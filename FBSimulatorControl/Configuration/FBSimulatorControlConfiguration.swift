@@ -8,7 +8,6 @@
 import FBControlCore
 import Foundation
 
-/// The ways device-set resolution can fail, as data rather than assembled strings.
 public enum FBSimulatorDeviceSetError: Error, LocalizedError {
   case simDeviceSetUnavailable
   case defaultPathUnavailable
@@ -54,8 +53,7 @@ public struct FBSimulatorControlConfiguration: Equatable, Hashable, CustomString
 
   // MARK: - Equatable, Hashable
 
-  /// Identity is the device set path alone. The logger is a dependency rather than data, and was
-  /// excluded from equality when this was a class.
+  /// Identity is the device set path alone; the logger is a dependency, not data.
   public static func == (lhs: FBSimulatorControlConfiguration, rhs: FBSimulatorControlConfiguration) -> Bool {
     lhs.deviceSetPath == rhs.deviceSetPath
   }
