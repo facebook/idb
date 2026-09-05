@@ -33,11 +33,7 @@
  */
 - (void)performTransactionAndWait:(void (^)(void))block;
 
-/**
- * The CoreData NSManagedObjectContext backing the photo library's
- * persistent store. Used to look up and delete managed objects
- * corresponding to PHAsset instances.
- */
+/** The CoreData context backing the photo library's persistent store. */
 @property (nonatomic, readonly) NSManagedObjectContext *managedObjectContext;
 
 @end
@@ -51,12 +47,7 @@
 - (id)objectValue;
 @end
 
-/**
- * PHAsset is backed by a CoreData managed object. This property
- * exposes the NSManagedObjectID, used to look up the corresponding
- * NSManagedObject in PLPhotoLibrary's managed object context for
- * direct deletion.
- */
+/** The CoreData object ID behind a PHAsset, for direct deletion through PLPhotoLibrary's context. */
 @interface PHAsset (CoreDataPrivate)
 @property (nonatomic, readonly) NSManagedObjectID *objectID;
 @end
