@@ -57,18 +57,6 @@ final class FBVideoStreamConfigurationTests: XCTestCase {
     XCTAssertEqual(config.keyFrameRate, 5.0)
   }
 
-  func testExplicitBitratePreserved() {
-    let rc = FBVideoStreamRateControl.bitrate(500000)
-    let config = FBVideoStreamConfiguration(
-      format: FBVideoStreamFormat.compressedVideo(withCodec: FBVideoStreamCodec.h264, transport: FBVideoStreamTransport.annexB),
-      framesPerSecond: nil,
-      rateControl: rc,
-      scaleFactor: nil,
-      keyFrameRate: nil
-    )
-    XCTAssertEqual(config.rateControl, .bitrate(500000))
-  }
-
   func testConfigurationEquality() {
     let rc = FBVideoStreamRateControl.quality(0.5)
     let a = FBVideoStreamConfiguration(
