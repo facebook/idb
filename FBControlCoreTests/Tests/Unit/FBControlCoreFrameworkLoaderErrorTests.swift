@@ -9,8 +9,6 @@ import FBControlCore
 import Foundation
 import Testing
 
-/// The loader's error contract: a failed load produces a descriptive error through the throwing
-/// entry point.
 @Suite("Framework loader error contract")
 struct FBControlCoreFrameworkLoaderErrorTests {
 
