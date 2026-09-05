@@ -19,12 +19,7 @@
 
 @class BBSectionInfo;
 
-/**
- * XPC client for the BulletinBoard daemon (bulletinboardd).
- * Provides read/write access to per-app notification settings.
- * Created via [[NSClassFromString(@"BBSettingsGateway") alloc] init]
- * after dlopen of BulletinBoard.framework.
- */
+/** XPC client for bulletinboardd; read/write access to per-app notification settings. */
 @interface BBSettingsGateway : NSObject
 
 /**
