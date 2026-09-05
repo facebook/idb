@@ -63,7 +63,7 @@ public final class FBXcodeConfiguration: NSObject {
       ?? (bundle.infoDictionary?["CFBundleExecutable"] as? String)
       ?? ((path as NSString).deletingPathExtension as NSString).lastPathComponent
     let identifier = bundle.bundleIdentifier ?? "com.apple.iphonesimulator"
-    // We deliberately don't include the binary because we should never need it.
+    // The binary is never needed.
     return FBBundleDescriptor(name: name, identifier: identifier, path: path, binary: nil)
   }()
 
@@ -98,11 +98,8 @@ public final class FBXcodeConfiguration: NSObject {
     ((developerDirectory as NSString).deletingLastPathComponent as NSString).appendingPathComponent("Info.plist")
   }
 
-  // A missing or unreadable plist is an expected runtime condition — hosts without a
-  // full Xcode install resolve an empty developer directory, making these paths
-  // relative and nonexistent. Callers tolerate nil, so this must not assert: the
-  // version statics run at process startup, and an assertions-enabled companion
-  // would abort on every launch on such hosts.
+  // Must not assert: hosts without a full Xcode resolve an empty developer directory, and these
+  // statics run at process startup.
   class func readValue(forKey key: String, fromPlistAtPath plistPath: String) -> Any? {
     guard let infoPlist = NSDictionary(contentsOfFile: plistPath) else {
       return nil
