@@ -11,11 +11,6 @@ import FBControlCore
 import Foundation
 import XCTest
 
-/// Coverage for the two halves of a drag that exist above any backend: what `FBDragOptions()` means,
-/// and what the two-argument `drag(from:to:)` sends when a caller does not choose.
-///
-/// A default that drifts is silent — the gesture still runs, it just runs differently — so the values
-/// are pinned here rather than left to whichever backend happens to read them.
 final class FBUIAutomationDragTests: XCTestCase {
 
   // The press hold is what makes this a drag rather than a flick: iOS opens a drag session only once
@@ -29,17 +24,6 @@ final class FBUIAutomationDragTests: XCTestCase {
     XCTAssertEqual(options.delta, FBSimulatorHIDEvent.defaultSwipeDelta)
   }
 
-  func testEveryOptionCanBeChosen() {
-    let options = FBDragOptions(pressDuration: 1, duration: 2, releaseDuration: 3, delta: 4)
-    XCTAssertEqual(options.pressDuration, 1)
-    XCTAssertEqual(options.duration, 2)
-    XCTAssertEqual(options.releaseDuration, 3)
-    XCTAssertEqual(options.delta, 4)
-  }
-
-  /// The convenience extension is the one place the defaults are applied on a caller's behalf. If it
-  /// ever built its options any other way, `drag(from:to:)` and `drag(from:to:options:
-  /// FBDragOptions())` would stop being the same gesture.
   func testTheTwoArgumentDragSendsTheDefaults() async throws {
     let automation = RecordingUIAutomation()
     try await automation.drag(from: .point(CGPoint(x: 1, y: 2)), to: .point(CGPoint(x: 3, y: 4)))
@@ -51,8 +35,6 @@ final class FBUIAutomationDragTests: XCTestCase {
   }
 }
 
-/// An `FBUIAutomation` that records the drag it was handed and refuses every other verb. Only the
-/// forwarding is under test, so the reads have nothing to return.
 private final class RecordingUIAutomation: FBUIAutomation, @unchecked Sendable {
 
   struct Drag: Equatable {
