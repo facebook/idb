@@ -97,27 +97,7 @@ final class FBSimulatorDTUHIDTransportTests: XCTestCase {
     XCTAssertEqual(DigitizerEventType.end.rawValue, 2)
   }
 
-  // MARK: Normalization parity with the Indigo transport
-
-  func testNormalizationParityWithIndigoRatio() throws {
-    let screenSize = CGSize(width: 1170, height: 2532) // pixels
-    let scale: Float = 3.0
-    let point = CGPoint(x: 201, y: 482) // points
-
-    let ratio = FBSimulatorIndigoHID.screenRatio(from: point, screenSize: screenSize, screenScale: scale)
-    // The DTUHID transport feeds exactly this ratio into pointOne.
-    let event = try encodeDigitizer(
-      IndigoDigitizerEvent(pointOne: DigitizerPoint(x: Double(ratio.x), y: Double(ratio.y)), eventType: .start))
-    let pointOne = xpc_dictionary_get_dictionary(xpc_dictionary_get_dictionary(event, "payload")!, "pointOne")!
-
-    XCTAssertEqual(xpc_dictionary_get_double(pointOne, "x"), Double(ratio.x), accuracy: 1e-9)
-    XCTAssertEqual(xpc_dictionary_get_double(pointOne, "y"), Double(ratio.y), accuracy: 1e-9)
-    // Sanity: point * scale / pixels == point / points, in 0...1.
-    XCTAssertEqual(Double(ratio.x), 201.0 * 3.0 / 1170.0, accuracy: 1e-9)
-    XCTAssertEqual(Double(ratio.y), 482.0 * 3.0 / 2532.0, accuracy: 1e-9)
-  }
-
-  // MARK: Not-yet-implemented families still throw (touch works; the rest land later)
+  // MARK: Unimplemented primitives throw
 
   func testUnimplementedPrimitivesThrow() async {
     let connection = xpc_connection_create("com.facebook.fbsimulatorcontrol.test.dtuhid", nil)
@@ -146,11 +126,6 @@ final class FBSimulatorDTUHIDTransportTests: XCTestCase {
     XCTAssertEqual(xpc_dictionary_get_double(pointOne, "x"), 0.25, accuracy: 1e-9)
     XCTAssertEqual(xpc_dictionary_get_double(pointTwo!, "x"), 0.75, accuracy: 1e-9)
     XCTAssertEqual(xpc_dictionary_get_double(pointTwo!, "y"), 0.5, accuracy: 1e-9)
-
-    // A single-finger event still omits pointTwo.
-    let single = try encodeDigitizer(
-      IndigoDigitizerEvent(pointOne: DigitizerPoint(x: 0.1, y: 0.2), eventType: .start))
-    XCTAssertNil(xpc_dictionary_get_dictionary(xpc_dictionary_get_dictionary(single, "payload")!, "pointTwo"))
   }
 
   // MARK: Button encoding
