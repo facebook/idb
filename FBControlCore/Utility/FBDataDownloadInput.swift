@@ -11,13 +11,8 @@ public final class FBDataDownloadInput: NSObject, @unchecked Sendable {
 
   public let input: FBProcessInput<AnyObject>
 
-  /// Waits for the transfer to finish, throwing if the server rejected the
-  /// request or the connection dropped.
-  ///
-  /// A data consumer carries only bytes and an end of file, so a failed download
-  /// is indistinguishable from a short one on `input` alone -- a caller that
-  /// needs to tell them apart awaits this. It is deliberately not `@objc`: the
-  /// future underneath is an implementation detail, and every caller is Swift.
+  /// Waits for the transfer to finish, throwing if the server rejected the request or the connection
+  /// dropped. `input` alone cannot distinguish a failed download from a short one.
   public func completed() async throws {
     _ = try await bridgeFBFuture(completedFuture)
   }
