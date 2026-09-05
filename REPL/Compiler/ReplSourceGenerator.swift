@@ -13,9 +13,6 @@ import Foundation
 /// file: it lifts the `import` statements out of the body, wraps the remaining
 /// code in a `@_cdecl` entry point the companion injects and calls, and re-applies
 /// the imports at file scope so the modules they name resolve.
-///
-/// Every step is a pure function free of I/O or `ReplRunner` state, so the parsing
-/// and generation can be unit-tested directly.
 public enum ReplSourceGenerator {
 
   /// The full compilable source for the submission at `index`: the user's imports
