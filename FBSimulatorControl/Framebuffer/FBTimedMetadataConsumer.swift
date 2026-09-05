@@ -10,12 +10,8 @@ import Foundation
 
 // MARK: - FBTimedMetadataConsumer
 
-/// A sink for the timed-metadata (chapter) markers emitted mid-stream by
-/// `FBSimulatorVideoStream.writeTimedMetadata`. Decoupling the marker write from the transport lets the
-/// same framebuffer→VideoToolbox pipeline target either a streaming byte consumer (fMP4 `emsg` /
-/// MPEG-TS ID3, the `stream` command) or an `AVAssetWriter` chapter track (the `record` command),
-/// without the stream knowing which — mirroring how `FBEncodedSampleConsumer` decouples the
-/// encoded-frame sink.
+/// A sink for the timed-metadata (chapter) markers emitted by `FBSimulatorVideoStream.writeTimedMetadata`:
+/// either a streaming transport writer (fMP4 `emsg` / MPEG-TS ID3) or an `AVAssetWriter` chapter track.
 protocol FBTimedMetadataConsumer: AnyObject {
   /// Write a single timed-metadata marker for the current stream position.
   func writeTimedMetadata(_ text: String, logger: any FBControlCoreLogger)
