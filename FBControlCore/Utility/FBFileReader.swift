@@ -24,7 +24,6 @@ private func stateString(from state: FBFileReaderState) -> String {
   }
 }
 
-/// The ways file reading can fail, as data rather than assembled strings.
 public enum FBFileReaderError: Error, LocalizedError {
   case openFailed(path: String, message: String)
   case wrongStateToStart(targeting: String, state: String)
@@ -153,7 +152,7 @@ public final class FBFileReader: NSObject, FBFileReaderProtocol {
   }
 
   @objc public var finishedReading: FBFuture<NSNumber> {
-    // We don't re-alias ioChannelFinishedReadOperation as if it's externally cancelled, we want the ioChannelFinishedReadOperation to resolve normally
+    // A fresh future, so cancelling the returned future does not cancel `ioChannelRelinquishedControl`.
     let future: FBMutableFuture<AnyObject> = FBMutableFuture(name: "Finished reading of \(targeting)")
     future.resolve(from: ioChannelRelinquishedControl)
     return unsafeBitCast(
@@ -175,20 +174,13 @@ public final class FBFileReader: NSObject, FBFileReaderProtocol {
     }
     assert(io == nil, "IO Channel should not exist when not started")
 
-    // Get locals to be captured by the read, rather than self.
     let consumer = self.consumer
     var readErrorCode: Int32 = 0
 
-    // Mark the descriptor non-blocking before DispatchIO snapshots its flags,
-    // so the original flags libdispatch restores on wind-down always include
-    // O_NONBLOCK. The restore runs on an asynchronously-drained queue the
-    // caller cannot await: restoring blocking flags reaches through shared
-    // open file descriptions — and through descriptor numbers recycled after
-    // close — stripping O_NONBLOCK from an unrelated live channel and wedging
-    // it in an uninterruptible blocking read(2). The channel forces
-    // non-blocking IO while armed regardless, so only post-teardown flags
-    // change, and no caller can reliably observe those through the racy
-    // restore anyway.
+    // Set O_NONBLOCK before DispatchIO snapshots the descriptor flags: libdispatch restores that
+    // snapshot asynchronously on teardown through the shared open file description (or a recycled
+    // descriptor number), and a snapshot without O_NONBLOCK would wedge an unrelated live channel in
+    // a blocking read(2).
     _ = fcntl(fileDescriptor, F_SETFL, fcntl(fileDescriptor, F_GETFL) | O_NONBLOCK)
 
     // If there is an error creating the IO Object, the errorCode will be delivered asynchronously.
@@ -216,11 +208,9 @@ public final class FBFileReader: NSObject, FBFileReaderProtocol {
   }
 
   private func stopReadingNow() -> FBFuture<AnyObject> {
-    // The only error condition is that we haven't yet started reading
     if state == .notStarted {
       return FBFuture(error: FBFileReaderError.notStartedReading(targeting: targeting))
     }
-    // All states other than reading mean that we don't need to close the channel.
     if state != .reading {
       return ioChannelRelinquishedControl
     }
@@ -231,7 +221,6 @@ public final class FBFileReader: NSObject, FBFileReaderProtocol {
   }
 
   private func ioChannelReadOperationDone(_ errorCode: Int32) {
-    // First, update internal state that the read operation is over.
     ioChannelReadOperationStateFinalize(errorCode)
 
     // Closing is necessary when a read has finished, since a "Read Operation" terminating *does not* mean
@@ -244,13 +233,10 @@ public final class FBFileReader: NSObject, FBFileReaderProtocol {
     // In the case of a bad file descriptor (EBADF) this can be called before dispatch_io_read.
     ioChannelReadOperationStateFinalize(errorCode)
 
-    // Signal that the file descriptor reading has now fully finished.
     ioChannelRelinquishedControl.resolve(withResult: NSNumber(value: errorCode))
 
-    // Now that the IO channel is done for good, remove the reference to it.
     guard io != nil else { return }
     io = nil
-    // Close the file descriptor if requested
     if closeOnEndOfFile {
       close(fileDescriptor)
     }
