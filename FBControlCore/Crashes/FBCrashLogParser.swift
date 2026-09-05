@@ -13,13 +13,9 @@ public protocol FBCrashLogParser: NSObjectProtocol {
   func parseCrashLog(from str: String, executablePathOut: AutoreleasingUnsafeMutablePointer<NSString>, identifierOut: AutoreleasingUnsafeMutablePointer<NSString>, processNameOut: AutoreleasingUnsafeMutablePointer<NSString>, parentProcessNameOut: AutoreleasingUnsafeMutablePointer<NSString>, processIdentifierOut: UnsafeMutablePointer<pid_t>, parentProcessIdentifierOut: UnsafeMutablePointer<pid_t>, dateOut: AutoreleasingUnsafeMutablePointer<NSDate>, exceptionDescription: AutoreleasingUnsafeMutablePointer<NSString>, crashedThreadDescription: AutoreleasingUnsafeMutablePointer<NSString>, error: NSErrorPointer)
 }
 
-/// .ips file for macOS 12+ is two concatenated json strings.
-/// 1st is metadata json, second is content json. Some of the fields from metadata repeats in content json.
-/// Considering the facts that:
-/// 1. The layout can be changed by apple easily
-/// 2. Json structure itself can be easily changed
-/// 3. Crashes is not often happening operation of idb
-/// we prefer reliability over performance gain here and parse all json strings finding the fields that we need in all of json entries
+/// A macOS 12+ `.ips` file is two concatenated JSON objects (metadata, then content) with some fields
+/// repeated. Apple can change the layout, so every object is searched for each needed field rather
+/// than assuming a position.
 public final class FBConcatedJSONCrashLogParser: NSObject, FBCrashLogParser {
 
   public func parseCrashLog(from str: String, executablePathOut: AutoreleasingUnsafeMutablePointer<NSString>, identifierOut: AutoreleasingUnsafeMutablePointer<NSString>, processNameOut: AutoreleasingUnsafeMutablePointer<NSString>, parentProcessNameOut: AutoreleasingUnsafeMutablePointer<NSString>, processIdentifierOut: UnsafeMutablePointer<pid_t>, parentProcessIdentifierOut: UnsafeMutablePointer<pid_t>, dateOut: AutoreleasingUnsafeMutablePointer<NSDate>, exceptionDescription: AutoreleasingUnsafeMutablePointer<NSString>, crashedThreadDescription: AutoreleasingUnsafeMutablePointer<NSString>, error: NSErrorPointer) {
@@ -107,7 +103,7 @@ public final class FBConcatedJSONCrashLogParser: NSObject, FBCrashLogParser {
   }
 }
 
-/// This parser handles old plain text implementation of crash results
+/// Parses the pre-macOS 12 plain-text `.crash` format.
 public final class FBPlainTextCrashLogParser: NSObject, FBCrashLogParser {
 
   private static let maxLineSearch: UInt = 20
