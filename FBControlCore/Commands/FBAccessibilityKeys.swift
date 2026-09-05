@@ -7,10 +7,8 @@
 
 import Foundation
 
-/// Keys for accessibility element dictionaries.
-///
-/// The raw values are the on-the-wire JSON keys (and the CLI `--key` names);
-/// they are pinned by golden tests and must not change.
+/// Keys for accessibility element dictionaries. The raw values are the on-the-wire JSON keys and the
+/// CLI `--key` names; they must not change.
 public enum FBAXKeys: String, Sendable, CaseIterable {
   case label = "AXLabel"
   case frame = "AXFrame"
@@ -33,17 +31,11 @@ public enum FBAXKeys: String, Sendable, CaseIterable {
   case hidden = "hidden"
   case focused = "focused"
   case isRemote = "is_remote"
-  /// Whether the element can be acted on, and why not when it cannot.
-  ///
-  /// Not in `defaultSet`: `isVisible` and `visiblePoint` cannot be looked up — the application
-  /// hit-tests the element to answer them — so requesting them for a whole tree hit-tests every node.
-  ///
-  /// Only axbridge is affected. `axIsHittable()` returns nil on the translator backend, which has no
-  /// equivalent attributes, so the verdict is null there and nothing extra is fetched.
+  /// Whether the element can be acted on, and why not. Not in `defaultSet`: answering it hit-tests
+  /// every node. Only axbridge can answer; the translator backend reports null and fetches nothing extra.
   case interactable = "interactable"
-  /// Names the element covering an occluded element's centre, under `interactable`'s `occluded` reason.
-  /// The only key that costs extra round trips — one hit-test per occluded element — so it is separate
-  /// from `interactable` rather than folded into it, and implies it.
+  /// Names the element covering an occluded element's centre. Costs one hit-test per occluded element;
+  /// implies `interactable`.
   case occludedBy = "occluded_by"
 
   /// What `occluded_by` needs serialized to do its work.
@@ -53,19 +45,13 @@ public enum FBAXKeys: String, Sendable, CaseIterable {
   /// on either side never matches, so these must be requested together.
   public static let occluderIdentityKeys: Set<FBAXKeys> = [.interactable, .frameDict, .type, .uniqueID, .label]
 
-  /// The keys the application answers by hit-testing every node, which is what makes a read asking for
-  /// them expensive. Asking for `occludedBy` already implies `interactable`, but both are named so a
-  /// change to that expansion cannot quietly change what counts as a reachability read.
+  /// The keys the application answers by hit-testing every node, which is what makes a read expensive.
   public static let reachabilityKeys: Set<FBAXKeys> = [.interactable, .occludedBy]
 
-  /// Every key this reader can answer. Derived from `allCases`, so a key added to the enum joins
-  /// automatically.
-  ///
-  /// Includes `interactable` and `occludedBy`, which are costly — see those keys.
+  /// Every key, including the costly `interactable` and `occludedBy`.
   public static let everything: Set<FBAXKeys> = Set(allCases)
 
-  /// The token a caller passes instead of naming every key: `--key all`. Not a case of the enum: it
-  /// names no field, and a node never carries it.
+  /// The `--key all` token, which stands for `everything`.
   public static let everythingToken = "all"
 
   /// Every value `--key` accepts: the token, then the keys themselves.
