@@ -13,10 +13,6 @@ import Foundation
 /// Decides which HID transport a caller that did not request one gets, and whether the legacy Indigo
 /// keyboard path is functional.
 ///
-/// A namespace of pure functions over injected host facts rather than methods on `FBSimulator`, so
-/// the policy is unit-testable without a booted simulator. `FBSimulator` supplies the real facts in
-/// the adapter below.
-///
 /// Deliberately not a probe of whether `dtuhidd` is *resident*: it is a demand-launched,
 /// pressured-exit job, so it is normally not running even on a simulator that routes all HID through
 /// it. This decides only what to *prefer*; whether `dtuhidd` can actually be reached is settled where
