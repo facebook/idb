@@ -7,7 +7,6 @@
 
 import Foundation
 
-/// The code-coverage formats, with the member names the `NS_ENUM` importer produced.
 public enum FBCodeCoverageFormat: UInt, Sendable {
   case exported = 0
   case raw = 1
