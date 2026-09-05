@@ -101,10 +101,7 @@ public enum FBSimulatorHIDRemoteButton: Int32, Sendable, CaseIterable {
 /// A point on the tvOS Siri Remote trackpad surface, in absolute-normalized coordinates: `(0, 0)` is
 /// the top-left of the surface and `(1, 1)` the bottom-right.
 ///
-/// A distinct type rather than a `CGPoint` because the trackpad surface and the screen are different
-/// coordinate spaces, and `CGPoint` is what `.twoFingerTouch` already uses for screen points. Sharing
-/// one type across both leaves the compiler unable to tell them apart, which makes confusing them a
-/// silent mistake rather than a build failure.
+/// A distinct type from `CGPoint` so trackpad (unit-square) and screen points cannot be confused.
 public struct FBSimulatorTrackpadPoint: Equatable, Hashable, Sendable {
 
   public let x: Double
