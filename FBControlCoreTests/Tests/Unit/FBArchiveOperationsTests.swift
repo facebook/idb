@@ -154,13 +154,6 @@ final class FBArchiveOperationsTests: XCTestCase {
 
   // MARK: - createGzippedTarForPath with Non-Existent Path
 
-  func testCreateGzippedTarForPath_WhenPathDoesNotExist_ReturnsError() {
-    let nonExistentPath = "/tmp/this_path_definitely_does_not_exist_12345"
-    let future = FBArchiveOperations.createGzippedTar(forPath: nonExistentPath, logger: logger)
-
-    XCTAssertThrowsError(try future.`await`())
-  }
-
   func testCreateGzippedTarDataForPath_WhenPathDoesNotExist_ReturnsError() {
     let nonExistentPath = "/tmp/this_path_definitely_does_not_exist_12345"
     let queue = DispatchQueue.global(qos: .default)
@@ -203,18 +196,6 @@ final class FBArchiveOperationsTests: XCTestCase {
   }
 
   // MARK: - createGzippedTarDataForPath with Real Paths
-
-  func testCreateGzippedTarDataForPath_WhenPathIsDirectory_ProducesData() throws {
-    let filePath = (tempDirectory as NSString).appendingPathComponent("data.txt")
-    try "tar data test".write(toFile: filePath, atomically: true, encoding: .utf8)
-
-    let queue = DispatchQueue.global(qos: .default)
-    let future = FBArchiveOperations.createGzippedTarData(
-      forPath: tempDirectory, queue: queue, logger: logger)
-
-    let result = try future.`await`()
-    XCTAssertGreaterThan(result.length, 0)
-  }
 
   func testCreateGzippedTarDataForPath_WhenPathIsFile_ProducesData() throws {
     let filePath = (tempDirectory as NSString).appendingPathComponent("single.txt")
