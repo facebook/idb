@@ -11,10 +11,7 @@ import XCTest
 final class FBFileWriterTests: XCTestCase {
 
   override func setUpWithError() throws {
-    // This class exercises dispatch_io descriptor teardown, which hosted CI
-    // runners have repeatedly proven a hostile environment for. The class is
-    // reliable on internal continuous runs, which remain the coverage of
-    // record; skip wholesale rather than gating tests one by one.
+    // dispatch_io descriptor teardown is unreliable on hosted GitHub Actions runners.
     try XCTSkipIf(
       ProcessInfo.processInfo.environment["GITHUB_ACTIONS"] == "true",
       "dispatch_io teardown classes are covered by internal continuous runs")
@@ -81,7 +78,6 @@ final class FBFileWriterTests: XCTestCase {
     writer.consumeEndOfFile()
     _ = try writer.finishedConsuming.`await`(withTimeout: 10)
 
-    // The write was flushed before the channel wound down.
     var buffer = [UInt8](repeating: 0, count: 4)
     XCTAssertEqual(recv(remoteSocket, &buffer, 4, MSG_DONTWAIT), 4)
 
@@ -112,15 +108,11 @@ final class FBFileWriterTests: XCTestCase {
     writer.consumeEndOfFile()
     _ = try writer.finishedConsuming.`await`(withTimeout: 10)
 
-    // The write was flushed before the channel wound down.
     var buffer = [UInt8](repeating: 0, count: 4)
     XCTAssertEqual(recv(remoteSocket, &buffer, 4, MSG_DONTWAIT), 4)
 
-    // Winding down must not restore the original blocking flags onto a
-    // descriptor the channel never owned: that restore lands on an
-    // asynchronously-drained queue, possibly after the caller has closed the
-    // descriptor and the number has been recycled, re-blocking an unrelated
-    // live channel. The borrowed socket stays non-blocking.
+    // Teardown must not restore blocking flags on a descriptor the channel never owned: the restore is
+    // asynchronous and could land on a recycled fd number belonging to an unrelated live channel.
     XCTAssertNotEqual(fcntl(localSocket, F_GETFL) & O_NONBLOCK, 0)
   }
 
@@ -152,10 +144,7 @@ final class FBFileWriterTests: XCTestCase {
       XCTAssertEqual(write(remoteSocket, buffer.baseAddress, buffer.count), pong.count)
     }
 
-    // Teardown: end the writer and wait for its channel to close its duplicate,
-    // wind down the reader with a bounded drain, and only then close the
-    // socket. All waits are bounded so a teardown wedge fails this test alone
-    // rather than timing out the whole target.
+    // All waits are bounded so a teardown wedge fails this test alone rather than timing out the whole target.
     writer.consumeEndOfFile()
     _ = try writer.finishedConsuming.`await`(withTimeout: 10)
     XCTAssertEqual(fcntl(writerDescriptor, F_GETFD), -1)
