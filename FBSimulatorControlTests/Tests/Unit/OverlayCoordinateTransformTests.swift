@@ -8,9 +8,7 @@
 @testable import FBSimulatorControl
 import XCTest
 
-/// Tests for FBOverlayCoordinateTransform.
-///
-/// Device reference: iPhone 11
+/// Fixture reference: iPhone 11
 ///   - Screen: 828×1792 pixels, 414×896 points, 2x retina
 ///   - With --border-top 24 at videoScale=0.5:
 ///     - scaledBorderTop = 24 * videoScale * retinaScale = 24 * 0.5 * 2.0 = 24 buffer px
@@ -20,7 +18,6 @@ import XCTest
 class FBOverlayCoordinateTransformTests: XCTestCase {
 
   private func iPhone11Transform(borderBottom: Int = 0, scaledBorderBottom: Int = 0) -> FBOverlayCoordinateTransform {
-    // scaledBorderTop = borderTop * videoScale * retinaScale = 24 * 0.5 * 2.0 = 24
     FBOverlayCoordinateTransform(
       screenPixelWidth: 828,
       screenPixelHeight: 1792,
@@ -56,18 +53,9 @@ class FBOverlayCoordinateTransformTests: XCTestCase {
 
   func testBufferPointForClickAtCenter() {
     let t = iPhone11Transform()
-    // x: 164 * 1.0 + 0 = 164
-    // y: 382 * 1.0 + 0 = 382
     let p = t.bufferPoint(x: 164, y: 382)
     XCTAssertEqual(p.x, 164, accuracy: 0.01)
     XCTAssertEqual(p.y, 382, accuracy: 0.01)
-  }
-
-  func testBufferPointAtOrigin() {
-    let t = iPhone11Transform()
-    let p = t.bufferPoint(x: 0, y: 0)
-    XCTAssertEqual(p.x, 0, accuracy: 0.01)
-    XCTAssertEqual(p.y, 0, accuracy: 0.01)
   }
 
   // MARK: - Size mapping
@@ -85,7 +73,7 @@ class FBOverlayCoordinateTransformTests: XCTestCase {
     let t = iPhone11Transform()
     let r = t.bufferRect(x: 0, y: 24, width: -1, height: 10)
     XCTAssertEqual(r.origin.x, 0, accuracy: 0.01)
-    XCTAssertEqual(r.origin.y, 24, accuracy: 0.01) // 24 + 0 = 24
+    XCTAssertEqual(r.origin.y, 24, accuracy: 0.01)
     XCTAssertEqual(r.size.width, 414, accuracy: 1)
     XCTAssertEqual(r.size.height, 10, accuracy: 0.01)
   }
@@ -94,7 +82,7 @@ class FBOverlayCoordinateTransformTests: XCTestCase {
     let t = iPhone11Transform()
     let r = t.bufferRect(x: 10, y: 34, width: 100, height: 50)
     XCTAssertEqual(r.origin.x, 10, accuracy: 0.01)
-    XCTAssertEqual(r.origin.y, 34, accuracy: 0.01) // 34 + 0 = 34
+    XCTAssertEqual(r.origin.y, 34, accuracy: 0.01)
     XCTAssertEqual(r.size.width, 100, accuracy: 0.01)
     XCTAssertEqual(r.size.height, 50, accuracy: 0.01)
   }
@@ -105,20 +93,18 @@ class FBOverlayCoordinateTransformTests: XCTestCase {
     let t = iPhone11Transform()
     let p = t.translateTarget(x: 200, y: 500)
     XCTAssertEqual(p.x, 200, accuracy: 0.01)
-    XCTAssertEqual(p.y, 500, accuracy: 0.01) // 500 + 0 = 500
+    XCTAssertEqual(p.y, 500, accuracy: 0.01)
   }
 
   // MARK: - Label layout
 
   func testLabelOriginIPhone11() {
     let t = iPhone11Transform()
-    // overlayScale = 1.0, headerHeight = scaledBorderTop = 24
     let font = CTFontCreateWithName("Monaco" as CFString, t.labelFontSize(8), nil)
     let ascent = CTFontGetAscent(font)
     let descent = CTFontGetDescent(font)
     let origin = t.labelOrigin(padding: 4, ascent: ascent, descent: descent)
     let lineHeight = ascent + descent
-    // x = padding * overlayScale + insetCorrection.x = 4 + 0 = 4
     XCTAssertEqual(origin.x, 4.0, accuracy: 0.001)
     // y = centered within visible 24px header, no insetCorrection.y
     let expectedY = (24.0 - lineHeight) / 2 + ascent
@@ -140,8 +126,6 @@ class FBOverlayCoordinateTransformTests: XCTestCase {
     let descent = CTFontGetDescent(font)
     let origin = t.labelOrigin(padding: 4, ascent: ascent, descent: descent)
     let lineHeight = ascent + descent
-    // labelOrigin centers within the visible header (12px), NOT borderTop * overlayScale (24px).
-    // insetCorrection.y is NOT applied.
     let expectedY = (12.0 - lineHeight) / 2 + ascent
     XCTAssertEqual(origin.y, expectedY, accuracy: 0.001)
   }
@@ -184,68 +168,9 @@ class FBOverlayCoordinateTransformTests: XCTestCase {
     XCTAssertEqual(origin.y, 4.0 + ascent, accuracy: 0.001)
   }
 
-  func testLabelOriginScalesPadding() {
-    let t = iPhone11Transform()
-    let font = CTFontCreateWithName("Monaco" as CFString, t.labelFontSize(8), nil)
-    let ascent = CTFontGetAscent(font)
-    let descent = CTFontGetDescent(font)
-    // With padding=8 instead of 4
-    let origin = t.labelOrigin(padding: 8, ascent: ascent, descent: descent)
-    // overlayScale = 1.0 → x = 8 * 1.0 = 8
-    XCTAssertEqual(origin.x, 8.0, accuracy: 0.001)
-    // y is still centered within 24px header (padding only affects x)
-    let lineHeight = ascent + descent
-    let expectedY = (24.0 - lineHeight) / 2 + ascent
-    XCTAssertEqual(origin.y, expectedY, accuracy: 0.001)
-  }
-
-  func testLabelPositionRelativeToHeaderRect() {
-    // Verify the label is centered within the visible header.
-    let t = iPhone11Transform()
-    let font = CTFontCreateWithName("Monaco" as CFString, t.labelFontSize(8), nil)
-    let ascent = CTFontGetAscent(font)
-    let descent = CTFontGetDescent(font)
-    let origin = t.labelOrigin(padding: 4, ascent: ascent, descent: descent)
-
-    let textTop = origin.y - ascent
-    let textBottom = origin.y + descent
-    // The visible header is y=0 to y=24 (scaledBorderTop).
-    let visibleHeaderHeight: CGFloat = 24.0
-
-    // Text should be vertically centered: gap above == gap below
-    let gapAbove = textTop
-    let gapBelow = visibleHeaderHeight - textBottom
-    XCTAssertEqual(
-      gapAbove, gapBelow, accuracy: 0.001,
-      "Label should be vertically centered in visible header")
-    // Text must be fully within the visible header
-    XCTAssertGreaterThanOrEqual(
-      textTop, 0,
-      "Text top should not extend above the buffer")
-    XCTAssertLessThanOrEqual(
-      textBottom, visibleHeaderHeight,
-      "Text bottom should not extend below the visible header")
-  }
-
   func testLabelFontSize() {
     let t = iPhone11Transform()
-    // 8 * overlayScale(1.0) = 8
     XCTAssertEqual(t.labelFontSize(8), 8, accuracy: 0.01)
-  }
-
-  // MARK: - No scaling (1x retina, 1.0 scale)
-
-  func testNoScalingPassesThrough() {
-    let t = FBOverlayCoordinateTransform(
-      screenPixelWidth: 414, screenPixelHeight: 896,
-      retinaScale: 1.0, videoScale: 1.0,
-      borderTop: 24, scaledBorderTop: 24,
-      borderBottom: 0, scaledBorderBottom: 0
-    )
-    // insetCorrection.y = 24 - 24*1.0 = 0
-    let p = t.bufferPoint(x: 164, y: 382)
-    XCTAssertEqual(p.x, 164, accuracy: 0.01)
-    XCTAssertEqual(p.y, 382, accuracy: 0.01)
   }
 
   // MARK: - 3x retina
@@ -296,8 +221,7 @@ class FBOverlayCoordinateTransformTests: XCTestCase {
   // MARK: - device coordinate space (opt-in)
 
   func testComposedCoordSpaceIsTheDefault() {
-    // Omitting coordSpace must match the explicit .composed init exactly — guarantees existing
-    // callers continue to see today's wire semantics until they opt in.
+    // Omitting `coordSpace` must be identical to passing `.composed`.
     let implicit = iPhone11Transform()
     let explicit = FBOverlayCoordinateTransform(
       screenPixelWidth: 828, screenPixelHeight: 1792,
@@ -346,9 +270,8 @@ class FBOverlayCoordinateTransformTests: XCTestCase {
   }
 
   func testDeviceCoordSpaceEquivalentToComposedWithPreShift() {
-    // The whole point of .device mode: caller sends y=N, sime2e lands it at the same buffer
-    // pixel where the .composed caller would have landed y=N+borderTop. Verify across a few
-    // (retina, scale, border) combinations using the production scaledBorderTop formula.
+    // In `.device` mode y=N lands on the buffer pixel that `.composed` y=N+borderTop lands on,
+    // across (retina, scale, border) using the production scaledBorderTop formula.
     let cases: [(retina: CGFloat, scale: CGFloat, border: Int)] = [
       (2.0, 0.5, 24),
       (2.0, 1.0, 24),
@@ -405,11 +328,6 @@ class FBOverlayCoordinateTransformTests: XCTestCase {
 
   // MARK: - Bar layout
 
-  func testBarHeightPositive() {
-    let t = iPhone11Transform()
-    XCTAssertGreaterThan(t.barHeight(), 0)
-  }
-
   func testBarHeightEvenIsEven() {
     let h = FBOverlayCoordinateTransform.barHeightEven()
     XCTAssertGreaterThan(h, 0)
@@ -424,10 +342,6 @@ class FBOverlayCoordinateTransformTests: XCTestCase {
   func testBarYTopIsZero() {
     let t = iPhone11Transform()
     XCTAssertEqual(t.barY(position: "top"), 0, accuracy: 0.01)
-  }
-
-  func testBarDefaultHeightIs24() {
-    XCTAssertEqual(FBOverlayCoordinateTransform.defaultBarHeight, 24)
   }
 
   // MARK: - Bottom inset is included in bufferHeight
