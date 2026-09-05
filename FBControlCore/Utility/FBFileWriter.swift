@@ -7,7 +7,6 @@
 
 import Foundation
 
-/// The ways file writing can fail, as data rather than assembled strings.
 public enum FBFileWriterError: Error, LocalizedError {
   case openFailed(path: String, message: String)
   case ioChannelCreationFailed(fileDescriptor: Int32)
@@ -128,7 +127,6 @@ public class FBFileWriter: NSObject {
 private class FBFileWriter_Null: FBFileWriter, FBDispatchDataConsumer, FBDataConsumerLifecycle {
 
   func consumeData(_ data: __DispatchData) {
-    // do nothing
   }
 
   func consumeEndOfFile() {
@@ -183,10 +181,8 @@ private class FBFileWriter_Async: FBFileWriter, FBDispatchDataConsumer, FBDataCo
 
   func consumeEndOfFile() {
     guard let io else { return }
-    // We can't close the file handle right now since there may still be pending IO operations on the channel.
-    // The safe place to do this is within the dispatch_io_create cleanup_handler callback.
-    // We also want to ensure that there are no pending write operations on the channel.
-    // The barrier ensures that there are no pending writes before we attempt to interrupt the channel.
+    // The descriptor is closed in the DispatchIO cleanup handler; the barrier ensures no writes are
+    // pending before the channel is stopped.
     io.barrier {
       io.close(flags: .stop)
     }
@@ -199,21 +195,14 @@ private class FBFileWriter_Async: FBFileWriter, FBDispatchDataConsumer, FBDataCo
   func startWriting() throws {
     assert(io == nil)
 
-    // Mark the descriptor non-blocking before DispatchIO snapshots its flags,
-    // so the original flags libdispatch restores on wind-down always include
-    // O_NONBLOCK — regardless of ownership. The restore runs on an
-    // asynchronously-drained queue the caller cannot await: restoring
-    // blocking flags reaches through shared open file descriptions — and
-    // through descriptor numbers recycled after close — stripping O_NONBLOCK
-    // from an unrelated live channel and wedging it in an uninterruptible
-    // blocking read(2). The channel forces non-blocking IO while armed
-    // regardless, so only post-teardown flags change, and no caller can
-    // reliably observe those through the racy restore anyway.
+    // Set O_NONBLOCK before DispatchIO snapshots the descriptor flags: libdispatch restores that
+    // snapshot asynchronously on teardown through the shared open file description (or a recycled
+    // descriptor number), and a snapshot without O_NONBLOCK would wedge an unrelated live channel in
+    // a blocking read(2).
     _ = fcntl(fileDescriptor, F_SETFL, fcntl(fileDescriptor, F_GETFL) | O_NONBLOCK)
 
     let finishedConsuming = finishedConsumingMutable
 
-    // Use weak self to avoid retain cycle (see comments in ObjC implementation)
     io = DispatchIO(type: .stream, fileDescriptor: fileDescriptor, queue: writeQueue) { [weak self] errorCode in
       self?.ioChannelDidClose(withError: errorCode)
       // Since writing is asynchronous, wait until the io channel is fully closed.
@@ -223,7 +212,6 @@ private class FBFileWriter_Async: FBFileWriter, FBDispatchDataConsumer, FBDataCo
       throw FBFileWriterError.ioChannelCreationFailed(fileDescriptor: fileDescriptor)
     }
 
-    // Report partial results with as little as 1 byte read.
     io?.setLimit(lowWater: 1)
   }
 
