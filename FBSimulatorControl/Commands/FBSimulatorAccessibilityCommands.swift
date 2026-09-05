@@ -119,9 +119,7 @@ final class FBSimulatorAccessibilityCommands: AccessibilityOperations {
     try FBSimulatorControlFrameworkLoader.accessibilityFrameworks.loadPrivateFrameworks(simulator.logger)
   }
 
-  // Returns an FBAccessibilityElement wrapping the platform element for the given request;
-  // the handle owns the request's token and pops it on close. Stale-SpringBoard remediation
-  // retries with remediationPermitted=false, bounding it to a single attempt.
+  // Remediation retries with `remediationPermitted: false`, bounding it to one attempt.
   private func accessibilityElement(request: FBAXTranslationRequest, remediationPermitted: Bool) async throws -> FBAccessibilityElement {
     guard let simulator else {
       throw FBWeakTargetError.simulator
