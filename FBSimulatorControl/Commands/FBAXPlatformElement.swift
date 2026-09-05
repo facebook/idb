@@ -10,17 +10,11 @@ import AppKit
 import FBControlCore
 import Foundation
 
-/// The read-only accessibility attribute + traversal surface the serializer, translation
-/// request, dispatcher, element handle, and facade depend on, expressed in plain value
-/// types. Element actions live in `FBAXWritableElement`, so the read-only axbridge projection
-/// conforms here without pretending it can act.
+/// The read-only accessibility attribute and traversal surface. Actions live in `FBAXWritableElement`,
+/// so the read-only axbridge projection conforms here without pretending it can act.
 ///
-/// `AXPMacPlatformElement` is a private-framework class the unit tests cannot subclass, so a
-/// protocol seam lets both the real element (which conforms via the adapter extension below)
-/// and test doubles participate with no unsafe casts. Expressing it as an adapter — rather
-/// than mirroring the overlay's own signatures — also keeps the `NSAccessibility.Role`/`.Action`
-/// overlay types out of callers, and folds in the `objc_msgSend`-forcing `as AnyObject` reads,
-/// the `accessibilityAttributeValue:` traits reflection, and the children casting.
+/// `AXPMacPlatformElement` is a private-framework class tests cannot subclass; the protocol admits test
+/// doubles without unsafe casts.
 protocol FBAXPlatformElement: AnyObject {
   func axFrame() -> NSRect
   func axRole() -> String?
@@ -56,12 +50,8 @@ protocol FBAXPlatformElement: AnyObject {
   func axCentrePoint() -> CGPoint?
   func axIsUserInteractionEnabled() -> Bool?
 
-  /// The element a hit-test at this one's centre found, as the backend was able to establish it. Nil when
-  /// the read did not ask, the backend cannot answer, or nothing was there.
-  ///
-  /// Answered by the backend rather than by the caller hit-testing, because the backend can do it where
-  /// it is cheap: the guest reader is already walking the tree with the runtime bound, so it resolves
-  /// this inline instead of the host paying a round trip per element.
+  /// The element a hit-test at this one's centre found. Nil when the read did not ask, the backend
+  /// cannot answer, or nothing was there.
   func axExplainedBy() -> FBAXPlatformElement?
   func axCustomActionNames() -> [String]
   func axActionNames() -> [String]
@@ -77,7 +67,7 @@ protocol FBAXPlatformElement: AnyObject {
 /// The mutating action surface — press, scroll, set-value — layered on the read surface.
 /// Only the legacy CoreSimulator element (`AXPMacPlatformElement`) and its test double
 /// perform these, so a caller that acts on an element (`FBAccessibilityElement`) demands
-/// this refinement and the type system keeps actions off the read-only remote tree.
+/// this refinement and the type system keeps actions off the read-only axbridge tree.
 protocol FBAXWritableElement: FBAXPlatformElement {
   func axPerformPress() -> Bool
   func axScroll(_ direction: FBAccessibilityScrollDirection)
