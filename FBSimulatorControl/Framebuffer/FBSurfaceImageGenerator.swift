@@ -48,17 +48,10 @@ public final class FBSurfaceImageGenerator {
     try image(configuration: FBScreenshotConfiguration(), screenScale: nil)?.image
   }
 
-  /// Renders the current surface with `configuration` applied.
-  ///
-  /// The crop and scale are folded into the Core Image pipeline that produces the image rather than
-  /// applied to one that has already been produced, so a scaled screenshot is never materialised at
-  /// full resolution and never resampled on the CPU. It is the same request, answered by the work
-  /// this was going to do regardless.
-  ///
-  /// `configuration` is resolved into a plan here, against the surface being rendered, rather than
-  /// resolved by the caller and handed over. A surface can be replaced -- by a rotation, say --
-  /// between a caller reading its size and asking for an image, and a crop resolved against the old
-  /// size names a different region of the new surface while still looking like a success.
+  /// Renders the current surface with `configuration` applied inside the Core Image pipeline, so a scaled
+  /// screenshot is never materialised at full resolution. The plan is resolved here, against the surface
+  /// being rendered: a surface can be replaced (e.g. by rotation) between a caller reading its size and
+  /// asking for an image, and a crop resolved against the old size would silently name the wrong region.
   public func image(configuration: FBScreenshotConfiguration, screenScale: Double?) throws -> FBSurfaceImage? {
     guard let surface = self.surface else {
       return nil
@@ -100,10 +93,7 @@ public final class FBSurfaceImageGenerator {
     CGRect(x: extent.minX + rect.minX, y: extent.maxY - rect.maxY, width: rect.width, height: rect.height)
   }
 
-  /// Both sizes are checked, not just the source. `FBScreenshotGeometry` floors every side of an
-  /// output at one pixel, so a plan that reaches here cannot have a zero one -- but the divisions
-  /// below would turn one into an infinite or NaN scale and hand it to the filter as a valid number,
-  /// which is too quiet a failure to leave resting on a caller's invariant.
+  /// Both sizes are guarded: a zero side would become an infinite/NaN scale the filter accepts silently.
   private static func scaled(_ image: CIImage, from size: CGSize, to outputSize: CGSize) -> CIImage? {
     guard size.width > 0, size.height > 0, outputSize.width > 0, outputSize.height > 0,
       let filter = CIFilter(name: "CILanczosScaleTransform")
