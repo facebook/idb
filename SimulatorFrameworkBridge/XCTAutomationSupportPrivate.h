@@ -69,19 +69,15 @@ typedef NSArray<NSNumber *> *_Nullable (*FBAXAttributeNumbersForNamesFn)(NSArray
                                                           error:(NSError **)error;
 
 /**
- * Reads a whole bounded subtree in **one** round trip — the call XCUITest walks hierarchies with.
+ * Reads a whole bounded subtree in one round trip — the call XCUITest walks hierarchies with. `options`
+ * is handed to the accessibility server verbatim (the framework reads only `options[@"attributes"]`, to
+ * log it), so the contract is the server's. Recognised keys: `maxDepth`, `maxChildren`,
+ * `maxArrayCount`, `snapshotAttributes`, `attributes`, `snapshotKeyHonorModalViews`,
+ * `traverseFromParentsToChildren`, `maximumCompression`. XCTest sanitises them before calling; this
+ * guest does not, so a malformed dictionary reaches the server unfiltered.
  *
- * Its body is a single `AXUIElementCopyParameterizedAttributeValue` for attribute `0x1731e`, with
- * `options` handed to the accessibility server verbatim; the method itself reads only
- * `options[@"attributes"]`, and only to log it. So the contract is the server's, not this framework's.
- *
- * Recognised option keys, from the framework binary: `maxDepth`, `maxChildren`, `maxArrayCount`,
- * `snapshotAttributes`, `attributes`, `snapshotKeyHonorModalViews`, `traverseFromParentsToChildren`,
- * `maximumCompression`. XCTest sanitises them in `XCTest.framework` before calling, which this guest
- * does not have, so a malformed dictionary reaches the server unfiltered.
- *
- * **Not equivalent to N calls to `attributesForElement:`.** This one sets the AX requesting client (that
- * method does not), so client-sensitive attributes can answer differently.
+ * **Not equivalent to N calls to `attributesForElement:`**: this one sets the AX requesting client, so
+ * client-sensitive attributes can answer differently.
  */
 - (nullable id)userTestingSnapshotForElement:(id)element
                                      options:(NSDictionary<NSString *, id> *)options
@@ -119,14 +115,7 @@ typedef NSArray<NSNumber *> *_Nullable (*FBAXAttributeNumbersForNamesFn)(NSArray
 
 @end
 
-/**
- * The class-side interface, for messaging a class resolved with `objc_lookUpClass`.
- *
- * A `Class` carries no type, so a send to one is resolved against whatever declaration in the translation
- * unit happens to share the selector — which is the wrong class's declaration as easily as the right one.
- * Casting the looked-up class to `Class<XCAccessibilityElementClass>` names the declaration to check
- * against.
- */
+/** Class-side interface for a class from `objc_lookUpClass`; see `RunningBoardServicesPrivate.h` for why. */
 @protocol XCAccessibilityElementClass <NSObject>
 + (nullable XCAccessibilityElement *)elementWithProcessIdentifier:(pid_t)pid;
 + (nullable XCAccessibilityElement *)elementWithAXUIElement:(void *)axUIElement;
