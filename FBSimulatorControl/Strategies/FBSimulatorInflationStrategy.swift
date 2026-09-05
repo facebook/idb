@@ -35,11 +35,9 @@ final class FBSimulatorInflationStrategy {
       availableDevices[device.udid.uuidString] = device
     }
 
-    // Calculate the new Devices that are available.
     var simulatorsToInflate = Set(availableDevices.keys)
     simulatorsToInflate.subtract(existingSimulatorUDIDs)
 
-    // Calculate the Devices that are now gone.
     var simulatorsToCull = existingSimulatorUDIDs
     simulatorsToCull.subtract(availableDevices.keys)
 
@@ -50,13 +48,11 @@ final class FBSimulatorInflationStrategy {
 
     var result = simulators
 
-    // Cull Simulators
     if !simulatorsToCull.isEmpty {
       let culled = FBiOSTargetPredicateForUDIDs(Array(simulatorsToCull))
       result = result.filter { !culled.evaluate(with: $0) }
     }
 
-    // Inflate the Simulators and join the array.
     let inflated = inflateSimulators(Array(simulatorsToInflate), availableDevices: availableDevices)
     return result + inflated
   }
