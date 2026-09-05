@@ -11,10 +11,8 @@ import XCTest
 final class FBProcessIOTests: XCTestCase {
 
   override func setUpWithError() throws {
-    // This class exercises dispatch_io descriptor teardown, which hosted CI
-    // runners have repeatedly proven a hostile environment for. The class is
-    // reliable on internal continuous runs, which remain the coverage of
-    // record; skip wholesale rather than gating tests one by one.
+    // dispatch_io descriptor teardown is unreliable on GitHub Actions runners; skip
+    // the whole class there.
     try XCTSkipIf(
       ProcessInfo.processInfo.environment["GITHUB_ACTIONS"] == "true",
       "dispatch_io teardown classes are covered by internal continuous runs")
