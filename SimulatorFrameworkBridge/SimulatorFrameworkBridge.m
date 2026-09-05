@@ -22,7 +22,6 @@ int main(int argc, const char *argv[])
     NSString *service = [NSString stringWithUTF8String:argv[1]];
     NSString *action = [NSString stringWithUTF8String:argv[2]];
 
-    // Collect remaining args (argv[3..]) into an array for services that need them
     NSMutableArray<NSString *> *remainingArgs = [NSMutableArray array];
     for (int i = 3; i < argc; i++) {
       [remainingArgs addObject:[NSString stringWithUTF8String:argv[i]]];
