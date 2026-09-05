@@ -10,14 +10,10 @@ import Darwin
 @preconcurrency import FBControlCore
 import Foundation
 
-/// Informal protocol for messaging the runtime-only `SimDeviceLegacyHIDClient` class.
-/// That class historically lived in SimulatorKit and has since relocated (e.g. to CoreDeviceIO
-/// in newer Xcodes), and is loaded on demand via dlopen by `FBSimulatorControlFrameworkLoader`.
-/// We therefore never reference it as a Swift type — doing so would emit a link-time
-/// `_OBJC_CLASS_$_SimDeviceLegacyClient` symbol pinned to a single framework, which breaks when
-/// the class moves. Instead we look the class up by name, allocate it with `FBObjCRuntimeClass`,
-/// and message it via `unsafeBitCast` to this protocol — mirroring exactly why the original
-/// Objective-C used `objc_lookUpClass` + `id`.
+/// Informal protocol for messaging the runtime-only `SimDeviceLegacyHIDClient`. The class has moved
+/// between frameworks across Xcodes and is dlopened on demand, so it is never referenced as a Swift
+/// type: that would emit a link-time `_OBJC_CLASS_$_` symbol pinned to one framework. It is looked up
+/// by name, allocated via `FBObjCRuntimeClass`, and messaged via `unsafeBitCast` to this protocol.
 ///
 /// Every send through this protocol has to be guarded with `FBObjCExceptionGuard`. It lands in
 /// CoreSimulator code that asserts on state this process does not own — a device that has been
@@ -55,10 +51,6 @@ final class FBSimulatorIndigoHIDClient: @unchecked Sendable {
   /// Resolves the runtime-only `SimDeviceLegacyHIDClient` class, dlopening the Xcode frameworks that
   /// vend it first — `FBSimulatorControl` itself loads only the essential set (CoreSimulator), so
   /// otherwise there is nothing for the lookup to find. Mirrors `FBSimulatorIndigoHID.init()`.
-  ///
-  /// `loader` is injectable because the process-global framework load state cannot answer whether
-  /// resolution asked for the Xcode frameworks — sibling suites in the same test process have
-  /// already loaded them.
   static func resolveClientClass(
     loader: FBControlCoreFrameworkLoader = FBSimulatorControlFrameworkLoader.xcodeFrameworks
   ) throws -> FBObjCRuntimeClass {
@@ -74,8 +66,7 @@ final class FBSimulatorIndigoHIDClient: @unchecked Sendable {
     try self.init(device: device, clientClass: Self.resolveClientClass())
   }
 
-  /// Allocates and initializes `clientClass` for `device`. Separate from `init(for:)` so that tests
-  /// can stand a class of their own in place of the runtime-only one.
+  /// Allocates and initializes `clientClass` for `device`.
   convenience init(device: Any, clientClass: FBObjCRuntimeClass) throws {
     var clientError: AnyObject?
     let client: AnyObject
