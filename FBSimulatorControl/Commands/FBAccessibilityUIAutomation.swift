@@ -153,9 +153,7 @@ final class FBAccessibilityUIAutomation: FBUIAutomation, @unchecked Sendable {
     }
   }
 
-  /// Resolves both endpoints to screen points and synthesizes the gesture over HID. There is no
-  /// accessibility action for a drag — `AXPress` is the only write this path has — so the endpoints
-  /// are all this backend contributes, and the touches go the same way every other backend sends them.
+  /// Synthesized over HID: there is no accessibility action for a drag.
   func drag(
     from source: FBAccessibilityElementQuery,
     to destination: FBAccessibilityElementQuery,
