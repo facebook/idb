@@ -10,13 +10,9 @@ import FBControlCore
 import FBSimulatorControl
 import Foundation
 
-/// Bare-minimum stand-in for `SimDevice`. The `FBSimulator` designated initializer only reads
-/// `UDID.uuidString` (to name the logger); nothing on the unit-test path reaches the device
-/// through its other properties, because tests register a wrapping command class that
-/// intercepts before any device access.
-///
-/// The stubs are `@objc` `NSObject` subclasses because the simulator reaches them by
-/// Objective-C message send, having been handed one in place of a real `SimDevice`.
+/// Bare-minimum `SimDevice` stand-in: `FBSimulator.init` reads only `UDID.uuidString` (to name the
+/// logger); everything else on the unit-test path is intercepted by a registered wrapping command class.
+/// Reached by Objective-C message send, hence `@objc` `NSObject`.
 @objc final class FBStubSimDevice: NSObject {
   @objc let UDID: NSUUID = NSUUID()
 }
@@ -70,18 +66,11 @@ func createSimulatorSet(
   }
 }
 
-/// Helpers that construct an `FBSimulator` instance suitable for unit tests.
-///
-/// The unit-test path is intended never to reach production code that touches the real
-/// `SimDevice`; the only thing the returned simulator needs to do is expose its `commandCache`
-/// so tests can pre-register a wrapping command class (see `FBTargetCommandCache.register(_:as:)`).
-/// The returned simulator's `device`-derived properties are NOT guaranteed to be correct and
-/// must not be exercised on the test path.
+/// Builds `FBSimulator`s for unit tests. Tests pre-register a wrapping command class on the
+/// returned simulator's `commandCache` (`FBTargetCommandCache.register(_:as:)`); `device`-derived
+/// properties are stub-backed and must not be exercised.
 enum FBSimulatorTestSupport {
 
-  /// Builds an `FBSimulator` whose `commandCache` is empty and ready for `register(_:as:)`
-  /// calls. Do NOT exercise `device`-derived properties on the returned simulator — they are
-  /// stub-backed and unsafe.
   static func testableSimulator() -> FBSimulator {
     testableSimulator(withDevice: FBStubSimDevice())
   }
@@ -99,8 +88,6 @@ enum FBSimulatorTestSupport {
     // configuration back; the initializer only stores it.
     let configuration = FBSimulatorConfiguration.inferSimulatorConfigurationFromDeviceSynthesizingMissing(
       asSimDevice(FBStubConfigurationSimDevice()))
-    // The initializer only stores fields and reads `device.UDID.uuidString`; everything else on
-    // the test path is intercepted before it reaches the device.
     return FBSimulator(
       device: asSimDevice(device),
       configuration: configuration,
