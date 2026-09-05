@@ -7,15 +7,6 @@
 
 #import "FBTestBundleDTXConnection.h"
 
-#import <XCTestPrivate/XCTestDriverInterface-Protocol.h>
-#import <XCTestPrivate/XCTestManager_DaemonConnectionInterface-Protocol.h>
-#import <XCTestPrivate/XCTestManager_IDEInterface-Protocol.h>
-
-// Protocol for RPC with testmanagerd daemon
-#import <XCTestPrivate/XCTMessagingChannel_DaemonToIDE-Protocol.h>
-#import <XCTestPrivate/XCTMessagingChannel_IDEToDaemon-Protocol.h>
-
-// Protocol for RPC with XCTest runner (within the host app process)
 #import <objc/runtime.h>
 
 #import <DTXConnectionServices/DTXConnection.h>
@@ -26,8 +17,13 @@
 #import <XCTestBootstrap/XCTestBootstrap-Swift.h>
 #import <XCTestPrivate/DTXConnection-XCTestAdditions.h>
 #import <XCTestPrivate/DTXProxyChannel-XCTestAdditions.h>
+#import <XCTestPrivate/XCTMessagingChannel_DaemonToIDE-Protocol.h>
+#import <XCTestPrivate/XCTMessagingChannel_IDEToDaemon-Protocol.h>
 #import <XCTestPrivate/XCTMessagingChannel_IDEToRunner-Protocol.h>
 #import <XCTestPrivate/XCTMessagingChannel_RunnerToIDE-Protocol.h>
+#import <XCTestPrivate/XCTestDriverInterface-Protocol.h>
+#import <XCTestPrivate/XCTestManager_DaemonConnectionInterface-Protocol.h>
+#import <XCTestPrivate/XCTestManager_IDEInterface-Protocol.h>
 
 #import "FBTestConfiguration.h"
 #import "XCTestBootstrapError.h"

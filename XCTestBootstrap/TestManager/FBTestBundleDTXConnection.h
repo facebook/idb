@@ -19,9 +19,7 @@
 #pragma mark Initializers
 
 /**
- Constructs a Test Bundle Connection that a caller drives step by step.
-
- @param interface the IDE-interface delegate (an `XCTestManager_IDEInterface` / `XCTMessagingChannel_RunnerToIDE` implementor) that test bundle and daemon callbacks are forwarded to. Typed as `id` so this header stays free of private XCTest protocols.
+ @param interface the `XCTestManager_IDEInterface` / `XCTMessagingChannel_RunnerToIDE` implementor that bundle and daemon callbacks are forwarded to. Typed as `id` to keep private XCTest protocols out of this header.
  */
 - (nonnull instancetype)initWithContext:(nonnull FBTestManagerContext *)context workQueue:(nonnull dispatch_queue_t)workQueue socket:(int)socket interface:(nonnull id)interface requestQueue:(nonnull dispatch_queue_t)requestQueue logger:(nonnull id<FBControlCoreLogger>)logger;
 
