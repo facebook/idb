@@ -13,8 +13,6 @@ import XCTest
 
 final class FBSimulatorVideoFileWriterTests: XCTestCase {
 
-  /// Feeds encoded H264 samples through the writer, finalizes, then reopens the file to confirm it is
-  /// a valid mp4 with one video track, a non-zero duration, and every appended frame readable back.
   func testWritesReadablePassthroughVideoTrack() async throws {
     let path = (NSTemporaryDirectory() as NSString).appendingPathComponent("FBSimulatorVideoFileWriterTests-\(UUID().uuidString).mp4")
     defer { try? FileManager.default.removeItem(atPath: path) }
@@ -50,8 +48,6 @@ final class FBSimulatorVideoFileWriterTests: XCTestCase {
     XCTAssertEqual(readSamples, frameCount, "every appended frame should be readable back")
   }
 
-  /// With chapters enabled, markers fed mid-recording become a player-visible QuickTime chapter track
-  /// whose titles and order survive a finalize + reopen.
   func testWritesReadableChapterTrack() async throws {
     let path = (NSTemporaryDirectory() as NSString).appendingPathComponent("FBSimulatorVideoFileWriterTests-chapters-\(UUID().uuidString).mp4")
     defer { try? FileManager.default.removeItem(atPath: path) }
@@ -113,8 +109,6 @@ final class FBSimulatorVideoFileWriterTests: XCTestCase {
     return titles
   }
 
-  /// Without chapters enabled, markers are dropped and no chapter track is added — the default
-  /// recording output is unchanged.
   func testNoChapterTrackWhenDisabled() async throws {
     let path = (NSTemporaryDirectory() as NSString).appendingPathComponent("FBSimulatorVideoFileWriterTests-nochapters-\(UUID().uuidString).mp4")
     defer { try? FileManager.default.removeItem(atPath: path) }
@@ -134,7 +128,6 @@ final class FBSimulatorVideoFileWriterTests: XCTestCase {
     XCTAssertTrue(textTracks.isEmpty, "no text track should be added when disabled")
   }
 
-  /// Finalizing a writer that never received a frame is a no-op rather than an error.
   func testFinishWithoutFramesDoesNotThrow() async throws {
     let path = (NSTemporaryDirectory() as NSString).appendingPathComponent("FBSimulatorVideoFileWriterTests-empty-\(UUID().uuidString).mp4")
     defer { try? FileManager.default.removeItem(atPath: path) }
@@ -187,8 +180,8 @@ final class FBSimulatorVideoTests: XCTestCase {
     return (video, path)
   }
 
-  /// Wait until the recording's output file exists — the writer creates it when the encoder emits
-  /// its first sample — rather than sleeping a fixed interval, which flakes on loaded machines.
+  /// The writer creates the output file when the encoder emits its first sample, so its existence
+  /// marks the first sample.
   private func waitForFirstSample(at path: String, timeout: TimeInterval = 10) async throws {
     let deadline = Date().addingTimeInterval(timeout)
     while Date() < deadline {
@@ -201,8 +194,6 @@ final class FBSimulatorVideoTests: XCTestCase {
   }
 
   func testRecordingProducesReadableMp4() async throws {
-    // Hardware video encoding is unavailable on hosted CI runners: the encoder
-    // never produces output, so the assertions cannot be exercised there.
     try XCTSkipIf(
       ProcessInfo.processInfo.environment["GITHUB_ACTIONS"] == "true",
       "video encoding is not available on hosted CI runners")
@@ -232,8 +223,6 @@ final class FBSimulatorVideoTests: XCTestCase {
   }
 
   func testSecondStopReturnsSameURLWithoutRefinalizing() async throws {
-    // Hardware video encoding is unavailable on hosted CI runners: the encoder
-    // never produces output, so the assertions cannot be exercised there.
     try XCTSkipIf(
       ProcessInfo.processInfo.environment["GITHUB_ACTIONS"] == "true",
       "video encoding is not available on hosted CI runners")
@@ -250,8 +239,6 @@ final class FBSimulatorVideoTests: XCTestCase {
   func testStopBeforeStartThrowsAndLatchesStopped() async throws {
     let (video, path) = makeRecordingFixture(immediateSurface: nil)
 
-    // Stopping a recording that never started throws (there is no stream to stop), and latches the
-    // stopped flag so a subsequent stop reports the output URL without touching the stream again.
     do {
       _ = try await video.stop()
       XCTFail("stop before start must throw")
