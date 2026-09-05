@@ -45,11 +45,7 @@ public indirect enum FBSimulatorHIDEvent: Equatable, Hashable, Sendable {
 
 public extension FBSimulatorHIDEvent {
 
-  /// Sends the event on the provided HID without draining afterwards.
-  ///
-  /// The gRPC companion has always sent this way and so has never drained; keeping the entry point
-  /// preserves that until it is addressed on its own terms. Prefer `FBSimulatorHID.send(event:logger:)`,
-  /// which drains once per gesture.
+  /// Sends without draining afterwards. Prefer `FBSimulatorHID.send(event:logger:)`, which drains once per gesture.
   func send(on hid: FBSimulatorHID) async throws {
     _ = try await hid.deliver(self)
   }
@@ -58,11 +54,6 @@ public extension FBSimulatorHIDEvent {
 // MARK: - Factories
 
 public extension FBSimulatorHIDEvent {
-
-  // Single-payload events use the enum cases directly (`.button(direction:button:)`,
-  // `.keyboard(direction:keyCode:)`, `.delay(_:)`, `.deviceOrientation(_:)`, `.shake`, `.lockDevice`,
-  // `.toggleInCallStatusBar`, `.composite(_:)`). Only composites with real construction logic, and
-  // the edgeless touch below, are wrapped here.
 
   /// An ordinary touch, not originating at a screen edge — what almost every caller wants. Tagging a
   /// contact with an edge is what turns a swipe into a system gesture, so it has to be asked for
@@ -145,17 +136,9 @@ public extension FBSimulatorHIDEvent {
     return .composite(events)
   }
 
-  /// A press-and-drag from `(xStart,yStart)` to `(xEnd,yEnd)`: hold the source, travel to the
-  /// destination over interpolated samples, hold there, then lift.
-  ///
-  /// The travel is the interpolation `swipe` performs, at the same `delta` and with the same
-  /// not-positive-means-default rule. The two holds are what make this a drag rather than a flick:
-  /// iOS starts a drag session only once the initial press clears its long-press threshold, and
-  /// `swipe` cannot express that because it divides its one `duration` across every step, so the
-  /// hold it produces shrinks as the path gets longer.
-  ///
-  /// The three durations are seconds and are additive — the gesture takes
-  /// `pressDuration + duration + releaseDuration`, with `duration` spread evenly over the samples.
+  /// A press-and-drag: hold at the source for `pressDuration`, travel over interpolated samples spread
+  /// across `duration`, hold at the destination for `releaseDuration`, then lift. The initial hold is what
+  /// starts an iOS drag session (it must clear the long-press threshold); `swipe` cannot express it.
   static func drag(
     _ xStart: Double, yStart: Double, xEnd: Double, yEnd: Double, delta: Double,
     pressDuration: Double, duration: Double, releaseDuration: Double
@@ -185,12 +168,9 @@ public extension FBSimulatorHIDEvent {
     return .composite(events)
   }
 
-  /// A tvOS Siri Remote trackpad pan from `(fromX,fromY)` to `(toX,toY)` — points absolute-normalized
-  /// (0..1, top-left). Expands to a began → changed×steps → ended gesture; the interpolated changed
-  /// samples with small delays give the focus engine the velocity it needs to move focus. Drained once
-  /// by `send(event:logger:)`. Indigo-only (the DTUHID transport has no trackpad).
-  /// Interpolated samples stay inside the unit square because both endpoints do, so the intermediate
-  /// points cannot fail to construct — hence the `?? from` fallbacks, which are unreachable.
+  /// A tvOS Siri Remote trackpad pan (unit-square points): began → changed×steps → ended, with small delays
+  /// so the focus engine sees velocity. Indigo only. The `?? from` fallbacks are unreachable — interpolating
+  /// two in-square points stays in the square.
   static func pan(
     from: FBSimulatorTrackpadPoint, to: FBSimulatorTrackpadPoint, steps: Int, duration: Double
   ) -> FBSimulatorHIDEvent {
@@ -225,13 +205,11 @@ public extension FBSimulatorHIDEvent {
 
     var events: [FBSimulatorHIDEvent] = []
 
-    // Touch down at start positions (fingers on horizontal axis centered on target)
     let f1Start = CGPoint(x: centerX - startRadius, y: centerY)
     let f2Start = CGPoint(x: centerX + startRadius, y: centerY)
     events.append(.twoFingerTouch(direction: .down, finger1: f1Start, finger2: f2Start))
     events.append(.delay(stepDelay))
 
-    // Interpolated moves — same pattern as swipe
     let dr = (endRadius - startRadius) / Double(steps)
     for i in 1...steps {
       let r = startRadius + dr * Double(i)
@@ -247,7 +225,6 @@ public extension FBSimulatorHIDEvent {
     events.append(.twoFingerTouch(direction: .down, finger1: f1End, finger2: f2End))
     events.append(.delay(stepDelay))
 
-    // Touch up at end positions
     events.append(.twoFingerTouch(direction: .up, finger1: f1End, finger2: f2End))
 
     return .composite(events)
