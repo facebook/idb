@@ -24,7 +24,6 @@
 
 + (nullable instancetype)configurationByWritingToFileWithSessionIdentifier:(NSUUID *)sessionIdentifier moduleName:(NSString *)moduleName testBundlePath:(NSString *)testBundlePath uiTesting:(BOOL)uiTesting testsToRun:(nullable NSSet<NSString *> *)testsToRun testsToSkip:(nullable NSSet<NSString *> *)testsToSkip targetApplicationPath:(nullable NSString *)targetApplicationPath targetApplicationBundleID:(nullable NSString *)targetApplicationBundleID testApplicationDependencies:(nullable NSDictionary<NSString *, NSString *> *)testApplicationDependencies automationFrameworkPath:(nullable NSString *)automationFrameworkPath reportActivities:(BOOL)reportActivities error:(NSError * _Nullable * _Nullable)error
 {
-  // Construct the XCTestConfiguration class.
   XCTestConfiguration *testConfiguration = [objc_lookUpClass("XCTestConfiguration") new];
   testConfiguration.sessionIdentifier = sessionIdentifier;
   testConfiguration.testBundleURL = (testBundlePath ? [NSURL fileURLWithPath:testBundlePath] : nil);
@@ -48,7 +47,6 @@
 
   NSData *data = [NSKeyedArchiver archivedDataWithRootObject:testConfiguration requiringSecureCoding:NO error:nil];
 
-  // Write it to file.
   NSString *testBundleContainerPath = testBundlePath.stringByDeletingLastPathComponent;
   NSString *testConfigPath = [testBundleContainerPath stringByAppendingPathComponent:[NSString stringWithFormat:@"%@-%@.xctestconfiguration", moduleName, sessionIdentifier.UUIDString]];
   if (![data writeToFile:testConfigPath options:NSDataWritingAtomic error:error]) {

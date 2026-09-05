@@ -39,6 +39,7 @@
  @param sessionIdentifier the session identifier.
  @param moduleName name the test module name.
  @param testBundlePath the absolute path to the test bundle.
+ @param path the path to the test configuration file.
  @param uiTesting YES if to initialize the Test Configuraiton for UI Testing, NO otherwise.
  @param xcTestConfiguration underlying XCTestConfiguration object
  */
