@@ -19,11 +19,8 @@ struct IdbForward {
 
     let allArguments = Array(CommandLine.arguments.dropFirst())
 
-    // Pull recognized flags out of the argument list; everything else is forwarded
-    // to the companion. `--idb-companion-binary` overrides the default
-    // system-installed companion CompanionDiscovery launches (mirrors idb-repl's
-    // flag). `--companion <host:port>` connects directly to a TCP companion,
-    // bypassing discovery. `--plaintext` forces an unencrypted TCP connection.
+    // Recognized flags are consumed here; everything else is forwarded to the companion
+    // verbatim.
     var udid: String?
     var companionBinary: String?
     var explicitCompanion: String?
@@ -42,11 +39,8 @@ struct IdbForward {
 
     logStderr("Remaining arguments: \(remainingArguments)")
 
-    // Resolve the companion address. With `--companion host:port` we connect to an
-    // explicit (typically remote) TCP companion and skip CompanionDiscovery
-    // entirely. Otherwise we discover a companion, starting one if needed (it exits
-    // after 5 minutes idle); with no udid we use the single running companion or
-    // start one for the only available simulator.
+    // A discovered companion is started if needed and exits after 5 minutes without
+    // gRPC activity.
     let address: CompanionAddress
     if let explicitCompanion {
       guard let parsed = CompanionAddress.parse(tcp: explicitCompanion) else {
