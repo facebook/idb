@@ -14,9 +14,6 @@ import XCTest
 /// in-call status bar — hold their target weakly and reach it on every send, since neither keeps a
 /// connection open. That makes "the target is gone" a real state each has to handle, and it is the one
 /// part of either that can be exercised without a live simulator.
-///
-/// Both were `guard let simulator else { throw }` written inline on `FBSimulatorHID` before they became
-/// transports of their own. This pins that the contract came with them.
 final class FBSimulatorConnectionlessTransportTests: XCTestCase {
 
   private func assertDeallocatedTarget(
@@ -29,7 +26,6 @@ final class FBSimulatorConnectionlessTransportTests: XCTestCase {
       try await operation()
       XCTFail("\(message): expected a weak-target failure, got success", file: file, line: line)
     } catch FBWeakTargetError.deallocated {
-      // The contract.
     } catch {
       XCTFail("\(message): expected a weak-target failure, got \(error)", file: file, line: line)
     }
@@ -49,8 +45,7 @@ final class FBSimulatorConnectionlessTransportTests: XCTestCase {
     await assertDeallocatedTarget("in-call status bar") { try await notification.sendToggleInCallStatusBar() }
   }
 
-  // The blocking primitives now run on a private queue, so the failure has to survive the hop back to
-  // the caller rather than being thrown inline. Concurrent sends must each get their own answer.
+  // The failure has to survive the hop back from the private queue; concurrent sends each get their own.
   func testDeallocatedTargetSurvivesConcurrentSends() async {
     let purple = FBSimulatorPurpleHIDTransport(simulator: nil)
     let notification = FBSimulatorDarwinNotificationTransport(simulator: nil)
