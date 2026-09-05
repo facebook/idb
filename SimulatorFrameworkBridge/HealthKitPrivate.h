@@ -5,13 +5,9 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-// Synthetic header for HealthKit private API.
-//
-// HKAuthorizationStore is a private XPC client of the healthd daemon
-// (mach service com.apple.healthd.server). It is shipped inside the
-// public HealthKit.framework but not exposed in the SDK headers, so
-// we declare only the methods we use here and call them via the ObjC
-// runtime after dlopen-loading HealthKit.framework.
+// Synthetic header for HealthKit private API. HKAuthorizationStore is the XPC client of healthd
+// (com.apple.healthd.server), shipped inside the public HealthKit.framework but absent from the SDK
+// headers. Only the methods used are declared; the framework is dlopen-loaded.
 
 #import <Foundation/Foundation.h>
 
@@ -21,9 +17,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 /**
  * XPC client for the healthd daemon. Provides read/write access to
- * per-bundle HealthKit authorisation records. Created via
- * [[NSClassFromString(@"HKAuthorizationStore") alloc] initWithHealthStore:store]
- * after dlopen of HealthKit.framework.
+ * per-bundle HealthKit authorisation records.
  */
 @interface HKAuthorizationStore : NSObject
 
@@ -45,9 +39,7 @@ NS_ASSUME_NONNULL_BEGIN
  * UI always passes an empty modes dict.
  *
  * `options` is a bitmask, **not an object** — both runtimes encode it
- * as `Q`. It was declared here as an `NSDictionary *` for a long time;
- * the only caller passed nil, which marshals as 0, so the mistake never
- * surfaced. Zero is the value the Health-app UI passes.
+ * as `Q`. Zero is what the Health app passes.
  *
  * Prerequisite: a matching `setRequestedAuthorizationForBundleIdentifier:`
  * call must have created an authorisation request for each (bundleID,
@@ -102,8 +94,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 /**
  * Resets every authorisation record for the bundle ID back to
- * "not determined". Useful for returning a target app to a clean
- * pre-approval state between test runs.
+ * "not determined".
  */
 - (void)resetAuthorizationStatusForBundleIdentifier:(NSString *)bundleID
                                          completion:(void (^)(BOOL success, NSError *_Nullable error))completion;
