@@ -10,8 +10,7 @@
 #import <FBControlCore/FBArchitecture.h>
 
 /**
- Uses the known values of SimDeviceType ProductFamilyID, to construct an enumeration.
- These mirror the values from -[SimDeviceState productFamilyID].
+ Raw values mirror CoreSimulator's -[SimDeviceType productFamilyID] and must not be renumbered.
  */
 typedef NS_ENUM(NSUInteger, FBControlCoreProductFamily) {
   FBControlCoreProductFamilyUnknown = 0,

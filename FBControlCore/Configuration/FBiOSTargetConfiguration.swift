@@ -33,8 +33,6 @@ public final class FBiOSTargetScreenInfo: NSObject, NSCopying {
       && scale == other.scale
   }
 
-  /// Truncates the scale, so infos differing only in its fractional part collide. Equality does not,
-  /// which is legal but means a struct conversion cannot synthesize `Hashable` and keep this behaviour.
   public override var hash: Int {
     Int(widthPixels) ^ Int(heightPixels) ^ Int(scale)
   }
@@ -75,9 +73,8 @@ public final class FBDeviceType: NSObject, NSCopying, @unchecked Sendable {
 
   // MARK: NSObject
 
-  /// The model is the identity: `productTypes`, `deviceArchitecture` and `family` are catalogue data
-  /// looked up from it, so a catalogue entry and a generic device type of the same model are the same
-  /// device. A struct conversion must keep this rather than synthesizing `Equatable`.
+  /// The model is the identity: the other properties are catalogue data looked up from it, so a
+  /// catalogue entry and a generic device type of the same model are equal.
   public override func isEqual(_ object: Any?) -> Bool {
     guard let other = object as? FBDeviceType else { return false }
     return model == other.model
@@ -179,8 +176,7 @@ public final class FBOSVersion: NSObject, NSCopying, @unchecked Sendable {
 
   // MARK: NSObject
 
-  /// The name is the identity: `families` is catalogue data looked up from it. A struct conversion
-  /// must keep this rather than synthesizing `Equatable`.
+  /// The name is the identity: `families` is catalogue data looked up from it.
   public override func isEqual(_ object: Any?) -> Bool {
     guard let other = object as? FBOSVersion else { return false }
     return name == other.name
