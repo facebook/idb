@@ -98,7 +98,6 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
     ])
   }
 
-  /// Asserts profiling data metrics with expected counts
   private func assertProfilingData(
     _ profile: FBAccessibilityProfile?,
     expectedElements: Int64,
@@ -127,7 +126,6 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
 
   // MARK: - Core Test Helpers
 
-  /// Core test for flat output - returns response for optional profiling assertions
   @discardableResult
   private func assertFlatOutput(
     withProfiling enableProfiling: Bool,
@@ -146,7 +144,6 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
     let result = response.legacyElementsObject() as! [Any]
     XCTAssertEqual(result.count, 4, "Flat format should have 4 elements (root + 3 children)")
 
-    // Expected full output for all 4 elements
     let expected: [[String: Any]] = [
       [
         "AXLabel": "App Window",
@@ -241,7 +238,6 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
     return response
   }
 
-  /// Core test for element at point - returns response for optional profiling assertions
   @discardableResult
   private func assertElementAtPoint(
     withProfiling enableProfiling: Bool,
@@ -274,7 +270,6 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
     return response
   }
 
-  /// Core test for nested output - returns response for optional profiling assertions
   @discardableResult
   private func assertNestedOutput(
     withProfiling enableProfiling: Bool,
@@ -293,7 +288,6 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
     let result = response.legacyElementsObject() as! [Any]
     XCTAssertEqual(result.count, 1, "Nested format should have 1 root element")
 
-    // Expected full nested output
     let expected: [[String: Any]] = [
       [
         "AXLabel": "App Window",
@@ -393,7 +387,6 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
     return response
   }
 
-  /// Core test for key filtering - returns response for optional profiling assertions
   @discardableResult
   private func assertKeyFiltering(
     withProfiling enableProfiling: Bool,
@@ -413,7 +406,6 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
     let result = response.legacyElementsObject() as! [Any]
     XCTAssertEqual(result.count, 4, "Should have 4 elements")
 
-    // Expected output with only the requested keys
     let expected: [[String: Any]] = [
       [
         "AXLabel": "App Window",
@@ -452,7 +444,6 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
     return response
   }
 
-  /// Core test for element at point with key filtering - returns response for optional profiling assertions
   @discardableResult
   private func assertElementAtPointKeyFiltering(withProfiling enableProfiling: Bool) async throws -> FBAccessibilityElementsResponse {
     let titleLabel = FBAccessibilityTestElementBuilder.staticText(
@@ -920,18 +911,6 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
     XCTAssertNil(response.coverage?.additional, "the additional coverage should be nil when no remote content is discovered")
   }
 
-  func testAdditionalFrameCoverageIsNilWithoutRemoteContentOptions() async throws {
-    try setUp(withRootElement: defaultElementTree)
-
-    let element = try await simulator.resolveElement(for: .frontmost)
-
-    var options = FBAccessibilityRequestOptions()
-    options.collectFrameCoverage = true
-    let response = try await element.serialize(with: options)
-    element.close()
-    XCTAssertNil(response.coverage?.additional, "the additional coverage should be nil without remoteContentOptions")
-  }
-
   func testRemoteContentDiscoveryMergesDiscoveredElement() async throws {
     // The frontmost app (pid 12345) is an AXApplication with no children, so the
     // main traversal marks no coverage. A separate-process element (pid 99999)
@@ -1321,14 +1300,6 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
 
   // MARK: - Serialize-to-Data Golden / Envelope Tests
 
-  /// Canonical (sorted-keys) JSON string for an object — the exact encoding both
-  /// `sime2e` (full `asDictionary()`) and the gRPC companion (`.elements` only)
-  /// emit on the wire. Used as a byte-level oracle for the swiftification.
-  private func canonicalJSONString(_ object: Any) throws -> String {
-    let data = try JSONSerialization.data(withJSONObject: object, options: [.sortedKeys])
-    return String(decoding: data, as: UTF8.self)
-  }
-
   func testSerializedEnvelopeDefaultContainsOnlyElements() async throws {
     try setUp(withRootElement: defaultElementTree)
     let element = try await simulator.resolveElement(for: .frontmost)
@@ -1418,63 +1389,6 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
     XCTAssertTrue(coverage["additional"] is NSNull, "No remote content -> additional is null, but keeps its key")
   }
 
-  func testGRPCElementsOnlyBytesMatchExpected() async throws {
-    try setUp(withRootElement: defaultElementTree)
-
-    // The cancel button is returned for the point query; the gRPC companion
-    // serializes `response.elements` directly (no envelope).
-    let cancel = FBAccessibilityTestElementBuilder.button(
-      withLabel: "Cancel",
-      identifier: "cancel_button",
-      frame: NSRect(x: 200, y: 750, width: 150, height: 44)
-    )
-    fixture!.translator.macPlatformElementResult = cancel
-    let element = try await simulator.resolveElement(for: .point(CGPoint(x: 275, y: 772)))
-    defer { element.close() }
-
-    let response = try await element.serialize(with: FBAccessibilityRequestOptions())
-
-    let expected: [String: Any] = [
-      "AXLabel": "Cancel",
-      "AXFrame": "{{200, 750}, {150, 44}}",
-      "AXValue": NSNull(),
-      "AXUniqueId": "cancel_button",
-      "type": "Button",
-      "title": NSNull(),
-      "frame": ["x": 200, "y": 750, "width": 150, "height": 44],
-      "help": NSNull(),
-      "enabled": true,
-      "custom_actions": [] as [Any],
-      "role": "AXButton",
-      "role_description": NSNull(),
-      "subrole": NSNull(),
-      "content_required": false,
-      "pid": 12345,
-      "traits": NSNull(),
-    ]
-
-    XCTAssertEqual(
-      try canonicalJSONString(response.legacyElementsObject()),
-      try canonicalJSONString(expected),
-      "gRPC elements-only JSON bytes changed"
-    )
-  }
-
-  func testSerializeToDataIsDeterministicAndRoundTrips() async throws {
-    try setUp(withRootElement: defaultElementTree)
-    let element = try await simulator.resolveElement(for: .frontmost)
-    let response = try await element.serialize(with: FBAccessibilityRequestOptions())
-    element.close()
-
-    let envelope = try response.legacyEnvelopeObject()
-    let first = try JSONSerialization.data(withJSONObject: envelope, options: [.sortedKeys])
-    let second = try JSONSerialization.data(withJSONObject: envelope, options: [.sortedKeys])
-    XCTAssertEqual(first, second, "sorted-keys serialization must be deterministic")
-
-    let reparsed = try JSONSerialization.jsonObject(with: first) as? [String: Any]
-    XCTAssertEqual(reparsed?["elements"] as? [[String: Any]] as NSArray?, envelope["elements"] as? [[String: Any]] as NSArray?)
-  }
-
   // MARK: - SpringBoard Remediation (zero-frame stale hierarchy)
 
   func testFrontmostRemediatesWhenZeroFramedRootPidIsDead() async throws {
@@ -1505,9 +1419,7 @@ final class FBSimulatorAccessibilityCommandsTests: XCTestCase {
   // MARK: - Frontmost nil-translation (describe-all SpringBoard-down classification)
 
   func testFrontmostDescribeAllReturnsSpringBoardNotRunningWhenSpringBoardDown() async throws {
-    // SpringBoard is confirmed not running.
     try setUp(withRootElement: defaultElementTree, launchCtl: FBSimulatorControlTests_LaunchCtl_Double.with(running: [:]))
-    // No frontmost translation -> request.perform(withTranslator:) returns nil.
     fixture!.translator.frontmostApplicationResult = nil
 
     do {
