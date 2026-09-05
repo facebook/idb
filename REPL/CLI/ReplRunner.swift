@@ -113,9 +113,6 @@ struct ReplRunner: ParsableArguments {
     config.mode = code != nil ? .oneshot : .interactive
     let session = try await ReplSession.start(context: context, config: config)
 
-    // One-shot mode: when a line of code is supplied on the command line, compile
-    // and run just that, print the result to stdout, and exit instead of starting
-    // the interactive REPL.
     if let code {
       do {
         let result = try await session.execute(code: code)
