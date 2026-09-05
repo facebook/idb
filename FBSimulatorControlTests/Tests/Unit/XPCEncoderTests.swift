@@ -48,12 +48,10 @@ final class XPCEncoderTests: XCTestCase {
     XCTAssertEqual(xpc_get_type(xpc_dictionary_get_value(object, "phase")!), XPC_TYPE_UINT64)
     XCTAssertEqual(xpc_dictionary_get_uint64(object, "phase"), 2)
 
-    // A nested Encodable becomes a nested dictionary.
     let point = xpc_dictionary_get_dictionary(object, "point")!
     XCTAssertEqual(xpc_dictionary_get_double(point, "x"), 0.25, accuracy: 1e-9)
     XCTAssertEqual(xpc_dictionary_get_double(point, "y"), 0.75, accuracy: 1e-9)
 
-    // A nil Optional omits its key.
     XCTAssertNil(xpc_dictionary_get_value(object, "optional"))
   }
 
