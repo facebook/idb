@@ -87,7 +87,6 @@ struct ReplayCommand: AsyncParsableCommand {
         // A run that now fails to compile (e.g. a different toolchain): report and continue.
         print("Error: \(error)")
       } catch {
-        // A terminal error (session stopped / stream closed): stop the replay.
         print("Error: \(error)")
         break
       }
