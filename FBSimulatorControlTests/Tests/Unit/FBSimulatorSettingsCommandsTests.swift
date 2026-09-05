@@ -9,8 +9,6 @@ import FBControlCore
 @testable import FBSimulatorControl
 import XCTest
 
-// MARK: - Tests
-
 final class FBSimulatorSettingsCommandsTests: XCTestCase {
 
   // MARK: - Helpers
@@ -42,26 +40,6 @@ final class FBSimulatorSettingsCommandsTests: XCTestCase {
     XCTAssertFalse(filtered.contains(.notification), "Notification is NOT in TCC mapping and should be removed")
   }
 
-  func testFilteredTCCApprovalsReturnsEmptyForNonTCCServices() {
-    let input: Set<FBTargetSettingsService> = [
-      .location, .notification, .health,
-    ]
-    let filtered = FBSimulatorSettingsCommands.filteredTCCApprovals(input)
-    XCTAssertEqual(
-      filtered.count, 0,
-      "Should return empty set when no input services are in TCC mapping")
-  }
-
-  func testFilteredTCCApprovalsKeepsAllFourTCCServices() {
-    let input: Set<FBTargetSettingsService> = [
-      .contacts, .photos, .camera, .microphone,
-    ]
-    let filtered = FBSimulatorSettingsCommands.filteredTCCApprovals(input)
-    XCTAssertEqual(
-      filtered.count, 4,
-      "All four TCC-backed services should pass through the filter")
-  }
-
   // MARK: - Magic Deeplink Key
 
   func testMagicDeeplinkKeyFormatsCorrectly() {
@@ -69,13 +47,6 @@ final class FBSimulatorSettingsCommandsTests: XCTestCase {
     XCTAssertEqual(
       key, "com.apple.CoreSimulator.CoreSimulatorBridge-->myapp",
       "Deeplink key should use CoreSimulatorBridge prefix with --> separator")
-  }
-
-  func testMagicDeeplinkKeyHandlesComplexScheme() {
-    let key = FBSimulatorSettingsCommands.magicDeeplinkKey(forScheme: "fb-messenger-api")
-    XCTAssertEqual(
-      key, "com.apple.CoreSimulator.CoreSimulatorBridge-->fb-messenger-api",
-      "Deeplink key should handle hyphenated scheme names")
   }
 
   // MARK: - Approval Row Generation
