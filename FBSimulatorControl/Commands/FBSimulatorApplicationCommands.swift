@@ -9,7 +9,6 @@
 @preconcurrency import FBControlCore
 @preconcurrency import Foundation
 
-/// The ways simulator application operations can fail, as data rather than assembled strings.
 public enum FBSimulatorApplicationError: Error {
   case installFailed(bundleDescription: String, options: String)
   case attachmentMissingFiles(bundleID: String)
@@ -101,7 +100,6 @@ public final class FBSimulatorApplicationCommands {
       installError = error as NSError
     }
 
-    // Retry install if the first attempt failed with 'Failed to load Info.plist...'.
     if let err = installError, err.description.contains("Failed to load Info.plist from bundle at path") {
       simulator.logger.log("Retrying install due to reinstall bug")
       if (try? simulator.device.installApplication(appURL, withOptions: options as [AnyHashable: Any])) != nil {
@@ -158,7 +156,6 @@ public final class FBSimulatorApplicationCommands {
     if installedApplication.installType == .system {
       throw FBSimulatorApplicationError.uninstallingSystemApplication(applicationDescription: String(describing: installedApplication))
     }
-    // Best-effort kill before uninstall; ignore errors.
     _ = try? await killApplication(withBundleID: bundleID)
     do {
       try simulator.device.uninstallApplication(bundleID, withOptions: nil)
@@ -291,7 +288,6 @@ public final class FBSimulatorApplicationCommands {
     return (translatedPath as NSString).appendingPathComponent(absolutePath)
   }
 
-  // Internal (not private) so the app-launch option dictionary can be characterized by unit tests; see FBSimulatorProcessSpawnCommandsTests.
   class func simDeviceLaunchOptions(for configuration: FBApplicationLaunchConfiguration, stdOutPath: String?, stdErrPath: String?) -> [String: Any] {
     var options = FBSimulatorProcessSpawnCommands.launchOptions(
       withArguments: configuration.arguments,
