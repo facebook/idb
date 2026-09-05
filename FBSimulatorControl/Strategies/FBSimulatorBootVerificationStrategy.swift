@@ -9,7 +9,6 @@
 @preconcurrency import FBControlCore
 import Foundation
 
-/// The ways boot verification can fail, as data rather than assembled strings.
 public enum FBSimulatorBootVerificationError: Error {
   case noBootInfo(simulatorDescription: String)
   case notTerminalStatus(bootInfoDescription: String)
@@ -36,8 +35,8 @@ public final class FBSimulatorBootVerificationStrategy {
 
   // MARK: - Constants
 
-  private static let bootVerificationWaitInterval: TimeInterval = 0.5 // 500ms
-  private static let bootVerificationStallInterval: TimeInterval = 1.5 // 1.5s
+  private static let bootVerificationWaitInterval: TimeInterval = 0.5
+  private static let bootVerificationStallInterval: TimeInterval = 1.5
 
   // MARK: - Initializers
 
