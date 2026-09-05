@@ -8,8 +8,8 @@
 #import <Foundation/Foundation.h>
 
 /*
- Loads xctestconfiguration passed by SHIMULATOR_START_XCTEST environment variable
- and then loads xctest bundle specified in that configuration
- In case SHIMULATOR_START_XCTEST is not present, nothing will get triggered
+ Loads the XCTestConfiguration at `XCTestConfigurationFilePath`, loads the test bundle it
+ names, and schedules `_XCTestMain` once the host app has finished launching. Returns NO
+ when the configuration or bundle cannot be loaded.
  */
 BOOL FBXCTestMain(void);
