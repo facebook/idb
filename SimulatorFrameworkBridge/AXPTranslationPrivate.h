@@ -131,13 +131,7 @@ typedef id _Nullable (^AXPTranslationBridgeCallback)(id request);
 
 @end
 
-/**
- * The class-side interface, for messaging a class resolved with `objc_lookUpClass`.
- *
- * A `Class` carries no type, so a send to one is resolved against whatever declaration in the translation
- * unit happens to share the selector — which is the wrong class's declaration as easily as the right one.
- * Casting the looked-up class to `Class<AXPTranslatorClass>` names the declaration to check against.
- */
+/** Class-side interface for a class from `objc_lookUpClass`; see `RunningBoardServicesPrivate.h` for why. */
 @protocol AXPTranslatorClass <NSObject>
 + (nullable AXPTranslator *)sharediOSInstance;
 @end
