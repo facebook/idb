@@ -17,13 +17,6 @@
 
 #pragma mark Initializers
 
-/**
- The Designated Initializer
-
- @param frameworkName the name of the loading framework.
- @param frameworks the framework dependencies
- @return a new Framework Loader
- */
 + (nonnull instancetype)loaderWithName:(nonnull NSString *)frameworkName frameworks:(nonnull NSArray<FBWeakFramework *> *)frameworks;
 
 /**
@@ -55,13 +48,8 @@
 #pragma mark Public Methods
 
 /**
- Confirms that the current user can load Frameworks.
- Subclasses should load the frameworks upon which they depend.
-
- @param logger the Logger to log events to. nil loads silently: diagnostics go to the os_log-only
- default logger (see FBControlCoreGlobalConfiguration.defaultLogger).
- @param error any error that occurred during performing the preconditions.
- @return YES if FBSimulatorControl is usable, NO otherwise.
+ Loads the frameworks, at most once per instance.
+ A nil logger loads silently.
  */
 - (BOOL)loadPrivateFrameworks:(nullable id<FBControlCoreLogger>)logger error:(NSError * _Nullable * _Nullable)error;
 

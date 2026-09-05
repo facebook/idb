@@ -59,7 +59,6 @@
     }
   }
 
-  // We're done with loading Frameworks.
   NSArray<NSString *> *frameworkNames = [weakFrameworks valueForKeyPath:@"@unionOfObjects.name"];
   if (frameworkNames) {
     [logger.debug log:
