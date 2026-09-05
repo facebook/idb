@@ -83,7 +83,6 @@ final class FBSimulatorSetTests: FBSimulatorSetTestCase {
     let secondFetch = self.set.allSimulators
     XCTAssertEqual(firstFetch, secondFetch)
 
-    // Reference equality.
     for index in 0..<firstFetch.count {
       XCTAssert(firstFetch[index] === secondFetch[index])
     }
