@@ -7,12 +7,7 @@
 
 import Foundation
 
-/// How a describe read is rendered. One value replaces the older "nested or not" boolean, so a format
-/// that is neither flat nor nested — `complete` — is representable without a second flag whose
-/// combinations would need policing.
-///
-/// The raw values are the CLI tokens verbatim, so a front-end can accept the format without restating
-/// the cases or mapping them onto a parallel enum of its own.
+/// How a describe read is rendered. Raw values are the CLI tokens.
 public enum FBAccessibilityOutputFormat: String, CaseIterable, Sendable {
   /// The elements flattened into one array, each node carrying no children.
   case `default`
