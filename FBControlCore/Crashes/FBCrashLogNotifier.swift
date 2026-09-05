@@ -39,12 +39,10 @@ public final class FBCrashLogNotifier {
     return true
   }
 
-  /// Polls until a crash log matching `predicate` appears. Callers impose their own timeouts,
-  /// and task cancellation stops the poll.
-  ///
-  /// Each pass is a synchronous scan of the diagnostic-reports directories, which fans out
-  /// through `DispatchQueue.concurrentPerform` and so blocks the thread running it. The pause
-  /// between passes is what keeps that off a cooperative-pool worker continuously.
+  /// Polls until a crash log matching `predicate` appears; callers impose their own timeouts and task
+  /// cancellation stops the poll. Each pass is a synchronous `concurrentPerform` scan that blocks the
+  /// calling thread, so the sleep between passes is what keeps a cooperative-pool worker from being
+  /// held continuously.
   public func nextCrashLog(forPredicate predicate: NSPredicate) async throws -> FBCrashLogInfo {
     _ = startListening(true)
     while true {
