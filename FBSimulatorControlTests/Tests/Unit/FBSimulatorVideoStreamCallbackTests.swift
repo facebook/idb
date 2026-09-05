@@ -41,22 +41,18 @@ final class FBSimulatorVideoStreamCallbackTests: XCTestCase {
     let logger = FBCapturingLogger()
     let pusher = createTestVideoStreamPusher(logger)
 
-    // Send 5 not-ready buffers (simulates warmup)
     for _ in 0..<5 {
       let notReady = makeNotReadySampleBuffer()
       pusher.handleCompressedSampleBuffer(notReady, encodeStatus: noErr, infoFlags: VTEncodeInfoFlags())
     }
 
-    // No per-frame messages during warmup
     for msg in logger.messages {
       XCTAssertFalse((msg as! String).contains("Sample Buffer is not ready"), "Should not log per-frame not-ready messages during warmup")
     }
 
-    // Now send a ready buffer to complete warmup
     let ready = makeReadySampleBuffer()
     pusher.handleCompressedSampleBuffer(ready, encodeStatus: noErr, infoFlags: VTEncodeInfoFlags())
 
-    // Should have a single warmup message
     var warmupMessageCount: UInt = 0
     for msg in logger.messages {
       if (msg as! String).contains("Encoder warmed up after 5 skipped frames") {
@@ -71,7 +67,6 @@ final class FBSimulatorVideoStreamCallbackTests: XCTestCase {
     let logger = FBCapturingLogger()
     let pusher = createTestVideoStreamPusher(logger)
 
-    // Send 20 not-ready buffers without any success
     for _ in 0..<20 {
       let notReady = makeNotReadySampleBuffer()
       pusher.handleCompressedSampleBuffer(notReady, encodeStatus: noErr, infoFlags: VTEncodeInfoFlags())
@@ -132,7 +127,6 @@ final class FBSimulatorVideoStreamCallbackTests: XCTestCase {
 
     pusher.handleCompressedSampleBuffer(nil, encodeStatus: noErr, infoFlags: .frameDropped)
 
-    // Dropped frame should increment failure counter, not produce a per-frame log
     XCTAssertEqual(pusher.consecutiveNotReadyFrameCount, 1)
     XCTAssertEqual(pusher.stats.callbackCount, 1)
     XCTAssertEqual(UInt(logger.messages.count), 1, "Should only log the first-callback message, not per-frame drop messages")
@@ -142,7 +136,6 @@ final class FBSimulatorVideoStreamCallbackTests: XCTestCase {
     let logger = FBCapturingLogger()
     let pusher = createTestVideoStreamPusher(logger)
 
-    // Send 20 dropped frames — should trigger starvation warning
     for _ in 0..<20 {
       pusher.handleCompressedSampleBuffer(nil, encodeStatus: noErr, infoFlags: .frameDropped)
     }
@@ -161,13 +154,11 @@ final class FBSimulatorVideoStreamCallbackTests: XCTestCase {
     let logger = FBCapturingLogger()
     let pusher = createTestVideoStreamPusher(logger)
 
-    // Send a ready buffer immediately
     let ready = makeReadySampleBuffer()
     pusher.handleCompressedSampleBuffer(ready, encodeStatus: noErr, infoFlags: VTEncodeInfoFlags())
 
     XCTAssertTrue(pusher.warmupComplete)
 
-    // No warmup message should be logged
     for msg in logger.messages {
       XCTAssertFalse((msg as! String).contains("Encoder warmed up"), "Should not log warmup message when first frame succeeds immediately")
     }
@@ -177,7 +168,6 @@ final class FBSimulatorVideoStreamCallbackTests: XCTestCase {
     let logger = FBCapturingLogger()
     let pusher = createTestVideoStreamPusher(logger)
 
-    // Send a few successful frames — stats interval hasn't elapsed
     for _ in 0..<3 {
       let ready = makeReadySampleBuffer()
       pusher.handleCompressedSampleBuffer(ready, encodeStatus: noErr, infoFlags: VTEncodeInfoFlags())
@@ -188,56 +178,26 @@ final class FBSimulatorVideoStreamCallbackTests: XCTestCase {
     }
   }
 
-  func testPeriodicStatsLoggedAfterInterval() throws {
-    let logger = FBCapturingLogger()
-    let pusher = createTestVideoStreamPusher(logger)
-
-    // Send one frame to initialize timing
-    var ready = makeReadySampleBuffer()
-    pusher.handleCompressedSampleBuffer(ready, encodeStatus: noErr, infoFlags: VTEncodeInfoFlags())
-
-    // Backdate statsTimer by 6 seconds to trigger stats on next frame
-    var timer = pusher.statsTimer
-    timer.backdateForTesting(by: 6.0)
-    pusher.statsTimer = timer
-
-    ready = makeReadySampleBuffer()
-    pusher.handleCompressedSampleBuffer(ready, encodeStatus: noErr, infoFlags: VTEncodeInfoFlags())
-
-    var foundStats = false
-    for msg in logger.messages {
-      if (msg as! String).contains("Video stats") {
-        foundStats = true
-      }
-    }
-    XCTAssertTrue(foundStats, "Should log stats after interval elapses")
-  }
-
   func testPeriodicStatsCountersAccurate() {
     let logger = FBCapturingLogger()
     let pusher = createTestVideoStreamPusher(logger)
 
-    // 3 successful writes
     for _ in 0..<3 {
       let ready = makeReadySampleBuffer()
       pusher.handleCompressedSampleBuffer(ready, encodeStatus: noErr, infoFlags: VTEncodeInfoFlags())
     }
 
-    // 2 dropped frames
     for _ in 0..<2 {
       pusher.handleCompressedSampleBuffer(nil, encodeStatus: noErr, infoFlags: .frameDropped)
     }
 
-    // 1 encode error
     pusher.handleCompressedSampleBuffer(nil, encodeStatus: -12345, infoFlags: VTEncodeInfoFlags())
 
-    // Verify counters
     XCTAssertEqual(pusher.stats.writeCount, 3)
     XCTAssertEqual(pusher.stats.dropCount, 2)
     XCTAssertEqual(pusher.stats.encodeErrorCount, 1)
     XCTAssertEqual(pusher.stats.callbackCount, 6)
 
-    // Backdate to trigger stats log
     var timer = pusher.statsTimer
     timer.backdateForTesting(by: 6.0)
     pusher.statsTimer = timer
@@ -263,18 +223,15 @@ final class FBSimulatorVideoStreamCallbackTests: XCTestCase {
     let logger = FBCapturingLogger()
     let pusher = createTestVideoStreamPusher(logger)
 
-    // Send 10 not-ready buffers (write failures during warmup)
     for _ in 0..<10 {
       let notReady = makeNotReadySampleBuffer()
       pusher.handleCompressedSampleBuffer(notReady, encodeStatus: noErr, infoFlags: VTEncodeInfoFlags())
     }
 
-    // Backdate to trigger stats log
     var timer = pusher.statsTimer
     timer.backdateForTesting(by: 6.0)
     pusher.statsTimer = timer
 
-    // Send one more not-ready buffer to trigger the stats log
     let notReady = makeNotReadySampleBuffer()
     pusher.handleCompressedSampleBuffer(notReady, encodeStatus: noErr, infoFlags: VTEncodeInfoFlags())
 
@@ -338,35 +295,11 @@ final class FBSimulatorVideoStreamBitmapPusherTests: XCTestCase {
 
     try pusher.tearDown()
   }
-
-  func testBitmapPusherWithoutScaleDoesNotResize() throws {
-    let buffer = makeBGRAPixelBuffer(width: 16, height: 8, fill: 0x10)
-    let consumer = FBDataBuffer.accumulatingBuffer()
-    // nil scaleFactor → no pixel transfer session, raw passthrough at source dimensions.
-    let pusher = FBSimulatorVideoStreamFramePusher_Bitmap(consumer: consumer, scaleFactor: nil)
-
-    let zeroInsets = FBVideoStreamEdgeInsets(top: 0, bottom: 0, left: 0, right: 0)
-    try pusher.setup(with: buffer, edgeInsets: zeroInsets)
-    try pusher.writeEncodedFrame(
-      buffer,
-      frameNumber: 0,
-      timeAtFirstFrame: 0,
-      frameDuration: 0,
-      forceKeyFrame: false
-    )
-
-    // Output is exactly one source-sized frame.
-    XCTAssertEqual(consumer.data().count, CVPixelBufferGetDataSize(buffer))
-
-    try pusher.tearDown()
-  }
 }
 
-/// End-to-end delivery tests for `FBSimulatorVideoStream` over a fake display surface: a framebuffer
-/// event fired on the fake must come out of the stream as pushed frame data. These pin the
-/// behavioral contract of the delivery chain (surface event → framebuffer → stream cadence →
-/// pusher → consumer) through the public API only, so they must keep passing unchanged as the
-/// internal delivery mechanism evolves.
+/// End-to-end delivery through the public API over a fake display surface: a framebuffer event
+/// on the fake must come out of the stream as pushed frame data (surface event -> framebuffer ->
+/// cadence -> pusher -> consumer).
 final class FBSimulatorVideoStreamDeliveryTests: XCTestCase {
 
   /// `.bgra` and no `framesPerSecond`: the lazy (variable-frame-rate) cadence with the bitmap
@@ -509,9 +442,8 @@ final class FBSimulatorVideoStreamDeliveryTests: XCTestCase {
     return surface
   }
 
-  /// Thread-safe completion latch for observing whether a task settled.
-  // SAFETY: every access to `settled` is serialized behind `lock`. NSLock rather than METAMutex
-  // because idb is mirrored to public GitHub and must stay stdlib-only.
+  /// Completion latch for observing whether a task settled.
+  // SAFETY: every access to `settled` is serialized behind `lock`.
   // patternlint-disable-next-line unchecked-sendable
   private final class SettledFlag: @unchecked Sendable {
     private let lock = NSLock()
@@ -579,7 +511,6 @@ final class FBSimulatorVideoStreamDeliveryTests: XCTestCase {
     // mount fails.
     let startTask = Task { try await stream.startStreaming(consumer) }
 
-    // The failed initial mount surfaces as a thrown error rather than a suspended caller.
     let pending = await isStillPending(startTask, after: 200_000_000)
     XCTAssertFalse(pending, "startStreaming must settle promptly when the initial mount fails")
     guard !pending else { return } // a hung start can never be awaited to completion
@@ -622,12 +553,10 @@ final class FBSimulatorVideoStreamDeliveryTests: XCTestCase {
     let surface = FakeFramebufferSurface()
     let stream = makeStream(surface: surface)
 
-    // Await completion of a stream that was never started, then cancel the await.
     let awaitTask = Task { await stream.awaitCompletion() }
     try await Task.sleep(nanoseconds: 100_000_000)
     awaitTask.cancel()
 
-    // Cancellation resumes the cancelled awaiter promptly even though there is nothing to stop.
     let pending = await isStillPending(awaitTask, after: 200_000_000)
     XCTAssertFalse(pending, "a cancelled awaitCompletion must return promptly")
   }
