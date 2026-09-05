@@ -27,9 +27,7 @@ public protocol FBiOSTargetSetDelegate: AnyObject {
 /// Common properties of iOS Target Sets, shared by Simulator & Device Sets.
 public protocol FBiOSTargetSet: AnyObject {
 
-  /// The Delegate of the Target Set.
-  /// Used to report updates out.
-  /// Conformers hold this weakly; the protocol cannot say so, but the requirement is the same.
+  /// Conformers must hold this weakly; a protocol requirement cannot say so.
   var delegate: (any FBiOSTargetSetDelegate)? { get set }
 
   /// Obtains all current targets infos within a set.
