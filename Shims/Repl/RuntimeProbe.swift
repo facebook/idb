@@ -21,8 +21,8 @@
 //     free functions are NOT in any runtime metadata table, so the symbol table
 //     is the source for the callable surface.
 //
-// Still out of scope (next increments): generic declarations, enum cases /
-// payload layout, nested types, argument *internal* names, faithful ABI layout.
+// Not recovered: generic declarations, enum cases / payload layout, nested types,
+// argument internal names, faithful ABI layout.
 //
 // Parsing is defensive: any malformed/unsupported descriptor or symbol is
 // skipped rather than crashing the host process.
@@ -198,8 +198,8 @@ private func moduleName(of descriptor: UnsafeRawPointer) -> String? {
   return nil
 }
 
-/// Whether the descriptor's immediate parent is a module (i.e. it's a top-level
-/// type). We skip nested types for now.
+/// Whether the descriptor's immediate parent is a module (a top-level type); nested
+/// types are not recovered.
 private func isTopLevel(_ descriptor: UnsafeRawPointer) -> Bool {
   guard let parent = relativeIndirectable(descriptor.advanced(by: 4)) else { return false }
   return (parent.loadUnaligned(as: UInt32.self) & 0x1F) == kindModule
@@ -208,8 +208,8 @@ private func isTopLevel(_ descriptor: UnsafeRawPointer) -> Bool {
 /// The kind/name/module of a top-level, non-generic nominal type, or nil to skip.
 private func typeInfo(of descriptor: UnsafeRawPointer) -> TypeInfo? {
   let flags = descriptor.loadUnaligned(as: UInt32.self)
-  guard (flags & flagIsGeneric) == 0 else { return nil } // skip generics for now
-  guard isTopLevel(descriptor) else { return nil } // skip nested types for now
+  guard (flags & flagIsGeneric) == 0 else { return nil } // generics are not recovered
+  guard isTopLevel(descriptor) else { return nil } // nested types are not recovered
 
   let keyword: String
   switch flags & 0x1F {
@@ -327,7 +327,7 @@ private func parseSymbol(_ demangledInput: String) -> ParsedSymbol? {
   let module = components[0]
   let member = components[components.count - 1]
   let typePath = Array(components[1..<(components.count - 1)])
-  if typePath.count > 1 { return nil } // skip members of nested types for now
+  if typePath.count > 1 { return nil } // members of nested types are not recovered
   if member == "deinit" || member.hasPrefix("__") { return nil }
 
   let params = reformatParameters(paramInner)
@@ -409,7 +409,7 @@ private func isIdentifier(_ s: String) -> Bool {
   return s.allSatisfy { $0 == "_" || $0.isLetter || $0.isNumber }
 }
 
-/// Whether nesting depth (parens/brackets/angles, ignoring `->`) returns to zero.
+/// Adjusts `depth` for one character of parens/brackets/angles, ignoring the `>` in `->`.
 private func adjustDepth(_ ch: Character, _ prev: Character, _ depth: inout Int) {
   switch ch {
   case "(", "[", "<":
