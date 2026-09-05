@@ -8,21 +8,13 @@
 import CoreMedia
 import Foundation
 
-// Faithful Swift translation of the former `FBVideoStream.m` pure-C byte writers:
-// H264/HEVC Annex-B, the MPEG-TS muxer (PAT/PMT/PES packetizer, CRC32, ID3 timed
-// metadata), the fragmented-MP4 box writer, and the MJPEG/Minicap writers. Behaviour and byte output
-// are preserved exactly.
-
 private let MaxAllowedUnprocessedDataCounts: Int = 2
 
-/// Returns true if consumer is ready to process another frame, false if consumer buffered data exceedes allowed limit.
-///
-/// - Parameter consumer: consumer
-/// - Returns: True if next frame should be pushed; False if frame should be dropped
+/// False when an async consumer has more than `MaxAllowedUnprocessedDataCounts` frames queued, in
+/// which case the caller should drop the frame.
 public func checkConsumerBufferLimit(_ consumer: any FBDataConsumer, _ logger: any FBControlCoreLogger) -> Bool {
   if let asyncConsumer = consumer as? FBDataConsumerAsync {
     let framesInProcess = asyncConsumer.unprocessedDataCount()
-    // drop frames if consumer is overflown
     if framesInProcess > MaxAllowedUnprocessedDataCounts {
       logger.log("Consumer is overflown. Number of unsent frames: \(framesInProcess)")
       return false
@@ -104,8 +96,7 @@ extension FBVideoStreamWriterError: LocalizedError {
   }
 }
 
-/// Write the contents of a CMBlockBuffer to a data consumer, iterating contiguous segments.
-/// Sync consumers receive zero-copy NSData backed by the buffer's memory; async consumers receive a copy.
+/// Sync consumers receive zero-copy Data backed by the block buffer; async consumers receive a copy.
 private func WriteBlockBufferToConsumer(_ blockBuffer: CMBlockBuffer, _ consumer: any FBDataConsumer) throws {
   let dataLength = CMBlockBufferGetDataLength(blockBuffer)
   let isSyncConsumer = consumer is FBDataConsumerSync
@@ -146,7 +137,7 @@ private func ConvertAVCCToAnnexBInPlace(_ sampleBuffer: CMSampleBuffer) throws {
     if status != noErr {
       throw FBVideoStreamWriterError.failedToAccessBlockBufferData(offset: offset, status: status)
     }
-    // memcpy(&nalLength, nalLengthPtr, 4) + CFSwapInt32BigToHost: assemble the 4 big-endian bytes.
+    // The AVCC NAL length prefix is big-endian.
     var nalLength: UInt32 = 0
     if let nalLengthPtr {
       nalLengthPtr.withMemoryRebound(to: UInt8.self, capacity: AVCCHeaderLength) { bytes in
@@ -252,10 +243,8 @@ public struct FBAnnexBFrameWriter: FBEncodedFrameWriter {
 
     let isKeyFrame = FBVideoSampleBufferIsKeyFrame(sampleBuffer)
 
-    // Convert AVCC length-prefixed NAL units to Annex-B start-code format in place.
     try ConvertAVCCToAnnexBInPlace(sampleBuffer)
 
-    // Get the block buffer for parameter sets and consumer write.
     guard let dataBuffer = CMSampleBufferGetDataBuffer(sampleBuffer) else {
       throw FBVideoStreamWriterError.failedToGetDataBuffer
     }
@@ -287,7 +276,6 @@ public struct FBAnnexBFrameWriter: FBEncodedFrameWriter {
       }
     }
 
-    // Send the converted block buffer data.
     try WriteBlockBufferToConsumer(dataBuffer, consumer)
   }
 }
@@ -328,9 +316,7 @@ func FBMPEGTS_CRC32(_ data: UnsafePointer<UInt8>, _ length: Int) -> UInt32 {
   return crc
 }
 
-/// Internal CRC32 over `data[offset..<offset+length]`. Behaviourally identical to
-/// `FBMPEGTS_CRC32(ptr, length)` over the same bytes; avoids force-unwrapping a buffer base
-/// address at the section-CRC call sites.
+/// CRC32 over `data[offset..<offset+length]`; same algorithm as `FBMPEGTS_CRC32`.
 private func FBMPEGTSCRC32(_ data: [UInt8], offset: Int, length: Int) -> UInt32 {
   var crc: UInt32 = 0xFFFFFFFF
   for i in 0..<length {
@@ -604,7 +590,7 @@ func FBMPEGTSCreateTimedMetadataPackets(_ text: String, _ pts90k: UInt64, _ meta
   id3Tag.append(contentsOf: txxxHeader)
 
   // TXXX payload: UTF-8 encoding (0x03), empty description (\0), then text
-  id3Tag.append(contentsOf: [0x03, 0x00]) // encoding=UTF-8, null-terminated empty description
+  id3Tag.append(contentsOf: [0x03, 0x00])
   id3Tag.append(contentsOf: textData)
 
   // Wrap in PES packet (stream_id = 0xBD = private_stream_1)
@@ -633,7 +619,6 @@ func FBMPEGTSCreateTimedMetadataPackets(_ text: String, _ pts90k: UInt64, _ meta
   pesPacket.append(contentsOf: pesHeader)
   pesPacket.append(contentsOf: id3Tag)
 
-  // Packetize into TS packets on MetadataPID
   let pesBytes = pesPacket
   let numPackets = (pesBytes.count + 183) / 184
   var output = Data(capacity: numPackets * TSPacketSize)
@@ -701,8 +686,7 @@ public final class FBMPEGTSFrameWriter: FBEncodedFrameWriter, FBVideoStreamTimed
 
     let isKeyFrame = FBVideoSampleBufferIsKeyFrame(sampleBuffer)
 
-    // Convert AVCC to Annex-B in place before computing sizes.
-    // AVCC headers and Annex-B start codes are both 4 bytes so sizes are unchanged.
+    // AVCC length prefixes and Annex-B start codes are both 4 bytes, so sizes are unchanged by the conversion.
     try ConvertAVCCToAnnexBInPlace(sampleBuffer)
 
     guard let dataBuffer = CMSampleBufferGetDataBuffer(sampleBuffer) else {
@@ -782,7 +766,6 @@ public final class FBMPEGTSFrameWriter: FBEncodedFrameWriter, FBVideoStreamTimed
 
     pesPacket.append(contentsOf: pesHeader)
 
-    // Append parameter sets for keyframes (start code + set bytes for each)
     if isKeyFrame, let format {
       for i in 0..<parameterSetCount {
         var paramSize = 0
@@ -795,7 +778,7 @@ public final class FBMPEGTSFrameWriter: FBEncodedFrameWriter, FBVideoStreamTimed
       }
     }
 
-    // Copy NAL data directly from CMBlockBuffer into pesPacket (handles non-contiguous buffers)
+    // CMBlockBufferCopyDataBytes handles non-contiguous block buffers.
     let nalDestOffset = pesPacket.count
     pesPacket.append(contentsOf: [UInt8](repeating: 0, count: dataLength))
     let copyStatus = pesPacket.withUnsafeMutableBufferPointer { ptr -> OSStatus in
@@ -806,7 +789,6 @@ public final class FBMPEGTSFrameWriter: FBEncodedFrameWriter, FBVideoStreamTimed
       throw FBVideoStreamWriterError.failedToCopyBlockBufferData(status: copyStatus)
     }
 
-    // Packetize into MPEG-TS and write to consumer
     let tsData = FBMPEGTSPacketizePES(
       Data(pesPacket),
       isKeyFrame,
@@ -1026,10 +1008,7 @@ private func FBFMP4GetCodecConfigAtom(_ formatDescription: CMFormatDescription, 
     writer.write16(0)
     writer.write8(0x0F)
 
-    // Group parameter sets by NAL type, preserving first-seen type order
-    // (NSMutableDictionary enumeration order is unspecified in ObjC, but the keys
-    // here are small distinct integers; preserving insertion order is a faithful and
-    // deterministic interpretation).
+    // Group parameter sets by NAL type, in first-seen order.
     var groupedOrder = [UInt8]()
     var grouped = [UInt8: [[UInt8]]]()
     for i in 0..<paramSets.count {
@@ -1147,7 +1126,7 @@ private func FBFMP4CreateMoovBox(_ formatDescription: CMFormatDescription, _ cod
         writer.writeZeros(12)
         let name = "VideoHandler"
         writer.writeBytes(name)
-        writer.write8(0) // null terminator (strlen(name) + 1)
+        writer.write8(0) // null terminator
         writer.endBox(off)
       }
 
@@ -1269,11 +1248,8 @@ private func FBFMP4CreateMoovBox(_ formatDescription: CMFormatDescription, _ cod
   return writer.data
 }
 
-// Build the moof + mdat header for a single-sample fragment.
-// The sample data itself is NOT included — the caller emits it separately
-// to avoid a redundant copy of the (potentially large) video frame payload.
-// The returned Data ends just after the mdat box header; the caller must
-// append exactly `sampleSize` bytes of sample data, then the fragment is complete.
+// moof + mdat header for a single-sample fragment. The sample data is not included: the caller
+// must append exactly `sampleSize` bytes after the returned bytes.
 private func FBFMP4CreateFragmentHeader(_ sequenceNumber: UInt32, _ baseDecodeTime: UInt64, _ duration: UInt32, _ sampleSize: UInt32, _ isKeyFrame: Bool) -> [UInt8] {
   let trunFlags: UInt32 = 0x000701
   // trun: header(12) + data_offset(4) + 1 sample entry (duration(4) + size(4) + flags(4))
@@ -1365,7 +1341,6 @@ public final class FBFMP4FrameWriter: FBEncodedFrameWriter, FBVideoStreamTimedMe
 
     let isKeyFrame = FBVideoSampleBufferIsKeyFrame(sampleBuffer)
 
-    // Extract PTS.
     let pts = CMSampleBufferGetPresentationTimeStamp(sampleBuffer)
     let pts90k = UInt64(CMTimeGetSeconds(pts) * 90000.0)
     let prevPts90k = lastPts90k
@@ -1393,7 +1368,6 @@ public final class FBFMP4FrameWriter: FBEncodedFrameWriter, FBVideoStreamTimedMe
       logger.log("fMP4 init segment written (\(dims.width)x\(dims.height), \(codec.displayName))")
     }
 
-    // Compute duration.
     let duration90k: UInt32
     let sampleDuration = CMSampleBufferGetDuration(sampleBuffer)
     if CMTIME_IS_VALID(sampleDuration) && CMTimeGetSeconds(sampleDuration) > 0 {
@@ -1456,7 +1430,7 @@ private func FBFMP4CreateEmsgBox(_ presentationTime90k: UInt64, _ text: String) 
 
   let scheme = "urn:sime2e:chapter"
   writer.writeBytes(scheme)
-  writer.write8(0) // null terminator (strlen(scheme) + 1)
+  writer.write8(0) // null terminator
   writer.write8(0) // empty value string
   writer.append(textData)
 
