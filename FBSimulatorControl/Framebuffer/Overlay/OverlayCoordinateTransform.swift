@@ -8,28 +8,17 @@
 import CoreGraphics
 import CoreText
 
-/// Coordinate space callers use when sending overlay shape `y` values to sime2e.
+/// Coordinate space of overlay shape `y` values.
 ///
-/// - `composed`: y=0 is the top of the composed video frame — the top of the reserved
-///   header bar (`scaledBorderTop`) when one is present. Callers must pre-shift their
-///   shapes by the header height to land in the device-image region. This is the
-///   historical contract and the default for backward compatibility.
-/// - `device`: y=0 is the top of the device image (i.e. *below* any reserved header).
-///   The transform adds `scaledBorderTop` internally so callers can send raw
-///   device-frame coordinates without knowing about the header bar's geometry.
+/// - `composed`: y=0 is the top of the composed frame, i.e. the top of any reserved header bar
+///   (`scaledBorderTop`); callers pre-shift shapes by the header height. The default.
+/// - `device`: y=0 is the top of the device image, below any header; the transform adds `scaledBorderTop`.
 public enum FBOverlayCoordSpace: String {
   case composed
   case device
 }
 
-/// Encapsulates all coordinate math for mapping jest_e2e overlay JSON
-/// coordinates to overlay buffer pixel coordinates.
-///
-/// The transform supports two coordinate spaces (`FBOverlayCoordSpace`):
-/// - `.composed` (default): historical semantics — `insetCorrection.y` is zero (or near
-///   zero modulo integer truncation) so overlay y is taken at face value in buffer space.
-/// - `.device`: `insetCorrection.y == scaledBorderTop` so overlay y=0 lands at the top
-///   of the device image and shape geometry does not need to know about the header.
+/// Maps overlay shape coordinates to overlay buffer pixel coordinates.
 public struct FBOverlayCoordinateTransform {
   public let bufferWidth: Int
   public let bufferHeight: Int
@@ -57,11 +46,8 @@ public struct FBOverlayCoordinateTransform {
     coordSpace: FBOverlayCoordSpace = .composed
   ) {
     self.bufferWidth = Int(Double(screenPixelWidth) * Double(videoScale))
-    // bufferHeight must include BOTH the top and bottom scaled insets so the overlay buffer
-    // matches the dimensions of the video frame produced by FBSimulatorVideoStream. If the
-    // bottom inset is omitted here the overlay ends up shorter than the frame, and the
-    // compositor shifts the overlay downward by the missing amount — which silently pushes
-    // any top-positioned content (e.g. header textboxes) below where it was placed.
+    // Must include both scaled insets so the overlay buffer matches the video frame; a shorter overlay is
+    // shifted down by the compositor.
     self.bufferHeight =
       Int(Double(screenPixelHeight) * Double(videoScale)) + scaledBorderTop + scaledBorderBottom
     self.overlayScale = videoScale * retinaScale
@@ -73,9 +59,6 @@ public struct FBOverlayCoordinateTransform {
         y: CGFloat(scaledBorderTop) - CGFloat(borderTop) * videoScale * retinaScale
       )
     case .device:
-      // In device-frame mode, overlay y=0 maps to the top of the device image, which sits
-      // immediately below the reserved header. The shift is the full scaledBorderTop, with
-      // no `borderTop * overlayScale` subtraction — callers send unshifted device coords.
       self.insetCorrection = CGPoint(x: 0, y: CGFloat(scaledBorderTop))
     }
   }
@@ -133,7 +116,7 @@ public struct FBOverlayCoordinateTransform {
 
   // MARK: - Bars
 
-  /// Default bar height in logical pixels. Matches the runner's `BORDER_TOP` constant.
+  /// Default bar height in logical pixels.
   public static let defaultBarHeight: Int = 24
 
   /// Bar font size in buffer pixels, derived from the bar's logical height.
