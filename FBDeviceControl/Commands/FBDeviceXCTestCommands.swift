@@ -9,7 +9,6 @@
 import Foundation
 import XCTestBootstrap
 
-/// The ways device test execution can fail, as data rather than assembled strings.
 public enum FBDeviceXCTestError: Error {
   case testManagerAlreadyRunning(configurationDescription: String)
   case unexpectedReporter(reporterDescription: String)
@@ -81,21 +80,19 @@ public final class FBDeviceXCTestCommands: NSObject {
   // MARK: Private
 
   private func startTestWithLaunchConfiguration(configuration: FBTestLaunchConfiguration, logger: any FBControlCoreLogger) throws -> FBFuture<FBSubprocess<AnyObject, AnyObject, AnyObject>> {
-    // Create the .xctestrun file
     let filePath: String
     do {
       filePath = try FBXcodeBuildOperation.createXCTestRunFile(at: workingDirectory, fromConfiguration: configuration)
     } catch {
       throw FBDeviceXCTestError.xctestrunCreationFailed(underlying: error)
     }
-    // Find the path to xcodebuild
     let xcodeBuildPath: String
     do {
       xcodeBuildPath = try FBXcodeBuildOperation.xcodeBuildPath()
     } catch {
       throw FBDeviceXCTestError.xcodebuildNotFound(underlying: error)
     }
-    // This is to walk around a bug in xcodebuild. The UDID inside xcodebuild does not match
+    // This is to work around a bug in xcodebuild. The UDID inside xcodebuild does not match
     // UDID reported by device properties (the difference is missing hyphen in xcodebuild).
     // This results in xcodebuild returning an error, since it cannot find a device with requested
     // id (e.g. we query for 00008101-001D296A2EE8001E, while xcodebuild have
@@ -108,7 +105,6 @@ public final class FBDeviceXCTestCommands: NSObject {
     }
     let udid = identifier.takeRetainedValue() as String
 
-    // Create the Task, wrap it and store it.
     return FBXcodeBuildOperation.operation(withUDID: udid, configuration: configuration, xcodeBuildPath: xcodeBuildPath, testRunFilePath: filePath, simDeviceSet: nil, macOSTestShimPath: nil, queue: device.workQueue, logger: logger.withName("xcodebuild"))
   }
 }
