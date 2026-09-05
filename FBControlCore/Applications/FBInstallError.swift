@@ -7,14 +7,9 @@
 
 import Foundation
 
-/// Everything that can go wrong fetching and unpacking an application.
-///
-/// A caller deciding what to do about a failure -- retry the fetch, report a bad
-/// URL, tell the user their archive is empty -- matches on a case rather than on
-/// the text of a message.
+/// Failures fetching an application archive.
 public enum FBInstallError: Error, CustomStringConvertible {
 
-  /// The server answered, and refused.
   case httpStatus(url: URL?, statusCode: Int)
 
   /// The transfer did not finish.
