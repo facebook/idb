@@ -22,7 +22,6 @@ private func processIsTranslated() -> Int32 {
   return ret
 }
 
-/// The ways architecture adaptation can fail, as data rather than assembled strings.
 public enum FBArchitectureAdapterError: Error, LocalizedError {
   case noCompatibleArchitecture(requested: [String], host: [String])
   case timedOut(seconds: Double, waitingFor: String)
@@ -43,9 +42,7 @@ public enum FBArchitectureAdapterError: Error, LocalizedError {
 @objc(FBArchitectureProcessAdapter)
 public final class FBArchitectureProcessAdapter: NSObject {
 
-  /// Force binaries to be launched in desired architectures.
-  ///
-  /// Convenience method for `adaptProcessConfiguration(_:toAnyArchitectureIn:hostArchitectures:queue:temporaryDirectory:)`
+  /// As the `hostArchitectures:` overload, using the host machine's supported architectures.
   @objc public func adaptProcessConfiguration(
     _ processConfiguration: FBProcessSpawnConfiguration,
     toAnyArchitectureIn requestedArchitectures: Set<FBArchitecture>,
@@ -106,8 +103,6 @@ public final class FBArchitectureProcessAdapter: NSObject {
                 queue,
                 map: { dyldFrameworkPath -> AnyObject in
                   var updatedEnvironment = processConfiguration.environment as [String: String]
-                  // DYLD_FRAMEWORK_PATH adds additional search paths for required "*.framework"s in binary
-                  // DYLD_LIBRARY_PATH adds additional search paths for required "*.dylib"s in binary
                   updatedEnvironment["DYLD_FRAMEWORK_PATH"] = dyldFrameworkPath as String
                   updatedEnvironment["DYLD_LIBRARY_PATH"] = dyldFrameworkPath as String
                   return FBProcessSpawnConfiguration(
@@ -244,14 +239,6 @@ public final class FBArchitectureProcessAdapter: NSObject {
     let lines = otoolOutput.components(separatedBy: "\n")
     var result = Set<String>()
 
-    // Rpath entry looks like:
-    // ```
-    // Load command 19
-    //   cmd LC_RPATH
-    //   cmdsize 48
-    //    path @executable_path/../../Frameworks/ (offset 12)
-    // ```
-    // So if we found occurence of `cmd LC_RPATH` rpath value will be two lines below.
     let lcRpathValueOffset = 2
 
     for (index, line) in lines.enumerated() {
@@ -279,9 +266,7 @@ public final class FBArchitectureProcessAdapter: NSObject {
     return hasCMD && hasLcRpath
   }
 
-  // Note: spaces in path names are not available. Currently we use adapter for binaries
-  // inside Xcode that has relative paths to original binary.
-  // And there is no spaces in paths over there.
+  // Splits on spaces, so rpaths containing spaces are unsupported; the Xcode binaries this adapts have none.
   private func extractRpathValue(fromLine line: String) -> String? {
     for component in line.components(separatedBy: " ") {
       if component.hasPrefix("@executable_path") {
