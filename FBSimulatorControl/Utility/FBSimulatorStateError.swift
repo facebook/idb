@@ -7,8 +7,7 @@
 
 import Foundation
 
-/// Shared state-guard failure for operations that require the simulator to be in a
-/// particular state, replacing the per-command variants of the same guard.
+/// State-guard failure for operations that require the simulator to be in a particular state.
 public enum FBSimulatorStateError: Error, LocalizedError {
   case notBooted(operation: String, state: String)
   case notShutdown(operation: String, state: String)
