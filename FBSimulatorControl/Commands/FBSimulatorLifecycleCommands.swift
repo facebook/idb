@@ -12,7 +12,6 @@ import AppKit
 
 private let openURLRetries = 2
 
-/// The ways simulator lifecycle operations can fail, as data rather than assembled strings.
 public enum FBSimulatorLifecycleError: Error {
   case focusUnsupportedForCustomDeviceSet(deviceSetPath: String)
   case focusAmbiguous(runningApplications: String)
@@ -115,18 +114,15 @@ public final class FBSimulatorLifecycleCommands {
       return simulatorAppBundleIDs.contains(bundleIdentifier)
     }
 
-    // If we have no SimulatorApp running then we can instead launch one in a focused state
     guard let simulatorApp = simulatorApps.first else {
       try await FBSimulatorLifecycleCommands.launchSimulatorApplicationForDefaultDeviceSet()
       return
     }
 
-    // Multiple apps, we don't know which to select.
     if simulatorApps.count > 1 {
       throw FBSimulatorLifecycleError.focusAmbiguous(runningApplications: FBCollectionInformation.oneLineDescription(from: simulatorApps))
     }
 
-    // Otherwise we have a single Simulator App to activate.
     if !simulatorApp.activate() {
       throw FBSimulatorLifecycleError.focusFailed(applicationDescription: String(describing: simulatorApp))
     }
