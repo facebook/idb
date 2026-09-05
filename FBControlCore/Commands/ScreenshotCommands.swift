@@ -33,7 +33,6 @@ public extension ScreenshotCommands {
   }
 }
 
-/// The ways the Objective-C format constants can fail to name an encoding.
 public enum FBScreenshotFormatError: Error, Hashable {
   case unrecognizedFormat(String)
 }
@@ -49,7 +48,7 @@ extension FBScreenshotFormatError: LocalizedError {
 
 public extension FBScreenshotEncoding {
 
-  /// Bridges the Objective-C format constants, which name a container but carry no encoder options.
+  /// `FBScreenshotFormat` carries no encoder options, so JPEG gets `defaultJPEGQuality`.
   init(format: FBScreenshotFormat) throws {
     switch format {
     case .png:
