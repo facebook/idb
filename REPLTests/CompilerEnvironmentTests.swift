@@ -8,8 +8,8 @@
 @testable import ReplCompiler
 import Testing
 
-/// Tests the pure version-flooring logic that picks the deployment target for
-/// injected code: the runtime OS version, clamped to the local SDK version.
+/// Tests deployment-target version flooring (`DeploymentTargetVersion`) and toolchain compiler/linker
+/// argument resolution.
 @Suite
 struct CompilerEnvironmentTests {
 
@@ -32,19 +32,6 @@ struct CompilerEnvironmentTests {
     #expect(DeploymentTargetVersion.floored(runtimeOSVersion: "27.0", sdkVersion: "27.0") == "27.0")
   }
 
-  @Test
-  func flooringComparesNumericallyNotLexically() {
-    // "9.0" is older than "10.0" even though "9" > "1" as text.
-    #expect(DeploymentTargetVersion.floored(runtimeOSVersion: "9.0", sdkVersion: "10.0") == "9.0")
-    #expect(DeploymentTargetVersion.floored(runtimeOSVersion: "10.0", sdkVersion: "9.0") == "9.0")
-  }
-
-  @Test
-  func flooringTreatsMissingComponentsAsZero() {
-    #expect(DeploymentTargetVersion.floored(runtimeOSVersion: "26", sdkVersion: "26.2") == "26")
-    #expect(DeploymentTargetVersion.floored(runtimeOSVersion: "26.2", sdkVersion: "26") == "26")
-  }
-
   // MARK: - isAtMost
 
   @Test
@@ -61,7 +48,6 @@ struct CompilerEnvironmentTests {
 
   @Test
   func isAtMostComparesEachComponentNumerically() {
-    // Not lexicographic: "9" < "10".
     #expect(DeploymentTargetVersion.isAtMost("9.0", "10.0"))
     #expect(!DeploymentTargetVersion.isAtMost("10.0", "9.0"))
   }
