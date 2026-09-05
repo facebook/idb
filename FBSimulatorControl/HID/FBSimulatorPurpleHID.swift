@@ -11,9 +11,8 @@ import Foundation
  Constructs GSEvent payloads for PurpleWorkspacePort.
  Mirrors `FBSimulatorIndigoHID` (which constructs Indigo payloads for IndigoHIDRegistrationPort).
 
- The returned `Data` contains a complete mach message (including `mach_msg_header_t`)
- ready to be sent via `mach_msg_send`. The `msgh_remote_port` field is left as 0
- and must be patched by the transport (`FBSimulatorHID.sendPurpleEvent:`) before sending.
+ The returned `Data` is a complete mach message (including `mach_msg_header_t`); `msgh_remote_port` is
+ left as 0 and patched by `FBSimulatorPurpleHIDTransport` before sending.
 
  See `SimulatorApp/GSEvent.h` for the wire format documentation.
 
@@ -30,10 +29,6 @@ final class FBSimulatorPurpleHID {
 
   /**
    Constructs a GSEvent orientation change mach message.
-   The message uses GSEvent type 50 (kGSEventDeviceOrientationChanged) with the host flag.
-
-   - Parameter orientation: the desired device orientation.
-   - Returns: a `Data` containing the complete mach message (112 bytes, msgh_size=108).
    */
   func orientationEvent(_ orientation: FBSimulatorHIDDeviceOrientation) -> Data {
     // Construct a 112-byte buffer (aligned to 8 bytes, >= 108 = 0x6C mach message size).
@@ -56,10 +51,6 @@ final class FBSimulatorPurpleHID {
 
   /**
    Constructs a GSEvent lock device mach message.
-   The message uses GSEvent type 1014 (kGSEventLockDevice) with the host flag.
-   No payload is needed (record_info_size = 0).
-
-   - Returns: a `Data` containing the complete mach message (112 bytes).
    */
   func lockDeviceEvent() -> Data {
     // Same 112-byte buffer as orientation, but with GSEventTypeLockDevice and no payload.
@@ -77,8 +68,7 @@ final class FBSimulatorPurpleHID {
 
   // MARK: - Wire format helpers
 
-  /// Writes the common `mach_msg_header_t` fields. `msgh_remote_port` is left as
-  /// MACH_PORT_NULL and patched by `FBSimulatorHID.sendPurpleEvent:` before sending.
+  /// Writes the common `mach_msg_header_t` fields; `msgh_remote_port` is patched by the transport.
   private static func writeMachHeader(into buf: inout [UInt8]) {
     // msgh_bits = MACH_MSGH_BITS(MACH_MSG_TYPE_COPY_SEND, 0) = 0x13.
     writeUInt32(0x13, into: &buf, at: 0x00)
