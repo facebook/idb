@@ -9,9 +9,6 @@
 import Foundation
 @preconcurrency import IOSurface
 
-// The FBSimulatorVideoStreamFramePusher protocol lives in FBSimulatorVideoStream.swift as a plain
-// (non-@objc) Swift protocol; the pushers are only constructed and used from Swift.
-
 /// Counters for framebuffer surface-change and frame-rendered callbacks, sampled for periodic
 /// logging. There is no rect geometry: the underlying CoreSimulator callback is a per-frame change
 /// signal only (see `FBFramebufferSurface`), so a frame-rendered callback carries no dimensions.
