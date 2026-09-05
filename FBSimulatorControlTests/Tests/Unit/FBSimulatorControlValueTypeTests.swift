@@ -13,8 +13,6 @@ import XCTest
 final class FBSimulatorControlValueTypeTests: XCTestCase {
 
   func testHIDEvents() {
-    // FBSimulatorHIDEvent is a value type: each event must equal (and hash equal to) an
-    // independently-constructed identical event.
     let events: [FBSimulatorHIDEvent] = [
       .tapAt(x: 10, y: 20),
       .shortButtonPress(.applePay),
