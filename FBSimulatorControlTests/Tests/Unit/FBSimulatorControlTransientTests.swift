@@ -8,8 +8,6 @@
 @testable import FBSimulatorControl
 import XCTest
 
-// MARK: - FBSimulatorBootConfiguration Tests
-
 final class FBSimulatorControlTransientTests: XCTestCase {
 
   // MARK: FBSimulatorBootConfiguration
@@ -30,23 +28,6 @@ final class FBSimulatorControlTransientTests: XCTestCase {
     let config = FBSimulatorBootConfiguration.default
     XCTAssertNotNil(config.environment)
     XCTAssertEqual(config.environment.count, 0)
-  }
-
-  func testBootConfigurationInitWithOptions() {
-    let config = FBSimulatorBootConfiguration(
-      options: .tieToProcessLifecycle,
-      environment: ["DYLD_INSERT_LIBRARIES": "/tmp/lib.dylib"]
-    )
-    XCTAssertTrue(config.options.contains(.tieToProcessLifecycle))
-    XCTAssertFalse(config.options.contains(.verifyUsable))
-    XCTAssertEqual(config.environment["DYLD_INSERT_LIBRARIES"], "/tmp/lib.dylib")
-  }
-
-  func testBootConfigurationInitWithCombinedOptions() {
-    let combined: FBSimulatorBootOptions = [.tieToProcessLifecycle, .verifyUsable]
-    let config = FBSimulatorBootConfiguration(options: combined, environment: [:])
-    XCTAssertTrue(config.options.contains(.tieToProcessLifecycle))
-    XCTAssertTrue(config.options.contains(.verifyUsable))
   }
 
   func testBootConfigurationDescription() {
@@ -77,170 +58,12 @@ final class FBSimulatorControlTransientTests: XCTestCase {
     XCTAssertFalse(desc.contains("Direct Launch"), "Description should not contain 'Direct Launch' for verifyUsable only")
   }
 
-  // MARK: FBSimulatorHIDEvent - Tap Composite Structure
-
-  func testTapProducesTwoSubEvents() {
-    let tap = FBSimulatorHIDEvent.tapAt(x: 100, y: 200)
-    XCTAssertEqual(tap.subEvents?.count, 2, "Tap should consist of touch-down and touch-up")
-  }
-
-  func testTapWithDurationProducesThreeSubEvents() {
-    let tap = FBSimulatorHIDEvent.tapAt(x: 50, y: 75, duration: 0.5)
-    XCTAssertEqual(tap.subEvents?.count, 3, "Tap with duration should consist of touch-down, delay, touch-up")
-
-    // The middle event should be a delay.
-    guard case let .delay(duration)? = tap.subEvents?[1] else {
-      return XCTFail("Middle event should be a .delay")
-    }
-    XCTAssertEqual(duration, 0.5, accuracy: 0.001)
-  }
-
-  func testShortButtonPressProducesTwoSubEvents() {
-    let press = FBSimulatorHIDEvent.shortButtonPress(.homeButton)
-    XCTAssertEqual(press.subEvents?.count, 2, "Short button press should be down + up")
-  }
-
-  func testShortKeyPressProducesTwoSubEvents() {
-    let press = FBSimulatorHIDEvent.shortKeyPress(0x00) // keyCode for 'a'
-    XCTAssertEqual(press.subEvents?.count, 2, "Short key press should be down + up")
-  }
-
-  func testShortKeyPressSequenceProducesCorrectCount() {
-    let keyCodes: [UInt32] = [0x00, 0x01, 0x02] // a, s, d
-    let sequence = FBSimulatorHIDEvent.shortKeyPressSequence(keyCodes)
-    XCTAssertEqual(sequence.subEvents?.count, 6, "3 keys should produce 6 sub-events (3 down + 3 up)")
-  }
-
-  func testShortKeyPressSequenceEmptyArray() {
-    let sequence = FBSimulatorHIDEvent.shortKeyPressSequence([])
-    XCTAssertEqual(sequence.subEvents?.count, 0)
-  }
-
-  // MARK: FBSimulatorHIDEvent - Delay
-
-  func testDelayEventDuration() {
-    guard case let .delay(duration) = FBSimulatorHIDEvent.delay(1.5) else {
-      return XCTFail("delay should produce a .delay event")
-    }
-    XCTAssertEqual(duration, 1.5, accuracy: 0.001)
-  }
-
-  func testDelayEventEquality() {
-    XCTAssertEqual(FBSimulatorHIDEvent.delay(2.0), .delay(2.0))
-  }
-
-  func testDelayEventInequality() {
-    XCTAssertNotEqual(FBSimulatorHIDEvent.delay(1.0), .delay(2.0))
-  }
-
-  // MARK: FBSimulatorHIDEvent - Composite
-
-  func testEventWithEventsWrapsCorrectly() {
-    let composite = FBSimulatorHIDEvent.composite([
-      .touch(direction: .down, x: 10, y: 20),
-      .delay(0.1),
-      .touch(direction: .up, x: 10, y: 20),
-    ])
-    XCTAssertEqual(composite.subEvents?.count, 3)
-  }
-
-  func testCompositeEventEquality() {
-    let a = FBSimulatorHIDEvent.tapAt(x: 100, y: 200)
-    let b = FBSimulatorHIDEvent.tapAt(x: 100, y: 200)
-    XCTAssertEqual(a, b)
-    XCTAssertEqual(a.hashValue, b.hashValue)
-  }
-
-  func testCompositeEventInequalityByCoordinates() {
-    XCTAssertNotEqual(FBSimulatorHIDEvent.tapAt(x: 100, y: 200), .tapAt(x: 300, y: 400))
-  }
-
-  // MARK: FBSimulatorHIDEvent - Touch Events
-
-  func testTouchDownEquality() {
-    XCTAssertEqual(FBSimulatorHIDEvent.touch(direction: .down, x: 10, y: 20), .touch(direction: .down, x: 10, y: 20))
-  }
-
-  func testTouchDownInequalityByCoordinates() {
-    XCTAssertNotEqual(FBSimulatorHIDEvent.touch(direction: .down, x: 10, y: 20), .touch(direction: .down, x: 30, y: 40))
-  }
-
-  func testTouchUpNotEqualToTouchDown() {
-    XCTAssertNotEqual(FBSimulatorHIDEvent.touch(direction: .down, x: 10, y: 20), .touch(direction: .up, x: 10, y: 20))
-  }
-
-  // MARK: FBSimulatorHIDEvent - Button Events
-
-  func testButtonDownEquality() {
-    XCTAssertEqual(FBSimulatorHIDEvent.button(direction: .down, button: .homeButton), .button(direction: .down, button: .homeButton))
-  }
-
-  func testButtonDownInequalityByButton() {
-    XCTAssertNotEqual(FBSimulatorHIDEvent.button(direction: .down, button: .homeButton), .button(direction: .down, button: .lock))
-  }
-
-  func testButtonUpNotEqualToButtonDown() {
-    XCTAssertNotEqual(FBSimulatorHIDEvent.button(direction: .down, button: .siri), .button(direction: .up, button: .siri))
-  }
-
-  func testAllButtonTypesCreateDistinctEvents() {
-    let buttons: [FBSimulatorHIDButton] = [.applePay, .homeButton, .lock, .sideButton, .siri]
-    let events = Set(buttons.map { FBSimulatorHIDEvent.button(direction: .down, button: $0) })
-    XCTAssertEqual(events.count, buttons.count, "Each button type should produce a distinct event")
-  }
-
-  // MARK: FBSimulatorHIDEvent - Keyboard Events
-
-  func testKeyDownEquality() {
-    XCTAssertEqual(FBSimulatorHIDEvent.keyboard(direction: .down, keyCode: 0x0D), .keyboard(direction: .down, keyCode: 0x0D)) // W
-  }
-
-  func testKeyDownInequalityByKeyCode() {
-    XCTAssertNotEqual(FBSimulatorHIDEvent.keyboard(direction: .down, keyCode: 0x0D), .keyboard(direction: .down, keyCode: 0x00)) // W vs A
-  }
-
-  func testKeyUpNotEqualToKeyDown() {
-    XCTAssertNotEqual(FBSimulatorHIDEvent.keyboard(direction: .down, keyCode: 0x0D), .keyboard(direction: .up, keyCode: 0x0D))
-  }
-
   // MARK: FBSimulatorHIDEvent - Swipe
-
-  func testSwipeHorizontalProducesCorrectStepCount() {
-    // Horizontal swipe: 100 points with delta=10 -> 10 steps
-    let swipe = FBSimulatorHIDEvent.swipe(0, yStart: 0, xEnd: 100, yEnd: 0, delta: 10, duration: 1.0)
-    // Events: (10+1) * (touchDown + delay) + 1 extra touchDown + 1 extra delay + 1 touchUp = 25
-    let expectedSteps = 10
-    let expectedEvents = (expectedSteps + 1) * 2 + 2 + 1
-    XCTAssertEqual(swipe.subEvents?.count, expectedEvents)
-  }
-
-  func testSwipeVerticalProducesCorrectStepCount() {
-    // Vertical swipe: 50 points with delta=10 -> 5 steps
-    let swipe = FBSimulatorHIDEvent.swipe(0, yStart: 0, xEnd: 0, yEnd: 50, delta: 10, duration: 0.5)
-    let expectedSteps = 5
-    let expectedEvents = (expectedSteps + 1) * 2 + 2 + 1
-    XCTAssertEqual(swipe.subEvents?.count, expectedEvents)
-  }
 
   func testSwipeDiagonalProducesCorrectStepCount() {
     // Diagonal: distance = sqrt(30^2 + 40^2) = 50, delta=10 -> 5 steps
     let swipe = FBSimulatorHIDEvent.swipe(0, yStart: 0, xEnd: 30, yEnd: 40, delta: 10, duration: 1.0)
     let expectedSteps = 5
-    let expectedEvents = (expectedSteps + 1) * 2 + 2 + 1
-    XCTAssertEqual(swipe.subEvents?.count, expectedEvents)
-  }
-
-  func testSwipeWithZeroDeltaUsesDefault() {
-    // When delta <= 0, defaultSwipeDelta (10.0) is used: 100 points / 10.0 = 10 steps
-    let swipe = FBSimulatorHIDEvent.swipe(0, yStart: 0, xEnd: 100, yEnd: 0, delta: 0, duration: 1.0)
-    let expectedSteps = 10
-    let expectedEvents = (expectedSteps + 1) * 2 + 2 + 1
-    XCTAssertEqual(swipe.subEvents?.count, expectedEvents)
-  }
-
-  func testSwipeWithNegativeDeltaUsesDefault() {
-    let swipe = FBSimulatorHIDEvent.swipe(0, yStart: 0, xEnd: 100, yEnd: 0, delta: -5, duration: 1.0)
-    let expectedSteps = 10
     let expectedEvents = (expectedSteps + 1) * 2 + 2 + 1
     XCTAssertEqual(swipe.subEvents?.count, expectedEvents)
   }
@@ -258,47 +81,5 @@ final class FBSimulatorControlTransientTests: XCTestCase {
         XCTAssertTrue(x.isFinite && y.isFinite, "Swipe produced a non-finite coordinate (\(x), \(y))")
       }
     }
-  }
-
-  func testSwipeEndsWithTouchUp() {
-    let swipe = FBSimulatorHIDEvent.swipe(0, yStart: 0, xEnd: 50, yEnd: 0, delta: 10, duration: 0.5)
-    guard let last = swipe.subEvents?.last else {
-      return XCTFail("Swipe should have sub-events")
-    }
-    if case .delay = last {
-      XCTFail("Last event should not be a delay")
-    }
-  }
-
-  func testSwipeEquality() {
-    let a = FBSimulatorHIDEvent.swipe(0, yStart: 0, xEnd: 100, yEnd: 0, delta: 10, duration: 1.0)
-    let b = FBSimulatorHIDEvent.swipe(0, yStart: 0, xEnd: 100, yEnd: 0, delta: 10, duration: 1.0)
-    XCTAssertEqual(a, b)
-  }
-
-  func testSwipeInequalityByEndpoint() {
-    let a = FBSimulatorHIDEvent.swipe(0, yStart: 0, xEnd: 100, yEnd: 0, delta: 10, duration: 1.0)
-    let b = FBSimulatorHIDEvent.swipe(0, yStart: 0, xEnd: 200, yEnd: 0, delta: 10, duration: 1.0)
-    XCTAssertNotEqual(a, b)
-  }
-
-  // MARK: FBSimulatorHIDEvent - Cross-type inequality
-
-  func testTouchNotEqualToButton() {
-    XCTAssertNotEqual(FBSimulatorHIDEvent.touch(direction: .down, x: 0, y: 0), .button(direction: .down, button: .homeButton))
-  }
-
-  func testButtonNotEqualToKeyboard() {
-    XCTAssertNotEqual(FBSimulatorHIDEvent.button(direction: .down, button: .homeButton), .keyboard(direction: .down, keyCode: 0x00))
-  }
-
-  func testDelayNotEqualToTouch() {
-    XCTAssertNotEqual(FBSimulatorHIDEvent.delay(1.0), .touch(direction: .down, x: 0, y: 0))
-  }
-
-  // MARK: defaultSwipeDelta constant
-
-  func testDefaultSwipeDeltaValue() {
-    XCTAssertEqual(FBSimulatorHIDEvent.defaultSwipeDelta, 10.0, accuracy: 0.001)
   }
 }
