@@ -7,14 +7,13 @@
 
 import Foundation
 
-/// Returns a long-lived operation that can be awaited for completion or cancelled.
+/// A long-lived operation that can be awaited for completion or cancelled.
 public protocol LogOperation: AnyObject {
 
   /// The data consumer attached to the underlying log stream.
   var consumer: any FBDataConsumer { get }
 
-  /// Awaits completion of the log operation. Cancelling the calling task signals
-  /// the operation to terminate.
+  /// Cancelling the calling task terminates the operation.
   func waitUntilCompleted() async throws
 }
 
