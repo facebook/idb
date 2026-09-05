@@ -27,10 +27,7 @@ private final class InstalledAppsStubDevice {
   }
 }
 
-/// Locks the container path-mapping behavior of `FBSimulatorFileCommands`. These assertions
-/// hold identically against the pre-conversion `FBFutureContext` producers and the async
-/// producers — the `withFileCommandsFor…` API is unchanged — so they prove the async
-/// conversion is behavior-preserving.
+/// Locks the container path-mapping behaviour of `FBSimulatorFileCommands`.
 final class FBSimulatorFileCommandsTests: XCTestCase {
 
   private func makeSimulator(installedApps: [String: Any]) -> FBSimulator {
