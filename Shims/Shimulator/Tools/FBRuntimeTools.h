@@ -15,9 +15,6 @@
 void *FBRetrieveSymbolFromBinary(const char *binary, const char *name);
 
 /**
- Method used to retrieve pointer for given symbol 'name' from given 'binary'
-
- @param name name of the symbol
- @return pointer to symbol
+ Resolves `name` from the loaded XCTest binary.
  */
 void *FBRetrieveXCTestSymbol(const char *name);
