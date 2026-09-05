@@ -14,8 +14,7 @@ private let installTypeStringUser = "user"
 private let installTypeStringUserEnterprise = "user_enterprise"
 private let installTypeStringUserDevelopment = "user_development"
 
-/// The Installed Type of the Application. `@objc` because the installed-application
-/// class exposes it through its own `@objc` members.
+/// How an application came to be installed.
 @objc public enum FBApplicationInstallType: UInt, Sendable {
   /// The Application is unknown.
   case unknown = 0
@@ -31,8 +30,7 @@ private let installTypeStringUserDevelopment = "user_development"
   case userDevelopment = 5
 }
 
-/// Keys from UserInfo about Applications, with the same member names the
-/// `NS_EXTENSIBLE_STRING_ENUM` importer produced.
+/// Keys of the application info dictionary.
 public struct FBApplicationInstallInfoKey: RawRepresentable, Hashable, Sendable {
   public let rawValue: String
   public init(rawValue: String) {
@@ -105,7 +103,7 @@ public final class FBInstalledApplication: NSObject, NSCopying {
     self
   }
 
-  // MARK: Private
+  // MARK: Install Type Mapping
 
   @objc(stringFromApplicationInstallType:)
   public class func string(from installType: FBApplicationInstallType) -> String {
