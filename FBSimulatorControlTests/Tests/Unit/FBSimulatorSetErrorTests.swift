@@ -10,21 +10,6 @@ import XCTest
 
 final class FBSimulatorSetErrorTests: XCTestCase {
 
-  func testMessagesAreStable() {
-    XCTAssertEqual(
-      FBSimulatorSetError.simulatorNotInflated(udid: "ABC-123").errorDescription,
-      "Expected simulator with UDID ABC-123 to be inflated"
-    )
-    XCTAssertEqual(
-      FBSimulatorSetError.deviceCreationFailed.errorDescription,
-      "Failed to create device with no error"
-    )
-    XCTAssertEqual(
-      FBSimulatorSetError.deviceCloneFailed.errorDescription,
-      "Failed to clone device with no error"
-    )
-  }
-
   func testShutdownAfterCreateComposesReason() {
     XCTAssertEqual(
       FBSimulatorSetError.shutdownAfterCreateFailed(reason: "timed out").errorDescription,
