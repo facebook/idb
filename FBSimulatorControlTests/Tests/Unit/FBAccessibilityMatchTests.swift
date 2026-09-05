@@ -61,15 +61,13 @@ final class FBAccessibilityMatchTests: XCTestCase {
     XCTAssertEqual(Self.labels(try Self.match("Cart").apply(to: read)), ["Add to Cart", "Remove from Cart"])
   }
 
-  // A substring, not equality — the contract `FBAccessibilityElementQuery.marker` already documents,
-  // and the comparison 83% of the hand-rolled scripts this replaces were performing.
+  // Substring, not equality — the contract documented on `FBAccessibilityElementQuery.marker`.
   func testTheMatchIsASubstringNotAnEquality() throws {
     let read = [Self.element(label: "Add to Cart")]
     XCTAssertEqual(Self.labels(try Self.match("to Ca").apply(to: read)), ["Add to Cart"])
   }
 
-  // No match is an empty list, not an error. `describe MARKER` throws `elementNotFound`; this verb
-  // answers a question about the screen, and "nothing" is a true answer.
+  // Unlike `describe MARKER` (which throws `elementNotFound`), no match is an empty list.
   func testNoMatchIsAnEmptyListRatherThanAFailure() throws {
     XCTAssertTrue(try Self.match("Cart").apply(to: [Self.element(label: "Checkout")]).isEmpty)
   }
@@ -113,16 +111,13 @@ final class FBAccessibilityMatchTests: XCTestCase {
     XCTAssertEqual(Self.labels(try Self.match("3", key: .value).apply(to: read)), ["Quantity"])
   }
 
-  // An attribute the element does not carry — or that the read did not serialize — never matches. The
-  // key-set widening in `serializationKeys` is what keeps the second case from arising in practice.
+  // An attribute the read did not serialize never matches either; the `serializationKeys` widening keeps that case from arising.
   func testAnAbsentAttributeDoesNotMatch() throws {
     XCTAssertTrue(try Self.match("Cart", key: .placeholder).apply(to: [Self.element(label: "Cart")]).isEmpty)
   }
 
   // MARK: - Hoisting
 
-  // The container holding the matching button is not itself labelled "Add to Cart". Dropping the button
-  // along with it is the exact failure the shared hoisting exists to prevent.
   func testAMatchingDescendantIsHoistedIntoItsDroppedAncestorsPlace() throws {
     let read = [
       Self.element(
@@ -135,8 +130,6 @@ final class FBAccessibilityMatchTests: XCTestCase {
     XCTAssertEqual(matched.first?.children ?? [], [])
   }
 
-  // A matching ancestor keeps only its matching descendants, not the whole subtree: the caller asked
-  // which elements match, and the children of a match are not themselves matches.
   func testAMatchingAncestorKeepsOnlyItsMatchingDescendants() throws {
     let read = [
       Self.element(
@@ -149,8 +142,6 @@ final class FBAccessibilityMatchTests: XCTestCase {
     XCTAssertEqual(Self.labels(matched.first?.children ?? []), ["Remove from Cart"])
   }
 
-  // A flat read's elements carry no `children` key and must not grow one — the shape of the response is
-  // the format's business, not the match's.
   func testAFlatReadsElementsDoNotGrowAChildrenKey() throws {
     let matched = try Self.match("Cart").apply(to: [Self.element(label: "Add to Cart")])
     XCTAssertNil(matched.first?.children)
@@ -158,8 +149,7 @@ final class FBAccessibilityMatchTests: XCTestCase {
 
   // MARK: - Composition with the filter
 
-  // `filter` then `match`, and the composition is pinned rather than argued: both hoist, so the order
-  // is observable whenever a matching element sits under a non-interactable one.
+  // Both `filter` and `match` hoist, so their order is observable when a match sits under a non-interactable container.
   func testFilterThenMatchKeepsAMatchingElementUnderADroppedContainer() throws {
     var container = FBAccessibilityDocumentElement()
     container.interactable = .some(nil)
