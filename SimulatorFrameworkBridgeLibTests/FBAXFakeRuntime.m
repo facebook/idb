@@ -81,7 +81,6 @@ static NSString *const kAXChildren = @"XC_kAXXCAttributeChildren";
 @implementation FBAXFakeRuntime
 {
   NSUInteger _translatorReadCount;
-  NSArray<NSNumber *> *_lastTranslatorAttributes;
   NSUInteger _snapshotCount;
   NSArray<NSString *> *_lastSnapshotAttributeNames;
 }
@@ -217,9 +216,7 @@ static NSDictionary *FBAXFakeSnapshotNode(FBAXFakeElement *element,
 
 - (BOOL)getRect:(CGRect *)rect fromValue:(id)value
 {
-  // Only the sentinel answers, and deliberately not an `NSValue`: see `FBAXFakeRectValue`. Anything else
-  // answers NO, which is the branch that matters — an unrecognised value must leave the rect alone rather
-  // than produce a zero frame.
+  // Only the sentinel unwraps; anything else answers NO and leaves `*rect` alone.
   if (!rect || ![value isKindOfClass:FBAXFakeRectValue.class]) {
     return NO;
   }
@@ -296,7 +293,6 @@ static NSDictionary *FBAXFakeSnapshotNode(FBAXFakeElement *element,
                                                       ofElement:(id)element
 {
   _translatorReadCount++;
-  _lastTranslatorAttributes = [attributes copy];
   return self.translatorAttributeValues;
 }
 

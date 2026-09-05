@@ -29,13 +29,9 @@ NS_ASSUME_NONNULL_BEGIN
 /** The error a `Failed` read carries. Nil models a runtime that failed while reporting nothing. */
 @property (nullable, nonatomic, strong) NSError *readError;
 /**
- * The process this element is drawn by, as `-owningProcessIdentifierForSnapshotElement:` reports it.
- *
- * What makes a process boundary expressible: a snapshot stops nesting where a child's owner differs
- * from its root's, exactly as the live server cannot serialize into a process it does not own — while
- * the per-node walk still exposes the children, because the server bridges each walked read across.
- * The default 0 is the interface's "unknown", which existing trees keep: everything owned by 0 is one
- * process and no read behaves differently.
+ * The process this element is drawn by. A snapshot stops nesting where a child's owner differs from its
+ * root's (the per-node walk still exposes the children). Default 0 is "unknown": trees that never set it
+ * behave as one process.
  */
 @property (nonatomic, assign) pid_t owningProcessIdentifier;
 
@@ -51,13 +47,9 @@ NS_ASSUME_NONNULL_BEGIN
 @end
 
 /**
- * A rect only the fake runtime can unwrap, standing in for the `AXValue` a single fetch answers a frame
- * with.
- *
- * An `AXValue` cannot be constructed in a test: it is a CFType private to the real runtime. What a test
- * needs from a stand-in is only that no production branch recognises it, so that asking the runtime is
- * the only way to unwrap it. An `NSValue` would not do — the coercions unwrap `NSValue` themselves,
- * before asking the runtime, so a test feeding one never exercises the runtime's unwrapping at all.
+ * A rect only the fake runtime can unwrap, standing in for the `AXValue` a snapshot answers frames with
+ * (a CFType a test cannot construct). Not an `NSValue`: the coercions unwrap `NSValue` themselves, so a
+ * test feeding one never exercises the runtime's unwrapping.
  */
 @interface FBAXFakeRectValue : NSObject
 
@@ -135,9 +127,6 @@ NS_ASSUME_NONNULL_BEGIN
 /** The attribute names the most recent snapshot was asked for, so a test can assert the ask. */
 @property (nullable, nonatomic, readonly, copy) NSArray<NSString *> *lastSnapshotAttributeNames;
 
-/** The attributes the last `-translatorAttributes:ofElement:` asked for, so a test can assert the ask. */
-@property (nullable, nonatomic, readonly, copy) NSArray<NSNumber *> *lastTranslatorAttributes;
-
 /** How many translator reads have been made — one request per node is the point of the batched form. */
 @property (nonatomic, readonly) NSUInteger translatorReadCount;
 /** What both write methods answer with. */
@@ -157,13 +146,7 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, readonly) NSUInteger runningBoardCount;
 @property (nonatomic, readonly) NSUInteger performCount;
 @property (nonatomic, readonly) NSUInteger setValueCount;
-/**
- * The attribute list the most recent read was asked for.
- *
- * Records the request's own choice rather than the fake's answer: the fake echoes back whatever the
- * element holds, so this is the only way to assert *what was asked*, which is the whole of the
- * request-named-attributes mechanism.
- */
+/** The attribute list the most recent read asked for — the fake echoes what the element holds, so this is the only evidence of the ask. */
 @property (nullable, nonatomic, readonly, copy) NSArray<NSString *> *lastReadAttributes;
 
 /** The point of the most recent hit-test, and the pid it was scoped to (0 for display-wide). */
