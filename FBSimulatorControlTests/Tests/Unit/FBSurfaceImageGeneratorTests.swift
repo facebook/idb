@@ -76,8 +76,6 @@ final class FBSurfaceImageGeneratorTests: XCTestCase {
     XCTAssertEqual(rendered.image.height, 32)
   }
 
-  /// `image()` is the same request spelled without a configuration, and has to stay that way: it is
-  /// what every caller that does not want a crop or a scale goes through.
   func testBareImageMatchesTheDefaultConfiguration() throws {
     let generator = try generator()
     let bare = try XCTUnwrap(generator.image())
@@ -87,9 +85,8 @@ final class FBSurfaceImageGeneratorTests: XCTestCase {
 
   // MARK: - Crop orientation
 
-  /// Core Image measures from the bottom left and a crop rect is in top-left pixels, so this is the
-  /// test that catches the flip going missing: the cropped render must equal the same region cut
-  /// out of the full render with `CGImage.cropping`, which is unambiguously top-left.
+  /// Core Image measures from the bottom left while a crop rect is in top-left pixels.
+  /// `CGImage.cropping` is unambiguously top-left, so it is the reference for the flip.
   func testCropMatchesTheSameRegionCutFromTheFullRender() throws {
     let generator = try generator()
     let full = try render(FBScreenshotConfiguration(), generator: generator).image
@@ -109,8 +106,6 @@ final class FBSurfaceImageGeneratorTests: XCTestCase {
     }
   }
 
-  /// The check above only means something if the surface's pattern actually distinguishes a region
-  /// from its mirror image. This pins that it does.
   func testTheFixturePatternWouldExposeAFlip() throws {
     let generator = try generator()
     let topLeft = try render(FBScreenshotConfiguration(cropRect: CGRect(x: 0, y: 0, width: 16, height: 8)), generator: generator)
@@ -120,7 +115,6 @@ final class FBSurfaceImageGeneratorTests: XCTestCase {
     XCTAssertNotEqual(try pixels(of: topLeft.image), try pixels(of: topRight.image))
   }
 
-  /// A crop in points is resolved against the screen scale, exactly as it is on every other target.
   func testCropInPointsUsesTheScreenScale() throws {
     let generator = try generator()
     let points = try render(
@@ -149,8 +143,8 @@ final class FBSurfaceImageGeneratorTests: XCTestCase {
 
   // MARK: - Scale
 
-  /// The read-out is taken at the size the plan committed to, not at whatever extent the filter
-  /// happens to produce, so an odd source cannot come back a pixel short.
+  /// An odd source must not come back a pixel short: the read-out uses the planned size, not
+  /// the filter's output extent.
   func testScaleProducesExactlyThePlannedSize() throws {
     let generator = try generator()
     let cases: [(FBScreenshotScale, CGSize)] = [
@@ -180,8 +174,6 @@ final class FBSurfaceImageGeneratorTests: XCTestCase {
     XCTAssertEqual(rendered.sourceSize, surfaceSize)
   }
 
-  /// A scaled render is the point of doing this on the GPU, so it has to keep the content it was
-  /// asked for rather than, say, a corner of it.
   func testScaledRenderKeepsTheWholeRegion() throws {
     let generator = try generator()
     let full = try render(FBScreenshotConfiguration(), generator: generator).image
