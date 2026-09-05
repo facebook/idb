@@ -17,8 +17,7 @@ private let ConfirmShimsAreSignedEnv = "FBCONTROLCORE_CONFIRM_SIGNED_SHIMS"
 @objc(FBControlCoreGlobalConfiguration)
 public final class FBControlCoreGlobalConfiguration: NSObject {
 
-  // Guarded by _loggerLock. nonisolated(unsafe) only silences static-variable isolation
-  // checking; the lock is what provides the synchronization.
+  // Guarded by _loggerLock.
   nonisolated(unsafe) private static var _logger: (any FBControlCoreLogger)?
   private static let _loggerLock = NSLock()
 
@@ -32,15 +31,10 @@ public final class FBControlCoreGlobalConfiguration: NSObject {
 
   /// The logger used wherever a nullable logger parameter is passed as nil.
   ///
-  /// By default this logger is close to silent from a consumer's point of view: it writes to
-  /// os_log (subsystem `com.facebook.fbcontrolcore`) at info level and nowhere else. In a process
-  /// without a terminal — a GUI app, a launchd job — nothing reaches stderr, so framework
-  /// diagnostics (including framework-loading failures) are only visible via
+  /// By default it writes only to os_log (subsystem `com.facebook.fbcontrolcore`) at info level, so
+  /// in a process without a terminal nothing reaches stderr and diagnostics are only visible via
   /// `log stream --predicate 'subsystem == "com.facebook.fbcontrolcore"'`.
-  ///
-  /// Two environment variables lift this: `FBCONTROLCORE_LOGGING` mirrors output to stderr, and
-  /// `FBCONTROLCORE_DEBUG_LOGGING` raises the level to debug. Consumers that want diagnostics
-  /// somewhere they will actually look should pass their own logger instead of relying on nil.
+  /// `FBCONTROLCORE_LOGGING` mirrors output to stderr; `FBCONTROLCORE_DEBUG_LOGGING` raises the level to debug.
   @objc public class var defaultLogger: any FBControlCoreLogger {
     get {
       _loggerLock.lock()
