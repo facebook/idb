@@ -7,9 +7,7 @@
 
 import Foundation
 
-/// Composes the async command protocols and exposes the same shared informational properties as
-/// `FBiOSTarget`. Conformers can adopt this protocol incrementally alongside their `FBiOSTarget`
-/// conformance.
+/// Composes the async command protocols with the informational properties shared with `FBiOSTarget`.
 public protocol AsynciOSTarget: AnyObject,
   ApplicationCommands,
   VideoStreamCommands,
@@ -28,7 +26,7 @@ public protocol AsynciOSTarget: AnyObject,
   PowerCommands
 {
 
-  // MARK: FBiOSTargetInfo (sync, no FBFuture involved)
+  // MARK: FBiOSTargetInfo
 
   var uniqueIdentifier: String { get }
   var udid: String { get }
