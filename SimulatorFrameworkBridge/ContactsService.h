@@ -8,14 +8,7 @@
 #import <Foundation/Foundation.h>
 
 /**
- * Manages contacts on the simulator via the Contacts framework.
- * Requires TCC authorization for AddressBook access (granted via
- * the binary's entitlements).
- *
- * Usage:
- *   handleContactsAction(@"clear")  // Delete all contacts
- *
- * @param action "clear"
- * @return 0 on success, 1 on failure
+ * Clears the simulator's contacts via the Contacts framework. Needs TCC AddressBook authorization,
+ * granted by the binary's entitlements. Returns 0 on success.
  */
 int handleContactsAction(NSString *action);
