@@ -75,7 +75,7 @@ final class FBiOSTargetConfigurationTests: XCTestCase {
     XCTAssertEqual(integral.hash, fractional.hash)
   }
 
-  // Inlined from FBControlCoreValueTestCase since Swift can't see same-target ObjC headers
+  // Swift tests cannot import this target's ObjC `FBControlCoreValueTestCase`, so the helper is duplicated here.
   private func assertEqualityOfCopy(_ values: [NSObject]) {
     for value in values {
       let valueCopy = value.copy() as! NSObject
