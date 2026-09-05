@@ -7,7 +7,6 @@
 
 import Foundation
 
-/// The ways xctrace recording can fail, as data rather than assembled strings.
 public enum FBXCTraceError: Error {
   case outputDirectoryCreationFailed(underlying: Error)
   case shimMissing
@@ -89,7 +88,6 @@ public final class FBXCTraceRecordOperation {
     }
     logger.log("Starting xctrace with arguments: \(FBCollectionInformation.oneLineDescription(from: arguments))")
 
-    // Find the absolute path to xctrace
     let xctracePath = try Self.xctracePath()
 
     var environment: [String: String] = [:]
