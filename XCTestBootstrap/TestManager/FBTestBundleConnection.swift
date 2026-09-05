@@ -11,14 +11,6 @@ import Foundation
 private let bundleReadyTimeout: TimeInterval = 60
 private let crashCheckWaitLimit: TimeInterval = 120
 
-/**
- Connects to the test bundle over testmanagerd and runs the test plan to completion.
-
- The orchestration and crash diagnosis run on Swift `async`/`await`. The DTX transport, the private
- XCTest `_XCT_*` callback surface, and the `NSInvocation` message forwarding stay in the Objective-C
- `FBTestBundleDTXConnection`, which this type drives step by step.
- */
-/// The ways a test-bundle connection can fail, as data rather than assembled strings.
 enum FBTestBundleConnectionError: Error {
   case hostRelaunchedByOS(underlying: Error)
   case hostStalled(processIdentifier: pid_t, stackshot: String)
@@ -103,17 +95,14 @@ final class FBTestBundleConnection {
     }
   }
 
-  // MARK: - Diagnosis (replaces the FBTestHostProcessQuery / FBTestHostCrashLogQuery bridges)
+  // MARK: - Diagnosis
 
-  /// Always produces an error explaining the connection failure as precisely as possible.
   private func diagnosedConnectionError(from error: Error) async -> Error {
     let bundleID = context.testHostLaunchConfiguration.bundleID
     let runningPid: pid_t
     do {
       runningPid = try await target.processID(forBundleID: bundleID)
     } catch {
-      // No running host process — it likely crashed during startup but lived long enough to avoid a
-      // relaunch. Look for a crash log.
       return await crashLogOrNotFoundError(description: "Error while establishing connection to test bundle: The host application is likely to have crashed during startup, but could not find a crash log.")
     }
     let expectedPid = testHostApplication.processIdentifier
@@ -122,7 +111,6 @@ final class FBTestBundleConnection {
       // drive, so there is no bundle to connect to.
       return FBTestBundleConnectionError.hostRelaunchedByOS(underlying: error)
     }
-    // Host process is alive — sample its stack for the error message.
     if let stackshot = (try? await bridgeFBFuture(FBProcessFetcher.performSampleStackshot(forProcessIdentifier: expectedPid, queue: target.workQueue))) as? String {
       return FBTestBundleConnectionError.hostStalled(processIdentifier: expectedPid, stackshot: stackshot)
     }
@@ -138,7 +126,6 @@ final class FBTestBundleConnection {
 
   private func findCrashedProcessLog() async throws -> FBCrashLog {
     let bundleID = context.testHostLaunchConfiguration.bundleID
-    // If the host process is still running it has not crashed.
     if let runningPid = try? await target.processID(forBundleID: bundleID) {
       throw FBTestBundleConnectionError.processStillRunning(processIdentifier: runningPid)
     }
@@ -148,8 +135,7 @@ final class FBTestBundleConnection {
     }
     let pid = testHostApplication.processIdentifier
     let predicate = FBCrashLogInfo.predicateForCrashLogs(withProcessID: pid)
-    // CrashLogCommands.notifyOfCrash(matching:) has no timeout, so bound it with FBFuture's
-    // timeout the way the old FBTestHostCrashLogQuery caller did.
+    // notifyOfCrash(matching:) has no timeout of its own, so bound it via FBFuture.
     let future = fbFutureFromAsync { try await self.target.notifyOfCrash(matching: predicate) }
     let timed = future.timeout(crashWaitTimeout, waitingFor: "Getting crash log for process with pid \(pid), bundle ID: \(bundleID)")
     guard let info = try await bridgeFBFuture(timed) as? FBCrashLogInfo else {
