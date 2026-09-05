@@ -31,16 +31,13 @@ class BuildPyCommand(setuptools.command.build_py.build_py):
     def run(self) -> None:
         super().run()
 
-        # Generate pure python protoc compiler
         gen_protoc_complier()
 
-        # Paths
         root = Path(os.path.realpath(__file__)).parent
         proto_file = root / "proto" / "idb.proto"
         output_dir = root / "build" / "lib" / "idb" / "grpc"
         grpclib_output = output_dir / "idb_grpc.py"
 
-        # Generate the grpc files
         output_dir.mkdir(parents=True, exist_ok=True)
         command = [
             "grpc_tools.protoc",
@@ -55,7 +52,6 @@ class BuildPyCommand(setuptools.command.build_py.build_py):
         if protoc.main(command) != 0:
             raise Exception("error: {} failed".format(command))
 
-        # Fix the import paths
         with open(grpclib_output, "r") as file:
             filedata = file.read()
         filedata = filedata.replace(
