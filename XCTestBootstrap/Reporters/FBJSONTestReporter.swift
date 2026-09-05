@@ -12,7 +12,6 @@ private func fullyFormattedXCTestName(_ className: String, _ methodName: String)
   "-[\(className) \(methodName)]"
 }
 
-/// The ways report finalisation can fail; the messages are assembled by the reporter itself.
 public enum FBJSONTestReporterError: Error, LocalizedError {
   case testPlanDidNotStart(message: String)
   case testPlanDidNotFinish(message: String)
