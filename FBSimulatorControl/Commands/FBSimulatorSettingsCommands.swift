@@ -35,7 +35,6 @@ public enum FBSimulatorContentSizeCategory: Int, Sendable {
 
 private let slowAnimationsNotification = "com.apple.UIKit.SimulatorSlowMotionAnimationState"
 
-/// The ways settings operations can fail, as data rather than assembled strings.
 public enum FBSimulatorSettingsError: Error {
   case noDataDirectory
   case noDataDirectoryForPlists
@@ -137,7 +136,6 @@ public struct FBSimulatorSettingsCommands {
     self.simulator = simulator
   }
 
-  // The command's simulator reference is weak; resolve it or fail uniformly across the settings ops.
   private func requireSimulator() throws -> FBSimulator {
     return simulator
   }
@@ -149,8 +147,6 @@ public struct FBSimulatorSettingsCommands {
     return dataDirectory
   }
 
-  // Single source of truth for the SettingsCommands.apply entry point: switch over the setting and
-  // dispatch to the transport-specific implementation.
   fileprivate func apply(_ setting: FBSimulatorSetting) async throws {
     switch setting {
     case let .hardwareKeyboard(enabled):
@@ -287,8 +283,6 @@ public struct FBSimulatorSettingsCommands {
     try simulator.device.setIncreaseContrastEnabled(enabled)
   }
 
-  // Write a preference-backed setting through its centralized (domain, key). The ASP-cover rationale
-  // for autofill-passwords lives on FBSimulatorSettingKey.preferenceBacking.
   fileprivate func setPreferenceBacked(_ key: FBSimulatorSettingKey, value: String, type: String?) async throws {
     guard let backing = key.preferenceBacking else {
       throw FBSimulatorSettingsError.settingNotPreferenceBacked(setting: key.rawValue)
@@ -557,10 +551,6 @@ public struct FBSimulatorSettingsCommands {
       throw FBSimulatorSettingsError.frameworkBridgeBinaryMissing
     }
 
-    // Spawn the bridge helper inside the simulator via CoreSimulator (the same
-    // path as every other in-simulator spawn) rather than shelling out to
-    // `simctl spawn`. The helper runs in the booted launchd domain, identically
-    // to what `simctl spawn` provided.
     let output = try await simulator.launchProcessConsumingOutput(
       launchPath: helperPath,
       arguments: [service, action] + arguments)
@@ -702,8 +692,6 @@ public struct FBSimulatorSettingsCommands {
     approvals.intersection(Set(tccDatabaseMapping.keys))
   }
 
-  /// The TCC database names of the approvals that have one, so the row builders below never have to
-  /// repeat the lookup that `filteredTCCApprovals` has already made.
   private static func tccServiceNames(for approvals: Set<FBTargetSettingsService>) -> [String] {
     filteredTCCApprovals(approvals).compactMap { tccDatabaseMapping[$0] }
   }
@@ -854,8 +842,8 @@ extension FBSimulator: SettingsCommands {
     try await settings.applyResolution(resolution)
   }
 
-  /// Read the current value of a curated setting by name, mirroring `apply`'s name space and
-  /// falling back to a raw preference read for any other name. Shared by idb and sime2e `get`.
+  /// Reads the current value of a curated setting by name, falling back to a raw preference read for
+  /// any other name.
   public func currentSettingValue(name: String, domain: String?) async throws -> String {
     guard let key = FBSimulatorSettingKey(rawValue: name) else {
       return try await getCurrentPreference(name, domain: domain)
