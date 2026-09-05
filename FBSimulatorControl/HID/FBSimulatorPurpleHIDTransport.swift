@@ -14,10 +14,7 @@ import Foundation
  The transport for GSEvents — device orientation and lock — delivered as raw mach messages to
  SpringBoard's PurpleWorkspacePort. Guest-side: `GraphicsServices._PurpleEventCallback` → backboardd.
 
- Not transport-switchable: unlike the Indigo-family primitives there is no alternative path, so this is
- a concrete transport rather than one case of a choice. It completes the split Indigo already had, where
- `FBSimulatorIndigoHID` builds the payload and `FBSimulatorIndigoHIDTransport` sends it —
- `FBSimulatorPurpleHID` was the codec half with no transport, so the send lived inline on the composite.
+ Not transport-switchable: there is no alternative path for GSEvents.
 
  Connectionless: the port is looked up per send, so there is nothing to hold open, drain or tear down.
 
@@ -92,7 +89,6 @@ final class FBSimulatorPurpleHIDTransport: @unchecked Sendable {
       throw FBSimulatorHIDError.purpleWorkspacePortUnavailable(underlying: lookupError)
     }
 
-    // Copy the payload and patch msgh_remote_port with the looked-up port.
     var mutableData = data
     let kr: kern_return_t = mutableData.withUnsafeMutableBytes { (buffer: UnsafeMutableRawBufferPointer) -> kern_return_t in
       guard let base = buffer.baseAddress else { return KERN_FAILURE }
