@@ -9,9 +9,7 @@ import FBControlCore
 @testable import FBSimulatorControl
 import XCTest
 
-/// Exercises launchctl service control end-to-end on a booted simulator. These run the
-/// runtime's `launchctl` inside the simulator via the unified spawn+capture helper
-/// (`FBSimulator.launchProcessConsumingOutput`), so a successful listing proves that path.
+/// Runs the runtime's `launchctl` inside a booted simulator via `FBSimulator.launchProcessConsumingOutput`.
 final class FBSimulatorLaunchCtlTests: FBSimulatorControlTestCase {
 
   func testListsServicesViaCoreSimulatorSpawn() async throws {
