@@ -29,7 +29,6 @@ private enum CanonicalShim: CaseIterable {
   }
 }
 
-/// The ways shim resolution can fail, as data rather than assembled strings.
 public enum FBXCTestShimError: Error {
   case shimMissing(path: String)
   case shimUnsigned(path: String, underlying: Error)
@@ -109,10 +108,8 @@ public struct FBXCTestShimConfiguration: Sendable {
     return directory
   }
 
-  // Caches the first resolution for the life of the process, matching the future the
-  // old implementation memoised. An actor holding the task needs no lock and no
-  // unsafely-nonisolated storage; concurrent first callers race to create the task
-  // inside the actor, so exactly one resolution ever runs.
+  // Caches the first resolution for the life of the process; actor isolation ensures exactly one resolution
+  // runs even when first callers race.
   private actor SharedResolution {
     private var task: Task<FBXCTestShimConfiguration, Error>?
 
