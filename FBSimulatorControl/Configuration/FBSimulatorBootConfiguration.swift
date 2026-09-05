@@ -10,8 +10,7 @@ import Foundation
 
 /// An Option Set for Direct Launching.
 ///
-/// The raw values are not contiguous, and are kept as they were when this was an `NS_OPTIONS`:
-/// they are compared and persisted by callers.
+/// The raw values are not contiguous; callers compare and persist them, so they must not change.
 public struct FBSimulatorBootOptions: OptionSet, Hashable, Sendable {
 
   public let rawValue: UInt
