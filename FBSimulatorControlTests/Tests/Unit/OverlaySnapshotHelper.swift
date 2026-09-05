@@ -5,23 +5,16 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-// Disabled during swift-format 6.3 rollout, feel free to remove:
-// swift-format-ignore-file: OrderedImports
-
 import AppKit
 import CoreGraphics
 import CoreVideo
-import XCTest
-
 @testable import FBSimulatorControl
+import XCTest
 
 /// Lightweight snapshot testing for FBOverlayRenderer output.
 ///
 /// Converts CVPixelBuffer to PNG and compares against reference images stored
 /// in `Fixtures/snapshots/` and bundled via `fb_apple_resource` in BUCK.
-///
-/// To record new snapshots, temporarily set `recordSnapshots = true`, run tests,
-/// and copy the emitted PNGs into `Fixtures/snapshots/`.
 enum OverlaySnapshotHelper {
 
   /// Set to `true` temporarily to record new snapshots.
@@ -71,12 +64,8 @@ enum OverlaySnapshotHelper {
   /// still catching positioning, sizing, and color changes.
   static let perChannelTolerance: UInt8 = 4
 
-  /// Assert that the buffer matches a reference snapshot PNG from the test bundle.
-  ///
-  /// Reference PNGs are stored in `Fixtures/snapshots/` and bundled via `fb_apple_resource`.
-  /// - In record mode: writes PNG to `$TMPDIR` for copying into `Fixtures/snapshots/`.
-  /// - In normal mode: loads reference from bundle, compares pixel data with tolerance.
-  /// - On mismatch: writes actual PNG to `$TMPDIR` for visual inspection.
+  /// Reference PNGs live in `Fixtures/snapshots/` (bundled via `fb_apple_resource`). On mismatch or in
+  /// record mode the actual PNG is written to `$TMPDIR`.
   static func assertSnapshot(
     _ buffer: CVPixelBuffer,
     named name: String,
@@ -122,8 +111,7 @@ enum OverlaySnapshotHelper {
     }
   }
 
-  /// Compare two PNG images at the pixel level with per-channel tolerance.
-  /// Returns a description of the mismatch, or nil if images match within tolerance.
+  /// Returns a description of the mismatch, or nil if the images match within tolerance.
   private static func comparePixels(actual: Data, reference: Data, tolerance: UInt8) -> String? {
     guard let actualImage = NSBitmapImageRep(data: actual),
       let referenceImage = NSBitmapImageRep(data: reference)
