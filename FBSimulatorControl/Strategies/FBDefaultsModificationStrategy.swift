@@ -79,9 +79,7 @@ class FBDefaultsModificationStrategy {
     return try await run(.read(domain: domain, key: key))
   }
 
-  // The closed set of `defaults` operations this strategy issues. Modelling them as an enum keeps argv
-  // construction in one place and makes the operation set exhaustive, so a new operation cannot be
-  // added without routing through `run`.
+  // The closed set of `defaults` operations this strategy issues.
   enum Command {
     case read(domain: String, key: String)
     case write(domain: String, key: String, type: String, value: String)
@@ -124,7 +122,6 @@ class FBDefaultsModificationStrategy {
     return try FBDefaultsModificationStrategy.stdout(orThrowFrom: output, command: command, logger: simulator.logger)
   }
 
-  // Internal for unit-test coverage of the exit-code handling; see FBDefaultsModificationStrategyTests.
   static func stdout(orThrowFrom output: FBInSimulatorToolOutput, command: Command, logger: (any FBControlCoreLogger)?) throws -> NSString {
     if output.exitCode != 0 {
       let stderr = String(data: output.stderr, encoding: .utf8) ?? ""
