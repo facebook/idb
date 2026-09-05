@@ -10,50 +10,27 @@ import Foundation
 import ImageIO
 @_implementationOnly import ReplProtocol
 
-// The API that injected REPL code calls to drive the connected target while its
-// own code runs. Everything public is nested under the single `IDB` namespace
-// enum, so importing this module adds only the name `IDB` to the caller's scope --
-// no command, type, or helper leaks in unqualified where it could collide with the
-// user's own code or another import. UI-automation commands live under `IDB.ui`,
-// e.g. `IDB.ui.tap(point)`, `IDB.ui.text("...")`, `IDB.ui.describeAll()`.
+// The API injected REPL code calls to drive the connected target. Everything public is
+// nested under the `IDB` namespace enum, so importing this module adds only that one
+// name to the caller's scope.
 //
-// The Swift module is named `IDBAPI`, not `IDB`, so the namespace type and the
-// module do not share a name -- a type sharing its module's name breaks
-// `.swiftinterface` generation (it emits unparseable `IDB.IDB.X` references). The
-// driver auto-imports the module by the name the companion reports, so injected
-// code never writes the import itself.
+// The Swift module is named `IDBAPI`, not `IDB`: a type sharing its module's name breaks
+// `.swiftinterface` generation (it emits unparseable `IDB.IDB.X` references).
 //
-// This module is linked into `libRepl`, which serves the REPL in each context
-// (DYLD-injected into the xctest process for `test`, dlopen'd by
-// SimulatorFrameworkBridge for `simulator`, and DYLD-injected into a launched app
-// for `app`, where libRepl starts itself). Injected code compiles against the
-// matching `IDBAPI.swiftinterface`; at run time its `IDB.*` references resolve to
-// this module's symbols, exported by the loaded `libRepl`. Each call encodes a
-// `ReplCommand` (the shared wire type) and hands it to the host's
-// `FBReplInvokeHostCommand` C entry point, resolved here with `dlsym` (it lives
-// in the same loaded image, so there is no link dependency on libRepl). The only
-// link dependency is `ReplProtocol`, the pure wire types shared with the
-// companion -- so the request contract is one type-checked model on both sides.
+// Commands reach the host through `FBReplInvokeHostCommand`, resolved with `dlsym` from
+// the loaded `libRepl` (same image, so no link dependency); the only link dependency is
+// `ReplProtocol`.
 //
-// The calls do not throw. Losing the connection to the companion ends the session,
-// so instead of surfacing a catchable error on every call it stops the submission
-// outright (see `haltReplExecution`): the disposable test / simulator host exits,
-// while in the app context the app keeps running and only the submission ends. A
-// command that merely did not apply is ignored (best-effort). If a future command's
-// failure is a meaningful result of the call, make that one `throws`.
+// Calls do not throw: a lost connection ends the submission (see `haltReplExecution`),
+// and a command that merely did not apply is ignored.
 //
-// Injected code must not write to stdout/stderr: in the REPL host those file
-// descriptors can alias the control socket, so a stray write corrupts the
-// protocol. That is why failures are silent rather than logged.
+// Injected code must not write to stdout/stderr: in the REPL host those file descriptors
+// can alias the control socket, so a stray write corrupts the protocol. Failures are
+// therefore silent.
 
-/// Encodes `command`, sends it to the companion, and returns the parsed `result`
-/// value on success, or `nil` on failure -- a command that did not apply, or a lost
-/// connection. A lost connection also stops the submission via `haltReplExecution`,
-/// which exits the disposable test / simulator host or simply returns in the app
-/// context (leaving the app running) before this returns `nil`.
-///
-/// Top-level and `private`, so it is neither exported to injected code nor part
-/// of the `IDB` namespace surface; the command methods below call it directly.
+/// Sends `command` to the host and returns its `result`, or `nil` when it did not
+/// apply or the connection was lost (which also halts the submission via
+/// `haltReplExecution`).
 @discardableResult
 private func perform(_ command: ReplCommand) -> Any? {
   typealias InvokeFunction = @convention(c) (UnsafeRawPointer?, Int32, UnsafeMutablePointer<Int32>?) -> UnsafeMutableRawPointer?
@@ -140,9 +117,8 @@ public enum IDB {
       perform(.tapMarker(marker))
     }
 
-    /// Swipes from one point to another. `duration` is the gesture's length in
-    /// seconds; `delta` is the spacing in points between intermediate touches (0
-    /// uses a default). 0 values let the companion pick sensible behavior.
+    /// Swipes between two points. `duration` is seconds; `delta` is the spacing in
+    /// points between intermediate touches. 0 for either uses the companion's default.
     public func swipe(from: CGPoint, to: CGPoint, duration: Double = 0, delta: Double = 0) {
       perform(.swipe(from: from, to: to, duration: duration, delta: delta))
     }
