@@ -9,7 +9,7 @@ import Foundation
 
 /// A Protocol for defining file reading.
 @objc public protocol FBFileReaderProtocol {
-  /// Starts the reading the file.
+  /// Starts reading the file.
   @discardableResult
   func startReading() -> FBFuture<NSNull>
 
