@@ -11,8 +11,7 @@ import FBControlCore
 import VideoToolbox
 import XCTest
 
-/// Creates an H264 CMSampleBuffer suitable for testing.
-/// The buffer is marked as data-ready.
+/// Data-ready; see `createNotReadySampleBuffer()` for the starved variant.
 func createH264SampleBuffer() -> CMSampleBuffer {
   let sps: [UInt8] = [0x67, 0x42, 0x00, 0x0a, 0xf8, 0x41, 0xa2]
   let pps: [UInt8] = [0x68, 0xce, 0x38, 0x80]
@@ -81,8 +80,7 @@ func createH264SampleBuffer() -> CMSampleBuffer {
   return sampleBuf!
 }
 
-/// Creates an H264 CMSampleBuffer that is NOT data-ready.
-/// Used to simulate encoder warmup / starvation scenarios.
+/// Not data-ready, to simulate encoder warmup / starvation.
 func createNotReadySampleBuffer() -> CMSampleBuffer {
   let sps: [UInt8] = [0x67, 0x42, 0x00, 0x0a, 0xf8, 0x41, 0xa2]
   let pps: [UInt8] = [0x68, 0xce, 0x38, 0x80]
@@ -132,7 +130,6 @@ func createNotReadySampleBuffer() -> CMSampleBuffer {
     presentationTimeStamp: CMTimeMake(value: 0, timescale: 90000),
     decodeTimeStamp: .invalid
   )
-  // Pass false for dataReady to create a not-ready buffer
   let status3 = CMSampleBufferCreate(
     allocator: nil,
     dataBuffer: blockBuf,
@@ -153,7 +150,6 @@ func createNotReadySampleBuffer() -> CMSampleBuffer {
 }
 
 /// A test double logger that captures all logged messages for assertion.
-/// Re-expressed in Swift now that the pushers are Swift (the ObjC bridge double is gone).
 // SAFETY: writes are serialized by `lock`; tests read `messages` after the work under test finishes.
 final class FBCapturingLogger: NSObject, FBControlCoreLogger, @unchecked Sendable {
   let messages = NSMutableArray()
@@ -176,10 +172,8 @@ final class FBCapturingLogger: NSObject, FBControlCoreLogger, @unchecked Sendabl
   var level: FBControlCoreLogLevel { .multiple }
 }
 
-/// Creates a FBSimulatorVideoStreamFramePusher_VideoToolbox configured for H264/AnnexB testing.
-/// Constructed directly in Swift now that the pusher is a Swift class. The pusher uses the
-/// block-based encode handler at runtime, but the tests drive `handleCompressedSampleBuffer`
-/// directly, so only the `.compressed` output mode is needed here.
+/// Tests drive `handleCompressedSampleBuffer` directly rather than the block-based encode handler,
+/// so only the `.compressed` output mode is wired.
 func createTestVideoStreamPusher(_ logger: FBControlCoreLogger) -> FBSimulatorVideoStreamFramePusher_VideoToolbox {
   let format = FBVideoStreamFormat.compressedVideo(withCodec: .h264, transport: .annexB)
   let config = FBVideoStreamConfiguration(
