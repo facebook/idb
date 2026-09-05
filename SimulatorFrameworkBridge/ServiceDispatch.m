@@ -40,13 +40,9 @@ int dispatchService(NSString *service, NSString *action, NSArray<NSString *> *ar
     return handleAccessibilityAction(action, arguments);
   } else if ([service isEqualToString:@"repl"]) {
     if ([action isEqualToString:@"start"]) {
-      // Serve the REPL control socket via libRepl, which the bridge loads on
-      // demand (only when a repl session starts). libRepl exports the socket
-      // server -- and the IDB API that injected code calls -- so serving through
-      // its copy keeps both on the same control-socket connection, and injected
-      // `import IDB` symbols resolve against it. Arguments: the socket path, then
-      // libRepl's path. The simulator context has no in-process probe, so it
-      // generates no interfaces (the companion reports the pre-built one).
+      // libRepl exports both the socket server and the IDB API injected code calls, so serving through
+      // its copy keeps both on one connection and lets `import IDB` resolve. Arguments: socket path, then
+      // libRepl path. The simulator context generates no interfaces; the companion reports the pre-built one.
       NSString *socketPath = arguments.count > 0 ? arguments[0] : nil;
       NSString *libReplPath = arguments.count > 1 ? arguments[1] : nil;
       if (libReplPath.length == 0) {

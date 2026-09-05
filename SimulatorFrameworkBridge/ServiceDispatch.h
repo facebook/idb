@@ -7,18 +7,5 @@
 
 #import <Foundation/Foundation.h>
 
-/**
- * Dispatches to the appropriate service handler based on service name and action.
- *
- * Routes to one of:
- *   - "contacts"      → handleContactsAction(action)
- *   - "photos"        → handlePhotoLibraryAction(action)
- *   - "notifications" → handleNotificationSettingsAction(action, arguments[0])
- *   - "proxy"         → handleProxyAction(action, arguments)
- *
- * @param service The service name
- * @param action The action to perform (service-specific)
- * @param arguments Additional arguments beyond service and action
- * @return 0 on success, 1 on failure (including unknown service)
- */
+/** Routes `<service> <action> [args...]` to the matching `handle*Action`. Returns 1 for an unknown service. */
 int dispatchService(NSString *service, NSString *action, NSArray<NSString *> *arguments);
