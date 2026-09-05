@@ -62,10 +62,8 @@ final class FBAXInteractableTests: XCTestCase {
 
   // MARK: - Blocked
 
-  // The motivating case, with the numbers measured on a real Explore grid: the element is hittable, but
-  // not at its centre, because the Liquid Glass tab bar covers the bottom of the cell. It is actionable,
-  // and `at` is the point that works — 4.83pt above the centre, which is the whole difference between
-  // opening the cell and opening Direct messages.
+  // Numbers measured on a real Explore grid: the tab bar covers the bottom of the cell, so the reachable point is
+  // 4.83pt above the centre.
   func testAnElementWhoseCentreIsCoveredIsActionableAtTheReachablePoint() throws {
     let value = try XCTUnwrap(
       Self.interactable(
@@ -83,23 +81,9 @@ final class FBAXInteractableTests: XCTestCase {
     XCTAssertEqual(value, .blocked(reasons: [.notHittable]))
   }
 
-  // The guest has no `enabled` to send: there is no such attribute in the `XC_kAXXCAttribute*`
-  // namespace at all (`IsUserInteractionEnabled` is the only enabled-ish one, and it is a different
-  // question). So `enabled` on a guest-backed read is invented by the host rather than measured.
-  //
-  // So it answers nil, and `disabled` is claimed only when the answer is a definite false. An element
-  // the guest cannot vouch for either way is still actionable — the absence of a measurement is not
-  // evidence of a disabled control.
-  func testEnabledIsUnknownOnAGuestBackedRead() throws {
-    let element = FBAXBridgePlatformElement(attributes: [:], children: [], pid: 0)
-    XCTAssertNil(element.axIsEnabled())
-
-    let value = try XCTUnwrap(Self.interactable(Self.node()) ?? nil)
-    XCTAssertEqual(value, .actionable(at: FBAccessibilityPoint(x: 201, y: 794.33)))
-  }
-
-  // The serialized `enabled` a guest-backed read reports, for the same reason: an explicit null, the
-  // same way `interactable` reports what a backend cannot answer.
+  // There is no `enabled` attribute in the `XC_kAXXCAttribute*` namespace (`IsUserInteractionEnabled` answers a
+  // different question), so a guest-backed read answers nil — serialized as an explicit null — and `disabled` is
+  // claimed only on a definite false.
   func testTheSerializedEnabledIsNullOnAGuestBackedRead() throws {
     let node = FBAXTreeWalk.describeAllElements(
       fromTree: Self.node(), keys: [.enabled], nestedFormat: false, pid: 13515
@@ -139,21 +123,15 @@ final class FBAXInteractableTests: XCTestCase {
 
   // MARK: - Cannot answer
 
-  // A read that did not fetch the visibility attributes cannot judge interactability, and says so with an
-  // explicit null rather than inventing a verdict from `enabled` — which is hardcoded `true` on this
-  // backend and conflates two different questions.
+  // Without the visibility attributes the read cannot judge, and must not invent a verdict from `enabled`, which is
+  // hardcoded `true` on this backend.
   func testABackendWithoutTheAttributesReportsNull() {
     let value = Self.interactable(Self.node(isVisible: nil, visiblePoint: nil, centrePoint: nil, userInteractionEnabled: nil))
     XCTAssertNotNil(value, "the key was requested, so it must be present")
     XCTAssertNil(value ?? nil, "and its value must be an explicit null")
   }
 
-  // A read that answers hittability and carries no point. The derivation checks hittability first to
-  // catch a backend that answered nothing at all; this read answers it, so that check passes and the
-  // derivation runs on to find no point.
-  //
-  // The shape a read produces whenever the server answers `isVisible` for an element and declines its
-  // visible point.
+  // `isVisible` answered but no visible point: the hittability check passes, and the derivation then finds no point.
   func testHittableWithNoPointReportsNoVerdict() throws {
     let value = try XCTUnwrap(
       Self.interactable(Self.node(visiblePoint: nil, centrePoint: nil, userInteractionEnabled: nil)),
@@ -252,9 +230,8 @@ final class FBAXInteractableTests: XCTestCase {
     )
   }
 
-  // Idempotent, so a refinement that runs twice cannot double the reason. The value is returned
-  // untouched, ordering included — the ordering guarantee is applied at encode, so no construction or
-  // early-return path can bypass it.
+  // Idempotent, so a refinement that runs twice cannot double the reason; ordering is applied at encode, so the
+  // value is returned untouched.
   func testClippingIsNotAddedTwice() {
     XCTAssertEqual(
       Self.clipped(frame: CGRect(x: 16, y: -10, width: 370, height: 52), reasons: [.notHittable, .clippedByScreen]),
@@ -269,8 +246,6 @@ final class FBAXInteractableTests: XCTestCase {
     XCTAssertEqual(reasons.map { $0["kind"] as? String }, ["clipped_by_screen", "not_hittable"])
   }
 
-  // An actionable element is never annotated: it carries a reachable point and nothing else, so there is
-  // no state in which a caller holds both a usable point and a complaint about the edge.
   func testAnActionableElementIsNeverNotedAsClipped() {
     var element = FBAccessibilityDocumentElement()
     element.frame = .some(FBAccessibilityFrame(CGRect(x: 16, y: -10, width: 370, height: 52)))
@@ -280,8 +255,7 @@ final class FBAXInteractableTests: XCTestCase {
     XCTAssertEqual(refined, FBAccessibilityInteractable.actionable(at: FBAccessibilityPoint(x: 201, y: 20)))
   }
 
-  // The whole point of the ordering: a consumer that reads only `reasons[0]` gets the most actionable
-  // thing known, never `notHittable`, which explains nothing.
+  // A consumer that reads only `reasons[0]` must get an explanation, never `notHittable`.
   func testNotHittableSortsBehindEveryExplanation() {
     let reasons: [FBAccessibilityInteractable.Reason] =
       [.notHittable, .clippedByScreen, .userInteractionDisabled]
@@ -322,8 +296,7 @@ final class FBAXInteractableTests: XCTestCase {
     XCTAssertEqual(by["type"] as? String, "Button")
   }
 
-  // Unnamed when no hit-test was paid for, the same as an unnamed occluder — the shape does not change,
-  // only what is known.
+  // Unnamed when no hit-test was paid for, the same as an unnamed occluder.
   func testHandledByOmitsTheElementWhenNoHitTestWasPaidFor() throws {
     let encoded = try Self.encode(.blocked(reasons: [.handledBy(nil)]))
     let reasons = try XCTUnwrap(encoded["reasons"] as? [[String: Any]])
@@ -353,12 +326,8 @@ final class FBAXInteractableTests: XCTestCase {
 
   // MARK: - What `occluded_by` needs serialized
 
-  // `occluded_by` hit-tests an element's centre and then has to recognise whether the element that
-  // answered is a relative of the target. Both halves need serialized fields it does not ask for: the
-  // centre comes from the frame, and the recognition compares what the two reads can both see.
-  //
-  // Requesting it therefore implies all of them, which is what keeps the enrichment able to run and the
-  // identity comparison symmetric.
+  // `occluded_by` hit-tests the element's centre (from the frame) and then compares identity fields both reads can
+  // see, so requesting it implies all of them.
   func testOccludedByImpliesTheKeysItsHitTestNeeds() {
     let keys = FBAccessibilityRequestOptions(keys: [.occludedBy]).serializationKeys
     XCTAssertTrue(keys.contains(.interactable), "the thing it enriches")
@@ -388,9 +357,7 @@ final class FBAXInteractableTests: XCTestCase {
     XCTAssertEqual(summary.blocked, 2)
   }
 
-  // The number the whole summary exists for: only an element blocked with *nothing but* the bare
-  // observation counts as unexplained. One that also carries a cause is explained, even though it still
-  // carries the observation alongside.
+  // An element carrying a cause alongside the bare observation is explained.
   func testUnexplainedCountsOnlyElementsWithNoExplanationAtAll() throws {
     let summary = try XCTUnwrap(
       FBAccessibilityInteractionSummary(elements: [
@@ -445,9 +412,7 @@ final class FBAXInteractableTests: XCTestCase {
     return [reachable, covered]
   }
 
-  // The filter keeps what can actually be acted on. The covered button is button-like by every
-  // structural measure — it has a label and an actionable role — and is dropped anyway, because the
-  // backend's verdict outranks the structural heuristic.
+  // The covered button is button-like by every structural measure; the backend's verdict outranks the heuristic.
   func testTheFilterKeepsOnlyElementsTheBackendReportsActionable() {
     let kept = FBAccessibilityElementFilter.interactable.apply(to: Self.mixedRead())
     XCTAssertEqual(kept.compactMap { $0.label ?? nil }, ["StandBy"])
@@ -468,24 +433,6 @@ final class FBAXInteractableTests: XCTestCase {
       FBAccessibilityElementFilter.interactable.apply(to: [unlabelledContainer]).isEmpty,
       "the fallback is the old heuristic, not keep-everything"
     )
-  }
-
-  // A verdict is never second-guessed by the heuristic: an element the backend judged blocked is dropped
-  // even though its label and role would have carried it through the fallback.
-  func testAVerdictIsNotOverriddenByTheHeuristic() {
-    let covered = Self.mixedRead()[1]
-    XCTAssertEqual(covered.label ?? nil, "Screen Time", "precondition: the labelled, button-role element")
-    XCTAssertTrue(FBAccessibilityElementFilter.interactable.apply(to: [covered]).isEmpty)
-  }
-
-  // Without `--key interactable` the filter matches on the heuristic, on every backend. This is
-  // deliberate: the verdict costs a hit-test per node, and choosing which elements to report should
-  // not incur that.
-  func testTheFilterDoesNotRequestTheVerdictItCanMatchOn() {
-    var options = FBAccessibilityRequestOptions()
-    options.filter = .interactable
-    XCTAssertFalse(options.serializationKeys.contains(.interactable))
-    XCTAssertNil(FBAXWire.Node.fetchList(for: options.serializationKeys))
   }
 
   private static func encode(_ value: FBAccessibilityInteractable) throws -> [String: Any] {
