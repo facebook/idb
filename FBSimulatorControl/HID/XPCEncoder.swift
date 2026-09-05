@@ -16,10 +16,6 @@ import XPC
  → `double`, `Bool` → `bool`, `String` → `string`. Optional properties that are `nil` are omitted (no
  key is written), so a model's optionals decide which keys appear on the wire. Unkeyed (array)
  containers are unsupported — no Indigo event needs them.
-
- This lets each wire message be expressed as a plain `Encodable` Swift model whose property types
- carry the wire types (e.g. a `UInt64` field can only encode to an `xpc_uint64`), instead of
- hand-rolling `xpc_dictionary_set_*` calls.
  */
 struct XPCEncoder {
   func encode<Value: Encodable>(_ value: Value) throws -> xpc_object_t {
