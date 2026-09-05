@@ -9,8 +9,7 @@ import FBControlCore
 import Foundation
 import Testing
 
-/// A class with no superclass at all, and so no key-value coding: what an idb type becomes once
-/// it stops inheriting from `NSObject`.
+/// No `NSObject` root, so no key-value coding.
 private final class SwiftRootClass: CustomStringConvertible {
   var description: String { "a swift root class" }
 }
@@ -19,9 +18,6 @@ private final class ObjectiveCRootedClass: NSObject {
   override var description: String { "an objective-c rooted class" }
 }
 
-/// `oneLineDescription(from:)` is how a collection reaches a log line or an error message
-/// throughout idb, so what it does to each kind of element is a contract rather than an
-/// implementation detail.
 @Suite
 struct FBCollectionInformationTests {
 
@@ -39,16 +35,12 @@ struct FBCollectionInformationTests {
     #expect((FBCollectionInformation.oneLineDescription(from: elements, atKeyPath: "length")) == ("[5, 3]"))
   }
 
-  /// A key path that resolves to a scalar rather than to one value per element — an aggregate
-  /// operator is the way to get one — describes the elements themselves instead.
   @Test
   func oneLineDescription_FallsBackToTheElementsWhenTheKeyPathIsNotPerElement() {
     let elements: [Any] = ["alpha", "bet"]
     #expect((FBCollectionInformation.oneLineDescription(from: elements, atKeyPath: "@count")) == ("[alpha, bet]"))
   }
 
-  /// A class with no Objective-C root has no key-value coding, so describing one is only possible
-  /// without going through it.
   @Test
   func oneLineDescription_DescribesAClassWithNoObjectiveCRoot() {
     #expect((FBCollectionInformation.oneLineDescription(from: [SwiftRootClass()])) == ("[a swift root class]"))
