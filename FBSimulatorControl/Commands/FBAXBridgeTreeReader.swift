@@ -9,28 +9,15 @@ import CoreGraphics
 import FBControlCore
 import Foundation
 
-/// The axbridge read pipeline. The protocol boundary keeps transport responses and warnings injectable
-/// in unit tests; production has one conformer, `FBAXBridgeUIAutomation`.
+/// The axbridge read pipeline. Production has one conformer, `FBAXBridgeUIAutomation`.
 protocol FBAXBridgeTreeReader: FBUIAutomation {
   /// The resolved axbridge backend, used in response metadata and errors.
   nonisolated var backend: FBUIAutomationBackend { get }
 
-  /// Reads the whole bounded attribute tree the query targets and returns it parsed. `.frontmost`
-  /// resolves the foreground app; `.application` anchors on the given pid; `.marker` reads the frontmost
-  /// tree so the shared matcher can find the element in the serialized result.
-  ///
-  /// Returns the raw read rather than serialized elements so `describeTree` serializes exactly once,
-  /// with the caller's keys/format/filter — none of which belong on a raw read, since the guest reads
-  /// the whole bounded tree and key selection happens at serialize. `FBAXTreeRead` also carries the
-  /// fullscreen-modal descriptor the read surfaced (host-facing enrichment, not serialized) and whether
-  /// the guest's walk was truncated.
-  /// `attributes` names what the guest fetches per element, or nil to leave it on its default list.
-  /// Derived from the caller's requested keys, so an attribute only reaches the wire when a key that
-  /// needs it was asked for.
-  ///
-  /// `traversal` chooses how the tree is traversed, and therefore which attributes the elements carry. Per read: the
-  /// same caller wants the structural tree for one question and the semantic one for another. Already
-  /// resolved, so a backend never has to decide what an unchosen traversal means at the point of reading.
+  /// Reads the whole bounded tree the query targets. `.marker` reads the frontmost tree; the match is
+  /// found in the serialized result. `attributes` is what the guest fetches per element (nil = its
+  /// default list); `traversal` is already resolved. `FBAXTreeRead` also carries the modal descriptor
+  /// and whether the guest's walk was truncated.
   func readRawTree(
     for query: FBAccessibilityElementQuery,
     attributes: [String]?,
@@ -161,10 +148,8 @@ extension FBAXBridgeTreeReader {
         for: options,
         explainUnreachable: options.keys.contains(.occludedBy)
       )
-      // An explicit single fetch cannot answer reachability: the application hit-tests every node for
-      // these keys, and a snapshot asking for them times out rather than answering. `.auto` routes such
-      // a read to the per-node walk, so only an explicit choice can get here — refused up front rather
-      // than left to time out in the guest.
+      // A single fetch cannot answer reachability (the app hit-tests every node and times out). `.auto`
+      // never routes here, so only an explicit choice can; refuse rather than time out in the guest.
       let unanswerable = plan.serializationKeys.intersection(FBAXKeys.reachabilityKeys)
       if plan.traversal == .singleFetch, !unanswerable.isEmpty {
         throw FBUIAutomationError.traversalCannotAnswer(
@@ -192,10 +177,8 @@ extension FBAXBridgeTreeReader {
       let elements = try await refiningInteractable(
         options.narrowing(walked), screen: screen, options: options
       )
-      // Measures serialize + refine, closed before response assembly.
       let serializeDuration = CFAbsoluteTimeGetCurrent() - serializeStarted
-      // Coverage is a calculation over the serialized model, the same one every backend runs.
-      // Remote-content discovery is accessibility-only, so `additional` stays absent here.
+      // No `additional` coverage: remote-content discovery is accessibility-only.
       let coverage: FBAccessibilityCoverage? =
         plan.collectFrameCoverage
         ? screen.flatMap {
@@ -294,15 +277,8 @@ extension FBAXBridgeTreeReader {
     return (element, descendantIdentities)
   }
 
-  /// `frame` for a tree-reading backend: the rectangle of the element a query names, in points.
-  ///
-  /// This is `describeTree` asking for the frame key alone. Narrowing to `.frameDict` optimises the
-  /// serialization, not the read — the guest walks the whole bounded tree either way.
-  ///
-  /// A whole-tree query answers with the application root's frame, matching what the accessibility
-  /// backend reports for the same query: a flat walk lists the root first, and `.point`/`.marker` answer
-  /// with the single element they resolved, so the head of the response is the named element in
-  /// every case.
+  /// The frame of the element `query` names; a whole-tree query answers with the application root.
+  /// Narrowing to `.frameDict` optimises serialization only — the guest walks the whole tree either way.
   func frameFromTree(_ query: FBAccessibilityElementQuery) async throws -> CGRect {
     let response = try await describeTree(query, options: FBAccessibilityRequestOptions(keys: [.frameDict]))
     // Throws rather than substituting a zero rect, which a caller could not tell apart from an element
