@@ -182,7 +182,7 @@
 
  @return the receiver, for chaining.
  */
-- (nonnull FBProcessBuilder<StdInType, StdInType, NSData *> *)withStdErrInMemoryAsData;
+- (nonnull FBProcessBuilder<StdInType, StdOutType, NSData *> *)withStdErrInMemoryAsData;
 
 /**
  Reads stderr into memory, as a String.
