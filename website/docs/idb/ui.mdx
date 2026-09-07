@@ -20,7 +20,7 @@ Most of the group accepts a **target**, and there are three ways to name one:
 | A marker | a single string | The first element whose `--match-key` attribute *contains* this string |
 | The frontmost app | omitted | The whole foreground application. Only where the command's target is optional |
 
-Matching is a substring match, not equality, so `General` matches an element labelled `General Settings`.
+Matching is a substring match, not equality, so `General` matches an element labelled `General Settings`. It is case-sensitive unless `--ignore-case` is passed, on reads and on marker writes alike.
 
 Two integers are always read as a point. Quote a marker that looks like a coordinate pair:
 
@@ -109,9 +109,9 @@ idb ui describe com.apple.settings.general --match-key AXUniqueId
 | `--api {ax,axbridge}` | all three | Which backend serves the read. See [Accessibility](accessibility.mdx) |
 | `--format {default,nested,complete}` | all three | The output format. See [Accessibility](accessibility.mdx) |
 | `--nested` | all three | Deprecated alias for `--format nested` |
-| `--key KEY` | `describe-all`, `describe-point` | Report only this attribute; repeatable |
-| `--profile` | `describe-all`, `describe-point` | Collect timings and counts for the read, reported in the `complete` format. See [Accessibility](accessibility.mdx#reading-profile) |
-| `--collect-frame-coverage` | `describe-all`, `describe-point` | Collect screen-coverage ratios for the read's element frames, reported in the `complete` format |
+| `--key KEY` | all three | Report only this attribute; repeatable |
+| `--profile` | all three | Collect timings and counts for the read, reported in the `complete` format. See [Accessibility](accessibility.mdx#reading-profile) |
+| `--collect-frame-coverage` | all three | Collect screen-coverage ratios for the read's element frames, reported in the `complete` format |
 | `--match-key KEY` | `describe` | Attribute the marker is matched against, default `AXLabel` |
 | `--depth N` | `describe` | Maximum tree depth searched for the marker, default `10` |
 
@@ -143,6 +143,8 @@ idb ui tap General
 
 A marker is always resolved through the accessibility system; passing `--api hid` with one is rejected rather than silently ignored.
 
+A marker write aims at the matched element's frame centre without consulting `interactable` or `occluded_by`: it taps where the element is, not whether anything covers it. To check reachability first, read the element — `describe-point` on its centre, or `describe` with `--key interactable` — and only then act.
+
 `--duration` holds the touch down for a given time, and is only meaningful for a coordinate touch. An accessibility press is instantaneous, so `--duration` is rejected there rather than silently ignored.
 
 `--expected-value` guards the tap. The element must report that value for `--expected-key` (default `AXLabel`) or the tap is refused, leaving the screen where it was:
@@ -165,7 +167,7 @@ idb ui scroll up 'Notification Center'
 idb ui scroll left 201 286
 ```
 
-`DIRECTION` is one of `up`, `down`, `left`, `right` or `visible`. `visible` scrolls the target into view rather than in a direction. `--match-key` and `--depth` apply to a marker target.
+`DIRECTION` is one of `up`, `down`, `left`, `right` or `visible`. `visible` scrolls the target into view rather than in a direction. `--match-key`, `--depth` and `--ignore-case` apply to a marker target.
 
 ### `idb ui set-value TARGET --value VALUE`
 
@@ -176,7 +178,7 @@ idb ui set-value 'Search' --value 'hello world'
 idb ui set-value 201 286 --value 'hello world'
 ```
 
-Unlike `scroll`, a target is required: there is no sensible value to set on a whole application. `--match-key` and `--depth` apply to a marker target.
+Unlike `scroll`, a target is required: there is no sensible value to set on a whole application. `--match-key`, `--depth` and `--ignore-case` apply to a marker target.
 
 ## Synthesizing input
 
