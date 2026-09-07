@@ -161,13 +161,17 @@ extension FBSimulatorConfiguration {
         && runtime.name == configuration.os.name.rawValue
         && FBSimulatorConfiguration.runtime(runtime, supportsFamilyOf: configuration.device)
     }
-    if matchingRuntimes.isEmpty {
+    // Multiple builds of one runtime version can be installed side by side (a normal
+    // beta-cycle state); a version tie resolves to the newest build rather than failing.
+    // `max` is nil only for an empty collection, so the guard doubles as the no-match check.
+    guard
+      let newest = matchingRuntimes.max(by: { left, right in
+        (left.buildVersionString ?? "").compare(right.buildVersionString ?? "", options: .numeric) == .orderedAscending
+      })
+    else {
       throw FBSimulatorConfigurationError.noMatchingRuntime(available: "\(runtimes)")
     }
-    if matchingRuntimes.count > 1 {
-      throw FBSimulatorConfigurationError.ambiguousRuntime(matches: "\(matchingRuntimes)")
-    }
-    return matchingRuntimes[0]
+    return newest
   }
 
   func obtainDeviceType() throws -> SimDeviceType {

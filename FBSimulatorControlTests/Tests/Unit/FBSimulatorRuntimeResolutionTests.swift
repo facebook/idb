@@ -60,24 +60,14 @@ struct FBSimulatorRuntimeResolutionTests {
     }
   }
 
-  @Test func multipleBuildsOfTheSameVersionAreAmbiguous() throws {
-    // BUG: multiple installed builds of one runtime version (a normal beta-cycle state) should
-    // resolve to the newest build; instead resolution fails as ambiguous, making the version
-    // unusable. Flipped in the following commit.
-    do {
-      _ = try FBSimulatorConfiguration.resolveRuntime(
-        for: Self.configuration,
-        from: [
-          Self.makeRuntime(name: "iOS 27.0", build: "24A5370g"),
-          Self.makeRuntime(name: "iOS 27.0", build: "24A5423a"),
-          Self.makeRuntime(name: "iOS 27.0", build: "24A5390f"),
-        ])
-      Issue.record("Expected ambiguous resolution to throw")
-    } catch let error as FBSimulatorConfigurationError {
-      guard case .ambiguousRuntime = error else {
-        Issue.record("Expected ambiguousRuntime, got \(error)")
-        return
-      }
-    }
+  @Test func multipleBuildsOfTheSameVersionResolveToTheNewestBuild() throws {
+    let resolved = try FBSimulatorConfiguration.resolveRuntime(
+      for: Self.configuration,
+      from: [
+        Self.makeRuntime(name: "iOS 27.0", build: "24A5370g"),
+        Self.makeRuntime(name: "iOS 27.0", build: "24A5423a"),
+        Self.makeRuntime(name: "iOS 27.0", build: "24A5390f"),
+      ])
+    #expect(resolved.buildVersionString == "24A5423a")
   }
 }
