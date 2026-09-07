@@ -36,14 +36,29 @@ public struct BundledResources {
   /// the directory cannot be determined or -- when `mustExist` is `true` (the
   /// default) -- when nothing exists at that path. Pass `mustExist: false` to
   /// build the path without touching the filesystem.
+  ///
+  /// When the item does not exist in `Bundle.main`'s layout, every other loaded
+  /// bundle's resources are consulted, so hosts that embed the frameworks and
+  /// carry the resources in their own bundle (an XCTest bundle, for example)
+  /// resolve them too.
   public static func path(forItem name: String, mustExist: Bool = true) -> String? {
-    guard let directory = directoryPath() else {
+    if let directory = directoryPath() {
+      let itemPath = (directory as NSString).appendingPathComponent(name)
+      if !mustExist || FileManager.default.fileExists(atPath: itemPath) {
+        return itemPath
+      }
+    } else if !mustExist {
       return nil
     }
-    let itemPath = (directory as NSString).appendingPathComponent(name)
-    if mustExist && !FileManager.default.fileExists(atPath: itemPath) {
-      return nil
+    for bundle in Bundle.allBundles where bundle !== Bundle.main {
+      guard let resourcePath = bundle.resourcePath else {
+        continue
+      }
+      let itemPath = (resourcePath as NSString).appendingPathComponent(name)
+      if FileManager.default.fileExists(atPath: itemPath) {
+        return itemPath
+      }
     }
-    return itemPath
+    return nil
   }
 }
