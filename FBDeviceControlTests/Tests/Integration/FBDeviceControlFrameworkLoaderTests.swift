@@ -24,7 +24,8 @@ struct FBDeviceControlFrameworkLoaderTests {
   @Test
   func constructsDeviceSet() throws {
     let deviceSet = try FBDeviceSet(logger: FBControlCoreGlobalConfiguration.defaultLogger, delegate: nil, ecidFilter: nil)
-    #expect((deviceSet) != nil)
-    #expect((deviceSet.allDevices) != nil)
+    let devices = deviceSet.allDevices
+    #expect(devices.allSatisfy { !$0.udid.isEmpty })
+    #expect(Set(devices.map(\.udid)).count == devices.count)
   }
 }
