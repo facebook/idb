@@ -308,19 +308,10 @@ private let FBMPEGTSCRC32Table: [UInt32] = {
   return table
 }()
 
-func FBMPEGTS_CRC32(_ data: UnsafePointer<UInt8>, _ length: Int) -> UInt32 {
+func FBMPEGTS_CRC32<Bytes: Sequence>(_ bytes: Bytes) -> UInt32 where Bytes.Element == UInt8 {
   var crc: UInt32 = 0xFFFFFFFF
-  for i in 0..<length {
-    crc = (crc << 8) ^ FBMPEGTSCRC32Table[Int(((crc >> 24) ^ UInt32(data[i])) & 0xFF)]
-  }
-  return crc
-}
-
-/// CRC32 over `data[offset..<offset+length]`; same algorithm as `FBMPEGTS_CRC32`.
-private func FBMPEGTSCRC32(_ data: [UInt8], offset: Int, length: Int) -> UInt32 {
-  var crc: UInt32 = 0xFFFFFFFF
-  for i in 0..<length {
-    crc = (crc << 8) ^ FBMPEGTSCRC32Table[Int(((crc >> 24) ^ UInt32(data[offset + i])) & 0xFF)]
+  for byte in bytes {
+    crc = (crc << 8) ^ FBMPEGTSCRC32Table[Int(((crc >> 24) ^ UInt32(byte)) & 0xFF)]
   }
   return crc
 }
@@ -359,7 +350,7 @@ private struct FBMPEGTSPacketWriter {
     let sectionLength = UInt16(cursor - (section.lengthOffset + 2) + 4)
     packet[section.lengthOffset] = 0xB0 | UInt8((sectionLength >> 8) & 0x0F)
     packet[section.lengthOffset + 1] = UInt8(sectionLength & 0xFF)
-    write32(FBMPEGTSCRC32(packet, offset: section.startOffset, length: cursor - section.startOffset))
+    write32(FBMPEGTS_CRC32(packet[section.startOffset..<cursor]))
   }
 
   mutating func write8(_ value: UInt8) {

@@ -462,15 +462,12 @@ final class FBVideoStreamTests: XCTestCase {
   func testMPEGTSCRC32KnownVector() {
     // MPEG-2 CRC32 of "123456789" is a well-known test vector
     let data: [UInt8] = [UInt8(ascii: "1"), UInt8(ascii: "2"), UInt8(ascii: "3"), UInt8(ascii: "4"), UInt8(ascii: "5"), UInt8(ascii: "6"), UInt8(ascii: "7"), UInt8(ascii: "8"), UInt8(ascii: "9")]
-    let crc = FBMPEGTS_CRC32(data, data.count)
+    let crc = FBMPEGTS_CRC32(data)
     XCTAssertEqual(crc, 0x0376E6E7)
   }
 
   func testMPEGTSCRC32EmptyInput() {
-    let emptyData: [UInt8] = []
-    let crc = emptyData.withUnsafeBufferPointer { ptr in
-      FBMPEGTS_CRC32(ptr.baseAddress!, 0)
-    }
+    let crc = FBMPEGTS_CRC32([UInt8]())
     XCTAssertEqual(crc, 0xFFFFFFFF)
   }
 
