@@ -32,7 +32,7 @@ extension FBBundleDescriptorError: LocalizedError {
   }
 }
 
-public final class FBBundleDescriptor: NSObject, NSCopying, Sendable {
+public struct FBBundleDescriptor: Hashable, Sendable, CustomStringConvertible {
 
   public let name: String
   public let identifier: String
@@ -44,36 +44,17 @@ public final class FBBundleDescriptor: NSObject, NSCopying, Sendable {
     self.identifier = identifier
     self.path = path
     self.binary = binary
-    super.init()
   }
 
-  public class func bundle(fromPath path: String) throws -> FBBundleDescriptor {
+  public static func bundle(fromPath path: String) throws -> FBBundleDescriptor {
     return try bundleFromPath(path, fallbackIdentifier: false)
   }
 
-  public class func bundleWithFallbackIdentifier(fromPath path: String) throws -> FBBundleDescriptor {
+  public static func bundleWithFallbackIdentifier(fromPath path: String) throws -> FBBundleDescriptor {
     return try bundleFromPath(path, fallbackIdentifier: true)
   }
 
-  public func copy(with zone: NSZone? = nil) -> Any {
-    return self
-  }
-
-  public override func isEqual(_ object: Any?) -> Bool {
-    guard let other = object as? FBBundleDescriptor, other.isMember(of: type(of: self)) else {
-      return false
-    }
-    return other.name == name
-      && other.path == path
-      && other.identifier == identifier
-      && (other.binary?.isEqual(binary) ?? (binary == nil))
-  }
-
-  public override var hash: Int {
-    name.hash | path.hash | identifier.hash | (binary?.hash ?? 0)
-  }
-
-  public override var description: String {
+  public var description: String {
     "Name: \(name) | ID: \(identifier)"
   }
 
@@ -100,14 +81,14 @@ public final class FBBundleDescriptor: NSObject, NSCopying, Sendable {
     try await bridgeFBFutureVoid(codesign.signBundle(atPath: path))
   }
 
-  private class func binaryForBundle(_ bundle: Bundle) throws -> FBBinaryDescriptor {
+  private static func binaryForBundle(_ bundle: Bundle) throws -> FBBinaryDescriptor {
     guard let binaryPath = bundle.executablePath else {
       throw FBBundleDescriptorError.binaryPathUnavailable(bundlePath: bundle.bundlePath)
     }
     return try FBBinaryDescriptor.binary(withPath: binaryPath)
   }
 
-  private class func bundleNameForBundle(_ bundle: Bundle) -> String {
+  private static func bundleNameForBundle(_ bundle: Bundle) -> String {
     return (bundle.infoDictionary?["CFBundleName"] as? String)
       ?? (bundle.infoDictionary?["CFBundleExecutable"] as? String)
       ?? ((bundle.bundlePath as NSString).deletingPathExtension as NSString).lastPathComponent
@@ -120,7 +101,7 @@ public final class FBBundleDescriptor: NSObject, NSCopying, Sendable {
     return FBBundleDescriptor.interpolateRpathReplacements(forRPaths: rpaths)
   }
 
-  private class func interpolateRpathReplacements(forRPaths rpaths: [String]) -> [String: String] {
+  private static func interpolateRpathReplacements(forRPaths rpaths: [String]) -> [String: String] {
     guard let regex = try? NSRegularExpression(pattern: "(/Applications/(?:xcode|Xcode).*\\.app/Contents/Developer)(.*)", options: []) else {
       return [:]
     }
@@ -136,7 +117,7 @@ public final class FBBundleDescriptor: NSObject, NSCopying, Sendable {
     return replacements
   }
 
-  private class func bundleFromPath(_ path: String, fallbackIdentifier: Bool) throws -> FBBundleDescriptor {
+  private static func bundleFromPath(_ path: String, fallbackIdentifier: Bool) throws -> FBBundleDescriptor {
     guard let bundle = Bundle(path: path) else {
       throw FBBundleDescriptorError.bundleLoadFailed(path: path)
     }

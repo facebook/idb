@@ -9,7 +9,7 @@ import Foundation
 
 extension FBBundleDescriptor {
 
-  public class func findAppPath(fromDirectory directory: URL, logger: FBControlCoreLogger?) throws -> FBBundleDescriptor {
+  public static func findAppPath(fromDirectory directory: URL, logger: FBControlCoreLogger?) throws -> FBBundleDescriptor {
     let directoryEnumerator = FileManager.default.enumerator(
       at: directory,
       includingPropertiesForKeys: [.isDirectoryKey],
@@ -47,7 +47,7 @@ extension FBBundleDescriptor {
     return bundle
   }
 
-  public class func isApplication(atPath path: String) -> Bool {
+  public static func isApplication(atPath path: String) -> Bool {
     var isDirectory: ObjCBool = false
     return path.hasSuffix(".app")
       && FileManager.default.fileExists(atPath: path, isDirectory: &isDirectory)

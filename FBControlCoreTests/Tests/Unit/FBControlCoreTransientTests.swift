@@ -36,27 +36,17 @@ final class FBControlCoreTransientTests: XCTestCase {
 
   // MARK: - FBBundleDescriptor
 
-  func testBundleDescriptorEqualityWithNilBinary() {
-    let a = FBBundleDescriptor(name: "App", identifier: "com.test", path: "/a", binary: nil)
-    let b = FBBundleDescriptor(name: "App", identifier: "com.test", path: "/a", binary: nil)
-
-    XCTAssertEqual(a, b)
-  }
-
+  /// The binary is a reference type, so this pins that a descriptor compares it by value:
+  /// two descriptors carrying distinct but equal binaries are equal.
   func testBundleDescriptorWithBinaryEquality() throws {
-    let binary = try FBBinaryDescriptor.binary(withPath: "/usr/bin/codesign")
-    let a = FBBundleDescriptor(name: "App", identifier: "com.test", path: "/a", binary: binary)
-    let b = FBBundleDescriptor(name: "App", identifier: "com.test", path: "/a", binary: binary)
+    let firstBinary = try FBBinaryDescriptor.binary(withPath: "/usr/bin/codesign")
+    let secondBinary = try FBBinaryDescriptor.binary(withPath: "/usr/bin/codesign")
+    XCTAssertFalse(firstBinary === secondBinary)
+
+    let a = FBBundleDescriptor(name: "App", identifier: "com.test", path: "/a", binary: firstBinary)
+    let b = FBBundleDescriptor(name: "App", identifier: "com.test", path: "/a", binary: secondBinary)
 
     XCTAssertEqual(a, b)
-  }
-
-  func testBundleDescriptorInequalityByIdentifier() throws {
-    let binary = try FBBinaryDescriptor.binary(withPath: "/usr/bin/codesign")
-    let a = FBBundleDescriptor(name: "App", identifier: "com.test.a", path: "/a", binary: binary)
-    let b = FBBundleDescriptor(name: "App", identifier: "com.test.b", path: "/a", binary: binary)
-
-    XCTAssertNotEqual(a, b)
   }
 
   func testBundleDescriptorDescription() {

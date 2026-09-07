@@ -76,11 +76,12 @@ public struct FBInstalledApplication: Hashable, Sendable, CustomStringConvertibl
   /// The data container takes part in equality but not in the hash, so two applications
   /// that differ only by their container are unequal and share a hash bucket.
   public func hash(into hasher: inout Hasher) {
-    hasher.combine(bundle.hash ^ Int(installType.rawValue))
+    hasher.combine(bundle)
+    hasher.combine(installType)
   }
 
   public static func == (lhs: FBInstalledApplication, rhs: FBInstalledApplication) -> Bool {
-    lhs.bundle.isEqual(rhs.bundle)
+    lhs.bundle == rhs.bundle
       && lhs.installType == rhs.installType
       && lhs.dataContainer == rhs.dataContainer
   }
