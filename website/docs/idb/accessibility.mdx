@@ -222,7 +222,7 @@ On an axbridge backend, the tree is walked in-process by a guest reader and ship
 
 | Field | What it measures |
 |-------|------------------|
-| `traversal` | The traversal that produced this read — `view-hierarchy`, `semantic` or `single-fetch`. Read `mach_round_trips` against it: the same tree costs one round trip per process or one per node depending on the traversal. Which traversal a read gets is described in [How the axbridge backends fetch the tree](#how-the-axbridge-backends-fetch-the-tree) |
+| `traversal` | The traversal that produced this read — `view-hierarchy`, `semantic` or `single-fetch`. Read `mach_round_trips` against it: the same tree costs one round trip per process or one per node depending on the traversal. Which traversal a read gets is described in [How axbridge fetches the tree](#how-axbridge-fetches-the-tree) |
 | `mach_round_trips` | Round trips to the application's accessibility server |
 | `host_decode_duration_ms` | Decoding the guest's JSON response on the host |
 | `response_bytes` | Response size. Divided by `acquire_duration_ms`, it gives transport throughput |
