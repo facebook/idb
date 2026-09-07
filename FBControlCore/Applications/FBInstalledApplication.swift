@@ -44,65 +44,54 @@ public struct FBApplicationInstallInfoKey: RawRepresentable, Hashable, Sendable 
   public static let signerIdentity = FBApplicationInstallInfoKey(rawValue: "SignerIdentity")
 }
 
-@objc(FBInstalledApplication)
-public final class FBInstalledApplication: NSObject, NSCopying {
+public struct FBInstalledApplication: Hashable, Sendable, CustomStringConvertible {
 
-  @objc public let bundle: FBBundleDescriptor
-  @objc public let installType: FBApplicationInstallType
-  @objc public let dataContainer: String?
+  public let bundle: FBBundleDescriptor
+  public let installType: FBApplicationInstallType
+  public let dataContainer: String?
 
-  @objc public var installTypeString: String {
+  public var installTypeString: String {
     FBInstalledApplication.string(from: installType)
   }
 
-  @objc(installedApplicationWithBundle:installType:dataContainer:)
-  public class func installedApplication(withBundle bundle: FBBundleDescriptor, installType: FBApplicationInstallType, dataContainer: String?) -> FBInstalledApplication {
+  public static func installedApplication(withBundle bundle: FBBundleDescriptor, installType: FBApplicationInstallType, dataContainer: String?) -> FBInstalledApplication {
     FBInstalledApplication(bundle: bundle, installType: installType, dataContainer: dataContainer)
   }
 
-  @objc(installedApplicationWithBundle:installTypeString:signerIdentity:dataContainer:)
-  public class func installedApplication(withBundle bundle: FBBundleDescriptor, installTypeString: String?, signerIdentity: String?, dataContainer: String?) -> FBInstalledApplication {
-    let installType = FBInstalledApplication.installType(from: installTypeString, signerIdentity: signerIdentity)
-    return FBInstalledApplication(bundle: bundle, installType: installType, dataContainer: dataContainer)
+  public static func installedApplication(withBundle bundle: FBBundleDescriptor, installTypeString: String?, signerIdentity: String?, dataContainer: String?) -> FBInstalledApplication {
+    FBInstalledApplication(bundle: bundle, installTypeString: installTypeString, signerIdentity: signerIdentity, dataContainer: dataContainer)
   }
 
-  @objc
   public init(bundle: FBBundleDescriptor, installType: FBApplicationInstallType, dataContainer: String?) {
     self.bundle = bundle
     self.installType = installType
     self.dataContainer = dataContainer
-    super.init()
   }
 
-  @objc
-  public convenience init(bundle: FBBundleDescriptor, installTypeString: String?, signerIdentity: String?, dataContainer: String?) {
+  public init(bundle: FBBundleDescriptor, installTypeString: String?, signerIdentity: String?, dataContainer: String?) {
     let installType = FBInstalledApplication.installType(from: installTypeString, signerIdentity: signerIdentity)
     self.init(bundle: bundle, installType: installType, dataContainer: dataContainer)
   }
 
-  public override var hash: Int {
-    bundle.hash ^ Int(installType.rawValue)
+  /// The data container takes part in equality but not in the hash, so two applications
+  /// that differ only by their container are unequal and share a hash bucket.
+  public func hash(into hasher: inout Hasher) {
+    hasher.combine(bundle.hash ^ Int(installType.rawValue))
   }
 
-  public override func isEqual(_ object: Any?) -> Bool {
-    guard let other = object as? FBInstalledApplication else { return false }
-    return bundle.isEqual(other.bundle)
-      && installType == other.installType
-      && dataContainer == other.dataContainer
+  public static func == (lhs: FBInstalledApplication, rhs: FBInstalledApplication) -> Bool {
+    lhs.bundle.isEqual(rhs.bundle)
+      && lhs.installType == rhs.installType
+      && lhs.dataContainer == rhs.dataContainer
   }
 
-  public override var description: String {
+  public var description: String {
     "Bundle \(bundle.description) | Install Type \(installTypeString) | Container \(dataContainer ?? "nil")"
-  }
-
-  public func copy(with zone: NSZone? = nil) -> Any {
-    self
   }
 
   // MARK: - Install Type Mapping
 
-  @objc(stringFromApplicationInstallType:)
-  public class func string(from installType: FBApplicationInstallType) -> String {
+  public static func string(from installType: FBApplicationInstallType) -> String {
     switch installType {
     case .user: return installTypeStringUser
     case .userDevelopment: return installTypeStringUserDevelopment
@@ -114,8 +103,7 @@ public final class FBInstalledApplication: NSObject, NSCopying {
     }
   }
 
-  @objc(installTypeFromString:signerIdentity:)
-  public class func installType(from installTypeString: String?, signerIdentity: String?) -> FBApplicationInstallType {
+  public static func installType(from installTypeString: String?, signerIdentity: String?) -> FBApplicationInstallType {
     guard let installTypeString = installTypeString?.lowercased() else {
       return .unknown
     }

@@ -49,7 +49,7 @@ final class FBMacDeviceTests: XCTestCase {
     }
 
     do {
-      installedApp = try device.installApplication(withPath: destPath).await(withTimeout: 5)
+      installedApp = try device.installApplication(withPath: destPath)
     } catch {
       preconditionFailure("Failed to install dummy app: \(error)")
     }
@@ -91,10 +91,9 @@ final class FBMacDeviceTests: XCTestCase {
   }
 
   func testInstallNotExistedApplicationAtPath() {
-    let installTask = device.installApplication(withPath: "/not/existed/path")
-    XCTAssertNotNil(
-      installTask.error,
-      "Installing not existed app should fail immidiately"
+    XCTAssertThrowsError(
+      try device.installApplication(withPath: "/not/existed/path"),
+      "Installing an application from a path that does not exist should throw"
     )
   }
 
