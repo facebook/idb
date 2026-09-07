@@ -442,6 +442,7 @@ class AccessibilityScrollCommand(ClientCommand):
         parser.add_argument(
             "--depth", type=int, default=10, help="Maximum tree depth to search"
         )
+        _add_ignore_case_arg(parser, subject="the marker")
 
     async def run_with_client(self, args: Namespace, client: Client) -> None:
         target = _parse_target(
@@ -452,6 +453,7 @@ class AccessibilityScrollCommand(ClientCommand):
         await client.accessibility_scroll(
             target=target,
             direction=AccessibilityScrollDirection[args.direction.upper()],
+            ignore_case=args.ignore_case,
         )
 
 
@@ -481,6 +483,7 @@ class AccessibilitySetValueCommand(ClientCommand):
         parser.add_argument(
             "--depth", type=int, default=10, help="Maximum tree depth to search"
         )
+        _add_ignore_case_arg(parser, subject="the marker")
 
     async def run_with_client(self, args: Namespace, client: Client) -> None:
         target = _parse_target(
@@ -490,7 +493,9 @@ class AccessibilitySetValueCommand(ClientCommand):
         )
         if target is None:
             raise IdbException("set-value requires 'x y' coordinates or a marker")
-        await client.accessibility_set_value(target=target, value=args.value)
+        await client.accessibility_set_value(
+            target=target, value=args.value, ignore_case=args.ignore_case
+        )
 
 
 class AccessibilityDragAndDropCommand(ClientCommand):
@@ -564,6 +569,7 @@ class AccessibilityDragAndDropCommand(ClientCommand):
             "10). A delta at or above the distance dragged is rejected: it moves "
             "in one jump, which reads as a flick.",
         )
+        _add_ignore_case_arg(parser, subject="the markers")
 
     async def run_with_client(self, args: Namespace, client: Client) -> None:
         source_tokens, destination_tokens = _split_endpoints(args.endpoints)
@@ -588,4 +594,5 @@ class AccessibilityDragAndDropCommand(ClientCommand):
                 release_duration=args.release_duration,
                 delta=args.delta,
             ),
+            ignore_case=args.ignore_case,
         )

@@ -82,6 +82,12 @@ class TapCommand(ClientCommand):
             default="AXLabel",
             help="Accessibility key to check --expected-value against",
         )
+        parser.add_argument(
+            "--ignore-case",
+            action="store_true",
+            default=False,
+            help="Compare the marker case-insensitively",
+        )
         super().add_parser_arguments(parser)
 
     def is_coordinate_hid_tap(self, args: Namespace) -> bool:
@@ -146,4 +152,5 @@ class TapCommand(ClientCommand):
             target=ax_target,
             expected_value=args.expected_value,
             expected_key=_SEARCHABLE_KEY_NAMES[args.expected_key],
+            ignore_case=args.ignore_case,
         )

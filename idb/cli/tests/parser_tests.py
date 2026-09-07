@@ -979,6 +979,7 @@ class TestParser(TestCase):
             target=AccessibilityPoint(x=10, y=20),
             expected_value="Ready",
             expected_key=AccessibilitySearchableKey.VALUE,
+            ignore_case=False,
         )
 
     async def test_tap_ax_point(self) -> None:
@@ -988,6 +989,7 @@ class TestParser(TestCase):
             target=AccessibilityPoint(x=10, y=20),
             expected_value=None,
             expected_key=AccessibilitySearchableKey.LABEL,
+            ignore_case=False,
         )
 
     async def test_tap_marker(self) -> None:
@@ -1001,6 +1003,21 @@ class TestParser(TestCase):
             ),
             expected_value=None,
             expected_key=AccessibilitySearchableKey.LABEL,
+            ignore_case=False,
+        )
+
+    async def test_tap_marker_with_ignore_case(self) -> None:
+        self.client_mock.accessibility_tap = AsyncMock(return_value=[])
+        await cli_main(cmd_input=["ui", "tap", "login", "--ignore-case"])
+        self.client_mock.accessibility_tap.assert_called_once_with(
+            target=AccessibilityMarker(
+                value="login",
+                match_key=AccessibilitySearchableKey.LABEL,
+                depth=10,
+            ),
+            expected_value=None,
+            expected_key=AccessibilitySearchableKey.LABEL,
+            ignore_case=True,
         )
 
     async def test_tap_marker_expected_value(self) -> None:
@@ -1024,6 +1041,7 @@ class TestParser(TestCase):
             ),
             expected_value="Ready",
             expected_key=AccessibilitySearchableKey.VALUE,
+            ignore_case=False,
         )
 
     async def test_tap_marker_rejects_api_hid(self) -> None:
@@ -1056,6 +1074,7 @@ class TestParser(TestCase):
         self.client_mock.accessibility_scroll.assert_called_once_with(
             target=None,
             direction=AccessibilityScrollDirection.DOWN,
+            ignore_case=False,
         )
 
     async def test_scroll_marker(self) -> None:
@@ -1068,6 +1087,20 @@ class TestParser(TestCase):
                 depth=10,
             ),
             direction=AccessibilityScrollDirection.UP,
+            ignore_case=False,
+        )
+
+    async def test_scroll_marker_with_ignore_case(self) -> None:
+        self.client_mock.accessibility_scroll = AsyncMock(return_value=[])
+        await cli_main(cmd_input=["ui", "scroll", "up", "list", "--ignore-case"])
+        self.client_mock.accessibility_scroll.assert_called_once_with(
+            target=AccessibilityMarker(
+                value="list",
+                match_key=AccessibilitySearchableKey.LABEL,
+                depth=10,
+            ),
+            direction=AccessibilityScrollDirection.UP,
+            ignore_case=True,
         )
 
     async def test_scroll_point(self) -> None:
@@ -1076,6 +1109,7 @@ class TestParser(TestCase):
         self.client_mock.accessibility_scroll.assert_called_once_with(
             target=AccessibilityPoint(x=100, y=200),
             direction=AccessibilityScrollDirection.DOWN,
+            ignore_case=False,
         )
 
     async def test_scroll_too_many_tokens(self) -> None:
@@ -1096,6 +1130,22 @@ class TestParser(TestCase):
                 depth=10,
             ),
             value="hello",
+            ignore_case=False,
+        )
+
+    async def test_set_value_marker_with_ignore_case(self) -> None:
+        self.client_mock.accessibility_set_value = AsyncMock(return_value=[])
+        await cli_main(
+            cmd_input=["ui", "set-value", "field", "--value", "hello", "--ignore-case"]
+        )
+        self.client_mock.accessibility_set_value.assert_called_once_with(
+            target=AccessibilityMarker(
+                value="field",
+                match_key=AccessibilitySearchableKey.LABEL,
+                depth=10,
+            ),
+            value="hello",
+            ignore_case=True,
         )
 
     async def test_drag_and_drop_points(self) -> None:
@@ -1107,6 +1157,7 @@ class TestParser(TestCase):
             options=AccessibilityDragOptions(
                 press_duration=None, duration=None, release_duration=None, delta=None
             ),
+            ignore_case=False,
         )
 
     async def test_drag_and_drop_markers(self) -> None:
@@ -1138,6 +1189,29 @@ class TestParser(TestCase):
             options=AccessibilityDragOptions(
                 press_duration=None, duration=None, release_duration=None, delta=None
             ),
+            ignore_case=False,
+        )
+
+    async def test_drag_and_drop_markers_with_ignore_case(self) -> None:
+        self.client_mock.accessibility_drag = AsyncMock(return_value=[])
+        await cli_main(
+            cmd_input=["ui", "drag-and-drop", "photo", "album", "--ignore-case"]
+        )
+        self.client_mock.accessibility_drag.assert_called_once_with(
+            source=AccessibilityMarker(
+                value="photo",
+                match_key=AccessibilitySearchableKey.LABEL,
+                depth=10,
+            ),
+            destination=AccessibilityMarker(
+                value="album",
+                match_key=AccessibilitySearchableKey.LABEL,
+                depth=10,
+            ),
+            options=AccessibilityDragOptions(
+                press_duration=None, duration=None, release_duration=None, delta=None
+            ),
+            ignore_case=True,
         )
 
     async def test_drag_and_drop_destination_overrides_the_source_key(self) -> None:
@@ -1170,6 +1244,7 @@ class TestParser(TestCase):
             options=AccessibilityDragOptions(
                 press_duration=None, duration=None, release_duration=None, delta=None
             ),
+            ignore_case=False,
         )
 
     async def test_drag_and_drop_timings(self) -> None:
@@ -1198,6 +1273,7 @@ class TestParser(TestCase):
             options=AccessibilityDragOptions(
                 press_duration=1.0, duration=2.0, release_duration=0.25, delta=5.0
             ),
+            ignore_case=False,
         )
 
     async def test_drag_and_drop_point_to_marker(self) -> None:
@@ -1214,6 +1290,7 @@ class TestParser(TestCase):
             options=AccessibilityDragOptions(
                 press_duration=None, duration=None, release_duration=None, delta=None
             ),
+            ignore_case=False,
         )
 
     async def test_drag_and_drop_marker_to_point(self) -> None:
@@ -1231,6 +1308,7 @@ class TestParser(TestCase):
             options=AccessibilityDragOptions(
                 press_duration=None, duration=None, release_duration=None, delta=None
             ),
+            ignore_case=False,
         )
 
     async def test_drag_and_drop_all_numeric_endpoints_read_the_source_greedily(
@@ -1252,6 +1330,7 @@ class TestParser(TestCase):
             options=AccessibilityDragOptions(
                 press_duration=None, duration=None, release_duration=None, delta=None
             ),
+            ignore_case=False,
         )
 
     async def test_drag_and_drop_rejects_a_bare_coordinate_pair(self) -> None:
