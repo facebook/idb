@@ -142,8 +142,7 @@ targets:
     preBuildScripts:
       - name: Generate BuildInfo.swift
         # Stamp build date/time into a Swift file inside DERIVED_FILE_DIR so that
-        # main.swift can reference `kBuildDate` / `kBuildTime`. Mirrors the
-        # `:BuildInfo` genrule in fbobjc/Tools/idb/defs.bzl.
+        # main.swift can reference `kBuildDate` / `kBuildTime`.
         script: |
           set -e
           mkdir -p "$DERIVED_FILE_DIR"
@@ -232,8 +231,7 @@ targets:
     dependencies:
       - sdk: Foundation.framework
 
-  # The shared REPL Swift compiler (Buck: fbsource//fbobjc/Tools/idb:ReplCompiler).
-  # Generates the wrapped source and drives swiftc; linked by idb-repl to compile
+  # The shared REPL Swift compiler. Generates the wrapped source and drives swiftc; linked by idb-repl to compile
   # injected code client-side. Foundation-only.
   ReplCompiler:
     type: framework
@@ -258,8 +256,7 @@ targets:
     dependencies:
       - sdk: Foundation.framework
 
-  # The `idb-repl` CLI (Buck: fbsource//fbobjc/Tools/idb:idb-repl). A small gRPC
-  # client that talks to a companion to drive a test/simulator REPL. It links the
+  # The `idb-repl` CLI. A small gRPC client that talks to a companion to drive a test/simulator REPL. It links the
   # IDBGRPCSwift static archive (which bundles the gRPC/NIO/protobuf closure) and
   # ArgumentParser; like idb_companion it must NOT depend on the gRPC packages
   # directly (those symbols come from IDBGRPCSwift, and a second copy would be a
