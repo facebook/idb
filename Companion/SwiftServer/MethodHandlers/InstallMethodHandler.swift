@@ -67,13 +67,6 @@ struct InstallMethodHandler: @unchecked Sendable {
     }
 
     var linkToBundle: FBDsymInstallLinkToBundle?
-
-    // Deprecated `bundleID` form of `linkDsymToBundle`, kept for older clients.
-    if case let .bundleID(id) = request.value {
-      linkToBundle = .init(bundleID: id, bundleType: .app)
-      request = try await requestStream.requiredNext
-    }
-
     if case let .linkDsymToBundle(link) = request.value {
       linkToBundle = readLinkBundleToDsym(from: link)
       request = try await requestStream.requiredNext
