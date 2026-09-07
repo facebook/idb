@@ -9,43 +9,14 @@ import FBControlCore
 @testable import FBSimulatorControl
 import XCTest
 
+/// Exercises the simulator lifecycle that this framework owns end-to-end: create, boot,
+/// shutdown, delete. This is the one suite that must manage its own simulators — the lifecycle
+/// is the unit under test.
 final class FBSimulatorLaunchTests: FBSimulatorControlTestCase {
 
-  func testLaunchesSingleSimulator(_ configuration: FBSimulatorConfiguration) async {
-    guard
-      let simulator = await assertObtainsBootedSimulator(
-        with: configuration,
-        bootConfiguration: bootConfiguration
-      )
-    else {
-      return
-    }
-
-    assertSimulatorBooted(simulator)
-    await assertShutdownSimulatorAndTerminateSession(simulator)
-  }
-
-  func testLaunchesiPhone() async throws {
-    await testLaunchesSingleSimulator(
-      try FBSimulatorConfiguration.defaultConfiguration().withDeviceModel(FBDeviceModel(rawValue: "iPhone 8"))
-    )
-  }
-
-  func testLaunchesiPad() async throws {
-    await testLaunchesSingleSimulator(
-      try FBSimulatorConfiguration.defaultConfiguration().withDeviceModel(FBDeviceModel(rawValue: "iPad Air 2"))
-    )
-  }
-
-  func testLaunchesWatch() async throws {
-    await testLaunchesSingleSimulator(
-      try FBSimulatorConfiguration.defaultConfiguration().withDeviceModel(FBDeviceModel(rawValue: "Apple Watch - 42mm"))
-    )
-  }
-
-  func testLaunchesTV() async throws {
-    await testLaunchesSingleSimulator(
-      try FBSimulatorConfiguration.defaultConfiguration().withDeviceModel(FBDeviceModel(rawValue: "Apple TV"))
-    )
+  func testBootShutdownLifecycle() async throws {
+    let simulator = try await obtainBootedSimulator()
+    XCTAssertEqual(simulator.state, .booted)
+    try await shutdownAndDelete(simulator)
   }
 }

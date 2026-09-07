@@ -13,20 +13,9 @@ import XCTest
 final class FBSimulatorLaunchCtlTests: FBSimulatorControlTestCase {
 
   func testListsServicesViaCoreSimulatorSpawn() async throws {
-    guard
-      let simulator = await assertObtainsBootedSimulator(
-        with: try FBSimulatorConfiguration.defaultConfiguration().withDeviceModel(FBDeviceModel(rawValue: "iPhone 8")),
-        bootConfiguration: bootConfiguration
-      )
-    else {
-      return
-    }
-    do {
-      let services = try await simulator.listServices()
-      XCTAssertFalse(services.isEmpty, "A booted simulator should report launchd services")
-    } catch {
-      XCTFail("launchctl list failed via CoreSimulator spawn: \(error)")
-    }
-    await assertShutdownSimulatorAndTerminateSession(simulator)
+    let simulator = try await obtainBootedSimulator()
+    let services = try await simulator.listServices()
+    XCTAssertFalse(services.isEmpty, "A booted simulator should report launchd services")
+    try await shutdownAndDelete(simulator)
   }
 }

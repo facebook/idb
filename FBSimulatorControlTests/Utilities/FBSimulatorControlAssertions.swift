@@ -9,130 +9,43 @@ import FBControlCore
 @testable import FBSimulatorControl
 import XCTest
 
-// MARK: - XCTestCase Assertion Helpers
-
-extension XCTestCase {
-
-  func assertShutdownSimulatorAndTerminateSession(_ simulator: FBSimulator) async {
-    do {
-      try await simulator.shutdown()
-    } catch {
-      XCTFail("Failed to shutdown simulator: \(error)")
-    }
-
-    do {
-      try await simulator.erase()
-    } catch {
-      XCTFail("Failed to erase simulator: \(error)")
-    }
-    assertSimulatorShutdown(simulator)
-  }
-
-  func assertNeedle(_ needle: String, inHaystack haystack: String) {
-    XCTAssertNotNil(needle)
-    XCTAssertNotNil(haystack)
-    if haystack.range(of: needle) != nil {
-      return
-    }
-    XCTFail("needle '\(needle)' to be contained in haystack '\(haystack)'")
-  }
-
-  func assertSimulatorBooted(_ simulator: FBSimulator) {
-    XCTAssertEqual(simulator.state, .booted)
-  }
-
-  func assertSimulatorShutdown(_ simulator: FBSimulator) {
-    XCTAssertEqual(simulator.state, .shutdown)
-  }
-
-  func assertSimulator(_ simulator: FBSimulator, isRunningApplicationFromConfiguration launchConfiguration: FBApplicationLaunchConfiguration) async {
-    do {
-      let processID = try await simulator.processID(forBundleID: launchConfiguration.bundleID)
-      XCTAssertGreaterThan(processID, 0)
-    } catch {
-      XCTFail("Failed to get process ID: \(error)")
-    }
-  }
-}
-
-// MARK: - FBSimulatorControlTestCase Assertion Helpers
-
 extension FBSimulatorControlTestCase {
 
-  func assertObtainsSimulatorWithConfiguration(_ configuration: FBSimulatorConfiguration) async throws -> FBSimulator {
+  /// Creates a simulator for the given configuration.
+  ///
+  /// An unsatisfiable configuration — no installed runtime supports it — skips the test: that is
+  /// a property of the host, not the code under test. Every other failure is thrown so the test
+  /// fails; acquisition problems must never silently pass.
+  func obtainSimulator(with configuration: FBSimulatorConfiguration) async throws -> FBSimulator {
     do {
       try configuration.checkRuntimeRequirements()
     } catch {
-      struct RuntimeRequirementsUnmet: Error, LocalizedError {
-        let message: String
-        var errorDescription: String? { message }
-      }
-      throw RuntimeRequirementsUnmet(message: "Configuration \(configuration) does not meet the runtime requirements with error \(error)")
+      throw XCTSkip("The host cannot create a simulator for \(configuration): \(error)")
     }
     return try await control.set.createSimulator(with: configuration)
   }
 
-  func assertObtainsSimulator() async -> FBSimulator? {
-    return try? await assertObtainsSimulatorWithConfiguration(simulatorConfiguration)
-  }
-
-  func assertObtainsBootedSimulator() async -> FBSimulator? {
-    return await assertObtainsBootedSimulator(with: simulatorConfiguration, bootConfiguration: bootConfiguration)
-  }
-
-  func assertObtainsBootedSimulator(withInstalledApplication application: FBBundleDescriptor) async -> FBSimulator? {
-    guard let simulator = await assertObtainsBootedSimulator() else { return nil }
-    do {
-      _ = try await simulator.installApplication(atPath: application.path)
-    } catch {
-      XCTFail("Failed to install application: \(error)")
-      return nil
-    }
+  func obtainBootedSimulator(
+    with configuration: FBSimulatorConfiguration,
+    bootConfiguration: FBSimulatorBootConfiguration
+  ) async throws -> FBSimulator {
+    let simulator = try await obtainSimulator(with: configuration)
+    try await simulator.boot(bootConfiguration)
+    XCTAssertEqual(simulator.state, .booted)
     return simulator
   }
 
-  func assertObtainsBootedSimulator(with configuration: FBSimulatorConfiguration, bootConfiguration: FBSimulatorBootConfiguration) async -> FBSimulator? {
-    guard let simulator = try? await assertObtainsSimulatorWithConfiguration(configuration) else { return nil }
-    do {
-      try await simulator.boot(bootConfiguration)
-    } catch {
-      XCTFail("Failed to boot simulator: \(error)")
-      return nil
-    }
-    return simulator
+  /// Boots a simulator with the test case's default configuration.
+  func obtainBootedSimulator() async throws -> FBSimulator {
+    try await obtainBootedSimulator(with: simulatorConfiguration, bootConfiguration: bootConfiguration)
   }
 
-  func assertSimulator(_ simulator: FBSimulator, installs application: FBBundleDescriptor) async -> FBSimulator {
-    do {
-      _ = try await simulator.installApplication(atPath: application.path)
-    } catch {
-      XCTFail("Failed to install application: \(error)")
-    }
-    return simulator
-  }
-
-  func assertSimulator(_ simulator: FBSimulator, launches configuration: FBApplicationLaunchConfiguration) async -> FBSimulator {
-    do {
-      _ = try await simulator.launchApplication(configuration)
-    } catch {
-      XCTFail("Failed to launch application: \(error)")
-    }
-
-    await assertSimulator(simulator, isRunningApplicationFromConfiguration: configuration)
-    assertSimulatorBooted(simulator)
-
-    do {
-      _ = try await simulator.launchApplication(configuration)
-      XCTFail("Second launch should have failed")
-    } catch {
-      // Expected
-    }
-
-    return simulator
-  }
-
-  func assertSimulator(withConfiguration simulatorConfiguration: FBSimulatorConfiguration, boots bootConfiguration: FBSimulatorBootConfiguration, thenLaunchesApplication launchConfiguration: FBApplicationLaunchConfiguration) async -> FBSimulator? {
-    guard let simulator = await assertObtainsBootedSimulator(with: simulatorConfiguration, bootConfiguration: bootConfiguration) else { return nil }
-    return await assertSimulator(simulator, launches: launchConfiguration)
+  /// Shuts the simulator down and deletes it from the set. Deletion (not erasure) is the
+  /// right cleanup for suite-created simulators: erased devices linger in the device set and
+  /// report a transient `creating` state while their contents are rebuilt.
+  func shutdownAndDelete(_ simulator: FBSimulator) async throws {
+    try await simulator.shutdown()
+    XCTAssertEqual(simulator.state, .shutdown)
+    try await control.set.delete(simulator)
   }
 }
