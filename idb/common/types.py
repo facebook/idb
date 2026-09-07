@@ -1022,6 +1022,7 @@ class Client(ABC):
         target: AccessibilityTarget,
         expected_value: str | None = None,
         expected_key: AccessibilitySearchableKey = AccessibilitySearchableKey.LABEL,
+        ignore_case: bool = False,
     ) -> None:
         pass
 
@@ -1030,6 +1031,7 @@ class Client(ABC):
         self,
         target: AccessibilityTarget | None,
         direction: AccessibilityScrollDirection,
+        ignore_case: bool = False,
     ) -> None:
         pass
 
@@ -1038,6 +1040,7 @@ class Client(ABC):
         self,
         target: AccessibilityTarget,
         value: str,
+        ignore_case: bool = False,
     ) -> None:
         pass
 
@@ -1047,6 +1050,7 @@ class Client(ABC):
         source: AccessibilityTarget,
         destination: AccessibilityTarget,
         options: AccessibilityDragOptions,
+        ignore_case: bool = False,
     ) -> None:
         pass
 

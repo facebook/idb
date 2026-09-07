@@ -356,9 +356,7 @@ message AccessibilityInfoRequest {
   // reports all of them and finding none is an empty result rather than an
   // error. Setting both marker and match is INVALID_ARGUMENT.
   string match = 11;
-  // Compare match — and, on a marker read, marker — case-insensitively. Read
-  // path only: marker resolution for a tap, scroll, set-value or drag stays
-  // case-sensitive.
+  // Compare match — and, on a marker read, marker — case-insensitively.
   bool ignore_case = 12;
   Filter filter = 13;
 }
@@ -386,6 +384,10 @@ message AccessibilityActionRequest {
   }
   SearchableKey match_key = 3;
   uint32 depth = 4;
+  // Compare a marker — the source and, on a drag, the destination —
+  // case-insensitively. Absent on an older client, which matches
+  // case-sensitively as before.
+  bool ignore_case = 9;
 
   message Tap {
     bool check_expected_value = 1;

@@ -523,6 +523,7 @@ class Client(ClientBase):
         target: AccessibilityTarget,
         expected_value: str | None = None,
         expected_key: AccessibilitySearchableKey = AccessibilitySearchableKey.LABEL,
+        ignore_case: bool = False,
     ) -> None:
         request = AccessibilityActionRequest(
             tap=AccessibilityActionRequest.Tap(
@@ -538,6 +539,7 @@ class Client(ClientBase):
         elif isinstance(target, AccessibilityPoint):
             request.point.x = target.x
             request.point.y = target.y
+        request.ignore_case = ignore_case
         await self.stub.accessibility_action(request)
 
     @log_and_handle_exceptions("accessibility_scroll")
@@ -545,6 +547,7 @@ class Client(ClientBase):
         self,
         target: AccessibilityTarget | None,
         direction: AccessibilityScrollDirection,
+        ignore_case: bool = False,
     ) -> None:
         request = AccessibilityActionRequest(
             scroll=AccessibilityActionRequest.Scroll(direction=direction.value),
@@ -556,6 +559,7 @@ class Client(ClientBase):
         elif isinstance(target, AccessibilityPoint):
             request.point.x = target.x
             request.point.y = target.y
+        request.ignore_case = ignore_case
         await self.stub.accessibility_action(request)
 
     @log_and_handle_exceptions("accessibility_set_value")
@@ -563,6 +567,7 @@ class Client(ClientBase):
         self,
         target: AccessibilityTarget,
         value: str,
+        ignore_case: bool = False,
     ) -> None:
         request = AccessibilityActionRequest(
             set_value=AccessibilityActionRequest.SetValue(value=value),
@@ -574,6 +579,7 @@ class Client(ClientBase):
         elif isinstance(target, AccessibilityPoint):
             request.point.x = target.x
             request.point.y = target.y
+        request.ignore_case = ignore_case
         await self.stub.accessibility_action(request)
 
     @log_and_handle_exceptions("accessibility_drag")
@@ -582,6 +588,7 @@ class Client(ClientBase):
         source: AccessibilityTarget,
         destination: AccessibilityTarget,
         options: AccessibilityDragOptions,
+        ignore_case: bool = False,
     ) -> None:
         drag = AccessibilityActionRequest.Drag(
             press_duration=options.press_duration or 0.0,
@@ -604,6 +611,7 @@ class Client(ClientBase):
         elif isinstance(source, AccessibilityPoint):
             request.point.x = source.x
             request.point.y = source.y
+        request.ignore_case = ignore_case
         await self.stub.accessibility_action(request)
 
     @log_and_handle_exceptions("add_media")
