@@ -104,7 +104,10 @@ final class FBSimulatorDTUHIDTransportTests: XCTestCase {
     xpc_connection_set_event_handler(connection) { _ in }
     xpc_connection_resume(connection)
     let transport = FBSimulatorDTUHIDTransport(
-      connection: connection, mainScreenSize: CGSize(width: 100, height: 200), mainScreenScale: 2.0)
+      connection: connection,
+      mainScreenSize: CGSize(width: 100, height: 200),
+      mainScreenScale: 2.0,
+      productFamily: .familyiPhone)
     defer { transport.disconnect() }
 
     // Apple Pay has no single HID usage (it is a double side-button press), so it stays unimplemented.
@@ -169,7 +172,10 @@ final class FBSimulatorDTUHIDTransportTests: XCTestCase {
     xpc_connection_set_event_handler(connection) { _ in }
     xpc_connection_resume(connection)
     let transport = FBSimulatorDTUHIDTransport(
-      connection: connection, mainScreenSize: CGSize(width: 100, height: 200), mainScreenScale: 2.0)
+      connection: connection,
+      mainScreenSize: CGSize(width: 100, height: 200),
+      mainScreenScale: 2.0,
+      productFamily: .familyiPhone)
     defer { transport.disconnect() }
 
     let message = try transport.encode(messageType: "Probe", payload: Probe(value: 7))

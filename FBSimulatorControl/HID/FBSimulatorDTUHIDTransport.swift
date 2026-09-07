@@ -79,6 +79,7 @@ actor FBSimulatorDTUHIDTransport {
   nonisolated(unsafe) private let connection: xpc_connection_t
   private let mainScreenSize: CGSize
   private let mainScreenScale: Float
+  private let productFamily: FBControlCoreProductFamily
   private var contact = DigitizerContactTracker()
   private var twoFingerContact = DigitizerContactTracker()
 
@@ -121,7 +122,8 @@ actor FBSimulatorDTUHIDTransport {
     let transport = FBSimulatorDTUHIDTransport(
       connection: connection,
       mainScreenSize: simulator.device.deviceType.mainScreenSize,
-      mainScreenScale: simulator.device.deviceType.mainScreenScale)
+      mainScreenScale: simulator.device.deviceType.mainScreenScale,
+      productFamily: simulator.productFamily)
     do {
       try await transport.primeThenWait(nanoseconds: DTUHIDTiming.activationNanos)
     } catch {
@@ -133,10 +135,16 @@ actor FBSimulatorDTUHIDTransport {
     return transport
   }
 
-  init(connection: xpc_connection_t, mainScreenSize: CGSize, mainScreenScale: Float) {
+  init(
+    connection: xpc_connection_t,
+    mainScreenSize: CGSize,
+    mainScreenScale: Float,
+    productFamily: FBControlCoreProductFamily
+  ) {
     self.connection = connection
     self.mainScreenSize = mainScreenSize
     self.mainScreenScale = mainScreenScale
+    self.productFamily = productFamily
   }
 
   private static func symbol<T>(_ handle: UnsafeMutableRawPointer, _ name: String, as type: T.Type) -> T? {

@@ -10,6 +10,13 @@
 /// transport's wire format. Each carries a single canonical `name` — the source of truth for the
 /// string forms used in event descriptions and (upper-cased) in CLI arguments.
 
+public extension FBControlCoreProductFamily {
+
+  var hasTouchscreen: Bool {
+    self != .familyAppleTV
+  }
+}
+
 /// The direction of a HID event.
 public enum FBSimulatorHIDDirection: Int32, Sendable, CaseIterable {
   case down = 1

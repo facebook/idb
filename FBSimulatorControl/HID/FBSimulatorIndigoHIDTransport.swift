@@ -76,7 +76,7 @@ actor FBSimulatorIndigoHIDTransport {
   func sendTouch(
     direction: FBSimulatorHIDDirection, x: Double, y: Double, edge: FBSimulatorHIDEdge
   ) async throws {
-    if productFamily == .familyAppleTV {
+    guard productFamily.hasTouchscreen else {
       throw FBSimulatorHIDError.touchUnsupportedOnAppleTV
     }
     try await indigoClient.send(
@@ -85,7 +85,7 @@ actor FBSimulatorIndigoHIDTransport {
   }
 
   func sendTwoFingerTouch(direction: FBSimulatorHIDDirection, finger1: CGPoint, finger2: CGPoint) async throws {
-    if productFamily == .familyAppleTV {
+    guard productFamily.hasTouchscreen else {
       throw FBSimulatorHIDError.touchUnsupportedOnAppleTV
     }
     try await indigoClient.send(
