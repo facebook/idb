@@ -387,6 +387,11 @@ function build_shims() {
   build_shim Repl-macOS macosx Shims/Repl/Repl.xcodeproj
 }
 
+function build_fbsimulatorcontrol_resources() {
+  build_shims
+  build_simulator_framework_bridge
+}
+
 function build_simulator_framework_bridge() {
   # An iOS-simulator command-line executable, spawned by idb_companion inside the
   # simulator to drive privacy/services state and the REPL socket.
@@ -547,8 +552,7 @@ function build_distribution() {
 
 function build_all() {
   # build_idb_companion already builds frameworks first
-  build_shims
-  build_simulator_framework_bridge
+  build_fbsimulatorcontrol_resources
   build_repl_host
   build_idb_companion
   build_idb_repl
@@ -603,6 +607,9 @@ function build() {
 
 function test_target() {
   local name=$1
+  if [[ $name == FBSimulatorControl ]]; then
+    build_fbsimulatorcontrol_resources
+  fi
   # Per-test time allowances turn a hung test into a named failure in about a
   # minute; without them a single hang stalls the suite until the CI job's
   # 60-minute timeout cancels it with no indication of which test hung. Most
