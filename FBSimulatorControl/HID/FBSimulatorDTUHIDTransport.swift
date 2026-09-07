@@ -12,6 +12,31 @@ import Darwin
 import Foundation
 import XPC
 
+/// What a DTUHID connection must do before it can carry a caller's first event.
+enum DTUHIDSendPreparation: Equatable {
+  /// Nothing; send directly.
+  case none
+  /// Send a disposable event to open the connection, then wait for `dtuhidd` to activate its services.
+  case primeThenWait(nanoseconds: UInt64)
+}
+
+/// The waits `FBSimulatorDTUHIDTransport` performs around the events it sends.
+enum DTUHIDTiming {
+
+  /// Time to keep the connection alive after a gesture's events are sent, so `dtuhidd` consumes them
+  /// before the connection is torn down. It resets its virtual services the instant the host peer
+  /// disconnects, which for a one-shot gesture is the moment the host process exits.
+  static let drainNanos: UInt64 = 80_000_000 // 80ms
+
+  /// Time to wait for `dtuhidd` to activate the virtual services that carry events.
+  static let activationNanos: UInt64 = 0
+
+  /// What a connection owes before its first send.
+  static var preparation: DTUHIDSendPreparation {
+    activationNanos == 0 ? .none : .primeThenWait(nanoseconds: activationNanos)
+  }
+}
+
 /// Tracks the per-contact phase so that a stream of Indigo `.down`/`.up` events maps onto the
 /// `dtuhidd` `start` / `position` / `end` model: the first `.down` is a `start`, subsequent `.down`s
 /// (a drag/swipe) are `position`s, and `.up` is the `end`.
@@ -55,15 +80,6 @@ actor FBSimulatorDTUHIDTransport {
   private typealias EndpointFromMachPortFn = @convention(c) (mach_port_t, UInt64, UInt64) -> xpc_object_t?
   private typealias ConnectionFromEndpointFn = @convention(c) (xpc_object_t) -> xpc_connection_t?
   private typealias EnableSim2HostFn = @convention(c) (xpc_connection_t) -> Void
-
-  /// Time `flush()` keeps the connection alive after a gesture's events are sent, so `dtuhidd`
-  /// consumes them before the connection is torn down. `dtuhidd` resets its virtual services
-  /// (dropping any in-flight gesture) the instant the host peer disconnects — which, for a one-shot
-  /// gesture from a short-lived host process, is the moment that process exits right after the send.
-  /// The XPC send barrier only confirms the bytes reached the connection, not that the daemon
-  /// consumed them, and `dtuhidd` does not reply to events or barriers — so a bounded wait is the
-  /// only signal available. It runs once per gesture (in `flush()`), not after every primitive.
-  private static let drainNanos: UInt64 = 80_000_000 // 80ms
 
   /// The host→guest XPC connection to `dtuhidd`. XPC connections are thread-safe, so it is marked
   /// `nonisolated(unsafe)` to be read from the `nonisolated` `disconnect()` as well as the
@@ -195,9 +211,10 @@ actor FBSimulatorDTUHIDTransport {
     }
   }
 
-  /// Waits `drainNanos` so `dtuhidd` consumes a gesture before the connection is torn down. Once per gesture.
+  /// Waits `DTUHIDTiming.drainNanos` so `dtuhidd` consumes a gesture before the connection is torn
+  /// down. Once per gesture.
   func flush() async throws {
-    try? await Task.sleep(nanoseconds: Self.drainNanos)
+    try? await Task.sleep(nanoseconds: DTUHIDTiming.drainNanos)
   }
 
 }
