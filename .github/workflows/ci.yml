@@ -79,6 +79,18 @@ jobs:
       - uses: actions/checkout@v5
       - name: Install tools
         run: brew install xcodegen
+      # The smoke tests take the simulator named by DEVICE_UDID (forwarded
+      # through xcodebuild's TEST_RUNNER_ prefix) instead of booting one
+      # themselves, which keeps the boot out of the per-test time allowance and
+      # pins which device they run against. The boot-lifecycle tests create
+      # their own simulators and need no provisioning.
+      - name: Boot a simulator for the smoke tests
+        if: matrix.target == 'FBSimulatorControl'
+        run: |
+          UDID=$(xcrun simctl create smoke-test-provided "iPhone 16")
+          xcrun simctl boot "$UDID"
+          xcrun simctl bootstatus "$UDID"
+          echo "TEST_RUNNER_DEVICE_UDID=$UDID" >> "$GITHUB_ENV"
       - name: Test ${{ matrix.target }}
         run: ./build.sh test ${{ matrix.target }}
       # Hosted runners otherwise yield nothing beyond a failing test's name;

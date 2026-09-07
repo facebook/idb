@@ -81,6 +81,9 @@ class FBSimulatorControlTestCase: XCTestCase {
 
   override func setUpWithError() throws {
     continueAfterFailure = false
+    // Creating and booting a simulator can take minutes on a slow CI host; when the harness
+    // enforces per-test time allowances, claim more than the short suite-wide default.
+    executionTimeAllowance = 600
     // Memoized: a no-op after the first test's load. Throwing here turns a load failure into a
     // per-test failure instead of killing the runner.
     try FBSimulatorControlFrameworkLoader.essentialFrameworks.loadPrivateFrameworks(FBControlCoreGlobalConfiguration.defaultLogger)
