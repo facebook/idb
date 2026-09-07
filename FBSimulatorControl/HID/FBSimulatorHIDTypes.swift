@@ -5,6 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+import FBControlCore
+
 /// The core, transport-agnostic HID value types. Every transport (Indigo, DTUHID) and the
 /// `FBSimulatorHIDEvent` dispatch share these; they are intentionally independent of any one
 /// transport's wire format. Each carries a single canonical `name` — the source of truth for the
