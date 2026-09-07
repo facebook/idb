@@ -9,13 +9,13 @@ import FBControlCore
 @testable import FBSimulatorControl
 import XCTest
 
-/// Runs the runtime's `launchctl` inside a booted simulator via `FBSimulator.launchProcessConsumingOutput`.
-final class FBSimulatorLaunchCtlTests: FBSimulatorControlTestCase {
+/// Runs the runtime's `launchctl` inside the provided booted simulator via `FBSimulator.launchProcessConsumingOutput`.
+final class FBSimulatorLaunchCtlTests: FBProvidedSimulatorTestCase {
 
   func testListsServicesViaCoreSimulatorSpawn() async throws {
-    let simulator = try await obtainBootedSimulator()
-    let services = try await simulator.listServices()
+    let services = try await skippingIfGuestServiceSpawnUnavailable {
+      try await simulator.listServices()
+    }
     XCTAssertFalse(services.isEmpty, "A booted simulator should report launchd services")
-    try await shutdownAndDelete(simulator)
   }
 }
