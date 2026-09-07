@@ -150,11 +150,16 @@ extension FBSimulatorConfiguration {
   // MARK: - Obtaining CoreSimulator Classes
 
   func obtainRuntime() throws -> SimRuntime {
-    let runtimes = try FBSimulatorConfiguration.supportedRuntimes()
+    try FBSimulatorConfiguration.resolveRuntime(for: self, from: FBSimulatorConfiguration.supportedRuntimes())
+  }
+
+  /// Pure matching over the supplied runtimes, separated from the CoreSimulator service
+  /// context so the resolution rules are directly testable.
+  static func resolveRuntime(for configuration: FBSimulatorConfiguration, from runtimes: [SimRuntime]) throws -> SimRuntime {
     let matchingRuntimes = runtimes.filter { runtime in
       runtime.available
-        && runtime.name == os.name.rawValue
-        && FBSimulatorConfiguration.runtime(runtime, supportsFamilyOf: device)
+        && runtime.name == configuration.os.name.rawValue
+        && FBSimulatorConfiguration.runtime(runtime, supportsFamilyOf: configuration.device)
     }
     if matchingRuntimes.isEmpty {
       throw FBSimulatorConfigurationError.noMatchingRuntime(available: "\(runtimes)")
