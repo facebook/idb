@@ -57,8 +57,8 @@ final class CompanionServiceProvider: Idb_CompanionServiceAsyncProvider, @unchec
     return try await idleMonitor.tracking(body)
   }
 
-  private func trackedUnaryCall<Request, Response>(_ method: String, request: Request, body: () async throws -> Response) async throws -> Response {
-    try await tracked { try await telemetry.unaryCall(method, request: request, body: body) }
+  private func trackedUnaryCall<Request, Response>(_ method: String, request: Request, summarize: ((Response) -> String)? = nil, body: () async throws -> Response) async throws -> Response {
+    try await tracked { try await telemetry.unaryCall(method, request: request, summarize: summarize, body: body) }
   }
 
   private func trackedClientStreaming<Response>(_ method: String, body: () async throws -> Response) async throws -> Response {
@@ -440,7 +440,7 @@ final class CompanionServiceProvider: Idb_CompanionServiceAsyncProvider, @unchec
   }
 
   func ls(request: Idb_LsRequest, context: GRPCAsyncServerCallContext) async throws -> Idb_LsResponse {
-    return try await trackedUnaryCall("ls", request: request) {
+    return try await trackedUnaryCall("ls", request: request, summarize: LsMethodHandler.summarize) {
       try await FBTeardownContext.withAutocleanup {
         try await LsMethodHandler(commandExecutor: commandExecutor)
           .handle(request: request, context: context)

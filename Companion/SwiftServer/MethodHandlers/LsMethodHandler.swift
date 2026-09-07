@@ -15,6 +15,13 @@ struct LsMethodHandler {
 
   let commandExecutor: FBIDBCommandExecutor
 
+  /// One-line result summary for the completion log, so directory listings
+  /// report how much they returned without dumping the entries.
+  static func summarize(_ response: Idb_LsResponse) -> String {
+    let count = response.files.count + response.listings.reduce(0) { $0 + $1.files.count }
+    return count == 1 ? "1 entry" : "\(count) entries"
+  }
+
   func handle(request: Idb_LsRequest, context: GRPCAsyncServerCallContext) async throws -> Idb_LsResponse {
     let fileContainer = FileContainerValueTransformer.rawFileContainer(from: request.container)
 

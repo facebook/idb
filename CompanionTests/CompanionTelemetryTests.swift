@@ -9,6 +9,7 @@ import CompanionLib
 import CompanionUtilities
 @preconcurrency import FBControlCore
 import Foundation
+import IDBGRPCSwift
 import Testing
 
 /// Captures every subject the telemetry reports, so the per-RPC emission can
@@ -65,6 +66,36 @@ private struct RequestWithMultilineValue {
 
 private struct TelemetryTestError: Error, LocalizedError {
   var errorDescription: String? { "request exploded" }
+}
+
+/// Captures log lines so completion-line rendering is assertable without
+/// reading stderr.
+private final class RecordingLogger: NSObject, FBControlCoreLogger, @unchecked Sendable {
+  private let lock = NSLock()
+  private var recorded: [String] = []
+
+  var messages: [String] {
+    lock.lock()
+    defer { lock.unlock() }
+    return recorded
+  }
+
+  var name: String? { nil }
+  var level: FBControlCoreLogLevel { .info }
+
+  @discardableResult
+  func log(_ message: String) -> FBControlCoreLogger {
+    lock.lock()
+    defer { lock.unlock() }
+    recorded.append(message)
+    return self
+  }
+
+  func info() -> FBControlCoreLogger { self }
+  func debug() -> FBControlCoreLogger { self }
+  func error() -> FBControlCoreLogger { self }
+  func withName(_ name: String) -> FBControlCoreLogger { self }
+  func withDateFormatEnabled(_ enabled: Bool) -> FBControlCoreLogger { self }
 }
 
 @Suite
@@ -198,6 +229,73 @@ struct CompanionTelemetryTests {
     try await telemetry.unaryCall("ls", request: request) {}
     #expect((recorder.subjects.count) == (1))
     #expect((recorder.subjects[0].arguments) == (["container=Envelope: kind: ROOT"]))
+  }
+
+  @Test
+  func unaryCallSummaryIsAppendedToCompletionLine() async throws {
+    let recorder = RecordingLogger()
+    let telemetry = CompanionTelemetry(
+      logger: FBIDBLogger(loggers: [recorder]),
+      reporter: RecordingEventReporter())
+    let request = FetchRequest(bundleID: "com.example.app", verbose: true)
+    try await telemetry.unaryCall("ls", request: request, summarize: { _ in "5 entries" }) { "ok" }
+    #expect((recorder.messages.count) == (2))
+    #expect((recorder.messages[0]) == ("ls called with: [bundleID=com.example.app, verbose=true]"))
+    #expect((recorder.messages[1].hasPrefix("ls succeeded in ")) == (true))
+    #expect((recorder.messages[1].hasSuffix(" (5 entries)")) == (true))
+  }
+
+  @Test
+  func unaryCallWithoutSummaryLogsBareCompletionLine() async throws {
+    let recorder = RecordingLogger()
+    let telemetry = CompanionTelemetry(
+      logger: FBIDBLogger(loggers: [recorder]),
+      reporter: RecordingEventReporter())
+    let request = FetchRequest(bundleID: "com.example.app", verbose: true)
+    try await telemetry.unaryCall("ls", request: request) { "ok" }
+    #expect((recorder.messages.count) == (2))
+    #expect((recorder.messages[1].hasPrefix("ls succeeded in ")) == (true))
+    #expect((recorder.messages[1].contains(" (")) == (false))
+  }
+
+  @Test
+  func lsSummarizeCountsFilesAndListings() {
+    #expect((LsMethodHandler.summarize(Idb_LsResponse())) == ("0 entries"))
+    let filesOnly = Idb_LsResponse.with {
+      $0.files = [
+        Idb_FileInfo.with { $0.path = "a" },
+        Idb_FileInfo.with { $0.path = "b" },
+      ]
+    }
+    #expect((LsMethodHandler.summarize(filesOnly)) == ("2 entries"))
+    let mixed = Idb_LsResponse.with {
+      $0.files = [Idb_FileInfo.with { $0.path = "a" }]
+      $0.listings = [
+        Idb_FileListing.with {
+          $0.parent = Idb_FileInfo.with { $0.path = "parent" }
+          $0.files = [
+            Idb_FileInfo.with { $0.path = "b" },
+            Idb_FileInfo.with { $0.path = "c" },
+          ]
+        }
+      ]
+    }
+    #expect((LsMethodHandler.summarize(mixed)) == ("3 entries"))
+    let singular = Idb_LsResponse.with {
+      $0.files = [Idb_FileInfo.with { $0.path = "only" }]
+    }
+    #expect((LsMethodHandler.summarize(singular)) == ("1 entry"))
+  }
+
+  @Test
+  func formatBytesUsesUnits() {
+    #expect((PullMethodHandler.formatBytes(0)) == ("0 B"))
+    #expect((PullMethodHandler.formatBytes(512)) == ("512 B"))
+    #expect((PullMethodHandler.formatBytes(1023)) == ("1023 B"))
+    #expect((PullMethodHandler.formatBytes(1024)) == ("1.0 KB"))
+    #expect((PullMethodHandler.formatBytes(1536)) == ("1.5 KB"))
+    #expect((PullMethodHandler.formatBytes(5 * 1024 * 1024)) == ("5.0 MB"))
+    #expect((PullMethodHandler.formatBytes(2 * 1024 * 1024 * 1024)) == ("2.0 GB"))
   }
 
   @Test

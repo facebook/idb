@@ -13,10 +13,11 @@ import Foundation
 /// Per-RPC telemetry, applied in `CompanionServiceProvider` around each handler dispatch: logs
 /// `<method> called with: [<args>]` and `<method> succeeded in <duration>` / `<method> failed after
 /// <duration>: <message>`, all at info so a failing call stays visible under `-log-level info`, and reports
-/// one success or failure `FBEventReporterSubject` per call. Arguments are rendered from the request via
-/// `Mirror`, each value middle-truncated to 100 characters (container GUIDs and temp paths differ at the
-/// tail); empty protobuf `unknownFields` are omitted. `size` is always nil; no request type reports bytes
-/// transferred.
+/// one success or failure `FBEventReporterSubject` per call. Unary calls may pass `summarize` to append a
+/// result summary to the success line (e.g. `ls succeeded in 12ms (5 entries)`). Arguments are rendered
+/// from the request via `Mirror`, each value middle-truncated to 100 characters (container GUIDs and temp
+/// paths differ at the tail); empty protobuf `unknownFields` are omitted. `size` is always nil; no request
+/// type reports bytes transferred.
 struct CompanionTelemetry {
 
   let logger: FBIDBLogger
@@ -30,9 +31,14 @@ struct CompanionTelemetry {
   func unaryCall<Request, Response>(
     _ method: String,
     request: Request,
+    summarize: ((Response) -> String)? = nil,
     body: () async throws -> Response
   ) async throws -> Response {
-    return try await report(method: method, arguments: describeArguments(request), body: body)
+    return try await report(
+      method: method,
+      arguments: describeArguments(request),
+      summarize: summarize,
+      body: body)
   }
 
   @discardableResult
@@ -64,6 +70,7 @@ struct CompanionTelemetry {
   private func report<R>(
     method: String,
     arguments: [String],
+    summarize: ((R) -> String)? = nil,
     body: () async throws -> R
   ) async throws -> R {
     // Monotonic on purpose: a wall clock can step backwards (NTP) across the
@@ -73,7 +80,8 @@ struct CompanionTelemetry {
     do {
       let result = try await body()
       let duration = Self.secondsSince(start)
-      logger.info().log("\(method) succeeded in \(Self.formatDuration(duration))")
+      let summary = summarize.map { " (\($0(result)))" } ?? ""
+      logger.info().log("\(method) succeeded in \(Self.formatDuration(duration))\(summary)")
       reporter.report(
         FBEventReporterSubject(
           forSuccessfulCall: method,
