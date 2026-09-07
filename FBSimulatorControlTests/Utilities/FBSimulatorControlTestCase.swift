@@ -16,8 +16,6 @@ private let LaunchTypeEnvKey = "FBSIMULATORCONTROL_LAUNCH_TYPE"
 private let LaunchTypeSimulatorApp = "simulator_app"
 private let LaunchTypeDirect = "direct"
 
-private let RecordVideoEnvKey = "FBSIMULATORCONTROL_RECORD_VIDEO"
-
 /// A Test Case that bootstraps a FBSimulatorControl instance.
 /// Should be overridden to provide Integration tests for Simulators.
 class FBSimulatorControlTestCase: XCTestCase {
@@ -52,14 +50,6 @@ class FBSimulatorControlTestCase: XCTestCase {
       setenv(FBControlCoreDebugLogging, "NO", 1)
     }
     FBControlCoreGlobalConfiguration.defaultLogger.log("Current Configuration => \(String(describing: FBControlCoreGlobalConfiguration.description))")
-  }
-
-  class var isRunningOnTravis: Bool {
-    if ProcessInfo.processInfo.environment["TRAVIS"] != nil {
-      NSLog("Running in Travis environment, skipping test")
-      return true
-    }
-    return false
   }
 
   class var useDirectLaunching: Bool {
