@@ -10,12 +10,23 @@
 // ast-grep-ignore: swift-testing/swift/no-new-xctest
 import XCTest
 
-/// Coverage of the keyboard-backed Siri Remote focus events. tvOS has no touchscreen; the focus
-/// engine is driven via USB HID keyboard usages, so each remote action must lower to a short key
-/// press of the expected keycode.
+/// Coverage of the Siri Remote focus events: the press expands to a `.remoteButton` down/up pair, and
+/// the keyboard usage each action carries.
 final class FBSimulatorHIDRemoteButtonTests: XCTestCase {
 
-  func testRemoteButtonLowersToKeyboardUsage() {
+  func testRemoteButtonIsAShortRemotePress() {
+    for button in FBSimulatorHIDRemoteButton.allCases {
+      XCTAssertEqual(
+        FBSimulatorHIDEvent.remoteButton(button),
+        .composite([
+          .remoteButton(direction: .down, button: button),
+          .remoteButton(direction: .up, button: button),
+        ]),
+        "remoteButton(\(button.name)) should be a short press of that remote action")
+    }
+  }
+
+  func testRemoteButtonKeyboardUsages() {
     let expected: [(FBSimulatorHIDRemoteButton, UInt32)] = [
       (.up, 0x52),
       (.down, 0x51),
@@ -26,12 +37,7 @@ final class FBSimulatorHIDRemoteButtonTests: XCTestCase {
     ]
     for (button, keyCode) in expected {
       XCTAssertEqual(
-        FBSimulatorHIDEvent.remoteButton(button),
-        .composite([
-          .keyboard(direction: .down, keyCode: keyCode),
-          .keyboard(direction: .up, keyCode: keyCode),
-        ]),
-        "remoteButton(\(button.name)) should be a short key press of \(keyCode)")
+        button.keyboardUsage, keyCode, "\(button.name) should carry keyboard usage \(keyCode)")
     }
   }
 

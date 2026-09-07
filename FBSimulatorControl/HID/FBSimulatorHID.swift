@@ -153,6 +153,11 @@ public final class FBSimulatorHID: CustomStringConvertible, @unchecked Sendable 
     try await transport.sendButton(direction: direction, button: button)
   }
 
+  /// Sends a tvOS Siri Remote focus action.
+  func sendRemoteButton(direction: FBSimulatorHIDDirection, button: FBSimulatorHIDRemoteButton) async throws {
+    try await transport.sendRemoteButton(direction: direction, button: button)
+  }
+
   /// Sends a keyboard key event.
   func sendKeyboard(direction: FBSimulatorHIDDirection, keyCode: UInt32) async throws {
     try await transport.sendKeyboard(direction: direction, keyCode: keyCode)
@@ -209,7 +214,7 @@ public final class FBSimulatorHID: CustomStringConvertible, @unchecked Sendable 
       switch subEvent {
       case let .delay(duration):
         logger.log("Delay \(duration)s")
-      case .touch, .button, .keyboard, .twoFingerTouch, .trackpad,
+      case .touch, .button, .remoteButton, .keyboard, .twoFingerTouch, .trackpad,
         .deviceOrientation, .lockDevice, .shake, .toggleInCallStatusBar, .composite:
         logger.log("Sending \(subEvent)")
       }
@@ -230,6 +235,9 @@ public final class FBSimulatorHID: CustomStringConvertible, @unchecked Sendable 
       return true
     case let .button(direction, button):
       try await transport.sendButton(direction: direction, button: button)
+      return true
+    case let .remoteButton(direction, button):
+      try await transport.sendRemoteButton(direction: direction, button: button)
       return true
     case let .keyboard(direction, keyCode):
       try await transport.sendKeyboard(direction: direction, keyCode: keyCode)

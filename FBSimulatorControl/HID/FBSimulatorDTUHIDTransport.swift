@@ -189,6 +189,12 @@ actor FBSimulatorDTUHIDTransport {
       payload: IndigoKeyboardButtonEvent(usageCode: UInt64(keyCode), state: state))
   }
 
+  /// Sends the keyboard usage the tvOS focus engine consumes. `dtuhidd` also advertises
+  /// `com.apple.coredevice.feature.remote.hid.tvremote`, whose accepted usages are undocumented.
+  func sendRemoteButton(direction: FBSimulatorHIDDirection, button: FBSimulatorHIDRemoteButton) async throws {
+    try await sendKeyboard(direction: direction, keyCode: button.keyboardUsage)
+  }
+
   // MARK: - Sending
 
   /// Wraps `payload` in a `DTUHIDMessage` and serializes it to the `xpc_object_t` `dtuhidd` decodes.

@@ -106,6 +106,12 @@ actor FBSimulatorIndigoHIDTransport {
     try await indigoClient.send(indigo.keyboard(with: direction, keyCode: keyCode))
   }
 
+  /// Delivers a Siri Remote focus action as the keyboard usage the tvOS focus engine consumes, which is
+  /// the only encoding the legacy path has for it — so it is subject to the same Xcode 27 suppression.
+  func sendRemoteButton(direction: FBSimulatorHIDDirection, button: FBSimulatorHIDRemoteButton) async throws {
+    try await sendKeyboard(direction: direction, keyCode: button.keyboardUsage)
+  }
+
   // No tvOS guard — the trackpad is exactly what Apple TV targets need (unlike the touchscreen).
   func sendTrackpad(point: FBSimulatorTrackpadPoint, phase: FBSimulatorTrackpadPhase) async throws {
     try await indigoClient.send(indigo.trackpad(point: CGPoint(x: point.x, y: point.y), phase: phase))

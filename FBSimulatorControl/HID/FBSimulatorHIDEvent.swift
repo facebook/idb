@@ -21,6 +21,7 @@ public indirect enum FBSimulatorHIDEvent: Equatable, Hashable, Sendable {
 
   case touch(direction: FBSimulatorHIDDirection, x: Double, y: Double, edge: FBSimulatorHIDEdge)
   case button(direction: FBSimulatorHIDDirection, button: FBSimulatorHIDButton)
+  case remoteButton(direction: FBSimulatorHIDDirection, button: FBSimulatorHIDRemoteButton)
   case keyboard(direction: FBSimulatorHIDDirection, keyCode: UInt32)
   case twoFingerTouch(direction: FBSimulatorHIDDirection, finger1: CGPoint, finger2: CGPoint)
   case trackpad(phase: FBSimulatorTrackpadPhase, point: FBSimulatorTrackpadPoint)
@@ -100,11 +101,12 @@ public extension FBSimulatorHIDEvent {
     return .composite(events)
   }
 
-  /// A Siri Remote focus action for tvOS, delivered as the USB HID keyboard usage the tvOS focus
-  /// engine consumes (arrows move focus, Return selects, Escape acts as Menu/back). The keyboard
-  /// path is the universal baseline that works on the legacy Indigo transport.
+  /// A short press of a Siri Remote focus action for tvOS, left for the transport to encode.
   static func remoteButton(_ button: FBSimulatorHIDRemoteButton) -> FBSimulatorHIDEvent {
-    shortKeyPress(button.keyboardUsage)
+    .composite([
+      .remoteButton(direction: .down, button: button),
+      .remoteButton(direction: .up, button: button),
+    ])
   }
 
   /// A swipe from `(xStart,yStart)` to `(xEnd,yEnd)`, interpolated at `delta` points per sample.
@@ -288,23 +290,6 @@ public extension FBSimulatorHIDEvent {
   }
 }
 
-// MARK: - Remote button key mapping
-
-private extension FBSimulatorHIDRemoteButton {
-  /// The USB HID Keyboard/Keypad page (0x07) usage the tvOS focus engine consumes for this action.
-  /// Live-confirmed on a booted Apple TV simulator: arrows move focus, Return selects, Escape backs out.
-  var keyboardUsage: UInt32 {
-    switch self {
-    case .up: return 0x52
-    case .down: return 0x51
-    case .left: return 0x50
-    case .right: return 0x4F
-    case .select: return 0x28 // Return
-    case .menu: return 0x29 // Escape
-    }
-  }
-}
-
 // MARK: - CustomStringConvertible
 
 extension FBSimulatorHIDEvent: CustomStringConvertible {
@@ -317,6 +302,9 @@ extension FBSimulatorHIDEvent: CustomStringConvertible {
     case let .button(direction, button):
       guard shouldLogHIDEventDetails() else { return "Button <hidden>" }
       return "Button \(button.name) \(direction.name)"
+    case let .remoteButton(direction, button):
+      guard shouldLogHIDEventDetails() else { return "Remote <hidden>" }
+      return "Remote \(button.name) \(direction.name)"
     case let .keyboard(direction, keyCode):
       guard shouldLogHIDEventDetails() else { return "Key <hidden>" }
       return "Keyboard Code=\(keyCode) \(direction.name)"

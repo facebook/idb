@@ -105,4 +105,13 @@ enum FBSimulatorHIDTransport: Sendable {
     case let .dtuhid(dtuhid), let .mixed(dtuhid, _): try await dtuhid.sendKeyboard(direction: direction, keyCode: keyCode)
     }
   }
+
+  /// Sends a tvOS Siri Remote focus action.
+  func sendRemoteButton(direction: FBSimulatorHIDDirection, button: FBSimulatorHIDRemoteButton) async throws {
+    switch self {
+    case let .indigo(indigo): try await indigo.sendRemoteButton(direction: direction, button: button)
+    case let .dtuhid(dtuhid), let .mixed(dtuhid, _):
+      try await dtuhid.sendRemoteButton(direction: direction, button: button)
+    }
+  }
 }
