@@ -195,10 +195,8 @@ private class FBFileWriter_Async: FBFileWriter, FBDispatchDataConsumer, FBDataCo
   func startWriting() throws {
     assert(io == nil)
 
-    // Set O_NONBLOCK before DispatchIO snapshots the descriptor flags: libdispatch restores that
-    // snapshot asynchronously on teardown through the shared open file description (or a recycled
-    // descriptor number), and a snapshot without O_NONBLOCK would wedge an unrelated live channel in
-    // a blocking read(2).
+    // O_NONBLOCK must be set before DispatchIO snapshots the descriptor flags; see
+    // FBFileReader.startReadingNow for why.
     _ = fcntl(fileDescriptor, F_SETFL, fcntl(fileDescriptor, F_GETFL) | O_NONBLOCK)
 
     let finishedConsuming = finishedConsumingMutable
