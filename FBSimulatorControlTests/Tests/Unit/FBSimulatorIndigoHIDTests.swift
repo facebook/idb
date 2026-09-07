@@ -279,6 +279,18 @@ final class FBSimulatorIndigoHIDTests: XCTestCase {
     XCTAssertEqual(uint32(at: 0x44, in: down), 0x0C, "page lands in usagePage")
   }
 
+  // BUG: the arbitrary-HID builder addresses `ButtonEventTargetHardware` (0x33), the target the
+  // *legacy* sourced-button builder uses. The guest routes Consumer-page usages to the digitizer
+  // target (0x32) instead, so everything sent this way is silently discarded — nothing reaches
+  // backboardd at all. Measured on iOS 27.0: at 0x32 a Play/Pause usage produces
+  // `backboardd PlayOrPause page:0xC usage:0xCD` and a SpringBoard `TogglePlayPause`; at 0x33 the
+  // guest log is empty. Flipped in the following commit.
+  func testArbitraryHIDUsageAddressesTheHardwareButtonTarget() throws {
+    let indigo = try makeIndigo()
+    let data = indigo.hidArbitrary(page: 0x0C, usage: 0xCD, direction: .down)
+    XCTAssertEqual(uint32(at: 0x38, in: data), 0x33, "eventTarget")
+  }
+
   // The page and usage are carried independently, so the builder is not hard-wired to one page.
   func testArbitraryHIDUsageCarriesAnyPageAndUsage() throws {
     let indigo = try makeIndigo()
