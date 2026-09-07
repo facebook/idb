@@ -92,30 +92,6 @@ public final class FBCodesignProvider {
     )
   }
 
-  func recursivelySignBundle(atPath bundlePath: String) -> FBFuture<NSNull> {
-    var pathsToSign = [bundlePath]
-    let fileManager = FileManager.default
-    let frameworksPath = bundlePath + "/Frameworks/"
-    if fileManager.fileExists(atPath: frameworksPath) {
-      do {
-        let frameworkNames = try fileManager.contentsOfDirectory(atPath: frameworksPath)
-        for frameworkPath in frameworkNames {
-          pathsToSign.append(frameworksPath + frameworkPath)
-        }
-      } catch {
-        return FBFuture(error: error)
-      }
-    }
-    var futures: [FBFuture<AnyObject>] = []
-    for pathToSign in pathsToSign {
-      futures.append(unsafeBitCast(signBundle(atPath: pathToSign), to: FBFuture<AnyObject>.self))
-    }
-    return unsafeBitCast(
-      FBFuture<AnyObject>.combine(futures).mapReplace(NSNull()),
-      to: FBFuture<NSNull>.self
-    )
-  }
-
   public func cdHashForBundle(atPath bundlePath: String) -> FBFuture<NSString> {
     logger?.log("Obtaining CDHash for bundle at path \(bundlePath)")
     return unsafeBitCast(

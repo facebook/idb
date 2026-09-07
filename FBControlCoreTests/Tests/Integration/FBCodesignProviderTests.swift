@@ -10,8 +10,8 @@ import Foundation
 import Testing
 
 /// Pins what `FBCodesignProvider` gets out of `/usr/bin/codesign`: which stream each
-/// value is read from, how a non-zero exit reaches the caller, the permission fixup
-/// that runs before the tool does, and which directories the recursive variant walks.
+/// value is read from, how a non-zero exit reaches the caller, and the permission
+/// fixup that runs before the tool does.
 ///
 /// Nothing here asserts a desirable design. Each case records what callers observe
 /// today so that a later replacement has to either reproduce it or change it
@@ -42,33 +42,15 @@ struct FBCodesignProviderTests {
     try data.write(to: url)
   }
 
-  /// An iOS-layout bundle: `Info.plist`, the executable and `Frameworks/` all sit at
-  /// the bundle root. This is the layout `recursivelySignBundle` assumes, and the only
-  /// one where `_CodeSignature/CodeResources` lands where `makeCodesignatureWritable`
-  /// looks for it.
+  /// An iOS-layout bundle: `Info.plist` and the executable sit at the bundle root,
+  /// which is the only layout where `_CodeSignature/CodeResources` lands where
+  /// `makeCodesignatureWritable` looks for it.
   private static func makeFlatBundle(in directory: URL, name: String) throws -> URL {
     let bundle = directory.appendingPathComponent("\(name).app", isDirectory: true)
     try FileManager.default.createDirectory(at: bundle, withIntermediateDirectories: true)
     try FileManager.default.copyItem(atPath: machOSource, toPath: bundle.appendingPathComponent(name).path)
     try writeInfoPlist(to: bundle.appendingPathComponent("Info.plist"), executableName: name)
     return bundle
-  }
-
-  private static func makeMacBundle(in directory: URL, name: String) throws -> URL {
-    let bundle = directory.appendingPathComponent("\(name).app", isDirectory: true)
-    let contents = bundle.appendingPathComponent("Contents", isDirectory: true)
-    try FileManager.default.createDirectory(at: contents.appendingPathComponent("MacOS", isDirectory: true), withIntermediateDirectories: true)
-    try FileManager.default.copyItem(atPath: machOSource, toPath: contents.appendingPathComponent("MacOS/\(name)").path)
-    try writeInfoPlist(to: contents.appendingPathComponent("Info.plist"), executableName: name)
-    return bundle
-  }
-
-  @discardableResult
-  private static func copyMachO(into directory: URL, named name: String) throws -> URL {
-    try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
-    let destination = directory.appendingPathComponent(name)
-    try FileManager.default.copyItem(atPath: machOSource, toPath: destination.path)
-    return destination
   }
 
   private static func adHocProvider() -> FBCodesignProvider {
@@ -185,46 +167,5 @@ struct FBCodesignProviderTests {
     }
 
     #expect(try Self.posixPermissions(of: codeResources.path) == 0o644)
-  }
-
-  // MARK: - Recursion
-
-  @Test("Recursive signing visits every entry directly inside the bundle's Frameworks directory")
-  func recursiveSigningVisitsTheBundleRootFrameworksDirectory() async throws {
-    let directory = try Self.makeTemporaryDirectory()
-    defer { try? FileManager.default.removeItem(at: directory) }
-    let bundle = try Self.makeFlatBundle(in: directory, name: "Recursive")
-    let framework = try Self.copyMachO(into: bundle.appendingPathComponent("Frameworks", isDirectory: true), named: "libthing")
-    let provider = Self.adHocProvider()
-
-    let bundleBefore = try await bridgeFBFuture(provider.cdHashForBundle(atPath: bundle.path)) as String
-    let frameworkBefore = try await bridgeFBFuture(provider.cdHashForBundle(atPath: framework.path)) as String
-
-    _ = try await bridgeFBFuture(provider.recursivelySignBundle(atPath: bundle.path))
-
-    let bundleAfter = try await bridgeFBFuture(provider.cdHashForBundle(atPath: bundle.path)) as String
-    let frameworkAfter = try await bridgeFBFuture(provider.cdHashForBundle(atPath: framework.path)) as String
-
-    #expect(bundleAfter != bundleBefore)
-    // Signing the enclosing bundle seals nested code but does not re-sign it, so a
-    // changed hash here can only come from the framework being signed in its own right.
-    #expect(frameworkAfter != frameworkBefore)
-  }
-
-  @Test("Recursive signing does not reach a macOS bundle's Contents/Frameworks")
-  func recursiveSigningIgnoresTheMacOsFrameworksDirectory() async throws {
-    let directory = try Self.makeTemporaryDirectory()
-    defer { try? FileManager.default.removeItem(at: directory) }
-    let bundle = try Self.makeMacBundle(in: directory, name: "MacLayout")
-    let nested = try Self.copyMachO(into: bundle.appendingPathComponent("Contents/Frameworks", isDirectory: true), named: "libnested")
-    let provider = Self.adHocProvider()
-
-    let nestedBefore = try await bridgeFBFuture(provider.cdHashForBundle(atPath: nested.path)) as String
-    _ = try await bridgeFBFuture(provider.recursivelySignBundle(atPath: bundle.path))
-    let nestedAfter = try await bridgeFBFuture(provider.cdHashForBundle(atPath: nested.path)) as String
-
-    // Only `<bundle>/Frameworks/` is enumerated, which is the iOS layout. Frameworks
-    // embedded the macOS way keep whatever signature they arrived with.
-    #expect(nestedAfter == nestedBefore)
   }
 }
