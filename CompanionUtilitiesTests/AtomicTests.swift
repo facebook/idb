@@ -51,6 +51,7 @@ struct AtomicTests {
       _testableCounter.set(etalonCounter)
     }
 
-    #expect(counter == iterationCount, "Conters not match. Caution: this maby flacky, because tests possible race condition.")
+    #expect(counter == iterationCount)
+    #expect((1...iterationCount).contains(testableCounter), "set never stored a value")
   }
 }
