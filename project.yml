@@ -8,20 +8,15 @@
 # Xcode-only settings (workarounds, source globs, xcconfig wiring) are
 # declared in the generator's manifest rather than edited here.
 #
-# Two derived settings are worth calling out:
+# OTHER_CFLAGS is the Buck build's warning configuration. Xcode appends it
+# after its own derived flags, so Buck's flags win where the two disagree. It
+# ends in -Wno-error=unused-command-line-argument because Xcode also applies
+# the list to generated C sources, where the Objective-C-only flags are
+# unused arguments.
 #
-#   OTHER_CFLAGS carries the warning configuration the Buck build compiles
-#   with. Xcode appends OTHER_CFLAGS after the flags it derives from build
-#   settings, so where the two disagree, Buck's posture wins -- which is the
-#   point: a warning should not appear in one build and not the other. It
-#   ends in -Wno-error=unused-command-line-argument because Xcode applies the
-#   list to generated C sources that Buck has no counterpart for, where Buck's
-#   Objective-C-only flags are unused arguments.
-#
-#   OTHER_SWIFT_FLAGS wraps the reverse-engineered headers under
-#   PrivateHeaders/<Name>/ as Clang modules, so Swift can `import
-#   CoreSimulator`, `import SimulatorKit`, and friends. This mirrors
-#   make_private_header_frameworks() in the Buck definitions.
+# OTHER_SWIFT_FLAGS wraps the headers under PrivateHeaders/<Name>/ as Clang
+# modules so Swift can `import CoreSimulator`, `import SimulatorKit`, and
+# friends, matching make_private_header_frameworks() in the Buck definitions.
 
 name: FBSimulatorControl
 
