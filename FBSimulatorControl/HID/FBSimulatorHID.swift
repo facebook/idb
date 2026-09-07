@@ -51,9 +51,9 @@ public final class FBSimulatorHID: CustomStringConvertible, @unchecked Sendable 
   /// transport cannot be established (registration may need to occur prior to booting).
   public convenience init(
     for simulator: FBSimulator, transport transportType: FBSimulatorHIDTransportType? = nil
-  ) throws {
+  ) async throws {
     self.init(
-      transport: try Self.transport(for: simulator, requested: transportType),
+      transport: try await Self.transport(for: simulator, requested: transportType),
       purple: FBSimulatorPurpleHIDTransport(simulator: simulator),
       notification: FBSimulatorDarwinNotificationTransport(simulator: simulator),
       simulator: simulator)
@@ -65,14 +65,14 @@ public final class FBSimulatorHID: CustomStringConvertible, @unchecked Sendable 
   /// demand-launched, so the service lookup that builds the transport is the only probe.
   private static func transport(
     for simulator: FBSimulator, requested: FBSimulatorHIDTransportType?
-  ) throws -> FBSimulatorHIDTransport {
+  ) async throws -> FBSimulatorHIDTransport {
     if let requested {
-      return try transport(requested, for: simulator)
+      return try await transport(requested, for: simulator)
     }
     let logger = FBControlCoreGlobalConfiguration.defaultLogger
     let preferred = simulator.defaultHIDTransport
     do {
-      let transport = try transport(preferred, for: simulator)
+      let transport = try await transport(preferred, for: simulator)
       logger.log("Negotiated the \(preferred) HID transport")
       return transport
     } catch let error as FBSimulatorHIDError where error.isDTUHIDUnreachable {
@@ -84,12 +84,12 @@ public final class FBSimulatorHID: CustomStringConvertible, @unchecked Sendable 
 
   private static func transport(
     _ type: FBSimulatorHIDTransportType, for simulator: FBSimulator
-  ) throws -> FBSimulatorHIDTransport {
+  ) async throws -> FBSimulatorHIDTransport {
     switch type {
     case .indigo:
       return .indigo(try FBSimulatorIndigoHIDTransport.indigo(for: simulator))
     case .dtuhid:
-      let dtuhid = try FBSimulatorDTUHIDTransport.dtuhid(for: simulator)
+      let dtuhid = try await FBSimulatorDTUHIDTransport.dtuhid(for: simulator)
       guard let indigo = indigoAlongsideDTUHID(for: simulator) else {
         return .dtuhid(dtuhid)
       }

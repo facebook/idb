@@ -179,7 +179,7 @@ public final class FBSimulatorLifecycleCommands {
     guard let simulator = self.simulator else {
       throw FBWeakTargetError.simulator
     }
-    let hid = try FBSimulatorHID(for: simulator)
+    let hid = try await FBSimulatorHID(for: simulator)
     self.hid = hid
     return hid
   }
