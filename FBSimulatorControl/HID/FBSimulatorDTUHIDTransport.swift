@@ -12,14 +12,6 @@ import Darwin
 import Foundation
 import XPC
 
-/// What a DTUHID connection must do before it can carry a caller's first event.
-enum DTUHIDSendPreparation: Equatable {
-  /// Nothing; send directly.
-  case none
-  /// Send a disposable event to open the connection, then wait for `dtuhidd` to activate its services.
-  case primeThenWait(nanoseconds: UInt64)
-}
-
 /// The waits `FBSimulatorDTUHIDTransport` performs around the events it sends.
 enum DTUHIDTiming {
 
@@ -28,13 +20,13 @@ enum DTUHIDTiming {
   /// disconnects, which for a one-shot gesture is the moment the host process exits.
   static let drainNanos: UInt64 = 80_000_000 // 80ms
 
-  /// Time to wait for `dtuhidd` to activate the virtual services that carry events.
-  static let activationNanos: UInt64 = 0
-
-  /// What a connection owes before its first send.
-  static var preparation: DTUHIDSendPreparation {
-    activationNanos == 0 ? .none : .primeThenWait(nanoseconds: activationNanos)
-  }
+  /// Time to wait for `dtuhidd` to activate the virtual services that carry events. It drops anything
+  /// addressed to a service that is not yet active, logging `No active service, dropping event`.
+  ///
+  /// A fixed wait because no readiness signal has been found to wait on instead, not because none
+  /// exists — what the daemon does with a message it cannot yet route has not been established. Sized
+  /// above the observed activation gap.
+  static let activationNanos: UInt64 = 500_000_000 // 500ms
 }
 
 /// Tracks the per-contact phase so that a stream of Indigo `.down`/`.up` events maps onto the
@@ -126,10 +118,19 @@ actor FBSimulatorDTUHIDTransport {
     xpc_connection_set_event_handler(connection) { _ in }
     xpc_connection_resume(connection)
 
-    return FBSimulatorDTUHIDTransport(
+    let transport = FBSimulatorDTUHIDTransport(
       connection: connection,
       mainScreenSize: simulator.device.deviceType.mainScreenSize,
       mainScreenScale: simulator.device.deviceType.mainScreenScale)
+    do {
+      try await transport.primeThenWait(nanoseconds: DTUHIDTiming.activationNanos)
+    } catch {
+      // The connection is live from `xpc_connection_resume` above, so an unreturned transport would
+      // leave `dtuhidd` holding a peer nothing will ever send to.
+      transport.disconnect()
+      throw error
+    }
+    return transport
   }
 
   init(connection: xpc_connection_t, mainScreenSize: CGSize, mainScreenScale: Float) {
@@ -206,11 +207,32 @@ actor FBSimulatorDTUHIDTransport {
     return try XPCEncoder().encode(message)
   }
 
-  /// Encodes `payload`, sends it over the connection, and resolves when the XPC send barrier fires.
-  /// The actor serializes calls, so per-gesture state stays consistent. Does not wait for the daemon
-  /// to consume the event — that is `flush()`'s job, run once per gesture rather than per primitive.
+  /// Encodes `payload` and writes it, resolving when the XPC send barrier fires. Does not wait for the
+  /// daemon to consume the event — that is `flush()`'s job, run once per gesture rather than per
+  /// primitive.
+  ///
+  /// Nothing suspends between a contact tracker assigning an event type and the write, so concurrent
+  /// sends cannot deliver an `.end` ahead of the `.start` it followed.
   func send(messageType: String, payload: some Encodable) async throws {
-    let object = try encode(messageType: messageType, payload: payload)
+    try await deliver(encode(messageType: messageType, payload: payload))
+  }
+
+  /// Opens the connection and waits for `dtuhidd` to activate the services that will carry events.
+  ///
+  /// An XPC connection is lazy: `xpc_connection_resume` does not create the peer, the first message
+  /// does, and `dtuhidd` activates nothing until it has a peer. The first message therefore always
+  /// predates any service that could receive it, so this spends one of its own rather than the
+  /// caller's. Keyboard usage `0` is "no event indicated", inert even if it does outlive activation.
+  func primeThenWait(nanoseconds: UInt64) async throws {
+    try await deliver(
+      encode(
+        messageType: "IndigoKeyboardButtonEvent",
+        payload: IndigoKeyboardButtonEvent(usageCode: 0, state: .up)))
+    try await Task.sleep(nanoseconds: nanoseconds)
+  }
+
+  /// Writes an already-encoded message and resolves when the XPC send barrier fires.
+  private func deliver(_ object: xpc_object_t) async throws {
     try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
       xpc_connection_send_message(connection, object)
       xpc_connection_send_barrier(connection) {
