@@ -340,8 +340,8 @@ public extension Array where Element == FBAccessibilityInteractable.Reason {
   /// The reasons with every explaining reason ahead of `notHittable`, each group keeping the order it
   /// was derived in.
   ///
-  /// A partition rather than a sort: Swift's sort is not guaranteed stable, and the derivation order
-  /// within a group is meaningful — it is the order the checks run in, which the tests pin.
+  /// Two filters, not a sort: order within each group must remain the derivation order, and
+  /// Swift's sort is not stable.
   var mostSpecificFirst: [FBAccessibilityInteractable.Reason] {
     filter { !$0.isUnexplained } + filter { $0.isUnexplained }
   }
@@ -722,7 +722,6 @@ public struct FBAccessibilityDocumentElement: Sendable, Equatable, Encodable {
 
 /// An element's `value`, which the platform reports as an untyped object — usually a string,
 /// sometimes a number or flag (a slider's position, a switch's state), occasionally a collection.
-/// Deliberately not a general-purpose JSON type: nothing else in the schema is dynamic.
 public enum FBAccessibilityAttributeValue: Sendable, Equatable, Encodable {
   case string(String)
   case bool(Bool)
@@ -789,15 +788,13 @@ public enum FBAccessibilityAttributeValue: Sendable, Equatable, Encodable {
 /// The `complete` output format: the elements plus everything the read learned about the state they
 /// were read in.
 ///
-/// **The key set is fixed.** Every field is always encoded, and anything a particular verb or backend
-/// cannot supply is an explicit `null` rather than an absent key. That is what lets one parser serve
-/// every describe verb: a point read and a whole-tree read differ in their *values*, never in their
-/// shape, and `target` rather than the shape says which verb produced the document. `elements` is
-/// always an array for the same reason, even for the single-element reads the legacy envelope emits as
-/// a bare object.
+/// **The key set is fixed.** Every field is always encoded; anything a verb or backend cannot supply
+/// is an explicit `null`. A point read and a whole-tree read differ in their values, never in their
+/// shape, and `target` says which verb produced the document. `elements` is always an array, even for
+/// the single-element reads the legacy envelope emits as a bare object.
 ///
-/// The document is expected to grow. New fields are added additively and consumers are expected to
-/// ignore ones they do not know, so there is deliberately no version field to bump.
+/// New fields are added additively and consumers ignore ones they do not know; there is no version
+/// field.
 public struct FBAccessibilityDocument: Sendable, Encodable {
 
   public let elements: [FBAccessibilityDocumentElement]
