@@ -259,7 +259,8 @@
 
 /**
  Builds and starts the process, resolving once it has exited with one of the acceptable exit codes.
- Cancelling the process will cancel the task.
+ Cancelling the returned future stops the caller waiting; it does not stop the process, which runs to completion unobserved.
+ To terminate the process use the `sendSignal:` APIs on the started process.
 
  @return a Future, encapsulating the process on completion.
  */

@@ -28,21 +28,21 @@ static const size_t FBProcessOutputErrorMessageLength = 200;
 /**
  A future that resolves with the the value from waitpid(2) on termination.
  This will always resolve on completion, regardless of whether the process was signalled or exited normally.
- Cancelling this Future will have no effect. To terminate the process use the `sendSignal:` APIs.
+ Cancelling this Future will have no effect on the process, but will settle the Future as cancelled so that it never delivers the value. To terminate the process use the `sendSignal:` APIs.
  */
 @property (nonnull, nonatomic, readonly, strong) FBFuture<NSNumber *> *statLoc;
 
 /**
  A future that resolves with the exit code upon termination.
  If the process exited abnormally then this future will error.
- Cancelling this Future will have no effect. To terminate the process use the `sendSignal:` APIs.
+ Cancelling this Future will have no effect on the process, but will settle the Future as cancelled so that it never delivers the exit code. To terminate the process use the `sendSignal:` APIs.
  */
 @property (nonnull, nonatomic, readonly, strong) FBFuture<NSNumber *> *exitCode;
 
 /**
  A future that resolves when the process terminates with a signal.
  If the process exited normally then this future will error.
- Cancelling this Future will have no effect. To terminate the process use the `sendSignal:` APIs.
+ Cancelling this Future will have no effect on the process, but will settle the Future as cancelled so that it never delivers the signal. To terminate the process use the `sendSignal:` APIs.
  */
 @property (nonnull, nonatomic, readonly, strong) FBFuture<NSNumber *> *signal;
 
@@ -100,7 +100,7 @@ static const size_t FBProcessOutputErrorMessageLength = 200;
 
 /**
  Confirms that the process exited with a defined set of status codes.
- Cancelling this future will have no effect.
+ Cancelling this future will have no effect on the process, but will settle the Future as cancelled so that it never delivers a verdict.
 
  @param acceptableExitCodes the exit codes to check for, must not be nil.
  @return a Future with the same base behaviour as -[FBSubprocess exitCode] with additional checking of codes.
