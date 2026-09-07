@@ -23,6 +23,9 @@ class FBSimulatorControlTests_SimDeviceType_Double: NSObject {
 class FBSimulatorControlTests_SimDeviceRuntime_Double: NSObject {
   @objc var name: String = ""
   @objc var versionString: String = ""
+  @objc var buildVersionString: String = ""
+  @objc var available: Bool = true
+  @objc var supportedProductFamilyIDs: [NSNumber] = []
 }
 
 class FBSimulatorControlTests_SimDevice_Double: NSObject {
