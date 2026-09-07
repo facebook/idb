@@ -89,8 +89,27 @@ public final class FBSimulatorHID: CustomStringConvertible, @unchecked Sendable 
     case .indigo:
       return .indigo(try FBSimulatorIndigoHIDTransport.indigo(for: simulator))
     case .dtuhid:
-      return .dtuhid(try FBSimulatorDTUHIDTransport.dtuhid(for: simulator))
+      let dtuhid = try FBSimulatorDTUHIDTransport.dtuhid(for: simulator)
+      guard let indigo = indigoAlongsideDTUHID(for: simulator) else {
+        return .dtuhid(dtuhid)
+      }
+      return .mixed(dtuhid: dtuhid, indigo: indigo)
     }
+  }
+
+  /// The Indigo transport to run alongside DTUHID, for a target that needs both.
+  ///
+  /// Only Apple TV does. It is the only family with a trackpad, which `dtuhidd` does not expose, and the
+  /// only one where a second client is safe: Indigo and DTUHID both claim `mainTouchscreen` and
+  /// whichever sends first on a boot keeps it, and tvOS has none for them to contend over.
+  ///
+  /// Absent rather than fatal when it cannot be registered, since it carries the trackpad alone — a
+  /// failure should cost a pan, not every other input on the target.
+  private static func indigoAlongsideDTUHID(for simulator: FBSimulator) -> FBSimulatorIndigoHIDTransport? {
+    guard simulator.productFamily == .familyAppleTV else {
+      return nil
+    }
+    return try? FBSimulatorIndigoHIDTransport.indigo(for: simulator)
   }
 
   /// `simulator` is weak and may be absent: the Purple and Darwin paths need it and throw
@@ -143,16 +162,13 @@ public final class FBSimulatorHID: CustomStringConvertible, @unchecked Sendable 
   /// has anything to drain; Indigo's client is synchronous. `send(event:logger:)` calls this per event
   /// unless `flushesAfterEachEvent` is `false`.
   public func flush() async throws {
-    guard case let .dtuhid(dtuhid) = transport else {
-      return
-    }
-    try await dtuhid.flush()
+    try await transport.dtuhid?.flush()
   }
 
   /// Indigo only: the tvOS trackpad rides a dedicated Indigo service that `dtuhidd` does not expose (its
   /// digitizer targets are displays and its scroll targets rotary devices).
   func sendTrackpad(point: FBSimulatorTrackpadPoint, phase: FBSimulatorTrackpadPhase) async throws {
-    guard case let .indigo(indigo) = transport else {
+    guard let indigo = transport.indigo else {
       throw FBSimulatorHIDError.notImplementedOnDTUHIDTransport(
         operation: "trackpad pan — the tvOS Siri Remote trackpad is not exposed by dtuhidd")
     }
@@ -223,7 +239,9 @@ public final class FBSimulatorHID: CustomStringConvertible, @unchecked Sendable 
       return true
     case let .trackpad(phase, point):
       try await sendTrackpad(point: point, phase: phase)
-      return true
+      // The trackpad rides Indigo, and only DTUHID has a drain, so this wrote to the drained transport
+      // only on a target that has no DTUHID transport at all.
+      return transport.dtuhid == nil
     case let .deviceOrientation(orientation):
       try await sendOrientation(orientation)
       return false
