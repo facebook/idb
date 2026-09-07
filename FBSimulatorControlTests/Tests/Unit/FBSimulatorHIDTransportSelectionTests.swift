@@ -34,18 +34,6 @@ struct FBSimulatorHIDTransportSelectionTests {
     #expect(!FBSimulatorHIDTransportSelection.shipsDTUHID(coreSimulatorVersion: "999.9"))
   }
 
-  @Test(
-    "Every family but Apple TV can be driven over DTUHID",
-    arguments: [
-      (FBControlCoreProductFamily.familyiPhone, true),
-      (.familyiPad, true),
-      (.familyAppleWatch, true),
-      (.familyAppleTV, false),
-    ])
-  func supportsDTUHID(family: FBControlCoreProductFamily, expected: Bool) {
-    #expect(FBSimulatorHIDTransportSelection.supportsDTUHID(productFamily: family) == expected)
-  }
-
   // MARK: - DTUHID reachability
 
   @Test("Only a failure to reach dtuhidd is worth falling back to Indigo for")
@@ -79,22 +67,11 @@ struct FBSimulatorHIDTransportSelectionTests {
 
   @Test("A toolchain without dtuhidd gets the legacy Indigo transport")
   func defaultTransportBeforeXcode27() {
-    #expect(
-      FBSimulatorHIDTransportSelection.defaultTransport(
-        coreSimulatorVersion: "1140.0", productFamily: .familyiPhone) == .indigo)
+    #expect(FBSimulatorHIDTransportSelection.defaultTransport(coreSimulatorVersion: "1140.0") == .indigo)
   }
 
   @Test("A toolchain that ships dtuhidd gets the DTUHID transport")
   func defaultTransportFromXcode27() {
-    #expect(
-      FBSimulatorHIDTransportSelection.defaultTransport(
-        coreSimulatorVersion: "1169.1", productFamily: .familyiPhone) == .dtuhid)
-  }
-
-  @Test("An Apple TV target stays on the legacy Indigo transport, for the Siri Remote trackpad")
-  func defaultTransportOnAppleTV() {
-    #expect(
-      FBSimulatorHIDTransportSelection.defaultTransport(
-        coreSimulatorVersion: "1169.1", productFamily: .familyAppleTV) == .indigo)
+    #expect(FBSimulatorHIDTransportSelection.defaultTransport(coreSimulatorVersion: "1169.1") == .dtuhid)
   }
 }

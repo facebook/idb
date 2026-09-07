@@ -32,15 +32,6 @@ enum FBSimulatorHIDTransportSelection {
     return coreSimulatorVersion.compare(firstDTUHIDCoreSimulatorVersion, options: .numeric) != .orderedAscending
   }
 
-  /// Whether `productFamily` can be driven over DTUHID at all.
-  ///
-  /// The tvOS Siri Remote trackpad rides a dedicated Indigo trackpad service that `dtuhidd` does not
-  /// expose — its digitizer targets are displays and its scroll targets are rotary devices — so Apple
-  /// TV targets have to stay on Indigo to keep the remote working.
-  static func supportsDTUHID(productFamily: FBControlCoreProductFamily) -> Bool {
-    productFamily != .familyAppleTV
-  }
-
   /// Whether the guest has handed its legacy keyboard service over to `dtuhidd`.
   ///
   /// A property of the CoreSimulator version alone: from 1155.4 the handover happens for the lifetime
@@ -49,15 +40,10 @@ enum FBSimulatorHIDTransportSelection {
     shipsDTUHID(coreSimulatorVersion: coreSimulatorVersion)
   }
 
-  /// The transport to prefer when a caller does not request one.
-  static func defaultTransport(
-    coreSimulatorVersion: String?,
-    productFamily: FBControlCoreProductFamily
-  ) -> FBSimulatorHIDTransportType {
-    guard
-      shipsDTUHID(coreSimulatorVersion: coreSimulatorVersion),
-      supportsDTUHID(productFamily: productFamily)
-    else {
+  /// The transport to prefer when a caller does not request one. The toolchain is the only condition;
+  /// every product family, Apple TV included, can be driven over DTUHID.
+  static func defaultTransport(coreSimulatorVersion: String?) -> FBSimulatorHIDTransportType {
+    guard shipsDTUHID(coreSimulatorVersion: coreSimulatorVersion) else {
       return .indigo
     }
     return .dtuhid
@@ -80,12 +66,11 @@ extension FBSimulator {
   }
 
   /// The HID transport to prefer when a caller does not request one: DTUHID once the toolchain ships
-  /// `dtuhidd` and the target can be driven over it, the legacy Indigo path otherwise. A preference,
-  /// not a guarantee — `FBSimulatorHID` falls back to Indigo if `dtuhidd` turns out to be unreachable.
+  /// `dtuhidd`, the legacy Indigo path otherwise. A preference, not a guarantee — `FBSimulatorHID`
+  /// falls back to Indigo if `dtuhidd` turns out to be unreachable.
   var defaultHIDTransport: FBSimulatorHIDTransportType {
     FBSimulatorHIDTransportSelection.defaultTransport(
-      coreSimulatorVersion: FBSimulatorControlFrameworkLoader.loadedCoreSimulatorVersion,
-      productFamily: productFamily)
+      coreSimulatorVersion: FBSimulatorControlFrameworkLoader.loadedCoreSimulatorVersion)
   }
 }
 
