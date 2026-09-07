@@ -107,8 +107,14 @@ public extension FBSimulatorHIDEvent {
     shortKeyPress(button.keyboardUsage)
   }
 
+  /// A swipe from `(xStart,yStart)` to `(xEnd,yEnd)`, interpolated at `delta` points per sample.
+  ///
+  /// `edge` tags every contact in the gesture, not just the first: the guest reads the edge flag off
+  /// whichever contact it is inspecting, so a gesture that announced an edge only on touch-down would
+  /// be read as an ordinary drag from its second sample onwards.
   static func swipe(
-    _ xStart: Double, yStart: Double, xEnd: Double, yEnd: Double, delta: Double, duration: Double
+    _ xStart: Double, yStart: Double, xEnd: Double, yEnd: Double, delta: Double, duration: Double,
+    edge: FBSimulatorHIDEdge = .none
   ) -> FBSimulatorHIDEvent {
     var events: [FBSimulatorHIDEvent] = []
     let distance = sqrt(pow(yEnd - yStart, 2) + pow(xEnd - xStart, 2))
@@ -124,16 +130,67 @@ public extension FBSimulatorHIDEvent {
     let stepDelay = duration / Double(steps + 2)
 
     for i in 0...steps {
-      events.append(.touch(direction: .down, x: xStart + dx * Double(i), y: yStart + dy * Double(i)))
+      events.append(.touch(direction: .down, x: xStart + dx * Double(i), y: yStart + dy * Double(i), edge: edge))
       events.append(.delay(stepDelay))
     }
     // Add an additional touch down event at the end of the swipe to avoid inertial scroll on arm simulators.
-    events.append(.touch(direction: .down, x: xStart + dx * Double(steps), y: yStart + dy * Double(steps)))
+    events.append(
+      .touch(direction: .down, x: xStart + dx * Double(steps), y: yStart + dy * Double(steps), edge: edge))
     events.append(.delay(stepDelay))
 
-    events.append(.touch(direction: .up, x: xEnd, y: yEnd))
+    events.append(.touch(direction: .up, x: xEnd, y: yEnd, edge: edge))
 
     return .composite(events)
+  }
+
+  /// How far across the screen an edge swipe travels, as a fraction of the axis it moves along. Half
+  /// the screen is comfortably past the thresholds the system gestures commit at, without running the
+  /// contact into the opposite edge.
+  static let edgeSwipeTravelFraction: Double = 0.5
+
+  /// A swipe inwards from a screen edge — the gesture iOS reads as a system gesture rather than as
+  /// content scrolling: up from the bottom for the home indicator, down from the top for Notification
+  /// Centre, rightwards from the left edge for back.
+  ///
+  /// `screenSize` is in points. The gesture starts one point inside the edge rather than exactly on it,
+  /// because the far edge of the screen is `size - 1` in a coordinate space that starts at zero, and
+  /// travels `edgeSwipeTravelFraction` of the way across.
+  ///
+  /// `.none` is accepted and produces a stationary contact at the screen centre with no edge flag, so
+  /// a caller threading an edge through from a CLI argument does not have to special-case it.
+  static func edgeSwipe(
+    _ edge: FBSimulatorHIDEdge, screenSize: CGSize, duration: Double, delta: Double = defaultSwipeDelta
+  ) -> FBSimulatorHIDEvent {
+    let width = Double(screenSize.width)
+    let height = Double(screenSize.height)
+    let midX = width / 2
+    let midY = height / 2
+    let travelX = width * edgeSwipeTravelFraction
+    let travelY = height * edgeSwipeTravelFraction
+
+    let start: CGPoint
+    let end: CGPoint
+    switch edge {
+    case .top:
+      start = CGPoint(x: midX, y: 1)
+      end = CGPoint(x: midX, y: travelY)
+    case .bottom:
+      start = CGPoint(x: midX, y: height - 1)
+      end = CGPoint(x: midX, y: height - travelY)
+    case .left:
+      start = CGPoint(x: 1, y: midY)
+      end = CGPoint(x: travelX, y: midY)
+    case .right:
+      start = CGPoint(x: width - 1, y: midY)
+      end = CGPoint(x: width - travelX, y: midY)
+    case .none:
+      start = CGPoint(x: midX, y: midY)
+      end = CGPoint(x: midX, y: midY)
+    }
+
+    return swipe(
+      Double(start.x), yStart: Double(start.y), xEnd: Double(end.x), yEnd: Double(end.y),
+      delta: delta, duration: duration, edge: edge)
   }
 
   /// A press-and-drag: hold at the source for `pressDuration`, travel over interpolated samples spread

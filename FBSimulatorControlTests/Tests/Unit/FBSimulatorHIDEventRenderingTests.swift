@@ -42,6 +42,61 @@ final class FBSimulatorHIDEventRenderingTests: XCTestCase {
     }.count
   }
 
+  private func edges(_ event: FBSimulatorHIDEvent) throws -> [FBSimulatorHIDEdge] {
+    try XCTUnwrap(event.subEvents).compactMap {
+      if case let .touch(_, _, _, edge) = $0 { return edge }
+      return nil
+    }
+  }
+
+  // MARK: - Edge swipe
+
+  // The gesture is derived from the screen, so the caller names an edge and nothing else. It starts
+  // one point inside the named edge — the far edge of a 874-point screen is y=873 — and travels half
+  // way across, which is the direction that edge implies.
+  func testEdgeSwipeGeometry() throws {
+    let screen = CGSize(width: 402, height: 874)
+    let expected: [(FBSimulatorHIDEdge, CGPoint, CGPoint)] = [
+      (.bottom, CGPoint(x: 201, y: 873), CGPoint(x: 201, y: 437)),
+      (.top, CGPoint(x: 201, y: 1), CGPoint(x: 201, y: 437)),
+      (.left, CGPoint(x: 1, y: 437), CGPoint(x: 201, y: 437)),
+      (.right, CGPoint(x: 401, y: 437), CGPoint(x: 201, y: 437)),
+    ]
+    for (edge, start, end) in expected {
+      let touches = try touches(.edgeSwipe(edge, screenSize: screen, duration: 0.4))
+      let first = try XCTUnwrap(touches.first)
+      let last = try XCTUnwrap(touches.last)
+      XCTAssertEqual(first.1, Double(start.x), accuracy: 1e-9, "\(edge.name) start x")
+      XCTAssertEqual(first.2, Double(start.y), accuracy: 1e-9, "\(edge.name) start y")
+      XCTAssertEqual(last.1, Double(end.x), accuracy: 1e-9, "\(edge.name) end x")
+      XCTAssertEqual(last.2, Double(end.y), accuracy: 1e-9, "\(edge.name) end y")
+    }
+  }
+
+  // Every contact carries the edge, not just the first: the guest reads the flag off whichever
+  // contact it inspects, so a gesture that dropped it after touch-down reads as an ordinary drag.
+  func testEdgeSwipeTagsEveryContact() throws {
+    let event = FBSimulatorHIDEvent.edgeSwipe(.bottom, screenSize: CGSize(width: 402, height: 874), duration: 0.4)
+    let edges = try edges(event)
+    XCTAssertGreaterThan(edges.count, 2, "an edge swipe interpolates several contacts")
+    XCTAssertTrue(edges.allSatisfy { $0 == .bottom }, "every contact should carry the edge, got \(edges)")
+  }
+
+  // It lifts at the end like any other swipe, so the gesture completes rather than leaving a contact
+  // held down.
+  func testEdgeSwipeEndsWithTouchUp() throws {
+    let event = FBSimulatorHIDEvent.edgeSwipe(.bottom, screenSize: CGSize(width: 402, height: 874), duration: 0.4)
+    let last = try XCTUnwrap(touches(event).last)
+    XCTAssertEqual(last.0, .up)
+  }
+
+  // A plain swipe is unaffected: it defaults to no edge, so the existing gesture keeps producing
+  // untagged contacts.
+  func testPlainSwipeCarriesNoEdge() throws {
+    let event = FBSimulatorHIDEvent.swipe(0, yStart: 0, xEnd: 0, yEnd: 100, delta: 10, duration: 0.3)
+    XCTAssertTrue(try edges(event).allSatisfy { $0 == .none })
+  }
+
   // MARK: - Tap
 
   func testTapLowersToDownUp() {
