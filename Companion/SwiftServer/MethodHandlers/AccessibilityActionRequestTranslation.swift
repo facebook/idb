@@ -55,7 +55,7 @@ enum AccessibilityActionRequestTranslation {
     guard let source = try targetedQuery(from: request) else {
       throw GRPCStatus(code: .invalidArgument, message: "accessibility_action drag requires a marker or point source")
     }
-    guard let destination = try dragDestination(drag) else {
+    guard let destination = try dragDestination(drag, ignoresCase: request.ignoreCase) else {
       throw GRPCStatus(code: .invalidArgument, message: "accessibility_action drag requires a marker or point destination")
     }
     guard source != destination else {
@@ -75,11 +75,11 @@ enum AccessibilityActionRequestTranslation {
     return .drag(source: source, destination: destination, options: options)
   }
 
-  private static func dragDestination(_ drag: Idb_AccessibilityActionRequest.Drag) throws -> FBAccessibilityElementQuery? {
+  private static func dragDestination(_ drag: Idb_AccessibilityActionRequest.Drag, ignoresCase: Bool) throws -> FBAccessibilityElementQuery? {
     switch drag.destination {
     case let .marker(marker):
       return .marker(
-        value: marker, key: try searchableKey(from: drag.destinationMatchKey), depth: UInt(drag.destinationDepth))
+        value: marker, key: try searchableKey(from: drag.destinationMatchKey), depth: UInt(drag.destinationDepth), ignoresCase: ignoresCase)
     case let .point(point):
       return .point(CGPoint(x: point.x, y: point.y))
     case .none:
@@ -119,7 +119,7 @@ enum AccessibilityActionRequestTranslation {
     switch request.target {
     case let .marker(marker):
       return .marker(
-        value: marker, key: try searchableKey(from: request.matchKey), depth: UInt(request.depth))
+        value: marker, key: try searchableKey(from: request.matchKey), depth: UInt(request.depth), ignoresCase: request.ignoreCase)
     case let .point(point):
       return .point(CGPoint(x: point.x, y: point.y))
     case .none:
