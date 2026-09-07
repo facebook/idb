@@ -114,7 +114,7 @@ final class FBSimulatorDTUHIDTransportTests: XCTestCase {
     await assertThrowsNotImplemented { try await transport.sendButton(direction: .down, button: .applePay) }
   }
 
-  func testTouchOnAppleTVDoesNotThrow() async throws {
+  func testTouchOnAppleTVThrows() async {
     let connection = xpc_connection_create("com.facebook.fbsimulatorcontrol.test.dtuhid", nil)
     xpc_connection_set_event_handler(connection) { _ in }
     xpc_connection_resume(connection)
@@ -125,12 +125,13 @@ final class FBSimulatorDTUHIDTransportTests: XCTestCase {
       productFamily: .familyAppleTV)
     defer { transport.disconnect() }
 
-    // BUG: tvOS has no touchscreen and the Indigo transport rejects a touch on one, but DTUHID encodes
-    // the digitizer event and reports success, so the caller is told a gesture happened that could not
-    // have. Flipped in the following commit.
-    try await transport.sendTouch(direction: .down, x: 10, y: 20, edge: .none)
-    try await transport.sendTwoFingerTouch(
-      direction: .down, finger1: CGPoint(x: 10, y: 20), finger2: CGPoint(x: 30, y: 40))
+    await assertThrowsTouchUnsupported {
+      try await transport.sendTouch(direction: .down, x: 10, y: 20, edge: .none)
+    }
+    await assertThrowsTouchUnsupported {
+      try await transport.sendTwoFingerTouch(
+        direction: .down, finger1: CGPoint(x: 10, y: 20), finger2: CGPoint(x: 30, y: 40))
+    }
   }
 
   // MARK: - Two-finger encoding
@@ -275,6 +276,22 @@ final class FBSimulatorDTUHIDTransportTests: XCTestCase {
       XCTFail("expected notImplementedOnDTUHIDTransport to be thrown", file: file, line: line)
     } catch let error as FBSimulatorHIDError {
       if case .notImplementedOnDTUHIDTransport = error {
+        return
+      }
+      XCTFail("unexpected FBSimulatorHIDError: \(error)", file: file, line: line)
+    } catch {
+      XCTFail("unexpected error: \(error)", file: file, line: line)
+    }
+  }
+
+  private func assertThrowsTouchUnsupported(
+    _ block: () async throws -> Void, file: StaticString = #filePath, line: UInt = #line
+  ) async {
+    do {
+      try await block()
+      XCTFail("expected touchUnsupportedOnAppleTV to be thrown", file: file, line: line)
+    } catch let error as FBSimulatorHIDError {
+      if case .touchUnsupportedOnAppleTV = error {
         return
       }
       XCTFail("unexpected FBSimulatorHIDError: \(error)", file: file, line: line)

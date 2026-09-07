@@ -163,6 +163,9 @@ actor FBSimulatorDTUHIDTransport {
   func sendTouch(
     direction: FBSimulatorHIDDirection, x: Double, y: Double, edge: FBSimulatorHIDEdge
   ) async throws {
+    guard productFamily.hasTouchscreen else {
+      throw FBSimulatorHIDError.touchUnsupportedOnAppleTV
+    }
     let ratio = FBSimulatorIndigoHID.screenRatio(
       from: CGPoint(x: x, y: y), screenSize: mainScreenSize, screenScale: mainScreenScale)
     let event = IndigoDigitizerEvent(
@@ -173,6 +176,9 @@ actor FBSimulatorDTUHIDTransport {
   }
 
   func sendTwoFingerTouch(direction: FBSimulatorHIDDirection, finger1: CGPoint, finger2: CGPoint) async throws {
+    guard productFamily.hasTouchscreen else {
+      throw FBSimulatorHIDError.touchUnsupportedOnAppleTV
+    }
     let r1 = FBSimulatorIndigoHID.screenRatio(from: finger1, screenSize: mainScreenSize, screenScale: mainScreenScale)
     let r2 = FBSimulatorIndigoHID.screenRatio(from: finger2, screenSize: mainScreenSize, screenScale: mainScreenScale)
     let event = IndigoDigitizerEvent(
