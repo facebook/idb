@@ -172,19 +172,7 @@ struct CompanionManagerTests {
 
   @Test
   func defaultCompanionSpawnsWithUDIDBootedWhenNoneAvailable() async throws {
-    // Records the launched argv next to the socket so we can assert on it.
-    let script = """
-      #!/bin/bash
-      path=""
-      prev=""
-      for arg in "$@"; do
-        if [ "$prev" = "--grpc-domain-sock" ]; then path="$arg"; fi
-        prev="$arg"
-      done
-      echo "$*" > "$path.args"
-      printf '{"grpc_path": "%s"}\\n' "$path"
-      """
-    let fakePath = try TestSupport.makeExecutableScript(script)
+    let fakePath = try TestSupport.makeExecutableScript(TestSupport.argvRecordingCompanionScript)
     defer { try? FileManager.default.removeItem(atPath: (fakePath as NSString).deletingLastPathComponent) }
 
     try await withTemporaryRegistry { registry in

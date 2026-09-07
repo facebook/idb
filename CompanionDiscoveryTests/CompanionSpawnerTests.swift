@@ -30,19 +30,7 @@ struct CompanionSpawnerTests {
 
   @Test
   func passesUDIDAndOnlyFilterToCompanion() async throws {
-    // Records the launched argv next to the socket so we can assert on it.
-    let script = """
-      #!/bin/bash
-      path=""
-      prev=""
-      for arg in "$@"; do
-        if [ "$prev" = "--grpc-domain-sock" ]; then path="$arg"; fi
-        prev="$arg"
-      done
-      echo "$*" > "$path.args"
-      printf '{"grpc_path": "%s"}\\n' "$path"
-      """
-    try await withFakeCompanion(script) { spawner in
+    try await withFakeCompanion(TestSupport.argvRecordingCompanionScript) { spawner in
       let udid = TestSupport.uniqueUDID()
       let socketPath = TestSupport.shortSocketPath()
       let argsPath = socketPath + ".args"
@@ -61,18 +49,7 @@ struct CompanionSpawnerTests {
 
   @Test
   func omitsOnlyFilterWhenNil() async throws {
-    let script = """
-      #!/bin/bash
-      path=""
-      prev=""
-      for arg in "$@"; do
-        if [ "$prev" = "--grpc-domain-sock" ]; then path="$arg"; fi
-        prev="$arg"
-      done
-      echo "$*" > "$path.args"
-      printf '{"grpc_path": "%s"}\\n' "$path"
-      """
-    try await withFakeCompanion(script) { spawner in
+    try await withFakeCompanion(TestSupport.argvRecordingCompanionScript) { spawner in
       let udid = TestSupport.uniqueUDID()
       let socketPath = TestSupport.shortSocketPath()
       let argsPath = socketPath + ".args"

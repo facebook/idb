@@ -33,6 +33,20 @@ enum TestSupport {
 
   /// Writes `script` to a unique temporary executable file and returns its path,
   /// for use as a fake `idb_companion`. The caller removes its parent directory.
+  /// A fake companion that records its argv next to the socket (`<path>.args`) and prints the
+  /// JSON handshake a real companion prints.
+  static let argvRecordingCompanionScript = """
+    #!/bin/bash
+    path=""
+    prev=""
+    for arg in "$@"; do
+      if [ "$prev" = "--grpc-domain-sock" ]; then path="$arg"; fi
+      prev="$arg"
+    done
+    echo "$*" > "$path.args"
+    printf '{"grpc_path": "%s"}\\n' "$path"
+    """
+
   static func makeExecutableScript(_ script: String) throws -> String {
     let path = (makeTemporaryDirectory() as NSString).appendingPathComponent("fake_idb_companion")
     try script.write(toFile: path, atomically: true, encoding: .utf8)
