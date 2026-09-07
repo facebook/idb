@@ -112,8 +112,8 @@ class OverlayRendererTests: XCTestCase {
 
   func testParseFontSpecWithNameOnly() {
     let renderer = FBOverlayRenderer(width: 100, height: 100)
-    let (name, size) = renderer.parseFontSpec("Monaco")
-    XCTAssertEqual(name, "Monaco")
+    let (name, size) = renderer.parseFontSpec("Helvetica")
+    XCTAssertEqual(name, "Helvetica")
     XCTAssertEqual(size, 8.0)
   }
 
@@ -311,6 +311,7 @@ class OverlayRendererTests: XCTestCase {
     renderer.setBarFit(true, position: "bottom")
     renderer.setBarContent(.stats, position: "bottom")
     renderer.setStatsText(String(repeating: "S", count: 200), position: "bottom")
+    renderer.renderToBuffer()
     let barY = Int(renderer.transform.barY(position: "bottom"))
     let barHeight = Int(renderer.transform.barHeight())
     let padding = 4
@@ -318,6 +319,7 @@ class OverlayRendererTests: XCTestCase {
     XCTAssertLessThanOrEqual(
       maxX, 600 - padding,
       "stats text should shrink to fit when the bar's fit flag is set")
+    XCTAssertGreaterThan(maxX, 0, "stats text must still be rendered")
   }
 
   // MARK: - Animating Shape Persistence Tests (deterministic clock)
