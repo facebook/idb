@@ -165,6 +165,15 @@ typedef struct {
 
 #define ButtonEventTargetHardware 0x33
 #define ButtonEventTargetKeyboard 0x64
+/**
+ The digitizer service, and the target a ButtonEventSourceHIDArbitrary event must be addressed to.
+
+ The guest keeps its registered HID services in a dictionary keyed by this target and routes on it.
+ ButtonEventTargetHardware (0x33) is where the *sourced* button builder sends home and lock, and it is
+ a registered target, so sending a Consumer-page usage there does not fail — the guest simply drops it,
+ with no log line and no error. Only 0x32 reaches the handler that acts on HID usages.
+ */
+#define ButtonEventTargetDigitizer 0x32
 
 /**
  These are Derived from NSEventTypeKeyDown & NSEventTypeKeyUp.

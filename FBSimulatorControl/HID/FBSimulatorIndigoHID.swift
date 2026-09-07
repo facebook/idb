@@ -108,7 +108,7 @@ final class FBSimulatorIndigoHID {
   /// with one everywhere downstream.
   func hidArbitrary(page: UInt16, usage: UInt16, direction: FBSimulatorHIDDirection) -> Data {
     let message = messageForHIDArbitrary(
-      Int32(ButtonEventTargetHardware), UInt32(page), UInt32(usage), direction.rawValue)
+      Int32(ButtonEventTargetDigitizer), UInt32(page), UInt32(usage), direction.rawValue)
     return FBSimulatorIndigoHID.data(fromMallocedMessage: message)
   }
 

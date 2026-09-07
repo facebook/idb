@@ -220,14 +220,15 @@ final class FBSimulatorIndigoHIDTests: XCTestCase {
   }
 
   // `play_pause` is the button that had no dedicated `ButtonEventSource`, so it is the one this
-  // routes down the arbitrary-HID path: same hardware target and direction as a sourced button, but
-  // the source is `ButtonEventSourceHIDArbitrary` and the Consumer usage rides in `keyCode`.
+  // routes down the arbitrary-HID path: the source is `ButtonEventSourceHIDArbitrary`, the Consumer
+  // usage rides in `keyCode`, and it is addressed to the digitizer service rather than the
+  // hardware-button one.
   func testConsumerPageButtonUsesTheArbitraryHIDSource() throws {
     let indigo = try makeIndigo()
     let data = indigo.button(with: .down, button: .playPause)
 
     XCTAssertEqual(uint32(at: 0x30, in: data), 0x2711, "eventSource should be arbitrary HID")
-    XCTAssertEqual(uint32(at: 0x38, in: data), 0x33, "eventTarget (hardware)")
+    XCTAssertEqual(uint32(at: 0x38, in: data), 0x32, "eventTarget (digitizer)")
     XCTAssertEqual(uint32(at: 0x3c, in: data), 0xCD, "Consumer Play/Pause usage")
     XCTAssertEqual(uint32(at: 0x44, in: data), 0x0C, "Consumer usage page")
   }
@@ -274,21 +275,28 @@ final class FBSimulatorIndigoHIDTests: XCTestCase {
     XCTAssertEqual(uint32(at: 0x30, in: down), 0x2711, "eventSource should be arbitrary HID")
     XCTAssertEqual(uint32(at: 0x34, in: down), 1, "down eventType")
     XCTAssertEqual(uint32(at: 0x34, in: up), 2, "up eventType")
-    XCTAssertEqual(uint32(at: 0x38, in: down), 0x33, "eventTarget (hardware)")
+    XCTAssertEqual(uint32(at: 0x38, in: down), 0x32, "eventTarget (digitizer)")
     XCTAssertEqual(uint32(at: 0x3c, in: down), 0xCD, "usage lands in keyCode")
     XCTAssertEqual(uint32(at: 0x44, in: down), 0x0C, "page lands in usagePage")
   }
 
-  // BUG: the arbitrary-HID builder addresses `ButtonEventTargetHardware` (0x33), the target the
-  // *legacy* sourced-button builder uses. The guest routes Consumer-page usages to the digitizer
-  // target (0x32) instead, so everything sent this way is silently discarded — nothing reaches
-  // backboardd at all. Measured on iOS 27.0: at 0x32 a Play/Pause usage produces
-  // `backboardd PlayOrPause page:0xC usage:0xCD` and a SpringBoard `TogglePlayPause`; at 0x33 the
-  // guest log is empty. Flipped in the following commit.
-  func testArbitraryHIDUsageAddressesTheHardwareButtonTarget() throws {
+  // A Consumer-page usage has to reach the digitizer service, not the hardware-button service the
+  // sourced builder uses for home and lock — 0x33 is a registered target, so the guest accepts the
+  // message and silently drops it rather than failing.
+  func testArbitraryHIDUsageAddressesTheDigitizerTarget() throws {
     let indigo = try makeIndigo()
     let data = indigo.hidArbitrary(page: 0x0C, usage: 0xCD, direction: .down)
-    XCTAssertEqual(uint32(at: 0x38, in: data), 0x33, "eventTarget")
+    XCTAssertEqual(uint32(at: 0x38, in: data), 0x32, "eventTarget")
+  }
+
+  // The sourced builder is unaffected: home and lock still go to the hardware-button service, which
+  // is the target that works for them.
+  func testSourcedButtonsStillAddressTheHardwareButtonTarget() throws {
+    let indigo = try makeIndigo()
+    for button in [FBSimulatorHIDButton.homeButton, .lock, .siri, .applePay] {
+      let data = indigo.button(with: .down, button: button)
+      XCTAssertEqual(uint32(at: 0x38, in: data), 0x33, "eventTarget for \(button.name)")
+    }
   }
 
   // The page and usage are carried independently, so the builder is not hard-wired to one page.
