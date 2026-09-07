@@ -114,6 +114,25 @@ final class FBSimulatorDTUHIDTransportTests: XCTestCase {
     await assertThrowsNotImplemented { try await transport.sendButton(direction: .down, button: .applePay) }
   }
 
+  func testTouchOnAppleTVDoesNotThrow() async throws {
+    let connection = xpc_connection_create("com.facebook.fbsimulatorcontrol.test.dtuhid", nil)
+    xpc_connection_set_event_handler(connection) { _ in }
+    xpc_connection_resume(connection)
+    let transport = FBSimulatorDTUHIDTransport(
+      connection: connection,
+      mainScreenSize: CGSize(width: 100, height: 200),
+      mainScreenScale: 2.0,
+      productFamily: .familyAppleTV)
+    defer { transport.disconnect() }
+
+    // BUG: tvOS has no touchscreen and the Indigo transport rejects a touch on one, but DTUHID encodes
+    // the digitizer event and reports success, so the caller is told a gesture happened that could not
+    // have. Flipped in the following commit.
+    try await transport.sendTouch(direction: .down, x: 10, y: 20, edge: .none)
+    try await transport.sendTwoFingerTouch(
+      direction: .down, finger1: CGPoint(x: 10, y: 20), finger2: CGPoint(x: 30, y: 40))
+  }
+
   // MARK: - Two-finger encoding
 
   func testDigitizerEventWithTwoFingers() throws {
