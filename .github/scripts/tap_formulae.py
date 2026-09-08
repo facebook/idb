@@ -28,6 +28,25 @@ COMPANION_ASSET = "idb-companion.macos-arm64.tar.gz"
 FORMULAE = ("idb-companion.rb", "idb-cli.rb", "idb.rb")
 
 TAG_RE = re.compile(r"^v\d+\.\d+\.\d+(?:\.(?:a|b|rc)\d+)?$")
+PRERELEASE_RE = re.compile(r"\.(?:a|b|rc)\d+$")
+
+# Written above the companion's `version` stanza, present or not, so the formula
+# always explains its own shape to the next reader of the tap.
+COMPANION_VERSION_NOTE = """\
+  # No explicit `version` on stable tags: it matches what Homebrew scans from
+  # the URL, and `brew audit --strict` rejects the redundancy. A prerelease tag
+  # (v1.5.0.b7) must re-add the stanza, because URL scanning silently drops the
+  # suffix and would make a beta look like a final release."""
+
+# The companion's url, its note and its optional `version` stanza are rewritten
+# as one region, because whether the stanza exists at all depends on the tag.
+COMPANION_HEAD_RE = (
+    r'(?m)^  url "https://github\.com/facebook/idb/releases/download/v[^/"]+/'
+    r'idb-companion\.macos-arm64\.tar\.gz"\n'
+    r"(?:  #[^\n]*\n)*"
+    r'(?:  version "[^"]+"\n)?'
+    r'(?=  sha256 "[0-9a-f]{64}"$)'
+)
 
 
 class FormulaError(Exception):
@@ -38,6 +57,10 @@ def version_from_tag(tag):
     if not TAG_RE.match(tag):
         raise FormulaError(f"tag {tag!r} does not look like vX.Y.Z or vX.Y.Z.<a|b|rc>N")
     return tag[1:]
+
+
+def is_prerelease(version):
+    return PRERELEASE_RE.search(version) is not None
 
 
 def pep440(version):
@@ -64,22 +87,36 @@ def _download_url(tag, asset):
     return f"https://github.com/{IDB_REPO}/releases/download/{tag}/{asset}"
 
 
+def companion_version(text):
+    """The version idb-companion.rb currently declares. A prerelease carries an
+    explicit stanza; a stable release carries the version only in its url."""
+    match = re.search(r'(?m)^  version "([^"]+)"$', text)
+    if match is not None:
+        return match.group(1)
+    match = re.search(
+        r'(?m)^  url "https://github\.com/facebook/idb/releases/download/(v[^/"]+)/'
+        r'idb-companion\.macos-arm64\.tar\.gz"$',
+        text,
+    )
+    if match is None:
+        raise FormulaError(
+            "idb-companion.rb: neither a version stanza nor a companion tarball "
+            "url — cannot tell what version this formula is on"
+        )
+    return version_from_tag(match.group(1))
+
+
 def rewrite_companion(text, tag, sha):
     version = version_from_tag(tag)
+    head = [f'  url "{_download_url(tag, COMPANION_ASSET)}"', COMPANION_VERSION_NOTE]
+    if is_prerelease(version):
+        head.append(f'  version "{version}"')
     text = _sub(
         text,
-        r'(?m)^  url "https://github\.com/facebook/idb/releases/download/v[^/"]+/idb-companion\.macos-arm64\.tar\.gz"$',
-        f'  url "{_download_url(tag, COMPANION_ASSET)}"',
+        COMPANION_HEAD_RE,
+        "\n".join(head) + "\n",
         1,
-        "the companion tarball url",
-        "idb-companion.rb",
-    )
-    text = _sub(
-        text,
-        r'(?m)^  version "[^"]+"$',
-        f'  version "{version}"',
-        1,
-        "the version stanza",
+        "the companion tarball url and version block",
         "idb-companion.rb",
     )
     return _sub(
