@@ -351,4 +351,24 @@ final class FBAXBridgeSocketTests: XCTestCase {
     XCTAssertLessThan(
       path.utf8.count, FBAXBridgeConnection.sunPathCapacity, "\(path) is \(path.utf8.count) bytes")
   }
+
+  // MARK: - Which guest a target gets
+
+  // Picking the wrong name aborts the guest before `main`, so the mapping is pinned per family.
+  func testAnAppleTVTargetGetsTheTvOSGuest() {
+    XCTAssertEqual(
+      FBSimulatorFrameworkBridgeSelection.resourceName(for: .familyAppleTV),
+      "SimulatorFrameworkBridge-tvOS")
+  }
+
+  func testEveryNonTVFamilyGetsTheIOSGuest() {
+    let families: [FBControlCoreProductFamily] = [
+      .familyiPhone, .familyiPad, .familyAppleWatch, .familyMac, .familyUnknown,
+    ]
+    for family in families {
+      XCTAssertEqual(
+        FBSimulatorFrameworkBridgeSelection.resourceName(for: family),
+        "SimulatorFrameworkBridge-iOS", "\(family)")
+    }
+  }
 }
