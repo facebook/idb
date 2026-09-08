@@ -30,23 +30,15 @@ FORMULAE = ("idb-companion.rb", "idb-cli.rb", "idb.rb")
 TAG_RE = re.compile(r"^v\d+\.\d+\.\d+(?:\.(?:a|b|rc)\d+)?$")
 PRERELEASE_RE = re.compile(r"\.(?:a|b|rc)\d+$")
 
-# Written above the companion's `version` stanza, present or not, so the formula
-# always explains its own shape to the next reader of the tap.
-COMPANION_VERSION_NOTE = """\
-  # No explicit `version` on stable tags: it matches what Homebrew scans from
-  # the URL, and `brew audit --strict` rejects the redundancy. A prerelease tag
-  # (v1.5.0.b7) must re-add the stanza, because URL scanning silently drops the
-  # suffix and would make a beta look like a final release."""
-
-# The companion's url, its note and its optional `version` stanza are rewritten
-# as one region, because whether the stanza exists at all depends on the tag.
-COMPANION_HEAD_RE = (
+COMPANION_URL_RE = (
     r'(?m)^  url "https://github\.com/facebook/idb/releases/download/v[^/"]+/'
-    r'idb-companion\.macos-arm64\.tar\.gz"\n'
-    r"(?:  #[^\n]*\n)*"
-    r'(?:  version "[^"]+"\n)?'
-    r'(?=  sha256 "[0-9a-f]{64}"$)'
+    r'idb-companion\.macos-arm64\.tar\.gz"$'
 )
+
+# Anchored on the sha256 rather than the url, so the optional `version` stanza
+# can be added or dropped without the region reaching back over the comments
+# above it -- those belong to whoever wrote them, not to this rewriter.
+COMPANION_VERSION_AND_SHA_RE = r'(?m)^(?:  version "[^"]+"\n)?  sha256 "[0-9a-f]{64}"$'
 
 
 class FormulaError(Exception):
@@ -108,23 +100,21 @@ def companion_version(text):
 
 def rewrite_companion(text, tag, sha):
     version = version_from_tag(tag)
-    head = [f'  url "{_download_url(tag, COMPANION_ASSET)}"', COMPANION_VERSION_NOTE]
-    if is_prerelease(version):
-        head.append(f'  version "{version}"')
     text = _sub(
         text,
-        COMPANION_HEAD_RE,
-        "\n".join(head) + "\n",
+        COMPANION_URL_RE,
+        f'  url "{_download_url(tag, COMPANION_ASSET)}"',
         1,
-        "the companion tarball url and version block",
+        "the companion tarball url",
         "idb-companion.rb",
     )
+    stanza = f'  version "{version}"\n' if is_prerelease(version) else ""
     return _sub(
         text,
-        r'(?m)^  sha256 "[0-9a-f]{64}"$',
-        f'  sha256 "{sha}"',
+        COMPANION_VERSION_AND_SHA_RE,
+        f'{stanza}  sha256 "{sha}"',
         1,
-        "the top-level sha256",
+        "the version stanza and top-level sha256",
         "idb-companion.rb",
     )
 
