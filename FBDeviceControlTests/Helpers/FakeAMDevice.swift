@@ -229,7 +229,7 @@ final class FakeAMDevice: NSObject {
         return nil
       }
       // The header declares this as returning `CFStringRef`, but MobileDevice returns whatever CF
-      // type the key holds — `FBAMDeviceManager` reads `UniqueChipID` back as an `NSNumber`. The
+      // type the key holds — `AMDeviceManager` reads `UniqueChipID` back as an `NSNumber`. The
       // fake has to under-declare in the same way to answer non-string keys.
       return unsafeBitCast(Unmanaged.passRetained(value as AnyObject), to: Unmanaged<CFString>.self)
     }

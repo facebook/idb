@@ -15,7 +15,7 @@ private let serviceReuseTimeout: TimeInterval = 6.0
 ///
 /// Pairing is allowed to fail: an unpaired device still yields the default domain, so it is
 /// reported with degraded information rather than dropped.
-private func amDeviceConnected(_ device: AMDevice, manager: FBAMDeviceManager) {
+private func amDeviceConnected(_ device: AMDevice, manager: AMDeviceManager) {
   let logger = manager.logger
   let calls = manager.calls
 
@@ -81,7 +81,7 @@ private func amDeviceListenerCallback(
   guard let notification, let context else {
     return
   }
-  let manager = Unmanaged<FBAMDeviceManager>.fromOpaque(context).takeUnretainedValue()
+  let manager = Unmanaged<AMDeviceManager>.fromOpaque(context).takeUnretainedValue()
   let logger = manager.logger
   // The struct field is an unaudited CF pointer, so it arrives unmanaged.
   let device = notification.pointee.amDevice.takeUnretainedValue()
@@ -103,7 +103,7 @@ private func amDeviceListenerCallback(
 }
 
 /// Obtains `FBAMDevice` instances.
-final class FBAMDeviceManager: FBDeviceManager<FBAMDevice> {
+final class AMDeviceManager: DeviceManager<FBAMDevice> {
 
   // MARK: - Properties
 
@@ -127,7 +127,7 @@ final class FBAMDeviceManager: FBDeviceManager<FBAMDevice> {
     super.init(logger: logger)
   }
 
-  // MARK: - FBDeviceManager Implementation
+  // MARK: - DeviceManager Implementation
 
   override func startListening() throws {
     guard subscription == nil else {
@@ -145,7 +145,7 @@ final class FBAMDeviceManager: FBDeviceManager<FBAMDevice> {
       context,
       &subscription)
     guard result == 0 else {
-      Unmanaged<FBAMDeviceManager>.fromOpaque(context).release()
+      Unmanaged<AMDeviceManager>.fromOpaque(context).release()
       throw FBAMDeviceManagerError.subscribeFailed(status: result)
     }
 

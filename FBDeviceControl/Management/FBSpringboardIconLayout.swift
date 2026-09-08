@@ -15,15 +15,15 @@ public enum FBSpringboardIconEntryType: Sendable {
 }
 
 /// A property-list value from the SpringBoard icon-state wire format.
-enum FBSpringboardPropertyListValue: Encodable, Sendable {
+enum SpringboardPropertyListValue: Encodable, Sendable {
   case string(String)
   case bool(Bool)
   case integer(Int)
   case double(Double)
   case data(Data)
   case date(Date)
-  case array([FBSpringboardPropertyListValue])
-  case dictionary([String: FBSpringboardPropertyListValue])
+  case array([SpringboardPropertyListValue])
+  case dictionary([String: SpringboardPropertyListValue])
 
   init(rawValue: Any) throws {
     if let value = rawValue as? String {
@@ -41,13 +41,13 @@ enum FBSpringboardPropertyListValue: Encodable, Sendable {
     } else if let value = rawValue as? NSNumber {
       self = value.isFloatingPointNumber ? .double(value.doubleValue) : .integer(value.intValue)
     } else if let value = rawValue as? [Any] {
-      self = .array(try value.map { try FBSpringboardPropertyListValue(rawValue: $0) })
+      self = .array(try value.map { try SpringboardPropertyListValue(rawValue: $0) })
     } else if let value = rawValue as? NSArray {
-      self = .array(try value.map { try FBSpringboardPropertyListValue(rawValue: $0) })
+      self = .array(try value.map { try SpringboardPropertyListValue(rawValue: $0) })
     } else if let value = rawValue as? [String: Any] {
-      self = .dictionary(try FBSpringboardPropertyListValue.dictionary(from: value))
+      self = .dictionary(try SpringboardPropertyListValue.dictionary(from: value))
     } else if let value = rawValue as? NSDictionary {
-      self = .dictionary(try FBSpringboardPropertyListValue.dictionary(from: value))
+      self = .dictionary(try SpringboardPropertyListValue.dictionary(from: value))
     } else {
       throw FBSpringboardServicesError.unexpectedResponse(
         command: "getIconState",
@@ -103,23 +103,23 @@ enum FBSpringboardPropertyListValue: Encodable, Sendable {
         try container.encode(element)
       }
     case .dictionary(let value):
-      var container = encoder.container(keyedBy: FBSpringboardPropertyListCodingKey.self)
+      var container = encoder.container(keyedBy: SpringboardPropertyListCodingKey.self)
       for (key, element) in value {
-        try container.encode(element, forKey: FBSpringboardPropertyListCodingKey(stringValue: key))
+        try container.encode(element, forKey: SpringboardPropertyListCodingKey(stringValue: key))
       }
     }
   }
 
-  static func dictionary(from dict: [String: Any]) throws -> [String: FBSpringboardPropertyListValue] {
-    var result: [String: FBSpringboardPropertyListValue] = [:]
+  static func dictionary(from dict: [String: Any]) throws -> [String: SpringboardPropertyListValue] {
+    var result: [String: SpringboardPropertyListValue] = [:]
     for (key, value) in dict {
-      result[key] = try FBSpringboardPropertyListValue(rawValue: value)
+      result[key] = try SpringboardPropertyListValue(rawValue: value)
     }
     return result
   }
 
-  static func dictionary(from dict: NSDictionary) throws -> [String: FBSpringboardPropertyListValue] {
-    var result: [String: FBSpringboardPropertyListValue] = [:]
+  static func dictionary(from dict: NSDictionary) throws -> [String: SpringboardPropertyListValue] {
+    var result: [String: SpringboardPropertyListValue] = [:]
     for (key, value) in dict {
       guard let key = key as? String else {
         throw FBSpringboardServicesError.unexpectedResponse(
@@ -127,13 +127,13 @@ enum FBSpringboardPropertyListValue: Encodable, Sendable {
           expected: "a property-list dictionary keyed by strings",
           actual: String(describing: dict))
       }
-      result[key] = try FBSpringboardPropertyListValue(rawValue: value)
+      result[key] = try SpringboardPropertyListValue(rawValue: value)
     }
     return result
   }
 }
 
-private struct FBSpringboardPropertyListCodingKey: CodingKey {
+private struct SpringboardPropertyListCodingKey: CodingKey {
   let stringValue: String
   let intValue: Int? = nil
 
@@ -153,7 +153,7 @@ private extension NSNumber {
   }
 }
 
-private extension Dictionary where Key == String, Value == FBSpringboardPropertyListValue {
+private extension Dictionary where Key == String, Value == SpringboardPropertyListValue {
 
   var rawValue: [String: Any] {
     mapValues { $0.rawValue }
@@ -174,7 +174,7 @@ public struct FBSpringboardIcon: Encodable, Sendable {
   public let gridSize: String?
   public let folderIcons: [[FBSpringboardIcon]]
 
-  private let propertyList: [String: FBSpringboardPropertyListValue]
+  private let propertyList: [String: SpringboardPropertyListValue]
 
   public var rawDict: [String: Any] {
     propertyList.rawValue
@@ -185,13 +185,13 @@ public struct FBSpringboardIcon: Encodable, Sendable {
   }
 
   public init(dict: [String: Any]) {
-    guard let propertyList = try? FBSpringboardPropertyListValue.dictionary(from: dict) else {
+    guard let propertyList = try? SpringboardPropertyListValue.dictionary(from: dict) else {
       preconditionFailure("SpringBoard icon dictionaries must contain property-list values")
     }
     self.init(propertyList: propertyList)
   }
 
-  private init(propertyList: [String: FBSpringboardPropertyListValue]) {
+  private init(propertyList: [String: SpringboardPropertyListValue]) {
     self.propertyList = propertyList
     let dict = propertyList.rawValue
 
@@ -249,7 +249,7 @@ public struct FBSpringboardIcon: Encodable, Sendable {
   }
 
   public func encode(to encoder: Encoder) throws {
-    try FBSpringboardPropertyListValue.dictionary(propertyList).encode(to: encoder)
+    try SpringboardPropertyListValue.dictionary(propertyList).encode(to: encoder)
   }
 
   public var isValid: Bool {
@@ -359,7 +359,7 @@ extension FBSpringboardIcon {
 /// Page 0 is the dock. Subsequent pages are home-screen pages. All values are
 /// property-list values deserialized from the lockdown service.
 public struct FBSpringboardIconLayout: Encodable, Sendable {
-  private let propertyListPages: [[[String: FBSpringboardPropertyListValue]]]
+  private let propertyListPages: [[[String: SpringboardPropertyListValue]]]
 
   public var pages: [[[String: Any]]] {
     propertyListPages.map { page in page.map { $0.rawValue } }
@@ -387,7 +387,7 @@ public struct FBSpringboardIconLayout: Encodable, Sendable {
   }
 
   public func encode(to encoder: Encoder) throws {
-    try FBSpringboardPropertyListValue.array(
+    try SpringboardPropertyListValue.array(
       propertyListPages.map { page in
         .array(page.map { .dictionary($0) })
       }
@@ -436,10 +436,10 @@ public struct FBSpringboardIconLayout: Encodable, Sendable {
     return nil
   }
 
-  private static func propertyListPages(from pages: [[[String: Any]]]) throws -> [[[String: FBSpringboardPropertyListValue]]] {
+  private static func propertyListPages(from pages: [[[String: Any]]]) throws -> [[[String: SpringboardPropertyListValue]]] {
     try pages.map { page in
       try page.map { icon in
-        try FBSpringboardPropertyListValue.dictionary(from: icon)
+        try SpringboardPropertyListValue.dictionary(from: icon)
       }
     }
   }

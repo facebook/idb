@@ -12,7 +12,7 @@ import Foundation
 ///
 /// Subclasses supply how to listen and how to turn a private device reference into a public one;
 /// this class owns the registry of what is currently attached and notifies the delegate.
-class FBDeviceManager<PublicDevice: AnyObject>: NSObject, FBiOSTargetSet {
+class DeviceManager<PublicDevice: AnyObject>: NSObject, FBiOSTargetSet {
 
   let logger: any FBControlCoreLogger
   let storage: FBDeviceStorage<PublicDevice>

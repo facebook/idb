@@ -52,8 +52,8 @@ public final class FBDeviceDiagnosticInformationCommands: FBiOSTargetCommand {
     let mobileConfig = try await fetchInformationFromMobileConfiguration(device: device)
     let merged: [String: Any] = [
       DiagnosticsRelayService: diagnostics,
-      FBSpringboardServicesClient.serviceName: springboard,
-      FBManagedConfigClient.serviceName: mobileConfig,
+      SpringboardServicesClient.serviceName: springboard,
+      ManagedConfigClient.serviceName: mobileConfig,
     ]
     return FBCollectionOperations.recursiveFilteredJSONSerializableRepresentation(of: merged) as [String: Any]
   }
@@ -75,16 +75,16 @@ public final class FBDeviceDiagnosticInformationCommands: FBiOSTargetCommand {
 
   private func fetchInformationFromSpringboard(device: FBDevice) async throws -> Any {
     let logger = device.logger
-    return try await device.withServiceConnection(FBSpringboardServicesClient.serviceName) { connection in
-      let client = FBSpringboardServicesClient(connection: connection, logger: logger)
+    return try await device.withServiceConnection(SpringboardServicesClient.serviceName) { connection in
+      let client = SpringboardServicesClient(connection: connection, logger: logger)
       return try await client.getIconLayout().pages
     }
   }
 
   private func fetchInformationFromMobileConfiguration(device: FBDevice) async throws -> Any {
     let logger = device.logger
-    return try await device.withServiceConnection(FBManagedConfigClient.serviceName) { connection in
-      try await FBManagedConfigClient.managedConfigClient(connection: connection, logger: logger).getCloudConfiguration()
+    return try await device.withServiceConnection(ManagedConfigClient.serviceName) { connection in
+      try await ManagedConfigClient.managedConfigClient(connection: connection, logger: logger).getCloudConfiguration()
     }
   }
 }

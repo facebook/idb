@@ -19,7 +19,7 @@ extension FBDevice {
     _ body: (FBAMDServiceConnection) async throws -> T
   ) async throws -> T {
     guard let amDevice else {
-      throw FBAMDeviceServiceError.notAMDeviceBacked(service: service)
+      throw AMDeviceServiceError.notAMDeviceBacked(service: service)
     }
     return try await amDevice.withServiceConnection(service, body)
   }
@@ -28,7 +28,7 @@ extension FBDevice {
   /// hands it back to `FBAMDevice.invalidateServiceConnection`.
   func openServiceConnection(_ service: String) async throws -> FBAMDServiceConnection {
     guard let amDevice else {
-      throw FBAMDeviceServiceError.notAMDeviceBacked(service: service)
+      throw AMDeviceServiceError.notAMDeviceBacked(service: service)
     }
     return try await amDevice.openServiceConnection(service)
   }
@@ -39,7 +39,7 @@ extension FBDevice {
     _ body: (FBDeviceLinkClient) async throws -> T
   ) async throws -> T {
     guard let amDevice else {
-      throw FBAMDeviceServiceError.notAMDeviceBacked(service: service)
+      throw AMDeviceServiceError.notAMDeviceBacked(service: service)
     }
     return try await amDevice.withDeviceLinkClient(service, body)
   }
@@ -52,7 +52,7 @@ extension FBDevice {
     _ body: (FBAFCConnection) async throws -> T
   ) async throws -> T {
     guard let amDevice else {
-      throw FBAMDeviceServiceError.notAMDeviceBacked(service: service)
+      throw AMDeviceServiceError.notAMDeviceBacked(service: service)
     }
     return try await amDevice.withAFCConnection(service, calls: afcCalls, body)
   }

@@ -28,7 +28,7 @@ private final class RecordingLogger: NSObject, FBControlCoreLogger {
 }
 
 @Suite
-struct FBDeviceManagerLoggingTests {
+struct DeviceManagerLoggingTests {
 
   /// A stand-in for the CFTypeRef handed to connection callbacks, with a
   /// recognizable description.
@@ -36,7 +36,7 @@ struct FBDeviceManagerLoggingTests {
 
   private func connectDevice(identifier: String) -> RecordingLogger {
     let logger = RecordingLogger()
-    let manager = FBDeviceManagerDouble(logger: logger)
+    let manager = DeviceManagerDouble(logger: logger)
     manager.deviceConnected(privateDevice, identifier: identifier, info: [:])
     return logger
   }
@@ -52,7 +52,7 @@ struct FBDeviceManagerLoggingTests {
   @Test
   func disconnectionLogsIdentifyTheDeviceWithoutDereferencingTheRef() {
     let logger = connectDevice(identifier: "chip-id-2")
-    let manager = FBDeviceManagerDouble(logger: logger)
+    let manager = DeviceManagerDouble(logger: logger)
     manager.deviceDisconnected(privateDevice, identifier: "chip-id-2")
     let allOutput = logger.lines.joined(separator: "\n")
     #expect(!(allOutput.contains("recognizable-private-ref-description")), "unexpected log output: \(allOutput)")

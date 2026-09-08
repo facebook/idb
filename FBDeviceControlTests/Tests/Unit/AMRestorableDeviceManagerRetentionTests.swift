@@ -17,7 +17,7 @@ import Testing
 /// something valid to message. Unregistering has to give that retain back, or the manager is
 /// immortal from the first `startListening`.
 @Suite
-struct FBAMRestorableDeviceManagerRetentionTests {
+struct AMRestorableDeviceManagerRetentionTests {
 
   /// `AMDCalls` with just the registration pair stubbed: registering reports a plausible
   /// identifier, unregistering does nothing. No device is involved.
@@ -28,8 +28,8 @@ struct FBAMRestorableDeviceManagerRetentionTests {
     return calls
   }
 
-  private func makeManager() -> FBAMRestorableDeviceManager {
-    FBAMRestorableDeviceManager(
+  private func makeManager() -> AMRestorableDeviceManager {
+    AMRestorableDeviceManager(
       calls: stubbedCalls(),
       work: DispatchQueue(label: "com.facebook.fbdevicecontrol.test.work"),
       asyncQueue: DispatchQueue(label: "com.facebook.fbdevicecontrol.test.async"),
@@ -39,7 +39,7 @@ struct FBAMRestorableDeviceManagerRetentionTests {
 
   @Test
   func unusedManagerIsReleased() {
-    weak var weakManager: FBAMRestorableDeviceManager?
+    weak var weakManager: AMRestorableDeviceManager?
     autoreleasepool {
       let manager = makeManager()
       weakManager = manager
@@ -49,7 +49,7 @@ struct FBAMRestorableDeviceManagerRetentionTests {
 
   @Test
   func listenedManagerIsReleased() throws {
-    weak var weakManager: FBAMRestorableDeviceManager?
+    weak var weakManager: AMRestorableDeviceManager?
     try autoreleasepool {
       let manager = makeManager()
       weakManager = manager

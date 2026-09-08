@@ -22,7 +22,7 @@ private final class FBDeviceEraseOperation: NSObject, FBiOSTargetSetDelegate, @u
   private let calls: AMDCalls
   private let logger: any FBControlCoreLogger
   private let queue: DispatchQueue
-  private let deviceManager: FBAMRestorableDeviceManager
+  private let deviceManager: AMRestorableDeviceManager
   private let deviceDetected = FBMutableFuture<NSNull>()
   private let deviceWentAway = FBMutableFuture<NSNull>()
   private let deviceCameBack = FBMutableFuture<NSNull>()
@@ -34,7 +34,7 @@ private final class FBDeviceEraseOperation: NSObject, FBiOSTargetSetDelegate, @u
     self.calls = device.calls
     self.logger = logger
     self.queue = queue
-    self.deviceManager = FBAMRestorableDeviceManager(
+    self.deviceManager = AMRestorableDeviceManager(
       calls: device.calls,
       work: queue,
       asyncQueue: queue,

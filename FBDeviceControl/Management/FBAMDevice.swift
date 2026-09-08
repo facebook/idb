@@ -30,17 +30,17 @@ public final class FBAMDevice: FBiOSTargetInfo, FBDeviceCommands, CustomStringCo
   // cannot be `let` properties, and `lazy` would make first access from two threads a race. The
   // storage is populated before the object is shared, which is what makes the unsynchronised
   // accessors safe.
-  private var sessionStorage: FBAMDeviceSession?
-  private var serviceManagerStorage: FBAMDeviceServiceManager?
+  private var sessionStorage: AMDeviceSession?
+  private var serviceManagerStorage: AMDeviceServiceManager?
 
-  var session: FBAMDeviceSession {
+  var session: AMDeviceSession {
     guard let sessionStorage else {
       preconditionFailure("The session is created in the initializer")
     }
     return sessionStorage
   }
 
-  var serviceManager: FBAMDeviceServiceManager {
+  var serviceManager: AMDeviceServiceManager {
     guard let serviceManagerStorage else {
       preconditionFailure("The service manager is created in the initializer")
     }
@@ -89,9 +89,9 @@ public final class FBAMDevice: FBiOSTargetInfo, FBDeviceCommands, CustomStringCo
     let udid = allValues[FBDeviceKey.uniqueDeviceID.rawValue] as? String ?? UnknownValue
     self.logger = logger.withName(udid)
     // The un-named logger: only this object's own logger is decorated with the udid.
-    self.sessionStorage = FBAMDeviceSession(
+    self.sessionStorage = AMDeviceSession(
       device: self, reuseTimeout: connectionReuseTimeout?.doubleValue, logger: logger)
-    self.serviceManagerStorage = FBAMDeviceServiceManager(
+    self.serviceManagerStorage = AMDeviceServiceManager(
       device: self, serviceTimeout: serviceReuseTimeout?.doubleValue)
   }
 

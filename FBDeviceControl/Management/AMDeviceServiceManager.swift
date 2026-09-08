@@ -8,7 +8,7 @@
 @preconcurrency import FBControlCore
 import Foundation
 
-enum FBAMDeviceServiceError: Error {
+enum AMDeviceServiceError: Error {
   case houseArrestStartFailed(bundleID: String, status: Int32, message: String)
   case houseArrestConnectionMissing(bundleID: String)
   case notAnAFCConnection(context: String)
@@ -17,7 +17,7 @@ enum FBAMDeviceServiceError: Error {
   case notAMDeviceBacked(service: String)
 }
 
-extension FBAMDeviceServiceError: LocalizedError {
+extension AMDeviceServiceError: LocalizedError {
   var errorDescription: String? {
     switch self {
     case let .houseArrestStartFailed(bundleID, status, message):
@@ -44,7 +44,7 @@ extension FBAMDeviceServiceError: LocalizedError {
 /// `AMDeviceCreateHouseArrestService`. With no timeout it is closed as soon as it is released.
 ///
 /// `@unchecked Sendable`: all mutable state is guarded by `lock`.
-final class FBHouseArrestService: @unchecked Sendable {
+final class HouseArrestService: @unchecked Sendable {
 
   // MARK: - Properties
 
@@ -166,10 +166,10 @@ final class FBHouseArrestService: @unchecked Sendable {
       ) ?? -1
     guard status == 0 else {
       let message = device.calls.CopyErrorText?(status)?.takeRetainedValue() as String? ?? "unknown"
-      throw FBAMDeviceServiceError.houseArrestStartFailed(bundleID: bundleID, status: status, message: message)
+      throw AMDeviceServiceError.houseArrestStartFailed(bundleID: bundleID, status: status, message: message)
     }
     guard let afcConnection else {
-      throw FBAMDeviceServiceError.houseArrestConnectionMissing(bundleID: bundleID)
+      throw AMDeviceServiceError.houseArrestConnectionMissing(bundleID: bundleID)
     }
     return FBAFCConnection(connection: afcConnection.takeUnretainedValue(), calls: afcCalls, logger: logger)
   }
@@ -206,12 +206,12 @@ final class FBHouseArrestService: @unchecked Sendable {
 /// The house arrest services a device has opened, one per bundle id.
 ///
 /// `@unchecked Sendable`: the service map is guarded by `lock`.
-final class FBAMDeviceServiceManager: @unchecked Sendable {
+final class AMDeviceServiceManager: @unchecked Sendable {
 
   private weak var device: FBAMDevice?
   private let serviceTimeout: TimeInterval?
   private let lock = NSLock()
-  private var houseArrestServices: [String: FBHouseArrestService] = [:]
+  private var houseArrestServices: [String: HouseArrestService] = [:]
 
   init(device: FBAMDevice, serviceTimeout: TimeInterval?) {
     self.device = device
@@ -221,7 +221,7 @@ final class FBAMDeviceServiceManager: @unchecked Sendable {
   // MARK: - Public Services
 
   /// The house arrest service for `bundleID`, created on first use and kept for the device's life.
-  func houseArrestService(forBundleID bundleID: String, afcCalls: AFCCalls) -> FBHouseArrestService {
+  func houseArrestService(forBundleID bundleID: String, afcCalls: AFCCalls) -> HouseArrestService {
     lock.lock()
     defer { lock.unlock() }
     if let existing = houseArrestServices[bundleID] {
@@ -230,7 +230,7 @@ final class FBAMDeviceServiceManager: @unchecked Sendable {
     guard let device else {
       preconditionFailure("Device is nil when creating house arrest connection for '\(bundleID)'")
     }
-    let service = FBHouseArrestService(device: device, bundleID: bundleID, afcCalls: afcCalls, reuseTimeout: serviceTimeout)
+    let service = HouseArrestService(device: device, bundleID: bundleID, afcCalls: afcCalls, reuseTimeout: serviceTimeout)
     houseArrestServices[bundleID] = service
     return service
   }

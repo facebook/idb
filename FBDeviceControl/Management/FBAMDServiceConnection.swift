@@ -276,7 +276,7 @@ public final class FBAMDServiceConnection: CustomStringConvertible {
     to consumer: any FBDataConsumer,
     on queue: DispatchQueue
   ) -> any FBFileReaderProtocol {
-    let reader = FBAMDServiceConnectionReader(connection: self, consumer: consumer, queue: queue)
+    let reader = AMDServiceConnectionReader(connection: self, consumer: consumer, queue: queue)
     activeReaderFinished = reader.finishedReading
     return reader
   }
@@ -331,7 +331,7 @@ public final class FBAMDServiceConnection: CustomStringConvertible {
 }
 
 /// Reads a service connection until it is exhausted, feeding a consumer.
-private final class FBAMDServiceConnectionReader: NSObject, FBFileReaderProtocol {
+private final class AMDServiceConnectionReader: NSObject, FBFileReaderProtocol {
 
   private let connection: FBAMDServiceConnection
   private let consumer: any FBDataConsumer

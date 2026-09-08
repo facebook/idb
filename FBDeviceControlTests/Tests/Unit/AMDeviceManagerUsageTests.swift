@@ -38,7 +38,7 @@ private nonisolated(unsafe) var sUsageRecorder = UsageCallRecorder()
 // Serialized: the stubs record into the file-scope `sUsageRecorder` that `init`
 // resets, which would race across parallel tests.
 @Suite(.serialized)
-final class FBAMDeviceManagerUsageTests {
+final class AMDeviceManagerUsageTests {
 
   init() {
     sUsageRecorder = UsageCallRecorder()

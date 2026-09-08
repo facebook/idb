@@ -9,11 +9,11 @@ import FBControlCore
 @testable import FBDeviceControl
 import Foundation
 
-/// A concrete `FBDeviceManager` for tests.
+/// A concrete `DeviceManager` for tests.
 ///
 /// `constructPublic` returns a plain `NSObject` stand-in and `extractPrivateReference` always
 /// returns nil, so every `deviceConnected` call takes the "appeared for the first time" path.
-final class FBDeviceManagerDouble: FBDeviceManager<NSObject> {
+final class DeviceManagerDouble: DeviceManager<NSObject> {
 
   override func startListening() throws {}
 

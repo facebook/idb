@@ -179,10 +179,10 @@ public final class FBDeviceFileContainer: AsyncFileContainer {
 
 private class FBDeviceFileContainer_Wallpaper: AsyncFileContainer {
   let queue: DispatchQueue
-  let springboard: FBSpringboardServicesClient
-  let managedConfig: FBManagedConfigClient
+  let springboard: SpringboardServicesClient
+  let managedConfig: ManagedConfigClient
 
-  init(springboard: FBSpringboardServicesClient, managedConfig: FBManagedConfigClient, queue: DispatchQueue) {
+  init(springboard: SpringboardServicesClient, managedConfig: ManagedConfigClient, queue: DispatchQueue) {
     self.springboard = springboard
     self.managedConfig = managedConfig
     self.queue = queue
@@ -216,7 +216,7 @@ private class FBDeviceFileContainer_Wallpaper: AsyncFileContainer {
   }
 
   func contents(ofDirectory path: String) async throws -> [String] {
-    [FBSpringboardServicesClient.wallpaperNameHomescreen, FBSpringboardServicesClient.wallpaperNameLockscreen]
+    [SpringboardServicesClient.wallpaperNameHomescreen, SpringboardServicesClient.wallpaperNameLockscreen]
   }
 }
 
@@ -224,9 +224,9 @@ private class FBDeviceFileContainer_Wallpaper: AsyncFileContainer {
 
 private class FBDeviceFileContainer_MDMProfiles: AsyncFileContainer {
   let queue: DispatchQueue
-  let managedConfig: FBManagedConfigClient
+  let managedConfig: ManagedConfigClient
 
-  init(managedConfig: FBManagedConfigClient, queue: DispatchQueue) {
+  init(managedConfig: ManagedConfigClient, queue: DispatchQueue) {
     self.managedConfig = managedConfig
     self.queue = queue
   }
@@ -537,8 +537,8 @@ extension FBDevice: FileCommands {
   public func withFileCommandsForMDMProfiles<R>(
     body: (any AsyncFileContainer) async throws -> R
   ) async throws -> R {
-    return try await withServiceConnection(FBManagedConfigClient.serviceName) { connection in
-      let managedConfig = FBManagedConfigClient.managedConfigClient(connection: connection, logger: logger)
+    return try await withServiceConnection(ManagedConfigClient.serviceName) { connection in
+      let managedConfig = ManagedConfigClient.managedConfigClient(connection: connection, logger: logger)
       return try await body(FBDeviceFileContainer_MDMProfiles(managedConfig: managedConfig, queue: workQueue))
     }
   }
@@ -546,8 +546,8 @@ extension FBDevice: FileCommands {
   public func withFileCommandsForSpringboardIconLayout<R>(
     body: (any AsyncFileContainer) async throws -> R
   ) async throws -> R {
-    return try await withServiceConnection(FBSpringboardServicesClient.serviceName) { connection in
-      let client = FBSpringboardServicesClient.springboardServicesClient(connection: connection, logger: logger)
+    return try await withServiceConnection(SpringboardServicesClient.serviceName) { connection in
+      let client = SpringboardServicesClient.springboardServicesClient(connection: connection, logger: logger)
       return try await body(client.iconContainer())
     }
   }
@@ -555,10 +555,10 @@ extension FBDevice: FileCommands {
   public func withFileCommandsForWallpaper<R>(
     body: (any AsyncFileContainer) async throws -> R
   ) async throws -> R {
-    return try await withServiceConnection(FBSpringboardServicesClient.serviceName) { springboardConnection in
-      try await withServiceConnection(FBManagedConfigClient.serviceName) { managedConfigConnection in
-        let springboard = FBSpringboardServicesClient.springboardServicesClient(connection: springboardConnection, logger: logger)
-        let managedConfig = FBManagedConfigClient.managedConfigClient(connection: managedConfigConnection, logger: logger)
+    return try await withServiceConnection(SpringboardServicesClient.serviceName) { springboardConnection in
+      try await withServiceConnection(ManagedConfigClient.serviceName) { managedConfigConnection in
+        let springboard = SpringboardServicesClient.springboardServicesClient(connection: springboardConnection, logger: logger)
+        let managedConfig = ManagedConfigClient.managedConfigClient(connection: managedConfigConnection, logger: logger)
         return try await body(
           FBDeviceFileContainer_Wallpaper(springboard: springboard, managedConfig: managedConfig, queue: workQueue))
       }

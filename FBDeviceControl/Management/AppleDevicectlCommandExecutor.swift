@@ -21,7 +21,7 @@ extension FBDevicectlError: LocalizedError {
   }
 }
 
-class FBAppleDevicectlCommandExecutor {
+class AppleDevicectlCommandExecutor {
 
   let logger: FBControlCoreLogger?
   let device: FBDevice
@@ -40,7 +40,7 @@ class FBAppleDevicectlCommandExecutor {
   }
 }
 
-extension FBAppleDevicectlCommandExecutor {
+extension AppleDevicectlCommandExecutor {
   func launchApplication(configuration: FBApplicationLaunchConfiguration) async throws -> NSNumber {
     let tmpPath = try FileManager.default.temporaryFile(extension: "json")
     let tmpPathStr = tmpPath.path()

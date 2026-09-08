@@ -10,7 +10,7 @@ import FBControlCore
 import Foundation
 import Testing
 
-// Constants mirroring private definitions in FBInstrumentsClient.
+// Constants mirroring private definitions in InstrumentsClient.
 private let TestArgumentMagic: UInt64 = 0x1F0
 private let TestEmptyDictionaryKey: UInt32 = 10
 private let TestObjectArgumentType: UInt32 = 2
@@ -39,7 +39,7 @@ private func readUInt64(_ data: Data, at offset: Int) -> UInt64 {
 /// The DTX argument wire format: what goes out for each argument kind, and that the auxillary
 /// framing round-trips.
 @Suite
-struct FBInstrumentsClientTests {
+struct InstrumentsClientTests {
 
   // MARK: - Object arguments
 
@@ -47,7 +47,7 @@ struct FBInstrumentsClientTests {
   func argumentDataForStringProducesValidSerializedData() throws {
     let argument = "com.example.testapp"
 
-    let result = FBInstrumentsClient.argumentData(forArgument: argument)
+    let result = InstrumentsClient.argumentData(forArgument: argument)
 
     #expect(result.count > 12, "Result should be larger than the 12-byte header")
     #expect(readUInt32(result, at: 0) == TestEmptyDictionaryKey)
@@ -64,7 +64,7 @@ struct FBInstrumentsClientTests {
   func argumentDataForDictionaryProducesValidSerializedData() throws {
     let argument: [String: Bool] = ["StartSuspendedKey": true, "KillExisting": false]
 
-    let result = FBInstrumentsClient.argumentData(forArgument: argument)
+    let result = InstrumentsClient.argumentData(forArgument: argument)
 
     #expect(result.count > 12)
     let argumentSize = readUInt32(result, at: 8)
@@ -76,7 +76,7 @@ struct FBInstrumentsClientTests {
 
   @Test
   func argumentDataForEmptyStringProducesValidSerializedData() throws {
-    let result = FBInstrumentsClient.argumentData(forArgument: "")
+    let result = InstrumentsClient.argumentData(forArgument: "")
 
     #expect(result.count > 12)
     let argumentSize = readUInt32(result, at: 8)
@@ -89,7 +89,7 @@ struct FBInstrumentsClientTests {
 
   @Test
   func argumentDataForInt32WithPositiveValueProducesCorrectFormat() {
-    let result = FBInstrumentsClient.argumentData(forInt32: 42)
+    let result = InstrumentsClient.argumentData(forInt32: 42)
 
     #expect(result.count == 12, "Int32 argument data should be exactly 12 bytes")
     #expect(readUInt32(result, at: 0) == TestEmptyDictionaryKey)
@@ -99,7 +99,7 @@ struct FBInstrumentsClientTests {
 
   @Test
   func argumentDataForInt32WithNegativeValuePreservesSign() {
-    let result = FBInstrumentsClient.argumentData(forInt32: -1)
+    let result = InstrumentsClient.argumentData(forInt32: -1)
 
     #expect(result.count == 12)
     #expect(readInt32(result, at: 8) == -1)
@@ -109,16 +109,16 @@ struct FBInstrumentsClientTests {
 
   @Test
   func auxillaryDataFromNilArgumentsReturnsEmptyData() {
-    let result = FBInstrumentsClient.auxillaryData(fromArgumentsData: nil)
+    let result = InstrumentsClient.auxillaryData(fromArgumentsData: nil)
 
     #expect(result.isEmpty, "Nil arguments should produce empty data")
   }
 
   @Test
   func auxillaryDataFromSingleArgumentIncludesMagicAndLength() {
-    let argData = FBInstrumentsClient.argumentData(forArgument: "test")
+    let argData = InstrumentsClient.argumentData(forArgument: "test")
 
-    let result = FBInstrumentsClient.auxillaryData(fromArgumentsData: [argData])
+    let result = InstrumentsClient.auxillaryData(fromArgumentsData: [argData])
 
     #expect(result.count == 16 + argData.count, "Result should be header (16) + argument data")
     #expect(readUInt64(result, at: 0) == TestArgumentMagic)
@@ -127,10 +127,10 @@ struct FBInstrumentsClientTests {
 
   @Test
   func auxillaryDataFromMultipleArgumentsConcatenatesCorrectly() {
-    let arg1 = FBInstrumentsClient.argumentData(forArgument: "first")
-    let arg2 = FBInstrumentsClient.argumentData(forArgument: "second")
+    let arg1 = InstrumentsClient.argumentData(forArgument: "first")
+    let arg2 = InstrumentsClient.argumentData(forArgument: "second")
 
-    let result = FBInstrumentsClient.auxillaryData(fromArgumentsData: [arg1, arg2])
+    let result = InstrumentsClient.auxillaryData(fromArgumentsData: [arg1, arg2])
 
     #expect(readUInt64(result, at: 8) == UInt64(arg1.count + arg2.count))
     #expect(result.count == 16 + arg1.count + arg2.count)
@@ -138,7 +138,7 @@ struct FBInstrumentsClientTests {
 
   @Test
   func auxillaryDataFromEmptyArrayProducesHeaderOnly() {
-    let result = FBInstrumentsClient.auxillaryData(fromArgumentsData: [])
+    let result = InstrumentsClient.auxillaryData(fromArgumentsData: [])
 
     #expect(result.count == 16, "Empty array should produce header-only data (16 bytes)")
     #expect(readUInt64(result, at: 8) == 0)
@@ -148,10 +148,10 @@ struct FBInstrumentsClientTests {
 
   @Test
   func objectArgumentsRoundTripWithSingleString() throws {
-    let argData = FBInstrumentsClient.argumentData(forArgument: "hello")
-    let auxData = FBInstrumentsClient.auxillaryData(fromArgumentsData: [argData])
+    let argData = InstrumentsClient.argumentData(forArgument: "hello")
+    let auxData = InstrumentsClient.auxillaryData(fromArgumentsData: [argData])
 
-    let result = try FBInstrumentsClient.objectArguments(fromAuxillaryData: auxData)
+    let result = try InstrumentsClient.objectArguments(fromAuxillaryData: auxData)
 
     #expect(result.count == 1)
     #expect(result.first as? String == "hello")
@@ -159,11 +159,11 @@ struct FBInstrumentsClientTests {
 
   @Test
   func objectArgumentsRoundTripWithMultipleArguments() throws {
-    let arg1 = FBInstrumentsClient.argumentData(forArgument: "first")
-    let arg2 = FBInstrumentsClient.argumentData(forArgument: 42)
-    let auxData = FBInstrumentsClient.auxillaryData(fromArgumentsData: [arg1, arg2])
+    let arg1 = InstrumentsClient.argumentData(forArgument: "first")
+    let arg2 = InstrumentsClient.argumentData(forArgument: 42)
+    let auxData = InstrumentsClient.auxillaryData(fromArgumentsData: [arg1, arg2])
 
-    let result = try FBInstrumentsClient.objectArguments(fromAuxillaryData: auxData)
+    let result = try InstrumentsClient.objectArguments(fromAuxillaryData: auxData)
 
     #expect(result.count == 2)
     #expect(result.first as? String == "first")
@@ -175,17 +175,17 @@ struct FBInstrumentsClientTests {
     let shortData = Data([0x00, 0x01, 0x02, 0x03, 0x04, 0x05])
 
     #expect(throws: (any Error).self) {
-      try FBInstrumentsClient.objectArguments(fromAuxillaryData: shortData)
+      try InstrumentsClient.objectArguments(fromAuxillaryData: shortData)
     }
   }
 
   @Test
   func objectArgumentsRoundTripWithDictionary() throws {
     let dictionary: [String: Any] = ["key": "value", "number": 123]
-    let argData = FBInstrumentsClient.argumentData(forArgument: dictionary)
-    let auxData = FBInstrumentsClient.auxillaryData(fromArgumentsData: [argData])
+    let argData = InstrumentsClient.argumentData(forArgument: dictionary)
+    let auxData = InstrumentsClient.auxillaryData(fromArgumentsData: [argData])
 
-    let result = try FBInstrumentsClient.objectArguments(fromAuxillaryData: auxData)
+    let result = try InstrumentsClient.objectArguments(fromAuxillaryData: auxData)
 
     #expect(result.count == 1)
     let decoded = result.first as? NSDictionary

@@ -104,10 +104,10 @@ extension FBAMDevice {
       ) ?? -1
     guard status == 0 else {
       let message = calls.CopyErrorText?(status)?.takeRetainedValue() as String? ?? "Unknown error"
-      throw FBAMDeviceServiceError.secureStartServiceFailed(service: service, status: status, message: message)
+      throw AMDeviceServiceError.secureStartServiceFailed(service: service, status: status, message: message)
     }
     guard let amDeviceRef = connectedDevice.amDeviceRef, let serviceConnection else {
-      throw FBAMDeviceServiceError.deviceNotConnected(service: service)
+      throw AMDeviceServiceError.deviceNotConnected(service: service)
     }
     // Unretained: the raw reference is handed straight to the connection, which owns it from here.
     let connection = FBAMDServiceConnection(

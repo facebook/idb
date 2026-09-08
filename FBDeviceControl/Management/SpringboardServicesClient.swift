@@ -49,7 +49,7 @@ public enum FBSpringboardServicesError: Error, LocalizedError {
     case .missingImageData(let response):
       return "No pngData in response \(response)"
     case .tailNotImplemented:
-      return "tail is not implemented for FBSpringboardServicesIconContainer"
+      return "tail is not implemented for SpringboardServicesIconContainer"
     case .operationUnsupported(let operation):
       return "\(operation) does not make sense for Springboard File Containers"
     }
@@ -72,7 +72,7 @@ private final class SpringboardDataBox: @unchecked Sendable {
   }
 }
 
-class FBSpringboardServicesClient {
+class SpringboardServicesClient {
   private let connection: FBAMDServiceConnection
   fileprivate let queue: DispatchQueue
   private let logger: any FBControlCoreLogger
@@ -85,9 +85,9 @@ class FBSpringboardServicesClient {
 
   // MARK: - Initializers
 
-  static func springboardServicesClient(connection: FBAMDServiceConnection, logger: any FBControlCoreLogger) -> FBSpringboardServicesClient {
+  static func springboardServicesClient(connection: FBAMDServiceConnection, logger: any FBControlCoreLogger) -> SpringboardServicesClient {
     let queue = DispatchQueue(label: "com.facebook.FBDeviceControl.springboard_services")
-    return FBSpringboardServicesClient(connection: connection, queue: queue, logger: logger)
+    return SpringboardServicesClient(connection: connection, queue: queue, logger: logger)
   }
 
   convenience init(connection: FBAMDServiceConnection, logger: any FBControlCoreLogger) {
@@ -106,7 +106,7 @@ class FBSpringboardServicesClient {
   }
 
   func iconContainer() -> any AsyncFileContainer {
-    FBSpringboardServicesIconContainer(client: self)
+    SpringboardServicesIconContainer(client: self)
   }
 
   // MARK: - Async
@@ -206,11 +206,11 @@ class FBSpringboardServicesClient {
 
 private typealias IconLayoutJSONType = [[String]]
 
-class FBSpringboardServicesIconContainer: AsyncFileContainer {
-  private let client: FBSpringboardServicesClient
+class SpringboardServicesIconContainer: AsyncFileContainer {
+  private let client: SpringboardServicesClient
   private let validFilenames: [String]
 
-  init(client: FBSpringboardServicesClient) {
+  init(client: SpringboardServicesClient) {
     self.client = client
     self.validFilenames = [IconPlistFile, IconJSONFile]
   }
@@ -335,10 +335,10 @@ extension FBDevice {
   }
 
   private func withSpringboardServicesClient<R>(
-    body: (FBSpringboardServicesClient) async throws -> R
+    body: (SpringboardServicesClient) async throws -> R
   ) async throws -> R {
-    return try await withServiceConnection(FBSpringboardServicesClient.serviceName) { connection in
-      let client = FBSpringboardServicesClient(connection: connection, logger: logger)
+    return try await withServiceConnection(SpringboardServicesClient.serviceName) { connection in
+      let client = SpringboardServicesClient(connection: connection, logger: logger)
       return try await body(client)
     }
   }

@@ -257,7 +257,7 @@ public final class FBDeviceApplicationCommands {
     }
     let pid: NSNumber
     if device.osVersion.version.majorVersion >= 17 {
-      let devicectl = FBAppleDevicectlCommandExecutor(device: device)
+      let devicectl = AppleDevicectlCommandExecutor(device: device)
       pid = try await devicectl.launchApplication(configuration: configuration)
     } else {
       pid = try await withRemoteInstrumentsClient { client in
@@ -306,7 +306,7 @@ public final class FBDeviceApplicationCommands {
     }
   }
 
-  private func withRemoteInstrumentsClient<R>(_ body: (FBInstrumentsClient) async throws -> R) async throws -> R {
+  private func withRemoteInstrumentsClient<R>(_ body: (InstrumentsClient) async throws -> R) async throws -> R {
     guard let device else {
       throw FBDeviceNilError.deviceNil
     }
@@ -314,7 +314,7 @@ public final class FBDeviceApplicationCommands {
     _ = try await device.ensureDeveloperDiskImageIsMounted()
     let serviceName = usesSecureConnection ? "com.apple.instruments.remoteserver.DVTSecureSocketProxy" : "com.apple.instruments.remoteserver"
     return try await device.withServiceConnection(serviceName) { connection in
-      let client = try await bridgeFBFuture(FBInstrumentsClient.instrumentsClient(with: connection, logger: device.logger))
+      let client = try await bridgeFBFuture(InstrumentsClient.instrumentsClient(with: connection, logger: device.logger))
       return try await body(client)
     }
   }

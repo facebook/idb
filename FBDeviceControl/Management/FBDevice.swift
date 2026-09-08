@@ -195,7 +195,7 @@ public final class FBDevice: FBiOSTarget, FBDeviceCommands, CustomStringConverti
     _ body: (any FBDeviceCommands) async throws -> T
   ) async throws -> T {
     guard let amDevice else {
-      throw FBAMDeviceServiceError.notAMDeviceBacked(service: purpose)
+      throw AMDeviceServiceError.notAMDeviceBacked(service: purpose)
     }
     return try await amDevice.withConnectedDevice(purpose: purpose, body)
   }
@@ -206,7 +206,7 @@ public final class FBDevice: FBiOSTarget, FBDeviceCommands, CustomStringConverti
     _ body: (FBAFCConnection) async throws -> T
   ) async throws -> T {
     guard let amDevice else {
-      throw FBAMDeviceServiceError.notAMDeviceBacked(service: "withHouseArrestAFCConnection(forBundleID:afcCalls:)")
+      throw AMDeviceServiceError.notAMDeviceBacked(service: "withHouseArrestAFCConnection(forBundleID:afcCalls:)")
     }
     return try await amDevice.withHouseArrestAFCConnection(forBundleID: bundleID, afcCalls: afcCalls, body)
   }

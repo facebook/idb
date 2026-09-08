@@ -12,7 +12,7 @@ private let mobileBackupDomain = "com.apple.mobile.backup"
 
 /// Taking a single device into and out of use: connecting, pairing, and opening a session.
 ///
-/// Separate from `FBAMDeviceManager`, which discovers the *set* of devices. These operate on one
+/// Separate from `AMDeviceManager`, which discovers the *set* of devices. These operate on one
 /// device and are what `FBAMDevice` wraps around every operation it performs.
 public enum FBAMDeviceUsage {
 
@@ -123,7 +123,7 @@ public enum FBAMDeviceUsage {
 /// connecting again; without one it is closed as soon as it is released.
 ///
 /// `@unchecked Sendable`: all mutable state is guarded by `lock`.
-final class FBAMDeviceSession: @unchecked Sendable {
+final class AMDeviceSession: @unchecked Sendable {
 
   /// Whether the session is open, and whether someone is part way through changing that.
   ///
@@ -283,7 +283,7 @@ final class FBAMDeviceSession: @unchecked Sendable {
   private func openSession() throws {
     do {
       guard let device, let amDevice = device.amDevice else {
-        throw FBAMDeviceServiceError.deviceNotConnected(service: "connect")
+        throw AMDeviceServiceError.deviceNotConnected(service: "connect")
       }
       try FBAMDeviceUsage.start(using: amDevice, calls: device.calls, logger: logger)
     } catch {

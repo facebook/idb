@@ -185,7 +185,7 @@ private let ProcessControlChannel = "com.apple.instruments.server.services.proce
 
 /// A client to instruments-related services on a device, talking the DTXMessage protocol over a
 /// lockdown service connection.
-final class FBInstrumentsClient {
+final class InstrumentsClient {
 
   // MARK: - Properties
 
@@ -201,14 +201,14 @@ final class FBInstrumentsClient {
   class func instrumentsClient(
     with connection: FBAMDServiceConnection,
     logger: any FBControlCoreLogger
-  ) -> FBFuture<FBInstrumentsClient> {
+  ) -> FBFuture<InstrumentsClient> {
     let queue = DispatchQueue(label: "com.facebook.fbdevicecontrol.fbinstrumentsclient")
     return FBFuture<AnyObject>.onQueue(
       queue,
       resolve: { () -> FBFuture<AnyObject> in
         do {
           let (channels, responseMessageIdentifier) = try availableChannels(on: connection)
-          let client = FBInstrumentsClient(
+          let client = InstrumentsClient(
             connection: connection,
             channels: channels,
             lastMessageIdentifier: responseMessageIdentifier,
@@ -219,7 +219,7 @@ final class FBInstrumentsClient {
           return FBFuture<AnyObject>(error: error as NSError)
         }
       }
-    ).retyped(FBFuture<FBInstrumentsClient>.self)
+    ).retyped(FBFuture<InstrumentsClient>.self)
   }
 
   private init(

@@ -10,7 +10,7 @@ import Foundation
 
 private let connectionReadSizeLimit: size_t = 1024
 
-private class FBDeviceDebugServer_TwistedPairFiles {
+private class DeviceDebugServer_TwistedPairFiles {
   let socket: Int32
   let connection: FBAMDServiceConnection
   let logger: any FBControlCoreLogger
@@ -106,7 +106,7 @@ public final class FBDeviceDebugServer: NSObject, FBSocketServerDelegate, FBDebu
   private let port: in_port_t
   private let logger: any FBControlCoreLogger
   private let teardown: FBMutableFuture<NSNull>
-  private var twistedPair: FBDeviceDebugServer_TwistedPairFiles?
+  private var twistedPair: DeviceDebugServer_TwistedPairFiles?
 
   public let lldbBootstrapCommands: [String]
 
@@ -178,7 +178,7 @@ public final class FBDeviceDebugServer: NSObject, FBSocketServerDelegate, FBDebu
       return
     }
     logger.log("Client connected, connecting all file handles")
-    let pair = FBDeviceDebugServer_TwistedPairFiles(
+    let pair = DeviceDebugServer_TwistedPairFiles(
       socket: fileDescriptor,
       connection: serviceConnection,
       logger: logger

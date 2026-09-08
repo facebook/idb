@@ -32,13 +32,13 @@ private func restorableDeviceListenerCallback(
   guard let device, let context else {
     return
   }
-  let manager = Unmanaged<FBAMRestorableDeviceManager>.fromOpaque(context).takeUnretainedValue()
+  let manager = Unmanaged<AMRestorableDeviceManager>.fromOpaque(context).takeUnretainedValue()
   manager.handleNotification(device: device, status: status)
 }
 
 /// Obtains `FBAMRestorableDevice` instances.
 @objc(FBAMRestorableDeviceManager)
-final class FBAMRestorableDeviceManager: FBDeviceManager<FBAMRestorableDevice> {
+final class AMRestorableDeviceManager: DeviceManager<FBAMRestorableDevice> {
 
   private let calls: AMDCalls
   private let workQueue: DispatchQueue
@@ -101,7 +101,7 @@ final class FBAMRestorableDeviceManager: FBDeviceManager<FBAMRestorableDevice> {
       0,
       0)
     guard registrationID >= 1 else {
-      Unmanaged<FBAMRestorableDeviceManager>.fromOpaque(context).release()
+      Unmanaged<AMRestorableDeviceManager>.fromOpaque(context).release()
       throw FBAMRestorableDeviceManagerError.registrationFailed(status: registrationID)
     }
     self.registrationID = registrationID
@@ -121,7 +121,7 @@ final class FBAMRestorableDeviceManager: FBDeviceManager<FBAMRestorableDevice> {
     // No further notification can be delivered, so the callback's context can be given back.
     if let context = notificationContext {
       notificationContext = nil
-      Unmanaged<FBAMRestorableDeviceManager>.fromOpaque(context).release()
+      Unmanaged<AMRestorableDeviceManager>.fromOpaque(context).release()
     }
   }
 

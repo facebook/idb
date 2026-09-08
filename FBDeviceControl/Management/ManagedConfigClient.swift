@@ -56,7 +56,7 @@ extension FBManagedConfigError: LocalizedError {
   }
 }
 
-class FBManagedConfigClient {
+class ManagedConfigClient {
   private let connection: FBAMDServiceConnection
   private let queue: DispatchQueue
   private let logger: any FBControlCoreLogger
@@ -72,9 +72,9 @@ class FBManagedConfigClient {
 
   // MARK: - Initializers
 
-  static func managedConfigClient(connection: FBAMDServiceConnection, logger: any FBControlCoreLogger) -> FBManagedConfigClient {
+  static func managedConfigClient(connection: FBAMDServiceConnection, logger: any FBControlCoreLogger) -> ManagedConfigClient {
     let queue = DispatchQueue(label: "com.facebook.FBDeviceControl.managed_config")
-    return FBManagedConfigClient(connection: connection, queue: queue, logger: logger)
+    return ManagedConfigClient(connection: connection, queue: queue, logger: logger)
   }
 
   init(
@@ -109,7 +109,7 @@ class FBManagedConfigClient {
   }
 
   func changeWallpaper(name: String, data: Data) async throws {
-    guard let whereNumber = FBManagedConfigClient.wallpaperWhereForName[name] else {
+    guard let whereNumber = ManagedConfigClient.wallpaperWhereForName[name] else {
       throw FBManagedConfigError.invalidWallpaperName(name: name)
     }
     try await changeSettings(settings: [["Item": "Wallpaper", "Image": data, "Where": whereNumber]])

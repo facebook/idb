@@ -221,7 +221,7 @@ struct FBDeviceConnectionScopeTests {
 /// other gets a turn. On a device the connect takes as long as the hardware takes, and callers
 /// really do arrive inside it.
 @Suite("Device session opening", .serialized)
-struct FBAMDeviceSessionOpeningTests {
+struct AMDeviceSessionOpeningTests {
 
   /// The case the reference count cannot express on its own: a caller that arrives before there is
   /// anything to count. It has to wait for the connect already in flight and then share it, rather

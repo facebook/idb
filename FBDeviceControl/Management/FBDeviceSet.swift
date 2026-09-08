@@ -17,8 +17,8 @@ public final class FBDeviceSet: FBiOSTargetSet, FBiOSTargetSetDelegate, CustomSt
     return try loader.amDeviceCalls
   }
 
-  private let amDeviceManager: FBAMDeviceManager
-  private let restorableDeviceManager: FBAMRestorableDeviceManager
+  private let amDeviceManager: AMDeviceManager
+  private let restorableDeviceManager: AMRestorableDeviceManager
   private let storage: FBDeviceStorage<FBDevice>
   public let logger: any FBControlCoreLogger
   public weak var delegate: (any FBiOSTargetSetDelegate)?
@@ -27,14 +27,14 @@ public final class FBDeviceSet: FBiOSTargetSet, FBiOSTargetSetDelegate, CustomSt
     let calls = try Self._amDeviceCalls.get()
     let workQueue = DispatchQueue.main
     let asyncQueue = DispatchQueue.global(qos: .userInitiated)
-    let amDeviceManager = FBAMDeviceManager(calls: calls, work: workQueue, asyncQueue: asyncQueue, ecidFilter: ecidFilter, logger: logger)
-    let restorableDeviceManager = FBAMRestorableDeviceManager(calls: calls, work: workQueue, asyncQueue: asyncQueue, ecidFilter: ecidFilter, logger: logger)
+    let amDeviceManager = AMDeviceManager(calls: calls, work: workQueue, asyncQueue: asyncQueue, ecidFilter: ecidFilter, logger: logger)
+    let restorableDeviceManager = AMRestorableDeviceManager(calls: calls, work: workQueue, asyncQueue: asyncQueue, ecidFilter: ecidFilter, logger: logger)
     self.init(amDeviceManager: amDeviceManager, restorableDeviceManager: restorableDeviceManager, logger: logger, delegate: delegate)
     try amDeviceManager.startListening()
     try restorableDeviceManager.startListening()
   }
 
-  private init(amDeviceManager: FBAMDeviceManager, restorableDeviceManager: FBAMRestorableDeviceManager, logger: any FBControlCoreLogger, delegate: (any FBiOSTargetSetDelegate)?) {
+  private init(amDeviceManager: AMDeviceManager, restorableDeviceManager: AMRestorableDeviceManager, logger: any FBControlCoreLogger, delegate: (any FBiOSTargetSetDelegate)?) {
     self.amDeviceManager = amDeviceManager
     self.restorableDeviceManager = restorableDeviceManager
     self.logger = logger

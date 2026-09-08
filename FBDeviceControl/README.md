@@ -28,7 +28,7 @@ To operate on an `AMDevice`, the phone must "trust" the host. You might recogniz
 
 Since this is such an important component of how to interact with iOS Devices, it is backed by the [`FBAMDevice`](https://github.com/facebook/idb/blob/main/FBDeviceControl/Management/FBAMDevice.swift) class.
 
-The process of discovering devices is asynchronous, which means that fetching the list of `AMDevice`s at a snapshot in time is going to be unreliable. `FBDeviceControl` instead uses an API within `MobileDevice.framework` [for receiving an `AMDevice` instance every time there is a state change](https://github.com/facebook/idb/blob/main/FBDeviceControl/Management/FBAMDeviceManager.swift) in the availability of `AMDevice` instances. This property is also true of Apple's tools that build on top of `MobileDevice.framework`; [`xcodebuild` has a `-destination-timeout` parameter](https://mokacoding.com/blog/xcodebuild-destination-options/) and Apple Configurator's `cfgutil` has a `--timeout` parameter since device discovery is delivered asynchronously. You might never notice this in Xcode's "Devices and Simulators" window, but it is still there too.
+The process of discovering devices is asynchronous, which means that fetching the list of `AMDevice`s at a snapshot in time is going to be unreliable. `FBDeviceControl` instead uses an API within `MobileDevice.framework` [for receiving an `AMDevice` instance every time there is a state change](https://github.com/facebook/idb/blob/main/FBDeviceControl/Management/AMDeviceManager.swift) in the availability of `AMDevice` instances. This property is also true of Apple's tools that build on top of `MobileDevice.framework`; [`xcodebuild` has a `-destination-timeout` parameter](https://mokacoding.com/blog/xcodebuild-destination-options/) and Apple Configurator's `cfgutil` has a `--timeout` parameter since device discovery is delivered asynchronously. You might never notice this in Xcode's "Devices and Simulators" window, but it is still there too.
 
 ### `AMRestorableDevice`
 
@@ -121,7 +121,7 @@ $ idb file ls --disk-images mounted
 
 The "Instruments Service", which is a service within the "Developer Disk Image" is a very important one with respect to iOS Device automation. Since `Instruments.app` and the `instruments` commandline offers a lot of functionality for launching and profiling Applications and iOS Devices, it is integral to tasks such as app launching and process listing on iOS Devices.
 
-The client-side implementation of this protocol is provided via `DTXConnectionServices`, with a [provisional re-implementation within `FBDeviceControl`](https://github.com/facebook/idb/blob/main/FBDeviceControl/Management/FBInstrumentsClient.swift). There are more details about the makeup of this protocol [within the `ios_instruments_client` project](https://github.com/troybowman/ios_instruments_client).
+The client-side implementation of this protocol is provided via `DTXConnectionServices`, with a [provisional re-implementation within `FBDeviceControl`](https://github.com/facebook/idb/blob/main/FBDeviceControl/Management/InstrumentsClient.swift). There are more details about the makeup of this protocol [within the `ios_instruments_client` project](https://github.com/troybowman/ios_instruments_client).
 
 ### Video Encoding
 
