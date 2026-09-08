@@ -105,7 +105,7 @@ public final class FBDeviceDebugServer: NSObject, FBSocketServerDelegate, FBDebu
   private lazy var tcpServer: FBSocketServer = FBSocketServer(onPort: self.port, delegate: self)
   private let port: in_port_t
   private let logger: any FBControlCoreLogger
-  private var teardown: FBMutableFuture<NSNull>?
+  private let teardown: FBMutableFuture<NSNull>
   private var twistedPair: FBDeviceDebugServer_TwistedPairFiles?
 
   public let lldbBootstrapCommands: [String]
@@ -114,34 +114,33 @@ public final class FBDeviceDebugServer: NSObject, FBSocketServerDelegate, FBDebu
 
   // MARK: - Initializers
 
-  /// Factory method: creates and starts a debug server from a future-wrapped service connection.
+  /// Starts a debug server that proxies `serviceConnection` to whichever client connects on `port`.
+  ///
+  /// The server owns the connection: it is held open across the separate requests that start,
+  /// query and stop the server, and handed back to `FBAMDevice.invalidateServiceConnection` when
+  /// the server is cancelled or its client disconnects. A server that fails to start hands the
+  /// connection back before throwing.
   public static func debugServer(
-    forServiceConnection service: FBFutureContext<FBAMDServiceConnection>,
+    forServiceConnection serviceConnection: FBAMDServiceConnection,
     port: in_port_t,
     lldbBootstrapCommands: [String],
     queue: DispatchQueue,
     logger: any FBControlCoreLogger
-  ) -> FBFuture<FBDeviceDebugServer> {
-    return service.onQueue(
-      queue,
-      push: { connection -> FBFutureContext<AnyObject> in
-        let server = FBDeviceDebugServer(
-          serviceConnection: connection,
-          port: port,
-          lldbBootstrapCommands: lldbBootstrapCommands,
-          queue: queue,
-          logger: logger
-        )
-        return server.startListening().retyped(FBFutureContext<AnyObject>.self)
-      }
-    ).retyped(FBFutureContext<FBDeviceDebugServer>.self)
-      .onQueue(
-        queue,
-        enter: { server, teardownFuture -> AnyObject in
-          server.teardown = teardownFuture
-          return server
-        }
-      ).retyped(FBFuture<FBDeviceDebugServer>.self)
+  ) async throws -> FBDeviceDebugServer {
+    let server = FBDeviceDebugServer(
+      serviceConnection: serviceConnection,
+      port: port,
+      lldbBootstrapCommands: lldbBootstrapCommands,
+      queue: queue,
+      logger: logger
+    )
+    do {
+      try await server.startListening()
+    } catch {
+      FBAMDevice.invalidateServiceConnection(serviceConnection, service: serviceConnection.name, logger: logger)
+      throw error
+    }
+    return server
   }
 
   init(
@@ -156,6 +155,7 @@ public final class FBDeviceDebugServer: NSObject, FBSocketServerDelegate, FBDebu
     self.lldbBootstrapCommands = lldbBootstrapCommands
     self.queue = queue
     self.logger = logger
+    self.teardown = FBMutableFuture<NSNull>(name: "Debug server for \(serviceConnection.name)")
     super.init()
   }
 
@@ -193,7 +193,7 @@ public final class FBDeviceDebugServer: NSObject, FBSocketServerDelegate, FBDebu
         self?.logger.log("Client Disconnected")
         self?.twistedPair = nil
       })
-    teardown?.resolve(from: unsafeBitCast(completed, to: FBFuture<AnyObject>.self))
+    teardown.resolve(from: unsafeBitCast(completed, to: FBFuture<AnyObject>.self))
     self.twistedPair = pair
   }
 
@@ -204,20 +204,38 @@ public final class FBDeviceDebugServer: NSObject, FBSocketServerDelegate, FBDebu
   }
 
   private var completed: FBFuture<NSNull> {
-    guard let teardown else {
-      fatalError("teardown must be set via debugServer(forServiceConnection:...) before accessing completed")
-    }
-    return unsafeBitCast(teardown, to: FBFuture<NSNull>.self)
+    unsafeBitCast(teardown, to: FBFuture<NSNull>.self)
   }
 
-  private func startListening() -> FBFutureContext<FBDeviceDebugServer> {
-    return tcpServer.startListeningContext()
-      .onQueue(
-        queue,
-        pend: { [self] (_: AnyObject) -> FBFuture<AnyObject> in
-          self.logger.log("TCP Server now running, bootstrap commands for lldb are \(self.lldbBootstrapCommands.joined(separator: "\n"))")
-          return FBFuture<AnyObject>(result: self)
-        }
-      ).retyped(FBFutureContext<FBDeviceDebugServer>.self)
+  private func startListening() async throws {
+    try await bridgeFBFutureVoid(tcpServer.startListening())
+    logger.log("TCP Server now running, bootstrap commands for lldb are \(lldbBootstrapCommands.joined(separator: "\n"))")
+    let tcpServer = self.tcpServer
+    let connection = serviceConnection
+    let logger = self.logger
+    // Both endings arrive on the same future: the client disconnecting resolves it, `cancel()`
+    // cancels it, and only one of the two can win.
+    teardown.onQueue(
+      queue,
+      respondToCancellation: {
+        Self.stop(tcpServer: tcpServer, connection: connection, logger: logger)
+        return FBFuture<NSNull>.empty()
+      })
+    teardown.onQueue(
+      queue,
+      doOnResolved: { _ in
+        Self.stop(tcpServer: tcpServer, connection: connection, logger: logger)
+      })
+  }
+
+  /// Innermost first: the socket a client would reach the connection through goes before the
+  /// connection itself.
+  private static func stop(
+    tcpServer: FBSocketServer,
+    connection: FBAMDServiceConnection,
+    logger: any FBControlCoreLogger
+  ) {
+    tcpServer.stopListening()
+    FBAMDevice.invalidateServiceConnection(connection, service: connection.name, logger: logger)
   }
 }

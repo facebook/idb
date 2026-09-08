@@ -47,33 +47,20 @@ public final class FBDeviceDebuggerCommands {
     self.device = device
   }
 
-  /**
-   Starts the Debug Server and exposes it via a service connection.
-
-   @return a future context with the service connection to the debug server.
-   */
-  public func connectToDebugServer() -> FBFutureContext<FBAMDServiceConnection> {
+  /// Starts the debug server on the device and hands its service connection to the caller.
+  ///
+  /// The developer disk image is mounted first, because the service does not exist until it is.
+  /// The connection is unscoped: whoever receives it decides when it is invalidated.
+  public func connectToDebugServer() async throws -> FBAMDServiceConnection {
     guard let device else {
-      return FBFutureContext(error: FBDeviceNilError.deviceNil)
+      throw FBDeviceNilError.deviceNil
     }
-    // Mounting must complete before the debug server is reachable. The image itself is only needed to
-    // pick which service to start, so the future carries the resolved service name rather than the image.
-    let serviceName: FBFuture<NSString> = fbFutureFromAsync {
-      let diskImage = try await device.ensureDeveloperDiskImageIsMounted()
-      let name =
-        diskImage.xcodeVersion.majorVersion >= 12
-        ? "com.apple.debugserver.DVTSecureSocketProxy"
-        : "com.apple.debugserver"
-      return name as NSString
-    }
-    return
-      serviceName
-      .onQueue(
-        device.workQueue,
-        pushTeardown: { serviceName -> FBFutureContext<AnyObject> in
-          device.startService(serviceName as String).retyped(FBFutureContext<AnyObject>.self)
-        }
-      ).retyped(FBFutureContext<FBAMDServiceConnection>.self)
+    let diskImage = try await device.ensureDeveloperDiskImageIsMounted()
+    let serviceName =
+      diskImage.xcodeVersion.majorVersion >= 12
+      ? "com.apple.debugserver.DVTSecureSocketProxy"
+      : "com.apple.debugserver"
+    return try await device.openServiceConnection(serviceName)
   }
 
   // MARK: - Async
@@ -86,14 +73,13 @@ public final class FBDeviceDebuggerCommands {
       throw FBDeviceDebuggerError.unsupportedOSVersion(version: device.osVersion.versionString)
     }
     let commands = try await lldbBootstrapCommands(forApplicationAtPath: application.path, port: port)
-    let server = FBDeviceDebugServer.debugServer(
+    return try await FBDeviceDebugServer.debugServer(
       forServiceConnection: connectToDebugServer(),
       port: port,
       lldbBootstrapCommands: commands,
       queue: device.workQueue,
       logger: device.logger
     )
-    return try await bridgeFBFuture(server)
   }
 
   private func lldbBootstrapCommands(forApplicationAtPath path: String, port: in_port_t) async throws -> [String] {

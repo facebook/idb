@@ -61,13 +61,12 @@ final class FBDeviceDebugServerTests {
   /// that needs a client reaches the delegate callback directly.
   private func makeDebugServer() async throws -> FBDeviceDebugServer {
     let device = amDevice.makeAMDevice()
-    return try await bridgeFBFuture(
-      FBDeviceDebugServer.debugServer(
-        forServiceConnection: device.startService(debugServerService),
-        port: 0,
-        lldbBootstrapCommands: ["platform select remote-ios"],
-        queue: DispatchQueue.main,
-        logger: FBControlCoreGlobalConfiguration.defaultLogger))
+    return try await FBDeviceDebugServer.debugServer(
+      forServiceConnection: device.openServiceConnection(debugServerService),
+      port: 0,
+      lldbBootstrapCommands: ["platform select remote-ios"],
+      queue: DispatchQueue.main,
+      logger: FBControlCoreGlobalConfiguration.defaultLogger)
   }
 
   /// The server holds the service connection open, with the AMDevice session that started the
