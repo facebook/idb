@@ -20,7 +20,7 @@ private let LaunchTypeSimulatorApp = "simulator_app"
 /// environment instead — see `FBProvidedSimulatorTestCase`.
 final class FBSimulatorBootTestCase: XCTestCase {
 
-  private var control: FBSimulatorControl!
+  private var control: SimulatorControlBootstrap!
   private var simulatorConfiguration: FBSimulatorConfiguration!
   private var bootConfiguration: FBSimulatorBootConfiguration!
 
@@ -46,7 +46,7 @@ final class FBSimulatorBootTestCase: XCTestCase {
     simulatorConfiguration = try FBSimulatorConfiguration.defaultConfiguration().withDeviceModel(.modeliPhone16)
     bootConfiguration = FBSimulatorBootConfiguration(options: Self.bootOptions, environment: [:])
     let noLogger: (any FBControlCoreLogger)? = nil
-    control = try FBSimulatorControl.withConfiguration(
+    control = try SimulatorControlBootstrap.withConfiguration(
       FBSimulatorControlConfiguration(deviceSetPath: Self.deviceSetPath, logger: noLogger))
   }
 

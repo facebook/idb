@@ -9,13 +9,17 @@
 @preconcurrency import FBControlCore
 import Foundation
 
-public final class FBSimulatorControl {
+/// The entry point to a simulator device set: loads the private frameworks, opens the service
+/// context and vends the `FBSimulatorSet`. Named distinctly from the module on purpose: a type
+/// that shares its module's name shadows the module in qualified lookups and cannot be emitted
+/// into a module interface.
+public final class SimulatorControlBootstrap {
 
   public var configuration: FBSimulatorControlConfiguration
   public let serviceContext: FBSimulatorServiceContext
   public let set: FBSimulatorSet
 
-  public class func withConfiguration(_ configuration: FBSimulatorControlConfiguration) throws -> FBSimulatorControl {
+  public class func withConfiguration(_ configuration: FBSimulatorControlConfiguration) throws -> SimulatorControlBootstrap {
     try FBSimulatorControlFrameworkLoader.essentialFrameworks.loadPrivateFrameworks(configuration.logger)
     let serviceContext = try FBSimulatorServiceContext.sharedServiceContext(withLogger: configuration.logger)
     let deviceSet = try serviceContext.createDeviceSet(with: configuration)
@@ -24,7 +28,7 @@ public final class FBSimulatorControl {
       deviceSet: deviceSet,
       delegate: nil,
       logger: configuration.logger.withName("simulator_set"))
-    return FBSimulatorControl(configuration: configuration, serviceContext: serviceContext, set: set)
+    return SimulatorControlBootstrap(configuration: configuration, serviceContext: serviceContext, set: set)
   }
 
   private init(configuration: FBSimulatorControlConfiguration, serviceContext: FBSimulatorServiceContext, set: FBSimulatorSet) {

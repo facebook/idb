@@ -136,7 +136,7 @@ private func simulatorSetWithPath(_ deviceSetPath: String?, logger: FBControlCor
   // Give a more meaningful message if we can't load the frameworks.
   try FBSimulatorControlFrameworkLoader.essentialFrameworks.loadPrivateFrameworks(logger)
   let configuration = FBSimulatorControlConfiguration(deviceSetPath: deviceSetPath, logger: logger)
-  return try FBSimulatorControl.withConfiguration(configuration).set
+  return try SimulatorControlBootstrap.withConfiguration(configuration).set
 }
 
 private func simulatorSet(_ userDefaults: UserDefaults, logger: FBControlCoreLogger) throws -> FBSimulatorSet {

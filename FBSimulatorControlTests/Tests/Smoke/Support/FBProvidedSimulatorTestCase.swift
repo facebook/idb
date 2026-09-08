@@ -79,7 +79,7 @@ class FBProvidedSimulatorTestCase: XCTestCase {
     let configuration = FBSimulatorControlConfiguration(
       deviceSetPath: environment[DeviceSetPathEnvKey],
       logger: noLogger)
-    let control = try FBSimulatorControl.withConfiguration(configuration)
+    let control = try SimulatorControlBootstrap.withConfiguration(configuration)
 
     if let udid = environment[DeviceUDIDEnvKey] {
       guard let simulator = control.set.simulator(withUDID: udid) else {
