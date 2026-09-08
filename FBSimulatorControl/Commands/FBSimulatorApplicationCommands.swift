@@ -19,6 +19,8 @@ public enum FBSimulatorApplicationError: Error {
   case launchingUninstalledApplication(bundleID: String, underlying: Error)
   case foregroundIfRunningIncompatibleWithWaitForDebugger
   case applicationAlreadyRunning(bundleID: String, processIdentifier: pid_t)
+  case applicationProcessSuspended(bundleID: String, processIdentifier: pid_t, debuggerAttached: Bool)
+  case applicationProcessDebuggerAttached(bundleID: String, processIdentifier: pid_t)
   case noDataDirectory(bundleID: String)
   case installInfoFieldNotAString(field: String, value: String, key: String, info: String)
   case dataContainerNotAURL(value: String, key: String, info: String)
@@ -49,6 +51,14 @@ extension FBSimulatorApplicationError: LocalizedError {
       return "'Foreground if running' and 'wait for debugger cannot be applied simultaneously"
     case let .applicationAlreadyRunning(bundleID, processIdentifier):
       return "App '\(bundleID)' can't be launched as it is already running (PID=\(processIdentifier))"
+    case let .applicationProcessSuspended(bundleID, processIdentifier, debuggerAttached):
+      let processDescription = "Cannot install '\(bundleID)' because its existing process (PID \(processIdentifier)) is suspended."
+      if debuggerAttached {
+        return "\(processDescription) A debugger is attached; detach the debugger or terminate the app, then retry."
+      }
+      return "\(processDescription) Resume or terminate the app, then retry."
+    case let .applicationProcessDebuggerAttached(bundleID, processIdentifier):
+      return "Cannot install '\(bundleID)' because a debugger is attached to its existing process (PID \(processIdentifier)). Detach the debugger or terminate the app, then retry."
     case let .noDataDirectory(bundleID):
       return "Cannot launch \(bundleID) as the Simulator has no data directory"
     case let .installInfoFieldNotAString(field, value, key, info):
@@ -95,11 +105,18 @@ public final class FBSimulatorApplicationCommands {
     let appBundle = try await confirmCompatibilityOfApplication(atPath: path)
     let options: [String: Any] = ["CFBundleIdentifier": appBundle.identifier]
     let appURL = URL(fileURLWithPath: appBundle.path)
+    let processFetcher = FBProcessFetcher()
     return try await Self.installAndResolveApplication(
       install: { attempt in
+        try await Self.confirmApplicationProcessIsInstallable(
+          bundleID: appBundle.identifier,
+          resolveProcessIdentifier: { try await self.processID(withBundleID: appBundle.identifier) },
+          processIsSuspended: { (try? processFetcher.isProcessStopped($0)) != nil },
+          debuggerIsAttached: { (try? processFetcher.isDebuggerAttached(to: $0)) != nil })
         if attempt == .retry {
           simulator.logger.log("Retrying install due to reinstall bug")
         }
+        try Task.checkCancellation()
         try simulator.device.installApplication(appURL, withOptions: options as [AnyHashable: Any])
       },
       resolveInstalledApplication: { try await self.installedApplication(withBundleID: appBundle.identifier) },
@@ -217,8 +234,22 @@ public final class FBSimulatorApplicationCommands {
   ) async throws -> T {
     do {
       try await install(.initial)
-      return try await resolveInstalledApplication()
+      try Task.checkCancellation()
+      let installedApplication = try await resolveInstalledApplication()
+      try Task.checkCancellation()
+      return installedApplication
+    } catch let error as CancellationError {
+      throw error
+    } catch let error as FBSimulatorApplicationError {
+      try Task.checkCancellation()
+      switch error {
+      case .applicationProcessSuspended, .applicationProcessDebuggerAttached:
+        throw error
+      default:
+        throw installFailure()
+      }
     } catch {
+      try Task.checkCancellation()
       guard (error as NSError).description.contains("Failed to load Info.plist from bundle at path") else {
         throw installFailure()
       }
@@ -226,10 +257,56 @@ public final class FBSimulatorApplicationCommands {
 
     do {
       try await install(.retry)
+      try Task.checkCancellation()
+    } catch let error as CancellationError {
+      throw error
+    } catch let error as FBSimulatorApplicationError {
+      try Task.checkCancellation()
+      switch error {
+      case .applicationProcessSuspended, .applicationProcessDebuggerAttached:
+        throw error
+      default:
+        throw installFailure()
+      }
     } catch {
+      try Task.checkCancellation()
       throw installFailure()
     }
-    return try await resolveInstalledApplication()
+    let installedApplication = try await resolveInstalledApplication()
+    try Task.checkCancellation()
+    return installedApplication
+  }
+
+  static func confirmApplicationProcessIsInstallable(
+    bundleID: String,
+    resolveProcessIdentifier: () async throws -> pid_t,
+    processIsSuspended: (pid_t) -> Bool,
+    debuggerIsAttached: (pid_t) -> Bool
+  ) async throws {
+    let processIdentifier: pid_t
+    do {
+      processIdentifier = try await resolveProcessIdentifier()
+    } catch let error as CancellationError {
+      throw error
+    } catch {
+      return
+    }
+
+    // Process inspection is advisory: FBProcessFetcher imports false and inspection failures as
+    // throws, so either result fails open rather than blocking an otherwise valid install.
+    let processSuspended = processIsSuspended(processIdentifier)
+    let debuggerAttached = debuggerIsAttached(processIdentifier)
+    if processSuspended {
+      throw FBSimulatorApplicationError.applicationProcessSuspended(
+        bundleID: bundleID,
+        processIdentifier: processIdentifier,
+        debuggerAttached: debuggerAttached)
+    }
+    if debuggerAttached {
+      throw FBSimulatorApplicationError.applicationProcessDebuggerAttached(
+        bundleID: bundleID,
+        processIdentifier: processIdentifier)
+    }
   }
 
   // MARK: - Private
