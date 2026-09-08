@@ -617,7 +617,10 @@ function build() {
 
 function test_target() {
   local name=$1
-  if [[ $name == FBSimulatorControl ]]; then
+  # Every FBSimulatorControl test bundle copies the generated shims and the
+  # accessibility bridge into its resources, so they have to exist first —
+  # whether the whole framework scheme is under test or one suite of it.
+  if [[ $name == FBSimulatorControl* ]]; then
     build_fbsimulatorcontrol_resources
   fi
   # Per-test time allowances turn a hung test into a named failure in about a
@@ -656,9 +659,13 @@ function run_tests() {
         test_all;;
       FBControlCore|XCTestBootstrap|FBSimulatorControl|FBDeviceControl)
         test_target "$target";;
+      FBSimulatorControlUnitTests|FBSimulatorControlBootTests|FBSimulatorControlSmokeTests)
+        test_target "$target";;
       *)
         echo "Unknown test target: $target"
-        echo "Valid targets: all, FBControlCore, XCTestBootstrap, FBSimulatorControl, FBDeviceControl"
+        echo "Valid targets: all, FBControlCore, XCTestBootstrap, FBSimulatorControl,"
+        echo "  FBSimulatorControlUnitTests, FBSimulatorControlBootTests,"
+        echo "  FBSimulatorControlSmokeTests, FBDeviceControl"
         exit 1;;
     esac
   fi
@@ -715,7 +722,11 @@ Commands:
       all             Run all tests
       FBControlCore   Test FBControlCore
       XCTestBootstrap Test XCTestBootstrap
-      FBSimulatorControl Test FBSimulatorControl
+      FBSimulatorControl Test FBSimulatorControl (every suite)
+      FBSimulatorControlUnitTests   Test the Unit suite: needs no simulator
+      FBSimulatorControlBootTests   Test the Boot suite: creates and boots one
+      FBSimulatorControlSmokeTests  Test the Smoke suite: takes a booted one
+                                    from the environment
       FBDeviceControl Test FBDeviceControl
 
 Examples:
@@ -728,6 +739,7 @@ Examples:
   ./build.sh build FBControlCore      # Build specific framework
   ./build.sh test                     # Run all tests
   ./build.sh test FBSimulatorControl  # Test specific framework
+  ./build.sh test FBSimulatorControlSmokeTests  # Test one suite of it
 
 Prerequisites:
   - Xcode 26.0+

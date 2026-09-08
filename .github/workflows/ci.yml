@@ -73,19 +73,25 @@ jobs:
         target:
           - FBControlCore
           - XCTestBootstrap
-          - FBSimulatorControl
+          # One job per FBSimulatorControl suite, so a Unit regression, a broken
+          # boot and a broken guest read are three signals rather than one.
+          - FBSimulatorControlUnitTests
+          - FBSimulatorControlBootTests
+          - FBSimulatorControlSmokeTests
           - FBDeviceControl
     steps:
       - uses: actions/checkout@v5
       - name: Install tools
         run: brew install xcodegen
-      # The smoke tests take the simulator named by DEVICE_UDID (forwarded
-      # through xcodebuild's TEST_RUNNER_ prefix) instead of booting one
-      # themselves, which keeps the boot out of the per-test time allowance and
-      # pins which device they run against. The boot-lifecycle tests create
-      # their own simulators and need no provisioning.
-      - name: Boot a simulator for the smoke tests
-        if: matrix.target == 'FBSimulatorControl'
+      # The smoke suite takes a booted simulator from its environment and does
+      # not boot one itself, so this job is the harness that supplies it, named
+      # by DEVICE_UDID (forwarded through xcodebuild's TEST_RUNNER_ prefix).
+      # `bootstatus` waits for the boot to finish: a simulator still coming up
+      # has no SpringBoard, and work against one waits rather than failing. The
+      # boot suite creates its own and needs no provisioning; the unit suite
+      # needs no simulator at all.
+      - name: Boot a simulator for the smoke suite
+        if: matrix.target == 'FBSimulatorControlSmokeTests'
         run: |
           UDID=$(xcrun simctl create smoke-test-provided "iPhone 16")
           xcrun simctl boot "$UDID"
