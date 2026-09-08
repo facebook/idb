@@ -17,35 +17,35 @@ final class FBAXBridgeReadsTests: XCTestCase {
     try JSONSerialization.data(withJSONObject: object)
   }
 
-  // MARK: - FBAXTreeRead envelope parsing
+  // MARK: - AXTreeRead envelope parsing
 
   func testParsesTreeFromOkEnvelope() throws {
     let tree: [String: Any] = [
-      FBAXWire.Node.label.rawValue: "General",
-      FBAXWire.Node.identifier.rawValue: "com.apple.settings.general",
+      AXWire.Node.label.rawValue: "General",
+      AXWire.Node.identifier.rawValue: "com.apple.settings.general",
     ]
     let data = try envelope(["ok": true, "tree": tree])
-    let parsed = try FBAXTreeRead(wholeTreeResponse: data, pid: 42)
-    XCTAssertEqual(parsed.tree[FBAXWire.Node.label.rawValue] as? String, "General")
-    XCTAssertEqual(parsed.tree[FBAXWire.Node.identifier.rawValue] as? String, "com.apple.settings.general")
+    let parsed = try AXTreeRead(wholeTreeResponse: data, pid: 42)
+    XCTAssertEqual(parsed.tree[AXWire.Node.label.rawValue] as? String, "General")
+    XCTAssertEqual(parsed.tree[AXWire.Node.identifier.rawValue] as? String, "com.apple.settings.general")
     XCTAssertFalse(parsed.truncated, "a whole-tree read with no truncated flag is a complete tree")
   }
 
   func testParsesTruncatedFlagWhenGuestReportsAPartialTree() throws {
     // A guest walk cut short by the depth or node bound tags its envelope `truncated: true`, so the
     // conformer can warn the tree is incomplete rather than pass it off as whole.
-    let tree: [String: Any] = [FBAXWire.Node.label.rawValue: "root"]
+    let tree: [String: Any] = [AXWire.Node.label.rawValue: "root"]
     let data = try envelope(["ok": true, "tree": tree, "truncated": true])
-    let parsed = try FBAXTreeRead(wholeTreeResponse: data, pid: 42)
+    let parsed = try AXTreeRead(wholeTreeResponse: data, pid: 42)
     XCTAssertTrue(parsed.truncated, "the guest's truncation flag must be surfaced to the caller")
   }
 
   func testParsesTheAutomationStateFromTheEnvelope() throws {
-    let tree: [String: Any] = [FBAXWire.Node.label.rawValue: "root"]
+    let tree: [String: Any] = [AXWire.Node.label.rawValue: "root"]
     let data = try envelope([
       "ok": true, "tree": tree, "automation": ["enabled": true, "asserted": false],
     ])
-    let parsed = try FBAXTreeRead(wholeTreeResponse: data, pid: 42)
+    let parsed = try AXTreeRead(wholeTreeResponse: data, pid: 42)
     XCTAssertEqual(parsed.automation?.enabled, true)
     XCTAssertEqual(parsed.automation?.asserted, false)
   }
@@ -53,17 +53,17 @@ final class FBAXBridgeReadsTests: XCTestCase {
   // Nil, not `enabled: false`: a guest predating the field did not say what mode the device was in, which is a
   // different fact from saying it was off.
   func testAnEnvelopeWithoutAutomationReportsNothingRatherThanOff() throws {
-    let tree: [String: Any] = [FBAXWire.Node.label.rawValue: "root"]
+    let tree: [String: Any] = [AXWire.Node.label.rawValue: "root"]
     let data = try envelope(["ok": true, "tree": tree])
-    let parsed = try FBAXTreeRead(wholeTreeResponse: data, pid: 42)
+    let parsed = try AXTreeRead(wholeTreeResponse: data, pid: 42)
     XCTAssertNil(parsed.automation, "an absent automation object must not read as automation mode being off")
   }
 
   // `asserted` absent is the state before anything asserts, and false is the truthful answer for it.
   func testAutomationAssertedDefaultsToFalseWhenOmitted() throws {
-    let tree: [String: Any] = [FBAXWire.Node.label.rawValue: "root"]
+    let tree: [String: Any] = [AXWire.Node.label.rawValue: "root"]
     let data = try envelope(["ok": true, "tree": tree, "automation": ["enabled": true]])
-    let parsed = try FBAXTreeRead(wholeTreeResponse: data, pid: 42)
+    let parsed = try AXTreeRead(wholeTreeResponse: data, pid: 42)
     XCTAssertEqual(parsed.automation?.enabled, true)
     XCTAssertEqual(parsed.automation?.asserted, false)
   }
@@ -72,7 +72,7 @@ final class FBAXBridgeReadsTests: XCTestCase {
     // An untagged failure (no `error_kind`) is an opaque `guestFailure` carrying the guest's own
     // message, so callers see the real cause.
     let data = try envelope(["ok": false, "error": "the accessibility server is not responding"])
-    XCTAssertThrowsError(try FBAXTreeRead(wholeTreeResponse: data, pid: 7)) { error in
+    XCTAssertThrowsError(try AXTreeRead(wholeTreeResponse: data, pid: 7)) { error in
       guard case FBAXBridgeError.guestFailure = error else {
         return XCTFail("an untagged failure should be a guestFailure, got: \(error)")
       }
@@ -83,7 +83,7 @@ final class FBAXBridgeReadsTests: XCTestCase {
   func testApplicationUnavailableErrorKindThrowsTypedCase() throws {
     // The guest error becomes the backend-neutral error shared with the accessibility backend.
     let data = try envelope(["ok": false, "error": "no application element for pid 7", "error_kind": "application_unavailable"])
-    XCTAssertThrowsError(try FBAXTreeRead(wholeTreeResponse: data, pid: 7)) { error in
+    XCTAssertThrowsError(try AXTreeRead(wholeTreeResponse: data, pid: 7)) { error in
       guard case let FBAXBridgeError.applicationUnavailable(pid) = error else {
         return XCTFail("a tagged failure should be applicationUnavailable, got: \(error)")
       }
@@ -101,7 +101,7 @@ final class FBAXBridgeReadsTests: XCTestCase {
       "error": "XCTAccessibilityFramework unavailable — is XCTAutomationSupport loaded?",
       "error_kind": "reader_unavailable",
     ])
-    XCTAssertThrowsError(try FBAXTreeRead(frontmostResponse: data, method: .centerPoint)) { error in
+    XCTAssertThrowsError(try AXTreeRead(frontmostResponse: data, method: .centerPoint)) { error in
       guard case let FBAXBridgeError.readerUnavailable(reason) = error else {
         return XCTFail("expected readerUnavailable, got: \(error)")
       }
@@ -117,7 +117,7 @@ final class FBAXBridgeReadsTests: XCTestCase {
       "error": "no accessibility server answered the system-wide hit-test at (201.0, 437.0)",
       "error_kind": "application_unavailable",
     ])
-    XCTAssertThrowsError(try FBAXTreeRead(frontmostResponse: data, method: .centerPoint)) { error in
+    XCTAssertThrowsError(try AXTreeRead(frontmostResponse: data, method: .centerPoint)) { error in
       guard case let FBAXBridgeError.applicationUnavailable(pid) = error else {
         return XCTFail("expected applicationUnavailable, got: \(error)")
       }
@@ -133,7 +133,7 @@ final class FBAXBridgeReadsTests: XCTestCase {
       "error": "AXPTranslator unavailable — is AccessibilityPlatformTranslation loaded?",
       "error_kind": "frontmost_unresolved",
     ])
-    XCTAssertThrowsError(try FBAXTreeRead(frontmostResponse: data, method: .windowServer)) { error in
+    XCTAssertThrowsError(try AXTreeRead(frontmostResponse: data, method: .windowServer)) { error in
       guard case let FBAXBridgeError.frontmostUnresolved(method, reason) = error else {
         return XCTFail("expected frontmostUnresolved, got: \(error)")
       }
@@ -152,7 +152,7 @@ final class FBAXBridgeReadsTests: XCTestCase {
       "error_kind": "application_unavailable",
       "pid": 8865,
     ])
-    XCTAssertThrowsError(try FBAXTreeRead(hitTestResponse: data)) { error in
+    XCTAssertThrowsError(try AXTreeRead(hitTestResponse: data)) { error in
       guard case let FBAXBridgeError.applicationUnavailable(pid) = error else {
         return XCTFail("expected applicationUnavailable, got: \(error)")
       }
@@ -169,7 +169,7 @@ final class FBAXBridgeReadsTests: XCTestCase {
       "error_kind": "application_not_responding",
       "pid": 8865,
     ])
-    XCTAssertThrowsError(try FBAXTreeRead(wholeTreeResponse: data, pid: 8865)) { error in
+    XCTAssertThrowsError(try AXTreeRead(wholeTreeResponse: data, pid: 8865)) { error in
       guard case let FBAXBridgeError.applicationNotResponding(pid) = error else {
         return XCTFail("expected applicationNotResponding, got: \(error)")
       }
@@ -186,7 +186,7 @@ final class FBAXBridgeReadsTests: XCTestCase {
       "error_kind": "application_unavailable",
       "pid": 99_999_999_999,
     ])
-    XCTAssertThrowsError(try FBAXTreeRead(wholeTreeResponse: data, pid: 42)) { error in
+    XCTAssertThrowsError(try AXTreeRead(wholeTreeResponse: data, pid: 42)) { error in
       guard case let FBAXBridgeError.applicationUnavailable(pid) = error else {
         return XCTFail("expected applicationUnavailable, got: \(error)")
       }
@@ -198,7 +198,7 @@ final class FBAXBridgeReadsTests: XCTestCase {
   // guest running ahead of its host costs precision and nothing else.
   func testAnUnknownFailureKindDegradesToAnOpaqueFailureCarryingTheMessage() throws {
     let data = try envelope(["ok": false, "error": "something new went wrong", "error_kind": "some_future_kind"])
-    XCTAssertThrowsError(try FBAXTreeRead(frontmostResponse: data, method: .centerPoint)) { error in
+    XCTAssertThrowsError(try AXTreeRead(frontmostResponse: data, method: .centerPoint)) { error in
       guard case FBAXBridgeError.guestFailure = error else {
         return XCTFail("expected guestFailure, got: \(error)")
       }
@@ -208,18 +208,18 @@ final class FBAXBridgeReadsTests: XCTestCase {
 
   func testThrowsOnMalformedResponse() {
     let data = Data("this is not json".utf8)
-    XCTAssertThrowsError(try FBAXTreeRead(wholeTreeResponse: data, pid: 1))
+    XCTAssertThrowsError(try AXTreeRead(wholeTreeResponse: data, pid: 1))
   }
 
   func testThrowsWhenOkButNoTree() throws {
     let data = try envelope(["ok": true])
-    XCTAssertThrowsError(try FBAXTreeRead(wholeTreeResponse: data, pid: 1))
+    XCTAssertThrowsError(try AXTreeRead(wholeTreeResponse: data, pid: 1))
   }
 
   func testThrowsWhenNotOk() throws {
     // `ok` missing/false with no `error` still fails rather than yielding an empty tree.
-    let data = try envelope(["tree": [FBAXWire.Node.label.rawValue: "x"]])
-    XCTAssertThrowsError(try FBAXTreeRead(wholeTreeResponse: data, pid: 1))
+    let data = try envelope(["tree": [AXWire.Node.label.rawValue: "x"]])
+    XCTAssertThrowsError(try AXTreeRead(wholeTreeResponse: data, pid: 1))
   }
 
   // MARK: - One error type across backends
@@ -258,7 +258,7 @@ final class FBAXBridgeReadsTests: XCTestCase {
   // that predates the field.
   func testADefaultReadNamesNoAttributesOnTheWire() {
     XCTAssertNil(
-      FBAXWire.Node.fetchList(for: FBAXKeys.defaultSet),
+      AXWire.Node.fetchList(for: FBAXKeys.defaultSet),
       "a default read must leave the attribute list off the wire entirely"
     )
   }
@@ -273,7 +273,7 @@ final class FBAXBridgeReadsTests: XCTestCase {
       "a filter must not pull the verdict into a key set the caller did not ask for"
     )
     XCTAssertNil(
-      FBAXWire.Node.fetchList(for: options.serializationKeys),
+      AXWire.Node.fetchList(for: options.serializationKeys),
       "so a filtered read still names no attributes on the wire, exactly like an unfiltered one"
     )
   }
@@ -283,8 +283,8 @@ final class FBAXBridgeReadsTests: XCTestCase {
     var options = FBAccessibilityRequestOptions()
     options.filter = .interactable
     options.keys = FBAXKeys.defaultSet.union([.interactable])
-    let fetchList = FBAXWire.Node.fetchList(for: options.serializationKeys)
-    for reachability in FBAXWire.Node.interactableAttributes {
+    let fetchList = AXWire.Node.fetchList(for: options.serializationKeys)
+    for reachability in AXWire.Node.interactableAttributes {
       XCTAssertTrue(
         fetchList?.contains(reachability.rawValue) ?? false,
         "\(reachability.rawValue) is fetched because the caller asked for the verdict, not because a filter did"
@@ -402,8 +402,8 @@ final class FBAXBridgeReadsTests: XCTestCase {
   private func timings(
     roundTrip: CFAbsoluteTime, decode: CFAbsoluteTime, traverse: CFAbsoluteTime?, machRoundTrips: Int64?,
     responseBytes: Int64 = 1024
-  ) -> FBAXReadTimings {
-    FBAXReadTimings(
+  ) -> AXReadTimings {
+    AXReadTimings(
       roundTrip: roundTrip, decode: decode, traverse: traverse, machRoundTrips: machRoundTrips,
       responseBytes: responseBytes)
   }
@@ -437,20 +437,20 @@ final class FBAXBridgeReadsTests: XCTestCase {
   // A well-formed, untruncated, error-free read whose elements have lost their geometry: nothing else in the
   // response distinguishes it, so this is the one place in the read path allowed a threshold.
   func testMostlyUnframedReadsAreAdvisedAboutAutomationMode() {
-    let advice = FBAccessibilityGuidance.zeroFrameAdvice(summary(total: 190, zeroFrame: 167))
+    let advice = AccessibilityGuidance.zeroFrameAdvice(summary(total: 190, zeroFrame: 167))
     XCTAssertNotNil(advice)
     XCTAssertTrue(advice?.contains("AutomationEnabled") == true, "got: \(advice ?? "nil")")
   }
 
   func testFullyFramedReadsAreNotAdvised() {
-    XCTAssertNil(FBAccessibilityGuidance.zeroFrameAdvice(summary(total: 176, zeroFrame: 0)))
+    XCTAssertNil(AccessibilityGuidance.zeroFrameAdvice(summary(total: 176, zeroFrame: 0)))
   }
 
   // A handful of unframed elements is ordinary. The advice is about a whole screen having lost its
   // geometry, not about any element that reports none.
   func testASmallReadIsNotJudged() {
     XCTAssertNil(
-      FBAccessibilityGuidance.zeroFrameAdvice(summary(total: 4, zeroFrame: 4)),
+      AccessibilityGuidance.zeroFrameAdvice(summary(total: 4, zeroFrame: 4)),
       "reads below the size threshold produce no advice, whatever their ratio"
     )
   }
@@ -458,7 +458,7 @@ final class FBAXBridgeReadsTests: XCTestCase {
   // Nil rather than zeroes means the read carried no frames at all, which is a caller's choice via
   // `--key`. Advising on it would be answering a question they did not ask.
   func testAReadCarryingNoFramesIsNotAdvised() {
-    XCTAssertNil(FBAccessibilityGuidance.zeroFrameAdvice(nil))
+    XCTAssertNil(AccessibilityGuidance.zeroFrameAdvice(nil))
   }
 
   // MARK: - Which read failures a marker wait polls through
@@ -498,16 +498,16 @@ final class FBAXBridgeReadsTests: XCTestCase {
   // The accessibility backend matches a marker by substring, so the serialized-tree matcher must too, or `--api`
   // silently changes what `tap General` hits (the contract stated on `FBAccessibilityElementQuery.marker`).
   func testMarkerMatchesBySubstring() throws {
-    let elements = FBAXTreeWalk.describeAllElements(
+    let elements = AXTreeWalk.describeAllElements(
       fromTree: [
-        FBAXWire.Node.label.rawValue: "root",
-        FBAXWire.Node.children.rawValue: [
-          [FBAXWire.Node.label.rawValue: "General Settings", FBAXWire.Node.children.rawValue: [[String: Any]]()] as [String: Any]
+        AXWire.Node.label.rawValue: "root",
+        AXWire.Node.children.rawValue: [
+          [AXWire.Node.label.rawValue: "General Settings", AXWire.Node.children.rawValue: [[String: Any]]()] as [String: Any]
         ],
       ],
       keys: FBAXKeys.defaultSet, nestedFormat: false, pid: 1
     )
-    let match = FBAXTreeWalk.matchingElement(inElements: elements, markerValue: "General", key: .label)
+    let match = AXTreeWalk.matchingElement(inElements: elements, markerValue: "General", key: .label)
     guard let label = match?.label ?? nil else {
       return XCTFail("a substring marker must match, got: \(String(describing: match))")
     }
@@ -517,15 +517,15 @@ final class FBAXBridgeReadsTests: XCTestCase {
   func testMarkerFrameCentreMatchesBySubstring() throws {
     // `tap`/`wait`/`set-value` resolve through frameCenter, so it must use the same predicate as the
     // describe matcher — otherwise a marker could be describable but not tappable.
-    let elements = FBAXTreeWalk.describeAllElements(
+    let elements = AXTreeWalk.describeAllElements(
       fromTree: [
-        FBAXWire.Node.label.rawValue: "General Settings",
-        FBAXWire.Node.frame.rawValue: CGRectCreateDictionaryRepresentation(CGRect(x: 10, y: 20, width: 100, height: 50)) as NSDictionary,
-        FBAXWire.Node.children.rawValue: [[String: Any]](),
+        AXWire.Node.label.rawValue: "General Settings",
+        AXWire.Node.frame.rawValue: CGRectCreateDictionaryRepresentation(CGRect(x: 10, y: 20, width: 100, height: 50)) as NSDictionary,
+        AXWire.Node.children.rawValue: [[String: Any]](),
       ],
       keys: FBAXKeys.defaultSet, nestedFormat: false, pid: 1
     )
-    let centre = FBAXTreeWalk.frameCenter(inElements: elements, markerValue: "General", key: .label)
+    let centre = AXTreeWalk.frameCenter(inElements: elements, markerValue: "General", key: .label)
     XCTAssertEqual(centre?.x, 60)
     XCTAssertEqual(centre?.y, 45)
   }
@@ -533,11 +533,11 @@ final class FBAXBridgeReadsTests: XCTestCase {
   // MARK: - Marker case sensitivity is opt-in, and reads only
 
   private func settingsElements() -> [FBAccessibilityDocumentElement] {
-    FBAXTreeWalk.describeAllElements(
+    AXTreeWalk.describeAllElements(
       fromTree: [
-        FBAXWire.Node.label.rawValue: "General Settings",
-        FBAXWire.Node.frame.rawValue: CGRectCreateDictionaryRepresentation(CGRect(x: 10, y: 20, width: 100, height: 50)) as NSDictionary,
-        FBAXWire.Node.children.rawValue: [[String: Any]](),
+        AXWire.Node.label.rawValue: "General Settings",
+        AXWire.Node.frame.rawValue: CGRectCreateDictionaryRepresentation(CGRect(x: 10, y: 20, width: 100, height: 50)) as NSDictionary,
+        AXWire.Node.children.rawValue: [[String: Any]](),
       ],
       keys: FBAXKeys.defaultSet, nestedFormat: false, pid: 1
     )
@@ -546,11 +546,11 @@ final class FBAXBridgeReadsTests: XCTestCase {
   func testMarkerIsCaseSensitiveUnlessAsked() throws {
     let elements = settingsElements()
     XCTAssertNil(
-      FBAXTreeWalk.matchingElement(inElements: elements, markerValue: "general", key: .label),
+      AXTreeWalk.matchingElement(inElements: elements, markerValue: "general", key: .label),
       "the default must stay the historical case-sensitive match"
     )
     guard
-      let label = FBAXTreeWalk.matchingElement(
+      let label = AXTreeWalk.matchingElement(
         inElements: elements, markerValue: "general", key: .label, ignoresCase: true
       )?.label ?? nil
     else {
@@ -564,10 +564,10 @@ final class FBAXBridgeReadsTests: XCTestCase {
     // an element the caller did not name, and cannot be undone by reading again.
     let elements = settingsElements()
     XCTAssertEqual(
-      FBAXTreeWalk.resolveMarker(inElements: elements, markerValue: "general", key: .label),
+      AXTreeWalk.resolveMarker(inElements: elements, markerValue: "general", key: .label),
       .notFound
     )
-    XCTAssertNil(FBAXTreeWalk.frameCenter(inElements: elements, markerValue: "general", key: .label))
+    XCTAssertNil(AXTreeWalk.frameCenter(inElements: elements, markerValue: "general", key: .label))
   }
 
   func testAMarkerWriteWithIgnoreCaseResolvesCaseInsensitively() async throws {
@@ -576,17 +576,17 @@ final class FBAXBridgeReadsTests: XCTestCase {
       operation: "A tap"
     )
     XCTAssertEqual(target.point, CGPoint(x: Self.childRect.midX, y: Self.childRect.midY))
-    XCTAssertEqual(target.assertion, FBAXBridgeWriteAssertion(key: .label, value: "General Settings"))
+    XCTAssertEqual(target.assertion, AXBridgeWriteAssertion(key: .label, value: "General Settings"))
   }
 
   func testResolveMarkerWithIgnoreCaseMatchesLikeTheDescribeMatcher() throws {
     let elements = settingsElements()
     XCTAssertEqual(
-      FBAXTreeWalk.resolveMarker(inElements: elements, markerValue: "general", key: .label, ignoresCase: true),
+      AXTreeWalk.resolveMarker(inElements: elements, markerValue: "general", key: .label, ignoresCase: true),
       .resolved(x: 60, y: 45)
     )
     XCTAssertEqual(
-      FBAXTreeWalk.frameCenter(inElements: elements, markerValue: "general", key: .label, ignoresCase: true)?.x,
+      AXTreeWalk.frameCenter(inElements: elements, markerValue: "general", key: .label, ignoresCase: true)?.x,
       60
     )
   }
@@ -594,7 +594,7 @@ final class FBAXBridgeReadsTests: XCTestCase {
   func testEmptyMarkerKeepsMatchingTheFirstElementCarryingTheKey() {
     // Every value contains the empty string, so an empty marker resolves to the first element carrying the key.
     // `FBAccessibilityMatch` refuses to represent that; the matcher must not turn the refusal into "no match".
-    let label = FBAXTreeWalk.matchingElement(inElements: settingsElements(), markerValue: "", key: .label)?.label ?? nil
+    let label = AXTreeWalk.matchingElement(inElements: settingsElements(), markerValue: "", key: .label)?.label ?? nil
     XCTAssertEqual(label, "General Settings")
   }
 
@@ -613,34 +613,34 @@ final class FBAXBridgeReadsTests: XCTestCase {
     // The marker union below is what makes a searched key outside the requested set — a restricted key
     // request, or `.placeholder`, which the default set omits — matchable at all.
     let tree: [String: Any] = [
-      FBAXWire.Node.label.rawValue: "General Settings",
-      FBAXWire.Node.children.rawValue: [[String: Any]](),
+      AXWire.Node.label.rawValue: "General Settings",
+      AXWire.Node.children.rawValue: [[String: Any]](),
     ]
     let requested: Set<FBAXKeys> = [.value]
-    let withoutSearchedKey = FBAXTreeWalk.describeAllElements(fromTree: tree, keys: requested, nestedFormat: false, pid: 1)
+    let withoutSearchedKey = AXTreeWalk.describeAllElements(fromTree: tree, keys: requested, nestedFormat: false, pid: 1)
     XCTAssertNil(
-      FBAXTreeWalk.matchingElement(inElements: withoutSearchedKey, markerValue: "General", key: .label),
+      AXTreeWalk.matchingElement(inElements: withoutSearchedKey, markerValue: "General", key: .label),
       "a key absent from the serialized set must not resolve a marker"
     )
-    let withSearchedKey = FBAXTreeWalk.describeAllElements(
+    let withSearchedKey = AXTreeWalk.describeAllElements(
       fromTree: tree, keys: requested.union([FBAXSearchableKey.label.serializationKey]), nestedFormat: false, pid: 1
     )
-    guard let label = FBAXTreeWalk.matchingElement(inElements: withSearchedKey, markerValue: "General", key: .label)?.label ?? nil
+    guard let label = AXTreeWalk.matchingElement(inElements: withSearchedKey, markerValue: "General", key: .label)?.label ?? nil
     else {
       return XCTFail("unioning the searched key must make the marker resolve regardless of the requested keys")
     }
     XCTAssertEqual(label, "General Settings")
   }
 
-  // MARK: - FBAXTreeRead system-wide hit-test parsing
+  // MARK: - AXTreeRead system-wide hit-test parsing
 
   func testHitTestParsesHitNodeAndOwningPid() throws {
     // A system-wide hit-test resolves which app owns the point, so the response carries the owning pid
     // the host tags the element with.
-    let node: [String: Any] = [FBAXWire.Node.identifier.rawValue: "com.apple.settings.general"]
+    let node: [String: Any] = [AXWire.Node.identifier.rawValue: "com.apple.settings.general"]
     let data = try envelope(["ok": true, "tree": node, "pid": 8865])
-    let parsed = try FBAXTreeRead(hitTestResponse: data)
-    XCTAssertEqual(parsed?.tree[FBAXWire.Node.identifier.rawValue] as? String, "com.apple.settings.general")
+    let parsed = try AXTreeRead(hitTestResponse: data)
+    XCTAssertEqual(parsed?.tree[AXWire.Node.identifier.rawValue] as? String, "com.apple.settings.general")
     XCTAssertEqual(parsed?.pid, 8865)
   }
 
@@ -648,48 +648,48 @@ final class FBAXBridgeReadsTests: XCTestCase {
     // `{ok:true, empty:true}` is "no element at the point" — a valid empty result, returned as nil,
     // not conflated with a reader failure.
     let data = try envelope(["ok": true, "empty": true])
-    XCTAssertNil(try FBAXTreeRead(hitTestResponse: data))
+    XCTAssertNil(try AXTreeRead(hitTestResponse: data))
   }
 
   func testHitTestThrowsOnFailure() throws {
     // A failure (`ok:false`) is distinct from an empty result and is surfaced with the guest message.
     let data = try envelope(["ok": false, "error": "AXUIElementCopyElementAtPosition unavailable"])
-    XCTAssertThrowsError(try FBAXTreeRead(hitTestResponse: data)) { error in
+    XCTAssertThrowsError(try AXTreeRead(hitTestResponse: data)) { error in
       XCTAssertTrue("\(error)".contains("AXUIElementCopyElementAtPosition unavailable"), "unexpected error: \(error)")
     }
   }
 
   func testHitTestThrowsWhenOkButNoTreeOrEmpty() throws {
     let data = try envelope(["ok": true])
-    XCTAssertThrowsError(try FBAXTreeRead(hitTestResponse: data))
+    XCTAssertThrowsError(try AXTreeRead(hitTestResponse: data))
   }
 
   func testHitTestThrowsWhenOwningPidMissing() throws {
     // A hit node with no owning pid is a protocol violation — the host cannot tag the element.
-    let data = try envelope(["ok": true, "tree": [FBAXWire.Node.identifier.rawValue: "x"]])
-    XCTAssertThrowsError(try FBAXTreeRead(hitTestResponse: data)) { error in
+    let data = try envelope(["ok": true, "tree": [AXWire.Node.identifier.rawValue: "x"]])
+    XCTAssertThrowsError(try AXTreeRead(hitTestResponse: data)) { error in
       guard case FBAXBridgeError.guestFailure = error else {
         return XCTFail("a hit-test without an owning pid should be guestFailure, got: \(error)")
       }
     }
   }
 
-  // MARK: - FBAXTreeRead fused frontmost tree parsing
+  // MARK: - AXTreeRead fused frontmost tree parsing
 
   func testFrontmostTreeParsesTreeAndResolvedPid() throws {
     // The fused read resolves the frontmost app AND reads its tree in one call, so the response carries
     // the resolved pid the host tags elements with — it did not know the pid in advance.
-    let tree: [String: Any] = [FBAXWire.Node.label.rawValue: "Settings"]
+    let tree: [String: Any] = [AXWire.Node.label.rawValue: "Settings"]
     let data = try envelope(["ok": true, "tree": tree, "pid": 8865, "method": "center-point", "truncated": false])
-    let parsed = try FBAXTreeRead(frontmostResponse: data, method: .centerPoint)
+    let parsed = try AXTreeRead(frontmostResponse: data, method: .centerPoint)
     XCTAssertEqual(parsed.pid, 8865)
-    XCTAssertEqual(parsed.tree[FBAXWire.Node.label.rawValue] as? String, "Settings")
+    XCTAssertEqual(parsed.tree[AXWire.Node.label.rawValue] as? String, "Settings")
     XCTAssertFalse(parsed.truncated)
   }
 
   func testFrontmostTreeSurfacesTruncation() throws {
-    let data = try envelope(["ok": true, "tree": [FBAXWire.Node.label.rawValue: "root"], "pid": 1, "truncated": true])
-    XCTAssertTrue(try FBAXTreeRead(frontmostResponse: data, method: .centerPoint).truncated)
+    let data = try envelope(["ok": true, "tree": [AXWire.Node.label.rawValue: "root"], "pid": 1, "truncated": true])
+    XCTAssertTrue(try AXTreeRead(frontmostResponse: data, method: .centerPoint).truncated)
   }
 
   func testFrontmostTreeThrowsFrontmostUnresolvedOnAnEmptyAnchor() throws {
@@ -700,7 +700,7 @@ final class FBAXBridgeReadsTests: XCTestCase {
       "error": "system-wide hit-test at (201.0, 437.0) found no element",
       "error_kind": "frontmost_unresolved",
     ])
-    XCTAssertThrowsError(try FBAXTreeRead(frontmostResponse: data, method: .centerPoint)) { error in
+    XCTAssertThrowsError(try AXTreeRead(frontmostResponse: data, method: .centerPoint)) { error in
       guard case let FBAXBridgeError.frontmostUnresolved(method, reason) = error else {
         return XCTFail("a strategy that named nothing should be frontmostUnresolved, got: \(error)")
       }
@@ -712,16 +712,16 @@ final class FBAXBridgeReadsTests: XCTestCase {
   // A pid above `Int32.max` must be rejected as a guest failure rather than trapping in the
   // non-failable `Int32` conversion.
   func testAnOutOfRangeResolvedPidIsRejectedRatherThanTrapping() throws {
-    let tree: [String: Any] = [FBAXWire.Node.label.rawValue: "root"]
+    let tree: [String: Any] = [AXWire.Node.label.rawValue: "root"]
     let frontmost = try envelope(["ok": true, "tree": tree, "pid": 99_999_999_999])
-    XCTAssertThrowsError(try FBAXTreeRead(frontmostResponse: frontmost, method: .centerPoint)) { error in
+    XCTAssertThrowsError(try AXTreeRead(frontmostResponse: frontmost, method: .centerPoint)) { error in
       guard case FBAXBridgeError.guestFailure = error else {
         return XCTFail("expected guestFailure, got: \(error)")
       }
     }
 
     let hit = try envelope(["ok": true, "tree": tree, "pid": 99_999_999_999])
-    XCTAssertThrowsError(try FBAXTreeRead(hitTestResponse: hit)) { error in
+    XCTAssertThrowsError(try AXTreeRead(hitTestResponse: hit)) { error in
       guard case FBAXBridgeError.guestFailure = error else {
         return XCTFail("expected guestFailure, got: \(error)")
       }
@@ -730,8 +730,8 @@ final class FBAXBridgeReadsTests: XCTestCase {
 
   func testFrontmostTreeThrowsWhenResolvedPidMissing() throws {
     // An ok response with a tree but no pid is a protocol violation — the host cannot tag the elements.
-    let data = try envelope(["ok": true, "tree": [FBAXWire.Node.label.rawValue: "x"]])
-    XCTAssertThrowsError(try FBAXTreeRead(frontmostResponse: data, method: .centerPoint)) { error in
+    let data = try envelope(["ok": true, "tree": [AXWire.Node.label.rawValue: "x"]])
+    XCTAssertThrowsError(try AXTreeRead(frontmostResponse: data, method: .centerPoint)) { error in
       guard case FBAXBridgeError.guestFailure = error else {
         return XCTFail("a fused response without a pid should be guestFailure, got: \(error)")
       }
@@ -740,7 +740,7 @@ final class FBAXBridgeReadsTests: XCTestCase {
 
   func testFrontmostTreeThrowsWhenTreeMissing() throws {
     let data = try envelope(["ok": true, "pid": 8865])
-    XCTAssertThrowsError(try FBAXTreeRead(frontmostResponse: data, method: .centerPoint)) { error in
+    XCTAssertThrowsError(try AXTreeRead(frontmostResponse: data, method: .centerPoint)) { error in
       guard case FBAXBridgeError.guestFailure = error else {
         return XCTFail("a fused response without a tree should be guestFailure, got: \(error)")
       }
@@ -751,7 +751,7 @@ final class FBAXBridgeReadsTests: XCTestCase {
 
   func testModalParsesSystemAlert() {
     let response: [String: Any] = ["ok": true, "modal": ["kind": "system", "elementType": "SBAlertItemWindow", "label": "Allow \u{201c}Maps\u{201d} to use your location?"]]
-    let modal = FBAXTreeRead.modal(fromResponse: response)
+    let modal = AXTreeRead.modal(fromResponse: response)
     XCTAssertEqual(modal?.kind, .system)
     XCTAssertEqual(modal?.elementType, "SBAlertItemWindow")
     XCTAssertEqual(modal?.label, "Allow \u{201c}Maps\u{201d} to use your location?")
@@ -759,22 +759,22 @@ final class FBAXBridgeReadsTests: XCTestCase {
 
   func testModalParsesAppAlertWithoutLabel() {
     let response: [String: Any] = ["ok": true, "modal": ["kind": "app", "elementType": "_UIAlertControllerView"]]
-    let modal = FBAXTreeRead.modal(fromResponse: response)
+    let modal = AXTreeRead.modal(fromResponse: response)
     XCTAssertEqual(modal?.kind, .app)
     XCTAssertEqual(modal?.elementType, "_UIAlertControllerView")
     XCTAssertNil(modal?.label)
   }
 
   func testModalAbsentOrMalformedIsNil() {
-    XCTAssertNil(FBAXTreeRead.modal(fromResponse: ["ok": true]), "no modal key -> nil")
-    XCTAssertNil(FBAXTreeRead.modal(fromResponse: ["ok": true, "modal": ["elementType": "X"]]), "missing kind -> nil")
-    XCTAssertNil(FBAXTreeRead.modal(fromResponse: ["ok": true, "modal": ["kind": "bogus", "elementType": "X"]]), "unknown kind -> nil")
+    XCTAssertNil(AXTreeRead.modal(fromResponse: ["ok": true]), "no modal key -> nil")
+    XCTAssertNil(AXTreeRead.modal(fromResponse: ["ok": true, "modal": ["elementType": "X"]]), "missing kind -> nil")
+    XCTAssertNil(AXTreeRead.modal(fromResponse: ["ok": true, "modal": ["kind": "bogus", "elementType": "X"]]), "unknown kind -> nil")
   }
 
   func testFrontmostTreeCarriesModalDescriptor() throws {
-    let tree: [String: Any] = [FBAXWire.Node.label.rawValue: "root"]
+    let tree: [String: Any] = [AXWire.Node.label.rawValue: "root"]
     let data = try envelope(["ok": true, "tree": tree, "pid": 20475, "modal": ["kind": "system", "elementType": "SBAlertItemWindow", "label": "Allow"]])
-    let parsed = try FBAXTreeRead(frontmostResponse: data, method: .centerPoint)
+    let parsed = try AXTreeRead(frontmostResponse: data, method: .centerPoint)
     XCTAssertEqual(parsed.pid, 20475)
     XCTAssertEqual(parsed.modal?.kind, .system)
     XCTAssertEqual(parsed.modal?.elementType, "SBAlertItemWindow")
@@ -797,20 +797,20 @@ final class FBAXBridgeReadsTests: XCTestCase {
     // The child is a Button (automationType 9) with its identifier, proving the guest tree uses the
     // shared serializer rather than a bespoke output shape.
     let tree: [String: Any] = [
-      FBAXWire.Node.label.rawValue: "root",
-      FBAXWire.Node.children.rawValue: [
+      AXWire.Node.label.rawValue: "root",
+      AXWire.Node.children.rawValue: [
         [
-          FBAXWire.Node.label.rawValue: "General",
-          FBAXWire.Node.identifier.rawValue: "com.apple.settings.general",
-          FBAXWire.Node.automationType.rawValue: 9,
-          FBAXWire.Node.children.rawValue: [[String: Any]](),
+          AXWire.Node.label.rawValue: "General",
+          AXWire.Node.identifier.rawValue: "com.apple.settings.general",
+          AXWire.Node.automationType.rawValue: 9,
+          AXWire.Node.children.rawValue: [[String: Any]](),
         ] as [String: Any]
       ],
     ]
     let data = try envelope(["ok": true, "tree": tree])
-    let parsed = try FBAXTreeRead(wholeTreeResponse: data, pid: 99)
+    let parsed = try AXTreeRead(wholeTreeResponse: data, pid: 99)
 
-    let elements = FBAXTreeWalk.describeAllElements(
+    let elements = AXTreeWalk.describeAllElements(
       fromTree: parsed.tree, keys: FBAXKeys.defaultSet, nestedFormat: false, pid: 99
     )
     XCTAssertEqual(elements.count, 2, "expected the root plus its one child, flattened")
@@ -829,18 +829,18 @@ final class FBAXBridgeReadsTests: XCTestCase {
 
   private static func twoNodeTree() -> [String: Any] {
     [
-      FBAXWire.Node.label.rawValue: "root",
-      FBAXWire.Node.children.rawValue: [
+      AXWire.Node.label.rawValue: "root",
+      AXWire.Node.children.rawValue: [
         [
-          FBAXWire.Node.label.rawValue: "General Settings",
-          FBAXWire.Node.children.rawValue: [[String: Any]](),
+          AXWire.Node.label.rawValue: "General Settings",
+          AXWire.Node.children.rawValue: [[String: Any]](),
         ] as [String: Any]
       ],
     ]
   }
 
-  private static func stubRead(truncated: Bool = false, modal: FBAccessibilityModalInfo? = nil) -> FBAXTreeRead {
-    FBAXTreeRead(tree: twoNodeTree(), pid: 99, truncated: truncated, modal: modal)
+  private static func stubRead(truncated: Bool = false, modal: FBAccessibilityModalInfo? = nil) -> AXTreeRead {
+    AXTreeRead(tree: twoNodeTree(), pid: 99, truncated: truncated, modal: modal)
   }
 
   func testDescribeTreeReturnsAnArrayForWholeTreeQueries() async throws {
@@ -1010,11 +1010,11 @@ final class FBAXBridgeReadsTests: XCTestCase {
   func testDescribeTreeHonoursTheRequestedFilterForWholeTreeQueries() async throws {
     // The unlabeled root of this tree is dropped by `.interactable`, leaving only the labeled child.
     let tree: [String: Any] = [
-      FBAXWire.Node.children.rawValue: [
-        [FBAXWire.Node.label.rawValue: "General Settings", FBAXWire.Node.children.rawValue: [[String: Any]]()] as [String: Any]
+      AXWire.Node.children.rawValue: [
+        [AXWire.Node.label.rawValue: "General Settings", AXWire.Node.children.rawValue: [[String: Any]]()] as [String: Any]
       ]
     ]
-    let reader = StubAXBridgeTreeReader(read: FBAXTreeRead(tree: tree, pid: 99, truncated: false, modal: nil))
+    let reader = StubAXBridgeTreeReader(read: AXTreeRead(tree: tree, pid: 99, truncated: false, modal: nil))
     let response = try await reader.describeTree(.frontmost, options: FBAccessibilityRequestOptions(filter: .interactable))
     guard case let .tree(elements) = response.elements else {
       return XCTFail("expected an array, got \(response.elements)")
@@ -1024,10 +1024,10 @@ final class FBAXBridgeReadsTests: XCTestCase {
 
   private static func occlusionIdentity(label: String, frame: CGRect) -> [String: Any] {
     [
-      FBAXWire.Node.label.rawValue: label,
-      FBAXWire.Node.identifier.rawValue: label.lowercased(),
-      FBAXWire.Node.elementType.rawValue: NSNumber(value: 9),
-      FBAXWire.Node.frame.rawValue: CGRectCreateDictionaryRepresentation(frame) as NSDictionary,
+      AXWire.Node.label.rawValue: label,
+      AXWire.Node.identifier.rawValue: label.lowercased(),
+      AXWire.Node.elementType.rawValue: NSNumber(value: 9),
+      AXWire.Node.frame.rawValue: CGRectCreateDictionaryRepresentation(frame) as NSDictionary,
     ]
   }
 
@@ -1039,21 +1039,21 @@ final class FBAXBridgeReadsTests: XCTestCase {
   ) -> [String: Any] {
     let centre = CGPoint(x: frame.midX, y: frame.midY)
     var node = occlusionIdentity(label: label, frame: frame)
-    node[FBAXWire.Node.isVisible.rawValue] = blockedBy == nil
-    node[FBAXWire.Node.visiblePoint.rawValue] =
+    node[AXWire.Node.isVisible.rawValue] = blockedBy == nil
+    node[AXWire.Node.visiblePoint.rawValue] =
       CGPointCreateDictionaryRepresentation(
         blockedBy == nil ? centre : CGPoint(x: -1, y: -1)
       ) as NSDictionary
-    node[FBAXWire.Node.centerPoint.rawValue] = CGPointCreateDictionaryRepresentation(centre) as NSDictionary
-    node[FBAXWire.Node.userInteractionEnabled.rawValue] = true
-    node[FBAXWire.Node.children.rawValue] = children
-    node[FBAXWire.Node.explainedBy.rawValue] = blockedBy
+    node[AXWire.Node.centerPoint.rawValue] = CGPointCreateDictionaryRepresentation(centre) as NSDictionary
+    node[AXWire.Node.userInteractionEnabled.rawValue] = true
+    node[AXWire.Node.children.rawValue] = children
+    node[AXWire.Node.explainedBy.rawValue] = blockedBy
     return node
   }
 
   private static func describedOcclusionTree(_ tree: [String: Any]) async throws -> FBAccessibilityDocumentElement {
     let reader = StubAXBridgeTreeReader(
-      read: FBAXTreeRead(tree: tree, pid: 99, truncated: false, modal: nil)
+      read: AXTreeRead(tree: tree, pid: 99, truncated: false, modal: nil)
     )
     let response = try await reader.describeTree(
       .frontmost,
@@ -1145,15 +1145,15 @@ final class FBAXBridgeReadsTests: XCTestCase {
   /// Button.
   private static func sizedTree() -> [String: Any] {
     [
-      FBAXWire.Node.label.rawValue: "root",
-      FBAXWire.Node.elementType.rawValue: NSNumber(value: 2),
-      FBAXWire.Node.frame.rawValue: CGRectCreateDictionaryRepresentation(CGRect(x: 0, y: 0, width: 390, height: 844)) as NSDictionary,
-      FBAXWire.Node.children.rawValue: [
+      AXWire.Node.label.rawValue: "root",
+      AXWire.Node.elementType.rawValue: NSNumber(value: 2),
+      AXWire.Node.frame.rawValue: CGRectCreateDictionaryRepresentation(CGRect(x: 0, y: 0, width: 390, height: 844)) as NSDictionary,
+      AXWire.Node.children.rawValue: [
         [
-          FBAXWire.Node.label.rawValue: "Lower Half",
-          FBAXWire.Node.elementType.rawValue: NSNumber(value: 9),
-          FBAXWire.Node.frame.rawValue: CGRectCreateDictionaryRepresentation(CGRect(x: 0, y: 422, width: 390, height: 422)) as NSDictionary,
-          FBAXWire.Node.children.rawValue: [[String: Any]](),
+          AXWire.Node.label.rawValue: "Lower Half",
+          AXWire.Node.elementType.rawValue: NSNumber(value: 9),
+          AXWire.Node.frame.rawValue: CGRectCreateDictionaryRepresentation(CGRect(x: 0, y: 422, width: 390, height: 422)) as NSDictionary,
+          AXWire.Node.children.rawValue: [[String: Any]](),
         ] as [String: Any]
       ],
     ]
@@ -1162,7 +1162,7 @@ final class FBAXBridgeReadsTests: XCTestCase {
   // `describeTree` is the read path every backend but `ax` funnels through, so it must honour
   // `collectFrameCoverage` for all of them.
   func testDescribeTreeReportsTheRequestedFrameCoverage() async throws {
-    let reader = StubAXBridgeTreeReader(read: FBAXTreeRead(tree: Self.sizedTree(), pid: 99, truncated: false, modal: nil))
+    let reader = StubAXBridgeTreeReader(read: AXTreeRead(tree: Self.sizedTree(), pid: 99, truncated: false, modal: nil))
     var options = FBAccessibilityRequestOptions(format: .complete)
     options.collectFrameCoverage = true
     let response = try await reader.describeTree(.frontmost, options: options)
@@ -1191,7 +1191,7 @@ final class FBAXBridgeReadsTests: XCTestCase {
 
   // Coverage stays opt-in: a read that did not ask for it reports none rather than a zero.
   func testDescribeTreeReportsNoCoverageUnlessAsked() async throws {
-    let reader = StubAXBridgeTreeReader(read: FBAXTreeRead(tree: Self.sizedTree(), pid: 99, truncated: false, modal: nil))
+    let reader = StubAXBridgeTreeReader(read: AXTreeRead(tree: Self.sizedTree(), pid: 99, truncated: false, modal: nil))
     let response = try await reader.describeTree(.frontmost, options: FBAccessibilityRequestOptions(format: .complete))
     XCTAssertNil(response.coverage)
     XCTAssertNil(response.document.coverage)
@@ -1212,14 +1212,14 @@ final class FBAXBridgeReadsTests: XCTestCase {
   /// Other, which is not an actionable role.
   private static func sizedTreeWithUnlabeledLowerHalf() -> [String: Any] {
     [
-      FBAXWire.Node.label.rawValue: "root",
-      FBAXWire.Node.elementType.rawValue: NSNumber(value: 2),
-      FBAXWire.Node.frame.rawValue: CGRectCreateDictionaryRepresentation(CGRect(x: 0, y: 0, width: 390, height: 844)) as NSDictionary,
-      FBAXWire.Node.children.rawValue: [
+      AXWire.Node.label.rawValue: "root",
+      AXWire.Node.elementType.rawValue: NSNumber(value: 2),
+      AXWire.Node.frame.rawValue: CGRectCreateDictionaryRepresentation(CGRect(x: 0, y: 0, width: 390, height: 844)) as NSDictionary,
+      AXWire.Node.children.rawValue: [
         [
-          FBAXWire.Node.elementType.rawValue: NSNumber(value: 1),
-          FBAXWire.Node.frame.rawValue: CGRectCreateDictionaryRepresentation(CGRect(x: 0, y: 422, width: 390, height: 422)) as NSDictionary,
-          FBAXWire.Node.children.rawValue: [[String: Any]](),
+          AXWire.Node.elementType.rawValue: NSNumber(value: 1),
+          AXWire.Node.frame.rawValue: CGRectCreateDictionaryRepresentation(CGRect(x: 0, y: 422, width: 390, height: 422)) as NSDictionary,
+          AXWire.Node.children.rawValue: [[String: Any]](),
         ] as [String: Any]
       ],
     ]
@@ -1237,12 +1237,12 @@ final class FBAXBridgeReadsTests: XCTestCase {
     children: [[String: Any]] = []
   ) -> [String: Any] {
     var node: [String: Any] = [
-      FBAXWire.Node.elementType.rawValue: NSNumber(value: type),
-      FBAXWire.Node.frame.rawValue: CGRectCreateDictionaryRepresentation(frame) as NSDictionary,
-      FBAXWire.Node.children.rawValue: children,
+      AXWire.Node.elementType.rawValue: NSNumber(value: type),
+      AXWire.Node.frame.rawValue: CGRectCreateDictionaryRepresentation(frame) as NSDictionary,
+      AXWire.Node.children.rawValue: children,
     ]
-    if let label { node[FBAXWire.Node.label.rawValue] = label }
-    if let identifier { node[FBAXWire.Node.identifier.rawValue] = identifier }
+    if let label { node[AXWire.Node.label.rawValue] = label }
+    if let identifier { node[AXWire.Node.identifier.rawValue] = identifier }
     return node
   }
 
@@ -1261,7 +1261,7 @@ final class FBAXBridgeReadsTests: XCTestCase {
   }
 
   private func contentCoverage(of tree: [String: Any]) async throws -> Double? {
-    let reader = StubAXBridgeTreeReader(read: FBAXTreeRead(tree: tree, pid: 99, truncated: false, modal: nil))
+    let reader = StubAXBridgeTreeReader(read: AXTreeRead(tree: tree, pid: 99, truncated: false, modal: nil))
     var options = FBAccessibilityRequestOptions(format: .complete)
     options.collectFrameCoverage = true
     return try await reader.describeTree(.frontmost, options: options).coverage?.content
@@ -1330,7 +1330,7 @@ final class FBAXBridgeReadsTests: XCTestCase {
   // calculation is shared, so the gap cannot come to mean different things per backend.
   func testDescribeTreeReportsWalkedCoverageAboveReportedWhenFiltering() async throws {
     let reader = StubAXBridgeTreeReader(
-      read: FBAXTreeRead(tree: Self.sizedTreeWithUnlabeledLowerHalf(), pid: 99, truncated: false, modal: nil)
+      read: AXTreeRead(tree: Self.sizedTreeWithUnlabeledLowerHalf(), pid: 99, truncated: false, modal: nil)
     )
     var options = FBAccessibilityRequestOptions(format: .complete)
     options.collectFrameCoverage = true
@@ -1404,11 +1404,11 @@ final class FBAXBridgeReadsTests: XCTestCase {
     XCTAssertNil(response.screen, "a root with no frame yields no screen bounds")
 
     let sized: [String: Any] = [
-      FBAXWire.Node.label.rawValue: "root",
-      FBAXWire.Node.frame.rawValue: CGRectCreateDictionaryRepresentation(CGRect(x: 0, y: 0, width: 390, height: 844)) as NSDictionary,
-      FBAXWire.Node.children.rawValue: [[String: Any]](),
+      AXWire.Node.label.rawValue: "root",
+      AXWire.Node.frame.rawValue: CGRectCreateDictionaryRepresentation(CGRect(x: 0, y: 0, width: 390, height: 844)) as NSDictionary,
+      AXWire.Node.children.rawValue: [[String: Any]](),
     ]
-    let sizedReader = StubAXBridgeTreeReader(read: FBAXTreeRead(tree: sized, pid: 99, truncated: false, modal: nil))
+    let sizedReader = StubAXBridgeTreeReader(read: AXTreeRead(tree: sized, pid: 99, truncated: false, modal: nil))
     let sizedResponse = try await sizedReader.describeTree(.frontmost, options: FBAccessibilityRequestOptions())
     XCTAssertEqual(sizedResponse.screen, FBAccessibilityScreenInfo(width: 390, height: 844))
     XCTAssertFalse(sizedResponse.truncated)
@@ -1517,16 +1517,16 @@ final class FBAXBridgeReadsTests: XCTestCase {
   private static func framedReader(child: CGRect? = childRect) -> StubAXBridgeTreeReader {
     func node(_ label: String, _ rect: CGRect?, children: [[String: Any]]) -> [String: Any] {
       var node: [String: Any] = [
-        FBAXWire.Node.label.rawValue: label,
-        FBAXWire.Node.children.rawValue: children,
+        AXWire.Node.label.rawValue: label,
+        AXWire.Node.children.rawValue: children,
       ]
       if let rect {
-        node[FBAXWire.Node.frame.rawValue] = CGRectCreateDictionaryRepresentation(rect) as NSDictionary
+        node[AXWire.Node.frame.rawValue] = CGRectCreateDictionaryRepresentation(rect) as NSDictionary
       }
       return node
     }
     let tree = node("root", rootRect, children: [node("General Settings", child, children: [])])
-    return StubAXBridgeTreeReader(read: FBAXTreeRead(tree: tree, pid: 99, truncated: false, modal: nil))
+    return StubAXBridgeTreeReader(read: AXTreeRead(tree: tree, pid: 99, truncated: false, modal: nil))
   }
 
   // A whole-tree query has no element in mind, so it answers with the root's — the application's own
@@ -1598,7 +1598,7 @@ final class FBAXBridgeReadsTests: XCTestCase {
 
   // A write is point-addressed, so everything that decides *which* point — and what the guest must still
   // find there — happens before the request is built. That resolution is what these cover; the request
-  // it turns into is pinned in `FBAXWireContractTests`.
+  // it turns into is pinned in `AXWireContractTests`.
 
   private static let marker = FBAccessibilityElementQuery.marker(value: "General", key: .label, depth: 10)
 
@@ -1607,7 +1607,7 @@ final class FBAXBridgeReadsTests: XCTestCase {
   func testAPointWriteTargetsTheCoordinateItself() async throws {
     let reader = Self.framedReader()
     let target = try await reader.writeTarget(for: .point(CGPoint(x: 12, y: 34)), operation: "A tap")
-    XCTAssertEqual(target, FBAXWriteTarget(point: CGPoint(x: 12, y: 34), pid: nil, assertion: nil))
+    XCTAssertEqual(target, AXWriteTarget(point: CGPoint(x: 12, y: 34), pid: nil, assertion: nil))
     XCTAssertEqual(reader.readCount, 0, "a point write must not read a tree to find a point it was given")
   }
 
@@ -1623,18 +1623,18 @@ final class FBAXBridgeReadsTests: XCTestCase {
   // it matched — "General" would never equal "General Settings".
   func testAMarkerAssertionCarriesTheMatchedValueRatherThanTheMarkerText() async throws {
     let target = try await Self.framedReader().writeTarget(for: Self.marker, operation: "A tap")
-    XCTAssertEqual(target.assertion, FBAXBridgeWriteAssertion(key: .label, value: "General Settings"))
+    XCTAssertEqual(target.assertion, AXBridgeWriteAssertion(key: .label, value: "General Settings"))
   }
 
   // Only the attributes this wire carries can be asserted on; a marker searched on a host-side
   // derivation still writes, unasserted, rather than not at all.
   func testAMarkerOnANonAssertableKeyStillResolvesWithoutAnAssertion() async throws {
     let tree: [String: Any] = [
-      FBAXWire.Node.elementType.rawValue: "Button",
-      FBAXWire.Node.frame.rawValue: CGRectCreateDictionaryRepresentation(Self.childRect) as NSDictionary,
-      FBAXWire.Node.children.rawValue: [[String: Any]](),
+      AXWire.Node.elementType.rawValue: "Button",
+      AXWire.Node.frame.rawValue: CGRectCreateDictionaryRepresentation(Self.childRect) as NSDictionary,
+      AXWire.Node.children.rawValue: [[String: Any]](),
     ]
-    let reader = StubAXBridgeTreeReader(read: FBAXTreeRead(tree: tree, pid: 99, truncated: false, modal: nil))
+    let reader = StubAXBridgeTreeReader(read: AXTreeRead(tree: tree, pid: 99, truncated: false, modal: nil))
     let target = try await reader.writeTarget(
       for: .marker(value: "Button", key: .role, depth: 10), operation: "A tap"
     )
@@ -1645,7 +1645,7 @@ final class FBAXBridgeReadsTests: XCTestCase {
   // Only keys whose value comes straight off the wire map; the rest are host-side derivations (`role` normalizes an
   // element type; the others are answered nil over this wire), so asserting on them would never match.
   func testOnlyWireBackedSearchKeysAreAssertable() {
-    let expected: [FBAXSearchableKey: FBAXWire.Node?] = [
+    let expected: [FBAXSearchableKey: AXWire.Node?] = [
       .label: .label,
       .value: .value,
       .uniqueID: .identifier,
@@ -1657,7 +1657,7 @@ final class FBAXBridgeReadsTests: XCTestCase {
       .placeholder: nil,
     ]
     for (key, node) in expected {
-      XCTAssertEqual(FBAXWire.Node(assertableSearchKey: key), node, "\(key)")
+      XCTAssertEqual(AXWire.Node(assertableSearchKey: key), node, "\(key)")
     }
   }
 
@@ -1810,9 +1810,9 @@ final class FBAXBridgeReadsTests: XCTestCase {
   // MARK: - Write envelope parsing
 
   func testAWriteEnvelopeReportsWhetherItLanded() throws {
-    XCTAssertTrue(try FBAXTreeRead.writeLanded(fromResponse: Self.json(["ok": true, "pid": 4321])))
+    XCTAssertTrue(try AXTreeRead.writeLanded(fromResponse: Self.json(["ok": true, "pid": 4321])))
     XCTAssertFalse(
-      try FBAXTreeRead.writeLanded(fromResponse: Self.json(["ok": true, "empty": true])),
+      try AXTreeRead.writeLanded(fromResponse: Self.json(["ok": true, "empty": true])),
       "writeLanded is false for an ok response carrying empty"
     )
   }
@@ -1821,7 +1821,7 @@ final class FBAXBridgeReadsTests: XCTestCase {
   // two are joined at the backend rather than collapsing into an opaque failure here.
   func testARefusedAssertionParsesAsItsOwnFailure() throws {
     do {
-      _ = try FBAXTreeRead.writeLanded(
+      _ = try AXTreeRead.writeLanded(
         fromResponse: Self.json([
           "ok": false, "error": "the element at (1.0, 2.0) has XC_kAXXCAttributeLabel Wi-Fi, expected General",
           "error_kind": "assertion_failed",
@@ -1845,7 +1845,7 @@ final class FBAXBridgeReadsTests: XCTestCase {
     ]
     for (kind, matches) in cases {
       do {
-        _ = try FBAXTreeRead.writeLanded(
+        _ = try AXTreeRead.writeLanded(
           fromResponse: Self.json(["ok": false, "error": "no", "error_kind": kind, "pid": 4321])
         )
         XCTFail("\(kind) must throw")
@@ -1856,7 +1856,7 @@ final class FBAXBridgeReadsTests: XCTestCase {
   }
 
   func testAnUnparseableWriteEnvelopeIsAGuestFailure() throws {
-    XCTAssertThrowsError(try FBAXTreeRead.writeLanded(fromResponse: Data("not json".utf8)))
+    XCTAssertThrowsError(try AXTreeRead.writeLanded(fromResponse: Data("not json".utf8)))
   }
 
   // Every other message opens with the backend's name, so `displayName` is capitalised and ends in
@@ -1941,9 +1941,9 @@ final class FBAXAutoTraversalTests: XCTestCase {
   // The whole tree in one fetch for a read that named nothing; the per-node walk for one asking about reachability,
   // the only key set the application has to hit-test.
   func testAxbridgeReadsInOneFetchWhenTheCallerNamesNothing() {
-    XCTAssertEqual(FBAXBridgeUIAutomation.autoTraversal(for: FBAccessibilityRequestOptions()), .singleFetch)
+    XCTAssertEqual(AXBridgeUIAutomation.autoTraversal(for: FBAccessibilityRequestOptions()), .singleFetch)
     XCTAssertEqual(
-      FBAXBridgeUIAutomation.autoTraversal(for: FBAccessibilityRequestOptions(keys: [.interactable, .occludedBy])),
+      AXBridgeUIAutomation.autoTraversal(for: FBAccessibilityRequestOptions(keys: [.interactable, .occludedBy])),
       .viewHierarchy
     )
   }
@@ -1951,7 +1951,7 @@ final class FBAXAutoTraversalTests: XCTestCase {
   // The guest reads one request whichever transport carried it, so a default that snapshots over argv but walks over
   // the socket would be a read whose cost depends on how the host happened to connect.
   func testADefaultGuestReadAsksTheGuestForASnapshot() {
-    let traversal = FBAXBridgeUIAutomation.autoTraversal(for: FBAccessibilityRequestOptions())
+    let traversal = AXBridgeUIAutomation.autoTraversal(for: FBAccessibilityRequestOptions())
     let request = Self.readRequest(traversal: traversal)
     XCTAssertTrue(request.arguments.contains("--snapshot-tree"))
     XCTAssertEqual(request.payload["snapshotTree"] as? Bool, true)
@@ -1960,7 +1960,7 @@ final class FBAXAutoTraversalTests: XCTestCase {
   // The same wire pin for a reachability read: it resolves to the walk, so its argv and payload stay
   // empty.
   func testAReachabilityReadAsksTheGuestForNoSnapshot() {
-    let traversal = FBAXBridgeUIAutomation.autoTraversal(for: FBAccessibilityRequestOptions(keys: [.interactable]))
+    let traversal = AXBridgeUIAutomation.autoTraversal(for: FBAccessibilityRequestOptions(keys: [.interactable]))
     let request = Self.readRequest(traversal: traversal)
     XCTAssertFalse(request.arguments.contains("--snapshot-tree"))
     XCTAssertNil(request.payload["snapshotTree"])
@@ -1979,16 +1979,16 @@ final class FBAXAutoTraversalTests: XCTestCase {
         return XCTFail("no strategy names \(traversal)")
       }
       let options = FBAccessibilityRequestOptions(traversalStrategy: strategy)
-      XCTAssertEqual(FBAXBridgeUIAutomation.resolvedTraversal(for: options), traversal)
+      XCTAssertEqual(AXBridgeUIAutomation.resolvedTraversal(for: options), traversal)
     }
   }
 
-  private static func readRequest(traversal: FBAXTraversal) -> FBAXBridgeRequest {
+  private static func readRequest(traversal: FBAXTraversal) -> AXBridgeRequest {
     .read(
       pid: 1,
-      options: FBAXBridgeReadRequest(
-        maxDepth: FBAXReadLimits.maxReadDepth,
-        maxNodes: FBAXReadLimits.maxReadNodes,
+      options: AXBridgeReadRequest(
+        maxDepth: AXReadLimits.maxReadDepth,
+        maxNodes: AXReadLimits.maxReadNodes,
         attributes: nil,
         explainUnreachable: false,
         traversal: traversal,
@@ -2004,20 +2004,20 @@ final class FBAXBridgeGuestDeathTests: XCTestCase {
   // The motivating case: a guest killed by the system. The signal points at the environment rather
   // than at whatever change the caller happens to be testing.
   func testAKilledGuestIsReportedWithItsSignal() {
-    let message = FBAXBridgeConnection.socketClosedMessage(pid: 4321, signal: 9, exitCode: nil)
+    let message = AXBridgeConnection.socketClosedMessage(pid: 4321, signal: 9, exitCode: nil)
     XCTAssertTrue(message.contains("killed by signal 9"), message)
     XCTAssertTrue(message.contains("pid 4321"), message)
   }
 
   func testAGuestThatExitedIsReportedWithItsCode() {
-    let message = FBAXBridgeConnection.socketClosedMessage(pid: 4321, signal: nil, exitCode: 3)
+    let message = AXBridgeConnection.socketClosedMessage(pid: 4321, signal: nil, exitCode: 3)
     XCTAssertTrue(message.contains("exited with code 3"), message)
   }
 
   // A signalled exit wins over an exit code, because it names something outside the reader as the cause
   // and that is the more actionable of the two.
   func testASignalTakesPrecedenceOverAnExitCode() {
-    let message = FBAXBridgeConnection.socketClosedMessage(pid: 4321, signal: 9, exitCode: 0)
+    let message = AXBridgeConnection.socketClosedMessage(pid: 4321, signal: 9, exitCode: 0)
     XCTAssertTrue(message.contains("killed by signal 9"), message)
     XCTAssertFalse(message.contains("exited with code"), message)
   }
@@ -2025,37 +2025,37 @@ final class FBAXBridgeGuestDeathTests: XCTestCase {
   // A clean exit is a different problem from a kill, and the guest is gone either way.
   func testACleanExitIsStillReported() {
     XCTAssertTrue(
-      FBAXBridgeConnection.socketClosedMessage(pid: 4321, signal: 0, exitCode: 0).contains("exited with code 0")
+      AXBridgeConnection.socketClosedMessage(pid: 4321, signal: 0, exitCode: 0).contains("exited with code 0")
     )
   }
 
   // Nothing to consult, nothing added: a caller is told what is true and no more.
   func testSocketClosedMessageOmitsDetailWhenPidAndStatusUnknown() {
     XCTAssertEqual(
-      FBAXBridgeConnection.socketClosedMessage(pid: nil, signal: nil, exitCode: nil),
+      AXBridgeConnection.socketClosedMessage(pid: nil, signal: nil, exitCode: nil),
       "serve socket closed by peer"
     )
-    XCTAssertEqual(FBAXBridgeConnection.socketClosedMessage(process: nil), "serve socket closed by peer")
+    XCTAssertEqual(AXBridgeConnection.socketClosedMessage(process: nil), "serve socket closed by peer")
   }
 
   // A process whose exit status never resolved is still named, rather than the message pretending it
   // knows or the read stalling to find out.
   func testAGuestWithNoRecordedStatusIsStillNamed() {
-    let message = FBAXBridgeConnection.socketClosedMessage(pid: 4321, signal: nil, exitCode: nil)
+    let message = AXBridgeConnection.socketClosedMessage(pid: 4321, signal: nil, exitCode: nil)
     XCTAssertTrue(message.contains("no exit status recorded"), message)
     XCTAssertTrue(message.contains("pid 4321"), message)
   }
 }
 
-/// A minimal `FBAXBridgeTreeReader` serving a canned read, so the shared `describeTree` composition can be
+/// A minimal `AXBridgeTreeReader` serving a canned read, so the shared `describeTree` composition can be
 /// observed without a simulator. `readRawTree`, `warnIfTruncated`, `warnIfMostElementsUnframed` and `hitTest`
 /// are the seams
 /// `describeTree` drives; every other `FBUIAutomation` verb is an unused conformance stub.
-private final class StubAXBridgeTreeReader: FBAXBridgeTreeReader, @unchecked Sendable {
+private final class StubAXBridgeTreeReader: AXBridgeTreeReader, @unchecked Sendable {
 
   let backend: FBUIAutomationBackend = .axBridge(persistence: .oneShot, frontmostMethod: .centerPoint, automationMode: true)
 
-  private let read: FBAXTreeRead
+  private let read: AXTreeRead
   private let hitTestResult: FBAccessibilityElementsResponse?
 
   private(set) var readCount = 0
@@ -2075,7 +2075,7 @@ private final class StubAXBridgeTreeReader: FBAXBridgeTreeReader, @unchecked Sen
   private(set) var unsatisfiableWarnings: [Set<FBAXKeys>] = []
   private(set) var hitTestPoints: [CGPoint] = []
 
-  init(read: FBAXTreeRead, hitTestResult: FBAccessibilityElementsResponse? = nil) {
+  init(read: AXTreeRead, hitTestResult: FBAccessibilityElementsResponse? = nil) {
     self.read = read
     self.hitTestResult = hitTestResult
   }
@@ -2085,7 +2085,7 @@ private final class StubAXBridgeTreeReader: FBAXBridgeTreeReader, @unchecked Sen
     attributes: [String]?,
     explainUnreachable: Bool,
     traversal: FBAXTraversal
-  ) async throws -> FBAXTreeRead {
+  ) async throws -> AXTreeRead {
     readCount += 1
     readAttributes.append(attributes)
     explainRequests.append(explainUnreachable)
@@ -2102,7 +2102,7 @@ private final class StubAXBridgeTreeReader: FBAXBridgeTreeReader, @unchecked Sen
   }
 
   func profile(
-    for read: FBAXTreeRead, elementCount: Int, serializeDuration: CFAbsoluteTime,
+    for read: AXTreeRead, elementCount: Int, serializeDuration: CFAbsoluteTime,
     traversal: FBAXTraversal
   ) -> FBAccessibilityProfile? {
     profiledTraversals.append(traversal)

@@ -12,5 +12,5 @@ protocol AccessibilityOperations: AnyObject {
 
   /// Resolves a query to a concrete accessibility element via the point / matching / frontmost
   /// mechanism. Callers own the returned element and must `close()` it.
-  func resolveElement(for query: FBAccessibilityElementQuery) async throws -> FBAccessibilityElement
+  func resolveElement(for query: FBAccessibilityElementQuery) async throws -> AccessibilityElement
 }

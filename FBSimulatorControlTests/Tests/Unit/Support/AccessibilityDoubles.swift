@@ -151,7 +151,7 @@ class FBSimulatorControlTests_AXPMacPlatformElement_Double: NSObject {
 
 // Attributes the double does not model (placeholder/expanded/hidden/focused) are inert — none are
 // in the default key set.
-extension FBSimulatorControlTests_AXPMacPlatformElement_Double: FBAXPlatformElement {
+extension FBSimulatorControlTests_AXPMacPlatformElement_Double: AXPlatformElement {
   func axFrame() -> NSRect { accessibilityFrame }
   func axRole() -> String? { accessibilityRole?.rawValue }
   func axLabel() -> String? { accessibilityLabel }
@@ -173,21 +173,21 @@ extension FBSimulatorControlTests_AXPMacPlatformElement_Double: FBAXPlatformElem
   func axHittablePoint() -> CGPoint? { nil }
   func axCentrePoint() -> CGPoint? { nil }
   func axIsUserInteractionEnabled() -> Bool? { nil }
-  func axExplainedBy() -> FBAXPlatformElement? { nil }
+  func axExplainedBy() -> AXPlatformElement? { nil }
   func axCustomActionNames() -> [String] {
     (accessibilityCustomActions ?? []).compactMap { ($0 as? NSAccessibilityCustomAction)?.name }
   }
   func axActionNames() -> [String] { accessibilityActionNames().map { $0.rawValue } }
   func axTraits() -> [String]? { nil }
-  func axChildren() -> [FBAXPlatformElement] {
-    (accessibilityChildren ?? []).compactMap { $0 as? FBAXPlatformElement }
+  func axChildren() -> [AXPlatformElement] {
+    (accessibilityChildren ?? []).compactMap { $0 as? AXPlatformElement }
   }
   var axTranslationPid: pid_t { translation.pid }
   func axSetBridgeDelegateToken(_ token: String?) { translation.bridgeDelegateToken = token }
 }
 
-// Only press is exercised (via `FBAccessibilityElement.tap()`); scroll and set-value are inert.
-extension FBSimulatorControlTests_AXPMacPlatformElement_Double: FBAXWritableElement {
+// Only press is exercised (via `AccessibilityElement.tap()`); scroll and set-value are inert.
+extension FBSimulatorControlTests_AXPMacPlatformElement_Double: AXWritableElement {
   func axPerformPress() -> Bool { accessibilityPerformPress() }
   func axScroll(_ direction: FBAccessibilityScrollDirection) {}
   func axSetValue(_ value: Any?) {}

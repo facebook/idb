@@ -30,23 +30,23 @@ final class FBAccessibilitySerializationTests: XCTestCase {
   //   AX-prefix strip) and omits value/identifier/frame, so those serialize as `null`/zero.
   private static func sampleTree() -> [String: Any] {
     [
-      FBAXWire.Node.label.rawValue: "root",
-      FBAXWire.Node.value.rawValue: "on",
-      FBAXWire.Node.identifier.rawValue: "com.example.root",
-      FBAXWire.Node.automationType.rawValue: NSNumber(value: 9),
-      FBAXWire.Node.frame.rawValue:
+      AXWire.Node.label.rawValue: "root",
+      AXWire.Node.value.rawValue: "on",
+      AXWire.Node.identifier.rawValue: "com.example.root",
+      AXWire.Node.automationType.rawValue: NSNumber(value: 9),
+      AXWire.Node.frame.rawValue:
         CGRectCreateDictionaryRepresentation(CGRect(x: 16, y: 380, width: 370, height: 52)) as NSDictionary,
-      FBAXWire.Node.children.rawValue: [
+      AXWire.Node.children.rawValue: [
         [
-          FBAXWire.Node.label.rawValue: "child",
-          FBAXWire.Node.automationType.rawValue: "AXCell",
+          AXWire.Node.label.rawValue: "child",
+          AXWire.Node.automationType.rawValue: "AXCell",
         ] as [String: Any]
       ],
     ]
   }
 
   private func serializedJSON(nestedFormat: Bool) throws -> String {
-    let elements = FBAXTreeWalk.describeAllElements(
+    let elements = AXTreeWalk.describeAllElements(
       fromTree: Self.sampleTree(), keys: FBAXKeys.defaultSet, nestedFormat: nestedFormat, pid: 7
     )
     let response = FBAccessibilityElementsResponse(
@@ -66,20 +66,20 @@ final class FBAccessibilitySerializationTests: XCTestCase {
 
   // Neither the profiling collector nor the seen-pid/is_remote decorator may change default-set node output.
   func testNodeDictionaryIsCollectorNeutral() throws {
-    let root = FBAXTreeWalk.buildPlatformElementTree(from: Self.sampleTree(), pid: 7)
-    var elements: [FBAXPlatformElement] = [root]
+    let root = AXTreeWalk.buildPlatformElementTree(from: Self.sampleTree(), pid: 7)
+    var elements: [AXPlatformElement] = [root]
     elements.append(contentsOf: root.axChildren())
     for element in elements {
-      let bare = FBAXNodeSerializer.nodeElement(
+      let bare = AXNodeSerializer.nodeElement(
         forElement: element, token: "", keys: FBAXKeys.defaultSet, collector: nil
       )
-      let instrumented = FBAXNodeSerializer.nodeElement(
+      let instrumented = AXNodeSerializer.nodeElement(
         forElement: element, token: "", keys: FBAXKeys.defaultSet,
         collector: FBAccessibilityProfilingCollector()
       )
       XCTAssertEqual(bare, instrumented, "the profiling side-channel must not change the node output")
 
-      let decorated = FBAXNodeSerializer.decoratedElement(
+      let decorated = AXNodeSerializer.decoratedElement(
         forElement: element, token: "", keys: FBAXKeys.defaultSet,
         collector: FBAccessibilityProfilingCollector(), seenPids: SeenPIDs(), isRemote: true
       )
@@ -90,23 +90,23 @@ final class FBAccessibilitySerializationTests: XCTestCase {
   // `is_remote` is opt-in and, when requested, a *bool* recording provenance — `false` for the main-tree traversal,
   // `true` for remote grid hit-testing.
   func testDecoratorTagsIsRemoteProvenanceAsBool() throws {
-    let root = FBAXTreeWalk.buildPlatformElementTree(from: Self.sampleTree(), pid: 7)
+    let root = AXTreeWalk.buildPlatformElementTree(from: Self.sampleTree(), pid: 7)
     var keysWithRemote = FBAXKeys.defaultSet
     keysWithRemote.insert(.isRemote)
 
-    let local = FBAXNodeSerializer.decoratedElement(
+    let local = AXNodeSerializer.decoratedElement(
       forElement: root, token: "", keys: keysWithRemote,
       collector: nil, seenPids: nil, isRemote: false
     )
     XCTAssertEqual(local.isRemote, .some(false), "main-tree nodes tag is_remote=false")
 
-    let remote = FBAXNodeSerializer.decoratedElement(
+    let remote = AXNodeSerializer.decoratedElement(
       forElement: root, token: "", keys: keysWithRemote,
       collector: nil, seenPids: nil, isRemote: true
     )
     XCTAssertEqual(remote.isRemote, .some(true), "remote-discovered nodes tag is_remote=true")
 
-    let defaultSet = FBAXNodeSerializer.decoratedElement(
+    let defaultSet = AXNodeSerializer.decoratedElement(
       forElement: root, token: "", keys: FBAXKeys.defaultSet,
       collector: nil, seenPids: nil, isRemote: true
     )
@@ -118,10 +118,10 @@ final class FBAccessibilitySerializationTests: XCTestCase {
   func testSerializedJSONSanitizesNonFiniteFrame() throws {
     let frameDict = CGRectCreateDictionaryRepresentation(CGRect(x: CGFloat.infinity, y: 0, width: 10, height: 20)) as NSDictionary
     let tree: [String: Any] = [
-      FBAXWire.Node.label.rawValue: "icon",
-      FBAXWire.Node.frame.rawValue: frameDict,
+      AXWire.Node.label.rawValue: "icon",
+      AXWire.Node.frame.rawValue: frameDict,
     ]
-    let elements = FBAXTreeWalk.describeAllElements(
+    let elements = AXTreeWalk.describeAllElements(
       fromTree: tree, keys: [.label, .frameDict], nestedFormat: false, pid: 7
     )
     let response = FBAccessibilityElementsResponse(
@@ -145,10 +145,10 @@ final class FBAccessibilitySerializationTests: XCTestCase {
 
   private func serializedFrame(fromGuestFrame frame: NSDictionary) -> FBAccessibilityFrame?? {
     let tree: [String: Any] = [
-      FBAXWire.Node.label.rawValue: "icon",
-      FBAXWire.Node.frame.rawValue: frame,
+      AXWire.Node.label.rawValue: "icon",
+      AXWire.Node.frame.rawValue: frame,
     ]
-    let elements = FBAXTreeWalk.describeAllElements(
+    let elements = AXTreeWalk.describeAllElements(
       fromTree: tree, keys: [.label, .frameDict], nestedFormat: false, pid: 7
     )
     return elements.first?.frame
@@ -168,31 +168,31 @@ final class FBAccessibilitySerializationTests: XCTestCase {
 
   func testGuestNullFrameMemberOnTheRootKeepsTheScreenBounds() throws {
     let tree: [String: Any] = [
-      FBAXWire.Node.label.rawValue: "root",
-      FBAXWire.Node.frame.rawValue: try guestFrameDictionary(nulling: "X", of: CGRect(x: 0, y: 0, width: 390, height: 844)),
+      AXWire.Node.label.rawValue: "root",
+      AXWire.Node.frame.rawValue: try guestFrameDictionary(nulling: "X", of: CGRect(x: 0, y: 0, width: 390, height: 844)),
     ]
-    XCTAssertEqual(FBAXTreeWalk.screenInfo(fromTree: tree), FBAccessibilityScreenInfo(width: 390, height: 844))
+    XCTAssertEqual(AXTreeWalk.screenInfo(fromTree: tree), FBAccessibilityScreenInfo(width: 390, height: 844))
   }
 
   // An element with an unreadable coordinate has nowhere to be tapped; `.offScreen` separates that from a marker that
   // matched nothing.
   func testMarkerOnAnElementWithAnUnreadableCoordinateResolvesAsOffScreen() throws {
     let tree: [String: Any] = [
-      FBAXWire.Node.label.rawValue: "root",
-      FBAXWire.Node.frame.rawValue: CGRectCreateDictionaryRepresentation(CGRect(x: 0, y: 0, width: 390, height: 844)) as NSDictionary,
-      FBAXWire.Node.children.rawValue: [
+      AXWire.Node.label.rawValue: "root",
+      AXWire.Node.frame.rawValue: CGRectCreateDictionaryRepresentation(CGRect(x: 0, y: 0, width: 390, height: 844)) as NSDictionary,
+      AXWire.Node.children.rawValue: [
         [
-          FBAXWire.Node.label.rawValue: "Offscreen Icon",
-          FBAXWire.Node.frame.rawValue: try guestFrameDictionary(nulling: "X", of: CGRect(x: 0, y: 40, width: 60, height: 60)),
-          FBAXWire.Node.children.rawValue: [[String: Any]](),
+          AXWire.Node.label.rawValue: "Offscreen Icon",
+          AXWire.Node.frame.rawValue: try guestFrameDictionary(nulling: "X", of: CGRect(x: 0, y: 40, width: 60, height: 60)),
+          AXWire.Node.children.rawValue: [[String: Any]](),
         ] as [String: Any]
       ],
     ]
-    let elements = FBAXTreeWalk.describeAllElements(
+    let elements = AXTreeWalk.describeAllElements(
       fromTree: tree, keys: [.label, .frameDict], nestedFormat: false, pid: 7
     )
     XCTAssertEqual(
-      FBAXTreeWalk.resolveMarker(inElements: elements, markerValue: "Offscreen Icon", key: .label),
+      AXTreeWalk.resolveMarker(inElements: elements, markerValue: "Offscreen Icon", key: .label),
       .offScreen,
       "a matched element with no usable frame is off-screen, not a tap at the origin"
     )
@@ -202,13 +202,13 @@ final class FBAccessibilitySerializationTests: XCTestCase {
   // were it not the one the caller named, which is what makes the target exemption observable.
   private static func unlabeledTargetTree() -> [String: Any] {
     [
-      FBAXWire.Node.children.rawValue: [
+      AXWire.Node.children.rawValue: [
         [
-          FBAXWire.Node.children.rawValue: [
-            [FBAXWire.Node.label.rawValue: "leaf"] as [String: Any]
+          AXWire.Node.children.rawValue: [
+            [AXWire.Node.label.rawValue: "leaf"] as [String: Any]
           ]
         ] as [String: Any],
-        [FBAXWire.Node.label.rawValue: "sibling"] as [String: Any],
+        [AXWire.Node.label.rawValue: "sibling"] as [String: Any],
       ]
     ]
   }
@@ -216,14 +216,14 @@ final class FBAccessibilitySerializationTests: XCTestCase {
   // A tree: root (labeled) → container (unlabeled, no role) → leaf (labeled); plus sibling (labeled).
   private static func filterTree() -> [String: Any] {
     [
-      FBAXWire.Node.label.rawValue: "root",
-      FBAXWire.Node.children.rawValue: [
+      AXWire.Node.label.rawValue: "root",
+      AXWire.Node.children.rawValue: [
         [
-          FBAXWire.Node.children.rawValue: [
-            [FBAXWire.Node.label.rawValue: "leaf"] as [String: Any]
+          AXWire.Node.children.rawValue: [
+            [AXWire.Node.label.rawValue: "leaf"] as [String: Any]
           ]
         ] as [String: Any],
-        [FBAXWire.Node.label.rawValue: "sibling"] as [String: Any],
+        [AXWire.Node.label.rawValue: "sibling"] as [String: Any],
       ],
     ]
   }
@@ -244,9 +244,9 @@ final class FBAccessibilitySerializationTests: XCTestCase {
   // since it has no label, no identifier and no actionable role.
   private static func valueOnlyMatchTree() -> [String: Any] {
     [
-      FBAXWire.Node.value.rawValue: "42",
-      FBAXWire.Node.children.rawValue: [
-        [FBAXWire.Node.label.rawValue: "leaf"] as [String: Any]
+      AXWire.Node.value.rawValue: "42",
+      AXWire.Node.children.rawValue: [
+        [AXWire.Node.label.rawValue: "leaf"] as [String: Any]
       ],
     ]
   }
@@ -256,11 +256,11 @@ final class FBAccessibilitySerializationTests: XCTestCase {
     // *match* to a handle that still carries the root's `.frontmostApplication` request. This reproduces
     // that: the request kind says "tree", the element is the match, and `isMarkerMatch` is what tells
     // the request the caller asked for this element rather than the tree it was found in.
-    let match = FBAXTreeWalk.buildPlatformElementTree(from: Self.valueOnlyMatchTree(), pid: 7)
+    let match = AXTreeWalk.buildPlatformElementTree(from: Self.valueOnlyMatchTree(), pid: 7)
     var options = FBAccessibilityRequestOptions()
     options.keys = [.label, .value]
     options.filter = filter
-    return try FBAXTranslationRequest(kind: .frontmostApplication).run(match, options: options, isMarkerMatch: true)
+    return try AXTranslationRequest(kind: .frontmostApplication).run(match, options: options, isMarkerMatch: true)
   }
 
   // MARK: - The ax marker read's shape
@@ -293,7 +293,7 @@ final class FBAccessibilitySerializationTests: XCTestCase {
   private static func filtered(
     _ filter: FBAccessibilityElementFilter, nestedFormat: Bool
   ) -> [FBAccessibilityDocumentElement] {
-    let walked = FBAXTreeWalk.describeAllElements(
+    let walked = AXTreeWalk.describeAllElements(
       fromTree: filterTree(), keys: [.label, .uniqueID, .role], nestedFormat: nestedFormat, pid: 7
     )
     return filter.apply(to: walked)
@@ -330,7 +330,7 @@ final class FBAccessibilitySerializationTests: XCTestCase {
     for key in FBAXKeys.allCases {
       // Through `serializationKeys` rather than the bare key, because that is the path a `--key` request
       // actually takes — and it is where `occluded_by` picks up the `interactable` it enriches.
-      let elements = FBAXTreeWalk.describeAllElements(
+      let elements = AXTreeWalk.describeAllElements(
         fromTree: Self.sampleTree(),
         keys: FBAccessibilityRequestOptions(keys: [key]).serializationKeys,
         nestedFormat: false,
@@ -346,7 +346,7 @@ final class FBAccessibilitySerializationTests: XCTestCase {
   }
 
   func testUnrequestedKeysAreAbsentFromTheSerializedElement() throws {
-    let elements = FBAXTreeWalk.describeAllElements(
+    let elements = AXTreeWalk.describeAllElements(
       fromTree: Self.sampleTree(), keys: [.label, .title], nestedFormat: false, pid: 7
     )
     let rendered = try XCTUnwrap(elements.first).legacyObject()
@@ -368,7 +368,7 @@ final class FBAccessibilitySerializationTests: XCTestCase {
   }
 
   private func flatElements() -> [FBAccessibilityDocumentElement] {
-    FBAXTreeWalk.describeAllElements(fromTree: Self.sampleTree(), keys: FBAXKeys.defaultSet, nestedFormat: false, pid: 7)
+    AXTreeWalk.describeAllElements(fromTree: Self.sampleTree(), keys: FBAXKeys.defaultSet, nestedFormat: false, pid: 7)
   }
 
   // `JSONSerialization` emits 17 significant digits (`0.33333333333333331`) where other writers emit the shortest
@@ -376,10 +376,10 @@ final class FBAccessibilitySerializationTests: XCTestCase {
   func testRenderedFractionalValuesKeepFullPrecision() throws {
     let rect = CGRect(x: 0, y: 0, width: 1.0 / 3.0, height: 2.0 / 3.0)
     let tree: [String: Any] = [
-      FBAXWire.Node.value.rawValue: NSNumber(value: 0.35),
-      FBAXWire.Node.frame.rawValue: CGRectCreateDictionaryRepresentation(rect) as NSDictionary,
+      AXWire.Node.value.rawValue: NSNumber(value: 0.35),
+      AXWire.Node.frame.rawValue: CGRectCreateDictionaryRepresentation(rect) as NSDictionary,
     ]
-    let elements = FBAXTreeWalk.describeAllElements(
+    let elements = AXTreeWalk.describeAllElements(
       fromTree: tree, keys: [.frameDict, .value], nestedFormat: false, pid: 7
     )
     let response = FBAccessibilityElementsResponse(elements: .tree(elements))
@@ -392,8 +392,8 @@ final class FBAccessibilitySerializationTests: XCTestCase {
   // `accessibilityValue` is untyped and not always scalar; a collection must survive as a collection rather
   // than its `String(describing:)` form.
   func testCollectionAttributeValuesSurviveAsCollections() throws {
-    let arrayTree: [String: Any] = [FBAXWire.Node.value.rawValue: ["alpha", "beta"] as [Any]]
-    let arrayElements = FBAXTreeWalk.describeAllElements(
+    let arrayTree: [String: Any] = [AXWire.Node.value.rawValue: ["alpha", "beta"] as [Any]]
+    let arrayElements = AXTreeWalk.describeAllElements(
       fromTree: arrayTree, keys: [.value], nestedFormat: false, pid: 7
     )
     XCTAssertEqual(
@@ -402,8 +402,8 @@ final class FBAccessibilitySerializationTests: XCTestCase {
       "an array value stays an array"
     )
 
-    let objectTree: [String: Any] = [FBAXWire.Node.value.rawValue: ["min": 0, "max": 10] as [String: Any]]
-    let objectElements = FBAXTreeWalk.describeAllElements(
+    let objectTree: [String: Any] = [AXWire.Node.value.rawValue: ["min": 0, "max": 10] as [String: Any]]
+    let objectElements = AXTreeWalk.describeAllElements(
       fromTree: objectTree, keys: [.value], nestedFormat: false, pid: 7
     )
     XCTAssertEqual(
@@ -416,8 +416,8 @@ final class FBAccessibilitySerializationTests: XCTestCase {
   // A null inside a collection value is a member of that collection and must survive as JSON `null`, distinct
   // from a null top-level value.
   func testNullInsideACollectionAttributeValueStaysNull() throws {
-    let tree: [String: Any] = [FBAXWire.Node.value.rawValue: ["alpha", NSNull(), "beta"] as [Any]]
-    let elements = FBAXTreeWalk.describeAllElements(
+    let tree: [String: Any] = [AXWire.Node.value.rawValue: ["alpha", NSNull(), "beta"] as [Any]]
+    let elements = AXTreeWalk.describeAllElements(
       fromTree: tree, keys: [.value], nestedFormat: false, pid: 7
     )
     XCTAssertEqual(
@@ -460,7 +460,7 @@ final class FBAccessibilitySerializationTests: XCTestCase {
 
     let nested = FBAccessibilityElementsResponse(
       elements: .tree(
-        FBAXTreeWalk.describeAllElements(
+        AXTreeWalk.describeAllElements(
           fromTree: Self.sampleTree(), keys: FBAXKeys.defaultSet, nestedFormat: true, pid: 7
         ))
     )
@@ -572,7 +572,7 @@ final class FBAccessibilitySerializationTests: XCTestCase {
 
   /// The rendered element parsed back, so assertions are on JSON types rather than the serializer's internal ones.
   private func renderedElement(keys: Set<FBAXKeys>, tree: [String: Any] = FBAccessibilitySerializationTests.sampleTree()) throws -> [String: Any] {
-    let elements = FBAXTreeWalk.describeAllElements(fromTree: tree, keys: keys, nestedFormat: false, pid: 7)
+    let elements = AXTreeWalk.describeAllElements(fromTree: tree, keys: keys, nestedFormat: false, pid: 7)
     let response = FBAccessibilityElementsResponse(elements: .tree(elements))
     let rendered = try response.legacyEnvelopeObject()["elements"] as? [[String: Any]]
     return try XCTUnwrap(rendered?.first)
@@ -620,7 +620,7 @@ final class FBAccessibilitySerializationTests: XCTestCase {
 
   // The child carries a string automationType, where role and type genuinely diverge.
   func testRawRoleAndNormalizedTypeDivergeOnTheChild() throws {
-    let elements = FBAXTreeWalk.describeAllElements(
+    let elements = AXTreeWalk.describeAllElements(
       fromTree: Self.sampleTree(), keys: [.role, .type], nestedFormat: false, pid: 7
     )
     let response = FBAccessibilityElementsResponse(elements: .tree(elements))
@@ -634,10 +634,10 @@ final class FBAccessibilitySerializationTests: XCTestCase {
   func testMangledSwiftClassNameDemanglesInTypeButNotRole() throws {
     let mangled = "_TtGC7SwiftUI15CellHostingViewGVS_15ModifiedContentVS_14_ViewList_ViewVS_26CollectionViewCellModifier__"
     let tree: [String: Any] = [
-      FBAXWire.Node.label.rawValue: "cell",
-      FBAXWire.Node.elementType.rawValue: mangled,
+      AXWire.Node.label.rawValue: "cell",
+      AXWire.Node.elementType.rawValue: mangled,
     ]
-    let elements = FBAXTreeWalk.describeAllElements(
+    let elements = AXTreeWalk.describeAllElements(
       fromTree: tree, keys: [.role, .type], nestedFormat: false, pid: 7
     )
     let response = FBAccessibilityElementsResponse(elements: .tree(elements))
@@ -651,8 +651,8 @@ final class FBAccessibilitySerializationTests: XCTestCase {
   func testNonFiniteFrameEdgesDegradeIndependently() throws {
     let rect = CGRect(x: CGFloat.infinity, y: 0, width: CGFloat.nan, height: 20)
     let tree: [String: Any] = [
-      FBAXWire.Node.label.rawValue: "icon",
-      FBAXWire.Node.frame.rawValue: CGRectCreateDictionaryRepresentation(rect) as NSDictionary,
+      AXWire.Node.label.rawValue: "icon",
+      AXWire.Node.frame.rawValue: CGRectCreateDictionaryRepresentation(rect) as NSDictionary,
     ]
     let element = try renderedElement(keys: [.frameDict], tree: tree)
     let frame = try XCTUnwrap(element[FBAXKeys.frameDict.rawValue] as? [String: Any])
@@ -665,7 +665,7 @@ final class FBAccessibilitySerializationTests: XCTestCase {
   // Nesting is a `children` array on each node, all the way down, and a leaf carries an empty one rather
   // than omitting the key. A flat read carries no `children` key at all.
   func testNestedChildrenShapeIsPinnedAtDepth() throws {
-    let nested = FBAXTreeWalk.describeAllElements(
+    let nested = AXTreeWalk.describeAllElements(
       fromTree: Self.sampleTree(), keys: [.label], nestedFormat: true, pid: 7
     )
     let response = FBAccessibilityElementsResponse(elements: .tree(nested))
@@ -682,7 +682,7 @@ final class FBAccessibilitySerializationTests: XCTestCase {
 
   // The legacy formats omit `children` for a flat read, which is what their consumers parse.
   func testLegacyFormatsStillOmitChildrenForAFlatRead() throws {
-    let flat = FBAXTreeWalk.describeAllElements(
+    let flat = AXTreeWalk.describeAllElements(
       fromTree: Self.sampleTree(), keys: [.label], nestedFormat: false, pid: 7
     )
     let response = FBAccessibilityElementsResponse(elements: .single(try XCTUnwrap(flat.first)))
@@ -746,13 +746,13 @@ final class FBAccessibilitySerializationTests: XCTestCase {
   // The named target is never filtered (it would not survive `.interactable` here); its descendants are walked
   // with the caller's filter exactly as a whole-tree read walks them.
   func testSingleElementReadKeepsTheTargetAndFiltersItsDescendants() throws {
-    let element = FBAXTreeWalk.buildPlatformElementTree(from: Self.unlabeledTargetTree(), pid: 7)
+    let element = AXTreeWalk.buildPlatformElementTree(from: Self.unlabeledTargetTree(), pid: 7)
     var options = FBAccessibilityRequestOptions()
     options.keys = [.label]
     options.filter = .interactable
     options.format = .nested
 
-    let response = try FBAXTranslationRequest(kind: .point(.zero)).run(element, options: options)
+    let response = try AXTranslationRequest(kind: .point(.zero)).run(element, options: options)
     guard case let .single(target) = response.elements else {
       return XCTFail("a point read yields one element, got \(response.elements)")
     }
@@ -772,7 +772,7 @@ final class FBAccessibilitySerializationTests: XCTestCase {
   // `complete` reports `children` on every element, whatever the read walked — the document's fixed
   // key set exists to rule out per-`--api` shape differences.
   func testCompleteAlwaysReportsChildrenWhateverTheReadWalked() throws {
-    let flat = FBAXTreeWalk.describeAllElements(
+    let flat = AXTreeWalk.describeAllElements(
       fromTree: Self.sampleTree(), keys: [.label], nestedFormat: false, pid: 7
     )
     XCTAssertNil(try XCTUnwrap(flat.first).children, "the model still records that nothing was walked")
@@ -784,7 +784,7 @@ final class FBAccessibilitySerializationTests: XCTestCase {
       "the key is reported regardless, empty where nothing was walked"
     )
 
-    let nested = FBAXTreeWalk.describeAllElements(
+    let nested = AXTreeWalk.describeAllElements(
       fromTree: Self.sampleTree(), keys: [.label], nestedFormat: true, pid: 7
     )
     let nestedResponse = FBAccessibilityElementsResponse(elements: .tree(nested))
@@ -797,7 +797,7 @@ final class FBAccessibilitySerializationTests: XCTestCase {
   // The clean schema re-spells the AX-prefixed holdovers and drops the two attributes that merely
   // restate another (`AXFrame` for the `frame` object, raw `role` for the normalized `type`).
   func testCompleteElementsUseTheCleanSchema() throws {
-    let elements = FBAXTreeWalk.describeAllElements(
+    let elements = AXTreeWalk.describeAllElements(
       fromTree: Self.sampleTree(), keys: FBAXKeys.defaultSet, nestedFormat: true, pid: 7
     )
     let response = FBAccessibilityElementsResponse(elements: .tree(elements))
@@ -823,7 +823,7 @@ final class FBAccessibilitySerializationTests: XCTestCase {
   }
 
   func testCompleteElementsRecurseIntoChildren() throws {
-    let elements = FBAXTreeWalk.describeAllElements(
+    let elements = AXTreeWalk.describeAllElements(
       fromTree: Self.sampleTree(), keys: FBAXKeys.defaultSet, nestedFormat: true, pid: 7
     )
     let response = FBAccessibilityElementsResponse(elements: .tree(elements))
@@ -960,7 +960,7 @@ final class FBAccessibilitySerializationTests: XCTestCase {
 
   // A real narrowing: the match drops nodes, and `walked`/`matched` are derived rather than handed in.
   func testARealMatchReportsFewerMatchedThanWalked() throws {
-    let walked = FBAXTreeWalk.describeAllElements(
+    let walked = AXTreeWalk.describeAllElements(
       fromTree: Self.filterTree(), keys: [.label, .role], nestedFormat: false, pid: 7
     )
     let options = FBAccessibilityRequestOptions(
@@ -1004,7 +1004,7 @@ final class FBAccessibilitySerializationTests: XCTestCase {
   // Node counts, not top-level counts: the same two-node tree rendered nested is one top-level element with one
   // child, and reporting `1` there would understate the read against its flat rendering.
   func testTheCountsAreNodeCountsWhateverTheRendering() throws {
-    let nested = FBAXTreeWalk.describeAllElements(
+    let nested = AXTreeWalk.describeAllElements(
       fromTree: Self.sampleTree(), keys: FBAXKeys.defaultSet, nestedFormat: true, pid: 7
     )
     XCTAssertEqual(nested.count, 1, "the fixture nests, or this test proves nothing")
@@ -1026,7 +1026,7 @@ final class FBAccessibilitySerializationTests: XCTestCase {
   // Counted over the whole tree, not just the roots — a nested read carries most of its elements as
   // descendants, and a summary that stopped at the top level would report almost nothing.
   func testTheFrameSummaryDescendsIntoChildren() throws {
-    let nested = FBAXTreeWalk.describeAllElements(
+    let nested = AXTreeWalk.describeAllElements(
       fromTree: Self.sampleTree(), keys: FBAXKeys.defaultSet, nestedFormat: true, pid: 7
     )
     let response = FBAccessibilityElementsResponse(elements: .tree(nested))
@@ -1123,7 +1123,7 @@ final class FBAccessibilitySerializationTests: XCTestCase {
   func testCompleteElementsOmitUnrequestedAttributesButNullRequestedEmptyOnes() throws {
     // The sample root has a label but no title, so `title` is requested-and-empty here. `complete` is
     // always a tree, so the fixture is read nested.
-    let elements = FBAXTreeWalk.describeAllElements(
+    let elements = AXTreeWalk.describeAllElements(
       fromTree: Self.sampleTree(), keys: [.label, .title], nestedFormat: true, pid: 7
     )
     let response = FBAccessibilityElementsResponse(elements: .tree(elements))
@@ -1140,7 +1140,7 @@ final class FBAccessibilitySerializationTests: XCTestCase {
   // Narrowing the key set must actually narrow the payload — that is what --key is for.
   func testCompleteElementsShrinkWithTheRequestedKeySet() throws {
     func keyCount(_ keys: Set<FBAXKeys>) throws -> Int {
-      let elements = FBAXTreeWalk.describeAllElements(fromTree: Self.sampleTree(), keys: keys, nestedFormat: true, pid: 7)
+      let elements = AXTreeWalk.describeAllElements(fromTree: Self.sampleTree(), keys: keys, nestedFormat: true, pid: 7)
       let response = FBAccessibilityElementsResponse(elements: .tree(elements))
       let root = try XCTUnwrap(documentObject(response)["elements"] as? [[String: Any]]).first ?? [:]
       return root.keys.count
@@ -1157,7 +1157,7 @@ final class FBAccessibilitySerializationTests: XCTestCase {
     for key in FBAXKeys.allCases {
       var options = FBAccessibilityRequestOptions(format: .complete)
       options.keys = [key]
-      let elements = FBAXTreeWalk.describeAllElements(
+      let elements = AXTreeWalk.describeAllElements(
         fromTree: Self.sampleTree(), keys: options.serializationKeys, nestedFormat: false, pid: 7
       )
       let response = FBAccessibilityElementsResponse(elements: .tree(elements))

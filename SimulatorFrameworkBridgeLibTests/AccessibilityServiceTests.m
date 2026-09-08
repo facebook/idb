@@ -129,7 +129,7 @@ static NSDictionary *FBAXTestsParse(NSData *data)
 #pragma mark - Wire contract
 
 // Guest and host share no header for these strings. This pins the guest's constants to the literals the
-// host pins in `FBAXWireContractTests`; the two files agreeing is the contract.
+// host pins in `AXWireContractTests`; the two files agreeing is the contract.
 - (void)testGuestWireConstantsMatchTheHostContract
 {
   NSDictionary<NSString *, NSString *> *expected = @{

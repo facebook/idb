@@ -12,7 +12,7 @@ import Foundation
 /// neutral and raised as `FBUIAutomationError`, so a caller can handle them without knowing which
 /// backend it holds.
 ///
-/// The cases mirror the guest's `FBAXWire.ErrorKind`. The two application-level ones are re-raised by
+/// The cases mirror the guest's `AXWire.ErrorKind`. The two application-level ones are re-raised by
 /// the conformer as the backend-neutral `FBUIAutomationError` cases.
 public enum FBAXBridgeError: LocalizedError, Sendable {
   /// The bundled `SimulatorFrameworkBridge` guest binary could not be located in Resources.
@@ -69,7 +69,7 @@ public enum FBAXBridgeError: LocalizedError, Sendable {
 
   /// A clause, not a sentence: the caller has already named the process it is about.
   ///
-  /// Signal zero is not a signal, matching `FBAXBridgeConnection.socketClosedMessage`.
+  /// Signal zero is not a signal, matching `AXBridgeConnection.socketClosedMessage`.
   private static func exitPhrase(signal: Int?, exitCode: Int?) -> String {
     if let signal, signal != 0 {
       return "was killed by signal \(signal)"

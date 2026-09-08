@@ -27,27 +27,27 @@ final class FBAXInteractableTests: XCTestCase {
     userInteractionEnabled: Bool? = true
   ) -> [String: Any] {
     var node: [String: Any] = [
-      FBAXWire.Node.label.rawValue: "Explore Grid Cell",
-      FBAXWire.Node.identifier.rawValue: "media-thumbnail-cell",
-      FBAXWire.Node.frame.rawValue: CGRectCreateDictionaryRepresentation(frame) as NSDictionary,
+      AXWire.Node.label.rawValue: "Explore Grid Cell",
+      AXWire.Node.identifier.rawValue: "media-thumbnail-cell",
+      AXWire.Node.frame.rawValue: CGRectCreateDictionaryRepresentation(frame) as NSDictionary,
     ]
     if let isVisible {
-      node[FBAXWire.Node.isVisible.rawValue] = isVisible
+      node[AXWire.Node.isVisible.rawValue] = isVisible
     }
     if let visiblePoint {
-      node[FBAXWire.Node.visiblePoint.rawValue] = CGPointCreateDictionaryRepresentation(visiblePoint) as NSDictionary
+      node[AXWire.Node.visiblePoint.rawValue] = CGPointCreateDictionaryRepresentation(visiblePoint) as NSDictionary
     }
     if let centrePoint {
-      node[FBAXWire.Node.centerPoint.rawValue] = CGPointCreateDictionaryRepresentation(centrePoint) as NSDictionary
+      node[AXWire.Node.centerPoint.rawValue] = CGPointCreateDictionaryRepresentation(centrePoint) as NSDictionary
     }
     if let userInteractionEnabled {
-      node[FBAXWire.Node.userInteractionEnabled.rawValue] = userInteractionEnabled
+      node[AXWire.Node.userInteractionEnabled.rawValue] = userInteractionEnabled
     }
     return node
   }
 
   private static func interactable(_ node: [String: Any]) -> FBAccessibilityInteractable?? {
-    FBAXTreeWalk.describeAllElements(
+    AXTreeWalk.describeAllElements(
       fromTree: node, keys: [.interactable], nestedFormat: false, pid: 13515
     ).first?.interactable
   }
@@ -85,7 +85,7 @@ final class FBAXInteractableTests: XCTestCase {
   // different question), so a guest-backed read answers nil — serialized as an explicit null — and `disabled` is
   // claimed only on a definite false.
   func testTheSerializedEnabledIsNullOnAGuestBackedRead() throws {
-    let node = FBAXTreeWalk.describeAllElements(
+    let node = AXTreeWalk.describeAllElements(
       fromTree: Self.node(), keys: [.enabled], nestedFormat: false, pid: 13515
     ).first
     XCTAssertNil(try XCTUnwrap(node?.enabled))
@@ -191,7 +191,7 @@ final class FBAXInteractableTests: XCTestCase {
     var element = FBAccessibilityDocumentElement()
     element.frame = .some(FBAccessibilityFrame(frame))
     element.interactable = .some(.blocked(reasons: reasons))
-    return FBAXScreenBoundsClassifier.notingScreenClipping(element, screen: screen).interactable ?? nil
+    return AXScreenBoundsClassifier.notingScreenClipping(element, screen: screen).interactable ?? nil
   }
 
   // The measured case: a row scrolled so its top is above the screen. Both facts are reported — it cannot
@@ -251,7 +251,7 @@ final class FBAXInteractableTests: XCTestCase {
     element.frame = .some(FBAccessibilityFrame(CGRect(x: 16, y: -10, width: 370, height: 52)))
     element.interactable = .some(.actionable(at: FBAccessibilityPoint(x: 201, y: 20)))
     let refined: FBAccessibilityInteractable? =
-      FBAXScreenBoundsClassifier.notingScreenClipping(element, screen: Self.screen).interactable ?? nil
+      AXScreenBoundsClassifier.notingScreenClipping(element, screen: Self.screen).interactable ?? nil
     XCTAssertEqual(refined, FBAccessibilityInteractable.actionable(at: FBAccessibilityPoint(x: 201, y: 20)))
   }
 

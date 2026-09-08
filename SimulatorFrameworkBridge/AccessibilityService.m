@@ -19,8 +19,8 @@
 #import "AccessibilityServiceServer.h"
 #import "AccessibilityService_Private.h"
 
-// The `XC_kAXXC*` attribute keys. These MUST match `FBAXWire.Node` host-side so the emitted tree feeds
-// the shared serializer (via `FBAXBridgePlatformElement`) unchanged.
+// The `XC_kAXXC*` attribute keys. These MUST match `AXWire.Node` host-side so the emitted tree feeds
+// the shared serializer (via `AXBridgePlatformElement`) unchanged.
 static NSString *const kAXElementType = @"XC_kAXXCAttributeElementType";
 static NSString *const kAXElementBaseType = @"XC_kAXXCAttributeElementBaseType";
 static NSString *const kAXLabel = @"XC_kAXXCAttributeLabel";
@@ -228,7 +228,7 @@ static NSArray<NSString *> *FBAXBridgeExplanationFetchList(void)
 }
 
 // The attributes a read fetches when the request names none. Membership *and* order are part of the wire
-// contract, mirrored host-side by `FBAXWire.Node.defaultFetchList`.
+// contract, mirrored host-side by `AXWire.Node.defaultFetchList`.
 static NSArray<NSString *> *FBAXBridgeDefaultFetchList(void)
 {
   return @[

@@ -137,7 +137,7 @@ public struct FBDragOptions: Sendable, Equatable {
 }
 
 /// What a drag endpoint names, once the queries that name no single element are refused.
-enum FBDragEndpoint: Equatable {
+enum DragEndpoint: Equatable {
   case point(CGPoint)
   case marker(value: String, key: FBAXSearchableKey, depth: UInt)
 
@@ -290,15 +290,15 @@ public extension FBSimulator {
   func uiAutomation(backend: FBUIAutomationBackend) throws -> any FBUIAutomation {
     switch backend {
     case .accessibility:
-      return FBAccessibilityUIAutomation(simulator: self)
+      return AccessibilityUIAutomation(simulator: self)
     case let .axBridge(persistence, frontmostMethod, automationMode):
-      let transport: any FBAXBridgeTransport =
+      let transport: any AXBridgeTransport =
         switch persistence {
-        case .oneShot: FBAXBridgeOneshotTransport(simulator: self)
+        case .oneShot: AXBridgeOneshotTransport(simulator: self)
         case .shared: axBridgeTransport(scope: .shared)
         case .exclusive: axBridgeTransport(scope: .exclusive)
         }
-      return FBAXBridgeUIAutomation(
+      return AXBridgeUIAutomation(
         simulator: self, transport: transport, persistence: persistence, frontmostMethod: frontmostMethod,
         automationMode: automationMode
       )
@@ -309,9 +309,9 @@ public extension FBSimulator {
   /// persistent modes exist to avoid. Shared and exclusive transports are never interchangeable.
   /// `frontmostMethod` and `automationMode` belong to the reader, so readers differing in those share
   /// a transport.
-  private func axBridgeTransport(scope: FBAXBridgeServiceScope) -> FBAXBridgePersistentTransport {
-    commandCache.resolve { FBAXBridgeTransportsByScope() }
-      .transport(for: scope) { FBAXBridgePersistentTransport(simulator: self, scope: scope) }
+  private func axBridgeTransport(scope: AXBridgeServiceScope) -> AXBridgePersistentTransport {
+    commandCache.resolve { AXBridgeTransportsByScope() }
+      .transport(for: scope) { AXBridgePersistentTransport(simulator: self, scope: scope) }
   }
 
   /// Delivers one composed gesture over HID, which drains the transport once for the whole gesture
@@ -329,14 +329,14 @@ public extension FBSimulator {
 // SAFETY: `transports` is only read or written with `lock` held, so no mutable state is reachable from
 // two threads at once.
 // patternlint-disable-next-line unchecked-sendable
-final class FBAXBridgeTransportsByScope: @unchecked Sendable {
+final class AXBridgeTransportsByScope: @unchecked Sendable {
   private let lock = NSLock()
-  private var transports: [FBAXBridgeServiceScope: FBAXBridgePersistentTransport] = [:]
+  private var transports: [AXBridgeServiceScope: AXBridgePersistentTransport] = [:]
 
   func transport(
-    for scope: FBAXBridgeServiceScope,
-    build: () -> FBAXBridgePersistentTransport
-  ) -> FBAXBridgePersistentTransport {
+    for scope: AXBridgeServiceScope,
+    build: () -> AXBridgePersistentTransport
+  ) -> AXBridgePersistentTransport {
     lock.lock()
     defer { lock.unlock() }
     if let existing = transports[scope] {

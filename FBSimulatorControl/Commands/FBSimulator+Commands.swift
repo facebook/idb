@@ -83,8 +83,8 @@ extension FBSimulator {
     commandCache.resolve { FBSimulatorXCTestCommands.commands(with: self) }
   }
 
-  var accessibility: FBSimulatorAccessibilityCommands {
-    commandCache.resolve { FBSimulatorAccessibilityCommands.commands(with: self) }
+  var accessibility: SimulatorAccessibilityCommands {
+    commandCache.resolve { SimulatorAccessibilityCommands.commands(with: self) }
   }
 
   var dapServer: FBSimulatorDapServerCommand {

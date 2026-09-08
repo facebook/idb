@@ -11,13 +11,13 @@ import XCTest
 final class FBUIAutomationTests: XCTestCase {
 
   func testAnchorPointIsScreenCentreInPoints() {
-    let anchor = FBAXBridgeUIAutomation.anchorPoint(widthPixels: 828, heightPixels: 1792, scale: 2)
+    let anchor = AXBridgeUIAutomation.anchorPoint(widthPixels: 828, heightPixels: 1792, scale: 2)
     XCTAssertEqual(anchor.x, 207, accuracy: 0.001)
     XCTAssertEqual(anchor.y, 448, accuracy: 0.001)
   }
 
   func testAnchorPointGuardsAgainstZeroScale() {
-    let anchor = FBAXBridgeUIAutomation.anchorPoint(widthPixels: 400, heightPixels: 800, scale: 0)
+    let anchor = AXBridgeUIAutomation.anchorPoint(widthPixels: 400, heightPixels: 800, scale: 0)
     XCTAssertEqual(anchor.x, 200, accuracy: 0.001)
     XCTAssertEqual(anchor.y, 400, accuracy: 0.001)
   }
@@ -32,10 +32,10 @@ final class FBUIAutomationTests: XCTestCase {
 
   private func transport(
     _ simulator: FBSimulator, _ persistence: FBAXBridgePersistence
-  ) throws -> FBAXBridgePersistentTransport {
+  ) throws -> AXBridgePersistentTransport {
     let reader = try simulator.uiAutomation(backend: Self.backend(persistence))
-    let bridgeReader = try XCTUnwrap(reader as? FBAXBridgeUIAutomation)
-    return try XCTUnwrap(bridgeReader.transport as? FBAXBridgePersistentTransport)
+    let bridgeReader = try XCTUnwrap(reader as? AXBridgeUIAutomation)
+    return try XCTUnwrap(bridgeReader.transport as? AXBridgePersistentTransport)
   }
 
   func testEverySharedBackendCallSharesOneTransport() throws {
@@ -66,10 +66,10 @@ final class FBUIAutomationTests: XCTestCase {
     let otherOptions = FBUIAutomationBackend.axBridge(
       persistence: .shared, frontmostMethod: .centerPoint, automationMode: nil
     )
-    let reader = try XCTUnwrap(try simulator.uiAutomation(backend: otherOptions) as? FBAXBridgeUIAutomation)
+    let reader = try XCTUnwrap(try simulator.uiAutomation(backend: otherOptions) as? AXBridgeUIAutomation)
     // `frontmostMethod` and `automationMode` are the reader's, not the transport's, so differing on
     // them must not cost a second guest.
-    XCTAssertTrue((reader.transport as? FBAXBridgePersistentTransport) === shared)
+    XCTAssertTrue((reader.transport as? AXBridgePersistentTransport) === shared)
   }
 
   func testEachOneShotBackendCallBuildsAOneShotTransport() throws {
@@ -79,8 +79,8 @@ final class FBUIAutomationTests: XCTestCase {
     )
     // Two calls: the one-shot transport must be built per call, never memoized.
     for _ in 0..<2 {
-      let reader = try XCTUnwrap(try simulator.uiAutomation(backend: backend) as? FBAXBridgeUIAutomation)
-      XCTAssertTrue(reader.transport is FBAXBridgeOneshotTransport)
+      let reader = try XCTUnwrap(try simulator.uiAutomation(backend: backend) as? AXBridgeUIAutomation)
+      XCTAssertTrue(reader.transport is AXBridgeOneshotTransport)
     }
   }
 }
