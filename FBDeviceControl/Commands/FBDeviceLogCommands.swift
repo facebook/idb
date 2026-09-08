@@ -8,28 +8,38 @@
 @preconcurrency import FBControlCore
 import Foundation
 
+private let syslogRelayService = "com.apple.syslog_relay"
+
 // MARK: - FBDeviceLogOperation
 
 public final class FBDeviceLogOperation: LogOperation {
   public let consumer: any FBDataConsumer
-  private let readCompleted: FBFuture<NSNull>
-  private let serviceCompleted: FBMutableFuture<NSNull>
+
+  /// Never resolves of its own accord: the device reaching the end of its log is not the end of the
+  /// tail, and only the caller decides that. Cancelling is what invalidates the connection.
+  public let completed: FBFuture<NSNull>
 
   init(
     consumer: any FBDataConsumer,
-    readCompleted: FBFuture<NSNull>,
-    serviceCompleted: FBMutableFuture<NSNull>
+    connection: FBAMDServiceConnection,
+    service: String,
+    queue: DispatchQueue,
+    logger: any FBControlCoreLogger
   ) {
     self.consumer = consumer
-    self.readCompleted = readCompleted
-    self.serviceCompleted = serviceCompleted
+    let tailing = FBMutableFuture<NSNull>(name: "Tailing \(service)")
+    self.completed = unsafeBitCast(
+      tailing.onQueue(
+        queue,
+        respondToCancellation: {
+          FBAMDevice.invalidateServiceConnection(connection, service: service, logger: logger)
+          return FBFuture<NSNull>.empty()
+        }
+      ),
+      to: FBFuture<NSNull>.self)
   }
 
   // MARK: - LogOperation
-
-  public var completed: FBFuture<NSNull> {
-    unsafeBitCast(serviceCompleted, to: FBFuture<NSNull>.self)
-  }
 
   public func waitUntilCompleted() async throws {
     try await bridgeFBFutureVoid(completed)
@@ -51,9 +61,9 @@ public final class FBDeviceLogCommands {
 
   // MARK: - FBLogCommands
 
-  public func tailLog(_ arguments: [String], consumer: any FBDataConsumer) -> FBFuture<FBDeviceLogOperation> {
+  public func tailLog(_ arguments: [String], consumer: any FBDataConsumer) async throws -> FBDeviceLogOperation {
     guard let device else {
-      return FBFuture(error: FBDeviceNilError.deviceNil)
+      throw FBDeviceNilError.deviceNil
     }
     if !arguments.isEmpty {
       let unsupportedArgumentsMessage = "[FBDeviceLogCommands][rdar://38452839] Unsupported arguments: \(arguments)"
@@ -62,24 +72,17 @@ public final class FBDeviceLogCommands {
       }
       device.logger.log(unsupportedArgumentsMessage)
     }
-    let queue = device.asyncQueue
     let readQueue = DispatchQueue(label: "com.facebook.fbdevicecontrol.device_log_consumer")
-    return
-      device
-      .startService("com.apple.syslog_relay")
-      .onQueue(
-        queue,
-        enter: { connection, teardown -> Any in
-          let reader = connection.readFromConnectionWriting(to: consumer, on: readQueue)
-          reader.startReading()
-          let readCompleted = reader.finishedReading(withTimeout: .infinity).mapReplace(NSNull()).retyped(FBFuture<NSNull>.self)
-          return FBDeviceLogOperation(
-            consumer: consumer,
-            readCompleted: readCompleted,
-            serviceCompleted: teardown
-          )
-        }
-      ).retyped(FBFuture<FBDeviceLogOperation>.self)
+    let connection = try await device.openServiceConnection(syslogRelayService)
+    let reader = connection.readFromConnectionWriting(to: consumer, on: readQueue)
+    reader.startReading()
+    return FBDeviceLogOperation(
+      consumer: consumer,
+      connection: connection,
+      service: syslogRelayService,
+      queue: device.asyncQueue,
+      logger: device.logger
+    )
   }
 }
 
@@ -88,6 +91,6 @@ public final class FBDeviceLogCommands {
 extension FBDevice: LogCommands {
 
   public func tailLog(arguments: [String], consumer: any FBDataConsumer) async throws -> any LogOperation {
-    return try await bridgeFBFuture(log.tailLog(arguments, consumer: consumer))
+    return try await log.tailLog(arguments, consumer: consumer)
   }
 }

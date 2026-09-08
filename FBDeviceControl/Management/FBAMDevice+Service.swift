@@ -22,7 +22,7 @@ extension FBAMDevice {
       .onQueue(
         workQueue,
         contextualTeardown: { (connection: FBAMDServiceConnection, _: FBFutureState) -> FBFuture<NSNull> in
-          Self.invalidate(connection, service: service, logger: logger)
+          Self.invalidateServiceConnection(connection, service: service, logger: logger)
           return FBFuture<NSNull>.empty()
         }
       ).retyped(FBFutureContext<FBAMDServiceConnection>.self)
@@ -37,7 +37,7 @@ extension FBAMDevice {
     _ body: (FBAMDServiceConnection) async throws -> T
   ) async throws -> T {
     let connection = try await openServiceConnection(service)
-    defer { Self.invalidate(connection, service: service, logger: logger) }
+    defer { Self.invalidateServiceConnection(connection, service: service, logger: logger) }
     return try await body(connection)
   }
 
@@ -73,11 +73,32 @@ extension FBAMDevice {
     }
   }
 
-  private func openServiceConnection(_ service: String) async throws -> FBAMDServiceConnection {
+  /// Starts a service whose connection outlives this call, handing ownership to the caller, who
+  /// hands it back to `invalidateServiceConnection`. `withServiceConnection` covers a connection
+  /// whose lifetime fits inside a call.
+  func openServiceConnection(_ service: String) async throws -> FBAMDServiceConnection {
     let calls = self.calls
     let logger = self.logger
     return try await withConnectedDevice(purpose: "start_service_\(service)") { device in
       try Self.startService(service, on: device, calls: calls, logger: logger)
+    }
+  }
+
+  /// Invalidates a connection handed out by `openServiceConnection`.
+  static func invalidateServiceConnection(
+    _ connection: FBAMDServiceConnection?,
+    service: String,
+    logger: any FBControlCoreLogger
+  ) {
+    guard let connection else {
+      return
+    }
+    logger.log("Invalidating service \(service)")
+    do {
+      try connection.invalidate()
+      logger.log("Invalidated service \(service)")
+    } catch {
+      logger.log("Failed to invalidate service \(service) with error \(error)")
     }
   }
 
@@ -115,20 +136,4 @@ extension FBAMDevice {
     return connection
   }
 
-  private static func invalidate(
-    _ connection: FBAMDServiceConnection?,
-    service: String,
-    logger: any FBControlCoreLogger
-  ) {
-    guard let connection else {
-      return
-    }
-    logger.log("Invalidating service \(service)")
-    do {
-      try connection.invalidate()
-      logger.log("Invalidated service \(service)")
-    } catch {
-      logger.log("Failed to invalidate service \(service) with error \(error)")
-    }
-  }
 }
