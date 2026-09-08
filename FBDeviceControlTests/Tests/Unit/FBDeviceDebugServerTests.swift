@@ -57,7 +57,8 @@ final class FBDeviceDebugServerTests {
   }
 
   /// Port zero asks the kernel for an ephemeral one, so nothing here collides with a port another
-  /// test or another process is already bound to. No client ever connects.
+  /// test or another process is already bound to. Nothing connects over TCP either — the one test
+  /// that needs a client reaches the delegate callback directly.
   private func makeDebugServer() async throws -> FBDeviceDebugServer {
     let device = amDevice.makeAMDevice()
     return try await bridgeFBFuture(
@@ -91,6 +92,31 @@ final class FBDeviceDebugServerTests {
 
     await waitFor("the service connection to be invalidated") { self.debugService.isInvalidated }
     // Invalidation is all that is left to do: the session was released when the service started.
+    #expect((debugServerSessionEvents) == (amDevice.events))
+  }
+
+  /// The client disconnecting invalidates the service connection without anyone calling `cancel()`.
+  ///
+  /// A socket pair stands in for an accepted client, handed straight to the delegate callback. The
+  /// server binds an ephemeral port that a test has no way to learn, and the callback ignores which
+  /// socket server it is told about, so the one passed here is a placeholder.
+  @Test
+  func debugServer_InvalidatesTheServiceConnectionWhenTheClientDisconnects() async throws {
+    let server = try await makeDebugServer()
+    await waitFor("the AMDevice session to close") { self.amDevice.events == debugServerSessionEvents }
+    #expect(!debugService.isInvalidated)
+
+    var sockets: [Int32] = [-1, -1]
+    #expect((socketpair(AF_UNIX, SOCK_STREAM, 0, &sockets)) == (0))
+    server.socketServer(
+      FBSocketServer(onPort: 0, delegate: server),
+      clientConnected: in6addr_any,
+      fileDescriptor: sockets[0])
+    // The device has nothing to relay, so the connection-side loop ends on its first read; hanging
+    // up the client end is what ends the other one.
+    close(sockets[1])
+
+    await waitFor("the service connection to be invalidated") { self.debugService.isInvalidated }
     #expect((debugServerSessionEvents) == (amDevice.events))
   }
 }
