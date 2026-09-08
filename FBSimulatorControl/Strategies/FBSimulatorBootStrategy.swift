@@ -27,7 +27,7 @@ final class FBSimulatorBootStrategy {
     if !configuration.options.contains(.verifyUsable) {
       return
     }
-    try await FBSimulatorBootVerificationStrategy.verifySimulatorIsBootedAsync(simulator)
+    try await FBSimulatorBootVerificationStrategy.verifySimulatorIsBooted(simulator)
   }
 
   private static func performSimulatorBoot(_ simulator: FBSimulator, with configuration: FBSimulatorBootConfiguration) async throws {
