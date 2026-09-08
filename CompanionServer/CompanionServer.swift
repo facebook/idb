@@ -8,9 +8,9 @@
 import CompanionDiscovery
 import Darwin
 import Foundation
-@_implementationOnly import NIOCore
-@_implementationOnly import NIOPosix
-@_implementationOnly import NIOSSL
+internal import NIOCore
+internal import NIOPosix
+internal import NIOSSL
 
 /// Writes a diagnostic line to stderr. The server keeps stdout free for a host's
 /// own protocol (e.g. idb2's `companion` subcommand prints the socket path on

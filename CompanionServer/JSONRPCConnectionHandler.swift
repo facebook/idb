@@ -6,7 +6,7 @@
  */
 
 import Foundation
-@_implementationOnly import NIOCore
+internal import NIOCore
 
 /// Per-connection handler sitting after `NewlineFrameDecoder`. It decodes the
 /// first line as a `JSONRPCRequest` and hands it (with this connection's channel)

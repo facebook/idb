@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-@_implementationOnly import NIOCore
+internal import NIOCore
 
 /// Splits the inbound byte stream into newline-delimited frames — one JSON-RPC
 /// message per line — emitting each line with its trailing `\n` stripped.

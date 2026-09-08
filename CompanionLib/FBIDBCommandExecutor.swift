@@ -7,7 +7,7 @@
 
 import CoreGraphics
 import FBControlCore
-@_implementationOnly import FBDeviceControl
+internal import FBDeviceControl
 import FBSimulatorControl
 import Foundation
 import XCTestBootstrap
