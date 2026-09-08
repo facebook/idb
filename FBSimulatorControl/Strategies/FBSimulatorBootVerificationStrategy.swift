@@ -80,28 +80,21 @@ public final class FBSimulatorBootVerificationStrategy {
       if updateInterval < stallInterval {
         return
       }
-      logger.log("Boot Status has not changed from '\(FBSimulatorBootVerificationStrategy.describeBootInfo(bootInfo))' for \(updateInterval) seconds")
+      logger.log("Boot Status has not changed from '\(bootInfo.progressDescription)' for \(updateInterval) seconds")
     } else {
-      logger.debug().log("Boot Status Changed: \(FBSimulatorBootVerificationStrategy.describeBootInfo(bootInfo))")
+      logger.debug().log("Boot Status Changed: \(bootInfo.progressDescription)")
       lastBootInfo = bootInfo
       lastInfoUpdateDate = Date()
     }
   }
 
-  private class func describeBootInfo(_ bootInfo: SimDeviceBootInfo) -> String {
-    let regular = regularBootInfo(bootInfo)
-    guard let migration = dataMigrationString(bootInfo) else {
-      return regular
-    }
-    return "\(regular) | \(migration)"
-  }
+}
 
-  private class func regularBootInfo(_ bootInfo: SimDeviceBootInfo) -> String {
-    return "\(bootStatusString(bootInfo.status)) | Elapsed \(bootInfo.bootElapsedTime)"
-  }
+extension SimDeviceBootInfoStatus {
 
-  private class func bootStatusString(_ status: SimDeviceBootInfoStatus) -> String {
-    switch status {
+  /// The status as it reads in a log line.
+  var statusName: String {
+    switch self {
     case .booting:
       return "Booting"
     case .waitingOnBackboard:
@@ -114,15 +107,21 @@ public final class FBSimulatorBootVerificationStrategy {
       return "Finished"
     case .dataMigrationFailed:
       return "DataMigrationFailed"
-    default:
-      return "Unknown"
+    @unknown default:
+      return "Unknown(\(rawValue))"
     }
   }
+}
 
-  private class func dataMigrationString(_ bootInfo: SimDeviceBootInfo) -> String? {
-    guard bootInfo.status == .waitingOnDataMigration else {
-      return nil
+extension SimDeviceBootInfo {
+
+  /// The boot's progress as it reads in a log line: the status and how long it has taken, plus the
+  /// migration detail when that is what it is waiting on.
+  var progressDescription: String {
+    let progress = "\(status.statusName) | Elapsed \(bootElapsedTime)"
+    guard status == .waitingOnDataMigration else {
+      return progress
     }
-    return "Migration Phase '\(bootInfo.migrationPhaseDescription ?? "")' | Migration Elapsed \(bootInfo.migrationElapsedTime)"
+    return "\(progress) | Migration Phase '\(migrationPhaseDescription ?? "")' | Migration Elapsed \(migrationElapsedTime)"
   }
 }
