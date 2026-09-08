@@ -56,19 +56,22 @@ public final class FBDeviceDebuggerCommands {
     guard let device else {
       return FBFutureContext(error: FBDeviceNilError.deviceNil)
     }
-    let mounted: FBFuture<FBDeveloperDiskImage> = fbFutureFromAsync {
-      try await device.ensureDeveloperDiskImageIsMounted()
+    // Mounting must complete before the debug server is reachable. The image itself is only needed to
+    // pick which service to start, so the future carries the resolved service name rather than the image.
+    let serviceName: FBFuture<NSString> = fbFutureFromAsync {
+      let diskImage = try await device.ensureDeveloperDiskImageIsMounted()
+      let name =
+        diskImage.xcodeVersion.majorVersion >= 12
+        ? "com.apple.debugserver.DVTSecureSocketProxy"
+        : "com.apple.debugserver"
+      return name as NSString
     }
     return
-      mounted
+      serviceName
       .onQueue(
         device.workQueue,
-        pushTeardown: { diskImage -> FBFutureContext<AnyObject> in
-          let serviceName =
-            diskImage.xcodeVersion.majorVersion >= 12
-            ? "com.apple.debugserver.DVTSecureSocketProxy"
-            : "com.apple.debugserver"
-          return device.startService(serviceName).retyped(FBFutureContext<AnyObject>.self)
+        pushTeardown: { serviceName -> FBFutureContext<AnyObject> in
+          device.startService(serviceName as String).retyped(FBFutureContext<AnyObject>.self)
         }
       ).retyped(FBFutureContext<FBAMDServiceConnection>.self)
   }

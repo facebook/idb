@@ -100,36 +100,32 @@ public struct InstalledDeveloperDiskImages: DeveloperDiskImageProviding {
   }
 }
 
-@objc(FBDeveloperDiskImage)
-public final class FBDeveloperDiskImage: NSObject, @unchecked Sendable {
+public struct FBDeveloperDiskImage: Sendable, CustomStringConvertible {
 
   // MARK: - Properties
 
-  @objc public let diskImagePath: String
-  @objc public let signature: Data
-  @objc public let version: OperatingSystemVersion
-  @objc public let xcodeVersion: OperatingSystemVersion
+  public let diskImagePath: String
+  public let signature: Data
+  public let version: OperatingSystemVersion
+  public let xcodeVersion: OperatingSystemVersion
 
   public init(diskImagePath: String, signature: Data, version: OperatingSystemVersion, xcodeVersion: OperatingSystemVersion) {
     self.diskImagePath = diskImagePath
     self.signature = signature
     self.version = version
     self.xcodeVersion = xcodeVersion
-    super.init()
   }
 
   // MARK: - Initializers
 
-  @objc(unknownDiskImageWithSignature:)
-  public class func unknownDiskImage(withSignature signature: Data) -> FBDeveloperDiskImage {
+  public static func unknownDiskImage(withSignature signature: Data) -> FBDeveloperDiskImage {
     let unknownVersion = OperatingSystemVersion(majorVersion: 0, minorVersion: 0, patchVersion: 0)
     return FBDeveloperDiskImage(diskImagePath: "unknown.dmg", signature: signature, version: unknownVersion, xcodeVersion: unknownVersion)
   }
 
   // MARK: - Public
 
-  @objc(pathForDeveloperSymbols:logger:error:)
-  public class func pathForDeveloperSymbols(_ buildVersion: String, logger: any FBControlCoreLogger) throws -> String {
+  public static func pathForDeveloperSymbols(_ buildVersion: String, logger: any FBControlCoreLogger) throws -> String {
     let searchPaths = [
       (NSHomeDirectory() as NSString).appendingPathComponent("Library/Developer/Xcode/iOS DeviceSupport"),
       (FBXcodeConfiguration.developerDirectory as NSString).appendingPathComponent("Platforms/iPhoneOS.platform/DeviceSupport"),
@@ -167,8 +163,7 @@ public final class FBDeveloperDiskImage: NSObject, @unchecked Sendable {
     throw FBDeveloperDiskImageError.symbolsNotFound(buildVersion: buildVersion, searched: paths)
   }
 
-  @objc(bestImageForImages:targetVersion:logger:error:)
-  public class func bestImage(forImages images: [FBDeveloperDiskImage], targetVersion: OperatingSystemVersion, logger: (any FBControlCoreLogger)?) throws -> FBDeveloperDiskImage {
+  public static func bestImage(forImages images: [FBDeveloperDiskImage], targetVersion: OperatingSystemVersion, logger: (any FBControlCoreLogger)?) throws -> FBDeveloperDiskImage {
     if images.isEmpty {
       throw FBDeveloperDiskImageError.noImagesProvided
     }
@@ -192,11 +187,11 @@ public final class FBDeveloperDiskImage: NSObject, @unchecked Sendable {
     throw FBDeveloperDiskImageError.noSuitableImage(bestDescription: String(describing: best), majorVersion: targetVersion.majorVersion, minorVersion: targetVersion.minorVersion)
   }
 
-  override public var description: String {
+  public var description: String {
     "\(diskImagePath): \(version.majorVersion).\(version.minorVersion)"
   }
 
-  @objc public func compare(_ other: FBDeveloperDiskImage) -> ComparisonResult {
+  public func compare(_ other: FBDeveloperDiskImage) -> ComparisonResult {
     var comparison = NSNumber(value: version.majorVersion).compare(NSNumber(value: other.version.majorVersion))
     if comparison != .orderedSame { return comparison }
     comparison = NSNumber(value: version.minorVersion).compare(NSNumber(value: other.version.minorVersion))
