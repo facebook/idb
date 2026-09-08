@@ -134,4 +134,61 @@ final class FBSimulatorAudioSettingsTests: XCTestCase {
   func testTheSettingsPathIsRelativeToTheDataDirectory() {
     XCTAssertEqual(FBSimulatorAudioSettings.relativePath, "var/run/simulatoraudio/audiosettings.plist")
   }
+
+  // MARK: - Publishing
+
+  // The notification carries an integer percentage, so the fraction has to survive the round trip
+  // through the same scale the reader divides back out.
+  func testTheVolumeIsPublishedAsAPercentage() throws {
+    XCTAssertEqual(try FBSimulatorAudioSettings.volumeNotificationState(for: 0), 0)
+    XCTAssertEqual(try FBSimulatorAudioSettings.volumeNotificationState(for: 0.35), 35)
+    XCTAssertEqual(try FBSimulatorAudioSettings.volumeNotificationState(for: 1), 100)
+  }
+
+  // A sixteenth is 6.25 points, which is not an integer percentage. Rounding rather than truncating
+  // keeps a read-modify-write of a button-produced level from drifting down a point each time.
+  func testAVolumeBetweenPercentagePointsRounds() throws {
+    XCTAssertEqual(try FBSimulatorAudioSettings.volumeNotificationState(for: 0.0625), 6)
+    XCTAssertEqual(try FBSimulatorAudioSettings.volumeNotificationState(for: 0.3125), 31)
+    XCTAssertEqual(try FBSimulatorAudioSettings.volumeNotificationState(for: 0.875), 88)
+  }
+
+  // Reading clamps because the guest reports its own state; writing refuses, so a caller's bad
+  // arithmetic surfaces instead of hiding behind a plausible readback.
+  func testAVolumeOutsideTheRangeIsRefusedRatherThanClamped() {
+    for volume in [-0.1, 1.1, Double.nan] {
+      XCTAssertThrowsError(try FBSimulatorAudioSettings.volumeNotificationState(for: volume)) { error in
+        guard case FBSimulatorAudioError.volumeOutOfRange = error else {
+          return XCTFail("expected volumeOutOfRange for \(volume), got \(error)")
+        }
+      }
+    }
+  }
+
+  // These name the keys SpringBoard publishes on and CoreSimulatorBridge listens to; a typo would
+  // silently write a state nothing reads.
+  func testTheNotificationNamesAreTheOnesSpringBoardPublishesOn() {
+    XCTAssertEqual(FBSimulatorAudioSettings.volumeNotificationName, "com.apple.springboard.volumestate")
+    XCTAssertEqual(FBSimulatorAudioSettings.ringerNotificationName, "com.apple.springboard.ringerstate")
+  }
+
+  // MARK: - Updates
+
+  // A nil field means "leave it alone" rather than "write the current value back", because each field
+  // is a separate notification and republishing one moves the guest's own bookkeeping for it.
+  func testAnUpdateCarriesOnlyTheFieldsItWasGiven() {
+    let volumeOnly = FBSimulatorAudioSettingsUpdate(volume: 0.5)
+    XCTAssertEqual(volumeOnly.volume, 0.5)
+    XCTAssertNil(volumeOnly.ringerEnabled)
+
+    let ringerOnly = FBSimulatorAudioSettingsUpdate(ringerEnabled: false)
+    XCTAssertNil(ringerOnly.volume)
+    XCTAssertEqual(ringerOnly.ringerEnabled, false)
+  }
+
+  func testAnUpdateWithNoFieldsIsEmpty() {
+    XCTAssertTrue(FBSimulatorAudioSettingsUpdate().isEmpty)
+    XCTAssertFalse(FBSimulatorAudioSettingsUpdate(volume: 0).isEmpty)
+    XCTAssertFalse(FBSimulatorAudioSettingsUpdate(ringerEnabled: true).isEmpty)
+  }
 }

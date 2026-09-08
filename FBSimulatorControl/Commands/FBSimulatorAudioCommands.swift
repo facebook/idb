@@ -35,6 +35,13 @@ public struct FBSimulatorAudioSettings: Equatable, Sendable {
   /// same file through its `SIMULATOR_AUDIO_SETTINGS_PATH` environment variable.
   public static let relativePath = "var/run/simulatoraudio/audiosettings.plist"
 
+  /// The Darwin notification carrying the volume, as an integer percentage. SpringBoard publishes it
+  /// on every button press and `CoreSimulatorBridge` mirrors it into `sim_volume`.
+  public static let volumeNotificationName = "com.apple.springboard.volumestate"
+
+  /// The Darwin notification carrying the ringer state, mirrored into `sim_ringer_state`.
+  public static let ringerNotificationName = "com.apple.springboard.ringerstate"
+
   /// The output volume, `0...1`. Stored in the file as an integer percentage; one hardware
   /// volume-button press moves it a sixteenth — 6.25 points — and the guest clamps at both ends.
   public let volume: Double
@@ -63,6 +70,18 @@ public struct FBSimulatorAudioSettings: Equatable, Sendable {
       ringerEnabled: (plist["sim_ringer_state"] as? NSNumber)?.boolValue ?? true)
   }
 
+  /// The value to publish on `volumeNotificationName` for `volume`.
+  ///
+  /// An out-of-range volume is an error rather than a clamp. Reading clamps, because the guest is
+  /// reporting its own state; writing does not, because a caller asking for 1.5 has a bug, and
+  /// quietly setting 1.0 would hide it behind a plausible-looking readback.
+  public static func volumeNotificationState(for volume: Double) throws -> UInt64 {
+    guard (0...1).contains(volume) else {
+      throw FBSimulatorAudioError.volumeOutOfRange(volume: volume)
+    }
+    return UInt64((volume * 100).rounded())
+  }
+
   /// Reads and parses the settings file at `path`.
   public static func settings(atPath path: String) throws -> FBSimulatorAudioSettings {
     let data: Data
@@ -79,6 +98,32 @@ public struct FBSimulatorAudioSettings: Equatable, Sendable {
   }
 }
 
+/**
+ A change to the simulated device's audio state.
+
+ Each field is published on its own Darwin notification, so a `nil` field is left alone rather than
+ written back at its current value — republishing a field the caller did not ask to change would move
+ the guest's own bookkeeping for it.
+ */
+public struct FBSimulatorAudioSettingsUpdate: Equatable, Sendable {
+
+  /// The output volume to move to, `0...1`, or `nil` to leave it alone.
+  public let volume: Double?
+
+  /// The ringer state to move to, or `nil` to leave it alone.
+  public let ringerEnabled: Bool?
+
+  public init(volume: Double? = nil, ringerEnabled: Bool? = nil) {
+    self.volume = volume
+    self.ringerEnabled = ringerEnabled
+  }
+
+  /// Whether the update carries no fields at all.
+  public var isEmpty: Bool {
+    volume == nil && ringerEnabled == nil
+  }
+}
+
 /// The failures of reading the simulated device's audio settings.
 public enum FBSimulatorAudioError: Error, LocalizedError {
   /// The simulator reported no data directory to look in.
@@ -90,6 +135,8 @@ public enum FBSimulatorAudioError: Error, LocalizedError {
   case malformed(path: String)
   /// The file parsed but carries no volume.
   case volumeMissing(keys: [String])
+  /// A volume outside `0...1` was asked for.
+  case volumeOutOfRange(volume: Double)
 
   public var errorDescription: String? {
     switch self {
@@ -103,6 +150,8 @@ public enum FBSimulatorAudioError: Error, LocalizedError {
     case let .volumeMissing(keys):
       let present = keys.isEmpty ? "none" : keys.joined(separator: ", ")
       return "The simulator's audio settings carry no sim_volume; keys present: \(present)"
+    case let .volumeOutOfRange(volume):
+      return "A volume of \(volume) is outside the permitted range of 0 to 1"
     }
   }
 }
@@ -121,5 +170,29 @@ extension FBSimulator: AudioCommands {
       throw FBSimulatorAudioError.noDataDirectory
     }
     return try FBSimulatorAudioSettings.settings(atPath: path)
+  }
+
+  /// Publishes the update on the Darwin notifications the guest owns, the same edge a hardware button
+  /// press drives.
+  ///
+  /// Writing the settings file directly would not do: `CoreSimulatorBridge` is its only writer, and a
+  /// guest app watches the *containing directory* for entry changes rather than the file itself, so
+  /// only the bridge's atomic replace makes an already-running app re-read it.
+  public func updateAudioSettings(_ update: FBSimulatorAudioSettingsUpdate) async throws {
+    if let volume = update.volume {
+      try publish(
+        state: try FBSimulatorAudioSettings.volumeNotificationState(for: volume),
+        on: FBSimulatorAudioSettings.volumeNotificationName)
+    }
+    if let ringerEnabled = update.ringerEnabled {
+      try publish(
+        state: ringerEnabled ? 1 : 0,
+        on: FBSimulatorAudioSettings.ringerNotificationName)
+    }
+  }
+
+  private func publish(state: UInt64, on notificationName: String) throws {
+    try device.darwinNotificationSetState(state, name: notificationName)
+    try device.postDarwinNotification(notificationName)
   }
 }
