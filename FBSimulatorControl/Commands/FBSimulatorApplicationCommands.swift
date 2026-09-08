@@ -67,6 +67,11 @@ extension FBSimulatorApplicationError: LocalizedError {
   }
 }
 
+enum FBSimulatorApplicationInstallAttempt {
+  case initial
+  case retry
+}
+
 public final class FBSimulatorApplicationCommands {
 
   internal weak var simulator: FBSimulator?
@@ -90,22 +95,17 @@ public final class FBSimulatorApplicationCommands {
     let appBundle = try await confirmCompatibilityOfApplication(atPath: path)
     let options: [String: Any] = ["CFBundleIdentifier": appBundle.identifier]
     let appURL = URL(fileURLWithPath: appBundle.path)
-    var installError: NSError?
-    do {
-      try simulator.device.installApplication(appURL, withOptions: options as [AnyHashable: Any])
-      return try await installedApplication(withBundleID: appBundle.identifier)
-    } catch {
-      installError = error as NSError
-    }
-
-    if let err = installError, err.description.contains("Failed to load Info.plist from bundle at path") {
-      simulator.logger.log("Retrying install due to reinstall bug")
-      if (try? simulator.device.installApplication(appURL, withOptions: options as [AnyHashable: Any])) != nil {
-        return try await installedApplication(withBundleID: appBundle.identifier)
-      }
-    }
-
-    throw FBSimulatorApplicationError.installFailed(bundleDescription: String(describing: appBundle), options: String(describing: options))
+    return try await Self.installAndResolveApplication(
+      install: { attempt in
+        if attempt == .retry {
+          simulator.logger.log("Retrying install due to reinstall bug")
+        }
+        try simulator.device.installApplication(appURL, withOptions: options as [AnyHashable: Any])
+      },
+      resolveInstalledApplication: { try await self.installedApplication(withBundleID: appBundle.identifier) },
+      installFailure: {
+        .installFailed(bundleDescription: String(describing: appBundle), options: String(describing: options))
+      })
   }
 
   internal func launchApplication(_ configuration: FBApplicationLaunchConfiguration) async throws -> FBLaunchedApplication {
@@ -207,6 +207,32 @@ public final class FBSimulatorApplicationCommands {
     let appInfo = try device.properties(ofApplication: bundleID)
     return try FBSimulatorApplicationCommands.installedApplication(fromInfo: appInfo)
   }
+
+  // MARK: - Install Helpers
+
+  static func installAndResolveApplication<T>(
+    install: (FBSimulatorApplicationInstallAttempt) async throws -> Void,
+    resolveInstalledApplication: () async throws -> T,
+    installFailure: () -> FBSimulatorApplicationError
+  ) async throws -> T {
+    do {
+      try await install(.initial)
+      return try await resolveInstalledApplication()
+    } catch {
+      guard (error as NSError).description.contains("Failed to load Info.plist from bundle at path") else {
+        throw installFailure()
+      }
+    }
+
+    do {
+      try await install(.retry)
+    } catch {
+      throw installFailure()
+    }
+    return try await resolveInstalledApplication()
+  }
+
+  // MARK: - Private
 
   private func ensureApplicationIsInstalled(_ bundleID: String) async throws {
     do {
