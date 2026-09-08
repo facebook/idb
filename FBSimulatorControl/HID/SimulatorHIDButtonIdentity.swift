@@ -16,7 +16,7 @@ internal import SimulatorApp
 /// case that cannot occur. Apple Pay has only a legacy source (it is a double side-button press, not a
 /// single HID usage); the Consumer-page buttons the legacy builder has no dedicated source for have
 /// only a usage; the rest have both.
-enum FBSimulatorHIDButtonIdentity {
+enum SimulatorHIDButtonIdentity {
 
   /// Only a legacy Indigo `ButtonEventSource`.
   case indigoSource(Int32)
@@ -50,7 +50,7 @@ extension FBSimulatorHIDButton {
 
   /// How this button is identified on the wire. Consumer-page usages are from the HID Usage Tables
   /// (page 0x0C); the legacy sources are the `ButtonEventSource` values in `Indigo.h`.
-  var identity: FBSimulatorHIDButtonIdentity {
+  var identity: SimulatorHIDButtonIdentity {
     switch self {
     case .applePay:
       // A double press of the side button, so there is no single HID usage for it.

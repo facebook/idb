@@ -13,12 +13,12 @@ import Foundation
 /**
  The HID abstraction layer for a Simulator.
 
- Touch, button, and keyboard events are delivered through a pluggable `FBSimulatorHIDTransport`
+ Touch, button, and keyboard events are delivered through a pluggable `SimulatorHIDTransport`
  (the legacy Indigo `SimDeviceLegacyHIDClient` path by default). The remaining event families are
  not transport-switchable and are sent directly from here:
 
  1. PurpleWorkspacePort — for GSEvent-based events (e.g., device orientation changes).
-    Payloads are constructed by `FBSimulatorPurpleHID` and sent via raw `mach_msg`.
+    Payloads are constructed by `SimulatorPurpleHID` and sent via raw `mach_msg`.
     Guest-side: `GraphicsServices._PurpleEventCallback` → backboardd.
 
  2. Darwin notifications — e.g. shake, in-call status bar — posted via the SimDevice.
@@ -32,11 +32,11 @@ public final class FBSimulatorHID: CustomStringConvertible, @unchecked Sendable 
   // MARK: - Properties
 
   /// The transport for the touch / button / keyboard primitives.
-  private let transport: FBSimulatorHIDTransport
+  private let transport: SimulatorHIDTransport
   /// The transport for GSEvents (orientation, lock).
-  private let purple: FBSimulatorPurpleHIDTransport
+  private let purple: SimulatorPurpleHIDTransport
   /// The transport for the Darwin-notification inputs (shake, in-call status bar).
-  private let notification: FBSimulatorDarwinNotificationTransport
+  private let notification: SimulatorDarwinNotificationTransport
 
   private weak var simulator: FBSimulator?
 
@@ -54,8 +54,8 @@ public final class FBSimulatorHID: CustomStringConvertible, @unchecked Sendable 
   ) async throws {
     self.init(
       transport: try await Self.transport(for: simulator, requested: transportType),
-      purple: FBSimulatorPurpleHIDTransport(simulator: simulator),
-      notification: FBSimulatorDarwinNotificationTransport(simulator: simulator),
+      purple: SimulatorPurpleHIDTransport(simulator: simulator),
+      notification: SimulatorDarwinNotificationTransport(simulator: simulator),
       simulator: simulator)
   }
 
@@ -65,7 +65,7 @@ public final class FBSimulatorHID: CustomStringConvertible, @unchecked Sendable 
   /// demand-launched, so the service lookup that builds the transport is the only probe.
   private static func transport(
     for simulator: FBSimulator, requested: FBSimulatorHIDTransportType?
-  ) async throws -> FBSimulatorHIDTransport {
+  ) async throws -> SimulatorHIDTransport {
     if let requested {
       return try await transport(requested, for: simulator)
     }
@@ -78,18 +78,18 @@ public final class FBSimulatorHID: CustomStringConvertible, @unchecked Sendable 
     } catch let error as FBSimulatorHIDError where error.isDTUHIDUnreachable {
       logger.log(
         "dtuhidd is unreachable (\(error.localizedDescription)), falling back to the legacy Indigo HID transport")
-      return .indigo(try FBSimulatorIndigoHIDTransport.indigo(for: simulator))
+      return .indigo(try SimulatorIndigoHIDTransport.indigo(for: simulator))
     }
   }
 
   private static func transport(
     _ type: FBSimulatorHIDTransportType, for simulator: FBSimulator
-  ) async throws -> FBSimulatorHIDTransport {
+  ) async throws -> SimulatorHIDTransport {
     switch type {
     case .indigo:
-      return .indigo(try FBSimulatorIndigoHIDTransport.indigo(for: simulator))
+      return .indigo(try SimulatorIndigoHIDTransport.indigo(for: simulator))
     case .dtuhid:
-      let dtuhid = try await FBSimulatorDTUHIDTransport.dtuhid(for: simulator)
+      let dtuhid = try await SimulatorDTUHIDTransport.dtuhid(for: simulator)
       guard let indigo = indigoAlongsideDTUHID(for: simulator) else {
         return .dtuhid(dtuhid)
       }
@@ -105,19 +105,19 @@ public final class FBSimulatorHID: CustomStringConvertible, @unchecked Sendable 
   ///
   /// Absent rather than fatal when it cannot be registered, since it carries the trackpad alone — a
   /// failure should cost a pan, not every other input on the target.
-  private static func indigoAlongsideDTUHID(for simulator: FBSimulator) -> FBSimulatorIndigoHIDTransport? {
+  private static func indigoAlongsideDTUHID(for simulator: FBSimulator) -> SimulatorIndigoHIDTransport? {
     guard simulator.productFamily == .familyAppleTV else {
       return nil
     }
-    return try? FBSimulatorIndigoHIDTransport.indigo(for: simulator)
+    return try? SimulatorIndigoHIDTransport.indigo(for: simulator)
   }
 
   /// `simulator` is weak and may be absent: the Purple and Darwin paths need it and throw
   /// `FBWeakTargetError.simulator` without one; the transport primitives never touch it.
   init(
-    transport: FBSimulatorHIDTransport,
-    purple: FBSimulatorPurpleHIDTransport,
-    notification: FBSimulatorDarwinNotificationTransport,
+    transport: SimulatorHIDTransport,
+    purple: SimulatorPurpleHIDTransport,
+    notification: SimulatorDarwinNotificationTransport,
     simulator: FBSimulator?
   ) {
     self.transport = transport

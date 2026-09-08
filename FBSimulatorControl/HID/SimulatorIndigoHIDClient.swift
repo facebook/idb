@@ -38,7 +38,7 @@ import Foundation
 
  Message sends are serialized onto the private `queue`, so the type is `@unchecked Sendable`.
  */
-final class FBSimulatorIndigoHIDClient: @unchecked Sendable {
+final class SimulatorIndigoHIDClient: @unchecked Sendable {
 
   private static let clientClassName = "SimulatorKit.SimDeviceLegacyHIDClient"
 
@@ -50,7 +50,7 @@ final class FBSimulatorIndigoHIDClient: @unchecked Sendable {
 
   /// Resolves the runtime-only `SimDeviceLegacyHIDClient` class, dlopening the Xcode frameworks that
   /// vend it first — `FBSimulatorControl` itself loads only the essential set (CoreSimulator), so
-  /// otherwise there is nothing for the lookup to find. Mirrors `FBSimulatorIndigoHID.init()`.
+  /// otherwise there is nothing for the lookup to find. Mirrors `SimulatorIndigoHID.init()`.
   static func resolveClientClass(
     loader: FBControlCoreFrameworkLoader = FBSimulatorControlFrameworkLoader.xcodeFrameworks
   ) throws -> FBObjCRuntimeClass {

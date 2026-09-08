@@ -8,7 +8,7 @@
 @testable import FBSimulatorControl
 import XCTest
 
-final class FBSimulatorPurpleHIDTests: XCTestCase {
+final class SimulatorPurpleHIDTests: XCTestCase {
 
   private func uint32(at offset: Int, in data: Data) -> UInt32 {
     data.withUnsafeBytes { buf -> UInt32 in
@@ -19,14 +19,14 @@ final class FBSimulatorPurpleHIDTests: XCTestCase {
   // MARK: - Tests
 
   func testOrientationEventSize() {
-    let purple = FBSimulatorPurpleHID()
+    let purple = SimulatorPurpleHID()
     let data = purple.orientationEvent(.portrait)
     XCTAssertEqual(data.count, 112, "Buffer should be 112 bytes (aligned to 8)")
     XCTAssertEqual(uint32(at: 0x04, in: data), 108, "msgh_size should be 108")
   }
 
   func testOrientationEventMachHeader() {
-    let purple = FBSimulatorPurpleHID()
+    let purple = SimulatorPurpleHID()
     let data = purple.orientationEvent(.portrait)
 
     // msgh_bits = MACH_MSGH_BITS(MACH_MSG_TYPE_COPY_SEND, 0) = 0x13
@@ -40,7 +40,7 @@ final class FBSimulatorPurpleHIDTests: XCTestCase {
   }
 
   func testOrientationEventPortrait() {
-    let purple = FBSimulatorPurpleHID()
+    let purple = SimulatorPurpleHID()
     let data = purple.orientationEvent(.portrait)
 
     // GSEvent type at offset 0x18 = 50 | 0x20000 = 0x20032
@@ -52,22 +52,22 @@ final class FBSimulatorPurpleHIDTests: XCTestCase {
   }
 
   func testOrientationEventPortraitUpsideDown() {
-    let data = FBSimulatorPurpleHID().orientationEvent(.portraitUpsideDown)
+    let data = SimulatorPurpleHID().orientationEvent(.portraitUpsideDown)
     XCTAssertEqual(uint32(at: 0x4C, in: data), 2)
   }
 
   func testOrientationEventLandscapeRight() {
-    let data = FBSimulatorPurpleHID().orientationEvent(.landscapeRight)
+    let data = SimulatorPurpleHID().orientationEvent(.landscapeRight)
     XCTAssertEqual(uint32(at: 0x4C, in: data), 3)
   }
 
   func testOrientationEventLandscapeLeft() {
-    let data = FBSimulatorPurpleHID().orientationEvent(.landscapeLeft)
+    let data = SimulatorPurpleHID().orientationEvent(.landscapeLeft)
     XCTAssertEqual(uint32(at: 0x4C, in: data), 4)
   }
 
   func testOrientationEventZeroedBody() {
-    let data = FBSimulatorPurpleHID().orientationEvent(.portrait)
+    let data = SimulatorPurpleHID().orientationEvent(.portrait)
 
     // GSEvent body from offset 0x1C to 0x47 (44 bytes) should be zeroed
     data.withUnsafeBytes { (buf: UnsafeRawBufferPointer) in
@@ -81,13 +81,13 @@ final class FBSimulatorPurpleHIDTests: XCTestCase {
   // MARK: - Lock Device
 
   func testLockDeviceEventSize() {
-    let data = FBSimulatorPurpleHID().lockDeviceEvent()
+    let data = SimulatorPurpleHID().lockDeviceEvent()
     XCTAssertEqual(data.count, 112, "Buffer should be 112 bytes (aligned to 8)")
     XCTAssertEqual(uint32(at: 0x04, in: data), 108, "msgh_size should be 108")
   }
 
   func testLockDeviceEventMachHeader() {
-    let data = FBSimulatorPurpleHID().lockDeviceEvent()
+    let data = SimulatorPurpleHID().lockDeviceEvent()
 
     // msgh_bits = MACH_MSGH_BITS(MACH_MSG_TYPE_COPY_SEND, 0) = 0x13
     XCTAssertEqual(uint32(at: 0x00, in: data), 0x13)
@@ -100,7 +100,7 @@ final class FBSimulatorPurpleHIDTests: XCTestCase {
   }
 
   func testLockDeviceEventType() {
-    let data = FBSimulatorPurpleHID().lockDeviceEvent()
+    let data = SimulatorPurpleHID().lockDeviceEvent()
 
     // GSEvent type at offset 0x18 = 1014 | 0x20000 = 0x203F6
     XCTAssertEqual(uint32(at: 0x18, in: data), 0x203F6)
@@ -109,7 +109,7 @@ final class FBSimulatorPurpleHIDTests: XCTestCase {
   }
 
   func testLockDeviceEventZeroedBody() {
-    let data = FBSimulatorPurpleHID().lockDeviceEvent()
+    let data = SimulatorPurpleHID().lockDeviceEvent()
 
     // Everything after the GSEvent type word (0x1C..end) carries no payload and should be zeroed.
     data.withUnsafeBytes { (buf: UnsafeRawBufferPointer) in

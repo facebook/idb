@@ -12,7 +12,7 @@ import Foundation
 internal import SimulatorApp
 
 /// Translates FBSimulatorHID events into Indigo structs.
-final class FBSimulatorIndigoHID {
+final class SimulatorIndigoHID {
 
   // The SimulatorKit `IndigoHIDMessageFor*` functions, resolved at runtime via dlsym.
   private typealias MessageForButtonFn = @convention(c) (Int32, Int32, Int32) -> UnsafeMutablePointer<IndigoMessage>
@@ -83,7 +83,7 @@ final class FBSimulatorIndigoHID {
   /// A keyboard event. The keycodes are 'Hardware Independent' as described in `<HIToolbox/Events.h>`.
   func keyboard(with direction: FBSimulatorHIDDirection, keyCode: UInt32) -> Data {
     let message = messageForKeyboardArbitrary(Int32(bitPattern: keyCode), direction.rawValue)
-    return FBSimulatorIndigoHID.data(fromMallocedMessage: message)
+    return SimulatorIndigoHID.data(fromMallocedMessage: message)
   }
 
   /// A button event. A button with a dedicated legacy `ButtonEventSource` goes through the sourced
@@ -93,7 +93,7 @@ final class FBSimulatorIndigoHID {
     switch button.identity {
     case let .indigoSource(source), let .indigoSourceAndConsumerUsage(source, _, _):
       let message = messageForButton(source, direction.rawValue, Int32(ButtonEventTargetHardware))
-      return FBSimulatorIndigoHID.data(fromMallocedMessage: message)
+      return SimulatorIndigoHID.data(fromMallocedMessage: message)
     case let .consumerUsage(page, code):
       return hidArbitrary(page: page, usage: code, direction: direction)
     }
@@ -109,7 +109,7 @@ final class FBSimulatorIndigoHID {
   func hidArbitrary(page: UInt16, usage: UInt16, direction: FBSimulatorHIDDirection) -> Data {
     let message = messageForHIDArbitrary(
       Int32(ButtonEventTargetDigitizer), UInt32(page), UInt32(usage), direction.rawValue)
-    return FBSimulatorIndigoHID.data(fromMallocedMessage: message)
+    return SimulatorIndigoHID.data(fromMallocedMessage: message)
   }
 
   /// The HID service target the mouse/touch builder addresses.
@@ -148,8 +148,8 @@ final class FBSimulatorIndigoHID {
   /// (IOHIDDigitizerEventMask: Range 0x1 | Touch 0x2 | Position 0x4 | Identity 0x20), `range`, and
   /// `touch`; the builder defaults to a Position/touch-down "changed" contact.
   func trackpad(point: CGPoint, phase: FBSimulatorTrackpadPhase) throws -> Data {
-    let message = messageForTrackpadMoveEvent(point, FBSimulatorIndigoHID.trackpadTarget)
-    let secondary = FBSimulatorIndigoHID.payload(at: FBSimulatorIndigoHID.secondPayloadWireOffset, of: message)
+    let message = messageForTrackpadMoveEvent(point, SimulatorIndigoHID.trackpadTarget)
+    let secondary = SimulatorIndigoHID.payload(at: SimulatorIndigoHID.secondPayloadWireOffset, of: message)
     switch phase {
     case .began:
       message.pointee.payload.event.touch.eventMask = 0x23 // Range|Touch|Identity
@@ -164,7 +164,7 @@ final class FBSimulatorIndigoHID {
       secondary.pointee.event.touch.range = 0
       secondary.pointee.event.touch.touch = 0
     }
-    return FBSimulatorIndigoHID.data(fromMallocedMessage: message)
+    return SimulatorIndigoHID.data(fromMallocedMessage: message)
   }
 
   /// A single-finger touch event. `x`/`y` are in points; `screenSize` is in pixels. `edge` tags the
@@ -173,7 +173,7 @@ final class FBSimulatorIndigoHID {
     _ screenSize: CGSize, screenScale: Float, direction: FBSimulatorHIDDirection, x: Double, y: Double,
     edge: FBSimulatorHIDEdge = .none
   ) -> Data {
-    let point = FBSimulatorIndigoHID.screenRatio(from: CGPoint(x: x, y: y), screenSize: screenSize, screenScale: screenScale)
+    let point = SimulatorIndigoHID.screenRatio(from: CGPoint(x: x, y: y), screenSize: screenSize, screenScale: screenScale)
     return touchMessage(point: point, direction: direction, edge: edge)
   }
 
@@ -181,28 +181,28 @@ final class FBSimulatorIndigoHID {
   func twoFingerTouchScreenSize(
     _ screenSize: CGSize, screenScale: Float, direction: FBSimulatorHIDDirection, finger1: CGPoint, finger2: CGPoint
   ) -> Data {
-    var ratio1 = FBSimulatorIndigoHID.screenRatio(from: finger1, screenSize: screenSize, screenScale: screenScale)
-    var ratio2 = FBSimulatorIndigoHID.screenRatio(from: finger2, screenSize: screenSize, screenScale: screenScale)
+    var ratio1 = SimulatorIndigoHID.screenRatio(from: finger1, screenSize: screenSize, screenScale: screenScale)
+    var ratio2 = SimulatorIndigoHID.screenRatio(from: finger2, screenSize: screenSize, screenScale: screenScale)
 
     // Passing a non-NULL second point makes IndigoHIDMessageForMouseNSEvent produce a 3-payload message
     // with eventType=0x03 (multi-touch) instead of 0x02 (single-touch).
     let message = messageForMouseNSEvent(
-      &ratio1, &ratio2, FBSimulatorIndigoHID.mouseTarget, UInt(direction.indigoEventType),
-      FBSimulatorIndigoHID.unitScreenSize, FBSimulatorIndigoHID.noEdge)
+      &ratio1, &ratio2, SimulatorIndigoHID.mouseTarget, UInt(direction.indigoEventType),
+      SimulatorIndigoHID.unitScreenSize, SimulatorIndigoHID.noEdge)
 
     // Patch each contact's xRatio/yRatio rather than trusting the builder's own normalization to reach
     // all three. Finger 1 is the primary contact, the digitizer summary (payload 2) mirrors it, and
     // finger 2 is payload 3.
     message.pointee.payload.event.touch.xRatio = ratio1.x
     message.pointee.payload.event.touch.yRatio = ratio1.y
-    let digitizer = FBSimulatorIndigoHID.payload(at: FBSimulatorIndigoHID.secondPayloadWireOffset, of: message)
+    let digitizer = SimulatorIndigoHID.payload(at: SimulatorIndigoHID.secondPayloadWireOffset, of: message)
     digitizer.pointee.event.touch.xRatio = ratio1.x
     digitizer.pointee.event.touch.yRatio = ratio1.y
-    let finger2Payload = FBSimulatorIndigoHID.payload(at: FBSimulatorIndigoHID.thirdPayloadWireOffset, of: message)
+    let finger2Payload = SimulatorIndigoHID.payload(at: SimulatorIndigoHID.thirdPayloadWireOffset, of: message)
     finger2Payload.pointee.event.touch.xRatio = ratio2.x
     finger2Payload.pointee.event.touch.yRatio = ratio2.y
 
-    return FBSimulatorIndigoHID.data(fromMallocedMessage: message)
+    return SimulatorIndigoHID.data(fromMallocedMessage: message)
   }
 
   // MARK: - Event Generation
@@ -213,8 +213,8 @@ final class FBSimulatorIndigoHID {
     // multi-touch (eventType 0x03) message. So source a valid touch-down IndigoTouch from it, then
     // hand-envelope it as a single-touch (eventType 0x02) two-payload message.
     let source = messageForMouseNSEvent(
-      &point, nil, FBSimulatorIndigoHID.mouseTarget, UInt(direction.indigoEventType),
-      FBSimulatorIndigoHID.unitScreenSize, edge.rawValue)
+      &point, nil, SimulatorIndigoHID.mouseTarget, UInt(direction.indigoEventType),
+      SimulatorIndigoHID.unitScreenSize, edge.rawValue)
     source.pointee.payload.event.touch.xRatio = point.x
     source.pointee.payload.event.touch.yRatio = point.y
     let sourceBytes = UnsafeMutableRawPointer(source)
@@ -240,7 +240,7 @@ final class FBSimulatorIndigoHID {
     // stride (0x90), so the second payload sits at 0xB0 — not the 0xC0 wire offset of the
     // SimulatorKit-built messages.
     memcpy(destination.advanced(by: 0x20 + stride), destination.advanced(by: 0x20), stride)
-    let secondPayload = FBSimulatorIndigoHID.payload(at: 0x20 + stride, of: message)
+    let secondPayload = SimulatorIndigoHID.payload(at: 0x20 + stride, of: message)
     secondPayload.pointee.event.touch.field1 = 1
     secondPayload.pointee.event.touch.field2 = 2
 

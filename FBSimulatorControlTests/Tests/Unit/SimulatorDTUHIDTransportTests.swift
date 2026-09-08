@@ -10,7 +10,7 @@ import CoreGraphics
 import XCTest
 import XPC
 
-final class FBSimulatorDTUHIDTransportTests: XCTestCase {
+final class SimulatorDTUHIDTransportTests: XCTestCase {
 
   // MARK: - Wire encoding (model + XPCEncoder, no connection needed)
 
@@ -20,7 +20,7 @@ final class FBSimulatorDTUHIDTransportTests: XCTestCase {
 
     XCTAssertEqual(xpc_get_type(event), XPC_TYPE_DICTIONARY)
     XCTAssertEqual(messageString(event, "messageType"), "IndigoDigitizerEvent")
-    XCTAssertEqual(messageString(event, "featureIdentifier"), FBSimulatorDTUHIDTransport.digitizerServiceName)
+    XCTAssertEqual(messageString(event, "featureIdentifier"), SimulatorDTUHIDTransport.digitizerServiceName)
 
     // isBarrier must be an XPC bool, false.
     XCTAssertEqual(xpc_get_type(xpc_dictionary_get_value(event, "isBarrier")!), XPC_TYPE_BOOL)
@@ -103,7 +103,7 @@ final class FBSimulatorDTUHIDTransportTests: XCTestCase {
     let connection = xpc_connection_create("com.facebook.fbsimulatorcontrol.test.dtuhid", nil)
     xpc_connection_set_event_handler(connection) { _ in }
     xpc_connection_resume(connection)
-    let transport = FBSimulatorDTUHIDTransport(
+    let transport = SimulatorDTUHIDTransport(
       connection: connection,
       mainScreenSize: CGSize(width: 100, height: 200),
       mainScreenScale: 2.0,
@@ -118,7 +118,7 @@ final class FBSimulatorDTUHIDTransportTests: XCTestCase {
     let connection = xpc_connection_create("com.facebook.fbsimulatorcontrol.test.dtuhid", nil)
     xpc_connection_set_event_handler(connection) { _ in }
     xpc_connection_resume(connection)
-    let transport = FBSimulatorDTUHIDTransport(
+    let transport = SimulatorDTUHIDTransport(
       connection: connection,
       mainScreenSize: CGSize(width: 100, height: 200),
       mainScreenScale: 2.0,
@@ -170,7 +170,7 @@ final class FBSimulatorDTUHIDTransportTests: XCTestCase {
     let down = try encodeButton(IndigoButtonEvent(usagePage: 0x0C, usageCode: 0x40, state: .down))
     XCTAssertEqual(xpc_get_type(down), XPC_TYPE_DICTIONARY)
     XCTAssertEqual(messageString(down, "messageType"), "IndigoButtonEvent")
-    XCTAssertEqual(messageString(down, "featureIdentifier"), FBSimulatorDTUHIDTransport.digitizerServiceName)
+    XCTAssertEqual(messageString(down, "featureIdentifier"), SimulatorDTUHIDTransport.digitizerServiceName)
 
     let payload = xpc_dictionary_get_dictionary(down, "payload")!
     for key in ["usagePage", "usageCode", "state"] {
@@ -193,7 +193,7 @@ final class FBSimulatorDTUHIDTransportTests: XCTestCase {
     let connection = xpc_connection_create("com.facebook.fbsimulatorcontrol.test.dtuhid", nil)
     xpc_connection_set_event_handler(connection) { _ in }
     xpc_connection_resume(connection)
-    let transport = FBSimulatorDTUHIDTransport(
+    let transport = SimulatorDTUHIDTransport(
       connection: connection,
       mainScreenSize: CGSize(width: 100, height: 200),
       mainScreenScale: 2.0,
@@ -204,7 +204,7 @@ final class FBSimulatorDTUHIDTransportTests: XCTestCase {
 
     XCTAssertEqual(xpc_get_type(message), XPC_TYPE_DICTIONARY)
     XCTAssertEqual(messageString(message, "messageType"), "Probe")
-    XCTAssertEqual(messageString(message, "featureIdentifier"), FBSimulatorDTUHIDTransport.digitizerServiceName)
+    XCTAssertEqual(messageString(message, "featureIdentifier"), SimulatorDTUHIDTransport.digitizerServiceName)
     XCTAssertEqual(xpc_get_type(xpc_dictionary_get_value(message, "isBarrier")!), XPC_TYPE_BOOL)
     XCTAssertFalse(xpc_dictionary_get_bool(message, "isBarrier"))
     let payload = xpc_dictionary_get_dictionary(message, "payload")
@@ -218,7 +218,7 @@ final class FBSimulatorDTUHIDTransportTests: XCTestCase {
     let down = try encodeKeyboard(IndigoKeyboardButtonEvent(usageCode: 4, state: .down)) // 'a'
     XCTAssertEqual(xpc_get_type(down), XPC_TYPE_DICTIONARY)
     XCTAssertEqual(messageString(down, "messageType"), "IndigoKeyboardButtonEvent")
-    XCTAssertEqual(messageString(down, "featureIdentifier"), FBSimulatorDTUHIDTransport.digitizerServiceName)
+    XCTAssertEqual(messageString(down, "featureIdentifier"), SimulatorDTUHIDTransport.digitizerServiceName)
 
     let payload = xpc_dictionary_get_dictionary(down, "payload")!
     XCTAssertEqual(xpc_get_type(xpc_dictionary_get_value(payload, "usageCode")!), XPC_TYPE_UINT64)
@@ -243,7 +243,7 @@ final class FBSimulatorDTUHIDTransportTests: XCTestCase {
     try XPCEncoder().encode(
       DTUHIDMessage(
         messageType: "IndigoDigitizerEvent",
-        featureIdentifier: FBSimulatorDTUHIDTransport.digitizerServiceName,
+        featureIdentifier: SimulatorDTUHIDTransport.digitizerServiceName,
         payload: event))
   }
 
@@ -251,7 +251,7 @@ final class FBSimulatorDTUHIDTransportTests: XCTestCase {
     try XPCEncoder().encode(
       DTUHIDMessage(
         messageType: "IndigoKeyboardButtonEvent",
-        featureIdentifier: FBSimulatorDTUHIDTransport.digitizerServiceName,
+        featureIdentifier: SimulatorDTUHIDTransport.digitizerServiceName,
         payload: event))
   }
 
@@ -259,7 +259,7 @@ final class FBSimulatorDTUHIDTransportTests: XCTestCase {
     try XPCEncoder().encode(
       DTUHIDMessage(
         messageType: "IndigoButtonEvent",
-        featureIdentifier: FBSimulatorDTUHIDTransport.digitizerServiceName,
+        featureIdentifier: SimulatorDTUHIDTransport.digitizerServiceName,
         payload: event))
   }
 

@@ -13,19 +13,19 @@ import Foundation
 /**
  The default HID transport (IndigoHIDRegistrationPort).
 
- Builds `IndigoMessage` payloads with `FBSimulatorIndigoHID` and delivers them through the runtime-only
- `SimDeviceLegacyHIDClient` (owned by `FBSimulatorIndigoHIDClient`). Guest-side:
+ Builds `IndigoMessage` payloads with `SimulatorIndigoHID` and delivers them through the runtime-only
+ `SimDeviceLegacyHIDClient` (owned by `SimulatorIndigoHIDClient`). Guest-side:
  `SimHIDVirtualServiceManager` dispatches on eventKind + target. See `Indigo.h` for wire format.
 
  An `actor`, so sends are serialized by actor isolation (no `@unchecked Sendable`).
  */
-actor FBSimulatorIndigoHIDTransport {
+actor SimulatorIndigoHIDTransport {
 
   /// Delivers the built Indigo message bytes to the simulator. `Sendable`, so `disconnect()` can
   /// reach it from a `nonisolated` context.
-  private let indigoClient: FBSimulatorIndigoHIDClient
+  private let indigoClient: SimulatorIndigoHIDClient
   /// The Indigo payload builder (touch, button, keyboard).
-  private let indigo: FBSimulatorIndigoHID
+  private let indigo: SimulatorIndigoHID
   /// The dimensions of the main screen.
   private let mainScreenSize: CGSize
   /// The scale of the main screen.
@@ -41,10 +41,10 @@ actor FBSimulatorIndigoHIDTransport {
   /// Creates a transport for the provided Simulator, registering a HID client.
   /// Will fail if a HID Port could not be registered for the provided Simulator.
   /// Registration may need to occur prior to booting.
-  static func indigo(for simulator: FBSimulator) throws -> FBSimulatorIndigoHIDTransport {
-    FBSimulatorIndigoHIDTransport(
-      indigoClient: try FBSimulatorIndigoHIDClient(for: simulator.device),
-      indigo: try FBSimulatorIndigoHID(),
+  static func indigo(for simulator: FBSimulator) throws -> SimulatorIndigoHIDTransport {
+    SimulatorIndigoHIDTransport(
+      indigoClient: try SimulatorIndigoHIDClient(for: simulator.device),
+      indigo: try SimulatorIndigoHID(),
       mainScreenSize: simulator.device.deviceType.mainScreenSize,
       mainScreenScale: simulator.device.deviceType.mainScreenScale,
       legacyKeyboardSuppressed: simulator.isLegacyKeyboardSuppressed,
@@ -52,8 +52,8 @@ actor FBSimulatorIndigoHIDTransport {
   }
 
   init(
-    indigoClient: FBSimulatorIndigoHIDClient,
-    indigo: FBSimulatorIndigoHID,
+    indigoClient: SimulatorIndigoHIDClient,
+    indigo: SimulatorIndigoHID,
     mainScreenSize: CGSize,
     mainScreenScale: Float,
     legacyKeyboardSuppressed: Bool,

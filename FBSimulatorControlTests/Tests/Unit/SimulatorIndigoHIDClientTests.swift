@@ -110,7 +110,7 @@ private final class SendOutcome: @unchecked Sendable {
 }
 
 @Suite("Legacy Indigo HID client")
-struct FBSimulatorIndigoHIDClientTests {
+struct SimulatorIndigoHIDClientTests {
 
   @Test("An initializer that raises surfaces the raise as a client creation failure")
   func clientInitializerRaises() throws {
@@ -122,7 +122,7 @@ struct FBSimulatorIndigoHIDClientTests {
       // aborting the whole test process instead of failing this test.
       try FBObjCExceptionGuard.run {
         do {
-          _ = try FBSimulatorIndigoHIDClient(device: NSObject(), clientClass: clientClass)
+          _ = try SimulatorIndigoHIDClient(device: NSObject(), clientClass: clientClass)
         } catch {
           thrown = error
         }
@@ -151,7 +151,7 @@ struct FBSimulatorIndigoHIDClientTests {
   func clientInitializerReturnsNil() throws {
     let clientClass = FBObjCRuntimeClass(NilReturningLegacyHIDClientStub.self)
     let error = try #require(throws: FBSimulatorHIDError.self) {
-      _ = try FBSimulatorIndigoHIDClient(device: NSObject(), clientClass: clientClass)
+      _ = try SimulatorIndigoHIDClient(device: NSObject(), clientClass: clientClass)
     }
     guard case let .clientCreationFailed(className, underlying) = error else {
       Issue.record("Expected clientCreationFailed, got \(error)")
@@ -163,7 +163,7 @@ struct FBSimulatorIndigoHIDClientTests {
 
   @Test("A send the client reports as failed throws to the caller")
   func sendReportsClientFailure() async throws {
-    let client = try FBSimulatorIndigoHIDClient(
+    let client = try SimulatorIndigoHIDClient(
       device: NSObject(), clientClass: FBObjCRuntimeClass(FailingSendLegacyHIDClientStub.self))
     let error = try await #require(throws: (any Error).self) {
       try await client.send(Data([0x01, 0x02]))
@@ -173,7 +173,7 @@ struct FBSimulatorIndigoHIDClientTests {
 
   @Test("A send whose client raises throws the raise to the caller")
   func sendRaises() async throws {
-    let client = try FBSimulatorIndigoHIDClient(
+    let client = try SimulatorIndigoHIDClient(
       device: NSObject(), clientClass: FBObjCRuntimeClass(RaisingSendLegacyHIDClientStub.self))
     // The send runs on the client's own queue, so nothing here can wrap it: an unguarded raise
     // aborts the test process rather than failing this test.
@@ -186,7 +186,7 @@ struct FBSimulatorIndigoHIDClientTests {
 
   @Test("A send after the client is disconnected comes back to the caller")
   func sendAfterDisconnect() async throws {
-    let client = try FBSimulatorIndigoHIDClient(
+    let client = try SimulatorIndigoHIDClient(
       device: NSObject(), clientClass: FBObjCRuntimeClass(FailingSendLegacyHIDClientStub.self))
     client.disconnect()
 

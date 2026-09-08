@@ -16,8 +16,8 @@ import Foundation
 /// Deliberately not a probe of whether `dtuhidd` is *resident*: it is a demand-launched,
 /// pressured-exit job, so it is normally not running even on a simulator that routes all HID through
 /// it. This decides only what to *prefer*; whether `dtuhidd` can actually be reached is settled where
-/// it is observable, by `FBSimulatorDTUHIDTransport.dtuhid(for:)` looking the service up.
-enum FBSimulatorHIDTransportSelection {
+/// it is observable, by `SimulatorDTUHIDTransport.dtuhid(for:)` looking the service up.
+enum SimulatorHIDTransportSelection {
 
   /// The first CoreSimulator version to inject `dtuhidd` into the guest. Older toolchains have no
   /// DTUHID transport at all.
@@ -61,7 +61,7 @@ extension FBSimulator {
   /// `com.apple.coredevice.dtuhidd.active` is not host-bridged, so this follows the CoreSimulator
   /// version rather than trying to observe the guest.
   var isLegacyKeyboardSuppressed: Bool {
-    FBSimulatorHIDTransportSelection.isLegacyKeyboardSuppressed(
+    SimulatorHIDTransportSelection.isLegacyKeyboardSuppressed(
       coreSimulatorVersion: FBSimulatorControlFrameworkLoader.loadedCoreSimulatorVersion)
   }
 
@@ -69,7 +69,7 @@ extension FBSimulator {
   /// `dtuhidd`, the legacy Indigo path otherwise. A preference, not a guarantee — `FBSimulatorHID`
   /// falls back to Indigo if `dtuhidd` turns out to be unreachable.
   var defaultHIDTransport: FBSimulatorHIDTransportType {
-    FBSimulatorHIDTransportSelection.defaultTransport(
+    SimulatorHIDTransportSelection.defaultTransport(
       coreSimulatorVersion: FBSimulatorControlFrameworkLoader.loadedCoreSimulatorVersion)
   }
 }

@@ -47,7 +47,7 @@ typedef struct {
  The eventMask/range/touch fields carry the digitizer phase. The tvOS Siri Remote trackpad
  (IndigoHIDMessageForTrackpadMoveEvent(point, target); target 0x16 = the dedicated trackpad service,
  NOT the screenID|0x40000000 screen target) builds a Position/touch-down "changed" contact, and its
- phase is expressed by setting these fields (see FBSimulatorIndigoHID.trackpad(point:phase:)). That
+ phase is expressed by setting these fields (see SimulatorIndigoHID.trackpad(point:phase:)). That
  builder emits a two-IndigoPayload message: this contact plus a repeated one in the IndigoPayload at
  the 0xC0 wire offset, the same layout the multi-touch builder uses.
 
@@ -55,7 +55,7 @@ typedef struct {
  observed value is noted inline.
  */
 typedef struct {
-  unsigned int field1; // 0x20 + 0x10 + 0x0 = 0x30  observed 0x400002; FBSimulatorIndigoHID.touchMessage marks the duplicated 2nd contact field1=1
+  unsigned int field1; // 0x20 + 0x10 + 0x0 = 0x30  observed 0x400002; SimulatorIndigoHID.touchMessage marks the duplicated 2nd contact field1=1
   unsigned int field2; // 0x20 + 0x10 + 0x4 = 0x34  observed 0x1; touchMessage marks the duplicated 2nd contact field2=2
   unsigned int eventMask; // 0x20 + 0x10 + 0x8 = 0x38  IOHIDDigitizerEventMask: Range 0x1 | Touch 0x2 | Position 0x4 | Identity 0x20
   double xRatio; // 0x20 + 0x10 + 0xc = 0x3c
@@ -256,7 +256,7 @@ typedef struct {
  Multi-payload messages built by SimulatorKit (multi-touch, trackpad) append further IndigoPayloads
  at the 0xA0 wire stride — payload 2 at 0xC0, payload 3 at 0x160. That stride is larger than
  sizeof(IndigoPayload) as Swift computes it (0x90, the packed-union under-count), so the hand-built
- single-touch message (FBSimulatorIndigoHID.touchMessage) — which uses the Swift stride — instead
+ single-touch message (SimulatorIndigoHID.touchMessage) — which uses the Swift stride — instead
  places its second payload at 0xB0.
  */
 typedef struct {

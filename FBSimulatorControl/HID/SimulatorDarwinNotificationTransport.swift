@@ -21,7 +21,7 @@ import Foundation
  SAFETY: holds only an immutable weak reference to the target and posts through it.
  */
 // patternlint-disable-next-line unchecked-sendable
-final class FBSimulatorDarwinNotificationTransport: @unchecked Sendable {
+final class SimulatorDarwinNotificationTransport: @unchecked Sendable {
 
   private static let shake = "com.apple.UIKit.SimulatorShake"
   private static let inCallStatusBar = "com.apple.iphonesimulator.toggleincallstatusbar"

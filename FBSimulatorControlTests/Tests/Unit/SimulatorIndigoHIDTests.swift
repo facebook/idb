@@ -7,7 +7,7 @@
 
 import FBControlCore
 @testable import FBSimulatorControl
-// Matches the existing XCTest-based FBSimulatorControl unit suite (FBSimulatorPurpleHIDTests et al.).
+// Matches the existing XCTest-based FBSimulatorControl unit suite (SimulatorPurpleHIDTests et al.).
 // ast-grep-ignore: swift-testing/swift/no-new-xctest
 import XCTest
 
@@ -23,14 +23,14 @@ private final class RecordingFrameworkLoader: FBControlCoreFrameworkLoader {
   }
 }
 
-/// Byte-level coverage of the Indigo payloads produced by `FBSimulatorIndigoHID`, plus the
+/// Byte-level coverage of the Indigo payloads produced by `SimulatorIndigoHID`, plus the
 /// resolution of the runtime-only client class that carries them.
 /// Offsets are taken from `Source/PrivateHeaders/SimulatorApp/Indigo.h`.
-final class FBSimulatorIndigoHIDTests: XCTestCase {
+final class SimulatorIndigoHIDTests: XCTestCase {
 
   override func setUpWithError() throws {
     try super.setUpWithError()
-    // FBSimulatorIndigoHID() dlopens SimulatorKit. Pre-load the private
+    // SimulatorIndigoHID() dlopens SimulatorKit. Pre-load the private
     // frameworks with the default logger (CoreSimulator, then SimulatorKit) so that the
     // builder's internal load is a no-op — its nil-logger load path would otherwise crash
     // when it is the first loader call in a bare unit-test process. The loads are memoized,
@@ -41,8 +41,8 @@ final class FBSimulatorIndigoHIDTests: XCTestCase {
 
   // MARK: - Helpers
 
-  private func makeIndigo() throws -> FBSimulatorIndigoHID {
-    try FBSimulatorIndigoHID()
+  private func makeIndigo() throws -> SimulatorIndigoHID {
+    try SimulatorIndigoHID()
   }
 
   private func uint8(at offset: Int, in data: Data) -> UInt8 {
@@ -372,7 +372,7 @@ final class FBSimulatorIndigoHIDTests: XCTestCase {
     let loader = RecordingFrameworkLoader(name: "SimulatorKit", frameworks: [])
     // `try?`: the class itself has relocated across Xcodes, so whether the lookup succeeds on the
     // host running this test is beside the point — what is pinned is the loading, not the result.
-    _ = try? FBSimulatorIndigoHIDClient.resolveClientClass(loader: loader)
+    _ = try? SimulatorIndigoHIDClient.resolveClientClass(loader: loader)
     XCTAssertEqual(loader.loadCount, 1)
   }
 

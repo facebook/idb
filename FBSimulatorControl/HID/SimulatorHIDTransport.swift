@@ -30,16 +30,16 @@ public enum FBSimulatorHIDTransportType: Equatable, Sendable {
 /// driven over DTUHID still reaches its Siri Remote trackpad over Indigo. Mixing is otherwise unsafe —
 /// both claim `mainTouchscreen` and whichever sends first on a boot keeps it — so the case exists for
 /// the one family with no touchscreen to contend over.
-enum FBSimulatorHIDTransport: Sendable {
+enum SimulatorHIDTransport: Sendable {
   /// Indigo alone, carrying the primitives and the trackpad.
-  case indigo(FBSimulatorIndigoHIDTransport)
+  case indigo(SimulatorIndigoHIDTransport)
   /// DTUHID alone, carrying the primitives. No trackpad is reachable.
-  case dtuhid(FBSimulatorDTUHIDTransport)
+  case dtuhid(SimulatorDTUHIDTransport)
   /// Both, mixed on one target: DTUHID carrying the primitives, Indigo carrying only the trackpad.
-  case mixed(dtuhid: FBSimulatorDTUHIDTransport, indigo: FBSimulatorIndigoHIDTransport)
+  case mixed(dtuhid: SimulatorDTUHIDTransport, indigo: SimulatorIndigoHIDTransport)
 
   /// The Indigo transport in play, if any.
-  var indigo: FBSimulatorIndigoHIDTransport? {
+  var indigo: SimulatorIndigoHIDTransport? {
     switch self {
     case let .indigo(indigo): return indigo
     case .dtuhid: return nil
@@ -48,7 +48,7 @@ enum FBSimulatorHIDTransport: Sendable {
   }
 
   /// The DTUHID transport in play, if any.
-  var dtuhid: FBSimulatorDTUHIDTransport? {
+  var dtuhid: SimulatorDTUHIDTransport? {
     switch self {
     case .indigo: return nil
     case let .dtuhid(dtuhid): return dtuhid

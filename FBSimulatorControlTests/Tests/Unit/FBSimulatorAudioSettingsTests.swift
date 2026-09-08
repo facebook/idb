@@ -6,7 +6,7 @@
  */
 
 @testable import FBSimulatorControl
-// Matches the existing XCTest-based FBSimulatorControl unit suite (FBSimulatorIndigoHIDTests et al.).
+// Matches the existing XCTest-based FBSimulatorControl unit suite (SimulatorIndigoHIDTests et al.).
 // ast-grep-ignore: swift-testing/swift/no-new-xctest
 import XCTest
 

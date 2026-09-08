@@ -32,14 +32,14 @@ final class FBSimulatorConnectionlessTransportTests: XCTestCase {
   }
 
   func testPurpleTransportReportsADeallocatedTarget() async {
-    let purple = FBSimulatorPurpleHIDTransport(simulator: nil)
+    let purple = SimulatorPurpleHIDTransport(simulator: nil)
 
     await assertDeallocatedTarget("orientation") { try await purple.sendOrientation(.landscapeLeft) }
     await assertDeallocatedTarget("lock") { try await purple.sendLockDevice() }
   }
 
   func testDarwinNotificationTransportReportsADeallocatedTarget() async {
-    let notification = FBSimulatorDarwinNotificationTransport(simulator: nil)
+    let notification = SimulatorDarwinNotificationTransport(simulator: nil)
 
     await assertDeallocatedTarget("shake") { try await notification.sendShake() }
     await assertDeallocatedTarget("in-call status bar") { try await notification.sendToggleInCallStatusBar() }
@@ -47,8 +47,8 @@ final class FBSimulatorConnectionlessTransportTests: XCTestCase {
 
   // The failure has to survive the hop back from the private queue; concurrent sends each get their own.
   func testDeallocatedTargetSurvivesConcurrentSends() async {
-    let purple = FBSimulatorPurpleHIDTransport(simulator: nil)
-    let notification = FBSimulatorDarwinNotificationTransport(simulator: nil)
+    let purple = SimulatorPurpleHIDTransport(simulator: nil)
+    let notification = SimulatorDarwinNotificationTransport(simulator: nil)
 
     await withTaskGroup(of: Bool.self) { group in
       for _ in 0..<8 {

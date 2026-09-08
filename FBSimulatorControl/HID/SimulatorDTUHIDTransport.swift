@@ -12,7 +12,7 @@ import Darwin
 import Foundation
 import XPC
 
-/// The waits `FBSimulatorDTUHIDTransport` performs around the events it sends.
+/// The waits `SimulatorDTUHIDTransport` performs around the events it sends.
 enum DTUHIDTiming {
 
   /// Time to keep the connection alive after a gesture's events are sent, so `dtuhidd` consumes them
@@ -64,7 +64,7 @@ struct DigitizerContactTracker {
  An `actor`: the mutable contact state is actor-isolated, so the type needs no `@unchecked Sendable`.
  The XPC connection handle is thread-safe, so `disconnect()` cancels it from a `nonisolated` context.
  */
-actor FBSimulatorDTUHIDTransport {
+actor SimulatorDTUHIDTransport {
 
   static let digitizerServiceName = "com.apple.coredevice.feature.remote.hid.digitizer"
 
@@ -89,7 +89,7 @@ actor FBSimulatorDTUHIDTransport {
   ///
   /// Async because readiness may need establishing before the transport can be handed out, and a
   /// caller should not have to remember to wait for it on every send.
-  static func dtuhid(for simulator: FBSimulator) async throws -> FBSimulatorDTUHIDTransport {
+  static func dtuhid(for simulator: FBSimulator) async throws -> SimulatorDTUHIDTransport {
     guard let handle = dlopen(nil, RTLD_NOW) else {
       throw FBSimulatorHIDError.dtuhidXPCSymbolsUnavailable
     }
@@ -119,7 +119,7 @@ actor FBSimulatorDTUHIDTransport {
     xpc_connection_set_event_handler(connection) { _ in }
     xpc_connection_resume(connection)
 
-    let transport = FBSimulatorDTUHIDTransport(
+    let transport = SimulatorDTUHIDTransport(
       connection: connection,
       mainScreenSize: simulator.device.deviceType.mainScreenSize,
       mainScreenScale: simulator.device.deviceType.mainScreenScale,
@@ -166,7 +166,7 @@ actor FBSimulatorDTUHIDTransport {
     guard productFamily.hasTouchscreen else {
       throw FBSimulatorHIDError.touchUnsupportedOnAppleTV
     }
-    let ratio = FBSimulatorIndigoHID.screenRatio(
+    let ratio = SimulatorIndigoHID.screenRatio(
       from: CGPoint(x: x, y: y), screenSize: mainScreenSize, screenScale: mainScreenScale)
     let event = IndigoDigitizerEvent(
       pointOne: DigitizerPoint(x: Double(ratio.x), y: Double(ratio.y)),
@@ -179,8 +179,8 @@ actor FBSimulatorDTUHIDTransport {
     guard productFamily.hasTouchscreen else {
       throw FBSimulatorHIDError.touchUnsupportedOnAppleTV
     }
-    let r1 = FBSimulatorIndigoHID.screenRatio(from: finger1, screenSize: mainScreenSize, screenScale: mainScreenScale)
-    let r2 = FBSimulatorIndigoHID.screenRatio(from: finger2, screenSize: mainScreenSize, screenScale: mainScreenScale)
+    let r1 = SimulatorIndigoHID.screenRatio(from: finger1, screenSize: mainScreenSize, screenScale: mainScreenScale)
+    let r2 = SimulatorIndigoHID.screenRatio(from: finger2, screenSize: mainScreenSize, screenScale: mainScreenScale)
     let event = IndigoDigitizerEvent(
       pointOne: DigitizerPoint(x: Double(r1.x), y: Double(r1.y)),
       pointTwo: DigitizerPoint(x: Double(r2.x), y: Double(r2.y)),

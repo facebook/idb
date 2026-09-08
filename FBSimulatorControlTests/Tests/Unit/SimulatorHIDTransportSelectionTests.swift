@@ -10,7 +10,7 @@ import FBControlCore
 import Testing
 
 @Suite("HID transport selection")
-struct FBSimulatorHIDTransportSelectionTests {
+struct SimulatorHIDTransportSelectionTests {
 
   // MARK: - CoreSimulator version gate
 
@@ -24,14 +24,14 @@ struct FBSimulatorHIDTransportSelectionTests {
       ("1169.1", true),
     ] as [(String?, Bool)])
   func shipsDTUHID(version: String?, expected: Bool) {
-    #expect(FBSimulatorHIDTransportSelection.shipsDTUHID(coreSimulatorVersion: version) == expected)
+    #expect(SimulatorHIDTransportSelection.shipsDTUHID(coreSimulatorVersion: version) == expected)
   }
 
   @Test("CoreSimulator versions compare numerically, not lexicographically")
   func shipsDTUHIDComparesNumerically() {
     // A lexicographic compare puts "1155.10" below "1155.4" and "999.9" above it.
-    #expect(FBSimulatorHIDTransportSelection.shipsDTUHID(coreSimulatorVersion: "1155.10"))
-    #expect(!FBSimulatorHIDTransportSelection.shipsDTUHID(coreSimulatorVersion: "999.9"))
+    #expect(SimulatorHIDTransportSelection.shipsDTUHID(coreSimulatorVersion: "1155.10"))
+    #expect(!SimulatorHIDTransportSelection.shipsDTUHID(coreSimulatorVersion: "999.9"))
   }
 
   // MARK: - DTUHID reachability
@@ -55,23 +55,23 @@ struct FBSimulatorHIDTransportSelectionTests {
 
   @Test("A toolchain without dtuhidd never suppresses the legacy keyboard")
   func legacyKeyboardIsNotSuppressedBeforeXcode27() {
-    #expect(!FBSimulatorHIDTransportSelection.isLegacyKeyboardSuppressed(coreSimulatorVersion: "1140.0"))
+    #expect(!SimulatorHIDTransportSelection.isLegacyKeyboardSuppressed(coreSimulatorVersion: "1140.0"))
   }
 
   @Test("A toolchain that ships dtuhidd suppresses the legacy keyboard")
   func legacyKeyboardIsSuppressedFromXcode27() {
-    #expect(FBSimulatorHIDTransportSelection.isLegacyKeyboardSuppressed(coreSimulatorVersion: "1169.1"))
+    #expect(SimulatorHIDTransportSelection.isLegacyKeyboardSuppressed(coreSimulatorVersion: "1169.1"))
   }
 
   // MARK: - Default transport
 
   @Test("A toolchain without dtuhidd gets the legacy Indigo transport")
   func defaultTransportBeforeXcode27() {
-    #expect(FBSimulatorHIDTransportSelection.defaultTransport(coreSimulatorVersion: "1140.0") == .indigo)
+    #expect(SimulatorHIDTransportSelection.defaultTransport(coreSimulatorVersion: "1140.0") == .indigo)
   }
 
   @Test("A toolchain that ships dtuhidd gets the DTUHID transport")
   func defaultTransportFromXcode27() {
-    #expect(FBSimulatorHIDTransportSelection.defaultTransport(coreSimulatorVersion: "1169.1") == .dtuhid)
+    #expect(SimulatorHIDTransportSelection.defaultTransport(coreSimulatorVersion: "1169.1") == .dtuhid)
   }
 }

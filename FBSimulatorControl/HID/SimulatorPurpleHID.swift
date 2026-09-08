@@ -9,17 +9,17 @@ import Foundation
 
 /**
  Constructs GSEvent payloads for PurpleWorkspacePort.
- Mirrors `FBSimulatorIndigoHID` (which constructs Indigo payloads for IndigoHIDRegistrationPort).
+ Mirrors `SimulatorIndigoHID` (which constructs Indigo payloads for IndigoHIDRegistrationPort).
 
  The returned `Data` is a complete mach message (including `mach_msg_header_t`); `msgh_remote_port` is
- left as 0 and patched by `FBSimulatorPurpleHIDTransport` before sending.
+ left as 0 and patched by `SimulatorPurpleHIDTransport` before sending.
 
  See `SimulatorApp/GSEvent.h` for the wire format documentation.
 
- Unlike `FBSimulatorIndigoHID`, this class has no dlsym dependencies — payloads are
+ Unlike `SimulatorIndigoHID`, this class has no dlsym dependencies — payloads are
  constructed from documented constants.
  */
-final class FBSimulatorPurpleHID {
+final class SimulatorPurpleHID {
 
   // GSEvent constants. Values mirror SimulatorApp/GSEvent.h.
   private static let gsEventTypeDeviceOrientationChanged: UInt32 = 50
@@ -34,17 +34,17 @@ final class FBSimulatorPurpleHID {
     // Construct a 112-byte buffer (aligned to 8 bytes, >= 108 = 0x6C mach message size).
     // See GSEvent.h for the complete wire format documentation.
     var buf = [UInt8](repeating: 0, count: 112)
-    FBSimulatorPurpleHID.writeMachHeader(into: &buf)
+    SimulatorPurpleHID.writeMachHeader(into: &buf)
 
     // GSEvent type at offset 0x18.
-    FBSimulatorPurpleHID.writeUInt32(
-      FBSimulatorPurpleHID.gsEventTypeDeviceOrientationChanged | FBSimulatorPurpleHID.gsEventHostFlag,
+    SimulatorPurpleHID.writeUInt32(
+      SimulatorPurpleHID.gsEventTypeDeviceOrientationChanged | SimulatorPurpleHID.gsEventHostFlag,
       into: &buf,
       at: 0x18)
     // record_info_size at offset 0x48.
-    FBSimulatorPurpleHID.writeUInt32(4, into: &buf, at: 0x48)
+    SimulatorPurpleHID.writeUInt32(4, into: &buf, at: 0x48)
     // orientation value at offset 0x4C.
-    FBSimulatorPurpleHID.writeUInt32(UInt32(orientation.rawValue), into: &buf, at: 0x4C)
+    SimulatorPurpleHID.writeUInt32(UInt32(orientation.rawValue), into: &buf, at: 0x4C)
 
     return Data(buf)
   }
@@ -55,10 +55,10 @@ final class FBSimulatorPurpleHID {
   func lockDeviceEvent() -> Data {
     // Same 112-byte buffer as orientation, but with GSEventTypeLockDevice and no payload.
     var buf = [UInt8](repeating: 0, count: 112)
-    FBSimulatorPurpleHID.writeMachHeader(into: &buf)
+    SimulatorPurpleHID.writeMachHeader(into: &buf)
 
-    FBSimulatorPurpleHID.writeUInt32(
-      FBSimulatorPurpleHID.gsEventTypeLockDevice | FBSimulatorPurpleHID.gsEventHostFlag,
+    SimulatorPurpleHID.writeUInt32(
+      SimulatorPurpleHID.gsEventTypeLockDevice | SimulatorPurpleHID.gsEventHostFlag,
       into: &buf,
       at: 0x18)
 

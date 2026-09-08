@@ -13,7 +13,7 @@ import XCTest
 
 /// Coverage of the `FBSimulatorHIDEvent` composite factories — the value-level decomposition of a
 /// gesture into its ordered primitive sub-events (touch/button/keyboard/two-finger + delays). The
-/// byte-level Indigo payloads are pinned by `FBSimulatorIndigoHIDTests`; the tvOS `pan`/`remoteButton`
+/// byte-level Indigo payloads are pinned by `SimulatorIndigoHIDTests`; the tvOS `pan`/`remoteButton`
 /// factories by their own suites. This fills the gap for `tapAt`, `swipe`, `pinchAt`, and the
 /// button/keyboard short-press factories, so the event model is a stable contract for the backends
 /// that render it.

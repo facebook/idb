@@ -26,7 +26,7 @@ import Foundation
  SAFETY: holds only an immutable weak reference to the target; the mach send owns no shared state.
  */
 // patternlint-disable-next-line unchecked-sendable
-final class FBSimulatorPurpleHIDTransport: @unchecked Sendable {
+final class SimulatorPurpleHIDTransport: @unchecked Sendable {
 
   /// Default Mach send timeout (in milliseconds). Healthy round-trips return in low single-digit
   /// milliseconds; 2000ms absorbs scheduler jitter while bounding the wedge condition where
@@ -34,13 +34,13 @@ final class FBSimulatorPurpleHIDTransport: @unchecked Sendable {
   private static let defaultSendTimeoutMs: mach_msg_timeout_t = 2000
 
   /// The GSEvent payload builder.
-  private let purple: FBSimulatorPurpleHID
+  private let purple: SimulatorPurpleHID
   /// Serial, so concurrent sends to the same port queue behind one another rather than racing, and so
   /// the blocking `mach_msg` never runs on a cooperative thread.
   private let sendQueue = DispatchQueue(label: "com.facebook.FBSimulatorControl.purple-hid")
   private weak var simulator: FBSimulator?
 
-  init(purple: FBSimulatorPurpleHID = FBSimulatorPurpleHID(), simulator: FBSimulator?) {
+  init(purple: SimulatorPurpleHID = SimulatorPurpleHID(), simulator: FBSimulator?) {
     self.purple = purple
     self.simulator = simulator
   }
