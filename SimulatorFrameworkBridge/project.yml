@@ -3,21 +3,11 @@ name: SimulatorFrameworkBridge
 options:
   createIntermediateGroups: true
 
-targets:
-  # A command-line executable spawned inside the iOS simulator runtime by idb_companion (from the bundled
-  # `Resources/SimulatorFrameworkBridge-iOS`) to drive privacy/services state, read the accessibility tree
-  # and serve the REPL socket. Mirrors the Buck `SimulatorFrameworkBridge-iOS` target.
-  SimulatorFrameworkBridge-iOS:
+targetTemplates:
+  Guest:
     type: tool
-    platform: iOS
     deploymentTarget: "15.0"
     sources:
-      - path: .
-        excludes:
-          - "**/*.entitlements"
-          - "**/*.xcodeproj"
-          - "project.yml"
-          - "Build"
       # ServiceDispatch.m imports <ReplExecutor/ReplSocketServer.h> and calls
       # FBReplServeSocket; compile the shared executor in so the binary is
       # self-contained. ReplSocketServer.m is MRC while the bridge sources are
@@ -37,9 +27,6 @@ targets:
           cp "$SRCROOT/../REPL/Executor/"*.h "$DEST/"
     settings:
       base:
-        SDKROOT: iphonesimulator
-        IPHONEOS_DEPLOYMENT_TARGET: "15.0"
-        PRODUCT_NAME: SimulatorFrameworkBridge-iOS
         HEADER_SEARCH_PATHS: $(inherited) $(TARGET_TEMP_DIR)/ReplExecutorHeaders
         # Ad-hoc sign with the bridge's private entitlements (TCC/HealthKit) so the
         # services it drives are permitted inside the simulator.
@@ -47,10 +34,51 @@ targets:
         CODE_SIGN_ENTITLEMENTS: SimulatorFrameworkBridge.entitlements
         OTHER_CFLAGS: $(inherited) -Wno-deprecated-declarations
     dependencies:
-      # Everything else the bridge reaches (HealthKit, BulletinBoard, SystemConfiguration, the accessibility
+      # Everything else the bridge reaches (BulletinBoard, SystemConfiguration, the accessibility
       # private frameworks) is dlopen-ed at runtime, so it is intentionally not linked here.
       - sdk: Foundation.framework
-      - sdk: Contacts.framework
       - sdk: CoreGraphics.framework
       - sdk: Photos.framework
       - sdk: CoreData.framework
+
+targets:
+  # A command-line executable spawned inside the simulator runtime by idb_companion (from the bundled
+  # `Resources/SimulatorFrameworkBridge-<platform>`) to drive privacy/services state, read the
+  # accessibility tree and serve the REPL socket. Mirrors the Buck targets of the same names.
+  SimulatorFrameworkBridge-iOS:
+    templates: [Guest]
+    platform: iOS
+    sources:
+      - path: .
+        excludes:
+          - "**/*.entitlements"
+          - "**/*.xcodeproj"
+          - "project.yml"
+          - "Build"
+    settings:
+      base:
+        SDKROOT: iphonesimulator
+        IPHONEOS_DEPLOYMENT_TARGET: "15.0"
+        PRODUCT_NAME: SimulatorFrameworkBridge-iOS
+    dependencies:
+      - sdk: Contacts.framework
+
+  SimulatorFrameworkBridge-tvOS:
+    templates: [Guest]
+    platform: tvOS
+    sources:
+      # Contacts and HealthKit are absent from the tvOS SDK, so the two services built on them are not
+      # compiled here. `ServiceDispatch.m` refuses their verbs under `TARGET_OS_TV`.
+      - path: .
+        excludes:
+          - "**/*.entitlements"
+          - "**/*.xcodeproj"
+          - "project.yml"
+          - "Build"
+          - "ContactsService.m"
+          - "HealthSettingsService.m"
+    settings:
+      base:
+        SDKROOT: appletvsimulator
+        TVOS_DEPLOYMENT_TARGET: "15.0"
+        PRODUCT_NAME: SimulatorFrameworkBridge-tvOS

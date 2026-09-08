@@ -10,17 +10,34 @@
 #import <dlfcn.h>
 
 #import "AccessibilityService.h"
-#import "ContactsService.h"
 #import "DnsService.h"
-#import "HealthSettingsService.h"
 #import "NotificationSettingsService.h"
 #import "PhotoLibraryService.h"
 #import "ProxyService.h"
 
+// Contacts and HealthKit are not in the tvOS SDK, so the services built on them are not compiled into
+// the tvOS guest. Their verbs are still recognised, so a caller sees a platform refusal rather than an
+// unknown-service error.
+#if TARGET_OS_TV
+static int unsupportedOnThisPlatform(NSString *service)
+{
+  NSLog(@"The %@ service is not available in a tvOS guest", service);
+  return 1;
+}
+
+#else
+ #import "ContactsService.h"
+ #import "HealthSettingsService.h"
+#endif
+
 int dispatchService(NSString *service, NSString *action, NSArray<NSString *> *arguments)
 {
   if ([service isEqualToString:@"contacts"]) {
+  #if TARGET_OS_TV
+    return unsupportedOnThisPlatform(service);
+  #else
     return handleContactsAction(action);
+  #endif
   } else if ([service isEqualToString:@"dns"]) {
     return handleDnsAction(action, arguments);
   } else if ([service isEqualToString:@"photos"]) {
@@ -29,11 +46,15 @@ int dispatchService(NSString *service, NSString *action, NSArray<NSString *> *ar
     NSString *bundleID = arguments.count > 0 ? arguments[0] : nil;
     return handleNotificationSettingsAction(action, bundleID);
   } else if ([service isEqualToString:@"health"]) {
+  #if TARGET_OS_TV
+    return unsupportedOnThisPlatform(service);
+  #else
     NSString *bundleID = arguments.count > 0 ? arguments[0] : nil;
     NSArray<NSString *> *typeIDs = arguments.count > 1
     ? [arguments subarrayWithRange:NSMakeRange(1, arguments.count - 1)]
     : @[];
     return handleHealthSettingsAction(action, bundleID, typeIDs);
+  #endif
   } else if ([service isEqualToString:@"proxy"]) {
     return handleProxyAction(action, arguments);
   } else if ([service isEqualToString:@"accessibility"]) {

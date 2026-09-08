@@ -114,6 +114,7 @@ Build/Distribution/
     libRepl-iOS.dylib
     libRepl-macOS.dylib
     SimulatorFrameworkBridge-iOS
+    SimulatorFrameworkBridge-tvOS
     ReplHost.app
     IDBAPI.swiftinterface
 ```

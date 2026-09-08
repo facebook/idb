@@ -389,17 +389,21 @@ function build_shims() {
 
 function build_fbsimulatorcontrol_resources() {
   build_shims
-  build_simulator_framework_bridge
+  build_simulator_framework_bridge iOS iphonesimulator
+  build_simulator_framework_bridge tvOS appletvsimulator
 }
 
 function build_simulator_framework_bridge() {
-  # An iOS-simulator command-line executable, spawned by idb_companion inside the
-  # simulator to drive privacy/services state and the REPL socket.
+  # A command-line executable spawned by idb_companion inside the simulator to drive
+  # privacy/services state and the REPL socket. One per simulator platform, because a
+  # simulator's dyld refuses a guest built for another.
+  local platform="$1"
+  local sdk="$2"
   invoke_xcodebuild \
     ONLY_ACTIVE_ARCH=NO \
     -project SimulatorFrameworkBridge/SimulatorFrameworkBridge.xcodeproj \
-    -scheme SimulatorFrameworkBridge-iOS \
-    -sdk iphonesimulator \
+    -scheme "SimulatorFrameworkBridge-$platform" \
+    -sdk "$sdk" \
     -derivedDataPath "$BUILD_DIRECTORY" \
     -configuration Release \
     build
@@ -487,12 +491,14 @@ function build_idb_repl() {
 #       libRepl-iOS.dylib
 #       libRepl-macOS.dylib
 #       SimulatorFrameworkBridge-iOS
+#       SimulatorFrameworkBridge-tvOS
 #       ReplHost.app
 #       IDBAPI.swiftinterface
 #
 function build_distribution() {
   local release="$BUILD_DIRECTORY/Products/Release"
   local sim="$BUILD_DIRECTORY/Products/Release-iphonesimulator"
+  local tvsim="$BUILD_DIRECTORY/Products/Release-appletvsimulator"
   local dist="$BUILD_DIRECTORY/Distribution"
 
   echo "Assembling distribution into $dist"
@@ -506,6 +512,7 @@ function build_distribution() {
     "$sim/libRepl-iOS.dylib"
     "$release/libRepl-macOS.dylib"
     "$sim/SimulatorFrameworkBridge-iOS"
+    "$tvsim/SimulatorFrameworkBridge-tvOS"
     "$sim/ReplHost.app"
   )
   local path
@@ -537,6 +544,7 @@ function build_distribution() {
   cp "$sim/libRepl-iOS.dylib" "$dist/Resources/"
   cp "$release/libRepl-macOS.dylib" "$dist/Resources/"
   cp "$sim/SimulatorFrameworkBridge-iOS" "$dist/Resources/"
+  cp "$tvsim/SimulatorFrameworkBridge-tvOS" "$dist/Resources/"
 
   # ReplHost.app: the default host app for `idb-repl app`, installed on demand
   # by the companion. Already ad-hoc signed at build time (CODE_SIGN_IDENTITY in
@@ -582,7 +590,9 @@ function build() {
       Repl-macOS)
         build_shim Repl-macOS macosx Shims/Repl/Repl.xcodeproj;;
       SimulatorFrameworkBridge-iOS)
-        build_simulator_framework_bridge;;
+        build_simulator_framework_bridge iOS iphonesimulator;;
+      SimulatorFrameworkBridge-tvOS)
+        build_simulator_framework_bridge tvOS appletvsimulator;;
       ReplHost)
         build_repl_host;;
       idb_companion)
@@ -595,7 +605,7 @@ function build() {
         build_target "$target";;
       *)
         echo "Unknown target: $target"
-        echo "Valid targets: all, frameworks, shims, idb_companion, idb-repl, FBControlCore, XCTestBootstrap, FBSimulatorControl, FBDeviceControl, Shimulator-iOS, Shimulator-macOS, Repl-iOS, Repl-macOS, ReplHost, SimulatorFrameworkBridge-iOS, distribution"
+        echo "Valid targets: all, frameworks, shims, idb_companion, idb-repl, FBControlCore, XCTestBootstrap, FBSimulatorControl, FBDeviceControl, Shimulator-iOS, Shimulator-macOS, Repl-iOS, Repl-macOS, ReplHost, SimulatorFrameworkBridge-iOS, SimulatorFrameworkBridge-tvOS, distribution"
         exit 1;;
     esac
   fi
@@ -695,6 +705,7 @@ Commands:
       Shimulator-iOS  Build Shimulator-iOS dylib (iOS simulator)
       Shimulator-macOS Build Shimulator-macOS dylib (macOS)
       SimulatorFrameworkBridge-iOS Build the iOS-simulator guest executable
+      SimulatorFrameworkBridge-tvOS Build the tvOS-simulator guest executable
       XCTestBootstrap Build XCTestBootstrap framework
 
   test [<target>]
