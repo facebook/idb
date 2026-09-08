@@ -9,13 +9,13 @@ import AVFoundation
 @preconcurrency import FBControlCore
 import Foundation
 
-private enum FBDeviceVideoRecordingCommandError: Error {
+private enum DeviceVideoRecordingCommandError: Error {
   case missingDevice
   case recordingAlreadyActive
   case missingVideo(deviceDescription: String)
 }
 
-extension FBDeviceVideoRecordingCommandError: LocalizedError {
+extension DeviceVideoRecordingCommandError: LocalizedError {
   var errorDescription: String? {
     switch self {
     case .missingDevice:
@@ -44,10 +44,10 @@ public final class FBDeviceVideoRecordingCommands {
 
   fileprivate func startRecording(toFile filePath: String) async throws -> any FBVideoRecording {
     guard let device else {
-      throw FBDeviceVideoRecordingCommandError.missingDevice
+      throw DeviceVideoRecordingCommandError.missingDevice
     }
     if video != nil {
-      throw FBDeviceVideoRecordingCommandError.recordingAlreadyActive
+      throw DeviceVideoRecordingCommandError.recordingAlreadyActive
     }
     let video = try await FBDeviceVideo.video(for: device, filePath: filePath)
     self.video = video
@@ -59,10 +59,10 @@ public final class FBDeviceVideoRecordingCommands {
 
   fileprivate func stop() async throws -> URL {
     guard let device else {
-      throw FBDeviceVideoRecordingCommandError.missingDevice
+      throw DeviceVideoRecordingCommandError.missingDevice
     }
     guard let video else {
-      throw FBDeviceVideoRecordingCommandError.missingVideo(deviceDescription: "\(device)")
+      throw DeviceVideoRecordingCommandError.missingVideo(deviceDescription: "\(device)")
     }
     self.video = nil
     return try await video.stop()
@@ -70,7 +70,7 @@ public final class FBDeviceVideoRecordingCommands {
 
   fileprivate func createStream(with configuration: FBVideoStreamConfiguration, to consumer: any FBDataConsumer) async throws -> any FBVideoStream {
     guard let device else {
-      throw FBDeviceVideoRecordingCommandError.missingDevice
+      throw DeviceVideoRecordingCommandError.missingDevice
     }
     let logger = device.logger
     let session = try await FBDeviceVideo.captureSession(for: device)

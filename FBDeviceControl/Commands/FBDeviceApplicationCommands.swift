@@ -59,9 +59,9 @@ extension FBDeviceApplicationError: LocalizedError {
   }
 }
 
-// MARK: - FBDeviceWorkflowStatistics
+// MARK: - DeviceWorkflowStatistics
 
-private class FBDeviceWorkflowStatistics {
+private class DeviceWorkflowStatistics {
   let workflowType: String
   let logger: any FBControlCoreLogger
   var lastEvent: [String: Any]?
@@ -86,13 +86,13 @@ private class FBDeviceWorkflowStatistics {
 
 private func workflowCallback(_ callbackDictionary: [String: Any]?, _ context: UnsafeMutableRawPointer?) {
   guard let context, let callbackDictionary else { return }
-  let statistics = Unmanaged<FBDeviceWorkflowStatistics>.fromOpaque(context).takeUnretainedValue()
+  let statistics = Unmanaged<DeviceWorkflowStatistics>.fromOpaque(context).takeUnretainedValue()
   statistics.pushProgress(callbackDictionary)
 }
 
-// MARK: - FBDeviceLaunchedApplication
+// MARK: - DeviceLaunchedApplication
 
-private class FBDeviceLaunchedApplication: FBLaunchedApplication {
+private class DeviceLaunchedApplication: FBLaunchedApplication {
   let processIdentifier: pid_t
   private let _configuration: FBApplicationLaunchConfiguration
   private let commands: FBDeviceApplicationCommands
@@ -154,7 +154,7 @@ public final class FBDeviceApplicationCommands {
     ]
     try await device.withConnectedDevice(purpose: "install") { connectedDevice in
       device.logger.log("Installing Application \(appURL)")
-      let statistics = FBDeviceWorkflowStatistics(workflowType: "Install", logger: connectedDevice.logger)
+      let statistics = DeviceWorkflowStatistics(workflowType: "Install", logger: connectedDevice.logger)
       let context = Unmanaged.passUnretained(statistics).toOpaque()
       let status =
         connectedDevice.calls.SecureInstallApplicationBundle?(
@@ -178,7 +178,7 @@ public final class FBDeviceApplicationCommands {
       throw FBDeviceNilError.deviceNil
     }
     try await device.withConnectedDevice(purpose: "uninstall_\(bundleID)") { connectedDevice in
-      let statistics = FBDeviceWorkflowStatistics(workflowType: "Uninstall", logger: connectedDevice.logger)
+      let statistics = DeviceWorkflowStatistics(workflowType: "Uninstall", logger: connectedDevice.logger)
       device.logger.log("Uninstalling Application \(bundleID)")
       let context = Unmanaged.passUnretained(statistics).toOpaque()
       let status =
@@ -264,7 +264,7 @@ public final class FBDeviceApplicationCommands {
         try await bridgeFBFuture(client.launchApplication(configuration))
       }
     }
-    return FBDeviceLaunchedApplication(
+    return DeviceLaunchedApplication(
       processIdentifier: pid.int32Value,
       configuration: configuration,
       commands: self,

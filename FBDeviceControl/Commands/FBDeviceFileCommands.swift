@@ -175,9 +175,9 @@ public final class FBDeviceFileContainer: AsyncFileContainer {
   }
 }
 
-// MARK: - FBDeviceFileContainer_Wallpaper
+// MARK: - DeviceFileContainer_Wallpaper
 
-private class FBDeviceFileContainer_Wallpaper: AsyncFileContainer {
+private class DeviceFileContainer_Wallpaper: AsyncFileContainer {
   let queue: DispatchQueue
   let springboard: SpringboardServicesClient
   let managedConfig: ManagedConfigClient
@@ -220,9 +220,9 @@ private class FBDeviceFileContainer_Wallpaper: AsyncFileContainer {
   }
 }
 
-// MARK: - FBDeviceFileContainer_MDMProfiles
+// MARK: - DeviceFileContainer_MDMProfiles
 
-private class FBDeviceFileContainer_MDMProfiles: AsyncFileContainer {
+private class DeviceFileContainer_MDMProfiles: AsyncFileContainer {
   let queue: DispatchQueue
   let managedConfig: ManagedConfigClient
 
@@ -261,9 +261,9 @@ private class FBDeviceFileContainer_MDMProfiles: AsyncFileContainer {
   }
 }
 
-// MARK: - FBDeviceFileCommands_DiskImages
+// MARK: - DeviceFileCommands_DiskImages
 
-private class FBDeviceFileCommands_DiskImages: AsyncFileContainer {
+private class DeviceFileCommands_DiskImages: AsyncFileContainer {
   let commands: any DeveloperDiskImageCommands
   let queue: DispatchQueue
 
@@ -314,7 +314,7 @@ private class FBDeviceFileCommands_DiskImages: AsyncFileContainer {
 
   func contents(ofDirectory path: String) async throws -> [String] {
     let diskImagePaths = try await allDiskImagePaths()
-    return FBDeviceFileCommands_DiskImages.traverseAndDescendPaths(diskImagePaths, path: path)
+    return DeviceFileCommands_DiskImages.traverseAndDescendPaths(diskImagePaths, path: path)
   }
 
   // MARK: - Private
@@ -323,7 +323,7 @@ private class FBDeviceFileCommands_DiskImages: AsyncFileContainer {
     let images = commands.mountableDiskImages()
     var mapping: [String: FBDeveloperDiskImage] = [:]
     for image in images {
-      mapping[FBDeviceFileCommands_DiskImages.filePath(for: image)] = image
+      mapping[DeviceFileCommands_DiskImages.filePath(for: image)] = image
     }
     return mapping
   }
@@ -332,7 +332,7 @@ private class FBDeviceFileCommands_DiskImages: AsyncFileContainer {
     let mountedImages = try await commands.mountedDiskImages()
     var imagesByPath: [String: FBDeveloperDiskImage] = [:]
     for image in mountedImages {
-      let mountedFilePath = (MountRootPath as NSString).appendingPathComponent(FBDeviceFileCommands_DiskImages.filePath(for: image))
+      let mountedFilePath = (MountRootPath as NSString).appendingPathComponent(DeviceFileCommands_DiskImages.filePath(for: image))
       imagesByPath[mountedFilePath] = image
     }
     return imagesByPath
@@ -378,9 +378,9 @@ private class FBDeviceFileCommands_DiskImages: AsyncFileContainer {
   }
 }
 
-// MARK: - FBDeviceFileCommands_Symbols
+// MARK: - DeviceFileCommands_Symbols
 
-private class FBDeviceFileCommands_Symbols: AsyncFileContainer {
+private class DeviceFileCommands_Symbols: AsyncFileContainer {
   let commands: any DebugSymbolsCommands
   let queue: DispatchQueue
 
@@ -473,14 +473,14 @@ public final class FBDeviceFileCommands {
     return FBFileContainer_ProvisioningProfile(commands: FBDeviceProvisioningProfileCommands.commands(with: device))
   }
 
-  fileprivate func fileCommandsForDiskImages() throws -> FBDeviceFileCommands_DiskImages {
+  fileprivate func fileCommandsForDiskImages() throws -> DeviceFileCommands_DiskImages {
     let device = try requireDevice()
-    return FBDeviceFileCommands_DiskImages(commands: device as any DeveloperDiskImageCommands, queue: device.asyncQueue)
+    return DeviceFileCommands_DiskImages(commands: device as any DeveloperDiskImageCommands, queue: device.asyncQueue)
   }
 
-  fileprivate func fileCommandsForSymbols() throws -> FBDeviceFileCommands_Symbols {
+  fileprivate func fileCommandsForSymbols() throws -> DeviceFileCommands_Symbols {
     let device = try requireDevice()
-    return FBDeviceFileCommands_Symbols(commands: device as any DebugSymbolsCommands, queue: device.asyncQueue)
+    return DeviceFileCommands_Symbols(commands: device as any DebugSymbolsCommands, queue: device.asyncQueue)
   }
 }
 
@@ -539,7 +539,7 @@ extension FBDevice: FileCommands {
   ) async throws -> R {
     return try await withServiceConnection(ManagedConfigClient.serviceName) { connection in
       let managedConfig = ManagedConfigClient.managedConfigClient(connection: connection, logger: logger)
-      return try await body(FBDeviceFileContainer_MDMProfiles(managedConfig: managedConfig, queue: workQueue))
+      return try await body(DeviceFileContainer_MDMProfiles(managedConfig: managedConfig, queue: workQueue))
     }
   }
 
@@ -560,7 +560,7 @@ extension FBDevice: FileCommands {
         let springboard = SpringboardServicesClient.springboardServicesClient(connection: springboardConnection, logger: logger)
         let managedConfig = ManagedConfigClient.managedConfigClient(connection: managedConfigConnection, logger: logger)
         return try await body(
-          FBDeviceFileContainer_Wallpaper(springboard: springboard, managedConfig: managedConfig, queue: workQueue))
+          DeviceFileContainer_Wallpaper(springboard: springboard, managedConfig: managedConfig, queue: workQueue))
       }
     }
   }

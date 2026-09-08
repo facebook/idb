@@ -28,7 +28,7 @@ private func pixelBufferAttributes(from pixelBuffer: CVPixelBuffer) -> [String: 
   ]
 }
 
-private enum FBDeviceVideoStreamError: Error {
+private enum DeviceVideoStreamError: Error {
   case invalidStreamFormat(String)
   case cannotAddDataOutput
   case noCaptureConnection
@@ -38,7 +38,7 @@ private enum FBDeviceVideoStreamError: Error {
   case unsupportedJPEGCodec
 }
 
-extension FBDeviceVideoStreamError: LocalizedError {
+extension DeviceVideoStreamError: LocalizedError {
   var errorDescription: String? {
     switch self {
     case .invalidStreamFormat(let formatDescription):
@@ -84,19 +84,19 @@ public class FBDeviceVideoStream: NSObject, FBVideoStream, @unchecked Sendable {
   public class func stream(withSession session: AVCaptureSession, configuration: FBVideoStreamConfiguration, logger: any FBControlCoreLogger) throws -> FBDeviceVideoStream {
     let format = configuration.format
     guard let streamType = classForConfiguration(configuration) else {
-      throw FBDeviceVideoStreamError.invalidStreamFormat("\(format)")
+      throw DeviceVideoStreamError.invalidStreamFormat("\(format)")
     }
 
     let output = AVCaptureVideoDataOutput()
     try streamType.configureVideoOutput(output, configuration: configuration)
     if !session.canAddOutput(output) {
-      throw FBDeviceVideoStreamError.cannotAddDataOutput
+      throw DeviceVideoStreamError.cannotAddDataOutput
     }
     session.addOutput(output)
 
     if let fps = configuration.framesPerSecond {
       guard let connection = session.connections.first else {
-        throw FBDeviceVideoStreamError.noCaptureConnection
+        throw DeviceVideoStreamError.noCaptureConnection
       }
       let frameTime: Float64 = 1.0 / Float64(fps)
       connection.videoMinFrameDuration = CMTimeMakeWithSeconds(frameTime, preferredTimescale: Int32(NSEC_PER_SEC))
@@ -111,17 +111,17 @@ public class FBDeviceVideoStream: NSObject, FBVideoStream, @unchecked Sendable {
     case let .compressedVideo(codec, transport):
       switch codec {
       case .h264:
-        return transport == .mpegts ? FBDeviceVideoStream_H264MPEGTS.self : FBDeviceVideoStream_H264.self
+        return transport == .mpegts ? DeviceVideoStream_H264MPEGTS.self : DeviceVideoStream_H264.self
       case .hevc:
         // HEVC is not yet supported on the device path.
         return nil
       }
     case .mjpeg:
-      return FBDeviceVideoStream_MJPEG.self
+      return DeviceVideoStream_MJPEG.self
     case .minicap:
-      return FBDeviceVideoStream_Minicap.self
+      return DeviceVideoStream_Minicap.self
     case .bgra:
-      return FBDeviceVideoStream_BGRA.self
+      return DeviceVideoStream_BGRA.self
     }
   }
 
@@ -142,7 +142,7 @@ public class FBDeviceVideoStream: NSObject, FBVideoStream, @unchecked Sendable {
 
   public func startStreaming(_ consumer: any FBDataConsumer) async throws {
     if self.consumer != nil {
-      throw FBDeviceVideoStreamError.consumerAlreadyAttached
+      throw DeviceVideoStreamError.consumerAlreadyAttached
     }
     self.consumer = consumer
     output.setSampleBufferDelegate(self, queue: writeQueue)
@@ -155,7 +155,7 @@ public class FBDeviceVideoStream: NSObject, FBVideoStream, @unchecked Sendable {
 
   public func stopStreaming() async throws {
     if consumer == nil {
-      throw FBDeviceVideoStreamError.noConsumerAttached
+      throw DeviceVideoStreamError.noConsumerAttached
     }
     session.stopRunning()
     if let awaiters = markStopped() {
@@ -251,7 +251,7 @@ extension FBDeviceVideoStream: AVCaptureVideoDataOutputSampleBufferDelegate {
 
 // MARK: - BGRA Subclass
 
-private class FBDeviceVideoStream_BGRA: FBDeviceVideoStream, @unchecked Sendable {
+private class DeviceVideoStream_BGRA: FBDeviceVideoStream, @unchecked Sendable {
   override func consumeSampleBuffer(_ sampleBuffer: CMSampleBuffer) {
     guard let consumer = self.consumer else { return }
     guard let pixelBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) else { return }
@@ -282,7 +282,7 @@ private class FBDeviceVideoStream_BGRA: FBDeviceVideoStream, @unchecked Sendable
   override class func configureVideoOutput(_ output: AVCaptureVideoDataOutput, configuration: FBVideoStreamConfiguration) throws {
     try super.configureVideoOutput(output, configuration: configuration)
     if !output.availableVideoPixelFormatTypes.contains(kCVPixelFormatType_32BGRA) {
-      throw FBDeviceVideoStreamError.unsupportedBGRAOutput
+      throw DeviceVideoStreamError.unsupportedBGRAOutput
     }
     output.videoSettings = [
       kCVPixelBufferPixelFormatTypeKey as String: kCVPixelFormatType_32BGRA
@@ -292,7 +292,7 @@ private class FBDeviceVideoStream_BGRA: FBDeviceVideoStream, @unchecked Sendable
 
 // MARK: - H264 Subclass
 
-private class FBDeviceVideoStream_H264: FBDeviceVideoStream, @unchecked Sendable {
+private class DeviceVideoStream_H264: FBDeviceVideoStream, @unchecked Sendable {
   private let frameWriter = FBAnnexBFrameWriter(codec: .h264)
 
   override func consumeSampleBuffer(_ sampleBuffer: CMSampleBuffer) {
@@ -307,7 +307,7 @@ private class FBDeviceVideoStream_H264: FBDeviceVideoStream, @unchecked Sendable
 
 // MARK: - H264 MPEGTS Subclass
 
-private class FBDeviceVideoStream_H264MPEGTS: FBDeviceVideoStream, @unchecked Sendable {
+private class DeviceVideoStream_H264MPEGTS: FBDeviceVideoStream, @unchecked Sendable {
   private let frameWriter = FBMPEGTSFrameWriter(codec: .h264)
 
   override func consumeSampleBuffer(_ sampleBuffer: CMSampleBuffer) {
@@ -322,7 +322,7 @@ private class FBDeviceVideoStream_H264MPEGTS: FBDeviceVideoStream, @unchecked Se
 
 // MARK: - MJPEG Subclass
 
-private class FBDeviceVideoStream_MJPEG: FBDeviceVideoStream, @unchecked Sendable {
+private class DeviceVideoStream_MJPEG: FBDeviceVideoStream, @unchecked Sendable {
   private let mjpegFrameWriter = FBMJPEGFrameWriter()
 
   override func consumeSampleBuffer(_ sampleBuffer: CMSampleBuffer) {
@@ -338,7 +338,7 @@ private class FBDeviceVideoStream_MJPEG: FBDeviceVideoStream, @unchecked Sendabl
     try super.configureVideoOutput(output, configuration: configuration)
     output.alwaysDiscardsLateVideoFrames = true
     if !output.availableVideoCodecTypes.contains(.jpeg) {
-      throw FBDeviceVideoStreamError.unsupportedJPEGCodec
+      throw DeviceVideoStreamError.unsupportedJPEGCodec
     }
     output.videoSettings = [
       AVVideoCodecKey: AVVideoCodecType.jpeg.rawValue,
@@ -351,7 +351,7 @@ private class FBDeviceVideoStream_MJPEG: FBDeviceVideoStream, @unchecked Sendabl
 
 // MARK: - Minicap Subclass
 
-private class FBDeviceVideoStream_Minicap: FBDeviceVideoStream_MJPEG, @unchecked Sendable {
+private class DeviceVideoStream_Minicap: DeviceVideoStream_MJPEG, @unchecked Sendable {
   private var hasSentHeader = false
   private let minicapFrameWriter = FBMinicapFrameWriter()
 

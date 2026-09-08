@@ -10,13 +10,13 @@ import CoreMediaIO
 @preconcurrency import FBControlCore
 import Foundation
 
-private enum FBDeviceVideoError: Error {
+private enum DeviceVideoError: Error {
   case failedToEnableScreenCaptureDevices(status: OSStatus)
   case timedOutWaitingForCaptureDevice(timeout: TimeInterval, deviceDescription: String)
   case cannotAddDeviceInput(captureDeviceDescription: String)
 }
 
-extension FBDeviceVideoError: LocalizedError {
+extension DeviceVideoError: LocalizedError {
   var errorDescription: String? {
     switch self {
     case .failedToEnableScreenCaptureDevices(let status):
@@ -50,7 +50,7 @@ public final class FBDeviceVideo {
       &allow
     )
     if status != 0 {
-      throw FBDeviceVideoError.failedToEnableScreenCaptureDevices(status: status)
+      throw DeviceVideoError.failedToEnableScreenCaptureDevices(status: status)
     }
   }
 
@@ -62,7 +62,7 @@ public final class FBDeviceVideo {
         return captureDevice
       }
       if Date() >= deadline {
-        throw FBDeviceVideoError.timedOutWaitingForCaptureDevice(timeout: timeout, deviceDescription: "\(device)")
+        throw DeviceVideoError.timedOutWaitingForCaptureDevice(timeout: timeout, deviceDescription: "\(device)")
       }
       try await Task.sleep(nanoseconds: 100_000_000)
     }
@@ -74,7 +74,7 @@ public final class FBDeviceVideo {
     let deviceInput = try AVCaptureDeviceInput(device: captureDevice)
     let session = AVCaptureSession()
     if !session.canAddInput(deviceInput) {
-      throw FBDeviceVideoError.cannotAddDeviceInput(captureDeviceDescription: "\(captureDevice)")
+      throw DeviceVideoError.cannotAddDeviceInput(captureDeviceDescription: "\(captureDevice)")
     }
     session.addInput(deviceInput)
     return session

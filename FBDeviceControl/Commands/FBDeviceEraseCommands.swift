@@ -14,9 +14,9 @@ private let APICallbackTimeout: TimeInterval = 15
 private let OfflineTimeout: TimeInterval = 20
 private let OnlineTimeout: TimeInterval = 300
 
-// MARK: - FBDeviceEraseOperation
+// MARK: - DeviceEraseOperation
 
-private final class FBDeviceEraseOperation: NSObject, FBiOSTargetSetDelegate, @unchecked Sendable {
+private final class DeviceEraseOperation: NSObject, FBiOSTargetSetDelegate, @unchecked Sendable {
 
   private let udid: String
   private let calls: AMDCalls
@@ -74,7 +74,7 @@ private final class FBDeviceEraseOperation: NSObject, FBiOSTargetSetDelegate, @u
             guard let context else {
               return 0
             }
-            let operation = Unmanaged<FBDeviceEraseOperation>.fromOpaque(context).takeUnretainedValue()
+            let operation = Unmanaged<DeviceEraseOperation>.fromOpaque(context).takeUnretainedValue()
             operation.logger.log("Erase Callback is \(progress)")
             operation.eraseCallbackResult.resolve(withResult: NSNumber(value: progress))
             return 0
@@ -152,7 +152,7 @@ public final class FBDeviceEraseCommands: EraseCommands {
     }
     let logger = device.logger.withName("erase_\(device.udid)")
     try await device.activate()
-    let operation = FBDeviceEraseOperation(device: device, logger: logger)
+    let operation = DeviceEraseOperation(device: device, logger: logger)
     try await operation.erase()
     logger.log("Device erase finished successfully \(operation)")
   }
