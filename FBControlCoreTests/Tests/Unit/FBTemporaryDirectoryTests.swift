@@ -82,6 +82,20 @@ struct FBTemporaryDirectoryTests {
     #expect(!exists(url))
   }
 
+  /// The plain form of the subdirectory walk: the unique file inside each immediate subdirectory.
+  @Test
+  func filesInSubdirectoriesOf_ReturnsTheUniqueFileInEachSubdirectory() throws {
+    let root = temporaryDirectory.temporaryDirectory()
+    defer { temporaryDirectory.cleanOnExit() }
+    for (subdir, file) in [("first", "a.txt"), ("second", "b.txt")] {
+      let dir = root.appendingPathComponent(subdir)
+      try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+      try Data("payload".utf8).write(to: dir.appendingPathComponent(file))
+    }
+    let files = try temporaryDirectory.files(inSubdirectoriesOf: root)
+    #expect((Set(files.map(\.lastPathComponent))) == (Set(["a.txt", "b.txt"])))
+  }
+
   /// Each immediate subdirectory of the extraction directory holds exactly one file, and those
   /// files are what come back, with the scoped directory deleted afterwards.
   @Test

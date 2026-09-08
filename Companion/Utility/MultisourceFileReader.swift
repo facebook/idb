@@ -13,7 +13,15 @@ import IDBGRPCSwift
 
 enum MultisourceFileReader {
 
-  static func filePathURLs<Request: PayloadExtractable>(from requestStream: GRPCAsyncRequestStream<Request>, temporaryDirectory: FBTemporaryDirectory, extractFromSubdir: Bool) async throws -> [URL] {
+  /// Hands the file URLs from the request stream to `body`. Files extracted from a streamed
+  /// archive live in a temporary directory scoped to `body`; files referenced by path belong to
+  /// the caller of the RPC and are handed through untouched.
+  static func withFilePathURLs<Request: PayloadExtractable, T>(
+    from requestStream: GRPCAsyncRequestStream<Request>,
+    temporaryDirectory: FBTemporaryDirectory,
+    extractFromSubdir: Bool,
+    _ body: ([URL]) async throws -> T
+  ) async throws -> T {
     func readNextPayload() async throws -> Idb_Payload {
       guard let p = try await requestStream.requiredNext.extractPayload()
       else { throw GRPCStatus(code: .failedPrecondition, message: "Incorrect request. Expected payload") }
@@ -32,16 +40,23 @@ enum MultisourceFileReader {
     switch payload.source {
     case let .data(data):
       let (readTaskFromStreamTask, input) = pipeToInput(initialData: data, requestStream: requestStream)
+      let mappedInput = input.retyped(FBProcessInput<AnyObject>.self)
 
-      let result = try await filepathsFromTar(temporaryDirectory: temporaryDirectory, input: input, extractFromSubdir: extractFromSubdir, compression: compression)
-
-      // We just check that read from request stream did not produce any errors
-      _ = try await readTaskFromStreamTask.value
-
-      return result
+      return try await temporaryDirectory.withArchiveExtracted(fromStream: mappedInput, compression: compression) { extractionDir in
+        let files: [URL]
+        if extractFromSubdir {
+          files = try temporaryDirectory.files(inSubdirectoriesOf: extractionDir)
+        } else {
+          files = try FileManager.default.contentsOfDirectory(at: extractionDir, includingPropertiesForKeys: [.isDirectoryKey], options: [])
+        }
+        // We just check that read from request stream did not produce any errors
+        _ = try await readTaskFromStreamTask.value
+        return try await body(files)
+      }
 
     case let .filePath(filePath):
-      return try await filepathsFromStream(initial: .init(fileURLWithPath: filePath), requestStream: requestStream)
+      let filePaths = try await filepathsFromStream(initial: .init(fileURLWithPath: filePath), requestStream: requestStream)
+      return try await body(filePaths)
 
     case .url, .compression, .none:
       throw GRPCStatus(code: .invalidArgument, message: "Unrecogized initial payload type \(payload.source as Any)")
@@ -73,16 +88,6 @@ enum MultisourceFileReader {
     }
 
     return filePaths
-  }
-
-  private static func filepathsFromTar(temporaryDirectory: FBTemporaryDirectory, input: FBProcessInput<OutputStream>, extractFromSubdir: Bool, compression: FBCompressionFormat) async throws -> [URL] {
-    let mappedInput = input.retyped(FBProcessInput<AnyObject>.self)
-    if extractFromSubdir {
-      return try await temporaryDirectory.filesFromSubdirsAsync(fromStream: mappedInput, compression: compression)
-    } else {
-      let extractionDir = try await temporaryDirectory.withArchiveExtractedAsync(fromStream: mappedInput, compression: compression)
-      return try FileManager.default.contentsOfDirectory(at: extractionDir, includingPropertiesForKeys: [.isDirectoryKey], options: [])
-    }
   }
 
   // TODO: Do we really need multithreading here? Isnt we just fill the stream sequentially while read is blocked and only then read starts?

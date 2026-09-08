@@ -21,12 +21,10 @@ struct PushMethodHandler {
     guard case let .inner(inner) = request.value
     else { throw GRPCStatus(code: .invalidArgument, message: "Expected inner as first request in stream") }
 
-    let extractedFileURLs =
-      try await MultisourceFileReader
-      .filePathURLs(from: requestStream, temporaryDirectory: commandExecutor.temporaryDirectory, extractFromSubdir: false)
-
     let fileContainer = FileContainerValueTransformer.rawFileContainer(from: inner.container)
-    try await commandExecutor.push_files(extractedFileURLs, to_path: inner.dstPath, containerType: fileContainer)
+    try await MultisourceFileReader.withFilePathURLs(from: requestStream, temporaryDirectory: commandExecutor.temporaryDirectory, extractFromSubdir: false) { extractedFileURLs in
+      try await commandExecutor.push_files(extractedFileURLs, to_path: inner.dstPath, containerType: fileContainer)
+    }
 
     return .init()
   }
