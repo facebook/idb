@@ -7,6 +7,7 @@
 
 import CompanionLib
 import FBControlCore
+import FBSimulatorControl
 import Foundation
 import GRPC
 import IDBGRPCSwift
@@ -18,13 +19,31 @@ struct InstallMethodHandler: @unchecked Sendable {
 
   func handle(requestStream: GRPCAsyncRequestStream<Idb_InstallRequest>, responseStream: GRPCAsyncResponseStreamWriter<Idb_InstallResponse>, context: GRPCAsyncServerCallContext) async throws {
 
-    let artifact = try await install(requestStream: requestStream, responseStream: responseStream)
+    let artifact = try await Self.mapSimulatorInstallErrors {
+      try await install(requestStream: requestStream, responseStream: responseStream)
+    }
 
     let response = Idb_InstallResponse.with {
       $0.name = artifact.name
       $0.uuid = artifact.uuid?.uuidString ?? ""
     }
     try await responseStream.send(response)
+  }
+
+  static func mapSimulatorInstallErrors<T>(_ operation: () async throws -> T) async throws -> T {
+    do {
+      return try await operation()
+    } catch let error as FBSimulatorApplicationError {
+      switch error {
+      case .applicationProcessSuspended,
+        .applicationProcessDebuggerAttached,
+        .applicationInstallTargetNotBooted,
+        .applicationInstallTargetUnavailable:
+        throw GRPCStatus(code: .failedPrecondition, message: error.localizedDescription)
+      default:
+        throw error
+      }
+    }
   }
 
   private func install(requestStream: GRPCAsyncRequestStream<Idb_InstallRequest>, responseStream: GRPCAsyncResponseStreamWriter<Idb_InstallResponse>) async throws -> FBInstalledArtifact {
