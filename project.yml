@@ -194,7 +194,9 @@ targets:
     platform: macOS
     scheme:
       testTargets:
-        - FBSimulatorControlTests
+        - FBSimulatorControlBootTests
+        - FBSimulatorControlSmokeTests
+        - FBSimulatorControlUnitTests
     configFiles:
       Debug: FBSimulatorControl/FBSimulatorControl.xcconfig
       Release: FBSimulatorControl/FBSimulatorControl.xcconfig
@@ -248,17 +250,42 @@ targets:
       - sdk: Metal.framework
       - sdk: UniformTypeIdentifiers.framework
       - sdk: VideoToolbox.framework
-  FBSimulatorControlTests:
+  FBSimulatorControlUnitTests:
     type: bundle.unit-test
     platform: macOS
+    scheme:
+      testTargets:
+        - FBSimulatorControlUnitTests
     configFiles:
       Debug: FBSimulatorControlTests/FBSimulatorControlTests.xcconfig
       Release: FBSimulatorControlTests/FBSimulatorControlTests.xcconfig
     sources:
-      - path: FBSimulatorControlTests
+      - path: FBSimulatorControlTests/Tests/Unit
         excludes:
           - "**/*-Info.plist"
           - "**/*.xcconfig"
+      - path: FBSimulatorControlTests/Fixtures/circle_iphone11.png
+        buildPhase: resources
+      - path: FBSimulatorControlTests/Fixtures/fadeout_circle_end_iphone11.png
+        buildPhase: resources
+      - path: FBSimulatorControlTests/Fixtures/fadeout_circle_mid_iphone11.png
+        buildPhase: resources
+      - path: FBSimulatorControlTests/Fixtures/fadeout_circle_start_iphone11.png
+        buildPhase: resources
+      - path: FBSimulatorControlTests/Fixtures/label_in_header_iphone11.png
+        buildPhase: resources
+      - path: FBSimulatorControlTests/Fixtures/photo0.png
+        buildPhase: resources
+      - path: FBSimulatorControlTests/Fixtures/photo1.png
+        buildPhase: resources
+      - path: FBSimulatorControlTests/Fixtures/rect_iphone11.png
+        buildPhase: resources
+      - path: FBSimulatorControlTests/Fixtures/rect_negative_width_iphone11.png
+        buildPhase: resources
+      - path: FBSimulatorControlTests/Fixtures/transient_persistence_iphone11.png
+        buildPhase: resources
+      - path: FBSimulatorControlTests/Fixtures/video0.mp4
+        buildPhase: resources
       - path: Fixtures/Binaries/MacUnitTestFixture.xctest
         type: folder
         buildPhase: resources
@@ -296,8 +323,198 @@ targets:
     settings:
       base:
         INFOPLIST_FILE: $(SRCROOT)/FBSimulatorControlTests/FBSimulatorControlTests-Info.plist
-        PRODUCT_BUNDLE_IDENTIFIER: com.facebook.FBSimulatorControlTests
-        PRODUCT_NAME: FBSimulatorControlTests
+        PRODUCT_BUNDLE_IDENTIFIER: com.facebook.FBSimulatorControlUnitTests
+        PRODUCT_NAME: FBSimulatorControlUnitTests
+        SWIFT_VERSION: "5.0"
+        SWIFT_OBJC_BRIDGING_HEADER: $(SRCROOT)/FBSimulatorControlTests/FBSimulatorControlTests-Bridging-Header.h
+        FRAMEWORK_SEARCH_PATHS: $(inherited) $(DEVELOPER_DIR)/Library/PrivateFrameworks
+        CLANG_ENABLE_OBJC_ARC: "YES"
+        OTHER_CFLAGS: $(inherited) -Werror -Wall -Warray-bounds-pointer-arithmetic -Wassign-enum -Wcompare-distinct-pointer-types -Wconversion -Wdeprecated -Wduplicate-method-match -Wglobal-constructors -Wimplicit-fallthrough -Wimplicit-retain-self -Wint-in-bool-context -Wmissing-prototypes -Wnonportable-include-path -Wnonportable-system-include-path -Wnull-pointer-arithmetic -Wnull-pointer-subtraction -Wnullable-to-nonnull-conversion -Wobjc-signed-char-bool -Wrange-loop-analysis -Wshadow -Wstrict-prototypes -Wstring-concatenation -Wundeclared-selector -Wunguarded-availability -Wunterminated-string-initialization -Wunreachable-code-return -Wunused-function -Wno-error=conditional-uninitialized -Wno-error=objc-designated-initializers -Wno-error=objc-dictionary-duplicate-keys -Wno-error=pointer-to-enum-cast -Wno-error=pointer-to-int-cast -Werror=void-pointer-to-int-cast -Wno-error=tautological-bitwise-compare -Wno-error=tautological-compare -Wno-error=tautological-constant-compare -Wno-error=tautological-constant-in-range-compare -Wno-error=tautological-constant-out-of-range-compare -Wno-error=tautological-negation-compare -Wno-error=tautological-objc-bool-compare -Wno-error=tautological-overlap-compare -Wno-error=tautological-pointer-compare -Wno-error=tautological-type-limit-compare -Wno-error=tautological-undefined-compare -Wno-error=tautological-unsigned-char-zero-compare -Wno-error=tautological-unsigned-enum-zero-compare -Wno-error=tautological-unsigned-zero-compare -Wno-error=tautological-value-range-compare -Wno-error=unreachable-code-break -Wno-error=unreachable-code-fallthrough -Wno-error=unreachable-code-loop-increment -Wno-error=unreachable-code -Wno-error=unused-but-set-parameter -Wno-error=unused-but-set-variable -Wno-error=void-pointer-to-enum-cast -Wno-error=suggest-override -Wno-error=extra-semi -Wno-error=missing-noreturn -Wno-error=format-nonliteral -Wno-error=non-virtual-dtor -Wno-covered-switch-default -Wswitch-enum -Wswitch-default -Wno-error=c23-extensions -Wno-error=vla-cxx-extension -Wmissing-field-initializers -Wno-error=missing-field-initializers -Wbitwise-conditional-parentheses -Wno-error=bitwise-conditional-parentheses -Wlogical-not-parentheses -Wno-error=logical-not-parentheses -Wlogical-op-parentheses -Wno-error=logical-op-parentheses -Wno-float-conversion -Wno-implicit-float-conversion -Wno-implicit-int-float-conversion -Wno-implicit-int-conversion -Wno-shorten-64-to-32 -Wno-sign-conversion -Wfloat-overflow-conversion -Wfloat-zero-conversion -Wobjc-signed-char-bool-implicit-float-conversion -Wobjc-signed-char-bool-implicit-int-conversion -Wno-deprecated-declarations -Wno-deprecated-copy-dtor -Wno-deprecated-copy-with-dtor -Wno-deprecated-dynamic-exception-spec -Wno-deprecated-implementations -Wno-deprecated-redundant-constexpr-static-def -Wno-non-c-typedef-for-linkage -Wno-psabi -Wno-gnu-folding-constant -Wno-c99-designator -Wno-deprecated-copy -Wno-final-dtor-non-final-class -Wno-gnu-inline-cpp-without-extern -Wno-range-loop-construct -Wno-reorder-init-list -Wno-deprecated-this-capture -Wno-error=ambiguous-reversed-operator -Wno-error=deprecated-anon-enum-enum-conversion -Wenum-enum-conversion -Wmisleading-indentation -Wno-unknown-warning-option -Wno-module-conflict -Wno-deprecated-copy-with-user-provided-dtor -Wno-deprecated-experimental-coroutine -Wundef-prefix=__IPHONE_1,__IPHONE_2,__IPHONE_3,FB_AT_LEAST_IOS,META_AT_LEAST,FB_IOS,META_IOS,FB_64,META_64,META_TARGET,FBReport,FB_SWITCH -DDEFAULT_WARNING_FLAGS_SENTINEL=1 -Wno-error=assign-enum -Wno-error=deprecated -Wno-error=deprecated-anon-enum-enum-conversion -Wno-error=deprecated-array-compare -Wno-error=deprecated-attributes -Wno-error=deprecated-comma-subscript -Wno-error=deprecated-copy -Wno-error=deprecated-copy-with-user-provided-copy -Wno-error=deprecated-copy-with-dtor -Wno-error=deprecated-copy-with-user-provided-dtor -Wno-error=deprecated-declarations -Wno-error=deprecated-dynamic-exception-spec -Wno-error=deprecated-enum-compare -Wno-error=deprecated-enum-compare-conditional -Wno-error=deprecated-enum-enum-conversion -Wno-error=deprecated-enum-float-conversion -Wno-error=deprecated-increment-bool -Wno-error=deprecated-pragma -Wno-error=deprecated-register -Wno-error=deprecated-this-capture -Wno-error=deprecated-volatile -Wno-error=deprecated-writable-strings -Wno-error=conversion -Wno-error=constant-conversion -Wno-error=bitfield-constant-conversion -Wno-error=objc-bool-constant-conversion -Wno-error=enum-conversion -Wno-error=enum-compare-conditional -Wno-error=enum-enum-conversion -Wno-error=enum-float-conversion -Wno-error=float-conversion -Wno-error=float-overflow-conversion -Wno-error=float-zero-conversion -Wno-error=implicit-fallthrough -Wno-error=implicit-float-conversion -Wno-error=implicit-int-float-conversion -Wno-error=implicit-const-int-float-conversion -Wno-error=objc-signed-char-bool-implicit-float-conversion -Wno-error=implicit-int-conversion -Wno-error=objc-signed-char-bool-implicit-int-conversion -Wno-error=int-conversion -Wno-error=literal-conversion -Wno-error=non-literal-null-conversion -Wno-error=nonnull -Wno-error=null-conversion -Wno-error=objc-literal-conversion -Wno-error=shorten-64-to-32 -Wno-error=string-conversion -Wno-error=nullable-to-nonnull-conversion -Wno-error=switch-enum -Wno-error=switch-default -Wno-mismatched-tags -Wno-objc-designated-initializers -Wno-reorder -Wno-sign-conversion -Wno-unused-lambda-capture -Wno-unused-private-field -Wno-unused-property-ivar -DDEFAULT_TEST_WARNING_FLAGS_SENTINEL=1 -Werror=sign-conversion -Werror=shorten-64-to-32 -Wno-nullability-completeness -Wno-global-constructors -fobjc-arc-exceptions -Wno-deprecated-declarations -Wno-error=unused-command-line-argument
+        OTHER_SWIFT_FLAGS: $(inherited) -Xcc -fmodule-map-file=$(SRCROOT)/PrivateHeaders/AXRuntime/module.modulemap -Xcc -fmodule-map-file=$(SRCROOT)/PrivateHeaders/AccessibilityPlatformTranslation/module.modulemap -Xcc -fmodule-map-file=$(SRCROOT)/PrivateHeaders/CoreSimulatorUtilities/module.modulemap -Xcc -fmodule-map-file=$(SRCROOT)/PrivateHeaders/DTXConnectionServices/module.modulemap -Xcc -fmodule-map-file=$(SRCROOT)/PrivateHeaders/SimulatorKit/module.modulemap -Xcc -fmodule-map-file=$(SRCROOT)/PrivateHeaders/CoreSimDeviceIO/module.modulemap -Xcc -fmodule-map-file=$(SRCROOT)/PrivateHeaders/CoreSimulator/module.modulemap -Xcc -fmodule-map-file=$(SRCROOT)/PrivateHeaders/SimulatorApp/module.modulemap -no-warnings-as-errors -Xcc -I -Xcc $(SRCROOT)/FBSimulatorControlTests/Fixtures
+        OTHER_LDFLAGS: $(inherited) -all_load -all_load -weak_library $(SRCROOT)/PrivateHeaders/CoreSimulator/CoreSimulator.tbd -weak_library $(SRCROOT)/PrivateHeaders/AccessibilityPlatformTranslation/AccessibilityPlatformTranslation.tbd
+      configs:
+        Release:
+          DEBUG_INFORMATION_FORMAT: dwarf-with-dsym
+          STRIP_INSTALLED_PRODUCT: "YES"
+    dependencies:
+      - target: CompanionUtilities
+      - target: FBControlCore
+      - target: FBSimulatorControl
+      - target: XCTestBootstrap
+      - sdk: AVFoundation.framework
+      - sdk: Cocoa.framework
+      - sdk: Metal.framework
+      - sdk: XCTest.framework
+  FBSimulatorControlBootTests:
+    type: bundle.unit-test
+    platform: macOS
+    scheme:
+      testTargets:
+        - FBSimulatorControlBootTests
+    configFiles:
+      Debug: FBSimulatorControlTests/FBSimulatorControlTests.xcconfig
+      Release: FBSimulatorControlTests/FBSimulatorControlTests.xcconfig
+    sources:
+      - path: FBSimulatorControlTests/Tests/Boot
+        excludes:
+          - "**/*-Info.plist"
+          - "**/*.xcconfig"
+      - path: FBSimulatorControlTests/Fixtures/circle_iphone11.png
+        buildPhase: resources
+      - path: FBSimulatorControlTests/Fixtures/fadeout_circle_end_iphone11.png
+        buildPhase: resources
+      - path: FBSimulatorControlTests/Fixtures/fadeout_circle_mid_iphone11.png
+        buildPhase: resources
+      - path: FBSimulatorControlTests/Fixtures/fadeout_circle_start_iphone11.png
+        buildPhase: resources
+      - path: FBSimulatorControlTests/Fixtures/label_in_header_iphone11.png
+        buildPhase: resources
+      - path: FBSimulatorControlTests/Fixtures/photo0.png
+        buildPhase: resources
+      - path: FBSimulatorControlTests/Fixtures/photo1.png
+        buildPhase: resources
+      - path: FBSimulatorControlTests/Fixtures/rect_iphone11.png
+        buildPhase: resources
+      - path: FBSimulatorControlTests/Fixtures/rect_negative_width_iphone11.png
+        buildPhase: resources
+      - path: FBSimulatorControlTests/Fixtures/transient_persistence_iphone11.png
+        buildPhase: resources
+      - path: FBSimulatorControlTests/Fixtures/video0.mp4
+        buildPhase: resources
+      - path: Fixtures/Binaries/MacUnitTestFixture.xctest
+        type: folder
+        buildPhase: resources
+      - path: Fixtures/Binaries/TableSearch.app
+        type: folder
+        buildPhase: resources
+      - path: Fixtures/Binaries/iOSAppFixture.app
+        type: folder
+        buildPhase: resources
+      - path: Fixtures/Binaries/iOSAppUITestFixture.xctest
+        type: folder
+        buildPhase: resources
+      - path: Fixtures/Binaries/iOSUnitTestFixture.xctest
+        type: folder
+        buildPhase: resources
+      - path: REPL/IDB/IDBAPI.swiftinterface
+        buildPhase: resources
+    postBuildScripts:
+      - name: Copy generated bundle resources
+        script: set -e && DEST="$TARGET_BUILD_DIR/$UNLOCALIZED_RESOURCES_FOLDER_PATH" && mkdir -p "$DEST" && cp "$SYMROOT/Release-appletvsimulator/SimulatorFrameworkBridge-tvOS" "$DEST/" && cp "$SYMROOT/Release-iphonesimulator/SimulatorFrameworkBridge-iOS" "$DEST/" && cp "$SYMROOT/Release-iphonesimulator/libRepl-iOS.dylib" "$DEST/" && cp "$SYMROOT/Release-iphonesimulator/libShimulator-iOS.dylib" "$DEST/" && cp "$SYMROOT/Release/libRepl-macOS.dylib" "$DEST/" && cp "$SYMROOT/Release/libShimulator-macOS.dylib" "$DEST/"
+        inputFiles:
+          - $(SYMROOT)/Release-appletvsimulator/SimulatorFrameworkBridge-tvOS
+          - $(SYMROOT)/Release-iphonesimulator/SimulatorFrameworkBridge-iOS
+          - $(SYMROOT)/Release-iphonesimulator/libRepl-iOS.dylib
+          - $(SYMROOT)/Release-iphonesimulator/libShimulator-iOS.dylib
+          - $(SYMROOT)/Release/libRepl-macOS.dylib
+          - $(SYMROOT)/Release/libShimulator-macOS.dylib
+        outputFiles:
+          - $(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/SimulatorFrameworkBridge-tvOS
+          - $(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/SimulatorFrameworkBridge-iOS
+          - $(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/libRepl-iOS.dylib
+          - $(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/libShimulator-iOS.dylib
+          - $(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/libRepl-macOS.dylib
+          - $(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/libShimulator-macOS.dylib
+    settings:
+      base:
+        INFOPLIST_FILE: $(SRCROOT)/FBSimulatorControlTests/FBSimulatorControlTests-Info.plist
+        PRODUCT_BUNDLE_IDENTIFIER: com.facebook.FBSimulatorControlBootTests
+        PRODUCT_NAME: FBSimulatorControlBootTests
+        SWIFT_VERSION: "5.0"
+        SWIFT_OBJC_BRIDGING_HEADER: $(SRCROOT)/FBSimulatorControlTests/FBSimulatorControlTests-Bridging-Header.h
+        FRAMEWORK_SEARCH_PATHS: $(inherited) $(DEVELOPER_DIR)/Library/PrivateFrameworks
+        CLANG_ENABLE_OBJC_ARC: "YES"
+        OTHER_CFLAGS: $(inherited) -Werror -Wall -Warray-bounds-pointer-arithmetic -Wassign-enum -Wcompare-distinct-pointer-types -Wconversion -Wdeprecated -Wduplicate-method-match -Wglobal-constructors -Wimplicit-fallthrough -Wimplicit-retain-self -Wint-in-bool-context -Wmissing-prototypes -Wnonportable-include-path -Wnonportable-system-include-path -Wnull-pointer-arithmetic -Wnull-pointer-subtraction -Wnullable-to-nonnull-conversion -Wobjc-signed-char-bool -Wrange-loop-analysis -Wshadow -Wstrict-prototypes -Wstring-concatenation -Wundeclared-selector -Wunguarded-availability -Wunterminated-string-initialization -Wunreachable-code-return -Wunused-function -Wno-error=conditional-uninitialized -Wno-error=objc-designated-initializers -Wno-error=objc-dictionary-duplicate-keys -Wno-error=pointer-to-enum-cast -Wno-error=pointer-to-int-cast -Werror=void-pointer-to-int-cast -Wno-error=tautological-bitwise-compare -Wno-error=tautological-compare -Wno-error=tautological-constant-compare -Wno-error=tautological-constant-in-range-compare -Wno-error=tautological-constant-out-of-range-compare -Wno-error=tautological-negation-compare -Wno-error=tautological-objc-bool-compare -Wno-error=tautological-overlap-compare -Wno-error=tautological-pointer-compare -Wno-error=tautological-type-limit-compare -Wno-error=tautological-undefined-compare -Wno-error=tautological-unsigned-char-zero-compare -Wno-error=tautological-unsigned-enum-zero-compare -Wno-error=tautological-unsigned-zero-compare -Wno-error=tautological-value-range-compare -Wno-error=unreachable-code-break -Wno-error=unreachable-code-fallthrough -Wno-error=unreachable-code-loop-increment -Wno-error=unreachable-code -Wno-error=unused-but-set-parameter -Wno-error=unused-but-set-variable -Wno-error=void-pointer-to-enum-cast -Wno-error=suggest-override -Wno-error=extra-semi -Wno-error=missing-noreturn -Wno-error=format-nonliteral -Wno-error=non-virtual-dtor -Wno-covered-switch-default -Wswitch-enum -Wswitch-default -Wno-error=c23-extensions -Wno-error=vla-cxx-extension -Wmissing-field-initializers -Wno-error=missing-field-initializers -Wbitwise-conditional-parentheses -Wno-error=bitwise-conditional-parentheses -Wlogical-not-parentheses -Wno-error=logical-not-parentheses -Wlogical-op-parentheses -Wno-error=logical-op-parentheses -Wno-float-conversion -Wno-implicit-float-conversion -Wno-implicit-int-float-conversion -Wno-implicit-int-conversion -Wno-shorten-64-to-32 -Wno-sign-conversion -Wfloat-overflow-conversion -Wfloat-zero-conversion -Wobjc-signed-char-bool-implicit-float-conversion -Wobjc-signed-char-bool-implicit-int-conversion -Wno-deprecated-declarations -Wno-deprecated-copy-dtor -Wno-deprecated-copy-with-dtor -Wno-deprecated-dynamic-exception-spec -Wno-deprecated-implementations -Wno-deprecated-redundant-constexpr-static-def -Wno-non-c-typedef-for-linkage -Wno-psabi -Wno-gnu-folding-constant -Wno-c99-designator -Wno-deprecated-copy -Wno-final-dtor-non-final-class -Wno-gnu-inline-cpp-without-extern -Wno-range-loop-construct -Wno-reorder-init-list -Wno-deprecated-this-capture -Wno-error=ambiguous-reversed-operator -Wno-error=deprecated-anon-enum-enum-conversion -Wenum-enum-conversion -Wmisleading-indentation -Wno-unknown-warning-option -Wno-module-conflict -Wno-deprecated-copy-with-user-provided-dtor -Wno-deprecated-experimental-coroutine -Wundef-prefix=__IPHONE_1,__IPHONE_2,__IPHONE_3,FB_AT_LEAST_IOS,META_AT_LEAST,FB_IOS,META_IOS,FB_64,META_64,META_TARGET,FBReport,FB_SWITCH -DDEFAULT_WARNING_FLAGS_SENTINEL=1 -Wno-error=assign-enum -Wno-error=deprecated -Wno-error=deprecated-anon-enum-enum-conversion -Wno-error=deprecated-array-compare -Wno-error=deprecated-attributes -Wno-error=deprecated-comma-subscript -Wno-error=deprecated-copy -Wno-error=deprecated-copy-with-user-provided-copy -Wno-error=deprecated-copy-with-dtor -Wno-error=deprecated-copy-with-user-provided-dtor -Wno-error=deprecated-declarations -Wno-error=deprecated-dynamic-exception-spec -Wno-error=deprecated-enum-compare -Wno-error=deprecated-enum-compare-conditional -Wno-error=deprecated-enum-enum-conversion -Wno-error=deprecated-enum-float-conversion -Wno-error=deprecated-increment-bool -Wno-error=deprecated-pragma -Wno-error=deprecated-register -Wno-error=deprecated-this-capture -Wno-error=deprecated-volatile -Wno-error=deprecated-writable-strings -Wno-error=conversion -Wno-error=constant-conversion -Wno-error=bitfield-constant-conversion -Wno-error=objc-bool-constant-conversion -Wno-error=enum-conversion -Wno-error=enum-compare-conditional -Wno-error=enum-enum-conversion -Wno-error=enum-float-conversion -Wno-error=float-conversion -Wno-error=float-overflow-conversion -Wno-error=float-zero-conversion -Wno-error=implicit-fallthrough -Wno-error=implicit-float-conversion -Wno-error=implicit-int-float-conversion -Wno-error=implicit-const-int-float-conversion -Wno-error=objc-signed-char-bool-implicit-float-conversion -Wno-error=implicit-int-conversion -Wno-error=objc-signed-char-bool-implicit-int-conversion -Wno-error=int-conversion -Wno-error=literal-conversion -Wno-error=non-literal-null-conversion -Wno-error=nonnull -Wno-error=null-conversion -Wno-error=objc-literal-conversion -Wno-error=shorten-64-to-32 -Wno-error=string-conversion -Wno-error=nullable-to-nonnull-conversion -Wno-error=switch-enum -Wno-error=switch-default -Wno-mismatched-tags -Wno-objc-designated-initializers -Wno-reorder -Wno-sign-conversion -Wno-unused-lambda-capture -Wno-unused-private-field -Wno-unused-property-ivar -DDEFAULT_TEST_WARNING_FLAGS_SENTINEL=1 -Werror=sign-conversion -Werror=shorten-64-to-32 -Wno-nullability-completeness -Wno-global-constructors -fobjc-arc-exceptions -Wno-deprecated-declarations -Wno-error=unused-command-line-argument
+        OTHER_SWIFT_FLAGS: $(inherited) -Xcc -fmodule-map-file=$(SRCROOT)/PrivateHeaders/AXRuntime/module.modulemap -Xcc -fmodule-map-file=$(SRCROOT)/PrivateHeaders/AccessibilityPlatformTranslation/module.modulemap -Xcc -fmodule-map-file=$(SRCROOT)/PrivateHeaders/CoreSimulatorUtilities/module.modulemap -Xcc -fmodule-map-file=$(SRCROOT)/PrivateHeaders/DTXConnectionServices/module.modulemap -Xcc -fmodule-map-file=$(SRCROOT)/PrivateHeaders/SimulatorKit/module.modulemap -Xcc -fmodule-map-file=$(SRCROOT)/PrivateHeaders/CoreSimDeviceIO/module.modulemap -Xcc -fmodule-map-file=$(SRCROOT)/PrivateHeaders/CoreSimulator/module.modulemap -Xcc -fmodule-map-file=$(SRCROOT)/PrivateHeaders/SimulatorApp/module.modulemap -no-warnings-as-errors -Xcc -I -Xcc $(SRCROOT)/FBSimulatorControlTests/Fixtures
+        OTHER_LDFLAGS: $(inherited) -all_load -all_load -weak_library $(SRCROOT)/PrivateHeaders/CoreSimulator/CoreSimulator.tbd -weak_library $(SRCROOT)/PrivateHeaders/AccessibilityPlatformTranslation/AccessibilityPlatformTranslation.tbd
+      configs:
+        Release:
+          DEBUG_INFORMATION_FORMAT: dwarf-with-dsym
+          STRIP_INSTALLED_PRODUCT: "YES"
+    dependencies:
+      - target: CompanionUtilities
+      - target: FBControlCore
+      - target: FBSimulatorControl
+      - target: XCTestBootstrap
+      - sdk: AVFoundation.framework
+      - sdk: Cocoa.framework
+      - sdk: Metal.framework
+      - sdk: XCTest.framework
+  FBSimulatorControlSmokeTests:
+    type: bundle.unit-test
+    platform: macOS
+    scheme:
+      testTargets:
+        - FBSimulatorControlSmokeTests
+    configFiles:
+      Debug: FBSimulatorControlTests/FBSimulatorControlTests.xcconfig
+      Release: FBSimulatorControlTests/FBSimulatorControlTests.xcconfig
+    sources:
+      - path: FBSimulatorControlTests/Tests/Smoke
+        excludes:
+          - "**/*-Info.plist"
+          - "**/*.xcconfig"
+      - path: FBSimulatorControlTests/Fixtures/circle_iphone11.png
+        buildPhase: resources
+      - path: FBSimulatorControlTests/Fixtures/fadeout_circle_end_iphone11.png
+        buildPhase: resources
+      - path: FBSimulatorControlTests/Fixtures/fadeout_circle_mid_iphone11.png
+        buildPhase: resources
+      - path: FBSimulatorControlTests/Fixtures/fadeout_circle_start_iphone11.png
+        buildPhase: resources
+      - path: FBSimulatorControlTests/Fixtures/label_in_header_iphone11.png
+        buildPhase: resources
+      - path: FBSimulatorControlTests/Fixtures/photo0.png
+        buildPhase: resources
+      - path: FBSimulatorControlTests/Fixtures/photo1.png
+        buildPhase: resources
+      - path: FBSimulatorControlTests/Fixtures/rect_iphone11.png
+        buildPhase: resources
+      - path: FBSimulatorControlTests/Fixtures/rect_negative_width_iphone11.png
+        buildPhase: resources
+      - path: FBSimulatorControlTests/Fixtures/transient_persistence_iphone11.png
+        buildPhase: resources
+      - path: FBSimulatorControlTests/Fixtures/video0.mp4
+        buildPhase: resources
+      - path: Fixtures/Binaries/MacUnitTestFixture.xctest
+        type: folder
+        buildPhase: resources
+      - path: Fixtures/Binaries/TableSearch.app
+        type: folder
+        buildPhase: resources
+      - path: Fixtures/Binaries/iOSAppFixture.app
+        type: folder
+        buildPhase: resources
+      - path: Fixtures/Binaries/iOSAppUITestFixture.xctest
+        type: folder
+        buildPhase: resources
+      - path: Fixtures/Binaries/iOSUnitTestFixture.xctest
+        type: folder
+        buildPhase: resources
+      - path: REPL/IDB/IDBAPI.swiftinterface
+        buildPhase: resources
+    postBuildScripts:
+      - name: Copy generated bundle resources
+        script: set -e && DEST="$TARGET_BUILD_DIR/$UNLOCALIZED_RESOURCES_FOLDER_PATH" && mkdir -p "$DEST" && cp "$SYMROOT/Release-appletvsimulator/SimulatorFrameworkBridge-tvOS" "$DEST/" && cp "$SYMROOT/Release-iphonesimulator/SimulatorFrameworkBridge-iOS" "$DEST/" && cp "$SYMROOT/Release-iphonesimulator/libRepl-iOS.dylib" "$DEST/" && cp "$SYMROOT/Release-iphonesimulator/libShimulator-iOS.dylib" "$DEST/" && cp "$SYMROOT/Release/libRepl-macOS.dylib" "$DEST/" && cp "$SYMROOT/Release/libShimulator-macOS.dylib" "$DEST/"
+        inputFiles:
+          - $(SYMROOT)/Release-appletvsimulator/SimulatorFrameworkBridge-tvOS
+          - $(SYMROOT)/Release-iphonesimulator/SimulatorFrameworkBridge-iOS
+          - $(SYMROOT)/Release-iphonesimulator/libRepl-iOS.dylib
+          - $(SYMROOT)/Release-iphonesimulator/libShimulator-iOS.dylib
+          - $(SYMROOT)/Release/libRepl-macOS.dylib
+          - $(SYMROOT)/Release/libShimulator-macOS.dylib
+        outputFiles:
+          - $(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/SimulatorFrameworkBridge-tvOS
+          - $(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/SimulatorFrameworkBridge-iOS
+          - $(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/libRepl-iOS.dylib
+          - $(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/libShimulator-iOS.dylib
+          - $(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/libRepl-macOS.dylib
+          - $(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/libShimulator-macOS.dylib
+    settings:
+      base:
+        INFOPLIST_FILE: $(SRCROOT)/FBSimulatorControlTests/FBSimulatorControlTests-Info.plist
+        PRODUCT_BUNDLE_IDENTIFIER: com.facebook.FBSimulatorControlSmokeTests
+        PRODUCT_NAME: FBSimulatorControlSmokeTests
         SWIFT_VERSION: "5.0"
         SWIFT_OBJC_BRIDGING_HEADER: $(SRCROOT)/FBSimulatorControlTests/FBSimulatorControlTests-Bridging-Header.h
         FRAMEWORK_SEARCH_PATHS: $(inherited) $(DEVELOPER_DIR)/Library/PrivateFrameworks
