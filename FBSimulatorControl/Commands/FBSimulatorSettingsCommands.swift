@@ -54,8 +54,6 @@ public enum FBSimulatorSettingsError: Error {
   case contactsDirectoryEnumerationFailed(path: String)
   case noContactsDatabases
   case noDnsServers
-  case frameworkBridgeBinaryMissing
-  case frameworkBridgeFailed(service: String, action: String, exitCode: Int32, stderr: String)
   case tccDatabaseMissing(path: String)
   case tccDatabaseIsDirectory(path: String)
   case tccDatabaseNotWritable(path: String)
@@ -102,10 +100,6 @@ extension FBSimulatorSettingsError: LocalizedError {
       return "Could not update Address Book DBs when no databases are provided"
     case .noDnsServers:
       return "At least one DNS server address is required"
-    case .frameworkBridgeBinaryMissing:
-      return "SimulatorFrameworkBridge binary not found in the companion Resources directory"
-    case let .frameworkBridgeFailed(service, action, exitCode, stderr):
-      return "SimulatorFrameworkBridge \(service) \(action) failed with exit code \(exitCode): \(stderr)"
     case let .tccDatabaseMissing(path):
       return "Expected file to exist at path \(path) but it was not there"
     case let .tccDatabaseIsDirectory(path):
@@ -477,67 +471,50 @@ public struct FBSimulatorSettingsCommands {
   }
 
   fileprivate func setProxy(host: String, port: UInt, type: String) async throws {
-    try await runSimulatorFrameworkBridge(
+    try await simulator.runSimulatorFrameworkBridge(
       withService: "proxy",
       action: "set",
       arguments: [host, "\(port)", type.isEmpty ? "http" : type])
   }
 
   fileprivate func clearProxy() async throws {
-    try await runSimulatorFrameworkBridge(withService: "proxy", action: "clear")
+    try await simulator.runSimulatorFrameworkBridge(withService: "proxy", action: "clear")
   }
 
   fileprivate func listProxy() async throws -> String {
-    try await runSimulatorFrameworkBridge(withService: "proxy", action: "list")
+    try await simulator.runSimulatorFrameworkBridge(withService: "proxy", action: "list")
   }
 
   fileprivate func setDnsServers(_ servers: [String]) async throws {
     if servers.isEmpty {
       throw FBSimulatorSettingsError.noDnsServers
     }
-    try await runSimulatorFrameworkBridge(withService: "dns", action: "set", arguments: servers)
+    try await simulator.runSimulatorFrameworkBridge(withService: "dns", action: "set", arguments: servers)
   }
 
   fileprivate func clearDns() async throws {
-    try await runSimulatorFrameworkBridge(withService: "dns", action: "clear")
+    try await simulator.runSimulatorFrameworkBridge(withService: "dns", action: "clear")
   }
 
   fileprivate func listDns() async throws -> String {
-    try await runSimulatorFrameworkBridge(withService: "dns", action: "list")
+    try await simulator.runSimulatorFrameworkBridge(withService: "dns", action: "list")
   }
 
   fileprivate func setHealthAuthorization(_ approved: Bool, forBundleID bundleID: String, typeIdentifiers: [String]) async throws {
     let action = approved ? "approve" : "revoke"
     let args = [bundleID] + typeIdentifiers
-    try await runSimulatorFrameworkBridge(withService: "health", action: action, arguments: args)
+    try await simulator.runSimulatorFrameworkBridge(withService: "health", action: action, arguments: args)
   }
 
   fileprivate func clearHealthAuthorization(forBundleID bundleID: String) async throws {
-    try await runSimulatorFrameworkBridge(withService: "health", action: "clear", arguments: [bundleID])
+    try await simulator.runSimulatorFrameworkBridge(withService: "health", action: "clear", arguments: [bundleID])
   }
 
   fileprivate func listHealthAuthorization(forBundleID bundleID: String) async throws -> String {
-    try await runSimulatorFrameworkBridge(withService: "health", action: "list", arguments: [bundleID])
+    try await simulator.runSimulatorFrameworkBridge(withService: "health", action: "list", arguments: [bundleID])
   }
 
   // MARK: - Private
-
-  @discardableResult
-  fileprivate func runSimulatorFrameworkBridge(withService service: String, action: String, arguments: [String] = []) async throws -> String {
-    guard let helperPath = BundledResources.path(forItem: "SimulatorFrameworkBridge") else {
-      throw FBSimulatorSettingsError.frameworkBridgeBinaryMissing
-    }
-
-    let output = try await simulator.launchProcessConsumingOutput(
-      launchPath: helperPath,
-      arguments: [service, action] + arguments)
-    guard output.exitCode == 0 else {
-      let stderr = String(data: output.stderr, encoding: .utf8) ?? ""
-      throw FBSimulatorSettingsError.frameworkBridgeFailed(service: service, action: action, exitCode: output.exitCode, stderr: stderr)
-    }
-    simulator.logger.log("SimulatorFrameworkBridge \(service) \(action) completed successfully")
-    return String(data: output.stdout, encoding: .utf8) ?? ""
-  }
 
   fileprivate func authorizeLocationSettings(_ bundleIDs: [String]) async throws {
     try await FBLocationServicesModificationStrategy(simulator: simulator)
@@ -555,7 +532,7 @@ public struct FBSimulatorSettingsCommands {
     }
     let action = approved ? "approve" : "revoke"
     for bundleID in bundleIDs {
-      try await runSimulatorFrameworkBridge(withService: "health", action: action, arguments: [bundleID])
+      try await simulator.runSimulatorFrameworkBridge(withService: "health", action: action, arguments: [bundleID])
     }
   }
 
@@ -566,7 +543,7 @@ public struct FBSimulatorSettingsCommands {
 
     let action = approved ? "approve" : "revoke"
     for bundleID in bundleIDs {
-      try await runSimulatorFrameworkBridge(withService: "notifications", action: action, arguments: [bundleID])
+      try await simulator.runSimulatorFrameworkBridge(withService: "notifications", action: action, arguments: [bundleID])
     }
   }
 
@@ -861,11 +838,11 @@ extension FBSimulator: SettingsCommands {
   }
 
   public func clearContacts() async throws {
-    try await settings.runSimulatorFrameworkBridge(withService: "contacts", action: "clear")
+    try await runSimulatorFrameworkBridge(withService: "contacts", action: "clear")
   }
 
   public func clearPhotos() async throws {
-    try await settings.runSimulatorFrameworkBridge(withService: "photos", action: "clear")
+    try await runSimulatorFrameworkBridge(withService: "photos", action: "clear")
   }
 
   private func currentAppearance() async throws -> FBSimulatorAppearance {
