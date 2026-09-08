@@ -78,9 +78,6 @@ public protocol FBDeviceCommands: FBDeviceProtocol {
     _ body: (any FBDeviceCommands) async throws -> T
   ) async throws -> T
 
-  /// Starts a service on the AMDevice.
-  func startService(_ service: String) -> FBFutureContext<FBAMDServiceConnection>
-
   /// Starts house arrest for a given bundle id, handing its AFC connection to `body`.
   func withHouseArrestAFCConnection<T>(
     forBundleID bundleID: String,

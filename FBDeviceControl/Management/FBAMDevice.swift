@@ -181,10 +181,6 @@ public final class FBAMDevice: FBiOSTargetInfo, FBDeviceCommands, CustomStringCo
     return try await body(self)
   }
 
-  public func startService(_ service: String) -> FBFutureContext<FBAMDServiceConnection> {
-    startServiceConnection(service)
-  }
-
   /// The AMDevice session is held only while `body` runs; the AFC connection outlives it, pooled
   /// for the device's service reuse timeout so a following operation on the same bundle re-uses it.
   public func withHouseArrestAFCConnection<T>(

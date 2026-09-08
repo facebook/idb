@@ -200,13 +200,6 @@ public final class FBDevice: FBiOSTarget, FBDeviceCommands, CustomStringConverti
     return try await amDevice.withConnectedDevice(purpose: purpose, body)
   }
 
-  public func startService(_ service: String) -> FBFutureContext<FBAMDServiceConnection> {
-    guard let amDevice else {
-      return notAMDeviceBacked(operation: "startService:")
-    }
-    return amDevice.startService(service)
-  }
-
   public func withHouseArrestAFCConnection<T>(
     forBundleID bundleID: String,
     afcCalls: AFCCalls,
@@ -219,15 +212,6 @@ public final class FBDevice: FBiOSTarget, FBDeviceCommands, CustomStringConverti
   }
 
   // MARK: - Private
-
-  private func notAMDeviceBacked<T>(operation: String) -> FBFutureContext<T> {
-    FBFuture<T>(error: FBAMDeviceServiceError.notAMDeviceBacked(service: operation) as NSError)
-      .onQueue(
-        workQueue,
-        contextualTeardown: { (_: T, _: FBFutureState) -> FBFuture<NSNull> in
-          FBFuture<NSNull>.empty()
-        })
-  }
 
   /// The AMDevice's richer information always overwrites; the restorable device's only fills what
   /// is not yet known. `calls` and `state` are refreshed from either.

@@ -10,28 +10,12 @@ import Foundation
 
 extension FBAMDevice {
 
-  /// Starts a service on the device, tearing the connection down when the context is exited.
-  ///
-  /// Two lifetimes are in play and they are not the same: the AMDevice *session* is released as
-  /// soon as the service has started, while the service *connection* is invalidated when the
-  /// caller finishes with it. A session times out after 60 seconds, so holding one open for the
-  /// duration of a long-running service fails the next operation on the device.
-  func startServiceConnection(_ service: String) -> FBFutureContext<FBAMDServiceConnection> {
-    let logger = self.logger
-    return fbFutureFromAsync { try await self.openServiceConnection(service) }
-      .onQueue(
-        workQueue,
-        contextualTeardown: { (connection: FBAMDServiceConnection, _: FBFutureState) -> FBFuture<NSNull> in
-          Self.invalidateServiceConnection(connection, service: service, logger: logger)
-          return FBFuture<NSNull>.empty()
-        }
-      ).retyped(FBFutureContext<FBAMDServiceConnection>.self)
-  }
-
   /// Starts a service on the device, invalidating the connection once `body` returns or throws.
   ///
-  /// The async counterpart of `startServiceConnection`, with the same two lifetimes: the AMDevice
-  /// session is released as soon as the service has started, the connection when `body` is done.
+  /// Two lifetimes are in play and they are not the same: the AMDevice *session* is released as
+  /// soon as the service has started, while the service *connection* is invalidated when `body`
+  /// is done. A session times out after 60 seconds, so holding one open for the duration of a
+  /// long-running service fails the next operation on the device.
   func withServiceConnection<T>(
     _ service: String,
     _ body: (FBAMDServiceConnection) async throws -> T

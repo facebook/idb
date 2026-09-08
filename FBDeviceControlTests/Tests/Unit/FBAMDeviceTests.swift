@@ -14,7 +14,7 @@ import Testing
 private var sAMDeviceEvents: [String] = []
 
 /// The session is stopped and the device disconnected before the connection is invalidated: the
-/// service is started inside a pop, so the AMDevice session is not held for the caller's use of
+/// AMDevice session is released once the service has started, not held for the caller's use of
 /// the connection.
 private let startServiceEvents = [
   "connect",
@@ -187,15 +187,17 @@ final class FBAMDeviceTests {
     #expect(("\(device)") == ("AMDevice foo | A Phone"))
   }
 
-  /// Pins the two lifetimes `startService` manages, which are not the same: the AMDevice session
-  /// is released as soon as the service has started, while the service connection is invalidated
-  /// only when the caller finishes with it.
+  /// Pins the two lifetimes of the unscoped pair, which are not the same: the AMDevice session is
+  /// released as soon as the service has started, while the service connection is invalidated only
+  /// when the caller hands it back.
   @Test
-  func startService_StartsTheServiceThenInvalidatesTheConnection() async throws {
-    let name = try await withFBFutureContext(device.startService("com.apple.testservice")) { connection in
-      connection.name
-    }
-    #expect((name) == ("com.apple.testservice"))
+  func openServiceConnection_TheCallerInvalidatesTheConnectionItIsHanded() async throws {
+    let connection = try await device.openServiceConnection("com.apple.testservice")
+    #expect((connection.name) == ("com.apple.testservice"))
+    await waitForDeviceEvents(Array(startServiceEvents.dropLast()))
+
+    FBAMDevice.invalidateServiceConnection(
+      connection, service: connection.name, logger: FBControlCoreGlobalConfiguration.defaultLogger)
 
     await waitForDeviceEvents(startServiceEvents)
     #expect((startServiceEvents) == (sAMDeviceEvents))

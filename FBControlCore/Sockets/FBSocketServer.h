@@ -53,9 +53,4 @@
  */
 - (nonnull FBFuture<NSNull *> *)stopListening;
 
-/**
- Listens until the returned context is torn down.
- */
-- (nonnull FBFutureContext<NSNull *> *)startListeningContext;
-
 @end
