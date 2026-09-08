@@ -352,4 +352,113 @@ final class FBSimulatorApplicationInstallPreflightTests: XCTestCase {
       XCTFail("Expected CancellationError, got \(error)")
     }
   }
+
+  func testInstallWrapperPreservesCancellation() async {
+    do {
+      let _: String = try await FBSimulatorApplicationCommands.installAndResolveApplication(
+        install: { _ in throw CancellationError() },
+        resolveInstalledApplication: { "installed" },
+        installFailure: installFailure)
+      XCTFail("Expected cancellation")
+    } catch is CancellationError {
+    } catch {
+      XCTFail("Expected CancellationError, got \(error)")
+    }
+  }
+
+  func testUnbootedTargetFailsReadinessWithoutAvailabilityProbe() {
+    var checkedAvailability = false
+
+    XCTAssertThrowsError(
+      try FBSimulatorApplicationCommands.confirmApplicationInstallTargetIsReady(
+        state: .shutdown,
+        stateDescription: "Shutdown",
+        checkAvailability: { checkedAvailability = true })
+    ) { error in
+      guard case let .applicationInstallTargetNotBooted(state) = error as? FBSimulatorApplicationError else {
+        return XCTFail("Expected an unbooted-target error, got \(error)")
+      }
+      XCTAssertEqual(state, "Shutdown")
+    }
+    XCTAssertFalse(checkedAvailability)
+  }
+
+  func testBootedAvailableTargetPassesReadiness() {
+    XCTAssertNoThrow(
+      try FBSimulatorApplicationCommands.confirmApplicationInstallTargetIsReady(
+        state: .booted,
+        stateDescription: "Booted",
+        checkAvailability: {}))
+  }
+
+  func testAvailabilityQueryFailureIsPreservedInReadinessError() {
+    let expectedReason = "simulator availability probe failed"
+
+    XCTAssertThrowsError(
+      try FBSimulatorApplicationCommands.confirmApplicationInstallTargetIsReady(
+        state: .booted,
+        stateDescription: "Booted",
+        checkAvailability: {
+          throw NSError(
+            domain: "com.example.simulator",
+            code: 1,
+            userInfo: [NSLocalizedDescriptionKey: expectedReason])
+        })
+    ) { error in
+      guard case let .applicationInstallTargetUnavailable(reason) = error as? FBSimulatorApplicationError else {
+        return XCTFail("Expected an unavailable-target error, got \(error)")
+      }
+      XCTAssertEqual(reason, expectedReason)
+    }
+  }
+
+  func testInstallWrapperPreservesReadinessErrors() async {
+    let errors: [FBSimulatorApplicationError] = [
+      .applicationInstallTargetNotBooted(state: "Shutdown"),
+      .applicationInstallTargetUnavailable(reason: "runtime unavailable"),
+    ]
+
+    for expected in errors {
+      do {
+        let _: String = try await FBSimulatorApplicationCommands.installAndResolveApplication(
+          install: { _ in throw expected },
+          resolveInstalledApplication: { "installed" },
+          installFailure: installFailure)
+        XCTFail("Expected readiness error")
+      } catch let actual as FBSimulatorApplicationError {
+        XCTAssertEqual(actual.localizedDescription, expected.localizedDescription)
+      } catch {
+        XCTFail("Expected readiness error, got \(error)")
+      }
+    }
+  }
+
+  func testInstallWrapperPreservesReadinessErrorsOnRetry() async {
+    let errors: [FBSimulatorApplicationError] = [
+      .applicationInstallTargetNotBooted(state: "Shutdown"),
+      .applicationInstallTargetUnavailable(reason: "runtime unavailable"),
+    ]
+
+    for expected in errors {
+      do {
+        let _: String = try await FBSimulatorApplicationCommands.installAndResolveApplication(
+          install: { attempt in
+            if attempt == .initial {
+              throw NSError(
+                domain: "com.example.install",
+                code: 1,
+                userInfo: [NSLocalizedDescriptionKey: "Failed to load Info.plist from bundle at path /tmp/App.app"])
+            }
+            throw expected
+          },
+          resolveInstalledApplication: { "installed" },
+          installFailure: installFailure)
+        XCTFail("Expected readiness error")
+      } catch let actual as FBSimulatorApplicationError {
+        XCTAssertEqual(actual.localizedDescription, expected.localizedDescription)
+      } catch {
+        XCTFail("Expected readiness error, got \(error)")
+      }
+    }
+  }
 }
