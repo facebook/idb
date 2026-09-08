@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+@preconcurrency import CoreSimulator
 import FBControlCore
 @testable import FBSimulatorControl
 import XCTest
@@ -17,107 +18,102 @@ private struct ProvidedSimulatorError: Error, LocalizedError {
   var errorDescription: String? { message }
 }
 
-/// A test case for tests that need *a* booted simulator but do not own its lifecycle.
+/// A test case for tests that need a booted simulator but do not own one.
 ///
-/// The simulator is resolved in this order:
-/// 1. `DEVICE_UDID` names one explicitly, with `DEVICE_SET_PATH` naming its device set
-///    (defaulting to the default set). It must exist and already be booted.
-/// 2. Otherwise a single booted simulator in that set is adopted — the case where a developer
-///    or a CI job booted one before running the suite. Several booted simulators is ambiguous
-///    and resolves to neither.
-/// 3. Otherwise the case boots one for itself, and shuts it down and deletes it afterwards.
+/// The simulator comes from the environment — a CI job, a developer's shell, an execution harness —
+/// and is never created here: booting is the Boot suite's job, where the lifecycle is the thing
+/// under test. A harness supplies one either by naming it in `DEVICE_UDID` (with `DEVICE_SET_PATH`
+/// naming its device set) or by leaving exactly one booted simulator in that set.
 ///
-/// Only a simulator this case booted is ever torn down: a simulator resolved by 1 or 2 is a
-/// leased resource, so tests restore any state they mutate and never boot, shutdown, erase or
-/// delete it. The fallback exists so the suite always reports a real result — the alternative
-/// is a suite that silently skips wherever nothing hands it a simulator, which is the failure
-/// mode these tests were rewritten to remove.
+/// It is acquired once and reused by every case in the bundle. Acquiring is the expensive part of
+/// a smoke test — `setUp` runs per case, and a simulator resolved per case would multiply that cost
+/// by the number of cases for no added coverage.
+///
+/// The simulator is a leased resource: tests restore anything they mutate, and nothing here boots,
+/// shuts down, erases or deletes it.
+///
+/// It is not handed to a test until it has *finished* booting. `booted` is reported the moment the
+/// boot is underway, and a simulator still on its way up has no SpringBoard and no application able
+/// to answer: work taken against it does not fail, it waits — turning a missing precondition into
+/// minutes of unexplained latency, or a timeout blamed on whatever happened to run first. Every
+/// harness is expected to hand over a simulator in a good state; this verifies the ones that do and
+/// waits for the ones that do not.
 class FBProvidedSimulatorTestCase: XCTestCase {
 
+  /// The one acquisition for the whole bundle. Memoized as a `Task` so cases share the work rather
+  /// than the result of a race; XCTest runs cases serially, so this is only ever awaited in turn.
+  private nonisolated(unsafe) static var acquisition: Task<FBSimulator, Error>?
+
   private(set) var simulator: FBSimulator!
-  private var control: FBSimulatorControl?
-  /// Non-nil only when this case booted the simulator, and so must tear it down.
-  private var bootedSimulator: FBSimulator?
 
   override func setUp() async throws {
     continueAfterFailure = false
+    simulator = try await Self.acquireSimulator()
+  }
+
+  private static func acquireSimulator() async throws -> FBSimulator {
+    if let acquisition {
+      return try await acquisition.value
+    }
+    let task = Task<FBSimulator, Error> {
+      let simulator = try resolveProvidedSimulator()
+      try await waitUntilBootCompleted(simulator)
+      return simulator
+    }
+    acquisition = task
+    do {
+      return try await task.value
+    } catch {
+      // A failed acquisition is not memoized as a success; the next case re-reports it identically.
+      acquisition = nil
+      throw error
+    }
+  }
+
+  /// Finds the simulator the environment provided, or skips: nothing supplied one, and this suite
+  /// does not boot.
+  private static func resolveProvidedSimulator() throws -> FBSimulator {
     try FBSimulatorControlFrameworkLoader.essentialFrameworks.loadPrivateFrameworks(FBControlCoreGlobalConfiguration.defaultLogger)
     let environment = ProcessInfo.processInfo.environment
     let noLogger: (any FBControlCoreLogger)? = nil
+    let configuration = FBSimulatorControlConfiguration(
+      deviceSetPath: environment[DeviceSetPathEnvKey],
+      logger: noLogger)
+    let control = try FBSimulatorControl.withConfiguration(configuration)
 
     if let udid = environment[DeviceUDIDEnvKey] {
-      let configuration = FBSimulatorControlConfiguration(
-        deviceSetPath: environment[DeviceSetPathEnvKey],
-        logger: noLogger)
-      let control = try FBSimulatorControl.withConfiguration(configuration)
-      self.control = control
       guard let simulator = control.set.simulator(withUDID: udid) else {
         throw ProvidedSimulatorError(message: "The provided simulator \(udid) is not present in the device set")
       }
       guard simulator.state == .booted else {
         throw ProvidedSimulatorError(message: "The provided simulator \(udid) must already be booted; it is \(simulator.state)")
       }
-      self.simulator = simulator
-      return
+      return simulator
     }
 
-    let providedSetConfiguration = FBSimulatorControlConfiguration(
-      deviceSetPath: environment[DeviceSetPathEnvKey],
-      logger: noLogger)
-    let providedSetControl = try FBSimulatorControl.withConfiguration(providedSetConfiguration)
-    let booted = providedSetControl.set.allSimulators.filter { $0.state == .booted }
-    if booted.count == 1 {
-      control = providedSetControl
-      simulator = booted[0]
-      return
+    let booted = control.set.allSimulators.filter { $0.state == .booted }
+    guard booted.count == 1 else {
+      let reason =
+        booted.isEmpty
+        ? "no booted simulator in the device set"
+        : "several booted simulators in the device set (\(booted.map(\.udid).joined(separator: ", ")))"
+      throw XCTSkip(
+        "No simulator was provided: \(reason). This suite consumes a booted simulator from its "
+          + "environment and does not boot one — boot exactly one, or name one with \(DeviceUDIDEnvKey) "
+          + "(and optionally \(DeviceSetPathEnvKey)).")
     }
-
-    let ownSetConfiguration = FBSimulatorControlConfiguration(
-      deviceSetPath: Self.fallbackDeviceSetPath,
-      logger: noLogger)
-    let ownSetControl = try FBSimulatorControl.withConfiguration(ownSetConfiguration)
-    control = ownSetControl
-    guard let simulatorConfiguration = try Self.bootableiPhoneConfiguration() else {
-      throw XCTSkip("No simulator was provided and the host has no runtime that can boot an iPhone")
-    }
-    let own = try await ownSetControl.set.createSimulator(with: simulatorConfiguration)
-    try await own.boot(FBSimulatorBootConfiguration(options: .tieToProcessLifecycle, environment: [:]))
-    bootedSimulator = own
-    simulator = own
+    return booted[0]
   }
 
-  override func tearDown() async throws {
-    if let bootedSimulator, let control {
-      try? await bootedSimulator.shutdown()
-      try? await control.set.delete(bootedSimulator)
-    }
-    bootedSimulator = nil
-    control = nil
-    simulator = nil
-  }
-
-  /// Isolated from the default set, which holds the developer's own simulators.
-  private static var fallbackDeviceSetPath: String {
-    (NSTemporaryDirectory() as NSString).appendingPathComponent("FBSimulatorControlSmokeTests_CustomSet")
-  }
-
-  /// An iPhone configuration the host can actually create. The preferred model is tried
-  /// first, then every other iPhone in the catalogue: naming one model and stopping there is
-  /// how this suite's predecessor died, since a hardcoded model quietly stops being creatable
-  /// as runtimes move on.
-  private static func bootableiPhoneConfiguration() throws -> FBSimulatorConfiguration? {
-    let base = try FBSimulatorConfiguration.defaultConfiguration()
-    let catalogueiPhones = FBiOSTargetConfiguration.nameToDevice
-      .filter { $0.value.family == .familyiPhone }
-      .keys
-      .sorted { $0.rawValue < $1.rawValue }
-    for model in [FBDeviceModel.modeliPhone16] + catalogueiPhones {
-      let configuration = base.withDeviceModel(model)
-      if (try? configuration.checkRuntimeRequirements()) != nil {
-        return configuration
-      }
-    }
-    return nil
+  /// Blocks until the simulator has finished booting, which is what boot verification waits on —
+  /// `resolveState(.booted)` is not it, since `booted` is reported while the boot is still in
+  /// progress. Booting applies that check to a simulator it has just booted itself; it applies just
+  /// as well to one handed over by somebody else.
+  ///
+  /// The wait is unbounded, and the test's execution time allowance is what stops it: a harness
+  /// that never finishes booting the simulator it promised is not something this can recover from.
+  private static func waitUntilBootCompleted(_ simulator: FBSimulator) async throws {
+    try await FBSimulatorBootVerificationStrategy.verifySimulatorIsBooted(simulator)
   }
 
   /// Some harnesses lease simulators whose host does not run `SimLaunchHostService`, so any
