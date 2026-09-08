@@ -40,7 +40,7 @@ public final class FBSimulatorBootVerificationStrategy {
     self.simulator = simulator
   }
 
-  static func verifySimulatorIsBooted(_ simulator: FBSimulator) async throws {
+  public static func verifySimulatorIsBooted(_ simulator: FBSimulator) async throws {
     try await FBiOSTargetResolveState(simulator, .booted)
     let strategy = FBSimulatorBootVerificationStrategy(simulator: simulator)
     let interval = UInt64(bootVerificationWaitInterval * Double(NSEC_PER_SEC))
