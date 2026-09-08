@@ -6,6 +6,7 @@
  */
 
 @preconcurrency import CoreSimulator
+@preconcurrency import FBControlCore
 import Foundation
 
 /// The failures of running a service inside the guest with `SimulatorFrameworkBridge`.
