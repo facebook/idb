@@ -11,7 +11,7 @@ import Foundation
 
 /// Counters for framebuffer surface-change and frame-rendered callbacks, sampled for periodic
 /// logging. There is no rect geometry: the underlying CoreSimulator callback is a per-frame change
-/// signal only (see `FBFramebufferSurface`), so a frame-rendered callback carries no dimensions.
+/// signal only (see `FramebufferSurface`), so a frame-rendered callback carries no dimensions.
 public struct FBFramebufferStats: Sendable {
   public var frameRenderedCount: UInt = 0
   var ioSurfaceChangeCount: UInt = 0
@@ -46,23 +46,23 @@ public enum FBFramebufferEvent: Sendable {
   /// The display's backing IOSurface changed (nil when the display has no surface).
   case surfaceChanged(IOSurface?)
   /// A new frame was rendered into the current surface. A bare per-frame signal — modern
-  /// CoreSimulator reports no changed-region geometry (see `FBFramebufferSurface`).
+  /// CoreSimulator reports no changed-region geometry (see `FramebufferSurface`).
   case frameRendered
 }
 
 public final class FBFramebuffer: @unchecked Sendable {
 
-  private let surface: any FBFramebufferSurface
-  private let statsRecorder: FBFramebufferStatsRecorder
+  private let surface: any FramebufferSurface
+  private let statsRecorder: FramebufferStatsRecorder
 
   public class func mainScreenSurface(for simulator: FBSimulator, logger: any FBControlCoreLogger) throws -> FBFramebuffer {
-    let surface = try FBFramebufferSurfaceLocator.mainDisplaySurface(for: simulator, logger: logger)
+    let surface = try FramebufferSurfaceLocator.mainDisplaySurface(for: simulator, logger: logger)
     return FBFramebuffer(surface: surface, logger: logger)
   }
 
-  init(surface: any FBFramebufferSurface, logger: any FBControlCoreLogger) {
+  init(surface: any FramebufferSurface, logger: any FBControlCoreLogger) {
     self.surface = surface
-    self.statsRecorder = FBFramebufferStatsRecorder(logger: logger)
+    self.statsRecorder = FramebufferStatsRecorder(logger: logger)
   }
 
   /// Attach to the framebuffer, receiving events as an ordered `AsyncStream` on the returned

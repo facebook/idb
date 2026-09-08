@@ -8,12 +8,12 @@
 import FBControlCore
 import Foundation
 
-private enum FBSimulatorVideoRecordingCommandError: Error {
+private enum SimulatorVideoRecordingCommandError: Error {
   case recordingAlreadyActive
   case missingVideo(simulatorDescription: String)
 }
 
-extension FBSimulatorVideoRecordingCommandError: LocalizedError {
+extension SimulatorVideoRecordingCommandError: LocalizedError {
   var errorDescription: String? {
     switch self {
     case .recordingAlreadyActive:
@@ -59,7 +59,7 @@ public final class FBSimulatorVideoRecordingCommands {
       throw FBWeakTargetError.simulator
     }
     if video != nil {
-      throw FBSimulatorVideoRecordingCommandError.recordingAlreadyActive
+      throw SimulatorVideoRecordingCommandError.recordingAlreadyActive
     }
     let framebuffer = try await simulator.connectToFramebuffer()
     let video = FBSimulatorVideo.video(withFramebuffer: framebuffer, configuration: configuration, filePath: filePath, logger: simulator.logger)
@@ -74,7 +74,7 @@ public final class FBSimulatorVideoRecordingCommands {
     let video = self.video
     self.video = nil
     guard let video else {
-      throw FBSimulatorVideoRecordingCommandError.missingVideo(simulatorDescription: self.simulator?.description ?? "unknown")
+      throw SimulatorVideoRecordingCommandError.missingVideo(simulatorDescription: self.simulator?.description ?? "unknown")
     }
     return try await video.stop()
   }

@@ -17,7 +17,7 @@ import Metal
 import UniformTypeIdentifiers
 import VideoToolbox
 
-enum FBSimulatorVideoStreamError: Error {
+enum SimulatorVideoStreamError: Error {
   case failedToCreatePixelTransferSession(status: OSStatus)
   case failedToStartCompressionSession(status: OSStatus)
   case compressionSessionNil
@@ -37,7 +37,7 @@ enum FBSimulatorVideoStreamError: Error {
   case failedToEncodePNG
 }
 
-extension FBSimulatorVideoStreamError: LocalizedError {
+extension SimulatorVideoStreamError: LocalizedError {
   var errorDescription: String? {
     switch self {
     case .failedToCreatePixelTransferSession(let status):
@@ -102,7 +102,7 @@ public struct FBVideoStreamEdgeInsets: Sendable {
 ///   frame was rendered (a `.frameRendered` event).
 /// - `.eager(framesPerSecond:)`: constant-frame-rate — a cadence `Task` pushes frames at the fixed
 ///   rate, and frame-rendered events are ignored (the cadence task drives pushes).
-enum FBVideoStreamCadence {
+enum VideoStreamCadence {
   case lazy
   case eager(framesPerSecond: UInt)
 }
@@ -159,10 +159,10 @@ public actor FBSimulatorVideoStream: FBVideoStream {
   let framebuffer: FBFramebuffer
   let configuration: FBVideoStreamConfiguration
   let edgeInsets: FBVideoStreamEdgeInsets
-  let cadence: FBVideoStreamCadence
-  /// When set (recording), encoded `.compressed` frames are routed to this sink — an `FBSimulatorVideoFileWriter`
+  let cadence: VideoStreamCadence
+  /// When set (recording), encoded `.compressed` frames are routed to this sink — an `SimulatorVideoFileWriter`
   /// — instead of being byte-framed to `consumer`. nil for streaming.
-  let encodedSampleConsumerOverride: FBEncodedSampleConsumer?
+  let encodedSampleConsumerOverride: EncodedSampleConsumer?
   let logger: any FBControlCoreLogger
 
   // MARK: - Lifecycle
@@ -226,10 +226,10 @@ public actor FBSimulatorVideoStream: FBVideoStream {
       return session.consumer
     }
   }
-  var framePusher: (any FBSimulatorVideoStreamFramePusher)?
+  var framePusher: (any SimulatorVideoStreamFramePusher)?
   /// The timed-metadata (chapter) sink: the streaming transport writer, or (recording) the file
   /// writer's chapter track. Resolved in `mountSurface`, cleared in `stopStreaming`.
-  var timedMetadataConsumer: (any FBTimedMetadataConsumer)?
+  var timedMetadataConsumer: (any TimedMetadataConsumer)?
 
   // Overlay compositing
   var overlayBuffer: CVPixelBuffer?
@@ -259,7 +259,7 @@ public actor FBSimulatorVideoStream: FBVideoStream {
   /// rather than byte-framed to an `FBDataConsumer`. `edgeInsets` (default zero) reserves overlay bar
   /// regions exactly as on the streaming path; set `configuration.framesPerSecond` so the cadence is
   /// eager (a recorded file wants a continuous timeline even while the screen is idle).
-  static func makeRecorder(framebuffer: FBFramebuffer, configuration: FBVideoStreamConfiguration, edgeInsets: FBVideoStreamEdgeInsets = FBVideoStreamEdgeInsets(top: 0, bottom: 0, left: 0, right: 0), fileWriter: FBSimulatorVideoFileWriter, logger: any FBControlCoreLogger) -> FBSimulatorVideoStream {
+  static func makeRecorder(framebuffer: FBFramebuffer, configuration: FBVideoStreamConfiguration, edgeInsets: FBVideoStreamEdgeInsets = FBVideoStreamEdgeInsets(top: 0, bottom: 0, left: 0, right: 0), fileWriter: SimulatorVideoFileWriter, logger: any FBControlCoreLogger) -> FBSimulatorVideoStream {
     return FBSimulatorVideoStream(
       framebuffer: framebuffer,
       configuration: configuration,
@@ -278,14 +278,14 @@ public actor FBSimulatorVideoStream: FBVideoStream {
 
   /// Eager (constant-frame-rate) when a positive `framesPerSecond` is set, else lazy (variable-rate,
   /// driven by damage events).
-  private static func cadence(for configuration: FBVideoStreamConfiguration) -> FBVideoStreamCadence {
+  private static func cadence(for configuration: FBVideoStreamConfiguration) -> VideoStreamCadence {
     guard let framesPerSecond = configuration.framesPerSecond, framesPerSecond > 0 else {
       return .lazy
     }
     return .eager(framesPerSecond: UInt(framesPerSecond))
   }
 
-  init(framebuffer: FBFramebuffer, configuration: FBVideoStreamConfiguration, edgeInsets: FBVideoStreamEdgeInsets, cadence: FBVideoStreamCadence, logger: any FBControlCoreLogger, encodedSampleConsumerOverride: FBEncodedSampleConsumer? = nil) {
+  init(framebuffer: FBFramebuffer, configuration: FBVideoStreamConfiguration, edgeInsets: FBVideoStreamEdgeInsets, cadence: VideoStreamCadence, logger: any FBControlCoreLogger, encodedSampleConsumerOverride: EncodedSampleConsumer? = nil) {
     self.framebuffer = framebuffer
     self.configuration = configuration
     self.edgeInsets = edgeInsets
@@ -323,9 +323,9 @@ public actor FBSimulatorVideoStream: FBVideoStream {
   private func isolatedStartStreaming(_ consumer: any FBDataConsumer) async throws {
     switch lifecycle {
     case .starting, .streaming:
-      throw FBSimulatorVideoStreamError.startAlreadyStarted
+      throw SimulatorVideoStreamError.startAlreadyStarted
     case .stopped:
-      throw FBSimulatorVideoStreamError.startWhenStopped
+      throw SimulatorVideoStreamError.startWhenStopped
     case .idle:
       break
     }
@@ -371,7 +371,7 @@ public actor FBSimulatorVideoStream: FBVideoStream {
     case .stopped:
       return
     case .idle:
-      throw FBSimulatorVideoStreamError.stopWithoutConsumer
+      throw SimulatorVideoStreamError.stopWithoutConsumer
     case .starting(let active, let awaiters):
       session = active
       pendingStartAwaiters = awaiters
@@ -398,10 +398,10 @@ public actor FBSimulatorVideoStream: FBVideoStream {
     cadenceTeardown()
     resumeStopAwaiters()
     for awaiter in pendingStartAwaiters {
-      awaiter.resume(throwing: FBSimulatorVideoStreamError.startWhenStopped)
+      awaiter.resume(throwing: SimulatorVideoStreamError.startWhenStopped)
     }
     if let tearDownError {
-      throw FBSimulatorVideoStreamError.failedToTearDownFramePusher(errorDescription: "\(tearDownError)")
+      throw SimulatorVideoStreamError.failedToTearDownFramePusher(errorDescription: "\(tearDownError)")
     }
   }
 
@@ -474,14 +474,14 @@ public actor FBSimulatorVideoStream: FBVideoStream {
     var unmanagedBuffer: Unmanaged<CVPixelBuffer>?
     let status = CVPixelBufferCreateWithIOSurface(nil, surface, nil, &unmanagedBuffer)
     if status != kCVReturnSuccess {
-      throw FBSimulatorVideoStreamError.failedToCreatePixelBufferFromSurface(status: status)
+      throw SimulatorVideoStreamError.failedToCreatePixelBufferFromSurface(status: status)
     }
     guard let buffer = unmanagedBuffer?.takeRetainedValue() else {
-      throw FBSimulatorVideoStreamError.failedToCreatePixelBufferFromSurfaceNil
+      throw SimulatorVideoStreamError.failedToCreatePixelBufferFromSurfaceNil
     }
 
     guard let consumer else {
-      throw FBSimulatorVideoStreamError.mountSurfaceWithoutConsumer
+      throw SimulatorVideoStreamError.mountSurfaceWithoutConsumer
     }
 
     let attributes = bitmapStreamPixelBufferAttributes(from: buffer)
@@ -502,15 +502,15 @@ public actor FBSimulatorVideoStream: FBVideoStream {
     self.pixelBufferAttributes = attributes
     self.framePusher = framePusher
     let transportTimedMetadataWriter =
-      (framePusher as? FBSimulatorVideoStreamFramePusher_VideoToolbox)?.timedMetadataWriter
+      (framePusher as? SimulatorVideoStreamFramePusher_VideoToolbox)?.timedMetadataWriter
 
     // Resolve the timed-metadata (chapter) sink. A recording file writer that supports chapters
     // supplies its own consumer; otherwise the streaming transport writer (fMP4 emsg / MPEG-TS ID3)
     // handles markers, dropping them on transports with no metadata channel.
     if case .compressedVideo = configuration.format {
       self.timedMetadataConsumer =
-        (encodedSampleConsumerOverride as? FBTimedMetadataConsumer)
-        ?? FBTransportTimedMetadataConsumer(consumer: consumer, timedMetadataWriter: transportTimedMetadataWriter)
+        (encodedSampleConsumerOverride as? TimedMetadataConsumer)
+        ?? TransportTimedMetadataConsumer(consumer: consumer, timedMetadataWriter: transportTimedMetadataWriter)
     }
 
     if compositorCIContext == nil {
@@ -522,8 +522,8 @@ public actor FBSimulatorVideoStream: FBVideoStream {
     }
     compositedBufferPool = nil
     let insets = edgeInsets
-    // Must agree exactly with the encoder's dimensions — both derive from FBVideoOutputDimensions.
-    let dimensions = FBVideoOutputDimensions.calculate(
+    // Must agree exactly with the encoder's dimensions — both derive from VideoOutputDimensions.
+    let dimensions = VideoOutputDimensions.calculate(
       sourceWidth: CVPixelBufferGetWidth(buffer), sourceHeight: CVPixelBufferGetHeight(buffer),
       scaleFactor: configuration.scaleFactor, edgeInsets: insets)
     let compositedWidth = dimensions.width
@@ -695,29 +695,29 @@ public actor FBSimulatorVideoStream: FBVideoStream {
     configuration: FBVideoStreamConfiguration,
     compressionSessionProperties: [String: Any],
     consumer: any FBDataConsumer,
-    encodedSampleConsumerOverride: FBEncodedSampleConsumer?,
+    encodedSampleConsumerOverride: EncodedSampleConsumer?,
     logger: any FBControlCoreLogger
-  ) throws -> any FBSimulatorVideoStreamFramePusher {
+  ) throws -> any SimulatorVideoStreamFramePusher {
     let derived = Self.compressionSessionProperties(for: configuration, callerProperties: compressionSessionProperties)
     switch configuration.format {
     case let .compressedVideo(codec, transport):
       let frameWriters = transport.frameWriters(for: codec)
-      let encodedSampleConsumer: FBEncodedSampleConsumer =
+      let encodedSampleConsumer: EncodedSampleConsumer =
         encodedSampleConsumerOverride
-        ?? FBDataConsumerEncodedSampleConsumer(consumer: consumer, frameWriter: frameWriters.frameWriter, timedMetadataWriter: frameWriters.timedMetadataWriter)
-      return FBSimulatorVideoStreamFramePusher_VideoToolbox(
+        ?? DataConsumerEncodedSampleConsumer(consumer: consumer, frameWriter: frameWriters.frameWriter, timedMetadataWriter: frameWriters.timedMetadataWriter)
+      return SimulatorVideoStreamFramePusher_VideoToolbox(
         configuration: configuration, compressionSessionProperties: derived, videoCodec: codec.videoToolboxCodec,
         consumer: consumer, outputMode: .compressed, encodedSampleConsumer: encodedSampleConsumer, timedMetadataWriter: frameWriters.timedMetadataWriter, logger: logger)
     case .mjpeg:
-      return FBSimulatorVideoStreamFramePusher_VideoToolbox(
+      return SimulatorVideoStreamFramePusher_VideoToolbox(
         configuration: configuration, compressionSessionProperties: derived, videoCodec: kCMVideoCodecType_JPEG,
         consumer: consumer, outputMode: .mjpeg, encodedSampleConsumer: nil, timedMetadataWriter: nil, logger: logger)
     case .minicap:
-      return FBSimulatorVideoStreamFramePusher_VideoToolbox(
+      return SimulatorVideoStreamFramePusher_VideoToolbox(
         configuration: configuration, compressionSessionProperties: derived, videoCodec: kCMVideoCodecType_JPEG,
         consumer: consumer, outputMode: .minicap, encodedSampleConsumer: nil, timedMetadataWriter: nil, logger: logger)
     case .bgra:
-      return FBSimulatorVideoStreamFramePusher_Bitmap(consumer: consumer, scaleFactor: configuration.scaleFactor)
+      return SimulatorVideoStreamFramePusher_Bitmap(consumer: consumer, scaleFactor: configuration.scaleFactor)
     }
   }
 
@@ -737,7 +737,7 @@ public actor FBSimulatorVideoStream: FBVideoStream {
   }
 
   /// Write a timed metadata marker (chapter) at the current stream position. Routed to the
-  /// `FBTimedMetadataConsumer` resolved in `mountSurface` — the streaming transport writer
+  /// `TimedMetadataConsumer` resolved in `mountSurface` — the streaming transport writer
   /// (MPEG-TS ID3 / fMP4 emsg) or, when recording, the file writer's chapter track. A no-op before the
   /// surface is mounted, after the stream stops, or for formats without a metadata channel.
   public func writeTimedMetadata(_ text: String) {
@@ -797,7 +797,7 @@ public actor FBSimulatorVideoStream: FBVideoStream {
   /// Capture a PNG screenshot of the current frame with overlay composited.
   public func captureCompositedScreenshot() throws -> Data {
     guard let sourceBuffer = pixelBuffer else {
-      throw FBSimulatorVideoStreamError.noPixelBufferForScreenshot
+      throw SimulatorVideoStreamError.noPixelBufferForScreenshot
     }
 
     // Only a CGImage is needed here, so render the composited CIImage directly rather than via a pool buffer.
@@ -805,18 +805,18 @@ public actor FBSimulatorVideoStream: FBVideoStream {
 
     let ctx = compositorCIContext ?? CIContext()
     guard let cgImage = ctx.createCGImage(ciImage, from: ciImage.extent) else {
-      throw FBSimulatorVideoStreamError.failedToCreateCGImage
+      throw SimulatorVideoStreamError.failedToCreateCGImage
     }
 
     let pngData = NSMutableData()
     guard let dest = CGImageDestinationCreateWithData(pngData as CFMutableData, UTType.png.identifier as CFString, 1, nil) else {
-      throw FBSimulatorVideoStreamError.failedToEncodePNG
+      throw SimulatorVideoStreamError.failedToEncodePNG
     }
     CGImageDestinationAddImage(dest, cgImage, nil)
     let finalized = CGImageDestinationFinalize(dest)
 
     if !finalized {
-      throw FBSimulatorVideoStreamError.failedToEncodePNG
+      throw SimulatorVideoStreamError.failedToEncodePNG
     }
 
     return pngData as Data

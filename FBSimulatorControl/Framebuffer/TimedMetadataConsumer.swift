@@ -8,21 +8,21 @@
 import FBControlCore
 import Foundation
 
-// MARK: - FBTimedMetadataConsumer
+// MARK: - TimedMetadataConsumer
 
 /// A sink for the timed-metadata (chapter) markers emitted by `FBSimulatorVideoStream.writeTimedMetadata`:
 /// either a streaming transport writer (fMP4 `emsg` / MPEG-TS ID3) or an `AVAssetWriter` chapter track.
-protocol FBTimedMetadataConsumer: AnyObject {
+protocol TimedMetadataConsumer: AnyObject {
   /// Write a single timed-metadata marker for the current stream position.
   func writeTimedMetadata(_ text: String, logger: any FBControlCoreLogger)
 }
 
-// MARK: - FBTransportTimedMetadataConsumer
+// MARK: - TransportTimedMetadataConsumer
 
-/// The streaming `FBTimedMetadataConsumer`: muxes each marker into the encoded byte stream via the
+/// The streaming `TimedMetadataConsumer`: muxes each marker into the encoded byte stream via the
 /// transport writer (MPEG-TS ID3 or fMP4 `emsg`). Transports that carry no timed-metadata channel
 /// (e.g. Annex-B) pass `nil` and drop markers with a log.
-final class FBTransportTimedMetadataConsumer: FBTimedMetadataConsumer {
+final class TransportTimedMetadataConsumer: TimedMetadataConsumer {
   private let consumer: any FBDataConsumer
   /// Transport writer that can mux timed metadata into the same byte stream. `nil` for stateless
   /// transports (Annex-B).

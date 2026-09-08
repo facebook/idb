@@ -275,7 +275,7 @@ final class FBSimulatorVideoStreamBitmapPusherTests: XCTestCase {
   func testBitmapPusherWritesRawPixelBytes() throws {
     let buffer = makeBGRAPixelBuffer(width: 16, height: 8, fill: 0xAB)
     let consumer = FBDataBuffer.accumulatingBuffer()
-    let pusher = FBSimulatorVideoStreamFramePusher_Bitmap(consumer: consumer, scaleFactor: nil)
+    let pusher = SimulatorVideoStreamFramePusher_Bitmap(consumer: consumer, scaleFactor: nil)
 
     let zeroInsets = FBVideoStreamEdgeInsets(top: 0, bottom: 0, left: 0, right: 0)
     try pusher.setup(with: buffer, edgeInsets: zeroInsets)

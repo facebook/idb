@@ -10,7 +10,7 @@ import Foundation
 
 /// Records simulator video in-process. Drives the framebuffer through the shared
 /// `FBSimulatorVideoStream` encode pipeline at an eager (constant-frame-rate) cadence and muxes the
-/// encoded frames into an `.mp4` via `FBSimulatorVideoFileWriter` (`AVAssetWriter`). The byte-stream consumer is
+/// encoded frames into an `.mp4` via `SimulatorVideoFileWriter` (`AVAssetWriter`). The byte-stream consumer is
 /// a discard; only the `.mp4` is produced.
 ///
 /// An actor: `hasStopped` guards the single stop and is set before the first suspension, so
@@ -22,7 +22,7 @@ public actor FBSimulatorVideo {
   /// The underlying encode pipeline, exposed so callers can drive overlay/chapter/screenshot on the live
   /// recording. `nonisolated`: a constant of Sendable (actor) type, readable without a hop.
   public nonisolated let stream: FBSimulatorVideoStream
-  private let fileWriter: FBSimulatorVideoFileWriter
+  private let fileWriter: SimulatorVideoFileWriter
   private var hasStopped = false
 
   public static func video(withFramebuffer framebuffer: FBFramebuffer, configuration: FBVideoStreamConfiguration, filePath: String, edgeInsets: FBVideoStreamEdgeInsets = FBVideoStreamEdgeInsets(top: 0, bottom: 0, left: 0, right: 0), chaptersEnabled: Bool = false, logger: any FBControlCoreLogger) -> FBSimulatorVideo {
@@ -31,7 +31,7 @@ public actor FBSimulatorVideo {
 
   private init(framebuffer: FBFramebuffer, configuration: FBVideoStreamConfiguration, filePath: String, edgeInsets: FBVideoStreamEdgeInsets, chaptersEnabled: Bool, logger: any FBControlCoreLogger) {
     self.outputURL = URL(fileURLWithPath: filePath)
-    let fileWriter = FBSimulatorVideoFileWriter(filePath: filePath, chaptersEnabled: chaptersEnabled, logger: logger)
+    let fileWriter = SimulatorVideoFileWriter(filePath: filePath, chaptersEnabled: chaptersEnabled, logger: logger)
     self.fileWriter = fileWriter
     self.stream = FBSimulatorVideoStream.makeRecorder(framebuffer: framebuffer, configuration: configuration, edgeInsets: edgeInsets, fileWriter: fileWriter, logger: logger)
   }

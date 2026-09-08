@@ -10,16 +10,16 @@ import CoreMedia
 import FBControlCore
 import Foundation
 
-// MARK: - FBSimulatorVideoFileWriter
+// MARK: - SimulatorVideoFileWriter
 
-private enum FBSimulatorVideoFileWriterError: Error {
+private enum SimulatorVideoFileWriterError: Error {
   case assetWriterFailedToFinish(errorDescription: String)
   case firstSampleBufferMissingFormatDescription
   case cannotAddVideoInput
   case assetWriterFailedToStart(errorDescription: String)
 }
 
-extension FBSimulatorVideoFileWriterError: LocalizedError {
+extension SimulatorVideoFileWriterError: LocalizedError {
   var errorDescription: String? {
     switch self {
     case .assetWriterFailedToFinish(let errorDescription):
@@ -47,7 +47,7 @@ extension FBSimulatorVideoFileWriterError: LocalizedError {
 /// finalizes the `moov`.
 ///
 /// When `chaptersEnabled` is set, the writer also adds a QuickTime chapter track — a `.text` track
-/// associated with the video track via `chapterList` — and conforms to `FBTimedMetadataConsumer` so
+/// associated with the video track via `chapterList` — and conforms to `TimedMetadataConsumer` so
 /// `FBSimulatorVideoStream.writeTimedMetadata` markers become player-visible chapters. Markers are
 /// buffered as they arrive (timestamped at the current video position) and written as text samples in
 /// `finish`, once every chapter's end boundary (the next chapter, or the end of video) is known.
@@ -59,7 +59,7 @@ extension FBSimulatorVideoFileWriterError: LocalizedError {
 /// flushed the encoder (`VTCompressionSessionCompleteFrames`), so it never overlaps `consume`. The
 /// timed-metadata path (`writeTimedMetadata`) arrives from other isolation domains (the stdin
 /// handler), so the chapter state it shares with `consume`/`finish` is guarded by `chapterLock`.
-final class FBSimulatorVideoFileWriter: FBEncodedSampleConsumer, FBTimedMetadataConsumer, @unchecked Sendable {
+final class SimulatorVideoFileWriter: EncodedSampleConsumer, TimedMetadataConsumer, @unchecked Sendable {
   private let outputURL: URL
   private let fileType: AVFileType
   private let chaptersEnabled: Bool
@@ -85,7 +85,7 @@ final class FBSimulatorVideoFileWriter: FBEncodedSampleConsumer, FBTimedMetadata
     self.logger = logger
   }
 
-  // MARK: - FBEncodedSampleConsumer
+  // MARK: - EncodedSampleConsumer
 
   func consume(_ sampleBuffer: CMSampleBuffer, logger: any FBControlCoreLogger) -> Bool {
     if failed {
@@ -116,7 +116,7 @@ final class FBSimulatorVideoFileWriter: FBEncodedSampleConsumer, FBTimedMetadata
     return true
   }
 
-  // MARK: - FBTimedMetadataConsumer
+  // MARK: - TimedMetadataConsumer
 
   /// Buffer a chapter marker at the current video position. Written to the chapter track in `finish`.
   func writeTimedMetadata(_ text: String, logger: any FBControlCoreLogger) {
@@ -136,7 +136,7 @@ final class FBSimulatorVideoFileWriter: FBEncodedSampleConsumer, FBTimedMetadata
   /// encoder has flushed all pending frames. A no-op if no frame was ever written.
   func finish() async throws {
     guard let assetWriter, let input else {
-      logger.log("FBSimulatorVideoFileWriter.finish called with no frames written; nothing to finalize")
+      logger.log("SimulatorVideoFileWriter.finish called with no frames written; nothing to finalize")
       return
     }
     if let chapterInput {
@@ -146,7 +146,7 @@ final class FBSimulatorVideoFileWriter: FBEncodedSampleConsumer, FBTimedMetadata
     input.markAsFinished()
     await assetWriter.finishWriting()
     if assetWriter.status == .failed {
-      throw FBSimulatorVideoFileWriterError.assetWriterFailedToFinish(errorDescription: assetWriter.error.map { String(describing: $0) } ?? "unknown error")
+      throw SimulatorVideoFileWriterError.assetWriterFailedToFinish(errorDescription: assetWriter.error.map { String(describing: $0) } ?? "unknown error")
     }
   }
 
@@ -166,7 +166,7 @@ final class FBSimulatorVideoFileWriter: FBEncodedSampleConsumer, FBTimedMetadata
       return input
     }
     guard let formatDescription = CMSampleBufferGetFormatDescription(sampleBuffer) else {
-      throw FBSimulatorVideoFileWriterError.firstSampleBufferMissingFormatDescription
+      throw SimulatorVideoFileWriterError.firstSampleBufferMissingFormatDescription
     }
     // AVAssetWriter refuses to overwrite an existing file.
     try? FileManager.default.removeItem(at: outputURL)
@@ -175,7 +175,7 @@ final class FBSimulatorVideoFileWriter: FBEncodedSampleConsumer, FBTimedMetadata
     let input = AVAssetWriterInput(mediaType: .video, outputSettings: nil, sourceFormatHint: formatDescription)
     input.expectsMediaDataInRealTime = true
     guard assetWriter.canAdd(input) else {
-      throw FBSimulatorVideoFileWriterError.cannotAddVideoInput
+      throw SimulatorVideoFileWriterError.cannotAddVideoInput
     }
     assetWriter.add(input)
 
@@ -186,7 +186,7 @@ final class FBSimulatorVideoFileWriter: FBEncodedSampleConsumer, FBTimedMetadata
     }
 
     guard assetWriter.startWriting() else {
-      throw FBSimulatorVideoFileWriterError.assetWriterFailedToStart(errorDescription: assetWriter.error.map { String(describing: $0) } ?? "unknown error")
+      throw SimulatorVideoFileWriterError.assetWriterFailedToStart(errorDescription: assetWriter.error.map { String(describing: $0) } ?? "unknown error")
     }
     assetWriter.startSession(atSourceTime: CMSampleBufferGetPresentationTimeStamp(sampleBuffer))
     self.assetWriter = assetWriter

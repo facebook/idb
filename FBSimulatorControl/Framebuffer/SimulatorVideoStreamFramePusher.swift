@@ -59,7 +59,7 @@ public struct FBVideoEncoderStats: Sendable {
 // MARK: - Frame Pusher Protocol
 
 /// Frame pusher abstraction. Concrete pushers convert + write frames to the consumer.
-protocol FBSimulatorVideoStreamFramePusher: AnyObject {
+protocol SimulatorVideoStreamFramePusher: AnyObject {
   func setup(with pixelBuffer: CVPixelBuffer, edgeInsets: FBVideoStreamEdgeInsets) throws
   func tearDown() throws
   func writeEncodedFrame(
@@ -72,7 +72,7 @@ protocol FBSimulatorVideoStreamFramePusher: AnyObject {
   func currentStats() -> FBVideoEncoderStats?
 }
 
-extension FBSimulatorVideoStreamFramePusher {
+extension SimulatorVideoStreamFramePusher {
   func currentStats() -> FBVideoEncoderStats? { nil }
 }
 
@@ -80,7 +80,7 @@ extension FBSimulatorVideoStreamFramePusher {
 
 /// Selects what the VideoToolbox pusher's per-frame encode handler does with each encoded sample:
 /// all H264/HEVC → `.compressed`, MJPEG → `.mjpeg`, Minicap → `.minicap`.
-enum FBVideoToolboxOutputMode {
+enum VideoToolboxOutputMode {
   /// H264/HEVC: hand the sample to `handleCompressedSampleBuffer` for framing + stats.
   case compressed
   /// MJPEG: write the sample's block buffer straight to the MJPEG stream.
@@ -136,11 +136,11 @@ private func createNV12PixelBufferPool(width: Int, height: Int) -> CVPixelBuffer
 /// session and the composited pool must agree on these exactly (a mismatch feeds the encoder frames
 /// of a different size than it was created for, distorting the output), so both sites derive them
 /// from this single computation.
-struct FBVideoOutputDimensions: Equatable {
+struct VideoOutputDimensions: Equatable {
   let width: Int
   let height: Int
 
-  static func calculate(sourceWidth: Int, sourceHeight: Int, scaleFactor: Double?, edgeInsets: FBVideoStreamEdgeInsets) -> FBVideoOutputDimensions {
+  static func calculate(sourceWidth: Int, sourceHeight: Int, scaleFactor: Double?, edgeInsets: FBVideoStreamEdgeInsets) -> VideoOutputDimensions {
     var width = sourceWidth
     var height = sourceHeight
     if let scaleFactor, scaleFactor > 0, scaleFactor < 1 {
@@ -151,14 +151,14 @@ struct FBVideoOutputDimensions: Equatable {
     height += Int(edgeInsets.top + edgeInsets.bottom)
     width += width % 2
     height += height % 2
-    return FBVideoOutputDimensions(width: width, height: height)
+    return VideoOutputDimensions(width: width, height: height)
   }
 }
 
 // MARK: - Bitmap Frame Pusher
 
 /// Writes raw BGRA pixel bytes (optionally scaled) straight through to the consumer, unframed.
-final class FBSimulatorVideoStreamFramePusher_Bitmap: FBSimulatorVideoStreamFramePusher {
+final class SimulatorVideoStreamFramePusher_Bitmap: SimulatorVideoStreamFramePusher {
   let consumer: any FBDataConsumer
   /// The scale factor between 0-1. nil for no scaling.
   let scaleFactor: Double?
@@ -176,7 +176,7 @@ final class FBSimulatorVideoStreamFramePusher_Bitmap: FBSimulatorVideoStreamFram
       var transferSession: VTPixelTransferSession?
       let status = VTPixelTransferSessionCreate(allocator: kCFAllocatorDefault, pixelTransferSessionOut: &transferSession)
       if status != noErr {
-        throw FBSimulatorVideoStreamError.failedToCreatePixelTransferSession(status: status)
+        throw SimulatorVideoStreamError.failedToCreatePixelTransferSession(status: status)
       }
       self.pixelTransferSession = transferSession
     }
@@ -238,14 +238,14 @@ final class FBSimulatorVideoStreamFramePusher_Bitmap: FBSimulatorVideoStreamFram
 /// frame's handler completes before the next `writeEncodedFrame` is submitted). `stats` is
 /// additionally read by `currentStats()` from other isolation domains, so it alone is guarded by
 /// `statsLock`.
-final class FBSimulatorVideoStreamFramePusher_VideoToolbox: FBSimulatorVideoStreamFramePusher, @unchecked Sendable {
+final class SimulatorVideoStreamFramePusher_VideoToolbox: SimulatorVideoStreamFramePusher, @unchecked Sendable {
   let configuration: FBVideoStreamConfiguration
   let compressionSessionProperties: [String: Any]
   let videoCodec: CMVideoCodecType
-  let outputMode: FBVideoToolboxOutputMode
+  let outputMode: VideoToolboxOutputMode
   /// The encoded-sample sink for `.compressed` output; nil for MJPEG/Minicap, which write the JPEG
   /// block buffer directly to `consumer` in the encode handler.
-  let encodedSampleConsumer: FBEncodedSampleConsumer?
+  let encodedSampleConsumer: EncodedSampleConsumer?
   let timedMetadataWriter: (any FBVideoStreamTimedMetadataWriter)?
   let consumer: any FBDataConsumer
   let logger: any FBControlCoreLogger
@@ -262,7 +262,7 @@ final class FBSimulatorVideoStreamFramePusher_VideoToolbox: FBSimulatorVideoStre
   var starvationWarningLogged = false
   var stats = FBVideoEncoderStats()
   var lastLoggedStats = FBVideoEncoderStats()
-  var statsTimer = FBPeriodicStatsTimer(interval: 5.0)
+  var statsTimer = PeriodicStatsTimer(interval: 5.0)
 
   // Guards `stats` only: written from the VideoToolbox handler thread and the encode submission,
   // read by `currentStats()` from arbitrary isolation domains.
@@ -279,8 +279,8 @@ final class FBSimulatorVideoStreamFramePusher_VideoToolbox: FBSimulatorVideoStre
     compressionSessionProperties: [String: Any],
     videoCodec: CMVideoCodecType,
     consumer: any FBDataConsumer,
-    outputMode: FBVideoToolboxOutputMode,
-    encodedSampleConsumer: FBEncodedSampleConsumer?,
+    outputMode: VideoToolboxOutputMode,
+    encodedSampleConsumer: EncodedSampleConsumer?,
     timedMetadataWriter: (any FBVideoStreamTimedMetadataWriter)?,
     logger: any FBControlCoreLogger
   ) {
@@ -433,8 +433,8 @@ final class FBSimulatorVideoStreamFramePusher_VideoToolbox: FBSimulatorVideoStre
     let sourceWidth = CVPixelBufferGetWidth(pixelBuffer)
     let sourceHeight = CVPixelBufferGetHeight(pixelBuffer)
     // The composited frame includes the edge insets, so the NV12 pool and compression session must
-    // accommodate the full output size — the same `FBVideoOutputDimensions` the composited pool uses.
-    let dimensions = FBVideoOutputDimensions.calculate(
+    // accommodate the full output size — the same `VideoOutputDimensions` the composited pool uses.
+    let dimensions = VideoOutputDimensions.calculate(
       sourceWidth: sourceWidth, sourceHeight: sourceHeight,
       scaleFactor: configuration.scaleFactor, edgeInsets: edgeInsets)
     let destinationWidth = dimensions.width
@@ -450,7 +450,7 @@ final class FBSimulatorVideoStreamFramePusher_VideoToolbox: FBSimulatorVideoStre
     var transferSession: VTPixelTransferSession?
     let transferStatus = VTPixelTransferSessionCreate(allocator: kCFAllocatorDefault, pixelTransferSessionOut: &transferSession)
     if transferStatus != noErr {
-      throw FBSimulatorVideoStreamError.failedToCreatePixelTransferSession(status: transferStatus)
+      throw SimulatorVideoStreamError.failedToCreatePixelTransferSession(status: transferStatus)
     }
     self.pixelTransferSession = transferSession
     self.nv12PixelBufferPool = createNV12PixelBufferPool(width: destinationWidth, height: destinationHeight)
@@ -481,10 +481,10 @@ final class FBSimulatorVideoStreamFramePusher_VideoToolbox: FBSimulatorVideoStre
       compressionSessionOut: &compressionSession
     )
     if status != noErr {
-      throw FBSimulatorVideoStreamError.failedToStartCompressionSession(status: status)
+      throw SimulatorVideoStreamError.failedToStartCompressionSession(status: status)
     }
     guard let compressionSession else {
-      throw FBSimulatorVideoStreamError.compressionSessionNil
+      throw SimulatorVideoStreamError.compressionSessionNil
     }
 
     // Resolve `.automatic` rate control: when neither a bitrate nor a quality was specified, target
@@ -503,11 +503,11 @@ final class FBSimulatorVideoStreamFramePusher_VideoToolbox: FBSimulatorVideoStre
 
     let propertiesStatus = VTSessionSetProperties(compressionSession, propertyDictionary: sessionProperties as CFDictionary)
     if propertiesStatus != noErr {
-      throw FBSimulatorVideoStreamError.failedToSetCompressionSessionProperties(status: propertiesStatus)
+      throw SimulatorVideoStreamError.failedToSetCompressionSessionProperties(status: propertiesStatus)
     }
     let prepareStatus = VTCompressionSessionPrepareToEncodeFrames(compressionSession)
     if prepareStatus != noErr {
-      throw FBSimulatorVideoStreamError.failedToPrepareCompressionSession(status: prepareStatus)
+      throw SimulatorVideoStreamError.failedToPrepareCompressionSession(status: prepareStatus)
     }
     self.compressionSession = compressionSession
   }
@@ -554,7 +554,7 @@ final class FBSimulatorVideoStreamFramePusher_VideoToolbox: FBSimulatorVideoStre
     forceKeyFrame: Bool
   ) throws {
     guard let compressionSession else {
-      throw FBSimulatorVideoStreamError.missingCompressionSession
+      throw SimulatorVideoStreamError.missingCompressionSession
     }
 
     var bufferToWrite = pixelBuffer
@@ -633,7 +633,7 @@ final class FBSimulatorVideoStreamFramePusher_VideoToolbox: FBSimulatorVideoStre
       }
     }
     if status != 0 {
-      throw FBSimulatorVideoStreamError.failedToCompress(status: status)
+      throw SimulatorVideoStreamError.failedToCompress(status: status)
     }
   }
 

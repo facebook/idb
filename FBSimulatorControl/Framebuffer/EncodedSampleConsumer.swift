@@ -9,23 +9,23 @@ import CoreMedia
 import FBControlCore
 import Foundation
 
-// MARK: - FBEncodedSampleConsumer
+// MARK: - EncodedSampleConsumer
 
 /// A sink for the encoded H264/HEVC `CMSampleBuffer`s produced by the VideoToolbox pusher's
 /// `.compressed` output. Decoupling the per-sample output from `FBDataConsumer` byte-framing lets the
 /// same framebuffer→VideoToolbox encode pipeline target either a streaming byte consumer (the `stream`
 /// command) or an `AVAssetWriter`-backed file (the `record` command), without the pipeline knowing
 /// which.
-protocol FBEncodedSampleConsumer: AnyObject {
+protocol EncodedSampleConsumer: AnyObject {
   /// Consume a single encoded sample. The return value feeds the pusher's write / failure / starvation stats.
   func consume(_ sampleBuffer: CMSampleBuffer, logger: any FBControlCoreLogger) -> Bool
 }
 
-// MARK: - FBDataConsumerEncodedSampleConsumer
+// MARK: - DataConsumerEncodedSampleConsumer
 
-/// The streaming `FBEncodedSampleConsumer`: byte-frames each encoded sample to an `FBDataConsumer`
+/// The streaming `EncodedSampleConsumer`: byte-frames each encoded sample to an `FBDataConsumer`
 /// through an `FBEncodedFrameWriter` (Annex-B / MPEG-TS / fMP4).
-final class FBDataConsumerEncodedSampleConsumer: FBEncodedSampleConsumer {
+final class DataConsumerEncodedSampleConsumer: EncodedSampleConsumer {
   let consumer: any FBDataConsumer
   let frameWriter: any FBEncodedFrameWriter
   /// The timed-metadata writer for transports that can carry markers (`fMP4` / `MPEG-TS`).

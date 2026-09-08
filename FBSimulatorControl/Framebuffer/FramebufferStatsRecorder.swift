@@ -13,13 +13,13 @@ import IOSurface
 /// interval/total rates. Owns the single lock guarding the counters and the cadence timer: the
 /// callbacks that feed it fire on arbitrary private-framework threads while `snapshot()` /
 /// `startTime` are read from a consumer's queue.
-final class FBFramebufferStatsRecorder: @unchecked Sendable {
+final class FramebufferStatsRecorder: @unchecked Sendable {
 
   private let logger: any FBControlCoreLogger
   private let lock = NSLock()
   private var stats = FBFramebufferStats()
   private var lastLoggedStats = FBFramebufferStats()
-  private var timer = FBPeriodicStatsTimer(interval: 5.0)
+  private var timer = PeriodicStatsTimer(interval: 5.0)
 
   init(logger: any FBControlCoreLogger) {
     self.logger = logger

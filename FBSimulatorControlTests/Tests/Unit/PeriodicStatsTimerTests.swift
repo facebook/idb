@@ -8,10 +8,10 @@
 @testable import FBSimulatorControl
 import XCTest
 
-final class FBPeriodicStatsTimerTests: XCTestCase {
+final class PeriodicStatsTimerTests: XCTestCase {
 
   func testFirstTickStartsTimer() {
-    var timer = FBPeriodicStatsTimer(interval: 5.0)
+    var timer = PeriodicStatsTimer(interval: 5.0)
     XCTAssertFalse(timer.hasStarted)
     XCTAssertEqual(timer.firstTickTime, 0)
 
@@ -22,13 +22,13 @@ final class FBPeriodicStatsTimerTests: XCTestCase {
   }
 
   func testTickPendingWithinInterval() {
-    var timer = FBPeriodicStatsTimer(interval: 5.0)
+    var timer = PeriodicStatsTimer(interval: 5.0)
     XCTAssertEqual(timer.tick(), .started)
     XCTAssertEqual(timer.tick(), .pending)
   }
 
   func testTickElapsedAfterInterval() {
-    var timer = FBPeriodicStatsTimer(interval: 5.0)
+    var timer = PeriodicStatsTimer(interval: 5.0)
     XCTAssertEqual(timer.tick(), .started)
     timer.backdateForTesting(by: 10.0)
 

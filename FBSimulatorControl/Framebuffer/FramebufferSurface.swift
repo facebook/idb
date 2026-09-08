@@ -14,7 +14,7 @@ import IOSurface
 /// The seam between `FBFramebuffer` and the private CoreSimulator display surface. Expressed purely
 /// in public/standard types so the private, internally imported renderable protocols never leak
 /// into `FBFramebuffer`'s logic and a fake can be substituted in tests.
-protocol FBFramebufferSurface: AnyObject {
+protocol FramebufferSurface: AnyObject {
   /// The surface available right now, if the underlying renderable can vend one synchronously.
   func immediatelyAvailableSurface() -> IOSurface?
 
@@ -31,11 +31,11 @@ protocol FBFramebufferSurface: AnyObject {
   func unregisterCallbacks(token: UUID)
 }
 
-/// The production `FBFramebufferSurface`, wrapping the private CoreSimulator renderable. This is the
+/// The production `FramebufferSurface`, wrapping the private CoreSimulator renderable. This is the
 /// single place that touches the internally imported renderable protocols and `FBObjCExceptionGuard`;
 /// it is `fileprivate` so those private types never appear in any interface reachable via
 /// `@testable import`.
-private final class SimDisplayRenderableSurface: FBFramebufferSurface {
+private final class SimDisplayRenderableSurface: FramebufferSurface {
   private let surface: any SimDisplayIOSurfaceRenderable & SimDisplayRenderable
   private let logger: any FBControlCoreLogger
   /// Dedicated serial queue the new-style `SimScreen` callbacks are delivered on, keeping frame and
@@ -164,10 +164,10 @@ private final class SimDisplayRenderableSurface: FBFramebufferSurface {
 }
 
 /// Locates the simulator's main-display surface among its IO ports and wraps it in a production
-/// `FBFramebufferSurface`. Kept separate from `FBFramebuffer` so that discovery, adaptation, and
+/// `FramebufferSurface`. Kept separate from `FBFramebuffer` so that discovery, adaptation, and
 /// consumer fan-out are distinct concerns.
-enum FBFramebufferSurfaceLocator {
-  static func mainDisplaySurface(for simulator: FBSimulator, logger: any FBControlCoreLogger) throws -> any FBFramebufferSurface {
+enum FramebufferSurfaceLocator {
+  static func mainDisplaySurface(for simulator: FBSimulator, logger: any FBControlCoreLogger) throws -> any FramebufferSurface {
     guard let ioClient = simulator.device.io else {
       throw FBFramebufferError.mainScreenSurfaceNotFound(description: "No IO client available on \(simulator.device)")
     }

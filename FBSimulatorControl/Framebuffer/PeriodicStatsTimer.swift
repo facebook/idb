@@ -8,7 +8,7 @@
 import CoreFoundation
 
 /// Shared timing logic for periodic stats logging across the framebuffer and the encoder.
-struct FBPeriodicStatsTimer {
+struct PeriodicStatsTimer {
   private var startTime: CFAbsoluteTime = 0
   private var lastLogTime: CFAbsoluteTime = 0
   private let interval: CFTimeInterval
