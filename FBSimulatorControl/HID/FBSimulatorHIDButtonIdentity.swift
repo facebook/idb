@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-@_implementationOnly import SimulatorApp
+internal import SimulatorApp
 
 /// The wire identities a hardware button has. Both transports read this, so the two vocabularies live
 /// together and cannot drift: a button is described once, and each transport takes the part it can

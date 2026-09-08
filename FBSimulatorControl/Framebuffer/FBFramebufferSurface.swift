@@ -5,14 +5,14 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-@_implementationOnly @preconcurrency import CoreSimDeviceIO
+@preconcurrency internal import CoreSimDeviceIO
 @preconcurrency import CoreSimulator
 @preconcurrency import FBControlCore
 import Foundation
 import IOSurface
 
 /// The seam between `FBFramebuffer` and the private CoreSimulator display surface. Expressed purely
-/// in public/standard types so the private `@_implementationOnly` renderable protocols never leak
+/// in public/standard types so the private, internally imported renderable protocols never leak
 /// into `FBFramebuffer`'s logic and a fake can be substituted in tests.
 protocol FBFramebufferSurface: AnyObject {
   /// The surface available right now, if the underlying renderable can vend one synchronously.
@@ -32,7 +32,7 @@ protocol FBFramebufferSurface: AnyObject {
 }
 
 /// The production `FBFramebufferSurface`, wrapping the private CoreSimulator renderable. This is the
-/// single place that touches the `@_implementationOnly` renderable protocols and `FBObjCExceptionGuard`;
+/// single place that touches the internally imported renderable protocols and `FBObjCExceptionGuard`;
 /// it is `fileprivate` so those private types never appear in any interface reachable via
 /// `@testable import`.
 private final class SimDisplayRenderableSurface: FBFramebufferSurface {

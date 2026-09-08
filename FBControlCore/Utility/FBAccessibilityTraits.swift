@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-@_implementationOnly import AXRuntime
+internal import AXRuntime
 import Foundation
 
 // Each trait paired with the name AXRuntime gives it - the constant minus its

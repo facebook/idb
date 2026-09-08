@@ -9,7 +9,7 @@ import CoreGraphics
 import Darwin
 @preconcurrency import FBControlCore
 import Foundation
-@_implementationOnly import SimulatorApp
+internal import SimulatorApp
 
 /// Translates FBSimulatorHID events into Indigo structs.
 final class FBSimulatorIndigoHID {
