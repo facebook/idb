@@ -93,7 +93,7 @@ public final class FBSimulatorReplCommands {
       throw FBWeakTargetError.simulator
     }
 
-    guard let bridgePath = BundledResources.path(forItem: "SimulatorFrameworkBridge") else {
+    guard let bridgePath = BundledResources.path(forItem: "SimulatorFrameworkBridge-iOS") else {
       throw FBSimulatorReplError.bundledResourceMissing(item: "SimulatorFrameworkBridge binary")
     }
     guard let libReplPath = BundledResources.path(forItem: "libRepl-iOS.dylib") else {

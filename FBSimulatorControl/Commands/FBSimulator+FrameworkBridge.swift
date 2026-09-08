@@ -42,7 +42,7 @@ extension FBSimulator {
     action: String,
     arguments: [String] = []
   ) async throws -> String {
-    guard let helperPath = BundledResources.path(forItem: "SimulatorFrameworkBridge") else {
+    guard let helperPath = BundledResources.path(forItem: "SimulatorFrameworkBridge-iOS") else {
       throw FBSimulatorFrameworkBridgeError.binaryMissing
     }
 

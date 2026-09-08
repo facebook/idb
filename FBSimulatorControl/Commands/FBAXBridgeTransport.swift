@@ -104,7 +104,7 @@ actor FBAXBridgePersistentTransport: FBAXBridgeTransport {
     guard let simulator else {
       throw FBWeakTargetError.simulator
     }
-    guard let helperPath = BundledResources.path(forItem: "SimulatorFrameworkBridge") else {
+    guard let helperPath = BundledResources.path(forItem: "SimulatorFrameworkBridge-iOS") else {
       throw FBAXBridgeError.bridgeUnavailable
     }
     try FBAXBridgeSocket.prepareDirectory()

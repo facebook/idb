@@ -5,9 +5,9 @@ options:
 
 targets:
   # A command-line executable spawned inside the iOS simulator runtime by idb_companion (from the bundled
-  # `Resources/SimulatorFrameworkBridge`) to drive privacy/services state, read the accessibility tree and
-  # serve the REPL socket. Mirrors the Buck `SimulatorFrameworkBridge` target.
-  SimulatorFrameworkBridge:
+  # `Resources/SimulatorFrameworkBridge-iOS`) to drive privacy/services state, read the accessibility tree
+  # and serve the REPL socket. Mirrors the Buck `SimulatorFrameworkBridge-iOS` target.
+  SimulatorFrameworkBridge-iOS:
     type: tool
     platform: iOS
     deploymentTarget: "15.0"
@@ -39,7 +39,7 @@ targets:
       base:
         SDKROOT: iphonesimulator
         IPHONEOS_DEPLOYMENT_TARGET: "15.0"
-        PRODUCT_NAME: SimulatorFrameworkBridge
+        PRODUCT_NAME: SimulatorFrameworkBridge-iOS
         HEADER_SEARCH_PATHS: $(inherited) $(TARGET_TEMP_DIR)/ReplExecutorHeaders
         # Ad-hoc sign with the bridge's private entitlements (TCC/HealthKit) so the
         # services it drives are permitted inside the simulator.

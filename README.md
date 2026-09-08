@@ -113,7 +113,7 @@ Build/Distribution/
     libShimulator-macOS.dylib
     libRepl-iOS.dylib
     libRepl-macOS.dylib
-    SimulatorFrameworkBridge
+    SimulatorFrameworkBridge-iOS
     ReplHost.app
     IDBAPI.swiftinterface
 ```

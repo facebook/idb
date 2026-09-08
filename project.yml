@@ -278,15 +278,15 @@ targets:
         buildPhase: resources
     postBuildScripts:
       - name: Copy generated bundle resources
-        script: set -e && DEST="$TARGET_BUILD_DIR/$UNLOCALIZED_RESOURCES_FOLDER_PATH" && mkdir -p "$DEST" && cp "$SYMROOT/Release-iphonesimulator/SimulatorFrameworkBridge" "$DEST/" && cp "$SYMROOT/Release-iphonesimulator/libRepl-iOS.dylib" "$DEST/" && cp "$SYMROOT/Release-iphonesimulator/libShimulator-iOS.dylib" "$DEST/" && cp "$SYMROOT/Release/libRepl-macOS.dylib" "$DEST/" && cp "$SYMROOT/Release/libShimulator-macOS.dylib" "$DEST/"
+        script: set -e && DEST="$TARGET_BUILD_DIR/$UNLOCALIZED_RESOURCES_FOLDER_PATH" && mkdir -p "$DEST" && cp "$SYMROOT/Release-iphonesimulator/SimulatorFrameworkBridge-iOS" "$DEST/" && cp "$SYMROOT/Release-iphonesimulator/libRepl-iOS.dylib" "$DEST/" && cp "$SYMROOT/Release-iphonesimulator/libShimulator-iOS.dylib" "$DEST/" && cp "$SYMROOT/Release/libRepl-macOS.dylib" "$DEST/" && cp "$SYMROOT/Release/libShimulator-macOS.dylib" "$DEST/"
         inputFiles:
-          - $(SYMROOT)/Release-iphonesimulator/SimulatorFrameworkBridge
+          - $(SYMROOT)/Release-iphonesimulator/SimulatorFrameworkBridge-iOS
           - $(SYMROOT)/Release-iphonesimulator/libRepl-iOS.dylib
           - $(SYMROOT)/Release-iphonesimulator/libShimulator-iOS.dylib
           - $(SYMROOT)/Release/libRepl-macOS.dylib
           - $(SYMROOT)/Release/libShimulator-macOS.dylib
         outputFiles:
-          - $(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/SimulatorFrameworkBridge
+          - $(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/SimulatorFrameworkBridge-iOS
           - $(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/libRepl-iOS.dylib
           - $(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/libShimulator-iOS.dylib
           - $(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/libRepl-macOS.dylib
