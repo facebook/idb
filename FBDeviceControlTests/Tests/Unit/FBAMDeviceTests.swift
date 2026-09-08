@@ -30,17 +30,10 @@ private let startServiceEvents = [
 
 /// `withAFCConnection` layers an AFC client over the service connection: creating it reads the
 /// secure IO context a second time, and it is closed before the service connection beneath it is
-/// invalidated.
+/// invalidated. A client AFC rejects is released the same way, so both paths record this sequence.
 private let afcConnectionEvents =
   Array(startServiceEvents.dropLast())
   + ["service_connection_get_secure_io_context", "connection_close", "service_connection_invalidate"]
-
-/// BUG: a connection AFC reports as invalid is dropped without being closed. The teardown only
-/// ever covered a connection that reached the caller, so the client `Create` handed back is
-/// leaked. Flipped by the bugfix later in this stack.
-private let rejectedAFCConnectionEvents =
-  Array(startServiceEvents.dropLast())
-  + ["service_connection_get_secure_io_context", "service_connection_invalidate"]
 
 // Serialized: the stubs append to the file-scope `sAMDeviceEvents` from the
 // main queue; parallel tests would interleave their recordings.
@@ -260,10 +253,8 @@ final class FBAMDeviceTests {
     #expect((afcConnectionEvents) == (sAMDeviceEvents))
   }
 
-  /// A connection AFC reports as invalid is rejected before the body runs, and the service
-  /// connection beneath it is invalidated either way.
-  ///
-  /// BUG: the rejected client is never closed. Flipped by the bugfix later in this stack.
+  /// A connection AFC reports as invalid is rejected before the body runs; rejecting a client
+  /// releases it exactly as handing one to the body does.
   @Test
   func withAFCConnection_RejectsAConnectionThatIsNotValid() async throws {
     var afcCalls = Self.stubbedAFCCalls
@@ -275,8 +266,8 @@ final class FBAMDeviceTests {
       }
     }
 
-    await waitForDeviceEvents(rejectedAFCConnectionEvents)
-    #expect((rejectedAFCConnectionEvents) == (sAMDeviceEvents))
+    await waitForDeviceEvents(afcConnectionEvents)
+    #expect((afcConnectionEvents) == (sAMDeviceEvents))
   }
 
   /// Three consumers of one bundle's house arrest share a single connection, whether they overlap

@@ -112,7 +112,8 @@ public final class FBAFCConnection {
     self.logger = logger
   }
 
-  /// Wraps a service connection in an AFC client, which the caller then owns and must close.
+  /// Wraps a service connection in an AFC client. A client AFC accepts is returned for the caller
+  /// to own and close; one it rejects is closed here.
   static func afc(
     from serviceConnection: FBAMDServiceConnection,
     calls: AFCCalls,
@@ -121,6 +122,9 @@ public final class FBAFCConnection {
     let connection = serviceConnection.asAFCConnection(
       calls: calls, callback: afcConnectionCallback, logger: logger)
     guard connection.connectionIsValid else {
+      // Discarding the close error: the caller's failure is the invalidity, not whatever closing
+      // an already-invalid client reports.
+      try? connection.close()
       throw FBAFCConnectionError.connectionNotValid(description: String(describing: connection))
     }
     return connection
