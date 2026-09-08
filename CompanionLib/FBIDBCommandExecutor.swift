@@ -120,15 +120,15 @@ public final class FBIDBCommandExecutor {
       let bundleDescriptor = try FBBundleDescriptor.bundle(fromPath: filePath)
       return try await installAppBundle(bundleDescriptor, makeDebuggable: makeDebuggable)
     } else {
-      return try await withFBFutureContext(temporaryDirectory.withArchiveExtracted(fromFile: filePath, overrideModificationTime: overrideModificationTime)) { extractPath in
-        return try await installExtractedApp(extractPath as URL, makeDebuggable: makeDebuggable)
+      return try await temporaryDirectory.withArchiveExtracted(fromFile: filePath, overrideModificationTime: overrideModificationTime) { extractPath in
+        return try await installExtractedApp(extractPath, makeDebuggable: makeDebuggable)
       }
     }
   }
 
   public func install_app_stream(_ input: FBProcessInput<AnyObject>, compression: FBCompressionFormat, make_debuggable makeDebuggable: Bool, override_modification_time overrideModificationTime: Bool) async throws -> FBInstalledArtifact {
-    return try await withFBFutureContext(temporaryDirectory.withArchiveExtracted(fromStream: input, compression: compression, overrideModificationTime: overrideModificationTime)) { extractPath in
-      return try await installExtractedApp(extractPath as URL, makeDebuggable: makeDebuggable)
+    return try await temporaryDirectory.withArchiveExtracted(fromStream: input, compression: compression, overrideModificationTime: overrideModificationTime) { extractPath in
+      return try await installExtractedApp(extractPath, makeDebuggable: makeDebuggable)
     }
   }
 
@@ -137,8 +137,8 @@ public final class FBIDBCommandExecutor {
   }
 
   public func install_xctest_app_stream(_ stream: FBProcessInput<AnyObject>, skipSigningBundles: Bool) async throws -> FBInstalledArtifact {
-    return try await withFBFutureContext(temporaryDirectory.withArchiveExtracted(fromStream: stream, compression: .GZIP)) { extractPath in
-      return try await installXctest(extractPath as URL, skipSigningBundles: skipSigningBundles)
+    return try await temporaryDirectory.withArchiveExtracted(fromStream: stream, compression: .GZIP) { extractPath in
+      return try await installXctest(extractPath, skipSigningBundles: skipSigningBundles)
     }
   }
 
@@ -147,8 +147,8 @@ public final class FBIDBCommandExecutor {
   }
 
   public func install_dylib_stream(_ input: FBProcessInput<AnyObject>, name: String) async throws -> FBInstalledArtifact {
-    return try await withFBFutureContext(temporaryDirectory.withGzipExtracted(fromStream: input, name: name)) { extractPath in
-      return try await installFile(extractPath as URL, intoStorage: storageManager.dylib)
+    return try await temporaryDirectory.withGzipExtracted(fromStream: input, name: name) { extractPath in
+      return try await installFile(extractPath, intoStorage: storageManager.dylib)
     }
   }
 
@@ -157,8 +157,8 @@ public final class FBIDBCommandExecutor {
   }
 
   public func install_framework_stream(_ input: FBProcessInput<AnyObject>) async throws -> FBInstalledArtifact {
-    return try await withFBFutureContext(temporaryDirectory.withArchiveExtracted(fromStream: input, compression: .GZIP)) { extractPath in
-      return try await installBundle(extractPath as URL, intoStorage: storageManager.framework)
+    return try await temporaryDirectory.withArchiveExtracted(fromStream: input, compression: .GZIP) { extractPath in
+      return try await installBundle(extractPath, intoStorage: storageManager.framework)
     }
   }
 
@@ -167,8 +167,8 @@ public final class FBIDBCommandExecutor {
   }
 
   public func install_dsym_stream(_ input: FBProcessInput<AnyObject>, compression: FBCompressionFormat, linkTo: FBDsymInstallLinkToBundle?) async throws -> FBInstalledArtifact {
-    return try await withFBFutureContext(temporaryDirectory.withArchiveExtracted(fromStream: input, compression: compression)) { extractPath in
-      let url = try dsymDirnameFromUnzipDir(extractPath as URL)
+    return try await temporaryDirectory.withArchiveExtracted(fromStream: input, compression: compression) { extractPath in
+      let url = try dsymDirnameFromUnzipDir(extractPath)
       return try await installAndLinkDsym(url, intoStorage: storageManager.dsym, linkTo: linkTo)
     }
   }
@@ -327,8 +327,8 @@ public final class FBIDBCommandExecutor {
 
   public func update_contacts(_ dbTarData: Data) async throws {
     let simulator = try simulatorTarget()
-    try await withFBFutureContext(temporaryDirectory.withArchiveExtracted(dbTarData)) { tempDir in
-      try await simulator.updateContacts((tempDir as URL).path)
+    try await temporaryDirectory.withArchiveExtracted(dbTarData) { tempDir in
+      try await simulator.updateContacts(tempDir.path)
     }
   }
 
@@ -567,8 +567,8 @@ public final class FBIDBCommandExecutor {
   }
 
   func push_file_from_tar(_ tarData: Data, to_path destinationPath: String, containerType: String?) async throws {
-    try await withFBFutureContext(temporaryDirectory.withArchiveExtracted(tarData)) { extractDir in
-      let paths = try FileManager.default.contentsOfDirectory(at: extractDir as URL, includingPropertiesForKeys: [.isDirectoryKey], options: [])
+    try await temporaryDirectory.withArchiveExtracted(tarData) { extractDir in
+      let paths = try FileManager.default.contentsOfDirectory(at: extractDir, includingPropertiesForKeys: [.isDirectoryKey], options: [])
       try await self.push_files(paths, to_path: destinationPath, containerType: containerType)
     }
   }
@@ -588,8 +588,8 @@ public final class FBIDBCommandExecutor {
   }
 
   func pull_file(_ path: String, containerType: String?) async throws -> Data {
-    return try await withFBFutureContext(temporaryDirectory.withTemporaryDirectory()) { url in
-      let tempPath = ((url as URL).path as NSString).appendingPathComponent((path as NSString).lastPathComponent)
+    return try await temporaryDirectory.withTemporaryDirectory { url in
+      let tempPath = (url.path as NSString).appendingPathComponent((path as NSString).lastPathComponent)
       try await self.withFileContainer(for: containerType) { container in
         _ = try await container.copy(fromContainer: path, toHost: tempPath)
       }

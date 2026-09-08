@@ -83,6 +83,75 @@ public final class FBTemporaryDirectory: NSObject {
     return rootTemporaryDirectory.appendingPathComponent(UUID().uuidString)
   }
 
+  // MARK: - Scoped
+
+  /// Creates a temporary directory that exists for exactly the scope of `body`: deleted when
+  /// `body` returns or throws.
+  public func withTemporaryDirectory<T>(_ body: (URL) async throws -> T) async throws -> T {
+    let tempDirectory = ephemeralTemporaryDirectory()
+    logger.log("Creating Temp Dir \(tempDirectory)")
+    do {
+      try FileManager.default.createDirectory(at: tempDirectory, withIntermediateDirectories: true, attributes: nil)
+    } catch {
+      throw FBTemporaryDirectoryError.creationFailed(directory: tempDirectory, underlying: error)
+    }
+    defer { delete(tempDirectory) }
+    return try await body(tempDirectory)
+  }
+
+  /// Extracts the archive in `input` into a temporary directory scoped to `body`.
+  public func withArchiveExtracted<T>(
+    fromStream input: FBProcessInput<AnyObject>,
+    compression: FBCompressionFormat,
+    overrideModificationTime overrideMTime: Bool = false,
+    _ body: (URL) async throws -> T
+  ) async throws -> T {
+    try await withTemporaryDirectory { tempDir in
+      _ = try await bridgeFBFuture(
+        FBArchiveOperations.extractArchive(fromStream: input, toPath: tempDir.path, overrideModificationTime: overrideMTime, logger: logger, compression: compression))
+      return try await body(tempDir)
+    }
+  }
+
+  /// Extracts the gzipped tar in `tarData` into a temporary directory scoped to `body`.
+  public func withArchiveExtracted<T>(_ tarData: Data, _ body: (URL) async throws -> T) async throws -> T {
+    let input = unsafeBitCast(FBProcessInput<NSData>(from: tarData), to: FBProcessInput<AnyObject>.self)
+    return try await withArchiveExtracted(fromStream: input, compression: .GZIP, body)
+  }
+
+  /// Extracts the archive at `filePath` into a temporary directory scoped to `body`.
+  public func withArchiveExtracted<T>(
+    fromFile filePath: String,
+    overrideModificationTime overrideMTime: Bool,
+    _ body: (URL) async throws -> T
+  ) async throws -> T {
+    try await withTemporaryDirectory { tempDir in
+      _ = try await bridgeFBFuture(
+        FBArchiveOperations.extractArchive(atPath: filePath, toPath: tempDir.path, overrideModificationTime: overrideMTime, logger: logger))
+      return try await body(tempDir)
+    }
+  }
+
+  /// Extracts the gzip in `input` to a file named `name` inside a temporary directory scoped to
+  /// `body`; the file goes with the directory when the scope ends.
+  public func withGzipExtracted<T>(fromStream input: FBProcessInput<AnyObject>, name: String, _ body: (URL) async throws -> T) async throws -> T {
+    try await withTemporaryDirectory { directory in
+      let tempFile = directory.appendingPathComponent(name)
+      _ = try await bridgeFBFuture(
+        FBArchiveOperations.extractGzip(fromStream: input, toPath: tempFile.path, logger: logger))
+      return try await body(tempFile)
+    }
+  }
+
+  private func delete(_ url: URL) {
+    do {
+      try FileManager.default.removeItem(at: url)
+      logger.log("Deleted Temp Dir \(url)")
+    } catch {
+      logger.log("Failed to delete Temp Dir \(url): \(error)")
+    }
+  }
+
   @objc(withGzipExtractedFromStream:name:)
   public func withGzipExtracted(fromStream input: FBProcessInput<AnyObject>, name: String) -> FBFutureContext<NSURL> {
     return withTemporaryFileNamed(name)

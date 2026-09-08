@@ -48,6 +48,30 @@ struct FBTemporaryDirectoryTests {
     #expect(!exists(url))
   }
 
+  /// The body-scoped variant carries the same two endings as the context form, without a context:
+  /// the directory is gone by the time the call returns.
+  @Test
+  func withTemporaryDirectoryBody_DeletesTheDirectoryWhenTheBodyReturns() async throws {
+    let handed = try await temporaryDirectory.withTemporaryDirectory { url -> URL in
+      #expect(self.exists(url))
+      return url
+    }
+    #expect(!exists(handed))
+  }
+
+  @Test
+  func withTemporaryDirectoryBody_DeletesTheDirectoryWhenTheBodyThrows() async throws {
+    nonisolated(unsafe) var handed: URL?
+    await #expect(throws: BodyError.self) {
+      try await self.temporaryDirectory.withTemporaryDirectory { url -> URL in
+        handed = url
+        throw BodyError()
+      }
+    }
+    let url = try #require(handed)
+    #expect(!exists(url))
+  }
+
   /// The unscoped variant hands out a directory the caller owns: nothing deletes it behind the
   /// caller's back.
   @Test
