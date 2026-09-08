@@ -66,6 +66,10 @@ extension FBSimulatorHIDButton {
       return .indigoSourceAndConsumerUsage(source: Int32(ButtonEventSourceSiri), page: 0x0C, code: 0xCF) // Voice Command
     case .playPause:
       return .consumerUsage(page: 0x0C, code: 0xCD) // Play/Pause
+    case .volumeUp:
+      return .consumerUsage(page: 0x0C, code: 0xE9) // Volume Increment
+    case .volumeDown:
+      return .consumerUsage(page: 0x0C, code: 0xEA) // Volume Decrement
     }
   }
 }

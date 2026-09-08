@@ -153,14 +153,11 @@ typedef struct {
    0xE9  Volume Increment
    0xEA  Volume Decrement
 
- Volume is recorded for completeness but is deliberately NOT exposed as a button: no simulator
- responds to it. Sending 0xE9/0xEA over dtuhidd has no observable effect on iOS 26.5, in sessions
- where the Menu usage demonstrably works, and the simulator has no volume subsystem to drive — its
- Settings app ships no "Sounds & Haptics" pane, and Simulator.app offers no iOS volume control (its
- audioVolumeUp:/audioVolumeDown: actions belong to the Apple TV remote window). Simulator.app does
- use IndigoHIDMessageForHIDArbitrary with page 0x0C, so the mechanism is right; Apple simply never
- sends a volume usage from it. The tvOS case is untested rather than disproven — no observable was
- found there for any button, so nothing can be concluded either way.
+ The volume usages drive the simulated device's real volume, not just its HUD. SpringBoard's
+ SBVolumeControl moves its level by a sixteenth per press and publishes the new value on the
+ com.apple.springboard.volumestate Darwin notification; CoreSimulatorBridge mirrors that into
+ var/run/simulatoraudio/audiosettings.plist, which is what a guest app reads back through
+ AVAudioSession.outputVolume. The host's own output volume is untouched.
  */
 
 #define ButtonEventTargetHardware 0x33

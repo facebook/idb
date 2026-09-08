@@ -299,6 +299,23 @@ final class FBSimulatorIndigoHIDTests: XCTestCase {
     }
   }
 
+  // Volume rides the same arbitrary-HID path as play/pause, with the Consumer increment and decrement
+  // usages. These are the values SpringBoard acts on to move the device's own level.
+  func testVolumeButtonUsages() throws {
+    let indigo = try makeIndigo()
+    let expected: [(FBSimulatorHIDButton, UInt32)] = [
+      (.volumeUp, 0xE9), // Consumer: Volume Increment
+      (.volumeDown, 0xEA), // Consumer: Volume Decrement
+    ]
+    for (button, usage) in expected {
+      let data = indigo.button(with: .down, button: button)
+      XCTAssertEqual(uint32(at: 0x30, in: data), 0x2711, "\(button.name) eventSource")
+      XCTAssertEqual(uint32(at: 0x38, in: data), 0x32, "\(button.name) eventTarget (digitizer)")
+      XCTAssertEqual(uint32(at: 0x3c, in: data), usage, "\(button.name) usage")
+      XCTAssertEqual(uint32(at: 0x44, in: data), 0x0C, "\(button.name) usage page")
+    }
+  }
+
   // The page and usage are carried independently, so the builder is not hard-wired to one page.
   func testArbitraryHIDUsageCarriesAnyPageAndUsage() throws {
     let indigo = try makeIndigo()

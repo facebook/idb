@@ -161,6 +161,8 @@ final class FBSimulatorDTUHIDTransportTests: XCTestCase {
     XCTAssertEqual(FBSimulatorHIDButton.siri.identity.consumerUsage?.code, 0xCF)
     XCTAssertEqual(FBSimulatorHIDButton.playPause.identity.consumerUsage?.page, 0x0C)
     XCTAssertEqual(FBSimulatorHIDButton.playPause.identity.consumerUsage?.code, 0xCD)
+    XCTAssertEqual(FBSimulatorHIDButton.volumeUp.identity.consumerUsage?.code, 0xE9)
+    XCTAssertEqual(FBSimulatorHIDButton.volumeDown.identity.consumerUsage?.code, 0xEA)
     XCTAssertNil(FBSimulatorHIDButton.applePay.identity.consumerUsage)
   }
 
