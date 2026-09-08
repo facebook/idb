@@ -36,7 +36,7 @@ final class FBSimulatorApplicationInstallPreflightTests: XCTestCase {
     case conditionNotMet
   }
 
-  private func installFailure() -> FBSimulatorApplicationError {
+  private func installFailure() -> FBSimulatorApplicationInstallError {
     .installFailed(bundleDescription: "an app", options: "no options")
   }
 
@@ -56,8 +56,8 @@ final class FBSimulatorApplicationInstallPreflightTests: XCTestCase {
         processIsSuspended: { _ in false },
         debuggerIsAttached: { _ in true })
       XCTFail("Expected debugger-attached process error")
-    } catch let error as FBSimulatorApplicationError {
-      guard case let .applicationProcessDebuggerAttached(bundleID, processIdentifier) = error else {
+    } catch let error as FBSimulatorApplicationInstallError {
+      guard case let .processDebuggerAttached(bundleID, processIdentifier) = error else {
         return XCTFail("Expected a debugger-attached process error, got \(error)")
       }
       XCTAssertEqual(bundleID, "com.example.app")
@@ -78,8 +78,8 @@ final class FBSimulatorApplicationInstallPreflightTests: XCTestCase {
         processIsSuspended: { _ in true },
         debuggerIsAttached: { _ in false })
       XCTFail("Expected suspended process error")
-    } catch let error as FBSimulatorApplicationError {
-      guard case let .applicationProcessSuspended(bundleID, processIdentifier, debuggerAttached) = error else {
+    } catch let error as FBSimulatorApplicationInstallError {
+      guard case let .processSuspended(bundleID, processIdentifier, debuggerAttached) = error else {
         return XCTFail("Expected a suspended-process install error, got \(error)")
       }
       XCTAssertEqual(bundleID, "com.example.app")
@@ -101,8 +101,8 @@ final class FBSimulatorApplicationInstallPreflightTests: XCTestCase {
         processIsSuspended: { _ in true },
         debuggerIsAttached: { _ in true })
       XCTFail("Expected suspended process error")
-    } catch let error as FBSimulatorApplicationError {
-      guard case let .applicationProcessSuspended(_, _, debuggerAttached) = error else {
+    } catch let error as FBSimulatorApplicationInstallError {
+      guard case let .processSuspended(_, _, debuggerAttached) = error else {
         return XCTFail("Expected a suspended-process install error, got \(error)")
       }
       XCTAssertTrue(debuggerAttached)
@@ -118,14 +118,14 @@ final class FBSimulatorApplicationInstallPreflightTests: XCTestCase {
     do {
       let _: String = try await FBSimulatorApplicationCommands.installAndResolveApplication(
         install: { _ in
-          throw FBSimulatorApplicationError.applicationProcessSuspended(
+          throw FBSimulatorApplicationInstallError.processSuspended(
             bundleID: "com.example.app", processIdentifier: 42, debuggerAttached: false)
         },
         resolveInstalledApplication: { "installed" },
         installFailure: installFailure)
       XCTFail("Expected suspended process error")
-    } catch let error as FBSimulatorApplicationError {
-      guard case .applicationProcessSuspended = error else {
+    } catch let error as FBSimulatorApplicationInstallError {
+      guard case .processSuspended = error else {
         return XCTFail("Expected a suspended-process install error, got \(error)")
       }
     } catch {
@@ -137,14 +137,14 @@ final class FBSimulatorApplicationInstallPreflightTests: XCTestCase {
     do {
       let _: String = try await FBSimulatorApplicationCommands.installAndResolveApplication(
         install: { _ in
-          throw FBSimulatorApplicationError.applicationProcessDebuggerAttached(
+          throw FBSimulatorApplicationInstallError.processDebuggerAttached(
             bundleID: "com.example.app", processIdentifier: 42)
         },
         resolveInstalledApplication: { "installed" },
         installFailure: installFailure)
       XCTFail("Expected debugger-attached process error")
-    } catch let error as FBSimulatorApplicationError {
-      guard case .applicationProcessDebuggerAttached = error else {
+    } catch let error as FBSimulatorApplicationInstallError {
+      guard case .processDebuggerAttached = error else {
         return XCTFail("Expected a debugger-attached process error, got \(error)")
       }
     } catch {
@@ -159,7 +159,7 @@ final class FBSimulatorApplicationInstallPreflightTests: XCTestCase {
       let _: String = try await FBSimulatorApplicationCommands.installAndResolveApplication(
         install: { attempt in
           if attempt == .retry {
-            throw FBSimulatorApplicationError.applicationProcessSuspended(
+            throw FBSimulatorApplicationInstallError.processSuspended(
               bundleID: "com.example.app", processIdentifier: 42, debuggerAttached: true)
           }
           installCalls += 1
@@ -171,8 +171,8 @@ final class FBSimulatorApplicationInstallPreflightTests: XCTestCase {
         resolveInstalledApplication: { "installed" },
         installFailure: installFailure)
       XCTFail("Expected suspended process error")
-    } catch let error as FBSimulatorApplicationError {
-      guard case .applicationProcessSuspended = error else {
+    } catch let error as FBSimulatorApplicationInstallError {
+      guard case .processSuspended = error else {
         return XCTFail("Expected a suspended-process install error, got \(error)")
       }
     } catch {
@@ -189,7 +189,7 @@ final class FBSimulatorApplicationInstallPreflightTests: XCTestCase {
       let _: String = try await FBSimulatorApplicationCommands.installAndResolveApplication(
         install: { attempt in
           if attempt == .retry {
-            throw FBSimulatorApplicationError.applicationProcessDebuggerAttached(
+            throw FBSimulatorApplicationInstallError.processDebuggerAttached(
               bundleID: "com.example.app", processIdentifier: 42)
           }
           installCalls += 1
@@ -201,8 +201,8 @@ final class FBSimulatorApplicationInstallPreflightTests: XCTestCase {
         resolveInstalledApplication: { "installed" },
         installFailure: installFailure)
       XCTFail("Expected debugger-attached process error")
-    } catch let error as FBSimulatorApplicationError {
-      guard case .applicationProcessDebuggerAttached = error else {
+    } catch let error as FBSimulatorApplicationInstallError {
+      guard case .processDebuggerAttached = error else {
         return XCTFail("Expected a debugger-attached process error, got \(error)")
       }
     } catch {
@@ -216,12 +216,12 @@ final class FBSimulatorApplicationInstallPreflightTests: XCTestCase {
     do {
       let _: String = try await FBSimulatorApplicationCommands.installAndResolveApplication(
         install: { _ in
-          throw FBSimulatorApplicationError.applicationInfoUnavailable(path: "/tmp/App.app")
+          throw FBSimulatorApplicationLookupError.applicationInfoUnavailable(path: "/tmp/App.app")
         },
         resolveInstalledApplication: { "installed" },
         installFailure: installFailure)
       XCTFail("Expected install failure")
-    } catch let error as FBSimulatorApplicationError {
+    } catch let error as FBSimulatorApplicationInstallError {
       guard case .installFailed = error else {
         return XCTFail("Expected installFailed, got \(error)")
       }
@@ -240,12 +240,12 @@ final class FBSimulatorApplicationInstallPreflightTests: XCTestCase {
               code: 1,
               userInfo: [NSLocalizedDescriptionKey: "Failed to load Info.plist from bundle at path /tmp/App.app"])
           }
-          throw FBSimulatorApplicationError.applicationInfoUnavailable(path: "/tmp/App.app")
+          throw FBSimulatorApplicationLookupError.applicationInfoUnavailable(path: "/tmp/App.app")
         },
         resolveInstalledApplication: { "installed" },
         installFailure: installFailure)
       XCTFail("Expected install failure")
-    } catch let error as FBSimulatorApplicationError {
+    } catch let error as FBSimulatorApplicationInstallError {
       guard case .installFailed = error else {
         return XCTFail("Expected installFailed, got \(error)")
       }
@@ -375,7 +375,7 @@ final class FBSimulatorApplicationInstallPreflightTests: XCTestCase {
         stateDescription: "Shutdown",
         checkAvailability: { checkedAvailability = true })
     ) { error in
-      guard case let .applicationInstallTargetNotBooted(state) = error as? FBSimulatorApplicationError else {
+      guard case let .targetNotBooted(state) = error as? FBSimulatorApplicationInstallError else {
         return XCTFail("Expected an unbooted-target error, got \(error)")
       }
       XCTAssertEqual(state, "Shutdown")
@@ -405,7 +405,7 @@ final class FBSimulatorApplicationInstallPreflightTests: XCTestCase {
             userInfo: [NSLocalizedDescriptionKey: expectedReason])
         })
     ) { error in
-      guard case let .applicationInstallTargetUnavailable(reason) = error as? FBSimulatorApplicationError else {
+      guard case let .targetUnavailable(reason) = error as? FBSimulatorApplicationInstallError else {
         return XCTFail("Expected an unavailable-target error, got \(error)")
       }
       XCTAssertEqual(reason, expectedReason)
@@ -413,9 +413,9 @@ final class FBSimulatorApplicationInstallPreflightTests: XCTestCase {
   }
 
   func testInstallWrapperPreservesReadinessErrors() async {
-    let errors: [FBSimulatorApplicationError] = [
-      .applicationInstallTargetNotBooted(state: "Shutdown"),
-      .applicationInstallTargetUnavailable(reason: "runtime unavailable"),
+    let errors: [FBSimulatorApplicationInstallError] = [
+      .targetNotBooted(state: "Shutdown"),
+      .targetUnavailable(reason: "runtime unavailable"),
     ]
 
     for expected in errors {
@@ -425,7 +425,7 @@ final class FBSimulatorApplicationInstallPreflightTests: XCTestCase {
           resolveInstalledApplication: { "installed" },
           installFailure: installFailure)
         XCTFail("Expected readiness error")
-      } catch let actual as FBSimulatorApplicationError {
+      } catch let actual as FBSimulatorApplicationInstallError {
         XCTAssertEqual(actual.localizedDescription, expected.localizedDescription)
       } catch {
         XCTFail("Expected readiness error, got \(error)")
@@ -434,9 +434,9 @@ final class FBSimulatorApplicationInstallPreflightTests: XCTestCase {
   }
 
   func testInstallWrapperPreservesReadinessErrorsOnRetry() async {
-    let errors: [FBSimulatorApplicationError] = [
-      .applicationInstallTargetNotBooted(state: "Shutdown"),
-      .applicationInstallTargetUnavailable(reason: "runtime unavailable"),
+    let errors: [FBSimulatorApplicationInstallError] = [
+      .targetNotBooted(state: "Shutdown"),
+      .targetUnavailable(reason: "runtime unavailable"),
     ]
 
     for expected in errors {
@@ -454,7 +454,7 @@ final class FBSimulatorApplicationInstallPreflightTests: XCTestCase {
           resolveInstalledApplication: { "installed" },
           installFailure: installFailure)
         XCTFail("Expected readiness error")
-      } catch let actual as FBSimulatorApplicationError {
+      } catch let actual as FBSimulatorApplicationInstallError {
         XCTAssertEqual(actual.localizedDescription, expected.localizedDescription)
       } catch {
         XCTFail("Expected readiness error, got \(error)")

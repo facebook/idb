@@ -33,12 +33,12 @@ struct InstallMethodHandler: @unchecked Sendable {
   static func mapSimulatorInstallErrors<T>(_ operation: () async throws -> T) async throws -> T {
     do {
       return try await operation()
-    } catch let error as FBSimulatorApplicationError {
+    } catch let error as FBSimulatorApplicationInstallError {
       switch error {
-      case .applicationProcessSuspended,
-        .applicationProcessDebuggerAttached,
-        .applicationInstallTargetNotBooted,
-        .applicationInstallTargetUnavailable:
+      case .processSuspended,
+        .processDebuggerAttached,
+        .targetNotBooted,
+        .targetUnavailable:
         throw GRPCStatus(code: .failedPrecondition, message: error.localizedDescription)
       default:
         throw error

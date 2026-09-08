@@ -22,7 +22,7 @@ final class FBSimulatorApplicationInstallTests: XCTestCase {
       userInfo: [NSLocalizedDescriptionKey: "Failed to load Info.plist from bundle at path /tmp/App.app"])
   }
 
-  private func installFailure() -> FBSimulatorApplicationError {
+  private func installFailure() -> FBSimulatorApplicationInstallError {
     .installFailed(bundleDescription: "an app", options: "no options")
   }
 
@@ -87,7 +87,7 @@ final class FBSimulatorApplicationInstallTests: XCTestCase {
         resolveInstalledApplication: { "installed" },
         installFailure: installFailure)
       XCTFail("Expected install failure")
-    } catch let error as FBSimulatorApplicationError {
+    } catch let error as FBSimulatorApplicationInstallError {
       guard case .installFailed = error else {
         return XCTFail("Expected installFailed, got \(error)")
       }
@@ -103,7 +103,7 @@ final class FBSimulatorApplicationInstallTests: XCTestCase {
         resolveInstalledApplication: { throw TestError.conditionNotMet },
         installFailure: installFailure)
       XCTFail("Expected install failure")
-    } catch let error as FBSimulatorApplicationError {
+    } catch let error as FBSimulatorApplicationInstallError {
       guard case .installFailed = error else {
         return XCTFail("Expected installFailed, got \(error)")
       }
@@ -127,7 +127,7 @@ final class FBSimulatorApplicationInstallTests: XCTestCase {
         resolveInstalledApplication: { "installed" },
         installFailure: installFailure)
       XCTFail("Expected install failure")
-    } catch let error as FBSimulatorApplicationError {
+    } catch let error as FBSimulatorApplicationInstallError {
       guard case .installFailed = error else {
         return XCTFail("Expected installFailed, got \(error)")
       }
