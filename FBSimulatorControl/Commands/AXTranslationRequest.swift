@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-@_implementationOnly import AccessibilityPlatformTranslation
+internal import AccessibilityPlatformTranslation
 import CoreSimulator
 import FBControlCore
 import Foundation

@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-@preconcurrency @_implementationOnly import AccessibilityPlatformTranslation
+@preconcurrency internal import AccessibilityPlatformTranslation
 import CoreSimulator
 import FBControlCore
 import Foundation
