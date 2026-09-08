@@ -24,10 +24,10 @@ public final class FBSimulatorSet: FBiOSTargetSet {
   // startup, delegate notification, description). Unsynchronized, the swap
   // races iteration in concurrent callers.
   private let simulatorsLock = NSLock()
-  private lazy var inflationStrategy = FBSimulatorInflationStrategy.strategy(for: self)
+  private lazy var inflationStrategy = SimulatorInflationStrategy.strategy(for: self)
 
   // Held only so that the strategy's notifier stays registered for the lifetime of the set; it is never read.
-  private var notificationUpdateStrategy: FBSimulatorNotificationUpdateStrategy?
+  private var notificationUpdateStrategy: SimulatorNotificationUpdateStrategy?
 
   /// - Parameter logger: nil means `FBControlCoreGlobalConfiguration.defaultLogger`, which is
   ///   os_log-only unless the `FBCONTROLCORE_LOGGING`/`FBCONTROLCORE_DEBUG_LOGGING` environment
@@ -46,7 +46,7 @@ public final class FBSimulatorSet: FBiOSTargetSet {
     self.workQueue = DispatchQueue.main
     self.asyncQueue = DispatchQueue.global(qos: .default)
     self._allSimulators = []
-    self.notificationUpdateStrategy = FBSimulatorNotificationUpdateStrategy.strategy(with: self)
+    self.notificationUpdateStrategy = SimulatorNotificationUpdateStrategy.strategy(with: self)
   }
 
   // MARK: - Querying
@@ -79,7 +79,7 @@ public final class FBSimulatorSet: FBiOSTargetSet {
     simulator.configuration = configuration
     logger.debug().log("Created Simulator \(simulator.udid) for configuration \(configuration)")
     do {
-      try await FBSimulatorShutdownStrategy.shutdown(simulator)
+      try await SimulatorShutdownStrategy.shutdown(simulator)
     } catch {
       throw FBSimulatorSetError.shutdownAfterCreateFailed(reason: error.localizedDescription)
     }
@@ -101,23 +101,23 @@ public final class FBSimulatorSet: FBiOSTargetSet {
   // MARK: - Destructive Methods
 
   public func shutdown(_ simulator: FBSimulator) async throws {
-    try await FBSimulatorShutdownStrategy.shutdown(simulator)
+    try await SimulatorShutdownStrategy.shutdown(simulator)
   }
 
   public func delete(_ simulator: FBSimulator) async throws {
-    try await FBSimulatorDeletionStrategy.delete(simulator)
+    try await SimulatorDeletionStrategy.delete(simulator)
   }
 
   func shutdownAll(_ simulators: [FBSimulator]) async throws {
-    try await FBSimulatorShutdownStrategy.shutdownAll(simulators)
+    try await SimulatorShutdownStrategy.shutdownAll(simulators)
   }
 
   public func deleteAll(_ simulators: [FBSimulator]) async throws {
-    try await FBSimulatorDeletionStrategy.deleteAll(simulators)
+    try await SimulatorDeletionStrategy.deleteAll(simulators)
   }
 
   func shutdownAll() async throws {
-    try await FBSimulatorShutdownStrategy.shutdownAll(allSimulators)
+    try await SimulatorShutdownStrategy.shutdownAll(allSimulators)
   }
 
   public func deleteAll() async throws {

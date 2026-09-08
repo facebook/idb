@@ -8,9 +8,9 @@
 import FBControlCore
 import Foundation
 
-// MARK: - FBSimulatorDebugServer
+// MARK: - SimulatorDebugServer
 
-private final class FBSimulatorDebugServer: FBDebugServer {
+private final class SimulatorDebugServer: FBDebugServer {
 
   let task: FBSubprocess<NSNull, AnyObject, AnyObject>
   let lldbBootstrapCommands: [String]
@@ -106,7 +106,7 @@ public final class FBSimulatorDebuggerCommands {
     let lldbBootstrapCommands = [
       "process connect connect://localhost:\(port)"
     ]
-    return FBSimulatorDebugServer(
+    return SimulatorDebugServer(
       debugServerTask: debugTask,
       lldbBootstrapCommands: lldbBootstrapCommands
     )

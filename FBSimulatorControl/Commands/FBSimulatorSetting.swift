@@ -27,7 +27,7 @@ public enum FBSimulatorSettingResolution: Equatable {
 }
 
 /// The curated setting names; raw values are the CLI names.
-enum FBSimulatorSettingKey: String, CaseIterable {
+enum SimulatorSettingKey: String, CaseIterable {
   case hardwareKeyboard = "hardware-keyboard"
   case slowAnimations = "slow-animations"
   case increaseContrast = "increase-contrast"
@@ -37,7 +37,7 @@ enum FBSimulatorSettingKey: String, CaseIterable {
   case locale
 }
 
-extension FBSimulatorSettingKey {
+extension SimulatorSettingKey {
   /// The `(domain, key)` for a preference-backed setting; `nil` for settings with no readable
   /// preference (SimDevice API or Darwin notification).
   ///
@@ -61,7 +61,7 @@ public extension FBSimulatorSetting {
   /// The curated setting names accepted by `set`/`get`. A name outside this list is treated as a raw
   /// preference key. Useful for rendering CLI help and discoverability.
   static var curatedNames: [String] {
-    FBSimulatorSettingKey.allCases.map(\.rawValue)
+    SimulatorSettingKey.allCases.map(\.rawValue)
   }
 }
 
@@ -84,7 +84,7 @@ extension FBSimulatorSettingResolution {
   /// Parse a CLI-style `name`/`value` into a resolution. A curated name yields `.setting`; any other
   /// name yields `.preference` (a raw defaults write), the only case that consults `type`/`domain`.
   public init(name: String, value: String, type: String?, domain: String?) throws {
-    guard let key = FBSimulatorSettingKey(rawValue: name) else {
+    guard let key = SimulatorSettingKey(rawValue: name) else {
       self = .preference(name: name, value: value, type: type, domain: domain)
       return
     }

@@ -9,12 +9,12 @@
 @preconcurrency import FBControlCore
 import Foundation
 
-final class FBSimulatorInflationStrategy {
+final class SimulatorInflationStrategy {
 
   private weak var set: FBSimulatorSet?
 
-  class func strategy(for set: FBSimulatorSet) -> FBSimulatorInflationStrategy {
-    FBSimulatorInflationStrategy(set: set)
+  class func strategy(for set: FBSimulatorSet) -> SimulatorInflationStrategy {
+    SimulatorInflationStrategy(set: set)
   }
 
   private init(set: FBSimulatorSet) {

@@ -9,10 +9,10 @@
 @preconcurrency import FBControlCore
 @preconcurrency import Foundation
 
-final class FBSimulatorEraseStrategy {
+final class SimulatorEraseStrategy {
 
   static func erase(_ simulator: FBSimulator) async throws {
-    try await FBSimulatorShutdownStrategy.shutdown(simulator)
+    try await SimulatorShutdownStrategy.shutdown(simulator)
     try await eraseContentsAndSettings(simulator)
   }
 

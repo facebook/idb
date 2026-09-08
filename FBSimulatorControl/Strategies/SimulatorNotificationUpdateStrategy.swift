@@ -9,13 +9,13 @@
 @preconcurrency import FBControlCore
 import Foundation
 
-final class FBSimulatorNotificationUpdateStrategy: @unchecked Sendable {
+final class SimulatorNotificationUpdateStrategy: @unchecked Sendable {
 
   private weak var set: FBSimulatorSet?
   private var notifier: FBCoreSimulatorNotifier?
 
-  class func strategy(with set: FBSimulatorSet) -> FBSimulatorNotificationUpdateStrategy {
-    let strategy = FBSimulatorNotificationUpdateStrategy(set: set)
+  class func strategy(with set: FBSimulatorSet) -> SimulatorNotificationUpdateStrategy {
+    let strategy = SimulatorNotificationUpdateStrategy(set: set)
     strategy.startNotifyingOfStateChanges()
     return strategy
   }

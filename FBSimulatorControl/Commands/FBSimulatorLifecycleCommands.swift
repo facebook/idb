@@ -57,14 +57,14 @@ public final class FBSimulatorLifecycleCommands {
     guard let simulator = self.simulator else {
       throw FBWeakTargetError.simulator
     }
-    try await FBSimulatorBootStrategy.boot(simulator, with: configuration)
+    try await SimulatorBootStrategy.boot(simulator, with: configuration)
   }
 
   fileprivate func shutdown() async throws {
     guard let simulator = self.simulator else {
       throw FBWeakTargetError.simulator
     }
-    try await FBSimulatorShutdownStrategy.shutdown(simulator)
+    try await SimulatorShutdownStrategy.shutdown(simulator)
   }
 
   fileprivate func reboot() async throws {
@@ -76,7 +76,7 @@ public final class FBSimulatorLifecycleCommands {
     guard let simulator = self.simulator else {
       throw FBWeakTargetError.simulator
     }
-    try await FBSimulatorEraseStrategy.erase(simulator)
+    try await SimulatorEraseStrategy.erase(simulator)
   }
 
   fileprivate func resolveState(_ state: FBiOSTargetState) async throws {

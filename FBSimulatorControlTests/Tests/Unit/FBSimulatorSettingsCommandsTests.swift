@@ -343,12 +343,12 @@ final class FBSimulatorSettingsCommandsTests: XCTestCase {
 
   func testPreferenceBacking() {
     // nil domain == Apple Global Domain, where the native AutoFill Passwords toggle lives.
-    XCTAssertNil(FBSimulatorSettingKey.autoFillPasswords.preferenceBacking?.domain)
-    XCTAssertEqual(FBSimulatorSettingKey.autoFillPasswords.preferenceBacking?.key, "AutoFillPasswords")
-    XCTAssertNil(FBSimulatorSettingKey.locale.preferenceBacking?.domain)
-    XCTAssertEqual(FBSimulatorSettingKey.locale.preferenceBacking?.key, "AppleLocale")
-    XCTAssertNil(FBSimulatorSettingKey.hardwareKeyboard.preferenceBacking)
-    XCTAssertNil(FBSimulatorSettingKey.appearance.preferenceBacking)
+    XCTAssertNil(SimulatorSettingKey.autoFillPasswords.preferenceBacking?.domain)
+    XCTAssertEqual(SimulatorSettingKey.autoFillPasswords.preferenceBacking?.key, "AutoFillPasswords")
+    XCTAssertNil(SimulatorSettingKey.locale.preferenceBacking?.domain)
+    XCTAssertEqual(SimulatorSettingKey.locale.preferenceBacking?.key, "AppleLocale")
+    XCTAssertNil(SimulatorSettingKey.hardwareKeyboard.preferenceBacking)
+    XCTAssertNil(SimulatorSettingKey.appearance.preferenceBacking)
   }
 
   func testWeakTargetErrorMessage() {
@@ -357,7 +357,7 @@ final class FBSimulatorSettingsCommandsTests: XCTestCase {
   }
 
   func testCuratedNames() {
-    XCTAssertEqual(FBSimulatorSetting.curatedNames, FBSimulatorSettingKey.allCases.map(\.rawValue))
+    XCTAssertEqual(FBSimulatorSetting.curatedNames, SimulatorSettingKey.allCases.map(\.rawValue))
     XCTAssertTrue(FBSimulatorSetting.curatedNames.contains("autofill-passwords"))
     XCTAssertTrue(FBSimulatorSetting.curatedNames.contains("appearance"))
     XCTAssertFalse(FBSimulatorSetting.curatedNames.contains("com.example.Key"))

@@ -12,7 +12,7 @@ import Foundation
 ///
 /// A guest records the platform it was built for in `LC_BUILD_VERSION`, and a simulator's dyld refuses
 /// one built for another, so the companion ships one per platform rather than one binary for all.
-enum FBSimulatorFrameworkBridgeSelection {
+enum SimulatorFrameworkBridgeSelection {
 
   static func resourceName(for productFamily: FBControlCoreProductFamily) -> String {
     switch productFamily {
@@ -32,6 +32,6 @@ extension FBSimulator {
   /// The path to the guest binary this simulator can run, or nil when it is not bundled.
   var frameworkBridgePath: String? {
     BundledResources.path(
-      forItem: FBSimulatorFrameworkBridgeSelection.resourceName(for: productFamily))
+      forItem: SimulatorFrameworkBridgeSelection.resourceName(for: productFamily))
   }
 }

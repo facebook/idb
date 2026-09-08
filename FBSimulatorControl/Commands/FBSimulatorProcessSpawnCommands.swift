@@ -9,11 +9,11 @@
 @preconcurrency import FBControlCore
 import Foundation
 
-enum FBSimulatorProcessSpawnError: Error {
+enum SimulatorProcessSpawnError: Error {
   case stdInUnsupported
 }
 
-extension FBSimulatorProcessSpawnError: LocalizedError {
+extension SimulatorProcessSpawnError: LocalizedError {
   var errorDescription: String? {
     switch self {
     case .stdInUnsupported:
@@ -47,7 +47,7 @@ public struct FBSimulatorProcessSpawnCommands {
     // that could never be read: SimDevice's launch options address stdout and stderr
     // by file descriptor and have no equivalent for stdin.
     guard configuration.io.stdIn == nil else {
-      throw FBSimulatorProcessSpawnError.stdInUnsupported
+      throw SimulatorProcessSpawnError.stdInUnsupported
     }
     let attachment = try await bridgeFBFuture(configuration.io.attach())
     return try await FBSimulatorProcessSpawnCommands.launchProcess(

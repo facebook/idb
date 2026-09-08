@@ -123,7 +123,7 @@ final class FBSimulatorProcessSpawnCommandsTests: XCTestCase {
     do {
       _ = try await simulator.launchProcess(configuration)
       XCTFail("Expected the launch to be rejected, but a process was returned")
-    } catch FBSimulatorProcessSpawnError.stdInUnsupported {
+    } catch SimulatorProcessSpawnError.stdInUnsupported {
       // Expected.
     }
 

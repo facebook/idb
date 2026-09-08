@@ -9,7 +9,7 @@
 @preconcurrency import FBControlCore
 import Foundation
 
-final class FBSimulatorShutdownStrategy {
+final class SimulatorShutdownStrategy {
 
   static func shutdown(_ simulator: FBSimulator) async throws {
     let logger = simulator.logger

@@ -263,7 +263,7 @@ public struct FBSimulatorSettingsCommands {
     try simulator.device.setIncreaseContrastEnabled(enabled)
   }
 
-  fileprivate func setPreferenceBacked(_ key: FBSimulatorSettingKey, value: String, type: String?) async throws {
+  fileprivate func setPreferenceBacked(_ key: SimulatorSettingKey, value: String, type: String?) async throws {
     guard let backing = key.preferenceBacking else {
       throw FBSimulatorSettingsError.settingNotPreferenceBacked(setting: key.rawValue)
     }
@@ -276,12 +276,12 @@ public struct FBSimulatorSettingsCommands {
   }
 
   fileprivate func setPreference(_ name: String, value: String, type: String?, domain: String?) async throws {
-    try await FBPreferenceModificationStrategy(simulator: simulator)
+    try await PreferenceModificationStrategy(simulator: simulator)
       .setPreference(name, value: value, type: type, domain: domain)
   }
 
   fileprivate func getCurrentPreference(_ name: String, domain: String?) async throws -> String {
-    return try await FBPreferenceModificationStrategy(simulator: simulator)
+    return try await PreferenceModificationStrategy(simulator: simulator)
       .getCurrentPreference(name, domain: domain)
   }
 
@@ -517,12 +517,12 @@ public struct FBSimulatorSettingsCommands {
   // MARK: - Private
 
   fileprivate func authorizeLocationSettings(_ bundleIDs: [String]) async throws {
-    try await FBLocationServicesModificationStrategy(simulator: simulator)
+    try await LocationServicesModificationStrategy(simulator: simulator)
       .approveLocationServices(forBundleIDs: bundleIDs)
   }
 
   fileprivate func revokeLocationSettings(_ bundleIDs: [String]) async throws {
-    try await FBLocationServicesModificationStrategy(simulator: simulator)
+    try await LocationServicesModificationStrategy(simulator: simulator)
       .revokeLocationServices(forBundleIDs: bundleIDs)
   }
 
@@ -794,7 +794,7 @@ extension FBSimulator: SettingsCommands {
   /// Reads the current value of a curated setting by name, falling back to a raw preference read for
   /// any other name.
   public func currentSettingValue(name: String, domain: String?) async throws -> String {
-    guard let key = FBSimulatorSettingKey(rawValue: name) else {
+    guard let key = SimulatorSettingKey(rawValue: name) else {
       return try await getCurrentPreference(name, domain: domain)
     }
     switch key {

@@ -105,7 +105,7 @@ public enum FBSimulatorApplicationLookupError: Error, LocalizedError {
   }
 }
 
-enum FBSimulatorApplicationInstallAttempt {
+enum SimulatorApplicationInstallAttempt {
   case initial
   case retry
 }
@@ -252,7 +252,7 @@ public final class FBSimulatorApplicationCommands {
   // MARK: - Install Helpers
 
   static func installAndResolveApplication<T>(
-    install: (FBSimulatorApplicationInstallAttempt) async throws -> Void,
+    install: (SimulatorApplicationInstallAttempt) async throws -> Void,
     resolveInstalledApplication: () async throws -> T,
     installFailure: () -> FBSimulatorApplicationInstallError
   ) async throws -> T {

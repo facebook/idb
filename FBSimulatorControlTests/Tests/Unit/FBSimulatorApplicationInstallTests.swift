@@ -27,7 +27,7 @@ final class FBSimulatorApplicationInstallTests: XCTestCase {
   }
 
   func testCleanInstallSucceedsWithoutRetry() async throws {
-    var attempts: [FBSimulatorApplicationInstallAttempt] = []
+    var attempts: [SimulatorApplicationInstallAttempt] = []
     var resolveCalls = 0
 
     let application = try await FBSimulatorApplicationCommands.installAndResolveApplication(
@@ -44,7 +44,7 @@ final class FBSimulatorApplicationInstallTests: XCTestCase {
   }
 
   func testInfoPlistInstallFailureRetriesSuccessfully() async throws {
-    var attempts: [FBSimulatorApplicationInstallAttempt] = []
+    var attempts: [SimulatorApplicationInstallAttempt] = []
 
     let application = try await FBSimulatorApplicationCommands.installAndResolveApplication(
       install: { attempt in
@@ -61,7 +61,7 @@ final class FBSimulatorApplicationInstallTests: XCTestCase {
   }
 
   func testInfoPlistLookupFailureRetriesSuccessfully() async throws {
-    var attempts: [FBSimulatorApplicationInstallAttempt] = []
+    var attempts: [SimulatorApplicationInstallAttempt] = []
     var resolveCalls = 0
 
     let application = try await FBSimulatorApplicationCommands.installAndResolveApplication(
@@ -113,7 +113,7 @@ final class FBSimulatorApplicationInstallTests: XCTestCase {
   }
 
   func testRetryInstallFailureBecomesInstallFailure() async {
-    var attempts: [FBSimulatorApplicationInstallAttempt] = []
+    var attempts: [SimulatorApplicationInstallAttempt] = []
 
     do {
       let _: String = try await FBSimulatorApplicationCommands.installAndResolveApplication(

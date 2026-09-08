@@ -9,7 +9,7 @@
 @preconcurrency import FBControlCore
 import Foundation
 
-final class FBSimulatorBootStrategy {
+final class SimulatorBootStrategy {
 
   static func boot(_ simulator: FBSimulator, with configuration: FBSimulatorBootConfiguration) async throws {
     if simulator.state == .booted {
