@@ -40,15 +40,6 @@ public final class FBSimulatorBootVerificationStrategy {
     self.simulator = simulator
   }
 
-  public class func verifySimulatorIsBooted(_ simulator: FBSimulator) -> FBFuture<NSNull> {
-    fbFutureFromAsync {
-      try await verifySimulatorIsBootedAsync(simulator)
-      return NSNull()
-    }
-  }
-
-  // MARK: - Async
-
   static func verifySimulatorIsBootedAsync(_ simulator: FBSimulator) async throws {
     try await FBiOSTargetResolveState(simulator, .booted)
     let strategy = FBSimulatorBootVerificationStrategy(simulator: simulator)
