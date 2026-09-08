@@ -29,6 +29,6 @@ func channelTransportSecurity(
   return .tls(
     .makeClientConfigurationBackedByNIOSSL(
       certificateChain: certificateChain,
-      privateKey: .file(identity.privateKeyPath),
+      privateKey: .privateKey(try NIOSSLPrivateKey(file: identity.privateKeyPath, format: .pem)),
       certificateVerification: .none))
 }
