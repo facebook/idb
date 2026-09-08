@@ -117,7 +117,7 @@ jobs:
             echo "url \"https://github.com/$GITHUB_REPOSITORY/releases/download/$RELEASE_TAG/idb-companion.macos-arm64.tar.gz\""
             echo "sha256 \"${{ steps.package.outputs.sha256 }}\""
             echo '```'
-            echo '- In `idb-companion.rb`, also update the explicit `version` stanza to match the tag: Homebrew mis-parses prerelease suffixes out of the URL.'
+            echo '- In `idb-companion.rb`, the explicit `version` stanza belongs on prerelease tags only, where Homebrew drops the `.bN` suffix parsing the URL: set it to match a prerelease tag, and remove it on a stable one, where the scanned version is already right and `brew audit --strict` rejects the redundant stanza.'
             echo '- In `idb-cli.rb`, update the `url` and `sha256` of the python sdist `resource` to the `fb_idb-*.tar.gz` attached to this release.'
             echo '- `idb.rb` only depends on the other two formulae, so it normally needs no change.'
             echo '- If the tarball layout changed since the previous release, review the `idb-companion.rb` `install` block as well: a url/sha bump alone can ship a formula that fails to install or installs a companion that crashes at runtime.'
