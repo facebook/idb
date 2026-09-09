@@ -42,7 +42,7 @@ public struct DeviceRecoveryCommands {
 
   // MARK: - Recovery
 
-  fileprivate func enterRecovery() async throws {
+  public func enterRecovery() async throws {
     try await device.withConnectedDevice(purpose: "enter_recovery") { connectedDevice in
       guard let enterRecoveryFunc = connectedDevice.calls.EnterRecovery else {
         throw DeviceRecoveryError.callUnavailable(function: "EnterRecovery")
@@ -54,7 +54,7 @@ public struct DeviceRecoveryCommands {
     }
   }
 
-  fileprivate func exitRecovery() async throws {
+  public func exitRecovery() async throws {
     guard let recoveryDevice = device.recoveryModeDeviceRef else {
       throw DeviceRecoveryError.notInRecovery(deviceDescription: String(describing: device))
     }

@@ -66,7 +66,7 @@ public struct DeviceActivationCommands {
 
   // MARK: - Activation
 
-  fileprivate func activate() async throws {
+  public func activate() async throws {
     let logger = device.logger
     let state = try await activationState()
     if state == DeviceActivationState.activated {

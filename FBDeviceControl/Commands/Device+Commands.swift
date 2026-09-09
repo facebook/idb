@@ -79,15 +79,15 @@ extension FBDevice {
     DeviceProvisioningProfileCommands.commands(with: self)
   }
 
-  var activation: DeviceActivationCommands {
+  public var activation: DeviceActivationCommands {
     DeviceActivationCommands.commands(with: self)
   }
 
-  var recovery: DeviceRecoveryCommands {
+  public var recovery: DeviceRecoveryCommands {
     DeviceRecoveryCommands.commands(with: self)
   }
 
-  var debugSymbols: DeviceDebugSymbolsCommands {
+  public var debugSymbols: DeviceDebugSymbolsCommands {
     DeviceDebugSymbolsCommands(device: self)
   }
 
