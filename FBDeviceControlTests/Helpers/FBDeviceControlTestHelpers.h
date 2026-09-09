@@ -6,7 +6,7 @@
  */
 
 #import <FBControlCore/FBControlCore.h>
-#import <FBDeviceControl/FBAMDefines.h>
+#import <FBDeviceControl/AMDefines.h>
 
 /// Returns a zero-initialized AMDCalls struct (needed because Swift can't zero-init
 /// structs with _Nonnull function pointer fields).

@@ -170,7 +170,7 @@ public final class FBDeviceActivationCommands {
     request.httpBody = body
     request.setValue("application/x-apple-plist", forHTTPHeaderField: "Content-Type")
     request.setValue("application/xml", forHTTPHeaderField: "Accept")
-    request.setValue("idb (https://github.com/facebook/idb/blob/main/FBDeviceControl/Commands/FBDeviceActivationCommands.swift)", forHTTPHeaderField: "User-Agent")
+    request.setValue("idb (https://github.com/facebook/idb/blob/main/FBDeviceControl/Commands/DeviceActivationCommands.swift)", forHTTPHeaderField: "User-Agent")
 
     let (responseData, httpResponse) = try await data(for: request)
     if httpResponse.statusCode != 200 {
@@ -194,7 +194,7 @@ public final class FBDeviceActivationCommands {
     request.httpMethod = "POST"
     request.httpBody = multipartData(fromRequestPayload: payloadData, key: "activation-info", boundary: boundaryConstant)
     request.setValue(contentType, forHTTPHeaderField: "Content-Type")
-    request.setValue("idb (https://github.com/facebook/idb/blob/main/FBDeviceControl/Commands/FBDeviceActivationCommands.swift)", forHTTPHeaderField: "User-Agent")
+    request.setValue("idb (https://github.com/facebook/idb/blob/main/FBDeviceControl/Commands/DeviceActivationCommands.swift)", forHTTPHeaderField: "User-Agent")
 
     let (responseData, httpResponse) = try await data(for: request)
     if httpResponse.statusCode != 200 {

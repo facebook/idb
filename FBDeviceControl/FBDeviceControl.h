@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#import <FBDeviceControl/FBAMDefines.h>
+#import <FBDeviceControl/AMDefines.h>
 
 #if __has_include(<FBDeviceControl/FBDeviceControl-Swift.h>)
  #import <FBDeviceControl/FBDeviceControl-Swift.h>
