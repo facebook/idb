@@ -24,7 +24,6 @@ public struct FBTemporaryDirectory: Equatable {
   // MARK: - Properties
 
   public let logger: any FBControlCoreLogger
-  public let queue: DispatchQueue
 
   private let rootTemporaryDirectory: URL
 
@@ -41,8 +40,7 @@ public struct FBTemporaryDirectory: Equatable {
     } catch {
       assertionFailure("Failed to create temporary directory: \(error)")
     }
-    let queue = DispatchQueue(label: "com.facebook.idb.fbtemporarydirectory")
-    return FBTemporaryDirectory(rootDirectory: temporaryDirectory, queue: queue, logger: logger)
+    return FBTemporaryDirectory(rootDirectory: temporaryDirectory, logger: logger)
   }
 
   public init(logger: any FBControlCoreLogger) {
@@ -52,8 +50,7 @@ public struct FBTemporaryDirectory: Equatable {
     } catch {
       fatalError("Failed to create temporary directory: \(error)")
     }
-    let queue = DispatchQueue(label: "com.facebook.idb.fbtemporarydirectory")
-    self.init(rootDirectory: temporaryDirectory, queue: queue, logger: logger)
+    self.init(rootDirectory: temporaryDirectory, logger: logger)
   }
 
   private static func uniqueTemporaryDirectoryURL() -> URL {
@@ -63,9 +60,8 @@ public struct FBTemporaryDirectory: Equatable {
       .appendingPathComponent(UUID().uuidString)
   }
 
-  init(rootDirectory: URL, queue: DispatchQueue, logger: any FBControlCoreLogger) {
+  init(rootDirectory: URL, logger: any FBControlCoreLogger) {
     self.rootTemporaryDirectory = rootDirectory
-    self.queue = queue
     self.logger = logger
   }
 
