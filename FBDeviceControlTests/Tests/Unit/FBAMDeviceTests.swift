@@ -370,10 +370,10 @@ final class FBAMDeviceTests {
     waiter.cancel()
     gate.resolve(withResult: NSNull())
 
-    // BUG: the cancelled waiter is handed the connection and runs its body instead of throwing
-    // CancellationError — flipped in the following commit.
-    try await waiter.value
-    #expect(waiterBodyRan)
+    await #expect(throws: CancellationError.self) {
+      try await waiter.value
+    }
+    #expect(!waiterBodyRan)
     try await holder.value
   }
 }

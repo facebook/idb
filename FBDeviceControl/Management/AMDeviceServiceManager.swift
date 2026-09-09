@@ -57,7 +57,7 @@ final class HouseArrestService: @unchecked Sendable {
   private let lock = NSLock()
   private var connection: FBAFCConnection?
   private var inUse = false
-  private var waiters: [CheckedContinuation<Void, Never>] = []
+  private var waiters: [(id: UUID, continuation: CheckedContinuation<Void, Error>)] = []
   private var idleTeardown: Task<Void, Never>?
 
   init(device: FBAMDevice, bundleID: String, afcCalls: AFCCalls, reuseTimeout: TimeInterval?) {
@@ -74,7 +74,7 @@ final class HouseArrestService: @unchecked Sendable {
   ///
   /// Every call that returns a connection must be paired with a `release()`.
   func acquire() async throws -> FBAFCConnection {
-    await takeExclusiveUse()
+    try await takeExclusiveUse()
     if let established = establishedConnection() {
       logger.log("Re-using the existing house arrest connection for '\(bundleID)'")
       return established
@@ -97,7 +97,7 @@ final class HouseArrestService: @unchecked Sendable {
     // resumed here.
     if let next = waiters.popLast() {
       lock.unlock()
-      next.resume()
+      next.continuation.resume()
       return
     }
     inUse = false
@@ -123,20 +123,48 @@ final class HouseArrestService: @unchecked Sendable {
 
   // MARK: - Private
 
-  private func takeExclusiveUse() async {
-    await withCheckedContinuation { continuation in
-      lock.lock()
-      idleTeardown?.cancel()
-      idleTeardown = nil
-      if inUse {
-        waiters.append(continuation)
-        lock.unlock()
-        return
+  /// Suspends until the connection is free, or the calling task is cancelled.
+  private func takeExclusiveUse() async throws {
+    let id = UUID()
+    try await withTaskCancellationHandler {
+      try await withCheckedThrowingContinuation { continuation in
+        park(id, continuation)
       }
-      inUse = true
-      lock.unlock()
-      continuation.resume()
+    } onCancel: {
+      cancelWaiter(id)
     }
+  }
+
+  /// The cancellation check closes the window against `cancelWaiter`, which runs as soon as the
+  /// task is cancelled and so can find nothing to remove because this has yet to park.
+  private func park(_ id: UUID, _ continuation: CheckedContinuation<Void, Error>) {
+    lock.lock()
+    guard !Task.isCancelled else {
+      lock.unlock()
+      continuation.resume(throwing: CancellationError())
+      return
+    }
+    idleTeardown?.cancel()
+    idleTeardown = nil
+    if inUse {
+      waiters.append((id: id, continuation: continuation))
+      lock.unlock()
+      return
+    }
+    inUse = true
+    lock.unlock()
+    continuation.resume()
+  }
+
+  private func cancelWaiter(_ id: UUID) {
+    lock.lock()
+    guard let index = waiters.firstIndex(where: { $0.id == id }) else {
+      lock.unlock()
+      return
+    }
+    let (_, continuation) = waiters.remove(at: index)
+    lock.unlock()
+    continuation.resume(throwing: CancellationError())
   }
 
   private func establishedConnection() -> FBAFCConnection? {
