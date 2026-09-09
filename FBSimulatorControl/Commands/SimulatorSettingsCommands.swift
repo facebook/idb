@@ -154,7 +154,7 @@ public struct SimulatorSettingsCommands {
     }
   }
 
-  public func applyResolution(_ resolution: FBSimulatorSettingResolution) async throws {
+  public func apply(_ resolution: FBSimulatorSettingResolution) async throws {
     switch resolution {
     case let .setting(setting):
       try await apply(setting)
@@ -163,7 +163,7 @@ public struct SimulatorSettingsCommands {
     }
   }
 
-  public func currentAppearance() async throws -> SimulatorAppearance {
+  fileprivate func currentAppearance() async throws -> SimulatorAppearance {
     let raw = simulator.device.currentUIInterfaceStyle()
     return SimulatorAppearance(rawValue: raw) ?? .light
   }
@@ -172,7 +172,7 @@ public struct SimulatorSettingsCommands {
     try simulator.device.setUIInterfaceStyle(appearance.rawValue)
   }
 
-  public func currentContentSizeCategory() async throws -> FBSimulatorContentSizeCategory {
+  fileprivate func currentContentSizeCategory() async throws -> FBSimulatorContentSizeCategory {
     let raw = simulator.device.currentContentSizeCategory()
     return FBSimulatorContentSizeCategory(rawValue: raw) ?? .large
   }
@@ -777,19 +777,6 @@ public struct SimulatorSettingsCommands {
   internal static func magicDeeplinkKey(forScheme scheme: String) -> String {
     "com.apple.CoreSimulator.CoreSimulatorBridge-->\(scheme)"
   }
-}
-
-// MARK: - FBSimulator+Settings
-
-extension FBSimulator {
-
-  public func apply(_ setting: FBSimulatorSetting) async throws {
-    try await settings.apply(setting)
-  }
-
-  public func apply(_ resolution: FBSimulatorSettingResolution) async throws {
-    try await settings.applyResolution(resolution)
-  }
 
   /// Reads the current value of a curated setting by name, falling back to a raw preference read for
   /// any other name.
@@ -813,87 +800,11 @@ extension FBSimulator {
     }
   }
 
-  public func getCurrentPreference(_ name: String, domain: String?) async throws -> String {
-    try await settings.getCurrentPreference(name, domain: domain)
-  }
-
-  public func grantAccess(_ bundleIDs: Set<String>, toServices services: Set<FBTargetSettingsService>) async throws {
-    try await settings.grantAccess(bundleIDs, toServices: services)
-  }
-
-  public func revokeAccess(_ bundleIDs: Set<String>, toServices services: Set<FBTargetSettingsService>) async throws {
-    try await settings.revokeAccess(bundleIDs, toServices: services)
-  }
-
-  public func grantAccess(_ bundleIDs: Set<String>, toDeeplink scheme: String) async throws {
-    try await settings.grantAccess(bundleIDs, toDeeplink: scheme)
-  }
-
-  public func revokeAccess(_ bundleIDs: Set<String>, toDeeplink scheme: String) async throws {
-    try await settings.revokeAccess(bundleIDs, toDeeplink: scheme)
-  }
-
-  public func updateContacts(_ databaseDirectory: String) async throws {
-    try await settings.updateContacts(databaseDirectory)
-  }
-
   public func clearContacts() async throws {
-    try await runSimulatorFrameworkBridge(withService: "contacts", action: "clear")
+    try await simulator.runSimulatorFrameworkBridge(withService: "contacts", action: "clear")
   }
 
   public func clearPhotos() async throws {
-    try await runSimulatorFrameworkBridge(withService: "photos", action: "clear")
-  }
-
-  private func currentAppearance() async throws -> SimulatorAppearance {
-    try await settings.currentAppearance()
-  }
-
-  private func currentContentSizeCategory() async throws -> FBSimulatorContentSizeCategory {
-    try await settings.currentContentSizeCategory()
-  }
-
-  public func currentStatusBarOverrides() async throws -> FBStatusBarOverride {
-    try await settings.currentStatusBarOverrides()
-  }
-
-  public func overrideStatusBar(_ override: FBStatusBarOverride?) async throws {
-    try await settings.overrideStatusBar(override)
-  }
-
-  public func setProxy(host: String, port: UInt, type: String) async throws {
-    try await settings.setProxy(host: host, port: port, type: type)
-  }
-
-  public func clearProxy() async throws {
-    try await settings.clearProxy()
-  }
-
-  public func listProxy() async throws -> String {
-    try await settings.listProxy()
-  }
-
-  public func setDnsServers(_ servers: [String]) async throws {
-    try await settings.setDnsServers(servers)
-  }
-
-  public func clearDns() async throws {
-    try await settings.clearDns()
-  }
-
-  public func listDns() async throws -> String {
-    try await settings.listDns()
-  }
-
-  public func setHealthAuthorization(_ approved: Bool, forBundleID bundleID: String, typeIdentifiers: [String]) async throws {
-    try await settings.setHealthAuthorization(approved, forBundleID: bundleID, typeIdentifiers: typeIdentifiers)
-  }
-
-  public func clearHealthAuthorization(forBundleID bundleID: String) async throws {
-    try await settings.clearHealthAuthorization(forBundleID: bundleID)
-  }
-
-  public func listHealthAuthorization(forBundleID bundleID: String) async throws -> String {
-    try await settings.listHealthAuthorization(forBundleID: bundleID)
+    try await simulator.runSimulatorFrameworkBridge(withService: "photos", action: "clear")
   }
 }

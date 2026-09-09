@@ -192,7 +192,7 @@ final class SimulatorSettingsCommandsTests: XCTestCase {
     await assertThrowsAsync(
       "grantAccess should reject empty services set",
       {
-        try await simulator.grantAccess(["com.test"], toServices: [])
+        try await simulator.settings.grantAccess(["com.test"], toServices: [])
       }
     ) { if case .noServicesToGrant = $0 { return true } else { return false } }
   }
@@ -202,7 +202,7 @@ final class SimulatorSettingsCommandsTests: XCTestCase {
     await assertThrowsAsync(
       "grantAccess should reject empty bundle IDs set",
       {
-        try await simulator.grantAccess([], toServices: [.contacts])
+        try await simulator.settings.grantAccess([], toServices: [.contacts])
       }
     ) { if case .noBundleIDsToGrant = $0 { return true } else { return false } }
   }
@@ -212,7 +212,7 @@ final class SimulatorSettingsCommandsTests: XCTestCase {
     await assertThrowsAsync(
       "revokeAccess should reject empty services set",
       {
-        try await simulator.revokeAccess(["com.test"], toServices: [])
+        try await simulator.settings.revokeAccess(["com.test"], toServices: [])
       }
     ) { if case .noServicesToRevoke = $0 { return true } else { return false } }
   }
@@ -222,7 +222,7 @@ final class SimulatorSettingsCommandsTests: XCTestCase {
     await assertThrowsAsync(
       "revokeAccess should reject empty bundle IDs set",
       {
-        try await simulator.revokeAccess([], toServices: [.contacts])
+        try await simulator.settings.revokeAccess([], toServices: [.contacts])
       }
     ) { if case .noBundleIDsToRevoke = $0 { return true } else { return false } }
   }
@@ -234,7 +234,7 @@ final class SimulatorSettingsCommandsTests: XCTestCase {
     await assertThrowsAsync(
       "grantAccess(toDeeplink:) should reject empty scheme",
       {
-        try await simulator.grantAccess(["com.test"], toDeeplink: "")
+        try await simulator.settings.grantAccess(["com.test"], toDeeplink: "")
       }
     ) { if case .emptyScheme = $0 { return true } else { return false } }
   }
@@ -244,7 +244,7 @@ final class SimulatorSettingsCommandsTests: XCTestCase {
     await assertThrowsAsync(
       "grantAccess(toDeeplink:) should reject empty bundle IDs",
       {
-        try await simulator.grantAccess([], toDeeplink: "myapp")
+        try await simulator.settings.grantAccess([], toDeeplink: "myapp")
       }
     ) { if case .emptyBundleIDs = $0 { return true } else { return false } }
   }
@@ -254,7 +254,7 @@ final class SimulatorSettingsCommandsTests: XCTestCase {
     await assertThrowsAsync(
       "revokeAccess(toDeeplink:) should reject empty scheme",
       {
-        try await simulator.revokeAccess(["com.test"], toDeeplink: "")
+        try await simulator.settings.revokeAccess(["com.test"], toDeeplink: "")
       }
     ) { if case .emptyScheme = $0 { return true } else { return false } }
   }
@@ -264,7 +264,7 @@ final class SimulatorSettingsCommandsTests: XCTestCase {
     await assertThrowsAsync(
       "revokeAccess(toDeeplink:) should reject empty bundle IDs",
       {
-        try await simulator.revokeAccess([], toDeeplink: "myapp")
+        try await simulator.settings.revokeAccess([], toDeeplink: "myapp")
       }
     ) { if case .emptyBundleIDs = $0 { return true } else { return false } }
   }
@@ -276,7 +276,7 @@ final class SimulatorSettingsCommandsTests: XCTestCase {
     await assertThrowsAsync(
       "setDnsServers should reject empty array",
       {
-        try await simulator.setDnsServers([])
+        try await simulator.settings.setDnsServers([])
       }
     ) { if case .noDnsServers = $0 { return true } else { return false } }
   }
