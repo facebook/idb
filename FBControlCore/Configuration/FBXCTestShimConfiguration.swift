@@ -78,7 +78,7 @@ public struct FBXCTestShimConfiguration: Sendable {
     }
     let codesign = FBCodesignProvider.codeSignCommand(withIdentityName: "-", logger: nil)
     do {
-      _ = try await bridgeFBFuture(codesign.cdHashForBundle(atPath: shimPath))
+      _ = try await codesign.cdHashForBundle(atPath: shimPath)
     } catch {
       throw FBXCTestShimError.shimUnsigned(path: shimPath, underlying: error)
     }

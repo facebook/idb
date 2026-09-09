@@ -71,9 +71,9 @@ struct FBCodesignProviderTests {
     let bundle = try Self.makeFlatBundle(in: directory, name: "RoundTrip")
     let provider = Self.adHocProvider()
 
-    let before = try await bridgeFBFuture(provider.cdHashForBundle(atPath: bundle.path)) as String
-    _ = try await bridgeFBFuture(provider.signBundle(atPath: bundle.path))
-    let after = try await bridgeFBFuture(provider.cdHashForBundle(atPath: bundle.path)) as String
+    let before = try await provider.cdHashForBundle(atPath: bundle.path)
+    try await provider.signBundle(atPath: bundle.path)
+    let after = try await provider.cdHashForBundle(atPath: bundle.path)
 
     #expect(after != before, "Re-signing replaces the signature inherited from the copied binary")
     #expect(after.count == 40)
@@ -86,7 +86,7 @@ struct FBCodesignProviderTests {
     defer { try? FileManager.default.removeItem(at: directory) }
     let bundle = try Self.makeFlatBundle(in: directory, name: "Streams")
     let provider = Self.adHocProvider()
-    _ = try await bridgeFBFuture(provider.signBundle(atPath: bundle.path))
+    try await provider.signBundle(atPath: bundle.path)
 
     // `codesign -dvvvv` writes its whole report to stderr, so a reader that took
     // the conventional stream would find nothing to match `CDHash=` against.
@@ -101,7 +101,7 @@ struct FBCodesignProviderTests {
     let standardError = (process.stdErr as String?) ?? ""
     #expect(standardError.contains("CDHash="))
 
-    let cdHash = try await bridgeFBFuture(provider.cdHashForBundle(atPath: bundle.path)) as String
+    let cdHash = try await provider.cdHashForBundle(atPath: bundle.path)
     #expect(standardError.contains("CDHash=\(cdHash)"))
   }
 
@@ -116,14 +116,13 @@ struct FBCodesignProviderTests {
     try FileManager.default.createDirectory(at: bundle, withIntermediateDirectories: true)
 
     do {
-      _ = try await bridgeFBFuture(Self.adHocProvider().signBundle(atPath: bundle.path))
+      try await Self.adHocProvider().signBundle(atPath: bundle.path)
       Issue.record("Expected signing an unsuitable bundle to fail")
     } catch {
       let message = error.localizedDescription
-      // The launch passes `nil` acceptable exit codes, so the process itself
-      // succeeds from `FBProcessBuilder`'s point of view and the exit code is
-      // re-examined afterwards. A caller therefore never sees the builder's own
-      // "Exit Code N is not acceptable" phrasing from this path.
+      // The provider runs codesign under an accept-anything policy and
+      // re-examines the exit code itself, so a caller sees its domain error
+      // rather than any generic "not acceptable" launch-layer phrasing.
       #expect(message.contains("Codesigning failed with exit code 1"))
       #expect(message.contains("bundle format unrecognized, invalid, or unsuitable"))
       #expect(!message.contains("is not acceptable"))
@@ -138,7 +137,7 @@ struct FBCodesignProviderTests {
     try FileManager.default.createDirectory(at: bundle, withIntermediateDirectories: true)
 
     do {
-      _ = try await bridgeFBFuture(Self.adHocProvider().cdHashForBundle(atPath: bundle.path))
+      _ = try await Self.adHocProvider().cdHashForBundle(atPath: bundle.path)
       Issue.record("Expected the CDHash lookup to fail")
     } catch {
       let message = error.localizedDescription
@@ -163,7 +162,7 @@ struct FBCodesignProviderTests {
     try FileManager.default.setAttributes([.posixPermissions: NSNumber(value: 0o444)], ofItemAtPath: codeResources.path)
 
     await #expect(throws: (any Error).self) {
-      _ = try await bridgeFBFuture(Self.adHocProvider().signBundle(atPath: bundle.path))
+      try await Self.adHocProvider().signBundle(atPath: bundle.path)
     }
 
     #expect(try Self.posixPermissions(of: codeResources.path) == 0o644)

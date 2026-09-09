@@ -78,7 +78,7 @@ public struct FBBundleDescriptor: Hashable, Sendable, CustomStringConvertible {
           .runUntilCompletion(withAcceptableExitCodes: Set([0 as NSNumber])))
     }
     logger.log("Re-Codesigning after rpath update \(path)")
-    try await bridgeFBFutureVoid(codesign.signBundle(atPath: path))
+    try await codesign.signBundle(atPath: path)
   }
 
   private static func binaryForBundle(_ bundle: Bundle) throws -> FBBinaryDescriptor {

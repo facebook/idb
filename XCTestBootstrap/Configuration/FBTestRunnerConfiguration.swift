@@ -60,7 +60,7 @@ public struct FBTestRunnerConfiguration {
   public static func prepareConfiguration(withTarget target: FBiOSTarget & ApplicationCommands & XCTestExtendedCommands, testLaunchConfiguration: FBTestLaunchConfiguration, workingDirectory: String, codesign: FBCodesignProvider?) async throws -> FBTestRunnerConfiguration {
     if let codesign {
       do {
-        _ = try await bridgeFBFuture(codesign.cdHashForBundle(atPath: testLaunchConfiguration.testBundle.path))
+        _ = try await codesign.cdHashForBundle(atPath: testLaunchConfiguration.testBundle.path)
       } catch {
         throw FBTestRunnerConfigurationError.codesignCheckFailed(bundlePath: testLaunchConfiguration.testBundle.path, underlying: error)
       }
