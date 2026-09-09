@@ -238,7 +238,7 @@ private func deviceForECID(_ ecid: String, logger: FBControlCoreLogger) async th
 private func resolveSimulator(_ udid: String, userDefaults: UserDefaults, logger: FBControlCoreLogger) async throws -> FBSimulator {
   let set = try simulatorSet(userDefaults, logger: logger)
   let target = try FBiOSTargetProvider.target(withUDID: udid, targetSets: [set], warmUp: false, logger: logger)
-  guard target is SimulatorLifecycleCommands, let simulator = target as? FBSimulator else {
+  guard let simulator = target as? FBSimulator else {
     throw IDBCompanionError.simulatorLifecycleUnsupported(targetDescription: String(describing: target))
   }
   return simulator
