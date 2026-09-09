@@ -48,6 +48,11 @@ class CompanionStub:
     def log_excerpt(self, limit: int = 4000) -> str:
         return "<companion log>"
 
+    def liveness_note(self) -> str:
+        if self.returncode is None:
+            return "the companion is still running"
+        return f"the companion exited with {self.returncode}"
+
 
 class TestCaseStub:
     def __init__(self, companion_returncode: int | None = None) -> None:
@@ -83,34 +88,26 @@ class FailureReportingTests(unittest.TestCase):
         message = report_for("boom", companion_returncode=1)
 
         self.assertIn("idb describe failed (rc=1)", message)
-        # BUG: the companion has exited, so every later command will fail to
-        # connect, and the report says nothing about it -- flipped in the
-        # following commit.
-        self.assertNotIn("exited", message)
+        self.assertIn("has since exited with 1", message)
 
     def test_reports_being_unable_to_reach_a_dead_companion(self) -> None:
         message = report_for(CONNECTION_REFUSED, companion_returncode=1)
 
-        # BUG: the client never reached the companion, so this is the harness's
-        # failure and not the command's, and it is reported as the command's --
-        # flipped in the following commit.
         self.assertTrue(
-            message.startswith("idb describe failed"),
-            f"expected the command's own failure, got: {message}",
+            message.startswith("The client could not reach the companion"),
+            f"expected the harness's own failure, got: {message}",
         )
-        self.assertNotIn("exited", message)
-        self.assertNotIn("companion log", message)
+        self.assertIn("the companion exited with 1", message)
+        self.assertIn("companion log", message)
 
     def test_reports_being_unable_to_reach_a_live_companion(self) -> None:
         message = report_for(CONNECTION_REFUSED)
 
-        # BUG: as above, and with nothing said about the companion still being
-        # up -- flipped in the following commit.
         self.assertTrue(
-            message.startswith("idb describe failed"),
-            f"expected the command's own failure, got: {message}",
+            message.startswith("The client could not reach the companion"),
+            f"expected the harness's own failure, got: {message}",
         )
-        self.assertNotIn("still running", message)
+        self.assertIn("the companion is still running", message)
 
     def test_skips_when_the_host_cannot_spawn_in_the_guest(self) -> None:
         case = TestCaseStub()

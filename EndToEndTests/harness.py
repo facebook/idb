@@ -45,6 +45,7 @@ from __future__ import annotations
 
 import asyncio
 import atexit
+import enum
 import json
 import os
 import select
@@ -55,7 +56,7 @@ import tempfile
 import time
 import unittest
 from pathlib import Path
-from typing import Any, Sequence
+from typing import Any, NoReturn, Sequence
 
 DEVICE_UDID_ENV = "DEVICE_UDID"
 DEVICE_SET_PATH_ENV = "DEVICE_SET_PATH"
@@ -79,6 +80,13 @@ HOST_SERVICE_UNAVAILABLE_MARKERS = (
     "Exit Code 149 is not acceptable",
 )
 
+# The client's own words when it cannot open a channel to the companion, from
+# `idb/grpc/client.py`. Deliberately just the one marker: a command misread as
+# a connection failure is reported as the harness's problem rather than as the
+# failure it actually was, which is the confusion this classification exists to
+# remove.
+COMPANION_UNREACHABLE_MARKERS = ("Failed to connect to companion",)
+
 COMPANION_READY_TIMEOUT_SECONDS = 180.0
 BOOT_COMPLETION_TIMEOUT_SECONDS = 300.0
 DEFAULT_COMMAND_TIMEOUT_SECONDS = 120.0
@@ -87,6 +95,27 @@ INSTALL_TIMEOUT_SECONDS = 300.0
 
 class HarnessError(Exception):
     """The environment did not hold up its end of the suite's invariant."""
+
+
+class FailureKind(enum.Enum):
+    """What a non-zero ``idb`` exit means, which is not always what the command
+    was doing: the companion is shared by every test, so its death turns every
+    later command into a connection failure that has nothing to say about the
+    command that hit it."""
+
+    COMMAND = enum.auto()
+    COMPANION_UNREACHABLE = enum.auto()
+    HOST_SERVICE_UNAVAILABLE = enum.auto()
+
+
+def classify_failure(completed: Completed) -> FailureKind:
+    for marker in COMPANION_UNREACHABLE_MARKERS:
+        if marker in completed.error_text:
+            return FailureKind.COMPANION_UNREACHABLE
+    for marker in HOST_SERVICE_UNAVAILABLE_MARKERS:
+        if marker in completed.error_text:
+            return FailureKind.HOST_SERVICE_UNAVAILABLE
+    return FailureKind.COMMAND
 
 
 def strict() -> bool:
@@ -332,6 +361,13 @@ class Companion:
             if path:
                 return str(path)
 
+    def liveness_note(self) -> str:
+        """How the companion is doing, in words a failure report can use."""
+        returncode = self.process.poll()
+        if returncode is None:
+            return "the companion is still running"
+        return f"the companion exited with {returncode}"
+
     def log_excerpt(self, limit: int = 4000) -> str:
         try:
             return self.log_path.read_text(errors="replace")[-limit:]
@@ -441,16 +477,32 @@ class IdbEndToEndTestCase(unittest.IsolatedAsyncioTestCase):
         """
         return IdbProcess(self, self.idb_argv(*args), " ".join(args))
 
-    def fail_or_skip_for(self, what: str, completed: Completed) -> None:
+    def fail_or_skip_for(self, what: str, completed: Completed) -> NoReturn:
+        """Report a failed ``idb`` command as whatever it actually was.
+
+        What the command was doing and what went wrong are separate questions:
+        the companion is shared by every test, so its death turns every later
+        command into a connection failure that says nothing about the command
+        that hit it. Reporting the two apart keeps the first real failure
+        legible instead of burying it under repeats of the same symptom.
+        """
         message = (
             f"idb {what} failed (rc={completed.returncode})\n"
             f"stdout: {completed.text}\n"
             f"stderr: {completed.error_text}"
         )
-        if any(
-            marker in completed.error_text
-            for marker in HOST_SERVICE_UNAVAILABLE_MARKERS
-        ):
+        kind = classify_failure(completed)
+
+        if kind is FailureKind.COMPANION_UNREACHABLE:
+            self.fail(
+                f"The client could not reach the companion, so this and every "
+                f"later command fail for a reason of the harness's own making "
+                f"rather than anything idb {what} did — "
+                f"{self.companion.liveness_note()}.\n{message}\n"
+                f"companion log: {self.companion.log_excerpt()}"
+            )
+
+        if kind is FailureKind.HOST_SERVICE_UNAVAILABLE:
             if strict():
                 self.fail(
                     f"{STRICT_ENV}=1 and the simulator's host does not run "
@@ -459,6 +511,19 @@ class IdbEndToEndTestCase(unittest.IsolatedAsyncioTestCase):
             self.skipTest(
                 f"This simulator's host does not run SimLaunchHostService; nothing "
                 f"can be spawned in the guest: idb {what}"
+            )
+
+        # A command that failed on its own terms is reported on its own terms.
+        # A companion that has since exited is context for it, not a
+        # replacement for it: the command reached a companion that was serving,
+        # so whatever it returned is a real answer.
+        companion_returncode = self.companion.process.poll()
+        if companion_returncode is not None:
+            self.fail(
+                f"{message}\n"
+                f"The companion has since exited with {companion_returncode}, so "
+                f"later commands will fail to connect.\n"
+                f"companion log: {self.companion.log_excerpt()}"
             )
         self.fail(message)
 
@@ -473,12 +538,20 @@ class IdbEndToEndTestCase(unittest.IsolatedAsyncioTestCase):
         return [json.loads(line) for line in text.splitlines() if line.strip()]
 
     async def idb_expect_failure(self, *args: str, **kwargs: Any) -> Completed:
+        """A command whose failure is the behaviour under test.
+
+        The non-zero exit has to have come from the command; a test asserting
+        that something is rejected passes for nothing if what it caught was the
+        companion being unreachable.
+        """
         kwargs["check"] = False
         completed = await self.idb(*args, **kwargs)
         if completed.returncode == 0:
             self.fail(
                 f"idb {' '.join(args)} unexpectedly succeeded\nstdout: {completed.text}"
             )
+        if classify_failure(completed) is not FailureKind.COMMAND:
+            self.fail_or_skip_for(" ".join(args), completed)
         return completed
 
     async def installed_apps(self) -> dict[str, dict[str, Any]]:

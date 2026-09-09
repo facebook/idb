@@ -36,6 +36,7 @@ without ``SimLaunchHostService`` every test here skips with that reason.
 from __future__ import annotations
 
 import asyncio
+import json
 import time
 from typing import Any
 
@@ -54,7 +55,11 @@ AXBRIDGE_BACKEND = "axbridge-exclusive"
 # icons do not, and those are the labels a smallest-first pick lands on.
 MINIMUM_CONTROL_WIDTH = 100
 
-CONTROL_DISCOVERY_TIMEOUT_SECONDS = 30.0
+CONTROL_DISCOVERY_TIMEOUT_SECONDS = 60.0
+DESCRIBE_ALL_ARGS = ("ui", "describe-all", "--nested")
+# A read taken before the simulator has an accessibility translation object to
+# serve fails rather than coming back empty.
+NOT_READY_MARKER = "No translation object returned"
 
 
 def _elements(node: Any) -> list[dict[str, Any]]:
@@ -128,7 +133,7 @@ class AccessibilityTests(IdbEndToEndTestCase):
         await self.some_control()
 
     async def describe_all(self, *extra: str) -> Any:
-        return await self.idb_json("ui", "describe-all", "--nested", *extra)
+        return await self.idb_json(*DESCRIBE_ALL_ARGS, *extra)
 
     async def complete_read(self, api: str) -> dict[str, Any]:
         """A ``--format complete`` describe-all over the named backend: the
@@ -145,16 +150,34 @@ class AccessibilityTests(IdbEndToEndTestCase):
 
     async def some_control(self) -> dict[str, Any]:
         """A labelled control on screen, waiting for Settings to finish
-        rendering: a read taken the moment it launches sees only the window."""
+        rendering.
+
+        Exactly two outcomes mean not-ready-yet: a read that comes back with
+        nothing labelled on it, because Settings has so far put up only its
+        window, and a read that fails because the simulator has no translation
+        object to serve. Every other failure is reported as one, so a host that
+        cannot spawn in the guest still skips and a companion that has died is
+        still named rather than waited out.
+        """
         deadline = time.monotonic() + CONTROL_DISCOVERY_TIMEOUT_SECONDS
         while True:
-            controls = _labelled_controls(await self.describe_all())
-            if controls:
-                return controls[0]
+            completed = await self.idb(*DESCRIBE_ALL_ARGS, "--json", check=False)
+            if (
+                completed.returncode != 0
+                and NOT_READY_MARKER not in completed.error_text
+            ):
+                self.fail_or_skip_for(" ".join(DESCRIBE_ALL_ARGS), completed)
+            if completed.returncode == 0:
+                controls = _labelled_controls(json.loads(completed.text))
+                if controls:
+                    return controls[0]
+                waiting_for = "Settings has put up no labelled control"
+            else:
+                waiting_for = "the simulator has no accessibility translation object"
             if time.monotonic() >= deadline:
                 self.fail(
-                    f"Settings showed no labelled control within "
-                    f"{CONTROL_DISCOVERY_TIMEOUT_SECONDS:.0f}s"
+                    f"No labelled control within "
+                    f"{CONTROL_DISCOVERY_TIMEOUT_SECONDS:.0f}s: {waiting_for}"
                 )
             await asyncio.sleep(1.0)
 
