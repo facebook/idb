@@ -342,4 +342,38 @@ final class FBAMDeviceTests {
     await waitForDeviceEvents(expected, timeout: 10)
     #expect((expected) == (sAMDeviceEvents))
   }
+
+  /// Cancelling a consumer that is queued behind another's use of house arrest abandons its place
+  /// in line.
+  @Test
+  func houseArrest_CancellingAQueuedConsumerAbandonsItsPlaceInLine() async throws {
+    let device = Self.makeDevice(connectionReuseTimeout: nil, serviceReuseTimeout: nil)
+    nonisolated(unsafe) let holderHasConnection = FBMutableFuture<NSNull>()
+    nonisolated(unsafe) let gate = FBMutableFuture<NSNull>()
+
+    let holder = Task { @MainActor in
+      try await device.withHouseArrestAFCConnection(forBundleID: "com.foo.bar", afcCalls: Self.stubbedAFCCalls) { _ in
+        holderHasConnection.resolve(withResult: NSNull())
+        try await bridgeFBFutureVoid(gate)
+      }
+    }
+    try await bridgeFBFutureVoid(holderHasConnection)
+
+    nonisolated(unsafe) var waiterBodyRan = false
+    let waiter = Task { @MainActor in
+      try await device.withHouseArrestAFCConnection(forBundleID: "com.foo.bar", afcCalls: Self.stubbedAFCCalls) { _ in
+        waiterBodyRan = true
+      }
+    }
+    // Give the waiter a chance to park behind the holder before cancelling it.
+    try? await Task.sleep(nanoseconds: 50_000_000)
+    waiter.cancel()
+    gate.resolve(withResult: NSNull())
+
+    // BUG: the cancelled waiter is handed the connection and runs its body instead of throwing
+    // CancellationError — flipped in the following commit.
+    try await waiter.value
+    #expect(waiterBodyRan)
+    try await holder.value
+  }
 }
