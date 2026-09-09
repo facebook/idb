@@ -158,10 +158,6 @@ public final class FBDevice: FBiOSTarget, FBDeviceCommands, CustomStringConverti
     nil
   }
 
-  public func compare(_ target: any FBiOSTarget) -> ComparisonResult {
-    FBiOSTargetComparison(self, target)
-  }
-
   public func requiresBundlesToBeSigned() -> Bool {
     true
   }

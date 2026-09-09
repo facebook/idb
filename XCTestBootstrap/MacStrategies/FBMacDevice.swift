@@ -367,7 +367,7 @@ public final class FBMacDevice: NSObject, FBiOSTarget {
     [:]
   }
 
-  public func compare(_ target: FBiOSTarget) -> ComparisonResult {
+  public func compare(_ target: any FBiOSTargetInfo) -> ComparisonResult {
     .orderedSame
   }
 

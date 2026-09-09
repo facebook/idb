@@ -118,10 +118,6 @@ public final class FBSimulator: FBiOSTarget, Hashable, CustomStringConvertible, 
 
   public var asyncQueue: DispatchQueue { .global(qos: .userInitiated) }
 
-  public func compare(_ target: any FBiOSTarget) -> ComparisonResult {
-    FBiOSTargetComparison(self, target)
-  }
-
   public func replacementMapping() -> [String: String] {
     ["%%SIM_ROOT%%": dataDirectory ?? ""]
   }

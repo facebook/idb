@@ -50,6 +50,16 @@ public protocol FBiOSTargetInfo: AnyObject {
 
   /// The State of the iOS Target. Currently only applies to Simulators.
   var state: FBiOSTargetState { get }
+
+  /// A Comparison Method for `sortedArrayUsingSelector:`
+  func compare(_ target: any FBiOSTargetInfo) -> ComparisonResult
+}
+
+extension FBiOSTargetInfo {
+
+  public func compare(_ target: any FBiOSTargetInfo) -> ComparisonResult {
+    FBiOSTargetComparison(self, target)
+  }
 }
 
 // MARK: - FBiOSTarget Protocol
@@ -88,9 +98,6 @@ public protocol FBiOSTarget: FBiOSTargetInfo, FBiOSTargetCommand {
   /// A queue for independent operations to execute on.
   /// Examples of these operations are transforming an immutable data structure.
   var asyncQueue: DispatchQueue { get }
-
-  /// A Comparison Method for `sortedArrayUsingSelector:`
-  func compare(_ target: any FBiOSTarget) -> ComparisonResult
 
   /// If the target's bundle needs to be codesigned or not.
   func requiresBundlesToBeSigned() -> Bool
@@ -212,8 +219,8 @@ public func FBControlCoreProductFamilyString(_ family: FBControlCoreProductFamil
   }
 }
 
-/// A Default Comparison Function that can be called for different implementations of FBiOSTarget.
-public func FBiOSTargetComparison(_ left: FBiOSTarget, _ right: FBiOSTarget) -> ComparisonResult {
+/// A Default Comparison Function that can be called for different implementations of FBiOSTargetInfo.
+public func FBiOSTargetComparison(_ left: any FBiOSTargetInfo, _ right: any FBiOSTargetInfo) -> ComparisonResult {
   var comparison = NSNumber(value: left.targetType.rawValue).compare(NSNumber(value: right.targetType.rawValue))
   if comparison != .orderedSame {
     return comparison
@@ -251,7 +258,7 @@ public func FBiOSTargetPredicateForUDID(_ udid: String) -> NSPredicate {
 public func FBiOSTargetPredicateForUDIDs(_ udids: [String]) -> NSPredicate {
   let udidsSet = Set(udids)
   return NSPredicate { (evaluatedObject, _) -> Bool in
-    guard let candidate = evaluatedObject as? FBiOSTarget else {
+    guard let candidate = evaluatedObject as? FBiOSTargetInfo else {
       return false
     }
     return udidsSet.contains(candidate.udid)

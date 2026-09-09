@@ -87,7 +87,7 @@ final class FBiOSTargetTests: XCTestCase {
 
   func testiPhoneComesBeforeiPad() {
     let deviceTypes = FBiOSTargetTests.iPhoneDeviceTypes + FBiOSTargetTests.iPadDeviceTypes
-    var input: [FBiOSTarget] = []
+    var input: [any FBiOSTargetInfo] = []
     for deviceType in deviceTypes {
       let target = FBiOSTargetDouble()
       target.targetType = .device
