@@ -8,10 +8,10 @@
 import FBControlCore
 import Foundation
 
-public final class DeviceLifecycleCommands {
-  private weak var device: FBDevice?
+public struct DeviceLifecycleCommands {
+  private let device: FBDevice
 
-  public class func commands(with device: FBDevice) -> DeviceLifecycleCommands {
+  public static func commands(with device: FBDevice) -> DeviceLifecycleCommands {
     DeviceLifecycleCommands(device: device)
   }
 
@@ -22,16 +22,10 @@ public final class DeviceLifecycleCommands {
   // MARK: - Async
 
   fileprivate func resolveState(_ state: FBiOSTargetState) async throws {
-    guard let device else {
-      throw DeviceNilError.deviceNil
-    }
     try await FBiOSTargetResolveState(device, state)
   }
 
   fileprivate func resolveLeavesState(_ state: FBiOSTargetState) async throws {
-    guard let device else {
-      throw DeviceNilError.deviceNil
-    }
     try await FBiOSTargetResolveLeavesState(device, state)
   }
 }

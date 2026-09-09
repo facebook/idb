@@ -51,12 +51,12 @@ extension DeviceActivationError: LocalizedError {
   }
 }
 
-public final class DeviceActivationCommands {
-  private weak var device: FBDevice?
+public struct DeviceActivationCommands {
+  private let device: FBDevice
 
   // MARK: - Initializers
 
-  public class func commands(with device: FBDevice) -> DeviceActivationCommands {
+  public static func commands(with device: FBDevice) -> DeviceActivationCommands {
     DeviceActivationCommands(device: device)
   }
 
@@ -67,9 +67,6 @@ public final class DeviceActivationCommands {
   // MARK: - Activation
 
   fileprivate func activate() async throws {
-    guard let device else {
-      throw DeviceNilError.deviceNil
-    }
     let logger = device.logger
     let state = try await activationState()
     if state == DeviceActivationState.activated {
@@ -94,9 +91,6 @@ public final class DeviceActivationCommands {
   }
 
   private func performActivation() async throws {
-    guard let device else {
-      throw DeviceNilError.deviceNil
-    }
     let logger = device.logger
     try await confirmActivationState(DeviceActivationState.unactivated)
     logger.log("Building DRM Handshake Payload")
@@ -110,9 +104,6 @@ public final class DeviceActivationCommands {
   }
 
   private func withMobileActivationService<T>(_ body: (FBAMDServiceConnection) async throws -> T) async throws -> T {
-    guard let device else {
-      throw DeviceNilError.deviceNil
-    }
     return try await device.withServiceConnection("com.apple.mobileactivationd", body)
   }
 

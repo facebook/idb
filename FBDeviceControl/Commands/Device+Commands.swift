@@ -8,6 +8,11 @@
 import FBControlCore
 import Foundation
 
+// Commands that own something outliving a single call — a notifier, an in-flight video, a set of
+// AFC calls — are memoized through `commandCache` (`FBTargetCommandCache`), whose lock also stops
+// two callers racing the first construction, and hold their device weakly so the cache slot does
+// not close a cycle. Commands that only wrap the device are built per call and hold it strongly:
+// nothing outlives the call that builds them.
 extension FBDevice {
 
   // MARK: - Shared accessors
@@ -21,15 +26,15 @@ extension FBDevice {
   }
 
   var screenshot: DeviceScreenshotCommands {
-    commandCache.resolve { DeviceScreenshotCommands.commands(with: self) }
+    DeviceScreenshotCommands.commands(with: self)
   }
 
   var location: DeviceLocationCommands {
-    commandCache.resolve { DeviceLocationCommands.commands(with: self) }
+    DeviceLocationCommands.commands(with: self)
   }
 
   var debugger: DeviceDebuggerCommands {
-    commandCache.resolve { DeviceDebuggerCommands.commands(with: self) }
+    DeviceDebuggerCommands.commands(with: self)
   }
 
   var file: DeviceFileCommands {
@@ -37,11 +42,11 @@ extension FBDevice {
   }
 
   var lifecycle: DeviceLifecycleCommands {
-    commandCache.resolve { DeviceLifecycleCommands.commands(with: self) }
+    DeviceLifecycleCommands.commands(with: self)
   }
 
   var log: DeviceLogCommands {
-    commandCache.resolve { DeviceLogCommands.commands(with: self) }
+    DeviceLogCommands.commands(with: self)
   }
 
   var videoRecording: DeviceVideoRecordingCommands {
@@ -59,31 +64,31 @@ extension FBDevice {
   // MARK: - Device-only accessors
 
   var diagnosticInformation: DeviceDiagnosticInformationCommands {
-    commandCache.resolve { DeviceDiagnosticInformationCommands.commands(with: self) }
+    DeviceDiagnosticInformationCommands.commands(with: self)
   }
 
   var erase: DeviceEraseCommands {
-    commandCache.resolve { DeviceEraseCommands.commands(with: self) }
+    DeviceEraseCommands.commands(with: self)
   }
 
   var power: DevicePowerCommands {
-    commandCache.resolve { DevicePowerCommands.commands(with: self) }
+    DevicePowerCommands.commands(with: self)
   }
 
   var provisioningProfile: DeviceProvisioningProfileCommands {
-    commandCache.resolve { DeviceProvisioningProfileCommands.commands(with: self) }
+    DeviceProvisioningProfileCommands.commands(with: self)
   }
 
   var activation: DeviceActivationCommands {
-    commandCache.resolve { DeviceActivationCommands.commands(with: self) }
+    DeviceActivationCommands.commands(with: self)
   }
 
   var recovery: DeviceRecoveryCommands {
-    commandCache.resolve { DeviceRecoveryCommands.commands(with: self) }
+    DeviceRecoveryCommands.commands(with: self)
   }
 
   var debugSymbols: DeviceDebugSymbolsCommands {
-    commandCache.resolve { DeviceDebugSymbolsCommands(device: self) }
+    DeviceDebugSymbolsCommands(device: self)
   }
 
   var developerDiskImage: DeviceDeveloperDiskImageCommands {
@@ -91,6 +96,6 @@ extension FBDevice {
   }
 
   var socketForwarding: DeviceSocketForwardingCommands {
-    commandCache.resolve { DeviceSocketForwardingCommands.commands(with: self) }
+    DeviceSocketForwardingCommands.commands(with: self)
   }
 }

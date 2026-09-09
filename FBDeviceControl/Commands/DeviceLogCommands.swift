@@ -48,10 +48,10 @@ public final class DeviceLogOperation: LogOperation {
 
 // MARK: - DeviceLogCommands
 
-public final class DeviceLogCommands {
-  private weak var device: FBDevice?
+public struct DeviceLogCommands {
+  private let device: FBDevice
 
-  public class func commands(with device: FBDevice) -> DeviceLogCommands {
+  public static func commands(with device: FBDevice) -> DeviceLogCommands {
     DeviceLogCommands(device: device)
   }
 
@@ -62,9 +62,6 @@ public final class DeviceLogCommands {
   // MARK: - FBLogCommands
 
   public func tailLog(_ arguments: [String], consumer: any FBDataConsumer) async throws -> DeviceLogOperation {
-    guard let device else {
-      throw DeviceNilError.deviceNil
-    }
     if !arguments.isEmpty {
       let unsupportedArgumentsMessage = "[DeviceLogCommands][rdar://38452839] Unsupported arguments: \(arguments)"
       if let data = unsupportedArgumentsMessage.data(using: .utf8) {

@@ -34,9 +34,9 @@ extension DeviceProvisioningProfileError: LocalizedError {
 }
 
 public final class DeviceProvisioningProfileCommands: ProvisioningProfileCommands {
-  private(set) weak var device: FBDevice?
+  let device: FBDevice
 
-  public class func commands(with device: FBDevice) -> DeviceProvisioningProfileCommands {
+  public static func commands(with device: FBDevice) -> DeviceProvisioningProfileCommands {
     return DeviceProvisioningProfileCommands(device: device)
   }
 
@@ -47,9 +47,6 @@ public final class DeviceProvisioningProfileCommands: ProvisioningProfileCommand
   // MARK: - ProvisioningProfileCommands
 
   public func allProvisioningProfiles() async throws -> [[String: Any]] {
-    guard let device else {
-      throw DeviceNilError.deviceNil
-    }
     return try await device.withConnectedDevice(purpose: "list_provisioning_profiles") { connectedDevice in
       guard let profiles = connectedDevice.calls.CopyProvisioningProfiles?(connectedDevice.amDeviceRef)?.takeRetainedValue() as? [Any] else {
         throw DeviceProvisioningProfileError.copyFailed
@@ -70,9 +67,6 @@ public final class DeviceProvisioningProfileCommands: ProvisioningProfileCommand
   }
 
   public func removeProvisioningProfile(uuid: String) async throws -> [String: Any] {
-    guard let device else {
-      throw DeviceNilError.deviceNil
-    }
     return try await device.withConnectedDevice(purpose: "remove_provisioning_profile") { connectedDevice in
       let status = connectedDevice.calls.RemoveProvisioningProfile?(connectedDevice.amDeviceRef, uuid as CFString) ?? -1
       if status != 0 {
@@ -85,9 +79,6 @@ public final class DeviceProvisioningProfileCommands: ProvisioningProfileCommand
   }
 
   public func installProvisioningProfile(_ profileData: Data) async throws -> [String: Any] {
-    guard let device else {
-      throw DeviceNilError.deviceNil
-    }
     return try await device.withConnectedDevice(purpose: "install_provisioning_profile") { connectedDevice in
       guard let profileUnmanaged = connectedDevice.calls.ProvisioningProfileCreateWithData?(profileData as CFData) else {
         throw DeviceProvisioningProfileError.constructionFailed(dataDescription: String(describing: profileData))

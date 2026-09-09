@@ -28,7 +28,7 @@ extension DiagnosticsRelayError: LocalizedError {
 }
 
 public final class DeviceDiagnosticInformationCommands: FBiOSTargetCommand {
-  private weak var device: FBDevice?
+  private let device: FBDevice
 
   public class func commands(with target: any FBiOSTarget) -> Self {
     guard let device = target as? FBDevice else {
@@ -44,9 +44,6 @@ public final class DeviceDiagnosticInformationCommands: FBiOSTargetCommand {
   // MARK: - Async
 
   fileprivate func fetchDiagnosticInformation() async throws -> [String: Any] {
-    guard let device else {
-      throw DeviceNilError.deviceNil
-    }
     let diagnostics = try await fetchInformationFromDiagnosticsRelay(device: device)
     let springboard = try await fetchInformationFromSpringboard(device: device)
     let mobileConfig = try await fetchInformationFromMobileConfiguration(device: device)

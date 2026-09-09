@@ -33,23 +33,16 @@ extension DeviceRecoveryError: LocalizedError {
   }
 }
 
-public final class DeviceRecoveryCommands {
-  private(set) weak var device: FBDevice?
+public struct DeviceRecoveryCommands {
+  let device: FBDevice
 
-  public class func commands(with device: FBDevice) -> DeviceRecoveryCommands {
+  public static func commands(with device: FBDevice) -> DeviceRecoveryCommands {
     DeviceRecoveryCommands(device: device)
-  }
-
-  init(device: FBDevice) {
-    self.device = device
   }
 
   // MARK: - Recovery
 
   fileprivate func enterRecovery() async throws {
-    guard let device else {
-      throw DeviceNilError.deviceNil
-    }
     try await device.withConnectedDevice(purpose: "enter_recovery") { connectedDevice in
       guard let enterRecoveryFunc = connectedDevice.calls.EnterRecovery else {
         throw DeviceRecoveryError.callUnavailable(function: "EnterRecovery")
@@ -62,9 +55,6 @@ public final class DeviceRecoveryCommands {
   }
 
   fileprivate func exitRecovery() async throws {
-    guard let device else {
-      throw DeviceNilError.deviceNil
-    }
     guard let recoveryDevice = device.recoveryModeDeviceRef else {
       throw DeviceRecoveryError.notInRecovery(deviceDescription: String(describing: device))
     }

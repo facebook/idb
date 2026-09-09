@@ -88,7 +88,7 @@ extension DeviceDebugSymbolsError: LocalizedError {
 }
 
 public final class DeviceDebugSymbolsCommands: DebugSymbolsCommands {
-  private weak var device: FBDevice?
+  private let device: FBDevice
 
   init(device: FBDevice) {
     self.device = device
@@ -112,9 +112,6 @@ public final class DeviceDebugSymbolsCommands: DebugSymbolsCommands {
       try FileManager.default.createDirectory(atPath: destinationDirectory, withIntermediateDirectories: true)
     } catch {
       throw DeviceDebugSymbolsError.destinationDirectoryNotCreated(message: String(describing: error))
-    }
-    guard let device else {
-      throw DeviceNilError.deviceNil
     }
     let logger = device.logger
 
@@ -140,9 +137,6 @@ public final class DeviceDebugSymbolsCommands: DebugSymbolsCommands {
   /// Each operation takes its own connection, as the service's protocol is per-connection state:
   /// once a file has been requested the connection is spent.
   private func withSymbolServiceConnection<T>(_ body: (FBAMDServiceConnection) async throws -> T) async throws -> T {
-    guard let device else {
-      throw DeviceNilError.deviceNil
-    }
     _ = try await device.developerDiskImage.ensureDeveloperDiskImageIsMounted()
     return try await device.withServiceConnection(FetchSymbolsService, body)
   }

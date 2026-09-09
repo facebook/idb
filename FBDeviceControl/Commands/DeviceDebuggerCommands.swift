@@ -36,10 +36,10 @@ extension DeviceDebuggerError: LocalizedError {
   }
 }
 
-public final class DeviceDebuggerCommands {
-  private weak var device: FBDevice?
+public struct DeviceDebuggerCommands {
+  private let device: FBDevice
 
-  public class func commands(with device: FBDevice) -> DeviceDebuggerCommands {
+  public static func commands(with device: FBDevice) -> DeviceDebuggerCommands {
     DeviceDebuggerCommands(device: device)
   }
 
@@ -52,9 +52,6 @@ public final class DeviceDebuggerCommands {
   /// The developer disk image is mounted first, because the service does not exist until it is.
   /// The connection is unscoped: whoever receives it decides when it is invalidated.
   public func connectToDebugServer() async throws -> FBAMDServiceConnection {
-    guard let device else {
-      throw DeviceNilError.deviceNil
-    }
     let diskImage = try await device.ensureDeveloperDiskImageIsMounted()
     let serviceName =
       diskImage.xcodeVersion.majorVersion >= 12
@@ -66,9 +63,6 @@ public final class DeviceDebuggerCommands {
   // MARK: - Async
 
   fileprivate func launchDebugServer(forHostApplication application: FBBundleDescriptor, port: in_port_t) async throws -> any FBDebugServer {
-    guard let device else {
-      throw DeviceNilError.deviceNil
-    }
     if device.osVersion.version.majorVersion >= 17 {
       throw DeviceDebuggerError.unsupportedOSVersion(version: device.osVersion.versionString)
     }
@@ -83,9 +77,6 @@ public final class DeviceDebuggerCommands {
   }
 
   private func lldbBootstrapCommands(forApplicationAtPath path: String, port: in_port_t) async throws -> [String] {
-    guard device != nil else {
-      throw DeviceNilError.deviceNil
-    }
     let bundle = try FBBundleDescriptor.bundle(fromPath: path)
     let platformSelect = try platformSelectCommand()
     let localTarget = "target create '\(path)'"
@@ -95,9 +86,6 @@ public final class DeviceDebuggerCommands {
   }
 
   private func platformSelectCommand() throws -> String {
-    guard let device else {
-      throw DeviceNilError.deviceNil
-    }
     let platformSelectCommand = "platform select remote-ios"
     guard let buildVersion = device.buildVersion else {
       device.logger.log("No build version available for \(device), no symbolication of system libraries will occur.")
@@ -113,9 +101,6 @@ public final class DeviceDebuggerCommands {
   }
 
   private func remoteTarget(forBundleID bundleID: String) async throws -> String {
-    guard let device else {
-      throw DeviceNilError.deviceNil
-    }
     let installedApplication = try await device.installedApplication(bundleID: bundleID)
     return "script lldb.target.modules[0].SetPlatformFileSpec(lldb.SBFileSpec(\"\(installedApplication.bundle.path)\"))"
   }

@@ -8,10 +8,10 @@
 import FBControlCore
 import Foundation
 
-public final class DevicePowerCommands {
-  private weak var device: FBDevice?
+public struct DevicePowerCommands {
+  private let device: FBDevice
 
-  public class func commands(with device: FBDevice) -> DevicePowerCommands {
+  public static func commands(with device: FBDevice) -> DevicePowerCommands {
     DevicePowerCommands(device: device)
   }
 
@@ -20,9 +20,6 @@ public final class DevicePowerCommands {
   }
 
   fileprivate func sendRelayCommand(_ request: String) async throws {
-    guard let device else {
-      throw DeviceNilError.deviceNil
-    }
     try await device.withServiceConnection("com.apple.mobile.diagnostics_relay") { connection in
       guard let result = try connection.sendAndReceiveMessage(["Request": request]) as? NSDictionary else {
         throw DiagnosticsRelayError.unexpectedResponse

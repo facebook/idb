@@ -84,7 +84,7 @@ enum DeviceCommandAccessor: CaseIterable, Sendable {
 ///
 /// A device owns its `commandCache`; the cache owns whatever is resolved into it. A memoized
 /// command holding its device strongly closes a cycle — device to cache to command to device — and
-/// the device can never be released, which is why the device command classes hold
+/// the device can never be released, which is why the memoized command classes hold
 /// `weak var device`. Commands built per call are free to hold it strongly: nothing outlives the
 /// call that builds them.
 @MainActor

@@ -134,9 +134,9 @@ extension DeviceEraseError: LocalizedError {
 
 public final class DeviceEraseCommands: EraseCommands {
 
-  private weak var device: FBDevice?
+  private let device: FBDevice
 
-  public class func commands(with device: FBDevice) -> DeviceEraseCommands {
+  public static func commands(with device: FBDevice) -> DeviceEraseCommands {
     DeviceEraseCommands(device: device)
   }
 
@@ -147,9 +147,6 @@ public final class DeviceEraseCommands: EraseCommands {
   // MARK: - EraseCommands
 
   public func erase() async throws {
-    guard let device else {
-      throw DeviceNilError.deviceNil
-    }
     let logger = device.logger.withName("erase_\(device.udid)")
     try await device.activate()
     let operation = DeviceEraseOperation(device: device, logger: logger)

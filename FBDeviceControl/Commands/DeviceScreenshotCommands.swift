@@ -23,10 +23,10 @@ extension DeviceScreenshotError: LocalizedError {
   }
 }
 
-public final class DeviceScreenshotCommands {
-  private weak var device: FBDevice?
+public struct DeviceScreenshotCommands {
+  private let device: FBDevice
 
-  public class func commands(with device: FBDevice) -> DeviceScreenshotCommands {
+  public static func commands(with device: FBDevice) -> DeviceScreenshotCommands {
     DeviceScreenshotCommands(device: device)
   }
 
@@ -37,9 +37,6 @@ public final class DeviceScreenshotCommands {
   // MARK: - Async
 
   fileprivate func takeScreenshot(configuration: FBScreenshotConfiguration) async throws -> FBScreenshotResult {
-    guard let device else {
-      throw DeviceNilError.deviceNil
-    }
     let captured = try await capture(from: device)
     // A device hands back a finished image file rather than a framebuffer, so any crop or scale is
     // applied to the decoded image. A request for the whole screen as PNG -- which is what the

@@ -36,15 +36,11 @@ extension DeviceSocketForwardingError: LocalizedError {
   }
 }
 
-public final class DeviceSocketForwardingCommands {
-  private(set) weak var device: FBDevice?
+public struct DeviceSocketForwardingCommands {
+  let device: FBDevice
 
-  public class func commands(with device: FBDevice) -> DeviceSocketForwardingCommands {
+  public static func commands(with device: FBDevice) -> DeviceSocketForwardingCommands {
     DeviceSocketForwardingCommands(device: device)
-  }
-
-  init(device: FBDevice) {
-    self.device = device
   }
 
   // MARK: - Socket forwarding
@@ -54,9 +50,6 @@ public final class DeviceSocketForwardingCommands {
     localFileOutput localFileDescriptorOutput: Int32,
     remotePort: Int32
   ) async throws {
-    guard let device else {
-      throw DeviceNilError.deviceNil
-    }
     var error: NSError?
     guard let localConsumer = FBFileWriter.asyncWriter(withFileDescriptor: localFileDescriptorOutput, closeOnEndOfFile: false, error: &error) else {
       throw error ?? DeviceSocketForwardingError.fileDescriptorWriterFailed(fileDescriptor: localFileDescriptorOutput)

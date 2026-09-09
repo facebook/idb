@@ -10,10 +10,10 @@ import Foundation
 
 private let StartCommand: UInt32 = 0x00000000
 
-public final class DeviceLocationCommands {
-  private weak var device: FBDevice?
+public struct DeviceLocationCommands {
+  private let device: FBDevice
 
-  public class func commands(with device: FBDevice) -> DeviceLocationCommands {
+  public static func commands(with device: FBDevice) -> DeviceLocationCommands {
     DeviceLocationCommands(device: device)
   }
 
@@ -24,9 +24,6 @@ public final class DeviceLocationCommands {
   // MARK: - Async
 
   fileprivate func overrideLocation(withLongitude longitude: Double, latitude: Double) async throws {
-    guard let device else {
-      throw DeviceNilError.deviceNil
-    }
     _ = try await device.ensureDeveloperDiskImageIsMounted()
     try await device.withServiceConnection("com.apple.dt.simulatelocation") { connection in
       var start = StartCommand
