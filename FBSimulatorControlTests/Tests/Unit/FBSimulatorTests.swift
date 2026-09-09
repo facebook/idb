@@ -167,7 +167,7 @@ final class FBSimulatorTests: XCTestCase {
   func testTemporaryDirectory_ReturnsSameInstanceOnSubsequentAccess() {
     let first = simulator.temporaryDirectory
     let second = simulator.temporaryDirectory
-    XCTAssertTrue(first === second, "temporaryDirectory should return the same cached instance on subsequent access")
+    XCTAssertEqual(first, second, "temporaryDirectory should return the same cached directory on subsequent access")
   }
 
   // MARK: - Healthcheck Helpers

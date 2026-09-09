@@ -18,20 +18,23 @@ public enum FBTemporaryDirectoryError: Error, LocalizedError {
   }
 }
 
-@objc(FBTemporaryDirectory)
-public final class FBTemporaryDirectory: NSObject {
+/// A value over the root it manages: two values with the same root are the same directory.
+public struct FBTemporaryDirectory: Equatable {
 
   // MARK: - Properties
 
-  @objc public let logger: FBControlCoreLogger
-  @objc public let queue: DispatchQueue
+  public let logger: any FBControlCoreLogger
+  public let queue: DispatchQueue
 
   private let rootTemporaryDirectory: URL
 
+  public static func == (lhs: FBTemporaryDirectory, rhs: FBTemporaryDirectory) -> Bool {
+    lhs.rootTemporaryDirectory == rhs.rootTemporaryDirectory
+  }
+
   // MARK: - Initializers
 
-  @objc(temporaryDirectoryWithLogger:)
-  public class func temporaryDirectory(logger: FBControlCoreLogger) -> Self {
+  public static func temporaryDirectory(logger: any FBControlCoreLogger) -> FBTemporaryDirectory {
     let temporaryDirectory = uniqueTemporaryDirectoryURL()
     do {
       try FileManager.default.createDirectory(at: temporaryDirectory, withIntermediateDirectories: true, attributes: nil)
@@ -39,11 +42,10 @@ public final class FBTemporaryDirectory: NSObject {
       assertionFailure("Failed to create temporary directory: \(error)")
     }
     let queue = DispatchQueue(label: "com.facebook.idb.fbtemporarydirectory")
-    return self.init(rootDirectory: temporaryDirectory, queue: queue, logger: logger)
+    return FBTemporaryDirectory(rootDirectory: temporaryDirectory, queue: queue, logger: logger)
   }
 
-  @objc(initWithLogger:)
-  public convenience init(logger: FBControlCoreLogger) {
+  public init(logger: any FBControlCoreLogger) {
     let temporaryDirectory = FBTemporaryDirectory.uniqueTemporaryDirectoryURL()
     do {
       try FileManager.default.createDirectory(at: temporaryDirectory, withIntermediateDirectories: true, attributes: nil)
@@ -54,23 +56,22 @@ public final class FBTemporaryDirectory: NSObject {
     self.init(rootDirectory: temporaryDirectory, queue: queue, logger: logger)
   }
 
-  private class func uniqueTemporaryDirectoryURL() -> URL {
+  private static func uniqueTemporaryDirectoryURL() -> URL {
     let base = ProcessInfo.processInfo.environment["TMPDIR"] ?? NSTemporaryDirectory()
     return URL(fileURLWithPath: base)
       .appendingPathComponent("IDB")
       .appendingPathComponent(UUID().uuidString)
   }
 
-  required init(rootDirectory: URL, queue: DispatchQueue, logger: FBControlCoreLogger) {
+  init(rootDirectory: URL, queue: DispatchQueue, logger: any FBControlCoreLogger) {
     self.rootTemporaryDirectory = rootDirectory
     self.queue = queue
     self.logger = logger
-    super.init()
   }
 
   // MARK: - Public Methods
 
-  @objc public func cleanOnExit() {
+  public func cleanOnExit() {
     do {
       try FileManager.default.removeItem(at: rootTemporaryDirectory)
       logger.debug().log("Successfully removed temporal directory: \(rootTemporaryDirectory)")
@@ -79,7 +80,7 @@ public final class FBTemporaryDirectory: NSObject {
     }
   }
 
-  @objc public func ephemeralTemporaryDirectory() -> URL {
+  public func ephemeralTemporaryDirectory() -> URL {
     return rootTemporaryDirectory.appendingPathComponent(UUID().uuidString)
   }
 
@@ -160,7 +161,7 @@ public final class FBTemporaryDirectory: NSObject {
 
   // MARK: - Temporary Directory
 
-  @objc public func temporaryDirectory() -> URL {
+  public func temporaryDirectory() -> URL {
     let tempDirectory = ephemeralTemporaryDirectory()
     logger.log("Creating Temp Dir \(tempDirectory)")
     do {
