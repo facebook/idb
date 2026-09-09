@@ -99,8 +99,21 @@ class ListLocaleCommand(ClientCommand):
             print(locale_identifier)
 
 
-ListCommand = CommandGroup(
-    name="list",
-    description="Lists values from the target",
-    commands=[ListLocaleCommand()],
-)
+def build_list_command() -> CommandGroup:
+    """A freshly constructed ``list`` group.
+
+    A group is mutable: adding it to a parser records that parser on it and
+    memoises its subcommand lookup. One instance shared between two command
+    graphs would therefore have the second graph's state overwrite the
+    first's, so every graph builds its own.
+    """
+    return CommandGroup(
+        name="list",
+        description="Lists values from the target",
+        commands=[ListLocaleCommand()],
+    )
+
+
+# Kept for callers that already import this name. The command graph builds its
+# own group with the factory above rather than sharing this one.
+ListCommand: CommandGroup = build_list_command()
