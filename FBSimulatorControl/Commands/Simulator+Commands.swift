@@ -63,8 +63,8 @@ extension FBSimulator {
 
   // MARK: - Sim-only accessors
 
-  var lifecycle: FBSimulatorLifecycleCommands {
-    commandCache.resolve { FBSimulatorLifecycleCommands.commands(with: self) }
+  var lifecycle: SimulatorLifecycleCommands {
+    commandCache.resolve { SimulatorLifecycleCommands.commands(with: self) }
   }
 
   var media: SimulatorMediaCommands {
