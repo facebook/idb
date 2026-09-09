@@ -9,7 +9,7 @@
 import Testing
 
 @Suite
-struct FBSpringboardIconLayoutTests {
+struct SpringboardIconLayoutTests {
 
   @Test
   func parsesRawIconLayoutPages() throws {

@@ -31,7 +31,7 @@ private let debugServerSessionEvents = [
 /// both of which are the main queue, so the assertions have to read them from the same one.
 @MainActor
 @Suite(.serialized)
-final class FBDeviceDebugServerTests {
+final class DeviceDebugServerTests {
 
   private let amDevice = FakeAMDevice()
 

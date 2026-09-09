@@ -20,7 +20,7 @@ private let secondSignature = Data([0xBE, 0xEF])
 @MainActor
 // Serialized: the fake device's queues are the main queue, so parallel tests would interleave on it.
 @Suite(.serialized)
-struct FBDeviceDeveloperDiskImageCommandsTests {
+struct DeviceDeveloperDiskImageCommandsTests {
 
   private let amDevice = FakeAMDevice()
 

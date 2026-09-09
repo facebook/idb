@@ -22,7 +22,7 @@ struct AMRestorableDeviceManagerRetentionTests {
   /// `AMDCalls` with just the registration pair stubbed: registering reports a plausible
   /// identifier, unregistering does nothing. No device is involved.
   private func stubbedCalls() -> AMDCalls {
-    var calls = FBCreateZeroedAMDCalls()
+    var calls = CreateZeroedAMDCalls()
     calls.RestorableDeviceRegisterForNotifications = { _, _, _, _ in 1 }
     calls.RestorableDeviceUnregisterForNotifications = { _ in 0 }
     return calls

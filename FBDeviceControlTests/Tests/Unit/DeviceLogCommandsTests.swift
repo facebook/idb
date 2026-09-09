@@ -31,7 +31,7 @@ private let syslogSessionEvents = [
 /// both of which are the main queue, so the assertions have to read them from the same one.
 @MainActor
 @Suite(.serialized)
-final class FBDeviceLogCommandsTests {
+final class DeviceLogCommandsTests {
 
   private let amDevice = FakeAMDevice()
   private let device: FBDevice

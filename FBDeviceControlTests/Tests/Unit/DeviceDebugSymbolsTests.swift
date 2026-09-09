@@ -30,7 +30,7 @@ private func index(of path: String) -> Int {
 }
 
 @Suite
-struct FBDeviceDebugSymbolsTests {
+struct DeviceDebugSymbolsTests {
 
   // MARK: - Selecting the shared cache files
 

@@ -16,7 +16,7 @@ private let DiagnosticsRelayService = "com.apple.mobile.diagnostics_relay"
 @MainActor
 // Serialized: the fake device's queues are the main queue, so parallel tests would interleave on it.
 @Suite(.serialized)
-struct FBDevicePowerCommandsTests {
+struct DevicePowerCommandsTests {
 
   private let amDevice = FakeAMDevice()
 

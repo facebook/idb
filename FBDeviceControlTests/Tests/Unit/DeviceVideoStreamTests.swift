@@ -15,7 +15,7 @@ import Testing
 /// Format → subclass dispatch and each subclass's `consumeSampleBuffer` byte contract. The
 /// AVFoundation capture plumbing needs hardware and is not covered here.
 @Suite
-struct FBDeviceVideoStreamTests {
+struct DeviceVideoStreamTests {
 
   private func configuration(_ format: FBVideoStreamFormat) -> FBVideoStreamConfiguration {
     FBVideoStreamConfiguration(format: format, framesPerSecond: nil, rateControl: nil, scaleFactor: nil, keyFrameRate: nil)

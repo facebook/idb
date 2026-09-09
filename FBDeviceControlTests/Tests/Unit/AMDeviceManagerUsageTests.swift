@@ -45,7 +45,7 @@ final class AMDeviceManagerUsageTests {
   }
 
   private func stubbedCalls() -> AMDCalls {
-    var calls = FBCreateZeroedAMDCalls()
+    var calls = CreateZeroedAMDCalls()
     calls.Connect = { _ in
       sUsageRecorder.record("connect")
       return 0

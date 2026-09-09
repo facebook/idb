@@ -14,11 +14,11 @@ import Testing
 /// and may omit keys or carry unexpectedly-typed values, so every accessor must degrade to the
 /// unknown value rather than trap.
 @Suite
-struct FBAMRestorableDeviceTests {
+struct AMRestorableDeviceTests {
 
   private func device(allValues: [String: Any]) -> FBAMRestorableDevice {
     FBAMRestorableDevice(
-      calls: FBCreateZeroedAMDCalls(),
+      calls: CreateZeroedAMDCalls(),
       restorableDevice: "fake-restorable-ref" as AnyObject,
       allValues: allValues,
       work: DispatchQueue(label: "com.facebook.fbdevicecontrol.tests.work"),

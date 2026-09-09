@@ -22,7 +22,7 @@ private func payload(_ count: Int) -> Data {
 /// reach only incidentally. The chunking loops, the end-of-file handling and the length header's
 /// byte order are the parts a rewrite of this class would most easily get wrong.
 @Suite
-struct FBAMDServiceConnectionTests {
+struct AMDServiceConnectionTests {
 
   private let amDevice = FakeAMDevice()
 

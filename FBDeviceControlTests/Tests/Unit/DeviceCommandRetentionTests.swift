@@ -12,7 +12,7 @@ import Testing
 
 /// Every command accessor on `FBDevice`, so the retention rule is checked against all of them
 /// rather than a hand-picked few.
-enum FBDeviceCommandAccessor: CaseIterable, Sendable {
+enum DeviceCommandAccessor: CaseIterable, Sendable {
   case application
   case crashLog
   case screenshot
@@ -91,7 +91,7 @@ enum FBDeviceCommandAccessor: CaseIterable, Sendable {
 // Serialized for the same reason as the other device-driving suites in this target: the devices
 // these tests build run their work and async queues on the main queue.
 @Suite("Device command retention", .serialized)
-struct FBDeviceCommandRetentionTests {
+struct DeviceCommandRetentionTests {
 
   /// Resolves a command, then reports whether the device survived the only strong reference to it
   /// going away.
@@ -112,8 +112,8 @@ struct FBDeviceCommandRetentionTests {
     #expect(deviceSurvives { _ in } == false)
   }
 
-  @Test("Resolving a command does not retain the device", arguments: FBDeviceCommandAccessor.allCases)
-  func resolvingACommandDoesNotRetainTheDevice(_ accessor: FBDeviceCommandAccessor) {
+  @Test("Resolving a command does not retain the device", arguments: DeviceCommandAccessor.allCases)
+  func resolvingACommandDoesNotRetainTheDevice(_ accessor: DeviceCommandAccessor) {
     #expect(deviceSurvives { accessor.resolve(on: $0) } == false)
   }
 }

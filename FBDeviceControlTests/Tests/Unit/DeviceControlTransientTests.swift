@@ -10,7 +10,7 @@ import FBControlCore
 import Testing
 
 @Suite
-struct FBDeviceControlTransientTests {
+struct DeviceControlTransientTests {
 
   // MARK: - FBDeviceStorage Tests
 

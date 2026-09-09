@@ -10,7 +10,7 @@ import FBDeviceControl
 import Testing
 import XCTestBootstrap
 
-final class FBTestManagerTestReporterDouble: NSObject, FBXCTestReporter {
+final class TestManagerTestReporterDouble: NSObject, FBXCTestReporter {
 
   var testCaseDidStartForTestClassCalled = false
   var testCaseDidFinishForTestClassCalled = false
@@ -38,7 +38,7 @@ final class FBTestManagerTestReporterDouble: NSObject, FBXCTestReporter {
 }
 
 @Suite
-struct FBDeviceXCTestCommandsTests {
+struct DeviceXCTestCommandsTests {
 
   @Test
   func overwriteXCTestRunPropertiesWithBaseProperties() {

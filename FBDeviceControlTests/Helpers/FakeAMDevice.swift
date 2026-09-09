@@ -95,7 +95,7 @@ private func fakeMountImage(
 /// An `AMDCalls` table backed by scripted fakes, so a real `FBAMDevice` and its commands can be
 /// driven through their public API with nothing device-side.
 ///
-/// Every entry a test might reach is populated: `FBCreateZeroedAMDCalls` leaves the rest as null
+/// Every entry a test might reach is populated: `CreateZeroedAMDCalls` leaves the rest as null
 /// function pointers, which crash rather than fail. `CopyErrorText` in particular is reached by
 /// every failure path.
 final class FakeAMDevice: NSObject {
@@ -182,7 +182,7 @@ final class FakeAMDevice: NSObject {
   // MARK: - The call table
 
   var calls: AMDCalls {
-    var calls = FBCreateZeroedAMDCalls()
+    var calls = CreateZeroedAMDCalls()
 
     // Lifecycle. Reference counting is a no-op: this object is owned by the test.
     calls.Retain = { _ in }

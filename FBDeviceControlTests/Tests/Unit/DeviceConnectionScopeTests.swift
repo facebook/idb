@@ -84,7 +84,7 @@ private final class ScopeBarrier: @unchecked Sendable {
 @MainActor
 // Serialized: the fake device's queues are the main queue, so parallel tests would interleave on it.
 @Suite("Device connection scopes", .serialized)
-struct FBDeviceConnectionScopeTests {
+struct DeviceConnectionScopeTests {
 
   private let amDevice = FakeAMDevice()
 
@@ -215,7 +215,7 @@ struct FBDeviceConnectionScopeTests {
   }
 }
 
-/// Separate from `FBDeviceConnectionScopeTests` because it must not be main-actor. That suite runs
+/// Separate from `DeviceConnectionScopeTests` because it must not be main-actor. That suite runs
 /// its scopes one at a time on one thread, so the window in which a session is part way through
 /// being opened never exists there — the first caller runs the connect to completion before any
 /// other gets a turn. On a device the connect takes as long as the hardware takes, and callers

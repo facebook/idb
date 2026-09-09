@@ -39,7 +39,7 @@ private let afcConnectionEvents =
 // main queue; parallel tests would interleave their recordings.
 @MainActor
 @Suite(.serialized)
-final class FBAMDeviceTests {
+final class AMDeviceTests {
 
   private let device: FBAMDevice
 
@@ -50,7 +50,7 @@ final class FBAMDeviceTests {
   // MARK: - Helpers
 
   private static var stubbedCalls: AMDCalls {
-    var calls = FBCreateZeroedAMDCalls()
+    var calls = CreateZeroedAMDCalls()
 
     calls.Retain = { _ in }
 

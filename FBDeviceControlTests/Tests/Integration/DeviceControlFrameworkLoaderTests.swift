@@ -10,7 +10,7 @@ import FBControlCore
 import Testing
 
 @Suite
-struct FBDeviceControlFrameworkLoaderTests {
+struct DeviceControlFrameworkLoaderTests {
 
   init() {
     if ProcessInfo.processInfo.environment[FBControlCoreStderrLogging] == nil {

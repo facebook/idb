@@ -45,7 +45,7 @@ struct AMDServiceConnectionReaderTests {
 
   @Test
   func readerDeliversEndOfFileToTheConsumer() async throws {
-    var calls = FBCreateZeroedAMDCalls()
+    var calls = CreateZeroedAMDCalls()
     calls.ServiceConnectionGetSecureIOContext = { _ in nil }
     calls.ServiceConnectionReceive = endOfFileReceive
     let connection = makeConnection(calls: calls)
@@ -63,7 +63,7 @@ struct AMDServiceConnectionReaderTests {
   @Test
   func invalidationWaitsForInFlightReadToFinish() async throws {
     sReceiveGate = DispatchSemaphore(value: 0)
-    var calls = FBCreateZeroedAMDCalls()
+    var calls = CreateZeroedAMDCalls()
     calls.ServiceConnectionGetSecureIOContext = { _ in nil }
     calls.ServiceConnectionReceive = blockingReceive
     calls.ServiceConnectionInvalidate = invalidateUnblockingReceive

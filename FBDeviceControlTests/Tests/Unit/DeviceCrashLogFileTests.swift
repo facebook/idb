@@ -34,7 +34,7 @@ private let crashReport = """
 @MainActor
 // Serialized: the fake device's queues are the main queue, so parallel tests would interleave on it.
 @Suite(.serialized)
-struct FBDeviceCrashLogFileTests {
+struct DeviceCrashLogFileTests {
 
   private let amDevice = FakeAMDevice()
   private let afc = FakeAFC()

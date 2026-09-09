@@ -60,7 +60,7 @@ private func contentsOfVirtualizedDirectory(_ directory: String) -> [String] {
 // Serialized: the C-callback stubs record into file-scope globals (`sEvents`
 // and friends) that `init` resets, which would race across parallel tests.
 @Suite(.serialized)
-final class FBAFCConnectionTests {
+final class AFCConnectionTests {
 
   private var rootHostDirectory: String = ""
   private var fooHostFilePath: String = ""
