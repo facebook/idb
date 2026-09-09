@@ -130,8 +130,65 @@ jobs:
           key: grpc-swift-1.23.1-${{ runner.os }}
       - name: Build everything and assemble the distribution
         run: ./build.sh build all
+      # Archived first: artifact upload does not keep file modes, and the
+      # end-to-end job has to execute what it downloads.
+      - name: Archive the distribution
+        run: tar -C Build -czf idb-companion-distribution.tgz Distribution
       - name: Upload distribution
         uses: actions/upload-artifact@v5
         with:
           name: idb-companion-distribution
-          path: Build/Distribution
+          path: idb-companion-distribution.tgz
+
+  mac-end-to-end:
+    name: End-to-end (idb through idb_companion, macOS)
+    runs-on: macos-26
+    needs: mac-companion
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Install fb-idb from source
+        run: FB_IDB_VERSION=0.0.0 pip install .
+      - name: Download the distribution
+        uses: actions/download-artifact@v5
+        with:
+          name: idb-companion-distribution
+      - name: Unpack the distribution
+        run: |
+          mkdir -p Build
+          tar -C Build -xzf idb-companion-distribution.tgz
+      # The suite consumes a booted simulator and does not boot one; this job
+      # is the harness that supplies it, named by DEVICE_UDID in the device set
+      # named by DEVICE_SET_PATH. Both are required, so the suite can never run
+      # against a simulator other than the one created here. A device set of
+      # this job's own keeps it clear of anything else on the runner.
+      # `bootstatus` waits for the boot to finish rather than for it to start.
+      - name: Boot a simulator
+        run: |
+          DEVICE_SET_PATH="$RUNNER_TEMP/end-to-end-device-set"
+          mkdir -p "$DEVICE_SET_PATH"
+          UDID=$(xcrun simctl --set "$DEVICE_SET_PATH" create end-to-end-provided "iPhone 16")
+          xcrun simctl --set "$DEVICE_SET_PATH" boot "$UDID"
+          xcrun simctl --set "$DEVICE_SET_PATH" bootstatus "$UDID"
+          echo "DEVICE_SET_PATH=$DEVICE_SET_PATH" >> "$GITHUB_ENV"
+          echo "DEVICE_UDID=$UDID" >> "$GITHUB_ENV"
+      # Strict: a hosted runner has everything the suite needs, so a skip here
+      # would hide a broken environment rather than report a capability gap.
+      - name: Run the end-to-end suite
+        run: |
+          IDB_BIN="$(command -v idb)" \
+          IDB_COMPANION_PATH="$PWD/Build/Distribution/idb_companion" \
+          IDB_E2E_STRICT=1 \
+          python -m unittest discover -s EndToEndTests -t . -v
+      # The companion's log is where a failing command explains itself.
+      - name: Upload the companion log on failure
+        if: failure()
+        uses: actions/upload-artifact@v5
+        with:
+          name: end-to-end-companion-log
+          path: /tmp/idb-e2e-*/companion.log
+          if-no-files-found: ignore
+          retention-days: 14
