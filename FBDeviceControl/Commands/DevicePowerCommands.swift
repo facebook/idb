@@ -8,11 +8,11 @@
 import FBControlCore
 import Foundation
 
-public final class FBDevicePowerCommands {
+public final class DevicePowerCommands {
   private weak var device: FBDevice?
 
-  public class func commands(with device: FBDevice) -> FBDevicePowerCommands {
-    FBDevicePowerCommands(device: device)
+  public class func commands(with device: FBDevice) -> DevicePowerCommands {
+    DevicePowerCommands(device: device)
   }
 
   init(device: FBDevice) {
@@ -25,10 +25,10 @@ public final class FBDevicePowerCommands {
     }
     try await device.withServiceConnection("com.apple.mobile.diagnostics_relay") { connection in
       guard let result = try connection.sendAndReceiveMessage(["Request": request]) as? NSDictionary else {
-        throw FBDiagnosticsRelayError.unexpectedResponse
+        throw DiagnosticsRelayError.unexpectedResponse
       }
       if (result["Status"] as? String) != "Success" {
-        throw FBDiagnosticsRelayError.unsuccessful(response: String(describing: result))
+        throw DiagnosticsRelayError.unsuccessful(response: String(describing: result))
       }
     }
   }

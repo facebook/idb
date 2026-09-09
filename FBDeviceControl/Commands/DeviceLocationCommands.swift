@@ -10,11 +10,11 @@ import Foundation
 
 private let StartCommand: UInt32 = 0x00000000
 
-public final class FBDeviceLocationCommands {
+public final class DeviceLocationCommands {
   private weak var device: FBDevice?
 
-  public class func commands(with device: FBDevice) -> FBDeviceLocationCommands {
-    FBDeviceLocationCommands(device: device)
+  public class func commands(with device: FBDevice) -> DeviceLocationCommands {
+    DeviceLocationCommands(device: device)
   }
 
   init(device: FBDevice) {

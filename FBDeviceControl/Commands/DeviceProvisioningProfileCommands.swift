@@ -8,7 +8,7 @@
 @preconcurrency import FBControlCore
 import Foundation
 
-public enum FBDeviceProvisioningProfileError: Error {
+public enum DeviceProvisioningProfileError: Error {
   case copyFailed
   case removeFailed(uuid: String, message: String)
   case constructionFailed(dataDescription: String)
@@ -16,7 +16,7 @@ public enum FBDeviceProvisioningProfileError: Error {
   case payloadUnavailable(profileDescription: String)
 }
 
-extension FBDeviceProvisioningProfileError: LocalizedError {
+extension DeviceProvisioningProfileError: LocalizedError {
   public var errorDescription: String? {
     switch self {
     case .copyFailed:
@@ -33,11 +33,11 @@ extension FBDeviceProvisioningProfileError: LocalizedError {
   }
 }
 
-public final class FBDeviceProvisioningProfileCommands: ProvisioningProfileCommands {
+public final class DeviceProvisioningProfileCommands: ProvisioningProfileCommands {
   private(set) weak var device: FBDevice?
 
-  public class func commands(with device: FBDevice) -> FBDeviceProvisioningProfileCommands {
-    return FBDeviceProvisioningProfileCommands(device: device)
+  public class func commands(with device: FBDevice) -> DeviceProvisioningProfileCommands {
+    return DeviceProvisioningProfileCommands(device: device)
   }
 
   public init(device: FBDevice) {
@@ -52,7 +52,7 @@ public final class FBDeviceProvisioningProfileCommands: ProvisioningProfileComma
     }
     return try await device.withConnectedDevice(purpose: "list_provisioning_profiles") { connectedDevice in
       guard let profiles = connectedDevice.calls.CopyProvisioningProfiles?(connectedDevice.amDeviceRef)?.takeRetainedValue() as? [Any] else {
-        throw FBDeviceProvisioningProfileError.copyFailed
+        throw DeviceProvisioningProfileError.copyFailed
       }
       var allProfiles: [[String: Any]] = []
       for profile in profiles {
@@ -78,7 +78,7 @@ public final class FBDeviceProvisioningProfileCommands: ProvisioningProfileComma
       if status != 0 {
         let errRef = connectedDevice.calls.ProvisioningProfileCopyErrorStringForCode?(status)
         let errorDescription = errRef?.takeRetainedValue() as String? ?? "Unknown error"
-        throw FBDeviceProvisioningProfileError.removeFailed(uuid: uuid, message: errorDescription)
+        throw DeviceProvisioningProfileError.removeFailed(uuid: uuid, message: errorDescription)
       }
       return [:]
     }
@@ -90,14 +90,14 @@ public final class FBDeviceProvisioningProfileCommands: ProvisioningProfileComma
     }
     return try await device.withConnectedDevice(purpose: "install_provisioning_profile") { connectedDevice in
       guard let profileUnmanaged = connectedDevice.calls.ProvisioningProfileCreateWithData?(profileData as CFData) else {
-        throw FBDeviceProvisioningProfileError.constructionFailed(dataDescription: String(describing: profileData))
+        throw DeviceProvisioningProfileError.constructionFailed(dataDescription: String(describing: profileData))
       }
       let profile = profileUnmanaged.takeRetainedValue()
       let status = connectedDevice.calls.InstallProvisioningProfile?(connectedDevice.amDeviceRef, profile) ?? -1
       if status != 0 {
         let errRef = connectedDevice.calls.ProvisioningProfileCopyErrorStringForCode?(status)
         let errorDescription = errRef?.takeRetainedValue() as String? ?? "Unknown error"
-        throw FBDeviceProvisioningProfileError.installFailed(profileDescription: String(describing: profile), message: errorDescription)
+        throw DeviceProvisioningProfileError.installFailed(profileDescription: String(describing: profile), message: errorDescription)
       }
       let payloadRef = connectedDevice.calls.ProvisioningProfileCopyPayload?(profile)
       var payload = payloadRef?.takeRetainedValue() as? [String: Any]
@@ -105,7 +105,7 @@ public final class FBDeviceProvisioningProfileCommands: ProvisioningProfileComma
         payload = FBCollectionOperations.recursiveFilteredJSONSerializableRepresentation(of: p)
       }
       guard let payload else {
-        throw FBDeviceProvisioningProfileError.payloadUnavailable(profileDescription: String(describing: profile))
+        throw DeviceProvisioningProfileError.payloadUnavailable(profileDescription: String(describing: profile))
       }
       return payload
     }

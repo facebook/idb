@@ -30,7 +30,7 @@ private func amDeviceConnected(_ device: AMDevice, manager: AMDeviceManager) {
   // `CFStringRef` while MobileDevice returns whatever CF type the key holds. The ECID comes back
   // as a number on some devices and a string on others, so accepting only one silently drops the
   // devices reporting the other.
-  let rawChipID = calls.CopyValue(device, nil, FBDeviceKey.uniqueChipID.rawValue as CFString)?.takeRetainedValue() as AnyObject?
+  let rawChipID = calls.CopyValue(device, nil, DeviceKey.uniqueChipID.rawValue as CFString)?.takeRetainedValue() as AnyObject?
   guard let uniqueChipID = (rawChipID as? NSNumber)?.stringValue ?? (rawChipID as? String) else {
     FBAMDeviceUsage.stopConnection(to: device, calls: calls, logger: logger)
     logger.error().log("Ignoring device as cannot obtain ECID for it")
@@ -62,8 +62,8 @@ private func amDeviceConnected(_ device: AMDevice, manager: AMDeviceManager) {
     logger.error().log("Ignoring device as no values were returned for it")
     return
   }
-  guard info[FBDeviceKey.uniqueDeviceID.rawValue] != nil else {
-    logger.error().log("Ignoring device as \(FBDeviceKey.uniqueDeviceID.rawValue) is not present in \(info)")
+  guard info[DeviceKey.uniqueDeviceID.rawValue] != nil else {
+    logger.error().log("Ignoring device as \(DeviceKey.uniqueDeviceID.rawValue) is not present in \(info)")
     return
   }
   logger.debug().log("Obtained Device Values \(info)")

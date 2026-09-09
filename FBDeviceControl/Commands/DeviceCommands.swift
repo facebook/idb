@@ -9,19 +9,19 @@
 import Foundation
 
 /// The Activation State of the device.
-public enum FBDeviceActivationState: String, Sendable, CaseIterable {
+public enum DeviceActivationState: String, Sendable, CaseIterable {
   case unknown = "Unknown"
   case unactivated = "Unactivated"
   case activated = "Activated"
 }
 
 /// The canonical activation state for whatever the device reported.
-func FBDeviceActivationStateCoerceFromString(_ activationState: String) -> FBDeviceActivationState {
-  FBDeviceActivationState(rawValue: activationState) ?? .unknown
+func FBDeviceActivationStateCoerceFromString(_ activationState: String) -> DeviceActivationState {
+  DeviceActivationState(rawValue: activationState) ?? .unknown
 }
 
 /// Keys of the device information dictionaries MobileDevice populates.
-public enum FBDeviceKey: String, Sendable, CaseIterable {
+public enum DeviceKey: String, Sendable, CaseIterable {
   case chipID = "ChipID"
   case deviceClass = "DeviceClass"
   case deviceName = "DeviceName"

@@ -36,7 +36,7 @@ struct DeviceDebugSymbolsTests {
 
   @Test
   func selectsOnlySharedCacheFilesUnderSystemLibrary() {
-    let matching = FBDeviceDebugSymbolsCommands.matchingPathsOfSharedCache(remoteListing)
+    let matching = DeviceDebugSymbolsCommands.matchingPathsOfSharedCache(remoteListing)
 
     #expect(
       matching == [
@@ -48,7 +48,7 @@ struct DeviceDebugSymbolsTests {
 
   @Test
   func excludesSharedCacheNamesOutsideSystemLibrary() {
-    let matching = FBDeviceDebugSymbolsCommands.matchingPathsOfSharedCache([
+    let matching = DeviceDebugSymbolsCommands.matchingPathsOfSharedCache([
       "/private/var/db/stash/shared_cache_decoy"
     ])
 
@@ -57,7 +57,7 @@ struct DeviceDebugSymbolsTests {
 
   @Test
   func excludesSystemLibraryFilesThatAreNotSharedCache() {
-    let matching = FBDeviceDebugSymbolsCommands.matchingPathsOfSharedCache([
+    let matching = DeviceDebugSymbolsCommands.matchingPathsOfSharedCache([
       "/System/Library/CoreServices/SystemVersion.plist"
     ])
 
@@ -71,7 +71,7 @@ struct DeviceDebugSymbolsTests {
     let cache = "/System/Library/Caches/com.apple.dyld/dyld_shared_cache_arm64e"
     let map = "/System/Library/Caches/com.apple.dyld/dyld_shared_cache_arm64e.map"
 
-    let matched = try FBDeviceDebugSymbolsCommands.matchFiles([cache, map], againstFileIndices: remoteListing)
+    let matched = try DeviceDebugSymbolsCommands.matchFiles([cache, map], againstFileIndices: remoteListing)
 
     #expect(matched == [index(of: cache): cache, index(of: map): map])
   }
@@ -79,7 +79,7 @@ struct DeviceDebugSymbolsTests {
   @Test
   func failsWhenAFileIsAbsentFromTheListing() {
     let error = #expect(throws: (any Error).self) {
-      try FBDeviceDebugSymbolsCommands.matchFiles(["/System/Library/Caches/absent"], againstFileIndices: remoteListing)
+      try DeviceDebugSymbolsCommands.matchFiles(["/System/Library/Caches/absent"], againstFileIndices: remoteListing)
     }
 
     #expect(
@@ -97,7 +97,7 @@ struct DeviceDebugSymbolsTests {
       "/local/dyld_shared_cache_arm64e.map",
     ]
 
-    let sharedCache = try FBDeviceDebugSymbolsCommands.extractSharedCachePath(fromPaths: paths)
+    let sharedCache = try DeviceDebugSymbolsCommands.extractSharedCachePath(fromPaths: paths)
 
     #expect(sharedCache == "/local/dyld_shared_cache_arm64e")
   }
@@ -107,7 +107,7 @@ struct DeviceDebugSymbolsTests {
     let paths = ["/local/dyld_shared_cache_arm64e.symbols", "/local/dyld_shared_cache_arm64e.map"]
 
     let error = #expect(throws: (any Error).self) {
-      try FBDeviceDebugSymbolsCommands.extractSharedCachePath(fromPaths: paths)
+      try DeviceDebugSymbolsCommands.extractSharedCachePath(fromPaths: paths)
     }
 
     #expect(

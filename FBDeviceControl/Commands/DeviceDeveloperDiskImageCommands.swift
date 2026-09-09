@@ -26,7 +26,7 @@ private func mountCallback(_ callbackDictionary: [String: Any]?, _ context: Unsa
   }
 }
 
-public enum FBDeviceDiskImageError: Error {
+public enum DeviceDiskImageError: Error {
   case missingMountPath(key: String, entry: String)
   case imageNotMounted(imageDescription: String)
   case noProductVersion(deviceDescription: String)
@@ -37,7 +37,7 @@ public enum FBDeviceDiskImageError: Error {
   case mountFailed(imagePath: String, status: Int32, message: String)
 }
 
-extension FBDeviceDiskImageError: LocalizedError {
+extension DeviceDiskImageError: LocalizedError {
   public var errorDescription: String? {
     switch self {
     case let .missingMountPath(key, entry):
@@ -60,14 +60,14 @@ extension FBDeviceDiskImageError: LocalizedError {
   }
 }
 
-public final class FBDeviceDeveloperDiskImageCommands: DeveloperDiskImageCommands {
+public final class DeviceDeveloperDiskImageCommands: DeveloperDiskImageCommands {
   private(set) weak var device: FBDevice?
   private let diskImages: any DeveloperDiskImageProviding
 
   // MARK: - Initializers
 
-  public class func commands(with device: FBDevice) -> FBDeviceDeveloperDiskImageCommands {
-    FBDeviceDeveloperDiskImageCommands(device: device)
+  public class func commands(with device: FBDevice) -> DeviceDeveloperDiskImageCommands {
+    DeviceDeveloperDiskImageCommands(device: device)
   }
 
   init(device: FBDevice, diskImages: any DeveloperDiskImageProviding = InstalledDeveloperDiskImages()) {
@@ -94,12 +94,12 @@ public final class FBDeviceDeveloperDiskImageCommands: DeveloperDiskImageCommand
         continue
       }
       guard let mountPath = mountEntry[MountPathKey] as? String else {
-        throw FBDeviceDiskImageError.missingMountPath(key: MountPathKey, entry: String(describing: mountEntry))
+        throw DeviceDiskImageError.missingMountPath(key: MountPathKey, entry: String(describing: mountEntry))
       }
       try await unmountDiskImageAtPath(mountPath)
       return
     }
-    throw FBDeviceDiskImageError.imageNotMounted(imageDescription: String(describing: diskImage))
+    throw DeviceDiskImageError.imageNotMounted(imageDescription: String(describing: diskImage))
   }
 
   public func mountableDiskImages() -> [FBDeveloperDiskImage] {
@@ -111,7 +111,7 @@ public final class FBDeviceDeveloperDiskImageCommands: DeveloperDiskImageCommand
       throw FBDeviceNilError.deviceNil
     }
     guard let productVersion = device.productVersion else {
-      throw FBDeviceDiskImageError.noProductVersion(deviceDescription: String(describing: device))
+      throw DeviceDiskImageError.noProductVersion(deviceDescription: String(describing: device))
     }
     let targetVersion = FBOSVersion.operatingSystemVersion(fromName: productVersion)
     let diskImage = try FBDeveloperDiskImage.bestImage(
@@ -154,13 +154,13 @@ public final class FBDeviceDeveloperDiskImageCommands: DeveloperDiskImageCommand
       ]
       let message = try connection.sendAndReceiveMessage(request)
       guard let response = message as? [String: Any] else {
-        throw FBDeviceDiskImageError.copyDevicesResponseNotADictionary(response: String(describing: message))
+        throw DeviceDiskImageError.copyDevicesResponseNotADictionary(response: String(describing: message))
       }
       if let errorString = response["Error"] as? String {
-        throw FBDeviceDiskImageError.mountedImageInfoUnavailable(message: errorString)
+        throw DeviceDiskImageError.mountedImageInfoUnavailable(message: errorString)
       }
       guard let entries = response["EntryList"] as? [[String: Any]] else {
-        throw FBDeviceDiskImageError.missingEntryList(response: String(describing: response))
+        throw DeviceDiskImageError.missingEntryList(response: String(describing: response))
       }
       return entries
     }
@@ -204,10 +204,10 @@ public final class FBDeviceDeveloperDiskImageCommands: DeveloperDiskImageCommand
           context
         ) ?? -1
       if status == DiskImageMountingError {
-        throw FBDeviceDiskImageError.wrongImageMounted(imageDescription: String(describing: diskImage))
+        throw DeviceDiskImageError.wrongImageMounted(imageDescription: String(describing: diskImage))
       } else if status != 0 {
         let internalMessage = connectedDevice.calls.CopyErrorText?(status)?.takeRetainedValue() as String? ?? "Unknown error"
-        throw FBDeviceDiskImageError.mountFailed(imagePath: diskImage.diskImagePath, status: status, message: internalMessage)
+        throw DeviceDiskImageError.mountFailed(imagePath: diskImage.diskImagePath, status: status, message: internalMessage)
       }
       return diskImage
     }

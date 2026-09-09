@@ -10,11 +10,11 @@ import Foundation
 
 private let ScreenShotDataKey = "ScreenShotData"
 
-public enum FBDeviceScreenshotError: Error {
+public enum DeviceScreenshotError: Error {
   case notImageData(response: String, key: String)
 }
 
-extension FBDeviceScreenshotError: LocalizedError {
+extension DeviceScreenshotError: LocalizedError {
   public var errorDescription: String? {
     switch self {
     case let .notImageData(response, key):
@@ -23,11 +23,11 @@ extension FBDeviceScreenshotError: LocalizedError {
   }
 }
 
-public final class FBDeviceScreenshotCommands {
+public final class DeviceScreenshotCommands {
   private weak var device: FBDevice?
 
-  public class func commands(with device: FBDevice) -> FBDeviceScreenshotCommands {
-    FBDeviceScreenshotCommands(device: device)
+  public class func commands(with device: FBDevice) -> DeviceScreenshotCommands {
+    DeviceScreenshotCommands(device: device)
   }
 
   init(device: FBDevice) {
@@ -55,7 +55,7 @@ public final class FBDeviceScreenshotCommands {
     try await device.withDeviceLinkClient("com.apple.mobile.screenshotr") { client in
       let response = try await client.processMessage(["MessageType": "ScreenShotRequest"])
       guard let screenshotData = response[ScreenShotDataKey] as? NSData else {
-        throw FBDeviceScreenshotError.notImageData(response: String(describing: response), key: ScreenShotDataKey)
+        throw DeviceScreenshotError.notImageData(response: String(describing: response), key: ScreenShotDataKey)
       }
       return screenshotData as Data
     }

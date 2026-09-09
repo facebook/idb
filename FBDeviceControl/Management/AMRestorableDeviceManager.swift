@@ -153,15 +153,15 @@ final class AMRestorableDeviceManager: DeviceManager<FBAMRestorableDevice> {
     Unmanaged.passUnretained(publicDevice.restorableDevice)
   }
 
-  private func info(forRestorableDevice device: AMRestorableDevice) -> [FBDeviceKey: Any] {
+  private func info(forRestorableDevice device: AMRestorableDevice) -> [DeviceKey: Any] {
     [
-      FBDeviceKey.chipID: Int(calls.RestorableDeviceGetChipID(device)),
-      FBDeviceKey.deviceClass: Int(calls.RestorableDeviceGetDeviceClass(device)),
-      FBDeviceKey.locationID: Int(calls.RestorableDeviceGetLocationID(device)),
-      FBDeviceKey.serialNumber: calls.RestorableDeviceCopySerialNumber(device)?.takeRetainedValue() as String? ?? NSNull(),
-      FBDeviceKey.deviceName: calls.RestorableDeviceCopyUserFriendlyName(device)?.takeRetainedValue() as String? ?? NSNull(),
-      FBDeviceKey.productType: calls.RestorableDeviceCopyProductString(device)?.takeRetainedValue() as String? ?? NSNull(),
-      FBDeviceKey.uniqueChipID: NSNumber(value: calls.RestorableDeviceGetECID(device)),
+      DeviceKey.chipID: Int(calls.RestorableDeviceGetChipID(device)),
+      DeviceKey.deviceClass: Int(calls.RestorableDeviceGetDeviceClass(device)),
+      DeviceKey.locationID: Int(calls.RestorableDeviceGetLocationID(device)),
+      DeviceKey.serialNumber: calls.RestorableDeviceCopySerialNumber(device)?.takeRetainedValue() as String? ?? NSNull(),
+      DeviceKey.deviceName: calls.RestorableDeviceCopyUserFriendlyName(device)?.takeRetainedValue() as String? ?? NSNull(),
+      DeviceKey.productType: calls.RestorableDeviceCopyProductString(device)?.takeRetainedValue() as String? ?? NSNull(),
+      DeviceKey.uniqueChipID: NSNumber(value: calls.RestorableDeviceGetECID(device)),
     ]
   }
 }

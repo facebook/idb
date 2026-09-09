@@ -53,7 +53,7 @@ private final class DeviceEraseOperation: NSObject, FBiOSTargetSetDelegate, @unc
     logger.log("Device has been detected, starting erase API Call")
     let eraseCallbackValue = try await startErase()
     guard eraseCallbackValue == EraseCallbackValueGood else {
-      throw FBDeviceEraseError.badEraseCallback(value: eraseCallbackValue, expected: EraseCallbackValueGood)
+      throw DeviceEraseError.badEraseCallback(value: eraseCallbackValue, expected: EraseCallbackValueGood)
     }
     logger.log("Device API call finished, waiting for device to go offline")
     try await awaitEvent(deviceWentAway, timeout: OfflineTimeout, waitingFor: "Device to go offline")
@@ -117,13 +117,13 @@ private final class DeviceEraseOperation: NSObject, FBiOSTargetSetDelegate, @unc
   func targetUpdated(_ targetInfo: any FBiOSTargetInfo, in targetSet: any FBiOSTargetSet) {}
 }
 
-// MARK: - FBDeviceEraseCommands
+// MARK: - DeviceEraseCommands
 
-public enum FBDeviceEraseError: Error {
+public enum DeviceEraseError: Error {
   case badEraseCallback(value: Int32, expected: Int32)
 }
 
-extension FBDeviceEraseError: LocalizedError {
+extension DeviceEraseError: LocalizedError {
   public var errorDescription: String? {
     switch self {
     case let .badEraseCallback(value, expected):
@@ -132,12 +132,12 @@ extension FBDeviceEraseError: LocalizedError {
   }
 }
 
-public final class FBDeviceEraseCommands: EraseCommands {
+public final class DeviceEraseCommands: EraseCommands {
 
   private weak var device: FBDevice?
 
-  public class func commands(with device: FBDevice) -> FBDeviceEraseCommands {
-    FBDeviceEraseCommands(device: device)
+  public class func commands(with device: FBDevice) -> DeviceEraseCommands {
+    DeviceEraseCommands(device: device)
   }
 
   init(device: FBDevice) {

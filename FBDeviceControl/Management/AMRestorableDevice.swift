@@ -60,7 +60,7 @@ public final class FBAMRestorableDevice: FBiOSTargetInfo, FBDeviceProtocol {
   // unexpected must degrade to the unknown value rather than trap.
 
   public var uniqueIdentifier: String {
-    let value = allValues[FBDeviceKey.uniqueChipID.rawValue]
+    let value = allValues[DeviceKey.uniqueChipID.rawValue]
     if let number = value as? NSNumber {
       return number.stringValue
     }
@@ -75,7 +75,7 @@ public final class FBAMRestorableDevice: FBiOSTargetInfo, FBDeviceProtocol {
   }
 
   public var name: String {
-    allValues[FBDeviceKey.deviceName.rawValue] as? String ?? UnknownValue
+    allValues[DeviceKey.deviceName.rawValue] as? String ?? UnknownValue
   }
 
   public var state: FBiOSTargetState {
@@ -83,7 +83,7 @@ public final class FBAMRestorableDevice: FBiOSTargetInfo, FBDeviceProtocol {
   }
 
   public var deviceType: FBDeviceType {
-    let productString = allValues[FBDeviceKey.productType.rawValue] as? String ?? UnknownValue
+    let productString = allValues[DeviceKey.productType.rawValue] as? String ?? UnknownValue
     return FBDeviceType.generic(withName: productString)
   }
 
@@ -122,7 +122,7 @@ public final class FBAMRestorableDevice: FBiOSTargetInfo, FBDeviceProtocol {
   }
 
   public var activationState: String {
-    FBDeviceActivationState.unknown.rawValue
+    DeviceActivationState.unknown.rawValue
   }
 
   /// `AMRestorableGetStringForState` is private, and the mapping is simple enough to restate.

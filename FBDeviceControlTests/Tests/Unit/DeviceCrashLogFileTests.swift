@@ -49,8 +49,8 @@ struct DeviceCrashLogFileTests {
     let storeDirectory = (NSTemporaryDirectory() as NSString).appendingPathComponent(UUID().uuidString)
     let store = FBCrashLogStore.store(forDirectories: [storeDirectory], logger: device.logger)
     device.commandCache.register(
-      FBDeviceCrashLogCommands(device: device, store: store, afcCalls: afc.calls),
-      as: FBDeviceCrashLogCommands.self)
+      DeviceCrashLogCommands(device: device, store: store, afcCalls: afc.calls),
+      as: DeviceCrashLogCommands.self)
     amDevice.clearEvents()
     return device
   }

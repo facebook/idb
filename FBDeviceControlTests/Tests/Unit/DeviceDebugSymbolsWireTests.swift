@@ -60,8 +60,8 @@ struct DeviceDebugSymbolsWireTests {
       xcodeVersion: OperatingSystemVersion(majorVersion: 15, minorVersion: 0, patchVersion: 0))
     let device = amDevice.makeDevice()
     device.commandCache.register(
-      FBDeviceDeveloperDiskImageCommands(device: device, diskImages: StubDiskImages(availableDiskImages: [image])),
-      as: FBDeviceDeveloperDiskImageCommands.self)
+      DeviceDeveloperDiskImageCommands(device: device, diskImages: StubDiskImages(availableDiskImages: [image])),
+      as: DeviceDeveloperDiskImageCommands.self)
     let alreadyMounted: [String: Any] = ["EntryList": [["ImageSignature": image.signature, "MountPath": "/Developer"]]]
     amDevice.service(ImageMounterService).repeatingReply = alreadyMounted
     amDevice.clearEvents()

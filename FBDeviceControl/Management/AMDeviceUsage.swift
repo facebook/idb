@@ -98,7 +98,7 @@ public enum FBAMDeviceUsage {
       return nil
     }
 
-    info[FBDeviceKey.isPaired.rawValue] = calls.IsPaired(device) != 0
+    info[DeviceKey.isPaired.rawValue] = calls.IsPaired(device) != 0
 
     // Only meaningful when paired.
     let backupInfo =

@@ -19,9 +19,9 @@ private final class AFCConnectionBox: @unchecked Sendable {
   }
 }
 
-// MARK: - FBDeviceFileContainerError
+// MARK: - DeviceFileContainerError
 
-public enum FBDeviceFileContainerError: Error {
+public enum DeviceFileContainerError: Error {
   case deviceDeallocated
   case tailNotImplemented
   case tailUnsupported(container: String)
@@ -33,13 +33,13 @@ public enum FBDeviceFileContainerError: Error {
   case requiresRootedDevice(operation: String)
 }
 
-extension FBDeviceFileContainerError: LocalizedError {
+extension DeviceFileContainerError: LocalizedError {
   public var errorDescription: String? {
     switch self {
     case .deviceDeallocated:
       return "The device that these file commands were created for has been deallocated"
     case .tailNotImplemented:
-      return "tail is not implemented for FBDeviceFileContainer"
+      return "tail is not implemented for DeviceFileContainer"
     case let .tailUnsupported(container):
       return "tail is not supported for \(container)"
     case let .operationUnsupported(operation, container):
@@ -58,9 +58,9 @@ extension FBDeviceFileContainerError: LocalizedError {
   }
 }
 
-// MARK: - FBDeviceFileContainer
+// MARK: - DeviceFileContainer
 
-public final class FBDeviceFileContainer: AsyncFileContainer {
+public final class DeviceFileContainer: AsyncFileContainer {
   private let queue: DispatchQueue
   private let connectionBox: AFCConnectionBox
 
@@ -87,7 +87,7 @@ public final class FBDeviceFileContainer: AsyncFileContainer {
 
   public func copy(fromContainer sourcePath: String, toHost destinationPath: String) async throws -> String {
     var destination = destinationPath
-    if FBDeviceFileContainer.isDirectory(destinationPath) {
+    if DeviceFileContainer.isDirectory(destinationPath) {
       destination = (destinationPath as NSString).appendingPathComponent((sourcePath as NSString).lastPathComponent)
     }
     let data = try await readFile(inContainer: sourcePath)
@@ -96,7 +96,7 @@ public final class FBDeviceFileContainer: AsyncFileContainer {
   }
 
   public func tail(_ path: String, to consumer: any FBDataConsumer) async throws -> FileContainerTailOperation {
-    throw FBDeviceFileContainerError.tailNotImplemented
+    throw DeviceFileContainerError.tailNotImplemented
   }
 
   public func createDirectory(_ directoryPath: String) async throws {
@@ -200,19 +200,19 @@ private class DeviceFileContainer_Wallpaper: AsyncFileContainer {
   }
 
   func tail(_ path: String, to consumer: any FBDataConsumer) async throws -> FileContainerTailOperation {
-    throw FBDeviceFileContainerError.tailUnsupported(container: "Wallpaper File Containers")
+    throw DeviceFileContainerError.tailUnsupported(container: "Wallpaper File Containers")
   }
 
   func createDirectory(_ directoryPath: String) async throws {
-    throw FBDeviceFileContainerError.operationUnsupported(operation: #function, container: "Wallpaper File Containers")
+    throw DeviceFileContainerError.operationUnsupported(operation: #function, container: "Wallpaper File Containers")
   }
 
   func move(from sourcePath: String, to destinationPath: String) async throws {
-    throw FBDeviceFileContainerError.operationUnsupported(operation: #function, container: "Wallpaper File Containers")
+    throw DeviceFileContainerError.operationUnsupported(operation: #function, container: "Wallpaper File Containers")
   }
 
   func remove(_ path: String) async throws {
-    throw FBDeviceFileContainerError.operationUnsupported(operation: #function, container: "Wallpaper File Containers")
+    throw DeviceFileContainerError.operationUnsupported(operation: #function, container: "Wallpaper File Containers")
   }
 
   func contents(ofDirectory path: String) async throws -> [String] {
@@ -237,19 +237,19 @@ private class DeviceFileContainer_MDMProfiles: AsyncFileContainer {
   }
 
   func copy(fromContainer sourcePath: String, toHost destinationPath: String) async throws -> String {
-    throw FBDeviceFileContainerError.operationUnsupported(operation: #function, container: "MDM Profile File Containers")
+    throw DeviceFileContainerError.operationUnsupported(operation: #function, container: "MDM Profile File Containers")
   }
 
   func tail(_ path: String, to consumer: any FBDataConsumer) async throws -> FileContainerTailOperation {
-    throw FBDeviceFileContainerError.tailUnsupported(container: "MDM Profile File Containers")
+    throw DeviceFileContainerError.tailUnsupported(container: "MDM Profile File Containers")
   }
 
   func createDirectory(_ directoryPath: String) async throws {
-    throw FBDeviceFileContainerError.operationUnsupported(operation: #function, container: "MDM Profile File Containers")
+    throw DeviceFileContainerError.operationUnsupported(operation: #function, container: "MDM Profile File Containers")
   }
 
   func move(from sourcePath: String, to destinationPath: String) async throws {
-    throw FBDeviceFileContainerError.operationUnsupported(operation: #function, container: "MDM Profile File Containers")
+    throw DeviceFileContainerError.operationUnsupported(operation: #function, container: "MDM Profile File Containers")
   }
 
   func remove(_ path: String) async throws {
@@ -275,39 +275,39 @@ private class DeviceFileCommands_DiskImages: AsyncFileContainer {
   // MARK: - AsyncFileContainer
 
   func copy(fromHost sourcePath: String, toContainer destinationPath: String) async throws {
-    throw FBDeviceFileContainerError.operationUnsupported(operation: #function, container: "Disk Images")
+    throw DeviceFileContainerError.operationUnsupported(operation: #function, container: "Disk Images")
   }
 
   func copy(fromContainer sourcePath: String, toHost destinationPath: String) async throws -> String {
-    throw FBDeviceFileContainerError.operationUnsupported(operation: #function, container: "Disk Images")
+    throw DeviceFileContainerError.operationUnsupported(operation: #function, container: "Disk Images")
   }
 
   func tail(_ path: String, to consumer: any FBDataConsumer) async throws -> FileContainerTailOperation {
-    throw FBDeviceFileContainerError.tailUnsupported(container: "Disk Images")
+    throw DeviceFileContainerError.tailUnsupported(container: "Disk Images")
   }
 
   func createDirectory(_ directoryPath: String) async throws {
-    throw FBDeviceFileContainerError.operationUnsupported(operation: #function, container: "Disk Images")
+    throw DeviceFileContainerError.operationUnsupported(operation: #function, container: "Disk Images")
   }
 
   func move(from sourcePath: String, to destinationPath: String) async throws {
     if !destinationPath.hasPrefix(MountRootPath) {
-      throw FBDeviceFileContainerError.moveOutsideMounts(destination: destinationPath)
+      throw DeviceFileContainerError.moveOutsideMounts(destination: destinationPath)
     }
     let mountableImagesByPath = self.mountableDiskImagesByPath
     guard let image = mountableImagesByPath[sourcePath] else {
-      throw FBDeviceFileContainerError.notAMountableImage(path: sourcePath, available: mountableImagesByPath.keys.sorted())
+      throw DeviceFileContainerError.notAMountableImage(path: sourcePath, available: mountableImagesByPath.keys.sorted())
     }
     _ = try await commands.mountDiskImage(image)
   }
 
   func remove(_ path: String) async throws {
     if !path.hasPrefix(MountRootPath) {
-      throw FBDeviceFileContainerError.removeOutsideMounts(path: path)
+      throw DeviceFileContainerError.removeOutsideMounts(path: path)
     }
     let mountedImages = try await mountedDiskImages()
     guard let image = mountedImages[path] else {
-      throw FBDeviceFileContainerError.notAMountedImage(path: path, available: Array(mountedImages.keys))
+      throw DeviceFileContainerError.notAMountedImage(path: path, available: Array(mountedImages.keys))
     }
     try await commands.unmountDiskImage(image)
   }
@@ -390,7 +390,7 @@ private class DeviceFileCommands_Symbols: AsyncFileContainer {
   }
 
   func copy(fromHost sourcePath: String, toContainer destinationPath: String) async throws {
-    throw FBDeviceFileContainerError.operationUnsupported(operation: #function, container: "Symbols")
+    throw DeviceFileContainerError.operationUnsupported(operation: #function, container: "Symbols")
   }
 
   func copy(fromContainer sourcePath: String, toHost destinationPath: String) async throws -> String {
@@ -401,19 +401,19 @@ private class DeviceFileCommands_Symbols: AsyncFileContainer {
   }
 
   func tail(_ path: String, to consumer: any FBDataConsumer) async throws -> FileContainerTailOperation {
-    throw FBDeviceFileContainerError.tailUnsupported(container: "Symbols")
+    throw DeviceFileContainerError.tailUnsupported(container: "Symbols")
   }
 
   func createDirectory(_ directoryPath: String) async throws {
-    throw FBDeviceFileContainerError.operationUnsupported(operation: #function, container: "Symbols")
+    throw DeviceFileContainerError.operationUnsupported(operation: #function, container: "Symbols")
   }
 
   func move(from sourcePath: String, to destinationPath: String) async throws {
-    throw FBDeviceFileContainerError.operationUnsupported(operation: #function, container: "Symbols")
+    throw DeviceFileContainerError.operationUnsupported(operation: #function, container: "Symbols")
   }
 
   func remove(_ path: String) async throws {
-    throw FBDeviceFileContainerError.operationUnsupported(operation: #function, container: "Symbols")
+    throw DeviceFileContainerError.operationUnsupported(operation: #function, container: "Symbols")
   }
 
   func contents(ofDirectory path: String) async throws -> [String] {
@@ -422,20 +422,20 @@ private class DeviceFileCommands_Symbols: AsyncFileContainer {
   }
 }
 
-// MARK: - FBDeviceFileCommands
+// MARK: - DeviceFileCommands
 
-public final class FBDeviceFileCommands {
+public final class DeviceFileCommands {
   private weak var device: FBDevice?
   private let afcCalls: AFCCalls
 
   // MARK: - Initializers
 
-  public class func commands(with device: FBDevice) -> FBDeviceFileCommands {
-    FBDeviceFileCommands(device: device, afcCalls: FBAFCConnection.defaultCalls)
+  public class func commands(with device: FBDevice) -> DeviceFileCommands {
+    DeviceFileCommands(device: device, afcCalls: FBAFCConnection.defaultCalls)
   }
 
-  public class func commands(with device: FBDevice, afcCalls: AFCCalls) -> FBDeviceFileCommands {
-    FBDeviceFileCommands(device: device, afcCalls: afcCalls)
+  public class func commands(with device: FBDevice, afcCalls: AFCCalls) -> DeviceFileCommands {
+    DeviceFileCommands(device: device, afcCalls: afcCalls)
   }
 
   init(device: FBDevice, afcCalls: AFCCalls) {
@@ -447,7 +447,7 @@ public final class FBDeviceFileCommands {
 
   private func requireDevice() throws -> FBDevice {
     guard let device else {
-      throw FBDeviceFileContainerError.deviceDeallocated
+      throw DeviceFileContainerError.deviceDeallocated
     }
     return device
   }
@@ -459,7 +459,7 @@ public final class FBDeviceFileCommands {
     let device = try requireDevice()
     let queue = device.asyncQueue
     return try await device.withHouseArrestAFCConnection(forBundleID: bundleID, afcCalls: afcCalls) { connection in
-      try await body(FBDeviceFileContainer(afcConnection: connection, queue: queue))
+      try await body(DeviceFileContainer(afcConnection: connection, queue: queue))
     }
   }
 
@@ -470,7 +470,7 @@ public final class FBDeviceFileCommands {
 
   fileprivate func fileCommandsForProvisioningProfiles() throws -> FBFileContainer_ProvisioningProfile {
     let device = try requireDevice()
-    return FBFileContainer_ProvisioningProfile(commands: FBDeviceProvisioningProfileCommands.commands(with: device))
+    return FBFileContainer_ProvisioningProfile(commands: DeviceProvisioningProfileCommands.commands(with: device))
   }
 
   fileprivate func fileCommandsForDiskImages() throws -> DeviceFileCommands_DiskImages {
@@ -504,19 +504,19 @@ extension FBDevice: FileCommands {
   public func withFileCommandsForApplicationContainers<R>(
     body: (any AsyncFileContainer) async throws -> R
   ) async throws -> R {
-    throw FBDeviceFileContainerError.requiresRootedDevice(operation: #function)
+    throw DeviceFileContainerError.requiresRootedDevice(operation: #function)
   }
 
   public func withFileCommandsForGroupContainers<R>(
     body: (any AsyncFileContainer) async throws -> R
   ) async throws -> R {
-    throw FBDeviceFileContainerError.requiresRootedDevice(operation: #function)
+    throw DeviceFileContainerError.requiresRootedDevice(operation: #function)
   }
 
   public func withFileCommandsForRootFilesystem<R>(
     body: (any AsyncFileContainer) async throws -> R
   ) async throws -> R {
-    throw FBDeviceFileContainerError.requiresRootedDevice(operation: #function)
+    throw DeviceFileContainerError.requiresRootedDevice(operation: #function)
   }
 
   public func withFileCommandsForMediaDirectory<R>(
@@ -524,7 +524,7 @@ extension FBDevice: FileCommands {
   ) async throws -> R {
     let queue = asyncQueue
     return try await withAFCConnection("com.apple.afc") { afc in
-      try await body(FBDeviceFileContainer(afcConnection: afc, queue: queue))
+      try await body(DeviceFileContainer(afcConnection: afc, queue: queue))
     }
   }
 

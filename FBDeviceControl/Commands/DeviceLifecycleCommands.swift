@@ -8,11 +8,11 @@
 import FBControlCore
 import Foundation
 
-public final class FBDeviceLifecycleCommands {
+public final class DeviceLifecycleCommands {
   private weak var device: FBDevice?
 
-  public class func commands(with device: FBDevice) -> FBDeviceLifecycleCommands {
-    FBDeviceLifecycleCommands(device: device)
+  public class func commands(with device: FBDevice) -> DeviceLifecycleCommands {
+    DeviceLifecycleCommands(device: device)
   }
 
   init(device: FBDevice) {

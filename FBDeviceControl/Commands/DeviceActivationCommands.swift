@@ -11,7 +11,7 @@ import Foundation
 private let DefaultDRMHandshakeURL = "https://albert.apple.com/deviceservices/drmHandshake"
 private let DefaultDeviceActivationURL = "https://albert.apple.com/deviceservices/deviceActivation"
 
-public enum FBDeviceActivationError: Error {
+public enum DeviceActivationError: Error {
   case invalidActivationState(state: String)
   case activationStateMismatch(expected: String, actual: String)
   case noActivationState(response: String)
@@ -24,7 +24,7 @@ public enum FBDeviceActivationError: Error {
   case notHTTPResponse(response: String)
 }
 
-extension FBDeviceActivationError: LocalizedError {
+extension DeviceActivationError: LocalizedError {
   public var errorDescription: String? {
     switch self {
     case let .invalidActivationState(state):
@@ -51,13 +51,13 @@ extension FBDeviceActivationError: LocalizedError {
   }
 }
 
-public final class FBDeviceActivationCommands {
+public final class DeviceActivationCommands {
   private weak var device: FBDevice?
 
   // MARK: - Initializers
 
-  public class func commands(with device: FBDevice) -> FBDeviceActivationCommands {
-    FBDeviceActivationCommands(device: device)
+  public class func commands(with device: FBDevice) -> DeviceActivationCommands {
+    DeviceActivationCommands(device: device)
   }
 
   init(device: FBDevice) {
@@ -72,24 +72,24 @@ public final class FBDeviceActivationCommands {
     }
     let logger = device.logger
     let state = try await activationState()
-    if state == FBDeviceActivationState.activated {
+    if state == DeviceActivationState.activated {
       logger.log("Device is already activated, nothing to activate")
       return
     }
-    if state == FBDeviceActivationState.unactivated {
+    if state == DeviceActivationState.unactivated {
       logger.log("Device is not activated, starting activation")
       try await performActivation()
       return
     }
-    throw FBDeviceActivationError.invalidActivationState(state: String(describing: state))
+    throw DeviceActivationError.invalidActivationState(state: String(describing: state))
   }
 
   // MARK: - Private
 
-  private func confirmActivationState(_ activationState: FBDeviceActivationState) async throws {
+  private func confirmActivationState(_ activationState: DeviceActivationState) async throws {
     let actual = try await self.activationState()
     if activationState != actual {
-      throw FBDeviceActivationError.activationStateMismatch(expected: String(describing: activationState), actual: String(describing: actual))
+      throw DeviceActivationError.activationStateMismatch(expected: String(describing: activationState), actual: String(describing: actual))
     }
   }
 
@@ -98,7 +98,7 @@ public final class FBDeviceActivationCommands {
       throw FBDeviceNilError.deviceNil
     }
     let logger = device.logger
-    try await confirmActivationState(FBDeviceActivationState.unactivated)
+    try await confirmActivationState(DeviceActivationState.unactivated)
     logger.log("Building DRM Handshake Payload")
     let drmHandshakePayload = try await buildDRMHandshakePayload()
     logger.log("Obtaining Activation record from DRM Handshake Payload")
@@ -106,7 +106,7 @@ public final class FBDeviceActivationCommands {
     logger.log("Performing activation from activation record")
     try await activateFromActivationRecord(activationRecordPayload)
     logger.log("Confirming activation state is Activated")
-    try await confirmActivationState(FBDeviceActivationState.activated)
+    try await confirmActivationState(DeviceActivationState.activated)
   }
 
   private func withMobileActivationService<T>(_ body: (FBAMDServiceConnection) async throws -> T) async throws -> T {
@@ -116,13 +116,13 @@ public final class FBDeviceActivationCommands {
     return try await device.withServiceConnection("com.apple.mobileactivationd", body)
   }
 
-  private func activationState() async throws -> FBDeviceActivationState {
+  private func activationState() async throws -> DeviceActivationState {
     try await withMobileActivationService { connection in
       let response = try connection.sendAndReceiveMessage(["Command": "GetActivationStateRequest"])
       guard let responseDict = response as? NSDictionary,
         let activationState = responseDict["Value"] as? String
       else {
-        throw FBDeviceActivationError.noActivationState(response: String(describing: response))
+        throw DeviceActivationError.noActivationState(response: String(describing: response))
       }
       return FBDeviceActivationStateCoerceFromString(activationState)
     }
@@ -134,7 +134,7 @@ public final class FBDeviceActivationCommands {
       guard let responseDict = response as? NSDictionary,
         let responsePayload = responseDict["Value"] as? [String: Any]
       else {
-        throw FBDeviceActivationError.noValueInResponse(response: String(describing: response))
+        throw DeviceActivationError.noValueInResponse(response: String(describing: response))
       }
       return try await Self.mobileActivationRequest(forRequestPayload: responsePayload)
     }
@@ -146,7 +146,7 @@ public final class FBDeviceActivationCommands {
       guard let responseDict = response as? NSDictionary,
         let responsePayload = responseDict["Value"] as? [String: Any]
       else {
-        throw FBDeviceActivationError.noValueInResponse(response: String(describing: response))
+        throw DeviceActivationError.noValueInResponse(response: String(describing: response))
       }
       return try await Self.mobileActivationActivate(forRequestPayload: responsePayload)
     }
@@ -163,7 +163,7 @@ public final class FBDeviceActivationCommands {
 
     let urlString = ProcessInfo.processInfo.environment["IDB_DRM_HANDSHAKE_URL"] ?? DefaultDRMHandshakeURL
     guard let url = URL(string: urlString) else {
-      throw FBDeviceActivationError.invalidDRMHandshakeURL(urlString: urlString)
+      throw DeviceActivationError.invalidDRMHandshakeURL(urlString: urlString)
     }
     var request = URLRequest(url: url)
     request.httpMethod = "POST"
@@ -174,7 +174,7 @@ public final class FBDeviceActivationCommands {
 
     let (responseData, httpResponse) = try await data(for: request)
     if httpResponse.statusCode != 200 {
-      throw FBDeviceActivationError.non200Response(response: String(describing: httpResponse))
+      throw DeviceActivationError.non200Response(response: String(describing: httpResponse))
     }
     _ = try PropertyListSerialization.propertyList(from: responseData, options: [], format: nil)
     return responseData
@@ -188,7 +188,7 @@ public final class FBDeviceActivationCommands {
 
     let urlString = ProcessInfo.processInfo.environment["IDB_ACTIVATION_URL"] ?? DefaultDeviceActivationURL
     guard let url = URL(string: urlString) else {
-      throw FBDeviceActivationError.invalidActivationURL(urlString: urlString)
+      throw DeviceActivationError.invalidActivationURL(urlString: urlString)
     }
     var request = URLRequest(url: url)
     request.httpMethod = "POST"
@@ -198,13 +198,13 @@ public final class FBDeviceActivationCommands {
 
     let (responseData, httpResponse) = try await data(for: request)
     if httpResponse.statusCode != 200 {
-      throw FBDeviceActivationError.non200Response(response: String(describing: httpResponse))
+      throw DeviceActivationError.non200Response(response: String(describing: httpResponse))
     }
     let responsePlist = try PropertyListSerialization.propertyList(from: responseData, options: [], format: nil)
     guard let responseDict = responsePlist as? [String: Any],
       let activationRecord = responseDict["ActivationRecord"]
     else {
-      throw FBDeviceActivationError.noActivationRecord(response: String(describing: responsePlist))
+      throw DeviceActivationError.noActivationRecord(response: String(describing: responsePlist))
     }
     return try PropertyListSerialization.data(fromPropertyList: activationRecord, format: .xml, options: 0)
   }
@@ -217,11 +217,11 @@ public final class FBDeviceActivationCommands {
           return
         }
         guard let responseData else {
-          continuation.resume(throwing: FBDeviceActivationError.noResponseData(response: String(describing: response)))
+          continuation.resume(throwing: DeviceActivationError.noResponseData(response: String(describing: response)))
           return
         }
         guard let httpResponse = response as? HTTPURLResponse else {
-          continuation.resume(throwing: FBDeviceActivationError.notHTTPResponse(response: String(describing: response)))
+          continuation.resume(throwing: DeviceActivationError.notHTTPResponse(response: String(describing: response)))
           return
         }
         continuation.resume(returning: (responseData, httpResponse))

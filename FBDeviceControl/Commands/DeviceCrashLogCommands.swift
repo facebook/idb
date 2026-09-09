@@ -12,14 +12,14 @@ private let CrashReportMoverService = "com.apple.crashreportmover"
 private let CrashReportCopyService = "com.apple.crashreportcopymobile"
 private let PingSuccess = "ping"
 
-public enum FBDeviceCrashLogError: Error {
+public enum DeviceCrashLogError: Error {
   case ingestFailed(name: String)
   case pingbackReceiveFailed(service: String, underlying: Error)
   case pingbackNotDecodable(service: String)
   case pingbackUnsuccessful(service: String, response: String, expected: String)
 }
 
-extension FBDeviceCrashLogError: LocalizedError {
+extension DeviceCrashLogError: LocalizedError {
   public var errorDescription: String? {
     switch self {
     case let .ingestFailed(name):
@@ -34,7 +34,7 @@ extension FBDeviceCrashLogError: LocalizedError {
   }
 }
 
-public final class FBDeviceCrashLogCommands {
+public final class DeviceCrashLogCommands {
   private weak var device: FBDevice?
   private let store: FBCrashLogStore
   /// Resolved at the point of use: `FBAFCConnection.defaultCalls` dlopens MobileDevice on first
@@ -49,10 +49,10 @@ public final class FBDeviceCrashLogCommands {
 
   // MARK: - Initializers
 
-  public class func commands(with device: FBDevice) -> FBDeviceCrashLogCommands {
+  public class func commands(with device: FBDevice) -> DeviceCrashLogCommands {
     let storeDirectory = (device.auxillaryDirectory as NSString).appendingPathComponent("crash_store")
     let store = FBCrashLogStore.store(forDirectories: [storeDirectory], logger: device.logger)
-    return FBDeviceCrashLogCommands(device: device, store: store)
+    return DeviceCrashLogCommands(device: device, store: store)
   }
 
   init(device: FBDevice, store: FBCrashLogStore, afcCalls: AFCCalls? = nil) {
@@ -155,7 +155,7 @@ public final class FBDeviceCrashLogCommands {
     }
     let data = try afc.contents(ofPath: path)
     guard let crash = store.ingestCrashLogData(data, name: name) else {
-      throw FBDeviceCrashLogError.ingestFailed(name: name)
+      throw DeviceCrashLogError.ingestFailed(name: name)
     }
     return crash
   }
@@ -169,13 +169,13 @@ public final class FBDeviceCrashLogCommands {
       do {
         data = try connection.receive(4)
       } catch {
-        throw FBDeviceCrashLogError.pingbackReceiveFailed(service: CrashReportMoverService, underlying: error)
+        throw DeviceCrashLogError.pingbackReceiveFailed(service: CrashReportMoverService, underlying: error)
       }
       guard let response = String(data: data, encoding: .ascii) else {
-        throw FBDeviceCrashLogError.pingbackNotDecodable(service: CrashReportMoverService)
+        throw DeviceCrashLogError.pingbackNotDecodable(service: CrashReportMoverService)
       }
       if response != PingSuccess {
-        throw FBDeviceCrashLogError.pingbackUnsuccessful(service: CrashReportMoverService, response: response, expected: PingSuccess)
+        throw DeviceCrashLogError.pingbackUnsuccessful(service: CrashReportMoverService, response: response, expected: PingSuccess)
       }
       return response
     }
@@ -208,7 +208,7 @@ extension FBDevice: CrashLogCommands {
   public func withCrashLogFiles<R>(body: (any AsyncFileContainer) async throws -> R) async throws -> R {
     let queue = asyncQueue
     return try await withAFCConnection(CrashReportCopyService) { afc in
-      try await body(FBDeviceFileContainer(afcConnection: afc, queue: queue))
+      try await body(DeviceFileContainer(afcConnection: afc, queue: queue))
     }
   }
 }

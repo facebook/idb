@@ -8,9 +8,9 @@
 @preconcurrency import FBControlCore
 import Foundation
 
-// MARK: - FBDeviceApplicationError
+// MARK: - DeviceApplicationError
 
-public enum FBDeviceApplicationError: Error {
+public enum DeviceApplicationError: Error {
   case awaitingTerminationUnsupported
   case installFailed(applicationName: String, status: Int32, message: String, recentEvents: String)
   case uninstallFailed(bundleID: String, status: Int32, message: String, recentEvents: String)
@@ -26,7 +26,7 @@ public enum FBDeviceApplicationError: Error {
   case missingBundleIdentifier(key: String, application: String)
 }
 
-extension FBDeviceApplicationError: LocalizedError {
+extension DeviceApplicationError: LocalizedError {
   public var errorDescription: String? {
     switch self {
     case .awaitingTerminationUnsupported:
@@ -95,10 +95,10 @@ private func workflowCallback(_ callbackDictionary: [String: Any]?, _ context: U
 private class DeviceLaunchedApplication: FBLaunchedApplication {
   let processIdentifier: pid_t
   private let _configuration: FBApplicationLaunchConfiguration
-  private let commands: FBDeviceApplicationCommands
+  private let commands: DeviceApplicationCommands
   private let queue: DispatchQueue
 
-  init(processIdentifier: pid_t, configuration: FBApplicationLaunchConfiguration, commands: FBDeviceApplicationCommands, queue: DispatchQueue) {
+  init(processIdentifier: pid_t, configuration: FBApplicationLaunchConfiguration, commands: DeviceApplicationCommands, queue: DispatchQueue) {
     self.processIdentifier = processIdentifier
     self._configuration = configuration
     self.commands = commands
@@ -106,7 +106,7 @@ private class DeviceLaunchedApplication: FBLaunchedApplication {
   }
 
   func waitForTermination() async throws {
-    throw FBDeviceApplicationError.awaitingTerminationUnsupported
+    throw DeviceApplicationError.awaitingTerminationUnsupported
   }
 
   func terminate() async throws {
@@ -118,17 +118,17 @@ private class DeviceLaunchedApplication: FBLaunchedApplication {
   }
 }
 
-// MARK: - FBDeviceApplicationCommands
+// MARK: - DeviceApplicationCommands
 
-public final class FBDeviceApplicationCommands {
+public final class DeviceApplicationCommands {
   fileprivate weak var device: FBDevice?
   private let deltaUpdateDirectory: URL
 
   // MARK: - Initializers
 
-  public class func commands(with device: FBDevice) -> FBDeviceApplicationCommands {
+  public class func commands(with device: FBDevice) -> DeviceApplicationCommands {
     let deltaUpdateDirectory = device.temporaryDirectory.temporaryDirectory()
-    return FBDeviceApplicationCommands(device: device, deltaUpdateDirectory: deltaUpdateDirectory)
+    return DeviceApplicationCommands(device: device, deltaUpdateDirectory: deltaUpdateDirectory)
   }
 
   init(device: FBDevice, deltaUpdateDirectory: URL) {
@@ -166,7 +166,7 @@ public final class FBDeviceApplicationCommands {
         ) ?? -1
       if status != 0 {
         let errorMessage = connectedDevice.calls.CopyErrorText?(status)?.takeRetainedValue() as String? ?? "Unknown error"
-        throw FBDeviceApplicationError.installFailed(applicationName: appURL.lastPathComponent, status: status, message: errorMessage, recentEvents: statistics.summaryOfRecentEvents)
+        throw DeviceApplicationError.installFailed(applicationName: appURL.lastPathComponent, status: status, message: errorMessage, recentEvents: statistics.summaryOfRecentEvents)
       }
       device.logger.log("Installed Application \(appURL)")
     }
@@ -192,7 +192,7 @@ public final class FBDeviceApplicationCommands {
         ) ?? -1
       if status != 0 {
         let internalMessage = connectedDevice.calls.CopyErrorText?(status)?.takeRetainedValue() as String? ?? "Unknown error"
-        throw FBDeviceApplicationError.uninstallFailed(bundleID: bundleID, status: status, message: internalMessage, recentEvents: statistics.summaryOfRecentEvents)
+        throw DeviceApplicationError.uninstallFailed(bundleID: bundleID, status: status, message: internalMessage, recentEvents: statistics.summaryOfRecentEvents)
       }
       device.logger.log("Uninstalled Application \(bundleID)")
     }
@@ -202,7 +202,7 @@ public final class FBDeviceApplicationCommands {
     let applicationData = try await installedApplicationsData(Self.installedApplicationLookupAttributes)
     var installedApplications: [FBInstalledApplication] = []
     for app in applicationData.values {
-      let application = try FBDeviceApplicationCommands.installedApplication(from: app)
+      let application = try DeviceApplicationCommands.installedApplication(from: app)
       installedApplications.append(application)
     }
     return installedApplications
@@ -211,9 +211,9 @@ public final class FBDeviceApplicationCommands {
   fileprivate func installedApplication(withBundleID bundleID: String) async throws -> FBInstalledApplication {
     let applicationData = try await installedApplicationsData(Self.installedApplicationLookupAttributes)
     guard let app = applicationData[bundleID] else {
-      throw FBDeviceApplicationError.applicationNotInstalled(bundleID: bundleID, installed: Array(applicationData.keys))
+      throw DeviceApplicationError.applicationNotInstalled(bundleID: bundleID, installed: Array(applicationData.keys))
     }
-    return try FBDeviceApplicationCommands.installedApplication(from: app)
+    return try DeviceApplicationCommands.installedApplication(from: app)
   }
 
   fileprivate func runningApplications() async throws -> [String: NSNumber] {
@@ -241,7 +241,7 @@ public final class FBDeviceApplicationCommands {
   fileprivate func processID(withBundleID bundleID: String) async throws -> NSNumber {
     let running = try await runningApplications()
     guard let pid = running[bundleID] else {
-      throw FBDeviceApplicationError.noProcessID(bundleID: bundleID)
+      throw DeviceApplicationError.noProcessID(bundleID: bundleID)
     }
     return pid
   }
@@ -297,10 +297,10 @@ public final class FBDeviceApplicationCommands {
         ) ?? -1
       if status != 0 {
         let errorMessage = connectedDevice.calls.CopyErrorText?(status)?.takeRetainedValue() as String? ?? "Unknown error"
-        throw FBDeviceApplicationError.applicationLookupFailed(status: status, message: errorMessage)
+        throw DeviceApplicationError.applicationLookupFailed(status: status, message: errorMessage)
       }
       guard let result = applications.takeRetainedValue() as? [String: [String: Any]] else {
-        throw FBDeviceApplicationError.applicationLookupMalformed
+        throw DeviceApplicationError.applicationLookupMalformed
       }
       return result
     }
@@ -327,25 +327,25 @@ public final class FBDeviceApplicationCommands {
       do {
         try connection.sendMessage(["Request": "PidList"])
       } catch {
-        throw FBDeviceApplicationError.pidListRequestFailed(underlying: error)
+        throw DeviceApplicationError.pidListRequestFailed(underlying: error)
       }
       do {
         _ = try connection.receive(1)
       } catch {
-        throw FBDeviceApplicationError.pidListAcknowledgementFailed(underlying: error)
+        throw DeviceApplicationError.pidListAcknowledgementFailed(underlying: error)
       }
       let response: Any
       do {
         response = try connection.receiveMessage()
       } catch {
-        throw FBDeviceApplicationError.pidListResponseFailed(underlying: error)
+        throw DeviceApplicationError.pidListResponseFailed(underlying: error)
       }
       guard let responseDict = response as? [String: Any] else {
-        throw FBDeviceApplicationError.pidListResponseNotADictionary(response: String(describing: response))
+        throw DeviceApplicationError.pidListResponseNotADictionary(response: String(describing: response))
       }
       let status = responseDict["Status"] as? String
       if status != "RequestSuccessful" {
-        throw FBDeviceApplicationError.pidListRequestUnsuccessful
+        throw DeviceApplicationError.pidListRequestUnsuccessful
       }
       let payload = responseDict["Payload"] as? [NSNumber: Any] ?? [:]
       var pidToRunningProcessName: [NSNumber: String] = [:]
@@ -365,7 +365,7 @@ public final class FBDeviceApplicationCommands {
     let bundleName = app[FBApplicationInstallInfoKey.bundleName.rawValue] as? String ?? ""
     let path = app[FBApplicationInstallInfoKey.path.rawValue] as? String ?? ""
     guard let bundleID = app[FBApplicationInstallInfoKey.bundleIdentifier.rawValue] as? String else {
-      throw FBDeviceApplicationError.missingBundleIdentifier(key: FBApplicationInstallInfoKey.bundleIdentifier.rawValue, application: String(describing: app))
+      throw DeviceApplicationError.missingBundleIdentifier(key: FBApplicationInstallInfoKey.bundleIdentifier.rawValue, application: String(describing: app))
     }
 
     let bundle = FBBundleDescriptor(name: bundleName, identifier: bundleID, path: path, binary: nil)

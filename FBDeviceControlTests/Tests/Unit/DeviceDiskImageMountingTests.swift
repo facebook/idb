@@ -49,8 +49,8 @@ struct DeviceDiskImageMountingTests {
     }
     let device = amDevice.makeDevice()
     device.commandCache.register(
-      FBDeviceDeveloperDiskImageCommands(device: device, diskImages: StubDiskImages(availableDiskImages: available)),
-      as: FBDeviceDeveloperDiskImageCommands.self)
+      DeviceDeveloperDiskImageCommands(device: device, diskImages: StubDiskImages(availableDiskImages: available)),
+      as: DeviceDeveloperDiskImageCommands.self)
     amDevice.service(ImageMounterService).messageReplies = [
       ["EntryList": mounted.map { ["ImageSignature": $0.signature, "MountPath": "/Developer"] }]
     ]

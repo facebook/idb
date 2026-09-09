@@ -182,7 +182,7 @@ final class AMDeviceTests {
   func descriptionNamesTheDeviceByUdidAndName() {
     #expect((device.description) == ("AMDevice foo | unknown"))
 
-    device.allValues[FBDeviceKey.deviceName.rawValue] = "A Phone"
+    device.allValues[DeviceKey.deviceName.rawValue] = "A Phone"
     #expect((device.description) == ("AMDevice foo | A Phone"))
     #expect(("\(device)") == ("AMDevice foo | A Phone"))
   }

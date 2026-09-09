@@ -86,7 +86,7 @@ public final class FBAMDevice: FBiOSTargetInfo, FBDeviceCommands, CustomStringCo
     self.calls = calls
     self.workQueue = workQueue
     self.asyncQueue = asyncQueue
-    let udid = allValues[FBDeviceKey.uniqueDeviceID.rawValue] as? String ?? UnknownValue
+    let udid = allValues[DeviceKey.uniqueDeviceID.rawValue] as? String ?? UnknownValue
     self.logger = logger.withName(udid)
     // The un-named logger: only this object's own logger is decorated with the udid.
     self.sessionStorage = AMDeviceSession(
@@ -99,7 +99,7 @@ public final class FBAMDevice: FBiOSTargetInfo, FBDeviceCommands, CustomStringCo
 
   public var uniqueIdentifier: String {
     // The chip identifier arrives as a number on some devices and a string on others.
-    let value = allValues[FBDeviceKey.uniqueChipID.rawValue]
+    let value = allValues[DeviceKey.uniqueChipID.rawValue]
     if let number = value as? NSNumber {
       return number.stringValue
     }
@@ -110,28 +110,28 @@ public final class FBAMDevice: FBiOSTargetInfo, FBDeviceCommands, CustomStringCo
   }
 
   public var udid: String {
-    allValues[FBDeviceKey.uniqueDeviceID.rawValue] as? String ?? UnknownValue
+    allValues[DeviceKey.uniqueDeviceID.rawValue] as? String ?? UnknownValue
   }
 
   public var name: String {
-    allValues[FBDeviceKey.deviceName.rawValue] as? String ?? UnknownValue
+    allValues[DeviceKey.deviceName.rawValue] as? String ?? UnknownValue
   }
 
   public var architectures: [FBArchitecture] {
-    guard let architecture = allValues[FBDeviceKey.cpuArchitecture.rawValue] as? String else {
+    guard let architecture = allValues[DeviceKey.cpuArchitecture.rawValue] as? String else {
       return []
     }
     return [FBArchitecture(rawValue: architecture)]
   }
 
   public var deviceType: FBDeviceType {
-    let productType = allValues[FBDeviceKey.productType.rawValue] as? String ?? UnknownValue
+    let productType = allValues[DeviceKey.productType.rawValue] as? String ?? UnknownValue
     return FBiOSTargetConfiguration.productTypeToDevice[productType] ?? FBDeviceType.generic(withName: productType)
   }
 
   public var osVersion: FBOSVersion {
     let name = Self.osVersionName(
-      deviceClass: allValues[FBDeviceKey.deviceClass.rawValue] as? String,
+      deviceClass: allValues[DeviceKey.deviceClass.rawValue] as? String,
       productVersion: productVersion)
     return FBiOSTargetConfiguration.nameToOSVersion[FBOSVersionName(rawValue: name)] ?? FBOSVersion.generic(withName: name)
   }
@@ -151,11 +151,11 @@ public final class FBAMDevice: FBiOSTargetInfo, FBDeviceCommands, CustomStringCo
   // MARK: - FBDeviceProtocol
 
   public var buildVersion: String? {
-    allValues[FBDeviceKey.buildVersion.rawValue] as? String
+    allValues[DeviceKey.buildVersion.rawValue] as? String
   }
 
   public var productVersion: String? {
-    allValues[FBDeviceKey.productVersion.rawValue] as? String
+    allValues[DeviceKey.productVersion.rawValue] as? String
   }
 
   public var recoveryModeDeviceRef: AMRecoveryModeDevice? {
@@ -163,8 +163,8 @@ public final class FBAMDevice: FBiOSTargetInfo, FBDeviceCommands, CustomStringCo
   }
 
   public var activationState: String {
-    guard let activationState = allValues[FBDeviceKey.activationState.rawValue] as? String else {
-      return FBDeviceActivationState.unknown.rawValue
+    guard let activationState = allValues[DeviceKey.activationState.rawValue] as? String else {
+      return DeviceActivationState.unknown.rawValue
     }
     return FBDeviceActivationStateCoerceFromString(activationState).rawValue
   }

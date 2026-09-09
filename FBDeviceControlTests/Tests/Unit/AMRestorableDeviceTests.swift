@@ -28,17 +28,17 @@ struct AMRestorableDeviceTests {
 
   @Test
   func stringProductTypeFlowsIntoDeviceType() {
-    #expect(device(allValues: [FBDeviceKey.productType.rawValue: "iPhone14,2"]).deviceType.model.rawValue == "iPhone14,2")
+    #expect(device(allValues: [DeviceKey.productType.rawValue: "iPhone14,2"]).deviceType.model.rawValue == "iPhone14,2")
   }
 
   @Test
   func stringDeviceNameFlowsIntoName() {
-    #expect(device(allValues: [FBDeviceKey.deviceName.rawValue: "lab-device"]).name == "lab-device")
+    #expect(device(allValues: [DeviceKey.deviceName.rawValue: "lab-device"]).name == "lab-device")
   }
 
   @Test
   func numericUniqueChipIDFlowsIntoUniqueIdentifier() {
-    #expect(device(allValues: [FBDeviceKey.uniqueChipID.rawValue: 12345]).uniqueIdentifier == "12345")
+    #expect(device(allValues: [DeviceKey.uniqueChipID.rawValue: 12345]).uniqueIdentifier == "12345")
   }
 
   @Test
@@ -58,16 +58,16 @@ struct AMRestorableDeviceTests {
 
   @Test
   func nonStringProductTypeFallsBackToUnknownDeviceType() {
-    #expect(device(allValues: [FBDeviceKey.productType.rawValue: 42]).deviceType.model.rawValue == "unknown")
+    #expect(device(allValues: [DeviceKey.productType.rawValue: 42]).deviceType.model.rawValue == "unknown")
   }
 
   @Test
   func stringUniqueChipIDFlowsIntoUniqueIdentifier() {
-    #expect(device(allValues: [FBDeviceKey.uniqueChipID.rawValue: "chip-as-string"]).uniqueIdentifier == "chip-as-string")
+    #expect(device(allValues: [DeviceKey.uniqueChipID.rawValue: "chip-as-string"]).uniqueIdentifier == "chip-as-string")
   }
 
   @Test
   func nonStringDeviceNameFallsBackToUnknown() {
-    #expect(device(allValues: [FBDeviceKey.deviceName.rawValue: 99]).name == "unknown")
+    #expect(device(allValues: [DeviceKey.deviceName.rawValue: 99]).name == "unknown")
   }
 }

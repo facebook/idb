@@ -26,7 +26,7 @@ private typealias SharedCacheExtractor =
     @convention(block) (Int32, Int32) -> Void
   ) -> Int32
 
-public enum FBDeviceDebugSymbolsError: Error {
+public enum DeviceDebugSymbolsError: Error {
   case destinationDirectoryNotCreated(message: String)
   case listingReceiveFailed(message: String)
   case listingNotStrings(files: String)
@@ -46,7 +46,7 @@ public enum FBDeviceDebugSymbolsError: Error {
   case extractionFailed(sharedCache: String, destination: String, status: Int32)
 }
 
-extension FBDeviceDebugSymbolsError: LocalizedError {
+extension DeviceDebugSymbolsError: LocalizedError {
   public var errorDescription: String? {
     switch self {
     case let .destinationDirectoryNotCreated(message):
@@ -87,7 +87,7 @@ extension FBDeviceDebugSymbolsError: LocalizedError {
   }
 }
 
-public final class FBDeviceDebugSymbolsCommands: DebugSymbolsCommands {
+public final class DeviceDebugSymbolsCommands: DebugSymbolsCommands {
   private weak var device: FBDevice?
 
   init(device: FBDevice) {
@@ -111,7 +111,7 @@ public final class FBDeviceDebugSymbolsCommands: DebugSymbolsCommands {
     do {
       try FileManager.default.createDirectory(atPath: destinationDirectory, withIntermediateDirectories: true)
     } catch {
-      throw FBDeviceDebugSymbolsError.destinationDirectoryNotCreated(message: String(describing: error))
+      throw DeviceDebugSymbolsError.destinationDirectoryNotCreated(message: String(describing: error))
     }
     guard let device else {
       throw FBDeviceNilError.deviceNil
@@ -158,7 +158,7 @@ public final class FBDeviceDebugSymbolsCommands: DebugSymbolsCommands {
     try await withSymbolServiceConnection { connection in
       let files = try Self.obtainFileListing(from: connection)
       guard let index = files.firstIndex(of: fileName) else {
-        throw FBDeviceDebugSymbolsError.fileNotInListing(
+        throw DeviceDebugSymbolsError.fileNotInListing(
           file: fileName,
           listing: FBCollectionInformation.oneLineDescription(from: files))
       }
@@ -181,12 +181,12 @@ public final class FBDeviceDebugSymbolsCommands: DebugSymbolsCommands {
     do {
       message = try connection.receiveMessage()
     } catch {
-      throw FBDeviceDebugSymbolsError.listingReceiveFailed(message: String(describing: error))
+      throw DeviceDebugSymbolsError.listingReceiveFailed(message: String(describing: error))
     }
     let raw = (message as? [String: Any])?["files"]
     guard let files = raw as? [String] else {
       let described = (raw as? [Any]).map { FBCollectionInformation.oneLineDescription(from: $0) } ?? String(describing: raw)
-      throw FBDeviceDebugSymbolsError.listingNotStrings(files: described)
+      throw DeviceDebugSymbolsError.listingNotStrings(files: described)
     }
     return files
   }
@@ -200,16 +200,16 @@ public final class FBDeviceDebugSymbolsCommands: DebugSymbolsCommands {
     do {
       try connection.sendUnsignedInt32(command)
     } catch {
-      throw FBDeviceDebugSymbolsError.commandSendFailed(command: commandName, message: String(describing: error))
+      throw DeviceDebugSymbolsError.commandSendFailed(command: commandName, message: String(describing: error))
     }
     var response: UInt32 = 0
     do {
       try connection.receiveUnsignedInt32(&response)
     } catch {
-      throw FBDeviceDebugSymbolsError.commandResponseFailed(command: commandName, message: String(describing: error))
+      throw DeviceDebugSymbolsError.commandResponseFailed(command: commandName, message: String(describing: error))
     }
     guard response == ack else {
-      throw FBDeviceDebugSymbolsError.commandAckMismatch(command: commandName, received: response, expected: ack)
+      throw DeviceDebugSymbolsError.commandAckMismatch(command: commandName, received: response, expected: ack)
     }
   }
 
@@ -222,22 +222,22 @@ public final class FBDeviceDebugSymbolsCommands: DebugSymbolsCommands {
     do {
       try connection.sendUnsignedInt32(index.bigEndian)
     } catch {
-      throw FBDeviceDebugSymbolsError.fileIndexSendFailed(index: index, message: String(describing: error))
+      throw DeviceDebugSymbolsError.fileIndexSendFailed(index: index, message: String(describing: error))
     }
     var receiveLengthWire: UInt64 = 0
     do {
       try connection.receiveUnsignedInt64(&receiveLengthWire)
     } catch {
-      throw FBDeviceDebugSymbolsError.fileLengthReceiveFailed(message: String(describing: error))
+      throw DeviceDebugSymbolsError.fileLengthReceiveFailed(message: String(describing: error))
     }
     guard receiveLengthWire != 0 else {
-      throw FBDeviceDebugSymbolsError.fileLengthZero
+      throw DeviceDebugSymbolsError.fileLengthZero
     }
     guard FileManager.default.createFile(atPath: destinationPath, contents: nil) else {
-      throw FBDeviceDebugSymbolsError.destinationFileNotCreated(path: destinationPath)
+      throw DeviceDebugSymbolsError.destinationFileNotCreated(path: destinationPath)
     }
     guard let fileHandle = FileHandle(forWritingAtPath: destinationPath) else {
-      throw FBDeviceDebugSymbolsError.destinationFileNotOpened(path: destinationPath)
+      throw DeviceDebugSymbolsError.destinationFileNotOpened(path: destinationPath)
     }
     try connection.receive(Int(UInt64(bigEndian: receiveLengthWire)), toFile: fileHandle)
   }
@@ -252,7 +252,7 @@ public final class FBDeviceDebugSymbolsCommands: DebugSymbolsCommands {
     var indexToFileName: [Int: String] = [:]
     for file in files {
       guard let index = fileIndices.firstIndex(of: file) else {
-        throw FBDeviceDebugSymbolsError.fileNotInListing(
+        throw DeviceDebugSymbolsError.fileNotInListing(
           file: file,
           listing: FBCollectionInformation.oneLineDescription(from: fileIndices))
       }
@@ -264,7 +264,7 @@ public final class FBDeviceDebugSymbolsCommands: DebugSymbolsCommands {
   /// The shared cache is the only pulled file without an extension; the rest are its sidecars.
   static func extractSharedCachePath(fromPaths paths: [String]) throws -> String {
     guard let sharedCache = paths.first(where: { ($0 as NSString).pathExtension.isEmpty }) else {
-      throw FBDeviceDebugSymbolsError.sharedCacheNotFound(
+      throw DeviceDebugSymbolsError.sharedCacheNotFound(
         paths: FBCollectionInformation.oneLineDescription(from: paths))
     }
     return sharedCache
@@ -283,7 +283,7 @@ public final class FBDeviceDebugSymbolsCommands: DebugSymbolsCommands {
       logger.log("Completed \(completed) Total \(total)")
     }
     guard status == 0 else {
-      throw FBDeviceDebugSymbolsError.extractionFailed(
+      throw DeviceDebugSymbolsError.extractionFailed(
         sharedCache: sharedCacheFile,
         destination: destinationDirectory,
         status: status)
@@ -294,11 +294,11 @@ public final class FBDeviceDebugSymbolsCommands: DebugSymbolsCommands {
   private static func sharedCacheExtractor() throws -> SharedCacheExtractor {
     let path = try pathForSharedCacheExtractor()
     guard let handle = dlopen(path, RTLD_LAZY) else {
-      throw FBDeviceDebugSymbolsError.extractorNotLoaded(path: path)
+      throw DeviceDebugSymbolsError.extractorNotLoaded(path: path)
     }
     let name = "dyld_shared_cache_extract_dylibs_progress"
     guard let address = FBGetSymbolFromHandleOptional(handle, name) else {
-      throw FBDeviceDebugSymbolsError.extractorSymbolNotFound(name: name, path: path)
+      throw DeviceDebugSymbolsError.extractorSymbolNotFound(name: name, path: path)
     }
     return unsafeBitCast(address, to: SharedCacheExtractor.self)
   }
@@ -307,7 +307,7 @@ public final class FBDeviceDebugSymbolsCommands: DebugSymbolsCommands {
     let path = (FBXcodeConfiguration.developerDirectory as NSString)
       .appendingPathComponent("Platforms/iPhoneOS.platform/usr/lib/dsc_extractor.bundle")
     guard FileManager.default.fileExists(atPath: path) else {
-      throw FBDeviceDebugSymbolsError.extractorNotFound(path: path)
+      throw DeviceDebugSymbolsError.extractorNotFound(path: path)
     }
     return path
   }

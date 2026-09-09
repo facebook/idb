@@ -23,11 +23,11 @@ Much of the implementation here comes from:
  - It is also possible to use lldb's internal logging to see the API calls that it is making. This is done by configuring lldb via adding a line in ~/.lldbinit (e.g `log enable -v -f /tmp/lldb.log lldb api`)
  */
 
-public enum FBDeviceDebuggerError: Error {
+public enum DeviceDebuggerError: Error {
   case unsupportedOSVersion(version: String)
 }
 
-extension FBDeviceDebuggerError: LocalizedError {
+extension DeviceDebuggerError: LocalizedError {
   public var errorDescription: String? {
     switch self {
     case let .unsupportedOSVersion(version):
@@ -36,11 +36,11 @@ extension FBDeviceDebuggerError: LocalizedError {
   }
 }
 
-public final class FBDeviceDebuggerCommands {
+public final class DeviceDebuggerCommands {
   private weak var device: FBDevice?
 
-  public class func commands(with device: FBDevice) -> FBDeviceDebuggerCommands {
-    FBDeviceDebuggerCommands(device: device)
+  public class func commands(with device: FBDevice) -> DeviceDebuggerCommands {
+    DeviceDebuggerCommands(device: device)
   }
 
   init(device: FBDevice) {
@@ -70,7 +70,7 @@ public final class FBDeviceDebuggerCommands {
       throw FBDeviceNilError.deviceNil
     }
     if device.osVersion.version.majorVersion >= 17 {
-      throw FBDeviceDebuggerError.unsupportedOSVersion(version: device.osVersion.versionString)
+      throw DeviceDebuggerError.unsupportedOSVersion(version: device.osVersion.versionString)
     }
     let commands = try await lldbBootstrapCommands(forApplicationAtPath: application.path, port: port)
     return try await FBDeviceDebugServer.debugServer(

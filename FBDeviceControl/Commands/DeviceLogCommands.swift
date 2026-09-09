@@ -10,9 +10,9 @@ import Foundation
 
 private let syslogRelayService = "com.apple.syslog_relay"
 
-// MARK: - FBDeviceLogOperation
+// MARK: - DeviceLogOperation
 
-public final class FBDeviceLogOperation: LogOperation {
+public final class DeviceLogOperation: LogOperation {
   public let consumer: any FBDataConsumer
 
   /// Never resolves of its own accord: the device reaching the end of its log is not the end of the
@@ -46,13 +46,13 @@ public final class FBDeviceLogOperation: LogOperation {
   }
 }
 
-// MARK: - FBDeviceLogCommands
+// MARK: - DeviceLogCommands
 
-public final class FBDeviceLogCommands {
+public final class DeviceLogCommands {
   private weak var device: FBDevice?
 
-  public class func commands(with device: FBDevice) -> FBDeviceLogCommands {
-    FBDeviceLogCommands(device: device)
+  public class func commands(with device: FBDevice) -> DeviceLogCommands {
+    DeviceLogCommands(device: device)
   }
 
   init(device: FBDevice) {
@@ -61,12 +61,12 @@ public final class FBDeviceLogCommands {
 
   // MARK: - FBLogCommands
 
-  public func tailLog(_ arguments: [String], consumer: any FBDataConsumer) async throws -> FBDeviceLogOperation {
+  public func tailLog(_ arguments: [String], consumer: any FBDataConsumer) async throws -> DeviceLogOperation {
     guard let device else {
       throw FBDeviceNilError.deviceNil
     }
     if !arguments.isEmpty {
-      let unsupportedArgumentsMessage = "[FBDeviceLogCommands][rdar://38452839] Unsupported arguments: \(arguments)"
+      let unsupportedArgumentsMessage = "[DeviceLogCommands][rdar://38452839] Unsupported arguments: \(arguments)"
       if let data = unsupportedArgumentsMessage.data(using: .utf8) {
         consumer.consumeData(data)
       }
@@ -76,7 +76,7 @@ public final class FBDeviceLogCommands {
     let connection = try await device.openServiceConnection(syslogRelayService)
     let reader = connection.readFromConnectionWriting(to: consumer, on: readQueue)
     reader.startReading()
-    return FBDeviceLogOperation(
+    return DeviceLogOperation(
       consumer: consumer,
       connection: connection,
       service: syslogRelayService,

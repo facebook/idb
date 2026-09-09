@@ -8,7 +8,7 @@
 @preconcurrency import FBControlCore
 import Foundation
 
-public enum FBDeviceRecoveryError: Error {
+public enum DeviceRecoveryError: Error {
   case callUnavailable(function: String)
   case enterRecoveryFailed(message: String)
   case notInRecovery(deviceDescription: String)
@@ -16,7 +16,7 @@ public enum FBDeviceRecoveryError: Error {
   case exitRecoveryFailed(recoveryDevice: String, message: String)
 }
 
-extension FBDeviceRecoveryError: LocalizedError {
+extension DeviceRecoveryError: LocalizedError {
   public var errorDescription: String? {
     switch self {
     case let .callUnavailable(function):
@@ -33,11 +33,11 @@ extension FBDeviceRecoveryError: LocalizedError {
   }
 }
 
-public final class FBDeviceRecoveryCommands {
+public final class DeviceRecoveryCommands {
   private(set) weak var device: FBDevice?
 
-  public class func commands(with device: FBDevice) -> FBDeviceRecoveryCommands {
-    FBDeviceRecoveryCommands(device: device)
+  public class func commands(with device: FBDevice) -> DeviceRecoveryCommands {
+    DeviceRecoveryCommands(device: device)
   }
 
   init(device: FBDevice) {
@@ -52,11 +52,11 @@ public final class FBDeviceRecoveryCommands {
     }
     try await device.withConnectedDevice(purpose: "enter_recovery") { connectedDevice in
       guard let enterRecoveryFunc = connectedDevice.calls.EnterRecovery else {
-        throw FBDeviceRecoveryError.callUnavailable(function: "EnterRecovery")
+        throw DeviceRecoveryError.callUnavailable(function: "EnterRecovery")
       }
       let status = enterRecoveryFunc(connectedDevice.amDeviceRef)
       if status != 0 {
-        throw FBDeviceRecoveryError.enterRecoveryFailed(message: Self.errorMessage(for: status, calls: connectedDevice.calls))
+        throw DeviceRecoveryError.enterRecoveryFailed(message: Self.errorMessage(for: status, calls: connectedDevice.calls))
       }
     }
   }
@@ -66,21 +66,21 @@ public final class FBDeviceRecoveryCommands {
       throw FBDeviceNilError.deviceNil
     }
     guard let recoveryDevice = device.recoveryModeDeviceRef else {
-      throw FBDeviceRecoveryError.notInRecovery(deviceDescription: String(describing: device))
+      throw DeviceRecoveryError.notInRecovery(deviceDescription: String(describing: device))
     }
     guard let setAutoBootFunc = device.calls.RecoveryModeDeviceSetAutoBoot else {
-      throw FBDeviceRecoveryError.callUnavailable(function: "RecoveryModeDeviceSetAutoBoot")
+      throw DeviceRecoveryError.callUnavailable(function: "RecoveryModeDeviceSetAutoBoot")
     }
     var status = setAutoBootFunc(recoveryDevice, 1)
     if status != 0 {
-      throw FBDeviceRecoveryError.autoBootFailed(recoveryDevice: String(describing: recoveryDevice), message: Self.errorMessage(for: status, calls: device.calls))
+      throw DeviceRecoveryError.autoBootFailed(recoveryDevice: String(describing: recoveryDevice), message: Self.errorMessage(for: status, calls: device.calls))
     }
     guard let rebootFunc = device.calls.RecoveryDeviceReboot else {
-      throw FBDeviceRecoveryError.callUnavailable(function: "RecoveryDeviceReboot")
+      throw DeviceRecoveryError.callUnavailable(function: "RecoveryDeviceReboot")
     }
     status = rebootFunc(recoveryDevice)
     if status != 0 {
-      throw FBDeviceRecoveryError.exitRecoveryFailed(recoveryDevice: String(describing: recoveryDevice), message: Self.errorMessage(for: status, calls: device.calls))
+      throw DeviceRecoveryError.exitRecoveryFailed(recoveryDevice: String(describing: recoveryDevice), message: Self.errorMessage(for: status, calls: device.calls))
     }
   }
 

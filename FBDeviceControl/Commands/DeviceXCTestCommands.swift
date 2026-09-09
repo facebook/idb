@@ -9,7 +9,7 @@
 import Foundation
 import XCTestBootstrap
 
-public enum FBDeviceXCTestError: Error {
+public enum DeviceXCTestError: Error {
   case testManagerAlreadyRunning(configurationDescription: String)
   case unexpectedReporter(reporterDescription: String)
   case xctestrunCreationFailed(underlying: Error)
@@ -17,7 +17,7 @@ public enum FBDeviceXCTestError: Error {
   case deviceIdentifierUnavailable(deviceDescription: String)
 }
 
-extension FBDeviceXCTestError: LocalizedError {
+extension DeviceXCTestError: LocalizedError {
   public var errorDescription: String? {
     switch self {
     case let .testManagerAlreadyRunning(configurationDescription):
@@ -34,14 +34,14 @@ extension FBDeviceXCTestError: LocalizedError {
   }
 }
 
-public final class FBDeviceXCTestCommands {
+public final class DeviceXCTestCommands {
   private(set) weak var device: FBDevice?
   private(set) var workingDirectory: String
   private(set) var processFetcher: FBProcessFetcher
   var runningXcodeBuildOperation = false
 
-  public class func commands(with device: FBDevice) -> FBDeviceXCTestCommands {
-    FBDeviceXCTestCommands(device: device, workingDirectory: NSTemporaryDirectory())
+  public class func commands(with device: FBDevice) -> DeviceXCTestCommands {
+    DeviceXCTestCommands(device: device, workingDirectory: NSTemporaryDirectory())
   }
 
   init(device: FBDevice, workingDirectory: String) {
@@ -58,13 +58,13 @@ public final class FBDeviceXCTestCommands {
     logger: any FBControlCoreLogger
   ) async throws {
     if runningXcodeBuildOperation {
-      throw FBDeviceXCTestError.testManagerAlreadyRunning(configurationDescription: String(describing: testLaunchConfiguration))
+      throw DeviceXCTestError.testManagerAlreadyRunning(configurationDescription: String(describing: testLaunchConfiguration))
     }
     guard let device else {
       throw FBDeviceNilError.deviceNil
     }
     guard let reporter = reporter as? FBXCTestReporter else {
-      throw FBDeviceXCTestError.unexpectedReporter(reporterDescription: String(describing: reporter))
+      throw DeviceXCTestError.unexpectedReporter(reporterDescription: String(describing: reporter))
     }
     runningXcodeBuildOperation = true
     defer { runningXcodeBuildOperation = false }
@@ -79,13 +79,13 @@ public final class FBDeviceXCTestCommands {
     do {
       filePath = try FBXcodeBuildOperation.createXCTestRunFile(at: workingDirectory, fromConfiguration: configuration)
     } catch {
-      throw FBDeviceXCTestError.xctestrunCreationFailed(underlying: error)
+      throw DeviceXCTestError.xctestrunCreationFailed(underlying: error)
     }
     let xcodeBuildPath: String
     do {
       xcodeBuildPath = try FBXcodeBuildOperation.xcodeBuildPath()
     } catch {
-      throw FBDeviceXCTestError.xcodebuildNotFound(underlying: error)
+      throw DeviceXCTestError.xcodebuildNotFound(underlying: error)
     }
     // This is to work around a bug in xcodebuild. The UDID inside xcodebuild does not match
     // UDID reported by device properties (the difference is missing hyphen in xcodebuild).
@@ -96,7 +96,7 @@ public final class FBDeviceXCTestCommands {
       throw FBDeviceNilError.deviceNil
     }
     guard let identifier = device.calls.CopyDeviceIdentifier(device.amDeviceRef) else {
-      throw FBDeviceXCTestError.deviceIdentifierUnavailable(deviceDescription: String(describing: device))
+      throw DeviceXCTestError.deviceIdentifierUnavailable(deviceDescription: String(describing: device))
     }
     let udid = identifier.takeRetainedValue() as String
 

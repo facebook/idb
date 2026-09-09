@@ -11,12 +11,12 @@ import Foundation
 private let DiagnosticsRelayService = "com.apple.mobile.diagnostics_relay"
 
 /// Shared with the power commands, which drive the same relay service.
-public enum FBDiagnosticsRelayError: Error {
+public enum DiagnosticsRelayError: Error {
   case unexpectedResponse
   case unsuccessful(response: String)
 }
 
-extension FBDiagnosticsRelayError: LocalizedError {
+extension DiagnosticsRelayError: LocalizedError {
   public var errorDescription: String? {
     switch self {
     case .unexpectedResponse:
@@ -27,7 +27,7 @@ extension FBDiagnosticsRelayError: LocalizedError {
   }
 }
 
-public final class FBDeviceDiagnosticInformationCommands: FBiOSTargetCommand {
+public final class DeviceDiagnosticInformationCommands: FBiOSTargetCommand {
   private weak var device: FBDevice?
 
   public class func commands(with target: any FBiOSTarget) -> Self {
@@ -61,10 +61,10 @@ public final class FBDeviceDiagnosticInformationCommands: FBiOSTargetCommand {
   private func fetchInformationFromDiagnosticsRelay(device: FBDevice) async throws -> Any {
     try await device.withServiceConnection(DiagnosticsRelayService) { connection in
       guard let result = try connection.sendAndReceiveMessage(["Request": "All"]) as? NSDictionary else {
-        throw FBDiagnosticsRelayError.unexpectedResponse
+        throw DiagnosticsRelayError.unexpectedResponse
       }
       if (result["Status"] as? String) != "Success" {
-        throw FBDiagnosticsRelayError.unsuccessful(response: String(describing: result))
+        throw DiagnosticsRelayError.unsuccessful(response: String(describing: result))
       }
       guard let diagnostics = result["Diagnostics"] as? [String: Any] else {
         return [:] as [String: Any]
