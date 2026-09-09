@@ -124,6 +124,11 @@ class FailureReportingTests(unittest.TestCase):
         )
         self.assertIn("the companion is still running", message)
 
+    # Both modes are stated rather than inherited. The end-to-end job sets
+    # IDB_E2E_STRICT for the simulator tests, and these two cases are the
+    # harness deciding what to do with it and without it, so a case that read
+    # the runner's environment would be testing the runner.
+    @mock.patch.dict(os.environ, {STRICT_ENV: "0"})
     def test_skips_when_the_host_cannot_spawn_in_the_guest(self) -> None:
         case = TestCaseStub()
 
