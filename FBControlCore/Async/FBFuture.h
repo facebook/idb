@@ -7,8 +7,6 @@
 
 #import <Foundation/Foundation.h>
 
-@class FBFutureContext<T>;
-
 @protocol FBControlCoreLogger;
 
 /**
@@ -313,28 +311,6 @@ extern dispatch_time_t FBCreateDispatchTimeFromDuration(NSTimeInterval inDuratio
 
 #pragma mark Creating Context
 
-/**
- Creates an 'context object' that allows for the value contained by a future to be torn-down when the context is done.
- This is useful for resource cleanup, where closing a resource needs to be managed.
- The teardown will always be called, regardless of the terminating condition of any chained future.
- The state passed in the teardown callback is the state of the resolved future from any chaining that may happen.
- The teardown will only be called if the receiver has resolved, as this is how the context value is resolved.
-
- @param queue the queue to perform the teardown on.
- @param action the teardown action to invoke. This block will be executed after the context object is done. This also includes the state that the resultant future ended in.
- @return a 'context object' that manages the tear-down of the receiver's value. This teardown can be asynchronous, and is indicated via the return-value of the contextualTeardown block,
- */
-- (nonnull FBFutureContext<T> *)onQueue:(nonnull dispatch_queue_t)queue contextualTeardown:(nonnull FBFuture<NSNull *> * _Nonnull (^)(T _Nonnull, FBFutureState))action;
-
-/**
- Creates an 'context object' from a block.
-
- @param queue the queue to perform the teardown on.
- @param fmap the 'context object' to add.
- @return a 'context object' that manages the tear-down of the receiver's value.
- */
-- (nonnull FBFutureContext *)onQueue:(nonnull dispatch_queue_t)queue pushTeardown:(nonnull FBFutureContext * _Nonnull (^)(T _Nonnull))fmap;
-
 #pragma mark Metadata
 
 /**
@@ -433,92 +409,5 @@ extern dispatch_time_t FBCreateDispatchTimeFromDuration(NSTimeInterval inDuratio
  @return the receiver, for chaining.
  */
 - (nonnull instancetype)resolveFromFuture:(nonnull FBFuture *)future;
-
-@end
-
-/**
- A future plus a teardown that runs once the context is popped.
- Contexts stack: teardowns unwind innermost-first, and because a teardown may be asynchronous an inner teardown completes before the outer one starts.
- Return an empty future from a teardown when ordering does not matter.
- */
-@interface FBFutureContext <T : id> : NSObject
-
-#pragma mark Initializers
-
-/**
- Constructs a context with no teardown.
-
- @param future the future to wrap.
- @return a FBFutureContext wrapping the Future.
- */
-+ (nonnull FBFutureContext<T> *)futureContextWithFuture:(nonnull FBFuture<T> *)future;
-
-/**
- Constructs a context with no teardown, from an error.
-
- @param error an error to raise.
- @return a new Future Context.
- */
-+ (nonnull FBFutureContext *)futureContextWithError:(nonnull NSError *)error;
-
-#pragma mark Public Methods
-
-/**
- Return a Future from the context.
- The receiver's teardown will occur *after* the Future returned by `pop` resolves.
- If you wish to keep the context alive after the `pop` then use `pend` instead.
-
- @param queue the queue to chain on.
- @param pop the function to re-map the result to a new future, only called on success.
- @return a Future derived from the fmap. The teardown of the context will occur *after* this future has resolved.
- */
-- (nonnull FBFuture *)onQueue:(nonnull dispatch_queue_t)queue pop:(nonnull FBFuture * _Nonnull (^)(T _Nonnull result))pop;
-
-/**
- Continue to keep the context alive, but fmap a new future.
- The receiver's teardown will not occur after the `pend`'s Future has resolved.
-
- @param queue the queue to chain on.
- @param fmap the function to re-map the result to a new future, only called on success.
- @return a Context derived from the fmap.
- */
-- (nonnull FBFutureContext *)onQueue:(nonnull dispatch_queue_t)queue pend:(nonnull FBFuture * _Nonnull (^)(T _Nonnull result))fmap;
-
-/**
- Pushes another context.
- This can be used to make a stack of contexts that unroll once the produced context pops.
-
- @param queue the queue to chain on.
- @param fmap the block to produce more context.
- @return a Context derived from the fmap with the current context stacked below.
- */
-- (nonnull FBFutureContext *)onQueue:(nonnull dispatch_queue_t)queue push:(nonnull FBFutureContext * _Nonnull (^)(T _Nonnull result))fmap;
-
-/**
- Adds a teardown to the context
-
- @param queue the queue to call the teardown on
- @param action the teardown action
- @return a context with the teardown applied.
- */
-- (nonnull FBFutureContext *)onQueue:(nonnull dispatch_queue_t)queue contextualTeardown:(nonnull FBFuture<NSNull *> * _Nonnull (^)(T _Nonnull, FBFutureState))action;
-
-/**
- Extracts the wrapped context, so that it can be torn-down at a later time.
- This is designed to allow a context manager to be combined with the teardown of other long-running operations.
-
- @param queue the queue to chain on.
- @param enter the block that receives two parameters. The first is the context value, the second is a future that will tear-down the context when it is resolved.
- @return a Future that wraps the value returned from `enter`.
- */
-- (nonnull FBFuture *)onQueue:(nonnull dispatch_queue_t)queue enter:(nonnull id _Nonnull (^)(T _Nonnull result, FBMutableFuture<NSNull *> * _Nonnull teardown))enter;
-
-#pragma mark Properties
-
-/**
- The future keeping the context alive.
- The context will not be torn down until this future resolves.
- */
-@property (nonnull, nonatomic, readonly, strong) FBFuture<T> *future;
 
 @end

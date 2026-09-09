@@ -12,9 +12,6 @@ public enum AsyncFBFutureBridgeError: Error {
   /// The underlying future signalled completion without yielding a value or an
   /// error. This indicates a bug in the producing FBFuture implementation.
   case continuationFulfilledWithoutValues
-
-  /// The `FBFutureContext`'s `pop:` block never ran even though the surrounding future resolved.
-  case contextTeardownNotCaptured
 }
 
 // MARK: - FBFuture → async bridge
@@ -150,75 +147,6 @@ func awaitMutableFuture<T: AnyObject>(_ mutableFuture: FBMutableFuture<T>) async
 /// Awaits an `FBMutableFuture<NSNull>`, discarding the resolved `NSNull`.
 func awaitMutableFutureVoid(_ mutableFuture: FBMutableFuture<NSNull>) async throws {
   try await bridgeFBFutureVoid(convertFBMutableFuture(mutableFuture))
-}
-
-// MARK: - FBFutureContext → async bridge
-
-/// Wraps a non-`Sendable` `FBFutureContext` so it can survive crossing the
-/// `Sendable` boundary of the bridging machinery.
-private final class FBFutureContextBox<T: AnyObject>: @unchecked Sendable {
-  let context: FBFutureContext<T>
-  init(_ context: FBFutureContext<T>) {
-    self.context = context
-  }
-}
-
-/// Holds the context value and its teardown trigger, set inside the `pop:` block.
-private final class ContextEnterCapture<T: AnyObject>: @unchecked Sendable {
-  var value: T?
-  var teardown: FBMutableFuture<AnyObject>?
-}
-
-/// Acquires the resource produced by an `FBFutureContext`, runs `body`, then runs the teardown stack.
-/// Teardown runs and completes even if `body` throws. Uses `pop:` rather than `enter:`, which discards
-/// the future that resolves once the teardown stack has finished.
-public func withFBFutureContext<T: AnyObject, R>(
-  _ context: FBFutureContext<T>,
-  body: (T) async throws -> R
-) async throws -> R {
-  let capture = ContextEnterCapture<T>()
-  let contextBox = FBFutureContextBox(context)
-  let acquired = FBMutableFuture<NSNull>()
-  let acquiredBox = FBFutureResultBox(acquired)
-
-  // The block runs once the resource is acquired; the future it returns gates
-  // the teardown, and `popped` resolves once that teardown stack has run.
-  let popped = contextBox.context.onQueue(
-    asyncBridgeQueue,
-    pop: { (value: T) -> FBFuture<AnyObject> in
-      let teardown = FBMutableFuture<AnyObject>()
-      capture.value = value
-      capture.teardown = teardown
-      acquiredBox.value.resolve(withResult: NSNull())
-      return convertFBMutableFuture(teardown)
-    })
-
-  // Surfaces any failure that occurred while acquiring the underlying resource:
-  // when acquisition fails the pop block never runs, so `acquired` is resolved
-  // from `popped`'s error rather than by the block above.
-  popped.onQueue(
-    asyncBridgeQueue,
-    handleError: { (error: any Error) -> FBFuture<AnyObject> in
-      acquiredBox.value.resolveWithError(error)
-      return FBFuture(error: error)
-    })
-  _ = try await awaitMutableFutureVoid(acquired)
-
-  guard let value = capture.value, let teardown = capture.teardown else {
-    throw AsyncFBFutureBridgeError.contextTeardownNotCaptured
-  }
-
-  // Await the teardown on both paths so the resource is released before returning.
-  do {
-    let result = try await body(value)
-    teardown.resolve(withResult: NSNull())
-    _ = try await bridgeFBFuture(popped)
-    return result
-  } catch {
-    teardown.resolve(withResult: NSNull())
-    _ = try? await bridgeFBFuture(popped)
-    throw error
-  }
 }
 
 // MARK: - async → FBFuture bridge
