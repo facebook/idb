@@ -75,9 +75,12 @@ public final class FBIDBLogger: FBCompositeLogger, @unchecked Sendable {
         exit(1)
       }
 
-      let fileDescriptor = open(logFileURL.path, O_WRONLY | O_APPEND | O_CREAT)
-      if fileDescriptor == 0 {
-        systemLogger.error().log("Couldn't create log file at \(logFileURL.path) \(String(cString: strerror(errno)))")
+      // O_CLOEXEC because the companion spawns processes throughout its life and
+      // none of them have any business inheriting the log.
+      let fileDescriptor = open(logFileURL.path, O_WRONLY | O_APPEND | O_CREAT | O_CLOEXEC, 0o644)
+      let openError = errno
+      if fileDescriptor < 0 {
+        systemLogger.error().log("Couldn't create log file at \(logFileURL.path) \(String(cString: strerror(openError)))")
         exit(1)
       }
 
