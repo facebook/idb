@@ -228,7 +228,7 @@ public final class FBMacDevice: NSObject, FBiOSTarget {
 
   // MARK: - Transport
 
-  func transportForTestManagerService() -> FBFutureContext<NSNumber> {
+  private func makeTransportForTestManagerService() throws -> FileHandle {
     let logger = self.logger
     let connection = NSXPCConnection(machServiceName: "com.apple.testmanagerd.control", options: [])
     let interface = NSXPCInterface(with: XCTestManager_XPCControl.self)
@@ -249,7 +249,7 @@ public final class FBMacDevice: NSObject, FBiOSTarget {
       proxyError = error
     }
     guard let proxy = rawProxy as? XCTestManager_XPCControl else {
-      return FBFutureContext(error: FBMacDeviceError.testManagerProxyNonConformant(proxyDescription: String(describing: rawProxy)))
+      throw FBMacDeviceError.testManagerProxyNonConformant(proxyDescription: String(describing: rawProxy))
     }
 
     self.connection = connection
@@ -264,17 +264,9 @@ public final class FBMacDevice: NSObject, FBiOSTarget {
       transport = file
     }
     guard let transport else {
-      return FBFutureContext(error: error ?? proxyError ?? FBMacDeviceError.transportUnavailable)
+      throw error ?? proxyError ?? FBMacDeviceError.transportUnavailable
     }
-    return FBFuture(result: NSNumber(value: transport.fileDescriptor))
-      .onQueue(
-        workQueue,
-        contextualTeardown: { _, _ -> FBFuture<NSNull> in
-          transport.closeFile()
-          return FBFuture(result: NSNull())
-        }
-      )
-      .retyped(FBFutureContext<NSNumber>.self)
+    return transport
   }
 
   public func processID(withBundleID bundleID: String) -> FBFuture<NSNumber> {
@@ -473,7 +465,9 @@ extension FBMacDevice: XCTestExtendedCommands {
   public func withTransportForTestManagerService<R>(
     body: (NSNumber) async throws -> R
   ) async throws -> R {
-    try await withFBFutureContext(transportForTestManagerService(), body: body)
+    let transport = try makeTransportForTestManagerService()
+    defer { transport.closeFile() }
+    return try await body(NSNumber(value: transport.fileDescriptor))
   }
 }
 
