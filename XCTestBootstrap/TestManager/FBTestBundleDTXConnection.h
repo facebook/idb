@@ -26,9 +26,16 @@
 #pragma mark Step-wise connection API
 
 /**
- Wraps the testmanagerd socket in a DTX connection. The returned context keeps the connection alive for the body and tears it down (suspend + cancel) when the scope exits.
+ Wraps the testmanagerd socket in a DTX connection. Pair with `-disconnect`, which the caller owes
+ once this has returned YES.
  */
-- (nonnull FBFutureContext<FBTestBundleDTXConnection *> *)connect;
+- (BOOL)connectWithError:(NSError *_Nullable *_Nullable)error;
+
+/**
+ Suspends and cancels the connection established by `-connectWithError:`. Synchronous: the
+ connection is down when this returns. Safe to call when nothing is connected.
+ */
+- (void)disconnect;
 
 /**
  Establishes the test-bundle proxy channel and starts the testmanagerd session, each with its own internal readiness timeout. Resolves when both have completed.

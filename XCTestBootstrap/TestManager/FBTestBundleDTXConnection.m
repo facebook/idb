@@ -127,7 +127,7 @@ static NSTimeInterval const DaemonSessionReadyTimeout = 60; // Time for `_IDE_in
 
 #pragma mark Connection lifecycle
 
-- (FBFutureContext<FBTestBundleDTXConnection *> *)connect
+- (BOOL)connectWithError:(NSError **)error
 {
   int socket = self.testManagerdSocket;
   id<FBControlCoreLogger> logger = self.logger;
@@ -142,10 +142,9 @@ static NSTimeInterval const DaemonSessionReadyTimeout = 60; // Time for `_IDE_in
                                                                                      }];
     connection = [[objc_lookUpClass("DTXConnection") alloc] initWithTransport:transport];
   } @catch (NSException *exception) {
-    return [FBFutureContext futureContextWithError:
-            [[FBXCTestError
-              describe:[NSString stringWithFormat:@"Failed to wrap testmanagerd socket %d in DTXConnection: %@", socket, exception]]
-             build]];
+    return [[FBXCTestError
+             describe:[NSString stringWithFormat:@"Failed to wrap testmanagerd socket %d in DTXConnection: %@", socket, exception]]
+            failBool:error];
   }
   [connection registerDisconnectHandler:^{
     [logger log:@"Notified that testmanagerd connection disconnected"];
@@ -153,16 +152,22 @@ static NSTimeInterval const DaemonSessionReadyTimeout = 60; // Time for `_IDE_in
   }];
   self.testManagerdConnection = connection;
   [logger log:[NSString stringWithFormat:@"testmanagerd socket %d wrapped in %@", socket, connection]];
+  return YES;
+}
 
-  return [[FBFuture
-           futureWithResult:self]
-          onQueue:self.requestQueue
-          contextualTeardown:^(id _, FBFutureState __) {
-            [logger log:[NSString stringWithFormat:@"Ending the testmanagerd connection. %@", connection]];
-            [connection suspend];
-            [connection cancel];
-            return FBFuture.empty;
-          }];
+- (void)disconnect
+{
+  DTXConnection *connection = self.testManagerdConnection;
+  if (!connection) {
+    return;
+  }
+  // Synchronous so the connection is down by the time the caller's scope has exited, matching the
+  // awaited teardown this replaces.
+  dispatch_sync(self.requestQueue, ^{
+    [self.logger log:[NSString stringWithFormat:@"Ending the testmanagerd connection. %@", connection]];
+    [connection suspend];
+    [connection cancel];
+  });
 }
 
 - (FBFuture<NSNull *> *)setupAndStartSession

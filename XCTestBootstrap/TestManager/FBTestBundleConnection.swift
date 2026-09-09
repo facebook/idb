@@ -77,21 +77,21 @@ final class FBTestBundleConnection {
       request: requestQueue,
       logger: logger
     )
-    try await withFBFutureContext(core.connect()) { (_: AnyObject) in
-      do {
-        try await bridgeFBFutureVoid(core.setupAndStartSession())
-        try await bridgeFBFutureVoid(core.waitForBundleReady())
-      } catch {
-        throw await self.diagnosedConnectionError(from: error)
-      }
-      core.startExecutingTestPlan()
-      try await bridgeFBFutureVoid(core.waitForBundleDisconnected())
-      if core.testPlanCompleted {
-        self.logger.log("Bundle disconnected, with the test plan completed. Bundle exited successfully.")
-      } else {
-        self.logger.log("Bundle disconnected, but test plan has not completed. This could mean a crash has occurred")
-        throw await self.crashLogOrNotFoundError(description: "Lost connection to test process, but could not find a crash log")
-      }
+    try core.connect()
+    defer { core.disconnect() }
+    do {
+      try await bridgeFBFutureVoid(core.setupAndStartSession())
+      try await bridgeFBFutureVoid(core.waitForBundleReady())
+    } catch {
+      throw await self.diagnosedConnectionError(from: error)
+    }
+    core.startExecutingTestPlan()
+    try await bridgeFBFutureVoid(core.waitForBundleDisconnected())
+    if core.testPlanCompleted {
+      self.logger.log("Bundle disconnected, with the test plan completed. Bundle exited successfully.")
+    } else {
+      self.logger.log("Bundle disconnected, but test plan has not completed. This could mean a crash has occurred")
+      throw await self.crashLogOrNotFoundError(description: "Lost connection to test process, but could not find a crash log")
     }
   }
 
