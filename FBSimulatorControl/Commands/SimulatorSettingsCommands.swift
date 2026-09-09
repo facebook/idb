@@ -779,9 +779,9 @@ public struct SimulatorSettingsCommands {
   }
 }
 
-// MARK: - FBSimulator+SettingsCommands
+// MARK: - FBSimulator+Settings
 
-extension FBSimulator: SettingsCommands {
+extension FBSimulator {
 
   public func apply(_ setting: FBSimulatorSetting) async throws {
     try await settings.apply(setting)

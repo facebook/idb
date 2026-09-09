@@ -119,9 +119,9 @@ public struct SimulatorMediaCommands {
   }
 }
 
-// MARK: - FBSimulator+MediaCommands
+// MARK: - FBSimulator+Media
 
-extension FBSimulator: MediaCommands {
+extension FBSimulator {
 
   public func addMedia(_ mediaFileURLs: [URL]) async throws {
     try media.uploadMedia(mediaFileURLs)

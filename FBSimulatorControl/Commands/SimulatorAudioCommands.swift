@@ -156,15 +156,16 @@ public enum SimulatorAudioError: Error, LocalizedError {
   }
 }
 
-// MARK: - AudioCommands
+// MARK: - FBSimulator+Audio
 
-extension FBSimulator: AudioCommands {
+extension FBSimulator {
 
   /// The path of this simulator's audio settings file.
   var audioSettingsPath: String? {
     dataDirectory.map { ($0 as NSString).appendingPathComponent(SimulatorAudioSettings.relativePath) }
   }
 
+  /// The simulated device's current audio settings.
   public func audioSettings() async throws -> SimulatorAudioSettings {
     guard let path = audioSettingsPath else {
       throw SimulatorAudioError.noDataDirectory
@@ -172,10 +173,18 @@ extension FBSimulator: AudioCommands {
     return try SimulatorAudioSettings.settings(atPath: path)
   }
 
-  /// Publishes the update on the Darwin notifications the guest owns, the same edge a hardware button
-  /// press drives.
+  /// Applies `update` to the simulated device, leaving any field it does not carry alone.
   ///
-  /// Writing the settings file directly would not do: `CoreSimulatorBridge` is its only writer, and a
+  /// The volume is the absolute counterpart to the `volumeUp` and `volumeDown` hardware buttons, which
+  /// only step by a sixteenth.
+  ///
+  /// Do not mix the two: SpringBoard never reads back the level it publishes, so the next hardware
+  /// button press steps from SpringBoard's stale level and overwrites what was set here. Control
+  /// Center's slider is stale for the same reason, and the ringer behaves alike. An absolute set is
+  /// reliable on its own.
+  ///
+  /// The update is published on the Darwin notifications the guest owns, the same edge a hardware
+  /// button press drives. Writing the settings file directly would not do: `CoreSimulatorBridge` is its only writer, and a
   /// guest app watches the *containing directory* for entry changes rather than the file itself, so
   /// only the bridge's atomic replace makes an already-running app re-read it.
   public func updateAudioSettings(_ update: FBSimulatorAudioSettingsUpdate) async throws {

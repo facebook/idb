@@ -21,9 +21,9 @@ public struct SimulatorKeychainCommands {
   }
 }
 
-// MARK: - FBSimulator+KeychainCommands
+// MARK: - FBSimulator+Keychain
 
-extension FBSimulator: KeychainCommands {
+extension FBSimulator {
 
   public func clearKeychain() async throws {
     try await keychain.clearKeychain()
