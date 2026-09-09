@@ -70,7 +70,7 @@ public final class SimulatorLaunchCtlCommands {
 
   // MARK: - Services
 
-  fileprivate func serviceName(forProcessIdentifier pid: pid_t) async throws -> String {
+  public func serviceName(forProcessIdentifier pid: pid_t) async throws -> String {
     let pattern = "^\(NSRegularExpression.escapedPattern(for: "\(pid)"))\t"
     guard let regex = try? NSRegularExpression(pattern: pattern, options: []) else {
       throw SimulatorLaunchCtlError.searchPatternConstructionFailed(processIdentifier: pid)
@@ -79,7 +79,7 @@ public final class SimulatorLaunchCtlCommands {
     return serviceName
   }
 
-  fileprivate func serviceNamesAndProcessIdentifiers(matching regex: NSRegularExpression) async throws -> [String: NSNumber] {
+  public func serviceNamesAndProcessIdentifiers(matching regex: NSRegularExpression) async throws -> [String: NSNumber] {
     let text = try await run(.list)
     let lines = text.components(separatedBy: .newlines)
     var mapping: [String: NSNumber] = [:]
@@ -96,7 +96,7 @@ public final class SimulatorLaunchCtlCommands {
     return mapping
   }
 
-  fileprivate func firstServiceNameAndProcessIdentifier(matching regex: NSRegularExpression) async throws -> (String, pid_t) {
+  public func firstServiceNameAndProcessIdentifier(matching regex: NSRegularExpression) async throws -> (String, pid_t) {
     let serviceNameToProcessIdentifier = try await serviceNamesAndProcessIdentifiers(matching: regex)
     guard let (serviceName, processIdentifier) = serviceNameToProcessIdentifier.first else {
       throw SimulatorLaunchCtlError.noMatchingProcesses(pattern: regex.pattern)
@@ -107,7 +107,7 @@ public final class SimulatorLaunchCtlCommands {
     return (serviceName, processIdentifier.int32Value)
   }
 
-  fileprivate func listServices() async throws -> [String: Any] {
+  public func listServices() async throws -> [String: Any] {
     let text = try await run(.list)
     let lines = text.components(separatedBy: .newlines)
     if lines.count < 2 {
@@ -120,7 +120,7 @@ public final class SimulatorLaunchCtlCommands {
     return services
   }
 
-  fileprivate func stopService(withName serviceName: String) async throws -> String {
+  public func stopService(withName serviceName: String) async throws -> String {
     do {
       return try await run(.stop(serviceName: serviceName))
     } catch {
@@ -128,7 +128,7 @@ public final class SimulatorLaunchCtlCommands {
     }
   }
 
-  fileprivate func startService(withName serviceName: String) async throws -> String {
+  public func startService(withName serviceName: String) async throws -> String {
     do {
       return try await run(.start(serviceName: serviceName))
     } catch {

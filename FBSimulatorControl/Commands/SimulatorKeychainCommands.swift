@@ -16,7 +16,7 @@ public struct SimulatorKeychainCommands {
     SimulatorKeychainCommands(simulator: simulator)
   }
 
-  fileprivate func clearKeychain() async throws {
+  public func clearKeychain() async throws {
     try simulator.device.resetKeychain()
   }
 }

@@ -135,7 +135,7 @@ public struct SimulatorSettingsCommands {
     return dataDirectory
   }
 
-  fileprivate func apply(_ setting: FBSimulatorSetting) async throws {
+  public func apply(_ setting: FBSimulatorSetting) async throws {
     switch setting {
     case let .hardwareKeyboard(enabled):
       try await setHardwareKeyboardEnabled(enabled)
@@ -154,7 +154,7 @@ public struct SimulatorSettingsCommands {
     }
   }
 
-  fileprivate func applyResolution(_ resolution: FBSimulatorSettingResolution) async throws {
+  public func applyResolution(_ resolution: FBSimulatorSettingResolution) async throws {
     switch resolution {
     case let .setting(setting):
       try await apply(setting)
@@ -163,7 +163,7 @@ public struct SimulatorSettingsCommands {
     }
   }
 
-  fileprivate func currentAppearance() async throws -> SimulatorAppearance {
+  public func currentAppearance() async throws -> SimulatorAppearance {
     let raw = simulator.device.currentUIInterfaceStyle()
     return SimulatorAppearance(rawValue: raw) ?? .light
   }
@@ -172,7 +172,7 @@ public struct SimulatorSettingsCommands {
     try simulator.device.setUIInterfaceStyle(appearance.rawValue)
   }
 
-  fileprivate func currentContentSizeCategory() async throws -> FBSimulatorContentSizeCategory {
+  public func currentContentSizeCategory() async throws -> FBSimulatorContentSizeCategory {
     let raw = simulator.device.currentContentSizeCategory()
     return FBSimulatorContentSizeCategory(rawValue: raw) ?? .large
   }
@@ -181,7 +181,7 @@ public struct SimulatorSettingsCommands {
     try simulator.device.setContentSizeCategory(category.rawValue)
   }
 
-  fileprivate func currentStatusBarOverrides() async throws -> FBStatusBarOverride {
+  public func currentStatusBarOverrides() async throws -> FBStatusBarOverride {
     var timeString: NSString?
     var dataNetworkType: NSNumber?
     var wiFiMode: NSNumber?
@@ -217,7 +217,7 @@ public struct SimulatorSettingsCommands {
     return override
   }
 
-  fileprivate func overrideStatusBar(_ override: FBStatusBarOverride?) async throws {
+  public func overrideStatusBar(_ override: FBStatusBarOverride?) async throws {
     guard let override else {
       // clearStatusBarOverrides:(NSUInteger)flags sends @{@"OverridesToClear": @(flags)} via MIG.
       // Bit 31 (0x80000000) = clear all. Pass NSUIntegerMax to clear everything.
@@ -280,12 +280,12 @@ public struct SimulatorSettingsCommands {
       .setPreference(name, value: value, type: type, domain: domain)
   }
 
-  fileprivate func getCurrentPreference(_ name: String, domain: String?) async throws -> String {
+  public func getCurrentPreference(_ name: String, domain: String?) async throws -> String {
     return try await PreferenceModificationStrategy(simulator: simulator)
       .getCurrentPreference(name, domain: domain)
   }
 
-  fileprivate func grantAccess(_ bundleIDs: Set<String>, toServices services: Set<FBTargetSettingsService>) async throws {
+  public func grantAccess(_ bundleIDs: Set<String>, toServices services: Set<FBTargetSettingsService>) async throws {
     if services.isEmpty {
       throw SimulatorSettingsError.noServicesToGrant(bundleIDs: bundleIDs)
     }
@@ -339,7 +339,7 @@ public struct SimulatorSettingsCommands {
     }
   }
 
-  fileprivate func revokeAccess(_ bundleIDs: Set<String>, toServices services: Set<FBTargetSettingsService>) async throws {
+  public func revokeAccess(_ bundleIDs: Set<String>, toServices services: Set<FBTargetSettingsService>) async throws {
     if services.isEmpty {
       throw SimulatorSettingsError.noServicesToRevoke(bundleIDs: bundleIDs)
     }
@@ -393,7 +393,7 @@ public struct SimulatorSettingsCommands {
     }
   }
 
-  fileprivate func grantAccess(_ bundleIDs: Set<String>, toDeeplink scheme: String) async throws {
+  public func grantAccess(_ bundleIDs: Set<String>, toDeeplink scheme: String) async throws {
     if scheme.isEmpty {
       throw SimulatorSettingsError.emptyScheme(operation: "url approve")
     }
@@ -427,7 +427,7 @@ public struct SimulatorSettingsCommands {
     }
   }
 
-  fileprivate func revokeAccess(_ bundleIDs: Set<String>, toDeeplink scheme: String) async throws {
+  public func revokeAccess(_ bundleIDs: Set<String>, toDeeplink scheme: String) async throws {
     if scheme.isEmpty {
       throw SimulatorSettingsError.emptyScheme(operation: "url revoke")
     }
@@ -453,7 +453,7 @@ public struct SimulatorSettingsCommands {
     }
   }
 
-  fileprivate func updateContacts(_ databaseDirectory: String) async throws {
+  public func updateContacts(_ databaseDirectory: String) async throws {
     let destinationDirectory = (try requireDataDirectory(of: simulator) as NSString).appendingPathComponent("Library/AddressBook")
     if !FileManager.default.fileExists(atPath: destinationDirectory) {
       throw SimulatorSettingsError.addressBookDirectoryMissing(path: destinationDirectory)
@@ -470,47 +470,47 @@ public struct SimulatorSettingsCommands {
     }
   }
 
-  fileprivate func setProxy(host: String, port: UInt, type: String) async throws {
+  public func setProxy(host: String, port: UInt, type: String) async throws {
     try await simulator.runSimulatorFrameworkBridge(
       withService: "proxy",
       action: "set",
       arguments: [host, "\(port)", type.isEmpty ? "http" : type])
   }
 
-  fileprivate func clearProxy() async throws {
+  public func clearProxy() async throws {
     try await simulator.runSimulatorFrameworkBridge(withService: "proxy", action: "clear")
   }
 
-  fileprivate func listProxy() async throws -> String {
+  public func listProxy() async throws -> String {
     try await simulator.runSimulatorFrameworkBridge(withService: "proxy", action: "list")
   }
 
-  fileprivate func setDnsServers(_ servers: [String]) async throws {
+  public func setDnsServers(_ servers: [String]) async throws {
     if servers.isEmpty {
       throw SimulatorSettingsError.noDnsServers
     }
     try await simulator.runSimulatorFrameworkBridge(withService: "dns", action: "set", arguments: servers)
   }
 
-  fileprivate func clearDns() async throws {
+  public func clearDns() async throws {
     try await simulator.runSimulatorFrameworkBridge(withService: "dns", action: "clear")
   }
 
-  fileprivate func listDns() async throws -> String {
+  public func listDns() async throws -> String {
     try await simulator.runSimulatorFrameworkBridge(withService: "dns", action: "list")
   }
 
-  fileprivate func setHealthAuthorization(_ approved: Bool, forBundleID bundleID: String, typeIdentifiers: [String]) async throws {
+  public func setHealthAuthorization(_ approved: Bool, forBundleID bundleID: String, typeIdentifiers: [String]) async throws {
     let action = approved ? "approve" : "revoke"
     let args = [bundleID] + typeIdentifiers
     try await simulator.runSimulatorFrameworkBridge(withService: "health", action: action, arguments: args)
   }
 
-  fileprivate func clearHealthAuthorization(forBundleID bundleID: String) async throws {
+  public func clearHealthAuthorization(forBundleID bundleID: String) async throws {
     try await simulator.runSimulatorFrameworkBridge(withService: "health", action: "clear", arguments: [bundleID])
   }
 
-  fileprivate func listHealthAuthorization(forBundleID bundleID: String) async throws -> String {
+  public func listHealthAuthorization(forBundleID bundleID: String) async throws -> String {
     try await simulator.runSimulatorFrameworkBridge(withService: "health", action: "list", arguments: [bundleID])
   }
 

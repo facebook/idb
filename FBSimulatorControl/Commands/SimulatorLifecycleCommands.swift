@@ -53,7 +53,7 @@ public final class SimulatorLifecycleCommands {
 
   // MARK: - Async
 
-  fileprivate func boot(_ configuration: FBSimulatorBootConfiguration) async throws {
+  public func boot(_ configuration: FBSimulatorBootConfiguration) async throws {
     guard let simulator = self.simulator else {
       throw FBWeakTargetError.simulator
     }
@@ -93,7 +93,7 @@ public final class SimulatorLifecycleCommands {
     try await bridgeFBFutureVoid(CoreSimulatorNotifier.resolveLeavesState(state, for: simulator.device))
   }
 
-  fileprivate func focus() async throws {
+  public func focus() async throws {
     guard let simulator = self.simulator else {
       throw FBWeakTargetError.simulator
     }
@@ -144,7 +144,7 @@ public final class SimulatorLifecycleCommands {
     }
   }
 
-  fileprivate func disconnect(withTimeout timeout: TimeInterval, logger: (any FBControlCoreLogger)?) async throws {
+  public func disconnect(withTimeout timeout: TimeInterval, logger: (any FBControlCoreLogger)?) async throws {
     guard self.simulator != nil else {
       throw FBWeakTargetError.simulator
     }
@@ -165,14 +165,14 @@ public final class SimulatorLifecycleCommands {
     self.hid = nil
   }
 
-  fileprivate func connectToFramebuffer() async throws -> FBFramebuffer {
+  public func connectToFramebuffer() async throws -> FBFramebuffer {
     guard let simulator = self.simulator else {
       throw FBWeakTargetError.simulator
     }
     return try FBFramebuffer.mainScreenSurface(for: simulator, logger: simulator.logger)
   }
 
-  fileprivate func connectToHID() async throws -> FBSimulatorHID {
+  public func connectToHID() async throws -> FBSimulatorHID {
     if let hid = self.hid {
       return hid
     }
@@ -184,7 +184,7 @@ public final class SimulatorLifecycleCommands {
     return hid
   }
 
-  fileprivate func open(_ url: URL) async throws {
+  public func open(_ url: URL) async throws {
     guard let simulator = self.simulator else {
       throw FBWeakTargetError.simulator
     }

@@ -53,7 +53,7 @@ extension FBSimulator {
     commandCache.resolve { FBSimulatorVideoRecordingCommands.commands(with: self) }
   }
 
-  var launchCtl: SimulatorLaunchCtlCommands {
+  public var launchCtl: SimulatorLaunchCtlCommands {
     SimulatorLaunchCtlCommands.commands(with: self)
   }
 
@@ -63,19 +63,19 @@ extension FBSimulator {
 
   // MARK: - Sim-only accessors
 
-  var lifecycle: SimulatorLifecycleCommands {
+  public var lifecycle: SimulatorLifecycleCommands {
     commandCache.resolve { SimulatorLifecycleCommands.commands(with: self) }
   }
 
-  var media: SimulatorMediaCommands {
+  public var media: SimulatorMediaCommands {
     SimulatorMediaCommands.commands(with: self)
   }
 
-  var keychain: SimulatorKeychainCommands {
+  public var keychain: SimulatorKeychainCommands {
     SimulatorKeychainCommands.commands(with: self)
   }
 
-  var settings: SimulatorSettingsCommands {
+  public var settings: SimulatorSettingsCommands {
     SimulatorSettingsCommands.commands(with: self)
   }
 

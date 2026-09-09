@@ -65,7 +65,7 @@ public struct SimulatorMediaCommands {
     ])
   }
 
-  fileprivate func uploadMedia(_ mediaFileURLs: [URL]) throws {
+  public func uploadMedia(_ mediaFileURLs: [URL]) throws {
 
     if mediaFileURLs.isEmpty {
       throw SimulatorMediaError.noMediaProvided
