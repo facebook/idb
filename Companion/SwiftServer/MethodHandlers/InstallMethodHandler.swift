@@ -17,7 +17,7 @@ struct InstallMethodHandler: @unchecked Sendable {
   let commandExecutor: FBIDBCommandExecutor
   let targetLogger: FBControlCoreLogger
 
-  func handle(requestStream: GRPCAsyncRequestStream<Idb_InstallRequest>, responseStream: GRPCAsyncResponseStreamWriter<Idb_InstallResponse>, context: GRPCAsyncServerCallContext) async throws {
+  func handle(requestStream: RequestStreamReader<Idb_InstallRequest>, responseStream: GRPCAsyncResponseStreamWriter<Idb_InstallResponse>, context: GRPCAsyncServerCallContext) async throws {
 
     let artifact = try await Self.mapSimulatorInstallErrors {
       try await install(requestStream: requestStream, responseStream: responseStream)
@@ -46,7 +46,7 @@ struct InstallMethodHandler: @unchecked Sendable {
     }
   }
 
-  private func install(requestStream: GRPCAsyncRequestStream<Idb_InstallRequest>, responseStream: GRPCAsyncResponseStreamWriter<Idb_InstallResponse>) async throws -> FBInstalledArtifact {
+  private func install(requestStream: RequestStreamReader<Idb_InstallRequest>, responseStream: GRPCAsyncResponseStreamWriter<Idb_InstallResponse>) async throws -> FBInstalledArtifact {
 
     func extractPayloadFromRequest() throws -> Idb_Payload {
       guard let payload = request.extractPayload() else {
@@ -55,40 +55,40 @@ struct InstallMethodHandler: @unchecked Sendable {
       return payload
     }
 
-    var request = try await requestStream.requiredNext
+    var request = try await requestStream.requiredNext()
 
     guard case let .destination(destination) = request.value else {
       throw GRPCStatus(code: .failedPrecondition, message: "Expected destination as first request in stream")
     }
-    request = try await requestStream.requiredNext
+    request = try await requestStream.requiredNext()
 
     var name = UUID().uuidString
     if case let .nameHint(nameHint) = request.value {
       name = nameHint
-      request = try await requestStream.requiredNext
+      request = try await requestStream.requiredNext()
     }
 
     var makeDebuggable = false
     if case let .makeDebuggable(debuggable) = request.value {
       makeDebuggable = debuggable
-      request = try await requestStream.requiredNext
+      request = try await requestStream.requiredNext()
     }
     var overrideModificationTime = false
     if case let .overrideModificationTime(omtime) = request.value {
       overrideModificationTime = omtime
-      request = try await requestStream.requiredNext
+      request = try await requestStream.requiredNext()
     }
 
     var skipSigningBundles = false
     if case let .skipSigningBundles(skip) = request.value {
       skipSigningBundles = skip
-      request = try await requestStream.requiredNext
+      request = try await requestStream.requiredNext()
     }
 
     var linkToBundle: FBDsymInstallLinkToBundle?
     if case let .linkDsymToBundle(link) = request.value {
       linkToBundle = readLinkBundleToDsym(from: link)
-      request = try await requestStream.requiredNext
+      request = try await requestStream.requiredNext()
     }
 
     var payload = try extractPayloadFromRequest()
@@ -96,7 +96,7 @@ struct InstallMethodHandler: @unchecked Sendable {
     var compression = FBCompressionFormat.GZIP
     if case let .compression(format) = payload.source {
       compression = readCompressionFormat(from: format)
-      request = try await requestStream.requiredNext
+      request = try await requestStream.requiredNext()
       payload = try extractPayloadFromRequest()
     }
 
@@ -115,7 +115,7 @@ struct InstallMethodHandler: @unchecked Sendable {
   private func installData(
     from source: Idb_Payload.OneOf_Source?,
     to destination: Idb_InstallRequest.Destination,
-    requestStream: GRPCAsyncRequestStream<Idb_InstallRequest>,
+    requestStream: RequestStreamReader<Idb_InstallRequest>,
     name: String,
     makeDebuggable: Bool,
     linkToBundle: FBDsymInstallLinkToBundle?,
@@ -196,7 +196,7 @@ struct InstallMethodHandler: @unchecked Sendable {
 
   private func installZipArchive(
     initial: Data,
-    requestStream: GRPCAsyncRequestStream<Idb_InstallRequest>,
+    requestStream: RequestStreamReader<Idb_InstallRequest>,
     makeDebuggable: Bool,
     overrideModificationTime: Bool
   ) async throws -> FBInstalledArtifact {
@@ -231,7 +231,7 @@ struct InstallMethodHandler: @unchecked Sendable {
 
   private func writePayload(
     initial: Data,
-    requestStream: GRPCAsyncRequestStream<Idb_InstallRequest>,
+    requestStream: RequestStreamReader<Idb_InstallRequest>,
     output: OutputStream
   ) async throws {
     output.open()

@@ -15,9 +15,9 @@ struct RecordMethodHandler {
   let target: FBiOSTarget
   let targetLogger: FBControlCoreLogger
 
-  func handle(requestStream: GRPCAsyncRequestStream<Idb_RecordRequest>, responseStream: GRPCAsyncResponseStreamWriter<Idb_RecordResponse>, context: GRPCAsyncServerCallContext) async throws {
+  func handle(requestStream: RequestStreamReader<Idb_RecordRequest>, responseStream: GRPCAsyncResponseStreamWriter<Idb_RecordResponse>, context: GRPCAsyncServerCallContext) async throws {
 
-    let request = try await requestStream.requiredNext
+    let request = try await requestStream.requiredNext()
     guard case let .start(start) = request.control
     else { throw GRPCStatus(code: .failedPrecondition, message: "Expect start as initial request frame") }
 
@@ -51,7 +51,7 @@ struct RecordMethodHandler {
       recording = try await asyncTarget.startRecording(toFile: filePath)
     }
 
-    _ = try await requestStream.requiredNext
+    _ = try await requestStream.requiredNext()
     let outputURL = try await recording.stop()
 
     if start.filePath.isEmpty {

@@ -31,10 +31,10 @@ struct VideoStreamMethodHandler {
   let targetLogger: FBControlCoreLogger
   let commandExecutor: FBIDBCommandExecutor
 
-  func handle(requestStream: GRPCAsyncRequestStream<Idb_VideoStreamRequest>, responseStream: GRPCAsyncResponseStreamWriter<Idb_VideoStreamResponse>, context: GRPCAsyncServerCallContext) async throws {
+  func handle(requestStream: RequestStreamReader<Idb_VideoStreamRequest>, responseStream: GRPCAsyncResponseStreamWriter<Idb_VideoStreamResponse>, context: GRPCAsyncServerCallContext) async throws {
     @Atomic var finished = false
 
-    guard case let .start(start) = try await requestStream.requiredNext.control
+    guard case let .start(start) = try await requestStream.requiredNext().control
     else { throw GRPCStatus(code: .failedPrecondition, message: "Expected start control") }
 
     let videoStream = try await startVideoStream(

@@ -14,7 +14,7 @@ struct DebugserverMethodHandler {
 
   let commandExecutor: FBIDBCommandExecutor
 
-  func handle(requestStream: GRPCAsyncRequestStream<Idb_DebugServerRequest>, responseStream: GRPCAsyncResponseStreamWriter<Idb_DebugServerResponse>, context: GRPCAsyncServerCallContext) async throws {
+  func handle(requestStream: RequestStreamReader<Idb_DebugServerRequest>, responseStream: GRPCAsyncResponseStreamWriter<Idb_DebugServerResponse>, context: GRPCAsyncServerCallContext) async throws {
 
     for try await request in requestStream {
       switch request.control {

@@ -16,10 +16,10 @@ struct TailMethodHandler {
 
   let commandExecutor: FBIDBCommandExecutor
 
-  func handle(requestStream: GRPCAsyncRequestStream<Idb_TailRequest>, responseStream: GRPCAsyncResponseStreamWriter<Idb_TailResponse>, context: GRPCAsyncServerCallContext) async throws {
+  func handle(requestStream: RequestStreamReader<Idb_TailRequest>, responseStream: GRPCAsyncResponseStreamWriter<Idb_TailResponse>, context: GRPCAsyncServerCallContext) async throws {
     @Atomic var finished = false
 
-    guard case let .start(start) = try await requestStream.requiredNext.control
+    guard case let .start(start) = try await requestStream.requiredNext().control
     else { throw GRPCStatus(code: .failedPrecondition, message: "Expected start control") }
 
     let responseWriter = FIFOStreamWriter(stream: responseStream)
@@ -38,7 +38,7 @@ struct TailMethodHandler {
     let fileContainer = FileContainerValueTransformer.rawFileContainer(from: start.container)
     let tail = try await commandExecutor.tail(start.path, to_consumer: consumer, in_container: fileContainer)
 
-    guard case .stop = try await requestStream.requiredNext.control
+    guard case .stop = try await requestStream.requiredNext().control
     else { throw GRPCStatus(code: .failedPrecondition, message: "Expected end control") }
 
     try await tail.cancel()

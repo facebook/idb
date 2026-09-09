@@ -17,8 +17,8 @@ struct DapMethodHandler: @unchecked Sendable {
   let commandExecutor: FBIDBCommandExecutor
   let targetLogger: FBControlCoreLogger
 
-  func handle(requestStream: GRPCAsyncRequestStream<Idb_DapRequest>, responseStream: GRPCAsyncResponseStreamWriter<Idb_DapResponse>, context: GRPCAsyncServerCallContext) async throws {
-    guard case let .start(start) = try await requestStream.requiredNext.control
+  func handle(requestStream: RequestStreamReader<Idb_DapRequest>, responseStream: GRPCAsyncResponseStreamWriter<Idb_DapResponse>, context: GRPCAsyncServerCallContext) async throws {
+    guard case let .start(start) = try await requestStream.requiredNext().control
     else { throw GRPCStatus(code: .failedPrecondition, message: "Dap command expected a Start messaged in the beginning of the Stream") }
 
     let writer = FBProcessInput<FBDataConsumer>.fromConsumer().retyped(FBProcessInput<AnyObject>.self)
@@ -59,7 +59,7 @@ struct DapMethodHandler: @unchecked Sendable {
     return process
   }
 
-  private func consumeElements(from requestStream: GRPCAsyncRequestStream<Idb_DapRequest>, to writer: FBProcessInput<AnyObject>, dapProcess: FBSubprocess<AnyObject, FBDataConsumer, NSString>) async throws {
+  private func consumeElements(from requestStream: RequestStreamReader<Idb_DapRequest>, to writer: FBProcessInput<AnyObject>, dapProcess: FBSubprocess<AnyObject, FBDataConsumer, NSString>) async throws {
     for try await request in requestStream {
       switch request.control {
       case .start:

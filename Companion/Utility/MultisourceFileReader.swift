@@ -17,13 +17,13 @@ enum MultisourceFileReader {
   /// archive live in a temporary directory scoped to `body`; files referenced by path belong to
   /// the caller of the RPC and are handed through untouched.
   static func withFilePathURLs<Request: PayloadExtractable, T>(
-    from requestStream: GRPCAsyncRequestStream<Request>,
+    from requestStream: RequestStreamReader<Request>,
     temporaryDirectory: FBTemporaryDirectory,
     extractFromSubdir: Bool,
     _ body: ([URL]) async throws -> T
   ) async throws -> T {
     func readNextPayload() async throws -> Idb_Payload {
-      guard let p = try await requestStream.requiredNext.extractPayload()
+      guard let p = try await requestStream.requiredNext().extractPayload()
       else { throw GRPCStatus(code: .failedPrecondition, message: "Incorrect request. Expected payload") }
       return p
     }
@@ -74,7 +74,7 @@ enum MultisourceFileReader {
     }
   }
 
-  private static func filepathsFromStream<Request: PayloadExtractable>(initial: URL, requestStream: GRPCAsyncRequestStream<Request>) async throws -> [URL] {
+  private static func filepathsFromStream<Request: PayloadExtractable>(initial: URL, requestStream: RequestStreamReader<Request>) async throws -> [URL] {
     var filePaths = [initial]
 
     for try await request in requestStream {
@@ -91,7 +91,7 @@ enum MultisourceFileReader {
   }
 
   // TODO: Do we really need multithreading here? Isnt we just fill the stream sequentially while read is blocked and only then read starts?
-  private static func pipeToInput<Request: PayloadExtractable>(initialData: Data, requestStream: GRPCAsyncRequestStream<Request>) -> (Task<Void, Error>, FBProcessInput<OutputStream>) {
+  private static func pipeToInput<Request: PayloadExtractable>(initialData: Data, requestStream: RequestStreamReader<Request>) -> (Task<Void, Error>, FBProcessInput<OutputStream>) {
     let input = FBProcessInput<OutputStream>.fromStream()
     let stream = input.contents
 

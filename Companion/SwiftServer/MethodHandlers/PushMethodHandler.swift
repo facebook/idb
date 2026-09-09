@@ -15,8 +15,8 @@ struct PushMethodHandler {
   let target: FBiOSTarget
   let commandExecutor: FBIDBCommandExecutor
 
-  func handle(requestStream: GRPCAsyncRequestStream<Idb_PushRequest>, context: GRPCAsyncServerCallContext) async throws -> Idb_PushResponse {
-    let request = try await requestStream.requiredNext
+  func handle(requestStream: RequestStreamReader<Idb_PushRequest>, context: GRPCAsyncServerCallContext) async throws -> Idb_PushResponse {
+    let request = try await requestStream.requiredNext()
 
     guard case let .inner(inner) = request.value
     else { throw GRPCStatus(code: .invalidArgument, message: "Expected inner as first request in stream") }

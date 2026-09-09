@@ -15,7 +15,7 @@ struct HidMethodHandler {
 
   let commandExecutor: FBIDBCommandExecutor
 
-  func handle(requestStream: GRPCAsyncRequestStream<Idb_HIDEvent>, context: GRPCAsyncServerCallContext) async throws -> Idb_HIDResponse {
+  func handle(requestStream: RequestStreamReader<Idb_HIDEvent>, context: GRPCAsyncServerCallContext) async throws -> Idb_HIDResponse {
     for try await request in requestStream {
       let event = try fbSimulatorHIDEvent(from: request)
       try await commandExecutor.hid(event)

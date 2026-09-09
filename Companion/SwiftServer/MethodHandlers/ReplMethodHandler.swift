@@ -21,8 +21,8 @@ struct ReplMethodHandler {
   /// stream (in the app context). Shared across streams for one target.
   let recordingCoordinator: ReplRecordingCoordinator
 
-  func handle(requestStream: GRPCAsyncRequestStream<Idb_ReplRequest>, responseStream: GRPCAsyncResponseStreamWriter<Idb_ReplResponse>, context: GRPCAsyncServerCallContext) async throws {
-    guard case let .start(start) = try await requestStream.requiredNext.control
+  func handle(requestStream: RequestStreamReader<Idb_ReplRequest>, responseStream: GRPCAsyncResponseStreamWriter<Idb_ReplResponse>, context: GRPCAsyncServerCallContext) async throws {
+    guard case let .start(start) = try await requestStream.requiredNext().control
     else { throw GRPCStatus(code: .failedPrecondition, message: "repl expected a Start message at the beginning of the stream") }
 
     targetLogger.debug().log("REPL session context: \(start.context)")
@@ -63,7 +63,7 @@ struct ReplMethodHandler {
   /// connects to the socket, reports `ready`, forwards each `Execute` (a dylib
   /// plus a symbol) to the socket and streams back the result, and on stop/EOF
   /// closes the socket (which ends the served process) and reports `stopped`.
-  private func serve(session: ReplSession, sharedFilesystem: Bool, context: Idb_ReplRequest.Start.Context, appBundleID: String?, requestStream: GRPCAsyncRequestStream<Idb_ReplRequest>, responseStream: GRPCAsyncResponseStreamWriter<Idb_ReplResponse>) async throws {
+  private func serve(session: ReplSession, sharedFilesystem: Bool, context: Idb_ReplRequest.Start.Context, appBundleID: String?, requestStream: RequestStreamReader<Idb_ReplRequest>, responseStream: GRPCAsyncResponseStreamWriter<Idb_ReplResponse>) async throws {
     // Per-session scratch directory for the dylibs received over the wire. It
     // lives on the host filesystem, which the simulator process can read.
     let scratchDirectory = (NSTemporaryDirectory() as NSString).appendingPathComponent("idb_repl_\(UUID().uuidString)")

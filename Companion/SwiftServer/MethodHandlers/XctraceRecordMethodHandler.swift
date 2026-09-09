@@ -18,16 +18,16 @@ struct XctraceRecordMethodHandler {
   let targetLogger: FBControlCoreLogger
   let target: FBiOSTarget
 
-  func handle(requestStream: GRPCAsyncRequestStream<Idb_XctraceRecordRequest>, responseStream: GRPCAsyncResponseStreamWriter<Idb_XctraceRecordResponse>, context: GRPCAsyncServerCallContext) async throws {
+  func handle(requestStream: RequestStreamReader<Idb_XctraceRecordRequest>, responseStream: GRPCAsyncResponseStreamWriter<Idb_XctraceRecordResponse>, context: GRPCAsyncServerCallContext) async throws {
 
     @Atomic var finishedWriting = false
     defer { _finishedWriting.set(true) }
 
-    guard case let .start(start) = try await requestStream.requiredNext.control
+    guard case let .start(start) = try await requestStream.requiredNext().control
     else { throw GRPCStatus(code: .failedPrecondition, message: "Expected start control") }
     let operation = try await startXCTraceOperation(request: start, responseStream: responseStream, finishedWriting: _finishedWriting)
 
-    guard case let .stop(stop) = try await requestStream.requiredNext.control
+    guard case let .stop(stop) = try await requestStream.requiredNext().control
     else { throw GRPCStatus(code: .failedPrecondition, message: "Expected end control") }
 
     try await stopXCTrace(operation: operation, request: stop, responseStream: responseStream, finishedWriting: _finishedWriting)

@@ -16,10 +16,10 @@ struct LaunchMethodHandler: @unchecked Sendable {
 
   let commandExecutor: FBIDBCommandExecutor
 
-  func handle(requestStream: GRPCAsyncRequestStream<Idb_LaunchRequest>, responseStream: GRPCAsyncResponseStreamWriter<Idb_LaunchResponse>, context: GRPCAsyncServerCallContext) async throws {
+  func handle(requestStream: RequestStreamReader<Idb_LaunchRequest>, responseStream: GRPCAsyncResponseStreamWriter<Idb_LaunchResponse>, context: GRPCAsyncServerCallContext) async throws {
     var consumers: [any FBDataConsumerLifecycle] = []
 
-    var request = try await requestStream.requiredNext
+    var request = try await requestStream.requiredNext()
     guard case let .start(start) = request.control else {
       throw GRPCStatus(code: .failedPrecondition, message: "Application not started yet")
     }
@@ -70,7 +70,7 @@ struct LaunchMethodHandler: @unchecked Sendable {
 
     guard start.waitFor else { return }
 
-    request = try await requestStream.requiredNext
+    request = try await requestStream.requiredNext()
     guard case .stop = request.control else {
       throw GRPCStatus(code: .failedPrecondition, message: "Application has already started")
     }

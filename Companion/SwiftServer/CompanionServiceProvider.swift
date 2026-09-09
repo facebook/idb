@@ -89,19 +89,21 @@ final class CompanionServiceProvider: Idb_CompanionServiceAsyncProvider, @unchec
   }
 
   func debugserver(requestStream: GRPCAsyncRequestStream<Idb_DebugServerRequest>, responseStream: GRPCAsyncResponseStreamWriter<Idb_DebugServerResponse>, context: GRPCAsyncServerCallContext) async throws {
+    let reader = RequestStreamReader(requestStream)
     try await trackedBidiStreaming("debugserver") {
       try await FBTeardownContext.withAutocleanup {
         try await DebugserverMethodHandler(commandExecutor: commandExecutor)
-          .handle(requestStream: requestStream, responseStream: responseStream, context: context)
+          .handle(requestStream: reader, responseStream: responseStream, context: context)
       }
     }
   }
 
   func dap(requestStream: GRPCAsyncRequestStream<Idb_DapRequest>, responseStream: GRPCAsyncResponseStreamWriter<Idb_DapResponse>, context: GRPCAsyncServerCallContext) async throws {
+    let reader = RequestStreamReader(requestStream)
     try await trackedBidiStreaming("dap") {
       try await FBTeardownContext.withAutocleanup {
         try await DapMethodHandler(commandExecutor: commandExecutor, targetLogger: targetLogger)
-          .handle(requestStream: requestStream, responseStream: responseStream, context: context)
+          .handle(requestStream: reader, responseStream: responseStream, context: context)
       }
     }
   }
@@ -116,19 +118,21 @@ final class CompanionServiceProvider: Idb_CompanionServiceAsyncProvider, @unchec
   }
 
   func install(requestStream: GRPCAsyncRequestStream<Idb_InstallRequest>, responseStream: GRPCAsyncResponseStreamWriter<Idb_InstallResponse>, context: GRPCAsyncServerCallContext) async throws {
+    let reader = RequestStreamReader(requestStream)
     try await trackedBidiStreaming("install") {
       try await FBTeardownContext.withAutocleanup {
         try await InstallMethodHandler(commandExecutor: commandExecutor, targetLogger: targetLogger)
-          .handle(requestStream: requestStream, responseStream: responseStream, context: context)
+          .handle(requestStream: reader, responseStream: responseStream, context: context)
       }
     }
   }
 
   func instruments_run(requestStream: GRPCAsyncRequestStream<Idb_InstrumentsRunRequest>, responseStream: GRPCAsyncResponseStreamWriter<Idb_InstrumentsRunResponse>, context: GRPCAsyncServerCallContext) async throws {
+    let reader = RequestStreamReader(requestStream)
     try await trackedBidiStreaming("instruments_run") {
       try await FBTeardownContext.withAutocleanup {
         try await InstrumentsRunMethodHandler(target: target, targetLogger: targetLogger, commandExecutor: commandExecutor, logger: logger)
-          .handle(requestStream: requestStream, responseStream: responseStream, context: context)
+          .handle(requestStream: reader, responseStream: responseStream, context: context)
       }
     }
   }
@@ -143,10 +147,11 @@ final class CompanionServiceProvider: Idb_CompanionServiceAsyncProvider, @unchec
   }
 
   func xctrace_record(requestStream: GRPCAsyncRequestStream<Idb_XctraceRecordRequest>, responseStream: GRPCAsyncResponseStreamWriter<Idb_XctraceRecordResponse>, context: GRPCAsyncServerCallContext) async throws {
+    let reader = RequestStreamReader(requestStream)
     try await trackedBidiStreaming("xctrace_record") {
       try await FBTeardownContext.withAutocleanup {
         try await XctraceRecordMethodHandler(logger: logger, targetLogger: targetLogger, target: target)
-          .handle(requestStream: requestStream, responseStream: responseStream, context: context)
+          .handle(requestStream: reader, responseStream: responseStream, context: context)
       }
     }
   }
@@ -179,10 +184,11 @@ final class CompanionServiceProvider: Idb_CompanionServiceAsyncProvider, @unchec
   }
 
   func hid(requestStream: GRPCAsyncRequestStream<Idb_HIDEvent>, context: GRPCAsyncServerCallContext) async throws -> Idb_HIDResponse {
+    let reader = RequestStreamReader(requestStream)
     return try await trackedClientStreaming("hid") {
       try await FBTeardownContext.withAutocleanup {
         try await HidMethodHandler(commandExecutor: commandExecutor)
-          .handle(requestStream: requestStream, context: context)
+          .handle(requestStream: reader, context: context)
       }
     }
   }
@@ -305,10 +311,11 @@ final class CompanionServiceProvider: Idb_CompanionServiceAsyncProvider, @unchec
   }
 
   func launch(requestStream: GRPCAsyncRequestStream<Idb_LaunchRequest>, responseStream: GRPCAsyncResponseStreamWriter<Idb_LaunchResponse>, context: GRPCAsyncServerCallContext) async throws {
+    let reader = RequestStreamReader(requestStream)
     try await trackedBidiStreaming("launch") {
       try await FBTeardownContext.withAutocleanup {
         try await LaunchMethodHandler(commandExecutor: commandExecutor)
-          .handle(requestStream: requestStream, responseStream: responseStream, context: context)
+          .handle(requestStream: reader, responseStream: responseStream, context: context)
       }
     }
   }
@@ -341,19 +348,21 @@ final class CompanionServiceProvider: Idb_CompanionServiceAsyncProvider, @unchec
   }
 
   func add_media(requestStream: GRPCAsyncRequestStream<Idb_AddMediaRequest>, context: GRPCAsyncServerCallContext) async throws -> Idb_AddMediaResponse {
+    let reader = RequestStreamReader(requestStream)
     return try await trackedClientStreaming("add_media") {
       try await FBTeardownContext.withAutocleanup {
         try await AddMediaMethodHandler(commandExecutor: commandExecutor)
-          .handle(requestStream: requestStream, context: context)
+          .handle(requestStream: reader, context: context)
       }
     }
   }
 
   func record(requestStream: GRPCAsyncRequestStream<Idb_RecordRequest>, responseStream: GRPCAsyncResponseStreamWriter<Idb_RecordResponse>, context: GRPCAsyncServerCallContext) async throws {
+    let reader = RequestStreamReader(requestStream)
     try await trackedBidiStreaming("record") {
       try await FBTeardownContext.withAutocleanup {
         try await RecordMethodHandler(target: target, targetLogger: targetLogger)
-          .handle(requestStream: requestStream, responseStream: responseStream, context: context)
+          .handle(requestStream: reader, responseStream: responseStream, context: context)
       }
     }
   }
@@ -368,10 +377,11 @@ final class CompanionServiceProvider: Idb_CompanionServiceAsyncProvider, @unchec
   }
 
   func video_stream(requestStream: GRPCAsyncRequestStream<Idb_VideoStreamRequest>, responseStream: GRPCAsyncResponseStreamWriter<Idb_VideoStreamResponse>, context: GRPCAsyncServerCallContext) async throws {
+    let reader = RequestStreamReader(requestStream)
     try await trackedBidiStreaming("video_stream") {
       try await FBTeardownContext.withAutocleanup {
         try await VideoStreamMethodHandler(target: target, targetLogger: targetLogger, commandExecutor: commandExecutor)
-          .handle(requestStream: requestStream, responseStream: responseStream, context: context)
+          .handle(requestStream: reader, responseStream: responseStream, context: context)
       }
     }
   }
@@ -431,10 +441,11 @@ final class CompanionServiceProvider: Idb_CompanionServiceAsyncProvider, @unchec
   }
 
   func repl(requestStream: GRPCAsyncRequestStream<Idb_ReplRequest>, responseStream: GRPCAsyncResponseStreamWriter<Idb_ReplResponse>, context: GRPCAsyncServerCallContext) async throws {
+    let reader = RequestStreamReader(requestStream)
     try await trackedBidiStreaming("repl") {
       try await FBTeardownContext.withAutocleanup {
         try await ReplMethodHandler(commandExecutor: commandExecutor, targetLogger: targetLogger, recordingCoordinator: replRecordingCoordinator)
-          .handle(requestStream: requestStream, responseStream: responseStream, context: context)
+          .handle(requestStream: reader, responseStream: responseStream, context: context)
       }
     }
   }
@@ -485,19 +496,21 @@ final class CompanionServiceProvider: Idb_CompanionServiceAsyncProvider, @unchec
   }
 
   func push(requestStream: GRPCAsyncRequestStream<Idb_PushRequest>, context: GRPCAsyncServerCallContext) async throws -> Idb_PushResponse {
+    let reader = RequestStreamReader(requestStream)
     return try await trackedClientStreaming("push") {
       try await FBTeardownContext.withAutocleanup {
         try await PushMethodHandler(target: target, commandExecutor: commandExecutor)
-          .handle(requestStream: requestStream, context: context)
+          .handle(requestStream: reader, context: context)
       }
     }
   }
 
   func tail(requestStream: GRPCAsyncRequestStream<Idb_TailRequest>, responseStream: GRPCAsyncResponseStreamWriter<Idb_TailResponse>, context: GRPCAsyncServerCallContext) async throws {
+    let reader = RequestStreamReader(requestStream)
     try await trackedBidiStreaming("tail") {
       try await FBTeardownContext.withAutocleanup {
         try await TailMethodHandler(commandExecutor: commandExecutor)
-          .handle(requestStream: requestStream, responseStream: responseStream, context: context)
+          .handle(requestStream: reader, responseStream: responseStream, context: context)
       }
     }
   }
