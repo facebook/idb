@@ -381,10 +381,10 @@ private class DeviceFileCommands_DiskImages: AsyncFileContainer {
 // MARK: - DeviceFileCommands_Symbols
 
 private class DeviceFileCommands_Symbols: AsyncFileContainer {
-  let commands: any DebugSymbolsCommands
+  let commands: DeviceDebugSymbolsCommands
   let queue: DispatchQueue
 
-  init(commands: any DebugSymbolsCommands, queue: DispatchQueue) {
+  init(commands: DeviceDebugSymbolsCommands, queue: DispatchQueue) {
     self.commands = commands
     self.queue = queue
   }
@@ -480,7 +480,7 @@ public final class DeviceFileCommands {
 
   fileprivate func fileCommandsForSymbols() throws -> DeviceFileCommands_Symbols {
     let device = try requireDevice()
-    return DeviceFileCommands_Symbols(commands: device as any DebugSymbolsCommands, queue: device.asyncQueue)
+    return DeviceFileCommands_Symbols(commands: device.debugSymbols, queue: device.asyncQueue)
   }
 }
 

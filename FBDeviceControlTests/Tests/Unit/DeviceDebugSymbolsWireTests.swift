@@ -76,7 +76,7 @@ struct DeviceDebugSymbolsWireTests {
     symbols.readBuffer = hostBytes(ListFilesPlistCommand)
     symbols.messageReplies = [["files": ["/System/Library/Caches/a", "/System/Library/Caches/b"]]]
 
-    let files = try await device.listSymbols()
+    let files = try await device.debugSymbols.listSymbols()
 
     #expect(files == ["/System/Library/Caches/a", "/System/Library/Caches/b"])
   }
@@ -87,7 +87,7 @@ struct DeviceDebugSymbolsWireTests {
     symbols.readBuffer = hostBytes(ListFilesPlistCommand)
     symbols.messageReplies = [["files": []]]
 
-    _ = try await device.listSymbols()
+    _ = try await device.debugSymbols.listSymbols()
 
     #expect(symbols.sentBytes == hostBytes(ListFilesPlistCommand))
   }
@@ -98,7 +98,7 @@ struct DeviceDebugSymbolsWireTests {
     symbols.readBuffer = hostBytes(0xDEAD_BEEF)
 
     await assertThrows(expected: "Incorrect 'ListFilesPlist' ack from symbol service") {
-      _ = try await device.listSymbols()
+      _ = try await device.debugSymbols.listSymbols()
     }
   }
 
@@ -109,7 +109,7 @@ struct DeviceDebugSymbolsWireTests {
     symbols.messageReplies = [["files": [1, 2, 3]]]
 
     await assertThrows(expected: "ListFilesPlist expected Array<String> for 'files' but got [1, 2, 3]") {
-      _ = try await device.listSymbols()
+      _ = try await device.debugSymbols.listSymbols()
     }
   }
 
@@ -128,7 +128,7 @@ struct DeviceDebugSymbolsWireTests {
       + hostBytes(GetFileCommand) + wireLength(UInt64(payload.count)) + payload
     symbols.messageReplies = [["files": ["/first", "/wanted"]]]
 
-    let written = try await device.pullSymbolFile("/wanted", toDestinationPath: destination)
+    let written = try await device.debugSymbols.pullSymbolFile("/wanted", toDestinationPath: destination)
 
     #expect(written == destination)
     #expect(FileManager.default.contents(atPath: destination) == payload)
@@ -147,7 +147,7 @@ struct DeviceDebugSymbolsWireTests {
       + hostBytes(GetFileCommand) + wireLength(UInt64(payload.count)) + payload
     symbols.messageReplies = [["files": ["/first", "/wanted"]]]
 
-    _ = try await device.pullSymbolFile("/wanted", toDestinationPath: destination)
+    _ = try await device.debugSymbols.pullSymbolFile("/wanted", toDestinationPath: destination)
 
     let expected = hostBytes(ListFilesPlistCommand) + hostBytes(GetFileCommand) + wireIndex(1)
     #expect(symbols.sentBytes == expected)
@@ -160,7 +160,7 @@ struct DeviceDebugSymbolsWireTests {
     symbols.messageReplies = [["files": ["/first"]]]
 
     await assertThrows(expected: "Could not find /absent within") {
-      _ = try await device.pullSymbolFile("/absent", toDestinationPath: "/tmp/unused")
+      _ = try await device.debugSymbols.pullSymbolFile("/absent", toDestinationPath: "/tmp/unused")
     }
   }
 
@@ -176,7 +176,7 @@ struct DeviceDebugSymbolsWireTests {
     symbols.messageReplies = [["files": ["/wanted"]]]
 
     await assertThrows(expected: "receiveLength not returned or is zero") {
-      _ = try await device.pullSymbolFile("/wanted", toDestinationPath: destination)
+      _ = try await device.debugSymbols.pullSymbolFile("/wanted", toDestinationPath: destination)
     }
   }
 

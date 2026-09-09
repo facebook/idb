@@ -256,12 +256,3 @@ public struct DeviceActivationCommands {
     return data
   }
 }
-
-// MARK: - FBDevice+Activation
-
-extension FBDevice {
-
-  public func activate() async throws {
-    try await activation.activate()
-  }
-}

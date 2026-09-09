@@ -374,17 +374,17 @@ private func runClone(_ udid: String, userDefaults: UserDefaults, logger: FBCont
 
 private func runEnterRecovery(_ ecid: String, logger: FBControlCoreLogger) async throws {
   let device = try await deviceForECID(ecid, logger: logger)
-  try await device.enterRecovery()
+  try await device.recovery.enterRecovery()
 }
 
 private func runExitRecovery(_ ecid: String, logger: FBControlCoreLogger) async throws {
   let device = try await deviceForECID(ecid, logger: logger)
-  try await device.exitRecovery()
+  try await device.recovery.exitRecovery()
 }
 
 private func runActivate(_ ecid: String, logger: FBControlCoreLogger) async throws {
   let device = try await deviceForECID(ecid, logger: logger)
-  try await device.activate()
+  try await device.activation.activate()
 }
 
 private func runClean(_ udid: String, userDefaults: UserDefaults, xcodeAvailable: Bool, logger: FBIDBLogger) async throws {

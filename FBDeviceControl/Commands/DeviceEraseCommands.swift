@@ -148,7 +148,7 @@ public final class DeviceEraseCommands: EraseCommands {
 
   public func erase() async throws {
     let logger = device.logger.withName("erase_\(device.udid)")
-    try await device.activate()
+    try await device.activation.activate()
     let operation = DeviceEraseOperation(device: device, logger: logger)
     try await operation.erase()
     logger.log("Device erase finished successfully \(operation)")

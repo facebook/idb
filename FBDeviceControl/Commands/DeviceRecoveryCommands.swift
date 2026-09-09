@@ -81,16 +81,3 @@ public struct DeviceRecoveryCommands {
     return "Unknown error"
   }
 }
-
-// MARK: - FBDevice+Recovery
-
-extension FBDevice {
-
-  public func enterRecovery() async throws {
-    try await recovery.enterRecovery()
-  }
-
-  public func exitRecovery() async throws {
-    try await recovery.exitRecovery()
-  }
-}

@@ -87,14 +87,14 @@ extension DeviceDebugSymbolsError: LocalizedError {
   }
 }
 
-public final class DeviceDebugSymbolsCommands: DebugSymbolsCommands {
+public final class DeviceDebugSymbolsCommands {
   private let device: FBDevice
 
   init(device: FBDevice) {
     self.device = device
   }
 
-  // MARK: - DebugSymbolsCommands
+  // MARK: - Symbols
 
   public func listSymbols() async throws -> [String] {
     try await withSymbolServiceConnection { connection in
