@@ -12,6 +12,7 @@ import Foundation
 public enum FBSimulatorReplError: Error {
   case bundledResourceMissing(item: String)
   case socketDirectoryCreationFailed(path: String)
+  case targetIsNotALaunchableApp(bundleID: String, processIdentifier: pid_t)
 }
 
 extension FBSimulatorReplError: LocalizedError {
@@ -21,6 +22,12 @@ extension FBSimulatorReplError: LocalizedError {
       return "\(item) not found in the companion Resources directory"
     case let .socketDirectoryCreationFailed(path):
       return "Could not create a private REPL socket directory at \(path)"
+    case let .targetIsNotALaunchableApp(bundleID, processIdentifier):
+      return """
+        \(bundleID) is managed by launchd (pid \(processIdentifier)), not launched as an app, \
+        so launching it returns the process already running and the REPL dylib is never injected. \
+        Target an app bundle instead.
+        """
     }
   }
 }
@@ -168,7 +175,24 @@ public final class FBSimulatorReplCommands {
       io: io,
       launchMode: .relaunchIfRunning
     )
-    _ = try await simulator.launchApplication(configuration)
+    let launched = try await simulator.launchApplication(configuration)
+
+    // A launched app registers a `UIKitApplication:` service with the simulator's
+    // launchd; a launchd-managed target such as SpringBoard never does. CoreSimulator
+    // still reports success for one -- it resolves to the process already running, so
+    // the injected environment is dropped and nothing ever binds the control socket.
+    // Without this the client spends its entire deadline waiting for a socket that
+    // cannot appear, then reports only a hashed path.
+    //
+    // This is the same lookup `confirmApplicationLaunchState` already trusts to decide
+    // whether an app is running, so it introduces no new signal. It is deliberately not
+    // `installType == .system`: Apple's system apps host a REPL perfectly well, and
+    // refusing them would be wrong.
+    guard (try? await simulator.processID(forBundleID: bundleID)) != nil else {
+      throw FBSimulatorReplError.targetIsNotALaunchableApp(
+        bundleID: bundleID,
+        processIdentifier: launched.processIdentifier)
+    }
 
     // The app outlives the REPL session -- it keeps running and resets for the
     // next client on disconnect -- so `run` is already resolved: teardown must not
