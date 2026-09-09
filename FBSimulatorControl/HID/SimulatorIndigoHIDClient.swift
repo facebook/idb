@@ -56,7 +56,7 @@ final class SimulatorIndigoHIDClient: @unchecked Sendable {
   ) throws -> FBObjCRuntimeClass {
     try loader.loadPrivateFrameworks(nil)
     guard let clientClass = FBObjCRuntimeClass(name: clientClassName) else {
-      throw FBSimulatorHIDError.clientClassUnavailable(className: clientClassName)
+      throw SimulatorHIDError.clientClassUnavailable(className: clientClassName)
     }
     return clientClass
   }
@@ -77,7 +77,7 @@ final class SimulatorIndigoHIDClient: @unchecked Sendable {
     } catch {
       // `clientError` first: when the client declines by contract it says why, and that is more
       // specific than "the initializer returned nil".
-      throw FBSimulatorHIDError.clientCreationFailed(
+      throw SimulatorHIDError.clientCreationFailed(
         clientClass: clientClass.name, underlying: (clientError as? Error) ?? error)
     }
     self.init(
@@ -113,7 +113,7 @@ final class SimulatorIndigoHIDClient: @unchecked Sendable {
         }
         guard let client else {
           free(raw)
-          continuation.resume(throwing: FBSimulatorHIDError.clientDisposed)
+          continuation.resume(throwing: SimulatorHIDError.clientDisposed)
           return
         }
         do {

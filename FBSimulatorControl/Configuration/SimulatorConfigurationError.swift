@@ -9,7 +9,7 @@ import Foundation
 
 /// Errors thrown while resolving a `FBSimulatorConfiguration` against the runtimes and device types
 /// available from CoreSimulator.
-public enum FBSimulatorConfigurationError: LocalizedError, Sendable {
+public enum SimulatorConfigurationError: LocalizedError, Sendable {
   case noNewestAvailableOS(device: String)
   case noOldestAvailableOS(device: String)
   case unsupportedOSVersion(name: String)
@@ -61,8 +61,8 @@ public enum FBSimulatorConfigurationError: LocalizedError, Sendable {
   }
 }
 
-extension FBSimulatorConfigurationError: CustomStringConvertible {
+extension SimulatorConfigurationError: CustomStringConvertible {
   /// Mirrors `errorDescription` so string interpolation (`"\(error)"`) and logs surface the
   /// human-readable message rather than the synthesized case name.
-  public var description: String { errorDescription ?? "FBSimulatorConfigurationError" }
+  public var description: String { errorDescription ?? "SimulatorConfigurationError" }
 }

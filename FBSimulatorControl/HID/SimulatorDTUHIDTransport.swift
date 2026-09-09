@@ -35,7 +35,7 @@ enum DTUHIDTiming {
 struct DigitizerContactTracker {
   private var active = false
 
-  mutating func eventType(for direction: FBSimulatorHIDDirection) -> DigitizerEventType {
+  mutating func eventType(for direction: SimulatorHIDDirection) -> DigitizerEventType {
     switch direction {
     case .down:
       if active {
@@ -91,27 +91,27 @@ actor SimulatorDTUHIDTransport {
   /// caller should not have to remember to wait for it on every send.
   static func dtuhid(for simulator: FBSimulator) async throws -> SimulatorDTUHIDTransport {
     guard let handle = dlopen(nil, RTLD_NOW) else {
-      throw FBSimulatorHIDError.dtuhidXPCSymbolsUnavailable
+      throw SimulatorHIDError.dtuhidXPCSymbolsUnavailable
     }
     guard
       let endpointFromPort = symbol(handle, "xpc_endpoint_create_mach_port_4sim", as: EndpointFromMachPortFn.self),
       let connectionFromEndpoint = symbol(handle, "xpc_connection_create_from_endpoint", as: ConnectionFromEndpointFn.self),
       let enableSim2Host = symbol(handle, "xpc_connection_enable_sim2host_4sim", as: EnableSim2HostFn.self)
     else {
-      throw FBSimulatorHIDError.dtuhidXPCSymbolsUnavailable
+      throw SimulatorHIDError.dtuhidXPCSymbolsUnavailable
     }
 
     var lookupError: NSError?
     let servicePort = simulator.device.lookup(digitizerServiceName, error: &lookupError)
     if servicePort == 0 {
-      throw FBSimulatorHIDError.dtuhidDigitizerServiceUnavailable(underlying: lookupError)
+      throw SimulatorHIDError.dtuhidDigitizerServiceUnavailable(underlying: lookupError)
     }
 
     guard
       let endpoint = endpointFromPort(servicePort, 0, 0),
       let connection = connectionFromEndpoint(endpoint)
     else {
-      throw FBSimulatorHIDError.dtuhidConnectionFailed
+      throw SimulatorHIDError.dtuhidConnectionFailed
     }
 
     // The load-bearing step: without this the daemon observes the peer but never the payload.
@@ -161,10 +161,10 @@ actor SimulatorDTUHIDTransport {
   }
 
   func sendTouch(
-    direction: FBSimulatorHIDDirection, x: Double, y: Double, edge: FBSimulatorHIDEdge
+    direction: SimulatorHIDDirection, x: Double, y: Double, edge: FBSimulatorHIDEdge
   ) async throws {
     guard productFamily.hasTouchscreen else {
-      throw FBSimulatorHIDError.touchUnsupportedOnAppleTV
+      throw SimulatorHIDError.touchUnsupportedOnAppleTV
     }
     let ratio = SimulatorIndigoHID.screenRatio(
       from: CGPoint(x: x, y: y), screenSize: mainScreenSize, screenScale: mainScreenScale)
@@ -175,9 +175,9 @@ actor SimulatorDTUHIDTransport {
     try await send(messageType: "IndigoDigitizerEvent", payload: event)
   }
 
-  func sendTwoFingerTouch(direction: FBSimulatorHIDDirection, finger1: CGPoint, finger2: CGPoint) async throws {
+  func sendTwoFingerTouch(direction: SimulatorHIDDirection, finger1: CGPoint, finger2: CGPoint) async throws {
     guard productFamily.hasTouchscreen else {
-      throw FBSimulatorHIDError.touchUnsupportedOnAppleTV
+      throw SimulatorHIDError.touchUnsupportedOnAppleTV
     }
     let r1 = SimulatorIndigoHID.screenRatio(from: finger1, screenSize: mainScreenSize, screenScale: mainScreenScale)
     let r2 = SimulatorIndigoHID.screenRatio(from: finger2, screenSize: mainScreenSize, screenScale: mainScreenScale)
@@ -188,9 +188,9 @@ actor SimulatorDTUHIDTransport {
     try await send(messageType: "IndigoDigitizerEvent", payload: event)
   }
 
-  func sendButton(direction: FBSimulatorHIDDirection, button: FBSimulatorHIDButton) async throws {
+  func sendButton(direction: SimulatorHIDDirection, button: FBSimulatorHIDButton) async throws {
     guard let usage = button.identity.consumerUsage else {
-      throw FBSimulatorHIDError.notImplementedOnDTUHIDTransport(
+      throw SimulatorHIDError.notImplementedOnDTUHIDTransport(
         operation: "sendButton(.applePay) — Apple Pay is a double side-button press, not a single HID usage; send two .sideButton presses instead")
     }
     let state: HIDButtonState = direction == .down ? .down : .up
@@ -199,7 +199,7 @@ actor SimulatorDTUHIDTransport {
       payload: IndigoButtonEvent(usagePage: UInt64(usage.page), usageCode: UInt64(usage.code), state: state))
   }
 
-  func sendKeyboard(direction: FBSimulatorHIDDirection, keyCode: UInt32) async throws {
+  func sendKeyboard(direction: SimulatorHIDDirection, keyCode: UInt32) async throws {
     let state: HIDButtonState = direction == .down ? .down : .up
     try await send(
       messageType: "IndigoKeyboardButtonEvent",
@@ -208,7 +208,7 @@ actor SimulatorDTUHIDTransport {
 
   /// Sends the keyboard usage the tvOS focus engine consumes. `dtuhidd` also advertises
   /// `com.apple.coredevice.feature.remote.hid.tvremote`, whose accepted usages are undocumented.
-  func sendRemoteButton(direction: FBSimulatorHIDDirection, button: FBSimulatorHIDRemoteButton) async throws {
+  func sendRemoteButton(direction: SimulatorHIDDirection, button: FBSimulatorHIDRemoteButton) async throws {
     try await sendKeyboard(direction: direction, keyCode: button.keyboardUsage)
   }
 

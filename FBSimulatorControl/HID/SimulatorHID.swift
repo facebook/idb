@@ -75,7 +75,7 @@ public final class FBSimulatorHID: CustomStringConvertible, @unchecked Sendable 
       let transport = try await transport(preferred, for: simulator)
       logger.log("Negotiated the \(preferred) HID transport")
       return transport
-    } catch let error as FBSimulatorHIDError where error.isDTUHIDUnreachable {
+    } catch let error as SimulatorHIDError where error.isDTUHIDUnreachable {
       logger.log(
         "dtuhidd is unreachable (\(error.localizedDescription)), falling back to the legacy Indigo HID transport")
       return .indigo(try SimulatorIndigoHIDTransport.indigo(for: simulator))
@@ -138,28 +138,28 @@ public final class FBSimulatorHID: CustomStringConvertible, @unchecked Sendable 
   /// Sends a single-finger touch at the given point (in points), optionally tagged as originating at
   /// a screen edge.
   func sendTouch(
-    direction: FBSimulatorHIDDirection, x: Double, y: Double, edge: FBSimulatorHIDEdge
+    direction: SimulatorHIDDirection, x: Double, y: Double, edge: FBSimulatorHIDEdge
   ) async throws {
     try await transport.sendTouch(direction: direction, x: x, y: y, edge: edge)
   }
 
   /// Sends a two-finger touch (for multi-touch gestures) at the given points (in points).
-  func sendTwoFingerTouch(direction: FBSimulatorHIDDirection, finger1: CGPoint, finger2: CGPoint) async throws {
+  func sendTwoFingerTouch(direction: SimulatorHIDDirection, finger1: CGPoint, finger2: CGPoint) async throws {
     try await transport.sendTwoFingerTouch(direction: direction, finger1: finger1, finger2: finger2)
   }
 
   /// Sends a hardware button event.
-  func sendButton(direction: FBSimulatorHIDDirection, button: FBSimulatorHIDButton) async throws {
+  func sendButton(direction: SimulatorHIDDirection, button: FBSimulatorHIDButton) async throws {
     try await transport.sendButton(direction: direction, button: button)
   }
 
   /// Sends a tvOS Siri Remote focus action.
-  func sendRemoteButton(direction: FBSimulatorHIDDirection, button: FBSimulatorHIDRemoteButton) async throws {
+  func sendRemoteButton(direction: SimulatorHIDDirection, button: FBSimulatorHIDRemoteButton) async throws {
     try await transport.sendRemoteButton(direction: direction, button: button)
   }
 
   /// Sends a keyboard key event.
-  func sendKeyboard(direction: FBSimulatorHIDDirection, keyCode: UInt32) async throws {
+  func sendKeyboard(direction: SimulatorHIDDirection, keyCode: UInt32) async throws {
     try await transport.sendKeyboard(direction: direction, keyCode: keyCode)
   }
 
@@ -172,9 +172,9 @@ public final class FBSimulatorHID: CustomStringConvertible, @unchecked Sendable 
 
   /// Indigo only: the tvOS trackpad rides a dedicated Indigo service that `dtuhidd` does not expose (its
   /// digitizer targets are displays and its scroll targets rotary devices).
-  func sendTrackpad(point: FBSimulatorTrackpadPoint, phase: FBSimulatorTrackpadPhase) async throws {
+  func sendTrackpad(point: FBSimulatorTrackpadPoint, phase: SimulatorTrackpadPhase) async throws {
     guard let indigo = transport.indigo else {
-      throw FBSimulatorHIDError.notImplementedOnDTUHIDTransport(
+      throw SimulatorHIDError.notImplementedOnDTUHIDTransport(
         operation: "trackpad pan — the tvOS Siri Remote trackpad is not exposed by dtuhidd")
     }
     try await indigo.sendTrackpad(point: point, phase: phase)

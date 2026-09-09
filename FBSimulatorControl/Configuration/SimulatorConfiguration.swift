@@ -32,11 +32,11 @@ public struct FBSimulatorConfiguration: Equatable, Hashable, CustomStringConvert
     }
     let model = FBDeviceModel(rawValue: "iPhone 6")
     guard let device = FBiOSTargetConfiguration.nameToDevice[model] else {
-      return .failure(FBSimulatorConfigurationError.noDefaultDeviceTypeRegistered(model: model.rawValue))
+      return .failure(SimulatorConfigurationError.noDefaultDeviceTypeRegistered(model: model.rawValue))
     }
     do {
       guard let os = try FBSimulatorConfiguration.newestAvailableOS(forDevice: device) else {
-        return .failure(FBSimulatorConfigurationError.noAvailableOSVersionsForDefault)
+        return .failure(SimulatorConfigurationError.noAvailableOSVersionsForDefault)
       }
       return .success(FBSimulatorConfiguration(device: device, os: os))
     } catch {

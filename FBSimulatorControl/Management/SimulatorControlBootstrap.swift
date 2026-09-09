@@ -16,12 +16,12 @@ import Foundation
 public final class SimulatorControlBootstrap {
 
   public var configuration: FBSimulatorControlConfiguration
-  public let serviceContext: FBSimulatorServiceContext
+  public let serviceContext: SimulatorServiceContext
   public let set: FBSimulatorSet
 
   public class func withConfiguration(_ configuration: FBSimulatorControlConfiguration) throws -> SimulatorControlBootstrap {
     try FBSimulatorControlFrameworkLoader.essentialFrameworks.loadPrivateFrameworks(configuration.logger)
-    let serviceContext = try FBSimulatorServiceContext.sharedServiceContext(withLogger: configuration.logger)
+    let serviceContext = try SimulatorServiceContext.sharedServiceContext(withLogger: configuration.logger)
     let deviceSet = try serviceContext.createDeviceSet(with: configuration)
     let set = try FBSimulatorSet.set(
       withConfiguration: configuration,
@@ -31,7 +31,7 @@ public final class SimulatorControlBootstrap {
     return SimulatorControlBootstrap(configuration: configuration, serviceContext: serviceContext, set: set)
   }
 
-  private init(configuration: FBSimulatorControlConfiguration, serviceContext: FBSimulatorServiceContext, set: FBSimulatorSet) {
+  private init(configuration: FBSimulatorControlConfiguration, serviceContext: SimulatorServiceContext, set: FBSimulatorSet) {
     self.configuration = configuration
     self.serviceContext = serviceContext
     self.set = set

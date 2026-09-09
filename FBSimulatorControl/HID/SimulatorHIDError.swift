@@ -10,7 +10,7 @@ import Foundation
 
 /// The failure cases of the HID layer. They are surfaced only as messages — no consumer inspects
 /// domain or code.
-public enum FBSimulatorHIDError: Error, LocalizedError {
+public enum SimulatorHIDError: Error, LocalizedError {
   /// The runtime-only `SimDeviceLegacyHIDClient` class could not be looked up by name.
   case clientClassUnavailable(className: String)
   /// The HID client class was found but `initWithDevice:error:` returned nil.

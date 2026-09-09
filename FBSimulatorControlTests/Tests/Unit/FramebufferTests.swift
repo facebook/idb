@@ -41,7 +41,7 @@ final class FramebufferTests: XCTestCase {
 
   func testAttachThrowsWhenRegistrationFails() {
     let surface = FakeFramebufferSurface()
-    surface.registerError = FBFramebufferError.surfaceCallbackRegistrationFailed(underlying: nil)
+    surface.registerError = FramebufferError.surfaceCallbackRegistrationFailed(underlying: nil)
     let framebuffer = makeFramebuffer(surface: surface)
 
     XCTAssertThrowsError(try framebuffer.attach())
@@ -62,7 +62,7 @@ final class FramebufferTests: XCTestCase {
     surface.ioSurfaceChanged?(nil)
     surface.frameRendered?()
 
-    var events: [FBFramebufferEvent] = []
+    var events: [FramebufferEvent] = []
     for await event in attachment.events {
       events.append(event)
       if events.count == 4 {

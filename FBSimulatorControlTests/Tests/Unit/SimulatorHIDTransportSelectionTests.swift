@@ -38,17 +38,17 @@ struct SimulatorHIDTransportSelectionTests {
 
   @Test("Only a failure to reach dtuhidd is worth falling back to Indigo for")
   func isDTUHIDUnreachable() {
-    #expect(FBSimulatorHIDError.dtuhidXPCSymbolsUnavailable.isDTUHIDUnreachable)
-    #expect(FBSimulatorHIDError.dtuhidDigitizerServiceUnavailable(underlying: nil).isDTUHIDUnreachable)
-    #expect(FBSimulatorHIDError.dtuhidConnectionFailed.isDTUHIDUnreachable)
+    #expect(SimulatorHIDError.dtuhidXPCSymbolsUnavailable.isDTUHIDUnreachable)
+    #expect(SimulatorHIDError.dtuhidDigitizerServiceUnavailable(underlying: nil).isDTUHIDUnreachable)
+    #expect(SimulatorHIDError.dtuhidConnectionFailed.isDTUHIDUnreachable)
   }
 
   @Test("A fault in an established transport is not a reachability failure")
   func isDTUHIDUnreachableRejectsOtherFailures() {
-    #expect(!FBSimulatorHIDError.clientDisposed.isDTUHIDUnreachable)
-    #expect(!FBSimulatorHIDError.simulatorKitUnavailable.isDTUHIDUnreachable)
-    #expect(!FBSimulatorHIDError.notImplementedOnDTUHIDTransport(operation: "trackpad pan").isDTUHIDUnreachable)
-    #expect(!FBSimulatorHIDError.touchUnsupportedOnAppleTV.isDTUHIDUnreachable)
+    #expect(!SimulatorHIDError.clientDisposed.isDTUHIDUnreachable)
+    #expect(!SimulatorHIDError.simulatorKitUnavailable.isDTUHIDUnreachable)
+    #expect(!SimulatorHIDError.notImplementedOnDTUHIDTransport(operation: "trackpad pan").isDTUHIDUnreachable)
+    #expect(!SimulatorHIDError.touchUnsupportedOnAppleTV.isDTUHIDUnreachable)
   }
 
   // MARK: - Legacy keyboard suppression

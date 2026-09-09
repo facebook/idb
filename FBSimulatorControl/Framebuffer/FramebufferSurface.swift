@@ -117,14 +117,14 @@ private final class SimDisplayRenderableSurface: FramebufferSurface {
     let pluralError = guardedCall { self.surface.registerCallback(with: token, ioSurfacesChangeCallback: ioSurfaceBlock) }
     let singularError = guardedCall { self.surface.registerCallback(with: token, ioSurfaceChangeCallback: ioSurfaceBlock) }
     guard pluralError == nil || singularError == nil else {
-      throw FBFramebufferError.surfaceCallbackRegistrationFailed(underlying: pluralError)
+      throw FramebufferError.surfaceCallbackRegistrationFailed(underlying: pluralError)
     }
 
     let frameRenderedBlock: ([NSValue]?) -> Void = { _ in frameRendered() }
     if let error = guardedCall({ self.surface.registerCallback(with: token, damageRectanglesCallback: frameRenderedBlock) }) {
       // Roll back the IOSurface callback so a failed registration leaves nothing behind.
       unregisterCallbacks(token: token)
-      throw FBFramebufferError.surfaceCallbackRegistrationFailed(underlying: error)
+      throw FramebufferError.surfaceCallbackRegistrationFailed(underlying: error)
     }
   }
 
@@ -169,10 +169,10 @@ private final class SimDisplayRenderableSurface: FramebufferSurface {
 enum FramebufferSurfaceLocator {
   static func mainDisplaySurface(for simulator: FBSimulator, logger: any FBControlCoreLogger) throws -> any FramebufferSurface {
     guard let ioClient = simulator.device.io else {
-      throw FBFramebufferError.mainScreenSurfaceNotFound(description: "No IO client available on \(simulator.device)")
+      throw FramebufferError.mainScreenSurfaceNotFound(description: "No IO client available on \(simulator.device)")
     }
     guard let ports = ioClient.ioPorts() else {
-      throw FBFramebufferError.mainScreenSurfaceNotFound(description: "No IO ports available on \(ioClient)")
+      throw FramebufferError.mainScreenSurfaceNotFound(description: "No IO ports available on \(ioClient)")
     }
 
     // iOS exposes the main display as displayClass 0. tvOS renders only on the TVOut display (a
@@ -204,7 +204,7 @@ enum FramebufferSurfaceLocator {
     if let fallback {
       return SimDisplayRenderableSurface(surface: fallback, logger: logger)
     }
-    throw FBFramebufferError.mainScreenSurfaceNotFound(
+    throw FramebufferError.mainScreenSurfaceNotFound(
       description: "Could not find the Main Screen Surface for Clients \(FBCollectionInformation.oneLineDescription(from: ports)) in \(ioClient)")
   }
 }

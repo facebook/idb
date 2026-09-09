@@ -16,7 +16,7 @@ final class SimulatorShutdownStrategy {
     logger.debug().log("Starting Safe Shutdown of \(simulator.udid)")
 
     if simulator.state == .unknown {
-      throw FBSimulatorStateError.unknownState(operation: "prepare for usage")
+      throw SimulatorStateError.unknownState(operation: "prepare for usage")
     }
     if simulator.state == .shutdown {
       logger.debug().log("Shutdown of \(simulator.udid) succeeded as it is already shutdown")

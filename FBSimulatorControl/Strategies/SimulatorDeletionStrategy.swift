@@ -9,7 +9,7 @@
 @preconcurrency import FBControlCore
 @preconcurrency import Foundation
 
-public enum FBSimulatorDeletionError: Error, LocalizedError {
+public enum SimulatorDeletionError: Error, LocalizedError {
   case removalTimedOut
 
   public var errorDescription: String? {
@@ -72,7 +72,7 @@ final class SimulatorDeletionStrategy {
         return
       }
       if Date() >= deadline {
-        throw FBSimulatorDeletionError.removalTimedOut
+        throw SimulatorDeletionError.removalTimedOut
       }
       try await Task.sleep(nanoseconds: pollIntervalNs)
     }

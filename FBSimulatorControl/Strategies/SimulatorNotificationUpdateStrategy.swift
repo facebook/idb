@@ -12,7 +12,7 @@ import Foundation
 final class SimulatorNotificationUpdateStrategy: @unchecked Sendable {
 
   private weak var set: FBSimulatorSet?
-  private var notifier: FBCoreSimulatorNotifier?
+  private var notifier: CoreSimulatorNotifier?
 
   class func strategy(with set: FBSimulatorSet) -> SimulatorNotificationUpdateStrategy {
     let strategy = SimulatorNotificationUpdateStrategy(set: set)
@@ -31,7 +31,7 @@ final class SimulatorNotificationUpdateStrategy: @unchecked Sendable {
 
   private func startNotifyingOfStateChanges() {
     guard let set = self.set else { return }
-    notifier = FBCoreSimulatorNotifier.notifier(for: set, queue: set.workQueue) { [weak self] (info: [String: Any]) in
+    notifier = CoreSimulatorNotifier.notifier(for: set, queue: set.workQueue) { [weak self] (info: [String: Any]) in
       guard let device = info["device"] as? SimDevice else {
         return
       }

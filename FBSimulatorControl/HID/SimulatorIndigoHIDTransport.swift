@@ -74,46 +74,46 @@ actor SimulatorIndigoHIDTransport {
   }
 
   func sendTouch(
-    direction: FBSimulatorHIDDirection, x: Double, y: Double, edge: FBSimulatorHIDEdge
+    direction: SimulatorHIDDirection, x: Double, y: Double, edge: FBSimulatorHIDEdge
   ) async throws {
     guard productFamily.hasTouchscreen else {
-      throw FBSimulatorHIDError.touchUnsupportedOnAppleTV
+      throw SimulatorHIDError.touchUnsupportedOnAppleTV
     }
     try await indigoClient.send(
       indigo.touchScreenSize(
         mainScreenSize, screenScale: mainScreenScale, direction: direction, x: x, y: y, edge: edge))
   }
 
-  func sendTwoFingerTouch(direction: FBSimulatorHIDDirection, finger1: CGPoint, finger2: CGPoint) async throws {
+  func sendTwoFingerTouch(direction: SimulatorHIDDirection, finger1: CGPoint, finger2: CGPoint) async throws {
     guard productFamily.hasTouchscreen else {
-      throw FBSimulatorHIDError.touchUnsupportedOnAppleTV
+      throw SimulatorHIDError.touchUnsupportedOnAppleTV
     }
     try await indigoClient.send(
       indigo.twoFingerTouchScreenSize(
         mainScreenSize, screenScale: mainScreenScale, direction: direction, finger1: finger1, finger2: finger2))
   }
 
-  func sendButton(direction: FBSimulatorHIDDirection, button: FBSimulatorHIDButton) async throws {
+  func sendButton(direction: SimulatorHIDDirection, button: FBSimulatorHIDButton) async throws {
     try await indigoClient.send(indigo.button(with: direction, button: button))
   }
 
-  func sendKeyboard(direction: FBSimulatorHIDDirection, keyCode: UInt32) async throws {
+  func sendKeyboard(direction: SimulatorHIDDirection, keyCode: UInt32) async throws {
     // On Xcode 27 (CoreSimulator-1155.4)+ the guest disconnects the legacy `ExternalKeyboardService`
     // in favour of dtuhidd, so legacy keyboard events deliver byte-correctly but produce no text.
     if legacyKeyboardSuppressed {
-      throw FBSimulatorHIDError.keyboardSuppressedByDTUHIDD
+      throw SimulatorHIDError.keyboardSuppressedByDTUHIDD
     }
     try await indigoClient.send(indigo.keyboard(with: direction, keyCode: keyCode))
   }
 
   /// Delivers a Siri Remote focus action as the keyboard usage the tvOS focus engine consumes, which is
   /// the only encoding the legacy path has for it — so it is subject to the same Xcode 27 suppression.
-  func sendRemoteButton(direction: FBSimulatorHIDDirection, button: FBSimulatorHIDRemoteButton) async throws {
+  func sendRemoteButton(direction: SimulatorHIDDirection, button: FBSimulatorHIDRemoteButton) async throws {
     try await sendKeyboard(direction: direction, keyCode: button.keyboardUsage)
   }
 
   // No tvOS guard — the trackpad is exactly what Apple TV targets need (unlike the touchscreen).
-  func sendTrackpad(point: FBSimulatorTrackpadPoint, phase: FBSimulatorTrackpadPhase) async throws {
+  func sendTrackpad(point: FBSimulatorTrackpadPoint, phase: SimulatorTrackpadPhase) async throws {
     try await indigoClient.send(indigo.trackpad(point: CGPoint(x: point.x, y: point.y), phase: phase))
   }
 }

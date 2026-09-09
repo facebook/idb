@@ -16,7 +16,7 @@ final class SimulatorBootStrategy {
       return
     }
     if simulator.state != .shutdown {
-      throw FBSimulatorStateError.notShutdown(operation: "boot", state: simulator.stateString.rawValue)
+      throw SimulatorStateError.notShutdown(operation: "boot", state: simulator.stateString.rawValue)
     }
 
     try await performSimulatorBoot(simulator, with: configuration)
@@ -27,7 +27,7 @@ final class SimulatorBootStrategy {
     if !configuration.options.contains(.verifyUsable) {
       return
     }
-    try await FBSimulatorBootVerificationStrategy.verifySimulatorIsBooted(simulator)
+    try await SimulatorBootVerificationStrategy.verifySimulatorIsBooted(simulator)
   }
 
   private static func performSimulatorBoot(_ simulator: FBSimulator, with configuration: FBSimulatorBootConfiguration) async throws {

@@ -78,7 +78,7 @@ final class SimulatorBootTestCase: XCTestCase {
     try await control.set.delete(simulator)
   }
 
-  private static var bootOptions: FBSimulatorBootOptions {
+  private static var bootOptions: SimulatorBootOptions {
     // Direct launch unless the environment asks for Simulator.app.
     ProcessInfo.processInfo.environment[LaunchTypeEnvKey] == LaunchTypeSimulatorApp ? [] : [.tieToProcessLifecycle]
   }

@@ -11,7 +11,7 @@ import Foundation
 // MARK: - Shape Model
 
 /// A command containing overlay shapes to render.
-public struct FBOverlayCommand: Decodable {
+public struct OverlayCommand: Decodable {
   public let overlays: [FBOverlayShape]
 
   public init(overlays: [FBOverlayShape]) {

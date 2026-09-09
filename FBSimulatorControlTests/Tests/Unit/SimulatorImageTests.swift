@@ -18,7 +18,7 @@ final class SimulatorImageTests: XCTestCase {
     let surface = FakeFramebufferSurface()
     surface.immediateSurface = makeTestIOSurface()
     let framebuffer = FBFramebuffer(surface: surface, logger: CapturingLogger())
-    let image = FBSimulatorImage(framebuffer: framebuffer, logger: CapturingLogger())
+    let image = SimulatorImage(framebuffer: framebuffer, logger: CapturingLogger())
 
     _ = try await image.image()
     _ = try await image.image()
@@ -33,7 +33,7 @@ final class SimulatorImageTests: XCTestCase {
     let surface = FakeFramebufferSurface()
     surface.immediateSurface = makeTestIOSurface()
     let framebuffer = FBFramebuffer(surface: surface, logger: CapturingLogger())
-    let image = FBSimulatorImage(framebuffer: framebuffer, logger: CapturingLogger())
+    let image = SimulatorImage(framebuffer: framebuffer, logger: CapturingLogger())
 
     let initial = try await image.image()
     XCTAssertNotNil(initial)

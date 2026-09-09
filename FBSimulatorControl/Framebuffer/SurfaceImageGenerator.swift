@@ -11,15 +11,15 @@ import Foundation
 import IOSurface
 
 /// A render of a simulator surface, and the size of the surface it was cut from.
-public struct FBSurfaceImage: Sendable {
+public struct SurfaceImage: Sendable {
   public let image: CGImage
   /// The surface's size in pixels, before any crop or scale was applied.
   public let sourceSize: CGSize
 }
 
 /// Renders the latest simulator IOSurface to a `CGImage`. Not thread-safe by itself: it is owned and
-/// confined by the `FBSimulatorImage` actor, which serializes `updateSurface` and `image()`.
-public final class FBSurfaceImageGenerator {
+/// confined by the `SimulatorImage` actor, which serializes `updateSurface` and `image()`.
+public final class SurfaceImageGenerator {
 
   private let logger: (any FBControlCoreLogger)?
   /// Created once and reused across renders: CIContext construction is expensive (it builds a GPU
@@ -46,7 +46,7 @@ public final class FBSurfaceImageGenerator {
   /// screenshot is never materialised at full resolution. The plan is resolved here, against the surface
   /// being rendered: a surface can be replaced (e.g. by rotation) between a caller reading its size and
   /// asking for an image, and a crop resolved against the old size would silently name the wrong region.
-  public func image(configuration: FBScreenshotConfiguration, screenScale: Double?) throws -> FBSurfaceImage? {
+  public func image(configuration: FBScreenshotConfiguration, screenScale: Double?) throws -> SurfaceImage? {
     guard let surface = self.surface else {
       return nil
     }
@@ -56,7 +56,7 @@ public final class FBSurfaceImageGenerator {
     guard let image = render(source, plan: plan) else {
       return nil
     }
-    return FBSurfaceImage(image: image, sourceSize: sourceSize)
+    return SurfaceImage(image: image, sourceSize: sourceSize)
   }
 
   // MARK: - Rendering

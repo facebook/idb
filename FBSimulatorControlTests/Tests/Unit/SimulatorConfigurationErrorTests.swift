@@ -12,30 +12,30 @@ final class SimulatorConfigurationErrorTests: XCTestCase {
 
   func testMessagesAreStable() {
     XCTAssertEqual(
-      FBSimulatorConfigurationError.noNewestAvailableOS(device: "iPhone 6").errorDescription,
+      SimulatorConfigurationError.noNewestAvailableOS(device: "iPhone 6").errorDescription,
       "No newest available OS for device iPhone 6"
     )
     XCTAssertEqual(
-      FBSimulatorConfigurationError.unsupportedDevice(name: "FooPad").errorDescription,
+      SimulatorConfigurationError.unsupportedDevice(name: "FooPad").errorDescription,
       "Could not obtain Device for FooPad, perhaps it is unsupported by FBSimulatorControl"
     )
     XCTAssertEqual(
-      FBSimulatorConfigurationError.noDefaultDeviceTypeRegistered(model: "iPhone 6").errorDescription,
+      SimulatorConfigurationError.noDefaultDeviceTypeRegistered(model: "iPhone 6").errorDescription,
       "No device type is registered for 'iPhone 6'"
     )
     XCTAssertEqual(
-      FBSimulatorConfigurationError.noAvailableOSVersionsForDefault.errorDescription,
+      SimulatorConfigurationError.noAvailableOSVersionsForDefault.errorDescription,
       "No available OS versions for the default simulator configuration"
     )
   }
 
   func testRuntimeUnavailableComposesReason() {
     XCTAssertEqual(
-      FBSimulatorConfigurationError.runtimeUnavailable(configuration: "Device 'X' | OS 'Y'", reason: "no matches").errorDescription,
+      SimulatorConfigurationError.runtimeUnavailable(configuration: "Device 'X' | OS 'Y'", reason: "no matches").errorDescription,
       "Could not obtain available SimRuntime for configuration Device 'X' | OS 'Y': no matches"
     )
     XCTAssertEqual(
-      FBSimulatorConfigurationError.runtimeUnavailable(configuration: "Device 'X' | OS 'Y'", reason: nil).errorDescription,
+      SimulatorConfigurationError.runtimeUnavailable(configuration: "Device 'X' | OS 'Y'", reason: nil).errorDescription,
       "Could not obtain available SimRuntime for configuration Device 'X' | OS 'Y'"
     )
   }

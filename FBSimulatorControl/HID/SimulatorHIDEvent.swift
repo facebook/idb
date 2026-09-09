@@ -19,12 +19,12 @@ public indirect enum FBSimulatorHIDEvent: Equatable, Hashable, Sendable {
   /// The per-sample step, in points, a swipe is broken into when the caller does not choose one.
   public static let defaultSwipeDelta: Double = 10.0
 
-  case touch(direction: FBSimulatorHIDDirection, x: Double, y: Double, edge: FBSimulatorHIDEdge)
-  case button(direction: FBSimulatorHIDDirection, button: FBSimulatorHIDButton)
-  case remoteButton(direction: FBSimulatorHIDDirection, button: FBSimulatorHIDRemoteButton)
-  case keyboard(direction: FBSimulatorHIDDirection, keyCode: UInt32)
-  case twoFingerTouch(direction: FBSimulatorHIDDirection, finger1: CGPoint, finger2: CGPoint)
-  case trackpad(phase: FBSimulatorTrackpadPhase, point: FBSimulatorTrackpadPoint)
+  case touch(direction: SimulatorHIDDirection, x: Double, y: Double, edge: FBSimulatorHIDEdge)
+  case button(direction: SimulatorHIDDirection, button: FBSimulatorHIDButton)
+  case remoteButton(direction: SimulatorHIDDirection, button: FBSimulatorHIDRemoteButton)
+  case keyboard(direction: SimulatorHIDDirection, keyCode: UInt32)
+  case twoFingerTouch(direction: SimulatorHIDDirection, finger1: CGPoint, finger2: CGPoint)
+  case trackpad(phase: SimulatorTrackpadPhase, point: FBSimulatorTrackpadPoint)
   case delay(TimeInterval)
   case deviceOrientation(FBSimulatorHIDDeviceOrientation)
   case shake
@@ -59,7 +59,7 @@ public extension FBSimulatorHIDEvent {
   /// An ordinary touch, not originating at a screen edge — what almost every caller wants. Tagging a
   /// contact with an edge is what turns a swipe into a system gesture, so it has to be asked for
   /// explicitly via the `.touch` case.
-  static func touch(direction: FBSimulatorHIDDirection, x: Double, y: Double) -> FBSimulatorHIDEvent {
+  static func touch(direction: SimulatorHIDDirection, x: Double, y: Double) -> FBSimulatorHIDEvent {
     .touch(direction: direction, x: x, y: y, edge: .none)
   }
 

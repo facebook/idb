@@ -440,7 +440,7 @@ class OverlayCoordinateTransformTests: XCTestCase {
       ]}
       """
     // swiftlint:disable:next force_unwrapping
-    let command = try JSONDecoder().decode(FBOverlayCommand.self, from: json.data(using: .utf8)!)
+    let command = try JSONDecoder().decode(OverlayCommand.self, from: json.data(using: .utf8)!)
     XCTAssertEqual(command.overlays.count, 3)
   }
 }

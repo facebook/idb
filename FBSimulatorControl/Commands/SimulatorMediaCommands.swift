@@ -79,7 +79,7 @@ public struct SimulatorMediaCommands {
 
     if simulator.state != .booted {
       let stateString = (simulator.device.stateString() as String?) ?? "unknown"
-      throw FBSimulatorStateError.notBooted(operation: "upload photos", state: stateString)
+      throw SimulatorStateError.notBooted(operation: "upload photos", state: stateString)
     }
 
     let photosAndVideosPredicate = NSCompoundPredicate(orPredicateWithSubpredicates: [

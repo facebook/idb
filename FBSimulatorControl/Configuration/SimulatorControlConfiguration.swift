@@ -8,7 +8,7 @@
 import FBControlCore
 import Foundation
 
-public enum FBSimulatorDeviceSetError: Error, LocalizedError {
+public enum SimulatorDeviceSetError: Error, LocalizedError {
   case simDeviceSetUnavailable
   case defaultPathUnavailable
 
@@ -67,7 +67,7 @@ public struct FBSimulatorControlConfiguration: Equatable, Hashable, CustomString
   public static func defaultDeviceSetPath() throws -> String {
     try FBSimulatorControlFrameworkLoader.essentialFrameworks.loadPrivateFrameworks(nil)
     guard let deviceSetClass = objc_lookUpClass("SimDeviceSet") else {
-      throw FBSimulatorDeviceSetError.simDeviceSetUnavailable
+      throw SimulatorDeviceSetError.simDeviceSetUnavailable
     }
     let cls = deviceSetClass as AnyObject
     if let result = cls.perform(NSSelectorFromString("defaultSetPath"))?.takeUnretainedValue() as? String {
@@ -77,7 +77,7 @@ public struct FBSimulatorControlConfiguration: Equatable, Hashable, CustomString
       let defaultSet = cls.perform(NSSelectorFromString("defaultSet"))?.takeUnretainedValue(),
       let setPath = (defaultSet as AnyObject).perform(NSSelectorFromString("setPath"))?.takeUnretainedValue() as? String
     else {
-      throw FBSimulatorDeviceSetError.defaultPathUnavailable
+      throw SimulatorDeviceSetError.defaultPathUnavailable
     }
     return setPath
   }

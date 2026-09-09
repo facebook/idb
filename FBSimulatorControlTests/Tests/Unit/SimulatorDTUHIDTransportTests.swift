@@ -276,11 +276,11 @@ final class SimulatorDTUHIDTransportTests: XCTestCase {
     do {
       try await block()
       XCTFail("expected notImplementedOnDTUHIDTransport to be thrown", file: file, line: line)
-    } catch let error as FBSimulatorHIDError {
+    } catch let error as SimulatorHIDError {
       if case .notImplementedOnDTUHIDTransport = error {
         return
       }
-      XCTFail("unexpected FBSimulatorHIDError: \(error)", file: file, line: line)
+      XCTFail("unexpected SimulatorHIDError: \(error)", file: file, line: line)
     } catch {
       XCTFail("unexpected error: \(error)", file: file, line: line)
     }
@@ -292,11 +292,11 @@ final class SimulatorDTUHIDTransportTests: XCTestCase {
     do {
       try await block()
       XCTFail("expected touchUnsupportedOnAppleTV to be thrown", file: file, line: line)
-    } catch let error as FBSimulatorHIDError {
+    } catch let error as SimulatorHIDError {
       if case .touchUnsupportedOnAppleTV = error {
         return
       }
-      XCTFail("unexpected FBSimulatorHIDError: \(error)", file: file, line: line)
+      XCTFail("unexpected SimulatorHIDError: \(error)", file: file, line: line)
     } catch {
       XCTFail("unexpected error: \(error)", file: file, line: line)
     }

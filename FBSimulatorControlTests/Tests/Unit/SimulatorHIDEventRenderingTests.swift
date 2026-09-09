@@ -21,14 +21,14 @@ final class SimulatorHIDEventRenderingTests: XCTestCase {
 
   // MARK: - Helpers
 
-  private func touches(_ event: FBSimulatorHIDEvent) throws -> [(FBSimulatorHIDDirection, Double, Double)] {
+  private func touches(_ event: FBSimulatorHIDEvent) throws -> [(SimulatorHIDDirection, Double, Double)] {
     try XCTUnwrap(event.subEvents).compactMap {
       if case let .touch(direction, x, y, _) = $0 { return (direction, x, y) }
       return nil
     }
   }
 
-  private func twoFingerTouches(_ event: FBSimulatorHIDEvent) throws -> [(FBSimulatorHIDDirection, CGPoint, CGPoint)] {
+  private func twoFingerTouches(_ event: FBSimulatorHIDEvent) throws -> [(SimulatorHIDDirection, CGPoint, CGPoint)] {
     try XCTUnwrap(event.subEvents).compactMap {
       if case let .twoFingerTouch(direction, finger1, finger2) = $0 { return (direction, finger1, finger2) }
       return nil

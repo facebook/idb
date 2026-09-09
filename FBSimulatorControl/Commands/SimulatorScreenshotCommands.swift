@@ -28,7 +28,7 @@ extension SimulatorScreenshotError: LocalizedError {
 public final class SimulatorScreenshotCommands {
 
   private weak var simulator: FBSimulator?
-  private var image: FBSimulatorImage?
+  private var image: SimulatorImage?
 
   public class func commands(with simulator: FBSimulator) -> SimulatorScreenshotCommands {
     SimulatorScreenshotCommands(simulator: simulator)
@@ -57,7 +57,7 @@ public final class SimulatorScreenshotCommands {
     )
   }
 
-  private func connectToImage() async throws -> FBSimulatorImage {
+  private func connectToImage() async throws -> SimulatorImage {
     if let image = self.image {
       return image
     }
@@ -65,7 +65,7 @@ public final class SimulatorScreenshotCommands {
       throw FBWeakTargetError.simulator
     }
     let framebuffer = try await simulator.connectToFramebuffer()
-    let image = FBSimulatorImage(framebuffer: framebuffer, logger: simulator.logger)
+    let image = SimulatorImage(framebuffer: framebuffer, logger: simulator.logger)
     self.image = image
     return image
   }

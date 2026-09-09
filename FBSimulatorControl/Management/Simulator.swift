@@ -174,8 +174,8 @@ public final class FBSimulator: FBiOSTarget, Hashable, CustomStringConvertible, 
   ///
   /// Only used for video recording (`simctl io recordVideo`), which has no CoreSimulator API; all
   /// other operations spawn inside the simulator via CoreSimulator.
-  public var simctlExecutor: FBAppleSimctlCommandExecutor {
-    FBAppleSimctlCommandExecutor.executor(for: self)
+  public var simctlExecutor: AppleSimctlCommandExecutor {
+    AppleSimctlCommandExecutor.executor(for: self)
   }
 
   /// The directory path of the expected location of the CoreSimulator logs directory.
@@ -211,7 +211,7 @@ extension FBSimulator {
   /// the CoreSimulator daemon (`SimDevice.lookup` is not cached).
   ///
   /// - Returns: the looked-up Mach port.
-  /// - Throws: the device's own error if the lookup failed, or `FBSimulatorPortLookupError` when
+  /// - Throws: the device's own error if the lookup failed, or `SimulatorPortLookupError` when
   ///   the daemon reported no port without reporting an error.
   public func lookupBootstrapPortNamed(_ name: String) throws -> NSNumber {
     var error: NSError?
@@ -219,14 +219,14 @@ extension FBSimulator {
     // The port is checked before the error: CoreSimulator is unannotated private API, and a
     // populated error alongside a valid port is a success.
     guard port != mach_port_t(MACH_PORT_NULL) else {
-      throw error ?? FBSimulatorPortLookupError.portNotFound(name: name)
+      throw error ?? SimulatorPortLookupError.portNotFound(name: name)
     }
     return NSNumber(value: port)
   }
 }
 
 /// The way a bootstrap-port lookup fails without the daemon reporting an error of its own.
-public enum FBSimulatorPortLookupError: Error, LocalizedError {
+public enum SimulatorPortLookupError: Error, LocalizedError {
   case portNotFound(name: String)
 
   public var errorDescription: String? {

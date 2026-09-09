@@ -8,7 +8,7 @@
 import Foundation
 
 /// Errors thrown while resolving the CoreSimulator `SimServiceContext` and its device sets.
-public enum FBSimulatorServiceContextError: LocalizedError, Sendable {
+public enum SimulatorServiceContextError: LocalizedError, Sendable {
 
   /// The `SimServiceContext` class is not present in the process even though CoreSimulator
   /// reported a successful load.
@@ -50,8 +50,8 @@ public enum FBSimulatorServiceContextError: LocalizedError, Sendable {
   }
 }
 
-extension FBSimulatorServiceContextError: CustomStringConvertible {
+extension SimulatorServiceContextError: CustomStringConvertible {
   /// Mirrors `errorDescription` so string interpolation (`"\(error)"`) and logs surface the
   /// human-readable message rather than the synthesized case name.
-  public var description: String { errorDescription ?? "FBSimulatorServiceContextError" }
+  public var description: String { errorDescription ?? "SimulatorServiceContextError" }
 }

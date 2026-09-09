@@ -20,7 +20,7 @@ public struct FBFramebufferStats: Sendable {
 }
 
 /// Errors surfaced by `FBFramebuffer`.
-public enum FBFramebufferError: Error, LocalizedError {
+public enum FramebufferError: Error, LocalizedError {
   /// No renderable main-display surface could be located for the simulator.
   case mainScreenSurfaceNotFound(description: String)
   /// The surface-change or frame-rendered callbacks could not be registered on the display surface.
@@ -42,7 +42,7 @@ public enum FBFramebufferError: Error, LocalizedError {
 /// A single framebuffer occurrence, delivered in the order the display surface reported it. One
 /// stream carries both kinds so that a surface swap can never be observed out of order with the
 /// frame-rendered events around it.
-public enum FBFramebufferEvent: Sendable {
+public enum FramebufferEvent: Sendable {
   /// The display's backing IOSurface changed (nil when the display has no surface).
   case surfaceChanged(IOSurface?)
   /// A new frame was rendered into the current surface. A bare per-frame signal — modern
@@ -73,7 +73,7 @@ public final class FBFramebuffer: @unchecked Sendable {
   /// Consumers must keep per-event work O(1) and non-suspending — the stream is unbounded so that a
   /// surface swap can never be dropped; heavy per-frame work belongs on a decoupled cadence, not in
   /// the event loop.
-  public func attach() throws -> FBFramebufferAttachment {
+  public func attach() throws -> FramebufferAttachment {
     try register()
   }
 
@@ -94,11 +94,11 @@ public final class FBFramebuffer: @unchecked Sendable {
   /// Register with the display surface, producing an attachment whose event stream is fed directly
   /// from the surface callbacks. Events are yielded synchronously inside the callback (no thread
   /// hop) so the stream preserves the exact order the surface reported, across both event kinds.
-  private func register() throws -> FBFramebufferAttachment {
+  private func register() throws -> FramebufferAttachment {
     let token = UUID()
     let immediateSurface = surface.immediatelyAvailableSurface()
 
-    let (events, continuation) = AsyncStream.makeStream(of: FBFramebufferEvent.self, bufferingPolicy: .unbounded)
+    let (events, continuation) = AsyncStream.makeStream(of: FramebufferEvent.self, bufferingPolicy: .unbounded)
 
     try surface.registerCallbacks(
       token: token,
@@ -111,7 +111,7 @@ public final class FBFramebuffer: @unchecked Sendable {
         continuation.yield(.frameRendered)
       })
 
-    return FBFramebufferAttachment(
+    return FramebufferAttachment(
       framebuffer: self,
       token: token,
       initialSurface: immediateSurface,
@@ -122,18 +122,18 @@ public final class FBFramebuffer: @unchecked Sendable {
 
 /// The handle returned by `FBFramebuffer.attach`. Owns a single registration: cancelling (or
 /// releasing) the handle unregisters from the display surface and finishes `events`.
-public final class FBFramebufferAttachment: @unchecked Sendable {
+public final class FramebufferAttachment: @unchecked Sendable {
 
   /// The surface available at attach time, if the framebuffer could vend one synchronously.
   public let initialSurface: IOSurface?
 
   /// Every framebuffer event since attachment, in the order the display surface reported them.
   /// Buffered without loss until iterated; finished by `cancel()`.
-  public let events: AsyncStream<FBFramebufferEvent>
+  public let events: AsyncStream<FramebufferEvent>
 
   private let token: UUID
   private weak var framebuffer: FBFramebuffer?
-  private let continuation: AsyncStream<FBFramebufferEvent>.Continuation
+  private let continuation: AsyncStream<FramebufferEvent>.Continuation
   private let lock = NSLock()
   private var isCancelled = false
 
@@ -141,8 +141,8 @@ public final class FBFramebufferAttachment: @unchecked Sendable {
     framebuffer: FBFramebuffer,
     token: UUID,
     initialSurface: IOSurface?,
-    events: AsyncStream<FBFramebufferEvent>,
-    continuation: AsyncStream<FBFramebufferEvent>.Continuation
+    events: AsyncStream<FramebufferEvent>,
+    continuation: AsyncStream<FramebufferEvent>.Continuation
   ) {
     self.framebuffer = framebuffer
     self.token = token

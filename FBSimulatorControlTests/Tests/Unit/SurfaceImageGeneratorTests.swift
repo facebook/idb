@@ -18,11 +18,11 @@ final class SurfaceImageGeneratorTests: XCTestCase {
 
   /// A surface whose pixels vary along both axes, so an image that has been flipped or transposed
   /// looks different from one that has not.
-  private func generator() throws -> FBSurfaceImageGenerator {
+  private func generator() throws -> SurfaceImageGenerator {
     let surface = try makeTestIOSurface(width: 64, height: 32) { x, y in
       (b: UInt8(x * 4), g: UInt8(y * 8), r: 0, a: 255)
     }
-    let generator = FBSurfaceImageGenerator(purpose: "test", logger: nil)
+    let generator = SurfaceImageGenerator(purpose: "test", logger: nil)
     generator.updateSurface(surface)
     return generator
   }
@@ -53,8 +53,8 @@ final class SurfaceImageGeneratorTests: XCTestCase {
   private func render(
     _ configuration: FBScreenshotConfiguration,
     screenScale: Double? = nil,
-    generator: FBSurfaceImageGenerator? = nil
-  ) throws -> FBSurfaceImage {
+    generator: SurfaceImageGenerator? = nil
+  ) throws -> SurfaceImage {
     let generator = try generator ?? self.generator()
     return try XCTUnwrap(generator.image(configuration: configuration, screenScale: screenScale))
   }
@@ -62,7 +62,7 @@ final class SurfaceImageGeneratorTests: XCTestCase {
   // MARK: - No surface
 
   func testNoSurfaceRendersNothing() throws {
-    let generator = FBSurfaceImageGenerator(purpose: "test", logger: nil)
+    let generator = SurfaceImageGenerator(purpose: "test", logger: nil)
     XCTAssertNil(try generator.image())
     XCTAssertNil(try generator.image(configuration: FBScreenshotConfiguration(), screenScale: nil))
   }

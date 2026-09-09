@@ -132,7 +132,7 @@ struct SimulatorIndigoHIDClientTests {
     }
 
     #expect(raised == nil)
-    let hidError = try #require(thrown as? FBSimulatorHIDError)
+    let hidError = try #require(thrown as? SimulatorHIDError)
     guard case let .clientCreationFailed(className, underlying) = hidError else {
       Issue.record("Expected clientCreationFailed, got \(hidError)")
       return
@@ -150,7 +150,7 @@ struct SimulatorIndigoHIDClientTests {
   @Test("An initializer that returns nil surfaces the error it wrote out")
   func clientInitializerReturnsNil() throws {
     let clientClass = FBObjCRuntimeClass(NilReturningLegacyHIDClientStub.self)
-    let error = try #require(throws: FBSimulatorHIDError.self) {
+    let error = try #require(throws: SimulatorHIDError.self) {
       _ = try SimulatorIndigoHIDClient(device: NSObject(), clientClass: clientClass)
     }
     guard case let .clientCreationFailed(className, underlying) = error else {
@@ -204,7 +204,7 @@ struct SimulatorIndigoHIDClientTests {
     try await Task.sleep(nanoseconds: 200 * NSEC_PER_MSEC)
 
     #expect(outcome.returned)
-    guard case .clientDisposed? = outcome.error as? FBSimulatorHIDError else {
+    guard case .clientDisposed? = outcome.error as? SimulatorHIDError else {
       Issue.record("Expected clientDisposed, got \(String(describing: outcome.error))")
       return
     }

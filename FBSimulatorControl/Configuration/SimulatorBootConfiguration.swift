@@ -11,7 +11,7 @@ import Foundation
 /// An Option Set for Direct Launching.
 ///
 /// The raw values are not contiguous; callers compare and persist them, so they must not change.
-public struct FBSimulatorBootOptions: OptionSet, Hashable, Sendable {
+public struct SimulatorBootOptions: OptionSet, Hashable, Sendable {
 
   public let rawValue: UInt
 
@@ -21,16 +21,16 @@ public struct FBSimulatorBootOptions: OptionSet, Hashable, Sendable {
 
   /// Ties the Simulator's lifecycle to that of the launching process, so that the Simulator is
   /// shut down automatically when the process that booted it dies.
-  public static let tieToProcessLifecycle = FBSimulatorBootOptions(rawValue: 1 << 1)
+  public static let tieToProcessLifecycle = SimulatorBootOptions(rawValue: 1 << 1)
 
   /// Requires that the Simulator is 'Usable' before the boot API completes. A Simulator can report
   /// itself 'Booted' very quickly while not yet being usable.
-  public static let verifyUsable = FBSimulatorBootOptions(rawValue: 1 << 3)
+  public static let verifyUsable = SimulatorBootOptions(rawValue: 1 << 3)
 }
 
 public struct FBSimulatorBootConfiguration: Equatable, Hashable, Sendable, CustomStringConvertible {
 
-  public let options: FBSimulatorBootOptions
+  public let options: SimulatorBootOptions
 
   public let environment: [String: String]
 
@@ -39,7 +39,7 @@ public struct FBSimulatorBootConfiguration: Equatable, Hashable, Sendable, Custo
     environment: [:]
   )
 
-  public init(options: FBSimulatorBootOptions, environment: [String: String]) {
+  public init(options: SimulatorBootOptions, environment: [String: String]) {
     self.options = options
     self.environment = environment
   }
@@ -54,7 +54,7 @@ public struct FBSimulatorBootConfiguration: Equatable, Hashable, Sendable, Custo
 
   private static let bootOptionStringDirectLaunch = "Direct Launch"
 
-  private static func stringsFromBootOptions(_ options: FBSimulatorBootOptions) -> [String] {
+  private static func stringsFromBootOptions(_ options: SimulatorBootOptions) -> [String] {
     var strings: [String] = []
     if options.contains(.tieToProcessLifecycle) {
       strings.append(bootOptionStringDirectLaunch)

@@ -8,7 +8,7 @@
 import FBControlCore
 import Foundation
 
-public final class FBSimulatorLaunchedApplication: FBLaunchedApplication, CustomStringConvertible {
+public final class SimulatorLaunchedApplication: FBLaunchedApplication, CustomStringConvertible {
 
   public let configuration: FBApplicationLaunchConfiguration
   public let processIdentifier: pid_t
@@ -48,16 +48,16 @@ public final class FBSimulatorLaunchedApplication: FBLaunchedApplication, Custom
     configuration: FBApplicationLaunchConfiguration,
     attachment: FBProcessFileAttachment,
     launchFuture: FBFuture<NSNumber>
-  ) -> FBFuture<FBSimulatorLaunchedApplication> {
+  ) -> FBFuture<SimulatorLaunchedApplication> {
     return launchFuture.onQueue(
       simulator.workQueue,
-      map: { processIdentifierNumber -> FBSimulatorLaunchedApplication in
+      map: { processIdentifierNumber -> SimulatorLaunchedApplication in
         let processIdentifier = processIdentifierNumber.int32Value
         let terminationFuture = Self.terminationFuture(
           forSimulator: simulator,
           processIdentifier: processIdentifier
         )
-        return FBSimulatorLaunchedApplication(
+        return SimulatorLaunchedApplication(
           simulator: simulator,
           configuration: configuration,
           attachment: attachment,
@@ -65,7 +65,7 @@ public final class FBSimulatorLaunchedApplication: FBLaunchedApplication, Custom
           terminationFuture: terminationFuture
         )
       }
-    ).retyped(FBFuture<FBSimulatorLaunchedApplication>.self)
+    ).retyped(FBFuture<SimulatorLaunchedApplication>.self)
   }
 
   public class func terminationFuture(

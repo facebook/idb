@@ -183,7 +183,7 @@ final class SimulatorTests: XCTestCase {
   }
 
   // Both no-port paths throw: the device's own error when it reported one, and a synthesized
-  // `FBSimulatorPortLookupError` when it did not. They are told apart by the error's domain.
+  // `SimulatorPortLookupError` when it did not. They are told apart by the error's domain.
   func testLookupBootstrapPortNamed_WhenPortIsNull_ProducesNoPort() {
     stubDevice.lookupPort = mach_port_t(MACH_PORT_NULL)
     stubDevice.lookupShouldFail = false

@@ -20,7 +20,7 @@ public extension FBControlCoreProductFamily {
 }
 
 /// The direction of a HID event.
-public enum FBSimulatorHIDDirection: Int32, Sendable, CaseIterable {
+public enum SimulatorHIDDirection: Int32, Sendable, CaseIterable {
   case down = 1
   case up = 2
 
@@ -147,7 +147,7 @@ public struct FBSimulatorTrackpadPoint: Equatable, Hashable, Sendable {
 /// The phase of a tvOS Siri Remote trackpad gesture. A pan is a began → changed×N → ended sequence;
 /// the phase selects which digitizer fields the Indigo trackpad message carries so the tvOS focus
 /// engine reads a lifting gesture (a bare stream of positions never moves focus).
-public enum FBSimulatorTrackpadPhase: Sendable, Equatable, Hashable, CaseIterable {
+public enum SimulatorTrackpadPhase: Sendable, Equatable, Hashable, CaseIterable {
   case began
   case changed
   case ended

@@ -10,22 +10,22 @@ import CoreImage
 import Foundation
 @preconcurrency import IOSurface
 
-public actor FBSimulatorImage {
+public actor SimulatorImage {
 
   private let logger: (any FBControlCoreLogger)?
-  private let imageGenerator: FBSurfaceImageGenerator
+  private let imageGenerator: SurfaceImageGenerator
   private let framebuffer: FBFramebuffer
-  private var attachment: FBFramebufferAttachment?
+  private var attachment: FramebufferAttachment?
   private var eventTask: Task<Void, Never>?
 
-  public static func image(with framebuffer: FBFramebuffer, logger: (any FBControlCoreLogger)?) -> FBSimulatorImage {
-    FBSimulatorImage(framebuffer: framebuffer, logger: logger)
+  public static func image(with framebuffer: FBFramebuffer, logger: (any FBControlCoreLogger)?) -> SimulatorImage {
+    SimulatorImage(framebuffer: framebuffer, logger: logger)
   }
 
   init(framebuffer: FBFramebuffer, logger: (any FBControlCoreLogger)?) {
     self.framebuffer = framebuffer
     self.logger = logger
-    self.imageGenerator = FBSurfaceImageGenerator(purpose: "simulator_image", logger: logger)
+    self.imageGenerator = SurfaceImageGenerator(purpose: "simulator_image", logger: logger)
   }
 
   deinit {
@@ -40,8 +40,8 @@ public actor FBSimulatorImage {
   }
 
   /// Renders the current surface with `configuration` applied during the render rather than after
-  /// it. See `FBSurfaceImageGenerator.image(configuration:screenScale:)`.
-  public func image(configuration: FBScreenshotConfiguration, screenScale: Double?) throws -> FBSurfaceImage? {
+  /// it. See `SurfaceImageGenerator.image(configuration:screenScale:)`.
+  public func image(configuration: FBScreenshotConfiguration, screenScale: Double?) throws -> SurfaceImage? {
     try attachIfNeeded()
     return try imageGenerator.image(configuration: configuration, screenScale: screenScale)
   }

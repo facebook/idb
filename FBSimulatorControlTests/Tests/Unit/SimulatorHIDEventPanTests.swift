@@ -21,7 +21,7 @@ final class SimulatorHIDEventPanTests: XCTestCase {
     let pan = FBSimulatorHIDEvent.pan(from: from, to: to, steps: 3, duration: 0.3)
     let subs = try XCTUnwrap(pan.subEvents, "pan should be a composite")
 
-    let trackpads: [(FBSimulatorTrackpadPhase, FBSimulatorTrackpadPoint)] = subs.compactMap {
+    let trackpads: [(SimulatorTrackpadPhase, FBSimulatorTrackpadPoint)] = subs.compactMap {
       if case let .trackpad(phase, point) = $0 { return (phase, point) }
       return nil
     }

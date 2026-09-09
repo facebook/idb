@@ -9,20 +9,20 @@
 @preconcurrency import FBControlCore
 import Foundation
 
-public final class FBAppleSimctlCommandExecutor {
+public final class AppleSimctlCommandExecutor {
 
   private let deviceSetPath: String
   private let deviceUUID: String?
   private let queue: DispatchQueue
   private let logger: any FBControlCoreLogger
 
-  public class func executor(for simulator: FBSimulator) -> FBAppleSimctlCommandExecutor {
+  public class func executor(for simulator: FBSimulator) -> AppleSimctlCommandExecutor {
     // simctl addresses a simulator by its device set, so this is only reachable for a
     // set-managed simulator - which every simulator the companion serves is.
     guard let set = simulator.set else {
       preconditionFailure("\(simulator.udid) does not belong to a simulator set, so simctl cannot address it")
     }
-    return FBAppleSimctlCommandExecutor(
+    return AppleSimctlCommandExecutor(
       deviceSetPath: set.deviceSet.setPath,
       deviceUUID: simulator.udid,
       logger: simulator.logger.withName("simctl"))

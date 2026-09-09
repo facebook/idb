@@ -90,7 +90,7 @@ public final class FBSimulatorLifecycleCommands {
     guard let simulator = self.simulator else {
       throw FBWeakTargetError.simulator
     }
-    try await bridgeFBFutureVoid(FBCoreSimulatorNotifier.resolveLeavesState(state, for: simulator.device))
+    try await bridgeFBFutureVoid(CoreSimulatorNotifier.resolveLeavesState(state, for: simulator.device))
   }
 
   fileprivate func focus() async throws {

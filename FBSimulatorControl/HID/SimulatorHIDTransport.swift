@@ -72,7 +72,7 @@ enum SimulatorHIDTransport: Sendable {
   /// Sends a single-finger touch at the given point (in points). `edge` tags the contact as
   /// originating at a screen edge, which is how the guest recognises a system edge gesture.
   func sendTouch(
-    direction: FBSimulatorHIDDirection, x: Double, y: Double, edge: FBSimulatorHIDEdge
+    direction: SimulatorHIDDirection, x: Double, y: Double, edge: FBSimulatorHIDEdge
   ) async throws {
     switch self {
     case let .indigo(indigo): try await indigo.sendTouch(direction: direction, x: x, y: y, edge: edge)
@@ -81,7 +81,7 @@ enum SimulatorHIDTransport: Sendable {
   }
 
   /// Sends a two-finger touch (for multi-touch gestures) at the given points (in points).
-  func sendTwoFingerTouch(direction: FBSimulatorHIDDirection, finger1: CGPoint, finger2: CGPoint) async throws {
+  func sendTwoFingerTouch(direction: SimulatorHIDDirection, finger1: CGPoint, finger2: CGPoint) async throws {
     switch self {
     case let .indigo(indigo):
       try await indigo.sendTwoFingerTouch(direction: direction, finger1: finger1, finger2: finger2)
@@ -91,7 +91,7 @@ enum SimulatorHIDTransport: Sendable {
   }
 
   /// Sends a hardware button event.
-  func sendButton(direction: FBSimulatorHIDDirection, button: FBSimulatorHIDButton) async throws {
+  func sendButton(direction: SimulatorHIDDirection, button: FBSimulatorHIDButton) async throws {
     switch self {
     case let .indigo(indigo): try await indigo.sendButton(direction: direction, button: button)
     case let .dtuhid(dtuhid), let .mixed(dtuhid, _): try await dtuhid.sendButton(direction: direction, button: button)
@@ -99,7 +99,7 @@ enum SimulatorHIDTransport: Sendable {
   }
 
   /// Sends a keyboard key event.
-  func sendKeyboard(direction: FBSimulatorHIDDirection, keyCode: UInt32) async throws {
+  func sendKeyboard(direction: SimulatorHIDDirection, keyCode: UInt32) async throws {
     switch self {
     case let .indigo(indigo): try await indigo.sendKeyboard(direction: direction, keyCode: keyCode)
     case let .dtuhid(dtuhid), let .mixed(dtuhid, _): try await dtuhid.sendKeyboard(direction: direction, keyCode: keyCode)
@@ -107,7 +107,7 @@ enum SimulatorHIDTransport: Sendable {
   }
 
   /// Sends a tvOS Siri Remote focus action.
-  func sendRemoteButton(direction: FBSimulatorHIDDirection, button: FBSimulatorHIDRemoteButton) async throws {
+  func sendRemoteButton(direction: SimulatorHIDDirection, button: FBSimulatorHIDRemoteButton) async throws {
     switch self {
     case let .indigo(indigo): try await indigo.sendRemoteButton(direction: direction, button: button)
     case let .dtuhid(dtuhid), let .mixed(dtuhid, _):

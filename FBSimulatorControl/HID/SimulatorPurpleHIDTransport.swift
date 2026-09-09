@@ -86,7 +86,7 @@ final class SimulatorPurpleHIDTransport: @unchecked Sendable {
     var lookupError: NSError?
     let purplePort = simulator.device.lookup("PurpleWorkspacePort", error: &lookupError)
     if purplePort == 0 {
-      throw FBSimulatorHIDError.purpleWorkspacePortUnavailable(underlying: lookupError)
+      throw SimulatorHIDError.purpleWorkspacePortUnavailable(underlying: lookupError)
     }
 
     var mutableData = data
@@ -108,10 +108,10 @@ final class SimulatorPurpleHIDTransport: @unchecked Sendable {
       return
     }
     if kr == MACH_SEND_TIMED_OUT {
-      throw FBSimulatorHIDError.machSendTimedOut(
+      throw SimulatorHIDError.machSendTimedOut(
         port: purplePort, timeoutMs: timeoutMs, detail: String(cString: mach_error_string(kr)))
     }
-    throw FBSimulatorHIDError.machSendFailed(
+    throw SimulatorHIDError.machSendFailed(
       port: purplePort, detail: String(cString: mach_error_string(kr)), code: kr)
   }
 }

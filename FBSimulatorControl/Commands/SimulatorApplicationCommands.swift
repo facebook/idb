@@ -160,7 +160,7 @@ public final class FBSimulatorApplicationCommands {
       throw SimulatorApplicationLaunchError.attachmentMissingFiles(bundleID: configuration.bundleID)
     }
     let launch = launchApplication(configuration, stdOut: stdOut, stdErr: stdErr)
-    return try await bridgeFBFuture(FBSimulatorLaunchedApplication.application(withSimulator: simulator, configuration: configuration, attachment: attachment, launchFuture: launch))
+    return try await bridgeFBFuture(SimulatorLaunchedApplication.application(withSimulator: simulator, configuration: configuration, attachment: attachment, launchFuture: launch))
   }
 
   fileprivate func killApplication(withBundleID bundleID: String) async throws {

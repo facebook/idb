@@ -9,20 +9,20 @@
 @preconcurrency import FBControlCore
 import Foundation
 
-public final class FBSimulatorServiceContext {
+public final class SimulatorServiceContext {
 
   private let serviceContext: SimServiceContext
 
   // MARK: - Initialization
 
-  nonisolated(unsafe) private static var _sharedInstance: FBSimulatorServiceContext?
+  nonisolated(unsafe) private static var _sharedInstance: SimulatorServiceContext?
   private static let sharedLock = NSLock()
 
-  public class func sharedServiceContext() throws -> FBSimulatorServiceContext {
+  public class func sharedServiceContext() throws -> SimulatorServiceContext {
     return try sharedServiceContext(withLogger: FBControlCoreGlobalConfiguration.defaultLogger)
   }
 
-  public class func sharedServiceContext(withLogger logger: (any FBControlCoreLogger)?) throws -> FBSimulatorServiceContext {
+  public class func sharedServiceContext(withLogger logger: (any FBControlCoreLogger)?) throws -> SimulatorServiceContext {
     sharedLock.lock()
     defer { sharedLock.unlock() }
     if let instance = _sharedInstance {
@@ -35,19 +35,19 @@ public final class FBSimulatorServiceContext {
 
   // MARK: - Private Initialization
 
-  private class func createServiceContext(withLogger logger: (any FBControlCoreLogger)?) throws -> FBSimulatorServiceContext {
+  private class func createServiceContext(withLogger logger: (any FBControlCoreLogger)?) throws -> SimulatorServiceContext {
     try FBSimulatorControlFrameworkLoader.essentialFrameworks.loadPrivateFrameworks(logger)
     guard
       let serviceContextClass = NSClassFromString("SimServiceContext") as? SimServiceContext.Type,
       serviceContextClass.responds(to: NSSelectorFromString("sharedServiceContextForDeveloperDir:error:"))
     else {
-      throw FBSimulatorServiceContextError.serviceContextClassUnavailable
+      throw SimulatorServiceContextError.serviceContextClassUnavailable
     }
     // An empty developer directory makes -[SimServiceContext sharedServiceContextForDeveloperDir:error:]
     // crash with an opaque NSException; throw a clear error instead.
     let developerDirectory = FBXcodeConfiguration.developerDirectory
     guard !developerDirectory.isEmpty else {
-      throw FBSimulatorServiceContextError.noFullXcodeSelected
+      throw SimulatorServiceContextError.noFullXcodeSelected
     }
 
     var innerError: AnyObject?
@@ -55,11 +55,11 @@ public final class FBSimulatorServiceContext {
       serviceContextClass
       .sharedServiceContext(forDeveloperDir: developerDirectory, error: &innerError)
     guard let serviceContext = serviceContext as? SimServiceContext else {
-      throw FBSimulatorServiceContextError.serviceContextUnavailable(
+      throw SimulatorServiceContextError.serviceContextUnavailable(
         developerDirectory: developerDirectory,
         reason: (innerError as? NSError)?.localizedDescription)
     }
-    return FBSimulatorServiceContext(serviceContext: serviceContext)
+    return SimulatorServiceContext(serviceContext: serviceContext)
   }
 
   private init(serviceContext: SimServiceContext) {
@@ -89,14 +89,14 @@ public final class FBSimulatorServiceContext {
       // defaultDeviceSetWithError: takes (id *) not (NSError **), so use the raw API
       var error: AnyObject?
       guard let deviceSet = serviceContext.defaultDeviceSetWithError(&error) as? SimDeviceSet else {
-        throw FBSimulatorServiceContextError.defaultDeviceSetUnavailable(reason: (error as? NSError)?.localizedDescription)
+        throw SimulatorServiceContextError.defaultDeviceSetUnavailable(reason: (error as? NSError)?.localizedDescription)
       }
       return deviceSet
     }
-    let resolvedPath = try FBSimulatorServiceContext.fullyQualifiedDeviceSetPath(deviceSetPath)
+    let resolvedPath = try SimulatorServiceContext.fullyQualifiedDeviceSetPath(deviceSetPath)
     var innerError: AnyObject?
     guard let deviceSet = serviceContext.deviceSet(withPath: resolvedPath, error: &innerError) as? SimDeviceSet else {
-      throw FBSimulatorServiceContextError.deviceSetUnavailable(
+      throw SimulatorServiceContextError.deviceSetUnavailable(
         configuration: "\(configuration)",
         reason: (innerError as? NSError)?.localizedDescription)
     }
@@ -107,7 +107,7 @@ public final class FBSimulatorServiceContext {
     do {
       try FileManager.default.createDirectory(atPath: deviceSetPath, withIntermediateDirectories: true, attributes: nil)
     } catch {
-      throw FBSimulatorServiceContextError.deviceSetDirectoryCreationFailed(
+      throw SimulatorServiceContextError.deviceSetDirectoryCreationFailed(
         path: deviceSetPath,
         reason: error.localizedDescription)
     }
@@ -116,7 +116,7 @@ public final class FBSimulatorServiceContext {
     // This is important for -[SimServiceContext deviceSetWithPath:error:], which internally caches based on a fully resolved path.
     var pathBuffer = [CChar](repeating: 0, count: Int(PATH_MAX) + 1)
     guard let result = realpath(deviceSetPath, &pathBuffer) else {
-      throw FBSimulatorServiceContextError.deviceSetPathResolutionFailed(
+      throw SimulatorServiceContextError.deviceSetPathResolutionFailed(
         path: deviceSetPath,
         reason: String(cString: strerror(errno)))
     }

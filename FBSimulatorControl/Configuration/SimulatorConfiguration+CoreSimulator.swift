@@ -19,7 +19,7 @@ extension FBSimulatorConfiguration {
 
   func newestAvailableOS() throws -> FBSimulatorConfiguration {
     guard let os = try FBSimulatorConfiguration.newestAvailableOS(forDevice: device) else {
-      throw FBSimulatorConfigurationError.noNewestAvailableOS(device: device.model.rawValue)
+      throw SimulatorConfigurationError.noNewestAvailableOS(device: device.model.rawValue)
     }
     return withOSNamed(os.name)
   }
@@ -30,7 +30,7 @@ extension FBSimulatorConfiguration {
 
   func oldestAvailableOS() throws -> FBSimulatorConfiguration {
     guard let os = try FBSimulatorConfiguration.oldestAvailableOS(forDevice: device) else {
-      throw FBSimulatorConfigurationError.noOldestAvailableOS(device: device.model.rawValue)
+      throw SimulatorConfigurationError.noOldestAvailableOS(device: device.model.rawValue)
     }
     return withOSNamed(os.name)
   }
@@ -38,11 +38,11 @@ extension FBSimulatorConfiguration {
   public static func inferSimulatorConfiguration(fromDevice simDevice: SimDevice) throws -> FBSimulatorConfiguration {
     let osName = FBOSVersionName(rawValue: simDevice.runtime.name ?? "unknown")
     guard FBiOSTargetConfiguration.nameToOSVersion[osName] != nil else {
-      throw FBSimulatorConfigurationError.unsupportedOSVersion(name: osName.rawValue)
+      throw SimulatorConfigurationError.unsupportedOSVersion(name: osName.rawValue)
     }
     let model = FBDeviceModel(rawValue: simDevice.deviceType.name ?? "unknown")
     guard FBiOSTargetConfiguration.nameToDevice[model] != nil else {
-      throw FBSimulatorConfigurationError.unsupportedDevice(name: model.rawValue)
+      throw SimulatorConfigurationError.unsupportedDevice(name: model.rawValue)
     }
     return try FBSimulatorConfiguration.defaultConfiguration().withOSNamed(osName).withDeviceModel(model)
   }
@@ -66,16 +66,16 @@ extension FBSimulatorConfiguration {
     do {
       runtime = try obtainRuntime()
     } catch {
-      throw FBSimulatorConfigurationError.runtimeUnavailable(configuration: "\(self)", reason: error.localizedDescription)
+      throw SimulatorConfigurationError.runtimeUnavailable(configuration: "\(self)", reason: error.localizedDescription)
     }
     let deviceType: SimDeviceType
     do {
       deviceType = try obtainDeviceType()
     } catch {
-      throw FBSimulatorConfigurationError.deviceTypeUnavailable(configuration: "\(self)", reason: error.localizedDescription)
+      throw SimulatorConfigurationError.deviceTypeUnavailable(configuration: "\(self)", reason: error.localizedDescription)
     }
     if !runtime.supportsDeviceType(deviceType) {
-      throw FBSimulatorConfigurationError.runtimeDeviceTypeMismatch(
+      throw SimulatorConfigurationError.runtimeDeviceTypeMismatch(
         deviceType: deviceType.name ?? "unknown",
         runtime: runtime.name ?? "unknown")
     }
@@ -169,7 +169,7 @@ extension FBSimulatorConfiguration {
         (left.buildVersionString ?? "").compare(right.buildVersionString ?? "", options: .numeric) == .orderedAscending
       })
     else {
-      throw FBSimulatorConfigurationError.noMatchingRuntime(available: "\(runtimes)")
+      throw SimulatorConfigurationError.noMatchingRuntime(available: "\(runtimes)")
     }
     return newest
   }
@@ -178,10 +178,10 @@ extension FBSimulatorConfiguration {
     let deviceTypes = try FBSimulatorConfiguration.supportedDeviceTypes()
     let matchingDeviceTypes = deviceTypes.filter { $0.name == device.model.rawValue }
     if matchingDeviceTypes.isEmpty {
-      throw FBSimulatorConfigurationError.noMatchingDeviceType(available: "\(matchingDeviceTypes)")
+      throw SimulatorConfigurationError.noMatchingDeviceType(available: "\(matchingDeviceTypes)")
     }
     if matchingDeviceTypes.count > 1 {
-      throw FBSimulatorConfigurationError.ambiguousDeviceType(matches: "\(matchingDeviceTypes)")
+      throw SimulatorConfigurationError.ambiguousDeviceType(matches: "\(matchingDeviceTypes)")
     }
     return matchingDeviceTypes[0]
   }
@@ -198,11 +198,11 @@ extension FBSimulatorConfiguration {
   }
 
   private static func supportedRuntimes() throws -> [SimRuntime] {
-    try FBSimulatorServiceContext.sharedServiceContext().supportedRuntimes()
+    try SimulatorServiceContext.sharedServiceContext().supportedRuntimes()
   }
 
   private static func supportedDeviceTypes() throws -> [SimDeviceType] {
-    try FBSimulatorServiceContext.sharedServiceContext().supportedDeviceTypes()
+    try SimulatorServiceContext.sharedServiceContext().supportedDeviceTypes()
   }
 
   private static func supportedRuntimes(forDevice device: FBDeviceType) throws -> [SimRuntime] {

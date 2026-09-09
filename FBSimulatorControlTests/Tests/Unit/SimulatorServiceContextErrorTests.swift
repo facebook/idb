@@ -13,13 +13,13 @@ final class SimulatorServiceContextErrorTests: XCTestCase {
   func testNoFullXcodeSelectedMessageIsStable() {
     // User-facing message; pinned verbatim.
     XCTAssertEqual(
-      FBSimulatorServiceContextError.noFullXcodeSelected.errorDescription,
+      SimulatorServiceContextError.noFullXcodeSelected.errorDescription,
       "No full Xcode developer directory is selected. Select one with `xcode-select -s` or set DEVELOPER_DIR."
     )
   }
 
   func testServiceContextUnavailableComposesUnderlyingReason() {
-    let error = FBSimulatorServiceContextError.serviceContextUnavailable(
+    let error = SimulatorServiceContextError.serviceContextUnavailable(
       developerDirectory: "/Applications/Xcode.app/Contents/Developer",
       reason: "the underlying boom"
     )
@@ -30,7 +30,7 @@ final class SimulatorServiceContextErrorTests: XCTestCase {
   }
 
   func testServiceContextUnavailableWithoutReasonOmitsSuffix() {
-    let error = FBSimulatorServiceContextError.serviceContextUnavailable(
+    let error = SimulatorServiceContextError.serviceContextUnavailable(
       developerDirectory: "/dev/dir",
       reason: nil
     )
@@ -38,7 +38,7 @@ final class SimulatorServiceContextErrorTests: XCTestCase {
   }
 
   func testDescriptionMirrorsErrorDescription() {
-    let error = FBSimulatorServiceContextError.deviceSetPathResolutionFailed(path: "/tmp/set", reason: "No such file or directory")
+    let error = SimulatorServiceContextError.deviceSetPathResolutionFailed(path: "/tmp/set", reason: "No such file or directory")
     XCTAssertEqual(error.description, error.errorDescription)
   }
 }

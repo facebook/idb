@@ -9,12 +9,12 @@
 @preconcurrency import FBControlCore
 import Foundation
 
-public enum FBSimulatorBootVerificationError: Error {
+public enum SimulatorBootVerificationError: Error {
   case noBootInfo(simulatorDescription: String)
   case notTerminalStatus(bootInfoDescription: String)
 }
 
-extension FBSimulatorBootVerificationError: LocalizedError {
+extension SimulatorBootVerificationError: LocalizedError {
   public var errorDescription: String? {
     switch self {
     case let .noBootInfo(simulatorDescription):
@@ -25,7 +25,7 @@ extension FBSimulatorBootVerificationError: LocalizedError {
   }
 }
 
-public final class FBSimulatorBootVerificationStrategy {
+public final class SimulatorBootVerificationStrategy {
 
   private let simulator: FBSimulator
   private var lastBootInfo: SimDeviceBootInfo?
@@ -42,7 +42,7 @@ public final class FBSimulatorBootVerificationStrategy {
 
   public static func verifySimulatorIsBooted(_ simulator: FBSimulator) async throws {
     try await FBiOSTargetResolveState(simulator, .booted)
-    let strategy = FBSimulatorBootVerificationStrategy(simulator: simulator)
+    let strategy = SimulatorBootVerificationStrategy(simulator: simulator)
     let interval = UInt64(bootVerificationWaitInterval * Double(NSEC_PER_SEC))
     while true {
       try Task.checkCancellation()
@@ -59,16 +59,16 @@ public final class FBSimulatorBootVerificationStrategy {
   private func performBootVerificationCheck() throws {
     let bootInfo: SimDeviceBootInfo? = simulator.device.bootStatus()
     guard let bootInfo else {
-      throw FBSimulatorBootVerificationError.noBootInfo(simulatorDescription: String(describing: simulator))
+      throw SimulatorBootVerificationError.noBootInfo(simulatorDescription: String(describing: simulator))
     }
     updateBootInfo(bootInfo)
     if bootInfo.isTerminalStatus == false {
-      throw FBSimulatorBootVerificationError.notTerminalStatus(bootInfoDescription: String(describing: bootInfo))
+      throw SimulatorBootVerificationError.notTerminalStatus(bootInfoDescription: String(describing: bootInfo))
     }
   }
 
   private func updateBootInfo(_ bootInfo: SimDeviceBootInfo) {
-    let stallInterval = FBSimulatorBootVerificationStrategy.bootVerificationStallInterval
+    let stallInterval = SimulatorBootVerificationStrategy.bootVerificationStallInterval
     let logger = simulator.logger
 
     let updateDate = lastInfoUpdateDate ?? Date()

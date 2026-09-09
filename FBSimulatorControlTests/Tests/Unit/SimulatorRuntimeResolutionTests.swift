@@ -45,7 +45,7 @@ struct SimulatorRuntimeResolutionTests {
   }
 
   @Test func noMatchingRuntimeThrows() {
-    #expect(throws: FBSimulatorConfigurationError.self) {
+    #expect(throws: SimulatorConfigurationError.self) {
       try FBSimulatorConfiguration.resolveRuntime(
         for: Self.configuration,
         from: [Self.makeRuntime(name: "iOS 26.5", build: "23F77")])
@@ -53,7 +53,7 @@ struct SimulatorRuntimeResolutionTests {
   }
 
   @Test func unavailableRuntimeDoesNotMatch() {
-    #expect(throws: FBSimulatorConfigurationError.self) {
+    #expect(throws: SimulatorConfigurationError.self) {
       try FBSimulatorConfiguration.resolveRuntime(
         for: Self.configuration,
         from: [Self.makeRuntime(name: "iOS 27.0", build: "24A5423a", available: false)])

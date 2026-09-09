@@ -177,7 +177,7 @@ public actor FBSimulatorVideoStream: FBVideoStream {
     // `startStreaming` shim already carries it across the boundary on the same justification.
     // patternlint-disable-next-line swift-nonisolated-unsafe
     nonisolated(unsafe) let consumer: any FBDataConsumer
-    let attachment: FBFramebufferAttachment
+    let attachment: FramebufferAttachment
     let eventTask: Task<Void, Never>
   }
 
@@ -445,7 +445,7 @@ public actor FBSimulatorVideoStream: FBVideoStream {
   /// unbounded event stream's drain invariant: a surface change mounts once; a rendered frame pokes
   /// the `.lazy` trigger, whose `bufferingNewest(1)` coalescing keeps real-time frame dropping where
   /// it belongs. In `.eager` mode the cadence clock drives pushes, so frame-rendered events are ignored.
-  private func handle(_ event: FBFramebufferEvent) {
+  private func handle(_ event: FramebufferEvent) {
     switch event {
     case let .surfaceChanged(surface):
       guard let surface else { return }

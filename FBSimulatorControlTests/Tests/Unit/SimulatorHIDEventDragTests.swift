@@ -14,7 +14,7 @@ import XCTest
 /// `swipe` cannot express, because it has one duration for three phases.
 final class SimulatorHIDEventDragTests: XCTestCase {
 
-  private func touches(_ event: FBSimulatorHIDEvent) throws -> [(FBSimulatorHIDDirection, Double, Double)] {
+  private func touches(_ event: FBSimulatorHIDEvent) throws -> [(SimulatorHIDDirection, Double, Double)] {
     try XCTUnwrap(event.subEvents, "drag should be a composite").compactMap {
       if case let .touch(direction, x, y, _) = $0 { return (direction, x, y) }
       return nil

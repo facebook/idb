@@ -8,7 +8,7 @@
 import Foundation
 
 /// State-guard failure for operations that require the simulator to be in a particular state.
-public enum FBSimulatorStateError: Error, LocalizedError {
+public enum SimulatorStateError: Error, LocalizedError {
   case notBooted(operation: String, state: String)
   case notShutdown(operation: String, state: String)
   case unknownState(operation: String)
