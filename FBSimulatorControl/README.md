@@ -138,7 +138,7 @@ In order for other Applications (mainly `Simulator.app`, but also for video reco
 
 An `IOSurface` is an object that wraps a Framebuffer, with the contents of the Framebuffer being located within GPU memory. This `IOSurface` can be read and inspected across process boundaries. `Simulator.app` uses this `IOSurface` as the backing Framebuffer for its view of an iOS Simulator.
 
-`IOSurface` objects are also easily convertible to "Pixel Buffer" types that are used in video encoding, which [`FBSimulatorVideoStream`](https://github.com/facebook/idb/blob/main/FBSimulatorControl/Framebuffer/FBSimulatorVideoStream.swift) takes advantage of. This allows `FBSimulatorControl` to implement video encoding of an iOS Simulator's Framebuffer in a way that avoids large copies of bitmap framebuffers on a per-frame basis.
+`IOSurface` objects are also easily convertible to "Pixel Buffer" types that are used in video encoding, which [`FBSimulatorVideoStream`](https://github.com/facebook/idb/blob/main/FBSimulatorControl/Framebuffer/SimulatorVideoStream.swift) takes advantage of. This allows `FBSimulatorControl` to implement video encoding of an iOS Simulator's Framebuffer in a way that avoids large copies of bitmap framebuffers on a per-frame basis.
 
 ### HID: `IndigoHID` and `DTUHID`
 
@@ -148,7 +148,7 @@ This uses "mach" IPC, where data structures are sent over a channel using `mach_
 
 The reverse engineering of this protocol allows `FBSimulatorControl` to expose APIs that send touch events directly to the iOS Simulator without using Accessibility APIs in a UI Test. The combination of video streams and APIs for sending input events allows for the building of applications that expose a remote iOS Simulator.
 
-Newer Xcode versions introduce a second event path: a `dtuhidd` daemon inside the Simulator, which receives events as XPC dictionaries rather than reverse-engineered mach structures. On these runtimes the guest moves some of its legacy HID services to `dtuhidd`, so `FBSimulatorControl` implements HID delivery behind a pluggable transport ([`FBSimulatorHID`](https://github.com/facebook/idb/blob/main/FBSimulatorControl/HID/FBSimulatorHID.swift)). The Indigo transport remains the default where it works, and the [DTUHID transport](https://github.com/facebook/idb/blob/main/FBSimulatorControl/HID/SimulatorDTUHIDTransport.swift) is used where the runtime requires it, negotiated automatically per Simulator. A caller of the Framework does not need to know which transport is in use.
+Newer Xcode versions introduce a second event path: a `dtuhidd` daemon inside the Simulator, which receives events as XPC dictionaries rather than reverse-engineered mach structures. On these runtimes the guest moves some of its legacy HID services to `dtuhidd`, so `FBSimulatorControl` implements HID delivery behind a pluggable transport ([`FBSimulatorHID`](https://github.com/facebook/idb/blob/main/FBSimulatorControl/HID/SimulatorHID.swift)). The Indigo transport remains the default where it works, and the [DTUHID transport](https://github.com/facebook/idb/blob/main/FBSimulatorControl/HID/SimulatorDTUHIDTransport.swift) is used where the runtime requires it, negotiated automatically per Simulator. A caller of the Framework does not need to know which transport is in use.
 
 ### `SimulatorKit.framework`
 
