@@ -16,11 +16,11 @@ import Foundation
 // representable in Objective-C fails to compile instead of silently vanishing from the
 // class at runtime.
 
-class FBSimulatorControlTests_SimDeviceType_Double: NSObject {
+class SimulatorControlTests_SimDeviceType_Double: NSObject {
   @objc var name: String = ""
 }
 
-class FBSimulatorControlTests_SimDeviceRuntime_Double: NSObject {
+class SimulatorControlTests_SimDeviceRuntime_Double: NSObject {
   @objc var name: String = ""
   @objc var versionString: String = ""
   @objc var buildVersionString: String = ""
@@ -28,7 +28,7 @@ class FBSimulatorControlTests_SimDeviceRuntime_Double: NSObject {
   @objc var supportedProductFamilyIDs: [NSNumber] = []
 }
 
-class FBSimulatorControlTests_SimDevice_Double: NSObject {
+class SimulatorControlTests_SimDevice_Double: NSObject {
   @objc var name: String = ""
   @objc var UDID: NSUUID = NSUUID()
   private var _dataPath: String?
@@ -48,12 +48,12 @@ class FBSimulatorControlTests_SimDevice_Double: NSObject {
     }
   }
   @objc var state: UInt64 = 0
-  @objc var deviceType: FBSimulatorControlTests_SimDeviceType_Double?
-  @objc var runtime: FBSimulatorControlTests_SimDeviceRuntime_Double?
+  @objc var deviceType: SimulatorControlTests_SimDeviceType_Double?
+  @objc var runtime: SimulatorControlTests_SimDeviceRuntime_Double?
   @objc var notificationManager: AnyObject?
 
   override func isEqual(_ object: Any?) -> Bool {
-    guard let other = object as? FBSimulatorControlTests_SimDevice_Double else { return false }
+    guard let other = object as? SimulatorControlTests_SimDevice_Double else { return false }
     return UDID.isEqual(other.UDID)
   }
 
@@ -64,7 +64,7 @@ class FBSimulatorControlTests_SimDevice_Double: NSObject {
   }
 }
 
-class FBSimulatorControlTests_SimDeviceSet_Double: NSObject {
+class SimulatorControlTests_SimDeviceSet_Double: NSObject {
   @objc var availableDevices: [Any] = []
   @objc var notificationManager: AnyObject?
 }

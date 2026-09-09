@@ -13,7 +13,7 @@ final class SimulatorAccessibilityCommandsTests: XCTestCase {
 
   // MARK: - Properties
 
-  private var fixture: FBAccessibilityTestFixture?
+  private var fixture: AccessibilityTestFixture?
   private var simulator: FBSimulator!
 
   // MARK: - Helpers
@@ -108,7 +108,7 @@ final class SimulatorAccessibilityCommandsTests: XCTestCase {
   @discardableResult
   private func assertFlatOutput(
     withProfiling enableProfiling: Bool,
-    childElements: [FBSimulatorControlTests_AXPMacPlatformElement_Double]
+    childElements: [SimulatorControlTests_AXPMacPlatformElement_Double]
   ) async throws -> FBAccessibilityElementsResponse {
     let element = try await simulator.resolveElement(for: .frontmost)
 
@@ -221,7 +221,7 @@ final class SimulatorAccessibilityCommandsTests: XCTestCase {
   private func assertElementAtPoint(
     withProfiling enableProfiling: Bool,
     point: CGPoint,
-    element elementDouble: FBSimulatorControlTests_AXPMacPlatformElement_Double,
+    element elementDouble: SimulatorControlTests_AXPMacPlatformElement_Double,
     expected: [String: Any]
   ) async throws -> FBAccessibilityElementsResponse {
     fixture!.translator.macPlatformElementResult = elementDouble
@@ -252,7 +252,7 @@ final class SimulatorAccessibilityCommandsTests: XCTestCase {
   @discardableResult
   private func assertNestedOutput(
     withProfiling enableProfiling: Bool,
-    childElements: [FBSimulatorControlTests_AXPMacPlatformElement_Double]
+    childElements: [SimulatorControlTests_AXPMacPlatformElement_Double]
   ) async throws -> FBAccessibilityElementsResponse {
     let element = try await simulator.resolveElement(for: .frontmost)
 
@@ -369,7 +369,7 @@ final class SimulatorAccessibilityCommandsTests: XCTestCase {
   @discardableResult
   private func assertKeyFiltering(
     withProfiling enableProfiling: Bool,
-    childElements: [FBSimulatorControlTests_AXPMacPlatformElement_Double]
+    childElements: [SimulatorControlTests_AXPMacPlatformElement_Double]
   ) async throws -> FBAccessibilityElementsResponse {
     let element = try await simulator.resolveElement(for: .frontmost)
 
@@ -425,7 +425,7 @@ final class SimulatorAccessibilityCommandsTests: XCTestCase {
 
   @discardableResult
   private func assertElementAtPointKeyFiltering(withProfiling enableProfiling: Bool) async throws -> FBAccessibilityElementsResponse {
-    let titleLabel = FBAccessibilityTestElementBuilder.staticText(
+    let titleLabel = AccessibilityTestElementBuilder.staticText(
       withLabel: "Confirm Action",
       frame: NSRect(x: 20, y: 100, width: 350, height: 30)
     )
@@ -477,14 +477,14 @@ final class SimulatorAccessibilityCommandsTests: XCTestCase {
   /// simulator's command cache. Production paths that resolve `accessibility`
   /// on the simulator will return it.
   private func setUp(
-    withRootElement rootElement: FBSimulatorControlTests_AXPMacPlatformElement_Double,
+    withRootElement rootElement: SimulatorControlTests_AXPMacPlatformElement_Double,
     launchCtl: (any LaunchCtlCommands)? = nil
   ) throws {
-    fixture = FBAccessibilityTestFixture.bootedSimulator()
+    fixture = AccessibilityTestFixture.bootedSimulator()
     fixture!.rootElement = rootElement
     try fixture!.setUp()
 
-    let sim = FBSimulatorTestSupport.testableSimulator(withDevice: fixture!.device)
+    let sim = SimulatorTestSupport.testableSimulator(withDevice: fixture!.device)
     let dispatcher = FBSimulator.createAccessibilityTranslationDispatcher(withTranslator: fixture!.translator)
     let commands = SimulatorAccessibilityCommands(simulator: sim, translationDispatcher: dispatcher, launchCtl: launchCtl)
     sim.commandCache.register(commands, as: SimulatorAccessibilityCommands.self)
@@ -494,23 +494,23 @@ final class SimulatorAccessibilityCommandsTests: XCTestCase {
 
   // MARK: - Default Element Factories
 
-  private var defaultTitleLabel: FBSimulatorControlTests_AXPMacPlatformElement_Double {
-    FBAccessibilityTestElementBuilder.staticText(withLabel: "Confirm Action", frame: NSRect(x: 20, y: 100, width: 350, height: 30))
+  private var defaultTitleLabel: SimulatorControlTests_AXPMacPlatformElement_Double {
+    AccessibilityTestElementBuilder.staticText(withLabel: "Confirm Action", frame: NSRect(x: 20, y: 100, width: 350, height: 30))
   }
 
-  private var defaultOkButton: FBSimulatorControlTests_AXPMacPlatformElement_Double {
-    FBAccessibilityTestElementBuilder.button(withLabel: "OK", identifier: "ok_button", frame: NSRect(x: 20, y: 750, width: 150, height: 44))
+  private var defaultOkButton: SimulatorControlTests_AXPMacPlatformElement_Double {
+    AccessibilityTestElementBuilder.button(withLabel: "OK", identifier: "ok_button", frame: NSRect(x: 20, y: 750, width: 150, height: 44))
   }
 
-  private var defaultCancelButton: FBSimulatorControlTests_AXPMacPlatformElement_Double {
-    FBAccessibilityTestElementBuilder.button(withLabel: "Cancel", identifier: "cancel_button", frame: NSRect(x: 200, y: 750, width: 150, height: 44))
+  private var defaultCancelButton: SimulatorControlTests_AXPMacPlatformElement_Double {
+    AccessibilityTestElementBuilder.button(withLabel: "Cancel", identifier: "cancel_button", frame: NSRect(x: 200, y: 750, width: 150, height: 44))
   }
 
-  private func defaultRoot(withChildren children: [FBSimulatorControlTests_AXPMacPlatformElement_Double]) -> FBSimulatorControlTests_AXPMacPlatformElement_Double {
-    FBAccessibilityTestElementBuilder.application(withLabel: "App Window", frame: NSRect(x: 0, y: 0, width: 390, height: 844), children: children)
+  private func defaultRoot(withChildren children: [SimulatorControlTests_AXPMacPlatformElement_Double]) -> SimulatorControlTests_AXPMacPlatformElement_Double {
+    AccessibilityTestElementBuilder.application(withLabel: "App Window", frame: NSRect(x: 0, y: 0, width: 390, height: 844), children: children)
   }
 
-  private var defaultElementTree: FBSimulatorControlTests_AXPMacPlatformElement_Double {
+  private var defaultElementTree: SimulatorControlTests_AXPMacPlatformElement_Double {
     defaultRoot(withChildren: [defaultTitleLabel, defaultOkButton, defaultCancelButton])
   }
 
@@ -566,7 +566,7 @@ final class SimulatorAccessibilityCommandsTests: XCTestCase {
   // an ordinary tap — a test asking for a long-press and getting a tap passes for the wrong reason.
   func testAccessibilityTapRefusesAHoldDuration() async throws {
     try setUp(withRootElement: defaultElementTree)
-    let okButton = FBAccessibilityTestElementBuilder.button(
+    let okButton = AccessibilityTestElementBuilder.button(
       withLabel: "OK",
       identifier: "ok_button",
       frame: NSRect(x: 20, y: 750, width: 150, height: 44)
@@ -594,7 +594,7 @@ final class SimulatorAccessibilityCommandsTests: XCTestCase {
   func testAccessibilityPerformTapOnButtonSucceeds() async throws {
     try setUp(withRootElement: defaultElementTree)
 
-    let okButton = FBAccessibilityTestElementBuilder.button(
+    let okButton = AccessibilityTestElementBuilder.button(
       withLabel: "OK",
       identifier: "ok_button",
       frame: NSRect(x: 20, y: 750, width: 150, height: 44)
@@ -650,7 +650,7 @@ final class SimulatorAccessibilityCommandsTests: XCTestCase {
   func testAccessibilityElementAtPointReturnsElement() async throws {
     try setUp(withRootElement: defaultElementTree)
 
-    let cancelButton = FBAccessibilityTestElementBuilder.button(
+    let cancelButton = AccessibilityTestElementBuilder.button(
       withLabel: "Cancel",
       identifier: "cancel_button",
       frame: NSRect(x: 200, y: 750, width: 150, height: 44)
@@ -681,7 +681,7 @@ final class SimulatorAccessibilityCommandsTests: XCTestCase {
   func testAccessibilityElementAtPointReturnsElementWithProfiling() async throws {
     try setUp(withRootElement: defaultElementTree)
 
-    let cancelButton = FBAccessibilityTestElementBuilder.button(
+    let cancelButton = AccessibilityTestElementBuilder.button(
       withLabel: "Cancel",
       identifier: "cancel_button",
       frame: NSRect(x: 200, y: 750, width: 150, height: 44)
@@ -756,22 +756,22 @@ final class SimulatorAccessibilityCommandsTests: XCTestCase {
   }
 
   func testCoverageCalculationWithSafariLikeLayout() async throws {
-    let navBar = FBAccessibilityTestElementBuilder.staticText(
+    let navBar = AccessibilityTestElementBuilder.staticText(
       withLabel: "Navigation Bar",
       frame: NSRect(x: 0, y: 0, width: 390, height: 44)
     )
 
-    let urlBar = FBAccessibilityTestElementBuilder.staticText(
+    let urlBar = AccessibilityTestElementBuilder.staticText(
       withLabel: "URL Bar",
       frame: NSRect(x: 0, y: 44, width: 390, height: 50)
     )
 
-    let bottomToolbar = FBAccessibilityTestElementBuilder.staticText(
+    let bottomToolbar = AccessibilityTestElementBuilder.staticText(
       withLabel: "Bottom Toolbar",
       frame: NSRect(x: 0, y: 700, width: 390, height: 144)
     )
 
-    let root = FBAccessibilityTestElementBuilder.application(
+    let root = AccessibilityTestElementBuilder.application(
       withLabel: "Safari",
       frame: NSRect(x: 0, y: 0, width: 390, height: 844),
       children: [navBar, urlBar, bottomToolbar]
@@ -793,12 +793,12 @@ final class SimulatorAccessibilityCommandsTests: XCTestCase {
   }
 
   func testCoverageCalculationWithFullCoverage() async throws {
-    let fullCoverageElement = FBAccessibilityTestElementBuilder.staticText(
+    let fullCoverageElement = AccessibilityTestElementBuilder.staticText(
       withLabel: "Full Coverage",
       frame: NSRect(x: 0, y: 0, width: 390, height: 844)
     )
 
-    let root = FBAccessibilityTestElementBuilder.application(
+    let root = AccessibilityTestElementBuilder.application(
       withLabel: "App Window",
       frame: NSRect(x: 0, y: 0, width: 390, height: 844),
       children: [fullCoverageElement]
@@ -819,7 +819,7 @@ final class SimulatorAccessibilityCommandsTests: XCTestCase {
   }
 
   func testCoverageCalculationSkipsApplicationElement() async throws {
-    let root = FBAccessibilityTestElementBuilder.application(
+    let root = AccessibilityTestElementBuilder.application(
       withLabel: "App Window",
       frame: NSRect(x: 0, y: 0, width: 390, height: 844),
       children: []
@@ -847,12 +847,12 @@ final class SimulatorAccessibilityCommandsTests: XCTestCase {
   // This costs no extra work on the wire: the walk fetches the frame for every node regardless of the
   // key set, so the widening only changes what is emitted.
   func testRequestingCoverageWidensTheKeySetToTheAttributesItReads() async throws {
-    let bar = FBAccessibilityTestElementBuilder.staticText(
+    let bar = AccessibilityTestElementBuilder.staticText(
       withLabel: "Navigation Bar",
       frame: NSRect(x: 0, y: 0, width: 390, height: 422)
     )
     try setUp(
-      withRootElement: FBAccessibilityTestElementBuilder.application(
+      withRootElement: AccessibilityTestElementBuilder.application(
         withLabel: "App Window",
         frame: NSRect(x: 0, y: 0, width: 390, height: 844),
         children: [bar]
@@ -895,12 +895,12 @@ final class SimulatorAccessibilityCommandsTests: XCTestCase {
     // main traversal marks no coverage. A separate-process element (pid 99999)
     // sits mid-screen and must be found via grid hit-testing and merged into the
     // flat output, with the additional coverage reflecting the newly covered area.
-    let appElement = FBAccessibilityTestElementBuilder.application(
+    let appElement = AccessibilityTestElementBuilder.application(
       withLabel: "App",
       frame: NSRect(x: 0, y: 0, width: 390, height: 844),
       children: []
     )
-    let remoteElement = FBAccessibilityTestElementBuilder.button(
+    let remoteElement = AccessibilityTestElementBuilder.button(
       withLabel: "Remote WebView Content",
       identifier: "remote_button",
       frame: NSRect(x: 0, y: 400, width: 390, height: 100)
@@ -910,7 +910,7 @@ final class SimulatorAccessibilityCommandsTests: XCTestCase {
     // Object-at-point hit-testing returns a translation with a distinct pid that
     // maps to the remote element; the frontmost translation (pid 12345) still
     // resolves to the app element.
-    let remoteTranslation = FBSimulatorControlTests_AXPTranslationObject_Double()
+    let remoteTranslation = SimulatorControlTests_AXPTranslationObject_Double()
     remoteTranslation.pid = 99999
     fixture!.translator.objectAtPointResult = remoteTranslation
     fixture!.translator.macPlatformElementResultsByPid = [99999: remoteElement]
@@ -936,16 +936,16 @@ final class SimulatorAccessibilityCommandsTests: XCTestCase {
 
   /// A root whose three children are one keeper and two elements `.interactable` drops — no label, no
   /// identifier, and `StaticText`, which is not an actionable role.
-  private func filterableRoot() -> FBSimulatorControlTests_AXPMacPlatformElement_Double {
-    FBAccessibilityTestElementBuilder.application(
+  private func filterableRoot() -> SimulatorControlTests_AXPMacPlatformElement_Double {
+    AccessibilityTestElementBuilder.application(
       withLabel: "App Window",
       frame: NSRect(x: 0, y: 0, width: 390, height: 844),
       children: [
-        FBAccessibilityTestElementBuilder.button(
+        AccessibilityTestElementBuilder.button(
           withLabel: "OK", identifier: "ok_button", frame: NSRect(x: 0, y: 0, width: 100, height: 44)
         ),
-        FBAccessibilityTestElementBuilder.staticText(withLabel: "", frame: NSRect(x: 0, y: 100, width: 390, height: 44)),
-        FBAccessibilityTestElementBuilder.staticText(withLabel: "", frame: NSRect(x: 0, y: 200, width: 390, height: 44)),
+        AccessibilityTestElementBuilder.staticText(withLabel: "", frame: NSRect(x: 0, y: 100, width: 390, height: 44)),
+        AccessibilityTestElementBuilder.staticText(withLabel: "", frame: NSRect(x: 0, y: 200, width: 390, height: 44)),
       ]
     )
   }
@@ -1000,18 +1000,18 @@ final class SimulatorAccessibilityCommandsTests: XCTestCase {
   /// A screen shaped like a real one: full-screen containers nesting a little actual content. This is
   /// what saturates a single coverage ratio — the containers alone cover the whole screen — so it is
   /// what the dimensions have to tell apart.
-  private func containerHeavyRoot() -> FBSimulatorControlTests_AXPMacPlatformElement_Double {
-    let button = FBAccessibilityTestElementBuilder.button(
+  private func containerHeavyRoot() -> SimulatorControlTests_AXPMacPlatformElement_Double {
+    let button = AccessibilityTestElementBuilder.button(
       withLabel: "OK", identifier: "ok_button", frame: NSRect(x: 0, y: 0, width: 390, height: 211)
     )
-    let innerContainer = FBAccessibilityTestElementBuilder.staticText(
+    let innerContainer = AccessibilityTestElementBuilder.staticText(
       withLabel: "", frame: NSRect(x: 0, y: 0, width: 390, height: 844)
     )
-    return FBAccessibilityTestElementBuilder.application(
+    return AccessibilityTestElementBuilder.application(
       withLabel: "App Window",
       frame: NSRect(x: 0, y: 0, width: 390, height: 844),
       children: [
-        FBAccessibilityTestElementBuilder.application(
+        AccessibilityTestElementBuilder.application(
           withLabel: "Inner", frame: NSRect(x: 0, y: 0, width: 390, height: 844), children: [button, innerContainer]
         )
       ]
@@ -1131,16 +1131,16 @@ final class SimulatorAccessibilityCommandsTests: XCTestCase {
   // Remote content is discovered after the walk and appended to the output, and the filter runs over
   // that merged list — an element is kept or dropped on what it is, not on which traversal found it.
   func testRemoteContentDiscoveryHonoursTheElementFilter() async throws {
-    let appElement = FBAccessibilityTestElementBuilder.application(
+    let appElement = AccessibilityTestElementBuilder.application(
       withLabel: "App", frame: NSRect(x: 0, y: 0, width: 390, height: 844), children: []
     )
     // Unlabeled, unidentified StaticText — exactly what `.interactable` exists to drop.
-    let remoteElement = FBAccessibilityTestElementBuilder.staticText(
+    let remoteElement = AccessibilityTestElementBuilder.staticText(
       withLabel: "", frame: NSRect(x: 0, y: 400, width: 390, height: 100)
     )
     try setUp(withRootElement: appElement)
 
-    let remoteTranslation = FBSimulatorControlTests_AXPTranslationObject_Double()
+    let remoteTranslation = SimulatorControlTests_AXPTranslationObject_Double()
     remoteTranslation.pid = 99999
     fixture!.translator.objectAtPointResult = remoteTranslation
     fixture!.translator.macPlatformElementResultsByPid = [99999: remoteElement]
@@ -1234,17 +1234,17 @@ final class SimulatorAccessibilityCommandsTests: XCTestCase {
   func testAccessibilityElementMatchingRespectsDepthBound() async throws {
     // Build a tree where the target is two levels below the root:
     // root -> container -> deepButton
-    let deepButton = FBAccessibilityTestElementBuilder.button(
+    let deepButton = AccessibilityTestElementBuilder.button(
       withLabel: "Deep",
       identifier: "deep_id",
       frame: NSRect(x: 0, y: 0, width: 10, height: 10)
     )
-    let container = FBAccessibilityTestElementBuilder.application(
+    let container = AccessibilityTestElementBuilder.application(
       withLabel: "Container",
       frame: NSRect(x: 0, y: 0, width: 390, height: 844),
       children: [deepButton]
     )
-    let root = FBAccessibilityTestElementBuilder.application(
+    let root = AccessibilityTestElementBuilder.application(
       withLabel: "App Window",
       frame: NSRect(x: 0, y: 0, width: 390, height: 844),
       children: [container]
@@ -1373,8 +1373,8 @@ final class SimulatorAccessibilityCommandsTests: XCTestCase {
   func testFrontmostRemediatesWhenZeroFramedRootPidIsDead() async throws {
     // A zero-framed root whose owning pid (12345) is not a live launchd service is the
     // stale-SpringBoard signal: remediation must restart CoreSimulatorBridge, then retry.
-    let zeroFrameRoot = FBAccessibilityTestElementBuilder.application(withLabel: "App", frame: .zero, children: [])
-    let launchCtl = FBSimulatorControlTests_LaunchCtl_Double.with(running: [:])
+    let zeroFrameRoot = AccessibilityTestElementBuilder.application(withLabel: "App", frame: .zero, children: [])
+    let launchCtl = SimulatorControlTests_LaunchCtl_Double.with(running: [:])
     try setUp(withRootElement: zeroFrameRoot, launchCtl: launchCtl)
 
     let element = try await simulator.resolveElement(for: .frontmost)
@@ -1385,8 +1385,8 @@ final class SimulatorAccessibilityCommandsTests: XCTestCase {
 
   func testFrontmostDoesNotRemediateWhenZeroFramedRootPidIsLive() async throws {
     // A zero frame alone is not stale: when the owning pid is still a live service, no remediation.
-    let zeroFrameRoot = FBAccessibilityTestElementBuilder.application(withLabel: "App", frame: .zero, children: [])
-    let launchCtl = FBSimulatorControlTests_LaunchCtl_Double.with(running: ["com.apple.SpringBoard": 12345])
+    let zeroFrameRoot = AccessibilityTestElementBuilder.application(withLabel: "App", frame: .zero, children: [])
+    let launchCtl = SimulatorControlTests_LaunchCtl_Double.with(running: ["com.apple.SpringBoard": 12345])
     try setUp(withRootElement: zeroFrameRoot, launchCtl: launchCtl)
 
     let element = try await simulator.resolveElement(for: .frontmost)
@@ -1398,7 +1398,7 @@ final class SimulatorAccessibilityCommandsTests: XCTestCase {
   // MARK: - Frontmost nil-translation (describe-all SpringBoard-down classification)
 
   func testFrontmostDescribeAllReturnsSpringBoardNotRunningWhenSpringBoardDown() async throws {
-    try setUp(withRootElement: defaultElementTree, launchCtl: FBSimulatorControlTests_LaunchCtl_Double.with(running: [:]))
+    try setUp(withRootElement: defaultElementTree, launchCtl: SimulatorControlTests_LaunchCtl_Double.with(running: [:]))
     fixture!.translator.frontmostApplicationResult = nil
 
     do {
@@ -1412,7 +1412,7 @@ final class SimulatorAccessibilityCommandsTests: XCTestCase {
 
   func testFrontmostDescribeAllStaysNoTranslationObjectWhenSpringBoardRunning() async throws {
     // SpringBoard is up, so a nil translation is some other failure (e.g. a transient) — unchanged.
-    try setUp(withRootElement: defaultElementTree, launchCtl: FBSimulatorControlTests_LaunchCtl_Double.with(running: ["com.apple.SpringBoard": 4321]))
+    try setUp(withRootElement: defaultElementTree, launchCtl: SimulatorControlTests_LaunchCtl_Double.with(running: ["com.apple.SpringBoard": 4321]))
     fixture!.translator.frontmostApplicationResult = nil
 
     do {
@@ -1441,7 +1441,7 @@ final class SimulatorAccessibilityCommandsTests: XCTestCase {
   // MARK: - Frontmost pid
 
   func testResolveFrontmostElementExposesProcessIdentifier() async throws {
-    let root = FBAccessibilityTestElementBuilder.application(withLabel: "App", frame: CGRect(x: 0, y: 0, width: 100, height: 100), children: [])
+    let root = AccessibilityTestElementBuilder.application(withLabel: "App", frame: CGRect(x: 0, y: 0, width: 100, height: 100), children: [])
     try setUp(withRootElement: root)
 
     let element = try await simulator.resolveElement(for: .frontmost)
@@ -1452,7 +1452,7 @@ final class SimulatorAccessibilityCommandsTests: XCTestCase {
 
   func testResolveApplicationByPidExposesProcessIdentifier() async throws {
     // A by-pid target reads that specific app (regardless of what is frontmost), surfacing its pid.
-    let root = FBAccessibilityTestElementBuilder.application(withLabel: "App", frame: CGRect(x: 0, y: 0, width: 100, height: 100), children: [])
+    let root = AccessibilityTestElementBuilder.application(withLabel: "App", frame: CGRect(x: 0, y: 0, width: 100, height: 100), children: [])
     try setUp(withRootElement: root)
 
     let element = try await simulator.resolveElement(for: .application(pid: 777))

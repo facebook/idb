@@ -15,7 +15,7 @@ import XCTest
 ///     - buffer = 414×(896 + 24) = 414×920
 ///     - overlayScale = 0.5 * 2.0 = 1.0
 ///     - insetCorrection.y = scaledBorderTop - borderTop * overlayScale = 24 - 24 = 0
-class FBOverlayCoordinateTransformTests: XCTestCase {
+class OverlayCoordinateTransformTests: XCTestCase {
 
   private func iPhone11Transform(borderBottom: Int = 0, scaledBorderBottom: Int = 0) -> FBOverlayCoordinateTransform {
     FBOverlayCoordinateTransform(
