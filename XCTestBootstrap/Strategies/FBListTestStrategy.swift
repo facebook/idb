@@ -11,7 +11,6 @@ import Foundation
 public enum FBListTestError: Error {
   case testNamesMalformed(result: String)
   case missingShimAndOutput(result: String)
-  case sanitiserDylibsMalformed(result: String)
   case testProcessMissingExitCode(result: String)
   case testListJSONParseFailed
   case unexpectedTestName(value: String)
@@ -25,8 +24,6 @@ extension FBListTestError: LocalizedError {
       return "Expected a list of test names, got \(result)"
     case let .missingShimAndOutput(result):
       return "Expected the shim path and its output file, got \(result)"
-    case let .sanitiserDylibsMalformed(result):
-      return "Expected a list of sanitiser dylib paths, got \(result)"
     case let .testProcessMissingExitCode(result):
       return "Expected the test process to resolve to its exit code, got \(result)"
     case .testListJSONParseFailed:
@@ -143,28 +140,20 @@ public final class FBListTestStrategy {
     return unsafeBitCast(
       fbFutureFromAsync {
         try await FBTemporaryDirectory(logger: self.logger).withTemporaryDirectory { temporaryDirectoryURL in
-          try await bridgeFBFuture(
-            FBOToolDynamicLibs.findFullPath(forSanitiserDyldInBundle: self.configuration.testBundlePath, onQueue: self.target.workQueue)
+          let libraries = try await FBOToolDynamicLibs.findFullPath(forSanitiserDyldInBundle: self.configuration.testBundlePath)
+          let environment = FBListTestStrategy.setupEnvironment(withDylibs: libraries, shimPath: shimPath, shimOutputFilePath: shimOutput.filePath, bundlePath: self.configuration.testBundlePath, target: self.target)
+          return try await bridgeFBFuture(
+            FBListTestStrategy.listTestProcess(withTarget: self.target, configuration: self.configuration, xctestPath: self.target.xctestPath, environment: environment, stdOutConsumer: stdOutConsumer, stdErrConsumer: stdErrConsumer, logger: self.logger, temporaryDirectory: temporaryDirectoryURL)
               .onQueue(
                 self.target.workQueue,
-                fmap: { librariesObj -> FBFuture<AnyObject> in
-                  guard let libraries = librariesObj as? [String] else {
-                    return FBFuture(error: FBListTestError.sanitiserDylibsMalformed(result: String(describing: librariesObj)))
+                fmap: { exitCodeFutureObj -> FBFuture<AnyObject> in
+                  guard let exitCodeFuture = exitCodeFutureObj as? FBFuture<NSNumber> else {
+                    return FBFuture(error: FBListTestError.testProcessMissingExitCode(result: String(describing: exitCodeFutureObj)))
                   }
-                  let environment = FBListTestStrategy.setupEnvironment(withDylibs: libraries, shimPath: shimPath, shimOutputFilePath: shimOutput.filePath, bundlePath: self.configuration.testBundlePath, target: self.target)
-
-                  return FBListTestStrategy.listTestProcess(withTarget: self.target, configuration: self.configuration, xctestPath: self.target.xctestPath, environment: environment, stdOutConsumer: stdOutConsumer, stdErrConsumer: stdErrConsumer, logger: self.logger, temporaryDirectory: temporaryDirectoryURL)
-                    .onQueue(
-                      self.target.workQueue,
-                      fmap: { exitCodeFutureObj -> FBFuture<AnyObject> in
-                        guard let exitCodeFuture = exitCodeFutureObj as? FBFuture<NSNumber> else {
-                          return FBFuture(error: FBListTestError.testProcessMissingExitCode(result: String(describing: exitCodeFutureObj)))
-                        }
-                        return unsafeBitCast(
-                          FBListTestStrategy.launchedProcess(withExitCode: exitCodeFuture, shimOutput: shimOutput, shimBuffer: shimBuffer, stdOutBuffer: stdOutBuffer, stdErrBuffer: stdErrBuffer, queue: self.target.workQueue),
-                          to: FBFuture<AnyObject>.self
-                        )
-                      })
+                  return unsafeBitCast(
+                    FBListTestStrategy.launchedProcess(withExitCode: exitCodeFuture, shimOutput: shimOutput, shimBuffer: shimBuffer, stdOutBuffer: stdOutBuffer, stdErrBuffer: stdErrBuffer, queue: self.target.workQueue),
+                    to: FBFuture<AnyObject>.self
+                  )
                 }))
         }
       },

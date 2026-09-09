@@ -26,26 +26,17 @@ extension FBOToolError: LocalizedError {
 
 public final class FBOToolOperation {
 
-  public static func listSanitiserDylibsRequired(byBundle testBundlePath: String, onQueue queue: DispatchQueue) -> FBFuture<NSArray> {
+  public static func listSanitiserDylibsRequired(byBundle testBundlePath: String) async throws -> [String] {
     guard let bundle = Bundle(path: testBundlePath) else {
-      return FBFuture(error: FBOToolError.bundleInaccessible(path: testBundlePath))
+      throw FBOToolError.bundleInaccessible(path: testBundlePath)
     }
     guard let executablePath = bundle.executablePath else {
-      return FBFuture(error: FBOToolError.bundleMissingExecutable(path: testBundlePath))
+      throw FBOToolError.bundleMissingExecutable(path: testBundlePath)
     }
 
-    let base = FBProcessBuilder<NSNull, NSData, NSData>.withLaunchPath("/usr/bin/otool", arguments: ["-L", executablePath])
-    let withStdOut = base.withStdOutInMemoryAsString()
-    let configured = withStdOut.withStdErrInMemoryAsString()
-    return unsafeBitCast(
-      configured.runUntilCompletion(withAcceptableExitCodes: [0])
-        .onQueue(
-          queue,
-          map: { subprocess -> AnyObject in
-            FBOToolOperation.extractSanitiserDylibs(fromOtoolOutput: (subprocess.stdOut as String?) ?? "") as NSArray
-          }),
-      to: FBFuture<NSArray>.self
-    )
+    let result = try await Subprocess(executable: "/usr/bin/otool", arguments: ["-L", executablePath])
+      .run()
+    return extractSanitiserDylibs(fromOtoolOutput: result.standardOutput)
   }
 
   private static func extractSanitiserDylibs(fromOtoolOutput otoolOutput: String) -> [String] {

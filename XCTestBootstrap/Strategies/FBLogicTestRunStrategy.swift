@@ -28,7 +28,6 @@ private final class FBLogicTestRunOutputs {
 
 public enum FBLogicTestRunError: Error {
   case missingOutputsAndShim(result: String)
-  case sanitiserDylibsMalformed(result: String)
   case testProcessMissingExitCode(result: String)
   case endOfFileTimedOut
   case xctestProcessMissingExitCode(result: String)
@@ -42,8 +41,6 @@ extension FBLogicTestRunError: LocalizedError {
     switch self {
     case let .missingOutputsAndShim(result):
       return "Expected the test outputs and the shim path, got \(result)"
-    case let .sanitiserDylibsMalformed(result):
-      return "Expected a list of sanitiser dylib paths, got \(result)"
     case let .testProcessMissingExitCode(result):
       return "Expected the test process to resolve to its exit code, got \(result)"
     case .endOfFileTimedOut:
@@ -127,28 +124,20 @@ public final class FBLogicTestRunStrategy: FBXCTestRunner {
     return unsafeBitCast(
       fbFutureFromAsync {
         try await FBTemporaryDirectory(logger: self.logger).withTemporaryDirectory { temporaryDirectoryURL in
-          try await bridgeFBFuture(
-            FBOToolDynamicLibs.findFullPath(forSanitiserDyldInBundle: self.configuration.testBundlePath, onQueue: self.target.workQueue)
+          let libraries = try await FBOToolDynamicLibs.findFullPath(forSanitiserDyldInBundle: self.configuration.testBundlePath)
+          let environment = FBLogicTestRunStrategy.setupEnvironment(withDylibs: self.configuration.processUnderTestEnvironment, withLibraries: libraries, injectLibraries: self.configuration.injectLibraries, shimOutputFilePath: outputs.shimOutput.filePath, shimPath: shimPath, bundlePath: self.configuration.testBundlePath, coverageConfiguration: self.configuration.coverageConfiguration, logDirectoryPath: self.configuration.logDirectoryPath, waitForDebugger: self.configuration.waitForDebugger, target: self.target)
+          return try await bridgeFBFuture(
+            self.startTestProcess(withLaunchPath: launchPath, arguments: arguments, environment: environment, outputs: outputs, temporaryDirectory: temporaryDirectoryURL)
               .onQueue(
                 self.target.workQueue,
-                fmap: { librariesObj -> FBFuture<AnyObject> in
-                  guard let libraries = librariesObj as? [String] else {
-                    return FBFuture(error: FBLogicTestRunError.sanitiserDylibsMalformed(result: String(describing: librariesObj)))
+                fmap: { exitCodeFutureObj -> FBFuture<AnyObject> in
+                  guard let exitCodeFuture = exitCodeFutureObj as? FBFuture<NSNumber> else {
+                    return FBFuture(error: FBLogicTestRunError.testProcessMissingExitCode(result: String(describing: exitCodeFutureObj)))
                   }
-                  let environment = FBLogicTestRunStrategy.setupEnvironment(withDylibs: self.configuration.processUnderTestEnvironment, withLibraries: libraries, injectLibraries: self.configuration.injectLibraries, shimOutputFilePath: outputs.shimOutput.filePath, shimPath: shimPath, bundlePath: self.configuration.testBundlePath, coverageConfiguration: self.configuration.coverageConfiguration, logDirectoryPath: self.configuration.logDirectoryPath, waitForDebugger: self.configuration.waitForDebugger, target: self.target)
-
-                  return self.startTestProcess(withLaunchPath: launchPath, arguments: arguments, environment: environment, outputs: outputs, temporaryDirectory: temporaryDirectoryURL)
-                    .onQueue(
-                      self.target.workQueue,
-                      fmap: { exitCodeFutureObj -> FBFuture<AnyObject> in
-                        guard let exitCodeFuture = exitCodeFutureObj as? FBFuture<NSNumber> else {
-                          return FBFuture(error: FBLogicTestRunError.testProcessMissingExitCode(result: String(describing: exitCodeFutureObj)))
-                        }
-                        return unsafeBitCast(
-                          self.completeLaunchedProcess(exitCodeFuture, outputs: outputs),
-                          to: FBFuture<AnyObject>.self
-                        )
-                      })
+                  return unsafeBitCast(
+                    self.completeLaunchedProcess(exitCodeFuture, outputs: outputs),
+                    to: FBFuture<AnyObject>.self
+                  )
                 }))
         }
       },

@@ -9,7 +9,6 @@ import FBControlCore
 import Foundation
 
 public enum FBOToolDynamicLibsError: Error {
-  case dylibNamesMalformed(result: String)
   case directoryListFailed(path: String, underlying: Error)
   case clangVersionNotFound(path: String)
 }
@@ -17,8 +16,6 @@ public enum FBOToolDynamicLibsError: Error {
 extension FBOToolDynamicLibsError: LocalizedError {
   public var errorDescription: String? {
     switch self {
-    case let .dylibNamesMalformed(result):
-      return "Expected a list of dylib names from otool, got \(result)"
     case let .directoryListFailed(path, _):
       return "Failed to list files in directory \(path)"
     case let .clangVersionNotFound(path):
@@ -29,59 +26,50 @@ extension FBOToolDynamicLibsError: LocalizedError {
 
 public final class FBOToolDynamicLibs {
 
-  public static func findFullPath(forSanitiserDyldInBundle bundlePath: String, onQueue queue: DispatchQueue) -> FBFuture<NSArray> {
-    return unsafeBitCast(
-      FBOToolOperation.listSanitiserDylibsRequired(byBundle: bundlePath, onQueue: queue)
-        .onQueue(
-          queue,
-          fmap: { result -> FBFuture<AnyObject> in
-            guard let libsList = result as? [String] else {
-              return FBFuture(error: FBOToolDynamicLibsError.dylibNamesMalformed(result: String(describing: result)))
-            }
-            let clangLocation = (FBXcodeConfiguration.developerDirectory as NSString).appendingPathComponent("Toolchains/XcodeDefault.xctoolchain/usr/lib/clang")
-            let fileList: [URL]
-            do {
-              fileList = try FileManager.default.contentsOfDirectory(at: URL(fileURLWithPath: clangLocation), includingPropertiesForKeys: [.isDirectoryKey], options: [])
-            } catch {
-              return FBFuture(error: FBOToolDynamicLibsError.directoryListFailed(path: clangLocation, underlying: error))
-            }
+  public static func findFullPath(forSanitiserDyldInBundle bundlePath: String) async throws -> [String] {
+    let libsList = try await FBOToolOperation.listSanitiserDylibsRequired(byBundle: bundlePath)
 
-            if fileList.isEmpty {
-              return FBFuture(error: FBOToolDynamicLibsError.clangVersionNotFound(path: clangLocation))
-            }
+    let clangLocation = (FBXcodeConfiguration.developerDirectory as NSString).appendingPathComponent("Toolchains/XcodeDefault.xctoolchain/usr/lib/clang")
+    let fileList: [URL]
+    do {
+      fileList = try FileManager.default.contentsOfDirectory(at: URL(fileURLWithPath: clangLocation), includingPropertiesForKeys: [.isDirectoryKey], options: [])
+    } catch {
+      throw FBOToolDynamicLibsError.directoryListFailed(path: clangLocation, underlying: error)
+    }
 
-            let libsFolder = NSString.path(withComponents: [fileList[0].path, "lib/darwin/"])
+    if fileList.isEmpty {
+      throw FBOToolDynamicLibsError.clangVersionNotFound(path: clangLocation)
+    }
 
-            var bundleFrameworksFolder = (bundlePath as NSString).appendingPathComponent("Frameworks")
-            if !FileManager.default.fileExists(atPath: bundleFrameworksFolder) {
-              bundleFrameworksFolder = (bundlePath as NSString).appendingPathComponent("Contents/Frameworks")
-            }
+    let libsFolder = NSString.path(withComponents: [fileList[0].path, "lib/darwin/"])
 
-            var bundleLibsNames: Set<String>?
-            if let bundleLibs = try? FileManager.default.contentsOfDirectory(at: URL(fileURLWithPath: bundleFrameworksFolder), includingPropertiesForKeys: [.isDirectoryKey], options: []) {
-              var names = Set<String>()
-              for libURL in bundleLibs {
-                if let libName = libURL.pathComponents.last {
-                  names.insert(libName)
-                }
-              }
-              bundleLibsNames = names
-            }
+    var bundleFrameworksFolder = (bundlePath as NSString).appendingPathComponent("Frameworks")
+    if !FileManager.default.fileExists(atPath: bundleFrameworksFolder) {
+      bundleFrameworksFolder = (bundlePath as NSString).appendingPathComponent("Contents/Frameworks")
+    }
 
-            var libraries: [String] = []
-            for lib in libsList {
-              let libPath: String
-              if bundleLibsNames?.contains(lib) == true {
-                libPath = (bundleFrameworksFolder as NSString).appendingPathComponent(lib)
-              } else {
-                libPath = (libsFolder as NSString).appendingPathComponent(lib)
-              }
-              libraries.append(libPath)
-            }
+    var bundleLibsNames: Set<String>?
+    if let bundleLibs = try? FileManager.default.contentsOfDirectory(at: URL(fileURLWithPath: bundleFrameworksFolder), includingPropertiesForKeys: [.isDirectoryKey], options: []) {
+      var names = Set<String>()
+      for libURL in bundleLibs {
+        if let libName = libURL.pathComponents.last {
+          names.insert(libName)
+        }
+      }
+      bundleLibsNames = names
+    }
 
-            return FBFuture<AnyObject>(result: libraries as NSArray)
-          }),
-      to: FBFuture<NSArray>.self
-    )
+    var libraries: [String] = []
+    for lib in libsList {
+      let libPath: String
+      if bundleLibsNames?.contains(lib) == true {
+        libPath = (bundleFrameworksFolder as NSString).appendingPathComponent(lib)
+      } else {
+        libPath = (libsFolder as NSString).appendingPathComponent(lib)
+      }
+      libraries.append(libPath)
+    }
+
+    return libraries
   }
 }

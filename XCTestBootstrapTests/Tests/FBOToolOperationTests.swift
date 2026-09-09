@@ -19,7 +19,6 @@ import XCTestBootstrap
 final class FBOToolOperationTests: XCTestCase {
 
   private var temporaryDirectory: URL!
-  private let queue = DispatchQueue(label: "com.facebook.xctestbootstrap.tests.otool")
 
   override func setUpWithError() throws {
     try super.setUpWithError()
@@ -54,8 +53,7 @@ final class FBOToolOperationTests: XCTestCase {
   }
 
   private func listSanitiserDylibs(byBundle path: String) async throws -> [String] {
-    let dylibs = try await bridgeFBFuture(FBOToolOperation.listSanitiserDylibsRequired(byBundle: path, onQueue: queue))
-    return dylibs as! [String]
+    try await FBOToolOperation.listSanitiserDylibsRequired(byBundle: path)
   }
 
   // MARK: - Bundle resolution
