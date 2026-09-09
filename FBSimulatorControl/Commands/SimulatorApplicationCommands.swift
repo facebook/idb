@@ -110,26 +110,19 @@ enum SimulatorApplicationInstallAttempt {
   case retry
 }
 
-public final class FBSimulatorApplicationCommands {
+public struct FBSimulatorApplicationCommands {
 
-  internal weak var simulator: FBSimulator?
+  internal let simulator: FBSimulator
 
   // MARK: - Initializers
 
-  public class func commands(with simulator: FBSimulator) -> FBSimulatorApplicationCommands {
+  public static func commands(with simulator: FBSimulator) -> FBSimulatorApplicationCommands {
     return FBSimulatorApplicationCommands(simulator: simulator)
-  }
-
-  internal init(simulator: FBSimulator) {
-    self.simulator = simulator
   }
 
   // MARK: - Async
 
   fileprivate func installApplication(withPath path: String) async throws -> FBInstalledApplication {
-    guard let simulator = self.simulator else {
-      throw FBWeakTargetError.simulator
-    }
     try confirmApplicationInstallTargetIsReady()
     let appBundle = try await confirmCompatibilityOfApplication(atPath: path)
     let options: [String: Any] = ["CFBundleIdentifier": appBundle.identifier]
@@ -150,9 +143,6 @@ public final class FBSimulatorApplicationCommands {
   }
 
   internal func launchApplication(_ configuration: FBApplicationLaunchConfiguration) async throws -> FBLaunchedApplication {
-    guard let simulator = self.simulator else {
-      throw FBWeakTargetError.simulator
-    }
     try await ensureApplicationIsInstalled(configuration.bundleID)
     try await confirmApplicationLaunchState(configuration.bundleID, launchMode: configuration.launchMode, waitForDebugger: configuration.waitForDebugger)
     let attachment = try await bridgeFBFuture(configuration.io.attachViaFile())
@@ -164,16 +154,10 @@ public final class FBSimulatorApplicationCommands {
   }
 
   fileprivate func killApplication(withBundleID bundleID: String) async throws {
-    guard let simulator = self.simulator else {
-      throw FBWeakTargetError.simulator
-    }
     try simulator.device.terminateApplication(withID: bundleID)
   }
 
   fileprivate func installedApplications() async throws -> [FBInstalledApplication] {
-    guard let simulator = self.simulator else {
-      throw FBWeakTargetError.simulator
-    }
     let installedApps = try simulator.device.installedApps()
     var applications: [FBInstalledApplication] = []
     for appInfo in installedApps.values {
@@ -188,9 +172,6 @@ public final class FBSimulatorApplicationCommands {
   }
 
   fileprivate func uninstallApplication(withBundleID bundleID: String) async throws {
-    guard let simulator = self.simulator else {
-      throw FBWeakTargetError.simulator
-    }
     let installedApplication = try await installedApplication(withBundleID: bundleID)
     if installedApplication.installType == .system {
       throw FBSimulatorApplicationUninstallError.uninstallingSystemApplication(applicationDescription: String(describing: installedApplication))
@@ -208,9 +189,6 @@ public final class FBSimulatorApplicationCommands {
   }
 
   fileprivate func runningApplications() async throws -> [String: NSNumber] {
-    guard let simulator = self.simulator else {
-      throw FBWeakTargetError.simulator
-    }
     guard let uiKitApplicationPattern = try? NSRegularExpression(pattern: "UIKitApplication:", options: []) else {
       throw SimulatorApplicationLookupError.servicePatternConstructionFailed
     }
@@ -225,9 +203,6 @@ public final class FBSimulatorApplicationCommands {
   }
 
   fileprivate func processID(withBundleID bundleID: String) async throws -> pid_t {
-    guard let simulator = self.simulator else {
-      throw FBWeakTargetError.simulator
-    }
     let pattern = "UIKitApplication:\(NSRegularExpression.escapedPattern(for: bundleID))(\\[|$)"
     guard let regex = try? NSRegularExpression(pattern: pattern, options: []) else {
       throw SimulatorApplicationLookupError.searchPatternConstructionFailed(bundleID: bundleID)
@@ -239,9 +214,6 @@ public final class FBSimulatorApplicationCommands {
   // MARK: - Private
 
   private func fetchInstalledApplication(bundleID: String) throws -> FBInstalledApplication {
-    guard let simulator = self.simulator else {
-      throw FBWeakTargetError.simulator
-    }
     let device = simulator.device
     var applicationType: NSString?
     try device.applicationIsInstalled(bundleID, type: &applicationType)
@@ -318,9 +290,6 @@ public final class FBSimulatorApplicationCommands {
   }
 
   private func confirmApplicationInstallTargetIsReady() throws {
-    guard let simulator = self.simulator else {
-      throw FBWeakTargetError.simulator
-    }
     let state = simulator.state
     try Self.confirmApplicationInstallTargetIsReady(
       state: state,
@@ -414,9 +383,6 @@ public final class FBSimulatorApplicationCommands {
   }
 
   private func launchApplication(_ configuration: FBApplicationLaunchConfiguration, stdOutPath: String?, stdErrPath: String?) async throws -> NSNumber {
-    guard let simulator = self.simulator else {
-      throw FBWeakTargetError.simulator
-    }
     guard let dataDirectory = simulator.dataDirectory else {
       throw SimulatorApplicationLaunchError.noDataDirectory(bundleID: configuration.bundleID)
     }
@@ -455,7 +421,7 @@ public final class FBSimulatorApplicationCommands {
     return (translatedPath as NSString).appendingPathComponent(absolutePath)
   }
 
-  class func simDeviceLaunchOptions(for configuration: FBApplicationLaunchConfiguration, stdOutPath: String?, stdErrPath: String?) -> [String: Any] {
+  static func simDeviceLaunchOptions(for configuration: FBApplicationLaunchConfiguration, stdOutPath: String?, stdErrPath: String?) -> [String: Any] {
     var options = SimulatorProcessSpawnCommands.launchOptions(
       withArguments: configuration.arguments,
       environment: configuration.environment,
@@ -471,7 +437,7 @@ public final class FBSimulatorApplicationCommands {
 
   private static let keyDataContainer = "DataContainer"
 
-  private class func installedApplication(fromInfo appInfo: [String: Any]) throws -> FBInstalledApplication {
+  private static func installedApplication(fromInfo appInfo: [String: Any]) throws -> FBInstalledApplication {
     guard let appName = appInfo[FBApplicationInstallInfoKey.bundleName.rawValue] as? String else {
       throw SimulatorApplicationLookupError.installInfoFieldNotAString(
         field: "Bundle Name",
@@ -518,9 +484,6 @@ public final class FBSimulatorApplicationCommands {
   private func confirmCompatibilityOfApplication(atPath path: String) async throws -> FBBundleDescriptor {
     guard let application = try? FBBundleDescriptor.bundle(fromPath: path) else {
       throw SimulatorApplicationLookupError.applicationInfoUnavailable(path: path)
-    }
-    guard let simulator = self.simulator else {
-      throw FBWeakTargetError.simulator
     }
 
     let installed: FBInstalledApplication?

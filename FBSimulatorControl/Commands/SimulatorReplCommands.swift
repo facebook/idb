@@ -32,26 +32,19 @@ extension SimulatorReplError: LocalizedError {
   }
 }
 
-public final class FBSimulatorReplCommands {
+public struct FBSimulatorReplCommands {
 
-  private weak var simulator: FBSimulator?
+  private let simulator: FBSimulator
 
   // MARK: - Initializers
 
-  public class func commands(with simulator: FBSimulator) -> FBSimulatorReplCommands {
+  public static func commands(with simulator: FBSimulator) -> FBSimulatorReplCommands {
     return FBSimulatorReplCommands(simulator: simulator)
-  }
-
-  private init(simulator: FBSimulator) {
-    self.simulator = simulator
   }
 
   // MARK: - Async
 
   fileprivate func startReplTest(bundlePath: String) async throws -> ReplSession {
-    guard let simulator = self.simulator else {
-      throw FBWeakTargetError.simulator
-    }
     let logger = simulator.logger
 
     // The driver auto-imports the IDBAPI `.swiftinterface` so injected code can call `IDB`; the API
@@ -96,9 +89,6 @@ public final class FBSimulatorReplCommands {
   }
 
   fileprivate func startReplSimulator() async throws -> ReplSession {
-    guard let simulator = self.simulator else {
-      throw FBWeakTargetError.simulator
-    }
 
     guard let bridgePath = simulator.frameworkBridgePath else {
       throw SimulatorReplError.bundledResourceMissing(item: "SimulatorFrameworkBridge binary")
@@ -128,9 +118,6 @@ public final class FBSimulatorReplCommands {
   }
 
   fileprivate func replAppEnvironment(bundleID: String) async throws -> [String: String] {
-    guard let simulator = self.simulator else {
-      throw FBWeakTargetError.simulator
-    }
     guard let replDylibPath = BundledResources.path(forItem: "libRepl-iOS.dylib") else {
       throw SimulatorReplError.bundledResourceMissing(item: "libRepl-iOS.dylib")
     }
@@ -142,9 +129,6 @@ public final class FBSimulatorReplCommands {
   }
 
   fileprivate func startReplApp(bundleID: String, reuseSession: Bool) async throws -> ReplSession {
-    guard let simulator = self.simulator else {
-      throw FBWeakTargetError.simulator
-    }
     let logger = simulator.logger
 
     // Read host-side by the companion, so the app sandbox need not contain it.

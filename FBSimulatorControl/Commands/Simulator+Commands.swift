@@ -18,7 +18,7 @@ extension FBSimulator {
   // MARK: - Shared accessors
 
   var application: FBSimulatorApplicationCommands {
-    commandCache.resolve { FBSimulatorApplicationCommands.commands(with: self) }
+    FBSimulatorApplicationCommands.commands(with: self)
   }
 
   var crashLog: SimulatorCrashLogCommands {
@@ -92,7 +92,7 @@ extension FBSimulator {
   }
 
   var repl: FBSimulatorReplCommands {
-    commandCache.resolve { FBSimulatorReplCommands.commands(with: self) }
+    FBSimulatorReplCommands.commands(with: self)
   }
 
   var notification: SimulatorNotificationCommands {
