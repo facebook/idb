@@ -30,7 +30,6 @@ public extension FBXCTestDescriptor {
 // MARK: - FBXCTestBootstrapDescriptor
 
 public enum FBXCTestDescriptorError: Error {
-  case applicationCommandsUnsupported(targetDescription: String)
   case uiTestMissingAppBundleID
   case appTestMissingBundleIDs
   case noTestHostApplication(requestDescription: String)
@@ -40,8 +39,6 @@ public enum FBXCTestDescriptorError: Error {
 extension FBXCTestDescriptorError: LocalizedError {
   public var errorDescription: String? {
     switch self {
-    case let .applicationCommandsUnsupported(targetDescription):
-      return "\(targetDescription) does not support ApplicationCommands"
     case .uiTestMissingAppBundleID:
       return "Request for UI Test, but no app_bundle_id provided"
     case .appTestMissingBundleIDs:
@@ -84,12 +81,9 @@ public final class FBXCTestBootstrapDescriptor: FBXCTestDescriptor, CustomString
 
   private static func killAllRunningApplications(_ target: FBiOSTarget) -> FBFuture<NSNull> {
     let future: FBFuture<NSNull> = fbFutureFromAsync {
-      guard let asyncTarget = target as? any ApplicationCommands else {
-        throw FBXCTestDescriptorError.applicationCommandsUnsupported(targetDescription: String(describing: target))
-      }
-      let running = try await asyncTarget.runningApplications()
+      let running = try await target.runningApplications()
       try await Array(running.keys).concurrentForEachThrowingFirstError { bundleID in
-        try await asyncTarget.killApplication(bundleID: bundleID)
+        try await target.killApplication(bundleID: bundleID)
       }
       return NSNull()
     }
@@ -110,23 +104,20 @@ public final class FBXCTestBootstrapDescriptor: FBXCTestDescriptor, CustomString
     if request.isLogicTest {
       return FBTestApplicationsPair(applicationUnderTest: nil, testHostApp: nil)
     }
-    guard let asyncTarget = target as? any ApplicationCommands else {
-      throw FBXCTestDescriptorError.applicationCommandsUnsupported(targetDescription: String(describing: target))
-    }
     if request.isUITest {
       guard let testTargetAppBundleID = request.testTargetAppBundleID else {
         throw FBXCTestDescriptorError.uiTestMissingAppBundleID
       }
       let testHostBundleID = request.testHostAppBundleID ?? "com.apple.Preferences"
-      let testTargetApp = try await asyncTarget.installedApplication(bundleID: testTargetAppBundleID)
-      let testHostApp = try await asyncTarget.installedApplication(bundleID: testHostBundleID)
+      let testTargetApp = try await target.installedApplication(bundleID: testTargetAppBundleID)
+      let testHostApp = try await target.installedApplication(bundleID: testHostBundleID)
       return FBTestApplicationsPair(applicationUnderTest: testTargetApp, testHostApp: testHostApp)
     }
     // App Test
     guard let bundleID = request.testHostAppBundleID else {
       throw FBXCTestDescriptorError.appTestMissingBundleIDs
     }
-    let application = try await asyncTarget.installedApplication(bundleID: bundleID)
+    let application = try await target.installedApplication(bundleID: bundleID)
     return FBTestApplicationsPair(applicationUnderTest: nil, testHostApp: application)
   }
 

@@ -90,10 +90,7 @@ struct VideoStreamMethodHandler {
       consumer = writer
     }
 
-    guard let asyncTarget = target as? any VideoStreamCommands else {
-      throw GRPCStatus(code: .failedPrecondition, message: "\(target) does not support VideoStreamCommands")
-    }
-    return try await asyncTarget.createStream(
+    return try await target.createStream(
       configuration: VideoStreamRequestTranslation.configuration(from: start), to: consumer)
   }
 }

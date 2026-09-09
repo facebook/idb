@@ -65,7 +65,24 @@ extension FBiOSTargetInfo {
 // MARK: - FBiOSTarget Protocol
 
 /// A protocol that defines an interactible and informational target.
-public protocol FBiOSTarget: FBiOSTargetInfo, FBiOSTargetCommand {
+public protocol FBiOSTarget: FBiOSTargetInfo,
+  FBiOSTargetCommand,
+  ApplicationCommands,
+  VideoStreamCommands,
+  CrashLogCommands,
+  DebuggerCommands,
+  EraseCommands,
+  FileCommands,
+  LocationCommands,
+  LogCommands,
+  ScreenshotCommands,
+  VideoRecordingCommands,
+  XCTestCommands,
+  XCTraceRecordCommands,
+  InstrumentsCommands,
+  LifecycleCommands,
+  PowerCommands
+{
 
   /// The Target's Logger.
   var logger: any FBControlCoreLogger { get }

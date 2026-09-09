@@ -13,7 +13,6 @@ import Foundation
 import XCTestBootstrap
 
 public enum FBIDBCommandError: Error {
-  case notAsyncTarget(targetDescription: String)
   case simulatorOnlyOperation(operation: String, targetDescription: String)
   case notASimulator(targetDescription: String)
   case invalidURL(urlString: String)
@@ -33,8 +32,6 @@ public enum FBIDBCommandError: Error {
 extension FBIDBCommandError: LocalizedError {
   public var errorDescription: String? {
     switch self {
-    case let .notAsyncTarget(targetDescription):
-      return "Target does not conform to AsynciOSTarget: \(targetDescription)"
     case let .simulatorOnlyOperation(operation, targetDescription):
       return "Target is not a simulator, cannot \(operation): \(targetDescription)"
     case let .notASimulator(targetDescription):
@@ -69,7 +66,7 @@ extension FBIDBCommandError: LocalizedError {
 
 public final class FBIDBCommandExecutor {
 
-  private let target: any FBiOSTarget & AsynciOSTarget
+  private let target: any FBiOSTarget
   private let logger: FBIDBLogger
   private let debugserverPort: in_port_t
 
@@ -79,14 +76,11 @@ public final class FBIDBCommandExecutor {
 
   // MARK: - Initializers
 
-  public static func commandExecutor(forTarget target: FBiOSTarget, storageManager: FBIDBStorageManager, temporaryDirectory: FBTemporaryDirectory, debugserverPort: in_port_t, logger: FBIDBLogger) throws -> FBIDBCommandExecutor {
-    guard let asyncTarget = target as? any FBiOSTarget & AsynciOSTarget else {
-      throw FBIDBCommandError.notAsyncTarget(targetDescription: String(describing: target))
-    }
-    return FBIDBCommandExecutor(target: asyncTarget, storageManager: storageManager, temporaryDirectory: temporaryDirectory, debugserverPort: debugserverPort, logger: logger.named("grpc_handler"))
+  public static func commandExecutor(forTarget target: FBiOSTarget, storageManager: FBIDBStorageManager, temporaryDirectory: FBTemporaryDirectory, debugserverPort: in_port_t, logger: FBIDBLogger) -> FBIDBCommandExecutor {
+    FBIDBCommandExecutor(target: target, storageManager: storageManager, temporaryDirectory: temporaryDirectory, debugserverPort: debugserverPort, logger: logger.named("grpc_handler"))
   }
 
-  private init(target: any FBiOSTarget & AsynciOSTarget, storageManager: FBIDBStorageManager, temporaryDirectory: FBTemporaryDirectory, debugserverPort: in_port_t, logger: FBIDBLogger) {
+  private init(target: any FBiOSTarget, storageManager: FBIDBStorageManager, temporaryDirectory: FBTemporaryDirectory, debugserverPort: in_port_t, logger: FBIDBLogger) {
     self.target = target
     self.storageManager = storageManager
     self.temporaryDirectory = temporaryDirectory

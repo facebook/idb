@@ -8,9 +8,9 @@
 import FBControlCore
 import Foundation
 
-// MARK: - FBDevice+XCTraceRecordCommands
+// MARK: - FBSimulator+XCTraceRecordCommands
 
-extension FBDevice: XCTraceRecordCommands {
+extension FBSimulator: XCTraceRecordCommands {
 
   public func startXctraceRecord(
     configuration: FBXCTraceRecordConfiguration,
@@ -20,9 +20,9 @@ extension FBDevice: XCTraceRecordCommands {
   }
 }
 
-// MARK: - FBDevice+InstrumentsCommands
+// MARK: - FBSimulator+InstrumentsCommands
 
-extension FBDevice: InstrumentsCommands {
+extension FBSimulator: InstrumentsCommands {
 
   public func startInstruments(
     configuration: FBInstrumentsConfiguration,
@@ -31,5 +31,3 @@ extension FBDevice: InstrumentsCommands {
     try await FBInstrumentsOperation.operation(target: self, configuration: configuration, logger: logger)
   }
 }
-
-extension FBDevice: AsynciOSTarget {}

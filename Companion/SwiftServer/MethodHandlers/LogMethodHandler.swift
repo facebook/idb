@@ -39,10 +39,7 @@ struct LogMethodHandler: @unchecked Sendable {
     if request.source == .companion {
       operation = try await commandExecutor.tail_companion_logs(consumer)
     } else {
-      guard let asyncTarget = target as? any LogCommands else {
-        throw GRPCStatus(code: .failedPrecondition, message: "\(target) does not support LogCommands")
-      }
-      operation = try await asyncTarget.tailLog(arguments: request.arguments, consumer: consumer)
+      operation = try await target.tailLog(arguments: request.arguments, consumer: consumer)
     }
 
     let observeWritingDone = Task<Void, Error> {

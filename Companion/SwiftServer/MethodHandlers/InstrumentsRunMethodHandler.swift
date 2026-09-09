@@ -55,10 +55,7 @@ struct InstrumentsRunMethodHandler {
         targetLogger,
       ].compactMap { $0 })
 
-    guard let asyncTarget = target as? any InstrumentsCommands else {
-      throw GRPCStatus(code: .failedPrecondition, message: "\(target) does not support InstrumentsCommands")
-    }
-    let operation = try await asyncTarget.startInstruments(configuration: configuration, logger: logger)
+    let operation = try await target.startInstruments(configuration: configuration, logger: logger)
 
     let runningStateResponse = Idb_InstrumentsRunResponse.with {
       $0.output = .state(.runningInstruments)

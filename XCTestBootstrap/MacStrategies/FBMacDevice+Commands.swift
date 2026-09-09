@@ -178,5 +178,3 @@ extension FBMacDevice: PowerCommands {
     throw macUnsupported("reboot")
   }
 }
-
-extension FBMacDevice: AsynciOSTarget {}

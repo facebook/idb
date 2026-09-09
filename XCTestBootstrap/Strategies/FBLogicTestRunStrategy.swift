@@ -389,7 +389,7 @@ public final class FBLogicTestRunStrategy: FBXCTestRunner {
             .onQueue(
               queue,
               fmap: { _ -> FBFuture<AnyObject> in
-                let crashCommands = self.target as? any CrashLogCommands
+                let crashCommands: any CrashLogCommands = self.target
                 return unsafeBitCast(
                   FBXCTestProcess.ensureProcess(process, completesWithin: timeout, crashLogCommands: crashCommands, queue: queue, logger: logger),
                   to: FBFuture<AnyObject>.self

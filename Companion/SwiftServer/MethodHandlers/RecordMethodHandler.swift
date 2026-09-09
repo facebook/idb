@@ -26,14 +26,10 @@ struct RecordMethodHandler {
       ? URL(fileURLWithPath: target.auxillaryDirectory).appendingPathComponent("idb_encode").appendingPathExtension("mp4").path
       : start.filePath
 
-    guard let asyncTarget = target as? any VideoRecordingCommands else {
-      throw GRPCStatus(code: .failedPrecondition, message: "\(target) does not support VideoRecordingCommands")
-    }
-
     let recording: any FBVideoRecording
     if let encodeOptions = try RecordRequestTranslation.encodeOptions(from: start) {
-      try RecordRequestTranslation.requireHonoredConfiguration(asyncTarget, describing: "\(target)")
-      recording = try await asyncTarget.startRecording(
+      try RecordRequestTranslation.requireHonoredConfiguration(target, describing: "\(target)")
+      recording = try await target.startRecording(
         toFile: filePath,
         configuration: RecordRequestTranslation.configuration(for: encodeOptions))
       do {
@@ -48,7 +44,7 @@ struct RecordMethodHandler {
         throw error
       }
     } else {
-      recording = try await asyncTarget.startRecording(toFile: filePath)
+      recording = try await target.startRecording(toFile: filePath)
     }
 
     _ = try await requestStream.requiredNext()

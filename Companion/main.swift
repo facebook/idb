@@ -21,10 +21,6 @@ enum IDBCompanionError: Error {
   case invalidOnlyArgument(argument: String)
   case noDevicesMatchingECID(ecid: String)
   case simulatorLifecycleUnsupported(targetDescription: String)
-  case lifecycleUnsupported(targetDescription: String)
-  case shutdownUnsupported(targetDescription: String)
-  case rebootUnsupported(targetDescription: String)
-  case eraseUnsupported(targetDescription: String)
   case simulatorNotFound(udid: String)
   case invalidForwardArgument(argument: String)
   case socketForwardingUnsupported(targetDescription: String)
@@ -40,14 +36,6 @@ extension IDBCompanionError: LocalizedError {
       return "No devices [] matching \(ecid)"
     case let .simulatorLifecycleUnsupported(targetDescription):
       return "\(targetDescription) does not support Simulator Lifecycle commands"
-    case let .lifecycleUnsupported(targetDescription):
-      return "\(targetDescription) does not support LifecycleCommands"
-    case let .shutdownUnsupported(targetDescription):
-      return "Cannot shutdown \(targetDescription), does not support shutting down"
-    case let .rebootUnsupported(targetDescription):
-      return "Cannot shutdown \(targetDescription), does not support rebooting"
-    case let .eraseUnsupported(targetDescription):
-      return "Cannot erase \(targetDescription), does not support erasing"
     case let .simulatorNotFound(udid):
       return "Could not find a simulator with udid \(udid)"
     case let .invalidForwardArgument(argument):
@@ -245,10 +233,7 @@ private func resolveSimulator(_ udid: String, userDefaults: UserDefaults, logger
 }
 
 private func awaitTargetOffline(_ target: FBiOSTarget, logger: FBControlCoreLogger) async throws {
-  guard let asyncTarget = target as? any LifecycleCommands else {
-    throw IDBCompanionError.lifecycleUnsupported(targetDescription: String(describing: target))
-  }
-  try await asyncTarget.resolveLeavesState(.booted)
+  try await target.resolveLeavesState(.booted)
   target.logger.log("Target is no longer booted, companion going offline")
 }
 
@@ -301,26 +286,17 @@ private func runBoot(_ udid: String, userDefaults: UserDefaults, logger: FBContr
 
 private func runShutdown(_ udid: String, userDefaults: UserDefaults, xcodeAvailable: Bool, logger: FBControlCoreLogger) async throws {
   let target = try await targetForUDID(udid, userDefaults: userDefaults, xcodeAvailable: xcodeAvailable, warmUp: false, logger: logger)
-  guard let powerTarget = target as? any PowerCommands else {
-    throw IDBCompanionError.shutdownUnsupported(targetDescription: String(describing: target))
-  }
-  try await powerTarget.shutdown()
+  try await target.shutdown()
 }
 
 private func runReboot(_ udid: String, userDefaults: UserDefaults, xcodeAvailable: Bool, logger: FBControlCoreLogger) async throws {
   let target = try await targetForUDID(udid, userDefaults: userDefaults, xcodeAvailable: xcodeAvailable, warmUp: false, logger: logger)
-  guard let powerTarget = target as? any PowerCommands else {
-    throw IDBCompanionError.rebootUnsupported(targetDescription: String(describing: target))
-  }
-  try await powerTarget.reboot()
+  try await target.reboot()
 }
 
 private func runErase(_ udid: String, userDefaults: UserDefaults, xcodeAvailable: Bool, logger: FBControlCoreLogger) async throws {
   let target = try await targetForUDID(udid, userDefaults: userDefaults, xcodeAvailable: xcodeAvailable, warmUp: false, logger: logger)
-  guard let eraseTarget = target as? any EraseCommands else {
-    throw IDBCompanionError.eraseUnsupported(targetDescription: String(describing: target))
-  }
-  try await eraseTarget.erase()
+  try await target.erase()
 }
 
 private func runDelete(_ udidOrAll: String, userDefaults: UserDefaults, logger: FBControlCoreLogger) async throws {
@@ -390,7 +366,7 @@ private func runActivate(_ ecid: String, logger: FBControlCoreLogger) async thro
 private func runClean(_ udid: String, userDefaults: UserDefaults, xcodeAvailable: Bool, logger: FBIDBLogger) async throws {
   let target = try await targetForUDID(udid, userDefaults: userDefaults, xcodeAvailable: xcodeAvailable, warmUp: true, logger: logger)
   let storageManager = try FBIDBStorageManager.manager(forTarget: target, logger: logger)
-  let commandExecutor = try FBIDBCommandExecutor.commandExecutor(
+  let commandExecutor = FBIDBCommandExecutor.commandExecutor(
     forTarget: target,
     storageManager: storageManager,
     temporaryDirectory: FBTemporaryDirectory(logger: logger),
@@ -432,7 +408,7 @@ private func runCompanionServer(_ udid: String, userDefaults: UserDefaults, xcod
     }
   }
 
-  let commandExecutor = try FBIDBCommandExecutor.commandExecutor(
+  let commandExecutor = FBIDBCommandExecutor.commandExecutor(
     forTarget: target,
     storageManager: storageManager,
     temporaryDirectory: temporaryDirectory,

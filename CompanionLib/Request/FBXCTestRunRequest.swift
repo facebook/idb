@@ -19,7 +19,6 @@ public enum FBXCTestRunRequestError: Error {
   case logicTestsUnsupported(targetDescription: String)
   case testsToSkipUnsupported(testsToSkip: [String])
   case multipleTestsToRun(testsToRun: [String])
-  case xctestCommandsUnsupported(targetDescription: String)
 }
 
 extension FBXCTestRunRequestError: LocalizedError {
@@ -35,8 +34,6 @@ extension FBXCTestRunRequestError: LocalizedError {
       return "'Tests to Skip' \(FBCollectionInformation.oneLineDescription(from: testsToSkip)) provided, but Logic Tests do not support this."
     case let .multipleTestsToRun(testsToRun):
       return "More than one 'Tests to Run' \(FBCollectionInformation.oneLineDescription(from: testsToRun)) provided, but only one 'Tests to Run' is supported."
-    case let .xctestCommandsUnsupported(targetDescription):
-      return "\(targetDescription) does not support XCTestCommands"
     }
   }
 }
@@ -294,10 +291,7 @@ public struct FBXCTestRunRequest {
     }
 
     let testCompleted: FBFuture<NSNull> = fbFutureFromAsync {
-      guard let asyncTarget = target as? any XCTestCommands else {
-        throw FBXCTestRunRequestError.xctestCommandsUnsupported(targetDescription: String(describing: target))
-      }
-      try await asyncTarget.runTest(launchConfiguration: testLaunchConfiguration, reporter: reporter, logger: logger)
+      try await target.runTest(launchConfiguration: testLaunchConfiguration, reporter: reporter, logger: logger)
       return NSNull()
     }
     let reporterConfiguration = FBXCTestReporterConfiguration(
