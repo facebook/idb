@@ -252,13 +252,6 @@ class Simctl:
             return None
         return set(json.loads(converted.stdout).keys())
 
-    async def app_container(self, bundle_id: str, kind: str = "data") -> Path | None:
-        completed = await self.run("get_app_container", self.udid, bundle_id, kind)
-        if completed.returncode != 0:
-            return None
-        path = completed.text.strip()
-        return Path(path) if path else None
-
 
 def springboard_pid_from_listing(listing: str) -> int | None:
     """SpringBoard's pid in a ``launchctl list`` listing, or ``None`` if it has
@@ -307,10 +300,6 @@ class Environment:
     @property
     def fixture_app(self) -> Path:
         return self.companion_path.parent / "Resources" / FIXTURE_APP_NAME
-
-    @property
-    def data_root(self) -> Path:
-        return self.device_set_path / self.udid / "data"
 
     @classmethod
     async def resolve(cls) -> "Environment":

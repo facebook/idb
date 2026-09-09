@@ -12,17 +12,11 @@ from __future__ import annotations
 import json
 from typing import Any
 
-from .harness import FIXTURE_APP_BUNDLE_ID, IdbEndToEndTestCase
+from .harness import IdbEndToEndTestCase
 
 # The app is launched and reported over gRPC before it draws anything, but the
 # report still crosses a companion, a simulator and a process spawn.
 PID_REPORT_TIMEOUT_SECONDS = 120.0
-
-# Long enough to distinguish "the launch is holding the app open" from "the
-# launch exited immediately", without lengthening the suite for the happy path.
-STREAM_HELD_OPEN_SECONDS = 5.0
-
-LAUNCH_STOP_TIMEOUT_SECONDS = 60.0
 
 
 def _leading_json_object(data: bytes) -> tuple[Any, int]:
