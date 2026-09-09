@@ -46,7 +46,7 @@ extension SimulatorLaunchCtlError: LocalizedError {
   }
 }
 
-public final class SimulatorLaunchCtlCommands {
+public final class SimulatorLaunchCtlCommands: LaunchCtlCommands {
 
   private let simulator: FBSimulator
 
@@ -96,7 +96,7 @@ public final class SimulatorLaunchCtlCommands {
     return mapping
   }
 
-  public func firstServiceNameAndProcessIdentifier(matching regex: NSRegularExpression) async throws -> (String, pid_t) {
+  public func firstServiceNameAndProcessIdentifier(matching regex: NSRegularExpression) async throws -> (serviceName: String, processIdentifier: pid_t) {
     let serviceNameToProcessIdentifier = try await serviceNamesAndProcessIdentifiers(matching: regex)
     guard let (serviceName, processIdentifier) = serviceNameToProcessIdentifier.first else {
       throw SimulatorLaunchCtlError.noMatchingProcesses(pattern: regex.pattern)
@@ -105,6 +105,15 @@ public final class SimulatorLaunchCtlCommands {
       throw SimulatorLaunchCtlError.multipleMatchingProcesses(pattern: regex.pattern, matches: serviceNameToProcessIdentifier)
     }
     return (serviceName, processIdentifier.int32Value)
+  }
+
+  public func serviceName(forProcess process: FBProcessInfo) async throws -> String {
+    try await serviceName(forProcessIdentifier: process.processIdentifier)
+  }
+
+  public func processIsRunning(onSimulator process: FBProcessInfo) async throws -> Bool {
+    _ = try await serviceName(forProcessIdentifier: process.processIdentifier)
+    return true
   }
 
   public func listServices() async throws -> [String: Any] {
@@ -226,43 +235,5 @@ public final class SimulatorLaunchCtlCommands {
       logger?.log("launchctl \(command.arguments.joined(separator: " ")) exited with code \(output.exitCode): \(stderr)")
     }
     return String(data: output.stdout, encoding: .utf8) ?? ""
-  }
-}
-
-// MARK: - FBSimulator+LaunchCtlCommands
-
-extension FBSimulator: LaunchCtlCommands {
-
-  public func serviceName(forProcessIdentifier pid: pid_t) async throws -> String {
-    try await launchCtl.serviceName(forProcessIdentifier: pid)
-  }
-
-  public func serviceName(forProcess process: FBProcessInfo) async throws -> String {
-    try await launchCtl.serviceName(forProcessIdentifier: process.processIdentifier)
-  }
-
-  public func serviceNamesAndProcessIdentifiers(matching regex: NSRegularExpression) async throws -> [String: NSNumber] {
-    try await launchCtl.serviceNamesAndProcessIdentifiers(matching: regex)
-  }
-
-  public func firstServiceNameAndProcessIdentifier(matching regex: NSRegularExpression) async throws -> (serviceName: String, processIdentifier: pid_t) {
-    try await launchCtl.firstServiceNameAndProcessIdentifier(matching: regex)
-  }
-
-  public func processIsRunning(onSimulator process: FBProcessInfo) async throws -> Bool {
-    _ = try await launchCtl.serviceName(forProcessIdentifier: process.processIdentifier)
-    return true
-  }
-
-  public func listServices() async throws -> [String: Any] {
-    try await launchCtl.listServices()
-  }
-
-  public func stopService(withName serviceName: String) async throws -> String {
-    try await launchCtl.stopService(withName: serviceName)
-  }
-
-  public func startService(withName serviceName: String) async throws -> String {
-    try await launchCtl.startService(withName: serviceName)
   }
 }

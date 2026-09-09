@@ -287,7 +287,7 @@ public final class FBIDBCommandExecutor {
   }
 
   public func add_media(_ filePaths: [URL]) async throws {
-    try await simulatorTarget().addMedia(filePaths)
+    try simulatorTarget().media.upload(filePaths)
   }
 
   public func set_location(_ latitude: Double, longitude: Double) async throws {
@@ -295,7 +295,7 @@ public final class FBIDBCommandExecutor {
   }
 
   public func clear_keychain() async throws {
-    try await simulatorTarget().clearKeychain()
+    try await simulatorTarget().keychain.clear()
   }
 
   public func approve(_ services: Set<FBTargetSettingsService>, for_application bundleID: String) async throws {

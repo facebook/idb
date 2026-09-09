@@ -192,7 +192,7 @@ public struct FBSimulatorApplicationCommands {
     guard let uiKitApplicationPattern = try? NSRegularExpression(pattern: "UIKitApplication:", options: []) else {
       throw SimulatorApplicationLookupError.servicePatternConstructionFailed
     }
-    let serviceNameToProcessIdentifier = try await simulator.serviceNamesAndProcessIdentifiers(matching: uiKitApplicationPattern)
+    let serviceNameToProcessIdentifier = try await simulator.launchCtl.serviceNamesAndProcessIdentifiers(matching: uiKitApplicationPattern)
     var mapping: [String: NSNumber] = [:]
     for serviceName in serviceNameToProcessIdentifier.keys {
       if let bundleName = SimulatorLaunchCtlCommands.extractApplicationBundleIdentifier(fromServiceName: serviceName) {
@@ -207,7 +207,7 @@ public struct FBSimulatorApplicationCommands {
     guard let regex = try? NSRegularExpression(pattern: pattern, options: []) else {
       throw SimulatorApplicationLookupError.searchPatternConstructionFailed(bundleID: bundleID)
     }
-    let (_, processIdentifier) = try await simulator.firstServiceNameAndProcessIdentifier(matching: regex)
+    let (_, processIdentifier) = try await simulator.launchCtl.firstServiceNameAndProcessIdentifier(matching: regex)
     return processIdentifier
   }
 

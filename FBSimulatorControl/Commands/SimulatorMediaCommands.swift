@@ -65,7 +65,7 @@ public struct SimulatorMediaCommands {
     ])
   }
 
-  public func uploadMedia(_ mediaFileURLs: [URL]) throws {
+  public func upload(_ mediaFileURLs: [URL]) throws {
 
     if mediaFileURLs.isEmpty {
       throw SimulatorMediaError.noMediaProvided
@@ -116,14 +116,5 @@ public struct SimulatorMediaCommands {
       guard let contentType = try? url.resourceValues(forKeys: [.contentTypeKey]).contentType else { return false }
       return types.contains { contentType.conforms(to: $0) }
     }
-  }
-}
-
-// MARK: - FBSimulator+Media
-
-extension FBSimulator {
-
-  public func addMedia(_ mediaFileURLs: [URL]) async throws {
-    try media.uploadMedia(mediaFileURLs)
   }
 }

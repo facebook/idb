@@ -27,7 +27,7 @@ final class SimulatorGuestServicesSmokeTests: ProvidedSimulatorTestCase {
 
     // The runtime's own launchctl, spawned via CoreSimulator.
     let services = try await skippingIfGuestServiceSpawnUnavailable {
-      try await simulator.listServices()
+      try await simulator.launchCtl.listServices()
     }
     XCTAssertFalse(services.isEmpty, "A booted simulator should report launchd services")
 

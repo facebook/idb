@@ -141,12 +141,12 @@ class DefaultsModificationStrategy {
 
     // Stop the service while the plist is rewritten, restarting it afterwards if it was running.
     if state == .booted {
-      _ = try await simulator.stopService(withName: serviceName)
+      _ = try await simulator.launchCtl.stopService(withName: serviceName)
     }
     let fullPath = (dataDirectory as NSString).appendingPathComponent(relativePath)
     try await modifyDefaults(inDomainOrPath: fullPath, defaults: defaults)
     if state == .booted {
-      _ = try await simulator.startService(withName: serviceName)
+      _ = try await simulator.launchCtl.startService(withName: serviceName)
     }
   }
 
@@ -226,7 +226,7 @@ class LocationServicesModificationStrategy: DefaultsModificationStrategy {
 
     let serviceName = "locationd"
     if state == .booted {
-      _ = try await simulator.stopService(withName: serviceName)
+      _ = try await simulator.launchCtl.stopService(withName: serviceName)
     }
 
     let path = (dataDirectory as NSString)
@@ -238,7 +238,7 @@ class LocationServicesModificationStrategy: DefaultsModificationStrategy {
     }
 
     if state == .booted {
-      _ = try await simulator.startService(withName: serviceName)
+      _ = try await simulator.launchCtl.startService(withName: serviceName)
     }
   }
 }

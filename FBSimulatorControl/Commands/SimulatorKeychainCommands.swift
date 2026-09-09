@@ -16,16 +16,7 @@ public struct SimulatorKeychainCommands {
     SimulatorKeychainCommands(simulator: simulator)
   }
 
-  public func clearKeychain() async throws {
+  public func clear() async throws {
     try simulator.device.resetKeychain()
-  }
-}
-
-// MARK: - FBSimulator+Keychain
-
-extension FBSimulator {
-
-  public func clearKeychain() async throws {
-    try await keychain.clearKeychain()
   }
 }

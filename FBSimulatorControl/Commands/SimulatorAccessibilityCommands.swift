@@ -74,7 +74,7 @@ final class SimulatorAccessibilityCommands: AccessibilityOperations {
   }
 
   private func resolvedLaunchCtl(_ simulator: FBSimulator) -> any LaunchCtlCommands {
-    launchCtl ?? simulator
+    launchCtl ?? simulator.launchCtl
   }
 
   // MARK: - AccessibilityOperations
