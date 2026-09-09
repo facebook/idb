@@ -18,6 +18,15 @@ its environment is incomplete.
 The simulator is a leased resource. Tests restore anything they mutate and
 never boot, shut down, erase or delete it.
 
+Before any test runs, the suite waits for the simulator in three stages, each
+of which can only be observed after the one before it: ``simctl bootstatus``
+for CoreSimulator's own services, a live ``com.apple.SpringBoard`` in the
+guest's launchd for the guest coming up, and an accessibility read that
+succeeds for the translation layer serving. A simulator that never gets past
+one of them fails the whole suite naming the stage it stopped at, rather than
+leaving whichever test happened to run first to report the symptom as its own
+failure.
+
 The harness starts one companion for the simulator on a private unix socket
 and every command connects to it with ``--companion``, so the client's own
 companion bookkeeping never enters the picture and the companion can be
@@ -87,8 +96,22 @@ HOST_SERVICE_UNAVAILABLE_MARKERS = (
 # remove.
 COMPANION_UNREACHABLE_MARKERS = ("Failed to connect to companion",)
 
+# The guest's window server and frontmost application. `bootstatus` returning
+# does not imply it is up: CoreSimulator calls the boot finished once its own
+# services have started, and SpringBoard comes up under the guest's launchd
+# after that.
+SPRINGBOARD_SERVICE_NAME = "com.apple.SpringBoard"
+
+# What an accessibility read says before the simulator has a translation object
+# to serve. Distinct from every other read failure: it is the one that goes
+# away on its own.
+ACCESSIBILITY_NOT_READY_MARKER = "No translation object returned"
+ACCESSIBILITY_PROBE_ARGS = ("ui", "describe-all", "--json")
+
 COMPANION_READY_TIMEOUT_SECONDS = 180.0
 BOOT_COMPLETION_TIMEOUT_SECONDS = 300.0
+SPRINGBOARD_READY_TIMEOUT_SECONDS = 180.0
+ACCESSIBILITY_READY_TIMEOUT_SECONDS = 180.0
 DEFAULT_COMMAND_TIMEOUT_SECONDS = 120.0
 INSTALL_TIMEOUT_SECONDS = 300.0
 
@@ -194,6 +217,28 @@ class Simctl:
                 f"{completed.error_text}"
             )
 
+    async def springboard_pid(self) -> int | None:
+        """SpringBoard's pid in the guest, or ``None`` if launchd has no live
+        job for it."""
+        completed = await self.run("spawn", self.udid, "launchctl", "list")
+        if completed.returncode != 0:
+            return None
+        return springboard_pid_from_listing(completed.text)
+
+    async def wait_until_springboard_is_running(self) -> None:
+        deadline = time.monotonic() + SPRINGBOARD_READY_TIMEOUT_SECONDS
+        while True:
+            if await self.springboard_pid() is not None:
+                return
+            if time.monotonic() >= deadline:
+                raise HarnessError(
+                    f"Readiness stage 2 of 3, SpringBoard: the guest's launchd "
+                    f"had no live {SPRINGBOARD_SERVICE_NAME} within "
+                    f"{SPRINGBOARD_READY_TIMEOUT_SECONDS:.0f}s of the boot "
+                    f"finishing. The simulator booted but did not come up."
+                )
+            await asyncio.sleep(1.0)
+
     async def installed_bundle_ids(self) -> set[str] | None:
         completed = await self.run("listapps", self.udid)
         if completed.returncode != 0:
@@ -213,6 +258,26 @@ class Simctl:
             return None
         path = completed.text.strip()
         return Path(path) if path else None
+
+
+def springboard_pid_from_listing(listing: str) -> int | None:
+    """SpringBoard's pid in a ``launchctl list`` listing, or ``None`` if it has
+    no live job there.
+
+    A pid over zero rather than presence in the listing, which is how idb
+    itself decides SpringBoard is running: launchd keeps a job listed with a
+    pid of ``-`` after it has exited.
+    """
+    for line in listing.splitlines():
+        columns = line.split("\t")
+        if len(columns) < 3 or columns[2].strip() != SPRINGBOARD_SERVICE_NAME:
+            continue
+        try:
+            pid = int(columns[0])
+        except ValueError:
+            return None
+        return pid if pid > 0 else None
+    return None
 
 
 def _device_states(listing: dict[str, Any]) -> dict[str, str]:
@@ -271,6 +336,7 @@ class Environment:
                 f"{DEVICE_UDID_ENV}={udid} must already be booted; it is {state}"
             )
         await simctl.wait_until_boot_completed()
+        await simctl.wait_until_springboard_is_running()
         return cls(udid, device_set_path, idb_bin, companion_path)
 
 
@@ -386,6 +452,55 @@ class Companion:
             self.process.stdout.close()
 
 
+def idb_argv(environment: Environment, companion: Companion, *args: str) -> list[str]:
+    return [str(environment.idb_bin), "--companion", companion.address, *args]
+
+
+async def wait_until_accessibility_is_serving(
+    environment: Environment, companion: Companion
+) -> None:
+    """Wait for the simulator to answer an accessibility read.
+
+    The last of the three things the suite waits for, and the only one with no
+    proxy for it. ``bootstatus`` reports CoreSimulator's own services started
+    and a live SpringBoard reports the guest came up, but the accessibility
+    translation layer begins serving strictly after both, and nothing outside
+    it says when. So the probe is the read itself, run once for the suite
+    rather than left for whichever test happens to go first to discover.
+    """
+    deadline = time.monotonic() + ACCESSIBILITY_READY_TIMEOUT_SECONDS
+    while True:
+        completed = await run(
+            idb_argv(environment, companion, *ACCESSIBILITY_PROBE_ARGS),
+            timeout=DEFAULT_COMMAND_TIMEOUT_SECONDS,
+        )
+        if completed.returncode == 0:
+            return
+        kind = classify_failure(completed)
+        if kind is FailureKind.HOST_SERVICE_UNAVAILABLE:
+            # Nothing here will become ready. The tests that need the guest
+            # skip with that as their reason, which is more use than the whole
+            # suite failing at setup.
+            return
+        if kind is not FailureKind.COMMAND or (
+            ACCESSIBILITY_NOT_READY_MARKER not in completed.error_text
+        ):
+            raise HarnessError(
+                f"Readiness stage 3 of 3, accessibility: "
+                f"idb {' '.join(ACCESSIBILITY_PROBE_ARGS)} failed for a reason "
+                f"that is not the simulator still coming up "
+                f"(rc={completed.returncode}): {completed.error_text}"
+            )
+        if time.monotonic() >= deadline:
+            raise HarnessError(
+                f"Readiness stage 3 of 3, accessibility: the simulator had no "
+                f"translation object to serve within "
+                f"{ACCESSIBILITY_READY_TIMEOUT_SECONDS:.0f}s of SpringBoard "
+                f"coming up. It is booted and running but not serving reads."
+            )
+        await asyncio.sleep(1.0)
+
+
 _environment: Environment | None = None
 _companion: Companion | None = None
 _acquisition_failure: BaseException | None = None
@@ -414,11 +529,19 @@ async def shared_companion() -> Companion:
     if _acquisition_failure is not None:
         raise _acquisition_failure
     if _companion is None:
+        environment = await shared_environment()
         try:
-            _companion = Companion(await shared_environment())
+            companion = Companion(environment)
         except BaseException as error:
             _acquisition_failure = error
             raise
+        try:
+            await wait_until_accessibility_is_serving(environment, companion)
+        except BaseException as error:
+            companion.stop()
+            _acquisition_failure = error
+            raise
+        _companion = companion
         atexit.register(_companion.stop)
     return _companion
 
@@ -444,12 +567,7 @@ class IdbEndToEndTestCase(unittest.IsolatedAsyncioTestCase):
         return self.environment.simctl
 
     def idb_argv(self, *args: str) -> list[str]:
-        return [
-            str(self.environment.idb_bin),
-            "--companion",
-            self.companion.address,
-            *args,
-        ]
+        return idb_argv(self.environment, self.companion, *args)
 
     async def idb(
         self,

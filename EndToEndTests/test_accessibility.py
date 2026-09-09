@@ -40,7 +40,11 @@ import json
 import time
 from typing import Any
 
-from .harness import FIXTURE_APP_BUNDLE_ID, IdbEndToEndTestCase
+from .harness import (
+    ACCESSIBILITY_NOT_READY_MARKER,
+    FIXTURE_APP_BUNDLE_ID,
+    IdbEndToEndTestCase,
+)
 
 SETTINGS_BUNDLE_ID = "com.apple.Preferences"
 SAFARI_BUNDLE_ID = "com.apple.mobilesafari"
@@ -57,9 +61,6 @@ MINIMUM_CONTROL_WIDTH = 100
 
 CONTROL_DISCOVERY_TIMEOUT_SECONDS = 60.0
 DESCRIBE_ALL_ARGS = ("ui", "describe-all", "--nested")
-# A read taken before the simulator has an accessibility translation object to
-# serve fails rather than coming back empty.
-NOT_READY_MARKER = "No translation object returned"
 
 
 def _elements(node: Any) -> list[dict[str, Any]]:
@@ -164,7 +165,7 @@ class AccessibilityTests(IdbEndToEndTestCase):
             completed = await self.idb(*DESCRIBE_ALL_ARGS, "--json", check=False)
             if (
                 completed.returncode != 0
-                and NOT_READY_MARKER not in completed.error_text
+                and ACCESSIBILITY_NOT_READY_MARKER not in completed.error_text
             ):
                 self.fail_or_skip_for(" ".join(DESCRIBE_ALL_ARGS), completed)
             if completed.returncode == 0:
