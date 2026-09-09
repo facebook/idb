@@ -30,8 +30,6 @@ struct FBArchitectureProcessAdapterTests {
   /// rpath shape the adapter rewrites. Tried in order; the first that exists is used.
   private static let fatBinariesWithExecutablePathRpaths = ["/usr/bin/xprotect", "/usr/bin/swift-inspect"]
 
-  private static let queue = DispatchQueue(label: "com.facebook.fbcontrolcore.tests.architecture_adapter")
-
   private static func makeTemporaryDirectory() throws -> URL {
     let url = URL(fileURLWithPath: NSTemporaryDirectory())
       .appendingPathComponent("FBArchitectureProcessAdapterTests-\(UUID().uuidString)", isDirectory: true)
@@ -66,13 +64,11 @@ struct FBArchitectureProcessAdapterTests {
     defer { try? FileManager.default.removeItem(at: directory) }
 
     do {
-      _ = try await bridgeFBFuture(
-        FBArchitectureProcessAdapter.adaptProcessConfiguration(
-          Self.configuration(launchPath: Self.fatBinary),
-          toAnyArchitectureIn: [.arm64],
-          hostArchitectures: [.X86_64],
-          queue: Self.queue,
-          temporaryDirectory: directory))
+      _ = try await FBArchitectureProcessAdapter.adaptProcessConfiguration(
+        Self.configuration(launchPath: Self.fatBinary),
+        toAnyArchitectureIn: [.arm64],
+        hostArchitectures: [.X86_64],
+        temporaryDirectory: directory)
       Issue.record("Expected adaptation to fail when the requested architecture is unsupported")
     } catch {
       #expect(error.localizedDescription.contains("Could not select an architecture from"))
@@ -94,13 +90,11 @@ struct FBArchitectureProcessAdapterTests {
     // -verify_arch arm64` then fails against a binary that only has arm64e. The
     // failure is the evidence of the preference: x86_64 was available and unused.
     do {
-      _ = try await bridgeFBFuture(
-        FBArchitectureProcessAdapter.adaptProcessConfiguration(
-          Self.configuration(launchPath: Self.fatBinary),
-          toAnyArchitectureIn: [.arm64, .X86_64],
-          hostArchitectures: [.arm64, .X86_64],
-          queue: Self.queue,
-          temporaryDirectory: directory))
+      _ = try await FBArchitectureProcessAdapter.adaptProcessConfiguration(
+        Self.configuration(launchPath: Self.fatBinary),
+        toAnyArchitectureIn: [.arm64, .X86_64],
+        hostArchitectures: [.arm64, .X86_64],
+        temporaryDirectory: directory)
       Issue.record("Expected verification of the arm64 slice to fail")
     } catch {
       #expect(error.localizedDescription.contains("Desired architecture"))
@@ -108,13 +102,11 @@ struct FBArchitectureProcessAdapterTests {
     }
 
     // Take arm64 off the host and the same request succeeds on x86_64.
-    let adapted = try await bridgeFBFuture(
-      FBArchitectureProcessAdapter.adaptProcessConfiguration(
-        Self.configuration(launchPath: Self.fatBinary),
-        toAnyArchitectureIn: [.arm64, .X86_64],
-        hostArchitectures: [.X86_64],
-        queue: Self.queue,
-        temporaryDirectory: directory))
+    let adapted = try await FBArchitectureProcessAdapter.adaptProcessConfiguration(
+      Self.configuration(launchPath: Self.fatBinary),
+      toAnyArchitectureIn: [.arm64, .X86_64],
+      hostArchitectures: [.X86_64],
+      temporaryDirectory: directory)
     #expect(try await Self.architectures(of: adapted.launchPath) == ["x86_64"])
   }
 
@@ -126,13 +118,11 @@ struct FBArchitectureProcessAdapterTests {
     defer { try? FileManager.default.removeItem(at: directory) }
     let original = Self.configuration(launchPath: Self.fatBinary, environment: ["KEEP": "ME"])
 
-    let adapted = try await bridgeFBFuture(
-      FBArchitectureProcessAdapter.adaptProcessConfiguration(
-        original,
-        toAnyArchitectureIn: [.X86_64],
-        hostArchitectures: [.X86_64],
-        queue: Self.queue,
-        temporaryDirectory: directory))
+    let adapted = try await FBArchitectureProcessAdapter.adaptProcessConfiguration(
+      original,
+      toAnyArchitectureIn: [.X86_64],
+      hostArchitectures: [.X86_64],
+      temporaryDirectory: directory)
 
     let fileName = (adapted.launchPath as NSString).lastPathComponent
     #expect((adapted.launchPath as NSString).deletingLastPathComponent == directory.path)
@@ -160,13 +150,11 @@ struct FBArchitectureProcessAdapterTests {
     let directory = try Self.makeTemporaryDirectory()
     defer { try? FileManager.default.removeItem(at: directory) }
 
-    let adapted = try await bridgeFBFuture(
-      FBArchitectureProcessAdapter.adaptProcessConfiguration(
-        Self.configuration(launchPath: binary),
-        toAnyArchitectureIn: [.X86_64],
-        hostArchitectures: [.X86_64],
-        queue: Self.queue,
-        temporaryDirectory: directory))
+    let adapted = try await FBArchitectureProcessAdapter.adaptProcessConfiguration(
+      Self.configuration(launchPath: binary),
+      toAnyArchitectureIn: [.X86_64],
+      hostArchitectures: [.X86_64],
+      temporaryDirectory: directory)
 
     // The thinned copy lives in a temporary directory, so `@executable_path` no
     // longer resolves to anything useful. Each rpath is rewritten against the
@@ -182,13 +170,11 @@ struct FBArchitectureProcessAdapterTests {
     let directory = try Self.makeTemporaryDirectory()
     defer { try? FileManager.default.removeItem(at: directory) }
 
-    let adapted = try await bridgeFBFuture(
-      FBArchitectureProcessAdapter.adaptProcessConfiguration(
-        Self.configuration(launchPath: Self.fatBinary),
-        toAnyArchitectureIn: [.X86_64],
-        hostArchitectures: [.X86_64],
-        queue: Self.queue,
-        temporaryDirectory: directory))
+    let adapted = try await FBArchitectureProcessAdapter.adaptProcessConfiguration(
+      Self.configuration(launchPath: Self.fatBinary),
+      toAnyArchitectureIn: [.X86_64],
+      hostArchitectures: [.X86_64],
+      temporaryDirectory: directory)
 
     // The variables are written unconditionally, so a binary with nothing to rewrite
     // is launched with two empty search paths rather than with neither variable set.

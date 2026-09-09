@@ -376,30 +376,30 @@ public final class FBLogicTestRunStrategy: FBXCTestRunner {
     let io = FBProcessIO<AnyObject, AnyObject, AnyObject>(stdIn: nil, stdOut: stdOut, stdErr: stdErr)
     let spawnConfig = FBProcessSpawnConfiguration(launchPath: launchPath, arguments: arguments, environment: environment, io: io, mode: .posixSpawn)
 
-    return FBArchitectureProcessAdapter.adaptProcessConfiguration(spawnConfig, toAnyArchitectureIn: Set(configuration.architectures.map { FBArchitecture(rawValue: $0) }), queue: queue, temporaryDirectory: temporaryDirectory)
-      .onQueue(
+    let launchAdaptedProcess: (FBProcessSpawnConfiguration) -> FBFuture<AnyObject> = { mappedConfig in
+      let target = self.target
+      let launchFuture: FBFuture<FBSubprocess<AnyObject, AnyObject, AnyObject>> = fbFutureFromAsync {
+        try await target.launchProcess(mappedConfig)
+      }
+      return launchFuture.onQueue(
         queue,
-        fmap: { mappedConfig -> FBFuture<AnyObject> in
-          let target = self.target
-          let launchFuture: FBFuture<FBSubprocess<AnyObject, AnyObject, AnyObject>> = fbFutureFromAsync {
-            try await target.launchProcess(mappedConfig)
-          }
-          return launchFuture.onQueue(
-            queue,
-            map: { process -> AnyObject in
-              let debuggerFuture = FBLogicTestRunStrategy.fromQueue(queue, reportWaitForDebugger: self.configuration.waitForDebugger, forProcessIdentifier: process.processIdentifier, reporter: reporter)
-              return unsafeBitCast(debuggerFuture, to: FBFuture<AnyObject>.self)
-                .onQueue(
-                  queue,
-                  fmap: { _ -> FBFuture<AnyObject> in
-                    let crashCommands = self.target as? any CrashLogCommands
-                    return unsafeBitCast(
-                      FBXCTestProcess.ensureProcess(process, completesWithin: timeout, crashLogCommands: crashCommands, queue: queue, logger: logger),
-                      to: FBFuture<AnyObject>.self
-                    )
-                  })
-            })
-        }
-      )
+        map: { process -> AnyObject in
+          let debuggerFuture = FBLogicTestRunStrategy.fromQueue(queue, reportWaitForDebugger: self.configuration.waitForDebugger, forProcessIdentifier: process.processIdentifier, reporter: reporter)
+          return unsafeBitCast(debuggerFuture, to: FBFuture<AnyObject>.self)
+            .onQueue(
+              queue,
+              fmap: { _ -> FBFuture<AnyObject> in
+                let crashCommands = self.target as? any CrashLogCommands
+                return unsafeBitCast(
+                  FBXCTestProcess.ensureProcess(process, completesWithin: timeout, crashLogCommands: crashCommands, queue: queue, logger: logger),
+                  to: FBFuture<AnyObject>.self
+                )
+              })
+        })
+    }
+    return fbFutureFromAsync {
+      let mappedConfig = try await FBArchitectureProcessAdapter.adaptProcessConfiguration(spawnConfig, toAnyArchitectureIn: Set(self.configuration.architectures.map { FBArchitecture(rawValue: $0) }), temporaryDirectory: temporaryDirectory)
+      return try await bridgeFBFuture(launchAdaptedProcess(mappedConfig))
+    }
   }
 }

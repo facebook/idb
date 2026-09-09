@@ -268,12 +268,11 @@ public final class FBListTestStrategy {
     } else {
       let spawnConfiguration = FBProcessSpawnConfiguration(launchPath: launchPath, arguments: [], environment: env, io: io, mode: .default)
 
-      return FBArchitectureProcessAdapter.adaptProcessConfiguration(spawnConfiguration, toAnyArchitectureIn: Set(configuration.architectures.map { FBArchitecture(rawValue: $0) }), queue: target.workQueue, temporaryDirectory: temporaryDirectory)
-        .onQueue(
-          target.workQueue,
-          fmap: { mappedConfig -> FBFuture<AnyObject> in
-            FBListTestStrategy.listTestProcess(withSpawnConfiguration: mappedConfig, onTarget: target, timeout: configuration.testTimeout, logger: logger)
-          })
+      return fbFutureFromAsync {
+        let mappedConfig = try await FBArchitectureProcessAdapter.adaptProcessConfiguration(spawnConfiguration, toAnyArchitectureIn: Set(configuration.architectures.map { FBArchitecture(rawValue: $0) }), temporaryDirectory: temporaryDirectory)
+        return try await bridgeFBFuture(
+          FBListTestStrategy.listTestProcess(withSpawnConfiguration: mappedConfig, onTarget: target, timeout: configuration.testTimeout, logger: logger))
+      }
     }
   }
 
