@@ -92,9 +92,9 @@ public final class FBDeviceRecoveryCommands {
   }
 }
 
-// MARK: - FBDevice+RecoveryCommands
+// MARK: - FBDevice+Recovery
 
-extension FBDevice: RecoveryCommands {
+extension FBDevice {
 
   public func enterRecovery() async throws {
     try await recovery.enterRecovery()

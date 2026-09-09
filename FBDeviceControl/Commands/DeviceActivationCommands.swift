@@ -266,9 +266,9 @@ public final class FBDeviceActivationCommands {
   }
 }
 
-// MARK: - FBDevice+ActivationCommands
+// MARK: - FBDevice+Activation
 
-extension FBDevice: ActivationCommands {
+extension FBDevice {
 
   public func activate() async throws {
     try await activation.activate()
