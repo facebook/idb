@@ -148,7 +148,7 @@ public final class DeviceEraseCommands: EraseCommands {
 
   public func erase() async throws {
     guard let device else {
-      throw FBDeviceNilError.deviceNil
+      throw DeviceNilError.deviceNil
     }
     let logger = device.logger.withName("erase_\(device.udid)")
     try await device.activate()

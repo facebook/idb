@@ -29,7 +29,7 @@ extension DeviceVideoError: LocalizedError {
   }
 }
 
-public final class FBDeviceVideo {
+public final class DeviceVideo {
   private let encoder: FBVideoFileWriter
 
   // MARK: - Initialization Helpers
@@ -80,10 +80,10 @@ public final class FBDeviceVideo {
     return session
   }
 
-  public class func video(for device: FBDevice, filePath: String) async throws -> FBDeviceVideo {
+  public class func video(for device: FBDevice, filePath: String) async throws -> DeviceVideo {
     let session = try await captureSession(for: device)
     let encoder = try FBVideoFileWriter.writer(withSession: session, filePath: filePath, logger: device.logger)
-    return FBDeviceVideo(encoder: encoder)
+    return DeviceVideo(encoder: encoder)
   }
 
   private init(encoder: FBVideoFileWriter) {

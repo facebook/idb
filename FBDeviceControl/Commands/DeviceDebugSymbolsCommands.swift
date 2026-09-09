@@ -114,7 +114,7 @@ public final class DeviceDebugSymbolsCommands: DebugSymbolsCommands {
       throw DeviceDebugSymbolsError.destinationDirectoryNotCreated(message: String(describing: error))
     }
     guard let device else {
-      throw FBDeviceNilError.deviceNil
+      throw DeviceNilError.deviceNil
     }
     let logger = device.logger
 
@@ -141,7 +141,7 @@ public final class DeviceDebugSymbolsCommands: DebugSymbolsCommands {
   /// once a file has been requested the connection is spent.
   private func withSymbolServiceConnection<T>(_ body: (FBAMDServiceConnection) async throws -> T) async throws -> T {
     guard let device else {
-      throw FBDeviceNilError.deviceNil
+      throw DeviceNilError.deviceNil
     }
     _ = try await device.developerDiskImage.ensureDeveloperDiskImageIsMounted()
     return try await device.withServiceConnection(FetchSymbolsService, body)

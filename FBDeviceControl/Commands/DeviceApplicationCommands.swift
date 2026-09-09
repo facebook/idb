@@ -140,7 +140,7 @@ public final class DeviceApplicationCommands {
 
   fileprivate func installApplication(withPath path: String) async throws -> FBInstalledApplication {
     guard let device else {
-      throw FBDeviceNilError.deviceNil
+      throw DeviceNilError.deviceNil
     }
     let bundle = try FBBundleDescriptor.bundle(fromPath: path)
     let appURL = URL(fileURLWithPath: path, isDirectory: true)
@@ -175,7 +175,7 @@ public final class DeviceApplicationCommands {
 
   fileprivate func uninstallApplication(withBundleID bundleID: String) async throws {
     guard let device else {
-      throw FBDeviceNilError.deviceNil
+      throw DeviceNilError.deviceNil
     }
     try await device.withConnectedDevice(purpose: "uninstall_\(bundleID)") { connectedDevice in
       let statistics = DeviceWorkflowStatistics(workflowType: "Uninstall", logger: connectedDevice.logger)
@@ -253,7 +253,7 @@ public final class DeviceApplicationCommands {
 
   fileprivate func launchApplication(_ configuration: FBApplicationLaunchConfiguration) async throws -> any FBLaunchedApplication {
     guard let device else {
-      throw FBDeviceNilError.deviceNil
+      throw DeviceNilError.deviceNil
     }
     let pid: NSNumber
     if device.osVersion.version.majorVersion >= 17 {
@@ -282,7 +282,7 @@ public final class DeviceApplicationCommands {
 
   private func installedApplicationsData(_ returnAttributes: [String]) async throws -> [String: [String: Any]] {
     guard let device else {
-      throw FBDeviceNilError.deviceNil
+      throw DeviceNilError.deviceNil
     }
     return try await device.withConnectedDevice(purpose: "installed_apps") { connectedDevice in
       let options: [String: Any] = [
@@ -308,7 +308,7 @@ public final class DeviceApplicationCommands {
 
   private func withRemoteInstrumentsClient<R>(_ body: (InstrumentsClient) async throws -> R) async throws -> R {
     guard let device else {
-      throw FBDeviceNilError.deviceNil
+      throw DeviceNilError.deviceNil
     }
     let usesSecureConnection = device.osVersion.version.majorVersion >= 14
     _ = try await device.ensureDeveloperDiskImageIsMounted()
@@ -321,7 +321,7 @@ public final class DeviceApplicationCommands {
 
   private func pidToRunningProcessName() async throws -> [NSNumber: String] {
     guard let device else {
-      throw FBDeviceNilError.deviceNil
+      throw DeviceNilError.deviceNil
     }
     return try await device.withServiceConnection("com.apple.os_trace_relay") { connection in
       do {

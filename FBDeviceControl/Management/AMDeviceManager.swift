@@ -20,7 +20,7 @@ private func amDeviceConnected(_ device: AMDevice, manager: AMDeviceManager) {
   let calls = manager.calls
 
   do {
-    try FBAMDeviceUsage.startConnection(to: device, calls: calls, logger: logger)
+    try AMDeviceUsage.startConnection(to: device, calls: calls, logger: logger)
   } catch {
     logger.error().log("Cannot connect to device, ignoring device \(error)")
     return
@@ -32,31 +32,31 @@ private func amDeviceConnected(_ device: AMDevice, manager: AMDeviceManager) {
   // devices reporting the other.
   let rawChipID = calls.CopyValue(device, nil, DeviceKey.uniqueChipID.rawValue as CFString)?.takeRetainedValue() as AnyObject?
   guard let uniqueChipID = (rawChipID as? NSNumber)?.stringValue ?? (rawChipID as? String) else {
-    FBAMDeviceUsage.stopConnection(to: device, calls: calls, logger: logger)
+    AMDeviceUsage.stopConnection(to: device, calls: calls, logger: logger)
     logger.error().log("Ignoring device as cannot obtain ECID for it")
     return
   }
 
   if let ecidFilter = manager.ecidFilter, uniqueChipID != ecidFilter {
-    FBAMDeviceUsage.stopConnection(to: device, calls: calls, logger: logger)
+    AMDeviceUsage.stopConnection(to: device, calls: calls, logger: logger)
     logger.error().log("Ignoring device as ECID \(uniqueChipID) does not match filter \(ecidFilter)")
     return
   }
 
   var pairedWithSession = true
   do {
-    try FBAMDeviceUsage.startSessionByPairing(with: device, calls: calls, logger: logger)
+    try AMDeviceUsage.startSessionByPairing(with: device, calls: calls, logger: logger)
   } catch {
     pairedWithSession = false
     logger.log("Device is not paired, degraded device information will be provied \(error)")
   }
 
-  let info = FBAMDeviceUsage.obtainDeviceValues(device, calls: calls)
+  let info = AMDeviceUsage.obtainDeviceValues(device, calls: calls)
 
   if pairedWithSession {
-    FBAMDeviceUsage.stopSession(with: device, calls: calls, logger: logger)
+    AMDeviceUsage.stopSession(with: device, calls: calls, logger: logger)
   }
-  FBAMDeviceUsage.stopConnection(to: device, calls: calls, logger: logger)
+  AMDeviceUsage.stopConnection(to: device, calls: calls, logger: logger)
 
   guard let info else {
     logger.error().log("Ignoring device as no values were returned for it")
@@ -131,7 +131,7 @@ final class AMDeviceManager: DeviceManager<FBAMDevice> {
 
   override func startListening() throws {
     guard subscription == nil else {
-      throw FBAMDeviceManagerError.alreadySubscribed
+      throw AMDeviceManagerError.alreadySubscribed
     }
 
     // Retained for as long as the subscription lasts, so the callback's context stays valid.
@@ -146,7 +146,7 @@ final class AMDeviceManager: DeviceManager<FBAMDevice> {
       &subscription)
     guard result == 0 else {
       Unmanaged<AMDeviceManager>.fromOpaque(context).release()
-      throw FBAMDeviceManagerError.subscribeFailed(status: result)
+      throw AMDeviceManagerError.subscribeFailed(status: result)
     }
 
     self.subscription = subscription
@@ -154,12 +154,12 @@ final class AMDeviceManager: DeviceManager<FBAMDevice> {
 
   override func stopListening() throws {
     guard let subscription else {
-      throw FBAMDeviceManagerError.notSubscribed
+      throw AMDeviceManagerError.notSubscribed
     }
 
     let result = calls.NotificationUnsubscribe(subscription)
     guard result == 0 else {
-      throw FBAMDeviceManagerError.unsubscribeFailed(status: result)
+      throw AMDeviceManagerError.unsubscribeFailed(status: result)
     }
 
     // Balances the retain taken in startListening.
@@ -214,7 +214,7 @@ final class AMDeviceManager: DeviceManager<FBAMDevice> {
 
 }
 
-public enum FBAMDeviceManagerError: Error, LocalizedError {
+public enum AMDeviceManagerError: Error, LocalizedError {
   case alreadySubscribed
   case notSubscribed
   case subscribeFailed(status: Int32)

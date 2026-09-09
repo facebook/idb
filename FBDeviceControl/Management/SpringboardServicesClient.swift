@@ -8,14 +8,14 @@
 @preconcurrency import FBControlCore
 import Foundation
 
-public struct FBWallpaperName: RawRepresentable, Equatable, Hashable, Sendable {
+public struct WallpaperName: RawRepresentable, Equatable, Hashable, Sendable {
   public let rawValue: String
   public init(rawValue: String) { self.rawValue = rawValue }
 }
 
-extension FBWallpaperName {
-  public static let homescreen = FBWallpaperName(rawValue: "homescreen")
-  public static let lockscreen = FBWallpaperName(rawValue: "lockscreen")
+extension WallpaperName {
+  public static let homescreen = WallpaperName(rawValue: "homescreen")
+  public static let lockscreen = WallpaperName(rawValue: "lockscreen")
 }
 
 let FBSpringboardServiceName: String = "com.apple.springboardservices"
@@ -24,7 +24,7 @@ private let IconPlistFile = "icons.plist"
 private let IconJSONFile = "icons.json"
 private let IconLayoutSize: UInt = 4
 
-public enum FBSpringboardServicesError: Error, LocalizedError {
+public enum SpringboardServicesError: Error, LocalizedError {
   case unexpectedResponse(command: String, expected: String, actual: String)
   case invalidIconLayoutJSON(path: String)
   case invalidIconLayoutPlist(path: String)
@@ -111,9 +111,9 @@ class SpringboardServicesClient {
 
   // MARK: - Async
 
-  func getIconLayout() async throws -> FBSpringboardIconLayout {
+  func getIconLayout() async throws -> SpringboardIconLayout {
     let raw = try await getRawIconState(formatVersion: 2)
-    return try FBSpringboardIconLayout(rawValue: raw)
+    return try SpringboardIconLayout(rawValue: raw)
   }
 
   func getRawIconState(formatVersion: UInt) async throws -> AnyObject {
@@ -131,7 +131,7 @@ class SpringboardServicesClient {
     }
   }
 
-  func setIconLayout(_ iconLayout: FBSpringboardIconLayout) async throws {
+  func setIconLayout(_ iconLayout: SpringboardIconLayout) async throws {
     try await sendIconLayout(iconLayout.rawValue)
   }
 
@@ -145,7 +145,7 @@ class SpringboardServicesClient {
           let response = try connectionBox.connection.receive(Int(IconLayoutSize))
           if response.count != Int(IconLayoutSize) {
             continuation.resume(
-              throwing: FBSpringboardServicesError.unexpectedResponse(
+              throwing: SpringboardServicesError.unexpectedResponse(
                 command: "setIconState",
                 expected: "\(IconLayoutSize) response bytes",
                 actual: "\(response.count) response bytes"))
@@ -167,7 +167,7 @@ class SpringboardServicesClient {
           let result = try connectionBox.connection.sendAndReceiveMessage(["command": "getHomeScreenIconMetrics"])
           guard let metrics = result as? [String: Any] else {
             continuation.resume(
-              throwing: FBSpringboardServicesError.unexpectedResponse(
+              throwing: SpringboardServicesError.unexpectedResponse(
                 command: "getHomeScreenIconMetrics",
                 expected: "a dictionary",
                 actual: String(describing: result)))
@@ -188,11 +188,11 @@ class SpringboardServicesClient {
         do {
           let response = try connectionBox.connection.sendAndReceiveMessage(["command": "getWallpaperPreviewImage", "wallpaperName": name])
           guard let responseDict = response as? [String: Any] else {
-            continuation.resume(throwing: FBSpringboardServicesError.responseNotADictionary(response: String(describing: response)))
+            continuation.resume(throwing: SpringboardServicesError.responseNotADictionary(response: String(describing: response)))
             return
           }
           guard let data = responseDict["pngData"] as? Data else {
-            continuation.resume(throwing: FBSpringboardServicesError.missingImageData(response: String(describing: responseDict)))
+            continuation.resume(throwing: SpringboardServicesError.missingImageData(response: String(describing: responseDict)))
             return
           }
           continuation.resume(returning: data)
@@ -226,19 +226,19 @@ class SpringboardServicesIconContainer: AsyncFileContainer {
   }
 
   func tail(_ path: String, to consumer: any FBDataConsumer) async throws -> FileContainerTailOperation {
-    throw FBSpringboardServicesError.tailNotImplemented
+    throw SpringboardServicesError.tailNotImplemented
   }
 
   func createDirectory(_ directoryPath: String) async throws {
-    throw FBSpringboardServicesError.operationUnsupported(operation: "createDirectory")
+    throw SpringboardServicesError.operationUnsupported(operation: "createDirectory")
   }
 
   func move(from sourcePath: String, to destinationPath: String) async throws {
-    throw FBSpringboardServicesError.operationUnsupported(operation: "moveFrom")
+    throw SpringboardServicesError.operationUnsupported(operation: "moveFrom")
   }
 
   func remove(_ path: String) async throws {
-    throw FBSpringboardServicesError.operationUnsupported(operation: "remove")
+    throw SpringboardServicesError.operationUnsupported(operation: "remove")
   }
 
   func contents(ofDirectory path: String) async throws -> [String] {
@@ -250,7 +250,7 @@ class SpringboardServicesIconContainer: AsyncFileContainer {
   fileprivate func copyFromContainer(sourcePath: String, toHost destinationPath: String) async throws -> String {
     let filename = (sourcePath as NSString).lastPathComponent
     guard validFilenames.contains(filename) else {
-      throw FBSpringboardServicesError.invalidIconLayoutFile(filename: filename, validFilenames: validFilenames)
+      throw SpringboardServicesError.invalidIconLayoutFile(filename: filename, validFilenames: validFilenames)
     }
     let layout = try await client.getIconLayout()
     if filename == IconJSONFile {
@@ -270,12 +270,12 @@ class SpringboardServicesIconContainer: AsyncFileContainer {
 
   // MARK: - Private
 
-  private func iconLayoutFromSourcePath(_ sourcePath: String, toDestinationFile filename: String) async throws -> FBSpringboardIconLayout {
+  private func iconLayoutFromSourcePath(_ sourcePath: String, toDestinationFile filename: String) async throws -> SpringboardIconLayout {
     if filename == IconJSONFile {
       let data = try Data(contentsOf: URL(fileURLWithPath: sourcePath))
       let jsonObject = try JSONSerialization.jsonObject(with: data, options: [])
       guard let layout = jsonObject as? IconLayoutJSONType else {
-        throw FBSpringboardServicesError.invalidIconLayoutJSON(path: sourcePath)
+        throw SpringboardServicesError.invalidIconLayoutJSON(path: sourcePath)
       }
       return try await convertJSONFormatToWireFormat(layout)
     }
@@ -283,15 +283,15 @@ class SpringboardServicesIconContainer: AsyncFileContainer {
       let data = try Data(contentsOf: URL(fileURLWithPath: sourcePath))
       let layout = try PropertyListSerialization.propertyList(from: data, options: [], format: nil)
       do {
-        return try FBSpringboardIconLayout(rawValue: layout)
+        return try SpringboardIconLayout(rawValue: layout)
       } catch {
-        throw FBSpringboardServicesError.invalidIconLayoutPlist(path: sourcePath)
+        throw SpringboardServicesError.invalidIconLayoutPlist(path: sourcePath)
       }
     }
-    throw FBSpringboardServicesError.invalidIconLayoutFile(filename: filename, validFilenames: validFilenames)
+    throw SpringboardServicesError.invalidIconLayoutFile(filename: filename, validFilenames: validFilenames)
   }
 
-  private func convertJSONFormatToWireFormat(_ jsonFormat: IconLayoutJSONType) async throws -> FBSpringboardIconLayout {
+  private func convertJSONFormatToWireFormat(_ jsonFormat: IconLayoutJSONType) async throws -> SpringboardIconLayout {
     let currentLayout = try await client.getIconLayout()
     let iconsByBundleID = currentLayout.iconsByBundleID
     var format: [[[String: Any]]] = []
@@ -304,19 +304,19 @@ class SpringboardServicesIconContainer: AsyncFileContainer {
       }
       format.append(fullPage)
     }
-    return FBSpringboardIconLayout(pages: format)
+    return SpringboardIconLayout(pages: format)
   }
 }
 
 extension FBDevice {
 
-  public func getSpringboardIconLayout() async throws -> FBSpringboardIconLayout {
+  public func getSpringboardIconLayout() async throws -> SpringboardIconLayout {
     try await withSpringboardServicesClient { client in
       try await client.getIconLayout()
     }
   }
 
-  public func setSpringboardIconLayout(_ layout: FBSpringboardIconLayout) async throws {
+  public func setSpringboardIconLayout(_ layout: SpringboardIconLayout) async throws {
     try await withSpringboardServicesClient { client in
       try await client.setIconLayout(layout)
     }

@@ -55,7 +55,7 @@ public final class DeviceSocketForwardingCommands {
     remotePort: Int32
   ) async throws {
     guard let device else {
-      throw FBDeviceNilError.deviceNil
+      throw DeviceNilError.deviceNil
     }
     var error: NSError?
     guard let localConsumer = FBFileWriter.asyncWriter(withFileDescriptor: localFileDescriptorOutput, closeOnEndOfFile: false, error: &error) else {

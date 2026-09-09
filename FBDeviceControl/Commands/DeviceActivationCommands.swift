@@ -68,7 +68,7 @@ public final class DeviceActivationCommands {
 
   fileprivate func activate() async throws {
     guard let device else {
-      throw FBDeviceNilError.deviceNil
+      throw DeviceNilError.deviceNil
     }
     let logger = device.logger
     let state = try await activationState()
@@ -95,7 +95,7 @@ public final class DeviceActivationCommands {
 
   private func performActivation() async throws {
     guard let device else {
-      throw FBDeviceNilError.deviceNil
+      throw DeviceNilError.deviceNil
     }
     let logger = device.logger
     try await confirmActivationState(DeviceActivationState.unactivated)
@@ -111,7 +111,7 @@ public final class DeviceActivationCommands {
 
   private func withMobileActivationService<T>(_ body: (FBAMDServiceConnection) async throws -> T) async throws -> T {
     guard let device else {
-      throw FBDeviceNilError.deviceNil
+      throw DeviceNilError.deviceNil
     }
     return try await device.withServiceConnection("com.apple.mobileactivationd", body)
   }

@@ -108,7 +108,7 @@ public final class DeviceDeveloperDiskImageCommands: DeveloperDiskImageCommands 
 
   public func ensureDeveloperDiskImageIsMounted() async throws -> FBDeveloperDiskImage {
     guard let device else {
-      throw FBDeviceNilError.deviceNil
+      throw DeviceNilError.deviceNil
     }
     guard let productVersion = device.productVersion else {
       throw DeviceDiskImageError.noProductVersion(deviceDescription: String(describing: device))
@@ -146,7 +146,7 @@ public final class DeviceDeveloperDiskImageCommands: DeveloperDiskImageCommands 
 
   private func mountedImageEntries() async throws -> [[String: Any]] {
     guard let device else {
-      throw FBDeviceNilError.deviceNil
+      throw DeviceNilError.deviceNil
     }
     return try await device.withServiceConnection(ImageMounterService) { connection in
       let request: [String: Any] = [
@@ -187,7 +187,7 @@ public final class DeviceDeveloperDiskImageCommands: DeveloperDiskImageCommands 
 
   private func performDiskImageMount(_ diskImage: FBDeveloperDiskImage, imageType: String) async throws -> FBDeveloperDiskImage {
     guard let device else {
-      throw FBDeviceNilError.deviceNil
+      throw DeviceNilError.deviceNil
     }
     return try await device.withConnectedDevice(purpose: "mount_disk_image") { connectedDevice in
       let options: [String: Any] = [
@@ -215,7 +215,7 @@ public final class DeviceDeveloperDiskImageCommands: DeveloperDiskImageCommands 
 
   private func unmountDiskImageAtPath(_ mountPath: String) async throws {
     guard let device else {
-      throw FBDeviceNilError.deviceNil
+      throw DeviceNilError.deviceNil
     }
     try await device.withServiceConnection(ImageMounterService) { connection in
       let request: [String: Any] = [

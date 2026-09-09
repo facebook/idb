@@ -19,7 +19,7 @@ public final class FBDeviceSet: FBiOSTargetSet, FBiOSTargetSetDelegate, CustomSt
 
   private let amDeviceManager: AMDeviceManager
   private let restorableDeviceManager: AMRestorableDeviceManager
-  private let storage: FBDeviceStorage<FBDevice>
+  private let storage: DeviceStorage<FBDevice>
   public let logger: any FBControlCoreLogger
   public weak var delegate: (any FBiOSTargetSetDelegate)?
 
@@ -39,7 +39,7 @@ public final class FBDeviceSet: FBiOSTargetSet, FBiOSTargetSetDelegate, CustomSt
     self.restorableDeviceManager = restorableDeviceManager
     self.logger = logger
     self.delegate = delegate
-    self.storage = FBDeviceStorage<FBDevice>(logger: logger)
+    self.storage = DeviceStorage<FBDevice>(logger: logger)
     subscribeToDeviceNotifications()
   }
 

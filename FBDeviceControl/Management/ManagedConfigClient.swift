@@ -31,7 +31,7 @@ private final class ManagedConfigDataBox: @unchecked Sendable {
   }
 }
 
-public enum FBManagedConfigError: Error {
+public enum ManagedConfigError: Error {
   case invalidWallpaperName(name: String)
   case orderedIdentifiersMissing(key: String)
   case orderedIdentifiersNotStrings(key: String)
@@ -39,7 +39,7 @@ public enum FBManagedConfigError: Error {
   case removeFailed(response: String)
 }
 
-extension FBManagedConfigError: LocalizedError {
+extension ManagedConfigError: LocalizedError {
   public var errorDescription: String? {
     switch self {
     case let .invalidWallpaperName(name):
@@ -66,8 +66,8 @@ class ManagedConfigClient {
   static let serviceName: String = "com.apple.mobile.MCInstall"
 
   private static let wallpaperWhereForName: [String: NSNumber] = [
-    FBWallpaperName.homescreen.rawValue: 0,
-    FBWallpaperName.lockscreen.rawValue: 1,
+    WallpaperName.homescreen.rawValue: 0,
+    WallpaperName.lockscreen.rawValue: 1,
   ]
 
   // MARK: - Initializers
@@ -110,7 +110,7 @@ class ManagedConfigClient {
 
   func changeWallpaper(name: String, data: Data) async throws {
     guard let whereNumber = ManagedConfigClient.wallpaperWhereForName[name] else {
-      throw FBManagedConfigError.invalidWallpaperName(name: name)
+      throw ManagedConfigError.invalidWallpaperName(name: name)
     }
     try await changeSettings(settings: [["Item": "Wallpaper", "Image": data, "Where": whereNumber]])
   }
@@ -126,11 +126,11 @@ class ManagedConfigClient {
             return
           }
           guard let orderedIdentifiers = resultDict[OrderedIdentifiers] as? [Any] else {
-            continuation.resume(throwing: FBManagedConfigError.orderedIdentifiersMissing(key: OrderedIdentifiers))
+            continuation.resume(throwing: ManagedConfigError.orderedIdentifiersMissing(key: OrderedIdentifiers))
             return
           }
           guard let identifiers = orderedIdentifiers as? [String] else {
-            continuation.resume(throwing: FBManagedConfigError.orderedIdentifiersNotStrings(key: OrderedIdentifiers))
+            continuation.resume(throwing: ManagedConfigError.orderedIdentifiersNotStrings(key: OrderedIdentifiers))
             return
           }
           continuation.resume(returning: identifiers)
@@ -175,7 +175,7 @@ class ManagedConfigClient {
             let profileMetadata = metadata[profileName] as? [String: Any]
           else {
             let identifiers = resultDict[OrderedIdentifiers] as? [Any] ?? []
-            continuation.resume(throwing: FBManagedConfigError.profileNotInstalled(profileName: profileName, identifiers: identifiers))
+            continuation.resume(throwing: ManagedConfigError.profileNotInstalled(profileName: profileName, identifiers: identifiers))
             return
           }
           let profileIdentifier: [String: Any] = [
@@ -191,7 +191,7 @@ class ManagedConfigClient {
             return
           }
           if (removeResultDict["Status"] as? String) == "Error" {
-            continuation.resume(throwing: FBManagedConfigError.removeFailed(response: String(describing: removeResultDict)))
+            continuation.resume(throwing: ManagedConfigError.removeFailed(response: String(describing: removeResultDict)))
             return
           }
           continuation.resume(returning: ())

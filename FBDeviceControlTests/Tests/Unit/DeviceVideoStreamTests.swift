@@ -21,8 +21,8 @@ struct DeviceVideoStreamTests {
     FBVideoStreamConfiguration(format: format, framesPerSecond: nil, rateControl: nil, scaleFactor: nil, keyFrameRate: nil)
   }
 
-  private func makeStream(for format: FBVideoStreamFormat, consumer: (any FBDataConsumer)?) throws -> FBDeviceVideoStream {
-    let streamType = try #require(FBDeviceVideoStream.classForConfiguration(configuration(format)), "Expected a stream type for \(format)")
+  private func makeStream(for format: FBVideoStreamFormat, consumer: (any FBDataConsumer)?) throws -> DeviceVideoStream {
+    let streamType = try #require(DeviceVideoStream.classForConfiguration(configuration(format)), "Expected a stream type for \(format)")
     let stream = streamType.init(
       session: AVCaptureSession(),
       output: AVCaptureVideoDataOutput(),
@@ -37,17 +37,17 @@ struct DeviceVideoStreamTests {
 
   @Test
   func classForConfigurationResolvesSupportedFormats() {
-    #expect((FBDeviceVideoStream.classForConfiguration(configuration(.bgra))) != nil)
-    #expect((FBDeviceVideoStream.classForConfiguration(configuration(.mjpeg(encoder: .requireHardware)))) != nil)
-    #expect((FBDeviceVideoStream.classForConfiguration(configuration(.minicap))) != nil)
-    #expect((FBDeviceVideoStream.classForConfiguration(configuration(.compressedVideo(withCodec: .h264, transport: .annexB)))) != nil)
-    #expect((FBDeviceVideoStream.classForConfiguration(configuration(.compressedVideo(withCodec: .h264, transport: .mpegts)))) != nil)
+    #expect((DeviceVideoStream.classForConfiguration(configuration(.bgra))) != nil)
+    #expect((DeviceVideoStream.classForConfiguration(configuration(.mjpeg(encoder: .requireHardware)))) != nil)
+    #expect((DeviceVideoStream.classForConfiguration(configuration(.minicap))) != nil)
+    #expect((DeviceVideoStream.classForConfiguration(configuration(.compressedVideo(withCodec: .h264, transport: .annexB)))) != nil)
+    #expect((DeviceVideoStream.classForConfiguration(configuration(.compressedVideo(withCodec: .h264, transport: .mpegts)))) != nil)
   }
 
   @Test
   func classForConfigurationDistinguishesH264Transports() throws {
-    let annexB = try #require(FBDeviceVideoStream.classForConfiguration(configuration(.compressedVideo(withCodec: .h264, transport: .annexB))))
-    let mpegts = try #require(FBDeviceVideoStream.classForConfiguration(configuration(.compressedVideo(withCodec: .h264, transport: .mpegts))))
+    let annexB = try #require(DeviceVideoStream.classForConfiguration(configuration(.compressedVideo(withCodec: .h264, transport: .annexB))))
+    let mpegts = try #require(DeviceVideoStream.classForConfiguration(configuration(.compressedVideo(withCodec: .h264, transport: .mpegts))))
     #expect((String(describing: annexB).contains("H264")))
     #expect((String(describing: mpegts).contains("MPEGTS")))
     #expect(!(annexB == mpegts))
@@ -56,8 +56,8 @@ struct DeviceVideoStreamTests {
   @Test
   func classForConfigurationRejectsHEVC() {
     // HEVC is not supported on the device path.
-    #expect((FBDeviceVideoStream.classForConfiguration(configuration(.compressedVideo(withCodec: .hevc, transport: .annexB)))) == nil)
-    #expect((FBDeviceVideoStream.classForConfiguration(configuration(.compressedVideo(withCodec: .hevc, transport: .mpegts)))) == nil)
+    #expect((DeviceVideoStream.classForConfiguration(configuration(.compressedVideo(withCodec: .hevc, transport: .annexB)))) == nil)
+    #expect((DeviceVideoStream.classForConfiguration(configuration(.compressedVideo(withCodec: .hevc, transport: .mpegts)))) == nil)
   }
 
   // MARK: - consumeSampleBuffer byte contracts

@@ -102,7 +102,7 @@ final class AMRestorableDeviceManager: DeviceManager<FBAMRestorableDevice> {
       0)
     guard registrationID >= 1 else {
       Unmanaged<AMRestorableDeviceManager>.fromOpaque(context).release()
-      throw FBAMRestorableDeviceManagerError.registrationFailed(status: registrationID)
+      throw AMRestorableDeviceManagerError.registrationFailed(status: registrationID)
     }
     self.registrationID = registrationID
     self.notificationContext = context
@@ -112,7 +112,7 @@ final class AMRestorableDeviceManager: DeviceManager<FBAMRestorableDevice> {
     let registrationID = self.registrationID
     self.registrationID = 0
     guard registrationID >= 1 else {
-      throw FBAMRestorableDeviceManagerError.notRegistered
+      throw AMRestorableDeviceManagerError.notRegistered
     }
 
     // The return of AMRestorableDeviceUnregisterForNotifications seems to be some random number.
@@ -166,7 +166,7 @@ final class AMRestorableDeviceManager: DeviceManager<FBAMRestorableDevice> {
   }
 }
 
-public enum FBAMRestorableDeviceManagerError: Error, LocalizedError {
+public enum AMRestorableDeviceManagerError: Error, LocalizedError {
   case registrationFailed(status: Int32)
   case notRegistered
 

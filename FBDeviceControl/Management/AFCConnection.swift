@@ -24,7 +24,7 @@ private func afcConnectionCallback(
   logger.log("Connection \(String(describing: connectionRefPtr)), operation \(String(describing: afcOperationPtr))")
 }
 
-public enum FBAFCConnectionError: Error {
+public enum AFCConnectionError: Error {
   case createDirectoryFailed(message: String)
   case openDirectoryFailed(path: String, message: String)
   case openFileFailed(path: String, message: String)
@@ -45,7 +45,7 @@ public enum FBAFCConnectionError: Error {
   case operationFailedWithUnderlying(info: String, code: Int)
 }
 
-extension FBAFCConnectionError: LocalizedError {
+extension AFCConnectionError: LocalizedError {
   public var errorDescription: String? {
     switch self {
     case let .createDirectoryFailed(message):
@@ -125,7 +125,7 @@ public final class FBAFCConnection {
       // Discarding the close error: the caller's failure is the invalidity, not whatever closing
       // an already-invalid client reports.
       try? connection.close()
-      throw FBAFCConnectionError.connectionNotValid(description: String(describing: connection))
+      throw AFCConnectionError.connectionNotValid(description: String(describing: connection))
     }
     return connection
   }
@@ -135,7 +135,7 @@ public final class FBAFCConnection {
   public func copy(fromHost hostPath: String, toContainerPath containerPath: String) throws {
     var isDirectory: ObjCBool = false
     guard FileManager.default.fileExists(atPath: hostPath, isDirectory: &isDirectory) else {
-      throw FBAFCConnectionError.hostFileMissing(path: hostPath)
+      throw AFCConnectionError.hostFileMissing(path: hostPath)
     }
     let lastComponent = (hostPath as NSString).lastPathComponent
     if isDirectory.boolValue {
@@ -153,7 +153,7 @@ public final class FBAFCConnection {
     logger?.log("Creating Directory \(path)")
     let result = calls.DirectoryCreate(connection, path)
     guard result == 0 else {
-      throw FBAFCConnectionError.createDirectoryFailed(message: errorMessage(code: result))
+      throw AFCConnectionError.createDirectoryFailed(message: errorMessage(code: result))
     }
     logger?.log("Created Directory \(path)")
   }
@@ -163,7 +163,7 @@ public final class FBAFCConnection {
     var directory: Unmanaged<CFTypeRef>?
     let result = calls.DirectoryOpen(connection, path, &directory)
     guard result == 0 else {
-      throw FBAFCConnectionError.openDirectoryFailed(path: path, message: errorMessage(code: result))
+      throw AFCConnectionError.openDirectoryFailed(path: path, message: errorMessage(code: result))
     }
     let directoryRef = directory?.takeUnretainedValue()
 
@@ -191,7 +191,7 @@ public final class FBAFCConnection {
     var file: Unmanaged<CFTypeRef>?
     let result = calls.FileRefOpen(connection, path, FBAFCReadOnlyMode, &file)
     guard result == 0 else {
-      throw FBAFCConnectionError.openFileFailed(path: path, message: errorMessage(code: result))
+      throw AFCConnectionError.openFileFailed(path: path, message: errorMessage(code: result))
     }
     let fileRef = file?.takeUnretainedValue()
 
@@ -219,7 +219,7 @@ public final class FBAFCConnection {
     }
     _ = calls.FileRefClose(connection, fileRef)
     guard readResult == 0 else {
-      throw FBAFCConnectionError.readFileFailed(path: path, message: errorMessage(code: readResult))
+      throw AFCConnectionError.readFileFailed(path: path, message: errorMessage(code: readResult))
     }
     logger?.log("Read \(buffer.count) bytes from path \(path)")
     return buffer
@@ -233,7 +233,7 @@ public final class FBAFCConnection {
     logger?.log("Removing file path \(path)")
     let result = calls.RemovePath(connection, path)
     guard result == 0 else {
-      throw FBAFCConnectionError.removePathFailed(path: path, message: errorMessage(code: result))
+      throw AFCConnectionError.removePathFailed(path: path, message: errorMessage(code: result))
     }
     logger?.log("Removed file path \(path)")
   }
@@ -241,21 +241,21 @@ public final class FBAFCConnection {
   func renamePath(_ path: String, destination: String) throws {
     let result = calls.RenamePath(connection, path, destination)
     guard result == 0 else {
-      throw FBAFCConnectionError.renamePathFailed(
+      throw AFCConnectionError.renamePathFailed(
         path: path, destination: destination, message: errorMessage(code: result))
     }
   }
 
   public func close() throws {
     guard let connectionRef else {
-      throw FBAFCConnectionError.noConnectionToClose
+      throw AFCConnectionError.noConnectionToClose
     }
     let reference = connectionRef.takeUnretainedValue()
     let connectionDescription = CFCopyDescription(reference) as String? ?? "unknown"
     logger?.log("Closing \(connectionDescription)")
     let status = calls.ConnectionClose(reference)
     guard status == 0 else {
-      throw FBAFCConnectionError.closeFailed(status: status)
+      throw AFCConnectionError.closeFailed(status: status)
     }
     logger?.log("Closed AFC Connection \(connectionDescription)")
     self.connectionRef = nil
@@ -307,12 +307,12 @@ public final class FBAFCConnection {
   private func copyFile(fromHost hostPath: String, toContainerPath containerPath: String) throws {
     logger?.log("Copying \(hostPath) to \(containerPath)")
     guard let data = FileManager.default.contents(atPath: hostPath) else {
-      throw FBAFCConnectionError.hostFileMissing(path: hostPath)
+      throw AFCConnectionError.hostFileMissing(path: hostPath)
     }
     var fileReference: Unmanaged<CFTypeRef>?
     let result = calls.FileRefOpen(connection, containerPath, FBAFCreateReadAndWrite, &fileReference)
     guard result == 0 else {
-      throw FBAFCConnectionError.openFileFailed(path: containerPath, message: errorMessage(code: result))
+      throw AFCConnectionError.openFileFailed(path: containerPath, message: errorMessage(code: result))
     }
     let fileRef = fileReference?.takeUnretainedValue()
 
@@ -332,7 +332,7 @@ public final class FBAFCConnection {
     }
     _ = calls.FileRefClose(connection, fileRef)
     guard writeResult == 0 else {
-      throw FBAFCConnectionError.writeFileFailed(path: containerPath, message: errorMessage(code: writeResult))
+      throw AFCConnectionError.writeFileFailed(path: containerPath, message: errorMessage(code: writeResult))
     }
     logger?.log("Copied from \(hostPath) to \(containerPath)")
   }
@@ -365,11 +365,11 @@ public final class FBAFCConnection {
       let operation = calls.OperationCreateRemovePathAndContents(
         CFGetAllocator(connection), path as CFString, nil)?.takeRetainedValue()
     else {
-      throw FBAFCConnectionError.removalOperationNotCreated(path: path)
+      throw AFCConnectionError.removalOperationNotCreated(path: path)
     }
     let processResult = calls.ConnectionProcessOperation(connection, operation)
     guard processResult == 0 else {
-      throw FBAFCConnectionError.operationNotProcessed(status: processResult)
+      throw AFCConnectionError.operationNotProcessed(status: processResult)
     }
     try checkOperationSucceeded(operation)
   }
@@ -381,12 +381,12 @@ public final class FBAFCConnection {
     }
     let resultObject = calls.OperationGetResultObject(operation)?.takeUnretainedValue()
     guard let info = resultObject as? [String: Any] else {
-      throw FBAFCConnectionError.operationFailed(status: status, resultObject: String(describing: resultObject))
+      throw AFCConnectionError.operationFailed(status: status, resultObject: String(describing: resultObject))
     }
     guard let code = info[AFCCodeKey] as? NSNumber, info[AFCDomainKey] is String else {
-      throw FBAFCConnectionError.operationFailed(status: status, resultObject: String(describing: info))
+      throw AFCConnectionError.operationFailed(status: status, resultObject: String(describing: info))
     }
-    throw FBAFCConnectionError.operationFailedWithUnderlying(
+    throw AFCConnectionError.operationFailedWithUnderlying(
       info: String(describing: info), code: code.intValue)
   }
 

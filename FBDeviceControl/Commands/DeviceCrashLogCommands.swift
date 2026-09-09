@@ -80,7 +80,7 @@ public final class DeviceCrashLogCommands {
 
   fileprivate func crashes(_ predicate: NSPredicate, useCache: Bool) async throws -> [FBCrashLogInfo] {
     guard device != nil else {
-      throw FBDeviceNilError.deviceNil
+      throw DeviceNilError.deviceNil
     }
     _ = try await ingestAllCrashLogs(useCache: useCache)
     return store.ingestedCrashLogs(matchingPredicate: predicate)
@@ -88,7 +88,7 @@ public final class DeviceCrashLogCommands {
 
   fileprivate func pruneCrashes(_ predicate: NSPredicate) async throws -> [FBCrashLogInfo] {
     guard let device else {
-      throw FBDeviceNilError.deviceNil
+      throw DeviceNilError.deviceNil
     }
     let logger = device.logger.withName("crash_remove")
     _ = try await ingestAllCrashLogs(useCache: true)
@@ -105,7 +105,7 @@ public final class DeviceCrashLogCommands {
       return []
     }
     guard let device else {
-      throw FBDeviceNilError.deviceNil
+      throw DeviceNilError.deviceNil
     }
     let logger = device.logger
     _ = try await moveCrashReports()
@@ -130,7 +130,7 @@ public final class DeviceCrashLogCommands {
 
   private func removeCrashLogsFromDevice(_ crashesToRemove: [FBCrashLogInfo], logger: (any FBControlCoreLogger)?) async throws -> [FBCrashLogInfo] {
     guard device != nil else {
-      throw FBDeviceNilError.deviceNil
+      throw DeviceNilError.deviceNil
     }
     return try await withCrashReportFileConnection { afc in
       var removed: [FBCrashLogInfo] = []
@@ -162,7 +162,7 @@ public final class DeviceCrashLogCommands {
 
   private func moveCrashReports() async throws -> String {
     guard let device else {
-      throw FBDeviceNilError.deviceNil
+      throw DeviceNilError.deviceNil
     }
     return try await device.withServiceConnection(CrashReportMoverService) { connection in
       let data: Data
@@ -183,7 +183,7 @@ public final class DeviceCrashLogCommands {
 
   private func withCrashReportFileConnection<T>(_ body: (FBAFCConnection) async throws -> T) async throws -> T {
     guard let device else {
-      throw FBDeviceNilError.deviceNil
+      throw DeviceNilError.deviceNil
     }
     return try await device.withAFCConnection(CrashReportCopyService, calls: afcCalls, body)
   }

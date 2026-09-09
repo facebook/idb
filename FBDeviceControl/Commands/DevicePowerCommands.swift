@@ -21,7 +21,7 @@ public final class DevicePowerCommands {
 
   fileprivate func sendRelayCommand(_ request: String) async throws {
     guard let device else {
-      throw FBDeviceNilError.deviceNil
+      throw DeviceNilError.deviceNil
     }
     try await device.withServiceConnection("com.apple.mobile.diagnostics_relay") { connection in
       guard let result = try connection.sendAndReceiveMessage(["Request": request]) as? NSDictionary else {

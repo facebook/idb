@@ -12,11 +12,11 @@ import Testing
 @Suite
 struct DeviceControlTransientTests {
 
-  // MARK: - FBDeviceStorage Tests
+  // MARK: - DeviceStorage Tests
 
   @Test
   func attachAndLookupDevice() {
-    let storage = FBDeviceStorage<NSString>(logger: FBControlCoreGlobalConfiguration.defaultLogger)
+    let storage = DeviceStorage<NSString>(logger: FBControlCoreGlobalConfiguration.defaultLogger)
     storage.deviceAttached("device1" as NSString, forKey: "key1")
 
     let retrieved = storage.device(forKey: "key1") as? NSString
@@ -25,7 +25,7 @@ struct DeviceControlTransientTests {
 
   @Test
   func attachedPropertyReflectsAttachedDevices() {
-    let storage = FBDeviceStorage<NSString>(logger: FBControlCoreGlobalConfiguration.defaultLogger)
+    let storage = DeviceStorage<NSString>(logger: FBControlCoreGlobalConfiguration.defaultLogger)
     storage.deviceAttached("device1" as NSString, forKey: "key1")
     storage.deviceAttached("device2" as NSString, forKey: "key2")
 
@@ -37,7 +37,7 @@ struct DeviceControlTransientTests {
 
   @Test
   func detachRemovesFromAttached() {
-    let storage = FBDeviceStorage<NSString>(logger: FBControlCoreGlobalConfiguration.defaultLogger)
+    let storage = DeviceStorage<NSString>(logger: FBControlCoreGlobalConfiguration.defaultLogger)
     storage.deviceAttached("device1" as NSString, forKey: "key1")
     storage.deviceDetached(forKey: "key1")
 
@@ -47,14 +47,14 @@ struct DeviceControlTransientTests {
 
   @Test
   func lookupReturnsNilForUnknownKey() {
-    let storage = FBDeviceStorage<NSString>(logger: FBControlCoreGlobalConfiguration.defaultLogger)
+    let storage = DeviceStorage<NSString>(logger: FBControlCoreGlobalConfiguration.defaultLogger)
     let result = storage.device(forKey: "nonexistent")
     #expect((result) == nil)
   }
 
   @Test
   func reattachUpdatesDevice() {
-    let storage = FBDeviceStorage<NSString>(logger: FBControlCoreGlobalConfiguration.defaultLogger)
+    let storage = DeviceStorage<NSString>(logger: FBControlCoreGlobalConfiguration.defaultLogger)
     storage.deviceAttached("old" as NSString, forKey: "key1")
     storage.deviceAttached("new" as NSString, forKey: "key1")
 
@@ -64,7 +64,7 @@ struct DeviceControlTransientTests {
 
   @Test
   func referencedPropertyTracksAllKnownDevices() {
-    let storage = FBDeviceStorage<NSString>(logger: FBControlCoreGlobalConfiguration.defaultLogger)
+    let storage = DeviceStorage<NSString>(logger: FBControlCoreGlobalConfiguration.defaultLogger)
     storage.deviceAttached("d1" as NSString, forKey: "k1")
     storage.deviceAttached("d2" as NSString, forKey: "k2")
 
@@ -86,7 +86,7 @@ struct DeviceControlTransientTests {
 
   @Test
   func attachAndLookupNativeSwiftDevice() {
-    let storage = FBDeviceStorage<NativeDevice>(logger: FBControlCoreGlobalConfiguration.defaultLogger)
+    let storage = DeviceStorage<NativeDevice>(logger: FBControlCoreGlobalConfiguration.defaultLogger)
     let device = NativeDevice()
     storage.deviceAttached(device, forKey: "key1")
 
@@ -97,7 +97,7 @@ struct DeviceControlTransientTests {
 
   @Test
   func detachedNativeSwiftDeviceIsStillLookupableWhileHeld() {
-    let storage = FBDeviceStorage<NativeDevice>(logger: FBControlCoreGlobalConfiguration.defaultLogger)
+    let storage = DeviceStorage<NativeDevice>(logger: FBControlCoreGlobalConfiguration.defaultLogger)
     let device = NativeDevice()
     storage.deviceAttached(device, forKey: "key1")
     storage.deviceDetached(forKey: "key1")
@@ -109,7 +109,7 @@ struct DeviceControlTransientTests {
 
   @Test
   func detachedNativeSwiftDeviceLeavesTheReferenceMapOnceReleased() {
-    let storage = FBDeviceStorage<NativeDevice>(logger: FBControlCoreGlobalConfiguration.defaultLogger)
+    let storage = DeviceStorage<NativeDevice>(logger: FBControlCoreGlobalConfiguration.defaultLogger)
     // The device goes into the reference map through an Objective-C accessor, which can leave an
     // autoreleased reference behind, so it is released inside a pool of its own rather than
     // relying on the scope end alone to be the point of deallocation.
@@ -123,24 +123,24 @@ struct DeviceControlTransientTests {
     #expect(storage.referenced.isEmpty)
   }
 
-  // MARK: - FBDeviceControlError Tests
+  // MARK: - DeviceControlError Tests
 
   @Test
   func errorBuilderCreatesErrorInCorrectDomain() {
-    let nsError = FBDeviceControlError.describe("test error").build() as NSError
+    let nsError = DeviceControlError.describe("test error").build() as NSError
     #expect((nsError.domain) == ("com.facebook.FBDeviceControl"))
   }
 
   @Test
   func errorBuilderWithDescription() {
-    let nsError = FBDeviceControlError.describe("error foo 42").build() as NSError
+    let nsError = DeviceControlError.describe("error foo 42").build() as NSError
     #expect((nsError.localizedDescription.contains("foo")))
     #expect((nsError.localizedDescription.contains("42")))
   }
 
   @Test
   func errorFailFuture() async {
-    let future: FBFuture<AnyObject> = FBDeviceControlError.describe("future error").failFuture()
+    let future: FBFuture<AnyObject> = DeviceControlError.describe("future error").failFuture()
     do {
       _ = try await bridgeFBFuture(future)
       Issue.record("Expected future to throw")
@@ -184,8 +184,8 @@ struct DeviceControlTransientTests {
 
   @Test
   func wallpaperNameConstants() {
-    #expect((FBWallpaperName.homescreen.rawValue) == ("homescreen"))
-    #expect((FBWallpaperName.lockscreen.rawValue) == ("lockscreen"))
+    #expect((WallpaperName.homescreen.rawValue) == ("homescreen"))
+    #expect((WallpaperName.lockscreen.rawValue) == ("lockscreen"))
   }
 
   // MARK: - Springboard Service Name Constants

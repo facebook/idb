@@ -63,7 +63,7 @@ public final class DeviceLogCommands {
 
   public func tailLog(_ arguments: [String], consumer: any FBDataConsumer) async throws -> DeviceLogOperation {
     guard let device else {
-      throw FBDeviceNilError.deviceNil
+      throw DeviceNilError.deviceNil
     }
     if !arguments.isEmpty {
       let unsupportedArgumentsMessage = "[DeviceLogCommands][rdar://38452839] Unsupported arguments: \(arguments)"

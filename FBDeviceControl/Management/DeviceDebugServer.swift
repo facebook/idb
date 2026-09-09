@@ -100,7 +100,7 @@ private class DeviceDebugServer_TwistedPairFiles {
   }
 }
 
-public final class FBDeviceDebugServer: NSObject, FBSocketServerDelegate, FBDebugServer {
+public final class DeviceDebugServer: NSObject, FBSocketServerDelegate, FBDebugServer {
   private let serviceConnection: FBAMDServiceConnection
   private lazy var tcpServer: FBSocketServer = FBSocketServer(onPort: self.port, delegate: self)
   private let port: in_port_t
@@ -126,8 +126,8 @@ public final class FBDeviceDebugServer: NSObject, FBSocketServerDelegate, FBDebu
     lldbBootstrapCommands: [String],
     queue: DispatchQueue,
     logger: any FBControlCoreLogger
-  ) async throws -> FBDeviceDebugServer {
-    let server = FBDeviceDebugServer(
+  ) async throws -> DeviceDebugServer {
+    let server = DeviceDebugServer(
       serviceConnection: serviceConnection,
       port: port,
       lldbBootstrapCommands: lldbBootstrapCommands,

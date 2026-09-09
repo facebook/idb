@@ -48,7 +48,7 @@ public final class DeviceRecoveryCommands {
 
   fileprivate func enterRecovery() async throws {
     guard let device else {
-      throw FBDeviceNilError.deviceNil
+      throw DeviceNilError.deviceNil
     }
     try await device.withConnectedDevice(purpose: "enter_recovery") { connectedDevice in
       guard let enterRecoveryFunc = connectedDevice.calls.EnterRecovery else {
@@ -63,7 +63,7 @@ public final class DeviceRecoveryCommands {
 
   fileprivate func exitRecovery() async throws {
     guard let device else {
-      throw FBDeviceNilError.deviceNil
+      throw DeviceNilError.deviceNil
     }
     guard let recoveryDevice = device.recoveryModeDeviceRef else {
       throw DeviceRecoveryError.notInRecovery(deviceDescription: String(describing: device))

@@ -48,7 +48,7 @@ public final class DeviceProvisioningProfileCommands: ProvisioningProfileCommand
 
   public func allProvisioningProfiles() async throws -> [[String: Any]] {
     guard let device else {
-      throw FBDeviceNilError.deviceNil
+      throw DeviceNilError.deviceNil
     }
     return try await device.withConnectedDevice(purpose: "list_provisioning_profiles") { connectedDevice in
       guard let profiles = connectedDevice.calls.CopyProvisioningProfiles?(connectedDevice.amDeviceRef)?.takeRetainedValue() as? [Any] else {
@@ -71,7 +71,7 @@ public final class DeviceProvisioningProfileCommands: ProvisioningProfileCommand
 
   public func removeProvisioningProfile(uuid: String) async throws -> [String: Any] {
     guard let device else {
-      throw FBDeviceNilError.deviceNil
+      throw DeviceNilError.deviceNil
     }
     return try await device.withConnectedDevice(purpose: "remove_provisioning_profile") { connectedDevice in
       let status = connectedDevice.calls.RemoveProvisioningProfile?(connectedDevice.amDeviceRef, uuid as CFString) ?? -1
@@ -86,7 +86,7 @@ public final class DeviceProvisioningProfileCommands: ProvisioningProfileCommand
 
   public func installProvisioningProfile(_ profileData: Data) async throws -> [String: Any] {
     guard let device else {
-      throw FBDeviceNilError.deviceNil
+      throw DeviceNilError.deviceNil
     }
     return try await device.withConnectedDevice(purpose: "install_provisioning_profile") { connectedDevice in
       guard let profileUnmanaged = connectedDevice.calls.ProvisioningProfileCreateWithData?(profileData as CFData) else {

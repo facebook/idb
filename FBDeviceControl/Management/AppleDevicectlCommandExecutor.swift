@@ -8,11 +8,11 @@
 @preconcurrency import FBControlCore
 import Foundation
 
-public enum FBDevicectlError: Error {
+public enum DevicectlError: Error {
   case commandFailed(exitCode: String, arguments: [String], stdOut: String, stdErr: String)
 }
 
-extension FBDevicectlError: LocalizedError {
+extension DevicectlError: LocalizedError {
   public var errorDescription: String? {
     switch self {
     case let .commandFailed(exitCode, arguments, stdOut, stdErr):
@@ -71,7 +71,7 @@ extension AppleDevicectlCommandExecutor {
     let builder = taskBuilder(arguments: arguments)
     let task = try await bridgeFBFuture(builder.runUntilCompletion(withAcceptableExitCodes: nil))
     if task.exitCode.result?.intValue != 0 {
-      throw FBDevicectlError.commandFailed(
+      throw DevicectlError.commandFailed(
         exitCode: task.exitCode.result.flatMap(String.init) ?? "<nil>",
         arguments: arguments,
         stdOut: (task.stdOut as String?) ?? "",

@@ -262,7 +262,7 @@ final class AMDeviceTests {
     var afcCalls = Self.stubbedAFCCalls
     afcCalls.ConnectionIsValid = { _ in 0 }
 
-    await #expect(throws: FBAFCConnectionError.self) {
+    await #expect(throws: AFCConnectionError.self) {
       try await device.withAFCConnection("com.apple.testservice", calls: afcCalls) { _ in
         Issue.record("Expected the invalid connection to be rejected before the body runs")
       }

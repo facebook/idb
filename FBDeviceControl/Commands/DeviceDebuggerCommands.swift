@@ -53,7 +53,7 @@ public final class DeviceDebuggerCommands {
   /// The connection is unscoped: whoever receives it decides when it is invalidated.
   public func connectToDebugServer() async throws -> FBAMDServiceConnection {
     guard let device else {
-      throw FBDeviceNilError.deviceNil
+      throw DeviceNilError.deviceNil
     }
     let diskImage = try await device.ensureDeveloperDiskImageIsMounted()
     let serviceName =
@@ -67,13 +67,13 @@ public final class DeviceDebuggerCommands {
 
   fileprivate func launchDebugServer(forHostApplication application: FBBundleDescriptor, port: in_port_t) async throws -> any FBDebugServer {
     guard let device else {
-      throw FBDeviceNilError.deviceNil
+      throw DeviceNilError.deviceNil
     }
     if device.osVersion.version.majorVersion >= 17 {
       throw DeviceDebuggerError.unsupportedOSVersion(version: device.osVersion.versionString)
     }
     let commands = try await lldbBootstrapCommands(forApplicationAtPath: application.path, port: port)
-    return try await FBDeviceDebugServer.debugServer(
+    return try await DeviceDebugServer.debugServer(
       forServiceConnection: connectToDebugServer(),
       port: port,
       lldbBootstrapCommands: commands,
@@ -84,7 +84,7 @@ public final class DeviceDebuggerCommands {
 
   private func lldbBootstrapCommands(forApplicationAtPath path: String, port: in_port_t) async throws -> [String] {
     guard device != nil else {
-      throw FBDeviceNilError.deviceNil
+      throw DeviceNilError.deviceNil
     }
     let bundle = try FBBundleDescriptor.bundle(fromPath: path)
     let platformSelect = try platformSelectCommand()
@@ -96,7 +96,7 @@ public final class DeviceDebuggerCommands {
 
   private func platformSelectCommand() throws -> String {
     guard let device else {
-      throw FBDeviceNilError.deviceNil
+      throw DeviceNilError.deviceNil
     }
     let platformSelectCommand = "platform select remote-ios"
     guard let buildVersion = device.buildVersion else {
@@ -114,7 +114,7 @@ public final class DeviceDebuggerCommands {
 
   private func remoteTarget(forBundleID bundleID: String) async throws -> String {
     guard let device else {
-      throw FBDeviceNilError.deviceNil
+      throw DeviceNilError.deviceNil
     }
     let installedApplication = try await device.installedApplication(bundleID: bundleID)
     return "script lldb.target.modules[0].SetPlatformFileSpec(lldb.SBFileSpec(\"\(installedApplication.bundle.path)\"))"

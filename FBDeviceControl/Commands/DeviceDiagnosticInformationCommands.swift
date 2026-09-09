@@ -45,7 +45,7 @@ public final class DeviceDiagnosticInformationCommands: FBiOSTargetCommand {
 
   fileprivate func fetchDiagnosticInformation() async throws -> [String: Any] {
     guard let device else {
-      throw FBDeviceNilError.deviceNil
+      throw DeviceNilError.deviceNil
     }
     let diagnostics = try await fetchInformationFromDiagnosticsRelay(device: device)
     let springboard = try await fetchInformationFromSpringboard(device: device)

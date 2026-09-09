@@ -15,7 +15,7 @@ import Foundation
 /// null pointer in the table to be crashed through later.
 private func symbol<T>(_ handle: UnsafeMutableRawPointer, _ name: String) throws -> T {
   guard let address = FBGetSymbolFromHandleOptional(handle, name) else {
-    throw FBDeviceControlFrameworkLoaderError.symbolNotFound(name: name)
+    throw DeviceControlFrameworkLoaderError.symbolNotFound(name: name)
   }
   return unsafeBitCast(address, to: T.self)
 }
@@ -43,7 +43,7 @@ public final class FBDeviceControlFrameworkLoader: FBControlCoreFrameworkLoader 
   var amDeviceCalls: AMDCalls {
     get throws {
       guard let resolvedCalls else {
-        throw FBDeviceControlFrameworkLoaderError.frameworksNotLoaded
+        throw DeviceControlFrameworkLoaderError.frameworksNotLoaded
       }
       return resolvedCalls
     }
@@ -54,7 +54,7 @@ public final class FBDeviceControlFrameworkLoader: FBControlCoreFrameworkLoader 
   /// Memberwise, so a symbol added to `AMDCalls` without being resolved here fails to compile.
   private static func resolveAMDeviceCalls() throws -> AMDCalls {
     guard let handle = Bundle(identifier: "com.apple.mobiledevice")?.dlopenExecutablePath() else {
-      throw FBDeviceControlFrameworkLoaderError.mobileDeviceUnavailable
+      throw DeviceControlFrameworkLoaderError.mobileDeviceUnavailable
     }
     return try AMDCalls(
       Connect: symbol(handle, "AMDeviceConnect"),
@@ -121,7 +121,7 @@ public final class FBDeviceControlFrameworkLoader: FBControlCoreFrameworkLoader 
   }
 }
 
-public enum FBDeviceControlFrameworkLoaderError: Error, LocalizedError {
+public enum DeviceControlFrameworkLoaderError: Error, LocalizedError {
   case mobileDeviceUnavailable
   case frameworksNotLoaded
   case symbolNotFound(name: String)

@@ -8,7 +8,7 @@
 import Foundation
 
 /// Shared failure for commands whose weakly-held device has been deallocated.
-public enum FBDeviceNilError: Error, LocalizedError {
+public enum DeviceNilError: Error, LocalizedError {
   case deviceNil
 
   public var errorDescription: String? {

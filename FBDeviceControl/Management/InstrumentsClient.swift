@@ -138,7 +138,7 @@ private struct RequestPayload {
   var expectsReply: Bool
 }
 
-public enum FBInstrumentsClientError: Error {
+public enum InstrumentsClientError: Error {
   case channelsNotADictionary(described: String)
   case auxillaryDataTooShort(described: String)
   case undecodableArgumentType(type: UInt32)
@@ -152,7 +152,7 @@ public enum FBInstrumentsClientError: Error {
   case unexpectedLaunchResult(described: String)
 }
 
-extension FBInstrumentsClientError: LocalizedError {
+extension InstrumentsClientError: LocalizedError {
   public var errorDescription: String? {
     switch self {
     case let .channelsNotADictionary(described):
@@ -258,7 +258,7 @@ final class InstrumentsClient {
               Self.argumentData(forArgument: options), // options:
             ])
           guard let processIdentifier = response.returnValue as? NSNumber else {
-            throw FBInstrumentsClientError.unexpectedLaunchResult(described: String(describing: response.returnValue))
+            throw InstrumentsClientError.unexpectedLaunchResult(described: String(describing: response.returnValue))
           }
           return FBFuture<AnyObject>(result: processIdentifier)
         } catch {
@@ -338,7 +338,7 @@ final class InstrumentsClient {
 
   static func objectArguments(fromAuxillaryData data: Data) throws -> [Any] {
     guard data.count >= 16 else {
-      throw FBInstrumentsClientError.auxillaryDataTooShort(described: String(describing: data as NSData))
+      throw InstrumentsClientError.auxillaryDataTooShort(described: String(describing: data as NSData))
     }
     // The magic and payload length occupy the first 16 bytes; nothing reads their values.
     var remaining = data.dropFirst(16)
@@ -350,12 +350,12 @@ final class InstrumentsClient {
       _ = argumentReader.readUInt32() // dictionary key
       let argumentType = argumentReader.readUInt32()
       guard argumentType == ObjectArgumentType else {
-        throw FBInstrumentsClientError.undecodableArgumentType(type: argumentType)
+        throw InstrumentsClientError.undecodableArgumentType(type: argumentType)
       }
       let argumentLength = argumentReader.readUInt32()
       // Wire-supplied length: validate before indexing, or a truncated payload traps.
       guard remaining.count >= 12 + Int(argumentLength) else {
-        throw FBInstrumentsClientError.auxillaryDataTooShort(described: String(describing: Data(remaining) as NSData))
+        throw InstrumentsClientError.auxillaryDataTooShort(described: String(describing: Data(remaining) as NSData))
       }
       let argumentStart = remaining.index(remaining.startIndex, offsetBy: 12)
       let argumentEnd = remaining.index(argumentStart, offsetBy: Int(argumentLength))
@@ -365,7 +365,7 @@ final class InstrumentsClient {
         let argument = try? NSKeyedUnarchiver.unarchivedObject(
           ofClasses: supportedReturnSerializerValues, from: argumentData)
       else {
-        throw FBInstrumentsClientError.undecodableArgument(described: String(describing: argumentData as NSData))
+        throw InstrumentsClientError.undecodableArgument(described: String(describing: argumentData as NSData))
       }
       arguments.append(argument)
     }
@@ -383,7 +383,7 @@ final class InstrumentsClient {
       expectsReply: false)
     let response = try sendAndReceive(request, on: connection)
     guard let channels = response.auxillaryValues?.first as? [String: Any] else {
-      throw FBInstrumentsClientError.channelsNotADictionary(
+      throw InstrumentsClientError.channelsNotADictionary(
         described: String(describing: response.auxillaryValues?.first))
     }
     return (channels, response.messageIdentifier)
@@ -439,14 +439,14 @@ final class InstrumentsClient {
     while Int(messageHeader.fragmentId) < Int(messageHeader.fragmentCount) - 1 {
       messageHeader = DTXMessageHeader.decode(try connection.receive(DTXMessageHeader.wireSize))
       guard messageHeader.magic == DTXMessageHeaderMagic else {
-        throw FBInstrumentsClientError.corruptHeader
+        throw InstrumentsClientError.corruptHeader
       }
       if messageHeader.conversationIndex == 0 && messageHeader.identifier < request.messageIdentifier {
-        throw FBInstrumentsClientError.staleResponseIdentifier(
+        throw InstrumentsClientError.staleResponseIdentifier(
           received: messageHeader.identifier, requested: request.messageIdentifier)
       }
       if messageHeader.conversationIndex == 1 && messageHeader.identifier != request.messageIdentifier {
-        throw FBInstrumentsClientError.mismatchedResponseIdentifier(
+        throw InstrumentsClientError.mismatchedResponseIdentifier(
           received: messageHeader.identifier, requested: request.messageIdentifier)
       }
       // The first message in a multi-part fragment has no payload; the next fragment does.
@@ -464,7 +464,7 @@ final class InstrumentsClient {
     var remaining = payloadData.dropFirst(DTXMessagePayloadHeader.wireSize)
     let compression = (payloadHeader.flags & 0xFF000) >> 12
     guard compression == 0 else {
-      throw FBInstrumentsClientError.compressedResponse
+      throw InstrumentsClientError.compressedResponse
     }
 
     // Wire-supplied lengths: validate before subtracting or indexing, either of which would trap.
@@ -472,7 +472,7 @@ final class InstrumentsClient {
       payloadHeader.totalLength >= UInt64(payloadHeader.auxiliaryLength),
       payloadHeader.totalLength <= UInt64(remaining.count)
     else {
-      throw FBInstrumentsClientError.inconsistentPayloadLengths(
+      throw InstrumentsClientError.inconsistentPayloadLengths(
         total: payloadHeader.totalLength, auxiliary: payloadHeader.auxiliaryLength, received: remaining.count)
     }
 
@@ -536,7 +536,7 @@ final class InstrumentsClient {
 
   private func makeChannel(identifier: String) throws -> Int32 {
     guard channels[identifier] != nil else {
-      throw FBInstrumentsClientError.unknownChannel(identifier: identifier, available: Array(channels.keys))
+      throw InstrumentsClientError.unknownChannel(identifier: identifier, available: Array(channels.keys))
     }
     let channelIdentifier = nextChannelIdentifier()
     let request = RequestPayload(

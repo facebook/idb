@@ -181,7 +181,7 @@ final class HouseArrestService: @unchecked Sendable {
 
   private func openConnection() throws -> FBAFCConnection {
     guard let device else {
-      throw FBDeviceNilError.deviceNil
+      throw DeviceNilError.deviceNil
     }
     logger.log("Starting house arrest for '\(bundleID)'")
     var afcConnection: Unmanaged<AnyObject>?

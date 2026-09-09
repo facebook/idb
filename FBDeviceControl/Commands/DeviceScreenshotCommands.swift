@@ -38,7 +38,7 @@ public final class DeviceScreenshotCommands {
 
   fileprivate func takeScreenshot(configuration: FBScreenshotConfiguration) async throws -> FBScreenshotResult {
     guard let device else {
-      throw FBDeviceNilError.deviceNil
+      throw DeviceNilError.deviceNil
     }
     let captured = try await capture(from: device)
     // A device hands back a finished image file rather than a framebuffer, so any crop or scale is

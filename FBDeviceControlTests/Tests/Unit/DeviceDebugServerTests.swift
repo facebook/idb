@@ -59,9 +59,9 @@ final class DeviceDebugServerTests {
   /// Port zero asks the kernel for an ephemeral one, so nothing here collides with a port another
   /// test or another process is already bound to. Nothing connects over TCP either — the one test
   /// that needs a client reaches the delegate callback directly.
-  private func makeDebugServer() async throws -> FBDeviceDebugServer {
+  private func makeDebugServer() async throws -> DeviceDebugServer {
     let device = amDevice.makeAMDevice()
-    return try await FBDeviceDebugServer.debugServer(
+    return try await DeviceDebugServer.debugServer(
       forServiceConnection: device.openServiceConnection(debugServerService),
       port: 0,
       lldbBootstrapCommands: ["platform select remote-ios"],

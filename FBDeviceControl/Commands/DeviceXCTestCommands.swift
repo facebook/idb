@@ -61,7 +61,7 @@ public final class DeviceXCTestCommands {
       throw DeviceXCTestError.testManagerAlreadyRunning(configurationDescription: String(describing: testLaunchConfiguration))
     }
     guard let device else {
-      throw FBDeviceNilError.deviceNil
+      throw DeviceNilError.deviceNil
     }
     guard let reporter = reporter as? FBXCTestReporter else {
       throw DeviceXCTestError.unexpectedReporter(reporterDescription: String(describing: reporter))
@@ -93,7 +93,7 @@ public final class DeviceXCTestCommands {
     // id (e.g. we query for 00008101-001D296A2EE8001E, while xcodebuild have
     // 00008101001D296A2EE8001E).
     guard let device else {
-      throw FBDeviceNilError.deviceNil
+      throw DeviceNilError.deviceNil
     }
     guard let identifier = device.calls.CopyDeviceIdentifier(device.amDeviceRef) else {
       throw DeviceXCTestError.deviceIdentifierUnavailable(deviceDescription: String(describing: device))

@@ -11,7 +11,7 @@ import Foundation
 /// Holds both the currently-attached devices and weak references to every device this storage has
 /// ever vended, so a consumer holding a device across a disconnect gets the same instance back on
 /// re-attach.
-public final class FBDeviceStorage<T: AnyObject> {
+public final class DeviceStorage<T: AnyObject> {
 
   public var attached: [String: T] {
     attachedDevices

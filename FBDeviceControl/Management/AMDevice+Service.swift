@@ -31,10 +31,10 @@ extension FBAMDevice {
   /// to process messages.
   func withDeviceLinkClient<T>(
     _ service: String,
-    _ body: (FBDeviceLinkClient) async throws -> T
+    _ body: (DeviceLinkClient) async throws -> T
   ) async throws -> T {
     try await withServiceConnection(service) { connection in
-      let client = try await FBDeviceLinkClient.deviceLinkClient(connection: connection)
+      let client = try await DeviceLinkClient.deviceLinkClient(connection: connection)
       return try await body(client)
     }
   }

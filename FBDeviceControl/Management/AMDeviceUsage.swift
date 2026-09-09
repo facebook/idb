@@ -14,7 +14,7 @@ private let mobileBackupDomain = "com.apple.mobile.backup"
 ///
 /// Separate from `AMDeviceManager`, which discovers the *set* of devices. These operate on one
 /// device and are what `FBAMDevice` wraps around every operation it performs.
-public enum FBAMDeviceUsage {
+public enum AMDeviceUsage {
 
   /// Connects to the device and opens a session on it, pairing first if required.
   public static func start(using device: AMDevice, calls: AMDCalls, logger: any FBControlCoreLogger) throws {
@@ -39,7 +39,7 @@ public enum FBAMDeviceUsage {
     logger.log("Connecting to \(device)")
     let status = calls.Connect(device)
     guard status == 0 else {
-      throw FBAMDeviceManagerError.connectFailed(device: "\(device)", message: errorText(status, calls: calls))
+      throw AMDeviceManagerError.connectFailed(device: "\(device)", message: errorText(status, calls: calls))
     }
   }
 
@@ -53,7 +53,7 @@ public enum FBAMDeviceUsage {
       logger.log("\(device) is not paired, attempting to pair")
       let status = calls.Pair(device)
       guard status == 0 else {
-        throw FBAMDeviceManagerError.notPaired(device: "\(device)", message: errorText(status, calls: calls))
+        throw AMDeviceManagerError.notPaired(device: "\(device)", message: errorText(status, calls: calls))
       }
       logger.log("\(device) succeeded pairing request")
     }
@@ -61,7 +61,7 @@ public enum FBAMDeviceUsage {
     logger.log("Validating Pairing to \(device)")
     let validateStatus = calls.ValidatePairing(device)
     guard validateStatus == 0 else {
-      throw FBAMDeviceManagerError.pairingValidationFailed(
+      throw AMDeviceManagerError.pairingValidationFailed(
         device: "\(device)", message: errorText(validateStatus, calls: calls))
     }
 
@@ -69,7 +69,7 @@ public enum FBAMDeviceUsage {
     let sessionStatus = calls.StartSession(device)
     guard sessionStatus == 0 else {
       _ = calls.Disconnect(device)
-      throw FBAMDeviceManagerError.sessionFailed(message: errorText(sessionStatus, calls: calls))
+      throw AMDeviceManagerError.sessionFailed(message: errorText(sessionStatus, calls: calls))
     }
   }
 
@@ -285,7 +285,7 @@ final class AMDeviceSession: @unchecked Sendable {
       guard let device, let amDevice = device.amDevice else {
         throw AMDeviceServiceError.deviceNotConnected(service: "connect")
       }
-      try FBAMDeviceUsage.start(using: amDevice, calls: device.calls, logger: logger)
+      try AMDeviceUsage.start(using: amDevice, calls: device.calls, logger: logger)
     } catch {
       settle(.closed)
       throw error
@@ -295,7 +295,7 @@ final class AMDeviceSession: @unchecked Sendable {
 
   private func closeSession() {
     if let device, let amDevice = device.amDevice {
-      FBAMDeviceUsage.stop(using: amDevice, calls: device.calls, logger: logger)
+      AMDeviceUsage.stop(using: amDevice, calls: device.calls, logger: logger)
     }
     settle(.closed)
   }

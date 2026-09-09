@@ -7,7 +7,7 @@
 
 import Foundation
 
-public enum FBSpringboardIconEntryType: Sendable {
+public enum SpringboardIconEntryType: Sendable {
   case app
   case folder
   case widget
@@ -49,7 +49,7 @@ enum SpringboardPropertyListValue: Encodable, Sendable {
     } else if let value = rawValue as? NSDictionary {
       self = .dictionary(try SpringboardPropertyListValue.dictionary(from: value))
     } else {
-      throw FBSpringboardServicesError.unexpectedResponse(
+      throw SpringboardServicesError.unexpectedResponse(
         command: "getIconState",
         expected: "a property-list value",
         actual: String(describing: rawValue))
@@ -122,7 +122,7 @@ enum SpringboardPropertyListValue: Encodable, Sendable {
     var result: [String: SpringboardPropertyListValue] = [:]
     for (key, value) in dict {
       guard let key = key as? String else {
-        throw FBSpringboardServicesError.unexpectedResponse(
+        throw SpringboardServicesError.unexpectedResponse(
           command: "getIconState",
           expected: "a property-list dictionary keyed by strings",
           actual: String(describing: dict))
@@ -160,19 +160,19 @@ private extension Dictionary where Key == String, Value == SpringboardPropertyLi
   }
 }
 
-// MARK: - FBSpringboardIcon
+// MARK: - SpringboardIcon
 
 /// A single entry in the SpringBoard icon-state wire format.
 ///
 /// The raw dictionary is preserved so callers can round-trip entries with
 /// fields that `FBDeviceControl` does not interpret.
-public struct FBSpringboardIcon: Encodable, Sendable {
+public struct SpringboardIcon: Encodable, Sendable {
   public let bundleID: String
   public let displayIdentifier: String
   public let displayName: String
-  public let entryType: FBSpringboardIconEntryType
+  public let entryType: SpringboardIconEntryType
   public let gridSize: String?
-  public let folderIcons: [[FBSpringboardIcon]]
+  public let folderIcons: [[SpringboardIcon]]
 
   private let propertyList: [String: SpringboardPropertyListValue]
 
@@ -203,7 +203,7 @@ public struct FBSpringboardIcon: Encodable, Sendable {
       self.gridSize = nil
       if let iconLists = dict["iconLists"] as? [[[String: Any]]] {
         self.folderIcons = iconLists.compactMap { page in
-          let icons = FBSpringboardIcon.parseIconDicts(page)
+          let icons = SpringboardIcon.parseIconDicts(page)
           return icons.isEmpty ? nil : icons
         }
       } else {
@@ -261,8 +261,8 @@ public struct FBSpringboardIcon: Encodable, Sendable {
     }
   }
 
-  public static func parseIconDicts(_ dicts: [[String: Any]]) -> [FBSpringboardIcon] {
-    dicts.map { FBSpringboardIcon(dict: $0) }.filter { $0.isValid }
+  public static func parseIconDicts(_ dicts: [[String: Any]]) -> [SpringboardIcon] {
+    dicts.map { SpringboardIcon(dict: $0) }.filter { $0.isValid }
   }
 
   public func toDict() -> [String: Any] {
@@ -276,8 +276,8 @@ public struct FBSpringboardIcon: Encodable, Sendable {
     return dict.rawValue
   }
 
-  public static func folder(name: String, icons: [[FBSpringboardIcon]]) -> FBSpringboardIcon {
-    FBSpringboardIcon(
+  public static func folder(name: String, icons: [[SpringboardIcon]]) -> SpringboardIcon {
+    SpringboardIcon(
       propertyList: [
         "listType": .string("folder"),
         "displayName": .string(name),
@@ -288,8 +288,8 @@ public struct FBSpringboardIcon: Encodable, Sendable {
       ])
   }
 
-  public static func app(bundleID: String, name: String) -> FBSpringboardIcon {
-    FBSpringboardIcon(
+  public static func app(bundleID: String, name: String) -> SpringboardIcon {
+    SpringboardIcon(
       propertyList: [
         "bundleIdentifier": .string(bundleID),
         "displayIdentifier": .string(bundleID),
@@ -298,9 +298,9 @@ public struct FBSpringboardIcon: Encodable, Sendable {
   }
 }
 
-// MARK: - FBSpringboardIcon Folder Editing
+// MARK: - SpringboardIcon Folder Editing
 
-extension FBSpringboardIcon {
+extension SpringboardIcon {
 
   public func findInFolder(identifier: String) -> (pageIndex: Int, iconIndex: Int)? {
     precondition(entryType == .folder)
@@ -314,14 +314,14 @@ extension FBSpringboardIcon {
     return nil
   }
 
-  public func renamingFolder(to newName: String) -> FBSpringboardIcon {
+  public func renamingFolder(to newName: String) -> SpringboardIcon {
     precondition(entryType == .folder)
     var dict = propertyList
     dict["displayName"] = .string(newName)
-    return FBSpringboardIcon(propertyList: dict)
+    return SpringboardIcon(propertyList: dict)
   }
 
-  public func addingToFolder(_ icons: [FBSpringboardIcon]) -> FBSpringboardIcon {
+  public func addingToFolder(_ icons: [SpringboardIcon]) -> SpringboardIcon {
     precondition(entryType == .folder)
     var newFolderIcons = folderIcons
     if newFolderIcons.isEmpty {
@@ -329,36 +329,36 @@ extension FBSpringboardIcon {
     } else {
       newFolderIcons[newFolderIcons.count - 1].append(contentsOf: icons)
     }
-    return FBSpringboardIcon.folder(name: displayName, icons: newFolderIcons)
+    return SpringboardIcon.folder(name: displayName, icons: newFolderIcons)
   }
 
-  public func removingFromFolder(pageIndex: Int, iconIndex: Int) -> (folder: FBSpringboardIcon, removed: FBSpringboardIcon) {
+  public func removingFromFolder(pageIndex: Int, iconIndex: Int) -> (folder: SpringboardIcon, removed: SpringboardIcon) {
     precondition(entryType == .folder)
     var newFolderIcons = folderIcons
     let removed = newFolderIcons[pageIndex].remove(at: iconIndex)
     newFolderIcons = newFolderIcons.filter { !$0.isEmpty }
-    let folder = FBSpringboardIcon.folder(name: displayName, icons: newFolderIcons)
+    let folder = SpringboardIcon.folder(name: displayName, icons: newFolderIcons)
     return (folder, removed)
   }
 
-  public func movingWithinFolder(page: Int, from sourceIndex: Int, to destIndex: Int) -> FBSpringboardIcon {
+  public func movingWithinFolder(page: Int, from sourceIndex: Int, to destIndex: Int) -> SpringboardIcon {
     precondition(entryType == .folder)
     var newFolderIcons = folderIcons
     let icon = newFolderIcons[page].remove(at: sourceIndex)
     let adjusted = destIndex > sourceIndex ? destIndex - 1 : destIndex
     let clamped = min(adjusted, newFolderIcons[page].count)
     newFolderIcons[page].insert(icon, at: clamped)
-    return FBSpringboardIcon.folder(name: displayName, icons: newFolderIcons)
+    return SpringboardIcon.folder(name: displayName, icons: newFolderIcons)
   }
 }
 
-// MARK: - FBSpringboardIconLayout
+// MARK: - SpringboardIconLayout
 
 /// The SpringBoard icon-state wire format.
 ///
 /// Page 0 is the dock. Subsequent pages are home-screen pages. All values are
 /// property-list values deserialized from the lockdown service.
-public struct FBSpringboardIconLayout: Encodable, Sendable {
+public struct SpringboardIconLayout: Encodable, Sendable {
   private let propertyListPages: [[[String: SpringboardPropertyListValue]]]
 
   public var pages: [[[String: Any]]] {
@@ -370,7 +370,7 @@ public struct FBSpringboardIconLayout: Encodable, Sendable {
   public var rawValue: NSArray { pages as NSArray }
 
   public init(pages: [[[String: Any]]]) {
-    guard let propertyListPages = try? FBSpringboardIconLayout.propertyListPages(from: pages) else {
+    guard let propertyListPages = try? SpringboardIconLayout.propertyListPages(from: pages) else {
       preconditionFailure("SpringBoard icon layout pages must contain property-list values")
     }
     self.propertyListPages = propertyListPages
@@ -378,12 +378,12 @@ public struct FBSpringboardIconLayout: Encodable, Sendable {
 
   public init(rawValue: Any) throws {
     guard let pages = rawValue as? [[[String: Any]]] else {
-      throw FBSpringboardServicesError.unexpectedResponse(
+      throw SpringboardServicesError.unexpectedResponse(
         command: "getIconState",
         expected: "an array of icon pages",
         actual: String(describing: rawValue))
     }
-    self.propertyListPages = try FBSpringboardIconLayout.propertyListPages(from: pages)
+    self.propertyListPages = try SpringboardIconLayout.propertyListPages(from: pages)
   }
 
   public func encode(to encoder: Encoder) throws {
@@ -412,7 +412,7 @@ public struct FBSpringboardIconLayout: Encodable, Sendable {
     }
   }
 
-  public func validationError(comparedTo actual: FBSpringboardIconLayout) -> String? {
+  public func validationError(comparedTo actual: SpringboardIconLayout) -> String? {
     if pageCount != actual.pageCount {
       return "page count differs: sent \(pageCount), got \(actual.pageCount) (iOS may add system entries)"
     }

@@ -15,12 +15,12 @@ import Foundation
 class DeviceManager<PublicDevice: AnyObject>: NSObject, FBiOSTargetSet {
 
   let logger: any FBControlCoreLogger
-  let storage: FBDeviceStorage<PublicDevice>
+  let storage: DeviceStorage<PublicDevice>
   weak var delegate: (any FBiOSTargetSetDelegate)?
 
   init(logger: any FBControlCoreLogger) {
     self.logger = logger
-    self.storage = FBDeviceStorage(logger: logger)
+    self.storage = DeviceStorage(logger: logger)
     super.init()
   }
 
@@ -32,12 +32,12 @@ class DeviceManager<PublicDevice: AnyObject>: NSObject, FBiOSTargetSet {
 
   /// Starts listening for device notifications.
   func startListening() throws {
-    throw FBDeviceManagerError.abstractMethod(name: "startListening")
+    throw DeviceManagerError.abstractMethod(name: "startListening")
   }
 
   /// Stops listening for device notifications.
   func stopListening() throws {
-    throw FBDeviceManagerError.abstractMethod(name: "stopListening")
+    throw DeviceManagerError.abstractMethod(name: "stopListening")
   }
 
   /// Constructs the type from the private one.
@@ -140,7 +140,7 @@ class DeviceManager<PublicDevice: AnyObject>: NSObject, FBiOSTargetSet {
   }
 }
 
-public enum FBDeviceManagerError: Error, LocalizedError {
+public enum DeviceManagerError: Error, LocalizedError {
   case abstractMethod(name: String)
 
   public var errorDescription: String? {

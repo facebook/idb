@@ -61,7 +61,7 @@ extension DeviceVideoStreamError: LocalizedError {
 
 // @unchecked Sendable: frame state is confined to `writeQueue` (the AVCapture delegate queue);
 // lifecycle state is guarded by `lifecycleLock`.
-public class FBDeviceVideoStream: NSObject, FBVideoStream, @unchecked Sendable {
+public class DeviceVideoStream: NSObject, FBVideoStream, @unchecked Sendable {
   let logger: any FBControlCoreLogger
   private let session: AVCaptureSession
   private let output: AVCaptureVideoDataOutput
@@ -81,7 +81,7 @@ public class FBDeviceVideoStream: NSObject, FBVideoStream, @unchecked Sendable {
 
   // MARK: - Factory
 
-  public class func stream(withSession session: AVCaptureSession, configuration: FBVideoStreamConfiguration, logger: any FBControlCoreLogger) throws -> FBDeviceVideoStream {
+  public class func stream(withSession session: AVCaptureSession, configuration: FBVideoStreamConfiguration, logger: any FBControlCoreLogger) throws -> DeviceVideoStream {
     let format = configuration.format
     guard let streamType = classForConfiguration(configuration) else {
       throw DeviceVideoStreamError.invalidStreamFormat("\(format)")
@@ -106,7 +106,7 @@ public class FBDeviceVideoStream: NSObject, FBVideoStream, @unchecked Sendable {
     return streamType.init(session: session, output: output, writeQueue: writeQueue, logger: logger)
   }
 
-  class func classForConfiguration(_ configuration: FBVideoStreamConfiguration) -> FBDeviceVideoStream.Type? {
+  class func classForConfiguration(_ configuration: FBVideoStreamConfiguration) -> DeviceVideoStream.Type? {
     switch configuration.format {
     case let .compressedVideo(codec, transport):
       switch codec {
@@ -236,7 +236,7 @@ public class FBDeviceVideoStream: NSObject, FBVideoStream, @unchecked Sendable {
 
 // MARK: - AVCaptureVideoDataOutputSampleBufferDelegate
 
-extension FBDeviceVideoStream: AVCaptureVideoDataOutputSampleBufferDelegate {
+extension DeviceVideoStream: AVCaptureVideoDataOutputSampleBufferDelegate {
   public func captureOutput(_ output: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection) {
     guard let consumer = self.consumer else { return }
     if !checkConsumerBufferLimit(consumer, logger) { return }
@@ -251,7 +251,7 @@ extension FBDeviceVideoStream: AVCaptureVideoDataOutputSampleBufferDelegate {
 
 // MARK: - BGRA Subclass
 
-private class DeviceVideoStream_BGRA: FBDeviceVideoStream, @unchecked Sendable {
+private class DeviceVideoStream_BGRA: DeviceVideoStream, @unchecked Sendable {
   override func consumeSampleBuffer(_ sampleBuffer: CMSampleBuffer) {
     guard let consumer = self.consumer else { return }
     guard let pixelBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) else { return }
@@ -292,7 +292,7 @@ private class DeviceVideoStream_BGRA: FBDeviceVideoStream, @unchecked Sendable {
 
 // MARK: - H264 Subclass
 
-private class DeviceVideoStream_H264: FBDeviceVideoStream, @unchecked Sendable {
+private class DeviceVideoStream_H264: DeviceVideoStream, @unchecked Sendable {
   private let frameWriter = FBAnnexBFrameWriter(codec: .h264)
 
   override func consumeSampleBuffer(_ sampleBuffer: CMSampleBuffer) {
@@ -307,7 +307,7 @@ private class DeviceVideoStream_H264: FBDeviceVideoStream, @unchecked Sendable {
 
 // MARK: - H264 MPEGTS Subclass
 
-private class DeviceVideoStream_H264MPEGTS: FBDeviceVideoStream, @unchecked Sendable {
+private class DeviceVideoStream_H264MPEGTS: DeviceVideoStream, @unchecked Sendable {
   private let frameWriter = FBMPEGTSFrameWriter(codec: .h264)
 
   override func consumeSampleBuffer(_ sampleBuffer: CMSampleBuffer) {
@@ -322,7 +322,7 @@ private class DeviceVideoStream_H264MPEGTS: FBDeviceVideoStream, @unchecked Send
 
 // MARK: - MJPEG Subclass
 
-private class DeviceVideoStream_MJPEG: FBDeviceVideoStream, @unchecked Sendable {
+private class DeviceVideoStream_MJPEG: DeviceVideoStream, @unchecked Sendable {
   private let mjpegFrameWriter = FBMJPEGFrameWriter()
 
   override func consumeSampleBuffer(_ sampleBuffer: CMSampleBuffer) {

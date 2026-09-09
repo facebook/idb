@@ -84,13 +84,13 @@ final class AMDeviceManagerUsageTests {
 
   @Test
   func startUsingConnectsThenPairsThenStartsASession() throws {
-    try FBAMDeviceUsage.start(using: device, calls: stubbedCalls(), logger: logger)
+    try AMDeviceUsage.start(using: device, calls: stubbedCalls(), logger: logger)
     #expect((sUsageRecorder.recorded) == (["connect", "is_paired", "validate_pairing", "start_session"]))
   }
 
   @Test
   func stopUsingEndsTheSessionBeforeTheConnection() {
-    FBAMDeviceUsage.stop(using: device, calls: stubbedCalls(), logger: logger)
+    AMDeviceUsage.stop(using: device, calls: stubbedCalls(), logger: logger)
     #expect((sUsageRecorder.recorded) == (["stop_session", "disconnect"]))
   }
 }

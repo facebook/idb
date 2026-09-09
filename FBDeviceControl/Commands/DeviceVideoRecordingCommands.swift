@@ -30,7 +30,7 @@ extension DeviceVideoRecordingCommandError: LocalizedError {
 
 public final class DeviceVideoRecordingCommands {
   private weak var device: FBDevice?
-  private var video: FBDeviceVideo?
+  private var video: DeviceVideo?
 
   public class func commands(with device: FBDevice) -> DeviceVideoRecordingCommands {
     DeviceVideoRecordingCommands(device: device)
@@ -49,7 +49,7 @@ public final class DeviceVideoRecordingCommands {
     if video != nil {
       throw DeviceVideoRecordingCommandError.recordingAlreadyActive
     }
-    let video = try await FBDeviceVideo.video(for: device, filePath: filePath)
+    let video = try await DeviceVideo.video(for: device, filePath: filePath)
     self.video = video
     try await video.startRecording()
     return FBVideoRecordingHandle {
@@ -73,8 +73,8 @@ public final class DeviceVideoRecordingCommands {
       throw DeviceVideoRecordingCommandError.missingDevice
     }
     let logger = device.logger
-    let session = try await FBDeviceVideo.captureSession(for: device)
-    let stream = try FBDeviceVideoStream.stream(withSession: session, configuration: configuration, logger: logger)
+    let session = try await DeviceVideo.captureSession(for: device)
+    let stream = try DeviceVideoStream.stream(withSession: session, configuration: configuration, logger: logger)
     try await stream.startStreaming(consumer)
     return stream
   }

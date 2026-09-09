@@ -43,7 +43,7 @@ struct SpringboardIconLayoutTests {
       ],
     ]
 
-    let layout = try FBSpringboardIconLayout(rawValue: rawLayout)
+    let layout = try SpringboardIconLayout(rawValue: rawLayout)
 
     #expect((layout.pageCount) == (2))
     #expect((layout.totalEntries) == (3))
@@ -55,9 +55,9 @@ struct SpringboardIconLayoutTests {
   @Test
   func rejectsUnexpectedRawIconLayoutShape() {
     do {
-      _ = try FBSpringboardIconLayout(rawValue: ["not": "pages"])
+      _ = try SpringboardIconLayout(rawValue: ["not": "pages"])
       Issue.record("Expected unexpectedResponse error to be thrown")
-    } catch FBSpringboardServicesError.unexpectedResponse(let command, let expected, let actual) {
+    } catch SpringboardServicesError.unexpectedResponse(let command, let expected, let actual) {
       #expect(command == "getIconState")
       #expect(expected == "an array of icon pages")
       #expect(actual.contains("not"))
@@ -68,12 +68,12 @@ struct SpringboardIconLayoutTests {
 
   @Test
   func validationErrorReportsFirstMismatchedPage() {
-    let expected = FBSpringboardIconLayout(
+    let expected = SpringboardIconLayout(
       pages: [
         [["displayIdentifier": "com.example.dock"]],
         [["displayIdentifier": "com.example.one"]],
       ])
-    let actual = FBSpringboardIconLayout(
+    let actual = SpringboardIconLayout(
       pages: [
         [["displayIdentifier": "com.example.dock"]],
         [["displayIdentifier": "com.example.two"]],

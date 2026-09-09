@@ -25,7 +25,7 @@ public final class DeviceLocationCommands {
 
   fileprivate func overrideLocation(withLongitude longitude: Double, latitude: Double) async throws {
     guard let device else {
-      throw FBDeviceNilError.deviceNil
+      throw DeviceNilError.deviceNil
     }
     _ = try await device.ensureDeveloperDiskImageIsMounted()
     try await device.withServiceConnection("com.apple.dt.simulatelocation") { connection in
