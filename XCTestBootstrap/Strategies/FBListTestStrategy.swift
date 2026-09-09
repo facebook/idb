@@ -138,11 +138,12 @@ public final class FBListTestStrategy {
       FBLoggingDataConsumer(logger: logger),
     ])
 
+    // The temporary directory is scoped to the inner pipeline: the async wrapper holds it open
+    // until the future chain resolves, exactly as the popped context did.
     return unsafeBitCast(
-      FBTemporaryDirectory(logger: logger).withTemporaryDirectory()
-        .onQueue(
-          target.workQueue,
-          pop: { temporaryDirectoryURL -> FBFuture<AnyObject> in
+      fbFutureFromAsync {
+        try await FBTemporaryDirectory(logger: self.logger).withTemporaryDirectory { temporaryDirectoryURL in
+          try await bridgeFBFuture(
             FBOToolDynamicLibs.findFullPath(forSanitiserDyldInBundle: self.configuration.testBundlePath, onQueue: self.target.workQueue)
               .onQueue(
                 self.target.workQueue,
@@ -152,7 +153,7 @@ public final class FBListTestStrategy {
                   }
                   let environment = FBListTestStrategy.setupEnvironment(withDylibs: libraries, shimPath: shimPath, shimOutputFilePath: shimOutput.filePath, bundlePath: self.configuration.testBundlePath, target: self.target)
 
-                  return FBListTestStrategy.listTestProcess(withTarget: self.target, configuration: self.configuration, xctestPath: self.target.xctestPath, environment: environment, stdOutConsumer: stdOutConsumer, stdErrConsumer: stdErrConsumer, logger: self.logger, temporaryDirectory: temporaryDirectoryURL as URL)
+                  return FBListTestStrategy.listTestProcess(withTarget: self.target, configuration: self.configuration, xctestPath: self.target.xctestPath, environment: environment, stdOutConsumer: stdOutConsumer, stdErrConsumer: stdErrConsumer, logger: self.logger, temporaryDirectory: temporaryDirectoryURL)
                     .onQueue(
                       self.target.workQueue,
                       fmap: { exitCodeFutureObj -> FBFuture<AnyObject> in
@@ -164,8 +165,9 @@ public final class FBListTestStrategy {
                           to: FBFuture<AnyObject>.self
                         )
                       })
-                })
-          }),
+                }))
+        }
+      },
       to: FBFuture<NSArray>.self
     )
   }

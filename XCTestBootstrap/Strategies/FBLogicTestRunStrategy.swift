@@ -122,11 +122,12 @@ public final class FBLogicTestRunStrategy: FBXCTestRunner {
     let launchPath = xctestPath
     let arguments = ["-XCTest", testSpecifier, configuration.testBundlePath]
 
+    // The temporary directory is scoped to the inner pipeline: the async wrapper holds it open
+    // until the future chain resolves, exactly as the popped context did.
     return unsafeBitCast(
-      FBTemporaryDirectory(logger: logger).withTemporaryDirectory()
-        .onQueue(
-          target.workQueue,
-          pop: { temporaryDirectoryURL -> FBFuture<AnyObject> in
+      fbFutureFromAsync {
+        try await FBTemporaryDirectory(logger: self.logger).withTemporaryDirectory { temporaryDirectoryURL in
+          try await bridgeFBFuture(
             FBOToolDynamicLibs.findFullPath(forSanitiserDyldInBundle: self.configuration.testBundlePath, onQueue: self.target.workQueue)
               .onQueue(
                 self.target.workQueue,
@@ -136,7 +137,7 @@ public final class FBLogicTestRunStrategy: FBXCTestRunner {
                   }
                   let environment = FBLogicTestRunStrategy.setupEnvironment(withDylibs: self.configuration.processUnderTestEnvironment, withLibraries: libraries, injectLibraries: self.configuration.injectLibraries, shimOutputFilePath: outputs.shimOutput.filePath, shimPath: shimPath, bundlePath: self.configuration.testBundlePath, coverageConfiguration: self.configuration.coverageConfiguration, logDirectoryPath: self.configuration.logDirectoryPath, waitForDebugger: self.configuration.waitForDebugger, target: self.target)
 
-                  return self.startTestProcess(withLaunchPath: launchPath, arguments: arguments, environment: environment, outputs: outputs, temporaryDirectory: temporaryDirectoryURL as URL)
+                  return self.startTestProcess(withLaunchPath: launchPath, arguments: arguments, environment: environment, outputs: outputs, temporaryDirectory: temporaryDirectoryURL)
                     .onQueue(
                       self.target.workQueue,
                       fmap: { exitCodeFutureObj -> FBFuture<AnyObject> in
@@ -148,8 +149,9 @@ public final class FBLogicTestRunStrategy: FBXCTestRunner {
                           to: FBFuture<AnyObject>.self
                         )
                       })
-                })
-          }),
+                }))
+        }
+      },
       to: FBFuture<NSNull>.self
     )
   }
