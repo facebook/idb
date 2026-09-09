@@ -166,11 +166,17 @@ jobs:
       # against a simulator other than the one created here. A device set of
       # this job's own keeps it clear of anything else on the runner.
       # `bootstatus` waits for the boot to finish rather than for it to start.
+      # The runtime is named rather than defaulted: idb is tested against the
+      # newest iOS the image offers, not against whatever a hardcoded device
+      # type happens to pair with once the image moves on.
       - name: Boot a simulator
         run: |
           DEVICE_SET_PATH="$RUNNER_TEMP/end-to-end-device-set"
           mkdir -p "$DEVICE_SET_PATH"
-          UDID=$(xcrun simctl --set "$DEVICE_SET_PATH" create end-to-end-provided "iPhone 16")
+          SELECTION=$(python3 EndToEndTests/newest_simulator.py)
+          read -r DEVICE_TYPE RUNTIME <<< "$SELECTION"
+          echo "Creating $DEVICE_TYPE on $RUNTIME"
+          UDID=$(xcrun simctl --set "$DEVICE_SET_PATH" create end-to-end-provided "$DEVICE_TYPE" "$RUNTIME")
           xcrun simctl --set "$DEVICE_SET_PATH" boot "$UDID"
           xcrun simctl --set "$DEVICE_SET_PATH" bootstatus "$UDID"
           echo "DEVICE_SET_PATH=$DEVICE_SET_PATH" >> "$GITHUB_ENV"
