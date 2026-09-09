@@ -318,11 +318,11 @@ public final class FBIDBCommandExecutor {
     guard let parsed = URL(string: url) else {
       throw FBIDBCommandError.invalidURL(urlString: url)
     }
-    try await simulatorTarget().open(parsed)
+    try await simulatorTarget().lifecycle.open(parsed)
   }
 
   public func focus() async throws {
-    try await simulatorTarget().focus()
+    try await simulatorTarget().lifecycle.focus()
   }
 
   public func update_contacts(_ dbTarData: Data) async throws {
@@ -794,7 +794,7 @@ public final class FBIDBCommandExecutor {
   private func connectToHID() async throws -> FBSimulatorHID {
     let simulator = try simulatorTarget()
     try FBSimulatorControlFrameworkLoader.xcodeFrameworks.loadPrivateFrameworks(target.logger)
-    return try await simulator.connectToHID()
+    return try await simulator.lifecycle.connectToHID()
   }
 
   private func installExtractedApp(_ extractPath: URL, makeDebuggable: Bool) async throws -> FBInstalledArtifact {

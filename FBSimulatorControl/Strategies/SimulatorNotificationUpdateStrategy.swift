@@ -48,7 +48,7 @@ final class SimulatorNotificationUpdateStrategy: @unchecked Sendable {
       return
     }
     _ = fbFutureFromAsync {
-      try await simulator.disconnect(withTimeout: FBControlCoreGlobalConfiguration.regularTimeout, logger: simulator.logger)
+      try await simulator.lifecycle.disconnect(withTimeout: FBControlCoreGlobalConfiguration.regularTimeout, logger: simulator.logger)
       return NSNull()
     }
     if let simulatorSet = simulator.set {

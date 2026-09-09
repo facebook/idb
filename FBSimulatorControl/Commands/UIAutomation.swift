@@ -317,7 +317,7 @@ public extension FBSimulator {
   /// Delivers one composed gesture over HID, which drains the transport once for the whole gesture
   /// rather than once per primitive event.
   internal func sendHIDGesture(_ event: FBSimulatorHIDEvent) async throws {
-    try await connectToHID().send(event: event, logger: logger)
+    try await lifecycle.connectToHID().send(event: event, logger: logger)
   }
 }
 

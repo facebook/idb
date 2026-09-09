@@ -64,7 +64,7 @@ public final class SimulatorScreenshotCommands {
     guard let simulator = self.simulator else {
       throw FBWeakTargetError.simulator
     }
-    let framebuffer = try await simulator.connectToFramebuffer()
+    let framebuffer = try await simulator.lifecycle.connectToFramebuffer()
     let image = SimulatorImage(framebuffer: framebuffer, logger: simulator.logger)
     self.image = image
     return image

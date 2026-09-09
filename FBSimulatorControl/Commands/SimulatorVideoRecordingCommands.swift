@@ -61,7 +61,7 @@ public final class FBSimulatorVideoRecordingCommands {
     if video != nil {
       throw SimulatorVideoRecordingCommandError.recordingAlreadyActive
     }
-    let framebuffer = try await simulator.connectToFramebuffer()
+    let framebuffer = try await simulator.lifecycle.connectToFramebuffer()
     let video = FBSimulatorVideo.video(withFramebuffer: framebuffer, configuration: configuration, filePath: filePath, logger: simulator.logger)
     try await video.startRecording()
     self.video = video
@@ -83,7 +83,7 @@ public final class FBSimulatorVideoRecordingCommands {
     guard let simulator = self.simulator else {
       throw FBWeakTargetError.simulator
     }
-    let framebuffer = try await simulator.connectToFramebuffer()
+    let framebuffer = try await simulator.lifecycle.connectToFramebuffer()
     return try await FBSimulatorVideoStream.start(framebuffer: framebuffer, configuration: configuration, to: consumer, logger: simulator.logger)
   }
 }

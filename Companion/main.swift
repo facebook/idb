@@ -273,7 +273,7 @@ private func runBoot(_ udid: String, userDefaults: UserDefaults, logger: FBContr
     options.remove(.verifyUsable)
   }
   let config = FBSimulatorBootConfiguration(options: options, environment: [:])
-  try await simulator.boot(config)
+  try await simulator.lifecycle.boot(config)
 
   writeTargetToStdOut(simulator)
 

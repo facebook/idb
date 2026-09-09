@@ -236,32 +236,3 @@ extension FBSimulator: EraseCommands {
     try await lifecycle.erase()
   }
 }
-
-// MARK: - FBSimulator+SimulatorLifecycleCommands
-
-extension FBSimulator {
-
-  public func boot(_ configuration: FBSimulatorBootConfiguration) async throws {
-    try await lifecycle.boot(configuration)
-  }
-
-  public func focus() async throws {
-    try await lifecycle.focus()
-  }
-
-  public func disconnect(withTimeout timeout: TimeInterval, logger: (any FBControlCoreLogger)?) async throws {
-    try await lifecycle.disconnect(withTimeout: timeout, logger: logger)
-  }
-
-  public func connectToFramebuffer() async throws -> FBFramebuffer {
-    try await lifecycle.connectToFramebuffer()
-  }
-
-  public func open(_ url: URL) async throws {
-    try await lifecycle.open(url)
-  }
-
-  public func connectToHID() async throws -> FBSimulatorHID {
-    try await lifecycle.connectToHID()
-  }
-}

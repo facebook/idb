@@ -68,7 +68,7 @@ final class SimulatorBootTestCase: XCTestCase {
     }
 
     let simulator = try await control.set.createSimulator(with: simulatorConfiguration)
-    try await simulator.boot(bootConfiguration)
+    try await simulator.lifecycle.boot(bootConfiguration)
     XCTAssertEqual(simulator.state, .booted)
 
     try await simulator.shutdown()
