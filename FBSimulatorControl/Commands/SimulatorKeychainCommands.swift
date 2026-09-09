@@ -8,12 +8,12 @@
 import FBControlCore
 import Foundation
 
-public struct FBSimulatorKeychainCommands {
+public struct SimulatorKeychainCommands {
 
   private let simulator: FBSimulator
 
-  public static func commands(with simulator: FBSimulator) -> FBSimulatorKeychainCommands {
-    FBSimulatorKeychainCommands(simulator: simulator)
+  public static func commands(with simulator: FBSimulator) -> SimulatorKeychainCommands {
+    SimulatorKeychainCommands(simulator: simulator)
   }
 
   fileprivate func clearKeychain() async throws {

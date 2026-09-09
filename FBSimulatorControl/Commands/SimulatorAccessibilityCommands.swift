@@ -108,11 +108,11 @@ final class SimulatorAccessibilityCommands: AccessibilityOperations {
       throw FBWeakTargetError.simulator
     }
     guard simulator.state == .booted else {
-      throw FBAccessibilityError.simulatorNotBooted(description: "\(simulator)")
+      throw AccessibilityError.simulatorNotBooted(description: "\(simulator)")
     }
     let selector = NSSelectorFromString("sendAccessibilityRequestAsync:completionQueue:completionHandler:")
     guard simulator.device.responds(to: selector) else {
-      throw FBAccessibilityError.accessibilityUnavailable
+      throw AccessibilityError.accessibilityUnavailable
     }
     try FBSimulatorControlFrameworkLoader.accessibilityFrameworks.loadPrivateFrameworks(simulator.logger)
   }
@@ -123,21 +123,21 @@ final class SimulatorAccessibilityCommands: AccessibilityOperations {
       throw FBWeakTargetError.simulator
     }
     guard let dispatcher = resolvedDispatcher else {
-      throw FBAccessibilityError.dispatcherUnavailable
+      throw AccessibilityError.dispatcherUnavailable
     }
     let element: AXWritableElement
     do {
       element = try await dispatcher.platformElement(withRequest: request, simulator: simulator)
-    } catch FBAccessibilityError.noTranslationObject where remediationPermitted {
+    } catch AccessibilityError.noTranslationObject where remediationPermitted {
       // On the frontmost path a nil translation usually means SpringBoard (the provider of the
       // frontmost application) is down. Re-label the error when we can confirm that; a probe
       // failure or a live reading keeps the original .noTranslationObject (e.g. a genuine
       // invalid point or a transient mid-respawn).
       let springBoardRunning = (try? await resolvedLaunchCtl(simulator).serviceIsRunning(named: Self.springBoardServiceName)) ?? true
       if !springBoardRunning {
-        throw FBAccessibilityError.springBoardNotRunning
+        throw AccessibilityError.springBoardNotRunning
       }
-      throw FBAccessibilityError.noTranslationObject
+      throw AccessibilityError.noTranslationObject
     }
     if !remediationPermitted {
       return AccessibilityElement(element: element, request: request, dispatcher: dispatcher, simulator: simulator)
@@ -176,7 +176,7 @@ final class SimulatorAccessibilityCommands: AccessibilityOperations {
     do {
       _ = try await resolvedLaunchCtl(simulator).stopService(withName: Self.coreSimulatorBridgeServiceName)
     } catch {
-      throw FBAccessibilityError.springBoardRemediationFailed(serviceName: Self.coreSimulatorBridgeServiceName)
+      throw AccessibilityError.springBoardRemediationFailed(serviceName: Self.coreSimulatorBridgeServiceName)
     }
   }
 }

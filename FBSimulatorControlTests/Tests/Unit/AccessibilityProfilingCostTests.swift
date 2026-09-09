@@ -15,7 +15,7 @@ final class AccessibilityProfilingCostTests: XCTestCase {
   // `fetchedKeys` is a set bounded by distinct keys; `attributeFetchCount` is a counter. Pinned
   // separately so a change to either is attributable.
   func testTheFetchedKeySetDoesNotGrowWithCallCount() {
-    let collector = FBAccessibilityProfilingCollector()
+    let collector = AccessibilityProfilingCollector()
     for _ in 0..<10000 {
       collector.incrementAttributeFetchCount(forKey: "AXLabel")
     }

@@ -9,13 +9,13 @@
 import FBControlCore
 import Foundation
 
-public enum FBSimulatorNotificationError: Error {
+public enum SimulatorNotificationError: Error {
   case jsonNotUTF8
   case jsonNotADictionary
   case selectorUnavailable
 }
 
-extension FBSimulatorNotificationError: LocalizedError {
+extension SimulatorNotificationError: LocalizedError {
   public var errorDescription: String? {
     switch self {
     case .jsonNotUTF8:
@@ -28,25 +28,25 @@ extension FBSimulatorNotificationError: LocalizedError {
   }
 }
 
-public struct FBSimulatorNotificationCommands {
+public struct SimulatorNotificationCommands {
 
   private let simulator: FBSimulator
 
-  public static func commands(with simulator: FBSimulator) -> FBSimulatorNotificationCommands {
-    FBSimulatorNotificationCommands(simulator: simulator)
+  public static func commands(with simulator: FBSimulator) -> SimulatorNotificationCommands {
+    SimulatorNotificationCommands(simulator: simulator)
   }
 
   fileprivate func sendPushNotification(forBundleID bundleID: String, jsonPayload: String) async throws {
 
     guard let data = jsonPayload.data(using: .utf8) else {
-      throw FBSimulatorNotificationError.jsonNotUTF8
+      throw SimulatorNotificationError.jsonNotUTF8
     }
     guard let jsonObj = try JSONSerialization.jsonObject(with: data) as? [String: Any] else {
-      throw FBSimulatorNotificationError.jsonNotADictionary
+      throw SimulatorNotificationError.jsonNotADictionary
     }
 
     guard simulator.device.responds(to: NSSelectorFromString("sendPushNotificationForBundleID:jsonPayload:error:")) else {
-      throw FBSimulatorNotificationError.selectorUnavailable
+      throw SimulatorNotificationError.selectorUnavailable
     }
 
     try simulator.device.sendPushNotification(forBundleID: bundleID, jsonPayload: jsonObj)

@@ -9,12 +9,12 @@
 import FBControlCore
 import Foundation
 
-public struct FBSimulatorLocationCommands {
+public struct SimulatorLocationCommands {
 
   private let simulator: FBSimulator
 
-  public static func commands(with simulator: FBSimulator) -> FBSimulatorLocationCommands {
-    FBSimulatorLocationCommands(simulator: simulator)
+  public static func commands(with simulator: FBSimulator) -> SimulatorLocationCommands {
+    SimulatorLocationCommands(simulator: simulator)
   }
 
   fileprivate func overrideLocation(longitude: Double, latitude: Double) async throws {

@@ -71,10 +71,10 @@ final class AXBridgeUIAutomation: AXBridgeTreeReader, @unchecked Sendable {
   private func translatingBackendErrors<T>(_ body: () async throws -> T) async throws -> T {
     do {
       return try await body()
-    } catch let FBAXBridgeError.applicationUnavailable(pid) {
-      throw FBUIAutomationError.applicationUnavailable(backend: backend, pid: pid)
-    } catch let FBAXBridgeError.applicationNotResponding(pid) {
-      throw FBUIAutomationError.applicationNotResponding(backend: backend, pid: pid)
+    } catch let AXBridgeError.applicationUnavailable(pid) {
+      throw UIAutomationError.applicationUnavailable(backend: backend, pid: pid)
+    } catch let AXBridgeError.applicationNotResponding(pid) {
+      throw UIAutomationError.applicationNotResponding(backend: backend, pid: pid)
     }
   }
 
@@ -190,7 +190,7 @@ final class AXBridgeUIAutomation: AXBridgeTreeReader, @unchecked Sendable {
           fromTree: read.tree, keys: FBAXKeys.defaultSet.union([key.serializationKey]), nestedFormat: false, pid: read.pid
         )
         return AXTreeWalk.matchingElement(inElements: elements, markerValue: markerValue, key: key) != nil ? true : nil
-      } catch let error as FBAXBridgeError {
+      } catch let error as AXBridgeError {
         guard error.isTransientDuringMarkerWait else {
           throw error
         }
@@ -208,7 +208,7 @@ final class AXBridgeUIAutomation: AXBridgeTreeReader, @unchecked Sendable {
     // The AX runtime's press is instantaneous with nowhere to put a hold; reject `duration` rather
     // than silently downgrading a long-press to a tap.
     guard options.duration == nil else {
-      throw FBUIAutomationError.operationUnsupported(backend: backend, operation: "A tap with a hold duration")
+      throw UIAutomationError.operationUnsupported(backend: backend, operation: "A tap with a hold duration")
     }
     let target = try await writeTarget(for: query, operation: "A tap", callerAssertion: options.assertion)
     try await write(.perform(.press), to: target, query: query)
@@ -282,11 +282,11 @@ final class AXBridgeUIAutomation: AXBridgeTreeReader, @unchecked Sendable {
   private func translatingWriteErrors(_ query: FBAccessibilityElementQuery, _ body: () async throws -> Void) async throws {
     do {
       try await translatingBackendErrors(body)
-    } catch let FBAXBridgeError.assertionFailed(message) {
+    } catch let AXBridgeError.assertionFailed(message) {
       guard case let .marker(value, key, _, _) = query else {
-        throw FBAXBridgeError.assertionFailed(message)
+        throw AXBridgeError.assertionFailed(message)
       }
-      throw FBUIAutomationError.elementMoved(backend: backend, key: key.rawValue, value: value)
+      throw UIAutomationError.elementMoved(backend: backend, key: key.rawValue, value: value)
     }
   }
 

@@ -12,14 +12,14 @@ import AppKit
 
 private let openURLRetries = 2
 
-public enum FBSimulatorLifecycleError: Error {
+public enum SimulatorLifecycleError: Error {
   case focusUnsupportedForCustomDeviceSet(deviceSetPath: String)
   case focusAmbiguous(runningApplications: String)
   case focusFailed(applicationDescription: String)
   case openURLFailed(url: URL, simulatorDescription: String, underlying: Error?)
 }
 
-extension FBSimulatorLifecycleError: LocalizedError {
+extension SimulatorLifecycleError: LocalizedError {
   public var errorDescription: String? {
     switch self {
     case let .focusUnsupportedForCustomDeviceSet(deviceSetPath):
@@ -102,7 +102,7 @@ public final class FBSimulatorLifecycleCommands {
     // This is also why Xcode parallel testing — which clones into a non-default device set — is
     // not visible in DeviceHub (Apple known issue 176809181).
     if let deviceSetPath = simulator.customDeviceSetPath {
-      throw FBSimulatorLifecycleError.focusUnsupportedForCustomDeviceSet(deviceSetPath: deviceSetPath)
+      throw SimulatorLifecycleError.focusUnsupportedForCustomDeviceSet(deviceSetPath: deviceSetPath)
     }
 
     // Find the running instances of the Simulator host app. Xcode 27 renamed Simulator.app
@@ -120,11 +120,11 @@ public final class FBSimulatorLifecycleCommands {
     }
 
     if simulatorApps.count > 1 {
-      throw FBSimulatorLifecycleError.focusAmbiguous(runningApplications: FBCollectionInformation.oneLineDescription(from: simulatorApps))
+      throw SimulatorLifecycleError.focusAmbiguous(runningApplications: FBCollectionInformation.oneLineDescription(from: simulatorApps))
     }
 
     if !simulatorApp.activate() {
-      throw FBSimulatorLifecycleError.focusFailed(applicationDescription: String(describing: simulatorApp))
+      throw SimulatorLifecycleError.focusFailed(applicationDescription: String(describing: simulatorApp))
     }
   }
 
@@ -198,7 +198,7 @@ public final class FBSimulatorLifecycleCommands {
         lastError = error as NSError
       }
     }
-    throw FBSimulatorLifecycleError.openURLFailed(url: url, simulatorDescription: String(describing: simulator), underlying: lastError)
+    throw SimulatorLifecycleError.openURLFailed(url: url, simulatorDescription: String(describing: simulator), underlying: lastError)
   }
 }
 

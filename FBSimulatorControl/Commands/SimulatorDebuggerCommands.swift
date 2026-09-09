@@ -58,7 +58,7 @@ private final class SimulatorDebugServer: FBDebugServer {
   }
 }
 
-public final class FBSimulatorDebuggerCommands {
+public final class SimulatorDebuggerCommands {
 
   internal weak var simulator: FBSimulator?
   internal let debugServerPath: String
@@ -71,8 +71,8 @@ public final class FBSimulatorDebuggerCommands {
       .appendingPathComponent("SharedFrameworks/LLDB.framework/Resources/debugserver")
   }
 
-  public class func commands(with simulator: FBSimulator) -> FBSimulatorDebuggerCommands {
-    FBSimulatorDebuggerCommands(
+  public class func commands(with simulator: FBSimulator) -> SimulatorDebuggerCommands {
+    SimulatorDebuggerCommands(
       simulator: simulator,
       debugServerPath: resolveDebugServerPath()
     )

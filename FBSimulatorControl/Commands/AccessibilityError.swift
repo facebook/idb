@@ -8,7 +8,7 @@
 import Foundation
 
 /// Errors thrown by the simulator accessibility command surface.
-public enum FBAccessibilityError: LocalizedError, Sendable {
+public enum AccessibilityError: LocalizedError, Sendable {
 
   /// An operation was attempted on an element handle that has been closed.
   /// `operation` is the verb phrase, e.g. "serialize", "tap", "set value on".
@@ -68,8 +68,8 @@ public enum FBAccessibilityError: LocalizedError, Sendable {
   }
 }
 
-extension FBAccessibilityError: CustomStringConvertible {
+extension AccessibilityError: CustomStringConvertible {
   /// Mirrors `errorDescription` so string interpolation (`"\(error)"`) and logs
   /// surface the human-readable message rather than the synthesized case name.
-  public var description: String { errorDescription ?? "FBAccessibilityError" }
+  public var description: String { errorDescription ?? "AccessibilityError" }
 }

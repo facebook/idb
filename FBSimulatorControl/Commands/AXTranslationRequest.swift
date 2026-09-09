@@ -46,7 +46,7 @@ final class AXTranslationRequest {
   var device: SimDevice?
   /// Owned from construction: the dispatcher records acquisition timings before the caller reaches
   /// `serialize`.
-  var collector: FBAccessibilityProfilingCollector
+  var collector: AccessibilityProfilingCollector
   var logger: FBControlCoreLogger?
   var translator: AXPTranslator?
 
@@ -59,7 +59,7 @@ final class AXTranslationRequest {
     self.kind = kind
     self.token = UUID().uuidString
     self.requestTimeoutSeconds = Self.defaultRequestTimeoutSeconds
-    self.collector = FBAccessibilityProfilingCollector()
+    self.collector = AccessibilityProfilingCollector()
   }
 
   /// A fresh request of the same kind with a new token, used to retry after

@@ -107,7 +107,7 @@ extension AXBridgeTreeReader {
     switch query {
     case let .point(point):
       guard let response = try await hitTest(at: point, options: options) else {
-        throw FBUIAutomationError.noElementAtPoint(backend: backend, x: Double(point.x), y: Double(point.y))
+        throw UIAutomationError.noElementAtPoint(backend: backend, x: Double(point.x), y: Double(point.y))
       }
       // A hit-test resolves one element with no tree behind it, so there is no screen or truncation to
       // report — only which backend answered and what was asked for.
@@ -131,7 +131,7 @@ extension AXBridgeTreeReader {
           inElements: elements, markerValue: value, key: key, ignoresCase: ignoresCase
         )
       else {
-        throw FBUIAutomationError.elementNotFound(backend: backend, key: key.rawValue, value: value)
+        throw UIAutomationError.elementNotFound(backend: backend, key: key.rawValue, value: value)
       }
       // The match came from a flattened walk, so it carries no children of its own; reporting them
       // keeps a marker read the same shape as any other single-element read of the same format.
@@ -152,7 +152,7 @@ extension AXBridgeTreeReader {
       // never routes here, so only an explicit choice can; refuse rather than time out in the guest.
       let unanswerable = plan.serializationKeys.intersection(FBAXKeys.reachabilityKeys)
       if plan.traversal == .singleFetch, !unanswerable.isEmpty {
-        throw FBUIAutomationError.traversalCannotAnswer(
+        throw UIAutomationError.traversalCannotAnswer(
           backend: backend,
           traversal: FBAXTraversal.singleFetch.rawValue,
           keys: unanswerable.map(\.rawValue).sorted()
@@ -287,7 +287,7 @@ extension AXBridgeTreeReader {
       let frame = element.frame ?? nil,
       let x = frame.x, let y = frame.y, let width = frame.width, let height = frame.height
     else {
-      throw FBUIAutomationError.frameUnavailable(backend: backend, query: query)
+      throw UIAutomationError.frameUnavailable(backend: backend, query: query)
     }
     return CGRect(x: x, y: y, width: width, height: height)
   }

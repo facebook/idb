@@ -21,40 +21,40 @@ extension FBSimulator {
     commandCache.resolve { FBSimulatorApplicationCommands.commands(with: self) }
   }
 
-  var crashLog: FBSimulatorCrashLogCommands {
-    commandCache.resolve { FBSimulatorCrashLogCommands.commands(with: self) }
+  var crashLog: SimulatorCrashLogCommands {
+    commandCache.resolve { SimulatorCrashLogCommands.commands(with: self) }
   }
 
-  var screenshot: FBSimulatorScreenshotCommands {
-    commandCache.resolve { FBSimulatorScreenshotCommands.commands(with: self) }
+  var screenshot: SimulatorScreenshotCommands {
+    commandCache.resolve { SimulatorScreenshotCommands.commands(with: self) }
   }
 
-  var location: FBSimulatorLocationCommands {
-    FBSimulatorLocationCommands.commands(with: self)
+  var location: SimulatorLocationCommands {
+    SimulatorLocationCommands.commands(with: self)
   }
 
-  var debugger: FBSimulatorDebuggerCommands {
-    commandCache.resolve { FBSimulatorDebuggerCommands.commands(with: self) }
+  var debugger: SimulatorDebuggerCommands {
+    commandCache.resolve { SimulatorDebuggerCommands.commands(with: self) }
   }
 
-  var file: FBSimulatorFileCommands {
-    FBSimulatorFileCommands.commands(with: self)
+  var file: SimulatorFileCommands {
+    SimulatorFileCommands.commands(with: self)
   }
 
-  var log: FBSimulatorLogCommands {
-    FBSimulatorLogCommands.commands(with: self)
+  var log: SimulatorLogCommands {
+    SimulatorLogCommands.commands(with: self)
   }
 
-  var processSpawn: FBSimulatorProcessSpawnCommands {
-    FBSimulatorProcessSpawnCommands.commands(with: self)
+  var processSpawn: SimulatorProcessSpawnCommands {
+    SimulatorProcessSpawnCommands.commands(with: self)
   }
 
   var videoRecording: FBSimulatorVideoRecordingCommands {
     commandCache.resolve { FBSimulatorVideoRecordingCommands.commands(with: self) }
   }
 
-  var launchCtl: FBSimulatorLaunchCtlCommands {
-    FBSimulatorLaunchCtlCommands.commands(with: self)
+  var launchCtl: SimulatorLaunchCtlCommands {
+    SimulatorLaunchCtlCommands.commands(with: self)
   }
 
   var xctraceRecord: FBXCTraceRecordCommands {
@@ -67,39 +67,39 @@ extension FBSimulator {
     commandCache.resolve { FBSimulatorLifecycleCommands.commands(with: self) }
   }
 
-  var media: FBSimulatorMediaCommands {
-    FBSimulatorMediaCommands.commands(with: self)
+  var media: SimulatorMediaCommands {
+    SimulatorMediaCommands.commands(with: self)
   }
 
-  var keychain: FBSimulatorKeychainCommands {
-    FBSimulatorKeychainCommands.commands(with: self)
+  var keychain: SimulatorKeychainCommands {
+    SimulatorKeychainCommands.commands(with: self)
   }
 
-  var settings: FBSimulatorSettingsCommands {
-    FBSimulatorSettingsCommands.commands(with: self)
+  var settings: SimulatorSettingsCommands {
+    SimulatorSettingsCommands.commands(with: self)
   }
 
-  var xctestExtended: FBSimulatorXCTestCommands {
-    commandCache.resolve { FBSimulatorXCTestCommands.commands(with: self) }
+  var xctestExtended: SimulatorXCTestCommands {
+    commandCache.resolve { SimulatorXCTestCommands.commands(with: self) }
   }
 
   var accessibility: SimulatorAccessibilityCommands {
     commandCache.resolve { SimulatorAccessibilityCommands.commands(with: self) }
   }
 
-  var dapServer: FBSimulatorDapServerCommand {
-    FBSimulatorDapServerCommand.commands(with: self)
+  var dapServer: SimulatorDapServerCommand {
+    SimulatorDapServerCommand.commands(with: self)
   }
 
   var repl: FBSimulatorReplCommands {
     commandCache.resolve { FBSimulatorReplCommands.commands(with: self) }
   }
 
-  var notification: FBSimulatorNotificationCommands {
-    FBSimulatorNotificationCommands.commands(with: self)
+  var notification: SimulatorNotificationCommands {
+    SimulatorNotificationCommands.commands(with: self)
   }
 
-  var memory: FBSimulatorMemoryCommands {
-    FBSimulatorMemoryCommands.commands(with: self)
+  var memory: SimulatorMemoryCommands {
+    SimulatorMemoryCommands.commands(with: self)
   }
 }

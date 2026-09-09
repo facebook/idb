@@ -75,13 +75,13 @@ final class AccessibilitySerializationTests: XCTestCase {
       )
       let instrumented = AXNodeSerializer.nodeElement(
         forElement: element, token: "", keys: FBAXKeys.defaultSet,
-        collector: FBAccessibilityProfilingCollector()
+        collector: AccessibilityProfilingCollector()
       )
       XCTAssertEqual(bare, instrumented, "the profiling side-channel must not change the node output")
 
       let decorated = AXNodeSerializer.decoratedElement(
         forElement: element, token: "", keys: FBAXKeys.defaultSet,
-        collector: FBAccessibilityProfilingCollector(), seenPids: SeenPIDs(), isRemote: true
+        collector: AccessibilityProfilingCollector(), seenPids: SeenPIDs(), isRemote: true
       )
       XCTAssertEqual(bare, decorated, "the seen-pid/is_remote decorator must not alter default-set node output")
     }

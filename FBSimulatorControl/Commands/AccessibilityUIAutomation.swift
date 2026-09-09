@@ -51,7 +51,7 @@ final class AccessibilityUIAutomation: FBUIAutomation, @unchecked Sendable {
   }
 
   /// Re-raises the accessibility stack's "element not found" as the backend-neutral
-  /// `FBUIAutomationError`, so a caller holding `any FBUIAutomation` can catch it without knowing
+  /// `UIAutomationError`, so a caller holding `any FBUIAutomation` can catch it without knowing
   /// which backend it holds. Every other accessibility failure is transport-specific and passes
   /// through untouched.
   private static func translatingBackendErrors<T>(
@@ -60,9 +60,9 @@ final class AccessibilityUIAutomation: FBUIAutomation, @unchecked Sendable {
   ) async throws -> T {
     do {
       return try await body()
-    } catch let error as FBAccessibilityError {
+    } catch let error as AccessibilityError {
       guard case let .elementNotFound(key, value, _) = error else { throw error }
-      throw FBUIAutomationError.elementNotFound(backend: .accessibility, key: key, value: value)
+      throw UIAutomationError.elementNotFound(backend: .accessibility, key: key, value: value)
     }
   }
 
@@ -75,7 +75,7 @@ final class AccessibilityUIAutomation: FBUIAutomation, @unchecked Sendable {
       defer { element.close() }
       return try await element.serialize(with: options)
         .withProvenance(backend: FBUIAutomationBackend.accessibility.name, target: .point(point))
-    } catch let error as FBAccessibilityError {
+    } catch let error as AccessibilityError {
       // A point that resolves to no element is a valid empty hit-test result, not a failure.
       if case .elementNotFound = error { return nil }
       throw error
@@ -89,7 +89,7 @@ final class AccessibilityUIAutomation: FBUIAutomation, @unchecked Sendable {
     // AXPress is instantaneous with nowhere to put a hold; reject `duration` rather than silently
     // downgrading a long-press to a tap.
     guard options.duration == nil else {
-      throw FBUIAutomationError.operationUnsupported(backend: .accessibility, operation: "A tap with a hold duration")
+      throw UIAutomationError.operationUnsupported(backend: .accessibility, operation: "A tap with a hold duration")
     }
     try await Self.translatingBackendErrors(query) {
       let element = try await operations.resolveElement(for: query)
@@ -97,7 +97,7 @@ final class AccessibilityUIAutomation: FBUIAutomation, @unchecked Sendable {
       if let assertion = options.assertion {
         let actual = try await element.stringValue(forSearchableKey: assertion.key)
         guard actual == assertion.value else {
-          throw FBUIAutomationError.valueMismatch(
+          throw UIAutomationError.valueMismatch(
             backend: .accessibility, key: assertion.key.rawValue, expected: assertion.value, actual: actual
           )
         }
@@ -126,7 +126,7 @@ final class AccessibilityUIAutomation: FBUIAutomation, @unchecked Sendable {
         let element = try await operations.resolveElement(for: .marker(value: markerValue, key: key, depth: depth))
         element.close()
         return true
-      } catch let error as FBAccessibilityError {
+      } catch let error as AccessibilityError {
         // The matcher throws `.elementNotFound` when the element isn't in the tree yet — keep
         // polling on that alone, and surface every other failure (boot/dispatcher/IPC) at once.
         if case .elementNotFound = error {

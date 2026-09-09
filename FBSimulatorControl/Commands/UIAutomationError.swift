@@ -13,7 +13,7 @@ import Foundation
 /// serving it. These conditions — the element isn't there, the point is empty, the wait elapsed, the
 /// target shape is wrong for the verb, the backend doesn't implement it — are facts about the query,
 /// not about a transport, so they are one type with a `backend` tag rather than one enum per backend.
-/// That is what lets `catch FBUIAutomationError.elementNotFound` work regardless of the backend in
+/// That is what lets `catch UIAutomationError.elementNotFound` work regardless of the backend in
 /// hand. Failures that genuinely belong to one transport (a missing guest binary or a dead
 /// accessibility dispatcher) stay in that backend's own error type.
 ///
@@ -21,7 +21,7 @@ import Foundation
 /// is the one condition `ApplicationAccessibilityEnabled` addresses; a point that is empty and a marker
 /// that never appeared are not accessibility-configuration problems, and telling a reader they might be
 /// is what makes the advice ignorable on the case where it is right.
-public enum FBUIAutomationError: LocalizedError, Sendable {
+public enum UIAutomationError: LocalizedError, CustomStringConvertible, Sendable {
   /// No element matched the marker `value` for `key`.
   case elementNotFound(backend: FBUIAutomationBackend, key: String, value: String)
   /// A marker matched an element, but it reports no on-screen frame — off-screen or still settling —
@@ -66,6 +66,8 @@ public enum FBUIAutomationError: LocalizedError, Sendable {
   /// front rather than attempted: the read would time out in the guest, not fail cleanly.
   case traversalCannotAnswer(backend: FBUIAutomationBackend, traversal: String, keys: [String])
 
+  public var description: String { errorDescription ?? "UIAutomationError" }
+
   public var errorDescription: String? {
     switch self {
     case let .elementNotFound(backend, key, value):
@@ -107,10 +109,6 @@ public enum FBUIAutomationError: LocalizedError, Sendable {
     }
     return "with pid \(pid)"
   }
-}
-
-extension FBUIAutomationError: CustomStringConvertible {
-  public var description: String { errorDescription ?? "FBUIAutomationError" }
 }
 
 public extension FBUIAutomationBackend {

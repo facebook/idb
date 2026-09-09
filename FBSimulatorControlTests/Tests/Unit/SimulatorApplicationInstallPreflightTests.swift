@@ -216,7 +216,7 @@ final class SimulatorApplicationInstallPreflightTests: XCTestCase {
     do {
       let _: String = try await FBSimulatorApplicationCommands.installAndResolveApplication(
         install: { _ in
-          throw FBSimulatorApplicationLookupError.applicationInfoUnavailable(path: "/tmp/App.app")
+          throw SimulatorApplicationLookupError.applicationInfoUnavailable(path: "/tmp/App.app")
         },
         resolveInstalledApplication: { "installed" },
         installFailure: installFailure)
@@ -240,7 +240,7 @@ final class SimulatorApplicationInstallPreflightTests: XCTestCase {
               code: 1,
               userInfo: [NSLocalizedDescriptionKey: "Failed to load Info.plist from bundle at path /tmp/App.app"])
           }
-          throw FBSimulatorApplicationLookupError.applicationInfoUnavailable(path: "/tmp/App.app")
+          throw SimulatorApplicationLookupError.applicationInfoUnavailable(path: "/tmp/App.app")
         },
         resolveInstalledApplication: { "installed" },
         installFailure: installFailure)

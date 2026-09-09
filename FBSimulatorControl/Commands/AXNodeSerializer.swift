@@ -23,7 +23,7 @@ enum AXNodeSerializer {
     token: String,
     nestedFormat: Bool,
     keys: Set<FBAXKeys>,
-    collector: FBAccessibilityProfilingCollector?,
+    collector: AccessibilityProfilingCollector?,
     seenPids: SeenPIDs?
   ) -> [FBAccessibilityDocumentElement] {
     element.axSetBridgeDelegateToken(token)
@@ -38,7 +38,7 @@ enum AXNodeSerializer {
     token: String,
     nestedFormat: Bool,
     keys: Set<FBAXKeys>,
-    collector: FBAccessibilityProfilingCollector?
+    collector: AccessibilityProfilingCollector?
   ) -> FBAccessibilityDocumentElement {
     element.axSetBridgeDelegateToken(token)
     var node = decoratedElement(forElement: element, token: token, keys: keys, collector: collector, seenPids: nil, isRemote: false)
@@ -76,7 +76,7 @@ enum AXNodeSerializer {
     forElement element: AXPlatformElement,
     token: String,
     keys: Set<FBAXKeys>,
-    collector: FBAccessibilityProfilingCollector?
+    collector: AccessibilityProfilingCollector?
   ) -> FBAccessibilityDocumentElement {
     // The token must always be set so that the right callback is called.
     element.axSetBridgeDelegateToken(token)
@@ -218,7 +218,7 @@ enum AXNodeSerializer {
     forElement element: AXPlatformElement,
     token: String,
     keys: Set<FBAXKeys>,
-    collector: FBAccessibilityProfilingCollector?,
+    collector: AccessibilityProfilingCollector?,
     seenPids: SeenPIDs?,
     isRemote: Bool
   ) -> FBAccessibilityDocumentElement {
@@ -238,7 +238,7 @@ enum AXNodeSerializer {
     fromElement element: AXPlatformElement,
     token: String,
     keys: Set<FBAXKeys>,
-    collector: FBAccessibilityProfilingCollector?,
+    collector: AccessibilityProfilingCollector?,
     seenPids: SeenPIDs?
   ) -> [FBAccessibilityDocumentElement] {
     var values: [FBAccessibilityDocumentElement] = [
@@ -256,7 +256,7 @@ enum AXNodeSerializer {
     fromElement element: AXPlatformElement,
     token: String,
     keys: Set<FBAXKeys>,
-    collector: FBAccessibilityProfilingCollector?,
+    collector: AccessibilityProfilingCollector?,
     seenPids: SeenPIDs?
   ) -> [FBAccessibilityDocumentElement] {
     var childrenValues: [FBAccessibilityDocumentElement] = []

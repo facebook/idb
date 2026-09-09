@@ -77,7 +77,7 @@ final class AXBridgeConnection: @unchecked Sendable {
     guest: FBSubprocess<AnyObject, AnyObject, AnyObject>? = nil
   ) async throws -> Int32 {
     guard path.utf8.count < sunPathCapacity else {
-      throw FBAXBridgeError.socketPathTooLong(path: path, limit: sunPathCapacity)
+      throw AXBridgeError.socketPathTooLong(path: path, limit: sunPathCapacity)
     }
     return try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Int32, Error>) in
       DispatchQueue.global().async {
@@ -97,13 +97,13 @@ final class AXBridgeConnection: @unchecked Sendable {
             }
             let exit = terminationCause(waitpidStatus: guest.statLoc.result?.int32Value)
             continuation.resume(
-              throwing: FBAXBridgeError.guestDiedBeforeBinding(
+              throwing: AXBridgeError.guestDiedBeforeBinding(
                 pid: guest.processIdentifier, signal: exit.signal, exitCode: exit.exitCode, path: path))
             return
           }
           usleep(100_000)
         } while Date() < deadline
-        continuation.resume(throwing: FBAXBridgeError.guestFailure("timed out connecting to the serve socket at \(path)"))
+        continuation.resume(throwing: AXBridgeError.guestFailure("timed out connecting to the serve socket at \(path)"))
       }
     }
   }
@@ -160,7 +160,7 @@ final class AXBridgeConnection: @unchecked Sendable {
     let header = try readAll(fileDescriptor, count: 4, guest: guest)
     let length = decodeLength(header)
     guard length > 0, length < 16 * 1024 * 1024 else {
-      throw FBAXBridgeError.guestFailure("invalid response frame length \(length)")
+      throw AXBridgeError.guestFailure("invalid response frame length \(length)")
     }
     return try readAll(fileDescriptor, count: length, guest: guest)
   }
@@ -185,10 +185,10 @@ final class AXBridgeConnection: @unchecked Sendable {
         let written = send(fileDescriptor, base + offset, raw.count - offset, 0)
         if written < 0 {
           if errno == EINTR { continue }
-          throw FBAXBridgeError.guestFailure("socket write failed: \(String(cString: strerror(errno)))")
+          throw AXBridgeError.guestFailure("socket write failed: \(String(cString: strerror(errno)))")
         }
         if written == 0 {
-          throw FBAXBridgeError.guestFailure("socket write returned 0")
+          throw AXBridgeError.guestFailure("socket write returned 0")
         }
         offset += written
       }
@@ -259,12 +259,12 @@ final class AXBridgeConnection: @unchecked Sendable {
         if received < 0 {
           if errno == EINTR { continue }
           if errno == EAGAIN || errno == EWOULDBLOCK {
-            throw FBAXBridgeError.guestFailure("serve read timed out after \(receiveTimeoutSeconds)s with no data")
+            throw AXBridgeError.guestFailure("serve read timed out after \(receiveTimeoutSeconds)s with no data")
           }
-          throw FBAXBridgeError.guestFailure("socket read failed: \(String(cString: strerror(errno)))")
+          throw AXBridgeError.guestFailure("socket read failed: \(String(cString: strerror(errno)))")
         }
         if received == 0 {
-          throw FBAXBridgeError.guestFailure(AXBridgeConnection.socketClosedMessage(process: guest))
+          throw AXBridgeError.guestFailure(AXBridgeConnection.socketClosedMessage(process: guest))
         }
         offset += received
       }

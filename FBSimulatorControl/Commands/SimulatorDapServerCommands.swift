@@ -8,13 +8,13 @@
 import FBControlCore
 import Foundation
 
-public enum FBSimulatorDapServerError: Error {
+public enum SimulatorDapServerError: Error {
   case logDirectoryCreationFailed(path: String, underlying: Error)
   case logFileCreationFailed(path: String)
   case noDataDirectory
 }
 
-extension FBSimulatorDapServerError: LocalizedError {
+extension SimulatorDapServerError: LocalizedError {
   public var errorDescription: String? {
     switch self {
     case let .logDirectoryCreationFailed(path, underlying):
@@ -27,12 +27,12 @@ extension FBSimulatorDapServerError: LocalizedError {
   }
 }
 
-public final class FBSimulatorDapServerCommand {
+public final class SimulatorDapServerCommand {
 
   private let simulator: FBSimulator
 
-  public class func commands(with simulator: FBSimulator) -> FBSimulatorDapServerCommand {
-    FBSimulatorDapServerCommand(simulator: simulator)
+  public class func commands(with simulator: FBSimulator) -> SimulatorDapServerCommand {
+    SimulatorDapServerCommand(simulator: simulator)
   }
 
   private init(simulator: FBSimulator) {
@@ -45,13 +45,13 @@ public final class FBSimulatorDapServerCommand {
     do {
       try FileManager.default.createDirectory(atPath: dapLogDir, withIntermediateDirectories: true, attributes: nil)
     } catch {
-      throw FBSimulatorDapServerError.logDirectoryCreationFailed(path: dapLogDir, underlying: error)
+      throw SimulatorDapServerError.logDirectoryCreationFailed(path: dapLogDir, underlying: error)
     }
 
     let logString = (dapLogDir as NSString).appendingPathComponent(UUID().uuidString + ".log")
     let createdLogFile = FileManager.default.createFile(atPath: logString, contents: nil, attributes: nil)
     if !createdLogFile {
-      throw FBSimulatorDapServerError.logFileCreationFailed(path: logString)
+      throw SimulatorDapServerError.logFileCreationFailed(path: logString)
     }
 
     simulator.logger.debug().log("Dap Command: Launching dap server logging at path \(logString)")
@@ -59,7 +59,7 @@ public final class FBSimulatorDapServerCommand {
       "LLDBVSCODE_LOG": logString
     ]
     guard let dataDirectory = simulator.dataDirectory else {
-      throw FBSimulatorDapServerError.noDataDirectory
+      throw SimulatorDapServerError.noDataDirectory
     }
     let fullPath = (dataDirectory as NSString).appendingPathComponent(dapPath)
     let startedFuture = FBProcessBuilder<AnyObject, AnyObject, NSString>

@@ -10,7 +10,7 @@
 import Foundation
 
 /// The failures of running a service inside the guest with `SimulatorFrameworkBridge`.
-public enum FBSimulatorFrameworkBridgeError: Error, LocalizedError {
+public enum SimulatorFrameworkBridgeError: Error, LocalizedError {
 
   /// The bridge binary is not present in the companion's Resources directory.
   case binaryMissing
@@ -43,7 +43,7 @@ extension FBSimulator {
     arguments: [String] = []
   ) async throws -> String {
     guard let helperPath = frameworkBridgePath else {
-      throw FBSimulatorFrameworkBridgeError.binaryMissing
+      throw SimulatorFrameworkBridgeError.binaryMissing
     }
 
     let output = try await launchProcessConsumingOutput(
@@ -51,7 +51,7 @@ extension FBSimulator {
       arguments: [service, action] + arguments)
     guard output.exitCode == 0 else {
       let stderr = String(data: output.stderr, encoding: .utf8) ?? ""
-      throw FBSimulatorFrameworkBridgeError.serviceFailed(
+      throw SimulatorFrameworkBridgeError.serviceFailed(
         service: service,
         action: action,
         exitCode: output.exitCode,

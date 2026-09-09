@@ -11,14 +11,14 @@ import FBControlCore
 import Foundation
 import UniformTypeIdentifiers
 
-public enum FBSimulatorMediaError: Error {
+public enum SimulatorMediaError: Error {
   case noMediaProvided
   case unknownMediaPaths(paths: [URL])
   case addMediaFailed(paths: [URL], underlying: Error)
   case addContactsFailed(paths: [URL], underlying: Error)
 }
 
-extension FBSimulatorMediaError: LocalizedError {
+extension SimulatorMediaError: LocalizedError {
   public var errorDescription: String? {
     switch self {
     case .noMediaProvided:
@@ -33,12 +33,12 @@ extension FBSimulatorMediaError: LocalizedError {
   }
 }
 
-public struct FBSimulatorMediaCommands {
+public struct SimulatorMediaCommands {
 
   private let simulator: FBSimulator
 
-  public static func commands(with simulator: FBSimulator) -> FBSimulatorMediaCommands {
-    FBSimulatorMediaCommands(simulator: simulator)
+  public static func commands(with simulator: FBSimulator) -> SimulatorMediaCommands {
+    SimulatorMediaCommands(simulator: simulator)
   }
 
   private static var predicateForVideoPaths: NSPredicate {
@@ -68,13 +68,13 @@ public struct FBSimulatorMediaCommands {
   fileprivate func uploadMedia(_ mediaFileURLs: [URL]) throws {
 
     if mediaFileURLs.isEmpty {
-      throw FBSimulatorMediaError.noMediaProvided
+      throw SimulatorMediaError.noMediaProvided
     }
 
-    let mediaPredicate = FBSimulatorMediaCommands.predicateForMediaPaths
+    let mediaPredicate = SimulatorMediaCommands.predicateForMediaPaths
     let unknown = mediaFileURLs.filter { !mediaPredicate.evaluate(with: $0) }
     if !unknown.isEmpty {
-      throw FBSimulatorMediaError.unknownMediaPaths(paths: unknown)
+      throw SimulatorMediaError.unknownMediaPaths(paths: unknown)
     }
 
     if simulator.state != .booted {
@@ -83,8 +83,8 @@ public struct FBSimulatorMediaCommands {
     }
 
     let photosAndVideosPredicate = NSCompoundPredicate(orPredicateWithSubpredicates: [
-      FBSimulatorMediaCommands.predicateForPhotoPaths,
-      FBSimulatorMediaCommands.predicateForVideoPaths,
+      SimulatorMediaCommands.predicateForPhotoPaths,
+      SimulatorMediaCommands.predicateForVideoPaths,
     ])
     let photosAndVideos = mediaFileURLs.filter { photosAndVideosPredicate.evaluate(with: $0) }
     if !photosAndVideos.isEmpty {
@@ -93,11 +93,11 @@ public struct FBSimulatorMediaCommands {
           try simulator.device.addMedia(photosAndVideos)
         }
       } catch {
-        throw FBSimulatorMediaError.addMediaFailed(paths: photosAndVideos, underlying: error)
+        throw SimulatorMediaError.addMediaFailed(paths: photosAndVideos, underlying: error)
       }
     }
 
-    let contactPredicate = FBSimulatorMediaCommands.predicateForContactPaths
+    let contactPredicate = SimulatorMediaCommands.predicateForContactPaths
     let contacts = mediaFileURLs.filter { contactPredicate.evaluate(with: $0) }
     if !contacts.isEmpty {
       do {
@@ -105,7 +105,7 @@ public struct FBSimulatorMediaCommands {
           try simulator.device.addMedia(contacts)
         }
       } catch {
-        throw FBSimulatorMediaError.addContactsFailed(paths: contacts, underlying: error)
+        throw SimulatorMediaError.addContactsFailed(paths: contacts, underlying: error)
       }
     }
   }

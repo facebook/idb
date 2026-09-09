@@ -45,12 +45,12 @@ enum UIAutomationPolling {
     probe: (_ value: String, _ key: FBAXSearchableKey, _ depth: UInt) async throws -> Bool?
   ) async throws {
     guard case let .marker(value, key, depth, _) = query else {
-      throw FBUIAutomationError.markerRequired(backend: backend, operation: "Waiting")
+      throw UIAutomationError.markerRequired(backend: backend, operation: "Waiting")
     }
     // A negative interval would trap `Task.sleep`'s unsigned conversion below; reject it loudly rather
     // than crash the process on nonsensical input.
     guard pollInterval >= 0 else {
-      throw FBUIAutomationError.invalidPollInterval(backend: backend, pollInterval: pollInterval)
+      throw UIAutomationError.invalidPollInterval(backend: backend, pollInterval: pollInterval)
     }
     let found = try await pollUntilFound(
       timeout: timeout,
@@ -61,7 +61,7 @@ enum UIAutomationPolling {
       try await probe(value, key, depth)
     }
     if found == nil {
-      throw FBUIAutomationError.timedOut(backend: backend, key: key.rawValue, value: value, timeout: timeout)
+      throw UIAutomationError.timedOut(backend: backend, key: key.rawValue, value: value, timeout: timeout)
     }
   }
 }

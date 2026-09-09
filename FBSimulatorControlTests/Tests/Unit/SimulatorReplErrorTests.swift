@@ -13,19 +13,19 @@ import Testing
 /// user sees when a session fails to start, so each is pinned to keep it naming
 /// the thing that went wrong rather than an internal detail.
 @Suite
-struct FBSimulatorReplErrorTests {
+struct SimulatorReplErrorTests {
 
   @Test
   func bundledResourceMissingNamesTheItem() throws {
     let message = try #require(
-      FBSimulatorReplError.bundledResourceMissing(item: "libRepl-iOS.dylib").errorDescription)
+      SimulatorReplError.bundledResourceMissing(item: "libRepl-iOS.dylib").errorDescription)
     #expect(message.contains("libRepl-iOS.dylib"))
   }
 
   @Test
   func socketDirectoryCreationFailedNamesThePath() throws {
     let message = try #require(
-      FBSimulatorReplError.socketDirectoryCreationFailed(path: "/tmp/idb_repl_501").errorDescription)
+      SimulatorReplError.socketDirectoryCreationFailed(path: "/tmp/idb_repl_501").errorDescription)
     #expect(message.contains("/tmp/idb_repl_501"))
   }
 
@@ -34,7 +34,7 @@ struct FBSimulatorReplErrorTests {
   @Test
   func notALaunchableAppNamesTheBundleIDAndProcess() throws {
     let message = try #require(
-      FBSimulatorReplError
+      SimulatorReplError
         .targetIsNotALaunchableApp(bundleID: "com.apple.springboard", processIdentifier: 53_820)
         .errorDescription)
     #expect(message.contains("com.apple.springboard"))
@@ -47,7 +47,7 @@ struct FBSimulatorReplErrorTests {
     // the client's deadline and then reporting a hashed socket path -- told the
     // reader neither what had failed nor what to do instead.
     let message = try #require(
-      FBSimulatorReplError
+      SimulatorReplError
         .targetIsNotALaunchableApp(bundleID: "com.apple.springboard", processIdentifier: 1)
         .errorDescription)
     #expect(message.contains("launchd"))
@@ -59,7 +59,7 @@ struct FBSimulatorReplErrorTests {
   func notALaunchableAppIsASingleLine() throws {
     // It is rendered into a gRPC status message, where embedded newlines are unreadable.
     let message = try #require(
-      FBSimulatorReplError
+      SimulatorReplError
         .targetIsNotALaunchableApp(bundleID: "com.apple.springboard", processIdentifier: 1)
         .errorDescription)
     #expect(!message.contains("\n"))

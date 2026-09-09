@@ -105,7 +105,7 @@ actor AXBridgePersistentTransport: AXBridgeTransport {
       throw FBWeakTargetError.simulator
     }
     guard let helperPath = simulator.frameworkBridgePath else {
-      throw FBAXBridgeError.bridgeUnavailable
+      throw AXBridgeError.bridgeUnavailable
     }
     try AXBridgeSocket.prepareDirectory()
 

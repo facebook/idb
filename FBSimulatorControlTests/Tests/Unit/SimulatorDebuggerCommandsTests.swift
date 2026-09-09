@@ -17,7 +17,7 @@ private struct LaunchCaptureStop: Error {}
 
 /// A stand-in launcher that records the configuration production supplies.
 ///
-/// Injected into `FBSimulatorDebuggerCommands` as its `applicationLauncher`, so the test does not
+/// Injected into `SimulatorDebuggerCommands` as its `applicationLauncher`, so the test does not
 /// have to subclass a production command class or install one in the simulator's command cache.
 private final class CapturingApplicationLauncher: ApplicationLaunching, @unchecked Sendable {
   private let lock = NSLock()
@@ -51,23 +51,23 @@ private final class CapturingApplicationLauncher: ApplicationLaunching, @uncheck
 final class SimulatorDebuggerCommandsTests: XCTestCase {
 
   /// Holds strong references to the real `FBSimulator` and the capturing wrapper
-  /// for the duration of a test. `FBSimulatorDebuggerCommands.simulator` and
+  /// for the duration of a test. `SimulatorDebuggerCommands.simulator` and
   /// `FBSimulatorApplicationCommands.simulator` are both `weak`, so without an
   /// external strong ref the simulator deallocates the moment `makeCommands`
   /// returns and the production code throws "Simulator deallocated" before the
   /// override has a chance to capture.
   private struct Harness {
     let simulator: FBSimulator
-    let commands: FBSimulatorDebuggerCommands
+    let commands: SimulatorDebuggerCommands
     let wrapper: CapturingApplicationLauncher
   }
 
   /// Builds a real `FBSimulator` (with a stub device — see SimulatorTestSupport) and constructs
-  /// the production `FBSimulatorDebuggerCommands` against it, with a capturing launcher injected.
+  /// the production `SimulatorDebuggerCommands` against it, with a capturing launcher injected.
   private func makeHarness() -> Harness {
     let simulator = SimulatorTestSupport.testableSimulator()
     let wrapper = CapturingApplicationLauncher()
-    let commands = FBSimulatorDebuggerCommands(
+    let commands = SimulatorDebuggerCommands(
       simulator: simulator,
       debugServerPath: "/fake/debugserver",
       applicationLauncher: wrapper)
@@ -135,7 +135,7 @@ final class SimulatorDebuggerCommandsTests: XCTestCase {
   // MARK: - Path Construction
 
   func testDebugServerPathCombinesXcodeContentsDirectoryWithLLDBRelativePath() {
-    let path = FBSimulatorDebuggerCommands.resolveDebugServerPath()
+    let path = SimulatorDebuggerCommands.resolveDebugServerPath()
     let contentsDirectory = FBXcodeConfiguration.contentsDirectory
     let expectedPath = (contentsDirectory as NSString)
       .appendingPathComponent("SharedFrameworks/LLDB.framework/Resources/debugserver")

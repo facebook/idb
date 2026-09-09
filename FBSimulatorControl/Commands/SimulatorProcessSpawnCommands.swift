@@ -22,12 +22,12 @@ extension SimulatorProcessSpawnError: LocalizedError {
   }
 }
 
-public struct FBSimulatorProcessSpawnCommands {
+public struct SimulatorProcessSpawnCommands {
 
   private let simulator: FBSimulator
 
-  public static func commands(with simulator: FBSimulator) -> FBSimulatorProcessSpawnCommands {
-    return FBSimulatorProcessSpawnCommands(simulator: simulator)
+  public static func commands(with simulator: FBSimulator) -> SimulatorProcessSpawnCommands {
+    return SimulatorProcessSpawnCommands(simulator: simulator)
   }
 
   // MARK: - Launch Options
@@ -50,7 +50,7 @@ public struct FBSimulatorProcessSpawnCommands {
       throw SimulatorProcessSpawnError.stdInUnsupported
     }
     let attachment = try await bridgeFBFuture(configuration.io.attach())
-    return try await FBSimulatorProcessSpawnCommands.launchProcess(
+    return try await SimulatorProcessSpawnCommands.launchProcess(
       withSimulator: simulator,
       configuration: configuration,
       attachment: attachment

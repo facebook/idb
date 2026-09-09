@@ -9,7 +9,7 @@
 @preconcurrency import FBControlCore
 @preconcurrency import Foundation
 
-public enum FBSimulatorLaunchCtlError: Error {
+public enum SimulatorLaunchCtlError: Error {
   case searchPatternConstructionFailed(processIdentifier: pid_t)
   case noMatchingProcesses(pattern: String)
   case multipleMatchingProcesses(pattern: String, matches: [String: NSNumber])
@@ -21,7 +21,7 @@ public enum FBSimulatorLaunchCtlError: Error {
   case commandFailed(arguments: [String], exitCode: Int32, stderr: String)
 }
 
-extension FBSimulatorLaunchCtlError: LocalizedError {
+extension SimulatorLaunchCtlError: LocalizedError {
   public var errorDescription: String? {
     switch self {
     case let .searchPatternConstructionFailed(processIdentifier):
@@ -46,7 +46,7 @@ extension FBSimulatorLaunchCtlError: LocalizedError {
   }
 }
 
-public final class FBSimulatorLaunchCtlCommands {
+public final class SimulatorLaunchCtlCommands {
 
   private let simulator: FBSimulator
 
@@ -60,8 +60,8 @@ public final class FBSimulatorLaunchCtlCommands {
     return binary.path
   }
 
-  public class func commands(with simulator: FBSimulator) -> FBSimulatorLaunchCtlCommands {
-    FBSimulatorLaunchCtlCommands(simulator: simulator)
+  public class func commands(with simulator: FBSimulator) -> SimulatorLaunchCtlCommands {
+    SimulatorLaunchCtlCommands(simulator: simulator)
   }
 
   private init(simulator: FBSimulator) {
@@ -73,7 +73,7 @@ public final class FBSimulatorLaunchCtlCommands {
   fileprivate func serviceName(forProcessIdentifier pid: pid_t) async throws -> String {
     let pattern = "^\(NSRegularExpression.escapedPattern(for: "\(pid)"))\t"
     guard let regex = try? NSRegularExpression(pattern: pattern, options: []) else {
-      throw FBSimulatorLaunchCtlError.searchPatternConstructionFailed(processIdentifier: pid)
+      throw SimulatorLaunchCtlError.searchPatternConstructionFailed(processIdentifier: pid)
     }
     let (serviceName, _) = try await firstServiceNameAndProcessIdentifier(matching: regex)
     return serviceName
@@ -88,7 +88,7 @@ public final class FBSimulatorLaunchCtlCommands {
         continue
       }
       var processIdentifier: pid_t = 0
-      guard let serviceName = try? FBSimulatorLaunchCtlCommands.extractServiceName(fromListLine: line, processIdentifierOut: &processIdentifier) else {
+      guard let serviceName = try? SimulatorLaunchCtlCommands.extractServiceName(fromListLine: line, processIdentifierOut: &processIdentifier) else {
         continue
       }
       mapping[serviceName] = NSNumber(value: processIdentifier)
@@ -99,10 +99,10 @@ public final class FBSimulatorLaunchCtlCommands {
   fileprivate func firstServiceNameAndProcessIdentifier(matching regex: NSRegularExpression) async throws -> (String, pid_t) {
     let serviceNameToProcessIdentifier = try await serviceNamesAndProcessIdentifiers(matching: regex)
     guard let (serviceName, processIdentifier) = serviceNameToProcessIdentifier.first else {
-      throw FBSimulatorLaunchCtlError.noMatchingProcesses(pattern: regex.pattern)
+      throw SimulatorLaunchCtlError.noMatchingProcesses(pattern: regex.pattern)
     }
     if serviceNameToProcessIdentifier.count > 1 {
-      throw FBSimulatorLaunchCtlError.multipleMatchingProcesses(pattern: regex.pattern, matches: serviceNameToProcessIdentifier)
+      throw SimulatorLaunchCtlError.multipleMatchingProcesses(pattern: regex.pattern, matches: serviceNameToProcessIdentifier)
     }
     return (serviceName, processIdentifier.int32Value)
   }
@@ -111,7 +111,7 @@ public final class FBSimulatorLaunchCtlCommands {
     let text = try await run(.list)
     let lines = text.components(separatedBy: .newlines)
     if lines.count < 2 {
-      throw FBSimulatorLaunchCtlError.insufficientOutput(output: text)
+      throw SimulatorLaunchCtlError.insufficientOutput(output: text)
     }
     var services: [String: Any] = [:]
     for (serviceName, processIdentifier) in Self.serviceMap(fromListOutput: text) {
@@ -124,7 +124,7 @@ public final class FBSimulatorLaunchCtlCommands {
     do {
       return try await run(.stop(serviceName: serviceName))
     } catch {
-      throw FBSimulatorLaunchCtlError.stopFailed(serviceName: serviceName, underlying: error)
+      throw SimulatorLaunchCtlError.stopFailed(serviceName: serviceName, underlying: error)
     }
   }
 
@@ -132,7 +132,7 @@ public final class FBSimulatorLaunchCtlCommands {
     do {
       return try await run(.start(serviceName: serviceName))
     } catch {
-      throw FBSimulatorLaunchCtlError.startFailed(serviceName: serviceName, underlying: error)
+      throw SimulatorLaunchCtlError.startFailed(serviceName: serviceName, underlying: error)
     }
   }
 
@@ -148,7 +148,7 @@ public final class FBSimulatorLaunchCtlCommands {
   private class func extractServiceName(fromListLine line: String, processIdentifierOut: inout pid_t) throws -> String {
     let words = line.components(separatedBy: .whitespaces)
     guard words.count == 3, let processIdentifierString = words.first, let serviceName = words.last else {
-      throw FBSimulatorLaunchCtlError.malformedListLine(words: words)
+      throw SimulatorLaunchCtlError.malformedListLine(words: words)
     }
     if processIdentifierString == "-" {
       processIdentifierOut = -1
@@ -157,7 +157,7 @@ public final class FBSimulatorLaunchCtlCommands {
 
     let processIdentifierInteger = Int(processIdentifierString) ?? 0
     guard processIdentifierInteger >= 1 else {
-      throw FBSimulatorLaunchCtlError.invalidProcessIdentifier(word: processIdentifierString, words: words)
+      throw SimulatorLaunchCtlError.invalidProcessIdentifier(word: processIdentifierString, words: words)
     }
     processIdentifierOut = pid_t(processIdentifierInteger)
     return serviceName
@@ -214,14 +214,14 @@ public final class FBSimulatorLaunchCtlCommands {
 
   private func run(_ command: Command) async throws -> String {
     let output = try await simulator.launchProcessConsumingOutput(launchPath: Self.launchCtlLaunchPath(for: simulator), arguments: command.arguments)
-    return try FBSimulatorLaunchCtlCommands.stdout(orThrowFrom: output, command: command, logger: simulator.logger)
+    return try SimulatorLaunchCtlCommands.stdout(orThrowFrom: output, command: command, logger: simulator.logger)
   }
 
   static func stdout(orThrowFrom output: FBInSimulatorToolOutput, command: Command, logger: (any FBControlCoreLogger)?) throws -> String {
     if output.exitCode != 0 {
       let stderr = String(data: output.stderr, encoding: .utf8) ?? ""
       guard command.exitCodePolicy.accepts(output.exitCode) else {
-        throw FBSimulatorLaunchCtlError.commandFailed(arguments: command.arguments, exitCode: output.exitCode, stderr: stderr)
+        throw SimulatorLaunchCtlError.commandFailed(arguments: command.arguments, exitCode: output.exitCode, stderr: stderr)
       }
       logger?.log("launchctl \(command.arguments.joined(separator: " ")) exited with code \(output.exitCode): \(stderr)")
     }

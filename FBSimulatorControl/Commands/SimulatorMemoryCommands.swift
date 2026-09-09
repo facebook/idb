@@ -9,7 +9,7 @@
 import FBControlCore
 import Foundation
 
-public enum FBSimulatorMemoryError: Error, LocalizedError {
+public enum SimulatorMemoryError: Error, LocalizedError {
   case selectorUnavailable
 
   public var errorDescription: String? {
@@ -20,17 +20,17 @@ public enum FBSimulatorMemoryError: Error, LocalizedError {
   }
 }
 
-public struct FBSimulatorMemoryCommands {
+public struct SimulatorMemoryCommands {
 
   private let simulator: FBSimulator
 
-  public static func commands(with simulator: FBSimulator) -> FBSimulatorMemoryCommands {
-    FBSimulatorMemoryCommands(simulator: simulator)
+  public static func commands(with simulator: FBSimulator) -> SimulatorMemoryCommands {
+    SimulatorMemoryCommands(simulator: simulator)
   }
 
   fileprivate func simulateMemoryWarning() async throws {
     guard simulator.device.responds(to: NSSelectorFromString("simulateMemoryWarning")) else {
-      throw FBSimulatorMemoryError.selectorUnavailable
+      throw SimulatorMemoryError.selectorUnavailable
     }
     simulator.device.simulateMemoryWarning()
   }

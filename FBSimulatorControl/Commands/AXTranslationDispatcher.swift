@@ -105,7 +105,7 @@ final class AXTranslationDispatcher: NSObject, AXPTranslationTokenDelegateHelper
         let collector = request.collector
         let translationStart = CFAbsoluteTimeGetCurrent()
         guard let translator, let translation = request.perform(withTranslator: translator) else {
-          throw FBAccessibilityError.noTranslationObject
+          throw AccessibilityError.noTranslationObject
         }
         collector.translationDuration = CFAbsoluteTimeGetCurrent() - translationStart
         translation.bridgeDelegateToken = request.token
@@ -115,7 +115,7 @@ final class AXTranslationDispatcher: NSObject, AXPTranslationTokenDelegateHelper
         collector.elementConversionDuration = CFAbsoluteTimeGetCurrent() - conversionStart
 
         guard let element = rawElement as? AXWritableElement else {
-          throw FBAccessibilityError.noTranslationObject
+          throw AccessibilityError.noTranslationObject
         }
         element.axSetBridgeDelegateToken(request.token)
         return element

@@ -60,7 +60,7 @@ final class AccessibilityElement {
   /// Serialize the element to a full response (preserves profiling/coverage data).
   func serialize(with options: FBAccessibilityRequestOptions) async throws -> FBAccessibilityElementsResponse {
     if closed {
-      throw FBAccessibilityError.closedElement(operation: "serialize")
+      throw AccessibilityError.closedElement(operation: "serialize")
     }
     // The dispatcher's XPC callbacks read `request.logger`.
     request.logger = options.enableLogging ? simulator?.logger : nil
@@ -81,11 +81,11 @@ final class AccessibilityElement {
   /// Read the string value of a searchable accessibility key from this element.
   func stringValue(forSearchableKey key: FBAXSearchableKey) async throws -> String {
     if closed {
-      throw FBAccessibilityError.closedElement(operation: "read from")
+      throw AccessibilityError.closedElement(operation: "read from")
     }
     let element = self.element
     guard let value = try await dispatcher.performSerialized({ Self.stringValue(forKey: key, from: element) }) else {
-      throw FBAccessibilityError.noStringValue(key: key.rawValue)
+      throw AccessibilityError.noStringValue(key: key.rawValue)
     }
     return value
   }
@@ -95,16 +95,16 @@ final class AccessibilityElement {
   /// Perform an unconditional accessibility tap (AXPress) without any label verification.
   func tap() async throws {
     if closed {
-      throw FBAccessibilityError.closedElement(operation: "tap")
+      throw AccessibilityError.closedElement(operation: "tap")
     }
     let element = self.element
     try await dispatcher.performSerialized {
       let actionNames = element.axActionNames()
       guard actionNames.contains("AXPress") else {
-        throw FBAccessibilityError.pressUnsupported(supportedActions: FBCollectionInformation.oneLineDescription(from: actionNames))
+        throw AccessibilityError.pressUnsupported(supportedActions: FBCollectionInformation.oneLineDescription(from: actionNames))
       }
       guard element.axPerformPress() else {
-        throw FBAccessibilityError.pressFailed
+        throw AccessibilityError.pressFailed
       }
     }
   }
@@ -112,7 +112,7 @@ final class AccessibilityElement {
   /// Perform an accessibility scroll on the element.
   func scroll(with direction: FBAccessibilityScrollDirection) async throws {
     if closed {
-      throw FBAccessibilityError.closedElement(operation: "scroll")
+      throw AccessibilityError.closedElement(operation: "scroll")
     }
     let element = self.element
     try await dispatcher.performSerialized { element.axScroll(direction) }
@@ -121,7 +121,7 @@ final class AccessibilityElement {
   /// Set the accessibility value of the element (e.g., text field content, slider position).
   func setValue(_ value: String) async throws {
     if closed {
-      throw FBAccessibilityError.closedElement(operation: "set value on")
+      throw AccessibilityError.closedElement(operation: "set value on")
     }
     let element = self.element
     try await dispatcher.performSerialized { element.axSetValue(value) }
@@ -132,7 +132,7 @@ final class AccessibilityElement {
   /// The element's frame in screen points. The element must be open.
   func frame() async throws -> CGRect {
     if closed {
-      throw FBAccessibilityError.closedElement(operation: "read the frame of")
+      throw AccessibilityError.closedElement(operation: "read the frame of")
     }
     let element = self.element
     let token = request.token
@@ -178,7 +178,7 @@ final class AccessibilityElement {
     }
     guard let match else {
       close()
-      throw FBAccessibilityError.elementNotFound(key: key.rawValue, value: value, depth: depth)
+      throw AccessibilityError.elementNotFound(key: key.rawValue, value: value, depth: depth)
     }
     assert(!closed, "Cannot transfer ownership from a closed element")
     guard let simulator else {

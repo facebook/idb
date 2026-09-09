@@ -11,7 +11,7 @@
 
 /// Dark/Light mode appearance.
 /// Values match UIUserInterfaceStyle used by SimDevice's setUIInterfaceStyle:error:.
-public enum FBSimulatorAppearance: Int, Sendable {
+public enum SimulatorAppearance: Int, Sendable {
   case light = 1 // UIUserInterfaceStyleLight
   case dark = 2 // UIUserInterfaceStyleDark
 }
@@ -35,7 +35,7 @@ public enum FBSimulatorContentSizeCategory: Int, Sendable {
 
 private let slowAnimationsNotification = "com.apple.UIKit.SimulatorSlowMotionAnimationState"
 
-public enum FBSimulatorSettingsError: Error {
+public enum SimulatorSettingsError: Error {
   case noDataDirectory
   case noDataDirectoryForPlists
   case settingNotPreferenceBacked(setting: String)
@@ -61,7 +61,7 @@ public enum FBSimulatorSettingsError: Error {
   case sqliteCommandFailed(stderr: String)
 }
 
-extension FBSimulatorSettingsError: LocalizedError {
+extension SimulatorSettingsError: LocalizedError {
   public var errorDescription: String? {
     switch self {
     case .noDataDirectory:
@@ -114,14 +114,14 @@ extension FBSimulatorSettingsError: LocalizedError {
   }
 }
 
-public struct FBSimulatorSettingsCommands {
+public struct SimulatorSettingsCommands {
 
   private let simulator: FBSimulator
 
   // MARK: - Initializers
 
-  public static func commands(with simulator: FBSimulator) -> FBSimulatorSettingsCommands {
-    FBSimulatorSettingsCommands(simulator: simulator)
+  public static func commands(with simulator: FBSimulator) -> SimulatorSettingsCommands {
+    SimulatorSettingsCommands(simulator: simulator)
   }
 
   internal init(simulator: FBSimulator) {
@@ -130,7 +130,7 @@ public struct FBSimulatorSettingsCommands {
 
   private func requireDataDirectory(of simulator: FBSimulator) throws -> String {
     guard let dataDirectory = simulator.dataDirectory else {
-      throw FBSimulatorSettingsError.noDataDirectoryForPlists
+      throw SimulatorSettingsError.noDataDirectoryForPlists
     }
     return dataDirectory
   }
@@ -163,12 +163,12 @@ public struct FBSimulatorSettingsCommands {
     }
   }
 
-  fileprivate func currentAppearance() async throws -> FBSimulatorAppearance {
+  fileprivate func currentAppearance() async throws -> SimulatorAppearance {
     let raw = simulator.device.currentUIInterfaceStyle()
-    return FBSimulatorAppearance(rawValue: raw) ?? .light
+    return SimulatorAppearance(rawValue: raw) ?? .light
   }
 
-  fileprivate func setAppearance(_ appearance: FBSimulatorAppearance) async throws {
+  fileprivate func setAppearance(_ appearance: SimulatorAppearance) async throws {
     try simulator.device.setUIInterfaceStyle(appearance.rawValue)
   }
 
@@ -265,7 +265,7 @@ public struct FBSimulatorSettingsCommands {
 
   fileprivate func setPreferenceBacked(_ key: SimulatorSettingKey, value: String, type: String?) async throws {
     guard let backing = key.preferenceBacking else {
-      throw FBSimulatorSettingsError.settingNotPreferenceBacked(setting: key.rawValue)
+      throw SimulatorSettingsError.settingNotPreferenceBacked(setting: key.rawValue)
     }
     try await setPreference(backing.key, value: value, type: type, domain: backing.domain)
   }
@@ -287,10 +287,10 @@ public struct FBSimulatorSettingsCommands {
 
   fileprivate func grantAccess(_ bundleIDs: Set<String>, toServices services: Set<FBTargetSettingsService>) async throws {
     if services.isEmpty {
-      throw FBSimulatorSettingsError.noServicesToGrant(bundleIDs: bundleIDs)
+      throw SimulatorSettingsError.noServicesToGrant(bundleIDs: bundleIDs)
     }
     if bundleIDs.isEmpty {
-      throw FBSimulatorSettingsError.noBundleIDsToGrant(services: services)
+      throw SimulatorSettingsError.noBundleIDsToGrant(services: services)
     }
 
     var toApprove = services
@@ -298,9 +298,9 @@ public struct FBSimulatorSettingsCommands {
     let coreSimulatorSettingMapping: [FBTargetSettingsService: String]
 
     if iosVer.version.majorVersion >= 13 {
-      coreSimulatorSettingMapping = FBSimulatorSettingsCommands.coreSimulatorSettingMappingPostIos13
+      coreSimulatorSettingMapping = SimulatorSettingsCommands.coreSimulatorSettingMappingPostIos13
     } else {
-      coreSimulatorSettingMapping = FBSimulatorSettingsCommands.coreSimulatorSettingMappingPreIos13
+      coreSimulatorSettingMapping = SimulatorSettingsCommands.coreSimulatorSettingMappingPreIos13
     }
 
     if simulator.device.responds(to: NSSelectorFromString("setPrivacyAccessForService:bundleID:granted:error:")) {
@@ -316,8 +316,8 @@ public struct FBSimulatorSettingsCommands {
         try coreSimulatorApprove(withBundleIDs: bundleIDs, toServices: internalServices)
       }
     }
-    if !toApprove.isEmpty && !toApprove.isDisjoint(with: Set(FBSimulatorSettingsCommands.tccDatabaseMapping.keys)) {
-      let tccServices = toApprove.intersection(Set(FBSimulatorSettingsCommands.tccDatabaseMapping.keys))
+    if !toApprove.isEmpty && !toApprove.isDisjoint(with: Set(SimulatorSettingsCommands.tccDatabaseMapping.keys)) {
+      let tccServices = toApprove.intersection(Set(SimulatorSettingsCommands.tccDatabaseMapping.keys))
       toApprove.subtract(tccServices)
       try await modifyTCCDatabase(withBundleIDs: bundleIDs, toServices: tccServices, grantAccess: true)
     }
@@ -335,16 +335,16 @@ public struct FBSimulatorSettingsCommands {
     }
 
     if !toApprove.isEmpty {
-      throw FBSimulatorSettingsError.unhandledGrantServices(services: toApprove)
+      throw SimulatorSettingsError.unhandledGrantServices(services: toApprove)
     }
   }
 
   fileprivate func revokeAccess(_ bundleIDs: Set<String>, toServices services: Set<FBTargetSettingsService>) async throws {
     if services.isEmpty {
-      throw FBSimulatorSettingsError.noServicesToRevoke(bundleIDs: bundleIDs)
+      throw SimulatorSettingsError.noServicesToRevoke(bundleIDs: bundleIDs)
     }
     if bundleIDs.isEmpty {
-      throw FBSimulatorSettingsError.noBundleIDsToRevoke(services: services)
+      throw SimulatorSettingsError.noBundleIDsToRevoke(services: services)
     }
 
     var toRevoke = services
@@ -352,9 +352,9 @@ public struct FBSimulatorSettingsCommands {
     let coreSimulatorSettingMapping: [FBTargetSettingsService: String]
 
     if iosVer.version.majorVersion >= 13 {
-      coreSimulatorSettingMapping = FBSimulatorSettingsCommands.coreSimulatorSettingMappingPostIos13
+      coreSimulatorSettingMapping = SimulatorSettingsCommands.coreSimulatorSettingMappingPostIos13
     } else {
-      coreSimulatorSettingMapping = FBSimulatorSettingsCommands.coreSimulatorSettingMappingPreIos13
+      coreSimulatorSettingMapping = SimulatorSettingsCommands.coreSimulatorSettingMappingPreIos13
     }
 
     if simulator.device.responds(to: NSSelectorFromString("setPrivacyAccessForService:bundleID:granted:error:")) {
@@ -370,8 +370,8 @@ public struct FBSimulatorSettingsCommands {
         try coreSimulatorRevoke(withBundleIDs: bundleIDs, toServices: internalServices)
       }
     }
-    if !toRevoke.isEmpty && !toRevoke.isDisjoint(with: Set(FBSimulatorSettingsCommands.tccDatabaseMapping.keys)) {
-      let tccServices = toRevoke.intersection(Set(FBSimulatorSettingsCommands.tccDatabaseMapping.keys))
+    if !toRevoke.isEmpty && !toRevoke.isDisjoint(with: Set(SimulatorSettingsCommands.tccDatabaseMapping.keys)) {
+      let tccServices = toRevoke.intersection(Set(SimulatorSettingsCommands.tccDatabaseMapping.keys))
       toRevoke.subtract(tccServices)
       try await modifyTCCDatabase(withBundleIDs: bundleIDs, toServices: tccServices, grantAccess: false)
     }
@@ -389,16 +389,16 @@ public struct FBSimulatorSettingsCommands {
     }
 
     if !toRevoke.isEmpty {
-      throw FBSimulatorSettingsError.unhandledRevokeServices(services: toRevoke)
+      throw SimulatorSettingsError.unhandledRevokeServices(services: toRevoke)
     }
   }
 
   fileprivate func grantAccess(_ bundleIDs: Set<String>, toDeeplink scheme: String) async throws {
     if scheme.isEmpty {
-      throw FBSimulatorSettingsError.emptyScheme(operation: "url approve")
+      throw SimulatorSettingsError.emptyScheme(operation: "url approve")
     }
     if bundleIDs.isEmpty {
-      throw FBSimulatorSettingsError.emptyBundleIDs(operation: "url approve")
+      throw SimulatorSettingsError.emptyBundleIDs(operation: "url approve")
     }
 
     let preferencesDirectory = (try requireDataDirectory(of: simulator) as NSString).appendingPathComponent("Library/Preferences")
@@ -407,12 +407,12 @@ public struct FBSimulatorSettingsCommands {
     var schemeApprovalProperties: NSMutableDictionary = NSMutableDictionary()
     if FileManager.default.fileExists(atPath: schemeApprovalPlistPath) {
       guard let dict = NSDictionary(contentsOfFile: schemeApprovalPlistPath)?.mutableCopy() as? NSMutableDictionary else {
-        throw FBSimulatorSettingsError.schemeApprovalPlistUnreadable(path: schemeApprovalPlistPath)
+        throw SimulatorSettingsError.schemeApprovalPlistUnreadable(path: schemeApprovalPlistPath)
       }
       schemeApprovalProperties = dict
     }
 
-    let urlKey = FBSimulatorSettingsCommands.magicDeeplinkKey(forScheme: scheme)
+    let urlKey = SimulatorSettingsCommands.magicDeeplinkKey(forScheme: scheme)
     for bundleID in bundleIDs {
       schemeApprovalProperties[urlKey] = bundleID
     }
@@ -420,19 +420,19 @@ public struct FBSimulatorSettingsCommands {
     do {
       try FileManager.default.createDirectory(atPath: preferencesDirectory, withIntermediateDirectories: true, attributes: nil)
     } catch {
-      throw FBSimulatorSettingsError.schemeApprovalDirectoryCreationFailed(underlying: error)
+      throw SimulatorSettingsError.schemeApprovalDirectoryCreationFailed(underlying: error)
     }
     if !schemeApprovalProperties.write(toFile: schemeApprovalPlistPath, atomically: true) {
-      throw FBSimulatorSettingsError.schemeApprovalPlistWriteFailed
+      throw SimulatorSettingsError.schemeApprovalPlistWriteFailed
     }
   }
 
   fileprivate func revokeAccess(_ bundleIDs: Set<String>, toDeeplink scheme: String) async throws {
     if scheme.isEmpty {
-      throw FBSimulatorSettingsError.emptyScheme(operation: "url revoke")
+      throw SimulatorSettingsError.emptyScheme(operation: "url revoke")
     }
     if bundleIDs.isEmpty {
-      throw FBSimulatorSettingsError.emptyBundleIDs(operation: "url revoke")
+      throw SimulatorSettingsError.emptyBundleIDs(operation: "url revoke")
     }
 
     let preferencesDirectory = (try requireDataDirectory(of: simulator) as NSString).appendingPathComponent("Library/Preferences")
@@ -442,24 +442,24 @@ public struct FBSimulatorSettingsCommands {
       return
     }
     guard let schemeApprovalProperties = NSDictionary(contentsOfFile: schemeApprovalPlistPath)?.mutableCopy() as? NSMutableDictionary else {
-      throw FBSimulatorSettingsError.schemeApprovalPlistUnreadable(path: schemeApprovalPlistPath)
+      throw SimulatorSettingsError.schemeApprovalPlistUnreadable(path: schemeApprovalPlistPath)
     }
 
-    let urlKey = FBSimulatorSettingsCommands.magicDeeplinkKey(forScheme: scheme)
+    let urlKey = SimulatorSettingsCommands.magicDeeplinkKey(forScheme: scheme)
     schemeApprovalProperties.removeObject(forKey: urlKey)
 
     if !schemeApprovalProperties.write(toFile: schemeApprovalPlistPath, atomically: true) {
-      throw FBSimulatorSettingsError.schemeApprovalPlistWriteFailed
+      throw SimulatorSettingsError.schemeApprovalPlistWriteFailed
     }
   }
 
   fileprivate func updateContacts(_ databaseDirectory: String) async throws {
     let destinationDirectory = (try requireDataDirectory(of: simulator) as NSString).appendingPathComponent("Library/AddressBook")
     if !FileManager.default.fileExists(atPath: destinationDirectory) {
-      throw FBSimulatorSettingsError.addressBookDirectoryMissing(path: destinationDirectory)
+      throw SimulatorSettingsError.addressBookDirectoryMissing(path: destinationDirectory)
     }
 
-    let sourceFilePaths = try FBSimulatorSettingsCommands.contactsDatabaseFilePaths(fromContainingDirectory: databaseDirectory)
+    let sourceFilePaths = try SimulatorSettingsCommands.contactsDatabaseFilePaths(fromContainingDirectory: databaseDirectory)
 
     for sourceFilePath in sourceFilePaths {
       let destinationFilePath = (destinationDirectory as NSString).appendingPathComponent((sourceFilePath as NSString).lastPathComponent)
@@ -487,7 +487,7 @@ public struct FBSimulatorSettingsCommands {
 
   fileprivate func setDnsServers(_ servers: [String]) async throws {
     if servers.isEmpty {
-      throw FBSimulatorSettingsError.noDnsServers
+      throw SimulatorSettingsError.noDnsServers
     }
     try await simulator.runSimulatorFrameworkBridge(withService: "dns", action: "set", arguments: servers)
   }
@@ -528,7 +528,7 @@ public struct FBSimulatorSettingsCommands {
 
   fileprivate func updateHealthService(_ bundleIDs: [String], approve approved: Bool) async throws {
     if bundleIDs.isEmpty {
-      throw FBSimulatorSettingsError.emptyBundleIDs(operation: "health approve")
+      throw SimulatorSettingsError.emptyBundleIDs(operation: "health approve")
     }
     let action = approved ? "approve" : "revoke"
     for bundleID in bundleIDs {
@@ -538,7 +538,7 @@ public struct FBSimulatorSettingsCommands {
 
   fileprivate func updateNotificationService(_ bundleIDs: [String], approve approved: Bool) async throws {
     if bundleIDs.isEmpty {
-      throw FBSimulatorSettingsError.emptyBundleIDs(operation: "notifications approve")
+      throw SimulatorSettingsError.emptyBundleIDs(operation: "notifications approve")
     }
 
     let action = approved ? "approve" : "revoke"
@@ -549,18 +549,18 @@ public struct FBSimulatorSettingsCommands {
 
   fileprivate func modifyTCCDatabase(withBundleIDs bundleIDs: Set<String>, toServices services: Set<FBTargetSettingsService>, grantAccess: Bool) async throws {
     guard let dataDirectory = simulator.dataDirectory else {
-      throw FBSimulatorSettingsError.noDataDirectory
+      throw SimulatorSettingsError.noDataDirectory
     }
     let databasePath = (dataDirectory as NSString).appendingPathComponent("Library/TCC/TCC.db")
     var isDirectory: ObjCBool = true
     if !FileManager.default.fileExists(atPath: databasePath, isDirectory: &isDirectory) {
-      throw FBSimulatorSettingsError.tccDatabaseMissing(path: databasePath)
+      throw SimulatorSettingsError.tccDatabaseMissing(path: databasePath)
     }
     if isDirectory.boolValue {
-      throw FBSimulatorSettingsError.tccDatabaseIsDirectory(path: databasePath)
+      throw SimulatorSettingsError.tccDatabaseIsDirectory(path: databasePath)
     }
     if !FileManager.default.isWritableFile(atPath: databasePath) {
-      throw FBSimulatorSettingsError.tccDatabaseNotWritable(path: databasePath)
+      throw SimulatorSettingsError.tccDatabaseNotWritable(path: databasePath)
     }
 
     let logger = simulator.logger.withName("sqlite_auth")
@@ -646,21 +646,21 @@ public struct FBSimulatorSettingsCommands {
   }
 
   fileprivate func grantAccessInTCCDatabase(_ databasePath: String, bundleIDs: Set<String>, services: Set<FBTargetSettingsService>, queue: DispatchQueue, logger: (any FBControlCoreLogger)?) async throws {
-    let query = try await FBSimulatorSettingsCommands.buildApprovalInsertQuery(forDatabase: databasePath, bundleIDs: bundleIDs, services: services, queue: queue, logger: logger)
-    _ = try await FBSimulatorSettingsCommands.runSqliteCommand(onDatabase: databasePath, arguments: [query], queue: queue, logger: logger)
+    let query = try await SimulatorSettingsCommands.buildApprovalInsertQuery(forDatabase: databasePath, bundleIDs: bundleIDs, services: services, queue: queue, logger: logger)
+    _ = try await SimulatorSettingsCommands.runSqliteCommand(onDatabase: databasePath, arguments: [query], queue: queue, logger: logger)
   }
 
   fileprivate func revokeAccessInTCCDatabase(_ databasePath: String, bundleIDs: Set<String>, services: Set<FBTargetSettingsService>, queue: DispatchQueue, logger: (any FBControlCoreLogger)?) async throws {
     var deletions: [String] = []
     for bundleID in bundleIDs {
-      for serviceName in FBSimulatorSettingsCommands.tccServiceNames(for: services) {
+      for serviceName in SimulatorSettingsCommands.tccServiceNames(for: services) {
         deletions.append("(service = '\(serviceName)' AND client = '\(bundleID)')")
       }
     }
     if deletions.isEmpty {
       return
     }
-    _ = try await FBSimulatorSettingsCommands.runSqliteCommand(
+    _ = try await SimulatorSettingsCommands.runSqliteCommand(
       onDatabase: databasePath,
       arguments: ["DELETE FROM access WHERE \(deletions.joined(separator: " OR "))"],
       queue: queue,
@@ -742,13 +742,13 @@ public struct FBSimulatorSettingsCommands {
       .runUntilCompletion(withAcceptableExitCodes: [0, 1])
     let task = try await bridgeFBFuture(runFuture)
     if task.exitCode.result != 0 as NSNumber {
-      throw FBSimulatorSettingsError.sqliteTaskFailed(
+      throw SimulatorSettingsError.sqliteTaskFailed(
         exitCode: task.exitCode.result?.intValue ?? 0,
         stdOut: (task.stdOut as? String) ?? "",
         stdErr: (task.stdErr as? String) ?? "")
     }
     if let stdErr = task.stdErr as? String, stdErr.hasPrefix("Error") {
-      throw FBSimulatorSettingsError.sqliteCommandFailed(stderr: stdErr)
+      throw SimulatorSettingsError.sqliteCommandFailed(stderr: stdErr)
     }
     return (task.stdOut as String?) ?? ""
   }
@@ -756,7 +756,7 @@ public struct FBSimulatorSettingsCommands {
   private static func contactsDatabaseFilePaths(fromContainingDirectory databaseDirectory: String) throws -> [String] {
     var filePaths: [String] = []
     guard let enumerator = FileManager.default.enumerator(atPath: databaseDirectory) else {
-      throw FBSimulatorSettingsError.contactsDirectoryEnumerationFailed(path: databaseDirectory)
+      throw SimulatorSettingsError.contactsDirectoryEnumerationFailed(path: databaseDirectory)
     }
 
     for case let path as String in enumerator {
@@ -768,7 +768,7 @@ public struct FBSimulatorSettingsCommands {
     }
 
     if filePaths.isEmpty {
-      throw FBSimulatorSettingsError.noContactsDatabases
+      throw SimulatorSettingsError.noContactsDatabases
     }
 
     return filePaths
@@ -845,7 +845,7 @@ extension FBSimulator: SettingsCommands {
     try await runSimulatorFrameworkBridge(withService: "photos", action: "clear")
   }
 
-  private func currentAppearance() async throws -> FBSimulatorAppearance {
+  private func currentAppearance() async throws -> SimulatorAppearance {
     try await settings.currentAppearance()
   }
 

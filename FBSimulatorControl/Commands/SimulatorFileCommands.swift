@@ -9,13 +9,13 @@
 import FBControlCore
 import Foundation
 
-public enum FBSimulatorFileError: Error {
+public enum SimulatorFileError: Error {
   case noDataContainer(applicationDescription: String)
   case noDataDirectory(simulatorDescription: String)
   case unsupportedOnSimulators(operation: String)
 }
 
-extension FBSimulatorFileError: LocalizedError {
+extension SimulatorFileError: LocalizedError {
   public var errorDescription: String? {
     switch self {
     case let .noDataContainer(applicationDescription):
@@ -28,14 +28,14 @@ extension FBSimulatorFileError: LocalizedError {
   }
 }
 
-public final class FBSimulatorFileCommands {
+public final class SimulatorFileCommands {
 
   private let simulator: FBSimulator
 
   // MARK: - Initializers
 
-  public class func commands(with simulator: FBSimulator) -> FBSimulatorFileCommands {
-    FBSimulatorFileCommands(simulator: simulator)
+  public class func commands(with simulator: FBSimulator) -> SimulatorFileCommands {
+    SimulatorFileCommands(simulator: simulator)
   }
 
   private init(simulator: FBSimulator) {
@@ -74,7 +74,7 @@ public final class FBSimulatorFileCommands {
   private func containedFile(forApplication bundleID: String) async throws -> any FBContainedFile {
     let installedApplication = try await simulator.installedApplication(bundleID: bundleID)
     guard let container = installedApplication.dataContainer else {
-      throw FBSimulatorFileError.noDataContainer(applicationDescription: String(describing: installedApplication))
+      throw SimulatorFileError.noDataContainer(applicationDescription: String(describing: installedApplication))
     }
     return FBFileContainer.containedFile(forBasePath: container)
   }
@@ -114,7 +114,7 @@ public final class FBSimulatorFileCommands {
 
   private func requireDataDirectory() throws -> String {
     guard let dataDirectory = simulator.dataDirectory else {
-      throw FBSimulatorFileError.noDataDirectory(simulatorDescription: String(describing: simulator))
+      throw SimulatorFileError.noDataDirectory(simulatorDescription: String(describing: simulator))
     }
     return dataDirectory
   }
@@ -164,36 +164,36 @@ extension FBSimulator: FileCommands {
   public func withFileCommandsForProvisioningProfiles<R>(
     body: (any AsyncFileContainer) async throws -> R
   ) async throws -> R {
-    throw FBSimulatorFileError.unsupportedOnSimulators(operation: #function)
+    throw SimulatorFileError.unsupportedOnSimulators(operation: #function)
   }
 
   public func withFileCommandsForMDMProfiles<R>(
     body: (any AsyncFileContainer) async throws -> R
   ) async throws -> R {
-    throw FBSimulatorFileError.unsupportedOnSimulators(operation: #function)
+    throw SimulatorFileError.unsupportedOnSimulators(operation: #function)
   }
 
   public func withFileCommandsForSpringboardIconLayout<R>(
     body: (any AsyncFileContainer) async throws -> R
   ) async throws -> R {
-    throw FBSimulatorFileError.unsupportedOnSimulators(operation: #function)
+    throw SimulatorFileError.unsupportedOnSimulators(operation: #function)
   }
 
   public func withFileCommandsForWallpaper<R>(
     body: (any AsyncFileContainer) async throws -> R
   ) async throws -> R {
-    throw FBSimulatorFileError.unsupportedOnSimulators(operation: #function)
+    throw SimulatorFileError.unsupportedOnSimulators(operation: #function)
   }
 
   public func withFileCommandsForDiskImages<R>(
     body: (any AsyncFileContainer) async throws -> R
   ) async throws -> R {
-    throw FBSimulatorFileError.unsupportedOnSimulators(operation: #function)
+    throw SimulatorFileError.unsupportedOnSimulators(operation: #function)
   }
 
   public func withFileCommandsForSymbols<R>(
     body: (any AsyncFileContainer) async throws -> R
   ) async throws -> R {
-    throw FBSimulatorFileError.unsupportedOnSimulators(operation: #function)
+    throw SimulatorFileError.unsupportedOnSimulators(operation: #function)
   }
 }

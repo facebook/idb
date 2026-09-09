@@ -13,7 +13,7 @@ import Foundation
 private let testmanagerdSimSockTimeout: TimeInterval = 5
 private let simSockEnvKey = "TESTMANAGERD_SIM_SOCK"
 
-public enum FBSimulatorXCTestError: Error {
+public enum SimulatorXCTestError: Error {
   case socketCreationFailed
   case socketFileMissing(path: String)
   case socketPathTooLong(path: String)
@@ -23,7 +23,7 @@ public enum FBSimulatorXCTestError: Error {
   case environmentVariableUnavailable(key: String, underlying: Error?)
 }
 
-extension FBSimulatorXCTestError: LocalizedError {
+extension SimulatorXCTestError: LocalizedError {
   public var errorDescription: String? {
     switch self {
     case .socketCreationFailed:
@@ -44,7 +44,7 @@ extension FBSimulatorXCTestError: LocalizedError {
   }
 }
 
-public final class FBSimulatorXCTestCommands {
+public final class SimulatorXCTestCommands {
 
   // MARK: - Properties
 
@@ -53,8 +53,8 @@ public final class FBSimulatorXCTestCommands {
 
   // MARK: - Initializers
 
-  public class func commands(with simulator: FBSimulator) -> FBSimulatorXCTestCommands {
-    return FBSimulatorXCTestCommands(simulator: simulator)
+  public class func commands(with simulator: FBSimulator) -> SimulatorXCTestCommands {
+    return SimulatorXCTestCommands(simulator: simulator)
   }
 
   private init(simulator: FBSimulator) {
@@ -78,16 +78,16 @@ public final class FBSimulatorXCTestCommands {
   private static func connectedTestManagerSocket(atPath testManagerSocketString: String) throws -> Int32 {
     let socketFD = socket(AF_UNIX, SOCK_STREAM, 0)
     if socketFD == -1 {
-      throw FBSimulatorXCTestError.socketCreationFailed
+      throw SimulatorXCTestError.socketCreationFailed
     }
     if !FileManager.default.fileExists(atPath: testManagerSocketString) {
       close(socketFD)
-      throw FBSimulatorXCTestError.socketFileMissing(path: testManagerSocketString)
+      throw SimulatorXCTestError.socketFileMissing(path: testManagerSocketString)
     }
     let testManagerSocketCStr = testManagerSocketString.utf8CString
     if testManagerSocketCStr.count - 1 >= 0x68 {
       close(socketFD)
-      throw FBSimulatorXCTestError.socketPathTooLong(path: testManagerSocketString)
+      throw SimulatorXCTestError.socketPathTooLong(path: testManagerSocketString)
     }
     var remote = sockaddr_un()
     remote.sun_family = sa_family_t(AF_UNIX)
@@ -109,7 +109,7 @@ public final class FBSimulatorXCTestCommands {
     }
     if connectResult == -1 {
       close(socketFD)
-      throw FBSimulatorXCTestError.socketConnectionFailed
+      throw SimulatorXCTestError.socketConnectionFailed
     }
     return socketFD
   }
@@ -128,7 +128,7 @@ public final class FBSimulatorXCTestCommands {
     // `XCTestCommands` lives in FBControlCore, which cannot see `FBXCTestReporter` in XCTestBootstrap,
     // so the reporter arrives type-erased and has to be recovered here.
     guard let typedReporter = reporter as? any FBXCTestReporter else {
-      throw FBSimulatorXCTestError.unexpectedReporter(reporterDescription: String(describing: reporter))
+      throw SimulatorXCTestError.unexpectedReporter(reporterDescription: String(describing: reporter))
     }
 
     if !launchConfiguration.shouldUseXcodebuild {
@@ -137,7 +137,7 @@ public final class FBSimulatorXCTestCommands {
     }
 
     if isRunningXcodeBuildOperation {
-      throw FBSimulatorXCTestError.testManagerAlreadyRunning(configurationDescription: String(describing: launchConfiguration))
+      throw SimulatorXCTestError.testManagerAlreadyRunning(configurationDescription: String(describing: launchConfiguration))
     }
 
     _ = try await bridgeFBFuture(
@@ -219,7 +219,7 @@ public final class FBSimulatorXCTestCommands {
         lastError = error as NSError
       }
       if Date() >= deadline {
-        throw FBSimulatorXCTestError.environmentVariableUnavailable(key: simSockEnvKey, underlying: lastError)
+        throw SimulatorXCTestError.environmentVariableUnavailable(key: simSockEnvKey, underlying: lastError)
       }
       try await Task.sleep(nanoseconds: 50_000_000)
     }

@@ -27,7 +27,7 @@ private final class InstalledAppsStubDevice {
   }
 }
 
-/// Locks the container path-mapping behaviour of `FBSimulatorFileCommands`.
+/// Locks the container path-mapping behaviour of `SimulatorFileCommands`.
 final class SimulatorFileCommandsTests: XCTestCase {
 
   private func makeSimulator(installedApps: [String: Any]) -> FBSimulator {

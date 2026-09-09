@@ -21,12 +21,12 @@ final class SimulatorSettingsCommandsTests: XCTestCase {
   private func assertThrowsAsync(
     _ message: String,
     _ expression: () async throws -> Void,
-    expecting isExpected: (FBSimulatorSettingsError) -> Bool
+    expecting isExpected: (SimulatorSettingsError) -> Bool
   ) async {
     do {
       try await expression()
       XCTFail(message)
-    } catch let error as FBSimulatorSettingsError where isExpected(error) {
+    } catch let error as SimulatorSettingsError where isExpected(error) {
       // Expected.
     } catch {
       XCTFail("\(message); threw \(error)")
@@ -39,7 +39,7 @@ final class SimulatorSettingsCommandsTests: XCTestCase {
     let input: Set<FBTargetSettingsService> = [
       .contacts, .photos, .location, .notification,
     ]
-    let filtered = FBSimulatorSettingsCommands.filteredTCCApprovals(input)
+    let filtered = SimulatorSettingsCommands.filteredTCCApprovals(input)
     XCTAssertTrue(filtered.contains(.contacts), "Contacts is in TCC mapping and should be kept")
     XCTAssertTrue(filtered.contains(.photos), "Photos is in TCC mapping and should be kept")
     XCTAssertFalse(filtered.contains(.location), "Location is NOT in TCC mapping and should be removed")
@@ -49,7 +49,7 @@ final class SimulatorSettingsCommandsTests: XCTestCase {
   // MARK: - Magic Deeplink Key
 
   func testMagicDeeplinkKeyFormatsCorrectly() {
-    let key = FBSimulatorSettingsCommands.magicDeeplinkKey(forScheme: "myapp")
+    let key = SimulatorSettingsCommands.magicDeeplinkKey(forScheme: "myapp")
     XCTAssertEqual(
       key, "com.apple.CoreSimulator.CoreSimulatorBridge-->myapp",
       "Deeplink key should use CoreSimulatorBridge prefix with --> separator")
@@ -60,7 +60,7 @@ final class SimulatorSettingsCommandsTests: XCTestCase {
   func testPreiOS12RowsContainBundleIDAndServiceName() {
     let bundleIDs: Set<String> = ["com.test.app"]
     let services: Set<FBTargetSettingsService> = [.contacts]
-    let rows = FBSimulatorSettingsCommands.preiOS12ApprovalRows(forBundleIDs: bundleIDs, services: services)
+    let rows = SimulatorSettingsCommands.preiOS12ApprovalRows(forBundleIDs: bundleIDs, services: services)
     XCTAssertTrue(
       rows.contains("kTCCServiceAddressBook"),
       "Row should reference the TCC service name from the mapping")
@@ -72,7 +72,7 @@ final class SimulatorSettingsCommandsTests: XCTestCase {
   func testPostiOS15RowsUseAuthValue2ForAVCaptureCompatibility() {
     let bundleIDs: Set<String> = ["com.test.app"]
     let services: Set<FBTargetSettingsService> = [.camera]
-    let rows = FBSimulatorSettingsCommands.postiOS15ApprovalRows(forBundleIDs: bundleIDs, services: services)
+    let rows = SimulatorSettingsCommands.postiOS15ApprovalRows(forBundleIDs: bundleIDs, services: services)
     // auth_value=2 is required for AVCaptureDevice.authorizationStatus to return
     // something other than notDetermined
     XCTAssertTrue(
@@ -83,8 +83,8 @@ final class SimulatorSettingsCommandsTests: XCTestCase {
   func testPostiOS17RowsIncludePidAndBootUuidColumns() {
     let bundleIDs: Set<String> = ["com.test.app"]
     let services: Set<FBTargetSettingsService> = [.microphone]
-    let rows17 = FBSimulatorSettingsCommands.postiOS17ApprovalRows(forBundleIDs: bundleIDs, services: services)
-    let rows15 = FBSimulatorSettingsCommands.postiOS15ApprovalRows(forBundleIDs: bundleIDs, services: services)
+    let rows17 = SimulatorSettingsCommands.postiOS17ApprovalRows(forBundleIDs: bundleIDs, services: services)
+    let rows15 = SimulatorSettingsCommands.postiOS15ApprovalRows(forBundleIDs: bundleIDs, services: services)
     XCTAssertGreaterThan(
       rows17.count, rows15.count,
       "iOS 17 rows should be longer than iOS 15 due to additional columns")
@@ -95,7 +95,7 @@ final class SimulatorSettingsCommandsTests: XCTestCase {
 
   func testPostiOS17InsertNamesColumnsForForwardCompatibility() {
     let schema = "CREATE TABLE access (last_reminded INTEGER, future_column_1 INTEGER DEFAULT 0, future_column_2 INTEGER DEFAULT 0)"
-    let query = FBSimulatorSettingsCommands.approvalInsertQuery(
+    let query = SimulatorSettingsCommands.approvalInsertQuery(
       forAccessSchema: schema,
       bundleIDs: ["com.test.app"],
       services: [.microphone])
@@ -112,7 +112,7 @@ final class SimulatorSettingsCommandsTests: XCTestCase {
   }
 
   func testPostiOS17InsertPairsEveryColumnNameWithExactlyOneValue() {
-    let query = FBSimulatorSettingsCommands.approvalInsertQuery(
+    let query = SimulatorSettingsCommands.approvalInsertQuery(
       forAccessSchema: "CREATE TABLE access (last_reminded INTEGER)",
       bundleIDs: ["com.test.app"],
       services: [.microphone])
@@ -166,7 +166,7 @@ final class SimulatorSettingsCommandsTests: XCTestCase {
   func testApprovalRowsGenerateCorrectCountForMultipleInputs() {
     let bundleIDs: Set<String> = ["com.app1", "com.app2"]
     let services: Set<FBTargetSettingsService> = [.contacts, .photos]
-    let rows = FBSimulatorSettingsCommands.preiOS12ApprovalRows(forBundleIDs: bundleIDs, services: services)
+    let rows = SimulatorSettingsCommands.preiOS12ApprovalRows(forBundleIDs: bundleIDs, services: services)
     let tuples = rows.components(separatedBy: "), (")
     XCTAssertEqual(
       tuples.count, 4,
@@ -176,7 +176,7 @@ final class SimulatorSettingsCommandsTests: XCTestCase {
   func testApprovalRowsFilterToTCCServicesOnly() {
     let bundleIDs: Set<String> = ["com.test.app"]
     let services: Set<FBTargetSettingsService> = [.contacts, .location]
-    let rows = FBSimulatorSettingsCommands.preiOS12ApprovalRows(forBundleIDs: bundleIDs, services: services)
+    let rows = SimulatorSettingsCommands.preiOS12ApprovalRows(forBundleIDs: bundleIDs, services: services)
     XCTAssertTrue(
       rows.contains("kTCCServiceAddressBook"),
       "Should include contacts which is in TCC mapping")
@@ -334,11 +334,11 @@ final class SimulatorSettingsCommandsTests: XCTestCase {
   }
 
   func testArgumentNameRoundTrip() {
-    XCTAssertEqual(FBSimulatorAppearance(argumentName: "dark"), FBSimulatorAppearance.dark)
-    XCTAssertEqual(FBSimulatorAppearance.dark.argumentName, "dark")
+    XCTAssertEqual(SimulatorAppearance(argumentName: "dark"), SimulatorAppearance.dark)
+    XCTAssertEqual(SimulatorAppearance.dark.argumentName, "dark")
     XCTAssertEqual(FBSimulatorContentSizeCategory(argumentName: "large"), FBSimulatorContentSizeCategory.large)
     XCTAssertEqual(FBSimulatorContentSizeCategory.large.argumentName, "large")
-    XCTAssertNil(FBSimulatorAppearance(argumentName: "purple"))
+    XCTAssertNil(SimulatorAppearance(argumentName: "purple"))
   }
 
   func testPreferenceBacking() {

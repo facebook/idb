@@ -9,7 +9,7 @@
 import FBControlCore
 import Foundation
 
-public enum FBSimulatorLogError: Error, LocalizedError {
+public enum SimulatorLogError: Error, LocalizedError {
   case runtimeRootUnavailable
 
   public var errorDescription: String? {
@@ -20,12 +20,12 @@ public enum FBSimulatorLogError: Error, LocalizedError {
   }
 }
 
-public struct FBSimulatorLogCommands {
+public struct SimulatorLogCommands {
 
   private let simulator: FBSimulator
 
-  public static func commands(with simulator: FBSimulator) -> FBSimulatorLogCommands {
-    FBSimulatorLogCommands(simulator: simulator)
+  public static func commands(with simulator: FBSimulator) -> SimulatorLogCommands {
+    SimulatorLogCommands(simulator: simulator)
   }
 
   fileprivate func tailLog(arguments: [String], consumer: any FBDataConsumer) async throws -> any LogOperation {
@@ -49,7 +49,7 @@ public struct FBSimulatorLogCommands {
 
   private func logExecutablePath() throws -> String {
     guard let root = simulator.device.runtime.root else {
-      throw FBSimulatorLogError.runtimeRootUnavailable
+      throw SimulatorLogError.runtimeRootUnavailable
     }
     let path =
       (((root as NSString)

@@ -50,14 +50,14 @@ final class DragEndpointTests: XCTestCase {
         do {
           _ = try DragEndpoint(query, backend: backend)
           XCTFail("\(query) must not be accepted as a drag endpoint by \(backend)")
-        } catch let error as FBUIAutomationError {
+        } catch let error as UIAutomationError {
           guard case let .pointOrMarkerRequired(thrownBackend, operation) = error else {
             return XCTFail("expected pointOrMarkerRequired, got \(error)")
           }
           XCTAssertEqual(thrownBackend, backend, "the refusal must name the backend that refused")
           XCTAssertEqual(operation, "A drag endpoint", "the refusal must name the verb")
         } catch {
-          XCTFail("expected an FBUIAutomationError, got \(error)")
+          XCTFail("expected an UIAutomationError, got \(error)")
         }
       }
     }

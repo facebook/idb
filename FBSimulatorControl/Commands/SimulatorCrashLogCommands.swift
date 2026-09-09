@@ -8,7 +8,7 @@
 import FBControlCore
 import Foundation
 
-public enum FBSimulatorCrashLogError: Error, LocalizedError {
+public enum SimulatorCrashLogError: Error, LocalizedError {
   case fileAccessUnsupported
 
   public var errorDescription: String? {
@@ -19,14 +19,14 @@ public enum FBSimulatorCrashLogError: Error, LocalizedError {
   }
 }
 
-public final class FBSimulatorCrashLogCommands {
+public final class SimulatorCrashLogCommands {
 
   private weak var simulator: FBSimulator?
   private let notifier: FBCrashLogNotifier
   private var hasPerformedInitialIngestion: Bool = false
 
-  public class func commands(with simulator: FBSimulator) -> FBSimulatorCrashLogCommands {
-    FBSimulatorCrashLogCommands(
+  public class func commands(with simulator: FBSimulator) -> SimulatorCrashLogCommands {
+    SimulatorCrashLogCommands(
       simulator: simulator,
       notifier: FBCrashLogNotifier.sharedInstance
     )
@@ -78,6 +78,6 @@ extension FBSimulator: CrashLogCommands {
   }
 
   public func withCrashLogFiles<R>(body: (any AsyncFileContainer) async throws -> R) async throws -> R {
-    throw FBSimulatorCrashLogError.fileAccessUnsupported
+    throw SimulatorCrashLogError.fileAccessUnsupported
   }
 }

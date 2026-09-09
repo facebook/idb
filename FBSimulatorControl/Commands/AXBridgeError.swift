@@ -9,12 +9,12 @@ import Foundation
 
 /// Failures specific to the `axbridge` transport — getting a guest reader running and talking to it.
 /// Failures of the *query* (no such element, empty point, timeout, unsupported verb) are backend-
-/// neutral and raised as `FBUIAutomationError`, so a caller can handle them without knowing which
+/// neutral and raised as `UIAutomationError`, so a caller can handle them without knowing which
 /// backend it holds.
 ///
 /// The cases mirror the guest's `AXWire.ErrorKind`. The two application-level ones are re-raised by
-/// the conformer as the backend-neutral `FBUIAutomationError` cases.
-public enum FBAXBridgeError: LocalizedError, Sendable {
+/// the conformer as the backend-neutral `UIAutomationError` cases.
+public enum AXBridgeError: LocalizedError, Sendable {
   /// The bundled `SimulatorFrameworkBridge` guest binary could not be located in Resources.
   case bridgeUnavailable
   /// The guest could not bind the private frameworks it reads through, so it can serve no request. The
@@ -90,11 +90,11 @@ public enum FBAXBridgeError: LocalizedError, Sendable {
   }
 }
 
-extension FBAXBridgeError: CustomStringConvertible {
-  public var description: String { errorDescription ?? "FBAXBridgeError" }
+extension AXBridgeError: CustomStringConvertible {
+  public var description: String { errorDescription ?? "AXBridgeError" }
 }
 
-extension FBAXBridgeError {
+extension AXBridgeError {
 
   /// Whether a read failure met while polling for a marker is worth polling through.
   ///

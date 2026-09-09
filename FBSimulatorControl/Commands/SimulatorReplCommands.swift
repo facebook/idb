@@ -9,13 +9,13 @@ import FBControlCore
 import Foundation
 @preconcurrency import XCTestBootstrap
 
-public enum FBSimulatorReplError: Error {
+public enum SimulatorReplError: Error {
   case bundledResourceMissing(item: String)
   case socketDirectoryCreationFailed(path: String)
   case targetIsNotALaunchableApp(bundleID: String, processIdentifier: pid_t)
 }
 
-extension FBSimulatorReplError: LocalizedError {
+extension SimulatorReplError: LocalizedError {
   public var errorDescription: String? {
     switch self {
     case let .bundledResourceMissing(item):
@@ -57,7 +57,7 @@ public final class FBSimulatorReplCommands {
     // The driver auto-imports the IDBAPI `.swiftinterface` so injected code can call `IDB`; the API
     // itself is linked into libRepl.
     guard let replDylibPath = BundledResources.path(forItem: "libRepl-iOS.dylib") else {
-      throw FBSimulatorReplError.bundledResourceMissing(item: "libRepl-iOS.dylib")
+      throw SimulatorReplError.bundledResourceMissing(item: "libRepl-iOS.dylib")
     }
     let idbInterfacePath = BundledResources.path(forItem: "IDBAPI.swiftinterface")
     let extraInterfacePaths = idbInterfacePath.map { [$0] } ?? []
@@ -101,10 +101,10 @@ public final class FBSimulatorReplCommands {
     }
 
     guard let bridgePath = simulator.frameworkBridgePath else {
-      throw FBSimulatorReplError.bundledResourceMissing(item: "SimulatorFrameworkBridge binary")
+      throw SimulatorReplError.bundledResourceMissing(item: "SimulatorFrameworkBridge binary")
     }
     guard let libReplPath = BundledResources.path(forItem: "libRepl-iOS.dylib") else {
-      throw FBSimulatorReplError.bundledResourceMissing(item: "libRepl-iOS.dylib")
+      throw SimulatorReplError.bundledResourceMissing(item: "libRepl-iOS.dylib")
     }
     let idbInterfacePath = BundledResources.path(forItem: "IDBAPI.swiftinterface")
 
@@ -132,7 +132,7 @@ public final class FBSimulatorReplCommands {
       throw FBWeakTargetError.simulator
     }
     guard let replDylibPath = BundledResources.path(forItem: "libRepl-iOS.dylib") else {
-      throw FBSimulatorReplError.bundledResourceMissing(item: "libRepl-iOS.dylib")
+      throw SimulatorReplError.bundledResourceMissing(item: "libRepl-iOS.dylib")
     }
     return [
       "DYLD_INSERT_LIBRARIES": replDylibPath,
@@ -153,7 +153,7 @@ public final class FBSimulatorReplCommands {
 
     // Deterministic so a later `idb-repl app` can reattach to a still-running REPL.
     guard ensureReplSocketDirectory(replSocketDirectory()) else {
-      throw FBSimulatorReplError.socketDirectoryCreationFailed(path: replSocketDirectory())
+      throw SimulatorReplError.socketDirectoryCreationFailed(path: replSocketDirectory())
     }
     let socketPath = replSocketPath(udid: simulator.udid, bundleID: bundleID)
 
@@ -189,7 +189,7 @@ public final class FBSimulatorReplCommands {
     // `installType == .system`: Apple's system apps host a REPL perfectly well, and
     // refusing them would be wrong.
     guard (try? await simulator.processID(forBundleID: bundleID)) != nil else {
-      throw FBSimulatorReplError.targetIsNotALaunchableApp(
+      throw SimulatorReplError.targetIsNotALaunchableApp(
         bundleID: bundleID,
         processIdentifier: launched.processIdentifier)
     }

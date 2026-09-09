@@ -29,7 +29,7 @@ import Foundation
  - **It resets to 60 when SpringBoard restarts**, because `SBVolumeControl` initialises its level to
    `0.6` and only publishes on a change.
  */
-public struct FBSimulatorAudioSettings: Equatable, Sendable {
+public struct SimulatorAudioSettings: Equatable, Sendable {
 
   /// Path of the settings file, relative to the simulator's data directory. The guest reaches the
   /// same file through its `SIMULATOR_AUDIO_SETTINGS_PATH` environment variable.
@@ -61,11 +61,11 @@ public struct FBSimulatorAudioSettings: Equatable, Sendable {
   /// from a reading, and a caller checking whether a button press moved the level would be told a
   /// number the device is not at. `sim_ringer_state` does default, to enabled, because the ringer is
   /// unmuted until something mutes it.
-  public static func settings(fromPropertyList plist: [String: Any]) throws -> FBSimulatorAudioSettings {
+  public static func settings(fromPropertyList plist: [String: Any]) throws -> SimulatorAudioSettings {
     guard let percentage = plist["sim_volume"] as? NSNumber else {
-      throw FBSimulatorAudioError.volumeMissing(keys: plist.keys.sorted())
+      throw SimulatorAudioError.volumeMissing(keys: plist.keys.sorted())
     }
-    return FBSimulatorAudioSettings(
+    return SimulatorAudioSettings(
       volume: min(max(percentage.doubleValue / 100, 0), 1),
       ringerEnabled: (plist["sim_ringer_state"] as? NSNumber)?.boolValue ?? true)
   }
@@ -77,22 +77,22 @@ public struct FBSimulatorAudioSettings: Equatable, Sendable {
   /// quietly setting 1.0 would hide it behind a plausible-looking readback.
   public static func volumeNotificationState(for volume: Double) throws -> UInt64 {
     guard (0...1).contains(volume) else {
-      throw FBSimulatorAudioError.volumeOutOfRange(volume: volume)
+      throw SimulatorAudioError.volumeOutOfRange(volume: volume)
     }
     return UInt64((volume * 100).rounded())
   }
 
   /// Reads and parses the settings file at `path`.
-  public static func settings(atPath path: String) throws -> FBSimulatorAudioSettings {
+  public static func settings(atPath path: String) throws -> SimulatorAudioSettings {
     let data: Data
     do {
       data = try Data(contentsOf: URL(fileURLWithPath: path))
     } catch {
-      throw FBSimulatorAudioError.unreadable(path: path, underlying: error)
+      throw SimulatorAudioError.unreadable(path: path, underlying: error)
     }
     let deserialized = try? PropertyListSerialization.propertyList(from: data, format: nil)
     guard let plist = deserialized as? [String: Any] else {
-      throw FBSimulatorAudioError.malformed(path: path)
+      throw SimulatorAudioError.malformed(path: path)
     }
     return try settings(fromPropertyList: plist)
   }
@@ -125,7 +125,7 @@ public struct FBSimulatorAudioSettingsUpdate: Equatable, Sendable {
 }
 
 /// The failures of reading the simulated device's audio settings.
-public enum FBSimulatorAudioError: Error, LocalizedError {
+public enum SimulatorAudioError: Error, LocalizedError {
   /// The simulator reported no data directory to look in.
   case noDataDirectory
   /// The settings file could not be read. The guest writes it while booting, so it is absent on a
@@ -162,14 +162,14 @@ extension FBSimulator: AudioCommands {
 
   /// The path of this simulator's audio settings file.
   var audioSettingsPath: String? {
-    dataDirectory.map { ($0 as NSString).appendingPathComponent(FBSimulatorAudioSettings.relativePath) }
+    dataDirectory.map { ($0 as NSString).appendingPathComponent(SimulatorAudioSettings.relativePath) }
   }
 
-  public func audioSettings() async throws -> FBSimulatorAudioSettings {
+  public func audioSettings() async throws -> SimulatorAudioSettings {
     guard let path = audioSettingsPath else {
-      throw FBSimulatorAudioError.noDataDirectory
+      throw SimulatorAudioError.noDataDirectory
     }
-    return try FBSimulatorAudioSettings.settings(atPath: path)
+    return try SimulatorAudioSettings.settings(atPath: path)
   }
 
   /// Publishes the update on the Darwin notifications the guest owns, the same edge a hardware button
@@ -181,13 +181,13 @@ extension FBSimulator: AudioCommands {
   public func updateAudioSettings(_ update: FBSimulatorAudioSettingsUpdate) async throws {
     if let volume = update.volume {
       try publish(
-        state: try FBSimulatorAudioSettings.volumeNotificationState(for: volume),
-        on: FBSimulatorAudioSettings.volumeNotificationName)
+        state: try SimulatorAudioSettings.volumeNotificationState(for: volume),
+        on: SimulatorAudioSettings.volumeNotificationName)
     }
     if let ringerEnabled = update.ringerEnabled {
       try publish(
         state: ringerEnabled ? 1 : 0,
-        on: FBSimulatorAudioSettings.ringerNotificationName)
+        on: SimulatorAudioSettings.ringerNotificationName)
     }
   }
 

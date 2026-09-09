@@ -42,7 +42,7 @@ extension AXBridgeTreeReader {
         pid: read.pid
       )
       guard let match = AXTreeWalk.matchingElement(inElements: elements, markerValue: value, key: key, ignoresCase: ignoresCase) else {
-        throw FBUIAutomationError.elementNotFound(backend: backend, key: key.rawValue, value: value)
+        throw UIAutomationError.elementNotFound(backend: backend, key: key.rawValue, value: value)
       }
       try validate(callerAssertion, against: match)
       switch AXTreeWalk.resolveMarker(inElements: elements, markerValue: value, key: key, ignoresCase: ignoresCase) {
@@ -55,16 +55,16 @@ extension AXBridgeTreeReader {
           assertion: Self.derivedAssertion(from: match, key: key)
         )
       case .offScreen:
-        throw FBUIAutomationError.elementNotOnScreen(backend: backend, key: key.rawValue, value: value)
+        throw UIAutomationError.elementNotOnScreen(backend: backend, key: key.rawValue, value: value)
       case .notFound:
-        throw FBUIAutomationError.elementNotFound(backend: backend, key: key.rawValue, value: value)
+        throw UIAutomationError.elementNotFound(backend: backend, key: key.rawValue, value: value)
       }
     case .frontmost, .application:
-      throw FBUIAutomationError.pointOrMarkerRequired(backend: backend, operation: operation)
+      throw UIAutomationError.pointOrMarkerRequired(backend: backend, operation: operation)
     }
   }
 
-  func emptyWriteTargetError(for query: FBAccessibilityElementQuery, at point: CGPoint) -> FBUIAutomationError {
+  func emptyWriteTargetError(for query: FBAccessibilityElementQuery, at point: CGPoint) -> UIAutomationError {
     guard case let .marker(value, key, _, _) = query else {
       return .noElementAtPoint(backend: backend, x: Double(point.x), y: Double(point.y))
     }
@@ -86,7 +86,7 @@ extension AXBridgeTreeReader {
     guard let response = try await hitTest(at: point, options: options),
       let element = response.elements.elements.first
     else {
-      throw FBUIAutomationError.noElementAtPoint(backend: backend, x: Double(point.x), y: Double(point.y))
+      throw UIAutomationError.noElementAtPoint(backend: backend, x: Double(point.x), y: Double(point.y))
     }
     try validate(assertion, against: element)
   }
@@ -100,7 +100,7 @@ extension AXBridgeTreeReader {
     }
     let actual = element.searchableValue(for: assertion.key) ?? ""
     guard actual == assertion.value else {
-      throw FBUIAutomationError.valueMismatch(
+      throw UIAutomationError.valueMismatch(
         backend: backend,
         key: assertion.key.rawValue,
         expected: assertion.value,

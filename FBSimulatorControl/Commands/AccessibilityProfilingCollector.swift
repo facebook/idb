@@ -13,7 +13,7 @@ import Foundation
 /// fetched-keys set are guarded by a lock because `addXPCCallDuration` may be
 /// called from the accessibility XPC callback thread while the serialization
 /// walk increments element/attribute counts.
-public final class FBAccessibilityProfilingCollector {
+public final class AccessibilityProfilingCollector {
 
   // Timing fields are set only on the serialization thread, so they are not lock-guarded.
   public var translationDuration: CFAbsoluteTime = 0

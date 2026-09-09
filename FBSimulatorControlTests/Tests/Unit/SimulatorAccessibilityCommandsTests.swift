@@ -577,7 +577,7 @@ final class SimulatorAccessibilityCommandsTests: XCTestCase {
     do {
       try await automation.tap(.point(CGPoint(x: 95, y: 772)), options: FBTapOptions(duration: 2))
       XCTFail("a hold this backend cannot perform must be refused")
-    } catch let error as FBUIAutomationError {
+    } catch let error as UIAutomationError {
       guard case let .operationUnsupported(backend, operation) = error else {
         return XCTFail("expected operationUnsupported, got \(error)")
       }
@@ -1405,7 +1405,7 @@ final class SimulatorAccessibilityCommandsTests: XCTestCase {
       let element = try await simulator.resolveElement(for: .frontmost)
       element.close()
       XCTFail("Expected springBoardNotRunning")
-    } catch FBAccessibilityError.springBoardNotRunning {
+    } catch AccessibilityError.springBoardNotRunning {
       // Expected: the describe-all failure is re-classified to the precise root cause.
     }
   }
@@ -1419,7 +1419,7 @@ final class SimulatorAccessibilityCommandsTests: XCTestCase {
       let element = try await simulator.resolveElement(for: .frontmost)
       element.close()
       XCTFail("Expected noTranslationObject")
-    } catch FBAccessibilityError.noTranslationObject {
+    } catch AccessibilityError.noTranslationObject {
       // Expected: re-classification fires only when SpringBoard is confirmed down.
     }
   }
@@ -1433,7 +1433,7 @@ final class SimulatorAccessibilityCommandsTests: XCTestCase {
       let element = try await simulator.resolveElement(for: .point(CGPoint(x: 10, y: 10)))
       element.close()
       XCTFail("Expected noTranslationObject")
-    } catch FBAccessibilityError.noTranslationObject {
+    } catch AccessibilityError.noTranslationObject {
       // Expected: the point path keeps the generic message regardless of SpringBoard state.
     }
   }

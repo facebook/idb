@@ -91,7 +91,7 @@ extension FBSimulator {
   /// path, validating that the binary exists.
   private func runtimeExecutablePath(_ relativePath: String) throws -> String {
     guard let root = device.runtime.root else {
-      throw FBSimulatorLogError.runtimeRootUnavailable
+      throw SimulatorLogError.runtimeRootUnavailable
     }
     let path = (root as NSString).appendingPathComponent(relativePath)
     let binary = try FBBinaryDescriptor.binary(withPath: path)

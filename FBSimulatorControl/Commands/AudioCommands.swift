@@ -11,7 +11,7 @@ import Foundation
 public protocol AudioCommands: AnyObject {
 
   /// The simulated device's current audio settings.
-  func audioSettings() async throws -> FBSimulatorAudioSettings
+  func audioSettings() async throws -> SimulatorAudioSettings
 
   /// Applies `update` to the simulated device, leaving any field it does not carry alone.
   ///

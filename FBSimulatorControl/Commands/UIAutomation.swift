@@ -85,7 +85,7 @@ public extension FBUIAutomationBackend {
 public struct FBTapOptions: Sendable, Equatable {
 
   /// A pre-tap value assertion: read `key` on the resolved element and tap only if it equals `value`,
-  /// else throw `FBUIAutomationError.valueMismatch`.
+  /// else throw `UIAutomationError.valueMismatch`.
   public struct Assertion: Sendable, Equatable {
     public var key: FBAXSearchableKey
     public var value: String
@@ -153,7 +153,7 @@ enum DragEndpoint: Equatable {
     case let .marker(value, key, depth, _):
       self = .marker(value: value, key: key, depth: depth)
     case .frontmost, .application:
-      throw FBUIAutomationError.pointOrMarkerRequired(backend: backend, operation: Self.operation)
+      throw UIAutomationError.pointOrMarkerRequired(backend: backend, operation: Self.operation)
     }
   }
 }

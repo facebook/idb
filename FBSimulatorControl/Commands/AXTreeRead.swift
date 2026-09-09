@@ -89,7 +89,7 @@ extension AXTreeRead {
   init(wholeTreeResponse data: Data, pid: pid_t) throws {
     let response = try Self.validatedResponse(fromResponse: data, pid: pid)
     guard let tree = try Self.node(fromValidatedResponse: response, pid: pid) else {
-      throw FBAXBridgeError.guestFailure("pid \(pid): empty response to a whole-tree read")
+      throw AXBridgeError.guestFailure("pid \(pid): empty response to a whole-tree read")
     }
     let truncated = (response[AXWire.Envelope.truncated.rawValue] as? Bool) ?? false
     self.init(
@@ -104,20 +104,20 @@ extension AXTreeRead {
   /// `method` is named only when the strategy itself could not answer.
   init(frontmostResponse data: Data, method: FBAXBridgeFrontmostMethod) throws {
     guard let object = try? JSONSerialization.jsonObject(with: data), let response = object as? [String: Any] else {
-      throw FBAXBridgeError.guestFailure("unparseable fused frontmost describe response")
+      throw AXBridgeError.guestFailure("unparseable fused frontmost describe response")
     }
     guard (response[AXWire.Envelope.ok.rawValue] as? Bool) == true else {
       throw Self.failure(fromResponse: response, pid: nil, frontmostMethod: method)
     }
     guard let tree = response[AXWire.Envelope.tree.rawValue] as? [String: Any] else {
-      throw FBAXBridgeError.guestFailure("fused frontmost describe response without a tree")
+      throw AXBridgeError.guestFailure("fused frontmost describe response without a tree")
     }
     // `exactly:` inside the guard, so a pid too large for a `pid_t` is a response the parser rejects
     // rather than a value the conversion traps on.
     guard let reported = response[AXWire.Envelope.pid.rawValue] as? Int,
       let pid = pid_t(exactly: reported), pid > 0
     else {
-      throw FBAXBridgeError.guestFailure("fused frontmost describe response without a resolved pid")
+      throw AXBridgeError.guestFailure("fused frontmost describe response without a resolved pid")
     }
     let truncated = (response[AXWire.Envelope.truncated.rawValue] as? Bool) ?? false
     self.init(
@@ -131,7 +131,7 @@ extension AXTreeRead {
   /// classified by the guest's kind. A hit carries no truncation flag or modal.
   init?(hitTestResponse data: Data) throws {
     guard let object = try? JSONSerialization.jsonObject(with: data), let response = object as? [String: Any] else {
-      throw FBAXBridgeError.guestFailure("unparseable hit-test response")
+      throw AXBridgeError.guestFailure("unparseable hit-test response")
     }
     guard (response[AXWire.Envelope.ok.rawValue] as? Bool) == true else {
       throw Self.failure(fromResponse: response, pid: nil, frontmostMethod: nil)
@@ -140,12 +140,12 @@ extension AXTreeRead {
       return nil
     }
     guard let node = response[AXWire.Envelope.tree.rawValue] as? [String: Any] else {
-      throw FBAXBridgeError.guestFailure("hit-test ok response without a tree or empty flag")
+      throw AXBridgeError.guestFailure("hit-test ok response without a tree or empty flag")
     }
     guard let reported = response[AXWire.Envelope.pid.rawValue] as? Int,
       let pid = pid_t(exactly: reported), pid > 0
     else {
-      throw FBAXBridgeError.guestFailure("hit-test response without an owning pid")
+      throw AXBridgeError.guestFailure("hit-test response without an owning pid")
     }
     self.init(tree: node, pid: pid, truncated: false, modal: nil)
   }
@@ -154,7 +154,7 @@ extension AXTreeRead {
   /// an unoccupied point is wrong.
   static func writeLanded(fromResponse data: Data) throws -> Bool {
     guard let object = try? JSONSerialization.jsonObject(with: data), let response = object as? [String: Any] else {
-      throw FBAXBridgeError.guestFailure("unparseable write response")
+      throw AXBridgeError.guestFailure("unparseable write response")
     }
     guard (response[AXWire.Envelope.ok.rawValue] as? Bool) == true else {
       throw Self.failure(fromResponse: response, pid: nil, frontmostMethod: nil)
@@ -179,7 +179,7 @@ extension AXTreeRead {
   /// dictionary of a successful response. A failed response throws whatever the guest's kind says it is.
   private static func validatedResponse(fromResponse data: Data, pid: pid_t) throws -> [String: Any] {
     guard let object = try? JSONSerialization.jsonObject(with: data), let response = object as? [String: Any] else {
-      throw FBAXBridgeError.guestFailure("pid \(pid): unparseable guest response")
+      throw AXBridgeError.guestFailure("pid \(pid): unparseable guest response")
     }
     guard (response[AXWire.Envelope.ok.rawValue] as? Bool) == true else {
       throw Self.failure(fromResponse: response, pid: pid, frontmostMethod: nil)
@@ -195,7 +195,7 @@ extension AXTreeRead {
     fromResponse response: [String: Any],
     pid: pid_t?,
     frontmostMethod: FBAXBridgeFrontmostMethod?
-  ) -> FBAXBridgeError {
+  ) -> AXBridgeError {
     let message = (response[AXWire.Envelope.error.rawValue] as? String) ?? "the guest reported a failure with no message"
     // `exactly:` so a pid too large for `pid_t` is a rejected response, not a trap.
     let reportedPid = (response[AXWire.Envelope.pid.rawValue] as? Int).flatMap(pid_t.init(exactly:)) ?? pid
@@ -235,7 +235,7 @@ extension AXTreeRead {
       return nil
     }
     guard let tree = response[AXWire.Envelope.tree.rawValue] as? [String: Any] else {
-      throw FBAXBridgeError.guestFailure("pid \(pid): ok response without a tree or empty flag")
+      throw AXBridgeError.guestFailure("pid \(pid): ok response without a tree or empty flag")
     }
     return tree
   }

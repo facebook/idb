@@ -225,7 +225,7 @@ final class AXBridgeSocketTests: XCTestCase {
     do {
       _ = try await AXBridgeConnection.connect(path: unbound, timeout: 1, guest: guest)
       XCTFail("connecting to a socket no guest will ever bind must not succeed")
-    } catch let error as FBAXBridgeError {
+    } catch let error as AXBridgeError {
       guard case let .guestDiedBeforeBinding(pid, signal, exitCode, _) = error else {
         return XCTFail("expected guestDiedBeforeBinding, got \(error)")
       }
@@ -269,14 +269,14 @@ final class AXBridgeSocketTests: XCTestCase {
     let cause = AXBridgeConnection.terminationCause(waitpidStatus: nil)
     XCTAssertNil(cause.signal)
     XCTAssertNil(cause.exitCode)
-    let error = FBAXBridgeError.guestDiedBeforeBinding(
+    let error = AXBridgeError.guestDiedBeforeBinding(
       pid: 4242, signal: cause.signal, exitCode: cause.exitCode, path: "/x/y.sock")
     XCTAssertTrue(error.localizedDescription.contains("no exit status recorded"), error.localizedDescription)
   }
 
   // Signal zero is not a signal, and the message must not claim one was raised.
   func testAZeroSignalIsNotReportedAsASignal() {
-    let error = FBAXBridgeError.guestDiedBeforeBinding(pid: 4242, signal: 0, exitCode: nil, path: "/x/y.sock")
+    let error = AXBridgeError.guestDiedBeforeBinding(pid: 4242, signal: 0, exitCode: nil, path: "/x/y.sock")
     XCTAssertFalse(error.localizedDescription.contains("signal 0"), error.localizedDescription)
   }
 

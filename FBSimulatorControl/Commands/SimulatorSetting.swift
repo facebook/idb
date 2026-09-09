@@ -14,7 +14,7 @@ public enum FBSimulatorSetting: Equatable {
   case slowAnimations(Bool)
   case increaseContrast(Bool)
   case autoFillPasswords(Bool)
-  case appearance(FBSimulatorAppearance)
+  case appearance(SimulatorAppearance)
   case contentSize(FBSimulatorContentSizeCategory)
   case locale(localeIdentifier: String)
 }
@@ -66,7 +66,7 @@ public extension FBSimulatorSetting {
 }
 
 /// Raised when a `name`/`value` pair cannot be parsed into an `FBSimulatorSetting`.
-public enum FBSimulatorSettingError: Error, CustomStringConvertible, LocalizedError {
+public enum SimulatorSettingError: Error, CustomStringConvertible, LocalizedError {
   case invalidValue(name: String, value: String, expected: String)
 
   public var description: String {
@@ -98,14 +98,14 @@ extension FBSimulatorSettingResolution {
     case .autoFillPasswords:
       self = .setting(.autoFillPasswords(try FBSimulatorSettingResolution.parseEnabled(name: name, value: value)))
     case .appearance:
-      guard let appearance = FBSimulatorAppearance(argumentName: value) else {
-        throw FBSimulatorSettingError.invalidValue(
-          name: name, value: value, expected: FBSimulatorAppearance.allArgumentNames.joined(separator: ", "))
+      guard let appearance = SimulatorAppearance(argumentName: value) else {
+        throw SimulatorSettingError.invalidValue(
+          name: name, value: value, expected: SimulatorAppearance.allArgumentNames.joined(separator: ", "))
       }
       self = .setting(.appearance(appearance))
     case .contentSize:
       guard let category = FBSimulatorContentSizeCategory(argumentName: value) else {
-        throw FBSimulatorSettingError.invalidValue(
+        throw SimulatorSettingError.invalidValue(
           name: name, value: value, expected: FBSimulatorContentSizeCategory.allArgumentNames.joined(separator: ", "))
       }
       self = .setting(.contentSize(category))
@@ -121,28 +121,28 @@ extension FBSimulatorSettingResolution {
     case "disable":
       return false
     default:
-      throw FBSimulatorSettingError.invalidValue(name: name, value: value, expected: "enable, disable")
+      throw SimulatorSettingError.invalidValue(name: name, value: value, expected: "enable, disable")
     }
   }
 }
 
 // MARK: - Argument name mappings
 
-extension FBSimulatorAppearance {
-  private static let argumentNames: [(name: String, value: FBSimulatorAppearance)] = [
+extension SimulatorAppearance {
+  private static let argumentNames: [(name: String, value: SimulatorAppearance)] = [
     ("dark", .dark),
     ("light", .light),
   ]
 
   public init?(argumentName: String) {
-    guard let entry = FBSimulatorAppearance.argumentNames.first(where: { $0.name == argumentName }) else {
+    guard let entry = SimulatorAppearance.argumentNames.first(where: { $0.name == argumentName }) else {
       return nil
     }
     self = entry.value
   }
 
   var argumentName: String? {
-    FBSimulatorAppearance.argumentNames.first(where: { $0.value == self })?.name
+    SimulatorAppearance.argumentNames.first(where: { $0.value == self })?.name
   }
 
   public static var allArgumentNames: [String] {

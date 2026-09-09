@@ -73,7 +73,7 @@ final class AXBridgeReadsTests: XCTestCase {
     // message, so callers see the real cause.
     let data = try envelope(["ok": false, "error": "the accessibility server is not responding"])
     XCTAssertThrowsError(try AXTreeRead(wholeTreeResponse: data, pid: 7)) { error in
-      guard case FBAXBridgeError.guestFailure = error else {
+      guard case AXBridgeError.guestFailure = error else {
         return XCTFail("an untagged failure should be a guestFailure, got: \(error)")
       }
       XCTAssertTrue("\(error)".contains("the accessibility server is not responding"), "unexpected error: \(error)")
@@ -84,7 +84,7 @@ final class AXBridgeReadsTests: XCTestCase {
     // The guest error becomes the backend-neutral error shared with the accessibility backend.
     let data = try envelope(["ok": false, "error": "no application element for pid 7", "error_kind": "application_unavailable"])
     XCTAssertThrowsError(try AXTreeRead(wholeTreeResponse: data, pid: 7)) { error in
-      guard case let FBAXBridgeError.applicationUnavailable(pid) = error else {
+      guard case let AXBridgeError.applicationUnavailable(pid) = error else {
         return XCTFail("a tagged failure should be applicationUnavailable, got: \(error)")
       }
       XCTAssertEqual(pid, 7)
@@ -102,7 +102,7 @@ final class AXBridgeReadsTests: XCTestCase {
       "error_kind": "reader_unavailable",
     ])
     XCTAssertThrowsError(try AXTreeRead(frontmostResponse: data, method: .centerPoint)) { error in
-      guard case let FBAXBridgeError.readerUnavailable(reason) = error else {
+      guard case let AXBridgeError.readerUnavailable(reason) = error else {
         return XCTFail("expected readerUnavailable, got: \(error)")
       }
       XCTAssertEqual(reason, "XCTAccessibilityFramework unavailable — is XCTAutomationSupport loaded?")
@@ -118,7 +118,7 @@ final class AXBridgeReadsTests: XCTestCase {
       "error_kind": "application_unavailable",
     ])
     XCTAssertThrowsError(try AXTreeRead(frontmostResponse: data, method: .centerPoint)) { error in
-      guard case let FBAXBridgeError.applicationUnavailable(pid) = error else {
+      guard case let AXBridgeError.applicationUnavailable(pid) = error else {
         return XCTFail("expected applicationUnavailable, got: \(error)")
       }
       XCTAssertNil(pid, "a frontmost read that resolved nothing has no pid to name")
@@ -134,7 +134,7 @@ final class AXBridgeReadsTests: XCTestCase {
       "error_kind": "frontmost_unresolved",
     ])
     XCTAssertThrowsError(try AXTreeRead(frontmostResponse: data, method: .windowServer)) { error in
-      guard case let FBAXBridgeError.frontmostUnresolved(method, reason) = error else {
+      guard case let AXBridgeError.frontmostUnresolved(method, reason) = error else {
         return XCTFail("expected frontmostUnresolved, got: \(error)")
       }
       XCTAssertEqual(method, .windowServer)
@@ -153,7 +153,7 @@ final class AXBridgeReadsTests: XCTestCase {
       "pid": 8865,
     ])
     XCTAssertThrowsError(try AXTreeRead(hitTestResponse: data)) { error in
-      guard case let FBAXBridgeError.applicationUnavailable(pid) = error else {
+      guard case let AXBridgeError.applicationUnavailable(pid) = error else {
         return XCTFail("expected applicationUnavailable, got: \(error)")
       }
       XCTAssertEqual(pid, 8865, "the guest's reported pid must ride out on the error")
@@ -170,7 +170,7 @@ final class AXBridgeReadsTests: XCTestCase {
       "pid": 8865,
     ])
     XCTAssertThrowsError(try AXTreeRead(wholeTreeResponse: data, pid: 8865)) { error in
-      guard case let FBAXBridgeError.applicationNotResponding(pid) = error else {
+      guard case let AXBridgeError.applicationNotResponding(pid) = error else {
         return XCTFail("expected applicationNotResponding, got: \(error)")
       }
       XCTAssertEqual(pid, 8865)
@@ -187,7 +187,7 @@ final class AXBridgeReadsTests: XCTestCase {
       "pid": 99_999_999_999,
     ])
     XCTAssertThrowsError(try AXTreeRead(wholeTreeResponse: data, pid: 42)) { error in
-      guard case let FBAXBridgeError.applicationUnavailable(pid) = error else {
+      guard case let AXBridgeError.applicationUnavailable(pid) = error else {
         return XCTFail("expected applicationUnavailable, got: \(error)")
       }
       XCTAssertEqual(pid, 42, "an unusable reported pid falls back to the one the caller named")
@@ -199,7 +199,7 @@ final class AXBridgeReadsTests: XCTestCase {
   func testAnUnknownFailureKindDegradesToAnOpaqueFailureCarryingTheMessage() throws {
     let data = try envelope(["ok": false, "error": "something new went wrong", "error_kind": "some_future_kind"])
     XCTAssertThrowsError(try AXTreeRead(frontmostResponse: data, method: .centerPoint)) { error in
-      guard case FBAXBridgeError.guestFailure = error else {
+      guard case AXBridgeError.guestFailure = error else {
         return XCTFail("expected guestFailure, got: \(error)")
       }
       XCTAssertTrue("\(error)".contains("something new went wrong"), "the message must survive: \(error)")
@@ -229,8 +229,8 @@ final class AXBridgeReadsTests: XCTestCase {
   func testOneCatchClauseHandlesEveryBackend() {
     let backends: [FBUIAutomationBackend] = [.accessibility, .axBridge(persistence: .oneShot, frontmostMethod: .centerPoint, automationMode: true), .axBridge(persistence: .shared, frontmostMethod: .centerPoint, automationMode: true)]
     for backend in backends {
-      let thrown: Error = FBUIAutomationError.elementNotFound(backend: backend, key: "AXLabel", value: "General")
-      guard case let FBUIAutomationError.elementNotFound(caught, key, value) = thrown else {
+      let thrown: Error = UIAutomationError.elementNotFound(backend: backend, key: "AXLabel", value: "General")
+      guard case let UIAutomationError.elementNotFound(caught, key, value) = thrown else {
         return XCTFail("\(backend) did not match the shared case")
       }
       XCTAssertEqual(caught, backend)
@@ -299,15 +299,15 @@ final class AXBridgeReadsTests: XCTestCase {
   // Only an application with no accessibility server gets the flag guidance: an empty point is a successful read of
   // blank space, and a marker that never appeared is about the app's state.
   func testOnlyAnUnreadableApplicationOffersTheAccessibilityServerGuidance() {
-    let unavailable = FBUIAutomationError.applicationUnavailable(backend: Self.axBridge, pid: 8865)
+    let unavailable = UIAutomationError.applicationUnavailable(backend: Self.axBridge, pid: 8865)
     XCTAssertTrue(unavailable.description.contains("ApplicationAccessibilityEnabled"), "got: \(unavailable.description)")
     XCTAssertTrue(unavailable.description.contains("pid 8865"), "the message must name the process: \(unavailable.description)")
 
-    let empty = FBUIAutomationError.noElementAtPoint(backend: Self.axBridge, x: 2000, y: 2000)
+    let empty = UIAutomationError.noElementAtPoint(backend: Self.axBridge, x: 2000, y: 2000)
     XCTAssertFalse(empty.description.contains("ApplicationAccessibilityEnabled"), "got: \(empty.description)")
     XCTAssertTrue(empty.description.contains("the point is empty"), "an empty point must say so: \(empty.description)")
 
-    let timedOut = FBUIAutomationError.timedOut(backend: Self.axBridge, key: "AXLabel", value: "General", timeout: 5)
+    let timedOut = UIAutomationError.timedOut(backend: Self.axBridge, key: "AXLabel", value: "General", timeout: 5)
     XCTAssertFalse(timedOut.description.contains("ApplicationAccessibilityEnabled"), "got: \(timedOut.description)")
     XCTAssertTrue(timedOut.description.contains("never appeared"), "a timeout must say what did not happen: \(timedOut.description)")
   }
@@ -315,7 +315,7 @@ final class AXBridgeReadsTests: XCTestCase {
   // A display-wide read that resolved nothing has no pid, so the message says where it looked instead of
   // printing a zero — and still offers the guidance, the condition being the same one.
   func testAnUnreadableApplicationWithNoResolvedPidSaysWhereItLooked() {
-    let error = FBUIAutomationError.applicationUnavailable(backend: Self.axBridge, pid: nil)
+    let error = UIAutomationError.applicationUnavailable(backend: Self.axBridge, pid: nil)
     XCTAssertTrue(error.description.contains("at that point"), "got: \(error.description)")
     XCTAssertFalse(error.description.contains("pid 0"), "a missing pid must not print as zero: \(error.description)")
     XCTAssertTrue(error.description.contains("ApplicationAccessibilityEnabled"), "got: \(error.description)")
@@ -324,11 +324,11 @@ final class AXBridgeReadsTests: XCTestCase {
   // One message per condition, so a reader can tell the causes apart without asking the backend.
   func testEachFailureModeStatesItsOwnCause() {
     let cases: [(any LocalizedError, String)] = [
-      (FBAXBridgeError.readerUnavailable("XCTAccessibilityFramework unavailable"), "could not bind"),
-      (FBAXBridgeError.frontmostUnresolved(method: .runningBoard, reason: "Client not entitled"), "runningboard strategy"),
-      (FBUIAutomationError.applicationNotResponding(backend: Self.axBridge, pid: 8865), "did not answer in time"),
-      (FBUIAutomationError.applicationUnavailable(backend: Self.axBridge, pid: 8865), "accessibility server has not started"),
-      (FBUIAutomationError.noElementAtPoint(backend: Self.axBridge, x: 1, y: 2), "the point is empty"),
+      (AXBridgeError.readerUnavailable("XCTAccessibilityFramework unavailable"), "could not bind"),
+      (AXBridgeError.frontmostUnresolved(method: .runningBoard, reason: "Client not entitled"), "runningboard strategy"),
+      (UIAutomationError.applicationNotResponding(backend: Self.axBridge, pid: 8865), "did not answer in time"),
+      (UIAutomationError.applicationUnavailable(backend: Self.axBridge, pid: 8865), "accessibility server has not started"),
+      (UIAutomationError.noElementAtPoint(backend: Self.axBridge, x: 1, y: 2), "the point is empty"),
     ]
     var descriptions: Set<String> = []
     for (error, expected) in cases {
@@ -343,9 +343,9 @@ final class AXBridgeReadsTests: XCTestCase {
   // `application_unavailable` by the guest and arrives as the case that does carry guidance.
   func testTheFailuresThatAreNotAboutTheFlagOfferNoAccessibilityGuidance() {
     let errors: [String: any LocalizedError] = [
-      "readerUnavailable": FBAXBridgeError.readerUnavailable("XCTAccessibilityFramework unavailable"),
-      "frontmostUnresolved": FBAXBridgeError.frontmostUnresolved(method: .windowServer, reason: "AXPTranslator unavailable"),
-      "applicationNotResponding": FBUIAutomationError.applicationNotResponding(backend: Self.axBridge, pid: 8865),
+      "readerUnavailable": AXBridgeError.readerUnavailable("XCTAccessibilityFramework unavailable"),
+      "frontmostUnresolved": AXBridgeError.frontmostUnresolved(method: .windowServer, reason: "AXPTranslator unavailable"),
+      "applicationNotResponding": UIAutomationError.applicationNotResponding(backend: Self.axBridge, pid: 8865),
     ]
     for (name, error) in errors {
       XCTAssertFalse(
@@ -356,12 +356,12 @@ final class AXBridgeReadsTests: XCTestCase {
   }
 
   func testValueMismatchIsSeamCatchableAndNamesTheMismatch() {
-    // A `tap` value assertion is a fact about the query, not the transport, so it is the neutral `FBUIAutomationError`,
+    // A `tap` value assertion is a fact about the query, not the transport, so it is the neutral `UIAutomationError`,
     // catchable by a caller holding `any FBUIAutomation`.
-    let thrown: Error = FBUIAutomationError.valueMismatch(
+    let thrown: Error = UIAutomationError.valueMismatch(
       backend: .accessibility, key: FBAXSearchableKey.value.rawValue, expected: "On", actual: "Off"
     )
-    guard case let FBUIAutomationError.valueMismatch(backend, key, expected, actual) = thrown else {
+    guard case let UIAutomationError.valueMismatch(backend, key, expected, actual) = thrown else {
       return XCTFail("value mismatch should match the shared case, got: \(thrown)")
     }
     XCTAssertEqual(backend, .accessibility)
@@ -466,7 +466,7 @@ final class AXBridgeReadsTests: XCTestCase {
   // An app still launching has no frontmost, no readable tree and no accessibility server, and acquires
   // all three shortly, so a wait is right to keep polling through those.
   func testAWaitPollsThroughTheFailuresAnAppStillLaunchingProduces() {
-    let transient: [String: FBAXBridgeError] = [
+    let transient: [String: AXBridgeError] = [
       "frontmostUnresolved": .frontmostUnresolved(method: .centerPoint, reason: "found no element"),
       "applicationUnavailable": .applicationUnavailable(pid: 8865),
       "applicationNotResponding": .applicationNotResponding(pid: 8865),
@@ -481,14 +481,14 @@ final class AXBridgeReadsTests: XCTestCase {
   // rather than being replaced by a timeout once the deadline passes.
   func testAWaitEndsAtOnceOnAFailureThatCannotResolveItself() {
     XCTAssertFalse(
-      FBAXBridgeError.readerUnavailable("XCTAccessibilityFramework unavailable").isTransientDuringMarkerWait,
+      AXBridgeError.readerUnavailable("XCTAccessibilityFramework unavailable").isTransientDuringMarkerWait,
       "readerUnavailable is not transient; the wait must end immediately"
     )
-    XCTAssertFalse(FBAXBridgeError.bridgeUnavailable.isTransientDuringMarkerWait)
+    XCTAssertFalse(AXBridgeError.bridgeUnavailable.isTransientDuringMarkerWait)
     // Polling through this one re-spawns a guest that cannot start, once per poll interval, and still
     // ends in a timeout that has thrown away the signal it already had.
     XCTAssertFalse(
-      FBAXBridgeError.guestDiedBeforeBinding(pid: 4242, signal: 6, exitCode: nil, path: "/x/y.sock")
+      AXBridgeError.guestDiedBeforeBinding(pid: 4242, signal: 6, exitCode: nil, path: "/x/y.sock")
         .isTransientDuringMarkerWait
     )
   }
@@ -668,7 +668,7 @@ final class AXBridgeReadsTests: XCTestCase {
     // A hit node with no owning pid is a protocol violation — the host cannot tag the element.
     let data = try envelope(["ok": true, "tree": [AXWire.Node.identifier.rawValue: "x"]])
     XCTAssertThrowsError(try AXTreeRead(hitTestResponse: data)) { error in
-      guard case FBAXBridgeError.guestFailure = error else {
+      guard case AXBridgeError.guestFailure = error else {
         return XCTFail("a hit-test without an owning pid should be guestFailure, got: \(error)")
       }
     }
@@ -701,7 +701,7 @@ final class AXBridgeReadsTests: XCTestCase {
       "error_kind": "frontmost_unresolved",
     ])
     XCTAssertThrowsError(try AXTreeRead(frontmostResponse: data, method: .centerPoint)) { error in
-      guard case let FBAXBridgeError.frontmostUnresolved(method, reason) = error else {
+      guard case let AXBridgeError.frontmostUnresolved(method, reason) = error else {
         return XCTFail("a strategy that named nothing should be frontmostUnresolved, got: \(error)")
       }
       XCTAssertEqual(method, .centerPoint)
@@ -715,14 +715,14 @@ final class AXBridgeReadsTests: XCTestCase {
     let tree: [String: Any] = [AXWire.Node.label.rawValue: "root"]
     let frontmost = try envelope(["ok": true, "tree": tree, "pid": 99_999_999_999])
     XCTAssertThrowsError(try AXTreeRead(frontmostResponse: frontmost, method: .centerPoint)) { error in
-      guard case FBAXBridgeError.guestFailure = error else {
+      guard case AXBridgeError.guestFailure = error else {
         return XCTFail("expected guestFailure, got: \(error)")
       }
     }
 
     let hit = try envelope(["ok": true, "tree": tree, "pid": 99_999_999_999])
     XCTAssertThrowsError(try AXTreeRead(hitTestResponse: hit)) { error in
-      guard case FBAXBridgeError.guestFailure = error else {
+      guard case AXBridgeError.guestFailure = error else {
         return XCTFail("expected guestFailure, got: \(error)")
       }
     }
@@ -732,7 +732,7 @@ final class AXBridgeReadsTests: XCTestCase {
     // An ok response with a tree but no pid is a protocol violation — the host cannot tag the elements.
     let data = try envelope(["ok": true, "tree": [AXWire.Node.label.rawValue: "x"]])
     XCTAssertThrowsError(try AXTreeRead(frontmostResponse: data, method: .centerPoint)) { error in
-      guard case FBAXBridgeError.guestFailure = error else {
+      guard case AXBridgeError.guestFailure = error else {
         return XCTFail("a fused response without a pid should be guestFailure, got: \(error)")
       }
     }
@@ -741,7 +741,7 @@ final class AXBridgeReadsTests: XCTestCase {
   func testFrontmostTreeThrowsWhenTreeMissing() throws {
     let data = try envelope(["ok": true, "pid": 8865])
     XCTAssertThrowsError(try AXTreeRead(frontmostResponse: data, method: .centerPoint)) { error in
-      guard case FBAXBridgeError.guestFailure = error else {
+      guard case AXBridgeError.guestFailure = error else {
         return XCTFail("a fused response without a tree should be guestFailure, got: \(error)")
       }
     }
@@ -938,7 +938,7 @@ final class AXBridgeReadsTests: XCTestCase {
         .frontmost, options: FBAccessibilityRequestOptions(keys: [.interactable], traversalStrategy: .singleFetch)
       )
       XCTFail("expected the read to be refused")
-    } catch let FBUIAutomationError.traversalCannotAnswer(_, traversal, keys) {
+    } catch let UIAutomationError.traversalCannotAnswer(_, traversal, keys) {
       XCTAssertEqual(traversal, "single-fetch")
       XCTAssertEqual(keys, ["interactable"])
     }
@@ -1348,7 +1348,7 @@ final class AXBridgeReadsTests: XCTestCase {
         .marker(value: "Nothing", key: .label, depth: 10), options: FBAccessibilityRequestOptions()
       )
       XCTFail("an unmatched marker must throw")
-    } catch let error as FBUIAutomationError {
+    } catch let error as UIAutomationError {
       guard case .elementNotFound = error else {
         return XCTFail("expected elementNotFound, got \(error)")
       }
@@ -1498,7 +1498,7 @@ final class AXBridgeReadsTests: XCTestCase {
     do {
       _ = try await reader.describeTree(.point(CGPoint(x: 1, y: 2)), options: FBAccessibilityRequestOptions())
       XCTFail("an empty point must throw from describe")
-    } catch let error as FBUIAutomationError {
+    } catch let error as UIAutomationError {
       guard case .noElementAtPoint = error else {
         return XCTFail("expected noElementAtPoint, got \(error)")
       }
@@ -1568,7 +1568,7 @@ final class AXBridgeReadsTests: XCTestCase {
     do {
       _ = try await StubAXBridgeTreeReader(read: Self.stubRead(), hitTestResult: frameless).frameFromTree(query)
       XCTFail("a read carrying no frame must throw rather than answer with the origin")
-    } catch let error as FBUIAutomationError {
+    } catch let error as UIAutomationError {
       guard case let .frameUnavailable(backend, thrownQuery) = error else {
         return XCTFail("expected frameUnavailable, got \(error)")
       }
@@ -1588,7 +1588,7 @@ final class AXBridgeReadsTests: XCTestCase {
       (.point(CGPoint(x: 3, y: 4)), "(3.0, 4.0)"),
     ]
     for (query, expected) in expectations {
-      let description = FBUIAutomationError.frameUnavailable(backend: backend, query: query).description
+      let description = UIAutomationError.frameUnavailable(backend: backend, query: query).description
       XCTAssertTrue(description.contains(expected), "\(query) should be named by \"\(expected)\": \(description)")
       XCTAssertTrue(description.contains(backend.displayName), "message should name the backend: \(description)")
     }
@@ -1668,7 +1668,7 @@ final class AXBridgeReadsTests: XCTestCase {
       do {
         _ = try await Self.framedReader().writeTarget(for: query, operation: "A tap")
         XCTFail("\(query) must not resolve to a point to write to")
-      } catch let error as FBUIAutomationError {
+      } catch let error as UIAutomationError {
         guard case let .pointOrMarkerRequired(_, operation) = error else {
           return XCTFail("expected pointOrMarkerRequired, got \(error)")
         }
@@ -1683,7 +1683,7 @@ final class AXBridgeReadsTests: XCTestCase {
         for: .marker(value: "Wi-Fi", key: .label, depth: 10), operation: "A tap"
       )
       XCTFail("a marker matching nothing must not resolve a point")
-    } catch let error as FBUIAutomationError {
+    } catch let error as UIAutomationError {
       guard case let .elementNotFound(_, key, value) = error else {
         return XCTFail("expected elementNotFound, got \(error)")
       }
@@ -1698,7 +1698,7 @@ final class AXBridgeReadsTests: XCTestCase {
     do {
       _ = try await Self.framedReader(child: nil).writeTarget(for: Self.marker, operation: "A tap")
       XCTFail("an element with no usable frame must not resolve a point to write to")
-    } catch let error as FBUIAutomationError {
+    } catch let error as UIAutomationError {
       guard case let .elementNotOnScreen(_, key, value) = error else {
         return XCTFail("expected elementNotOnScreen, got \(error)")
       }
@@ -1728,7 +1728,7 @@ final class AXBridgeReadsTests: XCTestCase {
         callerAssertion: FBTapOptions.Assertion(key: .label, value: "General")
       )
       XCTFail("a caller assertion that does not match must refuse the write")
-    } catch let error as FBUIAutomationError {
+    } catch let error as UIAutomationError {
       guard case let .valueMismatch(_, key, expected, actual) = error else {
         return XCTFail("expected valueMismatch, got \(error)")
       }
@@ -1752,7 +1752,7 @@ final class AXBridgeReadsTests: XCTestCase {
         callerAssertion: FBTapOptions.Assertion(key: .label, value: "General")
       )
       XCTFail("a caller assertion on a point must be checked against the element there")
-    } catch let error as FBUIAutomationError {
+    } catch let error as UIAutomationError {
       guard case let .valueMismatch(_, _, expected, actual) = error else {
         return XCTFail("expected valueMismatch, got \(error)")
       }
@@ -1771,7 +1771,7 @@ final class AXBridgeReadsTests: XCTestCase {
         callerAssertion: FBTapOptions.Assertion(key: .label, value: "General")
       )
       XCTFail("expected noElementAtPoint to be thrown")
-    } catch let error as FBUIAutomationError {
+    } catch let error as UIAutomationError {
       guard case .noElementAtPoint = error else {
         return XCTFail("expected noElementAtPoint, got \(error)")
       }
@@ -1828,7 +1828,7 @@ final class AXBridgeReadsTests: XCTestCase {
         ])
       )
       XCTFail("a refused write must throw")
-    } catch let error as FBAXBridgeError {
+    } catch let error as AXBridgeError {
       guard case let .assertionFailed(message) = error else {
         return XCTFail("expected assertionFailed, got \(error)")
       }
@@ -1837,7 +1837,7 @@ final class AXBridgeReadsTests: XCTestCase {
   }
 
   func testAWriteClassifiesApplicationFailuresLikeARead() throws {
-    let cases: [(String, (FBAXBridgeError) -> Bool)] = [
+    let cases: [(String, (AXBridgeError) -> Bool)] = [
       ("application_unavailable", { if case .applicationUnavailable = $0 { true } else { false } }),
       ("application_not_responding", { if case .applicationNotResponding = $0 { true } else { false } }),
       ("bad_request", { if case .guestFailure = $0 { true } else { false } }),
@@ -1849,7 +1849,7 @@ final class AXBridgeReadsTests: XCTestCase {
           fromResponse: Self.json(["ok": false, "error": "no", "error_kind": kind, "pid": 4321])
         )
         XCTFail("\(kind) must throw")
-      } catch let error as FBAXBridgeError {
+      } catch let error as AXBridgeError {
         XCTAssertTrue(matches(error), "\(kind) classified as \(error)")
       }
     }
@@ -1866,13 +1866,13 @@ final class AXBridgeReadsTests: XCTestCase {
       .accessibility, .axBridge(persistence: .oneShot, frontmostMethod: .centerPoint, automationMode: true),
     ]
     for backend in backends {
-      let description = FBUIAutomationError.operationUnsupported(backend: backend, operation: "Scroll").description
+      let description = UIAutomationError.operationUnsupported(backend: backend, operation: "Scroll").description
       XCTAssertFalse(description.contains("the The"), description)
       XCTAssertFalse(description.contains("backend backend"), description)
       XCTAssertTrue(description.hasSuffix(backend.inlineName), description)
     }
     XCTAssertEqual(
-      FBUIAutomationError.operationUnsupported(
+      UIAutomationError.operationUnsupported(
         backend: .axBridge(persistence: .oneShot, frontmostMethod: .centerPoint, automationMode: true), operation: "Scroll"
       ).description,
       "Scroll is not supported over the axbridge backend"

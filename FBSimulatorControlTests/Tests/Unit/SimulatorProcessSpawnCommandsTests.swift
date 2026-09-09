@@ -22,7 +22,7 @@ final class SimulatorProcessSpawnCommandsTests: XCTestCase {
   // MARK: - Raw process spawn options
 
   func testRawSpawnOptionsPrependLaunchPathAsArgv0() {
-    let options = FBSimulatorProcessSpawnCommands.simDeviceLaunchOptions(
+    let options = SimulatorProcessSpawnCommands.simDeviceLaunchOptions(
       withSimulator: simulator(state: .booted),
       launchPath: "/bin/echo",
       arguments: ["hello", "world"],
@@ -38,7 +38,7 @@ final class SimulatorProcessSpawnCommandsTests: XCTestCase {
   }
 
   func testRawSpawnOptionsCarryEnvironmentAndOmitWaitForDebuggerWhenFalse() {
-    let options = FBSimulatorProcessSpawnCommands.simDeviceLaunchOptions(
+    let options = SimulatorProcessSpawnCommands.simDeviceLaunchOptions(
       withSimulator: simulator(state: .booted),
       launchPath: "/bin/echo",
       arguments: [],
@@ -55,7 +55,7 @@ final class SimulatorProcessSpawnCommandsTests: XCTestCase {
   }
 
   func testRawSpawnOptionsSetWaitForDebuggerWhenRequested() {
-    let options = FBSimulatorProcessSpawnCommands.simDeviceLaunchOptions(
+    let options = SimulatorProcessSpawnCommands.simDeviceLaunchOptions(
       withSimulator: simulator(state: .booted),
       launchPath: "/bin/echo",
       arguments: [],
@@ -71,12 +71,12 @@ final class SimulatorProcessSpawnCommandsTests: XCTestCase {
   func testRawSpawnOptionsStandaloneReflectsMode() {
     let booted = simulator(state: .booted)
 
-    let launchd = FBSimulatorProcessSpawnCommands.simDeviceLaunchOptions(
+    let launchd = SimulatorProcessSpawnCommands.simDeviceLaunchOptions(
       withSimulator: booted, launchPath: "/bin/echo", arguments: [], environment: [:],
       waitForDebugger: false, stdOut: nil, stdErr: nil, mode: .launchd)
     XCTAssertEqual((launchd["standalone"] as? NSNumber)?.boolValue, false)
 
-    let posix = FBSimulatorProcessSpawnCommands.simDeviceLaunchOptions(
+    let posix = SimulatorProcessSpawnCommands.simDeviceLaunchOptions(
       withSimulator: booted, launchPath: "/bin/echo", arguments: [], environment: [:],
       waitForDebugger: false, stdOut: nil, stdErr: nil, mode: .posixSpawn)
     XCTAssertEqual((posix["standalone"] as? NSNumber)?.boolValue, true)
@@ -85,21 +85,21 @@ final class SimulatorProcessSpawnCommandsTests: XCTestCase {
   // MARK: - standalone resolution
 
   func testStandaloneIsTrueForPosixSpawnRegardlessOfState() {
-    XCTAssertTrue(FBSimulatorProcessSpawnCommands.shouldLaunchStandalone(onSimulator: simulator(state: .booted), mode: .posixSpawn))
-    XCTAssertTrue(FBSimulatorProcessSpawnCommands.shouldLaunchStandalone(onSimulator: simulator(state: .shutdown), mode: .posixSpawn))
+    XCTAssertTrue(SimulatorProcessSpawnCommands.shouldLaunchStandalone(onSimulator: simulator(state: .booted), mode: .posixSpawn))
+    XCTAssertTrue(SimulatorProcessSpawnCommands.shouldLaunchStandalone(onSimulator: simulator(state: .shutdown), mode: .posixSpawn))
   }
 
   func testStandaloneIsFalseForLaunchdRegardlessOfState() {
-    XCTAssertFalse(FBSimulatorProcessSpawnCommands.shouldLaunchStandalone(onSimulator: simulator(state: .booted), mode: .launchd))
-    XCTAssertFalse(FBSimulatorProcessSpawnCommands.shouldLaunchStandalone(onSimulator: simulator(state: .shutdown), mode: .launchd))
+    XCTAssertFalse(SimulatorProcessSpawnCommands.shouldLaunchStandalone(onSimulator: simulator(state: .booted), mode: .launchd))
+    XCTAssertFalse(SimulatorProcessSpawnCommands.shouldLaunchStandalone(onSimulator: simulator(state: .shutdown), mode: .launchd))
   }
 
   func testStandaloneDefaultModeFollowsBootState() {
     XCTAssertFalse(
-      FBSimulatorProcessSpawnCommands.shouldLaunchStandalone(onSimulator: simulator(state: .booted), mode: .default),
+      SimulatorProcessSpawnCommands.shouldLaunchStandalone(onSimulator: simulator(state: .booted), mode: .default),
       "When booted, default mode launches into launchd (not standalone)")
     XCTAssertTrue(
-      FBSimulatorProcessSpawnCommands.shouldLaunchStandalone(onSimulator: simulator(state: .shutdown), mode: .default),
+      SimulatorProcessSpawnCommands.shouldLaunchStandalone(onSimulator: simulator(state: .shutdown), mode: .default),
       "When not booted, default mode launches standalone")
   }
 

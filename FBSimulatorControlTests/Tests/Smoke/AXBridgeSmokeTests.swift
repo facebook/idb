@@ -68,7 +68,7 @@ final class AXBridgeSmokeTests: ProvidedSimulatorTestCase {
         return try await skippingIfGuestServiceSpawnUnavailable {
           try await automation.describe(.application(pid: pid), options: options)
         }
-      } catch let error as FBUIAutomationError {
+      } catch let error as UIAutomationError {
         guard case .applicationNotResponding = error, attempt < retries else {
           throw error
         }
