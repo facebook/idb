@@ -35,7 +35,7 @@ struct DevicePowerCommandsTests {
   func rebootSendsRestartToTheDiagnosticsRelay() async throws {
     let device = makeDevice(replying: ["Status": "Success"])
 
-    try await device.reboot()
+    try await device.power.reboot()
 
     let sent = try #require(amDevice.service(DiagnosticsRelayService).sentMessages.first as? [String: String])
     #expect((sent) == (["Request": "Restart"]))
@@ -45,7 +45,7 @@ struct DevicePowerCommandsTests {
   func shutdownSendsShutdownToTheDiagnosticsRelay() async throws {
     let device = makeDevice(replying: ["Status": "Success"])
 
-    try await device.shutdown()
+    try await device.power.shutdown()
 
     let sent = try #require(amDevice.service(DiagnosticsRelayService).sentMessages.first as? [String: String])
     #expect((sent) == (["Request": "Shutdown"]))
@@ -59,7 +59,7 @@ struct DevicePowerCommandsTests {
   func drivesTheFullConnectSessionServiceSequence() async throws {
     let device = makeDevice(replying: ["Status": "Success"])
 
-    try await device.reboot()
+    try await device.power.reboot()
 
     #expect(
       (amDevice.events)
@@ -78,7 +78,7 @@ struct DevicePowerCommandsTests {
   func invalidatesTheServiceConnection() async throws {
     let device = makeDevice(replying: ["Status": "Success"])
 
-    try await device.reboot()
+    try await device.power.reboot()
 
     #expect((amDevice.service(DiagnosticsRelayService).isInvalidated))
   }
@@ -90,7 +90,7 @@ struct DevicePowerCommandsTests {
     let device = makeDevice(replying: ["Status": "Failure"])
 
     do {
-      try await device.reboot()
+      try await device.power.reboot()
       Issue.record("Expected an unsuccessful status to fail the reboot")
     } catch {
       #expect(((error as NSError).localizedDescription) == ("Not successful {\n    Status = Failure;\n}"))
@@ -102,7 +102,7 @@ struct DevicePowerCommandsTests {
     let device = makeDevice(replying: ["not", "a", "dictionary"])
 
     do {
-      try await device.reboot()
+      try await device.power.reboot()
       Issue.record("Expected a non-dictionary reply to fail the reboot")
     } catch {
       #expect(((error as NSError).localizedDescription) == ("Unexpected response"))
@@ -115,7 +115,7 @@ struct DevicePowerCommandsTests {
     let device = makeDevice(replying: nil)
 
     do {
-      try await device.reboot()
+      try await device.power.reboot()
       Issue.record("Expected an absent reply to fail the reboot")
     } catch {
       #expect(((error as NSError).localizedDescription.hasPrefix("Failed to receive message")), "got \((error as NSError).localizedDescription)")
@@ -128,7 +128,7 @@ struct DevicePowerCommandsTests {
   func invalidatesTheServiceConnectionAfterAFailure() async throws {
     let device = makeDevice(replying: ["Status": "Failure"])
 
-    try? await device.reboot()
+    try? await device.power.reboot()
 
     #expect((amDevice.service(DiagnosticsRelayService).isInvalidated))
   }

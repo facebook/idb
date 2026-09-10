@@ -35,7 +35,7 @@ struct DeviceCrashLogPingbackTests {
   }
 
   private func collectCrashes(_ device: FBDevice) async throws {
-    _ = try await device.crashes(matching: NSPredicate(value: true), useCache: false)
+    _ = try await device.crashLog.crashes(matching: NSPredicate(value: true), useCache: false)
   }
 
   @Test

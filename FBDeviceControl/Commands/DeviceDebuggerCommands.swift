@@ -52,7 +52,7 @@ public struct DeviceDebuggerCommands: DebuggerCommands {
   /// The developer disk image is mounted first, because the service does not exist until it is.
   /// The connection is unscoped: whoever receives it decides when it is invalidated.
   public func connectToDebugServer() async throws -> FBAMDServiceConnection {
-    let diskImage = try await device.ensureDeveloperDiskImageIsMounted()
+    let diskImage = try await device.developerDiskImage.ensureDeveloperDiskImageIsMounted()
     let serviceName =
       diskImage.xcodeVersion.majorVersion >= 12
       ? "com.apple.debugserver.DVTSecureSocketProxy"
@@ -101,7 +101,7 @@ public struct DeviceDebuggerCommands: DebuggerCommands {
   }
 
   private func remoteTarget(forBundleID bundleID: String) async throws -> String {
-    let installedApplication = try await device.installedApplication(bundleID: bundleID)
+    let installedApplication = try await device.application.installedApplication(bundleID: bundleID)
     return "script lldb.target.modules[0].SetPlatformFileSpec(lldb.SBFileSpec(\"\(installedApplication.bundle.path)\"))"
   }
 }

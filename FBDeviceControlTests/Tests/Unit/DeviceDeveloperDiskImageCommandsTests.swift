@@ -45,7 +45,7 @@ struct DeviceDeveloperDiskImageCommandsTests {
   func asksTheMounterToCopyDevices() async throws {
     let device = makeDevice(mounterReplies: [copyDevicesReply([])])
 
-    _ = try await device.mountedDiskImages()
+    _ = try await device.developerDiskImage.mountedDiskImages()
 
     let sent = try #require(mounter.sentMessages.first as? [String: String])
     #expect(sent == ["Command": "CopyDevices"])
@@ -61,7 +61,7 @@ struct DeviceDeveloperDiskImageCommandsTests {
         ])
       ])
 
-    let mounted = try await device.mountedDiskImages()
+    let mounted = try await device.developerDiskImage.mountedDiskImages()
 
     #expect(Set(mounted.map(\.signature)) == [firstSignature, secondSignature])
   }
@@ -73,7 +73,7 @@ struct DeviceDeveloperDiskImageCommandsTests {
     let device = makeDevice(
       mounterReplies: [copyDevicesReply([["ImageSignature": firstSignature, "MountPath": "/Developer"]])])
 
-    let mounted = try await device.mountedDiskImages()
+    let mounted = try await device.developerDiskImage.mountedDiskImages()
 
     #expect(mounted.count == 1)
     #expect(mounted.first?.signature == firstSignature)
@@ -86,7 +86,7 @@ struct DeviceDeveloperDiskImageCommandsTests {
     let device = makeDevice(mounterReplies: [["not", "a", "dictionary"]])
 
     await assertThrows(expected: "is not a dictionary") {
-      _ = try await device.mountedDiskImages()
+      _ = try await device.developerDiskImage.mountedDiskImages()
     }
   }
 
@@ -95,7 +95,7 @@ struct DeviceDeveloperDiskImageCommandsTests {
     let device = makeDevice(mounterReplies: [["Error": "ImageMountFailed"]])
 
     await assertThrows(expected: "Could not get mounted image info: ImageMountFailed") {
-      _ = try await device.mountedDiskImages()
+      _ = try await device.developerDiskImage.mountedDiskImages()
     }
   }
 
@@ -104,7 +104,7 @@ struct DeviceDeveloperDiskImageCommandsTests {
     let device = makeDevice(mounterReplies: [["Status": "Complete"]])
 
     await assertThrows(expected: "No EntryList of mounted images") {
-      _ = try await device.mountedDiskImages()
+      _ = try await device.developerDiskImage.mountedDiskImages()
     }
   }
 
@@ -121,7 +121,7 @@ struct DeviceDeveloperDiskImageCommandsTests {
         ["Status": "Complete"],
       ])
 
-    try await device.unmountDiskImage(FBDeveloperDiskImage.unknownDiskImage(withSignature: secondSignature))
+    try await device.developerDiskImage.unmountDiskImage(FBDeveloperDiskImage.unknownDiskImage(withSignature: secondSignature))
 
     let unmount = try #require(mounter.sentMessages.last as? [String: String])
     #expect(unmount == ["Command": "UnmountImage", "MountPath": "/Developer2"])
@@ -133,7 +133,7 @@ struct DeviceDeveloperDiskImageCommandsTests {
       mounterReplies: [copyDevicesReply([["ImageSignature": firstSignature, "MountPath": "/Developer"]])])
 
     await assertThrows(expected: "does not appear to be mounted") {
-      try await device.unmountDiskImage(FBDeveloperDiskImage.unknownDiskImage(withSignature: secondSignature))
+      try await device.developerDiskImage.unmountDiskImage(FBDeveloperDiskImage.unknownDiskImage(withSignature: secondSignature))
     }
   }
 
@@ -142,7 +142,7 @@ struct DeviceDeveloperDiskImageCommandsTests {
     let device = makeDevice(mounterReplies: [copyDevicesReply([["ImageSignature": firstSignature]])])
 
     await assertThrows(expected: "No MountPath in mounted image entry") {
-      try await device.unmountDiskImage(FBDeveloperDiskImage.unknownDiskImage(withSignature: firstSignature))
+      try await device.developerDiskImage.unmountDiskImage(FBDeveloperDiskImage.unknownDiskImage(withSignature: firstSignature))
     }
   }
 

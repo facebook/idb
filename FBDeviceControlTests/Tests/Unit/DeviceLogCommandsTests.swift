@@ -66,7 +66,7 @@ final class DeviceLogCommandsTests {
     syslog.readBuffer = Data("a line of syslog\n".utf8)
     let consumer = FBDataBuffer.accumulatingBuffer()
 
-    let operation = try await device.tailLog(arguments: [], consumer: consumer)
+    let operation = try await device.log.tailLog(arguments: [], consumer: consumer)
     _ = try await bridgeFBFuture(consumer.finishedConsuming)
 
     #expect((String(decoding: consumer.data(), as: UTF8.self)) == ("a line of syslog\n"))
@@ -82,7 +82,7 @@ final class DeviceLogCommandsTests {
   func tailLog_LeavesTheConnectionOpenWhenTheDeviceStopsWriting() async throws {
     let consumer = FBDataBuffer.accumulatingBuffer()
 
-    let operation = try #require(try await device.tailLog(arguments: [], consumer: consumer) as? DeviceLogOperation)
+    let operation = try #require(try await device.log.tailLog(arguments: [], consumer: consumer) as? DeviceLogOperation)
     _ = try await bridgeFBFuture(consumer.finishedConsuming)
     await waitFor("the AMDevice session to close") { self.amDevice.events == syslogSessionEvents }
 
@@ -94,7 +94,7 @@ final class DeviceLogCommandsTests {
   @Test
   func tailLog_InvalidatesTheConnectionWhenTheWaitIsCancelled() async throws {
     let consumer = FBDataBuffer.accumulatingBuffer()
-    let operation = try await device.tailLog(arguments: [], consumer: consumer)
+    let operation = try await device.log.tailLog(arguments: [], consumer: consumer)
     await waitFor("the AMDevice session to close") { self.amDevice.events == syslogSessionEvents }
     #expect(!syslog.isInvalidated)
 

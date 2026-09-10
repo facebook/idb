@@ -543,7 +543,7 @@ public final class DeviceFileCommands: FileCommands {
     body: (any AsyncFileContainer) async throws -> R
   ) async throws -> R {
     let device = try requireDevice()
-    return try await body(DeviceFileCommands_DiskImages(commands: device as any DeveloperDiskImageCommands, queue: device.asyncQueue))
+    return try await body(DeviceFileCommands_DiskImages(commands: device.developerDiskImage, queue: device.asyncQueue))
   }
 
   public func withFileCommandsForSymbols<R>(

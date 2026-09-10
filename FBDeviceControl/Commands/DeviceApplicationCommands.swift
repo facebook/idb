@@ -311,7 +311,7 @@ public final class DeviceApplicationCommands: ApplicationCommands {
       throw DeviceNilError.deviceNil
     }
     let usesSecureConnection = device.osVersion.version.majorVersion >= 14
-    _ = try await device.ensureDeveloperDiskImageIsMounted()
+    _ = try await device.developerDiskImage.ensureDeveloperDiskImageIsMounted()
     let serviceName = usesSecureConnection ? "com.apple.instruments.remoteserver.DVTSecureSocketProxy" : "com.apple.instruments.remoteserver"
     return try await device.withServiceConnection(serviceName) { connection in
       let client = try await bridgeFBFuture(InstrumentsClient.instrumentsClient(with: connection, logger: device.logger))

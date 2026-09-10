@@ -65,7 +65,7 @@ struct DeviceDiskImageMountingTests {
     let matching = diskImage(17, 0, signature: Data([0x01]))
     let device = makeDevice(available: [diskImage(16, 0, signature: Data([0x02])), matching])
 
-    let mounted = try await device.ensureDeveloperDiskImageIsMounted()
+    let mounted = try await device.developerDiskImage.ensureDeveloperDiskImageIsMounted()
 
     #expect(mounted.diskImagePath == matching.diskImagePath)
     #expect(amDevice.mountedImagePaths == [matching.diskImagePath])
@@ -78,7 +78,7 @@ struct DeviceDiskImageMountingTests {
       productVersion: "17.4",
       available: [diskImage(16, 0, signature: Data([0x02])), diskImage(17, 0, signature: Data([0x01]))])
 
-    let mounted = try await device.ensureDeveloperDiskImageIsMounted()
+    let mounted = try await device.developerDiskImage.ensureDeveloperDiskImageIsMounted()
 
     #expect(mounted.version.majorVersion == 17)
     #expect(amDevice.mountedImagePaths == ["/Images/DeveloperDiskImage-17.0.dmg"])
@@ -89,7 +89,7 @@ struct DeviceDiskImageMountingTests {
     let alreadyMounted = diskImage(17, 0, signature: Data([0x01]))
     let device = makeDevice(available: [alreadyMounted], mounted: [alreadyMounted])
 
-    let mounted = try await device.ensureDeveloperDiskImageIsMounted()
+    let mounted = try await device.developerDiskImage.ensureDeveloperDiskImageIsMounted()
 
     #expect(mounted.diskImagePath == alreadyMounted.diskImagePath)
     #expect(amDevice.mountedImagePaths == [], "the image was already mounted, so nothing should be mounted again")
@@ -102,7 +102,7 @@ struct DeviceDiskImageMountingTests {
     let device = makeDevice(productVersion: nil, available: [diskImage(17, 0, signature: Data([0x01]))])
 
     await assertThrows(expected: "No product version available") {
-      _ = try await device.ensureDeveloperDiskImageIsMounted()
+      _ = try await device.developerDiskImage.ensureDeveloperDiskImageIsMounted()
     }
   }
 
@@ -111,7 +111,7 @@ struct DeviceDiskImageMountingTests {
     let device = makeDevice(available: [diskImage(16, 0, signature: Data([0x02]))])
 
     await assertThrows(expected: "is not suitable for 17.0") {
-      _ = try await device.ensureDeveloperDiskImageIsMounted()
+      _ = try await device.developerDiskImage.ensureDeveloperDiskImageIsMounted()
     }
   }
 
@@ -120,7 +120,7 @@ struct DeviceDiskImageMountingTests {
     let device = makeDevice(available: [])
 
     await assertThrows(expected: "No disk images provided") {
-      _ = try await device.ensureDeveloperDiskImageIsMounted()
+      _ = try await device.developerDiskImage.ensureDeveloperDiskImageIsMounted()
     }
   }
 
@@ -130,7 +130,7 @@ struct DeviceDiskImageMountingTests {
     let device = makeDevice(available: [diskImage(17, 0, signature: Data([0x01]))])
 
     await assertThrows(expected: "Failed to mount image '/Images/DeveloperDiskImage-17.0.dmg'") {
-      _ = try await device.ensureDeveloperDiskImageIsMounted()
+      _ = try await device.developerDiskImage.ensureDeveloperDiskImageIsMounted()
     }
   }
 
@@ -141,7 +141,7 @@ struct DeviceDiskImageMountingTests {
     let device = makeDevice(available: [diskImage(17, 0, signature: Data([0x01]))])
 
     await assertThrows(expected: "the wrong disk image is mounted") {
-      _ = try await device.ensureDeveloperDiskImageIsMounted()
+      _ = try await device.developerDiskImage.ensureDeveloperDiskImageIsMounted()
     }
   }
 
