@@ -3,18 +3,15 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-"""Rewrite the facebook/homebrew-fb tap formulae for a facebook/idb release.
+"""Render the facebook/homebrew-fb tap formulae for a facebook/idb release.
 
-The single source for formula rewriting: the Release workflow's bottle job
-uses it to bump a tap working copy to the release being cut before building
-bottles from it, and the workflow's tap-formulae job uses `bump` (the CLI
-below) to publish the finished formulae for that release as a run artifact,
-which release tooling then copies into the tap's source of truth. Standard
+The templates in .github/formulae/ are the source of truth for the three idb
+formulae; `render` turns them plus a release's inputs (tag, companion tarball,
+wheel, optional `brew bottle --json` output) into the finished formulae and a
+manifest. The Release workflow renders idb-cli.rb to bottle from, then renders
+all three for publication; CI renders against locally built assets to install-
+test them; release tooling copies the published render into the tap. Standard
 library only, so it runs anywhere a python3 exists.
-
-Every replacement is anchored and count-verified: if a formula's shape has
-drifted from what the anchors expect, the rewrite raises FormulaError instead
-of guessing, and nothing is modified.
 """
 
 from __future__ import annotations
@@ -35,16 +32,6 @@ FORMULAE = ("idb-companion.rb", "idb-cli.rb", "idb.rb")
 
 TAG_RE = re.compile(r"^v\d+\.\d+\.\d+(?:\.(?:a|b|rc)\d+)?$")
 PRERELEASE_RE = re.compile(r"\.(?:a|b|rc)\d+$")
-
-COMPANION_URL_RE = (
-    r'(?m)^  url "https://github\.com/facebook/idb/releases/download/v[^/"]+/'
-    r'idb-companion\.macos-arm64\.tar\.gz"$'
-)
-
-# Anchored on the sha256 rather than the url, so the optional `version` stanza
-# can be added or dropped without the region reaching back over the comments
-# above it -- those belong to whoever wrote them, not to this rewriter.
-COMPANION_VERSION_AND_SHA_RE = r'(?m)^(?:  version "[^"]+"\n)?  sha256 "[0-9a-f]{64}"$'
 
 
 class FormulaError(Exception):
@@ -71,20 +58,6 @@ def wheel_asset(version):
     return f"fb_idb-{pep440(version)}-py3-none-any.whl"
 
 
-def _sub(text, pattern, replacement, expected, anchor, name):
-    new, count = re.subn(pattern, lambda match: replacement, text)
-    if count != expected:
-        raise FormulaError(
-            f"{name}: expected {expected} match(es) for {anchor}, found {count} — "
-            "the formula shape has changed; refusing to rewrite anything"
-        )
-    return new
-
-
-def _download_url(tag, asset):
-    return f"https://github.com/{IDB_REPO}/releases/download/{tag}/{asset}"
-
-
 def companion_version(text):
     """The version idb-companion.rb currently declares. A prerelease carries an
     explicit stanza; a stable release carries the version only in its url."""
@@ -102,112 +75,6 @@ def companion_version(text):
             "url — cannot tell what version this formula is on"
         )
     return version_from_tag(match.group(1))
-
-
-def rewrite_companion(text, tag, sha):
-    version = version_from_tag(tag)
-    text = _sub(
-        text,
-        COMPANION_URL_RE,
-        f'  url "{_download_url(tag, COMPANION_ASSET)}"',
-        1,
-        "the companion tarball url",
-        "idb-companion.rb",
-    )
-    stanza = f'  version "{version}"\n' if is_prerelease(version) else ""
-    return _sub(
-        text,
-        COMPANION_VERSION_AND_SHA_RE,
-        f'{stanza}  sha256 "{sha}"',
-        1,
-        "the version stanza and top-level sha256",
-        "idb-companion.rb",
-    )
-
-
-def rewrite_cli(text, tag, wheel_sha):
-    version = version_from_tag(tag)
-    url_line = f'url "{_download_url(tag, wheel_asset(version))}"'
-    text = _sub(
-        text,
-        r'(?m)^  url "https://github\.com/facebook/idb/releases/download/v[^/"]+/fb_idb-[^"/]+-py3-none-any\.whl"$',
-        f"  {url_line}",
-        1,
-        "the main wheel url",
-        "idb-cli.rb",
-    )
-    text = _sub(
-        text,
-        r'(?m)^  version "[^"]+"$',
-        f'  version "{version}"',
-        1,
-        "the version stanza",
-        "idb-cli.rb",
-    )
-    text = _sub(
-        text,
-        r'(?m)^  sha256 "[0-9a-f]{64}"$',
-        f'  sha256 "{wheel_sha}"',
-        1,
-        "the top-level sha256",
-        "idb-cli.rb",
-    )
-
-    # The fb-idb resource must mirror the main url and sha byte-for-byte, or
-    # Homebrew stops deduping the download. Rewrite it inside its own block so
-    # the seven pinned dependency resources cannot be touched.
-    block_match = re.search(r'(?s)^  resource "fb-idb" do\n.*?\n  end$', text, re.M)
-    if block_match is None:
-        raise FormulaError(
-            'idb-cli.rb: the resource "fb-idb" block is missing — '
-            "the formula shape has changed; refusing to rewrite anything"
-        )
-    block = block_match.group(0)
-    block = _sub(
-        block,
-        r'(?m)^    url "https://github\.com/facebook/idb/releases/download/v[^/"]+/fb_idb-[^"/]+-py3-none-any\.whl"$',
-        f"    {url_line}",
-        1,
-        "the fb-idb resource url",
-        "idb-cli.rb",
-    )
-    block = _sub(
-        block,
-        r'(?m)^    sha256 "[0-9a-f]{64}"$',
-        f'    sha256 "{wheel_sha}"',
-        1,
-        "the fb-idb resource sha256",
-        "idb-cli.rb",
-    )
-    return text[: block_match.start()] + block + text[block_match.end() :]
-
-
-def rewrite_idb(text, tag, wheel_sha):
-    version = version_from_tag(tag)
-    text = _sub(
-        text,
-        r'(?m)^  url "https://github\.com/facebook/idb/releases/download/v[^/"]+/fb_idb-[^"/]+-py3-none-any\.whl"$',
-        f'  url "{_download_url(tag, wheel_asset(version))}"',
-        1,
-        "the wheel url",
-        "idb.rb",
-    )
-    text = _sub(
-        text,
-        r'(?m)^  version "[^"]+"$',
-        f'  version "{version}"',
-        1,
-        "the version stanza",
-        "idb.rb",
-    )
-    return _sub(
-        text,
-        r'(?m)^  sha256 "[0-9a-f]{64}"$',
-        f'  sha256 "{wheel_sha}"',
-        1,
-        "the sha256",
-        "idb.rb",
-    )
 
 
 def cellar_dsl(cellar):
@@ -250,23 +117,6 @@ def bottle_blocks_from_dir(directory):
     return blocks
 
 
-def insert_bottle_block(text, block, name):
-    existing = re.search(r"(?ms)^  bottle do\n.*?\n  end\n", text)
-    if existing:
-        return text[: existing.start()] + block + "\n" + text[existing.end() :]
-    new, count = re.subn(
-        r'(?m)^  license "[^"]+"$',
-        lambda match: f"{match.group(0)}\n\n{block}\n",
-        text,
-    )
-    if count != 1:
-        raise FormulaError(
-            f"{name}: expected 1 match for the license line to place the "
-            f"bottle block after, found {count}"
-        )
-    return new.replace("  end\n\n\n", "  end\n\n")
-
-
 MANIFEST = "manifest.json"
 
 
@@ -282,42 +132,7 @@ def sha256_of_file(path):
     return digest.hexdigest()
 
 
-def read_formulae(tap):
-    return {name: (Path(tap) / name).read_text() for name in FORMULAE}
-
-
-def bump_formulae(sources, tag, companion_sha, wheel_sha, bottle_blocks=None):
-    """All three rewrites, plus the bottle blocks, computed before anything
-    is returned: an anchor failure in any file yields nothing at all."""
-    outputs = {
-        "idb-companion.rb": rewrite_companion(
-            sources["idb-companion.rb"], tag, companion_sha
-        ),
-        "idb-cli.rb": rewrite_cli(sources["idb-cli.rb"], tag, wheel_sha),
-        "idb.rb": rewrite_idb(sources["idb.rb"], tag, wheel_sha),
-    }
-    for name, block in (bottle_blocks or {}).items():
-        if name not in outputs:
-            raise FormulaError(f"{name} is not a tap formula this tool rewrites")
-        outputs[name] = insert_bottle_block(outputs[name], block, name)
-    return outputs
-
-
-def bump_manifest(tag, tap_commit, sources, outputs, companion_sha, wheel_sha):
-    """What the artifact was computed from. `inputs` lets whoever applies the
-    artifact check that the tap they are writing into is the tap it was made
-    for, and `outputs` lets them check the files arrived intact."""
-    return {
-        "tag": tag,
-        "tap_commit": tap_commit,
-        "companion_sha256": companion_sha,
-        "wheel_sha256": wheel_sha,
-        "inputs": {name: sha256_of_text(text) for name, text in sources.items()},
-        "outputs": {name: sha256_of_text(text) for name, text in outputs.items()},
-    }
-
-
-def write_bump(out_dir, outputs, manifest):
+def write_rendered(out_dir, outputs, manifest):
     out = Path(out_dir)
     out.mkdir(parents=True, exist_ok=True)
     for name, text in outputs.items():
@@ -441,7 +256,7 @@ def cmd_render(args):
         only=only,
     )
     manifest = render_manifest(args.tag, outputs, companion_sha, wheel_sha, asset_base)
-    write_bump(args.out, outputs, manifest)
+    write_rendered(args.out, outputs, manifest)
     for name in only:
         print(f"{name}: rendered")
     print(f"wrote {len(outputs)} formulae and {MANIFEST} to {args.out}")
@@ -457,51 +272,9 @@ def _single_glob(pattern, what):
     return matches[0]
 
 
-def cmd_bump(args):
-    sources = read_formulae(args.tap)
-    companion_sha = sha256_of_file(_single_glob(args.companion, "companion tarball"))
-    wheel_sha = sha256_of_file(_single_glob(args.wheel, "wheel"))
-    blocks = bottle_blocks_from_dir(args.bottles) if args.bottles else None
-    outputs = bump_formulae(sources, args.tag, companion_sha, wheel_sha, blocks)
-    manifest = bump_manifest(
-        args.tag, args.tap_commit, sources, outputs, companion_sha, wheel_sha
-    )
-    write_bump(args.out, outputs, manifest)
-    for name in FORMULAE:
-        state = "unchanged" if outputs[name] == sources[name] else "rewritten"
-        print(f"{name}: {state}")
-    print(f"wrote {len(outputs)} formulae and {MANIFEST} to {args.out}")
-    return 0
-
-
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     subparsers = parser.add_subparsers(dest="command", required=True)
-    bump = subparsers.add_parser(
-        "bump",
-        help="rewrite the tap formulae for a release into an output directory, "
-        "with a manifest of what they were computed from",
-    )
-    bump.add_argument(
-        "--tap", required=True, help="tap checkout to read the formulae from"
-    )
-    bump.add_argument("--tag", required=True, help="release tag, e.g. v1.5.4")
-    bump.add_argument(
-        "--companion", required=True, help="glob for the companion tarball asset"
-    )
-    bump.add_argument("--wheel", required=True, help="glob for the fb-idb wheel asset")
-    bump.add_argument(
-        "--bottles",
-        help="directory of `brew bottle --json` output (omit for no bottle block)",
-    )
-    bump.add_argument(
-        "--tap-commit",
-        default="",
-        help="commit of the tap checkout, recorded in the manifest",
-    )
-    bump.add_argument("--out", required=True, help="directory to write into")
-    bump.set_defaults(func=cmd_bump)
-
     render = subparsers.add_parser(
         "render",
         help="render the tap formulae for a release from the templates, "
