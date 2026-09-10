@@ -69,12 +69,12 @@ public final class DeviceXCTestCommands: XCTestCommands {
     runningXcodeBuildOperation = true
     defer { runningXcodeBuildOperation = false }
 
-    _ = try await bridgeFBFuture(FBXcodeBuildOperation.terminateAbandonedXcodebuildProcesses(forUDID: device.udid, processFetcher: processFetcher, queue: device.workQueue, logger: logger))
-    let task = try await bridgeFBFuture(startTestWithLaunchConfiguration(configuration: testLaunchConfiguration, logger: logger))
+    _ = try await FBXcodeBuildOperation.terminateAbandonedXcodebuildProcesses(forUDID: device.udid, processFetcher: processFetcher, queue: device.workQueue, logger: logger)
+    let task = try await startTestWithLaunchConfiguration(configuration: testLaunchConfiguration, logger: logger)
     try await bridgeFBFutureVoid(FBXcodeBuildOperation.confirmExit(ofXcodebuildOperation: task, configuration: testLaunchConfiguration, reporter: reporter, target: device, logger: logger))
   }
 
-  private func startTestWithLaunchConfiguration(configuration: FBTestLaunchConfiguration, logger: any FBControlCoreLogger) throws -> FBFuture<FBSubprocess<AnyObject, AnyObject, AnyObject>> {
+  private func startTestWithLaunchConfiguration(configuration: FBTestLaunchConfiguration, logger: any FBControlCoreLogger) async throws -> FBSubprocess<AnyObject, AnyObject, AnyObject> {
     let filePath: String
     do {
       filePath = try FBXcodeBuildOperation.createXCTestRunFile(at: workingDirectory, fromConfiguration: configuration)
@@ -100,6 +100,6 @@ public final class DeviceXCTestCommands: XCTestCommands {
     }
     let udid = identifier.takeRetainedValue() as String
 
-    return FBXcodeBuildOperation.operation(withUDID: udid, configuration: configuration, xcodeBuildPath: xcodeBuildPath, testRunFilePath: filePath, simDeviceSet: nil, macOSTestShimPath: nil, queue: device.workQueue, logger: logger.withName("xcodebuild"))
+    return try await FBXcodeBuildOperation.operation(withUDID: udid, configuration: configuration, xcodeBuildPath: xcodeBuildPath, testRunFilePath: filePath, simDeviceSet: nil, macOSTestShimPath: nil, logger: logger.withName("xcodebuild"))
   }
 }

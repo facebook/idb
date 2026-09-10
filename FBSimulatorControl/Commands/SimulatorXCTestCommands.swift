@@ -140,12 +140,11 @@ public final class SimulatorXCTestCommands: XCTestExtendedCommands {
       throw SimulatorXCTestError.testManagerAlreadyRunning(configurationDescription: String(describing: launchConfiguration))
     }
 
-    _ = try await bridgeFBFuture(
-      FBXcodeBuildOperation.terminateAbandonedXcodebuildProcesses(
-        forUDID: simulator.udid,
-        processFetcher: FBProcessFetcher(),
-        queue: simulator.workQueue,
-        logger: logger))
+    _ = try await FBXcodeBuildOperation.terminateAbandonedXcodebuildProcesses(
+      forUDID: simulator.udid,
+      processFetcher: FBProcessFetcher(),
+      queue: simulator.workQueue,
+      logger: logger)
 
     isRunningXcodeBuildOperation = true
     defer { isRunningXcodeBuildOperation = false }
@@ -234,16 +233,14 @@ public final class SimulatorXCTestCommands: XCTestExtendedCommands {
     let xcodeBuildPath = try FBXcodeBuildOperation.xcodeBuildPath()
 
     let shimConfig = try await FBXCTestShimConfiguration.sharedShimConfiguration()
-    return try await bridgeFBFuture(
-      FBXcodeBuildOperation.operation(
-        withUDID: simulator.udid,
-        configuration: configuration,
-        xcodeBuildPath: xcodeBuildPath,
-        testRunFilePath: filePath,
-        simDeviceSet: simulator.customDeviceSetPath,
-        macOSTestShimPath: shimConfig.macOSTestShimPath,
-        queue: simulator.workQueue,
-        logger: logger.withName("xcodebuild")))
+    return try await FBXcodeBuildOperation.operation(
+      withUDID: simulator.udid,
+      configuration: configuration,
+      xcodeBuildPath: xcodeBuildPath,
+      testRunFilePath: filePath,
+      simDeviceSet: simulator.customDeviceSetPath,
+      macOSTestShimPath: shimConfig.macOSTestShimPath,
+      logger: logger.withName("xcodebuild"))
   }
 }
 

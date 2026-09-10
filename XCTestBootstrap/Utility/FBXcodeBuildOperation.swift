@@ -36,7 +36,7 @@ public final class FBXcodeBuildOperation {
 
   // MARK: - Initializers
 
-  public static func operation(withUDID udid: String, configuration: FBTestLaunchConfiguration, xcodeBuildPath: String, testRunFilePath: String, simDeviceSet simDeviceSetPath: String?, macOSTestShimPath: String?, queue: DispatchQueue, logger: FBControlCoreLogger?) -> FBFuture<FBSubprocess<AnyObject, AnyObject, AnyObject>> {
+  public static func operation(withUDID udid: String, configuration: FBTestLaunchConfiguration, xcodeBuildPath: String, testRunFilePath: String, simDeviceSet simDeviceSetPath: String?, macOSTestShimPath: String?, logger: FBControlCoreLogger?) async throws -> FBSubprocess<AnyObject, AnyObject, AnyObject> {
     var arguments = [
       "test-without-building",
       "-xctestrun", testRunFilePath,
@@ -61,7 +61,7 @@ public final class FBXcodeBuildOperation {
 
     if let simDeviceSetPath {
       guard let macOSTestShimPath else {
-        return FBFuture(error: FBXcodeBuildError.shimMissing)
+        throw FBXcodeBuildError.shimMissing
       }
       environment[XcodebuildEnvironmentDeviceSetPath] = simDeviceSetPath
       if let existingDylib = environment[XcodebuildEnvironmentInsertDylib] {
@@ -82,16 +82,9 @@ public final class FBXcodeBuildOperation {
     } else {
       startFuture = base.start().retyped(FBFuture<AnyObject>.self)
     }
-    return
-      startFuture
-      .onQueue(
-        queue,
-        map: { task -> AnyObject in
-          logger?.log("Task started \(task) for xcodebuild \(arguments.joined(separator: " "))")
-          return task
-        }
-      )
-      .retyped(FBFuture<FBSubprocess<AnyObject, AnyObject, AnyObject>>.self)
+    let task = try await bridgeFBFuture(startFuture.retyped(FBFuture<FBSubprocess<AnyObject, AnyObject, AnyObject>>.self))
+    logger?.log("Task started \(task) for xcodebuild \(arguments.joined(separator: " "))")
+    return task
   }
 
   // MARK: - Public Methods
@@ -132,20 +125,16 @@ public final class FBXcodeBuildOperation {
     return path
   }
 
-  public static func terminateAbandonedXcodebuildProcesses(forUDID udid: String, processFetcher: FBProcessFetcher, queue: DispatchQueue, logger: FBControlCoreLogger) -> FBFuture<NSArray> {
+  public static func terminateAbandonedXcodebuildProcesses(forUDID udid: String, processFetcher: FBProcessFetcher, queue: DispatchQueue, logger: FBControlCoreLogger) async throws -> [FBProcessInfo] {
     let processes = FBXcodeBuildOperation.activeXcodebuildProcesses(forUDID: udid, processFetcher: processFetcher)
     if processes.isEmpty {
       logger.log("No processes for \(udid) to terminate")
-      return FBFuture(result: NSArray())
+      return []
     }
     logger.log("Terminating abandoned xcodebuild processes \(FBCollectionInformation.oneLineDescription(from: processes))")
     let strategy = FBProcessTerminationStrategy.strategy(withProcessFetcher: processFetcher, workQueue: queue, logger: logger)
-    var futures: [FBFuture<AnyObject>] = []
-    for process in processes {
-      let termination = strategy.killProcessIdentifier(process.processIdentifier).retyped(FBFuture<AnyObject>.self).mapReplace(process)
-      futures.append(termination)
-    }
-    return FBFuture<AnyObject>.combine(futures)
+    _ = try await bridgeFBFutures(processes.map { strategy.killProcessIdentifier($0.processIdentifier) })
+    return processes
   }
 
   public static func xcodeBuildPath() throws -> String {
