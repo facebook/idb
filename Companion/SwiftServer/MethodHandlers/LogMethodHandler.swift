@@ -39,7 +39,7 @@ struct LogMethodHandler: @unchecked Sendable {
     if request.source == .companion {
       operation = try await commandExecutor.tail_companion_logs(consumer)
     } else {
-      operation = try await target.tailLog(arguments: request.arguments, consumer: consumer)
+      operation = try await target.log.tailLog(arguments: request.arguments, consumer: consumer)
     }
 
     let observeWritingDone = Task<Void, Error> {

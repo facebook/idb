@@ -91,10 +91,10 @@ public final class FBIDBCommandExecutor {
   // MARK: - Installation
 
   public func list_apps(_ fetchProcessState: Bool) async throws -> [FBInstalledApplication: Any] {
-    let installedApps = try await target.installedApplications()
+    let installedApps = try await target.application.installedApplications()
     let runningApps: [String: pid_t]
     if fetchProcessState {
-      runningApps = try await target.runningApplications()
+      runningApps = try await target.application.runningApplications()
     } else {
       runningApps = [:]
     }
@@ -170,11 +170,11 @@ public final class FBIDBCommandExecutor {
   // MARK: - Public Methods
 
   public func take_screenshot(_ format: FBScreenshotFormat) async throws -> Data {
-    try await target.takeScreenshot(format: format)
+    try await target.screenshot.takeScreenshot(format: format)
   }
 
   public func take_screenshot(_ configuration: FBScreenshotConfiguration) async throws -> FBScreenshotResult {
-    try await target.takeScreenshot(configuration: configuration)
+    try await target.screenshot.takeScreenshot(configuration: configuration)
   }
 
   public func accessibility_tap(label: String) async throws {
@@ -269,14 +269,14 @@ public final class FBIDBCommandExecutor {
   /// Starts recording the target's screen to `filePath`. The returned handle's
   /// `stop()` finalizes the file. Only one recording runs at a time.
   public func repl_start_recording(toFile filePath: String) async throws -> any FBVideoRecording {
-    try await target.startRecording(toFile: filePath)
+    try await target.videoRecording.startRecording(toFile: filePath)
   }
 
   /// Resolves when the app with `bundleID` terminates on the target. Used to drop a
   /// REPL recording that outlived the app that started it. Throws if the app's
   /// process cannot be resolved (e.g. it is not running).
   public func repl_wait_for_app_termination(bundleID: String) async throws {
-    let pid = try await target.processID(forBundleID: bundleID)
+    let pid = try await target.application.processID(forBundleID: bundleID)
     await waitForProcessExit(pid: pid)
   }
 
@@ -285,7 +285,7 @@ public final class FBIDBCommandExecutor {
   }
 
   public func set_location(_ latitude: Double, longitude: Double) async throws {
-    try await target.overrideLocation(longitude: longitude, latitude: latitude)
+    try await target.location.overrideLocation(longitude: longitude, latitude: latitude)
   }
 
   public func clear_keychain() async throws {
@@ -356,12 +356,12 @@ public final class FBIDBCommandExecutor {
   }
 
   public func uninstall_application(_ bundleID: String) async throws {
-    try await target.uninstallApplication(bundleID: bundleID)
+    try await target.application.uninstallApplication(bundleID: bundleID)
   }
 
   public func kill_application(_ bundleID: String) async throws {
     do {
-      try await target.killApplication(bundleID: bundleID)
+      try await target.application.killApplication(bundleID: bundleID)
     } catch {
       // Killing an app that is not running is a no-op.
     }
@@ -382,15 +382,15 @@ public final class FBIDBCommandExecutor {
       io: configuration.io,
       launchMode: configuration.launchMode
     )
-    return try await target.launchApplication(derived)
+    return try await target.application.launchApplication(derived)
   }
 
   public func crash_list(_ predicate: NSPredicate) async throws -> [FBCrashLogInfo] {
-    return try await target.crashes(matching: predicate, useCache: false)
+    return try await target.crashLog.crashes(matching: predicate, useCache: false)
   }
 
   public func crash_show(_ predicate: NSPredicate) async throws -> FBCrashLog {
-    let crashArray = try await target.crashes(matching: predicate, useCache: true)
+    let crashArray = try await target.crashLog.crashes(matching: predicate, useCache: true)
     if crashArray.count > 1 {
       throw FBIDBCommandError.multipleCrashLogs(predicateDescription: String(describing: predicate))
     }
@@ -401,7 +401,7 @@ public final class FBIDBCommandExecutor {
   }
 
   public func crash_delete(_ predicate: NSPredicate) async throws -> [FBCrashLogInfo] {
-    return try await target.pruneCrashes(matching: predicate)
+    return try await target.crashLog.pruneCrashes(matching: predicate)
   }
 
   public func xctest_run(_ request: FBXCTestRunRequest, reporter: FBXCTestReporter, logger: FBControlCoreLogger) async throws -> FBIDBTestOperation {
@@ -466,7 +466,7 @@ public final class FBIDBCommandExecutor {
   /// work. Used by the `app` REPL context when no bundle id is given.
   public func ensureReplHostAppInstalled() async throws -> String {
     let bundleID = Self.replHostBundleID
-    if (try? await target.installedApplication(bundleID: bundleID)) != nil {
+    if (try? await target.application.installedApplication(bundleID: bundleID)) != nil {
       return bundleID
     }
     // Not installed: locate ReplHost.app in the Resources/ directory next to the
@@ -491,7 +491,7 @@ public final class FBIDBCommandExecutor {
 
   public func debugserver_start(_ bundleID: String) async throws -> FBDebugServer {
     let bundle = try debugserver_prepare(bundleID)
-    let server = try await target.launchDebugServer(forHostApplication: bundle, port: debugserverPort)
+    let server = try await target.debugger.launchDebugServer(forHostApplication: bundle, port: debugserverPort)
     debugServer = server
     return server
   }
@@ -693,16 +693,16 @@ public final class FBIDBCommandExecutor {
   ) async throws -> R {
     guard let containerType, !containerType.isEmpty else {
       if target is FBDevice {
-        return try await target.withFileCommandsForMediaDirectory { container in
+        return try await target.file.withFileCommandsForMediaDirectory { container in
           try await body(container)
         }
       }
-      return try await target.withFileCommandsForRootFilesystem { container in
+      return try await target.file.withFileCommandsForRootFilesystem { container in
         try await body(container)
       }
     }
     if containerType == FBFileContainerKind.crashes.rawValue {
-      return try await target.withCrashLogFiles { container in
+      return try await target.crashLog.withCrashLogFiles { container in
         try await body(container)
       }
     }
@@ -719,61 +719,61 @@ public final class FBIDBCommandExecutor {
       return try await body(storageManager.framework.asFileContainer())
     }
     if containerType == FBFileContainerKind.application.rawValue {
-      return try await target.withFileCommandsForApplicationContainers { container in
+      return try await target.file.withFileCommandsForApplicationContainers { container in
         try await body(container)
       }
     }
     if containerType == FBFileContainerKind.group.rawValue {
-      return try await target.withFileCommandsForGroupContainers { container in
+      return try await target.file.withFileCommandsForGroupContainers { container in
         try await body(container)
       }
     }
     if containerType == FBFileContainerKind.media.rawValue {
-      return try await target.withFileCommandsForMediaDirectory { container in
+      return try await target.file.withFileCommandsForMediaDirectory { container in
         try await body(container)
       }
     }
     if containerType == FBFileContainerKind.root.rawValue {
-      return try await target.withFileCommandsForRootFilesystem { container in
+      return try await target.file.withFileCommandsForRootFilesystem { container in
         try await body(container)
       }
     }
     if containerType == FBFileContainerKind.provisioningProfiles.rawValue {
-      return try await target.withFileCommandsForProvisioningProfiles { container in
+      return try await target.file.withFileCommandsForProvisioningProfiles { container in
         try await body(container)
       }
     }
     if containerType == FBFileContainerKind.mdmProfiles.rawValue {
-      return try await target.withFileCommandsForMDMProfiles { container in
+      return try await target.file.withFileCommandsForMDMProfiles { container in
         try await body(container)
       }
     }
     if containerType == FBFileContainerKind.springboardIcons.rawValue {
-      return try await target.withFileCommandsForSpringboardIconLayout { container in
+      return try await target.file.withFileCommandsForSpringboardIconLayout { container in
         try await body(container)
       }
     }
     if containerType == FBFileContainerKind.wallpaper.rawValue {
-      return try await target.withFileCommandsForWallpaper { container in
+      return try await target.file.withFileCommandsForWallpaper { container in
         try await body(container)
       }
     }
     if containerType == FBFileContainerKind.diskImages.rawValue {
-      return try await target.withFileCommandsForDiskImages { container in
+      return try await target.file.withFileCommandsForDiskImages { container in
         try await body(container)
       }
     }
     if containerType == FBFileContainerKind.symbols.rawValue {
-      return try await target.withFileCommandsForSymbols { container in
+      return try await target.file.withFileCommandsForSymbols { container in
         try await body(container)
       }
     }
     if containerType == FBFileContainerKind.auxillary.rawValue {
-      return try await target.withFileCommandsForAuxillary { container in
+      return try await target.file.withFileCommandsForAuxillary { container in
         try await body(container)
       }
     }
-    return try await target.withFileCommandsForContainerApplication(containerType) { container in
+    return try await target.file.withFileCommandsForContainerApplication(containerType) { container in
       try await body(container)
     }
   }
@@ -801,7 +801,7 @@ public final class FBIDBCommandExecutor {
   private func installAppBundle(_ appBundle: FBBundleDescriptor, makeDebuggable: Bool) async throws -> FBInstalledArtifact {
     let userDevelopmentAppIsRequired = target is FBDevice
     try storageManager.application.checkArchitecture(appBundle)
-    let installedApp = try await target.installApplication(atPath: appBundle.path)
+    let installedApp = try await target.application.installApplication(atPath: appBundle.path)
     // TODO: currently we have to persist it even if app is not used for debugging
     // as installed apps are referenced from xctestrun files and expanded by idb
     // by using its own application storage. Fix this by replacing xctestrun
@@ -840,7 +840,7 @@ public final class FBIDBCommandExecutor {
     }
     let bundlePathURL: URL
     if linkTo.bundleType == .app {
-      let app = try await target.installedApplication(bundleID: linkTo.bundleID)
+      let app = try await target.application.installedApplication(bundleID: linkTo.bundleID)
       logger.log("Going to create a symlink for app bundle: \(app.bundle.name)")
       bundlePathURL = URL(fileURLWithPath: app.bundle.path)
     } else {

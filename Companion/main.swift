@@ -233,7 +233,7 @@ private func resolveSimulator(_ udid: String, userDefaults: UserDefaults, logger
 }
 
 private func awaitTargetOffline(_ target: any FBiOSTarget, logger: FBControlCoreLogger) async throws {
-  try await target.resolveLeavesState(.booted)
+  try await target.lifecycle.resolveLeavesState(.booted)
   target.logger.log("Target is no longer booted, companion going offline")
 }
 
@@ -278,7 +278,7 @@ private func runBoot(_ udid: String, userDefaults: UserDefaults, logger: FBContr
     // Includes CancellationError on signal. A fresh, unstructured Task does not
     // inherit the parent's cancelled state, so the shutdown runs to completion;
     // we await it before rethrowing so the sim is down before we exit.
-    let shutdown = Task { try await simulator.shutdown() }
+    let shutdown = Task { try await simulator.power.shutdown() }
     _ = try? await shutdown.value
     throw error
   }
@@ -286,17 +286,17 @@ private func runBoot(_ udid: String, userDefaults: UserDefaults, logger: FBContr
 
 private func runShutdown(_ udid: String, userDefaults: UserDefaults, xcodeAvailable: Bool, logger: FBControlCoreLogger) async throws {
   let target = try await targetForUDID(udid, userDefaults: userDefaults, xcodeAvailable: xcodeAvailable, warmUp: false, logger: logger)
-  try await target.shutdown()
+  try await target.power.shutdown()
 }
 
 private func runReboot(_ udid: String, userDefaults: UserDefaults, xcodeAvailable: Bool, logger: FBControlCoreLogger) async throws {
   let target = try await targetForUDID(udid, userDefaults: userDefaults, xcodeAvailable: xcodeAvailable, warmUp: false, logger: logger)
-  try await target.reboot()
+  try await target.power.reboot()
 }
 
 private func runErase(_ udid: String, userDefaults: UserDefaults, xcodeAvailable: Bool, logger: FBControlCoreLogger) async throws {
   let target = try await targetForUDID(udid, userDefaults: userDefaults, xcodeAvailable: xcodeAvailable, warmUp: false, logger: logger)
-  try await target.erase()
+  try await target.erase.erase()
 }
 
 private func runDelete(_ udidOrAll: String, userDefaults: UserDefaults, logger: FBControlCoreLogger) async throws {

@@ -90,7 +90,7 @@ struct VideoStreamMethodHandler {
       consumer = writer
     }
 
-    return try await target.createStream(
+    return try await target.videoStream.createStream(
       configuration: VideoStreamRequestTranslation.configuration(from: start), to: consumer)
   }
 }

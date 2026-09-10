@@ -81,9 +81,9 @@ public final class FBXCTestBootstrapDescriptor: FBXCTestDescriptor, CustomString
 
   private static func killAllRunningApplications(_ target: any FBiOSTarget) -> FBFuture<NSNull> {
     let future: FBFuture<NSNull> = fbFutureFromAsync {
-      let running = try await target.runningApplications()
+      let running = try await target.application.runningApplications()
       try await Array(running.keys).concurrentForEachThrowingFirstError { bundleID in
-        try await target.killApplication(bundleID: bundleID)
+        try await target.application.killApplication(bundleID: bundleID)
       }
       return NSNull()
     }
@@ -109,15 +109,15 @@ public final class FBXCTestBootstrapDescriptor: FBXCTestDescriptor, CustomString
         throw FBXCTestDescriptorError.uiTestMissingAppBundleID
       }
       let testHostBundleID = request.testHostAppBundleID ?? "com.apple.Preferences"
-      let testTargetApp = try await target.installedApplication(bundleID: testTargetAppBundleID)
-      let testHostApp = try await target.installedApplication(bundleID: testHostBundleID)
+      let testTargetApp = try await target.application.installedApplication(bundleID: testTargetAppBundleID)
+      let testHostApp = try await target.application.installedApplication(bundleID: testHostBundleID)
       return FBTestApplicationsPair(applicationUnderTest: testTargetApp, testHostApp: testHostApp)
     }
     // App Test
     guard let bundleID = request.testHostAppBundleID else {
       throw FBXCTestDescriptorError.appTestMissingBundleIDs
     }
-    let application = try await target.installedApplication(bundleID: bundleID)
+    let application = try await target.application.installedApplication(bundleID: bundleID)
     return FBTestApplicationsPair(applicationUnderTest: nil, testHostApp: application)
   }
 

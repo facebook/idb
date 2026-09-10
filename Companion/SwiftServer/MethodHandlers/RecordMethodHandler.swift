@@ -29,7 +29,7 @@ struct RecordMethodHandler {
     let recording: any FBVideoRecording
     if let encodeOptions = try RecordRequestTranslation.encodeOptions(from: start) {
       try RecordRequestTranslation.requireHonoredConfiguration(target, describing: "\(target)")
-      recording = try await target.startRecording(
+      recording = try await target.videoRecording.startRecording(
         toFile: filePath,
         configuration: RecordRequestTranslation.configuration(for: encodeOptions))
       do {
@@ -44,7 +44,7 @@ struct RecordMethodHandler {
         throw error
       }
     } else {
-      recording = try await target.startRecording(toFile: filePath)
+      recording = try await target.videoRecording.startRecording(toFile: filePath)
     }
 
     _ = try await requestStream.requiredNext()

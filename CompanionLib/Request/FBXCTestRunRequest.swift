@@ -291,7 +291,7 @@ public struct FBXCTestRunRequest {
     }
 
     let testCompleted: FBFuture<NSNull> = fbFutureFromAsync {
-      try await target.runTest(launchConfiguration: testLaunchConfiguration, reporter: reporter, logger: logger)
+      try await target.xctest.runTest(launchConfiguration: testLaunchConfiguration, reporter: reporter, logger: logger)
       return NSNull()
     }
     let reporterConfiguration = FBXCTestReporterConfiguration(
