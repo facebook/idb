@@ -452,7 +452,7 @@ public final class DeviceFileCommands: FileCommands {
     return device
   }
 
-  public func withFileCommandsForContainerApplication<R>(
+  public func withContainerApplication<R>(
     _ bundleID: String,
     body: (any AsyncFileContainer) async throws -> R
   ) async throws -> R {
@@ -463,32 +463,32 @@ public final class DeviceFileCommands: FileCommands {
     }
   }
 
-  public func withFileCommandsForAuxillary<R>(
+  public func withAuxiliary<R>(
     body: (any AsyncFileContainer) async throws -> R
   ) async throws -> R {
     let device = try requireDevice()
     return try await body(FBFileContainer.fileContainer(forBasePath: device.auxillaryDirectory))
   }
 
-  public func withFileCommandsForApplicationContainers<R>(
+  public func withApplicationContainers<R>(
     body: (any AsyncFileContainer) async throws -> R
   ) async throws -> R {
     throw DeviceFileContainerError.requiresRootedDevice(operation: #function)
   }
 
-  public func withFileCommandsForGroupContainers<R>(
+  public func withGroupContainers<R>(
     body: (any AsyncFileContainer) async throws -> R
   ) async throws -> R {
     throw DeviceFileContainerError.requiresRootedDevice(operation: #function)
   }
 
-  public func withFileCommandsForRootFilesystem<R>(
+  public func withRootFilesystem<R>(
     body: (any AsyncFileContainer) async throws -> R
   ) async throws -> R {
     throw DeviceFileContainerError.requiresRootedDevice(operation: #function)
   }
 
-  public func withFileCommandsForMediaDirectory<R>(
+  public func withMediaDirectory<R>(
     body: (any AsyncFileContainer) async throws -> R
   ) async throws -> R {
     let device = try requireDevice()
@@ -498,14 +498,14 @@ public final class DeviceFileCommands: FileCommands {
     }
   }
 
-  public func withFileCommandsForProvisioningProfiles<R>(
+  public func withProvisioningProfiles<R>(
     body: (any AsyncFileContainer) async throws -> R
   ) async throws -> R {
     let device = try requireDevice()
     return try await body(FBFileContainer_ProvisioningProfile(commands: DeviceProvisioningProfileCommands.commands(with: device)))
   }
 
-  public func withFileCommandsForMDMProfiles<R>(
+  public func withMDMProfiles<R>(
     body: (any AsyncFileContainer) async throws -> R
   ) async throws -> R {
     let device = try requireDevice()
@@ -515,7 +515,7 @@ public final class DeviceFileCommands: FileCommands {
     }
   }
 
-  public func withFileCommandsForSpringboardIconLayout<R>(
+  public func withSpringboardIconLayout<R>(
     body: (any AsyncFileContainer) async throws -> R
   ) async throws -> R {
     let device = try requireDevice()
@@ -525,7 +525,7 @@ public final class DeviceFileCommands: FileCommands {
     }
   }
 
-  public func withFileCommandsForWallpaper<R>(
+  public func withWallpaper<R>(
     body: (any AsyncFileContainer) async throws -> R
   ) async throws -> R {
     let device = try requireDevice()
@@ -539,14 +539,14 @@ public final class DeviceFileCommands: FileCommands {
     }
   }
 
-  public func withFileCommandsForDiskImages<R>(
+  public func withDiskImages<R>(
     body: (any AsyncFileContainer) async throws -> R
   ) async throws -> R {
     let device = try requireDevice()
     return try await body(DeviceFileCommands_DiskImages(commands: device.developerDiskImage, queue: device.asyncQueue))
   }
 
-  public func withFileCommandsForSymbols<R>(
+  public func withSymbols<R>(
     body: (any AsyncFileContainer) async throws -> R
   ) async throws -> R {
     let device = try requireDevice()

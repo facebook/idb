@@ -90,51 +90,51 @@ extension FBMacDevice: EraseCommands {
 
 extension FBMacDevice: FileCommands {
 
-  public func withFileCommandsForContainerApplication<R>(_ bundleID: String, body: (any AsyncFileContainer) async throws -> R) async throws -> R {
+  public func withContainerApplication<R>(_ bundleID: String, body: (any AsyncFileContainer) async throws -> R) async throws -> R {
     throw macUnsupported("file commands for application container")
   }
 
-  public func withFileCommandsForAuxillary<R>(body: (any AsyncFileContainer) async throws -> R) async throws -> R {
+  public func withAuxiliary<R>(body: (any AsyncFileContainer) async throws -> R) async throws -> R {
     throw macUnsupported("file commands for the auxillary directory")
   }
 
-  public func withFileCommandsForApplicationContainers<R>(body: (any AsyncFileContainer) async throws -> R) async throws -> R {
+  public func withApplicationContainers<R>(body: (any AsyncFileContainer) async throws -> R) async throws -> R {
     throw macUnsupported("file commands for application containers")
   }
 
-  public func withFileCommandsForGroupContainers<R>(body: (any AsyncFileContainer) async throws -> R) async throws -> R {
+  public func withGroupContainers<R>(body: (any AsyncFileContainer) async throws -> R) async throws -> R {
     throw macUnsupported("file commands for group containers")
   }
 
-  public func withFileCommandsForRootFilesystem<R>(body: (any AsyncFileContainer) async throws -> R) async throws -> R {
+  public func withRootFilesystem<R>(body: (any AsyncFileContainer) async throws -> R) async throws -> R {
     throw macUnsupported("file commands for the root filesystem")
   }
 
-  public func withFileCommandsForMediaDirectory<R>(body: (any AsyncFileContainer) async throws -> R) async throws -> R {
+  public func withMediaDirectory<R>(body: (any AsyncFileContainer) async throws -> R) async throws -> R {
     throw macUnsupported("file commands for the media directory")
   }
 
-  public func withFileCommandsForProvisioningProfiles<R>(body: (any AsyncFileContainer) async throws -> R) async throws -> R {
+  public func withProvisioningProfiles<R>(body: (any AsyncFileContainer) async throws -> R) async throws -> R {
     throw macUnsupported("file commands for provisioning profiles")
   }
 
-  public func withFileCommandsForMDMProfiles<R>(body: (any AsyncFileContainer) async throws -> R) async throws -> R {
+  public func withMDMProfiles<R>(body: (any AsyncFileContainer) async throws -> R) async throws -> R {
     throw macUnsupported("file commands for MDM profiles")
   }
 
-  public func withFileCommandsForSpringboardIconLayout<R>(body: (any AsyncFileContainer) async throws -> R) async throws -> R {
+  public func withSpringboardIconLayout<R>(body: (any AsyncFileContainer) async throws -> R) async throws -> R {
     throw macUnsupported("file commands for the springboard icon layout")
   }
 
-  public func withFileCommandsForWallpaper<R>(body: (any AsyncFileContainer) async throws -> R) async throws -> R {
+  public func withWallpaper<R>(body: (any AsyncFileContainer) async throws -> R) async throws -> R {
     throw macUnsupported("file commands for the wallpaper")
   }
 
-  public func withFileCommandsForDiskImages<R>(body: (any AsyncFileContainer) async throws -> R) async throws -> R {
+  public func withDiskImages<R>(body: (any AsyncFileContainer) async throws -> R) async throws -> R {
     throw macUnsupported("file commands for disk images")
   }
 
-  public func withFileCommandsForSymbols<R>(body: (any AsyncFileContainer) async throws -> R) async throws -> R {
+  public func withSymbols<R>(body: (any AsyncFileContainer) async throws -> R) async throws -> R {
     throw macUnsupported("file commands for symbols")
   }
 }

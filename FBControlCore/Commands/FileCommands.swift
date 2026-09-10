@@ -11,52 +11,52 @@ import Foundation
 /// guaranteeing that the container's resources are torn down when the body returns.
 public protocol FileCommands {
 
-  func withFileCommandsForContainerApplication<R>(
+  func withContainerApplication<R>(
     _ bundleID: String,
     body: (any AsyncFileContainer) async throws -> R
   ) async throws -> R
 
-  func withFileCommandsForAuxillary<R>(
+  func withAuxiliary<R>(
     body: (any AsyncFileContainer) async throws -> R
   ) async throws -> R
 
-  func withFileCommandsForApplicationContainers<R>(
+  func withApplicationContainers<R>(
     body: (any AsyncFileContainer) async throws -> R
   ) async throws -> R
 
-  func withFileCommandsForGroupContainers<R>(
+  func withGroupContainers<R>(
     body: (any AsyncFileContainer) async throws -> R
   ) async throws -> R
 
-  func withFileCommandsForRootFilesystem<R>(
+  func withRootFilesystem<R>(
     body: (any AsyncFileContainer) async throws -> R
   ) async throws -> R
 
-  func withFileCommandsForMediaDirectory<R>(
+  func withMediaDirectory<R>(
     body: (any AsyncFileContainer) async throws -> R
   ) async throws -> R
 
-  func withFileCommandsForProvisioningProfiles<R>(
+  func withProvisioningProfiles<R>(
     body: (any AsyncFileContainer) async throws -> R
   ) async throws -> R
 
-  func withFileCommandsForMDMProfiles<R>(
+  func withMDMProfiles<R>(
     body: (any AsyncFileContainer) async throws -> R
   ) async throws -> R
 
-  func withFileCommandsForSpringboardIconLayout<R>(
+  func withSpringboardIconLayout<R>(
     body: (any AsyncFileContainer) async throws -> R
   ) async throws -> R
 
-  func withFileCommandsForWallpaper<R>(
+  func withWallpaper<R>(
     body: (any AsyncFileContainer) async throws -> R
   ) async throws -> R
 
-  func withFileCommandsForDiskImages<R>(
+  func withDiskImages<R>(
     body: (any AsyncFileContainer) async throws -> R
   ) async throws -> R
 
-  func withFileCommandsForSymbols<R>(
+  func withSymbols<R>(
     body: (any AsyncFileContainer) async throws -> R
   ) async throws -> R
 }

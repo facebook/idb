@@ -693,11 +693,11 @@ public final class FBIDBCommandExecutor {
   ) async throws -> R {
     guard let containerType, !containerType.isEmpty else {
       if target is FBDevice {
-        return try await target.file.withFileCommandsForMediaDirectory { container in
+        return try await target.file.withMediaDirectory { container in
           try await body(container)
         }
       }
-      return try await target.file.withFileCommandsForRootFilesystem { container in
+      return try await target.file.withRootFilesystem { container in
         try await body(container)
       }
     }
@@ -719,61 +719,61 @@ public final class FBIDBCommandExecutor {
       return try await body(storageManager.framework.asFileContainer())
     }
     if containerType == FBFileContainerKind.application.rawValue {
-      return try await target.file.withFileCommandsForApplicationContainers { container in
+      return try await target.file.withApplicationContainers { container in
         try await body(container)
       }
     }
     if containerType == FBFileContainerKind.group.rawValue {
-      return try await target.file.withFileCommandsForGroupContainers { container in
+      return try await target.file.withGroupContainers { container in
         try await body(container)
       }
     }
     if containerType == FBFileContainerKind.media.rawValue {
-      return try await target.file.withFileCommandsForMediaDirectory { container in
+      return try await target.file.withMediaDirectory { container in
         try await body(container)
       }
     }
     if containerType == FBFileContainerKind.root.rawValue {
-      return try await target.file.withFileCommandsForRootFilesystem { container in
+      return try await target.file.withRootFilesystem { container in
         try await body(container)
       }
     }
     if containerType == FBFileContainerKind.provisioningProfiles.rawValue {
-      return try await target.file.withFileCommandsForProvisioningProfiles { container in
+      return try await target.file.withProvisioningProfiles { container in
         try await body(container)
       }
     }
     if containerType == FBFileContainerKind.mdmProfiles.rawValue {
-      return try await target.file.withFileCommandsForMDMProfiles { container in
+      return try await target.file.withMDMProfiles { container in
         try await body(container)
       }
     }
     if containerType == FBFileContainerKind.springboardIcons.rawValue {
-      return try await target.file.withFileCommandsForSpringboardIconLayout { container in
+      return try await target.file.withSpringboardIconLayout { container in
         try await body(container)
       }
     }
     if containerType == FBFileContainerKind.wallpaper.rawValue {
-      return try await target.file.withFileCommandsForWallpaper { container in
+      return try await target.file.withWallpaper { container in
         try await body(container)
       }
     }
     if containerType == FBFileContainerKind.diskImages.rawValue {
-      return try await target.file.withFileCommandsForDiskImages { container in
+      return try await target.file.withDiskImages { container in
         try await body(container)
       }
     }
     if containerType == FBFileContainerKind.symbols.rawValue {
-      return try await target.file.withFileCommandsForSymbols { container in
+      return try await target.file.withSymbols { container in
         try await body(container)
       }
     }
     if containerType == FBFileContainerKind.auxillary.rawValue {
-      return try await target.file.withFileCommandsForAuxillary { container in
+      return try await target.file.withAuxiliary { container in
         try await body(container)
       }
     }
-    return try await target.file.withFileCommandsForContainerApplication(containerType) { container in
+    return try await target.file.withContainerApplication(containerType) { container in
       try await body(container)
     }
   }

@@ -41,7 +41,7 @@ final class SimulatorFileCommandsTests: XCTestCase {
       "com.example.nodata": ["SomeOtherKey": "ignored"],
     ])
 
-    let mapping = try await simulator.file.withFileCommandsForApplicationContainers { $0.pathMapping }
+    let mapping = try await simulator.file.withApplicationContainers { $0.pathMapping }
 
     XCTAssertEqual(mapping, ["com.example.app1": "/data/app1", "com.example.app2": "/data/app2"])
   }
@@ -53,7 +53,7 @@ final class SimulatorFileCommandsTests: XCTestCase {
       "com.example.nogroups": ["DataContainer": URL(fileURLWithPath: "/data/nogroups")],
     ])
 
-    let mapping = try await simulator.file.withFileCommandsForGroupContainers { $0.pathMapping }
+    let mapping = try await simulator.file.withGroupContainers { $0.pathMapping }
 
     XCTAssertEqual(mapping, ["group.a": "/groups/a", "group.b": "/groups/b"])
   }
