@@ -170,11 +170,11 @@ public final class FBIDBCommandExecutor {
   // MARK: - Public Methods
 
   public func take_screenshot(_ format: FBScreenshotFormat) async throws -> Data {
-    try await target.screenshot.takeScreenshot(format: format)
+    try await target.screenshot.take(format: format)
   }
 
   public func take_screenshot(_ configuration: FBScreenshotConfiguration) async throws -> FBScreenshotResult {
-    try await target.screenshot.takeScreenshot(configuration: configuration)
+    try await target.screenshot.take(configuration: configuration)
   }
 
   public func accessibility_tap(label: String) async throws {
@@ -263,7 +263,7 @@ public final class FBIDBCommandExecutor {
     guard let simulator = target as? FBSimulator else {
       throw FBIDBCommandError.simulatorOnlyOperation(operation: "take a screenshot", targetDescription: String(describing: target))
     }
-    return try await simulator.screenshot.replScreenshot(cropRect: cropRect, asPNG: asPNG)
+    return try await simulator.screenshot.takeForRepl(cropRect: cropRect, asPNG: asPNG)
   }
 
   /// Starts recording the target's screen to `filePath`. The returned handle's
@@ -702,7 +702,7 @@ public final class FBIDBCommandExecutor {
       }
     }
     if containerType == FBFileContainerKind.crashes.rawValue {
-      return try await target.crashLog.withCrashLogFiles { container in
+      return try await target.crashLog.withFiles { container in
         try await body(container)
       }
     }

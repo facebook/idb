@@ -21,15 +21,15 @@ public struct FBScreenshotFormat: RawRepresentable, Hashable, Sendable {
 public protocol ScreenshotCommands {
 
   /// Captures the screen as `configuration` describes.
-  func takeScreenshot(configuration: FBScreenshotConfiguration) async throws -> FBScreenshotResult
+  func take(configuration: FBScreenshotConfiguration) async throws -> FBScreenshotResult
 }
 
 public extension ScreenshotCommands {
 
   /// Captures the whole screen at its native resolution.
-  func takeScreenshot(format: FBScreenshotFormat) async throws -> Data {
+  func take(format: FBScreenshotFormat) async throws -> Data {
     let configuration = FBScreenshotConfiguration(encoding: try FBScreenshotEncoding(format: format))
-    return try await takeScreenshot(configuration: configuration).imageData
+    return try await take(configuration: configuration).imageData
   }
 }
 

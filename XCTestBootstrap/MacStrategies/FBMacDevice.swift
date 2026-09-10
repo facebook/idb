@@ -532,7 +532,7 @@ extension FBMacDevice: CrashLogCommands {
     throw FBMacDeviceError.notImplemented(selector: "pruneCrashes:")
   }
 
-  public func withCrashLogFiles<R>(body: (any AsyncFileContainer) async throws -> R) async throws -> R {
+  public func withFiles<R>(body: (any AsyncFileContainer) async throws -> R) async throws -> R {
     throw FBMacDeviceError.notImplemented(selector: "crashLogFiles")
   }
 }

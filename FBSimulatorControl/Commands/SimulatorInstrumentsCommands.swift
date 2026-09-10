@@ -21,7 +21,7 @@ public struct SimulatorInstrumentsCommands: InstrumentsCommands {
 
   // MARK: - Async
 
-  public func startInstruments(configuration: FBInstrumentsConfiguration, logger: any FBControlCoreLogger) async throws -> FBInstrumentsOperation {
+  public func start(configuration: FBInstrumentsConfiguration, logger: any FBControlCoreLogger) async throws -> FBInstrumentsOperation {
     try await FBInstrumentsOperation.operation(target: simulator, configuration: configuration, logger: logger)
   }
 }

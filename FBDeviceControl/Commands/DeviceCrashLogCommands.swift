@@ -97,7 +97,7 @@ public final class DeviceCrashLogCommands: CrashLogCommands {
     return try await removeCrashLogsFromDevice(pruned, logger: logger)
   }
 
-  public func withCrashLogFiles<R>(body: (any AsyncFileContainer) async throws -> R) async throws -> R {
+  public func withFiles<R>(body: (any AsyncFileContainer) async throws -> R) async throws -> R {
     guard let device else {
       throw DeviceNilError.deviceNil
     }

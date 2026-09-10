@@ -40,7 +40,7 @@ public final class SimulatorScreenshotCommands: ScreenshotCommands {
 
   /// The crop and scale are applied by the render itself rather than to its output, so all that is
   /// left here is to encode what comes back.
-  public func takeScreenshot(configuration: FBScreenshotConfiguration) async throws -> FBScreenshotResult {
+  public func take(configuration: FBScreenshotConfiguration) async throws -> FBScreenshotResult {
     guard let simulator = self.simulator else {
       throw FBWeakTargetError.simulator
     }
@@ -71,12 +71,12 @@ public final class SimulatorScreenshotCommands: ScreenshotCommands {
   }
 
   /// The REPL's crop is in screen points (`FBScreenshotUnit.points`).
-  public func replScreenshot(cropRect: CGRect?, asPNG: Bool) async throws -> Data {
+  public func takeForRepl(cropRect: CGRect?, asPNG: Bool) async throws -> Data {
     let configuration = FBScreenshotConfiguration(
       encoding: asPNG ? .png : .tiff,
       cropRect: cropRect,
       unit: .points
     )
-    return try await takeScreenshot(configuration: configuration).imageData
+    return try await take(configuration: configuration).imageData
   }
 }

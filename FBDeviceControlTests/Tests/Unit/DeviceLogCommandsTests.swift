@@ -12,7 +12,7 @@ import Testing
 
 private let syslogRelay = "com.apple.syslog_relay"
 
-/// Everything `tailLog` asks of the AMDevice. The session is opened only for long enough to start
+/// Everything `tail` asks of the AMDevice. The session is opened only for long enough to start
 /// the service, so it is closed while the connection the caller reads from is still open.
 private let syslogSessionEvents = [
   "connect",
@@ -24,7 +24,7 @@ private let syslogSessionEvents = [
   "disconnect",
 ]
 
-/// `tailLog` returns an operation and the connection behind it stays live until the caller is
+/// `tail` returns an operation and the connection behind it stays live until the caller is
 /// finished with that operation, so the service connection outlives the call that opened it.
 ///
 /// Pinned on the main actor: the fake records its calls from the device's work and async queues,
@@ -66,7 +66,7 @@ final class DeviceLogCommandsTests {
     syslog.readBuffer = Data("a line of syslog\n".utf8)
     let consumer = FBDataBuffer.accumulatingBuffer()
 
-    let operation = try await device.log.tailLog(arguments: [], consumer: consumer)
+    let operation = try await device.log.tail(arguments: [], consumer: consumer)
     _ = try await bridgeFBFuture(consumer.finishedConsuming)
 
     #expect((String(decoding: consumer.data(), as: UTF8.self)) == ("a line of syslog\n"))
@@ -82,7 +82,7 @@ final class DeviceLogCommandsTests {
   func tailLog_LeavesTheConnectionOpenWhenTheDeviceStopsWriting() async throws {
     let consumer = FBDataBuffer.accumulatingBuffer()
 
-    let operation = try #require(try await device.log.tailLog(arguments: [], consumer: consumer) as? DeviceLogOperation)
+    let operation = try #require(try await device.log.tail(arguments: [], consumer: consumer) as? DeviceLogOperation)
     _ = try await bridgeFBFuture(consumer.finishedConsuming)
     await waitFor("the AMDevice session to close") { self.amDevice.events == syslogSessionEvents }
 
@@ -94,7 +94,7 @@ final class DeviceLogCommandsTests {
   @Test
   func tailLog_InvalidatesTheConnectionWhenTheWaitIsCancelled() async throws {
     let consumer = FBDataBuffer.accumulatingBuffer()
-    let operation = try await device.log.tailLog(arguments: [], consumer: consumer)
+    let operation = try await device.log.tail(arguments: [], consumer: consumer)
     await waitFor("the AMDevice session to close") { self.amDevice.events == syslogSessionEvents }
     #expect(!syslog.isInvalidated)
 

@@ -56,7 +56,7 @@ struct XctraceRecordMethodHandler {
         targetLogger,
       ].compactMap({ $0 }))
 
-    let operation = try await target.xctraceRecord.startXctraceRecord(configuration: config, logger: logger)
+    let operation = try await target.xctraceRecord.start(configuration: config, logger: logger)
     let response = Idb_XctraceRecordResponse.with {
       $0.state = .running
     }

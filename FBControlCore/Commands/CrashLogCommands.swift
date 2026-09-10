@@ -15,5 +15,5 @@ public protocol CrashLogCommands {
 
   func pruneCrashes(matching predicate: NSPredicate) async throws -> [FBCrashLogInfo]
 
-  func withCrashLogFiles<R>(body: (any AsyncFileContainer) async throws -> R) async throws -> R
+  func withFiles<R>(body: (any AsyncFileContainer) async throws -> R) async throws -> R
 }

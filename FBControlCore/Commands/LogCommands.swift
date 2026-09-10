@@ -19,5 +19,5 @@ public protocol LogOperation: AnyObject {
 
 public protocol LogCommands {
 
-  func tailLog(arguments: [String], consumer: any FBDataConsumer) async throws -> any LogOperation
+  func tail(arguments: [String], consumer: any FBDataConsumer) async throws -> any LogOperation
 }
