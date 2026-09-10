@@ -1,0 +1,31 @@
+/*
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
+
+@preconcurrency import FBControlCore
+@preconcurrency import Foundation
+
+/// Manages the contents of the simulated device's photo library.
+public struct SimulatorPhotosCommands {
+
+  private let simulator: FBSimulator
+
+  // MARK: - Initializers
+
+  public static func commands(with simulator: FBSimulator) -> SimulatorPhotosCommands {
+    SimulatorPhotosCommands(simulator: simulator)
+  }
+
+  internal init(simulator: FBSimulator) {
+    self.simulator = simulator
+  }
+
+  // MARK: - Library
+
+  public func clearPhotos() async throws {
+    try await simulator.runSimulatorFrameworkBridge(withService: "photos", action: "clear")
+  }
+}

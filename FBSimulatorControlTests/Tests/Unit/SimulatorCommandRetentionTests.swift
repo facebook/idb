@@ -26,7 +26,13 @@ enum SimulatorCommandAccessor: CaseIterable, Sendable {
   case lifecycle
   case media
   case keychain
-  case settings
+  case privacy
+  case preferences
+  case statusBar
+  case network
+  case health
+  case contacts
+  case photos
   case xctestExtended
   case accessibility
   case dapServer
@@ -64,8 +70,20 @@ enum SimulatorCommandAccessor: CaseIterable, Sendable {
       _ = simulator.media
     case .keychain:
       _ = simulator.keychain
-    case .settings:
-      _ = simulator.settings
+    case .privacy:
+      _ = simulator.privacy
+    case .preferences:
+      _ = simulator.preferences
+    case .statusBar:
+      _ = simulator.statusBar
+    case .network:
+      _ = simulator.network
+    case .health:
+      _ = simulator.health
+    case .contacts:
+      _ = simulator.contacts
+    case .photos:
+      _ = simulator.photos
     case .xctestExtended:
       _ = simulator.xctestExtended
     case .accessibility:

@@ -293,19 +293,19 @@ public final class FBIDBCommandExecutor {
   }
 
   public func approve(_ services: Set<FBTargetSettingsService>, for_application bundleID: String) async throws {
-    try await simulatorTarget().settings.grantAccess(Set([bundleID]), toServices: services)
+    try await simulatorTarget().privacy.grantAccess(Set([bundleID]), toServices: services)
   }
 
   public func revoke(_ services: Set<FBTargetSettingsService>, for_application bundleID: String) async throws {
-    try await simulatorTarget().settings.revokeAccess(Set([bundleID]), toServices: services)
+    try await simulatorTarget().privacy.revokeAccess(Set([bundleID]), toServices: services)
   }
 
   public func approve_deeplink(_ scheme: String, for_application bundleID: String) async throws {
-    try await simulatorTarget().settings.grantAccess(Set([bundleID]), toDeeplink: scheme)
+    try await simulatorTarget().privacy.grantAccess(Set([bundleID]), toDeeplink: scheme)
   }
 
   public func revoke_deeplink(_ scheme: String, for_application bundleID: String) async throws {
-    try await simulatorTarget().settings.revokeAccess(Set([bundleID]), toDeeplink: scheme)
+    try await simulatorTarget().privacy.revokeAccess(Set([bundleID]), toDeeplink: scheme)
   }
 
   public func open_url(_ url: String) async throws {
@@ -322,16 +322,16 @@ public final class FBIDBCommandExecutor {
   public func update_contacts(_ dbTarData: Data) async throws {
     let simulator = try simulatorTarget()
     try await temporaryDirectory.withArchiveExtracted(dbTarData) { tempDir in
-      try await simulator.settings.updateContacts(tempDir.path)
+      try await simulator.contacts.updateContacts(tempDir.path)
     }
   }
 
   public func clear_contacts() async throws {
-    try await simulatorTarget().settings.clearContacts()
+    try await simulatorTarget().contacts.clearContacts()
   }
 
   public func clear_photos() async throws {
-    try await simulatorTarget().settings.clearPhotos()
+    try await simulatorTarget().photos.clearPhotos()
   }
 
   public func list_test_bundles() async throws -> [FBXCTestDescriptor] {
@@ -527,23 +527,23 @@ public final class FBIDBCommandExecutor {
   }
 
   public func set_hardware_keyboard_enabled(_ enabled: Bool) async throws {
-    try await simulatorTarget().settings.apply(.hardwareKeyboard(enabled))
+    try await simulatorTarget().preferences.apply(.hardwareKeyboard(enabled))
   }
 
   public func set_preference(_ name: String, value: String, type: String?, domain: String?) async throws {
-    try await simulatorTarget().settings.apply(FBSimulatorSettingResolution(name: name, value: value, type: type, domain: domain))
+    try await simulatorTarget().preferences.apply(FBSimulatorSettingResolution(name: name, value: value, type: type, domain: domain))
   }
 
   public func get_preference(_ name: String, domain: String?) async throws -> String {
-    try await simulatorTarget().settings.currentSettingValue(name: name, domain: domain)
+    try await simulatorTarget().preferences.currentSettingValue(name: name, domain: domain)
   }
 
   public func set_locale_with_identifier(_ identifier: String) async throws {
-    try await simulatorTarget().settings.apply(.locale(localeIdentifier: identifier))
+    try await simulatorTarget().preferences.apply(.locale(localeIdentifier: identifier))
   }
 
   public func get_current_locale_identifier() async throws -> String {
-    try await simulatorTarget().settings.getCurrentPreference("AppleLocale", domain: nil)
+    try await simulatorTarget().preferences.getCurrentPreference("AppleLocale", domain: nil)
   }
 
   public func list_locale_identifiers() -> [String] {

@@ -32,22 +32,22 @@ final class SimulatorGuestServicesSmokeTests: ProvidedSimulatorTestCase {
     XCTAssertFalse(services.isEmpty, "A booted simulator should report launchd services")
 
     // The SimulatorFrameworkBridge helper, spawned into the booted launchd domain.
-    _ = try await simulator.settings.listProxy()
-    _ = try await simulator.settings.listDns()
+    _ = try await simulator.network.listProxy()
+    _ = try await simulator.network.listDns()
 
     // A settings write, read back through the backing the getter actually consults.
-    let original = try await simulator.settings.getCurrentPreference("AutoFillPasswords", domain: nil)
+    let original = try await simulator.preferences.getCurrentPreference("AutoFillPasswords", domain: nil)
     addTeardownBlock {
       // Leased-resource discipline: restore the toggle this test mutates.
-      try await simulator.settings.apply(.autoFillPasswords(original != "0"))
+      try await simulator.preferences.apply(.autoFillPasswords(original != "0"))
     }
-    try await simulator.settings.apply(.autoFillPasswords(false))
+    try await simulator.preferences.apply(.autoFillPasswords(false))
     // nil domain == Apple Global Domain, where apply(.autoFillPasswords) writes the toggle.
-    let disabled = try await simulator.settings.getCurrentPreference("AutoFillPasswords", domain: nil)
-    try await simulator.settings.apply(.autoFillPasswords(true))
-    let enabled = try await simulator.settings.getCurrentPreference("AutoFillPasswords", domain: nil)
+    let disabled = try await simulator.preferences.getCurrentPreference("AutoFillPasswords", domain: nil)
+    try await simulator.preferences.apply(.autoFillPasswords(true))
+    let enabled = try await simulator.preferences.getCurrentPreference("AutoFillPasswords", domain: nil)
     XCTAssertNotEqual(disabled, enabled, "AutoFillPasswords should read back differently after disable vs enable")
-    let viaSettingValue = try await simulator.settings.currentSettingValue(name: "autofill-passwords", domain: nil)
+    let viaSettingValue = try await simulator.preferences.currentSettingValue(name: "autofill-passwords", domain: nil)
     XCTAssertEqual(viaSettingValue, enabled, "currentSettingValue should read autofill-passwords from its real backing")
 
     // An application through its whole lifecycle. A system application, so nothing has to be

@@ -75,8 +75,32 @@ extension FBSimulator {
     SimulatorKeychainCommands.commands(with: self)
   }
 
-  public var settings: SimulatorSettingsCommands {
-    SimulatorSettingsCommands.commands(with: self)
+  public var privacy: SimulatorPrivacyCommands {
+    SimulatorPrivacyCommands.commands(with: self)
+  }
+
+  public var preferences: SimulatorPreferencesCommands {
+    SimulatorPreferencesCommands.commands(with: self)
+  }
+
+  public var statusBar: SimulatorStatusBarCommands {
+    SimulatorStatusBarCommands.commands(with: self)
+  }
+
+  public var network: SimulatorNetworkCommands {
+    SimulatorNetworkCommands.commands(with: self)
+  }
+
+  public var health: SimulatorHealthCommands {
+    SimulatorHealthCommands.commands(with: self)
+  }
+
+  public var contacts: SimulatorContactsCommands {
+    SimulatorContactsCommands.commands(with: self)
+  }
+
+  public var photos: SimulatorPhotosCommands {
+    SimulatorPhotosCommands.commands(with: self)
   }
 
   var xctestExtended: SimulatorXCTestCommands {
