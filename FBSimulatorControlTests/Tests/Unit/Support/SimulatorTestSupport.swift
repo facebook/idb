@@ -75,6 +75,12 @@ enum SimulatorTestSupport {
     testableSimulator(withDevice: StubSimDevice())
   }
 
+  /// Reinterprets a device double as `SimDevice`, for code under test that takes the CoreSimulator
+  /// type directly rather than an `FBSimulator`.
+  static func asDevice(_ object: AnyObject) -> SimDevice {
+    asSimDevice(object)
+  }
+
   /// Variant that lets the caller substitute a custom device double. Useful when production
   /// code under test reads `simulator.state` (which delegates to `device.state`) or calls
   /// `device.responds(to:)`. The supplied object must respond to `UDID` (returning `NSUUID`)
