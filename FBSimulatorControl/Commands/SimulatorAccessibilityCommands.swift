@@ -180,12 +180,3 @@ final class SimulatorAccessibilityCommands: AccessibilityOperations {
     }
   }
 }
-
-// MARK: - FBSimulator+AccessibilityOperations
-
-extension FBSimulator: AccessibilityOperations {
-
-  func resolveElement(for query: FBAccessibilityElementQuery) async throws -> AccessibilityElement {
-    try await accessibility.resolveElement(for: query)
-  }
-}

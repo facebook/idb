@@ -80,18 +80,3 @@ public final class SimulatorScreenshotCommands: ScreenshotCommands {
     return try await takeScreenshot(configuration: configuration).imageData
   }
 }
-
-// MARK: - FBSimulator+ScreenshotCommands
-
-extension FBSimulator: ScreenshotCommands {
-
-  public func takeScreenshot(configuration: FBScreenshotConfiguration) async throws -> FBScreenshotResult {
-    try await screenshot.takeScreenshot(configuration: configuration)
-  }
-
-  /// Captures the current screen as uncompressed TIFF (default) or PNG, optionally
-  /// cropped to `cropRect` (in screen points). Backs the REPL screenshot command.
-  public func replScreenshot(cropRect: CGRect?, asPNG: Bool) async throws -> Data {
-    try await screenshot.replScreenshot(cropRect: cropRect, asPNG: asPNG)
-  }
-}

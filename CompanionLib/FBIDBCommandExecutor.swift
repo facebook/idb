@@ -263,7 +263,7 @@ public final class FBIDBCommandExecutor {
     guard let simulator = target as? FBSimulator else {
       throw FBIDBCommandError.simulatorOnlyOperation(operation: "take a screenshot", targetDescription: String(describing: target))
     }
-    return try await simulator.replScreenshot(cropRect: cropRect, asPNG: asPNG)
+    return try await simulator.screenshot.replScreenshot(cropRect: cropRect, asPNG: asPNG)
   }
 
   /// Starts recording the target's screen to `filePath`. The returned handle's
@@ -352,7 +352,7 @@ public final class FBIDBCommandExecutor {
 
     let finalAppPath = resolvedAppPath
     let testDescriptor = try storageManager.xctest.testDescriptor(withID: bundleID)
-    return try await simulatorTarget().listTests(forBundleAtPath: testDescriptor.url.path, timeout: FBIDBCommandExecutor.ListTestBundleTimeout, withAppAtPath: finalAppPath)
+    return try await simulatorTarget().xctest.listTests(forBundleAtPath: testDescriptor.url.path, timeout: FBIDBCommandExecutor.ListTestBundleTimeout, withAppAtPath: finalAppPath)
   }
 
   public func uninstall_application(_ bundleID: String) async throws {
@@ -415,10 +415,10 @@ public final class FBIDBCommandExecutor {
   /// `IDB_REPL_SOCKET_PATH`. The returned `ReplSession.run` future completes when
   /// the test process exits, i.e. once the control socket is closed.
   public func repl_start_test(bundlePath: String) async throws -> ReplSession {
-    guard let replTarget = target as? ReplCommands else {
+    guard let simulator = target as? FBSimulator else {
       throw FBIDBCommandError.replTestsUnsupported(targetDescription: String(describing: target))
     }
-    return try await replTarget.startReplTest(bundlePath: bundlePath)
+    return try await simulator.repl.startReplTest(bundlePath: bundlePath)
   }
 
   /// The product family ("iphone", "ipad", "watch", "tv", "mac", "unknown") of
@@ -439,10 +439,10 @@ public final class FBIDBCommandExecutor {
   /// REPL context. The returned `ReplSession.run` completes when the bridge
   /// process exits.
   public func repl_start_simulator() async throws -> ReplSession {
-    guard let replTarget = target as? ReplCommands else {
+    guard let simulator = target as? FBSimulator else {
       throw FBIDBCommandError.replSessionsUnsupported(targetDescription: String(describing: target))
     }
-    return try await replTarget.startReplSimulator()
+    return try await simulator.repl.startReplSimulator()
   }
 
   /// Launches an installed app with the REPL injected, for the `app` REPL
@@ -450,10 +450,10 @@ public final class FBIDBCommandExecutor {
   /// REPL for the app. The returned `ReplSession.run` is already resolved: the app
   /// outlives the session (it resets and waits for the next client on disconnect).
   public func repl_start_app(bundleID: String, reuseSession: Bool) async throws -> ReplSession {
-    guard let replTarget = target as? ReplCommands else {
+    guard let simulator = target as? FBSimulator else {
       throw FBIDBCommandError.replSessionsUnsupported(targetDescription: String(describing: target))
     }
-    return try await replTarget.startReplApp(bundleID: bundleID, reuseSession: reuseSession)
+    return try await simulator.repl.startReplApp(bundleID: bundleID, reuseSession: reuseSession)
   }
 
   // Keep in sync with the PRODUCT_BUNDLE_IDENTIFIER in defs.bzl
@@ -483,10 +483,10 @@ public final class FBIDBCommandExecutor {
   /// path is deterministic, so a later `idb-repl app` reattaches. Simulator
   /// targets only.
   public func replAppLaunchEnvironment(bundleID: String) async throws -> [String: String] {
-    guard let replTarget = target as? ReplCommands else {
+    guard let simulator = target as? FBSimulator else {
       throw FBIDBCommandError.replAppLaunchesUnsupported(targetDescription: String(describing: target))
     }
-    return try await replTarget.replAppLaunchEnvironment(bundleID: bundleID)
+    return try await simulator.repl.replAppLaunchEnvironment(bundleID: bundleID)
   }
 
   public func debugserver_start(_ bundleID: String) async throws -> FBDebugServer {
@@ -629,7 +629,7 @@ public final class FBIDBCommandExecutor {
   }
 
   public func dapServer(withPath dapPath: String, stdIn: FBProcessInput<AnyObject>, stdOut: any FBDataConsumer) async throws -> FBSubprocess<AnyObject, FBDataConsumer, NSString> {
-    return try await simulatorTarget().launchDapServer(dapPath, stdIn: stdIn, stdOut: stdOut)
+    return try await simulatorTarget().dapServer.launchDapServer(dapPath, stdIn: stdIn, stdOut: stdOut)
   }
 
   public func clean() async throws {
@@ -640,11 +640,11 @@ public final class FBIDBCommandExecutor {
   }
 
   public func sendPushNotification(forBundleID bundleID: String, jsonPayload: String) async throws {
-    try await simulatorTarget().sendPushNotification(forBundleID: bundleID, jsonPayload: jsonPayload)
+    try await simulatorTarget().notification.sendPushNotification(forBundleID: bundleID, jsonPayload: jsonPayload)
   }
 
   public func simulateMemoryWarning() async throws {
-    try await simulatorTarget().simulateMemoryWarning()
+    try await simulatorTarget().memory.simulateMemoryWarning()
   }
 
   // MARK: - Private Methods

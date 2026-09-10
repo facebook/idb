@@ -25,15 +25,3 @@ public struct SimulatorInstrumentsCommands: InstrumentsCommands {
     try await FBInstrumentsOperation.operation(target: simulator, configuration: configuration, logger: logger)
   }
 }
-
-// MARK: - FBSimulator+InstrumentsCommands
-
-extension FBSimulator: InstrumentsCommands {
-
-  public func startInstruments(
-    configuration: FBInstrumentsConfiguration,
-    logger: any FBControlCoreLogger
-  ) async throws -> FBInstrumentsOperation {
-    try await instruments.startInstruments(configuration: configuration, logger: logger)
-  }
-}

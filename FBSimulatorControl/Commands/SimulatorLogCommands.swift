@@ -60,12 +60,3 @@ public struct SimulatorLogCommands: LogCommands {
     return binary.path
   }
 }
-
-// MARK: - FBSimulator+LogCommands
-
-extension FBSimulator: LogCommands {
-
-  public func tailLog(arguments: [String], consumer: any FBDataConsumer) async throws -> any LogOperation {
-    return try await log.tailLog(arguments: arguments, consumer: consumer)
-  }
-}

@@ -77,7 +77,7 @@ extension FBSimulator {
       mode: .default
     )
 
-    let process = try await launchProcess(configuration)
+    let process = try await processSpawn.launchProcess(configuration)
     let exitCode = try await bridgeFBFuture(process.exitCode)
 
     return FBInSimulatorToolOutput(

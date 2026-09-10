@@ -26,12 +26,3 @@ public struct SimulatorVideoStreamCommands: VideoStreamCommands {
     return try await FBSimulatorVideoStream.start(framebuffer: framebuffer, configuration: configuration, to: consumer, logger: simulator.logger)
   }
 }
-
-// MARK: - FBSimulator+VideoStreamCommands
-
-extension FBSimulator: VideoStreamCommands {
-
-  public func createStream(configuration: FBVideoStreamConfiguration, to consumer: any FBDataConsumer) async throws -> any FBVideoStream {
-    try await videoStream.createStream(configuration: configuration, to: consumer)
-  }
-}

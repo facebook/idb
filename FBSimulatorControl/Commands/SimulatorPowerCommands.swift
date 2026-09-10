@@ -30,16 +30,3 @@ public struct SimulatorPowerCommands: PowerCommands {
     try await simulator.lifecycle.boot(FBSimulatorBootConfiguration.default)
   }
 }
-
-// MARK: - FBSimulator+PowerCommands
-
-extension FBSimulator: PowerCommands {
-
-  public func shutdown() async throws {
-    try await power.shutdown()
-  }
-
-  public func reboot() async throws {
-    try await power.reboot()
-  }
-}

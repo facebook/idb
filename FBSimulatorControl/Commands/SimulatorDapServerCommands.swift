@@ -72,16 +72,3 @@ public final class SimulatorDapServerCommand {
     return try await bridgeFBFuture(startedFuture)
   }
 }
-
-// MARK: - FBSimulator+DapServerCommand
-
-extension FBSimulator: DapServerCommand {
-
-  public func launchDapServer(
-    _ dapPath: String,
-    stdIn: FBProcessInput<AnyObject>,
-    stdOut: any FBDataConsumer
-  ) async throws -> FBSubprocess<AnyObject, FBDataConsumer, NSString> {
-    try await dapServer.launchDapServer(dapPath, stdIn: stdIn, stdOut: stdOut)
-  }
-}

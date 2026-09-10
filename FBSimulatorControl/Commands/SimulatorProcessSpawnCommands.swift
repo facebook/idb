@@ -145,14 +145,3 @@ public struct SimulatorProcessSpawnCommands: ProcessSpawnCommands {
     }
   }
 }
-
-// MARK: - FBSimulator+ProcessSpawnCommands
-
-extension FBSimulator: ProcessSpawnCommands {
-
-  public func launchProcess(
-    _ configuration: FBProcessSpawnConfiguration
-  ) async throws -> FBSubprocess<AnyObject, AnyObject, AnyObject> {
-    try await processSpawn.launchProcess(configuration)
-  }
-}

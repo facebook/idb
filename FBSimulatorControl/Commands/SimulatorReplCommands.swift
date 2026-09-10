@@ -186,27 +186,6 @@ public struct FBSimulatorReplCommands {
   }
 }
 
-// MARK: - FBSimulator+ReplCommands
-
-extension FBSimulator: ReplCommands {
-
-  public func startReplTest(bundlePath: String) async throws -> ReplSession {
-    try await repl.startReplTest(bundlePath: bundlePath)
-  }
-
-  public func startReplSimulator() async throws -> ReplSession {
-    try await repl.startReplSimulator()
-  }
-
-  public func startReplApp(bundleID: String, reuseSession: Bool) async throws -> ReplSession {
-    try await repl.startReplApp(bundleID: bundleID, reuseSession: reuseSession)
-  }
-
-  public func replAppLaunchEnvironment(bundleID: String) async throws -> [String: String] {
-    try await repl.replAppLaunchEnvironment(bundleID: bundleID)
-  }
-}
-
 // MARK: - Reporter
 
 /// A no-op logic-test reporter. REPL mode runs the shim's single test purely to

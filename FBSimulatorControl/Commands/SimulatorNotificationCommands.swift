@@ -52,12 +52,3 @@ public struct SimulatorNotificationCommands {
     try simulator.device.sendPushNotification(forBundleID: bundleID, jsonPayload: jsonObj)
   }
 }
-
-// MARK: - FBSimulator+NotificationCommands
-
-extension FBSimulator: NotificationCommands {
-
-  public func sendPushNotification(forBundleID bundleID: String, jsonPayload: String) async throws {
-    try await notification.sendPushNotification(forBundleID: bundleID, jsonPayload: jsonPayload)
-  }
-}

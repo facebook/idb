@@ -244,41 +244,6 @@ public final class SimulatorXCTestCommands: XCTestExtendedCommands {
   }
 }
 
-// MARK: - FBSimulator+XCTestExtendedCommands
-
-extension FBSimulator: XCTestExtendedCommands {
-
-  public func runTest(
-    launchConfiguration: FBTestLaunchConfiguration,
-    reporter: AnyObject,
-    logger: any FBControlCoreLogger
-  ) async throws {
-    try await xctest.runTest(launchConfiguration: launchConfiguration, reporter: reporter, logger: logger)
-  }
-
-  public func listTests(
-    forBundleAtPath bundlePath: String,
-    timeout: TimeInterval,
-    withAppAtPath appPath: String?
-  ) async throws -> [String] {
-    try await xctest.listTests(forBundleAtPath: bundlePath, timeout: timeout, withAppAtPath: appPath)
-  }
-
-  public func extendedTestShim() async throws -> String {
-    try await xctest.extendedTestShim()
-  }
-
-  public func withTransportForTestManagerService<R>(
-    body: (NSNumber) async throws -> R
-  ) async throws -> R {
-    try await xctest.withTransportForTestManagerService(body: body)
-  }
-
-  public var xctestPath: String {
-    xctest.xctestPath
-  }
-}
-
 // MARK: - FBSimulator+LogicTestTarget
 
 extension FBSimulator: LogicTestTarget {}

@@ -101,7 +101,7 @@ public final class SimulatorDebuggerCommands: DebuggerCommands {
       io: FBProcessIO<AnyObject, AnyObject, AnyObject>.outputToDevNull(),
       launchMode: .failIfRunning
     )
-    let launchedApp = try await (applicationLauncher ?? simulator).launchApplication(configuration)
+    let launchedApp = try await (applicationLauncher ?? simulator.application).launchApplication(configuration)
     let debugTask = try await bridgeFBFuture(debugServerTask(forPort: port, processIdentifier: launchedApp.processIdentifier, simulator: simulator, debugServerPath: debugServerPath))
     let lldbBootstrapCommands = [
       "process connect connect://localhost:\(port)"
@@ -122,17 +122,5 @@ public final class SimulatorDebuggerCommands: DebuggerCommands {
       .withStdErr(to: logger)
       .start()
       .retyped(FBFuture<FBSubprocess<NSNull, AnyObject, AnyObject>>.self)
-  }
-}
-
-// MARK: - FBSimulator+DebuggerCommands
-
-extension FBSimulator: DebuggerCommands {
-
-  public func launchDebugServer(
-    forHostApplication application: FBBundleDescriptor,
-    port: in_port_t
-  ) async throws -> any FBDebugServer {
-    try await debugger.launchDebugServer(forHostApplication: application, port: port)
   }
 }

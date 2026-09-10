@@ -83,20 +83,3 @@ public final class FBSimulatorVideoRecordingCommands: VideoRecordingCommands {
     return try await video.stop()
   }
 }
-
-// MARK: - FBSimulator+VideoRecordingCommands
-
-extension FBSimulator: VideoRecordingCommands {
-
-  public func startRecording(toFile filePath: String) async throws -> any FBVideoRecording {
-    try await videoRecording.startRecording(toFile: filePath)
-  }
-
-  public func startRecording(toFile filePath: String, configuration: FBVideoStreamConfiguration) async throws -> any FBVideoRecording {
-    try await videoRecording.startRecording(toFile: filePath, configuration: configuration)
-  }
-
-  public var honorsRecordingConfiguration: Bool {
-    videoRecording.honorsRecordingConfiguration
-  }
-}

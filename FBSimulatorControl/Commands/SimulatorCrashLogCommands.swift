@@ -64,24 +64,3 @@ public final class SimulatorCrashLogCommands: CrashLogCommands {
     throw SimulatorCrashLogError.fileAccessUnsupported
   }
 }
-
-// MARK: - FBSimulator+CrashLogCommands
-
-extension FBSimulator: CrashLogCommands {
-
-  public func crashes(matching predicate: NSPredicate, useCache: Bool) async throws -> [FBCrashLogInfo] {
-    try await crashLog.crashes(matching: predicate, useCache: useCache)
-  }
-
-  public func notifyOfCrash(matching predicate: NSPredicate) async throws -> FBCrashLogInfo {
-    try await crashLog.notifyOfCrash(matching: predicate)
-  }
-
-  public func pruneCrashes(matching predicate: NSPredicate) async throws -> [FBCrashLogInfo] {
-    try await crashLog.pruneCrashes(matching: predicate)
-  }
-
-  public func withCrashLogFiles<R>(body: (any AsyncFileContainer) async throws -> R) async throws -> R {
-    try await crashLog.withCrashLogFiles(body: body)
-  }
-}

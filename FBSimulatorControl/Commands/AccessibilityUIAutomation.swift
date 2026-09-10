@@ -20,7 +20,7 @@ final class AccessibilityUIAutomation: FBUIAutomation, @unchecked Sendable {
 
   private let simulator: FBSimulator
 
-  private var operations: any AccessibilityOperations { simulator }
+  private var operations: any AccessibilityOperations { simulator.accessibility }
 
   init(simulator: FBSimulator) {
     self.simulator = simulator

@@ -182,16 +182,3 @@ public final class SimulatorLifecycleCommands: LifecycleCommands {
     throw SimulatorLifecycleError.openURLFailed(url: url, simulatorDescription: String(describing: simulator), underlying: lastError)
   }
 }
-
-// MARK: - FBSimulator+LifecycleCommands
-
-extension FBSimulator: LifecycleCommands {
-
-  public func resolveState(_ state: FBiOSTargetState) async throws {
-    try await lifecycle.resolveState(state)
-  }
-
-  public func resolveLeavesState(_ state: FBiOSTargetState) async throws {
-    try await lifecycle.resolveLeavesState(state)
-  }
-}

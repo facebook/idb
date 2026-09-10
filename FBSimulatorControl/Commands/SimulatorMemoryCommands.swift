@@ -35,12 +35,3 @@ public struct SimulatorMemoryCommands: MemoryCommands {
     simulator.device.simulateMemoryWarning()
   }
 }
-
-// MARK: - FBSimulator+MemoryCommands
-
-extension FBSimulator: MemoryCommands {
-
-  public func simulateMemoryWarning() async throws {
-    try await memory.simulateMemoryWarning()
-  }
-}

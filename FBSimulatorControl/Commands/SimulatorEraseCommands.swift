@@ -25,12 +25,3 @@ public struct SimulatorEraseCommands: EraseCommands {
     try await SimulatorEraseStrategy.erase(simulator)
   }
 }
-
-// MARK: - FBSimulator+EraseCommands
-
-extension FBSimulator: EraseCommands {
-
-  public func erase() async throws {
-    try await erase.erase()
-  }
-}
