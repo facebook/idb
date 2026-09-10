@@ -67,17 +67,6 @@ public final class DeviceVideoRecordingCommands {
     self.video = nil
     return try await video.stop()
   }
-
-  fileprivate func createStream(with configuration: FBVideoStreamConfiguration, to consumer: any FBDataConsumer) async throws -> any FBVideoStream {
-    guard let device else {
-      throw DeviceVideoRecordingCommandError.missingDevice
-    }
-    let logger = device.logger
-    let session = try await DeviceVideo.captureSession(for: device)
-    let stream = try DeviceVideoStream.stream(withSession: session, configuration: configuration, logger: logger)
-    try await stream.startStreaming(consumer)
-    return stream
-  }
 }
 
 // MARK: - FBDevice+VideoRecordingCommands
@@ -86,14 +75,5 @@ extension FBDevice: VideoRecordingCommands {
 
   public func startRecording(toFile filePath: String) async throws -> any FBVideoRecording {
     try await videoRecording.startRecording(toFile: filePath)
-  }
-}
-
-// MARK: - FBDevice+VideoStreamCommands
-
-extension FBDevice: VideoStreamCommands {
-
-  public func createStream(configuration: FBVideoStreamConfiguration, to consumer: any FBDataConsumer) async throws -> any FBVideoStream {
-    try await videoRecording.createStream(with: configuration, to: consumer)
   }
 }

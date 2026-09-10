@@ -53,12 +53,20 @@ extension FBDevice {
     commandCache.resolve { DeviceVideoRecordingCommands.commands(with: self) }
   }
 
+  var videoStream: DeviceVideoStreamCommands {
+    DeviceVideoStreamCommands.commands(with: self)
+  }
+
   var xctest: DeviceXCTestCommands {
     commandCache.resolve { DeviceXCTestCommands.commands(with: self) }
   }
 
   var xctraceRecord: FBXCTraceRecordCommands {
     FBXCTraceRecordCommands.commands(with: self)
+  }
+
+  var instruments: DeviceInstrumentsCommands {
+    DeviceInstrumentsCommands.commands(with: self)
   }
 
   // MARK: - Device-only accessors

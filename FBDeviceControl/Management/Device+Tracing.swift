@@ -19,15 +19,3 @@ extension FBDevice: XCTraceRecordCommands {
     try await xctraceRecord.startXctraceRecord(configuration, logger: logger)
   }
 }
-
-// MARK: - FBDevice+InstrumentsCommands
-
-extension FBDevice: InstrumentsCommands {
-
-  public func startInstruments(
-    configuration: FBInstrumentsConfiguration,
-    logger: any FBControlCoreLogger
-  ) async throws -> FBInstrumentsOperation {
-    try await FBInstrumentsOperation.operation(target: self, configuration: configuration, logger: logger)
-  }
-}
