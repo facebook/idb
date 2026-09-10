@@ -12,11 +12,15 @@ from __future__ import annotations
 import json
 from typing import Any
 
-from .harness import IdbEndToEndTestCase
+from .harness import HarnessError, IdbEndToEndTestCase, NotReady, wait_until
 
 # The app is launched and reported over gRPC before it draws anything, but the
 # report still crosses a companion, a simulator and a process spawn.
 PID_REPORT_TIMEOUT_SECONDS = 120.0
+
+# Stopping a launch stops the app it held open, but the two are separate
+# processes and the app is gone in well under this.
+APP_STOP_TIMEOUT_SECONDS = 60.0
 
 
 def _leading_json_object(data: bytes) -> tuple[Any, int]:
@@ -115,12 +119,24 @@ class LaunchOutputTests(IdbEndToEndTestCase):
                 "Running",
             )
 
-        # Leaving the block stops the launch, which takes the app with it.
-        self.assertNotEqual(
-            (await self.installed_apps())[self.bundle_id]["process_state"],
-            "Running",
-            "stopping the launch should stop the app it was holding open",
-        )
+        # Leaving the block stops the launch, which takes the app with it --
+        # though not necessarily before the next command gets to ask.
+        await self.wait_until_the_app_has_stopped()
+
+    async def wait_until_the_app_has_stopped(self) -> None:
+        async def stopped() -> None:
+            app = (await self.installed_apps())[self.bundle_id]
+            if app["process_state"] == "Running":
+                raise NotReady("list-apps still reports it running")
+
+        try:
+            await wait_until(
+                "Stopping the launch did not stop the app it was holding open",
+                APP_STOP_TIMEOUT_SECONDS,
+                stopped,
+            )
+        except HarnessError as error:
+            self.fail(str(error))
 
     async def test_the_pid_report_is_not_terminated(self) -> None:
         """The pid report is written to stdout with no delimiter after it.
