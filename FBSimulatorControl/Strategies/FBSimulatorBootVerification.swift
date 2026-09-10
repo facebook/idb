@@ -16,9 +16,14 @@ private let bootVerificationStallInterval: TimeInterval = 1.5
 /// moment the boot is underway — so this waits for the state and then for the boot status to reach
 /// a terminal value.
 ///
+/// - Parameter deadline: How long to wait for, across both phases. Waits indefinitely when `nil`;
+///   exceeding it throws `PollTimeoutError`.
+///
 /// Public: consumers outside this module wait on simulators they booted for the state only.
-public func verifySimulatorIsBooted(_ simulator: FBSimulator) async throws {
-  try await FBiOSTargetResolveState(simulator, .booted)
+public func verifySimulatorIsBooted(_ simulator: FBSimulator, deadline: PollDeadline? = nil) async throws {
+  // Taken before the first wait, so the two phases share one bound rather than getting one each.
+  let expiry = deadline.map { (deadline: $0, time: DispatchTime.now() + $0.timeout) }
+  try await FBiOSTargetResolveState(simulator, .booted, deadline: deadline)
 
   var lastBootInfo: SimDeviceBootInfo?
   var lastChange = Date()
@@ -39,6 +44,9 @@ public func verifySimulatorIsBooted(_ simulator: FBSimulator) async throws {
       if bootInfo.isTerminalStatus {
         return
       }
+    }
+    if let expiry, DispatchTime.now() >= expiry.time {
+      throw PollTimeoutError(deadline: expiry.deadline)
     }
     try await Task.sleep(nanoseconds: UInt64(bootVerificationPollInterval * Double(NSEC_PER_SEC)))
   }

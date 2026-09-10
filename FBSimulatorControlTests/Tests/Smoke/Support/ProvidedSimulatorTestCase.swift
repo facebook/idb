@@ -40,6 +40,10 @@ private struct ProvidedSimulatorError: Error, LocalizedError {
 /// waits for the ones that do not.
 class ProvidedSimulatorTestCase: XCTestCase {
 
+  /// How long to wait for a simulator to finish booting before giving up on the harness that
+  /// supplied it. A cold boot on a loaded CI host is minutes, not seconds.
+  private static let bootCompletionTimeout: TimeInterval = 300
+
   /// The one acquisition for the whole bundle. Memoized as a `Task` so cases share the work rather
   /// than the result of a race; XCTest runs cases serially, so this is only ever awaited in turn.
   private nonisolated(unsafe) static var acquisition: Task<FBSimulator, Error>?
@@ -110,10 +114,14 @@ class ProvidedSimulatorTestCase: XCTestCase {
   /// progress. Booting applies that check to a simulator it has just booted itself; it applies just
   /// as well to one handed over by somebody else.
   ///
-  /// The wait is unbounded, and the test's execution time allowance is what stops it: a harness
-  /// that never finishes booting the simulator it promised is not something this can recover from.
+  /// Bounded, so a harness that never finishes booting the simulator it promised is reported as
+  /// that, rather than as a test hanging until its execution time allowance kills it.
   private static func waitUntilBootCompleted(_ simulator: FBSimulator) async throws {
-    try await verifySimulatorIsBooted(simulator)
+    try await verifySimulatorIsBooted(
+      simulator,
+      deadline: PollDeadline(
+        timeout: bootCompletionTimeout,
+        waitingFor: "the provided simulator \(simulator.udid) to finish booting"))
   }
 
   /// Some harnesses lease simulators whose host does not run `SimLaunchHostService`, so any

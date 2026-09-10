@@ -27,6 +27,10 @@ public struct PollTimeoutError: Error, LocalizedError {
 
   public let deadline: PollDeadline
 
+  public init(deadline: PollDeadline) {
+    self.deadline = deadline
+  }
+
   public var errorDescription: String? {
     "Timed out after \(deadline.timeout) seconds waiting for \(deadline.waitingFor)"
   }
