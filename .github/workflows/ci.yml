@@ -184,18 +184,12 @@ jobs:
           IDB_COMPANION_PATH="$PWD/Build/Distribution/idb_companion" \
           IDB_E2E_STRICT=1 \
           python -m unittest discover -s EndToEndTests -t . -v
-      # A companion that dies mid-run takes every later command with it, and
-      # its own log stops at whatever it was serving rather than saying why.
-      # The crash report is the only account of that: its presence separates a
-      # signal from an orderly exit, which the log cannot.
+      # What the companion's own log cannot account for: the crash report that
+      # separates a signal from an orderly exit, and the simulator's side of a
+      # read that never arrived. See CI/collect_diagnostics.py.
       - name: Collect diagnostics on failure
         if: failure()
-        run: |
-          DIAGNOSTICS="$RUNNER_TEMP/end-to-end-diagnostics"
-          mkdir -p "$DIAGNOSTICS"
-          cp /tmp/idb-e2e-*/companion.log "$DIAGNOSTICS" 2>/dev/null || true
-          cp "$HOME"/Library/Logs/DiagnosticReports/idb_companion*.ips "$DIAGNOSTICS" 2>/dev/null || true
-          ls -l "$DIAGNOSTICS"
+        run: python3 -m CI.collect_diagnostics --output "$RUNNER_TEMP/end-to-end-diagnostics"
       - name: Upload diagnostics on failure
         if: failure()
         uses: actions/upload-artifact@v5
