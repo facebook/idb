@@ -48,8 +48,8 @@ final class FBiOSTargetDescription: FBiOSTargetInfo {
       Self.keyModel: model as Any? ?? NSNull(),
       Self.keyName: name as Any? ?? NSNull(),
       Self.keyOSVersion: osVersion.name as Any? ?? NSNull(),
-      Self.keyState: FBiOSTargetStateStringFromState(state).rawValue,
-      Self.keyType: FBiOSTargetTypeStringFromTargetType(targetType),
+      Self.keyState: state.stateString.rawValue,
+      Self.keyType: targetType.stringRepresentation,
       Self.keyUDID: udid as Any? ?? NSNull(),
     ]
     for (key, value) in extendedInformation {

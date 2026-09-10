@@ -60,7 +60,7 @@ class SimulatorControlTests_SimDevice_Double: NSObject {
   /// Mirrors the real `SimDevice`, which vends this as a string to the Objective-C runtime.
   @objc var stateString: String {
     // A state the enum does not name reads as unknown, rather than trapping the whole suite.
-    return FBiOSTargetStateStringFromState(FBiOSTargetState(rawValue: UInt(state)) ?? .unknown).rawValue
+    return (FBiOSTargetState(rawValue: UInt(state)) ?? .unknown).stateString.rawValue
   }
 }
 

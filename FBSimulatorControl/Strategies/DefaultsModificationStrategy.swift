@@ -25,7 +25,7 @@ enum DefaultsModificationError: Error, CustomStringConvertible {
     case let .couldNotWritePlist(plist):
       return "Failed to write out defaults to temporary file \(plist)"
     case let .invalidState(state, action):
-      return "Cannot \(action) a plist when the Simulator state is \(FBiOSTargetStateStringFromState(state)), should be \(FBiOSTargetStateString.shutdown) or \(FBiOSTargetStateString.booted)"
+      return "Cannot \(action) a plist when the Simulator state is \(state.stateString), should be \(FBiOSTargetStateString.shutdown) or \(FBiOSTargetStateString.booted)"
     case let .commandFailed(command, exitCode, stderr):
       return "defaults \(command) failed with exit code \(exitCode): \(stderr)"
     case .noDataDirectory:

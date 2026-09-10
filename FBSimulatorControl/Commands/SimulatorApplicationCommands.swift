@@ -293,7 +293,7 @@ public struct FBSimulatorApplicationCommands: ApplicationCommands {
     let state = simulator.state
     try Self.confirmApplicationInstallTargetIsReady(
       state: state,
-      stateDescription: FBiOSTargetStateStringFromState(state).rawValue,
+      stateDescription: state.stateString.rawValue,
       checkAvailability: { try simulator.device.isAvailable() })
   }
 

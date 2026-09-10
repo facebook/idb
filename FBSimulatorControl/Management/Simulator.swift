@@ -155,7 +155,7 @@ public final class FBSimulator: FBiOSTarget, Hashable, CustomStringConvertible, 
 
   /// A string representation of the Simulator State.
   public var stateString: FBiOSTargetStateString {
-    FBiOSTargetStateStringFromState(state)
+    state.stateString
   }
 
   /// The Directory that Contains the Simulator's Data.
@@ -191,7 +191,7 @@ public final class FBSimulator: FBiOSTarget, Hashable, CustomStringConvertible, 
   }
 
   public var description: String {
-    FBiOSTargetDescribe(self)
+    self.targetDescription
   }
 
   private class func auxillaryDirectory(fromSimDevice device: SimDevice) -> String {

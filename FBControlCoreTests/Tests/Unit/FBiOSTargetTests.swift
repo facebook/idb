@@ -67,7 +67,7 @@ final class FBiOSTargetTests: XCTestCase {
     second.deviceType = FBiOSTargetConfiguration.nameToDevice[.modeliPhone6S]!
     second.osVersion = FBiOSTargetConfiguration.nameToOSVersion[.nameiOS_10_0]!
 
-    XCTAssertEqual(FBiOSTargetComparison(first, second), .orderedDescending)
+    XCTAssertEqual(first.compare(second), .orderedDescending)
   }
 
   func testOSVersionOrdering() {
@@ -82,7 +82,7 @@ final class FBiOSTargetTests: XCTestCase {
     second.deviceType = FBiOSTargetConfiguration.nameToDevice[.modeliPhone6S]!
     second.osVersion = FBiOSTargetConfiguration.nameToOSVersion[.nameiOS_10_1]!
 
-    XCTAssertEqual(FBiOSTargetComparison(first, second), .orderedAscending)
+    XCTAssertEqual(first.compare(second), .orderedAscending)
   }
 
   func testiPhoneComesBeforeiPad() {

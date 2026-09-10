@@ -425,7 +425,7 @@ public final class FBIDBCommandExecutor {
   /// the target this companion is connected to. Reported to the client as part
   /// of the REPL handshake.
   public var replDeviceType: String {
-    FBControlCoreProductFamilyString(target.deviceType.family)
+    target.deviceType.family.stringRepresentation
   }
 
   /// The OS version ("26.2") of the target this companion is connected to.

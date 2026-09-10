@@ -24,8 +24,8 @@ struct DescribeMethodHandler {
       $0.targetDescription = .with {
         $0.udid = target.udid
         $0.name = target.name
-        $0.state = FBiOSTargetStateStringFromState(target.state).rawValue
-        $0.targetType = FBiOSTargetTypeStringFromTargetType(target.targetType).lowercased()
+        $0.state = target.state.stateString.rawValue
+        $0.targetType = target.targetType.stringRepresentation.lowercased()
         $0.osVersion = target.osVersion.name.rawValue
         if let screenInfo = target.screenInfo {
           $0.screenDimensions = .with {

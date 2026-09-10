@@ -69,7 +69,7 @@ final class AMRestorableDeviceManager: DeviceManager<FBAMRestorableDevice> {
     let targetState = FBAMRestorableDevice.targetState(for: deviceState)
     let identifier = String(calls.RestorableDeviceGetECID(device))
     logger.log(
-      "\(device) \(notificationTypeDescription(status)) in state \(FBiOSTargetStateStringFromState(targetState).rawValue)")
+      "\(device) \(notificationTypeDescription(status)) in state \(targetState.stateString.rawValue)")
 
     if let ecidFilter, identifier != ecidFilter {
       logger.log("Ignoring \(device) as it does not match filter of \(ecidFilter)")

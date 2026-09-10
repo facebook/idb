@@ -171,7 +171,7 @@ public final class FBDevice: FBiOSTarget, FBDeviceCommands, CustomStringConverti
   }
 
   public var description: String {
-    FBiOSTargetDescribe(self)
+    self.targetDescription
   }
 
   // MARK: - FBDeviceProtocol

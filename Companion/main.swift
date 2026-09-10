@@ -384,7 +384,7 @@ private func runCompanionServer(_ udid: String, userDefaults: UserDefaults, xcod
 
   reporter.addMetadata([
     "udid": udid,
-    "target_type": FBiOSTargetTypeStringFromTargetType(target.targetType).lowercased(),
+    "target_type": target.targetType.stringRepresentation.lowercased(),
   ])
   reporter.report(FBEventReporterSubject(forEvent: "launched"))
 

@@ -58,7 +58,32 @@ public protocol FBiOSTargetInfo: AnyObject {
 extension FBiOSTargetInfo {
 
   public func compare(_ target: any FBiOSTargetInfo) -> ComparisonResult {
-    FBiOSTargetComparison(self, target)
+    var comparison = NSNumber(value: targetType.rawValue).compare(NSNumber(value: target.targetType.rawValue))
+    if comparison != .orderedSame {
+      return comparison
+    }
+    comparison = osVersion.number.compare(target.osVersion.number)
+    if comparison != .orderedSame {
+      return comparison
+    }
+    comparison = NSNumber(value: deviceType.family.rawValue).compare(NSNumber(value: target.deviceType.family.rawValue))
+    if comparison != .orderedSame {
+      return comparison
+    }
+    comparison = deviceType.model.rawValue.compare(target.deviceType.model.rawValue)
+    if comparison != .orderedSame {
+      return comparison
+    }
+    comparison = NSNumber(value: state.rawValue).compare(NSNumber(value: target.state.rawValue))
+    if comparison != .orderedSame {
+      return comparison
+    }
+    return udid.compare(target.udid)
+  }
+
+  /// A one-line description of the target.
+  public var targetDescription: String {
+    "\(udid) | \(name) | \(state.stateString.rawValue) | \(deviceType.model.rawValue) | \(osVersion) "
   }
 }
 
@@ -144,96 +169,74 @@ public enum FBiOSTargetStateString: String, Sendable, CaseIterable {
 
 // MARK: - State conversions
 
-/// The canonical string representation of the state enum.
-public func FBiOSTargetStateStringFromState(_ state: FBiOSTargetState) -> FBiOSTargetStateString {
-  switch state {
-  case .creating:
-    return .creating
-  case .shutdown:
-    return .shutdown
-  case .booting:
-    return .booting
-  case .booted:
-    return .booted
-  case .shuttingDown:
-    return .shuttingDown
-  case .DFU:
-    return .DFU
-  case .recovery:
-    return .recovery
-  case .restoreOS:
-    return .restoreOS
-  case .unknown:
-    return .unknown
-  @unknown default:
-    return .unknown
+extension FBiOSTargetState {
+
+  /// The canonical string representation of the state enum.
+  public var stateString: FBiOSTargetStateString {
+    switch self {
+    case .creating:
+      return .creating
+    case .shutdown:
+      return .shutdown
+    case .booting:
+      return .booting
+    case .booted:
+      return .booted
+    case .shuttingDown:
+      return .shuttingDown
+    case .DFU:
+      return .DFU
+    case .recovery:
+      return .recovery
+    case .restoreOS:
+      return .restoreOS
+    case .unknown:
+      return .unknown
+    @unknown default:
+      return .unknown
+    }
   }
 }
 
-/// The canonical string representations of the FBiOSTargetType enum.
-public func FBiOSTargetTypeStringFromTargetType(_ targetType: FBiOSTargetType) -> String {
-  if targetType == .device {
-    return "Device"
-  }
-  if targetType == .simulator {
-    return "Simulator"
-  }
-  if targetType == .localMac {
-    return "Mac"
-  }
-  return "Unknown"
-}
+extension FBiOSTargetType {
 
-/// The canonical string representation of a product family (the device "type":
-/// iphone, ipad, watch, tv, mac), distinct from the simulator/device/mac
-/// distinction carried by FBiOSTargetType.
-public func FBControlCoreProductFamilyString(_ family: FBControlCoreProductFamily) -> String {
-  switch family {
-  case .familyiPhone:
-    return "iphone"
-  case .familyiPad:
-    return "ipad"
-  case .familyAppleWatch:
-    return "watch"
-  case .familyAppleTV:
-    return "tv"
-  case .familyMac:
-    return "mac"
-  case .familyUnknown:
-    return "unknown"
-  @unknown default:
-    return "unknown"
+  /// The canonical string representation of the target type.
+  public var stringRepresentation: String {
+    if self == .device {
+      return "Device"
+    }
+    if self == .simulator {
+      return "Simulator"
+    }
+    if self == .localMac {
+      return "Mac"
+    }
+    return "Unknown"
   }
 }
 
-/// A Default Comparison Function that can be called for different implementations of FBiOSTargetInfo.
-public func FBiOSTargetComparison(_ left: any FBiOSTargetInfo, _ right: any FBiOSTargetInfo) -> ComparisonResult {
-  var comparison = NSNumber(value: left.targetType.rawValue).compare(NSNumber(value: right.targetType.rawValue))
-  if comparison != .orderedSame {
-    return comparison
-  }
-  comparison = left.osVersion.number.compare(right.osVersion.number)
-  if comparison != .orderedSame {
-    return comparison
-  }
-  comparison = NSNumber(value: left.deviceType.family.rawValue).compare(NSNumber(value: right.deviceType.family.rawValue))
-  if comparison != .orderedSame {
-    return comparison
-  }
-  comparison = left.deviceType.model.rawValue.compare(right.deviceType.model.rawValue)
-  if comparison != .orderedSame {
-    return comparison
-  }
-  comparison = NSNumber(value: left.state.rawValue).compare(NSNumber(value: right.state.rawValue))
-  if comparison != .orderedSame {
-    return comparison
-  }
-  return left.udid.compare(right.udid)
-}
+extension FBControlCoreProductFamily {
 
-/// Constructs a string description of the provided target.
-public func FBiOSTargetDescribe(_ target: FBiOSTargetInfo) -> String {
-  return "\(target.udid) | \(target.name) | \(FBiOSTargetStateStringFromState(target.state).rawValue) | \(target.deviceType.model.rawValue) | \(target.osVersion) "
+  /// The canonical string representation of the product family (the device "type": iphone, ipad,
+  /// watch, tv, mac), distinct from the simulator/device/mac distinction of FBiOSTargetType.
+  public var stringRepresentation: String {
+    switch self {
+    case .familyiPhone:
+      return "iphone"
+    case .familyiPad:
+      return "ipad"
+    case .familyAppleWatch:
+      return "watch"
+    case .familyAppleTV:
+      return "tv"
+    case .familyMac:
+      return "mac"
+    case .familyUnknown:
+      return "unknown"
+    @unknown default:
+      return "unknown"
+    }
+  }
 }
 
 /// Constructs an NSPredicate matching the specified UDID.
