@@ -382,7 +382,7 @@ public final class FBLogicTestRunStrategy: FBXCTestRunner {
             .onQueue(
               queue,
               fmap: { _ -> FBFuture<AnyObject> in
-                let crashCommands: any CrashLogCommands = self.target
+                let crashCommands: any CrashLogCommands = self.target.crashLog
                 return FBXCTestProcess.ensureProcess(process, completesWithin: timeout, crashLogCommands: crashCommands, queue: queue, logger: logger)
                   .retyped(FBFuture<AnyObject>.self)
               })
