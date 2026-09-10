@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+import FBControlCore
 @testable import FBSimulatorControl
 import Foundation
 import Testing
@@ -38,6 +39,7 @@ enum SimulatorCommandAccessor: CaseIterable, Sendable {
   case contacts
   case photos
   case xctest
+  case uiAutomation
   case accessibility
   case dapServer
   case repl
@@ -101,6 +103,11 @@ enum SimulatorCommandAccessor: CaseIterable, Sendable {
       _ = simulator.photos
     case .xctest:
       _ = simulator.xctest
+    case .uiAutomation:
+      // Every backend, since only the persistent axbridge scopes resolve a transport into the cache.
+      for name in FBUIAutomationBackendName.allCases {
+        _ = try? simulator.uiAutomation(backend: FBUIAutomationBackend(resolvedName: name))
+      }
     case .accessibility:
       _ = simulator.accessibility
     case .dapServer:
