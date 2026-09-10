@@ -321,21 +321,20 @@ public struct SimulatorPrivacyCommands {
     }
 
     let logger = simulator.logger.withName("sqlite_auth")
-    let queue = simulator.asyncQueue
 
     if grantAccess {
-      try await grantAccessInTCCDatabase(databasePath, bundleIDs: bundleIDs, services: services, queue: queue, logger: logger)
+      try await grantAccessInTCCDatabase(databasePath, bundleIDs: bundleIDs, services: services, logger: logger)
     } else {
-      try await revokeAccessInTCCDatabase(databasePath, bundleIDs: bundleIDs, services: services, queue: queue, logger: logger)
+      try await revokeAccessInTCCDatabase(databasePath, bundleIDs: bundleIDs, services: services, logger: logger)
     }
   }
 
-  private func grantAccessInTCCDatabase(_ databasePath: String, bundleIDs: Set<String>, services: Set<FBTargetSettingsService>, queue: DispatchQueue, logger: (any FBControlCoreLogger)?) async throws {
-    let query = try await Self.buildApprovalInsertQuery(forDatabase: databasePath, bundleIDs: bundleIDs, services: services, queue: queue, logger: logger)
-    _ = try await Self.runSqliteCommand(onDatabase: databasePath, arguments: [query], queue: queue, logger: logger)
+  private func grantAccessInTCCDatabase(_ databasePath: String, bundleIDs: Set<String>, services: Set<FBTargetSettingsService>, logger: (any FBControlCoreLogger)?) async throws {
+    let query = try await Self.buildApprovalInsertQuery(forDatabase: databasePath, bundleIDs: bundleIDs, services: services, logger: logger)
+    _ = try await Self.runSqliteCommand(onDatabase: databasePath, arguments: [query], logger: logger)
   }
 
-  private func revokeAccessInTCCDatabase(_ databasePath: String, bundleIDs: Set<String>, services: Set<FBTargetSettingsService>, queue: DispatchQueue, logger: (any FBControlCoreLogger)?) async throws {
+  private func revokeAccessInTCCDatabase(_ databasePath: String, bundleIDs: Set<String>, services: Set<FBTargetSettingsService>, logger: (any FBControlCoreLogger)?) async throws {
     var deletions: [String] = []
     for bundleID in bundleIDs {
       for serviceName in Self.tccServiceNames(for: services) {
@@ -348,34 +347,29 @@ public struct SimulatorPrivacyCommands {
     _ = try await Self.runSqliteCommand(
       onDatabase: databasePath,
       arguments: ["DELETE FROM access WHERE \(deletions.joined(separator: " OR "))"],
-      queue: queue,
       logger: logger)
   }
 
-  private static func buildApprovalInsertQuery(forDatabase databasePath: String, bundleIDs: Set<String>, services: Set<FBTargetSettingsService>, queue: DispatchQueue, logger: (any FBControlCoreLogger)?) async throws -> String {
-    let schema = try await runSqliteCommand(onDatabase: databasePath, arguments: [".schema access"], queue: queue, logger: logger)
+  private static func buildApprovalInsertQuery(forDatabase databasePath: String, bundleIDs: Set<String>, services: Set<FBTargetSettingsService>, logger: (any FBControlCoreLogger)?) async throws -> String {
+    let schema = try await runSqliteCommand(onDatabase: databasePath, arguments: [".schema access"], logger: logger)
     return approvalInsertQuery(forAccessSchema: schema, bundleIDs: bundleIDs, services: services)
   }
 
-  private static func runSqliteCommand(onDatabase databasePath: String, arguments: [String], queue: DispatchQueue, logger: (any FBControlCoreLogger)?) async throws -> String {
+  private static func runSqliteCommand(onDatabase databasePath: String, arguments: [String], logger: (any FBControlCoreLogger)?) async throws -> String {
     let allArguments = [databasePath] + arguments
     logger?.log("Running sqlite3 \(FBCollectionInformation.oneLineDescription(from: allArguments))")
-    let runFuture = FBProcessBuilder<NSNull, NSData, NSData>.withLaunchPath("/usr/bin/sqlite3", arguments: allArguments)
-      .withStdOutInMemoryAsString()
-      .withStdErrInMemoryAsString()
-      .withTaskLifecycleLogging(to: logger)
-      .runUntilCompletion(withAcceptableExitCodes: [0, 1])
-    let task = try await bridgeFBFuture(runFuture)
-    if task.exitCode.result != 0 as NSNumber {
-      throw SimulatorPrivacyError.sqliteTaskFailed(
-        exitCode: task.exitCode.result?.intValue ?? 0,
-        stdOut: (task.stdOut as? String) ?? "",
-        stdErr: (task.stdErr as? String) ?? "")
+    let result = try await Subprocess(executable: "/usr/bin/sqlite3", arguments: allArguments)
+      .run(exitPolicy: .mustExit([0, 1]), logger: logger)
+    try result.checkExitedCleanly { code in
+      SimulatorPrivacyError.sqliteTaskFailed(
+        exitCode: Int(code),
+        stdOut: result.standardOutput,
+        stdErr: result.standardError)
     }
-    if let stdErr = task.stdErr as? String, stdErr.hasPrefix("Error") {
-      throw SimulatorPrivacyError.sqliteCommandFailed(stderr: stdErr)
+    if result.standardError.hasPrefix("Error") {
+      throw SimulatorPrivacyError.sqliteCommandFailed(stderr: result.standardError)
     }
-    return (task.stdOut as String?) ?? ""
+    return result.standardOutput
   }
 
   // MARK: - Service Mappings
