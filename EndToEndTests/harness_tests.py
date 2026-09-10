@@ -25,7 +25,7 @@ import os
 import tempfile
 import unittest
 from pathlib import Path
-from typing import NoReturn
+from typing import Awaitable, Callable, NoReturn, Sequence
 from unittest import mock
 
 from . import harness
@@ -37,6 +37,7 @@ from .harness import (
     HarnessError,
     IdbEndToEndTestCase,
     NotReady,
+    Simctl,
     STRICT_ENV,
     wait_until,
 )
@@ -48,6 +49,14 @@ CONNECTION_REFUSED = (
 HOST_SERVICE_UNAVAILABLE = (
     "SimLaunchHostService.RequestError: Exit Code 149 is not acceptable"
 )
+
+# `simctl listapps` writes an old-style plist, which is why the harness pipes it
+# through `plutil` rather than reading it directly.
+LISTAPPS_PLIST = b'{ "com.apple.Preferences" = { CFBundleName = Settings; }; }'
+LISTAPPS_JSON = b'{"com.apple.Preferences": {"CFBundleName": "Settings"}}'
+FAILED = Completed(1, b"", b"the simulator is not booted")
+
+Run = Callable[..., Awaitable[Completed]]
 
 
 class Failed(Exception):
@@ -236,6 +245,50 @@ class DeadCompanionStopsTheSuiteTests(unittest.TestCase):
         self.assertEqual(len(result.errors), 1)
         self.assertIn("exited with 1", result.errors[0][1])
         self.assertTrue(result.shouldStop)
+
+
+def reading(listapps: Completed, plutil: Completed) -> Run:
+    """Stands in for every subprocess ``installed_bundle_ids`` runs."""
+
+    async def run(
+        argv: Sequence[str], timeout: float, stdin: bytes | None = None
+    ) -> Completed:
+        return plutil if argv[0] == "plutil" else listapps
+
+    return run
+
+
+class InstalledBundleIdsTests(unittest.IsolatedAsyncioTestCase):
+    """What simctl -- the ground truth the application tests cross-check
+    against -- reports when it cannot be read."""
+
+    async def bundle_ids(
+        self, listapps: Completed, plutil: Completed
+    ) -> set[str] | None:
+        with mock.patch.object(harness, "run", reading(listapps, plutil)):
+            return await Simctl("UDID", Path("/device-set")).installed_bundle_ids()
+
+    async def test_a_listing_reports_what_is_installed(self) -> None:
+        installed = await self.bundle_ids(
+            Completed(0, LISTAPPS_PLIST, b""), Completed(0, LISTAPPS_JSON, b"")
+        )
+
+        self.assertEqual(installed, {"com.apple.Preferences"})
+
+    async def test_a_failing_listapps_reports_nothing_installed(self) -> None:
+        installed = await self.bundle_ids(FAILED, Completed(0, LISTAPPS_JSON, b""))
+
+        # BUG: reports the same thing as an empty simulator, so a caller's
+        # `if installed is not None` guard drops its cross-check without
+        # saying so -- flipped in the following commit.
+        self.assertIsNone(installed)
+
+    async def test_a_failing_plutil_reports_nothing_installed(self) -> None:
+        installed = await self.bundle_ids(Completed(0, LISTAPPS_PLIST, b""), FAILED)
+
+        # BUG: as above -- the conversion failing is indistinguishable from
+        # nothing being installed. Flipped in the following commit.
+        self.assertIsNone(installed)
 
 
 class DeadlineTests(unittest.TestCase):
