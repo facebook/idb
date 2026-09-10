@@ -53,6 +53,10 @@ extension FBSimulator {
     commandCache.resolve { FBSimulatorVideoRecordingCommands.commands(with: self) }
   }
 
+  var videoStream: SimulatorVideoStreamCommands {
+    SimulatorVideoStreamCommands.commands(with: self)
+  }
+
   public var launchCtl: SimulatorLaunchCtlCommands {
     SimulatorLaunchCtlCommands.commands(with: self)
   }
@@ -61,10 +65,22 @@ extension FBSimulator {
     FBXCTraceRecordCommands.commands(with: self)
   }
 
+  var instruments: SimulatorInstrumentsCommands {
+    SimulatorInstrumentsCommands.commands(with: self)
+  }
+
   // MARK: - Sim-only accessors
 
   public var lifecycle: SimulatorLifecycleCommands {
     commandCache.resolve { SimulatorLifecycleCommands.commands(with: self) }
+  }
+
+  public var power: SimulatorPowerCommands {
+    SimulatorPowerCommands.commands(with: self)
+  }
+
+  public var erase: SimulatorEraseCommands {
+    SimulatorEraseCommands.commands(with: self)
   }
 
   public var media: SimulatorMediaCommands {

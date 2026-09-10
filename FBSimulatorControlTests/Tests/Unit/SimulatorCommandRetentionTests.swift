@@ -21,9 +21,13 @@ enum SimulatorCommandAccessor: CaseIterable, Sendable {
   case log
   case processSpawn
   case videoRecording
+  case videoStream
   case launchCtl
   case xctraceRecord
+  case instruments
   case lifecycle
+  case power
+  case erase
   case media
   case keychain
   case privacy
@@ -60,12 +64,20 @@ enum SimulatorCommandAccessor: CaseIterable, Sendable {
       _ = simulator.processSpawn
     case .videoRecording:
       _ = simulator.videoRecording
+    case .videoStream:
+      _ = simulator.videoStream
     case .launchCtl:
       _ = simulator.launchCtl
     case .xctraceRecord:
       _ = simulator.xctraceRecord
+    case .instruments:
+      _ = simulator.instruments
     case .lifecycle:
       _ = simulator.lifecycle
+    case .power:
+      _ = simulator.power
+    case .erase:
+      _ = simulator.erase
     case .media:
       _ = simulator.media
     case .keychain:

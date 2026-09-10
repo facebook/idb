@@ -60,25 +60,6 @@ public final class SimulatorLifecycleCommands {
     try await SimulatorBootStrategy.boot(simulator, with: configuration)
   }
 
-  fileprivate func shutdown() async throws {
-    guard let simulator = self.simulator else {
-      throw FBWeakTargetError.simulator
-    }
-    try await SimulatorShutdownStrategy.shutdown(simulator)
-  }
-
-  fileprivate func reboot() async throws {
-    try await shutdown()
-    try await boot(FBSimulatorBootConfiguration.default)
-  }
-
-  fileprivate func erase() async throws {
-    guard let simulator = self.simulator else {
-      throw FBWeakTargetError.simulator
-    }
-    try await SimulatorEraseStrategy.erase(simulator)
-  }
-
   fileprivate func resolveState(_ state: FBiOSTargetState) async throws {
     guard let simulator = self.simulator else {
       throw FBWeakTargetError.simulator
@@ -212,27 +193,5 @@ extension FBSimulator: LifecycleCommands {
 
   public func resolveLeavesState(_ state: FBiOSTargetState) async throws {
     try await lifecycle.resolveLeavesState(state)
-  }
-}
-
-// MARK: - FBSimulator+PowerCommands
-
-extension FBSimulator: PowerCommands {
-
-  public func shutdown() async throws {
-    try await lifecycle.shutdown()
-  }
-
-  public func reboot() async throws {
-    try await lifecycle.reboot()
-  }
-}
-
-// MARK: - FBSimulator+EraseCommands
-
-extension FBSimulator: EraseCommands {
-
-  public func erase() async throws {
-    try await lifecycle.erase()
   }
 }

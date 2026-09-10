@@ -78,14 +78,6 @@ public final class FBSimulatorVideoRecordingCommands {
     }
     return try await video.stop()
   }
-
-  fileprivate func createStream(configuration: FBVideoStreamConfiguration, to consumer: any FBDataConsumer) async throws -> any FBVideoStream {
-    guard let simulator = self.simulator else {
-      throw FBWeakTargetError.simulator
-    }
-    let framebuffer = try await simulator.lifecycle.connectToFramebuffer()
-    return try await FBSimulatorVideoStream.start(framebuffer: framebuffer, configuration: configuration, to: consumer, logger: simulator.logger)
-  }
 }
 
 // MARK: - FBSimulator+VideoRecordingCommands
@@ -101,13 +93,4 @@ extension FBSimulator: VideoRecordingCommands {
   }
 
   public var honorsRecordingConfiguration: Bool { true }
-}
-
-// MARK: - FBSimulator+VideoStreamCommands
-
-extension FBSimulator: VideoStreamCommands {
-
-  public func createStream(configuration: FBVideoStreamConfiguration, to consumer: any FBDataConsumer) async throws -> any FBVideoStream {
-    try await videoRecording.createStream(configuration: configuration, to: consumer)
-  }
 }
