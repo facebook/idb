@@ -27,7 +27,9 @@ tautology.
 The reads answer for whichever application is frontmost, and on a simulator
 without a display that is only unambiguous when there is one candidate. So
 each test terminates every application the suite launches elsewhere, launches
-Settings afresh, and waits until the tree shows Settings' own rows.
+Settings afresh, and waits until the tree shows Settings' own rows. That is
+five commands before anything under test runs, which is why each test here is
+a journey over one command surface rather than one command.
 
 All of this needs the simulator's host to spawn inside the guest, so on a host
 without ``SimLaunchHostService`` every test here skips with that reason.
@@ -126,13 +128,17 @@ def _labels(document: Any) -> set[str]:
 
 
 class AccessibilityTests(IdbEndToEndTestCase):
+    # A labelled row of the Settings screen every test reads, found once by the
+    # setup that waits for the screen rather than again by each test.
+    control: dict[str, Any]
+
     async def asyncSetUp(self) -> None:
         await super().asyncSetUp()
         for bundle_id in (SAFARI_BUNDLE_ID, FIXTURE_APP_BUNDLE_ID, SETTINGS_BUNDLE_ID):
             await self.terminate_quietly(bundle_id)
         await self.idb("launch", SETTINGS_BUNDLE_ID)
         self.addAsyncCleanup(self.terminate_quietly, SETTINGS_BUNDLE_ID)
-        await self.some_control()
+        self.control = await self.some_control()
 
     async def describe_all(self, *extra: str) -> Any:
         return await self.idb_json(*DESCRIBE_ALL_ARGS, *extra)
@@ -187,38 +193,26 @@ class AccessibilityTests(IdbEndToEndTestCase):
             int(frame["y"] + frame["height"] / 2),
         )
 
-    async def test_describe_all_reports_settings_rows(self) -> None:
-        controls = _labelled_controls(await self.describe_all())
-        self.assertTrue(controls, "Settings should show labelled rows")
-        self.assertTrue(
-            all(_has_area(control) for control in controls),
-            "every reported control should cover a real area",
-        )
+    async def test_ui_describe_all_over_both_backends(self) -> None:
+        """Both backends read the same screen and each says which one it is.
 
-    async def test_the_host_backend_serves_and_reports_itself(self) -> None:
-        document = await self.complete_read("ax")
-
-        self.assertEqual(document["backend"], AX_BACKEND)
-        self.assertTrue(
-            _labelled_controls(document),
-            "the host accessibility backend should see Settings' rows",
-        )
-
-    async def test_the_guest_bridge_serves_and_reports_itself(self) -> None:
-        document = await self.complete_read("axbridge")
-
-        self.assertEqual(document["backend"], AXBRIDGE_BACKEND)
-        self.assertTrue(
-            _labelled_controls(document),
-            "the guest bridge should see Settings' rows",
-        )
-
-    async def test_the_two_backends_read_the_same_screen(self) -> None:
-        """The point of the bridge is that it answers the same question as the
-        host API, so the two reads of one screen must agree on what is on it."""
+        The point of the bridge is that it answers the same question as the
+        host API by an entirely different route, so one read from each has to
+        report its own backend, see Settings' rows, and agree with the other
+        about what is on screen.
+        """
         host = await self.complete_read("ax")
         bridge = await self.complete_read("axbridge")
 
+        self.assertEqual(host["backend"], AX_BACKEND)
+        self.assertEqual(bridge["backend"], AXBRIDGE_BACKEND)
+        for name, document in ((AX_BACKEND, host), (AXBRIDGE_BACKEND, bridge)):
+            controls = _labelled_controls(document)
+            self.assertTrue(controls, f"{name} should see Settings' rows")
+            self.assertTrue(
+                all(_has_area(control) for control in controls),
+                f"every control {name} reports should cover a real area",
+            )
         shared = _labels(host) & _labels(bridge)
         self.assertTrue(
             shared,
@@ -227,7 +221,7 @@ class AccessibilityTests(IdbEndToEndTestCase):
             f"{AXBRIDGE_BACKEND} saw {sorted(_labels(bridge))}",
         )
 
-    async def test_describe_all_accepts_key_selection_and_enrichers(self) -> None:
+    async def test_ui_describe_all_accepts_key_selection_and_enrichers(self) -> None:
         document = await self.describe_all(
             "--key",
             "AXLabel",
@@ -240,49 +234,46 @@ class AccessibilityTests(IdbEndToEndTestCase):
             _elements(document), "an enriched read should still report elements"
         )
 
-    async def test_describe_point_reports_the_element_under_it(self) -> None:
-        x, y = self.center(await self.some_control())
-        element = await self.idb_json("ui", "describe-point", str(x), str(y))
+    async def test_ui_describe_resolves_a_point_and_a_marker(self) -> None:
+        """The three ways to name one element, and what naming nothing does."""
+        marker = _label(self.control)
+        x, y = self.center(self.control)
+
         self.assertTrue(
-            element, "describe-point should report the element under the point"
+            await self.idb_json("ui", "describe-point", str(x), str(y)),
+            "describe-point should report the element under the point",
         )
-
-    async def test_describe_by_marker_finds_a_labelled_element(self) -> None:
-        marker = _label(await self.some_control())
-        element = await self.idb_json("ui", "describe", marker)
-        self.assertTrue(element, f"describe {marker!r} should report the element")
-
-    async def test_describe_by_marker_over_the_guest_bridge(self) -> None:
-        marker = _label(await self.some_control())
+        self.assertTrue(
+            await self.idb_json("ui", "describe", marker),
+            f"describe {marker!r} should report the element",
+        )
         document = await self.idb_json(
             "ui", "describe", marker, "--api", "axbridge", "--format", "complete"
         )
-
         self.assertEqual(document["backend"], AXBRIDGE_BACKEND)
         self.assertTrue(
             _elements(document["elements"]),
             f"the guest bridge should resolve the marker {marker!r}",
         )
 
-    async def test_describe_by_missing_marker_fails(self) -> None:
         await self.idb_expect_failure("ui", "describe", "idb-e2e-no-such-element")
 
-    async def test_tap_by_accessibility_point_and_by_marker(self) -> None:
-        control = await self.some_control()
-        x, y = self.center(control)
+    async def test_ui_tap_by_point_and_by_marker(self) -> None:
+        marker = _label(self.control)
+        x, y = self.center(self.control)
+
+        # First, while the marker is still on the root screen and resolves, so
+        # that what fails is the unmet expectation and not the lookup.
+        await self.idb_expect_failure(
+            "ui", "tap", marker, "--expected-value", "idb-e2e-value-it-does-not-have"
+        )
         await self.idb("ui", "tap", str(x), str(y), "--api", "ax")
         # Back to the root screen, rendered, before tapping the same row by name.
         await self.idb("terminate", SETTINGS_BUNDLE_ID)
         await self.idb("launch", SETTINGS_BUNDLE_ID)
         await self.some_control()
-        await self.idb("ui", "tap", _label(control))
+        await self.idb("ui", "tap", marker)
 
-    async def test_tap_by_marker_with_unmet_expected_value_fails(self) -> None:
-        marker = _label(await self.some_control())
-        await self.idb_expect_failure(
-            "ui", "tap", marker, "--expected-value", "idb-e2e-value-it-does-not-have"
-        )
-
-    async def test_scroll_the_frontmost_application(self) -> None:
+    async def test_ui_scroll_the_frontmost_application(self) -> None:
         await self.idb("ui", "scroll", "down")
         await self.idb("ui", "scroll", "up")
