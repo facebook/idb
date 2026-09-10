@@ -113,7 +113,7 @@ class ProvidedSimulatorTestCase: XCTestCase {
   /// The wait is unbounded, and the test's execution time allowance is what stops it: a harness
   /// that never finishes booting the simulator it promised is not something this can recover from.
   private static func waitUntilBootCompleted(_ simulator: FBSimulator) async throws {
-    try await SimulatorBootVerificationStrategy.verifySimulatorIsBooted(simulator)
+    try await verifySimulatorIsBooted(simulator)
   }
 
   /// Some harnesses lease simulators whose host does not run `SimLaunchHostService`, so any
