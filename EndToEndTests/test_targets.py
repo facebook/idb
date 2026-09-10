@@ -16,7 +16,6 @@ class TargetTests(IdbEndToEndTestCase):
 
         self.assertEqual(description["udid"], self.udid)
         self.assertEqual(description["target_type"], "simulator")
-        self.assertEqual(description["state"], "Booted")
         self.assertTrue(
             description["os_version"], "describe should report an OS version"
         )
@@ -27,6 +26,6 @@ class TargetTests(IdbEndToEndTestCase):
         self.assertGreater(dimensions["width"], 0)
         self.assertGreater(dimensions["height"], 0)
 
-    async def test_describe_agrees_with_simctl_about_the_state(self) -> None:
-        self.assertEqual(await self.simctl.state(), "Booted")
-        self.assertEqual((await self.idb_json("describe"))["state"], "Booted")
+        # simctl, not idb, is the ground truth for the state.
+        self.assertEqual(description["state"], await self.simctl.state())
+        self.assertEqual(description["state"], "Booted")
