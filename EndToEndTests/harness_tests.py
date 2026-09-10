@@ -37,6 +37,7 @@ from .harness import (
     HarnessError,
     IdbEndToEndTestCase,
     NotReady,
+    running_bundle_ids_from_listing,
     Simctl,
     STRICT_ENV,
     wait_until,
@@ -55,6 +56,14 @@ HOST_SERVICE_UNAVAILABLE = (
 LISTAPPS_PLIST = b'{ "com.apple.Preferences" = { CFBundleName = Settings; }; }'
 LISTAPPS_JSON = b'{"com.apple.Preferences": {"CFBundleName": "Settings"}}'
 FAILED = Completed(1, b"", b"the simulator is not booted")
+
+# `launchctl list` in the guest, tab separated, with a running app, an app that
+# has exited but is still listed, and a daemon that is not an app.
+LAUNCHCTL_LISTING = """PID\tStatus\tLabel
+81046\t0\tUIKitApplication:com.apple.mobilesafari[e334][rb-legacy]
+-\t0\tUIKitApplication:com.apple.Preferences[90ff][rb-legacy]
+392\t0\tcom.apple.backboardd
+"""
 
 Run = Callable[..., Awaitable[Completed]]
 
@@ -284,6 +293,17 @@ class InstalledBundleIdsTests(unittest.IsolatedAsyncioTestCase):
             await self.bundle_ids(Completed(0, LISTAPPS_PLIST, b""), FAILED)
 
         self.assertIn("could not be converted to JSON", str(raised.exception))
+
+
+class RunningBundleIdsTests(unittest.TestCase):
+    def test_only_an_app_with_a_process_is_running(self) -> None:
+        self.assertEqual(
+            running_bundle_ids_from_listing(LAUNCHCTL_LISTING),
+            {"com.apple.mobilesafari"},
+        )
+
+    def test_a_listing_with_no_apps_names_none(self) -> None:
+        self.assertEqual(running_bundle_ids_from_listing("PID\tStatus\tLabel\n"), set())
 
 
 class DeadlineTests(unittest.TestCase):

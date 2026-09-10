@@ -46,6 +46,7 @@ import atexit
 import enum
 import json
 import os
+import re
 import select
 import shutil
 import signal
@@ -257,6 +258,17 @@ class Simctl:
             )
         return set(json.loads(converted.stdout).keys())
 
+    async def running_bundle_ids(self) -> set[str]:
+        """Which apps the simulator itself has running, read from launchctl in
+        the guest rather than from idb."""
+        completed = await self.run("spawn", self.udid, "launchctl", "list")
+        if completed.returncode != 0:
+            raise HarnessError(
+                f"simctl could not list the simulator's services "
+                f"(rc={completed.returncode}): {completed.error_text}"
+            )
+        return running_bundle_ids_from_listing(completed.text)
+
     async def app_container(self, bundle_id: str, kind: str = "data") -> Path:
         """Where an installed app's container is on the host, so what idb wrote
         into it can be read without going back through idb."""
@@ -270,6 +282,28 @@ class Simctl:
         if not path:
             raise HarnessError(f"simctl reported no {kind} container for {bundle_id}")
         return Path(path)
+
+
+# launchctl labels an app's process ``UIKitApplication:<bundle id>[<token>]``.
+_APPLICATION_LABEL = re.compile(r"UIKitApplication:([^\[\s]+)")
+
+
+def running_bundle_ids_from_listing(listing: str) -> set[str]:
+    """The bundle ids of the apps a ``launchctl list`` listing shows running.
+
+    launchctl keeps listing an application that has exited, with ``-`` where
+    its PID was, so the label alone answers "has been launched at some point"
+    rather than "is running now" and only a listing with a process on it counts.
+    """
+    running: set[str] = set()
+    for line in listing.splitlines():
+        columns = line.split("\t")
+        if len(columns) != 3 or not columns[0].isdigit():
+            continue
+        found = _APPLICATION_LABEL.match(columns[2])
+        if found is not None:
+            running.add(found.group(1))
+    return running
 
 
 def _device_states(listing: dict[str, Any]) -> dict[str, str]:
