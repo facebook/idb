@@ -74,24 +74,53 @@ jobs:
     # cancelled create-release still blocks the upload legs.
     needs: [create-release]
     if: ${{ !cancelled() && (needs.create-release.result == 'success' || needs.create-release.result == 'skipped') }}
+    permissions:
+      contents: write
+      actions: read
     env:
       XCODEGEN_STRIP_XATTRS: 'false'
       RELEASE_TAG: ${{ startsWith(github.ref, 'refs/tags/v') && github.ref_name || inputs.version }}
     steps:
       - uses: actions/checkout@v5
+      # A release cut at a commit CI has already built ships CI's companion
+      # tarball rather than a rebuild: same tree, same packaging, and the
+      # bytes CI tested are the bytes users get. Keyed on exactly this commit
+      # and a fully successful CI run; anything else builds from scratch, as
+      # does a commit whose CI artifact has expired.
+      - name: Look for this commit's CI companion build
+        id: reuse
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          run_id=$(gh run list -R "$GITHUB_REPOSITORY" --workflow ci.yml --commit "$GITHUB_SHA" --status success --limit 1 --json databaseId --jq '.[0].databaseId // empty')
+          if [ -n "$run_id" ] && gh run download "$run_id" -R "$GITHUB_REPOSITORY" -n idb-companion -D reuse && [ -f reuse/idb-companion.macos-arm64.tar.gz ]; then
+            mv reuse/idb-companion.macos-arm64.tar.gz .
+            echo "reused=true" >> "$GITHUB_OUTPUT"
+            echo "Reusing the companion tarball from CI run $run_id for $GITHUB_SHA"
+          else
+            echo "reused=false" >> "$GITHUB_OUTPUT"
+            echo "No successful CI run with a companion artifact for $GITHUB_SHA; building"
+          fi
       - name: Install tools
+        if: steps.reuse.outputs.reused != 'true'
         run: brew install xcodegen protobuf swift-protobuf
       - name: Cache grpc-swift plugin
+        if: steps.reuse.outputs.reused != 'true'
         uses: actions/cache@v5
         with:
           path: Build/grpc-swift
           key: grpc-swift-1.27.5-${{ runner.os }}
       - name: Build everything and assemble the distribution
+        if: steps.reuse.outputs.reused != 'true'
         run: ./build.sh build all
       - name: Package
+        if: steps.reuse.outputs.reused != 'true'
+        run: tar -C Build/Distribution -czf idb-companion.macos-arm64.tar.gz .
+      # Digested here whichever way the tarball arrived, so the value the rest
+      # of the run sees is always that of the file being uploaded.
+      - name: Digest
         id: package
         run: |
-          tar -C Build/Distribution -czf idb-companion.macos-arm64.tar.gz .
           shasum -a 256 idb-companion.macos-arm64.tar.gz | tee idb-companion.macos-arm64.tar.gz.sha256
           echo "sha256=$(cut -d' ' -f1 idb-companion.macos-arm64.tar.gz.sha256)" >> "$GITHUB_OUTPUT"
       - name: Upload build artifact
