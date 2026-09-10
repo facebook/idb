@@ -8,7 +8,7 @@
 import FBControlCore
 import Foundation
 
-public struct SimulatorEraseCommands {
+public struct SimulatorEraseCommands: EraseCommands {
   private let simulator: FBSimulator
 
   public static func commands(with simulator: FBSimulator) -> SimulatorEraseCommands {

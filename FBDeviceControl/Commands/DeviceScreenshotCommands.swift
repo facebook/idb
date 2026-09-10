@@ -23,7 +23,7 @@ extension DeviceScreenshotError: LocalizedError {
   }
 }
 
-public struct DeviceScreenshotCommands {
+public struct DeviceScreenshotCommands: ScreenshotCommands {
   private let device: FBDevice
 
   public static func commands(with device: FBDevice) -> DeviceScreenshotCommands {

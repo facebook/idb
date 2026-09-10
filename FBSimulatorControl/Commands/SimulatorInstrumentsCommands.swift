@@ -8,7 +8,7 @@
 import FBControlCore
 import Foundation
 
-public struct SimulatorInstrumentsCommands {
+public struct SimulatorInstrumentsCommands: InstrumentsCommands {
   private let simulator: FBSimulator
 
   public static func commands(with simulator: FBSimulator) -> SimulatorInstrumentsCommands {

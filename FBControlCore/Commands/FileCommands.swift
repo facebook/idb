@@ -9,7 +9,7 @@ import Foundation
 
 /// Each method scopes the underlying file container to a closure body,
 /// guaranteeing that the container's resources are torn down when the body returns.
-public protocol FileCommands: AnyObject {
+public protocol FileCommands {
 
   func withFileCommandsForContainerApplication<R>(
     _ bundleID: String,

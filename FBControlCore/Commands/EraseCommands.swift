@@ -7,7 +7,7 @@
 
 import Foundation
 
-public protocol EraseCommands: AnyObject {
+public protocol EraseCommands {
 
   func erase() async throws
 }

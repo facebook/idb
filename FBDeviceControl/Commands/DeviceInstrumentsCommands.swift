@@ -8,7 +8,7 @@
 import FBControlCore
 import Foundation
 
-public struct DeviceInstrumentsCommands {
+public struct DeviceInstrumentsCommands: InstrumentsCommands {
   private let device: FBDevice
 
   public static func commands(with device: FBDevice) -> DeviceInstrumentsCommands {

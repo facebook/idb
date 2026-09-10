@@ -7,7 +7,7 @@
 
 import Foundation
 
-public protocol LocationCommands: AnyObject {
+public protocol LocationCommands {
 
   func overrideLocation(longitude: Double, latitude: Double) async throws
 }

@@ -8,7 +8,7 @@
 import FBControlCore
 import Foundation
 
-public struct SimulatorVideoStreamCommands {
+public struct SimulatorVideoStreamCommands: VideoStreamCommands {
   private let simulator: FBSimulator
 
   public static func commands(with simulator: FBSimulator) -> SimulatorVideoStreamCommands {

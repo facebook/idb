@@ -7,7 +7,7 @@
 
 import Foundation
 
-public final class FBXCTraceRecordCommands: FBiOSTargetCommand {
+public final class FBXCTraceRecordCommands: FBiOSTargetCommand, XCTraceRecordCommands {
 
   public let target: any FBiOSTarget
 
@@ -21,7 +21,7 @@ public final class FBXCTraceRecordCommands: FBiOSTargetCommand {
 
   // MARK: - Operations
 
-  public func startXctraceRecord(_ configuration: FBXCTraceRecordConfiguration, logger: any FBControlCoreLogger) async throws -> FBXCTraceRecordOperation {
+  public func startXctraceRecord(configuration: FBXCTraceRecordConfiguration, logger: any FBControlCoreLogger) async throws -> FBXCTraceRecordOperation {
     let shim = try await FBXCTestShimConfiguration.sharedShimConfiguration()
     return try await FBXCTraceRecordOperation.operation(with: target, configuration: configuration.withShim(shim), logger: logger)
   }

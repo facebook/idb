@@ -48,7 +48,7 @@ public final class DeviceLogOperation: LogOperation {
 
 // MARK: - DeviceLogCommands
 
-public struct DeviceLogCommands {
+public struct DeviceLogCommands: LogCommands {
   private let device: FBDevice
 
   public static func commands(with device: FBDevice) -> DeviceLogCommands {
@@ -61,7 +61,7 @@ public struct DeviceLogCommands {
 
   // MARK: - FBLogCommands
 
-  public func tailLog(arguments: [String], consumer: any FBDataConsumer) async throws -> DeviceLogOperation {
+  public func tailLog(arguments: [String], consumer: any FBDataConsumer) async throws -> any LogOperation {
     if !arguments.isEmpty {
       let unsupportedArgumentsMessage = "[DeviceLogCommands][rdar://38452839] Unsupported arguments: \(arguments)"
       if let data = unsupportedArgumentsMessage.data(using: .utf8) {

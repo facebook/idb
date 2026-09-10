@@ -19,7 +19,7 @@ public enum SimulatorCrashLogError: Error, LocalizedError {
   }
 }
 
-public final class SimulatorCrashLogCommands {
+public final class SimulatorCrashLogCommands: CrashLogCommands {
 
   private weak var simulator: FBSimulator?
   private let notifier: FBCrashLogNotifier

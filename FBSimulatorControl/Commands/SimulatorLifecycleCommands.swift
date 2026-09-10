@@ -34,7 +34,7 @@ extension SimulatorLifecycleError: LocalizedError {
   }
 }
 
-public final class SimulatorLifecycleCommands {
+public final class SimulatorLifecycleCommands: LifecycleCommands {
 
   // MARK: - Properties
 

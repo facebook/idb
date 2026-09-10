@@ -7,7 +7,7 @@
 
 import Foundation
 
-public protocol DebuggerCommands: AnyObject {
+public protocol DebuggerCommands {
 
   func launchDebugServer(
     forHostApplication application: FBBundleDescriptor,

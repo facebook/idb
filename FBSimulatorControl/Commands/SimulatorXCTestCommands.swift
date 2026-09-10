@@ -44,7 +44,7 @@ extension SimulatorXCTestError: LocalizedError {
   }
 }
 
-public final class SimulatorXCTestCommands {
+public final class SimulatorXCTestCommands: XCTestExtendedCommands {
 
   // MARK: - Properties
 

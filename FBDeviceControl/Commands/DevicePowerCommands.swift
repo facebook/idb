@@ -8,7 +8,7 @@
 import FBControlCore
 import Foundation
 
-public struct DevicePowerCommands {
+public struct DevicePowerCommands: PowerCommands {
   private let device: FBDevice
 
   public static func commands(with device: FBDevice) -> DevicePowerCommands {

@@ -24,7 +24,7 @@ extension SimulatorVideoRecordingCommandError: LocalizedError {
   }
 }
 
-public final class FBSimulatorVideoRecordingCommands {
+public final class FBSimulatorVideoRecordingCommands: VideoRecordingCommands {
 
   private weak var simulator: FBSimulator?
   private var video: FBSimulatorVideo?

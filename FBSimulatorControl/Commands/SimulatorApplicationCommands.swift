@@ -110,7 +110,7 @@ enum SimulatorApplicationInstallAttempt {
   case retry
 }
 
-public struct FBSimulatorApplicationCommands {
+public struct FBSimulatorApplicationCommands: ApplicationCommands {
 
   internal let simulator: FBSimulator
 

@@ -9,7 +9,7 @@
 import FBControlCore
 import Foundation
 
-public struct SimulatorLocationCommands {
+public struct SimulatorLocationCommands: LocationCommands {
 
   private let simulator: FBSimulator
 

@@ -7,7 +7,7 @@
 
 import Foundation
 
-public protocol PowerCommands: AnyObject {
+public protocol PowerCommands {
 
   func shutdown() async throws
 

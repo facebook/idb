@@ -36,7 +36,7 @@ extension DeviceDebuggerError: LocalizedError {
   }
 }
 
-public struct DeviceDebuggerCommands {
+public struct DeviceDebuggerCommands: DebuggerCommands {
   private let device: FBDevice
 
   public static func commands(with device: FBDevice) -> DeviceDebuggerCommands {

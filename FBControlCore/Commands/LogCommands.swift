@@ -17,7 +17,7 @@ public protocol LogOperation: AnyObject {
   func waitUntilCompleted() async throws
 }
 
-public protocol LogCommands: AnyObject {
+public protocol LogCommands {
 
   func tailLog(arguments: [String], consumer: any FBDataConsumer) async throws -> any LogOperation
 }

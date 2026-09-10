@@ -7,7 +7,7 @@
 
 import Foundation
 
-public protocol ApplicationLaunching: AnyObject {
+public protocol ApplicationLaunching {
 
   func launchApplication(_ configuration: FBApplicationLaunchConfiguration) async throws -> FBLaunchedApplication
 }

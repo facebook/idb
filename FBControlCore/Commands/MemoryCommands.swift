@@ -7,7 +7,7 @@
 
 import Foundation
 
-public protocol MemoryCommands: AnyObject {
+public protocol MemoryCommands {
 
   func simulateMemoryWarning() async throws
 }

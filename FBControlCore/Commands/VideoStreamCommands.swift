@@ -7,7 +7,7 @@
 
 import Foundation
 
-public protocol VideoStreamCommands: AnyObject {
+public protocol VideoStreamCommands {
 
   func createStream(configuration: FBVideoStreamConfiguration, to consumer: any FBDataConsumer) async throws -> any FBVideoStream
 }

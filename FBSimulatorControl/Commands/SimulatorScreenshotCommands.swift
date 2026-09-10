@@ -25,7 +25,7 @@ extension SimulatorScreenshotError: LocalizedError {
   }
 }
 
-public final class SimulatorScreenshotCommands {
+public final class SimulatorScreenshotCommands: ScreenshotCommands {
 
   private weak var simulator: FBSimulator?
   private var image: SimulatorImage?

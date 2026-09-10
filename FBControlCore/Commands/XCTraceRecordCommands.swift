@@ -7,7 +7,7 @@
 
 import Foundation
 
-public protocol XCTraceRecordCommands: AnyObject {
+public protocol XCTraceRecordCommands {
 
   func startXctraceRecord(
     configuration: FBXCTraceRecordConfiguration,

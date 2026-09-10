@@ -7,7 +7,7 @@
 
 import Foundation
 
-public protocol LifecycleCommands: AnyObject {
+public protocol LifecycleCommands {
 
   func resolveState(_ state: FBiOSTargetState) async throws
 

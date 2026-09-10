@@ -424,7 +424,7 @@ private class DeviceFileCommands_Symbols: AsyncFileContainer {
 
 // MARK: - DeviceFileCommands
 
-public final class DeviceFileCommands {
+public final class DeviceFileCommands: FileCommands {
   private weak var device: FBDevice?
   private let afcCalls: AFCCalls
 

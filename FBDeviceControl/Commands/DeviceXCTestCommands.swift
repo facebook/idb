@@ -34,7 +34,7 @@ extension DeviceXCTestError: LocalizedError {
   }
 }
 
-public final class DeviceXCTestCommands {
+public final class DeviceXCTestCommands: XCTestCommands {
   private(set) weak var device: FBDevice?
   private(set) var workingDirectory: String
   private(set) var processFetcher: FBProcessFetcher

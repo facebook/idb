@@ -20,7 +20,7 @@ public enum SimulatorMemoryError: Error, LocalizedError {
   }
 }
 
-public struct SimulatorMemoryCommands {
+public struct SimulatorMemoryCommands: MemoryCommands {
 
   private let simulator: FBSimulator
 

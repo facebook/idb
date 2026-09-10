@@ -58,7 +58,7 @@ private final class SimulatorDebugServer: FBDebugServer {
   }
 }
 
-public final class SimulatorDebuggerCommands {
+public final class SimulatorDebuggerCommands: DebuggerCommands {
 
   internal weak var simulator: FBSimulator?
   internal let debugServerPath: String

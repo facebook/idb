@@ -7,7 +7,7 @@
 
 import Foundation
 
-public protocol InstrumentsCommands: AnyObject {
+public protocol InstrumentsCommands {
 
   func startInstruments(
     configuration: FBInstrumentsConfiguration,

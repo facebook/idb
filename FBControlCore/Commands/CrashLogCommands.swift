@@ -7,7 +7,7 @@
 
 import Foundation
 
-public protocol CrashLogCommands: AnyObject {
+public protocol CrashLogCommands {
 
   func crashes(matching predicate: NSPredicate, useCache: Bool) async throws -> [FBCrashLogInfo]
 

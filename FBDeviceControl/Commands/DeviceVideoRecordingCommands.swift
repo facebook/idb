@@ -28,7 +28,7 @@ extension DeviceVideoRecordingCommandError: LocalizedError {
   }
 }
 
-public final class DeviceVideoRecordingCommands {
+public final class DeviceVideoRecordingCommands: VideoRecordingCommands {
   private weak var device: FBDevice?
   private var video: DeviceVideo?
 

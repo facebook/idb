@@ -120,7 +120,7 @@ private class DeviceLaunchedApplication: FBLaunchedApplication {
 
 // MARK: - DeviceApplicationCommands
 
-public final class DeviceApplicationCommands {
+public final class DeviceApplicationCommands: ApplicationCommands {
   fileprivate weak var device: FBDevice?
   private let deltaUpdateDirectory: URL
 

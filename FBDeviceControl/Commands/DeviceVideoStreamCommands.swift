@@ -8,7 +8,7 @@
 @preconcurrency import FBControlCore
 import Foundation
 
-public struct DeviceVideoStreamCommands {
+public struct DeviceVideoStreamCommands: VideoStreamCommands {
   private let device: FBDevice
 
   public static func commands(with device: FBDevice) -> DeviceVideoStreamCommands {

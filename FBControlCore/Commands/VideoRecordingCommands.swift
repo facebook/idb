@@ -28,7 +28,7 @@ public final class FBVideoRecordingHandle: FBVideoRecording {
   }
 }
 
-public protocol VideoRecordingCommands: AnyObject {
+public protocol VideoRecordingCommands {
 
   func startRecording(toFile filePath: String) async throws -> any FBVideoRecording
 

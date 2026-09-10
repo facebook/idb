@@ -20,7 +20,7 @@ public enum SimulatorLogError: Error, LocalizedError {
   }
 }
 
-public struct SimulatorLogCommands {
+public struct SimulatorLogCommands: LogCommands {
 
   private let simulator: FBSimulator
 

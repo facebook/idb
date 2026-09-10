@@ -18,7 +18,7 @@ public struct FBScreenshotFormat: RawRepresentable, Hashable, Sendable {
   public static let png = FBScreenshotFormat(rawValue: "png")
 }
 
-public protocol ScreenshotCommands: AnyObject {
+public protocol ScreenshotCommands {
 
   /// Captures the screen as `configuration` describes.
   func takeScreenshot(configuration: FBScreenshotConfiguration) async throws -> FBScreenshotResult

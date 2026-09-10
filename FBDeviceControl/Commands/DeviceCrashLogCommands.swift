@@ -34,7 +34,7 @@ extension DeviceCrashLogError: LocalizedError {
   }
 }
 
-public final class DeviceCrashLogCommands {
+public final class DeviceCrashLogCommands: CrashLogCommands {
   private weak var device: FBDevice?
   private let store: FBCrashLogStore
   /// Resolved at the point of use: `FBAFCConnection.defaultCalls` dlopens MobileDevice on first

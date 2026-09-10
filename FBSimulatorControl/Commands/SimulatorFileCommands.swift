@@ -28,7 +28,7 @@ extension SimulatorFileError: LocalizedError {
   }
 }
 
-public final class SimulatorFileCommands {
+public final class SimulatorFileCommands: FileCommands {
 
   private let simulator: FBSimulator
 
