@@ -40,6 +40,21 @@ jobs:
           pip install pytest
           python -m pytest --pyargs idb -o python_files='*_tests.py'
 
+  pure-python:
+    name: Pure Python tests (no simulator)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      # Logic that needs no simulator, no companion and no idb. Run here rather
+      # than inside the jobs that consume it, so that a red line in the
+      # end-to-end job always means idb is broken.
+      - name: Test the CI scripts
+        run: python -m unittest discover -s CI -p '*_tests.py' -t . -v
+
   mac-frameworks:
     name: Build frameworks (macOS)
     runs-on: macos-26
@@ -86,17 +101,11 @@ jobs:
       # The smoke suite takes a booted simulator from its environment and does
       # not boot one itself, so this job is the harness that supplies it, named
       # by DEVICE_UDID (forwarded through xcodebuild's TEST_RUNNER_ prefix).
-      # `bootstatus` waits for the boot to finish: a simulator still coming up
-      # has no SpringBoard, and work against one waits rather than failing. The
-      # boot suite creates its own and needs no provisioning; the unit suite
+      # The boot suite creates its own and needs no provisioning; the unit suite
       # needs no simulator at all.
-      - name: Boot a simulator for the smoke suite
+      - name: Provision a simulator for the smoke suite
         if: matrix.target == 'FBSimulatorControlSmokeTests'
-        run: |
-          UDID=$(xcrun simctl create smoke-test-provided "iPhone 16")
-          xcrun simctl boot "$UDID"
-          xcrun simctl bootstatus "$UDID"
-          echo "TEST_RUNNER_DEVICE_UDID=$UDID" >> "$GITHUB_ENV"
+        run: python3 -m CI.provision_simulator --name smoke-test-provided --env-prefix TEST_RUNNER_ >> "$GITHUB_ENV"
       - name: Test ${{ matrix.target }}
         run: ./build.sh test ${{ matrix.target }}
       # Hosted runners otherwise yield nothing beyond a failing test's name;
@@ -165,22 +174,8 @@ jobs:
       # named by DEVICE_SET_PATH. Both are required, so the suite can never run
       # against a simulator other than the one created here. A device set of
       # this job's own keeps it clear of anything else on the runner.
-      # `bootstatus` waits for the boot to finish rather than for it to start.
-      # The runtime is named rather than defaulted: idb is tested against the
-      # newest iOS the image offers, not against whatever a hardcoded device
-      # type happens to pair with once the image moves on.
-      - name: Boot a simulator
-        run: |
-          DEVICE_SET_PATH="$RUNNER_TEMP/end-to-end-device-set"
-          mkdir -p "$DEVICE_SET_PATH"
-          SELECTION=$(python3 EndToEndTests/newest_simulator.py)
-          read -r DEVICE_TYPE RUNTIME <<< "$SELECTION"
-          echo "Creating $DEVICE_TYPE on $RUNTIME"
-          UDID=$(xcrun simctl --set "$DEVICE_SET_PATH" create end-to-end-provided "$DEVICE_TYPE" "$RUNTIME")
-          xcrun simctl --set "$DEVICE_SET_PATH" boot "$UDID"
-          xcrun simctl --set "$DEVICE_SET_PATH" bootstatus "$UDID"
-          echo "DEVICE_SET_PATH=$DEVICE_SET_PATH" >> "$GITHUB_ENV"
-          echo "DEVICE_UDID=$UDID" >> "$GITHUB_ENV"
+      - name: Provision a simulator
+        run: python3 -m CI.provision_simulator --name end-to-end-provided --device-set "$RUNNER_TEMP/end-to-end-device-set" >> "$GITHUB_ENV"
       # Strict: a hosted runner has everything the suite needs, so a skip here
       # would hide a broken environment rather than report a capability gap.
       - name: Run the end-to-end suite
