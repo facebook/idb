@@ -106,4 +106,8 @@ extension FBDevice {
   public var socketForwarding: DeviceSocketForwardingCommands {
     DeviceSocketForwardingCommands.commands(with: self)
   }
+
+  public var springboard: DeviceSpringboardCommands {
+    DeviceSpringboardCommands.commands(with: self)
+  }
 }

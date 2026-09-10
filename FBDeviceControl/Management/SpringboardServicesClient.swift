@@ -307,39 +307,3 @@ class SpringboardServicesIconContainer: AsyncFileContainer {
     return SpringboardIconLayout(pages: format)
   }
 }
-
-extension FBDevice {
-
-  public func getSpringboardIconLayout() async throws -> SpringboardIconLayout {
-    try await withSpringboardServicesClient { client in
-      try await client.getIconLayout()
-    }
-  }
-
-  public func setSpringboardIconLayout(_ layout: SpringboardIconLayout) async throws {
-    try await withSpringboardServicesClient { client in
-      try await client.setIconLayout(layout)
-    }
-  }
-
-  public func getRawSpringboardIconState(formatVersion: UInt) async throws -> AnyObject {
-    try await withSpringboardServicesClient { client in
-      try await client.getRawIconState(formatVersion: formatVersion)
-    }
-  }
-
-  public func getSpringboardIconMetrics() async throws -> [String: Any] {
-    try await withSpringboardServicesClient { client in
-      try await client.getHomeScreenIconMetrics()
-    }
-  }
-
-  private func withSpringboardServicesClient<R>(
-    body: (SpringboardServicesClient) async throws -> R
-  ) async throws -> R {
-    return try await withServiceConnection(SpringboardServicesClient.serviceName) { connection in
-      let client = SpringboardServicesClient(connection: connection, logger: logger)
-      return try await body(client)
-    }
-  }
-}

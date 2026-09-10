@@ -35,6 +35,7 @@ enum DeviceCommandAccessor: CaseIterable, Sendable {
   case debugSymbols
   case developerDiskImage
   case socketForwarding
+  case springboard
 
   func resolve(on device: FBDevice) {
     switch self {
@@ -82,6 +83,8 @@ enum DeviceCommandAccessor: CaseIterable, Sendable {
       _ = device.developerDiskImage
     case .socketForwarding:
       _ = device.socketForwarding
+    case .springboard:
+      _ = device.springboard
     }
   }
 }
