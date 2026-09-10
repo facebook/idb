@@ -43,6 +43,9 @@ enum SimulatorCommandAccessor: CaseIterable, Sendable {
   case repl
   case notification
   case memory
+  case audio
+  case runtimeTools
+  case bootstrapPorts
 
   func resolve(on simulator: FBSimulator) {
     switch self {
@@ -108,6 +111,12 @@ enum SimulatorCommandAccessor: CaseIterable, Sendable {
       _ = simulator.notification
     case .memory:
       _ = simulator.memory
+    case .audio:
+      _ = simulator.audio
+    case .runtimeTools:
+      _ = simulator.runtimeTools
+    case .bootstrapPorts:
+      _ = simulator.bootstrapPorts
     }
   }
 }

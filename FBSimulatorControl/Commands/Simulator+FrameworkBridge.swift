@@ -46,7 +46,7 @@ extension FBSimulator {
       throw SimulatorFrameworkBridgeError.binaryMissing
     }
 
-    let output = try await launchProcessConsumingOutput(
+    let output = try await runtimeTools.launchConsumingOutput(
       launchPath: helperPath,
       arguments: [service, action] + arguments)
     guard output.exitCode == 0 else {

@@ -142,4 +142,16 @@ extension FBSimulator {
   public var memory: SimulatorMemoryCommands {
     SimulatorMemoryCommands.commands(with: self)
   }
+
+  public var audio: SimulatorAudioCommands {
+    SimulatorAudioCommands.commands(with: self)
+  }
+
+  public var runtimeTools: SimulatorRuntimeToolCommands {
+    SimulatorRuntimeToolCommands.commands(with: self)
+  }
+
+  public var bootstrapPorts: SimulatorBootstrapPortCommands {
+    SimulatorBootstrapPortCommands.commands(with: self)
+  }
 }

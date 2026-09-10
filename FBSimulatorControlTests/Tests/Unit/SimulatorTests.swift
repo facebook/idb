@@ -177,7 +177,7 @@ final class SimulatorTests: XCTestCase {
     stubDevice.lookupShouldFail = false
     let sim = Self.createSimulator(with: stubDevice)
 
-    let port = try sim.lookupBootstrapPortNamed("com.apple.testservice")
+    let port = try sim.bootstrapPorts.lookup(named: "com.apple.testservice")
 
     XCTAssertEqual(try XCTUnwrap(port).uint32Value, 12345, "Returned port number should match the looked-up port")
   }
@@ -189,7 +189,7 @@ final class SimulatorTests: XCTestCase {
     stubDevice.lookupShouldFail = false
     let sim = Self.createSimulator(with: stubDevice)
 
-    XCTAssertThrowsError(try sim.lookupBootstrapPortNamed("com.apple.nonexistent"), "No port should be produced when MACH_PORT_NULL is returned") { error in
+    XCTAssertThrowsError(try sim.bootstrapPorts.lookup(named: "com.apple.nonexistent"), "No port should be produced when MACH_PORT_NULL is returned") { error in
       XCTAssertNotEqual(
         (error as NSError).domain, "FBSimulatorTestDomain",
         "A null port is not a lookup failure - the device reported no error of its own")
@@ -200,7 +200,7 @@ final class SimulatorTests: XCTestCase {
     stubDevice.lookupShouldFail = true
     let sim = Self.createSimulator(with: stubDevice)
 
-    XCTAssertThrowsError(try sim.lookupBootstrapPortNamed("com.apple.failing"), "Error should be populated when lookup fails") { error in
+    XCTAssertThrowsError(try sim.bootstrapPorts.lookup(named: "com.apple.failing"), "Error should be populated when lookup fails") { error in
       XCTAssertEqual((error as NSError).domain, "FBSimulatorTestDomain", "The device's own lookup error should surface")
     }
   }

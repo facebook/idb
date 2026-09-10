@@ -156,18 +156,31 @@ public enum SimulatorAudioError: Error, LocalizedError {
   }
 }
 
-// MARK: - FBSimulator+Audio
+/// Reads and moves the simulated device's audio state.
+public struct SimulatorAudioCommands {
 
-extension FBSimulator {
+  private let simulator: FBSimulator
 
-  /// The path of this simulator's audio settings file.
-  var audioSettingsPath: String? {
-    dataDirectory.map { ($0 as NSString).appendingPathComponent(SimulatorAudioSettings.relativePath) }
+  // MARK: - Initializers
+
+  public static func commands(with simulator: FBSimulator) -> SimulatorAudioCommands {
+    SimulatorAudioCommands(simulator: simulator)
+  }
+
+  internal init(simulator: FBSimulator) {
+    self.simulator = simulator
+  }
+
+  // MARK: - Settings
+
+  /// The path of the simulator's audio settings file.
+  var settingsPath: String? {
+    simulator.dataDirectory.map { ($0 as NSString).appendingPathComponent(SimulatorAudioSettings.relativePath) }
   }
 
   /// The simulated device's current audio settings.
-  public func audioSettings() async throws -> SimulatorAudioSettings {
-    guard let path = audioSettingsPath else {
+  public func settings() async throws -> SimulatorAudioSettings {
+    guard let path = settingsPath else {
       throw SimulatorAudioError.noDataDirectory
     }
     return try SimulatorAudioSettings.settings(atPath: path)
@@ -187,7 +200,7 @@ extension FBSimulator {
   /// button press drives. Writing the settings file directly would not do: `CoreSimulatorBridge` is its only writer, and a
   /// guest app watches the *containing directory* for entry changes rather than the file itself, so
   /// only the bridge's atomic replace makes an already-running app re-read it.
-  public func updateAudioSettings(_ update: FBSimulatorAudioSettingsUpdate) async throws {
+  public func updateSettings(_ update: FBSimulatorAudioSettingsUpdate) async throws {
     if let volume = update.volume {
       try publish(
         state: try SimulatorAudioSettings.volumeNotificationState(for: volume),
@@ -201,7 +214,7 @@ extension FBSimulator {
   }
 
   private func publish(state: UInt64, on notificationName: String) throws {
-    try device.darwinNotificationSetState(state, name: notificationName)
-    try device.postDarwinNotification(notificationName)
+    try simulator.device.darwinNotificationSetState(state, name: notificationName)
+    try simulator.device.postDarwinNotification(notificationName)
   }
 }

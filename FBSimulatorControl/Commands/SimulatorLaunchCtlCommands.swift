@@ -222,7 +222,7 @@ public final class SimulatorLaunchCtlCommands: LaunchCtlCommands {
   }
 
   private func run(_ command: Command) async throws -> String {
-    let output = try await simulator.launchProcessConsumingOutput(launchPath: Self.launchCtlLaunchPath(for: simulator), arguments: command.arguments)
+    let output = try await simulator.runtimeTools.launchConsumingOutput(launchPath: Self.launchCtlLaunchPath(for: simulator), arguments: command.arguments)
     return try SimulatorLaunchCtlCommands.stdout(orThrowFrom: output, command: command, logger: simulator.logger)
   }
 

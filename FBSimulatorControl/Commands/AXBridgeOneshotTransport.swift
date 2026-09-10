@@ -15,7 +15,7 @@ struct AXBridgeOneshotTransport: AXBridgeTransport {
     guard let helperPath = simulator.frameworkBridgePath else {
       throw AXBridgeError.bridgeUnavailable
     }
-    let output = try await simulator.launchProcessConsumingOutput(
+    let output = try await simulator.runtimeTools.launchConsumingOutput(
       launchPath: helperPath,
       arguments: request.arguments
     )

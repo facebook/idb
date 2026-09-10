@@ -198,37 +198,3 @@ public final class FBSimulator: FBiOSTarget, Hashable, CustomStringConvertible, 
     ((device.dataPath() ?? "") as NSString).appendingPathComponent("fbsimulatorcontrol")
   }
 }
-
-// MARK: - Healthcheck Helpers
-
-extension FBSimulator {
-
-  /// Bootstrap-namespace lookup for a Mach port name in the simulator. A live XPC round-trip to
-  /// the CoreSimulator daemon (`SimDevice.lookup` is not cached).
-  ///
-  /// - Returns: the looked-up Mach port.
-  /// - Throws: the device's own error if the lookup failed, or `SimulatorPortLookupError` when
-  ///   the daemon reported no port without reporting an error.
-  public func lookupBootstrapPortNamed(_ name: String) throws -> NSNumber {
-    var error: NSError?
-    let port = device.lookup(name, error: &error)
-    // The port is checked before the error: CoreSimulator is unannotated private API, and a
-    // populated error alongside a valid port is a success.
-    guard port != mach_port_t(MACH_PORT_NULL) else {
-      throw error ?? SimulatorPortLookupError.portNotFound(name: name)
-    }
-    return NSNumber(value: port)
-  }
-}
-
-/// The way a bootstrap-port lookup fails without the daemon reporting an error of its own.
-public enum SimulatorPortLookupError: Error, LocalizedError {
-  case portNotFound(name: String)
-
-  public var errorDescription: String? {
-    switch self {
-    case let .portNotFound(name):
-      return "No mach port named \(name) is registered in the simulator's bootstrap namespace"
-    }
-  }
-}

@@ -22,9 +22,22 @@ public struct FBInSimulatorToolOutput: Sendable {
   }
 }
 
-// MARK: - In-Simulator Tool Spawning
+/// Spawns executables inside the simulator, capturing what they write.
+public struct SimulatorRuntimeToolCommands {
 
-extension FBSimulator {
+  private let simulator: FBSimulator
+
+  // MARK: - Initializers
+
+  public static func commands(with simulator: FBSimulator) -> SimulatorRuntimeToolCommands {
+    SimulatorRuntimeToolCommands(simulator: simulator)
+  }
+
+  internal init(simulator: FBSimulator) {
+    self.simulator = simulator
+  }
+
+  // MARK: - Spawning
 
   /// Runs a tool vendored by the simulator runtime (`relativePath` is relative to the RuntimeRoot, e.g.
   /// `usr/bin/heap`) against the booted simulator, capturing its stdout, stderr and exit code.
@@ -40,24 +53,24 @@ extension FBSimulator {
   ///
   /// The spawn runs in the CoreSimulator domain via `launchProcess`. Exit codes
   /// are not interpreted here — callers decide which codes are acceptable.
-  public func runRuntimeTool(
+  public func run(
     _ relativePath: String,
     arguments: [String] = [],
     environment: [String: String] = [:]
   ) async throws -> FBInSimulatorToolOutput {
     let launchPath = try runtimeExecutablePath(relativePath)
-    return try await launchProcessConsumingOutput(launchPath: launchPath, arguments: arguments, environment: environment)
+    return try await launchConsumingOutput(launchPath: launchPath, arguments: arguments, environment: environment)
   }
 
   /// Spawns an executable inside the simulator (the CoreSimulator domain, via
   /// `launchProcess`) and captures its stdout, stderr and exit code.
   ///
   /// `launchPath` is used verbatim: `SimDevice` resolves it against the host
-  /// filesystem, not the RuntimeRoot. Use `runRuntimeTool` for runtime-vendored
+  /// filesystem, not the RuntimeRoot. Use `run` for runtime-vendored
   /// tools; use this directly only for host executables (e.g. `/bin/sh`, which
   /// the runtime does not ship). Exit codes are not interpreted — callers decide
   /// which are acceptable.
-  func launchProcessConsumingOutput(
+  func launchConsumingOutput(
     launchPath: String,
     arguments: [String] = [],
     environment: [String: String] = [:]
@@ -77,7 +90,7 @@ extension FBSimulator {
       mode: .default
     )
 
-    let process = try await processSpawn.launchProcess(configuration)
+    let process = try await simulator.processSpawn.launchProcess(configuration)
     let exitCode = try await bridgeFBFuture(process.exitCode)
 
     return FBInSimulatorToolOutput(
@@ -90,7 +103,7 @@ extension FBSimulator {
   /// Resolves an executable vendored by the simulator runtime to its on-disk
   /// path, validating that the binary exists.
   private func runtimeExecutablePath(_ relativePath: String) throws -> String {
-    guard let root = device.runtime.root else {
+    guard let root = simulator.device.runtime.root else {
       throw SimulatorLogError.runtimeRootUnavailable
     }
     let path = (root as NSString).appendingPathComponent(relativePath)

@@ -114,7 +114,7 @@ class DefaultsModificationStrategy {
 
   fileprivate func run(_ command: Command) async throws -> NSString {
     let launchPath = defaultsBinary
-    let output = try await simulator.launchProcessConsumingOutput(launchPath: launchPath, arguments: command.arguments)
+    let output = try await simulator.runtimeTools.launchConsumingOutput(launchPath: launchPath, arguments: command.arguments)
     return try DefaultsModificationStrategy.stdout(orThrowFrom: output, command: command, logger: simulator.logger)
   }
 
