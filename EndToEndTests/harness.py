@@ -63,13 +63,15 @@ import tempfile
 import time
 import unittest
 from pathlib import Path
-from typing import Any, NoReturn, Sequence
+from typing import Any, Awaitable, Callable, NoReturn, Sequence, TypeVar
 
 DEVICE_UDID_ENV = "DEVICE_UDID"
 DEVICE_SET_PATH_ENV = "DEVICE_SET_PATH"
 IDB_BIN_ENV = "IDB_BIN"
 IDB_COMPANION_PATH_ENV = "IDB_COMPANION_PATH"
 STRICT_ENV = "IDB_E2E_STRICT"
+
+T = TypeVar("T")
 
 # The app the companion ships for `idb-repl app` to host: an arm64 simulator app
 # beside the companion on every platform that builds it, so it doubles as the
@@ -100,6 +102,10 @@ COMPANION_UNREACHABLE_MARKERS = ("Failed to connect to companion",)
 ACCESSIBILITY_NOT_READY_MARKER = "No translation object returned"
 ACCESSIBILITY_PROBE_ARGS = ("ui", "describe-all", "--json")
 
+# How often a poll asks again. Every wait here is for something that takes
+# seconds to tens of seconds, so this is far below any of their budgets.
+POLL_INTERVAL_SECONDS = 1.0
+
 COMPANION_READY_TIMEOUT_SECONDS = 180.0
 ACCESSIBILITY_READY_TIMEOUT_SECONDS = 180.0
 DEFAULT_COMMAND_TIMEOUT_SECONDS = 120.0
@@ -112,6 +118,45 @@ class HarnessError(Exception):
 
 class CompanionDied(HarnessError):
     """The companion is no longer serving, so nothing after it can be tested."""
+
+
+class NotReady(Exception):
+    """What a poll raises while the thing it waits for has not happened yet."""
+
+
+class Deadline:
+    """A bounded wait, stated once rather than recomputed at each check."""
+
+    def __init__(self, seconds: float) -> None:
+        self.seconds = seconds
+        self._at = time.monotonic() + seconds
+
+    @property
+    def remaining(self) -> float:
+        return self._at - time.monotonic()
+
+    @property
+    def passed(self) -> bool:
+        return self.remaining <= 0
+
+
+async def wait_until(what: str, timeout: float, poll: Callable[[], Awaitable[T]]) -> T:
+    """Poll until it produces a value, failing with what it was still waiting for.
+
+    A simulator comes up in stages that nothing announces, so every wait here
+    is a poll. What differs between them is only the question asked and how
+    long it is worth asking, which is what a caller supplies.
+    """
+    deadline = Deadline(timeout)
+    while True:
+        try:
+            return await poll()
+        except NotReady as not_ready:
+            if deadline.passed:
+                raise HarnessError(
+                    f"{what} within {timeout:.0f}s: {not_ready}"
+                ) from None
+        await asyncio.sleep(POLL_INTERVAL_SECONDS)
 
 
 class FailureKind(enum.Enum):
@@ -326,20 +371,22 @@ class Companion:
         # serving; anything before that is not the report.
         stdout = self.process.stdout
         assert stdout is not None
-        deadline = time.monotonic() + COMPANION_READY_TIMEOUT_SECONDS
+        deadline = Deadline(COMPANION_READY_TIMEOUT_SECONDS)
         while True:
-            remaining = deadline - time.monotonic()
+            remaining = deadline.remaining
             if remaining <= 0:
                 raise HarnessError(
                     f"The companion did not report ready within "
-                    f"{COMPANION_READY_TIMEOUT_SECONDS:.0f}s; log: {self.log_excerpt()}"
+                    f"{deadline.seconds:.0f}s; log: {self.log_excerpt()}"
                 )
             if self.process.poll() is not None:
                 raise HarnessError(
                     f"The companion exited with {self.process.returncode} before "
                     f"reporting ready; log: {self.log_excerpt()}"
                 )
-            ready, _, _ = select.select([stdout], [], [], min(remaining, 1.0))
+            ready, _, _ = select.select(
+                [stdout], [], [], min(remaining, POLL_INTERVAL_SECONDS)
+            )
             if not ready:
                 continue
             line = stdout.readline()
@@ -404,8 +451,8 @@ async def wait_until_accessibility_is_serving(
     it begins serving, so the probe is the read itself, run once for the suite
     rather than left for whichever test happens to go first to discover.
     """
-    deadline = time.monotonic() + ACCESSIBILITY_READY_TIMEOUT_SECONDS
-    while True:
+
+    async def probe() -> None:
         completed = await run(
             idb_argv(environment, companion, *ACCESSIBILITY_PROBE_ARGS),
             timeout=DEFAULT_COMMAND_TIMEOUT_SECONDS,
@@ -427,13 +474,13 @@ async def wait_until_accessibility_is_serving(
                 f"that is not the simulator still coming up "
                 f"(rc={completed.returncode}): {completed.error_text}"
             )
-        if time.monotonic() >= deadline:
-            raise HarnessError(
-                f"The simulator had no translation object to serve within "
-                f"{ACCESSIBILITY_READY_TIMEOUT_SECONDS:.0f}s. It is booted but "
-                f"not serving reads."
-            )
-        await asyncio.sleep(1.0)
+        raise NotReady("it has no translation object to serve")
+
+    await wait_until(
+        "The simulator did not begin serving accessibility reads",
+        ACCESSIBILITY_READY_TIMEOUT_SECONDS,
+        probe,
+    )
 
 
 _environment: Environment | None = None

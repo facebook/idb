@@ -8,9 +8,9 @@
 ``fail_or_skip_for`` decides what a non-zero ``idb`` exit is reported as, and
 every test in the suite reaches its own verdict through it. It reads nothing
 but the companion and reports through ``fail`` and ``skipTest``, so it can be
-called with a stand-in for the test case. Reading SpringBoard's pid out of a
-Deciding that a companion has died and the run should end is likewise pure.
-Both run anywhere, unlike the rest of the suite.
+called with a stand-in for the test case. Deciding that a companion has died
+and the run should end, and polling until something is ready, are likewise
+pure. All of them run anywhere, unlike the rest of the suite.
 
 Named ``harness_tests`` rather than ``test_harness`` deliberately. The
 end-to-end job discovers its tests with ``unittest discover``, whose default
@@ -28,12 +28,17 @@ from pathlib import Path
 from typing import NoReturn
 from unittest import mock
 
+from . import harness
 from .harness import (
     Companion,
     CompanionDied,
     Completed,
+    Deadline,
+    HarnessError,
     IdbEndToEndTestCase,
+    NotReady,
     STRICT_ENV,
+    wait_until,
 )
 
 CONNECTION_REFUSED = (
@@ -231,6 +236,82 @@ class DeadCompanionStopsTheSuiteTests(unittest.TestCase):
         self.assertEqual(len(result.errors), 1)
         self.assertIn("exited with 1", result.errors[0][1])
         self.assertTrue(result.shouldStop)
+
+
+class DeadlineTests(unittest.TestCase):
+    def test_a_deadline_in_the_future_has_not_passed(self) -> None:
+        deadline = Deadline(60.0)
+
+        self.assertFalse(deadline.passed)
+        self.assertGreater(deadline.remaining, 0)
+        self.assertLessEqual(deadline.remaining, 60.0)
+
+    def test_a_deadline_of_no_time_has_passed(self) -> None:
+        deadline = Deadline(0.0)
+
+        self.assertTrue(deadline.passed)
+        self.assertLessEqual(deadline.remaining, 0)
+
+
+@mock.patch.object(harness, "POLL_INTERVAL_SECONDS", 0.0)
+class WaitUntilTests(unittest.IsolatedAsyncioTestCase):
+    """What a poll can say, and what each answer does to the wait."""
+
+    async def test_a_poll_that_is_ready_returns_its_value(self) -> None:
+        asked = 0
+
+        async def poll() -> str:
+            nonlocal asked
+            asked += 1
+            return "ready"
+
+        self.assertEqual(await wait_until("Never", 60.0, poll), "ready")
+        self.assertEqual(asked, 1)
+
+    async def test_a_poll_is_asked_again_until_it_is_ready(self) -> None:
+        answers = [NotReady("still coming up"), NotReady("still coming up"), "ready"]
+
+        async def poll() -> str:
+            answer = answers.pop(0)
+            if isinstance(answer, NotReady):
+                raise answer
+            return answer
+
+        self.assertEqual(await wait_until("Never", 60.0, poll), "ready")
+        self.assertEqual(answers, [])
+
+    async def test_the_timeout_names_what_it_was_waiting_for(self) -> None:
+        async def poll() -> str:
+            raise NotReady("it has no translation object to serve")
+
+        with self.assertRaises(HarnessError) as raised:
+            await wait_until("The simulator did not begin serving", 0.0, poll)
+
+        self.assertEqual(
+            str(raised.exception),
+            "The simulator did not begin serving within 0s: "
+            "it has no translation object to serve",
+        )
+
+    async def test_the_poll_is_asked_once_before_the_deadline_is_read(self) -> None:
+        asked = 0
+
+        async def poll() -> str:
+            nonlocal asked
+            asked += 1
+            return "ready"
+
+        self.assertEqual(await wait_until("Never", 0.0, poll), "ready")
+        self.assertEqual(asked, 1)
+
+    async def test_a_failure_that_is_not_not_ready_is_not_waited_out(self) -> None:
+        async def poll() -> str:
+            raise HarnessError("the companion is gone")
+
+        with self.assertRaises(HarnessError) as raised:
+            await wait_until("Never", 60.0, poll)
+
+        self.assertEqual(str(raised.exception), "the companion is gone")
 
 
 if __name__ == "__main__":

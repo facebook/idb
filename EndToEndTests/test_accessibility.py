@@ -35,15 +35,16 @@ without ``SimLaunchHostService`` every test here skips with that reason.
 
 from __future__ import annotations
 
-import asyncio
 import json
-import time
 from typing import Any
 
 from .harness import (
     ACCESSIBILITY_NOT_READY_MARKER,
     FIXTURE_APP_BUNDLE_ID,
+    HarnessError,
     IdbEndToEndTestCase,
+    NotReady,
+    wait_until,
 )
 
 SETTINGS_BUNDLE_ID = "com.apple.Preferences"
@@ -160,27 +161,24 @@ class AccessibilityTests(IdbEndToEndTestCase):
         cannot spawn in the guest still skips and a companion that has died is
         still named rather than waited out.
         """
-        deadline = time.monotonic() + CONTROL_DISCOVERY_TIMEOUT_SECONDS
-        while True:
+
+        async def read() -> dict[str, Any]:
             completed = await self.idb(*DESCRIBE_ALL_ARGS, "--json", check=False)
-            if (
-                completed.returncode != 0
-                and ACCESSIBILITY_NOT_READY_MARKER not in completed.error_text
-            ):
-                self.fail_or_skip_for(" ".join(DESCRIBE_ALL_ARGS), completed)
-            if completed.returncode == 0:
-                controls = _labelled_controls(json.loads(completed.text))
-                if controls:
-                    return controls[0]
-                waiting_for = "Settings has put up no labelled control"
-            else:
-                waiting_for = "the simulator has no accessibility translation object"
-            if time.monotonic() >= deadline:
-                self.fail(
-                    f"No labelled control within "
-                    f"{CONTROL_DISCOVERY_TIMEOUT_SECONDS:.0f}s: {waiting_for}"
-                )
-            await asyncio.sleep(1.0)
+            if completed.returncode != 0:
+                if ACCESSIBILITY_NOT_READY_MARKER not in completed.error_text:
+                    self.fail_or_skip_for(" ".join(DESCRIBE_ALL_ARGS), completed)
+                raise NotReady("the simulator has no accessibility translation object")
+            controls = _labelled_controls(json.loads(completed.text))
+            if not controls:
+                raise NotReady("Settings has put up no labelled control")
+            return controls[0]
+
+        try:
+            return await wait_until(
+                "No labelled control", CONTROL_DISCOVERY_TIMEOUT_SECONDS, read
+            )
+        except HarnessError as error:
+            self.fail(str(error))
 
     def center(self, element: dict[str, Any]) -> tuple[int, int]:
         frame = element["frame"]
