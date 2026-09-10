@@ -24,6 +24,7 @@ import glob
 import hashlib
 import json
 import re
+import string
 import sys
 from pathlib import Path
 
@@ -324,6 +325,110 @@ def write_bump(out_dir, outputs, manifest):
     (out / MANIFEST).write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n")
 
 
+TEMPLATE_SUFFIX = ".in"
+
+
+def default_templates_dir():
+    """Source/.github/formulae, next to this script's directory."""
+    return Path(__file__).resolve().parent.parent / "formulae"
+
+
+def release_asset_base(tag):
+    return f"https://github.com/{IDB_REPO}/releases/download/{tag}"
+
+
+def generated_header(name, tag):
+    return (
+        f"# Rendered for {tag} from facebook/idb's "
+        f"Source/.github/formulae/{name}{TEMPLATE_SUFFIX};\n"
+        "# edit the template, not this file."
+    )
+
+
+def render_formulae(
+    tag,
+    companion_sha,
+    wheel_sha,
+    bottle_blocks=None,
+    asset_base=None,
+    templates_dir=None,
+):
+    """The three formulae for a release, from the templates alone: nothing
+    here depends on what the tap currently contains. `asset_base` overrides
+    the release download URL prefix, which is how CI points the formulae at
+    freshly built local copies of the assets (file://...) to install-test
+    them before any release exists."""
+    version = version_from_tag(tag)
+    base = (asset_base or release_asset_base(tag)).rstrip("/")
+    blocks = dict(bottle_blocks or {})
+    unknown = sorted(set(blocks) - set(FORMULAE))
+    if unknown:
+        raise FormulaError(f"{', '.join(unknown)}: not a tap formula this tool renders")
+    directory = Path(templates_dir or default_templates_dir())
+    values = {
+        "tag": tag,
+        "version": version,
+        "companion_url": f"{base}/{COMPANION_ASSET}",
+        "companion_sha256": companion_sha,
+        "wheel_url": f"{base}/{wheel_asset(version)}",
+        "wheel_sha256": wheel_sha,
+        # Homebrew scans the version from the url on a stable tag; on a
+        # prerelease the scan drops the suffix, so the stanza is needed.
+        "companion_version_stanza": (
+            f'  version "{version}"\n' if is_prerelease(version) else ""
+        ),
+    }
+    outputs = {}
+    for name in FORMULAE:
+        path = directory / f"{name}{TEMPLATE_SUFFIX}"
+        if not path.exists():
+            raise FormulaError(f"missing formula template {path}")
+        block = blocks.get(name)
+        per_file = dict(
+            values,
+            bottle_block=f"\n{block}\n" if block else "",
+            generated_header=generated_header(name, tag),
+        )
+        try:
+            outputs[name] = string.Template(path.read_text()).substitute(per_file)
+        except (KeyError, ValueError) as error:
+            raise FormulaError(f"{path.name}: bad placeholder {error}") from error
+    return outputs
+
+
+def render_manifest(tag, outputs, companion_sha, wheel_sha, asset_base):
+    """What the rendered files were computed from, and their digests so
+    whoever applies them can check they arrived intact."""
+    return {
+        "tag": tag,
+        "asset_base": asset_base,
+        "companion_sha256": companion_sha,
+        "wheel_sha256": wheel_sha,
+        "outputs": {name: sha256_of_text(text) for name, text in outputs.items()},
+    }
+
+
+def cmd_render(args):
+    companion_sha = sha256_of_file(_single_glob(args.companion, "companion tarball"))
+    wheel_sha = sha256_of_file(_single_glob(args.wheel, "wheel"))
+    blocks = bottle_blocks_from_dir(args.bottles) if args.bottles else None
+    asset_base = (args.asset_base or release_asset_base(args.tag)).rstrip("/")
+    outputs = render_formulae(
+        args.tag,
+        companion_sha,
+        wheel_sha,
+        blocks,
+        asset_base=asset_base,
+        templates_dir=args.templates,
+    )
+    manifest = render_manifest(args.tag, outputs, companion_sha, wheel_sha, asset_base)
+    write_bump(args.out, outputs, manifest)
+    for name in FORMULAE:
+        print(f"{name}: rendered")
+    print(f"wrote {len(outputs)} formulae and {MANIFEST} to {args.out}")
+    return 0
+
+
 def _single_glob(pattern, what):
     matches = glob.glob(pattern)
     if len(matches) != 1:
@@ -377,6 +482,34 @@ def main(argv=None):
     )
     bump.add_argument("--out", required=True, help="directory to write into")
     bump.set_defaults(func=cmd_bump)
+
+    render = subparsers.add_parser(
+        "render",
+        help="render the tap formulae for a release from the templates, "
+        "independent of the tap's current contents",
+    )
+    render.add_argument("--tag", required=True, help="release tag, e.g. v1.5.4")
+    render.add_argument(
+        "--companion", required=True, help="glob for the companion tarball asset"
+    )
+    render.add_argument(
+        "--wheel", required=True, help="glob for the fb-idb wheel asset"
+    )
+    render.add_argument(
+        "--bottles",
+        help="directory of `brew bottle --json` output (omit for no bottle block)",
+    )
+    render.add_argument(
+        "--asset-base",
+        help="URL prefix for the asset urls (default: the tag's GitHub release "
+        "download directory; CI passes a file:// directory of local builds)",
+    )
+    render.add_argument(
+        "--templates",
+        help="directory holding the *.rb.in templates (default: Source/.github/formulae)",
+    )
+    render.add_argument("--out", required=True, help="directory to write into")
+    render.set_defaults(func=cmd_render)
     args = parser.parse_args(argv)
     try:
         return args.func(args)

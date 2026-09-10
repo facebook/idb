@@ -1,0 +1,74 @@
+# Copyright (c) Meta Platforms, Inc. and affiliates.
+# All rights reserved.
+#
+# This source code is licensed under the BSD-style license found in the
+# LICENSE file in the root directory of this source tree.
+${generated_header}
+
+class IdbCompanion < Formula
+  desc "Companion server for automating iOS Simulators"
+  homepage "https://fbidb.io"
+  url "${companion_url}"
+  # No explicit `version` on stable tags: it matches what Homebrew scans from
+  # the URL, and `brew audit --strict` rejects the redundancy. A prerelease tag
+  # (v1.5.0.b7) must re-add the stanza, because URL scanning silently drops the
+  # suffix and would make a beta look like a final release.
+${companion_version_stanza}  sha256 "${companion_sha256}"
+  license "MIT"
+  # Deliberately no `head` spec. Building idb from source through Homebrew has
+  # never worked -- see facebook/homebrew-fb issues 73, 75, 77 and 84, spanning
+  # 2021 to 2026. The immediate blocker is that superenv exports SDKROOT for the
+  # macOS SDK, which overrides the `-sdk iphonesimulator` build.sh passes for
+  # the iOS shims, so they fail on a missing UIKit; behind that, build.sh clones
+  # and builds grpc-swift and lets SwiftPM resolve dependencies, none of it
+  # checksummed. Anyone wanting a source build should clone the repo and run
+  # `./build.sh build all`, which is faster and gives better errors.
+
+  # Both are runtime requirements, not build ones: the companion loads
+  # CoreSimulator and MobileDevice from the selected developer directory, and
+  # the shipped binaries carry a macOS 15 minimum (LC_BUILD_VERSION minos 15.0,
+  # built against the 26.5 SDK).
+  depends_on macos: :sequoia
+  depends_on xcode: "26.0"
+
+  def install
+    # v1.5.0 ships a flat tree: idb_companion, idb-repl, Resources/ and the
+    # SwiftPM resource bundles all sit at the archive root. v1.1.8 nested
+    # everything under a wrapper directory holding bin/ and Frameworks/.
+    #
+    # idb_companion resolves Resources/ as a sibling of its own binary and
+    # crashes outright when the shims are absent, so keep the tree intact in
+    # libexec and symlink the executables rather than cherry-picking them.
+    libexec.install Dir["*"]
+
+    # install_symlink is FileUtils.ln_sf underneath and will happily create a
+    # dangling link, so a layout change would otherwise put a broken
+    # idb_companion on PATH and still report success. Fail here instead.
+    %w[idb_companion idb-repl].each do |exe|
+      odie "#{exe} missing from the staged tree: the layout has changed" unless (libexec/exe).exist?
+    end
+
+    bin.install_symlink libexec/"idb_companion"
+    bin.install_symlink libexec/"idb-repl"
+  end
+
+  test do
+    # Both bin entries must resolve back into libexec, alongside Resources/.
+    # Assert the layout directly: --help and --list succeed even on a tree with
+    # Resources/ deleted, so neither proves the install block is right.
+    %w[idb_companion idb-repl].each do |exe|
+      assert_equal (libexec/exe).realpath, (bin/exe).realpath
+    end
+
+    resources = libexec/"Resources"
+    assert_path_exists resources/"libShimulator-iOS.dylib"
+    assert_path_exists resources/"libRepl-iOS.dylib"
+    assert_path_exists resources/"SimulatorFrameworkBridge-iOS"
+    assert_path_exists resources/"SimulatorFrameworkBridge-tvOS"
+    assert_path_exists resources/"ReplHost.app"
+    assert_path_exists resources/"IDBAPI.swiftinterface"
+
+    assert_match "build_date", shell_output("#{bin}/idb_companion --version")
+    assert_match "idb-repl built at", shell_output("#{bin}/idb-repl --version")
+  end
+end

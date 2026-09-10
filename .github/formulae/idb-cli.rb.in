@@ -1,0 +1,107 @@
+# Copyright (c) Meta Platforms, Inc. and affiliates.
+# All rights reserved.
+#
+# This source code is licensed under the BSD-style license found in the
+# LICENSE file in the root directory of this source tree.
+${generated_header}
+
+class IdbCli < Formula
+  include Language::Python::Virtualenv
+
+  desc "Command-line client for automating iOS Simulators"
+  homepage "https://fbidb.io"
+  # Taken from the GitHub release rather than PyPI so the client and the
+  # companion provably come from one build. Since 1.5.0b3 the release workflow
+  # also publishes to PyPI, and the artifacts are byte-identical -- the wheel
+  # there carries the same sha256 pinned below -- so this is a choice of
+  # provenance rather than availability, and either source would install the
+  # same bytes.
+  url "${wheel_url}"
+  # Kept in the release's own form so all three idb formulae carry one version.
+  version "${version}"
+  sha256 "${wheel_sha256}"
+  license "MIT"
+${bottle_block}
+  depends_on "python@3.14"
+
+  # The wheel rather than the sdist: the sdist ships no generated protobuf
+  # code and its build_py runs grpc_tools.protoc at install time, which makes
+  # pip resolve setup_requires in an isolated build environment -- roughly ten
+  # undeclared, unpinned packages fetched during `brew install`. The wheel
+  # already contains the generated code, so installing it needs no build.
+  #
+  # Installed via a resource rather than the main url: a wheel is a zip, so
+  # Homebrew would extract the main url into buildpath, where pip cannot
+  # install it. Resources are the one path that keeps a py3-none-any wheel as
+  # a file (Language::Python::Virtualenv#pip_install re-appends the basename
+  # for exactly this case). The url and sha256 match the main url, so
+  # Homebrew downloads the artifact once.
+  resource "fb-idb" do
+    url "${wheel_url}"
+    sha256 "${wheel_sha256}"
+  end
+
+  resource "aiofiles" do
+    url "https://files.pythonhosted.org/packages/41/c3/534eac40372d8ee36ef40df62ec129bee4fdb5ad9706e58a29be53b2c970/aiofiles-25.1.0.tar.gz"
+    sha256 "a8d728f0a29de45dc521f18f07297428d56992a742f0cd2701ba86e44d23d5b2"
+  end
+
+  resource "grpclib" do
+    url "https://files.pythonhosted.org/packages/5b/28/5a2c299ec82a876a252c5919aa895a6f1d1d35c96417c5ce4a4660dc3a80/grpclib-0.4.9.tar.gz"
+    sha256 "cc589c330fa81004c6400a52a566407574498cb5b055fa927013361e21466c46"
+  end
+
+  resource "h2" do
+    url "https://files.pythonhosted.org/packages/e7/85/7c366e69d84c17bb778fe41419e1fbcce3033d5b7ce29bbffff0a98b859f/h2-4.4.1.tar.gz"
+    sha256 "4e866ffb1a869ae14dd9b5e6beb5c24a13da0495ad72b65925ded182521c1516"
+  end
+
+  resource "hpack" do
+    url "https://files.pythonhosted.org/packages/26/5b/fcabf6028144a8723726318b07a32c2f3314acdff6265743cf08a344b18e/hpack-4.2.0.tar.gz"
+    sha256 "0895cfa3b5531fc65fe439c05eb65144f123bf7a394fcaa56aa423548d8e45c0"
+  end
+
+  resource "hyperframe" do
+    url "https://files.pythonhosted.org/packages/02/e7/94f8232d4a74cc99514c13a9f995811485a6903d48e5d952771ef6322e30/hyperframe-6.1.0.tar.gz"
+    sha256 "f630908a00854a7adeabd6382b43923a4c4cd4b821fcb527e6ab9e15382a3b08"
+  end
+
+  # multidict and protobuf are the only two dependencies with C extensions.
+  # Both are taken as pure Python py3-none-any wheels (the one wheel shape
+  # Homebrew's resource handling supports) so that source installs compile
+  # nothing; bottle installs never run this path at all. The trade is losing
+  # their C acceleration, which is not measurable for a CLI issuing gRPC
+  # control messages.
+  resource "multidict" do
+    url "https://files.pythonhosted.org/packages/81/08/7036c080d7117f28a4af526d794aab6a84463126db031b007717c1a6676e/multidict-6.7.1-py3-none-any.whl"
+    sha256 "55d97cc6dae627efa6a6e548885712d4864b81110ac76fa4e534c03819fa4a56"
+  end
+
+  # Pinned deliberately: idb's generated *_pb2.py modules call
+  # ValidateProtobufRuntimeVersion(PUBLIC, 7, 35, 1) and refuse to import
+  # against an older runtime. Pure Python wheel, per the note above -- the
+  # sdist builds the upb C++ backend, which is the expensive half of the
+  # install.
+  resource "protobuf" do
+    url "https://files.pythonhosted.org/packages/19/c7/5f7c636ec43e0c545e28d1f1db71990108306f7bdcb89f069ba97e428e7f/protobuf-7.35.1-py3-none-any.whl"
+    sha256 "4bc97768d8fe4ad6743c8a19403e314511ed9f6d13205b687e52421c023ac1b9"
+  end
+
+  def install
+    venv = virtualenv_create(libexec, "python3.14")
+    venv.pip_install resources.reject { |r| r.name == "fb-idb" }
+    venv.pip_install_and_link resource("fb-idb")
+  end
+
+  test do
+    assert_match "usage", shell_output("#{bin}/idb --help")
+
+    # Nothing here should be compiled: fb-idb, multidict and protobuf are all
+    # taken as pure Python wheels so that installing runs no compiler and no
+    # protoc. Assert it, or a well-meaning resource refresh will swap them back
+    # to sdists and quietly restore both the clang step and the unpinned
+    # build-time downloads described above.
+    assert_empty Dir.glob(libexec/"lib/python*/site-packages/**/*.so"),
+                 "expected no compiled extensions in the virtualenv"
+  end
+end
