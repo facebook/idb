@@ -233,7 +233,7 @@ public struct FBXCTestRunRequest {
   }
 
   private func startLogicTestExecution(_ configuration: FBLogicTestConfiguration, target: any FBiOSTarget, reporter: FBXCTestReporter, logger: FBControlCoreLogger) throws -> FBIDBTestOperation {
-    guard let target = target as? (any FBiOSTarget & ProcessSpawnCommands & XCTestExtendedCommands) else {
+    guard let target = target as? any LogicTestTarget else {
       throw FBXCTestRunRequestError.logicTestsUnsupported(targetDescription: String(describing: target))
     }
     let adapter = FBLogicReporterAdapter(reporter: reporter, logger: logger)

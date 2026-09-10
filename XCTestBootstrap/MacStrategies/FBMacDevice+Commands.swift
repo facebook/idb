@@ -46,6 +46,8 @@ extension FBMacDevice {
 
   public var power: FBMacDevice { self }
 
+  public var processSpawn: FBMacDevice { self }
+
   public var screenshot: FBMacDevice { self }
 
   public var videoRecording: FBMacDevice { self }
@@ -216,3 +218,7 @@ extension FBMacDevice: PowerCommands {
     throw macUnsupported("reboot")
   }
 }
+
+// MARK: - FBMacDevice+LogicTestTarget
+
+extension FBMacDevice: LogicTestTarget {}

@@ -42,7 +42,7 @@ extension FBTestBundleConnectionError: LocalizedError {
 final class FBTestBundleConnection {
 
   private let context: FBTestManagerContext
-  private let target: any FBiOSTarget & ApplicationCommands & CrashLogCommands
+  private let target: any FBiOSTarget
   private let socket: Int32
   private let interface: NSObject
   private let testHostApplication: FBLaunchedApplication
@@ -51,7 +51,7 @@ final class FBTestBundleConnection {
 
   init(
     context: FBTestManagerContext,
-    target: any FBiOSTarget & ApplicationCommands & CrashLogCommands,
+    target: any FBiOSTarget,
     socket: Int32,
     interface: NSObject,
     testHostApplication: FBLaunchedApplication,
@@ -101,7 +101,7 @@ final class FBTestBundleConnection {
     let bundleID = context.testHostLaunchConfiguration.bundleID
     let runningPid: pid_t
     do {
-      runningPid = try await target.processID(forBundleID: bundleID)
+      runningPid = try await target.application.processID(forBundleID: bundleID)
     } catch {
       return await crashLogOrNotFoundError(description: "Error while establishing connection to test bundle: The host application is likely to have crashed during startup, but could not find a crash log.")
     }
@@ -126,7 +126,7 @@ final class FBTestBundleConnection {
 
   private func findCrashedProcessLog() async throws -> FBCrashLog {
     let bundleID = context.testHostLaunchConfiguration.bundleID
-    if let runningPid = try? await target.processID(forBundleID: bundleID) {
+    if let runningPid = try? await target.application.processID(forBundleID: bundleID) {
       throw FBTestBundleConnectionError.processStillRunning(processIdentifier: runningPid)
     }
     var crashWaitTimeout = crashCheckWaitLimit
@@ -136,7 +136,7 @@ final class FBTestBundleConnection {
     let pid = testHostApplication.processIdentifier
     let predicate = FBCrashLogInfo.predicateForCrashLogs(withProcessID: pid)
     // notifyOfCrash(matching:) has no timeout of its own, so bound it via FBFuture.
-    let future = fbFutureFromAsync { try await self.target.notifyOfCrash(matching: predicate) }
+    let future = fbFutureFromAsync { try await self.target.crashLog.notifyOfCrash(matching: predicate) }
     let timed = future.timeout(crashWaitTimeout, waitingFor: "Getting crash log for process with pid \(pid), bundle ID: \(bundleID)")
     guard let info = try await bridgeFBFuture(timed) as? FBCrashLogInfo else {
       throw FBTestBundleConnectionError.unexpectedCrashLookupResult(processIdentifier: pid)

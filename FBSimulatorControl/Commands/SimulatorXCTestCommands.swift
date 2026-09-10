@@ -172,7 +172,7 @@ public final class SimulatorXCTestCommands: XCTestExtendedCommands {
       architectures: architectures)
 
     return try await bridgeFBFutureArray(
-      FBListTestStrategy(target: simulator as any FBiOSTarget & ProcessSpawnCommands & XCTestExtendedCommands, configuration: configuration, logger: simulator.logger)
+      FBListTestStrategy(target: simulator, configuration: configuration, logger: simulator.logger)
         .listTests())
   }
 
@@ -281,3 +281,7 @@ extension FBSimulator: XCTestExtendedCommands {
     xctest.xctestPath
   }
 }
+
+// MARK: - FBSimulator+LogicTestTarget
+
+extension FBSimulator: LogicTestTarget {}

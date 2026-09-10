@@ -59,12 +59,12 @@ extension FBLogicTestRunError: LocalizedError {
 
 public final class FBLogicTestRunStrategy: FBXCTestRunner {
 
-  private let target: any FBiOSTarget & ProcessSpawnCommands & XCTestExtendedCommands
+  private let target: any LogicTestTarget
   private let configuration: FBLogicTestConfiguration
   private let reporter: FBLogicXCTestReporter
   private let logger: FBControlCoreLogger
 
-  public init(target: any FBiOSTarget & ProcessSpawnCommands & XCTestExtendedCommands, configuration: FBLogicTestConfiguration, reporter: FBLogicXCTestReporter, logger: FBControlCoreLogger) {
+  public init(target: any LogicTestTarget, configuration: FBLogicTestConfiguration, reporter: FBLogicXCTestReporter, logger: FBControlCoreLogger) {
     self.target = target
     self.configuration = configuration
     self.reporter = reporter
@@ -82,7 +82,7 @@ public final class FBLogicTestRunStrategy: FBXCTestRunner {
 
     let target = self.target
     let shimFuture: FBFuture<AnyObject> = fbFutureFromAsync {
-      try await target.extendedTestShim() as AnyObject
+      try await target.xctest.extendedTestShim() as AnyObject
     }
     let futures: [FBFuture<AnyObject>] = [
       buildOutputs(forUUID: uuid),
@@ -112,7 +112,7 @@ public final class FBLogicTestRunStrategy: FBXCTestRunner {
     logger.log("Starting Logic Test execution of \(configuration)")
     reporter.didBeginExecutingTestPlan()
 
-    let xctestPath = target.xctestPath
+    let xctestPath = target.xctest.xctestPath
     let testSpecifier = configuration.testFilter ?? "All"
     let launchPath = xctestPath
     let arguments = ["-XCTest", testSpecifier, configuration.testBundlePath]
@@ -372,7 +372,7 @@ public final class FBLogicTestRunStrategy: FBXCTestRunner {
     let launchAdaptedProcess: (FBProcessSpawnConfiguration) -> FBFuture<AnyObject> = { mappedConfig in
       let target = self.target
       let launchFuture: FBFuture<FBSubprocess<AnyObject, AnyObject, AnyObject>> = fbFutureFromAsync {
-        try await target.launchProcess(mappedConfig)
+        try await target.processSpawn.launchProcess(mappedConfig)
       }
       return launchFuture.onQueue(
         queue,

@@ -81,7 +81,7 @@ public struct FBSimulatorReplCommands {
     )
 
     let runner = FBLogicTestRunStrategy(
-      target: simulator as any FBiOSTarget & ProcessSpawnCommands & XCTestExtendedCommands,
+      target: simulator,
       configuration: configuration,
       reporter: ReplNullReporter(),
       logger: logger)

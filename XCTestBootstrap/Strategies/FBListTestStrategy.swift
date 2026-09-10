@@ -74,11 +74,11 @@ private final class FBListTestStrategy_ReporterWrapped: FBXCTestRunner {
 
 public final class FBListTestStrategy {
 
-  let target: any FBiOSTarget & ProcessSpawnCommands & XCTestExtendedCommands
+  let target: any LogicTestTarget
   private let configuration: FBListTestConfiguration
   private let logger: FBControlCoreLogger
 
-  public init(target: any FBiOSTarget & ProcessSpawnCommands & XCTestExtendedCommands, configuration: FBListTestConfiguration, logger: FBControlCoreLogger) {
+  public init(target: any LogicTestTarget, configuration: FBListTestConfiguration, logger: FBControlCoreLogger) {
     self.target = target
     self.configuration = configuration
     self.logger = logger
@@ -88,7 +88,7 @@ public final class FBListTestStrategy {
     let shimBuffer = FBDataBuffer.consumableBuffer()
     let target = self.target
     let shimFuture: FBFuture<AnyObject> = fbFutureFromAsync {
-      try await target.extendedTestShim() as AnyObject
+      try await target.xctest.extendedTestShim() as AnyObject
     }
     let futures: [FBFuture<AnyObject>] = [
       shimFuture,
@@ -141,7 +141,7 @@ public final class FBListTestStrategy {
           let libraries = try await FBOToolDynamicLibs.findFullPath(forSanitiserDyldInBundle: self.configuration.testBundlePath)
           let environment = FBListTestStrategy.setupEnvironment(withDylibs: libraries, shimPath: shimPath, shimOutputFilePath: shimOutput.filePath, bundlePath: self.configuration.testBundlePath, target: self.target)
           return try await bridgeFBFuture(
-            FBListTestStrategy.listTestProcess(withTarget: self.target, configuration: self.configuration, xctestPath: self.target.xctestPath, environment: environment, stdOutConsumer: stdOutConsumer, stdErrConsumer: stdErrConsumer, logger: self.logger, temporaryDirectory: temporaryDirectoryURL)
+            FBListTestStrategy.listTestProcess(withTarget: self.target, configuration: self.configuration, xctestPath: self.target.xctest.xctestPath, environment: environment, stdOutConsumer: stdOutConsumer, stdErrConsumer: stdErrConsumer, logger: self.logger, temporaryDirectory: temporaryDirectoryURL)
               .onQueue(
                 self.target.workQueue,
                 fmap: { exitCodeFutureObj -> FBFuture<AnyObject> in
@@ -234,7 +234,7 @@ public final class FBListTestStrategy {
       .retyped(FBFuture<NSNull>.self)
   }
 
-  private static func listTestProcess(withTarget target: any FBiOSTarget & ProcessSpawnCommands, configuration: FBListTestConfiguration, xctestPath: String, environment: [String: String], stdOutConsumer: FBDataConsumer, stdErrConsumer: FBDataConsumer, logger: FBControlCoreLogger, temporaryDirectory: URL) -> FBFuture<AnyObject> {
+  private static func listTestProcess(withTarget target: any LogicTestTarget, configuration: FBListTestConfiguration, xctestPath: String, environment: [String: String], stdOutConsumer: FBDataConsumer, stdErrConsumer: FBDataConsumer, logger: FBControlCoreLogger, temporaryDirectory: URL) -> FBFuture<AnyObject> {
     var launchPath = xctestPath
     var env = environment
 
@@ -271,9 +271,9 @@ public final class FBListTestStrategy {
     }
   }
 
-  private static func listTestProcess(withSpawnConfiguration spawnConfiguration: FBProcessSpawnConfiguration, onTarget target: any FBiOSTarget & ProcessSpawnCommands, timeout: TimeInterval, logger: FBControlCoreLogger) -> FBFuture<AnyObject> {
+  private static func listTestProcess(withSpawnConfiguration spawnConfiguration: FBProcessSpawnConfiguration, onTarget target: any LogicTestTarget, timeout: TimeInterval, logger: FBControlCoreLogger) -> FBFuture<AnyObject> {
     let launchFuture: FBFuture<FBSubprocess<AnyObject, AnyObject, AnyObject>> = fbFutureFromAsync {
-      try await target.launchProcess(spawnConfiguration)
+      try await target.processSpawn.launchProcess(spawnConfiguration)
     }
     return
       launchFuture

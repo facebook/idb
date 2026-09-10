@@ -57,7 +57,7 @@ public struct FBTestRunnerConfiguration {
 
   // MARK: - Public
 
-  public static func prepareConfiguration(withTarget target: any FBiOSTarget & ApplicationCommands & XCTestExtendedCommands, testLaunchConfiguration: FBTestLaunchConfiguration, workingDirectory: String, codesign: FBCodesignProvider?) async throws -> FBTestRunnerConfiguration {
+  public static func prepareConfiguration(withTarget target: any XCTestExtendedTarget, testLaunchConfiguration: FBTestLaunchConfiguration, workingDirectory: String, codesign: FBCodesignProvider?) async throws -> FBTestRunnerConfiguration {
     if let codesign {
       do {
         _ = try await codesign.cdHashForBundle(atPath: testLaunchConfiguration.testBundle.path)
@@ -94,7 +94,7 @@ public struct FBTestRunnerConfiguration {
     return envs
   }
 
-  private static func prepareConfigurationAfterCodesignatureCheck(withTarget target: any FBiOSTarget & ApplicationCommands & XCTestExtendedCommands, testLaunchConfiguration: FBTestLaunchConfiguration, workingDirectory: String) async throws -> FBTestRunnerConfiguration {
+  private static func prepareConfigurationAfterCodesignatureCheck(withTarget target: any XCTestExtendedTarget, testLaunchConfiguration: FBTestLaunchConfiguration, workingDirectory: String) async throws -> FBTestRunnerConfiguration {
     let runtimeRoot = await target.runtimeRootDirectory
     let platformRoot = await target.platformRootDirectory
 
@@ -152,8 +152,8 @@ public struct FBTestRunnerConfiguration {
       throw FBTestRunnerConfigurationError.testConfigurationPreparationFailed(underlying: error)
     }
 
-    let hostApplication = try await target.installedApplication(bundleID: testLaunchConfiguration.applicationLaunchConfiguration.bundleID)
-    let shimPath = try await target.extendedTestShim()
+    let hostApplication = try await target.application.installedApplication(bundleID: testLaunchConfiguration.applicationLaunchConfiguration.bundleID)
+    let shimPath = try await target.xctest.extendedTestShim()
 
     var hostApplicationAdditionalEnvironment: [String: String] = [:]
     hostApplicationAdditionalEnvironment[kEnvShimStartXCTest] = "1"

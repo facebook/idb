@@ -21,7 +21,7 @@ public enum FBManagedTestRunError: Error, LocalizedError {
 
 public final class FBManagedTestRunStrategy {
 
-  public static func runToCompletion(withTarget target: any FBiOSTarget & ApplicationCommands & XCTestExtendedCommands & CrashLogCommands, configuration: FBTestLaunchConfiguration, codesign: FBCodesignProvider?, workingDirectory: String, reporter: FBXCTestReporter, logger: FBControlCoreLogger) async throws {
+  public static func runToCompletion(withTarget target: any XCTestExtendedTarget, configuration: FBTestLaunchConfiguration, codesign: FBCodesignProvider?, workingDirectory: String, reporter: FBXCTestReporter, logger: FBControlCoreLogger) async throws {
     do {
       try XCTestBootstrapFrameworkLoader.allDependentFrameworks.loadPrivateFrameworks(target.logger)
     } catch {

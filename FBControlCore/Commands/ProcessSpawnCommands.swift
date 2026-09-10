@@ -7,7 +7,7 @@
 
 import Foundation
 
-public protocol ProcessSpawnCommands: AnyObject {
+public protocol ProcessSpawnCommands {
 
   func launchProcess(
     _ configuration: FBProcessSpawnConfiguration

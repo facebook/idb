@@ -22,7 +22,7 @@ extension SimulatorProcessSpawnError: LocalizedError {
   }
 }
 
-public struct SimulatorProcessSpawnCommands {
+public struct SimulatorProcessSpawnCommands: ProcessSpawnCommands {
 
   private let simulator: FBSimulator
 
