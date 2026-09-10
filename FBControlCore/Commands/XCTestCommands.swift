@@ -31,5 +31,5 @@ public protocol XCTestExtendedCommands: XCTestCommands {
     body: (NSNumber) async throws -> R
   ) async throws -> R
 
-  var xctestPath: String { get }
+  var path: String { get }
 }

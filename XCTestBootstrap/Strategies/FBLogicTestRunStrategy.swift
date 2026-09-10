@@ -112,7 +112,7 @@ public final class FBLogicTestRunStrategy: FBXCTestRunner {
     logger.log("Starting Logic Test execution of \(configuration)")
     reporter.didBeginExecutingTestPlan()
 
-    let xctestPath = target.xctest.xctestPath
+    let xctestPath = target.xctest.path
     let testSpecifier = configuration.testFilter ?? "All"
     let launchPath = xctestPath
     let arguments = ["-XCTest", testSpecifier, configuration.testBundlePath]

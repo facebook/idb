@@ -114,7 +114,7 @@ public final class SimulatorXCTestCommands: XCTestExtendedCommands {
     return socketFD
   }
 
-  public var xctestPath: String {
+  public var path: String {
     (FBXcodeConfiguration.developerDirectory as NSString)
       .appendingPathComponent("Platforms/iPhoneSimulator.platform/Developer/Library/Xcode/Agents/xctest")
   }

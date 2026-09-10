@@ -205,7 +205,7 @@ public final class FBMacDevice: NSObject, FBiOSTarget {
     }
   }
 
-  public var xctestPath: String {
+  public var path: String {
     (FBXcodeConfiguration.developerDirectory as NSString).appendingPathComponent("usr/bin/xctest")
   }
 

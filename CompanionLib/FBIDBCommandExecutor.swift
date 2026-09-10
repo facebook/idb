@@ -418,7 +418,7 @@ public final class FBIDBCommandExecutor {
     guard let simulator = target as? FBSimulator else {
       throw FBIDBCommandError.replTestsUnsupported(targetDescription: String(describing: target))
     }
-    return try await simulator.repl.startReplTest(bundlePath: bundlePath)
+    return try await simulator.repl.startTest(bundlePath: bundlePath)
   }
 
   /// The product family ("iphone", "ipad", "watch", "tv", "mac", "unknown") of
@@ -442,7 +442,7 @@ public final class FBIDBCommandExecutor {
     guard let simulator = target as? FBSimulator else {
       throw FBIDBCommandError.replSessionsUnsupported(targetDescription: String(describing: target))
     }
-    return try await simulator.repl.startReplSimulator()
+    return try await simulator.repl.startSimulator()
   }
 
   /// Launches an installed app with the REPL injected, for the `app` REPL
@@ -453,7 +453,7 @@ public final class FBIDBCommandExecutor {
     guard let simulator = target as? FBSimulator else {
       throw FBIDBCommandError.replSessionsUnsupported(targetDescription: String(describing: target))
     }
-    return try await simulator.repl.startReplApp(bundleID: bundleID, reuseSession: reuseSession)
+    return try await simulator.repl.startApp(bundleID: bundleID, reuseSession: reuseSession)
   }
 
   // Keep in sync with the PRODUCT_BUNDLE_IDENTIFIER in defs.bzl
@@ -486,7 +486,7 @@ public final class FBIDBCommandExecutor {
     guard let simulator = target as? FBSimulator else {
       throw FBIDBCommandError.replAppLaunchesUnsupported(targetDescription: String(describing: target))
     }
-    return try await simulator.repl.replAppLaunchEnvironment(bundleID: bundleID)
+    return try await simulator.repl.appLaunchEnvironment(bundleID: bundleID)
   }
 
   public func debugserver_start(_ bundleID: String) async throws -> FBDebugServer {
@@ -629,7 +629,7 @@ public final class FBIDBCommandExecutor {
   }
 
   public func dapServer(withPath dapPath: String, stdIn: FBProcessInput<AnyObject>, stdOut: any FBDataConsumer) async throws -> FBSubprocess<AnyObject, FBDataConsumer, NSString> {
-    return try await simulatorTarget().dapServer.launchDapServer(dapPath, stdIn: stdIn, stdOut: stdOut)
+    return try await simulatorTarget().dapServer.launch(dapPath, stdIn: stdIn, stdOut: stdOut)
   }
 
   public func clean() async throws {
