@@ -11,6 +11,12 @@ but the companion and reports through ``fail`` and ``skipTest``, so it can be
 called with a stand-in for the test case. Reading SpringBoard's pid out of a
 ``launchctl`` listing is likewise pure. Both run anywhere, unlike the rest of
 the suite.
+
+Named ``harness_tests`` rather than ``test_harness`` deliberately. The
+end-to-end job discovers its tests with ``unittest discover``, whose default
+pattern is ``test*.py``, so under this name these cannot be swept into a run
+that leases a simulator and sets ``IDB_E2E_STRICT``. They are the environment,
+not the subject: a red line in the end-to-end job should mean idb is broken.
 """
 
 from __future__ import annotations

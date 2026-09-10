@@ -54,6 +54,12 @@ jobs:
       # end-to-end job always means idb is broken.
       - name: Test the CI scripts
         run: python -m unittest discover -s CI -p '*_tests.py' -t . -v
+      # The harness's own decisions -- what a non-zero idb exit is reported as,
+      # and what is read out of a launchctl listing. Named *_tests.py so that
+      # the end-to-end job's `unittest discover`, whose pattern is test*.py,
+      # cannot pull them into a run that leases a simulator.
+      - name: Test the end-to-end harness
+        run: python -m unittest EndToEndTests.harness_tests -v
 
   mac-frameworks:
     name: Build frameworks (macOS)
