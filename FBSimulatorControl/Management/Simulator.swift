@@ -168,8 +168,8 @@ public final class FBSimulator: FBiOSTarget, Hashable, CustomStringConvertible, 
 
   /// A command executor for simctl.
   ///
-  /// Only used for video recording (`simctl io recordVideo`), which has no CoreSimulator API; all
-  /// other operations spawn inside the simulator via CoreSimulator.
+  /// Used by an out-of-tree consumer for clipboard support (`simctl pbcopy` /
+  /// `simctl pbpaste`), which has no CoreSimulator API.
   public var simctlExecutor: AppleSimctlCommandExecutor {
     AppleSimctlCommandExecutor.executor(for: self)
   }

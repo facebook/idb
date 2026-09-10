@@ -31,13 +31,6 @@ class AppleDevicectlCommandExecutor {
     self.device = device
   }
 
-  func taskBuilder(arguments: [String]) -> FBProcessBuilder<NSNull, NSString, NSString> {
-    let derivedArgs = ["devicectl"] + arguments
-    return FBProcessBuilder<NSNull, NSString, NSString>.withLaunchPath("/usr/bin/xcrun", arguments: derivedArgs)
-      .withStdOutInMemoryAsString()
-      .withStdErrInMemoryAsString()
-      .withTaskLifecycleLogging(to: logger)
-  }
 }
 
 extension AppleDevicectlCommandExecutor {
@@ -68,14 +61,14 @@ extension AppleDevicectlCommandExecutor {
     arguments.append(configuration.bundleID)
     arguments += configuration.arguments
 
-    let builder = taskBuilder(arguments: arguments)
-    let task = try await bridgeFBFuture(builder.runUntilCompletion(withAcceptableExitCodes: nil))
-    if task.exitCode.result?.intValue != 0 {
-      throw DevicectlError.commandFailed(
-        exitCode: task.exitCode.result.flatMap(String.init) ?? "<nil>",
+    let result = try await Subprocess(executable: "/usr/bin/xcrun", arguments: ["devicectl"] + arguments)
+      .run(exitPolicy: .any, logger: logger)
+    try result.checkExitedCleanly { code in
+      DevicectlError.commandFailed(
+        exitCode: String(code),
         arguments: arguments,
-        stdOut: (task.stdOut as String?) ?? "",
-        stdErr: (task.stdErr as String?) ?? "")
+        stdOut: result.standardOutput,
+        stdErr: result.standardError)
     }
     let data = try Data(contentsOf: tmpPath)
     let info = try JSONDecoder().decode(DevicectlProcInfo.self, from: data)
