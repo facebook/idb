@@ -62,7 +62,7 @@ public struct DeviceDebuggerCommands {
 
   // MARK: - Async
 
-  fileprivate func launchDebugServer(forHostApplication application: FBBundleDescriptor, port: in_port_t) async throws -> any FBDebugServer {
+  public func launchDebugServer(forHostApplication application: FBBundleDescriptor, port: in_port_t) async throws -> any FBDebugServer {
     if device.osVersion.version.majorVersion >= 17 {
       throw DeviceDebuggerError.unsupportedOSVersion(version: device.osVersion.versionString)
     }

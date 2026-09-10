@@ -21,7 +21,7 @@ public struct DeviceVideoStreamCommands {
 
   // MARK: - Async
 
-  fileprivate func createStream(configuration: FBVideoStreamConfiguration, to consumer: any FBDataConsumer) async throws -> any FBVideoStream {
+  public func createStream(configuration: FBVideoStreamConfiguration, to consumer: any FBDataConsumer) async throws -> any FBVideoStream {
     let session = try await DeviceVideo.captureSession(for: device)
     let stream = try DeviceVideoStream.stream(withSession: session, configuration: configuration, logger: device.logger)
     try await stream.startStreaming(consumer)

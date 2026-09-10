@@ -452,7 +452,7 @@ public final class DeviceFileCommands {
     return device
   }
 
-  fileprivate func withFileContainerForContainerApplication<R>(
+  public func withFileCommandsForContainerApplication<R>(
     _ bundleID: String,
     body: (any AsyncFileContainer) async throws -> R
   ) async throws -> R {
@@ -463,42 +463,11 @@ public final class DeviceFileCommands {
     }
   }
 
-  fileprivate func fileCommandsForAuxillary() throws -> FBContainedFile_ContainedRoot {
-    let device = try requireDevice()
-    return FBFileContainer.fileContainer(forBasePath: device.auxillaryDirectory)
-  }
-
-  fileprivate func fileCommandsForProvisioningProfiles() throws -> FBFileContainer_ProvisioningProfile {
-    let device = try requireDevice()
-    return FBFileContainer_ProvisioningProfile(commands: DeviceProvisioningProfileCommands.commands(with: device))
-  }
-
-  fileprivate func fileCommandsForDiskImages() throws -> DeviceFileCommands_DiskImages {
-    let device = try requireDevice()
-    return DeviceFileCommands_DiskImages(commands: device as any DeveloperDiskImageCommands, queue: device.asyncQueue)
-  }
-
-  fileprivate func fileCommandsForSymbols() throws -> DeviceFileCommands_Symbols {
-    let device = try requireDevice()
-    return DeviceFileCommands_Symbols(commands: device.debugSymbols, queue: device.asyncQueue)
-  }
-}
-
-// MARK: - FBDevice+FileCommands
-
-extension FBDevice: FileCommands {
-
-  public func withFileCommandsForContainerApplication<R>(
-    _ bundleID: String,
-    body: (any AsyncFileContainer) async throws -> R
-  ) async throws -> R {
-    try await file.withFileContainerForContainerApplication(bundleID, body: body)
-  }
-
   public func withFileCommandsForAuxillary<R>(
     body: (any AsyncFileContainer) async throws -> R
   ) async throws -> R {
-    try await body(file.fileCommandsForAuxillary())
+    let device = try requireDevice()
+    return try await body(FBFileContainer.fileContainer(forBasePath: device.auxillaryDirectory))
   }
 
   public func withFileCommandsForApplicationContainers<R>(
@@ -522,8 +491,9 @@ extension FBDevice: FileCommands {
   public func withFileCommandsForMediaDirectory<R>(
     body: (any AsyncFileContainer) async throws -> R
   ) async throws -> R {
-    let queue = asyncQueue
-    return try await withAFCConnection("com.apple.afc") { afc in
+    let device = try requireDevice()
+    let queue = device.asyncQueue
+    return try await device.withAFCConnection("com.apple.afc") { afc in
       try await body(DeviceFileContainer(afcConnection: afc, queue: queue))
     }
   }
@@ -531,23 +501,26 @@ extension FBDevice: FileCommands {
   public func withFileCommandsForProvisioningProfiles<R>(
     body: (any AsyncFileContainer) async throws -> R
   ) async throws -> R {
-    try await body(file.fileCommandsForProvisioningProfiles())
+    let device = try requireDevice()
+    return try await body(FBFileContainer_ProvisioningProfile(commands: DeviceProvisioningProfileCommands.commands(with: device)))
   }
 
   public func withFileCommandsForMDMProfiles<R>(
     body: (any AsyncFileContainer) async throws -> R
   ) async throws -> R {
-    return try await withServiceConnection(ManagedConfigClient.serviceName) { connection in
-      let managedConfig = ManagedConfigClient.managedConfigClient(connection: connection, logger: logger)
-      return try await body(DeviceFileContainer_MDMProfiles(managedConfig: managedConfig, queue: workQueue))
+    let device = try requireDevice()
+    return try await device.withServiceConnection(ManagedConfigClient.serviceName) { connection in
+      let managedConfig = ManagedConfigClient.managedConfigClient(connection: connection, logger: device.logger)
+      return try await body(DeviceFileContainer_MDMProfiles(managedConfig: managedConfig, queue: device.workQueue))
     }
   }
 
   public func withFileCommandsForSpringboardIconLayout<R>(
     body: (any AsyncFileContainer) async throws -> R
   ) async throws -> R {
-    return try await withServiceConnection(SpringboardServicesClient.serviceName) { connection in
-      let client = SpringboardServicesClient.springboardServicesClient(connection: connection, logger: logger)
+    let device = try requireDevice()
+    return try await device.withServiceConnection(SpringboardServicesClient.serviceName) { connection in
+      let client = SpringboardServicesClient.springboardServicesClient(connection: connection, logger: device.logger)
       return try await body(client.iconContainer())
     }
   }
@@ -555,12 +528,13 @@ extension FBDevice: FileCommands {
   public func withFileCommandsForWallpaper<R>(
     body: (any AsyncFileContainer) async throws -> R
   ) async throws -> R {
-    return try await withServiceConnection(SpringboardServicesClient.serviceName) { springboardConnection in
-      try await withServiceConnection(ManagedConfigClient.serviceName) { managedConfigConnection in
-        let springboard = SpringboardServicesClient.springboardServicesClient(connection: springboardConnection, logger: logger)
-        let managedConfig = ManagedConfigClient.managedConfigClient(connection: managedConfigConnection, logger: logger)
+    let device = try requireDevice()
+    return try await device.withServiceConnection(SpringboardServicesClient.serviceName) { springboardConnection in
+      try await device.withServiceConnection(ManagedConfigClient.serviceName) { managedConfigConnection in
+        let springboard = SpringboardServicesClient.springboardServicesClient(connection: springboardConnection, logger: device.logger)
+        let managedConfig = ManagedConfigClient.managedConfigClient(connection: managedConfigConnection, logger: device.logger)
         return try await body(
-          DeviceFileContainer_Wallpaper(springboard: springboard, managedConfig: managedConfig, queue: workQueue))
+          DeviceFileContainer_Wallpaper(springboard: springboard, managedConfig: managedConfig, queue: device.workQueue))
       }
     }
   }
@@ -568,12 +542,92 @@ extension FBDevice: FileCommands {
   public func withFileCommandsForDiskImages<R>(
     body: (any AsyncFileContainer) async throws -> R
   ) async throws -> R {
-    try await body(file.fileCommandsForDiskImages())
+    let device = try requireDevice()
+    return try await body(DeviceFileCommands_DiskImages(commands: device as any DeveloperDiskImageCommands, queue: device.asyncQueue))
   }
 
   public func withFileCommandsForSymbols<R>(
     body: (any AsyncFileContainer) async throws -> R
   ) async throws -> R {
-    try await body(file.fileCommandsForSymbols())
+    let device = try requireDevice()
+    return try await body(DeviceFileCommands_Symbols(commands: device.debugSymbols, queue: device.asyncQueue))
+  }
+}
+
+// MARK: - FBDevice+FileCommands
+
+extension FBDevice: FileCommands {
+
+  public func withFileCommandsForContainerApplication<R>(
+    _ bundleID: String,
+    body: (any AsyncFileContainer) async throws -> R
+  ) async throws -> R {
+    try await file.withFileCommandsForContainerApplication(bundleID, body: body)
+  }
+
+  public func withFileCommandsForAuxillary<R>(
+    body: (any AsyncFileContainer) async throws -> R
+  ) async throws -> R {
+    try await file.withFileCommandsForAuxillary(body: body)
+  }
+
+  public func withFileCommandsForApplicationContainers<R>(
+    body: (any AsyncFileContainer) async throws -> R
+  ) async throws -> R {
+    try await file.withFileCommandsForApplicationContainers(body: body)
+  }
+
+  public func withFileCommandsForGroupContainers<R>(
+    body: (any AsyncFileContainer) async throws -> R
+  ) async throws -> R {
+    try await file.withFileCommandsForGroupContainers(body: body)
+  }
+
+  public func withFileCommandsForRootFilesystem<R>(
+    body: (any AsyncFileContainer) async throws -> R
+  ) async throws -> R {
+    try await file.withFileCommandsForRootFilesystem(body: body)
+  }
+
+  public func withFileCommandsForMediaDirectory<R>(
+    body: (any AsyncFileContainer) async throws -> R
+  ) async throws -> R {
+    try await file.withFileCommandsForMediaDirectory(body: body)
+  }
+
+  public func withFileCommandsForProvisioningProfiles<R>(
+    body: (any AsyncFileContainer) async throws -> R
+  ) async throws -> R {
+    try await file.withFileCommandsForProvisioningProfiles(body: body)
+  }
+
+  public func withFileCommandsForMDMProfiles<R>(
+    body: (any AsyncFileContainer) async throws -> R
+  ) async throws -> R {
+    try await file.withFileCommandsForMDMProfiles(body: body)
+  }
+
+  public func withFileCommandsForSpringboardIconLayout<R>(
+    body: (any AsyncFileContainer) async throws -> R
+  ) async throws -> R {
+    try await file.withFileCommandsForSpringboardIconLayout(body: body)
+  }
+
+  public func withFileCommandsForWallpaper<R>(
+    body: (any AsyncFileContainer) async throws -> R
+  ) async throws -> R {
+    try await file.withFileCommandsForWallpaper(body: body)
+  }
+
+  public func withFileCommandsForDiskImages<R>(
+    body: (any AsyncFileContainer) async throws -> R
+  ) async throws -> R {
+    try await file.withFileCommandsForDiskImages(body: body)
+  }
+
+  public func withFileCommandsForSymbols<R>(
+    body: (any AsyncFileContainer) async throws -> R
+  ) async throws -> R {
+    try await file.withFileCommandsForSymbols(body: body)
   }
 }

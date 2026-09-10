@@ -63,7 +63,7 @@ public final class DeviceCrashLogCommands {
 
   // MARK: - Notify
 
-  fileprivate func notifyOfCrash(matching predicate: NSPredicate) async throws -> FBCrashLogInfo {
+  public func notifyOfCrash(matching predicate: NSPredicate) async throws -> FBCrashLogInfo {
     // Start listening for the next matching crash log first, then kick off ingestion as a
     // fire-and-forget background job: a log ingested before the listener is installed is not
     // reported.
@@ -78,7 +78,7 @@ public final class DeviceCrashLogCommands {
 
   // MARK: - Async
 
-  fileprivate func crashes(_ predicate: NSPredicate, useCache: Bool) async throws -> [FBCrashLogInfo] {
+  public func crashes(matching predicate: NSPredicate, useCache: Bool) async throws -> [FBCrashLogInfo] {
     guard device != nil else {
       throw DeviceNilError.deviceNil
     }
@@ -86,7 +86,7 @@ public final class DeviceCrashLogCommands {
     return store.ingestedCrashLogs(matchingPredicate: predicate)
   }
 
-  fileprivate func pruneCrashes(_ predicate: NSPredicate) async throws -> [FBCrashLogInfo] {
+  public func pruneCrashes(matching predicate: NSPredicate) async throws -> [FBCrashLogInfo] {
     guard let device else {
       throw DeviceNilError.deviceNil
     }
@@ -95,6 +95,16 @@ public final class DeviceCrashLogCommands {
     let pruned = store.pruneCrashLogs(matchingPredicate: predicate)
     logger.log("Pruned \(FBCollectionInformation.oneLineDescription(from: pruned.map(\.name))) logs from local cache")
     return try await removeCrashLogsFromDevice(pruned, logger: logger)
+  }
+
+  public func withCrashLogFiles<R>(body: (any AsyncFileContainer) async throws -> R) async throws -> R {
+    guard let device else {
+      throw DeviceNilError.deviceNil
+    }
+    let queue = device.asyncQueue
+    return try await device.withAFCConnection(CrashReportCopyService) { afc in
+      try await body(DeviceFileContainer(afcConnection: afc, queue: queue))
+    }
   }
 
   // MARK: - Private
@@ -194,7 +204,7 @@ public final class DeviceCrashLogCommands {
 extension FBDevice: CrashLogCommands {
 
   public func crashes(matching predicate: NSPredicate, useCache: Bool) async throws -> [FBCrashLogInfo] {
-    try await crashLog.crashes(predicate, useCache: useCache)
+    try await crashLog.crashes(matching: predicate, useCache: useCache)
   }
 
   public func notifyOfCrash(matching predicate: NSPredicate) async throws -> FBCrashLogInfo {
@@ -202,13 +212,10 @@ extension FBDevice: CrashLogCommands {
   }
 
   public func pruneCrashes(matching predicate: NSPredicate) async throws -> [FBCrashLogInfo] {
-    try await crashLog.pruneCrashes(predicate)
+    try await crashLog.pruneCrashes(matching: predicate)
   }
 
   public func withCrashLogFiles<R>(body: (any AsyncFileContainer) async throws -> R) async throws -> R {
-    let queue = asyncQueue
-    return try await withAFCConnection(CrashReportCopyService) { afc in
-      try await body(DeviceFileContainer(afcConnection: afc, queue: queue))
-    }
+    try await crashLog.withCrashLogFiles(body: body)
   }
 }

@@ -19,7 +19,19 @@ public struct DevicePowerCommands {
     self.device = device
   }
 
-  fileprivate func sendRelayCommand(_ request: String) async throws {
+  // MARK: - Async
+
+  public func shutdown() async throws {
+    try await sendRelayCommand("Shutdown")
+  }
+
+  public func reboot() async throws {
+    try await sendRelayCommand("Restart")
+  }
+
+  // MARK: - Private
+
+  private func sendRelayCommand(_ request: String) async throws {
     try await device.withServiceConnection("com.apple.mobile.diagnostics_relay") { connection in
       guard let result = try connection.sendAndReceiveMessage(["Request": request]) as? NSDictionary else {
         throw DiagnosticsRelayError.unexpectedResponse
@@ -36,10 +48,10 @@ public struct DevicePowerCommands {
 extension FBDevice: PowerCommands {
 
   public func shutdown() async throws {
-    try await power.sendRelayCommand("Shutdown")
+    try await power.shutdown()
   }
 
   public func reboot() async throws {
-    try await power.sendRelayCommand("Restart")
+    try await power.reboot()
   }
 }

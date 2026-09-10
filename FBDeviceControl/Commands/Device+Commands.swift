@@ -17,73 +17,73 @@ extension FBDevice {
 
   // MARK: - Shared accessors
 
-  var application: DeviceApplicationCommands {
+  public var application: DeviceApplicationCommands {
     commandCache.resolve { DeviceApplicationCommands.commands(with: self) }
   }
 
-  var crashLog: DeviceCrashLogCommands {
+  public var crashLog: DeviceCrashLogCommands {
     commandCache.resolve { DeviceCrashLogCommands.commands(with: self) }
   }
 
-  var screenshot: DeviceScreenshotCommands {
+  public var screenshot: DeviceScreenshotCommands {
     DeviceScreenshotCommands.commands(with: self)
   }
 
-  var location: DeviceLocationCommands {
+  public var location: DeviceLocationCommands {
     DeviceLocationCommands.commands(with: self)
   }
 
-  var debugger: DeviceDebuggerCommands {
+  public var debugger: DeviceDebuggerCommands {
     DeviceDebuggerCommands.commands(with: self)
   }
 
-  var file: DeviceFileCommands {
+  public var file: DeviceFileCommands {
     commandCache.resolve { DeviceFileCommands.commands(with: self) }
   }
 
-  var lifecycle: DeviceLifecycleCommands {
+  public var lifecycle: DeviceLifecycleCommands {
     DeviceLifecycleCommands.commands(with: self)
   }
 
-  var log: DeviceLogCommands {
+  public var log: DeviceLogCommands {
     DeviceLogCommands.commands(with: self)
   }
 
-  var videoRecording: DeviceVideoRecordingCommands {
+  public var videoRecording: DeviceVideoRecordingCommands {
     commandCache.resolve { DeviceVideoRecordingCommands.commands(with: self) }
   }
 
-  var videoStream: DeviceVideoStreamCommands {
+  public var videoStream: DeviceVideoStreamCommands {
     DeviceVideoStreamCommands.commands(with: self)
   }
 
-  var xctest: DeviceXCTestCommands {
+  public var xctest: DeviceXCTestCommands {
     commandCache.resolve { DeviceXCTestCommands.commands(with: self) }
   }
 
-  var xctraceRecord: FBXCTraceRecordCommands {
+  public var xctraceRecord: FBXCTraceRecordCommands {
     FBXCTraceRecordCommands.commands(with: self)
   }
 
-  var instruments: DeviceInstrumentsCommands {
+  public var instruments: DeviceInstrumentsCommands {
     DeviceInstrumentsCommands.commands(with: self)
   }
 
   // MARK: - Device-only accessors
 
-  var diagnosticInformation: DeviceDiagnosticInformationCommands {
+  public var diagnosticInformation: DeviceDiagnosticInformationCommands {
     DeviceDiagnosticInformationCommands.commands(with: self)
   }
 
-  var erase: DeviceEraseCommands {
+  public var erase: DeviceEraseCommands {
     DeviceEraseCommands.commands(with: self)
   }
 
-  var power: DevicePowerCommands {
+  public var power: DevicePowerCommands {
     DevicePowerCommands.commands(with: self)
   }
 
-  var provisioningProfile: DeviceProvisioningProfileCommands {
+  public var provisioningProfile: DeviceProvisioningProfileCommands {
     DeviceProvisioningProfileCommands.commands(with: self)
   }
 
@@ -99,11 +99,11 @@ extension FBDevice {
     DeviceDebugSymbolsCommands(device: self)
   }
 
-  var developerDiskImage: DeviceDeveloperDiskImageCommands {
+  public var developerDiskImage: DeviceDeveloperDiskImageCommands {
     commandCache.resolve { DeviceDeveloperDiskImageCommands.commands(with: self) }
   }
 
-  var socketForwarding: DeviceSocketForwardingCommands {
+  public var socketForwarding: DeviceSocketForwardingCommands {
     DeviceSocketForwardingCommands.commands(with: self)
   }
 }

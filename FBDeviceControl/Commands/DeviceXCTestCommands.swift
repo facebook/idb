@@ -52,8 +52,8 @@ public final class DeviceXCTestCommands {
 
   // MARK: - Async
 
-  fileprivate func runTest(
-    withLaunchConfiguration testLaunchConfiguration: FBTestLaunchConfiguration,
+  public func runTest(
+    launchConfiguration testLaunchConfiguration: FBTestLaunchConfiguration,
     reporter: AnyObject,
     logger: any FBControlCoreLogger
   ) async throws {
@@ -113,6 +113,6 @@ extension FBDevice: XCTestCommands {
     reporter: AnyObject,
     logger: any FBControlCoreLogger
   ) async throws {
-    try await xctest.runTest(withLaunchConfiguration: launchConfiguration, reporter: reporter, logger: logger)
+    try await xctest.runTest(launchConfiguration: launchConfiguration, reporter: reporter, logger: logger)
   }
 }

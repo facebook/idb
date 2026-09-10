@@ -21,11 +21,11 @@ public struct DeviceLifecycleCommands {
 
   // MARK: - Async
 
-  fileprivate func resolveState(_ state: FBiOSTargetState) async throws {
+  public func resolveState(_ state: FBiOSTargetState) async throws {
     try await FBiOSTargetResolveState(device, state)
   }
 
-  fileprivate func resolveLeavesState(_ state: FBiOSTargetState) async throws {
+  public func resolveLeavesState(_ state: FBiOSTargetState) async throws {
     try await FBiOSTargetResolveLeavesState(device, state)
   }
 }

@@ -43,7 +43,7 @@ public final class DeviceDiagnosticInformationCommands: FBiOSTargetCommand {
 
   // MARK: - Async
 
-  fileprivate func fetchDiagnosticInformation() async throws -> [String: Any] {
+  public func fetchDiagnosticInformation() async throws -> [String: Any] {
     let diagnostics = try await fetchInformationFromDiagnosticsRelay(device: device)
     let springboard = try await fetchInformationFromSpringboard(device: device)
     let mobileConfig = try await fetchInformationFromMobileConfiguration(device: device)

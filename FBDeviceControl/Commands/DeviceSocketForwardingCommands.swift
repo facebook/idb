@@ -45,7 +45,7 @@ public struct DeviceSocketForwardingCommands {
 
   // MARK: - Socket forwarding
 
-  fileprivate func drainLocalFileInput(
+  public func drainLocalFileInput(
     _ localFileDescriptorInput: Int32,
     localFileOutput localFileDescriptorOutput: Int32,
     remotePort: Int32

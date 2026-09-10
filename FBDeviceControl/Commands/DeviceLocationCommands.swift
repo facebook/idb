@@ -23,7 +23,7 @@ public struct DeviceLocationCommands {
 
   // MARK: - Async
 
-  fileprivate func overrideLocation(withLongitude longitude: Double, latitude: Double) async throws {
+  public func overrideLocation(longitude: Double, latitude: Double) async throws {
     _ = try await device.ensureDeveloperDiskImageIsMounted()
     try await device.withServiceConnection("com.apple.dt.simulatelocation") { connection in
       var start = StartCommand
@@ -41,6 +41,6 @@ public struct DeviceLocationCommands {
 extension FBDevice: LocationCommands {
 
   public func overrideLocation(longitude: Double, latitude: Double) async throws {
-    try await location.overrideLocation(withLongitude: longitude, latitude: latitude)
+    try await location.overrideLocation(longitude: longitude, latitude: latitude)
   }
 }
