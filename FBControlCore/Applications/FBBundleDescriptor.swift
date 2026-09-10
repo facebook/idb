@@ -71,11 +71,8 @@ public struct FBBundleDescriptor: Hashable, Sendable, CustomStringConvertible {
         arguments.append(binaryPath)
       }
       logger.log("Updating rpaths for binary \(FBCollectionInformation.oneLineDescription(from: replacements as [String: Any]))")
-      _ = try await bridgeFBFuture(
-        FBProcessBuilder<AnyObject, AnyObject, AnyObject>
-          .withLaunchPath("/usr/bin/install_name_tool", arguments: arguments)
-          .withStdErr(to: logger)
-          .runUntilCompletion(withAcceptableExitCodes: Set([0 as NSNumber])))
+      _ = try await Subprocess(executable: "/usr/bin/install_name_tool", arguments: arguments)
+        .run(output: .string, error: .logger(logger))
     }
     logger.log("Re-Codesigning after rpath update \(path)")
     try await codesign.signBundle(atPath: path)
