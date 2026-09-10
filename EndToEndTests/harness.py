@@ -257,6 +257,20 @@ class Simctl:
             )
         return set(json.loads(converted.stdout).keys())
 
+    async def app_container(self, bundle_id: str, kind: str = "data") -> Path:
+        """Where an installed app's container is on the host, so what idb wrote
+        into it can be read without going back through idb."""
+        completed = await self.run("get_app_container", self.udid, bundle_id, kind)
+        if completed.returncode != 0:
+            raise HarnessError(
+                f"simctl has no {kind} container for {bundle_id} "
+                f"(rc={completed.returncode}): {completed.error_text}"
+            )
+        path = completed.text.strip()
+        if not path:
+            raise HarnessError(f"simctl reported no {kind} container for {bundle_id}")
+        return Path(path)
+
 
 def _device_states(listing: dict[str, Any]) -> dict[str, str]:
     states: dict[str, str] = {}
