@@ -170,36 +170,6 @@ public func FBiOSTargetStateStringFromState(_ state: FBiOSTargetState) -> FBiOST
   }
 }
 
-/// The canonical enum representation of the state string.
-func FBiOSTargetStateFromStateString(_ stateString: FBiOSTargetStateString) -> FBiOSTargetState {
-  let normalized = stateString.rawValue.lowercased().replacingOccurrences(of: "-", with: " ")
-  if normalized == FBiOSTargetStateString.creating.rawValue.lowercased() {
-    return .creating
-  }
-  if normalized == FBiOSTargetStateString.shutdown.rawValue.lowercased() {
-    return .shutdown
-  }
-  if normalized == FBiOSTargetStateString.booting.rawValue.lowercased() {
-    return .booting
-  }
-  if normalized == FBiOSTargetStateString.booted.rawValue.lowercased() {
-    return .booted
-  }
-  if normalized == FBiOSTargetStateString.shuttingDown.rawValue.lowercased() {
-    return .shuttingDown
-  }
-  if normalized == FBiOSTargetStateString.DFU.rawValue.lowercased() {
-    return .DFU
-  }
-  if normalized == FBiOSTargetStateString.recovery.rawValue.lowercased() {
-    return .recovery
-  }
-  if normalized == FBiOSTargetStateString.restoreOS.rawValue.lowercased() {
-    return .restoreOS
-  }
-  return .unknown
-}
-
 /// The canonical string representations of the FBiOSTargetType enum.
 public func FBiOSTargetTypeStringFromTargetType(_ targetType: FBiOSTargetType) -> String {
   if targetType == .device {
