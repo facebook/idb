@@ -29,7 +29,7 @@ private final class CapturingApplicationLauncher: ApplicationLaunching, @uncheck
     return _capturedConfiguration
   }
 
-  func launchApplication(_ configuration: FBApplicationLaunchConfiguration) async throws -> FBLaunchedApplication {
+  func launch(_ configuration: FBApplicationLaunchConfiguration) async throws -> FBLaunchedApplication {
     capture(configuration)
     // Throw to unwind launchDebugServer before it reaches the
     // (process-spawning) debugServerTask path. The thrown error never

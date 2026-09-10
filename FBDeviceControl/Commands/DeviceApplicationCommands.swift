@@ -138,7 +138,7 @@ public final class DeviceApplicationCommands: ApplicationCommands {
 
   // MARK: - Async
 
-  public func installApplication(atPath path: String) async throws -> FBInstalledApplication {
+  public func install(atPath path: String) async throws -> FBInstalledApplication {
     guard let device else {
       throw DeviceNilError.deviceNil
     }
@@ -170,10 +170,10 @@ public final class DeviceApplicationCommands: ApplicationCommands {
       }
       device.logger.log("Installed Application \(appURL)")
     }
-    return try await installedApplication(bundleID: bundle.identifier)
+    return try await installed(bundleID: bundle.identifier)
   }
 
-  public func uninstallApplication(bundleID: String) async throws {
+  public func uninstall(bundleID: String) async throws {
     guard let device else {
       throw DeviceNilError.deviceNil
     }
@@ -198,7 +198,7 @@ public final class DeviceApplicationCommands: ApplicationCommands {
     }
   }
 
-  public func installedApplications() async throws -> [FBInstalledApplication] {
+  public func installed() async throws -> [FBInstalledApplication] {
     let applicationData = try await installedApplicationsData(Self.installedApplicationLookupAttributes)
     var installedApplications: [FBInstalledApplication] = []
     for app in applicationData.values {
@@ -208,7 +208,7 @@ public final class DeviceApplicationCommands: ApplicationCommands {
     return installedApplications
   }
 
-  public func installedApplication(bundleID: String) async throws -> FBInstalledApplication {
+  public func installed(bundleID: String) async throws -> FBInstalledApplication {
     let applicationData = try await installedApplicationsData(Self.installedApplicationLookupAttributes)
     guard let app = applicationData[bundleID] else {
       throw DeviceApplicationError.applicationNotInstalled(bundleID: bundleID, installed: Array(applicationData.keys))
@@ -216,7 +216,7 @@ public final class DeviceApplicationCommands: ApplicationCommands {
     return try DeviceApplicationCommands.installedApplication(from: app)
   }
 
-  public func runningApplications() async throws -> [String: pid_t] {
+  public func running() async throws -> [String: pid_t] {
     let pidToRunningProcessName = try await pidToRunningProcessName()
     let bundleIdentifierToAttributes = try await installedApplicationsData(Self.namingLookupAttributes)
     var bundleNameToBundleIdentifier: [String: String] = [:]
@@ -239,19 +239,19 @@ public final class DeviceApplicationCommands: ApplicationCommands {
   }
 
   public func processID(forBundleID bundleID: String) async throws -> pid_t {
-    let running = try await runningApplications()
+    let running = try await self.running()
     guard let pid = running[bundleID] else {
       throw DeviceApplicationError.noProcessID(bundleID: bundleID)
     }
     return pid
   }
 
-  public func killApplication(bundleID: String) async throws {
+  public func kill(bundleID: String) async throws {
     let pid = try await processID(forBundleID: bundleID)
     try await killApplication(withProcessIdentifier: pid)
   }
 
-  public func launchApplication(_ configuration: FBApplicationLaunchConfiguration) async throws -> any FBLaunchedApplication {
+  public func launch(_ configuration: FBApplicationLaunchConfiguration) async throws -> any FBLaunchedApplication {
     guard let device else {
       throw DeviceNilError.deviceNil
     }

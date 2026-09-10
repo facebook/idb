@@ -152,7 +152,7 @@ public struct FBTestRunnerConfiguration {
       throw FBTestRunnerConfigurationError.testConfigurationPreparationFailed(underlying: error)
     }
 
-    let hostApplication = try await target.application.installedApplication(bundleID: testLaunchConfiguration.applicationLaunchConfiguration.bundleID)
+    let hostApplication = try await target.application.installed(bundleID: testLaunchConfiguration.applicationLaunchConfiguration.bundleID)
     let shimPath = try await target.xctest.extendedTestShim()
 
     var hostApplicationAdditionalEnvironment: [String: String] = [:]

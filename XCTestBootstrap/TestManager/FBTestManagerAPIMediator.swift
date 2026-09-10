@@ -76,7 +76,7 @@ public final class FBTestManagerAPIMediator: NSObject, @unchecked Sendable {
     let timeout = context.timeout <= 0 ? Self.defaultTestTimeout : context.timeout
     let result: Result<Void, Error>
     do {
-      let launchedApplication = try await target.application.launchApplication(context.testHostLaunchConfiguration)
+      let launchedApplication = try await target.application.launch(context.testHostLaunchConfiguration)
       do {
         if context.testHostLaunchConfiguration.waitForDebugger {
           reporter.processWaitingForDebugger(withProcessIdentifier: launchedApplication.processIdentifier)
@@ -165,7 +165,7 @@ public final class FBTestManagerAPIMediator: NSObject, @unchecked Sendable {
     }
     logger.log("Terminating processes spawned due to test bundle requests: \(appsToKill.map(\.bundleID))")
     for app in appsToKill {
-      try await target.application.killApplication(bundleID: app.bundleID)
+      try await target.application.kill(bundleID: app.bundleID)
     }
   }
 
@@ -206,7 +206,7 @@ public final class FBTestManagerAPIMediator: NSObject, @unchecked Sendable {
     let bundleID = app.bundleID
     Task {
       do {
-        try await self.target.application.killApplication(bundleID: bundleID)
+        try await self.target.application.kill(bundleID: bundleID)
         completion(nil)
       } catch {
         completion(error)
@@ -235,8 +235,8 @@ public final class FBTestManagerAPIMediator: NSObject, @unchecked Sendable {
   }
 
   private func launchApplication(_ configuration: FBApplicationLaunchConfiguration, atPath path: String?) async throws -> FBLaunchedApplication {
-    if let installed = try? await target.application.installedApplication(bundleID: configuration.bundleID), installed.bundle.path == path {
-      return try await target.application.launchApplication(configuration)
+    if let installed = try? await target.application.installed(bundleID: configuration.bundleID), installed.bundle.path == path {
+      return try await target.application.launch(configuration)
     }
     return try await installAndLaunchApplication(configuration, atPath: path)
   }
@@ -246,15 +246,15 @@ public final class FBTestManagerAPIMediator: NSObject, @unchecked Sendable {
       throw FBTestManagerError.appUnderTestNotInstallable(configurationDescription: String(describing: configuration))
     }
     if await isApplicationInstalled(bundleID: configuration.bundleID) {
-      try await target.application.uninstallApplication(bundleID: configuration.bundleID)
+      try await target.application.uninstall(bundleID: configuration.bundleID)
     }
-    _ = try await target.application.installApplication(atPath: path)
-    return try await target.application.launchApplication(configuration)
+    _ = try await target.application.install(atPath: path)
+    return try await target.application.launch(configuration)
   }
 
   private func isApplicationInstalled(bundleID: String) async -> Bool {
     do {
-      _ = try await target.application.installedApplication(bundleID: bundleID)
+      _ = try await target.application.installed(bundleID: bundleID)
       return true
     } catch {
       return false

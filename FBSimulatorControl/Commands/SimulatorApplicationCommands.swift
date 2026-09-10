@@ -122,7 +122,7 @@ public struct FBSimulatorApplicationCommands: ApplicationCommands {
 
   // MARK: - Async
 
-  public func installApplication(atPath path: String) async throws -> FBInstalledApplication {
+  public func install(atPath path: String) async throws -> FBInstalledApplication {
     try confirmApplicationInstallTargetIsReady()
     let appBundle = try await confirmCompatibilityOfApplication(atPath: path)
     let options: [String: Any] = ["CFBundleIdentifier": appBundle.identifier]
@@ -136,28 +136,28 @@ public struct FBSimulatorApplicationCommands: ApplicationCommands {
         try Task.checkCancellation()
         try simulator.device.installApplication(appURL, withOptions: options as [AnyHashable: Any])
       },
-      resolveInstalledApplication: { try await self.installedApplication(bundleID: appBundle.identifier) },
+      resolveInstalledApplication: { try await self.installed(bundleID: appBundle.identifier) },
       installFailure: {
         .installFailed(bundleDescription: String(describing: appBundle), options: String(describing: options))
       })
   }
 
-  public func launchApplication(_ configuration: FBApplicationLaunchConfiguration) async throws -> FBLaunchedApplication {
+  public func launch(_ configuration: FBApplicationLaunchConfiguration) async throws -> FBLaunchedApplication {
     try await ensureApplicationIsInstalled(configuration.bundleID)
     try await confirmApplicationLaunchState(configuration.bundleID, launchMode: configuration.launchMode, waitForDebugger: configuration.waitForDebugger)
     let attachment = try await bridgeFBFuture(configuration.io.attachViaFile())
     guard let stdOut = attachment.stdOut, let stdErr = attachment.stdErr else {
       throw SimulatorApplicationLaunchError.attachmentMissingFiles(bundleID: configuration.bundleID)
     }
-    let launch = launchApplication(configuration, stdOut: stdOut, stdErr: stdErr)
-    return try await bridgeFBFuture(SimulatorLaunchedApplication.application(withSimulator: simulator, configuration: configuration, attachment: attachment, launchFuture: launch))
+    let launchFuture = launch(configuration, stdOut: stdOut, stdErr: stdErr)
+    return try await bridgeFBFuture(SimulatorLaunchedApplication.application(withSimulator: simulator, configuration: configuration, attachment: attachment, launchFuture: launchFuture))
   }
 
-  public func killApplication(bundleID: String) async throws {
+  public func kill(bundleID: String) async throws {
     try simulator.device.terminateApplication(withID: bundleID)
   }
 
-  public func installedApplications() async throws -> [FBInstalledApplication] {
+  public func installed() async throws -> [FBInstalledApplication] {
     let installedApps = try simulator.device.installedApps()
     var applications: [FBInstalledApplication] = []
     for appInfo in installedApps.values {
@@ -171,12 +171,12 @@ public struct FBSimulatorApplicationCommands: ApplicationCommands {
     return applications
   }
 
-  public func uninstallApplication(bundleID: String) async throws {
-    let installedApplication = try await installedApplication(bundleID: bundleID)
+  public func uninstall(bundleID: String) async throws {
+    let installedApplication = try await installed(bundleID: bundleID)
     if installedApplication.installType == .system {
       throw FBSimulatorApplicationUninstallError.uninstallingSystemApplication(applicationDescription: String(describing: installedApplication))
     }
-    _ = try? await killApplication(bundleID: bundleID)
+    _ = try? await kill(bundleID: bundleID)
     do {
       try simulator.device.uninstallApplication(bundleID, withOptions: nil)
     } catch {
@@ -184,11 +184,11 @@ public struct FBSimulatorApplicationCommands: ApplicationCommands {
     }
   }
 
-  public func installedApplication(bundleID: String) async throws -> FBInstalledApplication {
+  public func installed(bundleID: String) async throws -> FBInstalledApplication {
     try fetchInstalledApplication(bundleID: bundleID)
   }
 
-  public func runningApplications() async throws -> [String: pid_t] {
+  public func running() async throws -> [String: pid_t] {
     guard let uiKitApplicationPattern = try? NSRegularExpression(pattern: "UIKitApplication:", options: []) else {
       throw SimulatorApplicationLookupError.servicePatternConstructionFailed
     }
@@ -348,7 +348,7 @@ public struct FBSimulatorApplicationCommands: ApplicationCommands {
 
   private func ensureApplicationIsInstalled(_ bundleID: String) async throws {
     do {
-      _ = try await installedApplication(bundleID: bundleID)
+      _ = try await installed(bundleID: bundleID)
     } catch {
       throw SimulatorApplicationLaunchError.launchingUninstalledApplication(bundleID: bundleID, underlying: error)
     }
@@ -370,19 +370,19 @@ public struct FBSimulatorApplicationCommands: ApplicationCommands {
     if launchMode == .failIfRunning {
       throw SimulatorApplicationLaunchError.applicationAlreadyRunning(bundleID: bundleID, processIdentifier: pid)
     } else if launchMode == .relaunchIfRunning {
-      try await killApplication(bundleID: bundleID)
+      try await kill(bundleID: bundleID)
     }
   }
 
-  private func launchApplication(_ configuration: FBApplicationLaunchConfiguration, stdOut: any FBProcessFileOutput, stdErr: any FBProcessFileOutput) -> FBFuture<NSNumber> {
+  private func launch(_ configuration: FBApplicationLaunchConfiguration, stdOut: any FBProcessFileOutput, stdErr: any FBProcessFileOutput) -> FBFuture<NSNumber> {
     fbFutureFromAsync { [self] in
       try await bridgeFBFutureVoid(stdOut.startReading())
       try await bridgeFBFutureVoid(stdErr.startReading())
-      return try await launchApplication(configuration, stdOutPath: stdOut.filePath, stdErrPath: stdErr.filePath)
+      return try await launch(configuration, stdOutPath: stdOut.filePath, stdErrPath: stdErr.filePath)
     }
   }
 
-  private func launchApplication(_ configuration: FBApplicationLaunchConfiguration, stdOutPath: String?, stdErrPath: String?) async throws -> NSNumber {
+  private func launch(_ configuration: FBApplicationLaunchConfiguration, stdOutPath: String?, stdErrPath: String?) async throws -> NSNumber {
     guard let dataDirectory = simulator.dataDirectory else {
       throw SimulatorApplicationLaunchError.noDataDirectory(bundleID: configuration.bundleID)
     }
@@ -488,7 +488,7 @@ public struct FBSimulatorApplicationCommands: ApplicationCommands {
 
     let installed: FBInstalledApplication?
     do {
-      installed = try await installedApplication(bundleID: application.identifier)
+      installed = try await self.installed(bundleID: application.identifier)
     } catch {
       installed = nil
     }

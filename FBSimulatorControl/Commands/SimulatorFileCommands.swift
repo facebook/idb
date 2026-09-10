@@ -121,7 +121,7 @@ public final class SimulatorFileCommands: FileCommands {
   // MARK: - Contained file accessors
 
   private func containedFile(forApplication bundleID: String) async throws -> any FBContainedFile {
-    let installedApplication = try await simulator.application.installedApplication(bundleID: bundleID)
+    let installedApplication = try await simulator.application.installed(bundleID: bundleID)
     guard let container = installedApplication.dataContainer else {
       throw SimulatorFileError.noDataContainer(applicationDescription: String(describing: installedApplication))
     }

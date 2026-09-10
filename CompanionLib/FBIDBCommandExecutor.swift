@@ -91,10 +91,10 @@ public final class FBIDBCommandExecutor {
   // MARK: - Installation
 
   public func list_apps(_ fetchProcessState: Bool) async throws -> [FBInstalledApplication: Any] {
-    let installedApps = try await target.application.installedApplications()
+    let installedApps = try await target.application.installed()
     let runningApps: [String: pid_t]
     if fetchProcessState {
-      runningApps = try await target.application.runningApplications()
+      runningApps = try await target.application.running()
     } else {
       runningApps = [:]
     }
@@ -356,12 +356,12 @@ public final class FBIDBCommandExecutor {
   }
 
   public func uninstall_application(_ bundleID: String) async throws {
-    try await target.application.uninstallApplication(bundleID: bundleID)
+    try await target.application.uninstall(bundleID: bundleID)
   }
 
   public func kill_application(_ bundleID: String) async throws {
     do {
-      try await target.application.killApplication(bundleID: bundleID)
+      try await target.application.kill(bundleID: bundleID)
     } catch {
       // Killing an app that is not running is a no-op.
     }
@@ -382,7 +382,7 @@ public final class FBIDBCommandExecutor {
       io: configuration.io,
       launchMode: configuration.launchMode
     )
-    return try await target.application.launchApplication(derived)
+    return try await target.application.launch(derived)
   }
 
   public func crash_list(_ predicate: NSPredicate) async throws -> [FBCrashLogInfo] {
@@ -466,7 +466,7 @@ public final class FBIDBCommandExecutor {
   /// work. Used by the `app` REPL context when no bundle id is given.
   public func ensureReplHostAppInstalled() async throws -> String {
     let bundleID = Self.replHostBundleID
-    if (try? await target.application.installedApplication(bundleID: bundleID)) != nil {
+    if (try? await target.application.installed(bundleID: bundleID)) != nil {
       return bundleID
     }
     // Not installed: locate ReplHost.app in the Resources/ directory next to the
@@ -801,7 +801,7 @@ public final class FBIDBCommandExecutor {
   private func installAppBundle(_ appBundle: FBBundleDescriptor, makeDebuggable: Bool) async throws -> FBInstalledArtifact {
     let userDevelopmentAppIsRequired = target is FBDevice
     try storageManager.application.checkArchitecture(appBundle)
-    let installedApp = try await target.application.installApplication(atPath: appBundle.path)
+    let installedApp = try await target.application.install(atPath: appBundle.path)
     // TODO: currently we have to persist it even if app is not used for debugging
     // as installed apps are referenced from xctestrun files and expanded by idb
     // by using its own application storage. Fix this by replacing xctestrun
@@ -840,7 +840,7 @@ public final class FBIDBCommandExecutor {
     }
     let bundlePathURL: URL
     if linkTo.bundleType == .app {
-      let app = try await target.application.installedApplication(bundleID: linkTo.bundleID)
+      let app = try await target.application.installed(bundleID: linkTo.bundleID)
       logger.log("Going to create a symlink for app bundle: \(app.bundle.name)")
       bundlePathURL = URL(fileURLWithPath: app.bundle.path)
     } else {

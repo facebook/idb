@@ -159,7 +159,7 @@ public struct FBSimulatorReplCommands {
       io: io,
       launchMode: .relaunchIfRunning
     )
-    let launched = try await simulator.application.launchApplication(configuration)
+    let launched = try await simulator.application.launch(configuration)
 
     // A launched app registers a `UIKitApplication:` service with the simulator's
     // launchd; a launchd-managed target such as SpringBoard never does. CoreSimulator

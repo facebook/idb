@@ -101,7 +101,7 @@ public struct DeviceDebuggerCommands: DebuggerCommands {
   }
 
   private func remoteTarget(forBundleID bundleID: String) async throws -> String {
-    let installedApplication = try await device.application.installedApplication(bundleID: bundleID)
+    let installedApplication = try await device.application.installed(bundleID: bundleID)
     return "script lldb.target.modules[0].SetPlatformFileSpec(lldb.SBFileSpec(\"\(installedApplication.bundle.path)\"))"
   }
 }

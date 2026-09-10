@@ -475,34 +475,34 @@ extension FBMacDevice: XCTestExtendedCommands {
 
 extension FBMacDevice: ApplicationCommands {
 
-  public func installApplication(atPath path: String) async throws -> FBInstalledApplication {
+  public func install(atPath path: String) async throws -> FBInstalledApplication {
     try installApplication(withPath: path)
   }
 
-  public func uninstallApplication(bundleID: String) async throws {
+  public func uninstall(bundleID: String) async throws {
     try await bridgeFBFutureVoid(uninstallApplication(withBundleID: bundleID))
   }
 
-  public func launchApplication(_ configuration: FBApplicationLaunchConfiguration) async throws -> FBLaunchedApplication {
+  public func launch(_ configuration: FBApplicationLaunchConfiguration) async throws -> FBLaunchedApplication {
     try await bridgeFBFuture(launchApplication(configuration))
   }
 
-  public func killApplication(bundleID: String) async throws {
+  public func kill(bundleID: String) async throws {
     try await bridgeFBFutureVoid(killApplication(withBundleID: bundleID))
   }
 
-  public func installedApplications() async throws -> [FBInstalledApplication] {
+  public func installed() async throws -> [FBInstalledApplication] {
     try bundleIDToProductMap.values.map { existingBundle in
       let bundle = try FBBundleDescriptor.bundle(fromPath: existingBundle.path)
       return FBInstalledApplication(bundle: bundle, installType: .mac, dataContainer: nil)
     }
   }
 
-  public func installedApplication(bundleID: String) async throws -> FBInstalledApplication {
+  public func installed(bundleID: String) async throws -> FBInstalledApplication {
     try installedApplication(withBundleID: bundleID)
   }
 
-  public func runningApplications() async throws -> [String: pid_t] {
+  public func running() async throws -> [String: pid_t] {
     var result: [String: pid_t] = [:]
     for (bundleId, task) in bundleIDToRunningTask {
       result[bundleId] = task.processIdentifier

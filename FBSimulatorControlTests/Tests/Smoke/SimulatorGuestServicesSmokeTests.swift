@@ -61,12 +61,12 @@ final class SimulatorGuestServicesSmokeTests: ProvidedSimulatorTestCase {
       waitForDebugger: false,
       io: io,
       launchMode: .relaunchIfRunning)
-    let launched = try await simulator.application.launchApplication(configuration)
+    let launched = try await simulator.application.launch(configuration)
     XCTAssertGreaterThan(launched.processIdentifier, 0)
     let processID = try await simulator.application.processID(forBundleID: Self.bundleID)
     XCTAssertEqual(processID, launched.processIdentifier)
 
-    try await simulator.application.killApplication(bundleID: Self.bundleID)
+    try await simulator.application.kill(bundleID: Self.bundleID)
     do {
       let survivor = try await simulator.application.processID(forBundleID: Self.bundleID)
       XCTFail("\(Self.bundleID) should not be running after termination, found pid \(survivor)")

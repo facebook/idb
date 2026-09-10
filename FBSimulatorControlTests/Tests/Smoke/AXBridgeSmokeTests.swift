@@ -46,11 +46,11 @@ final class AXBridgeSmokeTests: ProvidedSimulatorTestCase {
       waitForDebugger: false,
       io: io,
       launchMode: .foregroundIfRunning)
-    let launched = try await simulator.application.launchApplication(configuration)
+    let launched = try await simulator.application.launch(configuration)
     addTeardownBlock {
       // Leased-resource discipline: this suite may not own the simulator, so it leaves behind only
       // what it found.
-      try? await simulator.application.killApplication(bundleID: Self.bundleID)
+      try? await simulator.application.kill(bundleID: Self.bundleID)
     }
     return launched.processIdentifier
   }
