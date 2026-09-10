@@ -103,16 +103,3 @@ public final class DeviceXCTestCommands: XCTestCommands {
     return FBXcodeBuildOperation.operation(withUDID: udid, configuration: configuration, xcodeBuildPath: xcodeBuildPath, testRunFilePath: filePath, simDeviceSet: nil, macOSTestShimPath: nil, queue: device.workQueue, logger: logger.withName("xcodebuild"))
   }
 }
-
-// MARK: - FBDevice+XCTestCommands
-
-extension FBDevice: XCTestCommands {
-
-  public func runTest(
-    launchConfiguration: FBTestLaunchConfiguration,
-    reporter: AnyObject,
-    logger: any FBControlCoreLogger
-  ) async throws {
-    try await xctest.runTest(launchConfiguration: launchConfiguration, reporter: reporter, logger: logger)
-  }
-}

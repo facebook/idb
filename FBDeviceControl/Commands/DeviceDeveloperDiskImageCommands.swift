@@ -226,29 +226,3 @@ public final class DeviceDeveloperDiskImageCommands: DeveloperDiskImageCommands 
     }
   }
 }
-
-// MARK: - FBDevice+DeveloperDiskImageCommands
-
-extension FBDevice: DeveloperDiskImageCommands {
-
-  public func mountedDiskImages() async throws -> [FBDeveloperDiskImage] {
-    try await developerDiskImage.mountedDiskImages()
-  }
-
-  public func mountDiskImage(_ diskImage: FBDeveloperDiskImage) async throws -> FBDeveloperDiskImage {
-    try await developerDiskImage.mountDiskImage(diskImage)
-  }
-
-  public func unmountDiskImage(_ diskImage: FBDeveloperDiskImage) async throws {
-    try await developerDiskImage.unmountDiskImage(diskImage)
-  }
-
-  public func mountableDiskImages() -> [FBDeveloperDiskImage] {
-    developerDiskImage.mountableDiskImages()
-  }
-
-  public func ensureDeveloperDiskImageIsMounted() async throws -> FBDeveloperDiskImage {
-    try await developerDiskImage.ensureDeveloperDiskImageIsMounted()
-  }
-
-}

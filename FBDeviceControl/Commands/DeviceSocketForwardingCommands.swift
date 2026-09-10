@@ -130,12 +130,3 @@ public struct DeviceSocketForwardingCommands {
     return localSocket
   }
 }
-
-// MARK: - FBDevice+SocketForwardingCommands
-
-extension FBDevice: SocketForwardingCommands {
-
-  public func drainLocalFileInput(_ localFileDescriptorInput: Int32, localFileOutput localFileDescriptorOutput: Int32, remotePort: Int32) async throws {
-    try await socketForwarding.drainLocalFileInput(localFileDescriptorInput, localFileOutput: localFileDescriptorOutput, remotePort: remotePort)
-  }
-}

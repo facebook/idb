@@ -68,12 +68,3 @@ public final class DeviceVideoRecordingCommands: VideoRecordingCommands {
     return try await video.stop()
   }
 }
-
-// MARK: - FBDevice+VideoRecordingCommands
-
-extension FBDevice: VideoRecordingCommands {
-
-  public func startRecording(toFile filePath: String) async throws -> any FBVideoRecording {
-    try await videoRecording.startRecording(toFile: filePath)
-  }
-}

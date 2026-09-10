@@ -492,10 +492,10 @@ private func runForward(_ forward: String, userDefaults: UserDefaults, xcodeAvai
   let remotePort = Int32(components[1]) ?? 0
 
   let target = try await targetForUDID(udid, userDefaults: userDefaults, xcodeAvailable: xcodeAvailable, warmUp: false, logger: logger)
-  guard let commands = target as? SocketForwardingCommands else {
+  guard let socketForwarding = (target as? FBDevice)?.socketForwarding else {
     throw IDBCompanionError.socketForwardingUnsupported(targetDescription: String(describing: target))
   }
-  try await commands.drainLocalFileInput(STDIN_FILENO, localFileOutput: STDOUT_FILENO, remotePort: remotePort)
+  try await socketForwarding.drainLocalFileInput(STDIN_FILENO, localFileOutput: STDOUT_FILENO, remotePort: remotePort)
 }
 
 /// Runs the single mode-of-operation selected by the command-line arguments,

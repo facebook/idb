@@ -105,15 +105,3 @@ public struct DeviceDebuggerCommands: DebuggerCommands {
     return "script lldb.target.modules[0].SetPlatformFileSpec(lldb.SBFileSpec(\"\(installedApplication.bundle.path)\"))"
   }
 }
-
-// MARK: - FBDevice+DebuggerCommands
-
-extension FBDevice: DebuggerCommands {
-
-  public func launchDebugServer(
-    forHostApplication application: FBBundleDescriptor,
-    port: in_port_t
-  ) async throws -> any FBDebugServer {
-    try await debugger.launchDebugServer(forHostApplication: application, port: port)
-  }
-}

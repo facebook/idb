@@ -58,12 +58,3 @@ public struct DeviceScreenshotCommands: ScreenshotCommands {
     }
   }
 }
-
-// MARK: - FBDevice+ScreenshotCommands
-
-extension FBDevice: ScreenshotCommands {
-
-  public func takeScreenshot(configuration: FBScreenshotConfiguration) async throws -> FBScreenshotResult {
-    try await screenshot.takeScreenshot(configuration: configuration)
-  }
-}

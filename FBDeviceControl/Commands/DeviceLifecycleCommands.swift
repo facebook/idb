@@ -29,16 +29,3 @@ public struct DeviceLifecycleCommands: LifecycleCommands {
     try await FBiOSTargetResolveLeavesState(device, state)
   }
 }
-
-// MARK: - FBDevice+LifecycleCommands
-
-extension FBDevice: LifecycleCommands {
-
-  public func resolveState(_ state: FBiOSTargetState) async throws {
-    try await lifecycle.resolveState(state)
-  }
-
-  public func resolveLeavesState(_ state: FBiOSTargetState) async throws {
-    try await lifecycle.resolveLeavesState(state)
-  }
-}

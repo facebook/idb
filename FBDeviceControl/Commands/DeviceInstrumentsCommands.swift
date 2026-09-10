@@ -25,15 +25,3 @@ public struct DeviceInstrumentsCommands: InstrumentsCommands {
     try await FBInstrumentsOperation.operation(target: device, configuration: configuration, logger: logger)
   }
 }
-
-// MARK: - FBDevice+InstrumentsCommands
-
-extension FBDevice: InstrumentsCommands {
-
-  public func startInstruments(
-    configuration: FBInstrumentsConfiguration,
-    logger: any FBControlCoreLogger
-  ) async throws -> FBInstrumentsOperation {
-    try await instruments.startInstruments(configuration: configuration, logger: logger)
-  }
-}

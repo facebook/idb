@@ -42,16 +42,3 @@ public struct DevicePowerCommands: PowerCommands {
     }
   }
 }
-
-// MARK: - FBDevice+PowerCommands
-
-extension FBDevice: PowerCommands {
-
-  public func shutdown() async throws {
-    try await power.shutdown()
-  }
-
-  public func reboot() async throws {
-    try await power.reboot()
-  }
-}

@@ -28,12 +28,3 @@ public struct DeviceVideoStreamCommands: VideoStreamCommands {
     return stream
   }
 }
-
-// MARK: - FBDevice+VideoStreamCommands
-
-extension FBDevice: VideoStreamCommands {
-
-  public func createStream(configuration: FBVideoStreamConfiguration, to consumer: any FBDataConsumer) async throws -> any FBVideoStream {
-    try await videoStream.createStream(configuration: configuration, to: consumer)
-  }
-}

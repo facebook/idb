@@ -35,12 +35,3 @@ public struct DeviceLocationCommands: LocationCommands {
     }
   }
 }
-
-// MARK: - FBDevice+LocationCommands
-
-extension FBDevice: LocationCommands {
-
-  public func overrideLocation(longitude: Double, latitude: Double) async throws {
-    try await location.overrideLocation(longitude: longitude, latitude: latitude)
-  }
-}

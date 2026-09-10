@@ -154,12 +154,3 @@ public final class DeviceEraseCommands: EraseCommands {
     logger.log("Device erase finished successfully \(operation)")
   }
 }
-
-// MARK: - FBDevice+EraseCommands
-
-extension FBDevice: EraseCommands {
-
-  public func erase() async throws {
-    try await erase.erase()
-  }
-}
