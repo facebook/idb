@@ -352,16 +352,25 @@ def render_formulae(
     bottle_blocks=None,
     asset_base=None,
     templates_dir=None,
+    only=None,
 ):
     """The three formulae for a release, from the templates alone: nothing
     here depends on what the tap currently contains. `asset_base` overrides
     the release download URL prefix, which is how CI points the formulae at
     freshly built local copies of the assets (file://...) to install-test
-    them before any release exists."""
+    them before any release exists. `only` restricts the set, e.g. the bottle
+    job renders just idb-cli.rb before the companion tarball exists, in
+    which case `companion_sha` may be None."""
     version = version_from_tag(tag)
+    names = tuple(only) if only else FORMULAE
+    unknown = sorted(set(names) - set(FORMULAE))
+    if unknown:
+        raise FormulaError(f"{', '.join(unknown)}: not a tap formula this tool renders")
+    if "idb-companion.rb" in names and not companion_sha:
+        raise FormulaError("idb-companion.rb needs the companion tarball's sha256")
     base = (asset_base or release_asset_base(tag)).rstrip("/")
     blocks = dict(bottle_blocks or {})
-    unknown = sorted(set(blocks) - set(FORMULAE))
+    unknown = sorted(set(blocks) - set(names))
     if unknown:
         raise FormulaError(f"{', '.join(unknown)}: not a tap formula this tool renders")
     directory = Path(templates_dir or default_templates_dir())
@@ -369,7 +378,7 @@ def render_formulae(
         "tag": tag,
         "version": version,
         "companion_url": f"{base}/{COMPANION_ASSET}",
-        "companion_sha256": companion_sha,
+        "companion_sha256": companion_sha or "",
         "wheel_url": f"{base}/{wheel_asset(version)}",
         "wheel_sha256": wheel_sha,
         # Homebrew scans the version from the url on a stable tag; on a
@@ -379,7 +388,7 @@ def render_formulae(
         ),
     }
     outputs = {}
-    for name in FORMULAE:
+    for name in names:
         path = directory / f"{name}{TEMPLATE_SUFFIX}"
         if not path.exists():
             raise FormulaError(f"missing formula template {path}")
@@ -409,7 +418,16 @@ def render_manifest(tag, outputs, companion_sha, wheel_sha, asset_base):
 
 
 def cmd_render(args):
-    companion_sha = sha256_of_file(_single_glob(args.companion, "companion tarball"))
+    only = tuple(args.only) if args.only else FORMULAE
+    if "idb-companion.rb" in only and not args.companion:
+        raise FormulaError(
+            "--companion is required unless --only leaves out idb-companion.rb"
+        )
+    companion_sha = (
+        sha256_of_file(_single_glob(args.companion, "companion tarball"))
+        if args.companion
+        else None
+    )
     wheel_sha = sha256_of_file(_single_glob(args.wheel, "wheel"))
     blocks = bottle_blocks_from_dir(args.bottles) if args.bottles else None
     asset_base = (args.asset_base or release_asset_base(args.tag)).rstrip("/")
@@ -420,10 +438,11 @@ def cmd_render(args):
         blocks,
         asset_base=asset_base,
         templates_dir=args.templates,
+        only=only,
     )
     manifest = render_manifest(args.tag, outputs, companion_sha, wheel_sha, asset_base)
     write_bump(args.out, outputs, manifest)
-    for name in FORMULAE:
+    for name in only:
         print(f"{name}: rendered")
     print(f"wrote {len(outputs)} formulae and {MANIFEST} to {args.out}")
     return 0
@@ -490,10 +509,18 @@ def main(argv=None):
     )
     render.add_argument("--tag", required=True, help="release tag, e.g. v1.5.4")
     render.add_argument(
-        "--companion", required=True, help="glob for the companion tarball asset"
+        "--companion",
+        help="glob for the companion tarball asset (required unless --only "
+        "leaves out idb-companion.rb)",
     )
     render.add_argument(
         "--wheel", required=True, help="glob for the fb-idb wheel asset"
+    )
+    render.add_argument(
+        "--only",
+        action="append",
+        choices=FORMULAE,
+        help="render only this formula (repeatable; default: all three)",
     )
     render.add_argument(
         "--bottles",

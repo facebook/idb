@@ -144,12 +144,10 @@ jobs:
           gh release upload "$RELEASE_TAG" dist/* --clobber --repo "$GITHUB_REPOSITORY"
 
   # Bottles idb-cli during the release itself. A bottle is built by installing
-  # its formula, and the published tap still points at the previous release
-  # while this run is in flight — so this job clones a WORKING COPY of the tap,
-  # bumps idb-cli.rb to this run's own tag, and bottles from that. The tap
-  # commit that publishes the bump and the bottle block together comes
-  # afterwards, from release tooling, once this run's assets and bottle-json
-  # artifact exist. This replaces the manually-dispatched Bottle workflow.
+  # its formula, so this job renders idb-cli.rb for this run's own tag and
+  # wheel into a scratch tap and bottles from that; the published tap is not
+  # consulted. The formulae job below renders the final files, bottle block
+  # included, once the bottle exists.
   #
   # Only idb-cli is bottled: its source install is the venv-and-pip work a
   # bottle eliminates, while idb-companion's source install already unpacks a
@@ -173,40 +171,25 @@ jobs:
       - uses: actions/checkout@v5
       - uses: Homebrew/actions/setup-homebrew@master
 
-      - name: Clone a tap working copy
-        run: git clone --depth 1 https://github.com/facebook/homebrew-fb tap
-
       - name: Download this release's wheel
         env:
           GH_TOKEN: ${{ github.token }}
         run: gh release download "$RELEASE_TAG" --pattern 'fb_idb-*-py3-none-any.whl' --repo "$GITHUB_REPOSITORY"
 
-      # No published-tap version guard is needed (the old Bottle workflow had
-      # one): this job constructs the bump itself, from this run's own tag and
-      # wheel, so tap/release version skew is impossible.
-      - name: Bump idb-cli.rb in the working copy
+      # Rendered from the template for this run's own tag and wheel, so
+      # tap/release version skew is impossible. Only idb-cli.rb is needed to
+      # bottle idb-cli, and the companion tarball does not exist yet.
+      - name: Render idb-cli.rb into a scratch tap
         run: |
-          python3 - <<'EOF'
-          import glob
-          import hashlib
-          import os
-          import sys
-          from pathlib import Path
-
-          sys.path.insert(0, ".github/scripts")
-          import tap_formulae
-
-          [wheel] = glob.glob("fb_idb-*-py3-none-any.whl")
-          sha = hashlib.sha256(Path(wheel).read_bytes()).hexdigest()
-          formula = Path("tap/idb-cli.rb")
-          tag = os.environ["RELEASE_TAG"]
-          formula.write_text(tap_formulae.rewrite_cli(formula.read_text(), tag, sha))
-          print(f"{formula} -> {tag} ({wheel}: {sha})")
-          EOF
+          python3 .github/scripts/tap_formulae.py render \
+            --tag "$RELEASE_TAG" \
+            --only idb-cli.rb \
+            --wheel 'fb_idb-*-py3-none-any.whl' \
+            --out tap
 
       # brew only installs formulae out of its own tap directories, so expose
-      # the bumped working copy as the facebook/fb tap.
-      - name: Link the working copy as the facebook/fb tap
+      # the scratch tap as facebook/fb.
+      - name: Link the scratch tap as facebook/fb
         run: |
           taps="$(brew --repository)/Library/Taps/facebook"
           mkdir -p "$taps"
@@ -283,28 +266,24 @@ jobs:
                   out.write(f"### `{path}`\n\n```json\n{raw}\n```\n\n")
           EOF
 
-  # The finished tap bump for this release: the three formulae rewritten
-  # against the published tap, with the release's asset digests and the
-  # bottle block, plus a manifest recording what they were computed from.
-  # Release tooling copies this artifact into the tap's source of truth and
-  # commits it, so nothing downstream has to recompute a digest or a bottle
-  # block. A pure function of this run's own outputs, so it runs anywhere.
-  tap-formulae:
-    name: Publish the bumped tap formulae
+  # The finished tap formulae for this release, rendered from the templates
+  # in .github/formulae/ with the release's asset digests and the bottle
+  # block, plus a manifest recording what they were computed from. Published
+  # twice: as the `tap-formulae` run artifact, which release tooling copies
+  # into the tap's source of truth and commits, and as release assets, which
+  # need no token to fetch. A pure function of this run's own outputs.
+  formulae:
+    name: Publish the tap formulae
     runs-on: ubuntu-latest
     timeout-minutes: 10
     needs: [companion, python-client, bottle]
     if: ${{ startsWith(github.ref, 'refs/tags/v') || inputs.version != '' }}
+    permissions:
+      contents: write
     env:
       RELEASE_TAG: ${{ startsWith(github.ref, 'refs/tags/v') && github.ref_name || inputs.version }}
     steps:
       - uses: actions/checkout@v5
-
-      - name: Clone the published tap
-        id: tap
-        run: |
-          git clone --depth 1 https://github.com/facebook/homebrew-fb tap
-          echo "commit=$(git -C tap rev-parse HEAD)" >> "$GITHUB_OUTPUT"
 
       - uses: actions/download-artifact@v5
         with:
@@ -319,12 +298,10 @@ jobs:
           name: bottle-json
           path: assets/bottles
 
-      - name: Rewrite the formulae for this release
+      - name: Render the formulae for this release
         run: |
-          python3 .github/scripts/tap_formulae.py bump \
-            --tap tap \
+          python3 .github/scripts/tap_formulae.py render \
             --tag "$RELEASE_TAG" \
-            --tap-commit "${{ steps.tap.outputs.commit }}" \
             --companion 'assets/companion/idb-companion.macos-arm64.tar.gz' \
             --wheel 'assets/dist/fb_idb-*-py3-none-any.whl' \
             --bottles assets/bottles \
@@ -337,16 +314,23 @@ jobs:
           path: tap-formulae/
           if-no-files-found: error
 
-      # The same bump as a diff against the published tap, for the run page.
-      - name: Show the bump as a diff against the published tap
+      # The manifest is renamed on the release so it cannot be mistaken for
+      # anything else's manifest.json; the artifact keeps the plain name.
+      - name: Attach the formulae to the release
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
-          cp tap-formulae/*.rb tap/
+          cp tap-formulae/manifest.json formulae-manifest.json
+          gh release upload "$RELEASE_TAG" tap-formulae/*.rb formulae-manifest.json --clobber --repo "$GITHUB_REPOSITORY"
+
+      - name: Summarize
+        run: |
           {
-            echo '## Tap bump for this release'
-            echo 'The `tap-formulae` artifact holds the rewritten formulae and a `manifest.json`; release tooling applies it to the tap. As a diff against the published tap:'
+            echo '## Tap formulae for this release'
+            echo 'Rendered from `.github/formulae/*.rb.in`; the `tap-formulae` artifact and the release assets `idb-companion.rb`, `idb-cli.rb`, `idb.rb` and `formulae-manifest.json` hold the same files. Release tooling copies them into the tap.'
             echo ''
-            echo '```diff'
-            git -C tap --no-pager diff
+            echo '```json'
+            cat tap-formulae/manifest.json
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
 
