@@ -9,9 +9,8 @@
 every test in the suite reaches its own verdict through it. It reads nothing
 but the companion and reports through ``fail`` and ``skipTest``, so it can be
 called with a stand-in for the test case. Reading SpringBoard's pid out of a
-``launchctl`` listing is likewise pure. So is deciding that a companion has
-died and the run should end. All of them run anywhere, unlike the rest of the
-suite.
+Deciding that a companion has died and the run should end is likewise pure.
+Both run anywhere, unlike the rest of the suite.
 
 Named ``harness_tests`` rather than ``test_harness`` deliberately. The
 end-to-end job discovers its tests with ``unittest discover``, whose default
@@ -34,17 +33,8 @@ from .harness import (
     CompanionDied,
     Completed,
     IdbEndToEndTestCase,
-    springboard_pid_from_listing,
     STRICT_ENV,
 )
-
-# `launchctl list` in the guest, cut down to the shape the harness reads: a
-# header, a job launchd is keeping listed after it exited, and SpringBoard.
-LAUNCHCTL_LISTING = """PID\tStatus\tLabel
--\t0\tcom.apple.SafariBookmarksSyncAgent
-81\t0\tcom.apple.SpringBoard
-92\t0\tcom.apple.SpringBoardServices
-"""
 
 CONNECTION_REFUSED = (
     "Failed to connect to companion at address DomainSocketAddress("
@@ -241,28 +231,6 @@ class DeadCompanionStopsTheSuiteTests(unittest.TestCase):
         self.assertEqual(len(result.errors), 1)
         self.assertIn("exited with 1", result.errors[0][1])
         self.assertTrue(result.shouldStop)
-
-
-class SpringBoardListingTests(unittest.TestCase):
-    def test_reports_the_pid_of_a_running_springboard(self) -> None:
-        self.assertEqual(springboard_pid_from_listing(LAUNCHCTL_LISTING), 81)
-
-    def test_reports_nothing_for_a_job_launchd_lists_without_a_pid(self) -> None:
-        listing = LAUNCHCTL_LISTING.replace(
-            "81\t0\tcom.apple.SpringBoard", "-\t0\tcom.apple.SpringBoard"
-        )
-
-        self.assertIsNone(springboard_pid_from_listing(listing))
-
-    def test_reports_nothing_when_springboard_is_not_listed(self) -> None:
-        listing = LAUNCHCTL_LISTING.replace("81\t0\tcom.apple.SpringBoard\n", "")
-
-        self.assertIsNone(springboard_pid_from_listing(listing))
-
-    def test_does_not_take_another_job_for_springboard(self) -> None:
-        listing = "PID\tStatus\tLabel\n92\t0\tcom.apple.SpringBoardServices\n"
-
-        self.assertIsNone(springboard_pid_from_listing(listing))
 
 
 if __name__ == "__main__":

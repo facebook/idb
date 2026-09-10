@@ -18,14 +18,12 @@ its environment is incomplete.
 The simulator is a leased resource. Tests restore anything they mutate and
 never boot, shut down, erase or delete it.
 
-Before any test runs, the suite waits for the simulator in three stages, each
-of which can only be observed after the one before it: ``simctl bootstatus``
-for CoreSimulator's own services, a live ``com.apple.SpringBoard`` in the
-guest's launchd for the guest coming up, and an accessibility read that
-succeeds for the translation layer serving. A simulator that never gets past
-one of them fails the whole suite naming the stage it stopped at, rather than
-leaving whichever test happened to run first to report the symptom as its own
-failure.
+Before any test runs, the suite waits once for the simulator to answer an
+accessibility read. That is the last thing to come up and the only one with no
+proxy for it, so it subsumes the weaker signals: a simulator serving reads has
+finished booting and has a live SpringBoard. A simulator that never gets there
+fails the whole suite, rather than leaving whichever test happened to run
+first to report the symptom as its own failure.
 
 The harness starts one companion for the simulator on a private unix socket
 and every command connects to it with ``--companion``, so the client's own
@@ -96,12 +94,6 @@ HOST_SERVICE_UNAVAILABLE_MARKERS = (
 # remove.
 COMPANION_UNREACHABLE_MARKERS = ("Failed to connect to companion",)
 
-# The guest's window server and frontmost application. `bootstatus` returning
-# does not imply it is up: CoreSimulator calls the boot finished once its own
-# services have started, and SpringBoard comes up under the guest's launchd
-# after that.
-SPRINGBOARD_SERVICE_NAME = "com.apple.SpringBoard"
-
 # What an accessibility read says before the simulator has a translation object
 # to serve. Distinct from every other read failure: it is the one that goes
 # away on its own.
@@ -109,8 +101,6 @@ ACCESSIBILITY_NOT_READY_MARKER = "No translation object returned"
 ACCESSIBILITY_PROBE_ARGS = ("ui", "describe-all", "--json")
 
 COMPANION_READY_TIMEOUT_SECONDS = 180.0
-BOOT_COMPLETION_TIMEOUT_SECONDS = 300.0
-SPRINGBOARD_READY_TIMEOUT_SECONDS = 180.0
 ACCESSIBILITY_READY_TIMEOUT_SECONDS = 180.0
 DEFAULT_COMMAND_TIMEOUT_SECONDS = 120.0
 INSTALL_TIMEOUT_SECONDS = 300.0
@@ -208,41 +198,6 @@ class Simctl:
             return None
         return _device_states(json.loads(completed.stdout)).get(self.udid)
 
-    async def wait_until_boot_completed(self) -> None:
-        # `booted` is reported the moment the boot is underway; `bootstatus`
-        # returns once the boot has actually finished, and work handed to a
-        # simulator before then waits rather than failing.
-        completed = await self.run(
-            "bootstatus", self.udid, timeout=BOOT_COMPLETION_TIMEOUT_SECONDS
-        )
-        if completed.returncode != 0:
-            raise HarnessError(
-                f"simctl bootstatus {self.udid} failed (rc={completed.returncode}): "
-                f"{completed.error_text}"
-            )
-
-    async def springboard_pid(self) -> int | None:
-        """SpringBoard's pid in the guest, or ``None`` if launchd has no live
-        job for it."""
-        completed = await self.run("spawn", self.udid, "launchctl", "list")
-        if completed.returncode != 0:
-            return None
-        return springboard_pid_from_listing(completed.text)
-
-    async def wait_until_springboard_is_running(self) -> None:
-        deadline = time.monotonic() + SPRINGBOARD_READY_TIMEOUT_SECONDS
-        while True:
-            if await self.springboard_pid() is not None:
-                return
-            if time.monotonic() >= deadline:
-                raise HarnessError(
-                    f"Readiness stage 2 of 3, SpringBoard: the guest's launchd "
-                    f"had no live {SPRINGBOARD_SERVICE_NAME} within "
-                    f"{SPRINGBOARD_READY_TIMEOUT_SECONDS:.0f}s of the boot "
-                    f"finishing. The simulator booted but did not come up."
-                )
-            await asyncio.sleep(1.0)
-
     async def installed_bundle_ids(self) -> set[str] | None:
         completed = await self.run("listapps", self.udid)
         if completed.returncode != 0:
@@ -255,26 +210,6 @@ class Simctl:
         if converted.returncode != 0:
             return None
         return set(json.loads(converted.stdout).keys())
-
-
-def springboard_pid_from_listing(listing: str) -> int | None:
-    """SpringBoard's pid in a ``launchctl list`` listing, or ``None`` if it has
-    no live job there.
-
-    A pid over zero rather than presence in the listing, which is how idb
-    itself decides SpringBoard is running: launchd keeps a job listed with a
-    pid of ``-`` after it has exited.
-    """
-    for line in listing.splitlines():
-        columns = line.split("\t")
-        if len(columns) < 3 or columns[2].strip() != SPRINGBOARD_SERVICE_NAME:
-            continue
-        try:
-            pid = int(columns[0])
-        except ValueError:
-            return None
-        return pid if pid > 0 else None
-    return None
 
 
 def _device_states(listing: dict[str, Any]) -> dict[str, str]:
@@ -328,8 +263,6 @@ class Environment:
             raise HarnessError(
                 f"{DEVICE_UDID_ENV}={udid} must already be booted; it is {state}"
             )
-        await simctl.wait_until_boot_completed()
-        await simctl.wait_until_springboard_is_running()
         return cls(udid, device_set_path, idb_bin, companion_path)
 
 
@@ -465,11 +398,10 @@ async def wait_until_accessibility_is_serving(
 ) -> None:
     """Wait for the simulator to answer an accessibility read.
 
-    The last of the three things the suite waits for, and the only one with no
-    proxy for it. ``bootstatus`` reports CoreSimulator's own services started
-    and a live SpringBoard reports the guest came up, but the accessibility
-    translation layer begins serving strictly after both, and nothing outside
-    it says when. So the probe is the read itself, run once for the suite
+    The only signal with no proxy for it, and a strictly stronger one than the
+    weaker signals it replaces: a simulator serving reads has finished booting
+    and has a live SpringBoard. Nothing outside the translation layer says when
+    it begins serving, so the probe is the read itself, run once for the suite
     rather than left for whichever test happens to go first to discover.
     """
     deadline = time.monotonic() + ACCESSIBILITY_READY_TIMEOUT_SECONDS
@@ -490,17 +422,16 @@ async def wait_until_accessibility_is_serving(
             ACCESSIBILITY_NOT_READY_MARKER not in completed.error_text
         ):
             raise HarnessError(
-                f"Readiness stage 3 of 3, accessibility: "
+                f"The simulator is not serving accessibility reads: "
                 f"idb {' '.join(ACCESSIBILITY_PROBE_ARGS)} failed for a reason "
                 f"that is not the simulator still coming up "
                 f"(rc={completed.returncode}): {completed.error_text}"
             )
         if time.monotonic() >= deadline:
             raise HarnessError(
-                f"Readiness stage 3 of 3, accessibility: the simulator had no "
-                f"translation object to serve within "
-                f"{ACCESSIBILITY_READY_TIMEOUT_SECONDS:.0f}s of SpringBoard "
-                f"coming up. It is booted and running but not serving reads."
+                f"The simulator had no translation object to serve within "
+                f"{ACCESSIBILITY_READY_TIMEOUT_SECONDS:.0f}s. It is booted but "
+                f"not serving reads."
             )
         await asyncio.sleep(1.0)
 
