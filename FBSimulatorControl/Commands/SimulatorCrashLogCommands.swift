@@ -37,11 +37,11 @@ public final class SimulatorCrashLogCommands {
     self.notifier = notifier
   }
 
-  fileprivate func notifyOfCrash(matching predicate: NSPredicate) async throws -> FBCrashLogInfo {
+  public func notifyOfCrash(matching predicate: NSPredicate) async throws -> FBCrashLogInfo {
     try await notifier.nextCrashLog(forPredicate: predicate)
   }
 
-  fileprivate func crashes(matching predicate: NSPredicate, useCache: Bool) async throws -> [FBCrashLogInfo] {
+  public func crashes(matching predicate: NSPredicate, useCache: Bool) async throws -> [FBCrashLogInfo] {
     if !hasPerformedInitialIngestion {
       notifier.store.ingestAllExistingInDirectory()
       hasPerformedInitialIngestion = true
@@ -49,7 +49,7 @@ public final class SimulatorCrashLogCommands {
     return notifier.store.ingestedCrashLogs(matchingPredicate: predicate)
   }
 
-  fileprivate func pruneCrashes(matching predicate: NSPredicate) async throws -> [FBCrashLogInfo] {
+  public func pruneCrashes(matching predicate: NSPredicate) async throws -> [FBCrashLogInfo] {
     guard let simulator = self.simulator else {
       throw FBWeakTargetError.simulator
     }
@@ -58,6 +58,10 @@ public final class SimulatorCrashLogCommands {
       predicate,
     ])
     return notifier.store.pruneCrashLogs(matchingPredicate: simulatorPredicate)
+  }
+
+  public func withCrashLogFiles<R>(body: (any AsyncFileContainer) async throws -> R) async throws -> R {
+    throw SimulatorCrashLogError.fileAccessUnsupported
   }
 }
 
@@ -78,6 +82,6 @@ extension FBSimulator: CrashLogCommands {
   }
 
   public func withCrashLogFiles<R>(body: (any AsyncFileContainer) async throws -> R) async throws -> R {
-    throw SimulatorCrashLogError.fileAccessUnsupported
+    try await crashLog.withCrashLogFiles(body: body)
   }
 }

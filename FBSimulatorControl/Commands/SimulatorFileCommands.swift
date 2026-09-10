@@ -42,31 +42,80 @@ public final class SimulatorFileCommands {
     self.simulator = simulator
   }
 
-  // MARK: - FBFileCommands Implementation
+  // MARK: - Containers
 
-  public func fileCommandsForContainerApplication(_ bundleID: String) async throws -> FBContainedFile_ContainedRoot {
-    FBFileContainer.fileContainer(for: try await containedFile(forApplication: bundleID))
+  public func withFileCommandsForContainerApplication<R>(
+    _ bundleID: String,
+    body: (any AsyncFileContainer) async throws -> R
+  ) async throws -> R {
+    try await body(FBFileContainer.fileContainer(for: try await containedFile(forApplication: bundleID)))
   }
 
-  public func fileCommandsForAuxillary() -> FBContainedFile_ContainedRoot {
-    FBFileContainer.fileContainer(forBasePath: simulator.auxillaryDirectory)
+  public func withFileCommandsForAuxillary<R>(
+    body: (any AsyncFileContainer) async throws -> R
+  ) async throws -> R {
+    try await body(FBFileContainer.fileContainer(forBasePath: simulator.auxillaryDirectory))
   }
 
-  public func fileCommandsForApplicationContainers() async throws -> FBContainedFile_ContainedRoot {
-    FBFileContainer.fileContainer(for: try containedFileForApplicationContainers())
+  public func withFileCommandsForApplicationContainers<R>(
+    body: (any AsyncFileContainer) async throws -> R
+  ) async throws -> R {
+    try await body(FBFileContainer.fileContainer(for: try containedFileForApplicationContainers()))
   }
 
-  public func fileCommandsForGroupContainers() async throws -> FBContainedFile_ContainedRoot {
-    FBFileContainer.fileContainer(for: try containedFileForGroupContainers())
+  public func withFileCommandsForGroupContainers<R>(
+    body: (any AsyncFileContainer) async throws -> R
+  ) async throws -> R {
+    try await body(FBFileContainer.fileContainer(for: try containedFileForGroupContainers()))
   }
 
-  public func fileCommandsForRootFilesystem() throws -> FBContainedFile_ContainedRoot {
-    FBFileContainer.fileContainer(forBasePath: try requireDataDirectory())
+  public func withFileCommandsForRootFilesystem<R>(
+    body: (any AsyncFileContainer) async throws -> R
+  ) async throws -> R {
+    try await body(FBFileContainer.fileContainer(forBasePath: try requireDataDirectory()))
   }
 
-  public func fileCommandsForMediaDirectory() throws -> FBContainedFile_ContainedRoot {
+  public func withFileCommandsForMediaDirectory<R>(
+    body: (any AsyncFileContainer) async throws -> R
+  ) async throws -> R {
     let mediaDirectory = (try requireDataDirectory() as NSString).appendingPathComponent("Media")
-    return FBFileContainer.fileContainer(forBasePath: mediaDirectory)
+    return try await body(FBFileContainer.fileContainer(forBasePath: mediaDirectory))
+  }
+
+  public func withFileCommandsForProvisioningProfiles<R>(
+    body: (any AsyncFileContainer) async throws -> R
+  ) async throws -> R {
+    throw SimulatorFileError.unsupportedOnSimulators(operation: #function)
+  }
+
+  public func withFileCommandsForMDMProfiles<R>(
+    body: (any AsyncFileContainer) async throws -> R
+  ) async throws -> R {
+    throw SimulatorFileError.unsupportedOnSimulators(operation: #function)
+  }
+
+  public func withFileCommandsForSpringboardIconLayout<R>(
+    body: (any AsyncFileContainer) async throws -> R
+  ) async throws -> R {
+    throw SimulatorFileError.unsupportedOnSimulators(operation: #function)
+  }
+
+  public func withFileCommandsForWallpaper<R>(
+    body: (any AsyncFileContainer) async throws -> R
+  ) async throws -> R {
+    throw SimulatorFileError.unsupportedOnSimulators(operation: #function)
+  }
+
+  public func withFileCommandsForDiskImages<R>(
+    body: (any AsyncFileContainer) async throws -> R
+  ) async throws -> R {
+    throw SimulatorFileError.unsupportedOnSimulators(operation: #function)
+  }
+
+  public func withFileCommandsForSymbols<R>(
+    body: (any AsyncFileContainer) async throws -> R
+  ) async throws -> R {
+    throw SimulatorFileError.unsupportedOnSimulators(operation: #function)
   }
 
   // MARK: - Contained file accessors
@@ -128,72 +177,72 @@ extension FBSimulator: FileCommands {
     _ bundleID: String,
     body: (any AsyncFileContainer) async throws -> R
   ) async throws -> R {
-    try await body(file.fileCommandsForContainerApplication(bundleID))
+    try await file.withFileCommandsForContainerApplication(bundleID, body: body)
   }
 
   public func withFileCommandsForAuxillary<R>(
     body: (any AsyncFileContainer) async throws -> R
   ) async throws -> R {
-    try await body(file.fileCommandsForAuxillary())
+    try await file.withFileCommandsForAuxillary(body: body)
   }
 
   public func withFileCommandsForApplicationContainers<R>(
     body: (any AsyncFileContainer) async throws -> R
   ) async throws -> R {
-    try await body(file.fileCommandsForApplicationContainers())
+    try await file.withFileCommandsForApplicationContainers(body: body)
   }
 
   public func withFileCommandsForGroupContainers<R>(
     body: (any AsyncFileContainer) async throws -> R
   ) async throws -> R {
-    try await body(file.fileCommandsForGroupContainers())
+    try await file.withFileCommandsForGroupContainers(body: body)
   }
 
   public func withFileCommandsForRootFilesystem<R>(
     body: (any AsyncFileContainer) async throws -> R
   ) async throws -> R {
-    try await body(file.fileCommandsForRootFilesystem())
+    try await file.withFileCommandsForRootFilesystem(body: body)
   }
 
   public func withFileCommandsForMediaDirectory<R>(
     body: (any AsyncFileContainer) async throws -> R
   ) async throws -> R {
-    try await body(file.fileCommandsForMediaDirectory())
+    try await file.withFileCommandsForMediaDirectory(body: body)
   }
 
   public func withFileCommandsForProvisioningProfiles<R>(
     body: (any AsyncFileContainer) async throws -> R
   ) async throws -> R {
-    throw SimulatorFileError.unsupportedOnSimulators(operation: #function)
+    try await file.withFileCommandsForProvisioningProfiles(body: body)
   }
 
   public func withFileCommandsForMDMProfiles<R>(
     body: (any AsyncFileContainer) async throws -> R
   ) async throws -> R {
-    throw SimulatorFileError.unsupportedOnSimulators(operation: #function)
+    try await file.withFileCommandsForMDMProfiles(body: body)
   }
 
   public func withFileCommandsForSpringboardIconLayout<R>(
     body: (any AsyncFileContainer) async throws -> R
   ) async throws -> R {
-    throw SimulatorFileError.unsupportedOnSimulators(operation: #function)
+    try await file.withFileCommandsForSpringboardIconLayout(body: body)
   }
 
   public func withFileCommandsForWallpaper<R>(
     body: (any AsyncFileContainer) async throws -> R
   ) async throws -> R {
-    throw SimulatorFileError.unsupportedOnSimulators(operation: #function)
+    try await file.withFileCommandsForWallpaper(body: body)
   }
 
   public func withFileCommandsForDiskImages<R>(
     body: (any AsyncFileContainer) async throws -> R
   ) async throws -> R {
-    throw SimulatorFileError.unsupportedOnSimulators(operation: #function)
+    try await file.withFileCommandsForDiskImages(body: body)
   }
 
   public func withFileCommandsForSymbols<R>(
     body: (any AsyncFileContainer) async throws -> R
   ) async throws -> R {
-    throw SimulatorFileError.unsupportedOnSimulators(operation: #function)
+    try await file.withFileCommandsForSymbols(body: body)
   }
 }

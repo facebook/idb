@@ -28,7 +28,7 @@ public struct SimulatorMemoryCommands {
     SimulatorMemoryCommands(simulator: simulator)
   }
 
-  fileprivate func simulateMemoryWarning() async throws {
+  public func simulateMemoryWarning() async throws {
     guard simulator.device.responds(to: NSSelectorFromString("simulateMemoryWarning")) else {
       throw SimulatorMemoryError.selectorUnavailable
     }

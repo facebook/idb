@@ -17,43 +17,43 @@ extension FBSimulator {
 
   // MARK: - Shared accessors
 
-  var application: FBSimulatorApplicationCommands {
+  public var application: FBSimulatorApplicationCommands {
     FBSimulatorApplicationCommands.commands(with: self)
   }
 
-  var crashLog: SimulatorCrashLogCommands {
+  public var crashLog: SimulatorCrashLogCommands {
     commandCache.resolve { SimulatorCrashLogCommands.commands(with: self) }
   }
 
-  var screenshot: SimulatorScreenshotCommands {
+  public var screenshot: SimulatorScreenshotCommands {
     commandCache.resolve { SimulatorScreenshotCommands.commands(with: self) }
   }
 
-  var location: SimulatorLocationCommands {
+  public var location: SimulatorLocationCommands {
     SimulatorLocationCommands.commands(with: self)
   }
 
-  var debugger: SimulatorDebuggerCommands {
+  public var debugger: SimulatorDebuggerCommands {
     commandCache.resolve { SimulatorDebuggerCommands.commands(with: self) }
   }
 
-  var file: SimulatorFileCommands {
+  public var file: SimulatorFileCommands {
     SimulatorFileCommands.commands(with: self)
   }
 
-  var log: SimulatorLogCommands {
+  public var log: SimulatorLogCommands {
     SimulatorLogCommands.commands(with: self)
   }
 
-  var processSpawn: SimulatorProcessSpawnCommands {
+  public var processSpawn: SimulatorProcessSpawnCommands {
     SimulatorProcessSpawnCommands.commands(with: self)
   }
 
-  var videoRecording: FBSimulatorVideoRecordingCommands {
+  public var videoRecording: FBSimulatorVideoRecordingCommands {
     commandCache.resolve { FBSimulatorVideoRecordingCommands.commands(with: self) }
   }
 
-  var videoStream: SimulatorVideoStreamCommands {
+  public var videoStream: SimulatorVideoStreamCommands {
     SimulatorVideoStreamCommands.commands(with: self)
   }
 
@@ -61,11 +61,11 @@ extension FBSimulator {
     SimulatorLaunchCtlCommands.commands(with: self)
   }
 
-  var xctraceRecord: FBXCTraceRecordCommands {
+  public var xctraceRecord: FBXCTraceRecordCommands {
     FBXCTraceRecordCommands.commands(with: self)
   }
 
-  var instruments: SimulatorInstrumentsCommands {
+  public var instruments: SimulatorInstrumentsCommands {
     SimulatorInstrumentsCommands.commands(with: self)
   }
 
@@ -119,7 +119,7 @@ extension FBSimulator {
     SimulatorPhotosCommands.commands(with: self)
   }
 
-  var xctestExtended: SimulatorXCTestCommands {
+  public var xctestExtended: SimulatorXCTestCommands {
     commandCache.resolve { SimulatorXCTestCommands.commands(with: self) }
   }
 
@@ -127,19 +127,19 @@ extension FBSimulator {
     commandCache.resolve { SimulatorAccessibilityCommands.commands(with: self) }
   }
 
-  var dapServer: SimulatorDapServerCommand {
+  public var dapServer: SimulatorDapServerCommand {
     SimulatorDapServerCommand.commands(with: self)
   }
 
-  var repl: FBSimulatorReplCommands {
+  public var repl: FBSimulatorReplCommands {
     FBSimulatorReplCommands.commands(with: self)
   }
 
-  var notification: SimulatorNotificationCommands {
+  public var notification: SimulatorNotificationCommands {
     SimulatorNotificationCommands.commands(with: self)
   }
 
-  var memory: SimulatorMemoryCommands {
+  public var memory: SimulatorMemoryCommands {
     SimulatorMemoryCommands.commands(with: self)
   }
 }

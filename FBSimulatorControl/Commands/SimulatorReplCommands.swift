@@ -44,7 +44,7 @@ public struct FBSimulatorReplCommands {
 
   // MARK: - Async
 
-  fileprivate func startReplTest(bundlePath: String) async throws -> ReplSession {
+  public func startReplTest(bundlePath: String) async throws -> ReplSession {
     let logger = simulator.logger
 
     // The driver auto-imports the IDBAPI `.swiftinterface` so injected code can call `IDB`; the API
@@ -88,7 +88,7 @@ public struct FBSimulatorReplCommands {
     return ReplSession(socketPath: socketPath, run: runner.execute(), extraInterfacePaths: extraInterfacePaths)
   }
 
-  fileprivate func startReplSimulator() async throws -> ReplSession {
+  public func startReplSimulator() async throws -> ReplSession {
 
     guard let bridgePath = simulator.frameworkBridgePath else {
       throw SimulatorReplError.bundledResourceMissing(item: "SimulatorFrameworkBridge binary")
@@ -117,7 +117,7 @@ public struct FBSimulatorReplCommands {
     return ReplSession(socketPath: socketPath, run: run, extraInterfacePaths: [idbInterfacePath].compactMap { $0 })
   }
 
-  fileprivate func replAppEnvironment(bundleID: String) async throws -> [String: String] {
+  public func replAppLaunchEnvironment(bundleID: String) async throws -> [String: String] {
     guard let replDylibPath = BundledResources.path(forItem: "libRepl-iOS.dylib") else {
       throw SimulatorReplError.bundledResourceMissing(item: "libRepl-iOS.dylib")
     }
@@ -128,7 +128,7 @@ public struct FBSimulatorReplCommands {
     ]
   }
 
-  fileprivate func startReplApp(bundleID: String, reuseSession: Bool) async throws -> ReplSession {
+  public func startReplApp(bundleID: String, reuseSession: Bool) async throws -> ReplSession {
     let logger = simulator.logger
 
     // Read host-side by the companion, so the app sandbox need not contain it.
@@ -148,7 +148,7 @@ public struct FBSimulatorReplCommands {
     }
 
     // `.relaunchIfRunning` so an app already running without the dylib picks it up.
-    let environment = try await replAppEnvironment(bundleID: bundleID)
+    let environment = try await replAppLaunchEnvironment(bundleID: bundleID)
     let io: FBProcessIO<AnyObject, AnyObject, AnyObject> = .outputToDevNull()
     let configuration = FBApplicationLaunchConfiguration(
       bundleID: bundleID,
@@ -203,7 +203,7 @@ extension FBSimulator: ReplCommands {
   }
 
   public func replAppLaunchEnvironment(bundleID: String) async throws -> [String: String] {
-    try await repl.replAppEnvironment(bundleID: bundleID)
+    try await repl.replAppLaunchEnvironment(bundleID: bundleID)
   }
 }
 

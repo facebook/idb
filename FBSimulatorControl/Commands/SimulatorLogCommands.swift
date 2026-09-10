@@ -28,7 +28,7 @@ public struct SimulatorLogCommands {
     SimulatorLogCommands(simulator: simulator)
   }
 
-  fileprivate func tailLog(arguments: [String], consumer: any FBDataConsumer) async throws -> any LogOperation {
+  public func tailLog(arguments: [String], consumer: any FBDataConsumer) async throws -> any LogOperation {
     let launchPath = try logExecutablePath()
     let streamArguments = FBProcessLogOperation.osLogArgumentsInsertStreamIfNeeded(arguments)
     let processIO = FBProcessIO<AnyObject, AnyObject, AnyObject>(

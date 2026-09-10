@@ -50,11 +50,15 @@ public final class FBSimulatorVideoRecordingCommands {
       keyFrameRate: nil)
   }
 
-  fileprivate func startRecording(toFile filePath: String) async throws -> any FBVideoRecording {
+  /// Simulator recording goes through `FBSimulatorVideo`, which reads the configuration it is
+  /// handed rather than imposing a fixed one.
+  public var honorsRecordingConfiguration: Bool { true }
+
+  public func startRecording(toFile filePath: String) async throws -> any FBVideoRecording {
     try await startRecording(toFile: filePath, configuration: Self.recordingConfiguration)
   }
 
-  fileprivate func startRecording(toFile filePath: String, configuration: FBVideoStreamConfiguration) async throws -> any FBVideoRecording {
+  public func startRecording(toFile filePath: String, configuration: FBVideoStreamConfiguration) async throws -> any FBVideoRecording {
     guard let simulator = self.simulator else {
       throw FBWeakTargetError.simulator
     }
@@ -70,7 +74,7 @@ public final class FBSimulatorVideoRecordingCommands {
     }
   }
 
-  fileprivate func stop() async throws -> URL {
+  public func stop() async throws -> URL {
     let video = self.video
     self.video = nil
     guard let video else {
@@ -92,5 +96,7 @@ extension FBSimulator: VideoRecordingCommands {
     try await videoRecording.startRecording(toFile: filePath, configuration: configuration)
   }
 
-  public var honorsRecordingConfiguration: Bool { true }
+  public var honorsRecordingConfiguration: Bool {
+    videoRecording.honorsRecordingConfiguration
+  }
 }

@@ -42,7 +42,7 @@ public struct SimulatorProcessSpawnCommands {
     return options
   }
 
-  fileprivate func launchProcess(_ configuration: FBProcessSpawnConfiguration) async throws -> FBSubprocess<AnyObject, AnyObject, AnyObject> {
+  public func launchProcess(_ configuration: FBProcessSpawnConfiguration) async throws -> FBSubprocess<AnyObject, AnyObject, AnyObject> {
     // Rejected before attaching, so that no file descriptor is opened for an input
     // that could never be read: SimDevice's launch options address stdout and stderr
     // by file descriptor and have no equivalent for stdin.

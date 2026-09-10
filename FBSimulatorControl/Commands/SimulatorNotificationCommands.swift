@@ -36,7 +36,7 @@ public struct SimulatorNotificationCommands {
     SimulatorNotificationCommands(simulator: simulator)
   }
 
-  fileprivate func sendPushNotification(forBundleID bundleID: String, jsonPayload: String) async throws {
+  public func sendPushNotification(forBundleID bundleID: String, jsonPayload: String) async throws {
 
     guard let data = jsonPayload.data(using: .utf8) else {
       throw SimulatorNotificationError.jsonNotUTF8

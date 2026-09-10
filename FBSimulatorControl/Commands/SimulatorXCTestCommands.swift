@@ -65,7 +65,7 @@ public final class SimulatorXCTestCommands {
 
   /// Resolves the testmanagerd unix-domain socket, connects to it, and hands the socket fd to
   /// `body` for the duration of the call, closing it on exit.
-  fileprivate func withTransportForTestManagerService<R>(body: (NSNumber) async throws -> R) async throws -> R {
+  public func withTransportForTestManagerService<R>(body: (NSNumber) async throws -> R) async throws -> R {
     guard self.simulator != nil else {
       throw FBWeakTargetError.simulator
     }
@@ -121,7 +121,7 @@ public final class SimulatorXCTestCommands {
 
   // MARK: - Async
 
-  fileprivate func runTest(launchConfiguration: FBTestLaunchConfiguration, reporter: AnyObject, logger: any FBControlCoreLogger) async throws {
+  public func runTest(launchConfiguration: FBTestLaunchConfiguration, reporter: AnyObject, logger: any FBControlCoreLogger) async throws {
     guard let simulator = self.simulator else {
       throw FBWeakTargetError.simulator
     }
@@ -155,7 +155,7 @@ public final class SimulatorXCTestCommands {
       FBXcodeBuildOperation.confirmExit(ofXcodebuildOperation: subprocess, configuration: launchConfiguration, reporter: typedReporter, target: simulator, logger: logger))
   }
 
-  fileprivate func listTests(forBundleAtPath bundlePath: String, timeout: TimeInterval, withAppAtPath appPath: String?) async throws -> [String] {
+  public func listTests(forBundleAtPath bundlePath: String, timeout: TimeInterval, withAppAtPath appPath: String?) async throws -> [String] {
     guard let simulator = self.simulator else {
       throw FBWeakTargetError.simulator
     }
@@ -176,7 +176,7 @@ public final class SimulatorXCTestCommands {
         .listTests())
   }
 
-  fileprivate func extendedTestShim() async throws -> String {
+  public func extendedTestShim() async throws -> String {
     let shimConfig = try await FBXCTestShimConfiguration.sharedShimConfiguration()
     return shimConfig.iOSSimulatorTestShimPath
   }

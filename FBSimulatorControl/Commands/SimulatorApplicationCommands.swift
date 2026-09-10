@@ -122,7 +122,7 @@ public struct FBSimulatorApplicationCommands {
 
   // MARK: - Async
 
-  fileprivate func installApplication(withPath path: String) async throws -> FBInstalledApplication {
+  public func installApplication(atPath path: String) async throws -> FBInstalledApplication {
     try confirmApplicationInstallTargetIsReady()
     let appBundle = try await confirmCompatibilityOfApplication(atPath: path)
     let options: [String: Any] = ["CFBundleIdentifier": appBundle.identifier]
@@ -136,13 +136,13 @@ public struct FBSimulatorApplicationCommands {
         try Task.checkCancellation()
         try simulator.device.installApplication(appURL, withOptions: options as [AnyHashable: Any])
       },
-      resolveInstalledApplication: { try await self.installedApplication(withBundleID: appBundle.identifier) },
+      resolveInstalledApplication: { try await self.installedApplication(bundleID: appBundle.identifier) },
       installFailure: {
         .installFailed(bundleDescription: String(describing: appBundle), options: String(describing: options))
       })
   }
 
-  internal func launchApplication(_ configuration: FBApplicationLaunchConfiguration) async throws -> FBLaunchedApplication {
+  public func launchApplication(_ configuration: FBApplicationLaunchConfiguration) async throws -> FBLaunchedApplication {
     try await ensureApplicationIsInstalled(configuration.bundleID)
     try await confirmApplicationLaunchState(configuration.bundleID, launchMode: configuration.launchMode, waitForDebugger: configuration.waitForDebugger)
     let attachment = try await bridgeFBFuture(configuration.io.attachViaFile())
@@ -153,11 +153,11 @@ public struct FBSimulatorApplicationCommands {
     return try await bridgeFBFuture(SimulatorLaunchedApplication.application(withSimulator: simulator, configuration: configuration, attachment: attachment, launchFuture: launch))
   }
 
-  fileprivate func killApplication(withBundleID bundleID: String) async throws {
+  public func killApplication(bundleID: String) async throws {
     try simulator.device.terminateApplication(withID: bundleID)
   }
 
-  fileprivate func installedApplications() async throws -> [FBInstalledApplication] {
+  public func installedApplications() async throws -> [FBInstalledApplication] {
     let installedApps = try simulator.device.installedApps()
     var applications: [FBInstalledApplication] = []
     for appInfo in installedApps.values {
@@ -171,12 +171,12 @@ public struct FBSimulatorApplicationCommands {
     return applications
   }
 
-  fileprivate func uninstallApplication(withBundleID bundleID: String) async throws {
-    let installedApplication = try await installedApplication(withBundleID: bundleID)
+  public func uninstallApplication(bundleID: String) async throws {
+    let installedApplication = try await installedApplication(bundleID: bundleID)
     if installedApplication.installType == .system {
       throw FBSimulatorApplicationUninstallError.uninstallingSystemApplication(applicationDescription: String(describing: installedApplication))
     }
-    _ = try? await killApplication(withBundleID: bundleID)
+    _ = try? await killApplication(bundleID: bundleID)
     do {
       try simulator.device.uninstallApplication(bundleID, withOptions: nil)
     } catch {
@@ -184,25 +184,25 @@ public struct FBSimulatorApplicationCommands {
     }
   }
 
-  fileprivate func installedApplication(withBundleID bundleID: String) async throws -> FBInstalledApplication {
+  public func installedApplication(bundleID: String) async throws -> FBInstalledApplication {
     try fetchInstalledApplication(bundleID: bundleID)
   }
 
-  fileprivate func runningApplications() async throws -> [String: NSNumber] {
+  public func runningApplications() async throws -> [String: pid_t] {
     guard let uiKitApplicationPattern = try? NSRegularExpression(pattern: "UIKitApplication:", options: []) else {
       throw SimulatorApplicationLookupError.servicePatternConstructionFailed
     }
     let serviceNameToProcessIdentifier = try await simulator.launchCtl.serviceNamesAndProcessIdentifiers(matching: uiKitApplicationPattern)
-    var mapping: [String: NSNumber] = [:]
-    for serviceName in serviceNameToProcessIdentifier.keys {
+    var mapping: [String: pid_t] = [:]
+    for (serviceName, processIdentifier) in serviceNameToProcessIdentifier {
       if let bundleName = SimulatorLaunchCtlCommands.extractApplicationBundleIdentifier(fromServiceName: serviceName) {
-        mapping[bundleName] = serviceNameToProcessIdentifier[serviceName]
+        mapping[bundleName] = processIdentifier.int32Value
       }
     }
     return mapping
   }
 
-  fileprivate func processID(withBundleID bundleID: String) async throws -> pid_t {
+  public func processID(forBundleID bundleID: String) async throws -> pid_t {
     let pattern = "UIKitApplication:\(NSRegularExpression.escapedPattern(for: bundleID))(\\[|$)"
     guard let regex = try? NSRegularExpression(pattern: pattern, options: []) else {
       throw SimulatorApplicationLookupError.searchPatternConstructionFailed(bundleID: bundleID)
@@ -284,7 +284,7 @@ public struct FBSimulatorApplicationCommands {
     let processFetcher = FBProcessFetcher()
     try await Self.confirmApplicationProcessIsInstallable(
       bundleID: bundleID,
-      resolveProcessIdentifier: { try await self.processID(withBundleID: bundleID) },
+      resolveProcessIdentifier: { try await self.processID(forBundleID: bundleID) },
       processIsSuspended: { (try? processFetcher.isProcessStopped($0)) != nil },
       debuggerIsAttached: { (try? processFetcher.isDebuggerAttached(to: $0)) != nil })
   }
@@ -348,7 +348,7 @@ public struct FBSimulatorApplicationCommands {
 
   private func ensureApplicationIsInstalled(_ bundleID: String) async throws {
     do {
-      _ = try await installedApplication(withBundleID: bundleID)
+      _ = try await installedApplication(bundleID: bundleID)
     } catch {
       throw SimulatorApplicationLaunchError.launchingUninstalledApplication(bundleID: bundleID, underlying: error)
     }
@@ -361,7 +361,7 @@ public struct FBSimulatorApplicationCommands {
 
     let pid: pid_t
     do {
-      pid = try await processID(withBundleID: bundleID)
+      pid = try await processID(forBundleID: bundleID)
     } catch {
       // Process not running: treat as launchable.
       return
@@ -370,7 +370,7 @@ public struct FBSimulatorApplicationCommands {
     if launchMode == .failIfRunning {
       throw SimulatorApplicationLaunchError.applicationAlreadyRunning(bundleID: bundleID, processIdentifier: pid)
     } else if launchMode == .relaunchIfRunning {
-      try await killApplication(withBundleID: bundleID)
+      try await killApplication(bundleID: bundleID)
     }
   }
 
@@ -488,7 +488,7 @@ public struct FBSimulatorApplicationCommands {
 
     let installed: FBInstalledApplication?
     do {
-      installed = try await installedApplication(withBundleID: application.identifier)
+      installed = try await installedApplication(bundleID: application.identifier)
     } catch {
       installed = nil
     }
@@ -516,11 +516,11 @@ public struct FBSimulatorApplicationCommands {
 extension FBSimulator: ApplicationCommands {
 
   public func installApplication(atPath path: String) async throws -> FBInstalledApplication {
-    try await application.installApplication(withPath: path)
+    try await application.installApplication(atPath: path)
   }
 
   public func uninstallApplication(bundleID: String) async throws {
-    try await application.uninstallApplication(withBundleID: bundleID)
+    try await application.uninstallApplication(bundleID: bundleID)
   }
 
   public func launchApplication(_ configuration: FBApplicationLaunchConfiguration) async throws -> FBLaunchedApplication {
@@ -528,7 +528,7 @@ extension FBSimulator: ApplicationCommands {
   }
 
   public func killApplication(bundleID: String) async throws {
-    try await application.killApplication(withBundleID: bundleID)
+    try await application.killApplication(bundleID: bundleID)
   }
 
   public func installedApplications() async throws -> [FBInstalledApplication] {
@@ -536,15 +536,14 @@ extension FBSimulator: ApplicationCommands {
   }
 
   public func installedApplication(bundleID: String) async throws -> FBInstalledApplication {
-    try await application.installedApplication(withBundleID: bundleID)
+    try await application.installedApplication(bundleID: bundleID)
   }
 
   public func runningApplications() async throws -> [String: pid_t] {
-    let dict = try await application.runningApplications()
-    return dict.mapValues { $0.int32Value }
+    try await application.runningApplications()
   }
 
   public func processID(forBundleID bundleID: String) async throws -> pid_t {
-    try await application.processID(withBundleID: bundleID)
+    try await application.processID(forBundleID: bundleID)
   }
 }

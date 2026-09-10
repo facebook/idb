@@ -17,7 +17,7 @@ public struct SimulatorLocationCommands {
     SimulatorLocationCommands(simulator: simulator)
   }
 
-  fileprivate func overrideLocation(longitude: Double, latitude: Double) async throws {
+  public func overrideLocation(longitude: Double, latitude: Double) async throws {
     try simulator.device.setLocationWithLatitude(latitude, andLongitude: longitude)
   }
 }
