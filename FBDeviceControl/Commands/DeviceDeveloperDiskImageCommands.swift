@@ -106,7 +106,7 @@ public final class DeviceDeveloperDiskImageCommands: DeveloperDiskImageCommands 
     return diskImages.availableDiskImages
   }
 
-  public func ensureDeveloperDiskImageIsMounted() async throws -> FBDeveloperDiskImage {
+  public func ensureMounted() async throws -> FBDeveloperDiskImage {
     guard let device else {
       throw DeviceNilError.deviceNil
     }

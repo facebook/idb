@@ -9,9 +9,9 @@ import Foundation
 
 public protocol ProvisioningProfileCommands: AnyObject {
 
-  func allProvisioningProfiles() async throws -> [[String: Any]]
+  func all() async throws -> [[String: Any]]
 
-  func removeProvisioningProfile(uuid: String) async throws -> [String: Any]
+  func remove(uuid: String) async throws -> [String: Any]
 
-  func installProvisioningProfile(_ profileData: Data) async throws -> [String: Any]
+  func install(_ profileData: Data) async throws -> [String: Any]
 }

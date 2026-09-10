@@ -308,7 +308,7 @@ public final class FBFileContainer_ProvisioningProfile: AsyncFileContainer {
 
   public func copy(fromHost sourcePath: String, toContainer destinationPath: String) async throws {
     let data = try Data(contentsOf: URL(fileURLWithPath: sourcePath))
-    _ = try await commandsBox.commands.installProvisioningProfile(data)
+    _ = try await commandsBox.commands.install(data)
   }
 
   public func copy(fromContainer sourcePath: String, toHost destinationPath: String) async throws -> String {
@@ -328,11 +328,11 @@ public final class FBFileContainer_ProvisioningProfile: AsyncFileContainer {
   }
 
   public func remove(_ path: String) async throws {
-    _ = try await commandsBox.commands.removeProvisioningProfile(uuid: path)
+    _ = try await commandsBox.commands.remove(uuid: path)
   }
 
   public func contents(ofDirectory path: String) async throws -> [String] {
-    let profiles = try await commandsBox.commands.allProvisioningProfiles()
+    let profiles = try await commandsBox.commands.all()
     var files: [String] = []
     for profile in profiles {
       if let uuid = profile["UUID"] as? String {

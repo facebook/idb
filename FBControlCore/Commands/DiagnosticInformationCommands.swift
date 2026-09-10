@@ -9,5 +9,5 @@ import Foundation
 
 public protocol DiagnosticInformationCommands: AnyObject {
 
-  func fetchDiagnosticInformation() async throws -> [String: Any]
+  func fetch() async throws -> [String: Any]
 }

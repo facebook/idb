@@ -518,7 +518,7 @@ public final class FBIDBCommandExecutor {
     guard let device = target as? FBDevice else {
       return NSDictionary()
     }
-    return try await device.diagnosticInformation.fetchDiagnosticInformation() as NSDictionary
+    return try await device.diagnosticInformation.fetch() as NSDictionary
   }
 
   public func hid(_ event: FBSimulatorHIDEvent) async throws {

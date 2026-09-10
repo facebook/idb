@@ -350,12 +350,12 @@ private func runClone(_ udid: String, userDefaults: UserDefaults, logger: FBCont
 
 private func runEnterRecovery(_ ecid: String, logger: FBControlCoreLogger) async throws {
   let device = try await deviceForECID(ecid, logger: logger)
-  try await device.recovery.enterRecovery()
+  try await device.recovery.enter()
 }
 
 private func runExitRecovery(_ ecid: String, logger: FBControlCoreLogger) async throws {
   let device = try await deviceForECID(ecid, logger: logger)
-  try await device.recovery.exitRecovery()
+  try await device.recovery.exit()
 }
 
 private func runActivate(_ ecid: String, logger: FBControlCoreLogger) async throws {

@@ -137,7 +137,7 @@ public final class DeviceDebugSymbolsCommands {
   /// Each operation takes its own connection, as the service's protocol is per-connection state:
   /// once a file has been requested the connection is spent.
   private func withSymbolServiceConnection<T>(_ body: (FBAMDServiceConnection) async throws -> T) async throws -> T {
-    _ = try await device.developerDiskImage.ensureDeveloperDiskImageIsMounted()
+    _ = try await device.developerDiskImage.ensureMounted()
     return try await device.withServiceConnection(FetchSymbolsService, body)
   }
 

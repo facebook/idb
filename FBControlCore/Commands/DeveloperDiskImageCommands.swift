@@ -17,5 +17,5 @@ public protocol DeveloperDiskImageCommands: AnyObject {
 
   func mountableDiskImages() -> [FBDeveloperDiskImage]
 
-  func ensureDeveloperDiskImageIsMounted() async throws -> FBDeveloperDiskImage
+  func ensureMounted() async throws -> FBDeveloperDiskImage
 }

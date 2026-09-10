@@ -46,7 +46,7 @@ public final class DeviceProvisioningProfileCommands: ProvisioningProfileCommand
 
   // MARK: - ProvisioningProfileCommands
 
-  public func allProvisioningProfiles() async throws -> [[String: Any]] {
+  public func all() async throws -> [[String: Any]] {
     return try await device.withConnectedDevice(purpose: "list_provisioning_profiles") { connectedDevice in
       guard let profiles = connectedDevice.calls.CopyProvisioningProfiles?(connectedDevice.amDeviceRef)?.takeRetainedValue() as? [Any] else {
         throw DeviceProvisioningProfileError.copyFailed
@@ -66,7 +66,7 @@ public final class DeviceProvisioningProfileCommands: ProvisioningProfileCommand
     }
   }
 
-  public func removeProvisioningProfile(uuid: String) async throws -> [String: Any] {
+  public func remove(uuid: String) async throws -> [String: Any] {
     return try await device.withConnectedDevice(purpose: "remove_provisioning_profile") { connectedDevice in
       let status = connectedDevice.calls.RemoveProvisioningProfile?(connectedDevice.amDeviceRef, uuid as CFString) ?? -1
       if status != 0 {
@@ -78,7 +78,7 @@ public final class DeviceProvisioningProfileCommands: ProvisioningProfileCommand
     }
   }
 
-  public func installProvisioningProfile(_ profileData: Data) async throws -> [String: Any] {
+  public func install(_ profileData: Data) async throws -> [String: Any] {
     return try await device.withConnectedDevice(purpose: "install_provisioning_profile") { connectedDevice in
       guard let profileUnmanaged = connectedDevice.calls.ProvisioningProfileCreateWithData?(profileData as CFData) else {
         throw DeviceProvisioningProfileError.constructionFailed(dataDescription: String(describing: profileData))
