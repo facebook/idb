@@ -134,7 +134,7 @@ private class FBFileWriter_Null: FBFileWriter, FBDispatchDataConsumer, FBDataCon
   }
 
   var finishedConsuming: FBFuture<NSNull> {
-    return unsafeBitCast(finishedConsumingMutable, to: FBFuture<NSNull>.self)
+    return finishedConsumingMutable.retyped(FBFuture<NSNull>.self)
   }
 }
 
@@ -158,7 +158,7 @@ private class FBFileWriter_Sync: FBFileWriter, FBDispatchDataConsumer, FBDataCon
   }
 
   var finishedConsuming: FBFuture<NSNull> {
-    return unsafeBitCast(finishedConsumingMutable, to: FBFuture<NSNull>.self)
+    return finishedConsumingMutable.retyped(FBFuture<NSNull>.self)
   }
 }
 
@@ -189,7 +189,7 @@ private class FBFileWriter_Async: FBFileWriter, FBDispatchDataConsumer, FBDataCo
   }
 
   var finishedConsuming: FBFuture<NSNull> {
-    return unsafeBitCast(finishedConsumingMutable, to: FBFuture<NSNull>.self)
+    return finishedConsumingMutable.retyped(FBFuture<NSNull>.self)
   }
 
   func startWriting() throws {

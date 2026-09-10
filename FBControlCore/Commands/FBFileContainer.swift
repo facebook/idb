@@ -216,9 +216,9 @@ public final class FBContainedFile_ContainedRoot: AsyncFileContainer {
       .onQueue(
         serialQueue,
         respondToCancellation: {
-          unsafeBitCast(process.sendSignal(SIGTERM, backingOffToKillWithTimeout: 1, logger: nil), to: FBFuture<NSNull>.self)
+          process.sendSignal(SIGTERM, backingOffToKillWithTimeout: 1, logger: nil).retyped(FBFuture<NSNull>.self)
         })
-    return FileContainerTailOperation(completed: unsafeBitCast(completed, to: FBFuture<NSNull>.self))
+    return FileContainerTailOperation(completed: completed.retyped(FBFuture<NSNull>.self))
   }
 
   public func createDirectory(_ directoryPath: String) async throws {

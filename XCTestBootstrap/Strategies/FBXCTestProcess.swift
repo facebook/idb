@@ -37,35 +37,34 @@ public final class FBXCTestProcess {
     let startDate = Date(timeIntervalSinceNow: CrashLogStartDateFuzz)
 
     logger.log("Waiting for \(process.processIdentifier) to exit within \(timeout) seconds")
-    return unsafeBitCast(
-      unsafeBitCast(process.statLoc, to: FBFuture<AnyObject>.self)
-        .onQueue(
-          queue, timeout: timeout,
-          handler: {
-            FBXCTestProcess.performSampleStackshot(onProcess: process, forTimeout: timeout, queue: queue, logger: logger)
-          }
-        )
-        .onQueue(
-          queue,
-          fmap: { _ -> FBFuture<AnyObject> in
-            unsafeBitCast(process.exitCode, to: FBFuture<AnyObject>.self)
-              .onQueue(
-                queue,
-                chain: { exitCodeFuture -> FBFuture<AnyObject> in
-                  if exitCodeFuture.state == .done {
-                    return exitCodeFuture
-                  }
-                  guard let crashLogCommands else {
-                    return exitCodeFuture
-                  }
-                  return unsafeBitCast(
-                    FBXCTestProcess.performCrashLogQuery(forProcess: process, startDate: startDate, crashLogCommands: crashLogCommands, crashLogWaitTime: CrashLogWaitTime, queue: queue, logger: logger),
-                    to: FBFuture<AnyObject>.self
-                  )
-                })
-          }),
-      to: FBFuture<NSNumber>.self
-    )
+    return
+      process.statLoc.retyped(FBFuture<AnyObject>.self)
+      .onQueue(
+        queue, timeout: timeout,
+        handler: {
+          FBXCTestProcess.performSampleStackshot(onProcess: process, forTimeout: timeout, queue: queue, logger: logger)
+        }
+      )
+      .onQueue(
+        queue,
+        fmap: { _ -> FBFuture<AnyObject> in
+          process.exitCode.retyped(FBFuture<AnyObject>.self)
+            .onQueue(
+              queue,
+              chain: { exitCodeFuture -> FBFuture<AnyObject> in
+                if exitCodeFuture.state == .done {
+                  return exitCodeFuture
+                }
+                guard let crashLogCommands else {
+                  return exitCodeFuture
+                }
+                return FBXCTestProcess.performCrashLogQuery(
+                  forProcess: process, startDate: startDate, crashLogCommands: crashLogCommands, crashLogWaitTime: CrashLogWaitTime, queue: queue, logger: logger
+                ).retyped(FBFuture<AnyObject>.self)
+              })
+        }
+      )
+      .retyped(FBFuture<NSNumber>.self)
   }
 
   public static func describeFailingExitCode(_ exitCode: Int32) -> String? {
@@ -108,17 +107,17 @@ public final class FBXCTestProcess {
 
   private static func performCrashLogQuery(forProcess process: FBSubprocess<AnyObject, AnyObject, AnyObject>, startDate: Date, crashLogCommands: any CrashLogCommands, crashLogWaitTime: TimeInterval, queue: DispatchQueue, logger: FBControlCoreLogger) -> FBFuture<NSNumber> {
     logger.log("xctest process (\(process.processIdentifier)) died prematurely, checking for crash log for \(crashLogWaitTime) seconds")
-    return unsafeBitCast(
+    return
       FBXCTestProcess.crashLogs(forTerminationOfProcess: process, since: startDate, crashLogCommands: crashLogCommands, crashLogWaitTime: crashLogWaitTime, queue: queue)
-        .rephraseFailure("xctest process (\(process.processIdentifier)) exited abnormally with no crash log, to check for yourself look in ~/Library/Logs/DiagnosticReports")
-        .onQueue(
-          queue,
-          fmap: { info -> FBFuture<AnyObject> in
-            let rawLog = (try? info.loadRawCrashLogString()) ?? ""
-            return FBFuture(error: FBXCTestProcessError.crashed(info: String(describing: info), rawLog: rawLog))
-          }),
-      to: FBFuture<NSNumber>.self
-    )
+      .rephraseFailure("xctest process (\(process.processIdentifier)) exited abnormally with no crash log, to check for yourself look in ~/Library/Logs/DiagnosticReports")
+      .onQueue(
+        queue,
+        fmap: { info -> FBFuture<AnyObject> in
+          let rawLog = (try? info.loadRawCrashLogString()) ?? ""
+          return FBFuture(error: FBXCTestProcessError.crashed(info: String(describing: info), rawLog: rawLog))
+        }
+      )
+      .retyped(FBFuture<NSNumber>.self)
   }
 
   private static func crashLogs(forTerminationOfProcess process: FBSubprocess<AnyObject, AnyObject, AnyObject>, since sinceDate: Date, crashLogCommands: any CrashLogCommands, crashLogWaitTime: TimeInterval, queue: DispatchQueue) -> FBFuture<FBCrashLogInfo> {
@@ -130,14 +129,14 @@ public final class FBXCTestProcess {
     let notify: FBFuture<FBCrashLogInfo> = fbFutureFromAsync {
       try await crashLogCommands.notifyOfCrash(matching: predicate)
     }
-    return unsafeBitCast(
-      unsafeBitCast(notify, to: FBFuture<AnyObject>.self)
-        .onQueue(
-          queue, timeout: crashLogWaitTime,
-          handler: {
-            FBFuture<AnyObject>(error: FBXCTestProcessError.crashLogTimedOut(processIdentifier: process.processIdentifier))
-          }),
-      to: FBFuture<FBCrashLogInfo>.self
-    )
+    return
+      notify.retyped(FBFuture<AnyObject>.self)
+      .onQueue(
+        queue, timeout: crashLogWaitTime,
+        handler: {
+          FBFuture<AnyObject>(error: FBXCTestProcessError.crashLogTimedOut(processIdentifier: process.processIdentifier))
+        }
+      )
+      .retyped(FBFuture<FBCrashLogInfo>.self)
   }
 }

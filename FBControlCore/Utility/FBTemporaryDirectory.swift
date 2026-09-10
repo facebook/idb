@@ -112,7 +112,7 @@ public struct FBTemporaryDirectory: Equatable {
 
   /// Extracts the gzipped tar in `tarData` into a temporary directory scoped to `body`.
   public func withArchiveExtracted<T>(_ tarData: Data, _ body: (URL) async throws -> T) async throws -> T {
-    let input = unsafeBitCast(FBProcessInput<NSData>(from: tarData), to: FBProcessInput<AnyObject>.self)
+    let input = FBProcessInput<NSData>(from: tarData).retyped(FBProcessInput<AnyObject>.self)
     return try await withArchiveExtracted(fromStream: input, compression: .GZIP, body)
   }
 

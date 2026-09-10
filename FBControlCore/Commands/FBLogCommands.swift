@@ -28,9 +28,9 @@ public final class FBProcessLogOperation: LogOperation {
       .onQueue(
         queue,
         respondToCancellation: {
-          unsafeBitCast(process.sendSignal(SIGTERM, backingOffToKillWithTimeout: 5, logger: nil), to: FBFuture<NSNull>.self)
+          process.sendSignal(SIGTERM, backingOffToKillWithTimeout: 5, logger: nil).retyped(FBFuture<NSNull>.self)
         })
-    return unsafeBitCast(result, to: FBFuture<NSNull>.self)
+    return result.retyped(FBFuture<NSNull>.self)
   }
 
   public func waitUntilCompleted() async throws {

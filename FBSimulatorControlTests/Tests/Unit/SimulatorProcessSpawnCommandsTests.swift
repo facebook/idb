@@ -108,7 +108,7 @@ final class SimulatorProcessSpawnCommandsTests: XCTestCase {
   func testRawSpawnRejectsAConfigurationCarryingStdIn() async throws {
     let device = RecordingSpawnDevice()
     let simulator = SimulatorTestSupport.testableSimulator(withDevice: device)
-    let stdIn = unsafeBitCast(FBProcessInput<NSObject>.fromConsumer(), to: FBProcessInput<AnyObject>.self)
+    let stdIn = FBProcessInput<NSObject>.fromConsumer().retyped(FBProcessInput<AnyObject>.self)
     let stdOut = FBProcessOutput<AnyObject>(for: FBNullDataConsumer())
     let configuration = FBProcessSpawnConfiguration(
       launchPath: "/bin/cat",

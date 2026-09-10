@@ -130,11 +130,9 @@ public final class FBXCTestResultBundleParser {
       let majorVersion = readNumberFromDict(bundleFormatVersion, "major")
       let minorVersion = readNumberFromDict(bundleFormatVersion, "minor")
       logger.log("Test result bundle format version: \(majorVersion).\(minorVersion)")
-      return unsafeBitCast(
-        unsafeBitCast(
-          FBXCTestResultToolOperation.getJSON(from: resultBundlePath, forId: nil, queue: target.workQueue, logger: logger),
-          to: FBFuture<AnyObject>.self
-        )
+      return
+        FBXCTestResultToolOperation.getJSON(from: resultBundlePath, forId: nil, queue: target.workQueue, logger: logger)
+        .retyped(FBFuture<AnyObject>.self)
         .onQueue(
           target.workQueue,
           fmap: { actionsInvocationRecord -> FBFuture<AnyObject> in
@@ -146,28 +144,27 @@ public final class FBXCTestResultBundleParser {
             let ids = parseActions(actions, logger: logger)
             var operations: [FBFuture<AnyObject>] = []
             for bundleObjectId in ids {
-              let operation = unsafeBitCast(
-                FBXCTestResultToolOperation.getJSON(from: resultBundlePath, forId: bundleObjectId, queue: target.workQueue, logger: logger),
-                to: FBFuture<AnyObject>.self
-              )
-              .onQueue(
-                target.workQueue,
-                doOnResolved: { xcresults in
-                  guard let xcresultsDict = xcresults as? NSDictionary else {
-                    logger.log("Skipping summaries for id \(bundleObjectId), the result is not a dictionary")
-                    return
-                  }
-                  logger.log("Parsing summaries for id \(bundleObjectId)")
-                  let summaries = accessAndUnwrapValues(xcresultsDict, "summaries", logger)
-                  reportSummaries(summaries, reporter: reporter, queue: target.asyncQueue, resultBundlePath: resultBundlePath, logger: logger, extractScreenshots: extractScreenshots)
-                  logger.log("Done parsing summaries for id \(bundleObjectId)")
-                })
+              let operation =
+                FBXCTestResultToolOperation.getJSON(from: resultBundlePath, forId: bundleObjectId, queue: target.workQueue, logger: logger)
+                .retyped(FBFuture<AnyObject>.self)
+                .onQueue(
+                  target.workQueue,
+                  doOnResolved: { xcresults in
+                    guard let xcresultsDict = xcresults as? NSDictionary else {
+                      logger.log("Skipping summaries for id \(bundleObjectId), the result is not a dictionary")
+                      return
+                    }
+                    logger.log("Parsing summaries for id \(bundleObjectId)")
+                    let summaries = accessAndUnwrapValues(xcresultsDict, "summaries", logger)
+                    reportSummaries(summaries, reporter: reporter, queue: target.asyncQueue, resultBundlePath: resultBundlePath, logger: logger, extractScreenshots: extractScreenshots)
+                    logger.log("Done parsing summaries for id \(bundleObjectId)")
+                  })
               operations.append(operation)
             }
-            return unsafeBitCast(FBFuture<AnyObject>.combine(operations), to: FBFuture<AnyObject>.self)
-          }),
-        to: FBFuture<NSNull>.self
-      )
+            return FBFuture<AnyObject>.combine(operations).retyped(FBFuture<AnyObject>.self)
+          }
+        )
+        .retyped(FBFuture<NSNull>.self)
     } else {
       reporter.testPlanDidFail?(withMessage: "No test results were produced")
       return FBFuture(result: NSNull())
@@ -464,53 +461,52 @@ public final class FBXCTestResultBundleParser {
 
     let summaryRef = testMethod["summaryRef"] as? NSDictionary
     if let summaryRef, let summaryRefId = accessAndUnwrapValue(summaryRef, "id", logger) as? String {
-      let future = unsafeBitCast(
-        FBXCTestResultToolOperation.getJSON(from: resultBundlePath, forId: summaryRefId, queue: queue, logger: logger),
-        to: FBFuture<AnyObject>.self
-      )
-      .onQueue(
-        queue,
-        doOnResolved: { actionTestSummaryObj in
-          guard let actionTestSummary = actionTestSummaryObj as? NSDictionary else {
-            let errorMessage = "Expected action test summary \(summaryRefId) to be an NSDictionary, got \(String(describing: type(of: actionTestSummaryObj)))"
-            logger.log(errorMessage)
-            reporter.testCaseDidFail(
-              forTestClass: testClassName, method: testMethodIdentifier,
-              exceptions: [
-                FBExceptionInfo(message: errorMessage)
-              ])
-            // No activity summaries: the summary payload failed to parse, so there is nothing to extract.
-            let logs = buildTestLog(nil, testBundleName: testBundleName, testClassName: testClassName, testMethodName: testMethodIdentifier, testPassed: false, duration: duration.doubleValue, logger: logger)
-            reporter.testCaseDidFinish(forTestClass: testClassName, method: testMethodIdentifier, with: .failed, duration: duration.doubleValue, logs: logs)
-            return
-          }
-          if status == .failed {
-            let failureSummaries = accessAndUnwrapValues(actionTestSummary, "failureSummaries", logger)
-            reporter.testCaseDidFail(
-              forTestClass: testClassName, method: testMethodIdentifier,
-              exceptions: [
-                FBExceptionInfo(message: buildErrorMessage(failureSummaries, logger: logger))
-              ])
-          }
-
-          let performanceMetrics = accessAndUnwrapValues(actionTestSummary, "performanceMetrics", logger) as? [NSDictionary]
-          if let performanceMetrics {
-            var testMethodName = accessAndUnwrapValue(testMethod, "name", logger) as? String ?? ""
-            let suffix = "()"
-            if testMethodName.hasSuffix(suffix) {
-              testMethodName = String(testMethodName.dropLast(suffix.count))
+      let future =
+        FBXCTestResultToolOperation.getJSON(from: resultBundlePath, forId: summaryRefId, queue: queue, logger: logger)
+        .retyped(FBFuture<AnyObject>.self)
+        .onQueue(
+          queue,
+          doOnResolved: { actionTestSummaryObj in
+            guard let actionTestSummary = actionTestSummaryObj as? NSDictionary else {
+              let errorMessage = "Expected action test summary \(summaryRefId) to be an NSDictionary, got \(String(describing: type(of: actionTestSummaryObj)))"
+              logger.log(errorMessage)
+              reporter.testCaseDidFail(
+                forTestClass: testClassName, method: testMethodIdentifier,
+                exceptions: [
+                  FBExceptionInfo(message: errorMessage)
+                ])
+              // No activity summaries: the summary payload failed to parse, so there is nothing to extract.
+              let logs = buildTestLog(nil, testBundleName: testBundleName, testClassName: testClassName, testMethodName: testMethodIdentifier, testPassed: false, duration: duration.doubleValue, logger: logger)
+              reporter.testCaseDidFinish(forTestClass: testClassName, method: testMethodIdentifier, with: .failed, duration: duration.doubleValue, logs: logs)
+              return
             }
-            savePerformanceMetrics(performanceMetrics, toTestResultBundle: resultBundlePath, forTestTarget: testBundleName, testClass: testClassName, testMethod: testMethodName, logger: logger)
-          }
+            if status == .failed {
+              let failureSummaries = accessAndUnwrapValues(actionTestSummary, "failureSummaries", logger)
+              reporter.testCaseDidFail(
+                forTestClass: testClassName, method: testMethodIdentifier,
+                exceptions: [
+                  FBExceptionInfo(message: buildErrorMessage(failureSummaries, logger: logger))
+                ])
+            }
 
-          let activitySummaries = accessAndUnwrapValues(actionTestSummary, "activitySummaries", logger) as? [NSDictionary]
-          if extractScreenshots, let activitySummaries {
-            extractScreenshotsFromActivities(activitySummaries, queue: queue, resultBundlePath: resultBundlePath, logger: logger)
-          }
+            let performanceMetrics = accessAndUnwrapValues(actionTestSummary, "performanceMetrics", logger) as? [NSDictionary]
+            if let performanceMetrics {
+              var testMethodName = accessAndUnwrapValue(testMethod, "name", logger) as? String ?? ""
+              let suffix = "()"
+              if testMethodName.hasSuffix(suffix) {
+                testMethodName = String(testMethodName.dropLast(suffix.count))
+              }
+              savePerformanceMetrics(performanceMetrics, toTestResultBundle: resultBundlePath, forTestTarget: testBundleName, testClass: testClassName, testMethod: testMethodName, logger: logger)
+            }
 
-          let logs = buildTestLog(accessAndUnwrapValues(actionTestSummary, "activitySummaries", logger) as? [NSDictionary], testBundleName: testBundleName, testClassName: testClassName, testMethodName: testMethodIdentifier, testPassed: status == .passed, duration: duration.doubleValue, logger: logger)
-          reporter.testCaseDidFinish(forTestClass: testClassName, method: testMethodIdentifier, with: status, duration: duration.doubleValue, logs: logs)
-        })
+            let activitySummaries = accessAndUnwrapValues(actionTestSummary, "activitySummaries", logger) as? [NSDictionary]
+            if extractScreenshots, let activitySummaries {
+              extractScreenshotsFromActivities(activitySummaries, queue: queue, resultBundlePath: resultBundlePath, logger: logger)
+            }
+
+            let logs = buildTestLog(accessAndUnwrapValues(actionTestSummary, "activitySummaries", logger) as? [NSDictionary], testBundleName: testBundleName, testClassName: testClassName, testMethodName: testMethodIdentifier, testPassed: status == .passed, duration: duration.doubleValue, logger: logger)
+            reporter.testCaseDidFinish(forTestClass: testClassName, method: testMethodIdentifier, with: status, duration: duration.doubleValue, logs: logs)
+          })
       _ = try? future.await(withTimeout: XCTestOperationTimeoutSecs)
     }
   }

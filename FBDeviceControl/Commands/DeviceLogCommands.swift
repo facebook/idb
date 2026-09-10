@@ -28,15 +28,14 @@ public final class DeviceLogOperation: LogOperation {
   ) {
     self.consumer = consumer
     let tailing = FBMutableFuture<NSNull>(name: "Tailing \(service)")
-    self.completed = unsafeBitCast(
+    self.completed = convertFBMutableFuture(
       tailing.onQueue(
         queue,
         respondToCancellation: {
           FBAMDevice.invalidateServiceConnection(connection, service: service, logger: logger)
           return FBFuture<NSNull>.empty()
         }
-      ),
-      to: FBFuture<NSNull>.self)
+      ))
   }
 
   // MARK: - LogOperation

@@ -113,7 +113,7 @@ public struct FBSimulatorReplCommands {
     // Launch without waiting; `statLoc` completes when the bridge exits (once
     // the socket is closed), matching the `ReplSession.run` contract.
     let process = try await simulator.processSpawn.launchProcess(configuration)
-    let run = unsafeBitCast(process.statLoc, to: FBFuture<NSNull>.self)
+    let run = process.statLoc.retyped(FBFuture<NSNull>.self)
     return ReplSession(socketPath: socketPath, run: run, extraInterfacePaths: [idbInterfacePath].compactMap { $0 })
   }
 

@@ -78,20 +78,20 @@ public final class FBXcodeBuildOperation {
     let startFuture: FBFuture<AnyObject>
     if let logger {
       let configured = base.withStdOut(toLoggerAndErrorMessage: logger).withStdErr(toLoggerAndErrorMessage: logger)
-      startFuture = unsafeBitCast(configured.start(), to: FBFuture<AnyObject>.self)
+      startFuture = configured.start().retyped(FBFuture<AnyObject>.self)
     } else {
-      startFuture = unsafeBitCast(base.start(), to: FBFuture<AnyObject>.self)
+      startFuture = base.start().retyped(FBFuture<AnyObject>.self)
     }
-    return unsafeBitCast(
+    return
       startFuture
-        .onQueue(
-          queue,
-          map: { task -> AnyObject in
-            logger?.log("Task started \(task) for xcodebuild \(arguments.joined(separator: " "))")
-            return task
-          }),
-      to: FBFuture<FBSubprocess<AnyObject, AnyObject, AnyObject>>.self
-    )
+      .onQueue(
+        queue,
+        map: { task -> AnyObject in
+          logger?.log("Task started \(task) for xcodebuild \(arguments.joined(separator: " "))")
+          return task
+        }
+      )
+      .retyped(FBFuture<FBSubprocess<AnyObject, AnyObject, AnyObject>>.self)
   }
 
   // MARK: - Public Methods
@@ -142,7 +142,7 @@ public final class FBXcodeBuildOperation {
     let strategy = FBProcessTerminationStrategy.strategy(withProcessFetcher: processFetcher, workQueue: queue, logger: logger)
     var futures: [FBFuture<AnyObject>] = []
     for process in processes {
-      let termination = unsafeBitCast(strategy.killProcessIdentifier(process.processIdentifier), to: FBFuture<AnyObject>.self).mapReplace(process)
+      let termination = strategy.killProcessIdentifier(process.processIdentifier).retyped(FBFuture<AnyObject>.self).mapReplace(process)
       futures.append(termination)
     }
     return FBFuture<AnyObject>.combine(futures)
@@ -172,18 +172,12 @@ public final class FBXcodeBuildOperation {
   }
 
   public static func confirmExit(ofXcodebuildOperation task: FBSubprocess<AnyObject, AnyObject, AnyObject>, configuration: FBTestLaunchConfiguration, reporter: FBXCTestReporter, target: FBiOSTarget, logger: FBControlCoreLogger) -> FBFuture<NSNull> {
-    return unsafeBitCast(
-      unsafeBitCast(
-        task.exited(withCodes: [0, 65]),
-        to: FBFuture<AnyObject>.self
-      )
+    return
+      task.exited(withCodes: [0, 65]).retyped(FBFuture<AnyObject>.self)
       .onQueue(
         target.workQueue,
         respondToCancellation: { () -> FBFuture<NSNull> in
-          return unsafeBitCast(
-            task.sendSignal(SIGTERM, backingOffToKillWithTimeout: 1, logger: logger),
-            to: FBFuture<NSNull>.self
-          )
+          task.sendSignal(SIGTERM, backingOffToKillWithTimeout: 1, logger: logger).retyped(FBFuture<NSNull>.self)
         }
       )
       .onQueue(
@@ -191,10 +185,8 @@ public final class FBXcodeBuildOperation {
         fmap: { _ -> FBFuture<AnyObject> in
           logger.log("xcodebuild operation completed successfully \(task)")
           if let resultBundlePath = configuration.resultBundlePath {
-            return unsafeBitCast(
-              FBXCTestResultBundleParser.parse(resultBundlePath, target: target, reporter: reporter, logger: logger, extractScreenshots: configuration.reportResultBundle),
-              to: FBFuture<AnyObject>.self
-            )
+            return FBXCTestResultBundleParser.parse(resultBundlePath, target: target, reporter: reporter, logger: logger, extractScreenshots: configuration.reportResultBundle)
+              .retyped(FBFuture<AnyObject>.self)
           }
           logger.log("No result bundle to parse")
           return FBFuture(result: NSNull() as AnyObject)
@@ -206,9 +198,9 @@ public final class FBXcodeBuildOperation {
           logger.log("Reporting test results")
           reporter.didFinishExecutingTestPlan()
           return FBFuture(result: NSNull() as AnyObject)
-        }),
-      to: FBFuture<NSNull>.self
-    )
+        }
+      )
+      .retyped(FBFuture<NSNull>.self)
   }
 
   // MARK: - Private

@@ -105,7 +105,7 @@ public final class FBXCTraceRecordOperation {
         .withTaskLifecycleLogging(to: logger)
         .start())
     logger.log("Started xctrace \(started)")
-    let typedTask = unsafeBitCast(started, to: FBSubprocess<AnyObject, AnyObject, AnyObject>.self)
+    let typedTask = started.retyped(FBSubprocess<AnyObject, AnyObject, AnyObject>.self)
     return FBXCTraceRecordOperation(task: typedTask, traceDir: URL(fileURLWithPath: traceFile), configuration: configuration, queue: queue, logger: logger)
   }
 
@@ -134,7 +134,7 @@ public final class FBXCTraceRecordOperation {
             }
           })
     )
-    return unsafeBitCast(result, to: FBFuture<NSURL>.self)
+    return result.retyped(FBFuture<NSURL>.self)
   }
 
   public class func xctracePath() throws -> String {

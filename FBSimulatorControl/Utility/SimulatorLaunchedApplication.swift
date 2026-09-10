@@ -129,7 +129,7 @@ public final class SimulatorLaunchedApplication: FBLaunchedApplication, CustomSt
     }
     source.resume()
 
-    return unsafeBitCast(future, to: FBFuture<NSNumber>.self)
+    return convertFBMutableFuture(future)
   }
 
   public var description: String {

@@ -77,26 +77,24 @@ public final class FBFileReader: NSObject, FBFileReaderProtocol {
 
   @objc public static func reader(withFilePath filePath: String, consumer: FBDataConsumer, logger: FBControlCoreLogger?) -> FBFuture<FBFileReader> {
     let queue = createQueue()
-    return unsafeBitCast(
-      FBFuture<AnyObject>.onQueue(
-        queue,
-        resolve: {
-          let fd = open(filePath, O_RDONLY)
-          if fd == -1 {
-            return FBFuture(error: FBFileReaderError.openFailed(path: filePath, message: String(cString: strerror(errno))))
-          }
-          return FBFuture(
-            result: FBFileReader(
-              fileDescriptor: fd,
-              closeOnEndOfFile: true,
-              consumer: FBDataConsumerAdaptor.dispatchDataConsumer(for: consumer),
-              targeting: filePath,
-              queue: queue,
-              logger: logger
-            ))
-        }),
-      to: FBFuture<FBFileReader>.self
-    )
+    return FBFuture<AnyObject>.onQueue(
+      queue,
+      resolve: {
+        let fd = open(filePath, O_RDONLY)
+        if fd == -1 {
+          return FBFuture(error: FBFileReaderError.openFailed(path: filePath, message: String(cString: strerror(errno))))
+        }
+        return FBFuture(
+          result: FBFileReader(
+            fileDescriptor: fd,
+            closeOnEndOfFile: true,
+            consumer: FBDataConsumerAdaptor.dispatchDataConsumer(for: consumer),
+            targeting: filePath,
+            queue: queue,
+            logger: logger
+          ))
+      }
+    ).retyped(FBFuture<FBFileReader>.self)
   }
 
   required init(fileDescriptor: Int32, closeOnEndOfFile: Bool, consumer: FBDispatchDataConsumer, targeting: String, queue: DispatchQueue, logger: FBControlCoreLogger?) {
@@ -118,50 +116,45 @@ public final class FBFileReader: NSObject, FBFileReaderProtocol {
   // MARK: - Public Methods
 
   @objc public func startReading() -> FBFuture<NSNull> {
-    return unsafeBitCast(
-      FBFuture<AnyObject>.onQueue(
-        readQueue,
-        resolve: {
-          self.startReadingNow()
-        }),
-      to: FBFuture<NSNull>.self
-    )
+    return FBFuture<AnyObject>.onQueue(
+      readQueue,
+      resolve: {
+        self.startReadingNow()
+      }
+    ).retyped(FBFuture<NSNull>.self)
   }
 
   @objc public func stopReading() -> FBFuture<NSNumber> {
-    return unsafeBitCast(
-      FBFuture<AnyObject>.onQueue(
-        readQueue,
-        resolve: {
-          self.stopReadingNow()
-        }),
-      to: FBFuture<NSNumber>.self
-    )
+    return FBFuture<AnyObject>.onQueue(
+      readQueue,
+      resolve: {
+        self.stopReadingNow()
+      }
+    ).retyped(FBFuture<NSNumber>.self)
   }
 
   @objc public func finishedReading(withTimeout timeout: TimeInterval) -> FBFuture<NSNumber> {
-    return unsafeBitCast(
+    return
       finishedReading
-        .onQueue(readQueue, timeout: timeout) {
-          self.stopReadingNow()
-        },
-      to: FBFuture<NSNumber>.self
-    )
+      .onQueue(readQueue, timeout: timeout) {
+        self.stopReadingNow()
+      }
+      .retyped(FBFuture<NSNumber>.self)
   }
 
   @objc public var finishedReading: FBFuture<NSNumber> {
     // A fresh future, so cancelling the returned future does not cancel `ioChannelRelinquishedControl`.
     let future: FBMutableFuture<AnyObject> = FBMutableFuture(name: "Finished reading of \(targeting)")
     future.resolve(from: ioChannelRelinquishedControl)
-    return unsafeBitCast(
+    return
       (future as FBFuture<AnyObject>)
-        .onQueue(
-          readQueue,
-          respondToCancellation: {
-            unsafeBitCast(self.stopReadingNow(), to: FBFuture<NSNull>.self)
-          }),
-      to: FBFuture<NSNumber>.self
-    )
+      .onQueue(
+        readQueue,
+        respondToCancellation: {
+          self.stopReadingNow().retyped(FBFuture<NSNull>.self)
+        }
+      )
+      .retyped(FBFuture<NSNumber>.self)
   }
 
   // MARK: - Private
@@ -202,7 +195,7 @@ public final class FBFileReader: NSObject, FBFileReaderProtocol {
       }
     }
     state = .reading
-    return unsafeBitCast(FBFuture<NSNull>.empty(), to: FBFuture<AnyObject>.self)
+    return FBFuture<NSNull>.empty().retyped(FBFuture<AnyObject>.self)
   }
 
   private func stopReadingNow() -> FBFuture<AnyObject> {

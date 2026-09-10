@@ -43,7 +43,7 @@ public final class FBProcessSpawnCommandHelpers: NSObject {
     // so it inherently reports after IO teardown has finished. The separate
     // tearing-down/completed lines tripled every process exit for no
     // additional information.
-    unsafeBitCast(attachment.detach(), to: FBFuture<AnyObject>.self)
+    attachment.detach().retyped(FBFuture<AnyObject>.self)
       .onQueue(
         queue,
         notifyOfCompletion: { _ in

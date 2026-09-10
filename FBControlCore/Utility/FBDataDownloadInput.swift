@@ -36,7 +36,7 @@ public final class FBDataDownloadInput: NSObject, @unchecked Sendable {
     self.logger = logger
     self.completedFuture = FBMutableFuture<NSNull>()
     let rawInput = FBProcessInput<NSObject>.fromConsumer()
-    self.input = unsafeBitCast(rawInput, to: FBProcessInput<AnyObject>.self)
+    self.input = rawInput.retyped(FBProcessInput<AnyObject>.self)
     super.init()
   }
 

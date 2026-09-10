@@ -96,7 +96,7 @@ private class DeviceDebugServer_TwistedPairFiles {
         close(socket)
       }
     )
-    return unsafeBitCast(combinedFuture, to: FBFuture<NSNull>.self)
+    return combinedFuture.retyped(FBFuture<NSNull>.self)
   }
 }
 
@@ -193,7 +193,7 @@ public final class DeviceDebugServer: NSObject, FBSocketServerDelegate, FBDebugS
         self?.logger.log("Client Disconnected")
         self?.twistedPair = nil
       })
-    teardown.resolve(from: unsafeBitCast(completed, to: FBFuture<AnyObject>.self))
+    teardown.resolve(from: completed.retyped(FBFuture<AnyObject>.self))
     self.twistedPair = pair
   }
 
@@ -204,7 +204,7 @@ public final class DeviceDebugServer: NSObject, FBSocketServerDelegate, FBDebugS
   }
 
   private var completed: FBFuture<NSNull> {
-    unsafeBitCast(teardown, to: FBFuture<NSNull>.self)
+    convertFBMutableFuture(teardown)
   }
 
   private func startListening() async throws {

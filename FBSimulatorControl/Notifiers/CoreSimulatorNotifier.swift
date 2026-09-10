@@ -37,7 +37,7 @@ public final class CoreSimulatorNotifier {
       futureRef.resolve(withResult: NSNull())
     }
     return
-      unsafeBitCast(future, to: FBFuture<NSNull>.self)
+      convertFBMutableFuture(future)
       .onQueue(
         queue,
         notifyOfCompletion: { (_: Any) in

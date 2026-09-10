@@ -49,26 +49,26 @@ private final class FBListTestStrategy_ReporterWrapped: FBXCTestRunner {
   func execute() -> FBFuture<NSNull> {
     reporter.didBeginExecutingTestPlan()
 
-    return unsafeBitCast(
+    return
       strategy.listTests()
-        .onQueue(
-          strategy.target.workQueue,
-          fmap: { testNamesObj -> FBFuture<AnyObject> in
-            guard let testNames = testNamesObj as? [String] else {
-              return FBFuture(error: FBListTestError.testNamesMalformed(result: String(describing: testNamesObj)))
-            }
-            for testName in testNames {
-              guard let slashRange = testName.range(of: "/") else { continue }
-              let className = String(testName[testName.startIndex..<slashRange.lowerBound])
-              let methodName = String(testName[slashRange.upperBound...])
-              self.reporter.testCaseDidStart(forTestClass: className, method: methodName)
-              self.reporter.testCaseDidFinish(forTestClass: className, method: methodName, with: .passed, duration: 0, logs: nil)
-            }
-            self.reporter.didFinishExecutingTestPlan()
-            return FBFuture<AnyObject>(result: NSNull())
-          }),
-      to: FBFuture<NSNull>.self
-    )
+      .onQueue(
+        strategy.target.workQueue,
+        fmap: { testNamesObj -> FBFuture<AnyObject> in
+          guard let testNames = testNamesObj as? [String] else {
+            return FBFuture(error: FBListTestError.testNamesMalformed(result: String(describing: testNamesObj)))
+          }
+          for testName in testNames {
+            guard let slashRange = testName.range(of: "/") else { continue }
+            let className = String(testName[testName.startIndex..<slashRange.lowerBound])
+            let methodName = String(testName[slashRange.upperBound...])
+            self.reporter.testCaseDidStart(forTestClass: className, method: methodName)
+            self.reporter.testCaseDidFinish(forTestClass: className, method: methodName, with: .passed, duration: 0, logs: nil)
+          }
+          self.reporter.didFinishExecutingTestPlan()
+          return FBFuture<AnyObject>(result: NSNull())
+        }
+      )
+      .retyped(FBFuture<NSNull>.self)
   }
 }
 
@@ -92,29 +92,27 @@ public final class FBListTestStrategy {
     }
     let futures: [FBFuture<AnyObject>] = [
       shimFuture,
-      unsafeBitCast(FBProcessOutput<NSNull>(for: shimBuffer).providedThroughFile(), to: FBFuture<AnyObject>.self),
+      FBProcessOutput<NSNull>(for: shimBuffer).providedThroughFile().retyped(FBFuture<AnyObject>.self),
     ]
     let combined = FBFuture<AnyObject>.combine(futures)
 
-    return unsafeBitCast(
+    return
       combined
-        .onQueue(
-          target.workQueue,
-          fmap: { tupleObj -> FBFuture<AnyObject> in
-            let tuple = tupleObj as [AnyObject]
-            guard tuple.count == 2,
-              let shimPath = tuple[0] as? String,
-              let shimOutput = tuple[1] as? FBProcessFileOutput
-            else {
-              return FBFuture(error: FBListTestError.missingShimAndOutput(result: String(describing: tuple)))
-            }
-            return unsafeBitCast(
-              self.listTests(withShimPath: shimPath, shimOutput: shimOutput, shimBuffer: shimBuffer),
-              to: FBFuture<AnyObject>.self
-            )
-          }),
-      to: FBFuture<NSArray>.self
-    )
+      .onQueue(
+        target.workQueue,
+        fmap: { tupleObj -> FBFuture<AnyObject> in
+          let tuple = tupleObj as [AnyObject]
+          guard tuple.count == 2,
+            let shimPath = tuple[0] as? String,
+            let shimOutput = tuple[1] as? FBProcessFileOutput
+          else {
+            return FBFuture(error: FBListTestError.missingShimAndOutput(result: String(describing: tuple)))
+          }
+          return self.listTests(withShimPath: shimPath, shimOutput: shimOutput, shimBuffer: shimBuffer)
+            .retyped(FBFuture<AnyObject>.self)
+        }
+      )
+      .retyped(FBFuture<NSArray>.self)
   }
 
   func wrapInReporter(_ reporter: FBXCTestReporter) -> FBXCTestRunner {
@@ -137,7 +135,7 @@ public final class FBListTestStrategy {
 
     // The temporary directory is scoped to the inner pipeline: the async wrapper holds it open
     // until the future chain resolves, exactly as the popped context did.
-    return unsafeBitCast(
+    return
       fbFutureFromAsync {
         try await FBTemporaryDirectory(logger: self.logger).withTemporaryDirectory { temporaryDirectoryURL in
           let libraries = try await FBOToolDynamicLibs.findFullPath(forSanitiserDyldInBundle: self.configuration.testBundlePath)
@@ -150,15 +148,13 @@ public final class FBListTestStrategy {
                   guard let exitCodeFuture = exitCodeFutureObj as? FBFuture<NSNumber> else {
                     return FBFuture(error: FBListTestError.testProcessMissingExitCode(result: String(describing: exitCodeFutureObj)))
                   }
-                  return unsafeBitCast(
-                    FBListTestStrategy.launchedProcess(withExitCode: exitCodeFuture, shimOutput: shimOutput, shimBuffer: shimBuffer, stdOutBuffer: stdOutBuffer, stdErrBuffer: stdErrBuffer, queue: self.target.workQueue),
-                    to: FBFuture<AnyObject>.self
-                  )
+                  return FBListTestStrategy.launchedProcess(
+                    withExitCode: exitCodeFuture, shimOutput: shimOutput, shimBuffer: shimBuffer, stdOutBuffer: stdOutBuffer, stdErrBuffer: stdErrBuffer, queue: self.target.workQueue
+                  ).retyped(FBFuture<AnyObject>.self)
                 }))
         }
-      },
-      to: FBFuture<NSArray>.self
-    )
+      }
+      .retyped(FBFuture<NSArray>.self)
   }
 
   private static func setupEnvironment(withDylibs libraries: [String], shimPath: String, shimOutputFilePath: String, bundlePath: String, target: FBiOSTarget) -> [String: String] {
@@ -179,64 +175,63 @@ public final class FBListTestStrategy {
   }
 
   private static func launchedProcess(withExitCode exitCode: FBFuture<NSNumber>, shimOutput: FBProcessFileOutput, shimBuffer: FBConsumableBuffer, stdOutBuffer: FBConsumableBuffer, stdErrBuffer: FBConsumableBuffer, queue: DispatchQueue) -> FBFuture<NSArray> {
-    return unsafeBitCast(
-      unsafeBitCast(shimOutput.startReading(), to: FBFuture<AnyObject>.self)
-        .onQueue(
-          queue,
-          fmap: { _ -> FBFuture<AnyObject> in
-            unsafeBitCast(
-              FBListTestStrategy.onQueue(queue, confirmExit: exitCode, closingOutput: shimOutput, shimBuffer: shimBuffer, stdOutBuffer: stdOutBuffer, stdErrBuffer: stdErrBuffer),
-              to: FBFuture<AnyObject>.self
-            )
-          }
-        )
-        .onQueue(
-          queue,
-          fmap: { _ -> FBFuture<AnyObject> in
-            let data = shimBuffer.data()
-            let tests: [[String: String]]
-            do {
-              guard let parsed = try JSONSerialization.jsonObject(with: data, options: []) as? [[String: String]] else {
-                NSLog("Shimulator buffer data (should contain test information): %@", String(data: data, encoding: .utf8) ?? "")
-                return FBFuture<AnyObject>(error: FBListTestError.testListJSONParseFailed)
-              }
-              tests = parsed
-            } catch {
+    return
+      shimOutput.startReading().retyped(FBFuture<AnyObject>.self)
+      .onQueue(
+        queue,
+        fmap: { _ -> FBFuture<AnyObject> in
+          FBListTestStrategy.onQueue(
+            queue, confirmExit: exitCode, closingOutput: shimOutput, shimBuffer: shimBuffer, stdOutBuffer: stdOutBuffer, stdErrBuffer: stdErrBuffer
+          ).retyped(FBFuture<AnyObject>.self)
+        }
+      )
+      .onQueue(
+        queue,
+        fmap: { _ -> FBFuture<AnyObject> in
+          let data = shimBuffer.data()
+          let tests: [[String: String]]
+          do {
+            guard let parsed = try JSONSerialization.jsonObject(with: data, options: []) as? [[String: String]] else {
               NSLog("Shimulator buffer data (should contain test information): %@", String(data: data, encoding: .utf8) ?? "")
-              return FBFuture<AnyObject>(error: error)
+              return FBFuture<AnyObject>(error: FBListTestError.testListJSONParseFailed)
             }
-            var testNames: [String] = []
-            for test in tests {
-              guard let testName = test["legacyTestName"] else {
-                return FBFuture(error: FBListTestError.unexpectedTestName(value: String(describing: test["legacyTestName"])))
-              }
-              testNames.append(testName)
+            tests = parsed
+          } catch {
+            NSLog("Shimulator buffer data (should contain test information): %@", String(data: data, encoding: .utf8) ?? "")
+            return FBFuture<AnyObject>(error: error)
+          }
+          var testNames: [String] = []
+          for test in tests {
+            guard let testName = test["legacyTestName"] else {
+              return FBFuture(error: FBListTestError.unexpectedTestName(value: String(describing: test["legacyTestName"])))
             }
-            return FBFuture(result: testNames as NSArray as AnyObject)
-          }),
-      to: FBFuture<NSArray>.self
-    )
+            testNames.append(testName)
+          }
+          return FBFuture(result: testNames as NSArray as AnyObject)
+        }
+      )
+      .retyped(FBFuture<NSArray>.self)
   }
 
   private static func onQueue(_ queue: DispatchQueue, confirmExit exitCode: FBFuture<NSNumber>, closingOutput output: FBProcessFileOutput, shimBuffer: FBConsumableBuffer, stdOutBuffer: FBConsumableBuffer, stdErrBuffer: FBConsumableBuffer) -> FBFuture<NSNull> {
-    return unsafeBitCast(
+    return
       exitCode
-        .onQueue(
-          queue,
-          fmap: { exitCodeNumber -> FBFuture<AnyObject> in
-            let exitCodeValue = exitCodeNumber.int32Value
-            if let description = FBXCTestProcess.describeFailingExitCode(exitCodeValue) {
-              let stdErrReversed = stdErrBuffer.lines().reversed().joined(separator: "\n")
-              return FBFuture(error: FBListTestError.listingFailed(exitCode: exitCodeValue, exitDescription: description, stdErr: stdErrReversed))
-            }
-            let futures: [FBFuture<AnyObject>] = [
-              unsafeBitCast(output.stopReading(), to: FBFuture<AnyObject>.self),
-              unsafeBitCast(shimBuffer.finishedConsuming, to: FBFuture<AnyObject>.self),
-            ]
-            return unsafeBitCast(FBFuture<AnyObject>.combine(futures), to: FBFuture<AnyObject>.self)
-          }),
-      to: FBFuture<NSNull>.self
-    )
+      .onQueue(
+        queue,
+        fmap: { exitCodeNumber -> FBFuture<AnyObject> in
+          let exitCodeValue = exitCodeNumber.int32Value
+          if let description = FBXCTestProcess.describeFailingExitCode(exitCodeValue) {
+            let stdErrReversed = stdErrBuffer.lines().reversed().joined(separator: "\n")
+            return FBFuture(error: FBListTestError.listingFailed(exitCode: exitCodeValue, exitDescription: description, stdErr: stdErrReversed))
+          }
+          let futures: [FBFuture<AnyObject>] = [
+            output.stopReading().retyped(FBFuture<AnyObject>.self),
+            shimBuffer.finishedConsuming.retyped(FBFuture<AnyObject>.self),
+          ]
+          return FBFuture<AnyObject>.combine(futures).retyped(FBFuture<AnyObject>.self)
+        }
+      )
+      .retyped(FBFuture<NSNull>.self)
   }
 
   private static func listTestProcess(withTarget target: FBiOSTarget & ProcessSpawnCommands, configuration: FBListTestConfiguration, xctestPath: String, environment: [String: String], stdOutConsumer: FBDataConsumer, stdErrConsumer: FBDataConsumer, logger: FBControlCoreLogger, temporaryDirectory: URL) -> FBFuture<AnyObject> {

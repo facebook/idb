@@ -314,8 +314,7 @@ final class FBArchiveOperationsTests: XCTestCase {
   ) throws -> String {
     let destination = try makeExtractionDirectory()
     let data = try Data(contentsOf: URL(fileURLWithPath: archive))
-    let input = unsafeBitCast(
-      FBProcessInput<NSData>(from: data), to: FBProcessInput<AnyObject>.self)
+    let input = FBProcessInput<NSData>(from: data).retyped(FBProcessInput<AnyObject>.self)
     // Production passes GZIP for every container -- the flag only selects between
     // gzip and zstd, and bsdtar sniffs the real format regardless.
     let future = FBArchiveOperations.extractArchive(

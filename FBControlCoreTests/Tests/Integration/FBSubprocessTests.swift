@@ -17,7 +17,7 @@ final class FBSubprocessTests: XCTestCase {
   }
 
   private func runAndWaitForTaskFuture<S: AnyObject, O: AnyObject, E: AnyObject>(_ future: FBFuture<FBSubprocess<S, O, E>>) -> FBSubprocess<S, O, E> {
-    let erasedFuture = unsafeBitCast(future, to: FBFuture<AnyObject>.self)
+    let erasedFuture = future.retyped(FBFuture<AnyObject>.self)
     let timedFuture = erasedFuture.timeout(FBControlCoreGlobalConfiguration.regularTimeout, waitingFor: "FBTask to complete")
     _ = try? timedFuture.`await`()
     return future.result!
@@ -273,7 +273,7 @@ final class FBSubprocessTests: XCTestCase {
     let process = try startSynchronously(
       FBProcessBuilder<NSNull, NSData, NSData>
         .withLaunchPath("/bin/cat", arguments: [])
-        .withStdIn(unsafeBitCast(input, to: FBProcessInput<AnyObject>.self))
+        .withStdIn(input.retyped(FBProcessInput<AnyObject>.self))
         .withStdOutInMemoryAsString()
         .withStdErrToDevNull()
     )
@@ -299,7 +299,7 @@ final class FBSubprocessTests: XCTestCase {
     let process = try startSynchronously(
       FBProcessBuilder<NSNull, NSData, NSData>
         .withLaunchPath("/usr/bin/true", arguments: [])
-        .withStdIn(unsafeBitCast(input, to: FBProcessInput<AnyObject>.self))
+        .withStdIn(input.retyped(FBProcessInput<AnyObject>.self))
         .withStdOutToDevNull()
         .withStdErrToDevNull()
     )

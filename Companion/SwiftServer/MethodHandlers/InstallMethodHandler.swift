@@ -155,7 +155,7 @@ struct InstallMethodHandler: @unchecked Sendable {
       let output = input.contents
       async let writePayload: Void = writePayload(initial: data, requestStream: requestStream, output: output)
       let artifact = try await installSource(
-        dataStream: unsafeBitCast(input, to: FBProcessInput<AnyObject>.self),
+        dataStream: input.retyped(FBProcessInput<AnyObject>.self),
         skipSigningBundles: skipSigningBundles)
       try await writePayload
       return artifact

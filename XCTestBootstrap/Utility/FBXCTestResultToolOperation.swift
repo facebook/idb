@@ -30,23 +30,23 @@ public final class FBXCTestResultToolOperation {
     let base = FBProcessBuilder<NSNull, NSData, NSData>.withLaunchPath(launchPath, arguments: arguments).withTaskLifecycleLogging(to: logger)
     if let logger {
       let withStdErr = base.withStdErr(to: logger)
-      return unsafeBitCast(withStdErr.runUntilCompletion(withAcceptableExitCodes: [0]), to: FBFuture<AnyObject>.self)
+      return withStdErr.runUntilCompletion(withAcceptableExitCodes: [0]).retyped(FBFuture<AnyObject>.self)
     } else {
-      return unsafeBitCast(base.runUntilCompletion(withAcceptableExitCodes: [0]), to: FBFuture<AnyObject>.self)
+      return base.runUntilCompletion(withAcceptableExitCodes: [0]).retyped(FBFuture<AnyObject>.self)
     }
   }
 
   private static func internalOperation(withArguments arguments: [String], queue: DispatchQueue, logger: FBControlCoreLogger?) -> FBFuture<FBSubprocess<AnyObject, AnyObject, AnyObject>> {
     let xcrunArguments = ["xcresulttool"] + arguments
-    return unsafeBitCast(
+    return
       FBXCTestResultToolOperation.runProcess(launchPath: XcrunPath, arguments: xcrunArguments, logger: logger)
-        .onQueue(
-          queue,
-          map: { task -> AnyObject in
-            task
-          }),
-      to: FBFuture<FBSubprocess<AnyObject, AnyObject, AnyObject>>.self
-    )
+      .onQueue(
+        queue,
+        map: { task -> AnyObject in
+          task
+        }
+      )
+      .retyped(FBFuture<FBSubprocess<AnyObject, AnyObject, AnyObject>>.self)
   }
 
   private static func exportFrom(_ path: String, to destination: String, forId bundleObjectId: String, withType exportType: String, queue: DispatchQueue, logger: FBControlCoreLogger?) -> FBFuture<FBSubprocess<AnyObject, AnyObject, AnyObject>> {
@@ -69,15 +69,15 @@ public final class FBXCTestResultToolOperation {
     if let bundleObjectId, !bundleObjectId.isEmpty {
       arguments.append(contentsOf: ["--id", bundleObjectId])
     }
-    return unsafeBitCast(
+    return
       FBXCTestResultToolOperation.internalOperation(withArguments: arguments, queue: queue, logger: logger)
-        .onQueue(
-          queue,
-          map: { subprocess -> AnyObject in
-            FBXCTestResultToolOperation.getJSON(fromTask: subprocess)
-          }),
-      to: FBFuture<NSDictionary>.self
-    )
+      .onQueue(
+        queue,
+        map: { subprocess -> AnyObject in
+          FBXCTestResultToolOperation.getJSON(fromTask: subprocess)
+        }
+      )
+      .retyped(FBFuture<NSDictionary>.self)
   }
 
   public static func exportFile(from path: String, to destination: String, forId bundleObjectId: String, queue: DispatchQueue, logger: FBControlCoreLogger?) -> FBFuture<FBSubprocess<AnyObject, AnyObject, AnyObject>> {
@@ -85,11 +85,9 @@ public final class FBXCTestResultToolOperation {
   }
 
   public static func exportJPEG(from path: String, to destination: String, forId bundleObjectId: String, type encodeType: String, queue: DispatchQueue, logger: FBControlCoreLogger?) -> FBFuture<FBSubprocess<AnyObject, AnyObject, AnyObject>> {
-    return unsafeBitCast(
-      unsafeBitCast(
-        FBXCTestResultToolOperation.exportFile(from: path, to: destination, forId: bundleObjectId, queue: queue, logger: logger),
-        to: FBFuture<AnyObject>.self
-      )
+    return
+      FBXCTestResultToolOperation.exportFile(from: path, to: destination, forId: bundleObjectId, queue: queue, logger: logger)
+      .retyped(FBFuture<AnyObject>.self)
       .onQueue(
         queue,
         fmap: { task -> FBFuture<AnyObject> in
@@ -100,9 +98,9 @@ public final class FBXCTestResultToolOperation {
           } else {
             return FBFuture(error: FBXCTestResultToolError.unrecognizedScreenshotEncoding(encoding: String(describing: encodeType)))
           }
-        }),
-      to: FBFuture<FBSubprocess<AnyObject, AnyObject, AnyObject>>.self
-    )
+        }
+      )
+      .retyped(FBFuture<FBSubprocess<AnyObject, AnyObject, AnyObject>>.self)
   }
 
   public static func exportDirectory(from path: String, to destination: String, forId bundleObjectId: String, queue: DispatchQueue, logger: FBControlCoreLogger?) -> FBFuture<FBSubprocess<AnyObject, AnyObject, AnyObject>> {
@@ -111,14 +109,14 @@ public final class FBXCTestResultToolOperation {
 
   public static func describeFormat(_ queue: DispatchQueue, logger: FBControlCoreLogger?) -> FBFuture<NSDictionary> {
     let arguments = ["formatDescription"]
-    return unsafeBitCast(
+    return
       FBXCTestResultToolOperation.internalOperation(withArguments: arguments, queue: queue, logger: logger)
-        .onQueue(
-          queue,
-          map: { subprocess -> AnyObject in
-            FBXCTestResultToolOperation.getJSON(fromTask: subprocess)
-          }),
-      to: FBFuture<NSDictionary>.self
-    )
+      .onQueue(
+        queue,
+        map: { subprocess -> AnyObject in
+          FBXCTestResultToolOperation.getJSON(fromTask: subprocess)
+        }
+      )
+      .retyped(FBFuture<NSDictionary>.self)
   }
 }
