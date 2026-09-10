@@ -16,29 +16,20 @@ skip -- a suite that quietly tested nothing would be worse than one that says
 its environment is incomplete.
 
 The simulator is a leased resource. Tests restore anything they mutate and
-never boot, shut down, erase or delete it.
+never boot, shut down, erase or delete it. Before any test runs, the suite
+waits once for it to answer an accessibility read.
 
-Before any test runs, the suite waits once for the simulator to answer an
-accessibility read. That is the last thing to come up and the only one with no
-proxy for it, so it subsumes the weaker signals: a simulator serving reads has
-finished booting and has a live SpringBoard. A simulator that never gets there
-fails the whole suite, rather than leaving whichever test happened to run
-first to report the symptom as its own failure.
+The harness starts one companion on a private unix socket and every command
+connects to it with ``--companion``. The client cannot be made to do this for
+the companions it spawns itself: it constructs its spawner with no device set
+path, so a client-spawned companion only ever sees the default device set.
 
-The harness starts one companion for the simulator on a private unix socket
-and every command connects to it with ``--companion``, so the client's own
-companion bookkeeping never enters the picture and the companion can be
-pointed at any device set. The client cannot do that for the companions it
-spawns itself: it constructs its spawner with no device set path, so a
-client-spawned companion only ever sees the default one.
-
-Commands are run as subprocesses of the event loop, because the behaviour
-under test is partly concurrent -- ``launch --wait-for`` streams an app's
-output for as long as the app runs, and the test has to read that stream while
-the app is still alive. The companion, by contrast, is started with a plain
-``Popen``: it outlives every individual test, and an ``asyncio`` child process
-belongs to the loop that created it, which ``IsolatedAsyncioTestCase``
-replaces per test.
+Commands are subprocesses of the event loop, because the behaviour under test
+is partly concurrent -- ``launch --wait-for`` streams an app's output for as
+long as the app runs, and the test reads that stream while the app is alive.
+The companion is a plain ``Popen`` instead: it outlives every test, and an
+``asyncio`` child process belongs to the loop that created it, which
+``IsolatedAsyncioTestCase`` replaces per test.
 
 Failures are loud and skips are honest. A command that fails because the
 simulator's host does not run ``SimLaunchHostService`` -- the case on some
@@ -62,6 +53,7 @@ import subprocess
 import tempfile
 import time
 import unittest
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Awaitable, Callable, NoReturn, Sequence, TypeVar
 
@@ -184,13 +176,13 @@ def strict() -> bool:
     return os.environ.get(STRICT_ENV) == "1"
 
 
+@dataclass(frozen=True)
 class Completed:
     """The result of one command: what it exited with and what it wrote."""
 
-    def __init__(self, returncode: int, stdout: bytes, stderr: bytes) -> None:
-        self.returncode = returncode
-        self.stdout = stdout
-        self.stderr = stderr
+    returncode: int
+    stdout: bytes
+    stderr: bytes
 
     @property
     def text(self) -> str:
@@ -323,11 +315,7 @@ class Environment:
 def _required(name: str, meaning: str) -> str:
     value = os.environ.get(name)
     if not value:
-        raise HarnessError(
-            f"{name} is not set; it names {meaning}. Everything this suite runs "
-            f"against is provided by its environment and none of it is "
-            f"discovered or defaulted, so a missing one is an error."
-        )
+        raise HarnessError(f"{name} is not set; it names {meaning}.")
     return value
 
 
@@ -587,9 +575,6 @@ class IdbEndToEndTestCase(unittest.IsolatedAsyncioTestCase):
     def simctl(self) -> Simctl:
         return self.environment.simctl
 
-    def idb_argv(self, *args: str) -> list[str]:
-        return idb_argv(self.environment, self.companion, *args)
-
     async def idb(
         self,
         *args: str,
@@ -603,7 +588,11 @@ class IdbEndToEndTestCase(unittest.IsolatedAsyncioTestCase):
         its stderr, except when the failure is the simulator's host lacking
         ``SimLaunchHostService``, which skips (or fails in strict mode).
         """
-        completed = await run(self.idb_argv(*args), timeout=timeout, stdin=stdin)
+        completed = await run(
+            idb_argv(self.environment, self.companion, *args),
+            timeout=timeout,
+            stdin=stdin,
+        )
         if check and completed.returncode != 0:
             self.fail_or_skip_for(" ".join(args), completed)
         return completed
@@ -614,7 +603,9 @@ class IdbEndToEndTestCase(unittest.IsolatedAsyncioTestCase):
         Used for the streaming commands, where the output is the behaviour
         under test rather than something to collect at the end.
         """
-        return IdbProcess(self, self.idb_argv(*args), " ".join(args))
+        return IdbProcess(
+            self, idb_argv(self.environment, self.companion, *args), " ".join(args)
+        )
 
     def fail_or_skip_for(self, what: str, completed: Completed) -> NoReturn:
         """Report a failed ``idb`` command as whatever it actually was.
