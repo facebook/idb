@@ -7,9 +7,10 @@
 
 The single source for formula rewriting: the Release workflow's bottle job
 uses it to bump a tap working copy to the release being cut before building
-bottles from it, and release tooling uses the same functions to write the
-published tap commit. Standard library only, so it runs anywhere a python3
-exists.
+bottles from it, and the workflow's tap-formulae job uses `bump` (the CLI
+below) to publish the finished formulae for that release as a run artifact,
+which release tooling then copies into the tap's source of truth. Standard
+library only, so it runs anywhere a python3 exists.
 
 Every replacement is anchored and count-verified: if a formula's shape has
 drifted from what the anchors expect, the rewrite raises FormulaError instead
@@ -18,8 +19,12 @@ of guessing, and nothing is modified.
 
 from __future__ import annotations
 
+import argparse
+import glob
+import hashlib
 import json
 import re
+import sys
 from pathlib import Path
 
 IDB_REPO = "facebook/idb"
@@ -259,3 +264,126 @@ def insert_bottle_block(text, block, name):
             f"bottle block after, found {count}"
         )
     return new.replace("  end\n\n\n", "  end\n\n")
+
+
+MANIFEST = "manifest.json"
+
+
+def sha256_of_text(text):
+    return hashlib.sha256(text.encode()).hexdigest()
+
+
+def sha256_of_file(path):
+    digest = hashlib.sha256()
+    with open(path, "rb") as f:
+        for chunk in iter(lambda: f.read(1 << 20), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def read_formulae(tap):
+    return {name: (Path(tap) / name).read_text() for name in FORMULAE}
+
+
+def bump_formulae(sources, tag, companion_sha, wheel_sha, bottle_blocks=None):
+    """All three rewrites, plus the bottle blocks, computed before anything
+    is returned: an anchor failure in any file yields nothing at all."""
+    outputs = {
+        "idb-companion.rb": rewrite_companion(
+            sources["idb-companion.rb"], tag, companion_sha
+        ),
+        "idb-cli.rb": rewrite_cli(sources["idb-cli.rb"], tag, wheel_sha),
+        "idb.rb": rewrite_idb(sources["idb.rb"], tag, wheel_sha),
+    }
+    for name, block in (bottle_blocks or {}).items():
+        if name not in outputs:
+            raise FormulaError(f"{name} is not a tap formula this tool rewrites")
+        outputs[name] = insert_bottle_block(outputs[name], block, name)
+    return outputs
+
+
+def bump_manifest(tag, tap_commit, sources, outputs, companion_sha, wheel_sha):
+    """What the artifact was computed from. `inputs` lets whoever applies the
+    artifact check that the tap they are writing into is the tap it was made
+    for, and `outputs` lets them check the files arrived intact."""
+    return {
+        "tag": tag,
+        "tap_commit": tap_commit,
+        "companion_sha256": companion_sha,
+        "wheel_sha256": wheel_sha,
+        "inputs": {name: sha256_of_text(text) for name, text in sources.items()},
+        "outputs": {name: sha256_of_text(text) for name, text in outputs.items()},
+    }
+
+
+def write_bump(out_dir, outputs, manifest):
+    out = Path(out_dir)
+    out.mkdir(parents=True, exist_ok=True)
+    for name, text in outputs.items():
+        (out / name).write_text(text)
+    (out / MANIFEST).write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n")
+
+
+def _single_glob(pattern, what):
+    matches = glob.glob(pattern)
+    if len(matches) != 1:
+        raise FormulaError(
+            f"expected exactly one {what} matching {pattern!r}, found {matches}"
+        )
+    return matches[0]
+
+
+def cmd_bump(args):
+    sources = read_formulae(args.tap)
+    companion_sha = sha256_of_file(_single_glob(args.companion, "companion tarball"))
+    wheel_sha = sha256_of_file(_single_glob(args.wheel, "wheel"))
+    blocks = bottle_blocks_from_dir(args.bottles) if args.bottles else None
+    outputs = bump_formulae(sources, args.tag, companion_sha, wheel_sha, blocks)
+    manifest = bump_manifest(
+        args.tag, args.tap_commit, sources, outputs, companion_sha, wheel_sha
+    )
+    write_bump(args.out, outputs, manifest)
+    for name in FORMULAE:
+        state = "unchanged" if outputs[name] == sources[name] else "rewritten"
+        print(f"{name}: {state}")
+    print(f"wrote {len(outputs)} formulae and {MANIFEST} to {args.out}")
+    return 0
+
+
+def main(argv=None):
+    parser = argparse.ArgumentParser(description=__doc__)
+    subparsers = parser.add_subparsers(dest="command", required=True)
+    bump = subparsers.add_parser(
+        "bump",
+        help="rewrite the tap formulae for a release into an output directory, "
+        "with a manifest of what they were computed from",
+    )
+    bump.add_argument(
+        "--tap", required=True, help="tap checkout to read the formulae from"
+    )
+    bump.add_argument("--tag", required=True, help="release tag, e.g. v1.5.4")
+    bump.add_argument(
+        "--companion", required=True, help="glob for the companion tarball asset"
+    )
+    bump.add_argument("--wheel", required=True, help="glob for the fb-idb wheel asset")
+    bump.add_argument(
+        "--bottles",
+        help="directory of `brew bottle --json` output (omit for no bottle block)",
+    )
+    bump.add_argument(
+        "--tap-commit",
+        default="",
+        help="commit of the tap checkout, recorded in the manifest",
+    )
+    bump.add_argument("--out", required=True, help="directory to write into")
+    bump.set_defaults(func=cmd_bump)
+    args = parser.parse_args(argv)
+    try:
+        return args.func(args)
+    except FormulaError as error:
+        print(f"error: {error}", file=sys.stderr)
+        return 1
+
+
+if __name__ == "__main__":
+    sys.exit(main())
