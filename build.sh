@@ -41,7 +41,7 @@ fi
 # XcodeGen Project Generation
 # =============================================================================
 
-GRPC_SWIFT_VERSION="1.23.1"
+GRPC_SWIFT_VERSION="1.27.5"
 GRPC_SWIFT_DIR="$BUILD_DIRECTORY/grpc-swift"
 
 function check_xcodegen() {

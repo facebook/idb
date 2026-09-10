@@ -26,7 +26,7 @@ let package = Package(
     .executable(name: "idb-repl", targets: ["idb-repl"])
   ],
   dependencies: [
-    .package(url: "https://github.com/grpc/grpc-swift.git", from: "1.19.1"),
+    .package(url: "https://github.com/grpc/grpc-swift.git", exact: "1.27.5"),
     .package(url: "https://github.com/apple/swift-protobuf.git", from: "1.28.0"),
     .package(url: "https://github.com/apple/swift-nio.git", from: "2.50.0"),
     .package(url: "https://github.com/apple/swift-nio-ssl.git", from: "2.25.0"),

@@ -18,7 +18,7 @@ settings:
 packages:
   grpc-swift:
     url: https://github.com/grpc/grpc-swift.git
-    from: 1.19.1
+    exactVersion: 1.27.5
   swift-protobuf:
     url: https://github.com/apple/swift-protobuf.git
     from: 1.28.0
