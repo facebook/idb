@@ -38,7 +38,7 @@ final class MethodInfoSetterInterceptor<Request, Response>: ServerInterceptor<Re
           path: methodDescriptor.path,
           callType: methodDescriptor.type)
       } else {
-        assertionFailure("Method not found in descriptors list. If this is client and companion version mismatch, ignore that error")
+        assertionFailure("\(context.path) is not in the service descriptor")
         // context.callType is not reported correctly in ServerInterceptorContext and always return .bidirectionalStreaming
         methodInfo = GRPCMethodInfo(
           name: String(extractMethodName(path: context.path)),
