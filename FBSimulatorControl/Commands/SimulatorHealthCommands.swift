@@ -25,17 +25,17 @@ public struct SimulatorHealthCommands {
 
   // MARK: - Authorization
 
-  public func setHealthAuthorization(_ approved: Bool, forBundleID bundleID: String, typeIdentifiers: [String]) async throws {
+  public func setAuthorization(_ approved: Bool, forBundleID bundleID: String, typeIdentifiers: [String]) async throws {
     let action = approved ? "approve" : "revoke"
     let args = [bundleID] + typeIdentifiers
     try await simulator.runSimulatorFrameworkBridge(withService: "health", action: action, arguments: args)
   }
 
-  public func clearHealthAuthorization(forBundleID bundleID: String) async throws {
+  public func clearAuthorization(forBundleID bundleID: String) async throws {
     try await simulator.runSimulatorFrameworkBridge(withService: "health", action: "clear", arguments: [bundleID])
   }
 
-  public func listHealthAuthorization(forBundleID bundleID: String) async throws -> String {
+  public func listAuthorization(forBundleID bundleID: String) async throws -> String {
     try await simulator.runSimulatorFrameworkBridge(withService: "health", action: "list", arguments: [bundleID])
   }
 }

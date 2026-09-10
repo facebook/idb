@@ -47,7 +47,7 @@ public struct SimulatorContactsCommands {
 
   // MARK: - Address Book
 
-  public func updateContacts(_ databaseDirectory: String) async throws {
+  public func update(_ databaseDirectory: String) async throws {
     guard let dataDirectory = simulator.dataDirectory else {
       throw SimulatorContactsError.noDataDirectoryForPlists
     }
@@ -67,7 +67,7 @@ public struct SimulatorContactsCommands {
     }
   }
 
-  public func clearContacts() async throws {
+  public func clear() async throws {
     try await simulator.runSimulatorFrameworkBridge(withService: "contacts", action: "clear")
   }
 

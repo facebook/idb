@@ -9,5 +9,5 @@ import Foundation
 
 public protocol NotificationCommands: AnyObject {
 
-  func sendPushNotification(forBundleID bundleID: String, jsonPayload: String) async throws
+  func sendPush(forBundleID bundleID: String, jsonPayload: String) async throws
 }

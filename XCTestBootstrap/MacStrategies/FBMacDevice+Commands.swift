@@ -143,8 +143,8 @@ extension FBMacDevice: FileCommands {
 
 extension FBMacDevice: LocationCommands {
 
-  public func overrideLocation(longitude: Double, latitude: Double) async throws {
-    throw macUnsupported("overrideLocation")
+  public func set(longitude: Double, latitude: Double) async throws {
+    throw macUnsupported("set")
   }
 }
 

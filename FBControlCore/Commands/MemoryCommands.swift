@@ -9,5 +9,5 @@ import Foundation
 
 public protocol MemoryCommands {
 
-  func simulateMemoryWarning() async throws
+  func simulateWarning() async throws
 }

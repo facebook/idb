@@ -9,5 +9,5 @@ import Foundation
 
 public protocol LocationCommands {
 
-  func overrideLocation(longitude: Double, latitude: Double) async throws
+  func set(longitude: Double, latitude: Double) async throws
 }

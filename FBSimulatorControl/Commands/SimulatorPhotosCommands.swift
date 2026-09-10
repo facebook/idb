@@ -25,7 +25,7 @@ public struct SimulatorPhotosCommands {
 
   // MARK: - Library
 
-  public func clearPhotos() async throws {
+  public func clear() async throws {
     try await simulator.runSimulatorFrameworkBridge(withService: "photos", action: "clear")
   }
 }

@@ -285,7 +285,7 @@ public final class FBIDBCommandExecutor {
   }
 
   public func set_location(_ latitude: Double, longitude: Double) async throws {
-    try await target.location.overrideLocation(longitude: longitude, latitude: latitude)
+    try await target.location.set(longitude: longitude, latitude: latitude)
   }
 
   public func clear_keychain() async throws {
@@ -322,16 +322,16 @@ public final class FBIDBCommandExecutor {
   public func update_contacts(_ dbTarData: Data) async throws {
     let simulator = try simulatorTarget()
     try await temporaryDirectory.withArchiveExtracted(dbTarData) { tempDir in
-      try await simulator.contacts.updateContacts(tempDir.path)
+      try await simulator.contacts.update(tempDir.path)
     }
   }
 
   public func clear_contacts() async throws {
-    try await simulatorTarget().contacts.clearContacts()
+    try await simulatorTarget().contacts.clear()
   }
 
   public func clear_photos() async throws {
-    try await simulatorTarget().photos.clearPhotos()
+    try await simulatorTarget().photos.clear()
   }
 
   public func list_test_bundles() async throws -> [FBXCTestDescriptor] {
@@ -640,11 +640,11 @@ public final class FBIDBCommandExecutor {
   }
 
   public func sendPushNotification(forBundleID bundleID: String, jsonPayload: String) async throws {
-    try await simulatorTarget().notification.sendPushNotification(forBundleID: bundleID, jsonPayload: jsonPayload)
+    try await simulatorTarget().notification.sendPush(forBundleID: bundleID, jsonPayload: jsonPayload)
   }
 
   public func simulateMemoryWarning() async throws {
-    try await simulatorTarget().memory.simulateMemoryWarning()
+    try await simulatorTarget().memory.simulateWarning()
   }
 
   // MARK: - Private Methods
