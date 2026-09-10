@@ -9,8 +9,9 @@
 every test in the suite reaches its own verdict through it. It reads nothing
 but the companion and reports through ``fail`` and ``skipTest``, so it can be
 called with a stand-in for the test case. Reading SpringBoard's pid out of a
-``launchctl`` listing is likewise pure. Both run anywhere, unlike the rest of
-the suite.
+``launchctl`` listing is likewise pure. So is deciding that a companion has
+died and the run should end. All of them run anywhere, unlike the rest of the
+suite.
 
 Named ``harness_tests`` rather than ``test_harness`` deliberately. The
 end-to-end job discovers its tests with ``unittest discover``, whose default
@@ -22,11 +23,15 @@ not the subject: a red line in the end-to-end job should mean idb is broken.
 from __future__ import annotations
 
 import os
+import tempfile
 import unittest
+from pathlib import Path
 from typing import NoReturn
 from unittest import mock
 
 from .harness import (
+    Companion,
+    CompanionDied,
     Completed,
     IdbEndToEndTestCase,
     springboard_pid_from_listing,
@@ -58,26 +63,28 @@ class Skipped(Exception):
     """What the stand-in raises for ``skipTest``."""
 
 
-class CompanionStub:
+class ProcessStub:
     def __init__(self, returncode: int | None) -> None:
         self.returncode = returncode
-        self.process = self
 
     def poll(self) -> int | None:
         return self.returncode
 
-    def log_excerpt(self, limit: int = 4000) -> str:
-        return "<companion log>"
 
-    def liveness_note(self) -> str:
-        if self.returncode is None:
-            return "the companion is still running"
-        return f"the companion exited with {self.returncode}"
+def companion(returncode: int | None, log_path: Path | None = None) -> Companion:
+    """A real ``Companion`` over a stand-in process, without starting one."""
+    made = Companion.__new__(Companion)
+    made.process = ProcessStub(returncode)
+    made.log_path = log_path if log_path is not None else Path("/nonexistent.log")
+    return made
 
 
 class TestCaseStub:
     def __init__(self, companion_returncode: int | None = None) -> None:
-        self.companion = CompanionStub(companion_returncode)
+        self.companion = companion(companion_returncode)
+        self._result = unittest.TestResult()
+
+    _stop_the_run = IdbEndToEndTestCase._stop_the_run
 
     def fail(self, message: str) -> NoReturn:
         raise Failed(message)
@@ -88,7 +95,10 @@ class TestCaseStub:
 
 def report_for(stderr: str, companion_returncode: int | None = None) -> str:
     """The message ``fail_or_skip_for`` reports for a failed ``idb describe``."""
-    case = TestCaseStub(companion_returncode)
+    return reported_by(TestCaseStub(companion_returncode), stderr)
+
+
+def reported_by(case: TestCaseStub, stderr: str) -> str:
     try:
         IdbEndToEndTestCase.fail_or_skip_for(
             case, "describe", Completed(1, b"", stderr.encode())
@@ -155,6 +165,82 @@ class FailureReportingTests(unittest.TestCase):
             )
 
         self.assertIn(f"{STRICT_ENV}=1", str(raised.exception))
+
+
+class CompanionLifecycleTests(unittest.TestCase):
+    """The harness ending a run whose companion is gone."""
+
+    def test_a_running_companion_has_not_died(self) -> None:
+        self.assertIsNone(companion(None).died())
+
+    def test_a_dead_companion_names_its_exit_and_carries_its_log(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            log = Path(directory) / "companion.log"
+            log.write_text("last thing the companion served\n")
+
+            died = companion(9, log).died()
+
+        assert died is not None
+        self.assertIsInstance(died, CompanionDied)
+        self.assertIn("exited with 9", str(died))
+        self.assertIn("last thing the companion served", str(died))
+
+    def test_a_command_that_outlived_the_companion_ends_the_run(self) -> None:
+        case = TestCaseStub(companion_returncode=1)
+
+        reported_by(case, "boom")
+
+        self.assertTrue(case._result.shouldStop)
+
+    def test_a_command_that_failed_on_its_own_does_not_end_the_run(self) -> None:
+        case = TestCaseStub()
+
+        reported_by(case, "boom")
+
+        self.assertFalse(case._result.shouldStop)
+
+    def test_being_unable_to_reach_a_live_companion_does_not_end_the_run(self) -> None:
+        # Not every unreachable companion is a dead one, and a run is only
+        # abandoned for a companion that is actually gone.
+        case = TestCaseStub()
+
+        reported_by(case, CONNECTION_REFUSED)
+
+        self.assertFalse(case._result.shouldStop)
+
+
+class DeadCompanionStopsTheSuiteTests(unittest.TestCase):
+    """The whole mechanism, through unittest, with no simulator involved."""
+
+    class Suite(IdbEndToEndTestCase):
+        ran: list[str] = []
+
+        async def asyncSetUp(self) -> None:
+            # Stands in for the shared environment and companion, so that what
+            # is under test is the gate and not what supplies it.
+            self.companion = companion(1)
+            self.end_the_run_if_the_companion_died()
+
+        async def test_first(self) -> None:
+            self.ran.append("first")
+
+        async def test_second(self) -> None:
+            self.ran.append("second")
+
+    def test_the_first_test_reports_the_death_and_no_later_test_runs(self) -> None:
+        self.Suite.ran = []
+        suite = unittest.TestSuite(
+            [self.Suite("test_first"), self.Suite("test_second")]
+        )
+        result = unittest.TestResult()
+
+        suite.run(result)
+
+        self.assertEqual(self.Suite.ran, [])
+        self.assertEqual(result.testsRun, 1)
+        self.assertEqual(len(result.errors), 1)
+        self.assertIn("exited with 1", result.errors[0][1])
+        self.assertTrue(result.shouldStop)
 
 
 class SpringBoardListingTests(unittest.TestCase):

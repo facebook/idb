@@ -120,6 +120,10 @@ class HarnessError(Exception):
     """The environment did not hold up its end of the suite's invariant."""
 
 
+class CompanionDied(HarnessError):
+    """The companion is no longer serving, so nothing after it can be tested."""
+
+
 class FailureKind(enum.Enum):
     """What a non-zero ``idb`` exit means, which is not always what the command
     was doing: the companion is shared by every test, so its death turns every
@@ -416,6 +420,17 @@ class Companion:
             if path:
                 return str(path)
 
+    def died(self) -> CompanionDied | None:
+        """The failure to report if the companion is no longer serving."""
+        returncode = self.process.poll()
+        if returncode is None:
+            return None
+        return CompanionDied(
+            f"The companion exited with {returncode} part-way through the run, "
+            f"so nothing after it can be tested.\n"
+            f"companion log: {self.log_excerpt()}"
+        )
+
     def liveness_note(self) -> str:
         """How the companion is doing, in words a failure report can use."""
         returncode = self.process.poll()
@@ -542,10 +557,40 @@ class IdbEndToEndTestCase(unittest.IsolatedAsyncioTestCase):
     environment: Environment
     companion: Companion
 
+    # ``run`` is the only public place unittest hands over the result, and
+    # ending the run early needs it.
+    _result: unittest.TestResult | None = None
+
+    def run(self, result: unittest.TestResult | None = None) -> Any:
+        self._result = result if result is not None else self.defaultTestResult()
+        return super().run(self._result)
+
     async def asyncSetUp(self) -> None:
         await super().asyncSetUp()
         self.environment = await shared_environment()
         self.companion = await shared_companion()
+        self.end_the_run_if_the_companion_died()
+
+    def end_the_run_if_the_companion_died(self) -> None:
+        died = self.companion.died()
+        if died is None:
+            return
+        self._stop_the_run()
+        raise died
+
+    def _stop_the_run(self) -> None:
+        """End the run once this test has reported, rather than after every
+        remaining one.
+
+        The companion is leased once for the whole process, so its death is not
+        this test's failure but every remaining test's, and each would spend
+        its own timeout rediscovering the same thing and bury the one report
+        that says why. Not unittest's ``--failfast``, which would also stop for
+        a single genuine idb failure -- exactly the case where the rest of the
+        suite is still worth running.
+        """
+        if self._result is not None:
+            self._result.stop()
 
     @property
     def udid(self) -> str:
@@ -601,6 +646,8 @@ class IdbEndToEndTestCase(unittest.IsolatedAsyncioTestCase):
         kind = classify_failure(completed)
 
         if kind is FailureKind.COMPANION_UNREACHABLE:
+            if self.companion.died() is not None:
+                self._stop_the_run()
             self.fail(
                 f"The client could not reach the companion, so this and every "
                 f"later command fail for a reason of the harness's own making "
@@ -626,6 +673,7 @@ class IdbEndToEndTestCase(unittest.IsolatedAsyncioTestCase):
         # so whatever it returned is a real answer.
         companion_returncode = self.companion.process.poll()
         if companion_returncode is not None:
+            self._stop_the_run()
             self.fail(
                 f"{message}\n"
                 f"The companion has since exited with {companion_returncode}, so "
