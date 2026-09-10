@@ -262,9 +262,7 @@ class InstalledBundleIdsTests(unittest.IsolatedAsyncioTestCase):
     """What simctl -- the ground truth the application tests cross-check
     against -- reports when it cannot be read."""
 
-    async def bundle_ids(
-        self, listapps: Completed, plutil: Completed
-    ) -> set[str] | None:
+    async def bundle_ids(self, listapps: Completed, plutil: Completed) -> set[str]:
         with mock.patch.object(harness, "run", reading(listapps, plutil)):
             return await Simctl("UDID", Path("/device-set")).installed_bundle_ids()
 
@@ -275,20 +273,17 @@ class InstalledBundleIdsTests(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual(installed, {"com.apple.Preferences"})
 
-    async def test_a_failing_listapps_reports_nothing_installed(self) -> None:
-        installed = await self.bundle_ids(FAILED, Completed(0, LISTAPPS_JSON, b""))
+    async def test_a_failing_listapps_is_an_error(self) -> None:
+        with self.assertRaises(HarnessError) as raised:
+            await self.bundle_ids(FAILED, Completed(0, LISTAPPS_JSON, b""))
 
-        # BUG: reports the same thing as an empty simulator, so a caller's
-        # `if installed is not None` guard drops its cross-check without
-        # saying so -- flipped in the following commit.
-        self.assertIsNone(installed)
+        self.assertIn("no ground truth to check against", str(raised.exception))
 
-    async def test_a_failing_plutil_reports_nothing_installed(self) -> None:
-        installed = await self.bundle_ids(Completed(0, LISTAPPS_PLIST, b""), FAILED)
+    async def test_a_failing_plutil_is_an_error(self) -> None:
+        with self.assertRaises(HarnessError) as raised:
+            await self.bundle_ids(Completed(0, LISTAPPS_PLIST, b""), FAILED)
 
-        # BUG: as above -- the conversion failing is indistinguishable from
-        # nothing being installed. Flipped in the following commit.
-        self.assertIsNone(installed)
+        self.assertIn("could not be converted to JSON", str(raised.exception))
 
 
 class DeadlineTests(unittest.TestCase):

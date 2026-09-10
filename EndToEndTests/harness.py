@@ -243,17 +243,26 @@ class Simctl:
             return None
         return _device_states(json.loads(completed.stdout)).get(self.udid)
 
-    async def installed_bundle_ids(self) -> set[str] | None:
+    async def installed_bundle_ids(self) -> set[str]:
+        """What is installed, or an error -- never an answer that reads as an
+        empty simulator when the truth is that it could not be read."""
         completed = await self.run("listapps", self.udid)
         if completed.returncode != 0:
-            return None
+            raise HarnessError(
+                f"simctl listapps failed (rc={completed.returncode}), so there "
+                f"is no ground truth to check against: {completed.error_text}"
+            )
+        # listapps writes an old-style plist, which json cannot read.
         converted = await run(
             ["plutil", "-convert", "json", "-o", "-", "-"],
             timeout=60.0,
             stdin=completed.stdout,
         )
         if converted.returncode != 0:
-            return None
+            raise HarnessError(
+                f"simctl listapps output could not be converted to JSON "
+                f"(rc={converted.returncode}): {converted.error_text}"
+            )
         return set(json.loads(converted.stdout).keys())
 
 

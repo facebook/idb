@@ -30,8 +30,7 @@ class ApplicationLifecycleTests(IdbEndToEndTestCase):
 
         # simctl is the ground truth for what is installed; list-apps must agree.
         installed = await self.simctl.installed_bundle_ids()
-        if installed is not None:
-            self.assertIn(bundle_id, installed, "simctl does not see the installed app")
+        self.assertIn(bundle_id, installed, "simctl does not see the installed app")
         app = (await self.installed_apps())[bundle_id]
         self.assertEqual(app["install_type"], "user")
         self.assertNotEqual(app["process_state"], "Running")
@@ -54,10 +53,7 @@ class ApplicationLifecycleTests(IdbEndToEndTestCase):
         await self.idb("uninstall", bundle_id)
         self.assertNotIn(bundle_id, await self.installed_apps())
         installed = await self.simctl.installed_bundle_ids()
-        if installed is not None:
-            self.assertNotIn(
-                bundle_id, installed, "simctl still sees the uninstalled app"
-            )
+        self.assertNotIn(bundle_id, installed, "simctl still sees the uninstalled app")
 
     async def test_launching_an_unknown_bundle_fails(self) -> None:
         completed = await self.idb_expect_failure(
