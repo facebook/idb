@@ -71,7 +71,7 @@ final class SimulatorBootTestCase: XCTestCase {
     try await simulator.lifecycle.boot(bootConfiguration)
     XCTAssertEqual(simulator.state, .booted)
 
-    try await simulator.shutdown()
+    try await simulator.power.shutdown()
     XCTAssertEqual(simulator.state, .shutdown)
     // Deletion, not erasure: an erased device lingers in the set reporting a transient `creating`
     // state while its contents are rebuilt.

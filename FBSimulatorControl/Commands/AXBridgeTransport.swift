@@ -205,7 +205,7 @@ actor AXBridgePersistentTransport: AXBridgeTransport {
       io: io,
       mode: .default
     )
-    let process = try await simulator.launchProcess(configuration)
+    let process = try await simulator.processSpawn.launchProcess(configuration)
     do {
       let fileDescriptor = try await AXBridgeConnection.connect(path: socketPath, timeout: 10, guest: process)
       return AXBridgeConnection(fileDescriptor: fileDescriptor, ownership: ownership(process))

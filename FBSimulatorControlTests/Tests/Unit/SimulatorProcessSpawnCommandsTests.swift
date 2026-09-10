@@ -121,7 +121,7 @@ final class SimulatorProcessSpawnCommandsTests: XCTestCase {
     // descriptors but has no stdin key at all, so there is nowhere for the
     // attached input to go.
     do {
-      _ = try await simulator.launchProcess(configuration)
+      _ = try await simulator.processSpawn.launchProcess(configuration)
       XCTFail("Expected the launch to be rejected, but a process was returned")
     } catch SimulatorProcessSpawnError.stdInUnsupported {
       // Expected.

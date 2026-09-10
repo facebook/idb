@@ -112,7 +112,7 @@ public struct FBSimulatorReplCommands {
 
     // Launch without waiting; `statLoc` completes when the bridge exits (once
     // the socket is closed), matching the `ReplSession.run` contract.
-    let process = try await simulator.launchProcess(configuration)
+    let process = try await simulator.processSpawn.launchProcess(configuration)
     let run = unsafeBitCast(process.statLoc, to: FBFuture<NSNull>.self)
     return ReplSession(socketPath: socketPath, run: run, extraInterfacePaths: [idbInterfacePath].compactMap { $0 })
   }
@@ -159,7 +159,7 @@ public struct FBSimulatorReplCommands {
       io: io,
       launchMode: .relaunchIfRunning
     )
-    let launched = try await simulator.launchApplication(configuration)
+    let launched = try await simulator.application.launchApplication(configuration)
 
     // A launched app registers a `UIKitApplication:` service with the simulator's
     // launchd; a launchd-managed target such as SpringBoard never does. CoreSimulator
@@ -172,7 +172,7 @@ public struct FBSimulatorReplCommands {
     // whether an app is running, so it introduces no new signal. It is deliberately not
     // `installType == .system`: Apple's system apps host a REPL perfectly well, and
     // refusing them would be wrong.
-    guard (try? await simulator.processID(forBundleID: bundleID)) != nil else {
+    guard (try? await simulator.application.processID(forBundleID: bundleID)) != nil else {
       throw SimulatorReplError.targetIsNotALaunchableApp(
         bundleID: bundleID,
         processIdentifier: launched.processIdentifier)

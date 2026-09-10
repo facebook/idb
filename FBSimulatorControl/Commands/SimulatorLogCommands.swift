@@ -43,7 +43,7 @@ public struct SimulatorLogCommands: LogCommands {
       io: processIO,
       mode: .default
     )
-    let process = try await simulator.launchProcess(configuration)
+    let process = try await simulator.processSpawn.launchProcess(configuration)
     return FBProcessLogOperation(process: process, consumer: consumer, queue: simulator.asyncQueue)
   }
 
