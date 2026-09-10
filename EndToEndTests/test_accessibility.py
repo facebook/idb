@@ -42,6 +42,7 @@ from typing import Any
 
 from .harness import (
     ACCESSIBILITY_NOT_READY_MARKER,
+    ACCESSIBILITY_READY_TIMEOUT_SECONDS,
     FIXTURE_APP_BUNDLE_ID,
     HarnessError,
     IdbEndToEndTestCase,
@@ -62,7 +63,10 @@ AXBRIDGE_BACKEND = "axbridge-exclusive"
 # icons do not, and those are the labels a smallest-first pick lands on.
 MINIMUM_CONTROL_WIDTH = 100
 
-CONTROL_DISCOVERY_TIMEOUT_SECONDS = 60.0
+# The same budget the harness gives the simulator to start serving
+# accessibility at all: after the setup has terminated every application, this
+# wait is asking the same question in the same conditions.
+CONTROL_DISCOVERY_TIMEOUT_SECONDS = ACCESSIBILITY_READY_TIMEOUT_SECONDS
 DESCRIBE_ALL_ARGS = ("ui", "describe-all", "--nested")
 
 
@@ -166,6 +170,12 @@ class AccessibilityTests(IdbEndToEndTestCase):
         object to serve. Every other failure is reported as one, so a host that
         cannot spawn in the guest still skips and a companion that has died is
         still named rather than waited out.
+
+        There is something to translate only while an application is frontmost,
+        so a missing translation object is a lost precondition rather than an
+        answer that will change on its own: the application is put back up if
+        the simulator is no longer running it, and a launch that will not
+        succeed is reported rather than reissued until the deadline.
         """
 
         async def read() -> dict[str, Any]:
@@ -173,6 +183,8 @@ class AccessibilityTests(IdbEndToEndTestCase):
             if completed.returncode != 0:
                 if ACCESSIBILITY_NOT_READY_MARKER not in completed.error_text:
                     self.fail_or_skip_for(" ".join(DESCRIBE_ALL_ARGS), completed)
+                if SETTINGS_BUNDLE_ID not in await self.simctl.running_bundle_ids():
+                    await self.idb("launch", SETTINGS_BUNDLE_ID)
                 raise NotReady("the simulator has no accessibility translation object")
             controls = _labelled_controls(json.loads(completed.text))
             if not controls:
