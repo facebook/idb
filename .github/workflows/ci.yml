@@ -154,6 +154,75 @@ jobs:
         with:
           name: idb-companion-distribution
           path: idb-companion-distribution.tgz
+      # The same tree packaged exactly as the Release workflow's companion
+      # asset (flat, archive root = Distribution/), so the formulae job below
+      # can install it through the real formula, and so a release cut at this
+      # commit can ship these bytes instead of rebuilding them.
+      - name: Package the companion as the release asset
+        run: |
+          tar -C Build/Distribution -czf idb-companion.macos-arm64.tar.gz .
+          shasum -a 256 idb-companion.macos-arm64.tar.gz | tee idb-companion.macos-arm64.tar.gz.sha256
+      - name: Upload the companion asset
+        uses: actions/upload-artifact@v5
+        with:
+          name: idb-companion
+          path: idb-companion.macos-arm64.tar.gz*
+
+  # The formulae, rendered from .github/formulae/ against this commit's own
+  # companion tarball and wheel and installed through Homebrew from those
+  # local files. A template that no longer matches the tarball layout, a
+  # dependency pin that stopped resolving, or an install block that breaks
+  # fails here, on the diff that caused it, instead of on release day. The
+  # rendered files are uploaded for review; their URLs point at this runner,
+  # so they are a build output, not something to install from.
+  mac-formulae:
+    name: Render and install the formulae (macOS)
+    runs-on: macos-26
+    needs: mac-companion
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+      - uses: Homebrew/actions/setup-homebrew@master
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Download the companion asset
+        uses: actions/download-artifact@v5
+        with:
+          name: idb-companion
+          path: assets
+      # v0.0.0 is a well-formed tag for the render; the wheel must carry the
+      # same version so its filename matches the one the formulae reference.
+      - name: Build the wheel
+        run: |
+          pip install build
+          FB_IDB_VERSION=0.0.0 python -m build --wheel --outdir assets
+      - name: Render the formulae against the local assets
+        run: |
+          python3 .github/scripts/tap_formulae.py render \
+            --tag v0.0.0 \
+            --companion 'assets/idb-companion.macos-arm64.tar.gz' \
+            --wheel 'assets/fb_idb-*-py3-none-any.whl' \
+            --asset-base "file://$PWD/assets" \
+            --out tap
+      - name: Upload the rendered formulae
+        uses: actions/upload-artifact@v5
+        with:
+          name: formulae
+          path: tap/
+      - name: Mount the render as the facebook/fb tap
+        run: |
+          taps="$(brew --repository)/Library/Taps/facebook"
+          mkdir -p "$taps"
+          ln -s "$PWD/tap" "$taps/homebrew-fb"
+          brew tap-info facebook/fb
+      # idb depends on the other two, so one install exercises all three
+      # formulae; a source install of idb-cli is the venv-and-pip path that a
+      # release bottle would skip, which is exactly what should be checked.
+      - name: Install from the local assets
+        run: brew install facebook/fb/idb
+      - name: Test the installed formulae
+        run: brew test facebook/fb/idb-companion facebook/fb/idb-cli facebook/fb/idb
 
   mac-end-to-end:
     name: End-to-end (idb through idb_companion, macOS)
