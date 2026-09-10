@@ -287,7 +287,7 @@ public final class FBMacDevice: NSObject, FBiOSTarget {
     false
   }
 
-  public static func commands(with target: FBiOSTarget) -> Self {
+  public static func commands(with target: any FBiOSTarget) -> Self {
     assertionFailure("commandsWithTarget is not yet supported")
     return unsafeBitCast(NSNull(), to: Self.self)
   }

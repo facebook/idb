@@ -17,7 +17,7 @@ import XCTestBootstrap
 
 final class CompanionServiceProvider: Idb_CompanionServiceAsyncProvider, @unchecked Sendable {
 
-  private let target: FBiOSTarget
+  private let target: any FBiOSTarget
   private let commandExecutor: FBIDBCommandExecutor
   private let reporter: FBEventReporter
   private let logger: FBIDBLogger
@@ -31,7 +31,7 @@ final class CompanionServiceProvider: Idb_CompanionServiceAsyncProvider, @unchec
   private let replRecordingCoordinator: ReplRecordingCoordinator
 
   init(
-    target: FBiOSTarget,
+    target: any FBiOSTarget,
     commandExecutor: FBIDBCommandExecutor,
     reporter: FBEventReporter,
     logger: FBIDBLogger,

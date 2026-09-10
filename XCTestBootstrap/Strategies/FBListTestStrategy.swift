@@ -74,11 +74,11 @@ private final class FBListTestStrategy_ReporterWrapped: FBXCTestRunner {
 
 public final class FBListTestStrategy {
 
-  let target: FBiOSTarget & ProcessSpawnCommands & XCTestExtendedCommands
+  let target: any FBiOSTarget & ProcessSpawnCommands & XCTestExtendedCommands
   private let configuration: FBListTestConfiguration
   private let logger: FBControlCoreLogger
 
-  public init(target: FBiOSTarget & ProcessSpawnCommands & XCTestExtendedCommands, configuration: FBListTestConfiguration, logger: FBControlCoreLogger) {
+  public init(target: any FBiOSTarget & ProcessSpawnCommands & XCTestExtendedCommands, configuration: FBListTestConfiguration, logger: FBControlCoreLogger) {
     self.target = target
     self.configuration = configuration
     self.logger = logger
@@ -157,7 +157,7 @@ public final class FBListTestStrategy {
       .retyped(FBFuture<NSArray>.self)
   }
 
-  private static func setupEnvironment(withDylibs libraries: [String], shimPath: String, shimOutputFilePath: String, bundlePath: String, target: FBiOSTarget) -> [String: String] {
+  private static func setupEnvironment(withDylibs libraries: [String], shimPath: String, shimOutputFilePath: String, bundlePath: String, target: any FBiOSTarget) -> [String: String] {
     var librariesWithShim = [shimPath]
     librariesWithShim.append(contentsOf: libraries)
 
@@ -234,7 +234,7 @@ public final class FBListTestStrategy {
       .retyped(FBFuture<NSNull>.self)
   }
 
-  private static func listTestProcess(withTarget target: FBiOSTarget & ProcessSpawnCommands, configuration: FBListTestConfiguration, xctestPath: String, environment: [String: String], stdOutConsumer: FBDataConsumer, stdErrConsumer: FBDataConsumer, logger: FBControlCoreLogger, temporaryDirectory: URL) -> FBFuture<AnyObject> {
+  private static func listTestProcess(withTarget target: any FBiOSTarget & ProcessSpawnCommands, configuration: FBListTestConfiguration, xctestPath: String, environment: [String: String], stdOutConsumer: FBDataConsumer, stdErrConsumer: FBDataConsumer, logger: FBControlCoreLogger, temporaryDirectory: URL) -> FBFuture<AnyObject> {
     var launchPath = xctestPath
     var env = environment
 
@@ -271,7 +271,7 @@ public final class FBListTestStrategy {
     }
   }
 
-  private static func listTestProcess(withSpawnConfiguration spawnConfiguration: FBProcessSpawnConfiguration, onTarget target: FBiOSTarget & ProcessSpawnCommands, timeout: TimeInterval, logger: FBControlCoreLogger) -> FBFuture<AnyObject> {
+  private static func listTestProcess(withSpawnConfiguration spawnConfiguration: FBProcessSpawnConfiguration, onTarget target: any FBiOSTarget & ProcessSpawnCommands, timeout: TimeInterval, logger: FBControlCoreLogger) -> FBFuture<AnyObject> {
     let launchFuture: FBFuture<FBSubprocess<AnyObject, AnyObject, AnyObject>> = fbFutureFromAsync {
       try await target.launchProcess(spawnConfiguration)
     }

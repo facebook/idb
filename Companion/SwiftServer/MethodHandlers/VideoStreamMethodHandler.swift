@@ -27,7 +27,7 @@ extension VideoStreamMethodHandlerError: LocalizedError {
 
 struct VideoStreamMethodHandler {
 
-  let target: FBiOSTarget
+  let target: any FBiOSTarget
   let targetLogger: FBControlCoreLogger
   let commandExecutor: FBIDBCommandExecutor
 

@@ -109,6 +109,63 @@ public protocol FBiOSTarget: FBiOSTargetInfo,
   PowerCommands
 {
 
+  // MARK: - Command nouns
+
+  // The target's capabilities, one accessor per capability. A caller reaches an operation through
+  // the noun that owns it — `target.power.shutdown()` — rather than through a verb on the target.
+  //
+  // Each noun is an associated type rather than the capability existential so that a concrete target
+  // keeps the concrete command type: `simulator.lifecycle` is a `SimulatorLifecycleCommands`, with
+  // the simulator-only operations it adds. A caller holding `any FBiOSTarget` sees the capability
+  // upper bound, `any LifecycleCommands`.
+
+  associatedtype Application: ApplicationCommands
+  var application: Application { get }
+
+  associatedtype CrashLog: CrashLogCommands
+  var crashLog: CrashLog { get }
+
+  associatedtype Debugger: DebuggerCommands
+  var debugger: Debugger { get }
+
+  associatedtype Erase: EraseCommands
+  var erase: Erase { get }
+
+  associatedtype File: FileCommands
+  var file: File { get }
+
+  associatedtype Instruments: InstrumentsCommands
+  var instruments: Instruments { get }
+
+  associatedtype Lifecycle: LifecycleCommands
+  var lifecycle: Lifecycle { get }
+
+  associatedtype Location: LocationCommands
+  var location: Location { get }
+
+  associatedtype Log: LogCommands
+  var log: Log { get }
+
+  associatedtype Power: PowerCommands
+  var power: Power { get }
+
+  associatedtype Screenshot: ScreenshotCommands
+  var screenshot: Screenshot { get }
+
+  associatedtype VideoRecording: VideoRecordingCommands
+  var videoRecording: VideoRecording { get }
+
+  associatedtype VideoStream: VideoStreamCommands
+  var videoStream: VideoStream { get }
+
+  associatedtype XCTest: XCTestCommands
+  var xctest: XCTest { get }
+
+  associatedtype XCTraceRecord: XCTraceRecordCommands
+  var xctraceRecord: XCTraceRecord { get }
+
+  // MARK: - Target properties
+
   /// The Target's Logger.
   var logger: any FBControlCoreLogger { get }
 
@@ -259,7 +316,7 @@ public func FBiOSTargetPredicateForUDIDs(_ udids: [String]) -> NSPredicate {
 ///
 /// - Parameter deadline: How long to wait for. Waits indefinitely when `nil`.
 public func FBiOSTargetResolveState(
-  _ target: FBiOSTarget,
+  _ target: any FBiOSTarget,
   _ state: FBiOSTargetState,
   deadline: PollDeadline? = nil
 ) async throws {
@@ -271,7 +328,7 @@ public func FBiOSTargetResolveState(
 ///
 /// - Parameter deadline: How long to wait for. Waits indefinitely when `nil`.
 public func FBiOSTargetResolveLeavesState(
-  _ target: FBiOSTarget,
+  _ target: any FBiOSTarget,
   _ state: FBiOSTargetState,
   deadline: PollDeadline? = nil
 ) async throws {
@@ -282,8 +339,8 @@ public func FBiOSTargetResolveLeavesState(
 /// Carries a target into the `@Sendable` polling closure. The target is read only for its `state`,
 /// and only on its own work queue, which is the serialisation point the protocol documents.
 private final class TargetBox: @unchecked Sendable {
-  let target: FBiOSTarget
-  init(_ target: FBiOSTarget) {
+  let target: any FBiOSTarget
+  init(_ target: any FBiOSTarget) {
     self.target = target
   }
 }

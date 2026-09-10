@@ -45,7 +45,7 @@ final class GRPCSwiftServer: @unchecked Sendable {
   private let onShutdownStarted: (@Sendable () -> Void)?
 
   init(
-    target: FBiOSTarget,
+    target: any FBiOSTarget,
     commandExecutor: FBIDBCommandExecutor,
     reporter: FBEventReporter,
     logger: FBIDBLogger,

@@ -75,12 +75,12 @@ public final class FBInstalledArtifact {
 // MARK: - FBIDBStorage
 
 public class FBIDBStorage {
-  public let target: FBiOSTarget
+  public let target: any FBiOSTarget
   public let basePath: URL
   public let queue: DispatchQueue
   public let logger: FBControlCoreLogger
 
-  public init(target: FBiOSTarget, basePath: URL, queue: DispatchQueue, logger: FBControlCoreLogger) {
+  public init(target: any FBiOSTarget, basePath: URL, queue: DispatchQueue, logger: FBControlCoreLogger) {
     self.target = target
     self.basePath = basePath
     self.queue = queue
@@ -139,7 +139,7 @@ public final class FBFileStorage: FBIDBStorage {
 public class FBBundleStorage: FBIDBStorage {
   public let relocateLibraries: Bool
 
-  public init(target: FBiOSTarget, basePath: URL, queue: DispatchQueue, logger: FBControlCoreLogger, relocateLibraries: Bool) {
+  public init(target: any FBiOSTarget, basePath: URL, queue: DispatchQueue, logger: FBControlCoreLogger, relocateLibraries: Bool) {
     self.relocateLibraries = relocateLibraries
     super.init(target: target, basePath: basePath, queue: queue, logger: logger)
   }
@@ -464,7 +464,7 @@ public final class FBIDBStorageManager {
     self.logger = logger
   }
 
-  public static func manager(forTarget target: FBiOSTarget, logger: FBControlCoreLogger) throws -> FBIDBStorageManager {
+  public static func manager(forTarget target: any FBiOSTarget, logger: FBControlCoreLogger) throws -> FBIDBStorageManager {
     let queue = DispatchQueue(label: "com.facebook.idb.bundle_storage")
 
     let xctestBasePath = try prepareStoragePath(withName: IdbTestBundlesFolder, target: target)
@@ -513,7 +513,7 @@ public final class FBIDBStorageManager {
     return combined
   }
 
-  private static func prepareStoragePath(withName name: String, target: FBiOSTarget) throws -> URL {
+  private static func prepareStoragePath(withName name: String, target: any FBiOSTarget) throws -> URL {
     let basePath = URL(fileURLWithPath: target.auxillaryDirectory).appendingPathComponent(name)
     do {
       try FileManager.default.createDirectory(at: basePath, withIntermediateDirectories: true, attributes: nil)

@@ -41,7 +41,7 @@ extension FBiOSTargetProviderError: LocalizedError {
 
 public final class FBiOSTargetProvider {
 
-  public static func target(withUDID udid: String, targetSets: [FBiOSTargetSet], warmUp: Bool, logger: FBControlCoreLogger) throws -> FBiOSTarget {
+  public static func target(withUDID udid: String, targetSets: [FBiOSTargetSet], warmUp: Bool, logger: FBControlCoreLogger) throws -> any FBiOSTarget {
     switch udid.lowercased() {
     case "only":
       return try fetchSoleTarget(forTargetSets: targetSets, logger: logger)
@@ -52,7 +52,7 @@ public final class FBiOSTargetProvider {
     }
   }
 
-  private static func fetchTarget(withUDID udid: String, targetSets: [FBiOSTargetSet], logger: FBControlCoreLogger) throws -> FBiOSTarget {
+  private static func fetchTarget(withUDID udid: String, targetSets: [FBiOSTargetSet], logger: FBControlCoreLogger) throws -> any FBiOSTarget {
     if udid.lowercased() == "mac" {
       return FBMacDevice(logger: logger)
     }
@@ -60,7 +60,7 @@ public final class FBiOSTargetProvider {
       guard let targetInfo = targetSet.target(withUDID: udid) else {
         continue
       }
-      guard let target = targetInfo as? FBiOSTarget else {
+      guard let target = targetInfo as? any FBiOSTarget else {
         throw FBiOSTargetProviderError.targetNotUsable(udid: udid, targetDescription: String(describing: targetInfo))
       }
       return target
@@ -69,11 +69,11 @@ public final class FBiOSTargetProvider {
     throw FBiOSTargetProviderError.targetNotFound(udid: udid, targetSetsDescription: String(describing: targetSets))
   }
 
-  private static func fetchSoleTarget(forTargetSets targetSets: [FBiOSTargetSet], logger: FBControlCoreLogger) throws -> FBiOSTarget {
-    var targets: [FBiOSTarget] = []
+  private static func fetchSoleTarget(forTargetSets targetSets: [FBiOSTargetSet], logger: FBControlCoreLogger) throws -> any FBiOSTarget {
+    var targets: [any FBiOSTarget] = []
     for targetSet in targetSets {
       for info in targetSet.allTargetInfos {
-        if let target = info as? FBiOSTarget {
+        if let target = info as? any FBiOSTarget {
           targets.append(target)
         }
       }
@@ -87,11 +87,11 @@ public final class FBiOSTargetProvider {
     return target
   }
 
-  private static func fetchSoleBootedTarget(forTargetSets targetSets: [FBiOSTargetSet], logger: FBControlCoreLogger) throws -> FBiOSTarget {
-    var bootedTargets: [FBiOSTarget] = []
+  private static func fetchSoleBootedTarget(forTargetSets targetSets: [FBiOSTargetSet], logger: FBControlCoreLogger) throws -> any FBiOSTarget {
+    var bootedTargets: [any FBiOSTarget] = []
     for targetSet in targetSets {
       for info in targetSet.allTargetInfos {
-        guard let target = info as? FBiOSTarget, target.state == .booted else {
+        guard let target = info as? any FBiOSTarget, target.state == .booted else {
           continue
         }
         bootedTargets.append(target)

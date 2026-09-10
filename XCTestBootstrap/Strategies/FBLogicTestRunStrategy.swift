@@ -59,12 +59,12 @@ extension FBLogicTestRunError: LocalizedError {
 
 public final class FBLogicTestRunStrategy: FBXCTestRunner {
 
-  private let target: FBiOSTarget & ProcessSpawnCommands & XCTestExtendedCommands
+  private let target: any FBiOSTarget & ProcessSpawnCommands & XCTestExtendedCommands
   private let configuration: FBLogicTestConfiguration
   private let reporter: FBLogicXCTestReporter
   private let logger: FBControlCoreLogger
 
-  public init(target: FBiOSTarget & ProcessSpawnCommands & XCTestExtendedCommands, configuration: FBLogicTestConfiguration, reporter: FBLogicXCTestReporter, logger: FBControlCoreLogger) {
+  public init(target: any FBiOSTarget & ProcessSpawnCommands & XCTestExtendedCommands, configuration: FBLogicTestConfiguration, reporter: FBLogicXCTestReporter, logger: FBControlCoreLogger) {
     self.target = target
     self.configuration = configuration
     self.reporter = reporter
@@ -140,7 +140,7 @@ public final class FBLogicTestRunStrategy: FBXCTestRunner {
       .retyped(FBFuture<NSNull>.self)
   }
 
-  private static func setupEnvironment(withDylibs environment: [String: String], withLibraries libraries: [String], injectLibraries: [String], shimOutputFilePath: String, shimPath: String, bundlePath: String, coverageConfiguration: FBCodeCoverageConfiguration?, logDirectoryPath: String?, waitForDebugger: Bool, target: FBiOSTarget) -> [String: String] {
+  private static func setupEnvironment(withDylibs environment: [String: String], withLibraries libraries: [String], injectLibraries: [String], shimOutputFilePath: String, shimPath: String, bundlePath: String, coverageConfiguration: FBCodeCoverageConfiguration?, logDirectoryPath: String?, waitForDebugger: Bool, target: any FBiOSTarget) -> [String: String] {
     var librariesWithShim = [shimPath]
     librariesWithShim.append(contentsOf: libraries)
     librariesWithShim.append(contentsOf: injectLibraries)

@@ -76,7 +76,7 @@ public final class FBIDBCommandExecutor {
 
   // MARK: - Initializers
 
-  public static func commandExecutor(forTarget target: FBiOSTarget, storageManager: FBIDBStorageManager, temporaryDirectory: FBTemporaryDirectory, debugserverPort: in_port_t, logger: FBIDBLogger) -> FBIDBCommandExecutor {
+  public static func commandExecutor(forTarget target: any FBiOSTarget, storageManager: FBIDBStorageManager, temporaryDirectory: FBTemporaryDirectory, debugserverPort: in_port_t, logger: FBIDBLogger) -> FBIDBCommandExecutor {
     FBIDBCommandExecutor(target: target, storageManager: storageManager, temporaryDirectory: temporaryDirectory, debugserverPort: debugserverPort, logger: logger.named("grpc_handler"))
   }
 

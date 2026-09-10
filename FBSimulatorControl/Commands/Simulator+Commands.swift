@@ -119,7 +119,7 @@ extension FBSimulator {
     SimulatorPhotosCommands.commands(with: self)
   }
 
-  public var xctestExtended: SimulatorXCTestCommands {
+  public var xctest: SimulatorXCTestCommands {
     commandCache.resolve { SimulatorXCTestCommands.commands(with: self) }
   }
 

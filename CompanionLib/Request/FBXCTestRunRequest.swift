@@ -146,7 +146,7 @@ public struct FBXCTestRunRequest {
 
   // MARK: - Test Execution
 
-  func start(withBundleStorageManager bundleStorage: FBXCTestBundleStorage, target: FBiOSTarget, reporter: FBXCTestReporter, logger: FBControlCoreLogger, temporaryDirectory: FBTemporaryDirectory) async throws -> FBIDBTestOperation {
+  func start(withBundleStorageManager bundleStorage: FBXCTestBundleStorage, target: any FBiOSTarget, reporter: FBXCTestReporter, logger: FBControlCoreLogger, temporaryDirectory: FBTemporaryDirectory) async throws -> FBIDBTestOperation {
     let descriptor = try await fetchAndSetupDescriptor(withBundleStorage: bundleStorage, target: target)
     var logDirectoryPath: String?
     if collectLogs {
@@ -162,7 +162,7 @@ public struct FBXCTestRunRequest {
     }
   }
 
-  private func fetchAndSetupDescriptor(withBundleStorage bundleStorage: FBXCTestBundleStorage, target: FBiOSTarget) async throws -> FBXCTestDescriptor {
+  private func fetchAndSetupDescriptor(withBundleStorage bundleStorage: FBXCTestBundleStorage, target: any FBiOSTarget) async throws -> FBXCTestDescriptor {
     let descriptor = try fetchDescriptor(withBundleStorage: bundleStorage)
     try await descriptor.setupAsync(with: self, target: target)
     return descriptor
@@ -191,7 +191,7 @@ public struct FBXCTestRunRequest {
 
   // MARK: - Logic Tests
 
-  private func startLogicTest(with testDescriptor: FBXCTestDescriptor, logDirectoryPath: String?, target: FBiOSTarget, reporter: FBXCTestReporter, logger: FBControlCoreLogger, temporaryDirectory: FBTemporaryDirectory) throws -> FBIDBTestOperation {
+  private func startLogicTest(with testDescriptor: FBXCTestDescriptor, logDirectoryPath: String?, target: any FBiOSTarget, reporter: FBXCTestReporter, logger: FBControlCoreLogger, temporaryDirectory: FBTemporaryDirectory) throws -> FBIDBTestOperation {
     let workingDirectory = temporaryDirectory.ephemeralTemporaryDirectory()
     try FileManager.default.createDirectory(at: workingDirectory, withIntermediateDirectories: true, attributes: nil)
 
@@ -232,8 +232,8 @@ public struct FBXCTestRunRequest {
     return try startLogicTestExecution(configuration, target: target, reporter: reporter, logger: logger)
   }
 
-  private func startLogicTestExecution(_ configuration: FBLogicTestConfiguration, target: FBiOSTarget, reporter: FBXCTestReporter, logger: FBControlCoreLogger) throws -> FBIDBTestOperation {
-    guard let target = target as? (FBiOSTarget & ProcessSpawnCommands & XCTestExtendedCommands) else {
+  private func startLogicTestExecution(_ configuration: FBLogicTestConfiguration, target: any FBiOSTarget, reporter: FBXCTestReporter, logger: FBControlCoreLogger) throws -> FBIDBTestOperation {
+    guard let target = target as? (any FBiOSTarget & ProcessSpawnCommands & XCTestExtendedCommands) else {
       throw FBXCTestRunRequestError.logicTestsUnsupported(targetDescription: String(describing: target))
     }
     let adapter = FBLogicReporterAdapter(reporter: reporter, logger: logger)
@@ -267,7 +267,7 @@ public struct FBXCTestRunRequest {
 
   // MARK: - Application-Hosted Tests
 
-  private func startAppHostedTest(with testDescriptor: FBXCTestDescriptor, logDirectoryPath: String?, target: FBiOSTarget, reporter: FBXCTestReporter, logger: FBControlCoreLogger) async throws -> FBIDBTestOperation {
+  private func startAppHostedTest(with testDescriptor: FBXCTestDescriptor, logDirectoryPath: String?, target: any FBiOSTarget, reporter: FBXCTestReporter, logger: FBControlCoreLogger) async throws -> FBIDBTestOperation {
     let appPair = try await testDescriptor.testAppPair(for: self, target: target)
     logger.log("Obtaining launch configuration for App Pair \(appPair) on descriptor \(testDescriptor)")
     let appHostedTestConfig = try await testDescriptor.testConfig(withRunRequest: self, testApps: appPair, logDirectoryPath: logDirectoryPath, logger: logger)
@@ -275,7 +275,7 @@ public struct FBXCTestRunRequest {
     return Self.startAppHostedTestExecution(appHostedTestConfig, reportAttachments: reportAttachments, target: target, reporter: reporter, logger: logger, reportResultBundle: collectResultBundle)
   }
 
-  private static func startAppHostedTestExecution(_ configuration: FBIDBAppHostedTestConfiguration, reportAttachments: Bool, target: FBiOSTarget, reporter: FBXCTestReporter, logger: FBControlCoreLogger, reportResultBundle: Bool) -> FBIDBTestOperation {
+  private static func startAppHostedTestExecution(_ configuration: FBIDBAppHostedTestConfiguration, reportAttachments: Bool, target: any FBiOSTarget, reporter: FBXCTestReporter, logger: FBControlCoreLogger, reportResultBundle: Bool) -> FBIDBTestOperation {
     let testLaunchConfiguration = configuration.testLaunchConfiguration
     let coverageConfiguration = configuration.coverageConfiguration
 

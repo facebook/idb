@@ -37,7 +37,7 @@ enum SimulatorCommandAccessor: CaseIterable, Sendable {
   case health
   case contacts
   case photos
-  case xctestExtended
+  case xctest
   case accessibility
   case dapServer
   case repl
@@ -96,8 +96,8 @@ enum SimulatorCommandAccessor: CaseIterable, Sendable {
       _ = simulator.contacts
     case .photos:
       _ = simulator.photos
-    case .xctestExtended:
-      _ = simulator.xctestExtended
+    case .xctest:
+      _ = simulator.xctest
     case .accessibility:
       _ = simulator.accessibility
     case .dapServer:

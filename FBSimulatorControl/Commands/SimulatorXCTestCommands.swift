@@ -256,7 +256,7 @@ extension FBSimulator: XCTestExtendedCommands {
     reporter: AnyObject,
     logger: any FBControlCoreLogger
   ) async throws {
-    try await xctestExtended.runTest(launchConfiguration: launchConfiguration, reporter: reporter, logger: logger)
+    try await xctest.runTest(launchConfiguration: launchConfiguration, reporter: reporter, logger: logger)
   }
 
   public func listTests(
@@ -264,20 +264,20 @@ extension FBSimulator: XCTestExtendedCommands {
     timeout: TimeInterval,
     withAppAtPath appPath: String?
   ) async throws -> [String] {
-    try await xctestExtended.listTests(forBundleAtPath: bundlePath, timeout: timeout, withAppAtPath: appPath)
+    try await xctest.listTests(forBundleAtPath: bundlePath, timeout: timeout, withAppAtPath: appPath)
   }
 
   public func extendedTestShim() async throws -> String {
-    try await xctestExtended.extendedTestShim()
+    try await xctest.extendedTestShim()
   }
 
   public func withTransportForTestManagerService<R>(
     body: (NSNumber) async throws -> R
   ) async throws -> R {
-    try await xctestExtended.withTransportForTestManagerService(body: body)
+    try await xctest.withTransportForTestManagerService(body: body)
   }
 
   public var xctestPath: String {
-    xctestExtended.xctestPath
+    xctest.xctestPath
   }
 }

@@ -16,7 +16,7 @@ struct ConnectMethodHandler {
 
   let reporter: FBEventReporter
   let logger: FBIDBLogger
-  let target: FBiOSTarget
+  let target: any FBiOSTarget
 
   func handle(request: Idb_ConnectRequest, context: GRPCAsyncServerCallContext) async throws -> Idb_ConnectResponse {
     self.reporter.addMetadata(request.metadata)

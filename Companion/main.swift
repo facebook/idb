@@ -209,7 +209,7 @@ private func defaultTargetSets(_ userDefaults: UserDefaults, xcodeAvailable: Boo
   ]
 }
 
-private func targetForUDID(_ udid: String, userDefaults: UserDefaults, xcodeAvailable: Bool, warmUp: Bool, logger: FBControlCoreLogger) async throws -> FBiOSTarget {
+private func targetForUDID(_ udid: String, userDefaults: UserDefaults, xcodeAvailable: Bool, warmUp: Bool, logger: FBControlCoreLogger) async throws -> any FBiOSTarget {
   let targetSets = try await defaultTargetSets(userDefaults, xcodeAvailable: xcodeAvailable, logger: logger)
   return try FBiOSTargetProvider.target(withUDID: udid, targetSets: targetSets, warmUp: warmUp, logger: logger)
 }
@@ -232,7 +232,7 @@ private func resolveSimulator(_ udid: String, userDefaults: UserDefaults, logger
   return simulator
 }
 
-private func awaitTargetOffline(_ target: FBiOSTarget, logger: FBControlCoreLogger) async throws {
+private func awaitTargetOffline(_ target: any FBiOSTarget, logger: FBControlCoreLogger) async throws {
   try await target.resolveLeavesState(.booted)
   target.logger.log("Target is no longer booted, companion going offline")
 }

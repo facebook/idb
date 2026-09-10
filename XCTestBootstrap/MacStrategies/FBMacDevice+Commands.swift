@@ -19,6 +19,44 @@ extension FBMacDevice {
   }
 }
 
+// MARK: - Command nouns
+
+// `FBMacDevice` implements every capability inline rather than through command types, so each noun
+// resolves to the device itself. Splitting those implementations into command types is a separate
+// change; the nouns can be stated regardless.
+extension FBMacDevice {
+
+  public var application: FBMacDevice { self }
+
+  public var crashLog: FBMacDevice { self }
+
+  public var debugger: FBMacDevice { self }
+
+  public var erase: FBMacDevice { self }
+
+  public var file: FBMacDevice { self }
+
+  public var instruments: FBMacDevice { self }
+
+  public var lifecycle: FBMacDevice { self }
+
+  public var location: FBMacDevice { self }
+
+  public var log: FBMacDevice { self }
+
+  public var power: FBMacDevice { self }
+
+  public var screenshot: FBMacDevice { self }
+
+  public var videoRecording: FBMacDevice { self }
+
+  public var videoStream: FBMacDevice { self }
+
+  public var xctest: FBMacDevice { self }
+
+  public var xctraceRecord: FBMacDevice { self }
+}
+
 // MARK: - FBMacDevice+VideoStreamCommands
 
 extension FBMacDevice: VideoStreamCommands {

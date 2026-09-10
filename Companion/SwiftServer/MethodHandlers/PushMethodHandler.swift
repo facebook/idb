@@ -12,7 +12,7 @@ import IDBGRPCSwift
 
 struct PushMethodHandler {
 
-  let target: FBiOSTarget
+  let target: any FBiOSTarget
   let commandExecutor: FBIDBCommandExecutor
 
   func handle(requestStream: RequestStreamReader<Idb_PushRequest>, context: GRPCAsyncServerCallContext) async throws -> Idb_PushResponse {
