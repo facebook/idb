@@ -410,7 +410,7 @@ public final class IDBCommandExecutor {
   }
 
   /// Launches a logic test bundle in REPL mode. The implementation lives in the
-  /// REPL command (`FBSimulatorReplCommands`); this forwards to the target, which
+  /// REPL command (`SimulatorReplCommands`); this forwards to the target, which
   /// injects the REPL shim (`libRepl`), forces the shim's `TestRepl/start` test,
   /// and has the shim bind a control socket whose path is passed via
   /// `IDB_REPL_SOCKET_PATH`. The returned `ReplSession.run` future completes when

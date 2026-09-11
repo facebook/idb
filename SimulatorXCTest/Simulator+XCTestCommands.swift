@@ -20,7 +20,7 @@ extension FBSimulator: @retroactive LogicTestTarget {
     commandCache.resolve { SimulatorXCTestCommands.commands(with: self) }
   }
 
-  public var repl: FBSimulatorReplCommands {
-    FBSimulatorReplCommands.commands(with: self)
+  public var repl: SimulatorReplCommands {
+    SimulatorReplCommands.commands(with: self)
   }
 }
