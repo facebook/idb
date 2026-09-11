@@ -8,13 +8,13 @@
 import AVFoundation
 import Foundation
 
-private enum FBVideoFileWriterError: Error {
+private enum VideoFileWriterError: Error {
   case cannotAddFileOutput(filePath: String)
   case failedToRemoveExistingVideo(filePath: String, cause: Error)
   case failedToCreateAuxiliaryDirectory(filePath: String, cause: Error)
 }
 
-extension FBVideoFileWriterError: LocalizedError {
+extension VideoFileWriterError: LocalizedError {
   var errorDescription: String? {
     switch self {
     case .cannotAddFileOutput(let filePath):
@@ -51,7 +51,7 @@ public final class FBVideoFileWriter: NSObject, AVCaptureFileOutputRecordingDele
   public class func writer(withSession session: AVCaptureSession, filePath: String, logger: any FBControlCoreLogger) throws -> Self {
     let output = AVCaptureMovieFileOutput()
     if !session.canAddOutput(output) {
-      throw FBVideoFileWriterError.cannotAddFileOutput(filePath: filePath)
+      throw VideoFileWriterError.cannotAddFileOutput(filePath: filePath)
     }
     session.addOutput(output)
     return self.init(session: session, output: output, filePath: filePath, logger: logger)
@@ -84,14 +84,14 @@ public final class FBVideoFileWriter: NSObject, AVCaptureFileOutputRecordingDele
       do {
         try FileManager.default.removeItem(atPath: filePath)
       } catch {
-        throw FBVideoFileWriterError.failedToRemoveExistingVideo(filePath: filePath, cause: error)
+        throw VideoFileWriterError.failedToRemoveExistingVideo(filePath: filePath, cause: error)
       }
       logger.log("Removed video file at \(filePath)")
     }
     do {
       try FileManager.default.createDirectory(atPath: (filePath as NSString).deletingLastPathComponent, withIntermediateDirectories: true, attributes: nil)
     } catch {
-      throw FBVideoFileWriterError.failedToCreateAuxiliaryDirectory(filePath: filePath, cause: error)
+      throw VideoFileWriterError.failedToCreateAuxiliaryDirectory(filePath: filePath, cause: error)
     }
     try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
       registerStartAwaiter(continuation)
