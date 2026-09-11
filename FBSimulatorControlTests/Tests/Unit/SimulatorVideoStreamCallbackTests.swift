@@ -449,6 +449,32 @@ final class SimulatorVideoStreamDeliveryTests: XCTestCase {
     try await stream.stopStreaming()
   }
 
+  func testSurfaceChangedForMountedSurfaceDoesNotRemount() async throws {
+    let surface = FakeFramebufferSurface()
+    let ioSurface = makeTestIOSurface()
+    surface.immediateSurface = ioSurface
+    let consumer = FBDataBuffer.accumulatingBuffer()
+    let stream = makeStream(surface: surface)
+
+    try await stream.startStreaming(consumer)
+    let mountedHandle = await stream.currentFramePusherHandle()
+    let mounted = try XCTUnwrap(mountedHandle)
+    let baseline = try await settledCount(of: consumer)
+
+    // Report the surface that is already mounted, then a rendered frame. Events are delivered in
+    // order, so once the rendered frame's push lands the surface report has been handled.
+    surface.ioSurfaceChanged?(ioSurface)
+    surface.frameRendered?()
+    try await expectEventually("the rendered frame must push") { consumer.data().count > baseline }
+
+    // BUG: a surface report for the already-mounted surface re-mounts it, replacing the frame
+    // pusher (and rebuilding its encoder) — flipped in the following commit.
+    let currentHandle = await stream.currentFramePusherHandle()
+    let current = try XCTUnwrap(currentHandle)
+    XCTAssertNotEqual(current.identity, mounted.identity)
+    try await stream.stopStreaming()
+  }
+
   /// Creates an IOSurface with no pixel format: `CVPixelBufferCreateWithIOSurface` rejects it
   /// (-6661), so mounting it always fails — the trigger for the failed-initial-mount path.
   private func makeUnmountableIOSurface() -> IOSurface {
