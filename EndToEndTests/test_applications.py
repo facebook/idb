@@ -74,7 +74,7 @@ class LaunchOutputTests(IdbEndToEndTestCase):
         await super().asyncSetUp()
         self.bundle_id = await self.install_fixture_app()
 
-    async def test_waiting_launch_reports_the_pid_on_stdout(self) -> None:
+    async def test_launch_wait_for_reports_pid_on_stdout(self) -> None:
         async with self.idb_process("launch", "--wait-for", self.bundle_id) as launch:
             report, _ = _leading_json_object(
                 await launch.read_some(PID_REPORT_TIMEOUT_SECONDS)
@@ -87,7 +87,7 @@ class LaunchOutputTests(IdbEndToEndTestCase):
             self.assertEqual(running["process_state"], "Running")
             self.assertEqual(int(running["pid"]), pid)
 
-    async def test_the_launch_holds_the_app_open_until_it_is_stopped(self) -> None:
+    async def test_stopping_launch_wait_for_terminates_the_app(self) -> None:
         async with self.idb_process("launch", "--wait-for", self.bundle_id) as launch:
             await launch.read_some(PID_REPORT_TIMEOUT_SECONDS)
             # Background the app while keeping the launch command attached.
@@ -102,9 +102,9 @@ class LaunchOutputTests(IdbEndToEndTestCase):
             )
 
         # App termination may finish after the launch command exits.
-        await self.wait_until_the_app_has_stopped()
+        await self.wait_for_app_to_stop()
 
-    async def wait_until_the_app_has_stopped(self) -> None:
+    async def wait_for_app_to_stop(self) -> None:
         async def stopped() -> None:
             app = (await self.installed_apps())[self.bundle_id]
             if app["process_state"] == "Running":
@@ -119,7 +119,7 @@ class LaunchOutputTests(IdbEndToEndTestCase):
         except HarnessError as error:
             self.fail(str(error))
 
-    async def test_the_pid_report_is_not_terminated(self) -> None:
+    async def test_pid_report_has_no_trailing_newline(self) -> None:
         """Record the current PID output format: JSON without a trailing newline.
 
         Line-based readers block until the app writes a newline or exits.

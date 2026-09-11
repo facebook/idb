@@ -50,7 +50,7 @@ class DiagnosticPlanTests(unittest.TestCase):
         arguments.update(overrides)
         return diagnostic_plan(**arguments)
 
-    def test_the_plan_reads_the_companion_log_and_both_host_crash_reports(self) -> None:
+    def test_includes_companion_log_and_host_crash_reports(self) -> None:
         patterns = [
             source.pattern for source in self.plan() if isinstance(source, Copy)
         ]
@@ -63,7 +63,7 @@ class DiagnosticPlanTests(unittest.TestCase):
             patterns,
         )
 
-    def test_the_plan_reads_the_guest_crash_reports_from_the_device_set(self) -> None:
+    def test_includes_simulator_crash_reports(self) -> None:
         patterns = [
             source.pattern for source in self.plan() if isinstance(source, Copy)
         ]
@@ -71,7 +71,7 @@ class DiagnosticPlanTests(unittest.TestCase):
             f"/sets/end-to-end/{UDID}/data/Library/Logs/CrashReporter/*.ips", patterns
         )
 
-    def test_the_plan_captures_the_device_listing_scoped_to_the_device_set(
+    def test_device_listing_uses_requested_device_set(
         self,
     ) -> None:
         captures = {
@@ -84,7 +84,7 @@ class DiagnosticPlanTests(unittest.TestCase):
             ["xcrun", "simctl", "--set", "/sets/end-to-end", "list", "devices"],
         )
 
-    def test_the_plan_bounds_the_simulator_log_to_the_runs_own_window(self) -> None:
+    def test_simulator_log_uses_configured_time_window(self) -> None:
         captures = {
             source.name: list(source.argv)
             for source in self.plan()
@@ -108,7 +108,7 @@ class DiagnosticPlanTests(unittest.TestCase):
             ],
         )
 
-    def test_a_run_without_a_simulator_still_reads_the_host(self) -> None:
+    def test_missing_simulator_keeps_host_diagnostics(self) -> None:
         for absent in ({"device_set": None}, {"udid": None}, {"udid": ""}):
             with self.subTest(**absent):
                 plan = self.plan(**absent)
@@ -123,7 +123,7 @@ class CollectTests(unittest.TestCase):
         self.output = self.root / "diagnostics"
         self.run = Recorder()
 
-    def test_copying_takes_every_match_of_the_pattern(self) -> None:
+    def test_copies_matching_files(self) -> None:
         write(self.root / "idb-e2e-a" / "companion.log", "first")
         write(self.root / "idb-e2e-b" / "companion.log", "second")
         collected = collect(
@@ -135,14 +135,14 @@ class CollectTests(unittest.TestCase):
         self.assertEqual(collected, ["companion.log", "companion.log"])
         self.assertTrue((self.output / "companion.log").exists())
 
-    def test_a_pattern_that_matches_nothing_collects_nothing(self) -> None:
+    def test_unmatched_pattern_collects_no_files(self) -> None:
         self.assertEqual(
             collect([Copy(str(self.root / "absent" / "*.ips"))], self.output, self.run),
             [],
         )
         self.assertTrue(self.output.is_dir())
 
-    def test_capturing_writes_the_commands_output_under_its_name(self) -> None:
+    def test_saves_command_output(self) -> None:
         collected = collect(
             [Capture("devices.txt", ("xcrun", "simctl", "list"))], self.output, self.run
         )
@@ -150,7 +150,7 @@ class CollectTests(unittest.TestCase):
         self.assertEqual((self.output / "devices.txt").read_text(), "xcrun simctl list")
         self.assertEqual(self.run.commands, [["xcrun", "simctl", "list"]])
 
-    def test_a_source_that_raises_does_not_stop_the_ones_after_it(self) -> None:
+    def test_collection_continues_after_source_error(self) -> None:
         def raising(argv):
             raise OSError("xcrun is not on this host")
 

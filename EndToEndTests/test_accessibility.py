@@ -104,12 +104,12 @@ class AccessibilityTests(IdbEndToEndTestCase):
             await self.terminate_quietly(bundle_id)
         await self.idb("launch", SETTINGS_BUNDLE_ID)
         self.addAsyncCleanup(self.terminate_quietly, SETTINGS_BUNDLE_ID)
-        self.control = await self.some_control()
+        self.control = await self.wait_for_control()
 
     async def describe_all(self, *extra: str) -> Any:
         return await self.idb_json(*DESCRIBE_ALL_ARGS, *extra)
 
-    async def complete_read(self, api: str) -> dict[str, Any]:
+    async def describe_all_complete(self, api: str) -> dict[str, Any]:
         document = await self.idb_json(
             "ui", "describe-all", "--api", api, "--format", "complete"
         )
@@ -120,7 +120,7 @@ class AccessibilityTests(IdbEndToEndTestCase):
         )
         return document
 
-    async def some_control(self) -> dict[str, Any]:
+    async def wait_for_control(self) -> dict[str, Any]:
         """Wait for a labelled Settings row. Relaunch Settings if it has exited.
 
         Retry only an empty result or a missing translation object.
@@ -154,8 +154,8 @@ class AccessibilityTests(IdbEndToEndTestCase):
         )
 
     async def test_ui_describe_all_over_both_backends(self) -> None:
-        host = await self.complete_read("ax")
-        bridge = await self.complete_read("axbridge")
+        host = await self.describe_all_complete("ax")
+        bridge = await self.describe_all_complete("axbridge")
 
         self.assertEqual(host["backend"], AX_BACKEND)
         self.assertEqual(bridge["backend"], AXBRIDGE_BACKEND)
@@ -174,7 +174,9 @@ class AccessibilityTests(IdbEndToEndTestCase):
             f"{AXBRIDGE_BACKEND} saw {sorted(_labels(bridge))}",
         )
 
-    async def test_ui_describe_all_accepts_key_selection_and_enrichers(self) -> None:
+    async def test_ui_describe_all_accepts_keys_profiling_and_frame_coverage(
+        self,
+    ) -> None:
         document = await self.describe_all(
             "--key",
             "AXLabel",
@@ -222,9 +224,9 @@ class AccessibilityTests(IdbEndToEndTestCase):
         # Return to Settings before looking up the row again.
         await self.idb("terminate", SETTINGS_BUNDLE_ID)
         await self.idb("launch", SETTINGS_BUNDLE_ID)
-        await self.some_control()
+        await self.wait_for_control()
         await self.idb("ui", "tap", marker)
 
-    async def test_ui_scroll_the_frontmost_application(self) -> None:
+    async def test_ui_scroll_accepts_both_directions(self) -> None:
         await self.idb("ui", "scroll", "down")
         await self.idb("ui", "scroll", "up")

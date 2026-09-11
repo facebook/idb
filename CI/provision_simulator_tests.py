@@ -189,7 +189,7 @@ class ProvisionTests(unittest.TestCase):
 
         self.assertTrue(all("--set" not in command for command in recorder.commands))
 
-    def test_reports_a_create_that_named_no_simulator(self) -> None:
+    def test_create_without_udid_fails(self) -> None:
         recorder = Recorder([runtime("26.0", device_types=["iPhone 17"])], udid="")
 
         with self.assertRaises(NoSimulatorError):

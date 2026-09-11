@@ -85,7 +85,7 @@ class TestCaseStub:
         self.companion = companion(companion_returncode)
         self._result = unittest.TestResult()
 
-    _stop_the_run = IdbEndToEndTestCase._stop_the_run
+    _stop_suite = IdbEndToEndTestCase._stop_suite
 
     def fail(self, message: str) -> NoReturn:
         raise Failed(message)
@@ -115,13 +115,13 @@ class FailureReportingTests(unittest.TestCase):
         self.assertIn("idb describe failed (rc=1)", message)
         self.assertIn("boom", message)
 
-    def test_reports_a_failed_command_that_outlived_the_companion(self) -> None:
+    def test_command_failure_includes_companion_exit_status(self) -> None:
         message = report_for("boom", companion_returncode=1)
 
         self.assertIn("idb describe failed (rc=1)", message)
         self.assertIn("has since exited with 1", message)
 
-    def test_reports_being_unable_to_reach_a_dead_companion(self) -> None:
+    def test_connection_failure_reports_companion_exit(self) -> None:
         message = report_for(CONNECTION_REFUSED, companion_returncode=1)
 
         self.assertTrue(
@@ -131,7 +131,7 @@ class FailureReportingTests(unittest.TestCase):
         self.assertIn("the companion exited with 1", message)
         self.assertIn("companion log", message)
 
-    def test_reports_being_unable_to_reach_a_live_companion(self) -> None:
+    def test_connection_failure_reports_running_companion(self) -> None:
         message = report_for(CONNECTION_REFUSED)
 
         self.assertTrue(
@@ -153,7 +153,7 @@ class FailureReportingTests(unittest.TestCase):
         self.assertIn("SimLaunchHostService", str(raised.exception))
 
     @mock.patch.dict(os.environ, {STRICT_ENV: "1"})
-    def test_fails_rather_than_skipping_for_that_host_under_strict(self) -> None:
+    def test_strict_mode_fails_when_host_service_is_unavailable(self) -> None:
         case = TestCaseStub()
 
         with self.assertRaises(Failed) as raised:
@@ -165,10 +165,10 @@ class FailureReportingTests(unittest.TestCase):
 
 
 class CompanionLifecycleTests(unittest.TestCase):
-    def test_a_running_companion_has_not_died(self) -> None:
+    def test_running_companion_has_no_exit_error(self) -> None:
         self.assertIsNone(companion(None).died())
 
-    def test_a_dead_companion_names_its_exit_and_carries_its_log(self) -> None:
+    def test_companion_exit_error_includes_status_and_log(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             log = Path(directory) / "companion.log"
             log.write_text("last thing the companion served\n")
@@ -180,21 +180,23 @@ class CompanionLifecycleTests(unittest.TestCase):
         self.assertIn("exited with 9", str(died))
         self.assertIn("last thing the companion served", str(died))
 
-    def test_a_command_that_outlived_the_companion_ends_the_run(self) -> None:
+    def test_companion_exit_stops_the_suite(self) -> None:
         case = TestCaseStub(companion_returncode=1)
 
         reported_by(case, "boom")
 
         self.assertTrue(case._result.shouldStop)
 
-    def test_a_command_that_failed_on_its_own_does_not_end_the_run(self) -> None:
+    def test_command_failure_does_not_stop_the_suite(self) -> None:
         case = TestCaseStub()
 
         reported_by(case, "boom")
 
         self.assertFalse(case._result.shouldStop)
 
-    def test_being_unable_to_reach_a_live_companion_does_not_end_the_run(self) -> None:
+    def test_connection_failure_with_live_companion_does_not_stop_the_suite(
+        self,
+    ) -> None:
         case = TestCaseStub()
 
         reported_by(case, CONNECTION_REFUSED)
@@ -208,7 +210,7 @@ class DeadCompanionStopsTheSuiteTests(unittest.TestCase):
 
         async def asyncSetUp(self) -> None:
             self.companion = companion(1)
-            self.end_the_run_if_the_companion_died()
+            self.check_companion()
 
         async def test_first(self) -> None:
             self.ran.append("first")
@@ -216,7 +218,7 @@ class DeadCompanionStopsTheSuiteTests(unittest.TestCase):
         async def test_second(self) -> None:
             self.ran.append("second")
 
-    def test_the_first_test_reports_the_death_and_no_later_test_runs(self) -> None:
+    def test_companion_exit_fails_setup_and_stops_remaining_tests(self) -> None:
         self.Suite.ran = []
         suite = unittest.TestSuite(
             [self.Suite("test_first"), self.Suite("test_second")]
@@ -248,7 +250,7 @@ class InstalledBundleIdsTests(unittest.IsolatedAsyncioTestCase):
         with mock.patch.object(harness, "run", reading(listapps, plutil)):
             return await Simctl("UDID", Path("/device-set")).installed_bundle_ids()
 
-    async def test_a_listing_reports_what_is_installed(self) -> None:
+    async def test_parses_installed_bundle_ids(self) -> None:
         installed = await self.bundle_ids(
             Completed(0, LISTAPPS_PLIST, b""), Completed(0, LISTAPPS_JSON, b"")
         )
@@ -269,25 +271,25 @@ class InstalledBundleIdsTests(unittest.IsolatedAsyncioTestCase):
 
 
 class RunningBundleIdsTests(unittest.TestCase):
-    def test_only_an_app_with_a_process_is_running(self) -> None:
+    def test_excludes_exited_apps_and_daemons(self) -> None:
         self.assertEqual(
             running_bundle_ids_from_listing(LAUNCHCTL_LISTING),
             {"com.apple.mobilesafari"},
         )
 
-    def test_a_listing_with_no_apps_names_none(self) -> None:
+    def test_empty_listing_has_no_running_apps(self) -> None:
         self.assertEqual(running_bundle_ids_from_listing("PID\tStatus\tLabel\n"), set())
 
 
 class DeadlineTests(unittest.TestCase):
-    def test_a_deadline_in_the_future_has_not_passed(self) -> None:
+    def test_positive_timeout_leaves_time_remaining(self) -> None:
         deadline = Deadline(60.0)
 
         self.assertFalse(deadline.passed)
         self.assertGreater(deadline.remaining, 0)
         self.assertLessEqual(deadline.remaining, 60.0)
 
-    def test_a_deadline_of_no_time_has_passed(self) -> None:
+    def test_zero_timeout_is_expired(self) -> None:
         deadline = Deadline(0.0)
 
         self.assertTrue(deadline.passed)
@@ -296,7 +298,7 @@ class DeadlineTests(unittest.TestCase):
 
 @mock.patch.object(harness, "POLL_INTERVAL_SECONDS", 0.0)
 class WaitUntilTests(unittest.IsolatedAsyncioTestCase):
-    async def test_a_poll_that_is_ready_returns_its_value(self) -> None:
+    async def test_returns_successful_poll_result(self) -> None:
         asked = 0
 
         async def poll() -> str:
@@ -307,7 +309,7 @@ class WaitUntilTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(await wait_until("Never", 60.0, poll), "ready")
         self.assertEqual(asked, 1)
 
-    async def test_a_poll_is_asked_again_until_it_is_ready(self) -> None:
+    async def test_retries_on_not_ready(self) -> None:
         answers = [NotReady("still coming up"), NotReady("still coming up"), "ready"]
 
         async def poll() -> str:
@@ -319,7 +321,7 @@ class WaitUntilTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(await wait_until("Never", 60.0, poll), "ready")
         self.assertEqual(answers, [])
 
-    async def test_the_timeout_names_what_it_was_waiting_for(self) -> None:
+    async def test_timeout_includes_last_not_ready_reason(self) -> None:
         async def poll() -> str:
             raise NotReady("it has no translation object to serve")
 
@@ -332,7 +334,7 @@ class WaitUntilTests(unittest.IsolatedAsyncioTestCase):
             "it has no translation object to serve",
         )
 
-    async def test_the_poll_is_asked_once_before_the_deadline_is_read(self) -> None:
+    async def test_zero_timeout_still_polls_once(self) -> None:
         asked = 0
 
         async def poll() -> str:
@@ -343,7 +345,7 @@ class WaitUntilTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(await wait_until("Never", 0.0, poll), "ready")
         self.assertEqual(asked, 1)
 
-    async def test_a_failure_that_is_not_not_ready_is_not_waited_out(self) -> None:
+    async def test_other_exceptions_propagate_without_retry(self) -> None:
         async def poll() -> str:
             raise HarnessError("the companion is gone")
 

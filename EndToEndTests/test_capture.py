@@ -36,7 +36,7 @@ class CaptureTests(IdbEndToEndTestCase):
             "a screenshot is more than its signature",
         )
 
-    async def test_log_streams_the_targets_log(self) -> None:
+    async def test_log_streams_simulator_output(self) -> None:
         async with self.idb_process("log") as log:
             # Launching Settings produces log activity. Stop any existing instance first.
             self.addAsyncCleanup(self.terminate_quietly, SETTINGS_BUNDLE_ID)

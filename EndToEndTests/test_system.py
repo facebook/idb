@@ -57,11 +57,11 @@ class OpenUrlTests(IdbEndToEndTestCase):
 
 
 class PermissionTests(IdbEndToEndTestCase):
-    async def test_a_permission_is_granted_and_taken_back_one_at_a_time(self) -> None:
+    async def test_revoke_removes_only_the_requested_permission(self) -> None:
         bundle_id = await self.install_fixture_app()
         # Uninstall cleanup should remove permissions from previous runs.
         self.assertEqual(
-            self.granted_permissions(bundle_id),
+            self.permission_records(bundle_id),
             {},
             "a freshly installed app has been granted nothing",
         )
@@ -69,19 +69,19 @@ class PermissionTests(IdbEndToEndTestCase):
         await self.idb("approve", bundle_id, "photos", "contacts")
 
         self.assertEqual(
-            self.granted_permissions(bundle_id),
+            self.permission_records(bundle_id),
             {PHOTOS_SERVICE: TCC_ALLOWED, CONTACTS_SERVICE: TCC_ALLOWED},
         )
 
         await self.idb("revoke", bundle_id, "photos")
 
         self.assertEqual(
-            self.granted_permissions(bundle_id),
+            self.permission_records(bundle_id),
             {CONTACTS_SERVICE: TCC_ALLOWED},
             "revoke should take back only the permission it names",
         )
 
-    def granted_permissions(self, bundle_id: str) -> dict[str, int]:
+    def permission_records(self, bundle_id: str) -> dict[str, int]:
         """Read permission records from the simulator privacy database."""
         database = self.simctl.device_set_path / self.udid / "data" / TCC_DATABASE
         if not database.is_file():

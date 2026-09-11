@@ -389,7 +389,7 @@ class Companion:
             f"companion log: {self.log_excerpt()}"
         )
 
-    def liveness_note(self) -> str:
+    def status_description(self) -> str:
         returncode = self.process.poll()
         if returncode is None:
             return "the companion is still running"
@@ -417,7 +417,7 @@ def idb_argv(environment: Environment, companion: Companion, *args: str) -> list
     return [str(environment.idb_bin), "--companion", companion.address, *args]
 
 
-async def wait_until_accessibility_is_serving(
+async def wait_for_accessibility(
     environment: Environment, companion: Companion
 ) -> None:
     """Wait for an accessibility read before running tests.
@@ -485,7 +485,7 @@ async def shared_companion() -> Companion:
             _acquisition_failure = error
             raise
         try:
-            await wait_until_accessibility_is_serving(environment, companion)
+            await wait_for_accessibility(environment, companion)
         except BaseException as error:
             companion.stop()
             _acquisition_failure = error
@@ -512,16 +512,16 @@ class IdbEndToEndTestCase(unittest.IsolatedAsyncioTestCase):
         await super().asyncSetUp()
         self.environment = await shared_environment()
         self.companion = await shared_companion()
-        self.end_the_run_if_the_companion_died()
+        self.check_companion()
 
-    def end_the_run_if_the_companion_died(self) -> None:
+    def check_companion(self) -> None:
         died = self.companion.died()
         if died is None:
             return
-        self._stop_the_run()
+        self._stop_suite()
         raise died
 
-    def _stop_the_run(self) -> None:
+    def _stop_suite(self) -> None:
         """Stop after this test reports its result.
 
         The remaining tests cannot run without the shared companion. Ordinary
@@ -576,12 +576,12 @@ class IdbEndToEndTestCase(unittest.IsolatedAsyncioTestCase):
 
         if kind is FailureKind.COMPANION_UNREACHABLE:
             if self.companion.died() is not None:
-                self._stop_the_run()
+                self._stop_suite()
             self.fail(
                 f"The client could not reach the companion, so this and every "
                 f"later command fail for a reason of the harness's own making "
                 f"rather than anything idb {what} did — "
-                f"{self.companion.liveness_note()}.\n{message}\n"
+                f"{self.companion.status_description()}.\n{message}\n"
                 f"companion log: {self.companion.log_excerpt()}"
             )
 
@@ -599,7 +599,7 @@ class IdbEndToEndTestCase(unittest.IsolatedAsyncioTestCase):
         # Preserve the command error even if the companion exited afterwards.
         companion_returncode = self.companion.process.poll()
         if companion_returncode is not None:
-            self._stop_the_run()
+            self._stop_suite()
             self.fail(
                 f"{message}\n"
                 f"The companion has since exited with {companion_returncode}, so "
