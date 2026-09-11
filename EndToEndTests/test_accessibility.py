@@ -136,7 +136,7 @@ class AccessibilityTests(IdbEndToEndTestCase):
                 raise NotReady("the simulator has no accessibility translation object")
             controls = _labelled_controls(json.loads(completed.text))
             if not controls:
-                raise NotReady("Settings has put up no labelled control")
+                raise NotReady("Settings has no labelled rows yet")
             return controls[0]
 
         try:
@@ -186,7 +186,8 @@ class AccessibilityTests(IdbEndToEndTestCase):
             "--collect-frame-coverage",
         )
         self.assertTrue(
-            _elements(document), "an enriched read should still report elements"
+            _elements(document),
+            "describe-all returned no elements with the requested options",
         )
 
     async def test_ui_describe_resolves_a_point_and_a_marker(self) -> None:

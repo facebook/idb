@@ -78,17 +78,14 @@ class PermissionTests(IdbEndToEndTestCase):
         self.assertEqual(
             self.permission_records(bundle_id),
             {CONTACTS_SERVICE: TCC_ALLOWED},
-            "revoke should take back only the permission it names",
+            "revoking photos should leave contacts permission unchanged",
         )
 
     def permission_records(self, bundle_id: str) -> dict[str, int]:
         """Read permission records from the simulator privacy database."""
         database = self.simctl.device_set_path / self.udid / "data" / TCC_DATABASE
         if not database.is_file():
-            raise HarnessError(
-                f"the simulator has no privacy database at {database}, so there "
-                f"is no ground truth to check against"
-            )
+            raise HarnessError(f"Simulator privacy database not found: {database}")
         # closing() closes the connection; sqlite3's context manager only ends the transaction.
         with closing(
             sqlite3.connect(f"file:{database}?mode=ro", uri=True)

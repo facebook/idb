@@ -54,7 +54,7 @@ class FileTests(IdbEndToEndTestCase):
         self.assertEqual(
             (destination / FILE_NAME).read_bytes(),
             CONTENTS,
-            "pull should have brought back what push sent",
+            "pulled bytes differ from the source file",
         )
 
         await self.idb("file", "rm", remote, "--application")

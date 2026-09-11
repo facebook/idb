@@ -112,7 +112,7 @@ class LaunchOutputTests(IdbEndToEndTestCase):
 
         try:
             await wait_until(
-                "Stopping the launch did not stop the app it was holding open",
+                "App still running after launch --wait-for exited",
                 APP_STOP_TIMEOUT_SECONDS,
                 stopped,
             )
@@ -130,5 +130,5 @@ class LaunchOutputTests(IdbEndToEndTestCase):
             self.assertEqual(
                 chunk[consumed : consumed + 1],
                 b"",
-                "the pid report is expected to arrive unterminated",
+                "PID JSON currently has no trailing newline",
             )

@@ -126,7 +126,7 @@ class FailureReportingTests(unittest.TestCase):
 
         self.assertTrue(
             message.startswith("The client could not reach the companion"),
-            f"expected the harness's own failure, got: {message}",
+            f"expected a connection failure, got: {message}",
         )
         self.assertIn("the companion exited with 1", message)
         self.assertIn("companion log", message)
@@ -136,7 +136,7 @@ class FailureReportingTests(unittest.TestCase):
 
         self.assertTrue(
             message.startswith("The client could not reach the companion"),
-            f"expected the harness's own failure, got: {message}",
+            f"expected a connection failure, got: {message}",
         )
         self.assertIn("the companion is still running", message)
 
@@ -261,7 +261,7 @@ class InstalledBundleIdsTests(unittest.IsolatedAsyncioTestCase):
         with self.assertRaises(HarnessError) as raised:
             await self.bundle_ids(FAILED, Completed(0, LISTAPPS_JSON, b""))
 
-        self.assertIn("no ground truth to check against", str(raised.exception))
+        self.assertIn("simctl listapps failed (rc=1)", str(raised.exception))
 
     async def test_a_failing_plutil_is_an_error(self) -> None:
         with self.assertRaises(HarnessError) as raised:
@@ -323,7 +323,7 @@ class WaitUntilTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_timeout_includes_last_not_ready_reason(self) -> None:
         async def poll() -> str:
-            raise NotReady("it has no translation object to serve")
+            raise NotReady("no accessibility translation object")
 
         with self.assertRaises(HarnessError) as raised:
             await wait_until("The simulator did not begin serving", 0.0, poll)
@@ -331,7 +331,7 @@ class WaitUntilTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(
             str(raised.exception),
             "The simulator did not begin serving within 0s: "
-            "it has no translation object to serve",
+            "no accessibility translation object",
         )
 
     async def test_zero_timeout_still_polls_once(self) -> None:

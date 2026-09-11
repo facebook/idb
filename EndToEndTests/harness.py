@@ -187,8 +187,7 @@ class Simctl:
         completed = await self.run("listapps", self.udid)
         if completed.returncode != 0:
             raise HarnessError(
-                f"simctl listapps failed (rc={completed.returncode}), so there "
-                f"is no ground truth to check against: {completed.error_text}"
+                f"simctl listapps failed (rc={completed.returncode}): {completed.error_text}"
             )
         # listapps writes an old-style plist, which json cannot read.
         converted = await run(
@@ -384,8 +383,7 @@ class Companion:
         if returncode is None:
             return None
         return CompanionDied(
-            f"The companion exited with {returncode} part-way through the run, "
-            f"so nothing after it can be tested.\n"
+            f"The companion exited with {returncode}; stopping the test suite.\n"
             f"companion log: {self.log_excerpt()}"
         )
 
@@ -440,12 +438,11 @@ async def wait_for_accessibility(
             ACCESSIBILITY_NOT_READY_MARKER not in completed.error_text
         ):
             raise HarnessError(
-                f"The simulator is not serving accessibility reads: "
-                f"idb {' '.join(ACCESSIBILITY_PROBE_ARGS)} failed for a reason "
-                f"that is not the simulator still coming up "
+                f"Accessibility setup failed: "
+                f"idb {' '.join(ACCESSIBILITY_PROBE_ARGS)} "
                 f"(rc={completed.returncode}): {completed.error_text}"
             )
-        raise NotReady("it has no translation object to serve")
+        raise NotReady("no accessibility translation object")
 
     await wait_until(
         "The simulator did not begin serving accessibility reads",
@@ -578,9 +575,7 @@ class IdbEndToEndTestCase(unittest.IsolatedAsyncioTestCase):
             if self.companion.died() is not None:
                 self._stop_suite()
             self.fail(
-                f"The client could not reach the companion, so this and every "
-                f"later command fail for a reason of the harness's own making "
-                f"rather than anything idb {what} did — "
+                f"The client could not reach the companion; "
                 f"{self.companion.status_description()}.\n{message}\n"
                 f"companion log: {self.companion.log_excerpt()}"
             )

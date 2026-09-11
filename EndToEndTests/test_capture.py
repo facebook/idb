@@ -25,7 +25,7 @@ class CaptureTests(IdbEndToEndTestCase):
         written = destination.read_bytes()
         self.assertEqual(written[: len(PNG_SIGNATURE)], PNG_SIGNATURE)
         self.assertGreater(
-            len(written), len(PNG_SIGNATURE), "a screenshot is more than its signature"
+            len(written), len(PNG_SIGNATURE), "PNG output contains only the signature"
         )
 
         to_stdout = (await self.idb("screenshot", "-")).stdout
@@ -33,7 +33,7 @@ class CaptureTests(IdbEndToEndTestCase):
         self.assertGreater(
             len(to_stdout),
             len(PNG_SIGNATURE),
-            "a screenshot is more than its signature",
+            "PNG output contains only the signature",
         )
 
     async def test_log_streams_simulator_output(self) -> None:

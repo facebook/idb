@@ -103,7 +103,7 @@ def provision(
         )
     ).strip()
     if not udid:
-        raise NoSimulatorError(f"simctl create {name} named no simulator")
+        raise NoSimulatorError(f"simctl create {name} returned no UDID")
     run(simctl_argv(device_set, "boot", udid))
     run(simctl_argv(device_set, "bootstatus", udid))
     return environment_lines(udid, device_set, env_prefix)
@@ -120,14 +120,12 @@ def main(argv: Sequence[str] | None = None) -> int:
         "--device-set",
         type=Path,
         default=None,
-        help="a device set to create the simulator in, kept clear of anything "
-        "else on the machine; the default set is used without it",
+        help="create the simulator in this device set (default: the system device set)",
     )
     parser.add_argument(
         "--env-prefix",
         default="",
-        help="prefix for the printed variable names, for consumers that only "
-        "receive a prefixed subset of the environment",
+        help="prefix for output variable names, such as TEST_RUNNER_ for xcodebuild",
     )
     arguments = parser.parse_args(argv)
 
