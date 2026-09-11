@@ -10,6 +10,11 @@ concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
+# Nothing here writes to the repository or its releases; artifacts within a
+# run need no extra permission.
+permissions:
+  contents: read
+
 jobs:
   python-client:
     name: Python client (${{ matrix.os }})

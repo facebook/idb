@@ -18,8 +18,11 @@ on:
         required: false
         default: ''
 
+# The token is read-only by default; each job that creates or uploads to the
+# release asks for contents: write itself, and only the companion job reads
+# other runs' artifacts.
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   # The single owner of `gh release create`: with both build jobs creating the
@@ -31,6 +34,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     if: ${{ startsWith(github.ref, 'refs/tags/v') || inputs.version != '' }}
+    permissions:
+      contents: write
     env:
       # The tag this run releases: the pushed tag, or the dispatched version.
       # The expression works because && / || short-circuit to their operand
@@ -142,6 +147,8 @@ jobs:
     # on failure.
     needs: [create-release]
     if: ${{ !cancelled() && (needs.create-release.result == 'success' || needs.create-release.result == 'skipped') }}
+    permissions:
+      contents: write
     env:
       RELEASE_TAG: ${{ startsWith(github.ref, 'refs/tags/v') && github.ref_name || inputs.version }}
     steps:
