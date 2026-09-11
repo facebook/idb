@@ -7,7 +7,7 @@
 
 import Foundation
 
-@objc(FBCrashLogParser)
+@objc
 public protocol FBCrashLogParser: NSObjectProtocol {
   @objc(parseCrashLogFromString:executablePathOut:identifierOut:processNameOut:parentProcessNameOut:processIdentifierOut:parentProcessIdentifierOut:dateOut:exceptionDescription:crashedThreadDescription:error:)
   func parseCrashLog(from str: String, executablePathOut: AutoreleasingUnsafeMutablePointer<NSString>, identifierOut: AutoreleasingUnsafeMutablePointer<NSString>, processNameOut: AutoreleasingUnsafeMutablePointer<NSString>, parentProcessNameOut: AutoreleasingUnsafeMutablePointer<NSString>, processIdentifierOut: UnsafeMutablePointer<pid_t>, parentProcessIdentifierOut: UnsafeMutablePointer<pid_t>, dateOut: AutoreleasingUnsafeMutablePointer<NSDate>, exceptionDescription: AutoreleasingUnsafeMutablePointer<NSString>, crashedThreadDescription: AutoreleasingUnsafeMutablePointer<NSString>, error: NSErrorPointer)

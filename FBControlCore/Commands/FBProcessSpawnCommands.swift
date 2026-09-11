@@ -24,7 +24,7 @@ extension FBProcessTerminationError: LocalizedError {
   }
 }
 
-@objc(FBProcessSpawnCommandHelpers)
+@objc
 public final class FBProcessSpawnCommandHelpers: NSObject {
 
   @objc

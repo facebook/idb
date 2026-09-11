@@ -14,7 +14,7 @@ public let FBControlCoreDebugLogging = "FBCONTROLCORE_DEBUG_LOGGING"
 
 private let ConfirmShimsAreSignedEnv = "FBCONTROLCORE_CONFIRM_SIGNED_SHIMS"
 
-@objc(FBControlCoreGlobalConfiguration)
+@objc
 public final class FBControlCoreGlobalConfiguration: NSObject {
 
   // Guarded by _loggerLock.

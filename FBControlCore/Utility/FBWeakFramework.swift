@@ -35,7 +35,7 @@ extension FBWeakFrameworkError: LocalizedError {
   }
 }
 
-@objc(FBWeakFramework)
+@objc
 public final class FBWeakFramework: NSObject {
 
   @objc public let name: String

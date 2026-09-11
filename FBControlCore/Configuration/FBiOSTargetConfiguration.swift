@@ -178,7 +178,7 @@ public struct FBOSVersion: Equatable, Hashable, CustomStringConvertible, Sendabl
   }
 }
 
-@objc(FBiOSTargetConfiguration)
+@objc
 public final class FBiOSTargetConfiguration: NSObject {
 
   private static let _deviceConfigurations: [FBDeviceType] = {

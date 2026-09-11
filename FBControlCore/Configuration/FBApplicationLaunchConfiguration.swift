@@ -13,7 +13,7 @@ public enum FBApplicationLaunchMode: UInt {
   case relaunchIfRunning = 2
 }
 
-@objc(FBApplicationLaunchConfiguration)
+@objc
 public final class FBApplicationLaunchConfiguration: FBProcessLaunchConfiguration {
 
   @objc public let bundleID: String

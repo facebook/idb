@@ -7,7 +7,7 @@
 
 import Foundation
 
-@objc(FBCollectionOperations)
+@objc
 public final class FBCollectionOperations: NSObject {
 
   @objc(arrayFromIndices:)

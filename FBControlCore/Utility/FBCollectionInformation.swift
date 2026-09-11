@@ -7,7 +7,7 @@
 
 import Foundation
 
-@objc(FBCollectionInformation)
+@objc
 public final class FBCollectionInformation: NSObject {
 
   @objc(oneLineDescriptionFromArray:)

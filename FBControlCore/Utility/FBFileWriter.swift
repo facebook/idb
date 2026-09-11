@@ -21,7 +21,7 @@ public enum FBFileWriterError: Error, LocalizedError {
   }
 }
 
-@objc(FBFileWriter)
+@objc
 public class FBFileWriter: NSObject {
 
   // MARK: - Properties

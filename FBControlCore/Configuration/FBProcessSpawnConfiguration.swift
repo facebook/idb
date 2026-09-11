@@ -7,14 +7,14 @@
 
 import Foundation
 
-@objc(FBProcessSpawnMode)
+@objc
 public enum FBProcessSpawnMode: UInt {
   case `default` = 0
   case posixSpawn = 1
   case launchd = 2
 }
 
-@objc(FBProcessSpawnConfiguration)
+@objc
 public final class FBProcessSpawnConfiguration: FBProcessLaunchConfiguration {
 
   @objc public let launchPath: String

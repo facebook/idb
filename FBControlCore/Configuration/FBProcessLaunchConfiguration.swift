@@ -7,7 +7,7 @@
 
 import Foundation
 
-@objc(FBProcessLaunchConfiguration)
+@objc
 public class FBProcessLaunchConfiguration: NSObject {
 
   @objc public let arguments: [String]

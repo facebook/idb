@@ -7,7 +7,7 @@
 
 import Foundation
 
-@objc(FBProcessInfo)
+@objc
 public final class FBProcessInfo: NSObject, NSCopying {
 
   @objc public let processIdentifier: pid_t

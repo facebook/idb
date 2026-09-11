@@ -25,7 +25,7 @@ extension FBTestManagerError: LocalizedError {
 }
 
 /// A simplified re-implementation of Apple's `_IDETestManagerAPIMediator`: takes over once the test host process has started, mediating between the host, `testmanagerd` and the test runner.
-@objc(FBTestManagerAPIMediator)
+@objc
 public final class FBTestManagerAPIMediator: NSObject, @unchecked Sendable {
 
   private static let defaultTestTimeout: TimeInterval = 60 * 60
