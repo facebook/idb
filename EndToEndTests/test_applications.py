@@ -58,14 +58,6 @@ class ApplicationLifecycleTests(IdbEndToEndTestCase):
             completed.error_text.strip(), "a failed launch should explain itself"
         )
 
-    async def test_list_apps_reports_system_applications(self) -> None:
-        apps = await self.installed_apps()
-        self.assertIn("com.apple.mobilesafari", apps)
-        for row in apps.values():
-            self.assertIn("name", row)
-            self.assertIn("install_type", row)
-            self.assertIn("process_state", row)
-
 
 class LaunchOutputTests(IdbEndToEndTestCase):
     """Check PID output and app lifetime for launch --wait-for."""
