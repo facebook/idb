@@ -13,16 +13,19 @@ Tap and scroll tests verify navigation and movement through the simulator API.
 
 from __future__ import annotations
 
+import asyncio
 import json
 from typing import Any
 
 from .harness import (
     ACCESSIBILITY_NOT_READY_MARKER,
     ACCESSIBILITY_READY_TIMEOUT_SECONDS,
+    Deadline,
     FIXTURE_APP_BUNDLE_ID,
     HarnessError,
     IdbEndToEndTestCase,
     NotReady,
+    POLL_INTERVAL_SECONDS,
     wait_until,
 )
 
@@ -253,16 +256,21 @@ class AccessibilityTests(IdbEndToEndTestCase):
             "--expected-value",
             "idb-e2e-value-it-does-not-have",
         )
-        after_rejection = await self.describe_all_complete("axbridge")
-        self.assertNotIn(
-            title,
-            [
-                e.get("identifier")
-                for e in _elements(after_rejection)
-                if e.get("type") == "NavigationBar"
-            ],
-            "The rejected tap opened General",
-        )
+        deadline = Deadline(UI_UPDATE_TIMEOUT_SECONDS)
+        while True:
+            after_rejection = await self.describe_all_complete("axbridge")
+            self.assertNotIn(
+                title,
+                [
+                    e.get("identifier")
+                    for e in _elements(after_rejection)
+                    if e.get("type") == "NavigationBar"
+                ],
+                "The rejected tap opened General",
+            )
+            if deadline.passed:
+                break
+            await asyncio.sleep(min(POLL_INTERVAL_SECONDS, deadline.remaining))
 
         general = await self.wait_for_element(GENERAL_ROW_ID)
         x, y = self.center(general)
