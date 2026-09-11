@@ -449,6 +449,14 @@ public actor FBSimulatorVideoStream: FBVideoStream {
     switch event {
     case let .surfaceChanged(surface):
       guard let surface else { return }
+      // The display can report the surface that is already mounted (the registration echoing the
+      // attach-time surface, or the legacy plural and singular callbacks both firing for one swap).
+      // Compared by ID rather than object identity because the proxy may vend a distinct wrapper for
+      // the same underlying surface.
+      if let mountedSurfaceID, mountedSurfaceID == IOSurfaceGetID(surface) {
+        logger.info().log("Ignoring surface change for the already-mounted surface \(mountedSurfaceID)")
+        return
+      }
       do {
         try mountSurface(surface)
       } catch {
@@ -468,6 +476,15 @@ public actor FBSimulatorVideoStream: FBVideoStream {
   }
 
   // MARK: - Private (Surface)
+
+  /// The ID of the IOSurface backing the mounted `pixelBuffer`, nil before the first mount. Derived
+  /// from the buffer so it can never disagree with what is actually mounted.
+  private var mountedSurfaceID: IOSurfaceID? {
+    guard let pixelBuffer, let mountedSurface = CVPixelBufferGetIOSurface(pixelBuffer)?.takeUnretainedValue() else {
+      return nil
+    }
+    return IOSurfaceGetID(mountedSurface)
+  }
 
   func mountSurface(_ surface: IOSurface) throws {
     // CVPixelBufferCreateWithIOSurface returns +1 via an Unmanaged out-param; takeRetainedValue() adopts it.

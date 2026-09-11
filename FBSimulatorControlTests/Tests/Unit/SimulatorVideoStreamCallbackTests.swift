@@ -467,11 +467,9 @@ final class SimulatorVideoStreamDeliveryTests: XCTestCase {
     surface.frameRendered?()
     try await expectEventually("the rendered frame must push") { consumer.data().count > baseline }
 
-    // BUG: a surface report for the already-mounted surface re-mounts it, replacing the frame
-    // pusher (and rebuilding its encoder) — flipped in the following commit.
     let currentHandle = await stream.currentFramePusherHandle()
     let current = try XCTUnwrap(currentHandle)
-    XCTAssertNotEqual(current.identity, mounted.identity)
+    XCTAssertEqual(current.identity, mounted.identity, "reporting the already-mounted surface must not re-mount it")
     try await stream.stopStreaming()
   }
 
