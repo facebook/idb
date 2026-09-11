@@ -236,8 +236,6 @@ targets:
         embed: false
       - target: FBControlCore
         embed: false
-      - target: XCTestBootstrap
-        embed: false
       - sdk: AVFoundation.framework
       - sdk: Accelerate.framework
       - sdk: Cocoa.framework
