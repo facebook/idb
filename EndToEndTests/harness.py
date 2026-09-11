@@ -35,6 +35,7 @@ DEVICE_SET_PATH_ENV = "DEVICE_SET_PATH"
 IDB_BIN_ENV = "IDB_BIN"
 IDB_ARGS_ENV = "IDB_ARGS"
 IDB_COMPANION_PATH_ENV = "IDB_COMPANION_PATH"
+IDB_SETUP_BIN_ENV = "IDB_SETUP_BIN"
 STRICT_ENV = "IDB_E2E_STRICT"
 
 T = TypeVar("T")
@@ -261,12 +262,14 @@ class Environment:
         device_set_path: Path,
         idb_bin: Path,
         idb_args: Sequence[str],
+        setup_idb_bin: Path,
         companion_path: Path,
     ) -> None:
         self.udid = udid
         self.device_set_path = device_set_path
         self.idb_bin = idb_bin
         self.idb_args = tuple(idb_args)
+        self.setup_idb_bin = setup_idb_bin
         self.companion_path = companion_path
         self.simctl = Simctl(udid, device_set_path)
 
@@ -278,6 +281,7 @@ class Environment:
     async def resolve(cls) -> "Environment":
         idb_bin = _binary_from_environment(IDB_BIN_ENV)
         idb_args = shlex.split(os.environ.get(IDB_ARGS_ENV, ""))
+        setup_idb_bin = _optional_binary_from_environment(IDB_SETUP_BIN_ENV, idb_bin)
         companion_path = _binary_from_environment(IDB_COMPANION_PATH_ENV)
         udid = _required(DEVICE_UDID_ENV, "the booted simulator to test against")
         device_set_path = Path(
@@ -298,7 +302,14 @@ class Environment:
             raise HarnessError(
                 f"{DEVICE_UDID_ENV}={udid} must already be booted; it is {state}"
             )
-        return cls(udid, device_set_path, idb_bin, idb_args, companion_path)
+        return cls(
+            udid,
+            device_set_path,
+            idb_bin,
+            idb_args,
+            setup_idb_bin,
+            companion_path,
+        )
 
 
 def _required(name: str, meaning: str) -> str:
@@ -308,8 +319,16 @@ def _required(name: str, meaning: str) -> str:
     return value
 
 
+def _optional_binary_from_environment(name: str, default: Path) -> Path:
+    value = os.environ.get(name)
+    return default if not value else _executable(Path(value), name)
+
+
 def _binary_from_environment(name: str) -> Path:
-    path = Path(_required(name, "a binary this suite drives"))
+    return _executable(Path(_required(name, "a binary this suite drives")), name)
+
+
+def _executable(path: Path, name: str) -> Path:
     if not path.is_file() or not os.access(path, os.X_OK):
         raise HarnessError(f"{name}={path} is not an executable file")
     return path
@@ -569,6 +588,26 @@ class IdbEndToEndTestCase(unittest.IsolatedAsyncioTestCase):
         )
         if check and completed.returncode != 0:
             self.fail_or_skip_for(" ".join(args), completed)
+        return completed
+
+    async def setup_idb(
+        self,
+        *args: str,
+        check: bool = True,
+        timeout: float = DEFAULT_COMMAND_TIMEOUT_SECONDS,
+    ) -> Completed:
+        """Run a fixture-preparation command outside the client under test."""
+        completed = await run(
+            client_argv(
+                self.environment.setup_idb_bin,
+                (),
+                self.companion.address,
+                *args,
+            ),
+            timeout=timeout,
+        )
+        if check and completed.returncode != 0:
+            self.fail_or_skip_for("setup: " + " ".join(args), completed)
         return completed
 
     def idb_process(self, *args: str) -> "IdbProcess":

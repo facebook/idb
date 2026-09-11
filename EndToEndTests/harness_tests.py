@@ -20,12 +20,14 @@ from unittest import mock
 
 from . import harness
 from .harness import (
+    _optional_binary_from_environment,
     client_argv,
     Companion,
     CompanionDied,
     Completed,
     Deadline,
     HarnessError,
+    IDB_SETUP_BIN_ENV,
     IdbEndToEndTestCase,
     NotReady,
     running_bundle_ids_from_listing,
@@ -138,6 +140,26 @@ class ClientArgumentTests(unittest.TestCase):
             argv,
             ["/tmp/idb", "--companion", "/tmp/companion.sock", "describe"],
         )
+
+    @mock.patch.dict(os.environ, {}, clear=True)
+    def test_uses_the_client_under_test_for_setup_by_default(self) -> None:
+        client = Path("/tmp/idb")
+
+        self.assertEqual(
+            _optional_binary_from_environment(IDB_SETUP_BIN_ENV, client), client
+        )
+
+    def test_accepts_a_separate_fixture_setup_client(self) -> None:
+        with tempfile.NamedTemporaryFile() as executable:
+            os.chmod(executable.name, 0o755)
+            with mock.patch.dict(
+                os.environ, {IDB_SETUP_BIN_ENV: executable.name}, clear=True
+            ):
+                selected = _optional_binary_from_environment(
+                    IDB_SETUP_BIN_ENV, Path("/tmp/idb-rust")
+                )
+
+        self.assertEqual(selected, Path(executable.name))
 
 
 class FailureReportingTests(unittest.TestCase):
