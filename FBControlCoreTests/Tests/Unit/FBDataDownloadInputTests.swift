@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-@preconcurrency import FBControlCore
+@preconcurrency @testable import FBControlCore
 import XCTest
 
 /// Download piped straight into extraction, as the URL install path wires it: the

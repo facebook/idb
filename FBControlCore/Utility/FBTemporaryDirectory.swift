@@ -7,7 +7,7 @@
 
 import Foundation
 
-public enum FBTemporaryDirectoryError: Error, LocalizedError {
+enum FBTemporaryDirectoryError: Error, LocalizedError {
   case creationFailed(directory: URL, underlying: Error)
 
   public var errorDescription: String? {

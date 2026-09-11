@@ -16,7 +16,7 @@ private final class UncheckedSendableBox<T>: @unchecked Sendable {
   init(_ value: T) { self.value = value }
 }
 
-public final class FBConcurrentCollectionOperations {
+final class FBConcurrentCollectionOperations {
 
   public class func generate(_ count: UInt, withBlock block: @Sendable @escaping (UInt) -> Any) -> [Any] {
     let array = NSMutableArray(capacity: Int(count))

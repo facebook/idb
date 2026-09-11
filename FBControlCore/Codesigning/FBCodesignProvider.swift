@@ -7,7 +7,7 @@
 
 import Foundation
 
-public enum FBCodesignError: Error, LocalizedError {
+enum FBCodesignError: Error, LocalizedError {
   case signingFailed(exitCode: NSNumber, stdOut: String, stdErr: String)
   case cdHashCheckFailed(exitCode: NSNumber, stdOut: String, stdErr: String)
   case cdHashNotFound(output: String)

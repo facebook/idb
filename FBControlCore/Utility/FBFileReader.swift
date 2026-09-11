@@ -24,7 +24,7 @@ private func stateString(from state: FBFileReaderState) -> String {
   }
 }
 
-public enum FBFileReaderError: Error, LocalizedError {
+enum FBFileReaderError: Error, LocalizedError {
   case openFailed(path: String, message: String)
   case wrongStateToStart(targeting: String, state: String)
   case ioChannelCreationFailed(description: String)

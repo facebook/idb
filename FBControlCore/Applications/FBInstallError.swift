@@ -8,7 +8,7 @@
 import Foundation
 
 /// Failures fetching an application archive.
-public enum FBInstallError: Error, CustomStringConvertible {
+enum FBInstallError: Error, CustomStringConvertible {
 
   case httpStatus(url: URL?, statusCode: Int)
 

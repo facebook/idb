@@ -8,7 +8,7 @@
 import Foundation
 
 @objc
-public protocol FBCrashLogParser: NSObjectProtocol {
+protocol FBCrashLogParser: NSObjectProtocol {
   @objc(parseCrashLogFromString:executablePathOut:identifierOut:processNameOut:parentProcessNameOut:processIdentifierOut:parentProcessIdentifierOut:dateOut:exceptionDescription:crashedThreadDescription:error:)
   func parseCrashLog(from str: String, executablePathOut: AutoreleasingUnsafeMutablePointer<NSString>, identifierOut: AutoreleasingUnsafeMutablePointer<NSString>, processNameOut: AutoreleasingUnsafeMutablePointer<NSString>, parentProcessNameOut: AutoreleasingUnsafeMutablePointer<NSString>, processIdentifierOut: UnsafeMutablePointer<pid_t>, parentProcessIdentifierOut: UnsafeMutablePointer<pid_t>, dateOut: AutoreleasingUnsafeMutablePointer<NSDate>, exceptionDescription: AutoreleasingUnsafeMutablePointer<NSString>, crashedThreadDescription: AutoreleasingUnsafeMutablePointer<NSString>, error: NSErrorPointer)
 }
@@ -16,7 +16,7 @@ public protocol FBCrashLogParser: NSObjectProtocol {
 /// A macOS 12+ `.ips` file is two concatenated JSON objects (metadata, then content) with some fields
 /// repeated. Apple can change the layout, so every object is searched for each needed field rather
 /// than assuming a position.
-public final class FBConcatedJSONCrashLogParser: NSObject, FBCrashLogParser {
+final class FBConcatedJSONCrashLogParser: NSObject, FBCrashLogParser {
 
   public func parseCrashLog(from str: String, executablePathOut: AutoreleasingUnsafeMutablePointer<NSString>, identifierOut: AutoreleasingUnsafeMutablePointer<NSString>, processNameOut: AutoreleasingUnsafeMutablePointer<NSString>, parentProcessNameOut: AutoreleasingUnsafeMutablePointer<NSString>, processIdentifierOut: UnsafeMutablePointer<pid_t>, parentProcessIdentifierOut: UnsafeMutablePointer<pid_t>, dateOut: AutoreleasingUnsafeMutablePointer<NSDate>, exceptionDescription: AutoreleasingUnsafeMutablePointer<NSString>, crashedThreadDescription: AutoreleasingUnsafeMutablePointer<NSString>, error: NSErrorPointer) {
     let parsedReport: [String: Any]
@@ -104,7 +104,7 @@ public final class FBConcatedJSONCrashLogParser: NSObject, FBCrashLogParser {
 }
 
 /// Parses the pre-macOS 12 plain-text `.crash` format.
-public final class FBPlainTextCrashLogParser: NSObject, FBCrashLogParser {
+final class FBPlainTextCrashLogParser: NSObject, FBCrashLogParser {
 
   private static let maxLineSearch: UInt = 20
 

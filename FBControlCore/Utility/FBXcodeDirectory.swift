@@ -7,7 +7,7 @@
 
 import Foundation
 
-public enum FBXcodeDirectoryError: Error, LocalizedError {
+enum FBXcodeDirectoryError: Error, LocalizedError {
   case emptyXcodeSelectOutput(stdErr: String)
   case pathNil
   case commandLineToolsOnly
@@ -30,7 +30,7 @@ public enum FBXcodeDirectoryError: Error, LocalizedError {
   }
 }
 
-public struct FBXcodeDirectory {
+struct FBXcodeDirectory {
 
   public static func resolveDeveloperDirectory() throws -> String {
     let directory: String

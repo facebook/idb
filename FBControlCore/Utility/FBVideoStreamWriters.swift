@@ -1310,7 +1310,7 @@ private func FBFMP4CreateFragmentHeader(_ sequenceNumber: UInt32, _ baseDecodeTi
   return writer.data
 }
 
-public final class FBFMP4FrameWriter: FBEncodedFrameWriter, FBVideoStreamTimedMetadataWriter {
+final class FBFMP4FrameWriter: FBEncodedFrameWriter, FBVideoStreamTimedMetadataWriter {
   private let codec: FBVideoStreamCodec
   private(set) var initWritten: Bool
   private(set) var sequenceNumber: UInt32

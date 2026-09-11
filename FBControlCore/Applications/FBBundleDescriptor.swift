@@ -7,7 +7,7 @@
 
 import Foundation
 
-public enum FBBundleDescriptorError: Error {
+enum FBBundleDescriptorError: Error {
   case binaryPathUnavailable(bundlePath: String)
   case bundleLoadFailed(path: String)
   case bundleIdentifierUnavailable(name: String, path: String)

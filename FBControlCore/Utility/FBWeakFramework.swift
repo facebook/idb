@@ -7,7 +7,7 @@
 
 import Foundation
 
-public enum FBWeakFrameworkError: Error {
+enum FBWeakFrameworkError: Error {
   case missingRequiredClass(className: String, frameworkName: String)
   case rootUserForbidden(relativePath: String)
   case fileMissing(path: String)

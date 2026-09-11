@@ -7,7 +7,7 @@
 
 import Foundation
 
-public enum FBFileWriterError: Error, LocalizedError {
+enum FBFileWriterError: Error, LocalizedError {
   case openFailed(path: String, message: String)
   case ioChannelCreationFailed(fileDescriptor: Int32)
 

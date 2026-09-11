@@ -52,7 +52,7 @@ private let FBCrashLog_dateFormatter: DateFormatter = {
   return formatter
 }()
 
-public enum FBCrashLogError: Error {
+enum FBCrashLogError: Error {
   case fileDoesNotExist(path: String)
   case fileNotReadable(path: String)
   case dataReadFailed(path: String, underlying: Error)

@@ -15,7 +15,7 @@ private func scoreVersions(_ current: OperatingSystemVersion, _ target: Operatin
   return major + minor
 }
 
-public enum FBDeveloperDiskImageError: Error {
+enum FBDeveloperDiskImageError: Error {
   case symbolsNotFound(buildVersion: String, searched: [String])
   case noImagesProvided
   case noSuitableImage(bestDescription: String, majorVersion: Int, minorVersion: Int)

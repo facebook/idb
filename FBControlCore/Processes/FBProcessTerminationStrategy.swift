@@ -40,7 +40,7 @@ private let FBProcessTerminationStrategyConfigurationDefault = FBProcessTerminat
   options: [.checkProcessExistsBeforeSignal, .checkDeathAfterSignal, .backoffToSIGKILL]
 )
 
-public enum FBProcessTerminationStrategyError: Error, LocalizedError {
+enum FBProcessTerminationStrategyError: Error, LocalizedError {
   case processDoesNotExist(processIdentifier: pid_t)
   case killFailed(processIdentifier: pid_t, message: String)
   case processTableRemovalTimedOut(processIdentifier: pid_t)

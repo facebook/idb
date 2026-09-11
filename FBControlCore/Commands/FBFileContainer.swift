@@ -34,7 +34,7 @@ public protocol FBContainedFile: Sendable {
   var pathMapping: [String: String]? { get }
 }
 
-public enum FBFileContainerError: Error {
+enum FBFileContainerError: Error {
   case copyIntoContainerFailed(source: String, destination: String, underlying: Error)
   case sourceDoesNotExist(source: String)
   case temporaryDirectoryCreationFailed(underlying: Error)

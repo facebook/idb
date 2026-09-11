@@ -33,7 +33,7 @@ public extension ScreenshotCommands {
   }
 }
 
-public enum FBScreenshotFormatError: Error, Hashable {
+enum FBScreenshotFormatError: Error, Hashable {
   case unrecognizedFormat(String)
 }
 

@@ -22,7 +22,7 @@ private func processIsTranslated() -> Int32 {
   return ret
 }
 
-public enum FBArchitectureAdapterError: Error, LocalizedError {
+enum FBArchitectureAdapterError: Error, LocalizedError {
   case noCompatibleArchitecture(requested: [String], host: [String])
   case timedOut(seconds: Double, waitingFor: String)
   case verificationFailed(architecture: String, binary: String)

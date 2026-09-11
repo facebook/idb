@@ -7,7 +7,7 @@
 
 import Foundation
 
-public enum FBXCTraceError: Error {
+enum FBXCTraceError: Error {
   case outputDirectoryCreationFailed(underlying: Error)
   case shimMissing
   case recordFailed(exitCode: NSNumber)

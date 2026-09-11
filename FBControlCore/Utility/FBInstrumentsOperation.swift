@@ -18,7 +18,7 @@ private let LaunchRetryInterval: UInt64 = 100 * NSEC_PER_MSEC
 /// Fail instruments if the launch error message appears within this timeout.
 public let DefaultInstrumentsLaunchErrorTimeout: TimeInterval = 15.0
 
-public enum FBInstrumentsError: Error {
+enum FBInstrumentsError: Error {
   case outputDirectoryCreationFailed(underlying: Error)
   case startupFailed(logs: [String])
   case launchTimedOut(timeout: TimeInterval)

@@ -7,7 +7,7 @@
 
 import Foundation
 
-public enum FBStorageUtilsError: Error {
+enum FBStorageUtilsError: Error {
   case notExactlyOneFileWithExtension(count: Int, fileExtension: String, url: URL)
   case notExactlyOneFile(found: [URL])
   case directoryListFailed(directory: URL, underlying: Error)

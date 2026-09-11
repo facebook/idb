@@ -29,7 +29,7 @@ private enum CanonicalShim: CaseIterable {
   }
 }
 
-public enum FBXCTestShimError: Error {
+enum FBXCTestShimError: Error {
   case shimMissing(path: String)
   case shimUnsigned(path: String, underlying: Error)
   case searchPathUnresolvable
