@@ -193,36 +193,144 @@ function check_protobuf() {
 
 # Defined once, in Package.swift. The codegen plugin must be the same version as
 # the runtime it generates against, so derive it rather than restating it here.
-# XcodeGen resolves the companion's packages from its own manifest and consults
-# Package.swift for nothing, so that pin cannot be derived — only asserted.
 function resolve_grpc_swift_version() {
   GRPC_SWIFT_VERSION="$(sed -n 's/.*grpc-swift\.git", exact: "\([^"]*\)".*/\1/p' Package.swift)"
   if [ -z "$GRPC_SWIFT_VERSION" ]; then
     echo "error: Package.swift does not pin grpc-swift to an exact version" >&2
     exit 1
   fi
+}
 
-  # The block ends at the first non-blank line indented less than its own
-  # entries, so it cannot run on into a sibling package's version.
-  local companion
-  companion="$(awk '
-    /^  grpc-swift:[[:space:]]*$/ { in_block = 1; next }
-    in_block && NF && !/^    / { in_block = 0 }
-    in_block && $1 == "exactVersion:" { print $2 }
-  ' Companion/project.yml)"
-  companion="${companion//\"/}"
-  companion="${companion//\'/}"
+# Lines inside dependencies: that the extractor below cannot read. SwiftPM
+# accepts a .package(...) split over several lines, and the extractor only sees
+# one written on a single line -- so a split declaration lands in neither
+# listing, not pinned, not unpinned, simply absent. Nothing on such a line names
+# the package, so the line number is what identifies it.
+function package_swift_unreadable_entries() {
+  awk '
+    /^[[:space:]]*\/\// { next }
+    /\.package\(/ && !/\.package\(url: "[^"]*"/ { print FNR }
+  ' Package.swift
+}
 
-  if [ "$companion" != "$GRPC_SWIFT_VERSION" ]; then
-    echo "error: grpc-swift is pinned to $GRPC_SWIFT_VERSION in Package.swift but to '${companion:-no exact version}' in Companion/project.yml" >&2
-    exit 1
+# "<package> <version>" per dependency, and nothing at all for one that is not
+# pinned exactly -- which is what makes the two listings below comparable.
+# Commented-out lines go first: they declare nothing, and left in they would be
+# reported as an unpinned dependency that is not there. The comment cannot be
+# stripped to end of line instead, because every url: contains a // of its own.
+function package_swift_pins() {
+  sed -n '/^[[:space:]]*\/\//d; s|.*\.package(url: "[^"]*/\([^"/]*\)\.git", exact: "\([^"]*\)").*|\1 \2|p' Package.swift
+}
+
+function package_swift_packages() {
+  sed -n '/^[[:space:]]*\/\//d; s|.*\.package(url: "[^"]*/\([^"/]*\)\.git".*|\1|p' Package.swift
+}
+
+# The packages: block ends at the first non-blank line that is not indented, and
+# an entry ends at the first line indented less than its own keys, so neither can
+# run on into a sibling. An entry header is a bare key with nothing after the
+# colon; anything else at that indentation is an entry this cannot read, and
+# companion_unreadable_entries below reports it rather than letting it vanish.
+function _companion_packages_awk() {
+  awk -v want_version="$1" '
+    /^packages:[[:space:]]*$/ { in_packages = 1; next }
+    in_packages && NF && !/^[[:space:]]/ { in_packages = 0 }
+    !in_packages { next }
+    /^  [^[:space:]#][^:]*:[[:space:]]*$/ {
+      name = $1
+      sub(/:$/, "", name)
+      if (!want_version) print name
+      next
+    }
+    want_version && name != "" && ($1 == "exactVersion:" || $1 == "version:") {
+      version = $2
+      gsub(/["\047]/, "", version)
+      print name, version
+    }
+  ' Companion/project.yml
+}
+
+function companion_pins() {
+  _companion_packages_awk 1
+}
+
+function companion_packages() {
+  _companion_packages_awk ""
+}
+
+# Entries inside packages: that the parser above cannot read. A package written
+# in flow form (`  swift-nio: {url: ..., from: "1.2.0"}`) matches no entry
+# header, so it lands in neither listing -- not pinned, not unpinned, simply
+# absent. Naming it is the only way the guard can refuse a manifest it cannot
+# read rather than pass one it never checked.
+function companion_unreadable_entries() {
+  awk '
+    /^packages:[[:space:]]*$/ { in_packages = 1; next }
+    in_packages && NF && !/^[[:space:]]/ { in_packages = 0 }
+    !in_packages { next }
+    /^  [^[:space:]#][^:]*:[[:space:]]*$/ { next }
+    /^  [^[:space:]#]/ {
+      name = $1
+      sub(/:$/, "", name)
+      print name
+    }
+  ' Companion/project.yml
+}
+
+# Every dependency of both manifests is pinned exactly, and the ones they share
+# are pinned to the same version. XcodeGen resolves the companion's packages from
+# its own manifest and consults Package.swift for nothing, so agreement between
+# the two can only be asserted, never derived -- and the companion is the manifest
+# that builds the binary which ships.
+function check_package_pins() {
+  local unpinned unreadable
+  local errors=0
+
+  unreadable="$(package_swift_unreadable_entries | tr '\n' ' ')"
+  if [ -n "${unreadable// /}" ]; then
+    echo "error: Package.swift declares dependencies this check cannot read, on lines: ${unreadable% }" >&2
+    errors=1
   fi
+
+  unreadable="$(companion_unreadable_entries | tr '\n' ' ')"
+  if [ -n "${unreadable// /}" ]; then
+    echo "error: Companion/project.yml declares these in a form this check cannot read: ${unreadable% }" >&2
+    errors=1
+  fi
+
+  unpinned="$(comm -23 <(package_swift_packages | sort) <(package_swift_pins | cut -d' ' -f1 | sort) | tr '\n' ' ')"
+  if [ -n "${unpinned// /}" ]; then
+    echo "error: Package.swift does not pin these to an exact version: ${unpinned% }" >&2
+    errors=1
+  fi
+
+  unpinned="$(comm -23 <(companion_packages | sort) <(companion_pins | cut -d' ' -f1 | sort) | tr '\n' ' ')"
+  if [ -n "${unpinned// /}" ]; then
+    echo "error: Companion/project.yml does not pin these to an exact version: ${unpinned% }" >&2
+    errors=1
+  fi
+
+  # Only the packages both declare can disagree. The companion declares three
+  # that Package.swift picks up transitively, so those have nothing to compare
+  # against and are covered by the exactness check above alone.
+  local name version companion_version
+  while read -r name version; do
+    companion_version="$(companion_pins | awk -v n="$name" '$1 == n { print $2 }')"
+    [ -z "$companion_version" ] && continue
+    if [ "$companion_version" != "$version" ]; then
+      echo "error: $name is pinned to $version in Package.swift but to $companion_version in Companion/project.yml" >&2
+      errors=1
+    fi
+  done < <(package_swift_pins)
+
+  [ "$errors" -eq 0 ] || exit 1
 }
 
 function build_grpc_swift_plugin() {
   # Checked before the already-built early return below: a warm cache must not
   # let a drifted pin through.
   resolve_grpc_swift_version
+  check_package_pins
 
   # Build protoc-gen-grpc-swift from grpc-swift 1.x source
   local plugin_path="$GRPC_SWIFT_DIR/.build/release/protoc-gen-grpc-swift"
@@ -276,11 +384,11 @@ function generate_proto() {
 }
 
 function generate_companion_project() {
-  # This is where Companion/project.yml is consumed, so it is where the pin it
-  # declares has to agree with Package.swift. Every build and test path reaches
+  # This is where Companion/project.yml is consumed, so it is where the pins it
+  # declares have to agree with Package.swift. Every build and test path reaches
   # here via regenerate_projects; the codegen path checks separately, because it
   # can run without generating a project.
-  resolve_grpc_swift_version
+  check_package_pins
 
   echo "Generating idb_companion project..."
   generate_xcodeproj "Companion" "idb_companion"

@@ -27,10 +27,10 @@ let package = Package(
   ],
   dependencies: [
     .package(url: "https://github.com/grpc/grpc-swift.git", exact: "1.27.5"),
-    .package(url: "https://github.com/apple/swift-protobuf.git", from: "1.28.0"),
-    .package(url: "https://github.com/apple/swift-nio.git", from: "2.50.0"),
-    .package(url: "https://github.com/apple/swift-nio-ssl.git", from: "2.25.0"),
-    .package(url: "https://github.com/apple/swift-argument-parser.git", from: "1.3.0"),
+    .package(url: "https://github.com/apple/swift-protobuf.git", exact: "1.38.1"),
+    .package(url: "https://github.com/apple/swift-nio.git", exact: "2.101.3"),
+    .package(url: "https://github.com/apple/swift-nio-ssl.git", exact: "2.37.2"),
+    .package(url: "https://github.com/apple/swift-argument-parser.git", exact: "1.8.2"),
   ],
   targets: [
     .target(

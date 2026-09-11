@@ -21,25 +21,25 @@ packages:
     exactVersion: 1.27.5
   swift-protobuf:
     url: https://github.com/apple/swift-protobuf.git
-    from: 1.28.0
+    exactVersion: 1.38.1
   swift-log:
     url: https://github.com/apple/swift-log.git
-    from: 1.5.0
+    exactVersion: 1.14.0
   swift-nio:
     url: https://github.com/apple/swift-nio.git
-    from: 2.50.0
+    exactVersion: 2.101.3
   swift-nio-http2:
     url: https://github.com/apple/swift-nio-http2.git
-    from: 1.28.0
+    exactVersion: 1.45.0
   swift-nio-ssl:
     url: https://github.com/apple/swift-nio-ssl.git
-    from: 2.25.0
+    exactVersion: 2.37.2
   swift-collections:
     url: https://github.com/apple/swift-collections.git
-    from: 1.0.0
+    exactVersion: 1.6.0
   swift-argument-parser:
     url: https://github.com/apple/swift-argument-parser.git
-    from: 1.3.0
+    exactVersion: 1.8.2
 
 targets:
   IDBGRPCSwift:
