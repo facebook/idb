@@ -655,11 +655,11 @@ final class SimulatorVideoStreamDeliveryTests: XCTestCase {
   }
 
   func testKeyframesAcrossOverlayUpdates() async throws {
-    // Hardware video encoding is unavailable on hosted CI runners: the encoder
-    // never produces output, so the assertions cannot be exercised there.
-    try XCTSkipIf(
-      ProcessInfo.processInfo.environment["GITHUB_ACTIONS"] == "true",
-      "video encoding is not available on hosted CI runners")
+    // Without a hardware encoder the stream never produces output, so the
+    // assertions cannot be exercised on this host.
+    try XCTSkipUnless(
+      VideoEncodingHostSupport.supportsHardwareH264Encoding,
+      "video encoding needs a hardware H.264 encoder, unavailable on this host")
     let surface = FakeFramebufferSurface()
     surface.immediateSurface = makeTestIOSurface(width: 128, height: 128)
     let consumer = FBDataBuffer.accumulatingBuffer()

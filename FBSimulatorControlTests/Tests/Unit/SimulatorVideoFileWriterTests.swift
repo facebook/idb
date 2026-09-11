@@ -194,9 +194,9 @@ final class SimulatorVideoTests: XCTestCase {
   }
 
   func testRecordingProducesReadableMp4() async throws {
-    try XCTSkipIf(
-      ProcessInfo.processInfo.environment["GITHUB_ACTIONS"] == "true",
-      "video encoding is not available on hosted CI runners")
+    try XCTSkipUnless(
+      VideoEncodingHostSupport.supportsHardwareH264Encoding,
+      "video encoding needs a hardware H.264 encoder, unavailable on this host")
     let (video, path) = makeRecordingFixture(immediateSurface: makeTestIOSurface(width: 128, height: 128))
 
     try await video.startRecording()
@@ -223,9 +223,9 @@ final class SimulatorVideoTests: XCTestCase {
   }
 
   func testSecondStopReturnsSameURLWithoutRefinalizing() async throws {
-    try XCTSkipIf(
-      ProcessInfo.processInfo.environment["GITHUB_ACTIONS"] == "true",
-      "video encoding is not available on hosted CI runners")
+    try XCTSkipUnless(
+      VideoEncodingHostSupport.supportsHardwareH264Encoding,
+      "video encoding needs a hardware H.264 encoder, unavailable on this host")
     let (video, path) = makeRecordingFixture(immediateSurface: makeTestIOSurface(width: 128, height: 128))
 
     try await video.startRecording()
