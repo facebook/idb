@@ -498,9 +498,22 @@ public actor FBSimulatorVideoStream: FBVideoStream {
     // Published only once every throwing step is past, so a mount is all-or-nothing: a failed one
     // leaves the previous surface installed rather than a new `pixelBuffer` behind a pusher never
     // set up for it.
+    let previousFramePusher = self.framePusher
     self.pixelBuffer = buffer
     self.pixelBufferAttributes = attributes
     self.framePusher = framePusher
+    // The displaced pusher's VideoToolbox sessions are only released deterministically by
+    // `tearDown`; releasing the reference alone can leave them alive with encodes in flight into
+    // the same consumer. Torn down after the new pusher is published so a swap never leaves the
+    // stream without a working pusher, and a teardown failure cannot fail an otherwise good mount.
+    if let previousFramePusher {
+      do {
+        try previousFramePusher.tearDown()
+        logger.log("Tore down the previous frame pusher after a surface swap")
+      } catch {
+        logger.log("Failed to tear down the previous frame pusher after a surface swap: \(error)")
+      }
+    }
     let transportTimedMetadataWriter =
       (framePusher as? SimulatorVideoStreamFramePusher_VideoToolbox)?.timedMetadataWriter
 

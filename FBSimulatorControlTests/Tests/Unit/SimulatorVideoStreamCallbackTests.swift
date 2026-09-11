@@ -445,9 +445,7 @@ final class SimulatorVideoStreamDeliveryTests: XCTestCase {
       await stream.currentFramePusherHandle()?.identity != previous.identity
     }
 
-    // BUG: the displaced pusher is never torn down, so its VTPixelTransferSession stays alive —
-    // flipped in the following commit.
-    XCTAssertNotNil(previousPusher.pixelTransferSession)
+    XCTAssertNil(previousPusher.pixelTransferSession, "a surface swap must tear down the displaced pusher")
     try await stream.stopStreaming()
   }
 
