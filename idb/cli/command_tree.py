@@ -369,6 +369,7 @@ def build_command_graph(
     probes the parser defaults have always performed, and runs no command.
     """
     parser = parser_class(
+        prog="idb",
         description=DESCRIPTION,
         epilog=EPILOG,
         formatter_class=argparse.RawTextHelpFormatter,

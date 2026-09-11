@@ -296,6 +296,7 @@ class CommandTreeTest(unittest.TestCase):
 
     def test_root_parser_presentation(self) -> None:
         parser = self.graph.parser
+        self.assertEqual(parser.prog, "idb")
         self.assertEqual(parser.description, DESCRIPTION)
         self.assertEqual(parser.epilog, EPILOG)
         self.assertIs(parser.formatter_class, argparse.RawTextHelpFormatter)
