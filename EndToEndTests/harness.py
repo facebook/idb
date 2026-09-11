@@ -19,6 +19,7 @@ import json
 import os
 import re
 import select
+import shlex
 import shutil
 import signal
 import subprocess
@@ -32,6 +33,7 @@ from typing import Any, Awaitable, Callable, NoReturn, Sequence, TypeVar
 DEVICE_UDID_ENV = "DEVICE_UDID"
 DEVICE_SET_PATH_ENV = "DEVICE_SET_PATH"
 IDB_BIN_ENV = "IDB_BIN"
+IDB_ARGS_ENV = "IDB_ARGS"
 IDB_COMPANION_PATH_ENV = "IDB_COMPANION_PATH"
 STRICT_ENV = "IDB_E2E_STRICT"
 
@@ -258,11 +260,13 @@ class Environment:
         udid: str,
         device_set_path: Path,
         idb_bin: Path,
+        idb_args: Sequence[str],
         companion_path: Path,
     ) -> None:
         self.udid = udid
         self.device_set_path = device_set_path
         self.idb_bin = idb_bin
+        self.idb_args = tuple(idb_args)
         self.companion_path = companion_path
         self.simctl = Simctl(udid, device_set_path)
 
@@ -273,6 +277,7 @@ class Environment:
     @classmethod
     async def resolve(cls) -> "Environment":
         idb_bin = _binary_from_environment(IDB_BIN_ENV)
+        idb_args = shlex.split(os.environ.get(IDB_ARGS_ENV, ""))
         companion_path = _binary_from_environment(IDB_COMPANION_PATH_ENV)
         udid = _required(DEVICE_UDID_ENV, "the booted simulator to test against")
         device_set_path = Path(
@@ -293,7 +298,7 @@ class Environment:
             raise HarnessError(
                 f"{DEVICE_UDID_ENV}={udid} must already be booted; it is {state}"
             )
-        return cls(udid, device_set_path, idb_bin, companion_path)
+        return cls(udid, device_set_path, idb_bin, idb_args, companion_path)
 
 
 def _required(name: str, meaning: str) -> str:
@@ -411,8 +416,22 @@ class Companion:
             self.process.stdout.close()
 
 
+def client_argv(
+    idb_bin: Path,
+    idb_args: Sequence[str],
+    companion_address: str,
+    *args: str,
+) -> list[str]:
+    return [str(idb_bin), *idb_args, "--companion", companion_address, *args]
+
+
 def idb_argv(environment: Environment, companion: Companion, *args: str) -> list[str]:
-    return [str(environment.idb_bin), "--companion", companion.address, *args]
+    return client_argv(
+        environment.idb_bin,
+        environment.idb_args,
+        companion.address,
+        *args,
+    )
 
 
 async def wait_for_accessibility(

@@ -7,6 +7,7 @@ These tests run the `idb` CLI through `idb_companion` against a booted simulator
 | Variable | Meaning |
 |---|---|
 | `IDB_BIN` | the `idb` client to drive |
+| `IDB_ARGS` | optional root arguments inserted before `--companion` |
 | `IDB_COMPANION_PATH` | the `idb_companion` binary, with its `Resources/` directory beside it |
 | `DEVICE_UDID` | the booted simulator to test against |
 | `DEVICE_SET_PATH` | the device set `DEVICE_UDID` lives in |

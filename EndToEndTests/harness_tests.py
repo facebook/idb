@@ -20,6 +20,7 @@ from unittest import mock
 
 from . import harness
 from .harness import (
+    client_argv,
     Companion,
     CompanionDied,
     Completed,
@@ -106,6 +107,37 @@ def reported_by(case: TestCaseStub, stderr: str) -> str:
     except Failed as failed:
         return str(failed)
     raise AssertionError("fail_or_skip_for reported no failure")
+
+
+class ClientArgumentTests(unittest.TestCase):
+    def test_places_backend_arguments_before_the_direct_companion(self) -> None:
+        argv = client_argv(
+            Path("/tmp/idb-rust"),
+            ("--no-prune-dead-companion",),
+            "/tmp/companion.sock",
+            "describe",
+            "--json",
+        )
+
+        self.assertEqual(
+            argv,
+            [
+                "/tmp/idb-rust",
+                "--no-prune-dead-companion",
+                "--companion",
+                "/tmp/companion.sock",
+                "describe",
+                "--json",
+            ],
+        )
+
+    def test_uses_no_backend_arguments_by_default(self) -> None:
+        argv = client_argv(Path("/tmp/idb"), (), "/tmp/companion.sock", "describe")
+
+        self.assertEqual(
+            argv,
+            ["/tmp/idb", "--companion", "/tmp/companion.sock", "describe"],
+        )
 
 
 class FailureReportingTests(unittest.TestCase):
