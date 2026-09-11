@@ -7,7 +7,7 @@
 
 import Foundation
 
-enum FBXcodeDirectoryError: Error, LocalizedError {
+enum XcodeDirectoryError: Error, LocalizedError {
   case emptyXcodeSelectOutput(stdErr: String)
   case pathNil
   case commandLineToolsOnly
@@ -30,7 +30,7 @@ enum FBXcodeDirectoryError: Error, LocalizedError {
   }
 }
 
-struct FBXcodeDirectory {
+struct XcodeDirectory {
 
   public static func resolveDeveloperDirectory() throws -> String {
     let directory: String
@@ -55,7 +55,7 @@ struct FBXcodeDirectory {
     let directory = task.stdOut as? String ?? ""
     if directory.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
       let stdErr = task.stdErr as? String ?? ""
-      throw FBXcodeDirectoryError.emptyXcodeSelectOutput(stdErr: stdErr)
+      throw XcodeDirectoryError.emptyXcodeSelectOutput(stdErr: stdErr)
     }
     let resolved = (directory as NSString).resolvingSymlinksInPath
     try validateXcodeDirectory(resolved)
@@ -70,16 +70,16 @@ struct FBXcodeDirectory {
 
   private static func validateXcodeDirectory(_ directory: String?) throws {
     guard let directory else {
-      throw FBXcodeDirectoryError.pathNil
+      throw XcodeDirectoryError.pathNil
     }
     guard directory != "/Library/Developer/CommandLineTools" else {
-      throw FBXcodeDirectoryError.commandLineToolsOnly
+      throw XcodeDirectoryError.commandLineToolsOnly
     }
     guard directory != "/" else {
-      throw FBXcodeDirectoryError.rootPath
+      throw XcodeDirectoryError.rootPath
     }
     guard FileManager.default.fileExists(atPath: directory) else {
-      throw FBXcodeDirectoryError.pathDoesNotExist(directory: directory)
+      throw XcodeDirectoryError.pathDoesNotExist(directory: directory)
     }
   }
 }

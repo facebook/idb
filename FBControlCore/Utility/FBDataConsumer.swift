@@ -17,7 +17,7 @@ import Foundation
 }
 
 /// A consumer of dispatch_data.
-@objc public protocol FBDispatchDataConsumer: NSObjectProtocol {
+@objc public protocol DispatchDataConsumer: NSObjectProtocol {
   /// Consumes the provided binary data.
   func consumeData(_ data: __DispatchData)
 
@@ -30,7 +30,7 @@ import Foundation
 }
 
 /// Consumer which consumes the data asynchronously.
-@objc public protocol FBDataConsumerAsync: NSObjectProtocol {
+@objc public protocol DataConsumerAsync: NSObjectProtocol {
   /// Number of submitted data that has not been consumed yet.
   func unprocessedDataCount() -> Int
 }

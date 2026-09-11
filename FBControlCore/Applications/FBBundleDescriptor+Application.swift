@@ -34,11 +34,11 @@ extension FBBundleDescriptor {
     }
     if applicationPaths.isEmpty {
       let lastComponents = nonApplicationPaths.map { ($0 as NSString).lastPathComponent }
-      throw FBBundleDescriptorError.noApplicationInIPA(presentFiles: lastComponents)
+      throw BundleDescriptorError.noApplicationInIPA(presentFiles: lastComponents)
     }
     if applicationPaths.count > 1 {
       let lastComponents = applicationPaths.map { ($0 as NSString).lastPathComponent }
-      throw FBBundleDescriptorError.multipleApplicationsInIPA(count: applicationPaths.count, found: lastComponents)
+      throw BundleDescriptorError.multipleApplicationsInIPA(count: applicationPaths.count, found: lastComponents)
     }
     let applicationPath = applicationPaths[0]
     logger?.log("Using Application at path \(applicationPath)")

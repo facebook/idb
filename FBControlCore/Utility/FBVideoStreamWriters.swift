@@ -13,7 +13,7 @@ private let MaxAllowedUnprocessedDataCounts: Int = 2
 /// False when an async consumer has more than `MaxAllowedUnprocessedDataCounts` frames queued, in
 /// which case the caller should drop the frame.
 public func checkConsumerBufferLimit(_ consumer: any FBDataConsumer, _ logger: any FBControlCoreLogger) -> Bool {
-  if let asyncConsumer = consumer as? FBDataConsumerAsync {
+  if let asyncConsumer = consumer as? DataConsumerAsync {
     let framesInProcess = asyncConsumer.unprocessedDataCount()
     if framesInProcess > MaxAllowedUnprocessedDataCounts {
       logger.log("Consumer is overflown. Number of unsent frames: \(framesInProcess)")
@@ -34,7 +34,7 @@ public protocol FBVideoStreamTimedMetadataWriter {
   func writeTimedMetadata(_ text: String, to consumer: any FBDataConsumer)
 }
 
-public struct FBVideoStreamFrameWriters {
+public struct VideoStreamFrameWriters {
   public let frameWriter: any FBEncodedFrameWriter
   public let timedMetadataWriter: (any FBVideoStreamTimedMetadataWriter)?
 
@@ -45,16 +45,16 @@ public struct FBVideoStreamFrameWriters {
 }
 
 public extension FBVideoStreamTransport {
-  func frameWriters(for codec: FBVideoStreamCodec) -> FBVideoStreamFrameWriters {
+  func frameWriters(for codec: FBVideoStreamCodec) -> VideoStreamFrameWriters {
     switch self {
     case .fmp4:
-      let writer = FBFMP4FrameWriter(codec: codec)
-      return FBVideoStreamFrameWriters(frameWriter: writer, timedMetadataWriter: writer)
+      let writer = FMP4FrameWriter(codec: codec)
+      return VideoStreamFrameWriters(frameWriter: writer, timedMetadataWriter: writer)
     case .mpegts:
       let writer = FBMPEGTSFrameWriter(codec: codec)
-      return FBVideoStreamFrameWriters(frameWriter: writer, timedMetadataWriter: writer)
+      return VideoStreamFrameWriters(frameWriter: writer, timedMetadataWriter: writer)
     case .annexB:
-      return FBVideoStreamFrameWriters(frameWriter: FBAnnexBFrameWriter(codec: codec), timedMetadataWriter: nil)
+      return VideoStreamFrameWriters(frameWriter: FBAnnexBFrameWriter(codec: codec), timedMetadataWriter: nil)
     }
   }
 }
@@ -1310,7 +1310,7 @@ private func FBFMP4CreateFragmentHeader(_ sequenceNumber: UInt32, _ baseDecodeTi
   return writer.data
 }
 
-final class FBFMP4FrameWriter: FBEncodedFrameWriter, FBVideoStreamTimedMetadataWriter {
+final class FMP4FrameWriter: FBEncodedFrameWriter, FBVideoStreamTimedMetadataWriter {
   private let codec: FBVideoStreamCodec
   private(set) var initWritten: Bool
   private(set) var sequenceNumber: UInt32

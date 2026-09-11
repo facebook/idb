@@ -8,14 +8,14 @@
 @testable import FBControlCore
 import XCTest
 
-final class FBXcodeDirectoryTests: XCTestCase {
+final class XcodeDirectoryTests: XCTestCase {
   func testXcodeSelect() throws {
-    let directory = try FBXcodeDirectory.xcodeSelectDeveloperDirectory()
+    let directory = try XcodeDirectory.xcodeSelectDeveloperDirectory()
     assertDirectory(directory)
   }
 
   func testFromSymlink() throws {
-    let directory = try FBXcodeDirectory.symlinkedDeveloperDirectory()
+    let directory = try XcodeDirectory.symlinkedDeveloperDirectory()
     assertDirectory(directory)
   }
 

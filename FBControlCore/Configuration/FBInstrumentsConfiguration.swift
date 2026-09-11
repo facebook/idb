@@ -7,15 +7,15 @@
 
 import Foundation
 
-public struct FBInstrumentsTimings: Sendable {
+public struct InstrumentsTimings: Sendable {
 
   public let terminateTimeout: TimeInterval
   public let launchRetryTimeout: TimeInterval
   public let launchErrorTimeout: TimeInterval
   public let operationDuration: TimeInterval
 
-  public static func timings(withTerminateTimeout terminateTimeout: TimeInterval, launchRetryTimeout: TimeInterval, launchErrorTimeout: TimeInterval, operationDuration: TimeInterval) -> FBInstrumentsTimings {
-    FBInstrumentsTimings(terminateTimeout: terminateTimeout, launchRetryTimeout: launchRetryTimeout, launchErrorTimeout: launchErrorTimeout, operationDuration: operationDuration)
+  public static func timings(withTerminateTimeout terminateTimeout: TimeInterval, launchRetryTimeout: TimeInterval, launchErrorTimeout: TimeInterval, operationDuration: TimeInterval) -> InstrumentsTimings {
+    InstrumentsTimings(terminateTimeout: terminateTimeout, launchRetryTimeout: launchRetryTimeout, launchErrorTimeout: launchErrorTimeout, operationDuration: operationDuration)
   }
 
   public init(terminateTimeout: TimeInterval, launchRetryTimeout: TimeInterval, launchErrorTimeout: TimeInterval, operationDuration: TimeInterval) {
@@ -33,13 +33,13 @@ public struct FBInstrumentsConfiguration: Sendable, CustomStringConvertible {
   public let appEnvironment: [String: String]
   public let appArguments: [String]
   public let toolArguments: [String]
-  public let timings: FBInstrumentsTimings
+  public let timings: InstrumentsTimings
 
-  public static func configuration(withTemplateName templateName: String, targetApplication: String, appEnvironment: [String: String], appArguments: [String], toolArguments: [String], timings: FBInstrumentsTimings) -> FBInstrumentsConfiguration {
+  public static func configuration(withTemplateName templateName: String, targetApplication: String, appEnvironment: [String: String], appArguments: [String], toolArguments: [String], timings: InstrumentsTimings) -> FBInstrumentsConfiguration {
     FBInstrumentsConfiguration(templateName: templateName, targetApplication: targetApplication, appEnvironment: appEnvironment, appArguments: appArguments, toolArguments: toolArguments, timings: timings)
   }
 
-  public init(templateName: String, targetApplication: String, appEnvironment: [String: String], appArguments: [String], toolArguments: [String], timings: FBInstrumentsTimings) {
+  public init(templateName: String, targetApplication: String, appEnvironment: [String: String], appArguments: [String], toolArguments: [String], timings: InstrumentsTimings) {
     self.templateName = templateName
     self.targetApplication = targetApplication
     self.appEnvironment = appEnvironment

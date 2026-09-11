@@ -39,7 +39,7 @@ import Foundation
 }
 
 /// A Consumable buffer that also allows forwarding and notifying.
-@objc public protocol FBNotifyingBuffer: FBConsumableBuffer {
+@objc public protocol NotifyingBuffer: FBConsumableBuffer {
   /// Forwards to another data consumer, notifying every time a terminal is passed.
   func consume(_ consumer: FBDataConsumer, onQueue queue: DispatchQueue?, untilTerminal terminal: Data, error: NSErrorPointer) -> Bool
 
@@ -52,7 +52,7 @@ import Foundation
 }
 
 /// Internal forwarding protocol used by FBDataBuffer implementations.
-@objc public protocol FBDataBuffer_Forwarder: NSObjectProtocol {
+@objc public protocol DataBuffer_Forwarder: NSObjectProtocol {
   func run(_ buffer: FBConsumableBuffer)
   var consumer: FBDataConsumer { get }
 }

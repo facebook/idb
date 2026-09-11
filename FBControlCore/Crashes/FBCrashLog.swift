@@ -8,7 +8,7 @@
 import Foundation
 
 /// The kind of process that crashed.
-public struct FBCrashLogInfoProcessType: OptionSet, Sendable {
+public struct CrashLogInfoProcessType: OptionSet, Sendable {
   public let rawValue: UInt
 
   public init(rawValue: UInt) {
@@ -16,11 +16,11 @@ public struct FBCrashLogInfoProcessType: OptionSet, Sendable {
   }
 
   /// A process that is part of the operating system runtime.
-  public static let system = FBCrashLogInfoProcessType(rawValue: 1 << 0)
+  public static let system = CrashLogInfoProcessType(rawValue: 1 << 0)
   /// A process that is an application.
-  public static let application = FBCrashLogInfoProcessType(rawValue: 1 << 1)
+  public static let application = CrashLogInfoProcessType(rawValue: 1 << 1)
   /// A process that is neither an application nor part of the operating system runtime.
-  public static let custom = FBCrashLogInfoProcessType(rawValue: 1 << 2)
+  public static let custom = CrashLogInfoProcessType(rawValue: 1 << 2)
 }
 
 public final class FBCrashLog: CustomStringConvertible {
@@ -52,7 +52,7 @@ private let FBCrashLog_dateFormatter: DateFormatter = {
   return formatter
 }()
 
-enum FBCrashLogError: Error {
+enum CrashLogError: Error {
   case fileDoesNotExist(path: String)
   case fileNotReadable(path: String)
   case dataReadFailed(path: String, underlying: Error)
@@ -63,7 +63,7 @@ enum FBCrashLogError: Error {
   case missingField(field: String)
 }
 
-extension FBCrashLogError: LocalizedError {
+extension CrashLogError: LocalizedError {
   public var errorDescription: String? {
     switch self {
     case let .fileDoesNotExist(path):
@@ -98,7 +98,7 @@ public final class FBCrashLogInfo: CustomStringConvertible {
   public let parentProcessName: String
   public let parentProcessIdentifier: pid_t
   public let date: Date
-  public let processType: FBCrashLogInfoProcessType
+  public let processType: CrashLogInfoProcessType
   public let exceptionDescription: String?
   public let crashedThreadDescription: String?
 
@@ -115,7 +115,7 @@ public final class FBCrashLogInfo: CustomStringConvertible {
     parentProcessName: String,
     parentProcessIdentifier: pid_t,
     date: Date,
-    processType: FBCrashLogInfoProcessType,
+    processType: CrashLogInfoProcessType,
     exceptionDescription: String?,
     crashedThreadDescription: String?
   ) {
@@ -137,23 +137,23 @@ public final class FBCrashLogInfo: CustomStringConvertible {
   public class func fromCrashLog(atPath crashPath: String) throws -> FBCrashLogInfo {
     let fileManager = FileManager.default
     if !fileManager.fileExists(atPath: crashPath) {
-      throw FBCrashLogError.fileDoesNotExist(path: crashPath)
+      throw CrashLogError.fileDoesNotExist(path: crashPath)
     }
     if !fileManager.isReadableFile(atPath: crashPath) {
-      throw FBCrashLogError.fileNotReadable(path: crashPath)
+      throw CrashLogError.fileNotReadable(path: crashPath)
     }
     let crashFileData: Data
     do {
       crashFileData = try Data(contentsOf: URL(fileURLWithPath: crashPath))
     } catch {
-      throw FBCrashLogError.dataReadFailed(path: crashPath, underlying: error)
+      throw CrashLogError.dataReadFailed(path: crashPath, underlying: error)
     }
     if crashFileData.isEmpty {
-      throw FBCrashLogError.fileEmpty(path: crashPath)
+      throw CrashLogError.fileEmpty(path: crashPath)
     }
 
     guard let crashString = String(data: crashFileData, encoding: .utf8) else {
-      throw FBCrashLogError.stringExtractionFailed(path: crashPath)
+      throw CrashLogError.stringExtractionFailed(path: crashPath)
     }
 
     let parser = getPreferredCrashLogParser(forCrashString: crashString)
@@ -193,7 +193,7 @@ public final class FBCrashLogInfo: CustomStringConvertible {
     for basePath in diagnosticReportsPaths {
       let fileNames = (try? FileManager.default.contentsOfDirectory(atPath: basePath)) ?? []
       let predicate = predicateForFiles(withBasePath: basePath, afterDate: date, withExtensions: ["crash", "ips"])
-      let crashInfos = FBConcurrentCollectionOperations.filterMap(
+      let crashInfos = ConcurrentCollectionOperations.filterMap(
         fileNames as [Any],
         predicate: predicate,
         map: { item -> Any in
@@ -222,7 +222,7 @@ public final class FBCrashLogInfo: CustomStringConvertible {
     do {
       contents = try loadRawCrashLogString()
     } catch {
-      throw FBCrashLogError.readFailed(path: crashPath, underlying: error)
+      throw CrashLogError.readFailed(path: crashPath, underlying: error)
     }
     return FBCrashLog(info: self, contents: contents)
   }
@@ -277,15 +277,15 @@ public final class FBCrashLogInfo: CustomStringConvertible {
 
   // MARK: - Private
 
-  private class func getPreferredCrashLogParser(forCrashString crashString: String) -> FBCrashLogParser {
+  private class func getPreferredCrashLogParser(forCrashString crashString: String) -> CrashLogParser {
     if !crashString.isEmpty && crashString.first == "{" {
-      return FBConcatedJSONCrashLogParser()
+      return ConcatedJSONCrashLogParser()
     } else {
-      return FBPlainTextCrashLogParser()
+      return PlainTextCrashLogParser()
     }
   }
 
-  private class func fromCrashLogString(_ crashString: String, crashPath: String, parser: FBCrashLogParser) throws -> FBCrashLogInfo {
+  private class func fromCrashLogString(_ crashString: String, crashPath: String, parser: CrashLogParser) throws -> FBCrashLogInfo {
     var executablePath: NSString = NSString()
     var identifier: NSString = NSString()
     var processName: NSString = NSString()
@@ -312,30 +312,30 @@ public final class FBCrashLogInfo: CustomStringConvertible {
     )
 
     if let parseError {
-      throw FBCrashLogError.parseFailed(underlying: parseError)
+      throw CrashLogError.parseFailed(underlying: parseError)
     }
 
     let processNameStr = processName as String
     if processNameStr.isEmpty {
-      throw FBCrashLogError.missingField(field: "process name")
+      throw CrashLogError.missingField(field: "process name")
     }
     let identifierStr = identifier as String
     if identifierStr.isEmpty {
-      throw FBCrashLogError.missingField(field: "identifier")
+      throw CrashLogError.missingField(field: "identifier")
     }
     let parentProcessNameStr = parentProcessName as String
     if parentProcessNameStr.isEmpty {
-      throw FBCrashLogError.missingField(field: "parent process name")
+      throw CrashLogError.missingField(field: "parent process name")
     }
     let executablePathStr = executablePath as String
     if executablePathStr.isEmpty {
-      throw FBCrashLogError.missingField(field: "executable path")
+      throw CrashLogError.missingField(field: "executable path")
     }
     if processIdentifier == -1 {
-      throw FBCrashLogError.missingField(field: "process identifier")
+      throw CrashLogError.missingField(field: "process identifier")
     }
     if parentProcessIdentifier == -1 {
-      throw FBCrashLogError.missingField(field: "parent process identifier")
+      throw CrashLogError.missingField(field: "parent process identifier")
     }
 
     let processType = self.processType(forExecutablePath: executablePathStr)
@@ -358,7 +358,7 @@ public final class FBCrashLogInfo: CustomStringConvertible {
     )
   }
 
-  private class func processType(forExecutablePath executablePath: String) -> FBCrashLogInfoProcessType {
+  private class func processType(forExecutablePath executablePath: String) -> CrashLogInfoProcessType {
     if executablePath.contains("Platforms/iPhoneSimulator.platform") {
       return .system
     }

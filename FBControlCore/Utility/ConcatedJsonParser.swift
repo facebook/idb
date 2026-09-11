@@ -7,7 +7,7 @@
 
 import Foundation
 
-final class FBConcatedJsonParser {
+final class ConcatedJsonParser {
 
   public class func parseConcatenatedJSON(from str: String) throws -> [String: Any] {
     var bracketCounter = 0

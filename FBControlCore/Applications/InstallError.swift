@@ -8,7 +8,7 @@
 import Foundation
 
 /// Failures fetching an application archive.
-enum FBInstallError: Error, CustomStringConvertible {
+enum InstallError: Error, CustomStringConvertible {
 
   case httpStatus(url: URL?, statusCode: Int)
 
@@ -34,7 +34,7 @@ enum FBInstallError: Error, CustomStringConvertible {
 
 // MARK: - Bridging
 
-extension FBInstallError: CustomNSError {
+extension InstallError: CustomNSError {
 
   public static var errorDomain: String { "com.facebook.FBControlCore.install" }
 

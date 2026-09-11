@@ -7,14 +7,14 @@
 
 import Foundation
 
-enum FBXCTraceError: Error {
+enum XCTraceError: Error {
   case outputDirectoryCreationFailed(underlying: Error)
   case shimMissing
   case recordFailed(exitCode: NSNumber)
   case xctraceMissing(path: String)
 }
 
-extension FBXCTraceError: LocalizedError {
+extension XCTraceError: LocalizedError {
   public var errorDescription: String? {
     switch self {
     case let .outputDirectoryCreationFailed(underlying):
@@ -51,7 +51,7 @@ public final class FBXCTraceRecordOperation {
     do {
       try FileManager.default.createDirectory(atPath: traceDir, withIntermediateDirectories: false, attributes: nil)
     } catch {
-      throw FBXCTraceError.outputDirectoryCreationFailed(underlying: error)
+      throw XCTraceError.outputDirectoryCreationFailed(underlying: error)
     }
     let traceFile = (traceDir as NSString).appendingPathComponent("trace.trace")
 
@@ -89,7 +89,7 @@ public final class FBXCTraceRecordOperation {
     var environment: [String: String] = [:]
     if let customDeviceSetPath = target.customDeviceSetPath {
       guard let shim = configuration.shim else {
-        throw FBXCTraceError.shimMissing
+        throw XCTraceError.shimMissing
       }
       environment["SIM_DEVICE_SET_PATH"] = customDeviceSetPath
       environment["DYLD_INSERT_LIBRARIES"] = shim.macOSTestShimPath
@@ -130,7 +130,7 @@ public final class FBXCTraceRecordOperation {
             if exitCode.isEqual(to: NSNumber(value: 0)) {
               return FBFuture<AnyObject>(result: self.traceDir as NSURL)
             } else {
-              return FBFuture(error: FBXCTraceError.recordFailed(exitCode: exitCode))
+              return FBFuture(error: XCTraceError.recordFailed(exitCode: exitCode))
             }
           })
     )
@@ -140,7 +140,7 @@ public final class FBXCTraceRecordOperation {
   public class func xctracePath() throws -> String {
     let path = (FBXcodeConfiguration.developerDirectory as NSString).appendingPathComponent("/usr/bin/xctrace")
     if !FileManager.default.fileExists(atPath: path) {
-      throw FBXCTraceError.xctraceMissing(path: path)
+      throw XCTraceError.xctraceMissing(path: path)
     }
     return path
   }

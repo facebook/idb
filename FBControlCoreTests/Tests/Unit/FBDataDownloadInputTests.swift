@@ -114,7 +114,7 @@ final class FBDataDownloadInputTests: XCTestCase {
     StubURLProtocol.behaviour = .respond(statusCode: 404, body: errorPage)
 
     await assertThrows { error in
-      guard case .httpStatus(_, let statusCode)? = error as? FBInstallError else {
+      guard case .httpStatus(_, let statusCode)? = error as? InstallError else {
         XCTFail("Expected an HTTP status failure, got: \(error)")
         return
       }
@@ -131,7 +131,7 @@ final class FBDataDownloadInputTests: XCTestCase {
     StubURLProtocol.behaviour = .respond(statusCode: 404, body: Data())
 
     await assertThrows { error in
-      guard case .httpStatus(_, let statusCode)? = error as? FBInstallError else {
+      guard case .httpStatus(_, let statusCode)? = error as? InstallError else {
         XCTFail("Expected an HTTP status failure, got: \(error)")
         return
       }
@@ -149,7 +149,7 @@ final class FBDataDownloadInputTests: XCTestCase {
       statusCode: 200, body: archive, bytesBeforeFailure: archive.count / 2)
 
     await assertThrows { error in
-      guard case .transferFailed(_, let underlying)? = error as? FBInstallError else {
+      guard case .transferFailed(_, let underlying)? = error as? InstallError else {
         XCTFail("Expected a transfer failure, got: \(error)")
         return
       }

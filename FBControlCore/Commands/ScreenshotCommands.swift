@@ -33,11 +33,11 @@ public extension ScreenshotCommands {
   }
 }
 
-enum FBScreenshotFormatError: Error, Hashable {
+enum ScreenshotFormatError: Error, Hashable {
   case unrecognizedFormat(String)
 }
 
-extension FBScreenshotFormatError: LocalizedError {
+extension ScreenshotFormatError: LocalizedError {
   public var errorDescription: String? {
     switch self {
     case let .unrecognizedFormat(format):
@@ -56,7 +56,7 @@ public extension FBScreenshotEncoding {
     case .jpeg:
       self = .jpeg(quality: Self.defaultJPEGQuality)
     default:
-      throw FBScreenshotFormatError.unrecognizedFormat(format.rawValue)
+      throw ScreenshotFormatError.unrecognizedFormat(format.rawValue)
     }
   }
 }

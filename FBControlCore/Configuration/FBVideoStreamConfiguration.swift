@@ -23,7 +23,7 @@ public enum FBVideoStreamTransport: String, Sendable {
 /// The encoders an MJPEG stream may use. Hardware encoding is required by default; software
 /// encoding is a deliberate opt-in for hosts without a usable hardware JPEG encoder, trading CPU
 /// for availability.
-public enum FBMJPEGEncoderSelection: Hashable, Sendable {
+public enum MJPEGEncoderSelection: Hashable, Sendable {
   case requireHardware
   case allowSoftware
 }
@@ -31,7 +31,7 @@ public enum FBMJPEGEncoderSelection: Hashable, Sendable {
 /// The format of a video stream: a compressed codec over a transport, or a raw/JPEG format that has neither.
 public enum FBVideoStreamFormat: Hashable, Sendable {
   case compressedVideo(withCodec: FBVideoStreamCodec, transport: FBVideoStreamTransport)
-  case mjpeg(encoder: FBMJPEGEncoderSelection)
+  case mjpeg(encoder: MJPEGEncoderSelection)
   case minicap
   case bgra
 }

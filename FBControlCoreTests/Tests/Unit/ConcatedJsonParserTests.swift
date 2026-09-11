@@ -8,7 +8,7 @@
 @testable import FBControlCore
 import XCTest
 
-class FBConcatedJsonParserTests: XCTestCase {
+class ConcatedJsonParserTests: XCTestCase {
 
   func testPlainSmallJsonParse() throws {
     let json = """
@@ -53,7 +53,7 @@ class FBConcatedJsonParserTests: XCTestCase {
   }
 
   private func parse(string: String) throws -> [String: String] {
-    guard let json = try FBConcatedJsonParser.parseConcatenatedJSON(from: string) as? [String: String] else {
+    guard let json = try ConcatedJsonParser.parseConcatenatedJSON(from: string) as? [String: String] else {
       throw NSError(domain: "Json parsed with incorrect type", code: 0)
     }
 

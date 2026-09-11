@@ -11,7 +11,7 @@ import XCTest
 
 // MARK: - Test Doubles
 
-class FBOverflownConsumerDouble: NSObject, FBDataConsumer, FBDataConsumerAsync {
+class FBOverflownConsumerDouble: NSObject, FBDataConsumer, DataConsumerAsync {
   private var _unprocessedDataCount: Int = 0
 
   func unprocessedDataCount() -> Int {
@@ -440,7 +440,7 @@ final class FBVideoStreamTests: XCTestCase {
     let consumer = FBDataBuffer.accumulatingBuffer()
     let logger = FBControlCoreLoggerDouble()
 
-    // FBAccumulatingBuffer does not conform to FBDataConsumerAsync,
+    // FBAccumulatingBuffer does not conform to DataConsumerAsync,
     // so checkConsumerBufferLimit always returns YES.
     XCTAssertTrue(checkConsumerBufferLimit(consumer, logger))
   }
@@ -789,7 +789,7 @@ final class FBVideoStreamTests: XCTestCase {
 
   func testFMP4InitSegmentEmittedOnFirstKeyframe() {
     let sampleBuffer = CreateH264SampleBuffer(isKeyFrame: true)
-    let writer = FBFMP4FrameWriter(codec: .h264)
+    let writer = FMP4FrameWriter(codec: .h264)
     let consumer = FBDataBuffer.accumulatingBuffer()
     let logger = FBControlCoreLoggerDouble()
 
@@ -822,7 +822,7 @@ final class FBVideoStreamTests: XCTestCase {
 
   func testFMP4NonKeyframeBeforeFirstKeyframeDropped() {
     let nonKeyframe = CreateH264SampleBuffer(isKeyFrame: false)
-    let writer = FBFMP4FrameWriter(codec: .h264)
+    let writer = FMP4FrameWriter(codec: .h264)
     let consumer = FBDataBuffer.accumulatingBuffer()
     let logger = FBControlCoreLoggerDouble()
 
@@ -832,7 +832,7 @@ final class FBVideoStreamTests: XCTestCase {
   }
 
   func testFMP4FragmentContainsMoofAndMdat() {
-    let writer = FBFMP4FrameWriter(codec: .h264)
+    let writer = FMP4FrameWriter(codec: .h264)
     let consumer = FBDataBuffer.accumulatingBuffer()
     let logger = FBControlCoreLoggerDouble()
 
@@ -854,7 +854,7 @@ final class FBVideoStreamTests: XCTestCase {
   }
 
   func testFMP4EmsgBoxStructure() {
-    let writer = FBFMP4FrameWriter(codec: .h264)
+    let writer = FMP4FrameWriter(codec: .h264)
     writer.lastPts90k = 90000
     let consumer = FBDataBuffer.accumulatingBuffer()
 
@@ -884,7 +884,7 @@ final class FBVideoStreamTests: XCTestCase {
 
   func testFMP4NotReadyBufferReturnsError() throws {
     let sampleBuffer = CreateNotReadySampleBuffer()
-    let writer = FBFMP4FrameWriter(codec: .h264)
+    let writer = FMP4FrameWriter(codec: .h264)
     let consumer = FBDataBuffer.accumulatingBuffer()
     let logger = FBControlCoreLoggerDouble()
 
@@ -1016,7 +1016,7 @@ final class FBVideoStreamTests: XCTestCase {
 
   func testHEVCFMP4InitSegmentUsesHVC1AndHVCC() throws {
     let sampleBuffer = try XCTUnwrap(CreateHEVCSampleBuffer(isKeyFrame: true))
-    let writer = FBFMP4FrameWriter(codec: .hevc)
+    let writer = FMP4FrameWriter(codec: .hevc)
     let consumer = FBDataBuffer.accumulatingBuffer()
     let logger = FBControlCoreLoggerDouble()
 

@@ -7,7 +7,7 @@
 
 import Foundation
 
-enum FBWeakFrameworkError: Error {
+enum WeakFrameworkError: Error {
   case missingRequiredClass(className: String, frameworkName: String)
   case rootUserForbidden(relativePath: String)
   case fileMissing(path: String)
@@ -16,7 +16,7 @@ enum FBWeakFrameworkError: Error {
   case loadedFromWrongDirectory(frameworkName: String, bundlePath: String, basePath: String)
 }
 
-extension FBWeakFrameworkError: LocalizedError {
+extension WeakFrameworkError: LocalizedError {
   public var errorDescription: String? {
     switch self {
     case let .missingRequiredClass(className, frameworkName):
@@ -88,7 +88,7 @@ public final class FBWeakFramework: NSObject {
   private func allRequiredClassesExist() throws {
     for requiredClassName in requiredClassNames {
       if NSClassFromString(requiredClassName) == nil {
-        throw FBWeakFrameworkError.missingRequiredClass(className: requiredClassName, frameworkName: name)
+        throw WeakFrameworkError.missingRequiredClass(className: requiredClassName, frameworkName: name)
       }
     }
   }
@@ -101,16 +101,16 @@ public final class FBWeakFramework: NSObject {
     }
 
     if NSUserName() == "root" && !rootPermitted {
-      throw FBWeakFrameworkError.rootUserForbidden(relativePath: relativePath)
+      throw WeakFrameworkError.rootUserForbidden(relativePath: relativePath)
     }
 
     let path = ((relativeDirectory as NSString).appendingPathComponent(relativePath) as NSString).standardizingPath
     if !FileManager.default.fileExists(atPath: path) {
-      throw FBWeakFrameworkError.fileMissing(path: path)
+      throw WeakFrameworkError.fileMissing(path: path)
     }
 
     guard let bundle = Bundle(path: path) else {
-      throw FBWeakFrameworkError.bundleLoadFailed(path: path)
+      throw WeakFrameworkError.bundleLoadFailed(path: path)
     }
 
     logger?.debug().log("\(name): Loading from \(path) ")
@@ -129,7 +129,7 @@ public final class FBWeakFramework: NSObject {
 
   private func verifyRelativeDirectory(forPrivateClass className: String, logger: (any FBControlCoreLogger)?) throws {
     guard let cls = NSClassFromString(className) else {
-      throw FBWeakFrameworkError.bundleUnavailable(className: className)
+      throw WeakFrameworkError.bundleUnavailable(className: className)
     }
     let bundle = Bundle(for: cls)
 
@@ -137,7 +137,7 @@ public final class FBWeakFramework: NSObject {
     // The common base path is: /Applications/Xcode.app
     let commonBasePath = ((basePath as NSString).deletingLastPathComponent as NSString).deletingLastPathComponent
     if !bundle.bundlePath.hasPrefix(commonBasePath) {
-      throw FBWeakFrameworkError.loadedFromWrongDirectory(frameworkName: (bundle.bundlePath as NSString).lastPathComponent, bundlePath: bundle.bundlePath, basePath: basePath)
+      throw WeakFrameworkError.loadedFromWrongDirectory(frameworkName: (bundle.bundlePath as NSString).lastPathComponent, bundlePath: bundle.bundlePath, basePath: basePath)
     }
     logger?.debug().log("\(name): \(className) has correct path of \(commonBasePath)")
   }

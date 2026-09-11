@@ -11,20 +11,20 @@ import Foundation
 ///
 /// The parameter of such a class exists only in the type checker — it is erased before it reaches
 /// the runtime, so every instance is the same class whatever it is declared to carry.
-public protocol FBLightweightGeneric: AnyObject {}
+public protocol LightweightGeneric: AnyObject {}
 
-extension FBFuture: FBLightweightGeneric {}
-extension FBProcessInput: FBLightweightGeneric {}
-extension FBProcessOutput: FBLightweightGeneric {}
-extension FBSubprocess: FBLightweightGeneric {}
+extension FBFuture: LightweightGeneric {}
+extension FBProcessInput: LightweightGeneric {}
+extension FBProcessOutput: LightweightGeneric {}
+extension FBSubprocess: LightweightGeneric {}
 
-public extension FBLightweightGeneric {
+public extension LightweightGeneric {
 
   /// Re-expresses the erased parameter of a value returned by an Objective-C API. Chaining methods that
   /// cannot name their result type (`failFuture`, `mapReplace:` and neighbours) are declared as bare
   /// `FBFuture *` and import as the `AnyObject` specialisation.
   /// The parameter is erased at runtime, so restoring it cannot fail.
-  func retyped<U: FBLightweightGeneric>(_ type: U.Type = U.self) -> U {
+  func retyped<U: LightweightGeneric>(_ type: U.Type = U.self) -> U {
     unsafeDowncast(self, to: U.self)
   }
 }

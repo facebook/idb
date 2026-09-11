@@ -15,7 +15,7 @@ private let installTypeStringUserEnterprise = "user_enterprise"
 private let installTypeStringUserDevelopment = "user_development"
 
 /// How an application came to be installed.
-@objc public enum FBApplicationInstallType: UInt, Sendable {
+@objc public enum ApplicationInstallType: UInt, Sendable {
   /// The Application is unknown.
   case unknown = 0
   /// The Application is part of the Operating System.
@@ -47,14 +47,14 @@ public struct FBApplicationInstallInfoKey: RawRepresentable, Hashable, Sendable 
 public struct FBInstalledApplication: Hashable, Sendable, CustomStringConvertible {
 
   public let bundle: FBBundleDescriptor
-  public let installType: FBApplicationInstallType
+  public let installType: ApplicationInstallType
   public let dataContainer: String?
 
   public var installTypeString: String {
     FBInstalledApplication.string(from: installType)
   }
 
-  public static func installedApplication(withBundle bundle: FBBundleDescriptor, installType: FBApplicationInstallType, dataContainer: String?) -> FBInstalledApplication {
+  public static func installedApplication(withBundle bundle: FBBundleDescriptor, installType: ApplicationInstallType, dataContainer: String?) -> FBInstalledApplication {
     FBInstalledApplication(bundle: bundle, installType: installType, dataContainer: dataContainer)
   }
 
@@ -62,7 +62,7 @@ public struct FBInstalledApplication: Hashable, Sendable, CustomStringConvertibl
     FBInstalledApplication(bundle: bundle, installTypeString: installTypeString, signerIdentity: signerIdentity, dataContainer: dataContainer)
   }
 
-  public init(bundle: FBBundleDescriptor, installType: FBApplicationInstallType, dataContainer: String?) {
+  public init(bundle: FBBundleDescriptor, installType: ApplicationInstallType, dataContainer: String?) {
     self.bundle = bundle
     self.installType = installType
     self.dataContainer = dataContainer
@@ -92,7 +92,7 @@ public struct FBInstalledApplication: Hashable, Sendable, CustomStringConvertibl
 
   // MARK: - Install Type Mapping
 
-  public static func string(from installType: FBApplicationInstallType) -> String {
+  public static func string(from installType: ApplicationInstallType) -> String {
     switch installType {
     case .user: return installTypeStringUser
     case .userDevelopment: return installTypeStringUserDevelopment
@@ -104,7 +104,7 @@ public struct FBInstalledApplication: Hashable, Sendable, CustomStringConvertibl
     }
   }
 
-  public static func installType(from installTypeString: String?, signerIdentity: String?) -> FBApplicationInstallType {
+  public static func installType(from installTypeString: String?, signerIdentity: String?) -> ApplicationInstallType {
     guard let installTypeString = installTypeString?.lowercased() else {
       return .unknown
     }

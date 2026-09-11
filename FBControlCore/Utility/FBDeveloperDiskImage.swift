@@ -15,7 +15,7 @@ private func scoreVersions(_ current: OperatingSystemVersion, _ target: Operatin
   return major + minor
 }
 
-enum FBDeveloperDiskImageError: Error {
+enum DeveloperDiskImageError: Error {
   case symbolsNotFound(buildVersion: String, searched: [String])
   case noImagesProvided
   case noSuitableImage(bestDescription: String, majorVersion: Int, minorVersion: Int)
@@ -23,7 +23,7 @@ enum FBDeveloperDiskImageError: Error {
   case signatureLoadFailed(path: String)
 }
 
-extension FBDeveloperDiskImageError: LocalizedError {
+extension DeveloperDiskImageError: LocalizedError {
   public var errorDescription: String? {
     switch self {
     case let .symbolsNotFound(buildVersion, searched):
@@ -89,11 +89,11 @@ public struct InstalledDeveloperDiskImages: DeveloperDiskImageProviding {
   private static func diskImage(atPath path: String, xcodeVersion: OperatingSystemVersion) throws -> FBDeveloperDiskImage {
     let diskImagePath = (path as NSString).appendingPathComponent("DeveloperDiskImage.dmg")
     if !FileManager.default.fileExists(atPath: diskImagePath) {
-      throw FBDeveloperDiskImageError.imageMissing(path: diskImagePath)
+      throw DeveloperDiskImageError.imageMissing(path: diskImagePath)
     }
     let signaturePath = diskImagePath + ".signature"
     guard let signature = try? Data(contentsOf: URL(fileURLWithPath: signaturePath)) else {
-      throw FBDeveloperDiskImageError.signatureLoadFailed(path: signaturePath)
+      throw DeveloperDiskImageError.signatureLoadFailed(path: signaturePath)
     }
     let version = FBOSVersion.operatingSystemVersion(fromName: (path as NSString).lastPathComponent)
     return FBDeveloperDiskImage(diskImagePath: diskImagePath, signature: signature, version: version, xcodeVersion: xcodeVersion)
@@ -160,12 +160,12 @@ public struct FBDeveloperDiskImage: Sendable, CustomStringConvertible {
         return path
       }
     }
-    throw FBDeveloperDiskImageError.symbolsNotFound(buildVersion: buildVersion, searched: paths)
+    throw DeveloperDiskImageError.symbolsNotFound(buildVersion: buildVersion, searched: paths)
   }
 
   public static func bestImage(forImages images: [FBDeveloperDiskImage], targetVersion: OperatingSystemVersion, logger: (any FBControlCoreLogger)?) throws -> FBDeveloperDiskImage {
     if images.isEmpty {
-      throw FBDeveloperDiskImageError.noImagesProvided
+      throw DeveloperDiskImageError.noImagesProvided
     }
 
     let sorted = images.sorted { left, right in
@@ -184,7 +184,7 @@ public struct FBDeveloperDiskImage: Sendable, CustomStringConvertible {
       logger?.log("Found the closest match for \(targetVersion.majorVersion).\(targetVersion.minorVersion) at \(best)")
       return best
     }
-    throw FBDeveloperDiskImageError.noSuitableImage(bestDescription: String(describing: best), majorVersion: targetVersion.majorVersion, minorVersion: targetVersion.minorVersion)
+    throw DeveloperDiskImageError.noSuitableImage(bestDescription: String(describing: best), majorVersion: targetVersion.majorVersion, minorVersion: targetVersion.minorVersion)
   }
 
   public var description: String {

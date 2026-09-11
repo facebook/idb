@@ -17,7 +17,7 @@ public enum FBUIAutomationBackendName: String, Sendable, Encodable, CaseIterable
 }
 
 /// The space an element frame is expressed in.
-public enum FBAccessibilityCoordinateSpace: String, Sendable, Encodable {
+public enum AccessibilityCoordinateSpace: String, Sendable, Encodable {
   case screen
 }
 
@@ -82,10 +82,10 @@ public struct FBAccessibilityScreenInfo: Sendable, Equatable, Encodable {
 
   public let width: Double
   public let height: Double
-  public let coordinateSpace: FBAccessibilityCoordinateSpace
+  public let coordinateSpace: AccessibilityCoordinateSpace
 
   /// Nil for a non-finite bound: JSON cannot represent it, and encoding it would fail the whole read.
-  public init?(width: Double, height: Double, coordinateSpace: FBAccessibilityCoordinateSpace = .screen) {
+  public init?(width: Double, height: Double, coordinateSpace: AccessibilityCoordinateSpace = .screen) {
     guard width.isFinite, height.isFinite else {
       return nil
     }

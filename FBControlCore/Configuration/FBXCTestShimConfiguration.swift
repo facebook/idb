@@ -29,7 +29,7 @@ private enum CanonicalShim: CaseIterable {
   }
 }
 
-enum FBXCTestShimError: Error {
+enum XCTestShimError: Error {
   case shimMissing(path: String)
   case shimUnsigned(path: String, underlying: Error)
   case searchPathUnresolvable
@@ -37,7 +37,7 @@ enum FBXCTestShimError: Error {
   case shimsMissingInDirectory(shimNames: [String], directory: String, underlying: Error)
 }
 
-extension FBXCTestShimError: LocalizedError {
+extension XCTestShimError: LocalizedError {
   public var errorDescription: String? {
     switch self {
     case let .shimMissing(path):
@@ -71,7 +71,7 @@ public struct FBXCTestShimConfiguration: Sendable {
   private static func pathForCanonicallyNamedShim(_ shim: CanonicalShim, inDirectory directory: String) async throws -> String {
     let shimPath = (directory as NSString).appendingPathComponent(shim.filename)
     guard FileManager.default.fileExists(atPath: shimPath) else {
-      throw FBXCTestShimError.shimMissing(path: shimPath)
+      throw XCTestShimError.shimMissing(path: shimPath)
     }
     guard shim.codesigningRequired else {
       return shimPath
@@ -80,25 +80,25 @@ public struct FBXCTestShimConfiguration: Sendable {
     do {
       _ = try await codesign.cdHashForBundle(atPath: shimPath)
     } catch {
-      throw FBXCTestShimError.shimUnsigned(path: shimPath, underlying: error)
+      throw XCTestShimError.shimUnsigned(path: shimPath, underlying: error)
     }
     return shimPath
   }
 
   public static func findShimDirectory() async throws -> String {
     guard let searchPath = BundledResources.directoryPath() else {
-      throw FBXCTestShimError.searchPathUnresolvable
+      throw XCTestShimError.searchPathUnresolvable
     }
     do {
       return try await confirmExistenceOfRequiredShims(inDirectory: searchPath)
     } catch {
-      throw FBXCTestShimError.shimsMissingInDirectory(shimNames: CanonicalShim.allCases.map(\.filename), directory: searchPath, underlying: error)
+      throw XCTestShimError.shimsMissingInDirectory(shimNames: CanonicalShim.allCases.map(\.filename), directory: searchPath, underlying: error)
     }
   }
 
   private static func confirmExistenceOfRequiredShims(inDirectory directory: String) async throws -> String {
     guard FileManager.default.fileExists(atPath: directory) else {
-      throw FBXCTestShimError.shimDirectoryMissing(directory: directory)
+      throw XCTestShimError.shimDirectoryMissing(directory: directory)
     }
     async let iOSSimulatorShim = pathForCanonicallyNamedShim(.iOSSimulatorTest, inDirectory: directory)
     async let macShim = pathForCanonicallyNamedShim(.macTest, inDirectory: directory)

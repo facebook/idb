@@ -7,7 +7,7 @@
 
 import Foundation
 
-enum FBBundleDescriptorError: Error {
+enum BundleDescriptorError: Error {
   case binaryPathUnavailable(bundlePath: String)
   case bundleLoadFailed(path: String)
   case bundleIdentifierUnavailable(name: String, path: String)
@@ -15,7 +15,7 @@ enum FBBundleDescriptorError: Error {
   case multipleApplicationsInIPA(count: Int, found: [String])
 }
 
-extension FBBundleDescriptorError: LocalizedError {
+extension BundleDescriptorError: LocalizedError {
   public var errorDescription: String? {
     switch self {
     case let .binaryPathUnavailable(bundlePath):
@@ -80,7 +80,7 @@ public struct FBBundleDescriptor: Hashable, Sendable, CustomStringConvertible {
 
   private static func binaryForBundle(_ bundle: Bundle) throws -> FBBinaryDescriptor {
     guard let binaryPath = bundle.executablePath else {
-      throw FBBundleDescriptorError.binaryPathUnavailable(bundlePath: bundle.bundlePath)
+      throw BundleDescriptorError.binaryPathUnavailable(bundlePath: bundle.bundlePath)
     }
     return try FBBinaryDescriptor.binary(withPath: binaryPath)
   }
@@ -116,11 +116,11 @@ public struct FBBundleDescriptor: Hashable, Sendable, CustomStringConvertible {
 
   private static func bundleFromPath(_ path: String, fallbackIdentifier: Bool) throws -> FBBundleDescriptor {
     guard let bundle = Bundle(path: path) else {
-      throw FBBundleDescriptorError.bundleLoadFailed(path: path)
+      throw BundleDescriptorError.bundleLoadFailed(path: path)
     }
     let bundleName = bundleNameForBundle(bundle)
     guard let identifier = bundle.bundleIdentifier ?? (fallbackIdentifier ? bundleName : nil) else {
-      throw FBBundleDescriptorError.bundleIdentifierUnavailable(name: (path as NSString).lastPathComponent, path: path)
+      throw BundleDescriptorError.bundleIdentifierUnavailable(name: (path as NSString).lastPathComponent, path: path)
     }
     let binary = try binaryForBundle(bundle)
     return FBBundleDescriptor(name: bundleName, identifier: identifier, path: path, binary: binary)

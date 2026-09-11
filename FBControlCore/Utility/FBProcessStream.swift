@@ -8,7 +8,7 @@
 import Foundation
 
 /// A Protocol that wraps the standard stream stdout, stderr, stdin.
-@objc public protocol FBStandardStream: NSObjectProtocol {
+@objc public protocol StandardStream: NSObjectProtocol {
   /// Attaches to the output, returning an FBProcessStreamAttachment.
   func attach() -> FBFuture<FBProcessStreamAttachment>
 
@@ -17,7 +17,7 @@ import Foundation
 }
 
 /// Provides information about the state of a stream.
-@objc public protocol FBStandardStreamTransfer: NSObjectProtocol {
+@objc public protocol StandardStreamTransfer: NSObjectProtocol {
   /// The number of bytes transferred.
   var bytesTransferred: Int { get }
 
@@ -39,7 +39,7 @@ import Foundation
 
 /// Process output that can be redirected to a file path or to a data consumer.
 @objc(FBProcessOutput)
-public protocol FBProcessOutputProtocol: NSObjectProtocol {
+public protocol ProcessOutputProtocol: NSObjectProtocol {
   /// Allows the receiver to be written to via a file instead of via a file handle.
   func providedThroughFile() -> FBFuture<FBProcessFileOutput>
 
@@ -49,5 +49,5 @@ public protocol FBProcessOutputProtocol: NSObjectProtocol {
 
 // MARK: - Conformance extensions for ObjC classes
 
-extension FBProcessOutput: FBStandardStream, FBProcessOutputProtocol {}
-extension FBProcessInput: FBStandardStream {}
+extension FBProcessOutput: StandardStream, ProcessOutputProtocol {}
+extension FBProcessInput: StandardStream {}

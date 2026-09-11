@@ -7,7 +7,7 @@
 
 import Foundation
 
-enum FBFileWriterError: Error, LocalizedError {
+enum FileWriterError: Error, LocalizedError {
   case openFailed(path: String, message: String)
   case ioChannelCreationFailed(fileDescriptor: Int32)
 
@@ -43,7 +43,7 @@ public class FBFileWriter: NSObject {
   private static func fileDescriptor(forPath filePath: String) throws -> Int32 {
     let fd = open(filePath, O_WRONLY | O_CREAT, 0o644)
     if fd == -1 {
-      throw FBFileWriterError.openFailed(path: filePath, message: String(cString: strerror(errno)))
+      throw FileWriterError.openFailed(path: filePath, message: String(cString: strerror(errno)))
     }
     return fd
   }
@@ -124,7 +124,7 @@ public class FBFileWriter: NSObject {
 
 // MARK: - FileWriter_Null
 
-private class FileWriter_Null: FBFileWriter, FBDispatchDataConsumer, FBDataConsumerLifecycle {
+private class FileWriter_Null: FBFileWriter, DispatchDataConsumer, FBDataConsumerLifecycle {
 
   func consumeData(_ data: __DispatchData) {
   }
@@ -140,7 +140,7 @@ private class FileWriter_Null: FBFileWriter, FBDispatchDataConsumer, FBDataConsu
 
 // MARK: - FileWriter_Sync
 
-private class FileWriter_Sync: FBFileWriter, FBDispatchDataConsumer, FBDataConsumerLifecycle, FBDataConsumerSync {
+private class FileWriter_Sync: FBFileWriter, DispatchDataConsumer, FBDataConsumerLifecycle, FBDataConsumerSync {
 
   func consumeData(_ data: __DispatchData) {
     let dispatchData = data as DispatchData
@@ -164,7 +164,7 @@ private class FileWriter_Sync: FBFileWriter, FBDispatchDataConsumer, FBDataConsu
 
 // MARK: - FileWriter_Async
 
-private class FileWriter_Async: FBFileWriter, FBDispatchDataConsumer, FBDataConsumerLifecycle {
+private class FileWriter_Async: FBFileWriter, DispatchDataConsumer, FBDataConsumerLifecycle {
 
   let writeQueue: DispatchQueue
   var io: DispatchIO?
@@ -207,7 +207,7 @@ private class FileWriter_Async: FBFileWriter, FBDispatchDataConsumer, FBDataCons
       finishedConsuming.resolve(withResult: NSNull())
     }
     guard io != nil else {
-      throw FBFileWriterError.ioChannelCreationFailed(fileDescriptor: fileDescriptor)
+      throw FileWriterError.ioChannelCreationFailed(fileDescriptor: fileDescriptor)
     }
 
     io?.setLimit(lowWater: 1)

@@ -22,7 +22,7 @@ private func processIsTranslated() -> Int32 {
   return ret
 }
 
-enum FBArchitectureAdapterError: Error, LocalizedError {
+enum ArchitectureAdapterError: Error, LocalizedError {
   case noCompatibleArchitecture(requested: [String], host: [String])
   case timedOut(seconds: Double, waitingFor: String)
   case verificationFailed(architecture: String, binary: String)
@@ -68,7 +68,7 @@ public enum FBArchitectureProcessAdapter {
     temporaryDirectory: URL
   ) async throws -> FBProcessSpawnConfiguration {
     guard let architecture = selectArchitecture(from: requestedArchitectures, supportedArchitectures: hostArchitectures) else {
-      throw FBArchitectureAdapterError.noCompatibleArchitecture(requested: requestedArchitectures.map(\.rawValue), host: hostArchitectures.map(\.rawValue))
+      throw ArchitectureAdapterError.noCompatibleArchitecture(requested: requestedArchitectures.map(\.rawValue), host: hostArchitectures.map(\.rawValue))
     }
 
     try await verifyArchitectureAvailable(processConfiguration.launchPath, architecture: architecture)
@@ -100,7 +100,7 @@ public enum FBArchitectureProcessAdapter {
         .run(output: .closed, error: .closed, exitPolicy: .any)
     }
     try result.checkExitedCleanly(
-      orThrow: FBArchitectureAdapterError.verificationFailed(architecture: architecture.rawValue, binary: binary))
+      orThrow: ArchitectureAdapterError.verificationFailed(architecture: architecture.rawValue, binary: binary))
   }
 
   private static func extractArchitecture(
@@ -118,7 +118,7 @@ public enum FBArchitectureProcessAdapter {
           exitPolicy: .any)
     }
     try result.checkExitedCleanly(
-      orThrow: FBArchitectureAdapterError.extractionFailed(architecture: architecture.rawValue, binary: launchPath))
+      orThrow: ArchitectureAdapterError.extractionFailed(architecture: architecture.rawValue, binary: launchPath))
   }
 
   /// After we lipoed out arch from binary, new binary placed into temporary folder.
@@ -146,7 +146,7 @@ public enum FBArchitectureProcessAdapter {
       try await Subprocess(executable: "/usr/bin/otool", arguments: ["-l", binary])
         .run(output: .string, error: .closed, exitPolicy: .any)
     }
-    try result.checkExitedCleanly(orThrow: FBArchitectureAdapterError.otoolFailed(binary: binary))
+    try result.checkExitedCleanly(orThrow: ArchitectureAdapterError.otoolFailed(binary: binary))
     return result.standardOutput
   }
 
@@ -165,7 +165,7 @@ public enum FBArchitectureProcessAdapter {
       }
       group.addTask {
         try await Task.sleep(for: .seconds(seconds))
-        throw FBArchitectureAdapterError.timedOut(seconds: seconds, waitingFor: description)
+        throw ArchitectureAdapterError.timedOut(seconds: seconds, waitingFor: description)
       }
       guard let result = try await group.next() else {
         preconditionFailure("The task group has two children; next() cannot be empty")

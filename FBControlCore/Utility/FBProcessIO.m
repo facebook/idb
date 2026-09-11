@@ -230,7 +230,7 @@
           }];
 }
 
-- (FBFuture *)wrapAttachment:(id<FBStandardStream>)stream
+- (FBFuture *)wrapAttachment:(id<StandardStream>)stream
 {
   if (!stream) {
     return [FBFuture futureWithResult:@YES];
@@ -258,10 +258,10 @@
 
 + (NSError *)extractErrorFromStream:(id)stream
 {
-  if (![stream conformsToProtocol:@protocol(FBStandardStreamTransfer)]) {
+  if (![stream conformsToProtocol:@protocol(StandardStreamTransfer)]) {
     return nil;
   }
-  return ((id<FBStandardStreamTransfer>) stream).streamError;
+  return ((id<StandardStreamTransfer>) stream).streamError;
 }
 
 - (FBFuture<NSNull *> *)detachRepropogate:(NSError *)error

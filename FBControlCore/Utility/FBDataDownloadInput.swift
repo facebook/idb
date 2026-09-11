@@ -61,7 +61,7 @@ extension FBDataDownloadInput: URLSessionDataDelegate {
     guard httpResponse.statusCode == 200 else {
       // Without this the body of an error page is piped onward as though it were
       // the payload, and the caller is told it has a malformed archive.
-      let error = FBInstallError.httpStatus(
+      let error = InstallError.httpStatus(
         url: dataTask.originalRequest?.url ?? httpResponse.url,
         statusCode: httpResponse.statusCode)
       logger.error().log(error.description)
@@ -82,7 +82,7 @@ extension FBDataDownloadInput: URLSessionDataDelegate {
       // First resolution wins, so a cancellation triggered by a rejected response
       // does not displace the HTTP status that caused it.
       completedFuture.resolveWithError(
-        FBInstallError.transferFailed(url: task.originalRequest?.url, underlying: error))
+        InstallError.transferFailed(url: task.originalRequest?.url, underlying: error))
     } else {
       _ = completedFuture.resolve(withResult: NSNull())
     }

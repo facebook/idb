@@ -42,8 +42,8 @@ typedef NS_ENUM(NSUInteger, FBProcessStreamAttachmentMode) {
 
 @end
 
-@protocol FBStandardStream;
-@protocol FBStandardStreamTransfer;
+@protocol StandardStream;
+@protocol StandardStreamTransfer;
 @protocol FBProcessFileOutput;
 @protocol FBProcessOutput;
 

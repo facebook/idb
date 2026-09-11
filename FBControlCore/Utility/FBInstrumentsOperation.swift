@@ -18,14 +18,14 @@ private let LaunchRetryInterval: UInt64 = 100 * NSEC_PER_MSEC
 /// Fail instruments if the launch error message appears within this timeout.
 public let DefaultInstrumentsLaunchErrorTimeout: TimeInterval = 15.0
 
-enum FBInstrumentsError: Error {
+enum InstrumentsError: Error {
   case outputDirectoryCreationFailed(underlying: Error)
   case startupFailed(logs: [String])
   case launchTimedOut(timeout: TimeInterval)
   case exitedWithFailure(exitCode: NSNumber)
 }
 
-extension FBInstrumentsError: LocalizedError {
+extension InstrumentsError: LocalizedError {
   public var errorDescription: String? {
     switch self {
     case let .outputDirectoryCreationFailed(underlying):
@@ -67,7 +67,7 @@ final class InstrumentsConsumer: NSObject, FBDataConsumer {
         hasStartedLoadingTemplate.resolve(withResult: NSNull())
       }
       if logLine.contains("Instruments Trace Complete"), !hasStoppedRecording.hasCompleted {
-        hasStoppedRecording.resolveWithError(FBInstrumentsError.startupFailed(logs: logs.lines))
+        hasStoppedRecording.resolveWithError(InstrumentsError.startupFailed(logs: logs.lines))
       }
     }
     super.init()
@@ -114,7 +114,7 @@ public final class FBInstrumentsOperation {
       try Task.checkCancellation()
       let remaining = deadline.timeIntervalSinceNow
       guard remaining > 0 else {
-        throw FBInstrumentsError.launchTimedOut(timeout: configuration.timings.launchRetryTimeout)
+        throw InstrumentsError.launchTimedOut(timeout: configuration.timings.launchRetryTimeout)
       }
       do {
         return try await startSingleAttempt(target: target, configuration: configuration, logger: logger, attemptTimeout: remaining)
@@ -156,7 +156,7 @@ public final class FBInstrumentsOperation {
     do {
       try FileManager.default.createDirectory(atPath: traceDir, withIntermediateDirectories: false, attributes: nil)
     } catch {
-      throw FBInstrumentsError.outputDirectoryCreationFailed(underlying: error)
+      throw InstrumentsError.outputDirectoryCreationFailed(underlying: error)
     }
     let traceFile = (traceDir as NSString).appendingPathComponent("trace.trace")
 
@@ -209,7 +209,7 @@ public final class FBInstrumentsOperation {
     _ = try? await bridgeFBFuture(task.sendSignal(SIGINT, backingOffToKillWithTimeout: configuration.timings.terminateTimeout, logger: logger))
     let exitCode = try await bridgeFBFuture(task.exitCode)
     guard exitCode == 0 as NSNumber else {
-      throw FBInstrumentsError.exitedWithFailure(exitCode: exitCode)
+      throw InstrumentsError.exitedWithFailure(exitCode: exitCode)
     }
     return traceFile
   }

@@ -13,7 +13,7 @@ public final class FBXcodeConfiguration: NSObject {
   // MARK: - Public Properties
 
   @objc public static let developerDirectory: String = {
-    (try? FBXcodeDirectory.resolveDeveloperDirectory()) ?? ""
+    (try? XcodeDirectory.resolveDeveloperDirectory()) ?? ""
   }()
 
   @objc public static let contentsDirectory: String = {

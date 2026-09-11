@@ -14,7 +14,7 @@ public enum FBApplicationLaunchMode: UInt {
 }
 
 @objc
-public final class FBApplicationLaunchConfiguration: FBProcessLaunchConfiguration {
+public final class FBApplicationLaunchConfiguration: ProcessLaunchConfiguration {
 
   @objc public let bundleID: String
   @objc public let bundleName: String?

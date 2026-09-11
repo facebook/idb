@@ -101,7 +101,7 @@
 
 @end
 
-@interface FBDataBuffer_Terminal_Forwarder : NSObject <FBDataBuffer_Forwarder>
+@interface FBDataBuffer_Terminal_Forwarder : NSObject <DataBuffer_Forwarder>
 
 @property (nonatomic, readonly, copy) NSData *terminal;
 @property (nullable, nonatomic, readonly, strong) dispatch_queue_t queue;
@@ -145,7 +145,7 @@
 
 @end
 
-@interface FBDataBuffer_Header_Forwarder : NSObject <FBDataBuffer_Forwarder>
+@interface FBDataBuffer_Header_Forwarder : NSObject <DataBuffer_Forwarder>
 
 @property (nonatomic, readonly, assign) NSUInteger headerLength;
 @property (nonatomic, readonly, strong) NSUInteger (^derivedLength)(NSData *);
@@ -198,9 +198,9 @@
 
 @end
 
-@interface FBDataBuffer_Consumable : FBDataBuffer_Accumilating <FBConsumableBuffer, FBNotifyingBuffer>
+@interface FBDataBuffer_Consumable : FBDataBuffer_Accumilating <FBConsumableBuffer, NotifyingBuffer>
 
-@property (nullable, nonatomic, readwrite, strong) id<FBDataBuffer_Forwarder> forwarder;
+@property (nullable, nonatomic, readwrite, strong) id<DataBuffer_Forwarder> forwarder;
 
 @end
 
@@ -294,7 +294,7 @@
 
 - (BOOL)consume:(id<FBDataConsumer>)consumer onQueue:(dispatch_queue_t)queue untilTerminal:(NSData *)terminal error:(NSError **)error
 {
-  id<FBDataBuffer_Forwarder> forwarder = [[FBDataBuffer_Terminal_Forwarder alloc] initWithTerminal:terminal consumer:consumer queue:queue];
+  id<DataBuffer_Forwarder> forwarder = [[FBDataBuffer_Terminal_Forwarder alloc] initWithTerminal:terminal consumer:consumer queue:queue];
   return [self attachForwardingConsumer:forwarder error:error];
 }
 
@@ -321,7 +321,7 @@
     [future resolveWithResult:data];
   }];
 
-  id<FBDataBuffer_Forwarder> forwarder = [[FBDataBuffer_Header_Forwarder alloc] initWithHeaderLength:headerLength derivedLength:derivedLength consumer:consumer queue:nil];
+  id<DataBuffer_Forwarder> forwarder = [[FBDataBuffer_Header_Forwarder alloc] initWithHeaderLength:headerLength derivedLength:derivedLength consumer:consumer queue:nil];
   NSError *error = nil;
   if (![self attachForwardingConsumer:forwarder error:&error]) {
     return [FBFuture futureWithError:error];
@@ -341,7 +341,7 @@
 
 #pragma mark Private
 
-- (BOOL)attachForwardingConsumer:(id<FBDataBuffer_Forwarder>)forwarder error:(NSError **)error
+- (BOOL)attachForwardingConsumer:(id<DataBuffer_Forwarder>)forwarder error:(NSError **)error
 {
   @synchronized(self) {
     if (self.forwarder) {
@@ -357,7 +357,7 @@
 
 - (nullable id<FBDataConsumer>)removeForwardingConsumer
 {
-  id<FBDataBuffer_Forwarder> forwarder = self.forwarder;
+  id<DataBuffer_Forwarder> forwarder = self.forwarder;
   self.forwarder = nil;
   return forwarder.consumer;
 }
@@ -394,12 +394,12 @@
   return [self consumableBufferForwardingToConsumer:nil onQueue:nil terminal:nil];
 }
 
-+ (id<FBNotifyingBuffer>)notifyingBuffer
++ (id<NotifyingBuffer>)notifyingBuffer
 {
   return [self consumableBufferForwardingToConsumer:nil onQueue:nil terminal:nil];
 }
 
-+ (id<FBNotifyingBuffer>)consumableBufferForwardingToConsumer:(id<FBDataConsumer>)consumer onQueue:(nullable dispatch_queue_t)queue terminal:(NSData *)terminal
++ (id<NotifyingBuffer>)consumableBufferForwardingToConsumer:(id<FBDataConsumer>)consumer onQueue:(nullable dispatch_queue_t)queue terminal:(NSData *)terminal
 {
   FBDataBuffer_Terminal_Forwarder *forwarder = nil;
   if (consumer) {

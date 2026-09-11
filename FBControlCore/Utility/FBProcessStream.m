@@ -407,7 +407,7 @@ static NSTimeInterval const ProcessDetachDrainTimeout = 4;
   return self;
 }
 
-#pragma mark FBStandardStream
+#pragma mark StandardStream
 
 - (FBFuture<FBProcessStreamAttachment *> *)attach
 {
@@ -463,7 +463,7 @@ static NSTimeInterval const ProcessDetachDrainTimeout = 4;
 
 @implementation FBProcessOutput_Null
 
-#pragma mark FBStandardStream
+#pragma mark StandardStream
 
 - (FBFuture<FBProcessStreamAttachment *> *)attach
 {
@@ -503,7 +503,7 @@ static NSTimeInterval const ProcessDetachDrainTimeout = 4;
 
 @implementation FBProcessOutput_Pipe
 
-#pragma mark FBStandardStream
+#pragma mark StandardStream
 
 - (FBFuture<FBProcessStreamAttachment *> *)attach
 {
@@ -578,7 +578,7 @@ static NSTimeInterval const ProcessDetachDrainTimeout = 4;
   return self;
 }
 
-#pragma mark FBStandardStream
+#pragma mark StandardStream
 
 - (NSInputStream *)contents
 {
@@ -668,7 +668,7 @@ static NSTimeInterval const ProcessDetachDrainTimeout = 4;
   return self;
 }
 
-#pragma mark FBStandardStream
+#pragma mark StandardStream
 
 - (FBFuture<FBProcessStreamAttachment *> *)attach
 {
@@ -772,7 +772,7 @@ static NSTimeInterval const ProcessDetachDrainTimeout = 4;
   return self;
 }
 
-#pragma mark FBStandardStream
+#pragma mark StandardStream
 
 - (id<FBControlCoreLogger>)contents
 {
@@ -804,7 +804,7 @@ static NSTimeInterval const ProcessDetachDrainTimeout = 4;
   return self;
 }
 
-#pragma mark FBStandardStream
+#pragma mark StandardStream
 
 - (FBFuture<FBProcessStreamAttachment *> *)attach
 {
@@ -891,7 +891,7 @@ static NSTimeInterval const ProcessDetachDrainTimeout = 4;
   return self;
 }
 
-#pragma mark FBStandardStream
+#pragma mark StandardStream
 
 - (NSData *)contents
 {
@@ -909,7 +909,7 @@ static NSTimeInterval const ProcessDetachDrainTimeout = 4;
 
 @implementation FBProcessOutput_String
 
-#pragma mark FBStandardStream
+#pragma mark StandardStream
 
 - (NSString *)contents
 {
@@ -958,7 +958,7 @@ static NSTimeInterval const ProcessDetachDrainTimeout = 4;
 
 @class NSOutputStream_FBProcessInput;
 
-@interface FBProcessInput_InputStream : FBProcessInput <FBStandardStreamTransfer>
+@interface FBProcessInput_InputStream : FBProcessInput <StandardStreamTransfer>
 
 @property (nonatomic, readonly, strong) NSOutputStream_FBProcessInput *stream;
 @property (nonatomic, readonly, strong) FBMutableFuture<NSNumber *> *writeFuture;
@@ -1013,7 +1013,7 @@ static NSTimeInterval const ProcessDetachDrainTimeout = 4;
   return self;
 }
 
-#pragma mark FBStandardStream
+#pragma mark StandardStream
 
 - (FBFuture<FBProcessStreamAttachment *> *)attach
 {
@@ -1080,7 +1080,7 @@ static NSTimeInterval const ProcessDetachDrainTimeout = 4;
 
 @implementation FBProcessInput_Consumer
 
-#pragma mark FBStandardStream
+#pragma mark StandardStream
 
 - (id<FBDataConsumer>)contents
 {
@@ -1156,7 +1156,7 @@ static NSTimeInterval const ProcessDetachDrainTimeout = 4;
   return self;
 }
 
-#pragma mark FBStandardStream
+#pragma mark StandardStream
 
 - (FBFuture<FBProcessStreamAttachment *> *)attach
 {
@@ -1202,7 +1202,7 @@ static NSTimeInterval const ProcessDetachDrainTimeout = 4;
   return self;
 }
 
-#pragma mark FBStandardStream
+#pragma mark StandardStream
 
 - (NSOutputStream *)contents
 {
@@ -1225,7 +1225,7 @@ static NSTimeInterval const ProcessDetachDrainTimeout = 4;
   return @"Input to NSOutputStream";
 }
 
-#pragma mark FBStandardStreamTransfer
+#pragma mark StandardStreamTransfer
 
 - (ssize_t)bytesTransferred
 {

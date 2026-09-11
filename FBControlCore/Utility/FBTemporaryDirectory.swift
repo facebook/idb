@@ -7,7 +7,7 @@
 
 import Foundation
 
-enum FBTemporaryDirectoryError: Error, LocalizedError {
+enum TemporaryDirectoryError: Error, LocalizedError {
   case creationFailed(directory: URL, underlying: Error)
 
   public var errorDescription: String? {
@@ -90,7 +90,7 @@ public struct FBTemporaryDirectory: Equatable {
     do {
       try FileManager.default.createDirectory(at: tempDirectory, withIntermediateDirectories: true, attributes: nil)
     } catch {
-      throw FBTemporaryDirectoryError.creationFailed(directory: tempDirectory, underlying: error)
+      throw TemporaryDirectoryError.creationFailed(directory: tempDirectory, underlying: error)
     }
     defer { delete(tempDirectory) }
     return try await body(tempDirectory)

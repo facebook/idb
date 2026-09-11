@@ -34,7 +34,7 @@ public protocol FBContainedFile: Sendable {
   var pathMapping: [String: String]? { get }
 }
 
-enum FBFileContainerError: Error {
+enum FileContainerError: Error {
   case copyIntoContainerFailed(source: String, destination: String, underlying: Error)
   case sourceDoesNotExist(source: String)
   case temporaryDirectoryCreationFailed(underlying: Error)
@@ -51,7 +51,7 @@ enum FBFileContainerError: Error {
   case invalidRootPath(component: String, available: [String])
 }
 
-extension FBFileContainerError: LocalizedError {
+extension FileContainerError: LocalizedError {
   public var errorDescription: String? {
     switch self {
     case let .copyIntoContainerFailed(source, destination, underlying):
@@ -110,7 +110,7 @@ public final class FileContainerTailOperation {
 /// File container backed by a synchronous `FBContainedFile`. Each operation
 /// resolves the target path and runs the synchronous file work on a serial
 /// queue.
-public final class FBContainedFile_ContainedRoot: AsyncFileContainer {
+public final class ContainedFile_ContainedRoot: AsyncFileContainer {
 
   private let rootFile: any FBContainedFile
   private let queue: DispatchQueue
@@ -140,7 +140,7 @@ public final class FBContainedFile_ContainedRoot: AsyncFileContainer {
           do {
             try destination.populate(withContentsOfHostPath: sourcePath)
           } catch {
-            throw FBFileContainerError.copyIntoContainerFailed(source: sourcePath, destination: destinationPath, underlying: error)
+            throw FileContainerError.copyIntoContainerFailed(source: sourcePath, destination: destinationPath, underlying: error)
           }
           continuation.resume(returning: ())
         } catch {
@@ -158,14 +158,14 @@ public final class FBContainedFile_ContainedRoot: AsyncFileContainer {
           let source = try rootFile.file(byAppendingPathComponent: sourcePath)
           let (sourceExists, sourceIsDirectory) = source.fileExists()
           guard sourceExists else {
-            throw FBFileContainerError.sourceDoesNotExist(source: String(describing: source))
+            throw FileContainerError.sourceDoesNotExist(source: String(describing: source))
           }
           var dstPath = destinationPath
           if !sourceIsDirectory {
             do {
               try FileManager.default.createDirectory(atPath: dstPath, withIntermediateDirectories: true)
             } catch {
-              throw FBFileContainerError.temporaryDirectoryCreationFailed(underlying: error)
+              throw FileContainerError.temporaryDirectoryCreationFailed(underlying: error)
             }
             dstPath = (dstPath as NSString).appendingPathComponent((sourcePath as NSString).lastPathComponent)
           }
@@ -175,13 +175,13 @@ public final class FBContainedFile_ContainedRoot: AsyncFileContainer {
             do {
               try FileManager.default.removeItem(atPath: dstPath)
             } catch {
-              throw FBFileContainerError.removalBeforeOverwriteFailed(path: dstPath, underlying: error)
+              throw FileContainerError.removalBeforeOverwriteFailed(path: dstPath, underlying: error)
             }
           }
           do {
             try source.populateHostPath(withContents: dstPath)
           } catch {
-            throw FBFileContainerError.copyOutOfContainerFailed(source: String(describing: source), destination: dstPath, underlying: error)
+            throw FileContainerError.copyOutOfContainerFailed(source: String(describing: source), destination: dstPath, underlying: error)
           }
           continuation.resume(returning: destinationPath)
         } catch {
@@ -199,7 +199,7 @@ public final class FBContainedFile_ContainedRoot: AsyncFileContainer {
         do {
           let fileToTail = try rootFile.file(byAppendingPathComponent: path)
           guard let hostPath = fileToTail.pathOnHostFileSystem else {
-            throw FBFileContainerError.notOnLocalFilesystem(file: String(describing: fileToTail))
+            throw FileContainerError.notOnLocalFilesystem(file: String(describing: fileToTail))
           }
           continuation.resume(returning: hostPath)
         } catch {
@@ -230,7 +230,7 @@ public final class FBContainedFile_ContainedRoot: AsyncFileContainer {
           do {
             try directory.createDirectory()
           } catch {
-            throw FBFileContainerError.directoryCreationFailed(directory: String(describing: directory), underlying: error)
+            throw FileContainerError.directoryCreationFailed(directory: String(describing: directory), underlying: error)
           }
           continuation.resume(returning: ())
         } catch {
@@ -250,7 +250,7 @@ public final class FBContainedFile_ContainedRoot: AsyncFileContainer {
           do {
             try source.move(to: destination)
           } catch {
-            throw FBFileContainerError.moveFailed(source: String(describing: source), destination: String(describing: destination), underlying: error)
+            throw FileContainerError.moveFailed(source: String(describing: source), destination: String(describing: destination), underlying: error)
           }
           continuation.resume(returning: ())
         } catch {
@@ -269,7 +269,7 @@ public final class FBContainedFile_ContainedRoot: AsyncFileContainer {
           do {
             try file.removeItem()
           } catch {
-            throw FBFileContainerError.removalFailed(path: String(describing: file), underlying: error)
+            throw FileContainerError.removalFailed(path: String(describing: file), underlying: error)
           }
           continuation.resume(returning: ())
         } catch {
@@ -312,19 +312,19 @@ public final class FBFileContainer_ProvisioningProfile: AsyncFileContainer {
   }
 
   public func copy(fromContainer sourcePath: String, toHost destinationPath: String) async throws -> String {
-    throw FBFileContainerError.unsupportedForProvisioningProfiles(operation: #function)
+    throw FileContainerError.unsupportedForProvisioningProfiles(operation: #function)
   }
 
   public func tail(_ path: String, to consumer: any FBDataConsumer) async throws -> FileContainerTailOperation {
-    throw FBFileContainerError.unsupportedForProvisioningProfiles(operation: #function)
+    throw FileContainerError.unsupportedForProvisioningProfiles(operation: #function)
   }
 
   public func createDirectory(_ directoryPath: String) async throws {
-    throw FBFileContainerError.unsupportedForProvisioningProfiles(operation: #function)
+    throw FileContainerError.unsupportedForProvisioningProfiles(operation: #function)
   }
 
   public func move(from sourcePath: String, to destinationPath: String) async throws {
-    throw FBFileContainerError.unsupportedForProvisioningProfiles(operation: #function)
+    throw FileContainerError.unsupportedForProvisioningProfiles(operation: #function)
   }
 
   public func remove(_ path: String) async throws {
@@ -402,7 +402,7 @@ private struct ContainedFile_Host: FBContainedFile, CustomStringConvertible {
 
   func move(to destination: FBContainedFile) throws {
     guard let hostDestination = destination as? ContainedFile_Host else {
-      throw FBFileContainerError.destinationNotOnHostFilesystem(destination: String(describing: destination))
+      throw FileContainerError.destinationNotOnHostFilesystem(destination: String(describing: destination))
     }
     try FileManager.default.moveItem(atPath: path, toPath: hostDestination.path)
   }
@@ -434,7 +434,7 @@ private struct ContainedFile_Mapped_Host: FBContainedFile, CustomStringConvertib
   let mappingPaths: [String: String]
 
   func removeItem() throws {
-    throw FBFileContainerError.unsupportedOnVirtualRoot(operation: #function)
+    throw FileContainerError.unsupportedOnVirtualRoot(operation: #function)
   }
 
   func contentsOfDirectory() throws -> [String] {
@@ -442,11 +442,11 @@ private struct ContainedFile_Mapped_Host: FBContainedFile, CustomStringConvertib
   }
 
   func contentsOfFile() throws -> Data {
-    throw FBFileContainerError.unsupportedOnVirtualRoot(operation: #function)
+    throw FileContainerError.unsupportedOnVirtualRoot(operation: #function)
   }
 
   func createDirectory() throws {
-    throw FBFileContainerError.unsupportedOnVirtualRoot(operation: #function)
+    throw FileContainerError.unsupportedOnVirtualRoot(operation: #function)
   }
 
   func fileExists() -> (exists: Bool, isDirectory: Bool) {
@@ -454,15 +454,15 @@ private struct ContainedFile_Mapped_Host: FBContainedFile, CustomStringConvertib
   }
 
   func move(to destination: FBContainedFile) throws {
-    throw FBFileContainerError.movingUnsupportedOnVirtualRoot
+    throw FileContainerError.movingUnsupportedOnVirtualRoot
   }
 
   func populate(withContentsOfHostPath path: String) throws {
-    throw FBFileContainerError.unsupportedOnVirtualRoot(operation: #function)
+    throw FileContainerError.unsupportedOnVirtualRoot(operation: #function)
   }
 
   func populateHostPath(withContents path: String) throws {
-    throw FBFileContainerError.unsupportedOnVirtualRoot(operation: #function)
+    throw FileContainerError.unsupportedOnVirtualRoot(operation: #function)
   }
 
   func file(byAppendingPathComponent component: String) throws -> FBContainedFile {
@@ -472,7 +472,7 @@ private struct ContainedFile_Mapped_Host: FBContainedFile, CustomStringConvertib
       return self
     }
     guard let firstComponent = pathComponents.first, let mappedPath = mappingPaths[firstComponent] else {
-      throw FBFileContainerError.invalidRootPath(component: pathComponents.first ?? "", available: Array(mappingPaths.keys))
+      throw FileContainerError.invalidRootPath(component: pathComponents.first ?? "", available: Array(mappingPaths.keys))
     }
     let mapped = ContainedFile_Host(path: mappedPath)
     return try mapped.file(byAppendingPathComponent: Self.popFirstPathComponent(pathComponents))
@@ -514,15 +514,15 @@ public enum FBFileContainer {
     ContainedFile_Mapped_Host(mappingPaths: pathMapping)
   }
 
-  public static func fileContainer(forBasePath basePath: String) -> FBContainedFile_ContainedRoot {
+  public static func fileContainer(forBasePath basePath: String) -> ContainedFile_ContainedRoot {
     fileContainer(for: containedFile(forBasePath: basePath))
   }
 
-  public static func fileContainer(forPathMapping pathMapping: [String: String]) -> FBContainedFile_ContainedRoot {
+  public static func fileContainer(forPathMapping pathMapping: [String: String]) -> ContainedFile_ContainedRoot {
     fileContainer(for: containedFile(forPathMapping: pathMapping))
   }
 
-  public static func fileContainer(for containedFile: FBContainedFile) -> FBContainedFile_ContainedRoot {
-    FBContainedFile_ContainedRoot(rootFile: containedFile, queue: DispatchQueue(label: "com.facebook.fbcontrolcore.file_container"))
+  public static func fileContainer(for containedFile: FBContainedFile) -> ContainedFile_ContainedRoot {
+    ContainedFile_ContainedRoot(rootFile: containedFile, queue: DispatchQueue(label: "com.facebook.fbcontrolcore.file_container"))
   }
 }

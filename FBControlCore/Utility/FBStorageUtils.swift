@@ -7,13 +7,13 @@
 
 import Foundation
 
-enum FBStorageUtilsError: Error {
+enum StorageUtilsError: Error {
   case notExactlyOneFileWithExtension(count: Int, fileExtension: String, url: URL)
   case notExactlyOneFile(found: [URL])
   case directoryListFailed(directory: URL, underlying: Error)
 }
 
-extension FBStorageUtilsError: LocalizedError {
+extension StorageUtilsError: LocalizedError {
   public var errorDescription: String? {
     switch self {
     case let .notExactlyOneFileWithExtension(count, fileExtension, url):
@@ -55,7 +55,7 @@ public final class FBStorageUtils {
   public class func findFile(withExtension ext: String, at url: URL) throws -> URL {
     let files = try findFiles(withExtension: ext, at: url)
     guard let file = files.first, files.count == 1 else {
-      throw FBStorageUtilsError.notExactlyOneFileWithExtension(count: files.count, fileExtension: ext, url: url)
+      throw StorageUtilsError.notExactlyOneFileWithExtension(count: files.count, fileExtension: ext, url: url)
     }
     return file
   }
@@ -68,7 +68,7 @@ public final class FBStorageUtils {
   public class func findUniqueFile(inDirectory directory: URL) throws -> URL {
     let filesInDirectory = try files(inDirectory: directory)
     if filesInDirectory.count != 1 {
-      throw FBStorageUtilsError.notExactlyOneFile(found: filesInDirectory)
+      throw StorageUtilsError.notExactlyOneFile(found: filesInDirectory)
     }
     return filesInDirectory[0]
   }
@@ -77,7 +77,7 @@ public final class FBStorageUtils {
     do {
       return try FileManager.default.contentsOfDirectory(at: directory, includingPropertiesForKeys: [.isDirectoryKey], options: [])
     } catch {
-      throw FBStorageUtilsError.directoryListFailed(directory: directory, underlying: error)
+      throw StorageUtilsError.directoryListFailed(directory: directory, underlying: error)
     }
   }
 

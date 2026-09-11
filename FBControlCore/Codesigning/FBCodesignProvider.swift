@@ -7,7 +7,7 @@
 
 import Foundation
 
-enum FBCodesignError: Error, LocalizedError {
+enum CodesignError: Error, LocalizedError {
   case signingFailed(exitCode: NSNumber, stdOut: String, stdErr: String)
   case cdHashCheckFailed(exitCode: NSNumber, stdOut: String, stdErr: String)
   case cdHashNotFound(output: String)
@@ -71,7 +71,7 @@ public final class FBCodesignProvider {
     )
     .run(exitPolicy: .any, logger: logger)
     try result.checkExitedCleanly { code in
-      FBCodesignError.signingFailed(exitCode: NSNumber(value: code), stdOut: result.standardOutput, stdErr: result.standardError)
+      CodesignError.signingFailed(exitCode: NSNumber(value: code), stdOut: result.standardOutput, stdErr: result.standardError)
     }
     logger?.log("Successfully signed bundle \(result.standardError)")
   }
@@ -85,13 +85,13 @@ public final class FBCodesignProvider {
     )
     .run(exitPolicy: .any, logger: logger)
     try result.checkExitedCleanly { code in
-      FBCodesignError.cdHashCheckFailed(exitCode: NSNumber(value: code), stdOut: result.standardOutput, stdErr: result.standardError)
+      CodesignError.cdHashCheckFailed(exitCode: NSNumber(value: code), stdOut: result.standardOutput, stdErr: result.standardError)
     }
 
     // `codesign -dvvvv` writes its report, CDHash included, to stderr.
     let output = result.standardError
     guard let match = output.firstMatch(of: /CDHash=(.+)/) else {
-      throw FBCodesignError.cdHashNotFound(output: output)
+      throw CodesignError.cdHashNotFound(output: output)
     }
     let cdHash = String(match.1)
     logger?.log("Successfully obtained hash \(cdHash) from bundle \(bundlePath)")

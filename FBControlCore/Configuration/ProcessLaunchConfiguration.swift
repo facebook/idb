@@ -8,7 +8,7 @@
 import Foundation
 
 @objc
-public class FBProcessLaunchConfiguration: NSObject {
+public class ProcessLaunchConfiguration: NSObject {
 
   @objc public let arguments: [String]
   @objc public let environment: [String: String]
@@ -27,7 +27,7 @@ public class FBProcessLaunchConfiguration: NSObject {
   }
 
   public override func isEqual(_ object: Any?) -> Bool {
-    guard let other = object as? FBProcessLaunchConfiguration,
+    guard let other = object as? ProcessLaunchConfiguration,
       other.isKind(of: type(of: self))
     else {
       return false

@@ -24,7 +24,7 @@ private func stateString(from state: FBFileReaderState) -> String {
   }
 }
 
-enum FBFileReaderError: Error, LocalizedError {
+enum FileReaderError: Error, LocalizedError {
   case openFailed(path: String, message: String)
   case wrongStateToStart(targeting: String, state: String)
   case ioChannelCreationFailed(description: String)
@@ -50,7 +50,7 @@ public final class FBFileReader: NSObject, FBFileReaderProtocol {
   // MARK: - Private Properties
 
   private let targeting: String
-  private let consumer: FBDispatchDataConsumer
+  private let consumer: DispatchDataConsumer
   private let readQueue: DispatchQueue
   private let ioChannelRelinquishedControl: FBMutableFuture<AnyObject>
   private let fileDescriptor: Int32
@@ -70,7 +70,7 @@ public final class FBFileReader: NSObject, FBFileReaderProtocol {
     dispatchDataReader(withFileDescriptor: fileDescriptor, closeOnEndOfFile: closeOnEndOfFile, consumer: FBDataConsumerAdaptor.dispatchDataConsumer(for: consumer), logger: logger)
   }
 
-  @objc public static func dispatchDataReader(withFileDescriptor fileDescriptor: Int32, closeOnEndOfFile: Bool, consumer: FBDispatchDataConsumer, logger: FBControlCoreLogger?) -> Self {
+  @objc public static func dispatchDataReader(withFileDescriptor fileDescriptor: Int32, closeOnEndOfFile: Bool, consumer: DispatchDataConsumer, logger: FBControlCoreLogger?) -> Self {
     let targeting = "fd \(fileDescriptor)"
     return self.init(fileDescriptor: fileDescriptor, closeOnEndOfFile: closeOnEndOfFile, consumer: consumer, targeting: targeting, queue: createQueue(), logger: logger)
   }
@@ -82,7 +82,7 @@ public final class FBFileReader: NSObject, FBFileReaderProtocol {
       resolve: {
         let fd = open(filePath, O_RDONLY)
         if fd == -1 {
-          return FBFuture(error: FBFileReaderError.openFailed(path: filePath, message: String(cString: strerror(errno))))
+          return FBFuture(error: FileReaderError.openFailed(path: filePath, message: String(cString: strerror(errno))))
         }
         return FBFuture(
           result: FBFileReader(
@@ -97,7 +97,7 @@ public final class FBFileReader: NSObject, FBFileReaderProtocol {
     ).retyped(FBFuture<FBFileReader>.self)
   }
 
-  required init(fileDescriptor: Int32, closeOnEndOfFile: Bool, consumer: FBDispatchDataConsumer, targeting: String, queue: DispatchQueue, logger: FBControlCoreLogger?) {
+  required init(fileDescriptor: Int32, closeOnEndOfFile: Bool, consumer: DispatchDataConsumer, targeting: String, queue: DispatchQueue, logger: FBControlCoreLogger?) {
     self.fileDescriptor = fileDescriptor
     self.consumer = consumer
     self.targeting = targeting
@@ -161,7 +161,7 @@ public final class FBFileReader: NSObject, FBFileReaderProtocol {
 
   private func startReadingNow() -> FBFuture<AnyObject> {
     if state != .notStarted {
-      return FBFuture(error: FBFileReaderError.wrongStateToStart(targeting: targeting, state: stateString(from: state)))
+      return FBFuture(error: FileReaderError.wrongStateToStart(targeting: targeting, state: stateString(from: state)))
     }
     assert(io == nil, "IO Channel should not exist when not started")
 
@@ -180,7 +180,7 @@ public final class FBFileReader: NSObject, FBFileReaderProtocol {
       self.ioChannelHasRelinquishedControl(withErrorCode: createErrorCode != 0 ? createErrorCode : readErrorCode)
     }
     guard let io else {
-      return FBFuture(error: FBFileReaderError.ioChannelCreationFailed(description: self.description))
+      return FBFuture(error: FileReaderError.ioChannelCreationFailed(description: self.description))
     }
 
     // Report partial results with as little as 1 byte read.
@@ -200,7 +200,7 @@ public final class FBFileReader: NSObject, FBFileReaderProtocol {
 
   private func stopReadingNow() -> FBFuture<AnyObject> {
     if state == .notStarted {
-      return FBFuture(error: FBFileReaderError.notStartedReading(targeting: targeting))
+      return FBFuture(error: FileReaderError.notStartedReading(targeting: targeting))
     }
     if state != .reading {
       return ioChannelRelinquishedControl

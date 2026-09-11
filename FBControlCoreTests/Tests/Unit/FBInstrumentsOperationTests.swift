@@ -89,7 +89,7 @@ final class FBInstrumentsOperationTests: XCTestCase {
       appEnvironment: [:],
       appArguments: [],
       toolArguments: [],
-      timings: FBInstrumentsTimings.timings(
+      timings: InstrumentsTimings.timings(
         withTerminateTimeout: DefaultInstrumentsTerminateTimeout,
         launchRetryTimeout: DefaultInstrumentsLaunchRetryTimeout,
         launchErrorTimeout: DefaultInstrumentsLaunchErrorTimeout,
