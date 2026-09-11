@@ -13,7 +13,7 @@ private let FBLogicTestTimeout: TimeInterval = 60 * 60
 
 // MARK: - FBXCTestRunRequest
 
-public enum FBXCTestRunRequestError: Error {
+enum FBXCTestRunRequestError: Error {
   case notExactlyOneTest(count: Int)
   case testDescriptorNotFound
   case logicTestsUnsupported(targetDescription: String)

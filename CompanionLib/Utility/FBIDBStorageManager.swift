@@ -17,7 +17,7 @@ let IdbFrameworksFolder: String = "idb-frameworks"
 
 // MARK: - FBInstalledArtifact
 
-public enum FBIDBStorageError: Error {
+enum FBIDBStorageError: Error {
   case bundleMissingBinary(name: String)
   case architecturesIncompatible(supported: [String], bundle: [String])
   case multipleXctestFiles(files: [URL])

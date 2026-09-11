@@ -9,7 +9,7 @@ import FBControlCore
 import Foundation
 import XCTestBootstrap
 
-public enum FBXCTestRunFileError: Error {
+enum FBXCTestRunFileError: Error {
   case fileMissing(url: URL)
   case appStorageMissing(path: String)
   case fileUnreadable(url: URL)
@@ -28,7 +28,7 @@ extension FBXCTestRunFileError: LocalizedError {
   }
 }
 
-public final class FBXCTestRunFileReader {
+final class FBXCTestRunFileReader {
 
   public static func readContents(of xctestrunURL: URL, expandPlaceholderWithPath path: String) throws -> [String: Any] {
     let fileManager = FileManager.default

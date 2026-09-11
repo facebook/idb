@@ -11,7 +11,7 @@ import FBSimulatorControl
 import Foundation
 import XCTestBootstrap
 
-public enum FBiOSTargetProviderError: Error {
+enum FBiOSTargetProviderError: Error {
   case targetNotUsable(udid: String, targetDescription: String)
   case targetNotFound(udid: String, targetSetsDescription: String)
   case multipleTargets(targetsDescription: String)

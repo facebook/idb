@@ -29,7 +29,7 @@ public extension FBXCTestDescriptor {
 
 // MARK: - FBXCTestBootstrapDescriptor
 
-public enum FBXCTestDescriptorError: Error {
+enum FBXCTestDescriptorError: Error {
   case uiTestMissingAppBundleID
   case appTestMissingBundleIDs
   case noTestHostApplication(requestDescription: String)
@@ -51,7 +51,7 @@ extension FBXCTestDescriptorError: LocalizedError {
   }
 }
 
-public final class FBXCTestBootstrapDescriptor: FBXCTestDescriptor, CustomStringConvertible {
+final class FBXCTestBootstrapDescriptor: FBXCTestDescriptor, CustomStringConvertible {
 
   public let url: URL
   public let name: String
@@ -169,7 +169,7 @@ public final class FBXCTestBootstrapDescriptor: FBXCTestDescriptor, CustomString
 
 // MARK: - FBXCodebuildTestRunDescriptor
 
-public final class FBXCodebuildTestRunDescriptor: FBXCTestDescriptor, CustomStringConvertible {
+final class FBXCodebuildTestRunDescriptor: FBXCTestDescriptor, CustomStringConvertible {
 
   public let url: URL
   public let name: String
