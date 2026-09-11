@@ -13,7 +13,7 @@ private let FBLogicTestTimeout: TimeInterval = 60 * 60
 
 // MARK: - FBXCTestRunRequest
 
-enum FBXCTestRunRequestError: Error {
+enum XCTestRunRequestError: Error {
   case notExactlyOneTest(count: Int)
   case testDescriptorNotFound
   case logicTestsUnsupported(targetDescription: String)
@@ -22,7 +22,7 @@ enum FBXCTestRunRequestError: Error {
   case multipleTestsToRun(testsToRun: [String])
 }
 
-extension FBXCTestRunRequestError: LocalizedError {
+extension XCTestRunRequestError: LocalizedError {
   public var errorDescription: String? {
     switch self {
     case let .notExactlyOneTest(count):
@@ -149,7 +149,7 @@ public struct FBXCTestRunRequest {
 
   // MARK: - Test Execution
 
-  func start(withBundleStorageManager bundleStorage: FBXCTestBundleStorage, target: any FBiOSTarget, reporter: FBXCTestReporter, logger: FBControlCoreLogger, temporaryDirectory: FBTemporaryDirectory) async throws -> FBIDBTestOperation {
+  func start(withBundleStorageManager bundleStorage: XCTestBundleStorage, target: any FBiOSTarget, reporter: FBXCTestReporter, logger: FBControlCoreLogger, temporaryDirectory: FBTemporaryDirectory) async throws -> IDBTestOperation {
     let descriptor = try await fetchAndSetupDescriptor(withBundleStorage: bundleStorage, target: target)
     var logDirectoryPath: String?
     if collectLogs {
@@ -165,13 +165,13 @@ public struct FBXCTestRunRequest {
     }
   }
 
-  private func fetchAndSetupDescriptor(withBundleStorage bundleStorage: FBXCTestBundleStorage, target: any FBiOSTarget) async throws -> FBXCTestDescriptor {
+  private func fetchAndSetupDescriptor(withBundleStorage bundleStorage: XCTestBundleStorage, target: any FBiOSTarget) async throws -> FBXCTestDescriptor {
     let descriptor = try fetchDescriptor(withBundleStorage: bundleStorage)
     try await descriptor.setupAsync(with: self, target: target)
     return descriptor
   }
 
-  private func fetchDescriptor(withBundleStorage bundleStorage: FBXCTestBundleStorage) throws -> FBXCTestDescriptor {
+  private func fetchDescriptor(withBundleStorage bundleStorage: XCTestBundleStorage) throws -> FBXCTestDescriptor {
     switch bundle {
     case let .identifier(identifier):
       return try bundleStorage.testDescriptor(withID: identifier)
@@ -179,22 +179,22 @@ public struct FBXCTestRunRequest {
       switch path.pathExtension {
       case "xctest":
         let testBundle = try FBBundleDescriptor.bundle(fromPath: path.path)
-        return FBXCTestBootstrapDescriptor(url: path, name: testBundle.name, testBundle: testBundle)
+        return XCTestBootstrapDescriptor(url: path, name: testBundle.name, testBundle: testBundle)
       case "xctestrun":
         let descriptors = try bundleStorage.getXCTestRunDescriptors(from: path)
         if descriptors.count != 1 {
-          throw FBXCTestRunRequestError.notExactlyOneTest(count: descriptors.count)
+          throw XCTestRunRequestError.notExactlyOneTest(count: descriptors.count)
         }
         return descriptors[0]
       default:
-        throw FBXCTestRunRequestError.testDescriptorNotFound
+        throw XCTestRunRequestError.testDescriptorNotFound
       }
     }
   }
 
   // MARK: - Logic Tests
 
-  private func startLogicTest(with testDescriptor: FBXCTestDescriptor, logDirectoryPath: String?, target: any FBiOSTarget, reporter: FBXCTestReporter, logger: FBControlCoreLogger, temporaryDirectory: FBTemporaryDirectory) throws -> FBIDBTestOperation {
+  private func startLogicTest(with testDescriptor: FBXCTestDescriptor, logDirectoryPath: String?, target: any FBiOSTarget, reporter: FBXCTestReporter, logger: FBControlCoreLogger, temporaryDirectory: FBTemporaryDirectory) throws -> IDBTestOperation {
     let workingDirectory = temporaryDirectory.ephemeralTemporaryDirectory()
     try FileManager.default.createDirectory(at: workingDirectory, withIntermediateDirectories: true, attributes: nil)
 
@@ -209,11 +209,11 @@ public struct FBXCTestRunRequest {
 
     let testsToSkipArray = testsToSkip.sorted()
     if !testsToSkipArray.isEmpty {
-      throw FBXCTestRunRequestError.testsToSkipUnsupported(testsToSkip: testsToSkipArray)
+      throw XCTestRunRequestError.testsToSkipUnsupported(testsToSkip: testsToSkipArray)
     }
     let testsToRunArray = testsToRun?.sorted() ?? []
     if testsToRunArray.count > 1 {
-      throw FBXCTestRunRequestError.multipleTestsToRun(testsToRun: testsToRunArray)
+      throw XCTestRunRequestError.multipleTestsToRun(testsToRun: testsToRunArray)
     }
     let testFilter = testsToRunArray.first
 
@@ -235,9 +235,9 @@ public struct FBXCTestRunRequest {
     return try startLogicTestExecution(configuration, target: target, reporter: reporter, logger: logger)
   }
 
-  private func startLogicTestExecution(_ configuration: FBLogicTestConfiguration, target: any FBiOSTarget, reporter: FBXCTestReporter, logger: FBControlCoreLogger) throws -> FBIDBTestOperation {
+  private func startLogicTestExecution(_ configuration: FBLogicTestConfiguration, target: any FBiOSTarget, reporter: FBXCTestReporter, logger: FBControlCoreLogger) throws -> IDBTestOperation {
     guard let target = target as? any LogicTestTarget else {
-      throw FBXCTestRunRequestError.logicTestsUnsupported(targetDescription: String(describing: target))
+      throw XCTestRunRequestError.logicTestsUnsupported(targetDescription: String(describing: target))
     }
     let adapter = FBLogicReporterAdapter(reporter: reporter, logger: logger)
     let runner = FBLogicTestRunStrategy(
@@ -258,7 +258,7 @@ public struct FBXCTestRunRequest {
       reportAttachments: reportAttachments,
       reportResultBundle: collectResultBundle
     )
-    return FBIDBTestOperation(
+    return IDBTestOperation(
       configuration: .logic(configuration),
       reporterConfiguration: reporterConfiguration,
       reporter: reporter,
@@ -270,7 +270,7 @@ public struct FBXCTestRunRequest {
 
   // MARK: - Application-Hosted Tests
 
-  private func startAppHostedTest(with testDescriptor: FBXCTestDescriptor, logDirectoryPath: String?, target: any FBiOSTarget, reporter: FBXCTestReporter, logger: FBControlCoreLogger) async throws -> FBIDBTestOperation {
+  private func startAppHostedTest(with testDescriptor: FBXCTestDescriptor, logDirectoryPath: String?, target: any FBiOSTarget, reporter: FBXCTestReporter, logger: FBControlCoreLogger) async throws -> IDBTestOperation {
     let appPair = try await testDescriptor.testAppPair(for: self, target: target)
     logger.log("Obtaining launch configuration for App Pair \(appPair) on descriptor \(testDescriptor)")
     let appHostedTestConfig = try await testDescriptor.testConfig(withRunRequest: self, testApps: appPair, logDirectoryPath: logDirectoryPath, logger: logger)
@@ -278,9 +278,9 @@ public struct FBXCTestRunRequest {
     return try Self.startAppHostedTestExecution(appHostedTestConfig, reportAttachments: reportAttachments, target: target, reporter: reporter, logger: logger, reportResultBundle: collectResultBundle)
   }
 
-  private static func startAppHostedTestExecution(_ configuration: FBIDBAppHostedTestConfiguration, reportAttachments: Bool, target: any FBiOSTarget, reporter: FBXCTestReporter, logger: FBControlCoreLogger, reportResultBundle: Bool) throws -> FBIDBTestOperation {
+  private static func startAppHostedTestExecution(_ configuration: IDBAppHostedTestConfiguration, reportAttachments: Bool, target: any FBiOSTarget, reporter: FBXCTestReporter, logger: FBControlCoreLogger, reportResultBundle: Bool) throws -> IDBTestOperation {
     guard let target = target as? any XCTestTarget else {
-      throw FBXCTestRunRequestError.xctestUnsupported(targetDescription: String(describing: target))
+      throw XCTestRunRequestError.xctestUnsupported(targetDescription: String(describing: target))
     }
     let testLaunchConfiguration = configuration.testLaunchConfiguration
     let coverageConfiguration = configuration.coverageConfiguration
@@ -308,7 +308,7 @@ public struct FBXCTestRunRequest {
       reportAttachments: reportAttachments,
       reportResultBundle: reportResultBundle
     )
-    return FBIDBTestOperation(
+    return IDBTestOperation(
       configuration: .appHosted(testLaunchConfiguration),
       reporterConfiguration: reporterConfiguration,
       reporter: reporter,

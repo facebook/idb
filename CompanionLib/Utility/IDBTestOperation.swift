@@ -9,14 +9,14 @@ import FBControlCore
 import Foundation
 import XCTestBootstrap
 
-public enum FBIDBTestOperationState: UInt {
+public enum IDBTestOperationState: UInt {
   case notRunning
   case terminatedNormally
   case terminatedAbnormally
   case running
 }
 
-public final class FBIDBTestOperation: CustomStringConvertible {
+public final class IDBTestOperation: CustomStringConvertible {
 
   /// The configuration the run was started from. A logic test and an app-hosted test are
   /// configured by unrelated types, and only one of the two is ever in play.
@@ -41,7 +41,7 @@ public final class FBIDBTestOperation: CustomStringConvertible {
   public let reporterConfiguration: FBXCTestReporterConfiguration
   private let configuration: Configuration
 
-  public var state: FBIDBTestOperationState {
+  public var state: IDBTestOperationState {
     if completed.error != nil {
       return .terminatedAbnormally
     }

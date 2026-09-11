@@ -8,7 +8,7 @@
 import FBControlCore
 import Foundation
 
-public struct FBTestApplicationsPair: CustomStringConvertible {
+public struct TestApplicationsPair: CustomStringConvertible {
 
   public let applicationUnderTest: FBInstalledApplication?
   public let testHostApp: FBInstalledApplication?

@@ -9,13 +9,13 @@ import FBControlCore
 import Foundation
 import XCTestBootstrap
 
-enum FBXCTestRunFileError: Error {
+enum XCTestRunFileError: Error {
   case fileMissing(url: URL)
   case appStorageMissing(path: String)
   case fileUnreadable(url: URL)
 }
 
-extension FBXCTestRunFileError: LocalizedError {
+extension XCTestRunFileError: LocalizedError {
   public var errorDescription: String? {
     switch self {
     case let .fileMissing(url):
@@ -28,20 +28,20 @@ extension FBXCTestRunFileError: LocalizedError {
   }
 }
 
-final class FBXCTestRunFileReader {
+final class XCTestRunFileReader {
 
   public static func readContents(of xctestrunURL: URL, expandPlaceholderWithPath path: String) throws -> [String: Any] {
     let fileManager = FileManager.default
     guard fileManager.fileExists(atPath: xctestrunURL.path) else {
-      throw FBXCTestRunFileError.fileMissing(url: xctestrunURL)
+      throw XCTestRunFileError.fileMissing(url: xctestrunURL)
     }
     let testRoot = (xctestrunURL.path as NSString).deletingLastPathComponent
     let idbAppStoragePath = (path as NSString).appendingPathComponent(IdbApplicationsFolder)
     guard fileManager.fileExists(atPath: idbAppStoragePath) else {
-      throw FBXCTestRunFileError.appStorageMissing(path: idbAppStoragePath)
+      throw XCTestRunFileError.appStorageMissing(path: idbAppStoragePath)
     }
     guard let xctestrunContents = try NSDictionary(contentsOf: xctestrunURL, error: ()) as? [String: Any] else {
-      throw FBXCTestRunFileError.fileUnreadable(url: xctestrunURL)
+      throw XCTestRunFileError.fileUnreadable(url: xctestrunURL)
     }
     var mutableContents: [String: Any] = [:]
     for contentKey in xctestrunContents.keys {

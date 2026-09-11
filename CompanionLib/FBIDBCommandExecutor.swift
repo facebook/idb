@@ -405,7 +405,7 @@ public final class FBIDBCommandExecutor {
     return try await target.crashLog.pruneCrashes(matching: predicate)
   }
 
-  public func xctest_run(_ request: FBXCTestRunRequest, reporter: FBXCTestReporter, logger: FBControlCoreLogger) async throws -> FBIDBTestOperation {
+  public func xctest_run(_ request: FBXCTestRunRequest, reporter: FBXCTestReporter, logger: FBControlCoreLogger) async throws -> IDBTestOperation {
     return try await request.start(withBundleStorageManager: storageManager.xctest, target: target, reporter: reporter, logger: logger, temporaryDirectory: temporaryDirectory)
   }
 
@@ -822,7 +822,7 @@ public final class FBIDBCommandExecutor {
     return try await storageManager.xctest.saveBundleOrTestRun(xctestURL, skipSigningBundles: skipSigningBundles)
   }
 
-  private func installFile(_ extractedFile: URL, intoStorage storage: FBFileStorage) async throws -> FBInstalledArtifact {
+  private func installFile(_ extractedFile: URL, intoStorage storage: FileStorage) async throws -> FBInstalledArtifact {
     return try storage.saveFile(extractedFile)
   }
 
@@ -834,7 +834,7 @@ public final class FBIDBCommandExecutor {
     return subDirs[0]
   }
 
-  private func installAndLinkDsym(_ extractionDir: URL, intoStorage storage: FBFileStorage, linkTo: FBDsymInstallLinkToBundle?) async throws -> FBInstalledArtifact {
+  private func installAndLinkDsym(_ extractionDir: URL, intoStorage storage: FileStorage, linkTo: FBDsymInstallLinkToBundle?) async throws -> FBInstalledArtifact {
     let artifact = try storage.saveFileInUniquePath(extractionDir)
     guard let linkTo else {
       return artifact
@@ -858,7 +858,7 @@ public final class FBIDBCommandExecutor {
     return artifact
   }
 
-  private func installBundle(_ extractedDirectory: URL, intoStorage storage: FBBundleStorage) async throws -> FBInstalledArtifact {
+  private func installBundle(_ extractedDirectory: URL, intoStorage storage: BundleStorage) async throws -> FBInstalledArtifact {
     let bundle = try FBStorageUtils.bundle(inDirectory: extractedDirectory)
     return try await storage.saveBundle(bundle)
   }

@@ -17,7 +17,7 @@ let IdbFrameworksFolder: String = "idb-frameworks"
 
 // MARK: - FBInstalledArtifact
 
-enum FBIDBStorageError: Error {
+enum IDBStorageError: Error {
   case bundleMissingBinary(name: String)
   case architecturesIncompatible(supported: [String], bundle: [String])
   case multipleXctestFiles(files: [URL])
@@ -31,7 +31,7 @@ enum FBIDBStorageError: Error {
   case storageLocationCreationFailed(path: URL, underlying: Error)
 }
 
-extension FBIDBStorageError: LocalizedError {
+extension IDBStorageError: LocalizedError {
   public var errorDescription: String? {
     switch self {
     case let .bundleMissingBinary(name):
@@ -72,9 +72,9 @@ public final class FBInstalledArtifact {
   }
 }
 
-// MARK: - FBIDBStorage
+// MARK: - IDBStorage
 
-public class FBIDBStorage {
+public class IDBStorage {
   public let target: any FBiOSTarget
   public let basePath: URL
   public let queue: DispatchQueue
@@ -110,9 +110,9 @@ public class FBIDBStorage {
   }
 }
 
-// MARK: - FBFileStorage
+// MARK: - FileStorage
 
-public final class FBFileStorage: FBIDBStorage {
+public final class FileStorage: IDBStorage {
 
   func saveFile(_ url: URL) throws -> FBInstalledArtifact {
     return try copyInto(basePath, from: url)
@@ -134,9 +134,9 @@ public final class FBFileStorage: FBIDBStorage {
   }
 }
 
-// MARK: - FBBundleStorage
+// MARK: - BundleStorage
 
-public class FBBundleStorage: FBIDBStorage {
+public class BundleStorage: IDBStorage {
   public let relocateLibraries: Bool
 
   public init(target: any FBiOSTarget, basePath: URL, queue: DispatchQueue, logger: FBControlCoreLogger, relocateLibraries: Bool) {
@@ -146,7 +146,7 @@ public class FBBundleStorage: FBIDBStorage {
 
   func checkArchitecture(_ bundle: FBBundleDescriptor) throws {
     guard let binary = bundle.binary else {
-      throw FBIDBStorageError.bundleMissingBinary(name: bundle.name)
+      throw IDBStorageError.bundleMissingBinary(name: bundle.name)
     }
     let binaryArchitectures = Set(binary.architectures.map { $0.rawValue })
     let targetArchs = target.architectures
@@ -156,7 +156,7 @@ public class FBBundleStorage: FBIDBStorage {
     let arm64eEquivalent = targetArchs.contains(FBArchitecture(rawValue: "arm64e")) && binaryArchitectures.contains("arm64")
 
     if !(containsExactArch || arm64eEquivalent) {
-      throw FBIDBStorageError.architecturesIncompatible(supported: supportedArchitectures.sorted(), bundle: binaryArchitectures.sorted())
+      throw IDBStorageError.architecturesIncompatible(supported: supportedArchitectures.sorted(), bundle: binaryArchitectures.sorted())
     }
   }
 
@@ -236,27 +236,27 @@ public class FBBundleStorage: FBIDBStorage {
   }
 }
 
-// MARK: - FBXCTestBundleStorage
+// MARK: - XCTestBundleStorage
 
 private let XctestExtension = "xctest"
 private let XctestRunExtension = "xctestrun"
 
-public final class FBXCTestBundleStorage: FBBundleStorage {
+public final class XCTestBundleStorage: BundleStorage {
 
   func saveBundleOrTestRunFromBaseDirectory(_ baseDirectory: URL, skipSigningBundles: Bool) async throws -> FBInstalledArtifact {
     let buckets = try FBStorageUtils.bucketFiles(withExtensions: Set([XctestExtension, XctestRunExtension]), inDirectory: baseDirectory)
     let xctestBucket = buckets[XctestExtension]?.sorted(by: { $0.path < $1.path }) ?? []
     let xctestBundleURL = xctestBucket.first
     if xctestBucket.count > 1 {
-      throw FBIDBStorageError.multipleXctestFiles(files: xctestBucket)
+      throw IDBStorageError.multipleXctestFiles(files: xctestBucket)
     }
     let xctestrunBucket = buckets[XctestRunExtension]?.sorted(by: { $0.path < $1.path }) ?? []
     let xctestrunURL = xctestrunBucket.first
     if xctestrunBucket.count > 1 {
-      throw FBIDBStorageError.multipleXctestrunFiles(files: xctestrunBucket)
+      throw IDBStorageError.multipleXctestrunFiles(files: xctestrunBucket)
     }
     if xctestBundleURL == nil && xctestrunURL == nil {
-      throw FBIDBStorageError.noTestArtifactsProvided(bucketsDescription: FBCollectionInformation.oneLineDescription(from: buckets))
+      throw IDBStorageError.noTestArtifactsProvided(bucketsDescription: FBCollectionInformation.oneLineDescription(from: buckets))
     }
 
     if let xctestBundleURL {
@@ -265,7 +265,7 @@ public final class FBXCTestBundleStorage: FBBundleStorage {
     if let xctestrunURL {
       return try saveTestRun(xctestrunURL)
     }
-    throw FBIDBStorageError.testArtifactNotSaved(xctestDescription: String(describing: xctestBundleURL), xctestrunDescription: String(describing: xctestrunURL))
+    throw IDBStorageError.testArtifactNotSaved(xctestDescription: String(describing: xctestBundleURL), xctestrunDescription: String(describing: xctestrunURL))
   }
 
   func saveBundleOrTestRun(_ filePath: URL, skipSigningBundles: Bool) async throws -> FBInstalledArtifact {
@@ -275,7 +275,7 @@ public final class FBXCTestBundleStorage: FBBundleStorage {
     if filePath.pathExtension == XctestRunExtension {
       return try saveTestRun(filePath)
     }
-    throw FBIDBStorageError.invalidPathExtension(pathExtension: filePath.pathExtension, path: filePath)
+    throw IDBStorageError.invalidPathExtension(pathExtension: filePath.pathExtension, path: filePath)
   }
 
   func listTestDescriptors() throws -> [FBXCTestDescriptor] {
@@ -287,7 +287,7 @@ public final class FBXCTestBundleStorage: FBBundleStorage {
     for testURL in testURLs {
       do {
         let bundle = try FBBundleDescriptor.bundleWithFallbackIdentifier(fromPath: testURL.path)
-        let testDescriptor = FBXCTestBootstrapDescriptor(url: testURL, name: bundle.name, testBundle: bundle)
+        let testDescriptor = XCTestBootstrapDescriptor(url: testURL, name: bundle.name, testBundle: bundle)
         testDescriptors.append(testDescriptor)
       } catch {
         logger.error().log("\(error)")
@@ -313,11 +313,11 @@ public final class FBXCTestBundleStorage: FBBundleStorage {
         return testDescriptor
       }
     }
-    throw FBIDBStorageError.testNotFoundByID(bundleID: bundleId)
+    throw IDBStorageError.testNotFoundByID(bundleID: bundleId)
   }
 
   func getXCTestRunDescriptors(from xctestrunURL: URL) throws -> [FBXCTestDescriptor] {
-    let contentDict = try FBXCTestRunFileReader.readContents(of: xctestrunURL, expandPlaceholderWithPath: target.auxillaryDirectory)
+    let contentDict = try XCTestRunFileReader.readContents(of: xctestrunURL, expandPlaceholderWithPath: target.auxillaryDirectory)
     let xctestrunMetadata = contentDict["__xctestrun_metadata__"] as? [String: NSNumber]
     if let xctestrunMetadata {
       logger.info().log("Using xctestrun format version: \(xctestrunMetadata["FormatVersion"] ?? 0)")
@@ -340,7 +340,7 @@ public final class FBXCTestBundleStorage: FBBundleStorage {
 
   private func listXCTestContents(withExtension ext: String) throws -> Set<URL> {
     guard let directories = try? FileManager.default.contentsOfDirectory(at: basePath, includingPropertiesForKeys: nil, options: .skipsSubdirectoryDescendants) else {
-      throw FBIDBStorageError.baseDirectoryUnreadable
+      throw IDBStorageError.baseDirectoryUnreadable
     }
 
     var tests = Set<URL>()
@@ -392,7 +392,7 @@ public final class FBXCTestBundleStorage: FBBundleStorage {
       }
       let testBundle = FBBundleDescriptor(name: testIdentifier, identifier: testIdentifier, path: "", binary: nil)
       let hostBundle = FBBundleDescriptor(name: hostIdentifier, identifier: hostIdentifier, path: "", binary: nil)
-      return FBXCodebuildTestRunDescriptor(url: xctestrunURL, name: testTarget, testBundle: testBundle, testHostBundle: hostBundle)
+      return XCodebuildTestRunDescriptor(url: xctestrunURL, name: testTarget, testBundle: testBundle, testHostBundle: hostBundle)
     }
     guard let testHostPath = testTargetProperties["TestHostPath"] as? String,
       let testBundlePath = testTargetProperties["TestBundlePath"] as? String
@@ -405,7 +405,7 @@ public final class FBXCTestBundleStorage: FBBundleStorage {
     guard let testBundle = try? FBBundleDescriptor.bundle(fromPath: testBundlePath) else {
       return nil
     }
-    return FBXCodebuildTestRunDescriptor(url: xctestrunURL, name: testTarget, testBundle: testBundle, testHostBundle: testHostBundle)
+    return XCodebuildTestRunDescriptor(url: xctestrunURL, name: testTarget, testBundle: testBundle, testHostBundle: testHostBundle)
   }
 
   private func saveTestBundle(_ testBundleURL: URL, usingSymlink useSymlink: Bool, skipSigningBundles: Bool) async throws -> FBInstalledArtifact {
@@ -416,7 +416,7 @@ public final class FBXCTestBundleStorage: FBBundleStorage {
   private func saveTestRun(_ xcTestRunURL: URL) throws -> FBInstalledArtifact {
     let descriptors = try getXCTestRunDescriptors(from: xcTestRunURL)
     if descriptors.count != 1 {
-      throw FBIDBStorageError.notExactlyOneTest(count: descriptors.count)
+      throw IDBStorageError.notExactlyOneTest(count: descriptors.count)
     }
 
     let descriptor = descriptors[0]
@@ -448,14 +448,14 @@ public final class FBXCTestBundleStorage: FBBundleStorage {
 // MARK: - FBIDBStorageManager
 
 public final class FBIDBStorageManager {
-  public let xctest: FBXCTestBundleStorage
-  public let application: FBBundleStorage
-  public let dylib: FBFileStorage
-  public let dsym: FBFileStorage
-  public let framework: FBBundleStorage
+  public let xctest: XCTestBundleStorage
+  public let application: BundleStorage
+  public let dylib: FileStorage
+  public let dsym: FileStorage
+  public let framework: BundleStorage
   public let logger: FBControlCoreLogger
 
-  private init(xctest: FBXCTestBundleStorage, application: FBBundleStorage, dylib: FBFileStorage, dsym: FBFileStorage, framework: FBBundleStorage, logger: FBControlCoreLogger) {
+  private init(xctest: XCTestBundleStorage, application: BundleStorage, dylib: FileStorage, dsym: FileStorage, framework: BundleStorage, logger: FBControlCoreLogger) {
     self.xctest = xctest
     self.application = application
     self.dylib = dylib
@@ -468,19 +468,19 @@ public final class FBIDBStorageManager {
     let queue = DispatchQueue(label: "com.facebook.idb.bundle_storage")
 
     let xctestBasePath = try prepareStoragePath(withName: IdbTestBundlesFolder, target: target)
-    let xctest = FBXCTestBundleStorage(target: target, basePath: xctestBasePath, queue: queue, logger: logger, relocateLibraries: true)
+    let xctest = XCTestBundleStorage(target: target, basePath: xctestBasePath, queue: queue, logger: logger, relocateLibraries: true)
 
     let appBasePath = try prepareStoragePath(withName: IdbApplicationsFolder, target: target)
-    let application = FBBundleStorage(target: target, basePath: appBasePath, queue: queue, logger: logger, relocateLibraries: false)
+    let application = BundleStorage(target: target, basePath: appBasePath, queue: queue, logger: logger, relocateLibraries: false)
 
     let dylibBasePath = try prepareStoragePath(withName: IdbDylibsFolder, target: target)
-    let dylib = FBFileStorage(target: target, basePath: dylibBasePath, queue: queue, logger: logger)
+    let dylib = FileStorage(target: target, basePath: dylibBasePath, queue: queue, logger: logger)
 
     let dsymBasePath = try prepareStoragePath(withName: IdbDsymsFolder, target: target)
-    let dsym = FBFileStorage(target: target, basePath: dsymBasePath, queue: queue, logger: logger)
+    let dsym = FileStorage(target: target, basePath: dsymBasePath, queue: queue, logger: logger)
 
     let frameworkBasePath = try prepareStoragePath(withName: IdbFrameworksFolder, target: target)
-    let framework = FBBundleStorage(target: target, basePath: frameworkBasePath, queue: queue, logger: logger, relocateLibraries: true)
+    let framework = BundleStorage(target: target, basePath: frameworkBasePath, queue: queue, logger: logger, relocateLibraries: true)
 
     return FBIDBStorageManager(xctest: xctest, application: application, dylib: dylib, dsym: dsym, framework: framework, logger: logger)
   }
@@ -518,7 +518,7 @@ public final class FBIDBStorageManager {
     do {
       try FileManager.default.createDirectory(at: basePath, withIntermediateDirectories: true, attributes: nil)
     } catch {
-      throw FBIDBStorageError.storageLocationCreationFailed(path: basePath, underlying: error)
+      throw IDBStorageError.storageLocationCreationFailed(path: basePath, underlying: error)
     }
     return basePath
   }
