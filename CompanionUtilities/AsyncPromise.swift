@@ -24,7 +24,7 @@ public final class AsyncPromise<Value: Sendable>: @unchecked Sendable {
     case resolved(Result<Value, Error>)
   }
 
-  private let mutex = FBMutex()
+  private let mutex = Mutex()
   private var state: State = .pending
   private var waiters: [Int: CheckedContinuation<Value, Error>] = [:]
   /// IDs whose cancellation handler fired before their continuation registered,

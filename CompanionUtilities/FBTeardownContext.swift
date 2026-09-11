@@ -7,19 +7,19 @@
 
 import Foundation
 
-enum FBTeardownContextError: Error, Sendable {
+enum TeardownContextError: Error, Sendable {
   case emptyContext
   case cleanupAlreadyPerformed
 }
 
-private final class FBTeardownContextImpl: @unchecked Sendable {
+private final class TeardownContextImpl: @unchecked Sendable {
 
   @Atomic private var cleanupList: [() async throws -> Void] = []
   @Atomic var cleanupPerformed = false
 
   func add(cleanup: @escaping () async throws -> Void) throws {
     guard !cleanupPerformed else {
-      throw FBTeardownContextError.cleanupAlreadyPerformed
+      throw TeardownContextError.cleanupAlreadyPerformed
     }
     _cleanupList.sync { $0.append(cleanup) }
   }
@@ -30,7 +30,7 @@ private final class FBTeardownContextImpl: @unchecked Sendable {
       return cleanupPerformed
     }
     guard !cleanupAlreadyPerformed else {
-      throw FBTeardownContextError.cleanupAlreadyPerformed
+      throw TeardownContextError.cleanupAlreadyPerformed
     }
     for cleanup in cleanupList.reversed() {
       try await cleanup()
@@ -51,7 +51,7 @@ public final class FBTeardownContext: Sendable {
 
   @TaskLocal public static var current: FBTeardownContext = .init(emptyContext: ())
 
-  private let contextImpl: FBTeardownContextImpl?
+  private let contextImpl: TeardownContextImpl?
   private let codeLocation: CodeLocation
   private let isAutocleanup: Bool
 
@@ -62,7 +62,7 @@ public final class FBTeardownContext: Sendable {
   }
 
   private init(isAutocleanup: Bool, function: String = #function, file: String = #file, line: Int = #line, column: Int = #column) {
-    self.contextImpl = FBTeardownContextImpl()
+    self.contextImpl = TeardownContextImpl()
     self.isAutocleanup = isAutocleanup
     self.codeLocation = .init(function: function, file: file, line: line, column: column)
   }
@@ -78,7 +78,7 @@ public final class FBTeardownContext: Sendable {
   /// Cleanups run in LIFO order when the context is torn down.
   public func addCleanup(_ cleanup: @escaping () async throws -> Void) throws {
     guard let contextImpl else {
-      throw FBTeardownContextError.emptyContext
+      throw TeardownContextError.emptyContext
     }
     try contextImpl.add(cleanup: cleanup)
   }
@@ -86,7 +86,7 @@ public final class FBTeardownContext: Sendable {
   /// This method should be called explicitly. Relying on deinit is programmer error.
   func performCleanup() async throws {
     guard let contextImpl else {
-      throw FBTeardownContextError.emptyContext
+      throw TeardownContextError.emptyContext
     }
     try await contextImpl.performCleanup()
   }

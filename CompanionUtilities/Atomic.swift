@@ -11,10 +11,10 @@ import Foundation
 public final class Atomic<Value>: @unchecked Sendable {
 
   private var value: Value
-  private let mutex: FBMutex
+  private let mutex: Mutex
 
   public init(wrappedValue: Value) {
-    self.mutex = FBMutex()
+    self.mutex = Mutex()
     self.value = wrappedValue
   }
 

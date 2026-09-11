@@ -18,7 +18,7 @@ import Musl
 #endif
 
 /// Helper wrapper around `pthread_mutex`
-final class FBMutex: @unchecked Sendable {
+final class Mutex: @unchecked Sendable {
 
   private var underlyingMutex = pthread_mutex_t()
 

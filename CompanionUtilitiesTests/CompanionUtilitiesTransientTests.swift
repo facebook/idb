@@ -12,18 +12,18 @@ import Testing
 @Suite
 struct CompanionUtilitiesTransientTests {
 
-  // MARK: - FBMutex Tests
+  // MARK: - Mutex Tests
 
   @Test
   func mutexSyncThrows() {
     struct TestError: Error {}
-    let mutex = FBMutex()
+    let mutex = Mutex()
     #expect(throws: (any Error).self) { try mutex.sync { throw TestError() } }
   }
 
   @Test
   func mutexConcurrentAccess() {
-    let mutex = FBMutex()
+    let mutex = Mutex()
     var counter = 0
     DispatchQueue.concurrentPerform(iterations: 1000) { _ in
       mutex.sync { counter += 1 }
@@ -167,7 +167,7 @@ struct CompanionUtilitiesTransientTests {
     do {
       try emptyContext.addCleanup {}
       Issue.record("Expected emptyContext error")
-    } catch let contextError as FBTeardownContextError {
+    } catch let contextError as TeardownContextError {
       switch contextError {
       case .emptyContext:
         break
@@ -175,14 +175,14 @@ struct CompanionUtilitiesTransientTests {
         Issue.record("Unexpected error case")
       }
     } catch {
-      Issue.record("Expected FBTeardownContextError")
+      Issue.record("Expected TeardownContextError")
     }
   }
 
   @Test
   func emptyContextThrowsOnPerformCleanup() async {
     let emptyContext = FBTeardownContext.current
-    await #expect(throws: FBTeardownContextError.self) {
+    await #expect(throws: TeardownContextError.self) {
       try await emptyContext.performCleanup()
     }
   }
@@ -190,7 +190,7 @@ struct CompanionUtilitiesTransientTests {
   @Test
   func doubleCleanupThrows() async throws {
     var cleanupCount = 0
-    await #expect(throws: FBTeardownContextError.self) {
+    await #expect(throws: TeardownContextError.self) {
       try await FBTeardownContext.withAutocleanup {
         let context = FBTeardownContext.current
         try context.addCleanup {
@@ -211,7 +211,7 @@ struct CompanionUtilitiesTransientTests {
     }
     // Context cleanup already performed by withAutocleanup
     let captured = try #require(context)
-    #expect(throws: FBTeardownContextError.self) {
+    #expect(throws: TeardownContextError.self) {
       try captured.addCleanup {}
     }
   }

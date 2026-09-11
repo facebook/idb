@@ -7,21 +7,21 @@
 
 import Foundation
 
-public struct FBEventType: RawRepresentable, Equatable, Hashable, Sendable {
+public struct EventType: RawRepresentable, Equatable, Hashable, Sendable {
   public let rawValue: String
   public init(rawValue: String) { self.rawValue = rawValue }
 
-  public static let started = FBEventType(rawValue: "started")
-  public static let ended = FBEventType(rawValue: "ended")
-  public static let discrete = FBEventType(rawValue: "discrete")
-  public static let success = FBEventType(rawValue: "success")
-  public static let failure = FBEventType(rawValue: "failure")
+  public static let started = EventType(rawValue: "started")
+  public static let ended = EventType(rawValue: "ended")
+  public static let discrete = EventType(rawValue: "discrete")
+  public static let success = EventType(rawValue: "success")
+  public static let failure = EventType(rawValue: "failure")
 }
 
 public struct FBEventReporterSubject: Sendable {
 
   public let eventName: String
-  public let eventType: FBEventType
+  public let eventType: EventType
   public let arguments: [String]?
   public let duration: NSNumber?
   public let size: NSNumber?
@@ -115,7 +115,7 @@ public struct FBEventReporterSubject: Sendable {
     return NSNumber(value: UInt(milliseconds))
   }
 
-  private init(eventName: String, eventType: FBEventType, arguments: [String]?, duration: NSNumber?, size: NSNumber?, message: String?, normals: [String: String], ints: [String: Int]) {
+  private init(eventName: String, eventType: EventType, arguments: [String]?, duration: NSNumber?, size: NSNumber?, message: String?, normals: [String: String], ints: [String: Int]) {
     self.eventName = eventName
     self.eventType = eventType
     self.arguments = arguments
