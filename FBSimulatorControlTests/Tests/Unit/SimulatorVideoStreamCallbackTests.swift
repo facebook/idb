@@ -657,9 +657,7 @@ final class SimulatorVideoStreamDeliveryTests: XCTestCase {
   func testKeyframesAcrossOverlayUpdates() async throws {
     // Without a hardware encoder the stream never produces output, so the
     // assertions cannot be exercised on this host.
-    try XCTSkipUnless(
-      VideoEncodingHostSupport.supportsHardwareH264Encoding,
-      "video encoding needs a hardware H.264 encoder, unavailable on this host")
+    try VideoEncodingHostSupport.skipUnlessHardwareH264Encoding()
     let surface = FakeFramebufferSurface()
     surface.immediateSurface = makeTestIOSurface(width: 128, height: 128)
     let consumer = FBDataBuffer.accumulatingBuffer()
