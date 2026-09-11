@@ -118,8 +118,7 @@ class DiagnosticPlanTests(unittest.TestCase):
 
 class CollectTests(unittest.TestCase):
     def setUp(self) -> None:
-        self.root = Path(tempfile.mkdtemp())
-        self.addCleanup(lambda: __import__("shutil").rmtree(self.root))
+        self.root = Path(self.enterContext(tempfile.TemporaryDirectory()))
         self.output = self.root / "diagnostics"
         self.run = Recorder()
 
