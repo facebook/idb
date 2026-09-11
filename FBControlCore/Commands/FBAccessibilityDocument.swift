@@ -78,7 +78,7 @@ public extension FBAccessibilityFrame {
 }
 
 /// The bounds a read's frames are relative to.
-public struct FBAccessibilityScreenInfo: Sendable, Equatable, Encodable {
+public struct AccessibilityScreenInfo: Sendable, Equatable, Encodable {
 
   public let width: Double
   public let height: Double
@@ -102,7 +102,7 @@ public struct FBAccessibilityScreenInfo: Sendable, Equatable, Encodable {
 }
 
 /// What a read was asked for, which is how a consumer tells one describe verb from another.
-public struct FBAccessibilityTargetDescriptor: Sendable, Equatable, Encodable {
+public struct AccessibilityTargetDescriptor: Sendable, Equatable, Encodable {
 
   public enum Kind: String, Sendable, Encodable {
     case frontmost
@@ -138,20 +138,20 @@ public struct FBAccessibilityTargetDescriptor: Sendable, Equatable, Encodable {
     self.matchKey = matchKey
   }
 
-  public static let frontmost = FBAccessibilityTargetDescriptor(kind: .frontmost)
+  public static let frontmost = AccessibilityTargetDescriptor(kind: .frontmost)
 
-  public static func application(pid: pid_t) -> FBAccessibilityTargetDescriptor {
-    FBAccessibilityTargetDescriptor(kind: .application, pid: Int32(pid))
+  public static func application(pid: pid_t) -> AccessibilityTargetDescriptor {
+    AccessibilityTargetDescriptor(kind: .application, pid: Int32(pid))
   }
 
-  public static func point(_ point: CGPoint) -> FBAccessibilityTargetDescriptor {
+  public static func point(_ point: CGPoint) -> AccessibilityTargetDescriptor {
     let x = Double(point.x)
     let y = Double(point.y)
-    return FBAccessibilityTargetDescriptor(kind: .point, x: x.isFinite ? x : nil, y: y.isFinite ? y : nil)
+    return AccessibilityTargetDescriptor(kind: .point, x: x.isFinite ? x : nil, y: y.isFinite ? y : nil)
   }
 
-  public static func marker(value: String, matchKey: String) -> FBAccessibilityTargetDescriptor {
-    FBAccessibilityTargetDescriptor(kind: .marker, value: value, matchKey: matchKey)
+  public static func marker(value: String, matchKey: String) -> AccessibilityTargetDescriptor {
+    AccessibilityTargetDescriptor(kind: .marker, value: value, matchKey: matchKey)
   }
 
   enum CodingKeys: String, CodingKey {
@@ -178,7 +178,7 @@ public struct FBAccessibilityTargetDescriptor: Sendable, Equatable, Encodable {
 ///
 /// Every ratio comes from the same grid over the same single walk, differing only in which subset of
 /// elements is marked into it.
-public struct FBAccessibilityCoverage: Sendable, Equatable, Encodable {
+public struct AccessibilityCoverage: Sendable, Equatable, Encodable {
 
   /// Coverage of the elements the read *reports* — what a consumer actually receives.
   public let frame: Double
@@ -235,11 +235,11 @@ public struct FBAccessibilityCoverage: Sendable, Equatable, Encodable {
 /// `.actionable` is derived from the application's own render tree, which cannot see another
 /// process compositing on top of it (a system alert, SpringBoard chrome). Naming an occluder in
 /// another process requires the `FBAXKeys.occludedBy` hit-test.
-public enum FBAccessibilityInteractable: Sendable, Equatable {
+public enum AccessibilityInteractable: Sendable, Equatable {
 
   /// The element can be acted on, at this point. Not necessarily the frame centre: for a partially
   /// covered element the centre is exactly what fails, and this is the point that does not.
-  case actionable(at: FBAccessibilityPoint)
+  case actionable(at: AccessibilityPoint)
 
   /// The element cannot be acted on. `reasons` is never empty and is ordered most specific first:
   /// `notHittable`, which observes without explaining, always sorts last.
@@ -254,11 +254,11 @@ public enum FBAccessibilityInteractable: Sendable, Equatable {
     /// The element has a reachable point, but it is not the centre — so the centre is covered, and
     /// automation aiming there hits whatever is on top. `by` names that element when a hit-test was paid
     /// for, and is nil otherwise.
-    case occluded(by: FBAccessibilityElementRef?)
+    case occluded(by: AccessibilityElementRef?)
     /// A touch aimed here is delivered to a relative — an ancestor that owns this element, or a
     /// descendant it passes through to (a label inside a button, a container around a control). Act on
     /// the named element. Requires a hit-test, so without `occludedBy` these report as `notHittable`.
-    case handledBy(FBAccessibilityElementRef?)
+    case handledBy(AccessibilityElementRef?)
     /// The view has `userInteractionEnabled` off.
     case userInteractionDisabled
     /// The element reports itself disabled.
@@ -274,7 +274,7 @@ public enum FBAccessibilityInteractable: Sendable, Equatable {
 }
 
 /// A point in the same screen space element frames are expressed in.
-public struct FBAccessibilityPoint: Sendable, Equatable, Encodable {
+public struct AccessibilityPoint: Sendable, Equatable, Encodable {
   public let x: Double
   public let y: Double
 
@@ -295,7 +295,7 @@ public struct FBAccessibilityPoint: Sendable, Equatable, Encodable {
 /// An element resolved by a hit-test — whatever actually receives a touch aimed at another element.
 /// Used both for an unrelated element covering the target and for a relative of the target that takes
 /// the touch on its behalf.
-public struct FBAccessibilityElementRef: Sendable, Equatable, Encodable {
+public struct AccessibilityElementRef: Sendable, Equatable, Encodable {
   public let type: String?
   public let identifier: String?
   public let label: String?
@@ -328,7 +328,7 @@ public struct FBAccessibilityElementRef: Sendable, Equatable, Encodable {
   }
 }
 
-public extension FBAccessibilityInteractable.Reason {
+public extension AccessibilityInteractable.Reason {
   /// Whether this reason merely observes that the element is unreachable, without explaining it.
   var isUnexplained: Bool {
     if case .notHittable = self { return true }
@@ -336,18 +336,18 @@ public extension FBAccessibilityInteractable.Reason {
   }
 }
 
-public extension Array where Element == FBAccessibilityInteractable.Reason {
+public extension Array where Element == AccessibilityInteractable.Reason {
   /// The reasons with every explaining reason ahead of `notHittable`, each group keeping the order it
   /// was derived in.
   ///
   /// Two filters, not a sort: order within each group must remain the derivation order, and
   /// Swift's sort is not stable.
-  var mostSpecificFirst: [FBAccessibilityInteractable.Reason] {
+  var mostSpecificFirst: [AccessibilityInteractable.Reason] {
     filter { !$0.isUnexplained } + filter { $0.isUnexplained }
   }
 }
 
-public extension FBAccessibilityInteractable {
+public extension AccessibilityInteractable {
 
   /// Internally tagged: every value is an object, discriminated by `status`.
   enum CodingKeys: String, CodingKey {
@@ -362,7 +362,7 @@ public extension FBAccessibilityInteractable {
   }
 }
 
-extension FBAccessibilityInteractable: Encodable {
+extension AccessibilityInteractable: Encodable {
   public func encode(to encoder: Encoder) throws {
     var container = encoder.container(keyedBy: CodingKeys.self)
     switch self {
@@ -377,7 +377,7 @@ extension FBAccessibilityInteractable: Encodable {
   }
 }
 
-extension FBAccessibilityInteractable.Reason: Encodable {
+extension AccessibilityInteractable.Reason: Encodable {
 
   enum CodingKeys: String, CodingKey {
     case kind
@@ -415,7 +415,7 @@ extension FBAccessibilityInteractable.Reason: Encodable {
 /// `unexplained` counts elements whose only reason is the bare `notHittable` observation. An element
 /// nothing explains is still reported as blocked: a caller acting on it needs to know it cannot act,
 /// whether or not the reason is known.
-public struct FBAccessibilityInteractionSummary: Sendable, Equatable, Encodable {
+public struct AccessibilityInteractionSummary: Sendable, Equatable, Encodable {
 
   /// Elements reported actionable.
   public let actionable: Int
@@ -485,7 +485,7 @@ public struct FBAccessibilityInteractionSummary: Sendable, Equatable, Encodable 
 /// tree degraded; what proportion is suspicious depends on the screen, so no threshold is applied.
 /// `total` counts elements carrying a `frame` attribute, not things on screen. `nil` (not zeroes)
 /// when the read did not carry `frame`.
-public struct FBAccessibilityFrameSummary: Sendable, Equatable, Encodable {
+public struct AccessibilityFrameSummary: Sendable, Equatable, Encodable {
 
   /// Elements carrying a `frame` attribute, whatever its value.
   public let total: Int
@@ -536,7 +536,7 @@ public struct FBAccessibilityFrameSummary: Sendable, Equatable, Encodable {
 /// What narrowed a read and how much survived, so an empty result reads as "matched nothing out of
 /// N" rather than as a failed read. Emitted on every `complete` document; an un-narrowed read reports
 /// the default filter, a null match, and equal counts.
-public struct FBAccessibilityNarrowing: Sendable, Equatable, Encodable {
+public struct AccessibilityNarrowing: Sendable, Equatable, Encodable {
 
   /// The substring the read reported only the matching elements for, or nil when it did not narrow by
   /// one. A marker read leaves this null: it reports its search through `target`, not here.
@@ -585,10 +585,10 @@ public struct FBAccessibilityNarrowing: Sendable, Equatable, Encodable {
   }
 }
 
-public extension FBAccessibilityNarrowing {
+public extension AccessibilityNarrowing {
   /// The report for a read that applied `filter` and `match`, walking `walked` nodes and reporting
   /// `matched` of them.
-  init(filter: FBAccessibilityElementFilter, match: FBAccessibilityMatch?, walked: Int, matched: Int) {
+  init(filter: FBAccessibilityElementFilter, match: AccessibilityMatch?, walked: Int, matched: Int) {
     self.init(
       match: match?.value,
       matchKey: match?.key.rawValue,
@@ -602,7 +602,7 @@ public extension FBAccessibilityNarrowing {
   /// narrowed too: they add to `walked`, and any survivors are already in `reported`.
   init(
     filter: FBAccessibilityElementFilter,
-    match: FBAccessibilityMatch?,
+    match: AccessibilityMatch?,
     walked: [FBAccessibilityDocumentElement],
     discovered: [FBAccessibilityDocumentElement],
     reported: [FBAccessibilityDocumentElement]
@@ -617,8 +617,8 @@ public extension FBAccessibilityRequestOptions {
   /// The narrowing report for a read under these options that walked `walked` and reported `reported`.
   func narrowingReport(
     walked: [FBAccessibilityDocumentElement], reported: [FBAccessibilityDocumentElement]
-  ) -> FBAccessibilityNarrowing {
-    FBAccessibilityNarrowing(
+  ) -> AccessibilityNarrowing {
+    AccessibilityNarrowing(
       filter: filter, match: match, walked: walked.nodeCount, matched: reported.nodeCount)
   }
 }
@@ -662,7 +662,7 @@ public struct FBAccessibilityDocumentElement: Sendable, Equatable, Encodable {
   /// Whether the element can be acted on, and why not when it cannot. `.some(nil)` — an explicit `null` —
   /// on a backend that cannot answer: the legacy accessibility path has no counterpart for the attributes
   /// this is derived from.
-  public var interactable: FBAccessibilityInteractable??
+  public var interactable: AccessibilityInteractable??
   public var customActions: [String]??
   public var traits: [String]??
   public var pid: Int64??
@@ -673,7 +673,7 @@ public struct FBAccessibilityDocumentElement: Sendable, Equatable, Encodable {
   public var axFrame: String??
   /// What a hit-test at this element's centre found. Not part of the emitted schema (absent from
   /// `CodingKeys`): it is an input to deriving `interactable`, never emitted on its own.
-  public var explainedBy: FBAccessibilityElementRef?
+  public var explainedBy: AccessibilityElementRef?
   /// The nested children, or `nil` when the read did not walk them — a flat read lists every node
   /// separately and carries no `children` key at all. Not an attribute: it comes from the traversal.
   ///
@@ -798,38 +798,38 @@ public enum FBAccessibilityAttributeValue: Sendable, Equatable, Encodable {
 public struct FBAccessibilityDocument: Sendable, Encodable {
 
   public let elements: [FBAccessibilityDocumentElement]
-  public let modal: FBAccessibilityModalInfo?
+  public let modal: AccessibilityModalInfo?
   public let truncated: Bool
-  public let screen: FBAccessibilityScreenInfo?
+  public let screen: AccessibilityScreenInfo?
   public let backend: FBUIAutomationBackendName?
-  public let target: FBAccessibilityTargetDescriptor?
+  public let target: AccessibilityTargetDescriptor?
   public let profile: FBAccessibilityProfile?
-  public let coverage: FBAccessibilityCoverage?
+  public let coverage: AccessibilityCoverage?
   /// How much of what this read found blocked it could explain. Nil when `interactable` was not
   /// requested, since there is then nothing to summarize.
-  public let interaction: FBAccessibilityInteractionSummary?
+  public let interaction: AccessibilityInteractionSummary?
   /// How many of the read's elements carry a usable rectangle. Nil when `frame` was not requested.
-  public let frames: FBAccessibilityFrameSummary?
+  public let frames: AccessibilityFrameSummary?
   /// The device's accessibility automation mode for this read. Nil when the backend cannot report it —
   /// a single-element read, or a guest predating the field.
-  public let automation: FBAccessibilityAutomationState?
+  public let automation: AccessibilityAutomationState?
   /// What the read was narrowed by and how much survived. Nil for a single-element read, which selects
   /// rather than narrows.
-  public let narrowing: FBAccessibilityNarrowing?
+  public let narrowing: AccessibilityNarrowing?
 
   public init(
     elements: [FBAccessibilityDocumentElement],
-    modal: FBAccessibilityModalInfo? = nil,
+    modal: AccessibilityModalInfo? = nil,
     truncated: Bool = false,
-    screen: FBAccessibilityScreenInfo? = nil,
+    screen: AccessibilityScreenInfo? = nil,
     backend: FBUIAutomationBackendName? = nil,
-    target: FBAccessibilityTargetDescriptor? = nil,
+    target: AccessibilityTargetDescriptor? = nil,
     profile: FBAccessibilityProfile? = nil,
-    coverage: FBAccessibilityCoverage? = nil,
-    interaction: FBAccessibilityInteractionSummary? = nil,
-    frames: FBAccessibilityFrameSummary? = nil,
-    automation: FBAccessibilityAutomationState? = nil,
-    narrowing: FBAccessibilityNarrowing? = nil
+    coverage: AccessibilityCoverage? = nil,
+    interaction: AccessibilityInteractionSummary? = nil,
+    frames: AccessibilityFrameSummary? = nil,
+    automation: AccessibilityAutomationState? = nil,
+    narrowing: AccessibilityNarrowing? = nil
   ) {
     self.elements = elements
     self.modal = modal

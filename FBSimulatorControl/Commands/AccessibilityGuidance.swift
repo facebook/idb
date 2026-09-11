@@ -37,7 +37,7 @@ enum AccessibilityGuidance {
 
   /// Advice for a read whose geometry looks degenerate, or nil when it does not. A threshold
   /// heuristic; a wrong answer here only costs an ignorable advice line.
-  static func zeroFrameAdvice(_ frames: FBAccessibilityFrameSummary?) -> String? {
+  static func zeroFrameAdvice(_ frames: AccessibilityFrameSummary?) -> String? {
     guard let frames, frames.total >= minimumElementsForRatio else {
       return nil
     }

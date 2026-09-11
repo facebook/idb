@@ -21,11 +21,11 @@ struct AXTreeRead: @unchecked Sendable {
   let tree: [String: Any]
   let pid: pid_t
   let truncated: Bool
-  let modal: FBAccessibilityModalInfo?
+  let modal: AccessibilityModalInfo?
   /// The device's accessibility automation mode as the guest saw it. Nil from a guest predating the
   /// field, which is why it is optional rather than defaulted — "an older guest did not say" and "the
   /// device was not in automation mode" are different facts and must not collapse.
-  var automation: FBAccessibilityAutomationState?
+  var automation: AccessibilityAutomationState?
   /// What the guest measured of its own work, and what the host measured around the wire.
   var timings: AXReadTimings?
   /// The guest's reported phases, taken off the envelope this read already parsed so the host does not
@@ -57,7 +57,7 @@ struct AXReadTimings: Equatable {
 /// Parses the guest's `{ "ok": Bool, "tree": {...} | "error": String }` response envelope into a read.
 extension AXTreeRead {
 
-  init(tree: [String: Any], pid: pid_t, truncated: Bool, modal: FBAccessibilityModalInfo?) {
+  init(tree: [String: Any], pid: pid_t, truncated: Bool, modal: AccessibilityModalInfo?) {
     self.init(tree: tree, pid: pid, truncated: truncated, modal: modal, automation: nil)
   }
 
@@ -73,7 +73,7 @@ extension AXTreeRead {
   }
 
   /// The envelope's automation object, or nil when the guest did not send one.
-  static func automation(fromResponse response: [String: Any]) -> FBAccessibilityAutomationState? {
+  static func automation(fromResponse response: [String: Any]) -> AccessibilityAutomationState? {
     guard let object = response[AXWire.Envelope.automation.rawValue] as? [String: Any],
       let enabled = object[AXWire.Automation.enabled.rawValue] as? Bool
     else {
@@ -81,7 +81,7 @@ extension AXTreeRead {
     }
     // `asserted` absent reads as false: a guest that only reports the mode has asserted nothing.
     let asserted = (object[AXWire.Automation.asserted.rawValue] as? Bool) ?? false
-    return FBAccessibilityAutomationState(enabled: enabled, asserted: asserted)
+    return AccessibilityAutomationState(enabled: enabled, asserted: asserted)
   }
 
   /// An empty response is a protocol violation — an app always has a root element. `truncated`
@@ -164,15 +164,15 @@ extension AXTreeRead {
 
   /// Decodes the optional `modal` descriptor the guest adds to a describe response into a typed value,
   /// or nil when no modal is present. Host-facing enrichment — never emitted in the serialized output.
-  static func modal(fromResponse response: [String: Any]) -> FBAccessibilityModalInfo? {
+  static func modal(fromResponse response: [String: Any]) -> AccessibilityModalInfo? {
     guard let modal = response[AXWire.Envelope.modal.rawValue] as? [String: Any],
       let kindRaw = modal["kind"] as? String,
-      let kind = FBAccessibilityModalInfo.Kind(rawValue: kindRaw),
+      let kind = AccessibilityModalInfo.Kind(rawValue: kindRaw),
       let elementType = modal["elementType"] as? String
     else {
       return nil
     }
-    return FBAccessibilityModalInfo(kind: kind, elementType: elementType, label: modal["label"] as? String)
+    return AccessibilityModalInfo(kind: kind, elementType: elementType, label: modal["label"] as? String)
   }
 
   /// Parses the guest JSON and validates its `ok`/error framing, returning the top-level response

@@ -16,7 +16,7 @@ public protocol FBVideoRecording {
 
 /// A closure-backed recording handle for command implementations that keep ownership of the
 /// underlying recording operation.
-public final class FBVideoRecordingHandle: FBVideoRecording {
+public final class VideoRecordingHandle: FBVideoRecording {
   private let stopAction: () async throws -> URL
 
   public init(stop: @escaping () async throws -> URL) {

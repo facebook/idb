@@ -18,7 +18,7 @@ public enum TerminationStatus: Sendable, Equatable {
 
   /// Decodes a raw `wait(2)` status word.
   ///
-  /// Reproduces the decode in `FBProcessSpawnCommandHelpers` exactly,
+  /// Reproduces the decode in `ProcessSpawnCommandHelpers` exactly,
   /// including its treatment of a stopped status (low bits `0x7f`) as an
   /// exit — the engine only ever delivers statuses for processes that have
   /// terminated, so a stopped status cannot occur in practice.

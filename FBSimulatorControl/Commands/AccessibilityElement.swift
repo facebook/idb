@@ -242,9 +242,9 @@ final class AccessibilityElement {
     return nil
   }
 
-  /// The same substring test as `FBAccessibilityMatch`; an empty marker matches every value.
+  /// The same substring test as `AccessibilityMatch`; an empty marker matches every value.
   private static func contains(_ value: String, in candidate: String, ignoringCase: Bool) -> Bool {
-    guard let match = FBAccessibilityMatch(value: value, ignoresCase: ignoringCase) else {
+    guard let match = AccessibilityMatch(value: value, ignoresCase: ignoringCase) else {
       return true
     }
     return match.matches(candidate)

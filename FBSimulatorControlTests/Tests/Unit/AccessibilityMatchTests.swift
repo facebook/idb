@@ -10,7 +10,7 @@ import FBControlCore
 import Foundation
 import XCTest
 
-/// `FBAccessibilityMatch` — the substring narrowing behind `describe-all --match` — and the hoisting it
+/// `AccessibilityMatch` — the substring narrowing behind `describe-all --match` — and the hoisting it
 /// shares with `FBAccessibilityElementFilter`.
 ///
 /// Pure functions over the serialized model, so none of this needs a simulator.
@@ -46,8 +46,8 @@ final class AccessibilityMatchTests: XCTestCase {
 
   private static func match(
     _ value: String, key: FBAXSearchableKey = .label, ignoresCase: Bool = false
-  ) throws -> FBAccessibilityMatch {
-    try XCTUnwrap(FBAccessibilityMatch(value: value, key: key, ignoresCase: ignoresCase))
+  ) throws -> AccessibilityMatch {
+    try XCTUnwrap(AccessibilityMatch(value: value, key: key, ignoresCase: ignoresCase))
   }
 
   // MARK: - What matches
@@ -74,7 +74,7 @@ final class AccessibilityMatchTests: XCTestCase {
 
   func testAnEmptyMatchValueIsNoMatchAtAll() {
     XCTAssertNil(
-      FBAccessibilityMatch(value: ""),
+      AccessibilityMatch(value: ""),
       "an empty match would keep every element, which is the absence of a match rather than one"
     )
   }

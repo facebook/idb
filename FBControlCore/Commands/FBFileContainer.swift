@@ -296,7 +296,7 @@ public final class ContainedFile_ContainedRoot: AsyncFileContainer {
 }
 
 /// File container backed by `ProvisioningProfileCommands`.
-public final class FBFileContainer_ProvisioningProfile: AsyncFileContainer {
+public final class FileContainer_ProvisioningProfile: AsyncFileContainer {
 
   private let commandsBox: ProvisioningCommandsBox
 
@@ -346,29 +346,29 @@ public final class FBFileContainer_ProvisioningProfile: AsyncFileContainer {
 // MARK: - Container Kinds
 
 /// The names of the file containers a target can expose.
-public struct FBFileContainerKind: RawRepresentable, Hashable, Sendable {
+public struct FileContainerKind: RawRepresentable, Hashable, Sendable {
   public let rawValue: String
 
   public init(rawValue: String) {
     self.rawValue = rawValue
   }
 
-  public static let application = FBFileContainerKind(rawValue: "application")
-  public static let auxillary = FBFileContainerKind(rawValue: "auxillary")
-  public static let crashes = FBFileContainerKind(rawValue: "crashes")
-  public static let diskImages = FBFileContainerKind(rawValue: "disk_images")
-  public static let group = FBFileContainerKind(rawValue: "group")
-  public static let mdmProfiles = FBFileContainerKind(rawValue: "mdm_profiles")
-  public static let media = FBFileContainerKind(rawValue: "media")
-  public static let provisioningProfiles = FBFileContainerKind(rawValue: "provisioning_profiles")
-  public static let root = FBFileContainerKind(rawValue: "root")
-  public static let springboardIcons = FBFileContainerKind(rawValue: "springboard_icons")
-  public static let symbols = FBFileContainerKind(rawValue: "symbols")
-  public static let wallpaper = FBFileContainerKind(rawValue: "wallpaper")
-  public static let xctest = FBFileContainerKind(rawValue: "xctest")
-  public static let dylib = FBFileContainerKind(rawValue: "dylib")
-  public static let dsym = FBFileContainerKind(rawValue: "dsym")
-  public static let framework = FBFileContainerKind(rawValue: "framework")
+  public static let application = FileContainerKind(rawValue: "application")
+  public static let auxillary = FileContainerKind(rawValue: "auxillary")
+  public static let crashes = FileContainerKind(rawValue: "crashes")
+  public static let diskImages = FileContainerKind(rawValue: "disk_images")
+  public static let group = FileContainerKind(rawValue: "group")
+  public static let mdmProfiles = FileContainerKind(rawValue: "mdm_profiles")
+  public static let media = FileContainerKind(rawValue: "media")
+  public static let provisioningProfiles = FileContainerKind(rawValue: "provisioning_profiles")
+  public static let root = FileContainerKind(rawValue: "root")
+  public static let springboardIcons = FileContainerKind(rawValue: "springboard_icons")
+  public static let symbols = FileContainerKind(rawValue: "symbols")
+  public static let wallpaper = FileContainerKind(rawValue: "wallpaper")
+  public static let xctest = FileContainerKind(rawValue: "xctest")
+  public static let dylib = FileContainerKind(rawValue: "dylib")
+  public static let dsym = FileContainerKind(rawValue: "dsym")
+  public static let framework = FileContainerKind(rawValue: "framework")
 }
 
 // MARK: - Host Filesystem Contained Files

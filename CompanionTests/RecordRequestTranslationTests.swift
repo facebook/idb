@@ -15,7 +15,7 @@ import XCTest
 /// it overrides `honorsRecordingConfiguration`.
 private final class FixedConfigurationRecorder: VideoRecordingCommands {
   func startRecording(toFile filePath: String) async throws -> any FBVideoRecording {
-    FBVideoRecordingHandle { URL(fileURLWithPath: filePath) }
+    VideoRecordingHandle { URL(fileURLWithPath: filePath) }
   }
 }
 
@@ -23,7 +23,7 @@ private final class ConfigurableRecorder: VideoRecordingCommands {
   var honorsRecordingConfiguration: Bool { true }
 
   func startRecording(toFile filePath: String) async throws -> any FBVideoRecording {
-    FBVideoRecordingHandle { URL(fileURLWithPath: filePath) }
+    VideoRecordingHandle { URL(fileURLWithPath: filePath) }
   }
 }
 

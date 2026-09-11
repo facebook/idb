@@ -30,7 +30,7 @@ public struct SimulatorLogCommands: LogCommands {
 
   public func tail(arguments: [String], consumer: any FBDataConsumer) async throws -> any LogOperation {
     let launchPath = try logExecutablePath()
-    let streamArguments = FBProcessLogOperation.osLogArgumentsInsertStreamIfNeeded(arguments)
+    let streamArguments = ProcessLogOperation.osLogArgumentsInsertStreamIfNeeded(arguments)
     let processIO = FBProcessIO<AnyObject, AnyObject, AnyObject>(
       stdIn: nil,
       stdOut: FBProcessOutput<AnyObject>(for: consumer),
@@ -44,7 +44,7 @@ public struct SimulatorLogCommands: LogCommands {
       mode: .default
     )
     let process = try await simulator.processSpawn.launchProcess(configuration)
-    return FBProcessLogOperation(process: process, consumer: consumer, queue: simulator.asyncQueue)
+    return ProcessLogOperation(process: process, consumer: consumer, queue: simulator.asyncQueue)
   }
 
   private func logExecutablePath() throws -> String {

@@ -12,7 +12,7 @@ import Foundation
 /// The lock is held across `build`, so concurrent first access cannot construct the same command twice.
 /// Value types are returned by copy, so a command that mutates as it is used must be a reference type.
 /// A resolved command must hold its target weakly: the target owns this cache, so a strong reference is a cycle.
-public final class FBTargetCommandCache {
+public final class TargetCommandCache {
 
   private let lock = NSLock()
   private var slots: [ObjectIdentifier: Any] = [:]

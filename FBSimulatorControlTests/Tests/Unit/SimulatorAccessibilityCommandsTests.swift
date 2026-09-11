@@ -965,7 +965,7 @@ final class SimulatorAccessibilityCommandsTests: XCTestCase {
 
   /// Reads `filterableRoot()` under `filter` with coverage on. Installs the fixture, so it may be
   /// called only once per test.
-  private func coverage(withFilter filter: FBAccessibilityElementFilter) async throws -> FBAccessibilityCoverage? {
+  private func coverage(withFilter filter: FBAccessibilityElementFilter) async throws -> AccessibilityCoverage? {
     try setUp(withRootElement: filterableRoot())
     let element = try await simulator.accessibility.resolveElement(for: .frontmost)
     var options = FBAccessibilityRequestOptions()
@@ -1327,7 +1327,7 @@ final class SimulatorAccessibilityCommandsTests: XCTestCase {
     let translator = FBAccessibilityElementsResponse(
       elements: .tree([]),
       profilingData: .translator(
-        FBAccessibilityProfilingData(
+        AccessibilityProfilingData(
           elementCount: 1, totalDuration: 1, acquireDuration: 0.5, readDuration: 0.25,
           serializeDuration: 0.25, attributeFetchCount: 1, xpcCallCount: 1, translationDuration: 0.5,
           elementConversionDuration: 0, totalXPCDuration: 0.25, fetchedKeys: []
@@ -1336,7 +1336,7 @@ final class SimulatorAccessibilityCommandsTests: XCTestCase {
     let guestBridge = FBAccessibilityElementsResponse(
       elements: .tree([]),
       profilingData: .guestBridge(
-        FBAXBridgeProfile(
+        AXBridgeProfile(
           elementCount: 1, totalDuration: 1, acquireDuration: 0.5, readDuration: 0.25,
           serializeDuration: 0.25, traversal: .viewHierarchy
         ))

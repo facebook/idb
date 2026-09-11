@@ -40,12 +40,12 @@ private struct StubValueCommand: Equatable {
   var identifier: Int
 }
 
-@Suite("FBTargetCommandCache")
-struct FBTargetCommandCacheTests {
+@Suite("TargetCommandCache")
+struct TargetCommandCacheTests {
 
   @Test("A resolved command is cached, so a second resolve returns the same instance")
   func resolveReturnsTheSameInstance() {
-    let cache = FBTargetCommandCache()
+    let cache = TargetCommandCache()
     let first = cache.resolve(StubCommand.self) { StubCommand(identifier: 1) }
     let second = cache.resolve(StubCommand.self) { StubCommand(identifier: 2) }
 
@@ -56,7 +56,7 @@ struct FBTargetCommandCacheTests {
 
   @Test("Registering pre-populates the slot, so resolve does not build")
   func registerPrePopulatesTheSlot() {
-    let cache = FBTargetCommandCache()
+    let cache = TargetCommandCache()
     let registered = StubCommand(identifier: 7)
     cache.register(registered, as: StubCommand.self)
 
@@ -66,7 +66,7 @@ struct FBTargetCommandCacheTests {
 
   @Test("Each type gets its own slot")
   func distinctTypesGetDistinctSlots() {
-    let cache = FBTargetCommandCache()
+    let cache = TargetCommandCache()
     let command = cache.resolve(StubCommand.self) { StubCommand(identifier: 1) }
     let other = cache.resolve(OtherStubCommand.self) { OtherStubCommand() }
 
@@ -78,7 +78,7 @@ struct FBTargetCommandCacheTests {
   /// reference type.
   @Test("Mutating a resolved value command does not write back to the cache")
   func mutatingAResolvedValueDoesNotWriteBack() {
-    let cache = FBTargetCommandCache()
+    let cache = TargetCommandCache()
     var resolved = cache.resolve(StubValueCommand.self) { StubValueCommand(identifier: 1) }
     resolved.identifier = 99
 
@@ -88,7 +88,7 @@ struct FBTargetCommandCacheTests {
 
   @Test("Concurrent first access builds the command exactly once")
   func concurrentFirstAccessBuildsOnce() {
-    let cache = FBTargetCommandCache()
+    let cache = TargetCommandCache()
     let counter = BuildCounter()
 
     DispatchQueue.concurrentPerform(iterations: 64) { _ in

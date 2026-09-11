@@ -72,7 +72,7 @@ extension Subprocess {
       case .exited(let code):
         throw makeError(code)
       case .signalled(let signo):
-        throw FBProcessTerminationError.exitedWithSignal(
+        throw ProcessTerminationError.exitedWithSignal(
           processIdentifier: processIdentifier,
           processName: (executable as NSString).lastPathComponent,
           signal: signo)

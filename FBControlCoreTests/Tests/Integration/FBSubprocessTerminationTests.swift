@@ -54,7 +54,7 @@ struct FBSubprocessTerminationTests {
     #expect(try await bridgeFBFuture(process.exitCode).int32Value == code)
 
     // `statLoc` is the raw wait(2) status word, not a normalised code. The
-    // decode in `FBProcessSpawnCommandHelpers` is `(statLoc >> 8) & 0xff`.
+    // decode in `ProcessSpawnCommandHelpers` is `(statLoc >> 8) & 0xff`.
     #expect(process.statLoc.result?.int32Value == code << 8)
   }
 

@@ -88,7 +88,7 @@ public struct SimulatorProcessSpawnCommands: ProcessSpawnCommands {
         // asynchronous teardown and double-close recycled descriptor numbers,
         // which crashes whichever component now owns them (EV_VANISHED on
         // dispatch-source-monitored descriptors, EBADF traps in SwiftNIO).
-        FBProcessSpawnCommandHelpers.resolveProcessFinished(
+        ProcessSpawnCommandHelpers.resolveProcessFinished(
           withStatLoc: statLocValue,
           inTeardownOfIOAttachment: attachment,
           statLocFuture: statLoc,

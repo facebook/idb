@@ -18,7 +18,7 @@ struct IDBTransientTests {
 
   @Test
   func fileContainerMapsAllKnownKinds() {
-    let mappings: [(Idb_FileContainer.Kind, FBFileContainerKind)] = [
+    let mappings: [(Idb_FileContainer.Kind, FileContainerKind)] = [
       (.root, .root),
       (.media, .media),
       (.crashes, .crashes),
@@ -57,7 +57,7 @@ struct IDBTransientTests {
     var container = Idb_FileContainer()
     container.kind = .root
     let result = FileContainerValueTransformer.rawFileContainer(from: container)
-    #expect((result) == (FBFileContainerKind.root.rawValue))
+    #expect((result) == (FileContainerKind.root.rawValue))
   }
 
   @Test

@@ -63,7 +63,7 @@ public enum FBAccessibilityElementFilter: String, Sendable, CaseIterable {
 /// A substring search narrowing a describe-all read to elements whose `key` value contains `value`.
 /// Unlike `FBAccessibilityElementQuery.marker`, no match is an empty list rather than an error, and
 /// every matching element is reported.
-public struct FBAccessibilityMatch: Sendable, Equatable {
+public struct AccessibilityMatch: Sendable, Equatable {
 
   /// The substring an element's `key` value must contain. Never empty (see `init?`).
   public let value: String
@@ -98,9 +98,9 @@ public struct FBAccessibilityMatch: Sendable, Equatable {
   }
 }
 
-extension FBAccessibilityMatch: CustomStringConvertible {
+extension AccessibilityMatch: CustomStringConvertible {
   public var description: String {
-    "<FBAccessibilityMatch: \(key.rawValue) contains '\(value)'\(ignoresCase ? " (ignoring case)" : "")>"
+    "<AccessibilityMatch: \(key.rawValue) contains '\(value)'\(ignoresCase ? " (ignoring case)" : "")>"
   }
 }
 
@@ -110,7 +110,7 @@ extension FBAccessibilityMatch: CustomStringConvertible {
 /// fetched once per drawing process rather than once per node. The strategies read different child
 /// relations, so neither's element count is a baseline for the other, and a reachability verdict covers
 /// only what the strategy returned, not everything on screen.
-public enum FBAXTraversal: String, Sendable, CaseIterable {
+public enum AXTraversal: String, Sendable, CaseIterable {
   case viewHierarchy = "view-hierarchy"
   case semantic = "semantic"
   /// One fetch for the application plus one per subtree another process draws (a web view, picker or
@@ -130,7 +130,7 @@ public enum FBAXTraversal: String, Sendable, CaseIterable {
 }
 
 /// The traversal a read asks for, or `auto` to let the serving backend choose. Kept apart from
-/// `FBAXTraversal` so an unresolved request can never be sent to a guest or reported as the walk that ran.
+/// `AXTraversal` so an unresolved request can never be sent to a guest or reported as the walk that ran.
 public enum FBAXTraversalStrategy: String, Sendable, CaseIterable {
   /// Let the serving backend choose; a profiled read reports which traversal ran.
   case auto
@@ -139,7 +139,7 @@ public enum FBAXTraversalStrategy: String, Sendable, CaseIterable {
   case singleFetch = "single-fetch"
 
   /// The traversal this names outright, or nil for `auto`, which only a backend can resolve.
-  public var traversal: FBAXTraversal? {
+  public var traversal: AXTraversal? {
     switch self {
     case .auto: nil
     case .viewHierarchy: .viewHierarchy
@@ -180,7 +180,7 @@ public struct FBAccessibilityRequestOptions: Sendable {
     for keys: Set<FBAXKeys>,
     format: FBAccessibilityOutputFormat,
     filter: FBAccessibilityElementFilter,
-    match: FBAccessibilityMatch?,
+    match: AccessibilityMatch?,
     collectFrameCoverage: Bool
   ) -> Set<FBAXKeys> {
     var expanded = keys
@@ -241,13 +241,13 @@ public struct FBAccessibilityRequestOptions: Sendable {
   ///
   /// Composes with `filter` rather than replacing it: `filter` decides what is worth reporting at all,
   /// the match decides which of those the caller asked about.
-  public var match: FBAccessibilityMatch?
+  public var match: AccessibilityMatch?
 
   /// How the read asks to traverse.
   public var traversalStrategy: FBAXTraversalStrategy
 
   /// The requested keys the given traversal cannot answer for every element.
-  public func unsatisfiableKeys(for traversal: FBAXTraversal) -> Set<FBAXKeys> {
+  public func unsatisfiableKeys(for traversal: AXTraversal) -> Set<FBAXKeys> {
     serializationKeys.intersection(traversal.unsatisfiableKeys)
   }
 
@@ -259,7 +259,7 @@ public struct FBAccessibilityRequestOptions: Sendable {
     collectFrameCoverage: Bool = false,
     remoteContentOptions: FBAccessibilityRemoteContentOptions? = nil,
     filter: FBAccessibilityElementFilter = .all,
-    match: FBAccessibilityMatch? = nil,
+    match: AccessibilityMatch? = nil,
     traversalStrategy: FBAXTraversalStrategy = .auto
   ) {
     self.format = format

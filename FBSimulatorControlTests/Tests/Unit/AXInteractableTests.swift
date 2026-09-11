@@ -46,7 +46,7 @@ final class AXInteractableTests: XCTestCase {
     return node
   }
 
-  private static func interactable(_ node: [String: Any]) -> FBAccessibilityInteractable?? {
+  private static func interactable(_ node: [String: Any]) -> AccessibilityInteractable?? {
     AXTreeWalk.describeAllElements(
       fromTree: node, keys: [.interactable], nestedFormat: false, pid: 13515
     ).first?.interactable
@@ -57,7 +57,7 @@ final class AXInteractableTests: XCTestCase {
   // The point the accessibility server reports, not the frame centre — those coincide here.
   func testAnUnobstructedElementIsActionableAtItsReachablePoint() throws {
     let value = try XCTUnwrap(Self.interactable(Self.node()) ?? nil)
-    XCTAssertEqual(value, .actionable(at: FBAccessibilityPoint(x: 201, y: 794.33)))
+    XCTAssertEqual(value, .actionable(at: AccessibilityPoint(x: 201, y: 794.33)))
   }
 
   // MARK: - Blocked
@@ -70,7 +70,7 @@ final class AXInteractableTests: XCTestCase {
         Self.node(visiblePoint: CGPoint(x: 201, y: 789.5), centrePoint: CGPoint(x: 201, y: 794.33))
       ) ?? nil
     )
-    XCTAssertEqual(value, .actionable(at: FBAccessibilityPoint(x: 201, y: 789.5)))
+    XCTAssertEqual(value, .actionable(at: AccessibilityPoint(x: 201, y: 789.5)))
   }
 
   // No reachable point at all. The `(-1, -1)` sentinel the runtime reports must not surface as a point.
@@ -146,7 +146,7 @@ final class AXInteractableTests: XCTestCase {
   // The union is internally tagged, so a consumer branches on `status` rather than probing for whichever
   // key happens to be present. These are the exact tokens a consumer matches on.
   func testActionableEncodesWithItsStatusAndPoint() throws {
-    let encoded = try Self.encode(.actionable(at: FBAccessibilityPoint(x: 201, y: 789.5)))
+    let encoded = try Self.encode(.actionable(at: AccessibilityPoint(x: 201, y: 789.5)))
     XCTAssertEqual(encoded["status"] as? String, "actionable")
     XCTAssertEqual((encoded["at"] as? [String: Any])?["x"] as? Double, 201)
     XCTAssertEqual((encoded["at"] as? [String: Any])?["y"] as? Double, 789.5)
@@ -165,7 +165,7 @@ final class AXInteractableTests: XCTestCase {
   // Every reason's wire spelling, pinned — these are the tokens a consumer branches on, so a rename is a
   // silent break for anyone matching them.
   func testReasonWireSpellings() {
-    let expected: [(FBAccessibilityInteractable.Reason, String)] = [
+    let expected: [(AccessibilityInteractable.Reason, String)] = [
       (.notHittable, "not_hittable"),
       (.clippedByScreen, "clipped_by_screen"),
       (.occluded(by: nil), "occluded"),
@@ -181,13 +181,13 @@ final class AXInteractableTests: XCTestCase {
 
   // MARK: - Clipped by the screen edge
 
-  private static let screen = FBAccessibilityScreenInfo(width: 402, height: 874)
+  private static let screen = AccessibilityScreenInfo(width: 402, height: 874)
 
   /// Runs the post-serialization refinement the way `describeTree` does.
   private static func clipped(
     frame: CGRect,
-    reasons: [FBAccessibilityInteractable.Reason] = [.notHittable]
-  ) -> FBAccessibilityInteractable? {
+    reasons: [AccessibilityInteractable.Reason] = [.notHittable]
+  ) -> AccessibilityInteractable? {
     var element = FBAccessibilityDocumentElement()
     element.frame = .some(FBAccessibilityFrame(frame))
     element.interactable = .some(.blocked(reasons: reasons))
@@ -249,15 +249,15 @@ final class AXInteractableTests: XCTestCase {
   func testAnActionableElementIsNeverNotedAsClipped() {
     var element = FBAccessibilityDocumentElement()
     element.frame = .some(FBAccessibilityFrame(CGRect(x: 16, y: -10, width: 370, height: 52)))
-    element.interactable = .some(.actionable(at: FBAccessibilityPoint(x: 201, y: 20)))
-    let refined: FBAccessibilityInteractable? =
+    element.interactable = .some(.actionable(at: AccessibilityPoint(x: 201, y: 20)))
+    let refined: AccessibilityInteractable? =
       AXScreenBoundsClassifier.notingScreenClipping(element, screen: Self.screen).interactable ?? nil
-    XCTAssertEqual(refined, FBAccessibilityInteractable.actionable(at: FBAccessibilityPoint(x: 201, y: 20)))
+    XCTAssertEqual(refined, AccessibilityInteractable.actionable(at: AccessibilityPoint(x: 201, y: 20)))
   }
 
   // A consumer that reads only `reasons[0]` must get an explanation, never `notHittable`.
   func testNotHittableSortsBehindEveryExplanation() {
-    let reasons: [FBAccessibilityInteractable.Reason] =
+    let reasons: [AccessibilityInteractable.Reason] =
       [.notHittable, .clippedByScreen, .userInteractionDisabled]
     XCTAssertEqual(reasons.mostSpecificFirst, [.clippedByScreen, .userInteractionDisabled, .notHittable])
     XCTAssertFalse(reasons.mostSpecificFirst[0].isUnexplained)
@@ -265,26 +265,26 @@ final class AXInteractableTests: XCTestCase {
 
   // Ordering is a partition, not a sort, so explanations keep the order the checks derived them in.
   func testExplanationsKeepTheirDerivationOrder() {
-    let reasons: [FBAccessibilityInteractable.Reason] =
+    let reasons: [AccessibilityInteractable.Reason] =
       [.zeroSize, .notHittable, .hidden, .disabled]
     XCTAssertEqual(reasons.mostSpecificFirst, [.zeroSize, .hidden, .disabled, .notHittable])
   }
 
   // A lone `notHittable` is left alone — it is the commonest blocked shape, not a degenerate one.
   func testALoneObservationIsUnchanged() {
-    XCTAssertEqual([FBAccessibilityInteractable.Reason.notHittable].mostSpecificFirst, [.notHittable])
+    XCTAssertEqual([AccessibilityInteractable.Reason.notHittable].mostSpecificFirst, [.notHittable])
   }
 
   // MARK: - Handled by a relative
 
   func testHandledByHasItsOwnWireSpelling() {
-    XCTAssertEqual(FBAccessibilityInteractable.Reason.handledBy(nil).kind, "handled_by")
+    XCTAssertEqual(AccessibilityInteractable.Reason.handledBy(nil).kind, "handled_by")
   }
 
   // Both cases that can name an element encode it under the same key, so a consumer reads `by` once
   // rather than once per reason kind.
   func testHandledByEncodesTheElementThatTookTheTouch() throws {
-    let owner = FBAccessibilityElementRef(
+    let owner = AccessibilityElementRef(
       type: "Button", identifier: "standby", label: "StandBy",
       frame: FBAccessibilityFrame(CGRect(x: 16, y: 744, width: 370, height: 52)), pid: 3283
     )
@@ -306,9 +306,9 @@ final class AXInteractableTests: XCTestCase {
 
   // It explains, so it sorts ahead of `notHittable` like every other explanation.
   func testHandledByIsAnExplanationNotAnObservation() {
-    XCTAssertFalse(FBAccessibilityInteractable.Reason.handledBy(nil).isUnexplained)
+    XCTAssertFalse(AccessibilityInteractable.Reason.handledBy(nil).isUnexplained)
     XCTAssertEqual(
-      [FBAccessibilityInteractable.Reason.notHittable, .handledBy(nil)].mostSpecificFirst,
+      [AccessibilityInteractable.Reason.notHittable, .handledBy(nil)].mostSpecificFirst,
       [.handledBy(nil), .notHittable]
     )
   }
@@ -319,7 +319,7 @@ final class AXInteractableTests: XCTestCase {
     handled.interactable = .some(.blocked(reasons: [.handledBy(nil)]))
     var bare = FBAccessibilityDocumentElement()
     bare.interactable = .some(.blocked(reasons: [.notHittable]))
-    let summary = try XCTUnwrap(FBAccessibilityInteractionSummary(elements: [handled, bare]))
+    let summary = try XCTUnwrap(AccessibilityInteractionSummary(elements: [handled, bare]))
     XCTAssertEqual(summary.blocked, 2)
     XCTAssertEqual(summary.unexplained, 1)
   }
@@ -340,7 +340,7 @@ final class AXInteractableTests: XCTestCase {
 
   // MARK: - Explanatory power
 
-  private static func element(_ value: FBAccessibilityInteractable?) -> FBAccessibilityDocumentElement {
+  private static func element(_ value: AccessibilityInteractable?) -> FBAccessibilityDocumentElement {
     var element = FBAccessibilityDocumentElement()
     element.interactable = .some(value)
     return element
@@ -348,8 +348,8 @@ final class AXInteractableTests: XCTestCase {
 
   func testTheSummaryCountsVerdictsByOutcome() throws {
     let summary = try XCTUnwrap(
-      FBAccessibilityInteractionSummary(elements: [
-        Self.element(.actionable(at: FBAccessibilityPoint(x: 1, y: 2))),
+      AccessibilityInteractionSummary(elements: [
+        Self.element(.actionable(at: AccessibilityPoint(x: 1, y: 2))),
         Self.element(.blocked(reasons: [.notHittable])),
         Self.element(.blocked(reasons: [.clippedByScreen, .notHittable])),
       ]))
@@ -360,7 +360,7 @@ final class AXInteractableTests: XCTestCase {
   // An element carrying a cause alongside the bare observation is explained.
   func testUnexplainedCountsOnlyElementsWithNoExplanationAtAll() throws {
     let summary = try XCTUnwrap(
-      FBAccessibilityInteractionSummary(elements: [
+      AccessibilityInteractionSummary(elements: [
         Self.element(.blocked(reasons: [.notHittable])),
         Self.element(.blocked(reasons: [.clippedByScreen, .notHittable])),
         Self.element(.blocked(reasons: [.userInteractionDisabled])),
@@ -372,9 +372,9 @@ final class AXInteractableTests: XCTestCase {
 
   // Children are counted, not just roots — a nested read is the normal shape.
   func testTheSummaryCountsNestedElements() throws {
-    var root = Self.element(.actionable(at: FBAccessibilityPoint(x: 1, y: 2)))
+    var root = Self.element(.actionable(at: AccessibilityPoint(x: 1, y: 2)))
     root.children = [Self.element(.blocked(reasons: [.notHittable]))]
-    let summary = try XCTUnwrap(FBAccessibilityInteractionSummary(elements: [root]))
+    let summary = try XCTUnwrap(AccessibilityInteractionSummary(elements: [root]))
     XCTAssertEqual(summary.actionable, 1)
     XCTAssertEqual(summary.unexplained, 1)
   }
@@ -382,16 +382,16 @@ final class AXInteractableTests: XCTestCase {
   // Nil rather than zeroes when nothing carried a verdict, so a backend that cannot judge is not
   // mistaken for a screen with nothing blocked.
   func testTheSummaryIsAbsentWhenNothingCarriedAVerdict() {
-    XCTAssertNil(FBAccessibilityInteractionSummary(elements: [Self.element(nil), Self.element(nil)]))
-    XCTAssertNil(FBAccessibilityInteractionSummary(elements: []))
+    XCTAssertNil(AccessibilityInteractionSummary(elements: [Self.element(nil), Self.element(nil)]))
+    XCTAssertNil(AccessibilityInteractionSummary(elements: []))
   }
 
   // No blocked elements means the ratio has no denominator, and reporting 0.0 would read as "perfectly
   // explained" rather than "nothing to explain".
   func testTheRatioIsAbsentWhenNothingIsBlocked() throws {
     let summary = try XCTUnwrap(
-      FBAccessibilityInteractionSummary(
-        elements: [Self.element(.actionable(at: FBAccessibilityPoint(x: 1, y: 2)))]
+      AccessibilityInteractionSummary(
+        elements: [Self.element(.actionable(at: AccessibilityPoint(x: 1, y: 2)))]
       ))
     XCTAssertEqual(summary.blocked, 0)
     XCTAssertNil(summary.unexplainedRatio)
@@ -404,7 +404,7 @@ final class AXInteractableTests: XCTestCase {
     var reachable = FBAccessibilityDocumentElement()
     reachable.label = .some("StandBy")
     reachable.role = .some("AXButton")
-    reachable.interactable = .some(.actionable(at: FBAccessibilityPoint(x: 201, y: 770)))
+    reachable.interactable = .some(.actionable(at: AccessibilityPoint(x: 201, y: 770)))
     var covered = FBAccessibilityDocumentElement()
     covered.label = .some("Screen Time")
     covered.role = .some("AXButton")
@@ -435,7 +435,7 @@ final class AXInteractableTests: XCTestCase {
     )
   }
 
-  private static func encode(_ value: FBAccessibilityInteractable) throws -> [String: Any] {
+  private static func encode(_ value: AccessibilityInteractable) throws -> [String: Any] {
     let data = try JSONEncoder().encode(value)
     return try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any])
   }

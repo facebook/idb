@@ -7,13 +7,13 @@
 
 import Foundation
 
-public enum FBAccessibilityElementPayload: Sendable, Equatable {
+public enum AccessibilityElementPayload: Sendable, Equatable {
   case tree([FBAccessibilityDocumentElement])
   case single(FBAccessibilityDocumentElement)
   /// A point read that succeeded but hit nothing.
   case empty
 
-  public func reportingChildren() -> FBAccessibilityElementPayload {
+  public func reportingChildren() -> AccessibilityElementPayload {
     switch self {
     case let .tree(elements): return .tree(elements.map { $0.reportingChildren() })
     case let .single(element): return .single(element.reportingChildren())
@@ -30,7 +30,7 @@ public enum FBAccessibilityElementPayload: Sendable, Equatable {
   }
 }
 
-public extension FBAccessibilityElementPayload {
+public extension AccessibilityElementPayload {
   /// Foundation objects, so `JSONSerialization` reproduces the legacy format's floating-point rendering.
   var legacyFoundationObject: Any {
     switch self {
@@ -88,7 +88,7 @@ public extension FBAccessibilityFrame {
   }
 }
 
-public extension FBAccessibilityInteractable {
+public extension AccessibilityInteractable {
   var legacyFoundationObject: [String: Any] {
     switch self {
     case let .actionable(at):
@@ -102,7 +102,7 @@ public extension FBAccessibilityInteractable {
   }
 }
 
-public extension FBAccessibilityInteractable.Reason {
+public extension AccessibilityInteractable.Reason {
   var legacyFoundationObject: [String: Any] {
     switch self {
     case let .occluded(by), let .handledBy(by):
@@ -114,7 +114,7 @@ public extension FBAccessibilityInteractable.Reason {
   }
 }
 
-public extension FBAccessibilityElementRef {
+public extension AccessibilityElementRef {
   var legacyFoundationObject: [String: Any] {
     [
       "type": type ?? NSNull(),

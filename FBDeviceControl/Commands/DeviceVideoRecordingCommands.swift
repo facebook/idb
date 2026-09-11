@@ -52,7 +52,7 @@ public final class DeviceVideoRecordingCommands: VideoRecordingCommands {
     let video = try await DeviceVideo.video(for: device, filePath: filePath)
     self.video = video
     try await video.startRecording()
-    return FBVideoRecordingHandle {
+    return VideoRecordingHandle {
       return try await self.stop()
     }
   }

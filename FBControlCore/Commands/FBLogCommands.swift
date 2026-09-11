@@ -7,7 +7,7 @@
 
 import Foundation
 
-public final class FBProcessLogOperation: LogOperation {
+public final class ProcessLogOperation: LogOperation {
 
   public let process: FBSubprocess<AnyObject, AnyObject, AnyObject>
   public let consumer: any FBDataConsumer
@@ -41,7 +41,7 @@ public final class FBProcessLogOperation: LogOperation {
     guard let firstArgument = arguments.first else {
       return ["stream"]
     }
-    if FBProcessLogOperation.osLogSubcommands.contains(firstArgument) {
+    if ProcessLogOperation.osLogSubcommands.contains(firstArgument) {
       return arguments
     }
     return ["stream"] + arguments

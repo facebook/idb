@@ -9,9 +9,9 @@ import Foundation
 
 /// Where a translator-backed read spent its time.
 ///
-/// Disjoint from `FBAXBridgeProfile` because the backends measure different phases. Their common fields
+/// Disjoint from `AXBridgeProfile` because the backends measure different phases. Their common fields
 /// use the same names so callers can compare backend performance without flattening the two models.
-public struct FBAccessibilityProfilingData: Sendable, Equatable, Encodable {
+public struct AccessibilityProfilingData: Sendable, Equatable, Encodable {
 
   // MARK: - The core, spelled identically in every backend's profile
 
@@ -107,10 +107,10 @@ public struct FBAccessibilityProfilingData: Sendable, Equatable, Encodable {
   }
 }
 
-extension FBAccessibilityProfilingData: CustomStringConvertible {
+extension AccessibilityProfilingData: CustomStringConvertible {
   public var description: String {
     String(
-      format: "<FBAccessibilityProfilingData: elements=%lld, total=%.2fms, acquire=%.2fms, read=%.2fms, serialize=%.2fms>",
+      format: "<AccessibilityProfilingData: elements=%lld, total=%.2fms, acquire=%.2fms, read=%.2fms, serialize=%.2fms>",
       elementCount,
       totalDuration * 1000,
       acquireDuration * 1000,
@@ -123,7 +123,7 @@ extension FBAccessibilityProfilingData: CustomStringConvertible {
 /// A fullscreen modal / alert over the read target, carried on the SimulatorFrameworkBridge ->
 /// FBSimulatorControl wire. Surfaced only by the `complete` format; the legacy envelope stays
 /// byte-stable.
-public struct FBAccessibilityModalInfo: Sendable, Equatable, Encodable {
+public struct AccessibilityModalInfo: Sendable, Equatable, Encodable {
 
   /// Who owns the modal: the system shell (SpringBoard — a system/permission alert) or the app itself
   /// (an in-app `UIAlertController`).
@@ -165,50 +165,50 @@ public struct FBAccessibilityModalInfo: Sendable, Equatable, Encodable {
 public struct FBAccessibilityElementsResponse: Sendable {
 
   /// The accessibility elements: an object (single element) or an array (flat/nested tree).
-  public let elements: FBAccessibilityElementPayload
+  public let elements: AccessibilityElementPayload
 
   /// Where the read spent its time, when the backend measured it. `.translator` and `.guestBridge`
   /// measure disjoint phases; `backend` says which to expect.
   public let profilingData: FBAccessibilityProfile?
 
   /// How much of the screen the read's element frames cover, or `nil` when coverage was not requested.
-  public let coverage: FBAccessibilityCoverage?
+  public let coverage: AccessibilityCoverage?
 
   /// A fullscreen modal / alert over the read target, when detected. Emitted only by the `complete`
   /// document; the legacy envelope is byte-stable and must not gain it.
-  public let modal: FBAccessibilityModalInfo?
+  public let modal: AccessibilityModalInfo?
 
   /// Whether the read's tree walk was cut short by a depth or node bound, so the elements are a
   /// partial view. Only the `complete` document surfaces this.
   public let truncated: Bool
 
   /// The bounds the element frames are relative to, when the read knows them.
-  public let screen: FBAccessibilityScreenInfo?
+  public let screen: AccessibilityScreenInfo?
 
   /// Which backend produced the read.
   public let backend: FBUIAutomationBackendName?
 
   /// What the read was asked for.
-  public let target: FBAccessibilityTargetDescriptor?
+  public let target: AccessibilityTargetDescriptor?
 
   /// The device's accessibility automation mode for this read, when the backend reported it.
-  public let automation: FBAccessibilityAutomationState?
+  public let automation: AccessibilityAutomationState?
 
   /// What narrowed the read and how much survived, for a read that could narrow. Nil for the
   /// single-element reads, which select an element rather than narrow a list.
-  public let narrowing: FBAccessibilityNarrowing?
+  public let narrowing: AccessibilityNarrowing?
 
   public init(
-    elements: FBAccessibilityElementPayload,
+    elements: AccessibilityElementPayload,
     profilingData: FBAccessibilityProfile? = nil,
-    coverage: FBAccessibilityCoverage? = nil,
-    modal: FBAccessibilityModalInfo? = nil,
+    coverage: AccessibilityCoverage? = nil,
+    modal: AccessibilityModalInfo? = nil,
     truncated: Bool = false,
-    screen: FBAccessibilityScreenInfo? = nil,
+    screen: AccessibilityScreenInfo? = nil,
     backend: FBUIAutomationBackendName? = nil,
-    target: FBAccessibilityTargetDescriptor? = nil,
-    automation: FBAccessibilityAutomationState? = nil,
-    narrowing: FBAccessibilityNarrowing? = nil
+    target: AccessibilityTargetDescriptor? = nil,
+    automation: AccessibilityAutomationState? = nil,
+    narrowing: AccessibilityNarrowing? = nil
   ) {
     self.elements = elements
     self.profilingData = profilingData
@@ -225,8 +225,8 @@ public struct FBAccessibilityElementsResponse: Sendable {
   /// A copy carrying the read's provenance; a `nil` argument leaves the existing value in place.
   public func withProvenance(
     backend: FBUIAutomationBackendName? = nil,
-    target: FBAccessibilityTargetDescriptor? = nil,
-    screen: FBAccessibilityScreenInfo? = nil,
+    target: AccessibilityTargetDescriptor? = nil,
+    screen: AccessibilityScreenInfo? = nil,
     truncated: Bool? = nil
   ) -> FBAccessibilityElementsResponse {
     FBAccessibilityElementsResponse(
@@ -244,7 +244,7 @@ public struct FBAccessibilityElementsResponse: Sendable {
   }
 
   /// A copy reporting what narrowed the read.
-  public func withNarrowing(_ narrowing: FBAccessibilityNarrowing) -> FBAccessibilityElementsResponse {
+  public func withNarrowing(_ narrowing: AccessibilityNarrowing) -> FBAccessibilityElementsResponse {
     FBAccessibilityElementsResponse(
       elements: elements,
       profilingData: profilingData,
@@ -260,7 +260,7 @@ public struct FBAccessibilityElementsResponse: Sendable {
   }
 
   /// A copy whose screen bounds are replaced, including with `nil` when a read has no screen context.
-  public func replacingScreen(_ screen: FBAccessibilityScreenInfo?) -> FBAccessibilityElementsResponse {
+  public func replacingScreen(_ screen: AccessibilityScreenInfo?) -> FBAccessibilityElementsResponse {
     FBAccessibilityElementsResponse(
       elements: elements,
       profilingData: profilingData,
@@ -287,8 +287,8 @@ public struct FBAccessibilityElementsResponse: Sendable {
       target: target,
       profile: profilingData,
       coverage: coverage,
-      interaction: FBAccessibilityInteractionSummary(elements: reported),
-      frames: FBAccessibilityFrameSummary(elements: reported),
+      interaction: AccessibilityInteractionSummary(elements: reported),
+      frames: AccessibilityFrameSummary(elements: reported),
       automation: automation,
       narrowing: narrowing
     )

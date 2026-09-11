@@ -12,5 +12,5 @@ public protocol DebuggerCommands {
   func launchDebugServer(
     forHostApplication application: FBBundleDescriptor,
     port: in_port_t
-  ) async throws -> any FBDebugServer
+  ) async throws -> any DebugServer
 }

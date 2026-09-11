@@ -32,7 +32,7 @@ public final class FBSimulator: FBiOSTarget, Hashable, CustomStringConvertible, 
   /// The `FBSimulatorConfiguration` representing this Simulator.
   public var configuration: FBSimulatorConfiguration
 
-  public let commandCache: FBTargetCommandCache
+  public let commandCache: TargetCommandCache
 
   public let logger: any FBControlCoreLogger
   public let auxillaryDirectory: String
@@ -62,7 +62,7 @@ public final class FBSimulator: FBiOSTarget, Hashable, CustomStringConvertible, 
     self.set = set
     self.auxillaryDirectory = auxillaryDirectory
     self.logger = (logger ?? FBControlCoreGlobalConfiguration.defaultLogger).withName(device.udid.uuidString)
-    self.commandCache = FBTargetCommandCache()
+    self.commandCache = TargetCommandCache()
   }
 
   // MARK: - FBiOSTargetInfo

@@ -171,7 +171,7 @@ final class AccessibilitySerializationTests: XCTestCase {
       AXWire.Node.label.rawValue: "root",
       AXWire.Node.frame.rawValue: try guestFrameDictionary(nulling: "X", of: CGRect(x: 0, y: 0, width: 390, height: 844)),
     ]
-    XCTAssertEqual(AXTreeWalk.screenInfo(fromTree: tree), FBAccessibilityScreenInfo(width: 390, height: 844))
+    XCTAssertEqual(AXTreeWalk.screenInfo(fromTree: tree), AccessibilityScreenInfo(width: 390, height: 844))
   }
 
   // An element with an unreadable coordinate has nowhere to be tapped; `.offScreen` separates that from a marker that
@@ -440,7 +440,7 @@ final class AccessibilitySerializationTests: XCTestCase {
     let response = FBAccessibilityElementsResponse(
       elements: .tree([]),
       profilingData: .translator(Self.sampleProfilingData()),
-      coverage: FBAccessibilityCoverage(frame: 0.5, walked: 0.5, content: 0.5, leaf: 0.5, additional: 0.25)
+      coverage: AccessibilityCoverage(frame: 0.5, walked: 0.5, content: 0.5, leaf: 0.5, additional: 0.25)
     )
     for format: FBAccessibilityOutputFormat in [.default, .nested] {
       XCTAssertEqual(
@@ -474,7 +474,7 @@ final class AccessibilitySerializationTests: XCTestCase {
       FBAccessibilityElementsResponse(elements: .single(try XCTUnwrap(flatElements().first))),
       FBAccessibilityElementsResponse(elements: .tree([])),
       FBAccessibilityElementsResponse(elements: .tree([]), profilingData: .translator(Self.sampleProfilingData())),
-      FBAccessibilityElementsResponse(elements: .tree([]), coverage: FBAccessibilityCoverage(frame: 0.5, walked: 0.5, content: 0.5, leaf: 0.5, additional: 0.25)),
+      FBAccessibilityElementsResponse(elements: .tree([]), coverage: AccessibilityCoverage(frame: 0.5, walked: 0.5, content: 0.5, leaf: 0.5, additional: 0.25)),
     ]
     for response in responses {
       XCTAssertEqual(
@@ -552,8 +552,8 @@ final class AccessibilitySerializationTests: XCTestCase {
   }
 
   // Fixed, exactly-representable durations so the millisecond conversion has a stable byte form.
-  private static func sampleProfilingData() -> FBAccessibilityProfilingData {
-    FBAccessibilityProfilingData(
+  private static func sampleProfilingData() -> AccessibilityProfilingData {
+    AccessibilityProfilingData(
       elementCount: 2,
       totalDuration: 1,
       acquireDuration: 0.75,
@@ -694,12 +694,12 @@ final class AccessibilitySerializationTests: XCTestCase {
   // The root frame is where screen bounds come from and the document encoder refuses a non-finite value outright,
   // so an unrepresentable bound has to become "unknown" at construction rather than failing the whole read.
   func testNonFiniteScreenBoundsAreReportedAsUnknownRatherThanFailing() throws {
-    XCTAssertNil(FBAccessibilityScreenInfo(width: .infinity, height: 844), "a non-finite bound is not a screen")
-    XCTAssertNil(FBAccessibilityScreenInfo(width: 390, height: .nan))
-    XCTAssertNotNil(FBAccessibilityScreenInfo(width: 390, height: 844))
+    XCTAssertNil(AccessibilityScreenInfo(width: .infinity, height: 844), "a non-finite bound is not a screen")
+    XCTAssertNil(AccessibilityScreenInfo(width: 390, height: .nan))
+    XCTAssertNotNil(AccessibilityScreenInfo(width: 390, height: 844))
 
     let response = FBAccessibilityElementsResponse(
-      elements: .tree([]), screen: FBAccessibilityScreenInfo(width: .infinity, height: 844)
+      elements: .tree([]), screen: AccessibilityScreenInfo(width: .infinity, height: 844)
     )
     let document = documentObject(response)
     XCTAssertTrue(document["screen"] is NSNull, "unknown bounds are null, and the read still renders")
@@ -839,7 +839,7 @@ final class AccessibilitySerializationTests: XCTestCase {
   // A single-element read is an object in the legacy envelope; `complete` always presents an array so a
   // consumer never branches on the shape.
   func testCompleteElementsIsAlwaysAnArray() throws {
-    let cases: [(String, FBAccessibilityElementPayload, Int)] = [
+    let cases: [(String, AccessibilityElementPayload, Int)] = [
       ("a whole-tree read", .tree(flatElements()), 2),
       ("a single-element read", .single(try XCTUnwrap(flatElements().first)), 1),
       ("an empty read", .tree([]), 0),
@@ -860,13 +860,13 @@ final class AccessibilitySerializationTests: XCTestCase {
     let full = FBAccessibilityElementsResponse(
       elements: .tree(flatElements()),
       profilingData: .translator(Self.sampleProfilingData()),
-      coverage: FBAccessibilityCoverage(frame: 0.5, walked: 0.5, content: 0.5, leaf: 0.5, additional: 0.25),
-      modal: FBAccessibilityModalInfo(kind: .system, elementType: "SBAlertItemWindow", label: "Allow"),
+      coverage: AccessibilityCoverage(frame: 0.5, walked: 0.5, content: 0.5, leaf: 0.5, additional: 0.25),
+      modal: AccessibilityModalInfo(kind: .system, elementType: "SBAlertItemWindow", label: "Allow"),
       truncated: true,
-      screen: FBAccessibilityScreenInfo(width: 390, height: 844),
+      screen: AccessibilityScreenInfo(width: 390, height: 844),
       backend: .axBridgeOneShot,
       target: .point(CGPoint(x: 10, y: 20)),
-      narrowing: FBAccessibilityNarrowing(
+      narrowing: AccessibilityNarrowing(
         match: "Cart", matchKey: "AXLabel", ignoreCase: true, filter: "interactable", walked: 40, matched: 1)
     )
     XCTAssertEqual(documentKeys(bare), expected, "an empty read still carries every key")
@@ -885,10 +885,10 @@ final class AccessibilitySerializationTests: XCTestCase {
     let response = FBAccessibilityElementsResponse(
       elements: .tree([]),
       profilingData: .translator(Self.sampleProfilingData()),
-      coverage: FBAccessibilityCoverage(frame: 0.5, walked: 0.5, content: 0.5, leaf: 0.5, additional: nil),
-      modal: FBAccessibilityModalInfo(kind: .system, elementType: "SBAlertItemWindow", label: "Allow"),
+      coverage: AccessibilityCoverage(frame: 0.5, walked: 0.5, content: 0.5, leaf: 0.5, additional: nil),
+      modal: AccessibilityModalInfo(kind: .system, elementType: "SBAlertItemWindow", label: "Allow"),
       truncated: true,
-      screen: FBAccessibilityScreenInfo(width: 390, height: 844),
+      screen: AccessibilityScreenInfo(width: 390, height: 844),
       backend: .axBridgeOneShot,
       target: .marker(value: "General", matchKey: FBAXSearchableKey.label.rawValue)
     )
@@ -929,7 +929,7 @@ final class AccessibilitySerializationTests: XCTestCase {
   func testNarrowingEchoesThePredicateAndBothCounts() throws {
     let options = FBAccessibilityRequestOptions(
       filter: .interactable,
-      match: FBAccessibilityMatch(value: "Cart", key: .value, ignoresCase: true)
+      match: AccessibilityMatch(value: "Cart", key: .value, ignoresCase: true)
     )
     let response = FBAccessibilityElementsResponse(elements: .tree([]))
       .withNarrowing(options.narrowingReport(walked: flatElements(), reported: Array(flatElements().prefix(1))))
@@ -964,7 +964,7 @@ final class AccessibilitySerializationTests: XCTestCase {
       fromTree: Self.filterTree(), keys: [.label, .role], nestedFormat: false, pid: 7
     )
     let options = FBAccessibilityRequestOptions(
-      filter: .all, match: FBAccessibilityMatch(value: "sibling", key: .label, ignoresCase: false)
+      filter: .all, match: AccessibilityMatch(value: "sibling", key: .label, ignoresCase: false)
     )
     let reported = options.narrowing(walked)
     let report = options.narrowingReport(walked: walked, reported: reported)
@@ -980,7 +980,7 @@ final class AccessibilitySerializationTests: XCTestCase {
   // otherwise one non-matching main node plus three matching discovered nodes reports 3 matched of 1 walked.
   func testARemoteContentReadCountsDiscoveredNodesOnTheWalkedSide() throws {
     let options = FBAccessibilityRequestOptions(
-      filter: .all, match: FBAccessibilityMatch(value: "Cart", key: .label, ignoresCase: false)
+      filter: .all, match: AccessibilityMatch(value: "Cart", key: .label, ignoresCase: false)
     )
     let walkedMain = [Self.labeled("root")]
     let discovered = [Self.labeled("Cart"), Self.labeled("Cart"), Self.labeled("Cart")]
@@ -992,7 +992,7 @@ final class AccessibilitySerializationTests: XCTestCase {
       "the fixture must reproduce the hazard: more reported than the main walk alone"
     )
 
-    let report = FBAccessibilityNarrowing(
+    let report = AccessibilityNarrowing(
       filter: options.filter, match: options.match,
       walked: walkedMain, discovered: discovered, reported: reported
     )
@@ -1051,7 +1051,7 @@ final class AccessibilitySerializationTests: XCTestCase {
     let response = FBAccessibilityElementsResponse(
       elements: .tree([]),
       profilingData: .guestBridge(
-        FBAXBridgeProfile(
+        AXBridgeProfile(
           elementCount: 176, totalDuration: 0.4, acquireDuration: 0.36, readDuration: 0.03,
           serializeDuration: 0.01, traversal: .viewHierarchy, machRoundTrips: 176
         ))
@@ -1077,11 +1077,11 @@ final class AccessibilitySerializationTests: XCTestCase {
   // The wire profile carries the traversal for every strategy, so `mach_round_trips` can be read
   // without inferring which walk produced it.
   func testTheGuestProfileReportsHowTheTreeWasTraversed() throws {
-    for traversal in FBAXTraversal.allCases {
+    for traversal in AXTraversal.allCases {
       let response = FBAccessibilityElementsResponse(
         elements: .tree([]),
         profilingData: .guestBridge(
-          FBAXBridgeProfile(
+          AXBridgeProfile(
             elementCount: 0, totalDuration: 0, acquireDuration: 0, readDuration: 0, serializeDuration: 0,
             traversal: traversal
           ))
@@ -1092,7 +1092,7 @@ final class AccessibilitySerializationTests: XCTestCase {
   }
 
   func testCompleteDocumentTargetKindsCarryTheirOwnFields() throws {
-    let targets: [(FBAccessibilityTargetDescriptor, String, String, Any?)] = [
+    let targets: [(AccessibilityTargetDescriptor, String, String, Any?)] = [
       (.frontmost, "frontmost", "pid", nil),
       (.application(pid: 60924), "application", "pid", 60924),
       (.point(CGPoint(x: 10, y: 20)), "point", "x", 10.0),

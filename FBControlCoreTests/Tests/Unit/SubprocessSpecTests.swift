@@ -81,7 +81,7 @@ struct SubprocessSpecTests {
 }
 
 /// Pins `TerminationStatus.init(statLoc:)` to the decode in
-/// `FBProcessSpawnCommandHelpers`, which `FBSubprocessTerminationTests` pins
+/// `ProcessSpawnCommandHelpers`, which `FBSubprocessTerminationTests` pins
 /// against real processes.
 @Suite
 struct TerminationStatusTests {
@@ -146,7 +146,7 @@ struct CompletedCheckTests {
     do {
       try Self.completed(.signalled(SIGKILL)).checkExitedCleanly { DomainError(code: $0) }
       Issue.record("Expected the check to throw for a signal")
-    } catch let error as FBProcessTerminationError {
+    } catch let error as ProcessTerminationError {
       #expect(error.localizedDescription == "Process 42 (tool) exited with signal \(SIGKILL)")
     }
   }

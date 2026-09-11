@@ -149,7 +149,7 @@ enum AXNodeSerializer {
       collector?.incrementAttributeFetchCount(forKey: FBAXKeys.interactable.rawValue)
       node.interactable = .some(interactable(forElement: element, frame: frame))
       node.explainedBy = element.axExplainedBy().map { explanation in
-        FBAccessibilityElementRef(
+        AccessibilityElementRef(
           type: explanation.axRole().map(AXRoleVocabulary.normalizeRole),
           identifier: explanation.axIdentifier(),
           label: explanation.axLabel(),
@@ -168,12 +168,12 @@ enum AXNodeSerializer {
   private static func interactable(
     forElement element: AXPlatformElement,
     frame: NSRect
-  ) -> FBAccessibilityInteractable? {
+  ) -> AccessibilityInteractable? {
     guard let hittable = element.axIsHittable() else {
       return nil
     }
 
-    var reasons: [FBAccessibilityInteractable.Reason] = []
+    var reasons: [AccessibilityInteractable.Reason] = []
     if frame.width == 0 || frame.height == 0 {
       reasons.append(.zeroSize)
     }
@@ -187,7 +187,7 @@ enum AXNodeSerializer {
       reasons.append(.userInteractionDisabled)
     }
 
-    let hittablePoint = element.axHittablePoint().flatMap(FBAccessibilityPoint.init)
+    let hittablePoint = element.axHittablePoint().flatMap(AccessibilityPoint.init)
     if !hittable {
       // No reachable point at all. This attribute cannot say whether the element is covered, clipped,
       // transparent or handled by a relative — naming the cause needs the `occludedBy` hit-test.

@@ -95,7 +95,7 @@ final class AXBridgeUIAutomation: AXBridgeTreeReader, @unchecked Sendable {
 
   /// A single fetch that asks for reachability hit-tests every node and times out rather than
   /// answering, so those keys force the per-node walk.
-  static func autoTraversal(for options: FBAccessibilityRequestOptions) -> FBAXTraversal {
+  static func autoTraversal(for options: FBAccessibilityRequestOptions) -> AXTraversal {
     guard options.serializationKeys.isDisjoint(with: FBAXKeys.reachabilityKeys) else {
       return .viewHierarchy
     }
@@ -108,7 +108,7 @@ final class AXBridgeUIAutomation: AXBridgeTreeReader, @unchecked Sendable {
     for query: FBAccessibilityElementQuery,
     attributes: [String]?,
     explainUnreachable: Bool,
-    traversal: FBAXTraversal
+    traversal: AXTraversal
   ) async throws -> AXTreeRead {
     try await translatingBackendErrors {
       if case let .application(pid) = query {
@@ -309,7 +309,7 @@ final class AXBridgeUIAutomation: AXBridgeTreeReader, @unchecked Sendable {
     return (Double(widthPixels) / pointsPerPixel / 2, Double(heightPixels) / pointsPerPixel / 2)
   }
 
-  func warnIfUnsatisfiable(_ keys: Set<FBAXKeys>, traversal: FBAXTraversal) {
+  func warnIfUnsatisfiable(_ keys: Set<FBAXKeys>, traversal: AXTraversal) {
     guard !keys.isEmpty else {
       return
     }
@@ -327,13 +327,13 @@ final class AXBridgeUIAutomation: AXBridgeTreeReader, @unchecked Sendable {
 
   func profile(
     for read: AXTreeRead, elementCount: Int, serializeDuration: CFAbsoluteTime,
-    traversal: FBAXTraversal
+    traversal: AXTraversal
   ) -> FBAccessibilityProfile? {
     guard let timings = read.timings else {
       return nil
     }
     return .guestBridge(
-      FBAXBridgeProfile(
+      AXBridgeProfile(
         elementCount: Int64(elementCount),
         totalDuration: timings.roundTrip + timings.decode + serializeDuration,
         acquireDuration: timings.residual,
@@ -351,7 +351,7 @@ final class AXBridgeUIAutomation: AXBridgeTreeReader, @unchecked Sendable {
     _ = simulator.logger.log(AccessibilityGuidance.reachabilityAcrossTree)
   }
 
-  func warnIfMostElementsUnframed(_ frames: FBAccessibilityFrameSummary?) {
+  func warnIfMostElementsUnframed(_ frames: AccessibilityFrameSummary?) {
     guard let advice = AccessibilityGuidance.zeroFrameAdvice(frames), let frames else { return }
     _ = simulator.logger.log("axbridge read reported \(frames.zeroFrame) of \(frames.total) elements with no frame. \(advice)")
   }

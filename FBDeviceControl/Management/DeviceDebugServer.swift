@@ -100,7 +100,7 @@ private class DeviceDebugServer_TwistedPairFiles {
   }
 }
 
-public final class DeviceDebugServer: NSObject, FBSocketServerDelegate, FBDebugServer {
+public final class DeviceDebugServer: NSObject, FBSocketServerDelegate, DebugServer {
   private let serviceConnection: FBAMDServiceConnection
   private lazy var tcpServer: FBSocketServer = FBSocketServer(onPort: self.port, delegate: self)
   private let port: in_port_t
@@ -197,7 +197,7 @@ public final class DeviceDebugServer: NSObject, FBSocketServerDelegate, FBDebugS
     self.twistedPair = pair
   }
 
-  // MARK: - FBDebugServer
+  // MARK: - DebugServer
 
   public func cancel() async throws {
     try await bridgeFBFutureVoid(self.completed.cancel())

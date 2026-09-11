@@ -105,9 +105,9 @@ public final class AccessibilityProfilingCollector {
 
   /// `walkDuration` is the wall time of the serialization walk, which on this backend fetches and formats
   /// in one pass; `serializeDuration` is that wall time minus the walk's XPC wait.
-  public func finalize(withWalkDuration walkDuration: CFAbsoluteTime) -> FBAccessibilityProfilingData {
+  public func finalize(withWalkDuration walkDuration: CFAbsoluteTime) -> AccessibilityProfilingData {
     let readDuration = walkXPCDuration
-    return FBAccessibilityProfilingData(
+    return AccessibilityProfilingData(
       elementCount: elementCount,
       totalDuration: CFAbsoluteTimeGetCurrent() - readStart,
       acquireDuration: translationDuration + elementConversionDuration,

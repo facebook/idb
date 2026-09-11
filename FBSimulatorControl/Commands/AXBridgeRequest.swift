@@ -88,7 +88,7 @@ struct AXBridgeReadRequest: Sendable, Equatable {
   let maxNodes: Int
   let attributes: [String]?
   let explainUnreachable: Bool
-  let traversal: FBAXTraversal
+  let traversal: AXTraversal
   let automationMode: Bool?
 
   func appendingArguments(to arguments: [String]) -> [String] {

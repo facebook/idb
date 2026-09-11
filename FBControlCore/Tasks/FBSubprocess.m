@@ -253,7 +253,7 @@ static BOOL AddInputFileActions(posix_spawn_file_actions_t *fileActions, FBProce
     }
 
     // Resolve all of the related process finshed futures now, so that they do not need asynchronous resolution.
-    [FBProcessSpawnCommandHelpers
+    [ProcessSpawnCommandHelpers
      resolveProcessFinishedWithStatLoc:status
      inTeardownOfIOAttachment:attachment
      statLocFuture:statLoc

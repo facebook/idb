@@ -154,7 +154,7 @@ final class AXBridgeSocketTests: XCTestCase {
       environment: [:],
       io: FBProcessIO<AnyObject, AnyObject, AnyObject>.outputToDevNull(),
       mode: .default)
-    // Resolved the way `FBProcessSpawnCommandHelpers.resolveProcessFinished` resolves a signalled
+    // Resolved the way `ProcessSpawnCommandHelpers.resolveProcessFinished` resolves a signalled
     // process: `statLoc` carries the raw `waitpid` status, `signal` the number, and `exitCode` *errors*
     // rather than holding a value. A fake that leaves `exitCode` merely pending would let a reader that
     // depends on the three resolving in order pass here and fail against a real subprocess.
@@ -164,7 +164,7 @@ final class AXBridgeSocketTests: XCTestCase {
     signalled.resolve(withResult: NSNumber(value: signal))
     let exitCode = FBMutableFuture<NSNumber>()
     exitCode.resolveWithError(
-      FBProcessTerminationError.exitedWithSignal(
+      ProcessTerminationError.exitedWithSignal(
         processIdentifier: pid, processName: "SimulatorFrameworkBridge", signal: signal))
     return FBSubprocess(
       processIdentifier: pid,

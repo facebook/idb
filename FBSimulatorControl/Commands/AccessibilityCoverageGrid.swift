@@ -141,7 +141,7 @@ final class AccessibilityCoverageGrid {
   }
 }
 
-extension FBAccessibilityCoverage {
+extension AccessibilityCoverage {
 
   /// The coverage a read reports, measured over its serialized elements.
   ///
@@ -156,7 +156,7 @@ extension FBAccessibilityCoverage {
     screenBounds: CGRect,
     nested: Bool,
     additional: Double? = nil
-  ) -> FBAccessibilityCoverage? {
+  ) -> AccessibilityCoverage? {
     guard let frame = AccessibilityCoverageGrid.ratio(of: reported, screenBounds: screenBounds),
       let walkedRatio = AccessibilityCoverageGrid.ratio(of: walked, screenBounds: screenBounds)
     else {
@@ -169,7 +169,7 @@ extension FBAccessibilityCoverage {
     let content =
       nested
       ? AccessibilityCoverageGrid.ratio(of: Self.innermostLabelled(in: walked), screenBounds: screenBounds) : nil
-    return FBAccessibilityCoverage(
+    return AccessibilityCoverage(
       frame: frame, walked: walkedRatio, content: content, leaf: leaf, additional: additional
     )
   }
@@ -214,7 +214,7 @@ extension FBAccessibilityCoverage {
 
   /// The bounds a read's screen info describes. The frames the calculation measures are in screen
   /// space, so the rectangle is anchored at the origin.
-  static func bounds(of screen: FBAccessibilityScreenInfo) -> CGRect {
+  static func bounds(of screen: AccessibilityScreenInfo) -> CGRect {
     CGRect(x: 0, y: 0, width: screen.width, height: screen.height)
   }
 }

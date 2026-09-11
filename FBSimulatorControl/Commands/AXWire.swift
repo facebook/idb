@@ -15,7 +15,7 @@ import Foundation
 ///
 /// Two further wire vocabularies live with the types that own their parsed form and are referenced
 /// rather than re-declared here: the frontmost-resolution request `method` values are
-/// `FBAXBridgeFrontmostMethod`, and the modal kinds are `FBAccessibilityModalInfo.Kind`
+/// `FBAXBridgeFrontmostMethod`, and the modal kinds are `AccessibilityModalInfo.Kind`
 /// (`system`/`app`).
 enum AXWire {
 

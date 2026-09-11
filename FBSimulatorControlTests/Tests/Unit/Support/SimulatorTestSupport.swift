@@ -67,7 +67,7 @@ func createSimulatorSet(
 }
 
 /// Builds `FBSimulator`s for unit tests. Tests pre-register a wrapping command class on the
-/// returned simulator's `commandCache` (`FBTargetCommandCache.register(_:as:)`); `device`-derived
+/// returned simulator's `commandCache` (`TargetCommandCache.register(_:as:)`); `device`-derived
 /// properties are stub-backed and must not be exercised.
 enum SimulatorTestSupport {
 

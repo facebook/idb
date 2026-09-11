@@ -15,7 +15,7 @@ struct FileContainerValueTransformer {
     return fileContainer(from: proto.kind)?.rawValue ?? proto.bundleID
   }
 
-  static func fileContainer(from proto: Idb_FileContainer.Kind) -> FBFileContainerKind? {
+  static func fileContainer(from proto: Idb_FileContainer.Kind) -> FileContainerKind? {
     switch proto {
     case .root:
       return .root

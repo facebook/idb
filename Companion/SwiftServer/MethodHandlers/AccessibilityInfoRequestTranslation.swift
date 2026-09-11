@@ -30,8 +30,8 @@ enum AccessibilityInfoRequestTranslation {
   }
 
   /// The substring narrowing a request asks for, or nil when it asks for none.
-  static func match(from request: Idb_AccessibilityInfoRequest) -> FBAccessibilityMatch? {
-    FBAccessibilityMatch(
+  static func match(from request: Idb_AccessibilityInfoRequest) -> AccessibilityMatch? {
+    AccessibilityMatch(
       value: request.match,
       key: searchableKey(from: request.matchKey),
       ignoresCase: request.ignoreCase)

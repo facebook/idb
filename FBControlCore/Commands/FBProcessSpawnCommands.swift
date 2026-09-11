@@ -8,12 +8,12 @@
 import Foundation
 
 /// Set as the error on whichever of `exitCode` / `signal` did not happen.
-public enum FBProcessTerminationError: Error {
+public enum ProcessTerminationError: Error {
   case exitedWithSignal(processIdentifier: pid_t, processName: String, signal: Int32)
   case exitedWithCode(processIdentifier: pid_t, processName: String, exitCode: Int32)
 }
 
-extension FBProcessTerminationError: LocalizedError {
+extension ProcessTerminationError: LocalizedError {
   public var errorDescription: String? {
     switch self {
     case let .exitedWithSignal(processIdentifier, processName, signal):
@@ -25,7 +25,7 @@ extension FBProcessTerminationError: LocalizedError {
 }
 
 @objc
-public final class FBProcessSpawnCommandHelpers: NSObject {
+public final class ProcessSpawnCommandHelpers: NSObject {
 
   @objc
   public class func resolveProcessFinished(
@@ -52,13 +52,13 @@ public final class FBProcessSpawnCommandHelpers: NSObject {
           if wstatus != 0x7f /* _WSTOPPED */ && wstatus != 0 {
             // WIFSIGNALED
             let signalCode = statLoc & 0x7f // WTERMSIG
-            let error = FBProcessTerminationError.exitedWithSignal(processIdentifier: processIdentifier, processName: configuration.processName, signal: signalCode)
+            let error = ProcessTerminationError.exitedWithSignal(processIdentifier: processIdentifier, processName: configuration.processName, signal: signalCode)
             logger?.log(error.localizedDescription)
             exitCodeFuture.resolveWithError(error)
             signalFuture.resolve(withResult: NSNumber(value: signalCode))
           } else {
             let exitCode = (statLoc >> 8) & 0xff // WEXITSTATUS
-            let error = FBProcessTerminationError.exitedWithCode(processIdentifier: processIdentifier, processName: configuration.processName, exitCode: exitCode)
+            let error = ProcessTerminationError.exitedWithCode(processIdentifier: processIdentifier, processName: configuration.processName, exitCode: exitCode)
             logger?.log(error.localizedDescription)
             signalFuture.resolveWithError(error)
             exitCodeFuture.resolve(withResult: NSNumber(value: exitCode))

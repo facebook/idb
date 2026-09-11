@@ -15,7 +15,7 @@ public final class FBDevice: FBiOSTarget, DeviceCommands, CustomStringConvertibl
   // MARK: - Properties
 
   public private(set) weak var set: FBDeviceSet?
-  public let commandCache: FBTargetCommandCache
+  public let commandCache: TargetCommandCache
   public private(set) var logger: any FBControlCoreLogger
   public private(set) var calls: AMDCalls
 
@@ -89,7 +89,7 @@ public final class FBDevice: FBiOSTarget, DeviceCommands, CustomStringConvertibl
     self.set = set
     self.amDeviceStorage = amDevice
     self.restorableDeviceStorage = restorableDevice
-    self.commandCache = FBTargetCommandCache()
+    self.commandCache = TargetCommandCache()
     // Without a backing device there is no call table; fail here rather than through a null
     // function pointer later.
     if let amDevice {

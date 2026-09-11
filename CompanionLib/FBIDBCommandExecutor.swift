@@ -72,7 +72,7 @@ public final class FBIDBCommandExecutor {
   private let debugserverPort: in_port_t
 
   public let storageManager: FBIDBStorageManager
-  public var debugServer: FBDebugServer?
+  public var debugServer: DebugServer?
   public let temporaryDirectory: FBTemporaryDirectory
 
   // MARK: - Initializers
@@ -490,21 +490,21 @@ public final class FBIDBCommandExecutor {
     return try await simulator.repl.appLaunchEnvironment(bundleID: bundleID)
   }
 
-  public func debugserver_start(_ bundleID: String) async throws -> FBDebugServer {
+  public func debugserver_start(_ bundleID: String) async throws -> DebugServer {
     let bundle = try debugserver_prepare(bundleID)
     let server = try await target.debugger.launchDebugServer(forHostApplication: bundle, port: debugserverPort)
     debugServer = server
     return server
   }
 
-  public func debugserver_status() throws -> FBDebugServer {
+  public func debugserver_status() throws -> DebugServer {
     guard let debugServer else {
       throw FBIDBCommandError.noDebugServer
     }
     return debugServer
   }
 
-  public func debugserver_stop() async throws -> FBDebugServer {
+  public func debugserver_stop() async throws -> DebugServer {
     let server = try debugserver_status()
     try await server.cancel()
     debugServer = nil
@@ -702,74 +702,74 @@ public final class FBIDBCommandExecutor {
         try await body(container)
       }
     }
-    if containerType == FBFileContainerKind.crashes.rawValue {
+    if containerType == FileContainerKind.crashes.rawValue {
       return try await target.crashLog.withFiles { container in
         try await body(container)
       }
     }
-    if containerType == FBFileContainerKind.xctest.rawValue {
+    if containerType == FileContainerKind.xctest.rawValue {
       return try await body(storageManager.xctest.asFileContainer())
     }
-    if containerType == FBFileContainerKind.dylib.rawValue {
+    if containerType == FileContainerKind.dylib.rawValue {
       return try await body(storageManager.dylib.asFileContainer())
     }
-    if containerType == FBFileContainerKind.dsym.rawValue {
+    if containerType == FileContainerKind.dsym.rawValue {
       return try await body(storageManager.dsym.asFileContainer())
     }
-    if containerType == FBFileContainerKind.framework.rawValue {
+    if containerType == FileContainerKind.framework.rawValue {
       return try await body(storageManager.framework.asFileContainer())
     }
-    if containerType == FBFileContainerKind.application.rawValue {
+    if containerType == FileContainerKind.application.rawValue {
       return try await target.file.withApplicationContainers { container in
         try await body(container)
       }
     }
-    if containerType == FBFileContainerKind.group.rawValue {
+    if containerType == FileContainerKind.group.rawValue {
       return try await target.file.withGroupContainers { container in
         try await body(container)
       }
     }
-    if containerType == FBFileContainerKind.media.rawValue {
+    if containerType == FileContainerKind.media.rawValue {
       return try await target.file.withMediaDirectory { container in
         try await body(container)
       }
     }
-    if containerType == FBFileContainerKind.root.rawValue {
+    if containerType == FileContainerKind.root.rawValue {
       return try await target.file.withRootFilesystem { container in
         try await body(container)
       }
     }
-    if containerType == FBFileContainerKind.provisioningProfiles.rawValue {
+    if containerType == FileContainerKind.provisioningProfiles.rawValue {
       return try await target.file.withProvisioningProfiles { container in
         try await body(container)
       }
     }
-    if containerType == FBFileContainerKind.mdmProfiles.rawValue {
+    if containerType == FileContainerKind.mdmProfiles.rawValue {
       return try await target.file.withMDMProfiles { container in
         try await body(container)
       }
     }
-    if containerType == FBFileContainerKind.springboardIcons.rawValue {
+    if containerType == FileContainerKind.springboardIcons.rawValue {
       return try await target.file.withSpringboardIconLayout { container in
         try await body(container)
       }
     }
-    if containerType == FBFileContainerKind.wallpaper.rawValue {
+    if containerType == FileContainerKind.wallpaper.rawValue {
       return try await target.file.withWallpaper { container in
         try await body(container)
       }
     }
-    if containerType == FBFileContainerKind.diskImages.rawValue {
+    if containerType == FileContainerKind.diskImages.rawValue {
       return try await target.file.withDiskImages { container in
         try await body(container)
       }
     }
-    if containerType == FBFileContainerKind.symbols.rawValue {
+    if containerType == FileContainerKind.symbols.rawValue {
       return try await target.file.withSymbols { container in
         try await body(container)
       }
     }
-    if containerType == FBFileContainerKind.auxillary.rawValue {
+    if containerType == FileContainerKind.auxillary.rawValue {
       return try await target.file.withAuxiliary { container in
         try await body(container)
       }

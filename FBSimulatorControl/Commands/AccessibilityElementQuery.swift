@@ -35,7 +35,7 @@ public enum FBAccessibilityElementQuery: Equatable, Sendable {
 public extension FBAccessibilityElementQuery {
   /// How this query appears in the `complete` output document. Every describe verb emits the same
   /// document shape, so this is what tells a consumer which verb produced the one it is holding.
-  var targetDescriptor: FBAccessibilityTargetDescriptor {
+  var targetDescriptor: AccessibilityTargetDescriptor {
     switch self {
     case let .point(point):
       return .point(point)

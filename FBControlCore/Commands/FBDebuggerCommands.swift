@@ -7,7 +7,7 @@
 
 import Foundation
 
-public protocol FBDebugServer: AnyObject {
+public protocol DebugServer: AnyObject {
 
   var lldbBootstrapCommands: [String] { get }
 

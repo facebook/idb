@@ -69,7 +69,7 @@ public final class FBSimulatorVideoRecordingCommands: VideoRecordingCommands {
     let video = FBSimulatorVideo.video(withFramebuffer: framebuffer, configuration: configuration, filePath: filePath, logger: simulator.logger)
     try await video.startRecording()
     self.video = video
-    return FBVideoRecordingHandle {
+    return VideoRecordingHandle {
       return try await self.stop()
     }
   }

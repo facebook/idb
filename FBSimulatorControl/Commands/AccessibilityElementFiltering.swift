@@ -88,7 +88,7 @@ extension FBAccessibilityElementFilter {
   }
 }
 
-extension FBAccessibilityMatch {
+extension AccessibilityMatch {
 
   /// The elements whose `key` value contains this match's `value`, hoisted like the filter. No match is
   /// an empty list, not an error: `--match` reporting nothing is a true answer about the screen.
@@ -114,7 +114,7 @@ extension AccessibilityElementRetention {
   static func narrowing(
     _ elements: [FBAccessibilityDocumentElement],
     filter: FBAccessibilityElementFilter,
-    match: FBAccessibilityMatch?
+    match: AccessibilityMatch?
   ) -> [FBAccessibilityDocumentElement] {
     let filtered = filter.apply(to: elements)
     return match.map { $0.apply(to: filtered) } ?? filtered

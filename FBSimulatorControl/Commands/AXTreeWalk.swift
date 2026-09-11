@@ -33,13 +33,13 @@ enum AXTreeWalk {
   ///
   /// Reads the frame through the same element type the serializer uses, so this cannot disagree with
   /// the frames on the elements it describes.
-  static func screenInfo(fromTree tree: [String: Any]) -> FBAccessibilityScreenInfo? {
+  static func screenInfo(fromTree tree: [String: Any]) -> AccessibilityScreenInfo? {
     let root = AXBridgePlatformElement(attributes: tree, children: [], pid: 0)
     let frame = root.axFrame()
     guard frame.width > 0, frame.height > 0 else {
       return nil
     }
-    return FBAccessibilityScreenInfo(width: Double(frame.width), height: Double(frame.height))
+    return AccessibilityScreenInfo(width: Double(frame.width), height: Double(frame.height))
   }
 
   /// Recursively builds an `AXBridgePlatformElement` from a nested attribute-dictionary
@@ -50,7 +50,7 @@ enum AXTreeWalk {
     return AXBridgePlatformElement(attributes: node, children: children, pid: pid)
   }
 
-  /// The first element whose `key` value contains `markerValue`, via `FBAccessibilityMatch` so a marker
+  /// The first element whose `key` value contains `markerValue`, via `AccessibilityMatch` so a marker
   /// and `--match` agree on what "contains" means.
   static func matchingElement(
     inElements elements: [FBAccessibilityDocumentElement],
@@ -59,9 +59,9 @@ enum AXTreeWalk {
     ignoresCase: Bool = false
   ) -> FBAccessibilityDocumentElement? {
     // An empty marker is not a search — every value contains it — so it resolves to the first element
-    // carrying the key at all. `FBAccessibilityMatch` refuses to represent that, so it is spelled out
+    // carrying the key at all. `AccessibilityMatch` refuses to represent that, so it is spelled out
     // rather than quietly becoming "no match".
-    guard let match = FBAccessibilityMatch(value: markerValue, key: key, ignoresCase: ignoresCase) else {
+    guard let match = AccessibilityMatch(value: markerValue, key: key, ignoresCase: ignoresCase) else {
       return elements.first { $0.searchableValue(for: key) != nil }
     }
     return elements.first { match.matches($0.searchableValue(for: key)) }
@@ -80,7 +80,7 @@ enum AXTreeWalk {
 
   /// Resolves `markerValue` to the centre of the first matching element that has a usable frame,
   /// reporting whether a match without a usable frame existed so a caller can tell an off-screen
-  /// element apart from an absent one. Matches through the same `FBAccessibilityMatch` predicate as
+  /// element apart from an absent one. Matches through the same `AccessibilityMatch` predicate as
   /// `matchingElement`, so the asserted element and the tapped point cannot disagree.
   static func resolveMarker(
     inElements elements: [FBAccessibilityDocumentElement],
@@ -89,7 +89,7 @@ enum AXTreeWalk {
     ignoresCase: Bool = false
   ) -> MarkerResolution {
     var matched = false
-    let match = FBAccessibilityMatch(value: markerValue, key: key, ignoresCase: ignoresCase)
+    let match = AccessibilityMatch(value: markerValue, key: key, ignoresCase: ignoresCase)
     for element in elements {
       if let match {
         guard let value = element.searchableValue(for: key), match.matches(value) else {

@@ -9,7 +9,7 @@ import FBControlCore
 import Foundation
 
 // Commands that own something outliving a single call — a notifier, an in-flight video, a task —
-// are memoized through `commandCache` (`FBTargetCommandCache`), whose lock also stops two callers
+// are memoized through `commandCache` (`TargetCommandCache`), whose lock also stops two callers
 // racing the first construction. Commands that only wrap the simulator are built per call: a slot
 // for one would hold a box around a pointer back to the object owning the cache, closing a retain
 // cycle.

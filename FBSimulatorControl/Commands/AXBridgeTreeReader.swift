@@ -22,15 +22,15 @@ protocol AXBridgeTreeReader: FBUIAutomation {
     for query: FBAccessibilityElementQuery,
     attributes: [String]?,
     explainUnreachable: Bool,
-    traversal: FBAXTraversal
+    traversal: AXTraversal
   ) async throws -> AXTreeRead
 
   /// The traversal axbridge performs when the request does not select one.
-  static func autoTraversal(for options: FBAccessibilityRequestOptions) -> FBAXTraversal
+  static func autoTraversal(for options: FBAccessibilityRequestOptions) -> AXTraversal
 
   /// Warns that the traversal could not answer keys the caller asked for, so a caller can tell "this read
   /// could not ask" from "the app set nothing".
-  func warnIfUnsatisfiable(_ keys: Set<FBAXKeys>, traversal: FBAXTraversal) async
+  func warnIfUnsatisfiable(_ keys: Set<FBAXKeys>, traversal: AXTraversal) async
 
   /// Warns that a read's tree was truncated by the depth or node bound.
   func warnIfTruncated(_ truncated: Bool) async
@@ -39,19 +39,19 @@ protocol AXBridgeTreeReader: FBUIAutomation {
   func warnIfReachabilityAcrossTree(_ keys: Set<FBAXKeys>) async
 
   /// Warns that most of a read's elements carry no rectangle.
-  func warnIfMostElementsUnframed(_ frames: FBAccessibilityFrameSummary?) async
+  func warnIfMostElementsUnframed(_ frames: AccessibilityFrameSummary?) async
 
   /// Produces the axbridge profile for a completed read.
   func profile(
     for read: AXTreeRead, elementCount: Int, serializeDuration: CFAbsoluteTime,
-    traversal: FBAXTraversal
+    traversal: AXTraversal
   ) -> FBAccessibilityProfile?
 }
 
 extension AXBridgeTreeReader {
 
   /// The traversal a read actually gets: the explicit request or axbridge's automatic choice.
-  static func resolvedTraversal(for options: FBAccessibilityRequestOptions) -> FBAXTraversal {
+  static func resolvedTraversal(for options: FBAccessibilityRequestOptions) -> AXTraversal {
     options.traversalStrategy.traversal ?? autoTraversal(for: options)
   }
 
@@ -73,7 +73,7 @@ extension AXBridgeTreeReader {
 private struct AXBridgeReadPlan {
   let serializationKeys: Set<FBAXKeys>
   let attributes: [String]?
-  let traversal: FBAXTraversal
+  let traversal: AXTraversal
   let unsatisfiableKeys: Set<FBAXKeys>
   let nestedFormat: Bool
   let collectFrameCoverage: Bool
@@ -83,7 +83,7 @@ private struct AXBridgeReadPlan {
   init(
     options: FBAccessibilityRequestOptions,
     serializationKeys: Set<FBAXKeys>,
-    traversal: FBAXTraversal,
+    traversal: AXTraversal,
     explainUnreachable: Bool
   ) {
     self.serializationKeys = serializationKeys
@@ -154,7 +154,7 @@ extension AXBridgeTreeReader {
       if plan.traversal == .singleFetch, !unanswerable.isEmpty {
         throw UIAutomationError.traversalCannotAnswer(
           backend: backend,
-          traversal: FBAXTraversal.singleFetch.rawValue,
+          traversal: AXTraversal.singleFetch.rawValue,
           keys: unanswerable.map(\.rawValue).sorted()
         )
       }
@@ -179,16 +179,16 @@ extension AXBridgeTreeReader {
       )
       let serializeDuration = CFAbsoluteTimeGetCurrent() - serializeStarted
       // No `additional` coverage: remote-content discovery is accessibility-only.
-      let coverage: FBAccessibilityCoverage? =
+      let coverage: AccessibilityCoverage? =
         plan.collectFrameCoverage
         ? screen.flatMap {
           .measured(
-            reported: elements, walked: walked, screenBounds: FBAccessibilityCoverage.bounds(of: $0),
+            reported: elements, walked: walked, screenBounds: AccessibilityCoverage.bounds(of: $0),
             nested: plan.nestedFormat
           )
         } : nil
       // Judged on the reported elements — what the caller's `--filter` shows them.
-      await warnIfMostElementsUnframed(FBAccessibilityFrameSummary(elements: elements))
+      await warnIfMostElementsUnframed(AccessibilityFrameSummary(elements: elements))
       return FBAccessibilityElementsResponse(
         elements: .tree(elements),
         profilingData: plan.enableProfiling
@@ -217,7 +217,7 @@ extension AXBridgeTreeReader {
   /// refinement changes an element's `status` — only which reasons it carries.
   private func refiningInteractable(
     _ elements: [FBAccessibilityDocumentElement],
-    screen: FBAccessibilityScreenInfo?,
+    screen: AccessibilityScreenInfo?,
     options: FBAccessibilityRequestOptions
   ) async throws -> [FBAccessibilityDocumentElement] {
     guard options.keys.contains(.occludedBy) || screen != nil else {
@@ -235,7 +235,7 @@ extension AXBridgeTreeReader {
   private func refiningInteractable(
     of element: FBAccessibilityDocumentElement,
     ancestors: [AXElementIdentity],
-    screen: FBAccessibilityScreenInfo?,
+    screen: AccessibilityScreenInfo?,
     options: FBAccessibilityRequestOptions
   ) async -> (element: FBAccessibilityDocumentElement, identities: Set<AXElementIdentity>) {
     var element = element
@@ -303,7 +303,7 @@ enum AXScreenBoundsClassifier {
   /// already carries a reachable point.
   static func notingScreenClipping(
     _ element: FBAccessibilityDocumentElement,
-    screen: FBAccessibilityScreenInfo?
+    screen: AccessibilityScreenInfo?
   ) -> FBAccessibilityDocumentElement {
     guard let screen,
       case let .blocked(reasons)?? = element.interactable,
@@ -332,7 +332,7 @@ struct AXElementIdentity: Hashable {
   private let frame: [Double]
 
   /// The element as the guest described whatever answered a hit-test.
-  init(_ reference: FBAccessibilityElementRef) {
+  init(_ reference: AccessibilityElementRef) {
     self.init(
       type: reference.type, identifier: reference.identifier, label: reference.label,
       rect: reference.frame?.rect)

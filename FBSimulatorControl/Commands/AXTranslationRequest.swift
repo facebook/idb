@@ -283,7 +283,7 @@ final class AXTranslationRequest {
     mainAppElements: [FBAccessibilityDocumentElement],
     nestedFormat: Bool,
     filter: FBAccessibilityElementFilter,
-    match: FBAccessibilityMatch?,
+    match: AccessibilityMatch?,
     screenBounds: CGRect,
     frontmostPid: pid_t,
     seenPids: SeenPIDs,
@@ -342,7 +342,7 @@ final class AXTranslationRequest {
       screen: Self.screenInfo(fromBounds: screenBounds),
       reportProfile: reportProfile,
       // Discovered elements count as walked too, or a read could report more matched than walked.
-      narrowing: FBAccessibilityNarrowing(
+      narrowing: AccessibilityNarrowing(
         filter: filter, match: match,
         walked: walkedElements, discovered: discoveredElements, reported: elements)
     )
@@ -352,12 +352,12 @@ final class AXTranslationRequest {
 
   // `truncated` is always false: this path walks the live tree with no depth or node bound.
   private func buildResponse(
-    elements: FBAccessibilityElementPayload,
+    elements: AccessibilityElementPayload,
     walkStart: CFAbsoluteTime,
-    coverage: FBAccessibilityCoverage?,
-    screen: FBAccessibilityScreenInfo?,
+    coverage: AccessibilityCoverage?,
+    screen: AccessibilityScreenInfo?,
     reportProfile: Bool,
-    narrowing: FBAccessibilityNarrowing? = nil
+    narrowing: AccessibilityNarrowing? = nil
   ) -> FBAccessibilityElementsResponse {
     let walkDuration = CFAbsoluteTimeGetCurrent() - walkStart
     // Collected always (cheap); reported only when profiling was requested.
@@ -374,11 +374,11 @@ final class AXTranslationRequest {
 
   /// The screen bounds a read's frames are relative to; `nil` for a degenerate rectangle, so an unknown
   /// screen is reported as unknown rather than zero-sized.
-  static func screenInfo(fromBounds bounds: CGRect) -> FBAccessibilityScreenInfo? {
+  static func screenInfo(fromBounds bounds: CGRect) -> AccessibilityScreenInfo? {
     guard bounds.width > 0, bounds.height > 0 else {
       return nil
     }
-    return FBAccessibilityScreenInfo(width: Double(bounds.width), height: Double(bounds.height))
+    return AccessibilityScreenInfo(width: Double(bounds.width), height: Double(bounds.height))
   }
 
   private static func serializerKeys(_ options: FBAccessibilityRequestOptions) -> Set<FBAXKeys> {

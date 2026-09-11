@@ -9,7 +9,7 @@ import FBControlCore
 import Foundation
 
 // Commands that own something outliving a single call — a notifier, an in-flight video, a set of
-// AFC calls — are memoized through `commandCache` (`FBTargetCommandCache`), whose lock also stops
+// AFC calls — are memoized through `commandCache` (`TargetCommandCache`), whose lock also stops
 // two callers racing the first construction, and hold their device weakly so the cache slot does
 // not close a cycle. Commands that only wrap the device are built per call and hold it strongly:
 // nothing outlives the call that builds them.

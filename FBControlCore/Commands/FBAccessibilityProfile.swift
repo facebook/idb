@@ -8,13 +8,13 @@
 import Foundation
 
 /// Timing and transport measurements for an axbridge read.
-public struct FBAXBridgeProfile: Sendable, Equatable, Encodable {
+public struct AXBridgeProfile: Sendable, Equatable, Encodable {
   public let elementCount: Int64
   public let totalDuration: CFAbsoluteTime
   public let acquireDuration: CFAbsoluteTime
   public let readDuration: CFAbsoluteTime
   public let serializeDuration: CFAbsoluteTime
-  public let traversal: FBAXTraversal
+  public let traversal: AXTraversal
   public let machRoundTrips: Int64?
   public let hostDecodeDuration: CFAbsoluteTime?
   public let responseBytes: Int64?
@@ -25,7 +25,7 @@ public struct FBAXBridgeProfile: Sendable, Equatable, Encodable {
     acquireDuration: CFAbsoluteTime,
     readDuration: CFAbsoluteTime,
     serializeDuration: CFAbsoluteTime,
-    traversal: FBAXTraversal,
+    traversal: AXTraversal,
     machRoundTrips: Int64? = nil,
     hostDecodeDuration: CFAbsoluteTime? = nil,
     responseBytes: Int64? = nil
@@ -71,10 +71,10 @@ public struct FBAXBridgeProfile: Sendable, Equatable, Encodable {
 
 /// The backend-specific profile carried by a complete accessibility document.
 public enum FBAccessibilityProfile: Sendable, Equatable, Encodable {
-  case translator(FBAccessibilityProfilingData)
-  case guestBridge(FBAXBridgeProfile)
+  case translator(AccessibilityProfilingData)
+  case guestBridge(AXBridgeProfile)
 
-  public var translatorProfile: FBAccessibilityProfilingData? {
+  public var translatorProfile: AccessibilityProfilingData? {
     guard case let .translator(profile) = self else {
       return nil
     }
@@ -92,7 +92,7 @@ public enum FBAccessibilityProfile: Sendable, Equatable, Encodable {
   }
 }
 
-public struct FBAccessibilityAutomationState: Sendable, Equatable, Encodable {
+public struct AccessibilityAutomationState: Sendable, Equatable, Encodable {
   public let enabled: Bool
   public let asserted: Bool
 

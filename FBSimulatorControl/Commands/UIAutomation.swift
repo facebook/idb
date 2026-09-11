@@ -262,7 +262,7 @@ public extension FBAccessibilityElementsResponse {
   static func emptyOutputJSON(
     format: FBAccessibilityOutputFormat,
     backend: FBUIAutomationBackend,
-    target: FBAccessibilityTargetDescriptor
+    target: AccessibilityTargetDescriptor
   ) throws -> Data {
     let response = FBAccessibilityElementsResponse(
       elements: .empty, backend: backend.name, target: target
@@ -291,7 +291,7 @@ public extension FBSimulator {
 
 /// One socket-backed transport per service scope, for one target.
 ///
-/// `FBTargetCommandCache` keys its slots by type, and the two scopes need separate transports that
+/// `TargetCommandCache` keys its slots by type, and the two scopes need separate transports that
 /// are the same type, so this holds them apart.
 ///
 // SAFETY: `transports` is only read or written with `lock` held, so no mutable state is reachable from
