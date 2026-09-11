@@ -41,7 +41,7 @@ extension TestBundleConnectionError: LocalizedError {
 
 final class TestBundleConnection {
 
-  private let context: FBTestManagerContext
+  private let context: TestManagerContext
   private let target: any FBiOSTarget
   private let socket: Int32
   private let interface: NSObject
@@ -50,7 +50,7 @@ final class TestBundleConnection {
   private let logger: FBControlCoreLogger
 
   init(
-    context: FBTestManagerContext,
+    context: TestManagerContext,
     target: any FBiOSTarget,
     socket: Int32,
     interface: NSObject,

@@ -9,11 +9,11 @@ import FBControlCore
 import XCTest
 @testable import XCTestBootstrap
 
-final class FBJSONTestReporterTests: XCTestCase {
+final class JSONTestReporterTests: XCTestCase {
 
   private var mutableLines: NSMutableArray!
   var consumer: FBDataConsumer!
-  var reporter: FBJSONTestReporter!
+  var reporter: JSONTestReporter!
 
   var lines: [String] {
     return mutableLines as! [String]
@@ -26,7 +26,7 @@ final class FBJSONTestReporterTests: XCTestCase {
     consumer = FBBlockDataConsumer.synchronousLineConsumer { line in
       linesRef.add(line)
     }
-    reporter = FBJSONTestReporter(testBundlePath: "/path.bundle", testType: "footype", logger: nil, dataConsumer: consumer)
+    reporter = JSONTestReporter(testBundlePath: "/path.bundle", testType: "footype", logger: nil, dataConsumer: consumer)
   }
 
   private func object(atLine index: Int) -> [String: Any] {

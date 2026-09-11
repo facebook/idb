@@ -7,7 +7,7 @@
 
 import Foundation
 
-protocol FBXCTestRunner: AnyObject {
+protocol XCTestRunner: AnyObject {
 
   func execute() -> FBFuture<NSNull>
 }

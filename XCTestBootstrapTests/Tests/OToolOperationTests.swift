@@ -9,21 +9,21 @@ import FBControlCore
 import XCTest
 @testable import XCTestBootstrap
 
-/// Pins how `FBOToolOperation` resolves a bundle to an executable and what it makes
+/// Pins how `OToolOperation` resolves a bundle to an executable and what it makes
 /// of `otool -L`'s output, including the case where the tool reports a problem but
 /// still exits successfully.
 ///
 /// Nothing here asserts a desirable design. Each case records what callers observe
 /// today so that a later replacement has to either reproduce it or change it
 /// deliberately.
-final class FBOToolOperationTests: XCTestCase {
+final class OToolOperationTests: XCTestCase {
 
   private var temporaryDirectory: URL!
 
   override func setUpWithError() throws {
     try super.setUpWithError()
     temporaryDirectory = URL(fileURLWithPath: NSTemporaryDirectory())
-      .appendingPathComponent("FBOToolOperationTests-\(UUID().uuidString)", isDirectory: true)
+      .appendingPathComponent("OToolOperationTests-\(UUID().uuidString)", isDirectory: true)
     try FileManager.default.createDirectory(at: temporaryDirectory, withIntermediateDirectories: true)
   }
 
@@ -53,7 +53,7 @@ final class FBOToolOperationTests: XCTestCase {
   }
 
   private func listSanitiserDylibs(byBundle path: String) async throws -> [String] {
-    try await FBOToolOperation.listSanitiserDylibsRequired(byBundle: path)
+    try await OToolOperation.listSanitiserDylibsRequired(byBundle: path)
   }
 
   // MARK: - Bundle resolution

@@ -9,14 +9,14 @@ import FBControlCore
 import XCTest
 @testable import XCTestBootstrap
 
-/// Pins how `FBXCTestResultToolOperation` launches `xcrun xcresulttool` and what a
+/// Pins how `XCTestResultToolOperation` launches `xcrun xcresulttool` and what a
 /// caller sees when it fails: which exit-code policy applies, and what reaches an
 /// optional logger.
 ///
 /// Nothing here asserts a desirable design. Each case records what callers observe
 /// today so that a later replacement has to either reproduce it or change it
 /// deliberately.
-final class FBXCTestResultToolOperationTests: XCTestCase {
+final class XCTestResultToolOperationTests: XCTestCase {
 
   private var temporaryDirectory: URL!
   private let queue = DispatchQueue(label: "com.facebook.xctestbootstrap.tests.xcresulttool")
@@ -24,7 +24,7 @@ final class FBXCTestResultToolOperationTests: XCTestCase {
   override func setUpWithError() throws {
     try super.setUpWithError()
     temporaryDirectory = URL(fileURLWithPath: NSTemporaryDirectory())
-      .appendingPathComponent("FBXCTestResultToolOperationTests-\(UUID().uuidString)", isDirectory: true)
+      .appendingPathComponent("XCTestResultToolOperationTests-\(UUID().uuidString)", isDirectory: true)
     try FileManager.default.createDirectory(at: temporaryDirectory, withIntermediateDirectories: true)
   }
 
@@ -43,7 +43,7 @@ final class FBXCTestResultToolOperationTests: XCTestCase {
   func testGettingJSONFailsWhenTheToolExitsNonZero() async throws {
     do {
       _ = try await bridgeFBFuture(
-        FBXCTestResultToolOperation.getJSON(from: absentResultBundlePath, forId: nil, queue: queue, logger: nil))
+        XCTestResultToolOperation.getJSON(from: absentResultBundlePath, forId: nil, queue: queue, logger: nil))
       XCTFail("Expected reading an absent result bundle to fail")
     } catch {
       // Every entry point launches with `[0]` as the only acceptable exit code, so a
@@ -56,7 +56,7 @@ final class FBXCTestResultToolOperationTests: XCTestCase {
   func testExportingAFileFailsWhenTheToolExitsNonZero() async throws {
     do {
       _ = try await bridgeFBFuture(
-        FBXCTestResultToolOperation.exportFile(
+        XCTestResultToolOperation.exportFile(
           from: absentResultBundlePath,
           to: temporaryDirectory.appendingPathComponent("out.bin").path,
           forId: "0~abcdef",
@@ -71,7 +71,7 @@ final class FBXCTestResultToolOperationTests: XCTestCase {
   func testAnUnrecognizedScreenshotEncodingIsMaskedByAnExportFailure() async throws {
     do {
       _ = try await bridgeFBFuture(
-        FBXCTestResultToolOperation.exportJPEG(
+        XCTestResultToolOperation.exportJPEG(
           from: absentResultBundlePath,
           to: temporaryDirectory.appendingPathComponent("out.jpg").path,
           forId: "0~abcdef",
@@ -106,7 +106,7 @@ final class FBXCTestResultToolOperationTests: XCTestCase {
 
     do {
       _ = try await bridgeFBFuture(
-        FBXCTestResultToolOperation.getJSON(from: absentResultBundlePath, forId: nil, queue: queue, logger: logger))
+        XCTestResultToolOperation.getJSON(from: absentResultBundlePath, forId: nil, queue: queue, logger: logger))
     } catch {
       // The failure itself is covered above; this case is about what was logged.
     }

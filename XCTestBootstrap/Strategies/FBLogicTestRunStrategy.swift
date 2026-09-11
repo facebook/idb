@@ -26,7 +26,7 @@ private final class LogicTestRunOutputs {
   }
 }
 
-enum FBLogicTestRunError: Error {
+enum LogicTestRunError: Error {
   case missingOutputsAndShim(result: String)
   case testProcessMissingExitCode(result: String)
   case endOfFileTimedOut
@@ -36,7 +36,7 @@ enum FBLogicTestRunError: Error {
   case missingOutputConsumers(result: String)
 }
 
-extension FBLogicTestRunError: LocalizedError {
+extension LogicTestRunError: LocalizedError {
   public var errorDescription: String? {
     switch self {
     case let .missingOutputsAndShim(result):
@@ -57,7 +57,7 @@ extension FBLogicTestRunError: LocalizedError {
   }
 }
 
-public final class FBLogicTestRunStrategy: FBXCTestRunner {
+public final class FBLogicTestRunStrategy: XCTestRunner {
 
   private let target: any LogicTestTarget
   private let configuration: FBLogicTestConfiguration
@@ -99,7 +99,7 @@ public final class FBLogicTestRunStrategy: FBXCTestRunner {
             let outputs = tuple[0] as? LogicTestRunOutputs,
             let shimPath = tuple[1] as? String
           else {
-            return FBFuture(error: FBLogicTestRunError.missingOutputsAndShim(result: String(describing: tuple)))
+            return FBFuture(error: LogicTestRunError.missingOutputsAndShim(result: String(describing: tuple)))
           }
           return self.testFuture(withOutputs: outputs, shimPath: shimPath, uuid: uuid)
             .retyped(FBFuture<AnyObject>.self)
@@ -122,7 +122,7 @@ public final class FBLogicTestRunStrategy: FBXCTestRunner {
     return
       fbFutureFromAsync {
         try await FBTemporaryDirectory(logger: self.logger).withTemporaryDirectory { temporaryDirectoryURL in
-          let libraries = try await FBOToolDynamicLibs.findFullPath(forSanitiserDyldInBundle: self.configuration.testBundlePath)
+          let libraries = try await OToolDynamicLibs.findFullPath(forSanitiserDyldInBundle: self.configuration.testBundlePath)
           let environment = FBLogicTestRunStrategy.setupEnvironment(withDylibs: self.configuration.processUnderTestEnvironment, withLibraries: libraries, injectLibraries: self.configuration.injectLibraries, shimOutputFilePath: outputs.shimOutput.filePath, shimPath: shimPath, bundlePath: self.configuration.testBundlePath, coverageConfiguration: self.configuration.coverageConfiguration, logDirectoryPath: self.configuration.logDirectoryPath, waitForDebugger: self.configuration.waitForDebugger, target: self.target)
           return try await bridgeFBFuture(
             self.startTestProcess(withLaunchPath: launchPath, arguments: arguments, environment: environment, outputs: outputs, temporaryDirectory: temporaryDirectoryURL)
@@ -130,7 +130,7 @@ public final class FBLogicTestRunStrategy: FBXCTestRunner {
                 self.target.workQueue,
                 fmap: { exitCodeFutureObj -> FBFuture<AnyObject> in
                   guard let exitCodeFuture = exitCodeFutureObj as? FBFuture<NSNumber> else {
-                    return FBFuture(error: FBLogicTestRunError.testProcessMissingExitCode(result: String(describing: exitCodeFutureObj)))
+                    return FBFuture(error: LogicTestRunError.testProcessMissingExitCode(result: String(describing: exitCodeFutureObj)))
                   }
                   return self.completeLaunchedProcess(exitCodeFuture, outputs: outputs)
                     .retyped(FBFuture<AnyObject>.self)
@@ -229,7 +229,7 @@ public final class FBLogicTestRunStrategy: FBXCTestRunner {
           let timedOut = combined.onQueue(
             queue, timeout: EndOfFileFromStopReadingTimeout,
             handler: {
-              FBFuture<AnyObject>(error: FBLogicTestRunError.endOfFileTimedOut)
+              FBFuture<AnyObject>(error: LogicTestRunError.endOfFileTimedOut)
             })
           return timedOut.chainReplace(exitCode.retyped(FBFuture<AnyObject>.self))
         }
@@ -238,13 +238,13 @@ public final class FBLogicTestRunStrategy: FBXCTestRunner {
         queue,
         fmap: { exitCodeObj -> FBFuture<AnyObject> in
           guard let exitCodeNumber = exitCodeObj as? NSNumber else {
-            return FBFuture(error: FBLogicTestRunError.xctestProcessMissingExitCode(result: String(describing: exitCodeObj)))
+            return FBFuture(error: LogicTestRunError.xctestProcessMissingExitCode(result: String(describing: exitCodeObj)))
           }
           logger.log("xctest process terminated, exited with \(exitCodeNumber), checking status code")
           let exitCodeValue = exitCodeNumber.int32Value
-          if let descriptionOfExit = FBXCTestProcess.describeFailingExitCode(exitCodeValue) {
+          if let descriptionOfExit = XCTestProcess.describeFailingExitCode(exitCodeValue) {
             let stdErrReversed = outputs.stdErrBuffer.lines().reversed().joined(separator: "\n")
-            return FBFuture(error: FBLogicTestRunError.xctestProcessFailed(exitCode: exitCodeValue, exitDescription: descriptionOfExit, stdErr: stdErrReversed))
+            return FBFuture(error: LogicTestRunError.xctestProcessFailed(exitCode: exitCodeValue, exitDescription: descriptionOfExit, stdErr: stdErrReversed))
           }
           return FBFuture(result: exitCodeNumber as AnyObject)
         }
@@ -264,7 +264,7 @@ public final class FBLogicTestRunStrategy: FBXCTestRunner {
         waitQueue,
         chain: { future -> FBFuture<AnyObject> in
           if let error = future.error {
-            return FBFuture(error: FBLogicTestRunError.sigstopWaitFailed(processIdentifier: processIdentifier, underlying: error))
+            return FBFuture(error: LogicTestRunError.sigstopWaitFailed(processIdentifier: processIdentifier, underlying: error))
           }
           reporter.processWaitingForDebugger(withProcessIdentifier: processIdentifier)
           return FBFuture(result: NSNull() as AnyObject)
@@ -277,8 +277,8 @@ public final class FBLogicTestRunStrategy: FBXCTestRunner {
     let reporter = self.reporter
     let logger = self.logger
     let queue = target.workQueue
-    let mirrorToLogger = (configuration.mirroring.rawValue & FBLogicTestMirrorLogs.logger.rawValue) != 0
-    let mirrorToFiles = (configuration.mirroring.rawValue & FBLogicTestMirrorLogs.fileLogs.rawValue) != 0
+    let mirrorToLogger = (configuration.mirroring.rawValue & LogicTestMirrorLogs.logger.rawValue) != 0
+    let mirrorToFiles = (configuration.mirroring.rawValue & LogicTestMirrorLogs.fileLogs.rawValue) != 0
 
     var shimConsumers: [FBDataConsumer] = []
     var stdOutConsumers: [FBDataConsumer] = []
@@ -345,7 +345,7 @@ public final class FBLogicTestRunStrategy: FBXCTestRunner {
             let resolvedStdErr = outputsArray[1] as? FBDataConsumer & FBDataConsumerLifecycle,
             let resolvedShim = outputsArray[2] as? FBDataConsumer & FBDataConsumerLifecycle
           else {
-            return FBFuture(error: FBLogicTestRunError.missingOutputConsumers(result: String(describing: outputsArray)))
+            return FBFuture(error: LogicTestRunError.missingOutputConsumers(result: String(describing: outputsArray)))
           }
           return FBProcessOutput<AnyObject>(for: resolvedShim).providedThroughFile()
             .onQueue(
@@ -383,7 +383,7 @@ public final class FBLogicTestRunStrategy: FBXCTestRunner {
               queue,
               fmap: { _ -> FBFuture<AnyObject> in
                 let crashCommands: any CrashLogCommands = self.target.crashLog
-                return FBXCTestProcess.ensureProcess(process, completesWithin: timeout, crashLogCommands: crashCommands, queue: queue, logger: logger)
+                return XCTestProcess.ensureProcess(process, completesWithin: timeout, crashLogCommands: crashCommands, queue: queue, logger: logger)
                   .retyped(FBFuture<AnyObject>.self)
               })
         })

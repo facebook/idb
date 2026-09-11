@@ -9,7 +9,7 @@
 
 #import <FBControlCore/FBControlCore.h>
 
-@class FBTestManagerContext;
+@class TestManagerContext;
 
 /**
  The Objective-C core of a test-bundle connection: it owns the DTX transport and proxy channels, implements the private XCTest `_XCT_*` callbacks, and forwards everything else to the IDE-interface delegate. The Swift `TestBundleConnection` drives it step by step.
@@ -21,7 +21,7 @@
 /**
  @param interface the `XCTestManager_IDEInterface` / `XCTMessagingChannel_RunnerToIDE` implementor that bundle and daemon callbacks are forwarded to. Typed as `id` to keep private XCTest protocols out of this header.
  */
-- (nonnull instancetype)initWithContext:(nonnull FBTestManagerContext *)context workQueue:(nonnull dispatch_queue_t)workQueue socket:(int)socket interface:(nonnull id)interface requestQueue:(nonnull dispatch_queue_t)requestQueue logger:(nonnull id<FBControlCoreLogger>)logger;
+- (nonnull instancetype)initWithContext:(nonnull TestManagerContext *)context workQueue:(nonnull dispatch_queue_t)workQueue socket:(int)socket interface:(nonnull id)interface requestQueue:(nonnull dispatch_queue_t)requestQueue logger:(nonnull id<FBControlCoreLogger>)logger;
 
 #pragma mark Step-wise connection API
 

@@ -30,29 +30,29 @@ private let kDefaultTimeoutValue: TimeInterval = 500
 // MARK: - Test Types
 
 /// The type of an xctest execution, as reported in ocunit-shim events.
-struct FBXCTestType: RawRepresentable, Hashable, Sendable {
+struct XCTestType: RawRepresentable, Hashable, Sendable {
   public let rawValue: String
 
   public init(rawValue: String) {
     self.rawValue = rawValue
   }
 
-  public static let applicationTest = FBXCTestType(rawValue: "application-test")
-  public static let logicTest = FBXCTestType(rawValue: "logic-test")
-  public static let listTest = FBXCTestType(rawValue: "list-test")
-  public static let uiTest = FBXCTestType(rawValue: "ui-test")
+  public static let applicationTest = XCTestType(rawValue: "application-test")
+  public static let logicTest = XCTestType(rawValue: "logic-test")
+  public static let listTest = XCTestType(rawValue: "list-test")
+  public static let uiTest = XCTestType(rawValue: "ui-test")
 }
 
 /// Where a logic test's output is mirrored to, in addition to the reporter.
-public struct FBLogicTestMirrorLogs: OptionSet, Sendable {
+public struct LogicTestMirrorLogs: OptionSet, Sendable {
   public let rawValue: UInt
 
   public init(rawValue: UInt) {
     self.rawValue = rawValue
   }
 
-  public static let fileLogs = FBLogicTestMirrorLogs(rawValue: 1 << 0)
-  public static let logger = FBLogicTestMirrorLogs(rawValue: 1 << 1)
+  public static let fileLogs = LogicTestMirrorLogs(rawValue: 1 << 0)
+  public static let logger = LogicTestMirrorLogs(rawValue: 1 << 1)
 }
 
 // MARK: - FBXCTestConfiguration
@@ -65,7 +65,7 @@ public class FBXCTestConfiguration: NSObject, NSCopying {
   public let waitForDebugger: Bool
   public let testTimeout: TimeInterval
 
-  var testType: FBXCTestType {
+  var testType: XCTestType {
     fatalError("-[\(type(of: self)) testType] is abstract and should be overridden")
   }
 
@@ -165,8 +165,8 @@ public final class FBListTestConfiguration: FBXCTestConfiguration {
     super.init(environment: environment, workingDirectory: workingDirectory, testBundlePath: testBundlePath, waitForDebugger: waitForDebugger, timeout: timeout)
   }
 
-  override var testType: FBXCTestType {
-    FBXCTestType.listTest
+  override var testType: XCTestType {
+    XCTestType.listTest
   }
 
   override func jsonSerializableRepresentation() -> [String: Any] {
@@ -177,9 +177,9 @@ public final class FBListTestConfiguration: FBXCTestConfiguration {
   }
 }
 
-// MARK: - FBTestManagerTestConfiguration
+// MARK: - TestManagerTestConfiguration
 
-final class FBTestManagerTestConfiguration: FBXCTestConfiguration {
+final class TestManagerTestConfiguration: FBXCTestConfiguration {
 
   public let runnerAppPath: String
   public let testTargetAppPath: String?
@@ -188,8 +188,8 @@ final class FBTestManagerTestConfiguration: FBXCTestConfiguration {
   public let videoRecordingPath: String?
   public let testArtifactsFilenameGlobs: [String]?
 
-  public static func configuration(withEnvironment environment: [String: String], workingDirectory: String, testBundlePath: String, waitForDebugger: Bool, timeout: TimeInterval, runnerAppPath: String, testTargetAppPath: String?, testFilter: String?, videoRecordingPath: String?, testArtifactsFilenameGlobs: [String]?, osLogPath: String?) -> FBTestManagerTestConfiguration {
-    FBTestManagerTestConfiguration(environment: environment, workingDirectory: workingDirectory, testBundlePath: testBundlePath, waitForDebugger: waitForDebugger, timeout: timeout, runnerAppPath: runnerAppPath, testTargetAppPath: testTargetAppPath, testFilter: testFilter, videoRecordingPath: videoRecordingPath, testArtifactsFilenameGlobs: testArtifactsFilenameGlobs, osLogPath: osLogPath)
+  public static func configuration(withEnvironment environment: [String: String], workingDirectory: String, testBundlePath: String, waitForDebugger: Bool, timeout: TimeInterval, runnerAppPath: String, testTargetAppPath: String?, testFilter: String?, videoRecordingPath: String?, testArtifactsFilenameGlobs: [String]?, osLogPath: String?) -> TestManagerTestConfiguration {
+    TestManagerTestConfiguration(environment: environment, workingDirectory: workingDirectory, testBundlePath: testBundlePath, waitForDebugger: waitForDebugger, timeout: timeout, runnerAppPath: runnerAppPath, testTargetAppPath: testTargetAppPath, testFilter: testFilter, videoRecordingPath: videoRecordingPath, testArtifactsFilenameGlobs: testArtifactsFilenameGlobs, osLogPath: osLogPath)
   }
 
   public init(environment: [String: String], workingDirectory: String, testBundlePath: String, waitForDebugger: Bool, timeout: TimeInterval, runnerAppPath: String, testTargetAppPath: String?, testFilter: String?, videoRecordingPath: String?, testArtifactsFilenameGlobs: [String]?, osLogPath: String?) {
@@ -202,8 +202,8 @@ final class FBTestManagerTestConfiguration: FBXCTestConfiguration {
     super.init(environment: environment, workingDirectory: workingDirectory, testBundlePath: testBundlePath, waitForDebugger: waitForDebugger, timeout: timeout)
   }
 
-  override var testType: FBXCTestType {
-    testTargetAppPath != nil ? FBXCTestType.uiTest : FBXCTestType.applicationTest
+  override var testType: XCTestType {
+    testTargetAppPath != nil ? XCTestType.uiTest : XCTestType.applicationTest
   }
 
   override func jsonSerializableRepresentation() -> [String: Any] {
@@ -223,18 +223,18 @@ final class FBTestManagerTestConfiguration: FBXCTestConfiguration {
 public final class FBLogicTestConfiguration: FBXCTestConfiguration {
 
   public let testFilter: String?
-  public let mirroring: FBLogicTestMirrorLogs
+  public let mirroring: LogicTestMirrorLogs
   public let coverageConfiguration: FBCodeCoverageConfiguration?
   public let binaryPath: String?
   public let logDirectoryPath: String?
   public let architectures: Set<String>
   public let injectLibraries: [String]
 
-  public static func configuration(withEnvironment environment: [String: String], workingDirectory: String, testBundlePath: String, waitForDebugger: Bool, timeout: TimeInterval, testFilter: String?, mirroring: FBLogicTestMirrorLogs, coverageConfiguration: FBCodeCoverageConfiguration?, binaryPath: String?, logDirectoryPath: String?, architectures: Set<String>) -> FBLogicTestConfiguration {
+  public static func configuration(withEnvironment environment: [String: String], workingDirectory: String, testBundlePath: String, waitForDebugger: Bool, timeout: TimeInterval, testFilter: String?, mirroring: LogicTestMirrorLogs, coverageConfiguration: FBCodeCoverageConfiguration?, binaryPath: String?, logDirectoryPath: String?, architectures: Set<String>) -> FBLogicTestConfiguration {
     FBLogicTestConfiguration(environment: environment, workingDirectory: workingDirectory, testBundlePath: testBundlePath, waitForDebugger: waitForDebugger, timeout: timeout, testFilter: testFilter, mirroring: mirroring, coverageConfiguration: coverageConfiguration, binaryPath: binaryPath, logDirectoryPath: logDirectoryPath, architectures: architectures)
   }
 
-  public init(environment: [String: String], workingDirectory: String, testBundlePath: String, waitForDebugger: Bool, timeout: TimeInterval, testFilter: String?, mirroring: FBLogicTestMirrorLogs, coverageConfiguration: FBCodeCoverageConfiguration?, binaryPath: String?, logDirectoryPath: String?, architectures: Set<String>, injectLibraries: [String] = []) {
+  public init(environment: [String: String], workingDirectory: String, testBundlePath: String, waitForDebugger: Bool, timeout: TimeInterval, testFilter: String?, mirroring: LogicTestMirrorLogs, coverageConfiguration: FBCodeCoverageConfiguration?, binaryPath: String?, logDirectoryPath: String?, architectures: Set<String>, injectLibraries: [String] = []) {
     self.testFilter = testFilter
     self.mirroring = mirroring
     self.coverageConfiguration = coverageConfiguration
@@ -245,8 +245,8 @@ public final class FBLogicTestConfiguration: FBXCTestConfiguration {
     super.init(environment: environment, workingDirectory: workingDirectory, testBundlePath: testBundlePath, waitForDebugger: waitForDebugger, timeout: timeout)
   }
 
-  override var testType: FBXCTestType {
-    FBXCTestType.logicTest
+  override var testType: XCTestType {
+    XCTestType.logicTest
   }
 
   override func jsonSerializableRepresentation() -> [String: Any] {

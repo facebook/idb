@@ -13,7 +13,7 @@ private let kEnvLLVMProfileFile = "LLVM_PROFILE_FILE"
 private let kEnvLogDirectoryPath = "LOG_DIRECTORY_PATH"
 
 /// The ways runner-configuration preparation can fail, as data rather than assembled strings.
-enum FBTestRunnerConfigurationError: Error, LocalizedError {
+enum TestRunnerConfigurationError: Error, LocalizedError {
   case codesignCheckFailed(bundlePath: String, underlying: Error)
   case testBundlePreparationFailed(underlying: Error)
   case testConfigurationPreparationFailed(underlying: Error)
@@ -30,7 +30,7 @@ enum FBTestRunnerConfigurationError: Error, LocalizedError {
   }
 }
 
-struct FBTestRunnerConfiguration {
+struct TestRunnerConfiguration {
 
   // MARK: - Properties
 
@@ -57,12 +57,12 @@ struct FBTestRunnerConfiguration {
 
   // MARK: - Public
 
-  public static func prepareConfiguration(withTarget target: any XCTestExtendedTarget, testLaunchConfiguration: FBTestLaunchConfiguration, workingDirectory: String, codesign: FBCodesignProvider?) async throws -> FBTestRunnerConfiguration {
+  public static func prepareConfiguration(withTarget target: any XCTestExtendedTarget, testLaunchConfiguration: FBTestLaunchConfiguration, workingDirectory: String, codesign: FBCodesignProvider?) async throws -> TestRunnerConfiguration {
     if let codesign {
       do {
         _ = try await codesign.cdHashForBundle(atPath: testLaunchConfiguration.testBundle.path)
       } catch {
-        throw FBTestRunnerConfigurationError.codesignCheckFailed(bundlePath: testLaunchConfiguration.testBundle.path, underlying: error)
+        throw TestRunnerConfigurationError.codesignCheckFailed(bundlePath: testLaunchConfiguration.testBundle.path, underlying: error)
       }
     }
     return try await prepareConfigurationAfterCodesignatureCheck(withTarget: target, testLaunchConfiguration: testLaunchConfiguration, workingDirectory: workingDirectory)
@@ -94,7 +94,7 @@ struct FBTestRunnerConfiguration {
     return envs
   }
 
-  private static func prepareConfigurationAfterCodesignatureCheck(withTarget target: any XCTestExtendedTarget, testLaunchConfiguration: FBTestLaunchConfiguration, workingDirectory: String) async throws -> FBTestRunnerConfiguration {
+  private static func prepareConfigurationAfterCodesignatureCheck(withTarget target: any XCTestExtendedTarget, testLaunchConfiguration: FBTestLaunchConfiguration, workingDirectory: String) async throws -> TestRunnerConfiguration {
     let runtimeRoot = await target.runtimeRootDirectory
     let platformRoot = await target.platformRootDirectory
 
@@ -130,7 +130,7 @@ struct FBTestRunnerConfiguration {
     do {
       testBundle = try FBBundleDescriptor.bundle(fromPath: testLaunchConfiguration.testBundle.path)
     } catch {
-      throw FBTestRunnerConfigurationError.testBundlePreparationFailed(underlying: error)
+      throw TestRunnerConfigurationError.testBundlePreparationFailed(underlying: error)
     }
 
     let testConfiguration: FBTestConfiguration
@@ -149,7 +149,7 @@ struct FBTestRunnerConfiguration {
         reportActivities: testLaunchConfiguration.reportActivities
       )
     } catch {
-      throw FBTestRunnerConfigurationError.testConfigurationPreparationFailed(underlying: error)
+      throw TestRunnerConfigurationError.testConfigurationPreparationFailed(underlying: error)
     }
 
     let hostApplication = try await target.application.installed(bundleID: testLaunchConfiguration.applicationLaunchConfiguration.bundleID)
@@ -179,7 +179,7 @@ struct FBTestRunnerConfiguration {
 
     let frameworkSearchPaths = xcTestFrameworksPaths + [(hostApplication.bundle.path as NSString).appendingPathComponent("Frameworks")]
 
-    let launchEnvironment = FBTestRunnerConfiguration.launchEnvironment(
+    let launchEnvironment = TestRunnerConfiguration.launchEnvironment(
       withHostApplication: hostApplication.bundle,
       hostApplicationAdditionalEnvironment: hostApplicationAdditionalEnvironment,
       testBundle: testBundle,
@@ -187,7 +187,7 @@ struct FBTestRunnerConfiguration {
       frameworkSearchPaths: frameworkSearchPaths
     )
 
-    return FBTestRunnerConfiguration(
+    return TestRunnerConfiguration(
       sessionIdentifier: sessionIdentifier,
       testRunner: hostApplication.bundle,
       launchEnvironment: launchEnvironment,

@@ -9,8 +9,8 @@
 
 #import <FBControlCore/FBControlCore.h>
 
-@class FBTestManagerAPIMediator;
-@class FBTestManagerContext;
+@class TestManagerAPIMediator;
+@class TestManagerContext;
 
 @protocol FBControlCoreLogger;
 @protocol FBXCTestReporter;
@@ -18,7 +18,7 @@
 NS_ASSUME_NONNULL_BEGIN
 
 /**
- Implements the private XCTest `XCTestManager_IDEInterface` / `XCTMessagingChannel_RunnerToIDE` callback surface that the test runner and `testmanagerd` call over the DTX channel. Process launch and termination requests are forwarded to `FBTestManagerAPIMediator`.
+ Implements the private XCTest `XCTestManager_IDEInterface` / `XCTMessagingChannel_RunnerToIDE` callback surface that the test runner and `testmanagerd` call over the DTX channel. Process launch and termination requests are forwarded to `TestManagerAPIMediator`.
  */
 @interface FBTestManagerAPIMediatorIDEInterface : NSObject
 
@@ -32,7 +32,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param reporter the delegate to report test progress to.
  @param logger the logger to log events to.
  */
-- (instancetype)initWithMediator:(FBTestManagerAPIMediator *)mediator context:(FBTestManagerContext *)context reporter:(id<FBXCTestReporter>)reporter logger:(nullable id<FBControlCoreLogger>)logger;
+- (instancetype)initWithMediator:(TestManagerAPIMediator *)mediator context:(TestManagerContext *)context reporter:(id<FBXCTestReporter>)reporter logger:(nullable id<FBControlCoreLogger>)logger;
 
 @end
 

@@ -120,7 +120,7 @@ final class FBXCTestConfigurationTransientTests: XCTestCase {
     waitForDebugger: Bool = false,
     timeout: TimeInterval = 100,
     testFilter: String? = nil,
-    mirroring: FBLogicTestMirrorLogs = [],
+    mirroring: LogicTestMirrorLogs = [],
     coverageConfiguration: FBCodeCoverageConfiguration? = nil,
     binaryPath: String? = nil,
     logDirectoryPath: String? = nil,
@@ -143,7 +143,7 @@ final class FBXCTestConfigurationTransientTests: XCTestCase {
 
   func testListTestConfigurationTestType() {
     let config = makeListConfig()
-    XCTAssertEqual(config.testType, FBXCTestType.listTest)
+    XCTAssertEqual(config.testType, XCTestType.listTest)
   }
 
   func testListTestConfigurationDescription() {
@@ -160,10 +160,10 @@ final class FBXCTestConfigurationTransientTests: XCTestCase {
     XCTAssertEqual(config1.hash, config2.hash)
   }
 
-  // MARK: - FBTestManagerTestConfiguration
+  // MARK: - TestManagerTestConfiguration
 
   func testManagerTestConfigurationApplicationTestType() {
-    let config = FBTestManagerTestConfiguration(
+    let config = TestManagerTestConfiguration(
       environment: [:],
       workingDirectory: "/tmp",
       testBundlePath: "/test.xctest",
@@ -176,11 +176,11 @@ final class FBXCTestConfigurationTransientTests: XCTestCase {
       testArtifactsFilenameGlobs: nil,
       osLogPath: nil
     )
-    XCTAssertEqual(config.testType, FBXCTestType.applicationTest)
+    XCTAssertEqual(config.testType, XCTestType.applicationTest)
   }
 
   func testManagerTestConfigurationUITestType() {
-    let config = FBTestManagerTestConfiguration(
+    let config = TestManagerTestConfiguration(
       environment: [:],
       workingDirectory: "/tmp",
       testBundlePath: "/test.xctest",
@@ -193,11 +193,11 @@ final class FBXCTestConfigurationTransientTests: XCTestCase {
       testArtifactsFilenameGlobs: nil,
       osLogPath: nil
     )
-    XCTAssertEqual(config.testType, FBXCTestType.uiTest)
+    XCTAssertEqual(config.testType, XCTestType.uiTest)
   }
 
   func testManagerTestConfigurationDescription() {
-    let config = FBTestManagerTestConfiguration(
+    let config = TestManagerTestConfiguration(
       environment: [:],
       workingDirectory: "/tmp",
       testBundlePath: "/test.xctest",
@@ -221,7 +221,7 @@ final class FBXCTestConfigurationTransientTests: XCTestCase {
 
   func testLogicTestConfigurationTestType() {
     let config = makeLogicConfig()
-    XCTAssertEqual(config.testType, FBXCTestType.logicTest)
+    XCTAssertEqual(config.testType, XCTestType.logicTest)
   }
 
   func testLogicTestConfigurationDescription() {
@@ -265,14 +265,14 @@ final class FBXCTestConfigurationTransientTests: XCTestCase {
   }
 }
 
-// MARK: - FBXCTestType Constants Tests
+// MARK: - XCTestType Constants Tests
 
-final class FBXCTestTypeConstantsTransientTests: XCTestCase {
+final class XCTestTypeConstantsTransientTests: XCTestCase {
 
   func testTypeConstants() {
-    XCTAssertEqual(FBXCTestType.applicationTest.rawValue, "application-test")
-    XCTAssertEqual(FBXCTestType.logicTest.rawValue, "logic-test")
-    XCTAssertEqual(FBXCTestType.listTest.rawValue, "list-test")
-    XCTAssertEqual(FBXCTestType.uiTest.rawValue, "ui-test")
+    XCTAssertEqual(XCTestType.applicationTest.rawValue, "application-test")
+    XCTAssertEqual(XCTestType.logicTest.rawValue, "logic-test")
+    XCTAssertEqual(XCTestType.listTest.rawValue, "list-test")
+    XCTAssertEqual(XCTestType.uiTest.rawValue, "ui-test")
   }
 }

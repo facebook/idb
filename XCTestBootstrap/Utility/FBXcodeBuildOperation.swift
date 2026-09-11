@@ -13,13 +13,13 @@ private let XcodebuildEnvironmentDeviceSetPath = "SIM_DEVICE_SET_PATH"
 private let XcodebuildEnvironmentInsertDylib = "DYLD_INSERT_LIBRARIES"
 private let XcodebuildDestinationTimeoutSecs = "180"
 
-enum FBXcodeBuildError: Error {
+enum XcodeBuildError: Error {
   case shimMissing
   case writeFailed(path: String)
   case xcodebuildMissing(path: String)
 }
 
-extension FBXcodeBuildError: LocalizedError {
+extension XcodeBuildError: LocalizedError {
   public var errorDescription: String? {
     switch self {
     case .shimMissing:
@@ -61,7 +61,7 @@ public final class FBXcodeBuildOperation {
 
     if let simDeviceSetPath {
       guard let macOSTestShimPath else {
-        throw FBXcodeBuildError.shimMissing
+        throw XcodeBuildError.shimMissing
       }
       environment[XcodebuildEnvironmentDeviceSetPath] = simDeviceSetPath
       if let existingDylib = environment[XcodebuildEnvironmentInsertDylib] {
@@ -120,7 +120,7 @@ public final class FBXcodeBuildOperation {
     }
 
     if !testRunProperties.write(toFile: path, atomically: false) {
-      throw FBXcodeBuildError.writeFailed(path: path)
+      throw XcodeBuildError.writeFailed(path: path)
     }
     return path
   }
@@ -140,7 +140,7 @@ public final class FBXcodeBuildOperation {
   public static func xcodeBuildPath() throws -> String {
     let path = (FBXcodeConfiguration.developerDirectory as NSString).appendingPathComponent("/usr/bin/xcodebuild")
     if !FileManager.default.fileExists(atPath: path) {
-      throw FBXcodeBuildError.xcodebuildMissing(path: path)
+      throw XcodeBuildError.xcodebuildMissing(path: path)
     }
     return path
   }
@@ -174,7 +174,7 @@ public final class FBXcodeBuildOperation {
         fmap: { _ -> FBFuture<AnyObject> in
           logger.log("xcodebuild operation completed successfully \(task)")
           if let resultBundlePath = configuration.resultBundlePath {
-            return FBXCTestResultBundleParser.parse(resultBundlePath, target: target, reporter: reporter, logger: logger, extractScreenshots: configuration.reportResultBundle)
+            return XCTestResultBundleParser.parse(resultBundlePath, target: target, reporter: reporter, logger: logger, extractScreenshots: configuration.reportResultBundle)
               .retyped(FBFuture<AnyObject>.self)
           }
           logger.log("No result bundle to parse")

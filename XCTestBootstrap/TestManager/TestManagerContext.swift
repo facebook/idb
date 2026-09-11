@@ -8,7 +8,7 @@
 import FBControlCore
 import Foundation
 
-@objc public final class FBTestManagerContext: NSObject, NSCopying {
+@objc public final class TestManagerContext: NSObject, NSCopying {
 
   @objc public let sessionIdentifier: UUID
   @objc public let timeout: TimeInterval

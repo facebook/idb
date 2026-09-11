@@ -29,8 +29,8 @@
 
 @interface FBTestManagerAPIMediatorIDEInterface () <XCTestManager_IDEInterface, XCTMessagingChannel_RunnerToIDE>
 
-@property (nonatomic, readonly, weak) FBTestManagerAPIMediator *mediator;
-@property (nonatomic, readonly, strong) FBTestManagerContext *context;
+@property (nonatomic, readonly, weak) TestManagerAPIMediator *mediator;
+@property (nonatomic, readonly, strong) TestManagerContext *context;
 @property (nullable, nonatomic, readonly, strong) id<FBControlCoreLogger> logger;
 @property (nonatomic, readonly, strong) FBTestReporterAdapter *reporterAdapter;
 
@@ -40,7 +40,7 @@
 
 #pragma mark - Initializers
 
-- (instancetype)initWithMediator:(FBTestManagerAPIMediator *)mediator context:(FBTestManagerContext *)context reporter:(id<FBXCTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger
+- (instancetype)initWithMediator:(TestManagerAPIMediator *)mediator context:(TestManagerContext *)context reporter:(id<FBXCTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger
 {
   self = [super init];
   if (!self) {

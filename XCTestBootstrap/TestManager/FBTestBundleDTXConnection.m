@@ -41,7 +41,7 @@ static NSTimeInterval const DaemonSessionReadyTimeout = 60; // Time for `_IDE_in
 
 @interface FBTestBundleDTXConnection () <XCTestManager_IDEInterface, XCTMessagingChannel_DaemonToIDE, XCTMessagingChannel_RunnerToIDE>
 
-@property (nonatomic, readonly, strong) FBTestManagerContext *context;
+@property (nonatomic, readonly, strong) TestManagerContext *context;
 @property (nonatomic, readonly, strong) dispatch_queue_t workQueue;
 @property (nonatomic, readonly, assign) int testManagerdSocket;
 @property (nonatomic, readonly, strong) id<XCTestManager_IDEInterface, XCTMessagingChannel_RunnerToIDE, NSObject> interface;
@@ -83,7 +83,7 @@ static NSTimeInterval const DaemonSessionReadyTimeout = 60; // Time for `_IDE_in
   return _clientProcessDisplayPath;
 }
 
-- (instancetype)initWithContext:(FBTestManagerContext *)context workQueue:(dispatch_queue_t)workQueue socket:(int)socket interface:(id)interface requestQueue:(dispatch_queue_t)requestQueue logger:(id<FBControlCoreLogger>)logger
+- (instancetype)initWithContext:(TestManagerContext *)context workQueue:(dispatch_queue_t)workQueue socket:(int)socket interface:(id)interface requestQueue:(dispatch_queue_t)requestQueue logger:(id<FBControlCoreLogger>)logger
 {
   self = [super init];
   if (!self) {
@@ -142,7 +142,7 @@ static NSTimeInterval const DaemonSessionReadyTimeout = 60; // Time for `_IDE_in
                                                                                      }];
     connection = [[objc_lookUpClass("DTXConnection") alloc] initWithTransport:transport];
   } @catch (NSException *exception) {
-    return [[FBXCTestError
+    return [[XCTestError
              describe:[NSString stringWithFormat:@"Failed to wrap testmanagerd socket %d in DTXConnection: %@", socket, exception]]
             failBool:error];
   }

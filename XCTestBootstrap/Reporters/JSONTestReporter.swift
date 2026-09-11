@@ -12,7 +12,7 @@ private func fullyFormattedXCTestName(_ className: String, _ methodName: String)
   "-[\(className) \(methodName)]"
 }
 
-enum FBJSONTestReporterError: Error, LocalizedError {
+enum JSONTestReporterError: Error, LocalizedError {
   case testPlanDidNotStart(message: String)
   case testPlanDidNotFinish(message: String)
 
@@ -24,7 +24,7 @@ enum FBJSONTestReporterError: Error, LocalizedError {
   }
 }
 
-final class FBJSONTestReporter: NSObject, FBXCTestReporter {
+final class JSONTestReporter: NSObject, FBXCTestReporter {
 
   private let dataConsumer: FBDataConsumer
   private let logger: FBControlCoreLogger?
@@ -51,7 +51,7 @@ final class FBJSONTestReporter: NSObject, FBXCTestReporter {
 
   public func printReport() throws {
     if !started {
-      throw FBJSONTestReporterError.testPlanDidNotStart(message: noStartOfTestPlanErrorMessage())
+      throw JSONTestReporterError.testPlanDidNotStart(message: noStartOfTestPlanErrorMessage())
     }
     if !finished {
       var errorMessage = "No didFinishExecutingTestPlan event was received, the test bundle has likely crashed."
@@ -61,59 +61,59 @@ final class FBJSONTestReporter: NSObject, FBXCTestReporter {
       if let currentTestName {
         errorMessage += ". Crash occurred while this test was running: \(currentTestName)"
       }
-      printEvent(FBJSONTestReporter.createOCUnitEndEvent(testType, testBundlePath: testBundlePath, message: errorMessage, success: false))
-      throw FBJSONTestReporterError.testPlanDidNotFinish(message: errorMessage)
+      printEvent(JSONTestReporter.createOCUnitEndEvent(testType, testBundlePath: testBundlePath, message: errorMessage, success: false))
+      throw JSONTestReporterError.testPlanDidNotFinish(message: errorMessage)
     }
     dataConsumer.consumeEndOfFile()
   }
 
   public func processWaitingForDebugger(withProcessIdentifier pid: pid_t) {
-    printEvent(FBJSONTestReporter.waitingForDebuggerEvent(pid))
+    printEvent(JSONTestReporter.waitingForDebuggerEvent(pid))
   }
 
   public func didBeginExecutingTestPlan() {
     started = true
-    printEvent(FBJSONTestReporter.createOCUnitBeginEvent(testType, testBundlePath: testBundlePath))
+    printEvent(JSONTestReporter.createOCUnitBeginEvent(testType, testBundlePath: testBundlePath))
   }
 
   public func didFinishExecutingTestPlan() {
     if started {
-      printEvent(FBJSONTestReporter.createOCUnitEndEvent(testType, testBundlePath: testBundlePath, message: nil, success: true))
+      printEvent(JSONTestReporter.createOCUnitEndEvent(testType, testBundlePath: testBundlePath, message: nil, success: true))
     } else {
-      printEvent(FBJSONTestReporter.createOCUnitBeginEvent(testType, testBundlePath: testBundlePath))
+      printEvent(JSONTestReporter.createOCUnitBeginEvent(testType, testBundlePath: testBundlePath))
       let errorMessage = noStartOfTestPlanErrorMessage()
-      printEvent(FBJSONTestReporter.createOCUnitEndEvent(testType, testBundlePath: testBundlePath, message: errorMessage, success: false))
+      printEvent(JSONTestReporter.createOCUnitEndEvent(testType, testBundlePath: testBundlePath, message: errorMessage, success: false))
     }
     finished = true
   }
 
   public func testSuite(_ testSuite: String, didStartAt startTime: String) {
-    printEvent(FBJSONTestReporter.beginTestSuiteEvent(testSuite))
+    printEvent(JSONTestReporter.beginTestSuiteEvent(testSuite))
   }
 
   public func testCaseDidStart(forTestClass testClass: String, method: String) {
     let xctestName = fullyFormattedXCTestName(testClass, method)
     currentTestName = xctestName
     xctestNameExceptionsMapping[xctestName] = []
-    printEvent(FBJSONTestReporter.beginTestCaseEvent(testClass, testMethod: method))
+    printEvent(JSONTestReporter.beginTestCaseEvent(testClass, testMethod: method))
   }
 
   public func testCaseDidFail(forTestClass testClass: String, method: String, exceptions: [FBExceptionInfo]) {
     let xctestName = fullyFormattedXCTestName(testClass, method)
     for exception in exceptions {
-      xctestNameExceptionsMapping[xctestName]?.append(FBJSONTestReporter.exceptionEvent(exception.message, file: exception.file ?? "", line: exception.line))
+      xctestNameExceptionsMapping[xctestName]?.append(JSONTestReporter.exceptionEvent(exception.message, file: exception.file ?? "", line: exception.line))
     }
   }
 
   public func testCaseDidFinish(forTestClass testClass: String, method: String, with status: FBTestReportStatus, duration: TimeInterval, logs: [String]?) {
     currentTestName = nil
-    let event = FBJSONTestReporter.testCaseDidFinishEvent(forTestClass: testClass, method: method, status: status, duration: duration, pendingTestOutput: pendingTestOutput, xctestNameExceptionsMapping: xctestNameExceptionsMapping)
+    let event = JSONTestReporter.testCaseDidFinishEvent(forTestClass: testClass, method: method, status: status, duration: duration, pendingTestOutput: pendingTestOutput, xctestNameExceptionsMapping: xctestNameExceptionsMapping)
     printEvent(event)
     pendingTestOutput.removeAll()
   }
 
   public func finished(with summary: FBTestManagerResultSummary) {
-    printEvent(FBJSONTestReporter.finishedEvent(from: summary))
+    printEvent(JSONTestReporter.finishedEvent(from: summary))
   }
 
   public func didRecordVideo(atPath videoRecordingPath: String) {
@@ -140,7 +140,7 @@ final class FBJSONTestReporter: NSObject, FBXCTestReporter {
 
   public func testHadOutput(_ output: String) {
     pendingTestOutput.append(output)
-    printEvent(FBJSONTestReporter.testOutputEvent(output))
+    printEvent(JSONTestReporter.testOutputEvent(output))
   }
 
   public func handleExternalEvent(_ line: String) {

@@ -8,12 +8,12 @@
 import FBControlCore
 import Foundation
 
-enum FBOToolDynamicLibsError: Error {
+enum OToolDynamicLibsError: Error {
   case directoryListFailed(path: String, underlying: Error)
   case clangVersionNotFound(path: String)
 }
 
-extension FBOToolDynamicLibsError: LocalizedError {
+extension OToolDynamicLibsError: LocalizedError {
   public var errorDescription: String? {
     switch self {
     case let .directoryListFailed(path, _):
@@ -24,21 +24,21 @@ extension FBOToolDynamicLibsError: LocalizedError {
   }
 }
 
-final class FBOToolDynamicLibs {
+final class OToolDynamicLibs {
 
   public static func findFullPath(forSanitiserDyldInBundle bundlePath: String) async throws -> [String] {
-    let libsList = try await FBOToolOperation.listSanitiserDylibsRequired(byBundle: bundlePath)
+    let libsList = try await OToolOperation.listSanitiserDylibsRequired(byBundle: bundlePath)
 
     let clangLocation = (FBXcodeConfiguration.developerDirectory as NSString).appendingPathComponent("Toolchains/XcodeDefault.xctoolchain/usr/lib/clang")
     let fileList: [URL]
     do {
       fileList = try FileManager.default.contentsOfDirectory(at: URL(fileURLWithPath: clangLocation), includingPropertiesForKeys: [.isDirectoryKey], options: [])
     } catch {
-      throw FBOToolDynamicLibsError.directoryListFailed(path: clangLocation, underlying: error)
+      throw OToolDynamicLibsError.directoryListFailed(path: clangLocation, underlying: error)
     }
 
     if fileList.isEmpty {
-      throw FBOToolDynamicLibsError.clangVersionNotFound(path: clangLocation)
+      throw OToolDynamicLibsError.clangVersionNotFound(path: clangLocation)
     }
 
     let libsFolder = NSString.path(withComponents: [fileList[0].path, "lib/darwin/"])

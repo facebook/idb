@@ -8,7 +8,7 @@
 import FBControlCore
 import Foundation
 
-enum FBListTestError: Error {
+enum ListTestError: Error {
   case testNamesMalformed(result: String)
   case missingShimAndOutput(result: String)
   case testProcessMissingExitCode(result: String)
@@ -17,7 +17,7 @@ enum FBListTestError: Error {
   case listingFailed(exitCode: Int32, exitDescription: String, stdErr: String)
 }
 
-extension FBListTestError: LocalizedError {
+extension ListTestError: LocalizedError {
   public var errorDescription: String? {
     switch self {
     case let .testNamesMalformed(result):
@@ -36,7 +36,7 @@ extension FBListTestError: LocalizedError {
   }
 }
 
-private final class ListTestStrategy_ReporterWrapped: FBXCTestRunner {
+private final class ListTestStrategy_ReporterWrapped: XCTestRunner {
 
   let strategy: FBListTestStrategy
   let reporter: FBXCTestReporter
@@ -55,7 +55,7 @@ private final class ListTestStrategy_ReporterWrapped: FBXCTestRunner {
         strategy.target.workQueue,
         fmap: { testNamesObj -> FBFuture<AnyObject> in
           guard let testNames = testNamesObj as? [String] else {
-            return FBFuture(error: FBListTestError.testNamesMalformed(result: String(describing: testNamesObj)))
+            return FBFuture(error: ListTestError.testNamesMalformed(result: String(describing: testNamesObj)))
           }
           for testName in testNames {
             guard let slashRange = testName.range(of: "/") else { continue }
@@ -106,7 +106,7 @@ public final class FBListTestStrategy {
             let shimPath = tuple[0] as? String,
             let shimOutput = tuple[1] as? FBProcessFileOutput
           else {
-            return FBFuture(error: FBListTestError.missingShimAndOutput(result: String(describing: tuple)))
+            return FBFuture(error: ListTestError.missingShimAndOutput(result: String(describing: tuple)))
           }
           return self.listTests(withShimPath: shimPath, shimOutput: shimOutput, shimBuffer: shimBuffer)
             .retyped(FBFuture<AnyObject>.self)
@@ -115,7 +115,7 @@ public final class FBListTestStrategy {
       .retyped(FBFuture<NSArray>.self)
   }
 
-  func wrapInReporter(_ reporter: FBXCTestReporter) -> FBXCTestRunner {
+  func wrapInReporter(_ reporter: FBXCTestReporter) -> XCTestRunner {
     ListTestStrategy_ReporterWrapped(strategy: self, reporter: reporter)
   }
 
@@ -138,7 +138,7 @@ public final class FBListTestStrategy {
     return
       fbFutureFromAsync {
         try await FBTemporaryDirectory(logger: self.logger).withTemporaryDirectory { temporaryDirectoryURL in
-          let libraries = try await FBOToolDynamicLibs.findFullPath(forSanitiserDyldInBundle: self.configuration.testBundlePath)
+          let libraries = try await OToolDynamicLibs.findFullPath(forSanitiserDyldInBundle: self.configuration.testBundlePath)
           let environment = FBListTestStrategy.setupEnvironment(withDylibs: libraries, shimPath: shimPath, shimOutputFilePath: shimOutput.filePath, bundlePath: self.configuration.testBundlePath, target: self.target)
           return try await bridgeFBFuture(
             FBListTestStrategy.listTestProcess(withTarget: self.target, configuration: self.configuration, xctestPath: self.target.xctest.path, environment: environment, stdOutConsumer: stdOutConsumer, stdErrConsumer: stdErrConsumer, logger: self.logger, temporaryDirectory: temporaryDirectoryURL)
@@ -146,7 +146,7 @@ public final class FBListTestStrategy {
                 self.target.workQueue,
                 fmap: { exitCodeFutureObj -> FBFuture<AnyObject> in
                   guard let exitCodeFuture = exitCodeFutureObj as? FBFuture<NSNumber> else {
-                    return FBFuture(error: FBListTestError.testProcessMissingExitCode(result: String(describing: exitCodeFutureObj)))
+                    return FBFuture(error: ListTestError.testProcessMissingExitCode(result: String(describing: exitCodeFutureObj)))
                   }
                   return FBListTestStrategy.launchedProcess(
                     withExitCode: exitCodeFuture, shimOutput: shimOutput, shimBuffer: shimBuffer, stdOutBuffer: stdOutBuffer, stdErrBuffer: stdErrBuffer, queue: self.target.workQueue
@@ -193,7 +193,7 @@ public final class FBListTestStrategy {
           do {
             guard let parsed = try JSONSerialization.jsonObject(with: data, options: []) as? [[String: String]] else {
               NSLog("Shimulator buffer data (should contain test information): %@", String(data: data, encoding: .utf8) ?? "")
-              return FBFuture<AnyObject>(error: FBListTestError.testListJSONParseFailed)
+              return FBFuture<AnyObject>(error: ListTestError.testListJSONParseFailed)
             }
             tests = parsed
           } catch {
@@ -203,7 +203,7 @@ public final class FBListTestStrategy {
           var testNames: [String] = []
           for test in tests {
             guard let testName = test["legacyTestName"] else {
-              return FBFuture(error: FBListTestError.unexpectedTestName(value: String(describing: test["legacyTestName"])))
+              return FBFuture(error: ListTestError.unexpectedTestName(value: String(describing: test["legacyTestName"])))
             }
             testNames.append(testName)
           }
@@ -220,9 +220,9 @@ public final class FBListTestStrategy {
         queue,
         fmap: { exitCodeNumber -> FBFuture<AnyObject> in
           let exitCodeValue = exitCodeNumber.int32Value
-          if let description = FBXCTestProcess.describeFailingExitCode(exitCodeValue) {
+          if let description = XCTestProcess.describeFailingExitCode(exitCodeValue) {
             let stdErrReversed = stdErrBuffer.lines().reversed().joined(separator: "\n")
-            return FBFuture(error: FBListTestError.listingFailed(exitCode: exitCodeValue, exitDescription: description, stdErr: stdErrReversed))
+            return FBFuture(error: ListTestError.listingFailed(exitCode: exitCodeValue, exitDescription: description, stdErr: stdErrReversed))
           }
           let futures: [FBFuture<AnyObject>] = [
             output.stopReading().retyped(FBFuture<AnyObject>.self),
@@ -280,7 +280,7 @@ public final class FBListTestStrategy {
       .onQueue(
         target.workQueue,
         map: { process -> AnyObject in
-          FBXCTestProcess.ensureProcess(process, completesWithin: timeout, crashLogCommands: nil, queue: target.workQueue, logger: logger) as AnyObject
+          XCTestProcess.ensureProcess(process, completesWithin: timeout, crashLogCommands: nil, queue: target.workQueue, logger: logger) as AnyObject
         })
   }
 }

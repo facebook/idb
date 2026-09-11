@@ -8,7 +8,7 @@
 import FBControlCore
 import Foundation
 
-enum FBManagedTestRunError: Error, LocalizedError {
+enum ManagedTestRunError: Error, LocalizedError {
   case frameworkLoadingFailed(underlying: Error)
 
   public var errorDescription: String? {
@@ -25,10 +25,10 @@ public final class FBManagedTestRunStrategy {
     do {
       try XCTestBootstrapFrameworkLoader.allDependentFrameworks.loadPrivateFrameworks(target.logger)
     } catch {
-      throw FBManagedTestRunError.frameworkLoadingFailed(underlying: error)
+      throw ManagedTestRunError.frameworkLoadingFailed(underlying: error)
     }
 
-    let runnerConfiguration = try await FBTestRunnerConfiguration.prepareConfiguration(
+    let runnerConfiguration = try await TestRunnerConfiguration.prepareConfiguration(
       withTarget: target,
       testLaunchConfiguration: configuration,
       workingDirectory: workingDirectory,
@@ -37,7 +37,7 @@ public final class FBManagedTestRunStrategy {
 
     let testHostLaunchConfiguration = prepareApplicationLaunchConfiguration(configuration.applicationLaunchConfiguration, withTestRunnerConfiguration: runnerConfiguration)
 
-    let context = FBTestManagerContext(
+    let context = TestManagerContext(
       sessionIdentifier: runnerConfiguration.sessionIdentifier,
       timeout: configuration.timeout,
       testHostLaunchConfiguration: testHostLaunchConfiguration,
@@ -45,7 +45,7 @@ public final class FBManagedTestRunStrategy {
       testConfiguration: runnerConfiguration.testConfiguration
     )
 
-    try await FBTestManagerAPIMediator.connectAndRunUntilCompletion(
+    try await TestManagerAPIMediator.connectAndRunUntilCompletion(
       with: context,
       target: target,
       reporter: reporter,
@@ -53,7 +53,7 @@ public final class FBManagedTestRunStrategy {
     )
   }
 
-  private static func prepareApplicationLaunchConfiguration(_ applicationLaunchConfiguration: FBApplicationLaunchConfiguration, withTestRunnerConfiguration testRunnerConfiguration: FBTestRunnerConfiguration) -> FBApplicationLaunchConfiguration {
+  private static func prepareApplicationLaunchConfiguration(_ applicationLaunchConfiguration: FBApplicationLaunchConfiguration, withTestRunnerConfiguration testRunnerConfiguration: TestRunnerConfiguration) -> FBApplicationLaunchConfiguration {
     FBApplicationLaunchConfiguration(
       bundleID: testRunnerConfiguration.testRunner.identifier,
       bundleName: testRunnerConfiguration.testRunner.identifier,
@@ -65,11 +65,11 @@ public final class FBManagedTestRunStrategy {
     )
   }
 
-  private static func arguments(fromConfiguration configuration: FBTestRunnerConfiguration, attributes: [String]) -> [String] {
+  private static func arguments(fromConfiguration configuration: TestRunnerConfiguration, attributes: [String]) -> [String] {
     configuration.launchArguments + attributes
   }
 
-  private static func environment(fromConfiguration configuration: FBTestRunnerConfiguration, environment: [String: String]) -> [String: String] {
+  private static func environment(fromConfiguration configuration: TestRunnerConfiguration, environment: [String: String]) -> [String: String] {
     var mEnvironment = configuration.launchEnvironment
     for (key, value) in environment {
       mEnvironment[key] = value

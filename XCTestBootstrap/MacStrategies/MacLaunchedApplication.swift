@@ -8,7 +8,7 @@
 import FBControlCore
 import Foundation
 
-enum FBMacLaunchedApplicationError: Error, LocalizedError {
+enum MacLaunchedApplicationError: Error, LocalizedError {
   case awaitingTerminationUnsupported
 
   public var errorDescription: String? {
@@ -19,7 +19,7 @@ enum FBMacLaunchedApplicationError: Error, LocalizedError {
   }
 }
 
-public final class FBMacLaunchedApplication: FBLaunchedApplication {
+public final class MacLaunchedApplication: FBLaunchedApplication {
 
   public let bundleID: String
   public let processIdentifier: pid_t
@@ -34,7 +34,7 @@ public final class FBMacLaunchedApplication: FBLaunchedApplication {
   }
 
   public func waitForTermination() async throws {
-    throw FBMacLaunchedApplicationError.awaitingTerminationUnsupported
+    throw MacLaunchedApplicationError.awaitingTerminationUnsupported
   }
 
   public func terminate() async throws {

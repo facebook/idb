@@ -12,13 +12,13 @@ private let CrashLogStartDateFuzz: TimeInterval = -20
 private let CrashLogWaitTime: TimeInterval = 180
 private let KillBackoffTimeout: TimeInterval = 1
 
-enum FBXCTestProcessError: Error {
+enum XCTestProcessError: Error {
   case stalled(timeout: TimeInterval, processIdentifier: pid_t, stackshot: String)
   case crashed(info: String, rawLog: String)
   case crashLogTimedOut(processIdentifier: pid_t)
 }
 
-extension FBXCTestProcessError: LocalizedError {
+extension XCTestProcessError: LocalizedError {
   public var errorDescription: String? {
     switch self {
     case let .stalled(timeout, processIdentifier, stackshot):
@@ -31,7 +31,7 @@ extension FBXCTestProcessError: LocalizedError {
   }
 }
 
-final class FBXCTestProcess {
+final class XCTestProcess {
 
   public static func ensureProcess(_ process: FBSubprocess<AnyObject, AnyObject, AnyObject>, completesWithin timeout: TimeInterval, crashLogCommands: (any CrashLogCommands)?, queue: DispatchQueue, logger: FBControlCoreLogger) -> FBFuture<NSNumber> {
     let startDate = Date(timeIntervalSinceNow: CrashLogStartDateFuzz)
@@ -42,7 +42,7 @@ final class FBXCTestProcess {
       .onQueue(
         queue, timeout: timeout,
         handler: {
-          FBXCTestProcess.performSampleStackshot(onProcess: process, forTimeout: timeout, queue: queue, logger: logger)
+          XCTestProcess.performSampleStackshot(onProcess: process, forTimeout: timeout, queue: queue, logger: logger)
         }
       )
       .onQueue(
@@ -58,7 +58,7 @@ final class FBXCTestProcess {
                 guard let crashLogCommands else {
                   return exitCodeFuture
                 }
-                return FBXCTestProcess.performCrashLogQuery(
+                return XCTestProcess.performCrashLogQuery(
                   forProcess: process, startDate: startDate, crashLogCommands: crashLogCommands, crashLogWaitTime: CrashLogWaitTime, queue: queue, logger: logger
                 ).retyped(FBFuture<AnyObject>.self)
               })
@@ -89,7 +89,7 @@ final class FBXCTestProcess {
       .onQueue(
         queue,
         fmap: { stackshot -> FBFuture<AnyObject> in
-          FBFuture(error: FBXCTestProcessError.stalled(timeout: timeout, processIdentifier: process.processIdentifier, stackshot: String(describing: stackshot)))
+          FBFuture(error: XCTestProcessError.stalled(timeout: timeout, processIdentifier: process.processIdentifier, stackshot: String(describing: stackshot)))
         }
       )
       .onQueue(
@@ -108,13 +108,13 @@ final class FBXCTestProcess {
   private static func performCrashLogQuery(forProcess process: FBSubprocess<AnyObject, AnyObject, AnyObject>, startDate: Date, crashLogCommands: any CrashLogCommands, crashLogWaitTime: TimeInterval, queue: DispatchQueue, logger: FBControlCoreLogger) -> FBFuture<NSNumber> {
     logger.log("xctest process (\(process.processIdentifier)) died prematurely, checking for crash log for \(crashLogWaitTime) seconds")
     return
-      FBXCTestProcess.crashLogs(forTerminationOfProcess: process, since: startDate, crashLogCommands: crashLogCommands, crashLogWaitTime: crashLogWaitTime, queue: queue)
+      XCTestProcess.crashLogs(forTerminationOfProcess: process, since: startDate, crashLogCommands: crashLogCommands, crashLogWaitTime: crashLogWaitTime, queue: queue)
       .rephraseFailure("xctest process (\(process.processIdentifier)) exited abnormally with no crash log, to check for yourself look in ~/Library/Logs/DiagnosticReports")
       .onQueue(
         queue,
         fmap: { info -> FBFuture<AnyObject> in
           let rawLog = (try? info.loadRawCrashLogString()) ?? ""
-          return FBFuture(error: FBXCTestProcessError.crashed(info: String(describing: info), rawLog: rawLog))
+          return FBFuture(error: XCTestProcessError.crashed(info: String(describing: info), rawLog: rawLog))
         }
       )
       .retyped(FBFuture<NSNumber>.self)
@@ -134,7 +134,7 @@ final class FBXCTestProcess {
       .onQueue(
         queue, timeout: crashLogWaitTime,
         handler: {
-          FBFuture<AnyObject>(error: FBXCTestProcessError.crashLogTimedOut(processIdentifier: process.processIdentifier))
+          FBFuture<AnyObject>(error: XCTestProcessError.crashLogTimedOut(processIdentifier: process.processIdentifier))
         }
       )
       .retyped(FBFuture<FBCrashLogInfo>.self)

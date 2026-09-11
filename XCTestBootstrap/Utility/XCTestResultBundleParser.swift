@@ -93,12 +93,12 @@ private func dateFromString(_ date: String) -> Date? {
   return FBXCTestResultBundleParser_dateFormatter.date(from: date)
 }
 
-enum FBXCTestResultBundleError: Error {
+enum XCTestResultBundleError: Error {
   case noActions
   case notADirectory(path: String)
 }
 
-extension FBXCTestResultBundleError: LocalizedError {
+extension XCTestResultBundleError: LocalizedError {
   public var errorDescription: String? {
     switch self {
     case .noActions:
@@ -109,7 +109,7 @@ extension FBXCTestResultBundleError: LocalizedError {
   }
 }
 
-final class FBXCTestResultBundleParser {
+final class XCTestResultBundleParser {
 
   // MARK: - Public
 
@@ -131,7 +131,7 @@ final class FBXCTestResultBundleParser {
       let minorVersion = readNumberFromDict(bundleFormatVersion, "minor")
       logger.log("Test result bundle format version: \(majorVersion).\(minorVersion)")
       return
-        FBXCTestResultToolOperation.getJSON(from: resultBundlePath, forId: nil, queue: target.workQueue, logger: logger)
+        XCTestResultToolOperation.getJSON(from: resultBundlePath, forId: nil, queue: target.workQueue, logger: logger)
         .retyped(FBFuture<AnyObject>.self)
         .onQueue(
           target.workQueue,
@@ -139,13 +139,13 @@ final class FBXCTestResultBundleParser {
             guard let record = actionsInvocationRecord as? NSDictionary,
               let actions = record["actions"] as? NSDictionary
             else {
-              return FBFuture(error: FBXCTestResultBundleError.noActions)
+              return FBFuture(error: XCTestResultBundleError.noActions)
             }
             let ids = parseActions(actions, logger: logger)
             var operations: [FBFuture<AnyObject>] = []
             for bundleObjectId in ids {
               let operation =
-                FBXCTestResultToolOperation.getJSON(from: resultBundlePath, forId: bundleObjectId, queue: target.workQueue, logger: logger)
+                XCTestResultToolOperation.getJSON(from: resultBundlePath, forId: bundleObjectId, queue: target.workQueue, logger: logger)
                 .retyped(FBFuture<AnyObject>.self)
                 .onQueue(
                   target.workQueue,
@@ -462,7 +462,7 @@ final class FBXCTestResultBundleParser {
     let summaryRef = testMethod["summaryRef"] as? NSDictionary
     if let summaryRef, let summaryRefId = accessAndUnwrapValue(summaryRef, "id", logger) as? String {
       let future =
-        FBXCTestResultToolOperation.getJSON(from: resultBundlePath, forId: summaryRefId, queue: queue, logger: logger)
+        XCTestResultToolOperation.getJSON(from: resultBundlePath, forId: summaryRefId, queue: queue, logger: logger)
         .retyped(FBFuture<AnyObject>.self)
         .onQueue(
           queue,
@@ -584,7 +584,7 @@ final class FBXCTestResultBundleParser {
     var isDirectory: ObjCBool = false
     if fileManager.fileExists(atPath: subdirectoryFullPath, isDirectory: &isDirectory) {
       if !isDirectory.boolValue {
-        throw FBXCTestResultBundleError.notADirectory(path: subdirectoryFullPath)
+        throw XCTestResultBundleError.notADirectory(path: subdirectoryFullPath)
       }
     } else {
       try fileManager.createDirectory(atPath: subdirectoryFullPath, withIntermediateDirectories: false, attributes: nil)
@@ -603,7 +603,7 @@ final class FBXCTestResultBundleParser {
       let timestamp = accessAndUnwrapValue(attachment, "timestamp", logger) as? String ?? ""
       let jpgFilename = (filename as NSString).deletingPathExtension.appending(".jpg")
       let exportPath = (destination as NSString).appendingPathComponent("\(timestamp)_\(jpgFilename)")
-      _ = try? FBXCTestResultToolOperation.exportJPEG(from: resultBundlePath, to: exportPath, forId: screenshotId, type: screenshotType, queue: queue, logger: logger).await(withTimeout: XCTestOperationTimeoutSecs)
+      _ = try? XCTestResultToolOperation.exportJPEG(from: resultBundlePath, to: exportPath, forId: screenshotId, type: screenshotType, queue: queue, logger: logger).await(withTimeout: XCTestOperationTimeoutSecs)
     }
   }
 

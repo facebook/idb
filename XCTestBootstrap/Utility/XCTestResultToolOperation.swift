@@ -13,7 +13,7 @@ private let SipsPath = "/usr/bin/sips"
 private let HEIC = "public.heic"
 private let JPEG = "public.jpeg"
 
-enum FBXCTestResultToolError: Error, LocalizedError {
+enum XCTestResultToolError: Error, LocalizedError {
   case unrecognizedScreenshotEncoding(encoding: String)
 
   public var errorDescription: String? {
@@ -24,7 +24,7 @@ enum FBXCTestResultToolError: Error, LocalizedError {
   }
 }
 
-final class FBXCTestResultToolOperation {
+final class XCTestResultToolOperation {
 
   private static func runProcess(launchPath: String, arguments: [String], logger: FBControlCoreLogger?) -> FBFuture<AnyObject> {
     let base = FBProcessBuilder<NSNull, NSData, NSData>.withLaunchPath(launchPath, arguments: arguments).withTaskLifecycleLogging(to: logger)
@@ -39,7 +39,7 @@ final class FBXCTestResultToolOperation {
   private static func internalOperation(withArguments arguments: [String], queue: DispatchQueue, logger: FBControlCoreLogger?) -> FBFuture<FBSubprocess<AnyObject, AnyObject, AnyObject>> {
     let xcrunArguments = ["xcresulttool"] + arguments
     return
-      FBXCTestResultToolOperation.runProcess(launchPath: XcrunPath, arguments: xcrunArguments, logger: logger)
+      XCTestResultToolOperation.runProcess(launchPath: XcrunPath, arguments: xcrunArguments, logger: logger)
       .onQueue(
         queue,
         map: { task -> AnyObject in
@@ -51,7 +51,7 @@ final class FBXCTestResultToolOperation {
 
   private static func exportFrom(_ path: String, to destination: String, forId bundleObjectId: String, withType exportType: String, queue: DispatchQueue, logger: FBControlCoreLogger?) -> FBFuture<FBSubprocess<AnyObject, AnyObject, AnyObject>> {
     let arguments = ["export", "--path", path, "--output-path", destination, "--id", bundleObjectId, "--type", exportType]
-    return FBXCTestResultToolOperation.internalOperation(withArguments: arguments, queue: queue, logger: logger)
+    return XCTestResultToolOperation.internalOperation(withArguments: arguments, queue: queue, logger: logger)
   }
 
   private static func getJSON(fromTask task: FBSubprocess<AnyObject, AnyObject, AnyObject>) -> NSDictionary {
@@ -70,33 +70,33 @@ final class FBXCTestResultToolOperation {
       arguments.append(contentsOf: ["--id", bundleObjectId])
     }
     return
-      FBXCTestResultToolOperation.internalOperation(withArguments: arguments, queue: queue, logger: logger)
+      XCTestResultToolOperation.internalOperation(withArguments: arguments, queue: queue, logger: logger)
       .onQueue(
         queue,
         map: { subprocess -> AnyObject in
-          FBXCTestResultToolOperation.getJSON(fromTask: subprocess)
+          XCTestResultToolOperation.getJSON(fromTask: subprocess)
         }
       )
       .retyped(FBFuture<NSDictionary>.self)
   }
 
   public static func exportFile(from path: String, to destination: String, forId bundleObjectId: String, queue: DispatchQueue, logger: FBControlCoreLogger?) -> FBFuture<FBSubprocess<AnyObject, AnyObject, AnyObject>> {
-    return FBXCTestResultToolOperation.exportFrom(path, to: destination, forId: bundleObjectId, withType: "file", queue: queue, logger: logger)
+    return XCTestResultToolOperation.exportFrom(path, to: destination, forId: bundleObjectId, withType: "file", queue: queue, logger: logger)
   }
 
   public static func exportJPEG(from path: String, to destination: String, forId bundleObjectId: String, type encodeType: String, queue: DispatchQueue, logger: FBControlCoreLogger?) -> FBFuture<FBSubprocess<AnyObject, AnyObject, AnyObject>> {
     return
-      FBXCTestResultToolOperation.exportFile(from: path, to: destination, forId: bundleObjectId, queue: queue, logger: logger)
+      XCTestResultToolOperation.exportFile(from: path, to: destination, forId: bundleObjectId, queue: queue, logger: logger)
       .retyped(FBFuture<AnyObject>.self)
       .onQueue(
         queue,
         fmap: { task -> FBFuture<AnyObject> in
           if encodeType == HEIC {
-            return FBXCTestResultToolOperation.runProcess(launchPath: SipsPath, arguments: ["-s", "format", "jpeg", destination, "--out", destination], logger: logger)
+            return XCTestResultToolOperation.runProcess(launchPath: SipsPath, arguments: ["-s", "format", "jpeg", destination, "--out", destination], logger: logger)
           } else if encodeType == JPEG {
             return FBFuture(result: task)
           } else {
-            return FBFuture(error: FBXCTestResultToolError.unrecognizedScreenshotEncoding(encoding: String(describing: encodeType)))
+            return FBFuture(error: XCTestResultToolError.unrecognizedScreenshotEncoding(encoding: String(describing: encodeType)))
           }
         }
       )
@@ -104,17 +104,17 @@ final class FBXCTestResultToolOperation {
   }
 
   public static func exportDirectory(from path: String, to destination: String, forId bundleObjectId: String, queue: DispatchQueue, logger: FBControlCoreLogger?) -> FBFuture<FBSubprocess<AnyObject, AnyObject, AnyObject>> {
-    return FBXCTestResultToolOperation.exportFrom(path, to: destination, forId: bundleObjectId, withType: "directory", queue: queue, logger: logger)
+    return XCTestResultToolOperation.exportFrom(path, to: destination, forId: bundleObjectId, withType: "directory", queue: queue, logger: logger)
   }
 
   public static func describeFormat(_ queue: DispatchQueue, logger: FBControlCoreLogger?) -> FBFuture<NSDictionary> {
     let arguments = ["formatDescription"]
     return
-      FBXCTestResultToolOperation.internalOperation(withArguments: arguments, queue: queue, logger: logger)
+      XCTestResultToolOperation.internalOperation(withArguments: arguments, queue: queue, logger: logger)
       .onQueue(
         queue,
         map: { subprocess -> AnyObject in
-          FBXCTestResultToolOperation.getJSON(fromTask: subprocess)
+          XCTestResultToolOperation.getJSON(fromTask: subprocess)
         }
       )
       .retyped(FBFuture<NSDictionary>.self)

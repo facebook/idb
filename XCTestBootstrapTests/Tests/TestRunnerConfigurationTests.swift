@@ -9,7 +9,7 @@ import FBControlCore
 import XCTest
 @testable import XCTestBootstrap
 
-final class FBTestRunnerConfigurationTests: XCTestCase {
+final class TestRunnerConfigurationTests: XCTestCase {
 
   func testLaunchEnvironment() {
     let testBundleBinary = FBBinaryDescriptor(name: "TestBinaryName", architectures: Set(), uuid: UUID(), path: "/blackhole/xctwda.xctest/test")
@@ -33,7 +33,7 @@ final class FBTestRunnerConfigurationTests: XCTestCase {
       "XCODE_DBG_XPC_EXCLUSIONS": "com.apple.dt.xctestSymbolicator",
       "XCTestConfigurationFilePath": "/booo/magic.xctestconfiguration",
     ]
-    let actual = FBTestRunnerConfiguration.launchEnvironment(
+    let actual = TestRunnerConfiguration.launchEnvironment(
       withHostApplication: hostApplication,
       hostApplicationAdditionalEnvironment: ["MAGIC": "IS_HERE"],
       testBundle: testBundle,

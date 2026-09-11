@@ -11,7 +11,7 @@ import Foundation
 private let fbxctestOutputLogDirectoryEnv = "FBXCTEST_LOG_DIRECTORY"
 private let xctoolOutputLogDirectoryEnv = "XCTOOL_TEST_ENV_FB_LOG_DIRECTORY"
 
-enum FBXCTestLoggerError: Error, LocalizedError {
+enum XCTestLoggerError: Error, LocalizedError {
   case notADataConsumer(path: String, writer: String)
 
   public var errorDescription: String? {
@@ -137,7 +137,7 @@ public final class FBXCTestLogger: NSObject, FBControlCoreLogger, @unchecked Sen
       queue,
       fmap: { writer -> FBFuture<AnyObject> in
         guard let writer = writer as? FBDataConsumer else {
-          return FBFuture(error: FBXCTestLoggerError.notADataConsumer(path: filePath, writer: String(describing: writer)))
+          return FBFuture(error: XCTestLoggerError.notADataConsumer(path: filePath, writer: String(describing: writer)))
         }
         logger.info().log("Mirroring output to \(filePath)")
         return FBFuture<AnyObject>(

@@ -8,12 +8,12 @@
 import FBControlCore
 import Foundation
 
-enum FBOToolError: Error {
+enum OToolError: Error {
   case bundleInaccessible(path: String)
   case bundleMissingExecutable(path: String)
 }
 
-extension FBOToolError: LocalizedError {
+extension OToolError: LocalizedError {
   public var errorDescription: String? {
     switch self {
     case let .bundleInaccessible(path):
@@ -24,14 +24,14 @@ extension FBOToolError: LocalizedError {
   }
 }
 
-final class FBOToolOperation {
+final class OToolOperation {
 
   public static func listSanitiserDylibsRequired(byBundle testBundlePath: String) async throws -> [String] {
     guard let bundle = Bundle(path: testBundlePath) else {
-      throw FBOToolError.bundleInaccessible(path: testBundlePath)
+      throw OToolError.bundleInaccessible(path: testBundlePath)
     }
     guard let executablePath = bundle.executablePath else {
-      throw FBOToolError.bundleMissingExecutable(path: testBundlePath)
+      throw OToolError.bundleMissingExecutable(path: testBundlePath)
     }
 
     let result = try await Subprocess(executable: "/usr/bin/otool", arguments: ["-L", executablePath])

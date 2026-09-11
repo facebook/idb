@@ -15,7 +15,7 @@ import Foundation
 extension FBMacDevice {
 
   fileprivate func macUnsupported(_ command: String) -> any Error {
-    FBMacDeviceError.commandUnsupported(command: command)
+    MacDeviceError.commandUnsupported(command: command)
   }
 }
 

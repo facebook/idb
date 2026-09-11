@@ -8,12 +8,12 @@
 @preconcurrency import FBControlCore
 import Foundation
 
-enum FBTestManagerError: Error {
+enum TestManagerError: Error {
   case hostProcessStalled(timeout: TimeInterval, processIdentifier: pid_t, stackshot: String)
   case appUnderTestNotInstallable(configurationDescription: String)
 }
 
-extension FBTestManagerError: LocalizedError {
+extension TestManagerError: LocalizedError {
   public var errorDescription: String? {
     switch self {
     case let .hostProcessStalled(timeout, processIdentifier, stackshot):
@@ -26,13 +26,13 @@ extension FBTestManagerError: LocalizedError {
 
 /// A simplified re-implementation of Apple's `_IDETestManagerAPIMediator`: takes over once the test host process has started, mediating between the host, `testmanagerd` and the test runner.
 @objc
-public final class FBTestManagerAPIMediator: NSObject, @unchecked Sendable {
+public final class TestManagerAPIMediator: NSObject, @unchecked Sendable {
 
   private static let defaultTestTimeout: TimeInterval = 60 * 60
 
   // MARK: - Properties
 
-  private let context: FBTestManagerContext
+  private let context: TestManagerContext
   private let target: any XCTestExtendedTarget
   private let reporter: FBXCTestReporter
   private let logger: FBControlCoreLogger
@@ -47,17 +47,17 @@ public final class FBTestManagerAPIMediator: NSObject, @unchecked Sendable {
 
   /// Runs the whole test session to completion. Test failures are reported, not thrown; only execution errors throw.
   public static func connectAndRunUntilCompletion(
-    with context: FBTestManagerContext,
+    with context: TestManagerContext,
     target: any XCTestExtendedTarget,
     reporter: FBXCTestReporter,
     logger: FBControlCoreLogger
   ) async throws {
-    let mediator = FBTestManagerAPIMediator(context: context, target: target, reporter: reporter, logger: logger)
+    let mediator = TestManagerAPIMediator(context: context, target: target, reporter: reporter, logger: logger)
     try await mediator.connectAndRunUntilCompletion()
   }
 
   private init(
-    context: FBTestManagerContext,
+    context: TestManagerContext,
     target: any XCTestExtendedTarget,
     reporter: FBXCTestReporter,
     logger: FBControlCoreLogger
@@ -125,7 +125,7 @@ public final class FBTestManagerAPIMediator: NSObject, @unchecked Sendable {
       return fbFutureFromAsync { () -> AnyObject in
         let stackshot = (try? await self.sampleStack(forProcessIdentifier: launchedApplication.processIdentifier)) ?? "<no stackshot>"
         try? await self.terminateSpawnedProcesses()
-        throw FBTestManagerError.hostProcessStalled(timeout: timeout, processIdentifier: launchedApplication.processIdentifier, stackshot: stackshot)
+        throw TestManagerError.hostProcessStalled(timeout: timeout, processIdentifier: launchedApplication.processIdentifier, stackshot: stackshot)
       }
     }
     try await bridgeFBFutureVoid(timed)
@@ -243,7 +243,7 @@ public final class FBTestManagerAPIMediator: NSObject, @unchecked Sendable {
 
   private func installAndLaunchApplication(_ configuration: FBApplicationLaunchConfiguration, atPath path: String?) async throws -> FBLaunchedApplication {
     guard let path else {
-      throw FBTestManagerError.appUnderTestNotInstallable(configurationDescription: String(describing: configuration))
+      throw TestManagerError.appUnderTestNotInstallable(configurationDescription: String(describing: configuration))
     }
     if await isApplicationInstalled(bundleID: configuration.bundleID) {
       try await target.application.uninstall(bundleID: configuration.bundleID)

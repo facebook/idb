@@ -15,7 +15,7 @@ import Foundation
   }
 }
 
-public final class FBXCTestError: FBControlCoreError {
+public final class XCTestError: FBControlCoreError {
   public required init() {
     super.init()
     self.inDomain(FBTestErrorDomain)
