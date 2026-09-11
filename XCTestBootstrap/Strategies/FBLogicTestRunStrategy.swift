@@ -26,7 +26,7 @@ private final class LogicTestRunOutputs {
   }
 }
 
-public enum FBLogicTestRunError: Error {
+enum FBLogicTestRunError: Error {
   case missingOutputsAndShim(result: String)
   case testProcessMissingExitCode(result: String)
   case endOfFileTimedOut

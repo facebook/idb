@@ -8,7 +8,7 @@
 import FBControlCore
 import Foundation
 
-public enum FBOToolDynamicLibsError: Error {
+enum FBOToolDynamicLibsError: Error {
   case directoryListFailed(path: String, underlying: Error)
   case clangVersionNotFound(path: String)
 }
@@ -24,7 +24,7 @@ extension FBOToolDynamicLibsError: LocalizedError {
   }
 }
 
-public final class FBOToolDynamicLibs {
+final class FBOToolDynamicLibs {
 
   public static func findFullPath(forSanitiserDyldInBundle bundlePath: String) async throws -> [String] {
     let libsList = try await FBOToolOperation.listSanitiserDylibsRequired(byBundle: bundlePath)

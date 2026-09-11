@@ -8,7 +8,7 @@
 import FBControlCore
 import Foundation
 
-public enum FBOToolError: Error {
+enum FBOToolError: Error {
   case bundleInaccessible(path: String)
   case bundleMissingExecutable(path: String)
 }
@@ -24,7 +24,7 @@ extension FBOToolError: LocalizedError {
   }
 }
 
-public final class FBOToolOperation {
+final class FBOToolOperation {
 
   public static func listSanitiserDylibsRequired(byBundle testBundlePath: String) async throws -> [String] {
     guard let bundle = Bundle(path: testBundlePath) else {

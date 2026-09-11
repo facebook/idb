@@ -13,7 +13,7 @@ private let XcodebuildEnvironmentDeviceSetPath = "SIM_DEVICE_SET_PATH"
 private let XcodebuildEnvironmentInsertDylib = "DYLD_INSERT_LIBRARIES"
 private let XcodebuildDestinationTimeoutSecs = "180"
 
-public enum FBXcodeBuildError: Error {
+enum FBXcodeBuildError: Error {
   case shimMissing
   case writeFailed(path: String)
   case xcodebuildMissing(path: String)

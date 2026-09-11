@@ -13,7 +13,7 @@ private let SipsPath = "/usr/bin/sips"
 private let HEIC = "public.heic"
 private let JPEG = "public.jpeg"
 
-public enum FBXCTestResultToolError: Error, LocalizedError {
+enum FBXCTestResultToolError: Error, LocalizedError {
   case unrecognizedScreenshotEncoding(encoding: String)
 
   public var errorDescription: String? {
@@ -24,7 +24,7 @@ public enum FBXCTestResultToolError: Error, LocalizedError {
   }
 }
 
-public final class FBXCTestResultToolOperation {
+final class FBXCTestResultToolOperation {
 
   private static func runProcess(launchPath: String, arguments: [String], logger: FBControlCoreLogger?) -> FBFuture<AnyObject> {
     let base = FBProcessBuilder<NSNull, NSData, NSData>.withLaunchPath(launchPath, arguments: arguments).withTaskLifecycleLogging(to: logger)

@@ -13,7 +13,7 @@ import IOKit
   func _XCT_requestConnectedSocketForTransport(_ arg1: @escaping (FileHandle?, Error?) -> Void)
 }
 
-public enum FBMacDeviceError: Error {
+enum FBMacDeviceError: Error {
   case testManagerProxyNonConformant(proxyDescription: String)
   case transportUnavailable
   case applicationNotLaunched(bundleID: String)

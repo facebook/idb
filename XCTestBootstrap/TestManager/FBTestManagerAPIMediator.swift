@@ -8,7 +8,7 @@
 @preconcurrency import FBControlCore
 import Foundation
 
-public enum FBTestManagerError: Error {
+enum FBTestManagerError: Error {
   case hostProcessStalled(timeout: TimeInterval, processIdentifier: pid_t, stackshot: String)
   case appUnderTestNotInstallable(configurationDescription: String)
 }

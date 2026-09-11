@@ -11,7 +11,7 @@ import Foundation
 private let fbxctestOutputLogDirectoryEnv = "FBXCTEST_LOG_DIRECTORY"
 private let xctoolOutputLogDirectoryEnv = "XCTOOL_TEST_ENV_FB_LOG_DIRECTORY"
 
-public enum FBXCTestLoggerError: Error, LocalizedError {
+enum FBXCTestLoggerError: Error, LocalizedError {
   case notADataConsumer(path: String, writer: String)
 
   public var errorDescription: String? {

@@ -8,7 +8,7 @@
 import FBControlCore
 import Foundation
 
-public enum FBListTestError: Error {
+enum FBListTestError: Error {
   case testNamesMalformed(result: String)
   case missingShimAndOutput(result: String)
   case testProcessMissingExitCode(result: String)

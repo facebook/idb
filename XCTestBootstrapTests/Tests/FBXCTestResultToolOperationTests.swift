@@ -7,7 +7,7 @@
 
 import FBControlCore
 import XCTest
-import XCTestBootstrap
+@testable import XCTestBootstrap
 
 /// Pins how `FBXCTestResultToolOperation` launches `xcrun xcresulttool` and what a
 /// caller sees when it fails: which exit-code policy applies, and what reaches an

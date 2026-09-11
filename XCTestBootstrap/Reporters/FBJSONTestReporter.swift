@@ -12,7 +12,7 @@ private func fullyFormattedXCTestName(_ className: String, _ methodName: String)
   "-[\(className) \(methodName)]"
 }
 
-public enum FBJSONTestReporterError: Error, LocalizedError {
+enum FBJSONTestReporterError: Error, LocalizedError {
   case testPlanDidNotStart(message: String)
   case testPlanDidNotFinish(message: String)
 
@@ -24,7 +24,7 @@ public enum FBJSONTestReporterError: Error, LocalizedError {
   }
 }
 
-public final class FBJSONTestReporter: NSObject, FBXCTestReporter {
+final class FBJSONTestReporter: NSObject, FBXCTestReporter {
 
   private let dataConsumer: FBDataConsumer
   private let logger: FBControlCoreLogger?

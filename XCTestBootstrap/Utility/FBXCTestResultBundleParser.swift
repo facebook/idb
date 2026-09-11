@@ -93,7 +93,7 @@ private func dateFromString(_ date: String) -> Date? {
   return FBXCTestResultBundleParser_dateFormatter.date(from: date)
 }
 
-public enum FBXCTestResultBundleError: Error {
+enum FBXCTestResultBundleError: Error {
   case noActions
   case notADirectory(path: String)
 }
@@ -109,7 +109,7 @@ extension FBXCTestResultBundleError: LocalizedError {
   }
 }
 
-public final class FBXCTestResultBundleParser {
+final class FBXCTestResultBundleParser {
 
   // MARK: - Public
 

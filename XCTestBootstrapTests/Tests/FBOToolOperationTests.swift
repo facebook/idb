@@ -7,7 +7,7 @@
 
 import FBControlCore
 import XCTest
-import XCTestBootstrap
+@testable import XCTestBootstrap
 
 /// Pins how `FBOToolOperation` resolves a bundle to an executable and what it makes
 /// of `otool -L`'s output, including the case where the tool reports a problem but

@@ -8,7 +8,7 @@
 import FBControlCore
 import Foundation
 
-public enum FBManagedTestRunError: Error, LocalizedError {
+enum FBManagedTestRunError: Error, LocalizedError {
   case frameworkLoadingFailed(underlying: Error)
 
   public var errorDescription: String? {

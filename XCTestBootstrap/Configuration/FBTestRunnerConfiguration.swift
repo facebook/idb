@@ -13,7 +13,7 @@ private let kEnvLLVMProfileFile = "LLVM_PROFILE_FILE"
 private let kEnvLogDirectoryPath = "LOG_DIRECTORY_PATH"
 
 /// The ways runner-configuration preparation can fail, as data rather than assembled strings.
-public enum FBTestRunnerConfigurationError: Error, LocalizedError {
+enum FBTestRunnerConfigurationError: Error, LocalizedError {
   case codesignCheckFailed(bundlePath: String, underlying: Error)
   case testBundlePreparationFailed(underlying: Error)
   case testConfigurationPreparationFailed(underlying: Error)
@@ -30,7 +30,7 @@ public enum FBTestRunnerConfigurationError: Error, LocalizedError {
   }
 }
 
-public struct FBTestRunnerConfiguration {
+struct FBTestRunnerConfiguration {
 
   // MARK: - Properties
 

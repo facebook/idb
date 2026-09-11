@@ -30,7 +30,7 @@ private let kDefaultTimeoutValue: TimeInterval = 500
 // MARK: - Test Types
 
 /// The type of an xctest execution, as reported in ocunit-shim events.
-public struct FBXCTestType: RawRepresentable, Hashable, Sendable {
+struct FBXCTestType: RawRepresentable, Hashable, Sendable {
   public let rawValue: String
 
   public init(rawValue: String) {
@@ -179,7 +179,7 @@ public final class FBListTestConfiguration: FBXCTestConfiguration {
 
 // MARK: - FBTestManagerTestConfiguration
 
-public final class FBTestManagerTestConfiguration: FBXCTestConfiguration {
+final class FBTestManagerTestConfiguration: FBXCTestConfiguration {
 
   public let runnerAppPath: String
   public let testTargetAppPath: String?

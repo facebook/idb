@@ -8,7 +8,7 @@
 import FBControlCore
 import Foundation
 
-public enum FBMacLaunchedApplicationError: Error, LocalizedError {
+enum FBMacLaunchedApplicationError: Error, LocalizedError {
   case awaitingTerminationUnsupported
 
   public var errorDescription: String? {
