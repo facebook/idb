@@ -126,17 +126,50 @@ class CollectTests(unittest.TestCase):
         self.output = self.root / "diagnostics"
         self.run = Recorder()
 
-    def test_copies_matching_files(self) -> None:
+    def test_companion_log_collision(self) -> None:
         write(self.root / "idb-e2e-a" / "companion.log", "first")
         write(self.root / "idb-e2e-b" / "companion.log", "second")
         collected = collect(
-            [Copy(self.root, "idb-e2e-*/companion.log")],
+            diagnostic_plan(home=self.root / "home", companion_root=self.root),
             self.output,
             self.run,
         )
-        # Files with the same basename currently overwrite each other.
-        self.assertEqual(collected, ["companion.log", "companion.log"])
-        self.assertTrue((self.output / "companion.log").exists())
+        # BUG: both reported paths refer to the second log's contents.
+        self.assertEqual(
+            [(name, (self.output / name).read_text()) for name in collected],
+            [("companion.log", "second"), ("companion.log", "second")],
+        )
+
+    def test_host_and_simulator_crash_report_collision(self) -> None:
+        home = self.root / "home"
+        device_set = self.root / "devices"
+        filename = "idb_companion-example.ips"
+        write(home / "Library/Logs/DiagnosticReports" / filename, "host crash")
+        write(
+            device_set / UDID / "data/Library/Logs/CrashReporter" / filename,
+            "simulator crash",
+        )
+
+        collected = collect(
+            diagnostic_plan(
+                home=home,
+                companion_root=self.root,
+                device_set=device_set,
+                udid=UDID,
+            ),
+            self.output,
+            self.run,
+        )
+
+        # BUG: the simulator report overwrites the host report.
+        self.assertEqual(
+            [
+                (name, (self.output / name).read_text())
+                for name in collected
+                if name.endswith(".ips")
+            ],
+            [(filename, "simulator crash"), (filename, "simulator crash")],
+        )
 
     def test_unmatched_pattern_collects_no_files(self) -> None:
         self.assertEqual(
