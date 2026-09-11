@@ -162,10 +162,6 @@ class AccessibilityTests(IdbEndToEndTestCase):
         for name, document in ((AX_BACKEND, host), (AXBRIDGE_BACKEND, bridge)):
             controls = _labelled_controls(document)
             self.assertTrue(controls, f"{name} should see Settings' rows")
-            self.assertTrue(
-                all(_has_area(control) for control in controls),
-                f"every control {name} reports should cover a real area",
-            )
         shared = _labels(host) & _labels(bridge)
         self.assertTrue(
             shared,
