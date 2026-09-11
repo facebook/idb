@@ -12,7 +12,7 @@
 @class FBTestManagerContext;
 
 /**
- The Objective-C core of a test-bundle connection: it owns the DTX transport and proxy channels, implements the private XCTest `_XCT_*` callbacks, and forwards everything else to the IDE-interface delegate. The Swift `FBTestBundleConnection` drives it step by step.
+ The Objective-C core of a test-bundle connection: it owns the DTX transport and proxy channels, implements the private XCTest `_XCT_*` callbacks, and forwards everything else to the IDE-interface delegate. The Swift `TestBundleConnection` drives it step by step.
  */
 @interface FBTestBundleDTXConnection : NSObject
 

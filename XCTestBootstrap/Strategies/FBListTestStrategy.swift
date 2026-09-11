@@ -36,7 +36,7 @@ extension FBListTestError: LocalizedError {
   }
 }
 
-private final class FBListTestStrategy_ReporterWrapped: FBXCTestRunner {
+private final class ListTestStrategy_ReporterWrapped: FBXCTestRunner {
 
   let strategy: FBListTestStrategy
   let reporter: FBXCTestReporter
@@ -116,7 +116,7 @@ public final class FBListTestStrategy {
   }
 
   func wrapInReporter(_ reporter: FBXCTestReporter) -> FBXCTestRunner {
-    FBListTestStrategy_ReporterWrapped(strategy: self, reporter: reporter)
+    ListTestStrategy_ReporterWrapped(strategy: self, reporter: reporter)
   }
 
   // MARK: - Private

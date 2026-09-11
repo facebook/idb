@@ -10,7 +10,7 @@ import Foundation
 
 private let EndOfFileFromStopReadingTimeout: TimeInterval = 5
 
-private final class FBLogicTestRunOutputs {
+private final class LogicTestRunOutputs {
   let stdOutConsumer: FBDataConsumer & FBDataConsumerLifecycle
   let stdErrConsumer: FBDataConsumer & FBDataConsumerLifecycle
   let stdErrBuffer: FBConsumableBuffer
@@ -96,7 +96,7 @@ public final class FBLogicTestRunStrategy: FBXCTestRunner {
         fmap: { tupleObj -> FBFuture<AnyObject> in
           let tuple = tupleObj as [AnyObject]
           guard tuple.count == 2,
-            let outputs = tuple[0] as? FBLogicTestRunOutputs,
+            let outputs = tuple[0] as? LogicTestRunOutputs,
             let shimPath = tuple[1] as? String
           else {
             return FBFuture(error: FBLogicTestRunError.missingOutputsAndShim(result: String(describing: tuple)))
@@ -108,7 +108,7 @@ public final class FBLogicTestRunStrategy: FBXCTestRunner {
       .retyped(FBFuture<NSNull>.self)
   }
 
-  private func testFuture(withOutputs outputs: FBLogicTestRunOutputs, shimPath: String, uuid: UUID) -> FBFuture<NSNull> {
+  private func testFuture(withOutputs outputs: LogicTestRunOutputs, shimPath: String, uuid: UUID) -> FBFuture<NSNull> {
     logger.log("Starting Logic Test execution of \(configuration)")
     reporter.didBeginExecutingTestPlan()
 
@@ -174,7 +174,7 @@ public final class FBLogicTestRunStrategy: FBXCTestRunner {
     return updatedEnvironment
   }
 
-  private func completeLaunchedProcess(_ exitCode: FBFuture<NSNumber>, outputs: FBLogicTestRunOutputs) -> FBFuture<NSNull> {
+  private func completeLaunchedProcess(_ exitCode: FBFuture<NSNumber>, outputs: LogicTestRunOutputs) -> FBFuture<NSNull> {
     let logger = self.logger
     let reporter = self.reporter
     let queue = target.workQueue
@@ -210,7 +210,7 @@ public final class FBLogicTestRunStrategy: FBXCTestRunner {
       .retyped(FBFuture<NSNull>.self)
   }
 
-  private func waitForSuccessfulCompletion(_ exitCode: FBFuture<NSNumber>, closingOutputs outputs: FBLogicTestRunOutputs) -> FBFuture<NSNumber> {
+  private func waitForSuccessfulCompletion(_ exitCode: FBFuture<NSNumber>, closingOutputs outputs: LogicTestRunOutputs) -> FBFuture<NSNumber> {
     let logger = self.logger
     let queue = target.workQueue
 
@@ -351,12 +351,12 @@ public final class FBLogicTestRunStrategy: FBXCTestRunner {
             .onQueue(
               queue,
               map: { shimOutput -> AnyObject in
-                FBLogicTestRunOutputs(stdOutConsumer: resolvedStdOut, stdErrConsumer: resolvedStdErr, stdErrBuffer: stdErrBuffer, shimConsumer: resolvedShim, shimOutput: shimOutput)
+                LogicTestRunOutputs(stdOutConsumer: resolvedStdOut, stdErrConsumer: resolvedStdErr, stdErrBuffer: stdErrBuffer, shimConsumer: resolvedShim, shimOutput: shimOutput)
               })
         })
   }
 
-  private func startTestProcess(withLaunchPath launchPath: String, arguments: [String], environment: [String: String], outputs: FBLogicTestRunOutputs, temporaryDirectory: URL) -> FBFuture<AnyObject> {
+  private func startTestProcess(withLaunchPath launchPath: String, arguments: [String], environment: [String: String], outputs: LogicTestRunOutputs, temporaryDirectory: URL) -> FBFuture<AnyObject> {
     let queue = target.workQueue
     let logger = self.logger
     let reporter = self.reporter

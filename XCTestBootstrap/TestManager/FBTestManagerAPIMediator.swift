@@ -104,7 +104,7 @@ public final class FBTestManagerAPIMediator: NSObject, @unchecked Sendable {
     let work: FBFuture<AnyObject> = fbFutureFromAsync { () -> AnyObject in
       // The transport socket is closed when this scope ends, so the whole connection must run inside it.
       try await self.target.xctest.withTransportForTestManagerService { socket in
-        let connection = FBTestBundleConnection(
+        let connection = TestBundleConnection(
           context: self.context,
           target: self.target,
           socket: socket.int32Value,
