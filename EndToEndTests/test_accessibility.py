@@ -8,7 +8,7 @@
 The ax API runs on the host; axbridge runs SimulatorFrameworkBridge inside
 the simulator. Complete output identifies which backend served the request.
 Tests select labelled Settings rows at runtime to avoid locale-specific names.
-Tap tests verify Settings navigation through the simulator API.
+Tap and scroll tests verify navigation and movement through the simulator API.
 """
 
 from __future__ import annotations
@@ -30,6 +30,7 @@ SETTINGS_BUNDLE_ID = "com.apple.Preferences"
 SAFARI_BUNDLE_ID = "com.apple.mobilesafari"
 GENERAL_ROW_ID = "com.apple.settings.general"
 UI_UPDATE_TIMEOUT_SECONDS = 30.0
+MINIMUM_SCROLL_DISTANCE = 20.0
 
 # The companion uses an exclusive simulator process for --api axbridge.
 AX_BACKEND = "ax"
@@ -95,6 +96,15 @@ def _labelled_controls(document: Any) -> list[dict[str, Any]]:
 
 def _labels(document: Any) -> set[str]:
     return {_label(element) for element in _labelled_controls(document)}
+
+
+def _settings_row_positions(document: Any) -> dict[str, float]:
+    return {
+        element["identifier"]: element["frame"]["y"]
+        for element in _elements(document)
+        if str(element.get("identifier", "")).startswith("com.apple.settings.")
+        and _has_area(element)
+    }
 
 
 class AccessibilityTests(IdbEndToEndTestCase):
@@ -267,6 +277,46 @@ class AccessibilityTests(IdbEndToEndTestCase):
         await self.idb("ui", "tap", GENERAL_ROW_ID, "--match-key", "AXUniqueId")
         await self.wait_for_element(title, "NavigationBar")
 
-    async def test_ui_scroll_accepts_both_directions(self) -> None:
-        await self.idb("ui", "scroll", "down")
-        await self.idb("ui", "scroll", "up")
+    async def wait_for_scroll(
+        self, before: dict[str, float], direction: str
+    ) -> dict[str, float]:
+        async def read() -> dict[str, float]:
+            after = _settings_row_positions(
+                await self.describe_all_complete("axbridge")
+            )
+            movement = {
+                identifier: after[identifier] - y
+                for identifier, y in before.items()
+                if identifier in after
+            }
+            if direction == "down":
+                moved = any(
+                    delta < -MINIMUM_SCROLL_DISTANCE for delta in movement.values()
+                )
+            else:
+                moved = any(
+                    delta > MINIMUM_SCROLL_DISTANCE for delta in movement.values()
+                )
+            if not moved:
+                raise NotReady(f"Row movement after scrolling {direction}: {movement}")
+            return after
+
+        return await wait_until(
+            f"Settings did not scroll {direction}", UI_UPDATE_TIMEOUT_SECONDS, read
+        )
+
+    async def test_ui_scroll_moves_settings_rows_down_and_up(self) -> None:
+        await self.wait_for_element(GENERAL_ROW_ID)
+        before = _settings_row_positions(await self.describe_all_complete("axbridge"))
+        self.assertIn(GENERAL_ROW_ID, before)
+
+        await self.idb(
+            "ui", "scroll", "down", GENERAL_ROW_ID, "--match-key", "AXUniqueId"
+        )
+        after_down = await self.wait_for_scroll(before, "down")
+
+        row_after_scroll = next(iter(after_down))
+        await self.idb(
+            "ui", "scroll", "up", row_after_scroll, "--match-key", "AXUniqueId"
+        )
+        await self.wait_for_scroll(after_down, "up")
