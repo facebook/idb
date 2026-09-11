@@ -1,5 +1,11 @@
 name: idb_companion
 
+# The prebuilt products of the generated FBSimulatorControl project that
+# idb_companion and idb-repl link are derived from the Buck graph into
+# project-deps.yml. XcodeGen merges its dependency lists into the targets below.
+include:
+  - project-deps.yml
+
 options:
   deploymentTarget:
     macOS: "15.0"
@@ -190,20 +196,6 @@ targets:
           DEBUG_INFORMATION_FORMAT: dwarf-with-dsym
           STRIP_INSTALLED_PRODUCT: YES
     dependencies:
-      - framework: ../Build/Products/Release/FBControlCore.framework
-        embed: false
-      - framework: ../Build/Products/Release/XCTestBootstrap.framework
-        embed: false
-      - framework: ../Build/Products/Release/libFBSimulatorControl.a
-        embed: false
-      - framework: ../Build/Products/Release/libFBDeviceControl.a
-        embed: false
-      - framework: ../Build/Products/Release/libCompanionLib.a
-        embed: false
-      - framework: ../Build/Products/Release/libSimulatorXCTest.a
-        embed: false
-      - framework: ../Build/Products/Release/libCompanionUtilities.a
-        embed: false
       - target: IDBGRPCSwift
         embed: false
       - target: ReplProtocol
@@ -318,8 +310,6 @@ targets:
       - target: CompanionDiscovery
         embed: false
       - target: ReplCompiler
-        embed: false
-      - framework: ../Build/Products/Release/libCompanionUtilities.a
         embed: false
       - package: swift-argument-parser
         product: ArgumentParser
