@@ -8,7 +8,7 @@
 The ax API runs on the host; axbridge runs SimulatorFrameworkBridge inside
 the simulator. Complete output identifies which backend served the request.
 Tests select labelled Settings rows at runtime to avoid locale-specific names.
-Tap and scroll tests currently check command success, not navigation results.
+Tap tests verify Settings navigation through the simulator API.
 """
 
 from __future__ import annotations
@@ -28,6 +28,8 @@ from .harness import (
 
 SETTINGS_BUNDLE_ID = "com.apple.Preferences"
 SAFARI_BUNDLE_ID = "com.apple.mobilesafari"
+GENERAL_ROW_ID = "com.apple.settings.general"
+UI_UPDATE_TIMEOUT_SECONDS = 30.0
 
 # The companion uses an exclusive simulator process for --api axbridge.
 AX_BACKEND = "ax"
@@ -146,6 +148,24 @@ class AccessibilityTests(IdbEndToEndTestCase):
         except HarnessError as error:
             self.fail(str(error))
 
+    async def wait_for_element(
+        self, identifier: str, element_type: str | None = None
+    ) -> dict[str, Any]:
+        async def read() -> dict[str, Any]:
+            elements = _elements(await self.describe_all_complete("axbridge"))
+            for element in elements:
+                if element.get("identifier") == identifier and (
+                    element_type is None or element.get("type") == element_type
+                ):
+                    return element
+            raise NotReady(
+                f"No {element_type or 'element'} with identifier {identifier!r}"
+            )
+
+        return await wait_until(
+            "Settings did not update", UI_UPDATE_TIMEOUT_SECONDS, read
+        )
+
     def center(self, element: dict[str, Any]) -> tuple[int, int]:
         frame = element["frame"]
         return (
@@ -209,20 +229,43 @@ class AccessibilityTests(IdbEndToEndTestCase):
 
         await self.idb_expect_failure("ui", "describe", "idb-e2e-no-such-element")
 
-    async def test_ui_tap_by_point_and_by_marker(self) -> None:
-        marker = _label(self.control)
-        x, y = self.center(self.control)
+    async def test_ui_tap_opens_general_by_point(self) -> None:
+        general = await self.wait_for_element(GENERAL_ROW_ID)
+        title = _label(general)
+        self.assertTrue(title, "The General row has no label")
 
-        # Use a valid marker so failure comes from the expected-value check.
         await self.idb_expect_failure(
-            "ui", "tap", marker, "--expected-value", "idb-e2e-value-it-does-not-have"
+            "ui",
+            "tap",
+            GENERAL_ROW_ID,
+            "--match-key",
+            "AXUniqueId",
+            "--expected-value",
+            "idb-e2e-value-it-does-not-have",
         )
+        after_rejection = await self.describe_all_complete("axbridge")
+        self.assertNotIn(
+            title,
+            [
+                e.get("identifier")
+                for e in _elements(after_rejection)
+                if e.get("type") == "NavigationBar"
+            ],
+            "The rejected tap opened General",
+        )
+
+        general = await self.wait_for_element(GENERAL_ROW_ID)
+        x, y = self.center(general)
         await self.idb("ui", "tap", str(x), str(y), "--api", "ax")
-        # Return to Settings before looking up the row again.
-        await self.idb("terminate", SETTINGS_BUNDLE_ID)
-        await self.idb("launch", SETTINGS_BUNDLE_ID)
-        await self.wait_for_control()
-        await self.idb("ui", "tap", marker)
+        await self.wait_for_element(title, "NavigationBar")
+
+    async def test_ui_tap_opens_general_by_marker(self) -> None:
+        general = await self.wait_for_element(GENERAL_ROW_ID)
+        title = _label(general)
+        self.assertTrue(title, "The General row has no label")
+
+        await self.idb("ui", "tap", GENERAL_ROW_ID, "--match-key", "AXUniqueId")
+        await self.wait_for_element(title, "NavigationBar")
 
     async def test_ui_scroll_accepts_both_directions(self) -> None:
         await self.idb("ui", "scroll", "down")
