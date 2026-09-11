@@ -141,9 +141,6 @@ public protocol FBiOSTarget: FBiOSTargetInfo, FBiOSTargetCommand {
   associatedtype VideoStream: VideoStreamCommands
   var videoStream: VideoStream { get }
 
-  associatedtype XCTest: XCTestCommands
-  var xctest: XCTest { get }
-
   associatedtype XCTraceRecord: XCTraceRecordCommands
   var xctraceRecord: XCTraceRecord { get }
 

@@ -103,3 +103,7 @@ public final class DeviceXCTestCommands: XCTestCommands {
     return try await FBXcodeBuildOperation.operation(withUDID: udid, configuration: configuration, xcodeBuildPath: xcodeBuildPath, testRunFilePath: filePath, simDeviceSet: nil, macOSTestShimPath: nil, logger: logger.withName("xcodebuild"))
   }
 }
+
+// MARK: - FBDevice+XCTestTarget
+
+extension FBDevice: XCTestTarget {}

@@ -17,6 +17,7 @@ public enum FBXCTestRunRequestError: Error {
   case notExactlyOneTest(count: Int)
   case testDescriptorNotFound
   case logicTestsUnsupported(targetDescription: String)
+  case xctestUnsupported(targetDescription: String)
   case testsToSkipUnsupported(testsToSkip: [String])
   case multipleTestsToRun(testsToRun: [String])
 }
@@ -30,6 +31,8 @@ extension FBXCTestRunRequestError: LocalizedError {
       return "Could not find test descriptor"
     case let .logicTestsUnsupported(targetDescription):
       return "Target \(targetDescription) does not support process spawning and extended xctest commands, cannot run logic tests"
+    case let .xctestUnsupported(targetDescription):
+      return "Target \(targetDescription) does not support xctest commands, cannot run tests"
     case let .testsToSkipUnsupported(testsToSkip):
       return "'Tests to Skip' \(FBCollectionInformation.oneLineDescription(from: testsToSkip)) provided, but Logic Tests do not support this."
     case let .multipleTestsToRun(testsToRun):
@@ -272,10 +275,13 @@ public struct FBXCTestRunRequest {
     logger.log("Obtaining launch configuration for App Pair \(appPair) on descriptor \(testDescriptor)")
     let appHostedTestConfig = try await testDescriptor.testConfig(withRunRequest: self, testApps: appPair, logDirectoryPath: logDirectoryPath, logger: logger)
     logger.log("Obtained app-hosted test configuration \(appHostedTestConfig)")
-    return Self.startAppHostedTestExecution(appHostedTestConfig, reportAttachments: reportAttachments, target: target, reporter: reporter, logger: logger, reportResultBundle: collectResultBundle)
+    return try Self.startAppHostedTestExecution(appHostedTestConfig, reportAttachments: reportAttachments, target: target, reporter: reporter, logger: logger, reportResultBundle: collectResultBundle)
   }
 
-  private static func startAppHostedTestExecution(_ configuration: FBIDBAppHostedTestConfiguration, reportAttachments: Bool, target: any FBiOSTarget, reporter: FBXCTestReporter, logger: FBControlCoreLogger, reportResultBundle: Bool) -> FBIDBTestOperation {
+  private static func startAppHostedTestExecution(_ configuration: FBIDBAppHostedTestConfiguration, reportAttachments: Bool, target: any FBiOSTarget, reporter: FBXCTestReporter, logger: FBControlCoreLogger, reportResultBundle: Bool) throws -> FBIDBTestOperation {
+    guard let target = target as? any XCTestTarget else {
+      throw FBXCTestRunRequestError.xctestUnsupported(targetDescription: String(describing: target))
+    }
     let testLaunchConfiguration = configuration.testLaunchConfiguration
     let coverageConfiguration = configuration.coverageConfiguration
 
