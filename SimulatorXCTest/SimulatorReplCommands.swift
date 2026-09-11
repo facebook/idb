@@ -6,6 +6,7 @@
  */
 
 import FBControlCore
+@preconcurrency import FBSimulatorControl
 import Foundation
 @preconcurrency import XCTestBootstrap
 

@@ -10,6 +10,7 @@ import FBControlCore
 internal import FBDeviceControl
 import FBSimulatorControl
 import Foundation
+import SimulatorXCTest
 import XCTestBootstrap
 
 public enum FBIDBCommandError: Error {

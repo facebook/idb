@@ -119,10 +119,6 @@ extension FBSimulator {
     SimulatorPhotosCommands.commands(with: self)
   }
 
-  public var xctest: SimulatorXCTestCommands {
-    commandCache.resolve { SimulatorXCTestCommands.commands(with: self) }
-  }
-
   /// The converged UI-automation surface for `backend` — element reads and element-targeted actions
   /// over a single query-shaped API. Every call returns a fresh reader; the readers are cheap, and
   /// where a backend owns an expensive warm resource, who owns it differs by backend:
@@ -161,10 +157,6 @@ extension FBSimulator {
 
   public var dapServer: SimulatorDapServerCommand {
     SimulatorDapServerCommand.commands(with: self)
-  }
-
-  public var repl: FBSimulatorReplCommands {
-    FBSimulatorReplCommands.commands(with: self)
   }
 
   public var notification: SimulatorNotificationCommands {

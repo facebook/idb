@@ -8,6 +8,7 @@
 import FBControlCore
 @testable import FBSimulatorControl
 import Foundation
+import SimulatorXCTest
 import Testing
 
 /// Every command accessor on `FBSimulator`, so the retention rule is checked against all of them

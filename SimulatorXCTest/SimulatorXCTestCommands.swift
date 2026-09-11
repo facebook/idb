@@ -7,6 +7,7 @@
 
 @preconcurrency import CoreSimulator
 @preconcurrency import FBControlCore
+@preconcurrency import FBSimulatorControl
 import Foundation
 @preconcurrency import XCTestBootstrap
 
@@ -243,7 +244,3 @@ public final class SimulatorXCTestCommands: XCTestExtendedCommands {
       logger: logger.withName("xcodebuild"))
   }
 }
-
-// MARK: - FBSimulator+LogicTestTarget
-
-extension FBSimulator: LogicTestTarget {}

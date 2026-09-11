@@ -30,7 +30,7 @@ enum SimulatorFrameworkBridgeSelection {
 extension FBSimulator {
 
   /// The path to the guest binary this simulator can run, or nil when it is not bundled.
-  var frameworkBridgePath: String? {
+  public var frameworkBridgePath: String? {
     BundledResources.path(
       forItem: SimulatorFrameworkBridgeSelection.resourceName(for: productFamily))
   }
