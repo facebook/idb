@@ -94,6 +94,64 @@ final class FramebufferTests: XCTestCase {
     }
   }
 
+  func testEchoOfAttachTimeSurfaceIsNotDelivered() async throws {
+    let surface = FakeFramebufferSurface()
+    let ioSurface = makeTestIOSurface()
+    surface.immediateSurface = ioSurface
+    let framebuffer = makeFramebuffer(surface: surface)
+    let attachment = try framebuffer.attach()
+
+    // The display re-reports its current surface right after registration; the attachment already
+    // handed that surface out as `initialSurface`, so the echo must not come through as a change.
+    surface.ioSurfaceChanged?(ioSurface)
+    surface.frameRendered?()
+
+    var first: FramebufferEvent?
+    for await event in attachment.events {
+      first = event
+      break
+    }
+    guard case .frameRendered = first else {
+      XCTFail("Expected the echo to be dropped and .frameRendered to be first, got \(String(describing: first))")
+      return
+    }
+    XCTAssertEqual(framebuffer.currentStats().ioSurfaceChangeCount, 1, "the dropped echo is still counted in the stats")
+  }
+
+  func testRepeatedSurfaceReportsAreDeliveredOnce() async throws {
+    let surface = FakeFramebufferSurface()
+    let framebuffer = makeFramebuffer(surface: surface)
+    let attachment = try framebuffer.attach()
+
+    let first = makeTestIOSurface()
+    let second = makeTestIOSurface(width: 32, height: 32)
+    // Each surface is reported twice in a row (the legacy plural and singular callbacks both
+    // firing for one swap); only the transitions may come through, including the drop to nil.
+    surface.ioSurfaceChanged?(first)
+    surface.ioSurfaceChanged?(first)
+    surface.ioSurfaceChanged?(second)
+    surface.ioSurfaceChanged?(second)
+    surface.ioSurfaceChanged?(nil)
+    surface.ioSurfaceChanged?(nil)
+    surface.frameRendered?()
+
+    var delivered: [IOSurface?] = []
+    for await event in attachment.events {
+      guard case let .surfaceChanged(reported) = event else {
+        break // the trailing frame marks the end of the surface reports
+      }
+      delivered.append(reported)
+    }
+
+    guard delivered.count == 3 else {
+      XCTFail("Expected 3 distinct surface changes, got \(delivered.count)")
+      return
+    }
+    XCTAssertIdentical(delivered[0], first)
+    XCTAssertIdentical(delivered[1], second)
+    XCTAssertNil(delivered[2])
+  }
+
   func testStreamCancelFinishesIteration() async throws {
     let surface = FakeFramebufferSurface()
     let framebuffer = makeFramebuffer(surface: surface)
