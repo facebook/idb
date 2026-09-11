@@ -223,6 +223,7 @@ jobs:
           taps="$(brew --repository)/Library/Taps/facebook"
           mkdir -p "$taps"
           ln -s "$PWD/tap" "$taps/homebrew-fb"
+          brew trust facebook/fb
 
       - name: Build the bottle
         run: |

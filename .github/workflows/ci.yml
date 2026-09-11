@@ -216,6 +216,12 @@ jobs:
           mkdir -p "$taps"
           ln -s "$PWD/tap" "$taps/homebrew-fb"
           brew tap-info facebook/fb
+      # Homebrew only trusts the formula named on the command line; the
+      # dependencies it pulls from the same untrusted tap are refused. Trust
+      # the scratch tap as a whole so `idb` can bring in idb-cli and
+      # idb-companion.
+      - name: Trust the scratch tap
+        run: brew trust facebook/fb
       # idb depends on the other two, so one install exercises all three
       # formulae; a source install of idb-cli is the venv-and-pip path that a
       # release bottle would skip, which is exactly what should be checked.
