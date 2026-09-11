@@ -35,7 +35,7 @@ final class FBProcessStreamTests: XCTestCase {
   func testViaFifo() throws {
     let buffer = FBDataBuffer.accumulatingBuffer()
     let output = FBProcessOutput<FBDataConsumer>(for: buffer)
-    let fileOutput: FBProcessFileOutput = try output.providedThroughFile().`await`()
+    let fileOutput: ProcessFileOutput = try output.providedThroughFile().`await`()
     XCTAssertNotNil(fileOutput)
 
     let startReading = fileOutput.startReading()
@@ -55,7 +55,7 @@ final class FBProcessStreamTests: XCTestCase {
   func testFileToFileDoesNotInvolveIndirection() throws {
     let filePath = "/tmp/hello_world.txt"
     let output = FBProcessOutput<NSString>(forFilePath: filePath)
-    let fileOutput: FBProcessFileOutput = try output.providedThroughFile().`await`()
+    let fileOutput: ProcessFileOutput = try output.providedThroughFile().`await`()
     XCTAssertNotNil(fileOutput)
 
     XCTAssertEqual(filePath, fileOutput.filePath)

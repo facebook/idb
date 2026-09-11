@@ -47,12 +47,12 @@
 /**
  The attachment for stdout.
  */
-@property (nullable, nonatomic, readonly, strong) id<FBProcessFileOutput> stdOut;
+@property (nullable, nonatomic, readonly, strong) id<ProcessFileOutput> stdOut;
 
 /**
  The attachment for stderr.
  */
-@property (nullable, nonatomic, readonly, strong) id<FBProcessFileOutput> stdErr;
+@property (nullable, nonatomic, readonly, strong) id<ProcessFileOutput> stdErr;
 
 /**
  Detach from all the streams.

@@ -8,7 +8,7 @@
 @testable import FBControlCore
 import XCTest
 
-final class FBFileReaderTests: XCTestCase, FBDataConsumer {
+final class FileReaderTests: XCTestCase, FBDataConsumer {
 
   var didRecieveEOF: Bool = false
 
@@ -20,7 +20,7 @@ final class FBFileReaderTests: XCTestCase, FBDataConsumer {
   func testConsumesData() throws {
     let pipe = Pipe()
     let consumer = FBDataBuffer.accumulatingBuffer()
-    let reader = FBFileReader.reader(withFileDescriptor: pipe.fileHandleForReading.fileDescriptor, closeOnEndOfFile: false, consumer: consumer, logger: nil)
+    let reader = FileReader.reader(withFileDescriptor: pipe.fileHandleForReading.fileDescriptor, closeOnEndOfFile: false, consumer: consumer, logger: nil)
     XCTAssertEqual(reader.state, FBFileReaderState.notStarted)
 
     try reader.startReading().`await`()
@@ -43,7 +43,7 @@ final class FBFileReaderTests: XCTestCase, FBDataConsumer {
 
   func testConsumesEOFAfterStoppedReading() throws {
     let pipe = Pipe()
-    let reader = FBFileReader.reader(withFileDescriptor: pipe.fileHandleForReading.fileDescriptor, closeOnEndOfFile: false, consumer: self, logger: nil)
+    let reader = FileReader.reader(withFileDescriptor: pipe.fileHandleForReading.fileDescriptor, closeOnEndOfFile: false, consumer: self, logger: nil)
     XCTAssertEqual(reader.state, FBFileReaderState.notStarted)
 
     try reader.startReading().`await`()
@@ -65,14 +65,14 @@ final class FBFileReaderTests: XCTestCase, FBDataConsumer {
     let status = mkfifo(fifoPath, S_IWUSR | S_IRUSR)
     XCTAssertEqual(status, 0)
 
-    let writerFuture = FBFileWriter.asyncWriter(forFilePath: fifoPath)
-    let readerFuture = FBFileReader.reader(withFilePath: fifoPath, consumer: self, logger: nil)
+    let writerFuture = FileWriter.asyncWriter(forFilePath: fifoPath)
+    let readerFuture = FileReader.reader(withFilePath: fifoPath, consumer: self, logger: nil)
     let writerAndReader = try FBFuture<AnyObject>.combine([writerFuture, readerFuture as! FBFuture<AnyObject>]).`await`() as NSArray?
     XCTAssertNotNil(writerAndReader)
 
     // swiftlint:disable force_cast
-    let writer = writerAndReader![0] as! FBDataConsumer & FBDataConsumerLifecycle
-    let reader = writerAndReader![1] as! FBFileReader
+    let writer = writerAndReader![0] as! FBDataConsumer & DataConsumerLifecycle
+    let reader = writerAndReader![1] as! FileReader
     // swiftlint:enable force_cast
 
     try reader.startReading().`await`()
@@ -93,7 +93,7 @@ final class FBFileReaderTests: XCTestCase, FBDataConsumer {
   func testCanStopReadingBeforeEOFResolvesWhenPipeCloses() throws {
     let pipe = Pipe()
     let consumer = FBDataBuffer.accumulatingBuffer()
-    let reader = FBFileReader.reader(withFileDescriptor: pipe.fileHandleForReading.fileDescriptor, closeOnEndOfFile: false, consumer: consumer, logger: nil)
+    let reader = FileReader.reader(withFileDescriptor: pipe.fileHandleForReading.fileDescriptor, closeOnEndOfFile: false, consumer: consumer, logger: nil)
     XCTAssertEqual(reader.state, FBFileReaderState.notStarted)
 
     try reader.startReading().`await`()
@@ -116,7 +116,7 @@ final class FBFileReaderTests: XCTestCase, FBDataConsumer {
   }
 
   func testReadingTwiceFails() throws {
-    let reader: FBFileReader = try FBFileReader.reader(withFilePath: "/dev/urandom", consumer: self, logger: nil).`await`()
+    let reader: FileReader = try FileReader.reader(withFilePath: "/dev/urandom", consumer: self, logger: nil).`await`()
     XCTAssertEqual(reader.state, FBFileReaderState.notStarted)
 
     try reader.startReading().`await`()
@@ -132,7 +132,7 @@ final class FBFileReaderTests: XCTestCase, FBDataConsumer {
   }
 
   func testStoppingTwiceDoesNotError() throws {
-    let reader: FBFileReader = try FBFileReader.reader(withFilePath: "/dev/urandom", consumer: self, logger: nil).`await`()
+    let reader: FileReader = try FileReader.reader(withFilePath: "/dev/urandom", consumer: self, logger: nil).`await`()
     XCTAssertEqual(reader.state, FBFileReaderState.notStarted)
 
     try reader.startReading().`await`()
@@ -149,7 +149,7 @@ final class FBFileReaderTests: XCTestCase, FBDataConsumer {
   }
 
   func testCancellationOnFinishedReading() throws {
-    let reader: FBFileReader = try FBFileReader.reader(withFilePath: "/dev/urandom", consumer: self, logger: nil).`await`()
+    let reader: FileReader = try FileReader.reader(withFilePath: "/dev/urandom", consumer: self, logger: nil).`await`()
     XCTAssertEqual(reader.state, FBFileReaderState.notStarted)
 
     try reader.startReading().`await`()
@@ -163,7 +163,7 @@ final class FBFileReaderTests: XCTestCase, FBDataConsumer {
   }
 
   func testConcurrentAttachmentIsProhibited() throws {
-    let reader: FBFileReader = try FBFileReader.reader(withFilePath: "/dev/urandom", consumer: self, logger: nil).`await`()
+    let reader: FileReader = try FileReader.reader(withFilePath: "/dev/urandom", consumer: self, logger: nil).`await`()
     XCTAssertEqual(reader.state, FBFileReaderState.notStarted)
 
     let concurrentQueue = DispatchQueue.global(qos: .userInitiated)
@@ -219,7 +219,7 @@ final class FBFileReaderTests: XCTestCase, FBDataConsumer {
     }
 
     let consumer = FBDataBuffer.accumulatingBuffer()
-    let reader = FBFileReader.reader(withFileDescriptor: localSocket, closeOnEndOfFile: false, consumer: consumer, logger: nil)
+    let reader = FileReader.reader(withFileDescriptor: localSocket, closeOnEndOfFile: false, consumer: consumer, logger: nil)
     try reader.startReading().`await`()
 
     // Traffic through the channel guarantees libdispatch has armed the
@@ -243,7 +243,7 @@ final class FBFileReaderTests: XCTestCase, FBDataConsumer {
   }
 
   func testAttemptingToReadAGarbageFileDescriptor() throws {
-    let reader = FBFileReader.reader(withFileDescriptor: 92123, closeOnEndOfFile: false, consumer: self, logger: nil)
+    let reader = FileReader.reader(withFileDescriptor: 92123, closeOnEndOfFile: false, consumer: self, logger: nil)
     XCTAssertEqual(reader.state, FBFileReaderState.notStarted)
 
     try reader.startReading().`await`()

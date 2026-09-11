@@ -9,12 +9,12 @@ import Foundation
 
 /// Thrown when a command's weakly-held target (a simulator, device, or `self`) was deallocated
 /// before the command ran.
-public enum FBWeakTargetError: Error, CustomStringConvertible, LocalizedError {
+public enum WeakTargetError: Error, CustomStringConvertible, LocalizedError {
   /// `target` is a human-readable description of what was deallocated, e.g. "Simulator".
   case deallocated(String)
 
   /// A deallocated `FBSimulator`.
-  public static let simulator = FBWeakTargetError.deallocated("Simulator")
+  public static let simulator = WeakTargetError.deallocated("Simulator")
 
   public var description: String {
     switch self {

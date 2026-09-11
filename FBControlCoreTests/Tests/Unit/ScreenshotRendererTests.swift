@@ -11,7 +11,7 @@ import ImageIO
 import UniformTypeIdentifiers
 import XCTest
 
-final class FBScreenshotRendererTests: XCTestCase {
+final class ScreenshotRendererTests: XCTestCase {
 
   /// The fixture is a 988x388 PNG, standing in for a capture that arrives already encoded.
   private let fixtureSize = CGSize(width: 988, height: 388)
@@ -36,7 +36,7 @@ final class FBScreenshotRendererTests: XCTestCase {
   }
 
   private func render(_ configuration: FBScreenshotConfiguration, screenScale: Double? = 2) throws -> FBScreenshotResult {
-    try FBScreenshotRenderer.render(encoded: try fixtureData(), configuration: configuration, screenScale: screenScale)
+    try ScreenshotRenderer.render(encoded: try fixtureData(), configuration: configuration, screenScale: screenScale)
   }
 
   // MARK: - Passthrough
@@ -121,9 +121,9 @@ final class FBScreenshotRendererTests: XCTestCase {
   func testUnreadableInputIsRejected() {
     let data = Data("not an image".utf8)
     XCTAssertThrowsError(
-      try FBScreenshotRenderer.render(encoded: data, configuration: FBScreenshotConfiguration(), screenScale: nil)
+      try ScreenshotRenderer.render(encoded: data, configuration: FBScreenshotConfiguration(), screenScale: nil)
     ) { error in
-      XCTAssertEqual(error as? FBScreenshotRenderError, .unreadableImageData)
+      XCTAssertEqual(error as? ScreenshotRenderError, .unreadableImageData)
     }
   }
 
@@ -132,7 +132,7 @@ final class FBScreenshotRendererTests: XCTestCase {
   func testTransformIsAnIdentityWhenThePlanIs() throws {
     let image = try fixtureImage()
     let plan = FBScreenshotPlan(cropRect: nil, scaleFactor: 1, outputSize: fixtureSize)
-    let transformed = try FBScreenshotRenderer.transform(image, plan: plan)
+    let transformed = try ScreenshotRenderer.transform(image, plan: plan)
     XCTAssertTrue(transformed === image)
   }
 
@@ -143,7 +143,7 @@ final class FBScreenshotRendererTests: XCTestCase {
       scaleFactor: 0.25,
       outputSize: CGSize(width: 100, height: 50)
     )
-    let transformed = try FBScreenshotRenderer.transform(image, plan: plan)
+    let transformed = try ScreenshotRenderer.transform(image, plan: plan)
     XCTAssertEqual(transformed.width, 100)
     XCTAssertEqual(transformed.height, 50)
   }
@@ -151,7 +151,7 @@ final class FBScreenshotRendererTests: XCTestCase {
   func testTransformSkipsAResampleThatWouldChangeNothing() throws {
     let image = try fixtureImage()
     let plan = FBScreenshotPlan(cropRect: nil, scaleFactor: 0.9999, outputSize: fixtureSize)
-    let transformed = try FBScreenshotRenderer.transform(image, plan: plan)
+    let transformed = try ScreenshotRenderer.transform(image, plan: plan)
     XCTAssertTrue(transformed === image)
   }
 
@@ -161,8 +161,8 @@ final class FBScreenshotRendererTests: XCTestCase {
     let image = try fixtureImage()
     for outputSize in [CGSize(width: 0, height: 10), CGSize(width: 10, height: 0), .zero] {
       let plan = FBScreenshotPlan(cropRect: nil, scaleFactor: 1, outputSize: outputSize)
-      XCTAssertThrowsError(try FBScreenshotRenderer.transform(image, plan: plan), "\(outputSize)") { error in
-        XCTAssertEqual(error as? FBScreenshotRenderError, .contextCreationFailed(size: outputSize), "\(outputSize)")
+      XCTAssertThrowsError(try ScreenshotRenderer.transform(image, plan: plan), "\(outputSize)") { error in
+        XCTAssertEqual(error as? ScreenshotRenderError, .contextCreationFailed(size: outputSize), "\(outputSize)")
       }
     }
   }
@@ -172,7 +172,7 @@ final class FBScreenshotRendererTests: XCTestCase {
   func testEncodeProducesTheRequestedContainer() throws {
     let image = try fixtureImage()
     for encoding in [FBScreenshotEncoding.png, .tiff, .jpeg(quality: 0.8)] {
-      let data = try FBScreenshotRenderer.encode(image, encoding: encoding)
+      let data = try ScreenshotRenderer.encode(image, encoding: encoding)
       let decoded = try decode(data)
       XCTAssertEqual(decoded.type, encoding.format.contentType, "\(encoding)")
       XCTAssertEqual(decoded.size, fixtureSize, "\(encoding)")
@@ -181,8 +181,8 @@ final class FBScreenshotRendererTests: XCTestCase {
 
   func testJPEGQualityChangesTheEncodedSize() throws {
     let image = try fixtureImage()
-    let low = try FBScreenshotRenderer.encode(image, encoding: .jpeg(quality: 0.1))
-    let high = try FBScreenshotRenderer.encode(image, encoding: .jpeg(quality: 0.95))
+    let low = try ScreenshotRenderer.encode(image, encoding: .jpeg(quality: 0.1))
+    let high = try ScreenshotRenderer.encode(image, encoding: .jpeg(quality: 0.95))
     XCTAssertLessThan(low.count, high.count)
   }
 
@@ -192,20 +192,20 @@ final class FBScreenshotRendererTests: XCTestCase {
     let image = try fixtureImage()
     for quality in [0.0, -0.5, 1.5] {
       let encoding = FBScreenshotEncoding.jpeg(quality: quality)
-      XCTAssertThrowsError(try FBScreenshotRenderer.encode(image, encoding: encoding), "\(quality)") { error in
-        XCTAssertEqual(error as? FBScreenshotRenderError, .compressionQualityOutOfRange(quality), "\(quality)")
+      XCTAssertThrowsError(try ScreenshotRenderer.encode(image, encoding: encoding), "\(quality)") { error in
+        XCTAssertEqual(error as? ScreenshotRenderError, .compressionQualityOutOfRange(quality), "\(quality)")
       }
     }
     // NaN compares false against every bound, so it has to be rejected by the shape of the check
     // rather than by a comparison that happens to be true.
-    XCTAssertThrowsError(try FBScreenshotRenderer.encode(image, encoding: .jpeg(quality: .nan)))
-    XCTAssertNoThrow(try FBScreenshotRenderer.encode(image, encoding: .jpeg(quality: 1)))
+    XCTAssertThrowsError(try ScreenshotRenderer.encode(image, encoding: .jpeg(quality: .nan)))
+    XCTAssertNoThrow(try ScreenshotRenderer.encode(image, encoding: .jpeg(quality: 1)))
   }
 
   func testTIFFIsUncompressed() throws {
     let image = try fixtureImage()
-    let tiff = try FBScreenshotRenderer.encode(image, encoding: .tiff)
-    let png = try FBScreenshotRenderer.encode(image, encoding: .png)
+    let tiff = try ScreenshotRenderer.encode(image, encoding: .tiff)
+    let png = try ScreenshotRenderer.encode(image, encoding: .png)
     XCTAssertGreaterThan(tiff.count, png.count)
     // At least three bytes per pixel, whether or not the encoder keeps an alpha channel. Anything
     // compressed comes in well under this for a photograph.

@@ -17,7 +17,7 @@ private let WrongImageStatus: Int32 = -402653066
 
 /// A provider handing back exactly the images a test names.
 private struct StubDiskImages: DeveloperDiskImageProviding {
-  let availableDiskImages: [FBDeveloperDiskImage]
+  let availableDiskImages: [DeveloperDiskImage]
 }
 
 @MainActor
@@ -27,8 +27,8 @@ struct DeviceDiskImageMountingTests {
 
   private let amDevice = FakeAMDevice()
 
-  private func diskImage(_ major: Int, _ minor: Int, signature: Data) -> FBDeveloperDiskImage {
-    FBDeveloperDiskImage(
+  private func diskImage(_ major: Int, _ minor: Int, signature: Data) -> DeveloperDiskImage {
+    DeveloperDiskImage(
       diskImagePath: "/Images/DeveloperDiskImage-\(major).\(minor).dmg",
       signature: signature,
       version: OperatingSystemVersion(majorVersion: major, minorVersion: minor, patchVersion: 0),
@@ -39,8 +39,8 @@ struct DeviceDiskImageMountingTests {
   /// test rather than by whatever device support directories this host happens to have.
   private func makeDevice(
     productVersion: String? = "17.0",
-    available: [FBDeveloperDiskImage],
-    mounted: [FBDeveloperDiskImage] = []
+    available: [DeveloperDiskImage],
+    mounted: [DeveloperDiskImage] = []
   ) -> FBDevice {
     if let productVersion {
       amDevice.values["ProductVersion"] = productVersion

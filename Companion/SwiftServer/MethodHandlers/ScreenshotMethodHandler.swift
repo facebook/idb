@@ -23,7 +23,7 @@ struct ScreenshotMethodHandler {
       // The crop is resolved against the screen that was actually captured, so a rect that
       // overhangs it can only be discovered here, once the target has been asked.
       throw ScreenshotRequestTranslation.status(for: error)
-    } catch let error as FBScreenshotRenderError {
+    } catch let error as ScreenshotRenderError {
       // Otherwise a failed crop, scale or encode reaches the caller as an UNKNOWN with no message.
       throw ScreenshotRequestTranslation.status(for: error)
     }

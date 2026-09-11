@@ -10,7 +10,7 @@ import Foundation
 public let FBControlCoreErrorDomain = "com.facebook.FBControlCore"
 
 @objc
-open class FBControlCoreError: NSObject {
+open class ControlCoreError: NSObject {
 
   // MARK: - Properties
 
@@ -174,7 +174,7 @@ open class FBControlCoreError: NSObject {
 
 // MARK: - Constructors
 
-extension FBControlCoreError {
+extension ControlCoreError {
 
   @objc public class func error(forDescription description: String) -> NSError {
     return Self.describe(description).build()

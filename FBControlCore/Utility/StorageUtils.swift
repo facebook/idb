@@ -19,14 +19,14 @@ extension StorageUtilsError: LocalizedError {
     case let .notExactlyOneFileWithExtension(count, fileExtension, url):
       return "\(count) files with extension .\(fileExtension) in \(url)"
     case let .notExactlyOneFile(found):
-      return "Expected one top level file, found \(found.count): \(FBCollectionInformation.oneLineDescription(from: found))"
+      return "Expected one top level file, found \(found.count): \(CollectionInformation.oneLineDescription(from: found))"
     case let .directoryListFailed(directory, _):
       return "Failed to list files in directory \(directory)"
     }
   }
 }
 
-public final class FBStorageUtils {
+public final class StorageUtils {
 
   // MARK: - Finding Files
 

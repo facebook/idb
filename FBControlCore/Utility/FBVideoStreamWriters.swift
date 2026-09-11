@@ -26,19 +26,19 @@ public func checkConsumerBufferLimit(_ consumer: any FBDataConsumer, _ logger: a
 private let AVCCHeaderLength: Int = 4
 private let AnnexBStartCode: [UInt8] = [0x00, 0x00, 0x00, 0x01]
 
-public protocol FBEncodedFrameWriter {
+public protocol EncodedFrameWriter {
   func write(_ sampleBuffer: CMSampleBuffer, to consumer: any FBDataConsumer, logger: any FBControlCoreLogger) throws
 }
 
-public protocol FBVideoStreamTimedMetadataWriter {
+public protocol VideoStreamTimedMetadataWriter {
   func writeTimedMetadata(_ text: String, to consumer: any FBDataConsumer)
 }
 
 public struct VideoStreamFrameWriters {
-  public let frameWriter: any FBEncodedFrameWriter
-  public let timedMetadataWriter: (any FBVideoStreamTimedMetadataWriter)?
+  public let frameWriter: any EncodedFrameWriter
+  public let timedMetadataWriter: (any VideoStreamTimedMetadataWriter)?
 
-  public init(frameWriter: any FBEncodedFrameWriter, timedMetadataWriter: (any FBVideoStreamTimedMetadataWriter)?) {
+  public init(frameWriter: any EncodedFrameWriter, timedMetadataWriter: (any VideoStreamTimedMetadataWriter)?) {
     self.frameWriter = frameWriter
     self.timedMetadataWriter = timedMetadataWriter
   }
@@ -51,10 +51,10 @@ public extension FBVideoStreamTransport {
       let writer = FMP4FrameWriter(codec: codec)
       return VideoStreamFrameWriters(frameWriter: writer, timedMetadataWriter: writer)
     case .mpegts:
-      let writer = FBMPEGTSFrameWriter(codec: codec)
+      let writer = MPEGTSFrameWriter(codec: codec)
       return VideoStreamFrameWriters(frameWriter: writer, timedMetadataWriter: writer)
     case .annexB:
-      return VideoStreamFrameWriters(frameWriter: FBAnnexBFrameWriter(codec: codec), timedMetadataWriter: nil)
+      return VideoStreamFrameWriters(frameWriter: AnnexBFrameWriter(codec: codec), timedMetadataWriter: nil)
     }
   }
 }
@@ -229,7 +229,7 @@ private func FBVideoSampleBufferIsKeyFrame(_ sampleBuffer: CMSampleBuffer) -> Bo
   return !CFDictionaryContainsKey(attachment, Unmanaged.passUnretained(kCMSampleAttachmentKey_NotSync).toOpaque())
 }
 
-public struct FBAnnexBFrameWriter: FBEncodedFrameWriter {
+public struct AnnexBFrameWriter: EncodedFrameWriter {
   private let codec: FBVideoStreamCodec
 
   public init(codec: FBVideoStreamCodec) {
@@ -634,7 +634,7 @@ func FBMPEGTSCreateTimedMetadataPackets(_ text: String, _ pts90k: UInt64, _ meta
   return output
 }
 
-public final class FBMPEGTSFrameWriter: FBEncodedFrameWriter, FBVideoStreamTimedMetadataWriter {
+public final class MPEGTSFrameWriter: EncodedFrameWriter, VideoStreamTimedMetadataWriter {
   private let codec: FBVideoStreamCodec
   private let metadataLock = NSLock()
   private var metadataStreamEnabled = false
@@ -802,7 +802,7 @@ public final class FBMPEGTSFrameWriter: FBEncodedFrameWriter, FBVideoStreamTimed
   }
 }
 
-public struct FBMJPEGFrameWriter {
+public struct MJPEGFrameWriter {
   public init() {}
 
   public func write(_ jpegDataBuffer: CMBlockBuffer, to consumer: any FBDataConsumer, logger: any FBControlCoreLogger) throws {
@@ -810,7 +810,7 @@ public struct FBMJPEGFrameWriter {
   }
 }
 
-public struct FBMinicapFrameWriter {
+public struct MinicapFrameWriter {
   public init() {}
 
   public func write(_ jpegDataBuffer: CMBlockBuffer, to consumer: any FBDataConsumer, logger: any FBControlCoreLogger) throws {
@@ -1310,7 +1310,7 @@ private func FBFMP4CreateFragmentHeader(_ sequenceNumber: UInt32, _ baseDecodeTi
   return writer.data
 }
 
-final class FMP4FrameWriter: FBEncodedFrameWriter, FBVideoStreamTimedMetadataWriter {
+final class FMP4FrameWriter: EncodedFrameWriter, VideoStreamTimedMetadataWriter {
   private let codec: FBVideoStreamCodec
   private(set) var initWritten: Bool
   private(set) var sequenceNumber: UInt32

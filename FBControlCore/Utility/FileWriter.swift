@@ -22,7 +22,7 @@ enum FileWriterError: Error, LocalizedError {
 }
 
 @objc
-public class FBFileWriter: NSObject {
+public class FileWriter: NSObject {
 
   // MARK: - Properties
 
@@ -58,11 +58,11 @@ public class FBFileWriter: NSObject {
     return FBFuture(result: writer)
   }
 
-  @objc public static func syncWriter(withFileDescriptor fileDescriptor: Int32, closeOnEndOfFile: Bool) -> FBDataConsumer & FBDataConsumerLifecycle {
+  @objc public static func syncWriter(withFileDescriptor fileDescriptor: Int32, closeOnEndOfFile: Bool) -> FBDataConsumer & DataConsumerLifecycle {
     return FBDataConsumerAdaptor.dataConsumer(forDispatchDataConsumer: FileWriter_Sync(fileDescriptor: fileDescriptor, closeOnEndOfFile: closeOnEndOfFile))
   }
 
-  @objc public static func asyncWriter(withFileDescriptor fileDescriptor: Int32, closeOnEndOfFile: Bool, queue: DispatchQueue, error: NSErrorPointer) -> (FBDataConsumer & FBDataConsumerLifecycle)? {
+  @objc public static func asyncWriter(withFileDescriptor fileDescriptor: Int32, closeOnEndOfFile: Bool, queue: DispatchQueue, error: NSErrorPointer) -> (FBDataConsumer & DataConsumerLifecycle)? {
     let writer = FileWriter_Async(fileDescriptor: fileDescriptor, closeOnEndOfFile: closeOnEndOfFile, writeQueue: queue)
     do {
       try writer.startWriting()
@@ -73,12 +73,12 @@ public class FBFileWriter: NSObject {
     return FBDataConsumerAdaptor.dataConsumer(forDispatchDataConsumer: writer)
   }
 
-  @objc public static func asyncWriter(withFileDescriptor fileDescriptor: Int32, closeOnEndOfFile: Bool, error: NSErrorPointer) -> (FBDataConsumer & FBDataConsumerLifecycle)? {
+  @objc public static func asyncWriter(withFileDescriptor fileDescriptor: Int32, closeOnEndOfFile: Bool, error: NSErrorPointer) -> (FBDataConsumer & DataConsumerLifecycle)? {
     let queue = createWorkQueue()
     return asyncWriter(withFileDescriptor: fileDescriptor, closeOnEndOfFile: closeOnEndOfFile, queue: queue, error: error)
   }
 
-  @objc public static func syncWriter(forFilePath filePath: String, error: NSErrorPointer) -> (FBDataConsumer & FBDataConsumerLifecycle)? {
+  @objc public static func syncWriter(forFilePath filePath: String, error: NSErrorPointer) -> (FBDataConsumer & DataConsumerLifecycle)? {
     let fd: Int32
     do {
       fd = try fileDescriptor(forPath: filePath)
@@ -86,7 +86,7 @@ public class FBFileWriter: NSObject {
       error?.pointee = e as NSError
       return nil
     }
-    return FBFileWriter.syncWriter(withFileDescriptor: fd, closeOnEndOfFile: true)
+    return FileWriter.syncWriter(withFileDescriptor: fd, closeOnEndOfFile: true)
   }
 
   @objc public static func asyncWriter(forFilePath filePath: String) -> FBFuture<AnyObject> {
@@ -124,7 +124,7 @@ public class FBFileWriter: NSObject {
 
 // MARK: - FileWriter_Null
 
-private class FileWriter_Null: FBFileWriter, DispatchDataConsumer, FBDataConsumerLifecycle {
+private class FileWriter_Null: FileWriter, DispatchDataConsumer, DataConsumerLifecycle {
 
   func consumeData(_ data: __DispatchData) {
   }
@@ -140,7 +140,7 @@ private class FileWriter_Null: FBFileWriter, DispatchDataConsumer, FBDataConsume
 
 // MARK: - FileWriter_Sync
 
-private class FileWriter_Sync: FBFileWriter, DispatchDataConsumer, FBDataConsumerLifecycle, FBDataConsumerSync {
+private class FileWriter_Sync: FileWriter, DispatchDataConsumer, DataConsumerLifecycle, FBDataConsumerSync {
 
   func consumeData(_ data: __DispatchData) {
     let dispatchData = data as DispatchData
@@ -164,7 +164,7 @@ private class FileWriter_Sync: FBFileWriter, DispatchDataConsumer, FBDataConsume
 
 // MARK: - FileWriter_Async
 
-private class FileWriter_Async: FBFileWriter, DispatchDataConsumer, FBDataConsumerLifecycle {
+private class FileWriter_Async: FileWriter, DispatchDataConsumer, DataConsumerLifecycle {
 
   let writeQueue: DispatchQueue
   var io: DispatchIO?
@@ -196,7 +196,7 @@ private class FileWriter_Async: FBFileWriter, DispatchDataConsumer, FBDataConsum
     assert(io == nil)
 
     // O_NONBLOCK must be set before DispatchIO snapshots the descriptor flags; see
-    // FBFileReader.startReadingNow for why.
+    // FileReader.startReadingNow for why.
     _ = fcntl(fileDescriptor, F_SETFL, fcntl(fileDescriptor, F_GETFL) | O_NONBLOCK)
 
     let finishedConsuming = finishedConsumingMutable

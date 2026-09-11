@@ -46,7 +46,7 @@
 - (FBFuture<NSNull *> *)startListening
 {
   if (self.acceptSource) {
-    return (FBFuture *)[[FBControlCoreError
+    return (FBFuture *)[[ControlCoreError
                          describe:@"Cannot start listening, socket is already listening"]
                         failFuture];
   }
@@ -56,7 +56,7 @@
 - (FBFuture<NSNull *> *)stopListening
 {
   if (!self.acceptSource) {
-    return (FBFuture *)[[FBControlCoreError
+    return (FBFuture *)[[ControlCoreError
                          describe:@"Cannot stop listening, there is no active socket"]
                         failFuture];
   }
@@ -72,7 +72,7 @@
 {
   int socketDescriptor = socket(PF_INET6, SOCK_STREAM, IPPROTO_TCP);
   if (socketDescriptor <= 0) {
-    return (FBFuture *)[[FBControlCoreError
+    return (FBFuture *)[[ControlCoreError
                          describe:[NSString stringWithFormat:@"Failed to create a socket with error '%s'", strerror(errno)]]
                         failFuture];
   }
@@ -87,14 +87,14 @@
   address.sin6_addr = in6addr_any;
   int result = bind(socketDescriptor, (struct sockaddr *)&address, sizeof(address));
   if (result != 0) {
-    return (FBFuture *)[[FBControlCoreError
+    return (FBFuture *)[[ControlCoreError
                          describe:[NSString stringWithFormat:@"Failed to bind the socket on port %d with error '%s'", self.port, strerror(errno)]]
                         failFuture];
   }
 
   result = listen(socketDescriptor, 10);
   if (result != 0) {
-    return (FBFuture *)[[FBControlCoreError
+    return (FBFuture *)[[ControlCoreError
                          describe:[NSString stringWithFormat:@"Failed to listen on the socket on port %d error '%s'", self.port, strerror(errno)]]
                         failFuture];
   }
@@ -131,7 +131,7 @@
   socklen_t addressLength = sizeof(address);
   int acceptDescriptor = accept(socketDescriptor, (struct sockaddr *) &address, &addressLength);
   if (!acceptDescriptor) {
-    return [[FBControlCoreError
+    return [[ControlCoreError
              describe:[NSString stringWithFormat:@"accept() failed with error '%s'", strerror(errno)]]
             failBool:error];
   }

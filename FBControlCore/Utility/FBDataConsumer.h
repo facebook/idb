@@ -14,7 +14,7 @@
 @protocol DispatchDataConsumer;
 @protocol FBDataConsumerSync;
 @protocol DataConsumerAsync;
-@protocol FBDataConsumerLifecycle;
+@protocol DataConsumerLifecycle;
 
 /**
  Adapts between NSData and dispatch_data consumers.
@@ -35,7 +35,7 @@
  @param consumer the consumer to adapt.
  @return a NSData consumer.
  */
-+ (nonnull id<FBDataConsumer, FBDataConsumerLifecycle>)dataConsumerForDispatchDataConsumer:(nonnull id<DispatchDataConsumer, FBDataConsumerLifecycle>)consumer;
++ (nonnull id<FBDataConsumer, DataConsumerLifecycle>)dataConsumerForDispatchDataConsumer:(nonnull id<DispatchDataConsumer, DataConsumerLifecycle>)consumer;
 
 /**
  Converts dispatch_data to NSData, copying only when the dispatch_data is non-contiguous.
@@ -59,7 +59,7 @@
  @param consumer the block to call when new data is available
  @return a new consumer.
  */
-+ (nonnull id<FBDataConsumer, FBDataConsumerLifecycle, FBDataConsumerSync>)synchronousDataConsumerWithBlock:(void (^_Nonnull)(NSData * _Nonnull))consumer;
++ (nonnull id<FBDataConsumer, DataConsumerLifecycle, FBDataConsumerSync>)synchronousDataConsumerWithBlock:(void (^_Nonnull)(NSData * _Nonnull))consumer;
 
 /**
  Creates a Consumer of lines from a block.
@@ -68,7 +68,7 @@
  @param consumer the block to call when a line has been consumed.
  @return a new consumer.
  */
-+ (nonnull id<FBDataConsumer, FBDataConsumerLifecycle, FBDataConsumerSync>)synchronousLineConsumerWithBlock:(void (^_Nonnull)(NSString * _Nonnull))consumer;
++ (nonnull id<FBDataConsumer, DataConsumerLifecycle, FBDataConsumerSync>)synchronousLineConsumerWithBlock:(void (^_Nonnull)(NSString * _Nonnull))consumer;
 
 /**
  Creates a consumer that delivers data when available.
@@ -78,7 +78,7 @@
  @param consumer the block to call when new data is available
  @return a new consumer.
  */
-+ (nonnull id<FBDataConsumer, FBDataConsumerLifecycle, DataConsumerAsync>)asynchronousDataConsumerOnQueue:(nonnull dispatch_queue_t)queue consumer:(void (^_Nonnull)(NSData * _Nonnull))consumer;
++ (nonnull id<FBDataConsumer, DataConsumerLifecycle, DataConsumerAsync>)asynchronousDataConsumerOnQueue:(nonnull dispatch_queue_t)queue consumer:(void (^_Nonnull)(NSData * _Nonnull))consumer;
 
 /**
  Creates a consumer that delivers data when available.
@@ -87,7 +87,7 @@
  @param consumer the block to call when new data is available
  @return a new consumer.
  */
-+ (nonnull id<FBDataConsumer, FBDataConsumerLifecycle, DataConsumerAsync>)asynchronousDataConsumerWithBlock:(void (^_Nonnull)(NSData * _Nonnull))consumer;
++ (nonnull id<FBDataConsumer, DataConsumerLifecycle, DataConsumerAsync>)asynchronousDataConsumerWithBlock:(void (^_Nonnull)(NSData * _Nonnull))consumer;
 
 /**
  Creates a Consumer of lines from a block.
@@ -96,7 +96,7 @@
  @param consumer the block to call when a line has been consumed.
  @return a new consumer.
  */
-+ (nonnull id<FBDataConsumer, FBDataConsumerLifecycle>)asynchronousLineConsumerWithBlock:(void (^_Nonnull)(NSString * _Nonnull))consumer;
++ (nonnull id<FBDataConsumer, DataConsumerLifecycle>)asynchronousLineConsumerWithBlock:(void (^_Nonnull)(NSString * _Nonnull))consumer;
 
 /**
  Creates a Consumer of lines from a block.
@@ -106,7 +106,7 @@
  @param consumer the block to call when a line has been consumed.
  @return a new consumer.
  */
-+ (nonnull id<FBDataConsumer, FBDataConsumerLifecycle>)asynchronousLineConsumerWithQueue:(nonnull dispatch_queue_t)queue consumer:(void (^_Nonnull)(NSString * _Nonnull))consumer;
++ (nonnull id<FBDataConsumer, DataConsumerLifecycle>)asynchronousLineConsumerWithQueue:(nonnull dispatch_queue_t)queue consumer:(void (^_Nonnull)(NSString * _Nonnull))consumer;
 
 /**
  Creates a Consumer of lines from a block.
@@ -116,7 +116,7 @@
  @param consumer the block to call when a line has been consumed.
  @return a new consumer.
  */
-+ (nonnull id<FBDataConsumer, FBDataConsumerLifecycle>)asynchronousLineConsumerWithQueue:(nonnull dispatch_queue_t)queue dataConsumer:(void (^_Nonnull)(NSData * _Nonnull))consumer;
++ (nonnull id<FBDataConsumer, DataConsumerLifecycle>)asynchronousLineConsumerWithQueue:(nonnull dispatch_queue_t)queue dataConsumer:(void (^_Nonnull)(NSData * _Nonnull))consumer;
 
 @end
 

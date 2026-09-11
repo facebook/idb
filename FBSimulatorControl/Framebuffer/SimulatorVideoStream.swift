@@ -486,7 +486,7 @@ public actor FBSimulatorVideoStream: FBVideoStream {
     }
 
     let attributes = bitmapStreamPixelBufferAttributes(from: buffer)
-    logger.log("Mounting Surface \(IOSurfaceGetID(surface)) with Attributes: \(FBCollectionInformation.oneLineDescription(from: attributes))")
+    logger.log("Mounting Surface \(IOSurfaceGetID(surface)) with Attributes: \(CollectionInformation.oneLineDescription(from: attributes))")
 
     let framePusher = try Self.framePusher(
       configuration: configuration,

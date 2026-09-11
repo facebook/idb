@@ -56,7 +56,7 @@ public final class DeviceProvisioningProfileCommands: ProvisioningProfileCommand
         let payloadRef = connectedDevice.calls.ProvisioningProfileCopyPayload?(profile as CFTypeRef)
         var payload = payloadRef?.takeRetainedValue() as? [String: Any]
         if let p = payload {
-          payload = FBCollectionOperations.recursiveFilteredJSONSerializableRepresentation(of: p)
+          payload = CollectionOperations.recursiveFilteredJSONSerializableRepresentation(of: p)
         }
         if let payload {
           allProfiles.append(payload)
@@ -93,7 +93,7 @@ public final class DeviceProvisioningProfileCommands: ProvisioningProfileCommand
       let payloadRef = connectedDevice.calls.ProvisioningProfileCopyPayload?(profile)
       var payload = payloadRef?.takeRetainedValue() as? [String: Any]
       if let p = payload {
-        payload = FBCollectionOperations.recursiveFilteredJSONSerializableRepresentation(of: p)
+        payload = CollectionOperations.recursiveFilteredJSONSerializableRepresentation(of: p)
       }
       guard let payload else {
         throw DeviceProvisioningProfileError.payloadUnavailable(profileDescription: String(describing: profile))

@@ -35,6 +35,6 @@ extension FBXCTestReporterConfiguration: CustomStringConvertible {
 
   public var description: String {
     let coverageDesc = coverageConfiguration.map { "\($0)" } ?? "(null)"
-    return "Result Bundle \(resultBundlePath ?? "(null)") | Coverage \(coverageDesc) | Log Path \(logDirectoryPath ?? "(null)") | Binaries Paths \(FBCollectionInformation.oneLineDescription(from: binariesPaths)) | Report Attachments \(reportAttachments ? 1 : 0) | Report Restul Bundle \(reportResultBundle ? 1 : 0)"
+    return "Result Bundle \(resultBundlePath ?? "(null)") | Coverage \(coverageDesc) | Log Path \(logDirectoryPath ?? "(null)") | Binaries Paths \(CollectionInformation.oneLineDescription(from: binariesPaths)) | Report Attachments \(reportAttachments ? 1 : 0) | Report Restul Bundle \(reportResultBundle ? 1 : 0)"
   }
 }

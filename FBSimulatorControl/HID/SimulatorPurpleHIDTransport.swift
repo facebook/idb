@@ -80,7 +80,7 @@ final class SimulatorPurpleHIDTransport: @unchecked Sendable {
 
   private func sendBlocking(_ data: Data, timeoutMs: mach_msg_timeout_t) throws {
     guard let simulator else {
-      throw FBWeakTargetError.simulator
+      throw WeakTargetError.simulator
     }
 
     var lookupError: NSError?

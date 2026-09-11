@@ -237,66 +237,66 @@ final class FBControlCoreTransientTests: XCTestCase {
     XCTAssertTrue(config.description.contains("/usr/bin/env"))
   }
 
-  // MARK: - FBCollectionInformation
+  // MARK: - CollectionInformation
 
   func testOneLineDescriptionFromArray() {
-    let result = FBCollectionInformation.oneLineDescription(from: ["alpha", "beta", "gamma"])
+    let result = CollectionInformation.oneLineDescription(from: ["alpha", "beta", "gamma"])
     XCTAssertEqual(result, "[alpha, beta, gamma]")
   }
 
   func testOneLineDescriptionFromEmptyArray() {
-    let result = FBCollectionInformation.oneLineDescription(from: [])
+    let result = CollectionInformation.oneLineDescription(from: [])
     XCTAssertEqual(result, "[]")
   }
 
   func testOneLineDescriptionFromDictionary() {
-    let result = FBCollectionInformation.oneLineDescription(from: ["key": "value"])
+    let result = CollectionInformation.oneLineDescription(from: ["key": "value"])
     XCTAssertTrue(result.contains("key => value"))
     XCTAssertTrue(result.hasPrefix("{"))
     XCTAssertTrue(result.hasSuffix("}"))
   }
 
   func testOneLineDescriptionFromEmptyDictionary() {
-    let result = FBCollectionInformation.oneLineDescription(from: [:])
+    let result = CollectionInformation.oneLineDescription(from: [:])
     XCTAssertEqual(result, "{}")
   }
 
   func testIsArrayHeterogeneousWithMatchingClass() {
-    XCTAssertTrue(FBCollectionInformation.isArrayHeterogeneous(["a", "b", "c"], with: NSString.self))
+    XCTAssertTrue(CollectionInformation.isArrayHeterogeneous(["a", "b", "c"], with: NSString.self))
   }
 
   func testIsArrayHeterogeneousWithMismatchedClass() {
     let mixed: [Any] = ["a", NSNumber(value: 1), "b"]
-    XCTAssertFalse(FBCollectionInformation.isArrayHeterogeneous(mixed as [AnyObject], with: NSString.self))
+    XCTAssertFalse(CollectionInformation.isArrayHeterogeneous(mixed as [AnyObject], with: NSString.self))
   }
 
   func testIsArrayHeterogeneousWithEmptyArray() {
-    XCTAssertTrue(FBCollectionInformation.isArrayHeterogeneous([], with: NSString.self))
+    XCTAssertTrue(CollectionInformation.isArrayHeterogeneous([], with: NSString.self))
   }
 
   func testIsDictionaryHeterogeneousWithMatchingClasses() {
     let dict: NSDictionary = ["a": "b", "c": "d"]
-    XCTAssertTrue(FBCollectionInformation.isDictionaryHeterogeneous(dict as! [AnyHashable: Any], keyClass: NSString.self, valueClass: NSString.self))
+    XCTAssertTrue(CollectionInformation.isDictionaryHeterogeneous(dict as! [AnyHashable: Any], keyClass: NSString.self, valueClass: NSString.self))
   }
 
   func testIsDictionaryHeterogeneousWithMismatchedValues() {
     let dict: NSDictionary = ["a": "b", "c": NSNumber(value: 1)]
-    XCTAssertFalse(FBCollectionInformation.isDictionaryHeterogeneous(dict as! [AnyHashable: Any], keyClass: NSString.self, valueClass: NSString.self))
+    XCTAssertFalse(CollectionInformation.isDictionaryHeterogeneous(dict as! [AnyHashable: Any], keyClass: NSString.self, valueClass: NSString.self))
   }
 
-  // MARK: - FBCollectionOperations
+  // MARK: - CollectionOperations
 
   func testArrayFromIndices() {
     var indexSet = IndexSet()
     indexSet.insert(1)
     indexSet.insert(3)
     indexSet.insert(5)
-    let result = FBCollectionOperations.array(from: indexSet)
+    let result = CollectionOperations.array(from: indexSet)
     XCTAssertEqual(result, [1, 3, 5] as [NSNumber])
   }
 
   func testIndicesFromArray() {
-    let result = FBCollectionOperations.indices(from: [2, 4, 6]) as IndexSet
+    let result = CollectionOperations.indices(from: [2, 4, 6]) as IndexSet
     var expected = IndexSet()
     expected.insert(2)
     expected.insert(4)
@@ -306,8 +306,8 @@ final class FBControlCoreTransientTests: XCTestCase {
 
   func testArrayFromIndicesRoundTrip() {
     let original: [NSNumber] = [0, 10, 20]
-    let indexSet = FBCollectionOperations.indices(from: original)
-    let roundTripped = FBCollectionOperations.array(from: indexSet)
+    let indexSet = CollectionOperations.indices(from: original)
+    let roundTripped = CollectionOperations.array(from: indexSet)
     XCTAssertEqual(roundTripped, original)
   }
 
@@ -319,7 +319,7 @@ final class FBControlCoreTransientTests: XCTestCase {
       "nonSerializable": NSDate(),
       "array": [1, "two", NSDate()] as [Any],
     ]
-    let result = FBCollectionOperations.recursiveFilteredJSONSerializableRepresentation(of: input)
+    let result = CollectionOperations.recursiveFilteredJSONSerializableRepresentation(of: input)
 
     XCTAssertEqual(result["string"] as? String, "hello")
     XCTAssertEqual(result["number"] as? Int, 42)
@@ -333,7 +333,7 @@ final class FBControlCoreTransientTests: XCTestCase {
 
   func testRecursiveFilteredJSONArray() {
     let input: [Any] = ["hello", 42, NSDate(), ["key": "value"]]
-    let result = FBCollectionOperations.recursiveFilteredJSONSerializableRepresentation(of: input)
+    let result = CollectionOperations.recursiveFilteredJSONSerializableRepresentation(of: input)
 
     XCTAssertEqual(result.count, 3)
     XCTAssertEqual(result[0] as? String, "hello")
@@ -343,24 +343,24 @@ final class FBControlCoreTransientTests: XCTestCase {
 
   func testNullableValueForDictionaryReturnsValue() {
     let dict: NSDictionary = ["key": "value"]
-    let result = FBCollectionOperations.nullableValue(for: dict as! [AnyHashable: Any], key: "key" as NSString)
+    let result = CollectionOperations.nullableValue(for: dict as! [AnyHashable: Any], key: "key" as NSString)
     XCTAssertEqual(result as? String, "value")
   }
 
   func testNullableValueForDictionaryReturnsNilForNSNull() {
     let dict: NSDictionary = ["key": NSNull()]
-    let result = FBCollectionOperations.nullableValue(for: dict as! [AnyHashable: Any], key: "key" as NSString)
+    let result = CollectionOperations.nullableValue(for: dict as! [AnyHashable: Any], key: "key" as NSString)
     XCTAssertNil(result)
   }
 
   func testNullableValueForDictionaryReturnsNilForMissingKey() {
     let dict: NSDictionary = ["key": "value"]
-    let result = FBCollectionOperations.nullableValue(for: dict as! [AnyHashable: Any], key: "missing" as NSString)
+    let result = CollectionOperations.nullableValue(for: dict as! [AnyHashable: Any], key: "missing" as NSString)
     XCTAssertNil(result)
   }
 
   func testArrayWithObjectCount() {
-    let result = FBCollectionOperations.array(with: "x", count: 3)
+    let result = CollectionOperations.array(with: "x", count: 3)
     XCTAssertEqual(result.count, 3)
     for item in result {
       XCTAssertEqual(item as? String, "x")
@@ -368,7 +368,7 @@ final class FBControlCoreTransientTests: XCTestCase {
   }
 
   func testArrayWithObjectCountZero() {
-    let result = FBCollectionOperations.array(with: "x", count: 0)
+    let result = CollectionOperations.array(with: "x", count: 0)
     XCTAssertEqual(result.count, 0)
   }
 }

@@ -283,8 +283,8 @@ final class ScreenshotRequestTranslationTests: XCTestCase {
 
   func testEveryRenderFailureHasAStatus() {
     // Not exhaustive by construction -- the error has associated values, so it is not CaseIterable.
-    // A case added to FBScreenshotRenderError must be added here.
-    let expected: [(FBScreenshotRenderError, GRPCStatus.Code)] = [
+    // A case added to ScreenshotRenderError must be added here.
+    let expected: [(ScreenshotRenderError, GRPCStatus.Code)] = [
       (.croppingFailed(cropRect: .zero, sourceSize: .zero), .internalError),
       (.contextCreationFailed(size: .zero), .internalError),
       (.scalingFailed(size: .zero), .internalError),

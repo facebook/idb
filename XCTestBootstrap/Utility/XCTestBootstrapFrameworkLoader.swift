@@ -14,8 +14,8 @@ public final class XCTestBootstrapFrameworkLoader: FBControlCoreFrameworkLoader 
     return XCTestBootstrapFrameworkLoader(
       name: "XCTestBootstrap",
       frameworks: [
-        FBWeakFramework.dtxConnectionServices,
-        FBWeakFramework.xcTest,
+        WeakFramework.dtxConnectionServices,
+        WeakFramework.xcTest,
       ]
     )
   }()

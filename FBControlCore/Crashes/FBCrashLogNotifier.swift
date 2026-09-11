@@ -12,11 +12,11 @@ private let CrashLogPollInterval: UInt64 = 100 * NSEC_PER_MSEC
 
 public final class FBCrashLogNotifier {
 
-  public let store: FBCrashLogStore
+  public let store: CrashLogStore
   internal var sinceDate: Date
 
   internal init(logger: any FBControlCoreLogger) {
-    self.store = FBCrashLogStore.store(forDirectories: FBCrashLogInfo.diagnosticReportsPaths, logger: logger)
+    self.store = CrashLogStore.store(forDirectories: FBCrashLogInfo.diagnosticReportsPaths, logger: logger)
     self.sinceDate = Date()
   }
 

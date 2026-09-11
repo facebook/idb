@@ -8,7 +8,7 @@
 @testable import FBControlCore
 import XCTest
 
-final class FBCrashLogStoreTests: XCTestCase {
+final class CrashLogStoreTests: XCTestCase {
 
   private var directory: String!
 
@@ -88,7 +88,7 @@ final class FBCrashLogStoreTests: XCTestCase {
   /// notification observer asynchronously, so a single ingest can be posted before the observer
   /// exists and be missed; identical names are deduplicated and post nothing, so each retry
   /// needs a fresh name.
-  private func ingestRepeatedly(_ data: Data, into store: FBCrashLogStore, named name: String) -> Task<Void, Never> {
+  private func ingestRepeatedly(_ data: Data, into store: CrashLogStore, named name: String) -> Task<Void, Never> {
     Task {
       for attempt in 0..<50 {
         if Task.isCancelled { return }
@@ -98,8 +98,8 @@ final class FBCrashLogStoreTests: XCTestCase {
     }
   }
 
-  private func makeStore() -> FBCrashLogStore {
-    FBCrashLogStore.store(forDirectories: [directory], logger: FBControlCoreLoggerDouble())
+  private func makeStore() -> CrashLogStore {
+    CrashLogStore.store(forDirectories: [directory], logger: FBControlCoreLoggerDouble())
   }
 
   private func assetsdCrashData() throws -> Data {

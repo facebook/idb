@@ -10,8 +10,8 @@
 #import <FBControlCore/FBDataConsumer.h>
 
 // Protocols defined in Swift (FBDataBufferProtocols.swift)
-@protocol FBAccumulatingBuffer;
-@protocol FBConsumableBuffer;
+@protocol AccumulatingBuffer;
+@protocol ConsumableBuffer;
 @protocol NotifyingBuffer;
 
 /**
@@ -25,7 +25,7 @@
 
  @return a FBDataBuffer implementation.
  */
-+ (nonnull id<FBAccumulatingBuffer>)accumulatingBuffer;
++ (nonnull id<AccumulatingBuffer>)accumulatingBuffer;
 
 /**
  A data buffer that is only mutated through consuming data.
@@ -34,21 +34,21 @@
  @param capacity the capacity in bytes of the buffer.
  @return a FBDataBuffer implementation.
  */
-+ (nonnull id<FBAccumulatingBuffer>)accumulatingBufferWithCapacity:(size_t)capacity;
++ (nonnull id<AccumulatingBuffer>)accumulatingBufferWithCapacity:(size_t)capacity;
 
 /**
  A data buffer that appends into the provided NSMutableData.
 
  @return a FBDataBuffer implementation.
  */
-+ (nonnull id<FBAccumulatingBuffer>)accumulatingBufferForMutableData:(nonnull NSMutableData *)data;
++ (nonnull id<AccumulatingBuffer>)accumulatingBufferForMutableData:(nonnull NSMutableData *)data;
 
 /**
  A data buffer that is appended to by consuming data and can be drained.
 
- @return a FBConsumableBuffer implementation.
+ @return a ConsumableBuffer implementation.
  */
-+ (nonnull id<FBConsumableBuffer>)consumableBuffer;
++ (nonnull id<ConsumableBuffer>)consumableBuffer;
 
 /**
  A data buffer that can forward and notify.
@@ -63,7 +63,7 @@
  @param consumer the consumer to forward chunks to
  @param queue the queue to forward on.
  @param terminal the terminal separator.
- @return a FBConsumableBuffer implementation.
+ @return a ConsumableBuffer implementation.
  */
 + (nonnull id<NotifyingBuffer>)consumableBufferForwardingToConsumer:(nullable id<FBDataConsumer>)consumer onQueue:(nullable dispatch_queue_t)queue terminal:(nullable NSData *)terminal;
 

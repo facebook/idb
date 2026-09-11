@@ -36,7 +36,7 @@ extension DeviceApplicationError: LocalizedError {
     case let .uninstallFailed(bundleID, status, message, recentEvents):
       return "Failed to uninstall application '\(bundleID)' with error 0x\(String(UInt32(bitPattern: status), radix: 16)) (\(message)). \(recentEvents)"
     case let .applicationNotInstalled(bundleID, installed):
-      return "Application with bundle ID: \(bundleID) is not installed. Installed apps \(FBCollectionInformation.oneLineDescription(from: installed))"
+      return "Application with bundle ID: \(bundleID) is not installed. Installed apps \(CollectionInformation.oneLineDescription(from: installed))"
     case let .noProcessID(bundleID):
       return "No pid for \(bundleID)"
     case let .applicationLookupFailed(status, message):
@@ -72,7 +72,7 @@ private class DeviceWorkflowStatistics {
   }
 
   func pushProgress(_ event: [String: Any]) {
-    logger.log("\(workflowType) Progress: \(FBCollectionInformation.oneLineDescription(from: event))")
+    logger.log("\(workflowType) Progress: \(CollectionInformation.oneLineDescription(from: event))")
     lastEvent = event
   }
 
@@ -80,7 +80,7 @@ private class DeviceWorkflowStatistics {
     guard let lastEvent else {
       return "No events recorded"
     }
-    return "Last event \(FBCollectionInformation.oneLineDescription(from: lastEvent))"
+    return "Last event \(CollectionInformation.oneLineDescription(from: lastEvent))"
   }
 }
 

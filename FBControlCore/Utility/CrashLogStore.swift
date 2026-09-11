@@ -9,7 +9,7 @@ import Foundation
 
 private let FBCrashLogAppeared = NSNotification.Name("FBCrashLogAppeared")
 
-public final class FBCrashLogStore {
+public final class CrashLogStore {
 
   private let directories: [String]
   private let logger: any FBControlCoreLogger

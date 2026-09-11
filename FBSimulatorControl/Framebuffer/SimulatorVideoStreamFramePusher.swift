@@ -246,11 +246,11 @@ final class SimulatorVideoStreamFramePusher_VideoToolbox: SimulatorVideoStreamFr
   /// The encoded-sample sink for `.compressed` output; nil for MJPEG/Minicap, which write the JPEG
   /// block buffer directly to `consumer` in the encode handler.
   let encodedSampleConsumer: EncodedSampleConsumer?
-  let timedMetadataWriter: (any FBVideoStreamTimedMetadataWriter)?
+  let timedMetadataWriter: (any VideoStreamTimedMetadataWriter)?
   let consumer: any FBDataConsumer
   let logger: any FBControlCoreLogger
-  private let mjpegFrameWriter = FBMJPEGFrameWriter()
-  private let minicapFrameWriter = FBMinicapFrameWriter()
+  private let mjpegFrameWriter = MJPEGFrameWriter()
+  private let minicapFrameWriter = MinicapFrameWriter()
 
   var compressionSession: VTCompressionSession?
   var scaledPixelBufferPool: CVPixelBufferPool?
@@ -281,7 +281,7 @@ final class SimulatorVideoStreamFramePusher_VideoToolbox: SimulatorVideoStreamFr
     consumer: any FBDataConsumer,
     outputMode: VideoToolboxOutputMode,
     encodedSampleConsumer: EncodedSampleConsumer?,
-    timedMetadataWriter: (any FBVideoStreamTimedMetadataWriter)?,
+    timedMetadataWriter: (any VideoStreamTimedMetadataWriter)?,
     logger: any FBControlCoreLogger
   ) {
     self.configuration = configuration

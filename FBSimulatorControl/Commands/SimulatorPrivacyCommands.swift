@@ -42,13 +42,13 @@ extension SimulatorPrivacyError: LocalizedError {
     case let .noBundleIDsToGrant(services):
       return "Cannot approve \(services) since no bundle ids were provided"
     case let .unhandledGrantServices(services):
-      return "Cannot approve \(FBCollectionInformation.oneLineDescription(from: Array(services))) since there is no handling of it"
+      return "Cannot approve \(CollectionInformation.oneLineDescription(from: Array(services))) since there is no handling of it"
     case let .noServicesToRevoke(bundleIDs):
       return "Cannot revoke any services for \(bundleIDs) since no services were provided"
     case let .noBundleIDsToRevoke(services):
       return "Cannot revoke \(services) since no bundle ids were provided"
     case let .unhandledRevokeServices(services):
-      return "Cannot revoke \(FBCollectionInformation.oneLineDescription(from: Array(services))) since there is no handling of it"
+      return "Cannot revoke \(CollectionInformation.oneLineDescription(from: Array(services))) since there is no handling of it"
     case let .emptyScheme(operation):
       return "Empty scheme provided to \(operation)"
     case let .emptyBundleIDs(operation):
@@ -357,7 +357,7 @@ public struct SimulatorPrivacyCommands {
 
   private static func runSqliteCommand(onDatabase databasePath: String, arguments: [String], logger: (any FBControlCoreLogger)?) async throws -> String {
     let allArguments = [databasePath] + arguments
-    logger?.log("Running sqlite3 \(FBCollectionInformation.oneLineDescription(from: allArguments))")
+    logger?.log("Running sqlite3 \(CollectionInformation.oneLineDescription(from: allArguments))")
     let result = try await Subprocess(executable: "/usr/bin/sqlite3", arguments: allArguments)
       .run(exitPolicy: .mustExit([0, 1]), logger: logger)
     try result.checkExitedCleanly { code in

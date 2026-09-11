@@ -9,7 +9,7 @@ import Foundation
 import ObjectiveC
 
 /// The ways instantiating a runtime-resolved class can fail.
-public enum FBObjCRuntimeClassError: Error, LocalizedError {
+public enum ObjCRuntimeClassError: Error, LocalizedError {
   /// The instance could not be allocated, so no initializer was ever sent.
   case allocationFailed(className: String)
   /// The designated initializer raised an `NSException` instead of returning.
@@ -34,7 +34,7 @@ public enum FBObjCRuntimeClassError: Error, LocalizedError {
  process fails to launch once Apple moves it. `instantiate` routes the initializer send through
  `FBObjCExceptionGuard`, since an `NSException` unwinding through a Swift frame aborts the process.
  */
-public struct FBObjCRuntimeClass {
+public struct ObjCRuntimeClass {
 
   /// The name the class was resolved under.
   public let name: String
@@ -75,7 +75,7 @@ public struct FBObjCRuntimeClass {
     // Unwrapped rather than bridged: `Optional.none as AnyObject` boxes into a non-nil `NSNull`, so a
     // failed allocation would go on to be messaged and be reported as a raising initializer.
     guard let instance = class_createInstance(cls, 0) else {
-      throw FBObjCRuntimeClassError.allocationFailed(className: name)
+      throw ObjCRuntimeClassError.allocationFailed(className: name)
     }
     let allocated = unsafeBitCast(instance as AnyObject, to: Messaging.self)
     let initialized: AnyObject?
@@ -85,10 +85,10 @@ public struct FBObjCRuntimeClass {
       // A method in the `init` family consumes its receiver, so a raise leaves the allocation owned
       // by an initializer that never returned. Nothing releases it and one object leaks — the
       // deliberate trade against running `dealloc` over ivars that were never set.
-      throw FBObjCRuntimeClassError.initializerRaised(className: name, underlying: error)
+      throw ObjCRuntimeClassError.initializerRaised(className: name, underlying: error)
     }
     guard let initialized else {
-      throw FBObjCRuntimeClassError.initializerReturnedNil(className: name)
+      throw ObjCRuntimeClassError.initializerReturnedNil(className: name)
     }
     return initialized
   }

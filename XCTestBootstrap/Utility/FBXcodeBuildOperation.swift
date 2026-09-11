@@ -131,7 +131,7 @@ public final class FBXcodeBuildOperation {
       logger.log("No processes for \(udid) to terminate")
       return []
     }
-    logger.log("Terminating abandoned xcodebuild processes \(FBCollectionInformation.oneLineDescription(from: processes))")
+    logger.log("Terminating abandoned xcodebuild processes \(CollectionInformation.oneLineDescription(from: processes))")
     let strategy = FBProcessTerminationStrategy.strategy(withProcessFetcher: processFetcher, workQueue: queue, logger: logger)
     _ = try await bridgeFBFutures(processes.map { strategy.killProcessIdentifier($0.processIdentifier) })
     return processes

@@ -24,14 +24,14 @@ protocol EncodedSampleConsumer: AnyObject {
 // MARK: - DataConsumerEncodedSampleConsumer
 
 /// The streaming `EncodedSampleConsumer`: byte-frames each encoded sample to an `FBDataConsumer`
-/// through an `FBEncodedFrameWriter` (Annex-B / MPEG-TS / fMP4).
+/// through an `EncodedFrameWriter` (Annex-B / MPEG-TS / fMP4).
 final class DataConsumerEncodedSampleConsumer: EncodedSampleConsumer {
   let consumer: any FBDataConsumer
-  let frameWriter: any FBEncodedFrameWriter
+  let frameWriter: any EncodedFrameWriter
   /// The timed-metadata writer for transports that can carry markers (`fMP4` / `MPEG-TS`).
-  let timedMetadataWriter: (any FBVideoStreamTimedMetadataWriter)?
+  let timedMetadataWriter: (any VideoStreamTimedMetadataWriter)?
 
-  init(consumer: any FBDataConsumer, frameWriter: any FBEncodedFrameWriter, timedMetadataWriter: (any FBVideoStreamTimedMetadataWriter)?) {
+  init(consumer: any FBDataConsumer, frameWriter: any EncodedFrameWriter, timedMetadataWriter: (any VideoStreamTimedMetadataWriter)?) {
     self.consumer = consumer
     self.frameWriter = frameWriter
     self.timedMetadataWriter = timedMetadataWriter

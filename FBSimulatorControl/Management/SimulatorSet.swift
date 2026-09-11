@@ -125,7 +125,7 @@ public final class FBSimulatorSet: FBiOSTargetSet {
   }
 
   public var description: String {
-    FBCollectionInformation.oneLineDescription(from: allSimulators)
+    CollectionInformation.oneLineDescription(from: allSimulators)
   }
 
   public var allTargetInfos: [any FBiOSTargetInfo] {

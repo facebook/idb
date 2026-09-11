@@ -33,7 +33,7 @@ private func wireIndex(_ value: UInt32) -> Data {
 
 /// A provider handing back exactly the images a test names.
 private struct StubDiskImages: DeveloperDiskImageProviding {
-  let availableDiskImages: [FBDeveloperDiskImage]
+  let availableDiskImages: [DeveloperDiskImage]
 }
 
 /// Exercises the `com.apple.dt.fetchsymbols` exchange through `FBDevice`'s public API. Every step
@@ -53,7 +53,7 @@ struct DeviceDebugSymbolsWireTests {
   /// Each symbol operation opens its own connection and mounts first, so the mounter is given
   /// enough identical replies to answer however many times it is asked.
   private func makeDevice() -> FBDevice {
-    let image = FBDeveloperDiskImage(
+    let image = DeveloperDiskImage(
       diskImagePath: "/Images/DeveloperDiskImage-17.0.dmg",
       signature: Data([0x01]),
       version: OperatingSystemVersion(majorVersion: 17, minorVersion: 0, patchVersion: 0),

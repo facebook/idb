@@ -51,7 +51,7 @@ public struct DeviceSocketForwardingCommands {
     remotePort: Int32
   ) async throws {
     var error: NSError?
-    guard let localConsumer = FBFileWriter.asyncWriter(withFileDescriptor: localFileDescriptorOutput, closeOnEndOfFile: false, error: &error) else {
+    guard let localConsumer = FileWriter.asyncWriter(withFileDescriptor: localFileDescriptorOutput, closeOnEndOfFile: false, error: &error) else {
       throw error ?? DeviceSocketForwardingError.fileDescriptorWriterFailed(fileDescriptor: localFileDescriptorOutput)
     }
     try await device.withConnectedDevice(purpose: "Socket Connection") { connectedDevice in
@@ -66,13 +66,13 @@ public struct DeviceSocketForwardingCommands {
         throw DeviceSocketForwardingError.socketDuplicationFailed(message: String(cString: strerror(errno)))
       }
       var writerError: NSError?
-      guard let remoteWriter = FBFileWriter.asyncWriter(withFileDescriptor: writerDescriptor, closeOnEndOfFile: true, error: &writerError) else {
+      guard let remoteWriter = FileWriter.asyncWriter(withFileDescriptor: writerDescriptor, closeOnEndOfFile: true, error: &writerError) else {
         close(writerDescriptor)
         close(localSocket)
         throw writerError ?? DeviceSocketForwardingError.socketWriterFailed(socket: localSocket)
       }
-      let remoteReader = FBFileReader.reader(withFileDescriptor: localSocket, closeOnEndOfFile: false, consumer: localConsumer, logger: nil)
-      let inputReader = FBFileReader.reader(withFileDescriptor: localFileDescriptorInput, closeOnEndOfFile: false, consumer: remoteWriter, logger: nil)
+      let remoteReader = FileReader.reader(withFileDescriptor: localSocket, closeOnEndOfFile: false, consumer: localConsumer, logger: nil)
+      let inputReader = FileReader.reader(withFileDescriptor: localFileDescriptorInput, closeOnEndOfFile: false, consumer: remoteWriter, logger: nil)
       do {
         try await bridgeFBFutureVoid(remoteReader.startReading())
         try await bridgeFBFutureVoid(inputReader.startReading())
@@ -95,9 +95,9 @@ public struct DeviceSocketForwardingCommands {
   // outbound bytes flush before responses stop being read; its channel closes
   // its own duplicated descriptor. Reader drains are time-bounded.
   private static func stopForwarding(
-    inputReader: FBFileReader,
-    remoteReader: FBFileReader,
-    remoteWriter: FBDataConsumer & FBDataConsumerLifecycle,
+    inputReader: FileReader,
+    remoteReader: FileReader,
+    remoteWriter: FBDataConsumer & DataConsumerLifecycle,
     localSocket: Int32,
     logger: (any FBControlCoreLogger)?
   ) async {

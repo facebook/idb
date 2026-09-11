@@ -8,7 +8,7 @@
 import Foundation
 
 @objc
-public final class FBCollectionOperations: NSObject {
+public final class CollectionOperations: NSObject {
 
   @objc(arrayFromIndices:)
   public class func array(from indices: IndexSet) -> [NSNumber] {

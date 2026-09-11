@@ -9,13 +9,13 @@ import Foundation
 
 public protocol DeveloperDiskImageCommands: AnyObject {
 
-  func mountedDiskImages() async throws -> [FBDeveloperDiskImage]
+  func mountedDiskImages() async throws -> [DeveloperDiskImage]
 
-  func mountDiskImage(_ diskImage: FBDeveloperDiskImage) async throws -> FBDeveloperDiskImage
+  func mountDiskImage(_ diskImage: DeveloperDiskImage) async throws -> DeveloperDiskImage
 
-  func unmountDiskImage(_ diskImage: FBDeveloperDiskImage) async throws
+  func unmountDiskImage(_ diskImage: DeveloperDiskImage) async throws
 
-  func mountableDiskImages() -> [FBDeveloperDiskImage]
+  func mountableDiskImages() -> [DeveloperDiskImage]
 
-  func ensureMounted() async throws -> FBDeveloperDiskImage
+  func ensureMounted() async throws -> DeveloperDiskImage
 }

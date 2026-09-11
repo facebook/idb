@@ -101,7 +101,7 @@ final class AccessibilityElement {
     try await dispatcher.performSerialized {
       let actionNames = element.axActionNames()
       guard actionNames.contains("AXPress") else {
-        throw AccessibilityError.pressUnsupported(supportedActions: FBCollectionInformation.oneLineDescription(from: actionNames))
+        throw AccessibilityError.pressUnsupported(supportedActions: CollectionInformation.oneLineDescription(from: actionNames))
       }
       guard element.axPerformPress() else {
         throw AccessibilityError.pressFailed
@@ -182,7 +182,7 @@ final class AccessibilityElement {
     }
     assert(!closed, "Cannot transfer ownership from a closed element")
     guard let simulator else {
-      throw FBWeakTargetError.simulator
+      throw WeakTargetError.simulator
     }
     let newHandle = AccessibilityElement(
       element: match.found, request: request, dispatcher: dispatcher, simulator: simulator, rootBounds: match.rootBounds

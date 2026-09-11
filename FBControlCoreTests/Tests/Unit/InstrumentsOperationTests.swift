@@ -8,7 +8,7 @@
 @testable import FBControlCore
 import XCTest
 
-final class FBInstrumentsOperationTests: XCTestCase {
+final class InstrumentsOperationTests: XCTestCase {
 
   // MARK: - Lifecycle Markers
 
@@ -52,7 +52,7 @@ final class FBInstrumentsOperationTests: XCTestCase {
   func testPostProcess_WhenArgumentsAreNil_ReturnsTheInputTraceFileWithoutSpawning() async throws {
     let traceFile = URL(fileURLWithPath: "/tmp/does-not-need-to-exist.trace")
 
-    let result = try await FBInstrumentsOperation.postProcess(
+    let result = try await InstrumentsOperation.postProcess(
       arguments: nil, traceFile: traceFile, queue: .main, logger: nil)
 
     XCTAssertEqual(result, traceFile, "Absent post-processing arguments should pass the trace file straight through")
@@ -61,7 +61,7 @@ final class FBInstrumentsOperationTests: XCTestCase {
   func testPostProcess_WhenArgumentsAreEmpty_ReturnsTheInputTraceFileWithoutSpawning() async throws {
     let traceFile = URL(fileURLWithPath: "/tmp/does-not-need-to-exist.trace")
 
-    let result = try await FBInstrumentsOperation.postProcess(
+    let result = try await InstrumentsOperation.postProcess(
       arguments: [], traceFile: traceFile, queue: .main, logger: nil)
 
     XCTAssertEqual(result, traceFile, "Empty post-processing arguments should pass the trace file straight through")
@@ -102,7 +102,7 @@ final class FBInstrumentsOperationTests: XCTestCase {
   }
 
   func testLaunchArguments_CarryTheDurationInMilliseconds() throws {
-    let arguments = FBInstrumentsOperation.launchArguments(
+    let arguments = InstrumentsOperation.launchArguments(
       udid: "UDID", configuration: configuration(operationDuration: 60), traceFile: "/tmp/trace.trace")
 
     XCTAssertEqual(try durationArgument(in: arguments), "60000")
@@ -112,7 +112,7 @@ final class FBInstrumentsOperationTests: XCTestCase {
   /// value has to format rather than trap - `Int(_: Double)` would abort the companion outright.
   func testLaunchArguments_DoNotTrapOnADurationThatCannotBeAnInteger() throws {
     for duration in [Double.infinity, -Double.infinity, Double.nan, Double.greatestFiniteMagnitude, 1e16] {
-      let arguments = FBInstrumentsOperation.launchArguments(
+      let arguments = InstrumentsOperation.launchArguments(
         udid: "UDID", configuration: configuration(operationDuration: duration), traceFile: "/tmp/trace.trace")
 
       XCTAssertFalse(
@@ -122,7 +122,7 @@ final class FBInstrumentsOperationTests: XCTestCase {
   }
 
   func testLaunchArguments_PreserveSubMillisecondDurations() throws {
-    let arguments = FBInstrumentsOperation.launchArguments(
+    let arguments = InstrumentsOperation.launchArguments(
       udid: "UDID", configuration: configuration(operationDuration: 0.0005), traceFile: "/tmp/trace.trace")
 
     XCTAssertEqual(try durationArgument(in: arguments), "0.5", "truncating to an integer would lose this")

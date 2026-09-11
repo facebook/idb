@@ -337,7 +337,7 @@ final class SimulatorVideoStreamDeliveryTests: XCTestCase {
 
   /// Wait for the byte count to stop growing (two identical samples 100ms apart) so a test can
   /// take a baseline that in-flight attach-time pushes cannot disturb.
-  private func settledCount(of consumer: any FBAccumulatingBuffer) async throws -> Int {
+  private func settledCount(of consumer: any AccumulatingBuffer) async throws -> Int {
     var previous = -1
     for _ in 0..<50 {
       let current = consumer.data().count

@@ -55,28 +55,28 @@ public final class SimulatorLifecycleCommands: LifecycleCommands {
 
   public func boot(_ configuration: FBSimulatorBootConfiguration) async throws {
     guard let simulator = self.simulator else {
-      throw FBWeakTargetError.simulator
+      throw WeakTargetError.simulator
     }
     try await SimulatorBootStrategy.boot(simulator, with: configuration)
   }
 
   public func resolveState(_ state: FBiOSTargetState) async throws {
     guard let simulator = self.simulator else {
-      throw FBWeakTargetError.simulator
+      throw WeakTargetError.simulator
     }
     try await FBiOSTargetResolveState(simulator, state)
   }
 
   public func resolveLeavesState(_ state: FBiOSTargetState) async throws {
     guard let simulator = self.simulator else {
-      throw FBWeakTargetError.simulator
+      throw WeakTargetError.simulator
     }
     try await bridgeFBFutureVoid(CoreSimulatorNotifier.resolveLeavesState(state, for: simulator.device))
   }
 
   public func focus() async throws {
     guard let simulator = self.simulator else {
-      throw FBWeakTargetError.simulator
+      throw WeakTargetError.simulator
     }
     // The Simulator host app (Simulator.app, or DeviceHub.app on Xcode 27+) only displays
     // simulators in the default device set, so 'focus' is unsupported for a custom device set.
@@ -101,7 +101,7 @@ public final class SimulatorLifecycleCommands: LifecycleCommands {
     }
 
     if simulatorApps.count > 1 {
-      throw SimulatorLifecycleError.focusAmbiguous(runningApplications: FBCollectionInformation.oneLineDescription(from: simulatorApps))
+      throw SimulatorLifecycleError.focusAmbiguous(runningApplications: CollectionInformation.oneLineDescription(from: simulatorApps))
     }
 
     if !simulatorApp.activate() {
@@ -127,7 +127,7 @@ public final class SimulatorLifecycleCommands: LifecycleCommands {
 
   public func disconnect(withTimeout timeout: TimeInterval, logger: (any FBControlCoreLogger)?) async throws {
     guard self.simulator != nil else {
-      throw FBWeakTargetError.simulator
+      throw WeakTargetError.simulator
     }
     let date = Date()
     let teardownFuture =
@@ -148,7 +148,7 @@ public final class SimulatorLifecycleCommands: LifecycleCommands {
 
   public func connectToFramebuffer() async throws -> FBFramebuffer {
     guard let simulator = self.simulator else {
-      throw FBWeakTargetError.simulator
+      throw WeakTargetError.simulator
     }
     return try FBFramebuffer.mainScreenSurface(for: simulator, logger: simulator.logger)
   }
@@ -158,7 +158,7 @@ public final class SimulatorLifecycleCommands: LifecycleCommands {
       return hid
     }
     guard let simulator = self.simulator else {
-      throw FBWeakTargetError.simulator
+      throw WeakTargetError.simulator
     }
     let hid = try await FBSimulatorHID(for: simulator)
     self.hid = hid
@@ -167,7 +167,7 @@ public final class SimulatorLifecycleCommands: LifecycleCommands {
 
   public func open(_ url: URL) async throws {
     guard let simulator = self.simulator else {
-      throw FBWeakTargetError.simulator
+      throw WeakTargetError.simulator
     }
     var lastError: NSError?
     for _ in 0...openURLRetries {

@@ -133,7 +133,7 @@ public final class FBXCTestLogger: NSObject, FBControlCoreLogger, @unchecked Sen
     let queue = DispatchQueue.global(qos: .userInitiated)
     let filePath = (logDirectory as NSString).appendingPathComponent(fileName)
 
-    return FBFileWriter.asyncWriter(forFilePath: filePath).onQueue(
+    return FileWriter.asyncWriter(forFilePath: filePath).onQueue(
       queue,
       fmap: { writer -> FBFuture<AnyObject> in
         guard let writer = writer as? FBDataConsumer else {

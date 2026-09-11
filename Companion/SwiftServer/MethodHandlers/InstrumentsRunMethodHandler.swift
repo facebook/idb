@@ -33,7 +33,7 @@ struct InstrumentsRunMethodHandler {
     try await stopInstruments(operation: operation, request: stop, responseStream: responseStream, finishedWriting: _finishedWriting)
   }
 
-  private func startInstrumentsOperation(request: Idb_InstrumentsRunRequest.Start, responseStream: GRPCAsyncResponseStreamWriter<Idb_InstrumentsRunResponse>, finishedWriting: Atomic<Bool>) async throws -> FBInstrumentsOperation {
+  private func startInstrumentsOperation(request: Idb_InstrumentsRunRequest.Start, responseStream: GRPCAsyncResponseStreamWriter<Idb_InstrumentsRunResponse>, finishedWriting: Atomic<Bool>) async throws -> InstrumentsOperation {
     let configuration = instrumentsConfiguration(from: request, storageManager: commandExecutor.storageManager)
 
     let responseWriter = FIFOStreamWriter(stream: responseStream)
@@ -65,7 +65,7 @@ struct InstrumentsRunMethodHandler {
     return operation
   }
 
-  private func stopInstruments(operation: FBInstrumentsOperation, request: Idb_InstrumentsRunRequest.Stop, responseStream: GRPCAsyncResponseStreamWriter<Idb_InstrumentsRunResponse>, finishedWriting: Atomic<Bool>) async throws {
+  private func stopInstruments(operation: InstrumentsOperation, request: Idb_InstrumentsRunRequest.Stop, responseStream: GRPCAsyncResponseStreamWriter<Idb_InstrumentsRunResponse>, finishedWriting: Atomic<Bool>) async throws {
     let traceFile = try await operation.stop()
     let response = Idb_InstrumentsRunResponse.with {
       $0.state = .postProcessing
@@ -73,7 +73,7 @@ struct InstrumentsRunMethodHandler {
     try await responseStream.send(response)
 
     let postProcessArguments = commandExecutor.storageManager.interpolateArgumentReplacements(request.postProcessArguments)
-    let processed = try await FBInstrumentsOperation.postProcess(
+    let processed = try await InstrumentsOperation.postProcess(
       arguments: postProcessArguments,
       traceFile: traceFile,
       queue: BridgeQueues.futureSerialFullfillmentQueue,

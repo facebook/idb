@@ -45,7 +45,7 @@ enum FileReaderError: Error, LocalizedError {
 }
 
 @objc
-public final class FBFileReader: NSObject, FBFileReaderProtocol {
+public final class FileReader: NSObject, FileReaderProtocol {
 
   // MARK: - Private Properties
 
@@ -75,7 +75,7 @@ public final class FBFileReader: NSObject, FBFileReaderProtocol {
     return self.init(fileDescriptor: fileDescriptor, closeOnEndOfFile: closeOnEndOfFile, consumer: consumer, targeting: targeting, queue: createQueue(), logger: logger)
   }
 
-  @objc public static func reader(withFilePath filePath: String, consumer: FBDataConsumer, logger: FBControlCoreLogger?) -> FBFuture<FBFileReader> {
+  @objc public static func reader(withFilePath filePath: String, consumer: FBDataConsumer, logger: FBControlCoreLogger?) -> FBFuture<FileReader> {
     let queue = createQueue()
     return FBFuture<AnyObject>.onQueue(
       queue,
@@ -85,7 +85,7 @@ public final class FBFileReader: NSObject, FBFileReaderProtocol {
           return FBFuture(error: FileReaderError.openFailed(path: filePath, message: String(cString: strerror(errno))))
         }
         return FBFuture(
-          result: FBFileReader(
+          result: FileReader(
             fileDescriptor: fd,
             closeOnEndOfFile: true,
             consumer: FBDataConsumerAdaptor.dispatchDataConsumer(for: consumer),
@@ -94,7 +94,7 @@ public final class FBFileReader: NSObject, FBFileReaderProtocol {
             logger: logger
           ))
       }
-    ).retyped(FBFuture<FBFileReader>.self)
+    ).retyped(FBFuture<FileReader>.self)
   }
 
   required init(fileDescriptor: Int32, closeOnEndOfFile: Bool, consumer: DispatchDataConsumer, targeting: String, queue: DispatchQueue, logger: FBControlCoreLogger?) {

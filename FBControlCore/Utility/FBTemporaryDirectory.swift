@@ -142,8 +142,8 @@ public struct FBTemporaryDirectory: Equatable {
 
   /// Returns the unique file inside each immediate subdirectory of `extractionDirectory`.
   public func files(inSubdirectoriesOf extractionDirectory: URL) throws -> [URL] {
-    let subfolders = try FBStorageUtils.files(inDirectory: extractionDirectory)
-    return try subfolders.map { try FBStorageUtils.findUniqueFile(inDirectory: $0) }
+    let subfolders = try StorageUtils.files(inDirectory: extractionDirectory)
+    return try subfolders.map { try StorageUtils.findUniqueFile(inDirectory: $0) }
   }
 
   private func delete(_ url: URL) {

@@ -21,5 +21,5 @@ typedef NS_ENUM(NSUInteger, FBFileReaderState) {
   FBFileReaderStateFinishedReadingByCancellation = ECANCELED,
 };
 
-// Protocol defined in Swift (FBFileReaderProtocol.swift)
-@protocol FBFileReaderProtocol;
+// Protocol defined in Swift (FileReaderProtocol.swift)
+@protocol FileReaderProtocol;

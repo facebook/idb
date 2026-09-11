@@ -36,7 +36,7 @@ extension WeakFrameworkError: LocalizedError {
 }
 
 @objc
-public final class FBWeakFramework: NSObject {
+public final class WeakFramework: NSObject {
 
   @objc public let name: String
   private let basePath: String
@@ -47,8 +47,8 @@ public final class FBWeakFramework: NSObject {
   // MARK: - Factory Methods
 
   @objc(xcodeFrameworkWithRelativePath:requiredClassNames:)
-  public class func xcodeFramework(withRelativePath relativePath: String, requiredClassNames: [String]) -> FBWeakFramework {
-    FBWeakFramework(
+  public class func xcodeFramework(withRelativePath relativePath: String, requiredClassNames: [String]) -> WeakFramework {
+    WeakFramework(
       basePath: FBXcodeConfiguration.developerDirectory,
       relativePath: relativePath,
       requiredClassNames: requiredClassNames,
@@ -57,8 +57,8 @@ public final class FBWeakFramework: NSObject {
   }
 
   @objc(frameworkWithPath:requiredClassNames:rootPermitted:)
-  public class func framework(withPath absolutePath: String, requiredClassNames: [String], rootPermitted: Bool) -> FBWeakFramework {
-    FBWeakFramework(
+  public class func framework(withPath absolutePath: String, requiredClassNames: [String], rootPermitted: Bool) -> WeakFramework {
+    WeakFramework(
       basePath: absolutePath,
       relativePath: "",
       requiredClassNames: requiredClassNames,

@@ -33,7 +33,7 @@ struct XctraceRecordMethodHandler {
     try await stopXCTrace(operation: operation, request: stop, responseStream: responseStream, finishedWriting: _finishedWriting)
   }
 
-  private func startXCTraceOperation(request start: Idb_XctraceRecordRequest.Start, responseStream: GRPCAsyncResponseStreamWriter<Idb_XctraceRecordResponse>, finishedWriting: Atomic<Bool>) async throws -> FBXCTraceRecordOperation {
+  private func startXCTraceOperation(request start: Idb_XctraceRecordRequest.Start, responseStream: GRPCAsyncResponseStreamWriter<Idb_XctraceRecordResponse>, finishedWriting: Atomic<Bool>) async throws -> XCTraceRecordOperation {
     let config = xcTraceRecordConfiguration(from: start)
 
     let responseWriter = FIFOStreamWriter(stream: responseStream)
@@ -65,7 +65,7 @@ struct XctraceRecordMethodHandler {
     return operation
   }
 
-  private func stopXCTrace(operation: FBXCTraceRecordOperation, request stop: Idb_XctraceRecordRequest.Stop, responseStream: GRPCAsyncResponseStreamWriter<Idb_XctraceRecordResponse>, finishedWriting: Atomic<Bool>) async throws {
+  private func stopXCTrace(operation: XCTraceRecordOperation, request stop: Idb_XctraceRecordRequest.Stop, responseStream: GRPCAsyncResponseStreamWriter<Idb_XctraceRecordResponse>, finishedWriting: Atomic<Bool>) async throws {
     let stopTimeout = stop.timeout != 0 ? stop.timeout : DefaultXCTraceRecordStopTimeout
     _ = try await operation.stop(withTimeout: stopTimeout)
     let response = Idb_XctraceRecordResponse.with {
@@ -73,7 +73,7 @@ struct XctraceRecordMethodHandler {
     }
     try await responseStream.send(response)
 
-    let processed = try await FBInstrumentsOperation.postProcess(
+    let processed = try await InstrumentsOperation.postProcess(
       arguments: stop.args,
       traceFile: operation.traceDir,
       queue: BridgeQueues.miscEventReaderQueue,

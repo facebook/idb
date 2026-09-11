@@ -257,7 +257,7 @@ static void final_resolveUntil(FBMutableFuture *final, dispatch_queue_t queue, F
 {
   NSParameterAssert(timeout > 0);
 
-  FBFuture *timeoutFuture = [[[FBControlCoreError
+  FBFuture *timeoutFuture = [[[ControlCoreError
                                describe:[NSString stringWithFormat:@"Timed out after %f seconds waiting for %@", timeout, description]]
                               failFuture]
                              delay:timeout];
@@ -296,7 +296,7 @@ static void final_resolveUntil(FBMutableFuture *final, dispatch_queue_t queue, F
   }
 
   FBMutableFuture *compositeFuture = FBMutableFuture.future;
-  NSMutableArray *results = [[FBCollectionOperations arrayWithObject:NSNull.null count:futures.count] mutableCopy];
+  NSMutableArray *results = [[CollectionOperations arrayWithObject:NSNull.null count:futures.count] mutableCopy];
   dispatch_queue_t queue = dispatch_queue_create("com.facebook.fbcontrolcore.future.composite", DISPATCH_QUEUE_SERIAL);
   __block NSUInteger remaining = futures.count;
 
@@ -621,7 +621,7 @@ static void final_resolveUntil(FBMutableFuture *final, dispatch_queue_t queue, F
                    if (!error) {
                      return future;
                    }
-                   return (FBFuture *)[[[FBControlCoreError
+                   return (FBFuture *)[[[ControlCoreError
                                          describe:description]
                                         causedBy:error]
                                        failFuture];

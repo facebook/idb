@@ -32,7 +32,7 @@ enum ArchitectureAdapterError: Error, LocalizedError {
   public var errorDescription: String? {
     switch self {
     case let .noCompatibleArchitecture(requested, host):
-      return "Could not select an architecture from \(FBCollectionInformation.oneLineDescription(from: requested)) compatible with \(FBCollectionInformation.oneLineDescription(from: host))"
+      return "Could not select an architecture from \(CollectionInformation.oneLineDescription(from: requested)) compatible with \(CollectionInformation.oneLineDescription(from: host))"
     case let .timedOut(seconds, waitingFor):
       return "Timed out after \(String(format: "%.1f", seconds))s waiting for \(waitingFor)"
     case let .verificationFailed(architecture, binary):

@@ -29,7 +29,7 @@ extension XCTraceError: LocalizedError {
   }
 }
 
-public final class FBXCTraceRecordOperation {
+public final class XCTraceRecordOperation {
 
   public let task: FBSubprocess<AnyObject, AnyObject, AnyObject>
   public let queue: DispatchQueue
@@ -45,7 +45,7 @@ public final class FBXCTraceRecordOperation {
     self.logger = logger
   }
 
-  public class func operation(with target: any FBiOSTarget, configuration: FBXCTraceRecordConfiguration, logger: FBControlCoreLogger) async throws -> FBXCTraceRecordOperation {
+  public class func operation(with target: any FBiOSTarget, configuration: FBXCTraceRecordConfiguration, logger: FBControlCoreLogger) async throws -> XCTraceRecordOperation {
     let queue = DispatchQueue(label: "com.facebook.fbcontrolcore.xctrace")
     let traceDir = (target.auxillaryDirectory as NSString).appendingPathComponent("xctrace-" + UUID().uuidString)
     do {
@@ -82,7 +82,7 @@ public final class FBXCTraceRecordOperation {
         arguments.append(contentsOf: launchArgs)
       }
     }
-    logger.log("Starting xctrace with arguments: \(FBCollectionInformation.oneLineDescription(from: arguments))")
+    logger.log("Starting xctrace with arguments: \(CollectionInformation.oneLineDescription(from: arguments))")
 
     let xctracePath = try Self.xctracePath()
 
@@ -106,7 +106,7 @@ public final class FBXCTraceRecordOperation {
         .start())
     logger.log("Started xctrace \(started)")
     let typedTask = started.retyped(FBSubprocess<AnyObject, AnyObject, AnyObject>.self)
-    return FBXCTraceRecordOperation(task: typedTask, traceDir: URL(fileURLWithPath: traceFile), configuration: configuration, queue: queue, logger: logger)
+    return XCTraceRecordOperation(task: typedTask, traceDir: URL(fileURLWithPath: traceFile), configuration: configuration, queue: queue, logger: logger)
   }
 
   /// Stops the xctrace recording and returns the trace directory URL on success.

@@ -16,7 +16,7 @@ extension DevicectlError: LocalizedError {
   public var errorDescription: String? {
     switch self {
     case let .commandFailed(exitCode, arguments, stdOut, stdErr):
-      return "devicectl failed with exit code \(exitCode)\narguments: \(FBCollectionInformation.oneLineDescription(from: arguments))\n\(stdOut)\n\(stdErr)"
+      return "devicectl failed with exit code \(exitCode)\narguments: \(CollectionInformation.oneLineDescription(from: arguments))\n\(stdOut)\n\(stdErr)"
     }
   }
 }

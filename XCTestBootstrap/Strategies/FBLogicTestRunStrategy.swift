@@ -11,13 +11,13 @@ import Foundation
 private let EndOfFileFromStopReadingTimeout: TimeInterval = 5
 
 private final class LogicTestRunOutputs {
-  let stdOutConsumer: FBDataConsumer & FBDataConsumerLifecycle
-  let stdErrConsumer: FBDataConsumer & FBDataConsumerLifecycle
-  let stdErrBuffer: FBConsumableBuffer
-  let shimConsumer: FBDataConsumer & FBDataConsumerLifecycle
-  let shimOutput: FBProcessFileOutput
+  let stdOutConsumer: FBDataConsumer & DataConsumerLifecycle
+  let stdErrConsumer: FBDataConsumer & DataConsumerLifecycle
+  let stdErrBuffer: ConsumableBuffer
+  let shimConsumer: FBDataConsumer & DataConsumerLifecycle
+  let shimOutput: ProcessFileOutput
 
-  init(stdOutConsumer: FBDataConsumer & FBDataConsumerLifecycle, stdErrConsumer: FBDataConsumer & FBDataConsumerLifecycle, stdErrBuffer: FBConsumableBuffer, shimConsumer: FBDataConsumer & FBDataConsumerLifecycle, shimOutput: FBProcessFileOutput) {
+  init(stdOutConsumer: FBDataConsumer & DataConsumerLifecycle, stdErrConsumer: FBDataConsumer & DataConsumerLifecycle, stdErrBuffer: ConsumableBuffer, shimConsumer: FBDataConsumer & DataConsumerLifecycle, shimOutput: ProcessFileOutput) {
     self.stdOutConsumer = stdOutConsumer
     self.stdErrConsumer = stdErrConsumer
     self.stdErrBuffer = stdErrBuffer
@@ -341,9 +341,9 @@ public final class FBLogicTestRunStrategy: XCTestRunner {
         fmap: { outputsObj -> FBFuture<AnyObject> in
           let outputsArray = outputsObj as [AnyObject]
           guard outputsArray.count == 3,
-            let resolvedStdOut = outputsArray[0] as? FBDataConsumer & FBDataConsumerLifecycle,
-            let resolvedStdErr = outputsArray[1] as? FBDataConsumer & FBDataConsumerLifecycle,
-            let resolvedShim = outputsArray[2] as? FBDataConsumer & FBDataConsumerLifecycle
+            let resolvedStdOut = outputsArray[0] as? FBDataConsumer & DataConsumerLifecycle,
+            let resolvedStdErr = outputsArray[1] as? FBDataConsumer & DataConsumerLifecycle,
+            let resolvedShim = outputsArray[2] as? FBDataConsumer & DataConsumerLifecycle
           else {
             return FBFuture(error: LogicTestRunError.missingOutputConsumers(result: String(describing: outputsArray)))
           }
@@ -362,7 +362,7 @@ public final class FBLogicTestRunStrategy: XCTestRunner {
     let reporter = self.reporter
     let timeout = configuration.testTimeout
 
-    logger.log("Launching xctest process with arguments \(FBCollectionInformation.oneLineDescription(from: [launchPath] + arguments)), environment \(FBCollectionInformation.oneLineDescription(from: environment))")
+    logger.log("Launching xctest process with arguments \(CollectionInformation.oneLineDescription(from: [launchPath] + arguments)), environment \(CollectionInformation.oneLineDescription(from: environment))")
 
     let stdOut = FBProcessOutput<AnyObject>(for: outputs.stdOutConsumer)
     let stdErr = FBProcessOutput<AnyObject>(for: outputs.stdErrConsumer)

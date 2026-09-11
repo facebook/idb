@@ -15,7 +15,7 @@ struct FBControlCoreFrameworkLoaderErrorTests {
   @Test("A throwing load surfaces a descriptive error for an unloadable framework")
   func throwingLoadSurfacesADescriptiveError() throws {
     let missingPath = "/var/empty/Nonexistent.framework"
-    let framework = FBWeakFramework.framework(
+    let framework = WeakFramework.framework(
       withPath: missingPath,
       requiredClassNames: ["IDBNonexistentClass"],
       rootPermitted: false

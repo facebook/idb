@@ -84,7 +84,7 @@ struct VideoStreamMethodHandler {
       }
     } else {
       var writeError: NSError?
-      guard let writer = FBFileWriter.syncWriter(forFilePath: start.filePath, error: &writeError) else {
+      guard let writer = FileWriter.syncWriter(forFilePath: start.filePath, error: &writeError) else {
         throw writeError ?? VideoStreamMethodHandlerError.failedToCreateSyncWriter(filePath: start.filePath)
       }
       consumer = writer

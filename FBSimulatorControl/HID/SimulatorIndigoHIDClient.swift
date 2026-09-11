@@ -13,7 +13,7 @@ import Foundation
 /// Informal protocol for messaging the runtime-only `SimDeviceLegacyHIDClient`. The class has moved
 /// between frameworks across Xcodes and is dlopened on demand, so it is never referenced as a Swift
 /// type: that would emit a link-time `_OBJC_CLASS_$_` symbol pinned to one framework. It is looked up
-/// by name, allocated via `FBObjCRuntimeClass`, and messaged via `unsafeBitCast` to this protocol.
+/// by name, allocated via `ObjCRuntimeClass`, and messaged via `unsafeBitCast` to this protocol.
 ///
 /// Every send through this protocol has to be guarded with `FBObjCExceptionGuard`. It lands in
 /// CoreSimulator code that asserts on state this process does not own — a device that has been
@@ -53,9 +53,9 @@ final class SimulatorIndigoHIDClient: @unchecked Sendable {
   /// otherwise there is nothing for the lookup to find. Mirrors `SimulatorIndigoHID.init()`.
   static func resolveClientClass(
     loader: FBControlCoreFrameworkLoader = FBSimulatorControlFrameworkLoader.xcodeFrameworks
-  ) throws -> FBObjCRuntimeClass {
+  ) throws -> ObjCRuntimeClass {
     try loader.loadPrivateFrameworks(nil)
-    guard let clientClass = FBObjCRuntimeClass(name: clientClassName) else {
+    guard let clientClass = ObjCRuntimeClass(name: clientClassName) else {
       throw SimulatorHIDError.clientClassUnavailable(className: clientClassName)
     }
     return clientClass
@@ -67,7 +67,7 @@ final class SimulatorIndigoHIDClient: @unchecked Sendable {
   }
 
   /// Allocates and initializes `clientClass` for `device`.
-  convenience init(device: Any, clientClass: FBObjCRuntimeClass) throws {
+  convenience init(device: Any, clientClass: ObjCRuntimeClass) throws {
     var clientError: AnyObject?
     let client: AnyObject
     do {

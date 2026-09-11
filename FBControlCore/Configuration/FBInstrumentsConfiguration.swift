@@ -49,6 +49,6 @@ public struct FBInstrumentsConfiguration: Sendable, CustomStringConvertible {
   }
 
   public var description: String {
-    "Instruments \(templateName) | \(targetApplication) | \(FBCollectionInformation.oneLineDescription(from: appEnvironment)) | \(FBCollectionInformation.oneLineDescription(from: appArguments)) | \(FBCollectionInformation.oneLineDescription(from: toolArguments)) | duration \(timings.operationDuration) | terminate timeout \(timings.terminateTimeout) | launch retry timeout \(timings.launchRetryTimeout) | launch error timeout \(timings.launchErrorTimeout)"
+    "Instruments \(templateName) | \(targetApplication) | \(CollectionInformation.oneLineDescription(from: appEnvironment)) | \(CollectionInformation.oneLineDescription(from: appArguments)) | \(CollectionInformation.oneLineDescription(from: toolArguments)) | duration \(timings.operationDuration) | terminate timeout \(timings.terminateTimeout) | launch retry timeout \(timings.launchRetryTimeout) | launch error timeout \(timings.launchErrorTimeout)"
   }
 }

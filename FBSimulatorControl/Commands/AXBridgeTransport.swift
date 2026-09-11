@@ -102,7 +102,7 @@ actor AXBridgePersistentTransport: AXBridgeTransport {
     scope: AXBridgeServiceScope
   ) async throws -> AXBridgeConnection {
     guard let simulator else {
-      throw FBWeakTargetError.simulator
+      throw WeakTargetError.simulator
     }
     guard let helperPath = simulator.frameworkBridgePath else {
       throw AXBridgeError.bridgeUnavailable

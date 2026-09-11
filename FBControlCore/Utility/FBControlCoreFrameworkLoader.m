@@ -15,12 +15,12 @@
 
 #pragma mark Initializers
 
-+ (instancetype)loaderWithName:(NSString *)frameworkName frameworks:(NSArray<FBWeakFramework *> *)frameworks
++ (instancetype)loaderWithName:(NSString *)frameworkName frameworks:(NSArray<WeakFramework *> *)frameworks
 {
   return [[self alloc] initWithName:frameworkName frameworks:frameworks];
 }
 
-- (instancetype)initWithName:(NSString *)frameworkName frameworks:(NSArray<FBWeakFramework *> *)frameworks
+- (instancetype)initWithName:(NSString *)frameworkName frameworks:(NSArray<WeakFramework *> *)frameworks
 {
   self = [super init];
   if (!self) {
@@ -50,12 +50,12 @@
 
 #pragma mark Private
 
-+ (BOOL)loadPrivateFrameworks:(NSArray<FBWeakFramework *> *)weakFrameworks logger:(id<FBControlCoreLogger>)logger error:(NSError **)error
++ (BOOL)loadPrivateFrameworks:(NSArray<WeakFramework *> *)weakFrameworks logger:(id<FBControlCoreLogger>)logger error:(NSError **)error
 {
-  for (FBWeakFramework *framework in weakFrameworks) {
+  for (WeakFramework *framework in weakFrameworks) {
     NSError *innerError = nil;
     if (![framework loadWithLogger:logger error:&innerError]) {
-      return [FBControlCoreError failBoolWithError:innerError errorOut:error];
+      return [ControlCoreError failBoolWithError:innerError errorOut:error];
     }
   }
 
@@ -63,7 +63,7 @@
   if (frameworkNames) {
     [logger.debug log:
      [NSString stringWithFormat:@"Loaded All Private Frameworks %@",
-      [FBCollectionInformation oneLineDescriptionFromArray:frameworkNames atKeyPath:@"lastPathComponent"]]
+      [CollectionInformation oneLineDescriptionFromArray:frameworkNames atKeyPath:@"lastPathComponent"]]
     ];
   }
 

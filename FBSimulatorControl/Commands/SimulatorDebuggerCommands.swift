@@ -90,7 +90,7 @@ public final class SimulatorDebuggerCommands: DebuggerCommands {
 
   public func launchDebugServer(forHostApplication application: FBBundleDescriptor, port: in_port_t) async throws -> any FBDebugServer {
     guard let simulator = self.simulator else {
-      throw FBWeakTargetError.simulator
+      throw WeakTargetError.simulator
     }
     let configuration = FBApplicationLaunchConfiguration(
       bundleID: application.identifier,

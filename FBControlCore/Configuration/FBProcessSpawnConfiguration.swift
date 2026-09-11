@@ -48,6 +48,6 @@ public final class FBProcessSpawnConfiguration: ProcessLaunchConfiguration {
   }
 
   public override var description: String {
-    "Process Launch \(launchPath) | Arguments \(FBCollectionInformation.oneLineDescription(from: arguments)) | Environment \(FBCollectionInformation.oneLineDescription(from: environment)) | Output \(io)"
+    "Process Launch \(launchPath) | Arguments \(CollectionInformation.oneLineDescription(from: arguments)) | Environment \(CollectionInformation.oneLineDescription(from: environment)) | Output \(io)"
   }
 }

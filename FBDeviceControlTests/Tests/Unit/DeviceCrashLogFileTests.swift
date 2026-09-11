@@ -13,7 +13,7 @@ import Testing
 private let CrashReportMoverService = "com.apple.crashreportmover"
 private let CrashReportCopyService = "com.apple.crashreportcopymobile"
 
-/// A crash report shaped enough for `FBCrashLogStore` to parse an identifier out of.
+/// A crash report shaped enough for `CrashLogStore` to parse an identifier out of.
 private let crashReport = """
   Incident Identifier: 0BADF00D-0000-0000-0000-000000000001
   Hardware Model:      iPhone16,1
@@ -47,7 +47,7 @@ struct DeviceCrashLogFileTests {
 
     // A store rooted somewhere disposable, and the scripted AFC table in place of MobileDevice's.
     let storeDirectory = (NSTemporaryDirectory() as NSString).appendingPathComponent(UUID().uuidString)
-    let store = FBCrashLogStore.store(forDirectories: [storeDirectory], logger: device.logger)
+    let store = CrashLogStore.store(forDirectories: [storeDirectory], logger: device.logger)
     device.commandCache.register(
       DeviceCrashLogCommands(device: device, store: store, afcCalls: afc.calls),
       as: DeviceCrashLogCommands.self)

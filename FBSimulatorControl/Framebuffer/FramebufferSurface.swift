@@ -205,6 +205,6 @@ enum FramebufferSurfaceLocator {
       return SimDisplayRenderableSurface(surface: fallback, logger: logger)
     }
     throw FramebufferError.mainScreenSurfaceNotFound(
-      description: "Could not find the Main Screen Surface for Clients \(FBCollectionInformation.oneLineDescription(from: ports)) in \(ioClient)")
+      description: "Could not find the Main Screen Surface for Clients \(CollectionInformation.oneLineDescription(from: ports)) in \(ioClient)")
   }
 }

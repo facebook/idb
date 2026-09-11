@@ -182,7 +182,7 @@ public final class FBAFCConnection {
     }
 
     _ = calls.DirectoryClose(connection, directoryRef)
-    logger?.log("Contents of directory \(path) \(FBCollectionInformation.oneLineDescription(from: entries))")
+    logger?.log("Contents of directory \(path) \(CollectionInformation.oneLineDescription(from: entries))")
     return entries
   }
 
@@ -393,7 +393,7 @@ public final class FBAFCConnection {
   private func errorMessage(code: Int32) -> String {
     let name = calls.ErrorString(code).map { String(cString: $0) } ?? ""
     let info = calls.ConnectionCopyLastErrorInfo(connection)?.takeRetainedValue() as? [String: Any] ?? [:]
-    return "\(name) \(FBCollectionInformation.oneLineDescription(from: info))"
+    return "\(name) \(CollectionInformation.oneLineDescription(from: info))"
   }
 }
 

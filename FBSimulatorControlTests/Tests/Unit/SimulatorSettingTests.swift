@@ -82,8 +82,8 @@ final class SimulatorSettingTests: XCTestCase {
   }
 
   func testWeakTargetErrorMessage() {
-    XCTAssertEqual(FBWeakTargetError.deallocated("Simulator").errorDescription, "Simulator deallocated")
-    XCTAssertEqual(FBWeakTargetError.simulator.errorDescription, "Simulator deallocated")
+    XCTAssertEqual(WeakTargetError.deallocated("Simulator").errorDescription, "Simulator deallocated")
+    XCTAssertEqual(WeakTargetError.simulator.errorDescription, "Simulator deallocated")
   }
 
   func testCuratedNames() {

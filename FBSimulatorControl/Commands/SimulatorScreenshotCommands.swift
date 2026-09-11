@@ -11,7 +11,7 @@ import Foundation
 
 /// Everything after the capture itself -- resolving the request against the screen, cropping, scaling,
 /// encoding -- is shared with the other targets and reports `FBScreenshotGeometryError` or
-/// `FBScreenshotRenderError`.
+/// `ScreenshotRenderError`.
 public enum SimulatorScreenshotError: Error {
   case captureFailed
 }
@@ -42,14 +42,14 @@ public final class SimulatorScreenshotCommands: ScreenshotCommands {
   /// left here is to encode what comes back.
   public func take(configuration: FBScreenshotConfiguration) async throws -> FBScreenshotResult {
     guard let simulator = self.simulator else {
-      throw FBWeakTargetError.simulator
+      throw WeakTargetError.simulator
     }
     let image = try await connectToImage()
     let screenScale = simulator.screenInfo.map { Double($0.scale) }
     guard let captured = try await image.image(configuration: configuration, screenScale: screenScale) else {
       throw SimulatorScreenshotError.captureFailed
     }
-    return try FBScreenshotRenderer.render(
+    return try ScreenshotRenderer.render(
       transformed: captured.image,
       sourceSize: captured.sourceSize,
       encoding: configuration.encoding,
@@ -62,7 +62,7 @@ public final class SimulatorScreenshotCommands: ScreenshotCommands {
       return image
     }
     guard let simulator = self.simulator else {
-      throw FBWeakTargetError.simulator
+      throw WeakTargetError.simulator
     }
     let framebuffer = try await simulator.lifecycle.connectToFramebuffer()
     let image = SimulatorImage(framebuffer: framebuffer, logger: simulator.logger)

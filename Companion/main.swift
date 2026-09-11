@@ -608,7 +608,7 @@ private func archName() -> String {
 private func logStartupInfo(_ logger: FBIDBLogger) {
   logger.info().log("IDB Companion Built at \(kBuildDate) \(kBuildTime)")
   logger.info().log("IDB Companion architecture \(archName())")
-  logger.info().log("Invoked with args=\(FBCollectionInformation.oneLineDescription(from: ProcessInfo.processInfo.arguments))")
+  logger.info().log("Invoked with args=\(CollectionInformation.oneLineDescription(from: ProcessInfo.processInfo.arguments))")
 }
 
 private func idbMain() async -> Int32 {

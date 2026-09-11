@@ -9,7 +9,7 @@
 
 #import <FBControlCore/FBSubprocess.h>
 
-@protocol FBAccumulatingBuffer;
+@protocol AccumulatingBuffer;
 @protocol FBControlCoreLogger;
 @protocol FBDataConsumer;
 
@@ -173,7 +173,7 @@
  @param logger the logger to use for logging lines.
  @return the receiver, for chaining.
  */
-- (nonnull FBProcessBuilder<StdInType, id<FBAccumulatingBuffer>, StdErrType> *)withStdOutToLoggerAndErrorMessage:(nonnull id<FBControlCoreLogger>)logger;
+- (nonnull FBProcessBuilder<StdInType, id<AccumulatingBuffer>, StdErrType> *)withStdOutToLoggerAndErrorMessage:(nonnull id<FBControlCoreLogger>)logger;
 
 #pragma mark stderr
 
@@ -236,7 +236,7 @@
  @param logger the logger to use for logging lines.
  @return the receiver, for chaining.
  */
-- (nonnull FBProcessBuilder<StdInType, StdOutType, id<FBAccumulatingBuffer>> *)withStdErrToLoggerAndErrorMessage:(nonnull id<FBControlCoreLogger>)logger;
+- (nonnull FBProcessBuilder<StdInType, StdOutType, id<AccumulatingBuffer>> *)withStdErrToLoggerAndErrorMessage:(nonnull id<FBControlCoreLogger>)logger;
 
 #pragma mark Logging
 

@@ -52,7 +52,7 @@ public final class DeviceDiagnosticInformationCommands: FBiOSTargetCommand {
       SpringboardServicesClient.serviceName: springboard,
       ManagedConfigClient.serviceName: mobileConfig,
     ]
-    return FBCollectionOperations.recursiveFilteredJSONSerializableRepresentation(of: merged) as [String: Any]
+    return CollectionOperations.recursiveFilteredJSONSerializableRepresentation(of: merged) as [String: Any]
   }
 
   private func fetchInformationFromDiagnosticsRelay(device: FBDevice) async throws -> Any {
@@ -66,7 +66,7 @@ public final class DeviceDiagnosticInformationCommands: FBiOSTargetCommand {
       guard let diagnostics = result["Diagnostics"] as? [String: Any] else {
         return [:] as [String: Any]
       }
-      return FBCollectionOperations.recursiveFilteredJSONSerializableRepresentation(of: diagnostics) as [String: Any]
+      return CollectionOperations.recursiveFilteredJSONSerializableRepresentation(of: diagnostics) as [String: Any]
     }
   }
 

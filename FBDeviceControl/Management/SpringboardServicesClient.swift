@@ -43,7 +43,7 @@ public enum SpringboardServicesError: Error, LocalizedError {
     case .invalidIconLayoutPlist(let path):
       return "Icon layout plist at '\(path)' is not in the expected format"
     case .invalidIconLayoutFile(let filename, let validFilenames):
-      return "\(filename) is not one of \(FBCollectionInformation.oneLineDescription(from: validFilenames))"
+      return "\(filename) is not one of \(CollectionInformation.oneLineDescription(from: validFilenames))"
     case .responseNotADictionary(let response):
       return "Response \(response) is not a dictionary"
     case .missingImageData(let response):

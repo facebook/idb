@@ -47,11 +47,11 @@ extension DeviceFileContainerError: LocalizedError {
     case let .moveOutsideMounts(destination):
       return "\(destination) only moving into mounts is supported."
     case let .notAMountableImage(path, available):
-      return "\(path) is not one of \(FBCollectionInformation.oneLineDescription(from: available))"
+      return "\(path) is not one of \(CollectionInformation.oneLineDescription(from: available))"
     case let .removeOutsideMounts(path):
       return "\(path) cannot be removed, only mounts can be removed"
     case let .notAMountedImage(path, available):
-      return "\(path) is not one of the available mounts \(FBCollectionInformation.oneLineDescription(from: available))"
+      return "\(path) is not one of the available mounts \(CollectionInformation.oneLineDescription(from: available))"
     case let .requiresRootedDevice(operation):
       return "\(operation) not supported on devices, requires a rooted device"
     }
@@ -319,18 +319,18 @@ private class DeviceFileCommands_DiskImages: AsyncFileContainer {
 
   // MARK: - Private
 
-  private var mountableDiskImagesByPath: [String: FBDeveloperDiskImage] {
+  private var mountableDiskImagesByPath: [String: DeveloperDiskImage] {
     let images = commands.mountableDiskImages()
-    var mapping: [String: FBDeveloperDiskImage] = [:]
+    var mapping: [String: DeveloperDiskImage] = [:]
     for image in images {
       mapping[DeviceFileCommands_DiskImages.filePath(for: image)] = image
     }
     return mapping
   }
 
-  private func mountedDiskImages() async throws -> [String: FBDeveloperDiskImage] {
+  private func mountedDiskImages() async throws -> [String: DeveloperDiskImage] {
     let mountedImages = try await commands.mountedDiskImages()
-    var imagesByPath: [String: FBDeveloperDiskImage] = [:]
+    var imagesByPath: [String: DeveloperDiskImage] = [:]
     for image in mountedImages {
       let mountedFilePath = (MountRootPath as NSString).appendingPathComponent(DeviceFileCommands_DiskImages.filePath(for: image))
       imagesByPath[mountedFilePath] = image
@@ -373,7 +373,7 @@ private class DeviceFileCommands_DiskImages: AsyncFileContainer {
     return traversedPaths
   }
 
-  static func filePath(for image: FBDeveloperDiskImage) -> String {
+  static func filePath(for image: DeveloperDiskImage) -> String {
     "\(image.version.majorVersion).\(image.version.minorVersion)/\((image.diskImagePath as NSString).lastPathComponent)"
   }
 }

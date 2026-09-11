@@ -279,7 +279,7 @@
 
 + (id<FBControlCoreLogger>)loggerToFileDescriptor:(int)fileDescriptor closeOnEndOfFile:(BOOL)closeOnEndOfFile
 {
-  id<FBDataConsumer> consumer = [FBFileWriter syncWriterWithFileDescriptor:fileDescriptor closeOnEndOfFile:closeOnEndOfFile];
+  id<FBDataConsumer> consumer = [FileWriter syncWriterWithFileDescriptor:fileDescriptor closeOnEndOfFile:closeOnEndOfFile];
   return [[FBControlCoreLogger_Consumer alloc] initWithConsumer:consumer name:nil dateFormatter:nil];
 }
 

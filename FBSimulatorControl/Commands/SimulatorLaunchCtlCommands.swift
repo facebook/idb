@@ -29,7 +29,7 @@ extension SimulatorLaunchCtlError: LocalizedError {
     case let .noMatchingProcesses(pattern):
       return "No Matching processes for '\(pattern)'"
     case let .multipleMatchingProcesses(pattern, matches):
-      return "Multiple Matching processes for '\(pattern)' \(FBCollectionInformation.oneLineDescription(from: matches))"
+      return "Multiple Matching processes for '\(pattern)' \(CollectionInformation.oneLineDescription(from: matches))"
     case let .insufficientOutput(output):
       return "Insufficient number of lines from output '\(output)'"
     case let .stopFailed(serviceName, _):
@@ -37,9 +37,9 @@ extension SimulatorLaunchCtlError: LocalizedError {
     case let .startFailed(serviceName, _):
       return "Failed to start service '\(serviceName)'"
     case let .malformedListLine(words):
-      return "Output does not have exactly three words: \(FBCollectionInformation.oneLineDescription(from: words))"
+      return "Output does not have exactly three words: \(CollectionInformation.oneLineDescription(from: words))"
     case let .invalidProcessIdentifier(word, words):
-      return "Expected a process identifier as first word, but got \(word) from \(FBCollectionInformation.oneLineDescription(from: words))"
+      return "Expected a process identifier as first word, but got \(word) from \(CollectionInformation.oneLineDescription(from: words))"
     case let .commandFailed(arguments, exitCode, stderr):
       return "launchctl \(arguments.joined(separator: " ")) failed with exit code \(exitCode): \(stderr)"
     }

@@ -83,7 +83,7 @@ final class InstrumentsConsumer: NSObject, FBDataConsumer {
 }
 
 /// Represents an operation of the instruments command-line.
-public final class FBInstrumentsOperation {
+public final class InstrumentsOperation {
 
   public let task: FBSubprocess<AnyObject, AnyObject, AnyObject>
   public let traceFile: URL
@@ -108,7 +108,7 @@ public final class FBInstrumentsOperation {
     target: any FBiOSTarget,
     configuration: FBInstrumentsConfiguration,
     logger: any FBControlCoreLogger
-  ) async throws -> FBInstrumentsOperation {
+  ) async throws -> InstrumentsOperation {
     let deadline = Date().addingTimeInterval(configuration.timings.launchRetryTimeout)
     while true {
       try Task.checkCancellation()
@@ -151,7 +151,7 @@ public final class FBInstrumentsOperation {
     configuration: FBInstrumentsConfiguration,
     logger: any FBControlCoreLogger,
     attemptTimeout: TimeInterval
-  ) async throws -> FBInstrumentsOperation {
+  ) async throws -> InstrumentsOperation {
     let traceDir = (target.auxillaryDirectory as NSString).appendingPathComponent("instruments-" + UUID().uuidString)
     do {
       try FileManager.default.createDirectory(atPath: traceDir, withIntermediateDirectories: false, attributes: nil)
@@ -161,7 +161,7 @@ public final class FBInstrumentsOperation {
     let traceFile = (traceDir as NSString).appendingPathComponent("trace.trace")
 
     let arguments = launchArguments(udid: target.udid, configuration: configuration, traceFile: traceFile)
-    logger.log("Starting instruments with arguments: \(FBCollectionInformation.oneLineDescription(from: arguments))")
+    logger.log("Starting instruments with arguments: \(CollectionInformation.oneLineDescription(from: arguments))")
 
     let instrumentsConsumer = InstrumentsConsumer()
     let instrumentsLogger = FBControlCoreLoggerFactory.logger(to: instrumentsConsumer)
@@ -199,7 +199,7 @@ public final class FBInstrumentsOperation {
     }
 
     logger.log("Started instruments \(task)")
-    return FBInstrumentsOperation(task: task, traceFile: URL(fileURLWithPath: traceFile), configuration: configuration, logger: logger)
+    return InstrumentsOperation(task: task, traceFile: URL(fileURLWithPath: traceFile), configuration: configuration, logger: logger)
   }
 
   /// Stops the operation, waiting for the trace file to be written out to disk.
@@ -230,7 +230,7 @@ public final class FBInstrumentsOperation {
       launchArguments.append(contentsOf: arguments[3...])
     }
 
-    logger?.log("Starting post processing | Launch path: \(arguments[0]) | Arguments: \(FBCollectionInformation.oneLineDescription(from: launchArguments))")
+    logger?.log("Starting post processing | Launch path: \(arguments[0]) | Arguments: \(CollectionInformation.oneLineDescription(from: launchArguments))")
     let builder = FBProcessBuilder<AnyObject, AnyObject, AnyObject>
       .withLaunchPath(arguments[0], arguments: launchArguments)
       .withStdInConnected()

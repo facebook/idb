@@ -145,7 +145,7 @@ public final class FBAMDevice: FBiOSTargetInfo, DeviceCommands, CustomStringConv
   }
 
   public var extendedInformation: [String: Any] {
-    ["device": FBCollectionOperations.recursiveFilteredJSONSerializableRepresentation(of: allValues)]
+    ["device": CollectionOperations.recursiveFilteredJSONSerializableRepresentation(of: allValues)]
   }
 
   // MARK: - DeviceProtocol

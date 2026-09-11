@@ -49,7 +49,7 @@ extension XCTestShimError: LocalizedError {
     case let .shimDirectoryMissing(directory):
       return "A shim directory was searched for at '\(directory)', but it was not there"
     case let .shimsMissingInDirectory(shimNames, directory, underlying):
-      return "Could not find all shims \(FBCollectionInformation.oneLineDescription(from: shimNames)) in the expected directory \(directory): \(underlying.localizedDescription)"
+      return "Could not find all shims \(CollectionInformation.oneLineDescription(from: shimNames)) in the expected directory \(directory): \(underlying.localizedDescription)"
     }
   }
 }

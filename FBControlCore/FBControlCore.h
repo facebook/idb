@@ -13,7 +13,6 @@
 #import <FBControlCore/FBControlCoreLogger+OSLog.h>
 #import <FBControlCore/FBDataBuffer.h>
 #import <FBControlCore/FBDataConsumer.h>
-#import <FBControlCore/FBFileReader.h>
 #import <FBControlCore/FBFuture.h>
 #import <FBControlCore/FBFuture+Sync.h>
 #import <FBControlCore/FBObjCExceptionGuard.h>
@@ -27,6 +26,7 @@
 #import <FBControlCore/FBiOSTarget.h>
 #import <FBControlCore/FBiOSTargetConfiguration.h>
 #import <FBControlCore/FBiOSTargetConstants.h>
+#import <FBControlCore/FileReader.h>
 
 #if __has_include(<FBControlCore/FBControlCore-Swift.h>)
  #import <FBControlCore/FBControlCore-Swift.h>

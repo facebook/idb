@@ -36,7 +36,7 @@ extension VideoFileWriterError: LocalizedError {
   }
 }
 
-public final class FBVideoFileWriter: NSObject, AVCaptureFileOutputRecordingDelegate {
+public final class VideoFileWriter: NSObject, AVCaptureFileOutputRecordingDelegate {
 
   private let session: AVCaptureSession
   private let output: AVCaptureMovieFileOutput

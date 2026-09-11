@@ -40,7 +40,7 @@ public enum FBSimulatorApplicationInstallError: Error, LocalizedError {
     case let .applicationMissingExecutable(path):
       return "Cannot install the app at \(path) as it has no executable"
     case let .unsupportedArchitectures(binaryArchitectures, binaryPath, simulatorArchitectures):
-      return "Simulator does not support any of the architectures (\(FBCollectionInformation.oneLineDescription(from: binaryArchitectures))) of the executable at \(binaryPath). Simulator Archs (\(FBCollectionInformation.oneLineDescription(from: simulatorArchitectures)))"
+      return "Simulator does not support any of the architectures (\(CollectionInformation.oneLineDescription(from: binaryArchitectures))) of the executable at \(binaryPath). Simulator Archs (\(CollectionInformation.oneLineDescription(from: simulatorArchitectures)))"
     }
   }
 }
@@ -374,7 +374,7 @@ public struct FBSimulatorApplicationCommands: ApplicationCommands {
     }
   }
 
-  private func launch(_ configuration: FBApplicationLaunchConfiguration, stdOut: any FBProcessFileOutput, stdErr: any FBProcessFileOutput) -> FBFuture<NSNumber> {
+  private func launch(_ configuration: FBApplicationLaunchConfiguration, stdOut: any ProcessFileOutput, stdErr: any ProcessFileOutput) -> FBFuture<NSNumber> {
     fbFutureFromAsync { [self] in
       try await bridgeFBFutureVoid(stdOut.startReading())
       try await bridgeFBFutureVoid(stdErr.startReading())
@@ -393,7 +393,7 @@ public struct FBSimulatorApplicationCommands: ApplicationCommands {
 
     let logger = simulator.logger
     let bundleID = configuration.bundleID
-    logger.log("Launching Application \(bundleID) with \(FBCollectionInformation.oneLineDescription(from: configuration.arguments)) \(FBCollectionInformation.oneLineDescription(from: configuration.environment))")
+    logger.log("Launching Application \(bundleID) with \(CollectionInformation.oneLineDescription(from: configuration.arguments)) \(CollectionInformation.oneLineDescription(from: configuration.environment))")
 
     let pid = try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<pid_t, Error>) in
       simulator.device.launchApplicationAsync(withID: bundleID, options: options, completionQueue: simulator.workQueue) { error, pid in

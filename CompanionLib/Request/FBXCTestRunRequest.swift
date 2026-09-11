@@ -34,9 +34,9 @@ extension XCTestRunRequestError: LocalizedError {
     case let .xctestUnsupported(targetDescription):
       return "Target \(targetDescription) does not support xctest commands, cannot run tests"
     case let .testsToSkipUnsupported(testsToSkip):
-      return "'Tests to Skip' \(FBCollectionInformation.oneLineDescription(from: testsToSkip)) provided, but Logic Tests do not support this."
+      return "'Tests to Skip' \(CollectionInformation.oneLineDescription(from: testsToSkip)) provided, but Logic Tests do not support this."
     case let .multipleTestsToRun(testsToRun):
-      return "More than one 'Tests to Run' \(FBCollectionInformation.oneLineDescription(from: testsToRun)) provided, but only one 'Tests to Run' is supported."
+      return "More than one 'Tests to Run' \(CollectionInformation.oneLineDescription(from: testsToRun)) provided, but only one 'Tests to Run' is supported."
     }
   }
 }

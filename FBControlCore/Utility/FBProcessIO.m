@@ -57,7 +57,7 @@
 
 @implementation FBProcessFileAttachment
 
-- (instancetype)initWithIO:(FBProcessIO *)io stdOut:(nullable id<FBProcessFileOutput>)stdOut stdErr:(nullable id<FBProcessFileOutput>)stdErr
+- (instancetype)initWithIO:(FBProcessIO *)io stdOut:(nullable id<ProcessFileOutput>)stdOut stdErr:(nullable id<ProcessFileOutput>)stdErr
 {
   self = [super init];
   if (!self) {
@@ -180,7 +180,7 @@
           onQueue:self.queue
           resolve:^FBFuture<NSNull *> * {
             if (self.attached == NO) {
-              return (FBFuture *)[[FBControlCoreError
+              return (FBFuture *)[[ControlCoreError
                                    describe:@"Cannot detach when -attach has not been called"]
                                   failFuture];
             }
@@ -201,7 +201,7 @@
           onQueue:self.queue
           resolve:^FBFuture<NSNull *> * {
             if (self.attached) {
-              return (FBFuture *)[[FBControlCoreError
+              return (FBFuture *)[[ControlCoreError
                                    describe:@"Cannot -attach twice"]
                                   failFuture];
             }

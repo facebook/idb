@@ -51,7 +51,7 @@ public final class SimulatorCrashLogCommands: CrashLogCommands {
 
   public func pruneCrashes(matching predicate: NSPredicate) async throws -> [FBCrashLogInfo] {
     guard let simulator = self.simulator else {
-      throw FBWeakTargetError.simulator
+      throw WeakTargetError.simulator
     }
     let simulatorPredicate = NSCompoundPredicate(andPredicateWithSubpredicates: [
       FBCrashLogInfo.predicate(forExecutablePathContains: simulator.udid),

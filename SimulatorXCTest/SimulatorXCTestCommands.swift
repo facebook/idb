@@ -68,7 +68,7 @@ public final class SimulatorXCTestCommands: XCTestExtendedCommands {
   /// `body` for the duration of the call, closing it on exit.
   public func withTransportForTestManagerService<R>(body: (NSNumber) async throws -> R) async throws -> R {
     guard self.simulator != nil else {
-      throw FBWeakTargetError.simulator
+      throw WeakTargetError.simulator
     }
     let socketPath = try await testManagerDaemonSocketPath()
     let socketFD = try Self.connectedTestManagerSocket(atPath: socketPath)
@@ -124,7 +124,7 @@ public final class SimulatorXCTestCommands: XCTestExtendedCommands {
 
   public func runTest(launchConfiguration: FBTestLaunchConfiguration, reporter: AnyObject, logger: any FBControlCoreLogger) async throws {
     guard let simulator = self.simulator else {
-      throw FBWeakTargetError.simulator
+      throw WeakTargetError.simulator
     }
     // `XCTestCommands` lives in FBControlCore, which cannot see `FBXCTestReporter` in XCTestBootstrap,
     // so the reporter arrives type-erased and has to be recovered here.
@@ -157,7 +157,7 @@ public final class SimulatorXCTestCommands: XCTestExtendedCommands {
 
   public func listTests(forBundleAtPath bundlePath: String, timeout: TimeInterval, withAppAtPath appPath: String?) async throws -> [String] {
     guard let simulator = self.simulator else {
-      throw FBWeakTargetError.simulator
+      throw WeakTargetError.simulator
     }
 
     let bundleDescriptor = try FBBundleDescriptor.bundleWithFallbackIdentifier(fromPath: bundlePath)
@@ -185,7 +185,7 @@ public final class SimulatorXCTestCommands: XCTestExtendedCommands {
 
   private func runTest(with testLaunchConfiguration: FBTestLaunchConfiguration, reporter: any FBXCTestReporter, logger: any FBControlCoreLogger, workingDirectory: String?) async throws {
     guard let simulator = self.simulator else {
-      throw FBWeakTargetError.simulator
+      throw WeakTargetError.simulator
     }
 
     if simulator.state != .booted {
@@ -205,7 +205,7 @@ public final class SimulatorXCTestCommands: XCTestExtendedCommands {
 
   func testManagerDaemonSocketPath() async throws -> String {
     guard let simulator = self.simulator else {
-      throw FBWeakTargetError.simulator
+      throw WeakTargetError.simulator
     }
     let deadline = Date().addingTimeInterval(testmanagerdSimSockTimeout)
     var lastError: NSError?
@@ -227,7 +227,7 @@ public final class SimulatorXCTestCommands: XCTestExtendedCommands {
 
   private func startTest(with configuration: FBTestLaunchConfiguration, logger: any FBControlCoreLogger) async throws -> FBSubprocess<AnyObject, AnyObject, AnyObject> {
     guard let simulator = self.simulator else {
-      throw FBWeakTargetError.simulator
+      throw WeakTargetError.simulator
     }
 
     let filePath = try FBXcodeBuildOperation.createXCTestRunFile(at: simulator.auxillaryDirectory, fromConfiguration: configuration)

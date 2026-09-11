@@ -25,9 +25,9 @@ extension BundleDescriptorError: LocalizedError {
     case let .bundleIdentifierUnavailable(name, path):
       return "Could not obtain Bundle ID for bundle '\(name)' at \(path)"
     case let .noApplicationInIPA(presentFiles):
-      return "Could not find an Application in IPA, present files \(FBCollectionInformation.oneLineDescription(from: presentFiles))"
+      return "Could not find an Application in IPA, present files \(CollectionInformation.oneLineDescription(from: presentFiles))"
     case let .multipleApplicationsInIPA(count, found):
-      return "Expected only one Application in IPA, found \(count): \(FBCollectionInformation.oneLineDescription(from: found))"
+      return "Expected only one Application in IPA, found \(count): \(CollectionInformation.oneLineDescription(from: found))"
     }
   }
 }
@@ -70,7 +70,7 @@ public struct FBBundleDescriptor: Hashable, Sendable, CustomStringConvertible {
       if let binaryPath = binary?.path {
         arguments.append(binaryPath)
       }
-      logger.log("Updating rpaths for binary \(FBCollectionInformation.oneLineDescription(from: replacements as [String: Any]))")
+      logger.log("Updating rpaths for binary \(CollectionInformation.oneLineDescription(from: replacements as [String: Any]))")
       _ = try await Subprocess(executable: "/usr/bin/install_name_tool", arguments: arguments)
         .run(output: .string, error: .logger(logger))
     }

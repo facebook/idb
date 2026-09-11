@@ -10,7 +10,7 @@ import XCTest
 
 final class FBControlCoreFrameworkLoaderTests: XCTestCase {
 
-  private func assertLoadsFramework(_ framework: FBWeakFramework) {
+  private func assertLoadsFramework(_ framework: WeakFramework) {
     XCTAssertNoThrow(try framework.load(with: FBControlCoreGlobalConfiguration.defaultLogger))
   }
 
@@ -41,6 +41,6 @@ final class FBControlCoreFrameworkLoaderTests: XCTestCase {
   // `FBControlCoreFrameworkLoader` declares its `logger:` parameter nullable and forwards it here
   // unchanged, so a process that never configured a logger reaches this API with nil.
   func testLoadsWithoutALogger() {
-    XCTAssertNoThrow(try FBWeakFramework.coreSimulator.load(with: nil))
+    XCTAssertNoThrow(try WeakFramework.coreSimulator.load(with: nil))
   }
 }

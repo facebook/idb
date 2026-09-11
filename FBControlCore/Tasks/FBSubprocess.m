@@ -27,7 +27,7 @@ static BOOL AddOutputFileActions(posix_spawn_file_actions_t *fileActions, FBProc
   int sourceFileDescriptor = attachment.fileDescriptor;
   int status = posix_spawn_file_actions_adddup2(fileActions, sourceFileDescriptor, targetFileDescriptor);
   if (status != 0) {
-    return [[FBControlCoreError
+    return [[ControlCoreError
              describe:[NSString stringWithFormat:@"Failed to dup input %d, to %d: %s", sourceFileDescriptor, targetFileDescriptor, strerror(status)]]
             failBool:error];
   }
@@ -44,7 +44,7 @@ static BOOL AddInputFileActions(posix_spawn_file_actions_t *fileActions, FBProce
   int sourceFileDescriptor = attachment.fileDescriptor;
   int status = posix_spawn_file_actions_adddup2(fileActions, sourceFileDescriptor, targetFileDescriptor);
   if (status != 0) {
-    return [[FBControlCoreError
+    return [[ControlCoreError
              describe:[NSString stringWithFormat:@"Failed to dup input %d, to %d: %s", sourceFileDescriptor, targetFileDescriptor, strerror(status)]]
             failBool:error];
   }
@@ -166,8 +166,8 @@ static BOOL AddInputFileActions(posix_spawn_file_actions_t *fileActions, FBProce
   if ([acceptableExitCodes containsObject:@(exitCode)]) {
     return FBFuture.empty;
   }
-  return (FBFuture *)[[FBControlCoreError
-                       describe:[NSString stringWithFormat:@"Exit Code %d is not acceptable %@", exitCode, [FBCollectionInformation oneLineDescriptionFromArray:acceptableExitCodes.allObjects]]]
+  return (FBFuture *)[[ControlCoreError
+                       describe:[NSString stringWithFormat:@"Exit Code %d is not acceptable %@", exitCode, [CollectionInformation oneLineDescriptionFromArray:acceptableExitCodes.allObjects]]]
                       failFuture];
 }
 
@@ -224,7 +224,7 @@ static BOOL AddInputFileActions(posix_spawn_file_actions_t *fileActions, FBProce
   posix_spawn_file_actions_destroy(&fileActions);
   posix_spawnattr_destroy(&spawnAttributes);
   if (status != 0) {
-    return [[FBControlCoreError
+    return [[ControlCoreError
              describe:[NSString stringWithFormat:@"Failed to launch %@ with error %s", configuration, strerror(status)]]
             fail:error];
   }

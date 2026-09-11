@@ -8,7 +8,7 @@
 @testable import FBControlCore
 import XCTest
 
-final class FBFileWriterTests: XCTestCase {
+final class FileWriterTests: XCTestCase {
 
   override func setUpWithError() throws {
     // dispatch_io descriptor teardown is unreliable on hosted GitHub Actions runners.
@@ -21,7 +21,7 @@ final class FBFileWriterTests: XCTestCase {
   func testNonBlockingCloseOfPipe() throws {
     let pipe = Pipe()
     var writeError: NSError?
-    guard let writer = FBFileWriter.asyncWriter(withFileDescriptor: pipe.fileHandleForWriting.fileDescriptor, closeOnEndOfFile: true, error: &writeError) else {
+    guard let writer = FileWriter.asyncWriter(withFileDescriptor: pipe.fileHandleForWriting.fileDescriptor, closeOnEndOfFile: true, error: &writeError) else {
       throw writeError!
     }
 
@@ -44,7 +44,7 @@ final class FBFileWriterTests: XCTestCase {
     let fileHandle = FileHandle(forWritingAtPath: filePath)
     XCTAssertNotNil(fileHandle)
     var writeError: NSError?
-    guard let writer = FBFileWriter.asyncWriter(withFileDescriptor: fileHandle!.fileDescriptor, closeOnEndOfFile: true, error: &writeError) else {
+    guard let writer = FileWriter.asyncWriter(withFileDescriptor: fileHandle!.fileDescriptor, closeOnEndOfFile: true, error: &writeError) else {
       throw writeError!
     }
 
@@ -68,7 +68,7 @@ final class FBFileWriterTests: XCTestCase {
     let writerDescriptor = dup(localSocket)
     XCTAssertGreaterThanOrEqual(writerDescriptor, 0)
     var writeError: NSError?
-    guard let writer = FBFileWriter.asyncWriter(withFileDescriptor: writerDescriptor, closeOnEndOfFile: true, error: &writeError) else {
+    guard let writer = FileWriter.asyncWriter(withFileDescriptor: writerDescriptor, closeOnEndOfFile: true, error: &writeError) else {
       throw writeError!
     }
 
@@ -98,7 +98,7 @@ final class FBFileWriterTests: XCTestCase {
     }
 
     var writeError: NSError?
-    guard let writer = FBFileWriter.asyncWriter(withFileDescriptor: localSocket, closeOnEndOfFile: false, error: &writeError) else {
+    guard let writer = FileWriter.asyncWriter(withFileDescriptor: localSocket, closeOnEndOfFile: false, error: &writeError) else {
       throw writeError!
     }
 
@@ -131,10 +131,10 @@ final class FBFileWriterTests: XCTestCase {
     let writerDescriptor = dup(localSocket)
     XCTAssertGreaterThanOrEqual(writerDescriptor, 0)
     var writeError: NSError?
-    guard let writer = FBFileWriter.asyncWriter(withFileDescriptor: writerDescriptor, closeOnEndOfFile: true, error: &writeError) else {
+    guard let writer = FileWriter.asyncWriter(withFileDescriptor: writerDescriptor, closeOnEndOfFile: true, error: &writeError) else {
       throw writeError!
     }
-    let reader = FBFileReader.reader(withFileDescriptor: localSocket, closeOnEndOfFile: false, consumer: FBFileWriter.nullWriter, logger: nil)
+    let reader = FileReader.reader(withFileDescriptor: localSocket, closeOnEndOfFile: false, consumer: FileWriter.nullWriter, logger: nil)
     _ = try reader.startReading().`await`(withTimeout: 10)
 
     // Traffic in both directions, so teardown runs against live channels.

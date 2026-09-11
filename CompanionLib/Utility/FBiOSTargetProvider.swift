@@ -79,10 +79,10 @@ public final class FBiOSTargetProvider {
       }
     }
     if targets.count > 1 {
-      throw FBiOSTargetProviderError.multipleTargets(targetsDescription: FBCollectionInformation.oneLineDescription(from: targets))
+      throw FBiOSTargetProviderError.multipleTargets(targetsDescription: CollectionInformation.oneLineDescription(from: targets))
     }
     guard let target = targets.first else {
-      throw FBiOSTargetProviderError.noTargets(targetSetsDescription: FBCollectionInformation.oneLineDescription(from: targetSets))
+      throw FBiOSTargetProviderError.noTargets(targetSetsDescription: CollectionInformation.oneLineDescription(from: targetSets))
     }
     return target
   }
@@ -98,10 +98,10 @@ public final class FBiOSTargetProvider {
       }
     }
     if bootedTargets.count > 1 {
-      throw FBiOSTargetProviderError.multipleBootedTargets(targetsDescription: FBCollectionInformation.oneLineDescription(from: bootedTargets))
+      throw FBiOSTargetProviderError.multipleBootedTargets(targetsDescription: CollectionInformation.oneLineDescription(from: bootedTargets))
     }
     guard let target = bootedTargets.first else {
-      throw FBiOSTargetProviderError.noBootedTargets(targetSetsDescription: FBCollectionInformation.oneLineDescription(from: targetSets))
+      throw FBiOSTargetProviderError.noBootedTargets(targetSetsDescription: CollectionInformation.oneLineDescription(from: targetSets))
     }
     return target
   }

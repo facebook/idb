@@ -81,7 +81,7 @@ extension FileContainerError: LocalizedError {
     case .movingUnsupportedOnVirtualRoot:
       return "Moving files does not work on root virtual containers"
     case let .invalidRootPath(component, available):
-      return "'\(component)' is not a valid root path out of \(FBCollectionInformation.oneLineDescription(from: available))"
+      return "'\(component)' is not a valid root path out of \(CollectionInformation.oneLineDescription(from: available))"
     }
   }
 }
@@ -483,7 +483,7 @@ private struct ContainedFile_Mapped_Host: FBContainedFile, CustomStringConvertib
   var pathMapping: [String: String]? { mappingPaths }
 
   var description: String {
-    "Root mapping: \(FBCollectionInformation.oneLineDescription(from: Array(mappingPaths.keys)))"
+    "Root mapping: \(CollectionInformation.oneLineDescription(from: Array(mappingPaths.keys)))"
   }
 
   private static func isRootPathOfContainer(_ pathComponents: [String]) -> Bool {

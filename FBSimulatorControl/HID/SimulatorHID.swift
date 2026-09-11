@@ -113,7 +113,7 @@ public final class FBSimulatorHID: CustomStringConvertible, @unchecked Sendable 
   }
 
   /// `simulator` is weak and may be absent: the Purple and Darwin paths need it and throw
-  /// `FBWeakTargetError.simulator` without one; the transport primitives never touch it.
+  /// `WeakTargetError.simulator` without one; the transport primitives never touch it.
   init(
     transport: SimulatorHIDTransport,
     purple: SimulatorPurpleHIDTransport,

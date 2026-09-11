@@ -48,8 +48,8 @@ public struct FBXCTraceRecordConfiguration {
 extension FBXCTraceRecordConfiguration: CustomStringConvertible {
 
   public var description: String {
-    let launchArgsDesc = launchArgs.map { FBCollectionInformation.oneLineDescription(from: $0) } ?? "nil"
-    let processEnvDesc = processEnv.map { FBCollectionInformation.oneLineDescription(from: $0) } ?? "nil"
+    let launchArgsDesc = launchArgs.map { CollectionInformation.oneLineDescription(from: $0) } ?? "nil"
+    let processEnvDesc = processEnv.map { CollectionInformation.oneLineDescription(from: $0) } ?? "nil"
     return "xctrace record: template \(templateName) | duration \(timeLimit) | process to launch \(processToLaunch ?? "nil") | process to attach \(processToAttach ?? "nil") | package \(package ?? "nil") | target stdin \(targetStdin ?? "nil") | target stdout \(targetStdout ?? "nil") | target arguments \(launchArgsDesc) | target environment \(processEnvDesc) | record all processes \(allProcesses ? "Yes" : "No")"
   }
 }

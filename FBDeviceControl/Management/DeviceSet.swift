@@ -48,7 +48,7 @@ public final class FBDeviceSet: FBiOSTargetSet, FBiOSTargetSetDelegate, CustomSt
   }
 
   public var description: String {
-    "FBDeviceSet: \(FBCollectionInformation.oneLineDescription(from: allDevices))"
+    "FBDeviceSet: \(CollectionInformation.oneLineDescription(from: allDevices))"
   }
 
   // MARK: - Querying

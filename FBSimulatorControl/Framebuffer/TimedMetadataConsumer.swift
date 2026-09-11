@@ -26,9 +26,9 @@ final class TransportTimedMetadataConsumer: TimedMetadataConsumer {
   private let consumer: any FBDataConsumer
   /// Transport writer that can mux timed metadata into the same byte stream. `nil` for stateless
   /// transports (Annex-B).
-  private let timedMetadataWriter: (any FBVideoStreamTimedMetadataWriter)?
+  private let timedMetadataWriter: (any VideoStreamTimedMetadataWriter)?
 
-  init(consumer: any FBDataConsumer, timedMetadataWriter: (any FBVideoStreamTimedMetadataWriter)?) {
+  init(consumer: any FBDataConsumer, timedMetadataWriter: (any VideoStreamTimedMetadataWriter)?) {
     self.consumer = consumer
     self.timedMetadataWriter = timedMetadataWriter
   }

@@ -275,13 +275,13 @@ public final class FBAMDServiceConnection: CustomStringConvertible {
   func readFromConnectionWriting(
     to consumer: any FBDataConsumer,
     on queue: DispatchQueue
-  ) -> any FBFileReaderProtocol {
+  ) -> any FileReaderProtocol {
     let reader = AMDServiceConnectionReader(connection: self, consumer: consumer, queue: queue)
     activeReaderFinished = reader.finishedReading
     return reader
   }
 
-  func writeWithConsumerWriting(on queue: DispatchQueue) -> any FBDataConsumer & FBDataConsumerLifecycle {
+  func writeWithConsumerWriting(on queue: DispatchQueue) -> any FBDataConsumer & DataConsumerLifecycle {
     FBBlockDataConsumer.asynchronousDataConsumer(on: queue) { [weak self] data in
       try? self?.send(data)
     }
@@ -331,7 +331,7 @@ public final class FBAMDServiceConnection: CustomStringConvertible {
 }
 
 /// Reads a service connection until it is exhausted, feeding a consumer.
-private final class AMDServiceConnectionReader: NSObject, FBFileReaderProtocol {
+private final class AMDServiceConnectionReader: NSObject, FileReaderProtocol {
 
   private let connection: FBAMDServiceConnection
   private let consumer: any FBDataConsumer

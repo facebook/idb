@@ -9,7 +9,7 @@
 
 #import "FBControlCore-SwiftImport.h"
 
-@interface FBDataBuffer_Accumilating : NSObject <FBDataConsumer, FBAccumulatingBuffer>
+@interface FBDataBuffer_Accumilating : NSObject <FBDataConsumer, AccumulatingBuffer>
 
 @property (nonatomic, readwrite, strong) NSMutableData *buffer;
 @property (nonatomic, readonly, assign) size_t capacity;
@@ -49,7 +49,7 @@
   }
 }
 
-#pragma mark FBAccumulatingBuffer
+#pragma mark AccumulatingBuffer
 
 - (NSData *)data
 {
@@ -92,7 +92,7 @@
   }
 }
 
-#pragma mark FBDataConsumerLifecycle
+#pragma mark DataConsumerLifecycle
 
 - (FBFuture<NSNull *> *)finishedConsuming
 {
@@ -126,7 +126,7 @@
   return self;
 }
 
-- (void)run:(id<FBConsumableBuffer>)buffer
+- (void)run:(id<ConsumableBuffer>)buffer
 {
   NSData *partial = [buffer consumeUntil:self.terminal];
   dispatch_queue_t queue = self.queue;
@@ -173,7 +173,7 @@
   return self;
 }
 
-- (void)run:(id<FBConsumableBuffer>)buffer
+- (void)run:(id<ConsumableBuffer>)buffer
 {
   if (!self.knownderivedLength) {
     NSData *header = [buffer consumeLength:self.headerLength];
@@ -198,7 +198,7 @@
 
 @end
 
-@interface FBDataBuffer_Consumable : FBDataBuffer_Accumilating <FBConsumableBuffer, NotifyingBuffer>
+@interface FBDataBuffer_Consumable : FBDataBuffer_Accumilating <ConsumableBuffer, NotifyingBuffer>
 
 @property (nullable, nonatomic, readwrite, strong) id<DataBuffer_Forwarder> forwarder;
 
@@ -229,7 +229,7 @@
   }
 }
 
-#pragma mark FBConsumableBuffer
+#pragma mark ConsumableBuffer
 
 - (nonnull NSData *)consumeCurrentData
 {
@@ -345,7 +345,7 @@
 {
   @synchronized(self) {
     if (self.forwarder) {
-      return [[FBControlCoreError
+      return [[ControlCoreError
                describe:@"Cannot listen for the two terminals at the same time"]
               failBool:error];
     }
@@ -373,23 +373,23 @@
 
 #pragma mark Initializers
 
-+ (id<FBAccumulatingBuffer>)accumulatingBuffer
++ (id<AccumulatingBuffer>)accumulatingBuffer
 {
   return [FBDataBuffer_Accumilating new];
 }
 
-+ (id<FBAccumulatingBuffer>)accumulatingBufferWithCapacity:(size_t)capacity
++ (id<AccumulatingBuffer>)accumulatingBufferWithCapacity:(size_t)capacity
 {
   NSParameterAssert(capacity > 0);
   return [[FBDataBuffer_Accumilating alloc] initWithBackingBuffer:NSMutableData.data capacity:capacity];
 }
 
-+ (id<FBAccumulatingBuffer>)accumulatingBufferForMutableData:(NSMutableData *)data
++ (id<AccumulatingBuffer>)accumulatingBufferForMutableData:(NSMutableData *)data
 {
   return [[FBDataBuffer_Accumilating alloc] initWithBackingBuffer:data capacity:0];
 }
 
-+ (id<FBConsumableBuffer>)consumableBuffer
++ (id<ConsumableBuffer>)consumableBuffer
 {
   return [self consumableBufferForwardingToConsumer:nil onQueue:nil terminal:nil];
 }

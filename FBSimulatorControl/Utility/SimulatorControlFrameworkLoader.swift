@@ -16,15 +16,15 @@ public enum FBSimulatorControlFrameworkLoader {
   /// The frameworks needed for most operations.
   public static let essentialFrameworks = FBControlCoreFrameworkLoader(
     name: name,
-    frameworks: [FBWeakFramework.coreSimulator])
+    frameworks: [WeakFramework.coreSimulator])
 
   /// The frameworks needed for accessibility operations.
   public static let accessibilityFrameworks = FBControlCoreFrameworkLoader(
     name: name,
-    frameworks: [FBWeakFramework.accessibilityPlatformTranslation])
+    frameworks: [WeakFramework.accessibilityPlatformTranslation])
 
   /// The frameworks needed for operations involving the HID and framebuffer.
   public static let xcodeFrameworks = FBControlCoreFrameworkLoader(
     name: name,
-    frameworks: [FBWeakFramework.simulatorKit])
+    frameworks: [WeakFramework.simulatorKit])
 }

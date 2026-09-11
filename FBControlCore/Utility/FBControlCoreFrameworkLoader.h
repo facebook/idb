@@ -7,7 +7,7 @@
 
 #import <Foundation/Foundation.h>
 
-@class FBWeakFramework;
+@class WeakFramework;
 @protocol FBControlCoreLogger;
 
 /**
@@ -17,7 +17,7 @@
 
 #pragma mark Initializers
 
-+ (nonnull instancetype)loaderWithName:(nonnull NSString *)frameworkName frameworks:(nonnull NSArray<FBWeakFramework *> *)frameworks;
++ (nonnull instancetype)loaderWithName:(nonnull NSString *)frameworkName frameworks:(nonnull NSArray<WeakFramework *> *)frameworks;
 
 /**
  The Designated Initializer
@@ -26,7 +26,7 @@
  @param frameworks the framework dependencies
  @return a new Framework Loader
  */
-- (nonnull instancetype)initWithName:(nonnull NSString *)frameworkName frameworks:(nonnull NSArray<FBWeakFramework *> *)frameworks;
+- (nonnull instancetype)initWithName:(nonnull NSString *)frameworkName frameworks:(nonnull NSArray<WeakFramework *> *)frameworks;
 
 #pragma mark Properties
 
@@ -38,7 +38,7 @@
 /**
  The Frameworks to load.
  */
-@property (nonnull, nonatomic, readonly, copy) NSArray<FBWeakFramework *> *frameworks;
+@property (nonnull, nonatomic, readonly, copy) NSArray<WeakFramework *> *frameworks;
 
 /**
  YES if the Frameworks are loaded, NO otherwise.

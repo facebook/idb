@@ -352,14 +352,14 @@ static inline NSArray<NSString *> *ReadRPaths(FILE *file, uint32_t magic)
 + (nullable instancetype)binaryWithPath:(NSString *)binaryPath error:(NSError **)error;
 {
   if (![NSFileManager.defaultManager fileExistsAtPath:binaryPath]) {
-    return [[FBControlCoreError
+    return [[ControlCoreError
              describe:[NSString stringWithFormat:@"Binary does not exist at path %@", binaryPath]]
             fail:error];
   }
 
   FILE *file = fopen(binaryPath.UTF8String, "rb");
   if (file == NULL) {
-    return [[FBControlCoreError describe:[NSString stringWithFormat:@"Could not fopen file at path %@", binaryPath]] fail:error];
+    return [[ControlCoreError describe:[NSString stringWithFormat:@"Could not fopen file at path %@", binaryPath]] fail:error];
   }
 
   rewind(file);
@@ -367,13 +367,13 @@ static inline NSArray<NSString *> *ReadRPaths(FILE *file, uint32_t magic)
 
   if (!IsMagic(magic)) {
     fclose(file);
-    return [[FBControlCoreError describe:[NSString stringWithFormat:@"Could not interpret magic '%d' in file %@", magic, binaryPath]] fail:error];
+    return [[ControlCoreError describe:[NSString stringWithFormat:@"Could not interpret magic '%d' in file %@", magic, binaryPath]] fail:error];
   }
 
   NSArray *archs = ReadArchs(file, magic);
   if (!archs) {
     fclose(file);
-    return [[FBControlCoreError describe:[NSString stringWithFormat:@"Could not read architechtures of magic %@ in file %@", MagicNameForMagic(magic), binaryPath]] fail:error];
+    return [[ControlCoreError describe:[NSString stringWithFormat:@"Could not read architechtures of magic %@ in file %@", MagicNameForMagic(magic), binaryPath]] fail:error];
   }
 
   rewind(file);
@@ -419,7 +419,7 @@ static inline NSArray<NSString *> *ReadRPaths(FILE *file, uint32_t magic)
           @"Name: %@ | Path: %@ | Architectures: %@",
           self.name,
           self.path,
-          [FBCollectionInformation oneLineDescriptionFromArray:self.architectures.allObjects]
+          [CollectionInformation oneLineDescriptionFromArray:self.architectures.allObjects]
   ];
 }
 
@@ -429,7 +429,7 @@ static inline NSArray<NSString *> *ReadRPaths(FILE *file, uint32_t magic)
 {
   FILE *file = fopen(self.path.UTF8String, "rb");
   if (file == NULL) {
-    return [[FBControlCoreError describe:[NSString stringWithFormat:@"Could not fopen file at path %@", self.path]] fail:error];
+    return [[ControlCoreError describe:[NSString stringWithFormat:@"Could not fopen file at path %@", self.path]] fail:error];
   }
 
   rewind(file);
@@ -437,7 +437,7 @@ static inline NSArray<NSString *> *ReadRPaths(FILE *file, uint32_t magic)
 
   if (!IsMagic(magic)) {
     fclose(file);
-    return [[FBControlCoreError describe:[NSString stringWithFormat:@"Could not interpret magic '%d' in file %@", magic, self.path]] fail:error];
+    return [[ControlCoreError describe:[NSString stringWithFormat:@"Could not interpret magic '%d' in file %@", magic, self.path]] fail:error];
   }
 
   NSArray<NSString *> *rpaths = ReadRPaths(file, magic);

@@ -139,7 +139,7 @@ NSString *const BSDTarPath = @"/usr/bin/bsdtar";
 {
   BOOL isDirectory;
   if (![NSFileManager.defaultManager fileExistsAtPath:path isDirectory:&isDirectory]) {
-    return [[FBControlCoreError
+    return [[ControlCoreError
              describe:[NSString stringWithFormat:@"Path for tarring %@ doesn't exist", path]]
             fail:error];
   }

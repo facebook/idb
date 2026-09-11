@@ -84,7 +84,7 @@ struct DeviceDebugSymbolsTests {
 
     #expect(
       (error as? NSError)?.localizedDescription
-        == "Could not find /System/Library/Caches/absent within \(FBCollectionInformation.oneLineDescription(from: remoteListing))")
+        == "Could not find /System/Library/Caches/absent within \(CollectionInformation.oneLineDescription(from: remoteListing))")
   }
 
   // MARK: - Picking the cache out of the pulled files
@@ -112,6 +112,6 @@ struct DeviceDebugSymbolsTests {
 
     #expect(
       (error as? NSError)?.localizedDescription
-        == "Could not find the shared cache file within \(FBCollectionInformation.oneLineDescription(from: paths))")
+        == "Could not find the shared cache file within \(CollectionInformation.oneLineDescription(from: paths))")
   }
 }

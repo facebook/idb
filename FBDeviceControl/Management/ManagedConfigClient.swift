@@ -49,7 +49,7 @@ extension ManagedConfigError: LocalizedError {
     case let .orderedIdentifiersNotStrings(key):
       return "\(key) is not an Array<String>"
     case let .profileNotInstalled(profileName, identifiers):
-      return "\(profileName) is not one of \(FBCollectionInformation.oneLineDescription(from: identifiers))"
+      return "\(profileName) is not one of \(CollectionInformation.oneLineDescription(from: identifiers))"
     case let .removeFailed(response):
       return "Status is Error: \(response)"
     }
@@ -99,7 +99,7 @@ class ManagedConfigClient {
             continuation.resume(returning: [:])
             return
           }
-          let filtered = FBCollectionOperations.recursiveFilteredJSONSerializableRepresentation(of: resultDict) as [String: Any]
+          let filtered = CollectionOperations.recursiveFilteredJSONSerializableRepresentation(of: resultDict) as [String: Any]
           continuation.resume(returning: filtered)
         } catch {
           continuation.resume(throwing: error)
@@ -152,7 +152,7 @@ class ManagedConfigClient {
             continuation.resume(returning: [:])
             return
           }
-          let filtered = FBCollectionOperations.recursiveFilteredJSONSerializableRepresentation(of: resultDict) as [String: Any]
+          let filtered = CollectionOperations.recursiveFilteredJSONSerializableRepresentation(of: resultDict) as [String: Any]
           continuation.resume(returning: filtered)
         } catch {
           continuation.resume(throwing: error)

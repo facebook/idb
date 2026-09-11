@@ -36,12 +36,12 @@ import Foundation
 }
 
 /// Observation of a Data Consumer's lifecycle.
-@objc public protocol FBDataConsumerLifecycle: NSObjectProtocol {
+@objc public protocol DataConsumerLifecycle: NSObjectProtocol {
   /// A Future that resolves when there is no more data to write and any underlying resource managed by the consumer is released.
   var finishedConsuming: FBFuture<NSNull> { get }
 }
 
-public extension FBDataConsumerLifecycle {
+public extension DataConsumerLifecycle {
   /// Awaits completion of `finishedConsuming`.
   func awaitFinishedConsuming() async throws {
     try await bridgeFBFutureVoid(self.finishedConsuming)
@@ -51,5 +51,5 @@ public extension FBDataConsumerLifecycle {
 // MARK: - Conformance extensions for ObjC classes
 
 extension FBLoggingDataConsumer: FBDataConsumer {}
-extension FBCompositeDataConsumer: FBDataConsumer, FBDataConsumerLifecycle {}
+extension FBCompositeDataConsumer: FBDataConsumer, DataConsumerLifecycle {}
 extension FBNullDataConsumer: FBDataConsumer {}

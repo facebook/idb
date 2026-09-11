@@ -37,11 +37,11 @@ extension IDBStorageError: LocalizedError {
     case let .bundleMissingBinary(name):
       return "Cannot check the architectures of \(name), it has no binary"
     case let .architecturesIncompatible(supported, bundle):
-      return "The supported architectures of the target \(FBCollectionInformation.oneLineDescription(from: supported)) do not intersect with any architectures in the bundle: \(FBCollectionInformation.oneLineDescription(from: bundle))"
+      return "The supported architectures of the target \(CollectionInformation.oneLineDescription(from: supported)) do not intersect with any architectures in the bundle: \(CollectionInformation.oneLineDescription(from: bundle))"
     case let .multipleXctestFiles(files):
-      return "Multiple files with .xctest extension: \(FBCollectionInformation.oneLineDescription(from: files))"
+      return "Multiple files with .xctest extension: \(CollectionInformation.oneLineDescription(from: files))"
     case let .multipleXctestrunFiles(files):
-      return "Multiple files with .xctestrun extension: \(FBCollectionInformation.oneLineDescription(from: files))"
+      return "Multiple files with .xctestrun extension: \(CollectionInformation.oneLineDescription(from: files))"
     case let .noTestArtifactsProvided(bucketsDescription):
       return "Neither a .xctest bundle or .xctestrun file provided: \(bucketsDescription)"
     case let .testArtifactNotSaved(xctestDescription, xctestrunDescription):
@@ -203,7 +203,7 @@ public class BundleStorage: IDBStorage {
     }
     for case let directory as URL in enumerator {
       let key = directory.lastPathComponent
-      guard let bundlePath = try? FBStorageUtils.findUniqueFile(inDirectory: directory) else {
+      guard let bundlePath = try? StorageUtils.findUniqueFile(inDirectory: directory) else {
         continue
       }
       do {
@@ -244,7 +244,7 @@ private let XctestRunExtension = "xctestrun"
 public final class XCTestBundleStorage: BundleStorage {
 
   func saveBundleOrTestRunFromBaseDirectory(_ baseDirectory: URL, skipSigningBundles: Bool) async throws -> FBInstalledArtifact {
-    let buckets = try FBStorageUtils.bucketFiles(withExtensions: Set([XctestExtension, XctestRunExtension]), inDirectory: baseDirectory)
+    let buckets = try StorageUtils.bucketFiles(withExtensions: Set([XctestExtension, XctestRunExtension]), inDirectory: baseDirectory)
     let xctestBucket = buckets[XctestExtension]?.sorted(by: { $0.path < $1.path }) ?? []
     let xctestBundleURL = xctestBucket.first
     if xctestBucket.count > 1 {
@@ -256,7 +256,7 @@ public final class XCTestBundleStorage: BundleStorage {
       throw IDBStorageError.multipleXctestrunFiles(files: xctestrunBucket)
     }
     if xctestBundleURL == nil && xctestrunURL == nil {
-      throw IDBStorageError.noTestArtifactsProvided(bucketsDescription: FBCollectionInformation.oneLineDescription(from: buckets))
+      throw IDBStorageError.noTestArtifactsProvided(bucketsDescription: CollectionInformation.oneLineDescription(from: buckets))
     }
 
     if let xctestBundleURL {
@@ -345,7 +345,7 @@ public final class XCTestBundleStorage: BundleStorage {
 
     var tests = Set<URL>()
     for innerDirectory in directories {
-      if let bundleURL = try? FBStorageUtils.findFile(withExtension: ext, at: innerDirectory) {
+      if let bundleURL = try? StorageUtils.findFile(withExtension: ext, at: innerDirectory) {
         tests.insert(bundleURL)
       }
     }

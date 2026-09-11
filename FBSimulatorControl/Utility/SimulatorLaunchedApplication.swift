@@ -33,11 +33,11 @@ public final class SimulatorLaunchedApplication: FBLaunchedApplication, CustomSt
     try await bridgeFBFutureVoid(applicationTerminated.cancel())
   }
 
-  public var stdOut: (any FBProcessFileOutput)? {
+  public var stdOut: (any ProcessFileOutput)? {
     attachment.stdOut
   }
 
-  public var stdErr: (any FBProcessFileOutput)? {
+  public var stdErr: (any ProcessFileOutput)? {
     attachment.stdErr
   }
 

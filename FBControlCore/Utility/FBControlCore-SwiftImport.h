@@ -13,9 +13,9 @@
 #import <Foundation/Foundation.h>
 
 #import <FBControlCore/FBArchiveOperations.h>
-#import <FBControlCore/FBFileReader.h>
 #import <FBControlCore/FBiOSTarget.h>
 #import <FBControlCore/FBiOSTargetConfiguration.h>
+#import <FBControlCore/FileReader.h>
 
 #if __has_include(<FBControlCore/FBControlCore-Swift.h>)
  #import <FBControlCore/FBControlCore-Swift.h>

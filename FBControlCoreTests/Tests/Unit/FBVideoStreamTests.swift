@@ -342,7 +342,7 @@ final class FBVideoStreamTests: XCTestCase {
     let sampleBuffer = CreateH264SampleBuffer(isKeyFrame: true)
     let consumer = FBDataBuffer.accumulatingBuffer()
     let logger = FBControlCoreLoggerDouble()
-    let writer = FBAnnexBFrameWriter(codec: .h264)
+    let writer = AnnexBFrameWriter(codec: .h264)
 
     XCTAssertNoThrow(try writer.write(sampleBuffer, to: consumer, logger: logger))
 
@@ -371,7 +371,7 @@ final class FBVideoStreamTests: XCTestCase {
     let sampleBuffer = CreateH264SampleBuffer(isKeyFrame: false)
     let consumer = FBDataBuffer.accumulatingBuffer()
     let logger = FBControlCoreLoggerDouble()
-    let writer = FBAnnexBFrameWriter(codec: .h264)
+    let writer = AnnexBFrameWriter(codec: .h264)
 
     XCTAssertNoThrow(try writer.write(sampleBuffer, to: consumer, logger: logger))
 
@@ -390,7 +390,7 @@ final class FBVideoStreamTests: XCTestCase {
     let sampleBuffer = CreateNotReadySampleBuffer()
     let consumer = FBDataBuffer.accumulatingBuffer()
     let logger = FBControlCoreLoggerDouble()
-    let writer = FBAnnexBFrameWriter(codec: .h264)
+    let writer = AnnexBFrameWriter(codec: .h264)
 
     XCTAssertThrowsError(try writer.write(sampleBuffer, to: consumer, logger: logger)) { error in
       XCTAssertTrue(error.localizedDescription.contains("Sample Buffer is not ready"))
@@ -403,7 +403,7 @@ final class FBVideoStreamTests: XCTestCase {
   func testWriteMinicapHeader() {
     let consumer = FBDataBuffer.accumulatingBuffer()
     let logger = FBControlCoreLoggerDouble()
-    let writer = FBMinicapFrameWriter()
+    let writer = MinicapFrameWriter()
 
     writer.writeHeader(width: 1920, height: 1080, to: consumer, logger: logger)
 
@@ -440,7 +440,7 @@ final class FBVideoStreamTests: XCTestCase {
     let consumer = FBDataBuffer.accumulatingBuffer()
     let logger = FBControlCoreLoggerDouble()
 
-    // FBAccumulatingBuffer does not conform to DataConsumerAsync,
+    // AccumulatingBuffer does not conform to DataConsumerAsync,
     // so checkConsumerBufferLimit always returns YES.
     XCTAssertTrue(checkConsumerBufferLimit(consumer, logger))
   }
@@ -901,7 +901,7 @@ final class FBVideoStreamTests: XCTestCase {
     let blockBuffer = CreateBlockBuffer(jpeg)
     let consumer = FBDataBuffer.accumulatingBuffer()
     let logger = FBControlCoreLoggerDouble()
-    let writer = FBMJPEGFrameWriter()
+    let writer = MJPEGFrameWriter()
 
     XCTAssertNoThrow(try writer.write(blockBuffer, to: consumer, logger: logger))
 
@@ -913,7 +913,7 @@ final class FBVideoStreamTests: XCTestCase {
     let blockBuffer = CreateBlockBuffer(jpeg)
     let consumer = FBDataBuffer.accumulatingBuffer()
     let logger = FBControlCoreLoggerDouble()
-    let writer = FBMinicapFrameWriter()
+    let writer = MinicapFrameWriter()
 
     XCTAssertNoThrow(try writer.write(blockBuffer, to: consumer, logger: logger))
 
@@ -932,7 +932,7 @@ final class FBVideoStreamTests: XCTestCase {
     let sampleBuffer = CreateH264SampleBuffer(isKeyFrame: true)
     let consumer = FBDataBuffer.accumulatingBuffer()
     let logger = FBControlCoreLoggerDouble()
-    let writer = FBMPEGTSFrameWriter(codec: .h264)
+    let writer = MPEGTSFrameWriter(codec: .h264)
 
     XCTAssertNoThrow(try writer.write(sampleBuffer, to: consumer, logger: logger))
 
@@ -958,7 +958,7 @@ final class FBVideoStreamTests: XCTestCase {
     let sampleBuffer = CreateNotReadySampleBuffer()
     let consumer = FBDataBuffer.accumulatingBuffer()
     let logger = FBControlCoreLoggerDouble()
-    let writer = FBMPEGTSFrameWriter(codec: .h264)
+    let writer = MPEGTSFrameWriter(codec: .h264)
 
     XCTAssertThrowsError(try writer.write(sampleBuffer, to: consumer, logger: logger)) { error in
       XCTAssertTrue(error.localizedDescription.contains("Sample Buffer is not ready"))
@@ -972,7 +972,7 @@ final class FBVideoStreamTests: XCTestCase {
     let sampleBuffer = try XCTUnwrap(CreateHEVCSampleBuffer(isKeyFrame: true))
     let consumer = FBDataBuffer.accumulatingBuffer()
     let logger = FBControlCoreLoggerDouble()
-    let writer = FBAnnexBFrameWriter(codec: .hevc)
+    let writer = AnnexBFrameWriter(codec: .hevc)
 
     XCTAssertNoThrow(try writer.write(sampleBuffer, to: consumer, logger: logger))
 
@@ -990,7 +990,7 @@ final class FBVideoStreamTests: XCTestCase {
     let sampleBuffer = try XCTUnwrap(CreateHEVCSampleBuffer(isKeyFrame: true))
     let consumer = FBDataBuffer.accumulatingBuffer()
     let logger = FBControlCoreLoggerDouble()
-    let writer = FBMPEGTSFrameWriter(codec: .hevc)
+    let writer = MPEGTSFrameWriter(codec: .hevc)
 
     XCTAssertNoThrow(try writer.write(sampleBuffer, to: consumer, logger: logger))
 
@@ -1034,7 +1034,7 @@ final class FBVideoStreamTests: XCTestCase {
   // MARK: - MPEG-TS Timed Metadata Stream
 
   func testEnableMetadataStreamThenWriteTimedMetadataEmitsOnMetadataPID() {
-    let writer = FBMPEGTSFrameWriter(codec: .h264)
+    let writer = MPEGTSFrameWriter(codec: .h264)
     let consumer = FBDataBuffer.accumulatingBuffer()
     writer.writeTimedMetadata("Chapter Zulu", to: consumer)
 

@@ -60,7 +60,7 @@ public final class FBSimulatorVideoRecordingCommands: VideoRecordingCommands {
 
   public func startRecording(toFile filePath: String, configuration: FBVideoStreamConfiguration) async throws -> any FBVideoRecording {
     guard let simulator = self.simulator else {
-      throw FBWeakTargetError.simulator
+      throw WeakTargetError.simulator
     }
     if video != nil {
       throw SimulatorVideoRecordingCommandError.recordingAlreadyActive

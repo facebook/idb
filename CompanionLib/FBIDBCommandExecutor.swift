@@ -56,7 +56,7 @@ extension FBIDBCommandError: LocalizedError {
     case .debugServerAlreadyRunning:
       return "Debug server is already running"
     case let .notPersistedApplication(bundleID, suitable):
-      return "\(bundleID) not persisted application and is therefore not debuggable. Suitable applications: \(FBCollectionInformation.oneLineDescription(from: suitable))"
+      return "\(bundleID) not persisted application and is therefore not debuggable. Suitable applications: \(CollectionInformation.oneLineDescription(from: suitable))"
     case .noAppBundleExtracted:
       return "No app bundle could be extracted"
     case let .userDevelopmentSigningRequired(applicationDescription):
@@ -859,7 +859,7 @@ public final class FBIDBCommandExecutor {
   }
 
   private func installBundle(_ extractedDirectory: URL, intoStorage storage: BundleStorage) async throws -> FBInstalledArtifact {
-    let bundle = try FBStorageUtils.bundle(inDirectory: extractedDirectory)
+    let bundle = try StorageUtils.bundle(inDirectory: extractedDirectory)
     return try await storage.saveBundle(bundle)
   }
 }

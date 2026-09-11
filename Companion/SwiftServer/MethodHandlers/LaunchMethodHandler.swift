@@ -17,7 +17,7 @@ struct LaunchMethodHandler: @unchecked Sendable {
   let commandExecutor: FBIDBCommandExecutor
 
   func handle(requestStream: RequestStreamReader<Idb_LaunchRequest>, responseStream: GRPCAsyncResponseStreamWriter<Idb_LaunchResponse>, context: GRPCAsyncServerCallContext) async throws {
-    var consumers: [any FBDataConsumerLifecycle] = []
+    var consumers: [any DataConsumerLifecycle] = []
 
     var request = try await requestStream.requiredNext()
     guard case let .start(start) = request.control else {
@@ -92,7 +92,7 @@ struct LaunchMethodHandler: @unchecked Sendable {
     return FBProcessOutput<AnyObject>.forNullDevice().retyped(FBProcessOutput<AnyObject>.self)
   }
 
-  private func pipeOutput(interface: Idb_ProcessOutput.Interface, responseWriter: FIFOStreamWriter<GRPCAsyncResponseStreamWriter<Idb_LaunchResponse>>) -> (FBDataConsumer & FBDataConsumerLifecycle) {
+  private func pipeOutput(interface: Idb_ProcessOutput.Interface, responseWriter: FIFOStreamWriter<GRPCAsyncResponseStreamWriter<Idb_LaunchResponse>>) -> (FBDataConsumer & DataConsumerLifecycle) {
     return FBBlockDataConsumer.asynchronousDataConsumer { data in
       let response = Idb_LaunchResponse.with {
         $0.output.data = data

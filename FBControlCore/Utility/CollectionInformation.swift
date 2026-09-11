@@ -8,7 +8,7 @@
 import Foundation
 
 @objc
-public final class FBCollectionInformation: NSObject {
+public final class CollectionInformation: NSObject {
 
   @objc(oneLineDescriptionFromArray:)
   public class func oneLineDescription(from array: [Any]) -> String {

@@ -136,7 +136,7 @@ class DeviceManager<PublicDevice: AnyObject>: NSObject, FBiOSTargetSet {
   }
 
   override var description: String {
-    "\(type(of: self)): \(FBCollectionInformation.oneLineDescription(from: allTargetInfos))"
+    "\(type(of: self)): \(CollectionInformation.oneLineDescription(from: allTargetInfos))"
   }
 }
 

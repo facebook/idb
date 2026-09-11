@@ -179,7 +179,7 @@ extension FBMacDevice: VideoRecordingCommands {
 
 extension FBMacDevice: XCTraceRecordCommands {
 
-  public func start(configuration: FBXCTraceRecordConfiguration, logger: any FBControlCoreLogger) async throws -> FBXCTraceRecordOperation {
+  public func start(configuration: FBXCTraceRecordConfiguration, logger: any FBControlCoreLogger) async throws -> XCTraceRecordOperation {
     throw macUnsupported("start")
   }
 }
@@ -188,7 +188,7 @@ extension FBMacDevice: XCTraceRecordCommands {
 
 extension FBMacDevice: InstrumentsCommands {
 
-  public func start(configuration: FBInstrumentsConfiguration, logger: any FBControlCoreLogger) async throws -> FBInstrumentsOperation {
+  public func start(configuration: FBInstrumentsConfiguration, logger: any FBControlCoreLogger) async throws -> InstrumentsOperation {
     throw macUnsupported("start")
   }
 }

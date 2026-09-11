@@ -275,7 +275,7 @@ private class DeviceVideoStream_BGRA: DeviceVideoStream, @unchecked Sendable {
     if pixelBufferAttributes_ == nil {
       let attributes = pixelBufferAttributes(from: pixelBuffer)
       pixelBufferAttributes_ = attributes
-      logger.log("Mounting Surface with Attributes: \(FBCollectionInformation.oneLineDescription(from: attributes))")
+      logger.log("Mounting Surface with Attributes: \(CollectionInformation.oneLineDescription(from: attributes))")
     }
   }
 
@@ -293,7 +293,7 @@ private class DeviceVideoStream_BGRA: DeviceVideoStream, @unchecked Sendable {
 // MARK: - H264 Subclass
 
 private class DeviceVideoStream_H264: DeviceVideoStream, @unchecked Sendable {
-  private let frameWriter = FBAnnexBFrameWriter(codec: .h264)
+  private let frameWriter = AnnexBFrameWriter(codec: .h264)
 
   override func consumeSampleBuffer(_ sampleBuffer: CMSampleBuffer) {
     guard let consumer = self.consumer else { return }
@@ -308,7 +308,7 @@ private class DeviceVideoStream_H264: DeviceVideoStream, @unchecked Sendable {
 // MARK: - H264 MPEGTS Subclass
 
 private class DeviceVideoStream_H264MPEGTS: DeviceVideoStream, @unchecked Sendable {
-  private let frameWriter = FBMPEGTSFrameWriter(codec: .h264)
+  private let frameWriter = MPEGTSFrameWriter(codec: .h264)
 
   override func consumeSampleBuffer(_ sampleBuffer: CMSampleBuffer) {
     guard let consumer = self.consumer else { return }
@@ -323,7 +323,7 @@ private class DeviceVideoStream_H264MPEGTS: DeviceVideoStream, @unchecked Sendab
 // MARK: - MJPEG Subclass
 
 private class DeviceVideoStream_MJPEG: DeviceVideoStream, @unchecked Sendable {
-  private let mjpegFrameWriter = FBMJPEGFrameWriter()
+  private let mjpegFrameWriter = MJPEGFrameWriter()
 
   override func consumeSampleBuffer(_ sampleBuffer: CMSampleBuffer) {
     guard let consumer = self.consumer, let jpegDataBuffer = CMSampleBufferGetDataBuffer(sampleBuffer) else { return }
@@ -353,7 +353,7 @@ private class DeviceVideoStream_MJPEG: DeviceVideoStream, @unchecked Sendable {
 
 private class DeviceVideoStream_Minicap: DeviceVideoStream_MJPEG, @unchecked Sendable {
   private var hasSentHeader = false
-  private let minicapFrameWriter = FBMinicapFrameWriter()
+  private let minicapFrameWriter = MinicapFrameWriter()
 
   override func consumeSampleBuffer(_ sampleBuffer: CMSampleBuffer) {
     guard let consumer = self.consumer else { return }

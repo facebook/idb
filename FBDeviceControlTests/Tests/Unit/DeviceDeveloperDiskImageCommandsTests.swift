@@ -121,7 +121,7 @@ struct DeviceDeveloperDiskImageCommandsTests {
         ["Status": "Complete"],
       ])
 
-    try await device.developerDiskImage.unmountDiskImage(FBDeveloperDiskImage.unknownDiskImage(withSignature: secondSignature))
+    try await device.developerDiskImage.unmountDiskImage(DeveloperDiskImage.unknownDiskImage(withSignature: secondSignature))
 
     let unmount = try #require(mounter.sentMessages.last as? [String: String])
     #expect(unmount == ["Command": "UnmountImage", "MountPath": "/Developer2"])
@@ -133,7 +133,7 @@ struct DeviceDeveloperDiskImageCommandsTests {
       mounterReplies: [copyDevicesReply([["ImageSignature": firstSignature, "MountPath": "/Developer"]])])
 
     await assertThrows(expected: "does not appear to be mounted") {
-      try await device.developerDiskImage.unmountDiskImage(FBDeveloperDiskImage.unknownDiskImage(withSignature: secondSignature))
+      try await device.developerDiskImage.unmountDiskImage(DeveloperDiskImage.unknownDiskImage(withSignature: secondSignature))
     }
   }
 
@@ -142,7 +142,7 @@ struct DeviceDeveloperDiskImageCommandsTests {
     let device = makeDevice(mounterReplies: [copyDevicesReply([["ImageSignature": firstSignature]])])
 
     await assertThrows(expected: "No MountPath in mounted image entry") {
-      try await device.developerDiskImage.unmountDiskImage(FBDeveloperDiskImage.unknownDiskImage(withSignature: firstSignature))
+      try await device.developerDiskImage.unmountDiskImage(DeveloperDiskImage.unknownDiskImage(withSignature: firstSignature))
     }
   }
 

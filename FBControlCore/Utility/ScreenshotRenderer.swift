@@ -10,7 +10,7 @@ import Foundation
 import ImageIO
 import UniformTypeIdentifiers
 
-public enum FBScreenshotRenderError: Error, Hashable {
+public enum ScreenshotRenderError: Error, Hashable {
   case croppingFailed(cropRect: CGRect, sourceSize: CGSize)
   case contextCreationFailed(size: CGSize)
   case scalingFailed(size: CGSize)
@@ -22,7 +22,7 @@ public enum FBScreenshotRenderError: Error, Hashable {
   case compressionQualityOutOfRange(Double)
 }
 
-extension FBScreenshotRenderError: LocalizedError {
+extension ScreenshotRenderError: LocalizedError {
   public var errorDescription: String? {
     switch self {
     case let .croppingFailed(cropRect, sourceSize):
@@ -49,7 +49,7 @@ extension FBScreenshotRenderError: LocalizedError {
 
 /// Applies a resolved `FBScreenshotPlan` to a captured `CGImage` and encodes the result. A target
 /// that folds the transform into capture instead must produce the same pixels.
-public enum FBScreenshotRenderer {
+public enum ScreenshotRenderer {
 
   /// Transforms and encodes `image` as `plan` and `encoding` describe.
   ///
@@ -94,7 +94,7 @@ public enum FBScreenshotRenderer {
     screenScale: Double?
   ) throws -> FBScreenshotResult {
     guard let source = CGImageSourceCreateWithData(data as CFData, nil), CGImageSourceGetCount(source) > 0 else {
-      throw FBScreenshotRenderError.unreadableImageData
+      throw ScreenshotRenderError.unreadableImageData
     }
     // Read the dimensions from the header. This does not decode the pixels, so the passthrough below
     // stays as cheap as returning the bytes.
@@ -103,7 +103,7 @@ public enum FBScreenshotRenderer {
       let height = properties[kCGImagePropertyPixelHeight] as? Int,
       width > 0, height > 0
     else {
-      throw FBScreenshotRenderError.unknownImageDimensions
+      throw ScreenshotRenderError.unknownImageDimensions
     }
     let sourceSize = CGSize(width: width, height: height)
     let plan = try FBScreenshotGeometry.plan(for: configuration, sourceSize: sourceSize, screenScale: screenScale)
@@ -123,7 +123,7 @@ public enum FBScreenshotRenderer {
     }
 
     guard let image = CGImageSourceCreateImageAtIndex(source, 0, nil) else {
-      throw FBScreenshotRenderError.decodingFailed
+      throw ScreenshotRenderError.decodingFailed
     }
     return try render(image, plan: plan, encoding: configuration.encoding, screenScale: screenScale)
   }
@@ -133,7 +133,7 @@ public enum FBScreenshotRenderer {
     var result = image
     if let cropRect = plan.cropRect {
       guard let cropped = result.cropping(to: cropRect) else {
-        throw FBScreenshotRenderError.croppingFailed(
+        throw ScreenshotRenderError.croppingFailed(
           cropRect: cropRect,
           sourceSize: CGSize(width: result.width, height: result.height)
         )
@@ -168,12 +168,12 @@ public enum FBScreenshotRenderer {
         bitmapInfo: CGImageAlphaInfo.premultipliedFirst.rawValue | CGBitmapInfo.byteOrder32Little.rawValue
       )
     else {
-      throw FBScreenshotRenderError.contextCreationFailed(size: size)
+      throw ScreenshotRenderError.contextCreationFailed(size: size)
     }
     context.interpolationQuality = .high
     context.draw(image, in: CGRect(x: 0, y: 0, width: width, height: height))
     guard let scaled = context.makeImage() else {
-      throw FBScreenshotRenderError.scalingFailed(size: size)
+      throw ScreenshotRenderError.scalingFailed(size: size)
     }
     return scaled
   }
@@ -182,12 +182,12 @@ public enum FBScreenshotRenderer {
   /// silently clamps out-of-range values.
   public static func encode(_ image: CGImage, encoding: FBScreenshotEncoding) throws -> Data {
     if let quality = encoding.compressionQuality, !(quality > 0 && quality <= 1) {
-      throw FBScreenshotRenderError.compressionQualityOutOfRange(quality)
+      throw ScreenshotRenderError.compressionQualityOutOfRange(quality)
     }
     let format = encoding.format
     let data = NSMutableData()
     guard let destination = CGImageDestinationCreateWithData(data, format.contentType.identifier as CFString, 1, nil) else {
-      throw FBScreenshotRenderError.destinationCreationFailed(format: format)
+      throw ScreenshotRenderError.destinationCreationFailed(format: format)
     }
     var properties: [CFString: Any] = [:]
     switch encoding {
@@ -201,7 +201,7 @@ public enum FBScreenshotRenderer {
     }
     CGImageDestinationAddImage(destination, image, properties as CFDictionary)
     guard CGImageDestinationFinalize(destination) else {
-      throw FBScreenshotRenderError.encodingFailed(format: format)
+      throw ScreenshotRenderError.encodingFailed(format: format)
     }
     return data as Data
   }

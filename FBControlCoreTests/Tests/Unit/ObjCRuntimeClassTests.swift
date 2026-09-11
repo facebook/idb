@@ -42,27 +42,27 @@ private final class RaisingStub: NSObject, StubClientMessaging {
 }
 
 @Suite("Runtime-resolved Objective-C classes")
-struct FBObjCRuntimeClassTests {
+struct ObjCRuntimeClassTests {
 
   // MARK: - Lookup
 
   @Test("A loaded class resolves under the name it was asked for")
   func lookUpLoadedClass() throws {
-    let runtimeClass = try #require(FBObjCRuntimeClass(name: "NSObject"))
+    let runtimeClass = try #require(ObjCRuntimeClass(name: "NSObject"))
     #expect(runtimeClass.name == "NSObject")
     #expect(ObjectIdentifier(runtimeClass.cls) == ObjectIdentifier(NSObject.self))
   }
 
   @Test("A class that is not in the process does not resolve")
   func lookUpAbsentClass() {
-    #expect(FBObjCRuntimeClass(name: "FBObjCRuntimeClassTestsNoSuchClass") == nil)
+    #expect(ObjCRuntimeClass(name: "FBObjCRuntimeClassTestsNoSuchClass") == nil)
   }
 
   // MARK: - Instantiation
 
   @Test("A successful initializer hands back the instance it was sent to")
   func instantiateSucceeds() throws {
-    let runtimeClass = FBObjCRuntimeClass(SucceedingStub.self)
+    let runtimeClass = ObjCRuntimeClass(SucceedingStub.self)
     let instance = try runtimeClass.instantiate(as: StubClientMessaging.self) {
       $0.initWithName("indigo", error: nil)
     }
@@ -71,8 +71,8 @@ struct FBObjCRuntimeClassTests {
 
   @Test("An initializer that returns nil surfaces as a failure, not as a nil instance")
   func instantiateReturningNil() throws {
-    let runtimeClass = FBObjCRuntimeClass(NilReturningStub.self)
-    let error = try #require(throws: FBObjCRuntimeClassError.self) {
+    let runtimeClass = ObjCRuntimeClass(NilReturningStub.self)
+    let error = try #require(throws: ObjCRuntimeClassError.self) {
       _ = try runtimeClass.instantiate(as: StubClientMessaging.self) {
         $0.initWithName("indigo", error: nil)
       }
@@ -88,8 +88,8 @@ struct FBObjCRuntimeClassTests {
   // assertions is itself the check.
   @Test("An initializer that raises is converted into a Swift error")
   func instantiateRaising() throws {
-    let runtimeClass = FBObjCRuntimeClass(RaisingStub.self)
-    let error = try #require(throws: FBObjCRuntimeClassError.self) {
+    let runtimeClass = ObjCRuntimeClass(RaisingStub.self)
+    let error = try #require(throws: ObjCRuntimeClassError.self) {
       _ = try runtimeClass.instantiate(as: StubClientMessaging.self) {
         $0.initWithName("indigo", error: nil)
       }

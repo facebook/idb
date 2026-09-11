@@ -47,8 +47,8 @@ public struct FBSimulatorBootConfiguration: Equatable, Hashable, Sendable, Custo
   public var description: String {
     String(
       format: "Boot Environment %@ | Options %@",
-      FBCollectionInformation.oneLineDescription(from: environment as [String: Any]),
-      FBCollectionInformation.oneLineDescription(from: Self.stringsFromBootOptions(options) as [Any])
+      CollectionInformation.oneLineDescription(from: environment as [String: Any]),
+      CollectionInformation.oneLineDescription(from: Self.stringsFromBootOptions(options) as [Any])
     )
   }
 

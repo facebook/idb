@@ -46,11 +46,11 @@ private final class RecordingProcessOutput: FBProcessOutput<NSNull> {
     super.init()
   }
 
-  override func providedThroughFile() -> FBFuture<FBProcessFileOutput> {
+  override func providedThroughFile() -> FBFuture<ProcessFileOutput> {
     if let error {
-      return FBFuture<FBProcessFileOutput>(error: error)
+      return FBFuture<ProcessFileOutput>(error: error)
     }
-    return FBFuture<FBProcessFileOutput>(result: RecordingProcessFileOutput(filePath: filePath))
+    return FBFuture<ProcessFileOutput>(result: RecordingProcessFileOutput(filePath: filePath))
   }
 
   override func detach() -> FBFuture<NSNull> {
@@ -59,7 +59,7 @@ private final class RecordingProcessOutput: FBProcessOutput<NSNull> {
   }
 }
 
-private final class RecordingProcessFileOutput: NSObject, FBProcessFileOutput {
+private final class RecordingProcessFileOutput: NSObject, ProcessFileOutput {
 
   let filePath: String
 

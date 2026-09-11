@@ -63,7 +63,7 @@ final class SimulatorDarwinNotificationTransport: @unchecked Sendable {
 
   private func postBlocking(_ notificationName: String) throws {
     guard let simulator else {
-      throw FBWeakTargetError.simulator
+      throw WeakTargetError.simulator
     }
     try simulator.device.postDarwinNotification(notificationName)
   }

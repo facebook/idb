@@ -151,7 +151,7 @@ enum ScreenshotRequestTranslation {
 
   /// Maps a render failure onto a status code so it reaches the caller with a message rather than as a
   /// bare `UNKNOWN`.
-  static func status(for error: FBScreenshotRenderError) -> GRPCStatus {
+  static func status(for error: ScreenshotRenderError) -> GRPCStatus {
     switch error {
     case .croppingFailed, .contextCreationFailed, .scalingFailed, .destinationCreationFailed,
       .encodingFailed, .unreadableImageData, .unknownImageDimensions, .decodingFailed:

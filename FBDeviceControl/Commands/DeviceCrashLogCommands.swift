@@ -36,7 +36,7 @@ extension DeviceCrashLogError: LocalizedError {
 
 public final class DeviceCrashLogCommands: CrashLogCommands {
   private weak var device: FBDevice?
-  private let store: FBCrashLogStore
+  private let store: CrashLogStore
   /// Resolved at the point of use: `FBAFCConnection.defaultCalls` dlopens MobileDevice on first
   /// evaluation and aborts if the private frameworks are not loaded, so constructing these
   /// commands must not read it.
@@ -51,11 +51,11 @@ public final class DeviceCrashLogCommands: CrashLogCommands {
 
   public class func commands(with device: FBDevice) -> DeviceCrashLogCommands {
     let storeDirectory = (device.auxillaryDirectory as NSString).appendingPathComponent("crash_store")
-    let store = FBCrashLogStore.store(forDirectories: [storeDirectory], logger: device.logger)
+    let store = CrashLogStore.store(forDirectories: [storeDirectory], logger: device.logger)
     return DeviceCrashLogCommands(device: device, store: store)
   }
 
-  init(device: FBDevice, store: FBCrashLogStore, afcCalls: AFCCalls? = nil) {
+  init(device: FBDevice, store: CrashLogStore, afcCalls: AFCCalls? = nil) {
     self.device = device
     self.store = store
     self.injectedAFCCalls = afcCalls
@@ -93,7 +93,7 @@ public final class DeviceCrashLogCommands: CrashLogCommands {
     let logger = device.logger.withName("crash_remove")
     _ = try await ingestAllCrashLogs(useCache: true)
     let pruned = store.pruneCrashLogs(matchingPredicate: predicate)
-    logger.log("Pruned \(FBCollectionInformation.oneLineDescription(from: pruned.map(\.name))) logs from local cache")
+    logger.log("Pruned \(CollectionInformation.oneLineDescription(from: pruned.map(\.name))) logs from local cache")
     return try await removeCrashLogsFromDevice(pruned, logger: logger)
   }
 

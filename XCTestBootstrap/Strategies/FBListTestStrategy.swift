@@ -104,7 +104,7 @@ public final class FBListTestStrategy {
           let tuple = tupleObj as [AnyObject]
           guard tuple.count == 2,
             let shimPath = tuple[0] as? String,
-            let shimOutput = tuple[1] as? FBProcessFileOutput
+            let shimOutput = tuple[1] as? ProcessFileOutput
           else {
             return FBFuture(error: ListTestError.missingShimAndOutput(result: String(describing: tuple)))
           }
@@ -121,7 +121,7 @@ public final class FBListTestStrategy {
 
   // MARK: - Private
 
-  private func listTests(withShimPath shimPath: String, shimOutput: FBProcessFileOutput, shimBuffer: FBConsumableBuffer) -> FBFuture<NSArray> {
+  private func listTests(withShimPath shimPath: String, shimOutput: ProcessFileOutput, shimBuffer: ConsumableBuffer) -> FBFuture<NSArray> {
     let stdOutBuffer = FBDataBuffer.consumableBuffer()
     let stdOutConsumer: FBDataConsumer = FBCompositeDataConsumer(consumers: [
       stdOutBuffer,
@@ -174,7 +174,7 @@ public final class FBListTestStrategy {
     return environment
   }
 
-  private static func launchedProcess(withExitCode exitCode: FBFuture<NSNumber>, shimOutput: FBProcessFileOutput, shimBuffer: FBConsumableBuffer, stdOutBuffer: FBConsumableBuffer, stdErrBuffer: FBConsumableBuffer, queue: DispatchQueue) -> FBFuture<NSArray> {
+  private static func launchedProcess(withExitCode exitCode: FBFuture<NSNumber>, shimOutput: ProcessFileOutput, shimBuffer: ConsumableBuffer, stdOutBuffer: ConsumableBuffer, stdErrBuffer: ConsumableBuffer, queue: DispatchQueue) -> FBFuture<NSArray> {
     return
       shimOutput.startReading().retyped(FBFuture<AnyObject>.self)
       .onQueue(
@@ -213,7 +213,7 @@ public final class FBListTestStrategy {
       .retyped(FBFuture<NSArray>.self)
   }
 
-  private static func onQueue(_ queue: DispatchQueue, confirmExit exitCode: FBFuture<NSNumber>, closingOutput output: FBProcessFileOutput, shimBuffer: FBConsumableBuffer, stdOutBuffer: FBConsumableBuffer, stdErrBuffer: FBConsumableBuffer) -> FBFuture<NSNull> {
+  private static func onQueue(_ queue: DispatchQueue, confirmExit exitCode: FBFuture<NSNumber>, closingOutput output: ProcessFileOutput, shimBuffer: ConsumableBuffer, stdOutBuffer: ConsumableBuffer, stdErrBuffer: ConsumableBuffer) -> FBFuture<NSNull> {
     return
       exitCode
       .onQueue(

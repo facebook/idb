@@ -25,7 +25,7 @@ final class SimulatorConnectionlessTransportTests: XCTestCase {
     do {
       try await operation()
       XCTFail("\(message): expected a weak-target failure, got success", file: file, line: line)
-    } catch FBWeakTargetError.deallocated {
+    } catch WeakTargetError.deallocated {
     } catch {
       XCTFail("\(message): expected a weak-target failure, got \(error)", file: file, line: line)
     }
@@ -56,7 +56,7 @@ final class SimulatorConnectionlessTransportTests: XCTestCase {
           do {
             try await purple.sendLockDevice()
             return false
-          } catch FBWeakTargetError.deallocated {
+          } catch WeakTargetError.deallocated {
             return true
           } catch {
             return false
@@ -66,7 +66,7 @@ final class SimulatorConnectionlessTransportTests: XCTestCase {
           do {
             try await notification.sendShake()
             return false
-          } catch FBWeakTargetError.deallocated {
+          } catch WeakTargetError.deallocated {
             return true
           } catch {
             return false

@@ -116,7 +116,7 @@ public final class DeviceDebugSymbolsCommands {
     let logger = device.logger
 
     let indicesToRemotePaths = try await indicesAndRemotePathsOfSharedCache()
-    logger.log("Extracting remote symbols \(FBCollectionInformation.oneLineDescription(from: Array(indicesToRemotePaths.values)))")
+    logger.log("Extracting remote symbols \(CollectionInformation.oneLineDescription(from: Array(indicesToRemotePaths.values)))")
 
     var extractedPaths: [String] = []
     for (index, remotePath) in indicesToRemotePaths {
@@ -154,7 +154,7 @@ public final class DeviceDebugSymbolsCommands {
       guard let index = files.firstIndex(of: fileName) else {
         throw DeviceDebugSymbolsError.fileNotInListing(
           file: fileName,
-          listing: FBCollectionInformation.oneLineDescription(from: files))
+          listing: CollectionInformation.oneLineDescription(from: files))
       }
       return index
     }
@@ -179,7 +179,7 @@ public final class DeviceDebugSymbolsCommands {
     }
     let raw = (message as? [String: Any])?["files"]
     guard let files = raw as? [String] else {
-      let described = (raw as? [Any]).map { FBCollectionInformation.oneLineDescription(from: $0) } ?? String(describing: raw)
+      let described = (raw as? [Any]).map { CollectionInformation.oneLineDescription(from: $0) } ?? String(describing: raw)
       throw DeviceDebugSymbolsError.listingNotStrings(files: described)
     }
     return files
@@ -248,7 +248,7 @@ public final class DeviceDebugSymbolsCommands {
       guard let index = fileIndices.firstIndex(of: file) else {
         throw DeviceDebugSymbolsError.fileNotInListing(
           file: file,
-          listing: FBCollectionInformation.oneLineDescription(from: fileIndices))
+          listing: CollectionInformation.oneLineDescription(from: fileIndices))
       }
       indexToFileName[index] = file
     }
@@ -259,7 +259,7 @@ public final class DeviceDebugSymbolsCommands {
   static func extractSharedCachePath(fromPaths paths: [String]) throws -> String {
     guard let sharedCache = paths.first(where: { ($0 as NSString).pathExtension.isEmpty }) else {
       throw DeviceDebugSymbolsError.sharedCacheNotFound(
-        paths: FBCollectionInformation.oneLineDescription(from: paths))
+        paths: CollectionInformation.oneLineDescription(from: paths))
     }
     return sharedCache
   }

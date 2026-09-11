@@ -61,24 +61,24 @@ private func unwrapValue(_ wrapped: NSDictionary) -> Any? {
 
 private func accessAndUnwrapValues(_ dict: NSDictionary, _ key: String, _ logger: FBControlCoreLogger) -> NSArray? {
   guard let wrapped = dict[key] as? NSDictionary else {
-    logger.log("\(key) does not exist inside \(FBCollectionInformation.oneLineDescription(from: dict.allKeys))")
+    logger.log("\(key) does not exist inside \(CollectionInformation.oneLineDescription(from: dict.allKeys))")
     return nil
   }
   let unwrapped = unwrapValues(wrapped)
   if unwrapped == nil {
-    logger.log("Failed to unwrap values for \(key) from \(FBCollectionInformation.oneLineDescription(from: wrapped.allKeys))")
+    logger.log("Failed to unwrap values for \(key) from \(CollectionInformation.oneLineDescription(from: wrapped.allKeys))")
   }
   return unwrapped
 }
 
 private func accessAndUnwrapValue(_ dict: NSDictionary, _ key: String, _ logger: FBControlCoreLogger) -> Any? {
   guard let wrapped = dict[key] as? NSDictionary else {
-    logger.log("\(key) does not exist inside \(FBCollectionInformation.oneLineDescription(from: dict.allKeys))")
+    logger.log("\(key) does not exist inside \(CollectionInformation.oneLineDescription(from: dict.allKeys))")
     return nil
   }
   let unwrapped = unwrapValue(wrapped)
   if unwrapped == nil {
-    logger.log("Failed to unwrap value for \(key) from \(FBCollectionInformation.oneLineDescription(from: wrapped.allKeys))")
+    logger.log("Failed to unwrap value for \(key) from \(CollectionInformation.oneLineDescription(from: wrapped.allKeys))")
   }
   return unwrapped
 }

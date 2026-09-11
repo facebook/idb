@@ -26,7 +26,7 @@ import Foundation
 }
 
 /// Process Output that can be provided through a file.
-@objc public protocol FBProcessFileOutput: NSObjectProtocol {
+@objc public protocol ProcessFileOutput: NSObjectProtocol {
   /// The File Path to write to.
   var filePath: String { get }
 
@@ -41,7 +41,7 @@ import Foundation
 @objc(FBProcessOutput)
 public protocol ProcessOutputProtocol: NSObjectProtocol {
   /// Allows the receiver to be written to via a file instead of via a file handle.
-  func providedThroughFile() -> FBFuture<FBProcessFileOutput>
+  func providedThroughFile() -> FBFuture<ProcessFileOutput>
 
   /// Allows the receiver to be written to via a Data Consumer.
   func providedThroughConsumer() -> FBFuture<FBDataConsumer>
