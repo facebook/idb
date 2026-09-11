@@ -197,9 +197,9 @@
  Equivalent to `simctl ui <device> content_size` and `simctl ui <device> increase_contrast`.
  */
 @interface SimDevice (Accessibility)
-/// Returns a raw NSInteger: content size category index (1-12). See FBSimulatorContentSizeCategory.
+/// Returns a raw NSInteger: content size category index (1-12). See SimulatorContentSizeCategory.
 - (NSInteger)currentContentSizeCategory;
-/// Accepts a raw NSInteger: content size category index (1-12). See FBSimulatorContentSizeCategory.
+/// Accepts a raw NSInteger: content size category index (1-12). See SimulatorContentSizeCategory.
 - (BOOL)setContentSizeCategory:(NSInteger)category error:(NSError **)error;
 - (id)currentIncreaseContrastMode;
 - (BOOL)setIncreaseContrastEnabled:(BOOL)enabled error:(NSError **)error;

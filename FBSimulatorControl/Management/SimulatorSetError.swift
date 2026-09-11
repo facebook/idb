@@ -8,7 +8,7 @@
 import Foundation
 
 /// Errors thrown while creating or cloning simulators in an `FBSimulatorSet`.
-public enum FBSimulatorSetError: LocalizedError, Sendable {
+public enum SimulatorSetError: LocalizedError, Sendable {
   case deviceTypeOrRuntimeUnavailable(configuration: String, reason: String?)
   case shutdownAfterCreateFailed(reason: String?)
   case simulatorNotInflated(udid: String)
@@ -39,8 +39,8 @@ public enum FBSimulatorSetError: LocalizedError, Sendable {
   }
 }
 
-extension FBSimulatorSetError: CustomStringConvertible {
+extension SimulatorSetError: CustomStringConvertible {
   /// Mirrors `errorDescription` so string interpolation (`"\(error)"`) and logs surface the
   /// human-readable message rather than the synthesized case name.
-  public var description: String { errorDescription ?? "FBSimulatorSetError" }
+  public var description: String { errorDescription ?? "SimulatorSetError" }
 }

@@ -18,7 +18,7 @@ public enum SimulatorAppearance: Int, Sendable {
 
 /// Dynamic Type content size categories.
 /// Values match the integer indices used by SimDevice's setContentSizeCategory:error:.
-public enum FBSimulatorContentSizeCategory: Int, Sendable {
+public enum SimulatorContentSizeCategory: Int, Sendable {
   case extraSmall = 1
   case small = 2
   case medium = 3
@@ -131,12 +131,12 @@ public struct SimulatorPreferencesCommands {
     try simulator.device.setUIInterfaceStyle(appearance.rawValue)
   }
 
-  private func currentContentSizeCategory() async throws -> FBSimulatorContentSizeCategory {
+  private func currentContentSizeCategory() async throws -> SimulatorContentSizeCategory {
     let raw = simulator.device.currentContentSizeCategory()
-    return FBSimulatorContentSizeCategory(rawValue: raw) ?? .large
+    return SimulatorContentSizeCategory(rawValue: raw) ?? .large
   }
 
-  private func setContentSizeCategory(_ category: FBSimulatorContentSizeCategory) async throws {
+  private func setContentSizeCategory(_ category: SimulatorContentSizeCategory) async throws {
     try simulator.device.setContentSizeCategory(category.rawValue)
   }
 

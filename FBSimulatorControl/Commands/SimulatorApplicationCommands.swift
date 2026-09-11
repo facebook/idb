@@ -9,7 +9,7 @@
 @preconcurrency import FBControlCore
 @preconcurrency import Foundation
 
-public enum FBSimulatorApplicationInstallError: Error, LocalizedError {
+public enum SimulatorApplicationInstallError: Error, LocalizedError {
   case installFailed(bundleDescription: String, options: String)
   case processSuspended(bundleID: String, processIdentifier: pid_t, debuggerAttached: Bool)
   case processDebuggerAttached(bundleID: String, processIdentifier: pid_t)
@@ -45,7 +45,7 @@ public enum FBSimulatorApplicationInstallError: Error, LocalizedError {
   }
 }
 
-public enum FBSimulatorApplicationUninstallError: Error, LocalizedError {
+public enum SimulatorApplicationUninstallError: Error, LocalizedError {
   case uninstallingSystemApplication(applicationDescription: String)
   case uninstallFailed(bundleID: String, underlying: Error)
 
@@ -110,14 +110,14 @@ enum SimulatorApplicationInstallAttempt {
   case retry
 }
 
-public struct FBSimulatorApplicationCommands: ApplicationCommands {
+public struct SimulatorApplicationCommands: ApplicationCommands {
 
   internal let simulator: FBSimulator
 
   // MARK: - Initializers
 
-  public static func commands(with simulator: FBSimulator) -> FBSimulatorApplicationCommands {
-    return FBSimulatorApplicationCommands(simulator: simulator)
+  public static func commands(with simulator: FBSimulator) -> SimulatorApplicationCommands {
+    return SimulatorApplicationCommands(simulator: simulator)
   }
 
   // MARK: - Async
@@ -162,7 +162,7 @@ public struct FBSimulatorApplicationCommands: ApplicationCommands {
     var applications: [FBInstalledApplication] = []
     for appInfo in installedApps.values {
       guard let dict = appInfo as? [String: Any],
-        let application = try? FBSimulatorApplicationCommands.installedApplication(fromInfo: dict)
+        let application = try? SimulatorApplicationCommands.installedApplication(fromInfo: dict)
       else {
         continue
       }
@@ -174,13 +174,13 @@ public struct FBSimulatorApplicationCommands: ApplicationCommands {
   public func uninstall(bundleID: String) async throws {
     let installedApplication = try await installed(bundleID: bundleID)
     if installedApplication.installType == .system {
-      throw FBSimulatorApplicationUninstallError.uninstallingSystemApplication(applicationDescription: String(describing: installedApplication))
+      throw SimulatorApplicationUninstallError.uninstallingSystemApplication(applicationDescription: String(describing: installedApplication))
     }
     _ = try? await kill(bundleID: bundleID)
     do {
       try simulator.device.uninstallApplication(bundleID, withOptions: nil)
     } catch {
-      throw FBSimulatorApplicationUninstallError.uninstallFailed(bundleID: bundleID, underlying: error)
+      throw SimulatorApplicationUninstallError.uninstallFailed(bundleID: bundleID, underlying: error)
     }
   }
 
@@ -218,7 +218,7 @@ public struct FBSimulatorApplicationCommands: ApplicationCommands {
     var applicationType: NSString?
     try device.applicationIsInstalled(bundleID, type: &applicationType)
     let appInfo = try device.properties(ofApplication: bundleID)
-    return try FBSimulatorApplicationCommands.installedApplication(fromInfo: appInfo)
+    return try SimulatorApplicationCommands.installedApplication(fromInfo: appInfo)
   }
 
   // MARK: - Install Helpers
@@ -226,7 +226,7 @@ public struct FBSimulatorApplicationCommands: ApplicationCommands {
   static func installAndResolveApplication<T>(
     install: (SimulatorApplicationInstallAttempt) async throws -> Void,
     resolveInstalledApplication: () async throws -> T,
-    installFailure: () -> FBSimulatorApplicationInstallError
+    installFailure: () -> SimulatorApplicationInstallError
   ) async throws -> T {
     do {
       try await install(.initial)
@@ -236,7 +236,7 @@ public struct FBSimulatorApplicationCommands: ApplicationCommands {
       return installedApplication
     } catch let error as CancellationError {
       throw error
-    } catch let error as FBSimulatorApplicationInstallError {
+    } catch let error as SimulatorApplicationInstallError {
       try Task.checkCancellation()
       switch error {
       case .processSuspended,
@@ -259,7 +259,7 @@ public struct FBSimulatorApplicationCommands: ApplicationCommands {
       try Task.checkCancellation()
     } catch let error as CancellationError {
       throw error
-    } catch let error as FBSimulatorApplicationInstallError {
+    } catch let error as SimulatorApplicationInstallError {
       try Task.checkCancellation()
       switch error {
       case .processSuspended,
@@ -303,12 +303,12 @@ public struct FBSimulatorApplicationCommands: ApplicationCommands {
     checkAvailability: () throws -> Void
   ) throws {
     guard state == .booted else {
-      throw FBSimulatorApplicationInstallError.targetNotBooted(state: stateDescription)
+      throw SimulatorApplicationInstallError.targetNotBooted(state: stateDescription)
     }
     do {
       try checkAvailability()
     } catch {
-      throw FBSimulatorApplicationInstallError.targetUnavailable(reason: error.localizedDescription)
+      throw SimulatorApplicationInstallError.targetUnavailable(reason: error.localizedDescription)
     }
   }
 
@@ -332,13 +332,13 @@ public struct FBSimulatorApplicationCommands: ApplicationCommands {
     let processSuspended = processIsSuspended(processIdentifier)
     let debuggerAttached = debuggerIsAttached(processIdentifier)
     if processSuspended {
-      throw FBSimulatorApplicationInstallError.processSuspended(
+      throw SimulatorApplicationInstallError.processSuspended(
         bundleID: bundleID,
         processIdentifier: processIdentifier,
         debuggerAttached: debuggerAttached)
     }
     if debuggerAttached {
-      throw FBSimulatorApplicationInstallError.processDebuggerAttached(
+      throw SimulatorApplicationInstallError.processDebuggerAttached(
         bundleID: bundleID,
         processIdentifier: processIdentifier)
     }
@@ -386,7 +386,7 @@ public struct FBSimulatorApplicationCommands: ApplicationCommands {
     guard let dataDirectory = simulator.dataDirectory else {
       throw SimulatorApplicationLaunchError.noDataDirectory(bundleID: configuration.bundleID)
     }
-    let options = FBSimulatorApplicationCommands.simDeviceLaunchOptions(
+    let options = SimulatorApplicationCommands.simDeviceLaunchOptions(
       for: configuration,
       stdOutPath: translateAbsolutePath(stdOutPath, toPathRelativeTo: dataDirectory),
       stdErrPath: translateAbsolutePath(stdErrPath, toPathRelativeTo: dataDirectory))
@@ -493,16 +493,16 @@ public struct FBSimulatorApplicationCommands: ApplicationCommands {
       installed = nil
     }
     if let installed, installed.installType == .system {
-      throw FBSimulatorApplicationInstallError.installingSystemApplication(applicationDescription: String(describing: installed))
+      throw SimulatorApplicationInstallError.installingSystemApplication(applicationDescription: String(describing: installed))
     }
     guard let binary = application.binary else {
-      throw FBSimulatorApplicationInstallError.applicationMissingExecutable(path: path)
+      throw SimulatorApplicationInstallError.applicationMissingExecutable(path: path)
     }
     let binaryArchRawValues = Set(binary.architectures.map { $0.rawValue })
     let supportedArchitectures = FBiOSTargetConfiguration.baseArchsToCompatibleArch(simulator.architectures)
     let supportedArchRawValues = Set(supportedArchitectures.map { $0.rawValue })
     if binaryArchRawValues.isDisjoint(with: supportedArchRawValues) {
-      throw FBSimulatorApplicationInstallError.unsupportedArchitectures(
+      throw SimulatorApplicationInstallError.unsupportedArchitectures(
         binaryArchitectures: Array(binaryArchRawValues),
         binaryPath: binary.path,
         simulatorArchitectures: Array(supportedArchRawValues))

@@ -15,7 +15,7 @@ public enum FBSimulatorSetting: Equatable {
   case increaseContrast(Bool)
   case autoFillPasswords(Bool)
   case appearance(SimulatorAppearance)
-  case contentSize(FBSimulatorContentSizeCategory)
+  case contentSize(SimulatorContentSizeCategory)
   case locale(localeIdentifier: String)
 }
 
@@ -104,9 +104,9 @@ extension FBSimulatorSettingResolution {
       }
       self = .setting(.appearance(appearance))
     case .contentSize:
-      guard let category = FBSimulatorContentSizeCategory(argumentName: value) else {
+      guard let category = SimulatorContentSizeCategory(argumentName: value) else {
         throw SimulatorSettingError.invalidValue(
-          name: name, value: value, expected: FBSimulatorContentSizeCategory.allArgumentNames.joined(separator: ", "))
+          name: name, value: value, expected: SimulatorContentSizeCategory.allArgumentNames.joined(separator: ", "))
       }
       self = .setting(.contentSize(category))
     case .locale:
@@ -150,8 +150,8 @@ extension SimulatorAppearance {
   }
 }
 
-extension FBSimulatorContentSizeCategory {
-  private static let argumentNames: [(name: String, value: FBSimulatorContentSizeCategory)] = [
+extension SimulatorContentSizeCategory {
+  private static let argumentNames: [(name: String, value: SimulatorContentSizeCategory)] = [
     ("extra-small", .extraSmall),
     ("small", .small),
     ("medium", .medium),
@@ -167,14 +167,14 @@ extension FBSimulatorContentSizeCategory {
   ]
 
   public init?(argumentName: String) {
-    guard let entry = FBSimulatorContentSizeCategory.argumentNames.first(where: { $0.name == argumentName }) else {
+    guard let entry = SimulatorContentSizeCategory.argumentNames.first(where: { $0.name == argumentName }) else {
       return nil
     }
     self = entry.value
   }
 
   var argumentName: String? {
-    FBSimulatorContentSizeCategory.argumentNames.first(where: { $0.value == self })?.name
+    SimulatorContentSizeCategory.argumentNames.first(where: { $0.value == self })?.name
   }
 
   public static var allArgumentNames: [String] {

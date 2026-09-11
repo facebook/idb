@@ -66,8 +66,8 @@ final class SimulatorSettingTests: XCTestCase {
   func testArgumentNameRoundTrip() {
     XCTAssertEqual(SimulatorAppearance(argumentName: "dark"), SimulatorAppearance.dark)
     XCTAssertEqual(SimulatorAppearance.dark.argumentName, "dark")
-    XCTAssertEqual(FBSimulatorContentSizeCategory(argumentName: "large"), FBSimulatorContentSizeCategory.large)
-    XCTAssertEqual(FBSimulatorContentSizeCategory.large.argumentName, "large")
+    XCTAssertEqual(SimulatorContentSizeCategory(argumentName: "large"), SimulatorContentSizeCategory.large)
+    XCTAssertEqual(SimulatorContentSizeCategory.large.argumentName, "large")
     XCTAssertNil(SimulatorAppearance(argumentName: "purple"))
   }
 

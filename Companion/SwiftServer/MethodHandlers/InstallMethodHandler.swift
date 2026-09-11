@@ -33,7 +33,7 @@ struct InstallMethodHandler: @unchecked Sendable {
   static func mapSimulatorInstallErrors<T>(_ operation: () async throws -> T) async throws -> T {
     do {
       return try await operation()
-    } catch let error as FBSimulatorApplicationInstallError {
+    } catch let error as SimulatorApplicationInstallError {
       switch error {
       case .processSuspended,
         .processDebuggerAttached,

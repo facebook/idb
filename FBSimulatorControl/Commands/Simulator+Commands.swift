@@ -17,8 +17,8 @@ extension FBSimulator {
 
   // MARK: - Shared accessors
 
-  public var application: FBSimulatorApplicationCommands {
-    FBSimulatorApplicationCommands.commands(with: self)
+  public var application: SimulatorApplicationCommands {
+    SimulatorApplicationCommands.commands(with: self)
   }
 
   public var crashLog: SimulatorCrashLogCommands {
@@ -49,8 +49,8 @@ extension FBSimulator {
     SimulatorProcessSpawnCommands.commands(with: self)
   }
 
-  public var videoRecording: FBSimulatorVideoRecordingCommands {
-    commandCache.resolve { FBSimulatorVideoRecordingCommands.commands(with: self) }
+  public var videoRecording: SimulatorVideoRecordingCommands {
+    commandCache.resolve { SimulatorVideoRecordingCommands.commands(with: self) }
   }
 
   public var videoStream: SimulatorVideoStreamCommands {

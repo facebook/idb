@@ -142,7 +142,7 @@ final class SimulatorProcessSpawnCommandsTests: XCTestCase {
       io: FBProcessIO<AnyObject, AnyObject, AnyObject>.outputToDevNull(),
       launchMode: .failIfRunning)
 
-    let options = FBSimulatorApplicationCommands.simDeviceLaunchOptions(
+    let options = SimulatorApplicationCommands.simDeviceLaunchOptions(
       for: configuration, stdOutPath: "relative/out", stdErrPath: "relative/err")
 
     XCTAssertEqual(

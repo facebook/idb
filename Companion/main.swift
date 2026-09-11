@@ -342,7 +342,7 @@ private func runClone(_ udid: String, userDefaults: UserDefaults, logger: FBCont
   let base = try await resolveSimulator(udid, userDefaults: userDefaults, logger: logger)
   let destination = try simulatorSetWithPath(destinationSet, logger: logger)
   guard let baseSet = base.set else {
-    throw FBSimulatorSetError.simulatorHasNoSet(udid: base.udid)
+    throw SimulatorSetError.simulatorHasNoSet(udid: base.udid)
   }
   let cloned = try await baseSet.cloneSimulator(base, toDeviceSet: destination)
   writeTargetToStdOut(cloned)

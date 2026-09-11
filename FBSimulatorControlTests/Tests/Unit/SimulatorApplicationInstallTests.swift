@@ -22,7 +22,7 @@ final class SimulatorApplicationInstallTests: XCTestCase {
       userInfo: [NSLocalizedDescriptionKey: "Failed to load Info.plist from bundle at path /tmp/App.app"])
   }
 
-  private func installFailure() -> FBSimulatorApplicationInstallError {
+  private func installFailure() -> SimulatorApplicationInstallError {
     .installFailed(bundleDescription: "an app", options: "no options")
   }
 
@@ -30,7 +30,7 @@ final class SimulatorApplicationInstallTests: XCTestCase {
     var attempts: [SimulatorApplicationInstallAttempt] = []
     var resolveCalls = 0
 
-    let application = try await FBSimulatorApplicationCommands.installAndResolveApplication(
+    let application = try await SimulatorApplicationCommands.installAndResolveApplication(
       install: { attempts.append($0) },
       resolveInstalledApplication: {
         resolveCalls += 1
@@ -46,7 +46,7 @@ final class SimulatorApplicationInstallTests: XCTestCase {
   func testInfoPlistInstallFailureRetriesSuccessfully() async throws {
     var attempts: [SimulatorApplicationInstallAttempt] = []
 
-    let application = try await FBSimulatorApplicationCommands.installAndResolveApplication(
+    let application = try await SimulatorApplicationCommands.installAndResolveApplication(
       install: { attempt in
         attempts.append(attempt)
         if attempt == .initial {
@@ -64,7 +64,7 @@ final class SimulatorApplicationInstallTests: XCTestCase {
     var attempts: [SimulatorApplicationInstallAttempt] = []
     var resolveCalls = 0
 
-    let application = try await FBSimulatorApplicationCommands.installAndResolveApplication(
+    let application = try await SimulatorApplicationCommands.installAndResolveApplication(
       install: { attempts.append($0) },
       resolveInstalledApplication: {
         resolveCalls += 1
@@ -82,12 +82,12 @@ final class SimulatorApplicationInstallTests: XCTestCase {
 
   func testNonRetryableInitialFailureBecomesInstallFailure() async {
     do {
-      let _: String = try await FBSimulatorApplicationCommands.installAndResolveApplication(
+      let _: String = try await SimulatorApplicationCommands.installAndResolveApplication(
         install: { _ in throw TestError.conditionNotMet },
         resolveInstalledApplication: { "installed" },
         installFailure: installFailure)
       XCTFail("Expected install failure")
-    } catch let error as FBSimulatorApplicationInstallError {
+    } catch let error as SimulatorApplicationInstallError {
       guard case .installFailed = error else {
         return XCTFail("Expected installFailed, got \(error)")
       }
@@ -98,12 +98,12 @@ final class SimulatorApplicationInstallTests: XCTestCase {
 
   func testNonRetryableInitialLookupFailureBecomesInstallFailure() async {
     do {
-      let _: String = try await FBSimulatorApplicationCommands.installAndResolveApplication(
+      let _: String = try await SimulatorApplicationCommands.installAndResolveApplication(
         install: { _ in },
         resolveInstalledApplication: { throw TestError.conditionNotMet },
         installFailure: installFailure)
       XCTFail("Expected install failure")
-    } catch let error as FBSimulatorApplicationInstallError {
+    } catch let error as SimulatorApplicationInstallError {
       guard case .installFailed = error else {
         return XCTFail("Expected installFailed, got \(error)")
       }
@@ -116,7 +116,7 @@ final class SimulatorApplicationInstallTests: XCTestCase {
     var attempts: [SimulatorApplicationInstallAttempt] = []
 
     do {
-      let _: String = try await FBSimulatorApplicationCommands.installAndResolveApplication(
+      let _: String = try await SimulatorApplicationCommands.installAndResolveApplication(
         install: { attempt in
           attempts.append(attempt)
           if attempt == .initial {
@@ -127,7 +127,7 @@ final class SimulatorApplicationInstallTests: XCTestCase {
         resolveInstalledApplication: { "installed" },
         installFailure: installFailure)
       XCTFail("Expected install failure")
-    } catch let error as FBSimulatorApplicationInstallError {
+    } catch let error as SimulatorApplicationInstallError {
       guard case .installFailed = error else {
         return XCTFail("Expected installFailed, got \(error)")
       }
@@ -139,7 +139,7 @@ final class SimulatorApplicationInstallTests: XCTestCase {
 
   func testLookupFailureAfterSuccessfulRetryKeepsOriginalError() async {
     do {
-      let _: String = try await FBSimulatorApplicationCommands.installAndResolveApplication(
+      let _: String = try await SimulatorApplicationCommands.installAndResolveApplication(
         install: { attempt in
           if attempt == .initial {
             throw self.infoPlistError()

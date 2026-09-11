@@ -18,7 +18,7 @@ enum RecordRequestTranslation {
   /// muxed to a file rather than byte-framed.
   static let format = FBVideoStreamFormat.compressedVideo(withCodec: .h264, transport: .annexB)
 
-  /// What `FBSimulatorVideoRecordingCommands` has always pinned, and so what an unset `fps` has to
+  /// What `SimulatorVideoRecordingCommands` has always pinned, and so what an unset `fps` has to
   /// mean here. The stream's unset `fps` means the display's own rate instead.
   static let defaultFramesPerSecond = 30
 

@@ -14,7 +14,7 @@ final class InstallMethodHandlerTests: XCTestCase {
   func testSuspendedApplicationMapsToFailedPrecondition() async {
     do {
       let _: Void = try await InstallMethodHandler.mapSimulatorInstallErrors {
-        throw FBSimulatorApplicationInstallError.processSuspended(
+        throw SimulatorApplicationInstallError.processSuspended(
           bundleID: "com.example.app",
           processIdentifier: 42,
           debuggerAttached: true)
@@ -33,7 +33,7 @@ final class InstallMethodHandlerTests: XCTestCase {
   func testDebuggerAttachedApplicationMapsToFailedPrecondition() async {
     do {
       let _: Void = try await InstallMethodHandler.mapSimulatorInstallErrors {
-        throw FBSimulatorApplicationInstallError.processDebuggerAttached(
+        throw SimulatorApplicationInstallError.processDebuggerAttached(
           bundleID: "com.example.app",
           processIdentifier: 42)
       }
@@ -56,24 +56,24 @@ final class InstallMethodHandlerTests: XCTestCase {
 
     do {
       let _: Void = try await InstallMethodHandler.mapSimulatorInstallErrors {
-        throw FBSimulatorApplicationUninstallError.uninstallFailed(
+        throw SimulatorApplicationUninstallError.uninstallFailed(
           bundleID: "com.example.app",
           underlying: underlying)
       }
       XCTFail("Expected the original simulator application error")
-    } catch let error as FBSimulatorApplicationUninstallError {
+    } catch let error as SimulatorApplicationUninstallError {
       guard case let .uninstallFailed(bundleID, actualUnderlying) = error else {
         return XCTFail("Expected uninstallFailed, got \(error)")
       }
       XCTAssertEqual(bundleID, "com.example.app")
       XCTAssertTrue((actualUnderlying as NSError) === underlying)
     } catch {
-      XCTFail("Expected FBSimulatorApplicationUninstallError, got \(error)")
+      XCTFail("Expected SimulatorApplicationUninstallError, got \(error)")
     }
   }
 
   func testTargetReadinessErrorsMapToFailedPrecondition() async {
-    let errors: [FBSimulatorApplicationInstallError] = [
+    let errors: [SimulatorApplicationInstallError] = [
       .targetNotBooted(state: "Shutdown"),
       .targetUnavailable(reason: "runtime unavailable"),
     ]

@@ -52,7 +52,7 @@ final class SimulatorDebuggerCommandsTests: XCTestCase {
 
   /// Holds strong references to the real `FBSimulator` and the capturing wrapper
   /// for the duration of a test. `SimulatorDebuggerCommands.simulator` and
-  /// `FBSimulatorApplicationCommands.simulator` are both `weak`, so without an
+  /// `SimulatorApplicationCommands.simulator` are both `weak`, so without an
   /// external strong ref the simulator deallocates the moment `makeCommands`
   /// returns and the production code throws "Simulator deallocated" before the
   /// override has a chance to capture.

@@ -27,7 +27,7 @@ final class SimulatorDeletionStrategy {
     let coreSimulatorLogsDirectory = simulator.coreSimulatorLogsDirectory
     let udid = simulator.udid
     guard let set = simulator.set else {
-      throw FBSimulatorSetError.simulatorHasNoSet(udid: simulator.udid)
+      throw SimulatorSetError.simulatorHasNoSet(udid: simulator.udid)
     }
     let logger = simulator.logger
 

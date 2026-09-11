@@ -70,7 +70,7 @@ public final class FBSimulatorSet: FBiOSTargetSet {
       deviceType = try configuration.obtainDeviceType()
       runtime = try configuration.obtainRuntime()
     } catch {
-      throw FBSimulatorSetError.deviceTypeOrRuntimeUnavailable(configuration: "\(configuration)", reason: error.localizedDescription)
+      throw SimulatorSetError.deviceTypeOrRuntimeUnavailable(configuration: "\(configuration)", reason: error.localizedDescription)
     }
 
     logger.debug().log("Creating device with Type \(deviceType) Runtime \(runtime)")
@@ -81,7 +81,7 @@ public final class FBSimulatorSet: FBiOSTargetSet {
     do {
       try await SimulatorShutdownStrategy.shutdown(simulator)
     } catch {
-      throw FBSimulatorSetError.shutdownAfterCreateFailed(reason: error.localizedDescription)
+      throw SimulatorSetError.shutdownAfterCreateFailed(reason: error.localizedDescription)
     }
     return simulator
   }
@@ -153,7 +153,7 @@ public final class FBSimulatorSet: FBiOSTargetSet {
 
   private func fetchNewlyMadeSimulatorOrThrow(_ device: SimDevice) throws -> FBSimulator {
     guard let simulator = FBSimulatorSet.keySimulatorsByUDID(allSimulators)[device.udid.uuidString] else {
-      throw FBSimulatorSetError.simulatorNotInflated(udid: device.udid.uuidString)
+      throw SimulatorSetError.simulatorNotInflated(udid: device.udid.uuidString)
     }
     return simulator
   }
@@ -164,7 +164,7 @@ public final class FBSimulatorSet: FBiOSTargetSet {
         if let device {
           continuation.resume(returning: device)
         } else {
-          continuation.resume(throwing: error ?? FBSimulatorSetError.deviceCreationFailed)
+          continuation.resume(throwing: error ?? SimulatorSetError.deviceCreationFailed)
         }
       }
     }
@@ -176,7 +176,7 @@ public final class FBSimulatorSet: FBiOSTargetSet {
         if let created {
           continuation.resume(returning: created)
         } else {
-          continuation.resume(throwing: error ?? FBSimulatorSetError.deviceCloneFailed)
+          continuation.resume(throwing: error ?? SimulatorSetError.deviceCloneFailed)
         }
       }
     }
