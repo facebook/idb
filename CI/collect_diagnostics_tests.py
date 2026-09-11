@@ -134,10 +134,12 @@ class CollectTests(unittest.TestCase):
             self.output,
             self.run,
         )
-        # BUG: both reported paths refer to the second log's contents.
         self.assertEqual(
             [(name, (self.output / name).read_text()) for name in collected],
-            [("companion.log", "second"), ("companion.log", "second")],
+            [
+                ("companions/idb-e2e-a/companion.log", "first"),
+                ("companions/idb-e2e-b/companion.log", "second"),
+            ],
         )
 
     def test_host_and_simulator_crash_report_collision(self) -> None:
@@ -161,14 +163,16 @@ class CollectTests(unittest.TestCase):
             self.run,
         )
 
-        # BUG: the simulator report overwrites the host report.
         self.assertEqual(
             [
                 (name, (self.output / name).read_text())
                 for name in collected
                 if name.endswith(".ips")
             ],
-            [(filename, "simulator crash"), (filename, "simulator crash")],
+            [
+                (f"host-crashes/{filename}", "host crash"),
+                (f"simulator-crashes/{filename}", "simulator crash"),
+            ],
         )
 
     def test_unmatched_pattern_collects_no_files(self) -> None:

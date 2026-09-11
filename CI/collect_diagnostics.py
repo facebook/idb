@@ -34,13 +34,16 @@ class Copy:
 
     root: Path
     pattern: str
+    destination: str = ""
 
     def collect(self, output: Path, run: Run) -> list[str]:
         names = []
         for path in sorted(glob.glob(str(self.root / self.pattern))):
-            name = os.path.basename(path)
-            shutil.copy(path, output / name)
-            names.append(name)
+            relative_path = Path(self.destination) / Path(path).relative_to(self.root)
+            target = output / relative_path
+            target.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy(path, target)
+            names.append(str(relative_path))
         return names
 
 
@@ -62,15 +65,19 @@ Source = Copy | Capture
 def host_sources(*, home: Path, companion_root: Path) -> list[Source]:
     reports = home / "Library" / "Logs" / "DiagnosticReports"
     return [
-        Copy(companion_root, "idb-e2e-*/companion.log"),
-        Copy(reports, "idb_companion*.ips"),
-        Copy(reports, "SimulatorFrameworkBridge*.ips"),
+        Copy(companion_root, "idb-e2e-*/companion.log", "companions"),
+        Copy(reports, "idb_companion*.ips", "host-crashes"),
+        Copy(reports, "SimulatorFrameworkBridge*.ips", "host-crashes"),
     ]
 
 
 def simulator_sources(*, device_set: Path, udid: str) -> list[Source]:
     return [
-        Copy(device_set / udid / "data/Library/Logs/CrashReporter", "*.ips"),
+        Copy(
+            device_set / udid / "data/Library/Logs/CrashReporter",
+            "*.ips",
+            "simulator-crashes",
+        ),
         Capture("devices.txt", tuple(simctl_argv(device_set, "list", "devices"))),
         Capture(
             "simulator-log.txt",
