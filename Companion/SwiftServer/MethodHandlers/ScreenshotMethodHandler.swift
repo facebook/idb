@@ -19,7 +19,7 @@ struct ScreenshotMethodHandler {
     do {
       let result = try await commandExecutor.take_screenshot(configuration)
       return ScreenshotRequestTranslation.response(from: result)
-    } catch let error as FBScreenshotGeometryError {
+    } catch let error as ScreenshotGeometryError {
       // The crop is resolved against the screen that was actually captured, so a rect that
       // overhangs it can only be discovered here, once the target has been asked.
       throw ScreenshotRequestTranslation.status(for: error)

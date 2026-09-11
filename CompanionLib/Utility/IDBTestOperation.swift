@@ -22,7 +22,7 @@ public final class IDBTestOperation: CustomStringConvertible {
   /// configured by unrelated types, and only one of the two is ever in play.
   public enum Configuration: CustomStringConvertible {
     case logic(FBLogicTestConfiguration)
-    case appHosted(FBTestLaunchConfiguration)
+    case appHosted(TestLaunchConfiguration)
 
     public var description: String {
       switch self {

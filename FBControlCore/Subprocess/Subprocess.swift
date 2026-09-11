@@ -75,7 +75,7 @@ public struct Subprocess: Sendable, Equatable {
     }
   }
 
-  /// How a launcher spawns the process. Mirrors `FBProcessSpawnMode`.
+  /// How a launcher spawns the process. Mirrors `ProcessSpawnMode`.
   public enum LaunchMode: Sendable, Equatable {
     /// The launcher's own default.
     case `default`

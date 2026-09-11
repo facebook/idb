@@ -124,16 +124,16 @@ public final class FBAMDevice: FBiOSTargetInfo, DeviceCommands, CustomStringConv
     return [FBArchitecture(rawValue: architecture)]
   }
 
-  public var deviceType: FBDeviceType {
+  public var deviceType: DeviceType {
     let productType = allValues[DeviceKey.productType.rawValue] as? String ?? UnknownValue
-    return FBiOSTargetConfiguration.productTypeToDevice[productType] ?? FBDeviceType.generic(withName: productType)
+    return FBiOSTargetConfiguration.productTypeToDevice[productType] ?? DeviceType.generic(withName: productType)
   }
 
-  public var osVersion: FBOSVersion {
+  public var osVersion: OSVersion {
     let name = Self.osVersionName(
       deviceClass: allValues[DeviceKey.deviceClass.rawValue] as? String,
       productVersion: productVersion)
-    return FBiOSTargetConfiguration.nameToOSVersion[FBOSVersionName(rawValue: name)] ?? FBOSVersion.generic(withName: name)
+    return FBiOSTargetConfiguration.nameToOSVersion[FBOSVersionName(rawValue: name)] ?? OSVersion.generic(withName: name)
   }
 
   public var state: FBiOSTargetState {

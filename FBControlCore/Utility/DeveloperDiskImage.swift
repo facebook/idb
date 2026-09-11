@@ -95,7 +95,7 @@ public struct InstalledDeveloperDiskImages: DeveloperDiskImageProviding {
     guard let signature = try? Data(contentsOf: URL(fileURLWithPath: signaturePath)) else {
       throw DeveloperDiskImageError.signatureLoadFailed(path: signaturePath)
     }
-    let version = FBOSVersion.operatingSystemVersion(fromName: (path as NSString).lastPathComponent)
+    let version = OSVersion.operatingSystemVersion(fromName: (path as NSString).lastPathComponent)
     return DeveloperDiskImage(diskImagePath: diskImagePath, signature: signature, version: version, xcodeVersion: xcodeVersion)
   }
 }

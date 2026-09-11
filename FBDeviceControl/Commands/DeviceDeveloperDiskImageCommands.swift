@@ -113,7 +113,7 @@ public final class DeviceDeveloperDiskImageCommands: DeveloperDiskImageCommands 
     guard let productVersion = device.productVersion else {
       throw DeviceDiskImageError.noProductVersion(deviceDescription: String(describing: device))
     }
-    let targetVersion = FBOSVersion.operatingSystemVersion(fromName: productVersion)
+    let targetVersion = OSVersion.operatingSystemVersion(fromName: productVersion)
     let diskImage = try DeveloperDiskImage.bestImage(
       forImages: diskImages.availableDiskImages,
       targetVersion: targetVersion,

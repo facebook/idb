@@ -174,7 +174,7 @@ public final class FBIDBCommandExecutor {
     try await target.screenshot.take(format: format)
   }
 
-  public func take_screenshot(_ configuration: FBScreenshotConfiguration) async throws -> FBScreenshotResult {
+  public func take_screenshot(_ configuration: ScreenshotConfiguration) async throws -> ScreenshotResult {
     try await target.screenshot.take(configuration: configuration)
   }
 

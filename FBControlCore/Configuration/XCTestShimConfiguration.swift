@@ -54,7 +54,7 @@ extension XCTestShimError: LocalizedError {
   }
 }
 
-public struct FBXCTestShimConfiguration: Sendable {
+public struct XCTestShimConfiguration: Sendable {
 
   public let iOSSimulatorTestShimPath: String
   public let macOSTestShimPath: String
@@ -109,13 +109,13 @@ public struct FBXCTestShimConfiguration: Sendable {
   // Caches the first resolution for the life of the process; actor isolation ensures exactly one resolution
   // runs even when first callers race.
   private actor SharedResolution {
-    private var task: Task<FBXCTestShimConfiguration, Error>?
+    private var task: Task<XCTestShimConfiguration, Error>?
 
-    func configuration() async throws -> FBXCTestShimConfiguration {
+    func configuration() async throws -> XCTestShimConfiguration {
       if let task {
         return try await task.value
       }
-      let task = Task { try await FBXCTestShimConfiguration.defaultShimConfiguration() }
+      let task = Task { try await XCTestShimConfiguration.defaultShimConfiguration() }
       self.task = task
       return try await task.value
     }
@@ -123,20 +123,20 @@ public struct FBXCTestShimConfiguration: Sendable {
 
   private static let sharedResolution = SharedResolution()
 
-  public static func sharedShimConfiguration() async throws -> FBXCTestShimConfiguration {
+  public static func sharedShimConfiguration() async throws -> XCTestShimConfiguration {
     try await sharedResolution.configuration()
   }
 
-  public static func defaultShimConfiguration() async throws -> FBXCTestShimConfiguration {
+  public static func defaultShimConfiguration() async throws -> XCTestShimConfiguration {
     let directory = try await findShimDirectory()
     return try await shimConfiguration(withDirectory: directory)
   }
 
-  public static func shimConfiguration(withDirectory directory: String) async throws -> FBXCTestShimConfiguration {
+  public static func shimConfiguration(withDirectory directory: String) async throws -> XCTestShimConfiguration {
     _ = try await confirmExistenceOfRequiredShims(inDirectory: directory)
     async let iOSSimulatorTestShimPath = pathForCanonicallyNamedShim(.iOSSimulatorTest, inDirectory: directory)
     async let macOSTestShimPath = pathForCanonicallyNamedShim(.macTest, inDirectory: directory)
-    return try await FBXCTestShimConfiguration(
+    return try await XCTestShimConfiguration(
       iOSSimulatorTestShimPath: iOSSimulatorTestShimPath,
       macOSTestShimPath: macOSTestShimPath)
   }

@@ -65,12 +65,12 @@ public final class FBMacDevice: NSObject, FBiOSTarget {
   public let auxillaryDirectory: String
   public var name: String
   public var logger: any FBControlCoreLogger
-  public let osVersion: FBOSVersion
+  public let osVersion: OSVersion
   public var state: FBiOSTargetState
   public let targetType: FBiOSTargetType
   public let workQueue: DispatchQueue
   public let screenInfo: FBiOSTargetScreenInfo?
-  public var deviceType: FBDeviceType = FBDeviceType.generic(withName: "Mac")
+  public var deviceType: DeviceType = DeviceType.generic(withName: "Mac")
   public let udid: String
   public let temporaryDirectory: FBTemporaryDirectory
 
@@ -112,7 +112,7 @@ public final class FBMacDevice: NSObject, FBiOSTarget {
   // MARK: - Initializers
 
   public override init() {
-    architectures = Array(FBArchitectureProcessAdapter.hostMachineSupportedArchitectures())
+    architectures = Array(ArchitectureProcessAdapter.hostMachineSupportedArchitectures())
     asyncQueue = DispatchQueue.global(qos: .userInitiated)
     let explicitTmpDirectory = ProcessInfo.processInfo.environment["IDB_MAC_AUXILLIARY_DIR"]
     if let explicitTmpDirectory {
@@ -128,7 +128,7 @@ public final class FBMacDevice: NSObject, FBiOSTarget {
     workQueue = DispatchQueue.main
     workingDirectory = (NSTemporaryDirectory() as NSString).appendingPathComponent(ProcessInfo.processInfo.globallyUniqueString)
     screenInfo = nil
-    osVersion = FBOSVersion.generic(withName: "mac")
+    osVersion = OSVersion.generic(withName: "mac")
     name = Host.current().localizedName ?? ""
     self.logger = FBControlCoreGlobalConfiguration.defaultLogger
     self.catalyst = false
@@ -141,7 +141,7 @@ public final class FBMacDevice: NSObject, FBiOSTarget {
   }
 
   public init(logger: FBControlCoreLogger, catalyst: Bool) {
-    architectures = Array(FBArchitectureProcessAdapter.hostMachineSupportedArchitectures())
+    architectures = Array(ArchitectureProcessAdapter.hostMachineSupportedArchitectures())
     asyncQueue = DispatchQueue.global(qos: .userInitiated)
     let explicitTmpDirectory = ProcessInfo.processInfo.environment["IDB_MAC_AUXILLIARY_DIR"]
     if let explicitTmpDirectory {
@@ -157,7 +157,7 @@ public final class FBMacDevice: NSObject, FBiOSTarget {
     workQueue = DispatchQueue.main
     workingDirectory = (NSTemporaryDirectory() as NSString).appendingPathComponent(ProcessInfo.processInfo.globallyUniqueString)
     screenInfo = nil
-    osVersion = FBOSVersion.generic(withName: "mac")
+    osVersion = OSVersion.generic(withName: "mac")
     name = Host.current().localizedName ?? ""
     self.logger = logger
     self.catalyst = catalyst
@@ -432,7 +432,7 @@ extension FBMacDevice: ProcessSpawnCommands {
 extension FBMacDevice: XCTestExtendedCommands {
 
   public func runTest(
-    launchConfiguration: FBTestLaunchConfiguration,
+    launchConfiguration: TestLaunchConfiguration,
     reporter: AnyObject,
     logger: any FBControlCoreLogger
   ) async throws {
@@ -459,7 +459,7 @@ extension FBMacDevice: XCTestExtendedCommands {
   }
 
   public func extendedTestShim() async throws -> String {
-    try await FBXCTestShimConfiguration.sharedShimConfiguration().macOSTestShimPath
+    try await XCTestShimConfiguration.sharedShimConfiguration().macOSTestShimPath
   }
 
   public func withTransportForTestManagerService<R>(

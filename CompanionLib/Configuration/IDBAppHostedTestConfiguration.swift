@@ -12,10 +12,10 @@ import XCTestBootstrap
 /// constrained to class types.
 public final class IDBAppHostedTestConfiguration {
 
-  public let testLaunchConfiguration: FBTestLaunchConfiguration
+  public let testLaunchConfiguration: TestLaunchConfiguration
   public let coverageConfiguration: FBCodeCoverageConfiguration?
 
-  public init(testLaunchConfiguration: FBTestLaunchConfiguration, coverageConfiguration: FBCodeCoverageConfiguration?) {
+  public init(testLaunchConfiguration: TestLaunchConfiguration, coverageConfiguration: FBCodeCoverageConfiguration?) {
     self.testLaunchConfiguration = testLaunchConfiguration
     self.coverageConfiguration = coverageConfiguration
   }

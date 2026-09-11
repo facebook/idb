@@ -87,10 +87,10 @@ public final class InstrumentsOperation {
 
   public let task: FBSubprocess<AnyObject, AnyObject, AnyObject>
   public let traceFile: URL
-  public let configuration: FBInstrumentsConfiguration
+  public let configuration: InstrumentsConfiguration
   public let logger: any FBControlCoreLogger
 
-  init(task: FBSubprocess<AnyObject, AnyObject, AnyObject>, traceFile: URL, configuration: FBInstrumentsConfiguration, logger: any FBControlCoreLogger) {
+  init(task: FBSubprocess<AnyObject, AnyObject, AnyObject>, traceFile: URL, configuration: InstrumentsConfiguration, logger: any FBControlCoreLogger) {
     self.task = task
     self.traceFile = traceFile
     self.configuration = configuration
@@ -106,7 +106,7 @@ public final class InstrumentsOperation {
   /// timeout elapses.
   public class func operation(
     target: any FBiOSTarget,
-    configuration: FBInstrumentsConfiguration,
+    configuration: InstrumentsConfiguration,
     logger: any FBControlCoreLogger
   ) async throws -> InstrumentsOperation {
     let deadline = Date().addingTimeInterval(configuration.timings.launchRetryTimeout)
@@ -129,7 +129,7 @@ public final class InstrumentsOperation {
   }
 
   /// Builds the `instruments` command line.
-  static func launchArguments(udid: String, configuration: FBInstrumentsConfiguration, traceFile: String) -> [String] {
+  static func launchArguments(udid: String, configuration: InstrumentsConfiguration, traceFile: String) -> [String] {
     // Formatted via NSNumber rather than Int: operationDuration arrives unclamped from the client,
     // and Int(_: Double) traps on a value that is infinite, NaN, or beyond Int.max.
     let durationMilliseconds = NSNumber(value: configuration.timings.operationDuration * 1000).stringValue
@@ -148,7 +148,7 @@ public final class InstrumentsOperation {
 
   private class func startSingleAttempt(
     target: any FBiOSTarget,
-    configuration: FBInstrumentsConfiguration,
+    configuration: InstrumentsConfiguration,
     logger: any FBControlCoreLogger,
     attemptTimeout: TimeInterval
   ) async throws -> InstrumentsOperation {

@@ -51,7 +51,7 @@ final class SurfaceImageGeneratorTests: XCTestCase {
   }
 
   private func render(
-    _ configuration: FBScreenshotConfiguration,
+    _ configuration: ScreenshotConfiguration,
     screenScale: Double? = nil,
     generator: SurfaceImageGenerator? = nil
   ) throws -> SurfaceImage {
@@ -64,13 +64,13 @@ final class SurfaceImageGeneratorTests: XCTestCase {
   func testNoSurfaceRendersNothing() throws {
     let generator = SurfaceImageGenerator(purpose: "test", logger: nil)
     XCTAssertNil(try generator.image())
-    XCTAssertNil(try generator.image(configuration: FBScreenshotConfiguration(), screenScale: nil))
+    XCTAssertNil(try generator.image(configuration: ScreenshotConfiguration(), screenScale: nil))
   }
 
   // MARK: - Identity
 
   func testDefaultConfigurationRendersTheWholeSurface() throws {
-    let rendered = try render(FBScreenshotConfiguration())
+    let rendered = try render(ScreenshotConfiguration())
     XCTAssertEqual(rendered.sourceSize, surfaceSize)
     XCTAssertEqual(rendered.image.width, 64)
     XCTAssertEqual(rendered.image.height, 32)
@@ -79,7 +79,7 @@ final class SurfaceImageGeneratorTests: XCTestCase {
   func testBareImageMatchesTheDefaultConfiguration() throws {
     let generator = try generator()
     let bare = try XCTUnwrap(generator.image())
-    let configured = try render(FBScreenshotConfiguration(), generator: generator)
+    let configured = try render(ScreenshotConfiguration(), generator: generator)
     XCTAssertEqual(try pixels(of: bare), try pixels(of: configured.image))
   }
 
@@ -89,7 +89,7 @@ final class SurfaceImageGeneratorTests: XCTestCase {
   /// `CGImage.cropping` is unambiguously top-left, so it is the reference for the flip.
   func testCropMatchesTheSameRegionCutFromTheFullRender() throws {
     let generator = try generator()
-    let full = try render(FBScreenshotConfiguration(), generator: generator).image
+    let full = try render(ScreenshotConfiguration(), generator: generator).image
 
     for cropRect in [
       CGRect(x: 0, y: 0, width: 16, height: 8),
@@ -97,7 +97,7 @@ final class SurfaceImageGeneratorTests: XCTestCase {
       CGRect(x: 0, y: 24, width: 16, height: 8),
       CGRect(x: 20, y: 9, width: 13, height: 7),
     ] {
-      let cropped = try render(FBScreenshotConfiguration(cropRect: cropRect), generator: generator)
+      let cropped = try render(ScreenshotConfiguration(cropRect: cropRect), generator: generator)
       let expected = try XCTUnwrap(full.cropping(to: cropRect))
       XCTAssertEqual(cropped.image.width, Int(cropRect.width), "\(cropRect)")
       XCTAssertEqual(cropped.image.height, Int(cropRect.height), "\(cropRect)")
@@ -108,9 +108,9 @@ final class SurfaceImageGeneratorTests: XCTestCase {
 
   func testTheFixturePatternWouldExposeAFlip() throws {
     let generator = try generator()
-    let topLeft = try render(FBScreenshotConfiguration(cropRect: CGRect(x: 0, y: 0, width: 16, height: 8)), generator: generator)
-    let bottomLeft = try render(FBScreenshotConfiguration(cropRect: CGRect(x: 0, y: 24, width: 16, height: 8)), generator: generator)
-    let topRight = try render(FBScreenshotConfiguration(cropRect: CGRect(x: 48, y: 0, width: 16, height: 8)), generator: generator)
+    let topLeft = try render(ScreenshotConfiguration(cropRect: CGRect(x: 0, y: 0, width: 16, height: 8)), generator: generator)
+    let bottomLeft = try render(ScreenshotConfiguration(cropRect: CGRect(x: 0, y: 24, width: 16, height: 8)), generator: generator)
+    let topRight = try render(ScreenshotConfiguration(cropRect: CGRect(x: 48, y: 0, width: 16, height: 8)), generator: generator)
     XCTAssertNotEqual(try pixels(of: topLeft.image), try pixels(of: bottomLeft.image))
     XCTAssertNotEqual(try pixels(of: topLeft.image), try pixels(of: topRight.image))
   }
@@ -118,12 +118,12 @@ final class SurfaceImageGeneratorTests: XCTestCase {
   func testCropInPointsUsesTheScreenScale() throws {
     let generator = try generator()
     let points = try render(
-      FBScreenshotConfiguration(cropRect: CGRect(x: 4, y: 2, width: 8, height: 4), unit: .points),
+      ScreenshotConfiguration(cropRect: CGRect(x: 4, y: 2, width: 8, height: 4), unit: .points),
       screenScale: 2,
       generator: generator
     )
     let equivalent = try render(
-      FBScreenshotConfiguration(cropRect: CGRect(x: 8, y: 4, width: 16, height: 8)),
+      ScreenshotConfiguration(cropRect: CGRect(x: 8, y: 4, width: 16, height: 8)),
       generator: generator
     )
     XCTAssertEqual(try pixels(of: points.image), try pixels(of: equivalent.image))
@@ -133,11 +133,11 @@ final class SurfaceImageGeneratorTests: XCTestCase {
     let generator = try generator()
     XCTAssertThrowsError(
       try generator.image(
-        configuration: FBScreenshotConfiguration(cropRect: CGRect(x: 0, y: 0, width: 8, height: 4), unit: .points),
+        configuration: ScreenshotConfiguration(cropRect: CGRect(x: 0, y: 0, width: 8, height: 4), unit: .points),
         screenScale: nil
       )
     ) { error in
-      XCTAssertEqual(error as? FBScreenshotGeometryError, .screenScaleUnknown)
+      XCTAssertEqual(error as? ScreenshotGeometryError, .screenScaleUnknown)
     }
   }
 
@@ -147,7 +147,7 @@ final class SurfaceImageGeneratorTests: XCTestCase {
   /// the filter's output extent.
   func testScaleProducesExactlyThePlannedSize() throws {
     let generator = try generator()
-    let cases: [(FBScreenshotScale, CGSize)] = [
+    let cases: [(ScreenshotScale, CGSize)] = [
       (.factor(0.5), CGSize(width: 32, height: 16)),
       (.factor(0.25), CGSize(width: 16, height: 8)),
       (.factor(0.3), CGSize(width: 19, height: 10)),
@@ -156,7 +156,7 @@ final class SurfaceImageGeneratorTests: XCTestCase {
       (.fit(maxWidth: 200, maxHeight: 200), surfaceSize),
     ]
     for (scale, expected) in cases {
-      let rendered = try render(FBScreenshotConfiguration(scale: scale), generator: generator)
+      let rendered = try render(ScreenshotConfiguration(scale: scale), generator: generator)
       XCTAssertEqual(CGSize(width: rendered.image.width, height: rendered.image.height), expected, "\(scale)")
       XCTAssertEqual(rendered.sourceSize, surfaceSize, "\(scale)")
     }
@@ -164,7 +164,7 @@ final class SurfaceImageGeneratorTests: XCTestCase {
 
   /// The scale applies to the cropped region, not to the surface.
   func testCropThenScale() throws {
-    let configuration = FBScreenshotConfiguration(
+    let configuration = ScreenshotConfiguration(
       cropRect: CGRect(x: 8, y: 4, width: 32, height: 16),
       scale: .factor(0.5)
     )
@@ -176,8 +176,8 @@ final class SurfaceImageGeneratorTests: XCTestCase {
 
   func testScaledRenderKeepsTheWholeRegion() throws {
     let generator = try generator()
-    let full = try render(FBScreenshotConfiguration(), generator: generator).image
-    let halved = try render(FBScreenshotConfiguration(scale: .factor(0.5)), generator: generator).image
+    let full = try render(ScreenshotConfiguration(), generator: generator).image
+    let halved = try render(ScreenshotConfiguration(scale: .factor(0.5)), generator: generator).image
 
     // Sample the far corners. The surface's blue ramps along x and its green along y, so a render
     // that dropped or mirrored an edge would not carry both ends of both ramps.

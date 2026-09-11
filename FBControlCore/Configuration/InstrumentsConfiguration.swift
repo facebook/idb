@@ -26,7 +26,7 @@ public struct InstrumentsTimings: Sendable {
   }
 }
 
-public struct FBInstrumentsConfiguration: Sendable, CustomStringConvertible {
+public struct InstrumentsConfiguration: Sendable, CustomStringConvertible {
 
   public let templateName: String
   public let targetApplication: String
@@ -35,8 +35,8 @@ public struct FBInstrumentsConfiguration: Sendable, CustomStringConvertible {
   public let toolArguments: [String]
   public let timings: InstrumentsTimings
 
-  public static func configuration(withTemplateName templateName: String, targetApplication: String, appEnvironment: [String: String], appArguments: [String], toolArguments: [String], timings: InstrumentsTimings) -> FBInstrumentsConfiguration {
-    FBInstrumentsConfiguration(templateName: templateName, targetApplication: targetApplication, appEnvironment: appEnvironment, appArguments: appArguments, toolArguments: toolArguments, timings: timings)
+  public static func configuration(withTemplateName templateName: String, targetApplication: String, appEnvironment: [String: String], appArguments: [String], toolArguments: [String], timings: InstrumentsTimings) -> InstrumentsConfiguration {
+    InstrumentsConfiguration(templateName: templateName, targetApplication: targetApplication, appEnvironment: appEnvironment, appArguments: appArguments, toolArguments: toolArguments, timings: timings)
   }
 
   public init(templateName: String, targetApplication: String, appEnvironment: [String: String], appArguments: [String], toolArguments: [String], timings: InstrumentsTimings) {

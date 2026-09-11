@@ -82,9 +82,9 @@ public final class FBAMRestorableDevice: FBiOSTargetInfo, DeviceProtocol {
     Self.targetState(for: AMRestorableDeviceState(rawValue: calls.RestorableDeviceGetState(restorableDevice)) ?? .unknown)
   }
 
-  public var deviceType: FBDeviceType {
+  public var deviceType: DeviceType {
     let productString = allValues[DeviceKey.productType.rawValue] as? String ?? UnknownValue
-    return FBDeviceType.generic(withName: productString)
+    return DeviceType.generic(withName: productString)
   }
 
   public var architectures: [FBArchitecture] {
@@ -95,8 +95,8 @@ public final class FBAMRestorableDevice: FBiOSTargetInfo, DeviceProtocol {
     .device
   }
 
-  public var osVersion: FBOSVersion {
-    FBOSVersion.generic(withName: UnknownValue)
+  public var osVersion: OSVersion {
+    OSVersion.generic(withName: UnknownValue)
   }
 
   public var extendedInformation: [String: Any] {

@@ -27,7 +27,7 @@ final class ScreenshotRequestTranslationTests: XCTestCase {
 
   private func configuration(
     _ mutate: (inout Idb_ScreenshotRequest) -> Void = { _ in }
-  ) throws -> FBScreenshotConfiguration {
+  ) throws -> ScreenshotConfiguration {
     try ScreenshotRequestTranslation.configuration(from: request(mutate))
   }
 
@@ -48,7 +48,7 @@ final class ScreenshotRequestTranslationTests: XCTestCase {
   func testAnEmptyRequestIsTheHistoricalBehaviour() throws {
     // Every field defaults to 0 on the wire, so an old client that only ever set `format` must
     // still get exactly what it got before the request gained fields: a full-screen native PNG.
-    XCTAssertEqual(try configuration(), FBScreenshotConfiguration())
+    XCTAssertEqual(try configuration(), ScreenshotConfiguration())
   }
 
   // MARK: - Format and quality
@@ -58,7 +58,7 @@ final class ScreenshotRequestTranslationTests: XCTestCase {
     XCTAssertEqual(try configuration { $0.format = .tiff }.encoding, .tiff)
     XCTAssertEqual(
       try configuration { $0.format = .jpeg }.encoding,
-      .jpeg(quality: FBScreenshotEncoding.defaultJPEGQuality)
+      .jpeg(quality: ScreenshotEncoding.defaultJPEGQuality)
     )
   }
 
@@ -187,7 +187,7 @@ final class ScreenshotRequestTranslationTests: XCTestCase {
 
   func testTheResponseCarriesEveryMeasurement() {
     let response = ScreenshotRequestTranslation.response(
-      from: FBScreenshotResult(
+      from: ScreenshotResult(
         imageData: Data([1, 2, 3]),
         format: .jpeg,
         size: CGSize(width: 200, height: 100),
@@ -206,7 +206,7 @@ final class ScreenshotRequestTranslationTests: XCTestCase {
 
   func testAnUnknownScreenScaleIsReportedAsZero() {
     let response = ScreenshotRequestTranslation.response(
-      from: FBScreenshotResult(
+      from: ScreenshotResult(
         imageData: Data(),
         format: .png,
         size: CGSize(width: 1, height: 1),
@@ -220,7 +220,7 @@ final class ScreenshotRequestTranslationTests: XCTestCase {
   func testTheReportedFormatNamesAreTheDocumentedOnes() {
     // These strings are on the wire, so they are not free to change with the Swift case names.
     XCTAssertEqual(
-      FBScreenshotImageFormat.allCases.map(\.rawValue).sorted(),
+      ScreenshotImageFormat.allCases.map(\.rawValue).sorted(),
       ["jpeg", "png", "tiff"]
     )
   }
@@ -240,7 +240,7 @@ final class ScreenshotRequestTranslationTests: XCTestCase {
     ]
     for (width, reported) in expected {
       let response = ScreenshotRequestTranslation.response(
-        from: FBScreenshotResult(
+        from: ScreenshotResult(
           imageData: Data(),
           format: .png,
           size: CGSize(width: width, height: 1),
@@ -257,8 +257,8 @@ final class ScreenshotRequestTranslationTests: XCTestCase {
 
   func testEveryGeometryRejectionHasAStatus() {
     // Not exhaustive by construction -- the error has associated values, so it is not CaseIterable.
-    // A case added to FBScreenshotGeometryError must be added here.
-    let expected: [(FBScreenshotGeometryError, GRPCStatus.Code)] = [
+    // A case added to ScreenshotGeometryError must be added here.
+    let expected: [(ScreenshotGeometryError, GRPCStatus.Code)] = [
       (.scaleFactorOutOfRange(2), .invalidArgument),
       (.fitBoundsEmpty, .invalidArgument),
       (.fitBoundNotPositive(0), .invalidArgument),
@@ -309,13 +309,13 @@ final class ScreenshotRequestTranslationTests: XCTestCase {
     // cannot honor has to pass through here and be refused there.
     let unhonorable = try configuration { $0.scaleFactor = 2 }
     XCTAssertThrowsError(
-      try FBScreenshotGeometry.plan(
+      try ScreenshotGeometry.plan(
         for: unhonorable,
         sourceSize: CGSize(width: 828, height: 1792),
         screenScale: 3
       )
     ) { error in
-      guard let error = error as? FBScreenshotGeometryError else {
+      guard let error = error as? ScreenshotGeometryError else {
         return XCTFail("expected a geometry error, got \(error)")
       }
       XCTAssertEqual(ScreenshotRequestTranslation.status(for: error).code, .invalidArgument)

@@ -393,7 +393,7 @@ public struct SimulatorPrivacyCommands {
     FBTargetSettingsService.location: "__CoreLocationAlways"
   ]
 
-  private static func coreSimulatorSettingMapping(forOSVersion osVersion: FBOSVersion) -> [FBTargetSettingsService: String] {
+  private static func coreSimulatorSettingMapping(forOSVersion osVersion: OSVersion) -> [FBTargetSettingsService: String] {
     osVersion.version.majorVersion >= 13 ? coreSimulatorSettingMappingPostIos13 : coreSimulatorSettingMappingPreIos13
   }
 

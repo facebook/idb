@@ -82,8 +82,8 @@ final class InstrumentsOperationTests: XCTestCase {
 
   // MARK: - Launch Arguments
 
-  private func configuration(operationDuration: TimeInterval) -> FBInstrumentsConfiguration {
-    FBInstrumentsConfiguration.configuration(
+  private func configuration(operationDuration: TimeInterval) -> InstrumentsConfiguration {
+    InstrumentsConfiguration.configuration(
       withTemplateName: "Time Profiler",
       targetApplication: "",
       appEnvironment: [:],

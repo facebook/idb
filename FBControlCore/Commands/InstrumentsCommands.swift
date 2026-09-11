@@ -10,7 +10,7 @@ import Foundation
 public protocol InstrumentsCommands {
 
   func start(
-    configuration: FBInstrumentsConfiguration,
+    configuration: InstrumentsConfiguration,
     logger: any FBControlCoreLogger
   ) async throws -> InstrumentsOperation
 }

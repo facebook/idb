@@ -14,8 +14,8 @@ public enum ScreenshotRenderError: Error, Hashable {
   case croppingFailed(cropRect: CGRect, sourceSize: CGSize)
   case contextCreationFailed(size: CGSize)
   case scalingFailed(size: CGSize)
-  case destinationCreationFailed(format: FBScreenshotImageFormat)
-  case encodingFailed(format: FBScreenshotImageFormat)
+  case destinationCreationFailed(format: ScreenshotImageFormat)
+  case encodingFailed(format: ScreenshotImageFormat)
   case unreadableImageData
   case unknownImageDimensions
   case decodingFailed
@@ -47,7 +47,7 @@ extension ScreenshotRenderError: LocalizedError {
   }
 }
 
-/// Applies a resolved `FBScreenshotPlan` to a captured `CGImage` and encodes the result. A target
+/// Applies a resolved `ScreenshotPlan` to a captured `CGImage` and encodes the result. A target
 /// that folds the transform into capture instead must produce the same pixels.
 public enum ScreenshotRenderer {
 
@@ -57,10 +57,10 @@ public enum ScreenshotRenderer {
   ///   pixels itself; it does not affect the render, which `plan` has already resolved to pixels.
   public static func render(
     _ image: CGImage,
-    plan: FBScreenshotPlan,
-    encoding: FBScreenshotEncoding,
+    plan: ScreenshotPlan,
+    encoding: ScreenshotEncoding,
     screenScale: Double?
-  ) throws -> FBScreenshotResult {
+  ) throws -> ScreenshotResult {
     try render(
       transformed: try transform(image, plan: plan),
       sourceSize: CGSize(width: image.width, height: image.height),
@@ -73,10 +73,10 @@ public enum ScreenshotRenderer {
   public static func render(
     transformed image: CGImage,
     sourceSize: CGSize,
-    encoding: FBScreenshotEncoding,
+    encoding: ScreenshotEncoding,
     screenScale: Double?
-  ) throws -> FBScreenshotResult {
-    FBScreenshotResult(
+  ) throws -> ScreenshotResult {
+    ScreenshotResult(
       imageData: try encode(image, encoding: encoding),
       format: encoding.format,
       size: CGSize(width: image.width, height: image.height),
@@ -90,9 +90,9 @@ public enum ScreenshotRenderer {
   /// would flatten the source color space.
   public static func render(
     encoded data: Data,
-    configuration: FBScreenshotConfiguration,
+    configuration: ScreenshotConfiguration,
     screenScale: Double?
-  ) throws -> FBScreenshotResult {
+  ) throws -> ScreenshotResult {
     guard let source = CGImageSourceCreateWithData(data as CFData, nil), CGImageSourceGetCount(source) > 0 else {
       throw ScreenshotRenderError.unreadableImageData
     }
@@ -106,14 +106,14 @@ public enum ScreenshotRenderer {
       throw ScreenshotRenderError.unknownImageDimensions
     }
     let sourceSize = CGSize(width: width, height: height)
-    let plan = try FBScreenshotGeometry.plan(for: configuration, sourceSize: sourceSize, screenScale: screenScale)
+    let plan = try ScreenshotGeometry.plan(for: configuration, sourceSize: sourceSize, screenScale: screenScale)
 
     // Only PNG passes through. It is lossless and takes no encoder options, so bytes already in that
     // container are exactly what a re-encode would have been asked to produce. JPEG carries a
     // quality this image cannot be known to have been encoded at, and the TIFF case promises no
     // compression, which the source is not known to honor.
     if plan.isIdentity, configuration.encoding == .png, CGImageSourceGetType(source) == UTType.png.identifier as CFString {
-      return FBScreenshotResult(
+      return ScreenshotResult(
         imageData: data,
         format: .png,
         size: sourceSize,
@@ -129,7 +129,7 @@ public enum ScreenshotRenderer {
   }
 
   /// Crops and scales `image` as `plan` describes, in that order.
-  public static func transform(_ image: CGImage, plan: FBScreenshotPlan) throws -> CGImage {
+  public static func transform(_ image: CGImage, plan: ScreenshotPlan) throws -> CGImage {
     var result = image
     if let cropRect = plan.cropRect {
       guard let cropped = result.cropping(to: cropRect) else {
@@ -180,7 +180,7 @@ public enum ScreenshotRenderer {
 
   /// Encodes `image` in `encoding`. The JPEG quality range is validated here because ImageIO
   /// silently clamps out-of-range values.
-  public static func encode(_ image: CGImage, encoding: FBScreenshotEncoding) throws -> Data {
+  public static func encode(_ image: CGImage, encoding: ScreenshotEncoding) throws -> Data {
     if let quality = encoding.compressionQuality, !(quality > 0 && quality <= 1) {
       throw ScreenshotRenderError.compressionQualityOutOfRange(quality)
     }
@@ -207,7 +207,7 @@ public enum ScreenshotRenderer {
   }
 }
 
-extension FBScreenshotImageFormat {
+extension ScreenshotImageFormat {
   /// The type ImageIO knows this format by.
   public var contentType: UTType {
     switch self {

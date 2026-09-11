@@ -53,7 +53,7 @@ public final class DeviceXCTestCommands: XCTestCommands {
   // MARK: - Async
 
   public func runTest(
-    launchConfiguration testLaunchConfiguration: FBTestLaunchConfiguration,
+    launchConfiguration testLaunchConfiguration: TestLaunchConfiguration,
     reporter: AnyObject,
     logger: any FBControlCoreLogger
   ) async throws {
@@ -74,7 +74,7 @@ public final class DeviceXCTestCommands: XCTestCommands {
     try await bridgeFBFutureVoid(FBXcodeBuildOperation.confirmExit(ofXcodebuildOperation: task, configuration: testLaunchConfiguration, reporter: reporter, target: device, logger: logger))
   }
 
-  private func startTestWithLaunchConfiguration(configuration: FBTestLaunchConfiguration, logger: any FBControlCoreLogger) async throws -> FBSubprocess<AnyObject, AnyObject, AnyObject> {
+  private func startTestWithLaunchConfiguration(configuration: TestLaunchConfiguration, logger: any FBControlCoreLogger) async throws -> FBSubprocess<AnyObject, AnyObject, AnyObject> {
     let filePath: String
     do {
       filePath = try FBXcodeBuildOperation.createXCTestRunFile(at: workingDirectory, fromConfiguration: configuration)

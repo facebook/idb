@@ -11,15 +11,15 @@ import Foundation
 import GRPC
 import IDBGRPCSwift
 
-/// Translates a `screenshot` request to `FBScreenshotConfiguration` and a capture to the response.
+/// Translates a `screenshot` request to `ScreenshotConfiguration` and a capture to the response.
 /// Rejects request shapes the configuration type cannot represent (a quality on a lossless format, an
 /// unrecognized enum value).
 enum ScreenshotRequestTranslation {
 
   // MARK: - Request
 
-  static func configuration(from request: Idb_ScreenshotRequest) throws -> FBScreenshotConfiguration {
-    FBScreenshotConfiguration(
+  static func configuration(from request: Idb_ScreenshotRequest) throws -> ScreenshotConfiguration {
+    ScreenshotConfiguration(
       encoding: try encoding(from: request),
       cropRect: cropRect(from: request),
       scale: scale(from: request),
@@ -27,7 +27,7 @@ enum ScreenshotRequestTranslation {
     )
   }
 
-  private static func encoding(from request: Idb_ScreenshotRequest) throws -> FBScreenshotEncoding {
+  private static func encoding(from request: Idb_ScreenshotRequest) throws -> ScreenshotEncoding {
     switch request.format {
     case .png:
       try rejectCompressionQuality(on: request, format: "PNG")
@@ -39,7 +39,7 @@ enum ScreenshotRequestTranslation {
       // Unset is 0 on the wire and cannot be told apart from a deliberate 0, which is not a legal
       // quality anyway. Both mean "whatever the server thinks is reasonable".
       guard request.compressionQuality != 0 else {
-        return .jpeg(quality: FBScreenshotEncoding.defaultJPEGQuality)
+        return .jpeg(quality: ScreenshotEncoding.defaultJPEGQuality)
       }
       guard request.compressionQuality > 0, request.compressionQuality <= 1 else {
         throw GRPCStatus(
@@ -72,7 +72,7 @@ enum ScreenshotRequestTranslation {
     )
   }
 
-  private static func scale(from request: Idb_ScreenshotRequest) -> FBScreenshotScale {
+  private static func scale(from request: Idb_ScreenshotRequest) -> ScreenshotScale {
     guard let scale = request.scale else {
       return .native
     }
@@ -90,7 +90,7 @@ enum ScreenshotRequestTranslation {
     }
   }
 
-  private static func unit(from request: Idb_ScreenshotRequest) throws -> FBScreenshotUnit {
+  private static func unit(from request: Idb_ScreenshotRequest) throws -> ScreenshotUnit {
     switch request.unit {
     case .pixels:
       return .pixels
@@ -103,7 +103,7 @@ enum ScreenshotRequestTranslation {
 
   // MARK: - Response
 
-  static func response(from result: FBScreenshotResult) -> Idb_ScreenshotResponse {
+  static func response(from result: ScreenshotResult) -> Idb_ScreenshotResponse {
     .with {
       $0.imageData = result.imageData
       $0.imageFormat = result.format.rawValue
@@ -134,7 +134,7 @@ enum ScreenshotRequestTranslation {
   // MARK: - Errors
 
   /// Maps a geometry rejection onto a status code.
-  static func status(for error: FBScreenshotGeometryError) -> GRPCStatus {
+  static func status(for error: ScreenshotGeometryError) -> GRPCStatus {
     switch error {
     case .scaleFactorOutOfRange, .fitBoundsEmpty, .fitBoundNotPositive,
       .cropExtentNotPositive, .cropOutsideBounds:

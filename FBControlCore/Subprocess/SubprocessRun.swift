@@ -90,7 +90,7 @@ extension Subprocess {
 }
 
 extension Subprocess.LaunchMode {
-  var spawnMode: FBProcessSpawnMode {
+  var spawnMode: ProcessSpawnMode {
     switch self {
     case .default:
       return .default

@@ -93,7 +93,7 @@ struct InstrumentsRunMethodHandler {
     }
   }
 
-  private func instrumentsConfiguration(from request: Idb_InstrumentsRunRequest.Start, storageManager: FBIDBStorageManager) -> FBInstrumentsConfiguration {
+  private func instrumentsConfiguration(from request: Idb_InstrumentsRunRequest.Start, storageManager: FBIDBStorageManager) -> InstrumentsConfiguration {
     func withDefaultTimeout(_ initial: Double, _ default: Double) -> Double {
       initial != 0 ? initial : `default`
     }

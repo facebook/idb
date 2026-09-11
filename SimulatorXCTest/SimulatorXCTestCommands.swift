@@ -122,7 +122,7 @@ public final class SimulatorXCTestCommands: XCTestExtendedCommands {
 
   // MARK: - Async
 
-  public func runTest(launchConfiguration: FBTestLaunchConfiguration, reporter: AnyObject, logger: any FBControlCoreLogger) async throws {
+  public func runTest(launchConfiguration: TestLaunchConfiguration, reporter: AnyObject, logger: any FBControlCoreLogger) async throws {
     guard let simulator = self.simulator else {
       throw WeakTargetError.simulator
     }
@@ -177,13 +177,13 @@ public final class SimulatorXCTestCommands: XCTestExtendedCommands {
   }
 
   public func extendedTestShim() async throws -> String {
-    let shimConfig = try await FBXCTestShimConfiguration.sharedShimConfiguration()
+    let shimConfig = try await XCTestShimConfiguration.sharedShimConfiguration()
     return shimConfig.iOSSimulatorTestShimPath
   }
 
   // MARK: - Private
 
-  private func runTest(with testLaunchConfiguration: FBTestLaunchConfiguration, reporter: any FBXCTestReporter, logger: any FBControlCoreLogger, workingDirectory: String?) async throws {
+  private func runTest(with testLaunchConfiguration: TestLaunchConfiguration, reporter: any FBXCTestReporter, logger: any FBControlCoreLogger, workingDirectory: String?) async throws {
     guard let simulator = self.simulator else {
       throw WeakTargetError.simulator
     }
@@ -225,7 +225,7 @@ public final class SimulatorXCTestCommands: XCTestExtendedCommands {
     }
   }
 
-  private func startTest(with configuration: FBTestLaunchConfiguration, logger: any FBControlCoreLogger) async throws -> FBSubprocess<AnyObject, AnyObject, AnyObject> {
+  private func startTest(with configuration: TestLaunchConfiguration, logger: any FBControlCoreLogger) async throws -> FBSubprocess<AnyObject, AnyObject, AnyObject> {
     guard let simulator = self.simulator else {
       throw WeakTargetError.simulator
     }
@@ -233,7 +233,7 @@ public final class SimulatorXCTestCommands: XCTestExtendedCommands {
     let filePath = try FBXcodeBuildOperation.createXCTestRunFile(at: simulator.auxillaryDirectory, fromConfiguration: configuration)
     let xcodeBuildPath = try FBXcodeBuildOperation.xcodeBuildPath()
 
-    let shimConfig = try await FBXCTestShimConfiguration.sharedShimConfiguration()
+    let shimConfig = try await XCTestShimConfiguration.sharedShimConfiguration()
     return try await FBXcodeBuildOperation.operation(
       withUDID: simulator.udid,
       configuration: configuration,

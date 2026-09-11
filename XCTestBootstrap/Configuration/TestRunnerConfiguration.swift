@@ -57,7 +57,7 @@ struct TestRunnerConfiguration {
 
   // MARK: - Public
 
-  public static func prepareConfiguration(withTarget target: any XCTestExtendedTarget, testLaunchConfiguration: FBTestLaunchConfiguration, workingDirectory: String, codesign: FBCodesignProvider?) async throws -> TestRunnerConfiguration {
+  public static func prepareConfiguration(withTarget target: any XCTestExtendedTarget, testLaunchConfiguration: TestLaunchConfiguration, workingDirectory: String, codesign: FBCodesignProvider?) async throws -> TestRunnerConfiguration {
     if let codesign {
       do {
         _ = try await codesign.cdHashForBundle(atPath: testLaunchConfiguration.testBundle.path)
@@ -94,7 +94,7 @@ struct TestRunnerConfiguration {
     return envs
   }
 
-  private static func prepareConfigurationAfterCodesignatureCheck(withTarget target: any XCTestExtendedTarget, testLaunchConfiguration: FBTestLaunchConfiguration, workingDirectory: String) async throws -> TestRunnerConfiguration {
+  private static func prepareConfigurationAfterCodesignatureCheck(withTarget target: any XCTestExtendedTarget, testLaunchConfiguration: TestLaunchConfiguration, workingDirectory: String) async throws -> TestRunnerConfiguration {
     let runtimeRoot = await target.runtimeRootDirectory
     let platformRoot = await target.platformRootDirectory
 

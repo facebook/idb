@@ -42,7 +42,7 @@ final class RecordRequestTranslationTests: XCTestCase {
 
   private func options(
     _ mutate: (inout Idb_RecordRequest.Start) -> Void = { _ in }
-  ) throws -> FBVideoEncodeOptions? {
+  ) throws -> VideoEncodeOptions? {
     try RecordRequestTranslation.encodeOptions(from: start(mutate))
   }
 
@@ -103,7 +103,7 @@ final class RecordRequestTranslationTests: XCTestCase {
   func testAnUnsetScaleAndKeyFrameRateFallToTheFrameworkDefaults() throws {
     let options = try XCTUnwrap(try options { $0.fps = 15 })
     XCTAssertNil(options.scaleFactor)
-    XCTAssertEqual(options.keyFrameRate, FBVideoEncodeOptions(framesPerSecond: nil, rateControl: nil, scaleFactor: nil, keyFrameRate: nil).keyFrameRate)
+    XCTAssertEqual(options.keyFrameRate, VideoEncodeOptions(framesPerSecond: nil, rateControl: nil, scaleFactor: nil, keyFrameRate: nil).keyFrameRate)
   }
 
   func testEitherRateControlIsHonoured() throws {
@@ -115,7 +115,7 @@ final class RecordRequestTranslationTests: XCTestCase {
   func testTheConfigurationRecordsH264() {
     // A recording is muxed to an mp4, so the format is not the caller's to choose.
     let configuration = RecordRequestTranslation.configuration(
-      for: FBVideoEncodeOptions(framesPerSecond: 15, rateControl: nil, scaleFactor: nil, keyFrameRate: nil))
+      for: VideoEncodeOptions(framesPerSecond: 15, rateControl: nil, scaleFactor: nil, keyFrameRate: nil))
     XCTAssertEqual(configuration.format, .compressedVideo(withCodec: .h264, transport: .annexB))
     XCTAssertEqual(configuration.framesPerSecond, 15)
   }
@@ -213,7 +213,7 @@ final class RecordRequestTranslationTests: XCTestCase {
     XCTAssertEqual(applied.avgBitrate, 0)
     XCTAssertEqual(
       RecordRequestTranslation.appliedResponse(
-        FBVideoEncodeOptions(framesPerSecond: 15, rateControl: nil, scaleFactor: nil, keyFrameRate: nil)
+        VideoEncodeOptions(framesPerSecond: 15, rateControl: nil, scaleFactor: nil, keyFrameRate: nil)
       ).applied.scaleFactor, 1)
   }
 

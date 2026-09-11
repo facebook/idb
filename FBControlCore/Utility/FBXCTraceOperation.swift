@@ -34,10 +34,10 @@ public final class XCTraceRecordOperation {
   public let task: FBSubprocess<AnyObject, AnyObject, AnyObject>
   public let queue: DispatchQueue
   public let traceDir: URL
-  public let configuration: FBXCTraceRecordConfiguration
+  public let configuration: XCTraceRecordConfiguration
   public let logger: FBControlCoreLogger
 
-  public init(task: FBSubprocess<AnyObject, AnyObject, AnyObject>, traceDir: URL, configuration: FBXCTraceRecordConfiguration, queue: DispatchQueue, logger: FBControlCoreLogger) {
+  public init(task: FBSubprocess<AnyObject, AnyObject, AnyObject>, traceDir: URL, configuration: XCTraceRecordConfiguration, queue: DispatchQueue, logger: FBControlCoreLogger) {
     self.task = task
     self.traceDir = traceDir
     self.configuration = configuration
@@ -45,7 +45,7 @@ public final class XCTraceRecordOperation {
     self.logger = logger
   }
 
-  public class func operation(with target: any FBiOSTarget, configuration: FBXCTraceRecordConfiguration, logger: FBControlCoreLogger) async throws -> XCTraceRecordOperation {
+  public class func operation(with target: any FBiOSTarget, configuration: XCTraceRecordConfiguration, logger: FBControlCoreLogger) async throws -> XCTraceRecordOperation {
     let queue = DispatchQueue(label: "com.facebook.fbcontrolcore.xctrace")
     let traceDir = (target.auxillaryDirectory as NSString).appendingPathComponent("xctrace-" + UUID().uuidString)
     do {

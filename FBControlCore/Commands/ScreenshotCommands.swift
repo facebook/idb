@@ -21,14 +21,14 @@ public struct FBScreenshotFormat: RawRepresentable, Hashable, Sendable {
 public protocol ScreenshotCommands {
 
   /// Captures the screen as `configuration` describes.
-  func take(configuration: FBScreenshotConfiguration) async throws -> FBScreenshotResult
+  func take(configuration: ScreenshotConfiguration) async throws -> ScreenshotResult
 }
 
 public extension ScreenshotCommands {
 
   /// Captures the whole screen at its native resolution.
   func take(format: FBScreenshotFormat) async throws -> Data {
-    let configuration = FBScreenshotConfiguration(encoding: try FBScreenshotEncoding(format: format))
+    let configuration = ScreenshotConfiguration(encoding: try ScreenshotEncoding(format: format))
     return try await take(configuration: configuration).imageData
   }
 }
@@ -46,7 +46,7 @@ extension ScreenshotFormatError: LocalizedError {
   }
 }
 
-public extension FBScreenshotEncoding {
+public extension ScreenshotEncoding {
 
   /// `FBScreenshotFormat` carries no encoder options, so JPEG gets `defaultJPEGQuality`.
   init(format: FBScreenshotFormat) throws {

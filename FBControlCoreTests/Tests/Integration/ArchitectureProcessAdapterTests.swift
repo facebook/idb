@@ -9,7 +9,7 @@
 import Foundation
 import Testing
 
-/// Pins how `FBArchitectureProcessAdapter` drives `lipo` and `otool`: which
+/// Pins how `ArchitectureProcessAdapter` drives `lipo` and `otool`: which
 /// architecture it picks, what it does with the thinned slice, and how the original
 /// binary's rpaths end up in the adapted environment.
 ///
@@ -17,7 +17,7 @@ import Testing
 /// today so that a later replacement has to either reproduce it or change it
 /// deliberately.
 @Suite
-struct FBArchitectureProcessAdapterTests {
+struct ArchitectureProcessAdapterTests {
 
   // MARK: - Fixtures
 
@@ -32,7 +32,7 @@ struct FBArchitectureProcessAdapterTests {
 
   private static func makeTemporaryDirectory() throws -> URL {
     let url = URL(fileURLWithPath: NSTemporaryDirectory())
-      .appendingPathComponent("FBArchitectureProcessAdapterTests-\(UUID().uuidString)", isDirectory: true)
+      .appendingPathComponent("ArchitectureProcessAdapterTests-\(UUID().uuidString)", isDirectory: true)
     try FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
     return url
   }
@@ -64,7 +64,7 @@ struct FBArchitectureProcessAdapterTests {
     defer { try? FileManager.default.removeItem(at: directory) }
 
     do {
-      _ = try await FBArchitectureProcessAdapter.adaptProcessConfiguration(
+      _ = try await ArchitectureProcessAdapter.adaptProcessConfiguration(
         Self.configuration(launchPath: Self.fatBinary),
         toAnyArchitectureIn: [.arm64],
         hostArchitectures: [.X86_64],
@@ -90,7 +90,7 @@ struct FBArchitectureProcessAdapterTests {
     // -verify_arch arm64` then fails against a binary that only has arm64e. The
     // failure is the evidence of the preference: x86_64 was available and unused.
     do {
-      _ = try await FBArchitectureProcessAdapter.adaptProcessConfiguration(
+      _ = try await ArchitectureProcessAdapter.adaptProcessConfiguration(
         Self.configuration(launchPath: Self.fatBinary),
         toAnyArchitectureIn: [.arm64, .X86_64],
         hostArchitectures: [.arm64, .X86_64],
@@ -102,7 +102,7 @@ struct FBArchitectureProcessAdapterTests {
     }
 
     // Take arm64 off the host and the same request succeeds on x86_64.
-    let adapted = try await FBArchitectureProcessAdapter.adaptProcessConfiguration(
+    let adapted = try await ArchitectureProcessAdapter.adaptProcessConfiguration(
       Self.configuration(launchPath: Self.fatBinary),
       toAnyArchitectureIn: [.arm64, .X86_64],
       hostArchitectures: [.X86_64],
@@ -118,7 +118,7 @@ struct FBArchitectureProcessAdapterTests {
     defer { try? FileManager.default.removeItem(at: directory) }
     let original = Self.configuration(launchPath: Self.fatBinary, environment: ["KEEP": "ME"])
 
-    let adapted = try await FBArchitectureProcessAdapter.adaptProcessConfiguration(
+    let adapted = try await ArchitectureProcessAdapter.adaptProcessConfiguration(
       original,
       toAnyArchitectureIn: [.X86_64],
       hostArchitectures: [.X86_64],
@@ -150,7 +150,7 @@ struct FBArchitectureProcessAdapterTests {
     let directory = try Self.makeTemporaryDirectory()
     defer { try? FileManager.default.removeItem(at: directory) }
 
-    let adapted = try await FBArchitectureProcessAdapter.adaptProcessConfiguration(
+    let adapted = try await ArchitectureProcessAdapter.adaptProcessConfiguration(
       Self.configuration(launchPath: binary),
       toAnyArchitectureIn: [.X86_64],
       hostArchitectures: [.X86_64],
@@ -170,7 +170,7 @@ struct FBArchitectureProcessAdapterTests {
     let directory = try Self.makeTemporaryDirectory()
     defer { try? FileManager.default.removeItem(at: directory) }
 
-    let adapted = try await FBArchitectureProcessAdapter.adaptProcessConfiguration(
+    let adapted = try await ArchitectureProcessAdapter.adaptProcessConfiguration(
       Self.configuration(launchPath: Self.fatBinary),
       toAnyArchitectureIn: [.X86_64],
       hostArchitectures: [.X86_64],

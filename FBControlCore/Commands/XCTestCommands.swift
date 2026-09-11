@@ -11,7 +11,7 @@ import Foundation
 public protocol XCTestCommands {
 
   func runTest(
-    launchConfiguration: FBTestLaunchConfiguration,
+    launchConfiguration: TestLaunchConfiguration,
     reporter: AnyObject,
     logger: any FBControlCoreLogger
   ) async throws

@@ -26,7 +26,7 @@ public final class FBXcodeConfiguration: NSObject {
   }()
 
   @objc public static let xcodeVersion: OperatingSystemVersion = {
-    return FBOSVersion.operatingSystemVersion(fromName: xcodeVersionNumber.stringValue)
+    return OSVersion.operatingSystemVersion(fromName: xcodeVersionNumber.stringValue)
   }()
 
   @objc public static let iosSDKVersionNumber: NSDecimalNumber = {

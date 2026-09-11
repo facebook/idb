@@ -145,7 +145,7 @@ final class XCTestBootstrapDescriptor: FBXCTestDescriptor, CustomStringConvertib
       processLogDirectory: logDirectoryPath,
       waitForDebugger: request.waitForDebugger
     )
-    let testLaunchConfig = FBTestLaunchConfiguration(
+    let testLaunchConfig = TestLaunchConfiguration(
       testBundle: testBundle,
       applicationLaunchConfiguration: applicationLaunchConfiguration,
       testHostBundle: testApps.testHostApp?.bundle,
@@ -225,7 +225,7 @@ final class XCodebuildTestRunDescriptor: FBXCTestDescriptor, CustomStringConvert
       launchMode: .failIfRunning
     )
 
-    let testLaunchConfiguration = FBTestLaunchConfiguration(
+    let testLaunchConfiguration = TestLaunchConfiguration(
       testBundle: testBundle,
       applicationLaunchConfiguration: launchConfig,
       testHostBundle: testHostBundle,

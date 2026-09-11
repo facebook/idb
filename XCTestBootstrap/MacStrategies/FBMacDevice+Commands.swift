@@ -161,7 +161,7 @@ extension FBMacDevice: LogCommands {
 
 extension FBMacDevice: ScreenshotCommands {
 
-  public func take(configuration: FBScreenshotConfiguration) async throws -> FBScreenshotResult {
+  public func take(configuration: ScreenshotConfiguration) async throws -> ScreenshotResult {
     throw macUnsupported("take")
   }
 }
@@ -179,7 +179,7 @@ extension FBMacDevice: VideoRecordingCommands {
 
 extension FBMacDevice: XCTraceRecordCommands {
 
-  public func start(configuration: FBXCTraceRecordConfiguration, logger: any FBControlCoreLogger) async throws -> XCTraceRecordOperation {
+  public func start(configuration: XCTraceRecordConfiguration, logger: any FBControlCoreLogger) async throws -> XCTraceRecordOperation {
     throw macUnsupported("start")
   }
 }
@@ -188,7 +188,7 @@ extension FBMacDevice: XCTraceRecordCommands {
 
 extension FBMacDevice: InstrumentsCommands {
 
-  public func start(configuration: FBInstrumentsConfiguration, logger: any FBControlCoreLogger) async throws -> InstrumentsOperation {
+  public func start(configuration: InstrumentsConfiguration, logger: any FBControlCoreLogger) async throws -> InstrumentsOperation {
     throw macUnsupported("start")
   }
 }

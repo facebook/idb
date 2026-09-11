@@ -45,7 +45,7 @@ enum ArchitectureAdapterError: Error, LocalizedError {
   }
 }
 
-public enum FBArchitectureProcessAdapter {
+public enum ArchitectureProcessAdapter {
 
   private static func selectArchitecture(
     from requestedArchitectures: Set<FBArchitecture>,
@@ -64,7 +64,7 @@ public enum FBArchitectureProcessAdapter {
   public static func adaptProcessConfiguration(
     _ processConfiguration: FBProcessSpawnConfiguration,
     toAnyArchitectureIn requestedArchitectures: Set<FBArchitecture>,
-    hostArchitectures: Set<FBArchitecture> = FBArchitectureProcessAdapter.hostMachineSupportedArchitectures(),
+    hostArchitectures: Set<FBArchitecture> = ArchitectureProcessAdapter.hostMachineSupportedArchitectures(),
     temporaryDirectory: URL
   ) async throws -> FBProcessSpawnConfiguration {
     guard let architecture = selectArchitecture(from: requestedArchitectures, supportedArchitectures: hostArchitectures) else {

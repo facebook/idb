@@ -9,11 +9,11 @@
 import XCTest
 
 final class FBiOSTargetConfigurationTests: XCTestCase {
-  static var deviceTypeConfigurations: [FBDeviceType] {
+  static var deviceTypeConfigurations: [DeviceType] {
     return Array(FBiOSTargetConfiguration.nameToDevice.values)
   }
 
-  static var osVersionConfigurations: [FBOSVersion] {
+  static var osVersionConfigurations: [OSVersion] {
     return Array(FBiOSTargetConfiguration.nameToOSVersion.values)
   }
 
@@ -21,7 +21,7 @@ final class FBiOSTargetConfigurationTests: XCTestCase {
     guard let catalogued = FBiOSTargetConfigurationTests.deviceTypeConfigurations.first(where: { !$0.productTypes.isEmpty }) else {
       return XCTFail("No catalogued device type carries product types")
     }
-    let generic = FBDeviceType.generic(withName: catalogued.model.rawValue)
+    let generic = DeviceType.generic(withName: catalogued.model.rawValue)
 
     XCTAssertNotEqual(catalogued.productTypes, generic.productTypes)
     XCTAssertNotEqual(catalogued.family, generic.family)
@@ -35,7 +35,7 @@ final class FBiOSTargetConfigurationTests: XCTestCase {
     guard let catalogued = FBiOSTargetConfigurationTests.osVersionConfigurations.first(where: { !$0.families.isEmpty }) else {
       return XCTFail("No catalogued OS version carries families")
     }
-    let generic = FBOSVersion.generic(withName: catalogued.name.rawValue)
+    let generic = OSVersion.generic(withName: catalogued.name.rawValue)
 
     XCTAssertNotEqual(catalogued.families, generic.families)
 

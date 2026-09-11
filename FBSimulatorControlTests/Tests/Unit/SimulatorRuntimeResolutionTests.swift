@@ -23,7 +23,7 @@ struct SimulatorRuntimeResolutionTests {
   private static let device = FBiOSTargetConfiguration.nameToDevice[FBDeviceModel(rawValue: "iPhone 16")]!
 
   private static var configuration: FBSimulatorConfiguration {
-    FBSimulatorConfiguration(device: device, os: FBOSVersion.generic(withName: "iOS 27.0"))
+    FBSimulatorConfiguration(device: device, os: OSVersion.generic(withName: "iOS 27.0"))
   }
 
   private static func makeRuntime(name: String, build: String, available: Bool = true) -> SimRuntime {

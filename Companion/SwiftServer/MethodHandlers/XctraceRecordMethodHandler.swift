@@ -97,7 +97,7 @@ struct XctraceRecordMethodHandler {
     }
   }
 
-  private func xcTraceRecordConfiguration(from request: Idb_XctraceRecordRequest.Start) -> FBXCTraceRecordConfiguration {
+  private func xcTraceRecordConfiguration(from request: Idb_XctraceRecordRequest.Start) -> XCTraceRecordConfiguration {
     let timeLimit = request.timeLimit != 0 ? request.timeLimit : DefaultXCTraceRecordOperationTimeLimit
 
     return .init(

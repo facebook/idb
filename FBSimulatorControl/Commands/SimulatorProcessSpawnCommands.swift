@@ -120,7 +120,7 @@ public struct SimulatorProcessSpawnCommands: ProcessSpawnCommands {
     var value: Int32 = 0
   }
 
-  static func simDeviceLaunchOptions(withSimulator simulator: FBSimulator, launchPath: String, arguments: [String], environment: [String: String], waitForDebugger: Bool, stdOut: FBProcessStreamAttachment?, stdErr: FBProcessStreamAttachment?, mode: FBProcessSpawnMode) -> [String: Any] {
+  static func simDeviceLaunchOptions(withSimulator simulator: FBSimulator, launchPath: String, arguments: [String], environment: [String: String], waitForDebugger: Bool, stdOut: FBProcessStreamAttachment?, stdErr: FBProcessStreamAttachment?, mode: ProcessSpawnMode) -> [String: Any] {
     // argv[0] should be launch path of the process. SimDevice does not do this automatically, so we need to add it.
     let fullArguments = [launchPath] + arguments
     var options = launchOptions(withArguments: fullArguments, environment: environment, waitForDebugger: waitForDebugger)
@@ -134,7 +134,7 @@ public struct SimulatorProcessSpawnCommands: ProcessSpawnCommands {
     return options
   }
 
-  static func shouldLaunchStandalone(onSimulator simulator: FBSimulator, mode: FBProcessSpawnMode) -> Bool {
+  static func shouldLaunchStandalone(onSimulator simulator: FBSimulator, mode: ProcessSpawnMode) -> Bool {
     switch mode {
     case .launchd:
       return false

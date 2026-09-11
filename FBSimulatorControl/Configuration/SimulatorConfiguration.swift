@@ -10,11 +10,11 @@
 
 public struct FBSimulatorConfiguration: Equatable, Hashable, CustomStringConvertible {
 
-  public let device: FBDeviceType
-  public let os: FBOSVersion
+  public let device: DeviceType
+  public let os: OSVersion
 
   // Internal so same-module extensions can build a configuration without the throwing `defaultConfiguration()`.
-  init(device: FBDeviceType, os: FBOSVersion) {
+  init(device: DeviceType, os: OSVersion) {
     self.device = device
     self.os = os
   }
@@ -46,7 +46,7 @@ public struct FBSimulatorConfiguration: Equatable, Hashable, CustomStringConvert
 
   // MARK: - Equatable, Hashable
 
-  /// Identity is the device model and OS name, not the `FBDeviceType` and `FBOSVersion` objects
+  /// Identity is the device model and OS name, not the `DeviceType` and `OSVersion` objects
   /// carrying them — two configurations naming the same model and OS are the same configuration.
   public static func == (lhs: FBSimulatorConfiguration, rhs: FBSimulatorConfiguration) -> Bool {
     lhs.device.model == rhs.device.model && lhs.os.name == rhs.os.name
@@ -64,22 +64,22 @@ public struct FBSimulatorConfiguration: Equatable, Hashable, CustomStringConvert
   // MARK: - Models
 
   public func withDeviceModel(_ model: FBDeviceModel) -> FBSimulatorConfiguration {
-    let device = FBiOSTargetConfiguration.nameToDevice[model] ?? FBDeviceType.generic(withName: model.rawValue)
+    let device = FBiOSTargetConfiguration.nameToDevice[model] ?? DeviceType.generic(withName: model.rawValue)
     return withDevice(device)
   }
 
   // MARK: - OS Versions
 
   public func withOSNamed(_ osName: FBOSVersionName) -> FBSimulatorConfiguration {
-    let os = FBiOSTargetConfiguration.nameToOSVersion[osName] ?? FBOSVersion.generic(withName: osName.rawValue)
+    let os = FBiOSTargetConfiguration.nameToOSVersion[osName] ?? OSVersion.generic(withName: osName.rawValue)
     return withOS(os)
   }
 
-  func withOS(_ os: FBOSVersion) -> FBSimulatorConfiguration {
+  func withOS(_ os: OSVersion) -> FBSimulatorConfiguration {
     FBSimulatorConfiguration(device: device, os: os)
   }
 
-  private func withDevice(_ device: FBDeviceType) -> FBSimulatorConfiguration {
+  private func withDevice(_ device: DeviceType) -> FBSimulatorConfiguration {
     let os = self.os
     if os.families.isEmpty || os.families.contains(NSNumber(value: device.family.rawValue)) {
       return FBSimulatorConfiguration(device: device, os: os)

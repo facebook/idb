@@ -10,7 +10,7 @@ import Foundation
 import GRPC
 import IDBGRPCSwift
 
-/// Translates a `record` request to `FBVideoEncodeOptions` and echoes the resolved options back.
+/// Translates a `record` request to `VideoEncodeOptions` and echoes the resolved options back.
 /// Rejects what the encoder cannot honor (a quality out of range, an enlargement, two rate controls).
 enum RecordRequestTranslation {
 
@@ -24,7 +24,7 @@ enum RecordRequestTranslation {
 
   /// The options the request asked for, or nil when it set none, so a client that predates these fields
   /// records exactly as before. Zero is unset: a proto3 scalar cannot distinguish the two.
-  static func encodeOptions(from start: Idb_RecordRequest.Start) throws -> FBVideoEncodeOptions? {
+  static func encodeOptions(from start: Idb_RecordRequest.Start) throws -> VideoEncodeOptions? {
     for (name, value) in [
       ("scale_factor", start.scaleFactor), ("avg_bitrate", start.avgBitrate),
       ("key_frame_rate", start.keyFrameRate), ("compression_quality", start.compressionQuality),
@@ -77,14 +77,14 @@ enum RecordRequestTranslation {
       rateControl = nil
     }
 
-    return FBVideoEncodeOptions(
+    return VideoEncodeOptions(
       framesPerSecond: start.fps > 0 ? Int(start.fps) : defaultFramesPerSecond,
       rateControl: rateControl,
       scaleFactor: start.scaleFactor > 0 ? start.scaleFactor : nil,
       keyFrameRate: start.keyFrameRate > 0 ? start.keyFrameRate : nil)
   }
 
-  static func configuration(for options: FBVideoEncodeOptions) -> FBVideoStreamConfiguration {
+  static func configuration(for options: VideoEncodeOptions) -> FBVideoStreamConfiguration {
     FBVideoStreamConfiguration(format: format, encodeOptions: options)
   }
 
@@ -102,7 +102,7 @@ enum RecordRequestTranslation {
   /// Echoes the resolved options (defaults filled in). No scaling reports as 1. Rate control is reported
   /// in the field the request chose; an automatic rate leaves both 0. A reported quality means the encoder
   /// was configured with it, not that H.264 acts on it.
-  static func appliedResponse(_ options: FBVideoEncodeOptions) -> Idb_RecordResponse {
+  static func appliedResponse(_ options: VideoEncodeOptions) -> Idb_RecordResponse {
     Idb_RecordResponse.with {
       $0.output = .applied(
         .with {

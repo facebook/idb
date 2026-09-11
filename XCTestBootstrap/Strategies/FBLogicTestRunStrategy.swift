@@ -389,7 +389,7 @@ public final class FBLogicTestRunStrategy: XCTestRunner {
         })
     }
     return fbFutureFromAsync {
-      let mappedConfig = try await FBArchitectureProcessAdapter.adaptProcessConfiguration(spawnConfig, toAnyArchitectureIn: Set(self.configuration.architectures.map { FBArchitecture(rawValue: $0) }), temporaryDirectory: temporaryDirectory)
+      let mappedConfig = try await ArchitectureProcessAdapter.adaptProcessConfiguration(spawnConfig, toAnyArchitectureIn: Set(self.configuration.architectures.map { FBArchitecture(rawValue: $0) }), temporaryDirectory: temporaryDirectory)
       return try await bridgeFBFuture(launchAdaptedProcess(mappedConfig))
     }
   }

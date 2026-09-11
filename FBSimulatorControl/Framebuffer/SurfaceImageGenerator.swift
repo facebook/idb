@@ -39,20 +39,20 @@ public final class SurfaceImageGenerator {
 
   /// Renders the whole surface at its native resolution.
   public func image() throws -> CGImage? {
-    try image(configuration: FBScreenshotConfiguration(), screenScale: nil)?.image
+    try image(configuration: ScreenshotConfiguration(), screenScale: nil)?.image
   }
 
   /// Renders the current surface with `configuration` applied inside the Core Image pipeline, so a scaled
   /// screenshot is never materialised at full resolution. The plan is resolved here, against the surface
   /// being rendered: a surface can be replaced (e.g. by rotation) between a caller reading its size and
   /// asking for an image, and a crop resolved against the old size would silently name the wrong region.
-  public func image(configuration: FBScreenshotConfiguration, screenScale: Double?) throws -> SurfaceImage? {
+  public func image(configuration: ScreenshotConfiguration, screenScale: Double?) throws -> SurfaceImage? {
     guard let surface = self.surface else {
       return nil
     }
     let source = CIImage(ioSurface: unsafeBitCast(surface, to: IOSurfaceRef.self))
     let sourceSize = source.extent.size
-    let plan = try FBScreenshotGeometry.plan(for: configuration, sourceSize: sourceSize, screenScale: screenScale)
+    let plan = try ScreenshotGeometry.plan(for: configuration, sourceSize: sourceSize, screenScale: screenScale)
     guard let image = render(source, plan: plan) else {
       return nil
     }
@@ -62,7 +62,7 @@ public final class SurfaceImageGenerator {
   // MARK: - Rendering
 
   /// Applies `plan` to `source`, then reads the result out at exactly the planned size.
-  private func render(_ source: CIImage, plan: FBScreenshotPlan) -> CGImage? {
+  private func render(_ source: CIImage, plan: ScreenshotPlan) -> CGImage? {
     var image = source
     if let cropRect = plan.cropRect {
       image = image.cropped(to: Self.flipped(cropRect, in: source.extent))

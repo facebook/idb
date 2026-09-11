@@ -28,7 +28,7 @@ final class FBXcodeBuildOperationTests: XCTestCase {
       launchMode: .failIfRunning
     )
 
-    let configuration = FBTestLaunchConfiguration(
+    let configuration = TestLaunchConfiguration(
       testBundle: testBundle,
       applicationLaunchConfiguration: appLaunch,
       testHostBundle: testHostBundle,

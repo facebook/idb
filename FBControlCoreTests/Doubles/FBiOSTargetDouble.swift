@@ -14,8 +14,8 @@ final class FBiOSTargetDouble: FBiOSTargetInfo {
   var name: String = ""
   var state: FBiOSTargetState = .unknown
   var targetType: FBiOSTargetType = .simulator
-  var deviceType: FBDeviceType = .generic(withName: "FBiOSTargetDouble")
-  var osVersion: FBOSVersion = .generic(withName: "FBiOSTargetDouble")
+  var deviceType: DeviceType = .generic(withName: "FBiOSTargetDouble")
+  var osVersion: OSVersion = .generic(withName: "FBiOSTargetDouble")
   var architectures: [FBArchitecture] = []
   var extendedInformation: [String: Any] { [:] }
 }

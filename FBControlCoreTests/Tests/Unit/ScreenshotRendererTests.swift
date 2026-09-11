@@ -35,7 +35,7 @@ final class ScreenshotRendererTests: XCTestCase {
     return (type, CGSize(width: image.width, height: image.height))
   }
 
-  private func render(_ configuration: FBScreenshotConfiguration, screenScale: Double? = 2) throws -> FBScreenshotResult {
+  private func render(_ configuration: ScreenshotConfiguration, screenScale: Double? = 2) throws -> ScreenshotResult {
     try ScreenshotRenderer.render(encoded: try fixtureData(), configuration: configuration, screenScale: screenScale)
   }
 
@@ -43,7 +43,7 @@ final class ScreenshotRendererTests: XCTestCase {
 
   func testWholeScreenAsPNGReturnsTheCapturedBytesUntouched() throws {
     let data = try fixtureData()
-    let result = try render(FBScreenshotConfiguration())
+    let result = try render(ScreenshotConfiguration())
     XCTAssertEqual(result.imageData, data)
     XCTAssertEqual(result.format, .png)
     XCTAssertEqual(result.size, fixtureSize)
@@ -53,8 +53,8 @@ final class ScreenshotRendererTests: XCTestCase {
 
   func testWholeScreenInAnotherFormatIsReEncoded() throws {
     let data = try fixtureData()
-    for encoding in [FBScreenshotEncoding.jpeg(quality: 0.8), .tiff] {
-      let result = try render(FBScreenshotConfiguration(encoding: encoding))
+    for encoding in [ScreenshotEncoding.jpeg(quality: 0.8), .tiff] {
+      let result = try render(ScreenshotConfiguration(encoding: encoding))
       XCTAssertNotEqual(result.imageData, data)
       XCTAssertEqual(result.format, encoding.format)
       XCTAssertEqual(result.size, fixtureSize)
@@ -67,26 +67,26 @@ final class ScreenshotRendererTests: XCTestCase {
   // MARK: - Crop and scale on encoded input
 
   func testCropOnEncodedInput() throws {
-    let result = try render(FBScreenshotConfiguration(cropRect: CGRect(x: 100, y: 50, width: 200, height: 100)))
+    let result = try render(ScreenshotConfiguration(cropRect: CGRect(x: 100, y: 50, width: 200, height: 100)))
     XCTAssertEqual(result.size, CGSize(width: 200, height: 100))
     XCTAssertEqual(result.sourceSize, fixtureSize)
     XCTAssertEqual(try decode(result.imageData).size, CGSize(width: 200, height: 100))
   }
 
   func testScaleOnEncodedInput() throws {
-    let result = try render(FBScreenshotConfiguration(scale: .factor(0.5)))
+    let result = try render(ScreenshotConfiguration(scale: .factor(0.5)))
     XCTAssertEqual(result.size, CGSize(width: 494, height: 194))
     XCTAssertEqual(try decode(result.imageData).size, CGSize(width: 494, height: 194))
   }
 
   func testFitOnEncodedInput() throws {
-    let result = try render(FBScreenshotConfiguration(scale: .fit(maxWidth: 247, maxHeight: nil)))
+    let result = try render(ScreenshotConfiguration(scale: .fit(maxWidth: 247, maxHeight: nil)))
     XCTAssertEqual(result.size, CGSize(width: 247, height: 97))
     XCTAssertEqual(try decode(result.imageData).size, CGSize(width: 247, height: 97))
   }
 
   func testCropThenScaleOnEncodedInput() throws {
-    let configuration = FBScreenshotConfiguration(
+    let configuration = ScreenshotConfiguration(
       cropRect: CGRect(x: 0, y: 0, width: 400, height: 200),
       scale: .factor(0.5)
     )
@@ -97,7 +97,7 @@ final class ScreenshotRendererTests: XCTestCase {
 
   /// The crop is in points, so a 2x scale doubles it before it reaches the pixels.
   func testCropInPointsOnEncodedInput() throws {
-    let configuration = FBScreenshotConfiguration(
+    let configuration = ScreenshotConfiguration(
       cropRect: CGRect(x: 0, y: 0, width: 100, height: 50),
       unit: .points
     )
@@ -106,22 +106,22 @@ final class ScreenshotRendererTests: XCTestCase {
   }
 
   func testPointsWithoutAScreenScaleIsRejectedOnEncodedInput() throws {
-    let configuration = FBScreenshotConfiguration(
+    let configuration = ScreenshotConfiguration(
       cropRect: CGRect(x: 0, y: 0, width: 100, height: 50),
       unit: .points
     )
     XCTAssertThrowsError(try render(configuration, screenScale: nil)) { error in
-      XCTAssertEqual(error as? FBScreenshotGeometryError, .screenScaleUnknown)
+      XCTAssertEqual(error as? ScreenshotGeometryError, .screenScaleUnknown)
     }
-    XCTAssertNoThrow(try render(FBScreenshotConfiguration(), screenScale: nil))
+    XCTAssertNoThrow(try render(ScreenshotConfiguration(), screenScale: nil))
     // Points with nothing measured in them converts nothing, so it needs no scale either.
-    XCTAssertNoThrow(try render(FBScreenshotConfiguration(unit: .points), screenScale: nil))
+    XCTAssertNoThrow(try render(ScreenshotConfiguration(unit: .points), screenScale: nil))
   }
 
   func testUnreadableInputIsRejected() {
     let data = Data("not an image".utf8)
     XCTAssertThrowsError(
-      try ScreenshotRenderer.render(encoded: data, configuration: FBScreenshotConfiguration(), screenScale: nil)
+      try ScreenshotRenderer.render(encoded: data, configuration: ScreenshotConfiguration(), screenScale: nil)
     ) { error in
       XCTAssertEqual(error as? ScreenshotRenderError, .unreadableImageData)
     }
@@ -131,14 +131,14 @@ final class ScreenshotRendererTests: XCTestCase {
 
   func testTransformIsAnIdentityWhenThePlanIs() throws {
     let image = try fixtureImage()
-    let plan = FBScreenshotPlan(cropRect: nil, scaleFactor: 1, outputSize: fixtureSize)
+    let plan = ScreenshotPlan(cropRect: nil, scaleFactor: 1, outputSize: fixtureSize)
     let transformed = try ScreenshotRenderer.transform(image, plan: plan)
     XCTAssertTrue(transformed === image)
   }
 
   func testTransformCropsAndScales() throws {
     let image = try fixtureImage()
-    let plan = FBScreenshotPlan(
+    let plan = ScreenshotPlan(
       cropRect: CGRect(x: 10, y: 20, width: 400, height: 200),
       scaleFactor: 0.25,
       outputSize: CGSize(width: 100, height: 50)
@@ -150,17 +150,17 @@ final class ScreenshotRendererTests: XCTestCase {
 
   func testTransformSkipsAResampleThatWouldChangeNothing() throws {
     let image = try fixtureImage()
-    let plan = FBScreenshotPlan(cropRect: nil, scaleFactor: 0.9999, outputSize: fixtureSize)
+    let plan = ScreenshotPlan(cropRect: nil, scaleFactor: 0.9999, outputSize: fixtureSize)
     let transformed = try ScreenshotRenderer.transform(image, plan: plan)
     XCTAssertTrue(transformed === image)
   }
 
-  /// `FBScreenshotPlan` has a public memberwise initializer, so `transform` can receive an output size
+  /// `ScreenshotPlan` has a public memberwise initializer, so `transform` can receive an output size
   /// the geometry would never produce; it must fail with a named error, not a zero-sized CG context.
   func testTransformRejectsAPlanWithNoOutput() throws {
     let image = try fixtureImage()
     for outputSize in [CGSize(width: 0, height: 10), CGSize(width: 10, height: 0), .zero] {
-      let plan = FBScreenshotPlan(cropRect: nil, scaleFactor: 1, outputSize: outputSize)
+      let plan = ScreenshotPlan(cropRect: nil, scaleFactor: 1, outputSize: outputSize)
       XCTAssertThrowsError(try ScreenshotRenderer.transform(image, plan: plan), "\(outputSize)") { error in
         XCTAssertEqual(error as? ScreenshotRenderError, .contextCreationFailed(size: outputSize), "\(outputSize)")
       }
@@ -171,7 +171,7 @@ final class ScreenshotRendererTests: XCTestCase {
 
   func testEncodeProducesTheRequestedContainer() throws {
     let image = try fixtureImage()
-    for encoding in [FBScreenshotEncoding.png, .tiff, .jpeg(quality: 0.8)] {
+    for encoding in [ScreenshotEncoding.png, .tiff, .jpeg(quality: 0.8)] {
       let data = try ScreenshotRenderer.encode(image, encoding: encoding)
       let decoded = try decode(data)
       XCTAssertEqual(decoded.type, encoding.format.contentType, "\(encoding)")
@@ -191,7 +191,7 @@ final class ScreenshotRendererTests: XCTestCase {
   func testEncodeRejectsAQualityOutsideTheRange() throws {
     let image = try fixtureImage()
     for quality in [0.0, -0.5, 1.5] {
-      let encoding = FBScreenshotEncoding.jpeg(quality: quality)
+      let encoding = ScreenshotEncoding.jpeg(quality: quality)
       XCTAssertThrowsError(try ScreenshotRenderer.encode(image, encoding: encoding), "\(quality)") { error in
         XCTAssertEqual(error as? ScreenshotRenderError, .compressionQualityOutOfRange(quality), "\(quality)")
       }

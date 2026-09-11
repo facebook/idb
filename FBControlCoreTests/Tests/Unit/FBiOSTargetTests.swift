@@ -38,19 +38,19 @@ final class FBiOSTargetTests: XCTestCase {
     ]
   }
 
-  static func deviceTypes(forModels models: [FBDeviceModel]) -> [FBDeviceType] {
-    var deviceTypes: [FBDeviceType] = []
+  static func deviceTypes(forModels models: [FBDeviceModel]) -> [DeviceType] {
+    var deviceTypes: [DeviceType] = []
     for model in models {
       deviceTypes.append(FBiOSTargetConfiguration.nameToDevice[model]!)
     }
     return deviceTypes
   }
 
-  static var iPhoneDeviceTypes: [FBDeviceType] {
+  static var iPhoneDeviceTypes: [DeviceType] {
     return deviceTypes(forModels: iPhoneModels)
   }
 
-  static var iPadDeviceTypes: [FBDeviceType] {
+  static var iPadDeviceTypes: [DeviceType] {
     return deviceTypes(forModels: iPadModels)
   }
 

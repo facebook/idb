@@ -32,13 +32,13 @@ public protocol FBiOSTargetInfo: AnyObject {
   var name: String { get }
 
   /// The Device Type of the Target.
-  var deviceType: FBDeviceType { get }
+  var deviceType: DeviceType { get }
 
   /// Available architecture of the iOS Target
   var architectures: [FBArchitecture] { get }
 
   /// The OS Version of the Target.
-  var osVersion: FBOSVersion { get }
+  var osVersion: OSVersion { get }
 
   /// A dictionary containing per-target-type information that is unique to them.
   /// For example iOS Devices have additional metadata that is not present on Simulators.

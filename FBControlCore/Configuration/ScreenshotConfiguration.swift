@@ -9,14 +9,14 @@ import CoreGraphics
 import Foundation
 
 /// The container a screenshot is encoded into.
-public enum FBScreenshotImageFormat: String, Hashable, Sendable, CaseIterable {
+public enum ScreenshotImageFormat: String, Hashable, Sendable, CaseIterable {
   case png
   case jpeg
   case tiff
 }
 
 /// A JPEG quality on PNG or TIFF is rejected where the request is decoded, not silently ignored.
-public enum FBScreenshotEncoding: Hashable, Sendable {
+public enum ScreenshotEncoding: Hashable, Sendable {
   case png
   /// Uncompressed: preserves the pixels and color space with no codec cost.
   case tiff
@@ -26,7 +26,7 @@ public enum FBScreenshotEncoding: Hashable, Sendable {
   /// Matches the video stream encoder's default.
   public static let defaultJPEGQuality: Double = 0.8
 
-  public var format: FBScreenshotImageFormat {
+  public var format: ScreenshotImageFormat {
     switch self {
     case .png:
       return .png
@@ -48,9 +48,9 @@ public enum FBScreenshotEncoding: Hashable, Sendable {
   }
 }
 
-// MARK: - FBScreenshotEncoding: CustomStringConvertible
+// MARK: - ScreenshotEncoding: CustomStringConvertible
 
-extension FBScreenshotEncoding: CustomStringConvertible {
+extension ScreenshotEncoding: CustomStringConvertible {
   public var description: String {
     switch self {
     case .png:
@@ -65,13 +65,13 @@ extension FBScreenshotEncoding: CustomStringConvertible {
 
 /// Points are converted with the target's screen scale, which not every target reports; a `points` request
 /// on such a target fails rather than assuming 1x. `pixels` is the default and always available.
-public enum FBScreenshotUnit: String, Hashable, Sendable {
+public enum ScreenshotUnit: String, Hashable, Sendable {
   case pixels
   case points
 }
 
 /// Shrinks only; a factor or fit bound never enlarges.
-public enum FBScreenshotScale: Hashable, Sendable {
+public enum ScreenshotScale: Hashable, Sendable {
   /// Capture at the target's native resolution.
   case native
   /// Multiply both dimensions by a factor in (0, 1].
@@ -81,9 +81,9 @@ public enum FBScreenshotScale: Hashable, Sendable {
   case fit(maxWidth: Int?, maxHeight: Int?)
 }
 
-// MARK: - FBScreenshotScale: CustomStringConvertible
+// MARK: - ScreenshotScale: CustomStringConvertible
 
-extension FBScreenshotScale: CustomStringConvertible {
+extension ScreenshotScale: CustomStringConvertible {
   public var description: String {
     switch self {
     case .native:
@@ -99,20 +99,20 @@ extension FBScreenshotScale: CustomStringConvertible {
 }
 
 /// Describes a screenshot: what to capture, how much of it, at what size, in what encoding.
-public struct FBScreenshotConfiguration: Hashable, Sendable {
+public struct ScreenshotConfiguration: Hashable, Sendable {
 
-  public let encoding: FBScreenshotEncoding
+  public let encoding: ScreenshotEncoding
   /// The region to capture, in `unit`, with a top-left origin. `nil` captures the whole screen.
   public let cropRect: CGRect?
-  public let scale: FBScreenshotScale
+  public let scale: ScreenshotScale
   /// The unit `cropRect` and `scale`'s fit bounds are expressed in.
-  public let unit: FBScreenshotUnit
+  public let unit: ScreenshotUnit
 
   public init(
-    encoding: FBScreenshotEncoding = .png,
+    encoding: ScreenshotEncoding = .png,
     cropRect: CGRect? = nil,
-    scale: FBScreenshotScale = .native,
-    unit: FBScreenshotUnit = .pixels
+    scale: ScreenshotScale = .native,
+    unit: ScreenshotUnit = .pixels
   ) {
     self.encoding = encoding
     self.cropRect = cropRect
@@ -135,9 +135,9 @@ public struct FBScreenshotConfiguration: Hashable, Sendable {
   }
 }
 
-// MARK: - FBScreenshotConfiguration: CustomStringConvertible
+// MARK: - ScreenshotConfiguration: CustomStringConvertible
 
-extension FBScreenshotConfiguration: CustomStringConvertible {
+extension ScreenshotConfiguration: CustomStringConvertible {
   public var description: String {
     let crop = cropRect.map { "\($0)" } ?? "full screen"
     return "Encoding \(encoding) | Crop \(crop) | Scale \(scale) | Unit \(unit.rawValue)"
@@ -145,10 +145,10 @@ extension FBScreenshotConfiguration: CustomStringConvertible {
 }
 
 /// A captured screenshot. `size` can differ from what was requested: an overhanging crop is clamped and a fit bound rounds.
-public struct FBScreenshotResult: Hashable, Sendable {
+public struct ScreenshotResult: Hashable, Sendable {
 
   public let imageData: Data
-  public let format: FBScreenshotImageFormat
+  public let format: ScreenshotImageFormat
   /// The dimensions of `imageData`, in pixels, after cropping and scaling.
   public let size: CGSize
   /// The dimensions of the native capture, in pixels, before cropping and scaling.
@@ -156,7 +156,7 @@ public struct FBScreenshotResult: Hashable, Sendable {
   /// Pixels per point, or `nil` on a target that does not report its screen scale.
   public let screenScale: Double?
 
-  public init(imageData: Data, format: FBScreenshotImageFormat, size: CGSize, sourceSize: CGSize, screenScale: Double?) {
+  public init(imageData: Data, format: ScreenshotImageFormat, size: CGSize, sourceSize: CGSize, screenScale: Double?) {
     self.imageData = imageData
     self.format = format
     self.size = size
@@ -166,7 +166,7 @@ public struct FBScreenshotResult: Hashable, Sendable {
 }
 
 /// Each case maps to an invalid-argument failure at the API boundary.
-public enum FBScreenshotGeometryError: Error, Hashable {
+public enum ScreenshotGeometryError: Error, Hashable {
   case scaleFactorOutOfRange(Double)
   case fitBoundsEmpty
   case fitBoundNotPositive(Int)
@@ -176,9 +176,9 @@ public enum FBScreenshotGeometryError: Error, Hashable {
   case screenScaleUnknown
 }
 
-// MARK: - FBScreenshotGeometryError: LocalizedError
+// MARK: - ScreenshotGeometryError: LocalizedError
 
-extension FBScreenshotGeometryError: LocalizedError {
+extension ScreenshotGeometryError: LocalizedError {
   public var errorDescription: String? {
     switch self {
     case let .scaleFactorOutOfRange(factor):
@@ -200,7 +200,7 @@ extension FBScreenshotGeometryError: LocalizedError {
 }
 
 /// A resolved transform: everything in pixels, every bound checked. Shared by the simulator and device paths.
-public struct FBScreenshotPlan: Hashable, Sendable {
+public struct ScreenshotPlan: Hashable, Sendable {
 
   /// The region to capture, in pixels, clamped to the source and rounded out to whole pixels.
   /// `nil` captures the whole source image.
@@ -223,17 +223,17 @@ public struct FBScreenshotPlan: Hashable, Sendable {
 }
 
 /// The screenshot geometry, as pure functions over sizes.
-public enum FBScreenshotGeometry {
+public enum ScreenshotGeometry {
 
   /// Crop is applied before scale, so a fit bound applies to the cropped region.
   /// `screenScale` is required only when `configuration` measures something in points.
   public static func plan(
-    for configuration: FBScreenshotConfiguration,
+    for configuration: ScreenshotConfiguration,
     sourceSize: CGSize,
     screenScale: Double?
-  ) throws -> FBScreenshotPlan {
+  ) throws -> ScreenshotPlan {
     guard sourceSize.width >= 1, sourceSize.height >= 1 else {
-      throw FBScreenshotGeometryError.sourceSizeNotPositive(sourceSize)
+      throw ScreenshotGeometryError.sourceSizeNotPositive(sourceSize)
     }
     let scale =
       try configuration.requiresScreenScale
@@ -246,7 +246,7 @@ public enum FBScreenshotGeometry {
     let baseSize = cropRect?.size ?? sourceSize
     let factor = try scaleFactor(for: configuration.scale, baseSize: baseSize, pointsToPixels: scale)
 
-    return FBScreenshotPlan(
+    return ScreenshotPlan(
       cropRect: cropRect,
       scaleFactor: factor,
       outputSize: outputSize(baseSize: baseSize, factor: factor)
@@ -254,13 +254,13 @@ public enum FBScreenshotGeometry {
   }
 
   /// The multiplier that takes a measurement in `unit` to pixels.
-  static func pointsToPixels(for unit: FBScreenshotUnit, screenScale: Double?) throws -> Double {
+  static func pointsToPixels(for unit: ScreenshotUnit, screenScale: Double?) throws -> Double {
     switch unit {
     case .pixels:
       return 1
     case .points:
       guard let screenScale, screenScale > 0 else {
-        throw FBScreenshotGeometryError.screenScaleUnknown
+        throw ScreenshotGeometryError.screenScaleUnknown
       }
       return screenScale
     }
@@ -270,7 +270,7 @@ public enum FBScreenshotGeometry {
   static func clampedCropRect(_ cropRect: CGRect, pointsToPixels: Double, sourceSize: CGSize) throws -> CGRect {
     // `width`/`height` are standardized (a negative height reads positive); `size` is not.
     guard cropRect.size.width > 0, cropRect.size.height > 0 else {
-      throw FBScreenshotGeometryError.cropExtentNotPositive(cropRect)
+      throw ScreenshotGeometryError.cropExtentNotPositive(cropRect)
     }
     let pixelRect = CGRect(
       x: cropRect.origin.x * pointsToPixels,
@@ -281,24 +281,24 @@ public enum FBScreenshotGeometry {
     let bounds = CGRect(origin: .zero, size: sourceSize)
     let clamped = pixelRect.intersection(bounds)
     guard !clamped.isNull, clamped.width >= 1, clamped.height >= 1 else {
-      throw FBScreenshotGeometryError.cropOutsideBounds(cropRect: cropRect, sourceSize: sourceSize)
+      throw ScreenshotGeometryError.cropOutsideBounds(cropRect: cropRect, sourceSize: sourceSize)
     }
     return clamped
   }
 
   /// The factor that shrinks `baseSize` as `scale` asks, in (0, 1].
-  static func scaleFactor(for scale: FBScreenshotScale, baseSize: CGSize, pointsToPixels: Double) throws -> Double {
+  static func scaleFactor(for scale: ScreenshotScale, baseSize: CGSize, pointsToPixels: Double) throws -> Double {
     switch scale {
     case .native:
       return 1
     case let .factor(factor):
       guard factor > 0, factor <= 1 else {
-        throw FBScreenshotGeometryError.scaleFactorOutOfRange(factor)
+        throw ScreenshotGeometryError.scaleFactorOutOfRange(factor)
       }
       return factor
     case let .fit(maxWidth, maxHeight):
       if maxWidth == nil, maxHeight == nil {
-        throw FBScreenshotGeometryError.fitBoundsEmpty
+        throw ScreenshotGeometryError.fitBoundsEmpty
       }
       var factor = 1.0
       for (bound, extent) in [(maxWidth, baseSize.width), (maxHeight, baseSize.height)] {
@@ -306,7 +306,7 @@ public enum FBScreenshotGeometry {
           continue
         }
         guard bound > 0 else {
-          throw FBScreenshotGeometryError.fitBoundNotPositive(bound)
+          throw ScreenshotGeometryError.fitBoundNotPositive(bound)
         }
         factor = min(factor, Double(bound) * pointsToPixels / Double(extent))
       }

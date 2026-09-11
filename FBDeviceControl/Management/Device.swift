@@ -55,9 +55,9 @@ public final class FBDevice: FBiOSTarget, DeviceCommands, CustomStringConvertibl
   private var cachedUniqueIdentifier: String?
   private var cachedUDID: String?
   private var cachedName: String?
-  private var cachedDeviceType: FBDeviceType?
+  private var cachedDeviceType: DeviceType?
   private var cachedArchitectures: [FBArchitecture]?
-  private var cachedOSVersion: FBOSVersion?
+  private var cachedOSVersion: OSVersion?
   private var cachedExtendedInformation: [String: Any]?
   private var cachedTargetType: FBiOSTargetType?
   private var cachedBuildVersion: String?
@@ -70,9 +70,9 @@ public final class FBDevice: FBiOSTarget, DeviceCommands, CustomStringConvertibl
   public var uniqueIdentifier: String { cachedUniqueIdentifier ?? "" }
   public var udid: String { cachedUDID ?? "" }
   public var name: String { cachedName ?? "" }
-  public var deviceType: FBDeviceType { cachedDeviceType ?? FBDeviceType.generic(withName: "unknown") }
+  public var deviceType: DeviceType { cachedDeviceType ?? DeviceType.generic(withName: "unknown") }
   public var architectures: [FBArchitecture] { cachedArchitectures ?? [] }
-  public var osVersion: FBOSVersion { cachedOSVersion ?? FBOSVersion.generic(withName: "unknown") }
+  public var osVersion: OSVersion { cachedOSVersion ?? OSVersion.generic(withName: "unknown") }
   public var extendedInformation: [String: Any] { cachedExtendedInformation ?? [:] }
   public var targetType: FBiOSTargetType { cachedTargetType ?? .none }
   public var buildVersion: String? { cachedBuildVersion }

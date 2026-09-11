@@ -77,11 +77,11 @@ public final class FBSimulator: FBiOSTarget, Hashable, CustomStringConvertible, 
 
   public var targetType: FBiOSTargetType { .simulator }
 
-  public var architectures: [FBArchitecture] { Array(FBArchitectureProcessAdapter.hostMachineSupportedArchitectures()) }
+  public var architectures: [FBArchitecture] { Array(ArchitectureProcessAdapter.hostMachineSupportedArchitectures()) }
 
-  public var deviceType: FBDeviceType { configuration.device }
+  public var deviceType: DeviceType { configuration.device }
 
-  public var osVersion: FBOSVersion { configuration.os }
+  public var osVersion: OSVersion { configuration.os }
 
   public var extendedInformation: [String: Any] { [:] }
 

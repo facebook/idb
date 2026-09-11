@@ -10,7 +10,7 @@ import Foundation
 public let DefaultXCTraceRecordOperationTimeLimit: TimeInterval = 4 * 60 * 60 // 4h
 public let DefaultXCTraceRecordStopTimeout: TimeInterval = 600
 
-public struct FBXCTraceRecordConfiguration {
+public struct XCTraceRecordConfiguration {
 
   public let templateName: String
   public let timeLimit: TimeInterval
@@ -22,9 +22,9 @@ public struct FBXCTraceRecordConfiguration {
   public let targetStdin: String?
   public let targetStdout: String?
   public let processEnv: [String: String]?
-  public let shim: FBXCTestShimConfiguration?
+  public let shim: XCTestShimConfiguration?
 
-  public init(templateName: String, timeLimit: TimeInterval, package: String?, allProcesses: Bool, processToAttach: String?, processToLaunch: String?, launchArgs: [String]?, targetStdin: String?, targetStdout: String?, processEnv: [String: String]?, shim: FBXCTestShimConfiguration?) {
+  public init(templateName: String, timeLimit: TimeInterval, package: String?, allProcesses: Bool, processToAttach: String?, processToLaunch: String?, launchArgs: [String]?, targetStdin: String?, targetStdout: String?, processEnv: [String: String]?, shim: XCTestShimConfiguration?) {
     self.templateName = templateName
     self.timeLimit = timeLimit
     self.package = package
@@ -38,14 +38,14 @@ public struct FBXCTraceRecordConfiguration {
     self.shim = shim
   }
 
-  func withShim(_ shim: FBXCTestShimConfiguration) -> FBXCTraceRecordConfiguration {
-    FBXCTraceRecordConfiguration(templateName: templateName, timeLimit: timeLimit, package: package, allProcesses: allProcesses, processToAttach: processToAttach, processToLaunch: processToLaunch, launchArgs: launchArgs, targetStdin: targetStdin, targetStdout: targetStdout, processEnv: processEnv, shim: shim)
+  func withShim(_ shim: XCTestShimConfiguration) -> XCTraceRecordConfiguration {
+    XCTraceRecordConfiguration(templateName: templateName, timeLimit: timeLimit, package: package, allProcesses: allProcesses, processToAttach: processToAttach, processToLaunch: processToLaunch, launchArgs: launchArgs, targetStdin: targetStdin, targetStdout: targetStdout, processEnv: processEnv, shim: shim)
   }
 }
 
 // MARK: - CustomStringConvertible
 
-extension FBXCTraceRecordConfiguration: CustomStringConvertible {
+extension XCTraceRecordConfiguration: CustomStringConvertible {
 
   public var description: String {
     let launchArgsDesc = launchArgs.map { CollectionInformation.oneLineDescription(from: $0) } ?? "nil"

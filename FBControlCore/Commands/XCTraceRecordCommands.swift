@@ -10,7 +10,7 @@ import Foundation
 public protocol XCTraceRecordCommands {
 
   func start(
-    configuration: FBXCTraceRecordConfiguration,
+    configuration: XCTraceRecordConfiguration,
     logger: any FBControlCoreLogger
   ) async throws -> XCTraceRecordOperation
 }

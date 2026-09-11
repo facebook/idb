@@ -13,9 +13,9 @@ final class FBiOSTargetDescription: FBiOSTargetInfo {
   let uniqueIdentifier: String
   let udid: String
   let name: String
-  let deviceType: FBDeviceType
+  let deviceType: DeviceType
   let architectures: [FBArchitecture]
-  let osVersion: FBOSVersion
+  let osVersion: OSVersion
   let extendedInformation: [String: Any]
   let targetType: FBiOSTargetType
   let state: FBiOSTargetState

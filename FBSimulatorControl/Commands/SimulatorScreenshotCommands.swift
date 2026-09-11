@@ -10,7 +10,7 @@ import FBControlCore
 import Foundation
 
 /// Everything after the capture itself -- resolving the request against the screen, cropping, scaling,
-/// encoding -- is shared with the other targets and reports `FBScreenshotGeometryError` or
+/// encoding -- is shared with the other targets and reports `ScreenshotGeometryError` or
 /// `ScreenshotRenderError`.
 public enum SimulatorScreenshotError: Error {
   case captureFailed
@@ -40,7 +40,7 @@ public final class SimulatorScreenshotCommands: ScreenshotCommands {
 
   /// The crop and scale are applied by the render itself rather than to its output, so all that is
   /// left here is to encode what comes back.
-  public func take(configuration: FBScreenshotConfiguration) async throws -> FBScreenshotResult {
+  public func take(configuration: ScreenshotConfiguration) async throws -> ScreenshotResult {
     guard let simulator = self.simulator else {
       throw WeakTargetError.simulator
     }
@@ -70,9 +70,9 @@ public final class SimulatorScreenshotCommands: ScreenshotCommands {
     return image
   }
 
-  /// The REPL's crop is in screen points (`FBScreenshotUnit.points`).
+  /// The REPL's crop is in screen points (`ScreenshotUnit.points`).
   public func takeForRepl(cropRect: CGRect?, asPNG: Bool) async throws -> Data {
-    let configuration = FBScreenshotConfiguration(
+    let configuration = ScreenshotConfiguration(
       encoding: asPNG ? .png : .tiff,
       cropRect: cropRect,
       unit: .points

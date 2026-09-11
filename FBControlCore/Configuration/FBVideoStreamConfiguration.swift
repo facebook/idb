@@ -87,7 +87,7 @@ extension FBVideoStreamRateControl: CustomStringConvertible {
 }
 
 /// How frames are encoded, independent of the output format and sink.
-public struct FBVideoEncodeOptions: Hashable, Sendable {
+public struct VideoEncodeOptions: Hashable, Sendable {
   public let framesPerSecond: Int?
   public let scaleFactor: Double?
   public let rateControl: FBVideoStreamRateControl
@@ -108,20 +108,20 @@ public struct FBVideoEncodeOptions: Hashable, Sendable {
 public struct FBVideoStreamConfiguration: Hashable, CustomStringConvertible, Sendable {
 
   public let format: FBVideoStreamFormat
-  public let encodeOptions: FBVideoEncodeOptions
+  public let encodeOptions: VideoEncodeOptions
 
   public var framesPerSecond: Int? { encodeOptions.framesPerSecond }
   public var rateControl: FBVideoStreamRateControl { encodeOptions.rateControl }
   public var scaleFactor: Double? { encodeOptions.scaleFactor }
   public var keyFrameRate: Double { encodeOptions.keyFrameRate }
 
-  public init(format: FBVideoStreamFormat, encodeOptions: FBVideoEncodeOptions) {
+  public init(format: FBVideoStreamFormat, encodeOptions: VideoEncodeOptions) {
     self.format = format
     self.encodeOptions = encodeOptions
   }
 
   public init(format: FBVideoStreamFormat, framesPerSecond: Int?, rateControl: FBVideoStreamRateControl?, scaleFactor: Double?, keyFrameRate: Double?) {
-    self.init(format: format, encodeOptions: FBVideoEncodeOptions(framesPerSecond: framesPerSecond, rateControl: rateControl, scaleFactor: scaleFactor, keyFrameRate: keyFrameRate))
+    self.init(format: format, encodeOptions: VideoEncodeOptions(framesPerSecond: framesPerSecond, rateControl: rateControl, scaleFactor: scaleFactor, keyFrameRate: keyFrameRate))
   }
 
   public var description: String {
