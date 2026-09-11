@@ -52,7 +52,9 @@ class DiagnosticPlanTests(unittest.TestCase):
 
     def test_includes_companion_log_and_host_crash_reports(self) -> None:
         patterns = [
-            source.pattern for source in self.plan() if isinstance(source, Copy)
+            str(source.root / source.pattern)
+            for source in self.plan()
+            if isinstance(source, Copy)
         ]
         self.assertIn("/tmp/idb-e2e-*/companion.log", patterns)
         self.assertIn(
@@ -65,7 +67,9 @@ class DiagnosticPlanTests(unittest.TestCase):
 
     def test_includes_simulator_crash_reports(self) -> None:
         patterns = [
-            source.pattern for source in self.plan() if isinstance(source, Copy)
+            str(source.root / source.pattern)
+            for source in self.plan()
+            if isinstance(source, Copy)
         ]
         self.assertIn(
             f"/sets/end-to-end/{UDID}/data/Library/Logs/CrashReporter/*.ips", patterns
@@ -126,7 +130,7 @@ class CollectTests(unittest.TestCase):
         write(self.root / "idb-e2e-a" / "companion.log", "first")
         write(self.root / "idb-e2e-b" / "companion.log", "second")
         collected = collect(
-            [Copy(str(self.root / "idb-e2e-*" / "companion.log"))],
+            [Copy(self.root, "idb-e2e-*/companion.log")],
             self.output,
             self.run,
         )
@@ -136,7 +140,7 @@ class CollectTests(unittest.TestCase):
 
     def test_unmatched_pattern_collects_no_files(self) -> None:
         self.assertEqual(
-            collect([Copy(str(self.root / "absent" / "*.ips"))], self.output, self.run),
+            collect([Copy(self.root / "absent", "*.ips")], self.output, self.run),
             [],
         )
         self.assertTrue(self.output.is_dir())
@@ -156,7 +160,7 @@ class CollectTests(unittest.TestCase):
         collected = collect(
             [
                 Capture("devices.txt", ("xcrun", "simctl", "list")),
-                Copy(str(write(self.root / "crash.ips"))),
+                Copy(write(self.root / "crash.ips").parent, "crash.ips"),
             ],
             self.output,
             raising,

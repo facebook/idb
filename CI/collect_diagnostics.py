@@ -32,11 +32,12 @@ Run = Callable[[Sequence[str]], str]
 class Copy:
     """Copy files matching a glob into the output directory."""
 
+    root: Path
     pattern: str
 
     def collect(self, output: Path, run: Run) -> list[str]:
         names = []
-        for path in sorted(glob.glob(self.pattern)):
+        for path in sorted(glob.glob(str(self.root / self.pattern))):
             name = os.path.basename(path)
             shutil.copy(path, output / name)
             names.append(name)
@@ -61,15 +62,15 @@ Source = Copy | Capture
 def host_sources(*, home: Path, companion_root: Path) -> list[Source]:
     reports = home / "Library" / "Logs" / "DiagnosticReports"
     return [
-        Copy(str(companion_root / "idb-e2e-*" / "companion.log")),
-        Copy(str(reports / "idb_companion*.ips")),
-        Copy(str(reports / "SimulatorFrameworkBridge*.ips")),
+        Copy(companion_root, "idb-e2e-*/companion.log"),
+        Copy(reports, "idb_companion*.ips"),
+        Copy(reports, "SimulatorFrameworkBridge*.ips"),
     ]
 
 
 def simulator_sources(*, device_set: Path, udid: str) -> list[Source]:
     return [
-        Copy(str(device_set / udid / "data/Library/Logs/CrashReporter/*.ips")),
+        Copy(device_set / udid / "data/Library/Logs/CrashReporter", "*.ips"),
         Capture("devices.txt", tuple(simctl_argv(device_set, "list", "devices"))),
         Capture(
             "simulator-log.txt",
