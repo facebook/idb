@@ -26,6 +26,5 @@ class TargetTests(IdbEndToEndTestCase):
         self.assertGreater(dimensions["width"], 0)
         self.assertGreater(dimensions["height"], 0)
 
-        # simctl, not idb, is the ground truth for the state.
         self.assertEqual(description["state"], await self.simctl.state())
         self.assertEqual(description["state"], "Booted")

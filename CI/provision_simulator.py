@@ -3,19 +3,9 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-"""Create and boot the simulator the end-to-end suite runs against.
+"""Boot a simulator using the newest available iOS runtime and supported iPhone.
 
-The suite consumes a booted simulator and never creates one, so this is what
-supplies it. It lives outside ``EndToEndTests`` because provisioning is the
-precondition for the tests rather than one of them: here, the selection and
-the ``simctl`` sequence are covered by tests that need no simulator, and the
-suite's own discovery can never pick them up.
-
-The runtime is named rather than defaulted so that what idb is tested against
-is the newest iOS the machine offers, not whatever a hardcoded device type
-happens to pair with once the image moves on.
-
-Prints the environment the caller should export, one ``KEY=value`` per line:
+Print KEY=value lines for the caller to export:
 
     python3 -m CI.provision_simulator --name e2e >> "$GITHUB_ENV"
 """
@@ -36,7 +26,7 @@ Run = Callable[[Sequence[str]], str]
 
 
 class NoSimulatorError(Exception):
-    """Nothing on this machine can run the suite."""
+    """No suitable simulator is available, or creation returned no UDID."""
 
 
 def _version(runtime: dict[str, Any]) -> tuple[int, ...]:
@@ -59,9 +49,7 @@ def _rank(name: str) -> tuple[int, bool] | None:
     match = re.fullmatch(r"iPhone (\d+)( .+)?", name)
     if match is None:
         return None
-    # The base model over its Pro/Plus/Max variants: the suite exercises idb
-    # rather than a screen size, and the base model is the one every generation
-    # has.
+    # Prefer the base model when multiple variants share a generation.
     return (int(match.group(1)), match.group(2) is None)
 
 
@@ -79,7 +67,6 @@ def newest_iphone(runtime: dict[str, Any]) -> dict[str, Any]:
 
 
 def simctl_argv(device_set: Path | None, *args: str) -> list[str]:
-    """A ``simctl`` command line, scoped to ``device_set`` when there is one."""
     scope = [] if device_set is None else ["--set", str(device_set)]
     return ["xcrun", "simctl", *scope, *args]
 
@@ -87,11 +74,7 @@ def simctl_argv(device_set: Path | None, *args: str) -> list[str]:
 def environment_lines(
     udid: str, device_set: Path | None, prefix: str = ""
 ) -> list[str]:
-    """The ``KEY=value`` lines naming what was provisioned.
-
-    The device set is named alongside the UDID so that a consumer can never
-    resolve the UDID in a set other than the one it was created in.
-    """
+    """Format the UDID and optional device set as environment variables."""
     lines = []
     if device_set is not None:
         lines.append(f"{prefix}DEVICE_SET_PATH={device_set}")
@@ -106,12 +89,7 @@ def provision(
     device_set: Path | None = None,
     env_prefix: str = "",
 ) -> list[str]:
-    """Create, boot and wait for a simulator; return its environment lines.
-
-    ``bootstatus`` rather than ``boot`` alone: ``boot`` returns the moment the
-    boot is underway, and work handed to a simulator before it finishes waits
-    rather than failing.
-    """
+    """Create a simulator and wait for bootstatus before returning its environment."""
     listing = json.loads(run(["xcrun", "simctl", "list", "--json", "runtimes"]))
     runtime = newest_runtime(listing.get("runtimes", []))
     device_type = newest_iphone(runtime)

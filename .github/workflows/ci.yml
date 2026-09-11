@@ -54,15 +54,9 @@ jobs:
       - uses: actions/setup-python@v6
         with:
           python-version: '3.12'
-      # Logic that needs no simulator, no companion and no idb. Run here rather
-      # than inside the jobs that consume it, so that a red line in the
-      # end-to-end job always means idb is broken.
       - name: Test the CI scripts
         run: python -m unittest discover -s CI -p '*_tests.py' -t . -v
-      # The harness's own decisions -- what a non-zero idb exit is reported as,
-      # and what is read out of a launchctl listing. Named *_tests.py so that
-      # the end-to-end job's `unittest discover`, whose pattern is test*.py,
-      # cannot pull them into a run that leases a simulator.
+      # Run separately because e2e discovery matches test*.py.
       - name: Test the end-to-end harness
         run: python -m unittest EndToEndTests.harness_tests -v
 
@@ -255,24 +249,16 @@ jobs:
         run: |
           mkdir -p Build
           tar -C Build -xzf idb-companion-distribution.tgz
-      # The suite consumes a booted simulator and does not boot one; this job
-      # is the harness that supplies it, named by DEVICE_UDID in the device set
-      # named by DEVICE_SET_PATH. Both are required, so the suite can never run
-      # against a simulator other than the one created here. A device set of
-      # this job's own keeps it clear of anything else on the runner.
+      # Export DEVICE_UDID and DEVICE_SET_PATH for a dedicated simulator.
       - name: Provision a simulator
         run: python3 -m CI.provision_simulator --name end-to-end-provided --device-set "$RUNNER_TEMP/end-to-end-device-set" >> "$GITHUB_ENV"
-      # Strict: a hosted runner has everything the suite needs, so a skip here
-      # would hide a broken environment rather than report a capability gap.
+      # Fail if a required simulator host service is unavailable.
       - name: Run the end-to-end suite
         run: |
           IDB_BIN="$(command -v idb)" \
           IDB_COMPANION_PATH="$PWD/Build/Distribution/idb_companion" \
           IDB_E2E_STRICT=1 \
           python -m unittest discover -s EndToEndTests -t . -v
-      # What the companion's own log cannot account for: the crash report that
-      # separates a signal from an orderly exit, and the simulator's side of a
-      # read that never arrived. See CI/collect_diagnostics.py.
       - name: Collect diagnostics on failure
         if: failure()
         run: python3 -m CI.collect_diagnostics --output "$RUNNER_TEMP/end-to-end-diagnostics"

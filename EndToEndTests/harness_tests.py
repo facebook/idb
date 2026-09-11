@@ -3,20 +3,10 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-"""The harness's own decisions, taken apart from the simulator.
+"""Test failure reporting, process checks and polling without a simulator.
 
-``fail_or_skip_for`` decides what a non-zero ``idb`` exit is reported as, and
-every test in the suite reaches its own verdict through it. It reads nothing
-but the companion and reports through ``fail`` and ``skipTest``, so it can be
-called with a stand-in for the test case. Deciding that a companion has died
-and the run should end, and polling until something is ready, are likewise
-pure. All of them run anywhere, unlike the rest of the suite.
-
-Named ``harness_tests`` rather than ``test_harness`` deliberately. The
-end-to-end job discovers its tests with ``unittest discover``, whose default
-pattern is ``test*.py``, so under this name these cannot be swept into a run
-that leases a simulator and sets ``IDB_E2E_STRICT``. They are the environment,
-not the subject: a red line in the end-to-end job should mean idb is broken.
+The *_tests.py name excludes this module from e2e unittest discovery, which
+uses test*.py. Run it separately with python -m unittest EndToEndTests.harness_tests.
 """
 
 from __future__ import annotations
@@ -51,14 +41,12 @@ HOST_SERVICE_UNAVAILABLE = (
     "SimLaunchHostService.RequestError: Exit Code 149 is not acceptable"
 )
 
-# `simctl listapps` writes an old-style plist, which is why the harness pipes it
-# through `plutil` rather than reading it directly.
+# simctl listapps emits an old-style plist that plutil converts to JSON.
 LISTAPPS_PLIST = b'{ "com.apple.Preferences" = { CFBundleName = Settings; }; }'
 LISTAPPS_JSON = b'{"com.apple.Preferences": {"CFBundleName": "Settings"}}'
 FAILED = Completed(1, b"", b"the simulator is not booted")
 
-# `launchctl list` in the guest, tab separated, with a running app, an app that
-# has exited but is still listed, and a daemon that is not an app.
+# Include a running app, an exited app, and a daemon.
 LAUNCHCTL_LISTING = """PID\tStatus\tLabel
 81046\t0\tUIKitApplication:com.apple.mobilesafari[e334][rb-legacy]
 -\t0\tUIKitApplication:com.apple.Preferences[90ff][rb-legacy]
@@ -69,11 +57,11 @@ Run = Callable[..., Awaitable[Completed]]
 
 
 class Failed(Exception):
-    """What the stand-in raises for ``fail``."""
+    """Failure raised by the test case stub."""
 
 
 class Skipped(Exception):
-    """What the stand-in raises for ``skipTest``."""
+    """Skip raised by the test case stub."""
 
 
 class ProcessStub:
@@ -85,7 +73,7 @@ class ProcessStub:
 
 
 def companion(returncode: int | None, log_path: Path | None = None) -> Companion:
-    """A real ``Companion`` over a stand-in process, without starting one."""
+    """Construct a Companion with a fake process, without spawning one."""
     made = Companion.__new__(Companion)
     made.process = ProcessStub(returncode)
     made.log_path = log_path if log_path is not None else Path("/nonexistent.log")
@@ -107,7 +95,6 @@ class TestCaseStub:
 
 
 def report_for(stderr: str, companion_returncode: int | None = None) -> str:
-    """The message ``fail_or_skip_for`` reports for a failed ``idb describe``."""
     return reported_by(TestCaseStub(companion_returncode), stderr)
 
 
@@ -153,10 +140,7 @@ class FailureReportingTests(unittest.TestCase):
         )
         self.assertIn("the companion is still running", message)
 
-    # Both modes are stated rather than inherited. The end-to-end job sets
-    # IDB_E2E_STRICT for the simulator tests, and these two cases are the
-    # harness deciding what to do with it and without it, so a case that read
-    # the runner's environment would be testing the runner.
+    # Test both strict settings independently of the runner's environment.
     @mock.patch.dict(os.environ, {STRICT_ENV: "0"})
     def test_skips_when_the_host_cannot_spawn_in_the_guest(self) -> None:
         case = TestCaseStub()
@@ -181,8 +165,6 @@ class FailureReportingTests(unittest.TestCase):
 
 
 class CompanionLifecycleTests(unittest.TestCase):
-    """The harness ending a run whose companion is gone."""
-
     def test_a_running_companion_has_not_died(self) -> None:
         self.assertIsNone(companion(None).died())
 
@@ -213,8 +195,6 @@ class CompanionLifecycleTests(unittest.TestCase):
         self.assertFalse(case._result.shouldStop)
 
     def test_being_unable_to_reach_a_live_companion_does_not_end_the_run(self) -> None:
-        # Not every unreachable companion is a dead one, and a run is only
-        # abandoned for a companion that is actually gone.
         case = TestCaseStub()
 
         reported_by(case, CONNECTION_REFUSED)
@@ -223,14 +203,10 @@ class CompanionLifecycleTests(unittest.TestCase):
 
 
 class DeadCompanionStopsTheSuiteTests(unittest.TestCase):
-    """The whole mechanism, through unittest, with no simulator involved."""
-
     class Suite(IdbEndToEndTestCase):
         ran: list[str] = []
 
         async def asyncSetUp(self) -> None:
-            # Stands in for the shared environment and companion, so that what
-            # is under test is the gate and not what supplies it.
             self.companion = companion(1)
             self.end_the_run_if_the_companion_died()
 
@@ -257,7 +233,7 @@ class DeadCompanionStopsTheSuiteTests(unittest.TestCase):
 
 
 def reading(listapps: Completed, plutil: Completed) -> Run:
-    """Stands in for every subprocess ``installed_bundle_ids`` runs."""
+    """Return canned listapps and plutil responses."""
 
     async def run(
         argv: Sequence[str], timeout: float, stdin: bytes | None = None
@@ -268,9 +244,6 @@ def reading(listapps: Completed, plutil: Completed) -> Run:
 
 
 class InstalledBundleIdsTests(unittest.IsolatedAsyncioTestCase):
-    """What simctl -- the ground truth the application tests cross-check
-    against -- reports when it cannot be read."""
-
     async def bundle_ids(self, listapps: Completed, plutil: Completed) -> set[str]:
         with mock.patch.object(harness, "run", reading(listapps, plutil)):
             return await Simctl("UDID", Path("/device-set")).installed_bundle_ids()
@@ -323,8 +296,6 @@ class DeadlineTests(unittest.TestCase):
 
 @mock.patch.object(harness, "POLL_INTERVAL_SECONDS", 0.0)
 class WaitUntilTests(unittest.IsolatedAsyncioTestCase):
-    """What a poll can say, and what each answer does to the wait."""
-
     async def test_a_poll_that_is_ready_returns_its_value(self) -> None:
         asked = 0
 

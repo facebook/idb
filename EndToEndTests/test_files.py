@@ -3,26 +3,16 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-"""Moving files in and out of an installed application's container.
+"""Test file transfers in an app container, checking bytes on the host.
 
-``--application`` names the container of application containers, in which each
-installed app appears under its own bundle id, so every path here is prefixed
-with the fixture app's. The deprecated ``--bundle-id`` says the same thing and
-is not used.
-
-What makes this worth a test is that the bytes make a round trip through the
-companion twice, in opposite directions, and that both ends are observable:
-what ``push`` wrote is read off the host filesystem through the container
-simctl reports, and what ``pull`` brought back is compared with what went in.
-An `ls` that agrees with an empty directory proves nothing, so it is checked
-against ground truth rather than against itself.
+With --application, paths start with the app bundle ID. simctl locates the
+container so pushed files can be checked independently of idb.
 """
 
 from __future__ import annotations
 
 from .harness import IdbEndToEndTestCase
 
-# Under Documents, which every application has and nothing else writes to.
 REMOTE_DIRECTORY = "Documents/idb-e2e"
 FILE_NAME = "pushed.txt"
 CONTENTS = b"idb end-to-end file transfer\n"

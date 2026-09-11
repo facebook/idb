@@ -3,40 +3,11 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-"""Harness for the idb end-to-end tests.
+"""Run idb commands through one shared companion against a booted simulator.
 
-The tests drive the ``idb`` client, through a companion, against a booted
-simulator that the environment provides. Nothing here boots a simulator, and
-nothing here goes looking for one: the simulator is named by ``DEVICE_UDID``
-and the device set it lives in by ``DEVICE_SET_PATH``, and both are an
-invariant of the whole suite. Whoever runs the suite provides them, along with
-``IDB_BIN`` and ``IDB_COMPANION_PATH`` naming the two binaries under test.
-None of the four has a default, and a missing one is an error rather than a
-skip -- a suite that quietly tested nothing would be worse than one that says
-its environment is incomplete.
-
-The simulator is a leased resource. Tests restore anything they mutate and
-never boot, shut down, erase or delete it. Before any test runs, the suite
-waits once for it to answer an accessibility read.
-
-The harness starts one companion on a private unix socket and every command
-connects to it with ``--companion``. The client cannot be made to do this for
-the companions it spawns itself: it constructs its spawner with no device set
-path, so a client-spawned companion only ever sees the default device set.
-
-Commands are subprocesses of the event loop, because the behaviour under test
-is partly concurrent -- ``launch --wait-for`` streams an app's output for as
-long as the app runs, and the test reads that stream while the app is alive.
-The companion is a plain ``Popen`` instead: it outlives every test, and an
-``asyncio`` child process belongs to the loop that created it, which
-``IsolatedAsyncioTestCase`` replaces per test.
-
-Failures are loud and skips are honest. A command that fails because the
-simulator's host does not run ``SimLaunchHostService`` -- the case on some
-leased simulators, where nothing can be spawned inside the guest -- skips the
-test that needed it. ``IDB_E2E_STRICT=1`` turns that skip into a failure, for
-environments that promise a complete simulator and want to know when the
-promise is broken.
+The caller supplies DEVICE_UDID, DEVICE_SET_PATH, IDB_BIN and
+IDB_COMPANION_PATH. The harness starts the companion and waits for
+accessibility readiness; it does not manage the simulator lifecycle.
 """
 
 from __future__ import annotations
@@ -66,37 +37,23 @@ STRICT_ENV = "IDB_E2E_STRICT"
 
 T = TypeVar("T")
 
-# The app the companion ships for `idb-repl app` to host: an arm64 simulator app
-# beside the companion on every platform that builds it, so it doubles as the
-# install fixture without adding a fixture of its own.
+# ReplHost.app ships with the companion, so installation tests need no extra app.
 FIXTURE_APP_NAME = "ReplHost.app"
 FIXTURE_APP_BUNDLE_ID = "com.facebook.idb.replhost"
 
-# A leased simulator whose host does not run SimLaunchHostService refuses to
-# spawn anything in the guest: CoreSimulator reports SimError 405 with a
-# SimLaunchHostService request error, which FBSimulatorControl surfaces as an
-# unacceptable exit code. That is a property of the lease, not of the code
-# under test.
+# Hosts without SimLaunchHostService cannot spawn simulator processes.
 HOST_SERVICE_UNAVAILABLE_MARKERS = (
     "SimLaunchHostService.RequestError",
     "Exit Code 149 is not acceptable",
 )
 
-# The client's own words when it cannot open a channel to the companion, from
-# `idb/grpc/client.py`. Deliberately just the one marker: a command misread as
-# a connection failure is reported as the harness's problem rather than as the
-# failure it actually was, which is the confusion this classification exists to
-# remove.
+# Match the connection error emitted by idb/grpc/client.py.
 COMPANION_UNREACHABLE_MARKERS = ("Failed to connect to companion",)
 
-# What an accessibility read says before the simulator has a translation object
-# to serve. Distinct from every other read failure: it is the one that goes
-# away on its own.
+# This accessibility error is retryable while the simulator starts.
 ACCESSIBILITY_NOT_READY_MARKER = "No translation object returned"
 ACCESSIBILITY_PROBE_ARGS = ("ui", "describe-all", "--json")
 
-# How often a poll asks again. Every wait here is for something that takes
-# seconds to tens of seconds, so this is far below any of their budgets.
 POLL_INTERVAL_SECONDS = 1.0
 
 COMPANION_READY_TIMEOUT_SECONDS = 180.0
@@ -106,19 +63,19 @@ INSTALL_TIMEOUT_SECONDS = 300.0
 
 
 class HarnessError(Exception):
-    """The environment did not hold up its end of the suite's invariant."""
+    """Test setup or a harness operation failed."""
 
 
 class CompanionDied(HarnessError):
-    """The companion is no longer serving, so nothing after it can be tested."""
+    """The shared companion exited; stop the remaining tests."""
 
 
 class NotReady(Exception):
-    """What a poll raises while the thing it waits for has not happened yet."""
+    """Retry this poll because the expected condition is not met yet."""
 
 
 class Deadline:
-    """A bounded wait, stated once rather than recomputed at each check."""
+    """Track elapsed time using a monotonic clock."""
 
     def __init__(self, seconds: float) -> None:
         self.seconds = seconds
@@ -134,11 +91,9 @@ class Deadline:
 
 
 async def wait_until(what: str, timeout: float, poll: Callable[[], Awaitable[T]]) -> T:
-    """Poll until it produces a value, failing with what it was still waiting for.
+    """Retry on NotReady until the timeout; propagate other exceptions.
 
-    A simulator comes up in stages that nothing announces, so every wait here
-    is a poll. What differs between them is only the question asked and how
-    long it is worth asking, which is what a caller supplies.
+    The timeout is checked between polls. Each poll must bound its own runtime.
     """
     deadline = Deadline(timeout)
     while True:
@@ -153,11 +108,6 @@ async def wait_until(what: str, timeout: float, poll: Callable[[], Awaitable[T]]
 
 
 class FailureKind(enum.Enum):
-    """What a non-zero ``idb`` exit means, which is not always what the command
-    was doing: the companion is shared by every test, so its death turns every
-    later command into a connection failure that has nothing to say about the
-    command that hit it."""
-
     COMMAND = enum.auto()
     COMPANION_UNREACHABLE = enum.auto()
     HOST_SERVICE_UNAVAILABLE = enum.auto()
@@ -179,8 +129,6 @@ def strict() -> bool:
 
 @dataclass(frozen=True)
 class Completed:
-    """The result of one command: what it exited with and what it wrote."""
-
     returncode: int
     stdout: bytes
     stderr: bytes
@@ -217,8 +165,7 @@ async def run(
 
 
 class Simctl:
-    """Ground truth about the simulator, read from ``xcrun simctl`` rather than
-    from the tool under test."""
+    """Read simulator state independently of idb."""
 
     def __init__(self, udid: str, device_set_path: Path) -> None:
         self.udid = udid
@@ -237,8 +184,6 @@ class Simctl:
         return _device_states(json.loads(completed.stdout)).get(self.udid)
 
     async def installed_bundle_ids(self) -> set[str]:
-        """What is installed, or an error -- never an answer that reads as an
-        empty simulator when the truth is that it could not be read."""
         completed = await self.run("listapps", self.udid)
         if completed.returncode != 0:
             raise HarnessError(
@@ -259,8 +204,6 @@ class Simctl:
         return set(json.loads(converted.stdout).keys())
 
     async def running_bundle_ids(self) -> set[str]:
-        """Which apps the simulator itself has running, read from launchctl in
-        the guest rather than from idb."""
         completed = await self.run("spawn", self.udid, "launchctl", "list")
         if completed.returncode != 0:
             raise HarnessError(
@@ -270,8 +213,6 @@ class Simctl:
         return running_bundle_ids_from_listing(completed.text)
 
     async def app_container(self, bundle_id: str, kind: str = "data") -> Path:
-        """Where an installed app's container is on the host, so what idb wrote
-        into it can be read without going back through idb."""
         completed = await self.run("get_app_container", self.udid, bundle_id, kind)
         if completed.returncode != 0:
             raise HarnessError(
@@ -289,11 +230,9 @@ _APPLICATION_LABEL = re.compile(r"UIKitApplication:([^\[\s]+)")
 
 
 def running_bundle_ids_from_listing(listing: str) -> set[str]:
-    """The bundle ids of the apps a ``launchctl list`` listing shows running.
+    """Parse running apps from launchctl output.
 
-    launchctl keeps listing an application that has exited, with ``-`` where
-    its PID was, so the label alone answers "has been launched at some point"
-    rather than "is running now" and only a listing with a process on it counts.
+    Exited apps remain listed with a dash in the PID column.
     """
     running: set[str] = set()
     for line in listing.splitlines():
@@ -315,8 +254,6 @@ def _device_states(listing: dict[str, Any]) -> dict[str, str]:
 
 
 class Environment:
-    """What the environment provided: the simulator and the two binaries."""
-
     def __init__(
         self,
         udid: str,
@@ -375,17 +312,14 @@ def _binary_from_environment(name: str) -> Path:
 
 
 class Companion:
-    """One companion for the provided simulator, serving on a private unix
-    socket for as long as the test process lives.
+    """Share a companion across tests.
 
-    Started with ``Popen`` rather than through the event loop: it is shared by
-    every test, and ``IsolatedAsyncioTestCase`` gives each test its own loop,
-    which an ``asyncio`` child process would not survive.
+    Use Popen because IsolatedAsyncioTestCase replaces the event loop after
+    each test, while the companion must keep running.
     """
 
     def __init__(self, environment: Environment) -> None:
-        # Unix socket paths are limited to about a hundred bytes; the default
-        # temporary directory on macOS is already most of that.
+        # Use /tmp to stay within the Unix socket path limit on macOS.
         self.directory = Path(tempfile.mkdtemp(prefix="idb-e2e-", dir="/tmp"))
         self.socket_path = self.directory / "companion.sock"
         self.log_path = self.directory / "companion.log"
@@ -412,8 +346,7 @@ class Companion:
             raise
 
     def _wait_until_ready(self) -> str:
-        # The companion prints one JSON line naming its socket once it is
-        # serving; anything before that is not the report.
+        # The companion reports readiness as a JSON line containing grpc_path.
         stdout = self.process.stdout
         assert stdout is not None
         deadline = Deadline(COMPANION_READY_TIMEOUT_SECONDS)
@@ -446,7 +379,7 @@ class Companion:
                 return str(path)
 
     def died(self) -> CompanionDied | None:
-        """The failure to report if the companion is no longer serving."""
+        """Return an error with the exit code and log if the companion exited."""
         returncode = self.process.poll()
         if returncode is None:
             return None
@@ -457,7 +390,6 @@ class Companion:
         )
 
     def liveness_note(self) -> str:
-        """How the companion is doing, in words a failure report can use."""
         returncode = self.process.poll()
         if returncode is None:
             return "the companion is still running"
@@ -488,13 +420,9 @@ def idb_argv(environment: Environment, companion: Companion, *args: str) -> list
 async def wait_until_accessibility_is_serving(
     environment: Environment, companion: Companion
 ) -> None:
-    """Wait for the simulator to answer an accessibility read.
+    """Wait for an accessibility read before running tests.
 
-    The only signal with no proxy for it, and a strictly stronger one than the
-    weaker signals it replaces: a simulator serving reads has finished booting
-    and has a live SpringBoard. Nothing outside the translation layer says when
-    it begins serving, so the probe is the read itself, run once for the suite
-    rather than left for whichever test happens to go first to discover.
+    A booted simulator may not have an accessibility translation object yet.
     """
 
     async def probe() -> None:
@@ -506,9 +434,7 @@ async def wait_until_accessibility_is_serving(
             return
         kind = classify_failure(completed)
         if kind is FailureKind.HOST_SERVICE_UNAVAILABLE:
-            # Nothing here will become ready. The tests that need the guest
-            # skip with that as their reason, which is more use than the whole
-            # suite failing at setup.
+            # Let individual tests report the unavailable service as a skip or failure.
             return
         if kind is not FailureKind.COMMAND or (
             ACCESSIBILITY_NOT_READY_MARKER not in completed.error_text
@@ -534,11 +460,7 @@ _acquisition_failure: BaseException | None = None
 
 
 async def shared_environment() -> Environment:
-    """The environment, resolved once per process.
-
-    A failure is remembered and re-raised for every test, so each reports the
-    same reason instead of the first one consuming it.
-    """
+    """Validate the environment once and cache any setup failure."""
     global _environment, _acquisition_failure
     if _acquisition_failure is not None:
         raise _acquisition_failure
@@ -574,14 +496,12 @@ async def shared_companion() -> Companion:
 
 
 class IdbEndToEndTestCase(unittest.IsolatedAsyncioTestCase):
-    """A test case with a provided simulator, a companion serving it and the
-    ``idb`` client pointed at that companion."""
+    """Run CLI tests against the shared companion and simulator."""
 
     environment: Environment
     companion: Companion
 
-    # ``run`` is the only public place unittest hands over the result, and
-    # ending the run early needs it.
+    # Keep the result so companion death can stop the remaining tests.
     _result: unittest.TestResult | None = None
 
     def run(self, result: unittest.TestResult | None = None) -> Any:
@@ -602,15 +522,10 @@ class IdbEndToEndTestCase(unittest.IsolatedAsyncioTestCase):
         raise died
 
     def _stop_the_run(self) -> None:
-        """End the run once this test has reported, rather than after every
-        remaining one.
+        """Stop after this test reports its result.
 
-        The companion is leased once for the whole process, so its death is not
-        this test's failure but every remaining test's, and each would spend
-        its own timeout rediscovering the same thing and bury the one report
-        that says why. Not unittest's ``--failfast``, which would also stop for
-        a single genuine idb failure -- exactly the case where the rest of the
-        suite is still worth running.
+        The remaining tests cannot run without the shared companion. Ordinary
+        command failures leave the suite running.
         """
         if self._result is not None:
             self._result.stop()
@@ -630,12 +545,7 @@ class IdbEndToEndTestCase(unittest.IsolatedAsyncioTestCase):
         timeout: float = DEFAULT_COMMAND_TIMEOUT_SECONDS,
         stdin: bytes | None = None,
     ) -> Completed:
-        """Run one ``idb`` command against the companion to completion.
-
-        With ``check`` a non-zero exit fails the test, naming the command and
-        its stderr, except when the failure is the simulator's host lacking
-        ``SimLaunchHostService``, which skips (or fails in strict mode).
-        """
+        """Run idb; with check=True, report nonzero exits as failures or skips."""
         completed = await run(
             idb_argv(self.environment, self.companion, *args),
             timeout=timeout,
@@ -646,23 +556,16 @@ class IdbEndToEndTestCase(unittest.IsolatedAsyncioTestCase):
         return completed
 
     def idb_process(self, *args: str) -> "IdbProcess":
-        """An ``idb`` command whose output is read while it is still running.
-
-        Used for the streaming commands, where the output is the behaviour
-        under test rather than something to collect at the end.
-        """
+        """Start a streaming command and stop it when the async context exits."""
         return IdbProcess(
             self, idb_argv(self.environment, self.companion, *args), " ".join(args)
         )
 
     def fail_or_skip_for(self, what: str, completed: Completed) -> NoReturn:
-        """Report a failed ``idb`` command as whatever it actually was.
+        """Report command output; skip unsupported hosts unless strict mode is set.
 
-        What the command was doing and what went wrong are separate questions:
-        the companion is shared by every test, so its death turns every later
-        command into a connection failure that says nothing about the command
-        that hit it. Reporting the two apart keeps the first real failure
-        legible instead of burying it under repeats of the same symptom.
+        Include companion status for connection failures, and stop the suite if
+        the companion has exited.
         """
         message = (
             f"idb {what} failed (rc={completed.returncode})\n"
@@ -693,10 +596,7 @@ class IdbEndToEndTestCase(unittest.IsolatedAsyncioTestCase):
                 f"can be spawned in the guest: idb {what}"
             )
 
-        # A command that failed on its own terms is reported on its own terms.
-        # A companion that has since exited is context for it, not a
-        # replacement for it: the command reached a companion that was serving,
-        # so whatever it returned is a real answer.
+        # Preserve the command error even if the companion exited afterwards.
         companion_returncode = self.companion.process.poll()
         if companion_returncode is not None:
             self._stop_the_run()
@@ -719,12 +619,7 @@ class IdbEndToEndTestCase(unittest.IsolatedAsyncioTestCase):
         return [json.loads(line) for line in text.splitlines() if line.strip()]
 
     async def idb_expect_failure(self, *args: str, **kwargs: Any) -> Completed:
-        """A command whose failure is the behaviour under test.
-
-        The non-zero exit has to have come from the command; a test asserting
-        that something is rejected passes for nothing if what it caught was the
-        companion being unreachable.
-        """
+        """Require a command failure, rejecting connection and host-service errors."""
         kwargs["check"] = False
         completed = await self.idb(*args, **kwargs)
         if completed.returncode == 0:
@@ -739,8 +634,7 @@ class IdbEndToEndTestCase(unittest.IsolatedAsyncioTestCase):
         return {row["bundle_id"]: row for row in await self.idb_json_lines("list-apps")}
 
     async def install_fixture_app(self) -> str:
-        """Install the companion's bundled ``ReplHost.app`` and queue its
-        removal; returns its bundle id."""
+        """Install ReplHost.app, register uninstall cleanup, and return its bundle ID."""
         fixture = self.environment.fixture_app
         if not fixture.is_dir():
             raise HarnessError(
@@ -764,7 +658,7 @@ class IdbEndToEndTestCase(unittest.IsolatedAsyncioTestCase):
 
 
 class IdbProcess:
-    """A running ``idb`` command, read while it runs and stopped afterwards."""
+    """Manage a streaming idb subprocess with an async context manager."""
 
     def __init__(
         self, test: IdbEndToEndTestCase, argv: Sequence[str], what: str
@@ -808,12 +702,7 @@ class IdbProcess:
         return None if process is None else process.returncode
 
     async def read_some(self, timeout: float) -> bytes:
-        """The next chunk the command writes to stdout.
-
-        Deliberately not a line read: the streaming commands do not always
-        terminate what they write with a newline, so waiting for one can wait
-        for output that is never coming.
-        """
+        """Read a stdout chunk. Some commands omit newlines, so readline can block."""
         try:
             data = await asyncio.wait_for(self.stdout.read(4096), timeout)
         except asyncio.TimeoutError:

@@ -3,14 +3,7 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-"""What idb asks the simulator to do on an app's behalf: open a URL, and grant
-or take back a privacy permission.
-
-Neither command reports what it did, so both are read back from the simulator
-itself -- the URL's handler from `launchctl` in the guest, the permission from
-the simulator's own TCC database on the host. An exit code would say only that
-idb sent the request.
-"""
+"""Check URL handling with launchctl and permissions in the simulator TCC database."""
 
 from __future__ import annotations
 
@@ -20,16 +13,12 @@ from pathlib import Path
 
 from .harness import HarnessError, IdbEndToEndTestCase, NotReady, wait_until
 
-# Nothing is fetched -- the runner has no network. Opening the URL only has to
-# reach the app registered for its scheme.
+# Only Safari launch is checked; page loading does not need to succeed.
 URL = "https://example.com"
 SAFARI_BUNDLE_ID = "com.apple.mobilesafari"
 
-# Launching Safari from cold is the slow part; the read itself is immediate.
 RUNNING_TIMEOUT_SECONDS = 60.0
 
-# The privacy database the simulator itself consults, and the value it stores
-# for a granted permission.
 TCC_DATABASE = Path("Library") / "TCC" / "TCC.db"
 TCC_ALLOWED = 2
 
@@ -39,8 +28,7 @@ CONTACTS_SERVICE = "kTCCServiceAddressBook"
 
 class OpenUrlTests(IdbEndToEndTestCase):
     async def test_opening_a_url_launches_the_app_that_handles_it(self) -> None:
-        # Safari may have been left running by an earlier test, in which case
-        # finding it running afterwards would prove nothing.
+        # Start with Safari stopped so the test can detect the URL launching it.
         await self.terminate_quietly(SAFARI_BUNDLE_ID)
         await self.wait_until_running(SAFARI_BUNDLE_ID, False)
         self.addAsyncCleanup(self.terminate_quietly, SAFARI_BUNDLE_ID)
@@ -71,10 +59,7 @@ class OpenUrlTests(IdbEndToEndTestCase):
 class PermissionTests(IdbEndToEndTestCase):
     async def test_a_permission_is_granted_and_taken_back_one_at_a_time(self) -> None:
         bundle_id = await self.install_fixture_app()
-        # Nothing resets privacy between tests, so this asserts the run's own
-        # starting point as well: an install after an earlier run's uninstall
-        # has been granted nothing, which is what makes the run repeatable
-        # despite the grants it leaves behind.
+        # Uninstall cleanup should remove permissions from previous runs.
         self.assertEqual(
             self.granted_permissions(bundle_id),
             {},
@@ -97,15 +82,14 @@ class PermissionTests(IdbEndToEndTestCase):
         )
 
     def granted_permissions(self, bundle_id: str) -> dict[str, int]:
-        """What the simulator's privacy database says this app may do."""
+        """Read permission records from the simulator privacy database."""
         database = self.simctl.device_set_path / self.udid / "data" / TCC_DATABASE
         if not database.is_file():
             raise HarnessError(
                 f"the simulator has no privacy database at {database}, so there "
                 f"is no ground truth to check against"
             )
-        # sqlite3's own context manager ends the transaction rather than the
-        # connection, and this reads the file the simulator is writing to.
+        # closing() closes the connection; sqlite3's context manager only ends the transaction.
         with closing(
             sqlite3.connect(f"file:{database}?mode=ro", uri=True)
         ) as connection:

@@ -3,11 +3,7 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-"""What the workflow provisions before the end-to-end suite runs.
-
-Pure selection over a listing and a recorded ``simctl`` sequence, so unlike
-the suite itself these run anywhere.
-"""
+"""Test runtime selection and provisioning with recorded simctl responses."""
 
 from __future__ import annotations
 
@@ -51,7 +47,7 @@ def runtime(
 
 
 class Recorder:
-    """A ``run`` that answers the listing and the create, and records the rest."""
+    """Record simctl commands and return runtime data or a new UDID."""
 
     def __init__(self, runtimes: list[dict[str, Any]], udid: str = UDID) -> None:
         self.commands: list[list[str]] = []

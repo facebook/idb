@@ -3,12 +3,7 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-"""Tests for the end-to-end diagnostics collection.
-
-Everything here runs against a temporary tree and a recording ``run``, so the
-copy plan and the collection's tolerance of missing sources are covered on any
-host, with no simulator and no failed run to collect from.
-"""
+"""Test diagnostic selection and collection with temporary files and fake commands."""
 
 from __future__ import annotations
 
@@ -28,7 +23,7 @@ UDID = "1E4D2A00-0000-4000-8000-000000000000"
 
 
 class Recorder:
-    """A ``run`` that names the command it was given back to its caller."""
+    """Record each command and return its arguments as output."""
 
     def __init__(self) -> None:
         self.commands: list[list[str]] = []
@@ -114,8 +109,6 @@ class DiagnosticPlanTests(unittest.TestCase):
         )
 
     def test_a_run_without_a_simulator_still_reads_the_host(self) -> None:
-        # A run that failed before it was provisioned names no device set, and
-        # the host-side sources do not need one.
         for absent in ({"device_set": None}, {"udid": None}, {"udid": ""}):
             with self.subTest(**absent):
                 plan = self.plan(**absent)
@@ -138,8 +131,7 @@ class CollectTests(unittest.TestCase):
             self.output,
             self.run,
         )
-        # Both are named companion.log, so the second lands on the first: the
-        # collection reports what it read, not what survived.
+        # Files with the same basename currently overwrite each other.
         self.assertEqual(collected, ["companion.log", "companion.log"])
         self.assertTrue((self.output / "companion.log").exists())
 

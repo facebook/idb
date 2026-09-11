@@ -3,9 +3,7 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-"""An application through its whole lifecycle, and the streaming launch that
-holds one open and tails its output, against the companion's bundled
-``ReplHost.app``."""
+"""Test app installation, launch, termination and removal using ReplHost.app."""
 
 from __future__ import annotations
 
@@ -14,17 +12,13 @@ from typing import Any
 
 from .harness import HarnessError, IdbEndToEndTestCase, NotReady, wait_until
 
-# The app is launched and reported over gRPC before it draws anything, but the
-# report still crosses a companion, a simulator and a process spawn.
 PID_REPORT_TIMEOUT_SECONDS = 120.0
 
-# Stopping a launch stops the app it held open, but the two are separate
-# processes and the app is gone in well under this.
 APP_STOP_TIMEOUT_SECONDS = 60.0
 
 
 def _leading_json_object(data: bytes) -> tuple[Any, int]:
-    """The first JSON value in ``data`` and the offset just past it."""
+    """Decode the first JSON value and return its end offset in the decoded text."""
     return json.JSONDecoder().raw_decode(data.decode(errors="replace"))
 
 
@@ -32,7 +26,6 @@ class ApplicationLifecycleTests(IdbEndToEndTestCase):
     async def test_install_launch_terminate_and_uninstall(self) -> None:
         bundle_id = await self.install_fixture_app()
 
-        # simctl is the ground truth for what is installed; list-apps must agree.
         installed = await self.simctl.installed_bundle_ids()
         self.assertIn(bundle_id, installed, "simctl does not see the installed app")
         app = (await self.installed_apps())[bundle_id]
@@ -41,12 +34,10 @@ class ApplicationLifecycleTests(IdbEndToEndTestCase):
 
         pid_file = self.make_temporary_directory() / "pid"
         await self.idb("launch", "--pid-file", str(pid_file), bundle_id)
-        # The pid file carries a JSON object, not a bare number.
         pid = json.loads(pid_file.read_text())["pid"]
         self.assertGreater(pid, 0)
         running = (await self.installed_apps())[bundle_id]
         self.assertEqual(running["process_state"], "Running")
-        # list-apps spells the pid as a string.
         self.assertEqual(int(running["pid"]), pid)
 
         await self.idb("terminate", bundle_id)
@@ -77,15 +68,7 @@ class ApplicationLifecycleTests(IdbEndToEndTestCase):
 
 
 class LaunchOutputTests(IdbEndToEndTestCase):
-    """``launch --wait-for``: the launch that stays attached to the app.
-
-    This is how a test runner starts an app it intends to drive. The command
-    does not return when the app is up -- it reports the app's pid, then keeps
-    running, forwarding the app's stdout and stderr to its own, until it is
-    asked to stop, at which point the app goes down with it. So what a caller
-    depends on is the shape of the stream and the lifetime of the process, not
-    an exit status.
-    """
+    """Check PID output and app lifetime for launch --wait-for."""
 
     async def asyncSetUp(self) -> None:
         await super().asyncSetUp()
@@ -107,8 +90,7 @@ class LaunchOutputTests(IdbEndToEndTestCase):
     async def test_the_launch_holds_the_app_open_until_it_is_stopped(self) -> None:
         async with self.idb_process("launch", "--wait-for", self.bundle_id) as launch:
             await launch.read_some(PID_REPORT_TIMEOUT_SECONDS)
-            # A launch that returned as soon as the app was up would have
-            # exited by now; this one is meant to still be attached.
+            # Background the app while keeping the launch command attached.
             await self.idb("ui", "button", "HOME", check=False)
             self.assertIsNone(
                 launch.returncode,
@@ -119,8 +101,7 @@ class LaunchOutputTests(IdbEndToEndTestCase):
                 "Running",
             )
 
-        # Leaving the block stops the launch, which takes the app with it --
-        # though not necessarily before the next command gets to ask.
+        # App termination may finish after the launch command exits.
         await self.wait_until_the_app_has_stopped()
 
     async def wait_until_the_app_has_stopped(self) -> None:
@@ -139,19 +120,13 @@ class LaunchOutputTests(IdbEndToEndTestCase):
             self.fail(str(error))
 
     async def test_the_pid_report_is_not_terminated(self) -> None:
-        """The pid report is written to stdout with no delimiter after it.
+        """Record the current PID output format: JSON without a trailing newline.
 
-        A caller reading the stream a line at a time therefore never sees the
-        pid: the read blocks until the app itself happens to write a newline,
-        which an app that logs nothing never does. Callers work around it by
-        reading raw chunks and re-framing the report themselves.
+        Line-based readers block until the app writes a newline or exits.
         """
         async with self.idb_process("launch", "--wait-for", self.bundle_id) as launch:
             chunk = await launch.read_some(PID_REPORT_TIMEOUT_SECONDS)
             _, consumed = _leading_json_object(chunk)
-            # BUG: the report should be newline-terminated so that it is a
-            # frame on its own -- flipped to assertEqual(remainder[:1], b"\n")
-            # once the client terminates it.
             self.assertEqual(
                 chunk[consumed : consumed + 1],
                 b"",
