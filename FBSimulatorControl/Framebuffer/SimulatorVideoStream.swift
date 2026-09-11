@@ -442,21 +442,14 @@ public actor FBSimulatorVideoStream: FBVideoStream {
   // MARK: - Framebuffer Events
 
   /// Apply a single framebuffer event. Per-event work is O(1) and non-suspending, honoring the
-  /// unbounded event stream's drain invariant: a surface change mounts once; a rendered frame pokes
+  /// unbounded event stream's drain invariant: a surface change (always a genuinely different surface,
+  /// `FBFramebuffer` drops re-reports) mounts once; a rendered frame pokes
   /// the `.lazy` trigger, whose `bufferingNewest(1)` coalescing keeps real-time frame dropping where
   /// it belongs. In `.eager` mode the cadence clock drives pushes, so frame-rendered events are ignored.
   private func handle(_ event: FramebufferEvent) {
     switch event {
     case let .surfaceChanged(surface):
       guard let surface else { return }
-      // The display can report the surface that is already mounted (the registration echoing the
-      // attach-time surface, or the legacy plural and singular callbacks both firing for one swap).
-      // Compared by ID rather than object identity because the proxy may vend a distinct wrapper for
-      // the same underlying surface.
-      if let mountedSurfaceID, mountedSurfaceID == IOSurfaceGetID(surface) {
-        logger.info().log("Ignoring surface change for the already-mounted surface \(mountedSurfaceID)")
-        return
-      }
       do {
         try mountSurface(surface)
       } catch {
@@ -476,15 +469,6 @@ public actor FBSimulatorVideoStream: FBVideoStream {
   }
 
   // MARK: - Private (Surface)
-
-  /// The ID of the IOSurface backing the mounted `pixelBuffer`, nil before the first mount. Derived
-  /// from the buffer so it can never disagree with what is actually mounted.
-  private var mountedSurfaceID: IOSurfaceID? {
-    guard let pixelBuffer, let mountedSurface = CVPixelBufferGetIOSurface(pixelBuffer)?.takeUnretainedValue() else {
-      return nil
-    }
-    return IOSurfaceGetID(mountedSurface)
-  }
 
   func mountSurface(_ surface: IOSurface) throws {
     // CVPixelBufferCreateWithIOSurface returns +1 via an Unmanaged out-param; takeRetainedValue() adopts it.
