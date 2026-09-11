@@ -88,7 +88,7 @@ extension FBAMDevice {
 
   private static func startService(
     _ service: String,
-    on connectedDevice: any FBDeviceCommands,
+    on connectedDevice: any DeviceCommands,
     calls: AMDCalls,
     logger: any FBControlCoreLogger
   ) throws -> FBAMDServiceConnection {

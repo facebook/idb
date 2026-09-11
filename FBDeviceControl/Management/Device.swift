@@ -10,7 +10,7 @@ import Foundation
 
 /// Backed by an `FBAMDevice`, an `FBAMRestorableDevice`, or both, caching the target
 /// information of whichever it holds.
-public final class FBDevice: FBiOSTarget, FBDeviceCommands, CustomStringConvertible {
+public final class FBDevice: FBiOSTarget, DeviceCommands, CustomStringConvertible {
 
   // MARK: - Properties
 
@@ -100,7 +100,7 @@ public final class FBDevice: FBiOSTarget, FBDeviceCommands, CustomStringConverti
       preconditionFailure("An FBAMDevice or FBAMRestorableDevice must be provided")
     }
     self.logger = logger
-    if let info: any FBiOSTargetInfo & FBDeviceProtocol = amDevice ?? restorableDevice {
+    if let info: any FBiOSTargetInfo & DeviceProtocol = amDevice ?? restorableDevice {
       cacheValues(from: info, overwrite: true)
     }
     self.logger = logger.withName(udid)
@@ -174,7 +174,7 @@ public final class FBDevice: FBiOSTarget, FBDeviceCommands, CustomStringConverti
     self.targetDescription
   }
 
-  // MARK: - FBDeviceProtocol
+  // MARK: - DeviceProtocol
 
   public var amDeviceRef: AMDevice? {
     amDevice?.amDeviceRef
@@ -184,11 +184,11 @@ public final class FBDevice: FBiOSTarget, FBDeviceCommands, CustomStringConverti
     restorableDevice?.recoveryModeDeviceRef
   }
 
-  // MARK: - FBDeviceCommands
+  // MARK: - DeviceCommands
 
   public func withConnectedDevice<T>(
     purpose: String,
-    _ body: (any FBDeviceCommands) async throws -> T
+    _ body: (any DeviceCommands) async throws -> T
   ) async throws -> T {
     guard let amDevice else {
       throw AMDeviceServiceError.notAMDeviceBacked(service: purpose)
@@ -211,7 +211,7 @@ public final class FBDevice: FBiOSTarget, FBDeviceCommands, CustomStringConverti
 
   /// The AMDevice's richer information always overwrites; the restorable device's only fills what
   /// is not yet known. `calls` and `state` are refreshed from either.
-  private func cacheValues(from targetInfo: any FBiOSTargetInfo & FBDeviceProtocol, overwrite: Bool) {
+  private func cacheValues(from targetInfo: any FBiOSTargetInfo & DeviceProtocol, overwrite: Bool) {
     calls = targetInfo.calls
     state = targetInfo.state
 

@@ -17,7 +17,7 @@ private let DeviceClassOSPrefixes = [
 ]
 
 /// An Object Wrapper around AMDeviceRef.
-public final class FBAMDevice: FBiOSTargetInfo, FBDeviceCommands, CustomStringConvertible {
+public final class FBAMDevice: FBiOSTargetInfo, DeviceCommands, CustomStringConvertible {
 
   // MARK: - Properties
 
@@ -148,7 +148,7 @@ public final class FBAMDevice: FBiOSTargetInfo, FBDeviceCommands, CustomStringCo
     ["device": FBCollectionOperations.recursiveFilteredJSONSerializableRepresentation(of: allValues)]
   }
 
-  // MARK: - FBDeviceProtocol
+  // MARK: - DeviceProtocol
 
   public var buildVersion: String? {
     allValues[DeviceKey.buildVersion.rawValue] as? String
@@ -169,11 +169,11 @@ public final class FBAMDevice: FBiOSTargetInfo, FBDeviceCommands, CustomStringCo
     return FBDeviceActivationStateCoerceFromString(activationState).rawValue
   }
 
-  // MARK: - FBDeviceCommands
+  // MARK: - DeviceCommands
 
   public func withConnectedDevice<T>(
     purpose: String,
-    _ body: (any FBDeviceCommands) async throws -> T
+    _ body: (any DeviceCommands) async throws -> T
   ) async throws -> T {
     logger.log("Taking the device into use for \(purpose)")
     try await session.acquire()

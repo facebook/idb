@@ -11,7 +11,7 @@ import Foundation
 private let UnknownValue = "unknown"
 
 /// An Object Wrapper around AMRestorableDevice.
-public final class FBAMRestorableDevice: FBiOSTargetInfo, FBDeviceProtocol {
+public final class FBAMRestorableDevice: FBiOSTargetInfo, DeviceProtocol {
 
   public let calls: AMDCalls
   public var allValues: [String: Any]
@@ -103,7 +103,7 @@ public final class FBAMRestorableDevice: FBiOSTargetInfo, FBDeviceProtocol {
     ["device": allValues]
   }
 
-  // MARK: - FBDeviceProtocol
+  // MARK: - DeviceProtocol
 
   public var buildVersion: String? {
     UnknownValue

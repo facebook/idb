@@ -109,7 +109,7 @@ public struct DeviceSocketForwardingCommands {
     close(localSocket)
   }
 
-  private static func openLocalSocket(toRemotePort remotePort: Int, on device: any FBDeviceCommands, logger: (any FBControlCoreLogger)?) throws -> Int32 {
+  private static func openLocalSocket(toRemotePort remotePort: Int, on device: any DeviceCommands, logger: (any FBControlCoreLogger)?) throws -> Int32 {
     guard let getConnectionID = device.calls.GetConnectionID else {
       throw DeviceSocketForwardingError.callUnavailable(function: "GetConnectionID")
     }

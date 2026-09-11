@@ -38,7 +38,7 @@ public enum DeviceKey: String, Sendable, CaseIterable {
 }
 
 /// Defines properties that are required on classes related to the implementation of FBDevice.
-public protocol FBDeviceProtocol: AnyObject {
+public protocol DeviceProtocol: AnyObject {
 
   /// The AMDevice Calls to use.
   var calls: AMDCalls { get }
@@ -66,7 +66,7 @@ public protocol FBDeviceProtocol: AnyObject {
 }
 
 /// Defines Device-Specific commands, off which others are based.
-public protocol FBDeviceCommands: FBDeviceProtocol {
+public protocol DeviceCommands: DeviceProtocol {
 
   /// Connects for the duration of `body`, handing it the connected device.
   ///
@@ -75,7 +75,7 @@ public protocol FBDeviceCommands: FBDeviceProtocol {
   /// counted: overlapping scopes share one session and only the last to end closes it.
   func withConnectedDevice<T>(
     purpose: String,
-    _ body: (any FBDeviceCommands) async throws -> T
+    _ body: (any DeviceCommands) async throws -> T
   ) async throws -> T
 
   /// Starts house arrest for a given bundle id, handing its AFC connection to `body`.

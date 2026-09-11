@@ -21,7 +21,7 @@ private let DiskImageMountingError: Int32 = -402653066 // 0xe8000076
 private func mountCallback(_ callbackDictionary: [String: Any]?, _ context: UnsafeMutableRawPointer?) {
   guard let context, let callbackDictionary else { return }
   let device = Unmanaged<AnyObject>.fromOpaque(context).takeUnretainedValue()
-  if let logger = (device as? (any FBDeviceCommands))?.logger {
+  if let logger = (device as? (any DeviceCommands))?.logger {
     logger.log("Mount Progress: \(FBCollectionInformation.oneLineDescription(from: callbackDictionary))")
   }
 }
