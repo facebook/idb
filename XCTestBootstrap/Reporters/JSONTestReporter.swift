@@ -24,7 +24,7 @@ enum JSONTestReporterError: Error, LocalizedError {
   }
 }
 
-final class JSONTestReporter: NSObject, FBXCTestReporter {
+final class JSONTestReporter: NSObject, XCTestReporter {
 
   private let dataConsumer: FBDataConsumer
   private let logger: FBControlCoreLogger?
@@ -47,7 +47,7 @@ final class JSONTestReporter: NSObject, FBXCTestReporter {
     super.init()
   }
 
-  // MARK: - FBXCTestReporter
+  // MARK: - XCTestReporter
 
   public func printReport() throws {
     if !started {
@@ -112,7 +112,7 @@ final class JSONTestReporter: NSObject, FBXCTestReporter {
     pendingTestOutput.removeAll()
   }
 
-  public func finished(with summary: FBTestManagerResultSummary) {
+  public func finished(with summary: TestManagerResultSummary) {
     printEvent(JSONTestReporter.finishedEvent(from: summary))
   }
 
@@ -250,7 +250,7 @@ final class JSONTestReporter: NSObject, FBXCTestReporter {
     return event
   }
 
-  private static func finishedEvent(from summary: FBTestManagerResultSummary) -> [String: Any] {
+  private static func finishedEvent(from summary: TestManagerResultSummary) -> [String: Any] {
     [
       "event": "end-test-suite",
       "suite": summary.testSuite,

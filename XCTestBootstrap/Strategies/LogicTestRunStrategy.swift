@@ -57,14 +57,14 @@ extension LogicTestRunError: LocalizedError {
   }
 }
 
-public final class FBLogicTestRunStrategy: XCTestRunner {
+public final class LogicTestRunStrategy: XCTestRunner {
 
   private let target: any LogicTestTarget
-  private let configuration: FBLogicTestConfiguration
-  private let reporter: FBLogicXCTestReporter
+  private let configuration: LogicTestConfiguration
+  private let reporter: LogicXCTestReporter
   private let logger: FBControlCoreLogger
 
-  public init(target: any LogicTestTarget, configuration: FBLogicTestConfiguration, reporter: FBLogicXCTestReporter, logger: FBControlCoreLogger) {
+  public init(target: any LogicTestTarget, configuration: LogicTestConfiguration, reporter: LogicXCTestReporter, logger: FBControlCoreLogger) {
     self.target = target
     self.configuration = configuration
     self.reporter = reporter
@@ -123,7 +123,7 @@ public final class FBLogicTestRunStrategy: XCTestRunner {
       fbFutureFromAsync {
         try await FBTemporaryDirectory(logger: self.logger).withTemporaryDirectory { temporaryDirectoryURL in
           let libraries = try await OToolDynamicLibs.findFullPath(forSanitiserDyldInBundle: self.configuration.testBundlePath)
-          let environment = FBLogicTestRunStrategy.setupEnvironment(withDylibs: self.configuration.processUnderTestEnvironment, withLibraries: libraries, injectLibraries: self.configuration.injectLibraries, shimOutputFilePath: outputs.shimOutput.filePath, shimPath: shimPath, bundlePath: self.configuration.testBundlePath, coverageConfiguration: self.configuration.coverageConfiguration, logDirectoryPath: self.configuration.logDirectoryPath, waitForDebugger: self.configuration.waitForDebugger, target: self.target)
+          let environment = LogicTestRunStrategy.setupEnvironment(withDylibs: self.configuration.processUnderTestEnvironment, withLibraries: libraries, injectLibraries: self.configuration.injectLibraries, shimOutputFilePath: outputs.shimOutput.filePath, shimPath: shimPath, bundlePath: self.configuration.testBundlePath, coverageConfiguration: self.configuration.coverageConfiguration, logDirectoryPath: self.configuration.logDirectoryPath, waitForDebugger: self.configuration.waitForDebugger, target: self.target)
           return try await bridgeFBFuture(
             self.startTestProcess(withLaunchPath: launchPath, arguments: arguments, environment: environment, outputs: outputs, temporaryDirectory: temporaryDirectoryURL)
               .onQueue(
@@ -140,7 +140,7 @@ public final class FBLogicTestRunStrategy: XCTestRunner {
       .retyped(FBFuture<NSNull>.self)
   }
 
-  private static func setupEnvironment(withDylibs environment: [String: String], withLibraries libraries: [String], injectLibraries: [String], shimOutputFilePath: String, shimPath: String, bundlePath: String, coverageConfiguration: FBCodeCoverageConfiguration?, logDirectoryPath: String?, waitForDebugger: Bool, target: any FBiOSTarget) -> [String: String] {
+  private static func setupEnvironment(withDylibs environment: [String: String], withLibraries libraries: [String], injectLibraries: [String], shimOutputFilePath: String, shimPath: String, bundlePath: String, coverageConfiguration: CodeCoverageConfiguration?, logDirectoryPath: String?, waitForDebugger: Bool, target: any FBiOSTarget) -> [String: String] {
     var librariesWithShim = [shimPath]
     librariesWithShim.append(contentsOf: libraries)
     librariesWithShim.append(contentsOf: injectLibraries)
@@ -252,7 +252,7 @@ public final class FBLogicTestRunStrategy: XCTestRunner {
       .retyped(FBFuture<NSNumber>.self)
   }
 
-  private static func fromQueue(_ queue: DispatchQueue, reportWaitForDebugger waitFor: Bool, forProcessIdentifier processIdentifier: pid_t, reporter: FBLogicXCTestReporter) -> FBFuture<NSNull> {
+  private static func fromQueue(_ queue: DispatchQueue, reportWaitForDebugger waitFor: Bool, forProcessIdentifier processIdentifier: pid_t, reporter: LogicXCTestReporter) -> FBFuture<NSNull> {
     if !waitFor {
       return FBFuture(result: NSNull())
     }
@@ -322,11 +322,11 @@ public final class FBLogicTestRunStrategy: XCTestRunner {
     var shimFuture: FBFuture<AnyObject> = FBFuture(result: shimConsumer as AnyObject)
 
     if mirrorToFiles {
-      let mirrorLogger: FBXCTestLogger
+      let mirrorLogger: XCTestLogger
       if let logDirectoryPath = configuration.logDirectoryPath {
-        mirrorLogger = FBXCTestLogger.defaultLogger(inDirectory: logDirectoryPath)
+        mirrorLogger = XCTestLogger.defaultLogger(inDirectory: logDirectoryPath)
       } else {
-        mirrorLogger = FBXCTestLogger.defaultLoggerInDefaultDirectory()
+        mirrorLogger = XCTestLogger.defaultLoggerInDefaultDirectory()
       }
       stdOutFuture = mirrorLogger.logConsumption(of: stdOutConsumer, toFileNamed: "test_process_stdout.out", logger: logger)
       stdErrFuture = mirrorLogger.logConsumption(of: stdErrConsumer, toFileNamed: "test_process_stderr.err", logger: logger)
@@ -377,7 +377,7 @@ public final class FBLogicTestRunStrategy: XCTestRunner {
       return launchFuture.onQueue(
         queue,
         map: { process -> AnyObject in
-          let debuggerFuture = FBLogicTestRunStrategy.fromQueue(queue, reportWaitForDebugger: self.configuration.waitForDebugger, forProcessIdentifier: process.processIdentifier, reporter: reporter)
+          let debuggerFuture = LogicTestRunStrategy.fromQueue(queue, reportWaitForDebugger: self.configuration.waitForDebugger, forProcessIdentifier: process.processIdentifier, reporter: reporter)
           return debuggerFuture.retyped(FBFuture<AnyObject>.self)
             .onQueue(
               queue,

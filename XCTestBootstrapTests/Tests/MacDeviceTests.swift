@@ -9,25 +9,25 @@ import FBControlCore
 import XCTest
 @testable import XCTestBootstrap
 
-final class FBMacDeviceTests: XCTestCase {
+final class MacDeviceTests: XCTestCase {
 
-  var device: FBMacDevice!
+  var device: MacDevice!
   var installedApp: FBInstalledApplication!
   var tempInstallDir: String?
 
   override func setUpWithError() throws {
     try XCTSkipIf(
       ProcessInfo.processInfo.environment["GITHUB_ACTIONS"] == "true",
-      "FBMacDevice install/launch is not supported on hosted CI runners")
+      "MacDevice install/launch is not supported on hosted CI runners")
   }
 
   override func setUp() {
     super.setUp()
-    device = FBMacDevice()
+    device = MacDevice()
 
     let descriptor: FBBundleDescriptor
     do {
-      descriptor = try FBMacDeviceTests.macCommonApplication()
+      descriptor = try MacDeviceTests.macCommonApplication()
     } catch {
       preconditionFailure("Failed to load MacCommonApp fixture: \(error)")
     }
@@ -73,13 +73,13 @@ final class FBMacDeviceTests: XCTestCase {
   }
 
   func testMacComparsion() {
-    let anotherDevice = FBMacDevice()
+    let anotherDevice = MacDevice()
     let comparsionResult = device.compare(anotherDevice)
 
     XCTAssertEqual(
       comparsionResult,
       .orderedSame,
-      "We should have only one exemplar of FBMacDevice, so this is same"
+      "We should have only one exemplar of MacDevice, so this is same"
     )
   }
 

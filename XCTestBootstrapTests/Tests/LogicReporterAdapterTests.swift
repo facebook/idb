@@ -23,15 +23,15 @@ private func testEventDict() -> [String: Any] {
   ]
 }
 
-final class FBLogicReporterAdapterTests: XCTestCase {
+final class LogicReporterAdapterTests: XCTestCase {
 
-  var adapter: FBLogicReporterAdapter!
-  var reporterDouble: FBXCTestReporterDouble!
+  var adapter: LogicReporterAdapter!
+  var reporterDouble: XCTestReporterDouble!
 
   override func setUp() {
     super.setUp()
-    reporterDouble = FBXCTestReporterDouble()
-    adapter = FBLogicReporterAdapter(reporter: reporterDouble, logger: nil)
+    reporterDouble = XCTestReporterDouble()
+    adapter = LogicReporterAdapter(reporter: reporterDouble, logger: nil)
   }
 
   func test_LogicReporter_testSuiteDidStart() throws {

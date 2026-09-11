@@ -405,7 +405,7 @@ public final class FBIDBCommandExecutor {
     return try await target.crashLog.pruneCrashes(matching: predicate)
   }
 
-  public func xctest_run(_ request: FBXCTestRunRequest, reporter: FBXCTestReporter, logger: FBControlCoreLogger) async throws -> IDBTestOperation {
+  public func xctest_run(_ request: FBXCTestRunRequest, reporter: XCTestReporter, logger: FBControlCoreLogger) async throws -> IDBTestOperation {
     return try await request.start(withBundleStorageManager: storageManager.xctest, target: target, reporter: reporter, logger: logger, temporaryDirectory: temporaryDirectory)
   }
 

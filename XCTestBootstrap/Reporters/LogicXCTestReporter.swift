@@ -7,7 +7,7 @@
 
 import Foundation
 
-public protocol FBLogicXCTestReporter: AnyObject {
+public protocol LogicXCTestReporter: AnyObject {
 
   func processWaitingForDebugger(withProcessIdentifier pid: pid_t)
 

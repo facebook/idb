@@ -8,11 +8,11 @@
 import FBControlCore
 import Foundation
 
-// FBMacDevice has no equivalent for these simulator/device-oriented commands; each throws rather than silently no-ops.
+// MacDevice has no equivalent for these simulator/device-oriented commands; each throws rather than silently no-ops.
 
 // MARK: - Unsupported command helper
 
-extension FBMacDevice {
+extension MacDevice {
 
   fileprivate func macUnsupported(_ command: String) -> any Error {
     MacDeviceError.commandUnsupported(command: command)
@@ -21,74 +21,74 @@ extension FBMacDevice {
 
 // MARK: - Command nouns
 
-// `FBMacDevice` implements every capability inline rather than through command types, so each noun
+// `MacDevice` implements every capability inline rather than through command types, so each noun
 // resolves to the device itself. Splitting those implementations into command types is a separate
 // change; the nouns can be stated regardless.
-extension FBMacDevice {
+extension MacDevice {
 
-  public var application: FBMacDevice { self }
+  public var application: MacDevice { self }
 
-  public var crashLog: FBMacDevice { self }
+  public var crashLog: MacDevice { self }
 
-  public var debugger: FBMacDevice { self }
+  public var debugger: MacDevice { self }
 
-  public var erase: FBMacDevice { self }
+  public var erase: MacDevice { self }
 
-  public var file: FBMacDevice { self }
+  public var file: MacDevice { self }
 
-  public var instruments: FBMacDevice { self }
+  public var instruments: MacDevice { self }
 
-  public var lifecycle: FBMacDevice { self }
+  public var lifecycle: MacDevice { self }
 
-  public var location: FBMacDevice { self }
+  public var location: MacDevice { self }
 
-  public var log: FBMacDevice { self }
+  public var log: MacDevice { self }
 
-  public var power: FBMacDevice { self }
+  public var power: MacDevice { self }
 
-  public var processSpawn: FBMacDevice { self }
+  public var processSpawn: MacDevice { self }
 
-  public var screenshot: FBMacDevice { self }
+  public var screenshot: MacDevice { self }
 
-  public var videoRecording: FBMacDevice { self }
+  public var videoRecording: MacDevice { self }
 
-  public var videoStream: FBMacDevice { self }
+  public var videoStream: MacDevice { self }
 
-  public var xctest: FBMacDevice { self }
+  public var xctest: MacDevice { self }
 
-  public var xctraceRecord: FBMacDevice { self }
+  public var xctraceRecord: MacDevice { self }
 }
 
-// MARK: - FBMacDevice+VideoStreamCommands
+// MARK: - MacDevice+VideoStreamCommands
 
-extension FBMacDevice: VideoStreamCommands {
+extension MacDevice: VideoStreamCommands {
 
   public func createStream(configuration: FBVideoStreamConfiguration, to consumer: any FBDataConsumer) async throws -> any FBVideoStream {
     throw macUnsupported("createStream")
   }
 }
 
-// MARK: - FBMacDevice+DebuggerCommands
+// MARK: - MacDevice+DebuggerCommands
 
-extension FBMacDevice: DebuggerCommands {
+extension MacDevice: DebuggerCommands {
 
   public func launchDebugServer(forHostApplication application: FBBundleDescriptor, port: in_port_t) async throws -> any DebugServer {
     throw macUnsupported("launchDebugServer")
   }
 }
 
-// MARK: - FBMacDevice+EraseCommands
+// MARK: - MacDevice+EraseCommands
 
-extension FBMacDevice: EraseCommands {
+extension MacDevice: EraseCommands {
 
   public func erase() async throws {
     throw macUnsupported("erase")
   }
 }
 
-// MARK: - FBMacDevice+FileCommands
+// MARK: - MacDevice+FileCommands
 
-extension FBMacDevice: FileCommands {
+extension MacDevice: FileCommands {
 
   public func withContainerApplication<R>(_ bundleID: String, body: (any AsyncFileContainer) async throws -> R) async throws -> R {
     throw macUnsupported("file commands for application container")
@@ -139,63 +139,63 @@ extension FBMacDevice: FileCommands {
   }
 }
 
-// MARK: - FBMacDevice+LocationCommands
+// MARK: - MacDevice+LocationCommands
 
-extension FBMacDevice: LocationCommands {
+extension MacDevice: LocationCommands {
 
   public func set(longitude: Double, latitude: Double) async throws {
     throw macUnsupported("set")
   }
 }
 
-// MARK: - FBMacDevice+LogCommands
+// MARK: - MacDevice+LogCommands
 
-extension FBMacDevice: LogCommands {
+extension MacDevice: LogCommands {
 
   public func tail(arguments: [String], consumer: any FBDataConsumer) async throws -> any LogOperation {
     throw macUnsupported("tail")
   }
 }
 
-// MARK: - FBMacDevice+ScreenshotCommands
+// MARK: - MacDevice+ScreenshotCommands
 
-extension FBMacDevice: ScreenshotCommands {
+extension MacDevice: ScreenshotCommands {
 
   public func take(configuration: ScreenshotConfiguration) async throws -> ScreenshotResult {
     throw macUnsupported("take")
   }
 }
 
-// MARK: - FBMacDevice+VideoRecordingCommands
+// MARK: - MacDevice+VideoRecordingCommands
 
-extension FBMacDevice: VideoRecordingCommands {
+extension MacDevice: VideoRecordingCommands {
 
   public func startRecording(toFile filePath: String) async throws -> any FBVideoRecording {
     throw macUnsupported("startRecording")
   }
 }
 
-// MARK: - FBMacDevice+XCTraceRecordCommands
+// MARK: - MacDevice+XCTraceRecordCommands
 
-extension FBMacDevice: XCTraceRecordCommands {
+extension MacDevice: XCTraceRecordCommands {
 
   public func start(configuration: XCTraceRecordConfiguration, logger: any FBControlCoreLogger) async throws -> XCTraceRecordOperation {
     throw macUnsupported("start")
   }
 }
 
-// MARK: - FBMacDevice+InstrumentsCommands
+// MARK: - MacDevice+InstrumentsCommands
 
-extension FBMacDevice: InstrumentsCommands {
+extension MacDevice: InstrumentsCommands {
 
   public func start(configuration: InstrumentsConfiguration, logger: any FBControlCoreLogger) async throws -> InstrumentsOperation {
     throw macUnsupported("start")
   }
 }
 
-// MARK: - FBMacDevice+LifecycleCommands
+// MARK: - MacDevice+LifecycleCommands
 
-extension FBMacDevice: LifecycleCommands {
+extension MacDevice: LifecycleCommands {
 
   public func resolveState(_ state: FBiOSTargetState) async throws {
     throw macUnsupported("resolveState")
@@ -206,9 +206,9 @@ extension FBMacDevice: LifecycleCommands {
   }
 }
 
-// MARK: - FBMacDevice+PowerCommands
+// MARK: - MacDevice+PowerCommands
 
-extension FBMacDevice: PowerCommands {
+extension MacDevice: PowerCommands {
 
   public func shutdown() async throws {
     throw macUnsupported("shutdown")
@@ -219,6 +219,6 @@ extension FBMacDevice: PowerCommands {
   }
 }
 
-// MARK: - FBMacDevice+LogicTestTarget
+// MARK: - MacDevice+LogicTestTarget
 
-extension FBMacDevice: LogicTestTarget {}
+extension MacDevice: LogicTestTarget {}

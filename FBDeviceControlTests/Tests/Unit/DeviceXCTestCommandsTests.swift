@@ -10,7 +10,7 @@ import FBDeviceControl
 import Testing
 import XCTestBootstrap
 
-final class TestManagerTestReporterDouble: NSObject, FBXCTestReporter {
+final class TestManagerTestReporterDouble: NSObject, XCTestReporter {
 
   var testCaseDidStartForTestClassCalled = false
   var testCaseDidFinishForTestClassCalled = false
@@ -30,7 +30,7 @@ final class TestManagerTestReporterDouble: NSObject, FBXCTestReporter {
   }
 
   func testCaseDidFail(forTestClass testClass: String, method: String, exceptions: [FBExceptionInfo]) {}
-  func finished(with summary: FBTestManagerResultSummary) {}
+  func finished(with summary: TestManagerResultSummary) {}
   func testHadOutput(_ output: String) {}
   func handleExternalEvent(_ event: String) {}
   func printReport() throws {}
@@ -63,7 +63,7 @@ struct DeviceXCTestCommandsTests {
       ]
     ]
 
-    let realProperties = FBXcodeBuildOperation.overwriteXCTestRunProperties(withBaseProperties: baseProperties, newProperties: newProperties)
+    let realProperties = XcodeBuildOperation.overwriteXCTestRunProperties(withBaseProperties: baseProperties, newProperties: newProperties)
 
     #expect((realProperties as NSDictionary) == (expectedProperties as NSDictionary))
   }

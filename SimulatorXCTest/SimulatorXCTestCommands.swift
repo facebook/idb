@@ -36,7 +36,7 @@ extension SimulatorXCTestError: LocalizedError {
     case .socketConnectionFailed:
       return "Failed to connect to testmangerd socket"
     case let .unexpectedReporter(reporterDescription):
-      return "\(reporterDescription) is not an FBXCTestReporter"
+      return "\(reporterDescription) is not an XCTestReporter"
     case let .testManagerAlreadyRunning(configurationDescription):
       return "Cannot Start Test Manager with Configuration \(configurationDescription) as it is already running"
     case let .environmentVariableUnavailable(key, _):
@@ -126,9 +126,9 @@ public final class SimulatorXCTestCommands: XCTestExtendedCommands {
     guard let simulator = self.simulator else {
       throw WeakTargetError.simulator
     }
-    // `XCTestCommands` lives in FBControlCore, which cannot see `FBXCTestReporter` in XCTestBootstrap,
+    // `XCTestCommands` lives in FBControlCore, which cannot see `XCTestReporter` in XCTestBootstrap,
     // so the reporter arrives type-erased and has to be recovered here.
-    guard let typedReporter = reporter as? any FBXCTestReporter else {
+    guard let typedReporter = reporter as? any XCTestReporter else {
       throw SimulatorXCTestError.unexpectedReporter(reporterDescription: String(describing: reporter))
     }
 
@@ -141,7 +141,7 @@ public final class SimulatorXCTestCommands: XCTestExtendedCommands {
       throw SimulatorXCTestError.testManagerAlreadyRunning(configurationDescription: String(describing: launchConfiguration))
     }
 
-    _ = try await FBXcodeBuildOperation.terminateAbandonedXcodebuildProcesses(
+    _ = try await XcodeBuildOperation.terminateAbandonedXcodebuildProcesses(
       forUDID: simulator.udid,
       processFetcher: FBProcessFetcher(),
       queue: simulator.workQueue,
@@ -152,7 +152,7 @@ public final class SimulatorXCTestCommands: XCTestExtendedCommands {
 
     let subprocess = try await startTest(with: launchConfiguration, logger: logger)
     try await bridgeFBFutureVoid(
-      FBXcodeBuildOperation.confirmExit(ofXcodebuildOperation: subprocess, configuration: launchConfiguration, reporter: typedReporter, target: simulator, logger: logger))
+      XcodeBuildOperation.confirmExit(ofXcodebuildOperation: subprocess, configuration: launchConfiguration, reporter: typedReporter, target: simulator, logger: logger))
   }
 
   public func listTests(forBundleAtPath bundlePath: String, timeout: TimeInterval, withAppAtPath appPath: String?) async throws -> [String] {
@@ -162,7 +162,7 @@ public final class SimulatorXCTestCommands: XCTestExtendedCommands {
 
     let bundleDescriptor = try FBBundleDescriptor.bundleWithFallbackIdentifier(fromPath: bundlePath)
     let architectures = Set((bundleDescriptor.binary?.architectures ?? []).map(\.rawValue))
-    let configuration = FBListTestConfiguration.configuration(
+    let configuration = ListTestConfiguration.configuration(
       withEnvironment: [:],
       workingDirectory: simulator.auxillaryDirectory,
       testBundlePath: bundlePath,
@@ -172,7 +172,7 @@ public final class SimulatorXCTestCommands: XCTestExtendedCommands {
       architectures: architectures)
 
     return try await bridgeFBFutureArray(
-      FBListTestStrategy(target: simulator, configuration: configuration, logger: simulator.logger)
+      ListTestStrategy(target: simulator, configuration: configuration, logger: simulator.logger)
         .listTests())
   }
 
@@ -183,7 +183,7 @@ public final class SimulatorXCTestCommands: XCTestExtendedCommands {
 
   // MARK: - Private
 
-  private func runTest(with testLaunchConfiguration: TestLaunchConfiguration, reporter: any FBXCTestReporter, logger: any FBControlCoreLogger, workingDirectory: String?) async throws {
+  private func runTest(with testLaunchConfiguration: TestLaunchConfiguration, reporter: any XCTestReporter, logger: any FBControlCoreLogger, workingDirectory: String?) async throws {
     guard let simulator = self.simulator else {
       throw WeakTargetError.simulator
     }
@@ -192,7 +192,7 @@ public final class SimulatorXCTestCommands: XCTestExtendedCommands {
       throw SimulatorStateError.notBooted(operation: "run tests", state: simulator.stateString.rawValue)
     }
 
-    try await FBManagedTestRunStrategy.runToCompletion(
+    try await ManagedTestRunStrategy.runToCompletion(
       withTarget: simulator,
       configuration: testLaunchConfiguration,
       codesign: FBControlCoreGlobalConfiguration.confirmCodesignaturesAreValid
@@ -230,11 +230,11 @@ public final class SimulatorXCTestCommands: XCTestExtendedCommands {
       throw WeakTargetError.simulator
     }
 
-    let filePath = try FBXcodeBuildOperation.createXCTestRunFile(at: simulator.auxillaryDirectory, fromConfiguration: configuration)
-    let xcodeBuildPath = try FBXcodeBuildOperation.xcodeBuildPath()
+    let filePath = try XcodeBuildOperation.createXCTestRunFile(at: simulator.auxillaryDirectory, fromConfiguration: configuration)
+    let xcodeBuildPath = try XcodeBuildOperation.xcodeBuildPath()
 
     let shimConfig = try await XCTestShimConfiguration.sharedShimConfiguration()
-    return try await FBXcodeBuildOperation.operation(
+    return try await XcodeBuildOperation.operation(
       withUDID: simulator.udid,
       configuration: configuration,
       xcodeBuildPath: xcodeBuildPath,

@@ -148,15 +148,15 @@ public class FBXCTestConfiguration: NSObject, NSCopying {
   }
 }
 
-// MARK: - FBListTestConfiguration
+// MARK: - ListTestConfiguration
 
-public final class FBListTestConfiguration: FBXCTestConfiguration {
+public final class ListTestConfiguration: FBXCTestConfiguration {
 
   public let architectures: Set<String>
   public let runnerAppPath: String?
 
-  public static func configuration(withEnvironment environment: [String: String], workingDirectory: String, testBundlePath: String, runnerAppPath: String?, waitForDebugger: Bool, timeout: TimeInterval, architectures: Set<String>) -> FBListTestConfiguration {
-    FBListTestConfiguration(environment: environment, workingDirectory: workingDirectory, testBundlePath: testBundlePath, runnerAppPath: runnerAppPath, waitForDebugger: waitForDebugger, timeout: timeout, architectures: architectures)
+  public static func configuration(withEnvironment environment: [String: String], workingDirectory: String, testBundlePath: String, runnerAppPath: String?, waitForDebugger: Bool, timeout: TimeInterval, architectures: Set<String>) -> ListTestConfiguration {
+    ListTestConfiguration(environment: environment, workingDirectory: workingDirectory, testBundlePath: testBundlePath, runnerAppPath: runnerAppPath, waitForDebugger: waitForDebugger, timeout: timeout, architectures: architectures)
   }
 
   public init(environment: [String: String], workingDirectory: String, testBundlePath: String, runnerAppPath: String?, waitForDebugger: Bool, timeout: TimeInterval, architectures: Set<String>) {
@@ -218,23 +218,23 @@ final class TestManagerTestConfiguration: FBXCTestConfiguration {
   }
 }
 
-// MARK: - FBLogicTestConfiguration
+// MARK: - LogicTestConfiguration
 
-public final class FBLogicTestConfiguration: FBXCTestConfiguration {
+public final class LogicTestConfiguration: FBXCTestConfiguration {
 
   public let testFilter: String?
   public let mirroring: LogicTestMirrorLogs
-  public let coverageConfiguration: FBCodeCoverageConfiguration?
+  public let coverageConfiguration: CodeCoverageConfiguration?
   public let binaryPath: String?
   public let logDirectoryPath: String?
   public let architectures: Set<String>
   public let injectLibraries: [String]
 
-  public static func configuration(withEnvironment environment: [String: String], workingDirectory: String, testBundlePath: String, waitForDebugger: Bool, timeout: TimeInterval, testFilter: String?, mirroring: LogicTestMirrorLogs, coverageConfiguration: FBCodeCoverageConfiguration?, binaryPath: String?, logDirectoryPath: String?, architectures: Set<String>) -> FBLogicTestConfiguration {
-    FBLogicTestConfiguration(environment: environment, workingDirectory: workingDirectory, testBundlePath: testBundlePath, waitForDebugger: waitForDebugger, timeout: timeout, testFilter: testFilter, mirroring: mirroring, coverageConfiguration: coverageConfiguration, binaryPath: binaryPath, logDirectoryPath: logDirectoryPath, architectures: architectures)
+  public static func configuration(withEnvironment environment: [String: String], workingDirectory: String, testBundlePath: String, waitForDebugger: Bool, timeout: TimeInterval, testFilter: String?, mirroring: LogicTestMirrorLogs, coverageConfiguration: CodeCoverageConfiguration?, binaryPath: String?, logDirectoryPath: String?, architectures: Set<String>) -> LogicTestConfiguration {
+    LogicTestConfiguration(environment: environment, workingDirectory: workingDirectory, testBundlePath: testBundlePath, waitForDebugger: waitForDebugger, timeout: timeout, testFilter: testFilter, mirroring: mirroring, coverageConfiguration: coverageConfiguration, binaryPath: binaryPath, logDirectoryPath: logDirectoryPath, architectures: architectures)
   }
 
-  public init(environment: [String: String], workingDirectory: String, testBundlePath: String, waitForDebugger: Bool, timeout: TimeInterval, testFilter: String?, mirroring: LogicTestMirrorLogs, coverageConfiguration: FBCodeCoverageConfiguration?, binaryPath: String?, logDirectoryPath: String?, architectures: Set<String>, injectLibraries: [String] = []) {
+  public init(environment: [String: String], workingDirectory: String, testBundlePath: String, waitForDebugger: Bool, timeout: TimeInterval, testFilter: String?, mirroring: LogicTestMirrorLogs, coverageConfiguration: CodeCoverageConfiguration?, binaryPath: String?, logDirectoryPath: String?, architectures: Set<String>, injectLibraries: [String] = []) {
     self.testFilter = testFilter
     self.mirroring = mirroring
     self.coverageConfiguration = coverageConfiguration

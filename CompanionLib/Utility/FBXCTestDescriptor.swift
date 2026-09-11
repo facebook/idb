@@ -125,12 +125,12 @@ final class XCTestBootstrapDescriptor: FBXCTestDescriptor, CustomStringConvertib
     guard let testHostApp = testApps.testHostApp else {
       throw XCTestDescriptorError.noTestHostApplication(requestDescription: String(describing: request))
     }
-    var coverageConfig: FBCodeCoverageConfiguration?
+    var coverageConfig: CodeCoverageConfiguration?
     if request.coverageRequest.collect {
       let coverageDirName = "coverage_\(UUID().uuidString)"
       let coverageDirPath = (targetAuxillaryDirectory as NSString).appendingPathComponent(coverageDirName)
       try FileManager.default.createDirectory(atPath: coverageDirPath, withIntermediateDirectories: true, attributes: nil)
-      coverageConfig = FBCodeCoverageConfiguration(
+      coverageConfig = CodeCoverageConfiguration(
         directory: coverageDirPath,
         format: request.coverageRequest.format,
         enableContinuousCoverageCollection: request.coverageRequest.shouldEnableContinuousCoverageCollection
@@ -259,7 +259,7 @@ private func buildAppLaunchConfig(bundleID: String, environment: [String: String
   }
 
   // Both mirrors are created before either is awaited, so the two file writers are opened concurrently.
-  let mirrorLogger = FBXCTestLogger.defaultLogger(inDirectory: processLogDirectory)
+  let mirrorLogger = XCTestLogger.defaultLogger(inDirectory: processLogDirectory)
   let stdOutFuture = mirrorLogger.logConsumption(of: stdOutConsumer, toFileNamed: "test_process_stdout.out", logger: logger)
   let stdErrFuture = mirrorLogger.logConsumption(of: stdErrConsumer, toFileNamed: "test_process_stderr.err", logger: logger)
 

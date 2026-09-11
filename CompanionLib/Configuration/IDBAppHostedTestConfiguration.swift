@@ -13,9 +13,9 @@ import XCTestBootstrap
 public final class IDBAppHostedTestConfiguration {
 
   public let testLaunchConfiguration: TestLaunchConfiguration
-  public let coverageConfiguration: FBCodeCoverageConfiguration?
+  public let coverageConfiguration: CodeCoverageConfiguration?
 
-  public init(testLaunchConfiguration: TestLaunchConfiguration, coverageConfiguration: FBCodeCoverageConfiguration?) {
+  public init(testLaunchConfiguration: TestLaunchConfiguration, coverageConfiguration: CodeCoverageConfiguration?) {
     self.testLaunchConfiguration = testLaunchConfiguration
     self.coverageConfiguration = coverageConfiguration
   }

@@ -7,18 +7,18 @@
 
 import Foundation
 
-public enum FBCodeCoverageFormat: UInt, Sendable {
+public enum CodeCoverageFormat: UInt, Sendable {
   case exported = 0
   case raw = 1
 }
 
-public struct FBCodeCoverageConfiguration: Sendable, CustomStringConvertible {
+public struct CodeCoverageConfiguration: Sendable, CustomStringConvertible {
 
   public let coverageDirectory: String
-  public let format: FBCodeCoverageFormat
+  public let format: CodeCoverageFormat
   public let shouldEnableContinuousCoverageCollection: Bool
 
-  public init(directory coverageDirectory: String, format: FBCodeCoverageFormat, enableContinuousCoverageCollection: Bool) {
+  public init(directory coverageDirectory: String, format: CodeCoverageFormat, enableContinuousCoverageCollection: Bool) {
     self.coverageDirectory = coverageDirectory
     self.format = format
     self.shouldEnableContinuousCoverageCollection = enableContinuousCoverageCollection

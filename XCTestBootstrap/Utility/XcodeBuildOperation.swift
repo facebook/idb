@@ -32,7 +32,7 @@ extension XcodeBuildError: LocalizedError {
   }
 }
 
-public final class FBXcodeBuildOperation {
+public final class XcodeBuildOperation {
 
   // MARK: - Initializers
 
@@ -110,11 +110,11 @@ public final class FBXcodeBuildOperation {
     let fileName = ProcessInfo.processInfo.globallyUniqueString.appending(".xctestrun")
     let path = (directory as NSString).appendingPathComponent(fileName)
 
-    let defaultTestRunProperties = FBXcodeBuildOperation.xctestRunProperties(configuration)
+    let defaultTestRunProperties = XcodeBuildOperation.xctestRunProperties(configuration)
 
     let testRunProperties: NSDictionary
     if let xcTestRunProps = configuration.xcTestRunProperties {
-      testRunProperties = FBXcodeBuildOperation.overwriteXCTestRunProperties(withBaseProperties: xcTestRunProps, newProperties: defaultTestRunProperties)
+      testRunProperties = XcodeBuildOperation.overwriteXCTestRunProperties(withBaseProperties: xcTestRunProps, newProperties: defaultTestRunProperties)
     } else {
       testRunProperties = defaultTestRunProperties as NSDictionary
     }
@@ -126,7 +126,7 @@ public final class FBXcodeBuildOperation {
   }
 
   public static func terminateAbandonedXcodebuildProcesses(forUDID udid: String, processFetcher: FBProcessFetcher, queue: DispatchQueue, logger: FBControlCoreLogger) async throws -> [FBProcessInfo] {
-    let processes = FBXcodeBuildOperation.activeXcodebuildProcesses(forUDID: udid, processFetcher: processFetcher)
+    let processes = XcodeBuildOperation.activeXcodebuildProcesses(forUDID: udid, processFetcher: processFetcher)
     if processes.isEmpty {
       logger.log("No processes for \(udid) to terminate")
       return []
@@ -160,7 +160,7 @@ public final class FBXcodeBuildOperation {
     return mutableTestRunProperties as NSDictionary
   }
 
-  public static func confirmExit(ofXcodebuildOperation task: FBSubprocess<AnyObject, AnyObject, AnyObject>, configuration: TestLaunchConfiguration, reporter: FBXCTestReporter, target: any FBiOSTarget, logger: FBControlCoreLogger) -> FBFuture<NSNull> {
+  public static func confirmExit(ofXcodebuildOperation task: FBSubprocess<AnyObject, AnyObject, AnyObject>, configuration: TestLaunchConfiguration, reporter: XCTestReporter, target: any FBiOSTarget, logger: FBControlCoreLogger) -> FBFuture<NSNull> {
     return
       task.exited(withCodes: [0, 65]).retyped(FBFuture<AnyObject>.self)
       .onQueue(

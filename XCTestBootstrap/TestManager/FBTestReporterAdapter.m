@@ -12,7 +12,7 @@
 #import <XCTestPrivate/XCTestManager_IDEInterface-Protocol.h>
 
 #import "FBActivityRecord.h"
-#import "FBTestManagerResultSummary.h"
+#import "TestManagerResultSummary.h"
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wprotocol"
@@ -20,18 +20,18 @@
 
 @interface FBTestReporterAdapter ()
 
-@property (nonatomic, readonly, strong) id<FBXCTestReporter> reporter;
+@property (nonatomic, readonly, strong) id<XCTestReporter> reporter;
 
 @end
 
 @implementation FBTestReporterAdapter
 
-+ (instancetype)withReporter:(id<FBXCTestReporter>)reporter;
++ (instancetype)withReporter:(id<XCTestReporter>)reporter;
 {
   return [[self alloc] initWithReporter:reporter];
 }
 
-- (instancetype)initWithReporter:(id<FBXCTestReporter>)reporter;
+- (instancetype)initWithReporter:(id<XCTestReporter>)reporter;
 {
   self = [super init];
   if (!self) {
@@ -81,20 +81,20 @@
 
 - (id)_XCT_testCaseDidFinishForTestClass:(NSString *)testClass method:(NSString *)method withStatus:(NSString *)statusString duration:(NSNumber *)duration
 {
-  FBTestReportStatus status = [FBTestManagerResultSummary statusForStatusString:statusString];
+  FBTestReportStatus status = [TestManagerResultSummary statusForStatusString:statusString];
   [self.reporter testCaseDidFinishForTestClass:testClass method:method withStatus:status duration:duration.doubleValue logs:@[]];
   return nil;
 }
 
 - (id)_XCT_testSuite:(NSString *)testSuite didFinishAt:(NSString *)time runCount:(NSNumber *)runCount withFailures:(NSNumber *)failures unexpected:(NSNumber *)unexpected testDuration:(NSNumber *)testDuration totalDuration:(NSNumber *)totalDuration
 {
-  FBTestManagerResultSummary *summary = [FBTestManagerResultSummary fromTestSuite:testSuite
-                                                                      finishingAt:time
-                                                                         runCount:runCount
-                                                                         failures:failures
-                                                                       unexpected:unexpected
-                                                                     testDuration:testDuration
-                                                                    totalDuration:totalDuration];
+  TestManagerResultSummary *summary = [TestManagerResultSummary fromTestSuite:testSuite
+                                                                  finishingAt:time
+                                                                     runCount:runCount
+                                                                     failures:failures
+                                                                   unexpected:unexpected
+                                                                 testDuration:testDuration
+                                                                totalDuration:totalDuration];
   [self.reporter finishedWithSummary:summary];
   return nil;
 }

@@ -7,7 +7,7 @@
 
 import Foundation
 
-@objc public protocol FBXCTestReporter: NSObjectProtocol {
+@objc public protocol XCTestReporter: NSObjectProtocol {
 
   @objc(processWaitingForDebuggerWithProcessIdentifier:)
   func processWaitingForDebugger(withProcessIdentifier pid: pid_t)
@@ -31,7 +31,7 @@ import Foundation
   func testCaseDidStart(forTestClass testClass: String, method: String)
 
   @objc(finishedWithSummary:)
-  func finished(with summary: FBTestManagerResultSummary)
+  func finished(with summary: TestManagerResultSummary)
 
   @objc(testHadOutput:)
   func testHadOutput(_ output: String)

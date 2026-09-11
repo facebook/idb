@@ -8,7 +8,7 @@
 import Foundation
 import XCTestBootstrap
 
-final class FBXCTestReporterDouble: NSObject, FBXCTestReporter {
+final class XCTestReporterDouble: NSObject, XCTestReporter {
 
   private var mutableStartedSuites: [String] = []
   private var mutableEndedSuites: [String] = []
@@ -48,7 +48,7 @@ final class FBXCTestReporterDouble: NSObject, FBXCTestReporter {
     }
   }
 
-  // MARK: - FBXCTestReporter
+  // MARK: - XCTestReporter
 
   func testCaseDidStart(forTestClass testClass: String, method: String) {
     mutableStartedTestCases.append([testClass, method])
@@ -73,7 +73,7 @@ final class FBXCTestReporterDouble: NSObject, FBXCTestReporter {
     mutableStartedSuites.append(testSuite)
   }
 
-  func finished(with summary: FBTestManagerResultSummary) {
+  func finished(with summary: TestManagerResultSummary) {
     mutableEndedSuites.append(summary.testSuite)
   }
 

@@ -8,17 +8,17 @@
 import FBControlCore
 import Foundation
 
-public final class FBLogicReporterAdapter: FBLogicXCTestReporter {
+public final class LogicReporterAdapter: LogicXCTestReporter {
 
-  private let reporter: FBXCTestReporter
+  private let reporter: XCTestReporter
   private let logger: FBControlCoreLogger?
 
-  public init(reporter: FBXCTestReporter, logger: FBControlCoreLogger?) {
+  public init(reporter: XCTestReporter, logger: FBControlCoreLogger?) {
     self.reporter = reporter
-    self.logger = logger?.withName("FBLogicReporterAdapter") as (any FBControlCoreLogger)?
+    self.logger = logger?.withName("LogicReporterAdapter") as (any FBControlCoreLogger)?
   }
 
-  // MARK: - FBLogicXCTestReporter
+  // MARK: - LogicXCTestReporter
 
   public func didBeginExecutingTestPlan() {
     reporter.didBeginExecutingTestPlan()
@@ -67,7 +67,7 @@ public final class FBLogicReporterAdapter: FBLogicXCTestReporter {
     } else if eventName == "end-test-suite" {
       let finishDate = Date(timeIntervalSince1970: (jsonEvent["timestamp"] as? NSNumber)?.doubleValue ?? 0)
       let unexpected = (jsonEvent["unexpectedExceptionCount"] as? NSNumber)?.intValue ?? 0
-      let summary = FBTestManagerResultSummary(
+      let summary = TestManagerResultSummary(
         testSuite: jsonEvent["suite"] as? String ?? "",
         finishTime: finishDate,
         runCount: (jsonEvent["testCaseCount"] as? NSNumber)?.intValue ?? 0,
@@ -86,7 +86,7 @@ public final class FBLogicReporterAdapter: FBLogicXCTestReporter {
   }
 
   public func didCrashDuringTest(_ error: Error) {
-    if reporter.responds(to: #selector(FBXCTestReporter.didCrashDuringTest(_:))) {
+    if reporter.responds(to: #selector(XCTestReporter.didCrashDuringTest(_:))) {
       reporter.didCrashDuringTest(error as NSError)
     }
     reporter.processUnderTestDidExit()

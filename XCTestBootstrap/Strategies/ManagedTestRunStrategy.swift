@@ -19,9 +19,9 @@ enum ManagedTestRunError: Error, LocalizedError {
   }
 }
 
-public final class FBManagedTestRunStrategy {
+public final class ManagedTestRunStrategy {
 
-  public static func runToCompletion(withTarget target: any XCTestExtendedTarget, configuration: TestLaunchConfiguration, codesign: CodesignProvider?, workingDirectory: String, reporter: FBXCTestReporter, logger: FBControlCoreLogger) async throws {
+  public static func runToCompletion(withTarget target: any XCTestExtendedTarget, configuration: TestLaunchConfiguration, codesign: CodesignProvider?, workingDirectory: String, reporter: XCTestReporter, logger: FBControlCoreLogger) async throws {
     do {
       try XCTestBootstrapFrameworkLoader.allDependentFrameworks.loadPrivateFrameworks(target.logger)
     } catch {

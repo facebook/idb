@@ -149,7 +149,7 @@ public struct FBXCTestRunRequest {
 
   // MARK: - Test Execution
 
-  func start(withBundleStorageManager bundleStorage: XCTestBundleStorage, target: any FBiOSTarget, reporter: FBXCTestReporter, logger: FBControlCoreLogger, temporaryDirectory: FBTemporaryDirectory) async throws -> IDBTestOperation {
+  func start(withBundleStorageManager bundleStorage: XCTestBundleStorage, target: any FBiOSTarget, reporter: XCTestReporter, logger: FBControlCoreLogger, temporaryDirectory: FBTemporaryDirectory) async throws -> IDBTestOperation {
     let descriptor = try await fetchAndSetupDescriptor(withBundleStorage: bundleStorage, target: target)
     var logDirectoryPath: String?
     if collectLogs {
@@ -194,17 +194,17 @@ public struct FBXCTestRunRequest {
 
   // MARK: - Logic Tests
 
-  private func startLogicTest(with testDescriptor: FBXCTestDescriptor, logDirectoryPath: String?, target: any FBiOSTarget, reporter: FBXCTestReporter, logger: FBControlCoreLogger, temporaryDirectory: FBTemporaryDirectory) throws -> IDBTestOperation {
+  private func startLogicTest(with testDescriptor: FBXCTestDescriptor, logDirectoryPath: String?, target: any FBiOSTarget, reporter: XCTestReporter, logger: FBControlCoreLogger, temporaryDirectory: FBTemporaryDirectory) throws -> IDBTestOperation {
     let workingDirectory = temporaryDirectory.ephemeralTemporaryDirectory()
     try FileManager.default.createDirectory(at: workingDirectory, withIntermediateDirectories: true, attributes: nil)
 
-    var coverageConfig: FBCodeCoverageConfiguration?
+    var coverageConfig: CodeCoverageConfiguration?
     if coverageRequest.collect {
       let dir = temporaryDirectory.ephemeralTemporaryDirectory()
       let coverageDirName = "coverage_\(NSUUID().uuidString)"
       let coverageDirPath = (dir.path as NSString).appendingPathComponent(coverageDirName)
       try FileManager.default.createDirectory(atPath: coverageDirPath, withIntermediateDirectories: true, attributes: nil)
-      coverageConfig = FBCodeCoverageConfiguration(directory: coverageDirPath, format: coverageRequest.format, enableContinuousCoverageCollection: coverageRequest.shouldEnableContinuousCoverageCollection)
+      coverageConfig = CodeCoverageConfiguration(directory: coverageDirPath, format: coverageRequest.format, enableContinuousCoverageCollection: coverageRequest.shouldEnableContinuousCoverageCollection)
     }
 
     let testsToSkipArray = testsToSkip.sorted()
@@ -218,7 +218,7 @@ public struct FBXCTestRunRequest {
     let testFilter = testsToRunArray.first
 
     let timeout = testTimeout.flatMap { $0.boolValue ? $0.doubleValue : nil } ?? FBLogicTestTimeout
-    let configuration = FBLogicTestConfiguration(
+    let configuration = LogicTestConfiguration(
       environment: environment,
       workingDirectory: workingDirectory.path,
       testBundlePath: testDescriptor.testBundle.path,
@@ -235,12 +235,12 @@ public struct FBXCTestRunRequest {
     return try startLogicTestExecution(configuration, target: target, reporter: reporter, logger: logger)
   }
 
-  private func startLogicTestExecution(_ configuration: FBLogicTestConfiguration, target: any FBiOSTarget, reporter: FBXCTestReporter, logger: FBControlCoreLogger) throws -> IDBTestOperation {
+  private func startLogicTestExecution(_ configuration: LogicTestConfiguration, target: any FBiOSTarget, reporter: XCTestReporter, logger: FBControlCoreLogger) throws -> IDBTestOperation {
     guard let target = target as? any LogicTestTarget else {
       throw XCTestRunRequestError.logicTestsUnsupported(targetDescription: String(describing: target))
     }
-    let adapter = FBLogicReporterAdapter(reporter: reporter, logger: logger)
-    let runner = FBLogicTestRunStrategy(
+    let adapter = LogicReporterAdapter(reporter: reporter, logger: logger)
+    let runner = LogicTestRunStrategy(
       target: target,
       configuration: configuration,
       reporter: adapter,
@@ -270,7 +270,7 @@ public struct FBXCTestRunRequest {
 
   // MARK: - Application-Hosted Tests
 
-  private func startAppHostedTest(with testDescriptor: FBXCTestDescriptor, logDirectoryPath: String?, target: any FBiOSTarget, reporter: FBXCTestReporter, logger: FBControlCoreLogger) async throws -> IDBTestOperation {
+  private func startAppHostedTest(with testDescriptor: FBXCTestDescriptor, logDirectoryPath: String?, target: any FBiOSTarget, reporter: XCTestReporter, logger: FBControlCoreLogger) async throws -> IDBTestOperation {
     let appPair = try await testDescriptor.testAppPair(for: self, target: target)
     logger.log("Obtaining launch configuration for App Pair \(appPair) on descriptor \(testDescriptor)")
     let appHostedTestConfig = try await testDescriptor.testConfig(withRunRequest: self, testApps: appPair, logDirectoryPath: logDirectoryPath, logger: logger)
@@ -278,7 +278,7 @@ public struct FBXCTestRunRequest {
     return try Self.startAppHostedTestExecution(appHostedTestConfig, reportAttachments: reportAttachments, target: target, reporter: reporter, logger: logger, reportResultBundle: collectResultBundle)
   }
 
-  private static func startAppHostedTestExecution(_ configuration: IDBAppHostedTestConfiguration, reportAttachments: Bool, target: any FBiOSTarget, reporter: FBXCTestReporter, logger: FBControlCoreLogger, reportResultBundle: Bool) throws -> IDBTestOperation {
+  private static func startAppHostedTestExecution(_ configuration: IDBAppHostedTestConfiguration, reportAttachments: Bool, target: any FBiOSTarget, reporter: XCTestReporter, logger: FBControlCoreLogger, reportResultBundle: Bool) throws -> IDBTestOperation {
     guard let target = target as? any XCTestTarget else {
       throw XCTestRunRequestError.xctestUnsupported(targetDescription: String(describing: target))
     }

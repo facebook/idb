@@ -62,7 +62,7 @@ public struct FBSimulatorReplCommands {
     let bundle = try FBBundleDescriptor.bundle(fromPath: bundlePath)
     let architectures = Set((bundle.binary?.architectures ?? []).map(\.rawValue))
 
-    let configuration = FBLogicTestConfiguration(
+    let configuration = LogicTestConfiguration(
       environment: [
         "IDB_REPL_SOCKET_PATH": socketPath,
         "IDB_REPL_GEN_INTERFACE_DIR": "/tmp/idb_repl_interfaces",
@@ -81,7 +81,7 @@ public struct FBSimulatorReplCommands {
       injectLibraries: [replDylibPath]
     )
 
-    let runner = FBLogicTestRunStrategy(
+    let runner = LogicTestRunStrategy(
       target: simulator,
       configuration: configuration,
       reporter: ReplNullReporter(),
@@ -191,7 +191,7 @@ public struct FBSimulatorReplCommands {
 
 /// A no-op logic-test reporter. REPL mode runs the shim's single test purely to
 /// host the control socket, so the normal test-reporting events are discarded.
-final class ReplNullReporter: FBLogicXCTestReporter {
+final class ReplNullReporter: LogicXCTestReporter {
   func processWaitingForDebugger(withProcessIdentifier pid: pid_t) {}
   func didBeginExecutingTestPlan() {}
   func didFinishExecutingTestPlan() {}

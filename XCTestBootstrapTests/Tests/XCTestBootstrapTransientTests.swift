@@ -8,12 +8,12 @@
 import XCTest
 @testable import XCTestBootstrap
 
-// MARK: - FBCodeCoverageConfiguration Tests
+// MARK: - CodeCoverageConfiguration Tests
 
-final class FBCodeCoverageConfigurationTransientTests: XCTestCase {
+final class CodeCoverageConfigurationTransientTests: XCTestCase {
 
   func testDescriptionContainsDirectory() {
-    let config = FBCodeCoverageConfiguration(
+    let config = CodeCoverageConfiguration(
       directory: "/my/dir",
       format: .exported,
       enableContinuousCoverageCollection: false
@@ -23,31 +23,31 @@ final class FBCodeCoverageConfigurationTransientTests: XCTestCase {
   }
 }
 
-// MARK: - FBTestManagerResultSummary Tests
+// MARK: - TestManagerResultSummary Tests
 
-final class FBTestManagerResultSummaryTransientTests: XCTestCase {
+final class TestManagerResultSummaryTransientTests: XCTestCase {
 
   func testStatusForStatusString() {
-    XCTAssertEqual(FBTestManagerResultSummary.status(forStatusString: "passed"), .passed)
-    XCTAssertEqual(FBTestManagerResultSummary.status(forStatusString: "failed"), .failed)
-    XCTAssertEqual(FBTestManagerResultSummary.status(forStatusString: "unknown"), .unknown)
-    XCTAssertEqual(FBTestManagerResultSummary.status(forStatusString: "something-else"), .unknown)
-    XCTAssertEqual(FBTestManagerResultSummary.status(forStatusString: ""), .unknown)
+    XCTAssertEqual(TestManagerResultSummary.status(forStatusString: "passed"), .passed)
+    XCTAssertEqual(TestManagerResultSummary.status(forStatusString: "failed"), .failed)
+    XCTAssertEqual(TestManagerResultSummary.status(forStatusString: "unknown"), .unknown)
+    XCTAssertEqual(TestManagerResultSummary.status(forStatusString: "something-else"), .unknown)
+    XCTAssertEqual(TestManagerResultSummary.status(forStatusString: ""), .unknown)
   }
 
   func testStatusStringForStatus() {
-    XCTAssertEqual(FBTestManagerResultSummary.statusString(for: .passed), "Passed")
-    XCTAssertEqual(FBTestManagerResultSummary.statusString(for: .failed), "Failed")
-    XCTAssertEqual(FBTestManagerResultSummary.statusString(for: .unknown), "Unknown")
+    XCTAssertEqual(TestManagerResultSummary.statusString(for: .passed), "Passed")
+    XCTAssertEqual(TestManagerResultSummary.statusString(for: .failed), "Failed")
+    XCTAssertEqual(TestManagerResultSummary.statusString(for: .unknown), "Unknown")
   }
 
   func testEquality() {
     let date = Date(timeIntervalSince1970: 500)
-    let summary1 = FBTestManagerResultSummary(
+    let summary1 = TestManagerResultSummary(
       testSuite: "Suite", finishTime: date, runCount: 3, failureCount: 1,
       unexpected: 0, testDuration: 2.0, totalDuration: 3.0
     )
-    let summary2 = FBTestManagerResultSummary(
+    let summary2 = TestManagerResultSummary(
       testSuite: "Suite", finishTime: date, runCount: 3, failureCount: 1,
       unexpected: 0, testDuration: 2.0, totalDuration: 3.0
     )
@@ -56,11 +56,11 @@ final class FBTestManagerResultSummaryTransientTests: XCTestCase {
 
   func testInequality() {
     let date = Date(timeIntervalSince1970: 500)
-    let summary1 = FBTestManagerResultSummary(
+    let summary1 = TestManagerResultSummary(
       testSuite: "Suite", finishTime: date, runCount: 3, failureCount: 1,
       unexpected: 0, testDuration: 2.0, totalDuration: 3.0
     )
-    let summary2 = FBTestManagerResultSummary(
+    let summary2 = TestManagerResultSummary(
       testSuite: "DifferentSuite", finishTime: date, runCount: 3, failureCount: 1,
       unexpected: 0, testDuration: 2.0, totalDuration: 3.0
     )
@@ -69,11 +69,11 @@ final class FBTestManagerResultSummaryTransientTests: XCTestCase {
 
   func testInequalityByRunCount() {
     let date = Date(timeIntervalSince1970: 500)
-    let summary1 = FBTestManagerResultSummary(
+    let summary1 = TestManagerResultSummary(
       testSuite: "Suite", finishTime: date, runCount: 3, failureCount: 1,
       unexpected: 0, testDuration: 2.0, totalDuration: 3.0
     )
-    let summary2 = FBTestManagerResultSummary(
+    let summary2 = TestManagerResultSummary(
       testSuite: "Suite", finishTime: date, runCount: 99, failureCount: 1,
       unexpected: 0, testDuration: 2.0, totalDuration: 3.0
     )
@@ -81,7 +81,7 @@ final class FBTestManagerResultSummaryTransientTests: XCTestCase {
   }
 
   func testDescriptionContainsSuiteName() {
-    let summary = FBTestManagerResultSummary(
+    let summary = TestManagerResultSummary(
       testSuite: "DescSuite", finishTime: Date(), runCount: 1, failureCount: 0,
       unexpected: 0, testDuration: 1.0, totalDuration: 1.0
     )
@@ -91,7 +91,7 @@ final class FBTestManagerResultSummaryTransientTests: XCTestCase {
 
 final class FBXCTestConfigurationTransientTests: XCTestCase {
 
-  // MARK: - FBListTestConfiguration
+  // MARK: - ListTestConfiguration
 
   private func makeListConfig(
     env: [String: String] = [:],
@@ -101,8 +101,8 @@ final class FBXCTestConfigurationTransientTests: XCTestCase {
     waitForDebugger: Bool = false,
     timeout: TimeInterval = 100,
     architectures: Set<String> = ["x86_64"]
-  ) -> FBListTestConfiguration {
-    return FBListTestConfiguration(
+  ) -> ListTestConfiguration {
+    return ListTestConfiguration(
       environment: env,
       workingDirectory: workDir,
       testBundlePath: bundlePath,
@@ -121,12 +121,12 @@ final class FBXCTestConfigurationTransientTests: XCTestCase {
     timeout: TimeInterval = 100,
     testFilter: String? = nil,
     mirroring: LogicTestMirrorLogs = [],
-    coverageConfiguration: FBCodeCoverageConfiguration? = nil,
+    coverageConfiguration: CodeCoverageConfiguration? = nil,
     binaryPath: String? = nil,
     logDirectoryPath: String? = nil,
     architectures: Set<String> = ["arm64"]
-  ) -> FBLogicTestConfiguration {
-    return FBLogicTestConfiguration(
+  ) -> LogicTestConfiguration {
+    return LogicTestConfiguration(
       environment: env,
       workingDirectory: workDir,
       testBundlePath: bundlePath,
@@ -217,7 +217,7 @@ final class FBXCTestConfigurationTransientTests: XCTestCase {
     XCTAssertTrue(desc.contains("SomeFilter"), "Description should contain test filter")
   }
 
-  // MARK: - FBLogicTestConfiguration
+  // MARK: - LogicTestConfiguration
 
   func testLogicTestConfigurationTestType() {
     let config = makeLogicConfig()
@@ -247,7 +247,7 @@ final class FBXCTestConfigurationTransientTests: XCTestCase {
 
   func testConfigurationCopy() {
     let config = makeListConfig()
-    let copied = config.copy() as! FBListTestConfiguration
+    let copied = config.copy() as! ListTestConfiguration
     XCTAssertEqual(config, copied)
   }
 

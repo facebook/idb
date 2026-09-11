@@ -23,7 +23,7 @@ extension DeviceXCTestError: LocalizedError {
     case let .testManagerAlreadyRunning(configurationDescription):
       return "Cannot Start Test Manager with Configuration \(configurationDescription) as it is already running"
     case let .unexpectedReporter(reporterDescription):
-      return "\(reporterDescription) is not an FBXCTestReporter"
+      return "\(reporterDescription) is not an XCTestReporter"
     case let .xctestrunCreationFailed(underlying):
       return "Failed to create xctestrun file: \(underlying)"
     case let .xcodebuildNotFound(underlying):
@@ -63,27 +63,27 @@ public final class DeviceXCTestCommands: XCTestCommands {
     guard let device else {
       throw DeviceNilError.deviceNil
     }
-    guard let reporter = reporter as? FBXCTestReporter else {
+    guard let reporter = reporter as? XCTestReporter else {
       throw DeviceXCTestError.unexpectedReporter(reporterDescription: String(describing: reporter))
     }
     runningXcodeBuildOperation = true
     defer { runningXcodeBuildOperation = false }
 
-    _ = try await FBXcodeBuildOperation.terminateAbandonedXcodebuildProcesses(forUDID: device.udid, processFetcher: processFetcher, queue: device.workQueue, logger: logger)
+    _ = try await XcodeBuildOperation.terminateAbandonedXcodebuildProcesses(forUDID: device.udid, processFetcher: processFetcher, queue: device.workQueue, logger: logger)
     let task = try await startTestWithLaunchConfiguration(configuration: testLaunchConfiguration, logger: logger)
-    try await bridgeFBFutureVoid(FBXcodeBuildOperation.confirmExit(ofXcodebuildOperation: task, configuration: testLaunchConfiguration, reporter: reporter, target: device, logger: logger))
+    try await bridgeFBFutureVoid(XcodeBuildOperation.confirmExit(ofXcodebuildOperation: task, configuration: testLaunchConfiguration, reporter: reporter, target: device, logger: logger))
   }
 
   private func startTestWithLaunchConfiguration(configuration: TestLaunchConfiguration, logger: any FBControlCoreLogger) async throws -> FBSubprocess<AnyObject, AnyObject, AnyObject> {
     let filePath: String
     do {
-      filePath = try FBXcodeBuildOperation.createXCTestRunFile(at: workingDirectory, fromConfiguration: configuration)
+      filePath = try XcodeBuildOperation.createXCTestRunFile(at: workingDirectory, fromConfiguration: configuration)
     } catch {
       throw DeviceXCTestError.xctestrunCreationFailed(underlying: error)
     }
     let xcodeBuildPath: String
     do {
-      xcodeBuildPath = try FBXcodeBuildOperation.xcodeBuildPath()
+      xcodeBuildPath = try XcodeBuildOperation.xcodeBuildPath()
     } catch {
       throw DeviceXCTestError.xcodebuildNotFound(underlying: error)
     }
@@ -100,7 +100,7 @@ public final class DeviceXCTestCommands: XCTestCommands {
     }
     let udid = identifier.takeRetainedValue() as String
 
-    return try await FBXcodeBuildOperation.operation(withUDID: udid, configuration: configuration, xcodeBuildPath: xcodeBuildPath, testRunFilePath: filePath, simDeviceSet: nil, macOSTestShimPath: nil, logger: logger.withName("xcodebuild"))
+    return try await XcodeBuildOperation.operation(withUDID: udid, configuration: configuration, xcodeBuildPath: xcodeBuildPath, testRunFilePath: filePath, simDeviceSet: nil, macOSTestShimPath: nil, logger: logger.withName("xcodebuild"))
   }
 }
 

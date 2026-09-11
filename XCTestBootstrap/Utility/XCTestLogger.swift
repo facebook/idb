@@ -23,7 +23,7 @@ enum XCTestLoggerError: Error, LocalizedError {
 }
 
 // @unchecked Sendable: all stored state is immutable and FBControlCoreLogger implementations are required to be thread-safe.
-public final class FBXCTestLogger: NSObject, FBControlCoreLogger, @unchecked Sendable {
+public final class XCTestLogger: NSObject, FBControlCoreLogger, @unchecked Sendable {
 
   private let baseLogger: FBControlCoreLogger
   public let logDirectory: String
@@ -55,19 +55,19 @@ public final class FBXCTestLogger: NSObject, FBControlCoreLogger, @unchecked Sen
     "\(ProcessInfo.processInfo.globallyUniqueString)_test.log"
   }
 
-  public static func defaultLoggerInDefaultDirectory() -> FBXCTestLogger {
+  public static func defaultLoggerInDefaultDirectory() -> XCTestLogger {
     loggerInDefaultDirectory(defaultLogName())
   }
 
-  public static func loggerInDefaultDirectory(_ name: String) -> FBXCTestLogger {
+  public static func loggerInDefaultDirectory(_ name: String) -> XCTestLogger {
     logger(inDirectory: defaultLogDirectory(), name: name)
   }
 
-  public static func defaultLogger(inDirectory directory: String) -> FBXCTestLogger {
+  public static func defaultLogger(inDirectory directory: String) -> XCTestLogger {
     logger(inDirectory: directory, name: defaultLogName())
   }
 
-  public static func logger(inDirectory directory: String, name: String) -> FBXCTestLogger {
+  public static func logger(inDirectory directory: String, name: String) -> XCTestLogger {
     let success = (try? FileManager.default.createDirectory(atPath: directory, withIntermediateDirectories: true, attributes: nil)) != nil
     assert(success, "Expected to create directory at path \(directory)")
 
@@ -80,7 +80,7 @@ public final class FBXCTestLogger: NSObject, FBControlCoreLogger, @unchecked Sen
     let stderrLogger = FBControlCoreLoggerFactory.systemLoggerWriting(toStderr: true, withDebugLogging: true).withDateFormatEnabled(true)
     guard let fileHandle = FileHandle(forWritingAtPath: path) else {
       NSLog("Failed to open the log file at path %@ for writing, logging to stderr only", path)
-      return FBXCTestLogger(baseLogger: stderrLogger, logDirectory: directory)
+      return XCTestLogger(baseLogger: stderrLogger, logDirectory: directory)
     }
 
     let baseLogger = FBControlCoreLoggerFactory.compositeLogger(with: [
@@ -88,7 +88,7 @@ public final class FBXCTestLogger: NSObject, FBControlCoreLogger, @unchecked Sen
       FBControlCoreLoggerFactory.logger(toFileDescriptor: fileHandle.fileDescriptor, closeOnEndOfFile: false).withDateFormatEnabled(true),
     ])
 
-    return FBXCTestLogger(baseLogger: baseLogger, logDirectory: directory)
+    return XCTestLogger(baseLogger: baseLogger, logDirectory: directory)
   }
 
   // MARK: - FBControlCoreLogger
@@ -100,23 +100,23 @@ public final class FBXCTestLogger: NSObject, FBControlCoreLogger, @unchecked Sen
   }
 
   public func info() -> FBControlCoreLogger {
-    FBXCTestLogger(baseLogger: baseLogger.info(), logDirectory: logDirectory)
+    XCTestLogger(baseLogger: baseLogger.info(), logDirectory: logDirectory)
   }
 
   public func debug() -> FBControlCoreLogger {
-    FBXCTestLogger(baseLogger: baseLogger.debug(), logDirectory: logDirectory)
+    XCTestLogger(baseLogger: baseLogger.debug(), logDirectory: logDirectory)
   }
 
   public func error() -> FBControlCoreLogger {
-    FBXCTestLogger(baseLogger: baseLogger.error(), logDirectory: logDirectory)
+    XCTestLogger(baseLogger: baseLogger.error(), logDirectory: logDirectory)
   }
 
   public func withName(_ prefix: String) -> FBControlCoreLogger {
-    FBXCTestLogger(baseLogger: baseLogger.withName(prefix), logDirectory: logDirectory)
+    XCTestLogger(baseLogger: baseLogger.withName(prefix), logDirectory: logDirectory)
   }
 
   public func withDateFormatEnabled(_ enabled: Bool) -> FBControlCoreLogger {
-    FBXCTestLogger(baseLogger: baseLogger.withDateFormatEnabled(enabled), logDirectory: logDirectory)
+    XCTestLogger(baseLogger: baseLogger.withDateFormatEnabled(enabled), logDirectory: logDirectory)
   }
 
   public var name: String? {

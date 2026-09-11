@@ -38,10 +38,10 @@ extension ListTestError: LocalizedError {
 
 private final class ListTestStrategy_ReporterWrapped: XCTestRunner {
 
-  let strategy: FBListTestStrategy
-  let reporter: FBXCTestReporter
+  let strategy: ListTestStrategy
+  let reporter: XCTestReporter
 
-  init(strategy: FBListTestStrategy, reporter: FBXCTestReporter) {
+  init(strategy: ListTestStrategy, reporter: XCTestReporter) {
     self.strategy = strategy
     self.reporter = reporter
   }
@@ -72,13 +72,13 @@ private final class ListTestStrategy_ReporterWrapped: XCTestRunner {
   }
 }
 
-public final class FBListTestStrategy {
+public final class ListTestStrategy {
 
   let target: any LogicTestTarget
-  private let configuration: FBListTestConfiguration
+  private let configuration: ListTestConfiguration
   private let logger: FBControlCoreLogger
 
-  public init(target: any LogicTestTarget, configuration: FBListTestConfiguration, logger: FBControlCoreLogger) {
+  public init(target: any LogicTestTarget, configuration: ListTestConfiguration, logger: FBControlCoreLogger) {
     self.target = target
     self.configuration = configuration
     self.logger = logger
@@ -115,7 +115,7 @@ public final class FBListTestStrategy {
       .retyped(FBFuture<NSArray>.self)
   }
 
-  func wrapInReporter(_ reporter: FBXCTestReporter) -> XCTestRunner {
+  func wrapInReporter(_ reporter: XCTestReporter) -> XCTestRunner {
     ListTestStrategy_ReporterWrapped(strategy: self, reporter: reporter)
   }
 
@@ -139,16 +139,16 @@ public final class FBListTestStrategy {
       fbFutureFromAsync {
         try await FBTemporaryDirectory(logger: self.logger).withTemporaryDirectory { temporaryDirectoryURL in
           let libraries = try await OToolDynamicLibs.findFullPath(forSanitiserDyldInBundle: self.configuration.testBundlePath)
-          let environment = FBListTestStrategy.setupEnvironment(withDylibs: libraries, shimPath: shimPath, shimOutputFilePath: shimOutput.filePath, bundlePath: self.configuration.testBundlePath, target: self.target)
+          let environment = ListTestStrategy.setupEnvironment(withDylibs: libraries, shimPath: shimPath, shimOutputFilePath: shimOutput.filePath, bundlePath: self.configuration.testBundlePath, target: self.target)
           return try await bridgeFBFuture(
-            FBListTestStrategy.listTestProcess(withTarget: self.target, configuration: self.configuration, xctestPath: self.target.xctest.path, environment: environment, stdOutConsumer: stdOutConsumer, stdErrConsumer: stdErrConsumer, logger: self.logger, temporaryDirectory: temporaryDirectoryURL)
+            ListTestStrategy.listTestProcess(withTarget: self.target, configuration: self.configuration, xctestPath: self.target.xctest.path, environment: environment, stdOutConsumer: stdOutConsumer, stdErrConsumer: stdErrConsumer, logger: self.logger, temporaryDirectory: temporaryDirectoryURL)
               .onQueue(
                 self.target.workQueue,
                 fmap: { exitCodeFutureObj -> FBFuture<AnyObject> in
                   guard let exitCodeFuture = exitCodeFutureObj as? FBFuture<NSNumber> else {
                     return FBFuture(error: ListTestError.testProcessMissingExitCode(result: String(describing: exitCodeFutureObj)))
                   }
-                  return FBListTestStrategy.launchedProcess(
+                  return ListTestStrategy.launchedProcess(
                     withExitCode: exitCodeFuture, shimOutput: shimOutput, shimBuffer: shimBuffer, stdOutBuffer: stdOutBuffer, stdErrBuffer: stdErrBuffer, queue: self.target.workQueue
                   ).retyped(FBFuture<AnyObject>.self)
                 }))
@@ -180,7 +180,7 @@ public final class FBListTestStrategy {
       .onQueue(
         queue,
         fmap: { _ -> FBFuture<AnyObject> in
-          FBListTestStrategy.onQueue(
+          ListTestStrategy.onQueue(
             queue, confirmExit: exitCode, closingOutput: shimOutput, shimBuffer: shimBuffer, stdOutBuffer: stdOutBuffer, stdErrBuffer: stdErrBuffer
           ).retyped(FBFuture<AnyObject>.self)
         }
@@ -234,7 +234,7 @@ public final class FBListTestStrategy {
       .retyped(FBFuture<NSNull>.self)
   }
 
-  private static func listTestProcess(withTarget target: any LogicTestTarget, configuration: FBListTestConfiguration, xctestPath: String, environment: [String: String], stdOutConsumer: FBDataConsumer, stdErrConsumer: FBDataConsumer, logger: FBControlCoreLogger, temporaryDirectory: URL) -> FBFuture<AnyObject> {
+  private static func listTestProcess(withTarget target: any LogicTestTarget, configuration: ListTestConfiguration, xctestPath: String, environment: [String: String], stdOutConsumer: FBDataConsumer, stdErrConsumer: FBDataConsumer, logger: FBControlCoreLogger, temporaryDirectory: URL) -> FBFuture<AnyObject> {
     var launchPath = xctestPath
     var env = environment
 
@@ -259,14 +259,14 @@ public final class FBListTestStrategy {
       }
       launchPath = appBundle.binary?.path ?? launchPath
       let spawnConfiguration = FBProcessSpawnConfiguration(launchPath: launchPath, arguments: [], environment: env, io: io, mode: .default)
-      return FBListTestStrategy.listTestProcess(withSpawnConfiguration: spawnConfiguration, onTarget: target, timeout: configuration.testTimeout, logger: logger)
+      return ListTestStrategy.listTestProcess(withSpawnConfiguration: spawnConfiguration, onTarget: target, timeout: configuration.testTimeout, logger: logger)
     } else {
       let spawnConfiguration = FBProcessSpawnConfiguration(launchPath: launchPath, arguments: [], environment: env, io: io, mode: .default)
 
       return fbFutureFromAsync {
         let mappedConfig = try await ArchitectureProcessAdapter.adaptProcessConfiguration(spawnConfiguration, toAnyArchitectureIn: Set(configuration.architectures.map { FBArchitecture(rawValue: $0) }), temporaryDirectory: temporaryDirectory)
         return try await bridgeFBFuture(
-          FBListTestStrategy.listTestProcess(withSpawnConfiguration: mappedConfig, onTarget: target, timeout: configuration.testTimeout, logger: logger))
+          ListTestStrategy.listTestProcess(withSpawnConfiguration: mappedConfig, onTarget: target, timeout: configuration.testTimeout, logger: logger))
       }
     }
   }

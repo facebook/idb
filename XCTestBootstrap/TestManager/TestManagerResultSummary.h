@@ -16,4 +16,4 @@ typedef NS_ENUM(NSUInteger, FBTestReportStatus) {
   FBTestReportStatusFailed = 2,
 };
 
-@class FBTestManagerResultSummary;
+@class TestManagerResultSummary;

@@ -9,7 +9,7 @@ import FBControlCore
 import XCTest
 import XCTestBootstrap
 
-final class FBXcodeBuildOperationTests: XCTestCase {
+final class XcodeBuildOperationTests: XCTestCase {
 
   func testUITestConfiguration() {
     let testHostPath = "/tmp/test_host_path.app"
@@ -47,7 +47,7 @@ final class FBXcodeBuildOperationTests: XCTestCase {
       reportResultBundle: false
     )
 
-    let properties = FBXcodeBuildOperation.xctestRunProperties(configuration) as [String: Any]
+    let properties = XcodeBuildOperation.xctestRunProperties(configuration) as [String: Any]
     let stubBundleProperties = properties["StubBundleId"] as! [String: Any]
 
     XCTAssertEqual(stubBundleProperties["TestHostPath"] as? String, testHostPath)

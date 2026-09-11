@@ -47,16 +47,16 @@ extension MacDeviceError: LocalizedError {
     case let .testBundleHasNoBinary(path):
       return "Test bundle at \(path) has no binary to read architectures from"
     case let .unexpectedReporter(reporterDescription):
-      return "Expected an FBXCTestReporter, got \(reporterDescription)"
+      return "Expected an XCTestReporter, got \(reporterDescription)"
     case let .notImplemented(selector):
-      return "-[FBMacDevice \(selector)] is not implemented"
+      return "-[MacDevice \(selector)] is not implemented"
     case let .commandUnsupported(command):
       return "\(command) is not supported on the mac target"
     }
   }
 }
 
-public final class FBMacDevice: NSObject, FBiOSTarget {
+public final class MacDevice: NSObject, FBiOSTarget {
 
   // MARK: - FBiOSTarget synthesized properties
 
@@ -120,9 +120,9 @@ public final class FBMacDevice: NSObject, FBiOSTarget {
     } else {
       auxillaryDirectory = ((NSTemporaryDirectory() as NSString).appendingPathComponent("idb-mac-cwd") as NSString).appendingPathComponent(ProcessInfo.processInfo.globallyUniqueString)
     }
-    bundleIDToProductMap = FBMacDevice.fetchInstalledApplications()
+    bundleIDToProductMap = MacDevice.fetchInstalledApplications()
     bundleIDToRunningTask = [:]
-    udid = FBMacDevice.resolveDeviceUDID()
+    udid = MacDevice.resolveDeviceUDID()
     state = .booted
     targetType = .localMac
     workQueue = DispatchQueue.main
@@ -149,9 +149,9 @@ public final class FBMacDevice: NSObject, FBiOSTarget {
     } else {
       auxillaryDirectory = ((NSTemporaryDirectory() as NSString).appendingPathComponent("idb-mac-cwd") as NSString).appendingPathComponent(ProcessInfo.processInfo.globallyUniqueString)
     }
-    bundleIDToProductMap = FBMacDevice.fetchInstalledApplications()
+    bundleIDToProductMap = MacDevice.fetchInstalledApplications()
     bundleIDToRunningTask = [:]
-    udid = FBMacDevice.resolveDeviceUDID()
+    udid = MacDevice.resolveDeviceUDID()
     state = .booted
     targetType = .localMac
     workQueue = DispatchQueue.main
@@ -400,7 +400,7 @@ public final class FBMacDevice: NSObject, FBiOSTarget {
     guard let binary = bundleDescriptor.binary else {
       return FBFuture(error: MacDeviceError.testBundleHasNoBinary(path: bundlePath))
     }
-    let configuration = FBListTestConfiguration(
+    let configuration = ListTestConfiguration(
       environment: [:],
       workingDirectory: auxillaryDirectory,
       testBundlePath: bundlePath,
@@ -410,14 +410,14 @@ public final class FBMacDevice: NSObject, FBiOSTarget {
       architectures: Set(binary.architectures.map { $0.rawValue })
     )
 
-    return FBListTestStrategy(target: self, configuration: configuration, logger: self.logger).listTests()
+    return ListTestStrategy(target: self, configuration: configuration, logger: self.logger).listTests()
   }
 
 }
 
-// MARK: - FBMacDevice+ProcessSpawnCommands
+// MARK: - MacDevice+ProcessSpawnCommands
 
-extension FBMacDevice: ProcessSpawnCommands {
+extension MacDevice: ProcessSpawnCommands {
 
   public func launchProcess(
     _ configuration: FBProcessSpawnConfiguration
@@ -427,19 +427,19 @@ extension FBMacDevice: ProcessSpawnCommands {
   }
 }
 
-// MARK: - FBMacDevice+XCTestExtendedCommands
+// MARK: - MacDevice+XCTestExtendedCommands
 
-extension FBMacDevice: XCTestExtendedCommands {
+extension MacDevice: XCTestExtendedCommands {
 
   public func runTest(
     launchConfiguration: TestLaunchConfiguration,
     reporter: AnyObject,
     logger: any FBControlCoreLogger
   ) async throws {
-    guard let typedReporter = reporter as? FBXCTestReporter else {
+    guard let typedReporter = reporter as? XCTestReporter else {
       throw MacDeviceError.unexpectedReporter(reporterDescription: String(describing: reporter))
     }
-    try await FBManagedTestRunStrategy.runToCompletion(
+    try await ManagedTestRunStrategy.runToCompletion(
       withTarget: self,
       configuration: launchConfiguration,
       codesign: nil,
@@ -471,9 +471,9 @@ extension FBMacDevice: XCTestExtendedCommands {
   }
 }
 
-// MARK: - FBMacDevice+ApplicationCommands
+// MARK: - MacDevice+ApplicationCommands
 
-extension FBMacDevice: ApplicationCommands {
+extension MacDevice: ApplicationCommands {
 
   public func install(atPath path: String) async throws -> FBInstalledApplication {
     try installApplication(withPath: path)
@@ -516,9 +516,9 @@ extension FBMacDevice: ApplicationCommands {
   }
 }
 
-// MARK: - FBMacDevice+CrashLogCommands
+// MARK: - MacDevice+CrashLogCommands
 
-extension FBMacDevice: CrashLogCommands {
+extension MacDevice: CrashLogCommands {
 
   public func crashes(matching predicate: NSPredicate, useCache: Bool) async throws -> [CrashLogInfo] {
     throw MacDeviceError.notImplemented(selector: "crashes:useCache:")

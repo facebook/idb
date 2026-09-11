@@ -12,10 +12,10 @@ import XCTestBootstrap
 public struct FBCodeCoverageRequest: Sendable {
 
   public let collect: Bool
-  public let format: FBCodeCoverageFormat
+  public let format: CodeCoverageFormat
   public let shouldEnableContinuousCoverageCollection: Bool
 
-  public init(collect: Bool, format: FBCodeCoverageFormat, enableContinuousCoverageCollection: Bool) {
+  public init(collect: Bool, format: CodeCoverageFormat, enableContinuousCoverageCollection: Bool) {
     self.collect = collect
     self.format = format
     self.shouldEnableContinuousCoverageCollection = enableContinuousCoverageCollection

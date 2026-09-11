@@ -12,13 +12,13 @@ import XCTestBootstrap
 public struct FBXCTestReporterConfiguration {
 
   public let resultBundlePath: String?
-  public let coverageConfiguration: FBCodeCoverageConfiguration?
+  public let coverageConfiguration: CodeCoverageConfiguration?
   public let logDirectoryPath: String?
   public let binariesPaths: [String]
   public let reportAttachments: Bool
   public let reportResultBundle: Bool
 
-  public init(resultBundlePath: String?, coverageConfiguration: FBCodeCoverageConfiguration?, logDirectoryPath: String?, binariesPaths: [String]?, reportAttachments: Bool, reportResultBundle: Bool) {
+  public init(resultBundlePath: String?, coverageConfiguration: CodeCoverageConfiguration?, logDirectoryPath: String?, binariesPaths: [String]?, reportAttachments: Bool, reportResultBundle: Bool) {
     self.resultBundlePath = resultBundlePath
     self.coverageConfiguration = coverageConfiguration
     self.logDirectoryPath = logDirectoryPath

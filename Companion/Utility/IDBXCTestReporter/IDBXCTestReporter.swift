@@ -20,7 +20,7 @@ extension IDBXCTestReporter {
 
     let resultBundlePath: String
 
-    let coverageConfiguration: FBCodeCoverageConfiguration?
+    let coverageConfiguration: CodeCoverageConfiguration?
 
     let logDirectoryPath: String?
 
@@ -66,7 +66,7 @@ extension IDBXCTestReporterError: LocalizedError {
   }
 }
 
-final class IDBXCTestReporter: NSObject, FBXCTestReporter, FBDataConsumer, @unchecked Sendable {
+final class IDBXCTestReporter: NSObject, XCTestReporter, FBDataConsumer, @unchecked Sendable {
 
   private let reportingTerminated = AsyncPromise<Int>()
 
@@ -105,7 +105,7 @@ final class IDBXCTestReporter: NSObject, FBXCTestReporter, FBDataConsumer, @unch
     // Implementation not required
   }
 
-  // MARK: - FBXCTestReporter implementation
+  // MARK: - XCTestReporter implementation
 
   func processWaitingForDebugger(withProcessIdentifier pid: pid_t) {
     logger.info().log("Tests waiting for debugger. To debug run: lldb -p \(pid)")
@@ -182,7 +182,7 @@ final class IDBXCTestReporter: NSObject, FBXCTestReporter, FBDataConsumer, @unch
     }
   }
 
-  func finished(with summary: FBTestManagerResultSummary) {
+  func finished(with summary: TestManagerResultSummary) {
     // Implementation not required
   }
 
@@ -343,7 +343,7 @@ final class IDBXCTestReporter: NSObject, FBXCTestReporter, FBDataConsumer, @unch
         }
       }
 
-      // Read back through `self` rather than the local binding: `FBCodeCoverageConfiguration` is a
+      // Read back through `self` rather than the local binding: `CodeCoverageConfiguration` is a
       // non-Sendable ObjC class, so a value derived from the local would stay in this function's
       // isolation region and could not be captured by the child task.
       if let coverageConfig = self.configuration?.coverageConfiguration, !coverageConfig.coverageDirectory.isEmpty {
@@ -421,7 +421,7 @@ final class IDBXCTestReporter: NSObject, FBXCTestReporter, FBDataConsumer, @unch
       logger: logger)
   }
 
-  private func getCoverageResponseData(config: FBCodeCoverageConfiguration, binariesPath: [String]) async throws -> Data {
+  private func getCoverageResponseData(config: CodeCoverageConfiguration, binariesPath: [String]) async throws -> Data {
     try await processUnderTestExited.value
     switch config.format {
     case .exported:
@@ -433,7 +433,7 @@ final class IDBXCTestReporter: NSObject, FBXCTestReporter, FBDataConsumer, @unch
     }
   }
 
-  private func getCoverageDataExported(config: FBCodeCoverageConfiguration, binariesPath: [String]) async throws -> Data {
+  private func getCoverageDataExported(config: CodeCoverageConfiguration, binariesPath: [String]) async throws -> Data {
     let coverageDirectory = URL(fileURLWithPath: config.coverageDirectory)
     let profdataPath = coverageDirectory.appendingPathComponent("coverage.profdata")
 

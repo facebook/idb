@@ -7,7 +7,7 @@
 
 import Foundation
 
-@objc public final class FBTestManagerResultSummary: NSObject {
+@objc public final class TestManagerResultSummary: NSObject {
 
   @objc public let testSuite: String
   @objc public let finishTime: Date
@@ -25,10 +25,10 @@ import Foundation
     unexpected unexpectedFailureCount: NSNumber,
     testDuration: NSNumber,
     totalDuration: NSNumber
-  ) -> FBTestManagerResultSummary {
-    FBTestManagerResultSummary(
+  ) -> TestManagerResultSummary {
+    TestManagerResultSummary(
       testSuite: testSuite,
-      finishTime: FBTestManagerResultSummary.dateFormatter.date(from: finishTime) ?? Date(timeIntervalSince1970: 0),
+      finishTime: TestManagerResultSummary.dateFormatter.date(from: finishTime) ?? Date(timeIntervalSince1970: 0),
       runCount: runCount.intValue,
       failureCount: failuresCount.intValue,
       unexpected: unexpectedFailureCount.intValue,
@@ -61,7 +61,7 @@ import Foundation
   }
 
   public override func isEqual(_ object: Any?) -> Bool {
-    guard let other = object as? FBTestManagerResultSummary else { return false }
+    guard let other = object as? TestManagerResultSummary else { return false }
     if other === self { return true }
     return runCount == other.runCount
       && failureCount == other.failureCount

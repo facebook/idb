@@ -23,8 +23,8 @@
 #import <XCTestPrivate/XCTestManager_DaemonConnectionInterface-Protocol.h>
 #import <XCTestPrivate/XCTestManager_IDEInterface-Protocol.h>
 
-#import "FBTestManagerResultSummary.h"
 #import "FBTestReporterAdapter.h"
+#import "TestManagerResultSummary.h"
 #import "XCTestBootstrapError.h"
 
 @interface FBTestManagerAPIMediatorIDEInterface () <XCTestManager_IDEInterface, XCTMessagingChannel_RunnerToIDE>
@@ -40,7 +40,7 @@
 
 #pragma mark - Initializers
 
-- (instancetype)initWithMediator:(TestManagerAPIMediator *)mediator context:(TestManagerContext *)context reporter:(id<FBXCTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger
+- (instancetype)initWithMediator:(TestManagerAPIMediator *)mediator context:(TestManagerContext *)context reporter:(id<XCTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger
 {
   self = [super init];
   if (!self) {
