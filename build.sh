@@ -580,6 +580,19 @@ function build_repl_host() {
     build
 }
 
+# The companion project links the generated project's products as prebuilt
+# Release archives, listed by the generated Companion/project-deps.yml. Build
+# each one from that list so the two cannot disagree.
+function build_companion_archives() {
+  local product name
+  while IFS= read -r product; do
+    name="${product%.framework}"
+    name="${name#lib}"
+    name="${name%.a}"
+    build_target "$name" Release
+  done < <(sed -n 's|^ *- framework: \.\./Build/Products/Release/||p' Companion/project-deps.yml | sort -u)
+}
+
 function build_idb_companion() {
   check_protobuf
   build_idb_deps
@@ -593,14 +606,7 @@ function build_idb_companion() {
     # the sources are on disk.
     generate_companion_project
   fi
-  # Build frameworks first in Release (idb_companion depends on them and is built in Release)
-  build_target FBControlCore Release
-  build_target XCTestBootstrap Release
-  build_target FBSimulatorControl Release
-  build_target SimulatorXCTest Release
-  build_target FBDeviceControl Release
-  build_target CompanionLib Release
-  build_target CompanionUtilities Release
+  build_companion_archives
   # Build idb_companion from its own project
   invoke_xcodebuild \
     ONLY_ACTIVE_ARCH=NO \
