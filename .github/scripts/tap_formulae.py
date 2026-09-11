@@ -9,9 +9,9 @@ The templates in .github/formulae/ are the source of truth for the three idb
 formulae; `render` turns them plus a release's inputs (tag, companion tarball,
 wheel, optional `brew bottle --json` output) into the finished formulae and a
 manifest. The Release workflow renders idb-cli.rb to bottle from, then renders
-all three for publication; CI renders against locally built assets to install-
-test them; release tooling copies the published render into the tap. Standard
-library only, so it runs anywhere a python3 exists.
+all three for publication as a run artifact and release assets; CI renders
+against locally built assets to install-test them. Standard library only, so
+it runs anywhere a python3 exists.
 """
 
 from __future__ import annotations

@@ -266,8 +266,8 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: gh release upload "$RELEASE_TAG" ./*.bottle.tar.gz --clobber --repo "$GITHUB_REPOSITORY"
 
-      # The machine-readable counterpart of the summary below; release tooling
-      # downloads it to write the bottle block into the tap commit.
+      # The machine-readable counterpart of the summary below; the formulae
+      # job renders the bottle block from it.
       - name: Upload the bottle JSON as a run artifact
         uses: actions/upload-artifact@v5
         with:
@@ -306,8 +306,7 @@ jobs:
   # The finished tap formulae for this release, rendered from the templates
   # in .github/formulae/ with the release's asset digests and the bottle
   # block, plus a manifest recording what they were computed from. Published
-  # twice: as the `tap-formulae` run artifact, which release tooling copies
-  # into the tap's source of truth and commits, and as release assets, which
+  # twice: as the `tap-formulae` run artifact and as release assets, which
   # need no token to fetch. A pure function of this run's own outputs.
   formulae:
     name: Publish the tap formulae
@@ -364,7 +363,7 @@ jobs:
         run: |
           {
             echo '## Tap formulae for this release'
-            echo 'Rendered from `.github/formulae/*.rb.in`; the `tap-formulae` artifact and the release assets `idb-companion.rb`, `idb-cli.rb`, `idb.rb` and `formulae-manifest.json` hold the same files. Release tooling copies them into the tap.'
+            echo 'Rendered from `.github/formulae/*.rb.in`; the `tap-formulae` artifact and the release assets `idb-companion.rb`, `idb-cli.rb`, `idb.rb` and `formulae-manifest.json` hold the same files.'
             echo ''
             echo '```json'
             cat tap-formulae/manifest.json
