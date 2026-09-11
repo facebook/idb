@@ -7,6 +7,17 @@
 set -e
 set -o pipefail
 
+# Everything below is relative to the Source directory, including a `rm -rf Build`
+# and a symlink into it, so establish that we are in it before anything runs.
+# This covers `help` too: exempting it would leave the destructive setup below
+# reachable from an arbitrary directory, and the error already says what to do.
+for manifest in Package.swift Companion/project.yml; do
+  if [ ! -f "$manifest" ]; then
+    echo "error: $manifest not found; build.sh must run from the idb Source directory" >&2
+    exit 1
+  fi
+done
+
 if hash xcpretty 2>/dev/null; then
   HAS_XCPRETTY=true
 fi
@@ -41,7 +52,6 @@ fi
 # XcodeGen Project Generation
 # =============================================================================
 
-GRPC_SWIFT_VERSION="1.27.5"
 GRPC_SWIFT_DIR="$BUILD_DIRECTORY/grpc-swift"
 
 function check_xcodegen() {
@@ -181,7 +191,39 @@ function check_protobuf() {
   fi
 }
 
+# Defined once, in Package.swift. The codegen plugin must be the same version as
+# the runtime it generates against, so derive it rather than restating it here.
+# XcodeGen resolves the companion's packages from its own manifest and consults
+# Package.swift for nothing, so that pin cannot be derived — only asserted.
+function resolve_grpc_swift_version() {
+  GRPC_SWIFT_VERSION="$(sed -n 's/.*grpc-swift\.git", exact: "\([^"]*\)".*/\1/p' Package.swift)"
+  if [ -z "$GRPC_SWIFT_VERSION" ]; then
+    echo "error: Package.swift does not pin grpc-swift to an exact version" >&2
+    exit 1
+  fi
+
+  # The block ends at the first non-blank line indented less than its own
+  # entries, so it cannot run on into a sibling package's version.
+  local companion
+  companion="$(awk '
+    /^  grpc-swift:[[:space:]]*$/ { in_block = 1; next }
+    in_block && NF && !/^    / { in_block = 0 }
+    in_block && $1 == "exactVersion:" { print $2 }
+  ' Companion/project.yml)"
+  companion="${companion//\"/}"
+  companion="${companion//\'/}"
+
+  if [ "$companion" != "$GRPC_SWIFT_VERSION" ]; then
+    echo "error: grpc-swift is pinned to $GRPC_SWIFT_VERSION in Package.swift but to '${companion:-no exact version}' in Companion/project.yml" >&2
+    exit 1
+  fi
+}
+
 function build_grpc_swift_plugin() {
+  # Checked before the already-built early return below: a warm cache must not
+  # let a drifted pin through.
+  resolve_grpc_swift_version
+
   # Build protoc-gen-grpc-swift from grpc-swift 1.x source
   local plugin_path="$GRPC_SWIFT_DIR/.build/release/protoc-gen-grpc-swift"
 
@@ -234,6 +276,12 @@ function generate_proto() {
 }
 
 function generate_companion_project() {
+  # This is where Companion/project.yml is consumed, so it is where the pin it
+  # declares has to agree with Package.swift. Every build and test path reaches
+  # here via regenerate_projects; the codegen path checks separately, because it
+  # can run without generating a project.
+  resolve_grpc_swift_version
+
   echo "Generating idb_companion project..."
   generate_xcodeproj "Companion" "idb_companion"
 
