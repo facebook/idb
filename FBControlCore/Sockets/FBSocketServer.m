@@ -11,7 +11,7 @@
 
 @interface FBSocketServer ()
 
-@property (nonatomic, readonly, strong) id<FBSocketServerDelegate> delegate;
+@property (nonatomic, readonly, strong) id<SocketServerDelegate> delegate;
 
 @property (nonatomic, readwrite, assign) int socketDescriptor;
 @property (nonatomic, readwrite, strong) dispatch_source_t acceptSource;
@@ -22,12 +22,12 @@
 
 #pragma mark Initializers
 
-+ (instancetype)socketServerOnPort:(in_port_t)port delegate:(id<FBSocketServerDelegate>)delegate
++ (instancetype)socketServerOnPort:(in_port_t)port delegate:(id<SocketServerDelegate>)delegate
 {
   return [[self alloc] initWithPort:port delegate:delegate];
 }
 
-- (instancetype)initWithPort:(in_port_t)port delegate:(id<FBSocketServerDelegate>)delegate
+- (instancetype)initWithPort:(in_port_t)port delegate:(id<SocketServerDelegate>)delegate
 {
   self = [super init];
   if (!self) {

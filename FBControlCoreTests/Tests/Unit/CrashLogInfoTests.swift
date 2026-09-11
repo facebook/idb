@@ -8,10 +8,10 @@
 @testable import FBControlCore
 import XCTest
 
-final class FBCrashLogInfoTests: XCTestCase {
+final class CrashLogInfoTests: XCTestCase {
 
   func testAssetsdCustomSet() throws {
-    let info = try FBCrashLogInfo.fromCrashLog(atPath: TestFixtures.assetsdCrashPathWithCustomDeviceSet)
+    let info = try CrashLogInfo.fromCrashLog(atPath: TestFixtures.assetsdCrashPathWithCustomDeviceSet)
 
     XCTAssertEqual(info.processIdentifier, 39942)
     XCTAssertEqual(info.parentProcessIdentifier, 39927)
@@ -24,7 +24,7 @@ final class FBCrashLogInfoTests: XCTestCase {
   }
 
   func testAgentCustomSet() throws {
-    let info = try FBCrashLogInfo.fromCrashLog(atPath: TestFixtures.agentCrashPathWithCustomDeviceSet)
+    let info = try CrashLogInfo.fromCrashLog(atPath: TestFixtures.agentCrashPathWithCustomDeviceSet)
 
     XCTAssertEqual(info.processIdentifier, 39655)
     XCTAssertEqual(info.parentProcessIdentifier, 39576)
@@ -37,7 +37,7 @@ final class FBCrashLogInfoTests: XCTestCase {
   }
 
   func testAppDefaultSet() throws {
-    let info = try FBCrashLogInfo.fromCrashLog(atPath: TestFixtures.appCrashPathWithDefaultDeviceSet)
+    let info = try CrashLogInfo.fromCrashLog(atPath: TestFixtures.appCrashPathWithDefaultDeviceSet)
 
     XCTAssertEqual(info.processIdentifier, 37083)
     XCTAssertEqual(info.parentProcessIdentifier, 37007)
@@ -50,7 +50,7 @@ final class FBCrashLogInfoTests: XCTestCase {
   }
 
   func testAppCustomSet() throws {
-    let info = try FBCrashLogInfo.fromCrashLog(atPath: TestFixtures.appCrashPathWithCustomDeviceSet)
+    let info = try CrashLogInfo.fromCrashLog(atPath: TestFixtures.appCrashPathWithCustomDeviceSet)
 
     XCTAssertEqual(info.processIdentifier, 40119)
     XCTAssertEqual(info.parentProcessIdentifier, 39927)
@@ -63,15 +63,15 @@ final class FBCrashLogInfoTests: XCTestCase {
   }
 
   func testIdentifierPredicate() throws {
-    try XCTAssertEqual(allCrashLogs.filtered(using: FBCrashLogInfo.predicate(forIdentifier: "assetsd")).count, 1)
+    try XCTAssertEqual(allCrashLogs.filtered(using: CrashLogInfo.predicate(forIdentifier: "assetsd")).count, 1)
   }
 
   func testNamePredicate() throws {
-    try XCTAssertEqual(allCrashLogs.filtered(using: FBCrashLogInfo.predicate(forName: "assetsd_custom_set.crash")).count, 1)
+    try XCTAssertEqual(allCrashLogs.filtered(using: CrashLogInfo.predicate(forName: "assetsd_custom_set.crash")).count, 1)
   }
 
   func testJSONCrashLogFormat() throws {
-    let info = try FBCrashLogInfo.fromCrashLog(atPath: TestFixtures.appCrashWithJSONFormat)
+    let info = try CrashLogInfo.fromCrashLog(atPath: TestFixtures.appCrashWithJSONFormat)
 
     XCTAssertEqual(info.processIdentifier, 82406)
     XCTAssertEqual(info.parentProcessIdentifier, 81861)
@@ -86,10 +86,10 @@ final class FBCrashLogInfoTests: XCTestCase {
   private var allCrashLogs: NSArray {
     get throws {
       return try [
-        FBCrashLogInfo.fromCrashLog(atPath: TestFixtures.assetsdCrashPathWithCustomDeviceSet),
-        FBCrashLogInfo.fromCrashLog(atPath: TestFixtures.agentCrashPathWithCustomDeviceSet),
-        FBCrashLogInfo.fromCrashLog(atPath: TestFixtures.appCrashPathWithDefaultDeviceSet),
-        FBCrashLogInfo.fromCrashLog(atPath: TestFixtures.appCrashPathWithCustomDeviceSet),
+        CrashLogInfo.fromCrashLog(atPath: TestFixtures.assetsdCrashPathWithCustomDeviceSet),
+        CrashLogInfo.fromCrashLog(atPath: TestFixtures.agentCrashPathWithCustomDeviceSet),
+        CrashLogInfo.fromCrashLog(atPath: TestFixtures.appCrashPathWithDefaultDeviceSet),
+        CrashLogInfo.fromCrashLog(atPath: TestFixtures.appCrashPathWithCustomDeviceSet),
       ]
     }
   }

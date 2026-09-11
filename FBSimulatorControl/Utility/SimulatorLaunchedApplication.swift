@@ -80,7 +80,7 @@ public final class SimulatorLaunchedApplication: FBLaunchedApplication, CustomSt
       .onQueue(
         simulator.workQueue,
         respondToCancellation: {
-          FBProcessTerminationStrategy
+          ProcessTerminationStrategy
             .strategy(withProcessFetcher: FBProcessFetcher(), workQueue: simulator.workQueue, logger: simulator.logger)
             .killProcessIdentifier(processIdentifier)
         })

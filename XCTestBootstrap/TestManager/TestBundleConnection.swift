@@ -134,11 +134,11 @@ final class TestBundleConnection {
       crashWaitTimeout = TimeInterval((env as NSString).floatValue)
     }
     let pid = testHostApplication.processIdentifier
-    let predicate = FBCrashLogInfo.predicateForCrashLogs(withProcessID: pid)
+    let predicate = CrashLogInfo.predicateForCrashLogs(withProcessID: pid)
     // notifyOfCrash(matching:) has no timeout of its own, so bound it via FBFuture.
     let future = fbFutureFromAsync { try await self.target.crashLog.notifyOfCrash(matching: predicate) }
     let timed = future.timeout(crashWaitTimeout, waitingFor: "Getting crash log for process with pid \(pid), bundle ID: \(bundleID)")
-    guard let info = try await bridgeFBFuture(timed) as? FBCrashLogInfo else {
+    guard let info = try await bridgeFBFuture(timed) as? CrashLogInfo else {
       throw TestBundleConnectionError.unexpectedCrashLookupResult(processIdentifier: pid)
     }
     return try info.obtainCrashLog()

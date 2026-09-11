@@ -8,7 +8,7 @@
 import Foundation
 
 /// The Delegate for the Server.
-@objc public protocol FBSocketServerDelegate: NSObjectProtocol {
+@objc public protocol SocketServerDelegate: NSObjectProtocol {
 
   /// Called when the socket server has a new client connected.
   /// The File Descriptor will not be automatically be closed, so it's up to implementors to ensure that this happens so file descriptors do not leak.

@@ -63,7 +63,7 @@ enum ProcessTerminationStrategyError: Error, LocalizedError {
   }
 }
 
-public final class FBProcessTerminationStrategy {
+public final class ProcessTerminationStrategy {
 
   // MARK: - Private Properties
 
@@ -180,8 +180,8 @@ public final class FBProcessTerminationStrategy {
     configuration.options.contains(option)
   }
 
-  private func strategyWith(configuration: ProcessTerminationStrategyConfiguration) -> FBProcessTerminationStrategy {
-    FBProcessTerminationStrategy(
+  private func strategyWith(configuration: ProcessTerminationStrategyConfiguration) -> ProcessTerminationStrategy {
+    ProcessTerminationStrategy(
       configuration: configuration,
       processFetcher: processFetcher,
       workQueue: workQueue,

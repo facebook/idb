@@ -11,7 +11,7 @@ import IDBGRPCSwift
 
 enum CrashLogInfoValueTransformer {
 
-  static func responseCrashLogInfo(from crash: FBCrashLogInfo) -> Idb_CrashLogInfo {
+  static func responseCrashLogInfo(from crash: CrashLogInfo) -> Idb_CrashLogInfo {
     return .with {
       $0.name = crash.name
       $0.processName = crash.processName

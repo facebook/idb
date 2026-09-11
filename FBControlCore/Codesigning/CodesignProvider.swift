@@ -24,7 +24,7 @@ enum CodesignError: Error, LocalizedError {
   }
 }
 
-public final class FBCodesignProvider {
+public final class CodesignProvider {
 
   public let identityName: String
   private let logger: FBControlCoreLogger?

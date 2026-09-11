@@ -438,32 +438,32 @@ public struct FBSimulatorApplicationCommands: ApplicationCommands {
   private static let keyDataContainer = "DataContainer"
 
   private static func installedApplication(fromInfo appInfo: [String: Any]) throws -> FBInstalledApplication {
-    guard let appName = appInfo[FBApplicationInstallInfoKey.bundleName.rawValue] as? String else {
+    guard let appName = appInfo[ApplicationInstallInfoKey.bundleName.rawValue] as? String else {
       throw SimulatorApplicationLookupError.installInfoFieldNotAString(
         field: "Bundle Name",
-        value: String(describing: appInfo[FBApplicationInstallInfoKey.bundleName.rawValue] ?? "nil"),
-        key: FBApplicationInstallInfoKey.bundleName.rawValue,
+        value: String(describing: appInfo[ApplicationInstallInfoKey.bundleName.rawValue] ?? "nil"),
+        key: ApplicationInstallInfoKey.bundleName.rawValue,
         info: String(describing: appInfo))
     }
-    guard let _ = appInfo[FBApplicationInstallInfoKey.bundleIdentifier.rawValue] as? String else {
+    guard let _ = appInfo[ApplicationInstallInfoKey.bundleIdentifier.rawValue] as? String else {
       throw SimulatorApplicationLookupError.installInfoFieldNotAString(
         field: "Bundle Identifier",
-        value: String(describing: appInfo[FBApplicationInstallInfoKey.bundleIdentifier.rawValue] ?? "nil"),
-        key: FBApplicationInstallInfoKey.bundleIdentifier.rawValue,
+        value: String(describing: appInfo[ApplicationInstallInfoKey.bundleIdentifier.rawValue] ?? "nil"),
+        key: ApplicationInstallInfoKey.bundleIdentifier.rawValue,
         info: String(describing: appInfo))
     }
-    guard let appPath = appInfo[FBApplicationInstallInfoKey.path.rawValue] as? String else {
+    guard let appPath = appInfo[ApplicationInstallInfoKey.path.rawValue] as? String else {
       throw SimulatorApplicationLookupError.installInfoFieldNotAString(
         field: "App Path",
-        value: String(describing: appInfo[FBApplicationInstallInfoKey.path.rawValue] ?? "nil"),
-        key: FBApplicationInstallInfoKey.path.rawValue,
+        value: String(describing: appInfo[ApplicationInstallInfoKey.path.rawValue] ?? "nil"),
+        key: ApplicationInstallInfoKey.path.rawValue,
         info: String(describing: appInfo))
     }
-    guard let typeString = appInfo[FBApplicationInstallInfoKey.applicationType.rawValue] as? String else {
+    guard let typeString = appInfo[ApplicationInstallInfoKey.applicationType.rawValue] as? String else {
       throw SimulatorApplicationLookupError.installInfoFieldNotAString(
         field: "Install Type",
-        value: String(describing: appInfo[FBApplicationInstallInfoKey.applicationType.rawValue] ?? "nil"),
-        key: FBApplicationInstallInfoKey.applicationType.rawValue,
+        value: String(describing: appInfo[ApplicationInstallInfoKey.applicationType.rawValue] ?? "nil"),
+        key: ApplicationInstallInfoKey.applicationType.rawValue,
         info: String(describing: appInfo))
     }
     let dataContainer = appInfo[keyDataContainer]

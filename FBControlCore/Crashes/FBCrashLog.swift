@@ -25,10 +25,10 @@ public struct CrashLogInfoProcessType: OptionSet, Sendable {
 
 public final class FBCrashLog: CustomStringConvertible {
 
-  public let info: FBCrashLogInfo
+  public let info: CrashLogInfo
   public let contents: String
 
-  public init(info: FBCrashLogInfo, contents: String) {
+  public init(info: CrashLogInfo, contents: String) {
     self.info = info
     self.contents = contents
   }
@@ -86,7 +86,7 @@ extension CrashLogError: LocalizedError {
   }
 }
 
-public final class FBCrashLogInfo: CustomStringConvertible {
+public final class CrashLogInfo: CustomStringConvertible {
 
   // MARK: - Properties
 
@@ -134,7 +134,7 @@ public final class FBCrashLogInfo: CustomStringConvertible {
 
   // MARK: - Factory Methods
 
-  public class func fromCrashLog(atPath crashPath: String) throws -> FBCrashLogInfo {
+  public class func fromCrashLog(atPath crashPath: String) throws -> CrashLogInfo {
     let fileManager = FileManager.default
     if !fileManager.fileExists(atPath: crashPath) {
       throw CrashLogError.fileDoesNotExist(path: crashPath)
@@ -187,8 +187,8 @@ public final class FBCrashLogInfo: CustomStringConvertible {
 
   // MARK: - Bulk Collection
 
-  public class func crashInfo(afterDate date: Date, logger: FBControlCoreLogger?) -> [FBCrashLogInfo] {
-    var allCrashInfos: [FBCrashLogInfo] = []
+  public class func crashInfo(afterDate date: Date, logger: FBControlCoreLogger?) -> [CrashLogInfo] {
+    var allCrashInfos: [CrashLogInfo] = []
 
     for basePath in diagnosticReportsPaths {
       let fileNames = (try? FileManager.default.contentsOfDirectory(atPath: basePath)) ?? []
@@ -202,14 +202,14 @@ public final class FBCrashLogInfo: CustomStringConvertible {
           }
           let path = (basePath as NSString).appendingPathComponent(fileName)
           do {
-            return try FBCrashLogInfo.fromCrashLog(atPath: path)
+            return try CrashLogInfo.fromCrashLog(atPath: path)
           } catch {
             logger?.log("Error parsing log \(error)")
             return NSNull()
           }
         }
       )
-      allCrashInfos.append(contentsOf: crashInfos.compactMap { $0 as? FBCrashLogInfo })
+      allCrashInfos.append(contentsOf: crashInfos.compactMap { $0 as? CrashLogInfo })
     }
 
     return allCrashInfos
@@ -231,14 +231,14 @@ public final class FBCrashLogInfo: CustomStringConvertible {
 
   public class func predicateForCrashLogs(withProcessID processID: pid_t) -> NSPredicate {
     NSPredicate { evaluatedObject, _ in
-      guard let crashLog = evaluatedObject as? FBCrashLogInfo else { return false }
+      guard let crashLog = evaluatedObject as? CrashLogInfo else { return false }
       return crashLog.processIdentifier == processID
     }
   }
 
   public class func predicateNewer(thanDate date: Date) -> NSPredicate {
     NSPredicate { evaluatedObject, _ in
-      guard let crashLog = evaluatedObject as? FBCrashLogInfo else { return false }
+      guard let crashLog = evaluatedObject as? CrashLogInfo else { return false }
       return date.compare(crashLog.date) == .orderedAscending
     }
   }
@@ -249,21 +249,21 @@ public final class FBCrashLogInfo: CustomStringConvertible {
 
   public class func predicate(forIdentifier identifier: String) -> NSPredicate {
     NSPredicate { evaluatedObject, _ in
-      guard let crashLog = evaluatedObject as? FBCrashLogInfo else { return false }
+      guard let crashLog = evaluatedObject as? CrashLogInfo else { return false }
       return identifier == crashLog.identifier
     }
   }
 
   public class func predicate(forName name: String) -> NSPredicate {
     NSPredicate { evaluatedObject, _ in
-      guard let crashLog = evaluatedObject as? FBCrashLogInfo else { return false }
+      guard let crashLog = evaluatedObject as? CrashLogInfo else { return false }
       return name == crashLog.name
     }
   }
 
   public class func predicate(forExecutablePathContains contains: String) -> NSPredicate {
     NSPredicate { evaluatedObject, _ in
-      guard let crashLog = evaluatedObject as? FBCrashLogInfo else { return false }
+      guard let crashLog = evaluatedObject as? CrashLogInfo else { return false }
       return crashLog.executablePath.contains(contains)
     }
   }
@@ -285,7 +285,7 @@ public final class FBCrashLogInfo: CustomStringConvertible {
     }
   }
 
-  private class func fromCrashLogString(_ crashString: String, crashPath: String, parser: CrashLogParser) throws -> FBCrashLogInfo {
+  private class func fromCrashLogString(_ crashString: String, crashPath: String, parser: CrashLogParser) throws -> CrashLogInfo {
     var executablePath: NSString = NSString()
     var identifier: NSString = NSString()
     var processName: NSString = NSString()
@@ -343,7 +343,7 @@ public final class FBCrashLogInfo: CustomStringConvertible {
     let exceptionDescStr = exceptionDescription as String
     let crashedThreadDescStr = crashedThreadDescription as String
 
-    return FBCrashLogInfo(
+    return CrashLogInfo(
       crashPath: crashPath,
       executablePath: executablePathStr,
       identifier: identifierStr,

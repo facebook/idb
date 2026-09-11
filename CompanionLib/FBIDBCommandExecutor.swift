@@ -386,7 +386,7 @@ public final class FBIDBCommandExecutor {
     return try await target.application.launch(derived)
   }
 
-  public func crash_list(_ predicate: NSPredicate) async throws -> [FBCrashLogInfo] {
+  public func crash_list(_ predicate: NSPredicate) async throws -> [CrashLogInfo] {
     return try await target.crashLog.crashes(matching: predicate, useCache: false)
   }
 
@@ -401,7 +401,7 @@ public final class FBIDBCommandExecutor {
     return try first.obtainCrashLog()
   }
 
-  public func crash_delete(_ predicate: NSPredicate) async throws -> [FBCrashLogInfo] {
+  public func crash_delete(_ predicate: NSPredicate) async throws -> [CrashLogInfo] {
     return try await target.crashLog.pruneCrashes(matching: predicate)
   }
 

@@ -120,13 +120,13 @@ final class XCTestProcess {
       .retyped(FBFuture<NSNumber>.self)
   }
 
-  private static func crashLogs(forTerminationOfProcess process: FBSubprocess<AnyObject, AnyObject, AnyObject>, since sinceDate: Date, crashLogCommands: any CrashLogCommands, crashLogWaitTime: TimeInterval, queue: DispatchQueue) -> FBFuture<FBCrashLogInfo> {
+  private static func crashLogs(forTerminationOfProcess process: FBSubprocess<AnyObject, AnyObject, AnyObject>, since sinceDate: Date, crashLogCommands: any CrashLogCommands, crashLogWaitTime: TimeInterval, queue: DispatchQueue) -> FBFuture<CrashLogInfo> {
     let predicate = NSCompoundPredicate(andPredicateWithSubpredicates: [
-      FBCrashLogInfo.predicateForCrashLogs(withProcessID: process.processIdentifier),
-      FBCrashLogInfo.predicateNewer(thanDate: sinceDate),
+      CrashLogInfo.predicateForCrashLogs(withProcessID: process.processIdentifier),
+      CrashLogInfo.predicateNewer(thanDate: sinceDate),
     ])
 
-    let notify: FBFuture<FBCrashLogInfo> = fbFutureFromAsync {
+    let notify: FBFuture<CrashLogInfo> = fbFutureFromAsync {
       try await crashLogCommands.notifyOfCrash(matching: predicate)
     }
     return
@@ -137,6 +137,6 @@ final class XCTestProcess {
           FBFuture<AnyObject>(error: XCTestProcessError.crashLogTimedOut(processIdentifier: process.processIdentifier))
         }
       )
-      .retyped(FBFuture<FBCrashLogInfo>.self)
+      .retyped(FBFuture<CrashLogInfo>.self)
   }
 }

@@ -19,7 +19,7 @@ struct CrashShowMethodHandler {
       throw GRPCStatus(code: .invalidArgument, message: "Missing crash name")
     }
 
-    let predicate = FBCrashLogInfo.predicate(forName: request.name)
+    let predicate = CrashLogInfo.predicate(forName: request.name)
     let crash = try await commandExecutor.crash_show(predicate)
     return .with {
       $0.info = CrashLogInfoValueTransformer.responseCrashLogInfo(from: crash.info)

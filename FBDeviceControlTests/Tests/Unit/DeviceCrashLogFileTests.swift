@@ -55,7 +55,7 @@ struct DeviceCrashLogFileTests {
     return device
   }
 
-  private func allCrashes(_ device: FBDevice) async throws -> [FBCrashLogInfo] {
+  private func allCrashes(_ device: FBDevice) async throws -> [CrashLogInfo] {
     try await device.crashLog.crashes(matching: NSPredicate(value: true), useCache: false)
   }
 

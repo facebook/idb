@@ -29,8 +29,8 @@ public final class CrashLogStore {
 
   // MARK: - Ingestion
 
-  @discardableResult public func ingestAllExistingInDirectory() -> [FBCrashLogInfo] {
-    var ingested: [FBCrashLogInfo] = []
+  @discardableResult public func ingestAllExistingInDirectory() -> [CrashLogInfo] {
+    var ingested: [CrashLogInfo] = []
     for directory in directories {
       let crashLogs = ingestCrashLogInDirectory(directory)
       ingested.append(contentsOf: crashLogs)
@@ -38,22 +38,22 @@ public final class CrashLogStore {
     return ingested
   }
 
-  func ingestCrashLog(atPath path: String) -> FBCrashLogInfo? {
+  func ingestCrashLog(atPath path: String) -> CrashLogInfo? {
     if hasIngestedCrashLog(withName: (path as NSString).lastPathComponent) {
       return nil
     }
-    guard let crashLog = try? FBCrashLogInfo.fromCrashLog(atPath: path) else {
+    guard let crashLog = try? CrashLogInfo.fromCrashLog(atPath: path) else {
       logger.log("Could not obtain crash info for \(path)")
       return nil
     }
     return ingestCrashLog(crashLog)
   }
 
-  public func ingestCrashLogData(_ data: Data, name: String) -> FBCrashLogInfo? {
+  public func ingestCrashLogData(_ data: Data, name: String) -> CrashLogInfo? {
     if hasIngestedCrashLog(withName: name) {
       return nil
     }
-    if !FBCrashLogInfo.isParsableCrashLog(data) {
+    if !CrashLogInfo.isParsableCrashLog(data) {
       return nil
     }
     for directory in directories {
@@ -71,7 +71,7 @@ public final class CrashLogStore {
     return nil
   }
 
-  func removeCrashLog(atPath path: String) -> FBCrashLogInfo? {
+  func removeCrashLog(atPath path: String) -> CrashLogInfo? {
     let key = (path as NSString).lastPathComponent
     guard let crashLog = ingestedCrashLog(withName: key) else {
       return nil
@@ -82,15 +82,15 @@ public final class CrashLogStore {
 
   // MARK: - Fetching
 
-  public func ingestedCrashLog(withName name: String) -> FBCrashLogInfo? {
-    return ingestedCrashLogs[name] as? FBCrashLogInfo
+  public func ingestedCrashLog(withName name: String) -> CrashLogInfo? {
+    return ingestedCrashLogs[name] as? CrashLogInfo
   }
 
-  func allIngestedCrashLogs() -> [FBCrashLogInfo] {
-    return ingestedCrashLogs.allValues.compactMap { $0 as? FBCrashLogInfo }
+  func allIngestedCrashLogs() -> [CrashLogInfo] {
+    return ingestedCrashLogs.allValues.compactMap { $0 as? CrashLogInfo }
   }
 
-  public func nextCrashLog(forMatchingPredicate predicate: NSPredicate) async throws -> FBCrashLogInfo {
+  public func nextCrashLog(forMatchingPredicate predicate: NSPredicate) async throws -> CrashLogInfo {
     let holder = ObserverHolder()
     nonisolated(unsafe) let predicateRef = predicate
     let box = try await withTaskCancellationHandler {
@@ -100,7 +100,7 @@ public final class CrashLogStore {
           object: nil,
           queue: .main
         ) { notification in
-          guard let crashLog = notification.object as? FBCrashLogInfo else { return }
+          guard let crashLog = notification.object as? CrashLogInfo else { return }
           if !predicateRef.evaluate(with: crashLog) { return }
           if let obs = holder.observer {
             NotificationCenter.default.removeObserver(obs)
@@ -117,13 +117,13 @@ public final class CrashLogStore {
     return box.value
   }
 
-  public func ingestedCrashLogs(matchingPredicate predicate: NSPredicate) -> [FBCrashLogInfo] {
+  public func ingestedCrashLogs(matchingPredicate predicate: NSPredicate) -> [CrashLogInfo] {
     return allIngestedCrashLogs().filter(predicate.evaluate(with:))
   }
 
-  public func pruneCrashLogs(matchingPredicate predicate: NSPredicate) -> [FBCrashLogInfo] {
+  public func pruneCrashLogs(matchingPredicate predicate: NSPredicate) -> [CrashLogInfo] {
     var keys: [String] = []
-    var crashLogs: [FBCrashLogInfo] = []
+    var crashLogs: [CrashLogInfo] = []
     for crashLog in allIngestedCrashLogs() {
       if !predicate.evaluate(with: crashLog) {
         continue
@@ -139,7 +139,7 @@ public final class CrashLogStore {
     return ingestedCrashLogs[key] != nil
   }
 
-  private func ingestCrashLog(_ crashLog: FBCrashLogInfo) -> FBCrashLogInfo {
+  private func ingestCrashLog(_ crashLog: CrashLogInfo) -> CrashLogInfo {
     logger.log("Ingesting Crash Log \(crashLog)")
     ingestedCrashLogs[crashLog.name] = crashLog
     NotificationCenter.default.post(name: FBCrashLogAppeared, object: crashLog)
@@ -151,15 +151,15 @@ public final class CrashLogStore {
   }
 
   private final class CrashLogResultBox: @unchecked Sendable {
-    let value: FBCrashLogInfo
-    init(_ value: FBCrashLogInfo) { self.value = value }
+    let value: CrashLogInfo
+    init(_ value: CrashLogInfo) { self.value = value }
   }
 
-  private func ingestCrashLogInDirectory(_ directory: String) -> [FBCrashLogInfo] {
+  private func ingestCrashLogInDirectory(_ directory: String) -> [CrashLogInfo] {
     guard let contents = try? FileManager.default.contentsOfDirectory(atPath: directory) else {
       return []
     }
-    var ingested: [FBCrashLogInfo] = []
+    var ingested: [CrashLogInfo] = []
     for path in contents {
       if let crash = ingestCrashLog(atPath: (directory as NSString).appendingPathComponent(path)) {
         ingested.append(crash)

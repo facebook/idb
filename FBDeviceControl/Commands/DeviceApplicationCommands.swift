@@ -221,7 +221,7 @@ public final class DeviceApplicationCommands: ApplicationCommands {
     let bundleIdentifierToAttributes = try await installedApplicationsData(Self.namingLookupAttributes)
     var bundleNameToBundleIdentifier: [String: String] = [:]
     for (bundleIdentifier, attributes) in bundleIdentifierToAttributes {
-      if let bundleName = attributes[FBApplicationInstallInfoKey.bundleName.rawValue] as? String {
+      if let bundleName = attributes[ApplicationInstallInfoKey.bundleName.rawValue] as? String {
         bundleNameToBundleIdentifier[bundleName] = bundleIdentifier
       }
     }
@@ -362,32 +362,32 @@ public final class DeviceApplicationCommands: ApplicationCommands {
   }
 
   private static func installedApplication(from app: [String: Any]) throws -> FBInstalledApplication {
-    let bundleName = app[FBApplicationInstallInfoKey.bundleName.rawValue] as? String ?? ""
-    let path = app[FBApplicationInstallInfoKey.path.rawValue] as? String ?? ""
-    guard let bundleID = app[FBApplicationInstallInfoKey.bundleIdentifier.rawValue] as? String else {
-      throw DeviceApplicationError.missingBundleIdentifier(key: FBApplicationInstallInfoKey.bundleIdentifier.rawValue, application: String(describing: app))
+    let bundleName = app[ApplicationInstallInfoKey.bundleName.rawValue] as? String ?? ""
+    let path = app[ApplicationInstallInfoKey.path.rawValue] as? String ?? ""
+    guard let bundleID = app[ApplicationInstallInfoKey.bundleIdentifier.rawValue] as? String else {
+      throw DeviceApplicationError.missingBundleIdentifier(key: ApplicationInstallInfoKey.bundleIdentifier.rawValue, application: String(describing: app))
     }
 
     let bundle = FBBundleDescriptor(name: bundleName, identifier: bundleID, path: path, binary: nil)
 
     return FBInstalledApplication.installedApplication(
       withBundle: bundle,
-      installTypeString: app[FBApplicationInstallInfoKey.applicationType.rawValue] as? String ?? "",
-      signerIdentity: app[FBApplicationInstallInfoKey.signerIdentity.rawValue] as? String ?? "",
+      installTypeString: app[ApplicationInstallInfoKey.applicationType.rawValue] as? String ?? "",
+      signerIdentity: app[ApplicationInstallInfoKey.signerIdentity.rawValue] as? String ?? "",
       dataContainer: nil
     )
   }
 
   private static let installedApplicationLookupAttributes: [String] = [
-    FBApplicationInstallInfoKey.applicationType.rawValue,
-    FBApplicationInstallInfoKey.bundleIdentifier.rawValue,
-    FBApplicationInstallInfoKey.bundleName.rawValue,
-    FBApplicationInstallInfoKey.path.rawValue,
-    FBApplicationInstallInfoKey.signerIdentity.rawValue,
+    ApplicationInstallInfoKey.applicationType.rawValue,
+    ApplicationInstallInfoKey.bundleIdentifier.rawValue,
+    ApplicationInstallInfoKey.bundleName.rawValue,
+    ApplicationInstallInfoKey.path.rawValue,
+    ApplicationInstallInfoKey.signerIdentity.rawValue,
   ]
 
   private static let namingLookupAttributes: [String] = [
-    FBApplicationInstallInfoKey.bundleIdentifier.rawValue,
-    FBApplicationInstallInfoKey.bundleName.rawValue,
+    ApplicationInstallInfoKey.bundleIdentifier.rawValue,
+    ApplicationInstallInfoKey.bundleName.rawValue,
   ]
 }

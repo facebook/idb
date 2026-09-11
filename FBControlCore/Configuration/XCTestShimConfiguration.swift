@@ -76,7 +76,7 @@ public struct XCTestShimConfiguration: Sendable {
     guard shim.codesigningRequired else {
       return shimPath
     }
-    let codesign = FBCodesignProvider.codeSignCommand(withIdentityName: "-", logger: nil)
+    let codesign = CodesignProvider.codeSignCommand(withIdentityName: "-", logger: nil)
     do {
       _ = try await codesign.cdHashForBundle(atPath: shimPath)
     } catch {

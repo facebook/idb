@@ -58,7 +58,7 @@ public struct FBBundleDescriptor: Hashable, Sendable, CustomStringConvertible {
     "Name: \(name) | ID: \(identifier)"
   }
 
-  public func updatePathsForRelocation(withCodesign codesign: FBCodesignProvider, logger: FBControlCoreLogger) async throws {
+  public func updatePathsForRelocation(withCodesign codesign: CodesignProvider, logger: FBControlCoreLogger) async throws {
     let replacements = try replacementsForBinary()
     if !replacements.isEmpty {
       var arguments: [String] = []

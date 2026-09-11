@@ -196,7 +196,7 @@ public final class SimulatorXCTestCommands: XCTestExtendedCommands {
       withTarget: simulator,
       configuration: testLaunchConfiguration,
       codesign: FBControlCoreGlobalConfiguration.confirmCodesignaturesAreValid
-        ? FBCodesignProvider.codeSignCommand(withIdentityName: "-", logger: simulator.logger)
+        ? CodesignProvider.codeSignCommand(withIdentityName: "-", logger: simulator.logger)
         : nil,
       workingDirectory: simulator.auxillaryDirectory,
       reporter: reporter,

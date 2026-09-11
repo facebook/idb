@@ -63,7 +63,7 @@ public final class DeviceCrashLogCommands: CrashLogCommands {
 
   // MARK: - Notify
 
-  public func notifyOfCrash(matching predicate: NSPredicate) async throws -> FBCrashLogInfo {
+  public func notifyOfCrash(matching predicate: NSPredicate) async throws -> CrashLogInfo {
     // Start listening for the next matching crash log first, then kick off ingestion as a
     // fire-and-forget background job: a log ingested before the listener is installed is not
     // reported.
@@ -78,7 +78,7 @@ public final class DeviceCrashLogCommands: CrashLogCommands {
 
   // MARK: - Async
 
-  public func crashes(matching predicate: NSPredicate, useCache: Bool) async throws -> [FBCrashLogInfo] {
+  public func crashes(matching predicate: NSPredicate, useCache: Bool) async throws -> [CrashLogInfo] {
     guard device != nil else {
       throw DeviceNilError.deviceNil
     }
@@ -86,7 +86,7 @@ public final class DeviceCrashLogCommands: CrashLogCommands {
     return store.ingestedCrashLogs(matchingPredicate: predicate)
   }
 
-  public func pruneCrashes(matching predicate: NSPredicate) async throws -> [FBCrashLogInfo] {
+  public func pruneCrashes(matching predicate: NSPredicate) async throws -> [CrashLogInfo] {
     guard let device else {
       throw DeviceNilError.deviceNil
     }
@@ -110,7 +110,7 @@ public final class DeviceCrashLogCommands: CrashLogCommands {
   // MARK: - Private
 
   @discardableResult
-  private func ingestAllCrashLogs(useCache: Bool) async throws -> [FBCrashLogInfo] {
+  private func ingestAllCrashLogs(useCache: Bool) async throws -> [CrashLogInfo] {
     if hasPerformedInitialIngestion && useCache {
       return []
     }
@@ -125,7 +125,7 @@ public final class DeviceCrashLogCommands: CrashLogCommands {
         self.hasPerformedInitialIngestion = true
       }
       let paths = try afc.contents(ofDirectory: ".")
-      var crashes: [FBCrashLogInfo] = []
+      var crashes: [CrashLogInfo] = []
       for path in paths {
         do {
           let crash = try self.crashLogInfo(afc: afc, path: path)
@@ -138,12 +138,12 @@ public final class DeviceCrashLogCommands: CrashLogCommands {
     }
   }
 
-  private func removeCrashLogsFromDevice(_ crashesToRemove: [FBCrashLogInfo], logger: (any FBControlCoreLogger)?) async throws -> [FBCrashLogInfo] {
+  private func removeCrashLogsFromDevice(_ crashesToRemove: [CrashLogInfo], logger: (any FBControlCoreLogger)?) async throws -> [CrashLogInfo] {
     guard device != nil else {
       throw DeviceNilError.deviceNil
     }
     return try await withCrashReportFileConnection { afc in
-      var removed: [FBCrashLogInfo] = []
+      var removed: [CrashLogInfo] = []
       for crash in crashesToRemove {
         do {
           try afc.removePath(crash.name, recursively: false)
@@ -157,7 +157,7 @@ public final class DeviceCrashLogCommands: CrashLogCommands {
     }
   }
 
-  private func crashLogInfo(afc: FBAFCConnection, path: String) throws -> FBCrashLogInfo {
+  private func crashLogInfo(afc: FBAFCConnection, path: String) throws -> CrashLogInfo {
     let name = path
     if let existing = store.ingestedCrashLog(withName: path) {
       device?.logger.log("No need to re-ingest \(path)")

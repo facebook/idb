@@ -12,7 +12,7 @@
 
 #import <FBControlCore/FBFuture.h>
 
-@protocol FBSocketServerDelegate;
+@protocol SocketServerDelegate;
 
 /**
  A Generic Socket Server.
@@ -28,7 +28,7 @@
  @param delegate the delegate to use.
  @return a new socket server.
  */
-+ (nonnull instancetype)socketServerOnPort:(in_port_t)port delegate:(nonnull id<FBSocketServerDelegate>)delegate;
++ (nonnull instancetype)socketServerOnPort:(in_port_t)port delegate:(nonnull id<SocketServerDelegate>)delegate;
 
 #pragma mark Properties
 

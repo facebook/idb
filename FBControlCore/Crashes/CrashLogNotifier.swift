@@ -10,22 +10,22 @@ import Foundation
 /// The pause between crash-log scans, matching `AsyncPolling`'s default cadence.
 private let CrashLogPollInterval: UInt64 = 100 * NSEC_PER_MSEC
 
-public final class FBCrashLogNotifier {
+public final class CrashLogNotifier {
 
   public let store: CrashLogStore
   internal var sinceDate: Date
 
   internal init(logger: any FBControlCoreLogger) {
-    self.store = CrashLogStore.store(forDirectories: FBCrashLogInfo.diagnosticReportsPaths, logger: logger)
+    self.store = CrashLogStore.store(forDirectories: CrashLogInfo.diagnosticReportsPaths, logger: logger)
     self.sinceDate = Date()
   }
 
-  public class var sharedInstance: FBCrashLogNotifier {
+  public class var sharedInstance: CrashLogNotifier {
     _sharedInstance
   }
 
-  nonisolated(unsafe) private static let _sharedInstance: FBCrashLogNotifier = {
-    FBCrashLogNotifier(logger: FBControlCoreGlobalConfiguration.defaultLogger)
+  nonisolated(unsafe) private static let _sharedInstance: CrashLogNotifier = {
+    CrashLogNotifier(logger: FBControlCoreGlobalConfiguration.defaultLogger)
   }()
 
   // MARK: - Notifications
@@ -39,14 +39,14 @@ public final class FBCrashLogNotifier {
   /// cancellation stops the poll. Each pass is a synchronous `concurrentPerform` scan that blocks the
   /// calling thread, so the sleep between passes is what keeps a cooperative-pool worker from being
   /// held continuously.
-  public func nextCrashLog(forPredicate predicate: NSPredicate) async throws -> FBCrashLogInfo {
+  public func nextCrashLog(forPredicate predicate: NSPredicate) async throws -> CrashLogInfo {
     _ = startListening(true)
     while true {
       try Task.checkCancellation()
       let crashInfo =
-        (FBCrashLogInfo.crashInfo(afterDate: sinceDate, logger: nil) as NSArray)
+        (CrashLogInfo.crashInfo(afterDate: sinceDate, logger: nil) as NSArray)
         .filtered(using: predicate)
-        .first as? FBCrashLogInfo
+        .first as? CrashLogInfo
       if let crashInfo {
         _ = store.ingestCrashLog(atPath: crashInfo.crashPath)
         return crashInfo

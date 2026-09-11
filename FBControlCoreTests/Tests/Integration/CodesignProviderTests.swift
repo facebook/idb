@@ -9,7 +9,7 @@
 import Foundation
 import Testing
 
-/// Pins what `FBCodesignProvider` gets out of `/usr/bin/codesign`: which stream each
+/// Pins what `CodesignProvider` gets out of `/usr/bin/codesign`: which stream each
 /// value is read from, how a non-zero exit reaches the caller, and the permission
 /// fixup that runs before the tool does.
 ///
@@ -17,7 +17,7 @@ import Testing
 /// today so that a later replacement has to either reproduce it or change it
 /// deliberately.
 @Suite
-struct FBCodesignProviderTests {
+struct CodesignProviderTests {
 
   // MARK: - Fixtures
 
@@ -28,7 +28,7 @@ struct FBCodesignProviderTests {
 
   private static func makeTemporaryDirectory() throws -> URL {
     let url = URL(fileURLWithPath: NSTemporaryDirectory())
-      .appendingPathComponent("FBCodesignProviderTests-\(UUID().uuidString)", isDirectory: true)
+      .appendingPathComponent("CodesignProviderTests-\(UUID().uuidString)", isDirectory: true)
     try FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
     return url
   }
@@ -53,8 +53,8 @@ struct FBCodesignProviderTests {
     return bundle
   }
 
-  private static func adHocProvider() -> FBCodesignProvider {
-    FBCodesignProvider.codeSignCommandWithAdHocIdentity(logger: nil)
+  private static func adHocProvider() -> CodesignProvider {
+    CodesignProvider.codeSignCommandWithAdHocIdentity(logger: nil)
   }
 
   private static func posixPermissions(of path: String) throws -> Int16 {

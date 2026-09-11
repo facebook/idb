@@ -31,17 +31,17 @@ private let installTypeStringUserDevelopment = "user_development"
 }
 
 /// Keys of the application info dictionary.
-public struct FBApplicationInstallInfoKey: RawRepresentable, Hashable, Sendable {
+public struct ApplicationInstallInfoKey: RawRepresentable, Hashable, Sendable {
   public let rawValue: String
   public init(rawValue: String) {
     self.rawValue = rawValue
   }
 
-  public static let applicationType = FBApplicationInstallInfoKey(rawValue: "ApplicationType")
-  public static let bundleIdentifier = FBApplicationInstallInfoKey(rawValue: "CFBundleIdentifier")
-  public static let bundleName = FBApplicationInstallInfoKey(rawValue: "CFBundleName")
-  public static let path = FBApplicationInstallInfoKey(rawValue: "Path")
-  public static let signerIdentity = FBApplicationInstallInfoKey(rawValue: "SignerIdentity")
+  public static let applicationType = ApplicationInstallInfoKey(rawValue: "ApplicationType")
+  public static let bundleIdentifier = ApplicationInstallInfoKey(rawValue: "CFBundleIdentifier")
+  public static let bundleName = ApplicationInstallInfoKey(rawValue: "CFBundleName")
+  public static let path = ApplicationInstallInfoKey(rawValue: "Path")
+  public static let signerIdentity = ApplicationInstallInfoKey(rawValue: "SignerIdentity")
 }
 
 public struct FBInstalledApplication: Hashable, Sendable, CustomStringConvertible {

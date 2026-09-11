@@ -57,7 +57,7 @@ struct TestRunnerConfiguration {
 
   // MARK: - Public
 
-  public static func prepareConfiguration(withTarget target: any XCTestExtendedTarget, testLaunchConfiguration: TestLaunchConfiguration, workingDirectory: String, codesign: FBCodesignProvider?) async throws -> TestRunnerConfiguration {
+  public static func prepareConfiguration(withTarget target: any XCTestExtendedTarget, testLaunchConfiguration: TestLaunchConfiguration, workingDirectory: String, codesign: CodesignProvider?) async throws -> TestRunnerConfiguration {
     if let codesign {
       do {
         _ = try await codesign.cdHashForBundle(atPath: testLaunchConfiguration.testBundle.path)

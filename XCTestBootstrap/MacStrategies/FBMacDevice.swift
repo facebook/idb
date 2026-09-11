@@ -520,15 +520,15 @@ extension FBMacDevice: ApplicationCommands {
 
 extension FBMacDevice: CrashLogCommands {
 
-  public func crashes(matching predicate: NSPredicate, useCache: Bool) async throws -> [FBCrashLogInfo] {
+  public func crashes(matching predicate: NSPredicate, useCache: Bool) async throws -> [CrashLogInfo] {
     throw MacDeviceError.notImplemented(selector: "crashes:useCache:")
   }
 
-  public func notifyOfCrash(matching predicate: NSPredicate) async throws -> FBCrashLogInfo {
-    try await FBCrashLogNotifier.sharedInstance.nextCrashLog(forPredicate: predicate)
+  public func notifyOfCrash(matching predicate: NSPredicate) async throws -> CrashLogInfo {
+    try await CrashLogNotifier.sharedInstance.nextCrashLog(forPredicate: predicate)
   }
 
-  public func pruneCrashes(matching predicate: NSPredicate) async throws -> [FBCrashLogInfo] {
+  public func pruneCrashes(matching predicate: NSPredicate) async throws -> [CrashLogInfo] {
     throw MacDeviceError.notImplemented(selector: "pruneCrashes:")
   }
 

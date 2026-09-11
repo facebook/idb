@@ -186,7 +186,7 @@ public class BundleStorage: IDBStorage {
       return artifact
     }
     let updatedBundle = try FBBundleDescriptor.bundle(fromPath: destinationBundlePath.path)
-    let provider = FBCodesignProvider.codeSignCommand(withIdentityName: "-", logger: logger)
+    let provider = CodesignProvider.codeSignCommand(withIdentityName: "-", logger: logger)
     try await updatedBundle.updatePathsForRelocation(withCodesign: provider, logger: logger)
     return artifact
   }
