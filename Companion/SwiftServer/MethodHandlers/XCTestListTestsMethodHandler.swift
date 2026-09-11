@@ -14,7 +14,7 @@ import IDBGRPCSwift
 
 struct XCTestListTestsMethodHandler {
 
-  let commandExecutor: FBIDBCommandExecutor
+  let commandExecutor: IDBCommandExecutor
 
   func handle(request: Idb_XctestListTestsRequest, context: GRPCAsyncServerCallContext) async throws -> Idb_XctestListTestsResponse {
     let tests = try await commandExecutor.list_tests_in_bundle(request.bundleName, with_app: request.appPath)

@@ -12,7 +12,7 @@ import IDBGRPCSwift
 
 struct SimulateMemoryWarningMethodHandler {
 
-  let commandExecutor: FBIDBCommandExecutor
+  let commandExecutor: IDBCommandExecutor
 
   func handle(request: Idb_SimulateMemoryWarningRequest, context: GRPCAsyncServerCallContext) async throws -> Idb_SimulateMemoryWarningResponse {
     try await commandExecutor.simulateMemoryWarning()

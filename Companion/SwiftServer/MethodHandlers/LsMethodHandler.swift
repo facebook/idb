@@ -13,7 +13,7 @@ import IDBGRPCSwift
 
 struct LsMethodHandler {
 
-  let commandExecutor: FBIDBCommandExecutor
+  let commandExecutor: IDBCommandExecutor
 
   /// One-line result summary for the completion log, so directory listings
   /// report how much they returned without dumping the entries.

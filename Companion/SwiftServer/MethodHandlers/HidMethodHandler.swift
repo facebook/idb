@@ -13,7 +13,7 @@ import IDBGRPCSwift
 
 struct HidMethodHandler {
 
-  let commandExecutor: FBIDBCommandExecutor
+  let commandExecutor: IDBCommandExecutor
 
   func handle(requestStream: RequestStreamReader<Idb_HIDEvent>, context: GRPCAsyncServerCallContext) async throws -> Idb_HIDResponse {
     for try await request in requestStream {

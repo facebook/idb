@@ -13,7 +13,7 @@ import IDBGRPCSwift
 import XCTest
 
 /// Records the options the handler hands the command executor, so a test can read them without a
-/// simulator. `FBIDBCommandExecutor` is a `public final class`; `AccessibilityDescribing` is the seam
+/// simulator. `IDBCommandExecutor` is a `public final class`; `AccessibilityDescribing` is the seam
 /// the handler is written against, and this double stands in for it.
 private final class RecordingAccessibilityExecutor: AccessibilityDescribing {
   private(set) var describeOptions: FBAccessibilityRequestOptions?

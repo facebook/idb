@@ -12,7 +12,7 @@ import IDBGRPCSwift
 
 struct MvMethodHandler {
 
-  let commandExecutor: FBIDBCommandExecutor
+  let commandExecutor: IDBCommandExecutor
 
   func handle(request: Idb_MvRequest, context: GRPCAsyncServerCallContext) async throws -> Idb_MvResponse {
     let fileContainer = FileContainerValueTransformer.rawFileContainer(from: request.container)

@@ -363,10 +363,10 @@ private func runActivate(_ ecid: String, logger: FBControlCoreLogger) async thro
   try await device.activation.activate()
 }
 
-private func runClean(_ udid: String, userDefaults: UserDefaults, xcodeAvailable: Bool, logger: FBIDBLogger) async throws {
+private func runClean(_ udid: String, userDefaults: UserDefaults, xcodeAvailable: Bool, logger: IDBLogger) async throws {
   let target = try await targetForUDID(udid, userDefaults: userDefaults, xcodeAvailable: xcodeAvailable, warmUp: true, logger: logger)
-  let storageManager = try FBIDBStorageManager.manager(forTarget: target, logger: logger)
-  let commandExecutor = FBIDBCommandExecutor.commandExecutor(
+  let storageManager = try IDBStorageManager.manager(forTarget: target, logger: logger)
+  let commandExecutor = IDBCommandExecutor.commandExecutor(
     forTarget: target,
     storageManager: storageManager,
     temporaryDirectory: FBTemporaryDirectory(logger: logger),
@@ -376,7 +376,7 @@ private func runClean(_ udid: String, userDefaults: UserDefaults, xcodeAvailable
   try await commandExecutor.clean()
 }
 
-private func runCompanionServer(_ udid: String, userDefaults: UserDefaults, xcodeAvailable: Bool, logger: FBIDBLogger, reporter: FBEventReporter) async throws {
+private func runCompanionServer(_ udid: String, userDefaults: UserDefaults, xcodeAvailable: Bool, logger: IDBLogger, reporter: FBEventReporter) async throws {
   let terminateOffline = userDefaults.bool(forKey: "-terminate-offline")
   let idleShutdownTime = userDefaults.string(forKey: "-idle-shutdown-time").flatMap(Double.init).flatMap { $0 > 0 ? $0 : nil }
 
@@ -389,7 +389,7 @@ private func runCompanionServer(_ udid: String, userDefaults: UserDefaults, xcod
   reporter.report(FBEventReporterSubject(forEvent: "launched"))
 
   let temporaryDirectory = FBTemporaryDirectory(logger: logger)
-  let storageManager = try FBIDBStorageManager.manager(forTarget: target, logger: logger)
+  let storageManager = try IDBStorageManager.manager(forTarget: target, logger: logger)
 
   let ports = IDBPortsConfiguration(arguments: userDefaults)
 
@@ -408,7 +408,7 @@ private func runCompanionServer(_ udid: String, userDefaults: UserDefaults, xcod
     }
   }
 
-  let commandExecutor = FBIDBCommandExecutor.commandExecutor(
+  let commandExecutor = IDBCommandExecutor.commandExecutor(
     forTarget: target,
     storageManager: storageManager,
     temporaryDirectory: temporaryDirectory,
@@ -501,7 +501,7 @@ private func runForward(_ forward: String, userDefaults: UserDefaults, xcodeAvai
 /// Runs the single mode-of-operation selected by the command-line arguments,
 /// returning once it has completed (the companion-server / boot / notify modes
 /// run until they are shut down or cancelled).
-private func runSelectedCommand(_ userDefaults: UserDefaults, xcodeAvailable: Bool, logger: FBIDBLogger) async throws {
+private func runSelectedCommand(_ userDefaults: UserDefaults, xcodeAvailable: Bool, logger: IDBLogger) async throws {
   let boot = userDefaults.string(forKey: "-boot")
   let reboot = userDefaults.string(forKey: "-reboot")
   let clone = userDefaults.string(forKey: "-clone")
@@ -605,7 +605,7 @@ private func archName() -> String {
   #endif
 }
 
-private func logStartupInfo(_ logger: FBIDBLogger) {
+private func logStartupInfo(_ logger: IDBLogger) {
   logger.info().log("IDB Companion Built at \(kBuildDate) \(kBuildTime)")
   logger.info().log("IDB Companion architecture \(archName())")
   logger.info().log("Invoked with args=\(CollectionInformation.oneLineDescription(from: ProcessInfo.processInfo.arguments))")
@@ -623,7 +623,7 @@ private func idbMain() async -> Int32 {
   }
 
   let userDefaults = UserDefaults.standard
-  let logger = FBIDBLogger.logger(withUserDefaults: userDefaults)
+  let logger = IDBLogger.logger(withUserDefaults: userDefaults)
   logStartupInfo(logger)
 
   guard FBXcodeConfiguration.developerDirectory != "" else {

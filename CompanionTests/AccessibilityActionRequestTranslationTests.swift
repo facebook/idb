@@ -224,7 +224,7 @@ final class AccessibilityActionRequestTranslationTests: XCTestCase {
   /// A drag needs the HID stack, so the executor refuses one on anything but a simulator. Pins the
   /// sentence a device caller reads: `errorDescription` is what grpc-swift puts on the wire.
   func testADragOnANonSimulatorNamesTheOperationAndTheTarget() {
-    let error = FBIDBCommandError.simulatorOnlyOperation(
+    let error = IDBCommandError.simulatorOnlyOperation(
       operation: "drag by accessibility", targetDescription: "iPhone 15 | Booted | iOS 17.0")
     XCTAssertEqual(
       error.errorDescription,

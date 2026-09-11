@@ -15,9 +15,9 @@ import IDBGRPCSwift
 struct DescribeMethodHandler {
 
   let reporter: FBEventReporter
-  let logger: FBIDBLogger
+  let logger: IDBLogger
   let target: any FBiOSTarget
-  let commandExecutor: FBIDBCommandExecutor
+  let commandExecutor: IDBCommandExecutor
 
   func handle(request: Idb_TargetDescriptionRequest, context: GRPCAsyncServerCallContext) async throws -> Idb_TargetDescriptionResponse {
     var response = Idb_TargetDescriptionResponse.with {

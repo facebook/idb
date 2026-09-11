@@ -12,7 +12,7 @@ import IDBGRPCSwift
 
 struct UninstallMethodHandler {
 
-  let commandExecutor: FBIDBCommandExecutor
+  let commandExecutor: IDBCommandExecutor
 
   func handle(request: Idb_UninstallRequest, context: GRPCAsyncServerCallContext) async throws -> Idb_UninstallResponse {
     try await commandExecutor.uninstall_application(request.bundleID)

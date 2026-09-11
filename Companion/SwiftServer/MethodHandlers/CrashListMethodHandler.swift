@@ -12,7 +12,7 @@ import IDBGRPCSwift
 
 struct CrashListMethodHandler {
 
-  let commandExecutor: FBIDBCommandExecutor
+  let commandExecutor: IDBCommandExecutor
 
   func handle(request: Idb_CrashLogQuery, context: GRPCAsyncServerCallContext) async throws -> Idb_CrashLogResponse {
     let predicate = CrashLogQueryValueTransformer.predicate(from: request)

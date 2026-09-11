@@ -15,7 +15,7 @@ let IdbDylibsFolder: String = "idb-dylibs"
 let IdbDsymsFolder: String = "idb-dsyms"
 let IdbFrameworksFolder: String = "idb-frameworks"
 
-// MARK: - FBInstalledArtifact
+// MARK: - InstalledArtifact
 
 enum IDBStorageError: Error {
   case bundleMissingBinary(name: String)
@@ -60,7 +60,7 @@ extension IDBStorageError: LocalizedError {
   }
 }
 
-public final class FBInstalledArtifact {
+public final class InstalledArtifact {
   public let name: String
   public let uuid: NSUUID?
   public let path: URL
@@ -114,23 +114,23 @@ public class IDBStorage {
 
 public final class FileStorage: IDBStorage {
 
-  func saveFile(_ url: URL) throws -> FBInstalledArtifact {
+  func saveFile(_ url: URL) throws -> InstalledArtifact {
     return try copyInto(basePath, from: url)
   }
 
-  func saveFileInUniquePath(_ url: URL) throws -> FBInstalledArtifact {
+  func saveFileInUniquePath(_ url: URL) throws -> InstalledArtifact {
     var baseURL = basePath
     baseURL = baseURL.appendingPathComponent(NSUUID().uuidString)
     try FileManager.default.createDirectory(at: baseURL, withIntermediateDirectories: true, attributes: nil)
     return try copyInto(baseURL, from: url)
   }
 
-  private func copyInto(_ basePath: URL, from fromURL: URL) throws -> FBInstalledArtifact {
+  private func copyInto(_ basePath: URL, from fromURL: URL) throws -> InstalledArtifact {
     let destination = basePath.appendingPathComponent(fromURL.lastPathComponent)
     logger.log("Persisting \(fromURL.lastPathComponent) to \(destination)")
     try FileManager.default.copyItem(at: fromURL, to: destination)
     logger.log("Persisted \(destination.lastPathComponent)")
-    return FBInstalledArtifact(name: destination.lastPathComponent, uuid: nil, path: destination)
+    return InstalledArtifact(name: destination.lastPathComponent, uuid: nil, path: destination)
   }
 }
 
@@ -160,11 +160,11 @@ public class BundleStorage: IDBStorage {
     }
   }
 
-  func saveBundle(_ bundle: FBBundleDescriptor) async throws -> FBInstalledArtifact {
+  func saveBundle(_ bundle: FBBundleDescriptor) async throws -> InstalledArtifact {
     return try await saveBundle(bundle, usingSymlink: true, skipSigningBundles: false)
   }
 
-  func saveBundle(_ bundle: FBBundleDescriptor, usingSymlink useSymlink: Bool, skipSigningBundles: Bool) async throws -> FBInstalledArtifact {
+  func saveBundle(_ bundle: FBBundleDescriptor, usingSymlink useSymlink: Bool, skipSigningBundles: Bool) async throws -> InstalledArtifact {
     try checkArchitecture(bundle)
 
     let storageDirectory = basePath.appendingPathComponent(bundle.identifier)
@@ -181,7 +181,7 @@ public class BundleStorage: IDBStorage {
       logger.log("Moved \(bundle.identifier)")
     }
 
-    let artifact = FBInstalledArtifact(name: bundle.identifier, uuid: bundle.binary?.uuid as NSUUID?, path: destinationBundlePath)
+    let artifact = InstalledArtifact(name: bundle.identifier, uuid: bundle.binary?.uuid as NSUUID?, path: destinationBundlePath)
     if !relocateLibraries || !target.requiresBundlesToBeSigned() || skipSigningBundles {
       return artifact
     }
@@ -243,7 +243,7 @@ private let XctestRunExtension = "xctestrun"
 
 public final class XCTestBundleStorage: BundleStorage {
 
-  func saveBundleOrTestRunFromBaseDirectory(_ baseDirectory: URL, skipSigningBundles: Bool) async throws -> FBInstalledArtifact {
+  func saveBundleOrTestRunFromBaseDirectory(_ baseDirectory: URL, skipSigningBundles: Bool) async throws -> InstalledArtifact {
     let buckets = try StorageUtils.bucketFiles(withExtensions: Set([XctestExtension, XctestRunExtension]), inDirectory: baseDirectory)
     let xctestBucket = buckets[XctestExtension]?.sorted(by: { $0.path < $1.path }) ?? []
     let xctestBundleURL = xctestBucket.first
@@ -268,7 +268,7 @@ public final class XCTestBundleStorage: BundleStorage {
     throw IDBStorageError.testArtifactNotSaved(xctestDescription: String(describing: xctestBundleURL), xctestrunDescription: String(describing: xctestrunURL))
   }
 
-  func saveBundleOrTestRun(_ filePath: URL, skipSigningBundles: Bool) async throws -> FBInstalledArtifact {
+  func saveBundleOrTestRun(_ filePath: URL, skipSigningBundles: Bool) async throws -> InstalledArtifact {
     if filePath.pathExtension == XctestExtension {
       return try await saveTestBundle(filePath, usingSymlink: true, skipSigningBundles: skipSigningBundles)
     }
@@ -278,8 +278,8 @@ public final class XCTestBundleStorage: BundleStorage {
     throw IDBStorageError.invalidPathExtension(pathExtension: filePath.pathExtension, path: filePath)
   }
 
-  func listTestDescriptors() throws -> [FBXCTestDescriptor] {
-    var testDescriptors: [FBXCTestDescriptor] = []
+  func listTestDescriptors() throws -> [XCTestDescriptor] {
+    var testDescriptors: [XCTestDescriptor] = []
 
     let testURLs = try listTestBundles()
     let xcTestRunURLs = try listXCTestRunFiles()
@@ -306,7 +306,7 @@ public final class XCTestBundleStorage: BundleStorage {
     return testDescriptors
   }
 
-  func testDescriptor(withID bundleId: String) throws -> FBXCTestDescriptor {
+  func testDescriptor(withID bundleId: String) throws -> XCTestDescriptor {
     let testDescriptors = try listTestDescriptors()
     for testDescriptor in testDescriptors {
       if testDescriptor.testBundleID == bundleId {
@@ -316,7 +316,7 @@ public final class XCTestBundleStorage: BundleStorage {
     throw IDBStorageError.testNotFoundByID(bundleID: bundleId)
   }
 
-  func getXCTestRunDescriptors(from xctestrunURL: URL) throws -> [FBXCTestDescriptor] {
+  func getXCTestRunDescriptors(from xctestrunURL: URL) throws -> [XCTestDescriptor] {
     let contentDict = try XCTestRunFileReader.readContents(of: xctestrunURL, expandPlaceholderWithPath: target.auxillaryDirectory)
     let xctestrunMetadata = contentDict["__xctestrun_metadata__"] as? [String: NSNumber]
     if let xctestrunMetadata {
@@ -352,8 +352,8 @@ public final class XCTestBundleStorage: BundleStorage {
     return tests
   }
 
-  private func getDescriptors(from xctestrunContents: [String: Any], with xctestrunURL: URL) -> [FBXCTestDescriptor] {
-    var descriptors: [FBXCTestDescriptor] = []
+  private func getDescriptors(from xctestrunContents: [String: Any], with xctestrunURL: URL) -> [XCTestDescriptor] {
+    var descriptors: [XCTestDescriptor] = []
     for field in xctestrunContents.keys {
       logger.info().log("Checking the \(field) field to extract test descriptors")
       if field == "__xctestrun_metadata__" || field == "CodeCoverageBuildableInfos" {
@@ -366,8 +366,8 @@ public final class XCTestBundleStorage: BundleStorage {
     return descriptors
   }
 
-  private func legacyGetDescriptors(from xctestrunContents: [String: Any], with xctestrunURL: URL) -> [FBXCTestDescriptor] {
-    var descriptors: [FBXCTestDescriptor] = []
+  private func legacyGetDescriptors(from xctestrunContents: [String: Any], with xctestrunURL: URL) -> [XCTestDescriptor] {
+    var descriptors: [XCTestDescriptor] = []
     for testTarget in xctestrunContents.keys {
       if let descriptor = getDescriptor(for: testTarget, from: xctestrunContents, with: xctestrunURL) {
         descriptors.append(descriptor)
@@ -376,7 +376,7 @@ public final class XCTestBundleStorage: BundleStorage {
     return descriptors
   }
 
-  private func getDescriptor(for testTarget: String, from xctestrunContents: [String: Any], with xctestrunURL: URL) -> FBXCTestDescriptor? {
+  private func getDescriptor(for testTarget: String, from xctestrunContents: [String: Any], with xctestrunURL: URL) -> XCTestDescriptor? {
     guard let testTargetProperties = xctestrunContents[testTarget] as? [String: Any] else {
       return nil
     }
@@ -408,12 +408,12 @@ public final class XCTestBundleStorage: BundleStorage {
     return XCodebuildTestRunDescriptor(url: xctestrunURL, name: testTarget, testBundle: testBundle, testHostBundle: testHostBundle)
   }
 
-  private func saveTestBundle(_ testBundleURL: URL, usingSymlink useSymlink: Bool, skipSigningBundles: Bool) async throws -> FBInstalledArtifact {
+  private func saveTestBundle(_ testBundleURL: URL, usingSymlink useSymlink: Bool, skipSigningBundles: Bool) async throws -> InstalledArtifact {
     let bundle = try FBBundleDescriptor.bundleWithFallbackIdentifier(fromPath: testBundleURL.path)
     return try await saveBundle(bundle, usingSymlink: useSymlink, skipSigningBundles: skipSigningBundles)
   }
 
-  private func saveTestRun(_ xcTestRunURL: URL) throws -> FBInstalledArtifact {
+  private func saveTestRun(_ xcTestRunURL: URL) throws -> InstalledArtifact {
     let descriptors = try getXCTestRunDescriptors(from: xcTestRunURL)
     if descriptors.count != 1 {
       throw IDBStorageError.notExactlyOneTest(count: descriptors.count)
@@ -434,7 +434,7 @@ public final class XCTestBundleStorage: BundleStorage {
       try FileManager.default.copyItem(at: url, to: newPath.appendingPathComponent(url.lastPathComponent))
     }
 
-    return FBInstalledArtifact(name: descriptor.testBundleID, uuid: nil, path: dir)
+    return InstalledArtifact(name: descriptor.testBundleID, uuid: nil, path: dir)
   }
 
   private func prepareDirectory(with url: URL) throws {
@@ -445,9 +445,9 @@ public final class XCTestBundleStorage: BundleStorage {
   }
 }
 
-// MARK: - FBIDBStorageManager
+// MARK: - IDBStorageManager
 
-public final class FBIDBStorageManager {
+public final class IDBStorageManager {
   public let xctest: XCTestBundleStorage
   public let application: BundleStorage
   public let dylib: FileStorage
@@ -464,7 +464,7 @@ public final class FBIDBStorageManager {
     self.logger = logger
   }
 
-  public static func manager(forTarget target: any FBiOSTarget, logger: FBControlCoreLogger) throws -> FBIDBStorageManager {
+  public static func manager(forTarget target: any FBiOSTarget, logger: FBControlCoreLogger) throws -> IDBStorageManager {
     let queue = DispatchQueue(label: "com.facebook.idb.bundle_storage")
 
     let xctestBasePath = try prepareStoragePath(withName: IdbTestBundlesFolder, target: target)
@@ -482,7 +482,7 @@ public final class FBIDBStorageManager {
     let frameworkBasePath = try prepareStoragePath(withName: IdbFrameworksFolder, target: target)
     let framework = BundleStorage(target: target, basePath: frameworkBasePath, queue: queue, logger: logger, relocateLibraries: true)
 
-    return FBIDBStorageManager(xctest: xctest, application: application, dylib: dylib, dsym: dsym, framework: framework, logger: logger)
+    return IDBStorageManager(xctest: xctest, application: application, dylib: dylib, dsym: dsym, framework: framework, logger: logger)
   }
 
   public func clean() throws {

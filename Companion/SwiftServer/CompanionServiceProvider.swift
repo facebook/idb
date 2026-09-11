@@ -18,9 +18,9 @@ import XCTestBootstrap
 final class CompanionServiceProvider: Idb_CompanionServiceAsyncProvider, @unchecked Sendable {
 
   private let target: any FBiOSTarget
-  private let commandExecutor: FBIDBCommandExecutor
+  private let commandExecutor: IDBCommandExecutor
   private let reporter: FBEventReporter
-  private let logger: FBIDBLogger
+  private let logger: IDBLogger
   private let interceptorFactory: Idb_CompanionServiceServerInterceptorFactoryProtocol
   private let telemetry: CompanionTelemetry
   /// Tracks in-flight calls so the companion can shut down when idle.
@@ -32,9 +32,9 @@ final class CompanionServiceProvider: Idb_CompanionServiceAsyncProvider, @unchec
 
   init(
     target: any FBiOSTarget,
-    commandExecutor: FBIDBCommandExecutor,
+    commandExecutor: IDBCommandExecutor,
     reporter: FBEventReporter,
-    logger: FBIDBLogger,
+    logger: IDBLogger,
     interceptors: Idb_CompanionServiceServerInterceptorFactoryProtocol,
     idleMonitor: IdleMonitor? = nil
   ) {

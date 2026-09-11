@@ -14,7 +14,7 @@ import IDBGRPCSwift
 
 struct LaunchMethodHandler: @unchecked Sendable {
 
-  let commandExecutor: FBIDBCommandExecutor
+  let commandExecutor: IDBCommandExecutor
 
   func handle(requestStream: RequestStreamReader<Idb_LaunchRequest>, responseStream: GRPCAsyncResponseStreamWriter<Idb_LaunchResponse>, context: GRPCAsyncServerCallContext) async throws {
     var consumers: [any DataConsumerLifecycle] = []

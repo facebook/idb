@@ -12,7 +12,7 @@ import IDBGRPCSwift
 
 struct SendNotificationMethodHandler {
 
-  let commandExecutor: FBIDBCommandExecutor
+  let commandExecutor: IDBCommandExecutor
 
   func handle(request: Idb_SendNotificationRequest, context: GRPCAsyncServerCallContext) async throws -> Idb_SendNotificationResponse {
     try await commandExecutor.sendPushNotification(forBundleID: request.bundleID, jsonPayload: request.jsonPayload)

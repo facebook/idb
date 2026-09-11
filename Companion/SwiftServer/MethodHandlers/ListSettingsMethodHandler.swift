@@ -12,7 +12,7 @@ import IDBGRPCSwift
 
 struct ListSettingsMethodHandler {
 
-  let commandExecutor: FBIDBCommandExecutor
+  let commandExecutor: IDBCommandExecutor
 
   func handle(request: Idb_ListSettingRequest, context: GRPCAsyncServerCallContext) async throws -> Idb_ListSettingResponse {
     switch request.setting {

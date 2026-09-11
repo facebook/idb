@@ -26,7 +26,7 @@ final class GRPCSwiftServer: @unchecked Sendable {
 
   private var server: EventLoopFuture<Server>?
   private let provider: CallHandlerProvider
-  private let logger: FBIDBLogger
+  private let logger: IDBLogger
 
   private let serverConfig: Server.Configuration
   private let ports: IDBPortsConfiguration
@@ -46,9 +46,9 @@ final class GRPCSwiftServer: @unchecked Sendable {
 
   init(
     target: any FBiOSTarget,
-    commandExecutor: FBIDBCommandExecutor,
+    commandExecutor: IDBCommandExecutor,
     reporter: FBEventReporter,
-    logger: FBIDBLogger,
+    logger: IDBLogger,
     ports: IDBPortsConfiguration,
     idleMonitor: IdleMonitor?,
     onShutdownStarted: (@Sendable () -> Void)? = nil
@@ -199,7 +199,7 @@ final class GRPCSwiftServer: @unchecked Sendable {
     }
   }
 
-  private static func loadCertificates(tlsCertPath: String?, logger: FBIDBLogger) -> TLSCertificates? {
+  private static func loadCertificates(tlsCertPath: String?, logger: IDBLogger) -> TLSCertificates? {
     guard let tlsPath = tlsCertPath,
       !tlsPath.isEmpty
     else { return nil }

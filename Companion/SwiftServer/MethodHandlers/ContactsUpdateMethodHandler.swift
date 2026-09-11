@@ -12,7 +12,7 @@ import IDBGRPCSwift
 
 struct ContactsUpdateMethodHandler {
 
-  let commandExecutor: FBIDBCommandExecutor
+  let commandExecutor: IDBCommandExecutor
 
   func handle(request: Idb_ContactsUpdateRequest, context: GRPCAsyncServerCallContext) async throws -> Idb_ContactsUpdateResponse {
     try await commandExecutor.update_contacts(request.payload.data)

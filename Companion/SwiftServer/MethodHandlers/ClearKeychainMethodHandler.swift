@@ -12,7 +12,7 @@ import IDBGRPCSwift
 
 struct ClearKeychainMethodHandler {
 
-  let commandExecutor: FBIDBCommandExecutor
+  let commandExecutor: IDBCommandExecutor
 
   func handle(request: Idb_ClearKeychainRequest, context: GRPCAsyncServerCallContext) async throws -> Idb_ClearKeychainResponse {
     try await commandExecutor.clear_keychain()

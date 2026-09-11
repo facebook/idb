@@ -29,7 +29,7 @@ final class IdleMonitor: @unchecked Sendable {
   }
 
   private let idleTime: TimeInterval
-  private let logger: FBIDBLogger
+  private let logger: IDBLogger
   /// Invoked synchronously the instant idle shutdown begins, before `expired`
   /// resolves — used to release externally-visible resources (e.g. unlink the
   /// gRPC socket) without waiting for the async teardown.
@@ -45,7 +45,7 @@ final class IdleMonitor: @unchecked Sendable {
   /// Set once `expired` has resolved; no further work happens afterwards.
   private var fired = false
 
-  init(idleTime: TimeInterval, logger: FBIDBLogger, onShutdownStarted: (@Sendable () -> Void)? = nil) {
+  init(idleTime: TimeInterval, logger: IDBLogger, onShutdownStarted: (@Sendable () -> Void)? = nil) {
     self.idleTime = idleTime
     self.logger = logger
     self.onShutdownStarted = onShutdownStarted

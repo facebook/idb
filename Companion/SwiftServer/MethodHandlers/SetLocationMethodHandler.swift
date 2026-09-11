@@ -12,7 +12,7 @@ import IDBGRPCSwift
 
 struct SetLocationMethodHandler {
 
-  let commandExecutor: FBIDBCommandExecutor
+  let commandExecutor: IDBCommandExecutor
 
   func handle(request: Idb_SetLocationRequest, context: GRPCAsyncServerCallContext) async throws -> Idb_SetLocationResponse {
     try await commandExecutor.set_location(request.location.latitude, longitude: request.location.longitude)

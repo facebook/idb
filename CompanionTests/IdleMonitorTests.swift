@@ -36,7 +36,7 @@ final class IdleMonitorTests: XCTestCase {
   /// large multiple of it to avoid flaking under load.
   private let idleTime: TimeInterval = 0.2
 
-  private static let logger = FBIDBLogger(
+  private static let logger = IDBLogger(
     loggers: [FBControlCoreLoggerFactory.systemLoggerWriting(toStderr: true, withDebugLogging: false)])
 
   private func makeMonitor(onShutdownStarted: (@Sendable () -> Void)? = nil) -> IdleMonitor {

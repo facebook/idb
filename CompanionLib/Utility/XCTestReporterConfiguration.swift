@@ -9,7 +9,7 @@ import FBControlCore
 import Foundation
 import XCTestBootstrap
 
-public struct FBXCTestReporterConfiguration {
+public struct XCTestReporterConfiguration {
 
   public let resultBundlePath: String?
   public let coverageConfiguration: CodeCoverageConfiguration?
@@ -31,7 +31,7 @@ public struct FBXCTestReporterConfiguration {
 
 // MARK: - CustomStringConvertible
 
-extension FBXCTestReporterConfiguration: CustomStringConvertible {
+extension XCTestReporterConfiguration: CustomStringConvertible {
 
   public var description: String {
     let coverageDesc = coverageConfiguration.map { "\($0)" } ?? "(null)"

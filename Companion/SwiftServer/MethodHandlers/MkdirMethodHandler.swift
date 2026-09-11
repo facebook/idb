@@ -12,7 +12,7 @@ import IDBGRPCSwift
 
 struct MkdirMethodHandler {
 
-  let commandExecutor: FBIDBCommandExecutor
+  let commandExecutor: IDBCommandExecutor
 
   func handle(request: Idb_MkdirRequest, context: GRPCAsyncServerCallContext) async throws -> Idb_MkdirResponse {
     let fileContainer = FileContainerValueTransformer.rawFileContainer(from: request.container)

@@ -29,7 +29,7 @@ struct VideoStreamMethodHandler {
 
   let target: any FBiOSTarget
   let targetLogger: FBControlCoreLogger
-  let commandExecutor: FBIDBCommandExecutor
+  let commandExecutor: IDBCommandExecutor
 
   func handle(requestStream: RequestStreamReader<Idb_VideoStreamRequest>, responseStream: GRPCAsyncResponseStreamWriter<Idb_VideoStreamResponse>, context: GRPCAsyncServerCallContext) async throws {
     @Atomic var finished = false

@@ -12,7 +12,7 @@ import IDBGRPCSwift
 
 struct RmMethodHandler {
 
-  let commandExecutor: FBIDBCommandExecutor
+  let commandExecutor: IDBCommandExecutor
 
   func handle(request: Idb_RmRequest, context: GRPCAsyncServerCallContext) async throws -> Idb_RmResponse {
     let fileContainer = FileContainerValueTransformer.rawFileContainer(from: request.container)

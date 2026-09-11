@@ -17,14 +17,14 @@ import XCTestBootstrap
 struct XCTestRunMethodHandler {
 
   let target: any FBiOSTarget
-  let commandExecutor: FBIDBCommandExecutor
+  let commandExecutor: IDBCommandExecutor
   let reporter: FBEventReporter
   let targetLogger: FBControlCoreLogger
-  let logger: FBIDBLogger
+  let logger: IDBLogger
 
   func handle(request: Idb_XctestRunRequest, responseStream: GRPCAsyncResponseStreamWriter<Idb_XctestRunResponse>, context: GRPCAsyncServerCallContext) async throws {
     guard let request = transform(value: request) else {
-      throw GRPCStatus(code: .invalidArgument, message: "failed to create FBXCTestRunRequest")
+      throw GRPCStatus(code: .invalidArgument, message: "failed to create XCTestRunRequest")
     }
 
     let reporter = IDBXCTestReporter(responseStream: responseStream, queue: target.workQueue, logger: logger)
@@ -47,11 +47,11 @@ struct XCTestRunMethodHandler {
     _ = try await reporter.awaitReportingTerminated()
   }
 
-  func transform(value request: Idb_XctestRunRequest) -> FBXCTestRunRequest? {
+  func transform(value request: Idb_XctestRunRequest) -> XCTestRunRequest? {
     let testsToRun = request.testsToRun.isEmpty ? nil : Set(request.testsToRun)
     switch request.mode.mode {
     case .logic:
-      return FBXCTestRunRequest.logicTest(
+      return XCTestRunRequest.logicTest(
         withTestBundleID: request.testBundleID,
         environment: request.environment,
         arguments: request.arguments,
@@ -65,7 +65,7 @@ struct XCTestRunMethodHandler {
         waitForDebugger: request.waitForDebugger,
         collectResultBundle: request.collectResultBundle)
     case let .application(app):
-      return FBXCTestRunRequest.applicationTest(
+      return XCTestRunRequest.applicationTest(
         withTestBundleID: request.testBundleID,
         testHostAppBundleID: app.appBundleID,
         environment: request.environment,
@@ -80,7 +80,7 @@ struct XCTestRunMethodHandler {
         waitForDebugger: request.waitForDebugger,
         collectResultBundle: request.collectResultBundle)
     case let .ui(ui):
-      return FBXCTestRunRequest.uiTest(
+      return XCTestRunRequest.uiTest(
         withTestBundleID: request.testBundleID,
         testHostAppBundleID: ui.testHostAppBundleID,
         testTargetAppBundleID: ui.appBundleID,
@@ -99,16 +99,16 @@ struct XCTestRunMethodHandler {
     }
   }
 
-  private func extractCodeCoverage(from request: Idb_XctestRunRequest) -> FBCodeCoverageRequest {
+  private func extractCodeCoverage(from request: Idb_XctestRunRequest) -> CodeCoverageRequest {
     if request.hasCodeCoverage {
       switch request.codeCoverage.format {
       case .raw:
-        return FBCodeCoverageRequest(collect: request.codeCoverage.collect, format: .raw, enableContinuousCoverageCollection: request.codeCoverage.enableContinuousCoverageCollection)
+        return CodeCoverageRequest(collect: request.codeCoverage.collect, format: .raw, enableContinuousCoverageCollection: request.codeCoverage.enableContinuousCoverageCollection)
       case .exported, .UNRECOGNIZED:
-        return FBCodeCoverageRequest(collect: request.codeCoverage.collect, format: .exported, enableContinuousCoverageCollection: request.codeCoverage.enableContinuousCoverageCollection)
+        return CodeCoverageRequest(collect: request.codeCoverage.collect, format: .exported, enableContinuousCoverageCollection: request.codeCoverage.enableContinuousCoverageCollection)
       }
     }
     // fallback to deprecated request field for backwards compatibility
-    return FBCodeCoverageRequest(collect: request.collectCoverage, format: .exported, enableContinuousCoverageCollection: request.codeCoverage.enableContinuousCoverageCollection)
+    return CodeCoverageRequest(collect: request.collectCoverage, format: .exported, enableContinuousCoverageCollection: request.codeCoverage.enableContinuousCoverageCollection)
   }
 }

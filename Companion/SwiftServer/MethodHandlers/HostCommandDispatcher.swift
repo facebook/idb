@@ -95,11 +95,11 @@ struct ReplArtifact {
 }
 
 /// Maps a decoded `ReplCommand` -- sent by injected REPL code while it runs -- to an
-/// `FBIDBCommandExecutor` call. `resultValue(for:)` produces the value; `run` serializes it and maps
+/// `IDBCommandExecutor` call. `resultValue(for:)` produces the value; `run` serializes it and maps
 /// a thrown error to `.failure`.
 struct HostCommandDispatcher: @unchecked Sendable {
 
-  let commandExecutor: FBIDBCommandExecutor
+  let commandExecutor: IDBCommandExecutor
   let state: ReplHostCommandState
   /// Owns the in-progress screen recording, which can outlive this stream.
   let recordingCoordinator: ReplRecordingCoordinator

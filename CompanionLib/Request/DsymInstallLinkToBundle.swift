@@ -7,17 +7,17 @@
 
 import Foundation
 
-public enum FBDsymBundleType {
+public enum DsymBundleType {
   case xcTest
   case app
 }
 
-public struct FBDsymInstallLinkToBundle {
+public struct DsymInstallLinkToBundle {
 
   public let bundleID: String
-  public let bundleType: FBDsymBundleType
+  public let bundleType: DsymBundleType
 
-  public init(bundleID: String, bundleType: FBDsymBundleType) {
+  public init(bundleID: String, bundleType: DsymBundleType) {
     self.bundleID = bundleID
     self.bundleType = bundleType
   }

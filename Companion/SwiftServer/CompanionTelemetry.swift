@@ -20,7 +20,7 @@ import Foundation
 /// type reports bytes transferred.
 struct CompanionTelemetry {
 
-  let logger: FBIDBLogger
+  let logger: IDBLogger
   let reporter: FBEventReporter
 
   private static let argumentValueLimit = 100

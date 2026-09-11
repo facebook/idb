@@ -24,7 +24,7 @@ private let debugServerSessionEvents = [
   "disconnect",
 ]
 
-/// `FBIDBCommandExecutor` holds the server across separate `debugserver_start`, `debugserver_status`
+/// `IDBCommandExecutor` holds the server across separate `debugserver_start`, `debugserver_status`
 /// and `debugserver_stop` requests, so the service connection outlives the call that opened it.
 ///
 /// Pinned on the main actor: the fake records its calls from the device's work and async queues,

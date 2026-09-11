@@ -12,7 +12,7 @@ import Foundation
 import GRPC
 import IDBGRPCSwift
 
-/// Seam over the two `FBIDBCommandExecutor` reads this handler drives, so the request-to-options wiring
+/// Seam over the two `IDBCommandExecutor` reads this handler drives, so the request-to-options wiring
 /// can be tested against a double.
 protocol AccessibilityDescribing {
   func accessibility_describe(
@@ -28,11 +28,11 @@ protocol AccessibilityDescribing {
   ) async throws -> FBAccessibilityElementsResponse
 }
 
-extension FBIDBCommandExecutor: AccessibilityDescribing {}
+extension IDBCommandExecutor: AccessibilityDescribing {}
 
 struct AccessibilityInfoMethodHandler {
 
-  let commandExecutor: FBIDBCommandExecutor
+  let commandExecutor: IDBCommandExecutor
 
   func handle(request: Idb_AccessibilityInfoRequest, context: GRPCAsyncServerCallContext) async throws -> Idb_AccessibilityInfoResponse {
     try await Self.respond(to: request, using: commandExecutor)

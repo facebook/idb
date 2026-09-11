@@ -12,7 +12,7 @@ import IDBGRPCSwift
 
 struct CrashShowMethodHandler {
 
-  let commandExecutor: FBIDBCommandExecutor
+  let commandExecutor: IDBCommandExecutor
 
   func handle(request: Idb_CrashShowRequest, context: GRPCAsyncServerCallContext) async throws -> Idb_CrashShowResponse {
     guard !request.name.isEmpty else {

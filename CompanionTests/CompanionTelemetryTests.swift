@@ -101,7 +101,7 @@ private final class RecordingLogger: NSObject, FBControlCoreLogger, @unchecked S
 @Suite
 struct CompanionTelemetryTests {
 
-  private static let logger = FBIDBLogger(
+  private static let logger = IDBLogger(
     loggers: [FBControlCoreLoggerFactory.systemLoggerWriting(toStderr: true, withDebugLogging: false)])
 
   private func makeTelemetry() -> (CompanionTelemetry, RecordingEventReporter) {
@@ -235,7 +235,7 @@ struct CompanionTelemetryTests {
   func unaryCallSummaryIsAppendedToCompletionLine() async throws {
     let recorder = RecordingLogger()
     let telemetry = CompanionTelemetry(
-      logger: FBIDBLogger(loggers: [recorder]),
+      logger: IDBLogger(loggers: [recorder]),
       reporter: RecordingEventReporter())
     let request = FetchRequest(bundleID: "com.example.app", verbose: true)
     try await telemetry.unaryCall("ls", request: request, summarize: { _ in "5 entries" }) { "ok" }
@@ -249,7 +249,7 @@ struct CompanionTelemetryTests {
   func unaryCallWithoutSummaryLogsBareCompletionLine() async throws {
     let recorder = RecordingLogger()
     let telemetry = CompanionTelemetry(
-      logger: FBIDBLogger(loggers: [recorder]),
+      logger: IDBLogger(loggers: [recorder]),
       reporter: RecordingEventReporter())
     let request = FetchRequest(bundleID: "com.example.app", verbose: true)
     try await telemetry.unaryCall("ls", request: request) { "ok" }

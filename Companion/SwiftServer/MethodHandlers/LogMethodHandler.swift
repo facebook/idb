@@ -15,7 +15,7 @@ import IDBGRPCSwift
 struct LogMethodHandler: @unchecked Sendable {
 
   let target: any FBiOSTarget
-  let commandExecutor: FBIDBCommandExecutor
+  let commandExecutor: IDBCommandExecutor
 
   func handle(request: Idb_LogRequest, responseStream: GRPCAsyncResponseStreamWriter<Idb_LogResponse>, context: GRPCAsyncServerCallContext) async throws {
     let writingDone = AsyncPromise<Void>()

@@ -135,12 +135,12 @@ struct CompanionLibTransientTests {
     }
   }
 
-  // MARK: - FBXCTestRunRequest Factory & Property Tests
+  // MARK: - XCTestRunRequest Factory & Property Tests
 
   @Test
   func logicTestRequestProperties() {
-    let coverageRequest = FBCodeCoverageRequest(collect: false, format: .raw, enableContinuousCoverageCollection: false)
-    let request = FBXCTestRunRequest.logicTest(
+    let coverageRequest = CodeCoverageRequest(collect: false, format: .raw, enableContinuousCoverageCollection: false)
+    let request = XCTestRunRequest.logicTest(
       withTestBundleID: "com.test.bundle",
       environment: ["KEY": "VALUE"],
       arguments: ["-arg1"],
@@ -177,8 +177,8 @@ struct CompanionLibTransientTests {
 
   @Test
   func applicationTestRequestProperties() {
-    let coverageRequest = FBCodeCoverageRequest(collect: true, format: .exported, enableContinuousCoverageCollection: true)
-    let request = FBXCTestRunRequest.applicationTest(
+    let coverageRequest = CodeCoverageRequest(collect: true, format: .exported, enableContinuousCoverageCollection: true)
+    let request = XCTestRunRequest.applicationTest(
       withTestBundleID: "com.test.apptest",
       testHostAppBundleID: "com.test.host",
       environment: [:],
@@ -209,8 +209,8 @@ struct CompanionLibTransientTests {
 
   @Test
   func uITestRequestProperties() {
-    let coverageRequest = FBCodeCoverageRequest(collect: false, format: .raw, enableContinuousCoverageCollection: false)
-    let request = FBXCTestRunRequest.uiTest(
+    let coverageRequest = CodeCoverageRequest(collect: false, format: .raw, enableContinuousCoverageCollection: false)
+    let request = XCTestRunRequest.uiTest(
       withTestBundleID: "com.test.uitest",
       testHostAppBundleID: "com.test.runner",
       testTargetAppBundleID: "com.test.app",
@@ -241,9 +241,9 @@ struct CompanionLibTransientTests {
 
   @Test
   func logicTestWithTestPathProperties() {
-    let coverageRequest = FBCodeCoverageRequest(collect: false, format: .raw, enableContinuousCoverageCollection: false)
+    let coverageRequest = CodeCoverageRequest(collect: false, format: .raw, enableContinuousCoverageCollection: false)
     let testURL = URL(fileURLWithPath: "/tmp/MyTest.xctest")
-    let request = FBXCTestRunRequest.logicTest(
+    let request = XCTestRunRequest.logicTest(
       withTestPath: testURL,
       environment: [:],
       arguments: [],
@@ -267,9 +267,9 @@ struct CompanionLibTransientTests {
 
   @Test
   func pathBundlesCombineWithHostedModes() {
-    let coverageRequest = FBCodeCoverageRequest(collect: false, format: .raw, enableContinuousCoverageCollection: false)
+    let coverageRequest = CodeCoverageRequest(collect: false, format: .raw, enableContinuousCoverageCollection: false)
     let testURL = URL(fileURLWithPath: "/tmp/MyTest.xctest")
-    let applicationTest = FBXCTestRunRequest.applicationTest(
+    let applicationTest = XCTestRunRequest.applicationTest(
       withTestPath: testURL,
       testHostAppBundleID: "com.test.host",
       environment: [:],
@@ -292,7 +292,7 @@ struct CompanionLibTransientTests {
     #expect((applicationTest.testBundleID) == nil)
     #expect((applicationTest.testTargetAppBundleID) == nil)
 
-    let uiTest = FBXCTestRunRequest.uiTest(
+    let uiTest = XCTestRunRequest.uiTest(
       withTestPath: testURL,
       testHostAppBundleID: "com.test.runner",
       testTargetAppBundleID: "com.test.app",
@@ -317,8 +317,8 @@ struct CompanionLibTransientTests {
 
   @Test
   func requestDescriptionNamesModeAndBundle() {
-    let coverageRequest = FBCodeCoverageRequest(collect: false, format: .raw, enableContinuousCoverageCollection: false)
-    let logicTest = FBXCTestRunRequest.logicTest(
+    let coverageRequest = CodeCoverageRequest(collect: false, format: .raw, enableContinuousCoverageCollection: false)
+    let logicTest = XCTestRunRequest.logicTest(
       withTestBundleID: "com.test.bundle",
       environment: [:],
       arguments: [],
@@ -334,7 +334,7 @@ struct CompanionLibTransientTests {
     )
     #expect((String(describing: logicTest)) == ("logic test of bundle id com.test.bundle"))
 
-    let applicationTest = FBXCTestRunRequest.applicationTest(
+    let applicationTest = XCTestRunRequest.applicationTest(
       withTestBundleID: "com.test.apptest",
       testHostAppBundleID: "com.test.host",
       environment: [:],
@@ -351,7 +351,7 @@ struct CompanionLibTransientTests {
     )
     #expect((String(describing: applicationTest)) == ("application test of bundle id com.test.apptest hosted by com.test.host"))
 
-    let uiTest = FBXCTestRunRequest.uiTest(
+    let uiTest = XCTestRunRequest.uiTest(
       withTestPath: URL(fileURLWithPath: "/tmp/MyTest.xctest"),
       testHostAppBundleID: "com.test.runner",
       testTargetAppBundleID: "com.test.app",
@@ -369,11 +369,11 @@ struct CompanionLibTransientTests {
     #expect((String(describing: uiTest)) == ("ui test of bundle at /tmp/MyTest.xctest hosted by com.test.runner targeting com.test.app"))
   }
 
-  // MARK: - FBXCTestReporterConfiguration Tests
+  // MARK: - XCTestReporterConfiguration Tests
 
   @Test
   func reporterConfigurationDescription() {
-    let config = FBXCTestReporterConfiguration(
+    let config = XCTestReporterConfiguration(
       resultBundlePath: "/result",
       coverageConfiguration: nil,
       logDirectoryPath: "/logs",

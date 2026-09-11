@@ -15,7 +15,7 @@ import IDBGRPCSwift
 struct PullMethodHandler {
 
   let target: any FBiOSTarget
-  let commandExecutor: FBIDBCommandExecutor
+  let commandExecutor: IDBCommandExecutor
 
   /// Human byte count for transfer summaries (e.g. "512 B", "1.5 KB").
   static func formatBytes(_ bytes: Int) -> String {

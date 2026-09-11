@@ -14,7 +14,7 @@ import IDBGRPCSwift
 
 struct AccessibilityActionMethodHandler {
 
-  let commandExecutor: FBIDBCommandExecutor
+  let commandExecutor: IDBCommandExecutor
 
   func handle(request: Idb_AccessibilityActionRequest, context: GRPCAsyncServerCallContext) async throws -> Idb_AccessibilityActionResponse {
     switch try AccessibilityActionRequestTranslation.action(from: request) {

@@ -9,7 +9,7 @@ import FBControlCore
 import Foundation
 import XCTestBootstrap
 
-public struct FBCodeCoverageRequest: Sendable {
+public struct CodeCoverageRequest: Sendable {
 
   public let collect: Bool
   public let format: CodeCoverageFormat

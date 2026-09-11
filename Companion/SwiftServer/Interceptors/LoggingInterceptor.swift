@@ -29,10 +29,10 @@ import GRPC
 /// so the frame counter below needs no synchronization.
 final class LoggingInterceptor<Request, Response>: ServerInterceptor<Request, Response>, @unchecked Sendable {
 
-  private let logger: FBIDBLogger
+  private let logger: IDBLogger
   private var frameCount = 0
 
-  init(logger: FBIDBLogger) {
+  init(logger: IDBLogger) {
     self.logger = logger
   }
 

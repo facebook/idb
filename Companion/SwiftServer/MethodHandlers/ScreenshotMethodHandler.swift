@@ -12,7 +12,7 @@ import IDBGRPCSwift
 
 struct ScreenshotMethodHandler {
 
-  let commandExecutor: FBIDBCommandExecutor
+  let commandExecutor: IDBCommandExecutor
 
   func handle(request: Idb_ScreenshotRequest, context: GRPCAsyncServerCallContext) async throws -> Idb_ScreenshotResponse {
     let configuration = try ScreenshotRequestTranslation.configuration(from: request)

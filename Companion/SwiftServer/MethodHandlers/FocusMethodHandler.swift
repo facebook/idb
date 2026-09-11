@@ -12,7 +12,7 @@ import IDBGRPCSwift
 
 struct FocusMethodHandler {
 
-  let commandExecutor: FBIDBCommandExecutor
+  let commandExecutor: IDBCommandExecutor
 
   func handle(request: Idb_FocusRequest, context: GRPCAsyncServerCallContext) async throws -> Idb_FocusResponse {
     try await commandExecutor.focus()

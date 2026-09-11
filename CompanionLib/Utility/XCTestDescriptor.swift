@@ -10,19 +10,19 @@ import FBControlCore
 import Foundation
 import XCTestBootstrap
 
-public protocol FBXCTestDescriptor: AnyObject {
+public protocol XCTestDescriptor: AnyObject {
   var url: URL { get }
   var name: String { get }
   var testBundleID: String { get }
   var architectures: Set<String> { get }
   var testBundle: FBBundleDescriptor { get }
-  func setup(with request: FBXCTestRunRequest, target: any FBiOSTarget) -> FBFuture<NSNull>
-  func testConfig(withRunRequest request: FBXCTestRunRequest, testApps: TestApplicationsPair, logDirectoryPath: String?, logger: FBControlCoreLogger) async throws -> IDBAppHostedTestConfiguration
-  func testAppPair(for request: FBXCTestRunRequest, target: any FBiOSTarget) async throws -> TestApplicationsPair
+  func setup(with request: XCTestRunRequest, target: any FBiOSTarget) -> FBFuture<NSNull>
+  func testConfig(withRunRequest request: XCTestRunRequest, testApps: TestApplicationsPair, logDirectoryPath: String?, logger: FBControlCoreLogger) async throws -> IDBAppHostedTestConfiguration
+  func testAppPair(for request: XCTestRunRequest, target: any FBiOSTarget) async throws -> TestApplicationsPair
 }
 
-public extension FBXCTestDescriptor {
-  func setupAsync(with request: FBXCTestRunRequest, target: any FBiOSTarget) async throws {
+public extension XCTestDescriptor {
+  func setupAsync(with request: XCTestRunRequest, target: any FBiOSTarget) async throws {
     try await bridgeFBFutureVoid(self.setup(with: request, target: target))
   }
 }
@@ -51,7 +51,7 @@ extension XCTestDescriptorError: LocalizedError {
   }
 }
 
-final class XCTestBootstrapDescriptor: FBXCTestDescriptor, CustomStringConvertible {
+final class XCTestBootstrapDescriptor: XCTestDescriptor, CustomStringConvertible {
 
   public let url: URL
   public let name: String
@@ -90,9 +90,9 @@ final class XCTestBootstrapDescriptor: FBXCTestDescriptor, CustomStringConvertib
     return future
   }
 
-  // MARK: - FBXCTestDescriptor
+  // MARK: - XCTestDescriptor
 
-  public func setup(with request: FBXCTestRunRequest, target: any FBiOSTarget) -> FBFuture<NSNull> {
+  public func setup(with request: XCTestRunRequest, target: any FBiOSTarget) -> FBFuture<NSNull> {
     targetAuxillaryDirectory = target.auxillaryDirectory
     if request.isLogicTest {
       return FBFuture<NSNull>.empty()
@@ -100,7 +100,7 @@ final class XCTestBootstrapDescriptor: FBXCTestDescriptor, CustomStringConvertib
     return XCTestBootstrapDescriptor.killAllRunningApplications(target).mapReplace(NSNull()).retyped(FBFuture<NSNull>.self)
   }
 
-  public func testAppPair(for request: FBXCTestRunRequest, target: any FBiOSTarget) async throws -> TestApplicationsPair {
+  public func testAppPair(for request: XCTestRunRequest, target: any FBiOSTarget) async throws -> TestApplicationsPair {
     if request.isLogicTest {
       return TestApplicationsPair(applicationUnderTest: nil, testHostApp: nil)
     }
@@ -121,7 +121,7 @@ final class XCTestBootstrapDescriptor: FBXCTestDescriptor, CustomStringConvertib
     return TestApplicationsPair(applicationUnderTest: nil, testHostApp: application)
   }
 
-  public func testConfig(withRunRequest request: FBXCTestRunRequest, testApps: TestApplicationsPair, logDirectoryPath: String?, logger: FBControlCoreLogger) async throws -> IDBAppHostedTestConfiguration {
+  public func testConfig(withRunRequest request: XCTestRunRequest, testApps: TestApplicationsPair, logDirectoryPath: String?, logger: FBControlCoreLogger) async throws -> IDBAppHostedTestConfiguration {
     guard let testHostApp = testApps.testHostApp else {
       throw XCTestDescriptorError.noTestHostApplication(requestDescription: String(describing: request))
     }
@@ -169,7 +169,7 @@ final class XCTestBootstrapDescriptor: FBXCTestDescriptor, CustomStringConvertib
 
 // MARK: - XCodebuildTestRunDescriptor
 
-final class XCodebuildTestRunDescriptor: FBXCTestDescriptor, CustomStringConvertible {
+final class XCodebuildTestRunDescriptor: XCTestDescriptor, CustomStringConvertible {
 
   public let url: URL
   public let name: String
@@ -197,18 +197,18 @@ final class XCodebuildTestRunDescriptor: FBXCTestDescriptor, CustomStringConvert
     "xcodebuild descriptor for \(url) \(name) \(testBundle) \(testHostBundle)"
   }
 
-  // MARK: - FBXCTestDescriptor
+  // MARK: - XCTestDescriptor
 
-  public func setup(with request: FBXCTestRunRequest, target: any FBiOSTarget) -> FBFuture<NSNull> {
+  public func setup(with request: XCTestRunRequest, target: any FBiOSTarget) -> FBFuture<NSNull> {
     targetAuxillaryDirectory = target.auxillaryDirectory
     return FBFuture<NSNull>.empty()
   }
 
-  public func testAppPair(for request: FBXCTestRunRequest, target: any FBiOSTarget) async throws -> TestApplicationsPair {
+  public func testAppPair(for request: XCTestRunRequest, target: any FBiOSTarget) async throws -> TestApplicationsPair {
     TestApplicationsPair(applicationUnderTest: nil, testHostApp: nil)
   }
 
-  public func testConfig(withRunRequest request: FBXCTestRunRequest, testApps: TestApplicationsPair, logDirectoryPath: String?, logger: FBControlCoreLogger) async throws -> IDBAppHostedTestConfiguration {
+  public func testConfig(withRunRequest request: XCTestRunRequest, testApps: TestApplicationsPair, logDirectoryPath: String?, logger: FBControlCoreLogger) async throws -> IDBAppHostedTestConfiguration {
     let resultBundleName = "resultbundle_\(UUID().uuidString)"
     let resultBundlePath = (targetAuxillaryDirectory as NSString).appendingPathComponent(resultBundleName)
 

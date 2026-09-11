@@ -14,7 +14,7 @@ import IDBGRPCSwift
 
 struct DapMethodHandler: @unchecked Sendable {
 
-  let commandExecutor: FBIDBCommandExecutor
+  let commandExecutor: IDBCommandExecutor
   let targetLogger: FBControlCoreLogger
 
   func handle(requestStream: RequestStreamReader<Idb_DapRequest>, responseStream: GRPCAsyncResponseStreamWriter<Idb_DapResponse>, context: GRPCAsyncServerCallContext) async throws {

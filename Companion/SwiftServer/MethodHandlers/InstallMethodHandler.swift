@@ -14,7 +14,7 @@ import IDBGRPCSwift
 
 struct InstallMethodHandler: @unchecked Sendable {
 
-  let commandExecutor: FBIDBCommandExecutor
+  let commandExecutor: IDBCommandExecutor
   let targetLogger: FBControlCoreLogger
 
   func handle(requestStream: RequestStreamReader<Idb_InstallRequest>, responseStream: GRPCAsyncResponseStreamWriter<Idb_InstallResponse>, context: GRPCAsyncServerCallContext) async throws {
@@ -46,7 +46,7 @@ struct InstallMethodHandler: @unchecked Sendable {
     }
   }
 
-  private func install(requestStream: RequestStreamReader<Idb_InstallRequest>, responseStream: GRPCAsyncResponseStreamWriter<Idb_InstallResponse>) async throws -> FBInstalledArtifact {
+  private func install(requestStream: RequestStreamReader<Idb_InstallRequest>, responseStream: GRPCAsyncResponseStreamWriter<Idb_InstallResponse>) async throws -> InstalledArtifact {
 
     func extractPayloadFromRequest() throws -> Idb_Payload {
       guard let payload = request.extractPayload() else {
@@ -85,7 +85,7 @@ struct InstallMethodHandler: @unchecked Sendable {
       request = try await requestStream.requiredNext()
     }
 
-    var linkToBundle: FBDsymInstallLinkToBundle?
+    var linkToBundle: DsymInstallLinkToBundle?
     if case let .linkDsymToBundle(link) = request.value {
       linkToBundle = readLinkBundleToDsym(from: link)
       request = try await requestStream.requiredNext()
@@ -118,13 +118,13 @@ struct InstallMethodHandler: @unchecked Sendable {
     requestStream: RequestStreamReader<Idb_InstallRequest>,
     name: String,
     makeDebuggable: Bool,
-    linkToBundle: FBDsymInstallLinkToBundle?,
+    linkToBundle: DsymInstallLinkToBundle?,
     compression: FBCompressionFormat,
     overrideModificationTime: Bool,
     skipSigningBundles: Bool
-  ) async throws -> FBInstalledArtifact {
+  ) async throws -> InstalledArtifact {
 
-    func installSource(dataStream: FBProcessInput<AnyObject>, skipSigningBundles: Bool) async throws -> FBInstalledArtifact {
+    func installSource(dataStream: FBProcessInput<AnyObject>, skipSigningBundles: Bool) async throws -> InstalledArtifact {
       switch destination {
       case .app:
         return try await commandExecutor.install_app_stream(dataStream, compression: compression, make_debuggable: makeDebuggable, override_modification_time: overrideModificationTime)
@@ -199,7 +199,7 @@ struct InstallMethodHandler: @unchecked Sendable {
     requestStream: RequestStreamReader<Idb_InstallRequest>,
     makeDebuggable: Bool,
     overrideModificationTime: Bool
-  ) async throws -> FBInstalledArtifact {
+  ) async throws -> InstalledArtifact {
     let archiveURL = FileManager.default.temporaryDirectory
       .appendingPathComponent(UUID().uuidString)
       .appendingPathExtension("ipa")
@@ -253,13 +253,13 @@ struct InstallMethodHandler: @unchecked Sendable {
     }
   }
 
-  private func readLinkBundleToDsym(from link: Idb_InstallRequest.LinkDsymToBundle) -> FBDsymInstallLinkToBundle {
+  private func readLinkBundleToDsym(from link: Idb_InstallRequest.LinkDsymToBundle) -> DsymInstallLinkToBundle {
     return .init(
       bundleID: link.bundleID,
       bundleType: readDsymBundleType(from: link.bundleType))
   }
 
-  private func readDsymBundleType(from bundleType: Idb_InstallRequest.LinkDsymToBundle.BundleType) -> FBDsymBundleType {
+  private func readDsymBundleType(from bundleType: Idb_InstallRequest.LinkDsymToBundle.BundleType) -> DsymBundleType {
     switch bundleType {
     case .app:
       return .app

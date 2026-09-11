@@ -38,7 +38,7 @@ public final class IDBTestOperation: CustomStringConvertible {
   public let logger: FBControlCoreLogger
   public let queue: DispatchQueue
   public let reporter: XCTestReporter
-  public let reporterConfiguration: FBXCTestReporterConfiguration
+  public let reporterConfiguration: XCTestReporterConfiguration
   private let configuration: Configuration
 
   public var state: IDBTestOperationState {
@@ -48,7 +48,7 @@ public final class IDBTestOperation: CustomStringConvertible {
     return completed.hasCompleted ? .terminatedNormally : .running
   }
 
-  public init(configuration: Configuration, reporterConfiguration: FBXCTestReporterConfiguration, reporter: XCTestReporter, logger: FBControlCoreLogger, completed: FBFuture<NSNull>, queue: DispatchQueue) {
+  public init(configuration: Configuration, reporterConfiguration: XCTestReporterConfiguration, reporter: XCTestReporter, logger: FBControlCoreLogger, completed: FBFuture<NSNull>, queue: DispatchQueue) {
     self.configuration = configuration
     self.reporterConfiguration = reporterConfiguration
     self.reporter = reporter

@@ -12,7 +12,7 @@ import IDBGRPCSwift
 
 struct TerminateMethodHandler {
 
-  let commandExecutor: FBIDBCommandExecutor
+  let commandExecutor: IDBCommandExecutor
 
   func handle(request: Idb_TerminateRequest, context: GRPCAsyncServerCallContext) async throws -> Idb_TerminateResponse {
     try await commandExecutor.kill_application(request.bundleID)

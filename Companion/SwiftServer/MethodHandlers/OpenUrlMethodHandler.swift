@@ -12,7 +12,7 @@ import IDBGRPCSwift
 
 struct OpenUrlMethodHandler {
 
-  let commandExecutor: FBIDBCommandExecutor
+  let commandExecutor: IDBCommandExecutor
 
   func handle(request: Idb_OpenUrlRequest, context: GRPCAsyncServerCallContext) async throws -> Idb_OpenUrlRequest {
     try await commandExecutor.open_url(request.url)

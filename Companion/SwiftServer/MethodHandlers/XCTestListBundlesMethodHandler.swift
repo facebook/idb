@@ -15,7 +15,7 @@ import XCTestBootstrap
 
 struct XCTestListBundlesMethodHandler {
 
-  let commandExecutor: FBIDBCommandExecutor
+  let commandExecutor: IDBCommandExecutor
 
   func handle(request: Idb_XctestListBundlesRequest, context: GRPCAsyncServerCallContext) async throws -> Idb_XctestListBundlesResponse {
     let descriptors = try await commandExecutor.list_test_bundles()
@@ -23,7 +23,7 @@ struct XCTestListBundlesMethodHandler {
       $0.bundles = descriptors.map(toBundle(descriptor:))
     }
   }
-  private func toBundle(descriptor: FBXCTestDescriptor) -> Idb_XctestListBundlesResponse.Bundles {
+  private func toBundle(descriptor: XCTestDescriptor) -> Idb_XctestListBundlesResponse.Bundles {
     return .with {
       $0.name = descriptor.name
       $0.bundleID = descriptor.testBundleID

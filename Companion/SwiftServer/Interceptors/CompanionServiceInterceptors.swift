@@ -14,9 +14,9 @@ import IDBGRPCSwift
 // grpc-swift requires one factory method per RPC; all of them share `commonInterceptors()`.
 final class CompanionServiceInterceptors: Idb_CompanionServiceServerInterceptorFactoryProtocol, @unchecked Sendable {
 
-  private let logger: FBIDBLogger
+  private let logger: IDBLogger
 
-  init(logger: FBIDBLogger) {
+  init(logger: IDBLogger) {
     self.logger = logger
   }
 

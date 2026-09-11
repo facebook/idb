@@ -16,7 +16,7 @@ struct InstrumentsRunMethodHandler {
 
   let target: any FBiOSTarget
   let targetLogger: FBControlCoreLogger
-  let commandExecutor: FBIDBCommandExecutor
+  let commandExecutor: IDBCommandExecutor
   let logger: FBControlCoreLogger
 
   func handle(requestStream: RequestStreamReader<Idb_InstrumentsRunRequest>, responseStream: GRPCAsyncResponseStreamWriter<Idb_InstrumentsRunResponse>, context: GRPCAsyncServerCallContext) async throws {
@@ -93,7 +93,7 @@ struct InstrumentsRunMethodHandler {
     }
   }
 
-  private func instrumentsConfiguration(from request: Idb_InstrumentsRunRequest.Start, storageManager: FBIDBStorageManager) -> InstrumentsConfiguration {
+  private func instrumentsConfiguration(from request: Idb_InstrumentsRunRequest.Start, storageManager: IDBStorageManager) -> InstrumentsConfiguration {
     func withDefaultTimeout(_ initial: Double, _ default: Double) -> Double {
       initial != 0 ? initial : `default`
     }

@@ -30,7 +30,7 @@ extension IDBXCTestReporter {
 
     let reportResultBundle: Bool
 
-    init(legacy: FBXCTestReporterConfiguration) {
+    init(legacy: XCTestReporterConfiguration) {
       self.resultBundlePath = legacy.resultBundlePath ?? ""
       self.coverageConfiguration = legacy.coverageConfiguration
       self.logDirectoryPath = legacy.logDirectoryPath

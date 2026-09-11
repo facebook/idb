@@ -15,7 +15,7 @@ import ReplProtocol
 
 struct ReplMethodHandler {
 
-  let commandExecutor: FBIDBCommandExecutor
+  let commandExecutor: IDBCommandExecutor
   let targetLogger: FBControlCoreLogger
   /// Owns the in-progress screen recording, which can outlive a single `repl`
   /// stream (in the app context). Shared across streams for one target.
@@ -120,7 +120,7 @@ struct ReplMethodHandler {
       })
 
     // Services nested `host_command`s the served process sends back while an
-    // execute is running (e.g. `IDB.tap`), mapping them to FBIDBCommandExecutor.
+    // execute is running (e.g. `IDB.tap`), mapping them to IDBCommandExecutor.
     let dispatcher = HostCommandDispatcher(commandExecutor: commandExecutor, state: hostState, recordingCoordinator: recordingCoordinator, appBundleID: appBundleID)
 
     var runIndex = 0

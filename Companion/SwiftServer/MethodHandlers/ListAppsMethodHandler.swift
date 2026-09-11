@@ -13,7 +13,7 @@ import IDBGRPCSwift
 
 struct ListAppsMethodHandler {
 
-  let commandExecutor: FBIDBCommandExecutor
+  let commandExecutor: IDBCommandExecutor
 
   func handle(request: Idb_ListAppsRequest, context: GRPCAsyncServerCallContext) async throws -> Idb_ListAppsResponse {
     let persistedBundleIDs = commandExecutor.storageManager.application.persistedBundleIDs

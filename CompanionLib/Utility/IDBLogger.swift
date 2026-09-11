@@ -56,11 +56,11 @@ private final class IDBLoggerOperation: NSObject, LogOperation, @unchecked Senda
 
 // Restates the base class's @unchecked Sendable, as required for subclasses; all added state is
 // immutable or confined to `loggerQueue`.
-public final class FBIDBLogger: FBCompositeLogger, @unchecked Sendable {
+public final class IDBLogger: FBCompositeLogger, @unchecked Sendable {
 
   private static let loggerQueue: DispatchQueue = DispatchQueue(label: "com.facebook.idb.logger")
 
-  public static func logger(withUserDefaults userDefaults: UserDefaults) -> FBIDBLogger {
+  public static func logger(withUserDefaults userDefaults: UserDefaults) -> IDBLogger {
     let debugLogging = userDefaults.string(forKey: "-log-level")?.lowercased() == "info" ? false : true
     let systemLogger = FBControlCoreLoggerFactory.systemLoggerWriting(toStderr: true, withDebugLogging: debugLogging)
     var loggers: [FBControlCoreLogger] = [systemLogger]
@@ -86,7 +86,7 @@ public final class FBIDBLogger: FBCompositeLogger, @unchecked Sendable {
 
       loggers.append(FBControlCoreLoggerFactory.logger(toFileDescriptor: fileDescriptor, closeOnEndOfFile: true))
     }
-    let logger = FBIDBLogger(loggers: loggers).dateFormatted()
+    let logger = IDBLogger(loggers: loggers).dateFormatted()
     FBControlCoreGlobalConfiguration.defaultLogger = logger
 
     return logger
@@ -106,18 +106,18 @@ public final class FBIDBLogger: FBCompositeLogger, @unchecked Sendable {
   }
 
   /// `FBCompositeLogger`'s builder methods allocate an instance of the receiver's dynamic class, so
-  /// applying one to an `FBIDBLogger` always yields an `FBIDBLogger` — the Objective-C declarations
+  /// applying one to an `IDBLogger` always yields an `IDBLogger` — the Objective-C declarations
   /// can only promise `FBControlCoreLogger`.
-  public func named(_ name: String) -> FBIDBLogger {
-    unsafeDowncast(withName(name) as AnyObject, to: FBIDBLogger.self)
+  public func named(_ name: String) -> IDBLogger {
+    unsafeDowncast(withName(name) as AnyObject, to: IDBLogger.self)
   }
 
-  func dateFormatted() -> FBIDBLogger {
-    unsafeDowncast(withDateFormatEnabled(true) as AnyObject, to: FBIDBLogger.self)
+  func dateFormatted() -> IDBLogger {
+    unsafeDowncast(withDateFormatEnabled(true) as AnyObject, to: IDBLogger.self)
   }
 
   func tailToConsumer(_ consumer: FBDataConsumer) async throws -> any LogOperation {
-    let queue = FBIDBLogger.loggerQueue
+    let queue = IDBLogger.loggerQueue
     // FBDataConsumer is a thread-safe ObjC protocol that isn't Sendable.
     nonisolated(unsafe) let consumer = consumer
     return await withCheckedContinuation { (continuation: CheckedContinuation<any LogOperation, Never>) in
