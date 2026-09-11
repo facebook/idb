@@ -307,6 +307,11 @@ final class SimulatorVideoStreamDeliveryTests: XCTestCase {
   private static let lazyConfiguration = FBVideoStreamConfiguration(
     format: .bgra, framesPerSecond: nil, rateControl: nil, scaleFactor: nil, keyFrameRate: nil)
 
+  /// `lazyConfiguration` with a fractional scale: the bitmap pusher then owns a
+  /// `VTPixelTransferSession`, giving a displaced pusher session state to observe.
+  private static let scaledLazyConfiguration = FBVideoStreamConfiguration(
+    format: .bgra, framesPerSecond: nil, rateControl: nil, scaleFactor: 0.5, keyFrameRate: nil)
+
   private func makeStream(
     surface: FakeFramebufferSurface,
     configuration: FBVideoStreamConfiguration = lazyConfiguration
@@ -320,13 +325,14 @@ final class SimulatorVideoStreamDeliveryTests: XCTestCase {
   /// tests await outcomes rather than assuming synchronous effects.
   private func expectEventually(
     _ message: String,
-    condition: () -> Bool
+    condition: () async -> Bool
   ) async throws {
     for _ in 0..<500 {
-      if condition() { return }
+      if await condition() { return }
       try await Task.sleep(nanoseconds: 10_000_000)
     }
-    XCTAssertTrue(condition(), message)
+    let holds = await condition()
+    XCTAssertTrue(holds, message)
   }
 
   /// Wait for the byte count to stop growing (two identical samples 100ms apart) so a test can
@@ -419,6 +425,29 @@ final class SimulatorVideoStreamDeliveryTests: XCTestCase {
     try await expectEventually("a surface swap must remount and push a frame") {
       consumer.data().count > baseline
     }
+    try await stream.stopStreaming()
+  }
+
+  func testSurfaceSwapTearsDownPreviousFramePusher() async throws {
+    let surface = FakeFramebufferSurface()
+    surface.immediateSurface = makeTestIOSurface()
+    let consumer = FBDataBuffer.accumulatingBuffer()
+    let stream = makeStream(surface: surface, configuration: Self.scaledLazyConfiguration)
+
+    try await stream.startStreaming(consumer)
+    let mountedHandle = await stream.currentFramePusherHandle()
+    let previous = try XCTUnwrap(mountedHandle)
+    let previousPusher = try XCTUnwrap(previous.bitmapPusher)
+    XCTAssertNotNil(previousPusher.pixelTransferSession, "precondition: a scaled bitmap pusher owns a transfer session")
+
+    surface.ioSurfaceChanged?(makeTestIOSurface(width: 32, height: 32))
+    try await expectEventually("a surface swap must install a new frame pusher") {
+      await stream.currentFramePusherHandle()?.identity != previous.identity
+    }
+
+    // BUG: the displaced pusher is never torn down, so its VTPixelTransferSession stays alive —
+    // flipped in the following commit.
+    XCTAssertNotNil(previousPusher.pixelTransferSession)
     try await stream.stopStreaming()
   }
 
@@ -670,5 +699,26 @@ final class SimulatorVideoStreamDeliveryTests: XCTestCase {
     try await expectEventually("dropping the last external reference must release the stream") {
       weakStream == nil
     }
+  }
+}
+
+/// A snapshot of the stream's current frame pusher, taken on the actor so the non-Sendable pusher
+/// never crosses an isolation boundary.
+// SAFETY: pusher state is mutated only on the stream actor; tests read `bitmapPusher` only after
+// the actor has finished the operation under test.
+// patternlint-disable-next-line unchecked-sendable
+private final class FramePusherHandle: @unchecked Sendable {
+  let identity: ObjectIdentifier
+  let bitmapPusher: SimulatorVideoStreamFramePusher_Bitmap?
+
+  init(pusher: any SimulatorVideoStreamFramePusher) {
+    identity = ObjectIdentifier(pusher)
+    bitmapPusher = pusher as? SimulatorVideoStreamFramePusher_Bitmap
+  }
+}
+
+extension FBSimulatorVideoStream {
+  fileprivate func currentFramePusherHandle() -> FramePusherHandle? {
+    framePusher.map(FramePusherHandle.init)
   }
 }
