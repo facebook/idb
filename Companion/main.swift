@@ -376,7 +376,7 @@ private func runClean(_ udid: String, userDefaults: UserDefaults, xcodeAvailable
   try await commandExecutor.clean()
 }
 
-private func runCompanionServer(_ udid: String, userDefaults: UserDefaults, xcodeAvailable: Bool, logger: IDBLogger, reporter: FBEventReporter) async throws {
+private func runCompanionServer(_ udid: String, userDefaults: UserDefaults, xcodeAvailable: Bool, logger: IDBLogger, reporter: EventReporter) async throws {
   let terminateOffline = userDefaults.bool(forKey: "-terminate-offline")
   let idleShutdownTime = userDefaults.string(forKey: "-idle-shutdown-time").flatMap(Double.init).flatMap { $0 > 0 ? $0 : nil }
 
@@ -386,7 +386,7 @@ private func runCompanionServer(_ udid: String, userDefaults: UserDefaults, xcod
     "udid": udid,
     "target_type": target.targetType.stringRepresentation.lowercased(),
   ])
-  reporter.report(FBEventReporterSubject(forEvent: "launched"))
+  reporter.report(EventReporterSubject(forEvent: "launched"))
 
   let temporaryDirectory = FBTemporaryDirectory(logger: logger)
   let storageManager = try IDBStorageManager.manager(forTarget: target, logger: logger)

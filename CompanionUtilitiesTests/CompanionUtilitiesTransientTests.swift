@@ -142,19 +142,19 @@ struct CompanionUtilitiesTransientTests {
     }
   }
 
-  // MARK: - FBTeardownContext Tests
+  // MARK: - TeardownContext Tests
 
   @Test
   func withAutocleanupCallsCleanupInLIFOOrder() async throws {
     var order: [Int] = []
-    try await FBTeardownContext.withAutocleanup {
-      try FBTeardownContext.current.addCleanup {
+    try await TeardownContext.withAutocleanup {
+      try TeardownContext.current.addCleanup {
         order.append(1)
       }
-      try FBTeardownContext.current.addCleanup {
+      try TeardownContext.current.addCleanup {
         order.append(2)
       }
-      try FBTeardownContext.current.addCleanup {
+      try TeardownContext.current.addCleanup {
         order.append(3)
       }
     }
@@ -163,7 +163,7 @@ struct CompanionUtilitiesTransientTests {
 
   @Test
   func emptyContextThrowsOnAddCleanup() async {
-    let emptyContext = FBTeardownContext.current
+    let emptyContext = TeardownContext.current
     do {
       try emptyContext.addCleanup {}
       Issue.record("Expected emptyContext error")
@@ -181,7 +181,7 @@ struct CompanionUtilitiesTransientTests {
 
   @Test
   func emptyContextThrowsOnPerformCleanup() async {
-    let emptyContext = FBTeardownContext.current
+    let emptyContext = TeardownContext.current
     await #expect(throws: TeardownContextError.self) {
       try await emptyContext.performCleanup()
     }
@@ -191,8 +191,8 @@ struct CompanionUtilitiesTransientTests {
   func doubleCleanupThrows() async throws {
     var cleanupCount = 0
     await #expect(throws: TeardownContextError.self) {
-      try await FBTeardownContext.withAutocleanup {
-        let context = FBTeardownContext.current
+      try await TeardownContext.withAutocleanup {
+        let context = TeardownContext.current
         try context.addCleanup {
           cleanupCount += 1
         }
@@ -205,9 +205,9 @@ struct CompanionUtilitiesTransientTests {
 
   @Test
   func addCleanupAfterCleanupPerformedThrows() async throws {
-    var context: FBTeardownContext?
-    try await FBTeardownContext.withAutocleanup {
-      context = FBTeardownContext.current
+    var context: TeardownContext?
+    try await TeardownContext.withAutocleanup {
+      context = TeardownContext.current
     }
     // Context cleanup already performed by withAutocleanup
     let captured = try #require(context)
@@ -218,7 +218,7 @@ struct CompanionUtilitiesTransientTests {
 
   @Test
   func withAutocleanupReturnsValue() async throws {
-    let result = try await FBTeardownContext.withAutocleanup {
+    let result = try await TeardownContext.withAutocleanup {
       return 42
     }
     #expect(result == 42)
@@ -228,7 +228,7 @@ struct CompanionUtilitiesTransientTests {
   func withAutocleanupPropagatesError() async {
     struct TestError: Error {}
     await #expect(throws: TestError.self) {
-      try await FBTeardownContext.withAutocleanup {
+      try await TeardownContext.withAutocleanup {
         throw TestError()
       }
     }

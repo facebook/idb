@@ -49,10 +49,10 @@ enum ReplRunTelemetry {
     failure: String?,
     stage: ReplRunStage? = nil,
     now: Date = Date()
-  ) -> FBEventReporterSubject {
+  ) -> EventReporterSubject {
     let duration = now.timeIntervalSince(start)
     guard let failure else {
-      return FBEventReporterSubject(
+      return EventReporterSubject(
         forSuccessfulCall: name,
         duration: duration,
         size: nil,
@@ -63,7 +63,7 @@ enum ReplRunTelemetry {
     if let stage {
       normals["stage"] = stage.rawValue
     }
-    return FBEventReporterSubject(
+    return EventReporterSubject(
       forFailingCall: name,
       duration: duration,
       message: failure,

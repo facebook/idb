@@ -18,7 +18,7 @@ public struct EventType: RawRepresentable, Equatable, Hashable, Sendable {
   public static let failure = EventType(rawValue: "failure")
 }
 
-public struct FBEventReporterSubject: Sendable {
+public struct EventReporterSubject: Sendable {
 
   public let eventName: String
   public let eventType: EventType
@@ -72,7 +72,7 @@ public struct FBEventReporterSubject: Sendable {
       eventName: call,
       eventType: .success,
       arguments: arguments,
-      duration: FBEventReporterSubject.durationMilliseconds(duration),
+      duration: EventReporterSubject.durationMilliseconds(duration),
       size: size,
       message: nil,
       normals: normals,
@@ -93,7 +93,7 @@ public struct FBEventReporterSubject: Sendable {
       eventName: call,
       eventType: .failure,
       arguments: arguments,
-      duration: FBEventReporterSubject.durationMilliseconds(duration),
+      duration: EventReporterSubject.durationMilliseconds(duration),
       size: size,
       message: message,
       normals: normals,

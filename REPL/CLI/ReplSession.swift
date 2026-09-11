@@ -58,7 +58,7 @@ final class ReplSession {
   private(set) var nextRunIndex: Int
 
   private let config: ReplSessionConfig
-  private let reporter: FBEventReporter
+  private let reporter: EventReporter
   /// When the session began connecting; the `session_end` event's duration
   /// measures from here.
   private let startedAt: Date
@@ -81,7 +81,7 @@ final class ReplSession {
 
   private init(
     config: ReplSessionConfig,
-    reporter: FBEventReporter,
+    reporter: EventReporter,
     startedAt: Date,
     group: MultiThreadedEventLoopGroup,
     channel: GRPCChannel,

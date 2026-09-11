@@ -41,15 +41,15 @@ private final class TeardownContextImpl: @unchecked Sendable {
 /// Coordinates LIFO cleanup of resources created inside a task scope:
 ///
 /// ```
-/// try await FBTeardownContext.withAutocleanup {
+/// try await TeardownContext.withAutocleanup {
 ///   let tmpDir = createTemporaryDirectory()
-///   try FBTeardownContext.current.addCleanup { try FileManager.default.removeItem(atPath: tmpDir) }
+///   try TeardownContext.current.addCleanup { try FileManager.default.removeItem(atPath: tmpDir) }
 ///   addFiles(to: tmpDir)
 /// }
 /// ```
-public final class FBTeardownContext: Sendable {
+public final class TeardownContext: Sendable {
 
-  @TaskLocal public static var current: FBTeardownContext = .init(emptyContext: ())
+  @TaskLocal public static var current: TeardownContext = .init(emptyContext: ())
 
   private let contextImpl: TeardownContextImpl?
   private let codeLocation: CodeLocation
@@ -67,10 +67,10 @@ public final class FBTeardownContext: Sendable {
     self.codeLocation = .init(function: function, file: file, line: line, column: column)
   }
 
-  /// Runs `operation` with a fresh `FBTeardownContext.current`, then performs its cleanups.
+  /// Runs `operation` with a fresh `TeardownContext.current`, then performs its cleanups.
   public static func withAutocleanup<T>(function: String = #function, file: String = #file, line: Int = #line, column: Int = #column, operation: nonisolated(nonsending) () async throws -> T) async throws -> T {
-    let context = FBTeardownContext(isAutocleanup: true, function: function, file: file, line: line, column: column)
-    let result = try await FBTeardownContext.$current.withValue(context, operation: operation)
+    let context = TeardownContext(isAutocleanup: true, function: function, file: file, line: line, column: column)
+    let result = try await TeardownContext.$current.withValue(context, operation: operation)
     try await context.performCleanup()
     return result
   }

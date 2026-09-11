@@ -14,7 +14,7 @@ import IDBGRPCSwift
 
 struct DescribeMethodHandler {
 
-  let reporter: FBEventReporter
+  let reporter: EventReporter
   let logger: IDBLogger
   let target: any FBiOSTarget
   let commandExecutor: IDBCommandExecutor

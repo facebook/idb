@@ -18,7 +18,7 @@ struct XCTestRunMethodHandler {
 
   let target: any FBiOSTarget
   let commandExecutor: IDBCommandExecutor
-  let reporter: FBEventReporter
+  let reporter: EventReporter
   let targetLogger: FBControlCoreLogger
   let logger: IDBLogger
 

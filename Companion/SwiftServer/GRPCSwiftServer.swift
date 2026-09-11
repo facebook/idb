@@ -47,7 +47,7 @@ final class GRPCSwiftServer: @unchecked Sendable {
   init(
     target: any FBiOSTarget,
     commandExecutor: IDBCommandExecutor,
-    reporter: FBEventReporter,
+    reporter: EventReporter,
     logger: IDBLogger,
     ports: IDBPortsConfiguration,
     idleMonitor: IdleMonitor?,

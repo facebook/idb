@@ -13,7 +13,7 @@ import Foundation
 /// Per-RPC telemetry, applied in `CompanionServiceProvider` around each handler dispatch: logs
 /// `<method> called with: [<args>]` and `<method> succeeded in <duration>` / `<method> failed after
 /// <duration>: <message>`, all at info so a failing call stays visible under `-log-level info`, and reports
-/// one success or failure `FBEventReporterSubject` per call. Unary calls may pass `summarize` to append a
+/// one success or failure `EventReporterSubject` per call. Unary calls may pass `summarize` to append a
 /// result summary to the success line (e.g. `ls succeeded in 12ms (5 entries)`). Arguments are rendered
 /// from the request via `Mirror`, each value middle-truncated to 100 characters (container GUIDs and temp
 /// paths differ at the tail); empty protobuf `unknownFields` are omitted. `size` is always nil; no request
@@ -21,7 +21,7 @@ import Foundation
 struct CompanionTelemetry {
 
   let logger: IDBLogger
-  let reporter: FBEventReporter
+  let reporter: EventReporter
 
   private static let argumentValueLimit = 100
 
@@ -83,7 +83,7 @@ struct CompanionTelemetry {
       let summary = summarize.map { " (\($0(result)))" } ?? ""
       logger.info().log("\(method) succeeded in \(Self.formatDuration(duration))\(summary)")
       reporter.report(
-        FBEventReporterSubject(
+        EventReporterSubject(
           forSuccessfulCall: method,
           duration: duration,
           size: nil,
@@ -94,7 +94,7 @@ struct CompanionTelemetry {
       let message = (error as NSError).localizedDescription
       logger.info().log("\(method) failed after \(Self.formatDuration(duration)): \(message)")
       reporter.report(
-        FBEventReporterSubject(
+        EventReporterSubject(
           forFailingCall: method,
           duration: duration,
           message: message,

@@ -10,7 +10,7 @@ import Foundation
 
 enum ReplTelemetry {
 
-  static func makeReporter() -> FBEventReporter {
+  static func makeReporter() -> EventReporter {
     // @oss-disable
       // @oss-disable
     // @oss-disable

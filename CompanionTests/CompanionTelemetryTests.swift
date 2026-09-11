@@ -14,11 +14,11 @@ import Testing
 
 /// Captures every subject the telemetry reports, so the per-RPC emission can
 /// be asserted without a scribe process.
-private final class RecordingEventReporter: NSObject, FBEventReporter, @unchecked Sendable {
+private final class RecordingEventReporter: NSObject, EventReporter, @unchecked Sendable {
   private let lock = NSLock()
-  private var recorded: [FBEventReporterSubject] = []
+  private var recorded: [EventReporterSubject] = []
 
-  var subjects: [FBEventReporterSubject] {
+  var subjects: [EventReporterSubject] {
     lock.lock()
     defer { lock.unlock() }
     return recorded
@@ -26,7 +26,7 @@ private final class RecordingEventReporter: NSObject, FBEventReporter, @unchecke
 
   var metadata: [String: String] { [:] }
 
-  func report(_ subject: FBEventReporterSubject) {
+  func report(_ subject: EventReporterSubject) {
     lock.lock()
     defer { lock.unlock() }
     recorded.append(subject)

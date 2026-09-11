@@ -22,7 +22,7 @@ import GRPC
 /// or drops the connection mid-call, so completion observed at this layer is
 /// unreliable and would silently miss such calls. `CompanionTelemetry` wraps every
 /// handler in a `do`/`catch` and reports completion — and the success/failure
-/// `FBEventReporter` event — reliably on every termination path, so it is the
+/// `EventReporter` event — reliably on every termination path, so it is the
 /// single source for that.
 ///
 /// Interceptor instances are created per call by `CompanionServiceInterceptors`,

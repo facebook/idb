@@ -7,10 +7,10 @@
 
 import Foundation
 
-public protocol FBEventReporter: AnyObject {
+public protocol EventReporter: AnyObject {
 
   /// Reports a Subject.
-  func report(_ subject: FBEventReporterSubject)
+  func report(_ subject: EventReporterSubject)
 
   /// Add metadata to attach to each report.
   func addMetadata(_ metadata: [String: String])
