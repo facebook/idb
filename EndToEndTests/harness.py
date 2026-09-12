@@ -36,6 +36,7 @@ IDB_BIN_ENV = "IDB_BIN"
 IDB_ARGS_ENV = "IDB_ARGS"
 IDB_COMPANION_PATH_ENV = "IDB_COMPANION_PATH"
 IDB_SETUP_BIN_ENV = "IDB_SETUP_BIN"
+READ_ONLY_CLIENT_ENV = "IDB_E2E_READ_ONLY_CLIENT"
 STRICT_ENV = "IDB_E2E_STRICT"
 
 T = TypeVar("T")
@@ -128,6 +129,10 @@ def classify_failure(completed: Completed) -> FailureKind:
 
 def strict() -> bool:
     return os.environ.get(STRICT_ENV) == "1"
+
+
+def read_only_client() -> bool:
+    return os.environ.get(READ_ONLY_CLIENT_ENV) == "1"
 
 
 @dataclass(frozen=True)
@@ -609,6 +614,9 @@ class IdbEndToEndTestCase(unittest.IsolatedAsyncioTestCase):
         if check and completed.returncode != 0:
             self.fail_or_skip_for("setup: " + " ".join(args), completed)
         return completed
+
+    async def setup_terminate_quietly(self, bundle_id: str) -> None:
+        await self.setup_idb("terminate", bundle_id, check=False)
 
     def idb_process(self, *args: str) -> "IdbProcess":
         """Start a streaming command and stop it when the async context exits."""

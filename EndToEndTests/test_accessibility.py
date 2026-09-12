@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import unittest
 from typing import Any
 
 from .harness import (
@@ -26,6 +27,7 @@ from .harness import (
     IdbEndToEndTestCase,
     NotReady,
     POLL_INTERVAL_SECONDS,
+    read_only_client,
     wait_until,
 )
 
@@ -116,9 +118,9 @@ class AccessibilityTests(IdbEndToEndTestCase):
     async def asyncSetUp(self) -> None:
         await super().asyncSetUp()
         for bundle_id in (SAFARI_BUNDLE_ID, FIXTURE_APP_BUNDLE_ID, SETTINGS_BUNDLE_ID):
-            await self.terminate_quietly(bundle_id)
-        await self.idb("launch", SETTINGS_BUNDLE_ID)
-        self.addAsyncCleanup(self.terminate_quietly, SETTINGS_BUNDLE_ID)
+            await self.setup_terminate_quietly(bundle_id)
+        await self.setup_idb("launch", SETTINGS_BUNDLE_ID)
+        self.addAsyncCleanup(self.setup_terminate_quietly, SETTINGS_BUNDLE_ID)
         self.control = await self.wait_for_control()
 
     async def describe_all(self, *extra: str) -> Any:
@@ -147,7 +149,7 @@ class AccessibilityTests(IdbEndToEndTestCase):
                 if ACCESSIBILITY_NOT_READY_MARKER not in completed.error_text:
                     self.fail_or_skip_for(" ".join(DESCRIBE_ALL_ARGS), completed)
                 if SETTINGS_BUNDLE_ID not in await self.simctl.running_bundle_ids():
-                    await self.idb("launch", SETTINGS_BUNDLE_ID)
+                    await self.setup_idb("launch", SETTINGS_BUNDLE_ID, check=False)
                 raise NotReady("the simulator has no accessibility translation object")
             controls = _labelled_controls(json.loads(completed.text))
             if not controls:
@@ -242,6 +244,7 @@ class AccessibilityTests(IdbEndToEndTestCase):
 
         await self.idb_expect_failure("ui", "describe", "idb-e2e-no-such-element")
 
+    @unittest.skipIf(read_only_client(), "selected client is read-only")
     async def test_ui_tap_opens_general_by_point(self) -> None:
         general = await self.wait_for_element(GENERAL_ROW_ID)
         title = _label(general)
@@ -277,6 +280,7 @@ class AccessibilityTests(IdbEndToEndTestCase):
         await self.idb("ui", "tap", str(x), str(y), "--api", "ax")
         await self.wait_for_element(title, "NavigationBar")
 
+    @unittest.skipIf(read_only_client(), "selected client is read-only")
     async def test_ui_tap_opens_general_by_marker(self) -> None:
         general = await self.wait_for_element(GENERAL_ROW_ID)
         title = _label(general)
@@ -313,6 +317,7 @@ class AccessibilityTests(IdbEndToEndTestCase):
             f"Settings did not scroll {direction}", UI_UPDATE_TIMEOUT_SECONDS, read
         )
 
+    @unittest.skipIf(read_only_client(), "selected client is read-only")
     async def test_ui_scroll_moves_settings_rows_down_and_up(self) -> None:
         await self.wait_for_element(GENERAL_ROW_ID)
         before = _settings_row_positions(await self.describe_all_complete("axbridge"))
