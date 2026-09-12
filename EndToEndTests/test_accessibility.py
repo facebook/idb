@@ -112,6 +112,29 @@ def _settings_row_positions(document: Any) -> dict[str, float]:
     }
 
 
+INTERACTION_TESTS = frozenset(
+    {
+        "test_ui_scroll_moves_settings_rows_down_and_up",
+        "test_ui_tap_opens_general_by_marker",
+        "test_ui_tap_opens_general_by_point",
+    }
+)
+
+
+def load_tests(
+    loader: unittest.TestLoader,
+    tests: unittest.TestSuite,
+    pattern: str | None,
+) -> unittest.TestSuite:
+    if not read_only_client():
+        return tests
+    return unittest.TestSuite(
+        AccessibilityTests(name)
+        for name in loader.getTestCaseNames(AccessibilityTests)
+        if name not in INTERACTION_TESTS
+    )
+
+
 class AccessibilityTests(IdbEndToEndTestCase):
     control: dict[str, Any]
 
