@@ -202,6 +202,20 @@ function resolve_swift_protobuf_version() {
   fi
 }
 
+# Reduces the URL in the first field of each line to the repository name it ends
+# in. Neither manifest states an identity, so the URL is the only thing the two
+# can be matched on -- and a package is the same package however its URL is
+# spelled, so both sides are reduced here rather than each parser deciding for
+# itself what a name looks like.
+function repository_names() {
+  awk '{
+    sub(/\/+$/, "", $1)
+    sub(/\.git$/, "", $1)
+    sub(/.*\//, "", $1)
+    print
+  }'
+}
+
 # Lines inside dependencies: that the extractor below cannot read. SwiftPM
 # accepts a .package(...) split over several lines, and the extractor only sees
 # one written on a single line -- so a split declaration lands in neither
@@ -220,11 +234,11 @@ function package_swift_unreadable_entries() {
 # reported as an unpinned dependency that is not there. The comment cannot be
 # stripped to end of line instead, because every url: contains a // of its own.
 function package_swift_pins() {
-  sed -n '/^[[:space:]]*\/\//d; s|.*\.package(url: "[^"]*/\([^"/]*\)\.git", exact: "\([^"]*\)").*|\1 \2|p' Package.swift
+  sed -n '/^[[:space:]]*\/\//d; s|.*\.package(url: "\([^"]*\)", exact: "\([^"]*\)").*|\1 \2|p' Package.swift | repository_names
 }
 
 function package_swift_packages() {
-  sed -n '/^[[:space:]]*\/\//d; s|.*\.package(url: "[^"]*/\([^"/]*\)\.git".*|\1|p' Package.swift
+  sed -n '/^[[:space:]]*\/\//d; s|.*\.package(url: "\([^"]*\)".*|\1|p' Package.swift | repository_names
 }
 
 # "<package> <version>" per pin in Package.resolved, keyed on the identity
@@ -245,10 +259,8 @@ function pinned_version() {
 # Keyed on the URL, not on the YAML key above it. The key is a nickname XcodeGen
 # never resolves anything by, so matching on it lets a rename quietly take the
 # package out of the comparison with Package.swift; the URL is the identity both
-# manifests actually state. Trailing slashes come off before the repository name
-# is taken: they name the same repository, and left on they would reduce the
-# identity to nothing. An entry with no url: falls back to its key, which is the
-# only thing left to call it.
+# manifests actually state. An entry with no url: falls back to its key, which is
+# the only thing left to call it and passes through the reduction unchanged.
 #
 # The packages: block ends at the first non-blank line that is not indented, and
 # an entry ends where the next one begins, so neither can run on into a sibling. An entry header is a bare key with nothing after the
@@ -256,13 +268,8 @@ function pinned_version() {
 # companion_unreadable_entries below reports it rather than letting it vanish.
 function _companion_packages_awk() {
   awk -v want_version="$1" '
-    function identity(   n) {
-      if (url == "") return name
-      n = url
-      sub(/\/+$/, "", n)
-      sub(/\.git$/, "", n)
-      sub(/.*\//, "", n)
-      return n
+    function identity() {
+      return url == "" ? name : url
     }
     function flush() {
       if (name == "") return
@@ -289,7 +296,7 @@ function _companion_packages_awk() {
       gsub(/["\047]/, "", version)
     }
     END { flush() }
-  ' Companion/project.yml
+  ' Companion/project.yml | repository_names
 }
 
 function companion_pins() {

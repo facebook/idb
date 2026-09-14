@@ -366,17 +366,15 @@ dir="$(stage_package trailing-slash 1.27.5 1.38.1)"
 sed_inplace 's|\(url: .*\)$|\1/|' "$dir/Companion/project.yml"
 assert_accepted "a companion whose urls end in a slash" "$dir"
 
-# SwiftPM takes a url with or without the .git suffix, but the Package.swift
-# parser only recognises one with, so an entry written without it is invisible to
-# the exactness check the case above relies on -- the same requirement, spelled a
-# way the parser does not see.
+# SwiftPM takes a url with or without the .git suffix, and neither spelling may
+# change what the exactness check above sees: it is the same requirement, and the
+# case above refuses the other spelling of it.
 dir="$(stage_package unsuffixed-url 1.27.5 1.38.1)"
 sed_inplace 's|url: "https://github.com/apple/swift-protobuf.git", exact:|url: "https://github.com/apple/swift-protobuf", from:|' \
     "$dir/Package.swift"
 
-# BUG: a floating requirement goes unreported when its url carries no .git --
-# flipped in the following commit.
-assert_accepted "a floating requirement on a url with no .git suffix" "$dir"
+assert_rejected "a floating requirement on a url with no .git suffix" "$dir" \
+    "Package.swift does not pin these to an exact version: swift-protobuf"
 
 # ---------------------------------------------------------------------------
 # Which revision the plugin is actually built from
