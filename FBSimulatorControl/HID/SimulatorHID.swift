@@ -132,6 +132,11 @@ public final class FBSimulatorHID: CustomStringConvertible, @unchecked Sendable 
     transport.disconnect()
   }
 
+  /// Releases the transport.
+  public func close() async {
+    disconnect()
+  }
+
   // MARK: - Indigo Event Send Primitives
 
   /// Sends a single-finger touch at the given point (in points), optionally tagged as originating at

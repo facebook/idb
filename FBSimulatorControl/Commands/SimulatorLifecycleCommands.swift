@@ -142,8 +142,9 @@ public final class SimulatorLifecycleCommands: LifecycleCommands {
   }
 
   private func terminateConnections() async throws {
-    hid?.disconnect()
+    let hid = self.hid
     self.hid = nil
+    await hid?.close()
   }
 
   public func connectToFramebuffer() async throws -> Framebuffer {

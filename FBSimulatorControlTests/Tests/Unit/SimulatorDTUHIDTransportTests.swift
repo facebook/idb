@@ -400,6 +400,55 @@ final class SimulatorDTUHIDTransportTests: XCTestCase {
     XCTAssertEqual(sleeps, [DTUHIDTiming.replyTail, DTUHIDTiming.drain])
   }
 
+  // MARK: - Teardown
+
+  func testCloseWithUndrainedSend() async throws {
+    let recorder = DrainRecorder()
+    let hid = makeHID(recorder)
+    hid.flushesAfterEachEvent = false
+
+    try await sendGesture(on: hid)
+    await hid.close()
+
+    let replies = await recorder.replies
+    let sleeps = await recorder.sleeps
+    XCTAssertEqual(replies, 0)
+    XCTAssertEqual(sleeps, [])
+  }
+
+  func testCloseAfterCancellation() async throws {
+    let recorder = DrainRecorder()
+    let hid = makeHID(recorder)
+    try await sendGesture(on: hid)
+    hid.flushesAfterEachEvent = false
+    try await sendGesture(on: hid)
+
+    let gate = SleepGate()
+    let closing = Task {
+      await gate.enter()
+      await hid.close()
+    }
+    await gate.awaitEntry()
+    closing.cancel()
+    await gate.open()
+    await closing.value
+
+    let sleeps = await recorder.sleeps
+    XCTAssertEqual(sleeps, [DTUHIDTiming.replyTail])
+  }
+
+  func testCloseSkipsTheDrainWhenNothingWasSent() async throws {
+    let recorder = DrainRecorder()
+    let hid = makeHID(recorder)
+
+    await hid.close()
+
+    let replies = await recorder.replies
+    let sleeps = await recorder.sleeps
+    XCTAssertEqual(replies, 0)
+    XCTAssertEqual(sleeps, [])
+  }
+
   // MARK: - Helpers
 
   /// A HID over a DTUHID transport whose drain waits are recorded rather than taken. The connection
@@ -510,6 +559,7 @@ final class SimulatorDTUHIDTransportTests: XCTestCase {
   ) -> DTUHIDDrainClock {
     DTUHIDDrainClock(
       sleep: { duration in
+        try Task.checkCancellation()
         await gate?.enter()
         try await recorder.sleep(duration)
       },
