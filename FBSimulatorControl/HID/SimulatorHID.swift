@@ -132,8 +132,11 @@ public final class FBSimulatorHID: CustomStringConvertible, @unchecked Sendable 
     transport.disconnect()
   }
 
-  /// Releases the transport.
+  /// Drains pending events before disconnecting, even when the caller is cancelled.
+  /// Drain errors do not prevent disconnection.
   public func close() async {
+    let drain = Task { try await flush() }
+    try? await drain.value
     disconnect()
   }
 

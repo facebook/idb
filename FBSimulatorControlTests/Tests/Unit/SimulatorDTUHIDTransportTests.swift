@@ -412,8 +412,8 @@ final class SimulatorDTUHIDTransportTests: XCTestCase {
 
     let replies = await recorder.replies
     let sleeps = await recorder.sleeps
-    XCTAssertEqual(replies, 0)
-    XCTAssertEqual(sleeps, [])
+    XCTAssertEqual(replies, 1)
+    XCTAssertEqual(sleeps, [DTUHIDTiming.replyTail])
   }
 
   func testCloseAfterCancellation() async throws {
@@ -434,7 +434,7 @@ final class SimulatorDTUHIDTransportTests: XCTestCase {
     await closing.value
 
     let sleeps = await recorder.sleeps
-    XCTAssertEqual(sleeps, [DTUHIDTiming.replyTail])
+    XCTAssertEqual(sleeps, [DTUHIDTiming.replyTail, DTUHIDTiming.drain])
   }
 
   func testCloseSkipsTheDrainWhenNothingWasSent() async throws {
