@@ -240,15 +240,103 @@ final class SimulatorDTUHIDTransportTests: XCTestCase {
 
   // MARK: - Drain (driven through FBSimulatorHID, injected clock, no daemon)
 
-  func testEachGestureDrains() async throws {
+  func testFlushWithoutAGestureStillDrains() async throws {
+    let recorder = DrainRecorder()
+    let hid = makeHID(recorder)
+
+    try await hid.flush()
+
+    let replies = await recorder.replies
+    let sleeps = await recorder.sleeps
+    XCTAssertEqual(replies, 1)
+    XCTAssertEqual(sleeps, [DTUHIDTiming.replyTail])
+  }
+
+  func testFirstGestureSendsBarrierAndTailsAfterReply() async throws {
+    let recorder = DrainRecorder()
+    let hid = makeHID(recorder)
+
+    try await sendGesture(on: hid)
+
+    let replies = await recorder.replies
+    let barriers = await recorder.barriers
+    let sleeps = await recorder.sleeps
+    XCTAssertEqual(replies, 1)
+    let barrier = barriers.first!
+    XCTAssertEqual(xpc_get_type(xpc_dictionary_get_value(barrier, "isBarrier")!), XPC_TYPE_BOOL)
+    XCTAssertTrue(xpc_dictionary_get_bool(barrier, "isBarrier"))
+    XCTAssertEqual(messageString(barrier, "messageType"), "IndigoKeyboardButtonEvent")
+    XCTAssertEqual(sleeps, [DTUHIDTiming.replyTail])
+  }
+
+  func testLaterGesturesDrainWarm() async throws {
     let recorder = DrainRecorder()
     let hid = makeHID(recorder)
 
     try await sendGesture(on: hid)
     try await sendGesture(on: hid)
 
+    let replies = await recorder.replies
     let sleeps = await recorder.sleeps
-    XCTAssertEqual(sleeps, [DTUHIDTiming.drain, DTUHIDTiming.drain])
+    XCTAssertEqual(replies, 1)
+    XCTAssertEqual(sleeps, [DTUHIDTiming.replyTail, DTUHIDTiming.drain])
+  }
+
+  func testRedundantFlushDrainsAgain() async throws {
+    let recorder = DrainRecorder()
+    let hid = makeHID(recorder)
+
+    try await sendGesture(on: hid)
+    try await hid.flush()
+
+    let sleeps = await recorder.sleeps
+    XCTAssertEqual(sleeps, [DTUHIDTiming.replyTail, DTUHIDTiming.drain])
+  }
+
+  func testConcurrentFirstGesturesShareOneReplyAwait() async throws {
+    let recorder = DrainRecorder()
+    let hid = makeHID(recorder)
+
+    try await withThrowingTaskGroup(of: Void.self) { group in
+      group.addTask { try await self.sendGesture(on: hid) }
+      group.addTask { try await self.sendGesture(on: hid) }
+      for try await _ in group {}
+    }
+
+    let replies = await recorder.replies
+    XCTAssertEqual(replies, 1)
+  }
+
+  func testReplyTimeoutFallsBackToLongDrain() async throws {
+    let recorder = DrainRecorder()
+    let hid = makeHID(recorder, reply: .timeout)
+
+    try await sendGesture(on: hid)
+
+    let replies = await recorder.replies
+    let sleeps = await recorder.sleeps
+    XCTAssertEqual(replies, 1)
+    XCTAssertEqual(sleeps, [DTUHIDTiming.fallbackDrain])
+  }
+
+  func testDrainFailurePropagatesAndRetriesCold() async throws {
+    let recorder = DrainRecorder()
+    await recorder.setFailNextSleep()
+    let hid = makeHID(recorder)
+
+    do {
+      try await sendGesture(on: hid)
+      XCTFail("expected the drain to propagate its failure out of send")
+    } catch is DrainFailure {
+    } catch {
+      XCTFail("unexpected error: \(error)")
+    }
+
+    try await sendGesture(on: hid)
+    let replies = await recorder.replies
+    let sleeps = await recorder.sleeps
+    XCTAssertEqual(replies, 2)
+    XCTAssertEqual(sleeps, [DTUHIDTiming.replyTail])
   }
 
   func testStreamedGesturesDrainOnceOnTheExplicitFlush() async throws {
@@ -261,35 +349,14 @@ final class SimulatorDTUHIDTransportTests: XCTestCase {
     try await hid.flush()
 
     let sleeps = await recorder.sleeps
-    XCTAssertEqual(sleeps, [DTUHIDTiming.drain])
-  }
-
-  func testFlushWithoutAGestureStillDrains() async throws {
-    let recorder = DrainRecorder()
-    let hid = makeHID(recorder)
-
-    try await hid.flush()
-
-    let sleeps = await recorder.sleeps
-    XCTAssertEqual(sleeps, [DTUHIDTiming.drain])
-  }
-
-  func testRedundantFlushDrainsAgain() async throws {
-    let recorder = DrainRecorder()
-    let hid = makeHID(recorder)
-
-    try await sendGesture(on: hid)
-    try await hid.flush()
-
-    let sleeps = await recorder.sleeps
-    XCTAssertEqual(sleeps, [DTUHIDTiming.drain, DTUHIDTiming.drain])
+    XCTAssertEqual(sleeps, [DTUHIDTiming.replyTail])
   }
 
   // MARK: - Helpers
 
   /// A HID over a DTUHID transport whose drain waits are recorded rather than taken. The connection
   /// names no real service, so writes resolve locally and never reach a daemon.
-  private func makeHID(_ recorder: DrainRecorder) -> FBSimulatorHID {
+  private func makeHID(_ recorder: DrainRecorder, reply: DrainReply = .answer) -> FBSimulatorHID {
     let connection = xpc_connection_create("com.facebook.fbsimulatorcontrol.test.dtuhid", nil)
     xpc_connection_set_event_handler(connection) { _ in }
     xpc_connection_resume(connection)
@@ -298,7 +365,7 @@ final class SimulatorDTUHIDTransportTests: XCTestCase {
       mainScreenSize: CGSize(width: 100, height: 200),
       mainScreenScale: 2.0,
       productFamily: .familyiPhone,
-      clock: DTUHIDDrainClock(sleep: { await recorder.sleep($0) }))
+      clock: recordingClock(recorder, reply: reply))
     addTeardownBlock { transport.disconnect() }
     return FBSimulatorHID(
       transport: .dtuhid(transport),
@@ -315,12 +382,48 @@ final class SimulatorDTUHIDTransportTests: XCTestCase {
       logger: FBControlCoreGlobalConfiguration.defaultLogger)
   }
 
+  private enum DrainReply {
+    case answer
+    case timeout
+  }
+
+  private enum DrainFailure: Error {
+    case injected
+  }
+
   private actor DrainRecorder {
     var sleeps: [Duration] = []
+    var replies = 0
+    var barriers: [xpc_object_t] = []
+    var failsNextSleep = false
 
-    func sleep(_ duration: Duration) {
+    func setFailNextSleep() {
+      failsNextSleep = true
+    }
+
+    func sleep(_ duration: Duration) throws {
+      if failsNextSleep {
+        failsNextSleep = false
+        throw DrainFailure.injected
+      }
       sleeps.append(duration)
     }
+
+    func reply(_ message: xpc_object_t) {
+      replies += 1
+      barriers.append(message)
+    }
+  }
+
+  private func recordingClock(_ recorder: DrainRecorder, reply: DrainReply = .answer) -> DTUHIDDrainClock {
+    DTUHIDDrainClock(
+      sleep: { try await recorder.sleep($0) },
+      awaitBarrierReply: { _, message in
+        await recorder.reply(message)
+        if reply == .timeout {
+          throw DTUHIDDrainTimeout.expired
+        }
+      })
   }
 
   private func encodeDigitizer(_ event: IndigoDigitizerEvent) throws -> xpc_object_t {

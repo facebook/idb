@@ -15,25 +15,64 @@ import XPC
 /// The waits `SimulatorDTUHIDTransport` performs around the events it sends.
 enum DTUHIDTiming {
 
-  /// Time to keep the connection alive after a gesture's events are sent, so `dtuhidd` consumes them
-  /// before the connection is torn down. It resets its virtual services the instant the host peer
-  /// disconnects, which for a one-shot gesture is the moment the host process exits.
+  /// Time allowed for a warm connection to dispatch events before disconnecting.
   static let drain = Duration.milliseconds(80)
 
-  /// Time to wait for `dtuhidd` to activate the virtual services that carry events. It drops anything
-  /// addressed to a service that is not yet active, logging `No active service, dropping event`.
-  ///
-  /// A fixed wait because no readiness signal has been found to wait on instead, not because none
-  /// exists — what the daemon does with a message it cannot yet route has not been established. Sized
-  /// above the observed activation gap.
-  static let activation = Duration.milliseconds(500)
+  /// Time allowed for device-open and dispatch after the barrier reply signals peer activation.
+  static let replyTail = Duration.milliseconds(200)
+
+  /// Deadline for a barrier reply before taking the fallback drain.
+  static let replyTimeout = DispatchTimeInterval.seconds(2)
+
+  /// Additional wait after the barrier deadline expires.
+  static let fallbackDrain = Duration.seconds(1)
 }
 
 /// Injectable waits for the DTUHID transport.
 struct DTUHIDDrainClock: Sendable {
   let sleep: @Sendable (Duration) async throws -> Void
+  let awaitBarrierReply: @Sendable (xpc_connection_t, xpc_object_t) async throws -> Void
 
-  static let live = DTUHIDDrainClock(sleep: { try await Task.sleep(for: $0) })
+  static let live = DTUHIDDrainClock(
+    sleep: { try await Task.sleep(for: $0) },
+    awaitBarrierReply: { connection, message in
+      try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+        // SAFETY: The lock serializes the reply and timeout callbacks.
+        // patternlint-disable-next-line unchecked-sendable
+        final class BarrierReply: @unchecked Sendable {
+          private let lock = NSLock()
+          private var pending = true
+
+          func finish(_ resume: () -> Void) {
+            let shouldResume = lock.withLock {
+              defer { pending = false }
+              return pending
+            }
+            if shouldResume {
+              resume()
+            }
+          }
+        }
+        let reply = BarrierReply()
+        xpc_connection_send_message_with_reply(
+          connection, message, DispatchQueue.global(qos: .userInitiated)
+        ) { _ in
+          // Any reply object ends the await, including an XPC error: a dead connection is past
+          // protecting, and the tail that follows is harmless.
+          reply.finish { continuation.resume() }
+        }
+        DispatchQueue.global(qos: .userInitiated).asyncAfter(
+          deadline: .now() + DTUHIDTiming.replyTimeout
+        ) {
+          reply.finish { continuation.resume(throwing: DTUHIDDrainTimeout.expired) }
+        }
+      }
+    })
+}
+
+/// A barrier deadline expired; `flush()` takes the fallback drain.
+enum DTUHIDDrainTimeout: Error {
+  case expired
 }
 
 /// Tracks the per-contact phase so that a stream of Indigo `.down`/`.up` events maps onto the
@@ -89,13 +128,11 @@ actor SimulatorDTUHIDTransport {
   private let clock: DTUHIDDrainClock
   private var contact = DigitizerContactTracker()
   private var twoFingerContact = DigitizerContactTracker()
+  private var coldDrainState = ColdDrainState.pending
 
   // MARK: - Initializers
 
-  /// Builds a DTUHID transport for the provided Simulator and returns it ready to carry events.
-  ///
-  /// Async because readiness may need establishing before the transport can be handed out, and a
-  /// caller should not have to remember to wait for it on every send.
+  /// Connects to the simulator's DTUHID service. Events can be sent immediately.
   static func dtuhid(for simulator: FBSimulator) async throws -> SimulatorDTUHIDTransport {
     guard let handle = dlopen(nil, RTLD_NOW) else {
       throw SimulatorHIDError.dtuhidXPCSymbolsUnavailable
@@ -126,20 +163,11 @@ actor SimulatorDTUHIDTransport {
     xpc_connection_set_event_handler(connection) { _ in }
     xpc_connection_resume(connection)
 
-    let transport = SimulatorDTUHIDTransport(
+    return SimulatorDTUHIDTransport(
       connection: connection,
       mainScreenSize: simulator.device.deviceType.mainScreenSize,
       mainScreenScale: simulator.device.deviceType.mainScreenScale,
       productFamily: simulator.productFamily)
-    do {
-      try await transport.primeThenWait(DTUHIDTiming.activation)
-    } catch {
-      // The connection is live from `xpc_connection_resume` above, so an unreturned transport would
-      // leave `dtuhidd` holding a peer nothing will ever send to.
-      transport.disconnect()
-      throw error
-    }
-    return transport
   }
 
   init(
@@ -224,9 +252,12 @@ actor SimulatorDTUHIDTransport {
   // MARK: - Sending
 
   /// Wraps `payload` in a `DTUHIDMessage` and serializes it to the `xpc_object_t` `dtuhidd` decodes.
-  nonisolated func encode(messageType: String, payload: some Encodable) throws -> xpc_object_t {
+  nonisolated func encode(messageType: String, payload: some Encodable, isBarrier: Bool = false) throws -> xpc_object_t {
     let message = DTUHIDMessage(
-      messageType: messageType, featureIdentifier: Self.digitizerServiceName, payload: payload)
+      messageType: messageType,
+      featureIdentifier: Self.digitizerServiceName,
+      isBarrier: isBarrier,
+      payload: payload)
     return try XPCEncoder().encode(message)
   }
 
@@ -240,20 +271,6 @@ actor SimulatorDTUHIDTransport {
     try await deliver(encode(messageType: messageType, payload: payload))
   }
 
-  /// Opens the connection and waits for `dtuhidd` to activate the services that will carry events.
-  ///
-  /// An XPC connection is lazy: `xpc_connection_resume` does not create the peer, the first message
-  /// does, and `dtuhidd` activates nothing until it has a peer. The first message therefore always
-  /// predates any service that could receive it, so this spends one of its own rather than the
-  /// caller's. Keyboard usage `0` is "no event indicated", inert even if it does outlive activation.
-  func primeThenWait(_ duration: Duration) async throws {
-    try await deliver(
-      encode(
-        messageType: "IndigoKeyboardButtonEvent",
-        payload: IndigoKeyboardButtonEvent(usageCode: 0, state: .up)))
-    try await clock.sleep(duration)
-  }
-
   /// Writes an already-encoded message and resolves when the XPC send barrier fires.
   private func deliver(_ object: xpc_object_t) async throws {
     try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
@@ -264,9 +281,52 @@ actor SimulatorDTUHIDTransport {
     }
   }
 
-  /// Waits `DTUHIDTiming.drain` so `dtuhidd` consumes a gesture before the connection is torn
-  /// down. Once per gesture.
+  /// Allows time for sent events to reach the guest before disconnecting.
+  /// The first drain waits for a barrier reply plus `replyTail`; later drains wait `drain`.
   func flush() async throws {
-    try? await clock.sleep(DTUHIDTiming.drain)
+    guard case .done = coldDrainState else {
+      return try await coldDrain()
+    }
+    try await clock.sleep(DTUHIDTiming.drain)
   }
+
+  private enum ColdDrainState {
+    case pending
+    case running(Task<Void, Error>)
+    case done
+  }
+
+  /// Concurrent flushes share this task. Cancelling a waiter cannot interrupt another's drain.
+  private func coldDrain() async throws {
+    if case let .running(task) = coldDrainState {
+      return try await task.value
+    }
+    let task = Task<Void, Error> {
+      do {
+        try await self.performColdDrain()
+      } catch {
+        self.coldDrainState = .pending
+        throw error
+      }
+      // Settle state before any waiter can resume on the actor.
+      self.coldDrainState = .done
+    }
+    coldDrainState = .running(task)
+    try await task.value
+  }
+
+  /// The daemon replies to a barrier without decoding its inert keyboard payload.
+  private func performColdDrain() async throws {
+    let barrier = try encode(
+      messageType: "IndigoKeyboardButtonEvent",
+      payload: IndigoKeyboardButtonEvent(usageCode: 0, state: .up),
+      isBarrier: true)
+    do {
+      try await clock.awaitBarrierReply(connection, barrier)
+    } catch is DTUHIDDrainTimeout {
+      return try await clock.sleep(DTUHIDTiming.fallbackDrain)
+    }
+    try await clock.sleep(DTUHIDTiming.replyTail)
+  }
+
 }
