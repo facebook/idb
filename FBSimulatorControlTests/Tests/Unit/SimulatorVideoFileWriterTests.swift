@@ -171,15 +171,34 @@ final class SimulatorVideoFileWriterTests: XCTestCase {
     try await writer.finish()
   }
 
+  func testLongChaptersAtTheEncoderTimeScale() async throws {
+    let path = (NSTemporaryDirectory() as NSString).appendingPathComponent("chapters-nanoseconds-\(UUID().uuidString).mov")
+    defer { try? FileManager.default.removeItem(atPath: path) }
+    let logger = CapturingLogger()
+    let writer = SimulatorVideoFileWriter(filePath: path, fileType: .mov, chaptersEnabled: true, logger: logger)
+    for index in 0..<18 {
+      let timestamp = CMTime(value: Int64(index) * 1_000_000_000 + 123_456, timescale: 1_000_000_000)
+      XCTAssertTrue(writer.consume(sampleBuffer(frameIndex: index, timestamp: timestamp), logger: logger))
+      if index % 6 == 0 { writer.writeTimedMetadata("Chapter \(index / 6)", logger: logger) }
+    }
+    // BUG: Nanosecond chapter durations overflow the movie's sample-duration field.
+    do {
+      try await writer.finish()
+      XCTFail("Expected chapter finalization to reject the encoder time scale")
+    } catch {
+      XCTAssertTrue(error.localizedDescription.contains("-17771"))
+    }
+  }
+
   // MARK: - Helpers
 
   /// A copy of the shared synthetic H264 sample with its presentation timestamp set to `frameIndex`
   /// at 30fps, so a sequence forms a monotonic timeline the muxer can build a real duration from.
-  private func sampleBuffer(frameIndex: Int) -> CMSampleBuffer {
+  private func sampleBuffer(frameIndex: Int, timestamp: CMTime? = nil) -> CMSampleBuffer {
     let base = createH264SampleBuffer()
     var timing = CMSampleTimingInfo(
       duration: CMTimeMake(value: 1, timescale: 30),
-      presentationTimeStamp: CMTimeMake(value: Int64(frameIndex), timescale: 30),
+      presentationTimeStamp: timestamp ?? CMTimeMake(value: Int64(frameIndex), timescale: 30),
       decodeTimeStamp: .invalid)
     var copy: CMSampleBuffer?
     let status = CMSampleBufferCreateCopyWithNewTiming(
