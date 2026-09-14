@@ -11,7 +11,6 @@ IDBGRPCSwift/*.swift
 
 ## SwiftPM (Package.swift build)
 .build/
-Package.resolved
 
 ## Build & Test Generated
 Build/

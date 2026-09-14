@@ -227,6 +227,16 @@ function package_swift_packages() {
   sed -n '/^[[:space:]]*\/\//d; s|.*\.package(url: "[^"]*/\([^"/]*\)\.git".*|\1|p' Package.swift
 }
 
+# "<package> <version>" per pin in Package.resolved, keyed on the identity
+# SwiftPM matches on. The trailing top-level "version" key of the file itself is
+# skipped because no identity precedes it.
+function resolved_pins() {
+  awk -F'"' '
+    /"identity"[[:space:]]*:/ { identity = $4 }
+    /"version"[[:space:]]*:/  { if (identity != "") { print identity, $4; identity = "" } }
+  ' Package.resolved
+}
+
 # The version Package.swift pins a package to, or nothing if it does not pin one.
 function pinned_version() {
   package_swift_pins | awk -v name="$1" '$1 == name { print $2 }'
@@ -316,18 +326,46 @@ function check_package_pins() {
     errors=1
   fi
 
-  # Only the packages both declare can disagree. The companion declares three
-  # that Package.swift picks up transitively, so those have nothing to compare
-  # against and are covered by the exactness check above alone.
-  local name version companion_version
+  # Only the packages both manifests declare can disagree. The companion
+  # declares three that Package.swift picks up transitively, so those have
+  # nothing to compare against and are covered by the exactness check above
+  # alone. Package.resolved, by contrast, records every package, so a pinned one
+  # missing from it is itself an error.
+  local name version companion_version resolved_version
   while read -r name version; do
     companion_version="$(companion_pins | awk -v n="$name" '$1 == n { print $2 }')"
-    [ -z "$companion_version" ] && continue
-    if [ "$companion_version" != "$version" ]; then
+    if [ -n "$companion_version" ] && [ "$companion_version" != "$version" ]; then
       echo "error: $name is pinned to $version in Package.swift but to $companion_version in Companion/project.yml" >&2
       errors=1
     fi
+
+    resolved_version="$(resolved_pins | awk -v n="$name" '$1 == n { print $2 }')"
+    if [ -z "$resolved_version" ]; then
+      echo "error: $name is pinned in Package.swift but absent from Package.resolved" >&2
+      errors=1
+    elif [ "$resolved_version" != "$version" ]; then
+      echo "error: $name is pinned to $version in Package.swift but Package.resolved records $resolved_version" >&2
+      errors=1
+    fi
   done < <(package_swift_pins)
+
+  # The three the companion declares that Package.swift only picks up
+  # transitively still appear in the resolved graph, so the resolved file is
+  # what they can be checked against -- and a companion pinned to a different
+  # version of one is the companion linking a different library from idb-repl.
+  # Absent from the resolved graph is the same error here as on the Package.swift
+  # side: it is the one case where the companion has nothing to be checked
+  # against at all, so passing it over would leave the pin unchecked by anything.
+  while read -r name version; do
+    resolved_version="$(resolved_pins | awk -v n="$name" '$1 == n { print $2 }')"
+    if [ -z "$resolved_version" ]; then
+      echo "error: $name is pinned in Companion/project.yml but absent from Package.resolved" >&2
+      errors=1
+    elif [ "$resolved_version" != "$version" ]; then
+      echo "error: $name is pinned to $version in Companion/project.yml but Package.resolved records $resolved_version" >&2
+      errors=1
+    fi
+  done < <(companion_pins)
 
   [ "$errors" -eq 0 ] || exit 1
 }
