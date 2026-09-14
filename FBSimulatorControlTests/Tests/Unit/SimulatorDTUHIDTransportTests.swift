@@ -237,7 +237,90 @@ final class SimulatorDTUHIDTransportTests: XCTestCase {
     XCTAssertEqual(HIDButtonState.up.rawValue, 2)
   }
 
+  // MARK: - Drain (driven through FBSimulatorHID, injected clock, no daemon)
+
+  func testEachGestureDrains() async throws {
+    let recorder = DrainRecorder()
+    let hid = makeHID(recorder)
+
+    try await sendGesture(on: hid)
+    try await sendGesture(on: hid)
+
+    let sleeps = await recorder.sleeps
+    XCTAssertEqual(sleeps, [DTUHIDTiming.drain, DTUHIDTiming.drain])
+  }
+
+  func testStreamedGesturesDrainOnceOnTheExplicitFlush() async throws {
+    let recorder = DrainRecorder()
+    let hid = makeHID(recorder)
+    hid.flushesAfterEachEvent = false
+
+    try await sendGesture(on: hid)
+    try await sendGesture(on: hid)
+    try await hid.flush()
+
+    let sleeps = await recorder.sleeps
+    XCTAssertEqual(sleeps, [DTUHIDTiming.drain])
+  }
+
+  func testFlushWithoutAGestureStillDrains() async throws {
+    let recorder = DrainRecorder()
+    let hid = makeHID(recorder)
+
+    try await hid.flush()
+
+    let sleeps = await recorder.sleeps
+    XCTAssertEqual(sleeps, [DTUHIDTiming.drain])
+  }
+
+  func testRedundantFlushDrainsAgain() async throws {
+    let recorder = DrainRecorder()
+    let hid = makeHID(recorder)
+
+    try await sendGesture(on: hid)
+    try await hid.flush()
+
+    let sleeps = await recorder.sleeps
+    XCTAssertEqual(sleeps, [DTUHIDTiming.drain, DTUHIDTiming.drain])
+  }
+
   // MARK: - Helpers
+
+  /// A HID over a DTUHID transport whose drain waits are recorded rather than taken. The connection
+  /// names no real service, so writes resolve locally and never reach a daemon.
+  private func makeHID(_ recorder: DrainRecorder) -> FBSimulatorHID {
+    let connection = xpc_connection_create("com.facebook.fbsimulatorcontrol.test.dtuhid", nil)
+    xpc_connection_set_event_handler(connection) { _ in }
+    xpc_connection_resume(connection)
+    let transport = SimulatorDTUHIDTransport(
+      connection: connection,
+      mainScreenSize: CGSize(width: 100, height: 200),
+      mainScreenScale: 2.0,
+      productFamily: .familyiPhone,
+      clock: DTUHIDDrainClock(sleep: { await recorder.sleep($0) }))
+    addTeardownBlock { transport.disconnect() }
+    return FBSimulatorHID(
+      transport: .dtuhid(transport),
+      purple: SimulatorPurpleHIDTransport(simulator: nil),
+      notification: SimulatorDarwinNotificationTransport(simulator: nil),
+      simulator: nil)
+  }
+
+  /// One inert keypress. Usage `0` is "no event indicated", so a guest would ignore it even if one
+  /// were listening.
+  private func sendGesture(on hid: FBSimulatorHID) async throws {
+    try await hid.send(
+      event: .keyboard(direction: .up, keyCode: 0),
+      logger: FBControlCoreGlobalConfiguration.defaultLogger)
+  }
+
+  private actor DrainRecorder {
+    var sleeps: [Duration] = []
+
+    func sleep(_ duration: Duration) {
+      sleeps.append(duration)
+    }
+  }
 
   private func encodeDigitizer(_ event: IndigoDigitizerEvent) throws -> xpc_object_t {
     try XPCEncoder().encode(

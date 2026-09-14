@@ -40,9 +40,8 @@ public final class FBSimulatorHID: CustomStringConvertible, @unchecked Sendable 
 
   private weak var simulator: FBSimulator?
 
-  /// Whether `send(event:logger:)` flushes the transport after every event (a fixed wait — see
-  /// `DTUHIDTiming.drainNanos`). A caller streaming many gestures over one open HID should
-  /// set this to `false` and call `flush()` once before releasing the HID.
+  /// Whether `send(event:logger:)` flushes after every event. Streaming callers can disable this
+  /// and call `flush()` before releasing the HID.
   public var flushesAfterEachEvent = true
 
   // MARK: - Initializers

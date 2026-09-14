@@ -18,7 +18,7 @@ enum DTUHIDTiming {
   /// Time to keep the connection alive after a gesture's events are sent, so `dtuhidd` consumes them
   /// before the connection is torn down. It resets its virtual services the instant the host peer
   /// disconnects, which for a one-shot gesture is the moment the host process exits.
-  static let drainNanos: UInt64 = 80_000_000 // 80ms
+  static let drain = Duration.milliseconds(80)
 
   /// Time to wait for `dtuhidd` to activate the virtual services that carry events. It drops anything
   /// addressed to a service that is not yet active, logging `No active service, dropping event`.
@@ -26,7 +26,14 @@ enum DTUHIDTiming {
   /// A fixed wait because no readiness signal has been found to wait on instead, not because none
   /// exists — what the daemon does with a message it cannot yet route has not been established. Sized
   /// above the observed activation gap.
-  static let activationNanos: UInt64 = 500_000_000 // 500ms
+  static let activation = Duration.milliseconds(500)
+}
+
+/// Injectable waits for the DTUHID transport.
+struct DTUHIDDrainClock: Sendable {
+  let sleep: @Sendable (Duration) async throws -> Void
+
+  static let live = DTUHIDDrainClock(sleep: { try await Task.sleep(for: $0) })
 }
 
 /// Tracks the per-contact phase so that a stream of Indigo `.down`/`.up` events maps onto the
@@ -73,13 +80,13 @@ actor SimulatorDTUHIDTransport {
   private typealias ConnectionFromEndpointFn = @convention(c) (xpc_object_t) -> xpc_connection_t?
   private typealias EnableSim2HostFn = @convention(c) (xpc_connection_t) -> Void
 
-  /// The host→guest XPC connection to `dtuhidd`. XPC connections are thread-safe, so it is marked
-  /// `nonisolated(unsafe)` to be read from the `nonisolated` `disconnect()` as well as the
-  /// actor-isolated send path.
+  // SAFETY: XPC connections support concurrent sending and cancellation.
+  // patternlint-disable-next-line swift-nonisolated-unsafe
   nonisolated(unsafe) private let connection: xpc_connection_t
   private let mainScreenSize: CGSize
   private let mainScreenScale: Float
   private let productFamily: FBControlCoreProductFamily
+  private let clock: DTUHIDDrainClock
   private var contact = DigitizerContactTracker()
   private var twoFingerContact = DigitizerContactTracker()
 
@@ -125,7 +132,7 @@ actor SimulatorDTUHIDTransport {
       mainScreenScale: simulator.device.deviceType.mainScreenScale,
       productFamily: simulator.productFamily)
     do {
-      try await transport.primeThenWait(nanoseconds: DTUHIDTiming.activationNanos)
+      try await transport.primeThenWait(DTUHIDTiming.activation)
     } catch {
       // The connection is live from `xpc_connection_resume` above, so an unreturned transport would
       // leave `dtuhidd` holding a peer nothing will ever send to.
@@ -139,12 +146,14 @@ actor SimulatorDTUHIDTransport {
     connection: xpc_connection_t,
     mainScreenSize: CGSize,
     mainScreenScale: Float,
-    productFamily: FBControlCoreProductFamily
+    productFamily: FBControlCoreProductFamily,
+    clock: DTUHIDDrainClock = .live
   ) {
     self.connection = connection
     self.mainScreenSize = mainScreenSize
     self.mainScreenScale = mainScreenScale
     self.productFamily = productFamily
+    self.clock = clock
   }
 
   private static func symbol<T>(_ handle: UnsafeMutableRawPointer, _ name: String, as type: T.Type) -> T? {
@@ -237,12 +246,12 @@ actor SimulatorDTUHIDTransport {
   /// does, and `dtuhidd` activates nothing until it has a peer. The first message therefore always
   /// predates any service that could receive it, so this spends one of its own rather than the
   /// caller's. Keyboard usage `0` is "no event indicated", inert even if it does outlive activation.
-  func primeThenWait(nanoseconds: UInt64) async throws {
+  func primeThenWait(_ duration: Duration) async throws {
     try await deliver(
       encode(
         messageType: "IndigoKeyboardButtonEvent",
         payload: IndigoKeyboardButtonEvent(usageCode: 0, state: .up)))
-    try await Task.sleep(nanoseconds: nanoseconds)
+    try await clock.sleep(duration)
   }
 
   /// Writes an already-encoded message and resolves when the XPC send barrier fires.
@@ -255,10 +264,9 @@ actor SimulatorDTUHIDTransport {
     }
   }
 
-  /// Waits `DTUHIDTiming.drainNanos` so `dtuhidd` consumes a gesture before the connection is torn
+  /// Waits `DTUHIDTiming.drain` so `dtuhidd` consumes a gesture before the connection is torn
   /// down. Once per gesture.
   func flush() async throws {
-    try? await Task.sleep(nanoseconds: DTUHIDTiming.drainNanos)
+    try? await clock.sleep(DTUHIDTiming.drain)
   }
-
 }
