@@ -125,19 +125,12 @@ public final class FBSimulatorHID: CustomStringConvertible, @unchecked Sendable 
     self.simulator = simulator
   }
 
-  /**
-   Disconnects from the remote HID.
-   */
-  public func disconnect() {
-    transport.disconnect()
-  }
-
   /// Drains pending events before disconnecting, even when the caller is cancelled.
   /// Drain errors do not prevent disconnection.
   public func close() async {
     let drain = Task { try await flush() }
     try? await drain.value
-    disconnect()
+    transport.disconnect()
   }
 
   // MARK: - Indigo Event Send Primitives
