@@ -62,7 +62,7 @@ extension FBiOSTargetInfo {
     if comparison != .orderedSame {
       return comparison
     }
-    comparison = osVersion.number.compare(target.osVersion.number)
+    comparison = osVersion.compare(target.osVersion)
     if comparison != .orderedSame {
       return comparison
     }

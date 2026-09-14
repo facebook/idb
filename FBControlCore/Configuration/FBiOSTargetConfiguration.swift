@@ -45,7 +45,7 @@ public struct DeviceType: Equatable, Hashable, CustomStringConvertible, Sendable
     DeviceType(model: FBDeviceModel(rawValue: name), productTypes: [], deviceArchitecture: .arm64, family: .familyUnknown)
   }
 
-  private init(model: FBDeviceModel, productTypes: Set<String>, deviceArchitecture: FBArchitecture, family: FBControlCoreProductFamily) {
+  public init(model: FBDeviceModel, productTypes: Set<String> = [], deviceArchitecture: FBArchitecture = .arm64, family: FBControlCoreProductFamily) {
     self.model = model
     self.productTypes = productTypes
     self.deviceArchitecture = deviceArchitecture
@@ -99,6 +99,7 @@ public struct OSVersion: Equatable, Hashable, CustomStringConvertible, Sendable 
 
   public let name: FBOSVersionName
   public let families: Set<NSNumber>
+  public let versionString: String
 
   public static func generic(withName name: String) -> OSVersion {
     OSVersion(name: FBOSVersionName(rawValue: name), families: [])
@@ -123,16 +124,14 @@ public struct OSVersion: Equatable, Hashable, CustomStringConvertible, Sendable 
     return version
   }
 
-  private init(name: FBOSVersionName, families: Set<NSNumber>) {
+  public init(name: FBOSVersionName, versionString: String? = nil, families: Set<NSNumber> = []) {
     self.name = name
     self.families = families
+    let derivedVersion = name.rawValue.split(whereSeparator: { $0.isWhitespace }).first(where: { $0.first?.isNumber == true })
+    self.versionString = versionString ?? derivedVersion.map(String.init) ?? ""
   }
 
   // MARK: - Public Computed Properties
-
-  public var versionString: String {
-    (name.rawValue as String).components(separatedBy: CharacterSet.whitespaces)[1]
-  }
 
   public var number: NSDecimalNumber {
     NSDecimalNumber(string: versionString)
@@ -140,6 +139,15 @@ public struct OSVersion: Equatable, Hashable, CustomStringConvertible, Sendable 
 
   public var version: OperatingSystemVersion {
     OSVersion.operatingSystemVersion(fromName: versionString)
+  }
+
+  public func compare(_ other: OSVersion) -> ComparisonResult {
+    let left = [version.majorVersion, version.minorVersion, version.patchVersion]
+    let right = [other.version.majorVersion, other.version.minorVersion, other.version.patchVersion]
+    if left == right {
+      return .orderedSame
+    }
+    return left.lexicographicallyPrecedes(right) ? .orderedAscending : .orderedDescending
   }
 
   /// The name is the identity: `families` is catalogue data looked up from it.

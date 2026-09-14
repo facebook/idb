@@ -10,6 +10,17 @@ import Foundation
 import XCTest
 
 final class FBiOSTargetTests: XCTestCase {
+  func testVersionComponentsDetermineOrdering() {
+    let earlier = FBiOSTargetDouble()
+    let later = FBiOSTargetDouble()
+    earlier.osVersion = .generic(withName: "FutureOS 27.9")
+    later.osVersion = .generic(withName: "FutureOS 27.10")
+    XCTAssertEqual(earlier.compare(later), .orderedAscending)
+    earlier.osVersion = .generic(withName: "FutureOS 27.10")
+    later.osVersion = .generic(withName: "FutureOS 27.10.1")
+    XCTAssertEqual(earlier.compare(later), .orderedAscending)
+  }
+
   static var iPhoneModels: [FBDeviceModel] {
     return [
       .modeliPhone4s,
