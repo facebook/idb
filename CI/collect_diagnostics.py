@@ -3,7 +3,7 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-"""Collect companion logs, crash reports and simulator output after a failed run.
+"""Collect companion logs, crash reports and simulator output after a run.
 
 python3 -m CI.collect_diagnostics --output "$RUNNER_TEMP/diagnostics"
 """

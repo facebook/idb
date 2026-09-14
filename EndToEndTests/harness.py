@@ -6,7 +6,7 @@
 """Run idb commands through one shared companion against a booted simulator.
 
 The caller supplies DEVICE_UDID, DEVICE_SET_PATH, IDB_BIN and
-IDB_COMPANION_PATH. The harness starts the companion and waits for
+IDB_E2E_COMPANION_PATH. The harness starts the companion and waits for
 accessibility readiness; it does not manage the simulator lifecycle.
 """
 

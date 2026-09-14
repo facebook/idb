@@ -9,12 +9,12 @@ These tests run the `idb` CLI through `idb_companion` against a booted simulator
 | `IDB_BIN` | the `idb` client to drive |
 | `IDB_ARGS` | optional root arguments inserted before `--companion` |
 | `IDB_SETUP_BIN` | optional client used only to prepare fixtures; defaults to `IDB_BIN` |
-| `IDB_COMPANION_PATH` | the `idb_companion` binary, with its `Resources/` directory beside it |
+| `IDB_E2E_COMPANION_PATH` | the `idb_companion` binary, with its `Resources/` directory beside it |
 | `DEVICE_UDID` | the booted simulator to test against |
 | `DEVICE_SET_PATH` | the device set `DEVICE_UDID` lives in |
 | `IDB_E2E_STRICT` | `1` fails tests when `SimLaunchHostService` is unavailable; otherwise those tests skip |
 
-The first four variables are required. Missing variables, invalid binary paths and a simulator that is not booted fail setup.
+`IDB_BIN`, `IDB_E2E_COMPANION_PATH`, `DEVICE_UDID`, and `DEVICE_SET_PATH` are required. Missing variables, invalid binary paths and a simulator that is not booted fail setup.
 
 Use a dedicated simulator. Tests install and remove `ReplHost.app`, change its permissions and files, and launch or terminate Settings and Safari. Cleanup removes the fixture app and stops test apps; it does not restore pre-existing app state. The suite does not boot, shut down, erase or delete the simulator.
 
@@ -36,7 +36,7 @@ export DEVICE_UDID="$(xcrun simctl --set "$DEVICE_SET_PATH" create e2e "iPhone 1
 xcrun simctl --set "$DEVICE_SET_PATH" boot "$DEVICE_UDID"
 xcrun simctl --set "$DEVICE_SET_PATH" bootstatus "$DEVICE_UDID"
 IDB_BIN="$(command -v idb)" \
-IDB_COMPANION_PATH="$PWD/Build/Distribution/idb_companion" \
+IDB_E2E_COMPANION_PATH="$PWD/Build/Distribution/idb_companion" \
 python3 -m unittest discover -s EndToEndTests -t . -v
 ```
 
@@ -54,4 +54,6 @@ python3 -m unittest discover -s CI -p '*_tests.py' -t . -v
 python3 -m unittest EndToEndTests.harness_tests -v
 ```
 
-`harness_tests.py` is named separately from `test_*.py` so e2e discovery does not include it. In GitHub CI, the `pure-python` job runs these tests; `mac-end-to-end` builds on the companion artifact, provisions a simulator through `CI.provision_simulator`, runs the e2e suite in strict mode, and collects diagnostics on failure.
+`harness_tests.py` is named separately from `test_*.py` so e2e discovery does not include it. In GitHub CI, the `pure-python` job runs these tests; `mac-end-to-end` builds on the companion artifact, provisions a simulator through `CI.provision_simulator`, runs the e2e suite in strict mode, and collects diagnostics on success and failure.
+
+The harness writes companion logs to `IDB_E2E_ARTIFACTS_DIR`, falling back to `TEST_RESULT_ARTIFACTS_DIR` when available. Without either directory, logs stay at `/tmp/idb-e2e-*/companion.log`. The collector reads both layouts; `--artifacts-dir` overrides its artifact source without changing `--output`.
