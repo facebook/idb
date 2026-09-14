@@ -521,10 +521,10 @@ public actor SimulatorVideoStream: FBVideoStream {
     // Resolve the timed-metadata (chapter) sink. A recording file writer that supports chapters
     // supplies its own consumer; otherwise the streaming transport writer (fMP4 emsg / MPEG-TS ID3)
     // handles markers, dropping them on transports with no metadata channel.
-    if case .compressedVideo = configuration.format {
-      self.timedMetadataConsumer =
-        (encodedSampleConsumerOverride as? TimedMetadataConsumer)
-        ?? TransportTimedMetadataConsumer(consumer: consumer, timedMetadataWriter: transportTimedMetadataWriter)
+    if let recordingMetadata = encodedSampleConsumerOverride as? TimedMetadataConsumer {
+      self.timedMetadataConsumer = recordingMetadata
+    } else if case .compressedVideo = configuration.format {
+      self.timedMetadataConsumer = TransportTimedMetadataConsumer(consumer: consumer, timedMetadataWriter: transportTimedMetadataWriter)
     }
 
     if compositorCIContext == nil {
@@ -725,7 +725,7 @@ public actor SimulatorVideoStream: FBVideoStream {
     case .mjpeg:
       return SimulatorVideoStreamFramePusher_VideoToolbox(
         configuration: configuration, compressionSessionProperties: derived, videoCodec: kCMVideoCodecType_JPEG,
-        consumer: consumer, outputMode: .mjpeg, encodedSampleConsumer: nil, timedMetadataWriter: nil, logger: logger)
+        consumer: consumer, outputMode: encodedSampleConsumerOverride == nil ? .mjpeg : .compressed, encodedSampleConsumer: encodedSampleConsumerOverride, timedMetadataWriter: nil, logger: logger)
     case .minicap:
       return SimulatorVideoStreamFramePusher_VideoToolbox(
         configuration: configuration, compressionSessionProperties: derived, videoCodec: kCMVideoCodecType_JPEG,

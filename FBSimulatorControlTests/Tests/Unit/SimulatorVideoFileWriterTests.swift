@@ -82,7 +82,7 @@ final class SimulatorVideoFileWriterTests: XCTestCase {
 
   /// Reads a text track's samples and decodes each QuickTime text sample (UInt16 big-endian length
   /// prefix + UTF-8) back into its title string.
-  private static func readChapterTitles(track: AVAssetTrack, asset: AVAsset) throws -> [String] {
+  fileprivate static func readChapterTitles(track: AVAssetTrack, asset: AVAsset) throws -> [String] {
     let reader = try AVAssetReader(asset: asset)
     let output = AVAssetReaderTrackOutput(track: track, outputSettings: nil)
     reader.add(output)
@@ -164,19 +164,20 @@ final class SimulatorVideoTests: XCTestCase {
   /// A recorder over a fake display surface writing to a temp path removed at teardown. The eager
   /// cadence (positive framesPerSecond) pushes frames on the clock from the mounted surface without
   /// needing frame-rendered events from the fake.
-  private func makeRecordingFixture(immediateSurface: IOSurface?) -> (video: SimulatorVideo, path: String) {
-    let path = (NSTemporaryDirectory() as NSString).appendingPathComponent("SimulatorVideoTests-\(UUID().uuidString).mp4")
+  private func makeRecordingFixture(immediateSurface: IOSurface?, format: FBVideoStreamFormat = .compressedVideo(withCodec: .h264, transport: .fmp4), fileType: AVFileType = .mp4, chaptersEnabled: Bool = false) -> (video: SimulatorVideo, path: String) {
+    let extensionName = fileType == .mov ? "mov" : "mp4"
+    let path = (NSTemporaryDirectory() as NSString).appendingPathComponent("SimulatorVideoTests-\(UUID().uuidString).\(extensionName)")
     addTeardownBlock { try? FileManager.default.removeItem(atPath: path) }
     let surface = FakeFramebufferSurface()
     surface.immediateSurface = immediateSurface
     let framebuffer = Framebuffer(surface: surface, logger: CapturingLogger())
     let configuration = FBVideoStreamConfiguration(
-      format: .compressedVideo(withCodec: .h264, transport: .fmp4),
+      format: format,
       framesPerSecond: 30,
       rateControl: nil,
       scaleFactor: nil,
       keyFrameRate: nil)
-    let video = SimulatorVideo.video(withFramebuffer: framebuffer, configuration: configuration, filePath: path, logger: CapturingLogger())
+    let video = SimulatorVideo.video(withFramebuffer: framebuffer, configuration: configuration, filePath: path, fileType: fileType, chaptersEnabled: chaptersEnabled, logger: CapturingLogger())
     return (video, path)
   }
 
@@ -218,6 +219,48 @@ final class SimulatorVideoTests: XCTestCase {
     }
     XCTAssertEqual(reader.status, .completed)
     XCTAssertGreaterThan(readSamples, 0, "recorded frames must be readable back")
+  }
+
+  func testJPEGRecordingHasDecodableFramesAndChapters() async throws {
+    let (video, _) = makeRecordingFixture(
+      immediateSurface: makeTestIOSurface(width: 128, height: 128),
+      format: .mjpeg(encoder: .allowSoftware), fileType: .mov, chaptersEnabled: true)
+    addTeardownBlock { _ = try? await video.stop() }
+    try await video.startRecording()
+    await video.stream.writeTimedMetadata("First")
+    let deadline = ContinuousClock.now + .seconds(10)
+    while await video.stream.currentEncoderStats().writeCount < 3 {
+      guard ContinuousClock.now < deadline else {
+        return XCTFail("JPEG recording produced no usable frames")
+      }
+      try await Task.sleep(for: .milliseconds(100))
+    }
+    await video.stream.writeTimedMetadata("Second")
+    try await Task.sleep(for: .milliseconds(200))
+    let asset = AVURLAsset(url: try await video.stop())
+    let tracks = try await asset.loadTracks(withMediaType: .video)
+    let track = try XCTUnwrap(tracks.first)
+    let formats = try await track.load(.formatDescriptions)
+    XCTAssertEqual(CMFormatDescriptionGetMediaSubType(try XCTUnwrap(formats.first)), kCMVideoCodecType_JPEG)
+    let size = try await track.load(.naturalSize)
+    XCTAssertEqual(size, CGSize(width: 128, height: 128))
+    let duration = try await asset.load(.duration)
+    XCTAssertGreaterThan(duration.seconds, 0)
+
+    let reader = try AVAssetReader(asset: asset)
+    let output = AVAssetReaderTrackOutput(track: track, outputSettings: [kCVPixelBufferPixelFormatTypeKey as String: kCVPixelFormatType_32BGRA])
+    reader.add(output)
+    XCTAssertTrue(reader.startReading())
+    var decodedFrames = 0
+    while let sample = output.copyNextSampleBuffer() {
+      XCTAssertNotNil(CMSampleBufferGetImageBuffer(sample))
+      decodedFrames += 1
+    }
+    XCTAssertEqual(reader.status, .completed)
+    XCTAssertGreaterThanOrEqual(decodedFrames, 3)
+    let chapterTracks = try await asset.loadTracks(withMediaType: .text)
+    let chapterTrack = try XCTUnwrap(chapterTracks.first)
+    XCTAssertEqual(try SimulatorVideoFileWriterTests.readChapterTitles(track: chapterTrack, asset: asset), ["First", "Second"])
   }
 
   func testSecondStopReturnsSameURLWithoutRefinalizing() async throws {
