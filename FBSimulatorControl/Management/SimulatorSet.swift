@@ -67,8 +67,9 @@ public final class FBSimulatorSet: FBiOSTargetSet {
     let deviceType: SimDeviceType
     let runtime: SimRuntime
     do {
-      deviceType = try configuration.obtainDeviceType()
-      runtime = try configuration.obtainRuntime()
+      let snapshot = try CoreSimulatorRuntimeIndex.load()
+      (deviceType, runtime) = try snapshot.resolve(
+        device: .name(configuration.device.model.rawValue), runtime: .name(configuration.os.name.rawValue))
     } catch {
       throw SimulatorSetError.deviceTypeOrRuntimeUnavailable(configuration: "\(configuration)", reason: error.localizedDescription)
     }

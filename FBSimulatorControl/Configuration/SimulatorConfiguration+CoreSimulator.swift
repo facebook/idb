@@ -62,23 +62,8 @@ extension FBSimulatorConfiguration {
   }
 
   func checkRuntimeRequirements() throws {
-    let runtime: SimRuntime
-    do {
-      runtime = try obtainRuntime()
-    } catch {
-      throw SimulatorConfigurationError.runtimeUnavailable(configuration: "\(self)", reason: error.localizedDescription)
-    }
-    let deviceType: SimDeviceType
-    do {
-      deviceType = try obtainDeviceType()
-    } catch {
-      throw SimulatorConfigurationError.deviceTypeUnavailable(configuration: "\(self)", reason: error.localizedDescription)
-    }
-    if !runtime.supportsDeviceType(deviceType) {
-      throw SimulatorConfigurationError.runtimeDeviceTypeMismatch(
-        deviceType: deviceType.name ?? "unknown",
-        runtime: runtime.name ?? "unknown")
-    }
+    _ = try CoreSimulatorRuntimeIndex.load().resolve(
+      device: .name(device.model.rawValue), runtime: .name(os.name.rawValue))
   }
 
   public static func supportedOSVersions() throws -> [OSVersion] {
