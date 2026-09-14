@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import re
 import unittest
 from typing import Any
 
@@ -160,6 +161,28 @@ class AccessibilityTests(IdbEndToEndTestCase):
         )
         return document
 
+    async def wait_for_settings_snapshot(self) -> dict[str, Any]:
+        async def read() -> dict[str, Any]:
+            args = ("ui", "describe-all", "--api", "axbridge", "--format", "complete")
+            completed = await self.idb(*args, "--json", check=False)
+            if completed.returncode != 0:
+                if re.fullmatch(
+                    r"The axbridge backend requested accessibility from the application "
+                    r"with pid \d+, which did not answer in time",
+                    completed.error_text.strip(),
+                ):
+                    raise NotReady(completed.error_text.strip())
+                self.fail_or_skip_for(" ".join(args), completed)
+            document = json.loads(completed.text)
+            self.assertIsInstance(document, dict)
+            return document
+
+        return await wait_until(
+            "Settings did not answer accessibility requests",
+            UI_UPDATE_TIMEOUT_SECONDS,
+            read,
+        )
+
     async def wait_for_control(self) -> dict[str, Any]:
         """Wait for a labelled Settings row. Relaunch Settings if it has exited.
 
@@ -190,7 +213,7 @@ class AccessibilityTests(IdbEndToEndTestCase):
         self, identifier: str, element_type: str | None = None
     ) -> dict[str, Any]:
         async def read() -> dict[str, Any]:
-            elements = _elements(await self.describe_all_complete("axbridge"))
+            elements = _elements(await self.wait_for_settings_snapshot())
             for element in elements:
                 if element.get("identifier") == identifier and (
                     element_type is None or element.get("type") == element_type
@@ -284,7 +307,7 @@ class AccessibilityTests(IdbEndToEndTestCase):
         )
         deadline = Deadline(UI_UPDATE_TIMEOUT_SECONDS)
         while True:
-            after_rejection = await self.describe_all_complete("axbridge")
+            after_rejection = await self.wait_for_settings_snapshot()
             self.assertNotIn(
                 title,
                 [
@@ -316,9 +339,7 @@ class AccessibilityTests(IdbEndToEndTestCase):
         self, before: dict[str, float], direction: str
     ) -> dict[str, float]:
         async def read() -> dict[str, float]:
-            after = _settings_row_positions(
-                await self.describe_all_complete("axbridge")
-            )
+            after = _settings_row_positions(await self.wait_for_settings_snapshot())
             movement = {
                 identifier: after[identifier] - y
                 for identifier, y in before.items()
