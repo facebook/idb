@@ -34,7 +34,7 @@ DEVICE_UDID_ENV = "DEVICE_UDID"
 DEVICE_SET_PATH_ENV = "DEVICE_SET_PATH"
 IDB_BIN_ENV = "IDB_BIN"
 IDB_ARGS_ENV = "IDB_ARGS"
-IDB_COMPANION_PATH_ENV = "IDB_COMPANION_PATH"
+IDB_E2E_COMPANION_PATH_ENV = "IDB_E2E_COMPANION_PATH"
 IDB_SETUP_BIN_ENV = "IDB_SETUP_BIN"
 READ_ONLY_CLIENT_ENV = "IDB_E2E_READ_ONLY_CLIENT"
 STRICT_ENV = "IDB_E2E_STRICT"
@@ -288,7 +288,7 @@ class Environment:
         idb_bin = _binary_from_environment(IDB_BIN_ENV)
         idb_args = shlex.split(os.environ.get(IDB_ARGS_ENV, ""))
         setup_idb_bin = _optional_binary_from_environment(IDB_SETUP_BIN_ENV, idb_bin)
-        companion_path = _binary_from_environment(IDB_COMPANION_PATH_ENV)
+        companion_path = _binary_from_environment(IDB_E2E_COMPANION_PATH_ENV)
         udid = _required(DEVICE_UDID_ENV, "the booted simulator to test against")
         device_set_path = Path(
             _required(DEVICE_SET_PATH_ENV, f"the device set {DEVICE_UDID_ENV} lives in")

@@ -436,8 +436,7 @@ class EnvironmentSelectionTests(unittest.IsolatedAsyncioTestCase):
             ),
         ):
             environment = await harness.Environment.resolve()
-        # BUG: the runner's installed companion replaces the build under test.
-        self.assertEqual(environment.companion_path, self.installed_companion)
+        self.assertEqual(environment.companion_path, self.built_companion)
 
     async def test_generic_companion_variable_alone(self) -> None:
         del self.environment["IDB_E2E_COMPANION_PATH"]
@@ -447,9 +446,10 @@ class EnvironmentSelectionTests(unittest.IsolatedAsyncioTestCase):
                 Simctl, "state", new=mock.AsyncMock(return_value="Booted")
             ),
         ):
-            # BUG: generic runner configuration silently satisfies the suite.
-            environment = await harness.Environment.resolve()
-        self.assertEqual(environment.companion_path, self.installed_companion)
+            with self.assertRaisesRegex(
+                HarnessError, "IDB_E2E_COMPANION_PATH is not set"
+            ):
+                await harness.Environment.resolve()
 
 
 if __name__ == "__main__":
