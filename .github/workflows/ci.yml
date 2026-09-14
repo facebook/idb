@@ -134,7 +134,7 @@ jobs:
     steps:
       - uses: actions/checkout@v5
       - name: Install tools
-        run: brew install xcodegen protobuf swift-protobuf
+        run: brew install xcodegen protobuf
       # build.sh compiles protoc-gen-grpc-swift from source on first run;
       # cache that build to keep this job fast.
       - name: Cache grpc-swift plugin

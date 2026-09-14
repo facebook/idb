@@ -108,7 +108,7 @@ jobs:
           fi
       - name: Install tools
         if: steps.reuse.outputs.reused != 'true'
-        run: brew install xcodegen protobuf swift-protobuf
+        run: brew install xcodegen protobuf
       - name: Cache grpc-swift plugin
         if: steps.reuse.outputs.reused != 'true'
         uses: actions/cache@v5

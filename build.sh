@@ -53,6 +53,7 @@ fi
 # =============================================================================
 
 GRPC_SWIFT_DIR="$BUILD_DIRECTORY/grpc-swift"
+SWIFT_PROTOBUF_DIR="$BUILD_DIRECTORY/swift-protobuf"
 
 function check_xcodegen() {
   if ! command -v xcodegen &> /dev/null; then
@@ -174,19 +175,11 @@ function generate_xcodeproj() {
   fi
 }
 
+# Only protoc itself. Both Swift plugins are built from pinned source below.
 function check_protobuf() {
-  local missing=()
-
   if ! command -v protoc &> /dev/null; then
-    missing+=("protoc")
-  fi
-  if ! command -v protoc-gen-swift &> /dev/null; then
-    missing+=("protoc-gen-swift")
-  fi
-
-  if [ ${#missing[@]} -ne 0 ]; then
-    echo "error: Missing protobuf tools: ${missing[*]}"
-    echo "Install with: brew install protobuf swift-protobuf"
+    echo "error: protoc not found"
+    echo "Install with: brew install protobuf"
     exit 1
   fi
 }
@@ -197,6 +190,14 @@ function resolve_grpc_swift_version() {
   GRPC_SWIFT_VERSION="$(pinned_version grpc-swift)"
   if [ -z "$GRPC_SWIFT_VERSION" ]; then
     echo "error: Package.swift does not pin grpc-swift to an exact version" >&2
+    exit 1
+  fi
+}
+
+function resolve_swift_protobuf_version() {
+  SWIFT_PROTOBUF_VERSION="$(pinned_version swift-protobuf)"
+  if [ -z "$SWIFT_PROTOBUF_VERSION" ]; then
+    echo "error: Package.swift does not pin swift-protobuf to an exact version" >&2
     exit 1
   fi
 }
@@ -372,14 +373,23 @@ function build_grpc_swift_plugin() {
     grpc/grpc-swift "$GRPC_SWIFT_VERSION" "$GRPC_SWIFT_DIR"
 }
 
+function build_swift_protobuf_plugin() {
+  resolve_swift_protobuf_version
+  check_package_pins
+
+  build_protoc_plugin protoc-gen-swift \
+    apple/swift-protobuf "$SWIFT_PROTOBUF_VERSION" "$SWIFT_PROTOBUF_DIR"
+}
+
 function generate_proto() {
   check_protobuf
   build_grpc_swift_plugin
+  build_swift_protobuf_plugin
 
   local proto_dir="proto"
   local output_dir="IDBGRPCSwift"
   local protoc=$(which protoc)
-  local swift_plugin=$(which protoc-gen-swift)
+  local swift_plugin="$SWIFT_PROTOBUF_DIR/.build/release/protoc-gen-swift"
   local grpc_plugin="$GRPC_SWIFT_DIR/.build/release/protoc-gen-grpc-swift"
 
   echo "Generating gRPC Swift from proto..."
@@ -941,7 +951,7 @@ Examples:
 Prerequisites:
   - Xcode 26.0+
   - XcodeGen: brew install xcodegen
-  - For idb_companion: brew install protobuf swift-protobuf
+  - For idb_companion: brew install protobuf
 EOF
 }
 

@@ -79,11 +79,11 @@ Head over [to the main documentation](https://www.fbidb.io) for more details on 
 
 - **macOS 15+** with **Xcode 26.0+**
 - **XcodeGen**: `brew install xcodegen`
-- **For idb_companion**: the protobuf compiler and its Swift plugin
+- **For idb_companion**: the protobuf compiler
   ```
-  brew install protobuf swift-protobuf
+  brew install protobuf
   ```
-  (`build.sh` builds the `protoc-gen-grpc-swift` plugin itself, from a pinned checkout of grpc-swift.)
+  (`build.sh` builds both Swift codegen plugins itself — `protoc-gen-swift` and `protoc-gen-grpc-swift` — from checkouts pinned to the versions `Package.swift` declares, so the generated code always matches the runtime it is generated against.)
 
 ### Building
 
