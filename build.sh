@@ -49,9 +49,6 @@ function setup_build_directory() {
     rm -rf Build
     ln -s "$BUILD_DIRECTORY" Build
   fi
-
-  GRPC_SWIFT_DIR="$BUILD_DIRECTORY/grpc-swift"
-  SWIFT_PROTOBUF_DIR="$BUILD_DIRECTORY/swift-protobuf"
 }
 
 # =============================================================================
@@ -373,12 +370,28 @@ function check_package_pins() {
   [ "$errors" -eq 0 ] || exit 1
 }
 
-# <product> <package> <version> <checkout dir>. The checkout is shallow at the
-# tag, so a package whose tag has moved fails to clone rather than silently
-# building a different revision.
+# <package> <version>. The version is part of the path so that bumping a pin
+# lands in a new directory: the already-built early return below keys on the
+# binary existing, and nothing before it can tell that the binary came from the
+# previous tag -- the pin guard compares the manifests to each other, not to
+# what is on disk.
+function plugin_checkout() {
+  echo "$BUILD_DIRECTORY/${1##*/}-$2"
+}
+
+# <product> <package> <version>. Where a build of that plugin puts its binary.
+function plugin_binary() {
+  echo "$(plugin_checkout "$2" "$3")/.build/release/$1"
+}
+
+# <product> <package> <version>. The checkout is shallow at the tag, so a
+# package whose tag has moved fails to clone rather than silently building a
+# different revision.
 function build_protoc_plugin() {
-  local product="$1" package="$2" version="$3" dir="$4"
-  local plugin_path="$dir/.build/release/$product"
+  local product="$1" package="$2" version="$3"
+  local dir plugin_path
+  dir="$(plugin_checkout "$package" "$version")"
+  plugin_path="$(plugin_binary "$product" "$package" "$version")"
 
   if [ -x "$plugin_path" ]; then
     echo "$product already built at $plugin_path"
@@ -405,13 +418,11 @@ function build_protoc_plugin() {
 }
 
 function build_grpc_swift_plugin() {
-  # Checked before build_protoc_plugin's already-built early return: a warm
-  # cache must not let a drifted pin through.
   resolve_grpc_swift_version
   check_package_pins
 
   build_protoc_plugin protoc-gen-grpc-swift \
-    grpc/grpc-swift "$GRPC_SWIFT_VERSION" "$GRPC_SWIFT_DIR"
+    grpc/grpc-swift "$GRPC_SWIFT_VERSION"
 }
 
 function build_swift_protobuf_plugin() {
@@ -419,7 +430,7 @@ function build_swift_protobuf_plugin() {
   check_package_pins
 
   build_protoc_plugin protoc-gen-swift \
-    apple/swift-protobuf "$SWIFT_PROTOBUF_VERSION" "$SWIFT_PROTOBUF_DIR"
+    apple/swift-protobuf "$SWIFT_PROTOBUF_VERSION"
 }
 
 function generate_proto() {
@@ -430,8 +441,9 @@ function generate_proto() {
   local proto_dir="proto"
   local output_dir="IDBGRPCSwift"
   local protoc=$(which protoc)
-  local swift_plugin="$SWIFT_PROTOBUF_DIR/.build/release/protoc-gen-swift"
-  local grpc_plugin="$GRPC_SWIFT_DIR/.build/release/protoc-gen-grpc-swift"
+  local swift_plugin grpc_plugin
+  swift_plugin="$(plugin_binary protoc-gen-swift apple/swift-protobuf "$SWIFT_PROTOBUF_VERSION")"
+  grpc_plugin="$(plugin_binary protoc-gen-grpc-swift grpc/grpc-swift "$GRPC_SWIFT_VERSION")"
 
   echo "Generating gRPC Swift from proto..."
   mkdir -p "$output_dir"

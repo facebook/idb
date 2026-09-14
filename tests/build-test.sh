@@ -358,17 +358,16 @@ assert_equal "a warm checkout at the same pin still succeeds" 0 "$status"
 assert_equal "and is not re-cloned" "1.27.5" "$(cloned_tags)"
 
 # The pin moves, both manifests move with it, and the guard is satisfied -- so
-# nothing before the plugin builder can notice that the checkout on disk was
-# built from the previous tag.
+# nothing before the plugin builder can notice that a checkout on disk was built
+# from the previous tag. Keying the checkout by version is what makes the reuse
+# impossible rather than merely unlikely.
 write_package "$dir" 1.28.0 1.38.1
 in_package "$dir" 'build_grpc_swift_plugin' > /dev/null
 status=$?
 assert_equal "a bumped pin still succeeds" 0 "$status"
 
-# BUG: the checkout directory carries no version, so the plugin built at 1.27.5
-# is reused for a package now pinned to 1.28.0 -- flipped in the following commit.
-assert_equal "a bumped pin reuses the checkout built at the old tag" \
-    "1.27.5" "$(cloned_tags)"
+assert_equal "a bumped pin re-clones at the new tag" \
+    "1.27.5 1.28.0" "$(cloned_tags)"
 
 if [ "$FAILURES" -ne 0 ]; then
     echo "$FAILURES assertion(s) failed"
