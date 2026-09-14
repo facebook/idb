@@ -409,5 +409,48 @@ class WaitUntilTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(str(raised.exception), "the companion is gone")
 
 
+class EnvironmentSelectionTests(unittest.IsolatedAsyncioTestCase):
+    def setUp(self) -> None:
+        super().setUp()
+        directory = tempfile.TemporaryDirectory()
+        self.addCleanup(directory.cleanup)
+        self.root = Path(directory.name)
+        self.built_companion = self.root / "built-companion"
+        self.installed_companion = self.root / "installed-companion"
+        for path in (self.built_companion, self.installed_companion):
+            path.touch()
+            path.chmod(0o755)
+        self.environment = {
+            "DEVICE_UDID": "test-simulator",
+            "DEVICE_SET_PATH": str(self.root),
+            "IDB_BIN": str(self.built_companion),
+            "IDB_E2E_COMPANION_PATH": str(self.built_companion),
+            "IDB_COMPANION_PATH": str(self.installed_companion),
+        }
+
+    async def test_companion_selection_with_both_environment_variables(self) -> None:
+        with (
+            mock.patch.dict(os.environ, self.environment, clear=True),
+            mock.patch.object(
+                Simctl, "state", new=mock.AsyncMock(return_value="Booted")
+            ),
+        ):
+            environment = await harness.Environment.resolve()
+        # BUG: the runner's installed companion replaces the build under test.
+        self.assertEqual(environment.companion_path, self.installed_companion)
+
+    async def test_generic_companion_variable_alone(self) -> None:
+        del self.environment["IDB_E2E_COMPANION_PATH"]
+        with (
+            mock.patch.dict(os.environ, self.environment, clear=True),
+            mock.patch.object(
+                Simctl, "state", new=mock.AsyncMock(return_value="Booted")
+            ),
+        ):
+            # BUG: generic runner configuration silently satisfies the suite.
+            environment = await harness.Environment.resolve()
+        self.assertEqual(environment.companion_path, self.installed_companion)
+
+
 if __name__ == "__main__":
     unittest.main()
