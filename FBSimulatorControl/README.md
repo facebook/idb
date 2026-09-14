@@ -50,6 +50,25 @@ For a high level overview:
 - Configuration values: `FBApplicationLaunchConfiguration`, `FBSimulatorControlConfiguration`, `FBSimulatorConfiguration` & `FBSimulatorBootConfiguration`. The last three are structs.
 
 
+Simulator creation resolves a request against CoreSimulator's installed device types and runtimes:
+
+```swift
+let request = SimulatorCreationRequest(device: .name("iPhone 17e"))
+let simulator = try await control.set.createSimulator(with: request)
+```
+
+Use `.identifier(...)` for an exact CoreSimulator identifier, or `.name(...)` for a display name.
+An omitted runtime selects the newest available compatible version, with build numbers breaking
+version ties. An explicit runtime must match; it never falls back to another version.
+`FBSimulatorConfiguration.availableConfigurations()` lists available compatible pairs.
+A simulator's `configuration` describes its actual device/runtime metadata, including identifiers
+and runtime build, even when the runtime is no longer available.
+
+The former release constants, configuration catalogs, `defaultConfiguration()`, and fluent
+`withDeviceModel` / `withOSNamed` builders have been removed. Construct creation requests directly;
+`FBDeviceModel` and `FBOSVersionName` remain open string wrappers for target metadata.
+
+
 ## Functionality beyond Apple's tools
 
 `FBSimulatorControl` supported "Multisim" (booting many Simulators concurrently on one host, headlessly, isolated in custom device sets) years before Xcode and `simctl` did. Apple's tools now provide all of this, so it is no longer a reason to pick the framework.

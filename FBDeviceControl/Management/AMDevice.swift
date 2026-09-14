@@ -126,14 +126,23 @@ public final class FBAMDevice: FBiOSTargetInfo, DeviceCommands, CustomStringConv
 
   public var deviceType: DeviceType {
     let productType = allValues[DeviceKey.productType.rawValue] as? String ?? UnknownValue
-    return FBiOSTargetConfiguration.productTypeToDevice[productType] ?? DeviceType.generic(withName: productType)
+    let family: FBControlCoreProductFamily
+    switch allValues[DeviceKey.deviceClass.rawValue] as? String {
+    case "iPhone", "iPod": family = .familyiPhone
+    case "iPad": family = .familyiPad
+    case "AppleTV": family = .familyAppleTV
+    case "Watch": family = .familyAppleWatch
+    case "Mac": family = .familyMac
+    default: family = .familyUnknown
+    }
+    return DeviceType(model: FBDeviceModel(rawValue: legacyDeviceNames[productType] ?? productType), family: family)
   }
 
   public var osVersion: OSVersion {
     let name = Self.osVersionName(
       deviceClass: allValues[DeviceKey.deviceClass.rawValue] as? String,
       productVersion: productVersion)
-    return FBiOSTargetConfiguration.nameToOSVersion[FBOSVersionName(rawValue: name)] ?? OSVersion.generic(withName: name)
+    return OSVersion(name: FBOSVersionName(rawValue: name), versionString: productVersion ?? "")
   }
 
   public var state: FBiOSTargetState {

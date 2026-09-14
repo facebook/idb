@@ -21,62 +21,26 @@ final class FBiOSTargetTests: XCTestCase {
     XCTAssertEqual(earlier.compare(later), .orderedAscending)
   }
 
-  static var iPhoneModels: [FBDeviceModel] {
-    return [
-      .modeliPhone4s,
-      .modeliPhone5,
-      .modeliPhone5c,
-      .modeliPhone5s,
-      .modeliPhone6,
-      .modeliPhone6Plus,
-      .modeliPhone6S,
-      .modeliPhone6SPlus,
-      .modeliPhone7,
-      .modeliPhone7Plus,
-      .modeliPhoneSE_1stGeneration,
-    ]
-  }
-
-  static var iPadModels: [FBDeviceModel] {
-    return [
-      .modeliPad2,
-      .modeliPadAir,
-      .modeliPadAir2,
-      .modeliPadPro,
-      .modeliPadPro_12_9_Inch,
-      .modeliPadPro_9_7_Inch,
-      .modeliPadRetina,
-    ]
-  }
-
-  static func deviceTypes(forModels models: [FBDeviceModel]) -> [DeviceType] {
-    var deviceTypes: [DeviceType] = []
-    for model in models {
-      deviceTypes.append(FBiOSTargetConfiguration.nameToDevice[model]!)
-    }
-    return deviceTypes
-  }
-
   static var iPhoneDeviceTypes: [DeviceType] {
-    return deviceTypes(forModels: iPhoneModels)
+    ["Phone A", "Phone B"].map { DeviceType(model: FBDeviceModel(rawValue: $0), family: .familyiPhone) }
   }
 
   static var iPadDeviceTypes: [DeviceType] {
-    return deviceTypes(forModels: iPadModels)
+    ["Pad A", "Pad B"].map { DeviceType(model: FBDeviceModel(rawValue: $0), family: .familyiPad) }
   }
 
   func testDevicesOrderedFirst() {
     let first = FBiOSTargetDouble()
     first.targetType = .device
     first.state = .booted
-    first.deviceType = FBiOSTargetConfiguration.nameToDevice[.modeliPhone6S]!
-    first.osVersion = FBiOSTargetConfiguration.nameToOSVersion[.nameiOS_10_0]!
+    first.deviceType = DeviceType(model: FBDeviceModel(rawValue: "Future Phone"), family: .familyiPhone)
+    first.osVersion = OSVersion.generic(withName: "FutureOS 99.0")
 
     let second = FBiOSTargetDouble()
     second.targetType = .simulator
     second.state = .booted
-    second.deviceType = FBiOSTargetConfiguration.nameToDevice[.modeliPhone6S]!
-    second.osVersion = FBiOSTargetConfiguration.nameToOSVersion[.nameiOS_10_0]!
+    second.deviceType = DeviceType(model: FBDeviceModel(rawValue: "Future Phone"), family: .familyiPhone)
+    second.osVersion = OSVersion.generic(withName: "FutureOS 99.0")
 
     XCTAssertEqual(first.compare(second), .orderedDescending)
   }
@@ -85,13 +49,13 @@ final class FBiOSTargetTests: XCTestCase {
     let first = FBiOSTargetDouble()
     first.targetType = .device
     first.state = .booted
-    first.deviceType = FBiOSTargetConfiguration.nameToDevice[.modeliPhone6S]!
-    first.osVersion = FBiOSTargetConfiguration.nameToOSVersion[.nameiOS_10_0]!
+    first.deviceType = DeviceType(model: FBDeviceModel(rawValue: "Future Phone"), family: .familyiPhone)
+    first.osVersion = OSVersion.generic(withName: "FutureOS 99.0")
 
     let second = FBiOSTargetDouble()
     second.targetType = .device
-    second.deviceType = FBiOSTargetConfiguration.nameToDevice[.modeliPhone6S]!
-    second.osVersion = FBiOSTargetConfiguration.nameToOSVersion[.nameiOS_10_1]!
+    second.deviceType = DeviceType(model: FBDeviceModel(rawValue: "Future Phone"), family: .familyiPhone)
+    second.osVersion = OSVersion.generic(withName: "FutureOS 99.1")
 
     XCTAssertEqual(first.compare(second), .orderedAscending)
   }
@@ -104,7 +68,7 @@ final class FBiOSTargetTests: XCTestCase {
       target.targetType = .device
       target.state = .booted
       target.deviceType = deviceType
-      target.osVersion = FBiOSTargetConfiguration.nameToOSVersion[.nameiOS_10_0]!
+      target.osVersion = OSVersion.generic(withName: "FutureOS 99.0")
       input.append(target)
     }
     let output = input.sorted { $0.compare($1) == .orderedAscending }

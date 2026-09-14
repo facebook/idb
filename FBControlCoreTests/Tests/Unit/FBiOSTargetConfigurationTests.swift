@@ -46,39 +46,20 @@ final class FBiOSTargetConfigurationTests: XCTestCase {
     XCTAssertEqual(os.version.majorVersion, 0)
   }
 
-  static var deviceTypeConfigurations: [DeviceType] {
-    return Array(FBiOSTargetConfiguration.nameToDevice.values)
-  }
-
-  static var osVersionConfigurations: [OSVersion] {
-    return Array(FBiOSTargetConfiguration.nameToOSVersion.values)
-  }
-
   func testDeviceTypeEqualityConsidersOnlyTheModel() {
-    guard let catalogued = FBiOSTargetConfigurationTests.deviceTypeConfigurations.first(where: { !$0.productTypes.isEmpty }) else {
-      return XCTFail("No catalogued device type carries product types")
-    }
-    let generic = DeviceType.generic(withName: catalogued.model.rawValue)
-
-    XCTAssertNotEqual(catalogued.productTypes, generic.productTypes)
-    XCTAssertNotEqual(catalogued.family, generic.family)
-
-    // Equality and hashing are by model alone; every other field is catalogue data derived from it.
-    XCTAssertEqual(catalogued, generic)
-    XCTAssertEqual(catalogued.hashValue, generic.hashValue)
+    let described = DeviceType(model: FBDeviceModel(rawValue: "Future Device"), family: .familyiPad)
+    let generic = DeviceType.generic(withName: "Future Device")
+    XCTAssertNotEqual(described.family, generic.family)
+    XCTAssertEqual(described, generic)
+    XCTAssertEqual(described.hashValue, generic.hashValue)
   }
 
   func testOSVersionEqualityConsidersOnlyTheName() {
-    guard let catalogued = FBiOSTargetConfigurationTests.osVersionConfigurations.first(where: { !$0.families.isEmpty }) else {
-      return XCTFail("No catalogued OS version carries families")
-    }
-    let generic = OSVersion.generic(withName: catalogued.name.rawValue)
-
-    XCTAssertNotEqual(catalogued.families, generic.families)
-
-    // Equality and hashing are by name alone; families is catalogue data derived from it.
-    XCTAssertEqual(catalogued, generic)
-    XCTAssertEqual(catalogued.hashValue, generic.hashValue)
+    let described = OSVersion(name: FBOSVersionName(rawValue: "Future Platform"), versionString: "99.0")
+    let generic = OSVersion.generic(withName: "Future Platform")
+    XCTAssertNotEqual(described.versionString, generic.versionString)
+    XCTAssertEqual(described, generic)
+    XCTAssertEqual(described.hashValue, generic.hashValue)
   }
 
   func testScreenInfoHashTruncatesScale() {

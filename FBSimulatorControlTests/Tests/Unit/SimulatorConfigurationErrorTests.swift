@@ -9,34 +9,15 @@
 import XCTest
 
 final class SimulatorConfigurationErrorTests: XCTestCase {
-
-  func testMessagesAreStable() {
+  func testResolutionErrorsDescribeTheRuntimeIndex() {
     XCTAssertEqual(
-      SimulatorConfigurationError.noNewestAvailableOS(device: "iPhone 6").errorDescription,
-      "No newest available OS for device iPhone 6"
-    )
+      SimulatorConfigurationError.noMatchingRuntime(available: "[]").errorDescription,
+      "Could not obtain matching SimRuntime, no matches. Available Runtimes []")
     XCTAssertEqual(
-      SimulatorConfigurationError.unsupportedDevice(name: "FooPad").errorDescription,
-      "Could not obtain Device for FooPad, perhaps it is unsupported by FBSimulatorControl"
-    )
+      SimulatorConfigurationError.noMatchingDeviceType(available: "[]").errorDescription,
+      "Could not obtain matching DeviceTypes, no matches. Available Device Types []")
     XCTAssertEqual(
-      SimulatorConfigurationError.noDefaultDeviceTypeRegistered(model: "iPhone 6").errorDescription,
-      "No device type is registered for 'iPhone 6'"
-    )
-    XCTAssertEqual(
-      SimulatorConfigurationError.noAvailableOSVersionsForDefault.errorDescription,
-      "No available OS versions for the default simulator configuration"
-    )
-  }
-
-  func testRuntimeUnavailableComposesReason() {
-    XCTAssertEqual(
-      SimulatorConfigurationError.runtimeUnavailable(configuration: "Device 'X' | OS 'Y'", reason: "no matches").errorDescription,
-      "Could not obtain available SimRuntime for configuration Device 'X' | OS 'Y': no matches"
-    )
-    XCTAssertEqual(
-      SimulatorConfigurationError.runtimeUnavailable(configuration: "Device 'X' | OS 'Y'", reason: nil).errorDescription,
-      "Could not obtain available SimRuntime for configuration Device 'X' | OS 'Y'"
-    )
+      SimulatorConfigurationError.ambiguousDeviceType(matches: "[first, second]").description,
+      "Matching Device Types is ambiguous: [first, second]")
   }
 }
