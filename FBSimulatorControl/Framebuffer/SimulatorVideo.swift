@@ -11,14 +11,14 @@ import Foundation
 
 /// Records simulator video in-process. Drives the framebuffer through the shared
 /// `SimulatorVideoStream` encode pipeline at an eager (constant-frame-rate) cadence and muxes the
-/// encoded frames into an `.mp4` via `SimulatorVideoFileWriter` (`AVAssetWriter`). The byte-stream consumer is
-/// a discard; only the `.mp4` is produced.
+/// encoded frames into MP4 or MOV via `SimulatorVideoFileWriter` (`AVAssetWriter`).
+/// The byte-stream consumer is unused; only the recording file is produced.
 ///
 /// An actor: `hasStopped` guards the single stop and is set before the first suspension, so
 /// concurrent `stop()` calls cannot both finalize.
 public actor SimulatorVideo {
 
-  /// The URL of the `.mp4` this recording writes.
+  /// The URL of the recording file.
   let outputURL: URL
   /// The underlying encode pipeline, exposed so callers can drive overlay/chapter/screenshot on the live
   /// recording. `nonisolated`: a constant of Sendable (actor) type, readable without a hop.

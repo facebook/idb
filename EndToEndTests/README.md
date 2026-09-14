@@ -1,6 +1,6 @@
 # idb end-to-end tests
 
-These tests run the `idb` CLI through `idb_companion` against a booted simulator. They cover app lifecycle, file transfers, screenshots, logs, URLs, permissions and accessibility. Tests check command output and, where available, compare results with `simctl` or files on the host. Tap and scroll tests check command success but do not yet verify the resulting UI.
+These tests run the `idb` CLI through `idb_companion` against a booted simulator. They cover app lifecycle, file transfers, screenshots, logs, URLs, permissions and accessibility. Tests check command output and, where available, compare results with `simctl` or files on the host. Tap and scroll tests verify the resulting navigation and visible elements.
 
 ## What the environment provides
 
@@ -10,11 +10,12 @@ These tests run the `idb` CLI through `idb_companion` against a booted simulator
 | `IDB_ARGS` | optional root arguments inserted before `--companion` |
 | `IDB_SETUP_BIN` | optional client used only to prepare fixtures; defaults to `IDB_BIN` |
 | `IDB_E2E_COMPANION_PATH` | the `idb_companion` binary, with its `Resources/` directory beside it |
+| `IDB_E2E_RECORDER_PATH` | the built `sim-video` binary |
 | `DEVICE_UDID` | the booted simulator to test against |
 | `DEVICE_SET_PATH` | the device set `DEVICE_UDID` lives in |
 | `IDB_E2E_STRICT` | `1` fails tests when `SimLaunchHostService` is unavailable; otherwise those tests skip |
 
-`IDB_BIN`, `IDB_E2E_COMPANION_PATH`, `DEVICE_UDID`, and `DEVICE_SET_PATH` are required. Missing variables, invalid binary paths and a simulator that is not booted fail setup.
+`IDB_BIN`, `IDB_E2E_COMPANION_PATH`, `IDB_E2E_RECORDER_PATH`, `DEVICE_UDID`, and `DEVICE_SET_PATH` are required. Missing variables, invalid binary paths and a simulator that is not booted fail setup.
 
 Use a dedicated simulator. Tests install and remove `ReplHost.app`, change its permissions and files, and launch or terminate Settings and Safari. Cleanup removes the fixture app and stops test apps; it does not restore pre-existing app state. The suite does not boot, shut down, erase or delete the simulator.
 
@@ -37,6 +38,7 @@ xcrun simctl --set "$DEVICE_SET_PATH" boot "$DEVICE_UDID"
 xcrun simctl --set "$DEVICE_SET_PATH" bootstatus "$DEVICE_UDID"
 IDB_BIN="$(command -v idb)" \
 IDB_E2E_COMPANION_PATH="$PWD/Build/Distribution/idb_companion" \
+IDB_E2E_RECORDER_PATH="$PWD/Build/Distribution/sim-video" \
 python3 -m unittest discover -s EndToEndTests -t . -v
 ```
 
@@ -57,3 +59,13 @@ python3 -m unittest EndToEndTests.harness_tests -v
 `harness_tests.py` is named separately from `test_*.py` so e2e discovery does not include it. In GitHub CI, the `pure-python` job runs these tests; `mac-end-to-end` builds on the companion artifact, provisions a simulator through `CI.provision_simulator`, runs the e2e suite in strict mode, and collects diagnostics on success and failure.
 
 The harness writes companion logs to `IDB_E2E_ARTIFACTS_DIR`, falling back to `TEST_RESULT_ARTIFACTS_DIR` when available. Without either directory, logs stay at `/tmp/idb-e2e-*/companion.log`. The collector reads both layouts; `--artifacts-dir` overrides its artifact source without changing `--output`.
+
+## Recordings and diagnostics
+
+The harness starts one `sim-video` process alongside the companion. It records the simulator with padded bars for the active test and command, and adds a chapter at each test boundary. A timestamped JSON-lines trace preserves full test names, commands, exit codes, timing and final test results, including cleanup failures. Screenshots are captured before test cleanup.
+
+Recording tries hardware HEVC first, then JPEG with software encoding allowed if HEVC cannot produce frames. If neither produces frames, the recorder log explains the failure, the command trace continues, and screenshots are attempted through idb. A missing or non-executable recorder path fails setup. The suite also tests JPEG recording and recorder shutdown directly, so regressions in that supported path fail the recording tests.
+
+The recorder finalizes before the companion stops at process exit. Successful recordings include a `.mov.json` report written after AVFoundation decodes a frame and checks the duration. A hard kill can prevent finalization. JPEG/MOV is readable by AVFoundation; browser playback support varies.
+
+All diagnostics use unique, flat names in `IDB_E2E_ARTIFACTS_DIR`, falling back to `TEST_RESULT_ARTIFACTS_DIR` or the companion's local `/tmp/idb-e2e-*` directory. Both successful and failed runs retain companion and recorder logs, command traces, screenshots, and available video. The tool's commands and line protocol are documented in [Tools/VideoRecorder](../Tools/VideoRecorder/README.md).

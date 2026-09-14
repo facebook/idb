@@ -37,7 +37,7 @@ extension SimulatorVideoFileWriterError: LocalizedError {
   }
 }
 
-/// Muxes already-encoded H264/HEVC `CMSampleBuffer`s into an `.mp4` using `AVAssetWriter` in
+/// Muxes encoded H.264, HEVC, or JPEG `CMSampleBuffer`s into MP4 or MOV using `AVAssetWriter` in
 /// passthrough mode (no re-encode). The in-process simulator recorder uses this as the file sink for
 /// the framebuffer→VideoToolbox encode pipeline.
 ///

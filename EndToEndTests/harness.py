@@ -5,9 +5,9 @@
 
 """Run idb commands through one shared companion against a booted simulator.
 
-The caller supplies DEVICE_UDID, DEVICE_SET_PATH, IDB_BIN and
-IDB_E2E_COMPANION_PATH. The harness starts the companion and waits for
-accessibility readiness; it does not manage the simulator lifecycle.
+The caller supplies DEVICE_UDID, DEVICE_SET_PATH, IDB_BIN,
+IDB_E2E_COMPANION_PATH and IDB_E2E_RECORDER_PATH. The harness starts the companion
+and waits for accessibility readiness; it does not manage the simulator lifecycle.
 """
 
 from __future__ import annotations

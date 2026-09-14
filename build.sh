@@ -660,6 +660,7 @@ function build_sim_video() {
 #   <dist>/
 #     idb_companion             the executable
 #     idb-repl                  the REPL CLI
+#     sim-video                 the local video recorder
 #     *.bundle                  SwiftPM resource bundles (Bundle.module -> Bundle.main)
 #     Resources/
 #       libShimulator-iOS.dylib
