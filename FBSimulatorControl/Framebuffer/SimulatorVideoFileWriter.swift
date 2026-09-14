@@ -16,6 +16,7 @@ private enum SimulatorVideoFileWriterError: Error {
   case assetWriterFailedToFinish(errorDescription: String)
   case firstSampleBufferMissingFormatDescription
   case cannotAddVideoInput
+  case cannotWriteChapter(String)
   case assetWriterFailedToStart(errorDescription: String)
 }
 
@@ -26,6 +27,8 @@ extension SimulatorVideoFileWriterError: LocalizedError {
       return "AVAssetWriter failed to finish writing: \(errorDescription)"
     case .firstSampleBufferMissingFormatDescription:
       return "First sample buffer has no format description"
+    case .cannotWriteChapter(let reason):
+      return "Cannot write chapter: \(reason)"
     case .cannotAddVideoInput:
       return "AVAssetWriter cannot add the video input"
     case .assetWriterFailedToStart(let errorDescription):
@@ -139,11 +142,11 @@ final class SimulatorVideoFileWriter: EncodedSampleConsumer, TimedMetadataConsum
       logger.log("SimulatorVideoFileWriter.finish called with no frames written; nothing to finalize")
       return
     }
+    input.markAsFinished()
     if let chapterInput {
-      writeBufferedChapters(into: chapterInput)
+      try await writeBufferedChapters(into: chapterInput)
       chapterInput.markAsFinished()
     }
-    input.markAsFinished()
     await assetWriter.finishWriting()
     if assetWriter.status == .failed {
       throw SimulatorVideoFileWriterError.assetWriterFailedToFinish(errorDescription: assetWriter.error.map { String(describing: $0) } ?? "unknown error")
@@ -216,18 +219,26 @@ final class SimulatorVideoFileWriter: EncodedSampleConsumer, TimedMetadataConsum
 
   /// Drain the buffered markers into the chapter input as text samples with contiguous time ranges:
   /// each chapter runs until the next one, and the last until the end of the recorded video.
-  private func writeBufferedChapters(into chapterInput: AVAssetWriterInput) {
-    chapterLock.lock()
-    let chapters = pendingChapters
-    let sessionStart = firstPresentationTime
-    let videoEnd = lastPresentationTime
-    chapterLock.unlock()
+  private func writeBufferedChapters(into chapterInput: AVAssetWriterInput) async throws {
+    let (chapters, sessionStart, videoEnd) = chapterLock.withLock {
+      (pendingChapters, firstPresentationTime, lastPresentationTime)
+    }
 
     guard let formatDescription = chapterFormatDescription, !chapters.isEmpty else {
       return
     }
-    let resolved = chapters.map { (time: $0.time.isValid ? $0.time : sessionStart, text: $0.text) }
+    var resolved: [(time: CMTime, text: String)] = []
+    for chapter in chapters {
+      let time = chapter.time.isValid ? chapter.time : sessionStart
+      // QuickTime text samples cannot overlap. Updates within one video frame keep the latest title.
+      if resolved.last?.time == time {
+        resolved[resolved.count - 1] = (time, chapter.text)
+      } else {
+        resolved.append((time, chapter.text))
+      }
+    }
     let minDuration = CMTimeMake(value: 1, timescale: 600)
+    let deadline = ContinuousClock.now + .seconds(10)
     for (index, chapter) in resolved.enumerated() {
       let start = chapter.time
       let rawEnd = index + 1 < resolved.count ? resolved[index + 1].time : videoEnd
@@ -239,8 +250,18 @@ final class SimulatorVideoFileWriter: EncodedSampleConsumer, TimedMetadataConsum
         logger.log("Failed to build chapter sample for '\(chapter.text)', skipping")
         continue
       }
-      if !chapterInput.isReadyForMoreMediaData || !chapterInput.append(sample) {
-        logger.log("Failed to append chapter sample for '\(chapter.text)'")
+      // Buffered chapters must wait for capacity; dropping them would lose chapter titles.
+      while !chapterInput.isReadyForMoreMediaData {
+        guard assetWriter?.status == .writing else {
+          throw SimulatorVideoFileWriterError.cannotWriteChapter(assetWriter?.error.map { String(describing: $0) } ?? "writer stopped")
+        }
+        guard ContinuousClock.now < deadline else {
+          throw SimulatorVideoFileWriterError.cannotWriteChapter("chapter input did not drain within 10 seconds")
+        }
+        try await Task.sleep(for: .milliseconds(1))
+      }
+      guard chapterInput.append(sample) else {
+        throw SimulatorVideoFileWriterError.cannotWriteChapter(assetWriter?.error.map { String(describing: $0) } ?? "append failed")
       }
     }
   }

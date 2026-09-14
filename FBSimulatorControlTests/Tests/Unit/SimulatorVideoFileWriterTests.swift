@@ -139,13 +139,11 @@ final class SimulatorVideoFileWriterTests: XCTestCase {
     for index in 1..<30 {
       XCTAssertTrue(writer.consume(sampleBuffer(frameIndex: index), logger: logger))
     }
-    // BUG: Two chapter markers at one frame prevent the movie from finalizing.
-    do {
-      try await writer.finish()
-      XCTFail("Expected overlapping chapters to prevent finalization")
-    } catch {
-      XCTAssertTrue(String(describing: error).contains("assetWriterFailedToFinish"))
-    }
+    try await writer.finish()
+    let asset = AVURLAsset(url: URL(fileURLWithPath: path))
+    let tracks = try await asset.loadTracks(withMediaType: .text)
+    let track = try XCTUnwrap(tracks.first)
+    XCTAssertEqual(try Self.readChapterTitles(track: track, asset: asset), ["Second"])
   }
 
   func testManyChaptersAcrossALongTimeline() async throws {
@@ -163,8 +161,7 @@ final class SimulatorVideoFileWriterTests: XCTestCase {
     let asset = AVURLAsset(url: URL(fileURLWithPath: path))
     let tracks = try await asset.loadTracks(withMediaType: .text)
     let track = try XCTUnwrap(tracks.first)
-    // BUG: A full chapter input causes buffered titles to be discarded.
-    XCTAssertLessThan(try Self.readChapterTitles(track: track, asset: asset).count, titles.count)
+    XCTAssertEqual(try Self.readChapterTitles(track: track, asset: asset), titles)
   }
 
   func testFinishWithoutFramesDoesNotThrow() async throws {
