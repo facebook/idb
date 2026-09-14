@@ -18,6 +18,14 @@ public enum SimulatorFrameworkBridgeError: Error, LocalizedError {
   /// The bridge ran and reported a failure.
   case serviceFailed(service: String, action: String, exitCode: Int32, stderr: String)
 
+  static func failureDetails(stderr: Data, stdout: Data) -> String {
+    let details = [stderr, stdout]
+      .compactMap { String(data: $0, encoding: .utf8) }
+      .filter { !$0.isEmpty }
+      .joined(separator: "\n")
+    return details.isEmpty ? "no output" : details
+  }
+
   public var errorDescription: String? {
     switch self {
     case .binaryMissing:
@@ -50,12 +58,14 @@ extension FBSimulator {
       launchPath: helperPath,
       arguments: [service, action] + arguments)
     guard output.exitCode == 0 else {
-      let stderr = String(data: output.stderr, encoding: .utf8) ?? ""
+      let details = SimulatorFrameworkBridgeError.failureDetails(
+        stderr: output.stderr,
+        stdout: output.stdout)
       throw SimulatorFrameworkBridgeError.serviceFailed(
         service: service,
         action: action,
         exitCode: output.exitCode,
-        stderr: stderr)
+        stderr: details)
     }
     logger.log("SimulatorFrameworkBridge \(service) \(action) completed successfully")
     return String(data: output.stdout, encoding: .utf8) ?? ""
