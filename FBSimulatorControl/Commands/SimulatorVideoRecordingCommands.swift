@@ -27,7 +27,7 @@ extension SimulatorVideoRecordingCommandError: LocalizedError {
 public final class SimulatorVideoRecordingCommands: VideoRecordingCommands {
 
   private weak var simulator: FBSimulator?
-  private var video: FBSimulatorVideo?
+  private var video: SimulatorVideo?
 
   public class func commands(with simulator: FBSimulator) -> SimulatorVideoRecordingCommands {
     SimulatorVideoRecordingCommands(simulator: simulator)
@@ -50,7 +50,7 @@ public final class SimulatorVideoRecordingCommands: VideoRecordingCommands {
       keyFrameRate: nil)
   }
 
-  /// Simulator recording goes through `FBSimulatorVideo`, which reads the configuration it is
+  /// Simulator recording goes through `SimulatorVideo`, which reads the configuration it is
   /// handed rather than imposing a fixed one.
   public var honorsRecordingConfiguration: Bool { true }
 
@@ -66,7 +66,7 @@ public final class SimulatorVideoRecordingCommands: VideoRecordingCommands {
       throw SimulatorVideoRecordingCommandError.recordingAlreadyActive
     }
     let framebuffer = try await simulator.lifecycle.connectToFramebuffer()
-    let video = FBSimulatorVideo.video(withFramebuffer: framebuffer, configuration: configuration, filePath: filePath, logger: simulator.logger)
+    let video = SimulatorVideo.video(withFramebuffer: framebuffer, configuration: configuration, filePath: filePath, logger: simulator.logger)
     try await video.startRecording()
     self.video = video
     return VideoRecordingHandle {

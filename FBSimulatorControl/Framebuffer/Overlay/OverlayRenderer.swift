@@ -13,7 +13,7 @@ import Foundation
 import QuartzCore
 
 /// The content mode for a status bar slot.
-public enum FBBarContent: Equatable {
+public enum BarContent: Equatable {
   /// Display the given text in the bar.
   case text(String)
   /// Display live stats from the internal 1Hz writer.
@@ -23,7 +23,7 @@ public enum FBBarContent: Equatable {
 }
 
 /// Layout mode for a status bar — determines how the bar interacts with the simulator screen.
-public enum FBBarMode: String {
+public enum BarMode: String {
   /// Bar lives in canvas space reserved via edgeInsets. Nothing renders behind it, so the
   /// background is fully opaque. The simulator screen is pushed away from the reserved edge.
   case pad
@@ -37,15 +37,15 @@ public enum FBBarMode: String {
 ///
 /// The renderer owns a single IOSurface-backed BGRA+alpha CVPixelBuffer that is
 /// reused across renders. Call `render(overlays:)` to draw shapes, then pass `buffer`
-/// to `FBSimulatorVideoStream.updateOverlayBuffer()` to trigger a frame push.
+/// to `SimulatorVideoStream.updateOverlayBuffer()` to trigger a frame push.
 ///
 /// For animated effects (fadeout, fadein, translate), call `startEffectTimer(onTick:)`
 /// after rendering. The timer re-renders at ~30fps until all effects complete.
-public final class FBOverlayRenderer {
+public final class OverlayRenderer {
   public let buffer: CVPixelBuffer
   let width: Int
   let height: Int
-  public let transform: FBOverlayCoordinateTransform
+  public let transform: OverlayCoordinateTransform
 
   /// Injectable time source for monotonic time (seconds). Defaults to `CACurrentMediaTime()`.
   /// Override in tests to control animation progress deterministically.
@@ -57,10 +57,10 @@ public final class FBOverlayRenderer {
   /// - `animating`: Has an active effect (fadeout, fadein, translate) — survives across
   ///   subsequent `render(overlays:)` calls until the effect expires.
   private enum TimedShape {
-    case persistent(FBOverlayShape, startTime: CFTimeInterval)
-    case animating(FBOverlayShape, startTime: CFTimeInterval)
+    case persistent(OverlayShape, startTime: CFTimeInterval)
+    case animating(OverlayShape, startTime: CFTimeInterval)
 
-    var shape: FBOverlayShape {
+    var shape: OverlayShape {
       switch self {
       case .persistent(let s, _), .animating(let s, _): return s
       }
@@ -95,7 +95,7 @@ public final class FBOverlayRenderer {
   public var logger: FBControlCoreLogger?
 
   /// Current content mode for each bar position.
-  public private(set) var barContent: [String: FBBarContent] = [:]
+  public private(set) var barContent: [String: BarContent] = [:]
 
   /// Live stats text written by the internal 1Hz timer. Only displayed when the bar's content
   /// mode is `.stats`. The renderer never reads this unless the bar is in stats mode.
@@ -104,7 +104,7 @@ public final class FBOverlayRenderer {
   /// Layout mode for each bar position. Defaults to `.pad` for any position not explicitly set.
   /// `pad` mode draws an opaque background; `overlay` mode draws a partially-transparent
   /// background so the simulator content beneath shows through.
-  public private(set) var barMode: [String: FBBarMode] = [:]
+  public private(set) var barMode: [String: BarMode] = [:]
 
   /// Per-position shrink-to-fit flag. When true, the bar's font size is reduced so the rendered
   /// text width fits within the bar (minus padding). Applies to whatever the bar currently
@@ -114,7 +114,7 @@ public final class FBOverlayRenderer {
 
   /// Convenience init for testing — creates a transform from width/height/scale.
   public convenience init(width: Int, height: Int, scaleFactor: CGFloat = 1.0) {
-    let transform = FBOverlayCoordinateTransform(
+    let transform = OverlayCoordinateTransform(
       screenPixelWidth: width,
       screenPixelHeight: height,
       retinaScale: 1.0,
@@ -127,7 +127,7 @@ public final class FBOverlayRenderer {
     self.init(transform: transform)
   }
 
-  public init(transform: FBOverlayCoordinateTransform) {
+  public init(transform: OverlayCoordinateTransform) {
     let width = transform.bufferWidth
     let height = transform.bufferHeight
     var pixelBuffer: CVPixelBuffer?
@@ -159,7 +159,7 @@ public final class FBOverlayRenderer {
   /// Shapes with effects become `.animating` and persist across subsequent renders
   /// until their effect completes. Shapes without effects become `.persistent` and
   /// replace the previous persistent set on each call.
-  public func render(overlays: [FBOverlayShape]) {
+  public func render(overlays: [OverlayShape]) {
     stateLock.lock()
     defer { stateLock.unlock() }
     let now = currentTime()
@@ -231,7 +231,7 @@ public final class FBOverlayRenderer {
   }
 
   /// Set the content mode for a bar at the given position. Re-renders the buffer.
-  public func setBarContent(_ content: FBBarContent, position: String) {
+  public func setBarContent(_ content: BarContent, position: String) {
     stateLock.lock()
     defer { stateLock.unlock() }
     barContent[position] = content
@@ -250,7 +250,7 @@ public final class FBOverlayRenderer {
   }
 
   /// Set the layout mode for a bar position.
-  public func setBarMode(_ mode: FBBarMode, position: String) {
+  public func setBarMode(_ mode: BarMode, position: String) {
     stateLock.lock()
     defer { stateLock.unlock() }
     barMode[position] = mode
@@ -319,7 +319,7 @@ public final class FBOverlayRenderer {
     renderBarIfActive("top", context: context)
   }
 
-  private func renderShape(_ shape: FBOverlayShape, context: CGContext, elapsed: CFTimeInterval) {
+  private func renderShape(_ shape: OverlayShape, context: CGContext, elapsed: CFTimeInterval) {
     switch shape {
     case .circle(let c):
       let bp = transform.bufferPoint(x: c.x, y: c.y)
@@ -336,7 +336,7 @@ public final class FBOverlayRenderer {
 
   // MARK: - Circle
 
-  private func renderCircle(_ circle: FBOverlayShape.Circle, context: CGContext, elapsed: CFTimeInterval) {
+  private func renderCircle(_ circle: OverlayShape.Circle, context: CGContext, elapsed: CFTimeInterval) {
     let alpha = effectAlpha(circle.effect, baseAlpha: circleAlpha(circle.rgba), elapsed: elapsed)
     guard alpha > 0 else { return }
 
@@ -364,7 +364,7 @@ public final class FBOverlayRenderer {
 
   // MARK: - Rectangle
 
-  private func renderRectangle(_ rect: FBOverlayShape.Rectangle, context: CGContext, elapsed: CFTimeInterval) {
+  private func renderRectangle(_ rect: OverlayShape.Rectangle, context: CGContext, elapsed: CFTimeInterval) {
     let alpha = effectAlpha(rect.effect, baseAlpha: circleAlpha(rect.rgba), elapsed: elapsed)
     guard alpha > 0 else { return }
 
@@ -382,7 +382,7 @@ public final class FBOverlayRenderer {
 
   // MARK: - Label
 
-  private func renderLabel(_ label: FBOverlayShape.Label, context: CGContext) {
+  private func renderLabel(_ label: OverlayShape.Label, context: CGContext) {
     let (fontName, baseFontSize) = parseFontSpec(label.font)
     let fontSize = transform.labelFontSize(baseFontSize)
     let font = CTFontCreateWithName(fontName as CFString, fontSize, nil)
@@ -452,7 +452,7 @@ public final class FBOverlayRenderer {
     fontSize: CGFloat,
     barY: CGFloat,
     barHeight: CGFloat,
-    mode: FBBarMode,
+    mode: BarMode,
     fit: Bool,
     context: CGContext
   ) {
@@ -503,7 +503,7 @@ public final class FBOverlayRenderer {
 
   // MARK: - Effect Helpers
 
-  private func effectForShape(_ shape: FBOverlayShape) -> FBOverlayShape.Effect? {
+  private func effectForShape(_ shape: OverlayShape) -> OverlayShape.Effect? {
     switch shape {
     case .circle(let c): return c.effect
     case .rectangle(let r): return r.effect
@@ -516,7 +516,7 @@ public final class FBOverlayRenderer {
   private func circleBlue(_ rgba: [CGFloat]) -> CGFloat { rgba.count > 2 ? rgba[2] / 255.0 : 0 }
   private func circleAlpha(_ rgba: [CGFloat]) -> CGFloat { rgba.count > 3 ? rgba[3] : 1 }
 
-  private func effectAlpha(_ effect: FBOverlayShape.Effect?, baseAlpha: CGFloat, elapsed: CFTimeInterval) -> CGFloat {
+  private func effectAlpha(_ effect: OverlayShape.Effect?, baseAlpha: CGFloat, elapsed: CFTimeInterval) -> CGFloat {
     guard let effect else { return baseAlpha }
     switch effect {
     case .fadeout(let fade):
@@ -530,7 +530,7 @@ public final class FBOverlayRenderer {
     }
   }
 
-  private func effectPosition(_ effect: FBOverlayShape.Effect, base: CGPoint, elapsed: CFTimeInterval) -> CGPoint {
+  private func effectPosition(_ effect: OverlayShape.Effect, base: CGPoint, elapsed: CFTimeInterval) -> CGPoint {
     switch effect {
     case .translate(let t):
       let progress = min(1.0, elapsed / (Double(t.durationMs) / 1000.0))
@@ -543,7 +543,7 @@ public final class FBOverlayRenderer {
     }
   }
 
-  private func isEffectActive(_ effect: FBOverlayShape.Effect?, elapsed: CFTimeInterval) -> Bool {
+  private func isEffectActive(_ effect: OverlayShape.Effect?, elapsed: CFTimeInterval) -> Bool {
     guard let effect else { return false }
     switch effect {
     case .fadeout(let fade): return elapsed < Double(fade.durationMs) / 1000.0

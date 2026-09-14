@@ -12,14 +12,14 @@ import Foundation
 /// Counters for framebuffer surface-change and frame-rendered callbacks, sampled for periodic
 /// logging. There is no rect geometry: the underlying CoreSimulator callback is a per-frame change
 /// signal only (see `FramebufferSurface`), so a frame-rendered callback carries no dimensions.
-public struct FBFramebufferStats: Sendable {
+public struct FramebufferStats: Sendable {
   public var frameRenderedCount: UInt = 0
   var ioSurfaceChangeCount: UInt = 0
 
   public init() {}
 }
 
-/// Errors surfaced by `FBFramebuffer`.
+/// Errors surfaced by `Framebuffer`.
 public enum FramebufferError: Error, LocalizedError {
   /// No renderable main-display surface could be located for the simulator.
   case mainScreenSurfaceNotFound(description: String)
@@ -77,15 +77,15 @@ private final class SurfaceChangeFilter: @unchecked Sendable {
   }
 }
 
-public final class FBFramebuffer: @unchecked Sendable {
+public final class Framebuffer: @unchecked Sendable {
 
   private let surface: any FramebufferSurface
   private let statsRecorder: FramebufferStatsRecorder
   private let logger: any FBControlCoreLogger
 
-  public class func mainScreenSurface(for simulator: FBSimulator, logger: any FBControlCoreLogger) throws -> FBFramebuffer {
+  public class func mainScreenSurface(for simulator: FBSimulator, logger: any FBControlCoreLogger) throws -> Framebuffer {
     let surface = try FramebufferSurfaceLocator.mainDisplaySurface(for: simulator, logger: logger)
-    return FBFramebuffer(surface: surface, logger: logger)
+    return Framebuffer(surface: surface, logger: logger)
   }
 
   init(surface: any FramebufferSurface, logger: any FBControlCoreLogger) {
@@ -112,7 +112,7 @@ public final class FBFramebuffer: @unchecked Sendable {
 
   // MARK: - Stats
 
-  public func currentStats() -> FBFramebufferStats {
+  public func currentStats() -> FramebufferStats {
     statsRecorder.snapshot()
   }
 
@@ -137,7 +137,7 @@ public final class FBFramebuffer: @unchecked Sendable {
       ioSurfaceChanged: { [statsRecorder, logger] surface in
         statsRecorder.recordIOSurfaceChange(surface: surface)
         guard filter.admit(surface) else {
-          logger.info().log("FBFramebuffer: ignoring surface change for the already-current surface \(surface.map { String(IOSurfaceGetID($0)) } ?? "nil")")
+          logger.info().log("Framebuffer: ignoring surface change for the already-current surface \(surface.map { String(IOSurfaceGetID($0)) } ?? "nil")")
           return
         }
         continuation.yield(.surfaceChanged(surface))
@@ -156,7 +156,7 @@ public final class FBFramebuffer: @unchecked Sendable {
   }
 }
 
-/// The handle returned by `FBFramebuffer.attach`. Owns a single registration: cancelling (or
+/// The handle returned by `Framebuffer.attach`. Owns a single registration: cancelling (or
 /// releasing) the handle unregisters from the display surface and finishes `events`.
 public final class FramebufferAttachment: @unchecked Sendable {
 
@@ -168,13 +168,13 @@ public final class FramebufferAttachment: @unchecked Sendable {
   public let events: AsyncStream<FramebufferEvent>
 
   private let token: UUID
-  private weak var framebuffer: FBFramebuffer?
+  private weak var framebuffer: Framebuffer?
   private let continuation: AsyncStream<FramebufferEvent>.Continuation
   private let lock = NSLock()
   private var isCancelled = false
 
   init(
-    framebuffer: FBFramebuffer,
+    framebuffer: Framebuffer,
     token: UUID,
     initialSurface: IOSurface?,
     events: AsyncStream<FramebufferEvent>,

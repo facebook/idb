@@ -14,7 +14,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  The new-style ("SimScreen") display-callback surface vended by CoreSimDeviceIO. The IO-port display
  descriptor conforms to this at runtime in addition to SimDisplayRenderable /
- SimDisplayIOSurfaceRenderable; FBFramebuffer resolves it via -conformsToProtocol: and prefers it
+ SimDisplayIOSurfaceRenderable; Framebuffer resolves it via -conformsToProtocol: and prefers it
  over the old-style damageRectanglesCallback (which the render server itself brands "old-style").
 
  - frameCallback fires once per presented frame — the per-frame change signal a variable-frame-rate
@@ -26,7 +26,7 @@ NS_ASSUME_NONNULL_BEGIN
    framebufferSurface / maskedFramebufferSurface). Both are IOSurfaceRef (toll-free bridged to
    IOSurface) and may be nil.
  - propertiesChangedCallback delivers an id<SimScreenProperties> (a CoreSimDeviceIO protocol);
-   FBFramebuffer does not consume it.
+   Framebuffer does not consume it.
 
  The block args are typed `id` rather than IOSurface / SimScreenProperties: the descriptor is a
  ROCKRemoteProxy (untyped remoting — see SimDisplayIOSurfaceRenderable-Protocol.h), so the seam

@@ -10,7 +10,7 @@ import Foundation
 
 // MARK: - TimedMetadataConsumer
 
-/// A sink for the timed-metadata (chapter) markers emitted by `FBSimulatorVideoStream.writeTimedMetadata`:
+/// A sink for the timed-metadata (chapter) markers emitted by `SimulatorVideoStream.writeTimedMetadata`:
 /// either a streaming transport writer (fMP4 `emsg` / MPEG-TS ID3) or an `AVAssetWriter` chapter track.
 protocol TimedMetadataConsumer: AnyObject {
   /// Write a single timed-metadata marker for the current stream position.

@@ -61,13 +61,13 @@ enum VideoEncodingHostSupport {
 
     let pusher: any SimulatorVideoStreamFramePusher
     do {
-      pusher = try FBSimulatorVideoStream.framePusher(
+      pusher = try SimulatorVideoStream.framePusher(
         configuration: configuration,
         compressionSessionProperties: [:],
         consumer: consumer,
         encodedSampleConsumerOverride: nil,
         logger: logger)
-      try pusher.setup(with: pixelBuffer, edgeInsets: FBVideoStreamEdgeInsets(top: 0, bottom: 0, left: 0, right: 0))
+      try pusher.setup(with: pixelBuffer, edgeInsets: VideoStreamEdgeInsets(top: 0, bottom: 0, left: 0, right: 0))
       try pusher.writeEncodedFrame(
         pixelBuffer,
         frameNumber: 0,

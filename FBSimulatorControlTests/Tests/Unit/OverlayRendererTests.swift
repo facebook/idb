@@ -11,7 +11,7 @@ import XCTest
 
 class OverlayRendererTests: XCTestCase {
   func testBufferInitiallyTransparent() {
-    let renderer = FBOverlayRenderer(width: 10, height: 10)
+    let renderer = OverlayRenderer(width: 10, height: 10)
     CVPixelBufferLockBaseAddress(renderer.buffer, .readOnly)
     defer { CVPixelBufferUnlockBaseAddress(renderer.buffer, .readOnly) }
     guard let base = CVPixelBufferGetBaseAddress(renderer.buffer) else {
@@ -27,9 +27,9 @@ class OverlayRendererTests: XCTestCase {
 
   // MARK: - Snapshot Tests (iPhone 11: 414x908)
 
-  private func iPhone11Transform(withHeader: Bool = false) -> FBOverlayCoordinateTransform {
+  private func iPhone11Transform(withHeader: Bool = false) -> OverlayCoordinateTransform {
     // scaledBorderTop = borderTop * videoScale * retinaScale = 24 * 0.5 * 2.0 = 24 when set
-    FBOverlayCoordinateTransform(
+    OverlayCoordinateTransform(
       screenPixelWidth: 828,
       screenPixelHeight: 1792,
       retinaScale: 2.0,
@@ -60,8 +60,8 @@ class OverlayRendererTests: XCTestCase {
   }
 
   func testClearResetsBufferToTransparent() {
-    let renderer = FBOverlayRenderer(width: 10, height: 10)
-    let circle = FBOverlayShape.circle(.init(x: 5, y: 5, radius: 3, rgba: [255, 0, 0, 1.0], effect: nil))
+    let renderer = OverlayRenderer(width: 10, height: 10)
+    let circle = OverlayShape.circle(.init(x: 5, y: 5, radius: 3, rgba: [255, 0, 0, 1.0], effect: nil))
     renderer.render(overlays: [circle])
     renderer.clear()
 
@@ -79,8 +79,8 @@ class OverlayRendererTests: XCTestCase {
   }
 
   func testHasActiveEffectsReturnsFalseWithNoEffects() {
-    let renderer = FBOverlayRenderer(width: 10, height: 10)
-    let circle = FBOverlayShape.circle(.init(x: 5, y: 5, radius: 3, rgba: [255, 0, 0, 1.0], effect: nil))
+    let renderer = OverlayRenderer(width: 10, height: 10)
+    let circle = OverlayShape.circle(.init(x: 5, y: 5, radius: 3, rgba: [255, 0, 0, 1.0], effect: nil))
     renderer.render(overlays: [circle])
     XCTAssertFalse(renderer.hasActiveEffects(), "Should not have active effects without an effect")
   }
@@ -97,28 +97,28 @@ class OverlayRendererTests: XCTestCase {
   // MARK: - Font Parsing Tests
 
   func testParseFontSpecWithNameAndSize() {
-    let renderer = FBOverlayRenderer(width: 100, height: 100)
+    let renderer = OverlayRenderer(width: 100, height: 100)
     let (name, size) = renderer.parseFontSpec("Monaco 8")
     XCTAssertEqual(name, "Monaco")
     XCTAssertEqual(size, 8.0)
   }
 
   func testParseFontSpecWithMultiWordName() {
-    let renderer = FBOverlayRenderer(width: 100, height: 100)
+    let renderer = OverlayRenderer(width: 100, height: 100)
     let (name, size) = renderer.parseFontSpec("Helvetica Neue 12")
     XCTAssertEqual(name, "Helvetica Neue")
     XCTAssertEqual(size, 12.0)
   }
 
   func testParseFontSpecWithNameOnly() {
-    let renderer = FBOverlayRenderer(width: 100, height: 100)
+    let renderer = OverlayRenderer(width: 100, height: 100)
     let (name, size) = renderer.parseFontSpec("Helvetica")
     XCTAssertEqual(name, "Helvetica")
     XCTAssertEqual(size, 8.0)
   }
 
   func testParseFontSpecEmpty() {
-    let renderer = FBOverlayRenderer(width: 100, height: 100)
+    let renderer = OverlayRenderer(width: 100, height: 100)
     let (name, size) = renderer.parseFontSpec("")
     XCTAssertEqual(name, "Monaco")
     XCTAssertEqual(size, 8.0)
@@ -143,7 +143,7 @@ class OverlayRendererTests: XCTestCase {
   // MARK: - Bar Content
 
   func testBarContentPreservedAcrossRenders() {
-    let renderer = FBOverlayRenderer(width: 200, height: 100)
+    let renderer = OverlayRenderer(width: 200, height: 100)
     renderer.setBarContent(.text("stats line"), position: "bottom")
     XCTAssertEqual(renderer.barContent["bottom"], .text("stats line"))
     renderer.render(overlays: [])
@@ -151,19 +151,19 @@ class OverlayRendererTests: XCTestCase {
   }
 
   func testBarContentDefaultsToHidden() {
-    let renderer = FBOverlayRenderer(width: 200, height: 100)
+    let renderer = OverlayRenderer(width: 200, height: 100)
     XCTAssertNil(renderer.barContent["bottom"])
     XCTAssertNil(renderer.barContent["top"])
   }
 
   func testBarContentEmptyTextDrawsBar() {
-    let transform = FBOverlayCoordinateTransform(
+    let transform = OverlayCoordinateTransform(
       screenPixelWidth: 200, screenPixelHeight: 100,
       retinaScale: 1.0, videoScale: 1.0,
       borderTop: 0, scaledBorderTop: 0,
       borderBottom: 0, scaledBorderBottom: 0
     )
-    let renderer = FBOverlayRenderer(transform: transform)
+    let renderer = OverlayRenderer(transform: transform)
     renderer.setBarContent(.text(""), position: "bottom")
     renderer.renderToBuffer()
     let barY = Int(transform.barY(position: "bottom") + transform.barHeight() / 2)
@@ -173,13 +173,13 @@ class OverlayRendererTests: XCTestCase {
   }
 
   func testBarContentHiddenDrawsNothing() {
-    let transform = FBOverlayCoordinateTransform(
+    let transform = OverlayCoordinateTransform(
       screenPixelWidth: 200, screenPixelHeight: 100,
       retinaScale: 1.0, videoScale: 1.0,
       borderTop: 0, scaledBorderTop: 0,
       borderBottom: 0, scaledBorderBottom: 0
     )
-    let renderer = FBOverlayRenderer(transform: transform)
+    let renderer = OverlayRenderer(transform: transform)
     renderer.setBarContent(.hidden, position: "bottom")
     renderer.renderToBuffer()
     let barY = Int(transform.barY(position: "bottom") + transform.barHeight() / 2)
@@ -202,13 +202,13 @@ class OverlayRendererTests: XCTestCase {
   }
 
   func testBarModeDefaultsToPad() {
-    let renderer = FBOverlayRenderer(width: 200, height: 100)
+    let renderer = OverlayRenderer(width: 200, height: 100)
     XCTAssertNil(renderer.barMode["top"])
     XCTAssertNil(renderer.barMode["bottom"])
   }
 
   func testPadModeBarBackgroundIsOpaque() {
-    let renderer = FBOverlayRenderer(width: 200, height: 100)
+    let renderer = OverlayRenderer(width: 200, height: 100)
     renderer.setBarMode(.pad, position: "bottom")
     renderer.setBarContent(.text(""), position: "bottom")
     renderer.renderToBuffer()
@@ -219,7 +219,7 @@ class OverlayRendererTests: XCTestCase {
   }
 
   func testOverlayModeBarBackgroundIsPartiallyTransparent() {
-    let renderer = FBOverlayRenderer(width: 200, height: 100)
+    let renderer = OverlayRenderer(width: 200, height: 100)
     renderer.setBarMode(.overlay, position: "bottom")
     renderer.setBarContent(.text(""), position: "bottom")
     renderer.renderToBuffer()
@@ -230,7 +230,7 @@ class OverlayRendererTests: XCTestCase {
   }
 
   func testTopAndBottomCanHaveDifferentModes() {
-    let renderer = FBOverlayRenderer(width: 200, height: 100)
+    let renderer = OverlayRenderer(width: 200, height: 100)
     renderer.setBarMode(.overlay, position: "top")
     renderer.setBarMode(.pad, position: "bottom")
     renderer.setBarContent(.text(""), position: "top")
@@ -269,14 +269,14 @@ class OverlayRendererTests: XCTestCase {
   }
 
   func testBarFitDefaultsToFalse() {
-    let renderer = FBOverlayRenderer(width: 200, height: 100)
+    let renderer = OverlayRenderer(width: 200, height: 100)
     XCTAssertNil(renderer.barFit["bottom"])
     XCTAssertNil(renderer.barFit["top"])
   }
 
   func testBarFitFalseLetsTextOverflow() {
     // 600px wide canvas; a very long string at default font size will not fit.
-    let renderer = FBOverlayRenderer(width: 600, height: 200)
+    let renderer = OverlayRenderer(width: 600, height: 200)
     renderer.setBarFit(false, position: "bottom")
     renderer.setBarContent(
       .text(String(repeating: "X", count: 200)),
@@ -289,7 +289,7 @@ class OverlayRendererTests: XCTestCase {
   }
 
   func testBarFitTrueShrinksTextToFit() {
-    let renderer = FBOverlayRenderer(width: 600, height: 200)
+    let renderer = OverlayRenderer(width: 600, height: 200)
     renderer.setBarFit(true, position: "bottom")
     renderer.setBarContent(
       .text(String(repeating: "X", count: 200)),
@@ -307,7 +307,7 @@ class OverlayRendererTests: XCTestCase {
 
   func testBarFitAppliesToStatsContent() {
     // Once a bar is in stats mode, fit=true should also shrink the 1Hz stats text.
-    let renderer = FBOverlayRenderer(width: 600, height: 200)
+    let renderer = OverlayRenderer(width: 600, height: 200)
     renderer.setBarFit(true, position: "bottom")
     renderer.setBarContent(.stats, position: "bottom")
     renderer.setStatsText(String(repeating: "S", count: 200), position: "bottom")
@@ -326,10 +326,10 @@ class OverlayRendererTests: XCTestCase {
 
   func testAnimatingShapesPreservedAcrossRenders() {
     var clock: CFTimeInterval = 1000.0
-    let renderer = FBOverlayRenderer(width: 100, height: 100)
+    let renderer = OverlayRenderer(width: 100, height: 100)
     renderer.currentTime = { clock }
 
-    let fadeCircle = FBOverlayShape.circle(.init(x: 50, y: 50, radius: 10, rgba: [255, 0, 0, 1.0], effect: .fadeout(.init(durationMs: 5000))))
+    let fadeCircle = OverlayShape.circle(.init(x: 50, y: 50, radius: 10, rgba: [255, 0, 0, 1.0], effect: .fadeout(.init(durationMs: 5000))))
     renderer.render(overlays: [fadeCircle])
 
     XCTAssertTrue(
@@ -337,7 +337,7 @@ class OverlayRendererTests: XCTestCase {
       "Fadeout circle should be visible immediately after render")
 
     clock += 0.1
-    let rect = FBOverlayShape.rectangle(.init(x: 0, y: 0, width: 20, height: 20, rgba: [0, 255, 0, 1.0], effect: nil))
+    let rect = OverlayShape.rectangle(.init(x: 0, y: 0, width: 20, height: 20, rgba: [0, 255, 0, 1.0], effect: nil))
     renderer.render(overlays: [rect])
 
     XCTAssertTrue(
@@ -350,15 +350,15 @@ class OverlayRendererTests: XCTestCase {
 
   func testExpiredAnimatingShapesPruned() {
     var clock: CFTimeInterval = 1000.0
-    let renderer = FBOverlayRenderer(width: 100, height: 100)
+    let renderer = OverlayRenderer(width: 100, height: 100)
     renderer.currentTime = { clock }
 
-    let fadeCircle = FBOverlayShape.circle(.init(x: 50, y: 50, radius: 10, rgba: [255, 0, 0, 1.0], effect: .fadeout(.init(durationMs: 100))))
+    let fadeCircle = OverlayShape.circle(.init(x: 50, y: 50, radius: 10, rgba: [255, 0, 0, 1.0], effect: .fadeout(.init(durationMs: 100))))
     renderer.render(overlays: [fadeCircle])
 
     clock += 0.2
 
-    let rect = FBOverlayShape.rectangle(.init(x: 0, y: 0, width: 20, height: 20, rgba: [0, 255, 0, 1.0], effect: nil))
+    let rect = OverlayShape.rectangle(.init(x: 0, y: 0, width: 20, height: 20, rgba: [0, 255, 0, 1.0], effect: nil))
     renderer.render(overlays: [rect])
 
     XCTAssertFalse(
@@ -371,10 +371,10 @@ class OverlayRendererTests: XCTestCase {
 
   func testClearRemovesAnimatingShapes() {
     let clock: CFTimeInterval = 1000.0
-    let renderer = FBOverlayRenderer(width: 100, height: 100)
+    let renderer = OverlayRenderer(width: 100, height: 100)
     renderer.currentTime = { clock }
 
-    let fadeCircle = FBOverlayShape.circle(.init(x: 50, y: 50, radius: 10, rgba: [255, 0, 0, 1.0], effect: .fadeout(.init(durationMs: 5000))))
+    let fadeCircle = OverlayShape.circle(.init(x: 50, y: 50, radius: 10, rgba: [255, 0, 0, 1.0], effect: .fadeout(.init(durationMs: 5000))))
     renderer.render(overlays: [fadeCircle])
     XCTAssertTrue(renderer.hasActiveEffects(), "Should have active animating effects")
 
@@ -387,14 +387,14 @@ class OverlayRendererTests: XCTestCase {
 
   func testHasActiveEffectsIncludesAnimatingShapes() {
     var clock: CFTimeInterval = 1000.0
-    let renderer = FBOverlayRenderer(width: 100, height: 100)
+    let renderer = OverlayRenderer(width: 100, height: 100)
     renderer.currentTime = { clock }
 
-    let fadeCircle = FBOverlayShape.circle(.init(x: 50, y: 50, radius: 10, rgba: [255, 0, 0, 1.0], effect: .fadeout(.init(durationMs: 5000))))
+    let fadeCircle = OverlayShape.circle(.init(x: 50, y: 50, radius: 10, rgba: [255, 0, 0, 1.0], effect: .fadeout(.init(durationMs: 5000))))
     renderer.render(overlays: [fadeCircle])
 
     clock += 0.1
-    let rect = FBOverlayShape.rectangle(.init(x: 0, y: 0, width: 10, height: 10, rgba: [0, 255, 0, 1.0], effect: nil))
+    let rect = OverlayShape.rectangle(.init(x: 0, y: 0, width: 10, height: 10, rgba: [0, 255, 0, 1.0], effect: nil))
     renderer.render(overlays: [rect])
 
     XCTAssertTrue(
@@ -406,10 +406,10 @@ class OverlayRendererTests: XCTestCase {
 
   func testSnapshotFadeoutCircleStart() {
     let clock: CFTimeInterval = 1000.0
-    let renderer = FBOverlayRenderer(transform: iPhone11Transform())
+    let renderer = OverlayRenderer(transform: iPhone11Transform())
     renderer.currentTime = { clock }
 
-    let circle = FBOverlayShape.circle(.init(x: 207, y: 454, radius: 20, rgba: [255, 0, 0, 1.0], effect: .fadeout(.init(durationMs: 1000))))
+    let circle = OverlayShape.circle(.init(x: 207, y: 454, radius: 20, rgba: [255, 0, 0, 1.0], effect: .fadeout(.init(durationMs: 1000))))
     renderer.render(overlays: [circle])
 
     OverlaySnapshotHelper.assertSnapshot(renderer.buffer, named: "fadeout_circle_start_iphone11")
@@ -417,10 +417,10 @@ class OverlayRendererTests: XCTestCase {
 
   func testSnapshotFadeoutCircleMid() {
     var clock: CFTimeInterval = 1000.0
-    let renderer = FBOverlayRenderer(transform: iPhone11Transform())
+    let renderer = OverlayRenderer(transform: iPhone11Transform())
     renderer.currentTime = { clock }
 
-    let circle = FBOverlayShape.circle(.init(x: 207, y: 454, radius: 20, rgba: [255, 0, 0, 1.0], effect: .fadeout(.init(durationMs: 1000))))
+    let circle = OverlayShape.circle(.init(x: 207, y: 454, radius: 20, rgba: [255, 0, 0, 1.0], effect: .fadeout(.init(durationMs: 1000))))
     renderer.render(overlays: [circle])
 
     clock += 0.5
@@ -431,10 +431,10 @@ class OverlayRendererTests: XCTestCase {
 
   func testSnapshotFadeoutCircleEnd() {
     var clock: CFTimeInterval = 1000.0
-    let renderer = FBOverlayRenderer(transform: iPhone11Transform())
+    let renderer = OverlayRenderer(transform: iPhone11Transform())
     renderer.currentTime = { clock }
 
-    let circle = FBOverlayShape.circle(.init(x: 207, y: 454, radius: 20, rgba: [255, 0, 0, 1.0], effect: .fadeout(.init(durationMs: 1000))))
+    let circle = OverlayShape.circle(.init(x: 207, y: 454, radius: 20, rgba: [255, 0, 0, 1.0], effect: .fadeout(.init(durationMs: 1000))))
     renderer.render(overlays: [circle])
 
     clock += 0.99
@@ -445,14 +445,14 @@ class OverlayRendererTests: XCTestCase {
 
   func testSnapshotTransientPersistence() {
     var clock: CFTimeInterval = 1000.0
-    let renderer = FBOverlayRenderer(transform: iPhone11Transform())
+    let renderer = OverlayRenderer(transform: iPhone11Transform())
     renderer.currentTime = { clock }
 
-    let circle = FBOverlayShape.circle(.init(x: 207, y: 454, radius: 20, rgba: [255, 0, 0, 1.0], effect: .fadeout(.init(durationMs: 1000))))
+    let circle = OverlayShape.circle(.init(x: 207, y: 454, radius: 20, rgba: [255, 0, 0, 1.0], effect: .fadeout(.init(durationMs: 1000))))
     renderer.render(overlays: [circle])
 
     clock += 0.5
-    let rect = FBOverlayShape.rectangle(.init(x: 100, y: 200, width: 80, height: 40, rgba: [0, 255, 0, 1.0], effect: nil))
+    let rect = OverlayShape.rectangle(.init(x: 100, y: 200, width: 80, height: 40, rgba: [0, 255, 0, 1.0], effect: nil))
     renderer.render(overlays: [rect])
 
     OverlaySnapshotHelper.assertSnapshot(renderer.buffer, named: "transient_persistence_iphone11")

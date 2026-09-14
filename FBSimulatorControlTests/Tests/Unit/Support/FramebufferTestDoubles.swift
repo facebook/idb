@@ -11,7 +11,7 @@ import FBControlCore
 import Foundation
 import IOSurface
 
-/// A fake `FramebufferSurface` that lets tests drive `FBFramebuffer` without the private
+/// A fake `FramebufferSurface` that lets tests drive `Framebuffer` without the private
 /// CoreSimulator renderable. Tests call `ioSurfaceChanged` / `frameRendered` to simulate callbacks.
 final class FakeFramebufferSurface: FramebufferSurface {
   var immediateSurface: IOSurface?

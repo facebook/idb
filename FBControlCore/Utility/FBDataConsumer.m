@@ -65,7 +65,7 @@
 
 // Subclass used when the wrapped consumer is itself synchronous, so callers that
 // branch on `-conformsToProtocol:@protocol(FBDataConsumerSync)` (e.g.
-// FBSimulatorVideoStream's zero-copy fast path) can still find the marker.
+// SimulatorVideoStream's zero-copy fast path) can still find the marker.
 @interface FBDataConsumerAdaptor_SyncToDispatchData : FBDataConsumerAdaptor_ToDispatchData <FBDataConsumerSync>
 @end
 

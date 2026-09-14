@@ -17,7 +17,7 @@ final class SimulatorImageTests: XCTestCase {
   func testImageAttachesGeneratorExactlyOnce() async throws {
     let surface = FakeFramebufferSurface()
     surface.immediateSurface = makeTestIOSurface()
-    let framebuffer = FBFramebuffer(surface: surface, logger: CapturingLogger())
+    let framebuffer = Framebuffer(surface: surface, logger: CapturingLogger())
     let image = SimulatorImage(framebuffer: framebuffer, logger: CapturingLogger())
 
     _ = try await image.image()
@@ -32,7 +32,7 @@ final class SimulatorImageTests: XCTestCase {
   func testImageRendersFromInitialAndSwappedSurface() async throws {
     let surface = FakeFramebufferSurface()
     surface.immediateSurface = makeTestIOSurface()
-    let framebuffer = FBFramebuffer(surface: surface, logger: CapturingLogger())
+    let framebuffer = Framebuffer(surface: surface, logger: CapturingLogger())
     let image = SimulatorImage(framebuffer: framebuffer, logger: CapturingLogger())
 
     let initial = try await image.image()

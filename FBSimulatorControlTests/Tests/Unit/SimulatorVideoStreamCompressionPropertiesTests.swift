@@ -157,7 +157,7 @@ final class SimulatorVideoStreamCompressionPropertiesTests: XCTestCase {
       scaleFactor: nil,
       keyFrameRate: nil
     )
-    let props = FBSimulatorVideoStream.compressionSessionProperties(for: config, callerProperties: [:])
+    let props = SimulatorVideoStream.compressionSessionProperties(for: config, callerProperties: [:])
     XCTAssertEqual(props[kVTCompressionPropertyKey_RealTime as String] as? NSNumber, true)
     XCTAssertEqual(props[kVTCompressionPropertyKey_AllowFrameReordering as String] as? NSNumber, false)
     // No rateControl set: `.automatic` — the pusher derives an AverageBitRate at session setup, so
@@ -176,7 +176,7 @@ final class SimulatorVideoStreamCompressionPropertiesTests: XCTestCase {
       keyFrameRate: nil
     )
     let callerProps: [String: Any] = ["CustomKey": 42]
-    let props = FBSimulatorVideoStream.compressionSessionProperties(for: config, callerProperties: callerProps)
+    let props = SimulatorVideoStream.compressionSessionProperties(for: config, callerProperties: callerProps)
     XCTAssertEqual(props["CustomKey"] as? NSNumber, 42)
   }
 
@@ -190,7 +190,7 @@ final class SimulatorVideoStreamCompressionPropertiesTests: XCTestCase {
       scaleFactor: nil,
       keyFrameRate: nil
     )
-    let props = FBSimulatorVideoStream.compressionSessionProperties(for: config, callerProperties: [:])
+    let props = SimulatorVideoStream.compressionSessionProperties(for: config, callerProperties: [:])
     XCTAssertEqual(props[kVTCompressionPropertyKey_Quality as String] as? NSNumber, 0.5)
   }
 
@@ -202,7 +202,7 @@ final class SimulatorVideoStreamCompressionPropertiesTests: XCTestCase {
       scaleFactor: nil,
       keyFrameRate: nil
     )
-    let props = FBSimulatorVideoStream.compressionSessionProperties(for: config, callerProperties: [:])
+    let props = SimulatorVideoStream.compressionSessionProperties(for: config, callerProperties: [:])
     XCTAssertEqual(props[kVTCompressionPropertyKey_Quality as String] as? NSNumber, 0.5)
   }
 
@@ -215,7 +215,7 @@ final class SimulatorVideoStreamCompressionPropertiesTests: XCTestCase {
       scaleFactor: nil,
       keyFrameRate: nil
     )
-    let props = FBSimulatorVideoStream.compressionSessionProperties(for: config, callerProperties: [:])
+    let props = SimulatorVideoStream.compressionSessionProperties(for: config, callerProperties: [:])
     XCTAssertEqual(props[kVTCompressionPropertyKey_Quality as String] as? NSNumber, 0.75)
     XCTAssertNil(props[kVTCompressionPropertyKey_AverageBitRate as String])
   }
@@ -237,7 +237,7 @@ final class SimulatorVideoStreamCompressionPropertiesTests: XCTestCase {
       scaleFactor: nil,
       keyFrameRate: nil
     )
-    let props = FBSimulatorVideoStream.compressionSessionProperties(for: config, callerProperties: [:])
+    let props = SimulatorVideoStream.compressionSessionProperties(for: config, callerProperties: [:])
     XCTAssertNotNil(props[kVTCompressionPropertyKey_ProfileLevel as String])
     XCTAssertNotNil(props[kVTCompressionPropertyKey_H264EntropyMode as String])
   }
@@ -252,7 +252,7 @@ final class SimulatorVideoStreamCompressionPropertiesTests: XCTestCase {
       scaleFactor: nil,
       keyFrameRate: nil
     )
-    let props = FBSimulatorVideoStream.compressionSessionProperties(for: config, callerProperties: [:])
+    let props = SimulatorVideoStream.compressionSessionProperties(for: config, callerProperties: [:])
     XCTAssertEqual(props[kVTCompressionPropertyKey_AverageBitRate as String] as? NSNumber, 500000)
   }
 
@@ -266,7 +266,7 @@ final class SimulatorVideoStreamCompressionPropertiesTests: XCTestCase {
       scaleFactor: nil,
       keyFrameRate: nil
     )
-    let props = FBSimulatorVideoStream.compressionSessionProperties(for: config, callerProperties: [:])
+    let props = SimulatorVideoStream.compressionSessionProperties(for: config, callerProperties: [:])
     XCTAssertEqual(props[kVTCompressionPropertyKey_AllowOpenGOP as String] as? NSNumber, false)
     let profile = props[kVTCompressionPropertyKey_ProfileLevel as String] as? String
     XCTAssertNotNil(profile)
@@ -287,7 +287,7 @@ final class SimulatorVideoStreamCompressionPropertiesTests: XCTestCase {
       scaleFactor: nil,
       keyFrameRate: nil
     )
-    let props = FBSimulatorVideoStream.compressionSessionProperties(for: config, callerProperties: [:])
+    let props = SimulatorVideoStream.compressionSessionProperties(for: config, callerProperties: [:])
     // Zero frame delay keeps the live stream low-latency.
     XCTAssertEqual(props[kVTCompressionPropertyKey_MaxFrameDelayCount as String] as? NSNumber, 0)
   }
@@ -297,7 +297,7 @@ final class SimulatorVideoStreamCompressionPropertiesTests: XCTestCase {
 /// the composited-frame pool — the two sites that must agree exactly.
 final class VideoOutputDimensionsTests: XCTestCase {
 
-  private let zeroInsets = FBVideoStreamEdgeInsets(top: 0, bottom: 0, left: 0, right: 0)
+  private let zeroInsets = VideoStreamEdgeInsets(top: 0, bottom: 0, left: 0, right: 0)
 
   func testEvenSourcePassesThroughUnchanged() {
     let dims = VideoOutputDimensions.calculate(sourceWidth: 1206, sourceHeight: 2622, scaleFactor: nil, edgeInsets: zeroInsets)
@@ -317,14 +317,14 @@ final class VideoOutputDimensionsTests: XCTestCase {
 
   func testInsetsExpandBeforeEvenRounding() {
     // 100 + (3 + 4) = 107 → 108; 200 + (5 + 0) = 205 → 206.
-    let insets = FBVideoStreamEdgeInsets(top: 5, bottom: 0, left: 3, right: 4)
+    let insets = VideoStreamEdgeInsets(top: 5, bottom: 0, left: 3, right: 4)
     let dims = VideoOutputDimensions.calculate(sourceWidth: 100, sourceHeight: 200, scaleFactor: nil, edgeInsets: insets)
     XCTAssertEqual(dims, VideoOutputDimensions(width: 108, height: 206))
   }
 
   func testScaleAppliesBeforeInsets() {
     // floor(1000 * 0.25) = 250, + (10 + 10) = 270; floor(500 * 0.25) = 125, + (20 + 25) = 170.
-    let insets = FBVideoStreamEdgeInsets(top: 20, bottom: 25, left: 10, right: 10)
+    let insets = VideoStreamEdgeInsets(top: 20, bottom: 25, left: 10, right: 10)
     let dims = VideoOutputDimensions.calculate(sourceWidth: 1000, sourceHeight: 500, scaleFactor: 0.25, edgeInsets: insets)
     XCTAssertEqual(dims, VideoOutputDimensions(width: 270, height: 170))
   }

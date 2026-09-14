@@ -82,7 +82,7 @@ extension SimulatorVideoStreamError: LocalizedError {
 
 /// Edge insets that extend the output frame dimensions beyond the source framebuffer.
 /// Each edge adds opaque pixels for overlay content (label bars, diagnostic stats, etc.).
-public struct FBVideoStreamEdgeInsets: Sendable {
+public struct VideoStreamEdgeInsets: Sendable {
   public var top: UInt
   public var bottom: UInt
   public var left: UInt
@@ -152,13 +152,13 @@ private func bitmapStreamPixelBufferAttributes(from pixelBuffer: CVPixelBuffer) 
 /// actor-isolated task, rather than queue-delivered callbacks. The cadence is selected by the
 /// `cadence` strategy: `.lazy` pushes a frame when a frame-rendered event pokes the trigger stream
 /// (variable frame rate), while `.eager` runs a cadence `Task` on the actor that pushes at a fixed frame rate.
-public actor FBSimulatorVideoStream: FBVideoStream {
+public actor SimulatorVideoStream: FBVideoStream {
 
   // MARK: - Properties
 
-  let framebuffer: FBFramebuffer
+  let framebuffer: Framebuffer
   let configuration: FBVideoStreamConfiguration
-  let edgeInsets: FBVideoStreamEdgeInsets
+  let edgeInsets: VideoStreamEdgeInsets
   let cadence: VideoStreamCadence
   /// When set (recording), encoded `.compressed` frames are routed to this sink — an `SimulatorVideoFileWriter`
   /// — instead of being byte-framed to `consumer`. nil for streaming.
@@ -241,13 +241,13 @@ public actor FBSimulatorVideoStream: FBVideoStream {
   // MARK: - Initializers
 
   /// Makes a stream with no edge insets. Cadence is derived from `configuration.framesPerSecond`.
-  public static func make(framebuffer: FBFramebuffer, configuration: FBVideoStreamConfiguration, logger: any FBControlCoreLogger) -> FBSimulatorVideoStream {
-    make(framebuffer: framebuffer, configuration: configuration, edgeInsets: FBVideoStreamEdgeInsets(top: 0, bottom: 0, left: 0, right: 0), logger: logger)
+  public static func make(framebuffer: Framebuffer, configuration: FBVideoStreamConfiguration, logger: any FBControlCoreLogger) -> SimulatorVideoStream {
+    make(framebuffer: framebuffer, configuration: configuration, edgeInsets: VideoStreamEdgeInsets(top: 0, bottom: 0, left: 0, right: 0), logger: logger)
   }
 
   /// Makes a stream whose output frame is extended by `edgeInsets` (reserved for overlay content).
-  public static func make(framebuffer: FBFramebuffer, configuration: FBVideoStreamConfiguration, edgeInsets: FBVideoStreamEdgeInsets, logger: any FBControlCoreLogger) -> FBSimulatorVideoStream {
-    FBSimulatorVideoStream(
+  public static func make(framebuffer: Framebuffer, configuration: FBVideoStreamConfiguration, edgeInsets: VideoStreamEdgeInsets, logger: any FBControlCoreLogger) -> SimulatorVideoStream {
+    SimulatorVideoStream(
       framebuffer: framebuffer,
       configuration: configuration,
       edgeInsets: edgeInsets,
@@ -259,8 +259,8 @@ public actor FBSimulatorVideoStream: FBVideoStream {
   /// rather than byte-framed to an `FBDataConsumer`. `edgeInsets` (default zero) reserves overlay bar
   /// regions exactly as on the streaming path; set `configuration.framesPerSecond` so the cadence is
   /// eager (a recorded file wants a continuous timeline even while the screen is idle).
-  static func makeRecorder(framebuffer: FBFramebuffer, configuration: FBVideoStreamConfiguration, edgeInsets: FBVideoStreamEdgeInsets = FBVideoStreamEdgeInsets(top: 0, bottom: 0, left: 0, right: 0), fileWriter: SimulatorVideoFileWriter, logger: any FBControlCoreLogger) -> FBSimulatorVideoStream {
-    return FBSimulatorVideoStream(
+  static func makeRecorder(framebuffer: Framebuffer, configuration: FBVideoStreamConfiguration, edgeInsets: VideoStreamEdgeInsets = VideoStreamEdgeInsets(top: 0, bottom: 0, left: 0, right: 0), fileWriter: SimulatorVideoFileWriter, logger: any FBControlCoreLogger) -> SimulatorVideoStream {
+    return SimulatorVideoStream(
       framebuffer: framebuffer,
       configuration: configuration,
       edgeInsets: edgeInsets,
@@ -270,7 +270,7 @@ public actor FBSimulatorVideoStream: FBVideoStream {
   }
 
   /// Makes and starts a stream to `consumer`.
-  public static func start(framebuffer: FBFramebuffer, configuration: FBVideoStreamConfiguration, edgeInsets: FBVideoStreamEdgeInsets = FBVideoStreamEdgeInsets(top: 0, bottom: 0, left: 0, right: 0), to consumer: any FBDataConsumer, logger: any FBControlCoreLogger) async throws -> FBSimulatorVideoStream {
+  public static func start(framebuffer: Framebuffer, configuration: FBVideoStreamConfiguration, edgeInsets: VideoStreamEdgeInsets = VideoStreamEdgeInsets(top: 0, bottom: 0, left: 0, right: 0), to consumer: any FBDataConsumer, logger: any FBControlCoreLogger) async throws -> SimulatorVideoStream {
     let stream = make(framebuffer: framebuffer, configuration: configuration, edgeInsets: edgeInsets, logger: logger)
     try await stream.startStreaming(consumer)
     return stream
@@ -285,7 +285,7 @@ public actor FBSimulatorVideoStream: FBVideoStream {
     return .eager(framesPerSecond: UInt(framesPerSecond))
   }
 
-  init(framebuffer: FBFramebuffer, configuration: FBVideoStreamConfiguration, edgeInsets: FBVideoStreamEdgeInsets, cadence: VideoStreamCadence, logger: any FBControlCoreLogger, encodedSampleConsumerOverride: EncodedSampleConsumer? = nil) {
+  init(framebuffer: Framebuffer, configuration: FBVideoStreamConfiguration, edgeInsets: VideoStreamEdgeInsets, cadence: VideoStreamCadence, logger: any FBControlCoreLogger, encodedSampleConsumerOverride: EncodedSampleConsumer? = nil) {
     self.framebuffer = framebuffer
     self.configuration = configuration
     self.edgeInsets = edgeInsets
@@ -443,7 +443,7 @@ public actor FBSimulatorVideoStream: FBVideoStream {
 
   /// Apply a single framebuffer event. Per-event work is O(1) and non-suspending, honoring the
   /// unbounded event stream's drain invariant: a surface change (always a genuinely different surface,
-  /// `FBFramebuffer` drops re-reports) mounts once; a rendered frame pokes
+  /// `Framebuffer` drops re-reports) mounts once; a rendered frame pokes
   /// the `.lazy` trigger, whose `bufferingNewest(1)` coalescing keeps real-time frame dropping where
   /// it belongs. In `.eager` mode the cadence clock drives pushes, so frame-rendered events are ignored.
   private func handle(_ event: FramebufferEvent) {
@@ -840,16 +840,16 @@ public actor FBSimulatorVideoStream: FBVideoStream {
 
   /// Returns a snapshot of the current video encoder stats.
   /// Returns a zeroed struct if the stream uses a non-encoded format (e.g. bitmap/BGRA).
-  public func currentEncoderStats() -> FBVideoEncoderStats {
+  public func currentEncoderStats() -> VideoEncoderStats {
     if let pusher = framePusher, let stats = pusher.currentStats() {
       return stats
     }
-    return FBVideoEncoderStats()
+    return VideoEncoderStats()
   }
 
-  /// Returns a snapshot of the current framebuffer stats (from the underlying FBFramebuffer).
+  /// Returns a snapshot of the current framebuffer stats (from the underlying Framebuffer).
   /// `nonisolated`: reads only the immutable `framebuffer` reference, whose stats are lock-guarded.
-  public nonisolated func currentFramebufferStats() -> FBFramebufferStats {
+  public nonisolated func currentFramebufferStats() -> FramebufferStats {
     framebuffer.currentStats()
   }
 
@@ -901,7 +901,7 @@ public actor FBSimulatorVideoStream: FBVideoStream {
   // Concrete overloads rather than one generic loop: iterating a generic `AsyncSequence` from
   // actor-isolated code cannot prove the conformance nonisolated (SE-0470). Static and weakly-held so the
   // loop does not recreate the task↔stream retain cycle.
-  private static func runFramePushLoop(stimulus: LazyFrameTriggers, stats: CadenceStats?, stream: () -> FBSimulatorVideoStream?) async {
+  private static func runFramePushLoop(stimulus: LazyFrameTriggers, stats: CadenceStats?, stream: () -> SimulatorVideoStream?) async {
     var stats = stats
     for await trigger in stimulus {
       guard !Task.isCancelled else { break }
@@ -911,7 +911,7 @@ public actor FBSimulatorVideoStream: FBVideoStream {
     }
   }
 
-  private static func runFramePushLoop(stimulus: FrameCadence, stats: CadenceStats?, stream: () -> FBSimulatorVideoStream?) async {
+  private static func runFramePushLoop(stimulus: FrameCadence, stats: CadenceStats?, stream: () -> SimulatorVideoStream?) async {
     var stats = stats
     for await trigger in stimulus {
       guard !Task.isCancelled else { break }

@@ -17,8 +17,8 @@ import XCTest
 ///     - insetCorrection.y = scaledBorderTop - borderTop * overlayScale = 24 - 24 = 0
 class OverlayCoordinateTransformTests: XCTestCase {
 
-  private func iPhone11Transform(borderBottom: Int = 0, scaledBorderBottom: Int = 0) -> FBOverlayCoordinateTransform {
-    FBOverlayCoordinateTransform(
+  private func iPhone11Transform(borderBottom: Int = 0, scaledBorderBottom: Int = 0) -> OverlayCoordinateTransform {
+    OverlayCoordinateTransform(
       screenPixelWidth: 828,
       screenPixelHeight: 1792,
       retinaScale: 2.0,
@@ -114,7 +114,7 @@ class OverlayCoordinateTransformTests: XCTestCase {
   func testLabelOriginDoesNotApplyInsetCorrection() {
     // Even when insetCorrection.y is nonzero, labelOrigin doesn't apply it. The label
     // centers within the visible header (= scaledBorderTop), not at logical y=0.
-    let t = FBOverlayCoordinateTransform(
+    let t = OverlayCoordinateTransform(
       screenPixelWidth: 828, screenPixelHeight: 1792,
       retinaScale: 2.0, videoScale: 0.5,
       borderTop: 24, scaledBorderTop: 12, // intentionally underprovisioned to force insetCorrection.y != 0
@@ -131,7 +131,7 @@ class OverlayCoordinateTransformTests: XCTestCase {
   }
 
   func testLabelOrigin3xRetina() {
-    let t = FBOverlayCoordinateTransform(
+    let t = OverlayCoordinateTransform(
       screenPixelWidth: 1170, screenPixelHeight: 2532,
       retinaScale: 3.0, videoScale: 0.5,
       // scaledBorderTop = borderTop * videoScale * retinaScale = 24 * 0.5 * 3.0 = 36
@@ -153,7 +153,7 @@ class OverlayCoordinateTransformTests: XCTestCase {
   }
 
   func testLabelOriginZeroBorderTop() {
-    let t = FBOverlayCoordinateTransform(
+    let t = OverlayCoordinateTransform(
       screenPixelWidth: 100, screenPixelHeight: 100,
       retinaScale: 1.0, videoScale: 1.0,
       borderTop: 0, scaledBorderTop: 0,
@@ -176,7 +176,7 @@ class OverlayCoordinateTransformTests: XCTestCase {
   // MARK: - 3x retina
 
   func testIPhone3xRetina() {
-    let t = FBOverlayCoordinateTransform(
+    let t = OverlayCoordinateTransform(
       screenPixelWidth: 1170, screenPixelHeight: 2532,
       retinaScale: 3.0, videoScale: 0.5,
       // scaledBorderTop = borderTop * videoScale * retinaScale = 24 * 0.5 * 3.0 = 36
@@ -206,7 +206,7 @@ class OverlayCoordinateTransformTests: XCTestCase {
     ]
     for (retina, scale, border) in cases {
       let scaledBorderTop = Int(CGFloat(border) * scale * retina)
-      let t = FBOverlayCoordinateTransform(
+      let t = OverlayCoordinateTransform(
         screenPixelWidth: 1000, screenPixelHeight: 2000,
         retinaScale: retina, videoScale: scale,
         borderTop: border, scaledBorderTop: scaledBorderTop,
@@ -223,7 +223,7 @@ class OverlayCoordinateTransformTests: XCTestCase {
   func testComposedCoordSpaceIsTheDefault() {
     // Omitting `coordSpace` must be identical to passing `.composed`.
     let implicit = iPhone11Transform()
-    let explicit = FBOverlayCoordinateTransform(
+    let explicit = OverlayCoordinateTransform(
       screenPixelWidth: 828, screenPixelHeight: 1792,
       retinaScale: 2.0, videoScale: 0.5,
       borderTop: 24, scaledBorderTop: 24,
@@ -239,7 +239,7 @@ class OverlayCoordinateTransformTests: XCTestCase {
     // In .device mode, insetCorrection.y is the full scaledBorderTop (no subtraction).
     // This is what causes overlay y=0 to land at the top of the device image rather than
     // the top of the composed frame.
-    let t = FBOverlayCoordinateTransform(
+    let t = OverlayCoordinateTransform(
       screenPixelWidth: 828, screenPixelHeight: 1792,
       retinaScale: 2.0, videoScale: 0.5,
       borderTop: 24, scaledBorderTop: 24,
@@ -251,7 +251,7 @@ class OverlayCoordinateTransformTests: XCTestCase {
   }
 
   func testDeviceCoordSpaceBufferPoint() {
-    let t = FBOverlayCoordinateTransform(
+    let t = OverlayCoordinateTransform(
       screenPixelWidth: 828, screenPixelHeight: 1792,
       retinaScale: 2.0, videoScale: 0.5,
       borderTop: 24, scaledBorderTop: 24,
@@ -281,14 +281,14 @@ class OverlayCoordinateTransformTests: XCTestCase {
     let testYs: [CGFloat] = [0, 50, 100, 382]
     for (retina, scale, border) in cases {
       let scaledBorderTop = Int(CGFloat(border) * scale * retina)
-      let composed = FBOverlayCoordinateTransform(
+      let composed = OverlayCoordinateTransform(
         screenPixelWidth: 1000, screenPixelHeight: 2000,
         retinaScale: retina, videoScale: scale,
         borderTop: border, scaledBorderTop: scaledBorderTop,
         borderBottom: 0, scaledBorderBottom: 0,
         coordSpace: .composed
       )
-      let device = FBOverlayCoordinateTransform(
+      let device = OverlayCoordinateTransform(
         screenPixelWidth: 1000, screenPixelHeight: 2000,
         retinaScale: retina, videoScale: scale,
         borderTop: border, scaledBorderTop: scaledBorderTop,
@@ -310,7 +310,7 @@ class OverlayCoordinateTransformTests: XCTestCase {
     // Labels are positioned within the visible header explicitly and never apply
     // insetCorrection.y — switching to .device mode must not move the label off-bar.
     let composed = iPhone11Transform()
-    let device = FBOverlayCoordinateTransform(
+    let device = OverlayCoordinateTransform(
       screenPixelWidth: 828, screenPixelHeight: 1792,
       retinaScale: 2.0, videoScale: 0.5,
       borderTop: 24, scaledBorderTop: 24,
@@ -329,7 +329,7 @@ class OverlayCoordinateTransformTests: XCTestCase {
   // MARK: - Bar layout
 
   func testBarHeightEvenIsEven() {
-    let h = FBOverlayCoordinateTransform.barHeightEven()
+    let h = OverlayCoordinateTransform.barHeightEven()
     XCTAssertGreaterThan(h, 0)
     XCTAssertEqual(h % 2, 0)
   }
@@ -386,7 +386,7 @@ class OverlayCoordinateTransformTests: XCTestCase {
       {"circle": {"x": 50, "y": 100, "radius": 10, "rgba": [64, 64, 64, 0.5], "effect": {"fadeout": {"durationMs": 350}}}}
       """
     // swiftlint:disable:next force_unwrapping
-    let shape = try JSONDecoder().decode(FBOverlayShape.self, from: json.data(using: .utf8)!)
+    let shape = try JSONDecoder().decode(OverlayShape.self, from: json.data(using: .utf8)!)
     if case .circle(let c) = shape {
       XCTAssertEqual(c.x, 50)
       XCTAssertEqual(c.y, 100)
@@ -406,7 +406,7 @@ class OverlayCoordinateTransformTests: XCTestCase {
       {"rectangle": {"x": 0, "y": 0, "width": -1, "height": 24, "rgba": [64, 64, 64, 1]}}
       """
     // swiftlint:disable:next force_unwrapping
-    let shape = try JSONDecoder().decode(FBOverlayShape.self, from: json.data(using: .utf8)!)
+    let shape = try JSONDecoder().decode(OverlayShape.self, from: json.data(using: .utf8)!)
     if case .rectangle(let r) = shape {
       XCTAssertEqual(r.width, -1)
       XCTAssertEqual(r.height, 24)
@@ -421,7 +421,7 @@ class OverlayCoordinateTransformTests: XCTestCase {
       {"label": {"text": "Step: Login", "padding": 4, "font": "Monaco 8"}}
       """
     // swiftlint:disable:next force_unwrapping
-    let shape = try JSONDecoder().decode(FBOverlayShape.self, from: json.data(using: .utf8)!)
+    let shape = try JSONDecoder().decode(OverlayShape.self, from: json.data(using: .utf8)!)
     if case .label(let l) = shape {
       XCTAssertEqual(l.text, "Step: Login")
       XCTAssertEqual(l.padding, 4)

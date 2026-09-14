@@ -11,7 +11,7 @@ import CoreVideo
 @testable import FBSimulatorControl
 import XCTest
 
-/// Lightweight snapshot testing for FBOverlayRenderer output.
+/// Lightweight snapshot testing for OverlayRenderer output.
 ///
 /// Converts CVPixelBuffer to PNG and compares against reference images stored
 /// in `Fixtures/snapshots/` and bundled via `fb_apple_resource` in BUCK.
@@ -176,9 +176,9 @@ struct OverlaySnapshotCase {
   let width: Int
   let height: Int
   var scaleFactor: CGFloat = 1.0
-  var transform: FBOverlayCoordinateTransform?
-  var overlays: [FBOverlayShape] = []
-  var bottomBarContent: FBBarContent?
+  var transform: OverlayCoordinateTransform?
+  var overlays: [OverlayShape] = []
+  var bottomBarContent: BarContent?
   /// Per-channel tolerance override for this case. Nil uses the default (4).
   /// Text-rendering snapshots need higher tolerance (~40) due to font rendering
   /// differences across macOS versions.
@@ -191,11 +191,11 @@ func assertOverlaySnapshot(
   file: StaticString = #filePath,
   line: UInt = #line
 ) {
-  let renderer: FBOverlayRenderer
+  let renderer: OverlayRenderer
   if let transform = testCase.transform {
-    renderer = FBOverlayRenderer(transform: transform)
+    renderer = OverlayRenderer(transform: transform)
   } else {
-    renderer = FBOverlayRenderer(
+    renderer = OverlayRenderer(
       width: testCase.width, height: testCase.height,
       scaleFactor: testCase.scaleFactor
     )

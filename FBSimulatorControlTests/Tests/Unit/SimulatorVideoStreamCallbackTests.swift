@@ -277,7 +277,7 @@ final class SimulatorVideoStreamBitmapPusherTests: XCTestCase {
     let consumer = FBDataBuffer.accumulatingBuffer()
     let pusher = SimulatorVideoStreamFramePusher_Bitmap(consumer: consumer, scaleFactor: nil)
 
-    let zeroInsets = FBVideoStreamEdgeInsets(top: 0, bottom: 0, left: 0, right: 0)
+    let zeroInsets = VideoStreamEdgeInsets(top: 0, bottom: 0, left: 0, right: 0)
     try pusher.setup(with: buffer, edgeInsets: zeroInsets)
     try pusher.writeEncodedFrame(
       buffer,
@@ -315,9 +315,9 @@ final class SimulatorVideoStreamDeliveryTests: XCTestCase {
   private func makeStream(
     surface: FakeFramebufferSurface,
     configuration: FBVideoStreamConfiguration = lazyConfiguration
-  ) -> FBSimulatorVideoStream {
-    let framebuffer = FBFramebuffer(surface: surface, logger: CapturingLogger())
-    return FBSimulatorVideoStream.make(
+  ) -> SimulatorVideoStream {
+    let framebuffer = Framebuffer(surface: surface, logger: CapturingLogger())
+    return SimulatorVideoStream.make(
       framebuffer: framebuffer, configuration: configuration, logger: CapturingLogger())
   }
 
@@ -704,7 +704,7 @@ final class SimulatorVideoStreamDeliveryTests: XCTestCase {
     let consumer = FBDataBuffer.accumulatingBuffer()
     let eager = FBVideoStreamConfiguration(
       format: .bgra, framesPerSecond: 20, rateControl: nil, scaleFactor: nil, keyFrameRate: nil)
-    var stream: FBSimulatorVideoStream? = makeStream(surface: surface, configuration: eager)
+    var stream: SimulatorVideoStream? = makeStream(surface: surface, configuration: eager)
     weak let weakStream = stream
 
     try await stream?.startStreaming(consumer)
@@ -737,7 +737,7 @@ private final class FramePusherHandle: @unchecked Sendable {
   }
 }
 
-extension FBSimulatorVideoStream {
+extension SimulatorVideoStream {
   fileprivate func currentFramePusherHandle() -> FramePusherHandle? {
     framePusher.map(FramePusherHandle.init)
   }

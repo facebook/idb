@@ -17,8 +17,8 @@ final class FramebufferStatsRecorder: @unchecked Sendable {
 
   private let logger: any FBControlCoreLogger
   private let lock = NSLock()
-  private var stats = FBFramebufferStats()
-  private var lastLoggedStats = FBFramebufferStats()
+  private var stats = FramebufferStats()
+  private var lastLoggedStats = FramebufferStats()
   private var timer = PeriodicStatsTimer(interval: 5.0)
 
   init(logger: any FBControlCoreLogger) {
@@ -42,7 +42,7 @@ final class FramebufferStatsRecorder: @unchecked Sendable {
     logStatsIfNeeded()
   }
 
-  func snapshot() -> FBFramebufferStats {
+  func snapshot() -> FramebufferStats {
     lock.lock()
     defer { lock.unlock() }
     return stats

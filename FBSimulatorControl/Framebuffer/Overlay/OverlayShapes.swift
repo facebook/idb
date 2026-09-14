@@ -12,15 +12,15 @@ import Foundation
 
 /// A command containing overlay shapes to render.
 public struct OverlayCommand: Decodable {
-  public let overlays: [FBOverlayShape]
+  public let overlays: [OverlayShape]
 
-  public init(overlays: [FBOverlayShape]) {
+  public init(overlays: [OverlayShape]) {
     self.overlays = overlays
   }
 }
 
 /// A tagged union of overlay shapes, decoded from the overlay JSON protocol (`{"circle": {...}}` etc.).
-public enum FBOverlayShape: Decodable {
+public enum OverlayShape: Decodable {
   case circle(Circle)
   case rectangle(Rectangle)
   case label(Label)

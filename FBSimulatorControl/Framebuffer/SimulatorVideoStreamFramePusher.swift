@@ -14,7 +14,7 @@ import VideoToolbox
 
 /// Stats tracked by the video encoder (VideoToolbox).
 /// Zeroed if the stream uses a non-encoded format (e.g. bitmap/BGRA).
-public struct FBVideoEncoderStats: Sendable {
+public struct VideoEncoderStats: Sendable {
   public var callbackCount: UInt
   public var writeCount: UInt
   public var dropCount: UInt
@@ -60,7 +60,7 @@ public struct FBVideoEncoderStats: Sendable {
 
 /// Frame pusher abstraction. Concrete pushers convert + write frames to the consumer.
 protocol SimulatorVideoStreamFramePusher: AnyObject {
-  func setup(with pixelBuffer: CVPixelBuffer, edgeInsets: FBVideoStreamEdgeInsets) throws
+  func setup(with pixelBuffer: CVPixelBuffer, edgeInsets: VideoStreamEdgeInsets) throws
   func tearDown() throws
   func writeEncodedFrame(
     _ pixelBuffer: CVPixelBuffer,
@@ -69,11 +69,11 @@ protocol SimulatorVideoStreamFramePusher: AnyObject {
     frameDuration: CFTimeInterval,
     forceKeyFrame: Bool
   ) throws
-  func currentStats() -> FBVideoEncoderStats?
+  func currentStats() -> VideoEncoderStats?
 }
 
 extension SimulatorVideoStreamFramePusher {
-  func currentStats() -> FBVideoEncoderStats? { nil }
+  func currentStats() -> VideoEncoderStats? { nil }
 }
 
 // MARK: - VideoToolbox Output Mode
@@ -140,7 +140,7 @@ struct VideoOutputDimensions: Equatable {
   let width: Int
   let height: Int
 
-  static func calculate(sourceWidth: Int, sourceHeight: Int, scaleFactor: Double?, edgeInsets: FBVideoStreamEdgeInsets) -> VideoOutputDimensions {
+  static func calculate(sourceWidth: Int, sourceHeight: Int, scaleFactor: Double?, edgeInsets: VideoStreamEdgeInsets) -> VideoOutputDimensions {
     var width = sourceWidth
     var height = sourceHeight
     if let scaleFactor, scaleFactor > 0, scaleFactor < 1 {
@@ -170,7 +170,7 @@ final class SimulatorVideoStreamFramePusher_Bitmap: SimulatorVideoStreamFramePus
     self.scaleFactor = scaleFactor
   }
 
-  func setup(with pixelBuffer: CVPixelBuffer, edgeInsets: FBVideoStreamEdgeInsets) throws {
+  func setup(with pixelBuffer: CVPixelBuffer, edgeInsets: VideoStreamEdgeInsets) throws {
     if let scaleFactor, scaleFactor > 0, scaleFactor < 1 {
       self.scaledPixelBufferPool = createScaledPixelBufferPool(sourceBuffer: pixelBuffer, scaleFactor: scaleFactor)
       var transferSession: VTPixelTransferSession?
@@ -260,15 +260,15 @@ final class SimulatorVideoStreamFramePusher_VideoToolbox: SimulatorVideoStreamFr
   var consecutiveNotReadyFrameCount: UInt = 0
   var warmupComplete = false
   var starvationWarningLogged = false
-  var stats = FBVideoEncoderStats()
-  var lastLoggedStats = FBVideoEncoderStats()
+  var stats = VideoEncoderStats()
+  var lastLoggedStats = VideoEncoderStats()
   var statsTimer = PeriodicStatsTimer(interval: 5.0)
 
   // Guards `stats` only: written from the VideoToolbox handler thread and the encode submission,
   // read by `currentStats()` from arbitrary isolation domains.
   private let statsLock = NSLock()
 
-  private func withStats<T>(_ body: (inout FBVideoEncoderStats) -> T) -> T {
+  private func withStats<T>(_ body: (inout VideoEncoderStats) -> T) -> T {
     statsLock.lock()
     defer { statsLock.unlock() }
     return body(&stats)
@@ -427,7 +427,7 @@ final class SimulatorVideoStreamFramePusher_VideoToolbox: SimulatorVideoStreamFr
     }
   }
 
-  func setup(with pixelBuffer: CVPixelBuffer, edgeInsets: FBVideoStreamEdgeInsets) throws {
+  func setup(with pixelBuffer: CVPixelBuffer, edgeInsets: VideoStreamEdgeInsets) throws {
     let encoderSpecification = Self.encoderSpecification(for: configuration.format)
 
     let sourceWidth = CVPixelBufferGetWidth(pixelBuffer)
@@ -637,7 +637,7 @@ final class SimulatorVideoStreamFramePusher_VideoToolbox: SimulatorVideoStreamFr
     }
   }
 
-  func currentStats() -> FBVideoEncoderStats? {
+  func currentStats() -> VideoEncoderStats? {
     withStats { $0 }
   }
 }

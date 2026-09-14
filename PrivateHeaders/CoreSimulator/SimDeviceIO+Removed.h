@@ -13,7 +13,7 @@
  Removed in Xcode 27 (CoreSimulator 1155.4). The consumer attach/detach entry
  points and the +ioForSimDevice: factory are gone; the surviving IO surface is
  reached via -ioPorts and the SimDisplayIOSurfaceRenderable / SimDisplayRenderable
- protocols (see FBFramebuffer). Not called by idb/FBSimulatorControl.
+ protocols (see Framebuffer). Not called by idb/FBSimulatorControl.
  */
 + (id)ioForSimDevice:(id)arg1;
 - (void)detachConsumer:(id)arg1 fromPort:(id)arg2;

@@ -138,7 +138,7 @@ In order for other Applications (mainly `Simulator.app`, but also for video reco
 
 An `IOSurface` is an object that wraps a Framebuffer, with the contents of the Framebuffer being located within GPU memory. This `IOSurface` can be read and inspected across process boundaries. `Simulator.app` uses this `IOSurface` as the backing Framebuffer for its view of an iOS Simulator.
 
-`IOSurface` objects are also easily convertible to "Pixel Buffer" types that are used in video encoding, which [`FBSimulatorVideoStream`](https://github.com/facebook/idb/blob/main/FBSimulatorControl/Framebuffer/SimulatorVideoStream.swift) takes advantage of. This allows `FBSimulatorControl` to implement video encoding of an iOS Simulator's Framebuffer in a way that avoids large copies of bitmap framebuffers on a per-frame basis.
+`IOSurface` objects are also easily convertible to "Pixel Buffer" types that are used in video encoding, which [`SimulatorVideoStream`](https://github.com/facebook/idb/blob/main/FBSimulatorControl/Framebuffer/SimulatorVideoStream.swift) takes advantage of. This allows `FBSimulatorControl` to implement video encoding of an iOS Simulator's Framebuffer in a way that avoids large copies of bitmap framebuffers on a per-frame basis.
 
 ### HID: `IndigoHID` and `DTUHID`
 

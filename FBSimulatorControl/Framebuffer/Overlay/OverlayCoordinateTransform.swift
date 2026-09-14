@@ -13,13 +13,13 @@ import CoreText
 /// - `composed`: y=0 is the top of the composed frame, i.e. the top of any reserved header bar
 ///   (`scaledBorderTop`); callers pre-shift shapes by the header height. The default.
 /// - `device`: y=0 is the top of the device image, below any header; the transform adds `scaledBorderTop`.
-public enum FBOverlayCoordSpace: String {
+public enum OverlayCoordSpace: String {
   case composed
   case device
 }
 
 /// Maps overlay shape coordinates to overlay buffer pixel coordinates.
-public struct FBOverlayCoordinateTransform {
+public struct OverlayCoordinateTransform {
   public let bufferWidth: Int
   public let bufferHeight: Int
 
@@ -28,7 +28,7 @@ public struct FBOverlayCoordinateTransform {
   public let overlayScale: CGFloat
 
   /// Correction applied to shape coordinates after scaling. Driven by `coordSpace`:
-  /// see `FBOverlayCoordSpace`.
+  /// see `OverlayCoordSpace`.
   public let insetCorrection: CGPoint
 
   /// Visible header height in buffer pixels (the `scaledBorderTop` init parameter).
@@ -43,7 +43,7 @@ public struct FBOverlayCoordinateTransform {
     scaledBorderTop: Int,
     borderBottom: Int,
     scaledBorderBottom: Int,
-    coordSpace: FBOverlayCoordSpace = .composed
+    coordSpace: OverlayCoordSpace = .composed
   ) {
     self.bufferWidth = Int(Double(screenPixelWidth) * Double(videoScale))
     // Must include both scaled insets so the overlay buffer matches the video frame; a shorter overlay is

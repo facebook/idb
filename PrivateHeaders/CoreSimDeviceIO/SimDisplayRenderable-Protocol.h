@@ -13,7 +13,7 @@
  As of Xcode 27 (CoreSimulator 1155.4) this protocol is vended by
  CoreSimDeviceIO (re-exported by CoreSimulator), not SimulatorKit, which is now
  almost entirely Swift. The declaration is retained here unchanged: the IO-port
- descriptor still conforms to it at runtime and FBFramebuffer resolves it via
+ descriptor still conforms to it at runtime and Framebuffer resolves it via
  -conformsToProtocol: / -respondsToSelector:, so the framework move is
  transparent. This header now lives in the CoreSimDeviceIO module.
  */

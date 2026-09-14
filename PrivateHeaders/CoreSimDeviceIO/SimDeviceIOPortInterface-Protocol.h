@@ -15,7 +15,7 @@
  As of Xcode 27 (CoreSimulator 1155.4) this protocol is vended by CoreSimDeviceIO
  (re-exported by CoreSimulator), not SimulatorKit, which is now almost entirely
  Swift. Declaration retained here; -[SimDeviceIOClient ioPorts] returns objects
- conforming to it at runtime (see FBFramebuffer), so the move is transparent.
+ conforming to it at runtime (see Framebuffer), so the move is transparent.
  This header now lives in the CoreSimDeviceIO module.
  */
 @protocol SimDeviceIOPortInterface <FoundationXPCProtocolProxyable, NSObject>

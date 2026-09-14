@@ -11,7 +11,7 @@
 /**
  As of Xcode 27 (CoreSimulator 1155.4) this protocol is vended by CoreSimDeviceIO
  (re-exported by CoreSimulator). Declaration retained here; the display descriptor
- returned from an IO port conforms to it at runtime (FBFramebuffer reads
+ returned from an IO port conforms to it at runtime (Framebuffer reads
  -displayClass to find the main display), so the move is transparent.
  */
 @protocol SimDisplayDescriptorState <FoundationXPCProtocolProxyable, SimDeviceIOPortDescriptorState>

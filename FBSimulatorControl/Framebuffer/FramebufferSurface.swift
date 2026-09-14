@@ -11,9 +11,9 @@
 import Foundation
 import IOSurface
 
-/// The seam between `FBFramebuffer` and the private CoreSimulator display surface. Expressed purely
+/// The seam between `Framebuffer` and the private CoreSimulator display surface. Expressed purely
 /// in public/standard types so the private, internally imported renderable protocols never leak
-/// into `FBFramebuffer`'s logic and a fake can be substituted in tests.
+/// into `Framebuffer`'s logic and a fake can be substituted in tests.
 protocol FramebufferSurface: AnyObject {
   /// The surface available right now, if the underlying renderable can vend one synchronously.
   func immediatelyAvailableSurface() -> IOSurface?
@@ -69,7 +69,7 @@ private final class SimDisplayRenderableSurface: FramebufferSurface {
       return
     }
     try registerLegacyCallbacks(token: token, ioSurfaceChanged: ioSurfaceChanged, frameRendered: frameRendered)
-    logger.info().log("FBFramebuffer: registered old-style framebuffer callbacks")
+    logger.info().log("Framebuffer: registered old-style framebuffer callbacks")
   }
 
   /// New-style path: register the grouped `SimScreen` callbacks. Returns `true` if they were
@@ -95,10 +95,10 @@ private final class SimDisplayRenderableSurface: FramebufferSurface {
       // Roll back in case the raise happened after the remote side installed the callbacks —
       // otherwise the old-style fallback would double-register under the same token.
       _ = guardedCall { screen.unregisterScreenCallbacks(uuid: token) }
-      logger.log("FBFramebuffer: new-style SimScreen registration failed (\(error)); using old-style callbacks")
+      logger.log("Framebuffer: new-style SimScreen registration failed (\(error)); using old-style callbacks")
       return false
     }
-    logger.info().log("FBFramebuffer: registered new-style SimScreen frame callbacks")
+    logger.info().log("Framebuffer: registered new-style SimScreen frame callbacks")
     return true
   }
 
@@ -164,7 +164,7 @@ private final class SimDisplayRenderableSurface: FramebufferSurface {
 }
 
 /// Locates the simulator's main-display surface among its IO ports and wraps it in a production
-/// `FramebufferSurface`. Kept separate from `FBFramebuffer` so that discovery, adaptation, and
+/// `FramebufferSurface`. Kept separate from `Framebuffer` so that discovery, adaptation, and
 /// consumer fan-out are distinct concerns.
 enum FramebufferSurfaceLocator {
   static func mainDisplaySurface(for simulator: FBSimulator, logger: any FBControlCoreLogger) throws -> any FramebufferSurface {

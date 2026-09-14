@@ -48,7 +48,7 @@ extension SimulatorVideoFileWriterError: LocalizedError {
 ///
 /// When `chaptersEnabled` is set, the writer also adds a QuickTime chapter track — a `.text` track
 /// associated with the video track via `chapterList` — and conforms to `TimedMetadataConsumer` so
-/// `FBSimulatorVideoStream.writeTimedMetadata` markers become player-visible chapters. Markers are
+/// `SimulatorVideoStream.writeTimedMetadata` markers become player-visible chapters. Markers are
 /// buffered as they arrive (timestamped at the current video position) and written as text samples in
 /// `finish`, once every chapter's end boundary (the next chapter, or the end of video) is known.
 ///

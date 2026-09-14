@@ -146,11 +146,11 @@ public final class SimulatorLifecycleCommands: LifecycleCommands {
     self.hid = nil
   }
 
-  public func connectToFramebuffer() async throws -> FBFramebuffer {
+  public func connectToFramebuffer() async throws -> Framebuffer {
     guard let simulator = self.simulator else {
       throw WeakTargetError.simulator
     }
-    return try FBFramebuffer.mainScreenSurface(for: simulator, logger: simulator.logger)
+    return try Framebuffer.mainScreenSurface(for: simulator, logger: simulator.logger)
   }
 
   public func connectToHID() async throws -> FBSimulatorHID {
