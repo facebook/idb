@@ -27,19 +27,6 @@ public struct FBSimulatorControlConfiguration: Equatable, Hashable, CustomString
   public let deviceSetPath: String?
   public let logger: FBControlCoreLogger
 
-  /// - Parameter logger: nil means `FBControlCoreGlobalConfiguration.defaultLogger`, which is
-  ///   os_log-only unless the `FBCONTROLCORE_LOGGING`/`FBCONTROLCORE_DEBUG_LOGGING` environment
-  ///   variables are set — see its documentation.
-  public static func configuration(
-    withDeviceSetPath deviceSetPath: String?,
-    logger: (any FBControlCoreLogger)?
-  ) -> FBSimulatorControlConfiguration {
-    FBSimulatorControlConfiguration(
-      deviceSetPath: deviceSetPath,
-      logger: logger
-    )
-  }
-
   /// - Parameter logger: nil means `FBControlCoreGlobalConfiguration.defaultLogger` (os_log-only
   ///   by default — see its documentation).
   public init(deviceSetPath: String?, logger: (any FBControlCoreLogger)?) {
