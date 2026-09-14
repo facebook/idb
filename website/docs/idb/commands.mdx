@@ -602,7 +602,8 @@ idb_companion --list 1                  # List available targets
 idb_companion --boot UDID               # Boot a simulator
 idb_companion --reboot UDID             # Reboot a target
 idb_companion --shutdown UDID           # Shut a target down
-idb_companion --create "iPhone X,iOS 12.4"
+idb_companion --create "DEVICE"         # Choose the newest available compatible runtime
+idb_companion --create "DEVICE,RUNTIME" # Require a particular runtime
 idb_companion --clone UDID              # Clone a simulator
 idb_companion --erase UDID              # Erase a target's contents and settings
 idb_companion --delete UDID|all         # Delete a simulator, or all of them
@@ -610,5 +611,18 @@ idb_companion --recover ecid:ECID       # Enter recovery mode (devices)
 idb_companion --unrecover ecid:ECID     # Exit recovery mode (devices)
 idb_companion --activate ecid:ECID      # Activate a device
 ```
+
+For creation, replace `DEVICE` with an installed device type's display name or
+`com.apple.CoreSimulator.SimDeviceType.*` identifier. Optionally append a comma
+and `RUNTIME`, using its display name or `com.apple.CoreSimulator.SimRuntime.*`
+identifier. Quote the argument when names contain spaces. List the device types
+and runtimes for the selected Xcode with `xcrun simctl list devicetypes` and
+`xcrun simctl list runtimes`.
+
+Omitting `RUNTIME` selects the newest available runtime compatible with the device.
+An explicit runtime must match and be available and compatible; creation fails
+instead of falling back to another runtime. CoreSimulator determines the build
+used by the created device, including when multiple installed builds share the
+same runtime identifier. A runtime identifier does not pin a particular build.
 
 The full list is in `idb_companion --help`.

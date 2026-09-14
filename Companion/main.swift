@@ -58,7 +58,7 @@ private let kUsageHelpMessage = """
       --erase UDID               Erases the target with the specified UDID.
       --clean UDID               Performs a soft reset to the specified UDID.
       --delete UDID|all          Deletes the simulator with the specified UDID, or 'all' to delete all simulators in the set.
-      --create VALUE             Creates a simulator using the VALUE argument like "iPhone X,iOS 12.4"
+      --create DEVICE[,RUNTIME]  Creates a simulator by device/runtime name or CoreSimulator identifier. Omitting RUNTIME selects the newest available compatible version.
       --clone UDID               Clones a simulator by a given UDID
       --clone-destination-set    A path to the destination device set in a clone operation, --device-set-path specifies the source simulator.
       --recover ecid:ECID        Causes the targeted device ECID to enter recovery mode

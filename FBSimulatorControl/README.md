@@ -63,6 +63,9 @@ version ties. An explicit runtime must match; it never falls back to another ver
 `FBSimulatorConfiguration.availableConfigurations()` lists available compatible pairs.
 A simulator's `configuration` describes its actual device/runtime metadata, including identifiers
 and runtime build, even when the runtime is no longer available.
+Runtime identifiers do not pin a particular build: CoreSimulator can create the device
+using another installed build with the same identifier. Inspect the created simulator's
+configuration for its actual runtime build.
 
 The former release constants, configuration catalogs, `defaultConfiguration()`, and fluent
 `withDeviceModel` / `withOSNamed` builders have been removed. Construct creation requests directly;
