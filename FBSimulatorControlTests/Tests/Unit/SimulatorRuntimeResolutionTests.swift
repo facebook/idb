@@ -25,7 +25,7 @@ final class SimulatorRuntimeResolutionTests: XCTestCase {
     _ runtimes: [SimulatorRuntimeIndex.Runtime], runtime selector: SimulatorSelector? = .name("FutureOS 99.0")
   ) throws -> SimulatorRuntimeIndex.Runtime {
     let index = SimulatorRuntimeIndex(devices: [device], runtimes: runtimes)
-    let match = try index.resolve(device: .name(device.name), runtime: selector)
+    let match = try index.resolve(SimulatorCreationRequest(device: .name(device.name), runtime: selector))
     return index.runtimes[match.runtime]
   }
 
@@ -50,6 +50,8 @@ final class SimulatorRuntimeResolutionTests: XCTestCase {
     let newer = runtime(build: "99A100")
     XCTAssertEqual(try resolve([older, newer]).build, newer.build)
     XCTAssertEqual(try resolve([newer, older]).build, newer.build)
+    XCTAssertEqual(try resolve([older, newer], runtime: .identifier(newer.identifier)).build, newer.build)
+    XCTAssertEqual(try resolve([newer, older], runtime: .identifier(newer.identifier)).build, newer.build)
   }
 
   func testUnavailableOrIncompatibleNewerBuildDoesNotHideUsableBuild() throws {
@@ -84,8 +86,8 @@ final class SimulatorRuntimeResolutionTests: XCTestCase {
   func testAmbiguousDeviceNameRequiresIdentifier() throws {
     let duplicateName = SimulatorRuntimeIndex.Device(identifier: "another.device", name: device.name)
     let index = SimulatorRuntimeIndex(devices: [duplicateName, device], runtimes: [runtime()])
-    XCTAssertThrowsError(try index.resolve(device: .name(device.name), runtime: nil))
-    let match = try index.resolve(device: .identifier(device.identifier), runtime: nil)
+    XCTAssertThrowsError(try index.resolve(SimulatorCreationRequest(device: .name(device.name))))
+    let match = try index.resolve(SimulatorCreationRequest(device: .identifier(device.identifier)))
     XCTAssertEqual(index.devices[match.device].identifier, device.identifier)
   }
 
@@ -98,6 +100,6 @@ final class SimulatorRuntimeResolutionTests: XCTestCase {
 
   func testEmptyIndexFailsClearly() {
     let index = SimulatorRuntimeIndex(devices: [], runtimes: [])
-    XCTAssertThrowsError(try index.resolve(device: .name(device.name), runtime: nil))
+    XCTAssertThrowsError(try index.resolve(SimulatorCreationRequest(device: .name(device.name))))
   }
 }

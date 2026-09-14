@@ -8,18 +8,6 @@
 import FBControlCore
 import Foundation
 
-enum SimulatorSelector: Equatable, Sendable {
-  case identifier(String)
-  case name(String)
-
-  func matches(identifier: String, name: String) -> Bool {
-    switch self {
-    case .identifier(let value): return value == identifier
-    case .name(let value): return value == name
-    }
-  }
-}
-
 struct SimulatorRuntimeIndex {
   struct Device: Equatable {
     let identifier: String
@@ -43,9 +31,9 @@ struct SimulatorRuntimeIndex {
   let devices: [Device]
   let runtimes: [Runtime]
 
-  func resolve(device selector: SimulatorSelector, runtime runtimeSelector: SimulatorSelector?) throws -> Match {
+  func resolve(_ request: SimulatorCreationRequest) throws -> Match {
     let matchingDevices = devices.indices.filter {
-      selector.matches(identifier: devices[$0].identifier, name: devices[$0].name)
+      request.device.matches(identifier: devices[$0].identifier, name: devices[$0].name)
     }
     guard let device = matchingDevices.first else {
       throw SimulatorConfigurationError.noMatchingDeviceType(available: "\(devices)")
@@ -56,7 +44,7 @@ struct SimulatorRuntimeIndex {
     let matchingRuntimes = runtimes.indices.filter {
       let runtime = runtimes[$0]
       return runtime.available && runtime.supportedDevices.contains(devices[device].identifier)
-        && (runtimeSelector?.matches(identifier: runtime.identifier, name: runtime.name) ?? true)
+        && (request.runtime?.matches(identifier: runtime.identifier, name: runtime.name) ?? true)
     }
     guard let runtime = matchingRuntimes.max(by: { precedes(runtimes[$0], runtimes[$1]) }) else {
       throw SimulatorConfigurationError.noMatchingRuntime(available: "\(runtimes)")

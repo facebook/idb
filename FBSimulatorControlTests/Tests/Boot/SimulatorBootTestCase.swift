@@ -21,7 +21,9 @@ private let LaunchTypeSimulatorApp = "simulator_app"
 final class SimulatorBootTestCase: XCTestCase {
 
   private var control: SimulatorControlBootstrap!
-  private var simulatorConfiguration: FBSimulatorConfiguration!
+  private var creationRequest: SimulatorCreationRequest!
+  private var expectedConfiguration: FBSimulatorConfiguration!
+  private var ownedSimulator: FBSimulator?
   private var bootConfiguration: FBSimulatorBootConfiguration!
 
   override class func setUp() {
@@ -43,7 +45,20 @@ final class SimulatorBootTestCase: XCTestCase {
     // Memoized: a no-op after the first load. Throwing here turns a load failure into a test
     // failure instead of killing the runner.
     try FBSimulatorControlFrameworkLoader.essentialFrameworks.loadPrivateFrameworks(FBControlCoreGlobalConfiguration.defaultLogger)
-    simulatorConfiguration = try FBSimulatorConfiguration.defaultConfiguration().withDeviceModel(.modeliPhone16)
+    let service = try SimulatorServiceContext.sharedServiceContext()
+    let deviceTypes = service.supportedDeviceTypes()
+    let runtimes = service.supportedRuntimes()
+    guard
+      let availableDevice = deviceTypes.first(where: { device in
+        device.productFamilyID == 1 && runtimes.contains(where: { $0.available && $0.supportsDeviceType(device) })
+      })
+    else {
+      throw XCTSkip("The host has no available runtime compatible with an iPhone")
+    }
+    creationRequest = SimulatorCreationRequest(device: .identifier(try XCTUnwrap(availableDevice.identifier)))
+    let snapshot = CoreSimulatorRuntimeIndex(deviceTypes: deviceTypes, runtimes: runtimes)
+    let (deviceType, runtime) = try snapshot.resolve(creationRequest)
+    expectedConfiguration = FBSimulatorConfiguration.configuration(deviceType: deviceType, runtime: runtime)
     bootConfiguration = FBSimulatorBootConfiguration(options: Self.bootOptions, environment: [:])
     let noLogger: (any FBControlCoreLogger)? = nil
     control = try SimulatorControlBootstrap.withConfiguration(
@@ -51,31 +66,28 @@ final class SimulatorBootTestCase: XCTestCase {
   }
 
   override func tearDown() async throws {
-    // Whatever the test left behind, in whichever set it used.
-    if let control {
-      try? await control.set.shutdownAll()
+    if let simulator = ownedSimulator {
+      try await control.set.delete(simulator)
+      ownedSimulator = nil
     }
     control = nil
   }
 
   func testBootShutdownLifecycle() async throws {
-    do {
-      try simulatorConfiguration.checkRuntimeRequirements()
-    } catch {
-      // An unsatisfiable configuration is a property of the host, not of the code under test.
-      // Every other failure below is thrown, because an acquisition problem must never pass.
-      throw XCTSkip("The host cannot create a simulator for \(simulatorConfiguration!): \(error)")
-    }
-
-    let simulator = try await control.set.createSimulator(with: simulatorConfiguration)
+    let simulator = try await control.set.createSimulator(with: creationRequest)
+    ownedSimulator = simulator
+    XCTAssertEqual(simulator.configuration.deviceTypeIdentifier, expectedConfiguration.deviceTypeIdentifier)
+    XCTAssertEqual(simulator.configuration.runtimeIdentifier, expectedConfiguration.runtimeIdentifier)
+    XCTAssertEqual(simulator.configuration.os.versionString, expectedConfiguration.os.versionString)
+    XCTAssertEqual(simulator.configuration.deviceTypeIdentifier, simulator.device.deviceType.identifier)
+    XCTAssertEqual(simulator.configuration.runtimeIdentifier, simulator.device.runtime.identifier)
+    // CoreSimulator can choose another installed build for the same runtime identifier.
+    XCTAssertEqual(simulator.configuration.runtimeBuildVersion, simulator.device.runtime.buildVersionString)
     try await simulator.lifecycle.boot(bootConfiguration)
     XCTAssertEqual(simulator.state, .booted)
 
     try await simulator.power.shutdown()
     XCTAssertEqual(simulator.state, .shutdown)
-    // Deletion, not erasure: an erased device lingers in the set reporting a transient `creating`
-    // state while its contents are rebuilt.
-    try await control.set.delete(simulator)
   }
 
   private static var bootOptions: SimulatorBootOptions {
@@ -84,11 +96,10 @@ final class SimulatorBootTestCase: XCTestCase {
   }
 
   private static var deviceSetPath: String? {
-    // An isolated set unless explicitly opted into the default one, which holds the developer's
-    // own simulators — and teardown shuts down every booted device in whichever set is used.
+    // Even in the default set, teardown deletes only the simulator created by this test.
     if ProcessInfo.processInfo.environment[DeviceSetEnvKey] == DeviceSetEnvDefault {
       return nil
     }
-    return (NSTemporaryDirectory() as NSString).appendingPathComponent("FBSimulatorBootTests_CustomSet")
+    return (NSTemporaryDirectory() as NSString).appendingPathComponent("FBSimulatorBootTests_\(UUID().uuidString)")
   }
 }

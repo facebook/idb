@@ -10,49 +10,22 @@ import FBControlCore
 import XCTest
 
 final class SimulatorConfigurationTests: XCTestCase {
-
-  /// Seeds from the static configuration tables instead of `defaultConfiguration()`, which
-  /// resolves the newest runtime installed on the host. The seed OS is generic (empty product
-  /// families), so `withDeviceModel` takes its early return and no test here consults the
-  /// CoreSimulator service. Host-dependent assertions live in `SimulatorConfigurationBootTests`.
-  private func hermeticBaseConfiguration() throws -> FBSimulatorConfiguration {
-    let device = try XCTUnwrap(FBiOSTargetConfiguration.nameToDevice[.modeliPhone6])
-    return FBSimulatorConfiguration(device: device, os: .generic(withName: "HermeticOS 0.0"))
+  func testCreationRequestKeepsDeviceAndRuntimeSelectionExplicit() {
+    let request = SimulatorCreationRequest(device: .identifier("future.device"), runtime: .name("FutureOS 99.0"))
+    XCTAssertEqual(request.device, .identifier("future.device"))
+    XCTAssertEqual(request.runtime, .name("FutureOS 99.0"))
   }
 
-  func testiPhoneConfiguration() throws {
-    let configuration = try hermeticBaseConfiguration().withDeviceModel(.modeliPhone7).withOSNamed(.nameiOS_10_0)
-    XCTAssertEqual(configuration.device.model, .modeliPhone7)
-    XCTAssertEqual(configuration.os.name, .nameiOS_10_0)
-  }
-
-  func testWatchOSConfiguration() throws {
-    let watchModel = FBDeviceModel(rawValue: "Apple Watch Series 2 - 42mm")
-    let watchOS = FBOSVersionName(rawValue: "watchOS 3.2")
-    let configuration = try hermeticBaseConfiguration().withDeviceModel(watchModel).withOSNamed(watchOS)
-    XCTAssertEqual(configuration.device.model, watchModel)
-    XCTAssertEqual(configuration.os.name, watchOS)
-  }
-
-  func testTVOSConfiguration() throws {
-    let tvModel = FBDeviceModel(rawValue: "Apple TV")
-    let tvOS = FBOSVersionName(rawValue: "tvOS 10.0")
-    let configuration = try hermeticBaseConfiguration().withDeviceModel(tvModel).withOSNamed(tvOS)
-    XCTAssertEqual(configuration.device.model, tvModel)
-    XCTAssertEqual(configuration.os.name, tvOS)
-  }
-
-  func testUsesCurrentOSIfUnknownDeviceAppears() throws {
-    // Device first: applying a known OS first would send the unknown-device switch down the
-    // service-backed compatible-runtime fallback instead of keeping the seed's families.
-    let configuration = try hermeticBaseConfiguration().withDeviceModel(FBDeviceModel(rawValue: "FooPad")).withOSNamed(.nameiOS_10_0)
-    XCTAssertEqual(configuration.device.model, FBDeviceModel(rawValue: "FooPad"))
-    XCTAssertEqual(configuration.os.name, .nameiOS_10_0)
-  }
-
-  func testUsesCurrentDeviceIfUnknownOSAppears() throws {
-    let configuration = try hermeticBaseConfiguration().withDeviceModel(.modeliPhone7).withOSNamed(FBOSVersionName(rawValue: "FooOS"))
-    XCTAssertEqual(configuration.device.model, .modeliPhone7)
-    XCTAssertEqual(configuration.os.name, FBOSVersionName(rawValue: "FooOS"))
+  func testOmittedRuntimeIsResolvedAgainstTheRequestedDevice() throws {
+    let request = SimulatorCreationRequest(device: .identifier("future.device"))
+    let index = SimulatorRuntimeIndex(
+      devices: [.init(identifier: "future.device", name: "Future Device")],
+      runtimes: [
+        .init(identifier: "incompatible", name: "OtherOS 100.0", version: "100.0", build: "100A1", available: true, supportedDevices: []),
+        .init(identifier: "compatible", name: "FutureOS 99.0", version: "99.0", build: "99A1", available: true, supportedDevices: ["future.device"]),
+      ])
+    XCTAssertNil(request.runtime)
+    let match = try index.resolve(request)
+    XCTAssertEqual(index.runtimes[match.runtime].identifier, "compatible")
   }
 }

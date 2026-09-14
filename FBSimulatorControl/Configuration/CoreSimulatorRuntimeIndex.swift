@@ -37,8 +37,8 @@ final class CoreSimulatorRuntimeIndex {
     return CoreSimulatorRuntimeIndex(deviceTypes: service.supportedDeviceTypes(), runtimes: service.supportedRuntimes())
   }
 
-  func resolve(device: SimulatorSelector, runtime: SimulatorSelector?) throws -> (SimDeviceType, SimRuntime) {
-    let match = try index.resolve(device: device, runtime: runtime)
+  func resolve(_ request: SimulatorCreationRequest) throws -> (SimDeviceType, SimRuntime) {
+    let match = try index.resolve(request)
     return (deviceTypes[match.device], runtimes[match.runtime])
   }
 }

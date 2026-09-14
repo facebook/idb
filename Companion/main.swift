@@ -325,15 +325,13 @@ private func runList(_ userDefaults: UserDefaults, xcodeAvailable: Bool, logger:
 
 private func runCreate(_ create: String, userDefaults: UserDefaults, logger: FBControlCoreLogger) async throws {
   let parameters = create.components(separatedBy: ",")
-  var config = try FBSimulatorConfiguration.defaultConfiguration()
-  if parameters.count > 0 {
-    config = config.withDeviceModel(FBDeviceModel(rawValue: parameters[0]))
+  func selector(_ value: String) -> SimulatorSelector {
+    value.hasPrefix("com.apple.CoreSimulator.") ? .identifier(value) : .name(value)
   }
-  if parameters.count > 1 {
-    config = config.withOSNamed(FBOSVersionName(rawValue: parameters[1]))
-  }
+  let request = SimulatorCreationRequest(
+    device: selector(parameters[0]), runtime: parameters.count > 1 ? selector(parameters[1]) : nil)
   let set = try simulatorSet(userDefaults, logger: logger)
-  let simulator = try await set.createSimulator(with: config)
+  let simulator = try await set.createSimulator(with: request)
   writeTargetToStdOut(simulator)
 }
 

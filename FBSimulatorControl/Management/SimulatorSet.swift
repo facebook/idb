@@ -61,23 +61,20 @@ public final class FBSimulatorSet: FBiOSTargetSet {
 
   // MARK: - Creation
 
-  public func createSimulator(with configuration: FBSimulatorConfiguration) async throws -> FBSimulator {
-    let model: String = configuration.device.model.rawValue
-
+  public func createSimulator(with request: SimulatorCreationRequest) async throws -> FBSimulator {
     let deviceType: SimDeviceType
     let runtime: SimRuntime
     do {
       let snapshot = try CoreSimulatorRuntimeIndex.load()
-      (deviceType, runtime) = try snapshot.resolve(
-        device: .name(configuration.device.model.rawValue), runtime: .name(configuration.os.name.rawValue))
+      (deviceType, runtime) = try snapshot.resolve(request)
     } catch {
-      throw SimulatorSetError.deviceTypeOrRuntimeUnavailable(configuration: "\(configuration)", reason: error.localizedDescription)
+      throw SimulatorSetError.deviceTypeOrRuntimeUnavailable(configuration: "\(request)", reason: error.localizedDescription)
     }
 
     logger.debug().log("Creating device with Type \(deviceType) Runtime \(runtime)")
-    let device = try await Self.createDevice(on: deviceSet, type: deviceType, runtime: runtime, name: model, queue: asyncQueue)
+    let device = try await Self.createDevice(on: deviceSet, type: deviceType, runtime: runtime, name: deviceType.name ?? deviceType.identifier, queue: asyncQueue)
     let simulator = try fetchNewlyMadeSimulatorOrThrow(device)
-    logger.debug().log("Created Simulator \(simulator.udid) for configuration \(configuration)")
+    logger.debug().log("Created Simulator \(simulator.udid) for request \(request)")
     do {
       try await SimulatorShutdownStrategy.shutdown(simulator)
     } catch {
@@ -89,13 +86,6 @@ public final class FBSimulatorSet: FBiOSTargetSet {
   public func cloneSimulator(_ simulator: FBSimulator, toDeviceSet destinationSet: FBSimulatorSet) async throws -> FBSimulator {
     let device = try await Self.cloneDevice(on: deviceSet, device: simulator.device, toDeviceSet: destinationSet.deviceSet, queue: asyncQueue)
     return try destinationSet.fetchNewlyMadeSimulatorOrThrow(device)
-  }
-
-  func configurationsForAbsentDefaultSimulators() throws -> [FBSimulatorConfiguration] {
-    let existingConfigurations = Set(allSimulators.compactMap { $0.configuration })
-    var absentConfigurations = Set(try FBSimulatorConfiguration.allAvailableDefaultConfigrations(withLogger: logger))
-    absentConfigurations.subtract(existingConfigurations)
-    return Array(absentConfigurations)
   }
 
   // MARK: - Destructive Methods

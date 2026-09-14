@@ -9,21 +9,38 @@ import FBControlCore
 @testable import FBSimulatorControl
 import XCTest
 
-/// Host-dependent configuration assertions: they resolve against the runtimes installed on the
-/// host, so they run in the Boot suite (whose workers guarantee runtimes) rather than Unit.
-/// A plain `XCTestCase` — nothing here boots a simulator.
 final class SimulatorConfigurationBootTests: XCTestCase {
-
-  func testDefaultIsIphone() throws {
-    let configuration = try FBSimulatorConfiguration.defaultConfiguration()
-    XCTAssertTrue(configuration.device.model.rawValue.contains("iPhone"))
-    XCTAssertTrue(configuration.os.name.rawValue.contains("iOS"))
-  }
-
-  func testAdjustsOSOfIncompatableProductFamily() throws {
-    let tvOS = FBOSVersionName(rawValue: "tvOS 10.0")
-    let configuration = try FBSimulatorConfiguration.defaultConfiguration().withOSNamed(tvOS).withDeviceModel(.modeliPhone6)
-    XCTAssertEqual(configuration.device.model, .modeliPhone6)
-    XCTAssertTrue(configuration.os.name.rawValue.contains("iOS"))
+  func testAdapterRetainsCompatibleCoreSimulatorObjects() throws {
+    try FBSimulatorControlFrameworkLoader.essentialFrameworks.loadPrivateFrameworks(FBControlCoreGlobalConfiguration.defaultLogger)
+    let service = try SimulatorServiceContext.sharedServiceContext()
+    let deviceTypes = service.supportedDeviceTypes()
+    let runtimes = service.supportedRuntimes()
+    guard
+      let availableRuntime = runtimes.first(where: { runtime in
+        runtime.available && deviceTypes.contains(where: { runtime.supportsDeviceType($0) })
+      })
+    else {
+      throw XCTSkip("The host has no available compatible device/runtime pairs")
+    }
+    let availableDevice = try XCTUnwrap(deviceTypes.first(where: { availableRuntime.supportsDeviceType($0) }))
+    let request = SimulatorCreationRequest(
+      device: .identifier(try XCTUnwrap(availableDevice.identifier)),
+      runtime: .identifier(try XCTUnwrap(availableRuntime.identifier)))
+    let snapshot = try CoreSimulatorRuntimeIndex.load()
+    let match = try snapshot.index.resolve(request)
+    let expectedDevice = snapshot.deviceTypes[match.device]
+    let expectedRuntime = snapshot.runtimes[match.runtime]
+    let (device, runtime) = try snapshot.resolve(request)
+    XCTAssertTrue(device === expectedDevice)
+    XCTAssertTrue(runtime === expectedRuntime)
+    XCTAssertEqual(device.identifier, availableDevice.identifier)
+    XCTAssertEqual(runtime.identifier, availableRuntime.identifier)
+    XCTAssertTrue(runtime.available)
+    XCTAssertTrue(runtime.supportsDeviceType(device))
+    let configuration = FBSimulatorConfiguration.configuration(deviceType: device, runtime: runtime)
+    XCTAssertEqual(configuration.os.versionString, runtime.versionString)
+    XCTAssertEqual(configuration.runtimeBuildVersion, runtime.buildVersionString)
+    XCTAssertEqual(configuration.device.model.rawValue, device.name)
+    XCTAssertTrue(try FBSimulatorConfiguration.availableConfigurations().contains(configuration))
   }
 }
