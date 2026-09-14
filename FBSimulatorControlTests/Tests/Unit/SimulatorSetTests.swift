@@ -17,9 +17,9 @@ final class SimulatorSetTests: SimulatorSetTestCase {
       ["name": "iPhone 5", "state": FBiOSTargetState.shutdown.rawValue],
       ["name": "iPhone 5", "state": FBiOSTargetState.booted.rawValue],
       ["name": "iPhone 6s", "state": FBiOSTargetState.shuttingDown.rawValue],
-      ["name": "iPad 2", "state": FBiOSTargetState.booted.rawValue],
-      ["name": "iPad Air", "state": FBiOSTargetState.booted.rawValue],
-      ["name": "iPad Air 2", "state": FBiOSTargetState.creating.rawValue],
+      ["name": "iPad 2", "family": 2, "state": FBiOSTargetState.booted.rawValue],
+      ["name": "iPad Air", "family": 2, "state": FBiOSTargetState.booted.rawValue],
+      ["name": "iPad Air 2", "family": 2, "state": FBiOSTargetState.creating.rawValue],
       ["name": "iPhone 5", "state": FBiOSTargetState.shutdown.rawValue, "os": "iOS 10.0"],
     ])
 
@@ -73,9 +73,9 @@ final class SimulatorSetTests: SimulatorSetTestCase {
       ["name": "iPhone 5", "state": FBiOSTargetState.shutdown.rawValue],
       ["name": "iPhone 5", "state": FBiOSTargetState.booted.rawValue],
       ["name": "iPhone 6s", "state": FBiOSTargetState.shuttingDown.rawValue],
-      ["name": "iPad 2", "state": FBiOSTargetState.booted.rawValue],
-      ["name": "iPad Air", "state": FBiOSTargetState.booted.rawValue],
-      ["name": "iPad Air 2", "state": FBiOSTargetState.creating.rawValue],
+      ["name": "iPad 2", "family": 2, "state": FBiOSTargetState.booted.rawValue],
+      ["name": "iPad Air", "family": 2, "state": FBiOSTargetState.booted.rawValue],
+      ["name": "iPad Air 2", "family": 2, "state": FBiOSTargetState.creating.rawValue],
       ["name": "iPhone 5", "state": FBiOSTargetState.shutdown.rawValue, "os": "iOS 10.0"],
     ])
 

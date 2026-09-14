@@ -64,6 +64,17 @@ struct SimulatorRuntimeIndex {
     return Match(device: device, runtime: runtime)
   }
 
+  var availablePairs: [Match] {
+    runtimes.indices.flatMap { runtime in
+      devices.indices.compactMap { device in
+        guard runtimes[runtime].available, runtimes[runtime].supportedDevices.contains(devices[device].identifier) else {
+          return nil
+        }
+        return Match(device: device, runtime: runtime)
+      }
+    }
+  }
+
   private func precedes(_ left: Runtime, _ right: Runtime) -> Bool {
     let leftVersion = OSVersion(name: FBOSVersionName(rawValue: left.name), versionString: left.version)
     let rightVersion = OSVersion(name: FBOSVersionName(rawValue: right.name), versionString: right.version)

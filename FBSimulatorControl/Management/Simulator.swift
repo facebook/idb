@@ -30,7 +30,7 @@ public final class FBSimulator: FBiOSTarget, Hashable, CustomStringConvertible, 
   public private(set) var set: FBSimulatorSet?
 
   /// The `FBSimulatorConfiguration` representing this Simulator.
-  public var configuration: FBSimulatorConfiguration
+  public let configuration: FBSimulatorConfiguration
 
   public let commandCache: TargetCommandCache
 
@@ -44,7 +44,7 @@ public final class FBSimulator: FBiOSTarget, Hashable, CustomStringConvertible, 
   public class func fromSimDevice(_ device: SimDevice, configuration: FBSimulatorConfiguration?, set: FBSimulatorSet) -> FBSimulator {
     FBSimulator(
       device: device,
-      configuration: configuration ?? FBSimulatorConfiguration.inferSimulatorConfigurationFromDeviceSynthesizingMissing(device),
+      configuration: configuration ?? FBSimulatorConfiguration.inferSimulatorConfiguration(fromDevice: device),
       set: set,
       auxillaryDirectory: auxillaryDirectory(fromSimDevice: device),
       logger: set.logger)

@@ -17,24 +17,6 @@ import Foundation
   @objc let UDID: NSUUID = NSUUID()
 }
 
-/// Named stand-in for `SimDevice.runtime` / `SimDevice.deviceType`. Only `name` is read, by
-/// the configuration synthesis below.
-@objc final class StubSimNamed: NSObject {
-  @objc let name: String
-
-  init(name: String) {
-    self.name = name
-    super.init()
-  }
-}
-
-/// A device whose runtime and device-type names are always present, used solely to synthesize
-/// a configuration for the tests.
-@objc final class StubConfigurationSimDevice: NSObject {
-  @objc let runtime = StubSimNamed(name: "iOS 17.0")
-  @objc let deviceType = StubSimNamed(name: "iPhone 15")
-}
-
 /// Reinterprets a test double as `SimDevice`.
 ///
 /// The doubles are not `SimDevice`s — they merely respond to the selectors the simulator sends
@@ -87,13 +69,8 @@ enum SimulatorTestSupport {
   /// and any other selectors the code path exercises.
   static func testableSimulator(withDevice device: AnyObject) -> FBSimulator {
     let logger = FBControlCoreLoggerFactory.logger(to: FBNullDataConsumer())
-    // Synthesize the configuration from a stub rather than asking for the default one.
-    // `defaultConfiguration` pins a hardcoded device model and then resolves the newest
-    // *installed* runtime that supports it, so it returns nil on a host whose runtimes have
-    // dropped that model — a host dependency these tests should not have. They never read the
-    // configuration back; the initializer only stores it.
-    let configuration = FBSimulatorConfiguration.inferSimulatorConfigurationFromDeviceSynthesizingMissing(
-      asSimDevice(StubConfigurationSimDevice()))
+    let configuration = FBSimulatorConfiguration(
+      device: .generic(withName: "Test Device"), os: .generic(withName: "TestOS 99.0"))
     return FBSimulator(
       device: asSimDevice(device),
       configuration: configuration,

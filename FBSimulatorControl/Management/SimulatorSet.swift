@@ -77,7 +77,6 @@ public final class FBSimulatorSet: FBiOSTargetSet {
     logger.debug().log("Creating device with Type \(deviceType) Runtime \(runtime)")
     let device = try await Self.createDevice(on: deviceSet, type: deviceType, runtime: runtime, name: model, queue: asyncQueue)
     let simulator = try fetchNewlyMadeSimulatorOrThrow(device)
-    simulator.configuration = configuration
     logger.debug().log("Created Simulator \(simulator.udid) for configuration \(configuration)")
     do {
       try await SimulatorShutdownStrategy.shutdown(simulator)

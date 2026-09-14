@@ -89,6 +89,13 @@ final class SimulatorRuntimeResolutionTests: XCTestCase {
     XCTAssertEqual(index.devices[match.device].identifier, device.identifier)
   }
 
+  func testDiscoveryIncludesOnlyAvailableCompatiblePairs() {
+    let other = SimulatorRuntimeIndex.Device(identifier: "other.device", name: "Other Device")
+    let index = SimulatorRuntimeIndex(
+      devices: [device, other], runtimes: [runtime(), runtime(available: false), runtime(supportedDevices: [])])
+    XCTAssertEqual(index.availablePairs, [SimulatorRuntimeIndex.Match(device: 0, runtime: 0)])
+  }
+
   func testEmptyIndexFailsClearly() {
     let index = SimulatorRuntimeIndex(devices: [], runtimes: [])
     XCTAssertThrowsError(try index.resolve(device: .name(device.name), runtime: nil))

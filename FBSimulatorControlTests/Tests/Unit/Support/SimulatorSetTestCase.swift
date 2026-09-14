@@ -32,6 +32,7 @@ class SimulatorSetTestCase: XCTestCase {
 
       let deviceType = SimulatorControlTests_SimDeviceType_Double()
       deviceType.name = name
+      deviceType.productFamilyID = Int32(simulatorSpec["family"] as? Int ?? 1)
 
       let runtime = SimulatorControlTests_SimDeviceRuntime_Double()
       runtime.name = os

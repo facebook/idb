@@ -18,10 +18,13 @@ import Foundation
 // class at runtime.
 
 class SimulatorControlTests_SimDeviceType_Double: NSObject {
+  @objc var identifier: String?
+  @objc var productFamilyID: Int32 = 1
   @objc var name: String = ""
 }
 
 class SimulatorControlTests_SimDeviceRuntime_Double: NSObject {
+  @objc var identifier: String?
   @objc var name: String = ""
   @objc var versionString: String = ""
   @objc var buildVersionString: String = ""

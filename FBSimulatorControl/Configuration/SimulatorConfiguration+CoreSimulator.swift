@@ -35,30 +35,33 @@ extension FBSimulatorConfiguration {
     return withOSNamed(os.name)
   }
 
-  public static func inferSimulatorConfiguration(fromDevice simDevice: SimDevice) throws -> FBSimulatorConfiguration {
-    let osName = FBOSVersionName(rawValue: simDevice.runtime.name ?? "unknown")
-    guard FBiOSTargetConfiguration.nameToOSVersion[osName] != nil else {
-      throw SimulatorConfigurationError.unsupportedOSVersion(name: osName.rawValue)
-    }
-    let model = FBDeviceModel(rawValue: simDevice.deviceType.name ?? "unknown")
-    guard FBiOSTargetConfiguration.nameToDevice[model] != nil else {
-      throw SimulatorConfigurationError.unsupportedDevice(name: model.rawValue)
-    }
-    return try FBSimulatorConfiguration.defaultConfiguration().withOSNamed(osName).withDeviceModel(model)
+  public static func inferSimulatorConfiguration(fromDevice simDevice: SimDevice) -> FBSimulatorConfiguration {
+    configuration(deviceType: simDevice.deviceType, runtime: simDevice.runtime)
   }
 
-  public static func inferSimulatorConfigurationFromDeviceSynthesizingMissing(_ simDevice: SimDevice) -> FBSimulatorConfiguration {
-    if let configuration = try? inferSimulatorConfiguration(fromDevice: simDevice) {
-      return configuration
+  static func configuration(deviceType: SimDeviceType?, runtime: SimRuntime?) -> FBSimulatorConfiguration {
+    let family: FBControlCoreProductFamily
+    switch deviceType?.productFamilyID {
+    case 1: family = .familyiPhone
+    case 2: family = .familyiPad
+    case 3: family = .familyAppleTV
+    case 4: family = .familyAppleWatch
+    case 5: family = .familyMac
+    default: family = .familyUnknown
     }
-    // Synthesize directly rather than via the throwing `defaultConfiguration()`: this path must not
-    // fail (it has ObjC callers in non-throwing FBSimulator init) and it overrides both OS and device
-    // anyway, so the default's own values are irrelevant.
-    let osName = FBOSVersionName(rawValue: simDevice.runtime.name ?? "unknown")
-    let model = FBDeviceModel(rawValue: simDevice.deviceType.name ?? "unknown")
-    let os = FBiOSTargetConfiguration.nameToOSVersion[osName] ?? OSVersion.generic(withName: osName.rawValue)
-    let device = FBiOSTargetConfiguration.nameToDevice[model] ?? DeviceType.generic(withName: model.rawValue)
-    return FBSimulatorConfiguration(device: device, os: os).withDeviceModel(model)
+    return FBSimulatorConfiguration(
+      device: DeviceType(model: FBDeviceModel(rawValue: deviceType?.name ?? "unknown"), family: family),
+      os: OSVersion(name: FBOSVersionName(rawValue: runtime?.name ?? "unknown"), versionString: runtime?.versionString ?? ""),
+      deviceTypeIdentifier: deviceType?.identifier,
+      runtimeIdentifier: runtime?.identifier,
+      runtimeBuildVersion: runtime?.buildVersionString)
+  }
+
+  public static func availableConfigurations() throws -> [FBSimulatorConfiguration] {
+    let snapshot = try CoreSimulatorRuntimeIndex.load()
+    return snapshot.index.availablePairs.map {
+      configuration(deviceType: snapshot.deviceTypes[$0.device], runtime: snapshot.runtimes[$0.runtime])
+    }
   }
 
   func checkRuntimeRequirements() throws {
@@ -95,41 +98,9 @@ extension FBSimulatorConfiguration {
     withAbsentOSVersionsOut absentOSVersionsOut: AutoreleasingUnsafeMutablePointer<NSArray?>?,
     absentDeviceTypesOut: AutoreleasingUnsafeMutablePointer<NSArray?>?
   ) throws -> [FBSimulatorConfiguration] {
-    var configurations: [FBSimulatorConfiguration] = []
-    var absentOSVersions: [String] = []
-    var absentDeviceTypes: [String] = []
-    let deviceTypes = try supportedDeviceTypes()
-
-    for runtime in try supportedRuntimes() {
-      if !runtime.available {
-        continue
-      }
-      let runtimeName = runtime.name ?? "unknown"
-      let osName = FBOSVersionName(rawValue: runtimeName)
-      if FBiOSTargetConfiguration.nameToOSVersion[osName] == nil {
-        absentOSVersions.append(runtimeName)
-        continue
-      }
-
-      for deviceType in deviceTypes {
-        if !runtime.supportsDeviceType(deviceType) {
-          continue
-        }
-        let deviceTypeName = deviceType.name ?? "unknown"
-        let model = FBDeviceModel(rawValue: deviceTypeName)
-        if FBiOSTargetConfiguration.nameToDevice[model] == nil {
-          absentDeviceTypes.append(deviceTypeName)
-          continue
-        }
-
-        let configuration = try FBSimulatorConfiguration.defaultConfiguration().withDeviceModel(model).withOSNamed(osName)
-        configurations.append(configuration)
-      }
-    }
-
-    absentOSVersionsOut?.pointee = absentOSVersions as NSArray
-    absentDeviceTypesOut?.pointee = absentDeviceTypes as NSArray
-    return configurations
+    absentOSVersionsOut?.pointee = []
+    absentDeviceTypesOut?.pointee = []
+    return try availableConfigurations()
   }
 
   // MARK: - Obtaining CoreSimulator Classes

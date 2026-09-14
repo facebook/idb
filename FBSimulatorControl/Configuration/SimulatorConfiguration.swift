@@ -8,15 +8,23 @@
 @preconcurrency import FBControlCore
 @preconcurrency import Foundation
 
-public struct FBSimulatorConfiguration: Equatable, Hashable, CustomStringConvertible {
+public struct FBSimulatorConfiguration: Equatable, Hashable, CustomStringConvertible, Sendable {
 
   public let device: DeviceType
   public let os: OSVersion
+  public let deviceTypeIdentifier: String?
+  public let runtimeIdentifier: String?
+  public let runtimeBuildVersion: String?
 
-  // Internal so same-module extensions can build a configuration without the throwing `defaultConfiguration()`.
-  init(device: DeviceType, os: OSVersion) {
+  public init(
+    device: DeviceType, os: OSVersion, deviceTypeIdentifier: String? = nil,
+    runtimeIdentifier: String? = nil, runtimeBuildVersion: String? = nil
+  ) {
     self.device = device
     self.os = os
+    self.deviceTypeIdentifier = deviceTypeIdentifier
+    self.runtimeIdentifier = runtimeIdentifier
+    self.runtimeBuildVersion = runtimeBuildVersion
   }
 
   public static func defaultConfiguration() throws -> FBSimulatorConfiguration {
@@ -24,7 +32,7 @@ public struct FBSimulatorConfiguration: Equatable, Hashable, CustomStringConvert
   }
 
   // Memoized: the developer directory is resolved at most once, and the resolution error is preserved.
-  private nonisolated(unsafe) static let _defaultConfiguration: Result<FBSimulatorConfiguration, Error> = {
+  private static let _defaultConfiguration: Result<FBSimulatorConfiguration, Error> = {
     do {
       try FBSimulatorControlFrameworkLoader.essentialFrameworks.loadPrivateFrameworks(FBControlCoreGlobalConfiguration.defaultLogger)
     } catch {
@@ -46,15 +54,28 @@ public struct FBSimulatorConfiguration: Equatable, Hashable, CustomStringConvert
 
   // MARK: - Equatable, Hashable
 
-  /// Identity is the device model and OS name, not the `DeviceType` and `OSVersion` objects
-  /// carrying them — two configurations naming the same model and OS are the same configuration.
   public static func == (lhs: FBSimulatorConfiguration, rhs: FBSimulatorConfiguration) -> Bool {
-    lhs.device.model == rhs.device.model && lhs.os.name == rhs.os.name
+    lhs.deviceIdentity == rhs.deviceIdentity && lhs.runtimeIdentity == rhs.runtimeIdentity
+      && lhs.runtimeBuildVersion == rhs.runtimeBuildVersion
   }
 
   public func hash(into hasher: inout Hasher) {
-    hasher.combine(device.model.rawValue)
-    hasher.combine(os.name.rawValue)
+    hasher.combine(deviceIdentity)
+    hasher.combine(runtimeIdentity)
+    hasher.combine(runtimeBuildVersion)
+  }
+
+  private var deviceIdentity: String { deviceTypeIdentifier ?? device.model.rawValue }
+  private enum RuntimeIdentity: Hashable {
+    case identifier(String)
+    case metadata(name: String, version: String)
+  }
+
+  private var runtimeIdentity: RuntimeIdentity {
+    if let runtimeIdentifier {
+      return .identifier(runtimeIdentifier)
+    }
+    return .metadata(name: os.name.rawValue, version: os.versionString)
   }
 
   public var description: String {
