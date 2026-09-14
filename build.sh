@@ -194,7 +194,7 @@ function check_protobuf() {
 # Defined once, in Package.swift. The codegen plugin must be the same version as
 # the runtime it generates against, so derive it rather than restating it here.
 function resolve_grpc_swift_version() {
-  GRPC_SWIFT_VERSION="$(sed -n 's/.*grpc-swift\.git", exact: "\([^"]*\)".*/\1/p' Package.swift)"
+  GRPC_SWIFT_VERSION="$(pinned_version grpc-swift)"
   if [ -z "$GRPC_SWIFT_VERSION" ]; then
     echo "error: Package.swift does not pin grpc-swift to an exact version" >&2
     exit 1
@@ -224,6 +224,11 @@ function package_swift_pins() {
 
 function package_swift_packages() {
   sed -n '/^[[:space:]]*\/\//d; s|.*\.package(url: "[^"]*/\([^"/]*\)\.git".*|\1|p' Package.swift
+}
+
+# The version Package.swift pins a package to, or nothing if it does not pin one.
+function pinned_version() {
+  package_swift_pins | awk -v name="$1" '$1 == name { print $2 }'
 }
 
 # The packages: block ends at the first non-blank line that is not indented, and
@@ -326,37 +331,45 @@ function check_package_pins() {
   [ "$errors" -eq 0 ] || exit 1
 }
 
-function build_grpc_swift_plugin() {
-  # Checked before the already-built early return below: a warm cache must not
-  # let a drifted pin through.
-  resolve_grpc_swift_version
-  check_package_pins
-
-  # Build protoc-gen-grpc-swift from grpc-swift 1.x source
-  local plugin_path="$GRPC_SWIFT_DIR/.build/release/protoc-gen-grpc-swift"
+# <product> <package> <version> <checkout dir>. The checkout is shallow at the
+# tag, so a package whose tag has moved fails to clone rather than silently
+# building a different revision.
+function build_protoc_plugin() {
+  local product="$1" package="$2" version="$3" dir="$4"
+  local plugin_path="$dir/.build/release/$product"
 
   if [ -x "$plugin_path" ]; then
-    echo "protoc-gen-grpc-swift already built at $plugin_path"
+    echo "$product already built at $plugin_path"
     return 0
   fi
 
-  echo "Building protoc-gen-grpc-swift from grpc-swift $GRPC_SWIFT_VERSION..."
+  echo "Building $product from $package $version..."
 
-  if [ ! -d "$GRPC_SWIFT_DIR" ]; then
-    echo "Cloning grpc-swift $GRPC_SWIFT_VERSION..."
-    git clone --depth 1 --branch "$GRPC_SWIFT_VERSION" \
-      https://github.com/grpc/grpc-swift.git "$GRPC_SWIFT_DIR"
+  if [ ! -d "$dir" ]; then
+    echo "Cloning $package $version..."
+    git clone --depth 1 --branch "$version" \
+      "https://github.com/$package.git" "$dir"
   fi
 
-  echo "Building protoc-gen-grpc-swift (this may take a few minutes)..."
-  (cd "$GRPC_SWIFT_DIR" && swift build -c release --product protoc-gen-grpc-swift)
+  echo "Building $product (this may take a few minutes)..."
+  (cd "$dir" && swift build -c release --product "$product")
 
   if [ ! -x "$plugin_path" ]; then
-    echo "error: Failed to build protoc-gen-grpc-swift"
+    echo "error: Failed to build $product"
     exit 1
   fi
 
-  echo "Successfully built protoc-gen-grpc-swift"
+  echo "Successfully built $product"
+}
+
+function build_grpc_swift_plugin() {
+  # Checked before build_protoc_plugin's already-built early return: a warm
+  # cache must not let a drifted pin through.
+  resolve_grpc_swift_version
+  check_package_pins
+
+  build_protoc_plugin protoc-gen-grpc-swift \
+    grpc/grpc-swift "$GRPC_SWIFT_VERSION" "$GRPC_SWIFT_DIR"
 }
 
 function generate_proto() {
