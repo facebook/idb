@@ -11,6 +11,8 @@ uses test*.py. Run it separately with python -m unittest EndToEndTests.harness_t
 
 from __future__ import annotations
 
+import io
+import json
 import os
 import tempfile
 import unittest
@@ -18,7 +20,7 @@ from pathlib import Path
 from typing import Awaitable, Callable, NoReturn, Sequence
 from unittest import mock
 
-from . import harness
+from . import harness, recording as recording_module
 from .harness import (
     _optional_binary_from_environment,
     client_argv,
@@ -35,6 +37,7 @@ from .harness import (
     STRICT_ENV,
     wait_until,
 )
+from .recording import Recording
 
 CONNECTION_REFUSED = (
     "Failed to connect to companion at address DomainSocketAddress("
@@ -425,6 +428,7 @@ class EnvironmentSelectionTests(unittest.IsolatedAsyncioTestCase):
             "DEVICE_SET_PATH": str(self.root),
             "IDB_BIN": str(self.built_companion),
             "IDB_E2E_COMPANION_PATH": str(self.built_companion),
+            "IDB_E2E_RECORDER_PATH": str(self.built_companion),
             "IDB_COMPANION_PATH": str(self.installed_companion),
         }
 
@@ -450,6 +454,94 @@ class EnvironmentSelectionTests(unittest.IsolatedAsyncioTestCase):
                 HarnessError, "IDB_E2E_COMPANION_PATH is not set"
             ):
                 await harness.Environment.resolve()
+
+    async def test_recorder_path_is_required(self) -> None:
+        del self.environment["IDB_E2E_RECORDER_PATH"]
+        with mock.patch.dict(os.environ, self.environment, clear=True):
+            with self.assertRaisesRegex(
+                HarnessError, "IDB_E2E_RECORDER_PATH is not set"
+            ):
+                await harness.Environment.resolve()
+
+
+class RecordingResultTests(unittest.TestCase):
+    class Suite(IdbEndToEndTestCase):
+        async def asyncSetUp(self) -> None:
+            self.recording.start_test(self.id())
+
+        async def test_pass(self) -> None:
+            pass
+
+        async def test_fail(self) -> None:
+            self.fail("intentional failure")
+
+        async def test_cleanup_error(self) -> None:
+            self.addCleanup(self.fail, "cleanup failed")
+
+        async def test_skip(self) -> None:
+            self.skipTest("intentional skip")
+
+    def run_case(self, method: str) -> mock.Mock:
+        recording = mock.Mock()
+        recording.screenshot = mock.AsyncMock()
+        case = self.Suite(method)
+        case.recording = recording
+        result = unittest.TestResult()
+        case.run(result)
+        recording.screenshot.assert_awaited_once()
+        return recording
+
+    def test_records_success(self) -> None:
+        self.run_case("test_pass").finish_test.assert_called_once_with("passed")
+
+    def test_records_failure(self) -> None:
+        self.run_case("test_fail").finish_test.assert_called_once_with("failed")
+
+    def test_includes_cleanup_failures(self) -> None:
+        self.run_case("test_cleanup_error").finish_test.assert_called_once_with(
+            "failed"
+        )
+
+    def test_records_skip(self) -> None:
+        self.run_case("test_skip").finish_test.assert_called_once_with("skipped")
+
+
+class UnavailableRecordingTests(unittest.IsolatedAsyncioTestCase):
+    async def test_commands_remain_logged_after_encoder_failure(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            process = mock.Mock()
+            process.poll.return_value = 1
+            process.returncode = 1
+            process.stdin = io.BytesIO()
+            with (
+                mock.patch.object(
+                    recording_module.subprocess, "Popen", return_value=process
+                ),
+                mock.patch.dict(os.environ, {}, clear=True),
+            ):
+                recording = Recording(
+                    Path("/recorder"), "udid", Path("/set"), Path(directory), "test"
+                )
+                try:
+                    await recording.wait_until_ready()
+                    recording.start_test("test_failure")
+                    recording.command(["idb", "ui", "wait", 'a "quoted" marker'])
+                    recording.finish_test("failed")
+                    recording.stop()
+                    events = [
+                        json.loads(line)
+                        for line in Path(recording.trace.name).read_text().splitlines()
+                    ]
+                finally:
+                    recording.trace.close()
+        self.assertFalse(recording.ready)
+        self.assertIn("exited with 1", recording.error)
+        command = next(event for event in events if event["event"] == "command_started")
+        self.assertEqual(command["argv"], ["idb", "ui", "wait", 'a "quoted" marker'])
+        self.assertEqual(events[-1]["status"], "failed")
+        self.assertEqual(
+            sum(event["event"] == "recording_finished" for event in events), 1
+        )
 
 
 if __name__ == "__main__":

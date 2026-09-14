@@ -36,32 +36,38 @@ class Recording:
         self.error: str | None = None
         self.stopped = False
         self.index = 0
-        with self.log.open("wb") as log:
-            self.process = subprocess.Popen(
-                [
-                    str(binary),
-                    "record",
-                    str(self.video),
-                    "--udid",
-                    udid,
-                    "--set",
-                    str(device_set),
-                    "--encoding",
-                    encoding,
-                    "--fps",
-                    "10",
-                    "--scale",
-                    "0.5",
-                    "--bar",
-                    "top:48",
-                    "bottom:48",
-                    "--screenshot-dir",
-                    str(self.screenshots),
-                ],
-                stdin=subprocess.PIPE,
-                stdout=subprocess.DEVNULL,
-                stderr=log,
-            )
+        try:
+            with self.log.open("wb") as log:
+                self.process = subprocess.Popen(
+                    [
+                        str(binary),
+                        "record",
+                        str(self.video),
+                        "--udid",
+                        udid,
+                        "--set",
+                        str(device_set),
+                        "--encoding",
+                        encoding,
+                        "--fps",
+                        "10",
+                        "--scale",
+                        "0.5",
+                        "--bar",
+                        "top:48",
+                        "bottom:48",
+                        "--screenshot-dir",
+                        str(self.screenshots),
+                    ],
+                    stdin=subprocess.PIPE,
+                    stdout=subprocess.DEVNULL,
+                    stderr=log,
+                )
+        except OSError:
+            self.trace.close()
+            raise
+        self.annotate(self.log, "generic_text_log")
+        self.annotate(Path(self.trace.name), "generic_text_log")
 
     async def wait_until_ready(self) -> None:
         deadline = time.monotonic() + 60
@@ -81,7 +87,7 @@ class Recording:
             else:
                 self.error = "Recorder did not produce frames within 60 seconds"
         self.event("recording_unavailable", reason=self.error)
-        self.stop()
+        await asyncio.to_thread(self.stop)
 
     def event(self, event: str, **fields: Any) -> None:
         self.trace.write(
@@ -111,7 +117,8 @@ class Recording:
     def start_test(self, name: str) -> None:
         self.test = name
         self.event("test_started")
-        self.send("bar", position="top", content="text", text=name, fit=True)
+        title = name.rsplit(".", 1)[-1].removeprefix("test_").replace("_", " ")
+        self.send("bar", position="top", content="text", text=title, fit=True)
         self.send("bar", position="bottom", content="text", text="Setup", fit=True)
         self.send("chapter", text=name)
 
@@ -136,6 +143,7 @@ class Recording:
                 destination = self.directory / f"{self.prefix}-screenshot-{index}.png"
                 source.replace(destination)
                 self.event("screenshot", path=destination.name)
+                self.annotate(destination, "screenshot_test_artifact")
                 return destination
             if self.process.poll() is not None:
                 break
@@ -143,22 +151,47 @@ class Recording:
         self.event("screenshot_unavailable", index=index)
         return None
 
+    def save_screenshot(self, data: bytes) -> None:
+        self.index += 1
+        destination = self.directory / f"{self.prefix}-screenshot-{self.index}.png"
+        destination.write_bytes(data)
+        self.event("screenshot", path=destination.name)
+        self.annotate(destination, "screenshot_test_artifact")
+
+    def annotate(self, artifact: Path, kind: str) -> None:
+        annotations = os.environ.get("TEST_RESULT_ARTIFACT_ANNOTATIONS_DIR")
+        if not annotations:
+            return
+        path = Path(annotations) / f"{artifact.name}.annotation"
+        path.parent.mkdir(parents=True, exist_ok=True)
+        details = (
+            {"artifact_type": 0, "artifact_label": 0}
+            if kind == "screenshot_test_artifact"
+            else {}
+        )
+        path.write_text(
+            json.dumps({"type": {kind: details}, "description": "idb end-to-end tests"})
+            + "\n"
+        )
+
     def stop(self) -> None:
         if self.stopped:
             return
         self.stopped = True
         if self.process.poll() is None:
             self.send("shutdown")
-            if self.process.stdin is not None:
+        if self.process.stdin is not None and not self.process.stdin.closed:
+            try:
                 self.process.stdin.close()
+            except OSError as error:
+                self.event("recording_error", reason=f"Closing recorder stdin: {error}")
+        if self.process.poll() is None:
             try:
                 self.process.wait(timeout=30)
             except subprocess.TimeoutExpired:
                 self.error = "Recorder did not finalize within 30 seconds"
                 self.process.kill()
                 self.process.wait()
-        if self.process.stdin is not None and not self.process.stdin.closed:
-            self.process.stdin.close()
         report_path = self.video.with_suffix(".mov.json")
         status = (
             "recorded"
@@ -172,17 +205,5 @@ class Recording:
             error=self.error,
         )
         if status == "recorded":
-            annotations = os.environ.get("TEST_RESULT_ARTIFACT_ANNOTATIONS_DIR")
-            if annotations:
-                path = Path(annotations) / f"{self.video.name}.annotation"
-                path.parent.mkdir(parents=True, exist_ok=True)
-                path.write_text(
-                    json.dumps(
-                        {
-                            "type": {"video_recording_test_artifact": {}},
-                            "description": "idb end-to-end tests",
-                        }
-                    )
-                    + "\n"
-                )
+            self.annotate(self.video, "video_recording_test_artifact")
         self.ready = False

@@ -30,6 +30,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Awaitable, Callable, NoReturn, Sequence, TypeVar
 
+from .recording import Recording
+
 DEVICE_UDID_ENV = "DEVICE_UDID"
 DEVICE_SET_PATH_ENV = "DEVICE_SET_PATH"
 IDB_BIN_ENV = "IDB_BIN"
@@ -37,6 +39,7 @@ IDB_ARGS_ENV = "IDB_ARGS"
 IDB_E2E_COMPANION_PATH_ENV = "IDB_E2E_COMPANION_PATH"
 IDB_SETUP_BIN_ENV = "IDB_SETUP_BIN"
 READ_ONLY_CLIENT_ENV = "IDB_E2E_READ_ONLY_CLIENT"
+IDB_E2E_RECORDER_PATH_ENV = "IDB_E2E_RECORDER_PATH"
 STRICT_ENV = "IDB_E2E_STRICT"
 ARTIFACTS_ENV = "IDB_E2E_ARTIFACTS_DIR"
 
@@ -270,6 +273,7 @@ class Environment:
         idb_args: Sequence[str],
         setup_idb_bin: Path,
         companion_path: Path,
+        recorder_path: Path,
     ) -> None:
         self.udid = udid
         self.device_set_path = device_set_path
@@ -277,6 +281,7 @@ class Environment:
         self.idb_args = tuple(idb_args)
         self.setup_idb_bin = setup_idb_bin
         self.companion_path = companion_path
+        self.recorder_path = recorder_path
         self.simctl = Simctl(udid, device_set_path)
 
     @property
@@ -289,6 +294,7 @@ class Environment:
         idb_args = shlex.split(os.environ.get(IDB_ARGS_ENV, ""))
         setup_idb_bin = _optional_binary_from_environment(IDB_SETUP_BIN_ENV, idb_bin)
         companion_path = _binary_from_environment(IDB_E2E_COMPANION_PATH_ENV)
+        recorder_path = _binary_from_environment(IDB_E2E_RECORDER_PATH_ENV)
         udid = _required(DEVICE_UDID_ENV, "the booted simulator to test against")
         device_set_path = Path(
             _required(DEVICE_SET_PATH_ENV, f"the device set {DEVICE_UDID_ENV} lives in")
@@ -315,6 +321,7 @@ class Environment:
             idb_args,
             setup_idb_bin,
             companion_path,
+            recorder_path,
         )
 
 
@@ -511,6 +518,7 @@ async def wait_for_accessibility(
 
 _environment: Environment | None = None
 _companion: Companion | None = None
+_recording: Recording | None = None
 _acquisition_failure: BaseException | None = None
 
 
@@ -550,24 +558,86 @@ async def shared_companion() -> Companion:
     return _companion
 
 
+async def shared_recording(environment: Environment, companion: Companion) -> Recording:
+    global _recording
+    if _recording is None:
+        _recording = Recording(
+            environment.recorder_path,
+            environment.udid,
+            environment.device_set_path,
+            artifact_directory() or companion.directory,
+            companion.directory.name,
+        )
+        atexit.register(_recording.trace.close)
+        atexit.register(_recording.stop)
+        await _recording.wait_until_ready()
+    return _recording
+
+
 class IdbEndToEndTestCase(unittest.IsolatedAsyncioTestCase):
     """Run CLI tests against the shared companion and simulator."""
 
     environment: Environment
     companion: Companion
+    recording: Recording | None = None
 
     # Keep the result so companion death can stop the remaining tests.
     _result: unittest.TestResult | None = None
 
     def run(self, result: unittest.TestResult | None = None) -> Any:
         self._result = result if result is not None else self.defaultTestResult()
-        return super().run(self._result)
+        counts = self._result_counts()
+        started = time.monotonic()
+        try:
+            return super().run(self._result)
+        finally:
+            if self.recording is not None:
+                status = next(
+                    (
+                        name
+                        for name, count in self._result_counts().items()
+                        if count > counts[name]
+                    ),
+                    "passed",
+                )
+                self.recording.finish_test(status)
+                self.recording.event(
+                    "test_duration", seconds=time.monotonic() - started
+                )
+
+    def _result_counts(self) -> dict[str, int]:
+        assert self._result is not None
+        return {
+            "error": len(self._result.errors),
+            "failed": len(self._result.failures),
+            "unexpected_success": len(self._result.unexpectedSuccesses),
+            "skipped": len(self._result.skipped),
+            "expected_failure": len(self._result.expectedFailures),
+        }
 
     async def asyncSetUp(self) -> None:
         await super().asyncSetUp()
         self.environment = await shared_environment()
         self.companion = await shared_companion()
+        self.recording = await shared_recording(self.environment, self.companion)
+        self.recording.start_test(self.id())
         self.check_companion()
+
+    async def asyncTearDown(self) -> None:
+        if self.recording is not None:
+            if await self.recording.screenshot() is None:
+                try:
+                    screenshot = await self.idb("screenshot", "-", check=False)
+                except HarnessError as error:
+                    self.recording.event("screenshot_unavailable", reason=str(error))
+                else:
+                    if screenshot.returncode == 0:
+                        self.recording.save_screenshot(screenshot.stdout)
+                    else:
+                        self.recording.event(
+                            "screenshot_unavailable", reason=screenshot.error_text
+                        )
+        await super().asyncTearDown()
 
     def check_companion(self) -> None:
         died = self.companion.died()
@@ -601,11 +671,31 @@ class IdbEndToEndTestCase(unittest.IsolatedAsyncioTestCase):
         stdin: bytes | None = None,
     ) -> Completed:
         """Run idb; with check=True, report nonzero exits as failures or skips."""
-        completed = await run(
-            idb_argv(self.environment, self.companion, *args),
-            timeout=timeout,
-            stdin=stdin,
-        )
+        started = time.monotonic()
+        if self.recording is not None:
+            self.recording.command(["idb", *args])
+        try:
+            completed = await run(
+                idb_argv(self.environment, self.companion, *args),
+                timeout=timeout,
+                stdin=stdin,
+            )
+        except BaseException as error:
+            if self.recording is not None:
+                self.recording.event(
+                    "command_error",
+                    argv=["idb", *args],
+                    error=str(error),
+                    seconds=time.monotonic() - started,
+                )
+            raise
+        if self.recording is not None:
+            self.recording.event(
+                "command_finished",
+                argv=["idb", *args],
+                returncode=completed.returncode,
+                seconds=time.monotonic() - started,
+            )
         if check and completed.returncode != 0:
             self.fail_or_skip_for(" ".join(args), completed)
         return completed
@@ -746,6 +836,8 @@ class IdbProcess:
         self._stderr: bytes = b""
 
     async def __aenter__(self) -> "IdbProcess":
+        if self._test.recording is not None:
+            self._test.recording.command(["idb", *self._argv[3:]])
         self._process = await asyncio.create_subprocess_exec(
             *self._argv,
             stdin=asyncio.subprocess.DEVNULL,
@@ -765,6 +857,13 @@ class IdbProcess:
         except asyncio.TimeoutError:
             process.kill()
             await process.wait()
+
+        if self._test.recording is not None:
+            self._test.recording.event(
+                "command_finished",
+                argv=["idb", *self._argv[3:]],
+                returncode=process.returncode,
+            )
 
     @property
     def stdout(self) -> asyncio.StreamReader:

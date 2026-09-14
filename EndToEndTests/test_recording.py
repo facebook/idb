@@ -39,7 +39,7 @@ def png_image_data(path: Path) -> bytes:
 
 
 class RecordingTests(IdbEndToEndTestCase):
-    async def start_recording(self) -> Recording:
+    async def start_recording(self, encoding: str = "mjpeg") -> Recording:
         artifacts = artifact_directory()
         if artifacts is None:
             artifacts = Path(tempfile.mkdtemp(prefix="idb-recording-test-"))
@@ -49,7 +49,7 @@ class RecordingTests(IdbEndToEndTestCase):
             self.environment.device_set_path,
             artifacts,
             f"idb-recording-test-{uuid.uuid4().hex}",
-            encoding="mjpeg",
+            encoding=encoding,
         )
         self.addCleanup(recording.trace.close)
         self.addCleanup(recording.stop)
@@ -61,15 +61,16 @@ class RecordingTests(IdbEndToEndTestCase):
         width, _ = png_dimensions(image.read_bytes())
         cropped = image.with_name(f"{image.stem}-bar-{y}.png")
         self.addCleanup(cropped.unlink, missing_ok=True)
+        # sips centers the crop at offset (0, 0); inset each bar to avoid that default.
         completed = await run(
             [
                 "sips",
-                "--cropToHeightWidth",
-                str(height),
-                str(width),
                 "--cropOffset",
-                str(y),
-                "0",
+                str(y + 1),
+                "1",
+                "--cropToHeightWidth",
+                str(height - 2),
+                str(width - 2),
                 str(image),
                 "--out",
                 str(cropped),
@@ -77,6 +78,7 @@ class RecordingTests(IdbEndToEndTestCase):
             timeout=30,
         )
         self.assertEqual(completed.returncode, 0, completed.error_text)
+        self.assertEqual(png_dimensions(cropped.read_bytes()), (width - 2, height - 2))
         return png_image_data(cropped)
 
     async def test_recording_applies_test_and_command_bars(self) -> None:
@@ -104,18 +106,37 @@ class RecordingTests(IdbEndToEndTestCase):
         self.assertEqual((report["width"], report["height"]), (width, height))
         bar_height = (height - int(screen_height * 0.5)) // 2
         self.assertGreater(bar_height, 0)
-        self.assertNotEqual(
-            await self.crop_bar(before, bar_height, 0),
-            await self.crop_bar(test_image, bar_height, 0),
+        self.assertTrue(
+            await self.crop_bar(before, bar_height, 0)
+            != await self.crop_bar(test_image, bar_height, 0),
+            "Starting a test did not change the top bar",
         )
+        self.assertTrue(
+            await self.crop_bar(test_image, bar_height, 0)
+            == await self.crop_bar(command_image, bar_height, 0),
+            "Running a command changed the test title in the top bar",
+        )
+        self.assertTrue(
+            await self.crop_bar(test_image, bar_height, height - bar_height)
+            != await self.crop_bar(command_image, bar_height, height - bar_height),
+            "Running a command did not change the bottom bar",
+        )
+
+    async def test_recording_chooses_a_working_encoder(self) -> None:
+        recording = await self.start_recording(encoding="auto")
+        recording.start_test(self.id())
+        for index in range(30):
+            recording.send("chapter", text=f"Step {index}")
+        self.assertIsNotNone(await recording.screenshot())
+        await asyncio.to_thread(recording.stop)
         self.assertEqual(
-            await self.crop_bar(test_image, bar_height, 0),
-            await self.crop_bar(command_image, bar_height, 0),
+            recording.process.returncode, 0, recording.log.read_text(errors="replace")
         )
-        self.assertNotEqual(
-            await self.crop_bar(test_image, bar_height, height - bar_height),
-            await self.crop_bar(command_image, bar_height, height - bar_height),
-        )
+        report = json.loads(recording.video.with_suffix(".mov.json").read_text())
+        self.assertIn(report["encoding"], {"hevc", "mjpeg"})
+        if report["encoding"] == "mjpeg":
+            self.assertIn("Recording with hevc failed:", recording.log.read_text())
+        self.assertGreater(report["duration"], 0)
 
     async def test_recording_finalizes_after_sigterm(self) -> None:
         recording = await self.start_recording()
