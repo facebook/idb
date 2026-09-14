@@ -6,6 +6,7 @@
  */
 
 import CoreGraphics
+import FBControlCore
 @testable import FBSimulatorControl
 import XCTest
 import XPC
