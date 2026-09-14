@@ -201,7 +201,7 @@
 - (NSInteger)currentContentSizeCategory;
 /// Accepts a raw NSInteger: content size category index (1-12). See SimulatorContentSizeCategory.
 - (BOOL)setContentSizeCategory:(NSInteger)category error:(NSError **)error;
-- (id)currentIncreaseContrastMode;
+- (NSInteger)currentIncreaseContrastMode;
 - (BOOL)setIncreaseContrastEnabled:(BOOL)enabled error:(NSError **)error;
 @end
 

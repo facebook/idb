@@ -71,6 +71,12 @@ final class SimulatorSettingTests: XCTestCase {
     XCTAssertNil(SimulatorAppearance(argumentName: "purple"))
   }
 
+  func testIncreaseContrastModeValues() {
+    XCTAssertEqual(SimulatorIncreaseContrastMode(rawValue: 1), .disabled)
+    XCTAssertEqual(SimulatorIncreaseContrastMode(rawValue: 2), .enabled)
+    XCTAssertNil(SimulatorIncreaseContrastMode(rawValue: 0))
+  }
+
   func testPreferenceBacking() {
     // nil domain == Apple Global Domain, where the native AutoFill Passwords toggle lives.
     XCTAssertNil(SimulatorSettingKey.autoFillPasswords.preferenceBacking?.domain)

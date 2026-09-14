@@ -33,15 +33,23 @@ public enum SimulatorContentSizeCategory: Int, Sendable {
   case accessibilityExtraExtraExtraLarge = 12
 }
 
+enum SimulatorIncreaseContrastMode: Int {
+  case disabled = 1
+  case enabled = 2
+}
+
 private let slowAnimationsNotification = "com.apple.UIKit.SimulatorSlowMotionAnimationState"
 
 public enum SimulatorPreferencesError: Error, LocalizedError {
   case settingNotPreferenceBacked(setting: String)
+  case unexpectedIncreaseContrastMode(Int)
 
   public var errorDescription: String? {
     switch self {
     case let .settingNotPreferenceBacked(setting):
       return "Setting '\(setting)' is not backed by a preference"
+    case let .unexpectedIncreaseContrastMode(mode):
+      return "The simulator returned an unknown Increase Contrast mode: \(mode)"
     }
   }
 }
@@ -114,7 +122,9 @@ public struct SimulatorPreferencesCommands {
       return (try await currentAppearance()).argumentName ?? "light"
     case .contentSize:
       return (try await currentContentSizeCategory()).argumentName ?? "large"
-    case .hardwareKeyboard, .slowAnimations, .increaseContrast:
+    case .increaseContrast:
+      return try currentIncreaseContrastEnabled() ? "enabled" : "disabled"
+    case .hardwareKeyboard, .slowAnimations:
       // Set-only (SimDevice API / Darwin notification with no getter); no readable current value.
       return try await getCurrentPreference(name, domain: domain)
     }
@@ -146,6 +156,14 @@ public struct SimulatorPreferencesCommands {
 
   private func setSlowAnimationsEnabled(_ enabled: Bool) async throws {
     try await setDarwinNotificationState(enabled, name: slowAnimationsNotification)
+  }
+
+  private func currentIncreaseContrastEnabled() throws -> Bool {
+    let rawMode = simulator.device.currentIncreaseContrastMode()
+    guard let mode = SimulatorIncreaseContrastMode(rawValue: rawMode) else {
+      throw SimulatorPreferencesError.unexpectedIncreaseContrastMode(rawMode)
+    }
+    return mode == .enabled
   }
 
   private func setIncreaseContrastEnabled(_ enabled: Bool) async throws {
