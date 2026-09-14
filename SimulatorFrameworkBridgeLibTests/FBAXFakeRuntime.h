@@ -98,6 +98,11 @@ NS_ASSUME_NONNULL_BEGIN
 /** Every value passed to `-setAutomationModeEnabled:`, in order. Empty when nothing asked. */
 @property (nonatomic, strong) NSMutableArray<NSNumber *> *automationModeWrites;
 
+/** Current fake values by `FBAXDeviceSetting`. An absent setting models an unsupported runtime. */
+@property (nonatomic, strong) NSMutableDictionary<NSNumber *, NSNumber *> *deviceSettings;
+/** Every device-setting write as `{setting, enabled}`, in order. */
+@property (nonatomic, strong) NSMutableArray<NSDictionary<NSString *, NSNumber *> *> *deviceSettingWrites;
+
 /** What `-translatorAttributes:ofElement:` answers with. Nil means the read could not be performed. */
 @property (nullable, nonatomic, copy) NSDictionary<NSNumber *, id> *translatorAttributeValues;
 

@@ -13,6 +13,9 @@ public enum FBSimulatorSetting: Equatable {
   case hardwareKeyboard(Bool)
   case slowAnimations(Bool)
   case increaseContrast(Bool)
+  case reduceMotion(Bool)
+  case buttonShapes(Bool)
+  case voiceOver(Bool)
   case autoFillPasswords(Bool)
   case appearance(SimulatorAppearance)
   case contentSize(SimulatorContentSizeCategory)
@@ -31,6 +34,9 @@ enum SimulatorSettingKey: String, CaseIterable {
   case hardwareKeyboard = "hardware-keyboard"
   case slowAnimations = "slow-animations"
   case increaseContrast = "increase-contrast"
+  case reduceMotion = "reduce-motion"
+  case buttonShapes = "button-shapes"
+  case voiceOver = "voiceover"
   case autoFillPasswords = "autofill-passwords"
   case appearance
   case contentSize = "content-size"
@@ -38,6 +44,16 @@ enum SimulatorSettingKey: String, CaseIterable {
 }
 
 extension SimulatorSettingKey {
+  var accessibilityBridgeName: String? {
+    switch self {
+    case .reduceMotion, .buttonShapes, .voiceOver:
+      return rawValue
+    case .hardwareKeyboard, .slowAnimations, .increaseContrast, .autoFillPasswords, .appearance, .contentSize,
+      .locale:
+      return nil
+    }
+  }
+
   /// The `(domain, key)` for a preference-backed setting; `nil` for settings with no readable
   /// preference (SimDevice API or Darwin notification).
   ///
@@ -51,7 +67,8 @@ extension SimulatorSettingKey {
       return (domain: nil, key: "AutoFillPasswords")
     case .locale:
       return (domain: nil, key: "AppleLocale")
-    case .hardwareKeyboard, .slowAnimations, .increaseContrast, .appearance, .contentSize:
+    case .hardwareKeyboard, .slowAnimations, .increaseContrast, .reduceMotion, .buttonShapes,
+      .voiceOver, .appearance, .contentSize:
       return nil
     }
   }
@@ -95,6 +112,12 @@ extension FBSimulatorSettingResolution {
       self = .setting(.slowAnimations(try FBSimulatorSettingResolution.parseEnabled(name: name, value: value)))
     case .increaseContrast:
       self = .setting(.increaseContrast(try FBSimulatorSettingResolution.parseEnabled(name: name, value: value)))
+    case .reduceMotion:
+      self = .setting(.reduceMotion(try FBSimulatorSettingResolution.parseEnabled(name: name, value: value)))
+    case .buttonShapes:
+      self = .setting(.buttonShapes(try FBSimulatorSettingResolution.parseEnabled(name: name, value: value)))
+    case .voiceOver:
+      self = .setting(.voiceOver(try FBSimulatorSettingResolution.parseEnabled(name: name, value: value)))
     case .autoFillPasswords:
       self = .setting(.autoFillPasswords(try FBSimulatorSettingResolution.parseEnabled(name: name, value: value)))
     case .appearance:

@@ -143,13 +143,15 @@ enum AXBridgeRequest: Sendable {
   case readFrontmost(x: Double, y: Double, method: FBAXBridgeFrontmostMethod, options: AXBridgeReadRequest)
   case hitTest(x: Double, y: Double, attributes: [String]?)
   case write(AXBridgeWriteRequest)
+  case deviceSettingRead(String)
+  case deviceSettingWrite(String, enabled: Bool)
   case ping
 
   var mayRetry: Bool {
     switch self {
-    case .write:
+    case .write, .deviceSettingWrite:
       false
-    case .read, .readFrontmost, .hitTest, .ping:
+    case .read, .readFrontmost, .hitTest, .deviceSettingRead, .ping:
       true
     }
   }
@@ -177,6 +179,13 @@ enum AXBridgeRequest: Sendable {
       return arguments
     case let .write(request):
       return request.arguments
+    case let .deviceSettingRead(setting):
+      return ["accessibility", AXWire.Verb.settingsGet.rawValue]
+        + AXWire.Request.setting.argument(setting)
+    case let .deviceSettingWrite(setting, enabled):
+      return ["accessibility", AXWire.Verb.settingsSet.rawValue]
+        + AXWire.Request.setting.argument(setting)
+        + AXWire.Request.enabled.argument(enabled ? "true" : "false")
     case .ping:
       return ["accessibility", "ping"]
     }
@@ -208,6 +217,17 @@ enum AXBridgeRequest: Sendable {
       return payload
     case let .write(request):
       return request.payload
+    case let .deviceSettingRead(setting):
+      return [
+        AXWire.Request.verb.key: AXWire.Verb.settingsGet.rawValue,
+        AXWire.Request.setting.key: setting,
+      ]
+    case let .deviceSettingWrite(setting, enabled):
+      return [
+        AXWire.Request.verb.key: AXWire.Verb.settingsSet.rawValue,
+        AXWire.Request.setting.key: setting,
+        AXWire.Request.enabled.key: enabled,
+      ]
     case .ping:
       return [AXWire.Request.verb.key: "ping"]
     }

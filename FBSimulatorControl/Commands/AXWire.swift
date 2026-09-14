@@ -116,6 +116,7 @@ enum AXWire {
   /// `AXTreeRead`.
   enum Envelope: String {
     case ok
+    case enabled
     case error
     case errorKind = "error_kind"
     case empty
@@ -169,6 +170,8 @@ enum AXWire {
     case hitTest = "hittest"
     case perform
     case setValue = "setvalue"
+    case settingsGet = "settings-get"
+    case settingsSet = "settings-set"
     /// Asks a persistent `serve` guest to exit. Only a `serve` process has anything to answer.
     case shutdown
   }
@@ -201,6 +204,8 @@ enum AXWire {
     case method
     case action
     case value
+    case setting
+    case enabled
     case assertKey
     case assertValue
 
@@ -225,6 +230,8 @@ enum AXWire {
       case .method: "--method"
       case .action: "--action"
       case .value: "--value"
+      case .setting: "--setting"
+      case .enabled: "--enabled"
       case .assertKey: "--assert-key"
       case .assertValue: "--assert-value"
       }

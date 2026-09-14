@@ -206,6 +206,39 @@
 
 @end
 
+@implementation FBAXDeviceSettingOutcome
+
+- (instancetype)initWithStatus:(FBAXDeviceSettingStatus)status
+                       enabled:(BOOL)enabled
+                 failureReason:(nullable NSString *)failureReason
+{
+  self = [super init];
+  if (!self) {
+    return nil;
+  }
+  _status = status;
+  _enabled = enabled;
+  _failureReason = [failureReason copy];
+  return self;
+}
+
++ (instancetype)resolved:(BOOL)enabled
+{
+  return [[self alloc] initWithStatus:FBAXDeviceSettingStatusResolved enabled:enabled failureReason:nil];
+}
+
++ (instancetype)unavailable:(NSString *)failureReason
+{
+  return [[self alloc] initWithStatus:FBAXDeviceSettingStatusUnavailable enabled:NO failureReason:failureReason];
+}
+
++ (instancetype)failed:(NSString *)failureReason
+{
+  return [[self alloc] initWithStatus:FBAXDeviceSettingStatusFailed enabled:NO failureReason:failureReason];
+}
+
+@end
+
 @implementation FBAXFrontmostOutcome
 
 - (instancetype)initWithStatus:(FBAXFrontmostStatus)status
@@ -326,8 +359,12 @@ static const FBAXBoundSelector kFBAXBoundSelectors[] = {
   {"XCAccessibilityElement", "elementWithProcessIdentifier:", YES, "@@:i"},
   {"XCAccessibilityElement", "elementWithAXUIElement:", YES, "@@:^{__AXUIElement=}"},
   {"XCAccessibilityElement", "AXUIElement", NO, "^{__AXUIElement=}@:"},
-  // AccessibilityUtilities. `setAutomationEnabled:` takes BOOL, whose encoding differs by architecture.
+  // AccessibilityUtilities
   {"AXSettings", "sharedInstance", YES, "@@:"},
+  {"AXSettings", "reduceMotionEnabled", NO, "B@:"},
+  {"AXSettings", "setReduceMotionEnabled:", NO, "v@:B"},
+  {"AXSettings", "buttonShapesEnabled", NO, "B@:"},
+  {"AXSettings", "setButtonShapesEnabled:", NO, "v@:B"},
   // AccessibilityPlatformTranslation
   {"AXPTranslator", "sharediOSInstance", YES, "@@:"},
   {"AXPTranslator", "frontmostApplicationWithDisplayId:bridgeDelegateToken:", NO, "@@:I@"},
@@ -399,6 +436,10 @@ typedef struct {
   // because every read this bundle performs works either way — the flag changes how much structure the
   // target exposes, not whether it answers.
   bool (*automationEnabled)(void);
+  // Device-wide AccessibilityUtilities settings. Optional: each setting reports unsupported when its
+  // getter or setter is absent rather than breaking unrelated accessibility reads.
+  FBAXAccessibilitySettingGetFn voiceOverEnabled;
+  FBAXAccessibilitySettingSetFn voiceOverSetEnabled;
   // The single-fetch read's entry points. Optional as a group, for the same reason the snapshot selector
   // is resolved lazily: a runtime without them loses that one path and keeps every other.
   FBAXValueGetTypeFn valueGetType;                                  // borrows
@@ -674,10 +715,11 @@ static NSString *const kFrontboardVisibilityEndowment = @"com.apple.frontboard.v
     return nil;
   }
 
-  // Only the two this bind needs. The frontmost resolvers open the other two at their own call sites, so
-  // neither depends on this one having run.
+  // Only the two the tree-reader bind requires. AccessibilityUtilities is optional and is opened for
+  // device settings below without becoming a prerequisite for ordinary accessibility reads.
   dlopen(FBAXPathAXRuntime, RTLD_NOW);
   dlopen(FBAXPathXCTAutomationSupport, RTLD_NOW);
+  dlopen(FBAXPathAccessibilityUtilities, RTLD_NOW);
 
   Class frameworkClass = objc_lookUpClass("XCTAccessibilityFramework");
   if (!frameworkClass) {
@@ -712,6 +754,8 @@ static NSString *const kFrontboardVisibilityEndowment = @"com.apple.frontboard.v
   // Not part of the null check below: this one is optional, so a runtime without it degrades to
   // "cannot say" rather than failing a bind that every read would otherwise have survived.
   _functions.automationEnabled = dlsym(RTLD_DEFAULT, "_AXSAutomationEnabled");
+  _functions.voiceOverEnabled = dlsym(RTLD_DEFAULT, "_AXSVoiceOverTouchEnabled");
+  _functions.voiceOverSetEnabled = dlsym(RTLD_DEFAULT, "_AXSVoiceOverTouchSetEnabled");
   // Optional for the same reason, and checked where the single-fetch read uses them.
   _functions.valueGetType = dlsym(RTLD_DEFAULT, "AXValueGetType");
   _functions.valueGetValue = dlsym(RTLD_DEFAULT, "AXValueGetValue");
@@ -756,6 +800,83 @@ static NSString *const kFrontboardVisibilityEndowment = @"com.apple.frontboard.v
   // refuses it outright on a real device — and the target consults the preference per read, so what
   // matters to a caller is what the device now says, not that we asked.
   return [self automationModeEnabled];
+}
+
+- (nullable AXSettings *)deviceAccessibilitySettings
+{
+  Class<AXSettingsClass> settingsClass = (Class<AXSettingsClass>)objc_lookUpClass("AXSettings");
+  if (!settingsClass || ![settingsClass respondsToSelector:@selector(sharedInstance)]) {
+    return nil;
+  }
+  return [settingsClass sharedInstance];
+}
+
+- (FBAXDeviceSettingOutcome *)enabledStateForDeviceSetting:(FBAXDeviceSetting)setting
+{
+  @try {
+    switch (setting) {
+      case FBAXDeviceSettingReduceMotion: {
+        AXSettings *settings = [self deviceAccessibilitySettings];
+        if (!settings || ![settings respondsToSelector:@selector(reduceMotionEnabled)]) {
+          return [FBAXDeviceSettingOutcome unavailable:@"Reduce Motion is unavailable on this runtime"];
+        }
+        return [FBAXDeviceSettingOutcome resolved:[settings reduceMotionEnabled]];
+      }
+      case FBAXDeviceSettingButtonShapes: {
+        AXSettings *settings = [self deviceAccessibilitySettings];
+        if (!settings || ![settings respondsToSelector:@selector(buttonShapesEnabled)]) {
+          return [FBAXDeviceSettingOutcome unavailable:@"Button Shapes is unavailable on this runtime"];
+        }
+        return [FBAXDeviceSettingOutcome resolved:[settings buttonShapesEnabled]];
+      }
+      case FBAXDeviceSettingVoiceOver:
+        if (!_functions.voiceOverEnabled) {
+          return [FBAXDeviceSettingOutcome unavailable:@"VoiceOver is unavailable on this runtime"];
+        }
+        return [FBAXDeviceSettingOutcome resolved:_functions.voiceOverEnabled()];
+      default:
+        return [FBAXDeviceSettingOutcome unavailable:@"Unknown device setting"];
+    }
+  } @catch (NSException *exception) {
+    return [FBAXDeviceSettingOutcome failed:exception.reason ?: @"Device setting read raised an exception"];
+  }
+}
+
+- (FBAXDeviceSettingOutcome *)setEnabled:(BOOL)enabled forDeviceSetting:(FBAXDeviceSetting)setting
+{
+  @try {
+    switch (setting) {
+      case FBAXDeviceSettingReduceMotion: {
+        AXSettings *settings = [self deviceAccessibilitySettings];
+        if (!settings || ![settings respondsToSelector:@selector(reduceMotionEnabled)]
+            || ![settings respondsToSelector:@selector(setReduceMotionEnabled:)]) {
+          return [FBAXDeviceSettingOutcome unavailable:@"Reduce Motion is unavailable on this runtime"];
+        }
+        [settings setReduceMotionEnabled:enabled];
+        break;
+      }
+      case FBAXDeviceSettingButtonShapes: {
+        AXSettings *settings = [self deviceAccessibilitySettings];
+        if (!settings || ![settings respondsToSelector:@selector(buttonShapesEnabled)]
+            || ![settings respondsToSelector:@selector(setButtonShapesEnabled:)]) {
+          return [FBAXDeviceSettingOutcome unavailable:@"Button Shapes is unavailable on this runtime"];
+        }
+        [settings setButtonShapesEnabled:enabled];
+        break;
+      }
+      case FBAXDeviceSettingVoiceOver:
+        if (!_functions.voiceOverEnabled || !_functions.voiceOverSetEnabled) {
+          return [FBAXDeviceSettingOutcome unavailable:@"VoiceOver is unavailable on this runtime"];
+        }
+        _functions.voiceOverSetEnabled(enabled);
+        break;
+      default:
+        return [FBAXDeviceSettingOutcome unavailable:@"Unknown device setting"];
+    }
+  } @catch (NSException *exception) {
+    return [FBAXDeviceSettingOutcome failed:exception.reason ?: @"Device setting write raised an exception"];
+  }
+  return [self enabledStateForDeviceSetting:setting];
 }
 
 #pragma mark Element references

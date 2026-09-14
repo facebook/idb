@@ -23,6 +23,18 @@ final class SimulatorSettingTests: XCTestCase {
     XCTAssertEqual(try FBSimulatorSettingResolution(name: "increase-contrast", value: "disable", type: nil, domain: nil), .setting(.increaseContrast(false)))
   }
 
+  func testParseAccessibilitySettings() throws {
+    XCTAssertEqual(
+      try FBSimulatorSettingResolution(name: "reduce-motion", value: "enable", type: nil, domain: nil),
+      .setting(.reduceMotion(true)))
+    XCTAssertEqual(
+      try FBSimulatorSettingResolution(name: "button-shapes", value: "disable", type: nil, domain: nil),
+      .setting(.buttonShapes(false)))
+    XCTAssertEqual(
+      try FBSimulatorSettingResolution(name: "voiceover", value: "disable", type: nil, domain: nil),
+      .setting(.voiceOver(false)))
+  }
+
   func testParseInvalidEnableDisableThrows() {
     XCTAssertThrowsError(try FBSimulatorSettingResolution(name: "hardware-keyboard", value: "on", type: nil, domain: nil))
   }
@@ -85,6 +97,10 @@ final class SimulatorSettingTests: XCTestCase {
     XCTAssertEqual(SimulatorSettingKey.locale.preferenceBacking?.key, "AppleLocale")
     XCTAssertNil(SimulatorSettingKey.hardwareKeyboard.preferenceBacking)
     XCTAssertNil(SimulatorSettingKey.appearance.preferenceBacking)
+    XCTAssertEqual(SimulatorSettingKey.reduceMotion.accessibilityBridgeName, "reduce-motion")
+    XCTAssertEqual(SimulatorSettingKey.buttonShapes.accessibilityBridgeName, "button-shapes")
+    XCTAssertEqual(SimulatorSettingKey.voiceOver.accessibilityBridgeName, "voiceover")
+    XCTAssertNil(SimulatorSettingKey.increaseContrast.accessibilityBridgeName)
   }
 
   func testWeakTargetErrorMessage() {

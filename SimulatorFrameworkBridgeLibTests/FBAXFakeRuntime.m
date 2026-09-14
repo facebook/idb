@@ -93,6 +93,8 @@ static NSString *const kAXChildren = @"XC_kAXXCAttributeChildren";
   }
   _applicationElements = [NSMutableDictionary dictionary];
   _automationModeWrites = [NSMutableArray array];
+  _deviceSettings = [NSMutableDictionary dictionary];
+  _deviceSettingWrites = [NSMutableArray array];
   _hitTestOutcome = [FBAXHitTestOutcome empty];
   _windowServerOutcome = [FBAXFrontmostOutcome unresolved:@"no window-server outcome configured"];
   _runningBoardOutcome = [FBAXFrontmostOutcome unresolved:@"no running-board outcome configured"];
@@ -318,6 +320,24 @@ static NSDictionary *FBAXFakeSnapshotNode(FBAXFakeElement *element,
   // Read back, exactly as the live runtime does: what a caller learns is the state afterwards, not that
   // the write was attempted.
   return self.automationMode;
+}
+
+- (FBAXDeviceSettingOutcome *)enabledStateForDeviceSetting:(FBAXDeviceSetting)setting
+{
+  NSNumber *enabled = self.deviceSettings[@(setting)];
+  return enabled
+  ? [FBAXDeviceSettingOutcome resolved:enabled.boolValue]
+  : [FBAXDeviceSettingOutcome unavailable:@"setting unavailable"];
+}
+
+- (FBAXDeviceSettingOutcome *)setEnabled:(BOOL)enabled forDeviceSetting:(FBAXDeviceSetting)setting
+{
+  if (!self.deviceSettings[@(setting)]) {
+    return [FBAXDeviceSettingOutcome unavailable:@"setting unavailable"];
+  }
+  [self.deviceSettingWrites addObject:@{@"setting" : @(setting), @"enabled" : @(enabled)}];
+  self.deviceSettings[@(setting)] = @(enabled);
+  return [FBAXDeviceSettingOutcome resolved:enabled];
 }
 
 @end

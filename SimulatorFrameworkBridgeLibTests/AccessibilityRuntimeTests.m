@@ -816,6 +816,94 @@ static NSDictionary *FBAXTestsBoundaryNode(NSDictionary *response)
   XCTAssertEqualObjects(response[@"automation"][@"asserted"], @NO, @"asserted is NO when the write did not take");
 }
 
+#pragma mark - Device settings
+
+- (void)testEveryDeviceSettingNameReadsThroughItsSemanticSetting
+{
+  NSDictionary<NSString *, NSNumber *> *settings = @{
+    @"reduce-motion" : @(FBAXDeviceSettingReduceMotion),
+    @"button-shapes" : @(FBAXDeviceSettingButtonShapes),
+    @"voiceover" : @(FBAXDeviceSettingVoiceOver),
+  };
+  for (NSString *name in settings) {
+    NSNumber *setting = settings[name];
+    _runtime.deviceSettings[setting] = @YES;
+
+    NSDictionary *response = FBAXBridgeHandleRequest(@{@"verb" : @"settings-get", @"setting" : name});
+
+    XCTAssertEqualObjects(response[@"ok"], @YES, @"%@", name);
+    XCTAssertEqualObjects(response[@"enabled"], @YES, @"%@", name);
+  }
+}
+
+- (void)testDeviceSettingWriteReturnsReadBackState
+{
+  _runtime.deviceSettings[@(FBAXDeviceSettingReduceMotion)] = @NO;
+
+  NSDictionary *response = FBAXBridgeHandleRequest(
+    @{
+      @"verb" : @"settings-set",
+      @"setting" : @"reduce-motion",
+      @"enabled" : @YES,
+    }
+  );
+
+  XCTAssertEqualObjects(
+    _runtime.deviceSettingWrites,
+    (@[@{@"setting" : @(FBAXDeviceSettingReduceMotion), @"enabled" : @YES}])
+  );
+  XCTAssertEqualObjects(response[@"enabled"], @YES);
+}
+
+- (void)testUnavailableDeviceSettingIsANamedFailure
+{
+  NSDictionary *response = FBAXBridgeHandleRequest(
+    @{
+      @"verb" : @"settings-get",
+      @"setting" : @"voiceover",
+    }
+  );
+
+  XCTAssertEqualObjects(response[@"ok"], @NO);
+  XCTAssertEqualObjects(response[@"error_kind"], @"reader_unavailable");
+  XCTAssertTrue([response[@"error"] containsString:@"unavailable"]);
+}
+
+- (void)testUnavailableDeviceSettingWriteDoesNotReachRuntime
+{
+  NSDictionary *response = FBAXBridgeHandleRequest(
+    @{
+      @"verb" : @"settings-set",
+      @"setting" : @"voiceover",
+      @"enabled" : @YES,
+    }
+  );
+
+  XCTAssertEqualObjects(response[@"ok"], @NO);
+  XCTAssertEqualObjects(response[@"error_kind"], @"reader_unavailable");
+  XCTAssertEqualObjects(_runtime.deviceSettingWrites, @[]);
+}
+
+- (void)testMalformedDeviceSettingRequestsAreRefused
+{
+  NSDictionary *unknown = FBAXBridgeHandleRequest(
+    @{
+      @"verb" : @"settings-get",
+      @"setting" : @"future-setting",
+    }
+  );
+  NSDictionary *missingValue = FBAXBridgeHandleRequest(
+    @{
+      @"verb" : @"settings-set",
+      @"setting" : @"reduce-motion",
+    }
+  );
+
+  XCTAssertEqualObjects(unknown[@"error_kind"], @"bad_request");
+  XCTAssertEqualObjects(missingValue[@"error_kind"], @"bad_request");
+  XCTAssertEqualObjects(_runtime.deviceSettingWrites, @[]);
+}
+
 #pragma mark - Write dispatch
 
 // Seeds the hit-test so a point-addressed write lands on an element reporting `attributes`, and hands the

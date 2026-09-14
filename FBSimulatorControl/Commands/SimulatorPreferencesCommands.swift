@@ -42,12 +42,15 @@ private let slowAnimationsNotification = "com.apple.UIKit.SimulatorSlowMotionAni
 
 public enum SimulatorPreferencesError: Error, LocalizedError {
   case settingNotPreferenceBacked(setting: String)
+  case accessibilitySettingsReadbackMismatch(setting: String, expected: Bool, actual: Bool)
   case unexpectedIncreaseContrastMode(Int)
 
   public var errorDescription: String? {
     switch self {
     case let .settingNotPreferenceBacked(setting):
       return "Setting '\(setting)' is not backed by a preference"
+    case let .accessibilitySettingsReadbackMismatch(setting, expected, actual):
+      return "The simulator reported \(setting)=\(actual) after \(expected) was requested"
     case let .unexpectedIncreaseContrastMode(mode):
       return "The simulator returned an unknown Increase Contrast mode: \(mode)"
     }
@@ -79,6 +82,12 @@ public struct SimulatorPreferencesCommands {
       try await setSlowAnimationsEnabled(enabled)
     case let .increaseContrast(enabled):
       try await setIncreaseContrastEnabled(enabled)
+    case let .reduceMotion(enabled):
+      try await setAccessibilitySetting(.reduceMotion, enabled: enabled)
+    case let .buttonShapes(enabled):
+      try await setAccessibilitySetting(.buttonShapes, enabled: enabled)
+    case let .voiceOver(enabled):
+      try await setAccessibilitySetting(.voiceOver, enabled: enabled)
     case let .autoFillPasswords(enabled):
       try await setPreferenceBacked(.autoFillPasswords, value: enabled ? "true" : "false", type: "bool")
     case let .appearance(appearance):
@@ -124,6 +133,8 @@ public struct SimulatorPreferencesCommands {
       return (try await currentContentSizeCategory()).argumentName ?? "large"
     case .increaseContrast:
       return try currentIncreaseContrastEnabled() ? "enabled" : "disabled"
+    case .reduceMotion, .buttonShapes, .voiceOver:
+      return try await currentAccessibilitySettingEnabled(key) ? "enabled" : "disabled"
     case .hardwareKeyboard, .slowAnimations:
       // Set-only (SimDevice API / Darwin notification with no getter); no readable current value.
       return try await getCurrentPreference(name, domain: domain)
@@ -156,6 +167,30 @@ public struct SimulatorPreferencesCommands {
 
   private func setSlowAnimationsEnabled(_ enabled: Bool) async throws {
     try await setDarwinNotificationState(enabled, name: slowAnimationsNotification)
+  }
+
+  private func currentAccessibilitySettingEnabled(_ key: SimulatorSettingKey) async throws -> Bool {
+    guard let settingName = key.accessibilityBridgeName else {
+      throw SimulatorPreferencesError.settingNotPreferenceBacked(setting: key.rawValue)
+    }
+    let data = try await AXBridgeOneshotTransport(simulator: simulator)
+      .send(.deviceSettingRead(settingName))
+    return try AXDeviceSettingResponse(data: data).enabled
+  }
+
+  private func setAccessibilitySetting(_ key: SimulatorSettingKey, enabled: Bool) async throws {
+    guard let settingName = key.accessibilityBridgeName else {
+      throw SimulatorPreferencesError.settingNotPreferenceBacked(setting: key.rawValue)
+    }
+    let data = try await AXBridgeOneshotTransport(simulator: simulator)
+      .send(.deviceSettingWrite(settingName, enabled: enabled))
+    let actual = try AXDeviceSettingResponse(data: data).enabled
+    guard actual == enabled else {
+      throw SimulatorPreferencesError.accessibilitySettingsReadbackMismatch(
+        setting: settingName,
+        expected: enabled,
+        actual: actual)
+    }
   }
 
   private func currentIncreaseContrastEnabled() throws -> Bool {

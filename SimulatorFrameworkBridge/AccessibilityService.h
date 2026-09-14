@@ -12,9 +12,9 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  * Runs an accessibility command inside the simulator.
  *
- * `describe`, `hittest`, `perform`, and `setvalue` execute one request and print its JSON
- * response. `serve` accepts length-prefixed JSON requests on a Unix-domain socket and reuses the
- * initialized accessibility runtime. Arguments after the action are parsed as flag/value pairs.
+ * `describe`, `hittest`, `perform`, `setvalue`, `settings-get`, and `settings-set` execute one request
+ * and print its JSON response. `serve` accepts length-prefixed JSON requests on a Unix-domain socket and
+ * reuses the initialized accessibility runtime. Arguments after the action are parsed as flag/value pairs.
  *
  * @return 0 on success, 1 on failure.
  */

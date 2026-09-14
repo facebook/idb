@@ -87,7 +87,7 @@ extension AXTreeRead {
   /// An empty response is a protocol violation — an app always has a root element. `truncated`
   /// defaults to `false` when the guest omits it.
   init(wholeTreeResponse data: Data, pid: pid_t) throws {
-    let response = try Self.validatedResponse(fromResponse: data, pid: pid)
+    let response = try AXBridgeResponse.validated(data, context: "pid \(pid)", pid: pid)
     guard let tree = try Self.node(fromValidatedResponse: response, pid: pid) else {
       throw AXBridgeError.guestFailure("pid \(pid): empty response to a whole-tree read")
     }
@@ -103,12 +103,10 @@ extension AXTreeRead {
   /// guest's failure kind, so a resolved app with no accessibility server reads the same as via `--pid`;
   /// `method` is named only when the strategy itself could not answer.
   init(frontmostResponse data: Data, method: FBAXBridgeFrontmostMethod) throws {
-    guard let object = try? JSONSerialization.jsonObject(with: data), let response = object as? [String: Any] else {
-      throw AXBridgeError.guestFailure("unparseable fused frontmost describe response")
-    }
-    guard (response[AXWire.Envelope.ok.rawValue] as? Bool) == true else {
-      throw Self.failure(fromResponse: response, pid: nil, frontmostMethod: method)
-    }
+    let response = try AXBridgeResponse.validated(
+      data,
+      context: "fused frontmost describe",
+      frontmostMethod: method)
     guard let tree = response[AXWire.Envelope.tree.rawValue] as? [String: Any] else {
       throw AXBridgeError.guestFailure("fused frontmost describe response without a tree")
     }
@@ -130,12 +128,7 @@ extension AXTreeRead {
   /// `nil` when the guest reports no element at the point — a valid empty result. A failure throws,
   /// classified by the guest's kind. A hit carries no truncation flag or modal.
   init?(hitTestResponse data: Data) throws {
-    guard let object = try? JSONSerialization.jsonObject(with: data), let response = object as? [String: Any] else {
-      throw AXBridgeError.guestFailure("unparseable hit-test response")
-    }
-    guard (response[AXWire.Envelope.ok.rawValue] as? Bool) == true else {
-      throw Self.failure(fromResponse: response, pid: nil, frontmostMethod: nil)
-    }
+    let response = try AXBridgeResponse.validated(data, context: "hit-test")
     if (response[AXWire.Envelope.empty.rawValue] as? Bool) == true {
       return nil
     }
@@ -153,12 +146,7 @@ extension AXTreeRead {
   /// Whether a `perform`/`setvalue` landed. `empty` is a value, not a failure: only the caller can say
   /// an unoccupied point is wrong.
   static func writeLanded(fromResponse data: Data) throws -> Bool {
-    guard let object = try? JSONSerialization.jsonObject(with: data), let response = object as? [String: Any] else {
-      throw AXBridgeError.guestFailure("unparseable write response")
-    }
-    guard (response[AXWire.Envelope.ok.rawValue] as? Bool) == true else {
-      throw Self.failure(fromResponse: response, pid: nil, frontmostMethod: nil)
-    }
+    let response = try AXBridgeResponse.validated(data, context: "write")
     return (response[AXWire.Envelope.empty.rawValue] as? Bool) != true
   }
 
@@ -173,59 +161,6 @@ extension AXTreeRead {
       return nil
     }
     return AccessibilityModalInfo(kind: kind, elementType: elementType, label: modal["label"] as? String)
-  }
-
-  /// Parses the guest JSON and validates its `ok`/error framing, returning the top-level response
-  /// dictionary of a successful response. A failed response throws whatever the guest's kind says it is.
-  private static func validatedResponse(fromResponse data: Data, pid: pid_t) throws -> [String: Any] {
-    guard let object = try? JSONSerialization.jsonObject(with: data), let response = object as? [String: Any] else {
-      throw AXBridgeError.guestFailure("pid \(pid): unparseable guest response")
-    }
-    guard (response[AXWire.Envelope.ok.rawValue] as? Bool) == true else {
-      throw Self.failure(fromResponse: response, pid: pid, frontmostMethod: nil)
-    }
-    return response
-  }
-
-  /// The typed error a failed guest response means, from the kind the guest tagged it with. An
-  /// unrecognized or absent kind is a `guestFailure` carrying the guest's message, so a newer guest
-  /// degrades rather than failing to parse. `pid` is the process the caller named, used when the guest
-  /// did not report one; `frontmostMethod` is non-nil only for a fused frontmost read.
-  private static func failure(
-    fromResponse response: [String: Any],
-    pid: pid_t?,
-    frontmostMethod: FBAXBridgeFrontmostMethod?
-  ) -> AXBridgeError {
-    let message = (response[AXWire.Envelope.error.rawValue] as? String) ?? "the guest reported a failure with no message"
-    // `exactly:` so a pid too large for `pid_t` is a rejected response, not a trap.
-    let reportedPid = (response[AXWire.Envelope.pid.rawValue] as? Int).flatMap(pid_t.init(exactly:)) ?? pid
-    let rawKind = response[AXWire.Envelope.errorKind.rawValue] as? String
-    switch rawKind.flatMap(AXWire.ErrorKind.init(rawValue:)) {
-    case .applicationUnavailable:
-      return .applicationUnavailable(pid: reportedPid)
-    case .applicationNotResponding:
-      return .applicationNotResponding(pid: reportedPid)
-    case .readerUnavailable:
-      return .readerUnavailable(message)
-    case .frontmostUnresolved:
-      // Only a fused frontmost read asked for a strategy. The kind arriving on any other verb is a guest
-      // that answered something it was not asked, so it degrades rather than inventing a method to blame.
-      guard let frontmostMethod else {
-        return .guestFailure(message)
-      }
-      return .frontmostUnresolved(method: frontmostMethod, reason: message)
-    case .assertionFailed:
-      // Only a write can provoke this, and the conformer re-raises it against the query it resolved —
-      // the guest knows what it found under the point, but not which marker sent the write there.
-      return .assertionFailed(message)
-    case .badRequest, .none:
-      // A malformed request is a host bug, not something a user can act on, so it stays opaque and
-      // carries the guest's description of what it rejected.
-      guard let pid else {
-        return .guestFailure(message)
-      }
-      return .guestFailure("pid \(pid): \(message)")
-    }
   }
 
   /// The node a successful response carries, or `nil` for a successful *empty* result

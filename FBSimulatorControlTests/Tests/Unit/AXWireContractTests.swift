@@ -150,6 +150,8 @@ final class AXWireContractTests: XCTestCase {
       .hitTest: "hittest",
       .perform: "perform",
       .setValue: "setvalue",
+      .settingsGet: "settings-get",
+      .settingsSet: "settings-set",
       .shutdown: "shutdown",
     ]
     XCTAssertEqual(Set(AXWire.Verb.allCases), Set(expected.keys), "every verb must have its wire value pinned")
@@ -197,6 +199,8 @@ final class AXWireContractTests: XCTestCase {
       .method: ("method", "--method"),
       .action: ("action", "--action"),
       .value: ("value", "--value"),
+      .setting: ("setting", "--setting"),
+      .enabled: ("enabled", "--enabled"),
       .assertKey: ("assertKey", "--assert-key"),
       .assertValue: ("assertValue", "--assert-value"),
     ]
@@ -269,6 +273,39 @@ final class AXWireContractTests: XCTestCase {
     XCTAssertNil(transportRequest.payload["assertValue"])
     XCTAssertEqual(transportRequest.arguments.count % 2, 0, "the guest reads argv in pairs, so a flag must never be left without a value")
     XCTAssertFalse(transportRequest.mayRetry, "writes must not be resent after a dropped response")
+  }
+
+  func testDeviceSettingRequestsRenderTheSameFieldsForBothTransports() {
+    let read = AXBridgeRequest.deviceSettingRead("button-shapes")
+    XCTAssertEqual(read.arguments, ["accessibility", "settings-get", "--setting", "button-shapes"])
+    XCTAssertEqual(
+      read.payload as NSDictionary,
+      ["verb": "settings-get", "setting": "button-shapes"] as NSDictionary)
+    XCTAssertTrue(read.mayRetry)
+
+    let write = AXBridgeRequest.deviceSettingWrite("reduce-motion", enabled: true)
+    XCTAssertEqual(
+      write.arguments,
+      ["accessibility", "settings-set", "--setting", "reduce-motion", "--enabled", "true"])
+    XCTAssertEqual(
+      write.payload as NSDictionary,
+      ["verb": "settings-set", "setting": "reduce-motion", "enabled": true] as NSDictionary)
+    XCTAssertFalse(write.mayRetry)
+  }
+
+  func testDeviceSettingResponsePreservesTypedGuestFailures() throws {
+    let success = Data(#"{"ok":true,"enabled":true}"#.utf8)
+    XCTAssertTrue(try AXDeviceSettingResponse(data: success).enabled)
+
+    let failure = Data(#"{"ok":false,"error":"Button Shapes is unavailable","error_kind":"reader_unavailable"}"#.utf8)
+    XCTAssertThrowsError(try AXDeviceSettingResponse(data: failure)) { error in
+      guard let bridgeError = error as? AXBridgeError,
+        case let .readerUnavailable(message) = bridgeError
+      else {
+        return XCTFail("Expected readerUnavailable, got \(error)")
+      }
+      XCTAssertEqual(message, "Button Shapes is unavailable")
+    }
   }
 
   // MARK: - Frontmost-method request selectors

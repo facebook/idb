@@ -90,11 +90,15 @@ static NSString *const kRequestMethod = @"method";
 // The semantic action a `perform` asks for, and the string a `setvalue` writes.
 static NSString *const kRequestAction = @"action";
 static NSString *const kRequestValue = @"value";
+// Device-wide accessibility setting name and requested state.
+static NSString *const kRequestSetting = @"setting";
+static NSString *const kRequestEnabled = @"enabled";
 // What the element at the point must still be for the write to go ahead: one node attribute key and the
 // value it has to equal. Optional, and only meaningful together.
 static NSString *const kRequestAssertKey = @"assertKey";
 static NSString *const kRequestAssertValue = @"assertValue";
 static NSString *const kResponseOk = @"ok";
+static NSString *const kResponseEnabled = @"enabled";
 static NSString *const kResponseTree = @"tree";
 static NSString *const kResponseError = @"error";
 // A successful hit-test that found no element at the point: `{ok:true, empty:true}` — distinct from a
@@ -158,6 +162,8 @@ static NSString *const kVerbHitTest = @"hittest";
 static NSString *const kVerbShutdown = @"shutdown";
 static NSString *const kVerbPerform = @"perform";
 static NSString *const kVerbSetValue = @"setvalue";
+static NSString *const kVerbGetDeviceSetting = @"settings-get";
+static NSString *const kVerbSetDeviceSetting = @"settings-set";
 static NSString *const kActionServe = @"serve";
 
 // The semantic actions a `perform` request can name — the wire spelling of `FBAXAction`, which is what the
@@ -1263,6 +1269,67 @@ static NSDictionary *FBAXBridgeSetValue(id<FBAXRuntime> runtime, NSDictionary *r
   return FBAXBridgeWriteResponse(outcome, pid);
 }
 
+static BOOL FBAXBridgeDeviceSettingForName(NSString *name, FBAXDeviceSetting *setting)
+{
+  if ([name isEqualToString:@"reduce-motion"]) {
+    *setting = FBAXDeviceSettingReduceMotion;
+  } else if ([name isEqualToString:@"button-shapes"]) {
+    *setting = FBAXDeviceSettingButtonShapes;
+  } else if ([name isEqualToString:@"voiceover"]) {
+    *setting = FBAXDeviceSettingVoiceOver;
+  } else {
+    return NO;
+  }
+  return YES;
+}
+
+static NSDictionary<NSString *, id> *FBAXBridgeDeviceSetting(id<FBAXRuntime> runtime,
+                                                             NSDictionary<NSString *, id> *request,
+                                                             BOOL shouldSet)
+{
+  id requestedName = request[kRequestSetting];
+  if (![requestedName isKindOfClass:NSString.class]) {
+    return FBAXBridgeTaggedErrorResponse(@"device settings require a setting name", kErrorKindBadRequest, nil);
+  }
+  FBAXDeviceSetting setting;
+  if (!FBAXBridgeDeviceSettingForName(requestedName, &setting)) {
+    return FBAXBridgeTaggedErrorResponse(
+      [NSString stringWithFormat:@"unsupported device setting: %@", requestedName],
+      kErrorKindBadRequest,
+      nil
+    );
+  }
+
+  id requestedEnabled = request[kRequestEnabled];
+  if (shouldSet && ![requestedEnabled isKindOfClass:NSNumber.class]) {
+    return FBAXBridgeTaggedErrorResponse(
+      @"settings-set requires a boolean enabled value",
+      kErrorKindBadRequest,
+      nil
+    );
+  }
+  FBAXDeviceSettingOutcome *outcome = shouldSet
+  ? [runtime setEnabled:[requestedEnabled boolValue] forDeviceSetting:setting]
+  : [runtime enabledStateForDeviceSetting:setting];
+  switch (outcome.status) {
+    case FBAXDeviceSettingStatusResolved:
+      return @{kResponseOk : @YES, kResponseEnabled : @(outcome.enabled)};
+    case FBAXDeviceSettingStatusUnavailable:
+      return FBAXBridgeTaggedErrorResponse(
+        outcome.failureReason ?: [NSString stringWithFormat:@"device setting %@ is unavailable", requestedName],
+        kErrorKindReaderUnavailable,
+        nil
+      );
+    case FBAXDeviceSettingStatusFailed:
+    default:
+      return FBAXBridgeTaggedErrorResponse(
+        outcome.failureReason ?: [NSString stringWithFormat:@"device setting %@ failed", requestedName],
+        kErrorKindReaderUnavailable,
+        nil
+      );
+  }
+}
+
 static NSDictionary<NSString *, id> *FBAXBridgeDispatchRequest(NSDictionary<NSString *, id> *request)
 {
   // The frame is JSON from the client, so the value can be of any type — narrow it to a string before
@@ -1273,12 +1340,14 @@ static NSDictionary<NSString *, id> *FBAXBridgeDispatchRequest(NSDictionary<NSSt
   BOOL isHitTest = [verb isEqualToString:kVerbHitTest];
   BOOL isPerform = [verb isEqualToString:kVerbPerform];
   BOOL isSetValue = [verb isEqualToString:kVerbSetValue];
+  BOOL isGetDeviceSetting = [verb isEqualToString:kVerbGetDeviceSetting];
+  BOOL isSetDeviceSetting = [verb isEqualToString:kVerbSetDeviceSetting];
   if ([verb isEqualToString:kVerbShutdown]) {
     // Answered here, above the pid check and the runtime bind: shutting down needs neither, and a
     // reader that cannot bind is exactly the one a caller most wants to be able to end.
     return @{kResponseOk : @YES, kResponseShutdown : @YES};
   }
-  if (!isDescribe && !isHitTest && !isPerform && !isSetValue) {
+  if (!isDescribe && !isHitTest && !isPerform && !isSetValue && !isGetDeviceSetting && !isSetDeviceSetting) {
     return FBAXBridgeTaggedErrorResponse(
       [NSString stringWithFormat:@"unsupported verb: %@", requestedVerb ?: @"(nil)"],
       kErrorKindBadRequest,
@@ -1286,9 +1355,8 @@ static NSDictionary<NSString *, id> *FBAXBridgeDispatchRequest(NSDictionary<NSSt
     );
   }
 
-  // Every verb takes a `pid`, and a non-positive one names no process. The accessibility runtime does not
-  // reject it — pid 0 reads back as an application with an empty tree — so it is rejected here, before
-  // any setup, and every verb answers alike.
+  // Process-addressed verbs reject non-positive pids before runtime setup. Device-setting verbs carry no
+  // pid, but an explicitly malformed one is still refused rather than silently ignored.
   NSNumber *requestedPid = [request[kRequestPid] isKindOfClass:NSNumber.class] ? request[kRequestPid] : nil;
   if (requestedPid && requestedPid.intValue <= 0) {
     return FBAXBridgeTaggedErrorResponse(
@@ -1308,6 +1376,10 @@ static NSDictionary<NSString *, id> *FBAXBridgeDispatchRequest(NSDictionary<NSSt
       kErrorKindReaderUnavailable,
       nil
     );
+  }
+
+  if (isGetDeviceSetting || isSetDeviceSetting) {
+    return FBAXBridgeDeviceSetting(runtime, request, isSetDeviceSetting);
   }
 
   // `hittest` is self-contained: with a pid it hit-tests that app; with no pid it hit-tests display-wide
@@ -1552,6 +1624,16 @@ int handleAccessibilityAction(NSString *action, NSArray<NSString *> *arguments)
       request[kRequestAction] = argValue;
     } else if ([flag isEqualToString:@"--value"]) {
       request[kRequestValue] = argValue;
+    } else if ([flag isEqualToString:@"--setting"]) {
+      request[kRequestSetting] = argValue;
+    } else if ([flag isEqualToString:@"--enabled"]) {
+      if ([argValue isEqualToString:@"true"]) {
+        request[kRequestEnabled] = @YES;
+      } else if ([argValue isEqualToString:@"false"]) {
+        request[kRequestEnabled] = @NO;
+      } else {
+        request[kRequestEnabled] = argValue;
+      }
     } else if ([flag isEqualToString:@"--assert-key"]) {
       request[kRequestAssertKey] = argValue;
     } else if ([flag isEqualToString:@"--assert-value"]) {
@@ -1598,9 +1680,12 @@ NSDictionary<NSString *, NSString *> *FBAXBridgeWireConstantsForTesting(void)
     @"request.method" : kRequestMethod,
     @"request.action" : kRequestAction,
     @"request.value" : kRequestValue,
+    @"request.setting" : kRequestSetting,
+    @"request.enabled" : kRequestEnabled,
     @"request.assertKey" : kRequestAssertKey,
     @"request.assertValue" : kRequestAssertValue,
     @"envelope.ok" : kResponseOk,
+    @"envelope.enabled" : kResponseEnabled,
     @"envelope.tree" : kResponseTree,
     @"envelope.error" : kResponseError,
     @"envelope.empty" : kResponseEmpty,
@@ -1632,6 +1717,8 @@ NSDictionary<NSString *, NSString *> *FBAXBridgeWireConstantsForTesting(void)
     @"verb.hittest" : kVerbHitTest,
     @"verb.perform" : kVerbPerform,
     @"verb.setvalue" : kVerbSetValue,
+    @"verb.settingsGet" : kVerbGetDeviceSetting,
+    @"verb.settingsSet" : kVerbSetDeviceSetting,
     @"verb.shutdown" : kVerbShutdown,
     @"action.press" : kActionPress,
     @"action.scrollUp" : kActionScrollUp,

@@ -254,6 +254,39 @@ extern NSString *_Nullable FBAXSignatureMismatch(
  */
 extern NSArray<NSString *> *FBAXSignatureWarnings(void);
 
+#pragma mark - Device settings
+
+/** Device-wide simulator accessibility settings with authoritative getters and setters. */
+typedef NS_ENUM(NSUInteger, FBAXDeviceSetting) {
+  FBAXDeviceSettingReduceMotion,
+  FBAXDeviceSettingButtonShapes,
+  FBAXDeviceSettingVoiceOver,
+};
+
+/** How a device-setting read or write-readback turned out. */
+typedef NS_ENUM(NSUInteger, FBAXDeviceSettingStatus) {
+  /** `enabled` is the authoritative value. */
+  FBAXDeviceSettingStatusResolved,
+  /** This runtime does not expose every API needed to represent the operation truthfully. */
+  FBAXDeviceSettingStatusUnavailable,
+  /** A private API raised while performing the operation; `failureReason` says why. */
+  FBAXDeviceSettingStatusFailed,
+};
+
+@interface FBAXDeviceSettingOutcome : NSObject
+
+@property (nonatomic, readonly) FBAXDeviceSettingStatus status;
+/** Meaningful iff `Resolved`. */
+@property (nonatomic, readonly, getter = isEnabled) BOOL enabled;
+/** Non-nil iff `Unavailable` or `Failed`. */
+@property (nullable, nonatomic, readonly, copy) NSString *failureReason;
+
++ (instancetype)resolved:(BOOL)enabled;
++ (instancetype)unavailable:(NSString *)failureReason;
++ (instancetype)failed:(NSString *)failureReason;
+
+@end
+
 #pragma mark - The runtime
 
 /**
@@ -385,6 +418,12 @@ extern NSArray<NSString *> *FBAXSignatureWarnings(void);
  * earlier is still in force.
  */
 - (BOOL)setAutomationModeEnabled:(BOOL)enabled;
+
+/** Reads a device-wide setting. */
+- (FBAXDeviceSettingOutcome *)enabledStateForDeviceSetting:(FBAXDeviceSetting)setting;
+
+/** Writes a device-wide setting and returns its authoritative read-back outcome. */
+- (FBAXDeviceSettingOutcome *)setEnabled:(BOOL)enabled forDeviceSetting:(FBAXDeviceSetting)setting;
 
 @end
 
