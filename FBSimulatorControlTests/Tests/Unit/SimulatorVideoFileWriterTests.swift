@@ -181,12 +181,15 @@ final class SimulatorVideoFileWriterTests: XCTestCase {
       XCTAssertTrue(writer.consume(sampleBuffer(frameIndex: index, timestamp: timestamp), logger: logger))
       if index % 6 == 0 { writer.writeTimedMetadata("Chapter \(index / 6)", logger: logger) }
     }
-    // BUG: Nanosecond chapter durations overflow the movie's sample-duration field.
-    do {
-      try await writer.finish()
-      XCTFail("Expected chapter finalization to reject the encoder time scale")
-    } catch {
-      XCTAssertTrue(error.localizedDescription.contains("-17771"))
+    try await writer.finish()
+    let asset = AVURLAsset(url: URL(fileURLWithPath: path))
+    let tracks = try await asset.loadTracks(withMediaType: .text)
+    let track = try XCTUnwrap(tracks.first)
+    XCTAssertEqual(try Self.readChapterTitles(track: track, asset: asset), ["Chapter 0", "Chapter 1", "Chapter 2"])
+    let groups = try await asset.loadChapterMetadataGroups(bestMatchingPreferredLanguages: ["und"])
+    XCTAssertEqual(groups.count, 3)
+    for (index, group) in groups.enumerated() {
+      XCTAssertEqual(group.timeRange.start.seconds, Double(index * 6), accuracy: 0.002)
     }
   }
 

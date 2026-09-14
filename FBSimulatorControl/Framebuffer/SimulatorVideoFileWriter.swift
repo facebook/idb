@@ -63,6 +63,8 @@ extension SimulatorVideoFileWriterError: LocalizedError {
 /// timed-metadata path (`writeTimedMetadata`) arrives from other isolation domains (the stdin
 /// handler), so the chapter state it shares with `consume`/`finish` is guarded by `chapterLock`.
 final class SimulatorVideoFileWriter: EncodedSampleConsumer, TimedMetadataConsumer, @unchecked Sendable {
+  private static let chapterTimeScale: CMTimeScale = 600
+
   private let outputURL: URL
   private let fileType: AVFileType
   private let chaptersEnabled: Bool
@@ -204,6 +206,8 @@ final class SimulatorVideoFileWriter: EncodedSampleConsumer, TimedMetadataConsum
     }
     let chapterInput = AVAssetWriterInput(mediaType: .text, outputSettings: nil, sourceFormatHint: formatDescription)
     chapterInput.expectsMediaDataInRealTime = false
+    // Chapter durations use 32-bit ticks; nanosecond precision overflows after 4.3 seconds.
+    chapterInput.mediaTimeScale = Self.chapterTimeScale
     // Tag the chapter titles as language-undetermined; players and `ffprobe -show_chapters` group
     // chapters by language, and an untagged track is skipped by AVFoundation's language-filtered reader.
     chapterInput.languageCode = "und"
@@ -229,7 +233,7 @@ final class SimulatorVideoFileWriter: EncodedSampleConsumer, TimedMetadataConsum
     }
     var resolved: [(time: CMTime, text: String)] = []
     for chapter in chapters {
-      let time = chapter.time.isValid ? chapter.time : sessionStart
+      let time = CMTimeConvertScale(chapter.time.isValid ? chapter.time : sessionStart, timescale: Self.chapterTimeScale, method: .roundHalfAwayFromZero)
       // QuickTime text samples cannot overlap. Updates within one video frame keep the latest title.
       if resolved.last?.time == time {
         resolved[resolved.count - 1] = (time, chapter.text)
@@ -237,11 +241,12 @@ final class SimulatorVideoFileWriter: EncodedSampleConsumer, TimedMetadataConsum
         resolved.append((time, chapter.text))
       }
     }
-    let minDuration = CMTimeMake(value: 1, timescale: 600)
+    let minDuration = CMTimeMake(value: 1, timescale: Self.chapterTimeScale)
+    let end = CMTimeConvertScale(videoEnd, timescale: Self.chapterTimeScale, method: .roundHalfAwayFromZero)
     let deadline = ContinuousClock.now + .seconds(10)
     for (index, chapter) in resolved.enumerated() {
       let start = chapter.time
-      let rawEnd = index + 1 < resolved.count ? resolved[index + 1].time : videoEnd
+      let rawEnd = index + 1 < resolved.count ? resolved[index + 1].time : end
       var duration = CMTimeSubtract(rawEnd, start)
       if !duration.isValid || duration <= .zero {
         duration = minDuration
