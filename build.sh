@@ -242,27 +242,53 @@ function pinned_version() {
   package_swift_pins | awk -v name="$1" '$1 == name { print $2 }'
 }
 
+# Keyed on the URL, not on the YAML key above it. The key is a nickname XcodeGen
+# never resolves anything by, so matching on it lets a rename quietly take the
+# package out of the comparison with Package.swift; the URL is the identity both
+# manifests actually state. Trailing slashes come off before the repository name
+# is taken: they name the same repository, and left on they would reduce the
+# identity to nothing. An entry with no url: falls back to its key, which is the
+# only thing left to call it.
+#
 # The packages: block ends at the first non-blank line that is not indented, and
-# an entry ends at the first line indented less than its own keys, so neither can
-# run on into a sibling. An entry header is a bare key with nothing after the
+# an entry ends where the next one begins, so neither can run on into a sibling. An entry header is a bare key with nothing after the
 # colon; anything else at that indentation is an entry this cannot read, and
 # companion_unreadable_entries below reports it rather than letting it vanish.
 function _companion_packages_awk() {
   awk -v want_version="$1" '
+    function identity(   n) {
+      if (url == "") return name
+      n = url
+      sub(/\/+$/, "", n)
+      sub(/\.git$/, "", n)
+      sub(/.*\//, "", n)
+      return n
+    }
+    function flush() {
+      if (name == "") return
+      if (!want_version) print identity()
+      else if (version != "") print identity(), version
+    }
     /^packages:[[:space:]]*$/ { in_packages = 1; next }
-    in_packages && NF && !/^[[:space:]]/ { in_packages = 0 }
+    in_packages && NF && !/^[[:space:]]/ { in_packages = 0; flush(); name = "" }
     !in_packages { next }
     /^  [^[:space:]#][^:]*:[[:space:]]*$/ {
+      flush()
       name = $1
       sub(/:$/, "", name)
-      if (!want_version) print name
+      url = ""
+      version = ""
       next
     }
-    want_version && name != "" && ($1 == "exactVersion:" || $1 == "version:") {
+    name != "" && $1 == "url:" {
+      url = $2
+      gsub(/["\047]/, "", url)
+    }
+    name != "" && ($1 == "exactVersion:" || $1 == "version:") {
       version = $2
       gsub(/["\047]/, "", version)
-      print name, version
     }
+    END { flush() }
   ' Companion/project.yml
 }
 
@@ -331,15 +357,29 @@ function check_package_pins() {
   # nothing to compare against and are covered by the exactness check above
   # alone. Package.resolved, by contrast, records every package, so a pinned one
   # missing from it is itself an error.
+  # Each parsed once: the loops below ask them a question per dependency.
+  local companion resolved
+  companion="$(companion_pins)"
+  resolved="$(resolved_pins)"
+
+  # A guard that matches nothing passes every case in it, so say so rather than
+  # reporting agreement between two listings with no package in common. Asked of
+  # what the manifests declare rather than what they pin, so that a manifest with
+  # nothing pinned is reported by the exactness check above and not twice more.
+  if [ -z "$(comm -12 <(package_swift_packages | sort) <(companion_packages | sort))" ]; then
+    echo "error: Package.swift and Companion/project.yml declare no package in common" >&2
+    errors=1
+  fi
+
   local name version companion_version resolved_version
   while read -r name version; do
-    companion_version="$(companion_pins | awk -v n="$name" '$1 == n { print $2 }')"
+    companion_version="$(printf '%s\n' "$companion" | awk -v n="$name" '$1 == n { print $2 }')"
     if [ -n "$companion_version" ] && [ "$companion_version" != "$version" ]; then
       echo "error: $name is pinned to $version in Package.swift but to $companion_version in Companion/project.yml" >&2
       errors=1
     fi
 
-    resolved_version="$(resolved_pins | awk -v n="$name" '$1 == n { print $2 }')"
+    resolved_version="$(printf '%s\n' "$resolved" | awk -v n="$name" '$1 == n { print $2 }')"
     if [ -z "$resolved_version" ]; then
       echo "error: $name is pinned in Package.swift but absent from Package.resolved" >&2
       errors=1
@@ -357,7 +397,7 @@ function check_package_pins() {
   # side: it is the one case where the companion has nothing to be checked
   # against at all, so passing it over would leave the pin unchecked by anything.
   while read -r name version; do
-    resolved_version="$(resolved_pins | awk -v n="$name" '$1 == n { print $2 }')"
+    resolved_version="$(printf '%s\n' "$resolved" | awk -v n="$name" '$1 == n { print $2 }')"
     if [ -z "$resolved_version" ]; then
       echo "error: $name is pinned in Companion/project.yml but absent from Package.resolved" >&2
       errors=1
@@ -365,7 +405,7 @@ function check_package_pins() {
       echo "error: $name is pinned to $version in Companion/project.yml but Package.resolved records $resolved_version" >&2
       errors=1
     fi
-  done < <(companion_pins)
+  done < <(printf '%s\n' "$companion")
 
   [ "$errors" -eq 0 ] || exit 1
 }

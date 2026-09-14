@@ -339,14 +339,8 @@ dir="$(stage_package renamed 1.27.5 1.38.1)"
 sed_inplace 's/^  swift-protobuf:/  swiftprotobuf:/' "$dir/Companion/project.yml"
 sed_inplace 's/exactVersion: 1.38.1/exactVersion: 1.31.0/' "$dir/Companion/project.yml"
 
-# BUG: the two manifests are matched on the companion's YAML key, so renaming it
-# takes the package out of the comparison with Package.swift and the
-# disagreement beneath it goes unreported. What does stop the build is the
-# resolved graph noticing a package called `swiftprotobuf` that SwiftPM never
-# resolved -- a true statement about a nickname, and no help at all in finding
-# the version that actually disagrees. Flipped in the following commit.
-assert_rejected "a renamed companion key drops the package from the comparison" "$dir" \
-    "swiftprotobuf is pinned in Companion/project.yml but absent from Package.resolved"
+assert_rejected "a renamed companion key does not hide the version underneath it" "$dir" \
+    "swift-protobuf is pinned to 1.38.1 in Package.swift but to 1.31.0 in Companion/project.yml"
 
 # Every key is left alone and every url: is repointed, so a guard keyed on the
 # key still finds both packages in common and a guard keyed on the url finds
@@ -357,10 +351,8 @@ sed_inplace 's|url: https://github.com/grpc/grpc-swift.git|url: https://github.c
 sed_inplace 's|url: https://github.com/apple/swift-protobuf.git|url: https://github.com/apple/swift-log.git|' \
     "$dir/Companion/project.yml"
 
-# BUG: a guard that matches nothing passes every case in it, so two manifests
-# with no package in common are reported as agreeing -- flipped in the following
-# commit.
-assert_accepted "manifests that declare no package in common" "$dir"
+assert_rejected "manifests that declare no package in common" "$dir" \
+    "Package.swift and Companion/project.yml declare no package in common"
 
 # A quoted url: is as valid as a bare one and XcodeGen resolves both to the same
 # package, so whatever identity the guard derives has to survive the quotes.
