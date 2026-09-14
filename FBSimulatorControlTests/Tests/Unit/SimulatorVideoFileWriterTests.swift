@@ -128,6 +128,45 @@ final class SimulatorVideoFileWriterTests: XCTestCase {
     XCTAssertTrue(textTracks.isEmpty, "no text track should be added when disabled")
   }
 
+  func testChapterMarkersAtTheSameFrame() async throws {
+    let path = (NSTemporaryDirectory() as NSString).appendingPathComponent("chapters-same-frame-\(UUID().uuidString).mov")
+    defer { try? FileManager.default.removeItem(atPath: path) }
+    let logger = CapturingLogger()
+    let writer = SimulatorVideoFileWriter(filePath: path, fileType: .mov, chaptersEnabled: true, logger: logger)
+    XCTAssertTrue(writer.consume(sampleBuffer(frameIndex: 0), logger: logger))
+    writer.writeTimedMetadata("First", logger: logger)
+    writer.writeTimedMetadata("Second", logger: logger)
+    for index in 1..<30 {
+      XCTAssertTrue(writer.consume(sampleBuffer(frameIndex: index), logger: logger))
+    }
+    // BUG: Two chapter markers at one frame prevent the movie from finalizing.
+    do {
+      try await writer.finish()
+      XCTFail("Expected overlapping chapters to prevent finalization")
+    } catch {
+      XCTAssertTrue(String(describing: error).contains("assetWriterFailedToFinish"))
+    }
+  }
+
+  func testManyChaptersAcrossALongTimeline() async throws {
+    let path = (NSTemporaryDirectory() as NSString).appendingPathComponent("chapters-long-\(UUID().uuidString).mov")
+    defer { try? FileManager.default.removeItem(atPath: path) }
+    let logger = CapturingLogger()
+    let writer = SimulatorVideoFileWriter(filePath: path, fileType: .mov, chaptersEnabled: true, logger: logger)
+    let titles = (0..<30).map { "Chapter \($0)" }
+    for index in 0..<30 {
+      XCTAssertTrue(writer.consume(sampleBuffer(frameIndex: index * 300), logger: logger))
+      writer.writeTimedMetadata(titles[index], logger: logger)
+    }
+    XCTAssertTrue(writer.consume(sampleBuffer(frameIndex: 9000), logger: logger))
+    try await writer.finish()
+    let asset = AVURLAsset(url: URL(fileURLWithPath: path))
+    let tracks = try await asset.loadTracks(withMediaType: .text)
+    let track = try XCTUnwrap(tracks.first)
+    // BUG: A full chapter input causes buffered titles to be discarded.
+    XCTAssertLessThan(try Self.readChapterTitles(track: track, asset: asset).count, titles.count)
+  }
+
   func testFinishWithoutFramesDoesNotThrow() async throws {
     let path = (NSTemporaryDirectory() as NSString).appendingPathComponent("SimulatorVideoFileWriterTests-empty-\(UUID().uuidString).mp4")
     defer { try? FileManager.default.removeItem(atPath: path) }
