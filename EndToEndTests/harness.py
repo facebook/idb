@@ -38,6 +38,7 @@ IDB_COMPANION_PATH_ENV = "IDB_COMPANION_PATH"
 IDB_SETUP_BIN_ENV = "IDB_SETUP_BIN"
 READ_ONLY_CLIENT_ENV = "IDB_E2E_READ_ONLY_CLIENT"
 STRICT_ENV = "IDB_E2E_STRICT"
+ARTIFACTS_ENV = "IDB_E2E_ARTIFACTS_DIR"
 
 T = TypeVar("T")
 
@@ -339,6 +340,15 @@ def _executable(path: Path, name: str) -> Path:
     return path
 
 
+def artifact_directory() -> Path | None:
+    value = os.environ.get(ARTIFACTS_ENV) or os.environ.get("TEST_RESULT_ARTIFACTS_DIR")
+    if not value:
+        return None
+    directory = Path(value)
+    directory.mkdir(parents=True, exist_ok=True)
+    return directory
+
+
 class Companion:
     """Share a companion across tests.
 
@@ -350,7 +360,12 @@ class Companion:
         # Use /tmp to stay within the Unix socket path limit on macOS.
         self.directory = Path(tempfile.mkdtemp(prefix="idb-e2e-", dir="/tmp"))
         self.socket_path = self.directory / "companion.sock"
-        self.log_path = self.directory / "companion.log"
+        artifacts = artifact_directory()
+        self.log_path = (
+            artifacts / f"{self.directory.name}-companion.log"
+            if artifacts is not None
+            else self.directory / "companion.log"
+        )
         self.process = subprocess.Popen(
             [
                 str(environment.companion_path),

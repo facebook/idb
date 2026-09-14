@@ -41,8 +41,9 @@ class Copy:
         for path in sorted(glob.glob(str(self.root / self.pattern))):
             relative_path = Path(self.destination) / Path(path).relative_to(self.root)
             target = output / relative_path
-            target.parent.mkdir(parents=True, exist_ok=True)
-            shutil.copy(path, target)
+            if Path(path).resolve() != target.resolve():
+                target.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copy(path, target)
             names.append(str(relative_path))
         return names
 
@@ -102,11 +103,14 @@ def diagnostic_plan(
     *,
     home: Path,
     companion_root: Path,
+    artifacts_dir: Path | None = None,
     device_set: Path | None = None,
     udid: str | None = None,
 ) -> list[Source]:
     """List host diagnostics, adding simulator diagnostics when a device is known."""
     plan = host_sources(home=home, companion_root=companion_root)
+    if artifacts_dir is not None:
+        plan.append(Copy(artifacts_dir, "idb-e2e-*-companion.log"))
     if device_set is not None and udid:
         plan += simulator_sources(device_set=device_set, udid=udid)
     return plan
@@ -139,6 +143,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser.add_argument("--device-set", type=Path)
     parser.add_argument("--udid")
     parser.add_argument("--companion-root", type=Path, default=Path("/tmp"))
+    parser.add_argument("--artifacts-dir", type=Path)
     arguments = parser.parse_args(argv)
 
     device_set = arguments.device_set or _optional_path(
@@ -155,6 +160,11 @@ def main(argv: Sequence[str] | None = None) -> int:
     plan = diagnostic_plan(
         home=Path.home(),
         companion_root=arguments.companion_root,
+        artifacts_dir=arguments.artifacts_dir
+        or _optional_path(
+            os.environ.get("IDB_E2E_ARTIFACTS_DIR")
+            or os.environ.get("TEST_RESULT_ARTIFACTS_DIR")
+        ),
         device_set=device_set,
         udid=udid,
     )

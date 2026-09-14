@@ -257,13 +257,14 @@ jobs:
         run: |
           IDB_BIN="$(command -v idb)" \
           IDB_COMPANION_PATH="$PWD/Build/Distribution/idb_companion" \
+          IDB_E2E_ARTIFACTS_DIR="$RUNNER_TEMP/end-to-end-diagnostics" \
           IDB_E2E_STRICT=1 \
           python -m unittest discover -s EndToEndTests -t . -v
-      - name: Collect diagnostics on failure
-        if: failure()
-        run: python3 -m CI.collect_diagnostics --output "$RUNNER_TEMP/end-to-end-diagnostics"
-      - name: Upload diagnostics on failure
-        if: failure()
+      - name: Collect diagnostics
+        if: always()
+        run: python3 -m CI.collect_diagnostics --artifacts-dir "$RUNNER_TEMP/end-to-end-diagnostics" --output "$RUNNER_TEMP/end-to-end-diagnostics"
+      - name: Upload diagnostics
+        if: always()
         uses: actions/upload-artifact@v5
         with:
           name: end-to-end-diagnostics

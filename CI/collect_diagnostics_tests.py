@@ -10,12 +10,14 @@ from __future__ import annotations
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 from .collect_diagnostics import (
     Capture,
     collect,
     Copy,
     diagnostic_plan,
+    main,
     SIMULATOR_LOG_WINDOW,
 )
 
@@ -125,6 +127,80 @@ class CollectTests(unittest.TestCase):
         self.root = Path(self.enterContext(tempfile.TemporaryDirectory()))
         self.output = self.root / "diagnostics"
         self.run = Recorder()
+
+    def test_collects_flat_companion_logs_into_a_separate_directory(self) -> None:
+        artifacts = self.root / "artifacts"
+        write(artifacts / "idb-e2e-a-companion.log", "first")
+        write(artifacts / "idb-e2e-b-companion.log", "second")
+        collected = collect(
+            diagnostic_plan(
+                home=self.root / "home",
+                companion_root=self.root / "tmp",
+                artifacts_dir=artifacts,
+            ),
+            self.output,
+            self.run,
+        )
+        self.assertEqual(
+            [(name, (self.output / name).read_text()) for name in collected],
+            [
+                ("idb-e2e-a-companion.log", "first"),
+                ("idb-e2e-b-companion.log", "second"),
+            ],
+        )
+
+    def test_retains_logs_already_in_the_output_directory(self) -> None:
+        log = write(self.output / "idb-e2e-a-companion.log", "retained")
+        with mock.patch("sys.stderr") as stderr:
+            collected = collect(
+                [Copy(self.output, "idb-e2e-*-companion.log")], self.output, self.run
+            )
+        self.assertEqual(collected, [log.name])
+        self.assertEqual(log.read_text(), "retained")
+        stderr.write.assert_not_called()
+
+    def test_artifact_directory_selection(self) -> None:
+        explicit = self.root / "explicit"
+        runner = self.root / "runner"
+        override = self.root / "override"
+        for directory in (explicit, runner, override):
+            write(directory / "idb-e2e-a-companion.log", directory.name)
+        cases = [
+            ({"TEST_RESULT_ARTIFACTS_DIR": str(runner)}, [], "runner"),
+            (
+                {
+                    "IDB_E2E_ARTIFACTS_DIR": str(explicit),
+                    "TEST_RESULT_ARTIFACTS_DIR": str(runner),
+                },
+                [],
+                "explicit",
+            ),
+            (
+                {"IDB_E2E_ARTIFACTS_DIR": str(explicit)},
+                ["--artifacts-dir", str(override)],
+                "override",
+            ),
+        ]
+        for environment, arguments, expected in cases:
+            with (
+                self.subTest(expected=expected),
+                mock.patch.dict("os.environ", environment, clear=True),
+            ):
+                self.assertEqual(
+                    main(
+                        [
+                            "--output",
+                            str(self.output),
+                            "--companion-root",
+                            str(self.root / "tmp"),
+                            *arguments,
+                        ]
+                    ),
+                    0,
+                )
+                self.assertEqual(
+                    (self.output / "idb-e2e-a-companion.log").read_text(), expected
+                )
 
     def test_companion_log_collision(self) -> None:
         write(self.root / "idb-e2e-a" / "companion.log", "first")
