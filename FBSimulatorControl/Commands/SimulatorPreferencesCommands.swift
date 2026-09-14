@@ -43,6 +43,8 @@ private let slowAnimationsNotification = "com.apple.UIKit.SimulatorSlowMotionAni
 public enum SimulatorPreferencesError: Error, LocalizedError {
   case settingNotPreferenceBacked(setting: String)
   case accessibilitySettingsReadbackMismatch(setting: String, expected: Bool, actual: Bool)
+  case unexpectedAppearance(Int)
+  case unexpectedContentSizeCategory(Int)
   case unexpectedIncreaseContrastMode(Int)
 
   public var errorDescription: String? {
@@ -51,6 +53,10 @@ public enum SimulatorPreferencesError: Error, LocalizedError {
       return "Setting '\(setting)' is not backed by a preference"
     case let .accessibilitySettingsReadbackMismatch(setting, expected, actual):
       return "The simulator reported \(setting)=\(actual) after \(expected) was requested"
+    case let .unexpectedAppearance(appearance):
+      return "The simulator returned an unknown appearance value: \(appearance)"
+    case let .unexpectedContentSizeCategory(category):
+      return "The simulator returned an unknown content size category: \(category)"
     case let .unexpectedIncreaseContrastMode(mode):
       return "The simulator returned an unknown Increase Contrast mode: \(mode)"
     }
@@ -143,9 +149,22 @@ public struct SimulatorPreferencesCommands {
 
   // MARK: - Private
 
+  static func appearance(rawValue: Int) throws -> SimulatorAppearance {
+    guard let appearance = SimulatorAppearance(rawValue: rawValue) else {
+      throw SimulatorPreferencesError.unexpectedAppearance(rawValue)
+    }
+    return appearance
+  }
+
+  static func contentSizeCategory(rawValue: Int) throws -> SimulatorContentSizeCategory {
+    guard let category = SimulatorContentSizeCategory(rawValue: rawValue) else {
+      throw SimulatorPreferencesError.unexpectedContentSizeCategory(rawValue)
+    }
+    return category
+  }
+
   private func currentAppearance() async throws -> SimulatorAppearance {
-    let raw = simulator.device.currentUIInterfaceStyle()
-    return SimulatorAppearance(rawValue: raw) ?? .light
+    try Self.appearance(rawValue: simulator.device.currentUIInterfaceStyle())
   }
 
   private func setAppearance(_ appearance: SimulatorAppearance) async throws {
@@ -153,8 +172,7 @@ public struct SimulatorPreferencesCommands {
   }
 
   private func currentContentSizeCategory() async throws -> SimulatorContentSizeCategory {
-    let raw = simulator.device.currentContentSizeCategory()
-    return SimulatorContentSizeCategory(rawValue: raw) ?? .large
+    try Self.contentSizeCategory(rawValue: simulator.device.currentContentSizeCategory())
   }
 
   private func setContentSizeCategory(_ category: SimulatorContentSizeCategory) async throws {

@@ -83,6 +83,13 @@ final class SimulatorSettingTests: XCTestCase {
     XCTAssertNil(SimulatorAppearance(argumentName: "purple"))
   }
 
+  func testUnknownCoreSimulatorSettingValuesThrow() throws {
+    XCTAssertEqual(try SimulatorPreferencesCommands.appearance(rawValue: 1), .light)
+    XCTAssertThrowsError(try SimulatorPreferencesCommands.appearance(rawValue: 0))
+    XCTAssertEqual(try SimulatorPreferencesCommands.contentSizeCategory(rawValue: 4), .large)
+    XCTAssertThrowsError(try SimulatorPreferencesCommands.contentSizeCategory(rawValue: 0))
+  }
+
   func testIncreaseContrastModeValues() {
     XCTAssertEqual(SimulatorIncreaseContrastMode(rawValue: 1), .disabled)
     XCTAssertEqual(SimulatorIncreaseContrastMode(rawValue: 2), .enabled)
