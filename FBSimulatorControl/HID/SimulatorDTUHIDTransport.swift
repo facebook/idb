@@ -129,6 +129,9 @@ actor SimulatorDTUHIDTransport {
   private var contact = DigitizerContactTracker()
   private var twoFingerContact = DigitizerContactTracker()
   private var coldDrainState = ColdDrainState.pending
+  // A drain claims a snapshot of the send count; later sends remain outstanding.
+  private var sendGeneration = 0
+  private var drainedGeneration = 0
 
   // MARK: - Initializers
 
@@ -273,6 +276,8 @@ actor SimulatorDTUHIDTransport {
 
   /// Writes an already-encoded message and resolves when the XPC send barrier fires.
   private func deliver(_ object: xpc_object_t) async throws {
+    // Make the send visible to flush before the first suspension.
+    sendGeneration += 1
     try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
       xpc_connection_send_message(connection, object)
       xpc_connection_send_barrier(connection) {
@@ -281,27 +286,38 @@ actor SimulatorDTUHIDTransport {
     }
   }
 
-  /// Allows time for sent events to reach the guest before disconnecting.
+  /// Allows time for events sent before this call to reach the guest before disconnecting.
   /// The first drain waits for a barrier reply plus `replyTail`; later drains wait `drain`.
+  /// Returns immediately when no sends are outstanding.
   func flush() async throws {
-    guard case .done = coldDrainState else {
-      return try await coldDrain()
+    let generation = sendGeneration
+    guard generation > drainedGeneration else {
+      return
     }
-    try await clock.sleep(DTUHIDTiming.drain)
+    if case .done = coldDrainState {
+      try await clock.sleep(DTUHIDTiming.drain)
+    } else {
+      let coldGeneration = try await coldDrain()
+      if generation > coldGeneration {
+        try await clock.sleep(DTUHIDTiming.drain)
+      }
+    }
+    drainedGeneration = max(drainedGeneration, generation)
   }
 
   private enum ColdDrainState {
     case pending
-    case running(Task<Void, Error>)
+    case running(Task<Int, Error>)
     case done
   }
 
-  /// Concurrent flushes share this task. Cancelling a waiter cannot interrupt another's drain.
-  private func coldDrain() async throws {
+  /// Returns the last send covered by the shared drain. Waiter cancellation leaves it running.
+  private func coldDrain() async throws -> Int {
     if case let .running(task) = coldDrainState {
       return try await task.value
     }
-    let task = Task<Void, Error> {
+    let generation = sendGeneration
+    let task = Task<Int, Error> {
       do {
         try await self.performColdDrain()
       } catch {
@@ -310,9 +326,10 @@ actor SimulatorDTUHIDTransport {
       }
       // Settle state before any waiter can resume on the actor.
       self.coldDrainState = .done
+      return generation
     }
     coldDrainState = .running(task)
-    try await task.value
+    return try await task.value
   }
 
   /// The daemon replies to a barrier without decoding its inert keyboard payload.

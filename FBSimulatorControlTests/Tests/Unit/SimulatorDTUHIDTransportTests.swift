@@ -240,7 +240,7 @@ final class SimulatorDTUHIDTransportTests: XCTestCase {
 
   // MARK: - Drain (driven through FBSimulatorHID, injected clock, no daemon)
 
-  func testFlushWithoutAGestureStillDrains() async throws {
+  func testFlushWithoutAGestureIsANoOp() async throws {
     let recorder = DrainRecorder()
     let hid = makeHID(recorder)
 
@@ -248,8 +248,8 @@ final class SimulatorDTUHIDTransportTests: XCTestCase {
 
     let replies = await recorder.replies
     let sleeps = await recorder.sleeps
-    XCTAssertEqual(replies, 1)
-    XCTAssertEqual(sleeps, [DTUHIDTiming.replyTail])
+    XCTAssertEqual(replies, 0)
+    XCTAssertEqual(sleeps, [])
   }
 
   func testFirstGestureSendsBarrierAndTailsAfterReply() async throws {
@@ -282,7 +282,7 @@ final class SimulatorDTUHIDTransportTests: XCTestCase {
     XCTAssertEqual(sleeps, [DTUHIDTiming.replyTail, DTUHIDTiming.drain])
   }
 
-  func testRedundantFlushDrainsAgain() async throws {
+  func testRedundantFlushIsANoOp() async throws {
     let recorder = DrainRecorder()
     let hid = makeHID(recorder)
 
@@ -290,7 +290,7 @@ final class SimulatorDTUHIDTransportTests: XCTestCase {
     try await hid.flush()
 
     let sleeps = await recorder.sleeps
-    XCTAssertEqual(sleeps, [DTUHIDTiming.replyTail, DTUHIDTiming.drain])
+    XCTAssertEqual(sleeps, [DTUHIDTiming.replyTail])
   }
 
   func testConcurrentFirstGesturesShareOneReplyAwait() async throws {
@@ -352,11 +352,71 @@ final class SimulatorDTUHIDTransportTests: XCTestCase {
     XCTAssertEqual(sleeps, [DTUHIDTiming.replyTail])
   }
 
+  func testOverlappingFlushDrainsASendAfterTheColdBarrier() async throws {
+    let recorder = DrainRecorder()
+    let gate = SleepGate()
+    let transport = makeTransport(recorder, gate: gate)
+
+    try await transport.send(
+      messageType: "IndigoKeyboardButtonEvent", payload: IndigoKeyboardButtonEvent(usageCode: 0, state: .up))
+    let firstFlush = Task { try await transport.flush() }
+    await gate.awaitEntry()
+    try await transport.send(
+      messageType: "IndigoKeyboardButtonEvent", payload: IndigoKeyboardButtonEvent(usageCode: 0, state: .up))
+
+    func flushThenRelease(_ transport: isolated SimulatorDTUHIDTransport) async throws {
+      // The release can run on this actor only once flush has suspended on the cold drain.
+      let release = Task {
+        _ = transport
+        await gate.open()
+      }
+      try await transport.flush()
+      await release.value
+    }
+    try await flushThenRelease(transport)
+    try await firstFlush.value
+    try await transport.flush()
+
+    let sleeps = await recorder.sleeps
+    XCTAssertEqual(sleeps, [DTUHIDTiming.replyTail, DTUHIDTiming.drain])
+  }
+
+  func testSendDuringADrainIsDrainedByTheNextFlush() async throws {
+    let recorder = DrainRecorder()
+    let gate = SleepGate()
+    let hid = makeHID(recorder, gate: gate)
+    hid.flushesAfterEachEvent = false
+
+    try await sendGesture(on: hid)
+    let inFlight = Task { try await hid.flush() }
+    await gate.awaitEntry()
+    try await sendGesture(on: hid)
+    await gate.open()
+    try await inFlight.value
+
+    try await hid.flush()
+
+    let sleeps = await recorder.sleeps
+    XCTAssertEqual(sleeps, [DTUHIDTiming.replyTail, DTUHIDTiming.drain])
+  }
+
   // MARK: - Helpers
 
   /// A HID over a DTUHID transport whose drain waits are recorded rather than taken. The connection
   /// names no real service, so writes resolve locally and never reach a daemon.
-  private func makeHID(_ recorder: DrainRecorder, reply: DrainReply = .answer) -> FBSimulatorHID {
+  private func makeHID(
+    _ recorder: DrainRecorder, reply: DrainReply = .answer, gate: SleepGate? = nil
+  ) -> FBSimulatorHID {
+    FBSimulatorHID(
+      transport: .dtuhid(makeTransport(recorder, reply: reply, gate: gate)),
+      purple: SimulatorPurpleHIDTransport(simulator: nil),
+      notification: SimulatorDarwinNotificationTransport(simulator: nil),
+      simulator: nil)
+  }
+
+  private func makeTransport(
+    _ recorder: DrainRecorder, reply: DrainReply = .answer, gate: SleepGate? = nil
+  ) -> SimulatorDTUHIDTransport {
     let connection = xpc_connection_create("com.facebook.fbsimulatorcontrol.test.dtuhid", nil)
     xpc_connection_set_event_handler(connection) { _ in }
     xpc_connection_resume(connection)
@@ -365,13 +425,9 @@ final class SimulatorDTUHIDTransportTests: XCTestCase {
       mainScreenSize: CGSize(width: 100, height: 200),
       mainScreenScale: 2.0,
       productFamily: .familyiPhone,
-      clock: recordingClock(recorder, reply: reply))
+      clock: recordingClock(recorder, reply: reply, gate: gate))
     addTeardownBlock { transport.disconnect() }
-    return FBSimulatorHID(
-      transport: .dtuhid(transport),
-      purple: SimulatorPurpleHIDTransport(simulator: nil),
-      notification: SimulatorDarwinNotificationTransport(simulator: nil),
-      simulator: nil)
+    return transport
   }
 
   /// One inert keypress. Usage `0` is "no event indicated", so a guest would ignore it even if one
@@ -415,9 +471,48 @@ final class SimulatorDTUHIDTransportTests: XCTestCase {
     }
   }
 
-  private func recordingClock(_ recorder: DrainRecorder, reply: DrainReply = .answer) -> DTUHIDDrainClock {
+  /// Parks the first caller until `open()`; later callers pass through.
+  private actor SleepGate {
+    private var entered = false
+    private var opened = false
+    private var entryWaiter: CheckedContinuation<Void, Never>?
+    private var exitWaiter: CheckedContinuation<Void, Never>?
+
+    func enter() async {
+      guard !entered else {
+        return
+      }
+      entered = true
+      entryWaiter?.resume()
+      entryWaiter = nil
+      guard !opened else {
+        return
+      }
+      await withCheckedContinuation { exitWaiter = $0 }
+    }
+
+    func awaitEntry() async {
+      guard !entered else {
+        return
+      }
+      await withCheckedContinuation { entryWaiter = $0 }
+    }
+
+    func open() {
+      opened = true
+      exitWaiter?.resume()
+      exitWaiter = nil
+    }
+  }
+
+  private func recordingClock(
+    _ recorder: DrainRecorder, reply: DrainReply = .answer, gate: SleepGate? = nil
+  ) -> DTUHIDDrainClock {
     DTUHIDDrainClock(
-      sleep: { try await recorder.sleep($0) },
+      sleep: { duration in
+        await gate?.enter()
+        try await recorder.sleep(duration)
+      },
       awaitBarrierReply: { _, message in
         await recorder.reply(message)
         if reply == .timeout {
