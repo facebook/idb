@@ -365,6 +365,8 @@ static const FBAXBoundSelector kFBAXBoundSelectors[] = {
   {"AXSettings", "setReduceMotionEnabled:", NO, "v@:B"},
   {"AXSettings", "buttonShapesEnabled", NO, "B@:"},
   {"AXSettings", "setButtonShapesEnabled:", NO, "v@:B"},
+  {"AXSettings", "enhanceBackgroundContrastEnabled", NO, "B@:"},
+  {"AXSettings", "setEnhanceBackgroundContrastEnabled:", NO, "v@:B"},
   // AccessibilityPlatformTranslation
   {"AXPTranslator", "sharediOSInstance", YES, "@@:"},
   {"AXPTranslator", "frontmostApplicationWithDisplayId:bridgeDelegateToken:", NO, "@@:I@"},
@@ -822,6 +824,13 @@ static NSString *const kFrontboardVisibilityEndowment = @"com.apple.frontboard.v
         }
         return [FBAXDeviceSettingOutcome resolved:[settings reduceMotionEnabled]];
       }
+      case FBAXDeviceSettingReduceTransparency: {
+        AXSettings *settings = [self deviceAccessibilitySettings];
+        if (!settings || ![settings respondsToSelector:@selector(enhanceBackgroundContrastEnabled)]) {
+          return [FBAXDeviceSettingOutcome unavailable:@"Reduce Transparency is unavailable on this runtime"];
+        }
+        return [FBAXDeviceSettingOutcome resolved:[settings enhanceBackgroundContrastEnabled]];
+      }
       case FBAXDeviceSettingButtonShapes: {
         AXSettings *settings = [self deviceAccessibilitySettings];
         if (!settings || ![settings respondsToSelector:@selector(buttonShapesEnabled)]) {
@@ -853,6 +862,15 @@ static NSString *const kFrontboardVisibilityEndowment = @"com.apple.frontboard.v
           return [FBAXDeviceSettingOutcome unavailable:@"Reduce Motion is unavailable on this runtime"];
         }
         [settings setReduceMotionEnabled:enabled];
+        break;
+      }
+      case FBAXDeviceSettingReduceTransparency: {
+        AXSettings *settings = [self deviceAccessibilitySettings];
+        if (!settings || ![settings respondsToSelector:@selector(enhanceBackgroundContrastEnabled)]
+            || ![settings respondsToSelector:@selector(setEnhanceBackgroundContrastEnabled:)]) {
+          return [FBAXDeviceSettingOutcome unavailable:@"Reduce Transparency is unavailable on this runtime"];
+        }
+        [settings setEnhanceBackgroundContrastEnabled:enabled];
         break;
       }
       case FBAXDeviceSettingButtonShapes: {

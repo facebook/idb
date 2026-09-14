@@ -14,6 +14,7 @@ public enum FBSimulatorSetting: Equatable {
   case slowAnimations(Bool)
   case increaseContrast(Bool)
   case reduceMotion(Bool)
+  case reduceTransparency(Bool)
   case buttonShapes(Bool)
   case voiceOver(Bool)
   case autoFillPasswords(Bool)
@@ -35,6 +36,7 @@ enum SimulatorSettingKey: String, CaseIterable {
   case slowAnimations = "slow-animations"
   case increaseContrast = "increase-contrast"
   case reduceMotion = "reduce-motion"
+  case reduceTransparency = "reduce-transparency"
   case buttonShapes = "button-shapes"
   case voiceOver = "voiceover"
   case autoFillPasswords = "autofill-passwords"
@@ -46,7 +48,7 @@ enum SimulatorSettingKey: String, CaseIterable {
 extension SimulatorSettingKey {
   var accessibilityBridgeName: String? {
     switch self {
-    case .reduceMotion, .buttonShapes, .voiceOver:
+    case .reduceMotion, .reduceTransparency, .buttonShapes, .voiceOver:
       return rawValue
     case .hardwareKeyboard, .slowAnimations, .increaseContrast, .autoFillPasswords, .appearance, .contentSize,
       .locale:
@@ -67,8 +69,8 @@ extension SimulatorSettingKey {
       return (domain: nil, key: "AutoFillPasswords")
     case .locale:
       return (domain: nil, key: "AppleLocale")
-    case .hardwareKeyboard, .slowAnimations, .increaseContrast, .reduceMotion, .buttonShapes,
-      .voiceOver, .appearance, .contentSize:
+    case .hardwareKeyboard, .slowAnimations, .increaseContrast, .reduceMotion, .reduceTransparency,
+      .buttonShapes, .voiceOver, .appearance, .contentSize:
       return nil
     }
   }
@@ -114,6 +116,8 @@ extension FBSimulatorSettingResolution {
       self = .setting(.increaseContrast(try FBSimulatorSettingResolution.parseEnabled(name: name, value: value)))
     case .reduceMotion:
       self = .setting(.reduceMotion(try FBSimulatorSettingResolution.parseEnabled(name: name, value: value)))
+    case .reduceTransparency:
+      self = .setting(.reduceTransparency(try FBSimulatorSettingResolution.parseEnabled(name: name, value: value)))
     case .buttonShapes:
       self = .setting(.buttonShapes(try FBSimulatorSettingResolution.parseEnabled(name: name, value: value)))
     case .voiceOver:

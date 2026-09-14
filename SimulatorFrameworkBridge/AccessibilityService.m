@@ -1273,6 +1273,8 @@ static BOOL FBAXBridgeDeviceSettingForName(NSString *name, FBAXDeviceSetting *se
 {
   if ([name isEqualToString:@"reduce-motion"]) {
     *setting = FBAXDeviceSettingReduceMotion;
+  } else if ([name isEqualToString:@"reduce-transparency"]) {
+    *setting = FBAXDeviceSettingReduceTransparency;
   } else if ([name isEqualToString:@"button-shapes"]) {
     *setting = FBAXDeviceSettingButtonShapes;
   } else if ([name isEqualToString:@"voiceover"]) {

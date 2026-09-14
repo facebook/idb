@@ -24,9 +24,11 @@ NS_ASSUME_NONNULL_BEGIN
 
 @interface AXSettings : NSObject
 - (BOOL)buttonShapesEnabled;
+- (BOOL)enhanceBackgroundContrastEnabled;
 - (BOOL)reduceMotionEnabled;
 - (void)setAutomationEnabled:(BOOL)enabled;
 - (void)setButtonShapesEnabled:(BOOL)enabled;
+- (void)setEnhanceBackgroundContrastEnabled:(BOOL)enabled;
 - (void)setReduceMotionEnabled:(BOOL)enabled;
 @end
 

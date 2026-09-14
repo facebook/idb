@@ -90,6 +90,8 @@ public struct SimulatorPreferencesCommands {
       try await setIncreaseContrastEnabled(enabled)
     case let .reduceMotion(enabled):
       try await setAccessibilitySetting(.reduceMotion, enabled: enabled)
+    case let .reduceTransparency(enabled):
+      try await setAccessibilitySetting(.reduceTransparency, enabled: enabled)
     case let .buttonShapes(enabled):
       try await setAccessibilitySetting(.buttonShapes, enabled: enabled)
     case let .voiceOver(enabled):
@@ -139,7 +141,7 @@ public struct SimulatorPreferencesCommands {
       return (try await currentContentSizeCategory()).argumentName ?? "large"
     case .increaseContrast:
       return try currentIncreaseContrastEnabled() ? "enabled" : "disabled"
-    case .reduceMotion, .buttonShapes, .voiceOver:
+    case .reduceMotion, .reduceTransparency, .buttonShapes, .voiceOver:
       return try await currentAccessibilitySettingEnabled(key) ? "enabled" : "disabled"
     case .hardwareKeyboard, .slowAnimations:
       // Set-only (SimDevice API / Darwin notification with no getter); no readable current value.

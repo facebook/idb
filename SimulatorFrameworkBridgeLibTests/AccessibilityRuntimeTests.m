@@ -822,6 +822,7 @@ static NSDictionary *FBAXTestsBoundaryNode(NSDictionary *response)
 {
   NSDictionary<NSString *, NSNumber *> *settings = @{
     @"reduce-motion" : @(FBAXDeviceSettingReduceMotion),
+    @"reduce-transparency" : @(FBAXDeviceSettingReduceTransparency),
     @"button-shapes" : @(FBAXDeviceSettingButtonShapes),
     @"voiceover" : @(FBAXDeviceSettingVoiceOver),
   };

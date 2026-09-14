@@ -28,6 +28,9 @@ final class SimulatorSettingTests: XCTestCase {
       try FBSimulatorSettingResolution(name: "reduce-motion", value: "enable", type: nil, domain: nil),
       .setting(.reduceMotion(true)))
     XCTAssertEqual(
+      try FBSimulatorSettingResolution(name: "reduce-transparency", value: "enable", type: nil, domain: nil),
+      .setting(.reduceTransparency(true)))
+    XCTAssertEqual(
       try FBSimulatorSettingResolution(name: "button-shapes", value: "disable", type: nil, domain: nil),
       .setting(.buttonShapes(false)))
     XCTAssertEqual(
@@ -105,6 +108,7 @@ final class SimulatorSettingTests: XCTestCase {
     XCTAssertNil(SimulatorSettingKey.hardwareKeyboard.preferenceBacking)
     XCTAssertNil(SimulatorSettingKey.appearance.preferenceBacking)
     XCTAssertEqual(SimulatorSettingKey.reduceMotion.accessibilityBridgeName, "reduce-motion")
+    XCTAssertEqual(SimulatorSettingKey.reduceTransparency.accessibilityBridgeName, "reduce-transparency")
     XCTAssertEqual(SimulatorSettingKey.buttonShapes.accessibilityBridgeName, "button-shapes")
     XCTAssertEqual(SimulatorSettingKey.voiceOver.accessibilityBridgeName, "voiceover")
     XCTAssertNil(SimulatorSettingKey.increaseContrast.accessibilityBridgeName)

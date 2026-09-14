@@ -259,6 +259,7 @@ extern NSArray<NSString *> *FBAXSignatureWarnings(void);
 /** Device-wide simulator accessibility settings with authoritative getters and setters. */
 typedef NS_ENUM(NSUInteger, FBAXDeviceSetting) {
   FBAXDeviceSettingReduceMotion,
+  FBAXDeviceSettingReduceTransparency,
   FBAXDeviceSettingButtonShapes,
   FBAXDeviceSettingVoiceOver,
 };
