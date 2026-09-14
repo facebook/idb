@@ -4,23 +4,9 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-set -e
-set -o pipefail
-
-# Everything below is relative to the Source directory, including a `rm -rf Build`
-# and a symlink into it, so establish that we are in it before anything runs.
-# This covers `help` too: exempting it would leave the destructive setup below
-# reachable from an arbitrary directory, and the error already says what to do.
-for manifest in Package.swift Companion/project.yml; do
-  if [ ! -f "$manifest" ]; then
-    echo "error: $manifest not found; build.sh must run from the idb Source directory" >&2
-    exit 1
-  fi
-done
-
-if hash xcpretty 2>/dev/null; then
-  HAS_XCPRETTY=true
-fi
+# Sourcing this file defines its functions and does nothing else: `set -e` and
+# every side effect below live behind the dispatch guard at the bottom, so a
+# test can source it, stub what it shells out to, and call one function.
 
 # Check if xattrs are supported on the current filesystem
 # Some virtual filesystems (e.g., EdenFS) don't support xattrs
@@ -35,25 +21,42 @@ function supports_xattrs() {
   return 1
 }
 
-# Use build directory outside of repo if xattrs not supported (for Xcode compatibility)
-if supports_xattrs; then
-  BUILD_DIRECTORY="$(pwd)/Build"
-else
-  BUILD_DIRECTORY="/tmp/idb-build-$(basename "$(pwd)")"
-  echo "Note: Using external build directory at $BUILD_DIRECTORY (xattrs not supported)"
-  # Companion/project.yml hard-codes framework refs as
-  # `../Build/Products/Release/...`. Symlink the in-tree `Build` dir so
-  # those references resolve to the actual external build output.
-  rm -rf Build
-  ln -s "$BUILD_DIRECTORY" Build
-fi
+# Everything here is relative to the Source directory, including a `rm -rf Build`
+# and a symlink into it, so establish that we are in it before anything runs.
+# This covers `help` too: exempting it would leave the destructive setup below
+# reachable from an arbitrary directory, and the error already says what to do.
+function setup_build_directory() {
+  for manifest in Package.swift Companion/project.yml; do
+    if [ ! -f "$manifest" ]; then
+      echo "error: $manifest not found; build.sh must run from the idb Source directory" >&2
+      exit 1
+    fi
+  done
+
+  if hash xcpretty 2>/dev/null; then
+    HAS_XCPRETTY=true
+  fi
+
+  # Use build directory outside of repo if xattrs not supported (for Xcode compatibility)
+  if supports_xattrs; then
+    BUILD_DIRECTORY="$(pwd)/Build"
+  else
+    BUILD_DIRECTORY="/tmp/idb-build-$(basename "$(pwd)")"
+    echo "Note: Using external build directory at $BUILD_DIRECTORY (xattrs not supported)"
+    # Companion/project.yml hard-codes framework refs as
+    # `../Build/Products/Release/...`. Symlink the in-tree `Build` dir so
+    # those references resolve to the actual external build output.
+    rm -rf Build
+    ln -s "$BUILD_DIRECTORY" Build
+  fi
+
+  GRPC_SWIFT_DIR="$BUILD_DIRECTORY/grpc-swift"
+  SWIFT_PROTOBUF_DIR="$BUILD_DIRECTORY/swift-protobuf"
+}
 
 # =============================================================================
 # XcodeGen Project Generation
 # =============================================================================
-
-GRPC_SWIFT_DIR="$BUILD_DIRECTORY/grpc-swift"
-SWIFT_PROTOBUF_DIR="$BUILD_DIRECTORY/swift-protobuf"
 
 function check_xcodegen() {
   if ! command -v xcodegen &> /dev/null; then
@@ -997,39 +1000,50 @@ EOF
 # Main
 # =============================================================================
 
-COMMAND=${COMMAND:-$1}
-TARGET_ARG=${2:-}
+function main() {
+  set -e
+  set -o pipefail
 
-if [[ -z $COMMAND ]]; then
-  echo "No command provided"
-  print_usage
-  exit 1
-fi
+  setup_build_directory
 
-echo "Command: $COMMAND"
-if [[ -n $TARGET_ARG ]]; then
-  echo "Target: $TARGET_ARG"
-fi
+  COMMAND=${COMMAND:-${1:-}}
+  TARGET_ARG=${2:-}
 
-case $COMMAND in
-  help|-h|--help)
-    print_usage;;
-  generate)
-    regenerate_projects;;
-  generate-proto)
-    generate_proto;;
-  build)
-    check_xcode_version
-    regenerate_projects
-    build "$TARGET_ARG";;
-  test)
-    check_xcode_version
-    regenerate_projects
-    run_tests "$TARGET_ARG";;
-  *)
-    echo "Unknown command: $COMMAND"
+  if [[ -z $COMMAND ]]; then
+    echo "No command provided"
     print_usage
-    exit 1;;
-esac
+    exit 1
+  fi
+
+  echo "Command: $COMMAND"
+  if [[ -n $TARGET_ARG ]]; then
+    echo "Target: $TARGET_ARG"
+  fi
+
+  case $COMMAND in
+    help|-h|--help)
+      print_usage;;
+    generate)
+      regenerate_projects;;
+    generate-proto)
+      generate_proto;;
+    build)
+      check_xcode_version
+      regenerate_projects
+      build "$TARGET_ARG";;
+    test)
+      check_xcode_version
+      regenerate_projects
+      run_tests "$TARGET_ARG";;
+    *)
+      echo "Unknown command: $COMMAND"
+      print_usage
+      exit 1;;
+  esac
+}
+
+if [ "${BASH_SOURCE[0]}" = "$0" ]; then
+  main "$@"
+fi
 
 # vim: set tabstop=2 shiftwidth=2 filetype=sh:
