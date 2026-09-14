@@ -642,6 +642,19 @@ function build_idb_repl() {
     build
 }
 
+function build_sim_video() {
+  build_companion_archives
+  invoke_xcodebuild \
+    ONLY_ACTIVE_ARCH=NO \
+    SWIFT_ENABLE_EXPLICIT_MODULES=NO \
+    -project Companion/idb_companion.xcodeproj \
+    -scheme sim-video \
+    -sdk macosx \
+    -derivedDataPath "$BUILD_DIRECTORY" \
+    -configuration Release \
+    build
+}
+
 # Assemble the runtime layout idb_companion expects:
 #
 #   <dist>/
@@ -670,6 +683,7 @@ function build_distribution() {
   local required=(
     "$release/idb_companion"
     "$release/idb-repl"
+    "$release/sim-video"
     "$sim/libShimulator-iOS.dylib"
     "$release/libShimulator-macOS.dylib"
     "$sim/libRepl-iOS.dylib"
@@ -693,6 +707,7 @@ function build_distribution() {
   # Companion executable and the REPL CLI.
   cp "$release/idb_companion" "$dist/"
   cp "$release/idb-repl" "$dist/"
+  cp "$release/sim-video" "$dist/"
 
   # SwiftPM resource bundles (Bundle.module resolves relative to Bundle.main).
   local bundle
@@ -727,6 +742,7 @@ function build_all() {
   build_repl_host
   build_idb_companion
   build_idb_repl
+  build_sim_video
   build_distribution
 }
 
@@ -762,13 +778,15 @@ function build() {
         build_idb_companion;;
       idb-repl)
         build_idb_repl;;
+      sim-video)
+        build_sim_video;;
       distribution)
         build_distribution;;
       FBControlCore|XCTestBootstrap|FBSimulatorControl|SimulatorXCTest|FBDeviceControl)
         build_target "$target";;
       *)
         echo "Unknown target: $target"
-        echo "Valid targets: all, frameworks, shims, idb_companion, idb-repl, FBControlCore, XCTestBootstrap, FBSimulatorControl, SimulatorXCTest, FBDeviceControl, Shimulator-iOS, Shimulator-macOS, Repl-iOS, Repl-macOS, ReplHost, SimulatorFrameworkBridge-iOS, SimulatorFrameworkBridge-tvOS, distribution"
+        echo "Valid targets: all, frameworks, shims, idb_companion, idb-repl, sim-video, FBControlCore, XCTestBootstrap, FBSimulatorControl, SimulatorXCTest, FBDeviceControl, Shimulator-iOS, Shimulator-macOS, Repl-iOS, Repl-macOS, ReplHost, SimulatorFrameworkBridge-iOS, SimulatorFrameworkBridge-tvOS, distribution"
         exit 1;;
     esac
   fi
@@ -865,6 +883,7 @@ Commands:
       frameworks      Build all frameworks only
       idb_companion   Build idb_companion only
       idb-repl        Build idb-repl only
+      sim-video       Build the local video recorder
       shims           Build all shim dylibs (Shimulator + Repl, iOS + macOS)
       FBControlCore   Build FBControlCore framework
       FBDeviceControl Build FBDeviceControl framework

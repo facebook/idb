@@ -31,3 +31,13 @@ targets:
     dependencies:
       - framework: ../Build/Products/Release/libCompanionUtilities.a
         embed: false
+  sim-video:
+    dependencies:
+      - framework: ../Build/Products/Release/libCompanionUtilities.a
+        embed: false
+      - framework: ../Build/Products/Release/FBControlCore.framework
+        embed: false
+      - framework: ../Build/Products/Release/libFBSimulatorControl.a
+        embed: false
+      - framework: ../Build/Products/Release/libSimulatorVideo.a
+        embed: false

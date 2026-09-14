@@ -257,6 +257,7 @@ jobs:
         run: |
           IDB_BIN="$(command -v idb)" \
           IDB_E2E_COMPANION_PATH="$PWD/Build/Distribution/idb_companion" \
+          IDB_E2E_RECORDER_PATH="$PWD/Build/Distribution/sim-video" \
           IDB_E2E_ARTIFACTS_DIR="$RUNNER_TEMP/end-to-end-diagnostics" \
           IDB_E2E_STRICT=1 \
           python -m unittest discover -s EndToEndTests -t . -v

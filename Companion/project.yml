@@ -314,3 +314,34 @@ targets:
       - package: swift-argument-parser
         product: ArgumentParser
       - sdk: Foundation.framework
+
+
+  sim-video:
+    type: tool
+    platform: macOS
+    deploymentTarget: "15.0"
+    sources:
+      - path: ../Tools/VideoRecorder/CLI
+    settings:
+      base:
+        MACOSX_DEPLOYMENT_TARGET: "15.0"
+        PRODUCT_NAME: sim-video
+        SWIFT_VERSION: "6.0"
+        GENERATE_INFOPLIST_FILE: YES
+        OTHER_SWIFT_FLAGS: $(inherited) -parse-as-library
+        CODE_SIGN_IDENTITY: "-"
+        CODE_SIGNING_REQUIRED: NO
+        CODE_SIGNING_ALLOWED: NO
+        HEADER_SEARCH_PATHS: $(inherited) $(SRCROOT)/../PrivateHeaders
+        FRAMEWORK_SEARCH_PATHS: $(inherited) $(SRCROOT)/../Build/Products/Release
+        SWIFT_INCLUDE_PATHS: $(SRCROOT)/../Build/Products/Release
+        OTHER_LDFLAGS: $(inherited) -ObjC -weak_library $(SRCROOT)/../PrivateHeaders/CoreSimulator/CoreSimulator.tbd -weak_library $(SRCROOT)/../PrivateHeaders/AccessibilityPlatformTranslation/AccessibilityPlatformTranslation.tbd
+      configs:
+        Release:
+          DEBUG_INFORMATION_FORMAT: dwarf-with-dsym
+          STRIP_INSTALLED_PRODUCT: YES
+    dependencies:
+      - package: swift-argument-parser
+        product: ArgumentParser
+      - sdk: AVFoundation.framework
+      - sdk: Foundation.framework
