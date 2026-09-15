@@ -15,58 +15,31 @@ from idb.common.types import IdbException
 _AGENT_GUIDE = """\
 idb agent guide
 
-This guide is for coding agents and automation driving iOS simulators and
-devices through idb. The CLI is the source of truth for its own commands:
-`idb <command> --help` describes every flag; this guide describes the
-workflow expectations that make automated sessions reliable.
+This guide is for coding agents and automation driving iOS simulators and devices through idb. The CLI is the source of truth for its own commands: `idb <command> --help` describes every flag; this guide describes the workflow expectations that make automated sessions reliable.
 
 Read before acting
-- Prefer reading the accessibility tree over screenshots:
-  `idb ui describe-all --json` returns every element on screen.
-- `--format nested` preserves the element hierarchy; `--format complete`
-  returns a consolidated document that also names the backend that served
-  the read.
-- Narrow reads: `idb ui describe <marker>` describes one element by its
-  accessibility identity; `idb ui describe-point <x> <y>` by position.
+- Prefer reading the accessibility tree over screenshots: `idb ui describe-all --json` returns every element on screen.
+- `--format nested` preserves the element hierarchy; `--format complete` returns a consolidated document that also names the backend that served the read.
+- Narrow reads: `idb ui describe <marker>` describes one element by its accessibility identity; `idb ui describe-point <x> <y>` by position.
 
 Wait for element presence
-- On simulators, use `idb ui wait <marker> --match-key AXUniqueId --timeout 30`
-  to let the companion poll for an element. Use this instead of busy-looping
-  on `describe-all` or adding fixed sleeps while waiting for a screen to update.
+- On simulators, use `idb ui wait <marker> --match-key AXUniqueId --timeout 30` to let the companion poll for an element. Use this instead of busy-looping on `describe-all` or adding fixed sleeps while waiting for a screen to update.
 - Matching is a case-sensitive substring; omit `--match-key` to match a label.
-- With `--json`, a match returns `{"found": true}`; a timeout returns
-  `{"found": false}` and a nonzero exit status. Other failures remain errors.
-- Presence does not establish visibility or hittability. Read the element
-  again when you need its properties before acting.
+- With `--json`, a match returns `{"found": true}`; a timeout returns `{"found": false}` and a nonzero exit status. Other failures remain errors.
+- Presence does not establish visibility or hittability. Read the element again when you need its properties before acting.
 
 Interact by element identity, not coordinates
-- `idb ui tap <marker> --match-key AXUniqueId` resolves the accessibility
-  element and invokes its press action, so it does not drift with layout,
-  scale, or scroll position the way coordinate taps do.
+- `idb ui tap <marker> --match-key AXUniqueId` resolves the accessibility element and invokes its press action, so it does not drift with layout, scale, or scroll position the way coordinate taps do.
 - `idb ui set-value` and `idb ui scroll` address elements the same way.
-- When an element exposes no AXUniqueId but you can name what is on
-  screen, tap it by its visible label: `idb ui tap "<label>"` - the label
-  is the default match key, and it works on surfaces that never set
-  identifiers.
-- Coordinate taps (`idb ui tap <x> <y>`) are a last resort for targets
-  with neither identifier nor label. When one is genuinely required,
-  record why with `--reason`.
+- When an element exposes no AXUniqueId but you can name what is on screen, tap it by its visible label: `idb ui tap "<label>"` - the label is the default match key, and it works on surfaces that never set identifiers.
+- Coordinate taps (`idb ui tap <x> <y>`) are a last resort for targets with neither identifier nor label. When one is genuinely required, record why with `--reason`.
 
 Record intent
-- `--reason "<why>"` is accepted by every command and records the intent
-  of the invocation for the operators of the host being driven. Supply it
-  whenever the purpose of a command is not obvious from the command
-  itself, and always for coordinate taps and screenshots.
+- `--reason "<why>"` is accepted by every command and records the intent of the invocation for the operators of the host being driven. Supply it whenever the purpose of a command is not obvious from the command itself, and always for coordinate taps and screenshots.
 
 Identify yourself
-- idb recognizes standard agent environment signals, in priority order:
-  AI_AGENT (user-agent style, `AI_AGENT=<product>/<version>/<mode>` - the
-  preferred contract), AGENT (a bare product name), CODING_AGENT_METADATA
-  (the structured channel: comma-separated key=value pairs, for example
-  `CODING_AGENT_METADATA=id=<agent-product>,session_id=<uuid>`, carrying
-  session and invocation identity), and CLAUDECODE=1.
-- If your harness sets none of these, export one so tooling can
-  distinguish agent traffic from human sessions.
+- idb recognizes standard agent environment signals, in priority order: AI_AGENT (user-agent style, `AI_AGENT=<product>/<version>/<mode>` - the preferred contract), AGENT (a bare product name), CODING_AGENT_METADATA (the structured channel: comma-separated key=value pairs, for example `CODING_AGENT_METADATA=id=<agent-product>,session_id=<uuid>`, carrying session and invocation identity), and CLAUDECODE=1.
+- If your harness sets none of these, export one so tooling can distinguish agent traffic from human sessions.
 """
 
 # Topic key -> (one-line summary, body). Subtopic words join with "-", so
