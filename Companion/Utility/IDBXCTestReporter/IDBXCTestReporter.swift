@@ -447,7 +447,7 @@ final class IDBXCTestReporter: NSObject, XCTestReporter, FBDataConsumer, @unchec
       .filter { $0.pathExtension == "profraw" }
 
     let mergeArgs: [String] =
-      ["llvm-profdata", "merge", "-o", profdataPath.path]
+      ["llvm-profdata", "merge", "-o", profdataPath.path, "--num-threads", "2"]
       + profraws.map(\.path)
 
     let mergeProcess = try await awaitRunUntilCompletion(
@@ -464,7 +464,7 @@ final class IDBXCTestReporter: NSObject, XCTestReporter, FBDataConsumer, @unchec
 
   private func exportCoverage(profdataPath: URL, binariesPath: [String]) async throws -> Data {
     let exportArgs: [String] =
-      ["llvm-cov", "export", "-instr-profile", profdataPath.path]
+      ["llvm-cov", "export", "--num-threads", "2", "-instr-profile", profdataPath.path]
       + binariesPath.reduce(into: []) {
         $0 += ["-object", $1]
       }
