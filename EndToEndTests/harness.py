@@ -15,7 +15,6 @@ from __future__ import annotations
 import asyncio
 import atexit
 import enum
-import fcntl
 import json
 import logging
 import os
@@ -40,7 +39,6 @@ IDB_BIN_ENV = "IDB_BIN"
 IDB_ARGS_ENV = "IDB_ARGS"
 IDB_E2E_COMPANION_PATH_ENV = "IDB_E2E_COMPANION_PATH"
 IDB_SETUP_BIN_ENV = "IDB_SETUP_BIN"
-MUTATION_LOCK_ENV = "IDB_E2E_MUTATION_LOCK"
 READ_ONLY_CLIENT_ENV = "IDB_E2E_READ_ONLY_CLIENT"
 IDB_E2E_RECORDER_PATH_ENV = "IDB_E2E_RECORDER_PATH"
 STRICT_ENV = "IDB_E2E_STRICT"
@@ -73,7 +71,6 @@ COMPANION_READY_TIMEOUT_SECONDS = 180.0
 ACCESSIBILITY_READY_TIMEOUT_SECONDS = 180.0
 DEFAULT_COMMAND_TIMEOUT_SECONDS = 120.0
 INSTALL_TIMEOUT_SECONDS = 300.0
-MUTATION_LOCK_TIMEOUT_SECONDS = 300.0
 
 
 class HarnessError(Exception):
@@ -86,28 +83,6 @@ class CompanionDied(HarnessError):
 
 class NotReady(Exception):
     """Retry this poll because the expected condition is not met yet."""
-
-
-class SimulatorMutationLock:
-    """Exclusive process ownership of one simulator's mutation lane."""
-
-    def __init__(self, path: Path) -> None:
-        self.path = path
-        self._file = path.open("a+")
-
-    def acquire(self, *, blocking: bool = True) -> None:
-        operation = fcntl.LOCK_EX if blocking else fcntl.LOCK_EX | fcntl.LOCK_NB
-        fcntl.flock(self._file.fileno(), operation)
-
-    def close(self) -> None:
-        if self._file.closed:
-            return
-        fcntl.flock(self._file.fileno(), fcntl.LOCK_UN)
-        self._file.close()
-
-
-def mutation_lock_path(device_set_path: Path, udid: str) -> Path:
-    return device_set_path / f".idb-e2e-mutation-{udid}.lock"
 
 
 class Deadline:
@@ -323,8 +298,6 @@ class Environment:
             raise HarnessError(
                 f"{DEVICE_SET_PATH_ENV}={device_set_path} is not a directory"
             )
-        if os.environ.get(MUTATION_LOCK_ENV) == "1":
-            await acquire_mutation_lock(device_set_path, udid)
 
         simctl = Simctl(udid, device_set_path)
         state = await simctl.state()
@@ -541,56 +514,7 @@ async def wait_for_accessibility(
 _environment: Environment | None = None
 _companion: Companion | None = None
 _recording: Recording | None = None
-_mutation_lock: SimulatorMutationLock | None = None
 _acquisition_failure: BaseException | None = None
-
-
-async def acquire_mutation_lock(
-    device_set_path: Path,
-    udid: str,
-    timeout: float = MUTATION_LOCK_TIMEOUT_SECONDS,
-) -> None:
-    """Hold the simulator lock until process exit, including companion shutdown."""
-    global _mutation_lock
-    if _mutation_lock is not None:
-        return
-    path = mutation_lock_path(device_set_path, udid)
-    try:
-        lock = SimulatorMutationLock(path)
-    except OSError as error:
-        raise HarnessError(
-            f"Could not open simulator mutation lock for {udid} at {path}: {error}"
-        ) from error
-    deadline = Deadline(timeout)
-    _LOGGER.info(
-        "Waiting up to %.0fs for simulator mutation lock: udid=%s path=%s",
-        timeout,
-        udid,
-        path,
-    )
-    try:
-        while True:
-            try:
-                lock.acquire(blocking=False)
-                break
-            except BlockingIOError:
-                if deadline.passed:
-                    raise HarnessError(
-                        f"Could not acquire simulator mutation lock for {udid} "
-                        f"at {path} within {timeout:.0f}s"
-                    ) from None
-                await asyncio.sleep(POLL_INTERVAL_SECONDS)
-            except OSError as error:
-                raise HarnessError(
-                    f"Could not acquire simulator mutation lock for {udid} "
-                    f"at {path}: {error}"
-                ) from error
-    except BaseException:
-        lock.close()
-        raise
-    _mutation_lock = lock
-    _LOGGER.info("Acquired simulator mutation lock: udid=%s path=%s", udid, path)
-    atexit.register(lock.close)
 
 
 async def shared_environment() -> Environment:

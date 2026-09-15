@@ -31,11 +31,9 @@ from .harness import (
     HarnessError,
     IDB_SETUP_BIN_ENV,
     IdbEndToEndTestCase,
-    mutation_lock_path,
     NotReady,
     running_bundle_ids_from_listing,
     Simctl,
-    SimulatorMutationLock,
     STRICT_ENV,
     wait_until,
 )
@@ -338,112 +336,6 @@ class RunningBundleIdsTests(unittest.TestCase):
 
     def test_empty_listing_has_no_running_apps(self) -> None:
         self.assertEqual(running_bundle_ids_from_listing("PID\tStatus\tLabel\n"), set())
-
-
-class SimulatorMutationLockTests(unittest.TestCase):
-    def test_the_path_is_shared_per_device_and_distinct_between_devices(self) -> None:
-        device_set = Path("/tmp/device-set")
-
-        self.assertEqual(
-            mutation_lock_path(device_set, "DEVICE-A"),
-            device_set / ".idb-e2e-mutation-DEVICE-A.lock",
-        )
-        self.assertNotEqual(
-            mutation_lock_path(device_set, "DEVICE-A"),
-            mutation_lock_path(device_set, "DEVICE-B"),
-        )
-
-    def test_a_second_owner_cannot_acquire_the_simulator_until_release(self) -> None:
-        with tempfile.TemporaryDirectory() as directory:
-            path = mutation_lock_path(Path(directory), "DEVICE")
-            owner = SimulatorMutationLock(path)
-            contender = SimulatorMutationLock(path)
-            self.addCleanup(owner.close)
-            self.addCleanup(contender.close)
-            owner.acquire()
-
-            with self.assertRaises(BlockingIOError):
-                contender.acquire(blocking=False)
-
-            owner.close()
-            contender.acquire(blocking=False)
-
-
-class MutationLockAcquisitionTests(unittest.IsolatedAsyncioTestCase):
-    def setUp(self) -> None:
-        self.previous_lock = harness._mutation_lock
-        harness._mutation_lock = None
-
-    def tearDown(self) -> None:
-        if harness._mutation_lock is not None:
-            harness._mutation_lock.close()
-        harness._mutation_lock = self.previous_lock
-
-    async def test_retries_nonblocking_contention_and_logs_the_lock(self) -> None:
-        path = Path("/tmp/device-set/.idb-e2e-mutation-DEVICE.lock")
-        lock = mock.Mock()
-        lock.acquire.side_effect = [BlockingIOError(), None]
-        with (
-            mock.patch.object(harness, "mutation_lock_path", return_value=path),
-            mock.patch.object(harness, "SimulatorMutationLock", return_value=lock),
-            mock.patch.object(harness.asyncio, "sleep", new=mock.AsyncMock()) as sleep,
-            mock.patch.object(harness.atexit, "register"),
-            mock.patch.object(harness._LOGGER, "info") as log,
-        ):
-            await harness.acquire_mutation_lock(Path("/tmp/device-set"), "DEVICE")
-
-        self.assertEqual(
-            lock.acquire.call_args_list,
-            [mock.call(blocking=False), mock.call(blocking=False)],
-        )
-        sleep.assert_awaited_once_with(harness.POLL_INTERVAL_SECONDS)
-        log.assert_any_call(
-            "Waiting up to %.0fs for simulator mutation lock: udid=%s path=%s",
-            harness.MUTATION_LOCK_TIMEOUT_SECONDS,
-            "DEVICE",
-            path,
-        )
-
-    async def test_contention_timeout_names_the_udid_and_path(self) -> None:
-        path = Path("/tmp/device-set/.idb-e2e-mutation-DEVICE.lock")
-        lock = mock.Mock()
-        lock.acquire.side_effect = BlockingIOError()
-        with (
-            mock.patch.object(harness, "mutation_lock_path", return_value=path),
-            mock.patch.object(harness, "SimulatorMutationLock", return_value=lock),
-            mock.patch.object(harness._LOGGER, "info"),
-        ):
-            with self.assertRaisesRegex(
-                HarnessError,
-                rf"DEVICE.*{path}.*within 0s",
-            ):
-                await harness.acquire_mutation_lock(
-                    Path("/tmp/device-set"),
-                    "DEVICE",
-                    timeout=0,
-                )
-
-        lock.close.assert_called_once_with()
-        self.assertIsNone(harness._mutation_lock)
-
-    async def test_open_failure_is_a_contextual_harness_error(self) -> None:
-        path = Path("/tmp/device-set/.idb-e2e-mutation-DEVICE.lock")
-        with (
-            mock.patch.object(harness, "mutation_lock_path", return_value=path),
-            mock.patch.object(
-                harness,
-                "SimulatorMutationLock",
-                side_effect=OSError("read-only file system"),
-            ),
-        ):
-            with self.assertRaisesRegex(
-                HarnessError,
-                rf"open.*DEVICE.*{path}.*read-only file system",
-            ):
-                await harness.acquire_mutation_lock(
-                    Path("/tmp/device-set"),
-                    "DEVICE",
-                )
 
 
 class DeadlineTests(unittest.TestCase):
