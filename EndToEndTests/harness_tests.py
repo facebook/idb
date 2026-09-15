@@ -328,7 +328,7 @@ class InstalledBundleIdsTests(unittest.IsolatedAsyncioTestCase):
 
 
 class RunningBundleIdsTests(unittest.TestCase):
-    def test_excludes_exited_apps_and_daemons(self) -> None:
+    def test_only_apps_with_positive_pids_are_running(self) -> None:
         self.assertEqual(
             running_bundle_ids_from_listing(LAUNCHCTL_LISTING),
             {"com.apple.mobilesafari"},

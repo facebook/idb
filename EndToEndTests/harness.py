@@ -236,24 +236,16 @@ class Simctl:
         return Path(path)
 
 
-# launchctl labels an app's process ``UIKitApplication:<bundle id>[<token>]``.
-_APPLICATION_LABEL = re.compile(r"UIKitApplication:([^\[\s]+)")
+# A stopped launchd job remains in the listing with `-` instead of a PID. Only
+# positive-PID UIKitApplication rows prove that an application is still alive.
+_APPLICATION_LINE = re.compile(
+    r"(?m)^\s*([1-9][0-9]*)\s+\S+\s+UIKitApplication:([^\[\s]+)"
+)
 
 
 def running_bundle_ids_from_listing(listing: str) -> set[str]:
-    """Parse running apps from launchctl output.
-
-    Exited apps remain listed with a dash in the PID column.
-    """
-    running: set[str] = set()
-    for line in listing.splitlines():
-        columns = line.split("\t")
-        if len(columns) != 3 or not columns[0].isdigit():
-            continue
-        found = _APPLICATION_LABEL.match(columns[2])
-        if found is not None:
-            running.add(found.group(1))
-    return running
+    """The bundle ids of apps with live processes in a launchctl listing."""
+    return {bundle_id for _, bundle_id in _APPLICATION_LINE.findall(listing)}
 
 
 def _device_states(listing: dict[str, Any]) -> dict[str, str]:
@@ -802,6 +794,21 @@ class IdbEndToEndTestCase(unittest.IsolatedAsyncioTestCase):
 
     async def installed_apps(self) -> dict[str, dict[str, Any]]:
         return {row["bundle_id"]: row for row in await self.idb_json_lines("list-apps")}
+
+    async def setup_install_fixture_app(self) -> str:
+        """Install the companion fixture with the setup client and queue removal."""
+        fixture = self.environment.fixture_app
+        if not fixture.is_dir():
+            raise HarnessError(
+                f"The companion's {FIXTURE_APP_NAME} is missing at {fixture}"
+            )
+        self.addAsyncCleanup(self.setup_uninstall_quietly, FIXTURE_APP_BUNDLE_ID)
+        await self.setup_idb(
+            "install",
+            str(fixture),
+            timeout=INSTALL_TIMEOUT_SECONDS,
+        )
+        return FIXTURE_APP_BUNDLE_ID
 
     async def install_fixture_app(self) -> str:
         """Install ReplHost.app, register uninstall cleanup, and return its bundle ID."""
