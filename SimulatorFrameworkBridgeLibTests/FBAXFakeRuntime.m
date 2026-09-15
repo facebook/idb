@@ -91,6 +91,7 @@ static NSString *const kAXChildren = @"XC_kAXXCAttributeChildren";
   if (!self) {
     return nil;
   }
+  _operations = [NSMutableArray array];
   _applicationElements = [NSMutableDictionary dictionary];
   _automationModeWrites = [NSMutableArray array];
   _deviceSettings = [NSMutableDictionary dictionary];
@@ -102,10 +103,19 @@ static NSString *const kAXChildren = @"XC_kAXXCAttributeChildren";
   return self;
 }
 
+- (void)recordOperation:(NSString *)operation
+{
+  [self.operations addObject:operation];
+  if ([self.raiseOnOperation isEqualToString:operation]) {
+    [NSException raise:NSInternalInconsistencyException format:@"injected %@", operation];
+  }
+}
+
 #pragma mark - FBAXRuntime
 
 - (nullable id)applicationElementForProcessIdentifier:(pid_t)pid
 {
+  [self recordOperation:@"applicationElement"];
   return self.applicationElements[@(pid)];
 }
 
@@ -178,6 +188,7 @@ static NSDictionary *FBAXFakeSnapshotNode(FBAXFakeElement *element,
                    namesByNumber:(NSDictionary<NSNumber *, NSString *> *_Nullable *_Nonnull)namesByNumber
                            error:(NSError **)error
 {
+  [self recordOperation:@"snapshot"];
   _snapshotCount++;
   _lastSnapshotAttributeNames = [names copy];
   if (self.snapshotError) {
@@ -194,6 +205,7 @@ static NSDictionary *FBAXFakeSnapshotNode(FBAXFakeElement *element,
 
 - (pid_t)owningProcessIdentifierForSnapshotElement:(id)element
 {
+  [self recordOperation:@"snapshotOwner"];
   if (![element isKindOfClass:FBAXFakeElement.class]) {
     return 0;
   }
@@ -205,6 +217,7 @@ static NSDictionary *FBAXFakeSnapshotNode(FBAXFakeElement *element,
                            namesByNumber:(NSDictionary<NSNumber *, NSString *> *_Nullable *_Nonnull)namesByNumber
                                    error:(NSError **)error
 {
+  [self recordOperation:@"snapshotContinuation"];
   _snapshotCount++;
   _lastSnapshotAttributeNames = [names copy];
   if (self.snapshotContinuationError) {
@@ -218,6 +231,7 @@ static NSDictionary *FBAXFakeSnapshotNode(FBAXFakeElement *element,
 
 - (BOOL)getRect:(CGRect *)rect fromValue:(id)value
 {
+  [self recordOperation:@"getRect"];
   // Only the sentinel unwraps; anything else answers NO and leaves `*rect` alone.
   if (!rect || ![value isKindOfClass:FBAXFakeRectValue.class]) {
     return NO;
@@ -228,6 +242,7 @@ static NSDictionary *FBAXFakeSnapshotNode(FBAXFakeElement *element,
 
 - (BOOL)getPoint:(CGPoint *)point fromValue:(id)value
 {
+  [self recordOperation:@"getPoint"];
   if (!point || ![value isKindOfClass:FBAXFakePointValue.class]) {
     return NO;
   }
@@ -237,12 +252,16 @@ static NSDictionary *FBAXFakeSnapshotNode(FBAXFakeElement *element,
 
 - (FBAXReadOutcome *)readAttributes:(NSArray<NSString *> *)attributes ofElement:(id)element
 {
+  [self recordOperation:@"readAttributes"];
   // Recorded before the outcome switch, so a read that fails still evidences what it asked for.
   _lastReadAttributes = [attributes copy];
   if (self.readRaiseReason) {
     [NSException raise:NSInternalInconsistencyException format:@"%@", self.readRaiseReason];
   }
   FBAXFakeElement *fake = element;
+  if (fake.readRaiseReason) {
+    [NSException raise:NSInternalInconsistencyException format:@"%@", fake.readRaiseReason];
+  }
   switch (fake.readStatus) {
     case FBAXReadStatusRead:
       break;
@@ -263,6 +282,7 @@ static NSDictionary *FBAXFakeSnapshotNode(FBAXFakeElement *element,
 
 - (FBAXHitTestOutcome *)hitTestAtPoint:(CGPoint)point processIdentifier:(pid_t)pid
 {
+  [self recordOperation:@"hitTest"];
   _hitTestCount++;
   _lastHitTestPoint = point;
   _lastHitTestProcessIdentifier = pid;
@@ -271,6 +291,7 @@ static NSDictionary *FBAXFakeSnapshotNode(FBAXFakeElement *element,
 
 - (FBAXWriteOutcome *)performAction:(FBAXAction)action onElement:(id)element
 {
+  [self recordOperation:@"performAction"];
   _performCount++;
   _lastPerformedAction = action;
   _lastWrittenElement = element;
@@ -279,6 +300,7 @@ static NSDictionary *FBAXFakeSnapshotNode(FBAXFakeElement *element,
 
 - (FBAXWriteOutcome *)setValue:(id)value onElement:(id)element
 {
+  [self recordOperation:@"setValue"];
   _setValueCount++;
   _lastWrittenElement = element;
   _lastWrittenValue = value;
@@ -287,6 +309,7 @@ static NSDictionary *FBAXFakeSnapshotNode(FBAXFakeElement *element,
 
 - (FBAXFrontmostOutcome *)windowServerFrontmost
 {
+  [self recordOperation:@"windowServerFrontmost"];
   _windowServerCount++;
   return self.windowServerOutcome;
 }
@@ -294,12 +317,14 @@ static NSDictionary *FBAXFakeSnapshotNode(FBAXFakeElement *element,
 - (nullable NSDictionary<NSNumber *, id> *)translatorAttributes:(NSArray<NSNumber *> *)attributes
                                                       ofElement:(id)element
 {
+  [self recordOperation:@"translatorAttributes"];
   _translatorReadCount++;
   return self.translatorAttributeValues;
 }
 
 - (FBAXFrontmostOutcome *)runningBoardFrontmost
 {
+  [self recordOperation:@"runningBoardFrontmost"];
   _runningBoardCount++;
   return self.runningBoardOutcome;
 }
@@ -308,11 +333,13 @@ static NSDictionary *FBAXFakeSnapshotNode(FBAXFakeElement *element,
 
 - (BOOL)automationModeEnabled
 {
+  [self recordOperation:@"automationRead"];
   return self.automationMode;
 }
 
 - (BOOL)setAutomationModeEnabled:(BOOL)enabled
 {
+  [self recordOperation:@"automationWrite"];
   [self.automationModeWrites addObject:@(enabled)];
   if (!self.automationModeWriteFails) {
     self.automationMode = enabled;
@@ -324,6 +351,7 @@ static NSDictionary *FBAXFakeSnapshotNode(FBAXFakeElement *element,
 
 - (FBAXDeviceSettingOutcome *)enabledStateForDeviceSetting:(FBAXDeviceSetting)setting
 {
+  [self recordOperation:@"settingRead"];
   NSNumber *enabled = self.deviceSettings[@(setting)];
   return enabled
   ? [FBAXDeviceSettingOutcome resolved:enabled.boolValue]
@@ -332,6 +360,7 @@ static NSDictionary *FBAXFakeSnapshotNode(FBAXFakeElement *element,
 
 - (FBAXDeviceSettingOutcome *)setEnabled:(BOOL)enabled forDeviceSetting:(FBAXDeviceSetting)setting
 {
+  [self recordOperation:@"settingWrite"];
   if (!self.deviceSettings[@(setting)]) {
     return [FBAXDeviceSettingOutcome unavailable:@"setting unavailable"];
   }

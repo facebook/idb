@@ -20,6 +20,9 @@ NS_ASSUME_NONNULL_BEGIN
  */
 @interface FBAXFakeElement : NSObject
 
+/** An exception raised only when this element is read. */
+@property (nullable, nonatomic, copy) NSString *readRaiseReason;
+
 /** The element's attributes, excluding children. */
 @property (nonatomic, copy) NSDictionary<NSString *, id> *attributes;
 /** Children exposed under the children key when this element is read. */
@@ -77,6 +80,11 @@ NS_ASSUME_NONNULL_BEGIN
  * rather than only what came back.
  */
 @interface FBAXFakeRuntime : NSObject <FBAXRuntime>
+
+/** The named interaction to raise from; nil disables injection. */
+@property (nullable, nonatomic, copy) NSString *raiseOnOperation;
+/** Every interaction attempted, including the one that raised. */
+@property (nonatomic, readonly, strong) NSMutableArray<NSString *> *operations;
 
 /** Application elements by pid. A pid absent here is answered with nil, as an unknown pid is. */
 @property (nonatomic, strong) NSMutableDictionary<NSNumber *, FBAXFakeElement *> *applicationElements;
