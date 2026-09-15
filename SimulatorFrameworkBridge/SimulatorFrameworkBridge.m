@@ -12,21 +12,10 @@
 int main(int argc, const char *argv[])
 {
   @autoreleasepool {
-    if (argc < 3) {
-      NSLog(@"Usage: %s <service> <action> [args...]", argv[0]);
-      NSLog(@"Services: contacts, dns, photos, notifications, health, proxy, accessibility, repl");
-      NSLog(@"Actions: clear, approve, revoke, check, set, list");
-      return 1;
+    NSMutableArray<NSString *> *arguments = [NSMutableArray arrayWithCapacity:argc];
+    for (int i = 0; i < argc; i++) {
+      [arguments addObject:[NSString stringWithUTF8String:argv[i]]];
     }
-
-    NSString *service = [NSString stringWithUTF8String:argv[1]];
-    NSString *action = [NSString stringWithUTF8String:argv[2]];
-
-    NSMutableArray<NSString *> *remainingArgs = [NSMutableArray array];
-    for (int i = 3; i < argc; i++) {
-      [remainingArgs addObject:[NSString stringWithUTF8String:argv[i]]];
-    }
-
-    return dispatchService(service, action, remainingArgs);
+    return runBridgeCommand(arguments);
   }
 }
