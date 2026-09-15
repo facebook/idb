@@ -15,13 +15,13 @@ These tests run the `idb` CLI through `idb_companion` against a booted simulator
 | `DEVICE_SET_PATH` | the device set `DEVICE_UDID` lives in |
 | `IDB_E2E_STRICT` | `1` fails tests when `SimLaunchHostService` is unavailable; otherwise those tests skip |
 
-`IDB_BIN`, `IDB_E2E_COMPANION_PATH`, `IDB_E2E_RECORDER_PATH`, `DEVICE_UDID`, and `DEVICE_SET_PATH` are required. Missing variables, invalid binary paths and a simulator that is not booted fail setup.
+`IDB_BIN`, `IDB_E2E_COMPANION_PATH`, `IDB_E2E_RECORDER_PATH`, `DEVICE_UDID`, and `DEVICE_SET_PATH` are required. Everything the suite runs against is provided by its environment and none of it is discovered or defaulted, so missing variables, invalid binary paths, or a simulator that is not booted fail setup rather than skipping or selecting another target.
 
 Use a dedicated simulator. Tests install and remove `ReplHost.app`, change its permissions and files, and launch or terminate Settings and Safari. Cleanup removes the fixture app and stops test apps; it does not restore pre-existing app state. The suite does not boot, shut down, erase or delete the simulator.
 
 The harness starts one companion per test process with `DEVICE_SET_PATH` and a private Unix socket. Every CLI command connects to it with `--companion`. Setup waits for accessibility reads to become available. If the companion exits, the current test reports the failure and the remaining tests stop.
 
-Tests use `unittest.IsolatedAsyncioTestCase` to read streaming commands while they run. The companion uses `subprocess.Popen` so it can survive the event loop being replaced between tests.
+Cases derive from `unittest.IsolatedAsyncioTestCase` and every `idb` invocation is awaited, so a test can read from a command that is still running rather than only inspect one that has already exited. That is what the streaming commands need. The companion is the exception: it outlives any single test, and each test gets its own event loop, so it stays on a plain subprocess.
 
 Commands that report an unavailable `SimLaunchHostService` skip by default. Set `IDB_E2E_STRICT=1` to treat these errors as failures, as GitHub CI does.
 

@@ -723,6 +723,10 @@ class IdbEndToEndTestCase(unittest.IsolatedAsyncioTestCase):
     async def setup_terminate_quietly(self, bundle_id: str) -> None:
         await self.setup_idb("terminate", bundle_id, check=False)
 
+    async def setup_uninstall_quietly(self, bundle_id: str) -> None:
+        await self.setup_terminate_quietly(bundle_id)
+        await self.setup_idb("uninstall", bundle_id, check=False)
+
     def idb_process(self, *args: str) -> "IdbProcess":
         """Start a streaming command and stop it when the async context exits."""
         return IdbProcess(
@@ -806,8 +810,8 @@ class IdbEndToEndTestCase(unittest.IsolatedAsyncioTestCase):
             raise HarnessError(
                 f"The companion's {FIXTURE_APP_NAME} is missing at {fixture}"
             )
-        await self.idb("install", str(fixture), timeout=INSTALL_TIMEOUT_SECONDS)
         self.addAsyncCleanup(self.uninstall_quietly, FIXTURE_APP_BUNDLE_ID)
+        await self.idb("install", str(fixture), timeout=INSTALL_TIMEOUT_SECONDS)
         return FIXTURE_APP_BUNDLE_ID
 
     async def uninstall_quietly(self, bundle_id: str) -> None:
