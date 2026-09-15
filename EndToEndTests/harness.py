@@ -27,9 +27,10 @@ import subprocess
 import tempfile
 import time
 import unittest
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Awaitable, Callable, NoReturn, Sequence, TypeVar
+from typing import Any, Awaitable, Callable, NoReturn, TypeVar
 
 from .recording import Recording
 
@@ -158,10 +159,14 @@ class Completed:
 
 
 async def run(
-    argv: Sequence[str], timeout: float, stdin: bytes | None = None
+    argv: Sequence[str],
+    timeout: float,
+    stdin: bytes | None = None,
+    env: Mapping[str, str] | None = None,
 ) -> Completed:
     process = await asyncio.create_subprocess_exec(
         *argv,
+        env=env,
         stdin=asyncio.subprocess.PIPE
         if stdin is not None
         else asyncio.subprocess.DEVNULL,
@@ -658,6 +663,14 @@ class IdbEndToEndTestCase(unittest.IsolatedAsyncioTestCase):
     def simctl(self) -> Simctl:
         return self.environment.simctl
 
+    async def run_client(
+        self,
+        argv: Sequence[str],
+        timeout: float,
+        stdin: bytes | None = None,
+    ) -> Completed:
+        return await run(argv, timeout=timeout, stdin=stdin)
+
     async def idb(
         self,
         *args: str,
@@ -670,7 +683,7 @@ class IdbEndToEndTestCase(unittest.IsolatedAsyncioTestCase):
         if self.recording is not None:
             self.recording.command(["idb", *args])
         try:
-            completed = await run(
+            completed = await self.run_client(
                 idb_argv(self.environment, self.companion, *args),
                 timeout=timeout,
                 stdin=stdin,
