@@ -76,4 +76,15 @@
 /** Whether notifications appear in Notification Center: 0 = off, 1 = on. */
 @property (nonatomic) NSUInteger notificationCenterSetting;
 
+/**
+ * The effective Notification Center visibility. `notificationCenterSetting` is the
+ * user preference; this is what BulletinBoard actually honours when deciding
+ * whether to retain a delivered notification. Granting authorization without this
+ * produces an app that shows a banner and keeps nothing.
+ */
+@property (nonatomic) BOOL showsInNotificationCenter;
+
+/** The effective lock-screen visibility, the counterpart to `lockScreenSetting`. */
+@property (nonatomic) BOOL showsInLockScreen;
+
 @end

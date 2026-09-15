@@ -9,6 +9,7 @@
 
 #import <dlfcn.h>
 #import <objc/runtime.h>
+#import <unistd.h>
 
 #import <SimulatorFrameworkBridgeLib/BulletinBoardPrivate.h>
 #import <SimulatorFrameworkBridgeLib/HealthSettingsService.h>
@@ -66,6 +67,12 @@ NSException *FBHealthApproveException(NSArray<NSString *> *types)
   }
 }
 
+@implementation FBSectionInfoWithOnlyNotificationCenterFlag
+@end
+
+@implementation FBSectionInfoWithoutEffectiveFlags
+@end
+
 BOOL FBNotificationAllowsNotifications(id sectionInfo)
 {
   return [(BBSectionInfo *)sectionInfo allowsNotifications];
@@ -74,4 +81,57 @@ BOOL FBNotificationAllowsNotifications(id sectionInfo)
 NSInteger FBNotificationAuthorizationStatus(id sectionInfo)
 {
   return [(BBSectionInfo *)sectionInfo authorizationStatus];
+}
+
+BOOL FBNotificationShowsInNotificationCenter(id sectionInfo)
+{
+  return [(BBSectionInfo *)sectionInfo showsInNotificationCenter];
+}
+
+BOOL FBNotificationShowsInLockScreen(id sectionInfo)
+{
+  return [(BBSectionInfo *)sectionInfo showsInLockScreen];
+}
+
+NSString *FBStdoutWhileRunning(void (^block)(void))
+{
+  NSPipe *pipe = [NSPipe pipe];
+  // Drained on another queue for as long as the block runs, rather than after it returns: a
+  // pipe nobody is reading holds only a buffer's worth (16-64KB on Darwin), and the write that
+  // fills it blocks forever inside `printf`. That would hang the whole test process rather
+  // than fail one test, and what these services print is not bounded - `notifications list`
+  // prints a record per section, and an accessibility read prints a hierarchy.
+  NSMutableData *written = [NSMutableData data];
+  dispatch_queue_t queue = dispatch_queue_create("com.facebook.idb.stdout-capture", DISPATCH_QUEUE_SERIAL);
+  dispatch_group_t draining = dispatch_group_create();
+  NSFileHandle *reader = pipe.fileHandleForReading;
+  fflush(stdout);
+  int original = dup(STDOUT_FILENO);
+  dup2(pipe.fileHandleForWriting.fileDescriptor, STDOUT_FILENO);
+  dispatch_group_async(draining,
+    queue, ^{
+      // Ends when the write end is closed below, which is what makes this read return empty.
+      while (true) {
+        NSData *chunk = [reader availableData];
+        if (chunk.length == 0) {
+          break;
+        }
+        [written appendData:chunk];
+      }
+    });
+  @try {
+    block();
+  } @finally {
+    fflush(stdout);
+    dup2(original, STDOUT_FILENO);
+    close(original);
+    [pipe.fileHandleForWriting closeFile];
+  }
+  dispatch_group_wait(draining, DISPATCH_TIME_FOREVER);
+  return [[NSString alloc] initWithData:written encoding:NSUTF8StringEncoding];
+}
+
+NSDictionary<NSString *, id> *FBParsedJSONLine(NSString *output)
+{
+  return [NSJSONSerialization JSONObjectWithData:[output dataUsingEncoding:NSUTF8StringEncoding] options:0 error:NULL];
 }
