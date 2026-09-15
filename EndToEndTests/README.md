@@ -1,6 +1,6 @@
 # idb end-to-end tests
 
-These tests run the `idb` CLI through `idb_companion` against a booted simulator. They cover app lifecycle, file transfers, screenshots, logs, URLs, permissions and accessibility. Tests check command output and, where available, compare results with `simctl` or files on the host. Tap and scroll tests verify the resulting navigation and visible elements.
+These tests run the `idb` CLI through `idb_companion` against a booted simulator. They cover app lifecycle, file transfers, screenshots, logs, URLs, permissions and accessibility. Tests check command output and, where available, compare results with `simctl` or files on the host. Tap and scroll tests verify the resulting navigation and visible elements. Wait tests cover existing elements, delayed navigation and timeout results.
 
 ## What the environment provides
 
