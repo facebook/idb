@@ -100,9 +100,7 @@ Head over [to the main documentation](https://www.fbidb.io) for more details on 
 ./build.sh help
 ```
 
-The individual build products are written under `Build/Products/Release`. A
-full `./build.sh build` also assembles a self-contained distribution at
-`Build/Distribution`, laid out the way `idb_companion` expects at runtime:
+The individual build products are written under `Build/Products/Release`. A full `./build.sh build` also assembles a self-contained distribution at `Build/Distribution`, laid out the way `idb_companion` expects at runtime:
 
 ```
 Build/Distribution/
@@ -119,9 +117,7 @@ Build/Distribution/
     IDBAPI.swiftinterface
 ```
 
-`idb_companion` discovers the shims and `SimulatorFrameworkBridge` from the
-`Resources` directory next to the executable, so run it from `Build/Distribution`
-(or copy that directory as a unit).
+`idb_companion` discovers the shims and `SimulatorFrameworkBridge` from the `Resources` directory next to the executable, so run it from `Build/Distribution` (or copy that directory as a unit).
 
 ### Running Tests
 
