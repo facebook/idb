@@ -24,6 +24,7 @@ final class SimulatorBootTestCase: XCTestCase {
   private var creationRequest: SimulatorCreationRequest!
   private var expectedConfiguration: FBSimulatorConfiguration!
   private var ownedSimulator: FBSimulator?
+  private var ownedDeviceSetPath: String?
   private var bootConfiguration: FBSimulatorBootConfiguration!
 
   override class func setUp() {
@@ -59,16 +60,27 @@ final class SimulatorBootTestCase: XCTestCase {
     expectedConfiguration = FBSimulatorConfiguration.configuration(deviceType: deviceType, runtime: runtime)
     bootConfiguration = FBSimulatorBootConfiguration(options: Self.bootOptions, environment: [:])
     let noLogger: (any FBControlCoreLogger)? = nil
+    ownedDeviceSetPath = Self.deviceSetPath
     control = try SimulatorControlBootstrap.withConfiguration(
-      FBSimulatorControlConfiguration(deviceSetPath: Self.deviceSetPath, logger: noLogger))
+      FBSimulatorControlConfiguration(deviceSetPath: ownedDeviceSetPath, logger: noLogger))
   }
 
   override func tearDown() async throws {
+    let deviceSetPath = control?.set.deviceSet.setPath
     if let simulator = ownedSimulator {
       try await control.set.delete(simulator)
       ownedSimulator = nil
     }
     control = nil
+    if let ownedDeviceSetPath {
+      if FileManager.default.fileExists(atPath: ownedDeviceSetPath) {
+        try FileManager.default.removeItem(atPath: ownedDeviceSetPath)
+      }
+      self.ownedDeviceSetPath = nil
+      XCTAssertFalse(FileManager.default.fileExists(atPath: ownedDeviceSetPath), "Temporary device set remains at \(ownedDeviceSetPath)")
+    } else if let deviceSetPath {
+      XCTAssertTrue(FileManager.default.fileExists(atPath: deviceSetPath), "The shared default device set must remain")
+    }
   }
 
   func testBootShutdownLifecycle() async throws {
