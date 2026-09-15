@@ -113,11 +113,15 @@ def _settings_row_positions(document: Any) -> dict[str, float]:
     }
 
 
-INTERACTION_TESTS = frozenset(
+PYTHON_ONLY_TESTS = frozenset(
     {
         "test_ui_scroll_moves_settings_rows_down_and_up",
         "test_ui_tap_opens_general_by_marker",
         "test_ui_tap_opens_general_by_point",
+        "test_ui_wait_finds_an_existing_row_on_both_backends",
+        "test_ui_wait_returns_after_general_opens",
+        "test_ui_wait_reports_a_missing_marker_timeout",
+        "test_ui_wait_rejects_an_invalid_poll_interval",
     }
 )
 
@@ -132,7 +136,7 @@ def load_tests(
     return unittest.TestSuite(
         AccessibilityTests(name)
         for name in loader.getTestCaseNames(AccessibilityTests)
-        if name not in INTERACTION_TESTS
+        if name not in PYTHON_ONLY_TESTS
     )
 
 
@@ -294,6 +298,71 @@ class AccessibilityTests(IdbEndToEndTestCase):
             "idb-e2e-no-such-element",
             expected_error="found no element whose",
         )
+
+    async def test_ui_wait_finds_an_existing_row_on_both_backends(self) -> None:
+        marker = _label(self.control)
+        for api in ("ax", "axbridge"):
+            result = await self.idb_json("ui", "wait", marker, "--api", api)
+            self.assertEqual(result, {"found": True}, api)
+
+    @unittest.skipIf(read_only_client(), "selected client is read-only")
+    async def test_ui_wait_returns_after_general_opens(self) -> None:
+        general = await self.wait_for_element(GENERAL_ROW_ID)
+        title = _label(general)
+        self.assertTrue(title, "The General row has no label")
+        before = _elements(await self.describe_all_complete("axbridge"))
+        self.assertNotIn(title, [element.get("identifier") for element in before])
+
+        async with self.idb_process(
+            "ui",
+            "wait",
+            title,
+            "--match-key",
+            "AXUniqueId",
+            "--timeout",
+            str(UI_UPDATE_TIMEOUT_SECONDS),
+            "--json",
+        ) as waiting:
+            await asyncio.sleep(2)
+            self.assertIsNone(waiting.returncode, "wait finished before General opened")
+            await self.idb("ui", "tap", GENERAL_ROW_ID, "--match-key", "AXUniqueId")
+            result = await waiting.read_some(UI_UPDATE_TIMEOUT_SECONDS)
+            self.assertEqual(json.loads(result), {"found": True})
+            self.assertEqual(await waiting.wait_for_exit(10), 0)
+
+        after = _elements(await self.describe_all_complete("axbridge"))
+        self.assertIn(
+            title,
+            [
+                element.get("identifier")
+                for element in after
+                if element.get("type") == "NavigationBar"
+            ],
+        )
+
+    async def test_ui_wait_reports_a_missing_marker_timeout(self) -> None:
+        completed = await self.idb_expect_failure(
+            "ui",
+            "wait",
+            "idb-e2e-no-such-element",
+            "--timeout",
+            "1",
+            "--json",
+            expected_error="Timed out waiting for",
+        )
+        self.assertEqual(json.loads(completed.text), {"found": False})
+
+    async def test_ui_wait_rejects_an_invalid_poll_interval(self) -> None:
+        completed = await self.idb_expect_failure(
+            "ui",
+            "wait",
+            GENERAL_ROW_ID,
+            "--poll-interval",
+            "0",
+            "--json",
+            expected_error="poll_interval",
+        )
+        self.assertEqual(completed.stdout, b"")
 
     @unittest.skipIf(read_only_client(), "selected client is read-only")
     async def test_ui_tap_opens_general_by_point(self) -> None:
