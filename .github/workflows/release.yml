@@ -343,6 +343,7 @@ jobs:
             --companion 'assets/companion/idb-companion.macos-arm64.tar.gz' \
             --wheel 'assets/dist/fb_idb-*-py3-none-any.whl' \
             --bottles assets/bottles \
+            --run-url "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" \
             --out tap-formulae
 
       - name: Upload the formulae as a run artifact

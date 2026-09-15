@@ -118,6 +118,9 @@ def bottle_blocks_from_dir(directory):
 
 
 MANIFEST = "manifest.json"
+# The manifest as committed into the tap next to the formulae it describes,
+# so the tap records which release run rendered them and from what.
+RELEASE_MANIFEST = "idb-release.json"
 
 
 def sha256_of_text(text):
@@ -132,12 +135,16 @@ def sha256_of_file(path):
     return digest.hexdigest()
 
 
+def manifest_text(manifest):
+    return json.dumps(manifest, indent=2, sort_keys=True) + "\n"
+
+
 def write_rendered(out_dir, outputs, manifest):
     out = Path(out_dir)
     out.mkdir(parents=True, exist_ok=True)
     for name, text in outputs.items():
         (out / name).write_text(text)
-    (out / MANIFEST).write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n")
+    (out / MANIFEST).write_text(manifest_text(manifest))
 
 
 TEMPLATE_SUFFIX = ".in"
@@ -220,16 +227,45 @@ def render_formulae(
     return outputs
 
 
-def render_manifest(tag, outputs, companion_sha, wheel_sha, asset_base):
+def render_manifest(
+    tag, outputs, companion_sha, wheel_sha, asset_base, run_url=None, bottle_blocks=None
+):
     """What the rendered files were computed from, and their digests so
-    whoever applies them can check they arrived intact."""
-    return {
+    whoever applies them can check they arrived intact. Enough to re-render
+    the same files without the assets: tag, asset base, both asset digests
+    and the bottle blocks; `run_url` names the workflow run that did it."""
+    manifest = {
         "tag": tag,
         "asset_base": asset_base,
         "companion_sha256": companion_sha,
         "wheel_sha256": wheel_sha,
+        "bottle_blocks": dict(bottle_blocks or {}),
         "outputs": {name: sha256_of_text(text) for name, text in outputs.items()},
     }
+    if run_url:
+        manifest["run_url"] = run_url
+    return manifest
+
+
+def render_from_manifest(manifest, templates_dir=None, only=None):
+    """Re-render exactly what a manifest describes, from the templates alone.
+    This is what lets a checked-in manifest prove that the tap's formulae are
+    the render of a recorded release, with no network involved. The set of
+    formulae defaults to the ones the manifest recorded, so a manifest from a
+    partial render (the bottle job's, which has no companion digest) re-renders
+    the same partial set."""
+    if only is None:
+        recorded = manifest.get("outputs") or {}
+        only = tuple(name for name in FORMULAE if name in recorded) or None
+    return render_formulae(
+        manifest["tag"],
+        manifest.get("companion_sha256"),
+        manifest["wheel_sha256"],
+        manifest.get("bottle_blocks") or None,
+        asset_base=manifest.get("asset_base"),
+        templates_dir=templates_dir,
+        only=only,
+    )
 
 
 def cmd_render(args):
@@ -255,7 +291,9 @@ def cmd_render(args):
         templates_dir=args.templates,
         only=only,
     )
-    manifest = render_manifest(args.tag, outputs, companion_sha, wheel_sha, asset_base)
+    manifest = render_manifest(
+        args.tag, outputs, companion_sha, wheel_sha, asset_base, args.run_url, blocks
+    )
     write_rendered(args.out, outputs, manifest)
     for name in only:
         print(f"{name}: rendered")
@@ -307,6 +345,10 @@ def main(argv=None):
     render.add_argument(
         "--templates",
         help="directory holding the *.rb.in templates (default: Source/.github/formulae)",
+    )
+    render.add_argument(
+        "--run-url",
+        help="URL of the workflow run doing the rendering, recorded in the manifest",
     )
     render.add_argument("--out", required=True, help="directory to write into")
     render.set_defaults(func=cmd_render)

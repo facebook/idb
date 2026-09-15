@@ -208,6 +208,7 @@ jobs:
             --companion 'assets/idb-companion.macos-arm64.tar.gz' \
             --wheel 'assets/fb_idb-*-py3-none-any.whl' \
             --asset-base "file://$PWD/assets" \
+            --run-url "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" \
             --out tap
       - name: Upload the rendered formulae
         uses: actions/upload-artifact@v5
