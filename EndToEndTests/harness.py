@@ -796,8 +796,18 @@ class IdbEndToEndTestCase(unittest.IsolatedAsyncioTestCase):
         text = await self.idb_text(*args, "--json", **kwargs)
         return [json.loads(line) for line in text.splitlines() if line.strip()]
 
-    async def idb_expect_failure(self, *args: str, **kwargs: Any) -> Completed:
-        """Require a command failure, rejecting connection and host-service errors."""
+    async def idb_expect_failure(
+        self,
+        *args: str,
+        expected_error: str | Sequence[str],
+        **kwargs: Any,
+    ) -> Completed:
+        """A command whose named rejection is the behaviour under test.
+
+        The non-zero exit has to have come from the command, the companion must
+        still be alive, and stderr must identify the expected rejection. Without
+        all three, an infrastructure or routing failure could impersonate it.
+        """
         kwargs["check"] = False
         completed = await self.idb(*args, **kwargs)
         if completed.returncode == 0:
@@ -806,6 +816,28 @@ class IdbEndToEndTestCase(unittest.IsolatedAsyncioTestCase):
             )
         if classify_failure(completed) is not FailureKind.COMMAND:
             self.fail_or_skip_for(" ".join(args), completed)
+        if self.companion.died() is not None:
+            self.fail_or_skip_for(" ".join(args), completed)
+        markers = (
+            (expected_error,)
+            if isinstance(expected_error, str)
+            else tuple(expected_error)
+        )
+        if not markers:
+            self.fail(f"idb {' '.join(args)} declared no expected error marker")
+        if any(not marker.strip() for marker in markers):
+            self.fail(
+                f"idb {' '.join(args)} declared an empty expected error marker: "
+                f"{markers!r}"
+            )
+        actual = completed.error_text.casefold()
+        if not any(marker.casefold() in actual for marker in markers):
+            self.fail(
+                f"idb {' '.join(args)} failed for an unexpected reason "
+                f"(rc={completed.returncode})\n"
+                f"expected stderr containing one of {markers!r}\n"
+                f"stdout: {completed.text}\nstderr: {completed.error_text}"
+            )
         return completed
 
     async def installed_apps(self) -> dict[str, dict[str, Any]]:

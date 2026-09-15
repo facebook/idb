@@ -52,7 +52,9 @@ class ApplicationLifecycleTests(IdbEndToEndTestCase):
 
     async def test_launching_an_unknown_bundle_fails(self) -> None:
         completed = await self.idb_expect_failure(
-            "launch", "com.example.idb.not-installed"
+            "launch",
+            "com.example.idb.not-installed",
+            expected_error="isn't installed",
         )
         self.assertTrue(
             completed.error_text.strip(), "a failed launch should explain itself"

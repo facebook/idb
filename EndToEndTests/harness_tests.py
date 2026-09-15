@@ -17,6 +17,7 @@ import os
 import tempfile
 import unittest
 from pathlib import Path
+from types import SimpleNamespace
 from typing import Awaitable, Callable, NoReturn, Sequence
 from unittest import mock
 
@@ -89,6 +90,12 @@ def companion(returncode: int | None, log_path: Path | None = None) -> Companion
 class HarnessCaseStub:
     def __init__(self, companion_returncode: int | None = None) -> None:
         self.companion = companion(companion_returncode)
+        self.companion.address = "/tmp/companion.sock"
+        self.environment = SimpleNamespace(
+            idb_bin=Path("/tmp/idb"),
+            idb_args=(),
+        )
+        self.recording: Recording | None = None
         self._result = unittest.TestResult()
 
     _stop_suite = IdbEndToEndTestCase._stop_suite
@@ -219,6 +226,62 @@ class FailureReportingTests(unittest.TestCase):
             )
 
         self.assertIn(f"{STRICT_ENV}=1", str(raised.exception))
+
+
+class CommandTestCaseStub(HarnessCaseStub):
+    idb = IdbEndToEndTestCase.idb
+    idb_expect_failure = IdbEndToEndTestCase.idb_expect_failure
+    fail_or_skip_for = IdbEndToEndTestCase.fail_or_skip_for
+    run_client = IdbEndToEndTestCase.run_client
+
+
+class ExpectedFailureTest(unittest.IsolatedAsyncioTestCase):
+    async def result(
+        self,
+        completed: Completed,
+        *,
+        expected_error: str | Sequence[str] = "not a dictionary",
+        companion_returncode: int | None = None,
+    ) -> Completed:
+        case = CommandTestCaseStub(companion_returncode)
+        with mock.patch.object(
+            harness,
+            "run",
+            new=mock.AsyncMock(return_value=completed),
+        ):
+            return await case.idb_expect_failure(
+                "send-notification",
+                "com.example",
+                "[]",
+                expected_error=expected_error,
+            )
+
+    async def test_accepts_only_the_named_command_rejection(self) -> None:
+        completed = Completed(
+            1,
+            b"",
+            b"Failed to deserialize notification json: not a dictionary\n",
+        )
+
+        self.assertEqual(await self.result(completed), completed)
+
+    async def test_rejects_empty_expected_error_marker_sets_and_members(self) -> None:
+        completed = Completed(1, b"", b"not a dictionary\n")
+        for expected_error in ((), ("",), (" \t",)):
+            with self.subTest(expected_error=expected_error):
+                with self.assertRaisesRegex(Failed, "expected error marker"):
+                    await self.result(completed, expected_error=expected_error)
+
+    async def test_rejects_an_unrelated_command_failure(self) -> None:
+        with self.assertRaisesRegex(Failed, "unexpected reason"):
+            await self.result(Completed(1, b"", b"target is not booted\n"))
+
+    async def test_rejects_a_failure_when_the_companion_died(self) -> None:
+        with self.assertRaisesRegex(Failed, "has since exited with 9"):
+            await self.result(
+                Completed(1, b"", b"not a dictionary\n"),
+                companion_returncode=9,
+            )
 
 
 class CompanionLifecycleTests(unittest.TestCase):

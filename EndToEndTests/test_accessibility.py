@@ -288,7 +288,12 @@ class AccessibilityTests(IdbEndToEndTestCase):
             f"the guest bridge should resolve the marker {marker!r}",
         )
 
-        await self.idb_expect_failure("ui", "describe", "idb-e2e-no-such-element")
+        await self.idb_expect_failure(
+            "ui",
+            "describe",
+            "idb-e2e-no-such-element",
+            expected_error="found no element whose",
+        )
 
     @unittest.skipIf(read_only_client(), "selected client is read-only")
     async def test_ui_tap_opens_general_by_point(self) -> None:
@@ -304,6 +309,7 @@ class AccessibilityTests(IdbEndToEndTestCase):
             "AXUniqueId",
             "--expected-value",
             "idb-e2e-value-it-does-not-have",
+            expected_error="before tapping",
         )
         deadline = Deadline(UI_UPDATE_TIMEOUT_SECONDS)
         while True:
