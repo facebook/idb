@@ -1582,17 +1582,8 @@ static NSDictionary<NSString *, id> *FBAXBridgeDispatchRequest(NSDictionary<NSSt
 
 #pragma mark - Argv front-end
 
-int handleAccessibilityAction(NSString *action, NSArray<NSString *> *arguments)
+NSDictionary<NSString *, id> *FBAXBridgeRequestFromArguments(NSString *action, NSArray<NSString *> *arguments)
 {
-  if ([action isEqualToString:kActionServe]) {
-    NSString *socketPath = arguments.firstObject;
-    if (socketPath.length == 0) {
-      NSLog(@"[AccessibilityService] serve requires a socket path argument");
-      return 1;
-    }
-    return FBAXBridgeServe(socketPath, [arguments subarrayWithRange:NSMakeRange(1, arguments.count - 1)]);
-  }
-
   NSMutableDictionary<NSString *, id> *request = [NSMutableDictionary dictionary];
   request[kRequestVerb] = action;
   for (NSUInteger i = 0; i + 1 < arguments.count; i += 2) {
@@ -1642,6 +1633,22 @@ int handleAccessibilityAction(NSString *action, NSArray<NSString *> *arguments)
       request[kRequestAssertValue] = argValue;
     }
   }
+
+  return request;
+}
+
+int handleAccessibilityAction(NSString *action, NSArray<NSString *> *arguments)
+{
+  if ([action isEqualToString:kActionServe]) {
+    NSString *socketPath = arguments.firstObject;
+    if (socketPath.length == 0) {
+      NSLog(@"[AccessibilityService] serve requires a socket path argument");
+      return 1;
+    }
+    return FBAXBridgeServe(socketPath, [arguments subarrayWithRange:NSMakeRange(1, arguments.count - 1)]);
+  }
+
+  NSDictionary<NSString *, id> *request = FBAXBridgeRequestFromArguments(action, arguments);
 
   NSDictionary *response = FBAXBridgeHandleRequest(request);
   NSData *json = FBAXBridgeSerializeResponse(response);

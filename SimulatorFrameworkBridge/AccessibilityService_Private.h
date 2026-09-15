@@ -9,6 +9,9 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
+/** Parses the same flag/value pairs consumed by the accessibility command. */
+NSDictionary<NSString *, id> *FBAXBridgeRequestFromArguments(NSString *action, NSArray<NSString *> *arguments);
+
 void FBAXBridgePrepareRuntime(void);
 
 NSDictionary<NSString *, id> *FBAXBridgeHandleRequestData(
