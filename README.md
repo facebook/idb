@@ -83,7 +83,7 @@ Head over [to the main documentation](https://www.fbidb.io) for more details on 
   ```
   brew install protobuf
   ```
-  (`build.sh` builds both Swift codegen plugins itself — `protoc-gen-swift` and `protoc-gen-grpc-swift` — using the versions and revisions in `Package.resolved`, so the generated code matches the runtime it is generated against.)
+  (`build.sh` builds both Swift codegen plugins itself — `protoc-gen-swift` and `protoc-gen-grpc-swift-2` — using the versions and revisions in `Package.resolved`, so the generated code matches the runtime it is generated against.)
 
 ### Building
 

@@ -260,21 +260,21 @@ assert_accepted "the checked-in manifests" "$WORK/real"
 # The pin guard, against manifests made to disagree
 # ---------------------------------------------------------------------------
 
-assert_accepted "synthetic manifests in agreement" "$(stage_package synthetic 1.27.5 1.38.1)"
+assert_accepted "synthetic manifests in agreement" "$(stage_package synthetic 2.4.3 1.38.1)"
 
-dir="$(stage_package disagree 1.27.5 1.38.1)"
+dir="$(stage_package disagree 2.4.3 1.38.1)"
 sed_inplace 's/exactVersion: 1.38.1/exactVersion: 1.31.0/' "$dir/Companion/project.yml"
 assert_rejected "a companion pinned to a different version" "$dir" \
     "swift-protobuf is pinned to 1.38.1 in Package.swift but to 1.31.0 in Companion/project.yml"
 
-dir="$(stage_package floating 1.27.5 1.38.1)"
+dir="$(stage_package floating 2.4.3 1.38.1)"
 sed_inplace 's/exact: "1.38.1"/from: "1.38.1"/' "$dir/Package.swift"
 assert_rejected "a floating requirement in Package.swift" "$dir" \
     "Package.swift does not pin these to an exact version: swift-protobuf"
 
 # The companion's own exactness arm: XcodeGen would resolve this to whatever the
 # package's default branch points at, which is not a pin at all.
-dir="$(stage_package unpinned-companion 1.27.5 1.38.1)"
+dir="$(stage_package unpinned-companion 2.4.3 1.38.1)"
 sed_inplace '/exactVersion: 1.38.1/d' "$dir/Companion/project.yml"
 assert_rejected "a companion entry with no version" "$dir" \
     "Companion/project.yml does not pin these to an exact version: swift-protobuf"
@@ -282,12 +282,12 @@ assert_rejected "a companion entry with no version" "$dir" \
 # Package.resolved is the arm that covers the transitive graph: the two hand-
 # written manifests can agree with each other and still both disagree with what
 # SwiftPM last resolved.
-dir="$(stage_package resolved-drift 1.27.5 1.38.1)"
+dir="$(stage_package resolved-drift 2.4.3 1.38.1)"
 sed_inplace 's/"version" : "1.38.1"/"version" : "1.31.0"/' "$dir/Package.resolved"
 assert_rejected "a Package.resolved recording a different version" "$dir" \
     "swift-protobuf is pinned to 1.38.1 in Package.swift but Package.resolved records 1.31.0"
 
-dir="$(stage_package resolved-absent 1.27.5 1.38.1)"
+dir="$(stage_package resolved-absent 2.4.3 1.38.1)"
 cat > "$dir/Package.resolved" <<'EOF'
 {
   "originHash" : "0000000000000000000000000000000000000000000000000000000000000000",
@@ -298,7 +298,7 @@ cat > "$dir/Package.resolved" <<'EOF'
       "location" : "https://github.com/grpc/grpc-swift-2.git",
       "state" : {
         "revision" : "1111111111111111111111111111111111111111",
-        "version" : "1.27.5"
+        "version" : "2.4.3"
       }
     },
     {
@@ -307,7 +307,7 @@ cat > "$dir/Package.resolved" <<'EOF'
       "location" : "https://github.com/grpc/grpc-swift-protobuf.git",
       "state" : {
         "revision" : "3333333333333333333333333333333333333333",
-        "version" : "1.27.5"
+        "version" : "2.4.3"
       }
     }
   ],
@@ -321,7 +321,7 @@ assert_rejected "a pinned package missing from Package.resolved" "$dir" \
 # Package.swift only picks up transitively, so the resolved graph is the only
 # thing left that can check them -- letting one that is not in it through would
 # leave that pin asserted against nothing at all.
-dir="$(stage_package resolved-absent-companion 1.27.5 1.38.1)"
+dir="$(stage_package resolved-absent-companion 2.4.3 1.38.1)"
 insert_before "$dir/Companion/project.yml" "targets:" "  swift-log:
     url: https://github.com/apple/swift-log.git
     exactVersion: 1.14.0"
@@ -331,21 +331,21 @@ assert_rejected "a companion-only package missing from Package.resolved" "$dir" 
 # A commented-out dependency declares nothing. Counting one is worse than a
 # nuisance: the guard names a package the developer cannot find a requirement
 # for, because there is not one.
-dir="$(stage_package commented-out 1.27.5 1.38.1)"
+dir="$(stage_package commented-out 2.4.3 1.38.1)"
 insert_before "$dir/Package.swift" ".package(url: \"https://github.com/grpc/grpc-swift-2.git\"" \
     "        // .package(url: \"https://github.com/apple/swift-nio.git\", from: \"2.50.0\"),"
 assert_accepted "a commented-out dependency in Package.swift" "$dir"
 
 # XcodeGen accepts `version:` as a synonym for `exactVersion:`, so a companion
 # spelled that way is pinned and must read as pinned.
-dir="$(stage_package version-spelling 1.27.5 1.38.1)"
+dir="$(stage_package version-spelling 2.4.3 1.38.1)"
 sed_inplace 's/    exactVersion: 1.38.1/    version: 1.38.1/' "$dir/Companion/project.yml"
 assert_accepted "a companion pinned with version rather than exactVersion" "$dir"
 
 # An entry in flow form is one the parser genuinely cannot read. It matches no
 # entry header, so it falls out of the pinned and the unpinned listing alike --
 # and a package in neither listing is a package nothing above checks.
-dir="$(stage_package flow-form 1.27.5 1.38.1)"
+dir="$(stage_package flow-form 2.4.3 1.38.1)"
 insert_before "$dir/Companion/project.yml" "targets:" \
     "  swift-log: {url: https://github.com/apple/swift-log.git, exactVersion: 1.14.0}"
 assert_rejected "a companion entry written in flow form" "$dir" \
@@ -355,7 +355,7 @@ assert_rejected "a companion entry written in flow form" "$dir" \
 # over several lines, and a split one matches neither extractor -- so it too
 # falls out of both listings. Nothing on the line names the package, so the
 # refusal is keyed on where it is rather than on what it is called.
-dir="$(stage_package split-declaration 1.27.5 1.38.1)"
+dir="$(stage_package split-declaration 2.4.3 1.38.1)"
 insert_before "$dir/Package.swift" "    ]" "        .package(
             url: \"https://github.com/apple/swift-nio.git\",
             from: \"2.50.0\"
@@ -363,7 +363,7 @@ insert_before "$dir/Package.swift" "    ]" "        .package(
 assert_rejected "a Package.swift dependency split over several lines" "$dir" \
     "Package.swift declares dependencies this check cannot read, on lines: 10"
 
-dir="$(stage_package renamed 1.27.5 1.38.1)"
+dir="$(stage_package renamed 2.4.3 1.38.1)"
 # The YAML key is a nickname -- XcodeGen resolves the package from the `url`
 # beneath it -- so renaming the key changes nothing about what the companion
 # links, and the version beneath it still has to agree with Package.swift.
@@ -376,7 +376,7 @@ assert_rejected "a renamed companion key does not hide the version underneath it
 # Every key is left alone and every url: is repointed, so a guard keyed on the
 # key still finds both packages in common and a guard keyed on the url finds
 # neither -- which is the whole difference between the two.
-dir="$(stage_package no-overlap 1.27.5 1.38.1)"
+dir="$(stage_package no-overlap 2.4.3 1.38.1)"
 sed_inplace 's|url: https://github.com/grpc/grpc-swift-2.git|url: https://github.com/apple/swift-nio.git|' \
     "$dir/Companion/project.yml"
 sed_inplace 's|url: https://github.com/grpc/grpc-swift-protobuf.git|url: https://github.com/apple/swift-nio-ssl.git|' \
@@ -389,20 +389,20 @@ assert_rejected "manifests that declare no package in common" "$dir" \
 
 # A quoted url: is as valid as a bare one and XcodeGen resolves both to the same
 # package, so whatever identity the guard derives has to survive the quotes.
-dir="$(stage_package quoted-url 1.27.5 1.38.1)"
+dir="$(stage_package quoted-url 2.4.3 1.38.1)"
 sed_inplace 's|url: \(.*\)$|url: "\1"|' "$dir/Companion/project.yml"
 assert_accepted "a companion whose urls are quoted" "$dir"
 
 # A trailing slash names the same repository as no trailing slash, so it cannot
 # be allowed to reduce the identity to nothing.
-dir="$(stage_package trailing-slash 1.27.5 1.38.1)"
+dir="$(stage_package trailing-slash 2.4.3 1.38.1)"
 sed_inplace 's|\(url: .*\)$|\1/|' "$dir/Companion/project.yml"
 assert_accepted "a companion whose urls end in a slash" "$dir"
 
 # SwiftPM takes a url with or without the .git suffix, and neither spelling may
 # change what the exactness check above sees: it is the same requirement, and the
 # case above refuses the other spelling of it.
-dir="$(stage_package unsuffixed-url 1.27.5 1.38.1)"
+dir="$(stage_package unsuffixed-url 2.4.3 1.38.1)"
 sed_inplace 's|url: "https://github.com/apple/swift-protobuf.git", exact:|url: "https://github.com/apple/swift-protobuf", from:|' \
     "$dir/Package.swift"
 
@@ -413,7 +413,7 @@ assert_rejected "a floating requirement on a url with no .git suffix" "$dir" \
 # Codegen uses the lock, including on a warm cache and after a pin bump.
 # ---------------------------------------------------------------------------
 
-dir="$(stage_package plugin 1.27.5 1.38.1)"
+dir="$(stage_package plugin 2.4.3 1.38.1)"
 export SWIFT_STUB_LOG="$WORK/plugin.swiftlog"
 : > "$SWIFT_STUB_LOG"
 
@@ -423,7 +423,7 @@ assert_equal "cold codegen succeeds" 0 "$status"
 assert_contains "codegen reports success" "$output" "Successfully built protoc-gen-grpc-swift-2"
 assert_contains "codegen forbids resolution" "$(cat "$SWIFT_STUB_LOG")" "--only-use-versions-from-resolved-file"
 assert_contains "codegen receives the pinned revision" "$(cat "$SWIFT_STUB_LOG")" "1111111111111111111111111111111111111111"
-assert_contains "the generated manifest pins grpc" "$(cat "$dir/Build/Codegen/Package.swift")" 'exact: "1.27.5"'
+assert_contains "the generated manifest pins grpc" "$(cat "$dir/Build/Codegen/Package.swift")" 'exact: "2.4.3"'
 
 : > "$SWIFT_STUB_LOG"
 in_package "$dir" 'build_grpc_swift_plugin' > /dev/null
@@ -454,7 +454,7 @@ unset SWIFT_STUB_DRIFT
 # Xcode gets the same lock and must preserve it.
 # ---------------------------------------------------------------------------
 
-dir="$(stage_package xcode 1.27.5 1.38.1)"
+dir="$(stage_package xcode 2.4.3 1.38.1)"
 export XCODE_STUB_LOG="$WORK/xcode.log"
 : > "$XCODE_STUB_LOG"
 # The functions are evaluated inside the staged package.

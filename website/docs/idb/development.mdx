@@ -29,10 +29,10 @@ Firstly, there are system level build dependencies, which can be [installed via 
 ```
 # XcodeGen generates the Xcode projects from the project.yml files
 brew install xcodegen
-# protobuf and swift-protobuf are used to generate the gRPC Swift bindings
-# from idb.proto. build.sh builds the protoc-gen-grpc-swift plugin itself,
-# from a pinned checkout of grpc-swift.
-brew install protobuf swift-protobuf
+# protobuf is used to generate the gRPC Swift bindings from idb.proto.
+# build.sh builds the protoc-gen-swift and protoc-gen-grpc-swift-2 plugins
+# itself, from the versions pinned in Package.resolved.
+brew install protobuf
 ```
 
 Build the companion (and the frameworks, shims and helpers it needs) with:

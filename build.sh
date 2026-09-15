@@ -184,24 +184,6 @@ function check_protobuf() {
   fi
 }
 
-# Defined once, in Package.swift. The codegen plugin must be the same version as
-# the runtime it generates against, so derive it rather than restating it here.
-function resolve_grpc_swift_version() {
-  GRPC_SWIFT_VERSION="$(pinned_version grpc-swift-protobuf)"
-  if [ -z "$GRPC_SWIFT_VERSION" ]; then
-    echo "error: Package.swift does not pin grpc-swift-protobuf to an exact version" >&2
-    exit 1
-  fi
-}
-
-function resolve_swift_protobuf_version() {
-  SWIFT_PROTOBUF_VERSION="$(pinned_version swift-protobuf)"
-  if [ -z "$SWIFT_PROTOBUF_VERSION" ]; then
-    echo "error: Package.swift does not pin swift-protobuf to an exact version" >&2
-    exit 1
-  fi
-}
-
 # Reduces the URL in the first field of each line to the repository name it ends
 # in. Neither manifest states an identity, so the URL is the only thing the two
 # can be matched on -- and a package is the same package however its URL is
@@ -251,10 +233,6 @@ function resolved_pins() {
   ' Package.resolved
 }
 
-# The version Package.swift pins a package to, or nothing if it does not pin one.
-function pinned_version() {
-  package_swift_pins | awk -v name="$1" '$1 == name { print $2 }'
-}
 
 # Keyed on the URL, not on the YAML key above it. The key is a nickname XcodeGen
 # never resolves anything by, so matching on it lets a rename quietly take the
@@ -440,15 +418,17 @@ function build_protoc_plugin() {
   echo "Successfully built $product"
 }
 
+# The codegen plugins must be the same version as the runtime they generate against.
+# `check_package_pins` requires both to be pinned in Package.swift, and
+# `dependency_lock.py prepare-codegen` reads the pinned version and revision from
+# Package.resolved, so nothing here restates them.
 function build_grpc_swift_plugin() {
-  resolve_grpc_swift_version
   check_package_pins
 
   build_protoc_plugin protoc-gen-grpc-swift-2
 }
 
 function build_swift_protobuf_plugin() {
-  resolve_swift_protobuf_version
   check_package_pins
 
   build_protoc_plugin protoc-gen-swift
