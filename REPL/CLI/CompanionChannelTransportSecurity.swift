@@ -6,8 +6,7 @@
  */
 
 import CompanionDiscovery
-import GRPC
-import NIOSSL
+import GRPCNIOTransportHTTP2Posix
 
 /// The gRPC transport security for a companion connection. When `tls` is
 /// `.metaIdentity`, a TCP companion whose Meta identity is available uses TLS —
@@ -17,18 +16,17 @@ import NIOSSL
 func channelTransportSecurity(
   for address: CompanionAddress,
   tls: CompanionClientTLS
-) throws -> GRPCChannelPool.Configuration.TransportSecurity {
+) throws -> HTTP2ClientTransport.Posix.TransportSecurity {
   guard
     let identity = replClientTLSIdentity(
       for: address, tls: tls, provider: CompanionTLS.provider)
   else {
     return .plaintext
   }
-  let certificateChain = try NIOSSLCertificate.fromPEMFile(identity.certificateChainPath)
-    .map { NIOSSLCertificateSource.certificate($0) }
-  return .tls(
-    .makeClientConfigurationBackedByNIOSSL(
-      certificateChain: certificateChain,
-      privateKey: .privateKey(try NIOSSLPrivateKey(file: identity.privateKeyPath, format: .pem)),
-      certificateVerification: .none))
+  return .mTLS(
+    certificateChain: [.file(path: identity.certificateChainPath, format: .pem)],
+    privateKey: .file(path: identity.privateKeyPath, format: .pem)
+  ) { config in
+    config.serverCertificateVerification = .noVerification
+  }
 }

@@ -7,14 +7,14 @@
 
 import CompanionLib
 import FBControlCore
-import GRPC
+import GRPCCore
 import IDBGRPCSwift
 
 struct RmMethodHandler {
 
   let commandExecutor: IDBCommandExecutor
 
-  func handle(request: Idb_RmRequest, context: GRPCAsyncServerCallContext) async throws -> Idb_RmResponse {
+  func handle(request: Idb_RmRequest, context: ServerContext) async throws -> Idb_RmResponse {
     let fileContainer = FileContainerValueTransformer.rawFileContainer(from: request.container)
     try await commandExecutor.remove_paths(request.paths, containerType: fileContainer)
     return .init()

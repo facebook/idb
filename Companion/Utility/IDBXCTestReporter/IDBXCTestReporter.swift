@@ -10,7 +10,7 @@ import CompanionUtilities
 import FBControlCore
 import FBSimulatorControl
 import Foundation
-import GRPC
+import GRPCCore
 import IDBGRPCSwift
 import XCTestBootstrap
 
@@ -73,7 +73,7 @@ final class IDBXCTestReporter: NSObject, XCTestReporter, FBDataConsumer, @unchec
   /// Set once the test operation has started, which is the earliest point the configuration is known.
   var configuration: Configuration?
 
-  @Atomic private var responseStream: GRPCAsyncResponseStreamWriter<Idb_XctestRunResponse>?
+  @Atomic private var responseStream: RPCWriter<Idb_XctestRunResponse>?
 
   private let queue: DispatchQueue
   private let logger: FBControlCoreLogger
@@ -82,7 +82,7 @@ final class IDBXCTestReporter: NSObject, XCTestReporter, FBDataConsumer, @unchec
 
   @Atomic private var currentInfo = CurrentTestInfo()
 
-  init(responseStream: GRPCAsyncResponseStreamWriter<Idb_XctestRunResponse>, queue: DispatchQueue, logger: FBControlCoreLogger) {
+  init(responseStream: RPCWriter<Idb_XctestRunResponse>, queue: DispatchQueue, logger: FBControlCoreLogger) {
     self._responseStream = .init(wrappedValue: responseStream)
     self.queue = queue
     self.logger = logger
@@ -389,7 +389,7 @@ final class IDBXCTestReporter: NSObject, XCTestReporter, FBDataConsumer, @unchec
   private func writeResponseFinal(response: Idb_XctestRunResponse) async throws {
     let shouldCloseStream = isLastMessage(responseStatus: response.status)
 
-    let stream: GRPCAsyncResponseStreamWriter<Idb_XctestRunResponse>? = _responseStream.sync { storedStream in
+    let stream: RPCWriter<Idb_XctestRunResponse>? = _responseStream.sync { storedStream in
       guard let responseStream = storedStream else { return nil }
       if shouldCloseStream {
         storedStream = nil

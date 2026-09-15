@@ -7,14 +7,14 @@
 
 import CompanionLib
 import FBControlCore
-import GRPC
+import GRPCCore
 import IDBGRPCSwift
 
 struct OpenUrlMethodHandler {
 
   let commandExecutor: IDBCommandExecutor
 
-  func handle(request: Idb_OpenUrlRequest, context: GRPCAsyncServerCallContext) async throws -> Idb_OpenUrlRequest {
+  func handle(request: Idb_OpenUrlRequest, context: ServerContext) async throws -> Idb_OpenUrlRequest {
     try await commandExecutor.open_url(request.url)
     return .init()
   }

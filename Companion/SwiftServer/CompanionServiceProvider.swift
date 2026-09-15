@@ -9,19 +9,17 @@ import CompanionLib
 import CompanionUtilities
 @preconcurrency import FBControlCore
 import Foundation
-import GRPC
+import GRPCCore
 import IDBGRPCSwift
-import NIOHPACK
 import SwiftProtobuf
 import XCTestBootstrap
 
-final class CompanionServiceProvider: Idb_CompanionServiceAsyncProvider, @unchecked Sendable {
+final class CompanionServiceProvider: Idb_CompanionService.SimpleServiceProtocol, @unchecked Sendable {
 
   private let target: any FBiOSTarget
   private let commandExecutor: IDBCommandExecutor
   private let reporter: EventReporter
   private let logger: IDBLogger
-  private let interceptorFactory: Idb_CompanionServiceServerInterceptorFactoryProtocol
   private let telemetry: CompanionTelemetry
   /// Tracks in-flight calls so the companion can shut down when idle.
   private let idleMonitor: IdleMonitor?
@@ -35,26 +33,33 @@ final class CompanionServiceProvider: Idb_CompanionServiceAsyncProvider, @unchec
     commandExecutor: IDBCommandExecutor,
     reporter: EventReporter,
     logger: IDBLogger,
-    interceptors: Idb_CompanionServiceServerInterceptorFactoryProtocol,
     idleMonitor: IdleMonitor? = nil
   ) {
     self.target = target
     self.commandExecutor = commandExecutor
     self.reporter = reporter
     self.logger = logger
-    self.interceptorFactory = interceptors
     self.telemetry = CompanionTelemetry(logger: logger, reporter: reporter)
     self.idleMonitor = idleMonitor
     self.replRecordingCoordinator = ReplRecordingCoordinator(
       auxillaryDirectory: commandExecutor.auxillaryDirectory, logger: target.logger)
   }
 
-  /// Also counts the call as in-flight for `idleMonitor` (a no-op when idle shutdown is disabled).
+  /// Also counts the call as in-flight for `idleMonitor` (a no-op when idle shutdown is disabled),
+  /// and maps whatever the handler throws to the status the client sees.
+  ///
+  /// The generated service runs a streaming handler inside the response producer, after the
+  /// interceptor chain has already returned, so an interceptor cannot map its errors; the
+  /// mapping has to happen here, around the handler itself.
   private func tracked<R>(_ body: () async throws -> R) async throws -> R {
-    guard let idleMonitor else {
-      return try await body()
+    do {
+      guard let idleMonitor else {
+        return try await body()
+      }
+      return try await idleMonitor.tracking(body)
+    } catch {
+      throw ErrorMapping.rpcError(from: error)
     }
-    return try await idleMonitor.tracking(body)
   }
 
   private func trackedUnaryCall<Request, Response>(_ method: String, request: Request, summarize: ((Response) -> String)? = nil, body: () async throws -> Response) async throws -> Response {
@@ -73,13 +78,11 @@ final class CompanionServiceProvider: Idb_CompanionServiceAsyncProvider, @unchec
     try await tracked { try await telemetry.bidiStreaming(method, body: body) }
   }
 
-  var interceptors: Idb_CompanionServiceServerInterceptorFactoryProtocol? { interceptorFactory }
-
   private var targetLogger: FBControlCoreLogger {
     target.logger
   }
 
-  func connect(request: Idb_ConnectRequest, context: GRPCAsyncServerCallContext) async throws -> Idb_ConnectResponse {
+  func connect(request: Idb_ConnectRequest, context: ServerContext) async throws -> Idb_ConnectResponse {
     return try await trackedUnaryCall("connect", request: request) {
       try await TeardownContext.withAutocleanup {
         try await ConnectMethodHandler(reporter: reporter, logger: logger, target: target)
@@ -88,27 +91,27 @@ final class CompanionServiceProvider: Idb_CompanionServiceAsyncProvider, @unchec
     }
   }
 
-  func debugserver(requestStream: GRPCAsyncRequestStream<Idb_DebugServerRequest>, responseStream: GRPCAsyncResponseStreamWriter<Idb_DebugServerResponse>, context: GRPCAsyncServerCallContext) async throws {
-    let reader = RequestStreamReader(requestStream)
+  func debugserver(request: RPCAsyncSequence<Idb_DebugServerRequest, any Error>, response: RPCWriter<Idb_DebugServerResponse>, context: ServerContext) async throws {
+    let reader = RequestStreamReader(request)
     try await trackedBidiStreaming("debugserver") {
       try await TeardownContext.withAutocleanup {
         try await DebugserverMethodHandler(commandExecutor: commandExecutor)
-          .handle(requestStream: reader, responseStream: responseStream, context: context)
+          .handle(requestStream: reader, responseStream: response, context: context)
       }
     }
   }
 
-  func dap(requestStream: GRPCAsyncRequestStream<Idb_DapRequest>, responseStream: GRPCAsyncResponseStreamWriter<Idb_DapResponse>, context: GRPCAsyncServerCallContext) async throws {
-    let reader = RequestStreamReader(requestStream)
+  func dap(request: RPCAsyncSequence<Idb_DapRequest, any Error>, response: RPCWriter<Idb_DapResponse>, context: ServerContext) async throws {
+    let reader = RequestStreamReader(request)
     try await trackedBidiStreaming("dap") {
       try await TeardownContext.withAutocleanup {
         try await DapMethodHandler(commandExecutor: commandExecutor, targetLogger: targetLogger)
-          .handle(requestStream: reader, responseStream: responseStream, context: context)
+          .handle(requestStream: reader, responseStream: response, context: context)
       }
     }
   }
 
-  func describe(request: Idb_TargetDescriptionRequest, context: GRPCAsyncServerCallContext) async throws -> Idb_TargetDescriptionResponse {
+  func describe(request: Idb_TargetDescriptionRequest, context: ServerContext) async throws -> Idb_TargetDescriptionResponse {
     return try await trackedUnaryCall("describe", request: request) {
       try await TeardownContext.withAutocleanup {
         try await DescribeMethodHandler(reporter: reporter, logger: logger, target: target, commandExecutor: commandExecutor)
@@ -117,46 +120,46 @@ final class CompanionServiceProvider: Idb_CompanionServiceAsyncProvider, @unchec
     }
   }
 
-  func install(requestStream: GRPCAsyncRequestStream<Idb_InstallRequest>, responseStream: GRPCAsyncResponseStreamWriter<Idb_InstallResponse>, context: GRPCAsyncServerCallContext) async throws {
-    let reader = RequestStreamReader(requestStream)
+  func install(request: RPCAsyncSequence<Idb_InstallRequest, any Error>, response: RPCWriter<Idb_InstallResponse>, context: ServerContext) async throws {
+    let reader = RequestStreamReader(request)
     try await trackedBidiStreaming("install") {
       try await TeardownContext.withAutocleanup {
         try await InstallMethodHandler(commandExecutor: commandExecutor, targetLogger: targetLogger)
-          .handle(requestStream: reader, responseStream: responseStream, context: context)
+          .handle(requestStream: reader, responseStream: response, context: context)
       }
     }
   }
 
-  func instruments_run(requestStream: GRPCAsyncRequestStream<Idb_InstrumentsRunRequest>, responseStream: GRPCAsyncResponseStreamWriter<Idb_InstrumentsRunResponse>, context: GRPCAsyncServerCallContext) async throws {
-    let reader = RequestStreamReader(requestStream)
+  func instruments_run(request: RPCAsyncSequence<Idb_InstrumentsRunRequest, any Error>, response: RPCWriter<Idb_InstrumentsRunResponse>, context: ServerContext) async throws {
+    let reader = RequestStreamReader(request)
     try await trackedBidiStreaming("instruments_run") {
       try await TeardownContext.withAutocleanup {
         try await InstrumentsRunMethodHandler(target: target, targetLogger: targetLogger, commandExecutor: commandExecutor, logger: logger)
-          .handle(requestStream: reader, responseStream: responseStream, context: context)
+          .handle(requestStream: reader, responseStream: response, context: context)
       }
     }
   }
 
-  func log(request: Idb_LogRequest, responseStream: GRPCAsyncResponseStreamWriter<Idb_LogResponse>, context: GRPCAsyncServerCallContext) async throws {
+  func log(request: Idb_LogRequest, response: RPCWriter<Idb_LogResponse>, context: ServerContext) async throws {
     try await trackedServerStreaming("log", request: request) {
       try await TeardownContext.withAutocleanup {
         try await LogMethodHandler(target: target, commandExecutor: commandExecutor)
-          .handle(request: request, responseStream: responseStream, context: context)
+          .handle(request: request, responseStream: response, context: context)
       }
     }
   }
 
-  func xctrace_record(requestStream: GRPCAsyncRequestStream<Idb_XctraceRecordRequest>, responseStream: GRPCAsyncResponseStreamWriter<Idb_XctraceRecordResponse>, context: GRPCAsyncServerCallContext) async throws {
-    let reader = RequestStreamReader(requestStream)
+  func xctrace_record(request: RPCAsyncSequence<Idb_XctraceRecordRequest, any Error>, response: RPCWriter<Idb_XctraceRecordResponse>, context: ServerContext) async throws {
+    let reader = RequestStreamReader(request)
     try await trackedBidiStreaming("xctrace_record") {
       try await TeardownContext.withAutocleanup {
         try await XctraceRecordMethodHandler(logger: logger, targetLogger: targetLogger, target: target)
-          .handle(requestStream: reader, responseStream: responseStream, context: context)
+          .handle(requestStream: reader, responseStream: response, context: context)
       }
     }
   }
 
-  func accessibility_info(request: Idb_AccessibilityInfoRequest, context: GRPCAsyncServerCallContext) async throws -> Idb_AccessibilityInfoResponse {
+  func accessibility_info(request: Idb_AccessibilityInfoRequest, context: ServerContext) async throws -> Idb_AccessibilityInfoResponse {
     return try await trackedUnaryCall("accessibility_info", request: request) {
       try await TeardownContext.withAutocleanup {
         try await AccessibilityInfoMethodHandler(commandExecutor: commandExecutor)
@@ -165,7 +168,7 @@ final class CompanionServiceProvider: Idb_CompanionServiceAsyncProvider, @unchec
     }
   }
 
-  func accessibility_action(request: Idb_AccessibilityActionRequest, context: GRPCAsyncServerCallContext) async throws -> Idb_AccessibilityActionResponse {
+  func accessibility_action(request: Idb_AccessibilityActionRequest, context: ServerContext) async throws -> Idb_AccessibilityActionResponse {
     return try await trackedUnaryCall("accessibility_action", request: request) {
       try await TeardownContext.withAutocleanup {
         try await AccessibilityActionMethodHandler(commandExecutor: commandExecutor)
@@ -174,7 +177,7 @@ final class CompanionServiceProvider: Idb_CompanionServiceAsyncProvider, @unchec
     }
   }
 
-  func focus(request: Idb_FocusRequest, context: GRPCAsyncServerCallContext) async throws -> Idb_FocusResponse {
+  func focus(request: Idb_FocusRequest, context: ServerContext) async throws -> Idb_FocusResponse {
     return try await trackedUnaryCall("focus", request: request) {
       try await TeardownContext.withAutocleanup {
         try await FocusMethodHandler(commandExecutor: commandExecutor)
@@ -183,8 +186,8 @@ final class CompanionServiceProvider: Idb_CompanionServiceAsyncProvider, @unchec
     }
   }
 
-  func hid(requestStream: GRPCAsyncRequestStream<Idb_HIDEvent>, context: GRPCAsyncServerCallContext) async throws -> Idb_HIDResponse {
-    let reader = RequestStreamReader(requestStream)
+  func hid(request: RPCAsyncSequence<Idb_HIDEvent, any Error>, context: ServerContext) async throws -> Idb_HIDResponse {
+    let reader = RequestStreamReader(request)
     return try await trackedClientStreaming("hid") {
       try await TeardownContext.withAutocleanup {
         try await HidMethodHandler(commandExecutor: commandExecutor)
@@ -193,7 +196,7 @@ final class CompanionServiceProvider: Idb_CompanionServiceAsyncProvider, @unchec
     }
   }
 
-  func open_url(request: Idb_OpenUrlRequest, context: GRPCAsyncServerCallContext) async throws -> Idb_OpenUrlRequest {
+  func open_url(request: Idb_OpenUrlRequest, context: ServerContext) async throws -> Idb_OpenUrlRequest {
     return try await trackedUnaryCall("open_url", request: request) {
       try await TeardownContext.withAutocleanup {
         try await OpenUrlMethodHandler(commandExecutor: commandExecutor)
@@ -202,7 +205,7 @@ final class CompanionServiceProvider: Idb_CompanionServiceAsyncProvider, @unchec
     }
   }
 
-  func set_location(request: Idb_SetLocationRequest, context: GRPCAsyncServerCallContext) async throws -> Idb_SetLocationResponse {
+  func set_location(request: Idb_SetLocationRequest, context: ServerContext) async throws -> Idb_SetLocationResponse {
     return try await trackedUnaryCall("set_location", request: request) {
       try await TeardownContext.withAutocleanup {
         try await SetLocationMethodHandler(commandExecutor: commandExecutor)
@@ -211,7 +214,7 @@ final class CompanionServiceProvider: Idb_CompanionServiceAsyncProvider, @unchec
     }
   }
 
-  func send_notification(request: Idb_SendNotificationRequest, context: GRPCAsyncServerCallContext) async throws -> Idb_SendNotificationResponse {
+  func send_notification(request: Idb_SendNotificationRequest, context: ServerContext) async throws -> Idb_SendNotificationResponse {
     return try await trackedUnaryCall("send_notification", request: request) {
       try await TeardownContext.withAutocleanup {
         try await SendNotificationMethodHandler(commandExecutor: commandExecutor)
@@ -220,7 +223,7 @@ final class CompanionServiceProvider: Idb_CompanionServiceAsyncProvider, @unchec
     }
   }
 
-  func simulate_memory_warning(request: Idb_SimulateMemoryWarningRequest, context: GRPCAsyncServerCallContext) async throws -> Idb_SimulateMemoryWarningResponse {
+  func simulate_memory_warning(request: Idb_SimulateMemoryWarningRequest, context: ServerContext) async throws -> Idb_SimulateMemoryWarningResponse {
     return try await trackedUnaryCall("simulate_memory_warning", request: request) {
       try await TeardownContext.withAutocleanup {
         try await SimulateMemoryWarningMethodHandler(commandExecutor: commandExecutor)
@@ -229,7 +232,7 @@ final class CompanionServiceProvider: Idb_CompanionServiceAsyncProvider, @unchec
     }
   }
 
-  func approve(request: Idb_ApproveRequest, context: GRPCAsyncServerCallContext) async throws -> Idb_ApproveResponse {
+  func approve(request: Idb_ApproveRequest, context: ServerContext) async throws -> Idb_ApproveResponse {
     return try await trackedUnaryCall("approve", request: request) {
       try await TeardownContext.withAutocleanup {
         try await ApproveMethodHandler(commandExecutor: commandExecutor)
@@ -238,7 +241,7 @@ final class CompanionServiceProvider: Idb_CompanionServiceAsyncProvider, @unchec
     }
   }
 
-  func revoke(request: Idb_RevokeRequest, context: GRPCAsyncServerCallContext) async throws -> Idb_RevokeResponse {
+  func revoke(request: Idb_RevokeRequest, context: ServerContext) async throws -> Idb_RevokeResponse {
     return try await trackedUnaryCall("revoke", request: request) {
       try await TeardownContext.withAutocleanup {
         try await RevokeMethodHandler(commandExecutor: commandExecutor)
@@ -247,7 +250,7 @@ final class CompanionServiceProvider: Idb_CompanionServiceAsyncProvider, @unchec
     }
   }
 
-  func clear_keychain(request: Idb_ClearKeychainRequest, context: GRPCAsyncServerCallContext) async throws -> Idb_ClearKeychainResponse {
+  func clear_keychain(request: Idb_ClearKeychainRequest, context: ServerContext) async throws -> Idb_ClearKeychainResponse {
     return try await trackedUnaryCall("clear_keychain", request: request) {
       try await TeardownContext.withAutocleanup {
         try await ClearKeychainMethodHandler(commandExecutor: commandExecutor)
@@ -256,7 +259,7 @@ final class CompanionServiceProvider: Idb_CompanionServiceAsyncProvider, @unchec
     }
   }
 
-  func contacts_update(request: Idb_ContactsUpdateRequest, context: GRPCAsyncServerCallContext) async throws -> Idb_ContactsUpdateResponse {
+  func contacts_update(request: Idb_ContactsUpdateRequest, context: ServerContext) async throws -> Idb_ContactsUpdateResponse {
     return try await trackedUnaryCall("contacts_update", request: request) {
       try await TeardownContext.withAutocleanup {
         try await ContactsUpdateMethodHandler(commandExecutor: commandExecutor)
@@ -265,7 +268,7 @@ final class CompanionServiceProvider: Idb_CompanionServiceAsyncProvider, @unchec
     }
   }
 
-  func contacts_clear(request: Idb_ContactsClearRequest, context: GRPCAsyncServerCallContext) async throws -> Idb_ContactsClearResponse {
+  func contacts_clear(request: Idb_ContactsClearRequest, context: ServerContext) async throws -> Idb_ContactsClearResponse {
     return try await trackedUnaryCall("contacts_clear", request: request) {
       try await TeardownContext.withAutocleanup {
         try await commandExecutor.clear_contacts()
@@ -274,7 +277,7 @@ final class CompanionServiceProvider: Idb_CompanionServiceAsyncProvider, @unchec
     }
   }
 
-  func photos_clear(request: Idb_PhotosClearRequest, context: GRPCAsyncServerCallContext) async throws -> Idb_PhotosClearResponse {
+  func photos_clear(request: Idb_PhotosClearRequest, context: ServerContext) async throws -> Idb_PhotosClearResponse {
     return try await trackedUnaryCall("photos_clear", request: request) {
       try await TeardownContext.withAutocleanup {
         try await commandExecutor.clear_photos()
@@ -283,7 +286,7 @@ final class CompanionServiceProvider: Idb_CompanionServiceAsyncProvider, @unchec
     }
   }
 
-  func setting(request: Idb_SettingRequest, context: GRPCAsyncServerCallContext) async throws -> Idb_SettingResponse {
+  func setting(request: Idb_SettingRequest, context: ServerContext) async throws -> Idb_SettingResponse {
     return try await trackedUnaryCall("setting", request: request) {
       try await TeardownContext.withAutocleanup {
         try await SettingMethodHandler(commandExecutor: commandExecutor)
@@ -292,7 +295,7 @@ final class CompanionServiceProvider: Idb_CompanionServiceAsyncProvider, @unchec
     }
   }
 
-  func get_setting(request: Idb_GetSettingRequest, context: GRPCAsyncServerCallContext) async throws -> Idb_GetSettingResponse {
+  func get_setting(request: Idb_GetSettingRequest, context: ServerContext) async throws -> Idb_GetSettingResponse {
     return try await trackedUnaryCall("get_setting", request: request) {
       try await TeardownContext.withAutocleanup {
         try await GetSettingMethodHandler(commandExecutor: commandExecutor)
@@ -301,7 +304,7 @@ final class CompanionServiceProvider: Idb_CompanionServiceAsyncProvider, @unchec
     }
   }
 
-  func list_settings(request: Idb_ListSettingRequest, context: GRPCAsyncServerCallContext) async throws -> Idb_ListSettingResponse {
+  func list_settings(request: Idb_ListSettingRequest, context: ServerContext) async throws -> Idb_ListSettingResponse {
     return try await trackedUnaryCall("list_settings", request: request) {
       try await TeardownContext.withAutocleanup {
         try await ListSettingsMethodHandler(commandExecutor: commandExecutor)
@@ -310,17 +313,17 @@ final class CompanionServiceProvider: Idb_CompanionServiceAsyncProvider, @unchec
     }
   }
 
-  func launch(requestStream: GRPCAsyncRequestStream<Idb_LaunchRequest>, responseStream: GRPCAsyncResponseStreamWriter<Idb_LaunchResponse>, context: GRPCAsyncServerCallContext) async throws {
-    let reader = RequestStreamReader(requestStream)
+  func launch(request: RPCAsyncSequence<Idb_LaunchRequest, any Error>, response: RPCWriter<Idb_LaunchResponse>, context: ServerContext) async throws {
+    let reader = RequestStreamReader(request)
     try await trackedBidiStreaming("launch") {
       try await TeardownContext.withAutocleanup {
         try await LaunchMethodHandler(commandExecutor: commandExecutor)
-          .handle(requestStream: reader, responseStream: responseStream, context: context)
+          .handle(requestStream: reader, responseStream: response, context: context)
       }
     }
   }
 
-  func list_apps(request: Idb_ListAppsRequest, context: GRPCAsyncServerCallContext) async throws -> Idb_ListAppsResponse {
+  func list_apps(request: Idb_ListAppsRequest, context: ServerContext) async throws -> Idb_ListAppsResponse {
     return try await trackedUnaryCall("list_apps", request: request) {
       try await TeardownContext.withAutocleanup {
         try await ListAppsMethodHandler(commandExecutor: commandExecutor)
@@ -329,7 +332,7 @@ final class CompanionServiceProvider: Idb_CompanionServiceAsyncProvider, @unchec
     }
   }
 
-  func terminate(request: Idb_TerminateRequest, context: GRPCAsyncServerCallContext) async throws -> Idb_TerminateResponse {
+  func terminate(request: Idb_TerminateRequest, context: ServerContext) async throws -> Idb_TerminateResponse {
     return try await trackedUnaryCall("terminate", request: request) {
       try await TeardownContext.withAutocleanup {
         try await TerminateMethodHandler(commandExecutor: commandExecutor)
@@ -338,7 +341,7 @@ final class CompanionServiceProvider: Idb_CompanionServiceAsyncProvider, @unchec
     }
   }
 
-  func uninstall(request: Idb_UninstallRequest, context: GRPCAsyncServerCallContext) async throws -> Idb_UninstallResponse {
+  func uninstall(request: Idb_UninstallRequest, context: ServerContext) async throws -> Idb_UninstallResponse {
     return try await trackedUnaryCall("uninstall", request: request) {
       try await TeardownContext.withAutocleanup {
         try await UninstallMethodHandler(commandExecutor: commandExecutor)
@@ -347,8 +350,8 @@ final class CompanionServiceProvider: Idb_CompanionServiceAsyncProvider, @unchec
     }
   }
 
-  func add_media(requestStream: GRPCAsyncRequestStream<Idb_AddMediaRequest>, context: GRPCAsyncServerCallContext) async throws -> Idb_AddMediaResponse {
-    let reader = RequestStreamReader(requestStream)
+  func add_media(request: RPCAsyncSequence<Idb_AddMediaRequest, any Error>, context: ServerContext) async throws -> Idb_AddMediaResponse {
+    let reader = RequestStreamReader(request)
     return try await trackedClientStreaming("add_media") {
       try await TeardownContext.withAutocleanup {
         try await AddMediaMethodHandler(commandExecutor: commandExecutor)
@@ -357,17 +360,17 @@ final class CompanionServiceProvider: Idb_CompanionServiceAsyncProvider, @unchec
     }
   }
 
-  func record(requestStream: GRPCAsyncRequestStream<Idb_RecordRequest>, responseStream: GRPCAsyncResponseStreamWriter<Idb_RecordResponse>, context: GRPCAsyncServerCallContext) async throws {
-    let reader = RequestStreamReader(requestStream)
+  func record(request: RPCAsyncSequence<Idb_RecordRequest, any Error>, response: RPCWriter<Idb_RecordResponse>, context: ServerContext) async throws {
+    let reader = RequestStreamReader(request)
     try await trackedBidiStreaming("record") {
       try await TeardownContext.withAutocleanup {
         try await RecordMethodHandler(target: target, targetLogger: targetLogger)
-          .handle(requestStream: reader, responseStream: responseStream, context: context)
+          .handle(requestStream: reader, responseStream: response, context: context)
       }
     }
   }
 
-  func screenshot(request: Idb_ScreenshotRequest, context: GRPCAsyncServerCallContext) async throws -> Idb_ScreenshotResponse {
+  func screenshot(request: Idb_ScreenshotRequest, context: ServerContext) async throws -> Idb_ScreenshotResponse {
     return try await trackedUnaryCall("screenshot", request: request) {
       try await TeardownContext.withAutocleanup {
         try await ScreenshotMethodHandler(commandExecutor: commandExecutor)
@@ -376,17 +379,17 @@ final class CompanionServiceProvider: Idb_CompanionServiceAsyncProvider, @unchec
     }
   }
 
-  func video_stream(requestStream: GRPCAsyncRequestStream<Idb_VideoStreamRequest>, responseStream: GRPCAsyncResponseStreamWriter<Idb_VideoStreamResponse>, context: GRPCAsyncServerCallContext) async throws {
-    let reader = RequestStreamReader(requestStream)
+  func video_stream(request: RPCAsyncSequence<Idb_VideoStreamRequest, any Error>, response: RPCWriter<Idb_VideoStreamResponse>, context: ServerContext) async throws {
+    let reader = RequestStreamReader(request)
     try await trackedBidiStreaming("video_stream") {
       try await TeardownContext.withAutocleanup {
         try await VideoStreamMethodHandler(target: target, targetLogger: targetLogger, commandExecutor: commandExecutor)
-          .handle(requestStream: reader, responseStream: responseStream, context: context)
+          .handle(requestStream: reader, responseStream: response, context: context)
       }
     }
   }
 
-  func crash_delete(request: Idb_CrashLogQuery, context: GRPCAsyncServerCallContext) async throws -> Idb_CrashLogResponse {
+  func crash_delete(request: Idb_CrashLogQuery, context: ServerContext) async throws -> Idb_CrashLogResponse {
     return try await trackedUnaryCall("crash_delete", request: request) {
       try await TeardownContext.withAutocleanup {
         try await CrashDeleteMethodHandler(commandExecutor: commandExecutor)
@@ -395,7 +398,7 @@ final class CompanionServiceProvider: Idb_CompanionServiceAsyncProvider, @unchec
     }
   }
 
-  func crash_list(request: Idb_CrashLogQuery, context: GRPCAsyncServerCallContext) async throws -> Idb_CrashLogResponse {
+  func crash_list(request: Idb_CrashLogQuery, context: ServerContext) async throws -> Idb_CrashLogResponse {
     return try await trackedUnaryCall("crash_list", request: request) {
       try await TeardownContext.withAutocleanup {
         try await CrashListMethodHandler(commandExecutor: commandExecutor)
@@ -404,7 +407,7 @@ final class CompanionServiceProvider: Idb_CompanionServiceAsyncProvider, @unchec
     }
   }
 
-  func crash_show(request: Idb_CrashShowRequest, context: GRPCAsyncServerCallContext) async throws -> Idb_CrashShowResponse {
+  func crash_show(request: Idb_CrashShowRequest, context: ServerContext) async throws -> Idb_CrashShowResponse {
     return try await trackedUnaryCall("crash_show", request: request) {
       try await TeardownContext.withAutocleanup {
         try await CrashShowMethodHandler(commandExecutor: commandExecutor)
@@ -413,7 +416,7 @@ final class CompanionServiceProvider: Idb_CompanionServiceAsyncProvider, @unchec
     }
   }
 
-  func xctest_list_bundles(request: Idb_XctestListBundlesRequest, context: GRPCAsyncServerCallContext) async throws -> Idb_XctestListBundlesResponse {
+  func xctest_list_bundles(request: Idb_XctestListBundlesRequest, context: ServerContext) async throws -> Idb_XctestListBundlesResponse {
     return try await trackedUnaryCall("xctest_list_bundles", request: request) {
       try await TeardownContext.withAutocleanup {
         try await XCTestListBundlesMethodHandler(commandExecutor: commandExecutor)
@@ -422,7 +425,7 @@ final class CompanionServiceProvider: Idb_CompanionServiceAsyncProvider, @unchec
     }
   }
 
-  func xctest_list_tests(request: Idb_XctestListTestsRequest, context: GRPCAsyncServerCallContext) async throws -> Idb_XctestListTestsResponse {
+  func xctest_list_tests(request: Idb_XctestListTestsRequest, context: ServerContext) async throws -> Idb_XctestListTestsResponse {
     return try await trackedUnaryCall("xctest_list_tests", request: request) {
       try await TeardownContext.withAutocleanup {
         try await XCTestListTestsMethodHandler(commandExecutor: commandExecutor)
@@ -431,26 +434,26 @@ final class CompanionServiceProvider: Idb_CompanionServiceAsyncProvider, @unchec
     }
   }
 
-  func xctest_run(request: Idb_XctestRunRequest, responseStream: GRPCAsyncResponseStreamWriter<Idb_XctestRunResponse>, context: GRPCAsyncServerCallContext) async throws {
+  func xctest_run(request: Idb_XctestRunRequest, response: RPCWriter<Idb_XctestRunResponse>, context: ServerContext) async throws {
     try await trackedServerStreaming("xctest_run", request: request) {
       try await TeardownContext.withAutocleanup {
         try await XCTestRunMethodHandler(target: target, commandExecutor: commandExecutor, reporter: reporter, targetLogger: targetLogger, logger: logger)
-          .handle(request: request, responseStream: responseStream, context: context)
+          .handle(request: request, responseStream: response, context: context)
       }
     }
   }
 
-  func repl(requestStream: GRPCAsyncRequestStream<Idb_ReplRequest>, responseStream: GRPCAsyncResponseStreamWriter<Idb_ReplResponse>, context: GRPCAsyncServerCallContext) async throws {
-    let reader = RequestStreamReader(requestStream)
+  func repl(request: RPCAsyncSequence<Idb_ReplRequest, any Error>, response: RPCWriter<Idb_ReplResponse>, context: ServerContext) async throws {
+    let reader = RequestStreamReader(request)
     try await trackedBidiStreaming("repl") {
       try await TeardownContext.withAutocleanup {
         try await ReplMethodHandler(commandExecutor: commandExecutor, targetLogger: targetLogger, recordingCoordinator: replRecordingCoordinator)
-          .handle(requestStream: reader, responseStream: responseStream, context: context)
+          .handle(requestStream: reader, responseStream: response, context: context)
       }
     }
   }
 
-  func ls(request: Idb_LsRequest, context: GRPCAsyncServerCallContext) async throws -> Idb_LsResponse {
+  func ls(request: Idb_LsRequest, context: ServerContext) async throws -> Idb_LsResponse {
     return try await trackedUnaryCall("ls", request: request, summarize: LsMethodHandler.summarize) {
       try await TeardownContext.withAutocleanup {
         try await LsMethodHandler(commandExecutor: commandExecutor)
@@ -459,7 +462,7 @@ final class CompanionServiceProvider: Idb_CompanionServiceAsyncProvider, @unchec
     }
   }
 
-  func mkdir(request: Idb_MkdirRequest, context: GRPCAsyncServerCallContext) async throws -> Idb_MkdirResponse {
+  func mkdir(request: Idb_MkdirRequest, context: ServerContext) async throws -> Idb_MkdirResponse {
     return try await trackedUnaryCall("mkdir", request: request) {
       try await TeardownContext.withAutocleanup {
         try await MkdirMethodHandler(commandExecutor: commandExecutor)
@@ -468,7 +471,7 @@ final class CompanionServiceProvider: Idb_CompanionServiceAsyncProvider, @unchec
     }
   }
 
-  func mv(request: Idb_MvRequest, context: GRPCAsyncServerCallContext) async throws -> Idb_MvResponse {
+  func mv(request: Idb_MvRequest, context: ServerContext) async throws -> Idb_MvResponse {
     return try await trackedUnaryCall("mv", request: request) {
       try await TeardownContext.withAutocleanup {
         try await MvMethodHandler(commandExecutor: commandExecutor)
@@ -477,7 +480,7 @@ final class CompanionServiceProvider: Idb_CompanionServiceAsyncProvider, @unchec
     }
   }
 
-  func rm(request: Idb_RmRequest, context: GRPCAsyncServerCallContext) async throws -> Idb_RmResponse {
+  func rm(request: Idb_RmRequest, context: ServerContext) async throws -> Idb_RmResponse {
     return try await trackedUnaryCall("rm", request: request) {
       try await TeardownContext.withAutocleanup {
         try await RmMethodHandler(commandExecutor: commandExecutor)
@@ -486,17 +489,17 @@ final class CompanionServiceProvider: Idb_CompanionServiceAsyncProvider, @unchec
     }
   }
 
-  func pull(request: Idb_PullRequest, responseStream: GRPCAsyncResponseStreamWriter<Idb_PullResponse>, context: GRPCAsyncServerCallContext) async throws {
+  func pull(request: Idb_PullRequest, response: RPCWriter<Idb_PullResponse>, context: ServerContext) async throws {
     try await trackedServerStreaming("pull", request: request) {
       try await TeardownContext.withAutocleanup {
         try await PullMethodHandler(target: target, commandExecutor: commandExecutor)
-          .handle(request: request, responseStream: responseStream, context: context)
+          .handle(request: request, responseStream: response, context: context)
       }
     }
   }
 
-  func push(requestStream: GRPCAsyncRequestStream<Idb_PushRequest>, context: GRPCAsyncServerCallContext) async throws -> Idb_PushResponse {
-    let reader = RequestStreamReader(requestStream)
+  func push(request: RPCAsyncSequence<Idb_PushRequest, any Error>, context: ServerContext) async throws -> Idb_PushResponse {
+    let reader = RequestStreamReader(request)
     return try await trackedClientStreaming("push") {
       try await TeardownContext.withAutocleanup {
         try await PushMethodHandler(target: target, commandExecutor: commandExecutor)
@@ -505,12 +508,12 @@ final class CompanionServiceProvider: Idb_CompanionServiceAsyncProvider, @unchec
     }
   }
 
-  func tail(requestStream: GRPCAsyncRequestStream<Idb_TailRequest>, responseStream: GRPCAsyncResponseStreamWriter<Idb_TailResponse>, context: GRPCAsyncServerCallContext) async throws {
-    let reader = RequestStreamReader(requestStream)
+  func tail(request: RPCAsyncSequence<Idb_TailRequest, any Error>, response: RPCWriter<Idb_TailResponse>, context: ServerContext) async throws {
+    let reader = RequestStreamReader(request)
     try await trackedBidiStreaming("tail") {
       try await TeardownContext.withAutocleanup {
         try await TailMethodHandler(commandExecutor: commandExecutor)
-          .handle(requestStream: reader, responseStream: responseStream, context: context)
+          .handle(requestStream: reader, responseStream: response, context: context)
       }
     }
   }

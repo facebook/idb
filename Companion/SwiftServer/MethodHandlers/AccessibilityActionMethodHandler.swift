@@ -9,14 +9,14 @@ import CompanionLib
 import FBControlCore
 import FBSimulatorControl
 import Foundation
-import GRPC
+import GRPCCore
 import IDBGRPCSwift
 
 struct AccessibilityActionMethodHandler {
 
   let commandExecutor: IDBCommandExecutor
 
-  func handle(request: Idb_AccessibilityActionRequest, context: GRPCAsyncServerCallContext) async throws -> Idb_AccessibilityActionResponse {
+  func handle(request: Idb_AccessibilityActionRequest, context: ServerContext) async throws -> Idb_AccessibilityActionResponse {
     switch try AccessibilityActionRequestTranslation.action(from: request) {
     case let .tap(query, expectedValue, expectedKey):
       try await commandExecutor.accessibility_tap(query: query, expectedValue: expectedValue, expectedKey: expectedKey)

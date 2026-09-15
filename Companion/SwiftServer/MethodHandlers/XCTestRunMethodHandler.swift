@@ -10,7 +10,7 @@ import CompanionUtilities
 import FBControlCore
 import FBSimulatorControl
 import Foundation
-import GRPC
+import GRPCCore
 import IDBGRPCSwift
 import XCTestBootstrap
 
@@ -22,9 +22,9 @@ struct XCTestRunMethodHandler {
   let targetLogger: FBControlCoreLogger
   let logger: IDBLogger
 
-  func handle(request: Idb_XctestRunRequest, responseStream: GRPCAsyncResponseStreamWriter<Idb_XctestRunResponse>, context: GRPCAsyncServerCallContext) async throws {
+  func handle(request: Idb_XctestRunRequest, responseStream: RPCWriter<Idb_XctestRunResponse>, context: ServerContext) async throws {
     guard let request = transform(value: request) else {
-      throw GRPCStatus(code: .invalidArgument, message: "failed to create XCTestRunRequest")
+      throw RPCError(code: .invalidArgument, message: "failed to create XCTestRunRequest")
     }
 
     let reporter = IDBXCTestReporter(responseStream: responseStream, queue: target.workQueue, logger: logger)

@@ -7,7 +7,7 @@
 
 import CompanionLib
 import FBControlCore
-import GRPC
+import GRPCCore
 import IDBGRPCSwift
 
 struct PushMethodHandler {
@@ -15,11 +15,11 @@ struct PushMethodHandler {
   let target: any FBiOSTarget
   let commandExecutor: IDBCommandExecutor
 
-  func handle(requestStream: RequestStreamReader<Idb_PushRequest>, context: GRPCAsyncServerCallContext) async throws -> Idb_PushResponse {
+  func handle(requestStream: RequestStreamReader<Idb_PushRequest>, context: ServerContext) async throws -> Idb_PushResponse {
     let request = try await requestStream.requiredNext()
 
     guard case let .inner(inner) = request.value
-    else { throw GRPCStatus(code: .invalidArgument, message: "Expected inner as first request in stream") }
+    else { throw RPCError(code: .invalidArgument, message: "Expected inner as first request in stream") }
 
     let fileContainer = FileContainerValueTransformer.rawFileContainer(from: inner.container)
     try await MultisourceFileReader.withFilePathURLs(from: requestStream, temporaryDirectory: commandExecutor.temporaryDirectory, extractFromSubdir: false) { extractedFileURLs in

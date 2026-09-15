@@ -9,7 +9,7 @@ import CoreGraphics
 import FBControlCore
 import FBSimulatorControl
 import Foundation
-import GRPC
+import GRPCCore
 import IDBGRPCSwift
 
 /// Translates an `accessibility_action` request to a checked `Action`. Rejects shapes no action accepts
@@ -42,7 +42,7 @@ enum AccessibilityActionRequestTranslation {
     case .none:
       // Also what an action this companion is too old to know reads as: proto3 deserializes an
       // unrecognized oneof member as unset. Say so, rather than reporting an empty request.
-      throw GRPCStatus(
+      throw RPCError(
         code: .invalidArgument,
         message: "accessibility_action requires an action this companion supports — none was set, "
           + "or the client sent one added after this companion was built")
@@ -53,13 +53,13 @@ enum AccessibilityActionRequestTranslation {
 
   private static func dragAction(request: Idb_AccessibilityActionRequest, drag: Idb_AccessibilityActionRequest.Drag) throws -> Action {
     guard let source = try targetedQuery(from: request) else {
-      throw GRPCStatus(code: .invalidArgument, message: "accessibility_action drag requires a marker or point source")
+      throw RPCError(code: .invalidArgument, message: "accessibility_action drag requires a marker or point source")
     }
     guard let destination = try dragDestination(drag, ignoresCase: request.ignoreCase) else {
-      throw GRPCStatus(code: .invalidArgument, message: "accessibility_action drag requires a marker or point destination")
+      throw RPCError(code: .invalidArgument, message: "accessibility_action drag requires a marker or point destination")
     }
     guard source != destination else {
-      throw GRPCStatus(code: .invalidArgument, message: "accessibility_action drag source and destination are the same element")
+      throw RPCError(code: .invalidArgument, message: "accessibility_action drag source and destination are the same element")
     }
     let options = try dragOptions(drag)
     if case let .point(from) = source, case let .point(to) = destination {
@@ -67,7 +67,7 @@ enum AccessibilityActionRequestTranslation {
       // or above the distance samples the path once, which iOS reads as a flick rather than a drag.
       let distance = hypot(to.x - from.x, to.y - from.y)
       guard options.delta < Double(distance) else {
-        throw GRPCStatus(
+        throw RPCError(
           code: .invalidArgument,
           message: "accessibility_action drag delta (\(options.delta)) must be smaller than the distance dragged (\(distance))")
       }
@@ -95,7 +95,7 @@ enum AccessibilityActionRequestTranslation {
       ("press_duration", drag.pressDuration), ("duration", drag.duration),
       ("release_duration", drag.releaseDuration), ("delta", drag.delta),
     ] where value < 0 {
-      throw GRPCStatus(code: .invalidArgument, message: "accessibility_action drag \(name) must not be negative, got \(value)")
+      throw RPCError(code: .invalidArgument, message: "accessibility_action drag \(name) must not be negative, got \(value)")
     }
     return DragOptions(
       pressDuration: drag.pressDuration > 0 ? drag.pressDuration : defaults.pressDuration,
@@ -108,7 +108,7 @@ enum AccessibilityActionRequestTranslation {
 
   private static func requiredQuery(from request: Idb_AccessibilityActionRequest, action: String) throws -> AccessibilityElementQuery {
     guard let query = try targetedQuery(from: request) else {
-      throw GRPCStatus(code: .invalidArgument, message: "accessibility_action \(action) requires a marker or point target")
+      throw RPCError(code: .invalidArgument, message: "accessibility_action \(action) requires a marker or point target")
     }
     return query
   }
@@ -140,7 +140,7 @@ enum AccessibilityActionRequestTranslation {
     case .visible:
       return .visible
     case .UNRECOGNIZED:
-      throw GRPCStatus(code: .invalidArgument, message: "unknown scroll direction")
+      throw RPCError(code: .invalidArgument, message: "unknown scroll direction")
     }
   }
 
@@ -165,7 +165,7 @@ enum AccessibilityActionRequestTranslation {
     case .placeholder:
       return .placeholder
     case .UNRECOGNIZED:
-      throw GRPCStatus(code: .invalidArgument, message: "unrecognized accessibility key")
+      throw RPCError(code: .invalidArgument, message: "unrecognized accessibility key")
     }
   }
 }

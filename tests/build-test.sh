@@ -117,7 +117,7 @@ STUB
 
 chmod +x "$WORK/stubs"/*
 
-# <dir> <grpc-swift version> <swift-protobuf version>. A package the pin guard
+# <dir> <grpc-swift-2 version> <swift-protobuf version>. A package the pin guard
 # accepts: every dependency exact, and the three manifests in agreement.
 function write_package() {
     local dir="$1" grpc="$2" protobuf="$3"
@@ -129,7 +129,8 @@ import PackageDescription
 let package = Package(
     name: "idb",
     dependencies: [
-        .package(url: "https://github.com/grpc/grpc-swift.git", exact: "$grpc"),
+        .package(url: "https://github.com/grpc/grpc-swift-2.git", exact: "$grpc"),
+        .package(url: "https://github.com/grpc/grpc-swift-protobuf.git", exact: "$grpc"),
         .package(url: "https://github.com/apple/swift-protobuf.git", exact: "$protobuf"),
     ]
 )
@@ -137,8 +138,11 @@ EOF
     cat > "$dir/Companion/project.yml" <<EOF
 name: idb_companion
 packages:
-  grpc-swift:
-    url: https://github.com/grpc/grpc-swift.git
+  grpc-swift-2:
+    url: https://github.com/grpc/grpc-swift-2.git
+    exactVersion: $grpc
+  grpc-swift-protobuf:
+    url: https://github.com/grpc/grpc-swift-protobuf.git
     exactVersion: $grpc
   swift-protobuf:
     url: https://github.com/apple/swift-protobuf.git
@@ -152,11 +156,20 @@ EOF
   "originHash" : "0000000000000000000000000000000000000000000000000000000000000000",
   "pins" : [
     {
-      "identity" : "grpc-swift",
+      "identity" : "grpc-swift-2",
       "kind" : "remoteSourceControl",
-      "location" : "https://github.com/grpc/grpc-swift.git",
+      "location" : "https://github.com/grpc/grpc-swift-2.git",
       "state" : {
         "revision" : "1111111111111111111111111111111111111111",
+        "version" : "$grpc"
+      }
+    },
+    {
+      "identity" : "grpc-swift-protobuf",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/grpc/grpc-swift-protobuf.git",
+      "state" : {
+        "revision" : "3333333333333333333333333333333333333333",
         "version" : "$grpc"
       }
     },
@@ -175,7 +188,7 @@ EOF
 EOF
 }
 
-# <case name> <grpc-swift version> <swift-protobuf version>. A package under
+# <case name> <grpc-swift-2 version> <swift-protobuf version>. A package under
 # $WORK to mutate, with build.sh alongside it. Echoes the directory.
 function stage_package() {
     write_package "$WORK/$1" "$2" "$3"
@@ -280,11 +293,20 @@ cat > "$dir/Package.resolved" <<'EOF'
   "originHash" : "0000000000000000000000000000000000000000000000000000000000000000",
   "pins" : [
     {
-      "identity" : "grpc-swift",
+      "identity" : "grpc-swift-2",
       "kind" : "remoteSourceControl",
-      "location" : "https://github.com/grpc/grpc-swift.git",
+      "location" : "https://github.com/grpc/grpc-swift-2.git",
       "state" : {
         "revision" : "1111111111111111111111111111111111111111",
+        "version" : "1.27.5"
+      }
+    },
+    {
+      "identity" : "grpc-swift-protobuf",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/grpc/grpc-swift-protobuf.git",
+      "state" : {
+        "revision" : "3333333333333333333333333333333333333333",
         "version" : "1.27.5"
       }
     }
@@ -310,7 +332,7 @@ assert_rejected "a companion-only package missing from Package.resolved" "$dir" 
 # nuisance: the guard names a package the developer cannot find a requirement
 # for, because there is not one.
 dir="$(stage_package commented-out 1.27.5 1.38.1)"
-insert_before "$dir/Package.swift" ".package(url: \"https://github.com/grpc/grpc-swift.git\"" \
+insert_before "$dir/Package.swift" ".package(url: \"https://github.com/grpc/grpc-swift-2.git\"" \
     "        // .package(url: \"https://github.com/apple/swift-nio.git\", from: \"2.50.0\"),"
 assert_accepted "a commented-out dependency in Package.swift" "$dir"
 
@@ -339,7 +361,7 @@ insert_before "$dir/Package.swift" "    ]" "        .package(
             from: \"2.50.0\"
         ),"
 assert_rejected "a Package.swift dependency split over several lines" "$dir" \
-    "Package.swift declares dependencies this check cannot read, on lines: 9"
+    "Package.swift declares dependencies this check cannot read, on lines: 10"
 
 dir="$(stage_package renamed 1.27.5 1.38.1)"
 # The YAML key is a nickname -- XcodeGen resolves the package from the `url`
@@ -355,7 +377,9 @@ assert_rejected "a renamed companion key does not hide the version underneath it
 # key still finds both packages in common and a guard keyed on the url finds
 # neither -- which is the whole difference between the two.
 dir="$(stage_package no-overlap 1.27.5 1.38.1)"
-sed_inplace 's|url: https://github.com/grpc/grpc-swift.git|url: https://github.com/apple/swift-nio.git|' \
+sed_inplace 's|url: https://github.com/grpc/grpc-swift-2.git|url: https://github.com/apple/swift-nio.git|' \
+    "$dir/Companion/project.yml"
+sed_inplace 's|url: https://github.com/grpc/grpc-swift-protobuf.git|url: https://github.com/apple/swift-nio-ssl.git|' \
     "$dir/Companion/project.yml"
 sed_inplace 's|url: https://github.com/apple/swift-protobuf.git|url: https://github.com/apple/swift-log.git|' \
     "$dir/Companion/project.yml"
@@ -396,7 +420,7 @@ export SWIFT_STUB_LOG="$WORK/plugin.swiftlog"
 output="$(in_package "$dir" 'build_grpc_swift_plugin')"
 status=$?
 assert_equal "cold codegen succeeds" 0 "$status"
-assert_contains "codegen reports success" "$output" "Successfully built protoc-gen-grpc-swift"
+assert_contains "codegen reports success" "$output" "Successfully built protoc-gen-grpc-swift-2"
 assert_contains "codegen forbids resolution" "$(cat "$SWIFT_STUB_LOG")" "--only-use-versions-from-resolved-file"
 assert_contains "codegen receives the pinned revision" "$(cat "$SWIFT_STUB_LOG")" "1111111111111111111111111111111111111111"
 assert_contains "the generated manifest pins grpc" "$(cat "$dir/Build/Codegen/Package.swift")" 'exact: "1.27.5"'
@@ -423,7 +447,7 @@ unset SWIFT_STUB_FAIL
 export SWIFT_STUB_DRIFT=1
 output="$(in_package "$dir" 'build_grpc_swift_plugin')"
 assert_equal "resolver revision drift fails codegen" 1 "$?"
-assert_contains "codegen identifies resolver drift" "$output" "grpc-swift: expected"
+assert_contains "codegen identifies resolver drift" "$output" "grpc-swift-2: expected"
 unset SWIFT_STUB_DRIFT
 
 # ---------------------------------------------------------------------------
@@ -457,7 +481,7 @@ unset XCODE_STUB_FAIL
 export XCODE_STUB_DRIFT=1
 output="$(in_package "$dir" 'invoke_xcodebuild -project Companion/idb_companion.xcodeproj build')"
 assert_equal "Xcode revision drift fails the build" 1 "$?"
-assert_contains "Xcode identifies resolver drift" "$output" "grpc-swift: expected"
+assert_contains "Xcode identifies resolver drift" "$output" "grpc-swift-2: expected"
 unset XCODE_STUB_DRIFT
 
 # Existing generated files do not prove that they match today's plugin pins.

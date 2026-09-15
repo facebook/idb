@@ -9,7 +9,7 @@ import CompanionLib
 import CompanionUtilities
 import FBControlCore
 import FBSimulatorControl
-import GRPC
+import GRPCCore
 import IDBGRPCSwift
 
 struct DapMethodHandler: @unchecked Sendable {
@@ -17,9 +17,9 @@ struct DapMethodHandler: @unchecked Sendable {
   let commandExecutor: IDBCommandExecutor
   let targetLogger: FBControlCoreLogger
 
-  func handle(requestStream: RequestStreamReader<Idb_DapRequest>, responseStream: GRPCAsyncResponseStreamWriter<Idb_DapResponse>, context: GRPCAsyncServerCallContext) async throws {
+  func handle(requestStream: RequestStreamReader<Idb_DapRequest>, responseStream: RPCWriter<Idb_DapResponse>, context: ServerContext) async throws {
     guard case let .start(start) = try await requestStream.requiredNext().control
-    else { throw GRPCStatus(code: .failedPrecondition, message: "Dap command expected a Start messaged in the beginning of the Stream") }
+    else { throw RPCError(code: .failedPrecondition, message: "Dap command expected a Start messaged in the beginning of the Stream") }
 
     let writer = FBProcessInput<FBDataConsumer>.fromConsumer().retyped(FBProcessInput<AnyObject>.self)
     let dapProcess = try await startDapServer(startRequest: start, processInput: writer, responseStream: responseStream)
@@ -37,7 +37,7 @@ struct DapMethodHandler: @unchecked Sendable {
     try await responseStream.send(stoppedResponse)
   }
 
-  private func startDapServer(startRequest: Idb_DapRequest.Start, processInput: FBProcessInput<AnyObject>, responseStream: GRPCAsyncResponseStreamWriter<Idb_DapResponse>) async throws -> FBSubprocess<AnyObject, FBDataConsumer, NSString> {
+  private func startDapServer(startRequest: Idb_DapRequest.Start, processInput: FBProcessInput<AnyObject>, responseStream: RPCWriter<Idb_DapResponse>) async throws -> FBSubprocess<AnyObject, FBDataConsumer, NSString> {
 
     let lldbVSCode = "dap/\(startRequest.debuggerPkgID)/usr/bin/lldb-vscode"
 
@@ -63,10 +63,10 @@ struct DapMethodHandler: @unchecked Sendable {
     for try await request in requestStream {
       switch request.control {
       case .start:
-        throw GRPCStatus(code: .failedPrecondition, message: "DAP server already started")
+        throw RPCError(code: .failedPrecondition, message: "DAP server already started")
 
       case .none:
-        throw GRPCStatus(code: .invalidArgument, message: "Empty control in request")
+        throw RPCError(code: .invalidArgument, message: "Empty control in request")
 
       case let .pipe(pipe):
         guard !pipe.data.isEmpty else {
@@ -84,7 +84,7 @@ struct DapMethodHandler: @unchecked Sendable {
     }
   }
 
-  private func createDataConsumer(to responseStream: GRPCAsyncResponseStreamWriter<Idb_DapResponse>) -> FBDataConsumer {
+  private func createDataConsumer(to responseStream: RPCWriter<Idb_DapResponse>) -> FBDataConsumer {
     let responseWriter = FIFOStreamWriter(stream: responseStream)
 
     return FBBlockDataConsumer.synchronousDataConsumer { data in

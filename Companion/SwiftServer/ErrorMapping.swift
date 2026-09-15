@@ -5,30 +5,32 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import CompanionLib
 import Foundation
-import GRPC
-import NIOHPACK
+import GRPCCore
 
-final class GRPCSwiftServerErrorDelegate: ServerErrorDelegate {
+/// Turns errors a handler throws into the status the client sees.
+///
+/// gRPC Swift 2 maps every thrown error that is not an `RPCError` to a bare `unknown` status
+/// with no message, which would discard the `NSError` descriptions the Objective-C frameworks
+/// produce. This keeps `RPCError`s as thrown and gives everything else an `internalError`
+/// carrying the error's description, unwrapping legacy `NSError` `userInfo` for detail.
+enum ErrorMapping {
 
-  func transformRequestHandlerError(_ error: Error, headers: HPACKHeaders) -> GRPCStatusAndTrailers? {
-    if error is GRPCStatus || error is GRPCStatusTransformable {
-      // Use default error propagation transformation
-      return nil
+  static func rpcError(from error: any Error) -> RPCError {
+    if let rpcError = error as? RPCError {
+      return rpcError
     }
 
     var message = error.localizedDescription
     if type(of: error) == NSError.self {
       // Legacy NSError from objc, we should unwrap it for more expressive error handling.
       // Don't use `is NSError` check because all swift errors bridges to NSError successfully and this check passed
-
       message = extractMessage(fromLegacyNSError: error as NSError)
     }
-    return GRPCStatusAndTrailers(status: GRPCStatus(code: .internalError, message: message))
+    return RPCError(code: .internalError, message: message)
   }
 
-  private func extractMessage(fromLegacyNSError error: NSError) -> String {
+  private static func extractMessage(fromLegacyNSError error: NSError) -> String {
     var userInfo = error.userInfo
 
     var message: String

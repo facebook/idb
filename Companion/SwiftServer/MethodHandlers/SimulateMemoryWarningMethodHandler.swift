@@ -7,14 +7,14 @@
 
 import CompanionLib
 import FBControlCore
-import GRPC
+import GRPCCore
 import IDBGRPCSwift
 
 struct SimulateMemoryWarningMethodHandler {
 
   let commandExecutor: IDBCommandExecutor
 
-  func handle(request: Idb_SimulateMemoryWarningRequest, context: GRPCAsyncServerCallContext) async throws -> Idb_SimulateMemoryWarningResponse {
+  func handle(request: Idb_SimulateMemoryWarningRequest, context: ServerContext) async throws -> Idb_SimulateMemoryWarningResponse {
     try await commandExecutor.simulateMemoryWarning()
     return .init()
   }

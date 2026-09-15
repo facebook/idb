@@ -9,10 +9,9 @@ import ArgumentParser
 import CompanionDiscovery
 import CompanionUtilities
 import Foundation
-import GRPC
+import GRPCCore
+import GRPCNIOTransportHTTP2Posix
 import IDBGRPCSwift
-import NIOCore
-import NIOPosix
 import ReplCompiler
 
 /// The options needed to establish a REPL session, gathered from the CLI so both
@@ -65,11 +64,7 @@ final class ReplSession {
   /// How many blocks this session attempted to execute (successes and
   /// failures alike); reported on the `session_end` event.
   private var runsExecuted = 0
-  private let group: MultiThreadedEventLoopGroup
-  private let channel: GRPCChannel
-  private let call: GRPCAsyncBidirectionalStreamingCall<Idb_ReplRequest, Idb_ReplResponse>
-  private let client: Idb_CompanionServiceAsyncClient
-  private var responses: GRPCAsyncResponseStream<Idb_ReplResponse>.Iterator
+  private let connection: ReplConnection
   private let toolchain: String
   private let targetTriple: String
   private let sdkPath: String
@@ -83,11 +78,7 @@ final class ReplSession {
     config: ReplSessionConfig,
     reporter: EventReporter,
     startedAt: Date,
-    group: MultiThreadedEventLoopGroup,
-    channel: GRPCChannel,
-    call: GRPCAsyncBidirectionalStreamingCall<Idb_ReplRequest, Idb_ReplResponse>,
-    client: Idb_CompanionServiceAsyncClient,
-    responses: GRPCAsyncResponseStream<Idb_ReplResponse>.Iterator,
+    connection: ReplConnection,
     deviceType: String,
     osVersion: String,
     sessionID: String,
@@ -105,11 +96,7 @@ final class ReplSession {
     self.config = config
     self.reporter = reporter
     self.startedAt = startedAt
-    self.group = group
-    self.channel = channel
-    self.call = call
-    self.client = client
-    self.responses = responses
+    self.connection = connection
     self.deviceType = deviceType
     self.osVersion = osVersion
     self.sessionID = sessionID
@@ -148,11 +135,7 @@ final class ReplSession {
 
     let sessionStart = Date()
     let toolchain: String
-    let group: MultiThreadedEventLoopGroup
-    let channel: GRPCChannel
-    let call: GRPCAsyncBidirectionalStreamingCall<Idb_ReplRequest, Idb_ReplResponse>
-    let client: Idb_CompanionServiceAsyncClient
-    var responses: GRPCAsyncResponseStream<Idb_ReplResponse>.Iterator
+    let connection: ReplConnection
     let deviceType: String
     let osVersion: String
     let readyRunIndex: UInt32
@@ -168,23 +151,18 @@ final class ReplSession {
 
       let address = try await resolveCompanionAddress(config: config)
 
-      group = MultiThreadedEventLoopGroup(numberOfThreads: 1)
-      channel = try GRPCChannelPool.with(
-        target: connectionTarget(for: address),
-        transportSecurity: try channelTransportSecurity(
-          for: address, tls: planCompanionClientTLS(plaintext: config.plaintext)),
-        eventLoopGroup: group
-      )
-      client = Idb_CompanionServiceAsyncClient(channel: channel)
+      connection = try await ReplConnection.open(
+        transport: try .http2NIOPosix(
+          target: connectionTarget(for: address),
+          transportSecurity: try channelTransportSecurity(
+            for: address, tls: planCompanionClientTLS(plaintext: config.plaintext))))
 
       // Create a marker file so the companion can detect whether it shares our
       // filesystem (it checks this path's existence; see Start.probe_file_path).
       let probeFilePath = try sessionDirectory.filePath(named: "shared-fs-probe")
       FileManager.default.createFile(atPath: probeFilePath, contents: Data())
 
-      call = client.makeReplCall()
-      responses = call.responseStream.makeAsyncIterator()
-      try await call.requestStream.send(
+      try await connection.send(
         .with {
           $0.control = .start(
             .with {
@@ -201,7 +179,7 @@ final class ReplSession {
         })
 
       // The companion launches the test and connects to the shim before it is ready.
-      let first = try await responses.next()
+      let first = try await connection.nextResponse()
       guard let firstEvent = first?.event, case let .ready(ready) = firstEvent else {
         throw ReplExecutionError.notReady
       }
@@ -274,11 +252,7 @@ final class ReplSession {
       config: config,
       reporter: reporter,
       startedAt: sessionStart,
-      group: group,
-      channel: channel,
-      call: call,
-      client: client,
-      responses: responses,
+      connection: connection,
       deviceType: deviceType,
       osVersion: osVersion,
       sessionID: sessionID,
@@ -323,7 +297,7 @@ final class ReplSession {
         throw ReplExecutionError.compileFailed(compilerOutput)
       }
       stage = .inject
-      try await call.requestStream.send(
+      try await connection.send(
         .with {
           $0.control = .execute(
             .with {
@@ -332,9 +306,9 @@ final class ReplSession {
             })
         })
       stage = .execute
-      switch try await responses.next()?.event {
+      switch try await connection.nextResponse()?.event {
       case let .result(result):
-        let artifactFilenames = await Self.transferArtifacts(result.artifacts, client: client, into: reportWriter)
+        let artifactFilenames = await Self.transferArtifacts(result.artifacts, connection: connection, into: reportWriter)
         reportWriter?.recordRun(index: index, code: code, output: result.output, artifactFilenames: artifactFilenames, at: Date())
         let rawNext = Int(result.nextRunIndex)
         nextRunIndex = rawNext >= 0 ? rawNext : 0
@@ -374,9 +348,7 @@ final class ReplSession {
       ReplRunTelemetry.subject(
         name: "session_end", start: startedAt, ints: ["runs": runsExecuted], failure: nil))
     reportWriter?.close()
-    call.requestStream.finish()
-    try? await channel.close().get()
-    try? await group.shutdownGracefully()
+    await connection.close()
     sessionDirectory.cleanup()
   }
 
@@ -417,12 +389,12 @@ final class ReplSession {
   }
 
   /// Maps a discovered companion's address to a connection target.
-  private static func connectionTarget(for address: CompanionAddress) -> ConnectionTarget {
+  private static func connectionTarget(for address: CompanionAddress) -> any ResolvableTarget {
     switch address {
     case let .domainSocket(path):
-      return .unixDomainSocket(path)
+      return .unixDomainSocket(path: path)
     case let .tcp(host, port):
-      return .hostAndPort(host, port)
+      return .dns(host: host, port: port)
     }
   }
 
@@ -433,7 +405,7 @@ final class ReplSession {
   /// session directory). With a shared filesystem the file is moved; otherwise it is
   /// pulled over gRPC from the AUXILLARY container and removed from the companion.
   /// Best-effort per artifact.
-  private static func transferArtifacts(_ artifacts: [Idb_ReplResponse.Result.Artifact], client: Idb_CompanionServiceAsyncClient, into reportWriter: ReplReportWriter?) async -> [String] {
+  private static func transferArtifacts(_ artifacts: [Idb_ReplResponse.Result.Artifact], connection: ReplConnection, into reportWriter: ReplReportWriter?) async -> [String] {
     guard !artifacts.isEmpty else {
       return []
     }
@@ -458,7 +430,7 @@ final class ReplSession {
         if replSessionInfo.sharedFilesystem {
           localPath = try moveArtifact(hostPath: artifact.hostPath, into: directory)
         } else {
-          localPath = try await pullArtifact(containerPath: artifact.containerPath, client: client, into: directory)
+          localPath = try await pullArtifact(containerPath: artifact.containerPath, connection: connection, into: directory)
         }
         FileHandle.standardError.write(Data("idb-repl: saved artifact to \(localPath)\n".utf8))
         if linkable {
@@ -482,15 +454,18 @@ final class ReplSession {
 
   /// Pulls an artifact from the companion's AUXILLARY container (streamed back as a
   /// gzipped tar), extracts it into `directory`, and removes the companion copy.
-  private static func pullArtifact(containerPath: String, client: Idb_CompanionServiceAsyncClient, into directory: String) async throws -> String {
+  private static func pullArtifact(containerPath: String, connection: ReplConnection, into directory: String) async throws -> String {
     let request = Idb_PullRequest.with {
       $0.srcPath = containerPath
       $0.dstPath = "" // empty: stream the bytes back rather than copy them host-side
       $0.container = .with { $0.kind = .auxillary }
     }
-    var archive = Data()
-    for try await response in client.pull(request) {
-      archive.append(response.payload.data)
+    let archive = try await connection.client.pull(request) { response in
+      var archive = Data()
+      for try await chunk in response.messages {
+        archive.append(chunk.payload.data)
+      }
+      return archive
     }
 
     let name = (containerPath as NSString).lastPathComponent
@@ -500,7 +475,7 @@ final class ReplSession {
     defer { try? FileManager.default.removeItem(atPath: archivePath) }
     try extractArchive(at: archivePath, into: directory)
 
-    _ = try? await client.rm(
+    _ = try? await connection.client.rm(
       Idb_RmRequest.with {
         $0.paths = [containerPath]
         $0.container = .with { $0.kind = .auxillary }

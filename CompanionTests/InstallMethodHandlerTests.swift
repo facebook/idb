@@ -6,7 +6,7 @@
  */
 
 import FBSimulatorControl
-import GRPC
+import GRPCCore
 import XCTest
 
 final class InstallMethodHandlerTests: XCTestCase {
@@ -20,13 +20,13 @@ final class InstallMethodHandlerTests: XCTestCase {
           debuggerAttached: true)
       }
       XCTFail("Expected a failed-precondition status")
-    } catch let status as GRPCStatus {
+    } catch let status as RPCError {
       XCTAssertEqual(status.code, .failedPrecondition)
-      XCTAssertTrue(status.message?.contains("com.example.app") ?? false)
-      XCTAssertTrue(status.message?.contains("PID 42") ?? false)
-      XCTAssertTrue(status.message?.contains("debugger") ?? false)
+      XCTAssertTrue(status.message.contains("com.example.app"))
+      XCTAssertTrue(status.message.contains("PID 42"))
+      XCTAssertTrue(status.message.contains("debugger"))
     } catch {
-      XCTFail("Expected a GRPCStatus, got \(error)")
+      XCTFail("Expected a RPCError, got \(error)")
     }
   }
 
@@ -38,13 +38,13 @@ final class InstallMethodHandlerTests: XCTestCase {
           processIdentifier: 42)
       }
       XCTFail("Expected a failed-precondition status")
-    } catch let status as GRPCStatus {
+    } catch let status as RPCError {
       XCTAssertEqual(status.code, .failedPrecondition)
-      XCTAssertTrue(status.message?.contains("com.example.app") ?? false)
-      XCTAssertTrue(status.message?.contains("PID 42") ?? false)
-      XCTAssertTrue(status.message?.contains("debugger") ?? false)
+      XCTAssertTrue(status.message.contains("com.example.app"))
+      XCTAssertTrue(status.message.contains("PID 42"))
+      XCTAssertTrue(status.message.contains("debugger"))
     } catch {
-      XCTFail("Expected a GRPCStatus, got \(error)")
+      XCTFail("Expected a RPCError, got \(error)")
     }
   }
 
@@ -84,11 +84,11 @@ final class InstallMethodHandlerTests: XCTestCase {
           throw error
         }
         XCTFail("Expected a failed-precondition status")
-      } catch let status as GRPCStatus {
+      } catch let status as RPCError {
         XCTAssertEqual(status.code, .failedPrecondition)
-        XCTAssertFalse(status.message?.isEmpty ?? true)
+        XCTAssertFalse(status.message.isEmpty)
       } catch {
-        XCTFail("Expected a GRPCStatus, got \(error)")
+        XCTFail("Expected a RPCError, got \(error)")
       }
     }
   }

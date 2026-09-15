@@ -8,7 +8,7 @@
 import CompanionLib
 import FBControlCore
 import Foundation
-import GRPC
+import GRPCCore
 import IDBGRPCSwift
 
 enum MultisourceFileReader {
@@ -24,7 +24,7 @@ enum MultisourceFileReader {
   ) async throws -> T {
     func readNextPayload() async throws -> Idb_Payload {
       guard let p = try await requestStream.requiredNext().extractPayload()
-      else { throw GRPCStatus(code: .failedPrecondition, message: "Incorrect request. Expected payload") }
+      else { throw RPCError(code: .failedPrecondition, message: "Incorrect request. Expected payload") }
       return p
     }
 
@@ -59,7 +59,7 @@ enum MultisourceFileReader {
       return try await body(filePaths)
 
     case .url, .compression, .none:
-      throw GRPCStatus(code: .invalidArgument, message: "Unrecogized initial payload type \(payload.source as Any)")
+      throw RPCError(code: .invalidArgument, message: "Unrecogized initial payload type \(payload.source as Any)")
     }
   }
 
@@ -79,10 +79,10 @@ enum MultisourceFileReader {
 
     for try await request in requestStream {
       guard let payload = request.extractPayload()
-      else { throw GRPCStatus(code: .invalidArgument, message: "Unrecogized buffer frame. Expect payload, got \(request)") }
+      else { throw RPCError(code: .invalidArgument, message: "Unrecogized buffer frame. Expect payload, got \(request)") }
 
       guard case .filePath(let filePath) = payload.source
-      else { throw GRPCStatus(code: .invalidArgument, message: "Unrecogized buffer frame. Expect file path, got \(payload.source as Any)") }
+      else { throw RPCError(code: .invalidArgument, message: "Unrecogized buffer frame. Expect file path, got \(payload.source as Any)") }
 
       filePaths.append(URL(fileURLWithPath: filePath))
     }
@@ -104,10 +104,10 @@ enum MultisourceFileReader {
 
       for try await request in requestStream {
         guard let payload = request.extractPayload()
-        else { throw GRPCStatus(code: .invalidArgument, message: "Unrecogized buffer frame. Expect payload, got \(request)") }
+        else { throw RPCError(code: .invalidArgument, message: "Unrecogized buffer frame. Expect payload, got \(request)") }
 
         guard case .data(let data) = payload.source
-        else { throw GRPCStatus(code: .invalidArgument, message: "Unrecogized buffer frame. Expect file path, got \(payload.source as Any)") }
+        else { throw RPCError(code: .invalidArgument, message: "Unrecogized buffer frame. Expect file path, got \(payload.source as Any)") }
 
         var buffer = [UInt8](data)
         stream.write(&buffer, maxLength: buffer.count)

@@ -7,21 +7,21 @@
 
 import CompanionLib
 import FBControlCore
-import GRPC
+import GRPCCore
 import IDBGRPCSwift
 
 struct ListSettingsMethodHandler {
 
   let commandExecutor: IDBCommandExecutor
 
-  func handle(request: Idb_ListSettingRequest, context: GRPCAsyncServerCallContext) async throws -> Idb_ListSettingResponse {
+  func handle(request: Idb_ListSettingRequest, context: ServerContext) async throws -> Idb_ListSettingResponse {
     switch request.setting {
     case .locale:
       return .with {
         $0.values = commandExecutor.list_locale_identifiers()
       }
     case .any, .UNRECOGNIZED:
-      throw GRPCStatus(code: .invalidArgument, message: "Unknown setting case")
+      throw RPCError(code: .invalidArgument, message: "Unknown setting case")
     }
   }
 }

@@ -78,7 +78,7 @@ def verify_resolved(expected_path: Path, actual_path: Path) -> None:
 def prepare_codegen(lock_path: Path, destination: Path) -> None:
     pins = load_pins(lock_path)
     dependencies = []
-    for identity in ("grpc-swift", "swift-protobuf"):
+    for identity in ("grpc-swift-2", "grpc-swift-protobuf", "swift-protobuf"):
         if identity not in pins:
             raise ValueError(f"{lock_path}: missing codegen dependency {identity}")
         pin = pins[identity]
@@ -88,7 +88,7 @@ def prepare_codegen(lock_path: Path, destination: Path) -> None:
         )
     # The normal idb manifest needs generated sources before SwiftPM can load it.
     manifest = (
-        "// swift-tools-version:6.0\nimport PackageDescription\n"
+        "// swift-tools-version:6.1\nimport PackageDescription\n"
         'let package = Package(name: "idb-codegen", dependencies: [\n'
         + "\n".join(dependencies)
         + "\n], targets: [])\n"

@@ -9,19 +9,19 @@ import CompanionLib
 import CompanionUtilities
 import FBControlCore
 import Foundation
-import GRPC
+import GRPCCore
 import IDBGRPCSwift
 
 struct LaunchMethodHandler: @unchecked Sendable {
 
   let commandExecutor: IDBCommandExecutor
 
-  func handle(requestStream: RequestStreamReader<Idb_LaunchRequest>, responseStream: GRPCAsyncResponseStreamWriter<Idb_LaunchResponse>, context: GRPCAsyncServerCallContext) async throws {
+  func handle(requestStream: RequestStreamReader<Idb_LaunchRequest>, responseStream: RPCWriter<Idb_LaunchResponse>, context: ServerContext) async throws {
     var consumers: [any DataConsumerLifecycle] = []
 
     var request = try await requestStream.requiredNext()
     guard case let .start(start) = request.control else {
-      throw GRPCStatus(code: .failedPrecondition, message: "Application not started yet")
+      throw RPCError(code: .failedPrecondition, message: "Application not started yet")
     }
     var stdOut = processOutputForNullDevice()
     var stdErr = processOutputForNullDevice()
@@ -72,7 +72,7 @@ struct LaunchMethodHandler: @unchecked Sendable {
 
     request = try await requestStream.requiredNext()
     guard case .stop = request.control else {
-      throw GRPCStatus(code: .failedPrecondition, message: "Application has already started")
+      throw RPCError(code: .failedPrecondition, message: "Application has already started")
     }
 
     try await launchedApp.terminate()
@@ -92,7 +92,7 @@ struct LaunchMethodHandler: @unchecked Sendable {
     return FBProcessOutput<AnyObject>.forNullDevice().retyped(FBProcessOutput<AnyObject>.self)
   }
 
-  private func pipeOutput(interface: Idb_ProcessOutput.Interface, responseWriter: FIFOStreamWriter<GRPCAsyncResponseStreamWriter<Idb_LaunchResponse>>) -> (FBDataConsumer & DataConsumerLifecycle) {
+  private func pipeOutput(interface: Idb_ProcessOutput.Interface, responseWriter: FIFOStreamWriter<RPCWriter<Idb_LaunchResponse>>) -> (FBDataConsumer & DataConsumerLifecycle) {
     return FBBlockDataConsumer.asynchronousDataConsumer { data in
       let response = Idb_LaunchResponse.with {
         $0.output.data = data

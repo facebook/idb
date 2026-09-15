@@ -6,7 +6,7 @@
  */
 
 import Foundation
-import GRPC
+import GRPCCore
 
 /// A client for the REPL control socket served by the injected shim inside the
 /// test process. The shim is the server (it binds the socket); the companion
@@ -39,7 +39,7 @@ final class ReplSocketClient: @unchecked Sendable {
       queue.async {
         let fd = Darwin.socket(AF_UNIX, SOCK_STREAM, 0)
         guard fd >= 0 else {
-          continuation.resume(throwing: GRPCStatus(code: .internalError, message: "repl: failed to create socket"))
+          continuation.resume(throwing: RPCError(code: .internalError, message: "repl: failed to create socket"))
           return
         }
         var addr = sockaddr_un()
@@ -47,7 +47,7 @@ final class ReplSocketClient: @unchecked Sendable {
         let maxLength = MemoryLayout.size(ofValue: addr.sun_path)
         guard path.utf8.count < maxLength else {
           Darwin.close(fd)
-          continuation.resume(throwing: GRPCStatus(code: .invalidArgument, message: "repl: socket path too long (\(path.utf8.count) bytes): \(path)"))
+          continuation.resume(throwing: RPCError(code: .invalidArgument, message: "repl: socket path too long (\(path.utf8.count) bytes): \(path)"))
           return
         }
         _ = withUnsafeMutablePointer(to: &addr.sun_path) { ptr in
@@ -67,7 +67,7 @@ final class ReplSocketClient: @unchecked Sendable {
           }
           if Date() >= deadline {
             Darwin.close(fd)
-            continuation.resume(throwing: GRPCStatus(code: .deadlineExceeded, message: "repl: timed out connecting to control socket at \(path)"))
+            continuation.resume(throwing: RPCError(code: .deadlineExceeded, message: "repl: timed out connecting to control socket at \(path)"))
             return
           }
           usleep(100_000)
@@ -97,7 +97,7 @@ final class ReplSocketClient: @unchecked Sendable {
         do {
           let message = try Self.readMessage(fd: fd)
           guard message["type"] as? String == "greeting" else {
-            throw GRPCStatus(code: .internalError, message: "repl: expected a 'greeting' message, got type '\(message["type"] as? String ?? "nil")'")
+            throw RPCError(code: .internalError, message: "repl: expected a 'greeting' message, got type '\(message["type"] as? String ?? "nil")'")
           }
           let interfaces = message["interfaces"] as? [String] ?? []
           let nextRunIndex = (message["nextRunIndex"] as? NSNumber)?.uint32Value ?? 0
@@ -150,7 +150,7 @@ final class ReplSocketClient: @unchecked Sendable {
               return
 
             case let other:
-              throw GRPCStatus(code: .internalError, message: "repl: unexpected control-socket message type '\(other ?? "nil")'")
+              throw RPCError(code: .internalError, message: "repl: unexpected control-socket message type '\(other ?? "nil")'")
             }
           }
         } catch {
@@ -205,9 +205,9 @@ final class ReplSocketClient: @unchecked Sendable {
       if n > 0 {
         total += n
       } else if n == 0 {
-        throw GRPCStatus(code: .unavailable, message: "repl: control socket closed before a complete message was received (the test process may have crashed)")
+        throw RPCError(code: .unavailable, message: "repl: control socket closed before a complete message was received (the test process may have crashed)")
       } else {
-        throw GRPCStatus(code: .internalError, message: "repl: failed to read from control socket: \(String(cString: strerror(errno)))")
+        throw RPCError(code: .internalError, message: "repl: failed to read from control socket: \(String(cString: strerror(errno)))")
       }
     }
     return data
@@ -216,7 +216,7 @@ final class ReplSocketClient: @unchecked Sendable {
   private static func readMessage(fd: Int32) throws -> [String: Any] {
     let frame = try readFrame(fd: fd)
     guard let message = try PropertyListSerialization.propertyList(from: frame, options: [], format: nil) as? [String: Any] else {
-      throw GRPCStatus(code: .internalError, message: "repl: invalid control-socket message")
+      throw RPCError(code: .internalError, message: "repl: invalid control-socket message")
     }
     return message
   }
@@ -241,7 +241,7 @@ final class ReplSocketClient: @unchecked Sendable {
       while written < raw.count {
         let n = Darwin.write(fd, base + written, raw.count - written)
         guard n > 0 else {
-          throw GRPCStatus(code: .internalError, message: "repl: failed to write to control socket")
+          throw RPCError(code: .internalError, message: "repl: failed to write to control socket")
         }
         written += n
       }

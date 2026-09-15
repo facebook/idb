@@ -8,7 +8,7 @@
 import CoreGraphics
 @preconcurrency import FBControlCore
 import Foundation
-import GRPC
+import GRPCCore
 import IDBGRPCSwift
 import XCTest
 
@@ -37,11 +37,11 @@ final class ScreenshotRequestTranslationTests: XCTestCase {
     line: UInt = #line
   ) {
     XCTAssertThrowsError(try configuration(mutate), file: file, line: line) { error in
-      guard let status = error as? GRPCStatus else {
-        return XCTFail("expected a GRPCStatus, got \(error)", file: file, line: line)
+      guard let status = error as? RPCError else {
+        return XCTFail("expected a RPCError, got \(error)", file: file, line: line)
       }
       XCTAssertEqual(status.code, .invalidArgument, file: file, line: line)
-      XCTAssertFalse(status.message?.isEmpty ?? true, "a rejection must say why", file: file, line: line)
+      XCTAssertFalse(status.message.isEmpty, "a rejection must say why", file: file, line: line)
     }
   }
 
@@ -258,7 +258,7 @@ final class ScreenshotRequestTranslationTests: XCTestCase {
   func testEveryGeometryRejectionHasAStatus() {
     // Not exhaustive by construction -- the error has associated values, so it is not CaseIterable.
     // A case added to ScreenshotGeometryError must be added here.
-    let expected: [(ScreenshotGeometryError, GRPCStatus.Code)] = [
+    let expected: [(ScreenshotGeometryError, RPCError.Code)] = [
       (.scaleFactorOutOfRange(2), .invalidArgument),
       (.fitBoundsEmpty, .invalidArgument),
       (.fitBoundNotPositive(0), .invalidArgument),
@@ -275,7 +275,7 @@ final class ScreenshotRequestTranslationTests: XCTestCase {
     for (error, code) in expected {
       let status = ScreenshotRequestTranslation.status(for: error)
       XCTAssertEqual(status.code, code, "\(error)")
-      XCTAssertFalse(status.message?.isEmpty ?? true, "\(error) must say why")
+      XCTAssertFalse(status.message.isEmpty, "\(error) must say why")
     }
   }
 
@@ -284,7 +284,7 @@ final class ScreenshotRequestTranslationTests: XCTestCase {
   func testEveryRenderFailureHasAStatus() {
     // Not exhaustive by construction -- the error has associated values, so it is not CaseIterable.
     // A case added to ScreenshotRenderError must be added here.
-    let expected: [(ScreenshotRenderError, GRPCStatus.Code)] = [
+    let expected: [(ScreenshotRenderError, RPCError.Code)] = [
       (.croppingFailed(cropRect: .zero, sourceSize: .zero), .internalError),
       (.contextCreationFailed(size: .zero), .internalError),
       (.scalingFailed(size: .zero), .internalError),
@@ -298,7 +298,7 @@ final class ScreenshotRequestTranslationTests: XCTestCase {
     for (error, code) in expected {
       let status = ScreenshotRequestTranslation.status(for: error)
       XCTAssertEqual(status.code, code, "\(error)")
-      XCTAssertFalse(status.message?.isEmpty ?? true, "\(error) must say why")
+      XCTAssertFalse(status.message.isEmpty, "\(error) must say why")
     }
   }
 

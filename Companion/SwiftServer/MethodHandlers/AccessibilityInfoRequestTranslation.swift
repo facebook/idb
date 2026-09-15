@@ -9,7 +9,7 @@ import CompanionLib
 import FBControlCore
 import FBSimulatorControl
 import Foundation
-import GRPC
+import GRPCCore
 import IDBGRPCSwift
 
 /// Translates an `accessibility_info` request to the framework's query and option types, and a read's
@@ -64,7 +64,7 @@ enum AccessibilityInfoRequestTranslation {
   static func options(from request: Idb_AccessibilityInfoRequest, format: FBAccessibilityOutputFormat) throws -> FBAccessibilityRequestOptions {
     let mappedKeys = FBAXKeys.requested(request.keys)
     if !request.keys.isEmpty && mappedKeys.isEmpty {
-      throw GRPCStatus(
+      throw RPCError(
         code: .invalidArgument,
         message: "no recognized accessibility keys in \(request.keys)")
     }
@@ -83,7 +83,7 @@ enum AccessibilityInfoRequestTranslation {
   /// precedence.
   static func validate(_ request: Idb_AccessibilityInfoRequest) throws {
     guard request.marker.isEmpty || request.match.isEmpty else {
-      throw GRPCStatus(code: .invalidArgument, message: "set either marker or match, not both")
+      throw RPCError(code: .invalidArgument, message: "set either marker or match, not both")
     }
   }
 

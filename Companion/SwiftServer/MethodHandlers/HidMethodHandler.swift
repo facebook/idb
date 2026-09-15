@@ -8,14 +8,14 @@
 import CompanionLib
 import FBControlCore
 import FBSimulatorControl
-import GRPC
+import GRPCCore
 import IDBGRPCSwift
 
 struct HidMethodHandler {
 
   let commandExecutor: IDBCommandExecutor
 
-  func handle(requestStream: RequestStreamReader<Idb_HIDEvent>, context: GRPCAsyncServerCallContext) async throws -> Idb_HIDResponse {
+  func handle(requestStream: RequestStreamReader<Idb_HIDEvent>, context: ServerContext) async throws -> Idb_HIDResponse {
     for try await request in requestStream {
       let event = try fbSimulatorHIDEvent(from: request)
       try await commandExecutor.hid(event)
@@ -34,12 +34,12 @@ struct HidMethodHandler {
         case .down:
           return .keyboard(direction: .down, keyCode: UInt32(key.keycode))
         case .UNRECOGNIZED:
-          throw GRPCStatus(code: .invalidArgument, message: "Unrecognized press.direction")
+          throw RPCError(code: .invalidArgument, message: "Unrecognized press.direction")
         }
 
       case let .button(button):
         guard let hidButton = fbSimulatorHIDButton(from: button.button) else {
-          throw GRPCStatus(code: .invalidArgument, message: "Unrecognized hid button type")
+          throw RPCError(code: .invalidArgument, message: "Unrecognized hid button type")
         }
         switch press.direction {
         case .up:
@@ -47,7 +47,7 @@ struct HidMethodHandler {
         case .down:
           return .button(direction: .down, button: hidButton)
         case .UNRECOGNIZED:
-          throw GRPCStatus(code: .invalidArgument, message: "Unrecognized press.direction")
+          throw RPCError(code: .invalidArgument, message: "Unrecognized press.direction")
         }
 
       case let .touch(touch):
@@ -57,11 +57,11 @@ struct HidMethodHandler {
         case .down:
           return .touch(direction: .down, x: touch.point.x, y: touch.point.y)
         case .UNRECOGNIZED:
-          throw GRPCStatus(code: .invalidArgument, message: "Unrecognized press.direction")
+          throw RPCError(code: .invalidArgument, message: "Unrecognized press.direction")
         }
 
       case .none:
-        throw GRPCStatus(code: .invalidArgument, message: "Unrecognized press.action")
+        throw RPCError(code: .invalidArgument, message: "Unrecognized press.action")
       }
 
     case let .swipe(swipe):
@@ -86,7 +86,7 @@ struct HidMethodHandler {
 
     case let .orientation(orientation):
       guard let deviceOrientation = fbSimulatorHIDDeviceOrientation(from: orientation.orientation) else {
-        throw GRPCStatus(code: .invalidArgument, message: "Unrecognized orientation type")
+        throw RPCError(code: .invalidArgument, message: "Unrecognized orientation type")
       }
       return .deviceOrientation(deviceOrientation)
 
@@ -94,7 +94,7 @@ struct HidMethodHandler {
       return .shake
 
     case .none:
-      throw GRPCStatus(code: .invalidArgument, message: "Unrecognized request.event")
+      throw RPCError(code: .invalidArgument, message: "Unrecognized request.event")
     }
   }
 

@@ -9,7 +9,7 @@ import CompanionLib
 import FBControlCore
 import FBSimulatorControl
 import Foundation
-import GRPC
+import GRPCCore
 import IDBGRPCSwift
 
 struct PullMethodHandler {
@@ -32,7 +32,7 @@ struct PullMethodHandler {
     }
   }
 
-  func handle(request: Idb_PullRequest, responseStream: GRPCAsyncResponseStreamWriter<Idb_PullResponse>, context: GRPCAsyncServerCallContext) async throws {
+  func handle(request: Idb_PullRequest, responseStream: RPCWriter<Idb_PullResponse>, context: ServerContext) async throws {
     if request.dstPath.isEmpty {
       try await sendRawData(request: request, responseStream: responseStream)
     } else {
@@ -40,7 +40,7 @@ struct PullMethodHandler {
     }
   }
 
-  private func sendRawData(request: Idb_PullRequest, responseStream: GRPCAsyncResponseStreamWriter<Idb_PullResponse>) async throws {
+  private func sendRawData(request: Idb_PullRequest, responseStream: RPCWriter<Idb_PullResponse>) async throws {
     let logger = target.logger
     let path = request.srcPath as NSString
     let fileContainer = FileContainerValueTransformer.rawFileContainer(from: request.container)
@@ -68,7 +68,7 @@ struct PullMethodHandler {
     logger.info().log("pull streamed \(Self.formatBytes(totalBytes))")
   }
 
-  private func sendFilePath(request: Idb_PullRequest, responseStream: GRPCAsyncResponseStreamWriter<Idb_PullResponse>) async throws {
+  private func sendFilePath(request: Idb_PullRequest, responseStream: RPCWriter<Idb_PullResponse>) async throws {
     let fileContainer = FileContainerValueTransformer.rawFileContainer(from: request.container)
 
     let filePath = try await commandExecutor.pull_file_path(

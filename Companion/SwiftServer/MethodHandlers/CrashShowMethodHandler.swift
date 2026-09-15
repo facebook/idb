@@ -7,16 +7,16 @@
 
 import CompanionLib
 import FBControlCore
-import GRPC
+import GRPCCore
 import IDBGRPCSwift
 
 struct CrashShowMethodHandler {
 
   let commandExecutor: IDBCommandExecutor
 
-  func handle(request: Idb_CrashShowRequest, context: GRPCAsyncServerCallContext) async throws -> Idb_CrashShowResponse {
+  func handle(request: Idb_CrashShowRequest, context: ServerContext) async throws -> Idb_CrashShowResponse {
     guard !request.name.isEmpty else {
-      throw GRPCStatus(code: .invalidArgument, message: "Missing crash name")
+      throw RPCError(code: .invalidArgument, message: "Missing crash name")
     }
 
     let predicate = CrashLogInfo.predicate(forName: request.name)

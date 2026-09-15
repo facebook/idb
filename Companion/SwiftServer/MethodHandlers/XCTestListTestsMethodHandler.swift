@@ -9,14 +9,14 @@ import CompanionLib
 import FBControlCore
 import FBSimulatorControl
 import Foundation
-import GRPC
+import GRPCCore
 import IDBGRPCSwift
 
 struct XCTestListTestsMethodHandler {
 
   let commandExecutor: IDBCommandExecutor
 
-  func handle(request: Idb_XctestListTestsRequest, context: GRPCAsyncServerCallContext) async throws -> Idb_XctestListTestsResponse {
+  func handle(request: Idb_XctestListTestsRequest, context: ServerContext) async throws -> Idb_XctestListTestsResponse {
     let tests = try await commandExecutor.list_tests_in_bundle(request.bundleName, with_app: request.appPath)
     return .with {
       $0.names = tests

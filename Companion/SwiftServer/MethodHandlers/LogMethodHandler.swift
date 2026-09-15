@@ -9,7 +9,7 @@ import CompanionLib
 import CompanionUtilities
 import FBControlCore
 import FBSimulatorControl
-import GRPC
+import GRPCCore
 import IDBGRPCSwift
 
 struct LogMethodHandler: @unchecked Sendable {
@@ -17,7 +17,7 @@ struct LogMethodHandler: @unchecked Sendable {
   let target: any FBiOSTarget
   let commandExecutor: IDBCommandExecutor
 
-  func handle(request: Idb_LogRequest, responseStream: GRPCAsyncResponseStreamWriter<Idb_LogResponse>, context: GRPCAsyncServerCallContext) async throws {
+  func handle(request: Idb_LogRequest, responseStream: RPCWriter<Idb_LogResponse>, context: ServerContext) async throws {
     let writingDone = AsyncPromise<Void>()
     let streamWriter = FIFOStreamWriter(stream: responseStream)
 

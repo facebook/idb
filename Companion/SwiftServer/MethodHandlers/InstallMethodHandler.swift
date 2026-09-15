@@ -9,7 +9,7 @@ import CompanionLib
 import FBControlCore
 import FBSimulatorControl
 import Foundation
-import GRPC
+import GRPCCore
 import IDBGRPCSwift
 
 struct InstallMethodHandler: @unchecked Sendable {
@@ -17,7 +17,7 @@ struct InstallMethodHandler: @unchecked Sendable {
   let commandExecutor: IDBCommandExecutor
   let targetLogger: FBControlCoreLogger
 
-  func handle(requestStream: RequestStreamReader<Idb_InstallRequest>, responseStream: GRPCAsyncResponseStreamWriter<Idb_InstallResponse>, context: GRPCAsyncServerCallContext) async throws {
+  func handle(requestStream: RequestStreamReader<Idb_InstallRequest>, responseStream: RPCWriter<Idb_InstallResponse>, context: ServerContext) async throws {
 
     let artifact = try await Self.mapSimulatorInstallErrors {
       try await install(requestStream: requestStream, responseStream: responseStream)
@@ -39,18 +39,18 @@ struct InstallMethodHandler: @unchecked Sendable {
         .processDebuggerAttached,
         .targetNotBooted,
         .targetUnavailable:
-        throw GRPCStatus(code: .failedPrecondition, message: error.localizedDescription)
+        throw RPCError(code: .failedPrecondition, message: error.localizedDescription)
       default:
         throw error
       }
     }
   }
 
-  private func install(requestStream: RequestStreamReader<Idb_InstallRequest>, responseStream: GRPCAsyncResponseStreamWriter<Idb_InstallResponse>) async throws -> InstalledArtifact {
+  private func install(requestStream: RequestStreamReader<Idb_InstallRequest>, responseStream: RPCWriter<Idb_InstallResponse>) async throws -> InstalledArtifact {
 
     func extractPayloadFromRequest() throws -> Idb_Payload {
       guard let payload = request.extractPayload() else {
-        throw GRPCStatus(code: .invalidArgument, message: "Expected the next item in the stream to be a payload")
+        throw RPCError(code: .invalidArgument, message: "Expected the next item in the stream to be a payload")
       }
       return payload
     }
@@ -58,7 +58,7 @@ struct InstallMethodHandler: @unchecked Sendable {
     var request = try await requestStream.requiredNext()
 
     guard case let .destination(destination) = request.value else {
-      throw GRPCStatus(code: .failedPrecondition, message: "Expected destination as first request in stream")
+      throw RPCError(code: .failedPrecondition, message: "Expected destination as first request in stream")
     }
     request = try await requestStream.requiredNext()
 
@@ -137,7 +137,7 @@ struct InstallMethodHandler: @unchecked Sendable {
       case .framework:
         return try await commandExecutor.install_framework_stream(dataStream)
       case .UNRECOGNIZED:
-        throw GRPCStatus(code: .invalidArgument, message: "Unrecognized destination")
+        throw RPCError(code: .invalidArgument, message: "Unrecognized destination")
       }
     }
 
@@ -162,7 +162,7 @@ struct InstallMethodHandler: @unchecked Sendable {
 
     case let .url(urlString):
       guard let url = URL(string: urlString) else {
-        throw GRPCStatus(code: .invalidArgument, message: "Invalid url source")
+        throw RPCError(code: .invalidArgument, message: "Invalid url source")
       }
       let download = FBDataDownloadInput.dataDownload(withURL: url, logger: targetLogger)
       let input = download.input
@@ -182,11 +182,11 @@ struct InstallMethodHandler: @unchecked Sendable {
       case .framework:
         return try await commandExecutor.install_framework_file_path(filePath)
       case .UNRECOGNIZED:
-        throw GRPCStatus(code: .invalidArgument, message: "Unrecognized destination")
+        throw RPCError(code: .invalidArgument, message: "Unrecognized destination")
       }
 
     default:
-      throw GRPCStatus(code: .invalidArgument, message: "Incorrect payload source")
+      throw RPCError(code: .invalidArgument, message: "Incorrect payload source")
     }
   }
 
@@ -204,7 +204,7 @@ struct InstallMethodHandler: @unchecked Sendable {
       .appendingPathComponent(UUID().uuidString)
       .appendingPathExtension("ipa")
     guard FileManager.default.createFile(atPath: archiveURL.path, contents: nil) else {
-      throw GRPCStatus(code: .internalError, message: "Failed to create temporary install archive")
+      throw RPCError(code: .internalError, message: "Failed to create temporary install archive")
     }
     defer { try? FileManager.default.removeItem(at: archiveURL) }
 
@@ -249,7 +249,7 @@ struct InstallMethodHandler: @unchecked Sendable {
   private func write(_ data: Data, to output: OutputStream) throws {
     var buffer = [UInt8](data)
     guard output.write(&buffer, maxLength: buffer.count) == buffer.count else {
-      throw output.streamError ?? GRPCStatus(code: .internalError, message: "Failed to write install payload")
+      throw output.streamError ?? RPCError(code: .internalError, message: "Failed to write install payload")
     }
   }
 

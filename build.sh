@@ -187,9 +187,9 @@ function check_protobuf() {
 # Defined once, in Package.swift. The codegen plugin must be the same version as
 # the runtime it generates against, so derive it rather than restating it here.
 function resolve_grpc_swift_version() {
-  GRPC_SWIFT_VERSION="$(pinned_version grpc-swift)"
+  GRPC_SWIFT_VERSION="$(pinned_version grpc-swift-protobuf)"
   if [ -z "$GRPC_SWIFT_VERSION" ]; then
-    echo "error: Package.swift does not pin grpc-swift to an exact version" >&2
+    echo "error: Package.swift does not pin grpc-swift-protobuf to an exact version" >&2
     exit 1
   fi
 }
@@ -444,7 +444,7 @@ function build_grpc_swift_plugin() {
   resolve_grpc_swift_version
   check_package_pins
 
-  build_protoc_plugin protoc-gen-grpc-swift
+  build_protoc_plugin protoc-gen-grpc-swift-2
 }
 
 function build_swift_protobuf_plugin() {
@@ -464,7 +464,7 @@ function generate_proto() {
   local protoc=$(which protoc)
   local swift_plugin grpc_plugin
   swift_plugin="$(plugin_binary protoc-gen-swift)"
-  grpc_plugin="$(plugin_binary protoc-gen-grpc-swift)"
+  grpc_plugin="$(plugin_binary protoc-gen-grpc-swift-2)"
 
   echo "Generating gRPC Swift from proto..."
   mkdir -p "$output_dir"
@@ -472,7 +472,7 @@ function generate_proto() {
   $protoc \
     --proto_path="$proto_dir" \
     --swift_out=Visibility=Public:"$output_dir" \
-    --grpc-swift_out=Visibility=Public:"$output_dir" \
+    --grpc-swift_out=Visibility=Public,Client=true,Server=true:"$output_dir" \
     --plugin=protoc-gen-grpc-swift="$grpc_plugin" \
     --plugin=protoc-gen-swift="$swift_plugin" \
     "$proto_dir/idb.proto"
@@ -979,7 +979,7 @@ Commands:
 
   generate-proto
     Regenerate gRPC Swift files from proto/idb.proto.
-    This builds protoc-gen-grpc-swift from grpc-swift 1.x source if needed.
+    This builds protoc-gen-grpc-swift-2 from grpc-swift-protobuf source if needed.
 
   build [<target>]
     Build targets. If no target specified, builds everything.

@@ -8,7 +8,7 @@
 import CompanionLib
 import FBControlCore
 import Foundation
-import GRPC
+import GRPCCore
 import IDBGRPCSwift
 
 struct LsMethodHandler {
@@ -22,7 +22,7 @@ struct LsMethodHandler {
     return count == 1 ? "1 entry" : "\(count) entries"
   }
 
-  func handle(request: Idb_LsRequest, context: GRPCAsyncServerCallContext) async throws -> Idb_LsResponse {
+  func handle(request: Idb_LsRequest, context: ServerContext) async throws -> Idb_LsResponse {
     let fileContainer = FileContainerValueTransformer.rawFileContainer(from: request.container)
 
     if request.paths.isEmpty {

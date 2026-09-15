@@ -7,7 +7,8 @@
 
 import CompanionUtilities
 @preconcurrency import FBControlCore
-import GRPC
+import GRPCCore
+import GRPCNIOTransportCore
 import IDBGRPCSwift
 import Testing
 
@@ -240,10 +241,10 @@ struct IDBTransientTests {
   }
 
   @Test
-  func outputDescriptionThrowsForNilAddress() {
+  func outputDescriptionThrowsForMismatchedAddress() {
     let target = GRPCConnectionTarget.tcpPort(port: 8080)
     do {
-      _ = try target.outputDescription(for: nil)
+      _ = try target.outputDescription(for: .unixDomainSocket(path: "/tmp/idb.sock"))
       Issue.record("expected an ExtractionError")
     } catch {
       #expect(error is GRPCConnectionTarget.ExtractionError)
@@ -302,14 +303,35 @@ struct IDBTransientTests {
     #expect((compound.subpredicates.count) == (3))
   }
 
+  // MARK: - ErrorMapping Tests
+
+  @Test
+  func errorMappingKeepsRPCErrors() {
+    let thrown = RPCError(code: .invalidArgument, message: "bad request")
+    let mapped = ErrorMapping.rpcError(from: thrown)
+    #expect(mapped.code == .invalidArgument)
+    #expect(mapped.message == "bad request")
+  }
+
+  @Test
+  func errorMappingUnwrapsLegacyNSErrorDescriptions() {
+    let thrown = NSError(
+      domain: "com.example", code: 7,
+      userInfo: [NSLocalizedDescriptionKey: "Application com.example.app isn't installed", "bundle": "com.example.app"])
+    let mapped = ErrorMapping.rpcError(from: thrown)
+    #expect(mapped.code == .internalError)
+    #expect(mapped.message.hasPrefix("Application com.example.app isn't installed"))
+    #expect(mapped.message.contains("bundle"))
+  }
+
   // MARK: - StreamReadError Tests
 
   @Test
   func streamReadErrorMakesFailedPreconditionStatus() {
     let error = StreamReadError<String>.nextElementNotProduced
-    let status = error.makeGRPCStatus()
+    let status = error.rpcError
     #expect((status.code) == (.failedPrecondition))
-    #expect((status.message?.contains("String") ?? false))
+    #expect(status.message.contains("String"))
   }
 
   @Test

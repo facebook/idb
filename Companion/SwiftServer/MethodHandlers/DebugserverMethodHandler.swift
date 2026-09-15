@@ -7,14 +7,14 @@
 
 import CompanionLib
 import FBControlCore
-import GRPC
+import GRPCCore
 import IDBGRPCSwift
 
 struct DebugserverMethodHandler {
 
   let commandExecutor: IDBCommandExecutor
 
-  func handle(requestStream: RequestStreamReader<Idb_DebugServerRequest>, responseStream: GRPCAsyncResponseStreamWriter<Idb_DebugServerResponse>, context: GRPCAsyncServerCallContext) async throws {
+  func handle(requestStream: RequestStreamReader<Idb_DebugServerRequest>, responseStream: RPCWriter<Idb_DebugServerResponse>, context: ServerContext) async throws {
 
     for try await request in requestStream {
       switch request.control {
@@ -38,10 +38,10 @@ struct DebugserverMethodHandler {
         return
 
       case .pipe:
-        throw GRPCStatus(code: .unimplemented)
+        throw RPCError(code: .unimplemented, message: "debugserver pipe is not supported")
 
       case .none:
-        throw GRPCStatus(code: .invalidArgument, message: "Received empty control")
+        throw RPCError(code: .invalidArgument, message: "Received empty control")
       }
     }
   }

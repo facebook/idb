@@ -7,14 +7,14 @@
 
 import CompanionLib
 import FBControlCore
-import GRPC
+import GRPCCore
 import IDBGRPCSwift
 
 struct MvMethodHandler {
 
   let commandExecutor: IDBCommandExecutor
 
-  func handle(request: Idb_MvRequest, context: GRPCAsyncServerCallContext) async throws -> Idb_MvResponse {
+  func handle(request: Idb_MvRequest, context: ServerContext) async throws -> Idb_MvResponse {
     let fileContainer = FileContainerValueTransformer.rawFileContainer(from: request.container)
     try await commandExecutor.move_paths(request.srcPaths, to_path: request.dstPath, containerType: fileContainer)
     return .init()

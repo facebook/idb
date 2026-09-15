@@ -7,14 +7,14 @@
 
 import CompanionLib
 import FBControlCore
-import GRPC
+import GRPCCore
 import IDBGRPCSwift
 
 struct MkdirMethodHandler {
 
   let commandExecutor: IDBCommandExecutor
 
-  func handle(request: Idb_MkdirRequest, context: GRPCAsyncServerCallContext) async throws -> Idb_MkdirResponse {
+  func handle(request: Idb_MkdirRequest, context: ServerContext) async throws -> Idb_MkdirResponse {
     let fileContainer = FileContainerValueTransformer.rawFileContainer(from: request.container)
     try await commandExecutor.create_directory(request.path, containerType: fileContainer)
     return .init()

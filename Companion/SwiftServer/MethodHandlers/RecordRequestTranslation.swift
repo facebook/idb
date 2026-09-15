@@ -7,7 +7,7 @@
 
 import FBControlCore
 import Foundation
-import GRPC
+import GRPCCore
 import IDBGRPCSwift
 
 /// Translates a `record` request to `VideoEncodeOptions` and echoes the resolved options back.
@@ -34,24 +34,24 @@ enum RecordRequestTranslation {
       // Infinity would reach a trapping `Int(...)` conversion and crash the companion. Reject both up
       // front, before the range checks that assume a finite value.
       guard value.isFinite else {
-        throw GRPCStatus(code: .invalidArgument, message: "record \(name) must be a finite number, got \(value)")
+        throw RPCError(code: .invalidArgument, message: "record \(name) must be a finite number, got \(value)")
       }
       guard value >= 0 else {
-        throw GRPCStatus(code: .invalidArgument, message: "record \(name) must not be negative, got \(value)")
+        throw RPCError(code: .invalidArgument, message: "record \(name) must not be negative, got \(value)")
       }
     }
     guard start.compressionQuality <= 1 else {
-      throw GRPCStatus(
+      throw RPCError(
         code: .invalidArgument,
         message: "record compression_quality must be in [0, 1], got \(start.compressionQuality)")
     }
     guard start.scaleFactor <= 1 else {
-      throw GRPCStatus(
+      throw RPCError(
         code: .invalidArgument,
         message: "record scale_factor must be in (0, 1]; a recording can be shrunk but not enlarged, got \(start.scaleFactor)")
     }
     guard start.avgBitrate == 0 || start.compressionQuality == 0 else {
-      throw GRPCStatus(
+      throw RPCError(
         code: .invalidArgument,
         message: "record avg_bitrate and compression_quality are two ways to set the same rate control; set one")
     }
@@ -66,7 +66,7 @@ enum RecordRequestTranslation {
       // Finite by the check above, but a finite double can still exceed `Int`, and `Int(_:)` traps on
       // an out-of-range value. Reject it as invalid rather than let the conversion crash the companion.
       guard start.avgBitrate < Double(Int.max) else {
-        throw GRPCStatus(
+        throw RPCError(
           code: .invalidArgument,
           message: "record avg_bitrate is too large, got \(start.avgBitrate)")
       }
@@ -93,7 +93,7 @@ enum RecordRequestTranslation {
   /// for and reporting success is the one outcome the caller cannot detect, so refuse instead.
   static func requireHonoredConfiguration(_ commands: any VideoRecordingCommands, describing target: String) throws {
     guard commands.honorsRecordingConfiguration else {
-      throw GRPCStatus(
+      throw RPCError(
         code: .unimplemented,
         message: "\(target) records with a fixed configuration, so it cannot apply encode options")
     }

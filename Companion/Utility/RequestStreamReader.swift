@@ -6,36 +6,34 @@
  */
 
 import Foundation
-import GRPC
+import GRPCCore
 
-enum StreamReadError<Element>: Error, GRPCStatusTransformable {
+enum StreamReadError<Element>: Error {
   case nextElementNotProduced
 
-  func makeGRPCStatus() -> GRPCStatus {
+  var rpcError: RPCError {
     switch self {
     case .nextElementNotProduced:
-      return GRPCStatus(code: .failedPrecondition, message: "Expected next element of type \(Element.self)")
+      return RPCError(code: .failedPrecondition, message: "Expected next element of type \(Element.self)")
     }
   }
 }
 
 /// The one reader of a method's request stream.
 ///
-/// `GRPCAsyncRequestStream` is unicast: asking it for a second iterator is a `fatalError`
-/// inside NIO ("allows only a single AsyncIterator to be created") that kills the companion
-/// outright, with no `catch` to turn it into a `GRPCStatus` and nothing in the log to say so.
-/// The iterator is therefore made once, where the stream arrives, and handlers are handed a
-/// reader instead of the stream -- so a handler that reads in several places resumes the one
-/// read rather than starting a second.
+/// `RPCAsyncSequence` may only be iterated once: a second iterator is a programmer error that
+/// the transport does not recover from. The iterator is therefore made once, where the stream
+/// arrives, and handlers are handed a reader instead of the stream -- so a handler that reads in
+/// several places resumes the one read rather than starting a second.
 ///
 /// Being a reference is what lets that read position reach a child task; an iterator is a
 /// value, and `inout` cannot cross a task boundary. Reads are handed between tasks, never
 /// overlapped: a handler either reads on its own task or awaits the child it lent the reader to.
 final class RequestStreamReader<Element: Sendable>: AsyncSequence, AsyncIteratorProtocol, @unchecked Sendable {
 
-  private var iterator: GRPCAsyncRequestStream<Element>.Iterator
+  private var iterator: RPCAsyncSequence<Element, any Error>.AsyncIterator
 
-  init(_ stream: GRPCAsyncRequestStream<Element>) {
+  init(_ stream: RPCAsyncSequence<Element, any Error>) {
     self.iterator = stream.makeAsyncIterator()
   }
 
@@ -50,7 +48,7 @@ final class RequestStreamReader<Element: Sendable>: AsyncSequence, AsyncIterator
   /// The next element, throwing `failedPrecondition` instead of returning nil when the stream has ended.
   func requiredNext() async throws -> Element {
     guard let next = try await next() else {
-      throw StreamReadError<Element>.nextElementNotProduced
+      throw StreamReadError<Element>.nextElementNotProduced.rpcError
     }
     return next
   }

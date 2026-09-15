@@ -7,14 +7,14 @@
 
 import CompanionLib
 import FBControlCore
-import GRPC
+import GRPCCore
 import IDBGRPCSwift
 
 struct SetLocationMethodHandler {
 
   let commandExecutor: IDBCommandExecutor
 
-  func handle(request: Idb_SetLocationRequest, context: GRPCAsyncServerCallContext) async throws -> Idb_SetLocationResponse {
+  func handle(request: Idb_SetLocationRequest, context: ServerContext) async throws -> Idb_SetLocationResponse {
     try await commandExecutor.set_location(request.location.latitude, longitude: request.location.longitude)
     return .init()
   }

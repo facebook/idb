@@ -7,14 +7,14 @@
 
 import CompanionLib
 import FBControlCore
-import GRPC
+import GRPCCore
 import IDBGRPCSwift
 
 struct UninstallMethodHandler {
 
   let commandExecutor: IDBCommandExecutor
 
-  func handle(request: Idb_UninstallRequest, context: GRPCAsyncServerCallContext) async throws -> Idb_UninstallResponse {
+  func handle(request: Idb_UninstallRequest, context: ServerContext) async throws -> Idb_UninstallResponse {
     try await commandExecutor.uninstall_application(request.bundleID)
     return .init()
   }

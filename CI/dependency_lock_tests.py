@@ -28,37 +28,42 @@ class DependencyLockTest(unittest.TestCase):
         self.root = Path(self.enterContext(tempfile.TemporaryDirectory()))
         self.expected = self.root / "Package.resolved"
         self.actual = self.root / "Actual.resolved"
-        self.entries = [pin("grpc-swift"), pin("swift-protobuf"), pin("swift-log")]
+        self.entries = [
+            pin("grpc-swift-2"),
+            pin("grpc-swift-protobuf"),
+            pin("swift-protobuf"),
+            pin("swift-log"),
+        ]
         self.write(self.expected, self.entries)
 
     def write(self, path: Path, entries: list[dict], **fields) -> None:
         path.write_text(json.dumps({"version": 3, "pins": entries, **fields}) + "\n")
 
     def test_accepts_equivalent_resolution_despite_format_and_origin(self) -> None:
-        self.entries[0]["location"] = "https://github.com/example/grpc-swift/"
+        self.entries[0]["location"] = "https://github.com/example/grpc-swift-2/"
         self.write(self.actual, self.entries[::-1], originHash="another manifest")
         self.assertIsNone(verify_resolved(self.expected, self.actual))
 
     def test_rejects_revision_change_at_same_version(self) -> None:
-        self.entries[2]["state"]["revision"] = "b" * 40
+        self.entries[3]["state"]["revision"] = "b" * 40
         self.write(self.actual, self.entries)
         with self.assertRaisesRegex(ValueError, "swift-log: expected"):
             verify_resolved(self.expected, self.actual)
 
     def test_rejects_version_drift(self) -> None:
-        self.entries[2]["state"]["version"] = "2.0.0"
+        self.entries[3]["state"]["version"] = "2.0.0"
         self.write(self.actual, self.entries)
         with self.assertRaisesRegex(ValueError, "swift-log: expected"):
             verify_resolved(self.expected, self.actual)
 
     def test_rejects_another_repository_with_same_identity(self) -> None:
-        self.entries[2]["location"] = "https://github.com/another/swift-log.git"
+        self.entries[3]["location"] = "https://github.com/another/swift-log.git"
         self.write(self.actual, self.entries)
         with self.assertRaisesRegex(ValueError, "swift-log: expected"):
             verify_resolved(self.expected, self.actual)
 
     def test_rejects_missing_and_added_dependencies(self) -> None:
-        self.write(self.actual, self.entries[:2] + [pin("surprise")])
+        self.write(self.actual, self.entries[:3] + [pin("surprise")])
         with self.assertRaises(ValueError) as error:
             verify_resolved(self.expected, self.actual)
         self.assertIn("swift-log: missing", str(error.exception))
@@ -70,7 +75,7 @@ class DependencyLockTest(unittest.TestCase):
             load_pins(self.expected)
 
     def test_rejects_unpinned_revision(self) -> None:
-        self.entries[2]["state"]["revision"] = "main"
+        self.entries[3]["state"]["revision"] = "main"
         self.write(self.expected, self.entries)
         with self.assertRaisesRegex(ValueError, "swift-log must pin"):
             load_pins(self.expected)
@@ -103,7 +108,7 @@ class DependencyLockTest(unittest.TestCase):
                 self.entries[0]["state"] = state
                 self.write(self.expected, self.entries)
                 with self.assertRaisesRegex(
-                    ValueError, "grpc-swift: expected a state object"
+                    ValueError, "grpc-swift-2: expected a state object"
                 ):
                     load_pins(self.expected)
 
@@ -126,7 +131,7 @@ class DependencyLockTest(unittest.TestCase):
         self.write(self.expected, self.entries[1:])
         destination = self.root / "codegen"
         with self.assertRaisesRegex(
-            ValueError, "missing codegen dependency grpc-swift"
+            ValueError, "missing codegen dependency grpc-swift-2"
         ):
             prepare_codegen(self.expected, destination)
         self.assertFalse(destination.exists())

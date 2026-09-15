@@ -7,14 +7,14 @@
 
 import CompanionLib
 import FBControlCore
-import GRPC
+import GRPCCore
 import IDBGRPCSwift
 
 struct TerminateMethodHandler {
 
   let commandExecutor: IDBCommandExecutor
 
-  func handle(request: Idb_TerminateRequest, context: GRPCAsyncServerCallContext) async throws -> Idb_TerminateResponse {
+  func handle(request: Idb_TerminateRequest, context: ServerContext) async throws -> Idb_TerminateResponse {
     try await commandExecutor.kill_application(request.bundleID)
     return .init()
   }

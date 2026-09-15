@@ -9,7 +9,7 @@ import CompanionLib
 import CompanionUtilities
 import FBControlCore
 import FBSimulatorControl
-import GRPC
+import GRPCCore
 import IDBGRPCSwift
 
 private enum VideoStreamMethodHandlerError: Error {
@@ -31,11 +31,11 @@ struct VideoStreamMethodHandler {
   let targetLogger: FBControlCoreLogger
   let commandExecutor: IDBCommandExecutor
 
-  func handle(requestStream: RequestStreamReader<Idb_VideoStreamRequest>, responseStream: GRPCAsyncResponseStreamWriter<Idb_VideoStreamResponse>, context: GRPCAsyncServerCallContext) async throws {
+  func handle(requestStream: RequestStreamReader<Idb_VideoStreamRequest>, responseStream: RPCWriter<Idb_VideoStreamResponse>, context: ServerContext) async throws {
     @Atomic var finished = false
 
     guard case let .start(start) = try await requestStream.requiredNext().control
-    else { throw GRPCStatus(code: .failedPrecondition, message: "Expected start control") }
+    else { throw RPCError(code: .failedPrecondition, message: "Expected start control") }
 
     let videoStream = try await startVideoStream(
       request: start,
@@ -46,11 +46,11 @@ struct VideoStreamMethodHandler {
       for try await request in requestStream {
         switch request.control {
         case .start:
-          throw GRPCStatus(code: .failedPrecondition, message: "Video streaming already started")
+          throw RPCError(code: .failedPrecondition, message: "Video streaming already started")
         case .stop:
           return
         case .none:
-          throw GRPCStatus(code: .invalidArgument, message: "Client should not close request stream explicitly, send `stop` frame first")
+          throw RPCError(code: .invalidArgument, message: "Client should not close request stream explicitly, send `stop` frame first")
         }
       }
     }
@@ -65,7 +65,7 @@ struct VideoStreamMethodHandler {
     targetLogger.log("The video stream is terminated")
   }
 
-  private func startVideoStream(request start: Idb_VideoStreamRequest.Start, responseStream: GRPCAsyncResponseStreamWriter<Idb_VideoStreamResponse>, finished: Atomic<Bool>) async throws -> FBVideoStream {
+  private func startVideoStream(request start: Idb_VideoStreamRequest.Start, responseStream: RPCWriter<Idb_VideoStreamResponse>, finished: Atomic<Bool>) async throws -> FBVideoStream {
     let consumer: FBDataConsumer
 
     if start.filePath.isEmpty {

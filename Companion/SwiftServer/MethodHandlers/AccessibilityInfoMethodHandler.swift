@@ -9,7 +9,7 @@ import CompanionLib
 import FBControlCore
 import FBSimulatorControl
 import Foundation
-import GRPC
+import GRPCCore
 import IDBGRPCSwift
 
 /// Seam over the two `IDBCommandExecutor` reads this handler drives, so the request-to-options wiring
@@ -34,11 +34,11 @@ struct AccessibilityInfoMethodHandler {
 
   let commandExecutor: IDBCommandExecutor
 
-  func handle(request: Idb_AccessibilityInfoRequest, context: GRPCAsyncServerCallContext) async throws -> Idb_AccessibilityInfoResponse {
+  func handle(request: Idb_AccessibilityInfoRequest, context: ServerContext) async throws -> Idb_AccessibilityInfoResponse {
     try await Self.respond(to: request, using: commandExecutor)
   }
 
-  /// Lifted out of `handle` so it can be tested without a `GRPCAsyncServerCallContext`.
+  /// Lifted out of `handle` so it can be tested without a `ServerContext`.
   static func respond(
     to request: Idb_AccessibilityInfoRequest,
     using commandExecutor: any AccessibilityDescribing

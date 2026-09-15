@@ -9,35 +9,34 @@ import CompanionLib
 import CompanionUtilities
 import FBControlCore
 import Foundation
-@preconcurrency import GRPC
+import GRPCCore
+import GRPCNIOTransportHTTP2Posix
 import IDBGRPCSwift
 import NIOCore
 import NIOPosix
-import NIOSSL
 
 struct IDBUnixDomainSocketPathWrongType: Error {}
 
 final class GRPCSwiftServer: @unchecked Sendable {
 
-  private struct TLSCertificates {
-    let certificates: [NIOSSLCertificateSource]
-    let privateKey: NIOSSLPrivateKeySource
-  }
-
-  private var server: EventLoopFuture<Server>?
-  private let provider: CallHandlerProvider
+  private let server: GRPCServer<HTTP2ServerTransport.Posix>
+  private let transport: HTTP2ServerTransport.Posix
   private let logger: IDBLogger
-
-  private let serverConfig: Server.Configuration
   private let ports: IDBPortsConfiguration
 
   /// How long graceful shutdown is given to drain in-flight RPCs before the server is
   /// closed forcefully. Bounds shutdown so a stuck long-lived RPC (e.g. a log or video
   /// stream) cannot keep the companion alive after a termination signal.
-  private static let gracefulShutdownTimeout: TimeAmount = .seconds(5)
+  private static let gracefulShutdownTimeout: Duration = .seconds(5)
+
+  /// The maximum request payload the companion accepts. Installs and pushes stream large
+  /// chunks, so this is well above the transport's 4 MiB default.
+  private static let maximumReceiveMessageLength = 16_777_216
 
   private let shutdownLock = NSLock()
   private var didInitiateShutdown = false
+  /// The task running `serve()`; cancelling it is the forceful close.
+  private var serveTask: Task<Void, any Error>?
 
   /// Invoked synchronously the instant shutdown begins, before the async drain — used to
   /// release externally-visible registration (e.g. unlink the gRPC socket) so no client
@@ -53,39 +52,38 @@ final class GRPCSwiftServer: @unchecked Sendable {
     idleMonitor: IdleMonitor?,
     onShutdownStarted: (@Sendable () -> Void)? = nil
   ) throws {
-
     let group = MultiThreadedEventLoopGroup(numberOfThreads: 4)
-    let tlsCerts = Self.loadCertificates(tlsCertPath: ports.tlsCertPath, logger: logger)
 
-    let interceptors = CompanionServiceInterceptors(logger: logger)
-
-    self.provider = CompanionServiceProvider(
+    let provider = CompanionServiceProvider(
       target: target,
       commandExecutor: commandExecutor,
       reporter: reporter,
       logger: logger,
-      interceptors: interceptors,
       idleMonitor: idleMonitor)
 
-    var serverConfiguration = Server.Configuration.default(
-      target: ports.swiftServerTarget.grpcConnection,
-      eventLoopGroup: group,
-      serviceProviders: [provider])
-    serverConfiguration.maximumReceiveMessageLength = 16777216
-
-    if ports.swiftServerTarget.supportsTLSCert {
-      serverConfiguration.tlsConfiguration = tlsCerts.map {
-        GRPCTLSConfiguration.makeServerConfigurationBackedByNIOSSL(certificateChain: $0.certificates, privateKey: $0.privateKey)
-      }
+    let transportSecurity: HTTP2ServerTransport.Posix.TransportSecurity
+    if ports.swiftServerTarget.supportsTLSCert, let pem = Self.loadCertificatePEM(tlsCertPath: ports.tlsCertPath, logger: logger) {
+      transportSecurity = .tls(certificateChain: [.bytes(pem, format: .pem)], privateKey: .bytes(pem, format: .pem))
+    } else {
+      transportSecurity = .plaintext
     }
 
-    serverConfiguration.errorDelegate = GRPCSwiftServerErrorDelegate()
-    self.serverConfig = serverConfiguration
-    self.ports = ports
+    let transport = HTTP2ServerTransport.Posix(
+      address: ports.swiftServerTarget.socketAddress,
+      transportSecurity: transportSecurity,
+      config: .defaults { config in
+        config.rpc.maxRequestPayloadSize = Self.maximumReceiveMessageLength
+      },
+      eventLoopGroup: group)
 
+    self.transport = transport
+    self.server = GRPCServer(
+      transport: transport,
+      services: [provider],
+      interceptors: CompanionServiceInterceptors.make(logger: logger))
+    self.ports = ports
     self.logger = logger
     self.onShutdownStarted = onShutdownStarted
-
   }
 
   func start() async throws -> [String: Any] {
@@ -93,28 +91,28 @@ final class GRPCSwiftServer: @unchecked Sendable {
       try cleanupUnixDomainSocket(path: path)
     }
 
-    let server = Server.start(configuration: serverConfig)
-    self.server = server
-
     logger.info().log("Starting swift server on \(ports.swiftServerTarget)")
     if let tlsPath = ports.tlsCertPath, !tlsPath.isEmpty {
       logger.info().log("Starting swift server with TLS path \(tlsPath)")
     }
 
-    let runningServer = try await server.get()
-    let address = runningServer.channel.localAddress
+    let server = self.server
+    self.serveTask = Task {
+      try await server.serve()
+    }
+
+    let address = try await transport.listeningAddress
     logServerStartup(address: address)
     return try ports.swiftServerTarget.outputDescription(for: address)
   }
 
-  /// Suspends until the server's channel closes. If the awaiting task is cancelled
-  /// (e.g. on SIGTERM), a graceful shutdown is initiated so the channel closes and this
-  /// returns: NIO's `EventLoopFuture.get()` does not observe task cancellation and
-  /// nothing else closes the server, so without this a cancelled wait would hang forever.
+  /// Suspends until the server has stopped serving. If the awaiting task is cancelled
+  /// (e.g. on SIGTERM), a graceful shutdown is initiated so `serve()` returns and this
+  /// returns: nothing else stops the server, so without this a cancelled wait would hang forever.
   func waitUntilClosed() async throws {
-    guard let server = self.server else { return }
+    guard let serveTask else { return }
     try await withTaskCancellationHandler {
-      try await server.flatMap(\.onClose).get()
+      try await serveTask.value
       logger.info().log("Server closed")
     } onCancel: {
       initiateShutdown()
@@ -134,15 +132,15 @@ final class GRPCSwiftServer: @unchecked Sendable {
 
     onShutdownStarted?()
 
-    guard let server = self.server else { return }
+    guard let serveTask else { return }
     logger.info().log("Shutting down swift server")
-    server.whenSuccess { [logger] server in
-      let forceClose = server.channel.eventLoop.scheduleTask(in: Self.gracefulShutdownTimeout) {
-        logger.info().log("Graceful shutdown timed out; closing swift server forcefully")
-        server.close(promise: nil)
-      }
-      server.onClose.whenComplete { _ in forceClose.cancel() }
-      server.initiateGracefulShutdown(promise: nil)
+    server.beginGracefulShutdown()
+    let logger = self.logger
+    Task {
+      try? await Task.sleep(for: Self.gracefulShutdownTimeout)
+      guard !serveTask.isCancelled else { return }
+      logger.info().log("Graceful shutdown timed out; closing swift server forcefully")
+      serveTask.cancel()
     }
   }
 
@@ -190,31 +188,18 @@ final class GRPCSwiftServer: @unchecked Sendable {
     }
   }
 
-  private func logServerStartup(address: SocketAddress?) {
-    let message = "Swift server started on "
-    if let address {
-      logger.info().log(message + address.description)
-    } else {
-      logger.error().log(message + " unknown address")
-    }
+  private func logServerStartup(address: GRPCNIOTransportCore.SocketAddress) {
+    logger.info().log("Swift server started on \(address)")
   }
 
-  private static func loadCertificates(tlsCertPath: String?, logger: IDBLogger) -> TLSCertificates? {
+  private static func loadCertificatePEM(tlsCertPath: String?, logger: IDBLogger) -> [UInt8]? {
     guard let tlsPath = tlsCertPath,
       !tlsPath.isEmpty
     else { return nil }
 
     let tlsURL = URL(fileURLWithPath: tlsPath)
     do {
-      let rawCert = try Data(contentsOf: tlsURL)
-
-      let certificate = try NIOSSLCertificateSource.certificate(.init(bytes: [UInt8](rawCert), format: .pem))
-      let privateKey = try NIOSSLPrivateKeySource.privateKey(.init(bytes: [UInt8](rawCert), format: .pem))
-
-      return TLSCertificates(
-        certificates: [certificate],
-        privateKey: privateKey
-      )
+      return [UInt8](try Data(contentsOf: tlsURL))
     } catch {
       logger.error().log("Unable to load tls certificate. Error: \(error)")
       fatalError("Unable to load tls certificate. Error: \(error)")

@@ -7,7 +7,8 @@
 
 import CompanionLib
 import CompanionUtilities
-import GRPC
+import GRPCCore
+import IDBGRPCSwift
 
 /// Logs a one-line summary when a streaming call's client stream closes.
 ///
@@ -18,44 +19,80 @@ import GRPC
 /// and summarized on close instead.
 ///
 /// Call *completion* (success/failure) is intentionally not logged or reported
-/// here. A server interceptor's `send(.end)` is not invoked when a client cancels
-/// or drops the connection mid-call, so completion observed at this layer is
-/// unreliable and would silently miss such calls. `CompanionTelemetry` wraps every
-/// handler in a `do`/`catch` and reports completion — and the success/failure
-/// `EventReporter` event — reliably on every termination path, so it is the
-/// single source for that.
+/// here. `CompanionTelemetry` wraps every handler in a `do`/`catch` and reports
+/// completion — and the success/failure `EventReporter` event — reliably on every
+/// termination path, so it is the single source for that.
 ///
-/// Interceptor instances are created per call by `CompanionServiceInterceptors`,
-/// so the frame counter below needs no synchronization.
-final class LoggingInterceptor<Request, Response>: ServerInterceptor<Request, Response>, @unchecked Sendable {
+/// The frame counter lives inside `intercept`, so one interceptor instance serves
+/// every call without shared state.
+struct LoggingInterceptor: ServerInterceptor {
 
   private let logger: IDBLogger
-  private var frameCount = 0
 
   init(logger: IDBLogger) {
     self.logger = logger
   }
 
-  override func receive(_ part: GRPCServerRequestPart<Request>, context: ServerInterceptorContext<Request, Response>) {
-    guard let methodInfo = context.userInfo[MethodInfoKey.self] else {
-      assertionFailure("MethodInfoKey is empty, you have incorrect interceptor order")
-      super.receive(part, context: context)
-      return
-    }
-    let isStreamingCall =
-      methodInfo.callType == .clientStreaming || methodInfo.callType == .bidirectionalStreaming
-
-    switch part {
-    case .message where isStreamingCall:
-      frameCount += 1
-
-    case .end where isStreamingCall:
-      logger.debug().log("Closed client stream of \(methodInfo.name) after \(frameCount) frames")
-
-    default:
-      break
+  func intercept<Input: Sendable, Output: Sendable>(
+    request: StreamingServerRequest<Input>,
+    context: ServerContext,
+    next: @Sendable (StreamingServerRequest<Input>, ServerContext) async throws -> StreamingServerResponse<Output>
+  ) async throws -> StreamingServerResponse<Output> {
+    guard Self.isClientStreaming(context.descriptor) else {
+      return try await next(request, context)
     }
 
-    super.receive(part, context: context)
+    let logger = self.logger
+    let method = context.descriptor.method
+    let counted = RPCAsyncSequence<Input, any Error>(
+      wrapping: CountingSequence(base: request.messages) { frameCount in
+        logger.debug().log("Closed client stream of \(method) after \(frameCount) frames")
+      })
+    return try await next(StreamingServerRequest(metadata: request.metadata, messages: counted), context)
+  }
+
+  /// The context's descriptor comes from the transport and carries no call type; the
+  /// generated service metadata does, so the method is looked up there.
+  private static func isClientStreaming(_ descriptor: MethodDescriptor) -> Bool {
+    switch clientStreamingTypes[descriptor.fullyQualifiedMethod] {
+    case .clientStreaming, .bidirectionalStreaming:
+      return true
+    case .unary, .serverStreaming, .none:
+      return false
+    }
+  }
+
+  private static let clientStreamingTypes: [String: MethodDescriptor.RPCType] = Idb_CompanionService.Method.descriptors
+    .reduce(into: [:]) { $0[$1.fullyQualifiedMethod] = $1.type }
+}
+
+/// Passes `base` through unchanged, reporting how many elements were produced once it ends.
+private struct CountingSequence<Base: AsyncSequence & Sendable>: AsyncSequence, Sendable where Base.Element: Sendable {
+  typealias Element = Base.Element
+
+  let base: Base
+  let onEnd: @Sendable (Int) -> Void
+
+  func makeAsyncIterator() -> Iterator {
+    Iterator(base: base.makeAsyncIterator(), onEnd: onEnd)
+  }
+
+  struct Iterator: AsyncIteratorProtocol {
+    var base: Base.AsyncIterator
+    let onEnd: @Sendable (Int) -> Void
+    var count = 0
+    var ended = false
+
+    mutating func next() async throws -> Element? {
+      if let element = try await base.next() {
+        count += 1
+        return element
+      }
+      if !ended {
+        ended = true
+        onEnd(count)
+      }
+      return nil
+    }
   }
 }

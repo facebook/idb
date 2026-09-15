@@ -7,14 +7,14 @@
 
 import CompanionLib
 import FBControlCore
-import GRPC
+import GRPCCore
 import IDBGRPCSwift
 
 struct RevokeMethodHandler {
 
   let commandExecutor: IDBCommandExecutor
 
-  func handle(request: Idb_RevokeRequest, context: GRPCAsyncServerCallContext) async throws -> Idb_RevokeResponse {
+  func handle(request: Idb_RevokeRequest, context: ServerContext) async throws -> Idb_RevokeResponse {
 
     let mapping: [Idb_RevokeRequest.Permission: FBTargetSettingsService] = [
       .microphone: .microphone,
@@ -29,7 +29,7 @@ struct RevokeMethodHandler {
     var services = try Set(
       request.permissions.map { permission -> FBTargetSettingsService in
         guard let service = mapping[permission] else {
-          throw GRPCStatus(code: .invalidArgument, message: "Unrecognized permission \(permission)")
+          throw RPCError(code: .invalidArgument, message: "Unrecognized permission \(permission)")
         }
         return service
       }

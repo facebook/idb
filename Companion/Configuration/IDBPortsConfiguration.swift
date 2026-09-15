@@ -6,35 +6,30 @@
  */
 
 import Foundation
-import GRPC
-import NIO
+import GRPCNIOTransportCore
 
 enum GRPCConnectionTarget: CustomStringConvertible {
   enum ExtractionError: Error {
-    case socketAddressIsEmpty
     case failedToExtractAssociatedInfo
   }
 
   case tcpPort(port: Int)
   case unixDomainSocket(String)
 
-  var grpcConnection: ConnectionTarget {
+  var socketAddress: SocketAddress {
     switch self {
     case let .tcpPort(port):
-      return .hostAndPort("::", port)
+      return .ipv6(host: "::", port: port)
 
     case let .unixDomainSocket(path):
-      return .unixDomainSocket(path)
+      return .unixDomainSocket(path: path)
     }
   }
 
-  func outputDescription(for socketAddress: SocketAddress?) throws -> [String: Any] {
-    guard let socketAddress else {
-      throw ExtractionError.socketAddressIsEmpty
-    }
+  func outputDescription(for socketAddress: SocketAddress) throws -> [String: Any] {
     switch self {
     case .tcpPort:
-      guard let port = socketAddress.port else {
+      guard let port = socketAddress.ipv6?.port ?? socketAddress.ipv4?.port else {
         throw ExtractionError.failedToExtractAssociatedInfo
       }
       return [
@@ -43,7 +38,7 @@ enum GRPCConnectionTarget: CustomStringConvertible {
       ]
 
     case .unixDomainSocket:
-      guard let path = socketAddress.pathname else {
+      guard let path = socketAddress.unixDomainSocket?.path else {
         throw ExtractionError.failedToExtractAssociatedInfo
       }
       return ["grpc_path": path]

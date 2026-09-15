@@ -7,14 +7,14 @@
 
 import CompanionLib
 import FBControlCore
-import GRPC
+import GRPCCore
 import IDBGRPCSwift
 
 struct SettingMethodHandler {
 
   let commandExecutor: IDBCommandExecutor
 
-  func handle(request: Idb_SettingRequest, context: GRPCAsyncServerCallContext) async throws -> Idb_SettingResponse {
+  func handle(request: Idb_SettingRequest, context: ServerContext) async throws -> Idb_SettingResponse {
     switch request.setting {
     case let .hardwareKeyboard(hardwareKeyboard):
       try await commandExecutor.set_hardware_keyboard_enabled(hardwareKeyboard.enabled)
@@ -30,10 +30,10 @@ struct SettingMethodHandler {
         try await commandExecutor.set_preference(stringSetting.name, value: stringSetting.value, type: type, domain: domain)
 
       case .UNRECOGNIZED:
-        throw GRPCStatus(code: .invalidArgument, message: "Unknown setting case")
+        throw RPCError(code: .invalidArgument, message: "Unknown setting case")
       }
     case .none:
-      throw GRPCStatus(code: .invalidArgument, message: "Unknown setting case")
+      throw RPCError(code: .invalidArgument, message: "Unknown setting case")
     }
 
     return .init()

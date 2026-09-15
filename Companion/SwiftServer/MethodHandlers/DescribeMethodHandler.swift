@@ -9,7 +9,7 @@ import CompanionLib
 import CompanionUtilities
 import FBControlCore
 import Foundation
-import GRPC
+import GRPCCore
 import IDBGRPCSwift
 
 struct DescribeMethodHandler {
@@ -19,7 +19,7 @@ struct DescribeMethodHandler {
   let target: any FBiOSTarget
   let commandExecutor: IDBCommandExecutor
 
-  func handle(request: Idb_TargetDescriptionRequest, context: GRPCAsyncServerCallContext) async throws -> Idb_TargetDescriptionResponse {
+  func handle(request: Idb_TargetDescriptionRequest, context: ServerContext) async throws -> Idb_TargetDescriptionResponse {
     var response = Idb_TargetDescriptionResponse.with {
       $0.targetDescription = .with {
         $0.udid = target.udid

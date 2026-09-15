@@ -7,14 +7,14 @@
 
 import CompanionLib
 import FBControlCore
-import GRPC
+import GRPCCore
 import IDBGRPCSwift
 
 struct FocusMethodHandler {
 
   let commandExecutor: IDBCommandExecutor
 
-  func handle(request: Idb_FocusRequest, context: GRPCAsyncServerCallContext) async throws -> Idb_FocusResponse {
+  func handle(request: Idb_FocusRequest, context: ServerContext) async throws -> Idb_FocusResponse {
     try await commandExecutor.focus()
     return .init()
   }

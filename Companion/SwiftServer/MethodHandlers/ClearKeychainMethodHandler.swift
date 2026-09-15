@@ -7,14 +7,14 @@
 
 import CompanionLib
 import FBControlCore
-import GRPC
+import GRPCCore
 import IDBGRPCSwift
 
 struct ClearKeychainMethodHandler {
 
   let commandExecutor: IDBCommandExecutor
 
-  func handle(request: Idb_ClearKeychainRequest, context: GRPCAsyncServerCallContext) async throws -> Idb_ClearKeychainResponse {
+  func handle(request: Idb_ClearKeychainRequest, context: ServerContext) async throws -> Idb_ClearKeychainResponse {
     try await commandExecutor.clear_keychain()
     return .init()
   }

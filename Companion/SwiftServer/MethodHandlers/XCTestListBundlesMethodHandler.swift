@@ -9,7 +9,7 @@ import CompanionLib
 import FBControlCore
 import FBSimulatorControl
 import Foundation
-import GRPC
+import GRPCCore
 import IDBGRPCSwift
 import XCTestBootstrap
 
@@ -17,7 +17,7 @@ struct XCTestListBundlesMethodHandler {
 
   let commandExecutor: IDBCommandExecutor
 
-  func handle(request: Idb_XctestListBundlesRequest, context: GRPCAsyncServerCallContext) async throws -> Idb_XctestListBundlesResponse {
+  func handle(request: Idb_XctestListBundlesRequest, context: ServerContext) async throws -> Idb_XctestListBundlesResponse {
     let descriptors = try await commandExecutor.list_test_bundles()
     return .with {
       $0.bundles = descriptors.map(toBundle(descriptor:))

@@ -10,7 +10,7 @@ import CoreGraphics
 @preconcurrency import FBControlCore
 @preconcurrency import FBSimulatorControl
 import Foundation
-import GRPC
+import GRPCCore
 import IDBGRPCSwift
 import XCTest
 
@@ -54,8 +54,8 @@ final class AccessibilityActionRequestTranslationTests: XCTestCase {
     line: UInt = #line
   ) {
     XCTAssertThrowsError(try drag(mutate), file: file, line: line) { error in
-      guard let status = error as? GRPCStatus else {
-        return XCTFail("expected a GRPCStatus, got \(error)", file: file, line: line)
+      guard let status = error as? RPCError else {
+        return XCTFail("expected a RPCError, got \(error)", file: file, line: line)
       }
       XCTAssertEqual(status.code, .invalidArgument, file: file, line: line)
       let message = status.message ?? ""
@@ -76,8 +76,8 @@ final class AccessibilityActionRequestTranslationTests: XCTestCase {
 
   func testARequestWithNoActionIsRefused() {
     XCTAssertThrowsError(try action { _ in }) { error in
-      guard let status = error as? GRPCStatus else {
-        return XCTFail("expected a GRPCStatus, got \(error)")
+      guard let status = error as? RPCError else {
+        return XCTFail("expected a RPCError, got \(error)")
       }
       // Also what an action added after this companion was built deserializes as.
       XCTAssertEqual(status.code, .invalidArgument)

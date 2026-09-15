@@ -7,14 +7,14 @@
 
 import CompanionLib
 import FBControlCore
-import GRPC
+import GRPCCore
 import IDBGRPCSwift
 
 struct ContactsUpdateMethodHandler {
 
   let commandExecutor: IDBCommandExecutor
 
-  func handle(request: Idb_ContactsUpdateRequest, context: GRPCAsyncServerCallContext) async throws -> Idb_ContactsUpdateResponse {
+  func handle(request: Idb_ContactsUpdateRequest, context: ServerContext) async throws -> Idb_ContactsUpdateResponse {
     try await commandExecutor.update_contacts(request.payload.data)
     return .init()
   }

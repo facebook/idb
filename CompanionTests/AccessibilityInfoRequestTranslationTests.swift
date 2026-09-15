@@ -8,7 +8,7 @@
 import CompanionLib
 @preconcurrency import FBControlCore
 import FBSimulatorControl
-import GRPC
+import GRPCCore
 import IDBGRPCSwift
 import Testing
 
@@ -176,14 +176,14 @@ struct AccessibilityInfoRequestTranslationTests {
     request.match = "Cart"
     do {
       try AccessibilityInfoRequestTranslation.validate(request)
-      Issue.record("expected an invalidArgument GRPCStatus")
-    } catch let status as GRPCStatus {
+      Issue.record("expected an invalidArgument RPCError")
+    } catch let status as RPCError {
       #expect(
         status.code == .invalidArgument,
         "the two select elements by different rules, and there is no reading of both that is not a guess at which the caller meant"
       )
     } catch {
-      Issue.record("expected GRPCStatus, got \(error)")
+      Issue.record("expected RPCError, got \(error)")
     }
   }
 
@@ -239,11 +239,11 @@ struct AccessibilityInfoRequestTranslationTests {
     request.keys = ["not-a-key", "also-not-a-key"]
     do {
       _ = try AccessibilityInfoRequestTranslation.options(from: request, format: .default)
-      Issue.record("expected an invalidArgument GRPCStatus")
-    } catch let status as GRPCStatus {
+      Issue.record("expected an invalidArgument RPCError")
+    } catch let status as RPCError {
       #expect(status.code == .invalidArgument)
     } catch {
-      Issue.record("expected GRPCStatus, got \(error)")
+      Issue.record("expected RPCError, got \(error)")
     }
   }
 

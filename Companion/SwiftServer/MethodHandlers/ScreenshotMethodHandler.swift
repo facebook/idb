@@ -7,14 +7,14 @@
 
 import CompanionLib
 import FBControlCore
-import GRPC
+import GRPCCore
 import IDBGRPCSwift
 
 struct ScreenshotMethodHandler {
 
   let commandExecutor: IDBCommandExecutor
 
-  func handle(request: Idb_ScreenshotRequest, context: GRPCAsyncServerCallContext) async throws -> Idb_ScreenshotResponse {
+  func handle(request: Idb_ScreenshotRequest, context: ServerContext) async throws -> Idb_ScreenshotResponse {
     let configuration = try ScreenshotRequestTranslation.configuration(from: request)
     do {
       let result = try await commandExecutor.take_screenshot(configuration)

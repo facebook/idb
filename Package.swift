@@ -26,11 +26,26 @@ let package = Package(
     .executable(name: "idb-repl", targets: ["idb-repl"])
   ],
   dependencies: [
-    .package(url: "https://github.com/grpc/grpc-swift.git", exact: "1.27.5"),
+    .package(url: "https://github.com/grpc/grpc-swift-2.git", exact: "2.4.3"),
+    .package(url: "https://github.com/grpc/grpc-swift-nio-transport.git", exact: "2.9.2"),
+    .package(url: "https://github.com/grpc/grpc-swift-protobuf.git", exact: "2.4.1"),
     .package(url: "https://github.com/apple/swift-protobuf.git", exact: "1.38.1"),
+    .package(url: "https://github.com/apple/swift-argument-parser.git", exact: "1.8.2"),
+    // Transitive dependencies of the gRPC packages, pinned to the versions the
+    // internal build imports so the two dependency graphs stay identical
+    // (dependency_parity.bzl checks this).
     .package(url: "https://github.com/apple/swift-nio.git", exact: "2.101.3"),
     .package(url: "https://github.com/apple/swift-nio-ssl.git", exact: "2.37.2"),
-    .package(url: "https://github.com/apple/swift-argument-parser.git", exact: "1.8.2"),
+    .package(url: "https://github.com/apple/swift-nio-http2.git", exact: "1.45.0"),
+    .package(url: "https://github.com/apple/swift-nio-extras.git", exact: "1.34.3"),
+    .package(url: "https://github.com/apple/swift-log.git", exact: "1.14.0"),
+    .package(url: "https://github.com/apple/swift-collections.git", exact: "1.6.0"),
+    .package(url: "https://github.com/apple/swift-certificates.git", exact: "1.19.4"),
+    .package(url: "https://github.com/apple/swift-asn1.git", exact: "1.7.1"),
+    .package(url: "https://github.com/apple/swift-crypto.git", exact: "4.5.2"),
+    .package(url: "https://github.com/apple/swift-async-algorithms.git", exact: "1.1.5"),
+    .package(url: "https://github.com/swift-server/swift-service-lifecycle.git", exact: "2.12.0"),
+    .package(url: "https://github.com/apple/swift-atomics.git", exact: "1.3.1"),
   ],
   targets: [
     .target(
@@ -46,10 +61,9 @@ let package = Package(
     .target(
       name: "IDBGRPCSwift",
       dependencies: [
-        .product(name: "GRPC", package: "grpc-swift"),
+        .product(name: "GRPCCore", package: "grpc-swift-2"),
+        .product(name: "GRPCProtobuf", package: "grpc-swift-protobuf"),
         .product(name: "SwiftProtobuf", package: "swift-protobuf"),
-        .product(name: "NIO", package: "swift-nio"),
-        .product(name: "NIOConcurrencyHelpers", package: "swift-nio"),
       ],
       path: "IDBGRPCSwift",
       swiftSettings: [.swiftLanguageMode(.v5)]
@@ -67,10 +81,8 @@ let package = Package(
         "CompanionDiscovery",
         "IDBGRPCSwift",
         "ReplCompiler",
-        .product(name: "GRPC", package: "grpc-swift"),
-        .product(name: "NIOCore", package: "swift-nio"),
-        .product(name: "NIOPosix", package: "swift-nio"),
-        .product(name: "NIOSSL", package: "swift-nio-ssl"),
+        .product(name: "GRPCCore", package: "grpc-swift-2"),
+        .product(name: "GRPCNIOTransportHTTP2Posix", package: "grpc-swift-nio-transport"),
         .product(name: "ArgumentParser", package: "swift-argument-parser"),
       ],
       path: "REPL/CLI",

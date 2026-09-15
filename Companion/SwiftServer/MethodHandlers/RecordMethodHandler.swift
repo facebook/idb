@@ -7,7 +7,7 @@
 
 import CompanionLib
 import FBControlCore
-import GRPC
+import GRPCCore
 import IDBGRPCSwift
 
 struct RecordMethodHandler {
@@ -15,11 +15,11 @@ struct RecordMethodHandler {
   let target: any FBiOSTarget
   let targetLogger: FBControlCoreLogger
 
-  func handle(requestStream: RequestStreamReader<Idb_RecordRequest>, responseStream: GRPCAsyncResponseStreamWriter<Idb_RecordResponse>, context: GRPCAsyncServerCallContext) async throws {
+  func handle(requestStream: RequestStreamReader<Idb_RecordRequest>, responseStream: RPCWriter<Idb_RecordResponse>, context: ServerContext) async throws {
 
     let request = try await requestStream.requiredNext()
     guard case let .start(start) = request.control
-    else { throw GRPCStatus(code: .failedPrecondition, message: "Expect start as initial request frame") }
+    else { throw RPCError(code: .failedPrecondition, message: "Expect start as initial request frame") }
 
     let filePath =
       start.filePath.isEmpty

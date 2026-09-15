@@ -8,14 +8,14 @@
 import CompanionLib
 import FBControlCore
 import Foundation
-import GRPC
+import GRPCCore
 import IDBGRPCSwift
 
 struct ListAppsMethodHandler {
 
   let commandExecutor: IDBCommandExecutor
 
-  func handle(request: Idb_ListAppsRequest, context: GRPCAsyncServerCallContext) async throws -> Idb_ListAppsResponse {
+  func handle(request: Idb_ListAppsRequest, context: ServerContext) async throws -> Idb_ListAppsResponse {
     let persistedBundleIDs = commandExecutor.storageManager.application.persistedBundleIDs
     let fetchAppProcessState = !request.suppressProcessState
     let apps = try await commandExecutor.list_apps(fetchAppProcessState)

@@ -9,7 +9,7 @@ import CompanionLib
 import CompanionUtilities
 import FBControlCore
 import FBSimulatorControl
-import GRPC
+import GRPCCore
 import IDBGRPCSwift
 
 struct InstrumentsRunMethodHandler {
@@ -19,21 +19,21 @@ struct InstrumentsRunMethodHandler {
   let commandExecutor: IDBCommandExecutor
   let logger: FBControlCoreLogger
 
-  func handle(requestStream: RequestStreamReader<Idb_InstrumentsRunRequest>, responseStream: GRPCAsyncResponseStreamWriter<Idb_InstrumentsRunResponse>, context: GRPCAsyncServerCallContext) async throws {
+  func handle(requestStream: RequestStreamReader<Idb_InstrumentsRunRequest>, responseStream: RPCWriter<Idb_InstrumentsRunResponse>, context: ServerContext) async throws {
     @Atomic var finishedWriting = false
 
     guard case let .start(start) = try await requestStream.requiredNext().control
-    else { throw GRPCStatus(code: .failedPrecondition, message: "Expected start control") }
+    else { throw RPCError(code: .failedPrecondition, message: "Expected start control") }
 
     let operation = try await startInstrumentsOperation(request: start, responseStream: responseStream, finishedWriting: _finishedWriting)
 
     guard case let .stop(stop) = try await requestStream.requiredNext().control
-    else { throw GRPCStatus(code: .failedPrecondition, message: "Expected end control") }
+    else { throw RPCError(code: .failedPrecondition, message: "Expected end control") }
 
     try await stopInstruments(operation: operation, request: stop, responseStream: responseStream, finishedWriting: _finishedWriting)
   }
 
-  private func startInstrumentsOperation(request: Idb_InstrumentsRunRequest.Start, responseStream: GRPCAsyncResponseStreamWriter<Idb_InstrumentsRunResponse>, finishedWriting: Atomic<Bool>) async throws -> InstrumentsOperation {
+  private func startInstrumentsOperation(request: Idb_InstrumentsRunRequest.Start, responseStream: RPCWriter<Idb_InstrumentsRunResponse>, finishedWriting: Atomic<Bool>) async throws -> InstrumentsOperation {
     let configuration = instrumentsConfiguration(from: request, storageManager: commandExecutor.storageManager)
 
     let responseWriter = FIFOStreamWriter(stream: responseStream)
@@ -65,7 +65,7 @@ struct InstrumentsRunMethodHandler {
     return operation
   }
 
-  private func stopInstruments(operation: InstrumentsOperation, request: Idb_InstrumentsRunRequest.Stop, responseStream: GRPCAsyncResponseStreamWriter<Idb_InstrumentsRunResponse>, finishedWriting: Atomic<Bool>) async throws {
+  private func stopInstruments(operation: InstrumentsOperation, request: Idb_InstrumentsRunRequest.Stop, responseStream: RPCWriter<Idb_InstrumentsRunResponse>, finishedWriting: Atomic<Bool>) async throws {
     let traceFile = try await operation.stop()
     let response = Idb_InstrumentsRunResponse.with {
       $0.state = .postProcessing

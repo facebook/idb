@@ -9,18 +9,18 @@ import CompanionLib
 import CompanionUtilities
 import FBControlCore
 import FBSimulatorControl
-import GRPC
+import GRPCCore
 import IDBGRPCSwift
 
 struct TailMethodHandler {
 
   let commandExecutor: IDBCommandExecutor
 
-  func handle(requestStream: RequestStreamReader<Idb_TailRequest>, responseStream: GRPCAsyncResponseStreamWriter<Idb_TailResponse>, context: GRPCAsyncServerCallContext) async throws {
+  func handle(requestStream: RequestStreamReader<Idb_TailRequest>, responseStream: RPCWriter<Idb_TailResponse>, context: ServerContext) async throws {
     @Atomic var finished = false
 
     guard case let .start(start) = try await requestStream.requiredNext().control
-    else { throw GRPCStatus(code: .failedPrecondition, message: "Expected start control") }
+    else { throw RPCError(code: .failedPrecondition, message: "Expected start control") }
 
     let responseWriter = FIFOStreamWriter(stream: responseStream)
     let consumer = FBBlockDataConsumer.asynchronousDataConsumer { data in
@@ -39,7 +39,7 @@ struct TailMethodHandler {
     let tail = try await commandExecutor.tail(start.path, to_consumer: consumer, in_container: fileContainer)
 
     guard case .stop = try await requestStream.requiredNext().control
-    else { throw GRPCStatus(code: .failedPrecondition, message: "Expected end control") }
+    else { throw RPCError(code: .failedPrecondition, message: "Expected end control") }
 
     try await tail.cancel()
     _finished.set(true)

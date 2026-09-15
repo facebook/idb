@@ -8,7 +8,7 @@
 import CoreGraphics
 import FBControlCore
 import Foundation
-import GRPC
+import GRPCCore
 import IDBGRPCSwift
 
 /// Translates a `screenshot` request to `ScreenshotConfiguration` and a capture to the response.
@@ -42,21 +42,21 @@ enum ScreenshotRequestTranslation {
         return .jpeg(quality: ScreenshotEncoding.defaultJPEGQuality)
       }
       guard request.compressionQuality > 0, request.compressionQuality <= 1 else {
-        throw GRPCStatus(
+        throw RPCError(
           code: .invalidArgument,
           message: "compression_quality \(request.compressionQuality) is not in (0, 1]"
         )
       }
       return .jpeg(quality: request.compressionQuality)
     case let .UNRECOGNIZED(value):
-      throw GRPCStatus(code: .invalidArgument, message: "\(value) is not a recognized screenshot format")
+      throw RPCError(code: .invalidArgument, message: "\(value) is not a recognized screenshot format")
     }
   }
 
   /// A quality on a lossless format is rejected rather than silently ignored.
   private static func rejectCompressionQuality(on request: Idb_ScreenshotRequest, format: String) throws {
     guard request.compressionQuality == 0 else {
-      throw GRPCStatus(code: .invalidArgument, message: "compression_quality is not meaningful for \(format)")
+      throw RPCError(code: .invalidArgument, message: "compression_quality is not meaningful for \(format)")
     }
   }
 
@@ -97,7 +97,7 @@ enum ScreenshotRequestTranslation {
     case .points:
       return .points
     case let .UNRECOGNIZED(value):
-      throw GRPCStatus(code: .invalidArgument, message: "\(value) is not a recognized screenshot unit")
+      throw RPCError(code: .invalidArgument, message: "\(value) is not a recognized screenshot unit")
     }
   }
 
@@ -134,32 +134,32 @@ enum ScreenshotRequestTranslation {
   // MARK: - Errors
 
   /// Maps a geometry rejection onto a status code.
-  static func status(for error: ScreenshotGeometryError) -> GRPCStatus {
+  static func status(for error: ScreenshotGeometryError) -> RPCError {
     switch error {
     case .scaleFactorOutOfRange, .fitBoundsEmpty, .fitBoundNotPositive,
       .cropExtentNotPositive, .cropOutsideBounds:
-      return GRPCStatus(code: .invalidArgument, message: error.localizedDescription)
+      return RPCError(code: .invalidArgument, message: error.localizedDescription)
     case .screenScaleUnknown:
       // The request is well formed, and the same request succeeds against a target that reports a
       // screen scale. That is target state rather than a bad argument.
-      return GRPCStatus(code: .failedPrecondition, message: error.localizedDescription)
+      return RPCError(code: .failedPrecondition, message: error.localizedDescription)
     case .sourceSizeNotPositive:
       // The target handed back an empty screen. Nothing the caller sent could cause this.
-      return GRPCStatus(code: .internalError, message: error.localizedDescription)
+      return RPCError(code: .internalError, message: error.localizedDescription)
     }
   }
 
   /// Maps a render failure onto a status code so it reaches the caller with a message rather than as a
   /// bare `UNKNOWN`.
-  static func status(for error: ScreenshotRenderError) -> GRPCStatus {
+  static func status(for error: ScreenshotRenderError) -> RPCError {
     switch error {
     case .croppingFailed, .contextCreationFailed, .scalingFailed, .destinationCreationFailed,
       .encodingFailed, .unreadableImageData, .unknownImageDimensions, .decodingFailed:
-      return GRPCStatus(code: .internalError, message: error.localizedDescription)
+      return RPCError(code: .internalError, message: error.localizedDescription)
     case .compressionQualityOutOfRange:
       // Rejected on the way in, so reaching here means the request was not the one translated. Kept
       // as an invalid argument anyway, because that is what it describes.
-      return GRPCStatus(code: .invalidArgument, message: error.localizedDescription)
+      return RPCError(code: .invalidArgument, message: error.localizedDescription)
     }
   }
 }

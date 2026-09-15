@@ -23,30 +23,59 @@ settings:
     LD_RUNPATH_SEARCH_PATHS: $(inherited) @executable_path/Resources/Swift
 
 packages:
-  grpc-swift:
-    url: https://github.com/grpc/grpc-swift.git
-    exactVersion: 1.27.5
+  grpc-swift-2:
+    url: https://github.com/grpc/grpc-swift-2.git
+    exactVersion: 2.4.3
+  grpc-swift-nio-transport:
+    url: https://github.com/grpc/grpc-swift-nio-transport.git
+    exactVersion: 2.9.2
+  grpc-swift-protobuf:
+    url: https://github.com/grpc/grpc-swift-protobuf.git
+    exactVersion: 2.4.1
   swift-protobuf:
     url: https://github.com/apple/swift-protobuf.git
     exactVersion: 1.38.1
-  swift-log:
-    url: https://github.com/apple/swift-log.git
-    exactVersion: 1.14.0
-  swift-nio:
-    url: https://github.com/apple/swift-nio.git
-    exactVersion: 2.101.3
-  swift-nio-http2:
-    url: https://github.com/apple/swift-nio-http2.git
-    exactVersion: 1.45.0
-  swift-nio-ssl:
-    url: https://github.com/apple/swift-nio-ssl.git
-    exactVersion: 2.37.2
-  swift-collections:
-    url: https://github.com/apple/swift-collections.git
-    exactVersion: 1.6.0
   swift-argument-parser:
     url: https://github.com/apple/swift-argument-parser.git
     exactVersion: 1.8.2
+  # Transitive dependencies of the gRPC packages, pinned to the versions the
+  # internal build imports so the two dependency graphs stay identical.
+  swift-nio:
+    url: https://github.com/apple/swift-nio.git
+    exactVersion: 2.101.3
+  swift-nio-ssl:
+    url: https://github.com/apple/swift-nio-ssl.git
+    exactVersion: 2.37.2
+  swift-nio-http2:
+    url: https://github.com/apple/swift-nio-http2.git
+    exactVersion: 1.45.0
+  swift-nio-extras:
+    url: https://github.com/apple/swift-nio-extras.git
+    exactVersion: 1.34.3
+  swift-log:
+    url: https://github.com/apple/swift-log.git
+    exactVersion: 1.14.0
+  swift-collections:
+    url: https://github.com/apple/swift-collections.git
+    exactVersion: 1.6.0
+  swift-certificates:
+    url: https://github.com/apple/swift-certificates.git
+    exactVersion: 1.19.4
+  swift-asn1:
+    url: https://github.com/apple/swift-asn1.git
+    exactVersion: 1.7.1
+  swift-crypto:
+    url: https://github.com/apple/swift-crypto.git
+    exactVersion: 4.5.2
+  swift-async-algorithms:
+    url: https://github.com/apple/swift-async-algorithms.git
+    exactVersion: 1.1.5
+  swift-service-lifecycle:
+    url: https://github.com/swift-server/swift-service-lifecycle.git
+    exactVersion: 2.12.0
+  swift-atomics:
+    url: https://github.com/apple/swift-atomics.git
+    exactVersion: 1.3.1
 
 targets:
   IDBGRPCSwift:
@@ -89,20 +118,14 @@ targets:
           DEBUG_INFORMATION_FORMAT: dwarf
           STRIP_INSTALLED_PRODUCT: NO
     dependencies:
-      - package: grpc-swift
-        product: GRPC
+      - package: grpc-swift-2
+        product: GRPCCore
+      - package: grpc-swift-nio-transport
+        product: GRPCNIOTransportHTTP2Posix
+      - package: grpc-swift-protobuf
+        product: GRPCProtobuf
       - package: swift-protobuf
         product: SwiftProtobuf
-      - package: swift-log
-        product: Logging
-      - package: swift-nio
-        product: NIOCore
-      - package: swift-nio-http2
-        product: NIOHTTP2
-      - package: swift-nio-ssl
-        product: NIOSSL
-      - package: swift-collections
-        product: DequeModule
       - sdk: Foundation.framework
 
   ReplProtocol:

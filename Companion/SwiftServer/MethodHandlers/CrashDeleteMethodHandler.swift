@@ -7,14 +7,14 @@
 
 import CompanionLib
 import FBControlCore
-import GRPC
+import GRPCCore
 import IDBGRPCSwift
 
 struct CrashDeleteMethodHandler {
 
   let commandExecutor: IDBCommandExecutor
 
-  func handle(request: Idb_CrashLogQuery, context: GRPCAsyncServerCallContext) async throws -> Idb_CrashLogResponse {
+  func handle(request: Idb_CrashLogQuery, context: ServerContext) async throws -> Idb_CrashLogResponse {
     let predicate = CrashLogQueryValueTransformer.predicate(from: request)
     let crashes = try await commandExecutor.crash_delete(predicate)
     return .with {

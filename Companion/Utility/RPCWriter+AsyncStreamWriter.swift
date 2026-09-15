@@ -6,13 +6,13 @@
  */
 
 import CompanionUtilities
-import GRPC
+import GRPCCore
 
-extension GRPCAsyncResponseStreamWriter: @retroactive AsyncStreamWriter {
-  public typealias Value = Response
+extension RPCWriter: @retroactive AsyncStreamWriter {
+  public typealias Value = Element
 
   @inlinable
   public func send(_ value: Value) async throws {
-    try await send(value, compression: .deferToCallDefault)
+    try await write(value)
   }
 }

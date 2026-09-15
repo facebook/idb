@@ -7,7 +7,7 @@
 
 @preconcurrency import FBControlCore
 import Foundation
-import GRPC
+import GRPCCore
 import IDBGRPCSwift
 import XCTest
 
@@ -53,11 +53,11 @@ final class RecordRequestTranslationTests: XCTestCase {
     line: UInt = #line
   ) {
     XCTAssertThrowsError(try options(mutate), file: file, line: line) { error in
-      guard let status = error as? GRPCStatus else {
-        return XCTFail("expected a GRPCStatus, got \(error)", file: file, line: line)
+      guard let status = error as? RPCError else {
+        return XCTFail("expected a RPCError, got \(error)", file: file, line: line)
       }
       XCTAssertEqual(status.code, .invalidArgument, file: file, line: line)
-      let message = status.message ?? ""
+      let message = status.message
       XCTAssertTrue(
         message.contains(fragment), "\"\(message)\" does not name \(fragment)", file: file, line: line)
     }
@@ -169,12 +169,12 @@ final class RecordRequestTranslationTests: XCTestCase {
     XCTAssertThrowsError(
       try RecordRequestTranslation.requireHonoredConfiguration(FixedConfigurationRecorder(), describing: "a device")
     ) { error in
-      guard let status = error as? GRPCStatus else {
-        return XCTFail("expected a GRPCStatus, got \(error)")
+      guard let status = error as? RPCError else {
+        return XCTFail("expected a RPCError, got \(error)")
       }
       // Not invalidArgument: the request is well formed and the same one succeeds on a simulator.
       XCTAssertEqual(status.code, .unimplemented)
-      XCTAssertTrue(status.message?.contains("a device") ?? false, "the refusal must name the target")
+      XCTAssertTrue(status.message.contains("a device"), "the refusal must name the target")
     }
   }
 

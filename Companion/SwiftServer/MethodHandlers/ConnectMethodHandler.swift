@@ -9,7 +9,7 @@ import CompanionLib
 import CompanionUtilities
 import FBControlCore
 import Foundation
-import GRPC
+import GRPCCore
 import IDBGRPCSwift
 
 struct ConnectMethodHandler {
@@ -18,7 +18,7 @@ struct ConnectMethodHandler {
   let logger: IDBLogger
   let target: any FBiOSTarget
 
-  func handle(request: Idb_ConnectRequest, context: GRPCAsyncServerCallContext) async throws -> Idb_ConnectResponse {
+  func handle(request: Idb_ConnectRequest, context: ServerContext) async throws -> Idb_ConnectResponse {
     self.reporter.addMetadata(request.metadata)
     let isLocal = FileManager.default.fileExists(atPath: request.localFilePath)
 
