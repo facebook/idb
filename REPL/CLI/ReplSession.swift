@@ -374,7 +374,7 @@ final class ReplSession {
       ReplRunTelemetry.subject(
         name: "session_end", start: startedAt, ints: ["runs": runsExecuted], failure: nil))
     reportWriter?.close()
-    try? await call.requestStream.finish()
+    call.requestStream.finish()
     try? await channel.close().get()
     try? await group.shutdownGracefully()
     sessionDirectory.cleanup()

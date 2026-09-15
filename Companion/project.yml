@@ -20,6 +20,7 @@ configFiles:
 settings:
   base:
     HEADER_SEARCH_PATHS: $(inherited) $(SRCROOT)/../PrivateHeaders
+    LD_RUNPATH_SEARCH_PATHS: $(inherited) @executable_path/Resources/Swift
 
 packages:
   grpc-swift:

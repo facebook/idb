@@ -301,7 +301,7 @@ public final class CompanionServer: @unchecked Sendable {
       let certificates = try NIOSSLCertificate.fromPEMFile(identity.certificateChainPath).map { NIOSSLCertificateSource.certificate($0) }
       var configuration = TLSConfiguration.makeServerConfiguration(
         certificateChain: certificates,
-        privateKey: .file(identity.privateKeyPath))
+        privateKey: .privateKey(try NIOSSLPrivateKey(file: identity.privateKeyPath, format: .pem)))
       // NIOSSL defaults the floor to TLS 1.0; pin it to 1.2 so the deprecated
       // TLS 1.0/1.1 protocols and their legacy cipher suites are never negotiated.
       configuration.minimumTLSVersion = .tlsv12

@@ -98,7 +98,7 @@ public enum CompanionClient {
       configuration.minimumTLSVersion = .tlsv12
       configuration.certificateVerification = .none
       configuration.certificateChain = try NIOSSLCertificate.fromPEMFile(identity.certificateChainPath).map { .certificate($0) }
-      configuration.privateKey = .file(identity.privateKeyPath)
+      configuration.privateKey = .privateKey(try NIOSSLPrivateKey(file: identity.privateKeyPath, format: .pem))
       return try NIOSSLContext(configuration: configuration)
     } catch {
       throw CompanionClientError.tlsContextFailed(underlying: error)

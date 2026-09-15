@@ -761,6 +761,7 @@ function build_sim_video() {
 #     sim-video                 the local video recorder
 #     *.bundle                  SwiftPM resource bundles (Bundle.module -> Bundle.main)
 #     Resources/
+#       Swift/                    Swift back-deployment libraries
 #       libShimulator-iOS.dylib
 #       libShimulator-macOS.dylib
 #       libRepl-iOS.dylib
@@ -831,6 +832,13 @@ function build_distribution() {
   # The checked-in IDBAPI module interface, reported to the REPL driver so
   # injected code can auto-import the `IDB` namespace.
   cp "REPL/IDB/IDBAPI.swiftinterface" "$dist/Resources/"
+
+  mkdir -p "$dist/Resources/Swift"
+  xcrun swift-stdlib-tool --copy --platform macosx \
+    --scan-executable "$dist/idb_companion" \
+    --scan-executable "$dist/idb-repl" \
+    --scan-executable "$dist/sim-video" \
+    --destination "$dist/Resources/Swift"
 
   echo "Distribution ready at $dist"
 }
