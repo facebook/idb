@@ -54,6 +54,8 @@ jobs:
       - uses: actions/setup-python@v6
         with:
           python-version: '3.12'
+      - name: Test build script dependency guards
+        run: bash tests/build-test.sh "$PWD"
       - name: Test the CI scripts
         run: python -m unittest discover -s CI -p '*_tests.py' -t . -v
       # Run separately because e2e discovery matches test*.py.
@@ -145,9 +147,8 @@ jobs:
         uses: actions/cache@v5
         with:
           path: |
-            Build/grpc-swift-*
-            Build/swift-protobuf-*
-          key: protoc-plugins-${{ hashFiles('Package.swift') }}-${{ runner.os }}
+            Build/Codegen
+          key: protoc-plugins-${{ hashFiles('Package.swift', 'Package.resolved') }}-${{ runner.os }}
       - name: Build everything and assemble the distribution
         run: ./build.sh build all
       # Archived first: artifact upload does not keep file modes, and the

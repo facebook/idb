@@ -4,12 +4,9 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-# Covers build.sh's manifest guard and its protoc-plugin checkout selection.
-#
-# Everything build.sh shells out to for these paths -- git, swift, xattr -- is
-# stubbed, so this needs neither the network nor a Swift toolchain. The git stub
-# logs the tag it was asked for, which is what lets a case assert *which*
-# revision a plugin was built from rather than merely that one exists.
+# Covers manifest agreement, locked codegen, and Xcode resolution enforcement.
+# Swift and Xcode are stubbed; the real lockfile helper checks their inputs and
+# rejects simulated resolver drift without a network or Apple toolchain.
 #
 # build.sh is a macOS script, so this has to run on a developer's Mac as well as
 # on the Linux CI host: no `sed -i` without an argument, no negative array
@@ -83,31 +80,39 @@ cat > "$WORK/stubs/xattr" <<'STUB'
 exit 0
 STUB
 
-# Records the tag of every clone, so a case can tell a fresh checkout from a
-# reused one. Produces a directory and nothing else; the swift stub builds.
-cat > "$WORK/stubs/git" <<'STUB'
-#!/bin/bash
-branch=""
-args=("$@")
-for i in "${!args[@]}"; do
-    [ "${args[$i]}" = "--branch" ] && branch="${args[$((i + 1))]}"
-done
-dest="${args[$((${#args[@]} - 1))]}"
-echo "clone $branch -> $dest" >> "$GIT_STUB_LOG"
-mkdir -p "$dest"
-STUB
-
-# `swift build -c release --product X`, run from inside the checkout.
 cat > "$WORK/stubs/swift" <<'STUB'
 #!/bin/bash
 product=""
+package=""
 args=("$@")
 for i in "${!args[@]}"; do
     [ "${args[$i]}" = "--product" ] && product="${args[$((i + 1))]}"
+    [ "${args[$i]}" = "--package-path" ] && package="${args[$((i + 1))]}"
 done
-mkdir -p .build/release
-printf '#!/bin/sh\n' > ".build/release/$product"
-chmod +x ".build/release/$product"
+printf '%s\n' "$*" >> "$SWIFT_STUB_LOG"
+cat "$package/Package.resolved" >> "$SWIFT_STUB_LOG"
+[ "${SWIFT_STUB_FAIL:-0}" = 1 ] && exit 7
+if [ "${SWIFT_STUB_DRIFT:-0}" = 1 ]; then
+    sed 's/1111111111111111111111111111111111111111/9999999999999999999999999999999999999999/' \
+        "$package/Package.resolved" > "$package/changed"
+    mv "$package/changed" "$package/Package.resolved"
+fi
+mkdir -p "$package/.build/release"
+printf '#!/bin/sh\n' > "$package/.build/release/$product"
+chmod +x "$package/.build/release/$product"
+STUB
+
+cat > "$WORK/stubs/xcodebuild" <<'STUB'
+#!/bin/bash
+printf '%s\n' "$@" >> "$XCODE_STUB_LOG"
+[ "${XCODE_STUB_FAIL:-0}" = 1 ] && exit 8
+if [ "${XCODE_STUB_DRIFT:-0}" = 1 ]; then
+    lock=Companion/idb_companion.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved
+    sed 's/1111111111111111111111111111111111111111/9999999999999999999999999999999999999999/' \
+        "$lock" > "$lock.changed"
+    mv "$lock.changed" "$lock"
+fi
+exit 0
 STUB
 
 chmod +x "$WORK/stubs"/*
@@ -175,6 +180,8 @@ EOF
 function stage_package() {
     write_package "$WORK/$1" "$2" "$3"
     cp "$SRC/build.sh" "$WORK/$1/"
+    mkdir -p "$WORK/$1/CI"
+    cp "$SRC/CI/dependency_lock.py" "$WORK/$1/CI/"
     echo "$WORK/$1"
 }
 
@@ -188,6 +195,8 @@ function in_package() {
         PATH="$WORK/stubs:/usr/bin:/bin"
         # shellcheck disable=SC1090,SC1091
         source ./build.sh
+        export HAS_XCPRETTY=""
+        set -o pipefail
         setup_build_directory > /dev/null
         eval "$script"
     ) 2>&1
@@ -377,41 +386,92 @@ assert_rejected "a floating requirement on a url with no .git suffix" "$dir" \
     "Package.swift does not pin these to an exact version: swift-protobuf"
 
 # ---------------------------------------------------------------------------
-# Which revision the plugin is actually built from
+# Codegen uses the lock, including on a warm cache and after a pin bump.
 # ---------------------------------------------------------------------------
 
 dir="$(stage_package plugin 1.27.5 1.38.1)"
-export GIT_STUB_LOG="$WORK/plugin.gitlog"
-: > "$GIT_STUB_LOG"
-
-# The tags cloned so far, in order -- the checkout paths are temporary and the
-# tag is the whole question.
-function cloned_tags() {
-    awk '{ printf "%s%s", (NR > 1 ? " " : ""), $2 } END { print "" }' "$GIT_STUB_LOG"
-}
+export SWIFT_STUB_LOG="$WORK/plugin.swiftlog"
+: > "$SWIFT_STUB_LOG"
 
 output="$(in_package "$dir" 'build_grpc_swift_plugin')"
 status=$?
-assert_equal "a cold checkout builds the plugin" 0 "$status"
-assert_contains "and reports it built" "$output" "Successfully built protoc-gen-grpc-swift"
-assert_equal "from the pinned tag" "1.27.5" "$(cloned_tags)"
+assert_equal "cold codegen succeeds" 0 "$status"
+assert_contains "codegen reports success" "$output" "Successfully built protoc-gen-grpc-swift"
+assert_contains "codegen forbids resolution" "$(cat "$SWIFT_STUB_LOG")" "--only-use-versions-from-resolved-file"
+assert_contains "codegen receives the pinned revision" "$(cat "$SWIFT_STUB_LOG")" "1111111111111111111111111111111111111111"
+assert_contains "the generated manifest pins grpc" "$(cat "$dir/Build/Codegen/Package.swift")" 'exact: "1.27.5"'
 
+: > "$SWIFT_STUB_LOG"
 in_package "$dir" 'build_grpc_swift_plugin' > /dev/null
-status=$?
-assert_equal "a warm checkout at the same pin still succeeds" 0 "$status"
-assert_equal "and is not re-cloned" "1.27.5" "$(cloned_tags)"
+assert_equal "warm codegen succeeds" 0 "$?"
+assert_contains "warm codegen still validates with SwiftPM" "$(cat "$SWIFT_STUB_LOG")" "--only-use-versions-from-resolved-file"
 
-# The pin moves, both manifests move with it, and the guard is satisfied -- so
-# nothing before the plugin builder can notice that a checkout on disk was built
-# from the previous tag. Keying the checkout by version is what makes the reuse
-# impossible rather than merely unlikely.
 write_package "$dir" 1.28.0 1.38.1
 in_package "$dir" 'build_grpc_swift_plugin' > /dev/null
-status=$?
-assert_equal "a bumped pin still succeeds" 0 "$status"
+assert_equal "codegen after a pin bump succeeds" 0 "$?"
+assert_contains "a pin bump updates the generated manifest" "$(cat "$dir/Build/Codegen/Package.swift")" 'exact: "1.28.0"'
 
-assert_equal "a bumped pin re-clones at the new tag" \
-    "1.27.5 1.28.0" "$(cloned_tags)"
+in_package "$dir" 'build_swift_protobuf_plugin' > /dev/null
+assert_equal "protobuf codegen succeeds" 0 "$?"
+assert_contains "protobuf uses the same locked graph" "$(cat "$SWIFT_STUB_LOG")" "--product protoc-gen-swift --only-use-versions-from-resolved-file"
+
+export SWIFT_STUB_FAIL=1
+output="$(in_package "$dir" 'build_grpc_swift_plugin')"
+assert_equal "an existing binary cannot hide a failed SwiftPM build" 7 "$?"
+unset SWIFT_STUB_FAIL
+
+export SWIFT_STUB_DRIFT=1
+output="$(in_package "$dir" 'build_grpc_swift_plugin')"
+assert_equal "resolver revision drift fails codegen" 1 "$?"
+assert_contains "codegen identifies resolver drift" "$output" "grpc-swift: expected"
+unset SWIFT_STUB_DRIFT
+
+# ---------------------------------------------------------------------------
+# Xcode gets the same lock and must preserve it.
+# ---------------------------------------------------------------------------
+
+dir="$(stage_package xcode 1.27.5 1.38.1)"
+export XCODE_STUB_LOG="$WORK/xcode.log"
+: > "$XCODE_STUB_LOG"
+# The functions are evaluated inside the staged package.
+# shellcheck disable=SC2016
+output="$(in_package "$dir" '
+    generate_xcodeproj() { mkdir -p Companion/idb_companion.xcodeproj; }
+    sed() { if [ "$1" != "-i" ]; then command sed "$@"; fi; }
+    generate_companion_project
+')"
+assert_equal "companion generation stages the shared lock" 0 "$?"
+lock="$dir/Companion/idb_companion.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved"
+assert_equal "Xcode lock is identical to the shared lock" "$(cat "$dir/Package.resolved")" "$(cat "$lock")"
+
+output="$(in_package "$dir" 'invoke_xcodebuild -project Companion/idb_companion.xcodeproj build')"
+assert_equal "a locked Xcode build succeeds" 0 "$?"
+assert_contains "Xcode may only use the lock" "$(cat "$XCODE_STUB_LOG")" "-onlyUsePackageVersionsFromResolvedFile"
+assert_contains "Xcode automatic resolution is disabled" "$(cat "$XCODE_STUB_LOG")" "-disableAutomaticPackageResolution"
+
+export XCODE_STUB_FAIL=1
+output="$(in_package "$dir" 'invoke_xcodebuild -project Companion/idb_companion.xcodeproj build')"
+assert_equal "lock verification cannot hide an Xcode failure" 8 "$?"
+unset XCODE_STUB_FAIL
+
+export XCODE_STUB_DRIFT=1
+output="$(in_package "$dir" 'invoke_xcodebuild -project Companion/idb_companion.xcodeproj build')"
+assert_equal "Xcode revision drift fails the build" 1 "$?"
+assert_contains "Xcode identifies resolver drift" "$output" "grpc-swift: expected"
+unset XCODE_STUB_DRIFT
+
+# Existing generated files do not prove that they match today's plugin pins.
+mkdir -p "$dir/IDBGRPCSwift"
+touch "$dir/IDBGRPCSwift/idb.grpc.swift" "$dir/IDBGRPCSwift/idb.pb.swift"
+output="$(in_package "$dir" '
+    check_protobuf() { :; }
+    generate_proto() { echo regenerated-proto; }
+    generate_companion_project() { echo regenerated-project; }
+    invoke_xcodebuild() { :; }
+    build_idb_repl
+')"
+assert_equal "a repeat REPL build regenerates sources before project globs" 'regenerated-proto
+regenerated-project' "$output"
 
 if [ "$FAILURES" -ne 0 ]; then
     echo "$FAILURES assertion(s) failed"

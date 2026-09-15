@@ -83,7 +83,7 @@ Head over [to the main documentation](https://www.fbidb.io) for more details on 
   ```
   brew install protobuf
   ```
-  (`build.sh` builds both Swift codegen plugins itself — `protoc-gen-swift` and `protoc-gen-grpc-swift` — from checkouts pinned to the versions `Package.swift` declares, so the generated code always matches the runtime it is generated against.)
+  (`build.sh` builds both Swift codegen plugins itself — `protoc-gen-swift` and `protoc-gen-grpc-swift` — using the versions and revisions in `Package.resolved`, so the generated code matches the runtime it is generated against.)
 
 ### Building
 
@@ -162,3 +162,11 @@ Read our [contributing guide](.github/CONTRIBUTING.md) to learn about our develo
 ## License
 
 [`idb` is MIT-licensed](LICENSE).
+
+### Updating Swift dependencies
+
+`Package.resolved` is the shared lock for the runtime and both Swift codegen plugins. Keep the exact versions in `Package.swift` and `Companion/project.yml` in agreement with it. `build.sh` stages the lock in the generated Xcode workspace and disables automatic package resolution. It checks the resolved versions, revisions, and repositories after both plugin and Xcode builds.
+
+Codegen uses an incremental SwiftPM build in `Build/Codegen`. Each build validates the lock even when cached plugin binaries exist, and regenerates the protocol sources before XcodeGen expands their source globs. A dependency bump therefore cannot silently reuse older generated sources.
+
+Run `bash tests/build-test.sh "$PWD"` and `python3 -m unittest CI.dependency_lock_tests` from this directory to check the dependency guards without an Apple toolchain. GitHub CI runs both.

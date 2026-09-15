@@ -417,50 +417,26 @@ function check_package_pins() {
   [ "$errors" -eq 0 ] || exit 1
 }
 
-# <package> <version>. The version is part of the path so that bumping a pin
-# lands in a new directory: the already-built early return below keys on the
-# binary existing, and nothing before it can tell that the binary came from the
-# previous tag -- the pin guard compares the manifests to each other, not to
-# what is on disk.
-function plugin_checkout() {
-  echo "$BUILD_DIRECTORY/${1##*/}-$2"
-}
-
-# <product> <package> <version>. Where a build of that plugin puts its binary.
+# <product>. Both plugins share one SwiftPM graph and incremental build cache.
 function plugin_binary() {
-  echo "$(plugin_checkout "$2" "$3")/.build/release/$1"
+  echo "$BUILD_DIRECTORY/Codegen/.build/release/$1"
 }
 
-# <product> <package> <version>. The checkout is shallow at the tag, so a
-# package whose tag has moved fails to clone rather than silently building a
-# different revision.
 function build_protoc_plugin() {
-  local product="$1" package="$2" version="$3"
-  local dir plugin_path
-  dir="$(plugin_checkout "$package" "$version")"
-  plugin_path="$(plugin_binary "$product" "$package" "$version")"
+  local product="$1"
+  local codegen="$BUILD_DIRECTORY/Codegen"
+  local plugin_path
+  plugin_path="$(plugin_binary "$product")"
 
-  if [ -x "$plugin_path" ]; then
-    echo "$product already built at $plugin_path"
-    return 0
-  fi
-
-  echo "Building $product from $package $version..."
-
-  if [ ! -d "$dir" ]; then
-    echo "Cloning $package $version..."
-    git clone --depth 1 --branch "$version" \
-      "https://github.com/$package.git" "$dir"
-  fi
-
-  echo "Building $product (this may take a few minutes)..."
-  (cd "$dir" && swift build -c release --product "$product")
+  python3 CI/dependency_lock.py prepare-codegen Package.resolved "$codegen" || return
+  swift build --package-path "$codegen" -c release --product "$product" \
+    --only-use-versions-from-resolved-file || return
+  python3 CI/dependency_lock.py check Package.resolved "$codegen/Package.resolved" || return
 
   if [ ! -x "$plugin_path" ]; then
-    echo "error: Failed to build $product"
-    exit 1
+    echo "error: Failed to build $product" >&2
+    return 1
   fi
-
   echo "Successfully built $product"
 }
 
@@ -468,29 +444,27 @@ function build_grpc_swift_plugin() {
   resolve_grpc_swift_version
   check_package_pins
 
-  build_protoc_plugin protoc-gen-grpc-swift \
-    grpc/grpc-swift "$GRPC_SWIFT_VERSION"
+  build_protoc_plugin protoc-gen-grpc-swift
 }
 
 function build_swift_protobuf_plugin() {
   resolve_swift_protobuf_version
   check_package_pins
 
-  build_protoc_plugin protoc-gen-swift \
-    apple/swift-protobuf "$SWIFT_PROTOBUF_VERSION"
+  build_protoc_plugin protoc-gen-swift
 }
 
 function generate_proto() {
   check_protobuf
-  build_grpc_swift_plugin
-  build_swift_protobuf_plugin
+  build_grpc_swift_plugin || return
+  build_swift_protobuf_plugin || return
 
   local proto_dir="proto"
   local output_dir="IDBGRPCSwift"
   local protoc=$(which protoc)
   local swift_plugin grpc_plugin
-  swift_plugin="$(plugin_binary protoc-gen-swift apple/swift-protobuf "$SWIFT_PROTOBUF_VERSION")"
-  grpc_plugin="$(plugin_binary protoc-gen-grpc-swift grpc/grpc-swift "$GRPC_SWIFT_VERSION")"
+  swift_plugin="$(plugin_binary protoc-gen-swift)"
+  grpc_plugin="$(plugin_binary protoc-gen-grpc-swift)"
 
   echo "Generating gRPC Swift from proto..."
   mkdir -p "$output_dir"
@@ -520,6 +494,10 @@ function generate_companion_project() {
   # leftover entry here.
   sed -i '' '/IDBGRPCSwift.framework in Embed Frameworks/d' \
     Companion/idb_companion.xcodeproj/project.pbxproj
+
+  local resolved_dir="Companion/idb_companion.xcodeproj/project.xcworkspace/xcshareddata/swiftpm"
+  mkdir -p "$resolved_dir"
+  cp Package.resolved "$resolved_dir/Package.resolved"
 }
 
 function regenerate_projects() {
@@ -586,15 +564,25 @@ function invoke_xcodebuild() {
   # Add ARCHS=arm64 to build arm64 only (no Intel/x86_64 slices).
   local common_settings=(
     -skipMacroValidation
+    -onlyUsePackageVersionsFromResolvedFile
+    -disableAutomaticPackageResolution
     ENABLE_USER_SCRIPT_SANDBOXING=NO
     CLANG_ENABLE_EXPLICIT_MODULES=NO
     ARCHS=arm64
   )
   if [[ -n $HAS_XCPRETTY ]]; then
-    NSUnbufferedIO=YES xcodebuild "${common_settings[@]}" SYMROOT="$symroot" OBJROOT="$objroot" "$@" | xcpretty -c
+    NSUnbufferedIO=YES xcodebuild "${common_settings[@]}" SYMROOT="$symroot" OBJROOT="$objroot" "$@" | xcpretty -c || return
   else
-    xcodebuild "${common_settings[@]}" SYMROOT="$symroot" OBJROOT="$objroot" "$@"
+    xcodebuild "${common_settings[@]}" SYMROOT="$symroot" OBJROOT="$objroot" "$@" || return
   fi
+  local argument
+  for argument in "$@"; do
+    if [ "$argument" = "Companion/idb_companion.xcodeproj" ]; then
+      python3 CI/dependency_lock.py check Package.resolved \
+        Companion/idb_companion.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved || return
+      break
+    fi
+  done
 }
 
 function build_idb_deps() {
@@ -719,16 +707,9 @@ function build_companion_archives() {
 function build_idb_companion() {
   check_protobuf
   build_idb_deps
-  # Ensure proto files are generated
-  if [ ! -f "IDBGRPCSwift/idb.grpc.swift" ] || [ ! -f "IDBGRPCSwift/idb.pb.swift" ]; then
-    echo "Proto files not found, generating..."
-    generate_proto
-    # XcodeGen resolves source globs at generation time, so a project generated
-    # before the gRPC sources existed (a fresh clone) has an empty IDBGRPCSwift
-    # target and the companion fails with "no such module". Regenerate now that
-    # the sources are on disk.
-    generate_companion_project
-  fi
+  generate_proto
+  # XcodeGen expands source globs, so generate the project after the sources.
+  generate_companion_project
   build_companion_archives
   # Build idb_companion from its own project
   invoke_xcodebuild \
@@ -745,14 +726,8 @@ function build_idb_companion() {
 
 function build_idb_repl() {
   check_protobuf
-  # idb-repl links IDBGRPCSwift, which needs the generated gRPC Swift files.
-  if [ ! -f "IDBGRPCSwift/idb.grpc.swift" ] || [ ! -f "IDBGRPCSwift/idb.pb.swift" ]; then
-    echo "Proto files not found, generating..."
-    generate_proto
-    # See build_idb_companion: the project must be regenerated once the
-    # generated sources exist, or the IDBGRPCSwift target is empty.
-    generate_companion_project
-  fi
+  generate_proto
+  generate_companion_project
   # Build the idb-repl CLI from the idb_companion project (shares IDBGRPCSwift).
   invoke_xcodebuild \
     ONLY_ACTIVE_ARCH=NO \
