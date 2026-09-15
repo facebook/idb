@@ -58,11 +58,11 @@ final class SimulatorControlTransientTests: XCTestCase {
     XCTAssertFalse(desc.contains("Direct Launch"), "Description should not contain 'Direct Launch' for verifyUsable only")
   }
 
-  // MARK: - FBSimulatorHIDEvent - Swipe
+  // MARK: - SimulatorHIDEvent - Swipe
 
   func testSwipeDiagonalProducesCorrectStepCount() {
     // Diagonal: distance = sqrt(30^2 + 40^2) = 50, delta=10 -> 5 steps
-    let swipe = FBSimulatorHIDEvent.swipe(0, yStart: 0, xEnd: 30, yEnd: 40, delta: 10, duration: 1.0)
+    let swipe = SimulatorHIDEvent.swipe(0, yStart: 0, xEnd: 30, yEnd: 40, delta: 10, duration: 1.0)
     let expectedSteps = 5
     let expectedEvents = (expectedSteps + 1) * 2 + 2 + 1
     XCTAssertEqual(swipe.subEvents?.count, expectedEvents)
@@ -72,7 +72,7 @@ final class SimulatorControlTransientTests: XCTestCase {
     // distance = 5 < delta 10 gives Int(0.5) = 0 steps, which divides by zero in
     // dx/dy and yields NaN touch coordinates. Steps must be clamped to at least 1,
     // mirroring `pinchAt` and `pan`.
-    let swipe = FBSimulatorHIDEvent.swipe(0, yStart: 0, xEnd: 5, yEnd: 0, delta: 10, duration: 1.0)
+    let swipe = SimulatorHIDEvent.swipe(0, yStart: 0, xEnd: 5, yEnd: 0, delta: 10, duration: 1.0)
     let expectedSteps = 1
     let expectedEvents = (expectedSteps + 1) * 2 + 2 + 1
     XCTAssertEqual(swipe.subEvents?.count, expectedEvents)

@@ -42,7 +42,7 @@ enum SimulatorHIDTransportSelection {
 
   /// The transport to prefer when a caller does not request one. The toolchain is the only condition;
   /// every product family, Apple TV included, can be driven over DTUHID.
-  static func defaultTransport(coreSimulatorVersion: String?) -> FBSimulatorHIDTransportType {
+  static func defaultTransport(coreSimulatorVersion: String?) -> SimulatorHIDTransportType {
     guard shipsDTUHID(coreSimulatorVersion: coreSimulatorVersion) else {
       return .indigo
     }
@@ -66,9 +66,9 @@ extension FBSimulator {
   }
 
   /// The HID transport to prefer when a caller does not request one: DTUHID once the toolchain ships
-  /// `dtuhidd`, the legacy Indigo path otherwise. A preference, not a guarantee — `FBSimulatorHID`
+  /// `dtuhidd`, the legacy Indigo path otherwise. A preference, not a guarantee — `SimulatorHID`
   /// falls back to Indigo if `dtuhidd` turns out to be unreachable.
-  var defaultHIDTransport: FBSimulatorHIDTransportType {
+  var defaultHIDTransport: SimulatorHIDTransportType {
     SimulatorHIDTransportSelection.defaultTransport(
       coreSimulatorVersion: FBSimulatorControlFrameworkLoader.loadedCoreSimulatorVersion)
   }

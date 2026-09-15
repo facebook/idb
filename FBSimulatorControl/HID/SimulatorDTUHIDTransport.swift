@@ -201,7 +201,7 @@ actor SimulatorDTUHIDTransport {
   }
 
   func sendTouch(
-    direction: SimulatorHIDDirection, x: Double, y: Double, edge: FBSimulatorHIDEdge
+    direction: SimulatorHIDDirection, x: Double, y: Double, edge: SimulatorHIDEdge
   ) async throws {
     guard productFamily.hasTouchscreen else {
       throw SimulatorHIDError.touchUnsupportedOnAppleTV
@@ -228,7 +228,7 @@ actor SimulatorDTUHIDTransport {
     try await send(messageType: "IndigoDigitizerEvent", payload: event)
   }
 
-  func sendButton(direction: SimulatorHIDDirection, button: FBSimulatorHIDButton) async throws {
+  func sendButton(direction: SimulatorHIDDirection, button: SimulatorHIDButton) async throws {
     guard let usage = button.identity.consumerUsage else {
       throw SimulatorHIDError.notImplementedOnDTUHIDTransport(
         operation: "sendButton(.applePay) — Apple Pay is a double side-button press, not a single HID usage; send two .sideButton presses instead")
@@ -248,7 +248,7 @@ actor SimulatorDTUHIDTransport {
 
   /// Sends the keyboard usage the tvOS focus engine consumes. `dtuhidd` also advertises
   /// `com.apple.coredevice.feature.remote.hid.tvremote`, whose accepted usages are undocumented.
-  func sendRemoteButton(direction: SimulatorHIDDirection, button: FBSimulatorHIDRemoteButton) async throws {
+  func sendRemoteButton(direction: SimulatorHIDDirection, button: SimulatorHIDRemoteButton) async throws {
     try await sendKeyboard(direction: direction, keyCode: button.keyboardUsage)
   }
 

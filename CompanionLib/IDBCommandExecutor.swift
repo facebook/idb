@@ -522,7 +522,7 @@ public final class IDBCommandExecutor {
     return try await device.diagnosticInformation.fetch() as NSDictionary
   }
 
-  public func hid(_ event: FBSimulatorHIDEvent) async throws {
+  public func hid(_ event: SimulatorHIDEvent) async throws {
     let hid = try await connectToHID()
     try await event.send(on: hid)
   }
@@ -786,7 +786,7 @@ public final class IDBCommandExecutor {
     return simulator
   }
 
-  private func connectToHID() async throws -> FBSimulatorHID {
+  private func connectToHID() async throws -> SimulatorHID {
     let simulator = try simulatorTarget()
     try FBSimulatorControlFrameworkLoader.xcodeFrameworks.loadPrivateFrameworks(target.logger)
     return try await simulator.lifecycle.connectToHID()

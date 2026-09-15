@@ -55,9 +55,9 @@ final class SimulatorDTUHIDTransportTests: XCTestCase {
   }
 
   // The edge rides the same `IndigoDigitizerEvent.edge` field `dtuhidd` already declares, using the
-  // same 0...4 encoding the Indigo builder takes, so one `FBSimulatorHIDEdge` describes both wires.
+  // same 0...4 encoding the Indigo builder takes, so one `SimulatorHIDEdge` describes both wires.
   func testDigitizerEventCarriesTheEdge() throws {
-    for edge in FBSimulatorHIDEdge.allCases {
+    for edge in SimulatorHIDEdge.allCases {
       let event = try encodeDigitizer(
         IndigoDigitizerEvent(
           pointOne: DigitizerPoint(x: 0.5, y: 0.99),
@@ -72,11 +72,11 @@ final class SimulatorDTUHIDTransportTests: XCTestCase {
 
   func testEdgeRawValuesMatchTheIndigoEncoding() {
     // Indigo.h: IndigoHIDEdgeNone/Top/Left/Bottom/Right.
-    XCTAssertEqual(FBSimulatorHIDEdge.none.rawValue, 0)
-    XCTAssertEqual(FBSimulatorHIDEdge.top.rawValue, 1)
-    XCTAssertEqual(FBSimulatorHIDEdge.left.rawValue, 2)
-    XCTAssertEqual(FBSimulatorHIDEdge.bottom.rawValue, 3)
-    XCTAssertEqual(FBSimulatorHIDEdge.right.rawValue, 4)
+    XCTAssertEqual(SimulatorHIDEdge.none.rawValue, 0)
+    XCTAssertEqual(SimulatorHIDEdge.top.rawValue, 1)
+    XCTAssertEqual(SimulatorHIDEdge.left.rawValue, 2)
+    XCTAssertEqual(SimulatorHIDEdge.bottom.rawValue, 3)
+    XCTAssertEqual(SimulatorHIDEdge.right.rawValue, 4)
   }
 
   // MARK: - Contact-state machine
@@ -155,16 +155,16 @@ final class SimulatorDTUHIDTransportTests: XCTestCase {
   // MARK: - Button encoding
 
   func testButtonUsageMapping() {
-    XCTAssertEqual(FBSimulatorHIDButton.homeButton.identity.consumerUsage?.page, 0x0C)
-    XCTAssertEqual(FBSimulatorHIDButton.homeButton.identity.consumerUsage?.code, 0x40)
-    XCTAssertEqual(FBSimulatorHIDButton.lock.identity.consumerUsage?.code, 0x30)
-    XCTAssertEqual(FBSimulatorHIDButton.sideButton.identity.consumerUsage?.code, 0x30)
-    XCTAssertEqual(FBSimulatorHIDButton.siri.identity.consumerUsage?.code, 0xCF)
-    XCTAssertEqual(FBSimulatorHIDButton.playPause.identity.consumerUsage?.page, 0x0C)
-    XCTAssertEqual(FBSimulatorHIDButton.playPause.identity.consumerUsage?.code, 0xCD)
-    XCTAssertEqual(FBSimulatorHIDButton.volumeUp.identity.consumerUsage?.code, 0xE9)
-    XCTAssertEqual(FBSimulatorHIDButton.volumeDown.identity.consumerUsage?.code, 0xEA)
-    XCTAssertNil(FBSimulatorHIDButton.applePay.identity.consumerUsage)
+    XCTAssertEqual(SimulatorHIDButton.homeButton.identity.consumerUsage?.page, 0x0C)
+    XCTAssertEqual(SimulatorHIDButton.homeButton.identity.consumerUsage?.code, 0x40)
+    XCTAssertEqual(SimulatorHIDButton.lock.identity.consumerUsage?.code, 0x30)
+    XCTAssertEqual(SimulatorHIDButton.sideButton.identity.consumerUsage?.code, 0x30)
+    XCTAssertEqual(SimulatorHIDButton.siri.identity.consumerUsage?.code, 0xCF)
+    XCTAssertEqual(SimulatorHIDButton.playPause.identity.consumerUsage?.page, 0x0C)
+    XCTAssertEqual(SimulatorHIDButton.playPause.identity.consumerUsage?.code, 0xCD)
+    XCTAssertEqual(SimulatorHIDButton.volumeUp.identity.consumerUsage?.code, 0xE9)
+    XCTAssertEqual(SimulatorHIDButton.volumeDown.identity.consumerUsage?.code, 0xEA)
+    XCTAssertNil(SimulatorHIDButton.applePay.identity.consumerUsage)
   }
 
   func testButtonEventEnvelope() throws {
@@ -238,7 +238,7 @@ final class SimulatorDTUHIDTransportTests: XCTestCase {
     XCTAssertEqual(HIDButtonState.up.rawValue, 2)
   }
 
-  // MARK: - Drain (driven through FBSimulatorHID, injected clock, no daemon)
+  // MARK: - Drain (driven through SimulatorHID, injected clock, no daemon)
 
   func testFlushWithoutAGestureIsANoOp() async throws {
     let recorder = DrainRecorder()
@@ -455,8 +455,8 @@ final class SimulatorDTUHIDTransportTests: XCTestCase {
   /// names no real service, so writes resolve locally and never reach a daemon.
   private func makeHID(
     _ recorder: DrainRecorder, reply: DrainReply = .answer, gate: SleepGate? = nil
-  ) -> FBSimulatorHID {
-    FBSimulatorHID(
+  ) -> SimulatorHID {
+    SimulatorHID(
       transport: .dtuhid(makeTransport(recorder, reply: reply, gate: gate)),
       purple: SimulatorPurpleHIDTransport(simulator: nil),
       notification: SimulatorDarwinNotificationTransport(simulator: nil),
@@ -481,7 +481,7 @@ final class SimulatorDTUHIDTransportTests: XCTestCase {
 
   /// One inert keypress. Usage `0` is "no event indicated", so a guest would ignore it even if one
   /// were listening.
-  private func sendGesture(on hid: FBSimulatorHID) async throws {
+  private func sendGesture(on hid: SimulatorHID) async throws {
     try await hid.send(
       event: .keyboard(direction: .up, keyCode: 0),
       logger: FBControlCoreGlobalConfiguration.defaultLogger)

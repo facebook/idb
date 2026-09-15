@@ -46,7 +46,7 @@ enum SimulatorHIDButtonIdentity {
   }
 }
 
-extension FBSimulatorHIDButton {
+extension SimulatorHIDButton {
 
   /// How this button is identified on the wire. Consumer-page usages are from the HID Usage Tables
   /// (page 0x0C); the legacy sources are the `ButtonEventSource` values in `Indigo.h`.

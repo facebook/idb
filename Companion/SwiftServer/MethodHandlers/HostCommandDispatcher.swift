@@ -157,15 +157,15 @@ struct HostCommandDispatcher: @unchecked Sendable {
 
     case .button(let name):
       let normalized = name.replacingOccurrences(of: "-", with: "_").lowercased()
-      guard let button = FBSimulatorHIDButton.allCases.first(where: { $0.name == normalized }) else {
-        let valid = FBSimulatorHIDButton.allCases.map(\.name).joined(separator: ", ")
+      guard let button = SimulatorHIDButton.allCases.first(where: { $0.name == normalized }) else {
+        let valid = SimulatorHIDButton.allCases.map(\.name).joined(separator: ", ")
         throw HostCommandError.message("button: unknown button '\(name)' (expected one of: \(valid))")
       }
       try await commandExecutor.hid(.shortButtonPress(button))
       return nil
 
     case .text(let text):
-      var events: [FBSimulatorHIDEvent] = []
+      var events: [SimulatorHIDEvent] = []
       for character in text {
         guard let key = Self.hidKeyCode(for: character) else {
           throw HostCommandError.message("text: unsupported character '\(character)'")

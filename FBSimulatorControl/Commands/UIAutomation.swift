@@ -127,7 +127,7 @@ public struct DragOptions: Sendable, Equatable {
     pressDuration: TimeInterval = 0.5,
     duration: TimeInterval = 0.5,
     releaseDuration: TimeInterval = 0.1,
-    delta: Double = FBSimulatorHIDEvent.defaultSwipeDelta
+    delta: Double = SimulatorHIDEvent.defaultSwipeDelta
   ) {
     self.pressDuration = pressDuration
     self.duration = duration
@@ -284,7 +284,7 @@ public extension FBSimulator {
 
   /// Delivers one composed gesture over HID, which drains the transport once for the whole gesture
   /// rather than once per primitive event.
-  internal func sendHIDGesture(_ event: FBSimulatorHIDEvent) async throws {
+  internal func sendHIDGesture(_ event: SimulatorHIDEvent) async throws {
     try await lifecycle.connectToHID().send(event: event, logger: logger)
   }
 }

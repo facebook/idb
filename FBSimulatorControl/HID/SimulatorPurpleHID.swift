@@ -30,7 +30,7 @@ final class SimulatorPurpleHID {
   /**
    Constructs a GSEvent orientation change mach message.
    */
-  func orientationEvent(_ orientation: FBSimulatorHIDDeviceOrientation) -> Data {
+  func orientationEvent(_ orientation: SimulatorHIDDeviceOrientation) -> Data {
     // Construct a 112-byte buffer (aligned to 8 bytes, >= 108 = 0x6C mach message size).
     // See GSEvent.h for the complete wire format documentation.
     var buf = [UInt8](repeating: 0, count: 112)

@@ -39,7 +39,7 @@ public final class SimulatorLifecycleCommands: LifecycleCommands {
   // MARK: - Properties
 
   private weak var simulator: FBSimulator?
-  private var hid: FBSimulatorHID?
+  private var hid: SimulatorHID?
 
   // MARK: - Initializers
 
@@ -154,14 +154,14 @@ public final class SimulatorLifecycleCommands: LifecycleCommands {
     return try Framebuffer.mainScreenSurface(for: simulator, logger: simulator.logger)
   }
 
-  public func connectToHID() async throws -> FBSimulatorHID {
+  public func connectToHID() async throws -> SimulatorHID {
     if let hid = self.hid {
       return hid
     }
     guard let simulator = self.simulator else {
       throw WeakTargetError.simulator
     }
-    let hid = try await FBSimulatorHID(for: simulator)
+    let hid = try await SimulatorHID(for: simulator)
     self.hid = hid
     return hid
   }

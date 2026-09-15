@@ -23,7 +23,7 @@ struct HidMethodHandler {
     return .init()
   }
 
-  private func fbSimulatorHIDEvent(from request: Idb_HIDEvent) throws -> FBSimulatorHIDEvent {
+  private func fbSimulatorHIDEvent(from request: Idb_HIDEvent) throws -> SimulatorHIDEvent {
     switch request.event {
     case let .press(press):
       switch press.action.action {
@@ -65,7 +65,7 @@ struct HidMethodHandler {
       }
 
     case let .swipe(swipe):
-      return FBSimulatorHIDEvent.swipe(
+      return SimulatorHIDEvent.swipe(
         swipe.start.x,
         yStart: swipe.start.y,
         xEnd: swipe.end.x,
@@ -74,7 +74,7 @@ struct HidMethodHandler {
         duration: swipe.duration)
 
     case let .delay(delay):
-      return FBSimulatorHIDEvent.delay(delay.duration)
+      return SimulatorHIDEvent.delay(delay.duration)
 
     case let .pinch(pinch):
       let centerX = Double(pinch.center.x)
@@ -82,7 +82,7 @@ struct HidMethodHandler {
       let scale = pinch.scale
       let duration = pinch.duration > 0 ? pinch.duration : 0.5
       let radius = pinch.radius > 0 ? pinch.radius : 100.0
-      return FBSimulatorHIDEvent.pinchAt(x: centerX, y: centerY, scale: scale, duration: duration, radius: radius)
+      return SimulatorHIDEvent.pinchAt(x: centerX, y: centerY, scale: scale, duration: duration, radius: radius)
 
     case let .orientation(orientation):
       guard let deviceOrientation = fbSimulatorHIDDeviceOrientation(from: orientation.orientation) else {
@@ -98,7 +98,7 @@ struct HidMethodHandler {
     }
   }
 
-  private func fbSimulatorHIDDeviceOrientation(from request: Idb_HIDEvent.HIDOrientationType) -> FBSimulatorHIDDeviceOrientation? {
+  private func fbSimulatorHIDDeviceOrientation(from request: Idb_HIDEvent.HIDOrientationType) -> SimulatorHIDDeviceOrientation? {
     switch request {
     case .portrait:
       return .portrait
@@ -113,7 +113,7 @@ struct HidMethodHandler {
     }
   }
 
-  private func fbSimulatorHIDButton(from request: Idb_HIDEvent.HIDButtonType) -> FBSimulatorHIDButton? {
+  private func fbSimulatorHIDButton(from request: Idb_HIDEvent.HIDButtonType) -> SimulatorHIDButton? {
     switch request {
     case .applePay:
       return .applePay

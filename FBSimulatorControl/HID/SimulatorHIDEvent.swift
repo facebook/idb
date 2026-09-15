@@ -9,31 +9,31 @@ import CoreGraphics
 import FBControlCore
 import Foundation
 
-// MARK: - FBSimulatorHIDEvent
+// MARK: - SimulatorHIDEvent
 
 /// A HID event that can be sent to a Simulator. A discriminated union of the primitive
 /// payloads (touch, button, keyboard, two-finger touch, orientation, shake, lock, in-call
 /// status bar, delay) plus a `composite` of ordered events.
-public indirect enum FBSimulatorHIDEvent: Equatable, Hashable, Sendable {
+public indirect enum SimulatorHIDEvent: Equatable, Hashable, Sendable {
 
   /// The per-sample step, in points, a swipe is broken into when the caller does not choose one.
   public static let defaultSwipeDelta: Double = 10.0
 
-  case touch(direction: SimulatorHIDDirection, x: Double, y: Double, edge: FBSimulatorHIDEdge)
-  case button(direction: SimulatorHIDDirection, button: FBSimulatorHIDButton)
-  case remoteButton(direction: SimulatorHIDDirection, button: FBSimulatorHIDRemoteButton)
+  case touch(direction: SimulatorHIDDirection, x: Double, y: Double, edge: SimulatorHIDEdge)
+  case button(direction: SimulatorHIDDirection, button: SimulatorHIDButton)
+  case remoteButton(direction: SimulatorHIDDirection, button: SimulatorHIDRemoteButton)
   case keyboard(direction: SimulatorHIDDirection, keyCode: UInt32)
   case twoFingerTouch(direction: SimulatorHIDDirection, finger1: CGPoint, finger2: CGPoint)
-  case trackpad(phase: SimulatorTrackpadPhase, point: FBSimulatorTrackpadPoint)
+  case trackpad(phase: SimulatorTrackpadPhase, point: SimulatorTrackpadPoint)
   case delay(TimeInterval)
-  case deviceOrientation(FBSimulatorHIDDeviceOrientation)
+  case deviceOrientation(SimulatorHIDDeviceOrientation)
   case shake
   case toggleInCallStatusBar
   case lockDevice
-  case composite([FBSimulatorHIDEvent])
+  case composite([SimulatorHIDEvent])
 
   /// For a `.composite` event, its ordered sub-events; otherwise `nil`.
-  public var subEvents: [FBSimulatorHIDEvent]? {
+  public var subEvents: [SimulatorHIDEvent]? {
     guard case let .composite(events) = self else {
       return nil
     }
@@ -44,33 +44,33 @@ public indirect enum FBSimulatorHIDEvent: Equatable, Hashable, Sendable {
 
 // MARK: - Dispatch
 
-public extension FBSimulatorHIDEvent {
+public extension SimulatorHIDEvent {
 
-  /// Sends without draining afterwards. Prefer `FBSimulatorHID.send(event:logger:)`, which drains once per gesture.
-  func send(on hid: FBSimulatorHID) async throws {
+  /// Sends without draining afterwards. Prefer `SimulatorHID.send(event:logger:)`, which drains once per gesture.
+  func send(on hid: SimulatorHID) async throws {
     _ = try await hid.deliver(self)
   }
 }
 
 // MARK: - Factories
 
-public extension FBSimulatorHIDEvent {
+public extension SimulatorHIDEvent {
 
   /// An ordinary touch, not originating at a screen edge — what almost every caller wants. Tagging a
   /// contact with an edge is what turns a swipe into a system gesture, so it has to be asked for
   /// explicitly via the `.touch` case.
-  static func touch(direction: SimulatorHIDDirection, x: Double, y: Double) -> FBSimulatorHIDEvent {
+  static func touch(direction: SimulatorHIDDirection, x: Double, y: Double) -> SimulatorHIDEvent {
     .touch(direction: direction, x: x, y: y, edge: .none)
   }
 
-  static func tapAt(x: Double, y: Double) -> FBSimulatorHIDEvent {
+  static func tapAt(x: Double, y: Double) -> SimulatorHIDEvent {
     .composite([
       .touch(direction: .down, x: x, y: y),
       .touch(direction: .up, x: x, y: y),
     ])
   }
 
-  static func tapAt(x: Double, y: Double, duration: Double) -> FBSimulatorHIDEvent {
+  static func tapAt(x: Double, y: Double, duration: Double) -> SimulatorHIDEvent {
     .composite([
       .touch(direction: .down, x: x, y: y),
       .delay(duration),
@@ -78,22 +78,22 @@ public extension FBSimulatorHIDEvent {
     ])
   }
 
-  static func shortButtonPress(_ button: FBSimulatorHIDButton) -> FBSimulatorHIDEvent {
+  static func shortButtonPress(_ button: SimulatorHIDButton) -> SimulatorHIDEvent {
     .composite([
       .button(direction: .down, button: button),
       .button(direction: .up, button: button),
     ])
   }
 
-  static func shortKeyPress(_ keyCode: UInt32) -> FBSimulatorHIDEvent {
+  static func shortKeyPress(_ keyCode: UInt32) -> SimulatorHIDEvent {
     .composite([
       .keyboard(direction: .down, keyCode: keyCode),
       .keyboard(direction: .up, keyCode: keyCode),
     ])
   }
 
-  static func shortKeyPressSequence(_ sequence: [UInt32]) -> FBSimulatorHIDEvent {
-    var events: [FBSimulatorHIDEvent] = []
+  static func shortKeyPressSequence(_ sequence: [UInt32]) -> SimulatorHIDEvent {
+    var events: [SimulatorHIDEvent] = []
     for keyCode in sequence {
       events.append(.keyboard(direction: .down, keyCode: keyCode))
       events.append(.keyboard(direction: .up, keyCode: keyCode))
@@ -102,7 +102,7 @@ public extension FBSimulatorHIDEvent {
   }
 
   /// A short press of a Siri Remote focus action for tvOS, left for the transport to encode.
-  static func remoteButton(_ button: FBSimulatorHIDRemoteButton) -> FBSimulatorHIDEvent {
+  static func remoteButton(_ button: SimulatorHIDRemoteButton) -> SimulatorHIDEvent {
     .composite([
       .remoteButton(direction: .down, button: button),
       .remoteButton(direction: .up, button: button),
@@ -116,9 +116,9 @@ public extension FBSimulatorHIDEvent {
   /// be read as an ordinary drag from its second sample onwards.
   static func swipe(
     _ xStart: Double, yStart: Double, xEnd: Double, yEnd: Double, delta: Double, duration: Double,
-    edge: FBSimulatorHIDEdge = .none
-  ) -> FBSimulatorHIDEvent {
-    var events: [FBSimulatorHIDEvent] = []
+    edge: SimulatorHIDEdge = .none
+  ) -> SimulatorHIDEvent {
+    var events: [SimulatorHIDEvent] = []
     let distance = sqrt(pow(yEnd - yStart, 2) + pow(xEnd - xStart, 2))
     var effectiveDelta = delta
     if effectiveDelta <= 0.0 {
@@ -161,8 +161,8 @@ public extension FBSimulatorHIDEvent {
   /// `.none` is accepted and produces a stationary contact at the screen centre with no edge flag, so
   /// a caller threading an edge through from a CLI argument does not have to special-case it.
   static func edgeSwipe(
-    _ edge: FBSimulatorHIDEdge, screenSize: CGSize, duration: Double, delta: Double = defaultSwipeDelta
-  ) -> FBSimulatorHIDEvent {
+    _ edge: SimulatorHIDEdge, screenSize: CGSize, duration: Double, delta: Double = defaultSwipeDelta
+  ) -> SimulatorHIDEvent {
     let width = Double(screenSize.width)
     let height = Double(screenSize.height)
     let midX = width / 2
@@ -201,7 +201,7 @@ public extension FBSimulatorHIDEvent {
   static func drag(
     _ xStart: Double, yStart: Double, xEnd: Double, yEnd: Double, delta: Double,
     pressDuration: Double, duration: Double, releaseDuration: Double
-  ) -> FBSimulatorHIDEvent {
+  ) -> SimulatorHIDEvent {
     let distance = sqrt(pow(yEnd - yStart, 2) + pow(xEnd - xStart, 2))
     var effectiveDelta = delta
     if effectiveDelta <= 0.0 {
@@ -213,7 +213,7 @@ public extension FBSimulatorHIDEvent {
     let dy = (yEnd - yStart) / Double(steps)
     let stepDelay = duration / Double(steps)
 
-    var events: [FBSimulatorHIDEvent] = [
+    var events: [SimulatorHIDEvent] = [
       .touch(direction: .down, x: xStart, y: yStart),
       .delay(pressDuration),
     ]
@@ -231,15 +231,15 @@ public extension FBSimulatorHIDEvent {
   /// so the focus engine sees velocity. Indigo only. The `?? from` fallbacks are unreachable — interpolating
   /// two in-square points stays in the square.
   static func pan(
-    from: FBSimulatorTrackpadPoint, to: FBSimulatorTrackpadPoint, steps: Int, duration: Double
-  ) -> FBSimulatorHIDEvent {
+    from: SimulatorTrackpadPoint, to: SimulatorTrackpadPoint, steps: Int, duration: Double
+  ) -> SimulatorHIDEvent {
     let n = max(1, steps)
     let stepDelay = duration / Double(n + 1)
-    var events: [FBSimulatorHIDEvent] = [.trackpad(phase: .began, point: from)]
+    var events: [SimulatorHIDEvent] = [.trackpad(phase: .began, point: from)]
     for i in 1...n {
       let t = Double(i) / Double(n + 1)
       let sample =
-        FBSimulatorTrackpadPoint(
+        SimulatorTrackpadPoint(
           x: from.x + (to.x - from.x) * t, y: from.y + (to.y - from.y) * t
         ) ?? from
       events.append(.delay(stepDelay))
@@ -252,7 +252,7 @@ public extension FBSimulatorHIDEvent {
 
   static func pinchAt(
     x centerX: Double, y centerY: Double, scale: Double, duration: Double, radius: Double
-  ) -> FBSimulatorHIDEvent {
+  ) -> SimulatorHIDEvent {
     let startRadius = radius
     let endRadius = radius * scale
     let fingerDistance = abs(endRadius - startRadius)
@@ -262,7 +262,7 @@ public extension FBSimulatorHIDEvent {
     if steps < 2 { steps = 2 }
     let stepDelay = duration / Double(steps + 2)
 
-    var events: [FBSimulatorHIDEvent] = []
+    var events: [SimulatorHIDEvent] = []
 
     let f1Start = CGPoint(x: centerX - startRadius, y: centerY)
     let f2Start = CGPoint(x: centerX + startRadius, y: centerY)
@@ -292,7 +292,7 @@ public extension FBSimulatorHIDEvent {
 
 // MARK: - CustomStringConvertible
 
-extension FBSimulatorHIDEvent: CustomStringConvertible {
+extension SimulatorHIDEvent: CustomStringConvertible {
   public var description: String {
     switch self {
     case let .touch(direction, x, y, edge):

@@ -13,15 +13,15 @@ final class SimulatorHIDEventOrientationTests: XCTestCase {
   // MARK: - Orientation
 
   func testOrientationEventDescription() {
-    let description = FBSimulatorHIDEvent.deviceOrientation(.landscapeLeft).description
+    let description = SimulatorHIDEvent.deviceOrientation(.landscapeLeft).description
     XCTAssertTrue(description.contains("landscape_left"), "Description should contain orientation name, got: \(description)")
   }
 
   func testShakeDescription() {
-    XCTAssertTrue(FBSimulatorHIDEvent.shake.description.contains("Shake"))
+    XCTAssertTrue(SimulatorHIDEvent.shake.description.contains("Shake"))
   }
 
   func testLockDeviceDescription() {
-    XCTAssertTrue(FBSimulatorHIDEvent.lockDevice.description.contains("Lock"))
+    XCTAssertTrue(SimulatorHIDEvent.lockDevice.description.contains("Lock"))
   }
 }

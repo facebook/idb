@@ -74,7 +74,7 @@ actor SimulatorIndigoHIDTransport {
   }
 
   func sendTouch(
-    direction: SimulatorHIDDirection, x: Double, y: Double, edge: FBSimulatorHIDEdge
+    direction: SimulatorHIDDirection, x: Double, y: Double, edge: SimulatorHIDEdge
   ) async throws {
     guard productFamily.hasTouchscreen else {
       throw SimulatorHIDError.touchUnsupportedOnAppleTV
@@ -93,7 +93,7 @@ actor SimulatorIndigoHIDTransport {
         mainScreenSize, screenScale: mainScreenScale, direction: direction, finger1: finger1, finger2: finger2))
   }
 
-  func sendButton(direction: SimulatorHIDDirection, button: FBSimulatorHIDButton) async throws {
+  func sendButton(direction: SimulatorHIDDirection, button: SimulatorHIDButton) async throws {
     try await indigoClient.send(indigo.button(with: direction, button: button))
   }
 
@@ -108,12 +108,12 @@ actor SimulatorIndigoHIDTransport {
 
   /// Delivers a Siri Remote focus action as the keyboard usage the tvOS focus engine consumes, which is
   /// the only encoding the legacy path has for it — so it is subject to the same Xcode 27 suppression.
-  func sendRemoteButton(direction: SimulatorHIDDirection, button: FBSimulatorHIDRemoteButton) async throws {
+  func sendRemoteButton(direction: SimulatorHIDDirection, button: SimulatorHIDRemoteButton) async throws {
     try await sendKeyboard(direction: direction, keyCode: button.keyboardUsage)
   }
 
   // No tvOS guard — the trackpad is exactly what Apple TV targets need (unlike the touchscreen).
-  func sendTrackpad(point: FBSimulatorTrackpadPoint, phase: SimulatorTrackpadPhase) async throws {
+  func sendTrackpad(point: SimulatorTrackpadPoint, phase: SimulatorTrackpadPhase) async throws {
     try await indigoClient.send(indigo.trackpad(point: CGPoint(x: point.x, y: point.y), phase: phase))
   }
 }

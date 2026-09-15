@@ -11,17 +11,17 @@ import CoreGraphics
 // ast-grep-ignore: swift-testing/swift/no-new-xctest
 import XCTest
 
-/// Coverage of `FBSimulatorHIDEvent.pan(...)` — the tvOS trackpad pan factory that expands a
+/// Coverage of `SimulatorHIDEvent.pan(...)` — the tvOS trackpad pan factory that expands a
 /// start→end drag into a phased began → changed×steps → ended gesture with interleaved delays.
 final class SimulatorHIDEventPanTests: XCTestCase {
 
   func testPanExpandsToPhasedGesture() throws {
-    let from = try XCTUnwrap(FBSimulatorTrackpadPoint(x: 0.5, y: 0.2))
-    let to = try XCTUnwrap(FBSimulatorTrackpadPoint(x: 0.5, y: 0.8))
-    let pan = FBSimulatorHIDEvent.pan(from: from, to: to, steps: 3, duration: 0.3)
+    let from = try XCTUnwrap(SimulatorTrackpadPoint(x: 0.5, y: 0.2))
+    let to = try XCTUnwrap(SimulatorTrackpadPoint(x: 0.5, y: 0.8))
+    let pan = SimulatorHIDEvent.pan(from: from, to: to, steps: 3, duration: 0.3)
     let subs = try XCTUnwrap(pan.subEvents, "pan should be a composite")
 
-    let trackpads: [(SimulatorTrackpadPhase, FBSimulatorTrackpadPoint)] = subs.compactMap {
+    let trackpads: [(SimulatorTrackpadPhase, SimulatorTrackpadPoint)] = subs.compactMap {
       if case let .trackpad(phase, point) = $0 { return (phase, point) }
       return nil
     }
@@ -43,21 +43,21 @@ final class SimulatorHIDEventPanTests: XCTestCase {
   }
 
   // The trackpad surface is absolute-normalized and the type enforces it: screen coordinates
-  // cannot be represented as an FBSimulatorTrackpadPoint, so `pan` cannot be handed them.
+  // cannot be represented as an SimulatorTrackpadPoint, so `pan` cannot be handed them.
   func testTrackpadPointRejectsCoordinatesOutsideTheSurface() throws {
-    XCTAssertNil(FBSimulatorTrackpadPoint(x: 100, y: 200), "screen coordinates are not surface coordinates")
-    XCTAssertNil(FBSimulatorTrackpadPoint(x: 0.5, y: 1.5), "one axis outside the unit square is enough")
-    XCTAssertNil(FBSimulatorTrackpadPoint(x: -0.1, y: 0.5), "and so is a negative one")
+    XCTAssertNil(SimulatorTrackpadPoint(x: 100, y: 200), "screen coordinates are not surface coordinates")
+    XCTAssertNil(SimulatorTrackpadPoint(x: 0.5, y: 1.5), "one axis outside the unit square is enough")
+    XCTAssertNil(SimulatorTrackpadPoint(x: -0.1, y: 0.5), "and so is a negative one")
 
-    XCTAssertNotNil(FBSimulatorTrackpadPoint(x: 0, y: 0), "the corners are on the surface")
-    XCTAssertNotNil(FBSimulatorTrackpadPoint(x: 1, y: 1), "including the far one")
+    XCTAssertNotNil(SimulatorTrackpadPoint(x: 0, y: 0), "the corners are on the surface")
+    XCTAssertNotNil(SimulatorTrackpadPoint(x: 1, y: 1), "including the far one")
   }
 
   func testPanClampsStepsToAtLeastOne() throws {
     // steps <= 0 must not trap; it degrades to a single changed sample.
-    let from = try XCTUnwrap(FBSimulatorTrackpadPoint(x: 0, y: 0))
-    let to = try XCTUnwrap(FBSimulatorTrackpadPoint(x: 1, y: 1))
-    let pan = FBSimulatorHIDEvent.pan(from: from, to: to, steps: 0, duration: 0.1)
+    let from = try XCTUnwrap(SimulatorTrackpadPoint(x: 0, y: 0))
+    let to = try XCTUnwrap(SimulatorTrackpadPoint(x: 1, y: 1))
+    let pan = SimulatorHIDEvent.pan(from: from, to: to, steps: 0, duration: 0.1)
     let trackpads = try XCTUnwrap(pan.subEvents).filter {
       if case .trackpad = $0 { return true }
       return false

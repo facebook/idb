@@ -13,7 +13,7 @@ import XCTest
 final class SimulatorControlValueTypeTests: XCTestCase {
 
   func testHIDEvents() {
-    let events: [FBSimulatorHIDEvent] = [
+    let events: [SimulatorHIDEvent] = [
       .tapAt(x: 10, y: 20),
       .shortButtonPress(.applePay),
       .shortButtonPress(.homeButton),
@@ -26,7 +26,7 @@ final class SimulatorControlValueTypeTests: XCTestCase {
       .shortKeyPress(UInt32(kVK_ANSI_I)),
       .shortKeyPress(UInt32(kVK_ANSI_O)),
     ]
-    let copies: [FBSimulatorHIDEvent] = [
+    let copies: [SimulatorHIDEvent] = [
       .tapAt(x: 10, y: 20),
       .shortButtonPress(.applePay),
       .shortButtonPress(.homeButton),

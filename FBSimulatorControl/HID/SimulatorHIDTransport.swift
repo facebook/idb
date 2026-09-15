@@ -8,8 +8,8 @@
 import CoreGraphics
 import Foundation
 
-/// Selects which transport an `FBSimulatorHID` uses for the touch / button / keyboard primitives.
-public enum FBSimulatorHIDTransportType: Equatable, Sendable {
+/// Selects which transport an `SimulatorHID` uses for the touch / button / keyboard primitives.
+public enum SimulatorHIDTransportType: Equatable, Sendable {
   /// The legacy Indigo path via SimulatorKit's runtime-only `SimDeviceLegacyHIDClient`.
   case indigo
   /// The modern DTUHID path via the `dtuhidd` daemon (Xcode 27 / iOS 26+).
@@ -72,7 +72,7 @@ enum SimulatorHIDTransport: Sendable {
   /// Sends a single-finger touch at the given point (in points). `edge` tags the contact as
   /// originating at a screen edge, which is how the guest recognises a system edge gesture.
   func sendTouch(
-    direction: SimulatorHIDDirection, x: Double, y: Double, edge: FBSimulatorHIDEdge
+    direction: SimulatorHIDDirection, x: Double, y: Double, edge: SimulatorHIDEdge
   ) async throws {
     switch self {
     case let .indigo(indigo): try await indigo.sendTouch(direction: direction, x: x, y: y, edge: edge)
@@ -91,7 +91,7 @@ enum SimulatorHIDTransport: Sendable {
   }
 
   /// Sends a hardware button event.
-  func sendButton(direction: SimulatorHIDDirection, button: FBSimulatorHIDButton) async throws {
+  func sendButton(direction: SimulatorHIDDirection, button: SimulatorHIDButton) async throws {
     switch self {
     case let .indigo(indigo): try await indigo.sendButton(direction: direction, button: button)
     case let .dtuhid(dtuhid), let .mixed(dtuhid, _): try await dtuhid.sendButton(direction: direction, button: button)
@@ -107,7 +107,7 @@ enum SimulatorHIDTransport: Sendable {
   }
 
   /// Sends a tvOS Siri Remote focus action.
-  func sendRemoteButton(direction: SimulatorHIDDirection, button: FBSimulatorHIDRemoteButton) async throws {
+  func sendRemoteButton(direction: SimulatorHIDDirection, button: SimulatorHIDRemoteButton) async throws {
     switch self {
     case let .indigo(indigo): try await indigo.sendRemoteButton(direction: direction, button: button)
     case let .dtuhid(dtuhid), let .mixed(dtuhid, _):

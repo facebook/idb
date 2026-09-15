@@ -15,9 +15,9 @@ import XCTest
 final class SimulatorHIDRemoteButtonTests: XCTestCase {
 
   func testRemoteButtonIsAShortRemotePress() {
-    for button in FBSimulatorHIDRemoteButton.allCases {
+    for button in SimulatorHIDRemoteButton.allCases {
       XCTAssertEqual(
-        FBSimulatorHIDEvent.remoteButton(button),
+        SimulatorHIDEvent.remoteButton(button),
         .composite([
           .remoteButton(direction: .down, button: button),
           .remoteButton(direction: .up, button: button),
@@ -27,7 +27,7 @@ final class SimulatorHIDRemoteButtonTests: XCTestCase {
   }
 
   func testRemoteButtonKeyboardUsages() {
-    let expected: [(FBSimulatorHIDRemoteButton, UInt32)] = [
+    let expected: [(SimulatorHIDRemoteButton, UInt32)] = [
       (.up, 0x52),
       (.down, 0x51),
       (.left, 0x50),
@@ -43,7 +43,7 @@ final class SimulatorHIDRemoteButtonTests: XCTestCase {
 
   func testRemoteButtonNames() {
     XCTAssertEqual(
-      FBSimulatorHIDRemoteButton.allCases.map(\.name),
+      SimulatorHIDRemoteButton.allCases.map(\.name),
       ["up", "down", "left", "right", "select", "menu"])
   }
 }

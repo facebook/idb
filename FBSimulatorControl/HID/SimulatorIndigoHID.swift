@@ -11,7 +11,7 @@ import Darwin
 import Foundation
 internal import SimulatorApp
 
-/// Translates FBSimulatorHID events into Indigo structs.
+/// Translates SimulatorHID events into Indigo structs.
 final class SimulatorIndigoHID {
 
   // The SimulatorKit `IndigoHIDMessageFor*` functions, resolved at runtime via dlsym.
@@ -89,7 +89,7 @@ final class SimulatorIndigoHID {
   /// A button event. A button with a dedicated legacy `ButtonEventSource` goes through the sourced
   /// builder; one identified only by a HID Consumer-page usage goes through the arbitrary-HID builder,
   /// which addresses the same hardware-button service with the usage the DTUHID transport would send.
-  func button(with direction: SimulatorHIDDirection, button: FBSimulatorHIDButton) -> Data {
+  func button(with direction: SimulatorHIDDirection, button: SimulatorHIDButton) -> Data {
     switch button.identity {
     case let .indigoSource(source), let .indigoSourceAndConsumerUsage(source, _, _):
       let message = messageForButton(source, direction.rawValue, Int32(ButtonEventTargetHardware))
@@ -171,7 +171,7 @@ final class SimulatorIndigoHID {
   /// contact as originating at a screen edge, which the builder folds into `IndigoTouch.eventMask`.
   func touchScreenSize(
     _ screenSize: CGSize, screenScale: Float, direction: SimulatorHIDDirection, x: Double, y: Double,
-    edge: FBSimulatorHIDEdge = .none
+    edge: SimulatorHIDEdge = .none
   ) -> Data {
     let point = SimulatorIndigoHID.screenRatio(from: CGPoint(x: x, y: y), screenSize: screenSize, screenScale: screenScale)
     return touchMessage(point: point, direction: direction, edge: edge)
@@ -207,7 +207,7 @@ final class SimulatorIndigoHID {
 
   // MARK: - Event Generation
 
-  private func touchMessage(point: CGPoint, direction: SimulatorHIDDirection, edge: FBSimulatorHIDEdge) -> Data {
+  private func touchMessage(point: CGPoint, direction: SimulatorHIDDirection, edge: SimulatorHIDEdge) -> Data {
     var point = point
     // SimulatorKit has no single-touch builder: IndigoHIDMessageForMouseNSEvent always emits a
     // multi-touch (eventType 0x03) message. So source a valid touch-down IndigoTouch from it, then

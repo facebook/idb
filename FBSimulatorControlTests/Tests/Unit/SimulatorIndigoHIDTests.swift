@@ -123,7 +123,7 @@ final class SimulatorIndigoHIDTests: XCTestCase {
   func testEdgeTouchSetsTheSwipeEventMaskBits() throws {
     let indigo = try makeIndigo()
     let size = CGSize(width: 200, height: 400)
-    let expected: [(FBSimulatorHIDEdge, UInt32)] = [
+    let expected: [(SimulatorHIDEdge, UInt32)] = [
       (.none, 0x0000_0003),
       (.top, 0x0204_0003), // SwipeDown — a swipe from the top travels down
       (.left, 0x0804_0003), // SwipeRight
@@ -195,7 +195,7 @@ final class SimulatorIndigoHIDTests: XCTestCase {
 
   func testButtonEventSources() throws {
     let indigo = try makeIndigo()
-    let expected: [(FBSimulatorHIDButton, UInt32)] = [
+    let expected: [(SimulatorHIDButton, UInt32)] = [
       (.applePay, 0x1f4),
       (.homeButton, 0x0),
       (.lock, 0x1),
@@ -213,7 +213,7 @@ final class SimulatorIndigoHIDTests: XCTestCase {
   // silently joining the unsupported set.
   func testEveryButtonHasALegacyIndigoMessage() throws {
     let indigo = try makeIndigo()
-    let unsupported = FBSimulatorHIDButton.allCases
+    let unsupported = SimulatorHIDButton.allCases
       .filter { indigo.button(with: .down, button: $0).isEmpty }
       .map(\.name)
     XCTAssertEqual(unsupported, [])
@@ -293,7 +293,7 @@ final class SimulatorIndigoHIDTests: XCTestCase {
   // is the target that works for them.
   func testSourcedButtonsStillAddressTheHardwareButtonTarget() throws {
     let indigo = try makeIndigo()
-    for button in [FBSimulatorHIDButton.homeButton, .lock, .siri, .applePay] {
+    for button in [SimulatorHIDButton.homeButton, .lock, .siri, .applePay] {
       let data = indigo.button(with: .down, button: button)
       XCTAssertEqual(uint32(at: 0x38, in: data), 0x33, "eventTarget for \(button.name)")
     }
@@ -303,7 +303,7 @@ final class SimulatorIndigoHIDTests: XCTestCase {
   // usages. These are the values SpringBoard acts on to move the device's own level.
   func testVolumeButtonUsages() throws {
     let indigo = try makeIndigo()
-    let expected: [(FBSimulatorHIDButton, UInt32)] = [
+    let expected: [(SimulatorHIDButton, UInt32)] = [
       (.volumeUp, 0xE9), // Consumer: Volume Increment
       (.volumeDown, 0xEA), // Consumer: Volume Decrement
     ]

@@ -11,7 +11,7 @@ import CoreGraphics
 // ast-grep-ignore: swift-testing/swift/no-new-xctest
 import XCTest
 
-/// Coverage of the `FBSimulatorHIDEvent` composite factories — the value-level decomposition of a
+/// Coverage of the `SimulatorHIDEvent` composite factories — the value-level decomposition of a
 /// gesture into its ordered primitive sub-events (touch/button/keyboard/two-finger + delays). The
 /// byte-level Indigo payloads are pinned by `SimulatorIndigoHIDTests`; the tvOS `pan`/`remoteButton`
 /// factories by their own suites. This fills the gap for `tapAt`, `swipe`, `pinchAt`, and the
@@ -21,28 +21,28 @@ final class SimulatorHIDEventRenderingTests: XCTestCase {
 
   // MARK: - Helpers
 
-  private func touches(_ event: FBSimulatorHIDEvent) throws -> [(SimulatorHIDDirection, Double, Double)] {
+  private func touches(_ event: SimulatorHIDEvent) throws -> [(SimulatorHIDDirection, Double, Double)] {
     try XCTUnwrap(event.subEvents).compactMap {
       if case let .touch(direction, x, y, _) = $0 { return (direction, x, y) }
       return nil
     }
   }
 
-  private func twoFingerTouches(_ event: FBSimulatorHIDEvent) throws -> [(SimulatorHIDDirection, CGPoint, CGPoint)] {
+  private func twoFingerTouches(_ event: SimulatorHIDEvent) throws -> [(SimulatorHIDDirection, CGPoint, CGPoint)] {
     try XCTUnwrap(event.subEvents).compactMap {
       if case let .twoFingerTouch(direction, finger1, finger2) = $0 { return (direction, finger1, finger2) }
       return nil
     }
   }
 
-  private func delayCount(_ event: FBSimulatorHIDEvent) throws -> Int {
+  private func delayCount(_ event: SimulatorHIDEvent) throws -> Int {
     try XCTUnwrap(event.subEvents).filter {
       if case .delay = $0 { return true }
       return false
     }.count
   }
 
-  private func edges(_ event: FBSimulatorHIDEvent) throws -> [FBSimulatorHIDEdge] {
+  private func edges(_ event: SimulatorHIDEvent) throws -> [SimulatorHIDEdge] {
     try XCTUnwrap(event.subEvents).compactMap {
       if case let .touch(_, _, _, edge) = $0 { return edge }
       return nil
@@ -56,7 +56,7 @@ final class SimulatorHIDEventRenderingTests: XCTestCase {
   // way across, which is the direction that edge implies.
   func testEdgeSwipeGeometry() throws {
     let screen = CGSize(width: 402, height: 874)
-    let expected: [(FBSimulatorHIDEdge, CGPoint, CGPoint)] = [
+    let expected: [(SimulatorHIDEdge, CGPoint, CGPoint)] = [
       (.bottom, CGPoint(x: 201, y: 873), CGPoint(x: 201, y: 437)),
       (.top, CGPoint(x: 201, y: 1), CGPoint(x: 201, y: 437)),
       (.left, CGPoint(x: 1, y: 437), CGPoint(x: 201, y: 437)),
@@ -76,7 +76,7 @@ final class SimulatorHIDEventRenderingTests: XCTestCase {
   // Every contact carries the edge, not just the first: the guest reads the flag off whichever
   // contact it inspects, so a gesture that dropped it after touch-down reads as an ordinary drag.
   func testEdgeSwipeTagsEveryContact() throws {
-    let event = FBSimulatorHIDEvent.edgeSwipe(.bottom, screenSize: CGSize(width: 402, height: 874), duration: 0.4)
+    let event = SimulatorHIDEvent.edgeSwipe(.bottom, screenSize: CGSize(width: 402, height: 874), duration: 0.4)
     let edges = try edges(event)
     XCTAssertGreaterThan(edges.count, 2, "an edge swipe interpolates several contacts")
     XCTAssertTrue(edges.allSatisfy { $0 == .bottom }, "every contact should carry the edge, got \(edges)")
@@ -85,7 +85,7 @@ final class SimulatorHIDEventRenderingTests: XCTestCase {
   // It lifts at the end like any other swipe, so the gesture completes rather than leaving a contact
   // held down.
   func testEdgeSwipeEndsWithTouchUp() throws {
-    let event = FBSimulatorHIDEvent.edgeSwipe(.bottom, screenSize: CGSize(width: 402, height: 874), duration: 0.4)
+    let event = SimulatorHIDEvent.edgeSwipe(.bottom, screenSize: CGSize(width: 402, height: 874), duration: 0.4)
     let last = try XCTUnwrap(touches(event).last)
     XCTAssertEqual(last.0, .up)
   }
@@ -93,7 +93,7 @@ final class SimulatorHIDEventRenderingTests: XCTestCase {
   // A plain swipe is unaffected: it defaults to no edge, so the existing gesture keeps producing
   // untagged contacts.
   func testPlainSwipeCarriesNoEdge() throws {
-    let event = FBSimulatorHIDEvent.swipe(0, yStart: 0, xEnd: 0, yEnd: 100, delta: 10, duration: 0.3)
+    let event = SimulatorHIDEvent.swipe(0, yStart: 0, xEnd: 0, yEnd: 100, delta: 10, duration: 0.3)
     XCTAssertTrue(try edges(event).allSatisfy { $0 == .none })
   }
 
@@ -101,7 +101,7 @@ final class SimulatorHIDEventRenderingTests: XCTestCase {
 
   func testTapLowersToDownUp() {
     XCTAssertEqual(
-      FBSimulatorHIDEvent.tapAt(x: 12, y: 34),
+      SimulatorHIDEvent.tapAt(x: 12, y: 34),
       .composite([
         .touch(direction: .down, x: 12, y: 34),
         .touch(direction: .up, x: 12, y: 34),
@@ -110,7 +110,7 @@ final class SimulatorHIDEventRenderingTests: XCTestCase {
 
   func testTapWithDurationInsertsDelayBetweenDownAndUp() {
     XCTAssertEqual(
-      FBSimulatorHIDEvent.tapAt(x: 12, y: 34, duration: 0.5),
+      SimulatorHIDEvent.tapAt(x: 12, y: 34, duration: 0.5),
       .composite([
         .touch(direction: .down, x: 12, y: 34),
         .delay(0.5),
@@ -122,7 +122,7 @@ final class SimulatorHIDEventRenderingTests: XCTestCase {
 
   func testShortButtonPressLowersToDownUp() {
     XCTAssertEqual(
-      FBSimulatorHIDEvent.shortButtonPress(.homeButton),
+      SimulatorHIDEvent.shortButtonPress(.homeButton),
       .composite([
         .button(direction: .down, button: .homeButton),
         .button(direction: .up, button: .homeButton),
@@ -131,7 +131,7 @@ final class SimulatorHIDEventRenderingTests: XCTestCase {
 
   func testShortKeyPressLowersToDownUp() {
     XCTAssertEqual(
-      FBSimulatorHIDEvent.shortKeyPress(0x04),
+      SimulatorHIDEvent.shortKeyPress(0x04),
       .composite([
         .keyboard(direction: .down, keyCode: 0x04),
         .keyboard(direction: .up, keyCode: 0x04),
@@ -140,7 +140,7 @@ final class SimulatorHIDEventRenderingTests: XCTestCase {
 
   func testShortKeyPressSequencePressesEachKeyInOrder() {
     XCTAssertEqual(
-      FBSimulatorHIDEvent.shortKeyPressSequence([0x04, 0x05, 0x06]),
+      SimulatorHIDEvent.shortKeyPressSequence([0x04, 0x05, 0x06]),
       .composite([
         .keyboard(direction: .down, keyCode: 0x04),
         .keyboard(direction: .up, keyCode: 0x04),
@@ -152,7 +152,7 @@ final class SimulatorHIDEventRenderingTests: XCTestCase {
   }
 
   func testShortKeyPressSequenceEmptyIsEmptyComposite() {
-    XCTAssertEqual(FBSimulatorHIDEvent.shortKeyPressSequence([]), .composite([]))
+    XCTAssertEqual(SimulatorHIDEvent.shortKeyPressSequence([]), .composite([]))
   }
 
   // MARK: - Swipe
@@ -161,7 +161,7 @@ final class SimulatorHIDEventRenderingTests: XCTestCase {
   // interpolated touch-downs, a duplicated final touch-down (the anti-inertial-scroll guard), and a
   // terminating touch-up; a delay follows every touch-down except the final up.
   func testSwipeInterpolatesDownsThenLiftsUp() throws {
-    let swipe = FBSimulatorHIDEvent.swipe(100, yStart: 100, xEnd: 100, yEnd: 200, delta: 10, duration: 0.3)
+    let swipe = SimulatorHIDEvent.swipe(100, yStart: 100, xEnd: 100, yEnd: 200, delta: 10, duration: 0.3)
     let touches = try touches(swipe)
 
     // (steps + 1) interpolated downs + 1 duplicated final down + 1 up.
@@ -191,14 +191,14 @@ final class SimulatorHIDEventRenderingTests: XCTestCase {
 
   func testSwipeNonPositiveDeltaUsesDefault() throws {
     // delta <= 0 falls back to defaultSwipeDelta (10), so distance 100 still yields 10 steps.
-    let withZero = FBSimulatorHIDEvent.swipe(0, yStart: 0, xEnd: 0, yEnd: 100, delta: 0, duration: 0.3)
-    let withDefault = FBSimulatorHIDEvent.swipe(0, yStart: 0, xEnd: 0, yEnd: 100, delta: FBSimulatorHIDEvent.defaultSwipeDelta, duration: 0.3)
+    let withZero = SimulatorHIDEvent.swipe(0, yStart: 0, xEnd: 0, yEnd: 100, delta: 0, duration: 0.3)
+    let withDefault = SimulatorHIDEvent.swipe(0, yStart: 0, xEnd: 0, yEnd: 100, delta: SimulatorHIDEvent.defaultSwipeDelta, duration: 0.3)
     XCTAssertEqual(try touches(withZero).count, try touches(withDefault).count)
   }
 
   func testSwipeClampsStepsToAtLeastOne() throws {
     // A sub-delta distance must not divide to zero steps; it degrades to a single interpolated down.
-    let swipe = FBSimulatorHIDEvent.swipe(0, yStart: 0, xEnd: 1, yEnd: 0, delta: 10, duration: 0.1)
+    let swipe = SimulatorHIDEvent.swipe(0, yStart: 0, xEnd: 1, yEnd: 0, delta: 10, duration: 0.1)
     // (1 + 1) interpolated downs + 1 duplicate final down + 1 up.
     XCTAssertEqual(try touches(swipe).filter { $0.0 == .down }.count, 3)
     XCTAssertEqual(try touches(swipe).filter { $0.0 == .up }.count, 1)
@@ -211,7 +211,7 @@ final class SimulatorHIDEventRenderingTests: XCTestCase {
   // sequence of two-finger downs (initial + steps + duplicated final) terminated by a two-finger up.
   func testPinchOutIsSymmetricAndGrowsRadius() throws {
     let center = CGPoint(x: 200, y: 200)
-    let pinch = FBSimulatorHIDEvent.pinchAt(x: center.x, y: center.y, scale: 2, duration: 0.3, radius: 50)
+    let pinch = SimulatorHIDEvent.pinchAt(x: center.x, y: center.y, scale: 2, duration: 0.3, radius: 50)
     let events = try twoFingerTouches(pinch)
 
     // initial down + 5 interpolated downs + 1 duplicated final down + 1 up.
@@ -235,7 +235,7 @@ final class SimulatorHIDEventRenderingTests: XCTestCase {
   }
 
   func testPinchInShrinksRadius() throws {
-    let pinch = FBSimulatorHIDEvent.pinchAt(x: 200, y: 200, scale: 0.5, duration: 0.3, radius: 100)
+    let pinch = SimulatorHIDEvent.pinchAt(x: 200, y: 200, scale: 0.5, duration: 0.3, radius: 100)
     let events = try twoFingerTouches(pinch)
     let startRadius = events.first!.2.x - 200
     let endRadius = events.last!.2.x - 200
@@ -246,7 +246,7 @@ final class SimulatorHIDEventRenderingTests: XCTestCase {
   func testPinchClampsStepsToAtLeastTwo() throws {
     // scale 1 -> zero finger travel -> steps would divide to 0; the factory clamps to 2 interpolated
     // moves so the gesture is still a well-formed multi-sample pinch.
-    let pinch = FBSimulatorHIDEvent.pinchAt(x: 200, y: 200, scale: 1, duration: 0.3, radius: 50)
+    let pinch = SimulatorHIDEvent.pinchAt(x: 200, y: 200, scale: 1, duration: 0.3, radius: 50)
     // initial down + 2 interpolated downs + 1 duplicated final down + 1 up.
     XCTAssertEqual(try twoFingerTouches(pinch).count, 5)
   }
@@ -264,12 +264,12 @@ final class SimulatorHIDEventRenderingTests: XCTestCase {
   func testTouchDescriptionRendersDirectionAndCoordinates() {
     withHIDDetailLogging {
       XCTAssertEqual(
-        FBSimulatorHIDEvent.touch(direction: .down, x: 10.5, y: 20.0).description,
+        SimulatorHIDEvent.touch(direction: .down, x: 10.5, y: 20.0).description,
         "Touch down at (10.5,20.0)")
       // Negative coordinates arrive unvalidated from the wire (off-screen
       // swipe endpoints); rendering them must not trap.
       XCTAssertEqual(
-        FBSimulatorHIDEvent.touch(direction: .up, x: -5.0, y: -0.5).description,
+        SimulatorHIDEvent.touch(direction: .up, x: -5.0, y: -0.5).description,
         "Touch up at (-5.0,-0.5)")
     }
   }
@@ -277,7 +277,7 @@ final class SimulatorHIDEventRenderingTests: XCTestCase {
   func testTwoFingerTouchDescriptionRendersBothFingersVerbatim() {
     withHIDDetailLogging {
       XCTAssertEqual(
-        FBSimulatorHIDEvent.twoFingerTouch(
+        SimulatorHIDEvent.twoFingerTouch(
           direction: .up,
           finger1: CGPoint(x: 10.5, y: 20.0),
           finger2: CGPoint(x: -30.0, y: 40.0)
@@ -289,7 +289,7 @@ final class SimulatorHIDEventRenderingTests: XCTestCase {
   func testKeyboardDescriptionRendersKeyCodeAndDirection() {
     withHIDDetailLogging {
       XCTAssertEqual(
-        FBSimulatorHIDEvent.keyboard(direction: .down, keyCode: 40).description,
+        SimulatorHIDEvent.keyboard(direction: .down, keyCode: 40).description,
         "Keyboard Code=40 down")
     }
   }
@@ -297,10 +297,10 @@ final class SimulatorHIDEventRenderingTests: XCTestCase {
   func testDescriptionsAreHiddenWithoutDetailLogging() {
     unsetenv("FBSIMULATORCONTROL_LOG_HID_DETAILS")
     XCTAssertEqual(
-      FBSimulatorHIDEvent.touch(direction: .down, x: 10.0, y: 20.0).description,
+      SimulatorHIDEvent.touch(direction: .down, x: 10.0, y: 20.0).description,
       "Touch <hidden>")
     XCTAssertEqual(
-      FBSimulatorHIDEvent.keyboard(direction: .down, keyCode: 40).description,
+      SimulatorHIDEvent.keyboard(direction: .down, keyCode: 40).description,
       "Key <hidden>")
   }
 }

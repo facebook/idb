@@ -27,7 +27,7 @@ import Foundation
 
  Indigo-family sends are serialized by the transport, so the type is `@unchecked Sendable`.
  */
-public final class FBSimulatorHID: CustomStringConvertible, @unchecked Sendable {
+public final class SimulatorHID: CustomStringConvertible, @unchecked Sendable {
 
   // MARK: - Properties
 
@@ -49,7 +49,7 @@ public final class FBSimulatorHID: CustomStringConvertible, @unchecked Sendable 
   /// `transport` forces a HID path; `nil` negotiates one (see `transport(for:requested:)`). Throws if the
   /// transport cannot be established (registration may need to occur prior to booting).
   public convenience init(
-    for simulator: FBSimulator, transport transportType: FBSimulatorHIDTransportType? = nil
+    for simulator: FBSimulator, transport transportType: SimulatorHIDTransportType? = nil
   ) async throws {
     self.init(
       transport: try await Self.transport(for: simulator, requested: transportType),
@@ -63,7 +63,7 @@ public final class FBSimulatorHID: CustomStringConvertible, @unchecked Sendable 
   /// in an established transport is a real error. Reachability cannot be known up front: `dtuhidd` is
   /// demand-launched, so the service lookup that builds the transport is the only probe.
   private static func transport(
-    for simulator: FBSimulator, requested: FBSimulatorHIDTransportType?
+    for simulator: FBSimulator, requested: SimulatorHIDTransportType?
   ) async throws -> SimulatorHIDTransport {
     if let requested {
       return try await transport(requested, for: simulator)
@@ -82,7 +82,7 @@ public final class FBSimulatorHID: CustomStringConvertible, @unchecked Sendable 
   }
 
   private static func transport(
-    _ type: FBSimulatorHIDTransportType, for simulator: FBSimulator
+    _ type: SimulatorHIDTransportType, for simulator: FBSimulator
   ) async throws -> SimulatorHIDTransport {
     switch type {
     case .indigo:
@@ -138,7 +138,7 @@ public final class FBSimulatorHID: CustomStringConvertible, @unchecked Sendable 
   /// Sends a single-finger touch at the given point (in points), optionally tagged as originating at
   /// a screen edge.
   func sendTouch(
-    direction: SimulatorHIDDirection, x: Double, y: Double, edge: FBSimulatorHIDEdge
+    direction: SimulatorHIDDirection, x: Double, y: Double, edge: SimulatorHIDEdge
   ) async throws {
     try await transport.sendTouch(direction: direction, x: x, y: y, edge: edge)
   }
@@ -149,12 +149,12 @@ public final class FBSimulatorHID: CustomStringConvertible, @unchecked Sendable 
   }
 
   /// Sends a hardware button event.
-  func sendButton(direction: SimulatorHIDDirection, button: FBSimulatorHIDButton) async throws {
+  func sendButton(direction: SimulatorHIDDirection, button: SimulatorHIDButton) async throws {
     try await transport.sendButton(direction: direction, button: button)
   }
 
   /// Sends a tvOS Siri Remote focus action.
-  func sendRemoteButton(direction: SimulatorHIDDirection, button: FBSimulatorHIDRemoteButton) async throws {
+  func sendRemoteButton(direction: SimulatorHIDDirection, button: SimulatorHIDRemoteButton) async throws {
     try await transport.sendRemoteButton(direction: direction, button: button)
   }
 
@@ -172,7 +172,7 @@ public final class FBSimulatorHID: CustomStringConvertible, @unchecked Sendable 
 
   /// Indigo only: the tvOS trackpad rides a dedicated Indigo service that `dtuhidd` does not expose (its
   /// digitizer targets are displays and its scroll targets rotary devices).
-  func sendTrackpad(point: FBSimulatorTrackpadPoint, phase: SimulatorTrackpadPhase) async throws {
+  func sendTrackpad(point: SimulatorTrackpadPoint, phase: SimulatorTrackpadPhase) async throws {
     guard let indigo = transport.indigo else {
       throw SimulatorHIDError.notImplementedOnDTUHIDTransport(
         operation: "trackpad pan — the tvOS Siri Remote trackpad is not exposed by dtuhidd")
@@ -183,7 +183,7 @@ public final class FBSimulatorHID: CustomStringConvertible, @unchecked Sendable 
   // MARK: - Purple / GSEvents
 
   /// Rotates the device. Delivered as a GSEvent over Purple, not through the HID transport.
-  func sendOrientation(_ orientation: FBSimulatorHIDDeviceOrientation) async throws {
+  func sendOrientation(_ orientation: SimulatorHIDDeviceOrientation) async throws {
     try await purple.sendOrientation(orientation)
   }
 
@@ -208,7 +208,7 @@ public final class FBSimulatorHID: CustomStringConvertible, @unchecked Sendable 
 
   /// Sends a (possibly composite) event, logging each sub-event, then drains once if any sub-event reached
   /// the HID transport — so a tap or typed string settles once, not per primitive.
-  public func send(event: FBSimulatorHIDEvent, logger: FBControlCoreLogger) async throws {
+  public func send(event: SimulatorHIDEvent, logger: FBControlCoreLogger) async throws {
     var wroteToTransport = false
     for subEvent in event.subEvents ?? [event] {
       switch subEvent {
@@ -228,7 +228,7 @@ public final class FBSimulatorHID: CustomStringConvertible, @unchecked Sendable 
   }
 
   /// Routes one event to its transport; returns whether it went to the HID transport (which decides the drain).
-  func deliver(_ event: FBSimulatorHIDEvent) async throws -> Bool {
+  func deliver(_ event: SimulatorHIDEvent) async throws -> Bool {
     switch event {
     case let .touch(direction, x, y, edge):
       try await transport.sendTouch(direction: direction, x: x, y: y, edge: edge)

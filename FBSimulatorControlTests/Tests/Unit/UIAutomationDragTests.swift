@@ -21,7 +21,7 @@ final class UIAutomationDragTests: XCTestCase {
     XCTAssertEqual(options.pressDuration, 0.5)
     XCTAssertEqual(options.duration, 0.5)
     XCTAssertEqual(options.releaseDuration, 0.1)
-    XCTAssertEqual(options.delta, FBSimulatorHIDEvent.defaultSwipeDelta)
+    XCTAssertEqual(options.delta, SimulatorHIDEvent.defaultSwipeDelta)
   }
 
   func testTheTwoArgumentDragSendsTheDefaults() async throws {

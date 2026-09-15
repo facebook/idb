@@ -48,7 +48,7 @@ final class SimulatorPurpleHIDTransport: @unchecked Sendable {
   // MARK: - Sends
 
   /// Rotates the device.
-  func sendOrientation(_ orientation: FBSimulatorHIDDeviceOrientation) async throws {
+  func sendOrientation(_ orientation: SimulatorHIDDeviceOrientation) async throws {
     try await send(purple.orientationEvent(orientation))
   }
 
