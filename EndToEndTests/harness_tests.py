@@ -88,7 +88,7 @@ def companion(returncode: int | None, log_path: Path | None = None) -> Companion
     return made
 
 
-class TestCaseStub:
+class HarnessCaseStub:
     def __init__(self, companion_returncode: int | None = None) -> None:
         self.companion = companion(companion_returncode)
         self._result = unittest.TestResult()
@@ -103,10 +103,10 @@ class TestCaseStub:
 
 
 def report_for(stderr: str, companion_returncode: int | None = None) -> str:
-    return reported_by(TestCaseStub(companion_returncode), stderr)
+    return reported_by(HarnessCaseStub(companion_returncode), stderr)
 
 
-def reported_by(case: TestCaseStub, stderr: str) -> str:
+def reported_by(case: HarnessCaseStub, stderr: str) -> str:
     try:
         IdbEndToEndTestCase.fail_or_skip_for(
             case, "describe", Completed(1, b"", stderr.encode())
@@ -202,7 +202,7 @@ class FailureReportingTests(unittest.TestCase):
     # Test both strict settings independently of the runner's environment.
     @mock.patch.dict(os.environ, {STRICT_ENV: "0"})
     def test_skips_when_the_host_cannot_spawn_in_the_guest(self) -> None:
-        case = TestCaseStub()
+        case = HarnessCaseStub()
 
         with self.assertRaises(Skipped) as raised:
             IdbEndToEndTestCase.fail_or_skip_for(
@@ -213,7 +213,7 @@ class FailureReportingTests(unittest.TestCase):
 
     @mock.patch.dict(os.environ, {STRICT_ENV: "1"})
     def test_strict_mode_fails_when_host_service_is_unavailable(self) -> None:
-        case = TestCaseStub()
+        case = HarnessCaseStub()
 
         with self.assertRaises(Failed) as raised:
             IdbEndToEndTestCase.fail_or_skip_for(
@@ -240,14 +240,14 @@ class CompanionLifecycleTests(unittest.TestCase):
         self.assertIn("last thing the companion served", str(died))
 
     def test_companion_exit_stops_the_suite(self) -> None:
-        case = TestCaseStub(companion_returncode=1)
+        case = HarnessCaseStub(companion_returncode=1)
 
         reported_by(case, "boom")
 
         self.assertTrue(case._result.shouldStop)
 
     def test_command_failure_does_not_stop_the_suite(self) -> None:
-        case = TestCaseStub()
+        case = HarnessCaseStub()
 
         reported_by(case, "boom")
 
@@ -256,7 +256,7 @@ class CompanionLifecycleTests(unittest.TestCase):
     def test_connection_failure_with_live_companion_does_not_stop_the_suite(
         self,
     ) -> None:
-        case = TestCaseStub()
+        case = HarnessCaseStub()
 
         reported_by(case, CONNECTION_REFUSED)
 
@@ -271,16 +271,16 @@ class DeadCompanionStopsTheSuiteTests(unittest.TestCase):
             self.companion = companion(1)
             self.check_companion()
 
-        async def test_first(self) -> None:
+        async def case_first(self) -> None:
             self.ran.append("first")
 
-        async def test_second(self) -> None:
+        async def case_second(self) -> None:
             self.ran.append("second")
 
     def test_companion_exit_fails_setup_and_stops_remaining_tests(self) -> None:
         self.Suite.ran = []
         suite = unittest.TestSuite(
-            [self.Suite("test_first"), self.Suite("test_second")]
+            [self.Suite("case_first"), self.Suite("case_second")]
         )
         result = unittest.TestResult()
 
@@ -577,16 +577,16 @@ class RecordingResultTests(unittest.TestCase):
         async def asyncSetUp(self) -> None:
             self.recording.start_test(self.id())
 
-        async def test_pass(self) -> None:
+        async def case_pass(self) -> None:
             pass
 
-        async def test_fail(self) -> None:
+        async def case_fail(self) -> None:
             self.fail("intentional failure")
 
-        async def test_cleanup_error(self) -> None:
+        async def case_cleanup_error(self) -> None:
             self.addCleanup(self.fail, "cleanup failed")
 
-        async def test_skip(self) -> None:
+        async def case_skip(self) -> None:
             self.skipTest("intentional skip")
 
     def run_case(self, method: str) -> mock.Mock:
@@ -600,18 +600,18 @@ class RecordingResultTests(unittest.TestCase):
         return recording
 
     def test_records_success(self) -> None:
-        self.run_case("test_pass").finish_test.assert_called_once_with("passed")
+        self.run_case("case_pass").finish_test.assert_called_once_with("passed")
 
     def test_records_failure(self) -> None:
-        self.run_case("test_fail").finish_test.assert_called_once_with("failed")
+        self.run_case("case_fail").finish_test.assert_called_once_with("failed")
 
     def test_includes_cleanup_failures(self) -> None:
-        self.run_case("test_cleanup_error").finish_test.assert_called_once_with(
+        self.run_case("case_cleanup_error").finish_test.assert_called_once_with(
             "failed"
         )
 
     def test_records_skip(self) -> None:
-        self.run_case("test_skip").finish_test.assert_called_once_with("skipped")
+        self.run_case("case_skip").finish_test.assert_called_once_with("skipped")
 
 
 class UnavailableRecordingTests(unittest.IsolatedAsyncioTestCase):
