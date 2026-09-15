@@ -193,6 +193,60 @@ final class SimulatorVideoFileWriterTests: XCTestCase {
     }
   }
 
+  func testWritingAfterLongFrameGaps() async throws {
+    for chaptersEnabled in [false, true] {
+      let path = (NSTemporaryDirectory() as NSString).appendingPathComponent("video-gaps-\(UUID().uuidString).mov")
+      defer { try? FileManager.default.removeItem(atPath: path) }
+      let logger = CapturingLogger()
+      let writer = SimulatorVideoFileWriter(filePath: path, fileType: .mov, chaptersEnabled: chaptersEnabled, logger: logger)
+      writer.writeTimedMetadata("Long frame gaps", logger: logger)
+      var previous = 0.0
+      let timestamps = [0.0, 0.1, 0.2, 5.2, 5.3, 5.4, 30.4, 30.5, 30.6] + (1...200).map { 30.6 + Double($0) / 1000 }
+      for (index, timestamp) in timestamps.enumerated() {
+        var timing = CMSampleTimingInfo(
+          duration: index == 0 ? .invalid : CMTimeMakeWithSeconds(timestamp - previous, preferredTimescale: 1_000_000_000),
+          presentationTimeStamp: CMTimeMakeWithSeconds(timestamp, preferredTimescale: 1_000_000_000),
+          decodeTimeStamp: .invalid)
+        var sample: CMSampleBuffer?
+        XCTAssertEqual(CMSampleBufferCreateCopyWithNewTiming(allocator: nil, sampleBuffer: createH264SampleBuffer(), sampleTimingEntryCount: 1, sampleTimingArray: &timing, sampleBufferOut: &sample), noErr)
+        let encoded = try XCTUnwrap(sample)
+        let deadline = ContinuousClock.now + .seconds(2)
+        var appended = writer.consume(encoded, logger: logger)
+        while !appended && ContinuousClock.now < deadline {
+          try await Task.sleep(for: .milliseconds(1))
+          appended = writer.consume(encoded, logger: logger)
+        }
+        guard appended else {
+          XCTFail("chapters=\(chaptersEnabled), frame=\(index), logs=\(logger.messages.suffix(5))")
+          _ = try? await writer.finish()
+          return
+        }
+        previous = timestamp
+      }
+      try await writer.finish()
+      let asset = AVURLAsset(url: URL(fileURLWithPath: path))
+      let duration = try await asset.load(.duration)
+      XCTAssertGreaterThan(duration.seconds, 30.7)
+      let videoTracks = try await asset.loadTracks(withMediaType: .video)
+      let reader = try AVAssetReader(asset: asset)
+      let output = AVAssetReaderTrackOutput(track: try XCTUnwrap(videoTracks.first), outputSettings: nil)
+      reader.add(output)
+      XCTAssertTrue(reader.startReading())
+      var frames = 0
+      while let sample = output.copyNextSampleBuffer() {
+        if CMSampleBufferGetNumSamples(sample) > 0 { frames += 1 }
+      }
+      XCTAssertEqual(reader.status, .completed)
+      XCTAssertEqual(frames, timestamps.count)
+      let chapters = try await asset.loadTracks(withMediaType: .text)
+      if chaptersEnabled {
+        XCTAssertEqual(try Self.readChapterTitles(track: XCTUnwrap(chapters.first), asset: asset), ["Long frame gaps"])
+      } else {
+        XCTAssertTrue(chapters.isEmpty)
+      }
+    }
+  }
+
   // MARK: - Helpers
 
   /// A copy of the shared synthetic H264 sample with its presentation timestamp set to `frameIndex`

@@ -17,6 +17,7 @@ private enum SimulatorVideoFileWriterError: Error {
   case firstSampleBufferMissingFormatDescription
   case cannotAddVideoInput
   case cannotWriteChapter(String)
+  case cannotWriteVideo(String)
   case assetWriterFailedToStart(errorDescription: String)
 }
 
@@ -29,6 +30,8 @@ extension SimulatorVideoFileWriterError: LocalizedError {
       return "First sample buffer has no format description"
     case .cannotWriteChapter(let reason):
       return "Cannot write chapter: \(reason)"
+    case .cannotWriteVideo(let reason):
+      return "Cannot write video: \(reason)"
     case .cannotAddVideoInput:
       return "AVAssetWriter cannot add the video input"
     case .assetWriterFailedToStart(let errorDescription):
@@ -49,11 +52,9 @@ extension SimulatorVideoFileWriterError: LocalizedError {
 /// the first sample's presentation timestamp; `finish`, called once after the encoder has flushed,
 /// finalizes the `moov`.
 ///
-/// When `chaptersEnabled` is set, the writer also adds a QuickTime chapter track — a `.text` track
-/// associated with the video track via `chapterList` — and conforms to `TimedMetadataConsumer` so
-/// `SimulatorVideoStream.writeTimedMetadata` markers become player-visible chapters. Markers are
-/// buffered as they arrive (timestamped at the current video position) and written as text samples in
-/// `finish`, once every chapter's end boundary (the next chapter, or the end of video) is known.
+/// Chapter markers are buffered at the current video position. At finish, a second passthrough
+/// writer copies the video and adds the chapter track. An empty chapter input on the live writer
+/// can block video writes while waiting for chapter samples, particularly across long frame gaps.
 ///
 /// @unchecked Sendable: `consume` runs inside the VideoToolbox output handler, whose invocations
 /// alternate one frame at a time with the stream actor's encode submissions (the session is
@@ -145,13 +146,12 @@ final class SimulatorVideoFileWriter: EncodedSampleConsumer, TimedMetadataConsum
       return
     }
     input.markAsFinished()
-    if let chapterInput {
-      try await writeBufferedChapters(into: chapterInput)
-      chapterInput.markAsFinished()
-    }
     await assetWriter.finishWriting()
     if assetWriter.status == .failed {
       throw SimulatorVideoFileWriterError.assetWriterFailedToFinish(errorDescription: assetWriter.error.map { String(describing: $0) } ?? "unknown error")
+    }
+    if chaptersEnabled && chapterLock.withLock({ !pendingChapters.isEmpty }) {
+      try await addBufferedChapters()
     }
   }
 
@@ -184,12 +184,6 @@ final class SimulatorVideoFileWriter: EncodedSampleConsumer, TimedMetadataConsum
     }
     assetWriter.add(input)
 
-    // A chapter track must be created and associated before `startWriting`. If the text format
-    // description cannot be built, degrade to a chapterless recording rather than failing.
-    if chaptersEnabled {
-      addChapterTrack(to: assetWriter, associatedWith: input)
-    }
-
     guard assetWriter.startWriting() else {
       throw SimulatorVideoFileWriterError.assetWriterFailedToStart(errorDescription: assetWriter.error.map { String(describing: $0) } ?? "unknown error")
     }
@@ -197,6 +191,77 @@ final class SimulatorVideoFileWriter: EncodedSampleConsumer, TimedMetadataConsum
     self.assetWriter = assetWriter
     self.input = input
     return input
+  }
+
+  private func addBufferedChapters() async throws {
+    let temporaryURL = outputURL.appendingPathExtension("chapters-\(UUID().uuidString)")
+    defer { try? FileManager.default.removeItem(at: temporaryURL) }
+    let asset = AVURLAsset(url: outputURL)
+    guard let track = try await asset.loadTracks(withMediaType: .video).first,
+      let format = try await track.load(.formatDescriptions).first
+    else { throw SimulatorVideoFileWriterError.cannotWriteVideo("recording has no video track") }
+    let reader = try AVAssetReader(asset: asset)
+    let output = AVAssetReaderTrackOutput(track: track, outputSettings: nil)
+    reader.add(output)
+    let writer = try AVAssetWriter(outputURL: temporaryURL, fileType: fileType)
+    let videoInput = AVAssetWriterInput(mediaType: .video, outputSettings: nil, sourceFormatHint: format)
+    guard writer.canAdd(videoInput) else { throw SimulatorVideoFileWriterError.cannotAddVideoInput }
+    writer.add(videoInput)
+    addChapterTrack(to: writer, associatedWith: videoInput)
+    guard let chapterInput else { return }
+    guard writer.startWriting(), reader.startReading() else {
+      throw SimulatorVideoFileWriterError.cannotWriteVideo("cannot start chapter mux: \(String(describing: writer.error ?? reader.error))")
+    }
+    defer {
+      if reader.status == .reading { reader.cancelReading() }
+      if writer.status == .writing { writer.cancelWriting() }
+    }
+    writer.startSession(atSourceTime: .zero)
+    var chapters = makeBufferedChapterSamples().makeIterator()
+    var chapter = chapters.next()
+    if chapter == nil { chapterInput.markAsFinished() }
+    var videoFinished = false
+    var progressDeadline = ContinuousClock.now + .seconds(10)
+    // Feed whichever input is ready: waiting on one track alone can prevent the other from draining.
+    while !videoFinished || chapter != nil {
+      try Task.checkCancellation()
+      var madeProgress = false
+      if !videoFinished && videoInput.isReadyForMoreMediaData {
+        if let sample = output.copyNextSampleBuffer() {
+          if CMSampleBufferGetNumSamples(sample) > 0, !videoInput.append(sample) {
+            throw SimulatorVideoFileWriterError.cannotWriteVideo(String(describing: writer.error))
+          }
+        } else {
+          guard reader.status == .completed else {
+            throw SimulatorVideoFileWriterError.cannotWriteVideo(String(describing: reader.error))
+          }
+          videoInput.markAsFinished()
+          videoFinished = true
+        }
+        madeProgress = true
+      }
+      if let sample = chapter, chapterInput.isReadyForMoreMediaData {
+        guard chapterInput.append(sample) else {
+          throw SimulatorVideoFileWriterError.cannotWriteChapter(String(describing: writer.error))
+        }
+        chapter = chapters.next()
+        if chapter == nil { chapterInput.markAsFinished() }
+        madeProgress = true
+      }
+      if madeProgress {
+        progressDeadline = ContinuousClock.now + .seconds(10)
+      } else {
+        guard writer.status == .writing, ContinuousClock.now < progressDeadline else {
+          throw SimulatorVideoFileWriterError.cannotWriteVideo("chapter mux stopped making progress: \(String(describing: writer.error))")
+        }
+        try await Task.sleep(for: .milliseconds(1))
+      }
+    }
+    await writer.finishWriting()
+    guard writer.status == .completed else {
+      throw SimulatorVideoFileWriterError.assetWriterFailedToFinish(errorDescription: String(describing: writer.error))
+    }
+    _ = try FileManager.default.replaceItemAt(outputURL, withItemAt: temporaryURL)
   }
 
   private func addChapterTrack(to assetWriter: AVAssetWriter, associatedWith videoInput: AVAssetWriterInput) {
@@ -221,19 +286,20 @@ final class SimulatorVideoFileWriter: EncodedSampleConsumer, TimedMetadataConsum
     self.chapterFormatDescription = formatDescription
   }
 
-  /// Drain the buffered markers into the chapter input as text samples with contiguous time ranges:
+  /// Convert buffered markers to text samples with contiguous time ranges:
   /// each chapter runs until the next one, and the last until the end of the recorded video.
-  private func writeBufferedChapters(into chapterInput: AVAssetWriterInput) async throws {
+  private func makeBufferedChapterSamples() -> [CMSampleBuffer] {
     let (chapters, sessionStart, videoEnd) = chapterLock.withLock {
       (pendingChapters, firstPresentationTime, lastPresentationTime)
     }
 
     guard let formatDescription = chapterFormatDescription, !chapters.isEmpty else {
-      return
+      return []
     }
     var resolved: [(time: CMTime, text: String)] = []
     for chapter in chapters {
-      let time = CMTimeConvertScale(chapter.time.isValid ? chapter.time : sessionStart, timescale: Self.chapterTimeScale, method: .roundHalfAwayFromZero)
+      let relativeTime = chapter.time.isValid ? CMTimeSubtract(chapter.time, sessionStart) : .zero
+      let time = CMTimeConvertScale(relativeTime, timescale: Self.chapterTimeScale, method: .roundHalfAwayFromZero)
       // QuickTime text samples cannot overlap. Updates within one video frame keep the latest title.
       if resolved.last?.time == time {
         resolved[resolved.count - 1] = (time, chapter.text)
@@ -242,8 +308,8 @@ final class SimulatorVideoFileWriter: EncodedSampleConsumer, TimedMetadataConsum
       }
     }
     let minDuration = CMTimeMake(value: 1, timescale: Self.chapterTimeScale)
-    let end = CMTimeConvertScale(videoEnd, timescale: Self.chapterTimeScale, method: .roundHalfAwayFromZero)
-    let deadline = ContinuousClock.now + .seconds(10)
+    let end = CMTimeConvertScale(CMTimeSubtract(videoEnd, sessionStart), timescale: Self.chapterTimeScale, method: .roundHalfAwayFromZero)
+    var samples: [CMSampleBuffer] = []
     for (index, chapter) in resolved.enumerated() {
       let start = chapter.time
       let rawEnd = index + 1 < resolved.count ? resolved[index + 1].time : end
@@ -255,20 +321,9 @@ final class SimulatorVideoFileWriter: EncodedSampleConsumer, TimedMetadataConsum
         logger.log("Failed to build chapter sample for '\(chapter.text)', skipping")
         continue
       }
-      // Buffered chapters must wait for capacity; dropping them would lose chapter titles.
-      while !chapterInput.isReadyForMoreMediaData {
-        guard assetWriter?.status == .writing else {
-          throw SimulatorVideoFileWriterError.cannotWriteChapter(assetWriter?.error.map { String(describing: $0) } ?? "writer stopped")
-        }
-        guard ContinuousClock.now < deadline else {
-          throw SimulatorVideoFileWriterError.cannotWriteChapter("chapter input did not drain within 10 seconds")
-        }
-        try await Task.sleep(for: .milliseconds(1))
-      }
-      guard chapterInput.append(sample) else {
-        throw SimulatorVideoFileWriterError.cannotWriteChapter(assetWriter?.error.map { String(describing: $0) } ?? "append failed")
-      }
+      samples.append(sample)
     }
+    return samples
   }
 
   // MARK: - QuickTime Text Track Construction
