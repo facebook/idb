@@ -116,6 +116,7 @@ BUILT_IN_GROUP_CHILDREN: dict[str, tuple[str, ...]] = {
         "describe-all",
         "describe-point",
         "describe",
+        "wait",
         "scroll",
         "set-value",
         "drag-and-drop",
@@ -135,8 +136,8 @@ BUILT_IN_GROUP_CHILDREN: dict[str, tuple[str, ...]] = {
     "xctrace": ("record",),
 }
 
-BUILT_IN_TERMINAL_COUNT = 84
-BUILT_IN_NODE_COUNT = 99
+BUILT_IN_TERMINAL_COUNT = 85
+BUILT_IN_NODE_COUNT = 100
 
 BUILT_IN_ALIAS_PATHS: tuple[tuple[str, ...], ...] = (
     ("file", "mv"),

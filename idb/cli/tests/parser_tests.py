@@ -1137,6 +1137,49 @@ class TestParser(TestCase):
             options=AccessibilityInfoOptions(nested=False),
         )
 
+    async def test_wait_for_marker(self) -> None:
+        self.client_mock.accessibility_wait = AsyncMock(return_value=True)
+        exit_code = await cli_main(
+            cmd_input=[
+                "ui",
+                "wait",
+                "General",
+                "--match-key",
+                "AXUniqueId",
+                "--timeout",
+                "30",
+                "--poll-interval",
+                "0.25",
+                "--api",
+                "ax",
+            ]
+        )
+        self.assertEqual(exit_code, 0)
+        self.client_mock.accessibility_wait.assert_called_once_with(
+            target=AccessibilityMarker(
+                "General", AccessibilitySearchableKey.UNIQUE_ID, 10
+            ),
+            timeout=30.0,
+            poll_interval=0.25,
+            backend=AccessibilityBackend.AX,
+        )
+
+    async def test_wait_timeout_has_a_distinct_json_result(self) -> None:
+        self.client_mock.accessibility_wait = AsyncMock(return_value=False)
+        with redirect_stdout(StringIO()) as output:
+            exit_code = await cli_main(cmd_input=["ui", "wait", "missing", "--json"])
+        self.assertEqual(exit_code, 1)
+        self.assertEqual(json.loads(output.getvalue()), {"found": False})
+
+    async def test_wait_command_error_has_no_timeout_result(self) -> None:
+        self.client_mock.accessibility_wait = AsyncMock(
+            side_effect=IdbException("reader failed")
+        )
+        with redirect_stdout(StringIO()) as output:
+            exit_code = await cli_main(cmd_input=["ui", "wait", "missing", "--json"])
+        self.assertEqual(exit_code, 1)
+        self.assertEqual(output.getvalue(), "")
+
     async def test_scroll_frontmost(self) -> None:
         self.client_mock.accessibility_scroll = AsyncMock(return_value=[])
         await cli_main(cmd_input=["ui", "scroll", "down"])

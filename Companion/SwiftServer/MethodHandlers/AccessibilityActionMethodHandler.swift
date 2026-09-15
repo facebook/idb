@@ -18,6 +18,10 @@ struct AccessibilityActionMethodHandler {
 
   func handle(request: Idb_AccessibilityActionRequest, context: ServerContext) async throws -> Idb_AccessibilityActionResponse {
     switch try AccessibilityActionRequestTranslation.action(from: request) {
+    case let .wait(query, backend, timeout, pollInterval):
+      return try await AccessibilityActionRequestTranslation.waitResponse {
+        try await commandExecutor.accessibility_wait(query: query, backend: backend, timeout: timeout, pollInterval: pollInterval)
+      }
     case let .tap(query, expectedValue, expectedKey):
       try await commandExecutor.accessibility_tap(query: query, expectedValue: expectedValue, expectedKey: expectedKey)
     case let .scroll(query, direction):

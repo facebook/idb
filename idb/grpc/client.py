@@ -44,6 +44,7 @@ from idb.common.logging import log_call
 from idb.common.stream import stream_map
 from idb.common.tar import create_tar, drain_untar, generate_tar
 from idb.common.types import (
+    AccessibilityBackend,
     AccessibilityDragOptions,
     AccessibilityInfo,
     AccessibilityInfoOptions,
@@ -99,6 +100,7 @@ from idb.grpc.hid import event_to_grpc
 from idb.grpc.idb_grpc import CompanionServiceStub
 from idb.grpc.idb_pb2 import (
     AccessibilityActionRequest,
+    AccessibilityActionResponse,
     AddMediaRequest,
     ANY as AnySetting,
     ApproveRequest,
@@ -516,6 +518,30 @@ class Client(ClientBase):
             accessibility_info_to_grpc(target, options)
         )
         return AccessibilityInfo(json=response.json)
+
+    @log_and_handle_exceptions("accessibility_wait")
+    async def accessibility_wait(
+        self,
+        target: AccessibilityMarker,
+        timeout: float = 10.0,
+        poll_interval: float = 0.5,
+        backend: AccessibilityBackend = AccessibilityBackend.AXBRIDGE,
+    ) -> bool:
+        response = await self.stub.accessibility_action(
+            AccessibilityActionRequest(
+                marker=target.value,
+                match_key=target.match_key.value,
+                depth=target.depth,
+                wait=AccessibilityActionRequest.Wait(
+                    timeout=timeout, poll_interval=poll_interval, backend=backend.value
+                ),
+            )
+        )
+        if response.wait_result == AccessibilityActionResponse.FOUND:
+            return True
+        if response.wait_result == AccessibilityActionResponse.TIMED_OUT:
+            return False
+        raise IdbException("The companion did not report a wait result")
 
     @log_and_handle_exceptions("accessibility_tap")
     async def accessibility_tap(

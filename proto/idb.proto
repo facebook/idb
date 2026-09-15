@@ -433,7 +433,14 @@ message AccessibilityActionRequest {
     double delta = 8;
   }
 
+  message Wait {
+    double timeout = 1;
+    double poll_interval = 2;
+    AccessibilityInfoRequest.Backend backend = 3;
+  }
+
   oneof action {
+    Wait wait = 10;
     Tap tap = 5;
     Scroll scroll = 6;
     SetValue set_value = 7;
@@ -441,7 +448,14 @@ message AccessibilityActionRequest {
   }
 }
 
-message AccessibilityActionResponse {}
+message AccessibilityActionResponse {
+  enum WaitResult {
+    UNSPECIFIED = 0;
+    FOUND = 1;
+    TIMED_OUT = 2;
+  }
+  WaitResult wait_result = 1;
+}
 
 message ApproveRequest {
   enum Permission {

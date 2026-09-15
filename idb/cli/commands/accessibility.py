@@ -410,6 +410,45 @@ class AccessibilityDescribeMarkerCommand(ClientCommand):
         print(info.json)
 
 
+class AccessibilityWaitCommand(ClientCommand):
+    @property
+    def description(self) -> str:
+        return "Wait for an accessibility element matching a marker to appear"
+
+    @property
+    def name(self) -> str:
+        return "wait"
+
+    def add_parser_arguments(self, parser: ArgumentParser) -> None:
+        super().add_parser_arguments(parser)
+        parser.add_argument("marker", help="Case-sensitive substring to match")
+        parser.add_argument(
+            "--match-key", choices=list(ACCESSIBILITY_KEY_BY_NAME), default="AXLabel"
+        )
+        parser.add_argument("--timeout", type=float, default=10.0)
+        parser.add_argument("--poll-interval", type=float, default=0.5)
+        parser.add_argument(
+            "--api", choices=list(ACCESSIBILITY_BACKEND_BY_NAME), default="axbridge"
+        )
+
+    async def run_with_client(self, args: Namespace, client: Client) -> None:
+        found = await client.accessibility_wait(
+            target=AccessibilityMarker(
+                value=args.marker,
+                match_key=ACCESSIBILITY_KEY_BY_NAME[args.match_key],
+            ),
+            timeout=args.timeout,
+            poll_interval=args.poll_interval,
+            backend=ACCESSIBILITY_BACKEND_BY_NAME[args.api],
+        )
+        if args.json:
+            print(json.dumps({"found": found}))
+        if not found:
+            raise IdbException(
+                f"Timed out waiting for {args.marker!r} after {args.timeout:g}s"
+            )
+
+
 class AccessibilityScrollCommand(ClientCommand):
     @property
     def description(self) -> str:

@@ -38,6 +38,7 @@ from idb.cli.commands.accessibility import (
     AccessibilityInfoAtPointCommand,
     AccessibilityScrollCommand,
     AccessibilitySetValueCommand,
+    AccessibilityWaitCommand,
 )
 from idb.cli.commands.app import (
     AppInstallCommand,
@@ -296,6 +297,7 @@ def build_builtin_commands(shell_command: ShellCommand) -> list[Command]:
                 AccessibilityInfoAllCommand(),
                 AccessibilityInfoAtPointCommand(),
                 AccessibilityDescribeMarkerCommand(),
+                AccessibilityWaitCommand(),
                 AccessibilityScrollCommand(),
                 AccessibilitySetValueCommand(),
                 AccessibilityDragAndDropCommand(),

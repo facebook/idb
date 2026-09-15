@@ -64,6 +64,91 @@ final class AccessibilityActionRequestTranslationTests: XCTestCase {
     }
   }
 
+  func testWaitPreservesMarkerBackendAndTiming() throws {
+    let translated = try action {
+      $0.marker = "com.apple.settings.general"
+      $0.matchKey = .uniqueID
+      $0.depth = 12
+      $0.wait = .with {
+        $0.backend = .axbridge
+        $0.timeout = 30
+        $0.pollInterval = 0.25
+      }
+    }
+    XCTAssertEqual(
+      translated,
+      .wait(
+        query: .marker(value: "com.apple.settings.general", key: .uniqueID, depth: 12),
+        backend: UIAutomationBackend(resolvedName: .axBridgeExclusive), timeout: 30, pollInterval: 0.25))
+  }
+
+  func testWaitRejectsInvalidRequests() {
+    var valid = Idb_AccessibilityActionRequest.with {
+      $0.marker = "Settings"
+      $0.wait = .with {
+        $0.timeout = 10
+        $0.pollInterval = 0.5
+      }
+    }
+    var invalid = [Idb_AccessibilityActionRequest]()
+    for duration in [-1, Double.nan, Double.infinity] {
+      var request = valid
+      request.wait.timeout = duration
+      invalid.append(request)
+    }
+    for interval in [0, -1, Double.nan, Double.infinity, 1e20] {
+      var request = valid
+      request.wait.pollInterval = interval
+      invalid.append(request)
+    }
+    var request = valid
+    request.target = nil
+    invalid.append(request)
+    request = valid
+    request.point = .init()
+    invalid.append(request)
+    request = valid
+    request.ignoreCase = true
+    invalid.append(request)
+    valid.wait.backend = .UNRECOGNIZED(99)
+    invalid.append(valid)
+    for request in invalid {
+      XCTAssertThrowsError(try AccessibilityActionRequestTranslation.action(from: request)) { error in
+        XCTAssertEqual((error as? RPCError)?.code, .invalidArgument)
+      }
+    }
+  }
+
+  func testWaitDistinguishesFoundTimeoutAndFailure() async throws {
+    let found = try await AccessibilityActionRequestTranslation.waitResponse {}
+    XCTAssertEqual(found.waitResult, .found)
+    let timeout = try await AccessibilityActionRequestTranslation.waitResponse {
+      throw UIAutomationError.timedOut(backend: .accessibility, key: "AXLabel", value: "missing", timeout: 1)
+    }
+    XCTAssertEqual(timeout.waitResult, .timedOut)
+    do {
+      _ = try await AccessibilityActionRequestTranslation.waitResponse {
+        throw UIAutomationError.applicationNotResponding(backend: .accessibility, pid: 123)
+      }
+      XCTFail("a failed read must not become a timeout")
+    } catch let error as UIAutomationError {
+      guard case .applicationNotResponding = error else {
+        return XCTFail("unexpected error: \(error)")
+      }
+    }
+  }
+
+  func testWaitPreservesCancellation() async throws {
+    do {
+      _ = try await AccessibilityActionRequestTranslation.waitResponse {
+        throw CancellationError()
+      }
+      XCTFail("cancelled wait must not report a result")
+    } catch {
+      XCTAssertTrue(error is CancellationError, "unexpected error: \(error)")
+    }
+  }
+
   // MARK: - Routing
 
   func testADragRequestBecomesADrag() throws {

@@ -5,6 +5,10 @@
 # LICENSE file in the root directory of this source tree.
 
 
+from unittest.mock import AsyncMock, MagicMock
+
+from grpclib.const import Status
+from grpclib.exceptions import GRPCError
 from idb.common.types import (
     AccessibilityBackend,
     AccessibilityElementFilter,
@@ -16,7 +20,12 @@ from idb.common.types import (
     IdbException,
 )
 from idb.grpc.accessibility import accessibility_info_to_grpc
-from idb.grpc.idb_pb2 import AccessibilityInfoRequest
+from idb.grpc.client import Client
+from idb.grpc.idb_pb2 import (
+    AccessibilityActionRequest,
+    AccessibilityActionResponse,
+    AccessibilityInfoRequest,
+)
 from idb.utils.testing import TestCase
 
 
@@ -177,3 +186,60 @@ class AccessibilityInfoRequestTests(TestCase):
         self.assertEqual(request.match, "Cart")
         self.assertEqual(request.filter, AccessibilityInfoRequest.FILTER_INTERACTABLE)
         self.assertEqual(request.backend, AccessibilityInfoRequest.AXBRIDGE)
+
+
+class AccessibilityWaitTests(TestCase):
+    def setUp(self) -> None:
+        super().setUp()
+        self.client = Client.__new__(Client)
+        self.client.logger = MagicMock()
+        self.client.stub = MagicMock()
+        self.client.stub.accessibility_action = AsyncMock()
+
+    async def test_wait_sends_marker_and_options(self) -> None:
+        self.client.stub.accessibility_action.return_value = (
+            AccessibilityActionResponse(wait_result=AccessibilityActionResponse.FOUND)
+        )
+        found = await self.client.accessibility_wait(
+            AccessibilityMarker("General", AccessibilitySearchableKey.UNIQUE_ID, 12),
+            timeout=30,
+            poll_interval=0.25,
+            backend=AccessibilityBackend.AX,
+        )
+        self.assertTrue(found)
+        self.client.stub.accessibility_action.assert_awaited_once_with(
+            AccessibilityActionRequest(
+                marker="General",
+                match_key=AccessibilitySearchableKey.UNIQUE_ID.value,
+                depth=12,
+                wait=AccessibilityActionRequest.Wait(
+                    timeout=30,
+                    poll_interval=0.25,
+                    backend=AccessibilityBackend.AX.value,
+                ),
+            )
+        )
+
+    async def test_wait_timeout_returns_false(self) -> None:
+        self.client.stub.accessibility_action.return_value = (
+            AccessibilityActionResponse(
+                wait_result=AccessibilityActionResponse.TIMED_OUT
+            )
+        )
+        self.assertFalse(
+            await self.client.accessibility_wait(AccessibilityMarker("missing"))
+        )
+
+    async def test_missing_wait_result_is_an_error(self) -> None:
+        self.client.stub.accessibility_action.return_value = (
+            AccessibilityActionResponse()
+        )
+        with self.assertRaisesRegex(IdbException, "did not report a wait result"):
+            await self.client.accessibility_wait(AccessibilityMarker("missing"))
+
+    async def test_transport_failure_is_not_a_timeout_result(self) -> None:
+        self.client.stub.accessibility_action.side_effect = GRPCError(
+            Status.UNAVAILABLE, "reader failed"
+        )
+        with self.assertRaises(IdbException):
+            await self.client.accessibility_wait(AccessibilityMarker("missing"))

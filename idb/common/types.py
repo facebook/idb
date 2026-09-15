@@ -1017,6 +1017,17 @@ class Client(ABC):
         pass
 
     @abstractmethod
+    async def accessibility_wait(
+        self,
+        target: AccessibilityMarker,
+        timeout: float = 10.0,
+        poll_interval: float = 0.5,
+        backend: AccessibilityBackend = AccessibilityBackend.AXBRIDGE,
+    ) -> bool:
+        """Return True when found, False on timeout; propagate operation failures."""
+        pass
+
+    @abstractmethod
     async def accessibility_tap(
         self,
         target: AccessibilityTarget,

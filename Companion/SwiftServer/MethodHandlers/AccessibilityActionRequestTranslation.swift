@@ -18,6 +18,7 @@ enum AccessibilityActionRequestTranslation {
 
   /// A request that has been checked, with every endpoint and option resolved.
   enum Action: Equatable {
+    case wait(query: AccessibilityElementQuery, backend: UIAutomationBackend, timeout: Double, pollInterval: Double)
     case tap(query: AccessibilityElementQuery, expectedValue: String?, expectedKey: FBAXSearchableKey)
     case scroll(query: AccessibilityElementQuery, direction: FBAccessibilityScrollDirection)
     case setValue(query: AccessibilityElementQuery, value: String)
@@ -26,6 +27,23 @@ enum AccessibilityActionRequestTranslation {
 
   static func action(from request: Idb_AccessibilityActionRequest) throws -> Action {
     switch request.action {
+    case let .wait(wait):
+      guard case .marker = request.target, !request.marker.isEmpty else {
+        throw RPCError(code: .invalidArgument, message: "wait requires a nonempty marker")
+      }
+      guard !request.ignoreCase else {
+        throw RPCError(code: .invalidArgument, message: "wait does not support ignore_case")
+      }
+      guard wait.timeout.isFinite, wait.timeout >= 0, wait.pollInterval.isFinite, wait.pollInterval > 0, wait.pollInterval * 1_000_000_000 < Double(UInt64.max) else {
+        throw RPCError(code: .invalidArgument, message: "wait requires a finite nonnegative timeout and a finite positive poll_interval")
+      }
+      if case .UNRECOGNIZED = wait.backend {
+        throw RPCError(code: .invalidArgument, message: "unknown wait backend")
+      }
+      return .wait(
+        query: try requiredQuery(from: request, action: "wait"),
+        backend: AccessibilityInfoRequestTranslation.backend(from: wait.backend),
+        timeout: wait.timeout, pollInterval: wait.pollInterval)
     case let .tap(tap):
       return .tap(
         query: try requiredQuery(from: request, action: "tap"),
@@ -46,6 +64,18 @@ enum AccessibilityActionRequestTranslation {
         code: .invalidArgument,
         message: "accessibility_action requires an action this companion supports — none was set, "
           + "or the client sent one added after this companion was built")
+    }
+  }
+
+  static func waitResponse(operation: () async throws -> Void) async throws -> Idb_AccessibilityActionResponse {
+    do {
+      try await operation()
+      return .with { $0.waitResult = .found }
+    } catch let error as UIAutomationError {
+      if case .timedOut = error {
+        return .with { $0.waitResult = .timedOut }
+      }
+      throw error
     }
   }
 

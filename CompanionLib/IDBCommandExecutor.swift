@@ -202,6 +202,13 @@ public final class IDBCommandExecutor {
       .formattedOutputJSON(format: options.format)
   }
 
+  public func accessibility_wait(query: AccessibilityElementQuery, backend: UIAutomationBackend, timeout: TimeInterval, pollInterval: TimeInterval) async throws {
+    guard let simulator = target as? FBSimulator else {
+      throw IDBCommandError.simulatorOnlyOperation(operation: "wait for accessibility", targetDescription: String(describing: target))
+    }
+    try await simulator.uiAutomation(backend: backend).wait(query, timeout: timeout, pollInterval: pollInterval)
+  }
+
   public func accessibility_scroll(query: AccessibilityElementQuery, direction: FBAccessibilityScrollDirection) async throws {
     guard let simulator = target as? FBSimulator else {
       throw IDBCommandError.simulatorOnlyOperation(operation: "scroll by accessibility", targetDescription: String(describing: target))
