@@ -2,6 +2,13 @@
 title: Troubleshooting
 ---
 
+{/*
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ */}
+
 ## An error about which simulator to use
 
 You can omit `--udid` only when **exactly one** simulator is booted. If several are booted (or none), `idb-repl` cannot choose and errors. Fix: boot a single simulator, or pass `--udid <udid>` explicitly. List targets with `idb list-targets`.

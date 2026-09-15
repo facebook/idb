@@ -2,6 +2,13 @@
 title: Built-in IDB API
 ---
 
+{/*
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ */}
+
 The REPL exposes a built-in command API for driving the connected simulator from your REPL code. It is automatically available in every context. Everything lives under the `IDB` namespace, so it never collides with the target's own symbols: reach commands as `IDB.ui.<command>`, `IDB.screenshot.<command>`, `IDB.video.<command>`, and name types as `IDB.AXElement` (there is no bare `tap` or `AXElement`).
 
 These commands drive the connected simulator directly, so they work in the `app`, `simulator`, and `test` contexts alike.

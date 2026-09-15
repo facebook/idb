@@ -2,6 +2,13 @@
 title: Writing REPL Code
 ---
 
+{/*
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ */}
+
 `idb-repl` runs Swift code you submit in a process on the simulator. You choose which process context with a subcommand — `app`, `simulator`, or `test`. The context determines what your code can see (which modules and symbols) and what it has access to. Whichever you use, the code you write follows the same rules — so this page covers how to write REPL code first, then what each context gives you.
 
 ### Structure of REPL code

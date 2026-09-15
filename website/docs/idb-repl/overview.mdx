@@ -3,6 +3,13 @@ title: idb-repl
 sidebar_label: Overview
 ---
 
+{/*
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ */}
+
 `idb-repl` is an interactive REPL (Read-Eval-Print-Loop) for running Swift code **inside a live process on an iOS Simulator**. You type (or pipe) Swift code, and it is compiled, injected into a running process, executed, and the result is streamed back to your terminal.
 
 It is built with coding agents in mind: code is a more general tool than any fixed set of commands, and a session can be captured as a report and replayed later, so you can see exactly what an agent did. Everything works the same when driven by hand.
