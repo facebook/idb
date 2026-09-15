@@ -7,3 +7,4 @@
 
 #import "FBAXFakeRuntime.h"
 #import "FBAXSignatureProbe.h"
+#import "ServiceTestRuntime.h"
