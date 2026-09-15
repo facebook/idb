@@ -61,7 +61,7 @@ final class AccessibilityMatchTests: XCTestCase {
     XCTAssertEqual(Self.labels(try Self.match("Cart").apply(to: read)), ["Add to Cart", "Remove from Cart"])
   }
 
-  // Substring, not equality — the contract documented on `FBAccessibilityElementQuery.marker`.
+  // Substring, not equality — the contract documented on `AccessibilityElementQuery.marker`.
   func testTheMatchIsASubstringNotAnEquality() throws {
     let read = [Self.element(label: "Add to Cart")]
     XCTAssertEqual(Self.labels(try Self.match("to Ca").apply(to: read)), ["Add to Cart"])

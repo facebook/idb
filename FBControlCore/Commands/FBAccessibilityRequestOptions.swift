@@ -61,7 +61,7 @@ public enum FBAccessibilityElementFilter: String, Sendable, CaseIterable {
 }
 
 /// A substring search narrowing a describe-all read to elements whose `key` value contains `value`.
-/// Unlike `FBAccessibilityElementQuery.marker`, no match is an empty list rather than an error, and
+/// Unlike `AccessibilityElementQuery.marker`, no match is an empty list rather than an error, and
 /// every matching element is reported.
 public struct AccessibilityMatch: Sendable, Equatable {
 

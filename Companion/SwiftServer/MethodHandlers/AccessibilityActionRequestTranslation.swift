@@ -18,10 +18,10 @@ enum AccessibilityActionRequestTranslation {
 
   /// A request that has been checked, with every endpoint and option resolved.
   enum Action: Equatable {
-    case tap(query: FBAccessibilityElementQuery, expectedValue: String?, expectedKey: FBAXSearchableKey)
-    case scroll(query: FBAccessibilityElementQuery, direction: FBAccessibilityScrollDirection)
-    case setValue(query: FBAccessibilityElementQuery, value: String)
-    case drag(source: FBAccessibilityElementQuery, destination: FBAccessibilityElementQuery, options: FBDragOptions)
+    case tap(query: AccessibilityElementQuery, expectedValue: String?, expectedKey: FBAXSearchableKey)
+    case scroll(query: AccessibilityElementQuery, direction: FBAccessibilityScrollDirection)
+    case setValue(query: AccessibilityElementQuery, value: String)
+    case drag(source: AccessibilityElementQuery, destination: AccessibilityElementQuery, options: DragOptions)
   }
 
   static func action(from request: Idb_AccessibilityActionRequest) throws -> Action {
@@ -75,7 +75,7 @@ enum AccessibilityActionRequestTranslation {
     return .drag(source: source, destination: destination, options: options)
   }
 
-  private static func dragDestination(_ drag: Idb_AccessibilityActionRequest.Drag, ignoresCase: Bool) throws -> FBAccessibilityElementQuery? {
+  private static func dragDestination(_ drag: Idb_AccessibilityActionRequest.Drag, ignoresCase: Bool) throws -> AccessibilityElementQuery? {
     switch drag.destination {
     case let .marker(marker):
       return .marker(
@@ -89,15 +89,15 @@ enum AccessibilityActionRequestTranslation {
 
   /// The wire's zero value means "server default", the same rule the swipe and pinch fields follow —
   /// a proto3 scalar cannot distinguish unset from zero, and none of these are useful at zero.
-  private static func dragOptions(_ drag: Idb_AccessibilityActionRequest.Drag) throws -> FBDragOptions {
-    let defaults = FBDragOptions()
+  private static func dragOptions(_ drag: Idb_AccessibilityActionRequest.Drag) throws -> DragOptions {
+    let defaults = DragOptions()
     for (name, value) in [
       ("press_duration", drag.pressDuration), ("duration", drag.duration),
       ("release_duration", drag.releaseDuration), ("delta", drag.delta),
     ] where value < 0 {
       throw GRPCStatus(code: .invalidArgument, message: "accessibility_action drag \(name) must not be negative, got \(value)")
     }
-    return FBDragOptions(
+    return DragOptions(
       pressDuration: drag.pressDuration > 0 ? drag.pressDuration : defaults.pressDuration,
       duration: drag.duration > 0 ? drag.duration : defaults.duration,
       releaseDuration: drag.releaseDuration > 0 ? drag.releaseDuration : defaults.releaseDuration,
@@ -106,7 +106,7 @@ enum AccessibilityActionRequestTranslation {
 
   // MARK: - Targets
 
-  private static func requiredQuery(from request: Idb_AccessibilityActionRequest, action: String) throws -> FBAccessibilityElementQuery {
+  private static func requiredQuery(from request: Idb_AccessibilityActionRequest, action: String) throws -> AccessibilityElementQuery {
     guard let query = try targetedQuery(from: request) else {
       throw GRPCStatus(code: .invalidArgument, message: "accessibility_action \(action) requires a marker or point target")
     }
@@ -115,7 +115,7 @@ enum AccessibilityActionRequestTranslation {
 
   // Returns nil when no target is set, which callers map to the frontmost app
   // (or reject, for actions that require an explicit element).
-  private static func targetedQuery(from request: Idb_AccessibilityActionRequest) throws -> FBAccessibilityElementQuery? {
+  private static func targetedQuery(from request: Idb_AccessibilityActionRequest) throws -> AccessibilityElementQuery? {
     switch request.target {
     case let .marker(marker):
       return .marker(

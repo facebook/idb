@@ -9,7 +9,7 @@ import Foundation
 
 /// A failure of a UI-automation *query*, raised the same way by every backend.
 ///
-/// `FBUIAutomation` is a protocol, so a caller holding one does not statically know which backend is
+/// `UIAutomation` is a protocol, so a caller holding one does not statically know which backend is
 /// serving it. These conditions — the element isn't there, the point is empty, the wait elapsed, the
 /// target shape is wrong for the verb, the backend doesn't implement it — are facts about the query,
 /// not about a transport, so they are one type with a `backend` tag rather than one enum per backend.
@@ -23,48 +23,48 @@ import Foundation
 /// is what makes the advice ignorable on the case where it is right.
 public enum UIAutomationError: LocalizedError, CustomStringConvertible, Sendable {
   /// No element matched the marker `value` for `key`.
-  case elementNotFound(backend: FBUIAutomationBackend, key: String, value: String)
+  case elementNotFound(backend: UIAutomationBackend, key: String, value: String)
   /// A marker matched an element, but it reports no on-screen frame — off-screen or still settling —
   /// so there is no point to interact with. Distinct from `elementNotFound`: the element exists.
-  case elementNotOnScreen(backend: FBUIAutomationBackend, key: String, value: String)
+  case elementNotOnScreen(backend: UIAutomationBackend, key: String, value: String)
   /// A read answered without geometry: no element, or an element carrying no frame. Distinct from
   /// `elementNotOnScreen`, which is about an element whose frame puts it out of reach — here there is no
   /// frame to judge. It names whichever target shape was asked, because a frame can be read of a whole
   /// tree as well as of a marker.
-  case frameUnavailable(backend: FBUIAutomationBackend, query: FBAccessibilityElementQuery)
+  case frameUnavailable(backend: UIAutomationBackend, query: AccessibilityElementQuery)
   /// No element sits at the requested point. A successful read of empty space, raised as an error only
   /// because `describe(.point:)` has to answer with an element — so it carries no remediation, there
   /// being nothing wrong to remedy.
-  case noElementAtPoint(backend: FBUIAutomationBackend, x: Double, y: Double)
+  case noElementAtPoint(backend: UIAutomationBackend, x: Double, y: Double)
   /// The wait for a marker element elapsed.
-  case timedOut(backend: FBUIAutomationBackend, key: String, value: String, timeout: TimeInterval)
+  case timedOut(backend: UIAutomationBackend, key: String, value: String, timeout: TimeInterval)
   /// A verb that requires a marker target was given a point or a whole-tree query.
-  case markerRequired(backend: FBUIAutomationBackend, operation: String)
+  case markerRequired(backend: UIAutomationBackend, operation: String)
   /// A verb that requires a point or marker target was given a whole-tree query.
-  case pointOrMarkerRequired(backend: FBUIAutomationBackend, operation: String)
+  case pointOrMarkerRequired(backend: UIAutomationBackend, operation: String)
   /// A wait was given a negative poll interval, which has no meaning and would trap the sleep timer.
-  case invalidPollInterval(backend: FBUIAutomationBackend, pollInterval: TimeInterval)
+  case invalidPollInterval(backend: UIAutomationBackend, pollInterval: TimeInterval)
   /// A verb this backend does not implement.
-  case operationUnsupported(backend: FBUIAutomationBackend, operation: String)
+  case operationUnsupported(backend: UIAutomationBackend, operation: String)
   /// A read found no tree: the pid is not a live app, or its accessibility server never started. `pid` is
   /// nil when the read resolved no application to name — a point read that nothing answered.
-  case applicationUnavailable(backend: FBUIAutomationBackend, pid: pid_t?)
+  case applicationUnavailable(backend: UIAutomationBackend, pid: pid_t?)
   /// The application has an accessibility server and did not answer in time. A fact about the
   /// application rather than the transport, like `applicationUnavailable`, and held apart from it because
   /// the application has not gone away — so it is a wait, not a reconfiguration.
-  case applicationNotResponding(backend: FBUIAutomationBackend, pid: pid_t?)
-  /// A `tap` asserted the element's value for `key` (via `FBTapOptions.assertion`) before tapping, but
+  case applicationNotResponding(backend: UIAutomationBackend, pid: pid_t?)
+  /// A `tap` asserted the element's value for `key` (via `TapOptions.assertion`) before tapping, but
   /// the element's actual value did not match.
-  case valueMismatch(backend: FBUIAutomationBackend, key: String, expected: String, actual: String)
+  case valueMismatch(backend: UIAutomationBackend, key: String, expected: String, actual: String)
   /// A write resolved its target by reading a tree and then acted on the point that element occupied,
   /// and by the time it landed the element there was no longer the one the query named. Distinct from
   /// `elementNotFound`, which is a marker that matched nothing at all: this one matched, and then the
   /// screen moved out from under it.
-  case elementMoved(backend: FBUIAutomationBackend, key: String, value: String)
+  case elementMoved(backend: UIAutomationBackend, key: String, value: String)
 
   /// The caller explicitly named a traversal that cannot answer keys they also asked for. Refused up
   /// front rather than attempted: the read would time out in the guest, not fail cleanly.
-  case traversalCannotAnswer(backend: FBUIAutomationBackend, traversal: String, keys: [String])
+  case traversalCannotAnswer(backend: UIAutomationBackend, traversal: String, keys: [String])
 
   public var description: String { errorDescription ?? "UIAutomationError" }
 
@@ -111,7 +111,7 @@ public enum UIAutomationError: LocalizedError, CustomStringConvertible, Sendable
   }
 }
 
-public extension FBUIAutomationBackend {
+public extension UIAutomationBackend {
   /// How this backend names itself part-way through a sentence, rather than at the start of one.
   ///
   /// `displayName` leads with a capitalised "The" because nearly every message opens with it. A message

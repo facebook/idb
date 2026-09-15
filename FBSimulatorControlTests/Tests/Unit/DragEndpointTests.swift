@@ -20,7 +20,7 @@ import XCTest
 /// and report success.
 final class DragEndpointTests: XCTestCase {
 
-  private static let backends: [FBUIAutomationBackend] = [
+  private static let backends: [UIAutomationBackend] = [
     .accessibility,
     .axBridge(persistence: .oneShot, frontmostMethod: .windowServer, automationMode: true),
   ]
@@ -35,7 +35,7 @@ final class DragEndpointTests: XCTestCase {
   // The key and depth travel with the marker rather than being defaulted here: the backend that
   // resolves it searches on the caller's key, and a silently dropped key matches on the label instead.
   func testAMarkerCarriesTheKeyAndDepthItWasNamedWith() throws {
-    let query = FBAccessibilityElementQuery.marker(value: "Album", key: .uniqueID, depth: 5)
+    let query = AccessibilityElementQuery.marker(value: "Album", key: .uniqueID, depth: 5)
     for backend in Self.backends {
       XCTAssertEqual(
         try DragEndpoint(query, backend: backend),
@@ -46,7 +46,7 @@ final class DragEndpointTests: XCTestCase {
 
   func testWholeTreeQueriesAreNotEndpoints() {
     for backend in Self.backends {
-      for query in [FBAccessibilityElementQuery.frontmost, .application(pid: 99)] {
+      for query in [AccessibilityElementQuery.frontmost, .application(pid: 99)] {
         do {
           _ = try DragEndpoint(query, backend: backend)
           XCTFail("\(query) must not be accepted as a drag endpoint by \(backend)")

@@ -10,7 +10,7 @@
 import Foundation
 
 /// The captured result of running a tool inside the simulator runtime.
-public struct FBInSimulatorToolOutput: Sendable {
+public struct InSimulatorToolOutput: Sendable {
   public let stdout: Data
   public let stderr: Data
   public let exitCode: Int32
@@ -57,7 +57,7 @@ public struct SimulatorRuntimeToolCommands {
     _ relativePath: String,
     arguments: [String] = [],
     environment: [String: String] = [:]
-  ) async throws -> FBInSimulatorToolOutput {
+  ) async throws -> InSimulatorToolOutput {
     let launchPath = try runtimeExecutablePath(relativePath)
     return try await launchConsumingOutput(launchPath: launchPath, arguments: arguments, environment: environment)
   }
@@ -74,7 +74,7 @@ public struct SimulatorRuntimeToolCommands {
     launchPath: String,
     arguments: [String] = [],
     environment: [String: String] = [:]
-  ) async throws -> FBInSimulatorToolOutput {
+  ) async throws -> InSimulatorToolOutput {
     let stdoutConsumer = FBDataBuffer.accumulatingBuffer()
     let stderrConsumer = FBDataBuffer.accumulatingBuffer()
     let io = FBProcessIO<AnyObject, AnyObject, AnyObject>(
@@ -93,7 +93,7 @@ public struct SimulatorRuntimeToolCommands {
     let process = try await simulator.processSpawn.launchProcess(configuration)
     let exitCode = try await bridgeFBFuture(process.exitCode)
 
-    return FBInSimulatorToolOutput(
+    return InSimulatorToolOutput(
       stdout: stdoutConsumer.data(),
       stderr: stderrConsumer.data(),
       exitCode: exitCode.int32Value

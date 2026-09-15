@@ -118,7 +118,7 @@ class DefaultsModificationStrategy {
     return try DefaultsModificationStrategy.stdout(orThrowFrom: output, command: command, logger: simulator.logger)
   }
 
-  static func stdout(orThrowFrom output: FBInSimulatorToolOutput, command: Command, logger: (any FBControlCoreLogger)?) throws -> NSString {
+  static func stdout(orThrowFrom output: InSimulatorToolOutput, command: Command, logger: (any FBControlCoreLogger)?) throws -> NSString {
     if output.exitCode != 0 {
       let stderr = String(data: output.stderr, encoding: .utf8) ?? ""
       guard command.exitCodePolicy.accepts(output.exitCode) else {

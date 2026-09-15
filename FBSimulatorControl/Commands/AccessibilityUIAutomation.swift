@@ -8,7 +8,7 @@
 import FBControlCore
 import Foundation
 
-/// The `FBUIAutomation` backend over the CoreSimulator accessibility-translation path. Resolves a
+/// The `UIAutomation` backend over the CoreSimulator accessibility-translation path. Resolves a
 /// query to an `AccessibilityElement` via the accessibility primitives and serializes it through
 /// the shared schema.
 ///
@@ -16,7 +16,7 @@ import Foundation
 // element handle, so no mutable state is shared across calls, and the target's accessibility request
 // path is async IPC already safe under concurrent use. `Sendable` lets a caller hold one reader.
 // patternlint-disable-next-line unchecked-sendable
-final class AccessibilityUIAutomation: FBUIAutomation, @unchecked Sendable {
+final class AccessibilityUIAutomation: UIAutomation, @unchecked Sendable {
 
   private let simulator: FBSimulator
 
@@ -27,14 +27,14 @@ final class AccessibilityUIAutomation: FBUIAutomation, @unchecked Sendable {
   }
 
   func describe(
-    _ query: FBAccessibilityElementQuery,
+    _ query: AccessibilityElementQuery,
     options: FBAccessibilityRequestOptions
   ) async throws -> FBAccessibilityElementsResponse {
     try await Self.translatingBackendErrors(query) {
       let element = try await operations.resolveElement(for: query)
       defer { element.close() }
       let response = try await element.serialize(with: options)
-        .withProvenance(backend: FBUIAutomationBackend.accessibility.name, target: query.targetDescriptor)
+        .withProvenance(backend: UIAutomationBackend.accessibility.name, target: query.targetDescriptor)
       // A point or marker resolves one element and is then serialized through the frontmost path, which
       // reads screen bounds off whatever element it is handed. For those queries that element is the
       // match rather than the application root, so the bounds it reports describe the match — they have
@@ -51,11 +51,11 @@ final class AccessibilityUIAutomation: FBUIAutomation, @unchecked Sendable {
   }
 
   /// Re-raises the accessibility stack's "element not found" as the backend-neutral
-  /// `UIAutomationError`, so a caller holding `any FBUIAutomation` can catch it without knowing
+  /// `UIAutomationError`, so a caller holding `any UIAutomation` can catch it without knowing
   /// which backend it holds. Every other accessibility failure is transport-specific and passes
   /// through untouched.
   private static func translatingBackendErrors<T>(
-    _ query: FBAccessibilityElementQuery,
+    _ query: AccessibilityElementQuery,
     _ body: () async throws -> T
   ) async throws -> T {
     do {
@@ -74,7 +74,7 @@ final class AccessibilityUIAutomation: FBUIAutomation, @unchecked Sendable {
       let element = try await operations.resolveElement(for: .point(point))
       defer { element.close() }
       return try await element.serialize(with: options)
-        .withProvenance(backend: FBUIAutomationBackend.accessibility.name, target: .point(point))
+        .withProvenance(backend: UIAutomationBackend.accessibility.name, target: .point(point))
     } catch let error as AccessibilityError {
       // A point that resolves to no element is a valid empty hit-test result, not a failure.
       if case .elementNotFound = error { return nil }
@@ -83,8 +83,8 @@ final class AccessibilityUIAutomation: FBUIAutomation, @unchecked Sendable {
   }
 
   func tap(
-    _ query: FBAccessibilityElementQuery,
-    options: FBTapOptions
+    _ query: AccessibilityElementQuery,
+    options: TapOptions
   ) async throws {
     // AXPress is instantaneous with nowhere to put a hold; reject `duration` rather than silently
     // downgrading a long-press to a tap.
@@ -106,7 +106,7 @@ final class AccessibilityUIAutomation: FBUIAutomation, @unchecked Sendable {
     }
   }
 
-  func setValue(_ value: String, for query: FBAccessibilityElementQuery) async throws {
+  func setValue(_ value: String, for query: AccessibilityElementQuery) async throws {
     try await Self.translatingBackendErrors(query) {
       let element = try await operations.resolveElement(for: query)
       defer { element.close() }
@@ -115,7 +115,7 @@ final class AccessibilityUIAutomation: FBUIAutomation, @unchecked Sendable {
   }
 
   func wait(
-    _ query: FBAccessibilityElementQuery,
+    _ query: AccessibilityElementQuery,
     timeout: TimeInterval,
     pollInterval: TimeInterval
   ) async throws {
@@ -137,7 +137,7 @@ final class AccessibilityUIAutomation: FBUIAutomation, @unchecked Sendable {
     }
   }
 
-  func scroll(_ query: FBAccessibilityElementQuery, direction: FBAccessibilityScrollDirection) async throws {
+  func scroll(_ query: AccessibilityElementQuery, direction: FBAccessibilityScrollDirection) async throws {
     try await Self.translatingBackendErrors(query) {
       let element = try await operations.resolveElement(for: query)
       defer { element.close() }
@@ -145,7 +145,7 @@ final class AccessibilityUIAutomation: FBUIAutomation, @unchecked Sendable {
     }
   }
 
-  func frame(_ query: FBAccessibilityElementQuery) async throws -> CGRect {
+  func frame(_ query: AccessibilityElementQuery) async throws -> CGRect {
     try await Self.translatingBackendErrors(query) {
       let element = try await operations.resolveElement(for: query)
       defer { element.close() }
@@ -155,9 +155,9 @@ final class AccessibilityUIAutomation: FBUIAutomation, @unchecked Sendable {
 
   /// Synthesized over HID: there is no accessibility action for a drag.
   func drag(
-    from source: FBAccessibilityElementQuery,
-    to destination: FBAccessibilityElementQuery,
-    options: FBDragOptions
+    from source: AccessibilityElementQuery,
+    to destination: AccessibilityElementQuery,
+    options: DragOptions
   ) async throws {
     let start = try await endpoint(source)
     let end = try await endpoint(destination)
@@ -172,7 +172,7 @@ final class AccessibilityUIAutomation: FBUIAutomation, @unchecked Sendable {
 
   /// The screen point a drag endpoint names: a coordinate is itself, a marker is the centre of the
   /// element's frame.
-  private func endpoint(_ query: FBAccessibilityElementQuery) async throws -> CGPoint {
+  private func endpoint(_ query: AccessibilityElementQuery) async throws -> CGPoint {
     switch try DragEndpoint(query, backend: .accessibility) {
     case let .point(point):
       return point

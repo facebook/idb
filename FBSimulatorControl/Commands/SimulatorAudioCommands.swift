@@ -105,7 +105,7 @@ public struct SimulatorAudioSettings: Equatable, Sendable {
  written back at its current value — republishing a field the caller did not ask to change would move
  the guest's own bookkeeping for it.
  */
-public struct FBSimulatorAudioSettingsUpdate: Equatable, Sendable {
+public struct SimulatorAudioSettingsUpdate: Equatable, Sendable {
 
   /// The output volume to move to, `0...1`, or `nil` to leave it alone.
   public let volume: Double?
@@ -200,7 +200,7 @@ public struct SimulatorAudioCommands {
   /// button press drives. Writing the settings file directly would not do: `CoreSimulatorBridge` is its only writer, and a
   /// guest app watches the *containing directory* for entry changes rather than the file itself, so
   /// only the bridge's atomic replace makes an already-running app re-read it.
-  public func updateSettings(_ update: FBSimulatorAudioSettingsUpdate) async throws {
+  public func updateSettings(_ update: SimulatorAudioSettingsUpdate) async throws {
     if let volume = update.volume {
       try publish(
         state: try SimulatorAudioSettings.volumeNotificationState(for: volume),

@@ -80,7 +80,7 @@ public struct SimulatorPreferencesCommands {
 
   // MARK: - Applying
 
-  public func apply(_ setting: FBSimulatorSetting) async throws {
+  public func apply(_ setting: SimulatorSetting) async throws {
     switch setting {
     case let .hardwareKeyboard(enabled):
       try await setHardwareKeyboardEnabled(enabled)
@@ -107,7 +107,7 @@ public struct SimulatorPreferencesCommands {
     }
   }
 
-  public func apply(_ resolution: FBSimulatorSettingResolution) async throws {
+  public func apply(_ resolution: SimulatorSettingResolution) async throws {
     switch resolution {
     case let .setting(setting):
       try await apply(setting)

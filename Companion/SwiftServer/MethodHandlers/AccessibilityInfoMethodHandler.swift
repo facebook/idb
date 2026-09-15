@@ -16,15 +16,15 @@ import IDBGRPCSwift
 /// can be tested against a double.
 protocol AccessibilityDescribing {
   func accessibility_describe(
-    query: FBAccessibilityElementQuery,
+    query: AccessibilityElementQuery,
     options: FBAccessibilityRequestOptions,
-    backend: FBUIAutomationBackend
+    backend: UIAutomationBackend
   ) async throws -> Data
 
   func accessibility_info_at_point(
     _ value: NSValue?,
     options: FBAccessibilityRequestOptions,
-    backend: FBUIAutomationBackend
+    backend: UIAutomationBackend
   ) async throws -> FBAccessibilityElementsResponse
 }
 

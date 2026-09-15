@@ -310,22 +310,22 @@ final class AXWireContractTests: XCTestCase {
 
   // MARK: - Frontmost-method request selectors
 
-  // `FBAXBridgeFrontmostMethod`'s raw values are the selectors the host sends the guest to pick a
+  // `AXBridgeFrontmostMethod`'s raw values are the selectors the host sends the guest to pick a
   // frontmost-resolution strategy; each must round-trip through its raw value, and the guest-reported
   // `method` decodes back into these same cases.
   func testFrontmostMethodRequestSelectors() {
-    let expected: [FBAXBridgeFrontmostMethod: String] = [
+    let expected: [AXBridgeFrontmostMethod: String] = [
       .centerPoint: "center-point",
       .windowServer: "window-server",
       .runningBoard: "runningboard",
     ]
     XCTAssertEqual(
-      Set(FBAXBridgeFrontmostMethod.allCases), Set(expected.keys),
+      Set(AXBridgeFrontmostMethod.allCases), Set(expected.keys),
       "every frontmost method must have its selector pinned"
     )
     for (method, selector) in expected {
       XCTAssertEqual(method.rawValue, selector)
-      XCTAssertEqual(FBAXBridgeFrontmostMethod(rawValue: selector), method, "\(method) must round-trip through its selector")
+      XCTAssertEqual(AXBridgeFrontmostMethod(rawValue: selector), method, "\(method) must round-trip through its selector")
     }
   }
 }

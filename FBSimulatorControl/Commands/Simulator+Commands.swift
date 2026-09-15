@@ -133,7 +133,7 @@ extension FBSimulator {
   ///   what ends it — for a process that owns the simulator for its lifetime.
   /// - `.accessibility` and `.axBridge(persistence: .oneShot, …)` are stateless — they hold no warm
   ///   resource, so reconstructing them per call is free.
-  public func uiAutomation(backend: FBUIAutomationBackend) throws -> any FBUIAutomation {
+  public func uiAutomation(backend: UIAutomationBackend) throws -> any UIAutomation {
     switch backend {
     case .accessibility:
       return AccessibilityUIAutomation(simulator: self)

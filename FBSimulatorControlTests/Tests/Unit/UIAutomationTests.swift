@@ -26,12 +26,12 @@ final class UIAutomationTests: XCTestCase {
   // shared across reads or spawned for each one. Constructing the axbridge backends touches no
   // device, so this needs no booted simulator.
 
-  private static func backend(_ persistence: FBAXBridgePersistence) -> FBUIAutomationBackend {
+  private static func backend(_ persistence: AXBridgePersistence) -> UIAutomationBackend {
     .axBridge(persistence: persistence, frontmostMethod: .windowServer, automationMode: true)
   }
 
   private func transport(
-    _ simulator: FBSimulator, _ persistence: FBAXBridgePersistence
+    _ simulator: FBSimulator, _ persistence: AXBridgePersistence
   ) throws -> AXBridgePersistentTransport {
     let reader = try simulator.uiAutomation(backend: Self.backend(persistence))
     let bridgeReader = try XCTUnwrap(reader as? AXBridgeUIAutomation)
@@ -63,7 +63,7 @@ final class UIAutomationTests: XCTestCase {
   func testReadersDifferingOnlyInReaderOptionsShareOneTransport() throws {
     let simulator = SimulatorTestSupport.testableSimulator()
     let shared = try transport(simulator, .shared)
-    let otherOptions = FBUIAutomationBackend.axBridge(
+    let otherOptions = UIAutomationBackend.axBridge(
       persistence: .shared, frontmostMethod: .centerPoint, automationMode: nil
     )
     let reader = try XCTUnwrap(try simulator.uiAutomation(backend: otherOptions) as? AXBridgeUIAutomation)
@@ -74,7 +74,7 @@ final class UIAutomationTests: XCTestCase {
 
   func testEachOneShotBackendCallBuildsAOneShotTransport() throws {
     let simulator = SimulatorTestSupport.testableSimulator()
-    let backend = FBUIAutomationBackend.axBridge(
+    let backend = UIAutomationBackend.axBridge(
       persistence: .oneShot, frontmostMethod: .windowServer, automationMode: true
     )
     // Two calls: the one-shot transport must be built per call, never memoized.

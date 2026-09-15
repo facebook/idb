@@ -18,7 +18,7 @@ enum AccessibilityInfoRequestTranslation {
 
   /// The marker query a request selects, or nil when the request targets a point or the whole frontmost
   /// app. An unset `ignore_case` (older clients) is the historical case-sensitive match.
-  static func markerQuery(from request: Idb_AccessibilityInfoRequest) -> FBAccessibilityElementQuery? {
+  static func markerQuery(from request: Idb_AccessibilityInfoRequest) -> AccessibilityElementQuery? {
     guard !request.marker.isEmpty else {
       return nil
     }
@@ -88,16 +88,16 @@ enum AccessibilityInfoRequestTranslation {
   }
 
   /// `UNSPECIFIED` and an unrecognized value both fall back to the CoreSimulator backend.
-  static func backend(from wire: Idb_AccessibilityInfoRequest.Backend) -> FBUIAutomationBackend {
+  static func backend(from wire: Idb_AccessibilityInfoRequest.Backend) -> UIAutomationBackend {
     switch wire {
     case .unspecified:
       return .accessibility
     case .ax:
-      return FBUIAutomationBackend(resolvedName: .ax)
+      return UIAutomationBackend(resolvedName: .ax)
     case .axbridge, .axbridgePersistent:
       // The companion owns its simulator for its whole run, so it holds a bridge. Holding the shared
       // one would make every other process on this machine wait and then spawn a duplicate.
-      return FBUIAutomationBackend(resolvedName: .axBridgeExclusive)
+      return UIAutomationBackend(resolvedName: .axBridgeExclusive)
     case .UNRECOGNIZED:
       return .accessibility
     }

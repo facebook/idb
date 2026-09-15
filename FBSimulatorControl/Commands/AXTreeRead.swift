@@ -102,7 +102,7 @@ extension AXTreeRead {
   /// The pid rides back in the envelope because the guest resolved it. `ok:false` is classified by the
   /// guest's failure kind, so a resolved app with no accessibility server reads the same as via `--pid`;
   /// `method` is named only when the strategy itself could not answer.
-  init(frontmostResponse data: Data, method: FBAXBridgeFrontmostMethod) throws {
+  init(frontmostResponse data: Data, method: AXBridgeFrontmostMethod) throws {
     let response = try AXBridgeResponse.validated(
       data,
       context: "fused frontmost describe",

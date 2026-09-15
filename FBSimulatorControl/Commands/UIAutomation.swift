@@ -11,7 +11,7 @@ import Foundation
 
 /// Which guest a `.axBridge` read runs against: a fresh spawn of its own, the simulator's shared one,
 /// or a private one held for the caller's lifetime.
-public enum FBAXBridgePersistence: Sendable, Hashable {
+public enum AXBridgePersistence: Sendable, Hashable {
   /// A fresh guest spawn per read. Stateless and free to reconstruct per call — for a single one-shot
   /// read.
   case oneShot
@@ -26,7 +26,7 @@ public enum FBAXBridgePersistence: Sendable, Hashable {
 }
 
 /// Selects the backend a UI-automation element operation runs against.
-public enum FBUIAutomationBackend: Sendable, Equatable {
+public enum UIAutomationBackend: Sendable, Equatable {
   /// The legacy CoreSimulator accessibility-translation path.
   case accessibility
   /// The guest AX reader: the `SimulatorFrameworkBridge` `accessibility` service spawned in the
@@ -34,13 +34,13 @@ public enum FBUIAutomationBackend: Sendable, Equatable {
   /// app; `automationMode` is `true` to assert automation mode, `false` to assert it off, `nil` to
   /// leave the device untouched.
   case axBridge(
-    persistence: FBAXBridgePersistence,
-    frontmostMethod: FBAXBridgeFrontmostMethod,
+    persistence: AXBridgePersistence,
+    frontmostMethod: AXBridgeFrontmostMethod,
     automationMode: Bool?
   )
 }
 
-public extension FBUIAutomationBackend {
+public extension UIAutomationBackend {
   /// The backend name reported in the `complete` output document.
   var name: FBUIAutomationBackendName {
     switch self {
@@ -61,7 +61,7 @@ public extension FBUIAutomationBackend {
   /// Builds the resolved backend represented by `name`.
   init(
     resolvedName name: FBUIAutomationBackendName,
-    frontmostMethod: FBAXBridgeFrontmostMethod = .windowServer,
+    frontmostMethod: AXBridgeFrontmostMethod = .windowServer,
     automationMode: Bool? = true
   ) {
     switch name {
@@ -80,9 +80,9 @@ public extension FBUIAutomationBackend {
 }
 
 /// Options for a `tap`: an optional hold duration and an optional pre-tap value assertion. Both default
-/// off, so `FBTapOptions()` is an instantaneous, unconditional tap and `tap(_ query)` covers the common
+/// off, so `TapOptions()` is an instantaneous, unconditional tap and `tap(_ query)` covers the common
 /// case without constructing one.
-public struct FBTapOptions: Sendable, Equatable {
+public struct TapOptions: Sendable, Equatable {
 
   /// A pre-tap value assertion: read `key` on the resolved element and tap only if it equals `value`,
   /// else throw `UIAutomationError.valueMismatch`.
@@ -109,8 +109,8 @@ public struct FBTapOptions: Sendable, Equatable {
 }
 
 /// Options for a `drag`: the three phase durations and the sampling interval. Every value defaults to
-/// what the gesture uses when a caller does not choose, so `FBDragOptions()` is the documented drag.
-public struct FBDragOptions: Sendable, Equatable {
+/// what the gesture uses when a caller does not choose, so `DragOptions()` is the documented drag.
+public struct DragOptions: Sendable, Equatable {
 
   /// The hold at the source before travel starts. This is the phase that makes the gesture a drag
   /// rather than a flick: iOS begins a drag session only once the press clears its long-press
@@ -146,7 +146,7 @@ enum DragEndpoint: Equatable {
 
   /// `.frontmost` and `.application` name a tree. Resolving one would drag from the middle of the
   /// application's own rectangle, which is somewhere the caller never named.
-  init(_ query: FBAccessibilityElementQuery, backend: FBUIAutomationBackend) throws {
+  init(_ query: AccessibilityElementQuery, backend: UIAutomationBackend) throws {
     switch query {
     case let .point(point):
       self = .point(point)
@@ -159,14 +159,14 @@ enum DragEndpoint: Equatable {
 }
 
 /// The converged UI-automation surface: element reads and element-targeted
-/// actions, expressed once against an `FBAccessibilityElementQuery` target and run by the selected
+/// actions, expressed once against an `AccessibilityElementQuery` target and run by the selected
 /// backend. `FBSimulator.uiAutomation(backend:)` vends the backend that implements it.
-public protocol FBUIAutomation: Sendable {
+public protocol UIAutomation: Sendable {
 
   /// Reads the element(s) named by `query` and serializes them to the shared accessibility schema.
   /// `.point`/`.marker` yield a single element; `.frontmost` yields the whole tree.
   func describe(
-    _ query: FBAccessibilityElementQuery,
+    _ query: AccessibilityElementQuery,
     options: FBAccessibilityRequestOptions
   ) async throws -> FBAccessibilityElementsResponse
 
@@ -184,33 +184,33 @@ public protocol FBUIAutomation: Sendable {
   /// `options.duration` asks for a long-press; a backend whose press is instantaneous rejects it rather
   /// than downgrading to a tap.
   func tap(
-    _ query: FBAccessibilityElementQuery,
-    options: FBTapOptions
+    _ query: AccessibilityElementQuery,
+    options: TapOptions
   ) async throws
 
   /// Sets `value` on the element named by `query`. `.point`/`.marker` targets only.
   func setValue(
     _ value: String,
-    for query: FBAccessibilityElementQuery
+    for query: AccessibilityElementQuery
   ) async throws
 
   /// Polls until the element named by a `.marker` query appears, or throws when `timeout` elapses.
   /// `.point`/`.frontmost` are not waitable.
   func wait(
-    _ query: FBAccessibilityElementQuery,
+    _ query: AccessibilityElementQuery,
     timeout: TimeInterval,
     pollInterval: TimeInterval
   ) async throws
 
   /// Scrolls the element named by `query` in `direction`.
   func scroll(
-    _ query: FBAccessibilityElementQuery,
+    _ query: AccessibilityElementQuery,
     direction: FBAccessibilityScrollDirection
   ) async throws
 
   /// The frame (in screen points) of the element named by `query`. A geometry-only read for callers
   /// that need an element's position or size without a full serialization.
-  func frame(_ query: FBAccessibilityElementQuery) async throws -> CGRect
+  func frame(_ query: AccessibilityElementQuery) async throws -> CGRect
 
   /// Presses `source`, drags to `destination`, and releases. `.point` endpoints are the coordinate
   /// itself; a `.marker` endpoint is the centre of the element it names. `.frontmost`/`.application`
@@ -220,22 +220,22 @@ public protocol FBUIAutomation: Sendable {
   /// drag. The backends differ only in how a marker endpoint is resolved and which transport carries
   /// the events.
   func drag(
-    from source: FBAccessibilityElementQuery,
-    to destination: FBAccessibilityElementQuery,
-    options: FBDragOptions
+    from source: AccessibilityElementQuery,
+    to destination: AccessibilityElementQuery,
+    options: DragOptions
   ) async throws
 }
 
-public extension FBUIAutomation {
+public extension UIAutomation {
 
   /// Taps the element named by `query` with no hold duration and no value assertion.
-  func tap(_ query: FBAccessibilityElementQuery) async throws {
-    try await tap(query, options: FBTapOptions())
+  func tap(_ query: AccessibilityElementQuery) async throws {
+    try await tap(query, options: TapOptions())
   }
 
   /// Drags with the default phase durations and sampling interval.
-  func drag(from source: FBAccessibilityElementQuery, to destination: FBAccessibilityElementQuery) async throws {
-    try await drag(from: source, to: destination, options: FBDragOptions())
+  func drag(from source: AccessibilityElementQuery, to destination: AccessibilityElementQuery) async throws {
+    try await drag(from: source, to: destination, options: DragOptions())
   }
 }
 
@@ -261,7 +261,7 @@ public extension FBAccessibilityElementsResponse {
   /// no elements, so a consumer parses one shape whether or not the point was occupied.
   static func emptyOutputJSON(
     format: FBAccessibilityOutputFormat,
-    backend: FBUIAutomationBackend,
+    backend: UIAutomationBackend,
     target: AccessibilityTargetDescriptor
   ) throws -> Data {
     let response = FBAccessibilityElementsResponse(

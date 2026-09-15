@@ -535,7 +535,7 @@ final class AccessibilitySerializationTests: XCTestCase {
   // An empty hit-test is a successful result, not a failure, and it stays parseable the same way as an
   // occupied one: the legacy sentinel under the legacy formats, an ordinary document under `complete`.
   func testEmptyHitTestRendersInEveryFormat() throws {
-    let backend = FBUIAutomationBackend.axBridge(persistence: .shared, frontmostMethod: .centerPoint, automationMode: true)
+    let backend = UIAutomationBackend.axBridge(persistence: .shared, frontmostMethod: .centerPoint, automationMode: true)
     func rendered(_ format: FBAccessibilityOutputFormat) throws -> String {
       let data = try FBAccessibilityElementsResponse.emptyOutputJSON(
         format: format, backend: backend, target: .point(CGPoint(x: 5, y: 6))

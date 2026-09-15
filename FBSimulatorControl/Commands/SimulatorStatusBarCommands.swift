@@ -26,7 +26,7 @@ public struct SimulatorStatusBarCommands {
 
   // MARK: - Overrides
 
-  public func current() async throws -> FBStatusBarOverride {
+  public func current() async throws -> StatusBarOverride {
     var timeString: NSString?
     var dataNetworkType: NSNumber?
     var wiFiMode: NSNumber?
@@ -48,7 +48,7 @@ public struct SimulatorStatusBarCommands {
       batteryState: &batteryState,
       batteryLevel: &batteryLevel,
       showNotCharging: &showNotCharging)
-    var override = FBStatusBarOverride()
+    var override = StatusBarOverride()
     override.timeString = timeString as String?
     override.dataNetworkType = dataNetworkType
     override.wiFiMode = wiFiMode
@@ -62,7 +62,7 @@ public struct SimulatorStatusBarCommands {
     return override
   }
 
-  public func set(_ override: FBStatusBarOverride?) async throws {
+  public func set(_ override: StatusBarOverride?) async throws {
     guard let override else {
       // clearStatusBarOverrides:(NSUInteger)flags sends @{@"OverridesToClear": @(flags)} via MIG.
       // Bit 31 (0x80000000) = clear all. Pass NSUIntegerMax to clear everything.

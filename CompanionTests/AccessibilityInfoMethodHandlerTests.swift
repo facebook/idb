@@ -17,13 +17,13 @@ import XCTest
 /// the handler is written against, and this double stands in for it.
 private final class RecordingAccessibilityExecutor: AccessibilityDescribing {
   private(set) var describeOptions: FBAccessibilityRequestOptions?
-  private(set) var describeQuery: FBAccessibilityElementQuery?
+  private(set) var describeQuery: AccessibilityElementQuery?
   private(set) var pointReadCount = 0
 
   func accessibility_describe(
-    query: FBAccessibilityElementQuery,
+    query: AccessibilityElementQuery,
     options: FBAccessibilityRequestOptions,
-    backend: FBUIAutomationBackend
+    backend: UIAutomationBackend
   ) async throws -> Data {
     describeQuery = query
     describeOptions = options
@@ -33,7 +33,7 @@ private final class RecordingAccessibilityExecutor: AccessibilityDescribing {
   func accessibility_info_at_point(
     _ value: NSValue?,
     options: FBAccessibilityRequestOptions,
-    backend: FBUIAutomationBackend
+    backend: UIAutomationBackend
   ) async throws -> FBAccessibilityElementsResponse {
     pointReadCount += 1
     return FBAccessibilityElementsResponse(elements: .single(FBAccessibilityDocumentElement()))

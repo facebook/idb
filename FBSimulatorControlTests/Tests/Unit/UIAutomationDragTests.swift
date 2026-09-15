@@ -17,7 +17,7 @@ final class UIAutomationDragTests: XCTestCase {
   // the press clears its long-press threshold, so a shortened default silently turns every drag into
   // a swipe.
   func testTheDefaultsAreTheDocumentedDrag() {
-    let options = FBDragOptions()
+    let options = DragOptions()
     XCTAssertEqual(options.pressDuration, 0.5)
     XCTAssertEqual(options.duration, 0.5)
     XCTAssertEqual(options.releaseDuration, 0.1)
@@ -31,16 +31,16 @@ final class UIAutomationDragTests: XCTestCase {
     let recorded = try XCTUnwrap(automation.recorded)
     XCTAssertEqual(recorded.source, .point(CGPoint(x: 1, y: 2)))
     XCTAssertEqual(recorded.destination, .point(CGPoint(x: 3, y: 4)))
-    XCTAssertEqual(recorded.options, FBDragOptions())
+    XCTAssertEqual(recorded.options, DragOptions())
   }
 }
 
-private final class RecordingUIAutomation: FBUIAutomation, @unchecked Sendable {
+private final class RecordingUIAutomation: UIAutomation, @unchecked Sendable {
 
   struct Drag: Equatable {
-    let source: FBAccessibilityElementQuery
-    let destination: FBAccessibilityElementQuery
-    let options: FBDragOptions
+    let source: AccessibilityElementQuery
+    let destination: AccessibilityElementQuery
+    let options: DragOptions
   }
 
   private(set) var recorded: Drag?
@@ -48,15 +48,15 @@ private final class RecordingUIAutomation: FBUIAutomation, @unchecked Sendable {
   private struct NotUnderTest: Error {}
 
   func drag(
-    from source: FBAccessibilityElementQuery,
-    to destination: FBAccessibilityElementQuery,
-    options: FBDragOptions
+    from source: AccessibilityElementQuery,
+    to destination: AccessibilityElementQuery,
+    options: DragOptions
   ) async throws {
     recorded = Drag(source: source, destination: destination, options: options)
   }
 
   func describe(
-    _ query: FBAccessibilityElementQuery,
+    _ query: AccessibilityElementQuery,
     options: FBAccessibilityRequestOptions
   ) async throws -> FBAccessibilityElementsResponse {
     throw NotUnderTest()
@@ -69,16 +69,16 @@ private final class RecordingUIAutomation: FBUIAutomation, @unchecked Sendable {
     throw NotUnderTest()
   }
 
-  func tap(_ query: FBAccessibilityElementQuery, options: FBTapOptions) async throws {
+  func tap(_ query: AccessibilityElementQuery, options: TapOptions) async throws {
     throw NotUnderTest()
   }
 
-  func setValue(_ value: String, for query: FBAccessibilityElementQuery) async throws {
+  func setValue(_ value: String, for query: AccessibilityElementQuery) async throws {
     throw NotUnderTest()
   }
 
   func wait(
-    _ query: FBAccessibilityElementQuery,
+    _ query: AccessibilityElementQuery,
     timeout: TimeInterval,
     pollInterval: TimeInterval
   ) async throws {
@@ -86,13 +86,13 @@ private final class RecordingUIAutomation: FBUIAutomation, @unchecked Sendable {
   }
 
   func scroll(
-    _ query: FBAccessibilityElementQuery,
+    _ query: AccessibilityElementQuery,
     direction: FBAccessibilityScrollDirection
   ) async throws {
     throw NotUnderTest()
   }
 
-  func frame(_ query: FBAccessibilityElementQuery) async throws -> CGRect {
+  func frame(_ query: AccessibilityElementQuery) async throws -> CGRect {
     throw NotUnderTest()
   }
 }

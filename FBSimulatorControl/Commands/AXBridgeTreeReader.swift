@@ -10,16 +10,16 @@ import FBControlCore
 import Foundation
 
 /// The axbridge read pipeline. Production has one conformer, `AXBridgeUIAutomation`.
-protocol AXBridgeTreeReader: FBUIAutomation {
+protocol AXBridgeTreeReader: UIAutomation {
   /// The resolved axbridge backend, used in response metadata and errors.
-  nonisolated var backend: FBUIAutomationBackend { get }
+  nonisolated var backend: UIAutomationBackend { get }
 
   /// Reads the whole bounded tree the query targets. `.marker` reads the frontmost tree; the match is
   /// found in the serialized result. `attributes` is what the guest fetches per element (nil = its
   /// default list); `traversal` is already resolved. `AXTreeRead` also carries the modal descriptor
   /// and whether the guest's walk was truncated.
   func readRawTree(
-    for query: FBAccessibilityElementQuery,
+    for query: AccessibilityElementQuery,
     attributes: [String]?,
     explainUnreachable: Bool,
     traversal: AXTraversal
@@ -101,7 +101,7 @@ extension AXBridgeTreeReader {
 
   /// Resolves the query, reads the raw tree, serializes it, and attaches response metadata.
   func describeTree(
-    _ query: FBAccessibilityElementQuery,
+    _ query: AccessibilityElementQuery,
     options: FBAccessibilityRequestOptions
   ) async throws -> FBAccessibilityElementsResponse {
     switch query {
@@ -279,7 +279,7 @@ extension AXBridgeTreeReader {
 
   /// The frame of the element `query` names; a whole-tree query answers with the application root.
   /// Narrowing to `.frameDict` optimises serialization only — the guest walks the whole tree either way.
-  func frameFromTree(_ query: FBAccessibilityElementQuery) async throws -> CGRect {
+  func frameFromTree(_ query: AccessibilityElementQuery) async throws -> CGRect {
     let response = try await describeTree(query, options: FBAccessibilityRequestOptions(keys: [.frameDict]))
     // Throws rather than substituting a zero rect, which a caller could not tell apart from an element
     // genuinely at the origin.

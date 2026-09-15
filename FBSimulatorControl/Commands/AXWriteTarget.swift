@@ -16,9 +16,9 @@ struct AXWriteTarget: Equatable {
 
 extension AXBridgeTreeReader {
   func writeTarget(
-    for query: FBAccessibilityElementQuery,
+    for query: AccessibilityElementQuery,
     operation: String,
-    callerAssertion: FBTapOptions.Assertion? = nil
+    callerAssertion: TapOptions.Assertion? = nil
   ) async throws -> AXWriteTarget {
     switch query {
     case let .point(point):
@@ -64,7 +64,7 @@ extension AXBridgeTreeReader {
     }
   }
 
-  func emptyWriteTargetError(for query: FBAccessibilityElementQuery, at point: CGPoint) -> UIAutomationError {
+  func emptyWriteTargetError(for query: AccessibilityElementQuery, at point: CGPoint) -> UIAutomationError {
     guard case let .marker(value, key, _, _) = query else {
       return .noElementAtPoint(backend: backend, x: Double(point.x), y: Double(point.y))
     }
@@ -81,7 +81,7 @@ extension AXBridgeTreeReader {
     return AXBridgeWriteAssertion(key: node, value: actual)
   }
 
-  private func assertBeforeWriting(_ assertion: FBTapOptions.Assertion, atPoint point: CGPoint) async throws {
+  private func assertBeforeWriting(_ assertion: TapOptions.Assertion, atPoint point: CGPoint) async throws {
     let options = FBAccessibilityRequestOptions(keys: FBAXKeys.defaultSet.union([assertion.key.serializationKey]))
     guard let response = try await hitTest(at: point, options: options),
       let element = response.elements.elements.first
@@ -92,7 +92,7 @@ extension AXBridgeTreeReader {
   }
 
   private func validate(
-    _ assertion: FBTapOptions.Assertion?,
+    _ assertion: TapOptions.Assertion?,
     against element: FBAccessibilityDocumentElement
   ) throws {
     guard let assertion else {

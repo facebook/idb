@@ -224,10 +224,10 @@ final class AXBridgeReadsTests: XCTestCase {
 
   // MARK: - One error type across backends
 
-  // A caller holding `any FBUIAutomation` does not statically know its backend, so one catch clause must handle
+  // A caller holding `any UIAutomation` does not statically know its backend, so one catch clause must handle
   // every backend.
   func testOneCatchClauseHandlesEveryBackend() {
-    let backends: [FBUIAutomationBackend] = [.accessibility, .axBridge(persistence: .oneShot, frontmostMethod: .centerPoint, automationMode: true), .axBridge(persistence: .shared, frontmostMethod: .centerPoint, automationMode: true)]
+    let backends: [UIAutomationBackend] = [.accessibility, .axBridge(persistence: .oneShot, frontmostMethod: .centerPoint, automationMode: true), .axBridge(persistence: .shared, frontmostMethod: .centerPoint, automationMode: true)]
     for backend in backends {
       let thrown: Error = UIAutomationError.elementNotFound(backend: backend, key: "AXLabel", value: "General")
       guard case let UIAutomationError.elementNotFound(caught, key, value) = thrown else {
@@ -294,7 +294,7 @@ final class AXBridgeReadsTests: XCTestCase {
 
   // MARK: - Where the accessibility-server remediation is offered
 
-  private static let axBridge = FBUIAutomationBackend.axBridge(persistence: .oneShot, frontmostMethod: .centerPoint, automationMode: true)
+  private static let axBridge = UIAutomationBackend.axBridge(persistence: .oneShot, frontmostMethod: .centerPoint, automationMode: true)
 
   // Only an application with no accessibility server gets the flag guidance: an empty point is a successful read of
   // blank space, and a marker that never appeared is about the app's state.
@@ -357,7 +357,7 @@ final class AXBridgeReadsTests: XCTestCase {
 
   func testValueMismatchIsSeamCatchableAndNamesTheMismatch() {
     // A `tap` value assertion is a fact about the query, not the transport, so it is the neutral `UIAutomationError`,
-    // catchable by a caller holding `any FBUIAutomation`.
+    // catchable by a caller holding `any UIAutomation`.
     let thrown: Error = UIAutomationError.valueMismatch(
       backend: .accessibility, key: FBAXSearchableKey.value.rawValue, expected: "On", actual: "Off"
     )
@@ -378,7 +378,7 @@ final class AXBridgeReadsTests: XCTestCase {
 
   func testSelectingAxbridgeByResolvedNameAssertsAutomationMode() {
     for name in [FBUIAutomationBackendName.axBridgeOneShot, .axBridgePersistent] {
-      guard case let .axBridge(_, _, automationMode) = FBUIAutomationBackend(resolvedName: name) else {
+      guard case let .axBridge(_, _, automationMode) = UIAutomationBackend(resolvedName: name) else {
         return XCTFail("\(name) did not select an axbridge backend")
       }
       XCTAssertEqual(automationMode, true, "selecting \(name) by name asserts automation mode")
@@ -388,8 +388,8 @@ final class AXBridgeReadsTests: XCTestCase {
   // The tri-state has to survive the enum, not just the wire. `false` is what reproduces the child-cache
   // fault and what measures the mode's cost, and it must not collapse into "did not ask".
   func testTheAxbridgeBackendCarriesAnExplicitlyDisabledAutomationMode() {
-    guard case let .axBridge(_, _, off) = FBUIAutomationBackend(resolvedName: .axBridgeOneShot, automationMode: false),
-      case let .axBridge(_, _, unset) = FBUIAutomationBackend(resolvedName: .axBridgeOneShot, automationMode: nil)
+    guard case let .axBridge(_, _, off) = UIAutomationBackend(resolvedName: .axBridgeOneShot, automationMode: false),
+      case let .axBridge(_, _, unset) = UIAutomationBackend(resolvedName: .axBridgeOneShot, automationMode: nil)
     else {
       return XCTFail("expected axbridge backends")
     }
@@ -496,7 +496,7 @@ final class AXBridgeReadsTests: XCTestCase {
   // MARK: - Marker matching agrees with the accessibility backend
 
   // The accessibility backend matches a marker by substring, so the serialized-tree matcher must too, or `--api`
-  // silently changes what `tap General` hits (the contract stated on `FBAccessibilityElementQuery.marker`).
+  // silently changes what `tap General` hits (the contract stated on `AccessibilityElementQuery.marker`).
   func testMarkerMatchesBySubstring() throws {
     let elements = AXTreeWalk.describeAllElements(
       fromTree: [
@@ -844,7 +844,7 @@ final class AXBridgeReadsTests: XCTestCase {
   }
 
   func testDescribeTreeReturnsAnArrayForWholeTreeQueries() async throws {
-    for query in [FBAccessibilityElementQuery.frontmost, .application(pid: 99)] {
+    for query in [AccessibilityElementQuery.frontmost, .application(pid: 99)] {
       let reader = StubAXBridgeTreeReader(read: Self.stubRead())
       let response = try await reader.describeTree(query, options: FBAccessibilityRequestOptions())
       guard case let .tree(elements) = response.elements else {
@@ -869,7 +869,7 @@ final class AXBridgeReadsTests: XCTestCase {
 
   func testDescribeTreeCarriesTheModalDescriptorOutOfTheRead() async throws {
     let modal = AccessibilityModalInfo(kind: .system, elementType: "SBAlertItemWindow", label: "Allow")
-    for query in [FBAccessibilityElementQuery.frontmost, .marker(value: "General", key: .label, depth: 10)] {
+    for query in [AccessibilityElementQuery.frontmost, .marker(value: "General", key: .label, depth: 10)] {
       let reader = StubAXBridgeTreeReader(read: Self.stubRead(modal: modal))
       let response = try await reader.describeTree(query, options: FBAccessibilityRequestOptions())
       XCTAssertEqual(response.modal, modal, "\(query) must surface the read's modal to the host")
@@ -885,7 +885,7 @@ final class AXBridgeReadsTests: XCTestCase {
   }
 
   func testDescribeTreeCarriesTheChosenTraversalToTheRead() async throws {
-    for query in [FBAccessibilityElementQuery.frontmost, .marker(value: "General", key: .label, depth: 10)] {
+    for query in [AccessibilityElementQuery.frontmost, .marker(value: "General", key: .label, depth: 10)] {
       let reader = StubAXBridgeTreeReader(read: Self.stubRead())
       _ = try? await reader.describeTree(query, options: FBAccessibilityRequestOptions(traversalStrategy: .semantic))
       XCTAssertEqual(reader.traversals, [.semantic], "\(query) must carry the caller's choice to the read")
@@ -1382,7 +1382,7 @@ final class AXBridgeReadsTests: XCTestCase {
   // `describeTree` stamps them on the way out. These fields feed the `complete` document only.
   func testDescribeTreeStampsBackendAndTargetForEveryQueryKind() async throws {
     let hit = FBAccessibilityElementsResponse(elements: .single(FBAccessibilityDocumentElement()))
-    let cases: [(FBAccessibilityElementQuery, AccessibilityTargetDescriptor.Kind)] = [
+    let cases: [(AccessibilityElementQuery, AccessibilityTargetDescriptor.Kind)] = [
       (.frontmost, .frontmost),
       (.application(pid: 99), .application),
       (.marker(value: "General", key: .label, depth: 10), .marker),
@@ -1477,17 +1477,17 @@ final class AXBridgeReadsTests: XCTestCase {
     // consumer that silently cannot name (or select) it.
     for name in FBUIAutomationBackendName.allCases {
       XCTAssertEqual(
-        FBUIAutomationBackend(resolvedName: name).name, name,
+        UIAutomationBackend(resolvedName: name).name, name,
         "\(name.rawValue) must round-trip through the backend it selects"
       )
     }
     XCTAssertEqual(
-      FBUIAutomationBackend.axBridge(persistence: .shared, frontmostMethod: .centerPoint, automationMode: true).name,
+      UIAutomationBackend.axBridge(persistence: .shared, frontmostMethod: .centerPoint, automationMode: true).name,
       .axBridgePersistent,
       "the persistent transport is a distinct backend to a consumer reading timings"
     )
     XCTAssertEqual(
-      FBUIAutomationBackend(resolvedName: .axBridgePersistent, frontmostMethod: .windowServer).name,
+      UIAutomationBackend(resolvedName: .axBridgePersistent, frontmostMethod: .windowServer).name,
       .axBridgePersistent,
       "the frontmost method rides the axbridge case without disturbing its name"
     )
@@ -1532,7 +1532,7 @@ final class AXBridgeReadsTests: XCTestCase {
   // A whole-tree query has no element in mind, so it answers with the root's — the application's own
   // rectangle, which is what the accessibility backend reports for the same query.
   func testFrameFromTreeAnswersWithTheRootRectangleForWholeTreeQueries() async throws {
-    for query in [FBAccessibilityElementQuery.frontmost, .application(pid: 99)] {
+    for query in [AccessibilityElementQuery.frontmost, .application(pid: 99)] {
       let frame = try await Self.framedReader().frameFromTree(query)
       XCTAssertEqual(frame, Self.rootRect, "\(query) must answer with the application root's frame")
     }
@@ -1563,7 +1563,7 @@ final class AXBridgeReadsTests: XCTestCase {
   // A backend cannot reach this — `frameFromTree` requests the frame key — but the response type permits it, and a
   // zero rect is not an answer a caller could tell apart from the origin.
   func testFrameFromTreeThrowsWhenTheReadCarriesNoFrame() async throws {
-    let query = FBAccessibilityElementQuery.point(CGPoint(x: 20, y: 110))
+    let query = AccessibilityElementQuery.point(CGPoint(x: 20, y: 110))
     let frameless = FBAccessibilityElementsResponse(elements: .single(FBAccessibilityDocumentElement()))
     do {
       _ = try await StubAXBridgeTreeReader(read: Self.stubRead(), hitTestResult: frameless).frameFromTree(query)
@@ -1580,8 +1580,8 @@ final class AXBridgeReadsTests: XCTestCase {
   // Every query shape can be asked for a frame, so the error names whichever was asked — unlike
   // `elementNotOnScreen`, which can only speak about a marker.
   func testFrameUnavailableNamesEveryTargetShape() {
-    let backend = FBUIAutomationBackend.axBridge(persistence: .oneShot, frontmostMethod: .centerPoint, automationMode: true)
-    let expectations: [(FBAccessibilityElementQuery, String)] = [
+    let backend = UIAutomationBackend.axBridge(persistence: .oneShot, frontmostMethod: .centerPoint, automationMode: true)
+    let expectations: [(AccessibilityElementQuery, String)] = [
       (.frontmost, "the frontmost application"),
       (.application(pid: 99), "pid 99"),
       (.marker(value: "General", key: .label, depth: 10), "AXLabel"),
@@ -1600,7 +1600,7 @@ final class AXBridgeReadsTests: XCTestCase {
   // find there — happens before the request is built. That resolution is what these cover; the request
   // it turns into is pinned in `AXWireContractTests`.
 
-  private static let marker = FBAccessibilityElementQuery.marker(value: "General", key: .label, depth: 10)
+  private static let marker = AccessibilityElementQuery.marker(value: "General", key: .label, depth: 10)
 
   // A coordinate names no element, so it is sent exactly as given: nothing to look up, nothing to assert
   // about, and no tree read to pay for.
@@ -1664,7 +1664,7 @@ final class AXBridgeReadsTests: XCTestCase {
   // A point-addressed write acts on the deepest element under the point, so a whole-tree query would
   // silently become "whatever is in the middle of the screen" rather than the thing the caller named.
   func testWholeTreeQueriesAreRefusedForWrites() async throws {
-    for query in [FBAccessibilityElementQuery.frontmost, .application(pid: 99)] {
+    for query in [AccessibilityElementQuery.frontmost, .application(pid: 99)] {
       do {
         _ = try await Self.framedReader().writeTarget(for: query, operation: "A tap")
         XCTFail("\(query) must not resolve to a point to write to")
@@ -1713,7 +1713,7 @@ final class AXBridgeReadsTests: XCTestCase {
     let target = try await Self.framedReader().writeTarget(
       for: Self.marker,
       operation: "A tap",
-      callerAssertion: FBTapOptions.Assertion(key: .label, value: "General Settings")
+      callerAssertion: TapOptions.Assertion(key: .label, value: "General Settings")
     )
     XCTAssertEqual(target.point, CGPoint(x: Self.childRect.midX, y: Self.childRect.midY))
   }
@@ -1725,7 +1725,7 @@ final class AXBridgeReadsTests: XCTestCase {
       _ = try await Self.framedReader().writeTarget(
         for: Self.marker,
         operation: "A tap",
-        callerAssertion: FBTapOptions.Assertion(key: .label, value: "General")
+        callerAssertion: TapOptions.Assertion(key: .label, value: "General")
       )
       XCTFail("a caller assertion that does not match must refuse the write")
     } catch let error as UIAutomationError {
@@ -1749,7 +1749,7 @@ final class AXBridgeReadsTests: XCTestCase {
       _ = try await reader.writeTarget(
         for: .point(CGPoint(x: 5, y: 6)),
         operation: "A tap",
-        callerAssertion: FBTapOptions.Assertion(key: .label, value: "General")
+        callerAssertion: TapOptions.Assertion(key: .label, value: "General")
       )
       XCTFail("a caller assertion on a point must be checked against the element there")
     } catch let error as UIAutomationError {
@@ -1768,7 +1768,7 @@ final class AXBridgeReadsTests: XCTestCase {
       _ = try await reader.writeTarget(
         for: .point(CGPoint(x: 5, y: 6)),
         operation: "A tap",
-        callerAssertion: FBTapOptions.Assertion(key: .label, value: "General")
+        callerAssertion: TapOptions.Assertion(key: .label, value: "General")
       )
       XCTFail("expected noElementAtPoint to be thrown")
     } catch let error as UIAutomationError {
@@ -1862,7 +1862,7 @@ final class AXBridgeReadsTests: XCTestCase {
   // Every other message opens with the backend's name, so `displayName` is capitalised and ends in
   // "backend"; this one names it part-way through a sentence, where both of those read as a stutter.
   func testAnUnsupportedOperationNamesTheBackendOnceAndInLowerCase() {
-    let backends: [FBUIAutomationBackend] = [
+    let backends: [UIAutomationBackend] = [
       .accessibility, .axBridge(persistence: .oneShot, frontmostMethod: .centerPoint, automationMode: true),
     ]
     for backend in backends {
@@ -2050,10 +2050,10 @@ final class AXBridgeGuestDeathTests: XCTestCase {
 /// A minimal `AXBridgeTreeReader` serving a canned read, so the shared `describeTree` composition can be
 /// observed without a simulator. `readRawTree`, `warnIfTruncated`, `warnIfMostElementsUnframed` and `hitTest`
 /// are the seams
-/// `describeTree` drives; every other `FBUIAutomation` verb is an unused conformance stub.
+/// `describeTree` drives; every other `UIAutomation` verb is an unused conformance stub.
 private final class StubAXBridgeTreeReader: AXBridgeTreeReader, @unchecked Sendable {
 
-  let backend: FBUIAutomationBackend = .axBridge(persistence: .oneShot, frontmostMethod: .centerPoint, automationMode: true)
+  let backend: UIAutomationBackend = .axBridge(persistence: .oneShot, frontmostMethod: .centerPoint, automationMode: true)
 
   private let read: AXTreeRead
   private let hitTestResult: FBAccessibilityElementsResponse?
@@ -2081,7 +2081,7 @@ private final class StubAXBridgeTreeReader: AXBridgeTreeReader, @unchecked Senda
   }
 
   func readRawTree(
-    for query: FBAccessibilityElementQuery,
+    for query: AccessibilityElementQuery,
     attributes: [String]?,
     explainUnreachable: Bool,
     traversal: AXTraversal
@@ -2137,22 +2137,22 @@ private final class StubAXBridgeTreeReader: AXBridgeTreeReader, @unchecked Senda
     return hitTestResult
   }
 
-  func describe(_ query: FBAccessibilityElementQuery, options: FBAccessibilityRequestOptions) async throws -> FBAccessibilityElementsResponse {
+  func describe(_ query: AccessibilityElementQuery, options: FBAccessibilityRequestOptions) async throws -> FBAccessibilityElementsResponse {
     try await describeTree(query, options: options)
   }
 
-  func tap(_ query: FBAccessibilityElementQuery, options: FBTapOptions) async throws {}
+  func tap(_ query: AccessibilityElementQuery, options: TapOptions) async throws {}
 
-  func setValue(_ value: String, for query: FBAccessibilityElementQuery) async throws {}
+  func setValue(_ value: String, for query: AccessibilityElementQuery) async throws {}
 
-  func wait(_ query: FBAccessibilityElementQuery, timeout: TimeInterval, pollInterval: TimeInterval) async throws {}
+  func wait(_ query: AccessibilityElementQuery, timeout: TimeInterval, pollInterval: TimeInterval) async throws {}
 
-  func scroll(_ query: FBAccessibilityElementQuery, direction: FBAccessibilityScrollDirection) async throws {}
+  func scroll(_ query: AccessibilityElementQuery, direction: FBAccessibilityScrollDirection) async throws {}
 
-  func frame(_ query: FBAccessibilityElementQuery) async throws -> CGRect { .zero }
+  func frame(_ query: AccessibilityElementQuery) async throws -> CGRect { .zero }
 
   func drag(
-    from source: FBAccessibilityElementQuery, to destination: FBAccessibilityElementQuery, options: FBDragOptions
+    from source: AccessibilityElementQuery, to destination: AccessibilityElementQuery, options: DragOptions
   ) async throws {}
 }
 

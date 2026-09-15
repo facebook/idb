@@ -14,7 +14,7 @@ enum AXBridgeResponse {
     _ data: Data,
     context: String,
     pid: pid_t? = nil,
-    frontmostMethod: FBAXBridgeFrontmostMethod? = nil
+    frontmostMethod: AXBridgeFrontmostMethod? = nil
   ) throws -> [String: Any] {
     guard let object = try? JSONSerialization.jsonObject(with: data), let response = object as? [String: Any] else {
       throw AXBridgeError.guestFailure("\(context): unparseable guest response")
@@ -28,7 +28,7 @@ enum AXBridgeResponse {
   private static func failure(
     from response: [String: Any],
     pid: pid_t?,
-    frontmostMethod: FBAXBridgeFrontmostMethod?
+    frontmostMethod: AXBridgeFrontmostMethod?
   ) -> AXBridgeError {
     let message = (response[AXWire.Envelope.error.rawValue] as? String) ?? "the guest reported a failure with no message"
     let reportedPid = (response[AXWire.Envelope.pid.rawValue] as? Int).flatMap(pid_t.init(exactly:)) ?? pid

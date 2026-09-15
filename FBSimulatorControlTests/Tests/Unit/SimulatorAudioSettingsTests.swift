@@ -177,18 +177,18 @@ final class SimulatorAudioSettingsTests: XCTestCase {
   // A nil field means "leave it alone" rather than "write the current value back", because each field
   // is a separate notification and republishing one moves the guest's own bookkeeping for it.
   func testAnUpdateCarriesOnlyTheFieldsItWasGiven() {
-    let volumeOnly = FBSimulatorAudioSettingsUpdate(volume: 0.5)
+    let volumeOnly = SimulatorAudioSettingsUpdate(volume: 0.5)
     XCTAssertEqual(volumeOnly.volume, 0.5)
     XCTAssertNil(volumeOnly.ringerEnabled)
 
-    let ringerOnly = FBSimulatorAudioSettingsUpdate(ringerEnabled: false)
+    let ringerOnly = SimulatorAudioSettingsUpdate(ringerEnabled: false)
     XCTAssertNil(ringerOnly.volume)
     XCTAssertEqual(ringerOnly.ringerEnabled, false)
   }
 
   func testAnUpdateWithNoFieldsIsEmpty() {
-    XCTAssertTrue(FBSimulatorAudioSettingsUpdate().isEmpty)
-    XCTAssertFalse(FBSimulatorAudioSettingsUpdate(volume: 0).isEmpty)
-    XCTAssertFalse(FBSimulatorAudioSettingsUpdate(ringerEnabled: true).isEmpty)
+    XCTAssertTrue(SimulatorAudioSettingsUpdate().isEmpty)
+    XCTAssertFalse(SimulatorAudioSettingsUpdate(volume: 0).isEmpty)
+    XCTAssertFalse(SimulatorAudioSettingsUpdate(ringerEnabled: true).isEmpty)
   }
 }

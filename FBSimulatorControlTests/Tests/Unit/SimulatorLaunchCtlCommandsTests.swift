@@ -12,13 +12,13 @@ import XCTest
 final class SimulatorLaunchCtlCommandsTests: XCTestCase {
 
   func testListReturnsStdoutOnZeroExit() throws {
-    let output = FBInSimulatorToolOutput(stdout: Data("- 0 com.apple.foo\n".utf8), stderr: Data(), exitCode: 0)
+    let output = InSimulatorToolOutput(stdout: Data("- 0 com.apple.foo\n".utf8), stderr: Data(), exitCode: 0)
     let result = try SimulatorLaunchCtlCommands.stdout(orThrowFrom: output, command: .list, logger: nil)
     XCTAssertEqual(result, "- 0 com.apple.foo\n")
   }
 
   func testListThrowsOnNonZeroExit() {
-    let output = FBInSimulatorToolOutput(stdout: Data(), stderr: Data("boom\n".utf8), exitCode: 1)
+    let output = InSimulatorToolOutput(stdout: Data(), stderr: Data("boom\n".utf8), exitCode: 1)
     XCTAssertThrowsError(try SimulatorLaunchCtlCommands.stdout(orThrowFrom: output, command: .list, logger: nil)) { error in
       XCTAssertTrue(error.localizedDescription.contains("exit code 1"), "got: \(error.localizedDescription)")
     }
@@ -26,13 +26,13 @@ final class SimulatorLaunchCtlCommandsTests: XCTestCase {
 
   func testStopToleratesNotRunningExitCode() throws {
     // launchctl returns ESRCH (3) when the service is not running; idempotent, not a failure.
-    let output = FBInSimulatorToolOutput(stdout: Data(), stderr: Data(), exitCode: 3)
+    let output = InSimulatorToolOutput(stdout: Data(), stderr: Data(), exitCode: 3)
     let result = try SimulatorLaunchCtlCommands.stdout(orThrowFrom: output, command: .stop(serviceName: "com.apple.foo"), logger: nil)
     XCTAssertEqual(result, "")
   }
 
   func testStopThrowsOnGenuineFailure() {
-    let output = FBInSimulatorToolOutput(stdout: Data(), stderr: Data("Operation not permitted\n".utf8), exitCode: 1)
+    let output = InSimulatorToolOutput(stdout: Data(), stderr: Data("Operation not permitted\n".utf8), exitCode: 1)
     XCTAssertThrowsError(try SimulatorLaunchCtlCommands.stdout(orThrowFrom: output, command: .stop(serviceName: "com.apple.foo"), logger: nil)) { error in
       XCTAssertTrue(error.localizedDescription.contains("Operation not permitted"), "got: \(error.localizedDescription)")
     }
@@ -40,7 +40,7 @@ final class SimulatorLaunchCtlCommandsTests: XCTestCase {
 
   func testStartThrowsOnNotRunningExitCode() {
     // Unlike stop, for start ESRCH (3) means there is no such service to start — a genuine failure.
-    let output = FBInSimulatorToolOutput(stdout: Data(), stderr: Data("Could not find service\n".utf8), exitCode: 3)
+    let output = InSimulatorToolOutput(stdout: Data(), stderr: Data("Could not find service\n".utf8), exitCode: 3)
     XCTAssertThrowsError(try SimulatorLaunchCtlCommands.stdout(orThrowFrom: output, command: .start(serviceName: "com.apple.foo"), logger: nil)) { error in
       XCTAssertTrue(error.localizedDescription.contains("exit code 3"), "got: \(error.localizedDescription)")
     }

@@ -12,7 +12,7 @@ import Foundation
 /// A resolvable reference to an accessibility element: a screen point, a marker
 /// matched against a searchable key up to a depth, the frontmost application, or a
 /// specific application by process identifier.
-public enum FBAccessibilityElementQuery: Equatable, Sendable {
+public enum AccessibilityElementQuery: Equatable, Sendable {
   case point(CGPoint)
   /// An element whose `key` value *contains* `value` — a substring match, not an equality test, so
   /// `"General"` finds an element labelled `"General Settings"`. Every backend matches the same way;
@@ -32,7 +32,7 @@ public enum FBAccessibilityElementQuery: Equatable, Sendable {
   case application(pid: pid_t)
 }
 
-public extension FBAccessibilityElementQuery {
+public extension AccessibilityElementQuery {
   /// How this query appears in the `complete` output document. Every describe verb emits the same
   /// document shape, so this is what tells a consumer which verb produced the one it is holding.
   var targetDescriptor: AccessibilityTargetDescriptor {
@@ -49,7 +49,7 @@ public extension FBAccessibilityElementQuery {
   }
 }
 
-extension FBAccessibilityElementQuery: CustomStringConvertible {
+extension AccessibilityElementQuery: CustomStringConvertible {
   /// How this query names its target in an error a user reads, phrased as a noun so it reads inside a
   /// sentence. The machine-readable counterpart is `targetDescriptor`.
   public var description: String {

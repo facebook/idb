@@ -561,7 +561,7 @@ final class SimulatorAccessibilityCommandsTests: XCTestCase {
     XCTAssertEqual(response.profilingData?.translatorProfile?.fetchedKeys, expectedKeys, "fetchedKeys should match exactly the keys that were requested")
   }
 
-  // `FBTapOptions.duration` asks for a long-press. The accessibility backend performs `AXPress`, which is
+  // `TapOptions.duration` asks for a long-press. The accessibility backend performs `AXPress`, which is
   // instantaneous and has nowhere to put a hold, so the request is refused rather than quietly served as
   // an ordinary tap — a test asking for a long-press and getting a tap passes for the wrong reason.
   func testAccessibilityTapRefusesAHoldDuration() async throws {
@@ -575,7 +575,7 @@ final class SimulatorAccessibilityCommandsTests: XCTestCase {
 
     let automation = try simulator.uiAutomation(backend: .accessibility)
     do {
-      try await automation.tap(.point(CGPoint(x: 95, y: 772)), options: FBTapOptions(duration: 2))
+      try await automation.tap(.point(CGPoint(x: 95, y: 772)), options: TapOptions(duration: 2))
       XCTFail("a hold this backend cannot perform must be refused")
     } catch let error as UIAutomationError {
       guard case let .operationUnsupported(backend, operation) = error else {

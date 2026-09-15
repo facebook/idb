@@ -8,8 +8,8 @@
 import Foundation
 
 /// A curated, device-wide simulator setting applied via `FBSimulator.apply(_:)`. Parsing a CLI
-/// `name`/`value` is `FBSimulatorSettingResolution`'s job.
-public enum FBSimulatorSetting: Equatable {
+/// `name`/`value` is `SimulatorSettingResolution`'s job.
+public enum SimulatorSetting: Equatable {
   case hardwareKeyboard(Bool)
   case slowAnimations(Bool)
   case increaseContrast(Bool)
@@ -23,10 +23,10 @@ public enum FBSimulatorSetting: Equatable {
   case locale(localeIdentifier: String)
 }
 
-/// The result of resolving a CLI `set` `name`/`value`: a curated `FBSimulatorSetting`, or a raw
+/// The result of resolving a CLI `set` `name`/`value`: a curated `SimulatorSetting`, or a raw
 /// preference write for any other name.
-public enum FBSimulatorSettingResolution: Equatable {
-  case setting(FBSimulatorSetting)
+public enum SimulatorSettingResolution: Equatable {
+  case setting(SimulatorSetting)
   case preference(name: String, value: String, type: String?, domain: String?)
 }
 
@@ -76,7 +76,7 @@ extension SimulatorSettingKey {
   }
 }
 
-public extension FBSimulatorSetting {
+public extension SimulatorSetting {
   /// The curated setting names accepted by `set`/`get`. A name outside this list is treated as a raw
   /// preference key. Useful for rendering CLI help and discoverability.
   static var curatedNames: [String] {
@@ -84,7 +84,7 @@ public extension FBSimulatorSetting {
   }
 }
 
-/// Raised when a `name`/`value` pair cannot be parsed into an `FBSimulatorSetting`.
+/// Raised when a `name`/`value` pair cannot be parsed into an `SimulatorSetting`.
 public enum SimulatorSettingError: Error, CustomStringConvertible, LocalizedError {
   case invalidValue(name: String, value: String, expected: String)
 
@@ -98,7 +98,7 @@ public enum SimulatorSettingError: Error, CustomStringConvertible, LocalizedErro
   public var errorDescription: String? { description }
 }
 
-extension FBSimulatorSettingResolution {
+extension SimulatorSettingResolution {
 
   /// Parse a CLI-style `name`/`value` into a resolution. A curated name yields `.setting`; any other
   /// name yields `.preference` (a raw defaults write), the only case that consults `type`/`domain`.
@@ -109,21 +109,21 @@ extension FBSimulatorSettingResolution {
     }
     switch key {
     case .hardwareKeyboard:
-      self = .setting(.hardwareKeyboard(try FBSimulatorSettingResolution.parseEnabled(name: name, value: value)))
+      self = .setting(.hardwareKeyboard(try SimulatorSettingResolution.parseEnabled(name: name, value: value)))
     case .slowAnimations:
-      self = .setting(.slowAnimations(try FBSimulatorSettingResolution.parseEnabled(name: name, value: value)))
+      self = .setting(.slowAnimations(try SimulatorSettingResolution.parseEnabled(name: name, value: value)))
     case .increaseContrast:
-      self = .setting(.increaseContrast(try FBSimulatorSettingResolution.parseEnabled(name: name, value: value)))
+      self = .setting(.increaseContrast(try SimulatorSettingResolution.parseEnabled(name: name, value: value)))
     case .reduceMotion:
-      self = .setting(.reduceMotion(try FBSimulatorSettingResolution.parseEnabled(name: name, value: value)))
+      self = .setting(.reduceMotion(try SimulatorSettingResolution.parseEnabled(name: name, value: value)))
     case .reduceTransparency:
-      self = .setting(.reduceTransparency(try FBSimulatorSettingResolution.parseEnabled(name: name, value: value)))
+      self = .setting(.reduceTransparency(try SimulatorSettingResolution.parseEnabled(name: name, value: value)))
     case .buttonShapes:
-      self = .setting(.buttonShapes(try FBSimulatorSettingResolution.parseEnabled(name: name, value: value)))
+      self = .setting(.buttonShapes(try SimulatorSettingResolution.parseEnabled(name: name, value: value)))
     case .voiceOver:
-      self = .setting(.voiceOver(try FBSimulatorSettingResolution.parseEnabled(name: name, value: value)))
+      self = .setting(.voiceOver(try SimulatorSettingResolution.parseEnabled(name: name, value: value)))
     case .autoFillPasswords:
-      self = .setting(.autoFillPasswords(try FBSimulatorSettingResolution.parseEnabled(name: name, value: value)))
+      self = .setting(.autoFillPasswords(try SimulatorSettingResolution.parseEnabled(name: name, value: value)))
     case .appearance:
       guard let appearance = SimulatorAppearance(argumentName: value) else {
         throw SimulatorSettingError.invalidValue(

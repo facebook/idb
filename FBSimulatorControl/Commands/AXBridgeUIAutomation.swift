@@ -9,7 +9,7 @@ import CoreGraphics
 import FBControlCore
 import Foundation
 
-/// The `FBUIAutomation` backend that reads via the `SimulatorFrameworkBridge` guest `accessibility`
+/// The `UIAutomation` backend that reads via the `SimulatorFrameworkBridge` guest `accessibility`
 /// service — an in-simulator accessibility client with no test bundle.
 ///
 /// Writes are semantic accessibility actions addressed by point: a one-shot guest cannot hold an
@@ -33,17 +33,17 @@ final class AXBridgeUIAutomation: AXBridgeTreeReader, @unchecked Sendable {
 
   /// The transport lifecycle this reader was vended for. Held only so `backend` reports the case the
   /// caller selected; the injected transport already encodes the behavioural difference.
-  private let persistence: FBAXBridgePersistence
+  private let persistence: AXBridgePersistence
 
   /// How frontmost reads resolve the foreground app. Defaults to the authoritative `.windowServer`; a
   /// caller can select the positional `.centerPoint` or `.runningBoard`.
-  private let frontmostMethod: FBAXBridgeFrontmostMethod
+  private let frontmostMethod: AXBridgeFrontmostMethod
 
   init(
     simulator: FBSimulator,
     transport: any AXBridgeTransport,
-    persistence: FBAXBridgePersistence,
-    frontmostMethod: FBAXBridgeFrontmostMethod = .windowServer,
+    persistence: AXBridgePersistence,
+    frontmostMethod: AXBridgeFrontmostMethod = .windowServer,
     automationMode: Bool? = true
   ) {
     self.simulator = simulator
@@ -56,13 +56,13 @@ final class AXBridgeUIAutomation: AXBridgeTreeReader, @unchecked Sendable {
   // MARK: - Reads
 
   func describe(
-    _ query: FBAccessibilityElementQuery,
+    _ query: AccessibilityElementQuery,
     options: FBAccessibilityRequestOptions
   ) async throws -> FBAccessibilityElementsResponse {
     try await describeTree(query, options: options)
   }
 
-  nonisolated var backend: FBUIAutomationBackend {
+  nonisolated var backend: UIAutomationBackend {
     .axBridge(
       persistence: persistence, frontmostMethod: frontmostMethod, automationMode: requestedAutomationMode)
   }
@@ -105,7 +105,7 @@ final class AXBridgeUIAutomation: AXBridgeTreeReader, @unchecked Sendable {
   /// `.application` reads the named pid; every other query is one fused guest call that resolves the
   /// frontmost app at the screen-centre anchor and reads its tree. `.point` goes through `hitTest`.
   func readRawTree(
-    for query: FBAccessibilityElementQuery,
+    for query: AccessibilityElementQuery,
     attributes: [String]?,
     explainUnreachable: Bool,
     traversal: AXTraversal
@@ -174,7 +174,7 @@ final class AXBridgeUIAutomation: AXBridgeTreeReader, @unchecked Sendable {
   }
 
   func wait(
-    _ query: FBAccessibilityElementQuery,
+    _ query: AccessibilityElementQuery,
     timeout: TimeInterval,
     pollInterval: TimeInterval
   ) async throws {
@@ -202,8 +202,8 @@ final class AXBridgeUIAutomation: AXBridgeTreeReader, @unchecked Sendable {
   // MARK: - Writes
 
   func tap(
-    _ query: FBAccessibilityElementQuery,
-    options: FBTapOptions
+    _ query: AccessibilityElementQuery,
+    options: TapOptions
   ) async throws {
     // The AX runtime's press is instantaneous with nowhere to put a hold; reject `duration` rather
     // than silently downgrading a long-press to a tap.
@@ -214,12 +214,12 @@ final class AXBridgeUIAutomation: AXBridgeTreeReader, @unchecked Sendable {
     try await write(.perform(.press), to: target, query: query)
   }
 
-  func setValue(_ value: String, for query: FBAccessibilityElementQuery) async throws {
+  func setValue(_ value: String, for query: AccessibilityElementQuery) async throws {
     let target = try await writeTarget(for: query, operation: "Setting a value", callerAssertion: nil)
     try await write(.setValue(value), to: target, query: query)
   }
 
-  func scroll(_ query: FBAccessibilityElementQuery, direction: FBAccessibilityScrollDirection) async throws {
+  func scroll(_ query: AccessibilityElementQuery, direction: FBAccessibilityScrollDirection) async throws {
     let target = try await writeTarget(for: query, operation: "Scroll", callerAssertion: nil)
     try await write(.perform(Self.action(for: direction)), to: target, query: query)
   }
@@ -227,9 +227,9 @@ final class AXBridgeUIAutomation: AXBridgeTreeReader, @unchecked Sendable {
   /// Synthesized over HID: a drag is a touch path, not an action on a single element, so the guest has
   /// no verb for it.
   func drag(
-    from source: FBAccessibilityElementQuery,
-    to destination: FBAccessibilityElementQuery,
-    options: FBDragOptions
+    from source: AccessibilityElementQuery,
+    to destination: AccessibilityElementQuery,
+    options: DragOptions
   ) async throws {
     let start = try await writeTarget(for: source, operation: DragEndpoint.operation, callerAssertion: nil).point
     let end = try await writeTarget(for: destination, operation: DragEndpoint.operation, callerAssertion: nil).point
@@ -257,7 +257,7 @@ final class AXBridgeUIAutomation: AXBridgeTreeReader, @unchecked Sendable {
   private func write(
     _ kind: AXBridgeWriteRequest.Kind,
     to target: AXWriteTarget,
-    query: FBAccessibilityElementQuery
+    query: AccessibilityElementQuery
   ) async throws {
     try await translatingWriteErrors(query) {
       let response = try await transport.send(
@@ -279,7 +279,7 @@ final class AXBridgeUIAutomation: AXBridgeTreeReader, @unchecked Sendable {
 
   /// Adds the refused-assertion case, which only a write can meet, to the shared backend-error
   /// translation; the guest cannot know which marker sent the write.
-  private func translatingWriteErrors(_ query: FBAccessibilityElementQuery, _ body: () async throws -> Void) async throws {
+  private func translatingWriteErrors(_ query: AccessibilityElementQuery, _ body: () async throws -> Void) async throws {
     do {
       try await translatingBackendErrors(body)
     } catch let AXBridgeError.assertionFailed(message) {
@@ -290,7 +290,7 @@ final class AXBridgeUIAutomation: AXBridgeTreeReader, @unchecked Sendable {
     }
   }
 
-  func frame(_ query: FBAccessibilityElementQuery) async throws -> CGRect {
+  func frame(_ query: AccessibilityElementQuery) async throws -> CGRect {
     try await frameFromTree(query)
   }
 

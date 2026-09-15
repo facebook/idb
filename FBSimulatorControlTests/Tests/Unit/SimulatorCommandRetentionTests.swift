@@ -107,7 +107,7 @@ enum SimulatorCommandAccessor: CaseIterable, Sendable {
     case .uiAutomation:
       // Every backend, since only the persistent axbridge scopes resolve a transport into the cache.
       for name in FBUIAutomationBackendName.allCases {
-        _ = try? simulator.uiAutomation(backend: FBUIAutomationBackend(resolvedName: name))
+        _ = try? simulator.uiAutomation(backend: UIAutomationBackend(resolvedName: name))
       }
     case .accessibility:
       _ = simulator.accessibility

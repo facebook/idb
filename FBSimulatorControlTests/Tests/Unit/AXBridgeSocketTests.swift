@@ -35,14 +35,14 @@ final class AXBridgeSocketTests: XCTestCase {
     XCTAssertGreaterThan(window.tv_usec, 0, "a sub-second deadline that converts to zero is no deadline")
   }
   func testEveryResolvedBackendNameRoundTrips() {
-    let cases: [(FBAXBridgePersistence, FBUIAutomationBackendName)] = [
+    let cases: [(AXBridgePersistence, FBUIAutomationBackendName)] = [
       (.oneShot, .axBridgeOneShot), (.shared, .axBridgePersistent), (.exclusive, .axBridgeExclusive),
     ]
     for (persistence, name) in cases {
-      let backend = FBUIAutomationBackend.axBridge(
+      let backend = UIAutomationBackend.axBridge(
         persistence: persistence, frontmostMethod: .windowServer, automationMode: true)
       XCTAssertEqual(backend.name, name)
-      XCTAssertEqual(FBUIAutomationBackend(resolvedName: name), backend)
+      XCTAssertEqual(UIAutomationBackend(resolvedName: name), backend)
     }
   }
 

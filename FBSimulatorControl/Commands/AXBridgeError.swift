@@ -23,7 +23,7 @@ public enum AXBridgeError: LocalizedError, Sendable {
   /// The frontmost-resolution strategy the caller selected could not name an application, for a reason
   /// that is about the strategy rather than about any one application. Carries the method asked for,
   /// because `--frontmost-method` is the caller's choice and the other two may well answer.
-  case frontmostUnresolved(method: FBAXBridgeFrontmostMethod, reason: String)
+  case frontmostUnresolved(method: AXBridgeFrontmostMethod, reason: String)
   /// The guest reported that `pid` names no readable application — a dead pid, or an app whose
   /// accessibility server never started. `pid` is nil when a display-wide hit-test resolves nothing.
   case applicationUnavailable(pid: pid_t?)

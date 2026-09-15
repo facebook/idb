@@ -38,8 +38,8 @@ enum UIAutomationPolling {
   /// treat "not there" as `nil` rather than throwing, and throw only on a genuine failure, which ends
   /// the wait immediately instead of burning the timeout.
   static func waitForMarker(
-    _ query: FBAccessibilityElementQuery,
-    backend: FBUIAutomationBackend,
+    _ query: AccessibilityElementQuery,
+    backend: UIAutomationBackend,
     timeout: TimeInterval,
     pollInterval: TimeInterval,
     probe: (_ value: String, _ key: FBAXSearchableKey, _ depth: UInt) async throws -> Bool?

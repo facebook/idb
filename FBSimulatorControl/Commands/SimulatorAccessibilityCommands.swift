@@ -79,7 +79,7 @@ final class SimulatorAccessibilityCommands: AccessibilityOperations {
 
   // MARK: - AccessibilityOperations
 
-  func resolveElement(for query: FBAccessibilityElementQuery) async throws -> AccessibilityElement {
+  func resolveElement(for query: AccessibilityElementQuery) async throws -> AccessibilityElement {
     try validateAccessibility()
     switch query {
     case let .point(point):

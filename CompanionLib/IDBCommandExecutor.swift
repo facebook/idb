@@ -185,16 +185,16 @@ public final class IDBCommandExecutor {
     try await simulator.uiAutomation(backend: .accessibility).tap(.marker(value: label, key: .label, depth: .max))
   }
 
-  public func accessibility_tap(query: FBAccessibilityElementQuery, expectedValue: String?, expectedKey: FBAXSearchableKey) async throws {
+  public func accessibility_tap(query: AccessibilityElementQuery, expectedValue: String?, expectedKey: FBAXSearchableKey) async throws {
     guard let simulator = target as? FBSimulator else {
       throw IDBCommandError.simulatorOnlyOperation(operation: "tap by accessibility", targetDescription: String(describing: target))
     }
-    let assertion = expectedValue.map { FBTapOptions.Assertion(key: expectedKey, value: $0) }
-    try await simulator.uiAutomation(backend: .accessibility).tap(query, options: FBTapOptions(assertion: assertion))
+    let assertion = expectedValue.map { TapOptions.Assertion(key: expectedKey, value: $0) }
+    try await simulator.uiAutomation(backend: .accessibility).tap(query, options: TapOptions(assertion: assertion))
   }
 
   /// Describes the single element `query` names, serialized in `options.format`.
-  public func accessibility_describe(query: FBAccessibilityElementQuery, options: FBAccessibilityRequestOptions, backend: FBUIAutomationBackend = .accessibility) async throws -> Data {
+  public func accessibility_describe(query: AccessibilityElementQuery, options: FBAccessibilityRequestOptions, backend: UIAutomationBackend = .accessibility) async throws -> Data {
     guard let simulator = target as? FBSimulator else {
       throw IDBCommandError.simulatorOnlyOperation(operation: "describe accessibility", targetDescription: String(describing: target))
     }
@@ -202,14 +202,14 @@ public final class IDBCommandExecutor {
       .formattedOutputJSON(format: options.format)
   }
 
-  public func accessibility_scroll(query: FBAccessibilityElementQuery, direction: FBAccessibilityScrollDirection) async throws {
+  public func accessibility_scroll(query: AccessibilityElementQuery, direction: FBAccessibilityScrollDirection) async throws {
     guard let simulator = target as? FBSimulator else {
       throw IDBCommandError.simulatorOnlyOperation(operation: "scroll by accessibility", targetDescription: String(describing: target))
     }
     try await simulator.uiAutomation(backend: .accessibility).scroll(query, direction: direction)
   }
 
-  public func accessibility_set_value(query: FBAccessibilityElementQuery, value: String) async throws {
+  public func accessibility_set_value(query: AccessibilityElementQuery, value: String) async throws {
     guard let simulator = target as? FBSimulator else {
       throw IDBCommandError.simulatorOnlyOperation(operation: "set value by accessibility", targetDescription: String(describing: target))
     }
@@ -217,9 +217,9 @@ public final class IDBCommandExecutor {
   }
 
   public func accessibility_drag(
-    from source: FBAccessibilityElementQuery,
-    to destination: FBAccessibilityElementQuery,
-    options: FBDragOptions
+    from source: AccessibilityElementQuery,
+    to destination: AccessibilityElementQuery,
+    options: DragOptions
   ) async throws {
     guard let simulator = target as? FBSimulator else {
       throw IDBCommandError.simulatorOnlyOperation(operation: "drag by accessibility", targetDescription: String(describing: target))
@@ -232,11 +232,11 @@ public final class IDBCommandExecutor {
       value, options: FBAccessibilityRequestOptions(format: format, enableLogging: false))
   }
 
-  public func accessibility_info_at_point(_ value: NSValue?, options: FBAccessibilityRequestOptions, backend: FBUIAutomationBackend = .accessibility) async throws -> FBAccessibilityElementsResponse {
+  public func accessibility_info_at_point(_ value: NSValue?, options: FBAccessibilityRequestOptions, backend: UIAutomationBackend = .accessibility) async throws -> FBAccessibilityElementsResponse {
     guard let simulator = target as? FBSimulator else {
       throw IDBCommandError.simulatorOnlyOperation(operation: "provide accessibility commands", targetDescription: String(describing: target))
     }
-    let query: FBAccessibilityElementQuery = value.map { .point($0.pointValue) } ?? .frontmost
+    let query: AccessibilityElementQuery = value.map { .point($0.pointValue) } ?? .frontmost
     return try await simulator.uiAutomation(backend: backend).describe(query, options: options)
   }
 
@@ -532,7 +532,7 @@ public final class IDBCommandExecutor {
   }
 
   public func set_preference(_ name: String, value: String, type: String?, domain: String?) async throws {
-    try await simulatorTarget().preferences.apply(FBSimulatorSettingResolution(name: name, value: value, type: type, domain: domain))
+    try await simulatorTarget().preferences.apply(SimulatorSettingResolution(name: name, value: value, type: type, domain: domain))
   }
 
   public func get_preference(_ name: String, domain: String?) async throws -> String {

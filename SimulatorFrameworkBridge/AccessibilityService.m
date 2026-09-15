@@ -177,7 +177,7 @@ static NSString *const kActionScrollToVisible = @"scroll-to-visible";
 
 // The frontmost-resolution methods, shared by the request `method` selector and the response `method`
 // value: a request selects a strategy with one of these, and a fused frontmost response echoes back the
-// one that answered, so a guest-reported `method` round-trips into the host's `FBAXBridgeFrontmostMethod`.
+// one that answered, so a guest-reported `method` round-trips into the host's `AXBridgeFrontmostMethod`.
 // `center-point` is the positional system-wide hit-test; `window-server` is the authoritative query, and
 // the default when a request names no method.
 static NSString *const kMethodCenterPoint = @"center-point";

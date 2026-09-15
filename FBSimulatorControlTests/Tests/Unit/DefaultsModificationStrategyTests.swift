@@ -12,26 +12,26 @@ import XCTest
 final class DefaultsModificationStrategyTests: XCTestCase {
 
   func testReadReturnsTrimmedStdoutOnZeroExit() throws {
-    let output = FBInSimulatorToolOutput(stdout: Data("value\n".utf8), stderr: Data(), exitCode: 0)
+    let output = InSimulatorToolOutput(stdout: Data("value\n".utf8), stderr: Data(), exitCode: 0)
     let result = try DefaultsModificationStrategy.stdout(orThrowFrom: output, command: .read(domain: "d", key: "k"), logger: nil)
     XCTAssertEqual(result as String, "value")
   }
 
   func testReadToleratesMissingKeyNonZeroExit() throws {
     // defaults returns 1 for a missing key/domain; a benign optional read, not a failure.
-    let output = FBInSimulatorToolOutput(stdout: Data(), stderr: Data("does not exist\n".utf8), exitCode: 1)
+    let output = InSimulatorToolOutput(stdout: Data(), stderr: Data("does not exist\n".utf8), exitCode: 1)
     let result = try DefaultsModificationStrategy.stdout(orThrowFrom: output, command: .read(domain: "d", key: "missing"), logger: nil)
     XCTAssertEqual(result as String, "")
   }
 
   func testDeleteToleratesMissingKeyNonZeroExit() throws {
-    let output = FBInSimulatorToolOutput(stdout: Data(), stderr: Data("does not exist\n".utf8), exitCode: 1)
+    let output = InSimulatorToolOutput(stdout: Data(), stderr: Data("does not exist\n".utf8), exitCode: 1)
     let result = try DefaultsModificationStrategy.stdout(orThrowFrom: output, command: .delete(path: "p", key: "k"), logger: nil)
     XCTAssertEqual(result as String, "")
   }
 
   func testWriteThrowsOnNonZeroExit() {
-    let output = FBInSimulatorToolOutput(stdout: Data(), stderr: Data("bad type\n".utf8), exitCode: 1)
+    let output = InSimulatorToolOutput(stdout: Data(), stderr: Data("bad type\n".utf8), exitCode: 1)
     XCTAssertThrowsError(try DefaultsModificationStrategy.stdout(orThrowFrom: output, command: .write(domain: "d", key: "k", type: "string", value: "v"), logger: nil)) { error in
       XCTAssertTrue(String(describing: error).contains("exit code 1"), "got: \(String(describing: error))")
       XCTAssertTrue(String(describing: error).contains("bad type"), "got: \(String(describing: error))")

@@ -171,7 +171,7 @@ final class AccessibilityActionRequestTranslationTests: XCTestCase {
     }
     // Zero is unset on the wire and none of these are useful at zero, so the server's defaults
     // stand in -- a press of zero would make the gesture a flick.
-    XCTAssertEqual(options, FBDragOptions())
+    XCTAssertEqual(options, DragOptions())
   }
 
   func testEveryOptionIsCarriedThrough() throws {
@@ -185,7 +185,7 @@ final class AccessibilityActionRequestTranslationTests: XCTestCase {
       return XCTFail("expected a drag")
     }
     XCTAssertEqual(
-      options, FBDragOptions(pressDuration: 1, duration: 2, releaseDuration: 0.25, delta: 5))
+      options, DragOptions(pressDuration: 1, duration: 2, releaseDuration: 0.25, delta: 5))
   }
 
   func testEveryNegativeOptionIsRefusedByNameAndValue() {

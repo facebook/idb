@@ -10,7 +10,7 @@ import FBControlCore
 import Foundation
 
 /// Selects how an in-guest frontmost read resolves the foreground application.
-public enum FBAXBridgeFrontmostMethod: String, Sendable, CaseIterable {
+public enum AXBridgeFrontmostMethod: String, Sendable, CaseIterable {
   case centerPoint = "center-point"
   case windowServer = "window-server"
   case runningBoard = "runningboard"
@@ -140,7 +140,7 @@ struct AXBridgeReadRequest: Sendable, Equatable {
 
 enum AXBridgeRequest: Sendable {
   case read(pid: pid_t, options: AXBridgeReadRequest)
-  case readFrontmost(x: Double, y: Double, method: FBAXBridgeFrontmostMethod, options: AXBridgeReadRequest)
+  case readFrontmost(x: Double, y: Double, method: AXBridgeFrontmostMethod, options: AXBridgeReadRequest)
   case hitTest(x: Double, y: Double, attributes: [String]?)
   case write(AXBridgeWriteRequest)
   case deviceSettingRead(String)
