@@ -29,6 +29,16 @@ Read before acting
 - Narrow reads: `idb ui describe <marker>` describes one element by its
   accessibility identity; `idb ui describe-point <x> <y>` by position.
 
+Wait for element presence
+- On simulators, use `idb ui wait <marker> --match-key AXUniqueId --timeout 30`
+  to let the companion poll for an element. Use this instead of busy-looping
+  on `describe-all` or adding fixed sleeps while waiting for a screen to update.
+- Matching is a case-sensitive substring; omit `--match-key` to match a label.
+- With `--json`, a match returns `{"found": true}`; a timeout returns
+  `{"found": false}` and a nonzero exit status. Other failures remain errors.
+- Presence does not establish visibility or hittability. Read the element
+  again when you need its properties before acting.
+
 Interact by element identity, not coordinates
 - `idb ui tap <marker> --match-key AXUniqueId` resolves the accessibility
   element and invokes its press action, so it does not drift with layout,
