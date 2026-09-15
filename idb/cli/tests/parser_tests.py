@@ -255,6 +255,25 @@ class TestParser(TestCase):
             override_modification_time=None,
         )
 
+    async def test_dsym_install(self) -> None:
+        self.client_mock.install_dsym = MagicMock(return_value=AsyncGeneratorMock())
+        await cli_main(cmd_input=["dsym", "install", "Symbols.dSYM"])
+        self.client_mock.install_dsym.assert_called_once_with(
+            "Symbols.dSYM", None, None, None
+        )
+
+    async def test_dylib_install(self) -> None:
+        self.client_mock.install_dylib = MagicMock(return_value=AsyncGeneratorMock())
+        await cli_main(cmd_input=["dylib", "install", "libExample.dylib"])
+        self.client_mock.install_dylib.assert_called_once_with("libExample.dylib")
+
+    async def test_framework_install(self) -> None:
+        self.client_mock.install_framework = MagicMock(
+            return_value=AsyncGeneratorMock()
+        )
+        await cli_main(cmd_input=["framework", "install", "Example.framework"])
+        self.client_mock.install_framework.assert_called_once_with("Example.framework")
+
     async def test_uninstall(self) -> None:
         self.client_mock.uninstall = AsyncMock()
         app_path = "com.dummy.app"
@@ -492,6 +511,56 @@ class TestParser(TestCase):
         self.client_mock.pull.assert_called_once_with(
             container=bundle_id, src_path=src, dest_path=os.path.abspath(dst)
         )
+
+    async def test_file_read_and_show(self) -> None:
+        contents = b"exact binary contents\x00\xff"
+        src = "Library/example.bin"
+
+        def pull(*, container: object, src_path: str, dest_path: str) -> None:
+            self.assertIsNone(container)
+            self.assertEqual(src_path, src)
+            with open(os.path.join(dest_path, os.path.basename(src_path)), "wb") as f:
+                f.write(contents)
+
+        self.client_mock.pull = AsyncMock(side_effect=pull)
+        stdout = MagicMock()
+        for spelling in ("read", "show"):
+            with self.subTest(spelling=spelling):
+                self.client_mock.pull.reset_mock()
+                stdout.buffer.write.reset_mock()
+                with patch("idb.cli.commands.file.sys.stdout", stdout):
+                    self.assertEqual(
+                        await cli_main(cmd_input=["file", spelling, src]), 0
+                    )
+                self.client_mock.pull.assert_called_once()
+                stdout.buffer.write.assert_called_once_with(contents)
+
+    async def test_file_write(self) -> None:
+        contents = b"exact stdin contents\x00\xff"
+        dst = "Library/Config/example.bin"
+
+        def push(
+            *,
+            src_paths: list[str],
+            container: object,
+            dest_path: str,
+            compression: Compression | None,
+        ) -> None:
+            self.assertIsNone(container)
+            self.assertEqual(dest_path, "Library/Config")
+            self.assertIsNone(compression)
+            self.assertEqual(len(src_paths), 1)
+            self.assertEqual(os.path.basename(src_paths[0]), "example.bin")
+            with open(src_paths[0], "rb") as f:
+                self.assertEqual(f.read(), contents)
+
+        self.client_mock.push = AsyncMock(side_effect=push)
+        stdin = MagicMock()
+        stdin.buffer.read.return_value = contents
+        with patch("idb.cli.commands.file.sys.stdin", stdin):
+            self.assertEqual(await cli_main(cmd_input=["file", "write", dst]), 0)
+        stdin.buffer.read.assert_called_once_with()
+        self.client_mock.push.assert_called_once()
 
     async def test_list_targets(self) -> None:
         self.client_manager_mock().list_targets = AsyncMock(return_value=[])
