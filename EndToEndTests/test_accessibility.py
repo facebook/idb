@@ -216,20 +216,21 @@ class AccessibilityTests(IdbEndToEndTestCase):
     async def wait_for_element(
         self, identifier: str, element_type: str | None = None
     ) -> dict[str, Any]:
-        async def read() -> dict[str, Any]:
-            elements = _elements(await self.wait_for_settings_snapshot())
-            for element in elements:
-                if element.get("identifier") == identifier and (
-                    element_type is None or element.get("type") == element_type
-                ):
-                    return element
-            raise NotReady(
-                f"No {element_type or 'element'} with identifier {identifier!r}"
-            )
-
-        return await wait_until(
-            "Settings did not update", UI_UPDATE_TIMEOUT_SECONDS, read
+        await self.setup_idb(
+            "ui",
+            "wait",
+            identifier,
+            "--match-key",
+            "AXUniqueId",
+            "--timeout",
+            str(UI_UPDATE_TIMEOUT_SECONDS),
         )
+        for element in _elements(await self.wait_for_settings_snapshot()):
+            if element.get("identifier") == identifier and (
+                element_type is None or element.get("type") == element_type
+            ):
+                return element
+        self.fail(f"No {element_type or 'element'} with identifier {identifier!r}")
 
     def center(self, element: dict[str, Any]) -> tuple[int, int]:
         frame = element["frame"]
