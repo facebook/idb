@@ -13,6 +13,7 @@
 #import "AXPAttributes.h"
 #import "AXPTranslationPrivate.h"
 #import "AXRuntimePrivate.h"
+#import "AccessibilityRuntime_Private.h"
 #import "AccessibilityUtilitiesPrivate.h"
 #import "RunningBoardServicesPrivate.h"
 #import "XCTAutomationSupportPrivate.h"
@@ -659,18 +660,27 @@ static AXPTranslator *_Nullable FBAXBridgeWindowServerTranslator(NSString *_Null
 // on the main queue (`-[AXPTranslator_iOS _enableAccessibilityBridgeRuntime]` calls
 // `dispatch_assert_queue_not`). The in-guest self-service delegate re-enters the translator on whichever
 // thread called in, so driving it from the reader's main thread trips the assert and traps the process.
-static void FBAXBridgeRunOffMainQueue(dispatch_block_t block)
+void FBAXBridgeRunOffMainQueue(dispatch_block_t block)
 {
   if (!NSThread.isMainThread) {
     block();
     return;
   }
   dispatch_semaphore_t completed = dispatch_semaphore_create(0);
+  __block NSException *raised = nil;
   dispatch_async(dispatch_get_global_queue(QOS_CLASS_USER_INITIATED, 0), ^{
-    block();
-    dispatch_semaphore_signal(completed);
+    @try {
+      block();
+    } @catch (NSException *exception) {
+      raised = exception;
+    } @finally {
+      dispatch_semaphore_signal(completed);
+    }
   });
   dispatch_semaphore_wait(completed, DISPATCH_TIME_FOREVER);
+  if (raised) {
+    @throw raised;
+  }
 }
 
 // The window-server frontmost query itself, which must already be off the main queue — see

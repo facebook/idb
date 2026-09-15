@@ -64,4 +64,7 @@ Class _Nullable FBHealthAuthorizationStoreClass(void);
 BOOL FBHealthRuntimeDeclaresSelector(NSString *selectorName);
 NSException *_Nullable FBHealthApproveException(NSArray<NSString *> *types);
 
+/** Exercises the runtime queue from Objective-C so no exception unwinds through Swift. */
+NSDictionary<NSString *, NSNumber *> *FBAXRuntimeQueueProbe(BOOL raise);
+
 NS_ASSUME_NONNULL_END

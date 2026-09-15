@@ -11,6 +11,7 @@
 #import <objc/runtime.h>
 #import <unistd.h>
 
+#import <SimulatorFrameworkBridgeLib/AccessibilityRuntime_Private.h>
 #import <SimulatorFrameworkBridgeLib/BulletinBoardPrivate.h>
 #import <SimulatorFrameworkBridgeLib/HealthSettingsService.h>
 
@@ -134,4 +135,24 @@ NSString *FBStdoutWhileRunning(void (^block)(void))
 NSDictionary<NSString *, id> *FBParsedJSONLine(NSString *output)
 {
   return [NSJSONSerialization JSONObjectWithData:[output dataUsingEncoding:NSUTF8StringEncoding] options:0 error:NULL];
+}
+
+NSDictionary<NSString *, NSNumber *> *FBAXRuntimeQueueProbe(BOOL raise)
+{
+  __block BOOL offMain = NO;
+  __block NSUInteger calls = 0;
+  NSException *expected = [NSException exceptionWithName:NSInternalInconsistencyException reason:@"worker failed" userInfo:nil];
+  NSException *caught = nil;
+  @try {
+    FBAXBridgeRunOffMainQueue(^{
+      offMain = !NSThread.isMainThread;
+      calls++;
+      if (raise) {
+        @throw expected;
+      }
+    });
+  } @catch (NSException *exception) {
+    caught = exception;
+  }
+  return @{@"offMain" : @(offMain), @"calls" : @(calls), @"sameException" : @(caught == expected), @"caught" : @(caught != nil)};
 }
