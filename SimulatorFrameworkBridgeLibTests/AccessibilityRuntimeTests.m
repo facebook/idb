@@ -18,6 +18,7 @@
 
 #import "AXPAttributes.h"
 #import "FBAXFakeRuntime.h"
+#import "FBAXSignatureProbe.h"
 
 static NSString *const kAXElementType = @"XC_kAXXCAttributeElementType";
 static NSString *const kAXLabel = @"XC_kAXXCAttributeLabel";
@@ -37,30 +38,6 @@ static NSError *FBAXTestsErrorWithCode(int32_t code)
                              code:1
                          userInfo:@{FBAXAccessibilityErrorKey : @(code), NSLocalizedDescriptionKey : @"runtime said no"}];
 }
-
-// Carries an aggregate signature for the encoding-comparison tests. Foundation has plenty of selectors to
-// compare against, but none whose encoding contains a digit that is part of the type rather than an
-// offset, which is the case the comparison has to get right.
-typedef struct FBAXQuad {
-  int values[4];
-} FBAXQuad;
-
-typedef struct FBAXPair {
-  int first;
-  int second;
-} FBAXPair;
-
-@interface FBAXSignatureProbe : NSObject
-- (FBAXQuad)quadFromPair:(FBAXPair)pair;
-@end
-
-@implementation FBAXSignatureProbe
-- (FBAXQuad)quadFromPair:(FBAXPair)pair
-{
-  return (FBAXQuad) {{pair.first, pair.second, 0, 0}};
-}
-
-@end
 
 /**
  * Drives `FBAXBridgeHandleRequest` against a fake `FBAXRuntime`, reaching outcomes a real simulator only
