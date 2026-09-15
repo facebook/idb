@@ -91,7 +91,7 @@ from idb.grpc.accessibility import accessibility_info_to_grpc
 from idb.grpc.crash import (
     _to_crash_log,
     _to_crash_log_info_list,
-    _to_crash_log_query_proto,
+    crash_log_query_to_grpc,
 )
 from idb.grpc.dap import RemoteDapServer
 from idb.grpc.file import container_to_grpc as file_container_to_grpc
@@ -800,12 +800,12 @@ class Client(ClientBase):
 
     @log_and_handle_exceptions("crash_delete")
     async def crash_delete(self, query: CrashLogQuery) -> list[CrashLogInfo]:
-        response = await self.stub.crash_delete(_to_crash_log_query_proto(query))
+        response = await self.stub.crash_delete(crash_log_query_to_grpc(query))
         return _to_crash_log_info_list(response)
 
     @log_and_handle_exceptions("crash_list")
     async def crash_list(self, query: CrashLogQuery) -> list[CrashLogInfo]:
-        response = await self.stub.crash_list(_to_crash_log_query_proto(query))
+        response = await self.stub.crash_list(crash_log_query_to_grpc(query))
         return _to_crash_log_info_list(response)
 
     @log_and_handle_exceptions("crash_show")

@@ -36,7 +36,8 @@ def _to_crash_log(proto: CrashShowResponse) -> CrashLog:
     return CrashLog(info=_to_crash_log_info(proto.info), contents=proto.contents)
 
 
-def _to_crash_log_query_proto(query: CrashLogQuery) -> CrashLogQueryProto:
+def crash_log_query_to_grpc(query: CrashLogQuery) -> CrashLogQueryProto:
+    """Build the request used by the crash-list and crash-delete RPCs."""
     return CrashLogQueryProto(
         # pyre-ignore
         before=query.before,
