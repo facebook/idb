@@ -20,24 +20,13 @@ private struct ProvidedSimulatorError: Error, LocalizedError {
 
 /// A test case for tests that need a booted simulator but do not own one.
 ///
-/// The simulator comes from the environment — a CI job, a developer's shell, an execution harness —
-/// and is never created here: booting is the Boot suite's job, where the lifecycle is the thing
-/// under test. A harness supplies one either by naming it in `DEVICE_UDID` (with `DEVICE_SET_PATH`
-/// naming its device set) or by leaving exactly one booted simulator in that set.
+/// The simulator comes from the environment and is never created here: a harness supplies one by
+/// naming it in `DEVICE_UDID` (with `DEVICE_SET_PATH` naming its device set), or by leaving exactly
+/// one booted simulator in that set. Booting is the Boot suite's job.
 ///
-/// It is acquired once and reused by every case in the bundle. Acquiring is the expensive part of
-/// a smoke test — `setUp` runs per case, and a simulator resolved per case would multiply that cost
-/// by the number of cases for no added coverage.
-///
-/// The simulator is a leased resource: tests restore anything they mutate, and nothing here boots,
-/// shuts down, erases or deletes it.
-///
-/// It is not handed to a test until it has *finished* booting. `booted` is reported the moment the
-/// boot is underway, and a simulator still on its way up has no SpringBoard and no application able
-/// to answer: work taken against it does not fail, it waits — turning a missing precondition into
-/// minutes of unexplained latency, or a timeout blamed on whatever happened to run first. Every
-/// harness is expected to hand over a simulator in a good state; this verifies the ones that do and
-/// waits for the ones that do not.
+/// It is acquired once and reused by every case in the bundle, it has finished booting before any
+/// test runs, and it is a leased resource: tests restore anything they mutate, and nothing here
+/// boots, shuts down, erases or deletes it.
 class ProvidedSimulatorTestCase: XCTestCase {
 
   /// How long to wait for a simulator to finish booting before giving up on the harness that

@@ -10,28 +10,19 @@ import FBControlCore
 import XCTest
 
 /// Reads a real accessibility tree out of the provided simulator through the axbridge backend —
-/// the `SimulatorFrameworkBridge` `accessibility serve` guest, reached over its unix socket.
-///
-/// This is the seam no unit test reaches: the doubles-backed suites cover envelope parsing, socket
-/// naming and serialization, but none of them spawns the guest, completes the socket handshake, or
-/// walks a live element tree.
-///
-/// One test, not several: a guest spawn is the expensive part of this read, it is paid per guest,
-/// and a suite of independent reads would pay it repeatedly to cover the same round trip. The read
-/// is taken against the shared guest, which is the one idb itself uses for one-off commands and the
-/// only one whose warmth outlives a single read.
+/// the `SimulatorFrameworkBridge` `accessibility serve` guest, reached over its unix socket. The
+/// doubles-backed suites cover the envelope and the serialization; nothing else starts the guest
+/// or walks a live tree.
 ///
 /// Reads are anchored on an explicit pid: `.frontmost` asks the window server which application is
-/// in front, which has no answer on a simulator booted headless — the state this suite runs in —
-/// whereas `.application` reads the pid it is given.
+/// in front, which has no answer on a simulator booted headless.
 final class AXBridgeSmokeTests: ProvidedSimulatorTestCase {
 
   private static let bundleID = "com.apple.Preferences"
 
   override func setUp() async throws {
     try await super.setUp()
-    // The base case waits for the boot to complete before this runs, and a guest spawn on top of
-    // that is still slower than a default-allowance test.
+    // A guest spawn outruns the default allowance.
     executionTimeAllowance = 600
   }
 
@@ -55,10 +46,8 @@ final class AXBridgeSmokeTests: ProvidedSimulatorTestCase {
     return launched.processIdentifier
   }
 
-  /// Retries a not-responding application while its accessibility server starts — seconds, now the
-  /// base case guarantees the simulator finished booting first. Nothing else is retried: an
-  /// unreachable guest, a broken handshake or a malformed response all still throw on the first
-  /// attempt.
+  /// Retries only a not-responding application, while its accessibility server starts. An
+  /// unreachable guest, a broken handshake or a malformed response throw on the first attempt.
   private func describeApplication(pid: pid_t, retries: Int = 4) async throws -> FBAccessibilityElementsResponse {
     let automation = try simulator.uiAutomation(
       backend: .axBridge(persistence: .shared, frontmostMethod: .windowServer, automationMode: true))
@@ -82,13 +71,10 @@ final class AXBridgeSmokeTests: ProvidedSimulatorTestCase {
     let pid = try await launchedApplicationPID()
     let response = try await describeApplication(pid: pid)
 
-    // The round trip produced a tree, from the backend that was asked for.
     let elements = response.elements.elements
     XCTAssertFalse(elements.isEmpty, "The application should serialize at least one element")
     XCTAssertEqual(response.backend, .axBridgePersistent)
 
-    // A tree read is anchored on the application element; without it the guest answered with
-    // something other than the tree it was asked for.
     let types = elements.compactMap { $0.type ?? nil }
     XCTAssertTrue(
       types.contains { $0.contains("Application") },

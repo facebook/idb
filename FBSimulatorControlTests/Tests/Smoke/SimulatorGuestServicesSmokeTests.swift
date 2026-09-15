@@ -13,11 +13,6 @@ import XCTest
 /// runtime's own `launchctl` spawned through CoreSimulator, the `SimulatorFrameworkBridge` helper
 /// spawned into the launchd domain, a settings write read back through its real backing, and an
 /// application launched and terminated.
-///
-/// One test, because the expensive part of a smoke test is acquiring a simulator, not asserting
-/// against one: `setUp` runs per test case, so every case split off here is another boot to pay
-/// for. These checks share a target and a mechanism, so they share a case, and each step is
-/// assertive enough that a failure names itself.
 final class SimulatorGuestServicesSmokeTests: ProvidedSimulatorTestCase {
 
   private static let bundleID = "com.apple.mobilesafari"
@@ -50,8 +45,7 @@ final class SimulatorGuestServicesSmokeTests: ProvidedSimulatorTestCase {
     let viaSettingValue = try await simulator.preferences.currentSettingValue(name: "autofill-passwords", domain: nil)
     XCTAssertEqual(viaSettingValue, enabled, "currentSettingValue should read autofill-passwords from its real backing")
 
-    // An application through its whole lifecycle. A system application, so nothing has to be
-    // installed and no fixture architecture is involved.
+    // A system application, so nothing has to be installed and no fixture architecture applies.
     let io: FBProcessIO<AnyObject, AnyObject, AnyObject> = .outputToDevNull()
     let configuration = FBApplicationLaunchConfiguration(
       bundleID: Self.bundleID,

@@ -39,11 +39,9 @@ final class SimulatorBootTestCase: XCTestCase {
 
   override func setUpWithError() throws {
     continueAfterFailure = false
-    // Creating and booting a simulator can take minutes on a slow CI host; when the harness
-    // enforces per-test time allowances, claim more than the short suite-wide default.
+    // Booting can take minutes on a loaded host, far longer than the default allowance.
     executionTimeAllowance = 600
-    // Memoized: a no-op after the first load. Throwing here turns a load failure into a test
-    // failure instead of killing the runner.
+    // Throwing here turns a load failure into a test failure instead of killing the runner.
     try FBSimulatorControlFrameworkLoader.essentialFrameworks.loadPrivateFrameworks(FBControlCoreGlobalConfiguration.defaultLogger)
     let service = try SimulatorServiceContext.sharedServiceContext()
     let deviceTypes = service.supportedDeviceTypes()
@@ -91,7 +89,6 @@ final class SimulatorBootTestCase: XCTestCase {
   }
 
   private static var bootOptions: SimulatorBootOptions {
-    // Direct launch unless the environment asks for Simulator.app.
     ProcessInfo.processInfo.environment[LaunchTypeEnvKey] == LaunchTypeSimulatorApp ? [] : [.tieToProcessLifecycle]
   }
 
