@@ -95,16 +95,21 @@ static NSArray<NSString *> *setEffectiveVisibility(BBSectionInfo *sectionInfo, B
 
 int handleNotificationSettingsAction(NSString *action, NSString *bundleID)
 {
-  BBSettingsGateway *gateway = loadGateway();
-  if (!gateway) {
+  @try {
+    BBSettingsGateway *gateway = loadGateway();
+    if (!gateway) {
+      return 1;
+    }
+    return handleNotificationSettingsActionWithGateway(action, bundleID, (id<NotificationSettingsGateway>)gateway);
+  } @catch (NSException *exception) {
+    NSLog(@"[NotificationSettings] Command raised: %@", exception);
     return 1;
   }
-  return handleNotificationSettingsActionWithGateway(action, bundleID, (id<NotificationSettingsGateway>)gateway);
 }
 
-int handleNotificationSettingsActionWithGateway(NSString *action,
-                                                NSString *bundleID,
-                                                id<NotificationSettingsGateway> gateway
+static int handleNotificationSettingsActionWithGatewayImpl(NSString *action,
+                                                           NSString *bundleID,
+                                                           id<NotificationSettingsGateway> gateway
 )
 {
   if ([action isEqualToString:@"check"] || [action isEqualToString:@"list"]) {
@@ -173,4 +178,14 @@ int handleNotificationSettingsActionWithGateway(NSString *action,
   [gateway setSectionInfo:sectionInfo forSectionID:bundleID];
   NSLog(@"[NotificationSettings] %@ notifications for %@", action, bundleID);
   return 0;
+}
+
+int handleNotificationSettingsActionWithGateway(NSString *action, NSString *bundleID, id<NotificationSettingsGateway> gateway)
+{
+  @try {
+    return handleNotificationSettingsActionWithGatewayImpl(action, bundleID, gateway);
+  } @catch (NSException *exception) {
+    NSLog(@"[NotificationSettings] Command raised: %@", exception);
+    return 1;
+  }
 }

@@ -14,7 +14,7 @@ final class NotificationExceptionTests: XCTestCase {
       "lookup", "write", "list", "allowsNotifications", "authorizationStatus",
       "setAllowsNotifications", "setAuthorizationStatus", "setAlertType", "setLockScreenSetting", "setNotificationCenterSetting",
     ] {
-      XCTAssertEqual(FBNotificationCommandExceptionResult(operation) as NSDictionary, ["exception": "NotificationTest"] as NSDictionary)
+      XCTAssertEqual(FBNotificationCommandExceptionResult(operation) as NSDictionary, ["status": 1] as NSDictionary)
     }
   }
 }
