@@ -94,7 +94,7 @@ static int FBAXBridgeIdleTimeoutFromArguments(NSArray<NSString *> *arguments, in
   return fallback;
 }
 
-static BOOL FBAXBridgeServeConnection(int connection, int idleTimeoutSeconds)
+static BOOL FBAXBridgeServeConnection(int connection, int idleTimeoutSeconds, FBAXBridgeSocketResponse *(^handleRequest)(NSData *))
 {
   struct timeval receiveTimeout = {.tv_sec = idleTimeoutSeconds, .tv_usec = 0};
   setsockopt(connection, SOL_SOCKET, SO_RCVTIMEO, &receiveTimeout, sizeof(receiveTimeout));
@@ -115,26 +115,42 @@ static BOOL FBAXBridgeServeConnection(int connection, int idleTimeoutSeconds)
         return NO;
       }
 
-      BOOL shutdownRequested = NO;
-      NSDictionary<NSString *, id> *response = FBAXBridgeHandleRequestData(requestData, &shutdownRequested);
-      NSData *responseData = FBAXBridgeSerializeResponse(response);
+      FBAXBridgeSocketResponse *response = handleRequest(requestData);
+      NSData *responseData = response.data;
       uint32_t responseLength = htonl((uint32_t)responseData.length);
       if (!FBAXBridgeWriteFully(connection, &responseLength, sizeof(responseLength))
           || !FBAXBridgeWriteFully(connection, responseData.bytes, responseData.length)) {
         return NO;
       }
-      if (shutdownRequested) {
+      if (response.shutdown) {
         return YES;
       }
     }
   }
 }
 
-int FBAXBridgeServe(NSString *socketPath, NSArray<NSString *> *arguments)
-{
-  const int idleTimeoutSeconds = FBAXBridgeIdleTimeoutFromArguments(arguments, kDefaultIdleTimeoutSeconds);
-  const BOOL exitOnDisconnect = FBAXBridgeBoolFromArguments(arguments, kFlagExitOnDisconnect);
+@implementation FBAXBridgeSocketResponse
 
+- (instancetype)initWithData:(NSData *)data shutdown:(BOOL)shutdown
+{
+  self = [super init];
+  if (self) {
+    _data = [data copy];
+    _shutdown = shutdown;
+  }
+  return self;
+}
+
+@end
+
+@implementation FBAXBridgeServer
+
++ (int32_t)serveWithSocketPath:(NSString *)socketPath
+            idleTimeoutSeconds:(int32_t)idleTimeoutSeconds
+              exitOnDisconnect:(BOOL)exitOnDisconnect
+                prepareRuntime:(void (^)(void))prepareRuntime
+                 handleRequest:(FBAXBridgeSocketResponse *(^)(NSData *))handleRequest
+{
   int listenFd = socket(AF_UNIX, SOCK_STREAM, 0);
   if (listenFd < 0) {
     NSLog(@"[AccessibilityService] socket() failed: %s", strerror(errno));
@@ -163,7 +179,7 @@ int FBAXBridgeServe(NSString *socketPath, NSArray<NSString *> *arguments)
     return 1;
   }
 
-  FBAXBridgePrepareRuntime();
+  prepareRuntime();
   NSLog(@"[AccessibilityService] serving accessibility on %@ (idle timeout %ds)", socketPath, idleTimeoutSeconds);
 
   BOOL shutdownRequested = NO;
@@ -188,7 +204,7 @@ int FBAXBridgeServe(NSString *socketPath, NSArray<NSString *> *arguments)
       }
       break;
     }
-    shutdownRequested = FBAXBridgeServeConnection(connection, idleTimeoutSeconds);
+    shutdownRequested = FBAXBridgeServeConnection(connection, idleTimeoutSeconds, handleRequest);
     close(connection);
 
     if (exitOnDisconnect) {
@@ -203,6 +219,21 @@ int FBAXBridgeServe(NSString *socketPath, NSArray<NSString *> *arguments)
   close(listenFd);
   unlink(address.sun_path);
   return 0;
+}
+
+@end
+
+int FBAXBridgeServe(NSString *socketPath, NSArray<NSString *> *arguments)
+{
+  return [FBAXBridgeServer serveWithSocketPath:socketPath
+                            idleTimeoutSeconds:FBAXBridgeIdleTimeoutFromArguments(arguments, kDefaultIdleTimeoutSeconds)
+                              exitOnDisconnect:FBAXBridgeBoolFromArguments(arguments, kFlagExitOnDisconnect)
+                                prepareRuntime:^{ FBAXBridgePrepareRuntime(); }
+                                 handleRequest:^FBAXBridgeSocketResponse *(NSData *request) {
+                                   BOOL shutdown = NO;
+                                   NSDictionary *response = FBAXBridgeHandleRequestData(request, &shutdown);
+                                   return [[FBAXBridgeSocketResponse alloc] initWithData:FBAXBridgeSerializeResponse(response) shutdown:shutdown];
+                                 }];
 }
 
 int FBAXBridgeServeBacklogForTesting(void)
