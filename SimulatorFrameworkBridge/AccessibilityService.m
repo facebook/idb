@@ -198,7 +198,15 @@ static FBAXRuntimeFactory gInjectedRuntimeFactory = nil;
 
 static id<FBAXRuntime> _Nullable FBAXBridgeCreateRuntime(FBAXRuntimeFactory factory, NSString *_Nullable *_Nullable error)
 {
-  return factory(error);
+  @try {
+    return factory(error);
+  } @catch (NSException *exception) {
+    NSLog(@"[AccessibilityService] runtime initialization raised: %@", exception);
+    if (error) {
+      *error = [NSString stringWithFormat:@"accessibility initialization raised: %@", exception.reason ?: exception.name];
+    }
+    return nil;
+  }
 }
 
 // The runtime is bound once and reused across requests: `dlopen` + `initForRemoteAccess` is the

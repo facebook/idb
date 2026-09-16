@@ -45,22 +45,20 @@ final class AccessibilityInitializationTests: XCTestCase {
   }
 
   func testInitializationExceptionWithReason() {
-    // BUG: preparation lets an Objective-C initialization exception escape.
     XCTAssertEqual(
       FBAXRuntimeInitializationProbe(.exceptionWithReason, true, request) as NSDictionary,
       [
-        "preparationException": "initialization failed", "calls": 2,
-        "response": ["ok": false, "error": "the reader raised while answering: initialization failed"],
+        "preparationException": NSNull(), "calls": 2,
+        "response": ["ok": false, "error": "accessibility initialization raised: initialization failed", "error_kind": "reader_unavailable"],
       ] as NSDictionary)
   }
 
   func testInitializationExceptionWithoutReason() {
-    // BUG: preparation lets an Objective-C initialization exception escape.
     XCTAssertEqual(
       FBAXRuntimeInitializationProbe(.exceptionWithoutReason, true, request) as NSDictionary,
       [
-        "preparationException": "NSInternalInconsistencyException", "calls": 2,
-        "response": ["ok": false, "error": "the reader raised while answering: NSInternalInconsistencyException"],
+        "preparationException": NSNull(), "calls": 2,
+        "response": ["ok": false, "error": "accessibility initialization raised: NSInternalInconsistencyException", "error_kind": "reader_unavailable"],
       ] as NSDictionary)
   }
 
