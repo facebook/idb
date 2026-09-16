@@ -29,6 +29,7 @@ from .harness import (
     NotReady,
     POLL_INTERVAL_SECONDS,
     read_only_client,
+    run_with_registered_cleanup,
     wait_until,
 )
 
@@ -150,8 +151,11 @@ class AccessibilityTests(IdbEndToEndTestCase):
         await super().asyncSetUp()
         for bundle_id in (SAFARI_BUNDLE_ID, FIXTURE_APP_BUNDLE_ID, SETTINGS_BUNDLE_ID):
             await self.setup_terminate_quietly(bundle_id)
-        await self.setup_idb("launch", SETTINGS_BUNDLE_ID)
-        self.addAsyncCleanup(self.setup_terminate_quietly, SETTINGS_BUNDLE_ID)
+        await run_with_registered_cleanup(
+            self.addAsyncCleanup,
+            lambda: self.setup_terminate_quietly(SETTINGS_BUNDLE_ID),
+            lambda: self.setup_idb("launch", SETTINGS_BUNDLE_ID),
+        )
         self.control = await self.wait_for_control()
 
     async def describe_all(self, *extra: str) -> Any:

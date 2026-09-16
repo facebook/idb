@@ -11,6 +11,7 @@ uses test*.py. Run it separately with python -m unittest EndToEndTests.harness_t
 
 from __future__ import annotations
 
+import asyncio
 import io
 import json
 import os
@@ -33,6 +34,7 @@ from .harness import (
     IDB_SETUP_BIN_ENV,
     IdbEndToEndTestCase,
     NotReady,
+    run_with_registered_cleanup,
     running_bundle_ids_from_listing,
     Simctl,
     STRICT_ENV,
@@ -170,6 +172,54 @@ class ClientArgumentTests(unittest.TestCase):
                 )
 
         self.assertEqual(selected, Path(executable.name))
+
+
+class _SettingsCleanupSuite(unittest.IsolatedAsyncioTestCase):
+    events: list[str] = []
+    launch_error: BaseException = HarnessError("launch failed")
+
+    async def asyncSetUp(self) -> None:
+        async def terminate_settings() -> None:
+            self.events.append("terminate Settings")
+
+        async def launch_settings() -> None:
+            self.events.append("launch Settings")
+            raise self.launch_error
+
+        await run_with_registered_cleanup(
+            self.addAsyncCleanup,
+            terminate_settings,
+            launch_settings,
+        )
+
+    async def case_body(self) -> None:
+        self.events.append("test body")
+
+
+class SettingsCleanupTests(unittest.TestCase):
+    def run_setup_error(self, error: BaseException) -> unittest.TestResult:
+        _SettingsCleanupSuite.events = []
+        _SettingsCleanupSuite.launch_error = error
+        result = unittest.TestResult()
+
+        _SettingsCleanupSuite("case_body").run(result)
+
+        self.assertEqual(
+            _SettingsCleanupSuite.events,
+            ["launch Settings", "terminate Settings"],
+        )
+        self.assertEqual(len(result.errors), 1)
+        return result
+
+    def test_settings_cleanup_runs_when_launch_fails(self) -> None:
+        result = self.run_setup_error(HarnessError("launch failed"))
+
+        self.assertIn("launch failed", result.errors[0][1])
+
+    def test_settings_cleanup_runs_when_launch_is_cancelled(self) -> None:
+        result = self.run_setup_error(asyncio.CancelledError())
+
+        self.assertIn("CancelledError", result.errors[0][1])
 
 
 class FailureReportingTests(unittest.TestCase):

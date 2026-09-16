@@ -119,6 +119,20 @@ async def wait_until(what: str, timeout: float, poll: Callable[[], Awaitable[T]]
         await asyncio.sleep(POLL_INTERVAL_SECONDS)
 
 
+async def run_with_registered_cleanup(
+    register_cleanup: Callable[[Callable[[], Awaitable[None]]], None],
+    cleanup: Callable[[], Awaitable[object]],
+    operation: Callable[[], Awaitable[T]],
+) -> T:
+    """Register recovery before starting an operation, then run it exactly once."""
+
+    async def registered_cleanup() -> None:
+        await cleanup()
+
+    register_cleanup(registered_cleanup)
+    return await operation()
+
+
 class FailureKind(enum.Enum):
     COMMAND = enum.auto()
     COMPANION_UNREACHABLE = enum.auto()
