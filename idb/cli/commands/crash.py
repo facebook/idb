@@ -10,10 +10,10 @@ import json
 from argparse import ArgumentParser, Namespace
 
 from idb.cli import ClientCommand
-from idb.common.types import Client, CrashLogQuery
+from idb.common.types import Client, CrashLogQuery, IdbException
 
 
-class CrashDeleteException(Exception):
+class CrashDeleteException(IdbException):
     pass
 
 
@@ -34,23 +34,19 @@ def _add_query_arguments(parser: ArgumentParser) -> None:
 
 
 def _build_query(arguments: Namespace) -> CrashLogQuery:
-    if (
-        hasattr(arguments, "all")
-        and not arguments.all
-        and hasattr(arguments, "name")
-        and not arguments.name
-        and arguments.before is None
-        and arguments.since is None
-        and arguments.bundle_id is None
-    ):
-        raise CrashDeleteException("Must pass --all if not other arguments specified")
-
-    return CrashLogQuery(
+    query = CrashLogQuery(
         before=arguments.before,
         since=arguments.since,
         bundle_id=arguments.bundle_id,
         name=getattr(arguments, "name", None),
     )
+    if (
+        hasattr(arguments, "all")
+        and not arguments.all
+        and not any((query.before, query.since, query.bundle_id, query.name))
+    ):
+        raise CrashDeleteException("Must pass --all if not other arguments specified")
+    return query
 
 
 class CrashListCommand(ClientCommand):
@@ -107,7 +103,14 @@ class CrashDeleteCommand(ClientCommand):
         parser.add_argument("--all", help="Delete all crash logs", action="store_true")
         super().add_parser_arguments(parser)
 
+    async def _run_impl(self, args: Namespace) -> None:
+        args._crash_delete_query = _build_query(args)
+        await super()._run_impl(args)
+
     async def run_with_client(self, args: Namespace, client: Client) -> None:
-        crashes = await client.crash_delete(query=_build_query(args))
+        query = getattr(args, "_crash_delete_query", None)
+        if query is None:
+            query = _build_query(args)
+        crashes = await client.crash_delete(query=query)
         for crash in crashes:
             print(json.dumps(dataclasses.asdict(crash)))

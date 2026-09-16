@@ -11,7 +11,7 @@ import os
 import tempfile
 from argparse import ArgumentParser, Namespace
 from collections.abc import AsyncIterator
-from contextlib import asynccontextmanager, redirect_stdout
+from contextlib import asynccontextmanager, redirect_stderr, redirect_stdout
 from io import StringIO
 from types import ModuleType
 from typing import Any, TypeVar
@@ -2193,15 +2193,54 @@ class TestParser(TestCase):
 
     async def test_crash_delete_all(self) -> None:
         self.client_mock.crash_delete = AsyncMock(return_value=[])
-        await cli_main(cmd_input=["crash", "delete", "--all"])
-        self.client_mock.crash_delete.assert_called_once_with(query=CrashLogQuery())
+        cases = (
+            (["crash", "delete", "--all"], CrashLogQuery()),
+            (["crash", "delete", "", "--all"], CrashLogQuery(name="")),
+            (
+                ["crash", "delete", "--before", "0", "--all"],
+                CrashLogQuery(before=0),
+            ),
+            (
+                ["crash", "delete", "--since", "0", "--all"],
+                CrashLogQuery(since=0),
+            ),
+            (
+                ["crash", "delete", "--bundle-id", "", "--all"],
+                CrashLogQuery(bundle_id=""),
+            ),
+        )
+        for command, query in cases:
+            with self.subTest(command=command):
+                self.client_mock.crash_delete.reset_mock()
+
+                self.assertEqual(await cli_main(cmd_input=command), 0)
+
+                self.client_mock.crash_delete.assert_called_once_with(query=query)
 
     async def test_crash_delete_with_predicate(self) -> None:
         self.client_mock.crash_delete = AsyncMock(return_value=[])
-        await cli_main(cmd_input=["crash", "delete", "--since", "20"])
-        self.client_mock.crash_delete.assert_called_once_with(
-            query=CrashLogQuery(since=20)
+        cases = (
+            (["crash", "delete", "--since", "20"], CrashLogQuery(since=20)),
+            (
+                ["crash", "delete", "", "--before", "1"],
+                CrashLogQuery(name="", before=1),
+            ),
+            (
+                ["crash", "delete", "", "--since", "1"],
+                CrashLogQuery(name="", since=1),
+            ),
+            (
+                ["crash", "delete", "", "--bundle-id", "com.example"],
+                CrashLogQuery(name="", bundle_id="com.example"),
+            ),
         )
+        for command, query in cases:
+            with self.subTest(command=command):
+                self.client_mock.crash_delete.reset_mock()
+
+                self.assertEqual(await cli_main(cmd_input=command), 0)
+
+                self.client_mock.crash_delete.assert_called_once_with(query=query)
 
     async def test_crash_delete_with_name(self) -> None:
         self.client_mock.crash_delete = AsyncMock(return_value=[])
@@ -2209,6 +2248,32 @@ class TestParser(TestCase):
         self.client_mock.crash_delete.assert_called_once_with(
             query=CrashLogQuery(name="some.foo.bar.crash")
         )
+
+        for command in (
+            ["crash", "delete"],
+            ["crash", "delete", ""],
+            ["crash", "delete", "--before", "0"],
+            ["crash", "delete", "--since", "0"],
+            ["crash", "delete", "--bundle-id", ""],
+            ["--companion", "/tmp/unreached.sock", "crash", "delete"],
+        ):
+            with self.subTest(command=command):
+                self.client_manager_mock.reset_mock()
+                self.client_mock.build.reset_mock()
+                self.client_mock.crash_delete.reset_mock()
+
+                stderr = StringIO()
+                with redirect_stderr(stderr):
+                    self.assertEqual(await cli_main(cmd_input=command), 1)
+
+                self.assertEqual(
+                    stderr.getvalue(),
+                    "Must pass --all if not other arguments specified\n",
+                )
+                self.assertNotIn("Traceback", stderr.getvalue())
+                self.client_manager_mock.assert_not_called()
+                self.client_mock.build.assert_not_called()
+                self.client_mock.crash_delete.assert_not_called()
 
     async def test_instruments(self) -> None:
         self.client_mock.run_instruments = AsyncMock()
