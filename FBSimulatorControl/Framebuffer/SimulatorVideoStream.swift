@@ -579,7 +579,7 @@ public actor SimulatorVideoStream: FBVideoStream {
     case let .eager(framesPerSecond):
       framePusherTask = Task { [weak self, logger] in
         let stats = CadenceStats(frameIntervalNanos: NSEC_PER_SEC / UInt64(framesPerSecond), logger: logger)
-        await Self.runFramePushLoop(stimulus: FrameCadence(framesPerSecond: framesPerSecond, logger: logger), stats: stats) { self }
+        await Self.runFramePushLoop(stimulus: FrameCadence(framesPerSecond: framesPerSecond), stats: stats) { self }
       }
     case .lazy:
       let triggers = LazyFrameTriggers()

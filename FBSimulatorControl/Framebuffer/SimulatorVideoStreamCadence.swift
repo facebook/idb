@@ -90,41 +90,37 @@ final class LazyFrameTriggers: AsyncSequence, @unchecked Sendable {
 
 /// A drift-corrected frame clock for `.eager` mode. Iterating it (`for await trigger in …`) suspends
 /// until the next frame deadline and yields a `FrameTrigger`, so the push loop can read as just
-/// "push each tick". The iterator owns all the timing — Mach-tick deadlines, the `Task.sleep` wait,
-/// drift correction, and the per-deadline overrun log — and ends (returns `nil`) when the
-/// surrounding `Task` is cancelled.
+/// "push each tick". The iterator owns all the timing — Mach-tick deadlines, the `Task.sleep` wait
+/// and drift correction — and ends (returns `nil`) when the surrounding `Task` is cancelled.
 ///
-/// Note: an overrun (a push that overshoots its deadline) is detected on the *following* `next()`,
-/// when the clock finds it is already past the deadline — so at a window boundary the overrun
-/// *count* can attribute to the next 5s stats window.
+/// An overrun (a push that overshoots its deadline) is detected on the *following* `next()`, when
+/// the clock finds it is already past the deadline. That tick fires immediately and the deadlines
+/// the stall consumed are skipped, so a stall of N intervals costs one late frame rather than N
+/// back-to-back copies of it. `CadenceStats` reports the overrun count; at a window boundary the
+/// count can attribute to the next 5s stats window.
 struct FrameCadence: AsyncSequence {
   typealias Element = FrameTrigger
 
   let framesPerSecond: UInt
-  let logger: any ControlCoreLogger
 
   func makeAsyncIterator() -> Iterator {
-    Iterator(framesPerSecond: framesPerSecond, logger: logger)
+    Iterator(framesPerSecond: framesPerSecond)
   }
 
   struct Iterator: nonisolated AsyncIteratorProtocol {
     private let frameIntervalMach: UInt64
-    private let frameIntervalNanos: UInt64
     private let machNumer: UInt64
     private let machDenom: UInt64
-    private let logger: any ControlCoreLogger
     private var nextTargetTime: UInt64
     private var firstTickPending = true
 
-    init(framesPerSecond: UInt, logger: any ControlCoreLogger) {
+    init(framesPerSecond: UInt) {
       let frameIntervalNanos = NSEC_PER_SEC / UInt64(framesPerSecond)
       var timebase = mach_timebase_info_data_t()
       mach_timebase_info(&timebase)
       self.machNumer = UInt64(timebase.numer)
       self.machDenom = UInt64(timebase.denom)
-      self.frameIntervalNanos = frameIntervalNanos
       self.frameIntervalMach = frameIntervalNanos * UInt64(timebase.denom) / UInt64(timebase.numer)
-      self.logger = logger
       self.nextTargetTime = mach_absolute_time() + self.frameIntervalMach
     }
 
@@ -149,10 +145,11 @@ struct FrameCadence: AsyncSequence {
           return nil // cancelled while sleeping
         }
       } else {
-        // Already past the deadline — the previous push overshot the frame budget.
+        // Already past the deadline — the previous push overshot the frame budget. Skip the
+        // deadlines the stall consumed so the grid stays aligned but no catch-up burst follows.
         overran = true
-        let overrunNanos = (now - nextTargetTime) * machNumer / machDenom
-        logger.log(String(format: "Frame push exceeded budget by %.1f ms (budget: %.1f ms)", Double(overrunNanos) / 1e6, Double(frameIntervalNanos) / 1e6))
+        let missed = (now - nextTargetTime) / frameIntervalMach
+        nextTargetTime += missed * frameIntervalMach
       }
       nextTargetTime += frameIntervalMach
       return FrameTrigger(forceKeyFrame: false, overran: overran)
