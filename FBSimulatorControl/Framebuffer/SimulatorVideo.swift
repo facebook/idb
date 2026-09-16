@@ -10,8 +10,8 @@ import FBControlCore
 import Foundation
 
 /// Records simulator video in-process. Drives the framebuffer through the shared
-/// `SimulatorVideoStream` encode pipeline at an eager (constant-frame-rate) cadence and muxes the
-/// encoded frames into MP4 or MOV via `SimulatorVideoFileWriter` (`AVAssetWriter`).
+/// `SimulatorVideoStream` encode pipeline with the configured cadence and muxes encoded frames
+/// into MP4 or MOV via `SimulatorVideoFileWriter` (`AVAssetWriter`).
 /// The byte-stream consumer is unused; only the recording file is produced.
 ///
 /// An actor: `hasStopped` guards the single stop and is set before the first suspension, so

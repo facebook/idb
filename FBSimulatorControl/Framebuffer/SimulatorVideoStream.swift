@@ -257,8 +257,7 @@ public actor SimulatorVideoStream: FBVideoStream {
 
   /// Constructs a recording stream: encoded `.compressed` frames are muxed into a file via `fileWriter`
   /// rather than byte-framed to an `FBDataConsumer`. `edgeInsets` (default zero) reserves overlay bar
-  /// regions exactly as on the streaming path; set `configuration.framesPerSecond` so the cadence is
-  /// eager (a recorded file wants a continuous timeline even while the screen is idle).
+  /// regions exactly as on the streaming path. Cadence is derived from `configuration.framesPerSecond`.
   static func makeRecorder(framebuffer: Framebuffer, configuration: FBVideoStreamConfiguration, edgeInsets: VideoStreamEdgeInsets = VideoStreamEdgeInsets(top: 0, bottom: 0, left: 0, right: 0), fileWriter: SimulatorVideoFileWriter, logger: any FBControlCoreLogger) -> SimulatorVideoStream {
     return SimulatorVideoStream(
       framebuffer: framebuffer,

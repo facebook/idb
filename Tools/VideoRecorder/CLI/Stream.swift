@@ -36,7 +36,7 @@ struct Stream: AsyncParsableCommand {
     let simulator = try target.simulator(logger: logger)
     let (insets, renderer, bars) = try video.composition(simulator: simulator, logger: logger)
     let framebuffer = try await simulator.lifecycle.connectToFramebuffer()
-    let configuration = video.configuration(format: encoding.format(transport: transport.flatMap(FBVideoStreamTransport.init(rawValue:)) ?? .annexB), recording: false)
+    let configuration = video.configuration(format: encoding.format(transport: transport.flatMap(FBVideoStreamTransport.init(rawValue:)) ?? .annexB))
     let stream = SimulatorVideoStream.make(framebuffer: framebuffer, configuration: configuration, edgeInsets: insets, logger: logger)
     let consumer: any FBDataConsumer
     if output == "-" {

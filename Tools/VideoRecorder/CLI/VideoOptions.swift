@@ -30,7 +30,7 @@ struct SimulatorOptions: ParsableArguments {
 }
 
 struct VideoOptions: ParsableArguments {
-  @Option(help: "Frames per second (record defaults to 30; stream is event-driven)") var fps: UInt?
+  @Option(help: "Frames per second; omitted or 0 follows screen and overlay updates") var fps: UInt?
   @Option(help: "Scale factor between 0 and 1") var scale: Double?
   @Option(help: "Compression quality between 0 and 1") var compressionQuality: Double?
   @Option(help: "Average bitrate in bits per second") var avgBitrate: UInt?
@@ -47,8 +47,8 @@ struct VideoOptions: ParsableArguments {
     if let scale, !scale.isFinite || scale <= 0 || scale > 1 {
       throw ValidationError("--scale must be greater than zero and at most one")
     }
-    if let fps, fps == 0 || fps > UInt(Int.max) {
-      throw ValidationError("--fps must be a positive integer")
+    if let fps, fps > UInt(Int.max) {
+      throw ValidationError("--fps is too large")
     }
     if let compressionQuality, !compressionQuality.isFinite || !(0...1).contains(compressionQuality) {
       throw ValidationError("--compression-quality must be between zero and one")
@@ -74,7 +74,7 @@ struct VideoOptions: ParsableArguments {
     }
   }
 
-  func configuration(format: FBVideoStreamFormat, recording: Bool) -> FBVideoStreamConfiguration {
+  func configuration(format: FBVideoStreamFormat) -> FBVideoStreamConfiguration {
     let rateControl: FBVideoStreamRateControl?
     if let compressionQuality {
       rateControl = .quality(compressionQuality)
@@ -83,7 +83,7 @@ struct VideoOptions: ParsableArguments {
     } else {
       rateControl = nil
     }
-    return FBVideoStreamConfiguration(format: format, framesPerSecond: fps.map { Int($0) } ?? (recording ? 30 : nil), rateControl: rateControl, scaleFactor: scale, keyFrameRate: keyFrameRate)
+    return FBVideoStreamConfiguration(format: format, framesPerSecond: fps.map { Int($0) }, rateControl: rateControl, scaleFactor: scale, keyFrameRate: keyFrameRate)
   }
 
   @MainActor

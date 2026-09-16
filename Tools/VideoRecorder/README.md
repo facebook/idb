@@ -11,7 +11,7 @@ Build/Distribution/sim-video record recording.mov --set "$DEVICE_SET_PATH" --udi
 
 `stream` writes raw video to a path or `-` for stdout. Its encodings are `h264`, `hevc`, `mjpeg`, `minicap`, and `bgra`. H.264 and HEVC support `--transport annex-b`, `mpegts`, or `fmp4` (default: `annex-b`). Streaming MJPEG requires a hardware encoder.
 
-Shared recording and streaming options are: `--fps`, `--scale`, `--compression-quality`, `--avg-bitrate`, `--key-frame-rate`, `--bar`, `--bar-stats`, `--overlay-coord-space`, and `--screenshot-dir`. Quality and bitrate are mutually exclusive. Recording defaults to 30 fps; streaming follows framebuffer updates when no rate is supplied. Bars use `position[:size][:pad|overlay]`, with size 24 and padding by default.
+Shared recording and streaming options are: `--fps`, `--scale`, `--compression-quality`, `--avg-bitrate`, `--key-frame-rate`, `--bar`, `--bar-stats`, `--overlay-coord-space`, and `--screenshot-dir`. Quality and bitrate are mutually exclusive. Recording and streaming default to variable frame rate: frames are produced when the screen or overlays change. `--fps 0` explicitly selects this behavior; a positive `--fps` selects a fixed cadence. Bars use `position[:size][:pad|overlay]`, with size 24 and padding by default.
 
 ## Controlling a session
 
