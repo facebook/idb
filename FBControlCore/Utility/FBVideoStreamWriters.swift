@@ -634,10 +634,12 @@ func FBMPEGTSCreateTimedMetadataPackets(_ text: String, _ pts90k: UInt64, _ meta
   return output
 }
 
+/// The program map always declares the timed-metadata stream, so a marker written at any point —
+/// including before the first keyframe — travels on a PID every demuxer already knows about. An
+/// elementary stream that never carries a packet costs nothing.
 public final class MPEGTSFrameWriter: EncodedFrameWriter, VideoStreamTimedMetadataWriter {
   private let codec: VideoStreamCodec
   private let metadataLock = NSLock()
-  private var metadataStreamEnabled = false
   private var metadataContinuityCounter: UInt8 = 0
   private var lastPts90k: UInt64 = 0
   private var videoContinuityCounter: UInt8 = 0
@@ -648,26 +650,16 @@ public final class MPEGTSFrameWriter: EncodedFrameWriter, VideoStreamTimedMetada
     self.codec = codec
   }
 
-  private func enableMetadataStream() {
+  private func timedMetadataPackets(for text: String) -> Data {
     metadataLock.lock()
     defer { metadataLock.unlock() }
-    metadataStreamEnabled = true
-  }
-
-  private func timedMetadataPackets(for text: String) -> Data? {
-    metadataLock.lock()
-    defer { metadataLock.unlock() }
-    guard metadataStreamEnabled else {
-      return nil
-    }
     return FBMPEGTSCreateTimedMetadataPackets(text, lastPts90k, &metadataContinuityCounter)
   }
 
-  private func recordVideoPTSAndMetadataStreamState(_ pts90k: UInt64) -> Bool {
+  private func recordVideoPTS(_ pts90k: UInt64) {
     metadataLock.lock()
     defer { metadataLock.unlock() }
     lastPts90k = pts90k
-    return metadataStreamEnabled
   }
 
   public func write(_ sampleBuffer: CMSampleBuffer, to consumer: any DataConsumer, logger: any ControlCoreLogger) throws {
@@ -723,7 +715,7 @@ public final class MPEGTSFrameWriter: EncodedFrameWriter, VideoStreamTimedMetada
     let pts = CMSampleBufferGetPresentationTimeStamp(sampleBuffer)
     let pts90k = UInt64(CMTimeGetSeconds(pts) * 90000.0)
 
-    let includeMetadataStream = recordVideoPTSAndMetadataStreamState(pts90k)
+    recordVideoPTS(pts90k)
 
     var pesPacket = [UInt8]()
     pesPacket.reserveCapacity(pesTotalLength)
@@ -788,17 +780,13 @@ public final class MPEGTSFrameWriter: EncodedFrameWriter, VideoStreamTimedMetada
       &videoContinuityCounter,
       &patContinuityCounter,
       &pmtContinuityCounter,
-      includeMetadataStream
+      true
     )
     consumer.consumeData(tsData)
   }
 
   public func writeTimedMetadata(_ text: String, to consumer: any DataConsumer) {
-    enableMetadataStream()
-    guard let packets = timedMetadataPackets(for: text) else {
-      return
-    }
-    consumer.consumeData(packets)
+    consumer.consumeData(timedMetadataPackets(for: text))
   }
 }
 

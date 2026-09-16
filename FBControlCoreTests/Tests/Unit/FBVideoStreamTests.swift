@@ -1291,16 +1291,13 @@ final class FBVideoStreamTests: XCTestCase {
 
   // MARK: - MPEG-TS Program Map
 
-  func testMPEGTSKeyframePMTDeclaresOnlyTheVideoStreamUntilAMarkerIsWritten() throws {
+  func testMPEGTSKeyframePMTAlwaysDeclaresTheMetadataStream() throws {
     let consumer = FBDataBuffer.accumulatingBuffer()
     try MPEGTSFrameWriter(codec: .h264).write(CreateH264SampleBuffer(isKeyFrame: true), to: consumer, logger: ControlCoreLoggerDouble())
 
     let pmt = try XCTUnwrap(TSPackets(consumer.data(), pid: 0x0100).first)
     var counter: UInt8 = 0
-    // BUG: the metadata PID is only announced in the PMT after the first marker is written, and only
-    // from the next keyframe, so the first markers travel on an undeclared PID and demuxers drop
-    // them — flipped to a PMT that always declares the metadata stream in the following commit.
-    XCTAssertEqual(pmt, FBMPEGTSCreatePMTPacket(&counter, 0x1B))
+    XCTAssertEqual(pmt, FBMPEGTSCreatePMTPacketWithMetadata(&counter, 0x1B, true))
   }
 
   // MARK: - MPEG-TS Timed Metadata Stream
