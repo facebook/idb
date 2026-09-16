@@ -21,7 +21,7 @@ final class SimulatorVideoStreamFrameWriterOwnershipTests: XCTestCase {
     scaleFactor: nil,
     keyFrameRate: nil)
 
-  private func makePusher(frameWriters: VideoStreamFrameWriters?) throws -> SimulatorVideoStreamFramePusher_VideoToolbox {
+  private func makePusher(frameWriters: VideoStreamFrameWriters?) throws -> VideoToolboxFramePusher {
     let pusher = try SimulatorVideoStream.framePusher(
       configuration: configuration,
       cadence: .lazy,
@@ -29,7 +29,7 @@ final class SimulatorVideoStreamFrameWriterOwnershipTests: XCTestCase {
       encodedSampleConsumerOverride: nil,
       frameWriters: frameWriters,
       logger: CapturingLogger())
-    return try XCTUnwrap(pusher as? SimulatorVideoStreamFramePusher_VideoToolbox)
+    return try XCTUnwrap(pusher as? VideoToolboxFramePusher)
   }
 
   func testFramePushersShareTheStreamsTransportWriter() throws {

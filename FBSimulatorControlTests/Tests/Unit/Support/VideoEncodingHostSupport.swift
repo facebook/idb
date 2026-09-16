@@ -59,7 +59,7 @@ enum VideoEncodingHostSupport {
       keyFrameRate: nil)
     let logger = CapturingLogger()
 
-    let pusher: any SimulatorVideoStreamFramePusher
+    let pusher: any FramePusher
     do {
       pusher = try SimulatorVideoStream.framePusher(
         configuration: configuration,

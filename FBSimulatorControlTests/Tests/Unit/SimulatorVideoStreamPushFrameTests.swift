@@ -84,7 +84,7 @@ final class SimulatorVideoStreamPushFrameTests: XCTestCase {
   func testEncodeSubmissionFailureIsLogged() async throws {
     let started = try await startStream()
     defer { Task { try? await started.stream.stopStreaming() } }
-    started.pusher.error = SimulatorVideoStreamError.failedToCompress(status: -12902)
+    started.pusher.error = VideoToolboxFramePusherError.failedToCompress(status: -12902)
 
     await started.stream.pushFrame(forceKeyFrame: false)
 
@@ -115,7 +115,7 @@ final class SimulatorVideoStreamPushFrameTests: XCTestCase {
 /// A frame pusher that records what `pushFrame` hands it and can fail or act on demand.
 // SAFETY: `writes` is guarded by `lock`; `error` and `onWrite` are set before the push under test.
 // patternlint-disable-next-line unchecked-sendable
-private final class RecordingFramePusher: SimulatorVideoStreamFramePusher, @unchecked Sendable {
+private final class RecordingFramePusher: FramePusher, @unchecked Sendable {
   struct Write {
     let time: TimeInterval
     let frameNumber: UInt
@@ -167,7 +167,7 @@ private final class RecordingFramePusher: SimulatorVideoStreamFramePusher, @unch
 }
 
 extension SimulatorVideoStream {
-  fileprivate func installFramePusher(_ pusher: any SimulatorVideoStreamFramePusher & Sendable) {
+  fileprivate func installFramePusher(_ pusher: any FramePusher & Sendable) {
     framePusher = pusher
   }
 }

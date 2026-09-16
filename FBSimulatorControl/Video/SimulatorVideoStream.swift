@@ -18,13 +18,6 @@ import UniformTypeIdentifiers
 import VideoToolbox
 
 enum SimulatorVideoStreamError: Error {
-  case failedToCreatePixelTransferSession(status: OSStatus)
-  case failedToStartCompressionSession(status: OSStatus)
-  case compressionSessionNil
-  case failedToSetCompressionSessionProperties(status: OSStatus)
-  case failedToPrepareCompressionSession(status: OSStatus)
-  case missingCompressionSession
-  case failedToCompress(status: OSStatus)
   case startWhenStopped
   case startAlreadyStarted
   case stopWithoutConsumer
@@ -40,20 +33,6 @@ enum SimulatorVideoStreamError: Error {
 extension SimulatorVideoStreamError: LocalizedError {
   var errorDescription: String? {
     switch self {
-    case .failedToCreatePixelTransferSession(let status):
-      return "Failed to create VTPixelTransferSession: \(status)"
-    case .failedToStartCompressionSession(let status):
-      return "Failed to start Compression Session \(status)"
-    case .compressionSessionNil:
-      return "Failed to start Compression Session (nil)"
-    case .failedToSetCompressionSessionProperties(let status):
-      return "Failed to set compression session properties \(status)"
-    case .failedToPrepareCompressionSession(let status):
-      return "Failed to prepare compression session \(status)"
-    case .missingCompressionSession:
-      return "No compression session"
-    case .failedToCompress(let status):
-      return "Failed to compress \(status)"
     case .startWhenStopped:
       return "Cannot start streaming, since streaming is stopped"
     case .startAlreadyStarted:
@@ -226,7 +205,7 @@ public actor SimulatorVideoStream: FBVideoStream {
       return session.consumer
     }
   }
-  var framePusher: (any SimulatorVideoStreamFramePusher)?
+  var framePusher: (any FramePusher)?
   /// The transport writers for compressed video, created on the first mount and shared by every
   /// pusher the stream creates: they carry per-stream state (MPEG-TS continuity counters, the fMP4
   /// init segment and sequence numbers) that must survive a surface swap. nil for other formats.
@@ -693,29 +672,29 @@ public actor SimulatorVideoStream: FBVideoStream {
     encodedSampleConsumerOverride: EncodedSampleConsumer?,
     frameWriters: VideoStreamFrameWriters?,
     logger: any ControlCoreLogger
-  ) throws -> any SimulatorVideoStreamFramePusher {
+  ) throws -> any FramePusher {
     let settings = VideoToolboxEncoderSettings(
       configuration: configuration, cadence: cadence, sink: encodedSampleConsumerOverride == nil ? .live : .file)
     switch configuration.format {
     case let .compressedVideo(codec, transport):
       let frameWriters = frameWriters ?? transport.frameWriters(for: codec)
-      return SimulatorVideoStreamFramePusher_VideoToolbox(
+      return VideoToolboxFramePusher(
         settings: settings, scaleFactor: configuration.scaleFactor, videoCodec: codec.videoToolboxCodec,
         encodedSampleConsumer: encodedSampleConsumerOverride
           ?? DataConsumerEncodedSampleConsumer(consumer: consumer, frameWriter: frameWriters.frameWriter, timedMetadataWriter: frameWriters.timedMetadataWriter),
         logger: logger)
     case .mjpeg:
-      return SimulatorVideoStreamFramePusher_VideoToolbox(
+      return VideoToolboxFramePusher(
         settings: settings, scaleFactor: configuration.scaleFactor, videoCodec: kCMVideoCodecType_JPEG,
         encodedSampleConsumer: encodedSampleConsumerOverride ?? MJPEGSampleConsumer(consumer: consumer),
         logger: logger)
     case .minicap:
-      return SimulatorVideoStreamFramePusher_VideoToolbox(
+      return VideoToolboxFramePusher(
         settings: settings, scaleFactor: configuration.scaleFactor, videoCodec: kCMVideoCodecType_JPEG,
         encodedSampleConsumer: encodedSampleConsumerOverride ?? MinicapSampleConsumer(consumer: consumer),
         logger: logger)
     case .bgra:
-      return SimulatorVideoStreamFramePusher_Bitmap(consumer: consumer, scaleFactor: configuration.scaleFactor)
+      return BitmapFramePusher(consumer: consumer, scaleFactor: configuration.scaleFactor)
     }
   }
 

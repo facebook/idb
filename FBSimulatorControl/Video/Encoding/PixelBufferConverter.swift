@@ -26,7 +26,7 @@ final class PixelBufferConverter {
   private var transferSession: VTPixelTransferSession?
   private var pool: CVPixelBufferPool?
 
-  /// Throws `SimulatorVideoStreamError.failedToCreatePixelTransferSession` if the transfer session cannot be made.
+  /// Throws `VideoToolboxFramePusherError.failedToCreatePixelTransferSession` if the transfer session cannot be made.
   init(outputWidth: Int, outputHeight: Int, pixelFormat: OSType) throws {
     self.outputWidth = outputWidth
     self.outputHeight = outputHeight
@@ -35,7 +35,7 @@ final class PixelBufferConverter {
     var transferSession: VTPixelTransferSession?
     let status = VTPixelTransferSessionCreate(allocator: kCFAllocatorDefault, pixelTransferSessionOut: &transferSession)
     if status != noErr {
-      throw SimulatorVideoStreamError.failedToCreatePixelTransferSession(status: status)
+      throw VideoToolboxFramePusherError.failedToCreatePixelTransferSession(status: status)
     }
     self.transferSession = transferSession
 

@@ -275,7 +275,7 @@ final class SimulatorVideoStreamBitmapPusherTests: XCTestCase {
   func testBitmapPusherWritesRawPixelBytes() throws {
     let buffer = makeBGRAPixelBuffer(width: 16, height: 8, fill: 0xAB)
     let consumer = FBDataBuffer.accumulatingBuffer()
-    let pusher = SimulatorVideoStreamFramePusher_Bitmap(consumer: consumer, scaleFactor: nil)
+    let pusher = BitmapFramePusher(consumer: consumer, scaleFactor: nil)
 
     let zeroInsets = VideoStreamEdgeInsets(top: 0, bottom: 0, left: 0, right: 0)
     try pusher.setup(with: buffer, edgeInsets: zeroInsets)
@@ -729,11 +729,11 @@ final class SimulatorVideoStreamDeliveryTests: XCTestCase {
 // patternlint-disable-next-line unchecked-sendable
 private final class FramePusherHandle: @unchecked Sendable {
   let identity: ObjectIdentifier
-  let bitmapPusher: SimulatorVideoStreamFramePusher_Bitmap?
+  let bitmapPusher: BitmapFramePusher?
 
-  init(pusher: any SimulatorVideoStreamFramePusher) {
+  init(pusher: any FramePusher) {
     identity = ObjectIdentifier(pusher)
-    bitmapPusher = pusher as? SimulatorVideoStreamFramePusher_Bitmap
+    bitmapPusher = pusher as? BitmapFramePusher
   }
 }
 

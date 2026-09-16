@@ -209,11 +209,11 @@ final class VideoToolboxEncoderSettingsTests: XCTestCase {
     let recording = try SimulatorVideoStream.framePusher(
       configuration: config, cadence: .eager(framesPerSecond: 30), consumer: FBNullDataConsumer(),
       encodedSampleConsumerOverride: fileWriter, frameWriters: nil, logger: CapturingLogger())
-    XCTAssertEqual((recording as? SimulatorVideoStreamFramePusher_VideoToolbox)?.settings.sink, .file)
+    XCTAssertEqual((recording as? VideoToolboxFramePusher)?.settings.sink, .file)
 
     let live = try SimulatorVideoStream.framePusher(
       configuration: config, cadence: .eager(framesPerSecond: 30), consumer: FBNullDataConsumer(),
       encodedSampleConsumerOverride: nil, frameWriters: nil, logger: CapturingLogger())
-    XCTAssertEqual((live as? SimulatorVideoStreamFramePusher_VideoToolbox)?.settings.sink, .live)
+    XCTAssertEqual((live as? VideoToolboxFramePusher)?.settings.sink, .live)
   }
 }
