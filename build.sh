@@ -656,19 +656,6 @@ function build_simulator_framework_bridge() {
     build
 }
 
-function build_service_probe() {
-  invoke_xcodebuild \
-    ONLY_ACTIVE_ARCH=NO \
-    -project SimulatorFrameworkBridge/SimulatorFrameworkBridge.xcodeproj \
-    -scheme SimulatorServiceProbe-iOS \
-    -sdk iphonesimulator \
-    -derivedDataPath "$BUILD_DIRECTORY" \
-    -configuration Release \
-    build
-  mkdir -p "$BUILD_DIRECTORY/EndToEndResources"
-  cp "$BUILD_DIRECTORY/Products/Release-iphonesimulator/SimulatorServiceProbe-iOS" "$BUILD_DIRECTORY/EndToEndResources/SimulatorServiceProbe-iOS"
-}
-
 function build_repl_host() {
   # An empty SwiftUI app bundled into the distribution's Resources/ as
   # ReplHost.app: the default host app for `idb-repl app` without --bundle-id,
@@ -872,8 +859,6 @@ function build() {
         build_simulator_framework_bridge iOS iphonesimulator;;
       SimulatorFrameworkBridge-tvOS)
         build_simulator_framework_bridge tvOS appletvsimulator;;
-      SimulatorServiceProbe-iOS)
-        build_service_probe;;
       ReplHost)
         build_repl_host;;
       idb_companion)
@@ -888,7 +873,7 @@ function build() {
         build_target "$target";;
       *)
         echo "Unknown target: $target"
-        echo "Valid targets: all, frameworks, shims, idb_companion, idb-repl, sim-video, FBControlCore, XCTestBootstrap, FBSimulatorControl, SimulatorXCTest, FBDeviceControl, Shimulator-iOS, Shimulator-macOS, Repl-iOS, Repl-macOS, ReplHost, SimulatorFrameworkBridge-iOS, SimulatorFrameworkBridge-tvOS, SimulatorServiceProbe-iOS, distribution"
+        echo "Valid targets: all, frameworks, shims, idb_companion, idb-repl, sim-video, FBControlCore, XCTestBootstrap, FBSimulatorControl, SimulatorXCTest, FBDeviceControl, Shimulator-iOS, Shimulator-macOS, Repl-iOS, Repl-macOS, ReplHost, SimulatorFrameworkBridge-iOS, SimulatorFrameworkBridge-tvOS, distribution"
         exit 1;;
     esac
   fi

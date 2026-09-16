@@ -303,8 +303,8 @@ class Environment:
         return self.companion_path.parent / "Resources" / FIXTURE_APP_NAME
 
     @property
-    def service_probe(self) -> Path:
-        return _binary_from_environment("IDB_E2E_SERVICE_PROBE_PATH").resolve()
+    def guest_binary(self) -> Path:
+        return self.companion_path.parent / "Resources" / "SimulatorFrameworkBridge-iOS"
 
     @classmethod
     async def resolve(cls) -> "Environment":
@@ -908,11 +908,7 @@ class IdbEndToEndTestCase(unittest.IsolatedAsyncioTestCase):
         return FIXTURE_APP_BUNDLE_ID
 
     async def guest(self, *arguments: str) -> Completed:
-        binary = (
-            self.environment.companion_path.parent
-            / "Resources"
-            / "SimulatorFrameworkBridge-iOS"
-        )
+        binary = self.environment.guest_binary
         completed = await self.simctl.run("spawn", self.udid, str(binary), *arguments)
         self.assertEqual(
             completed.returncode,

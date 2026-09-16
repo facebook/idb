@@ -151,12 +151,10 @@ jobs:
           key: protoc-plugins-${{ hashFiles('Package.swift', 'Package.resolved') }}-${{ runner.os }}
       - name: Build everything and assemble the distribution
         run: ./build.sh build all
-      - name: Build service test probe
-        run: ./build.sh build SimulatorServiceProbe-iOS
       # Archived first: artifact upload does not keep file modes, and the
       # end-to-end job has to execute what it downloads.
       - name: Archive the distribution
-        run: tar -C Build -czf idb-companion-distribution.tgz Distribution EndToEndResources
+        run: tar -C Build -czf idb-companion-distribution.tgz Distribution
       - name: Upload distribution
         uses: actions/upload-artifact@v5
         with:
@@ -274,7 +272,6 @@ jobs:
           IDB_BIN="$(command -v idb)" \
           IDB_E2E_COMPANION_PATH="$RUNNER_TEMP/artifacts/Distribution/idb_companion" \
           IDB_E2E_RECORDER_PATH="$RUNNER_TEMP/artifacts/Distribution/sim-video" \
-          IDB_E2E_SERVICE_PROBE_PATH="$RUNNER_TEMP/artifacts/EndToEndResources/SimulatorServiceProbe-iOS" \
           IDB_E2E_ARTIFACTS_DIR="$RUNNER_TEMP/end-to-end-diagnostics" \
           IDB_E2E_STRICT=1 \
           python -m unittest discover -s EndToEndTests -t . -v

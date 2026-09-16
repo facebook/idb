@@ -753,6 +753,10 @@ class BinaryPathTests(unittest.IsolatedAsyncioTestCase):
             resolved.fixture_app,
             self.distribution / "Resources" / harness.FIXTURE_APP_NAME,
         )
+        self.assertEqual(
+            resolved.guest_binary,
+            self.distribution / "Resources" / "SimulatorFrameworkBridge-iOS",
+        )
 
     async def test_a_companion_that_is_not_there_under_either_spelling_is_refused(
         self,

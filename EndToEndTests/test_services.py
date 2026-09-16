@@ -15,10 +15,14 @@ from .harness import IdbEndToEndTestCase, NotReady, run, wait_until
 
 
 class ServiceMutationTests(IdbEndToEndTestCase):
-    async def probe_data(self, *arguments: str, stdin: bytes | None = None) -> bytes:
+    async def store_data(self, *arguments: str, stdin: bytes | None = None) -> bytes:
         completed = await run(
             self.simctl.argv(
-                "spawn", self.udid, str(self.environment.service_probe), *arguments
+                "spawn",
+                self.udid,
+                str(self.environment.guest_binary),
+                "dynamic-store",
+                *arguments,
             ),
             timeout=60.0,
             stdin=stdin,
@@ -31,36 +35,36 @@ class ServiceMutationTests(IdbEndToEndTestCase):
                     "--verbose=4",
                     "--entitlements",
                     ":-",
-                    str(self.environment.service_probe),
+                    str(self.environment.guest_binary),
                 ],
                 timeout=30.0,
             )
             self.fail(
-                f"probe {self.environment.service_probe} failed ({completed.returncode}): "
+                f"guest dynamic-store {arguments} failed ({completed.returncode}): "
                 f"{completed.error_text}\nsignature: {signature.text}\n{signature.error_text}"
             )
         return completed.stdout
 
-    async def probe(
+    async def store(
         self, *arguments: str, stdin: bytes | None = None
     ) -> dict[str, Any]:
-        return plistlib.loads(await self.probe_data(*arguments, stdin=stdin))
+        return plistlib.loads(await self.store_data(*arguments, stdin=stdin))
 
     async def restore_network(self, service: str, snapshot: bytes) -> None:
-        restored = await self.probe(service, "restore", stdin=snapshot)
+        restored = await self.store("restore", service, stdin=snapshot)
         self.assertEqual(
             restored, plistlib.loads(snapshot), f"{service} state was not restored"
         )
 
     async def assert_network(self, service: str, expected: dict[str, Any]) -> None:
         self.assertEqual(
-            await self.probe(service, "snapshot"),
+            await self.store("snapshot", service),
             {"present": True, "value": expected},
         )
         self.assertEqual(json.loads((await self.guest(service, "list")).text), expected)
 
     async def test_dns_set_and_clear_update_the_dynamic_store(self) -> None:
-        snapshot = await self.probe_data("dns", "snapshot")
+        snapshot = await self.store_data("snapshot", "dns")
         self.addAsyncCleanup(self.restore_network, "dns", snapshot)
 
         await self.guest("dns", "set", "192.0.2.1", "192.0.2.2")
@@ -74,7 +78,7 @@ class ServiceMutationTests(IdbEndToEndTestCase):
     async def test_proxy_set_replaces_the_previous_type_and_clear_disables_it(
         self,
     ) -> None:
-        snapshot = await self.probe_data("proxy", "snapshot")
+        snapshot = await self.store_data("snapshot", "proxy")
         self.addAsyncCleanup(self.restore_network, "proxy", snapshot)
 
         await self.guest("proxy", "set", "192.0.2.3", "8123", "http")
