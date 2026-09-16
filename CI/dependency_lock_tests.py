@@ -102,6 +102,34 @@ class DependencyLockTest(unittest.TestCase):
                     "expected a nonempty SwiftPM v2/v3 lockfile", logs.output[0]
                 )
 
+    def cli(self, *argv: str) -> int:
+        """Run the command line, which reads its arguments from `sys.argv`."""
+        with patch("sys.argv", ["dependency_lock.py", *argv]):
+            return main()
+
+    def test_cli_check_compares_the_resolved_graph_against_the_lockfile(self) -> None:
+        self.write(self.actual, self.entries[::-1], originHash="another manifest")
+
+        self.assertEqual(self.cli("check", str(self.expected), str(self.actual)), 0)
+
+        self.entries[3]["state"]["version"] = "2.0.0"
+        self.write(self.actual, self.entries)
+        with self.assertLogs(level="ERROR") as logs:
+            self.assertEqual(self.cli("check", str(self.expected), str(self.actual)), 1)
+        self.assertIn("swift-log: expected", logs.output[0])
+
+    def test_cli_prepare_codegen_writes_the_manifest_it_was_asked_for(self) -> None:
+        destination = self.root / "codegen"
+
+        self.assertEqual(
+            self.cli("prepare-codegen", str(self.expected), str(destination)), 0
+        )
+
+        self.assertIn('exact: "1.2.3"', (destination / "Package.swift").read_text())
+        self.assertEqual(
+            self.expected.read_bytes(), (destination / "Package.resolved").read_bytes()
+        )
+
     def test_rejects_non_object_pin_state(self) -> None:
         for state in (None, [], "state", 42, True):
             with self.subTest(state=state):
