@@ -21,6 +21,7 @@ final class SimulatorVideoStreamPushFrameTests: XCTestCase {
   private struct Started {
     let stream: SimulatorVideoStream
     let pusher: RecordingFramePusher
+    let surface: FakeFramebufferSurface
     let ioSurface: IOSurface
     let logger: CapturingLogger
   }
@@ -35,7 +36,34 @@ final class SimulatorVideoStreamPushFrameTests: XCTestCase {
     try await stream.startStreaming(FBDataBuffer.accumulatingBuffer())
     let pusher = RecordingFramePusher()
     await stream.installFramePusher(pusher)
-    return Started(stream: stream, pusher: pusher, ioSurface: ioSurface, logger: logger)
+    return Started(stream: stream, pusher: pusher, surface: surface, ioSurface: ioSurface, logger: logger)
+  }
+
+  func testPushesArePacedToOneDisplayIntervalApart() async throws {
+    let started = try await startStream()
+    defer { Task { try? await started.stream.stopStreaming() } }
+    let pushInProgress = DispatchSemaphore(value: 0)
+    started.pusher.onWrite = {
+      pushInProgress.signal()
+      usleep(2_000)
+    }
+
+    // The second signal lands while the first push is in progress; the third right after the second.
+    started.surface.frameRendered?()
+    XCTAssertEqual(pushInProgress.wait(timeout: .now() + 2), .success, "the first signal must start a push")
+    started.surface.frameRendered?()
+    started.surface.frameRendered?()
+
+    for _ in 0..<200 where started.pusher.writes.count < 2 {
+      try await Task.sleep(nanoseconds: 10_000_000)
+    }
+    try await Task.sleep(nanoseconds: 50_000_000)
+    let writes = started.pusher.writes
+    XCTAssertGreaterThanOrEqual(writes.count, 2, "a signal during a push must still be pushed")
+    XCTAssertLessThanOrEqual(writes.count, 3, "three signals cannot produce more than three pushes")
+    for (earlier, later) in zip(writes, writes.dropFirst()) {
+      XCTAssertGreaterThanOrEqual(later.time - earlier.time, 1.0 / 60.0, "consecutive pushes must be a display interval apart")
+    }
   }
 
   func testFrameTimingReferenceIsTheMonotonicClock() async throws {
@@ -89,6 +117,7 @@ final class SimulatorVideoStreamPushFrameTests: XCTestCase {
 // patternlint-disable-next-line unchecked-sendable
 private final class RecordingFramePusher: SimulatorVideoStreamFramePusher, @unchecked Sendable {
   struct Write {
+    let time: TimeInterval
     let frameNumber: UInt
     let timeAtFirstFrame: CFTimeInterval
     let frameDuration: CFTimeInterval
@@ -126,9 +155,10 @@ private final class RecordingFramePusher: SimulatorVideoStreamFramePusher, @unch
     frameDuration: CFTimeInterval,
     forceKeyFrame: Bool
   ) throws {
+    let time = ProcessInfo.processInfo.systemUptime
     onWrite?()
     lock.withLock {
-      recorded.append(Write(frameNumber: frameNumber, timeAtFirstFrame: timeAtFirstFrame, frameDuration: frameDuration, forceKeyFrame: forceKeyFrame))
+      recorded.append(Write(time: time, frameNumber: frameNumber, timeAtFirstFrame: timeAtFirstFrame, frameDuration: frameDuration, forceKeyFrame: forceKeyFrame))
     }
     if let error {
       throw error
