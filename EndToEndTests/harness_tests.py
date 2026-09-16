@@ -15,6 +15,7 @@ import asyncio
 import io
 import json
 import os
+import shutil
 import tempfile
 import unittest
 from pathlib import Path
@@ -655,6 +656,116 @@ class UnavailableRecordingTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(
             sum(event["event"] == "recording_finished" for event in events), 1
         )
+
+
+class BinaryPathTests(unittest.IsolatedAsyncioTestCase):
+    """The paths the harness hands to `simctl spawn`.
+
+    A simulator's `launchd_sim` resolves the program path case-sensitively, even
+    where the filesystem it sits on does not. A path that differs from the one on
+    disk only in case therefore opens, stats and code-signs perfectly well on the
+    host, and is refused by the guest with an error naming neither the file nor
+    the case:
+
+        domain=com.apple.CoreSimulator.LaunchdSimError, code=111
+        Underlying error (domain=SimXPCErrorDomain, code=111):
+            Invalid or missing Program/ProgramArguments
+
+    Such a path reaches the harness whenever an ancestor directory is spelled
+    differently from the one that exists -- on a case-insensitive filesystem,
+    `mkdir Build` beside an existing `build` silently keeps `build`.
+
+    These go through `Environment.resolve`, which is where the paths the suite
+    actually spawns come from: what a test hands `simctl` is either a binary
+    the environment named, or something derived from one -- and a derived path
+    inherits whatever spelling its companion was resolved to.
+    """
+
+    def setUp(self) -> None:
+        # Resolved up front: /tmp is a symlink on macOS, and the behaviour under
+        # test is the spelling of a path, not where symlinks lead.
+        self.directory = Path(tempfile.mkdtemp()).resolve()
+        self.addCleanup(shutil.rmtree, self.directory, True)
+        # The distribution as the public job lays it out: the companion with its
+        # Resources/ beside it, under the lowercase `build/` that
+        # `pip install .` leaves in the checkout.
+        self.distribution = self.directory / "build" / "Distribution"
+        (self.distribution / "Resources").mkdir(parents=True)
+        self.companion = self.distribution / "idb_companion"
+        self.companion.write_text("#!/bin/sh\n")
+        self.companion.chmod(0o755)
+
+    def as_exported(self, path: Path) -> Path:
+        """The same path spelled `Build`, the way the workflow exports it."""
+        lowercase = self.directory / "build"
+        return self.directory / "Build" / path.relative_to(lowercase)
+
+    def skip_unless_both_spellings_exist(self, path: Path) -> None:
+        if not path.exists():
+            raise unittest.SkipTest(
+                "a case-sensitive filesystem cannot present the two spellings"
+            )
+
+    async def resolve(self, companion: Path) -> harness.Environment:
+        environment = {
+            "DEVICE_UDID": "test-simulator",
+            "DEVICE_SET_PATH": str(self.directory),
+            "IDB_BIN": str(self.companion),
+            "IDB_E2E_COMPANION_PATH": str(companion),
+            "IDB_E2E_RECORDER_PATH": str(self.companion),
+        }
+        with (
+            mock.patch.dict(os.environ, environment, clear=True),
+            mock.patch.object(
+                Simctl, "state", new=mock.AsyncMock(return_value="Booted")
+            ),
+        ):
+            return await harness.Environment.resolve()
+
+    async def test_a_companion_is_resolved_to_the_path_it_was_given(self) -> None:
+        resolved = await self.resolve(self.companion)
+
+        self.assertEqual(resolved.companion_path, self.companion)
+
+    # BUG: the harness hands on a differently-cased path unchanged, which every
+    # host-side check accepts and `launchd_sim` refuses -- flipped in the
+    # following commit, where the answer becomes the path that is on disk.
+    async def test_a_differently_cased_companion_keeps_the_case_it_was_given(
+        self,
+    ) -> None:
+        requested = self.as_exported(self.companion)
+        self.skip_unless_both_spellings_exist(requested)
+
+        resolved = await self.resolve(requested)
+
+        self.assertEqual(resolved.companion_path, requested)
+        self.assertNotEqual(resolved.companion_path, self.companion)
+
+    # BUG: and so everything derived beside that companion carries the spelling
+    # the guest refuses, which is how one mis-spelled variable fails every
+    # single thing the suite spawns. Flipped in the following commit.
+    async def test_what_is_derived_beside_a_companion_carries_its_case(
+        self,
+    ) -> None:
+        requested = self.as_exported(self.companion)
+        self.skip_unless_both_spellings_exist(requested)
+
+        resolved = await self.resolve(requested)
+
+        self.assertEqual(
+            resolved.fixture_app,
+            self.as_exported(self.distribution)
+            / "Resources"
+            / harness.FIXTURE_APP_NAME,
+        )
+
+    async def test_a_companion_that_is_not_there_under_either_spelling_is_refused(
+        self,
+    ) -> None:
+        absent = self.directory / "Absent" / self.companion.name
+
+        with self.assertRaises(harness.HarnessError):
+            await self.resolve(absent)
 
 
 if __name__ == "__main__":
