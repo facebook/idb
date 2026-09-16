@@ -1868,6 +1868,104 @@ final class AccessibilityRuntimeTests: XCTestCase {
     XCTAssertEqual(runtime.windowServerCount, 1)
   }
 
+  // MARK: - Decoded request coercion
+
+  private var flagCoercionCases: [(Any, Bool)] {
+    [("YES", true), ("1", true), ("false", false), ("0", false), (NSNumber(value: 2), true), (NSNumber(value: -1), true), (NSNumber(value: 0), false)]
+  }
+
+  func testSnapshotFlagPreservesFoundationBooleanCoercion() {
+    runtime.applicationElements[NSNumber(value: kAppPid)] = FBAXFakeElement.readable("root")
+    for (value, enabled) in flagCoercionCases {
+      let before = runtime.snapshotCount
+
+      let response = FBAXBridgeHandleRequest(["verb": "describe", "pid": kAppPid, "snapshotTree": value])
+
+      assertEqualObjects(response["ok"], true)
+      assertEqualObjects(axValue(response["tree"], kAXLabel), "root")
+      XCTAssertEqual(runtime.snapshotCount - before, enabled ? 1 : 0)
+    }
+  }
+
+  func testTranslatorFlagPreservesFoundationBooleanCoercion() {
+    runtime.applicationElements[NSNumber(value: kAppPid)] = FBAXFakeElement.readable("original")
+    runtime.translatorAttributeValues = [33: "translated"]
+    for (value, enabled) in flagCoercionCases {
+      let before = runtime.translatorReadCount
+
+      let response = FBAXBridgeHandleRequest(["verb": "describe", "pid": kAppPid, "translatorVocabulary": value])
+
+      assertEqualObjects(response["ok"], true)
+      assertEqualObjects(axValue(response["tree"], kAXLabel), enabled ? "translated" : "original")
+      XCTAssertEqual(runtime.translatorReadCount - before, enabled ? 2 : 0)
+    }
+  }
+
+  func testExplanationFlagPreservesFoundationBooleanCoercion() {
+    _ = unreachableRoot()
+    runtime.hitTestOutcome = FBAXHitTestOutcome.hit(FBAXFakeElement.readable("overlay"), owningProcessIdentifier: 9000)
+    for (value, enabled) in flagCoercionCases {
+      let before = runtime.hitTestCount
+
+      let response = FBAXBridgeHandleRequest(["verb": "describe", "pid": kAppPid, "explainUnreachable": value])
+
+      assertEqualObjects(response["ok"], true)
+      XCTAssertEqual(axValue(response["tree"], "FBExplainedBy") != nil, enabled)
+      XCTAssertEqual(runtime.hitTestCount - before, enabled ? 1 : 0)
+    }
+  }
+
+  func testMalformedTraversalFlagsReturnPlainErrorsAndRecover() {
+    runtime.applicationElements[NSNumber(value: kAppPid)] = FBAXFakeElement.readable("root")
+    for flag in ["snapshotTree", "translatorVocabulary", "explainUnreachable"] {
+      for value in [NSNull(), [], [:]] as [Any] {
+        let response = FBAXBridgeHandleRequest(["verb": "describe", "pid": kAppPid, flag: value])
+
+        assertEqualObjects(response["ok"], false)
+        XCTAssertNil(response["error_kind"])
+        XCTAssertNil(response["tree"])
+        XCTAssertTrue((response["error"] as? String)?.hasPrefix("the reader raised while answering:") == true)
+        XCTAssertTrue((response["error"] as? String)?.contains("boolValue") == true)
+        assertEqualObjects(FBAXBridgeHandleRequest(["verb": "describe", "pid": kAppPid])["ok"], true)
+      }
+    }
+    XCTAssertEqual(runtime.snapshotCount, 0)
+    XCTAssertEqual(runtime.translatorReadCount, 0)
+    XCTAssertEqual(runtime.hitTestCount, 0)
+  }
+
+  func testSnapshotSelectionDoesNotInterpretUnusedTraversalFlags() {
+    runtime.applicationElements[NSNumber(value: kAppPid)] = FBAXFakeElement.readable("root")
+
+    let response = FBAXBridgeHandleRequest(["verb": "describe", "pid": kAppPid, "snapshotTree": "YES", "translatorVocabulary": NSNull(), "explainUnreachable": NSNull()])
+
+    assertEqualObjects(response["ok"], true)
+    assertEqualObjects(axValue(response["tree"], kAXLabel), "root")
+    XCTAssertEqual(runtime.snapshotCount, 1)
+    XCTAssertEqual(runtime.translatorReadCount, 0)
+    XCTAssertEqual(runtime.hitTestCount, 0)
+  }
+
+  func testUnsupportedVerbPreservesFoundationValueDescriptions() {
+    let cases: [(Any, String)] = [(123, "123"), (NSNull(), "<null>"), (["describe"], "(\n    describe\n)"), (["a": 1], "{\n    a = 1;\n}")]
+    for (value, description) in cases {
+      let response = FBAXBridgeHandleRequest(["verb": value])
+
+      assertEqualObjects(response, ["ok": false, "error_kind": "bad_request", "error": "unsupported verb: \(description)"])
+    }
+    assertEqualObjects(runtime.operations, [])
+  }
+
+  func testUnsupportedActionPreservesFoundationValueDescriptions() {
+    let cases: [(Any, String)] = [(123, "123"), (NSNull(), "<null>"), (["press"], "(\n    press\n)"), (["a": 1], "{\n    a = 1;\n}")]
+    for (value, description) in cases {
+      let response = FBAXBridgeHandleRequest(["verb": "perform", "action": value, "x": 1, "y": 2])
+
+      assertEqualObjects(response, ["ok": false, "error_kind": "bad_request", "error": "unsupported action: \(description)"])
+    }
+    assertEqualObjects(runtime.operations, [])
+  }
+
 }
 
 private func axValue(_ object: Any?, _ key: AnyHashable, file: StaticString = #filePath, line: UInt = #line) -> Any? {
@@ -1898,4 +1996,5 @@ private func axCount(_ object: Any?, file: StaticString = #filePath, line: UInt 
   if let array = object as? NSArray { return array.count }
   XCTFail("Expected an array", file: file, line: line)
   return 0
+
 }
