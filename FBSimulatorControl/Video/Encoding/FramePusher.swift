@@ -35,19 +35,6 @@ extension SimulatorVideoStreamFramePusher {
   func currentStats() -> VideoEncoderStats? { nil }
 }
 
-// MARK: - VideoToolbox Output Mode
-
-/// Selects what the VideoToolbox pusher's per-frame encode handler does with each encoded sample:
-/// all H264/HEVC → `.compressed`, MJPEG → `.mjpeg`, Minicap → `.minicap`.
-enum VideoToolboxOutputMode {
-  /// H264/HEVC: hand the sample to `handleCompressedSampleBuffer` for framing + stats.
-  case compressed
-  /// MJPEG: write the sample's block buffer straight to the MJPEG stream.
-  case mjpeg
-  /// Minicap: emit the Minicap header on the first frame, then write each JPEG frame.
-  case minicap
-}
-
 // MARK: - Bitmap Frame Pusher
 
 /// Writes raw BGRA pixel bytes (optionally scaled) straight through to the consumer, unframed.
@@ -108,28 +95,25 @@ final class SimulatorVideoStreamFramePusher_Bitmap: SimulatorVideoStreamFramePus
 
 // MARK: - VideoToolbox Frame Pusher
 
-/// Encodes BGRA frames via a VTCompressionSession (BGRA→NV12 via `PixelBufferConverter`), then
-/// writes the encoded sample to the consumer through the chosen frame writer (or, for MJPEG/Minicap,
-/// directly in the encode handler). Outcomes are accounted for by `EncoderStatsRecorder`.
+/// Encodes frames via a VTCompressionSession (BGRA→NV12 via `PixelBufferConverter`) and hands each
+/// encoded sample to an `EncodedSampleConsumer` — a transport writer, a JPEG framer or a file
+/// writer. Outcomes are accounted for by `EncoderStatsRecorder`.
 ///
 /// @unchecked Sendable: `VTCompressionSessionEncodeFrame`'s `@Sendable` output handler can run on a
-/// VideoToolbox thread after the encode call returns, so it captures `self`. Everything it touches
-/// is immutable or is the stats recorder, which is safe for that thread by its own contract.
-/// `tearDown` flushes every pending handler before it invalidates the session.
+/// VideoToolbox thread after the encode call returns, so it captures `self`. VideoToolbox invokes a
+/// session's output handlers serially, in decode order, so the handler's two collaborators are never
+/// entered concurrently: the encoded-sample consumer, whose state (a transport writer's continuity
+/// counters, the Minicap header flag, the file writer) is touched only from the handler, and the
+/// stats recorder, which additionally locks the counters the owning actor reads. The pusher's own
+/// stored properties are immutable after `setup`. `tearDown` flushes every pending handler before
+/// it invalidates the session.
 final class SimulatorVideoStreamFramePusher_VideoToolbox: SimulatorVideoStreamFramePusher, @unchecked Sendable {
   let settings: VideoToolboxEncoderSettings
   /// The scale factor between 0-1. nil for no scaling.
   let scaleFactor: Double?
   let videoCodec: CMVideoCodecType
-  let outputMode: VideoToolboxOutputMode
-  /// The encoded-sample sink for `.compressed` output; nil for MJPEG/Minicap, which write the JPEG
-  /// block buffer directly to `consumer` in the encode handler.
-  let encodedSampleConsumer: EncodedSampleConsumer?
-  let timedMetadataWriter: (any VideoStreamTimedMetadataWriter)?
-  let consumer: any DataConsumer
+  let encodedSampleConsumer: EncodedSampleConsumer
   let logger: any ControlCoreLogger
-  private let mjpegFrameWriter = MJPEGFrameWriter()
-  private let minicapFrameWriter = MinicapFrameWriter()
 
   var compressionSession: VTCompressionSession?
   /// BGRA→NV12 at the encoded output size; nil until `setup`.
@@ -140,25 +124,18 @@ final class SimulatorVideoStreamFramePusher_VideoToolbox: SimulatorVideoStreamFr
     settings: VideoToolboxEncoderSettings,
     scaleFactor: Double?,
     videoCodec: CMVideoCodecType,
-    consumer: any DataConsumer,
-    outputMode: VideoToolboxOutputMode,
-    encodedSampleConsumer: EncodedSampleConsumer?,
-    timedMetadataWriter: (any VideoStreamTimedMetadataWriter)?,
+    encodedSampleConsumer: EncodedSampleConsumer,
     logger: any ControlCoreLogger
   ) {
     self.settings = settings
     self.scaleFactor = scaleFactor
-    self.outputMode = outputMode
     self.encodedSampleConsumer = encodedSampleConsumer
-    self.timedMetadataWriter = timedMetadataWriter
-    self.consumer = consumer
     self.logger = logger
     self.videoCodec = videoCodec
     self.statsRecorder = EncoderStatsRecorder(logger: logger)
   }
 
-  /// The `.compressed` output path: hands the sample to the encoded-sample consumer and records the
-  /// outcome.
+  /// The output handler: hands the sample to the encoded-sample consumer and records the outcome.
   func handleCompressedSampleBuffer(_ sampleBuffer: CMSampleBuffer?, encodeStatus: OSStatus, infoFlags: VTEncodeInfoFlags) {
     statsRecorder.record(outcome(of: sampleBuffer, encodeStatus: encodeStatus, infoFlags: infoFlags))
   }
@@ -170,39 +147,11 @@ final class SimulatorVideoStreamFramePusher_VideoToolbox: SimulatorVideoStreamFr
     if infoFlags.contains(.frameDropped) {
       return .dropped
     }
-    guard let sampleBuffer, let encodedSampleConsumer, encodedSampleConsumer.consume(sampleBuffer, logger: logger) else {
+    guard let sampleBuffer, encodedSampleConsumer.consume(sampleBuffer, logger: logger) else {
       return .writeFailed
     }
     let encodedBytes = CMSampleBufferGetDataBuffer(sampleBuffer).map(CMBlockBufferGetDataLength) ?? 0
     return .written(encodedBytes: encodedBytes)
-  }
-
-  /// MJPEG output: writes the sample's JPEG block buffer straight to the stream, ignoring encode status/flags.
-  private func handleMJPEGSampleBuffer(_ sampleBuffer: CMSampleBuffer?) {
-    guard let sampleBuffer, let blockBuffer = CMSampleBufferGetDataBuffer(sampleBuffer) else { return }
-    do {
-      try mjpegFrameWriter.write(blockBuffer, to: consumer, logger: logger)
-    } catch {
-      logger.log("Failed to write MJPEG frame: \(error)")
-    }
-  }
-
-  /// Minicap output: on frame 0 emits the header from the sample's format dimensions, then writes each
-  /// JPEG block buffer. Ignores encode status/flags.
-  private func handleMinicapSampleBuffer(_ sampleBuffer: CMSampleBuffer?, frameNumber: UInt) {
-    guard let sampleBuffer else { return }
-    if frameNumber == 0 {
-      if let formatDescription = CMSampleBufferGetFormatDescription(sampleBuffer) {
-        let dimensions = CMVideoFormatDescriptionGetDimensions(formatDescription)
-        minicapFrameWriter.writeHeader(width: UInt32(dimensions.width), height: UInt32(dimensions.height), to: consumer, logger: logger)
-      }
-    }
-    guard let blockBuffer = CMSampleBufferGetDataBuffer(sampleBuffer) else { return }
-    do {
-      try minicapFrameWriter.write(blockBuffer, to: consumer, logger: logger)
-    } catch {
-      logger.log("Failed to write Minicap frame: \(error)")
-    }
   }
 
   func setup(with pixelBuffer: CVPixelBuffer, edgeInsets: VideoStreamEdgeInsets) throws {
@@ -312,19 +261,10 @@ final class SimulatorVideoStreamFramePusher_VideoToolbox: SimulatorVideoStreamFr
     }
 
     // `[weak self]`: the session does not retain the pusher, so a strong capture would be a cycle
-    // (pusher → session → handler → pusher). The handler may run on a VideoToolbox thread after this call
-    // returns; mutable state is handler-confined or guarded by `statsLock` (see the class doc).
-    let outputMode = self.outputMode
+    // (pusher → session → handler → pusher). The handler may run on a VideoToolbox thread after this
+    // call returns (see the class doc).
     let handler: VTCompressionOutputHandler = { [weak self] encodeStatus, infoFlags, sampleBuffer in
-      guard let self else { return }
-      switch outputMode {
-      case .compressed:
-        self.handleCompressedSampleBuffer(sampleBuffer, encodeStatus: encodeStatus, infoFlags: infoFlags)
-      case .mjpeg:
-        self.handleMJPEGSampleBuffer(sampleBuffer)
-      case .minicap:
-        self.handleMinicapSampleBuffer(sampleBuffer, frameNumber: frameNumber)
-      }
+      self?.handleCompressedSampleBuffer(sampleBuffer, encodeStatus: encodeStatus, infoFlags: infoFlags)
     }
 
     let status = VTCompressionSessionEncodeFrame(

@@ -35,10 +35,10 @@ final class SimulatorVideoStreamFrameWriterOwnershipTests: XCTestCase {
   func testFramePushersShareTheStreamsTransportWriter() throws {
     // The MPEG-TS writer is a class, so `===` compares the writer itself, not a boxed copy.
     let shared = VideoStreamTransport.mpegts.frameWriters(for: .h264)
-    let first = try XCTUnwrap(makePusher(frameWriters: shared).timedMetadataWriter as? MPEGTSFrameWriter)
-    let second = try XCTUnwrap(makePusher(frameWriters: shared).timedMetadataWriter as? MPEGTSFrameWriter)
+    let first = try XCTUnwrap((makePusher(frameWriters: shared).encodedSampleConsumer as? DataConsumerEncodedSampleConsumer)?.frameWriter as? MPEGTSFrameWriter)
+    let second = try XCTUnwrap((makePusher(frameWriters: shared).encodedSampleConsumer as? DataConsumerEncodedSampleConsumer)?.frameWriter as? MPEGTSFrameWriter)
     XCTAssertTrue(first === second)
-    XCTAssertTrue(first === shared.timedMetadataWriter as AnyObject?)
+    XCTAssertTrue(first === shared.frameWriter as AnyObject?)
   }
 
   func testStreamKeepsItsTransportWriterAcrossSurfaceSwaps() async throws {

@@ -699,20 +699,21 @@ public actor SimulatorVideoStream: FBVideoStream {
     switch configuration.format {
     case let .compressedVideo(codec, transport):
       let frameWriters = frameWriters ?? transport.frameWriters(for: codec)
-      let encodedSampleConsumer: EncodedSampleConsumer =
-        encodedSampleConsumerOverride
-        ?? DataConsumerEncodedSampleConsumer(consumer: consumer, frameWriter: frameWriters.frameWriter, timedMetadataWriter: frameWriters.timedMetadataWriter)
       return SimulatorVideoStreamFramePusher_VideoToolbox(
         settings: settings, scaleFactor: configuration.scaleFactor, videoCodec: codec.videoToolboxCodec,
-        consumer: consumer, outputMode: .compressed, encodedSampleConsumer: encodedSampleConsumer, timedMetadataWriter: frameWriters.timedMetadataWriter, logger: logger)
+        encodedSampleConsumer: encodedSampleConsumerOverride
+          ?? DataConsumerEncodedSampleConsumer(consumer: consumer, frameWriter: frameWriters.frameWriter, timedMetadataWriter: frameWriters.timedMetadataWriter),
+        logger: logger)
     case .mjpeg:
       return SimulatorVideoStreamFramePusher_VideoToolbox(
         settings: settings, scaleFactor: configuration.scaleFactor, videoCodec: kCMVideoCodecType_JPEG,
-        consumer: consumer, outputMode: encodedSampleConsumerOverride == nil ? .mjpeg : .compressed, encodedSampleConsumer: encodedSampleConsumerOverride, timedMetadataWriter: nil, logger: logger)
+        encodedSampleConsumer: encodedSampleConsumerOverride ?? MJPEGSampleConsumer(consumer: consumer),
+        logger: logger)
     case .minicap:
       return SimulatorVideoStreamFramePusher_VideoToolbox(
         settings: settings, scaleFactor: configuration.scaleFactor, videoCodec: kCMVideoCodecType_JPEG,
-        consumer: consumer, outputMode: .minicap, encodedSampleConsumer: nil, timedMetadataWriter: nil, logger: logger)
+        encodedSampleConsumer: encodedSampleConsumerOverride ?? MinicapSampleConsumer(consumer: consumer),
+        logger: logger)
     case .bgra:
       return SimulatorVideoStreamFramePusher_Bitmap(consumer: consumer, scaleFactor: configuration.scaleFactor)
     }
