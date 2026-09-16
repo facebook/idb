@@ -52,66 +52,57 @@ class DiagnosticPlanTests(unittest.TestCase):
         arguments.update(overrides)
         return diagnostic_plan(**arguments)
 
-    def test_includes_companion_log_and_host_crash_reports(self) -> None:
+    def test_names_every_file_it_copies(self) -> None:
         patterns = [
             str(source.root / source.pattern)
             for source in self.plan()
             if isinstance(source, Copy)
         ]
-        self.assertIn("/tmp/idb-e2e-*/companion.log", patterns)
-        self.assertIn(
-            "/home/runner/Library/Logs/DiagnosticReports/idb_companion*.ips", patterns
-        )
-        self.assertIn(
-            "/home/runner/Library/Logs/DiagnosticReports/SimulatorFrameworkBridge*.ips",
+
+        self.assertEqual(
             patterns,
-        )
-
-    def test_includes_simulator_crash_reports(self) -> None:
-        patterns = [
-            str(source.root / source.pattern)
-            for source in self.plan()
-            if isinstance(source, Copy)
-        ]
-        self.assertIn(
-            f"/sets/end-to-end/{UDID}/data/Library/Logs/CrashReporter/*.ips", patterns
-        )
-
-    def test_device_listing_uses_requested_device_set(
-        self,
-    ) -> None:
-        captures = {
-            source.name: list(source.argv)
-            for source in self.plan()
-            if isinstance(source, Capture)
-        }
-        self.assertEqual(
-            captures["devices.txt"],
-            ["xcrun", "simctl", "--set", "/sets/end-to-end", "list", "devices"],
-        )
-
-    def test_simulator_log_uses_configured_time_window(self) -> None:
-        captures = {
-            source.name: list(source.argv)
-            for source in self.plan()
-            if isinstance(source, Capture)
-        }
-        self.assertEqual(
-            captures["simulator-log.txt"],
             [
-                "xcrun",
-                "simctl",
-                "--set",
-                "/sets/end-to-end",
-                "spawn",
-                UDID,
-                "log",
-                "show",
-                "--last",
-                SIMULATOR_LOG_WINDOW,
-                "--style",
-                "compact",
+                "/tmp/idb-e2e-*/companion.log",
+                "/home/runner/Library/Logs/DiagnosticReports/idb_companion*.ips",
+                "/home/runner/Library/Logs/DiagnosticReports/"
+                "SimulatorFrameworkBridge*.ips",
+                f"/sets/end-to-end/{UDID}/data/Library/Logs/CrashReporter/*.ips",
             ],
+        )
+
+    def test_names_every_command_it_captures(self) -> None:
+        captures = {
+            source.name: list(source.argv)
+            for source in self.plan()
+            if isinstance(source, Capture)
+        }
+
+        self.assertEqual(
+            captures,
+            {
+                "devices.txt": [
+                    "xcrun",
+                    "simctl",
+                    "--set",
+                    "/sets/end-to-end",
+                    "list",
+                    "devices",
+                ],
+                "simulator-log.txt": [
+                    "xcrun",
+                    "simctl",
+                    "--set",
+                    "/sets/end-to-end",
+                    "spawn",
+                    UDID,
+                    "log",
+                    "show",
+                    "--last",
+                    SIMULATOR_LOG_WINDOW,
+                    "--style",
+                    "compact",
+                ],
+            },
         )
 
     def test_missing_simulator_keeps_host_diagnostics(self) -> None:
