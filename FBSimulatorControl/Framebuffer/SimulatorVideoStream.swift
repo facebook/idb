@@ -96,6 +96,16 @@ public struct VideoStreamEdgeInsets: Sendable {
   }
 }
 
+/// Where encoded frames go, which decides the encoder's latency/quality trade-off.
+public enum VideoEncodeSink: Sendable {
+  /// A consumer displays frames as they arrive: low-latency rate control, no frame reordering and no
+  /// encoder delay, so a frame is out within the frame interval.
+  case live
+  /// Frames are muxed to a file: the standard encoder, free to reorder (B-frames) and look ahead,
+  /// which is quality-per-bit a viewer of the finished file gets for nothing.
+  case file
+}
+
 /// Frame cadence strategy for the video stream.
 ///
 /// - `.lazy`: variable-frame-rate — a frame is pushed only when the framebuffer signals that a new
@@ -686,19 +696,26 @@ public actor SimulatorVideoStream: FBVideoStream {
 
   // MARK: - Compression Properties
 
-  /// The `VTSessionSetProperties` dictionary for `configuration`, with `callerProperties` layered on top.
-  public static func compressionSessionProperties(for configuration: VideoStreamConfiguration, callerProperties: [String: Any]) -> [String: Any] {
+  /// The `VTSessionSetProperties` dictionary for `configuration` and `sink`, with `callerProperties`
+  /// layered on top. A live sink forbids frame reordering and any encoder delay; a file sink allows
+  /// both, buying B-frames and lookahead for the same bitrate.
+  public static func compressionSessionProperties(for configuration: VideoStreamConfiguration, callerProperties: [String: Any], sink: VideoEncodeSink = .live) -> [String: Any] {
     var derived: [String: Any] = [
-      kVTCompressionPropertyKey_RealTime as String: true,
-      kVTCompressionPropertyKey_AllowFrameReordering as String: false,
-      kVTCompressionPropertyKey_MaxFrameDelayCount as String: 0,
+      kVTCompressionPropertyKey_RealTime as String: true
     ]
 
     switch configuration.format {
     case .compressedVideo:
-      // Resolved by the VideoToolbox pusher at session setup, where the encoded output dimensions
-      // are known (see `compressedVideoRateControlProperties`).
-      break
+      // Frame reordering and encoder delay are H.264/HEVC concepts; a JPEG session ignores the keys.
+      // Rate control is resolved by the VideoToolbox pusher at session setup, where the encoded
+      // output dimensions are known (see `compressedVideoRateControlProperties`).
+      switch sink {
+      case .live:
+        derived[kVTCompressionPropertyKey_AllowFrameReordering as String] = false
+        derived[kVTCompressionPropertyKey_MaxFrameDelayCount as String] = 0
+      case .file:
+        derived[kVTCompressionPropertyKey_AllowFrameReordering as String] = true
+      }
     case .mjpeg, .minicap, .bgra:
       switch configuration.rateControl {
       case .automatic:
@@ -739,7 +756,8 @@ public actor SimulatorVideoStream: FBVideoStream {
     frameWriters: VideoStreamFrameWriters?,
     logger: any ControlCoreLogger
   ) throws -> any SimulatorVideoStreamFramePusher {
-    let derived = Self.compressionSessionProperties(for: configuration, callerProperties: compressionSessionProperties)
+    let sink: VideoEncodeSink = encodedSampleConsumerOverride == nil ? .live : .file
+    let derived = Self.compressionSessionProperties(for: configuration, callerProperties: compressionSessionProperties, sink: sink)
     switch configuration.format {
     case let .compressedVideo(codec, transport):
       let frameWriters = frameWriters ?? transport.frameWriters(for: codec)
@@ -747,15 +765,15 @@ public actor SimulatorVideoStream: FBVideoStream {
         encodedSampleConsumerOverride
         ?? DataConsumerEncodedSampleConsumer(consumer: consumer, frameWriter: frameWriters.frameWriter, timedMetadataWriter: frameWriters.timedMetadataWriter)
       return SimulatorVideoStreamFramePusher_VideoToolbox(
-        configuration: configuration, compressionSessionProperties: derived, videoCodec: codec.videoToolboxCodec,
+        configuration: configuration, compressionSessionProperties: derived, videoCodec: codec.videoToolboxCodec, sink: sink,
         consumer: consumer, outputMode: .compressed, encodedSampleConsumer: encodedSampleConsumer, timedMetadataWriter: frameWriters.timedMetadataWriter, logger: logger)
     case .mjpeg:
       return SimulatorVideoStreamFramePusher_VideoToolbox(
-        configuration: configuration, compressionSessionProperties: derived, videoCodec: kCMVideoCodecType_JPEG,
+        configuration: configuration, compressionSessionProperties: derived, videoCodec: kCMVideoCodecType_JPEG, sink: sink,
         consumer: consumer, outputMode: encodedSampleConsumerOverride == nil ? .mjpeg : .compressed, encodedSampleConsumer: encodedSampleConsumerOverride, timedMetadataWriter: nil, logger: logger)
     case .minicap:
       return SimulatorVideoStreamFramePusher_VideoToolbox(
-        configuration: configuration, compressionSessionProperties: derived, videoCodec: kCMVideoCodecType_JPEG,
+        configuration: configuration, compressionSessionProperties: derived, videoCodec: kCMVideoCodecType_JPEG, sink: sink,
         consumer: consumer, outputMode: .minicap, encodedSampleConsumer: nil, timedMetadataWriter: nil, logger: logger)
     case .bgra:
       return SimulatorVideoStreamFramePusher_Bitmap(consumer: consumer, scaleFactor: configuration.scaleFactor)

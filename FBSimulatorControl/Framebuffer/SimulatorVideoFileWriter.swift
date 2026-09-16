@@ -56,11 +56,10 @@ extension SimulatorVideoFileWriterError: LocalizedError {
 /// writer copies the video and adds the chapter track. An empty chapter input on the live writer
 /// can block video writes while waiting for chapter samples, particularly across long frame gaps.
 ///
-/// @unchecked Sendable: `consume` runs inside the VideoToolbox output handler, whose invocations
-/// alternate one frame at a time with the stream actor's encode submissions (the session is
-/// configured with `MaxFrameDelayCount: 0` — see the pusher's own concurrency doc), so consumes
-/// never overlap each other. `finish` is called once, from the recorder, after `stopStreaming` has
-/// flushed the encoder (`VTCompressionSessionCompleteFrames`), so it never overlaps `consume`. The
+/// @unchecked Sendable: `consume` runs inside the VideoToolbox output handler, and VideoToolbox
+/// invokes a session's output handlers serially, so consumes never overlap each other. `finish` is
+/// called once, from the recorder, after `stopStreaming` has flushed the encoder
+/// (`VTCompressionSessionCompleteFrames`), so it never overlaps `consume`. The
 /// timed-metadata path (`writeTimedMetadata`) arrives from other isolation domains (the stdin
 /// handler), so the chapter state it shares with `consume`/`finish` is guarded by `chapterLock`.
 final class SimulatorVideoFileWriter: EncodedSampleConsumer, TimedMetadataConsumer, @unchecked Sendable {

@@ -254,6 +254,21 @@ final class SimulatorVideoStreamCompressionPropertiesTests: XCTestCase {
     XCTAssertEqual(limits, [1_500_000, 1])
   }
 
+  func testJPEGSessionsGetNoReorderingOrDelayKeys() {
+    let config = VideoStreamConfiguration(
+      format: VideoStreamFormat.mjpeg(encoder: .requireHardware),
+      framesPerSecond: nil,
+      rateControl: nil,
+      scaleFactor: nil,
+      keyFrameRate: nil
+    )
+    for sink in [VideoEncodeSink.live, .file] {
+      let props = SimulatorVideoStream.compressionSessionProperties(for: config, callerProperties: [:], sink: sink)
+      XCTAssertNil(props[kVTCompressionPropertyKey_AllowFrameReordering as String], "\(sink)")
+      XCTAssertNil(props[kVTCompressionPropertyKey_MaxFrameDelayCount as String], "\(sink)")
+    }
+  }
+
   func testAutomaticRateControlUsesQualityForMJPEG() {
     // JPEG encoders honor the quality knob, so `.automatic` uses it for MJPEG.
     let config = VideoStreamConfiguration(
@@ -343,6 +358,48 @@ final class SimulatorVideoStreamCompressionPropertiesTests: XCTestCase {
     let props = await makeStream(framesPerSecond: 60).compressionSessionProperties
     XCTAssertEqual(props[kVTCompressionPropertyKey_ExpectedFrameRate as String] as? NSNumber, 60)
     XCTAssertNil(props[kVTCompressionPropertyKey_MaxKeyFrameInterval as String])
+  }
+
+  // MARK: - Encode Sink
+
+  func testFileSinkUsesTheStandardEncoderWithReordering() {
+    let config = VideoStreamConfiguration(
+      format: VideoStreamFormat.compressedVideo(withCodec: .h264, transport: .annexB),
+      framesPerSecond: 30,
+      rateControl: nil,
+      scaleFactor: nil,
+      keyFrameRate: nil
+    )
+    let props = SimulatorVideoStream.compressionSessionProperties(for: config, callerProperties: [:], sink: .file)
+    XCTAssertEqual(props[kVTCompressionPropertyKey_RealTime as String] as? NSNumber, true)
+    XCTAssertEqual(props[kVTCompressionPropertyKey_AllowFrameReordering as String] as? NSNumber, true)
+    XCTAssertNil(props[kVTCompressionPropertyKey_MaxFrameDelayCount as String])
+
+    let specification = SimulatorVideoStreamFramePusher_VideoToolbox.encoderSpecification(for: config.format, sink: .file)
+    XCTAssertEqual(specification[kVTVideoEncoderSpecification_RequireHardwareAcceleratedVideoEncoder as String] as? Bool, true)
+    XCTAssertNil(specification[kVTVideoEncoderSpecification_EnableLowLatencyRateControl as String])
+  }
+
+  func testRecordingPusherEncodesForAFileSink() throws {
+    let config = VideoStreamConfiguration(
+      format: VideoStreamFormat.compressedVideo(withCodec: .h264, transport: .annexB),
+      framesPerSecond: 30,
+      rateControl: nil,
+      scaleFactor: nil,
+      keyFrameRate: nil
+    )
+    let fileWriter = SimulatorVideoFileWriter(filePath: NSTemporaryDirectory() + "/\(UUID().uuidString).mp4", logger: CapturingLogger())
+    let pusher = try SimulatorVideoStream.framePusher(
+      configuration: config, compressionSessionProperties: [:], consumer: FBNullDataConsumer(),
+      encodedSampleConsumerOverride: fileWriter, frameWriters: nil, logger: CapturingLogger())
+    let videoToolbox = try XCTUnwrap(pusher as? SimulatorVideoStreamFramePusher_VideoToolbox)
+    XCTAssertEqual(videoToolbox.sink, .file)
+    XCTAssertEqual(videoToolbox.compressionSessionProperties[kVTCompressionPropertyKey_AllowFrameReordering as String] as? NSNumber, true)
+
+    let live = try SimulatorVideoStream.framePusher(
+      configuration: config, compressionSessionProperties: [:], consumer: FBNullDataConsumer(),
+      encodedSampleConsumerOverride: nil, frameWriters: nil, logger: CapturingLogger())
+    XCTAssertEqual((live as? SimulatorVideoStreamFramePusher_VideoToolbox)?.sink, .live)
   }
 
   // MARK: - Low-Latency Base Properties

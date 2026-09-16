@@ -236,15 +236,16 @@ final class SimulatorVideoStreamFramePusher_Bitmap: SimulatorVideoStreamFramePus
 /// @unchecked Sendable: `VTCompressionSessionEncodeFrame`'s `@Sendable` output handler can run on a
 /// VideoToolbox thread after the encode call returns, so it captures `self`. Encoder state
 /// (warmup/starvation counters, `statsTimer`, `lastLoggedStats`) is only ever touched from that
-/// handler and the owning actor's frame submissions, which alternate one frame at a time (the
-/// encoder is configured with `MaxFrameDelayCount: 0` and real-time low-latency rate control, so a
-/// frame's handler completes before the next `writeEncodedFrame` is submitted). `stats` is
-/// additionally read by `currentStats()` from other isolation domains, so it alone is guarded by
-/// `statsLock`.
+/// handler, and VideoToolbox invokes a session's output handlers serially, in decode order, so they
+/// never overlap each other; the owning actor's frame submissions touch none of it. `stats` is
+/// additionally read by `currentStats()` from other isolation domains and written by both sides, so
+/// it alone is guarded by `statsLock`. `tearDown` flushes every pending handler before it invalidates
+/// the session.
 final class SimulatorVideoStreamFramePusher_VideoToolbox: SimulatorVideoStreamFramePusher, @unchecked Sendable {
   let configuration: VideoStreamConfiguration
   let compressionSessionProperties: [String: Any]
   let videoCodec: CMVideoCodecType
+  let sink: VideoEncodeSink
   let outputMode: VideoToolboxOutputMode
   /// The encoded-sample sink for `.compressed` output; nil for MJPEG/Minicap, which write the JPEG
   /// block buffer directly to `consumer` in the encode handler.
@@ -280,6 +281,7 @@ final class SimulatorVideoStreamFramePusher_VideoToolbox: SimulatorVideoStreamFr
     configuration: VideoStreamConfiguration,
     compressionSessionProperties: [String: Any],
     videoCodec: CMVideoCodecType,
+    sink: VideoEncodeSink = .live,
     consumer: any DataConsumer,
     outputMode: VideoToolboxOutputMode,
     encodedSampleConsumer: EncodedSampleConsumer?,
@@ -288,6 +290,7 @@ final class SimulatorVideoStreamFramePusher_VideoToolbox: SimulatorVideoStreamFr
   ) {
     self.configuration = configuration
     self.compressionSessionProperties = compressionSessionProperties
+    self.sink = sink
     self.outputMode = outputMode
     self.encodedSampleConsumer = encodedSampleConsumer
     self.timedMetadataWriter = timedMetadataWriter
@@ -430,7 +433,7 @@ final class SimulatorVideoStreamFramePusher_VideoToolbox: SimulatorVideoStreamFr
   }
 
   func setup(with pixelBuffer: CVPixelBuffer, edgeInsets: VideoStreamEdgeInsets) throws {
-    let encoderSpecification = Self.encoderSpecification(for: configuration.format)
+    let encoderSpecification = Self.encoderSpecification(for: configuration.format, sink: sink)
 
     let sourceWidth = CVPixelBufferGetWidth(pixelBuffer)
     let sourceHeight = CVPixelBufferGetHeight(pixelBuffer)
@@ -551,19 +554,19 @@ final class SimulatorVideoStreamFramePusher_VideoToolbox: SimulatorVideoStreamFr
     ]
   }
 
-  static func encoderSpecification(for format: VideoStreamFormat) -> [String: Any] {
-    switch format {
-    case .mjpeg(encoder: .allowSoftware):
+  static func encoderSpecification(for format: VideoStreamFormat, sink: VideoEncodeSink = .live) -> [String: Any] {
+    switch (format, sink) {
+    case (.mjpeg(encoder: .allowSoftware), _):
       return [
         kVTVideoEncoderSpecification_EnableHardwareAcceleratedVideoEncoder as String: true
       ]
-    case .mjpeg(encoder: .requireHardware), .minicap, .bgra:
+    case (.mjpeg(encoder: .requireHardware), _), (.minicap, _), (.bgra, _), (.compressedVideo, .file):
       return [
         kVTVideoEncoderSpecification_RequireHardwareAcceleratedVideoEncoder as String: true
       ]
-    case .compressedVideo:
+    case (.compressedVideo, .live):
       // Low-latency rate control exists only on the H.264/HEVC encoders; a JPEG session refuses to
-      // be created with it requested.
+      // be created with it requested. A file sink wants the standard encoder's quality instead.
       return [
         kVTVideoEncoderSpecification_RequireHardwareAcceleratedVideoEncoder as String: true,
         kVTVideoEncoderSpecification_EnableLowLatencyRateControl as String: true,
