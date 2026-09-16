@@ -874,11 +874,9 @@ final class FBVideoStreamTests: XCTestCase {
     // header(12) + sample_count(4) + data_offset(4) + one sample entry (duration, size, flags = 12).
     let expectedTrunSize = UInt32(trafRange.location - 4) + trafSize - UInt32(trunRange.location - 4)
     XCTAssertEqual(expectedTrunSize, 32)
-    // BUG: the trun box is never closed, so its size field is left at the zero placeholder. A size
-    // of 0 means "box extends to end of file" (ISO 14496-12 §4.2), which Chrome's MSE demuxer refuses
-    // ("ISO BMFF boxes that run to EOS are not supported"). Flipped to `expectedTrunSize` in the
-    // following commit.
-    XCTAssertEqual(trunSize, 0)
+    // A size of 0 would mean "box extends to end of file" (ISO 14496-12 §4.2), which Chrome's MSE
+    // demuxer refuses ("ISO BMFF boxes that run to EOS are not supported").
+    XCTAssertEqual(trunSize, expectedTrunSize)
   }
 
   func testFMP4EmsgBoxStructure() {
