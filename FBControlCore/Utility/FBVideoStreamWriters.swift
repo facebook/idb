@@ -1237,6 +1237,7 @@ final class FMP4FrameWriter: EncodedFrameWriter, VideoStreamTimedMetadataWriter 
   private(set) var initWritten: Bool
   private(set) var sequenceNumber: UInt32
   private var baseDecodeTime: UInt64
+  private var firstPts90k: UInt64
   var lastPts90k: UInt64
 
   public init(codec: FBVideoStreamCodec) {
@@ -1244,6 +1245,7 @@ final class FMP4FrameWriter: EncodedFrameWriter, VideoStreamTimedMetadataWriter 
     self.initWritten = false
     self.sequenceNumber = 0
     self.baseDecodeTime = 0
+    self.firstPts90k = 0
     self.lastPts90k = 0
   }
 
@@ -1277,7 +1279,8 @@ final class FMP4FrameWriter: EncodedFrameWriter, VideoStreamTimedMetadataWriter 
       consumer.consumeData(Data(moov))
 
       initWritten = true
-      baseDecodeTime = pts90k
+      firstPts90k = pts90k
+      baseDecodeTime = 0
       logger.log("fMP4 init segment written (\(dims.width)x\(dims.height), \(codec.displayName))")
     }
 
@@ -1289,6 +1292,13 @@ final class FMP4FrameWriter: EncodedFrameWriter, VideoStreamTimedMetadataWriter 
       duration90k = UInt32(pts90k - prevPts90k)
     } else {
       duration90k = 3000 // ~33ms at 30fps fallback
+    }
+
+    // The fragment's decode time is the sample's own presentation time, relative to the first
+    // sample — never the running sum of declared durations, which drifts from real time whenever
+    // a source misses its nominal cadence.
+    if pts90k >= firstPts90k {
+      baseDecodeTime = pts90k - firstPts90k
     }
 
     // Get AVCC NAL data (do NOT convert to Annex-B).
@@ -1321,7 +1331,6 @@ final class FMP4FrameWriter: EncodedFrameWriter, VideoStreamTimedMetadataWriter 
       consumer.consumeData(sampleData)
     }
 
-    baseDecodeTime += UInt64(duration90k)
   }
 
   public func writeTimedMetadata(_ text: String, to consumer: any FBDataConsumer) {

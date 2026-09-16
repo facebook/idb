@@ -1040,11 +1040,9 @@ final class FBVideoStreamTests: XCTestCase {
       searchFrom = range.location + 4
     }
     XCTAssertEqual(tfdts.count, ptsList.count)
-    // BUG: baseMediaDecodeTime is the running sum of the DECLARED durations (1/30 s = 3000 ticks each),
-    // not the sample's presentation time, so media time runs at 3000 ticks per frame while the frames
-    // are 9000 ticks apart — the stream's clock outruns wall time by 3x here. Flipped to the PTS-relative
-    // values `[0, 9000, 18000, 27000]` in the following commit.
-    XCTAssertEqual(tfdts, [0, 3000, 6000, 9000])
+    // baseMediaDecodeTime follows the sample's presentation time (relative to the first sample), so a
+    // source that misses its declared cadence still carries a media clock that tracks real time.
+    XCTAssertEqual(tfdts, [0, 9000, 18000, 27000])
   }
 
   func testFMP4EmsgBoxStructure() {
