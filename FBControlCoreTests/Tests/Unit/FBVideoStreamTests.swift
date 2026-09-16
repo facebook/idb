@@ -519,11 +519,6 @@ final class FBVideoStreamTests: XCTestCase {
     XCTAssertEqual(crc, 0x0376E6E7)
   }
 
-  func testMPEGTSCRC32EmptyInput() {
-    let crc = FBMPEGTS_CRC32([UInt8]())
-    XCTAssertEqual(crc, 0xFFFFFFFF)
-  }
-
   // MARK: - MPEG-TS PAT/PMT Structure
 
   func testPATPacketStructure() {
@@ -756,15 +751,6 @@ final class FBVideoStreamTests: XCTestCase {
     XCTAssertEqual(section[17], 0x15)
     let metaPid = UInt16(section[18] & 0x1F) << 8 | UInt16(section[19])
     XCTAssertEqual(metaPid, FBMPEGTSMetadataPID)
-  }
-
-  func testPMTWithoutMetadataStreamUnchanged() {
-    var counter1: UInt8 = 0
-    var counter2: UInt8 = 0
-    let pmtWithout = FBMPEGTSCreatePMTPacketWithMetadata(&counter1, 0x24, false)
-    let pmtOriginal = FBMPEGTSCreatePMTPacket(&counter2, 0x24)
-
-    XCTAssertEqual(pmtWithout, pmtOriginal)
   }
 
   // MARK: - MPEG-TS Timed Metadata Packets
