@@ -120,7 +120,7 @@ private func bitmapStreamPixelBufferAttributes(from pixelBuffer: CVPixelBuffer) 
 /// actor-isolated task, rather than queue-delivered callbacks. The cadence is selected by the
 /// `cadence` strategy: `.lazy` pushes a frame when a frame-rendered event pokes the trigger stream
 /// (variable frame rate), while `.eager` runs a cadence `Task` on the actor that pushes at a fixed frame rate.
-public actor SimulatorVideoStream: FBVideoStream {
+public actor SimulatorVideoStream: VideoStreamOperation {
 
   // MARK: - Properties
 
@@ -703,7 +703,7 @@ public actor SimulatorVideoStream: FBVideoStream {
   /// `nonisolated`: reads only the immutable `framebuffer` reference.
   public nonisolated var framebufferStatsStartTime: CFTimeInterval { framebuffer.statsStartTime }
 
-  // MARK: - FBVideoStream
+  // MARK: - VideoStreamOperation
 
   public func awaitCompletion() async {
     let id = UUID()

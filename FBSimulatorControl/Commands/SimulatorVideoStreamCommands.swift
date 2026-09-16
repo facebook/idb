@@ -21,7 +21,7 @@ public struct SimulatorVideoStreamCommands: VideoStreamCommands {
 
   // MARK: - Async
 
-  public func createStream(configuration: VideoStreamConfiguration, to consumer: any DataConsumer) async throws -> any FBVideoStream {
+  public func createStream(configuration: VideoStreamConfiguration, to consumer: any DataConsumer) async throws -> any VideoStreamOperation {
     let framebuffer = try await simulator.lifecycle.connectToFramebuffer()
     return try await SimulatorVideoStream.start(framebuffer: framebuffer, configuration: configuration, to: consumer, logger: simulator.logger)
   }

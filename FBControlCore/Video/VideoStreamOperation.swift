@@ -9,7 +9,7 @@ import Foundation
 
 /// Streams encoded video frames to a data consumer. `Sendable` because the async lifecycle methods
 /// are awaited across concurrency domains.
-public protocol FBVideoStream: AnyObject, Sendable {
+public protocol VideoStreamOperation: AnyObject, Sendable {
   /// Starts the Streaming, to a Data Consumer.
   func startStreaming(_ consumer: DataConsumer) async throws
 

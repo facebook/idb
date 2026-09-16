@@ -65,7 +65,7 @@ struct VideoStreamMethodHandler {
     targetLogger.log("The video stream is terminated")
   }
 
-  private func startVideoStream(request start: Idb_VideoStreamRequest.Start, responseStream: RPCWriter<Idb_VideoStreamResponse>, finished: Atomic<Bool>) async throws -> FBVideoStream {
+  private func startVideoStream(request start: Idb_VideoStreamRequest.Start, responseStream: RPCWriter<Idb_VideoStreamResponse>, finished: Atomic<Bool>) async throws -> VideoStreamOperation {
     let consumer: DataConsumer
 
     if start.filePath.isEmpty {

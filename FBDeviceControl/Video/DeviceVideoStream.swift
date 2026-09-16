@@ -39,7 +39,7 @@ enum DeviceVideoStreamError: Error, LocalizedError {
 ///
 /// @unchecked Sendable: frame delivery is confined to `writeQueue` (the AVCapture delegate queue);
 /// lifecycle state is guarded by `lifecycleLock`.
-public final class DeviceVideoStream: NSObject, FBVideoStream, @unchecked Sendable {
+public final class DeviceVideoStream: NSObject, VideoStreamOperation, @unchecked Sendable {
   let logger: any ControlCoreLogger
   private let session: AVCaptureSession
   private let output: AVCaptureVideoDataOutput
@@ -114,7 +114,7 @@ public final class DeviceVideoStream: NSObject, FBVideoStream, @unchecked Sendab
     super.init()
   }
 
-  // MARK: - FBVideoStream
+  // MARK: - VideoStreamOperation
 
   public func startStreaming(_ consumer: any DataConsumer) async throws {
     if self.consumer != nil {
