@@ -493,6 +493,75 @@ final class AXBridgeReadsTests: XCTestCase {
     )
   }
 
+  private func nativeWaitReader(responses: [Data]) -> (AXBridgeUIAutomation, StubAXBridgeWaitTransport) {
+    let transport = StubAXBridgeWaitTransport(responses: responses)
+    let reader = AXBridgeUIAutomation(
+      simulator: SimulatorTestSupport.testableSimulator(withDevice: AXBridgeWaitDevice()),
+      transport: transport,
+      persistence: .exclusive
+    )
+    return (reader, transport)
+  }
+
+  private func waitErrorEnvelope(_ kind: String) throws -> Data {
+    try envelope(["ok": false, "error_kind": kind, "error": "read failed", "pid": 42])
+  }
+
+  private func waitMatchingEnvelope() throws -> Data {
+    try envelope([
+      "ok": true, "pid": 42,
+      "tree": [AXWire.Node.label.rawValue: "ready"],
+    ])
+  }
+
+  private func assertNativeWaitRecovers(from kind: String) async throws {
+    let (reader, transport) = try nativeWaitReader(responses: [
+      waitErrorEnvelope(kind), waitMatchingEnvelope(),
+    ])
+    try await reader.wait(.marker(value: "ready", key: .label, depth: 10), timeout: 5, pollInterval: 0)
+    let readCount = await transport.readCount
+    XCTAssertEqual(readCount, 2, "wait must retry the failed read before finding the marker")
+  }
+
+  func testNativeWaitRetriesApplicationUnavailable() async throws {
+    try await assertNativeWaitRecovers(from: "application_unavailable")
+  }
+
+  func testNativeWaitRetriesApplicationNotResponding() async throws {
+    try await assertNativeWaitRecovers(from: "application_not_responding")
+  }
+
+  func testNativeWaitApplicationFailuresStillRespectTimeout() async throws {
+    for kind in ["application_unavailable", "application_not_responding"] {
+      let (reader, transport) = try nativeWaitReader(responses: [waitErrorEnvelope(kind)])
+      do {
+        try await reader.wait(.marker(value: "ready", key: .label, depth: 10), timeout: 0, pollInterval: 0)
+        XCTFail("a failed read cannot satisfy the wait")
+      } catch let UIAutomationError.timedOut(backend, key, value, timeout) {
+        XCTAssertEqual(backend, reader.backend)
+        XCTAssertEqual(key, AXSearchableKey.label.rawValue)
+        XCTAssertEqual(value, "ready")
+        XCTAssertEqual(timeout, 0)
+      }
+      let readCount = await transport.readCount
+      XCTAssertEqual(readCount, 1, "an expired wait must not retry \(kind)")
+    }
+  }
+
+  func testNativeWaitPreservesTerminalReaderFailure() async throws {
+    let (reader, transport) = try nativeWaitReader(responses: [
+      waitErrorEnvelope("reader_unavailable"), waitMatchingEnvelope(),
+    ])
+    do {
+      try await reader.wait(.marker(value: "ready", key: .label, depth: 10), timeout: 5, pollInterval: 0)
+      XCTFail("a terminal failure must end the wait")
+    } catch let AXBridgeError.readerUnavailable(reason) {
+      XCTAssertEqual(reason, "read failed")
+    }
+    let readCount = await transport.readCount
+    XCTAssertEqual(readCount, 1, "a terminal failure must not be retried")
+  }
+
   // MARK: - Marker matching agrees with the accessibility backend
 
   // The accessibility backend matches a marker by substring, so the serialized-tree matcher must too, or `--api`
@@ -2170,5 +2239,27 @@ final class AXKeySetTests: XCTestCase {
   func testEverythingIncludesTheKeysThatCostExtraGuestWork() {
     XCTAssertTrue(AXKeys.everything.contains(.interactable))
     XCTAssertTrue(AXKeys.everything.contains(.occludedBy))
+  }
+}
+
+@objc private final class AXBridgeWaitDevice: NSObject {
+  @objc let UDID = NSUUID()
+  @objc var deviceType: NSObject? { nil }
+}
+
+private actor StubAXBridgeWaitTransport: AXBridgeTransport {
+  private var responses: [Data]
+  private(set) var readCount = 0
+
+  init(responses: [Data]) {
+    self.responses = responses
+  }
+
+  func send(_ request: AXBridgeRequest) async throws -> Data {
+    readCount += 1
+    guard !responses.isEmpty else {
+      throw AXBridgeError.bridgeUnavailable
+    }
+    return responses.removeFirst()
   }
 }

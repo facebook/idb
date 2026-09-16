@@ -190,6 +190,8 @@ final class AXBridgeUIAutomation: AXBridgeTreeReader, @unchecked Sendable {
           fromTree: read.tree, keys: AXKeys.defaultSet.union([key.serializationKey]), nestedFormat: false, pid: read.pid
         )
         return AXTreeWalk.matchingElement(inElements: elements, markerValue: markerValue, key: key) != nil ? true : nil
+      } catch UIAutomationError.applicationUnavailable, UIAutomationError.applicationNotResponding {
+        return nil
       } catch let error as AXBridgeError {
         guard error.isTransientDuringMarkerWait else {
           throw error
