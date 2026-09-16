@@ -8,13 +8,13 @@
 import XCTest
 import XCTestBootstrap
 
-final class FBExceptionInfoTests: XCTestCase {
+final class TestExceptionInfoTests: XCTestCase {
 
   // MARK: - Initializer Behavioral Contracts
 
   func testConvenienceInit_DefaultsFileToNilAndLineToZero() {
-    let fromConvenience = FBExceptionInfo(message: "error")
-    let fromFull = FBExceptionInfo(message: "error", file: "Test.m", line: 10)
+    let fromConvenience = TestExceptionInfo(message: "error")
+    let fromFull = TestExceptionInfo(message: "error", file: "Test.m", line: 10)
 
     XCTAssertNil(fromConvenience.file, "Convenience init must default file to nil")
     XCTAssertEqual(fromConvenience.line, 0, "Convenience init must default line to 0")
@@ -26,7 +26,7 @@ final class FBExceptionInfoTests: XCTestCase {
   // MARK: - Description Formatting
 
   func testDescription_IncludesMessageFileAndLine() {
-    let info = FBExceptionInfo(message: "assertion failed", file: "MyTest.m", line: 55)
+    let info = TestExceptionInfo(message: "assertion failed", file: "MyTest.m", line: 55)
     let desc = info.description
 
     XCTAssertTrue(desc.contains("assertion failed"), "Description must include the exception message")

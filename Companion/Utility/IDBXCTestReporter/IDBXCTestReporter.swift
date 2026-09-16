@@ -148,7 +148,7 @@ final class IDBXCTestReporter: NSObject, XCTestReporter, DataConsumer, @unchecke
     }
   }
 
-  func testCaseDidFail(forTestClass testClass: String, method: String, exceptions: [FBExceptionInfo]) {
+  func testCaseDidFail(forTestClass testClass: String, method: String, exceptions: [TestExceptionInfo]) {
     let currentInfo = self.currentInfo
     if testClass == currentInfo.testClass && method != currentInfo.testMethod {
       logger.log("Got failure info for \(testClass)/\(method) but the current known executing test is \(currentInfo.testClass)\(currentInfo.testMethod). Ignoring it")
@@ -510,7 +510,7 @@ final class IDBXCTestReporter: NSObject, XCTestReporter, DataConsumer, @unchecke
     return stdOut as Data
   }
 
-  private func createFailureInfo(exceptionInfo: FBExceptionInfo) -> Idb_XctestRunResponse.TestRunInfo.TestRunFailureInfo {
+  private func createFailureInfo(exceptionInfo: TestExceptionInfo) -> Idb_XctestRunResponse.TestRunInfo.TestRunFailureInfo {
     return Idb_XctestRunResponse.TestRunInfo.TestRunFailureInfo.with {
       $0.failureMessage = exceptionInfo.message
       $0.file = exceptionInfo.file ?? ""

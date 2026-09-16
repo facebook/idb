@@ -98,7 +98,7 @@ final class JSONTestReporter: NSObject, XCTestReporter {
     printEvent(JSONTestReporter.beginTestCaseEvent(testClass, testMethod: method))
   }
 
-  public func testCaseDidFail(forTestClass testClass: String, method: String, exceptions: [FBExceptionInfo]) {
+  public func testCaseDidFail(forTestClass testClass: String, method: String, exceptions: [TestExceptionInfo]) {
     let xctestName = fullyFormattedXCTestName(testClass, method)
     for exception in exceptions {
       xctestNameExceptionsMapping[xctestName]?.append(JSONTestReporter.exceptionEvent(exception.message, file: exception.file ?? "", line: exception.line))

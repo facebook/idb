@@ -89,7 +89,7 @@ final class TestManagerResultSummaryTransientTests: XCTestCase {
   }
 }
 
-final class FBXCTestConfigurationTransientTests: XCTestCase {
+final class XCTestRunConfigurationTransientTests: XCTestCase {
 
   // MARK: - ListTestConfiguration
 
@@ -231,7 +231,7 @@ final class FBXCTestConfigurationTransientTests: XCTestCase {
     XCTAssertTrue(desc.contains("MyFilter"), "Description should contain test filter")
   }
 
-  // MARK: - FBXCTestConfiguration base class
+  // MARK: - XCTestRunConfiguration base class
 
   func testBuildEnvironmentWithEntries() {
     let config = makeListConfig()

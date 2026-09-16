@@ -257,7 +257,7 @@ final class XCTestResultBundleParser {
       reporter.testCaseDidFail(
         forTestClass: testClassName, method: testMethodName,
         exceptions: [
-          FBExceptionInfo(message: buildErrorMessageLegacy(failureSummaries))
+          TestExceptionInfo(message: buildErrorMessageLegacy(failureSummaries))
         ])
     }
     reporter.testCaseDidFinish(forTestClass: testClassName, method: testMethodName, with: status, duration: duration.doubleValue, logs: logs)
@@ -368,7 +368,7 @@ final class XCTestResultBundleParser {
       reporter.testCaseDidFail(
         forTestClass: "", method: "",
         exceptions: [
-          FBExceptionInfo(message: buildErrorMessage(failureSummaries, logger: logger))
+          TestExceptionInfo(message: buildErrorMessage(failureSummaries, logger: logger))
         ])
     }
   }
@@ -389,7 +389,7 @@ final class XCTestResultBundleParser {
       reporter.testCaseDidFail(
         forTestClass: "", method: "",
         exceptions: [
-          FBExceptionInfo(message: "")
+          TestExceptionInfo(message: "")
         ])
     }
   }
@@ -410,7 +410,7 @@ final class XCTestResultBundleParser {
       reporter.testCaseDidFail(
         forTestClass: "", method: "",
         exceptions: [
-          FBExceptionInfo(message: "")
+          TestExceptionInfo(message: "")
         ])
     }
   }
@@ -432,7 +432,7 @@ final class XCTestResultBundleParser {
       reporter.testCaseDidFail(
         forTestClass: "", method: "",
         exceptions: [
-          FBExceptionInfo(message: "")
+          TestExceptionInfo(message: "")
         ])
     }
   }
@@ -473,7 +473,7 @@ final class XCTestResultBundleParser {
               reporter.testCaseDidFail(
                 forTestClass: testClassName, method: testMethodIdentifier,
                 exceptions: [
-                  FBExceptionInfo(message: errorMessage)
+                  TestExceptionInfo(message: errorMessage)
                 ])
               // No activity summaries: the summary payload failed to parse, so there is nothing to extract.
               let logs = buildTestLog(nil, testBundleName: testBundleName, testClassName: testClassName, testMethodName: testMethodIdentifier, testPassed: false, duration: duration.doubleValue, logger: logger)
@@ -485,7 +485,7 @@ final class XCTestResultBundleParser {
               reporter.testCaseDidFail(
                 forTestClass: testClassName, method: testMethodIdentifier,
                 exceptions: [
-                  FBExceptionInfo(message: buildErrorMessage(failureSummaries, logger: logger))
+                  TestExceptionInfo(message: buildErrorMessage(failureSummaries, logger: logger))
                 ])
             }
 

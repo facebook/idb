@@ -68,7 +68,7 @@
   [self.reporter testCaseDidFailForTestClass:testClass
                                       method:method
                                   exceptions:@[
-     [[FBExceptionInfo alloc]initWithMessage:message file:file line:line.unsignedIntegerValue
+     [[TestExceptionInfo alloc]initWithMessage:message file:file line:line.unsignedIntegerValue
      ]]];
   return nil;
 }

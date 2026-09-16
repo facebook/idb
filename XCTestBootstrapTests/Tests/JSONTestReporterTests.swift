@@ -130,7 +130,7 @@ final class JSONTestReporterTests: XCTestCase {
     reporter.testCaseDidFail(
       forTestClass: "FooTest", method: "BarCase",
       exceptions: [
-        FBExceptionInfo(message: "BadBar", file: "BadFile", line: 42)
+        TestExceptionInfo(message: "BadBar", file: "BadFile", line: 42)
       ])
     reporter.testCaseDidFinish(forTestClass: "FooTest", method: "BarCase", with: .failed, duration: 1, logs: nil)
     reporter.didFinishExecutingTestPlan()

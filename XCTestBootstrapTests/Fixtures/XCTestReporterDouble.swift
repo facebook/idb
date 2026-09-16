@@ -107,5 +107,5 @@ final class XCTestReporterDouble: NSObject, XCTestReporter {
 
   func didCrashDuringTest(_ error: Error) {}
 
-  func testCaseDidFail(forTestClass testClass: String, method: String, exceptions: [FBExceptionInfo]) {}
+  func testCaseDidFail(forTestClass testClass: String, method: String, exceptions: [TestExceptionInfo]) {}
 }

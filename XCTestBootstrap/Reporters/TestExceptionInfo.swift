@@ -7,7 +7,7 @@
 
 import Foundation
 
-@objc public final class FBExceptionInfo: NSObject {
+@objc public final class TestExceptionInfo: NSObject {
 
   @objc public let message: String
   @objc public let file: String?

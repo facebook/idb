@@ -25,7 +25,7 @@ import Foundation
   func testCaseDidFinish(forTestClass testClass: String, method: String, with status: FBTestReportStatus, duration: TimeInterval, logs: [String]?)
 
   @objc(testCaseDidFailForTestClass:method:exceptions:)
-  func testCaseDidFail(forTestClass testClass: String, method: String, exceptions: [FBExceptionInfo])
+  func testCaseDidFail(forTestClass testClass: String, method: String, exceptions: [TestExceptionInfo])
 
   @objc(testCaseDidStartForTestClass:method:)
   func testCaseDidStart(forTestClass testClass: String, method: String)

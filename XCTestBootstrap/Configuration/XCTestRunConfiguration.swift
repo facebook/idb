@@ -55,9 +55,9 @@ public struct LogicTestMirrorLogs: OptionSet, Sendable {
   public static let logger = LogicTestMirrorLogs(rawValue: 1 << 1)
 }
 
-// MARK: - FBXCTestConfiguration
+// MARK: - XCTestRunConfiguration
 
-public class FBXCTestConfiguration: NSObject, NSCopying {
+public class XCTestRunConfiguration: NSObject, NSCopying {
 
   public let processUnderTestEnvironment: [String: String]
   public let workingDirectory: String
@@ -93,7 +93,7 @@ public class FBXCTestConfiguration: NSObject, NSCopying {
   }
 
   public override func isEqual(_ object: Any?) -> Bool {
-    guard let other = object as? FBXCTestConfiguration else { return false }
+    guard let other = object as? XCTestRunConfiguration else { return false }
     guard type(of: other) == type(of: self) else { return false }
     return processUnderTestEnvironment == other.processUnderTestEnvironment
       && workingDirectory == other.workingDirectory
@@ -150,7 +150,7 @@ public class FBXCTestConfiguration: NSObject, NSCopying {
 
 // MARK: - ListTestConfiguration
 
-public final class ListTestConfiguration: FBXCTestConfiguration {
+public final class ListTestConfiguration: XCTestRunConfiguration {
 
   public let architectures: Set<String>
   public let runnerAppPath: String?
@@ -179,7 +179,7 @@ public final class ListTestConfiguration: FBXCTestConfiguration {
 
 // MARK: - TestManagerTestConfiguration
 
-final class TestManagerTestConfiguration: FBXCTestConfiguration {
+final class TestManagerTestConfiguration: XCTestRunConfiguration {
 
   public let runnerAppPath: String
   public let testTargetAppPath: String?
@@ -220,7 +220,7 @@ final class TestManagerTestConfiguration: FBXCTestConfiguration {
 
 // MARK: - LogicTestConfiguration
 
-public final class LogicTestConfiguration: FBXCTestConfiguration {
+public final class LogicTestConfiguration: XCTestRunConfiguration {
 
   public let testFilter: String?
   public let mirroring: LogicTestMirrorLogs
