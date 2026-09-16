@@ -853,6 +853,34 @@ final class FBVideoStreamTests: XCTestCase {
     XCTAssertEqual(writer.sequenceNumber, 1)
   }
 
+  func testFMP4FragmentTrunBoxSize() {
+    let writer = FMP4FrameWriter(codec: .h264)
+    let consumer = FBDataBuffer.accumulatingBuffer()
+    let logger = FBControlCoreLoggerDouble()
+
+    XCTAssertNoThrow(try writer.write(CreateH264SampleBuffer(isKeyFrame: true), to: consumer, logger: logger))
+
+    let output = consumer.data()
+    let trunRange = (output as NSData).range(of: Data("trun".utf8), options: [], in: NSRange(location: 0, length: output.count))
+    XCTAssertNotEqual(trunRange.location, NSNotFound, "Fragment should contain a trun box")
+    let trunSize = output.withUnsafeBytes { ptr -> UInt32 in
+      UInt32(bigEndian: ptr.loadUnaligned(fromByteOffset: trunRange.location - 4, as: UInt32.self))
+    }
+    let trafRange = (output as NSData).range(of: Data("traf".utf8), options: [], in: NSRange(location: 0, length: output.count))
+    let trafSize = output.withUnsafeBytes { ptr -> UInt32 in
+      UInt32(bigEndian: ptr.loadUnaligned(fromByteOffset: trafRange.location - 4, as: UInt32.self))
+    }
+    // trun is the last child of traf, so its size is the bytes from its own header to traf's end:
+    // header(12) + sample_count(4) + data_offset(4) + one sample entry (duration, size, flags = 12).
+    let expectedTrunSize = UInt32(trafRange.location - 4) + trafSize - UInt32(trunRange.location - 4)
+    XCTAssertEqual(expectedTrunSize, 32)
+    // BUG: the trun box is never closed, so its size field is left at the zero placeholder. A size
+    // of 0 means "box extends to end of file" (ISO 14496-12 §4.2), which Chrome's MSE demuxer refuses
+    // ("ISO BMFF boxes that run to EOS are not supported"). Flipped to `expectedTrunSize` in the
+    // following commit.
+    XCTAssertEqual(trunSize, 0)
+  }
+
   func testFMP4EmsgBoxStructure() {
     let writer = FMP4FrameWriter(codec: .h264)
     writer.lastPts90k = 90000
