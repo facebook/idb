@@ -10,6 +10,7 @@
 NS_ASSUME_NONNULL_BEGIN
 
 @interface FakeNotificationSettingsGateway : NSObject
+@property (nonatomic, readonly) NSMutableArray<NSString *> *writtenSectionIDs;
 - (nullable id)sectionInfoForSectionID:(NSString *)sectionID;
 - (void)setSectionInfo:(id)sectionInfo forSectionID:(NSString *)sectionID;
 - (NSArray<NSString *> *)allSectionIDs;
@@ -41,6 +42,10 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic) NSUInteger notificationCenterSetting;
 @end
 
+NSDictionary<NSString *, id> *FBNotificationSectionSnapshot(id sectionInfo);
+void FBNotificationSetPresentation(id sectionInfo, NSUInteger alert, NSUInteger lockScreen, NSUInteger center);
+NSDictionary<NSString *, id> *FBNotificationRunCommand(NSString *_Nullable action, NSString *_Nullable bundleID, id gateway);
+
 BOOL FBNotificationAllowsNotifications(id _Nullable sectionInfo);
 NSInteger FBNotificationAuthorizationStatus(id _Nullable sectionInfo);
 BOOL FBNotificationShowsInNotificationCenter(id _Nullable sectionInfo);
@@ -59,7 +64,7 @@ NSString *FBStdoutWhileRunning(void (^block)(void));
 /** The single JSON object in an answer that printed one record. */
 NSDictionary<NSString *, id> *_Nullable FBParsedJSONLine(NSString *output);
 
-int handleNotificationSettingsActionWithGateway(NSString *action, NSString *_Nullable bundleID, id gateway);
+int handleNotificationSettingsActionWithGateway(NSString *_Nullable action, NSString *_Nullable bundleID, id gateway);
 Class _Nullable FBHealthAuthorizationStoreClass(void);
 BOOL FBHealthRuntimeDeclaresSelector(NSString *selectorName);
 NSException *_Nullable FBHealthApproveException(NSArray<NSString *> *types);

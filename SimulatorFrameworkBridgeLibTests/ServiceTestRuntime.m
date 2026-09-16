@@ -9,6 +9,7 @@
 
 #import <dlfcn.h>
 #import <objc/runtime.h>
+#import <stdio.h>
 #import <unistd.h>
 
 #import <SimulatorFrameworkBridgeLib/AccessibilityRuntime_Private.h>
@@ -25,6 +26,7 @@
   self = [super init];
   if (self) {
     _sections = [NSMutableDictionary dictionary];
+    _writtenSectionIDs = [NSMutableArray array];
   }
   return self;
 }
@@ -37,6 +39,7 @@
 - (void)setSectionInfo:(id)sectionInfo forSectionID:(NSString *)sectionID
 {
   self.sections[sectionID] = sectionInfo;
+  [self.writtenSectionIDs addObject:sectionID];
 }
 
 - (NSArray<NSString *> *)allSectionIDs
@@ -155,4 +158,52 @@ NSDictionary<NSString *, NSNumber *> *FBAXRuntimeQueueProbe(BOOL raise)
     caught = exception;
   }
   return @{@"offMain" : @(offMain), @"calls" : @(calls), @"sameException" : @(caught == expected), @"caught" : @(caught != nil)};
+}
+
+NSDictionary<NSString *, id> *FBNotificationSectionSnapshot(id sectionInfo)
+{
+  BBSectionInfo *section = sectionInfo;
+  return @{
+    @"sectionID" : section.sectionID ?: @"",
+    @"allowsNotifications" : @(section.allowsNotifications),
+    @"authorizationStatus" : @(section.authorizationStatus),
+    @"alertType" : @(section.alertType),
+    @"lockScreenSetting" : @(section.lockScreenSetting),
+    @"notificationCenterSetting" : @(section.notificationCenterSetting),
+  };
+}
+
+void FBNotificationSetPresentation(id sectionInfo, NSUInteger alert, NSUInteger lockScreen, NSUInteger center)
+{
+  BBSectionInfo *section = sectionInfo;
+  section.alertType = alert;
+  section.lockScreenSetting = lockScreen;
+  section.notificationCenterSetting = center;
+}
+
+NSDictionary<NSString *, id> *FBNotificationRunCommand(NSString *action, NSString *bundleID, id gateway)
+{
+  fflush(stdout);
+  FILE *capture = tmpfile();
+  int saved = dup(STDOUT_FILENO);
+  NSCAssert(capture && saved >= 0, @"Cannot capture notification output");
+  int redirected = dup2(fileno(capture), STDOUT_FILENO);
+  NSCAssert(redirected >= 0, @"Cannot redirect notification output");
+  int status;
+  @try {
+    status = handleNotificationSettingsActionWithGateway(action, bundleID, gateway);
+  } @finally {
+    fflush(stdout);
+    dup2(saved, STDOUT_FILENO);
+    close(saved);
+  }
+  rewind(capture);
+  NSMutableData *data = [NSMutableData data];
+  unsigned char buffer[1024];
+  size_t count;
+  while ((count = fread(buffer, 1, sizeof(buffer), capture)) > 0) {
+    [data appendBytes:buffer length:count];
+  }
+  fclose(capture);
+  return @{@"status" : @(status), @"output" : [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding]};
 }
