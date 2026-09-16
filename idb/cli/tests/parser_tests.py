@@ -35,11 +35,13 @@ from idb.common.types import (
     Compression,
     CrashLogQuery,
     DomainSocketAddress,
+    FileContainerType,
     HIDButtonType,
     HIDDelay,
     HIDDirection,
     HIDOrientationType,
     IdbException,
+    InstalledArtifact,
     InstrumentsTimings,
     LoggingMetadata,
     Permission,
@@ -212,26 +214,64 @@ class TestParser(TestCase):
         self.companion_mock().delete.assert_called_once_with(udid=None)
 
     async def test_install(self) -> None:
-        self.client_mock.install = MagicMock(return_value=AsyncGeneratorMock())
         app_path = "testApp.app"
-        compression = None
-        await cli_main(cmd_input=["install", app_path])
+        self.client_mock.install = MagicMock(
+            return_value=AsyncGeneratorMock(
+                (
+                    InstalledArtifact(
+                        name="first.app", uuid="first-uuid", progress=50.0
+                    ),
+                    InstalledArtifact(
+                        name="com.example.app", uuid="app-uuid", progress=0.0
+                    ),
+                )
+            )
+        )
+        output = StringIO()
+        with redirect_stdout(output):
+            self.assertEqual(await cli_main(cmd_input=["install", app_path]), 0)
+        self.assertEqual(output.getvalue(), "Installed: com.example.app app-uuid\n")
         self.client_mock.install.assert_called_once_with(
             bundle=app_path,
             make_debuggable=None,
-            compression=compression,
+            compression=None,
+            override_modification_time=None,
+        )
+
+        self.client_mock.install = MagicMock(return_value=AsyncGeneratorMock())
+        output = StringIO()
+        with redirect_stdout(output), redirect_stderr(StringIO()):
+            self.assertEqual(await cli_main(cmd_input=["install", app_path]), 1)
+        self.assertEqual(output.getvalue(), "")
+        self.client_mock.install.assert_called_once_with(
+            bundle=app_path,
+            make_debuggable=None,
+            compression=None,
             override_modification_time=None,
         )
 
     async def test_install_with_mtime_override(self) -> None:
-        self.client_mock.install = MagicMock(return_value=AsyncGeneratorMock())
+        self.client_mock.install = MagicMock(
+            return_value=AsyncGeneratorMock(
+                (
+                    InstalledArtifact(
+                        name="com.example.app", uuid="app-uuid", progress=0.0
+                    ),
+                )
+            )
+        )
         app_path = "testApp.ipa"
-        compression = None
-        await cli_main(cmd_input=["install", "--override-mtime", app_path])
+        output = StringIO()
+        with redirect_stdout(output):
+            self.assertEqual(
+                await cli_main(cmd_input=["install", "--override-mtime", app_path]),
+                0,
+            )
+        self.assertEqual(output.getvalue(), "Installed: com.example.app app-uuid\n")
         self.client_mock.install.assert_called_once_with(
             bundle=app_path,
             make_debuggable=None,
-            compression=compression,
+            compression=None,
             override_modification_time=True,
         )
 
@@ -245,9 +285,25 @@ class TestParser(TestCase):
         self.client_mock.install.assert_not_called()
 
     async def test_install_with_compression(self) -> None:
-        self.client_mock.install = MagicMock(return_value=AsyncGeneratorMock())
+        self.client_mock.install = MagicMock(
+            return_value=AsyncGeneratorMock(
+                (
+                    InstalledArtifact(
+                        name="com.example.app", uuid="app-uuid", progress=0.0
+                    ),
+                )
+            )
+        )
         app_path = "testApp.app"
-        await cli_main(cmd_input=["--compression", "ZSTD", "install", app_path])
+        output = StringIO()
+        with redirect_stdout(output):
+            self.assertEqual(
+                await cli_main(
+                    cmd_input=["--compression", "ZSTD", "install", app_path]
+                ),
+                0,
+            )
+        self.assertEqual(output.getvalue(), "Installed: com.example.app app-uuid\n")
         self.client_mock.install.assert_called_once_with(
             bundle=app_path,
             make_debuggable=None,
@@ -256,23 +312,96 @@ class TestParser(TestCase):
         )
 
     async def test_dsym_install(self) -> None:
-        self.client_mock.install_dsym = MagicMock(return_value=AsyncGeneratorMock())
-        await cli_main(cmd_input=["dsym", "install", "Symbols.dSYM"])
+        responses = (
+            InstalledArtifact(name="ignored", uuid=None, progress=50.0),
+            InstalledArtifact(name="Symbols.dSYM", uuid=None, progress=0.0),
+        )
+        self.client_mock.install_dsym = MagicMock(
+            return_value=AsyncGeneratorMock(responses)
+        )
+        bundle_id = "com.example.app"
+        command = [
+            "--compression",
+            "GZIP",
+            "dsym",
+            "install",
+            "--bundle-id",
+            bundle_id,
+            "Symbols.dSYM",
+        ]
+        output = StringIO()
+        with redirect_stdout(output):
+            self.assertEqual(await cli_main(cmd_input=command), 0)
+        self.assertEqual(
+            output.getvalue(),
+            "Installed {install_response.progress}%\nInstalled: Symbols.dSYM\n",
+        )
         self.client_mock.install_dsym.assert_called_once_with(
-            "Symbols.dSYM", None, None, None
+            "Symbols.dSYM",
+            bundle_id,
+            Compression.GZIP,
+            FileContainerType.APPLICATION,
         )
 
+        self.client_mock.install_dsym = MagicMock(return_value=AsyncGeneratorMock())
+        output = StringIO()
+        with redirect_stdout(output):
+            self.assertEqual(await cli_main(cmd_input=command), 0)
+        self.assertEqual(output.getvalue(), "")
+
     async def test_dylib_install(self) -> None:
-        self.client_mock.install_dylib = MagicMock(return_value=AsyncGeneratorMock())
-        await cli_main(cmd_input=["dylib", "install", "libExample.dylib"])
+        responses = (
+            InstalledArtifact(name="ignored", uuid=None, progress=50.0),
+            InstalledArtifact(name="libExample.dylib", uuid="dylib-uuid", progress=0.0),
+        )
+        self.client_mock.install_dylib = MagicMock(
+            return_value=AsyncGeneratorMock(responses)
+        )
+        command = ["dylib", "install", "libExample.dylib"]
+        output = StringIO()
+        with redirect_stdout(output):
+            self.assertEqual(await cli_main(cmd_input=command), 0)
+        self.assertEqual(
+            output.getvalue(),
+            "Installed {install_response.progress}%\n"
+            "Installed: libExample.dylib dylib-uuid\n",
+        )
         self.client_mock.install_dylib.assert_called_once_with("libExample.dylib")
 
+        self.client_mock.install_dylib = MagicMock(return_value=AsyncGeneratorMock())
+        output = StringIO()
+        with redirect_stdout(output):
+            self.assertEqual(await cli_main(cmd_input=command), 0)
+        self.assertEqual(output.getvalue(), "")
+
     async def test_framework_install(self) -> None:
+        responses = (
+            InstalledArtifact(name="ignored", uuid=None, progress=50.0),
+            InstalledArtifact(
+                name="Example.framework", uuid="framework-uuid", progress=0.0
+            ),
+        )
+        self.client_mock.install_framework = MagicMock(
+            return_value=AsyncGeneratorMock(responses)
+        )
+        command = ["framework", "install", "Example.framework"]
+        output = StringIO()
+        with redirect_stdout(output):
+            self.assertEqual(await cli_main(cmd_input=command), 0)
+        self.assertEqual(
+            output.getvalue(),
+            "Installed {install_response.progress}%\n"
+            "Installed: Example.framework framework-uuid\n",
+        )
+        self.client_mock.install_framework.assert_called_once_with("Example.framework")
+
         self.client_mock.install_framework = MagicMock(
             return_value=AsyncGeneratorMock()
         )
-        await cli_main(cmd_input=["framework", "install", "Example.framework"])
-        self.client_mock.install_framework.assert_called_once_with("Example.framework")
+        output = StringIO()
+        with redirect_stdout(output):
+            self.assertEqual(await cli_main(cmd_input=command), 0)
+        self.assertEqual(output.getvalue(), "")
 
     async def test_uninstall(self) -> None:
         self.client_mock.uninstall = AsyncMock()
@@ -573,10 +702,37 @@ class TestParser(TestCase):
         self.client_manager_mock().kill.assert_called_once_with()
 
     async def test_xctest_install(self) -> None:
-        self.client_mock.install_xctest = MagicMock(return_value=AsyncGeneratorMock())
+        responses = (
+            InstalledArtifact(name="ignored", uuid=None, progress=50.0),
+            InstalledArtifact(
+                name="com.example.tests", uuid="xctest-uuid", progress=0.0
+            ),
+        )
+        self.client_mock.install_xctest = MagicMock(
+            return_value=AsyncGeneratorMock(responses)
+        )
         test_bundle_path = "testBundle.xctest"
-        await cli_main(cmd_input=["xctest", "install", test_bundle_path])
-        self.client_mock.install_xctest.assert_called_once_with(test_bundle_path, None)
+        command = [
+            "xctest",
+            "install",
+            "--skip-signing-bundles",
+            test_bundle_path,
+        ]
+        output = StringIO()
+        with redirect_stdout(output):
+            self.assertEqual(await cli_main(cmd_input=command), 0)
+        self.assertEqual(
+            output.getvalue(),
+            "Installed {install_response.progress}%\n"
+            "Installed: com.example.tests xctest-uuid\n",
+        )
+        self.client_mock.install_xctest.assert_called_once_with(test_bundle_path, True)
+
+        self.client_mock.install_xctest = MagicMock(return_value=AsyncGeneratorMock())
+        output = StringIO()
+        with redirect_stdout(output):
+            self.assertEqual(await cli_main(cmd_input=command), 0)
+        self.assertEqual(output.getvalue(), "")
 
     def xctest_run_namespace(self, command: str, test_bundle_id: str) -> Namespace:
         namespace = Namespace()
