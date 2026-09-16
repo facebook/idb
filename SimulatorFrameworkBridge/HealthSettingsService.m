@@ -6,6 +6,7 @@
  */
 
 #import "HealthSettingsService.h"
+#import "HealthSettingsService+Testing.h"
 
 #import <dlfcn.h>
 
@@ -35,13 +36,25 @@ static NSArray<NSString *> *defaultApproveTypeIdentifiers(void)
 
 #pragma mark - Framework loader
 
+static Class (^healthClassLookup)(NSString *);
+
+void FBHealthSetClassLookupForTesting(Class (^lookup)(NSString *))
+{
+  healthClassLookup = [lookup copy];
+}
+
+static Class healthClassForName(NSString *name)
+{
+  return healthClassLookup ? healthClassLookup(name) : NSClassFromString(name);
+}
+
 static id loadHealthStore(void)
 {
   if (!dlopen("/System/Library/Frameworks/HealthKit.framework/HealthKit", RTLD_NOW)) {
     NSLog(@"[Health] Failed to load HealthKit.framework: %s", dlerror());
     return nil;
   }
-  Class HKHealthStoreClass = NSClassFromString(@"HKHealthStore");
+  Class HKHealthStoreClass = healthClassForName(@"HKHealthStore");
   if (!HKHealthStoreClass) {
     NSLog(@"[Health] HKHealthStore class not found");
     return nil;
@@ -55,7 +68,7 @@ static HKAuthorizationStore *loadAuthStore(void)
   if (!store) {
     return nil;
   }
-  Class HKAuthStoreClass = NSClassFromString(@"HKAuthorizationStore");
+  Class HKAuthStoreClass = healthClassForName(@"HKAuthorizationStore");
   if (!HKAuthStoreClass) {
     NSLog(@"[Health] HKAuthorizationStore class not found");
     return nil;
@@ -132,7 +145,7 @@ static id resolveHealthKitObjectType(NSString *identifier)
   });
 
   for (NSUInteger i = 0; i < factoryClasses.count; i++) {
-    Class cls = NSClassFromString(factoryClasses[i]);
+    Class cls = healthClassForName(factoryClasses[i]);
     SEL sel = NSSelectorFromString(factorySelectors[i]);
     if (!cls || ![cls respondsToSelector:sel]) {
       continue;
