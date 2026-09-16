@@ -242,10 +242,10 @@ final class SimulatorVideoStreamFramePusher_Bitmap: SimulatorVideoStreamFramePus
 /// it alone is guarded by `statsLock`. `tearDown` flushes every pending handler before it invalidates
 /// the session.
 final class SimulatorVideoStreamFramePusher_VideoToolbox: SimulatorVideoStreamFramePusher, @unchecked Sendable {
-  let configuration: VideoStreamConfiguration
-  let compressionSessionProperties: [String: Any]
+  let settings: VideoToolboxEncoderSettings
+  /// The scale factor between 0-1. nil for no scaling.
+  let scaleFactor: Double?
   let videoCodec: CMVideoCodecType
-  let sink: VideoEncodeSink
   let outputMode: VideoToolboxOutputMode
   /// The encoded-sample sink for `.compressed` output; nil for MJPEG/Minicap, which write the JPEG
   /// block buffer directly to `consumer` in the encode handler.
@@ -278,19 +278,17 @@ final class SimulatorVideoStreamFramePusher_VideoToolbox: SimulatorVideoStreamFr
   }
 
   init(
-    configuration: VideoStreamConfiguration,
-    compressionSessionProperties: [String: Any],
+    settings: VideoToolboxEncoderSettings,
+    scaleFactor: Double?,
     videoCodec: CMVideoCodecType,
-    sink: VideoEncodeSink = .live,
     consumer: any DataConsumer,
     outputMode: VideoToolboxOutputMode,
     encodedSampleConsumer: EncodedSampleConsumer?,
     timedMetadataWriter: (any VideoStreamTimedMetadataWriter)?,
     logger: any ControlCoreLogger
   ) {
-    self.configuration = configuration
-    self.compressionSessionProperties = compressionSessionProperties
-    self.sink = sink
+    self.settings = settings
+    self.scaleFactor = scaleFactor
     self.outputMode = outputMode
     self.encodedSampleConsumer = encodedSampleConsumer
     self.timedMetadataWriter = timedMetadataWriter
@@ -433,7 +431,7 @@ final class SimulatorVideoStreamFramePusher_VideoToolbox: SimulatorVideoStreamFr
   }
 
   func setup(with pixelBuffer: CVPixelBuffer, edgeInsets: VideoStreamEdgeInsets) throws {
-    let encoderSpecification = Self.encoderSpecification(for: configuration.format, sink: sink)
+    let encoderSpecification = settings.encoderSpecification
 
     let sourceWidth = CVPixelBufferGetWidth(pixelBuffer)
     let sourceHeight = CVPixelBufferGetHeight(pixelBuffer)
@@ -441,10 +439,10 @@ final class SimulatorVideoStreamFramePusher_VideoToolbox: SimulatorVideoStreamFr
     // accommodate the full output size — the same `VideoOutputDimensions` the composited pool uses.
     let dimensions = VideoOutputDimensions.calculate(
       sourceWidth: sourceWidth, sourceHeight: sourceHeight,
-      scaleFactor: configuration.scaleFactor, edgeInsets: edgeInsets)
+      scaleFactor: scaleFactor, edgeInsets: edgeInsets)
     let destinationWidth = dimensions.width
     let destinationHeight = dimensions.height
-    if let scaleFactor = configuration.scaleFactor, scaleFactor > 0, scaleFactor < 1 {
+    if let scaleFactor, scaleFactor > 0, scaleFactor < 1 {
       logger.info().log("Applying \(scaleFactor) scale from w=\(sourceWidth)/h=\(sourceHeight) to output w=\(destinationWidth)/h=\(destinationHeight)")
     }
 
@@ -492,14 +490,10 @@ final class SimulatorVideoStreamFramePusher_VideoToolbox: SimulatorVideoStreamFr
       throw SimulatorVideoStreamError.compressionSessionNil
     }
 
-    // Compressed video resolves its rate control here, where the encoded size is known.
-    var sessionProperties = compressionSessionProperties
-    if case .compressedVideo = configuration.format {
-      let rateProperties = Self.compressedVideoRateControlProperties(
-        rateControl: configuration.rateControl, width: destinationWidth, height: destinationHeight)
-      sessionProperties.merge(rateProperties) { _, resolved in resolved }
+    let sessionProperties = settings.sessionProperties(outputWidth: destinationWidth, outputHeight: destinationHeight)
+    if case .compressedVideo = settings.format {
       logger.info().log(
-        "Rate control \(configuration.rateControl) resolved to \(rateProperties[kVTCompressionPropertyKey_AverageBitRate as String] ?? 0) bps average for w=\(destinationWidth)/h=\(destinationHeight)")
+        "Rate control \(settings.rateControl) resolved to \(sessionProperties[kVTCompressionPropertyKey_AverageBitRate as String] ?? 0) bps average for w=\(destinationWidth)/h=\(destinationHeight)")
     }
 
     let propertiesStatus = VTSessionSetProperties(compressionSession, propertyDictionary: sessionProperties as CFDictionary)
@@ -511,67 +505,6 @@ final class SimulatorVideoStreamFramePusher_VideoToolbox: SimulatorVideoStreamFr
       throw SimulatorVideoStreamError.failedToPrepareCompressionSession(status: prepareStatus)
     }
     self.compressionSession = compressionSession
-  }
-
-  /// The `.automatic` rate-control budget: 4 bits per output pixel per second (≈0.08 bits/pixel per
-  /// frame at a 50fps pan). Measured on the liquid-glass home screen: below ≈0.05 bpp the hardware
-  /// encoder visibly macroblocks smooth gradients during full-screen motion, and it saturates around
-  /// ≈14 Mbps at native retina size, so a larger budget buys little. Scales with `--scale`.
-  static func automaticAverageBitRate(width: Int, height: Int) -> Int {
-    width * height * 4
-  }
-
-  /// The quality at which `.quality` meets the `.automatic` budget; the budget scales linearly with
-  /// quality either side of it, so 1.0 is a third more than automatic and 0.25 a third of it.
-  static let automaticEquivalentQuality = 0.75
-
-  /// The average bitrate a `.quality` rate control means for compressed video at this output size.
-  static func averageBitRate(width: Int, height: Int, quality: Double) -> Int {
-    let clamped = min(max(quality, 0.01), 1.0)
-    return Int(Double(automaticAverageBitRate(width: width, height: height)) * clamped / automaticEquivalentQuality)
-  }
-
-  /// The rate-control properties for an H.264/HEVC session at its encoded output size. The
-  /// low-latency hardware encoder accepts the `Quality` property but ignores it and, given no
-  /// `AverageBitRate`, falls back to an internal default (~2 Mbps regardless of resolution) that
-  /// macroblocks full-screen motion at retina sizes — so every strategy resolves to an average
-  /// bitrate here. `DataRateLimits` bounds any one-second window to 1.5× that average: enough for a
-  /// keyframe, not for the unbounded burst that stalls a pipe or socket consumer.
-  static func compressedVideoRateControlProperties(rateControl: VideoStreamRateControl, width: Int, height: Int) -> [String: Any] {
-    let averageBitRate: Int
-    switch rateControl {
-    case .automatic:
-      averageBitRate = automaticAverageBitRate(width: width, height: height)
-    case let .quality(quality):
-      averageBitRate = Self.averageBitRate(width: width, height: height, quality: quality)
-    case let .bitrate(bitrate):
-      averageBitRate = bitrate
-    }
-    let burstBytesPerSecond = averageBitRate * 3 / 16
-    return [
-      kVTCompressionPropertyKey_AverageBitRate as String: averageBitRate,
-      kVTCompressionPropertyKey_DataRateLimits as String: [NSNumber(value: burstBytesPerSecond), NSNumber(value: 1)],
-    ]
-  }
-
-  static func encoderSpecification(for format: VideoStreamFormat, sink: VideoEncodeSink = .live) -> [String: Any] {
-    switch (format, sink) {
-    case (.mjpeg(encoder: .allowSoftware), _):
-      return [
-        kVTVideoEncoderSpecification_EnableHardwareAcceleratedVideoEncoder as String: true
-      ]
-    case (.mjpeg(encoder: .requireHardware), _), (.minicap, _), (.bgra, _), (.compressedVideo, .file):
-      return [
-        kVTVideoEncoderSpecification_RequireHardwareAcceleratedVideoEncoder as String: true
-      ]
-    case (.compressedVideo, .live):
-      // Low-latency rate control exists only on the H.264/HEVC encoders; a JPEG session refuses to
-      // be created with it requested. A file sink wants the standard encoder's quality instead.
-      return [
-        kVTVideoEncoderSpecification_RequireHardwareAcceleratedVideoEncoder as String: true,
-        kVTVideoEncoderSpecification_EnableLowLatencyRateControl as String: true,
-      ]
-    }
   }
 
   func tearDown() throws {

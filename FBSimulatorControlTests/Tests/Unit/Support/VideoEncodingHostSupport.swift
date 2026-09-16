@@ -63,7 +63,7 @@ enum VideoEncodingHostSupport {
     do {
       pusher = try SimulatorVideoStream.framePusher(
         configuration: configuration,
-        compressionSessionProperties: [:],
+        cadence: .lazy,
         consumer: consumer,
         encodedSampleConsumerOverride: nil,
         frameWriters: nil,

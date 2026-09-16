@@ -96,16 +96,6 @@ public struct VideoStreamEdgeInsets: Sendable {
   }
 }
 
-/// Where encoded frames go, which decides the encoder's latency/quality trade-off.
-public enum VideoEncodeSink: Sendable {
-  /// A consumer displays frames as they arrive: low-latency rate control, no frame reordering and no
-  /// encoder delay, so a frame is out within the frame interval.
-  case live
-  /// Frames are muxed to a file: the standard encoder, free to reorder (B-frames) and look ahead,
-  /// which is quality-per-bit a viewer of the finished file gets for nothing.
-  case file
-}
-
 /// Frame cadence strategy for the video stream.
 ///
 /// - `.lazy`: variable-frame-rate — a frame is pushed only when the framebuffer signals that a new
@@ -507,7 +497,7 @@ public actor SimulatorVideoStream: FBVideoStream {
     }
     let framePusher = try Self.framePusher(
       configuration: configuration,
-      compressionSessionProperties: compressionSessionProperties,
+      cadence: cadence,
       consumer: consumer,
       encodedSampleConsumerOverride: encodedSampleConsumerOverride,
       frameWriters: frameWriters,
@@ -694,70 +684,18 @@ public actor SimulatorVideoStream: FBVideoStream {
     self.frameNumber = frameNumber + 1
   }
 
-  // MARK: - Compression Properties
+  // MARK: - Frame Pusher
 
-  /// The `VTSessionSetProperties` dictionary for `configuration` and `sink`, with `callerProperties`
-  /// layered on top. A live sink forbids frame reordering and any encoder delay; a file sink allows
-  /// both, buying B-frames and lookahead for the same bitrate.
-  public static func compressionSessionProperties(for configuration: VideoStreamConfiguration, callerProperties: [String: Any], sink: VideoEncodeSink = .live) -> [String: Any] {
-    var derived: [String: Any] = [
-      kVTCompressionPropertyKey_RealTime as String: true
-    ]
-
-    switch configuration.format {
-    case .compressedVideo:
-      // Frame reordering and encoder delay are H.264/HEVC concepts; a JPEG session ignores the keys.
-      // Rate control is resolved by the VideoToolbox pusher at session setup, where the encoded
-      // output dimensions are known (see `compressedVideoRateControlProperties`).
-      switch sink {
-      case .live:
-        derived[kVTCompressionPropertyKey_AllowFrameReordering as String] = false
-        derived[kVTCompressionPropertyKey_MaxFrameDelayCount as String] = 0
-      case .file:
-        derived[kVTCompressionPropertyKey_AllowFrameReordering as String] = true
-      }
-    case .mjpeg, .minicap, .bgra:
-      switch configuration.rateControl {
-      case .automatic:
-        // JPEG formats honor the quality knob (the value the pre-automatic default used).
-        derived[kVTCompressionPropertyKey_Quality as String] = 0.75
-      case let .bitrate(bitrate):
-        // Explicit bitrate: AverageBitRate is in bits/sec
-        derived[kVTCompressionPropertyKey_AverageBitRate as String] = bitrate
-      case let .quality(quality):
-        derived[kVTCompressionPropertyKey_Quality as String] = quality
-      }
-    }
-
-    for (key, value) in callerProperties {
-      derived[key] = value
-    }
-    derived[kVTCompressionPropertyKey_MaxKeyFrameIntervalDuration as String] = configuration.keyFrameRate
-    if case let .compressedVideo(codec, _) = configuration.format {
-      switch codec {
-      case .h264:
-        derived[kVTCompressionPropertyKey_ProfileLevel as String] = kVTProfileLevel_H264_High_AutoLevel as String
-        derived[kVTCompressionPropertyKey_H264EntropyMode as String] = kVTH264EntropyMode_CABAC as String
-      case .hevc:
-        derived[kVTCompressionPropertyKey_AllowOpenGOP as String] = false
-        derived[kVTCompressionPropertyKey_ProfileLevel as String] = kVTProfileLevel_HEVC_Main_AutoLevel as String
-      }
-    }
-    return derived
-  }
-
-  /// Builds the pusher for one mounted surface. Compressed video writes through `frameWriters`,
-  /// which the stream owns so that state survives the pusher; a caller without one gets fresh writers.
   static func framePusher(
     configuration: VideoStreamConfiguration,
-    compressionSessionProperties: [String: Any],
+    cadence: VideoStreamCadence,
     consumer: any DataConsumer,
     encodedSampleConsumerOverride: EncodedSampleConsumer?,
     frameWriters: VideoStreamFrameWriters?,
     logger: any ControlCoreLogger
   ) throws -> any SimulatorVideoStreamFramePusher {
-    let sink: VideoEncodeSink = encodedSampleConsumerOverride == nil ? .live : .file
-    let derived = Self.compressionSessionProperties(for: configuration, callerProperties: compressionSessionProperties, sink: sink)
+    let settings = VideoToolboxEncoderSettings(
+      configuration: configuration, cadence: cadence, sink: encodedSampleConsumerOverride == nil ? .live : .file)
     switch configuration.format {
     case let .compressedVideo(codec, transport):
       let frameWriters = frameWriters ?? transport.frameWriters(for: codec)
@@ -765,32 +703,18 @@ public actor SimulatorVideoStream: FBVideoStream {
         encodedSampleConsumerOverride
         ?? DataConsumerEncodedSampleConsumer(consumer: consumer, frameWriter: frameWriters.frameWriter, timedMetadataWriter: frameWriters.timedMetadataWriter)
       return SimulatorVideoStreamFramePusher_VideoToolbox(
-        configuration: configuration, compressionSessionProperties: derived, videoCodec: codec.videoToolboxCodec, sink: sink,
+        settings: settings, scaleFactor: configuration.scaleFactor, videoCodec: codec.videoToolboxCodec,
         consumer: consumer, outputMode: .compressed, encodedSampleConsumer: encodedSampleConsumer, timedMetadataWriter: frameWriters.timedMetadataWriter, logger: logger)
     case .mjpeg:
       return SimulatorVideoStreamFramePusher_VideoToolbox(
-        configuration: configuration, compressionSessionProperties: derived, videoCodec: kCMVideoCodecType_JPEG, sink: sink,
+        settings: settings, scaleFactor: configuration.scaleFactor, videoCodec: kCMVideoCodecType_JPEG,
         consumer: consumer, outputMode: encodedSampleConsumerOverride == nil ? .mjpeg : .compressed, encodedSampleConsumer: encodedSampleConsumerOverride, timedMetadataWriter: nil, logger: logger)
     case .minicap:
       return SimulatorVideoStreamFramePusher_VideoToolbox(
-        configuration: configuration, compressionSessionProperties: derived, videoCodec: kCMVideoCodecType_JPEG, sink: sink,
+        settings: settings, scaleFactor: configuration.scaleFactor, videoCodec: kCMVideoCodecType_JPEG,
         consumer: consumer, outputMode: .minicap, encodedSampleConsumer: nil, timedMetadataWriter: nil, logger: logger)
     case .bgra:
       return SimulatorVideoStreamFramePusher_Bitmap(consumer: consumer, scaleFactor: configuration.scaleFactor)
-    }
-  }
-
-  /// Caller-provided compression session properties. In `.eager` mode these add the fixed frame rate
-  /// (`ExpectedFrameRate`); in `.lazy` mode there are none (the base, variable-frame-rate value).
-  /// The keyframe cadence is the configuration's `keyFrameRate` duration alone.
-  var compressionSessionProperties: [String: Any] {
-    switch cadence {
-    case .lazy:
-      return [:]
-    case let .eager(framesPerSecond):
-      return [
-        kVTCompressionPropertyKey_ExpectedFrameRate as String: framesPerSecond
-      ]
     }
   }
 

@@ -184,8 +184,8 @@ func createTestVideoStreamPusher(_ logger: ControlCoreLogger) -> SimulatorVideoS
     keyFrameRate: 10.0)
   let consumer = FBDataBuffer.accumulatingBuffer()
   return SimulatorVideoStreamFramePusher_VideoToolbox(
-    configuration: config,
-    compressionSessionProperties: [:],
+    settings: VideoToolboxEncoderSettings(configuration: config, cadence: .eager(framesPerSecond: 30), sink: .live),
+    scaleFactor: nil,
     videoCodec: kCMVideoCodecType_H264,
     consumer: consumer,
     outputMode: .compressed,

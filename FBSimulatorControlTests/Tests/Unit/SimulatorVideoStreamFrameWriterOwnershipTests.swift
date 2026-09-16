@@ -24,7 +24,7 @@ final class SimulatorVideoStreamFrameWriterOwnershipTests: XCTestCase {
   private func makePusher(frameWriters: VideoStreamFrameWriters?) throws -> SimulatorVideoStreamFramePusher_VideoToolbox {
     let pusher = try SimulatorVideoStream.framePusher(
       configuration: configuration,
-      compressionSessionProperties: [:],
+      cadence: .lazy,
       consumer: FBDataBuffer.accumulatingBuffer(),
       encodedSampleConsumerOverride: nil,
       frameWriters: frameWriters,
