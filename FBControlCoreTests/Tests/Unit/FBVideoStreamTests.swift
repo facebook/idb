@@ -1281,6 +1281,18 @@ final class FBVideoStreamTests: XCTestCase {
     XCTAssertEqual(initSegments, 2)
   }
 
+  func testFMP4KeyframeWithTheSameFormatDescriptionDoesNotReemitTheInitSegment() throws {
+    let counting = CountingConsumer()
+    let writer = FMP4FrameWriter(codec: .h264)
+    let logger = ControlCoreLoggerDouble()
+    try writer.write(CreateH264SampleBuffer(isKeyFrame: true), to: counting.consumer, logger: logger)
+    let afterFirst = counting.bytes.count
+    try writer.write(CreateH264SampleBuffer(isKeyFrame: true, pts90k: 3000), to: counting.consumer, logger: logger)
+
+    let second = counting.bytes.subdata(in: afterFirst..<counting.bytes.count)
+    XCTAssertEqual((second as NSData).range(of: Data("ftyp".utf8), options: [], in: NSRange(location: 0, length: second.count)).location, NSNotFound)
+  }
+
   // MARK: - MPEG-TS Program Map
 
   func testMPEGTSKeyframePMTAlwaysDeclaresTheMetadataStream() throws {
