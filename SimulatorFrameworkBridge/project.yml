@@ -77,13 +77,15 @@ targets:
         PRODUCT_NAME: SimulatorFrameworkBridge-iOS
     dependencies:
       - sdk: Contacts.framework
+      - sdk: UserNotifications.framework
 
   SimulatorFrameworkBridge-tvOS:
     templates: [Guest]
     platform: tvOS
     sources:
-      # Contacts and HealthKit are absent from the tvOS SDK, so the two services built on them are not
-      # compiled here. `ServiceDispatch.m` refuses their verbs under `TARGET_OS_TV`.
+      # Contacts and HealthKit are absent from the tvOS SDK, and UserNotifications has no
+      # delivered-notification API there, so the three services built on them are not compiled here.
+      # `ServiceDispatch.m` refuses their verbs under `TARGET_OS_TV`.
       - path: .
         excludes:
           - "**/*.entitlements"
@@ -91,6 +93,7 @@ targets:
           - "project.yml"
           - "Build"
           - "ContactsService.m"
+          - "DeliveredNotificationsService.m"
           - "HealthSettingsService.m"
     settings:
       base:

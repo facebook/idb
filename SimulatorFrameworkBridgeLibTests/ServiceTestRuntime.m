@@ -253,3 +253,67 @@ NSDictionary<NSString *, id> *FBAXRuntimeInitializationProbe(FBAXRuntimeInitiali
   }
   return @{@"preparationException" : preparationException ?: NSNull.null, @"calls" : @(calls), @"response" : response};
 }
+
+@implementation FBFakeDeliveredNotificationsCenter
+
+- (void)getDeliveredNotificationsWithCompletionHandler:(void (^)(NSArray<UNNotification *> *notifications))completionHandler
+{
+  self.wasAsked = YES;
+  completionHandler(self.notifications ?: @[]);
+}
+
+@end
+
+@implementation FBRaisingDeliveredNotificationsCenter
+
+- (void)getDeliveredNotificationsWithCompletionHandler:(void (^)(NSArray<UNNotification *> *notifications))completionHandler
+{
+  [NSException raise:NSInvalidArgumentException format:@"no notification settings for this bundle"];
+}
+
+@end
+
+@implementation FBSilentDeliveredNotificationsCenter
+
+- (void)getDeliveredNotificationsWithCompletionHandler:(void (^)(NSArray<UNNotification *> *notifications))completionHandler
+{}
+
+@end
+
+@interface FBAsynchronousDeliveredNotificationsCenter ()
+@property (nonatomic, strong) dispatch_queue_t queue;
+@end
+
+@implementation FBAsynchronousDeliveredNotificationsCenter
+
+- (instancetype)init
+{
+  self = [super init];
+  if (self) {
+    _queue = dispatch_queue_create("com.facebook.idb.delivered-notifications-tests", DISPATCH_QUEUE_SERIAL);
+  }
+  return self;
+}
+
+- (void)getDeliveredNotificationsWithCompletionHandler:(void (^)(NSArray<UNNotification *> *notifications))completionHandler
+{
+  dispatch_async(self.queue, ^{
+    completionHandler(@[]);
+  });
+}
+
+@end
+
+@implementation FBFakeDeliveredNotification
+
+- (instancetype)request
+{
+  return self;
+}
+
+- (id)content
+{
+  return nil;
+}
+
+@end

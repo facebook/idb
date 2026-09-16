@@ -5,10 +5,31 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+import Foundation
 @_implementationOnly import SimulatorFrameworkBridgeLib
 import XCTest
 
 final class ServiceDispatchTests: XCTestCase {
+  private var notificationsDirectory = ""
+
+  override func setUp() {
+    super.setUp()
+    // What the delivered reader answers depends on the store it reads, so point it at an empty
+    // directory of this suite's own: these assertions are about which service a verb reaches.
+    notificationsDirectory = (NSTemporaryDirectory() as NSString)
+      .appendingPathComponent(UUID().uuidString)
+    FBDeliveredNotificationsSetDirectoryForTesting(notificationsDirectory)
+    // The delivered verb reaches a real notification center on a simulator that has one, and
+    // these assertions are about routing rather than about what it answers. Without a short
+    // timeout, a center that does not come back spends the default 30s in a routing test.
+    FBDeliveredNotificationsSetTimeoutForTesting(0.05)
+  }
+
+  override func tearDown() {
+    FBDeliveredNotificationsSetDirectoryForTesting(nil)
+    FBDeliveredNotificationsSetTimeoutForTesting(0)
+    super.tearDown()
+  }
 
   // MARK: - Unknown service
 
@@ -41,6 +62,12 @@ final class ServiceDispatchTests: XCTestCase {
   func testDispatchNotificationsNoBundleID() {
     // "list" with no arguments — bundleID is nil, so every section is reported
     XCTAssertEqual(dispatchService("notifications", "list", []), 0)
+  }
+
+  func testDispatchNotificationsDeliveredRoutesToTheReader() {
+    // The settings service has no "delivered" action and would answer 1, so a 0 here is
+    // the delivered reader answering.
+    XCTAssertEqual(dispatchService("notifications", "delivered", ["com.test"]), 0)
   }
 
   // MARK: - Proxy routing

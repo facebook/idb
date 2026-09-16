@@ -6,6 +6,10 @@
  */
 
 #import <Foundation/Foundation.h>
+#import <UserNotifications/UserNotifications.h>
+
+#import <SimulatorFrameworkBridgeLib/DeliveredNotificationsService.h>
+#import <SimulatorFrameworkBridgeLib/DeliveredNotificationsService+Testing.h>
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -71,6 +75,35 @@ NSException *_Nullable FBHealthApproveException(NSArray<NSString *> *types);
 
 /** Exercises the runtime queue from Objective-C so no exception unwinds through Swift. */
 NSDictionary<NSString *, NSNumber *> *FBAXRuntimeQueueProbe(BOOL raise);
+/** Answers with whatever it was handed, so the reader runs without a notification daemon. */
+@interface FBFakeDeliveredNotificationsCenter : NSObject <FBDeliveredNotificationsCenter>
+/// `id` rather than `UNNotification *`: what the fake hands back stands in for one without
+/// being one, which is the point of it.
+@property (nullable, nonatomic, copy) NSArray<id> *notifications;
+@property (nonatomic) BOOL wasAsked;
+@end
+
+/** Raises the way a runtime that has the selector but will not answer for the bundle does. */
+@interface FBRaisingDeliveredNotificationsCenter : NSObject <FBDeliveredNotificationsCenter>
+@end
+
+/** Never answers, as a daemon that has stopped servicing the request does. */
+@interface FBSilentDeliveredNotificationsCenter : NSObject <FBDeliveredNotificationsCenter>
+@end
+
+/** Answers from another queue, as the real daemon does. */
+@interface FBAsynchronousDeliveredNotificationsCenter : NSObject <FBDeliveredNotificationsCenter>
+@end
+
+/**
+ * Enough of a delivered notification for the mapping that turns one into JSON, which reads the
+ * request, the request's content and the date. It stands in as its own request, and its content
+ * is nil - a shape the mapping already answers for with empty strings.
+ */
+@interface FBFakeDeliveredNotification : NSObject
+@property (nullable, nonatomic, copy) NSString *identifier;
+@property (nullable, nonatomic, copy) NSDate *date;
+@end
 
 typedef NS_ENUM(NSInteger, FBAXRuntimeInitializationMode) {
   FBAXRuntimeInitializationModeSuccess,

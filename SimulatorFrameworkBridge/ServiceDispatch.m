@@ -16,6 +16,7 @@
 #import "ProxyService.h"
 #if !TARGET_OS_TV
  #import "ContactsService.h"
+ #import "DeliveredNotificationsService.h"
  #import "HealthSettingsService.h"
 #endif
 
@@ -49,6 +50,16 @@
 
 - (int32_t)notifications:(NSString *)action bundleID:(NSString *)bundleID
 {
+  // `list` on this service means "list the apps' settings", so the delivered notifications of
+  // one app are read with their own verb.
+  if ([action isEqualToString:@"delivered"]) {
+  #if TARGET_OS_TV
+    NSLog(@"The notifications delivered action is not available in a tvOS guest");
+    return 1;
+  #else
+    return handleDeliveredNotificationsAction(action, bundleID);
+  #endif
+  }
   return handleNotificationSettingsAction(action, bundleID);
 }
 
