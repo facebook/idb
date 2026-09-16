@@ -34,7 +34,9 @@ async def drain_launch_stream(
         if debugger_pid is not None and debugger_pid != 0:
             info = DebuggerInfo(pid=debugger_info.pid)
             if pid_file is None:
-                sys.stdout.buffer.write(json_format_debugger_info(info).encode())
+                sys.stdout.buffer.write(
+                    json_format_debugger_info(info).encode() + b"\n"
+                )
                 sys.stdout.buffer.flush()
             else:
                 with open(pid_file, "wb") as f:

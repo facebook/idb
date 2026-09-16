@@ -113,16 +113,17 @@ class LaunchOutputTests(IdbEndToEndTestCase):
         except HarnessError as error:
             self.fail(str(error))
 
-    async def test_pid_report_has_no_trailing_newline(self) -> None:
-        """Record the current PID output format: JSON without a trailing newline.
+    async def test_pid_report_is_newline_terminated(self) -> None:
+        """The PID report is a JSON object terminated by a newline.
 
-        Line-based readers block until the app writes a newline or exits.
+        Line-based readers can find it without waiting on the app's own
+        output to supply a delimiter.
         """
         async with self.idb_process("launch", "--wait-for", self.bundle_id) as launch:
             chunk = await launch.read_some(PID_REPORT_TIMEOUT_SECONDS)
             _, consumed = _leading_json_object(chunk)
             self.assertEqual(
                 chunk[consumed : consumed + 1],
-                b"",
-                "PID JSON currently has no trailing newline",
+                b"\n",
+                "the pid report should be newline-terminated",
             )
