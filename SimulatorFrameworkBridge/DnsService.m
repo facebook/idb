@@ -9,11 +9,12 @@
 
 #import <dlfcn.h>
 
+#import "SystemConfigurationLoader.h"
 #import "SystemConfigurationPrivate.h"
 
 static void *loadSystemConfiguration(void)
 {
-  void *sc = dlopen("/System/Library/Frameworks/SystemConfiguration.framework/SystemConfiguration", RTLD_LAZY);
+  void *sc = FBSystemConfigurationLoad();
   if (!sc) {
     NSLog(@"[DnsService] Failed to load SystemConfiguration.framework: %s", dlerror());
   }
@@ -39,7 +40,7 @@ int handleDnsAction(NSString *action, NSArray<NSString *> *arguments)
     return 1;
   }
 
-  SCDynamicStoreCreate_fn fn_create = dlsym(sc, "SCDynamicStoreCreate");
+  SCDynamicStoreCreate_fn fn_create = FBSystemConfigurationLookup(sc, "SCDynamicStoreCreate");
 
   if (!fn_create) {
     NSLog(@"[DnsService] Required SCDynamicStore symbols not found");
@@ -55,7 +56,7 @@ int handleDnsAction(NSString *action, NSArray<NSString *> *arguments)
   CFStringRef key = CFSTR("State:/Network/Global/DNS");
 
   if ([action isEqualToString:@"list"]) {
-    SCDynamicStoreCopyValue_fn fn_copy = dlsym(sc, "SCDynamicStoreCopyValue");
+    SCDynamicStoreCopyValue_fn fn_copy = FBSystemConfigurationLookup(sc, "SCDynamicStoreCopyValue");
     if (!fn_copy) {
       NSLog(@"[DnsService] SCDynamicStoreCopyValue not found");
       CFRelease(store);
@@ -76,8 +77,8 @@ int handleDnsAction(NSString *action, NSArray<NSString *> *arguments)
     return 0;
   }
 
-  SCDynamicStoreSetValue_fn fn_set = dlsym(sc, "SCDynamicStoreSetValue");
-  SCDynamicStoreNotifyValue_fn fn_notify = dlsym(sc, "SCDynamicStoreNotifyValue");
+  SCDynamicStoreSetValue_fn fn_set = FBSystemConfigurationLookup(sc, "SCDynamicStoreSetValue");
+  SCDynamicStoreNotifyValue_fn fn_notify = FBSystemConfigurationLookup(sc, "SCDynamicStoreNotifyValue");
 
   if (!fn_set) {
     NSLog(@"[DnsService] SCDynamicStoreSetValue not found");

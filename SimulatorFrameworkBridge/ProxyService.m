@@ -9,11 +9,12 @@
 
 #import <dlfcn.h>
 
+#import "SystemConfigurationLoader.h"
 #import "SystemConfigurationPrivate.h"
 
 static void *loadSystemConfiguration(void)
 {
-  void *sc = dlopen("/System/Library/Frameworks/SystemConfiguration.framework/SystemConfiguration", RTLD_LAZY);
+  void *sc = FBSystemConfigurationLoad();
   if (!sc) {
     NSLog(@"[ProxyService] Failed to load SystemConfiguration.framework: %s", dlerror());
   }
@@ -59,8 +60,8 @@ int handleProxyAction(NSString *action, NSArray<NSString *> *arguments)
     return 1;
   }
 
-  SCDynamicStoreCreate_fn fn_create = dlsym(sc, "SCDynamicStoreCreate");
-  SCDynamicStoreKeyCreateProxies_fn fn_key = dlsym(sc, "SCDynamicStoreKeyCreateProxies");
+  SCDynamicStoreCreate_fn fn_create = FBSystemConfigurationLookup(sc, "SCDynamicStoreCreate");
+  SCDynamicStoreKeyCreateProxies_fn fn_key = FBSystemConfigurationLookup(sc, "SCDynamicStoreKeyCreateProxies");
 
   if (!fn_create || !fn_key) {
     NSLog(@"[ProxyService] Required SCDynamicStore symbols not found");
@@ -76,7 +77,7 @@ int handleProxyAction(NSString *action, NSArray<NSString *> *arguments)
   CFStringRef key = fn_key(NULL);
 
   if ([action isEqualToString:@"list"]) {
-    SCDynamicStoreCopyValue_fn fn_copy = dlsym(sc, "SCDynamicStoreCopyValue");
+    SCDynamicStoreCopyValue_fn fn_copy = FBSystemConfigurationLookup(sc, "SCDynamicStoreCopyValue");
     if (!fn_copy) {
       NSLog(@"[ProxyService] SCDynamicStoreCopyValue not found");
       CFRelease(key);
@@ -99,8 +100,8 @@ int handleProxyAction(NSString *action, NSArray<NSString *> *arguments)
     return 0;
   }
 
-  SCDynamicStoreSetValue_fn fn_set = dlsym(sc, "SCDynamicStoreSetValue");
-  SCDynamicStoreNotifyValue_fn fn_notify = dlsym(sc, "SCDynamicStoreNotifyValue");
+  SCDynamicStoreSetValue_fn fn_set = FBSystemConfigurationLookup(sc, "SCDynamicStoreSetValue");
+  SCDynamicStoreNotifyValue_fn fn_notify = FBSystemConfigurationLookup(sc, "SCDynamicStoreNotifyValue");
 
   if (!fn_set) {
     NSLog(@"[ProxyService] SCDynamicStoreSetValue not found");
