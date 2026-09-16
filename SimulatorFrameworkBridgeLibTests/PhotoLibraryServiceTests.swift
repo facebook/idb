@@ -11,6 +11,10 @@ import XCTest
 
 final class PhotoLibraryServiceTests: XCTestCase {
 
+  func testNilActionReturnsFailure() {
+    XCTAssertEqual(handlePhotoLibraryAction(nil), 1)
+  }
+
   func testUnknownActionReturnsFailure() {
     XCTAssertEqual(handlePhotoLibraryAction("delete"), 1)
     XCTAssertEqual(handlePhotoLibraryAction(""), 1)

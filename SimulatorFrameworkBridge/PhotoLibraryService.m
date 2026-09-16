@@ -6,6 +6,7 @@
  */
 
 #import "PhotoLibraryService.h"
+#import "PhotoLibraryService+Testing.h"
 
 #import "PhotosPrivate.h"
 
@@ -50,13 +51,8 @@ static BOOL saveManagedObjectContext(NSManagedObjectContext *moc, NSError **outE
   return [moc save:outError];
 }
 
-static int clearPhotoLibrary(void)
+int FBPhotoLibraryClearWithLibrary(PHPhotoLibrary *photoLibrary, PHFetchResult<PHAsset *> *allPhotos)
 {
-  PHPhotoLibrary *photoLibrary = [PHPhotoLibrary sharedPhotoLibrary];
-
-  PHFetchOptions *fetchOptions = [[PHFetchOptions alloc] init];
-  PHFetchResult<PHAsset *> *allPhotos = [PHAsset fetchAssetsWithOptions:fetchOptions];
-
   if (allPhotos.count == 0) {
     NSLog(@"No photos to delete");
     return 0;
@@ -104,7 +100,9 @@ static int clearPhotoLibrary(void)
 int handlePhotoLibraryAction(NSString *action)
 {
   if ([action isEqualToString:@"clear"]) {
-    return clearPhotoLibrary();
+    PHPhotoLibrary *library = [PHPhotoLibrary sharedPhotoLibrary];
+    PHFetchOptions *options = [[PHFetchOptions alloc] init];
+    return FBPhotoLibraryClearWithLibrary(library, [PHAsset fetchAssetsWithOptions:options]);
   } else {
     NSLog(@"Unknown action: %@", action);
     return 1;

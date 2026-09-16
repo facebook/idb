@@ -9,4 +9,5 @@
 #import "FBAXFakeRuntime.h"
 #import "FBAXSignatureProbe.h"
 #import "NetworkConfigurationTestRuntime.h"
+#import "PhotosTestRuntime.h"
 #import "ServiceTestRuntime.h"
