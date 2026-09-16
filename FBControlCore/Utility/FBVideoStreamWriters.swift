@@ -882,14 +882,11 @@ private struct FMP4BoxWriter {
     withUnsafeBytes(of: be) { data.append(contentsOf: $0) }
   }
 
-  mutating func beginBox(_ type: String) -> Int {
-    let offset = data.count
+  mutating func writeBox(_ type: String, contents: (inout Self) -> Void) {
+    let sizeOffset = data.count
     write32(0)
     writeBytes(type)
-    return offset
-  }
-
-  mutating func endBox(_ sizeOffset: Int) {
+    contents(&self)
     write32(UInt32(data.count - sizeOffset), at: sizeOffset)
   }
 
@@ -1027,13 +1024,13 @@ private func FBFMP4GetCodecConfigAtom(_ formatDescription: CMFormatDescription, 
 
 private func FBFMP4CreateFtypBox(_ codec: FBVideoStreamCodec) -> [UInt8] {
   var writer = FMP4BoxWriter(capacity: 24)
-  let off = writer.beginBox("ftyp")
-  writer.writeBytes("isom")
-  writer.write32(0x200)
-  writer.writeBytes("isom")
-  writer.writeBytes("iso6")
-  writer.writeBytes(codec.fmp4CompatibleBrand)
-  writer.endBox(off)
+  writer.writeBox("ftyp") { writer in
+    writer.writeBytes("isom")
+    writer.write32(0x200)
+    writer.writeBytes("isom")
+    writer.writeBytes("iso6")
+    writer.writeBytes(codec.fmp4CompatibleBrand)
+  }
   return writer.data
 }
 
@@ -1042,200 +1039,142 @@ private func FBFMP4CreateMoovBox(_ formatDescription: CMFormatDescription, _ cod
 
   let codecConfig = FBFMP4GetCodecConfigAtom(formatDescription, codec)
 
-  let moovOff = writer.beginBox("moov")
-
-  // mvhd
-  do {
-    let off = writer.beginBox("mvhd")
-    writer.writeFullBoxHeader(version: 0, flags: 0)
-    writer.write32(0)
-    writer.write32(0)
-    writer.write32(timescale)
-    writer.write32(0)
-    writer.write32(0x00010000)
-    writer.write16(0x0100)
-    writer.writeZeros(10)
-    let matrix: [UInt32] = [0x00010000, 0, 0, 0, 0x00010000, 0, 0, 0, 0x40000000]
-    for i in 0..<9 {
-      writer.write32(matrix[i])
-    }
-    writer.writeZeros(24)
-    writer.write32(2)
-    writer.endBox(off)
-  }
-
-  // trak
-  do {
-    let trakOff = writer.beginBox("trak")
-
-    // tkhd
-    do {
-      let off = writer.beginBox("tkhd")
-      writer.writeFullBoxHeader(version: 0, flags: 0x03)
+  writer.writeBox("moov") { writer in
+    writer.writeBox("mvhd") { writer in
+      writer.writeFullBoxHeader(version: 0, flags: 0)
       writer.write32(0)
       writer.write32(0)
-      writer.write32(1)
+      writer.write32(timescale)
       writer.write32(0)
-      writer.write32(0)
-      writer.writeZeros(8)
-      writer.write16(0)
-      writer.write16(0)
-      writer.write16(0)
-      writer.write16(0)
+      writer.write32(0x00010000)
+      writer.write16(0x0100)
+      writer.writeZeros(10)
       let matrix: [UInt32] = [0x00010000, 0, 0, 0, 0x00010000, 0, 0, 0, 0x40000000]
       for i in 0..<9 {
         writer.write32(matrix[i])
       }
-      writer.write32(width << 16)
-      writer.write32(height << 16)
-      writer.endBox(off)
+      writer.writeZeros(24)
+      writer.write32(2)
     }
 
-    // mdia
-    do {
-      let mdiaOff = writer.beginBox("mdia")
-
-      // mdhd
-      do {
-        let off = writer.beginBox("mdhd")
-        writer.writeFullBoxHeader(version: 0, flags: 0)
+    writer.writeBox("trak") { writer in
+      writer.writeBox("tkhd") { writer in
+        writer.writeFullBoxHeader(version: 0, flags: 0x03)
         writer.write32(0)
         writer.write32(0)
-        writer.write32(timescale)
+        writer.write32(1)
         writer.write32(0)
-        writer.write16(0x55C4)
+        writer.write32(0)
+        writer.writeZeros(8)
         writer.write16(0)
-        writer.endBox(off)
-      }
-
-      // hdlr
-      do {
-        let off = writer.beginBox("hdlr")
-        writer.writeFullBoxHeader(version: 0, flags: 0)
-        writer.write32(0)
-        writer.writeBytes("vide")
-        writer.writeZeros(12)
-        let name = "VideoHandler"
-        writer.writeBytes(name)
-        writer.write8(0) // null terminator
-        writer.endBox(off)
-      }
-
-      // minf
-      do {
-        let minfOff = writer.beginBox("minf")
-
-        // vmhd
-        do {
-          let off = writer.beginBox("vmhd")
-          writer.writeFullBoxHeader(version: 0, flags: 1)
-          writer.write16(0)
-          writer.writeZeros(6)
-          writer.endBox(off)
+        writer.write16(0)
+        writer.write16(0)
+        writer.write16(0)
+        let matrix: [UInt32] = [0x00010000, 0, 0, 0, 0x00010000, 0, 0, 0, 0x40000000]
+        for i in 0..<9 {
+          writer.write32(matrix[i])
         }
+        writer.write32(width << 16)
+        writer.write32(height << 16)
+      }
 
-        // dinf → dref → url
-        do {
-          let dinfOff = writer.beginBox("dinf")
-          let drefOff = writer.beginBox("dref")
+      writer.writeBox("mdia") { writer in
+        writer.writeBox("mdhd") { writer in
           writer.writeFullBoxHeader(version: 0, flags: 0)
-          writer.write32(1)
-          let urlOff = writer.beginBox("url ")
-          writer.writeFullBoxHeader(version: 0, flags: 1)
-          writer.endBox(urlOff)
-          writer.endBox(drefOff)
-          writer.endBox(dinfOff)
+          writer.write32(0)
+          writer.write32(0)
+          writer.write32(timescale)
+          writer.write32(0)
+          writer.write16(0x55C4)
+          writer.write16(0)
         }
 
-        // stbl
-        do {
-          let stblOff = writer.beginBox("stbl")
+        writer.writeBox("hdlr") { writer in
+          writer.writeFullBoxHeader(version: 0, flags: 0)
+          writer.write32(0)
+          writer.writeBytes("vide")
+          writer.writeZeros(12)
+          writer.writeBytes("VideoHandler")
+          writer.write8(0)
+        }
 
-          // stsd
-          do {
-            let stsdOff = writer.beginBox("stsd")
-            writer.writeFullBoxHeader(version: 0, flags: 0)
-            writer.write32(1)
+        writer.writeBox("minf") { writer in
+          writer.writeBox("vmhd") { writer in
+            writer.writeFullBoxHeader(version: 0, flags: 1)
+            writer.write16(0)
+            writer.writeZeros(6)
+          }
 
-            // Visual sample entry (avc1 or hvc1)
-            do {
-              let entryOff = writer.beginBox(codec.fmp4SampleEntryType)
-              writer.writeZeros(6)
-              writer.write16(1)
-              writer.writeZeros(16)
-              writer.write16(UInt16(width))
-              writer.write16(UInt16(height))
-              writer.write32(0x00480000)
-              writer.write32(0x00480000)
-              writer.write32(0)
-              writer.write16(1)
-              writer.writeZeros(32)
-              writer.write16(0x0018)
-              writer.write16(0xFFFF)
-
-              if let codecConfig {
-                let ccOff = writer.beginBox(codec.fmp4CodecConfigType)
-                writer.append(codecConfig)
-                writer.endBox(ccOff)
+          writer.writeBox("dinf") { writer in
+            writer.writeBox("dref") { writer in
+              writer.writeFullBoxHeader(version: 0, flags: 0)
+              writer.write32(1)
+              writer.writeBox("url ") { writer in
+                writer.writeFullBoxHeader(version: 0, flags: 1)
               }
+            }
+          }
 
-              writer.endBox(entryOff)
+          writer.writeBox("stbl") { writer in
+            writer.writeBox("stsd") { writer in
+              writer.writeFullBoxHeader(version: 0, flags: 0)
+              writer.write32(1)
+
+              writer.writeBox(codec.fmp4SampleEntryType) { writer in
+                writer.writeZeros(6)
+                writer.write16(1)
+                writer.writeZeros(16)
+                writer.write16(UInt16(width))
+                writer.write16(UInt16(height))
+                writer.write32(0x00480000)
+                writer.write32(0x00480000)
+                writer.write32(0)
+                writer.write16(1)
+                writer.writeZeros(32)
+                writer.write16(0x0018)
+                writer.write16(0xFFFF)
+
+                if let codecConfig {
+                  writer.writeBox(codec.fmp4CodecConfigType) { writer in
+                    writer.append(codecConfig)
+                  }
+                }
+              }
             }
 
-            writer.endBox(stsdOff)
+            writer.writeBox("stts") { writer in
+              writer.writeFullBoxHeader(version: 0, flags: 0)
+              writer.write32(0)
+            }
+            writer.writeBox("stsc") { writer in
+              writer.writeFullBoxHeader(version: 0, flags: 0)
+              writer.write32(0)
+            }
+            writer.writeBox("stsz") { writer in
+              writer.writeFullBoxHeader(version: 0, flags: 0)
+              writer.write32(0)
+              writer.write32(0)
+            }
+            writer.writeBox("stco") { writer in
+              writer.writeFullBoxHeader(version: 0, flags: 0)
+              writer.write32(0)
+            }
           }
-
-          // Empty required boxes
-          do {
-            var off = writer.beginBox("stts")
-            writer.writeFullBoxHeader(version: 0, flags: 0)
-            writer.write32(0)
-            writer.endBox(off)
-
-            off = writer.beginBox("stsc")
-            writer.writeFullBoxHeader(version: 0, flags: 0)
-            writer.write32(0)
-            writer.endBox(off)
-
-            off = writer.beginBox("stsz")
-            writer.writeFullBoxHeader(version: 0, flags: 0)
-            writer.write32(0)
-            writer.write32(0)
-            writer.endBox(off)
-
-            off = writer.beginBox("stco")
-            writer.writeFullBoxHeader(version: 0, flags: 0)
-            writer.write32(0)
-            writer.endBox(off)
-          }
-
-          writer.endBox(stblOff)
         }
-
-        writer.endBox(minfOff)
       }
-
-      writer.endBox(mdiaOff)
     }
 
-    writer.endBox(trakOff)
+    writer.writeBox("mvex") { writer in
+      writer.writeBox("trex") { writer in
+        writer.writeFullBoxHeader(version: 0, flags: 0)
+        writer.write32(1)
+        writer.write32(1)
+        writer.write32(0)
+        writer.write32(0)
+        writer.write32(0)
+      }
+    }
   }
-
-  // mvex
-  do {
-    let mvexOff = writer.beginBox("mvex")
-    let trexOff = writer.beginBox("trex")
-    writer.writeFullBoxHeader(version: 0, flags: 0)
-    writer.write32(1)
-    writer.write32(1)
-    writer.write32(0)
-    writer.write32(0)
-    writer.write32(0)
-    writer.endBox(trexOff)
-    writer.endBox(mvexOff)
-  }
-
-  writer.endBox(moovOff)
   return writer.data
 }
 
@@ -1250,58 +1189,40 @@ private func FBFMP4CreateFragmentHeader(_ sequenceNumber: UInt32, _ baseDecodeTi
 
   var writer = FMP4BoxWriter(capacity: moofSize + mdatHeaderSize)
 
-  let moofOff = writer.beginBox("moof")
+  let moofOffset = writer.count
+  writer.writeBox("moof") { writer in
+    writer.writeBox("mfhd") { writer in
+      writer.writeFullBoxHeader(version: 0, flags: 0)
+      writer.write32(sequenceNumber)
+    }
 
-  // mfhd
-  do {
-    let off = writer.beginBox("mfhd")
-    writer.writeFullBoxHeader(version: 0, flags: 0)
-    writer.write32(sequenceNumber)
-    writer.endBox(off)
+    writer.writeBox("traf") { writer in
+      writer.writeBox("tfhd") { writer in
+        writer.writeFullBoxHeader(version: 0, flags: 0x020000)
+        writer.write32(1)
+      }
+
+      writer.writeBox("tfdt") { writer in
+        writer.writeFullBoxHeader(version: 1, flags: 0)
+        writer.write64(baseDecodeTime)
+      }
+
+      writer.writeBox("trun") { writer in
+        writer.writeFullBoxHeader(version: 0, flags: trunFlags)
+        writer.write32(1) // sample_count = 1
+        writer.write32(0) // placeholder for data_offset (patched below)
+        writer.write32(duration)
+        writer.write32(sampleSize)
+        writer.write32(isKeyFrame ? 0x02000000 : 0x01010000)
+      }
+    }
   }
-
-  // traf
-  do {
-    let trafOff = writer.beginBox("traf")
-
-    // tfhd
-    do {
-      let off = writer.beginBox("tfhd")
-      writer.writeFullBoxHeader(version: 0, flags: 0x020000)
-      writer.write32(1)
-      writer.endBox(off)
-    }
-
-    // tfdt
-    do {
-      let off = writer.beginBox("tfdt")
-      writer.writeFullBoxHeader(version: 1, flags: 0)
-      writer.write64(baseDecodeTime)
-      writer.endBox(off)
-    }
-
-    // trun — single sample
-    do {
-      let off = writer.beginBox("trun")
-      writer.writeFullBoxHeader(version: 0, flags: trunFlags)
-      writer.write32(1) // sample_count = 1
-      writer.write32(0) // placeholder for data_offset (patched below)
-      writer.write32(duration)
-      writer.write32(sampleSize)
-      writer.write32(isKeyFrame ? 0x02000000 : 0x01010000)
-      writer.endBox(off)
-    }
-
-    writer.endBox(trafOff)
-  }
-
-  writer.endBox(moofOff)
 
   // Patch data_offset: distance from moof start to first sample byte in mdat.
-  let actualMoofSize = UInt32(writer.count - moofOff)
+  let actualMoofSize = UInt32(writer.count - moofOffset)
   let dataOffset = actualMoofSize + UInt32(mdatHeaderSize)
-  // dataOffsetPos = moofOff + moof_header(8) + mfhd(16) + traf_header(8) + tfhd(16) + tfdt(20) + trun_header(12) + sample_count(4)
-  let patchPos = moofOff + 8 + 16 + 8 + 16 + 20 + 12 + 4
+  // patchPos = moofOffset + moof_header(8) + mfhd(16) + traf_header(8) + tfhd(16) + tfdt(20) + trun_header(12) + sample_count(4)
+  let patchPos = moofOffset + 8 + 16 + 8 + 16 + 20 + 12 + 4
   writer.write32(dataOffset, at: patchPos)
 
   // mdat header only — caller appends sample data.
@@ -1413,20 +1334,19 @@ private func FBFMP4CreateEmsgBox(_ presentationTime90k: UInt64, _ text: String) 
 
   var writer = FMP4BoxWriter(capacity: 64 + textData.count)
 
-  let off = writer.beginBox("emsg")
-  writer.writeFullBoxHeader(version: 1, flags: 0)
-  writer.write32(90000)
-  writer.write64(presentationTime90k)
-  writer.write32(0)
-  writer.write32(0)
+  writer.writeBox("emsg") { writer in
+    writer.writeFullBoxHeader(version: 1, flags: 0)
+    writer.write32(90000)
+    writer.write64(presentationTime90k)
+    writer.write32(0)
+    writer.write32(0)
 
-  let scheme = "urn:sime2e:chapter"
-  writer.writeBytes(scheme)
-  writer.write8(0) // null terminator
-  writer.write8(0) // empty value string
-  writer.append(textData)
-
-  writer.endBox(off)
+    let scheme = "urn:sime2e:chapter"
+    writer.writeBytes(scheme)
+    writer.write8(0) // null terminator
+    writer.write8(0) // empty value string
+    writer.append(textData)
+  }
 
   return Data(writer.data)
 }
