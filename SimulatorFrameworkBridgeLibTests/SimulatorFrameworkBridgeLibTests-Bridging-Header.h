@@ -10,5 +10,6 @@
 #import "FBAXSignatureProbe.h"
 #import "HealthTestRuntime.h"
 #import "NetworkConfigurationTestRuntime.h"
+#import "NotificationExceptionRuntime.h"
 #import "PhotosTestRuntime.h"
 #import "ServiceTestRuntime.h"
