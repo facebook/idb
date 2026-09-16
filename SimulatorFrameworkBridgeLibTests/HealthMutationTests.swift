@@ -259,7 +259,7 @@ final class HealthMutationTests: XCTestCase {
       runtime.setterVariants = operation == "setLegacy" ? 1 : 3
       runtime.records = [["identifier": "step"]]
       let action = operation == "clear" ? "clear" : (["list", "record"].contains(operation) ? "list" : "approve")
-      XCTAssertEqual(runtime.runAction(action, bundleID: bundleID, types: ["step"]) as NSDictionary, ["exception": "HealthTest"] as NSDictionary)
+      XCTAssertEqual(runtime.runAction(action, bundleID: bundleID, types: ["step"]) as NSDictionary, ["status": 1, "output": ""] as NSDictionary)
     }
   }
   func testWaitsForAsynchronousCompletions() throws {

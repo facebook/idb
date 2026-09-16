@@ -328,7 +328,7 @@ static int handleListAction(HKAuthorizationStore *authStore, NSString *bundleID)
 
 #pragma mark - Dispatch
 
-int handleHealthSettingsAction(NSString *action, NSString *bundleID, NSArray<NSString *> *typeIdentifiers)
+static int handleHealthSettingsActionImpl(NSString *action, NSString *bundleID, NSArray<NSString *> *typeIdentifiers)
 {
   HKAuthorizationStore *authStore = loadAuthStore();
   if (!authStore) {
@@ -364,4 +364,14 @@ int handleHealthSettingsAction(NSString *action, NSString *bundleID, NSArray<NSS
   }
   NSLog(@"[Health] Unknown action '%@'. Supported: list, clear, approve, revoke", action);
   return 1;
+}
+
+int handleHealthSettingsAction(NSString *action, NSString *bundleID, NSArray<NSString *> *typeIdentifiers)
+{
+  @try {
+    return handleHealthSettingsActionImpl(action, bundleID, typeIdentifiers);
+  } @catch (NSException *exception) {
+    NSLog(@"[Health] Command raised: %@", exception);
+    return 1;
+  }
 }
