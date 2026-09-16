@@ -13,8 +13,13 @@
 #import <unistd.h>
 
 #import <SimulatorFrameworkBridgeLib/AccessibilityRuntime_Private.h>
+#import <SimulatorFrameworkBridgeLib/AccessibilityService.h>
+#import <SimulatorFrameworkBridgeLib/AccessibilityService+Testing.h>
+#import <SimulatorFrameworkBridgeLib/AccessibilityService_Private.h>
 #import <SimulatorFrameworkBridgeLib/BulletinBoardPrivate.h>
 #import <SimulatorFrameworkBridgeLib/HealthSettingsService.h>
+
+#import "FBAXFakeRuntime.h"
 
 @interface FakeNotificationSettingsGateway ()
 @property (nonatomic, strong) NSMutableDictionary<NSString *, BBSectionInfo *> *sections;
@@ -206,4 +211,45 @@ NSDictionary<NSString *, id> *FBNotificationRunCommand(NSString *action, NSStrin
   }
   fclose(capture);
   return @{@"status" : @(status), @"output" : [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding]};
+}
+
+NSDictionary<NSString *, id> *FBAXRuntimeInitializationProbe(FBAXRuntimeInitializationMode mode, BOOL prepare, NSDictionary<NSString *, id> *request)
+{
+  FBAXFakeRuntime *runtime = [FBAXFakeRuntime new];
+  runtime.deviceSettings[@(FBAXDeviceSettingReduceMotion)] = @YES;
+  __block NSUInteger calls = 0;
+  FBAXBridgeSetRuntimeFactoryForTesting(^id<FBAXRuntime>(NSString **error) {
+    calls++;
+    switch (mode) {
+      case FBAXRuntimeInitializationModeSuccess:
+        return runtime;
+      case FBAXRuntimeInitializationModeFailureWithMessage:
+        if (error) {
+          *error = @"missing test framework";
+        }
+        return nil;
+      case FBAXRuntimeInitializationModeFailureWithoutMessage:
+        return nil;
+      case FBAXRuntimeInitializationModeExceptionWithReason:
+      case FBAXRuntimeInitializationModeExceptionWithoutReason:
+        @throw [NSException exceptionWithName:NSInternalInconsistencyException
+                                       reason:mode == FBAXRuntimeInitializationModeExceptionWithReason ? @"initialization failed" : nil
+                                     userInfo:nil];
+    }
+  });
+  NSString *preparationException = nil;
+  NSDictionary *response = nil;
+  @try {
+    if (prepare) {
+      @try {
+        FBAXBridgePrepareRuntime();
+      } @catch (NSException *exception) {
+        preparationException = exception.reason ?: exception.name;
+      }
+    }
+    response = FBAXBridgeHandleRequest(request);
+  } @finally {
+    FBAXBridgeSetRuntimeFactoryForTesting(nil);
+  }
+  return @{@"preparationException" : preparationException ?: NSNull.null, @"calls" : @(calls), @"response" : response};
 }

@@ -32,4 +32,9 @@ NSDictionary<NSString *, NSString *> *_Nullable FBAXBridgeModalDescriptor(NSDict
 /** Substitutes a runtime for tests, or restores the live runtime when passed nil. */
 void FBAXBridgeSetRuntimeForTesting(id<FBAXRuntime> _Nullable runtime);
 
+typedef id<FBAXRuntime> _Nullable (^FBAXRuntimeFactory)(NSString *_Nullable *_Nullable error);
+
+/** Substitutes initialization without sharing the production dispatch-once state. */
+void FBAXBridgeSetRuntimeFactoryForTesting(FBAXRuntimeFactory _Nullable factory);
+
 NS_ASSUME_NONNULL_END

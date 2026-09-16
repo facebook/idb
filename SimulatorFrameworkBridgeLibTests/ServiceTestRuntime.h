@@ -72,4 +72,15 @@ NSException *_Nullable FBHealthApproveException(NSArray<NSString *> *types);
 /** Exercises the runtime queue from Objective-C so no exception unwinds through Swift. */
 NSDictionary<NSString *, NSNumber *> *FBAXRuntimeQueueProbe(BOOL raise);
 
+typedef NS_ENUM(NSInteger, FBAXRuntimeInitializationMode) {
+  FBAXRuntimeInitializationModeSuccess,
+  FBAXRuntimeInitializationModeFailureWithMessage,
+  FBAXRuntimeInitializationModeFailureWithoutMessage,
+  FBAXRuntimeInitializationModeExceptionWithReason,
+  FBAXRuntimeInitializationModeExceptionWithoutReason,
+};
+
+/** Captures preparation exceptions in Objective-C before returning observations to Swift. */
+NSDictionary<NSString *, id> *FBAXRuntimeInitializationProbe(FBAXRuntimeInitializationMode mode, BOOL prepare, NSDictionary<NSString *, id> *request);
+
 NS_ASSUME_NONNULL_END

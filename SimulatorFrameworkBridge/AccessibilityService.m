@@ -194,6 +194,12 @@ static const int kDefaultNodeBudget = 5000;
 
 // Set by `FBAXBridgeSetRuntimeForTesting`; nil in the product.
 static id<FBAXRuntime> gInjectedRuntime = nil;
+static FBAXRuntimeFactory gInjectedRuntimeFactory = nil;
+
+static id<FBAXRuntime> _Nullable FBAXBridgeCreateRuntime(FBAXRuntimeFactory factory, NSString *_Nullable *_Nullable error)
+{
+  return factory(error);
+}
 
 // The runtime is bound once and reused across requests: `dlopen` + `initForRemoteAccess` is the
 // dominant setup cost (~260ms), so caching it is what makes the persistent `serve` mode fast.
@@ -203,12 +209,17 @@ static id<FBAXRuntime> _Nullable FBAXBridgeSharedRuntime(NSString *_Nullable *_N
   if (gInjectedRuntime) {
     return gInjectedRuntime;
   }
-  static FBAXLiveRuntime *shared;
+  if (gInjectedRuntimeFactory) {
+    return FBAXBridgeCreateRuntime(gInjectedRuntimeFactory, error);
+  }
+  static id<FBAXRuntime> shared;
   static NSString *cachedError;
   static dispatch_once_t onceToken;
   dispatch_once(&onceToken, ^{
     NSString *setupError = nil;
-    shared = [[FBAXLiveRuntime alloc] initWithError:&setupError];
+    shared = FBAXBridgeCreateRuntime(^id<FBAXRuntime>(NSString **initializationError) {
+      return [[FBAXLiveRuntime alloc] initWithError:initializationError];
+    }, &setupError);
     cachedError = setupError;
   });
   if (!shared && error) {
@@ -225,6 +236,11 @@ void FBAXBridgePrepareRuntime(void)
 void FBAXBridgeSetRuntimeForTesting(id<FBAXRuntime> _Nullable runtime)
 {
   gInjectedRuntime = runtime;
+}
+
+void FBAXBridgeSetRuntimeFactoryForTesting(FBAXRuntimeFactory _Nullable factory)
+{
+  gInjectedRuntimeFactory = [factory copy];
 }
 
 // Kept short: read once per unreachable element.
