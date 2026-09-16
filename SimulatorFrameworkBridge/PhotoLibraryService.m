@@ -51,7 +51,7 @@ static BOOL saveManagedObjectContext(NSManagedObjectContext *moc, NSError **outE
   return [moc save:outError];
 }
 
-int FBPhotoLibraryClearWithLibrary(PHPhotoLibrary *photoLibrary, PHFetchResult<PHAsset *> *allPhotos)
+static int clearPhotoLibraryWithLibrary(PHPhotoLibrary *photoLibrary, PHFetchResult<PHAsset *> *allPhotos)
 {
   if (allPhotos.count == 0) {
     NSLog(@"No photos to delete");
@@ -95,6 +95,16 @@ int FBPhotoLibraryClearWithLibrary(PHPhotoLibrary *photoLibrary, PHFetchResult<P
 
   NSLog(@"PLPhotoLibrary transaction completed but success was NO. Error: %@", transactionError);
   return 1;
+}
+
+int FBPhotoLibraryClearWithLibrary(PHPhotoLibrary *photoLibrary, PHFetchResult<PHAsset *> *allPhotos)
+{
+  @try {
+    return clearPhotoLibraryWithLibrary(photoLibrary, allPhotos);
+  } @catch (NSException *exception) {
+    NSLog(@"Failed to clear photo library: %@", exception);
+    return 1;
+  }
 }
 
 int handlePhotoLibraryAction(NSString *action)

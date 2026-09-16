@@ -65,7 +65,7 @@ final class PhotoLibraryMutationTests: XCTestCase {
     for failure in ["transactionException", "idException", "saveException"] {
       let runtime = FBPhotosTestRuntime()
       runtime.failure = failure
-      XCTAssertEqual(runtime.runCatchingException() as NSDictionary, ["exception": "PhotosTest"] as NSDictionary)
+      XCTAssertEqual(runtime.runCatchingException() as NSDictionary, ["status": 1] as NSDictionary)
     }
   }
 }
