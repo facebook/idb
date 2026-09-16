@@ -24,7 +24,7 @@ struct Stream: AsyncParsableCommand {
       guard encoding == .h264 || encoding == .hevc else {
         throw ValidationError("--transport is only valid with h264 or hevc")
       }
-      guard FBVideoStreamTransport(rawValue: transport) != nil else {
+      guard VideoStreamTransport(rawValue: transport) != nil else {
         throw ValidationError("Unknown transport: \(transport)")
       }
     }
@@ -36,7 +36,7 @@ struct Stream: AsyncParsableCommand {
     let simulator = try target.simulator(logger: logger)
     let (insets, renderer, bars) = try video.composition(simulator: simulator, logger: logger)
     let framebuffer = try await simulator.lifecycle.connectToFramebuffer()
-    let configuration = video.configuration(format: encoding.format(transport: transport.flatMap(FBVideoStreamTransport.init(rawValue:)) ?? .annexB))
+    let configuration = video.configuration(format: encoding.format(transport: transport.flatMap(VideoStreamTransport.init(rawValue:)) ?? .annexB))
     let stream = SimulatorVideoStream.make(framebuffer: framebuffer, configuration: configuration, edgeInsets: insets, logger: logger)
     let consumer: any FBDataConsumer
     if output == "-" {
@@ -57,7 +57,7 @@ struct Stream: AsyncParsableCommand {
 
 enum StreamEncoding: String, ExpressibleByArgument {
   case h264, hevc, mjpeg, minicap, bgra
-  func format(transport: FBVideoStreamTransport) -> FBVideoStreamFormat {
+  func format(transport: VideoStreamTransport) -> VideoStreamFormat {
     switch self {
     case .h264: return .compressedVideo(withCodec: .h264, transport: transport)
     case .hevc: return .compressedVideo(withCodec: .hevc, transport: transport)

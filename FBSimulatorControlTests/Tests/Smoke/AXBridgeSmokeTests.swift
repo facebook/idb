@@ -29,7 +29,7 @@ final class AXBridgeSmokeTests: ProvidedSimulatorTestCase {
   private func launchedApplicationPID() async throws -> pid_t {
     let simulator = self.simulator!
     let io: FBProcessIO<AnyObject, AnyObject, AnyObject> = .outputToDevNull()
-    let configuration = FBApplicationLaunchConfiguration(
+    let configuration = ApplicationLaunchConfiguration(
       bundleID: Self.bundleID,
       bundleName: nil,
       arguments: [],

@@ -26,11 +26,11 @@ public actor SimulatorVideo {
   private let fileWriter: SimulatorVideoFileWriter
   private var hasStopped = false
 
-  public static func video(withFramebuffer framebuffer: Framebuffer, configuration: FBVideoStreamConfiguration, filePath: String, fileType: AVFileType = .mp4, edgeInsets: VideoStreamEdgeInsets = VideoStreamEdgeInsets(top: 0, bottom: 0, left: 0, right: 0), chaptersEnabled: Bool = false, logger: any FBControlCoreLogger) -> SimulatorVideo {
+  public static func video(withFramebuffer framebuffer: Framebuffer, configuration: VideoStreamConfiguration, filePath: String, fileType: AVFileType = .mp4, edgeInsets: VideoStreamEdgeInsets = VideoStreamEdgeInsets(top: 0, bottom: 0, left: 0, right: 0), chaptersEnabled: Bool = false, logger: any FBControlCoreLogger) -> SimulatorVideo {
     SimulatorVideo(framebuffer: framebuffer, configuration: configuration, filePath: filePath, fileType: fileType, edgeInsets: edgeInsets, chaptersEnabled: chaptersEnabled, logger: logger)
   }
 
-  private init(framebuffer: Framebuffer, configuration: FBVideoStreamConfiguration, filePath: String, fileType: AVFileType, edgeInsets: VideoStreamEdgeInsets, chaptersEnabled: Bool, logger: any FBControlCoreLogger) {
+  private init(framebuffer: Framebuffer, configuration: VideoStreamConfiguration, filePath: String, fileType: AVFileType, edgeInsets: VideoStreamEdgeInsets, chaptersEnabled: Bool, logger: any FBControlCoreLogger) {
     self.outputURL = URL(fileURLWithPath: filePath)
     let fileWriter = SimulatorVideoFileWriter(filePath: filePath, fileType: fileType, chaptersEnabled: chaptersEnabled, logger: logger)
     self.fileWriter = fileWriter

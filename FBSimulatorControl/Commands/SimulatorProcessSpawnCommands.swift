@@ -42,7 +42,7 @@ public struct SimulatorProcessSpawnCommands: ProcessSpawnCommands {
     return options
   }
 
-  public func launchProcess(_ configuration: FBProcessSpawnConfiguration) async throws -> FBSubprocess<AnyObject, AnyObject, AnyObject> {
+  public func launchProcess(_ configuration: ProcessSpawnConfiguration) async throws -> FBSubprocess<AnyObject, AnyObject, AnyObject> {
     // Rejected before attaching, so that no file descriptor is opened for an input
     // that could never be read: SimDevice's launch options address stdout and stderr
     // by file descriptor and have no equivalent for stdin.
@@ -57,7 +57,7 @@ public struct SimulatorProcessSpawnCommands: ProcessSpawnCommands {
     )
   }
 
-  private static func launchProcess(withSimulator simulator: FBSimulator, configuration: FBProcessSpawnConfiguration, attachment: FBProcessIOAttachment) async throws -> FBSubprocess<AnyObject, AnyObject, AnyObject> {
+  private static func launchProcess(withSimulator simulator: FBSimulator, configuration: ProcessSpawnConfiguration, attachment: FBProcessIOAttachment) async throws -> FBSubprocess<AnyObject, AnyObject, AnyObject> {
     let logger = simulator.logger
     let statLoc = FBMutableFuture<NSNumber>(name: "Process completion of \(configuration.launchPath) on \(simulator.udid)")
     let exitCode = FBMutableFuture<NSNumber>(name: "Process exit of \(configuration.launchPath) on \(simulator.udid)")

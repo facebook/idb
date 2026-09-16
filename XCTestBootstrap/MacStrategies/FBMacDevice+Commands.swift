@@ -63,7 +63,7 @@ extension MacDevice {
 
 extension MacDevice: VideoStreamCommands {
 
-  public func createStream(configuration: FBVideoStreamConfiguration, to consumer: any FBDataConsumer) async throws -> any FBVideoStream {
+  public func createStream(configuration: VideoStreamConfiguration, to consumer: any FBDataConsumer) async throws -> any FBVideoStream {
     throw macUnsupported("createStream")
   }
 }

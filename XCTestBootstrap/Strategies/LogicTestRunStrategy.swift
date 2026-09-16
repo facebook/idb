@@ -367,9 +367,9 @@ public final class LogicTestRunStrategy: XCTestRunner {
     let stdOut = FBProcessOutput<AnyObject>(for: outputs.stdOutConsumer)
     let stdErr = FBProcessOutput<AnyObject>(for: outputs.stdErrConsumer)
     let io = FBProcessIO<AnyObject, AnyObject, AnyObject>(stdIn: nil, stdOut: stdOut, stdErr: stdErr)
-    let spawnConfig = FBProcessSpawnConfiguration(launchPath: launchPath, arguments: arguments, environment: environment, io: io, mode: .posixSpawn)
+    let spawnConfig = ProcessSpawnConfiguration(launchPath: launchPath, arguments: arguments, environment: environment, io: io, mode: .posixSpawn)
 
-    let launchAdaptedProcess: (FBProcessSpawnConfiguration) -> FBFuture<AnyObject> = { mappedConfig in
+    let launchAdaptedProcess: (ProcessSpawnConfiguration) -> FBFuture<AnyObject> = { mappedConfig in
       let target = self.target
       let launchFuture: FBFuture<FBSubprocess<AnyObject, AnyObject, AnyObject>> = fbFutureFromAsync {
         try await target.processSpawn.launchProcess(mappedConfig)

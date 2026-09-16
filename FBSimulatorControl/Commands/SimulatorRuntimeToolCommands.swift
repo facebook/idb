@@ -82,7 +82,7 @@ public struct SimulatorRuntimeToolCommands {
       stdOut: FBProcessOutput<AnyObject>(for: stdoutConsumer),
       stdErr: FBProcessOutput<AnyObject>(for: stderrConsumer)
     )
-    let configuration = FBProcessSpawnConfiguration(
+    let configuration = ProcessSpawnConfiguration(
       launchPath: launchPath,
       arguments: arguments,
       environment: environment,

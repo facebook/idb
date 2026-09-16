@@ -34,7 +34,7 @@ class AppleDevicectlCommandExecutor {
 }
 
 extension AppleDevicectlCommandExecutor {
-  func launchApplication(configuration: FBApplicationLaunchConfiguration) async throws -> NSNumber {
+  func launchApplication(configuration: ApplicationLaunchConfiguration) async throws -> NSNumber {
     let tmpPath = try FileManager.default.temporaryFile(extension: "json")
     let tmpPathStr = tmpPath.path()
     var arguments = [

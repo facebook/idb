@@ -222,7 +222,7 @@ public final class TestManagerAPIMediator: NSObject, @unchecked Sendable {
     let stdOut = FBProcessOutput<AnyObject>(for: logger)
     let stdErr = FBProcessOutput<AnyObject>(for: logger)
     let processIO = FBProcessIO<AnyObject, AnyObject, AnyObject>(stdIn: nil, stdOut: stdOut, stdErr: stdErr)
-    let launch = FBApplicationLaunchConfiguration(
+    let launch = ApplicationLaunchConfiguration(
       bundleID: bundleID,
       bundleName: bundleID,
       arguments: arguments,
@@ -234,14 +234,14 @@ public final class TestManagerAPIMediator: NSObject, @unchecked Sendable {
     return try await launchApplication(launch, atPath: path)
   }
 
-  private func launchApplication(_ configuration: FBApplicationLaunchConfiguration, atPath path: String?) async throws -> FBLaunchedApplication {
+  private func launchApplication(_ configuration: ApplicationLaunchConfiguration, atPath path: String?) async throws -> FBLaunchedApplication {
     if let installed = try? await target.application.installed(bundleID: configuration.bundleID), installed.bundle.path == path {
       return try await target.application.launch(configuration)
     }
     return try await installAndLaunchApplication(configuration, atPath: path)
   }
 
-  private func installAndLaunchApplication(_ configuration: FBApplicationLaunchConfiguration, atPath path: String?) async throws -> FBLaunchedApplication {
+  private func installAndLaunchApplication(_ configuration: ApplicationLaunchConfiguration, atPath path: String?) async throws -> FBLaunchedApplication {
     guard let path else {
       throw TestManagerError.appUnderTestNotInstallable(configurationDescription: String(describing: configuration))
     }

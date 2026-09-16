@@ -21,15 +21,15 @@ private struct LaunchCaptureStop: Error {}
 /// have to subclass a production command class or install one in the simulator's command cache.
 private final class CapturingApplicationLauncher: ApplicationLaunching, @unchecked Sendable {
   private let lock = NSLock()
-  private var _capturedConfiguration: FBApplicationLaunchConfiguration?
+  private var _capturedConfiguration: ApplicationLaunchConfiguration?
 
-  var capturedConfiguration: FBApplicationLaunchConfiguration? {
+  var capturedConfiguration: ApplicationLaunchConfiguration? {
     lock.lock()
     defer { lock.unlock() }
     return _capturedConfiguration
   }
 
-  func launch(_ configuration: FBApplicationLaunchConfiguration) async throws -> FBLaunchedApplication {
+  func launch(_ configuration: ApplicationLaunchConfiguration) async throws -> FBLaunchedApplication {
     capture(configuration)
     // Throw to unwind launchDebugServer before it reaches the
     // (process-spawning) debugServerTask path. The thrown error never
@@ -39,7 +39,7 @@ private final class CapturingApplicationLauncher: ApplicationLaunching, @uncheck
 
   // NSLock.lock/unlock are unavailable from async contexts; scope the locking
   // in a synchronous helper instead.
-  private func capture(_ configuration: FBApplicationLaunchConfiguration) {
+  private func capture(_ configuration: ApplicationLaunchConfiguration) {
     lock.lock()
     defer { lock.unlock() }
     _capturedConfiguration = configuration
@@ -74,7 +74,7 @@ final class SimulatorDebuggerCommandsTests: XCTestCase {
     return Harness(simulator: simulator, commands: commands, wrapper: wrapper)
   }
 
-  private func awaitCapturedConfig(_ wrapper: CapturingApplicationLauncher, timeout: TimeInterval = 1.0) -> FBApplicationLaunchConfiguration? {
+  private func awaitCapturedConfig(_ wrapper: CapturingApplicationLauncher, timeout: TimeInterval = 1.0) -> ApplicationLaunchConfiguration? {
     let deadline = Date().addingTimeInterval(timeout)
     while Date() < deadline {
       if let config = wrapper.capturedConfiguration {

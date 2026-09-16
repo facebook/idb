@@ -51,7 +51,7 @@ enum VideoEncodingHostSupport {
     }
     let firstSample = DispatchSemaphore(value: 0)
     let consumer = FBBlockDataConsumer.synchronousDataConsumer { _ in firstSample.signal() }
-    let configuration = FBVideoStreamConfiguration(
+    let configuration = VideoStreamConfiguration(
       format: .compressedVideo(withCodec: .h264, transport: .annexB),
       framesPerSecond: nil,
       rateControl: nil,

@@ -10,6 +10,6 @@ import Foundation
 public protocol ProcessSpawnCommands {
 
   func launchProcess(
-    _ configuration: FBProcessSpawnConfiguration
+    _ configuration: ProcessSpawnConfiguration
   ) async throws -> FBSubprocess<AnyObject, AnyObject, AnyObject>
 }

@@ -81,7 +81,7 @@ public class DeviceVideoStream: NSObject, FBVideoStream, @unchecked Sendable {
 
   // MARK: - Factory
 
-  public class func stream(withSession session: AVCaptureSession, configuration: FBVideoStreamConfiguration, logger: any FBControlCoreLogger) throws -> DeviceVideoStream {
+  public class func stream(withSession session: AVCaptureSession, configuration: VideoStreamConfiguration, logger: any FBControlCoreLogger) throws -> DeviceVideoStream {
     let format = configuration.format
     guard let streamType = classForConfiguration(configuration) else {
       throw DeviceVideoStreamError.invalidStreamFormat("\(format)")
@@ -106,7 +106,7 @@ public class DeviceVideoStream: NSObject, FBVideoStream, @unchecked Sendable {
     return streamType.init(session: session, output: output, writeQueue: writeQueue, logger: logger)
   }
 
-  class func classForConfiguration(_ configuration: FBVideoStreamConfiguration) -> DeviceVideoStream.Type? {
+  class func classForConfiguration(_ configuration: VideoStreamConfiguration) -> DeviceVideoStream.Type? {
     switch configuration.format {
     case let .compressedVideo(codec, transport):
       switch codec {
@@ -125,7 +125,7 @@ public class DeviceVideoStream: NSObject, FBVideoStream, @unchecked Sendable {
     }
   }
 
-  class func configureVideoOutput(_ output: AVCaptureVideoDataOutput, configuration: FBVideoStreamConfiguration) throws {
+  class func configureVideoOutput(_ output: AVCaptureVideoDataOutput, configuration: VideoStreamConfiguration) throws {
     output.alwaysDiscardsLateVideoFrames = true
     output.videoSettings = [:]
   }
@@ -279,7 +279,7 @@ private class DeviceVideoStream_BGRA: DeviceVideoStream, @unchecked Sendable {
     }
   }
 
-  override class func configureVideoOutput(_ output: AVCaptureVideoDataOutput, configuration: FBVideoStreamConfiguration) throws {
+  override class func configureVideoOutput(_ output: AVCaptureVideoDataOutput, configuration: VideoStreamConfiguration) throws {
     try super.configureVideoOutput(output, configuration: configuration)
     if !output.availableVideoPixelFormatTypes.contains(kCVPixelFormatType_32BGRA) {
       throw DeviceVideoStreamError.unsupportedBGRAOutput
@@ -334,7 +334,7 @@ private class DeviceVideoStream_MJPEG: DeviceVideoStream, @unchecked Sendable {
     }
   }
 
-  override class func configureVideoOutput(_ output: AVCaptureVideoDataOutput, configuration: FBVideoStreamConfiguration) throws {
+  override class func configureVideoOutput(_ output: AVCaptureVideoDataOutput, configuration: VideoStreamConfiguration) throws {
     try super.configureVideoOutput(output, configuration: configuration)
     output.alwaysDiscardsLateVideoFrames = true
     if !output.availableVideoCodecTypes.contains(.jpeg) {

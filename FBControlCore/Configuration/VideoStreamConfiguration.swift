@@ -8,13 +8,13 @@
 import Foundation
 
 /// The video codec for compressed video streams.
-public enum FBVideoStreamCodec: String, Sendable {
+public enum VideoStreamCodec: String, Sendable {
   case h264
   case hevc
 }
 
 /// The transport/container framing for compressed video streams.
-public enum FBVideoStreamTransport: String, Sendable {
+public enum VideoStreamTransport: String, Sendable {
   case annexB = "annex-b"
   case mpegts
   case fmp4
@@ -29,14 +29,14 @@ public enum MJPEGEncoderSelection: Hashable, Sendable {
 }
 
 /// The format of a video stream: a compressed codec over a transport, or a raw/JPEG format that has neither.
-public enum FBVideoStreamFormat: Hashable, Sendable {
-  case compressedVideo(withCodec: FBVideoStreamCodec, transport: FBVideoStreamTransport)
+public enum VideoStreamFormat: Hashable, Sendable {
+  case compressedVideo(withCodec: VideoStreamCodec, transport: VideoStreamTransport)
   case mjpeg(encoder: MJPEGEncoderSelection)
   case minicap
   case bgra
 }
 
-extension FBVideoStreamFormat: CustomStringConvertible {
+extension VideoStreamFormat: CustomStringConvertible {
   public var description: String {
     switch self {
     case let .compressedVideo(codec, transport):
@@ -55,20 +55,19 @@ extension FBVideoStreamFormat: CustomStringConvertible {
 
 /// The rate-control strategy for VTCompression: derived automatically, a target quality (0–1), or an
 /// average bitrate in bits per second.
-public enum FBVideoStreamRateControl: Hashable, Sendable {
+public enum VideoStreamRateControl: Hashable, Sendable {
   /// The default: derive a rate from what is being encoded. JPEG formats (MJPEG/Minicap) use their
-  /// quality knob; H.264/HEVC derive an average bitrate from the encoded output dimensions at
-  /// session setup. An explicit `quality` is NOT a substitute for H.264/HEVC — the low-latency
-  /// hardware encoder accepts the Quality property but ignores it, falling back to its internal
-  /// default bitrate (~2 Mbps regardless of resolution), which macroblocks badly under motion.
+  /// quality knob at 0.75; H.264/HEVC derive an average bitrate from the encoded output dimensions
+  /// at session setup.
   case automatic
-  /// A constant target quality (0–1). Honored by the JPEG formats; ignored by the low-latency
-  /// hardware H.264/HEVC encoder (see `automatic`).
+  /// A constant target quality (0–1). JPEG formats pass it to the encoder. For H.264/HEVC it scales
+  /// the automatic bitrate budget linearly, meeting it at 0.75 — the low-latency hardware encoder
+  /// ignores a quality property, so the budget is how a quality is honored there.
   case quality(Double)
   case bitrate(Int)
 }
 
-extension FBVideoStreamRateControl: CustomStringConvertible {
+extension VideoStreamRateControl: CustomStringConvertible {
   public var description: String {
     switch self {
     case .automatic:
@@ -90,10 +89,10 @@ extension FBVideoStreamRateControl: CustomStringConvertible {
 public struct VideoEncodeOptions: Hashable, Sendable {
   public let framesPerSecond: Int?
   public let scaleFactor: Double?
-  public let rateControl: FBVideoStreamRateControl
+  public let rateControl: VideoStreamRateControl
   public let keyFrameRate: Double
 
-  public init(framesPerSecond: Int?, rateControl: FBVideoStreamRateControl?, scaleFactor: Double?, keyFrameRate: Double?) {
+  public init(framesPerSecond: Int?, rateControl: VideoStreamRateControl?, scaleFactor: Double?, keyFrameRate: Double?) {
     self.framesPerSecond = framesPerSecond
     self.rateControl = rateControl ?? .automatic
     self.scaleFactor = scaleFactor
@@ -105,22 +104,22 @@ public struct VideoEncodeOptions: Hashable, Sendable {
 }
 
 /// Describes a video stream: the output format and the options controlling how frames are encoded.
-public struct FBVideoStreamConfiguration: Hashable, CustomStringConvertible, Sendable {
+public struct VideoStreamConfiguration: Hashable, CustomStringConvertible, Sendable {
 
-  public let format: FBVideoStreamFormat
+  public let format: VideoStreamFormat
   public let encodeOptions: VideoEncodeOptions
 
   public var framesPerSecond: Int? { encodeOptions.framesPerSecond }
-  public var rateControl: FBVideoStreamRateControl { encodeOptions.rateControl }
+  public var rateControl: VideoStreamRateControl { encodeOptions.rateControl }
   public var scaleFactor: Double? { encodeOptions.scaleFactor }
   public var keyFrameRate: Double { encodeOptions.keyFrameRate }
 
-  public init(format: FBVideoStreamFormat, encodeOptions: VideoEncodeOptions) {
+  public init(format: VideoStreamFormat, encodeOptions: VideoEncodeOptions) {
     self.format = format
     self.encodeOptions = encodeOptions
   }
 
-  public init(format: FBVideoStreamFormat, framesPerSecond: Int?, rateControl: FBVideoStreamRateControl?, scaleFactor: Double?, keyFrameRate: Double?) {
+  public init(format: VideoStreamFormat, framesPerSecond: Int?, rateControl: VideoStreamRateControl?, scaleFactor: Double?, keyFrameRate: Double?) {
     self.init(format: format, encodeOptions: VideoEncodeOptions(framesPerSecond: framesPerSecond, rateControl: rateControl, scaleFactor: scaleFactor, keyFrameRate: keyFrameRate))
   }
 

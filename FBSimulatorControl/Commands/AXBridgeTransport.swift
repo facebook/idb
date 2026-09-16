@@ -198,7 +198,7 @@ actor AXBridgePersistentTransport: AXBridgeTransport {
     ownership: (FBSubprocess<AnyObject, AnyObject, AnyObject>) -> AXBridgeGuestOwnership
   ) async throws -> AXBridgeConnection {
     let io = FBProcessIO<AnyObject, AnyObject, AnyObject>.outputToDevNull()
-    let configuration = FBProcessSpawnConfiguration(
+    let configuration = ProcessSpawnConfiguration(
       launchPath: helperPath,
       arguments: serveArguments(socketPath: socketPath, scope: scope),
       environment: [:],

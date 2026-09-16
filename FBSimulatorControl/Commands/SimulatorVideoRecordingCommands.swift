@@ -41,9 +41,9 @@ public final class SimulatorVideoRecordingCommands: VideoRecordingCommands {
   /// constant frame rate (eager cadence), clean frames, default quality. The transport is irrelevant —
   /// recording muxes encoded samples to a file rather than byte-framing them.
   /// `RecordMethodHandler` mirrors the frame rate here as the meaning of an unset `fps` on the wire.
-  private static var recordingConfiguration: FBVideoStreamConfiguration {
-    FBVideoStreamConfiguration(
-      format: FBVideoStreamFormat.compressedVideo(withCodec: .h264, transport: .annexB),
+  private static var recordingConfiguration: VideoStreamConfiguration {
+    VideoStreamConfiguration(
+      format: VideoStreamFormat.compressedVideo(withCodec: .h264, transport: .annexB),
       framesPerSecond: 30,
       rateControl: nil,
       scaleFactor: nil,
@@ -58,7 +58,7 @@ public final class SimulatorVideoRecordingCommands: VideoRecordingCommands {
     try await startRecording(toFile: filePath, configuration: Self.recordingConfiguration)
   }
 
-  public func startRecording(toFile filePath: String, configuration: FBVideoStreamConfiguration) async throws -> any VideoRecording {
+  public func startRecording(toFile filePath: String, configuration: VideoStreamConfiguration) async throws -> any VideoRecording {
     guard let simulator = self.simulator else {
       throw WeakTargetError.simulator
     }

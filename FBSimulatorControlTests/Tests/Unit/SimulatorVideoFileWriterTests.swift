@@ -276,14 +276,14 @@ final class SimulatorVideoTests: XCTestCase {
   /// A recorder over a fake display surface writing to a temp path removed at teardown. The eager
   /// cadence (positive framesPerSecond) pushes frames on the clock from the mounted surface without
   /// needing frame-rendered events from the fake.
-  private func makeRecordingFixture(immediateSurface: IOSurface?, format: FBVideoStreamFormat = .compressedVideo(withCodec: .h264, transport: .fmp4), fileType: AVFileType = .mp4, chaptersEnabled: Bool = false) -> (video: SimulatorVideo, path: String) {
+  private func makeRecordingFixture(immediateSurface: IOSurface?, format: VideoStreamFormat = .compressedVideo(withCodec: .h264, transport: .fmp4), fileType: AVFileType = .mp4, chaptersEnabled: Bool = false) -> (video: SimulatorVideo, path: String) {
     let extensionName = fileType == .mov ? "mov" : "mp4"
     let path = (NSTemporaryDirectory() as NSString).appendingPathComponent("SimulatorVideoTests-\(UUID().uuidString).\(extensionName)")
     addTeardownBlock { try? FileManager.default.removeItem(atPath: path) }
     let surface = FakeFramebufferSurface()
     surface.immediateSurface = immediateSurface
     let framebuffer = Framebuffer(surface: surface, logger: CapturingLogger())
-    let configuration = FBVideoStreamConfiguration(
+    let configuration = VideoStreamConfiguration(
       format: format,
       framesPerSecond: 30,
       rateControl: nil,

@@ -7,21 +7,21 @@
 
 import Foundation
 
-public enum FBApplicationLaunchMode: UInt {
+public enum ApplicationLaunchMode: UInt {
   case failIfRunning = 0
   case foregroundIfRunning = 1
   case relaunchIfRunning = 2
 }
 
 @objc
-public final class FBApplicationLaunchConfiguration: ProcessLaunchConfiguration {
+public final class ApplicationLaunchConfiguration: ProcessLaunchConfiguration {
 
   @objc public let bundleID: String
   @objc public let bundleName: String?
   @objc public let waitForDebugger: Bool
-  public let launchMode: FBApplicationLaunchMode
+  public let launchMode: ApplicationLaunchMode
 
-  public init(bundleID: String, bundleName: String?, arguments: [String], environment: [String: String], waitForDebugger: Bool, io: FBProcessIO<AnyObject, AnyObject, AnyObject>, launchMode: FBApplicationLaunchMode) {
+  public init(bundleID: String, bundleName: String?, arguments: [String], environment: [String: String], waitForDebugger: Bool, io: FBProcessIO<AnyObject, AnyObject, AnyObject>, launchMode: ApplicationLaunchMode) {
     self.bundleID = bundleID
     self.bundleName = bundleName
     self.waitForDebugger = waitForDebugger
@@ -35,7 +35,7 @@ public final class FBApplicationLaunchConfiguration: ProcessLaunchConfiguration 
 
   public override func isEqual(_ object: Any?) -> Bool {
     guard super.isEqual(object),
-      let other = object as? FBApplicationLaunchConfiguration
+      let other = object as? ApplicationLaunchConfiguration
     else {
       return false
     }

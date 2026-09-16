@@ -110,7 +110,7 @@ final class SimulatorProcessSpawnCommandsTests: XCTestCase {
     let simulator = SimulatorTestSupport.testableSimulator(withDevice: device)
     let stdIn = FBProcessInput<NSObject>.fromConsumer().retyped(FBProcessInput<AnyObject>.self)
     let stdOut = FBProcessOutput<AnyObject>(for: FBNullDataConsumer())
-    let configuration = FBProcessSpawnConfiguration(
+    let configuration = ProcessSpawnConfiguration(
       launchPath: "/bin/cat",
       arguments: [],
       environment: [:],
@@ -133,7 +133,7 @@ final class SimulatorProcessSpawnCommandsTests: XCTestCase {
   // MARK: - Application launch options
 
   func testAppLaunchOptionsDoNotPrependLaunchPathAndCarryStdioPaths() {
-    let configuration = FBApplicationLaunchConfiguration(
+    let configuration = ApplicationLaunchConfiguration(
       bundleID: "com.example.app",
       bundleName: "App",
       arguments: ["--flag"],

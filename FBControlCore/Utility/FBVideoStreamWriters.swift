@@ -44,8 +44,8 @@ public struct VideoStreamFrameWriters {
   }
 }
 
-public extension FBVideoStreamTransport {
-  func frameWriters(for codec: FBVideoStreamCodec) -> VideoStreamFrameWriters {
+public extension VideoStreamTransport {
+  func frameWriters(for codec: VideoStreamCodec) -> VideoStreamFrameWriters {
     switch self {
     case .fmp4:
       let writer = FMP4FrameWriter(codec: codec)
@@ -165,7 +165,7 @@ private typealias VideoParameterSetGetter = (
   _ nalUnitHeaderLengthOut: UnsafeMutablePointer<Int32>?
 ) -> OSStatus
 
-private extension FBVideoStreamCodec {
+private extension VideoStreamCodec {
   var parameterSetGetter: VideoParameterSetGetter {
     switch self {
     case .h264:
@@ -230,9 +230,9 @@ private func FBVideoSampleBufferIsKeyFrame(_ sampleBuffer: CMSampleBuffer) -> Bo
 }
 
 public struct AnnexBFrameWriter: EncodedFrameWriter {
-  private let codec: FBVideoStreamCodec
+  private let codec: VideoStreamCodec
 
-  public init(codec: FBVideoStreamCodec) {
+  public init(codec: VideoStreamCodec) {
     self.codec = codec
   }
 
@@ -635,7 +635,7 @@ func FBMPEGTSCreateTimedMetadataPackets(_ text: String, _ pts90k: UInt64, _ meta
 }
 
 public final class MPEGTSFrameWriter: EncodedFrameWriter, VideoStreamTimedMetadataWriter {
-  private let codec: FBVideoStreamCodec
+  private let codec: VideoStreamCodec
   private let metadataLock = NSLock()
   private var metadataStreamEnabled = false
   private var metadataContinuityCounter: UInt8 = 0
@@ -644,7 +644,7 @@ public final class MPEGTSFrameWriter: EncodedFrameWriter, VideoStreamTimedMetada
   private var patContinuityCounter: UInt8 = 0
   private var pmtContinuityCounter: UInt8 = 0
 
-  public init(codec: FBVideoStreamCodec) {
+  public init(codec: VideoStreamCodec) {
     self.codec = codec
   }
 
@@ -925,7 +925,7 @@ private struct FMP4BoxWriter {
   }
 }
 
-private func FBFMP4GetCodecConfigAtom(_ formatDescription: CMFormatDescription, _ codec: FBVideoStreamCodec) -> [UInt8]? {
+private func FBFMP4GetCodecConfigAtom(_ formatDescription: CMFormatDescription, _ codec: VideoStreamCodec) -> [UInt8]? {
   if let atoms = CMFormatDescriptionGetExtension(formatDescription, extensionKey: kCMFormatDescriptionExtension_SampleDescriptionExtensionAtoms) as? [String: Any] {
     if let configData = atoms[codec.fmp4CodecConfigType] as? Data {
       return [UInt8](configData)
@@ -1022,7 +1022,7 @@ private func FBFMP4GetCodecConfigAtom(_ formatDescription: CMFormatDescription, 
   return writer.data
 }
 
-private func FBFMP4CreateFtypBox(_ codec: FBVideoStreamCodec) -> [UInt8] {
+private func FBFMP4CreateFtypBox(_ codec: VideoStreamCodec) -> [UInt8] {
   var writer = FMP4BoxWriter(capacity: 24)
   writer.writeBox("ftyp") { writer in
     writer.writeBytes("isom")
@@ -1034,7 +1034,7 @@ private func FBFMP4CreateFtypBox(_ codec: FBVideoStreamCodec) -> [UInt8] {
   return writer.data
 }
 
-private func FBFMP4CreateMoovBox(_ formatDescription: CMFormatDescription, _ codec: FBVideoStreamCodec, _ width: UInt32, _ height: UInt32, _ timescale: UInt32) -> [UInt8] {
+private func FBFMP4CreateMoovBox(_ formatDescription: CMFormatDescription, _ codec: VideoStreamCodec, _ width: UInt32, _ height: UInt32, _ timescale: UInt32) -> [UInt8] {
   var writer = FMP4BoxWriter(capacity: 512)
 
   let codecConfig = FBFMP4GetCodecConfigAtom(formatDescription, codec)
@@ -1233,14 +1233,14 @@ private func FBFMP4CreateFragmentHeader(_ sequenceNumber: UInt32, _ baseDecodeTi
 }
 
 final class FMP4FrameWriter: EncodedFrameWriter, VideoStreamTimedMetadataWriter {
-  private let codec: FBVideoStreamCodec
+  private let codec: VideoStreamCodec
   private(set) var initWritten: Bool
   private(set) var sequenceNumber: UInt32
   private var baseDecodeTime: UInt64
   private var firstPts90k: UInt64
   var lastPts90k: UInt64
 
-  public init(codec: FBVideoStreamCodec) {
+  public init(codec: VideoStreamCodec) {
     self.codec = codec
     self.initWritten = false
     self.sequenceNumber = 0

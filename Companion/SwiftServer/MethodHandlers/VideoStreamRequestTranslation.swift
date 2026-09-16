@@ -9,12 +9,12 @@ import FBControlCore
 import Foundation
 import IDBGRPCSwift
 
-/// Translates a `video_stream` request to `FBVideoStreamConfiguration`. Zero is unset on the wire and
+/// Translates a `video_stream` request to `VideoStreamConfiguration`. Zero is unset on the wire and
 /// maps to nil so the framework substitutes its defaults.
 enum VideoStreamRequestTranslation {
 
-  static func configuration(from start: Idb_VideoStreamRequest.Start) -> FBVideoStreamConfiguration {
-    let rateControl: FBVideoStreamRateControl?
+  static func configuration(from start: Idb_VideoStreamRequest.Start) -> VideoStreamConfiguration {
+    let rateControl: VideoStreamRateControl?
     if start.avgBitrate > 0 {
       rateControl = .bitrate(Int(start.avgBitrate))
     } else if start.compressionQuality > 0 {
@@ -23,7 +23,7 @@ enum VideoStreamRequestTranslation {
       rateControl = nil
     }
 
-    return FBVideoStreamConfiguration(
+    return VideoStreamConfiguration(
       format: format(from: start.format),
       // Unset means the display's own rate, which is what a stream wants; a recording pins 30.
       framesPerSecond: start.fps > 0 ? Int(start.fps) : nil,
@@ -32,7 +32,7 @@ enum VideoStreamRequestTranslation {
       keyFrameRate: start.keyFrameRate > 0 ? start.keyFrameRate : nil)
   }
 
-  static func format(from requestFormat: Idb_VideoStreamRequest.Format) -> FBVideoStreamFormat {
+  static func format(from requestFormat: Idb_VideoStreamRequest.Format) -> VideoStreamFormat {
     switch requestFormat {
     case .h264:
       return .compressedVideo(withCodec: .h264, transport: .annexB)

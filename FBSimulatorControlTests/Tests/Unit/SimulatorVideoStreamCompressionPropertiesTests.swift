@@ -28,11 +28,10 @@ final class SimulatorVideoStreamCompressionPropertiesTests: XCTestCase {
       ] as? Bool,
       true
     )
-    XCTAssertEqual(
+    XCTAssertNil(
       specification[
         kVTVideoEncoderSpecification_EnableLowLatencyRateControl as String
-      ] as? Bool,
-      true
+      ]
     )
     XCTAssertNil(
       specification[
@@ -114,11 +113,10 @@ final class SimulatorVideoStreamCompressionPropertiesTests: XCTestCase {
       ] as? Bool,
       true
     )
-    XCTAssertEqual(
+    XCTAssertNil(
       specification[
         kVTVideoEncoderSpecification_EnableLowLatencyRateControl as String
-      ] as? Bool,
-      true
+      ]
     )
     XCTAssertNil(
       specification[
@@ -129,14 +127,14 @@ final class SimulatorVideoStreamCompressionPropertiesTests: XCTestCase {
   }
 
   func testMJPEGEncoderSelectionAffectsConfigurationIdentity() {
-    let hardwareConfiguration = FBVideoStreamConfiguration(
+    let hardwareConfiguration = VideoStreamConfiguration(
       format: .mjpeg(encoder: .requireHardware),
       framesPerSecond: nil,
       rateControl: nil,
       scaleFactor: nil,
       keyFrameRate: nil
     )
-    let softwareConfiguration = FBVideoStreamConfiguration(
+    let softwareConfiguration = VideoStreamConfiguration(
       format: .mjpeg(encoder: .allowSoftware),
       framesPerSecond: nil,
       rateControl: nil,
@@ -150,8 +148,8 @@ final class SimulatorVideoStreamCompressionPropertiesTests: XCTestCase {
   // MARK: - Shared Properties
 
   func testBasePropertiesAlwaysPresent() {
-    let config = FBVideoStreamConfiguration(
-      format: FBVideoStreamFormat.compressedVideo(withCodec: .h264, transport: .annexB),
+    let config = VideoStreamConfiguration(
+      format: VideoStreamFormat.compressedVideo(withCodec: .h264, transport: .annexB),
       framesPerSecond: nil,
       rateControl: nil,
       scaleFactor: nil,
@@ -168,8 +166,8 @@ final class SimulatorVideoStreamCompressionPropertiesTests: XCTestCase {
   }
 
   func testCallerPropertiesMerged() {
-    let config = FBVideoStreamConfiguration(
-      format: FBVideoStreamFormat.mjpeg(encoder: .requireHardware),
+    let config = VideoStreamConfiguration(
+      format: VideoStreamFormat.mjpeg(encoder: .requireHardware),
       framesPerSecond: nil,
       rateControl: nil,
       scaleFactor: nil,
@@ -183,10 +181,10 @@ final class SimulatorVideoStreamCompressionPropertiesTests: XCTestCase {
   // MARK: - Compression Quality
 
   func testMJPEGCompressionPropertiesContainQuality() {
-    let config = FBVideoStreamConfiguration(
-      format: FBVideoStreamFormat.mjpeg(encoder: .requireHardware),
+    let config = VideoStreamConfiguration(
+      format: VideoStreamFormat.mjpeg(encoder: .requireHardware),
       framesPerSecond: nil,
-      rateControl: FBVideoStreamRateControl.quality(0.5),
+      rateControl: VideoStreamRateControl.quality(0.5),
       scaleFactor: nil,
       keyFrameRate: nil
     )
@@ -195,21 +193,71 @@ final class SimulatorVideoStreamCompressionPropertiesTests: XCTestCase {
   }
 
   func testH264CompressionPropertiesContainQuality() {
-    let config = FBVideoStreamConfiguration(
-      format: FBVideoStreamFormat.compressedVideo(withCodec: .h264, transport: .annexB),
+    let config = VideoStreamConfiguration(
+      format: VideoStreamFormat.compressedVideo(withCodec: .h264, transport: .annexB),
       framesPerSecond: nil,
-      rateControl: FBVideoStreamRateControl.quality(0.5),
+      rateControl: VideoStreamRateControl.quality(0.5),
       scaleFactor: nil,
       keyFrameRate: nil
     )
     let props = SimulatorVideoStream.compressionSessionProperties(for: config, callerProperties: [:])
-    XCTAssertEqual(props[kVTCompressionPropertyKey_Quality as String] as? NSNumber, 0.5)
+    // Compressed video carries no rate key here; the pusher resolves quality to a bitrate at setup.
+    XCTAssertNil(props[kVTCompressionPropertyKey_Quality as String])
+    XCTAssertNil(props[kVTCompressionPropertyKey_AverageBitRate as String])
+  }
+
+  func testH264ExplicitBitrateIsResolvedAtSetupNotInSharedProperties() {
+    let config = VideoStreamConfiguration(
+      format: VideoStreamFormat.compressedVideo(withCodec: .h264, transport: .annexB),
+      framesPerSecond: nil,
+      rateControl: VideoStreamRateControl.bitrate(500000),
+      scaleFactor: nil,
+      keyFrameRate: nil
+    )
+    let props = SimulatorVideoStream.compressionSessionProperties(for: config, callerProperties: [:])
+    XCTAssertNil(props[kVTCompressionPropertyKey_AverageBitRate as String])
+  }
+
+  // MARK: - Compressed Video Rate Control
+
+  private func rateControlProperties(_ rateControl: VideoStreamRateControl) -> [String: Any] {
+    SimulatorVideoStreamFramePusher_VideoToolbox.compressedVideoRateControlProperties(rateControl: rateControl, width: 1206, height: 2622)
+  }
+
+  func testAutomaticRateControlResolvesToTheAutomaticBudget() {
+    let props = rateControlProperties(.automatic)
+    XCTAssertEqual(props[kVTCompressionPropertyKey_AverageBitRate as String] as? Int, 12_648_528)
+    XCTAssertNil(props[kVTCompressionPropertyKey_Quality as String])
+  }
+
+  func testQualityRateControlScalesTheAutomaticBudget() {
+    XCTAssertEqual(rateControlProperties(.quality(0.75))[kVTCompressionPropertyKey_AverageBitRate as String] as? Int, 12_648_528)
+    XCTAssertEqual(rateControlProperties(.quality(0.375))[kVTCompressionPropertyKey_AverageBitRate as String] as? Int, 6_324_264)
+    XCTAssertEqual(rateControlProperties(.quality(1.0))[kVTCompressionPropertyKey_AverageBitRate as String] as? Int, 16_864_704)
+    XCTAssertNil(rateControlProperties(.quality(0.5))[kVTCompressionPropertyKey_Quality as String])
+  }
+
+  func testQualityRateControlClampsOutOfRangeValues() {
+    XCTAssertEqual(
+      rateControlProperties(.quality(7))[kVTCompressionPropertyKey_AverageBitRate as String] as? Int,
+      rateControlProperties(.quality(1))[kVTCompressionPropertyKey_AverageBitRate as String] as? Int)
+    XCTAssertGreaterThan(rateControlProperties(.quality(0))[kVTCompressionPropertyKey_AverageBitRate as String] as? Int ?? 0, 0)
+  }
+
+  func testExplicitBitrateRateControlPassesThrough() {
+    XCTAssertEqual(rateControlProperties(.bitrate(4_000_000))[kVTCompressionPropertyKey_AverageBitRate as String] as? Int, 4_000_000)
+  }
+
+  func testRateControlBoundsBurstsToOneAndAHalfTimesTheAverageOverOneSecond() {
+    let limits = rateControlProperties(.bitrate(8_000_000))[kVTCompressionPropertyKey_DataRateLimits as String] as? [NSNumber]
+    // 8 Mbps × 1.5 = 12 Mbit = 1.5 MB per one-second window.
+    XCTAssertEqual(limits, [1_500_000, 1])
   }
 
   func testAutomaticRateControlUsesQualityForMJPEG() {
     // JPEG encoders honor the quality knob, so `.automatic` uses it for MJPEG.
-    let config = FBVideoStreamConfiguration(
-      format: FBVideoStreamFormat.mjpeg(encoder: .requireHardware),
+    let config = VideoStreamConfiguration(
+      format: VideoStreamFormat.mjpeg(encoder: .requireHardware),
       framesPerSecond: nil,
       rateControl: nil,
       scaleFactor: nil,
@@ -230,8 +278,8 @@ final class SimulatorVideoStreamCompressionPropertiesTests: XCTestCase {
   // MARK: - H264 Encoding-Specific Properties
 
   func testH264ProfileAndEntropyMode() {
-    let config = FBVideoStreamConfiguration(
-      format: FBVideoStreamFormat.compressedVideo(withCodec: .h264, transport: .annexB),
+    let config = VideoStreamConfiguration(
+      format: VideoStreamFormat.compressedVideo(withCodec: .h264, transport: .annexB),
       framesPerSecond: nil,
       rateControl: nil,
       scaleFactor: nil,
@@ -245,10 +293,10 @@ final class SimulatorVideoStreamCompressionPropertiesTests: XCTestCase {
   // MARK: - Bitrate Configuration
 
   func testExplicitBitrate() {
-    let config = FBVideoStreamConfiguration(
-      format: FBVideoStreamFormat.mjpeg(encoder: .requireHardware),
+    let config = VideoStreamConfiguration(
+      format: VideoStreamFormat.mjpeg(encoder: .requireHardware),
       framesPerSecond: nil,
-      rateControl: FBVideoStreamRateControl.bitrate(500000),
+      rateControl: VideoStreamRateControl.bitrate(500000),
       scaleFactor: nil,
       keyFrameRate: nil
     )
@@ -259,8 +307,8 @@ final class SimulatorVideoStreamCompressionPropertiesTests: XCTestCase {
   // MARK: - HEVC Encoding-Specific Properties
 
   func testHEVCProfileAndClosedGOP() {
-    let config = FBVideoStreamConfiguration(
-      format: FBVideoStreamFormat.compressedVideo(withCodec: .hevc, transport: .annexB),
+    let config = VideoStreamConfiguration(
+      format: VideoStreamFormat.compressedVideo(withCodec: .hevc, transport: .annexB),
       framesPerSecond: nil,
       rateControl: nil,
       scaleFactor: nil,
@@ -268,20 +316,40 @@ final class SimulatorVideoStreamCompressionPropertiesTests: XCTestCase {
     )
     let props = SimulatorVideoStream.compressionSessionProperties(for: config, callerProperties: [:])
     XCTAssertEqual(props[kVTCompressionPropertyKey_AllowOpenGOP as String] as? NSNumber, false)
-    let profile = props[kVTCompressionPropertyKey_ProfileLevel as String] as? String
-    XCTAssertNotNil(profile)
-    XCTAssertTrue(
-      profile == (kVTProfileLevel_HEVC_Main_AutoLevel as String) || profile == (kVTProfileLevel_HEVC_Main10_AutoLevel as String),
-      "HEVC profile should be Main or Main10, got \(String(describing: profile))"
-    )
+    XCTAssertEqual(props[kVTCompressionPropertyKey_ProfileLevel as String] as? String, kVTProfileLevel_HEVC_Main_AutoLevel as String)
     XCTAssertNil(props[kVTCompressionPropertyKey_H264EntropyMode as String])
+  }
+
+  // MARK: - Cadence Properties
+
+  private func makeStream(framesPerSecond: Int?) -> SimulatorVideoStream {
+    let configuration = VideoStreamConfiguration(
+      format: .compressedVideo(withCodec: .h264, transport: .annexB),
+      framesPerSecond: framesPerSecond,
+      rateControl: nil,
+      scaleFactor: nil,
+      keyFrameRate: nil
+    )
+    let framebuffer = Framebuffer(surface: FakeFramebufferSurface(), logger: CapturingLogger())
+    return SimulatorVideoStream.make(framebuffer: framebuffer, configuration: configuration, logger: CapturingLogger())
+  }
+
+  func testLazyCadenceAddsNoProperties() async {
+    let props = await makeStream(framesPerSecond: nil).compressionSessionProperties
+    XCTAssertTrue(props.isEmpty)
+  }
+
+  func testEagerCadenceSetsExpectedFrameRateOnly() async {
+    let props = await makeStream(framesPerSecond: 60).compressionSessionProperties
+    XCTAssertEqual(props[kVTCompressionPropertyKey_ExpectedFrameRate as String] as? NSNumber, 60)
+    XCTAssertNil(props[kVTCompressionPropertyKey_MaxKeyFrameInterval as String])
   }
 
   // MARK: - Low-Latency Base Properties
 
   func testBasePropertiesUseZeroMaxFrameDelay() {
-    let config = FBVideoStreamConfiguration(
-      format: FBVideoStreamFormat.compressedVideo(withCodec: .h264, transport: .annexB),
+    let config = VideoStreamConfiguration(
+      format: VideoStreamFormat.compressedVideo(withCodec: .h264, transport: .annexB),
       framesPerSecond: nil,
       rateControl: nil,
       scaleFactor: nil,

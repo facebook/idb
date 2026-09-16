@@ -47,7 +47,7 @@ final class SimulatorGuestServicesSmokeTests: ProvidedSimulatorTestCase {
 
     // A system application, so nothing has to be installed and no fixture architecture applies.
     let io: FBProcessIO<AnyObject, AnyObject, AnyObject> = .outputToDevNull()
-    let configuration = FBApplicationLaunchConfiguration(
+    let configuration = ApplicationLaunchConfiguration(
       bundleID: Self.bundleID,
       bundleName: nil,
       arguments: [],

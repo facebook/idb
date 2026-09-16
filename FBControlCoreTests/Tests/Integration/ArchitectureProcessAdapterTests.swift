@@ -37,8 +37,8 @@ struct ArchitectureProcessAdapterTests {
     return url
   }
 
-  private static func configuration(launchPath: String, environment: [String: String] = [:]) -> FBProcessSpawnConfiguration {
-    FBProcessSpawnConfiguration(
+  private static func configuration(launchPath: String, environment: [String: String] = [:]) -> ProcessSpawnConfiguration {
+    ProcessSpawnConfiguration(
       launchPath: launchPath,
       arguments: ["--first", "--second"],
       environment: environment,

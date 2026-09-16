@@ -304,17 +304,17 @@ final class SimulatorVideoStreamDeliveryTests: XCTestCase {
 
   /// `.bgra` and no `framesPerSecond`: the lazy (variable-frame-rate) cadence with the bitmap
   /// pusher, so pushes reach the consumer without any encoder in the way.
-  private static let lazyConfiguration = FBVideoStreamConfiguration(
+  private static let lazyConfiguration = VideoStreamConfiguration(
     format: .bgra, framesPerSecond: nil, rateControl: nil, scaleFactor: nil, keyFrameRate: nil)
 
   /// `lazyConfiguration` with a fractional scale: the bitmap pusher then owns a
   /// `VTPixelTransferSession`, giving a displaced pusher session state to observe.
-  private static let scaledLazyConfiguration = FBVideoStreamConfiguration(
+  private static let scaledLazyConfiguration = VideoStreamConfiguration(
     format: .bgra, framesPerSecond: nil, rateControl: nil, scaleFactor: 0.5, keyFrameRate: nil)
 
   private func makeStream(
     surface: FakeFramebufferSurface,
-    configuration: FBVideoStreamConfiguration = lazyConfiguration
+    configuration: VideoStreamConfiguration = lazyConfiguration
   ) -> SimulatorVideoStream {
     let framebuffer = Framebuffer(surface: surface, logger: CapturingLogger())
     return SimulatorVideoStream.make(
@@ -614,7 +614,7 @@ final class SimulatorVideoStreamDeliveryTests: XCTestCase {
 
   /// `.compressedVideo` h264 over Annex-B with no `framesPerSecond`: the lazy cadence with a real
   /// VideoToolbox encode, so keyframe decisions are observable as IDR NAL units in the output bytes.
-  private static let h264Configuration = FBVideoStreamConfiguration(
+  private static let h264Configuration = VideoStreamConfiguration(
     format: .compressedVideo(withCodec: .h264, transport: .annexB), framesPerSecond: nil, rateControl: nil, scaleFactor: nil, keyFrameRate: nil)
 
   /// A small BGRA overlay buffer for compositing over the fake surface's frames.
@@ -702,7 +702,7 @@ final class SimulatorVideoStreamDeliveryTests: XCTestCase {
     let surface = FakeFramebufferSurface()
     surface.immediateSurface = makeTestIOSurface()
     let consumer = FBDataBuffer.accumulatingBuffer()
-    let eager = FBVideoStreamConfiguration(
+    let eager = VideoStreamConfiguration(
       format: .bgra, framesPerSecond: 20, rateControl: nil, scaleFactor: nil, keyFrameRate: nil)
     var stream: SimulatorVideoStream? = makeStream(surface: surface, configuration: eager)
     weak let weakStream = stream

@@ -175,8 +175,8 @@ final class CapturingLogger: NSObject, FBControlCoreLogger, @unchecked Sendable 
 /// Tests drive `handleCompressedSampleBuffer` directly rather than the block-based encode handler,
 /// so only the `.compressed` output mode is wired.
 func createTestVideoStreamPusher(_ logger: FBControlCoreLogger) -> SimulatorVideoStreamFramePusher_VideoToolbox {
-  let format = FBVideoStreamFormat.compressedVideo(withCodec: .h264, transport: .annexB)
-  let config = FBVideoStreamConfiguration(
+  let format = VideoStreamFormat.compressedVideo(withCodec: .h264, transport: .annexB)
+  let config = VideoStreamConfiguration(
     format: format,
     framesPerSecond: 30,
     rateControl: nil,

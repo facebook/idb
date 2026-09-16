@@ -69,10 +69,13 @@ protocol SimulatorVideoStreamFramePusher: AnyObject {
     frameDuration: CFTimeInterval,
     forceKeyFrame: Bool
   ) throws
+  /// The source surface changed while the frame was being read; counted in the pusher's stats.
+  func recordTornFrame()
   func currentStats() -> VideoEncoderStats?
 }
 
 extension SimulatorVideoStreamFramePusher {
+  func recordTornFrame() {}
   func currentStats() -> VideoEncoderStats? { nil }
 }
 
@@ -239,7 +242,7 @@ final class SimulatorVideoStreamFramePusher_Bitmap: SimulatorVideoStreamFramePus
 /// additionally read by `currentStats()` from other isolation domains, so it alone is guarded by
 /// `statsLock`.
 final class SimulatorVideoStreamFramePusher_VideoToolbox: SimulatorVideoStreamFramePusher, @unchecked Sendable {
-  let configuration: FBVideoStreamConfiguration
+  let configuration: VideoStreamConfiguration
   let compressionSessionProperties: [String: Any]
   let videoCodec: CMVideoCodecType
   let outputMode: VideoToolboxOutputMode
@@ -253,7 +256,6 @@ final class SimulatorVideoStreamFramePusher_VideoToolbox: SimulatorVideoStreamFr
   private let minicapFrameWriter = MinicapFrameWriter()
 
   var compressionSession: VTCompressionSession?
-  var scaledPixelBufferPool: CVPixelBufferPool?
   var nv12PixelBufferPool: CVPixelBufferPool?
   var pixelTransferSession: VTPixelTransferSession?
 
@@ -275,7 +277,7 @@ final class SimulatorVideoStreamFramePusher_VideoToolbox: SimulatorVideoStreamFr
   }
 
   init(
-    configuration: FBVideoStreamConfiguration,
+    configuration: VideoStreamConfiguration,
     compressionSessionProperties: [String: Any],
     videoCodec: CMVideoCodecType,
     consumer: any FBDataConsumer,
@@ -487,18 +489,14 @@ final class SimulatorVideoStreamFramePusher_VideoToolbox: SimulatorVideoStreamFr
       throw SimulatorVideoStreamError.compressionSessionNil
     }
 
-    // Resolve `.automatic` rate control: when neither a bitrate nor a quality was specified, target
-    // a constant bits-per-pixel budget at the actual encoded size. Without an AverageBitRate the
-    // low-latency hardware encoder falls back to its internal default (~2 Mbps regardless of
-    // resolution), which macroblocks full-screen motion badly at retina sizes; the Quality property
-    // is accepted but ignored by that encoder, so it cannot serve as the default either.
+    // Compressed video resolves its rate control here, where the encoded size is known.
     var sessionProperties = compressionSessionProperties
-    if sessionProperties[kVTCompressionPropertyKey_AverageBitRate as String] == nil,
-      sessionProperties[kVTCompressionPropertyKey_Quality as String] == nil
-    {
-      let automaticBitRate = Self.automaticAverageBitRate(width: destinationWidth, height: destinationHeight)
-      sessionProperties[kVTCompressionPropertyKey_AverageBitRate as String] = automaticBitRate
-      logger.info().log("Derived automatic average bitrate \(automaticBitRate) bps for w=\(destinationWidth)/h=\(destinationHeight)")
+    if case .compressedVideo = configuration.format {
+      let rateProperties = Self.compressedVideoRateControlProperties(
+        rateControl: configuration.rateControl, width: destinationWidth, height: destinationHeight)
+      sessionProperties.merge(rateProperties) { _, resolved in resolved }
+      logger.info().log(
+        "Rate control \(configuration.rateControl) resolved to \(rateProperties[kVTCompressionPropertyKey_AverageBitRate as String] ?? 0) bps average for w=\(destinationWidth)/h=\(destinationHeight)")
     }
 
     let propertiesStatus = VTSessionSetProperties(compressionSession, propertyDictionary: sessionProperties as CFDictionary)
@@ -520,16 +518,57 @@ final class SimulatorVideoStreamFramePusher_VideoToolbox: SimulatorVideoStreamFr
     width * height * 4
   }
 
-  static func encoderSpecification(for format: FBVideoStreamFormat) -> [String: Any] {
-    if case .mjpeg(encoder: .allowSoftware) = format {
+  /// The quality at which `.quality` meets the `.automatic` budget; the budget scales linearly with
+  /// quality either side of it, so 1.0 is a third more than automatic and 0.25 a third of it.
+  static let automaticEquivalentQuality = 0.75
+
+  /// The average bitrate a `.quality` rate control means for compressed video at this output size.
+  static func averageBitRate(width: Int, height: Int, quality: Double) -> Int {
+    let clamped = min(max(quality, 0.01), 1.0)
+    return Int(Double(automaticAverageBitRate(width: width, height: height)) * clamped / automaticEquivalentQuality)
+  }
+
+  /// The rate-control properties for an H.264/HEVC session at its encoded output size. The
+  /// low-latency hardware encoder accepts the `Quality` property but ignores it and, given no
+  /// `AverageBitRate`, falls back to an internal default (~2 Mbps regardless of resolution) that
+  /// macroblocks full-screen motion at retina sizes — so every strategy resolves to an average
+  /// bitrate here. `DataRateLimits` bounds any one-second window to 1.5× that average: enough for a
+  /// keyframe, not for the unbounded burst that stalls a pipe or socket consumer.
+  static func compressedVideoRateControlProperties(rateControl: VideoStreamRateControl, width: Int, height: Int) -> [String: Any] {
+    let averageBitRate: Int
+    switch rateControl {
+    case .automatic:
+      averageBitRate = automaticAverageBitRate(width: width, height: height)
+    case let .quality(quality):
+      averageBitRate = Self.averageBitRate(width: width, height: height, quality: quality)
+    case let .bitrate(bitrate):
+      averageBitRate = bitrate
+    }
+    let burstBytesPerSecond = averageBitRate * 3 / 16
+    return [
+      kVTCompressionPropertyKey_AverageBitRate as String: averageBitRate,
+      kVTCompressionPropertyKey_DataRateLimits as String: [NSNumber(value: burstBytesPerSecond), NSNumber(value: 1)],
+    ]
+  }
+
+  static func encoderSpecification(for format: VideoStreamFormat) -> [String: Any] {
+    switch format {
+    case .mjpeg(encoder: .allowSoftware):
       return [
         kVTVideoEncoderSpecification_EnableHardwareAcceleratedVideoEncoder as String: true
       ]
+    case .mjpeg(encoder: .requireHardware), .minicap, .bgra:
+      return [
+        kVTVideoEncoderSpecification_RequireHardwareAcceleratedVideoEncoder as String: true
+      ]
+    case .compressedVideo:
+      // Low-latency rate control exists only on the H.264/HEVC encoders; a JPEG session refuses to
+      // be created with it requested.
+      return [
+        kVTVideoEncoderSpecification_RequireHardwareAcceleratedVideoEncoder as String: true,
+        kVTVideoEncoderSpecification_EnableLowLatencyRateControl as String: true,
+      ]
     }
-    return [
-      kVTVideoEncoderSpecification_RequireHardwareAcceleratedVideoEncoder as String: true,
-      kVTVideoEncoderSpecification_EnableLowLatencyRateControl as String: true,
-    ]
   }
 
   func tearDown() throws {
@@ -542,7 +581,6 @@ final class SimulatorVideoStreamFramePusher_VideoToolbox: SimulatorVideoStreamFr
       VTPixelTransferSessionInvalidate(pixelTransferSession)
       self.pixelTransferSession = nil
     }
-    self.scaledPixelBufferPool = nil
     self.nv12PixelBufferPool = nil
   }
 
@@ -577,7 +615,7 @@ final class SimulatorVideoStreamFramePusher_VideoToolbox: SimulatorVideoStreamFr
       }
     }
 
-    let time = CMTimeMakeWithSeconds(CFAbsoluteTimeGetCurrent() - timeAtFirstFrame, preferredTimescale: Int32(NSEC_PER_SEC))
+    let time = CMTimeMakeWithSeconds(ProcessInfo.processInfo.systemUptime - timeAtFirstFrame, preferredTimescale: Int32(NSEC_PER_SEC))
     let duration = frameDuration > 0 ? CMTimeMakeWithSeconds(frameDuration, preferredTimescale: Int32(NSEC_PER_SEC)) : CMTime.invalid
     var frameProperties: [String: Any]?
     if frameNumber == 0 || forceKeyFrame {
@@ -600,18 +638,6 @@ final class SimulatorVideoStreamFramePusher_VideoToolbox: SimulatorVideoStreamFr
       }
     }
 
-    // Lock the source buffer for read-only access during the encode call. For
-    // IOSurface-backed buffers this prevents the simulator from writing while
-    // VTCompressionSession reads the pixel data, avoiding screen tearing.
-    // VTCompressionSessionEncodeFrame captures the pixel data before returning
-    // so we can unlock immediately after.
-    //
-    // Check the IOSurface seed before and after to detect if the surface was
-    // modified during the encode (which would indicate a torn frame despite
-    // the advisory lock).
-    let surface = CVPixelBufferGetIOSurface(bufferToWrite)?.takeUnretainedValue()
-    let seedBefore = surface.map { IOSurfaceGetSeed($0) } ?? 0
-    CVPixelBufferLockBaseAddress(bufferToWrite, .readOnly)
     let status = VTCompressionSessionEncodeFrame(
       compressionSession,
       imageBuffer: bufferToWrite,
@@ -621,20 +647,17 @@ final class SimulatorVideoStreamFramePusher_VideoToolbox: SimulatorVideoStreamFr
       infoFlagsOut: nil,
       outputHandler: handler
     )
-    CVPixelBufferUnlockBaseAddress(bufferToWrite, .readOnly)
 
     let encodeEnd = CFAbsoluteTimeGetCurrent()
     withStats { $0.totalEncodeSubmitSeconds += (encodeEnd - encodeStart) }
 
-    if let surface {
-      let seedAfter = IOSurfaceGetSeed(surface)
-      if seedAfter != seedBefore {
-        withStats { $0.tornFrameCount += 1 }
-      }
-    }
     if status != 0 {
       throw SimulatorVideoStreamError.failedToCompress(status: status)
     }
+  }
+
+  func recordTornFrame() {
+    withStats { $0.tornFrameCount += 1 }
   }
 
   func currentStats() -> VideoEncoderStats? {

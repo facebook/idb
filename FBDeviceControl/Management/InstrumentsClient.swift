@@ -238,7 +238,7 @@ final class InstrumentsClient {
 
   // MARK: - Public
 
-  func launchApplication(_ configuration: FBApplicationLaunchConfiguration) -> FBFuture<NSNumber> {
+  func launchApplication(_ configuration: ApplicationLaunchConfiguration) -> FBFuture<NSNumber> {
     FBFuture<AnyObject>.onQueue(
       queue,
       resolve: { [self] () -> FBFuture<AnyObject> in

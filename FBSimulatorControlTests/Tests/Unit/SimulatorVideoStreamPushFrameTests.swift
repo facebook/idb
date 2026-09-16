@@ -15,7 +15,7 @@ import XCTest
 /// through a recording pusher installed in place of the real one.
 final class SimulatorVideoStreamPushFrameTests: XCTestCase {
 
-  private static let lazyConfiguration = FBVideoStreamConfiguration(
+  private static let lazyConfiguration = VideoStreamConfiguration(
     format: .bgra, framesPerSecond: nil, rateControl: nil, scaleFactor: nil, keyFrameRate: nil)
 
   private struct Started {
@@ -38,7 +38,7 @@ final class SimulatorVideoStreamPushFrameTests: XCTestCase {
     return Started(stream: stream, pusher: pusher, ioSurface: ioSurface, logger: logger)
   }
 
-  func testFrameTimingReferenceIsTheWallClock() async throws {
+  func testFrameTimingReferenceIsTheMonotonicClock() async throws {
     let started = try await startStream()
     defer { Task { try? await started.stream.stopStreaming() } }
 
@@ -48,15 +48,12 @@ final class SimulatorVideoStreamPushFrameTests: XCTestCase {
     let writes = started.pusher.writes
     XCTAssertEqual(writes.count, 2)
     let reference = try XCTUnwrap(writes.first?.timeAtFirstFrame)
-    // BUG: frames are timed against CFAbsoluteTimeGetCurrent, which steps with NTP adjustments and can
-    // hand the encoder a non-increasing timestamp — flipped to the monotonic uptime clock in the
-    // following commit.
-    XCTAssertEqual(reference, CFAbsoluteTimeGetCurrent(), accuracy: 5, "frame timing reference must be a wall-clock reading")
+    XCTAssertEqual(reference, ProcessInfo.processInfo.systemUptime, accuracy: 5, "frame timing reference must be a monotonic uptime reading")
     XCTAssertEqual(writes[1].timeAtFirstFrame, reference, "every frame shares the first frame's reference time")
     XCTAssertGreaterThanOrEqual(writes[1].frameDuration, 0)
   }
 
-  func testEncodeSubmissionFailureIsSwallowed() async throws {
+  func testEncodeSubmissionFailureIsLogged() async throws {
     let started = try await startStream()
     defer { Task { try? await started.stream.stopStreaming() } }
     started.pusher.error = SimulatorVideoStreamError.failedToCompress(status: -12902)
@@ -65,11 +62,10 @@ final class SimulatorVideoStreamPushFrameTests: XCTestCase {
 
     XCTAssertEqual(started.pusher.writes.count, 1)
     let encodeFailureLogs = started.logger.messages.compactMap { $0 as? String }.filter { $0.contains("-12902") }
-    // BUG: a frame the encoder refuses leaves no trace — flipped to a logged failure in the following commit.
-    XCTAssertEqual(encodeFailureLogs, [])
+    XCTAssertEqual(encodeFailureLogs.count, 1, "an encode submission failure must be logged once: \(started.logger.messages)")
   }
 
-  func testSurfaceWrittenDuringPushIsNotCountedAsTorn() async throws {
+  func testSurfaceWrittenDuringPushIsCountedAsTorn() async throws {
     let started = try await startStream()
     defer { Task { try? await started.stream.stopStreaming() } }
     let ioSurface = started.ioSurface
@@ -84,9 +80,7 @@ final class SimulatorVideoStreamPushFrameTests: XCTestCase {
 
     XCTAssertEqual(started.pusher.writes.count, 1)
     let stats = await started.stream.currentEncoderStats()
-    // BUG: tearing is checked on the encoder's private NV12 copy, which nothing else writes, so a
-    // surface modified mid-read is never counted — flipped to 1 in the following commit.
-    XCTAssertEqual(stats.tornFrameCount, 0)
+    XCTAssertEqual(stats.tornFrameCount, 1)
   }
 }
 
@@ -103,11 +97,22 @@ private final class RecordingFramePusher: SimulatorVideoStreamFramePusher, @unch
 
   private let lock = NSLock()
   private var recorded: [Write] = []
+  private var tornFrameCount: UInt = 0
   var error: Error?
   var onWrite: (() -> Void)?
 
   var writes: [Write] {
     lock.withLock { recorded }
+  }
+
+  func recordTornFrame() {
+    lock.withLock { tornFrameCount += 1 }
+  }
+
+  func currentStats() -> VideoEncoderStats? {
+    var stats = VideoEncoderStats()
+    stats.tornFrameCount = lock.withLock { tornFrameCount }
+    return stats
   }
 
   func setup(with pixelBuffer: CVPixelBuffer, edgeInsets: VideoStreamEdgeInsets) throws {}

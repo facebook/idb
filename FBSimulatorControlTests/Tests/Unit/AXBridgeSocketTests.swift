@@ -148,7 +148,7 @@ final class AXBridgeSocketTests: XCTestCase {
 
   // A guest whose process is already gone, signalled before it could bind.
   private func exitedGuest(pid: pid_t, signal: Int32) -> FBSubprocess<AnyObject, AnyObject, AnyObject> {
-    let configuration = FBProcessSpawnConfiguration(
+    let configuration = ProcessSpawnConfiguration(
       launchPath: "/usr/bin/true",
       arguments: [],
       environment: [:],

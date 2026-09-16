@@ -333,7 +333,7 @@ public final class MacDevice: NSObject, FBiOSTarget {
     return FBFuture(result: NSNull())
   }
 
-  public func launchApplication(_ configuration: FBApplicationLaunchConfiguration) -> FBFuture<MacLaunchedApplication> {
+  public func launchApplication(_ configuration: ApplicationLaunchConfiguration) -> FBFuture<MacLaunchedApplication> {
     guard let bundle = bundleIDToProductMap[configuration.bundleID] else {
       return FBFuture(error: MacDeviceError.applicationNotFound(bundleID: configuration.bundleID))
     }
@@ -420,7 +420,7 @@ public final class MacDevice: NSObject, FBiOSTarget {
 extension MacDevice: ProcessSpawnCommands {
 
   public func launchProcess(
-    _ configuration: FBProcessSpawnConfiguration
+    _ configuration: ProcessSpawnConfiguration
   ) async throws -> FBSubprocess<AnyObject, AnyObject, AnyObject> {
     let logger = self.logger
     return try await bridgeFBFuture(FBSubprocess<AnyObject, AnyObject, AnyObject>.launchProcess(with: configuration, logger: logger))
@@ -483,7 +483,7 @@ extension MacDevice: ApplicationCommands {
     try await bridgeFBFutureVoid(uninstallApplication(withBundleID: bundleID))
   }
 
-  public func launch(_ configuration: FBApplicationLaunchConfiguration) async throws -> FBLaunchedApplication {
+  public func launch(_ configuration: ApplicationLaunchConfiguration) async throws -> FBLaunchedApplication {
     try await bridgeFBFuture(launchApplication(configuration))
   }
 

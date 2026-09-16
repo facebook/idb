@@ -9,7 +9,7 @@ import Foundation
 
 public protocol ApplicationLaunching {
 
-  func launch(_ configuration: FBApplicationLaunchConfiguration) async throws -> FBLaunchedApplication
+  func launch(_ configuration: ApplicationLaunchConfiguration) async throws -> FBLaunchedApplication
 }
 
 public protocol ApplicationCommands: ApplicationLaunching {

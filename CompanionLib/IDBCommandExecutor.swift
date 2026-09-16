@@ -375,13 +375,13 @@ public final class IDBCommandExecutor {
     }
   }
 
-  public func launch_app(_ configuration: FBApplicationLaunchConfiguration) async throws -> FBLaunchedApplication {
+  public func launch_app(_ configuration: ApplicationLaunchConfiguration) async throws -> FBLaunchedApplication {
     var replacements: [String: String] = [:]
     replacements.merge(storageManager.replacementMapping) { _, new in new }
     replacements.merge(target.replacementMapping()) { _, new in new }
     let environment = applyEnvironmentReplacements(configuration.environment, replacements: replacements)
 
-    let derived = FBApplicationLaunchConfiguration(
+    let derived = ApplicationLaunchConfiguration(
       bundleID: configuration.bundleID,
       bundleName: configuration.bundleName,
       arguments: configuration.arguments,

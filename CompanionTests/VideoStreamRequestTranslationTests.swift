@@ -17,7 +17,7 @@ final class VideoStreamRequestTranslationTests: XCTestCase {
 
   private func configuration(
     _ mutate: (inout Idb_VideoStreamRequest.Start) -> Void = { _ in }
-  ) -> FBVideoStreamConfiguration {
+  ) -> VideoStreamConfiguration {
     var start = Idb_VideoStreamRequest.Start()
     mutate(&start)
     return VideoStreamRequestTranslation.configuration(from: start)

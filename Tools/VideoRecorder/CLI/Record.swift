@@ -106,7 +106,7 @@ struct Record: AsyncParsableCommand {
 
 enum RecordingEncoding: String, ExpressibleByArgument {
   case h264, hevc, mjpeg, auto
-  var format: FBVideoStreamFormat {
+  var format: VideoStreamFormat {
     switch self {
     case .h264: return .compressedVideo(withCodec: .h264, transport: .annexB)
     case .hevc, .auto: return .compressedVideo(withCodec: .hevc, transport: .annexB)

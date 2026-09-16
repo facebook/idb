@@ -35,7 +35,7 @@ public final class ProcessSpawnCommandHelpers: NSObject {
     exitCodeFuture: FBMutableFuture<NSNumber>,
     signalFuture: FBMutableFuture<NSNumber>,
     processIdentifier: pid_t,
-    configuration: FBProcessSpawnConfiguration,
+    configuration: ProcessSpawnConfiguration,
     queue: DispatchQueue,
     logger: (any FBControlCoreLogger)?
   ) {

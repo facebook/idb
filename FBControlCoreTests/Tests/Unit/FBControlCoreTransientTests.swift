@@ -21,9 +21,9 @@ final class FBControlCoreTransientTests: XCTestCase {
   private func makeAppLaunch(
     bundleID: String = "com.test.host",
     bundleName: String? = nil,
-    launchMode: FBApplicationLaunchMode = .failIfRunning
-  ) -> FBApplicationLaunchConfiguration {
-    return FBApplicationLaunchConfiguration(
+    launchMode: ApplicationLaunchMode = .failIfRunning
+  ) -> ApplicationLaunchConfiguration {
+    return ApplicationLaunchConfiguration(
       bundleID: bundleID,
       bundleName: bundleName,
       arguments: [],
@@ -163,12 +163,12 @@ final class FBControlCoreTransientTests: XCTestCase {
     XCTAssertEqual(a.hash, b.hash)
   }
 
-  // MARK: - FBApplicationLaunchConfiguration
+  // MARK: - ApplicationLaunchConfiguration
 
   func testApplicationLaunchConfigurationEquality() {
     let io = makeIO()
-    let a = FBApplicationLaunchConfiguration(bundleID: "com.app", bundleName: "App", arguments: [], environment: [:], waitForDebugger: false, io: io, launchMode: .failIfRunning)
-    let b = FBApplicationLaunchConfiguration(bundleID: "com.app", bundleName: "App", arguments: [], environment: [:], waitForDebugger: false, io: io, launchMode: .failIfRunning)
+    let a = ApplicationLaunchConfiguration(bundleID: "com.app", bundleName: "App", arguments: [], environment: [:], waitForDebugger: false, io: io, launchMode: .failIfRunning)
+    let b = ApplicationLaunchConfiguration(bundleID: "com.app", bundleName: "App", arguments: [], environment: [:], waitForDebugger: false, io: io, launchMode: .failIfRunning)
 
     XCTAssertEqual(a, b)
   }
@@ -181,7 +181,7 @@ final class FBControlCoreTransientTests: XCTestCase {
   }
 
   func testApplicationLaunchConfigurationDescription() {
-    let config = FBApplicationLaunchConfiguration(
+    let config = ApplicationLaunchConfiguration(
       bundleID: "com.example.app",
       bundleName: "MyApp",
       arguments: [],
@@ -195,10 +195,10 @@ final class FBControlCoreTransientTests: XCTestCase {
     XCTAssertTrue(config.description.contains("MyApp"))
   }
 
-  // MARK: - FBProcessSpawnConfiguration
+  // MARK: - ProcessSpawnConfiguration
 
   func testProcessSpawnConfigurationProcessName() {
-    let config = FBProcessSpawnConfiguration(
+    let config = ProcessSpawnConfiguration(
       launchPath: "/usr/local/bin/my_tool",
       arguments: [],
       environment: [:],
@@ -211,22 +211,22 @@ final class FBControlCoreTransientTests: XCTestCase {
 
   func testProcessSpawnConfigurationEquality() {
     let io = makeIO()
-    let a = FBProcessSpawnConfiguration(launchPath: "/usr/bin/env", arguments: ["a"], environment: ["K": "V"], io: io, mode: .posixSpawn)
-    let b = FBProcessSpawnConfiguration(launchPath: "/usr/bin/env", arguments: ["a"], environment: ["K": "V"], io: io, mode: .posixSpawn)
+    let a = ProcessSpawnConfiguration(launchPath: "/usr/bin/env", arguments: ["a"], environment: ["K": "V"], io: io, mode: .posixSpawn)
+    let b = ProcessSpawnConfiguration(launchPath: "/usr/bin/env", arguments: ["a"], environment: ["K": "V"], io: io, mode: .posixSpawn)
 
     XCTAssertEqual(a, b)
   }
 
   func testProcessSpawnConfigurationInequalityByMode() {
     let io = makeIO()
-    let a = FBProcessSpawnConfiguration(launchPath: "/usr/bin/env", arguments: [], environment: [:], io: io, mode: .posixSpawn)
-    let b = FBProcessSpawnConfiguration(launchPath: "/usr/bin/env", arguments: [], environment: [:], io: io, mode: .launchd)
+    let a = ProcessSpawnConfiguration(launchPath: "/usr/bin/env", arguments: [], environment: [:], io: io, mode: .posixSpawn)
+    let b = ProcessSpawnConfiguration(launchPath: "/usr/bin/env", arguments: [], environment: [:], io: io, mode: .launchd)
 
     XCTAssertNotEqual(a, b)
   }
 
   func testProcessSpawnConfigurationDescription() {
-    let config = FBProcessSpawnConfiguration(
+    let config = ProcessSpawnConfiguration(
       launchPath: "/usr/bin/env",
       arguments: ["--help"],
       environment: [:],

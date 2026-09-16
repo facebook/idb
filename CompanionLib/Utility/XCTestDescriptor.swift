@@ -215,7 +215,7 @@ final class XCodebuildTestRunDescriptor: XCTestDescriptor, CustomStringConvertib
     let properties = try XCTestRunFileReader.readContents(of: url, expandPlaceholderWithPath: targetAuxillaryDirectory)
 
     let io = FBProcessIO<AnyObject, AnyObject, AnyObject>(stdIn: nil, stdOut: nil, stdErr: nil)
-    let launchConfig = FBApplicationLaunchConfiguration(
+    let launchConfig = ApplicationLaunchConfiguration(
       bundleID: "not.used.bundleId",
       bundleName: nil,
       arguments: request.arguments,
@@ -250,7 +250,7 @@ final class XCodebuildTestRunDescriptor: XCTestDescriptor, CustomStringConvertib
 
 // MARK: - Private Helper
 
-private func buildAppLaunchConfig(bundleID: String, environment: [String: String], arguments: [String], logger: FBControlCoreLogger, processLogDirectory: String?, waitForDebugger: Bool) async throws -> FBApplicationLaunchConfiguration {
+private func buildAppLaunchConfig(bundleID: String, environment: [String: String], arguments: [String], logger: FBControlCoreLogger, processLogDirectory: String?, waitForDebugger: Bool) async throws -> ApplicationLaunchConfiguration {
   let stdOutConsumer = FBLoggingDataConsumer(logger: logger)
   let stdErrConsumer = FBLoggingDataConsumer(logger: logger)
 
@@ -276,13 +276,13 @@ private func mirroredConsumer(_ future: FBFuture<AnyObject>) async throws -> FBD
   return consumer
 }
 
-private func applicationLaunchConfiguration(bundleID: String, environment: [String: String], arguments: [String], waitForDebugger: Bool, stdOut: FBDataConsumer, stdErr: FBDataConsumer) -> FBApplicationLaunchConfiguration {
+private func applicationLaunchConfiguration(bundleID: String, environment: [String: String], arguments: [String], waitForDebugger: Bool, stdOut: FBDataConsumer, stdErr: FBDataConsumer) -> ApplicationLaunchConfiguration {
   let io = FBProcessIO<AnyObject, AnyObject, AnyObject>(
     stdIn: nil,
     stdOut: FBProcessOutput<AnyObject>(for: stdOut),
     stdErr: FBProcessOutput<AnyObject>(for: stdErr)
   )
-  return FBApplicationLaunchConfiguration(
+  return ApplicationLaunchConfiguration(
     bundleID: bundleID,
     bundleName: nil,
     arguments: arguments,

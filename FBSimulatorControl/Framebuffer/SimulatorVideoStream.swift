@@ -107,7 +107,7 @@ enum VideoStreamCadence {
   case eager(framesPerSecond: UInt)
 }
 
-private extension FBVideoStreamCodec {
+private extension VideoStreamCodec {
   var videoToolboxCodec: CMVideoCodecType {
     switch self {
     case .h264:
@@ -157,7 +157,7 @@ public actor SimulatorVideoStream: FBVideoStream {
   // MARK: - Properties
 
   let framebuffer: Framebuffer
-  let configuration: FBVideoStreamConfiguration
+  let configuration: VideoStreamConfiguration
   let edgeInsets: VideoStreamEdgeInsets
   let cadence: VideoStreamCadence
   /// When set (recording), encoded `.compressed` frames are routed to this sink — an `SimulatorVideoFileWriter`
@@ -241,12 +241,12 @@ public actor SimulatorVideoStream: FBVideoStream {
   // MARK: - Initializers
 
   /// Makes a stream with no edge insets. Cadence is derived from `configuration.framesPerSecond`.
-  public static func make(framebuffer: Framebuffer, configuration: FBVideoStreamConfiguration, logger: any FBControlCoreLogger) -> SimulatorVideoStream {
+  public static func make(framebuffer: Framebuffer, configuration: VideoStreamConfiguration, logger: any FBControlCoreLogger) -> SimulatorVideoStream {
     make(framebuffer: framebuffer, configuration: configuration, edgeInsets: VideoStreamEdgeInsets(top: 0, bottom: 0, left: 0, right: 0), logger: logger)
   }
 
   /// Makes a stream whose output frame is extended by `edgeInsets` (reserved for overlay content).
-  public static func make(framebuffer: Framebuffer, configuration: FBVideoStreamConfiguration, edgeInsets: VideoStreamEdgeInsets, logger: any FBControlCoreLogger) -> SimulatorVideoStream {
+  public static func make(framebuffer: Framebuffer, configuration: VideoStreamConfiguration, edgeInsets: VideoStreamEdgeInsets, logger: any FBControlCoreLogger) -> SimulatorVideoStream {
     SimulatorVideoStream(
       framebuffer: framebuffer,
       configuration: configuration,
@@ -258,7 +258,7 @@ public actor SimulatorVideoStream: FBVideoStream {
   /// Constructs a recording stream: encoded `.compressed` frames are muxed into a file via `fileWriter`
   /// rather than byte-framed to an `FBDataConsumer`. `edgeInsets` (default zero) reserves overlay bar
   /// regions exactly as on the streaming path. Cadence is derived from `configuration.framesPerSecond`.
-  static func makeRecorder(framebuffer: Framebuffer, configuration: FBVideoStreamConfiguration, edgeInsets: VideoStreamEdgeInsets = VideoStreamEdgeInsets(top: 0, bottom: 0, left: 0, right: 0), fileWriter: SimulatorVideoFileWriter, logger: any FBControlCoreLogger) -> SimulatorVideoStream {
+  static func makeRecorder(framebuffer: Framebuffer, configuration: VideoStreamConfiguration, edgeInsets: VideoStreamEdgeInsets = VideoStreamEdgeInsets(top: 0, bottom: 0, left: 0, right: 0), fileWriter: SimulatorVideoFileWriter, logger: any FBControlCoreLogger) -> SimulatorVideoStream {
     return SimulatorVideoStream(
       framebuffer: framebuffer,
       configuration: configuration,
@@ -269,7 +269,7 @@ public actor SimulatorVideoStream: FBVideoStream {
   }
 
   /// Makes and starts a stream to `consumer`.
-  public static func start(framebuffer: Framebuffer, configuration: FBVideoStreamConfiguration, edgeInsets: VideoStreamEdgeInsets = VideoStreamEdgeInsets(top: 0, bottom: 0, left: 0, right: 0), to consumer: any FBDataConsumer, logger: any FBControlCoreLogger) async throws -> SimulatorVideoStream {
+  public static func start(framebuffer: Framebuffer, configuration: VideoStreamConfiguration, edgeInsets: VideoStreamEdgeInsets = VideoStreamEdgeInsets(top: 0, bottom: 0, left: 0, right: 0), to consumer: any FBDataConsumer, logger: any FBControlCoreLogger) async throws -> SimulatorVideoStream {
     let stream = make(framebuffer: framebuffer, configuration: configuration, edgeInsets: edgeInsets, logger: logger)
     try await stream.startStreaming(consumer)
     return stream
@@ -277,14 +277,14 @@ public actor SimulatorVideoStream: FBVideoStream {
 
   /// Eager (constant-frame-rate) when a positive `framesPerSecond` is set, else lazy (variable-rate,
   /// driven by damage events).
-  private static func cadence(for configuration: FBVideoStreamConfiguration) -> VideoStreamCadence {
+  private static func cadence(for configuration: VideoStreamConfiguration) -> VideoStreamCadence {
     guard let framesPerSecond = configuration.framesPerSecond, framesPerSecond > 0 else {
       return .lazy
     }
     return .eager(framesPerSecond: UInt(framesPerSecond))
   }
 
-  init(framebuffer: Framebuffer, configuration: FBVideoStreamConfiguration, edgeInsets: VideoStreamEdgeInsets, cadence: VideoStreamCadence, logger: any FBControlCoreLogger, encodedSampleConsumerOverride: EncodedSampleConsumer? = nil) {
+  init(framebuffer: Framebuffer, configuration: VideoStreamConfiguration, edgeInsets: VideoStreamEdgeInsets, cadence: VideoStreamCadence, logger: any FBControlCoreLogger, encodedSampleConsumerOverride: EncodedSampleConsumer? = nil) {
     self.framebuffer = framebuffer
     self.configuration = configuration
     self.edgeInsets = edgeInsets
@@ -626,7 +626,9 @@ public actor SimulatorVideoStream: FBVideoStream {
       return
     }
 
-    let now = CFAbsoluteTimeGetCurrent()
+    // Uptime is monotonic; the wall clock steps under NTP and can hand the encoder (and a file
+    // writer) a timestamp earlier than the previous frame's.
+    let now = ProcessInfo.processInfo.systemUptime
     let frameNumber = self.frameNumber
     if frameNumber == 0 {
       timeAtFirstFrame = now
@@ -634,6 +636,14 @@ public actor SimulatorVideoStream: FBVideoStream {
     let timeAtFirstFrame = self.timeAtFirstFrame
     let frameDuration = timeAtLastPush > 0 ? (now - timeAtLastPush) : 0
     timeAtLastPush = now
+
+    // The simulator's render server writes into the mounted surface; the lock is advisory, so the
+    // seed is compared across the read to count frames it wrote into anyway. Every read of the
+    // source happens inside this window — the overlay composite and the pusher's colour conversion —
+    // and nothing after it touches the source.
+    let sourceSurface = CVPixelBufferGetIOSurface(pixelBuffer)?.takeUnretainedValue()
+    let seedBefore = sourceSurface.map { IOSurfaceGetSeed($0) }
+    CVPixelBufferLockBaseAddress(pixelBuffer, .readOnly)
 
     // Composite the overlay buffer over the source frame, or apply edge inset padding.
     // When any edge inset > 0, every frame must be composited to match the output dimensions
@@ -649,12 +659,21 @@ public actor SimulatorVideoStream: FBVideoStream {
       }
     }
 
-    try? framePusher.writeEncodedFrame(
-      bufferToEncode,
-      frameNumber: frameNumber,
-      timeAtFirstFrame: timeAtFirstFrame,
-      frameDuration: frameDuration,
-      forceKeyFrame: forceKeyFrame)
+    do {
+      try framePusher.writeEncodedFrame(
+        bufferToEncode,
+        frameNumber: frameNumber,
+        timeAtFirstFrame: timeAtFirstFrame,
+        frameDuration: frameDuration,
+        forceKeyFrame: forceKeyFrame)
+    } catch {
+      logger.log("Failed to submit frame \(frameNumber) for encoding: \(error)")
+    }
+
+    CVPixelBufferUnlockBaseAddress(pixelBuffer, .readOnly)
+    if let sourceSurface, let seedBefore, IOSurfaceGetSeed(sourceSurface) != seedBefore {
+      framePusher.recordTornFrame()
+    }
 
     self.frameNumber = frameNumber + 1
   }
@@ -662,29 +681,29 @@ public actor SimulatorVideoStream: FBVideoStream {
   // MARK: - Compression Properties
 
   /// The `VTSessionSetProperties` dictionary for `configuration`, with `callerProperties` layered on top.
-  public static func compressionSessionProperties(for configuration: FBVideoStreamConfiguration, callerProperties: [String: Any]) -> [String: Any] {
+  public static func compressionSessionProperties(for configuration: VideoStreamConfiguration, callerProperties: [String: Any]) -> [String: Any] {
     var derived: [String: Any] = [
       kVTCompressionPropertyKey_RealTime as String: true,
       kVTCompressionPropertyKey_AllowFrameReordering as String: false,
       kVTCompressionPropertyKey_MaxFrameDelayCount as String: 0,
     ]
 
-    switch configuration.rateControl {
-    case .automatic:
-      // JPEG formats honor the quality knob (the value the pre-automatic default used). For
-      // H.264/HEVC no rate key is set here: the VideoToolbox pusher derives an average bitrate at
-      // session setup, where the encoded output dimensions are known.
-      switch configuration.format {
-      case .mjpeg, .minicap:
+    switch configuration.format {
+    case .compressedVideo:
+      // Resolved by the VideoToolbox pusher at session setup, where the encoded output dimensions
+      // are known (see `compressedVideoRateControlProperties`).
+      break
+    case .mjpeg, .minicap, .bgra:
+      switch configuration.rateControl {
+      case .automatic:
+        // JPEG formats honor the quality knob (the value the pre-automatic default used).
         derived[kVTCompressionPropertyKey_Quality as String] = 0.75
-      case .compressedVideo, .bgra:
-        break
+      case let .bitrate(bitrate):
+        // Explicit bitrate: AverageBitRate is in bits/sec
+        derived[kVTCompressionPropertyKey_AverageBitRate as String] = bitrate
+      case let .quality(quality):
+        derived[kVTCompressionPropertyKey_Quality as String] = quality
       }
-    case let .bitrate(bitrate):
-      // Explicit bitrate: AverageBitRate is in bits/sec
-      derived[kVTCompressionPropertyKey_AverageBitRate as String] = bitrate
-    case let .quality(quality):
-      derived[kVTCompressionPropertyKey_Quality as String] = quality
     }
 
     for (key, value) in callerProperties {
@@ -698,14 +717,14 @@ public actor SimulatorVideoStream: FBVideoStream {
         derived[kVTCompressionPropertyKey_H264EntropyMode as String] = kVTH264EntropyMode_CABAC as String
       case .hevc:
         derived[kVTCompressionPropertyKey_AllowOpenGOP as String] = false
-        derived[kVTCompressionPropertyKey_ProfileLevel as String] = kVTProfileLevel_HEVC_Main10_AutoLevel as String
+        derived[kVTCompressionPropertyKey_ProfileLevel as String] = kVTProfileLevel_HEVC_Main_AutoLevel as String
       }
     }
     return derived
   }
 
   static func framePusher(
-    configuration: FBVideoStreamConfiguration,
+    configuration: VideoStreamConfiguration,
     compressionSessionProperties: [String: Any],
     consumer: any FBDataConsumer,
     encodedSampleConsumerOverride: EncodedSampleConsumer?,
@@ -735,16 +754,15 @@ public actor SimulatorVideoStream: FBVideoStream {
   }
 
   /// Caller-provided compression session properties. In `.eager` mode these add the fixed frame rate
-  /// (`ExpectedFrameRate`) and a long keyframe interval (`MaxKeyFrameInterval`) suited to a constant
-  /// cadence; in `.lazy` mode there are none (the base, variable-frame-rate value).
+  /// (`ExpectedFrameRate`); in `.lazy` mode there are none (the base, variable-frame-rate value).
+  /// The keyframe cadence is the configuration's `keyFrameRate` duration alone.
   var compressionSessionProperties: [String: Any] {
     switch cadence {
     case .lazy:
       return [:]
     case let .eager(framesPerSecond):
       return [
-        kVTCompressionPropertyKey_ExpectedFrameRate as String: framesPerSecond,
-        kVTCompressionPropertyKey_MaxKeyFrameInterval as String: 360,
+        kVTCompressionPropertyKey_ExpectedFrameRate as String: framesPerSecond
       ]
     }
   }

@@ -74,8 +74,8 @@ struct VideoOptions: ParsableArguments {
     }
   }
 
-  func configuration(format: FBVideoStreamFormat) -> FBVideoStreamConfiguration {
-    let rateControl: FBVideoStreamRateControl?
+  func configuration(format: VideoStreamFormat) -> VideoStreamConfiguration {
+    let rateControl: VideoStreamRateControl?
     if let compressionQuality {
       rateControl = .quality(compressionQuality)
     } else if let avgBitrate {
@@ -83,7 +83,7 @@ struct VideoOptions: ParsableArguments {
     } else {
       rateControl = nil
     }
-    return FBVideoStreamConfiguration(format: format, framesPerSecond: fps.map { Int($0) }, rateControl: rateControl, scaleFactor: scale, keyFrameRate: keyFrameRate)
+    return VideoStreamConfiguration(format: format, framesPerSecond: fps.map { Int($0) }, rateControl: rateControl, scaleFactor: scale, keyFrameRate: keyFrameRate)
   }
 
   @MainActor

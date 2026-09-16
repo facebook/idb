@@ -48,7 +48,7 @@ extension Subprocess {
     let stdOut = output.resolve()
     let stdErr = error.resolve()
     let io = FBProcessIO<AnyObject, AnyObject, AnyObject>(stdIn: nil, stdOut: stdOut.output, stdErr: stdErr.output)
-    let configuration = FBProcessSpawnConfiguration(
+    let configuration = ProcessSpawnConfiguration(
       launchPath: executable,
       arguments: arguments,
       environment: environment.resolved(against: ProcessInfo.processInfo.environment),

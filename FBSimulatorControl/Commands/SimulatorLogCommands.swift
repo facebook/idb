@@ -36,7 +36,7 @@ public struct SimulatorLogCommands: LogCommands {
       stdOut: FBProcessOutput<AnyObject>(for: consumer),
       stdErr: nil
     )
-    let configuration = FBProcessSpawnConfiguration(
+    let configuration = ProcessSpawnConfiguration(
       launchPath: launchPath,
       arguments: streamArguments,
       environment: [:],

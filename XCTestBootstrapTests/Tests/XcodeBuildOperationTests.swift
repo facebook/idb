@@ -18,7 +18,7 @@ final class XcodeBuildOperationTests: XCTestCase {
     let testBundlePath = "/tmp/test_host_path.app/test_bundle_path.xctest"
     let testBundle = FBBundleDescriptor(name: "test.bundle", identifier: "test.bundle", path: testBundlePath, binary: nil)
 
-    let appLaunch = FBApplicationLaunchConfiguration(
+    let appLaunch = ApplicationLaunchConfiguration(
       bundleID: "com.bundle.id",
       bundleName: "BundleName",
       arguments: [],

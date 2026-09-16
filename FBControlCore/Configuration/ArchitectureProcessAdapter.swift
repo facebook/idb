@@ -62,11 +62,11 @@ public enum ArchitectureProcessAdapter {
 
   /// Force binaries to be launched in desired architectures.
   public static func adaptProcessConfiguration(
-    _ processConfiguration: FBProcessSpawnConfiguration,
+    _ processConfiguration: ProcessSpawnConfiguration,
     toAnyArchitectureIn requestedArchitectures: Set<FBArchitecture>,
     hostArchitectures: Set<FBArchitecture> = ArchitectureProcessAdapter.hostMachineSupportedArchitectures(),
     temporaryDirectory: URL
-  ) async throws -> FBProcessSpawnConfiguration {
+  ) async throws -> ProcessSpawnConfiguration {
     guard let architecture = selectArchitecture(from: requestedArchitectures, supportedArchitectures: hostArchitectures) else {
       throw ArchitectureAdapterError.noCompatibleArchitecture(requested: requestedArchitectures.map(\.rawValue), host: hostArchitectures.map(\.rawValue))
     }
@@ -81,7 +81,7 @@ public enum ArchitectureProcessAdapter {
     var updatedEnvironment = processConfiguration.environment as [String: String]
     updatedEnvironment["DYLD_FRAMEWORK_PATH"] = dyldFrameworkPath
     updatedEnvironment["DYLD_LIBRARY_PATH"] = dyldFrameworkPath
-    return FBProcessSpawnConfiguration(
+    return ProcessSpawnConfiguration(
       launchPath: filePath.path,
       arguments: processConfiguration.arguments,
       environment: updatedEnvironment,

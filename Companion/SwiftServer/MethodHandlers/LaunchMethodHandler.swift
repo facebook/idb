@@ -39,7 +39,7 @@ struct LaunchMethodHandler: @unchecked Sendable {
     let io = FBProcessIO<AnyObject, AnyObject, AnyObject>(stdIn: nil, stdOut: stdOut, stdErr: stdErr)
 
     var environment = start.env
-    var launchMode: FBApplicationLaunchMode = start.foregroundIfRunning ? .foregroundIfRunning : .failIfRunning
+    var launchMode: ApplicationLaunchMode = start.foregroundIfRunning ? .foregroundIfRunning : .failIfRunning
     if start.enableRepl {
       // Setup the launch for the REPL (inject libRepl + the IDB_REPL_* vars) and
       // force a relaunch so an already-running, un-injected app picks up the dylib.
@@ -54,7 +54,7 @@ struct LaunchMethodHandler: @unchecked Sendable {
       launchMode = .relaunchIfRunning
     }
 
-    let config = FBApplicationLaunchConfiguration(
+    let config = ApplicationLaunchConfiguration(
       bundleID: start.bundleID,
       bundleName: nil,
       arguments: start.appArgs,

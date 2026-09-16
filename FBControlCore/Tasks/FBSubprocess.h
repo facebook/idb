@@ -11,7 +11,7 @@
 
 static const size_t FBProcessOutputErrorMessageLength = 200;
 
-@class FBProcessSpawnConfiguration;
+@class ProcessSpawnConfiguration;
 
 /**
  A representation of a process that has been launched.
@@ -49,7 +49,7 @@ static const size_t FBProcessOutputErrorMessageLength = 200;
 /**
  The configuration the process was launched with.
  */
-@property (nonnull, nonatomic, readonly, strong) FBProcessSpawnConfiguration *configuration;
+@property (nonnull, nonatomic, readonly, strong) ProcessSpawnConfiguration *configuration;
 
 /**
  Returns the stdin of the task.
@@ -85,7 +85,7 @@ static const size_t FBProcessOutputErrorMessageLength = 200;
  @param queue the queue to perform actions on.
  @return an implementation of FBSubprocess.
  */
-- (nonnull instancetype)initWithProcessIdentifier:(pid_t)processIdentifier statLoc:(nonnull FBFuture<NSNumber *> *)statLoc exitCode:(nonnull FBFuture<NSNumber *> *)exitCode signal:(nonnull FBFuture<NSNumber *> *)signal configuration:(nonnull FBProcessSpawnConfiguration *)configuration queue:(nonnull dispatch_queue_t)queue;
+- (nonnull instancetype)initWithProcessIdentifier:(pid_t)processIdentifier statLoc:(nonnull FBFuture<NSNumber *> *)statLoc exitCode:(nonnull FBFuture<NSNumber *> *)exitCode signal:(nonnull FBFuture<NSNumber *> *)signal configuration:(nonnull ProcessSpawnConfiguration *)configuration queue:(nonnull dispatch_queue_t)queue;
 
 /**
  Launches a process with the provided configuration.
@@ -94,7 +94,7 @@ static const size_t FBProcessOutputErrorMessageLength = 200;
  @param logger an optional logger to log process lifecycle events to.
  @return a future that resolves with the launched process once it has been started.
  */
-+ (nonnull FBFuture<FBSubprocess *> *)launchProcessWithConfiguration:(nonnull FBProcessSpawnConfiguration *)configuration logger:(nullable id<FBControlCoreLogger>)logger;
++ (nonnull FBFuture<FBSubprocess *> *)launchProcessWithConfiguration:(nonnull ProcessSpawnConfiguration *)configuration logger:(nullable id<FBControlCoreLogger>)logger;
 
 #pragma mark Methods
 

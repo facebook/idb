@@ -95,7 +95,7 @@ struct FBProcessBuilderTests {
 
   @Test("FBProcessIO.outputToDevNull cannot be spawned by the host engine")
   func nullDeviceOutputCannotBeSpawnedOnTheHost() async throws {
-    let configuration = FBProcessSpawnConfiguration(
+    let configuration = ProcessSpawnConfiguration(
       launchPath: "/bin/sh",
       arguments: ["-c", "true"],
       environment: [:],

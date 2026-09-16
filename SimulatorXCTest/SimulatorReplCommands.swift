@@ -103,7 +103,7 @@ public struct SimulatorReplCommands {
     let socketPath = "/tmp/idb_repl_\(UUID().uuidString).sock"
 
     let io: FBProcessIO<AnyObject, AnyObject, AnyObject> = .outputToDevNull()
-    let configuration = FBProcessSpawnConfiguration(
+    let configuration = ProcessSpawnConfiguration(
       launchPath: bridgePath,
       arguments: ["repl", "start", socketPath, libReplPath],
       environment: [:],
@@ -151,7 +151,7 @@ public struct SimulatorReplCommands {
     // `.relaunchIfRunning` so an app already running without the dylib picks it up.
     let environment = try await appLaunchEnvironment(bundleID: bundleID)
     let io: FBProcessIO<AnyObject, AnyObject, AnyObject> = .outputToDevNull()
-    let configuration = FBApplicationLaunchConfiguration(
+    let configuration = ApplicationLaunchConfiguration(
       bundleID: bundleID,
       bundleName: nil,
       arguments: [],

@@ -258,10 +258,10 @@ public final class ListTestStrategy {
         return FBFuture<AnyObject>(error: error)
       }
       launchPath = appBundle.binary?.path ?? launchPath
-      let spawnConfiguration = FBProcessSpawnConfiguration(launchPath: launchPath, arguments: [], environment: env, io: io, mode: .default)
+      let spawnConfiguration = ProcessSpawnConfiguration(launchPath: launchPath, arguments: [], environment: env, io: io, mode: .default)
       return ListTestStrategy.listTestProcess(withSpawnConfiguration: spawnConfiguration, onTarget: target, timeout: configuration.testTimeout, logger: logger)
     } else {
-      let spawnConfiguration = FBProcessSpawnConfiguration(launchPath: launchPath, arguments: [], environment: env, io: io, mode: .default)
+      let spawnConfiguration = ProcessSpawnConfiguration(launchPath: launchPath, arguments: [], environment: env, io: io, mode: .default)
 
       return fbFutureFromAsync {
         let mappedConfig = try await ArchitectureProcessAdapter.adaptProcessConfiguration(spawnConfiguration, toAnyArchitectureIn: Set(configuration.architectures.map { FBArchitecture(rawValue: $0) }), temporaryDirectory: temporaryDirectory)
@@ -271,7 +271,7 @@ public final class ListTestStrategy {
     }
   }
 
-  private static func listTestProcess(withSpawnConfiguration spawnConfiguration: FBProcessSpawnConfiguration, onTarget target: any LogicTestTarget, timeout: TimeInterval, logger: FBControlCoreLogger) -> FBFuture<AnyObject> {
+  private static func listTestProcess(withSpawnConfiguration spawnConfiguration: ProcessSpawnConfiguration, onTarget target: any LogicTestTarget, timeout: TimeInterval, logger: FBControlCoreLogger) -> FBFuture<AnyObject> {
     let launchFuture: FBFuture<FBSubprocess<AnyObject, AnyObject, AnyObject>> = fbFutureFromAsync {
       try await target.processSpawn.launchProcess(spawnConfiguration)
     }

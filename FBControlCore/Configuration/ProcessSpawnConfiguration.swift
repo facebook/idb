@@ -15,7 +15,7 @@ public enum ProcessSpawnMode: UInt {
 }
 
 @objc
-public final class FBProcessSpawnConfiguration: ProcessLaunchConfiguration {
+public final class ProcessSpawnConfiguration: ProcessLaunchConfiguration {
 
   @objc public let launchPath: String
   @objc public let mode: ProcessSpawnMode
@@ -36,7 +36,7 @@ public final class FBProcessSpawnConfiguration: ProcessLaunchConfiguration {
   }
 
   public override func isEqual(_ object: Any?) -> Bool {
-    guard let other = object as? FBProcessSpawnConfiguration,
+    guard let other = object as? ProcessSpawnConfiguration,
       other.isKind(of: type(of: self))
     else {
       return false

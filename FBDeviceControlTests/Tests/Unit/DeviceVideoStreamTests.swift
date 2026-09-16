@@ -17,11 +17,11 @@ import Testing
 @Suite
 struct DeviceVideoStreamTests {
 
-  private func configuration(_ format: FBVideoStreamFormat) -> FBVideoStreamConfiguration {
-    FBVideoStreamConfiguration(format: format, framesPerSecond: nil, rateControl: nil, scaleFactor: nil, keyFrameRate: nil)
+  private func configuration(_ format: VideoStreamFormat) -> VideoStreamConfiguration {
+    VideoStreamConfiguration(format: format, framesPerSecond: nil, rateControl: nil, scaleFactor: nil, keyFrameRate: nil)
   }
 
-  private func makeStream(for format: FBVideoStreamFormat, consumer: (any FBDataConsumer)?) throws -> DeviceVideoStream {
+  private func makeStream(for format: VideoStreamFormat, consumer: (any FBDataConsumer)?) throws -> DeviceVideoStream {
     let streamType = try #require(DeviceVideoStream.classForConfiguration(configuration(format)), "Expected a stream type for \(format)")
     let stream = streamType.init(
       session: AVCaptureSession(),

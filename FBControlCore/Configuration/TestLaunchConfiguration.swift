@@ -10,7 +10,7 @@ import Foundation
 public struct TestLaunchConfiguration {
 
   public let testBundle: FBBundleDescriptor
-  public let applicationLaunchConfiguration: FBApplicationLaunchConfiguration
+  public let applicationLaunchConfiguration: ApplicationLaunchConfiguration
   public let testHostBundle: FBBundleDescriptor?
   public let timeout: TimeInterval
   public let shouldInitializeUITesting: Bool
@@ -26,7 +26,7 @@ public struct TestLaunchConfiguration {
   public let logDirectoryPath: String?
   public let reportResultBundle: Bool
 
-  public init(testBundle: FBBundleDescriptor, applicationLaunchConfiguration: FBApplicationLaunchConfiguration, testHostBundle: FBBundleDescriptor?, timeout: TimeInterval, initializeUITesting: Bool, useXcodebuild: Bool, testsToRun: Set<String>?, testsToSkip: Set<String>?, targetApplicationBundle: FBBundleDescriptor?, xcTestRunProperties: [String: Any]?, resultBundlePath: String?, reportActivities: Bool, coverageDirectoryPath: String?, enableContinuousCoverageCollection: Bool, logDirectoryPath: String?, reportResultBundle: Bool) {
+  public init(testBundle: FBBundleDescriptor, applicationLaunchConfiguration: ApplicationLaunchConfiguration, testHostBundle: FBBundleDescriptor?, timeout: TimeInterval, initializeUITesting: Bool, useXcodebuild: Bool, testsToRun: Set<String>?, testsToSkip: Set<String>?, targetApplicationBundle: FBBundleDescriptor?, xcTestRunProperties: [String: Any]?, resultBundlePath: String?, reportActivities: Bool, coverageDirectoryPath: String?, enableContinuousCoverageCollection: Bool, logDirectoryPath: String?, reportResultBundle: Bool) {
     self.testBundle = testBundle
     self.applicationLaunchConfiguration = applicationLaunchConfiguration
     self.testHostBundle = testHostBundle

@@ -10,7 +10,7 @@ import Foundation
 
 public final class SimulatorLaunchedApplication: FBLaunchedApplication, CustomStringConvertible {
 
-  public let configuration: FBApplicationLaunchConfiguration
+  public let configuration: ApplicationLaunchConfiguration
   public let processIdentifier: pid_t
   private let applicationTerminated: FBFuture<NSNull>
 
@@ -45,7 +45,7 @@ public final class SimulatorLaunchedApplication: FBLaunchedApplication, CustomSt
 
   public class func application(
     withSimulator simulator: FBSimulator,
-    configuration: FBApplicationLaunchConfiguration,
+    configuration: ApplicationLaunchConfiguration,
     attachment: FBProcessFileAttachment,
     launchFuture: FBFuture<NSNumber>
   ) -> FBFuture<SimulatorLaunchedApplication> {
@@ -88,7 +88,7 @@ public final class SimulatorLaunchedApplication: FBLaunchedApplication, CustomSt
 
   private init(
     simulator: FBSimulator,
-    configuration: FBApplicationLaunchConfiguration,
+    configuration: ApplicationLaunchConfiguration,
     attachment: FBProcessFileAttachment,
     processIdentifier: pid_t,
     terminationFuture: FBFuture<NSNull>

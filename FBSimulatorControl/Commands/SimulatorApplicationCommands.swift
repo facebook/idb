@@ -142,7 +142,7 @@ public struct SimulatorApplicationCommands: ApplicationCommands {
       })
   }
 
-  public func launch(_ configuration: FBApplicationLaunchConfiguration) async throws -> FBLaunchedApplication {
+  public func launch(_ configuration: ApplicationLaunchConfiguration) async throws -> FBLaunchedApplication {
     try await ensureApplicationIsInstalled(configuration.bundleID)
     try await confirmApplicationLaunchState(configuration.bundleID, launchMode: configuration.launchMode, waitForDebugger: configuration.waitForDebugger)
     let attachment = try await bridgeFBFuture(configuration.io.attachViaFile())
@@ -354,7 +354,7 @@ public struct SimulatorApplicationCommands: ApplicationCommands {
     }
   }
 
-  private func confirmApplicationLaunchState(_ bundleID: String, launchMode: FBApplicationLaunchMode, waitForDebugger: Bool) async throws {
+  private func confirmApplicationLaunchState(_ bundleID: String, launchMode: ApplicationLaunchMode, waitForDebugger: Bool) async throws {
     if waitForDebugger && launchMode == .foregroundIfRunning {
       throw SimulatorApplicationLaunchError.foregroundIfRunningIncompatibleWithWaitForDebugger
     }
@@ -374,7 +374,7 @@ public struct SimulatorApplicationCommands: ApplicationCommands {
     }
   }
 
-  private func launch(_ configuration: FBApplicationLaunchConfiguration, stdOut: any ProcessFileOutput, stdErr: any ProcessFileOutput) -> FBFuture<NSNumber> {
+  private func launch(_ configuration: ApplicationLaunchConfiguration, stdOut: any ProcessFileOutput, stdErr: any ProcessFileOutput) -> FBFuture<NSNumber> {
     fbFutureFromAsync { [self] in
       try await bridgeFBFutureVoid(stdOut.startReading())
       try await bridgeFBFutureVoid(stdErr.startReading())
@@ -382,7 +382,7 @@ public struct SimulatorApplicationCommands: ApplicationCommands {
     }
   }
 
-  private func launch(_ configuration: FBApplicationLaunchConfiguration, stdOutPath: String?, stdErrPath: String?) async throws -> NSNumber {
+  private func launch(_ configuration: ApplicationLaunchConfiguration, stdOutPath: String?, stdErrPath: String?) async throws -> NSNumber {
     guard let dataDirectory = simulator.dataDirectory else {
       throw SimulatorApplicationLaunchError.noDataDirectory(bundleID: configuration.bundleID)
     }
@@ -421,7 +421,7 @@ public struct SimulatorApplicationCommands: ApplicationCommands {
     return (translatedPath as NSString).appendingPathComponent(absolutePath)
   }
 
-  static func simDeviceLaunchOptions(for configuration: FBApplicationLaunchConfiguration, stdOutPath: String?, stdErrPath: String?) -> [String: Any] {
+  static func simDeviceLaunchOptions(for configuration: ApplicationLaunchConfiguration, stdOutPath: String?, stdErrPath: String?) -> [String: Any] {
     var options = SimulatorProcessSpawnCommands.launchOptions(
       withArguments: configuration.arguments,
       environment: configuration.environment,

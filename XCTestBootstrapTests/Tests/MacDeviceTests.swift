@@ -109,7 +109,7 @@ final class MacDeviceTests: XCTestCase {
   }
 
   func testLaunchingNotInstalledAppByBuntleID() {
-    let config = FBApplicationLaunchConfiguration(
+    let config = ApplicationLaunchConfiguration(
       bundleID: "not.existed",
       bundleName: "not.existed",
       arguments: [],
@@ -127,7 +127,7 @@ final class MacDeviceTests: XCTestCase {
   }
 
   func testLaunchingExistedApp() throws {
-    let config = FBApplicationLaunchConfiguration(
+    let config = ApplicationLaunchConfiguration(
       bundleID: installedApp.bundle.identifier,
       bundleName: installedApp.bundle.name,
       arguments: [],

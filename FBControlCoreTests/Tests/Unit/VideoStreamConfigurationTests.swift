@@ -8,10 +8,10 @@
 @testable import FBControlCore
 import XCTest
 
-final class FBVideoStreamConfigurationTests: XCTestCase {
+final class VideoStreamConfigurationTests: XCTestCase {
   func testUnsetFieldsTakeTheirDefaults() {
-    let config = FBVideoStreamConfiguration(
-      format: FBVideoStreamFormat.compressedVideo(withCodec: FBVideoStreamCodec.h264, transport: FBVideoStreamTransport.annexB),
+    let config = VideoStreamConfiguration(
+      format: VideoStreamFormat.compressedVideo(withCodec: VideoStreamCodec.h264, transport: VideoStreamTransport.annexB),
       framesPerSecond: nil,
       rateControl: nil,
       scaleFactor: nil,
@@ -24,8 +24,8 @@ final class FBVideoStreamConfigurationTests: XCTestCase {
   /// Only nil takes the default, so a caller mapping an unset wire field has to send nil — zero
   /// survives, and zero is what VideoToolbox reads as an unlimited key frame interval.
   func testZeroKeyFrameRateIsNotTheDefault() {
-    let config = FBVideoStreamConfiguration(
-      format: FBVideoStreamFormat.compressedVideo(withCodec: FBVideoStreamCodec.h264, transport: FBVideoStreamTransport.annexB),
+    let config = VideoStreamConfiguration(
+      format: VideoStreamFormat.compressedVideo(withCodec: VideoStreamCodec.h264, transport: VideoStreamTransport.annexB),
       framesPerSecond: nil,
       rateControl: nil,
       scaleFactor: nil,
@@ -35,9 +35,9 @@ final class FBVideoStreamConfigurationTests: XCTestCase {
   }
 
   func testExplicitQualityPreserved() {
-    let rc = FBVideoStreamRateControl.quality(0.7)
-    let config = FBVideoStreamConfiguration(
-      format: FBVideoStreamFormat.compressedVideo(withCodec: FBVideoStreamCodec.h264, transport: FBVideoStreamTransport.annexB),
+    let rc = VideoStreamRateControl.quality(0.7)
+    let config = VideoStreamConfiguration(
+      format: VideoStreamFormat.compressedVideo(withCodec: VideoStreamCodec.h264, transport: VideoStreamTransport.annexB),
       framesPerSecond: nil,
       rateControl: rc,
       scaleFactor: nil,

@@ -16,7 +16,7 @@ enum RecordRequestTranslation {
 
   /// A recording is always H.264 in an mp4; the transport is irrelevant because encoded samples are
   /// muxed to a file rather than byte-framed.
-  static let format = FBVideoStreamFormat.compressedVideo(withCodec: .h264, transport: .annexB)
+  static let format = VideoStreamFormat.compressedVideo(withCodec: .h264, transport: .annexB)
 
   /// What `SimulatorVideoRecordingCommands` has always pinned, and so what an unset `fps` has to
   /// mean here. The stream's unset `fps` means the display's own rate instead.
@@ -61,7 +61,7 @@ enum RecordRequestTranslation {
         || start.avgBitrate > 0 || start.keyFrameRate > 0
     else { return nil }
 
-    let rateControl: FBVideoStreamRateControl?
+    let rateControl: VideoStreamRateControl?
     if start.avgBitrate > 0 {
       // Finite by the check above, but a finite double can still exceed `Int`, and `Int(_:)` traps on
       // an out-of-range value. Reject it as invalid rather than let the conversion crash the companion.
@@ -84,8 +84,8 @@ enum RecordRequestTranslation {
       keyFrameRate: start.keyFrameRate > 0 ? start.keyFrameRate : nil)
   }
 
-  static func configuration(for options: VideoEncodeOptions) -> FBVideoStreamConfiguration {
-    FBVideoStreamConfiguration(format: format, encodeOptions: options)
+  static func configuration(for options: VideoEncodeOptions) -> VideoStreamConfiguration {
+    VideoStreamConfiguration(format: format, encodeOptions: options)
   }
 
   /// A conformer that inherits the default `startRecording(toFile:configuration:)` discards the
@@ -100,8 +100,7 @@ enum RecordRequestTranslation {
   }
 
   /// Echoes the resolved options (defaults filled in). No scaling reports as 1. Rate control is reported
-  /// in the field the request chose; an automatic rate leaves both 0. A reported quality means the encoder
-  /// was configured with it, not that H.264 acts on it.
+  /// in the field the request chose; an automatic rate leaves both 0.
   static func appliedResponse(_ options: VideoEncodeOptions) -> Idb_RecordResponse {
     Idb_RecordResponse.with {
       $0.output = .applied(

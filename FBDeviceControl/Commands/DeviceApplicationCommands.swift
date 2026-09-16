@@ -94,11 +94,11 @@ private func workflowCallback(_ callbackDictionary: [String: Any]?, _ context: U
 
 private class DeviceLaunchedApplication: FBLaunchedApplication {
   let processIdentifier: pid_t
-  private let _configuration: FBApplicationLaunchConfiguration
+  private let _configuration: ApplicationLaunchConfiguration
   private let commands: DeviceApplicationCommands
   private let queue: DispatchQueue
 
-  init(processIdentifier: pid_t, configuration: FBApplicationLaunchConfiguration, commands: DeviceApplicationCommands, queue: DispatchQueue) {
+  init(processIdentifier: pid_t, configuration: ApplicationLaunchConfiguration, commands: DeviceApplicationCommands, queue: DispatchQueue) {
     self.processIdentifier = processIdentifier
     self._configuration = configuration
     self.commands = commands
@@ -251,7 +251,7 @@ public final class DeviceApplicationCommands: ApplicationCommands {
     try await killApplication(withProcessIdentifier: pid)
   }
 
-  public func launch(_ configuration: FBApplicationLaunchConfiguration) async throws -> any FBLaunchedApplication {
+  public func launch(_ configuration: ApplicationLaunchConfiguration) async throws -> any FBLaunchedApplication {
     guard let device else {
       throw DeviceNilError.deviceNil
     }

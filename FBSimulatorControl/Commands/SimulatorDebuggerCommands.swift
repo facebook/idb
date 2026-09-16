@@ -92,7 +92,7 @@ public final class SimulatorDebuggerCommands: DebuggerCommands {
     guard let simulator = self.simulator else {
       throw WeakTargetError.simulator
     }
-    let configuration = FBApplicationLaunchConfiguration(
+    let configuration = ApplicationLaunchConfiguration(
       bundleID: application.identifier,
       bundleName: application.name,
       arguments: [],

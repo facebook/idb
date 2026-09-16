@@ -53,8 +53,8 @@ public final class ManagedTestRunStrategy {
     )
   }
 
-  private static func prepareApplicationLaunchConfiguration(_ applicationLaunchConfiguration: FBApplicationLaunchConfiguration, withTestRunnerConfiguration testRunnerConfiguration: TestRunnerConfiguration) -> FBApplicationLaunchConfiguration {
-    FBApplicationLaunchConfiguration(
+  private static func prepareApplicationLaunchConfiguration(_ applicationLaunchConfiguration: ApplicationLaunchConfiguration, withTestRunnerConfiguration testRunnerConfiguration: TestRunnerConfiguration) -> ApplicationLaunchConfiguration {
+    ApplicationLaunchConfiguration(
       bundleID: testRunnerConfiguration.testRunner.identifier,
       bundleName: testRunnerConfiguration.testRunner.identifier,
       arguments: arguments(fromConfiguration: testRunnerConfiguration, attributes: applicationLaunchConfiguration.arguments),

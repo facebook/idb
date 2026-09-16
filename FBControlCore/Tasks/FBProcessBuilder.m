@@ -247,9 +247,9 @@
 
 #pragma mark Private
 
-- (FBProcessSpawnConfiguration *)buildConfiguration
+- (ProcessSpawnConfiguration *)buildConfiguration
 {
-  return [[FBProcessSpawnConfiguration alloc]
+  return [[ProcessSpawnConfiguration alloc]
           initWithLaunchPath:self.launchPath
           arguments:self.arguments
           environment:self.environment

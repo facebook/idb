@@ -47,7 +47,7 @@ For a high level overview:
 - `SimulatorControlBootstrap` is the entry point. It is the first object that you should create, with `SimulatorControlBootstrap.withConfiguration(_:)`. It creates a `FBSimulatorSet` upon creation, exposed as `set`.
 - `FBSimulatorSet` wraps `SimDeviceSet` and provides a resilient CRUD API for Deleting, Creating and Erasing Simulators.
 - `FBSimulator` is a reference type that represents an individual Simulator. It has a number of convenience methods for accessing information about a Simulator. Many of the possible actions you can perform on a Simulator are present on instances of this class.
-- Configuration values: `FBApplicationLaunchConfiguration`, `FBSimulatorControlConfiguration`, `FBSimulatorConfiguration` & `FBSimulatorBootConfiguration`. The last three are structs.
+- Configuration values: `ApplicationLaunchConfiguration`, `FBSimulatorControlConfiguration`, `FBSimulatorConfiguration` & `FBSimulatorBootConfiguration`. The last three are structs.
 
 
 Simulator creation resolves a request against CoreSimulator's installed device types and runtimes:
