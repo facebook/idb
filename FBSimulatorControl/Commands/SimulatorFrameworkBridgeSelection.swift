@@ -27,7 +27,7 @@ enum SimulatorFrameworkBridgeSelection {
   }
 }
 
-extension FBSimulator {
+extension Simulator {
 
   /// The path to the guest binary this simulator can run, or nil when it is not bundled.
   public var frameworkBridgePath: String? {

@@ -38,7 +38,7 @@ public final class SimulatorHID: CustomStringConvertible, @unchecked Sendable {
   /// The transport for the Darwin-notification inputs (shake, in-call status bar).
   private let notification: SimulatorDarwinNotificationTransport
 
-  private weak var simulator: FBSimulator?
+  private weak var simulator: Simulator?
 
   /// Whether `send(event:logger:)` flushes after every event. Streaming callers can disable this
   /// and call `flush()` before releasing the HID.
@@ -49,7 +49,7 @@ public final class SimulatorHID: CustomStringConvertible, @unchecked Sendable {
   /// `transport` forces a HID path; `nil` negotiates one (see `transport(for:requested:)`). Throws if the
   /// transport cannot be established (registration may need to occur prior to booting).
   public convenience init(
-    for simulator: FBSimulator, transport transportType: SimulatorHIDTransportType? = nil
+    for simulator: Simulator, transport transportType: SimulatorHIDTransportType? = nil
   ) async throws {
     self.init(
       transport: try await Self.transport(for: simulator, requested: transportType),
@@ -63,7 +63,7 @@ public final class SimulatorHID: CustomStringConvertible, @unchecked Sendable {
   /// in an established transport is a real error. Reachability cannot be known up front: `dtuhidd` is
   /// demand-launched, so the service lookup that builds the transport is the only probe.
   private static func transport(
-    for simulator: FBSimulator, requested: SimulatorHIDTransportType?
+    for simulator: Simulator, requested: SimulatorHIDTransportType?
   ) async throws -> SimulatorHIDTransport {
     if let requested {
       return try await transport(requested, for: simulator)
@@ -82,7 +82,7 @@ public final class SimulatorHID: CustomStringConvertible, @unchecked Sendable {
   }
 
   private static func transport(
-    _ type: SimulatorHIDTransportType, for simulator: FBSimulator
+    _ type: SimulatorHIDTransportType, for simulator: Simulator
   ) async throws -> SimulatorHIDTransport {
     switch type {
     case .indigo:
@@ -104,7 +104,7 @@ public final class SimulatorHID: CustomStringConvertible, @unchecked Sendable {
   ///
   /// Absent rather than fatal when it cannot be registered, since it carries the trackpad alone — a
   /// failure should cost a pan, not every other input on the target.
-  private static func indigoAlongsideDTUHID(for simulator: FBSimulator) -> SimulatorIndigoHIDTransport? {
+  private static func indigoAlongsideDTUHID(for simulator: Simulator) -> SimulatorIndigoHIDTransport? {
     guard simulator.productFamily == .familyAppleTV else {
       return nil
     }
@@ -117,7 +117,7 @@ public final class SimulatorHID: CustomStringConvertible, @unchecked Sendable {
     transport: SimulatorHIDTransport,
     purple: SimulatorPurpleHIDTransport,
     notification: SimulatorDarwinNotificationTransport,
-    simulator: FBSimulator?
+    simulator: Simulator?
   ) {
     self.transport = transport
     self.purple = purple

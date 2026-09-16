@@ -11,7 +11,7 @@ import Foundation
 import SimulatorXCTest
 import Testing
 
-/// Every command accessor on `FBSimulator`, so the retention rule is checked against all of them
+/// Every command accessor on `Simulator`, so the retention rule is checked against all of them
 /// rather than a hand-picked few.
 enum SimulatorCommandAccessor: CaseIterable, Sendable {
   case application
@@ -50,7 +50,7 @@ enum SimulatorCommandAccessor: CaseIterable, Sendable {
   case runtimeTools
   case bootstrapPorts
 
-  func resolve(on simulator: FBSimulator) {
+  func resolve(on simulator: Simulator) {
     switch self {
     case .application:
       _ = simulator.application
@@ -144,8 +144,8 @@ struct SimulatorCommandRetentionTests {
 
   /// Resolves a command, then reports whether the simulator survived the only strong reference to
   /// it going away.
-  private func simulatorSurvives(_ resolve: (FBSimulator) -> Void) -> Bool {
-    weak var weakSimulator: FBSimulator?
+  private func simulatorSurvives(_ resolve: (Simulator) -> Void) -> Bool {
+    weak var weakSimulator: Simulator?
     autoreleasepool {
       let simulator = SimulatorTestSupport.testableSimulator()
       weakSimulator = simulator

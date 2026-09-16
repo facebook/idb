@@ -38,22 +38,22 @@ public final class SimulatorLifecycleCommands: LifecycleCommands {
 
   // MARK: - Properties
 
-  private weak var simulator: FBSimulator?
+  private weak var simulator: Simulator?
   private var hid: SimulatorHID?
 
   // MARK: - Initializers
 
-  public class func commands(with simulator: FBSimulator) -> SimulatorLifecycleCommands {
+  public class func commands(with simulator: Simulator) -> SimulatorLifecycleCommands {
     SimulatorLifecycleCommands(simulator: simulator)
   }
 
-  private init(simulator: FBSimulator) {
+  private init(simulator: Simulator) {
     self.simulator = simulator
   }
 
   // MARK: - Async
 
-  public func boot(_ configuration: FBSimulatorBootConfiguration) async throws {
+  public func boot(_ configuration: SimulatorBootConfiguration) async throws {
     guard let simulator = self.simulator else {
       throw WeakTargetError.simulator
     }

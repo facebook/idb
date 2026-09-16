@@ -48,11 +48,11 @@ extension SimulatorLaunchCtlError: LocalizedError {
 
 public final class SimulatorLaunchCtlCommands: LaunchCtlCommands {
 
-  private let simulator: FBSimulator
+  private let simulator: Simulator
 
   // MARK: - Initializers
 
-  private class func launchCtlLaunchPath(for simulator: FBSimulator) throws -> String {
+  private class func launchCtlLaunchPath(for simulator: Simulator) throws -> String {
     let path = (simulator.device.runtime.root as NSString)
       .appendingPathComponent("bin")
       .appending("/launchctl")
@@ -60,11 +60,11 @@ public final class SimulatorLaunchCtlCommands: LaunchCtlCommands {
     return binary.path
   }
 
-  public class func commands(with simulator: FBSimulator) -> SimulatorLaunchCtlCommands {
+  public class func commands(with simulator: Simulator) -> SimulatorLaunchCtlCommands {
     SimulatorLaunchCtlCommands(simulator: simulator)
   }
 
-  private init(simulator: FBSimulator) {
+  private init(simulator: Simulator) {
     self.simulator = simulator
   }
 

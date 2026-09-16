@@ -11,7 +11,7 @@ import Foundation
 
 final class SimulatorBootStrategy {
 
-  static func boot(_ simulator: FBSimulator, with configuration: FBSimulatorBootConfiguration) async throws {
+  static func boot(_ simulator: Simulator, with configuration: SimulatorBootConfiguration) async throws {
     if simulator.state == .booted {
       return
     }
@@ -25,7 +25,7 @@ final class SimulatorBootStrategy {
     }
   }
 
-  private static func performSimulatorBoot(_ simulator: FBSimulator, with configuration: FBSimulatorBootConfiguration) async throws {
+  private static func performSimulatorBoot(_ simulator: Simulator, with configuration: SimulatorBootConfiguration) async throws {
     // "persist": the booted Simulator outlives the calling process; `.tieToProcessLifecycle` is its inverse.
     let persist = !configuration.options.contains(.tieToProcessLifecycle)
     let options: [String: Any] = [

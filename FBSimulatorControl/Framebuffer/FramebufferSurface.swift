@@ -167,7 +167,7 @@ private final class SimDisplayRenderableSurface: FramebufferSurface {
 /// `FramebufferSurface`. Kept separate from `Framebuffer` so that discovery, adaptation, and
 /// consumer fan-out are distinct concerns.
 enum FramebufferSurfaceLocator {
-  static func mainDisplaySurface(for simulator: FBSimulator, logger: any ControlCoreLogger) throws -> any FramebufferSurface {
+  static func mainDisplaySurface(for simulator: Simulator, logger: any ControlCoreLogger) throws -> any FramebufferSurface {
     guard let ioClient = simulator.device.io else {
       throw FramebufferError.mainScreenSurfaceNotFound(description: "No IO client available on \(simulator.device)")
     }

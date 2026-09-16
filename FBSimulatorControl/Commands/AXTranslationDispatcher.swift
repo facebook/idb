@@ -91,7 +91,7 @@ final class AXTranslationDispatcher: NSObject, AXPTranslationTokenDelegateHelper
     return try job.takeResult()
   }
 
-  func platformElement(withRequest request: AXTranslationRequest, simulator: FBSimulator) async throws -> AXWritableElement {
+  func platformElement(withRequest request: AXTranslationRequest, simulator: Simulator) async throws -> AXWritableElement {
     // The synchronous XPC round-trips driven by the delegate callback must never
     // run on the main queue; the serialized hop below moves them to the AXP work
     // queue, off the main actor and off the cooperative executor.

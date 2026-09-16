@@ -26,14 +26,14 @@ extension SimulatorVideoRecordingCommandError: LocalizedError {
 
 public final class SimulatorVideoRecordingCommands: VideoRecordingCommands {
 
-  private weak var simulator: FBSimulator?
+  private weak var simulator: Simulator?
   private var video: SimulatorVideo?
 
-  public class func commands(with simulator: FBSimulator) -> SimulatorVideoRecordingCommands {
+  public class func commands(with simulator: Simulator) -> SimulatorVideoRecordingCommands {
     SimulatorVideoRecordingCommands(simulator: simulator)
   }
 
-  private init(simulator: FBSimulator) {
+  private init(simulator: Simulator) {
     self.simulator = simulator
   }
 

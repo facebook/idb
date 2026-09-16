@@ -20,7 +20,7 @@ private let bootVerificationStallInterval: TimeInterval = 1.5
 ///   exceeding it throws `PollTimeoutError`.
 ///
 /// Public: consumers outside this module wait on simulators they booted for the state only.
-public func verifySimulatorIsBooted(_ simulator: FBSimulator, deadline: PollDeadline? = nil) async throws {
+public func verifySimulatorIsBooted(_ simulator: Simulator, deadline: PollDeadline? = nil) async throws {
   // Taken before the first wait, so the two phases share one bound rather than getting one each.
   let expiry = deadline.map { (deadline: $0, time: DispatchTime.now() + $0.timeout) }
   try await FBiOSTargetResolveState(simulator, .booted, deadline: deadline)

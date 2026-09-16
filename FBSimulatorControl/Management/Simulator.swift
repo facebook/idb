@@ -15,7 +15,7 @@ private let DefaultDeviceSet = "~/Library/Developer/CoreSimulator/Devices"
 ///
 /// The async commands serialize their work onto `FBFuture`'s internal queues, so instances are
 /// safe to pass across Swift concurrency domains.
-public final class FBSimulator: FBiOSTarget, Hashable, CustomStringConvertible, @unchecked Sendable {
+public final class Simulator: FBiOSTarget, Hashable, CustomStringConvertible, @unchecked Sendable {
 
   // MARK: - Properties
 
@@ -24,13 +24,13 @@ public final class FBSimulator: FBiOSTarget, Hashable, CustomStringConvertible, 
 
   /// The Simulator Set that the Simulator belongs to. Nil for simulators created outside a set.
   ///
-  /// Referencing `FBSimulatorSet` here forms a strong-strong reference cycle between the set and
+  /// Referencing `SimulatorSet` here forms a strong-strong reference cycle between the set and
   /// the simulator. The set breaks it explicitly when a simulator is removed from the device set
   /// it wraps.
-  public private(set) var set: FBSimulatorSet?
+  public private(set) var set: SimulatorSet?
 
-  /// The `FBSimulatorConfiguration` representing this Simulator.
-  public let configuration: FBSimulatorConfiguration
+  /// The `SimulatorConfiguration` representing this Simulator.
+  public let configuration: SimulatorConfiguration
 
   public let commandCache: TargetCommandCache
 
@@ -41,10 +41,10 @@ public final class FBSimulator: FBiOSTarget, Hashable, CustomStringConvertible, 
 
   // MARK: - Initializers
 
-  public class func fromSimDevice(_ device: SimDevice, configuration: FBSimulatorConfiguration?, set: FBSimulatorSet) -> FBSimulator {
-    FBSimulator(
+  public class func fromSimDevice(_ device: SimDevice, configuration: SimulatorConfiguration?, set: SimulatorSet) -> Simulator {
+    Simulator(
       device: device,
-      configuration: configuration ?? FBSimulatorConfiguration.inferSimulatorConfiguration(fromDevice: device),
+      configuration: configuration ?? SimulatorConfiguration.inferSimulatorConfiguration(fromDevice: device),
       set: set,
       auxillaryDirectory: auxillaryDirectory(fromSimDevice: device),
       logger: set.logger)
@@ -52,8 +52,8 @@ public final class FBSimulator: FBiOSTarget, Hashable, CustomStringConvertible, 
 
   public init(
     device: SimDevice,
-    configuration: FBSimulatorConfiguration,
-    set: FBSimulatorSet?,
+    configuration: SimulatorConfiguration,
+    set: SimulatorSet?,
     auxillaryDirectory: String,
     logger: (any ControlCoreLogger)?
   ) {
@@ -130,7 +130,7 @@ public final class FBSimulator: FBiOSTarget, Hashable, CustomStringConvertible, 
   /// only trap (not catchable by `FBObjCExceptionGuard`).
   public static func commands(with target: any FBiOSTarget) -> Self {
     guard let simulator = target as? Self else {
-      preconditionFailure("\(type(of: target)) is not an FBSimulator, so it cannot provide simulator commands")
+      preconditionFailure("\(type(of: target)) is not an Simulator, so it cannot provide simulator commands")
     }
     return simulator
   }
@@ -186,7 +186,7 @@ public final class FBSimulator: FBiOSTarget, Hashable, CustomStringConvertible, 
     hasher.combine(device.hash)
   }
 
-  public static func == (lhs: FBSimulator, rhs: FBSimulator) -> Bool {
+  public static func == (lhs: Simulator, rhs: Simulator) -> Bool {
     lhs.device.isEqual(rhs.device)
   }
 

@@ -10,20 +10,20 @@
 import Foundation
 
 /// The entry point to a simulator device set: loads the private frameworks, opens the service
-/// context and vends the `FBSimulatorSet`. Named distinctly from the module on purpose: a type
+/// context and vends the `SimulatorSet`. Named distinctly from the module on purpose: a type
 /// that shares its module's name shadows the module in qualified lookups and cannot be emitted
 /// into a module interface.
 public final class SimulatorControlBootstrap {
 
-  public var configuration: FBSimulatorControlConfiguration
+  public var configuration: SimulatorControlConfiguration
   public let serviceContext: SimulatorServiceContext
-  public let set: FBSimulatorSet
+  public let set: SimulatorSet
 
-  public class func withConfiguration(_ configuration: FBSimulatorControlConfiguration) throws -> SimulatorControlBootstrap {
-    try FBSimulatorControlFrameworkLoader.essentialFrameworks.loadPrivateFrameworks(configuration.logger)
+  public class func withConfiguration(_ configuration: SimulatorControlConfiguration) throws -> SimulatorControlBootstrap {
+    try SimulatorControlFrameworkLoader.essentialFrameworks.loadPrivateFrameworks(configuration.logger)
     let serviceContext = try SimulatorServiceContext.sharedServiceContext(withLogger: configuration.logger)
     let deviceSet = try serviceContext.createDeviceSet(with: configuration)
-    let set = try FBSimulatorSet.set(
+    let set = try SimulatorSet.set(
       withConfiguration: configuration,
       deviceSet: deviceSet,
       delegate: nil,
@@ -31,7 +31,7 @@ public final class SimulatorControlBootstrap {
     return SimulatorControlBootstrap(configuration: configuration, serviceContext: serviceContext, set: set)
   }
 
-  private init(configuration: FBSimulatorControlConfiguration, serviceContext: SimulatorServiceContext, set: FBSimulatorSet) {
+  private init(configuration: SimulatorControlConfiguration, serviceContext: SimulatorServiceContext, set: SimulatorSet) {
     self.configuration = configuration
     self.serviceContext = serviceContext
     self.set = set

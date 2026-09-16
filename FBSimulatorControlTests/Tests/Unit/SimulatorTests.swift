@@ -61,7 +61,7 @@ import XCTest
 final class SimulatorTests: XCTestCase {
 
   private var stubDevice: TestSimDevice!
-  private var simulator: FBSimulator!
+  private var simulator: Simulator!
 
   override func setUpWithError() throws {
     try super.setUpWithError()
@@ -75,7 +75,7 @@ final class SimulatorTests: XCTestCase {
     try super.tearDownWithError()
   }
 
-  private static func createSimulator(with device: TestSimDevice) -> FBSimulator {
+  private static func createSimulator(with device: TestSimDevice) -> Simulator {
     SimulatorTestSupport.testableSimulator(withDevice: device)
   }
 

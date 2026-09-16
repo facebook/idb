@@ -28,7 +28,7 @@ public enum AccessibilityElementQuery: Equatable, Sendable {
   case frontmost
   /// A specific application's whole element tree, anchored by its process identifier — read regardless
   /// of what is frontmost (e.g. an app behind a system modal), unlike `frontmost`. Callers resolve a
-  /// bundle id to a pid (`FBSimulator.processID(forBundleID:)`) before building this.
+  /// bundle id to a pid (`Simulator.processID(forBundleID:)`) before building this.
   case application(pid: pid_t)
 }
 

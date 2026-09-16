@@ -9,13 +9,13 @@ import FBControlCore
 import Foundation
 
 public struct SimulatorVideoStreamCommands: VideoStreamCommands {
-  private let simulator: FBSimulator
+  private let simulator: Simulator
 
-  public static func commands(with simulator: FBSimulator) -> SimulatorVideoStreamCommands {
+  public static func commands(with simulator: Simulator) -> SimulatorVideoStreamCommands {
     SimulatorVideoStreamCommands(simulator: simulator)
   }
 
-  init(simulator: FBSimulator) {
+  init(simulator: Simulator) {
     self.simulator = simulator
   }
 

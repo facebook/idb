@@ -13,10 +13,10 @@ import XCTest
 /// A Test Case Template that creates a Set for mocking.
 class SimulatorSetTestCase: XCTestCase {
 
-  private(set) var set: FBSimulatorSet!
+  private(set) var set: SimulatorSet!
 
   @discardableResult
-  func createSet(withExistingSimDeviceSpecs simulatorSpecs: [[String: Any]]) -> [FBSimulator] {
+  func createSet(withExistingSimDeviceSpecs simulatorSpecs: [[String: Any]]) -> [Simulator] {
     var simDevices: [AnyObject] = []
     for simulatorSpec in simulatorSpecs {
       let name = simulatorSpec["name"] as! String
@@ -52,7 +52,7 @@ class SimulatorSetTestCase: XCTestCase {
     deviceSet.availableDevices = simDevices
 
     let noLogger: (any ControlCoreLogger)? = nil
-    let configuration = FBSimulatorControlConfiguration(deviceSetPath: nil, logger: noLogger)
+    let configuration = SimulatorControlConfiguration(deviceSetPath: nil, logger: noLogger)
     set = createSimulatorSet(configuration: configuration, fakeDeviceSet: deviceSet)
 
     let simulators = set.allSimulators

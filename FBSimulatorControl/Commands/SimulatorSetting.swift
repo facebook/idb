@@ -7,7 +7,7 @@
 
 import Foundation
 
-/// A curated, device-wide simulator setting applied via `FBSimulator.apply(_:)`. Parsing a CLI
+/// A curated, device-wide simulator setting applied via `Simulator.apply(_:)`. Parsing a CLI
 /// `name`/`value` is `SimulatorSettingResolution`'s job.
 public enum SimulatorSetting: Equatable {
   case hardwareKeyboard(Bool)

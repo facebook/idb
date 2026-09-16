@@ -160,7 +160,7 @@ enum DragEndpoint: Equatable {
 
 /// The converged UI-automation surface: element reads and element-targeted
 /// actions, expressed once against an `AccessibilityElementQuery` target and run by the selected
-/// backend. `FBSimulator.uiAutomation(backend:)` vends the backend that implements it.
+/// backend. `Simulator.uiAutomation(backend:)` vends the backend that implements it.
 public protocol UIAutomation: Sendable {
 
   /// Reads the element(s) named by `query` and serializes them to the shared accessibility schema.
@@ -271,7 +271,7 @@ public extension AccessibilityElementsResponse {
   }
 }
 
-public extension FBSimulator {
+public extension Simulator {
 
   /// Memoized per scope: the spawn plus `initForRemoteAccess` behind a transport is the cost the
   /// persistent modes exist to avoid. Shared and exclusive transports are never interchangeable.

@@ -11,15 +11,15 @@
 /// Manages an application's HealthKit authorization for individual sample types.
 public struct SimulatorHealthCommands {
 
-  private let simulator: FBSimulator
+  private let simulator: Simulator
 
   // MARK: - Initializers
 
-  public static func commands(with simulator: FBSimulator) -> SimulatorHealthCommands {
+  public static func commands(with simulator: Simulator) -> SimulatorHealthCommands {
     SimulatorHealthCommands(simulator: simulator)
   }
 
-  internal init(simulator: FBSimulator) {
+  internal init(simulator: Simulator) {
     self.simulator = simulator
   }
 

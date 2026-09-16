@@ -22,7 +22,7 @@ public enum SimulatorDeviceSetError: Error, LocalizedError {
   }
 }
 
-public struct FBSimulatorControlConfiguration: Equatable, Hashable, CustomStringConvertible {
+public struct SimulatorControlConfiguration: Equatable, Hashable, CustomStringConvertible {
 
   public let deviceSetPath: String?
   public let logger: ControlCoreLogger
@@ -37,7 +37,7 @@ public struct FBSimulatorControlConfiguration: Equatable, Hashable, CustomString
   // MARK: - Equatable, Hashable
 
   /// Identity is the device set path alone; the logger is a dependency, not data.
-  public static func == (lhs: FBSimulatorControlConfiguration, rhs: FBSimulatorControlConfiguration) -> Bool {
+  public static func == (lhs: SimulatorControlConfiguration, rhs: SimulatorControlConfiguration) -> Bool {
     lhs.deviceSetPath == rhs.deviceSetPath
   }
 
@@ -52,7 +52,7 @@ public struct FBSimulatorControlConfiguration: Equatable, Hashable, CustomString
   /// The default CoreSimulator device-set path. Loads the private frameworks on demand and throws
   /// when they cannot be loaded or the path cannot be resolved.
   public static func defaultDeviceSetPath() throws -> String {
-    try FBSimulatorControlFrameworkLoader.essentialFrameworks.loadPrivateFrameworks(nil)
+    try SimulatorControlFrameworkLoader.essentialFrameworks.loadPrivateFrameworks(nil)
     guard let deviceSetClass = objc_lookUpClass("SimDeviceSet") else {
       throw SimulatorDeviceSetError.simDeviceSetUnavailable
     }

@@ -9,13 +9,13 @@ import FBControlCore
 @testable import FBSimulatorControl
 import XCTest
 
-/// How `FBSimulator`'s spawn paths build the `SimDevice` launch-option dictionary: argv[0]
+/// How `Simulator`'s spawn paths build the `SimDevice` launch-option dictionary: argv[0]
 /// handling, `standalone` resolution, stdio keys. Pure-function assertions except the stdin
 /// case, which drives the launcher against a recording device double because what it asserts
 /// is that the device is never reached.
 final class SimulatorProcessSpawnCommandsTests: XCTestCase {
 
-  private func simulator(state: FBiOSTargetState) -> FBSimulator {
+  private func simulator(state: FBiOSTargetState) -> Simulator {
     SimulatorTestSupport.testableSimulator(withDevice: StubStateDevice(state: state))
   }
 
@@ -158,7 +158,7 @@ final class SimulatorProcessSpawnCommandsTests: XCTestCase {
 // MARK: - Device double
 
 /// Stands in for `SimDevice` on the unit-test path, exposing only the two selectors
-/// `FBSimulator` reads here: `-UDID` (logger naming at init) and `-state`
+/// `Simulator` reads here: `-UDID` (logger naming at init) and `-state`
 /// (consulted by `shouldLaunchStandalone`). Passed through `id`, so a Swift class
 /// suffices — it never reaches real CoreSimulator.
 private final class StubStateDevice {

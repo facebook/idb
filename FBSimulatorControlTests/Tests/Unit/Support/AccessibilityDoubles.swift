@@ -412,10 +412,10 @@ class AccessibilityTestFixture: NSObject {
 
   /// Installs the AXPTranslator swizzle and wires the translator's results.
   /// Tests build the dispatcher separately via
-  /// `FBSimulator.createAccessibilityTranslationDispatcher(withTranslator:translator)`
+  /// `Simulator.createAccessibilityTranslationDispatcher(withTranslator:translator)`
   /// once setUp returns.
   func setUp() throws {
-    try FBSimulatorControlFrameworkLoader.accessibilityFrameworks.loadPrivateFrameworks(ControlCoreGlobalConfiguration.defaultLogger)
+    try SimulatorControlFrameworkLoader.accessibilityFrameworks.loadPrivateFrameworks(ControlCoreGlobalConfiguration.defaultLogger)
 
     let translation = SimulatorControlTests_AXPTranslationObject_Double()
     translation.pid = 12345

@@ -21,18 +21,18 @@ public enum SimulatorCrashLogError: Error, LocalizedError {
 
 public final class SimulatorCrashLogCommands: CrashLogCommands {
 
-  private weak var simulator: FBSimulator?
+  private weak var simulator: Simulator?
   private let notifier: CrashLogNotifier
   private var hasPerformedInitialIngestion: Bool = false
 
-  public class func commands(with simulator: FBSimulator) -> SimulatorCrashLogCommands {
+  public class func commands(with simulator: Simulator) -> SimulatorCrashLogCommands {
     SimulatorCrashLogCommands(
       simulator: simulator,
       notifier: CrashLogNotifier.sharedInstance
     )
   }
 
-  private init(simulator: FBSimulator, notifier: CrashLogNotifier) {
+  private init(simulator: Simulator, notifier: CrashLogNotifier) {
     self.simulator = simulator
     self.notifier = notifier
   }

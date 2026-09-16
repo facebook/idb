@@ -10,7 +10,7 @@ import FBControlCore
 import FBSimulatorControl
 import Foundation
 
-public extension FBSimulator {
+public extension Simulator {
   /// Compute the buffer-pixel edge insets and the overlay renderer for a video session. Shared by
   /// `videoStream` and `videoRecord` so the stream and record paths reserve bar regions and map
   /// overlay coordinates identically.

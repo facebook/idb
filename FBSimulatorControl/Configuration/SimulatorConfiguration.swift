@@ -8,7 +8,7 @@
 @preconcurrency import FBControlCore
 @preconcurrency import Foundation
 
-public struct FBSimulatorConfiguration: Equatable, Hashable, CustomStringConvertible, Sendable {
+public struct SimulatorConfiguration: Equatable, Hashable, CustomStringConvertible, Sendable {
 
   public let device: DeviceType
   public let os: OSVersion
@@ -29,7 +29,7 @@ public struct FBSimulatorConfiguration: Equatable, Hashable, CustomStringConvert
 
   // MARK: - Equatable, Hashable
 
-  public static func == (lhs: FBSimulatorConfiguration, rhs: FBSimulatorConfiguration) -> Bool {
+  public static func == (lhs: SimulatorConfiguration, rhs: SimulatorConfiguration) -> Bool {
     lhs.deviceIdentity == rhs.deviceIdentity && lhs.runtimeIdentity == rhs.runtimeIdentity
       && lhs.runtimeBuildVersion == rhs.runtimeBuildVersion
   }

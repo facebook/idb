@@ -44,10 +44,10 @@ Since the Frameworks upon which `FBSimulatorControl` depends are loaded lazily, 
 [The tests](FBSimulatorControlTests/Tests) should provide you with some basic guidance for using the API, and the `idb_companion` in this repository is a full-featured consumer of it.
 
 For a high level overview:
-- `SimulatorControlBootstrap` is the entry point. It is the first object that you should create, with `SimulatorControlBootstrap.withConfiguration(_:)`. It creates a `FBSimulatorSet` upon creation, exposed as `set`.
-- `FBSimulatorSet` wraps `SimDeviceSet` and provides a resilient CRUD API for Deleting, Creating and Erasing Simulators.
-- `FBSimulator` is a reference type that represents an individual Simulator. It has a number of convenience methods for accessing information about a Simulator. Many of the possible actions you can perform on a Simulator are present on instances of this class.
-- Configuration values: `ApplicationLaunchConfiguration`, `FBSimulatorControlConfiguration`, `FBSimulatorConfiguration` & `FBSimulatorBootConfiguration`. The last three are structs.
+- `SimulatorControlBootstrap` is the entry point. It is the first object that you should create, with `SimulatorControlBootstrap.withConfiguration(_:)`. It creates a `SimulatorSet` upon creation, exposed as `set`.
+- `SimulatorSet` wraps `SimDeviceSet` and provides a resilient CRUD API for Deleting, Creating and Erasing Simulators.
+- `Simulator` is a reference type that represents an individual Simulator. It has a number of convenience methods for accessing information about a Simulator. Many of the possible actions you can perform on a Simulator are present on instances of this class.
+- Configuration values: `ApplicationLaunchConfiguration`, `SimulatorControlConfiguration`, `SimulatorConfiguration` & `SimulatorBootConfiguration`. The last three are structs.
 
 
 Simulator creation resolves a request against CoreSimulator's installed device types and runtimes:
@@ -101,7 +101,7 @@ The framework is built on the private frameworks and services that Apple's own t
 
 `CoreSimulator` is the Private Framework that is the interface for most Simulator related functionality on macOS. In previous Xcode versions, `CoreSimulator` was bundled inside of Xcode, but it is now installed at the System level just like `MobileDevice.framework`. It may be upgraded to a newer version as part of the install process of Xcode itself.
 
-`CoreSimulator` is used by Xcode and `simctl` as the Framework used to manipulate Simulators. It has Objective-C classes representing a set of Simulators within a directory (`SimDeviceSet` wrapped by `FBSimulatorSet`) and an individual iOS Simulator (`SimDevice`, wrapped by `FBSimulator`). There is also a Class that behaves a lot like an "entrypoint" to the Framework in `SimServiceContext`, this performs initialization of external services and is aware of the various configurations of Simulators that are available.
+`CoreSimulator` is used by Xcode and `simctl` as the Framework used to manipulate Simulators. It has Objective-C classes representing a set of Simulators within a directory (`SimDeviceSet` wrapped by `SimulatorSet`) and an individual iOS Simulator (`SimDevice`, wrapped by `Simulator`). There is also a Class that behaves a lot like an "entrypoint" to the Framework in `SimServiceContext`, this performs initialization of external services and is aware of the various configurations of Simulators that are available.
 
 ### `simctl`
 

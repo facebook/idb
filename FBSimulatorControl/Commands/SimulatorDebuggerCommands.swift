@@ -60,7 +60,7 @@ private final class SimulatorDebugServer: DebugServer {
 
 public final class SimulatorDebuggerCommands: DebuggerCommands {
 
-  internal weak var simulator: FBSimulator?
+  internal weak var simulator: Simulator?
   internal let debugServerPath: String
 
   /// How the host application is launched; defaults to the simulator itself.
@@ -71,7 +71,7 @@ public final class SimulatorDebuggerCommands: DebuggerCommands {
       .appendingPathComponent("SharedFrameworks/LLDB.framework/Resources/debugserver")
   }
 
-  public class func commands(with simulator: FBSimulator) -> SimulatorDebuggerCommands {
+  public class func commands(with simulator: Simulator) -> SimulatorDebuggerCommands {
     SimulatorDebuggerCommands(
       simulator: simulator,
       debugServerPath: resolveDebugServerPath()
@@ -79,7 +79,7 @@ public final class SimulatorDebuggerCommands: DebuggerCommands {
   }
 
   internal init(
-    simulator: FBSimulator,
+    simulator: Simulator,
     debugServerPath: String,
     applicationLauncher: (any ApplicationLaunching)? = nil
   ) {
@@ -112,7 +112,7 @@ public final class SimulatorDebuggerCommands: DebuggerCommands {
     )
   }
 
-  private func debugServerTask(forPort port: in_port_t, processIdentifier: pid_t, simulator: FBSimulator, debugServerPath: String) -> FBFuture<FBSubprocess<NSNull, AnyObject, AnyObject>> {
+  private func debugServerTask(forPort port: in_port_t, processIdentifier: pid_t, simulator: Simulator, debugServerPath: String) -> FBFuture<FBSubprocess<NSNull, AnyObject, AnyObject>> {
     let logger = simulator.logger
     return
       FBProcessBuilder<NSNull, AnyObject, AnyObject>

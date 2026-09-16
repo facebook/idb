@@ -50,19 +50,19 @@ private final class CapturingApplicationLauncher: ApplicationLaunching, @uncheck
 
 final class SimulatorDebuggerCommandsTests: XCTestCase {
 
-  /// Holds strong references to the real `FBSimulator` and the capturing wrapper
+  /// Holds strong references to the real `Simulator` and the capturing wrapper
   /// for the duration of a test. `SimulatorDebuggerCommands.simulator` and
   /// `SimulatorApplicationCommands.simulator` are both `weak`, so without an
   /// external strong ref the simulator deallocates the moment `makeCommands`
   /// returns and the production code throws "Simulator deallocated" before the
   /// override has a chance to capture.
   private struct Harness {
-    let simulator: FBSimulator
+    let simulator: Simulator
     let commands: SimulatorDebuggerCommands
     let wrapper: CapturingApplicationLauncher
   }
 
-  /// Builds a real `FBSimulator` (with a stub device — see SimulatorTestSupport) and constructs
+  /// Builds a real `Simulator` (with a stub device — see SimulatorTestSupport) and constructs
   /// the production `SimulatorDebuggerCommands` against it, with a capturing launcher injected.
   private func makeHarness() -> Harness {
     let simulator = SimulatorTestSupport.testableSimulator()

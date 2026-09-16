@@ -22,10 +22,10 @@ final class SimulatorBootTestCase: XCTestCase {
 
   private var control: SimulatorControlBootstrap!
   private var creationRequest: SimulatorCreationRequest!
-  private var expectedConfiguration: FBSimulatorConfiguration!
-  private var ownedSimulator: FBSimulator?
+  private var expectedConfiguration: SimulatorConfiguration!
+  private var ownedSimulator: Simulator?
   private var ownedDeviceSetPath: String?
-  private var bootConfiguration: FBSimulatorBootConfiguration!
+  private var bootConfiguration: SimulatorBootConfiguration!
 
   override class func setUp() {
     super.setUp()
@@ -43,7 +43,7 @@ final class SimulatorBootTestCase: XCTestCase {
     // Booting can take minutes on a loaded host, far longer than the default allowance.
     executionTimeAllowance = 600
     // Throwing here turns a load failure into a test failure instead of killing the runner.
-    try FBSimulatorControlFrameworkLoader.essentialFrameworks.loadPrivateFrameworks(ControlCoreGlobalConfiguration.defaultLogger)
+    try SimulatorControlFrameworkLoader.essentialFrameworks.loadPrivateFrameworks(ControlCoreGlobalConfiguration.defaultLogger)
     let service = try SimulatorServiceContext.sharedServiceContext()
     let deviceTypes = service.supportedDeviceTypes()
     let runtimes = service.supportedRuntimes()
@@ -57,12 +57,12 @@ final class SimulatorBootTestCase: XCTestCase {
     creationRequest = SimulatorCreationRequest(device: .identifier(try XCTUnwrap(availableDevice.identifier)))
     let snapshot = CoreSimulatorRuntimeIndex(deviceTypes: deviceTypes, runtimes: runtimes)
     let (deviceType, runtime) = try snapshot.resolve(creationRequest)
-    expectedConfiguration = FBSimulatorConfiguration.configuration(deviceType: deviceType, runtime: runtime)
-    bootConfiguration = FBSimulatorBootConfiguration(options: Self.bootOptions, environment: [:])
+    expectedConfiguration = SimulatorConfiguration.configuration(deviceType: deviceType, runtime: runtime)
+    bootConfiguration = SimulatorBootConfiguration(options: Self.bootOptions, environment: [:])
     let noLogger: (any ControlCoreLogger)? = nil
     ownedDeviceSetPath = Self.deviceSetPath
     control = try SimulatorControlBootstrap.withConfiguration(
-      FBSimulatorControlConfiguration(deviceSetPath: ownedDeviceSetPath, logger: noLogger))
+      SimulatorControlConfiguration(deviceSetPath: ownedDeviceSetPath, logger: noLogger))
   }
 
   override func tearDown() async throws {

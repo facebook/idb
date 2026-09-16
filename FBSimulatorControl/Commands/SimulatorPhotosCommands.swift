@@ -11,15 +11,15 @@
 /// Manages the contents of the simulated device's photo library.
 public struct SimulatorPhotosCommands {
 
-  private let simulator: FBSimulator
+  private let simulator: Simulator
 
   // MARK: - Initializers
 
-  public static func commands(with simulator: FBSimulator) -> SimulatorPhotosCommands {
+  public static func commands(with simulator: Simulator) -> SimulatorPhotosCommands {
     SimulatorPhotosCommands(simulator: simulator)
   }
 
-  internal init(simulator: FBSimulator) {
+  internal init(simulator: Simulator) {
     self.simulator = simulator
   }
 

@@ -38,7 +38,7 @@ public enum SimulatorFrameworkBridgeError: Error, LocalizedError {
 
 // MARK: - SimulatorFrameworkBridge
 
-extension FBSimulator {
+extension Simulator {
 
   /// Runs one of `SimulatorFrameworkBridge`'s services inside the guest, returning its stdout.
   ///

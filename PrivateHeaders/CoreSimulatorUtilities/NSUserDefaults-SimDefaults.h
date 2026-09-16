@@ -12,7 +12,7 @@
  CoreSimulatorUtilities (CoreSimulator.framework/Frameworks/CoreSimulatorUtilities),
  which CoreSimulator hard-links via LC_LOAD_DYLIB, so +simulatorDefaults still
  registers in the ObjC runtime whenever CoreSimulator loads.
- FBSimulatorControlFrameworkLoader calls it (guarded by -respondsToSelector:) to
+ SimulatorControlFrameworkLoader calls it (guarded by -respondsToSelector:) to
  toggle CoreSimulator debug logging, so this remains functional under Xcode 27.
  */
 @interface NSUserDefaults (SimDefaults)

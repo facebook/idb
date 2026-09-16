@@ -20,11 +20,11 @@ enum AXBridgeServiceScope: Sendable, Hashable {
 
 /// Owns the lifecycle of a shared or exclusive socket-backed axbridge guest.
 actor AXBridgePersistentTransport: AXBridgeTransport {
-  private weak var simulator: FBSimulator?
+  private weak var simulator: Simulator?
   private let scope: AXBridgeServiceScope
   private var connectionTask: Task<AXBridgeConnection, Error>?
 
-  init(simulator: FBSimulator, scope: AXBridgeServiceScope) {
+  init(simulator: Simulator, scope: AXBridgeServiceScope) {
     self.simulator = simulator
     self.scope = scope
   }
@@ -98,7 +98,7 @@ actor AXBridgePersistentTransport: AXBridgeTransport {
   }
 
   private static func establish(
-    simulator: FBSimulator?,
+    simulator: Simulator?,
     scope: AXBridgeServiceScope
   ) async throws -> AXBridgeConnection {
     guard let simulator else {
@@ -191,7 +191,7 @@ actor AXBridgePersistentTransport: AXBridgeTransport {
   }
 
   private static func spawn(
-    simulator: FBSimulator,
+    simulator: Simulator,
     helperPath: String,
     socketPath: String,
     scope: AXBridgeServiceScope,

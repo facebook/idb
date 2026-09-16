@@ -10,10 +10,10 @@ import XCTest
 
 final class SimulatorControlTransientTests: XCTestCase {
 
-  // MARK: - FBSimulatorBootConfiguration
+  // MARK: - SimulatorBootConfiguration
 
   func testDefaultConfigurationHasVerifyUsable() {
-    let config = FBSimulatorBootConfiguration.default
+    let config = SimulatorBootConfiguration.default
     XCTAssertTrue(
       config.options.contains(.verifyUsable),
       "Default configuration should have VerifyUsable option"
@@ -25,13 +25,13 @@ final class SimulatorControlTransientTests: XCTestCase {
   }
 
   func testDefaultConfigurationHasEmptyEnvironment() {
-    let config = FBSimulatorBootConfiguration.default
+    let config = SimulatorBootConfiguration.default
     XCTAssertNotNil(config.environment)
     XCTAssertEqual(config.environment.count, 0)
   }
 
   func testBootConfigurationDescription() {
-    let config = FBSimulatorBootConfiguration(
+    let config = SimulatorBootConfiguration(
       options: .tieToProcessLifecycle,
       environment: ["KEY": "VAL"]
     )
@@ -41,7 +41,7 @@ final class SimulatorControlTransientTests: XCTestCase {
   }
 
   func testBootConfigurationDescriptionContainsDirectLaunch() {
-    let config = FBSimulatorBootConfiguration(
+    let config = SimulatorBootConfiguration(
       options: .tieToProcessLifecycle,
       environment: [:]
     )
@@ -50,7 +50,7 @@ final class SimulatorControlTransientTests: XCTestCase {
   }
 
   func testBootConfigurationDescriptionWithoutDirectLaunch() {
-    let config = FBSimulatorBootConfiguration(
+    let config = SimulatorBootConfiguration(
       options: .verifyUsable,
       environment: [:]
     )

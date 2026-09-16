@@ -11,12 +11,12 @@
 
 final class SimulatorEraseStrategy {
 
-  static func erase(_ simulator: FBSimulator) async throws {
+  static func erase(_ simulator: Simulator) async throws {
     try await SimulatorShutdownStrategy.shutdown(simulator)
     try await eraseContentsAndSettings(simulator)
   }
 
-  private static func eraseContentsAndSettings(_ simulator: FBSimulator) async throws {
+  private static func eraseContentsAndSettings(_ simulator: Simulator) async throws {
     let logger = simulator.logger
     let description = "\(simulator)"
     logger.log("Erasing \(description)")

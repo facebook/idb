@@ -36,7 +36,7 @@ public final class SimulatorServiceContext {
   // MARK: - Private Initialization
 
   private class func createServiceContext(withLogger logger: (any ControlCoreLogger)?) throws -> SimulatorServiceContext {
-    try FBSimulatorControlFrameworkLoader.essentialFrameworks.loadPrivateFrameworks(logger)
+    try SimulatorControlFrameworkLoader.essentialFrameworks.loadPrivateFrameworks(logger)
     guard
       let serviceContextClass = NSClassFromString("SimServiceContext") as? SimServiceContext.Type,
       serviceContextClass.responds(to: NSSelectorFromString("sharedServiceContextForDeveloperDir:error:"))
@@ -84,7 +84,7 @@ public final class SimulatorServiceContext {
     return (serviceContext.supportedDeviceTypes as? [SimDeviceType]) ?? []
   }
 
-  func createDeviceSet(with configuration: FBSimulatorControlConfiguration) throws -> SimDeviceSet {
+  func createDeviceSet(with configuration: SimulatorControlConfiguration) throws -> SimDeviceSet {
     guard let deviceSetPath = configuration.deviceSetPath else {
       // defaultDeviceSetWithError: takes (id *) not (NSError **), so use the raw API
       var error: AnyObject?

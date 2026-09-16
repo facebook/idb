@@ -22,15 +22,15 @@ public enum SimulatorNetworkError: Error, LocalizedError {
 /// Configures the HTTP proxy and DNS resolvers the simulated device uses.
 public struct SimulatorNetworkCommands {
 
-  private let simulator: FBSimulator
+  private let simulator: Simulator
 
   // MARK: - Initializers
 
-  public static func commands(with simulator: FBSimulator) -> SimulatorNetworkCommands {
+  public static func commands(with simulator: Simulator) -> SimulatorNetworkCommands {
     SimulatorNetworkCommands(simulator: simulator)
   }
 
-  internal init(simulator: FBSimulator) {
+  internal init(simulator: Simulator) {
     self.simulator = simulator
   }
 

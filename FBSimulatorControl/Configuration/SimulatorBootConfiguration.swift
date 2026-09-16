@@ -28,13 +28,13 @@ public struct SimulatorBootOptions: OptionSet, Hashable, Sendable {
   public static let verifyUsable = SimulatorBootOptions(rawValue: 1 << 3)
 }
 
-public struct FBSimulatorBootConfiguration: Equatable, Hashable, Sendable, CustomStringConvertible {
+public struct SimulatorBootConfiguration: Equatable, Hashable, Sendable, CustomStringConvertible {
 
   public let options: SimulatorBootOptions
 
   public let environment: [String: String]
 
-  public static let `default` = FBSimulatorBootConfiguration(
+  public static let `default` = SimulatorBootConfiguration(
     options: .verifyUsable,
     environment: [:]
   )

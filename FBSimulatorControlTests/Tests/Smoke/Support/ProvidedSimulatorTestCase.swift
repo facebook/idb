@@ -35,20 +35,20 @@ class ProvidedSimulatorTestCase: XCTestCase {
 
   /// The one acquisition for the whole bundle. Memoized as a `Task` so cases share the work rather
   /// than the result of a race; XCTest runs cases serially, so this is only ever awaited in turn.
-  private nonisolated(unsafe) static var acquisition: Task<FBSimulator, Error>?
+  private nonisolated(unsafe) static var acquisition: Task<Simulator, Error>?
 
-  private(set) var simulator: FBSimulator!
+  private(set) var simulator: Simulator!
 
   override func setUp() async throws {
     continueAfterFailure = false
     simulator = try await Self.acquireSimulator()
   }
 
-  private static func acquireSimulator() async throws -> FBSimulator {
+  private static func acquireSimulator() async throws -> Simulator {
     if let acquisition {
       return try await acquisition.value
     }
-    let task = Task<FBSimulator, Error> {
+    let task = Task<Simulator, Error> {
       let simulator = try resolveProvidedSimulator()
       try await waitUntilBootCompleted(simulator)
       return simulator
@@ -65,11 +65,11 @@ class ProvidedSimulatorTestCase: XCTestCase {
 
   /// Finds the simulator the environment provided, or skips: nothing supplied one, and this suite
   /// does not boot.
-  private static func resolveProvidedSimulator() throws -> FBSimulator {
-    try FBSimulatorControlFrameworkLoader.essentialFrameworks.loadPrivateFrameworks(ControlCoreGlobalConfiguration.defaultLogger)
+  private static func resolveProvidedSimulator() throws -> Simulator {
+    try SimulatorControlFrameworkLoader.essentialFrameworks.loadPrivateFrameworks(ControlCoreGlobalConfiguration.defaultLogger)
     let environment = ProcessInfo.processInfo.environment
     let noLogger: (any ControlCoreLogger)? = nil
-    let configuration = FBSimulatorControlConfiguration(
+    let configuration = SimulatorControlConfiguration(
       deviceSetPath: environment[DeviceSetPathEnvKey],
       logger: noLogger)
     let control = try SimulatorControlBootstrap.withConfiguration(configuration)
@@ -105,7 +105,7 @@ class ProvidedSimulatorTestCase: XCTestCase {
   ///
   /// Bounded, so a harness that never finishes booting the simulator it promised is reported as
   /// that, rather than as a test hanging until its execution time allowance kills it.
-  private static func waitUntilBootCompleted(_ simulator: FBSimulator) async throws {
+  private static func waitUntilBootCompleted(_ simulator: Simulator) async throws {
     try await verifySimulatorIsBooted(
       simulator,
       deadline: PollDeadline(

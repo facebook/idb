@@ -9,13 +9,13 @@ import FBControlCore
 import Foundation
 
 public struct SimulatorEraseCommands: EraseCommands {
-  private let simulator: FBSimulator
+  private let simulator: Simulator
 
-  public static func commands(with simulator: FBSimulator) -> SimulatorEraseCommands {
+  public static func commands(with simulator: Simulator) -> SimulatorEraseCommands {
     SimulatorEraseCommands(simulator: simulator)
   }
 
-  init(simulator: FBSimulator) {
+  init(simulator: Simulator) {
     self.simulator = simulator
   }
 

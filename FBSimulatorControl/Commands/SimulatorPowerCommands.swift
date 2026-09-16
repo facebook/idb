@@ -9,13 +9,13 @@ import FBControlCore
 import Foundation
 
 public struct SimulatorPowerCommands: PowerCommands {
-  private let simulator: FBSimulator
+  private let simulator: Simulator
 
-  public static func commands(with simulator: FBSimulator) -> SimulatorPowerCommands {
+  public static func commands(with simulator: Simulator) -> SimulatorPowerCommands {
     SimulatorPowerCommands(simulator: simulator)
   }
 
-  init(simulator: FBSimulator) {
+  init(simulator: Simulator) {
     self.simulator = simulator
   }
 
@@ -27,6 +27,6 @@ public struct SimulatorPowerCommands: PowerCommands {
 
   public func reboot() async throws {
     try await shutdown()
-    try await simulator.lifecycle.boot(FBSimulatorBootConfiguration.default)
+    try await simulator.lifecycle.boot(SimulatorBootConfiguration.default)
   }
 }

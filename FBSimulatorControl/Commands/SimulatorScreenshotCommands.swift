@@ -27,14 +27,14 @@ extension SimulatorScreenshotError: LocalizedError {
 
 public final class SimulatorScreenshotCommands: ScreenshotCommands {
 
-  private weak var simulator: FBSimulator?
+  private weak var simulator: Simulator?
   private var image: SimulatorImage?
 
-  public class func commands(with simulator: FBSimulator) -> SimulatorScreenshotCommands {
+  public class func commands(with simulator: Simulator) -> SimulatorScreenshotCommands {
     SimulatorScreenshotCommands(simulator: simulator)
   }
 
-  private init(simulator: FBSimulator) {
+  private init(simulator: Simulator) {
     self.simulator = simulator
   }
 

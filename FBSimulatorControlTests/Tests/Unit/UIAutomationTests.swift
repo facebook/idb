@@ -31,7 +31,7 @@ final class UIAutomationTests: XCTestCase {
   }
 
   private func transport(
-    _ simulator: FBSimulator, _ persistence: AXBridgePersistence
+    _ simulator: Simulator, _ persistence: AXBridgePersistence
   ) throws -> AXBridgePersistentTransport {
     let reader = try simulator.uiAutomation(backend: Self.backend(persistence))
     let bridgeReader = try XCTUnwrap(reader as? AXBridgeUIAutomation)

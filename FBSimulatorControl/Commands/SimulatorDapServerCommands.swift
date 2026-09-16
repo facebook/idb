@@ -29,13 +29,13 @@ extension SimulatorDapServerError: LocalizedError {
 
 public final class SimulatorDapServerCommand {
 
-  private let simulator: FBSimulator
+  private let simulator: Simulator
 
-  public class func commands(with simulator: FBSimulator) -> SimulatorDapServerCommand {
+  public class func commands(with simulator: Simulator) -> SimulatorDapServerCommand {
     SimulatorDapServerCommand(simulator: simulator)
   }
 
-  private init(simulator: FBSimulator) {
+  private init(simulator: Simulator) {
     self.simulator = simulator
   }
 

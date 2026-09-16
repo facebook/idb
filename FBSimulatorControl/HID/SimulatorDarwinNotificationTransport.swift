@@ -28,9 +28,9 @@ final class SimulatorDarwinNotificationTransport: @unchecked Sendable {
 
   /// Serial, so the blocking post never runs on a cooperative thread.
   private let postQueue = DispatchQueue(label: "com.facebook.FBSimulatorControl.darwin-notification")
-  private weak var simulator: FBSimulator?
+  private weak var simulator: Simulator?
 
-  init(simulator: FBSimulator?) {
+  init(simulator: Simulator?) {
     self.simulator = simulator
   }
 

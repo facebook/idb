@@ -66,15 +66,15 @@ public enum SimulatorPreferencesError: Error, LocalizedError {
 /// Reads and writes the simulated device's settings, both the curated ones and raw preferences.
 public struct SimulatorPreferencesCommands {
 
-  private let simulator: FBSimulator
+  private let simulator: Simulator
 
   // MARK: - Initializers
 
-  public static func commands(with simulator: FBSimulator) -> SimulatorPreferencesCommands {
+  public static func commands(with simulator: Simulator) -> SimulatorPreferencesCommands {
     SimulatorPreferencesCommands(simulator: simulator)
   }
 
-  internal init(simulator: FBSimulator) {
+  internal init(simulator: Simulator) {
     self.simulator = simulator
   }
 

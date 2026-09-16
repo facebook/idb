@@ -35,11 +35,11 @@ extension SimulatorReplError: LocalizedError {
 
 public struct SimulatorReplCommands {
 
-  private let simulator: FBSimulator
+  private let simulator: Simulator
 
   // MARK: - Initializers
 
-  public static func commands(with simulator: FBSimulator) -> SimulatorReplCommands {
+  public static func commands(with simulator: Simulator) -> SimulatorReplCommands {
     return SimulatorReplCommands(simulator: simulator)
   }
 

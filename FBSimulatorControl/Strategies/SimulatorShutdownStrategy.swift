@@ -11,7 +11,7 @@ import Foundation
 
 final class SimulatorShutdownStrategy {
 
-  static func shutdown(_ simulator: FBSimulator) async throws {
+  static func shutdown(_ simulator: Simulator) async throws {
     let logger = simulator.logger
     logger.debug().log("Starting Safe Shutdown of \(simulator.udid)")
 
@@ -29,7 +29,7 @@ final class SimulatorShutdownStrategy {
     try await shutdownSimulator(simulator)
   }
 
-  static func shutdownAll(_ simulators: [FBSimulator]) async throws {
+  static func shutdownAll(_ simulators: [Simulator]) async throws {
     for simulator in simulators {
       try await shutdown(simulator)
     }
@@ -37,7 +37,7 @@ final class SimulatorShutdownStrategy {
 
   private static let shutdownWhenShuttingDownErrorCode: Int = 164
 
-  private static func shutdownSimulator(_ simulator: FBSimulator) async throws {
+  private static func shutdownSimulator(_ simulator: Simulator) async throws {
     let logger = simulator.logger
     let errorCode = shutdownWhenShuttingDownErrorCode
 
@@ -57,7 +57,7 @@ final class SimulatorShutdownStrategy {
     try await FBiOSTargetResolveState(simulator, .shutdown)
   }
 
-  private static func transitionCreatingToShutdown(_ simulator: FBSimulator) async throws {
+  private static func transitionCreatingToShutdown(_ simulator: Simulator) async throws {
     do {
       try await FBiOSTargetResolveState(
         simulator,
@@ -71,7 +71,7 @@ final class SimulatorShutdownStrategy {
     }
   }
 
-  private static func eraseSimulator(_ simulator: FBSimulator) async throws {
+  private static func eraseSimulator(_ simulator: Simulator) async throws {
     let logger = simulator.logger
     logger.debug().log("Erasing Simulator \(simulator.udid)")
     try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in

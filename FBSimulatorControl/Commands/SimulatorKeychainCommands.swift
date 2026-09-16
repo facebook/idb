@@ -10,9 +10,9 @@ import Foundation
 
 public struct SimulatorKeychainCommands {
 
-  private let simulator: FBSimulator
+  private let simulator: Simulator
 
-  public static func commands(with simulator: FBSimulator) -> SimulatorKeychainCommands {
+  public static func commands(with simulator: Simulator) -> SimulatorKeychainCommands {
     SimulatorKeychainCommands(simulator: simulator)
   }
 

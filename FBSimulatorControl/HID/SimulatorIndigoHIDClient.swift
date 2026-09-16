@@ -52,7 +52,7 @@ final class SimulatorIndigoHIDClient: @unchecked Sendable {
   /// vend it first — `FBSimulatorControl` itself loads only the essential set (CoreSimulator), so
   /// otherwise there is nothing for the lookup to find. Mirrors `SimulatorIndigoHID.init()`.
   static func resolveClientClass(
-    loader: FBControlCoreFrameworkLoader = FBSimulatorControlFrameworkLoader.xcodeFrameworks
+    loader: FBControlCoreFrameworkLoader = SimulatorControlFrameworkLoader.xcodeFrameworks
   ) throws -> ObjCRuntimeClass {
     try loader.loadPrivateFrameworks(nil)
     guard let clientClass = ObjCRuntimeClass(name: clientClassName) else {

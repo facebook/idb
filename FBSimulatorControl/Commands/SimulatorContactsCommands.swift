@@ -33,15 +33,15 @@ extension SimulatorContactsError: LocalizedError {
 /// Replaces and clears the simulated device's Address Book.
 public struct SimulatorContactsCommands {
 
-  private let simulator: FBSimulator
+  private let simulator: Simulator
 
   // MARK: - Initializers
 
-  public static func commands(with simulator: FBSimulator) -> SimulatorContactsCommands {
+  public static func commands(with simulator: Simulator) -> SimulatorContactsCommands {
     SimulatorContactsCommands(simulator: simulator)
   }
 
-  internal init(simulator: FBSimulator) {
+  internal init(simulator: Simulator) {
     self.simulator = simulator
   }
 

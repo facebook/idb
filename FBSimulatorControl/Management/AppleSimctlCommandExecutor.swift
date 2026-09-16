@@ -16,7 +16,7 @@ public final class AppleSimctlCommandExecutor {
   private let queue: DispatchQueue
   private let logger: any ControlCoreLogger
 
-  public class func executor(for simulator: FBSimulator) -> AppleSimctlCommandExecutor {
+  public class func executor(for simulator: Simulator) -> AppleSimctlCommandExecutor {
     // simctl addresses a simulator by its device set, so this is only reachable for a
     // set-managed simulator - which every simulator the companion serves is.
     guard let set = simulator.set else {

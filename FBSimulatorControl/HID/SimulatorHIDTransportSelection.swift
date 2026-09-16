@@ -52,7 +52,7 @@ enum SimulatorHIDTransportSelection {
 
 // MARK: - Legacy keyboard suppression
 
-extension FBSimulator {
+extension Simulator {
 
   /// Whether this simulator's guest has handed its legacy keyboard service over to `dtuhidd`.
   ///
@@ -62,7 +62,7 @@ extension FBSimulator {
   /// version rather than trying to observe the guest.
   var isLegacyKeyboardSuppressed: Bool {
     SimulatorHIDTransportSelection.isLegacyKeyboardSuppressed(
-      coreSimulatorVersion: FBSimulatorControlFrameworkLoader.loadedCoreSimulatorVersion)
+      coreSimulatorVersion: SimulatorControlFrameworkLoader.loadedCoreSimulatorVersion)
   }
 
   /// The HID transport to prefer when a caller does not request one: DTUHID once the toolchain ships
@@ -70,13 +70,13 @@ extension FBSimulator {
   /// falls back to Indigo if `dtuhidd` turns out to be unreachable.
   var defaultHIDTransport: SimulatorHIDTransportType {
     SimulatorHIDTransportSelection.defaultTransport(
-      coreSimulatorVersion: FBSimulatorControlFrameworkLoader.loadedCoreSimulatorVersion)
+      coreSimulatorVersion: SimulatorControlFrameworkLoader.loadedCoreSimulatorVersion)
   }
 }
 
 // MARK: - Loaded CoreSimulator version
 
-private extension FBSimulatorControlFrameworkLoader {
+private extension SimulatorControlFrameworkLoader {
 
   /// The version of the CoreSimulator framework actually loaded in-process (e.g. `"1155.4"`), read
   /// from the bundle that vends `SimDevice`, or `nil` if it is not loaded. CoreSimulator is a system

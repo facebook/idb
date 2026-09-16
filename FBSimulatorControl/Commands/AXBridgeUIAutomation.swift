@@ -26,7 +26,7 @@ final class AXBridgeUIAutomation: AXBridgeTreeReader, @unchecked Sendable {
   /// screen no longer displayed.
   let requestedAutomationMode: Bool?
 
-  private let simulator: FBSimulator
+  private let simulator: Simulator
 
   /// How this reader reaches the guest.
   let transport: any AXBridgeTransport
@@ -40,7 +40,7 @@ final class AXBridgeUIAutomation: AXBridgeTreeReader, @unchecked Sendable {
   private let frontmostMethod: AXBridgeFrontmostMethod
 
   init(
-    simulator: FBSimulator,
+    simulator: Simulator,
     transport: any AXBridgeTransport,
     persistence: AXBridgePersistence,
     frontmostMethod: AXBridgeFrontmostMethod = .windowServer,

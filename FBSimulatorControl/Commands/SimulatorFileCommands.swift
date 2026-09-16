@@ -30,15 +30,15 @@ extension SimulatorFileError: LocalizedError {
 
 public final class SimulatorFileCommands: FileCommands {
 
-  private let simulator: FBSimulator
+  private let simulator: Simulator
 
   // MARK: - Initializers
 
-  public class func commands(with simulator: FBSimulator) -> SimulatorFileCommands {
+  public class func commands(with simulator: Simulator) -> SimulatorFileCommands {
     SimulatorFileCommands(simulator: simulator)
   }
 
-  private init(simulator: FBSimulator) {
+  private init(simulator: Simulator) {
     self.simulator = simulator
   }
 

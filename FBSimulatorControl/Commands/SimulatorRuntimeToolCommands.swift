@@ -25,15 +25,15 @@ public struct InSimulatorToolOutput: Sendable {
 /// Spawns executables inside the simulator, capturing what they write.
 public struct SimulatorRuntimeToolCommands {
 
-  private let simulator: FBSimulator
+  private let simulator: Simulator
 
   // MARK: - Initializers
 
-  public static func commands(with simulator: FBSimulator) -> SimulatorRuntimeToolCommands {
+  public static func commands(with simulator: Simulator) -> SimulatorRuntimeToolCommands {
     SimulatorRuntimeToolCommands(simulator: simulator)
   }
 
-  internal init(simulator: FBSimulator) {
+  internal init(simulator: Simulator) {
     self.simulator = simulator
   }
 

@@ -29,7 +29,7 @@ import XCTest
 
 final class SimulatorMetadataTests: XCTestCase {
   func testMissingMetadataRemainsDescribable() {
-    let configuration = FBSimulatorConfiguration.configuration(deviceType: nil, runtime: nil)
+    let configuration = SimulatorConfiguration.configuration(deviceType: nil, runtime: nil)
     XCTAssertEqual(configuration.device.model.rawValue, "unknown")
     XCTAssertEqual(configuration.os.versionString, "")
     XCTAssertNil(configuration.runtimeIdentifier)
@@ -38,28 +38,28 @@ final class SimulatorMetadataTests: XCTestCase {
   func testDifferentVersionsWithoutIdentifiersRemainDistinct() {
     let device = DeviceType.generic(withName: "Future Device")
     let name = FBOSVersionName(rawValue: "Future Platform")
-    let first = FBSimulatorConfiguration(device: device, os: OSVersion(name: name, versionString: "99.0"))
-    let second = FBSimulatorConfiguration(device: device, os: OSVersion(name: name, versionString: "100.0"))
+    let first = SimulatorConfiguration(device: device, os: OSVersion(name: name, versionString: "99.0"))
+    let second = SimulatorConfiguration(device: device, os: OSVersion(name: name, versionString: "100.0"))
     XCTAssertEqual(Set([first, second]).count, 2)
   }
 
   func testRuntimeIdentifierPreservesIdentityAcrossDisplayNameChanges() {
     let device = DeviceType.generic(withName: "Future Device")
-    let first = FBSimulatorConfiguration(device: device, os: .generic(withName: "FutureOS 99.0"), runtimeIdentifier: "future.runtime")
-    let second = FBSimulatorConfiguration(device: device, os: .generic(withName: "RenamedOS 99.0"), runtimeIdentifier: "future.runtime")
+    let first = SimulatorConfiguration(device: device, os: .generic(withName: "FutureOS 99.0"), runtimeIdentifier: "future.runtime")
+    let second = SimulatorConfiguration(device: device, os: .generic(withName: "RenamedOS 99.0"), runtimeIdentifier: "future.runtime")
     XCTAssertEqual(Set([first, second]).count, 1)
   }
 
   func testDifferentBuildsRemainDistinct() {
     let device = DeviceType.generic(withName: "Future Device")
     let os = OSVersion.generic(withName: "FutureOS 99.0")
-    let first = FBSimulatorConfiguration(device: device, os: os, runtimeIdentifier: "future.runtime", runtimeBuildVersion: "99A1")
-    let second = FBSimulatorConfiguration(device: device, os: os, runtimeIdentifier: "future.runtime", runtimeBuildVersion: "99A2")
+    let first = SimulatorConfiguration(device: device, os: os, runtimeIdentifier: "future.runtime", runtimeBuildVersion: "99A1")
+    let second = SimulatorConfiguration(device: device, os: os, runtimeIdentifier: "future.runtime", runtimeBuildVersion: "99A2")
     XCTAssertEqual(Set([first, second]).count, 2)
   }
 
   func testUncataloguedSimulatorUsesReportedMetadata() {
-    let configuration = FBSimulatorConfiguration.inferSimulatorConfiguration(
+    let configuration = SimulatorConfiguration.inferSimulatorConfiguration(
       fromDevice: SimulatorTestSupport.asDevice(MetadataSimDevice()))
     XCTAssertEqual(configuration.device.model.rawValue, "Future Device")
     XCTAssertEqual(configuration.os.name.rawValue, "Future Platform")

@@ -11,9 +11,9 @@ import CoreSimulator
 import FBControlCore
 import Foundation
 
-// MARK: - FBSimulator (translation dispatcher construction)
+// MARK: - Simulator (translation dispatcher construction)
 
-extension FBSimulator {
+extension Simulator {
 
   /// Builds a dispatcher for the given translator and wires it up as the
   /// translator's token delegate. `translator` is typed `Any` so tests can pass
@@ -30,11 +30,11 @@ extension FBSimulator {
   // disambiguates concurrent requests by token, guarded internally by a lock).
   private nonisolated(unsafe) static let sharedAccessibilityTranslationDispatcher: AXTranslationDispatcher = {
     let translator = unsafeBitCast(AXPTranslator.sharedInstance() as AnyObject, to: AXPTranslator.self)
-    return FBSimulator.createAccessibilityTranslationDispatcher(withTranslator: translator)
+    return Simulator.createAccessibilityTranslationDispatcher(withTranslator: translator)
   }()
 
   var accessibilityTranslationDispatcher: AXTranslationDispatcher {
-    FBSimulator.sharedAccessibilityTranslationDispatcher
+    Simulator.sharedAccessibilityTranslationDispatcher
   }
 }
 
@@ -48,13 +48,13 @@ final class SimulatorAccessibilityCommands: AccessibilityOperations {
   private static let coreSimulatorBridgeServiceName = "com.apple.CoreSimulator.bridge"
   private static let springBoardServiceName = "com.apple.SpringBoard"
 
-  private weak var simulator: FBSimulator?
+  private weak var simulator: Simulator?
 
   private let translationDispatcher: AXTranslationDispatcher?
   private let launchCtl: (any LaunchCtlCommands)?
 
   init(
-    simulator: FBSimulator,
+    simulator: Simulator,
     translationDispatcher: AXTranslationDispatcher? = nil,
     launchCtl: (any LaunchCtlCommands)? = nil
   ) {
@@ -63,7 +63,7 @@ final class SimulatorAccessibilityCommands: AccessibilityOperations {
     self.launchCtl = launchCtl
   }
 
-  class func commands(with target: FBSimulator) -> Self {
+  class func commands(with target: Simulator) -> Self {
     self.init(simulator: target)
   }
 
@@ -73,7 +73,7 @@ final class SimulatorAccessibilityCommands: AccessibilityOperations {
     translationDispatcher ?? simulator?.accessibilityTranslationDispatcher
   }
 
-  private func resolvedLaunchCtl(_ simulator: FBSimulator) -> any LaunchCtlCommands {
+  private func resolvedLaunchCtl(_ simulator: Simulator) -> any LaunchCtlCommands {
     launchCtl ?? simulator.launchCtl
   }
 
@@ -114,7 +114,7 @@ final class SimulatorAccessibilityCommands: AccessibilityOperations {
     guard simulator.device.responds(to: selector) else {
       throw AccessibilityError.accessibilityUnavailable
     }
-    try FBSimulatorControlFrameworkLoader.accessibilityFrameworks.loadPrivateFrameworks(simulator.logger)
+    try SimulatorControlFrameworkLoader.accessibilityFrameworks.loadPrivateFrameworks(simulator.logger)
   }
 
   // Remediation retries with `remediationPermitted: false`, bounding it to one attempt.
@@ -154,7 +154,7 @@ final class SimulatorAccessibilityCommands: AccessibilityOperations {
     return try await accessibilityElement(request: nextRequest, remediationPermitted: false)
   }
 
-  private func remediationRequired(forSimulator simulator: FBSimulator, element: AXPlatformElement, dispatcher: AXTranslationDispatcher) async throws -> Bool {
+  private func remediationRequired(forSimulator simulator: Simulator, element: AXPlatformElement, dispatcher: AXTranslationDispatcher) async throws -> Bool {
     // A quick check: a non-zero accessibility frame indicates a healthy element.
     // An attribute read, so it takes the serialized hop like every other translator touch.
     let frame = try await dispatcher.performSerialized { element.axFrame() }
@@ -172,7 +172,7 @@ final class SimulatorAccessibilityCommands: AccessibilityOperations {
     return true
   }
 
-  private func remediateSpringBoard(forSimulator simulator: FBSimulator) async throws {
+  private func remediateSpringBoard(forSimulator simulator: Simulator) async throws {
     do {
       _ = try await resolvedLaunchCtl(simulator).stopService(withName: Self.coreSimulatorBridgeServiceName)
     } catch {

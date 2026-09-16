@@ -48,7 +48,7 @@ final class SimulatorIndigoHID {
   /// The SimulatorKit implementation. Loads the xcode private frameworks and resolves the
   /// `IndigoHIDMessageFor*` symbols from the SimulatorKit dylib.
   public convenience init() throws {
-    try FBSimulatorControlFrameworkLoader.xcodeFrameworks.loadPrivateFrameworks(nil)
+    try SimulatorControlFrameworkLoader.xcodeFrameworks.loadPrivateFrameworks(nil)
     guard let handle = Bundle(identifier: "com.apple.SimulatorKit")?.dlopenExecutablePath() else {
       throw SimulatorHIDError.simulatorKitUnavailable
     }

@@ -120,14 +120,14 @@ private func writeTargetToStdOut(_ target: FBiOSTargetInfo) {
   writeJSONToStdOut(FBiOSTargetDescription(target: target).asJSON)
 }
 
-private func simulatorSetWithPath(_ deviceSetPath: String?, logger: ControlCoreLogger) throws -> FBSimulatorSet {
+private func simulatorSetWithPath(_ deviceSetPath: String?, logger: ControlCoreLogger) throws -> SimulatorSet {
   // Give a more meaningful message if we can't load the frameworks.
-  try FBSimulatorControlFrameworkLoader.essentialFrameworks.loadPrivateFrameworks(logger)
-  let configuration = FBSimulatorControlConfiguration(deviceSetPath: deviceSetPath, logger: logger)
+  try SimulatorControlFrameworkLoader.essentialFrameworks.loadPrivateFrameworks(logger)
+  let configuration = SimulatorControlConfiguration(deviceSetPath: deviceSetPath, logger: logger)
   return try SimulatorControlBootstrap.withConfiguration(configuration).set
 }
 
-private func simulatorSet(_ userDefaults: UserDefaults, logger: ControlCoreLogger) throws -> FBSimulatorSet {
+private func simulatorSet(_ userDefaults: UserDefaults, logger: ControlCoreLogger) throws -> SimulatorSet {
   let deviceSetPath = userDefaults.string(forKey: "-device-set-path")
   return try simulatorSetWithPath(deviceSetPath, logger: logger)
 }
@@ -223,10 +223,10 @@ private func deviceForECID(_ ecid: String, logger: ControlCoreLogger) async thro
   return devices[0]
 }
 
-private func resolveSimulator(_ udid: String, userDefaults: UserDefaults, logger: ControlCoreLogger) async throws -> FBSimulator {
+private func resolveSimulator(_ udid: String, userDefaults: UserDefaults, logger: ControlCoreLogger) async throws -> Simulator {
   let set = try simulatorSet(userDefaults, logger: logger)
   let target = try FBiOSTargetProvider.target(withUDID: udid, targetSets: [set], warmUp: false, logger: logger)
-  guard let simulator = target as? FBSimulator else {
+  guard let simulator = target as? Simulator else {
     throw IDBCompanionError.simulatorLifecycleUnsupported(targetDescription: String(describing: target))
   }
   return simulator
@@ -242,7 +242,7 @@ private func runBoot(_ udid: String, userDefaults: UserDefaults, logger: Control
   let verifyBooted = userDefaults.object(forKey: "-verify-booted") == nil ? true : userDefaults.bool(forKey: "-verify-booted")
   let simulator = try await resolveSimulator(udid, userDefaults: userDefaults, logger: logger)
 
-  var options = FBSimulatorBootConfiguration.default.options
+  var options = SimulatorBootConfiguration.default.options
   if headless {
     logger.log("Booting \(udid) headlessly")
     options.insert(.tieToProcessLifecycle)
@@ -257,7 +257,7 @@ private func runBoot(_ udid: String, userDefaults: UserDefaults, logger: Control
     logger.log("Booting \(udid) without verification")
     options.remove(.verifyUsable)
   }
-  let config = FBSimulatorBootConfiguration(options: options, environment: [:])
+  let config = SimulatorBootConfiguration(options: options, environment: [:])
   try await simulator.lifecycle.boot(config)
 
   writeTargetToStdOut(simulator)

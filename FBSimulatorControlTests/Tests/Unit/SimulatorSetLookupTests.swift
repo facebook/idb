@@ -10,10 +10,10 @@ import FBControlCore
 import Foundation
 import Testing
 
-@Suite("FBSimulatorSet UDID lookup")
+@Suite("SimulatorSet UDID lookup")
 struct SimulatorSetLookupTests {
 
-  private static func makeSet(udids: [NSUUID]) -> FBSimulatorSet {
+  private static func makeSet(udids: [NSUUID]) -> SimulatorSet {
     let deviceSet = SimulatorControlTests_SimDeviceSet_Double()
     deviceSet.availableDevices = udids.map { udid in
       let deviceType = SimulatorControlTests_SimDeviceType_Double()
@@ -28,7 +28,7 @@ struct SimulatorSetLookupTests {
       device.runtime = runtime
       return device
     }
-    let configuration = FBSimulatorControlConfiguration(deviceSetPath: nil, logger: nil)
+    let configuration = SimulatorControlConfiguration(deviceSetPath: nil, logger: nil)
     return createSimulatorSet(configuration: configuration, fakeDeviceSet: deviceSet)
   }
 

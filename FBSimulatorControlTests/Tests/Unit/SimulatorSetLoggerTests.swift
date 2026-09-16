@@ -10,10 +10,10 @@ import FBControlCore
 import Foundation
 import Testing
 
-@Suite("FBSimulatorSet logger retention")
+@Suite("SimulatorSet logger retention")
 struct SimulatorSetLoggerTests {
 
-  private static func makeSet(logger: (any ControlCoreLogger)?) -> FBSimulatorSet {
+  private static func makeSet(logger: (any ControlCoreLogger)?) -> SimulatorSet {
     let deviceType = SimulatorControlTests_SimDeviceType_Double()
     deviceType.name = "iPhone 8"
     let runtime = SimulatorControlTests_SimDeviceRuntime_Double()
@@ -25,7 +25,7 @@ struct SimulatorSetLoggerTests {
     device.runtime = runtime
     let deviceSet = SimulatorControlTests_SimDeviceSet_Double()
     deviceSet.availableDevices = [device]
-    let configuration = FBSimulatorControlConfiguration(deviceSetPath: nil, logger: nil)
+    let configuration = SimulatorControlConfiguration(deviceSetPath: nil, logger: nil)
     return createSimulatorSet(configuration: configuration, fakeDeviceSet: deviceSet, logger: logger)
   }
 

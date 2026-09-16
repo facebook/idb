@@ -35,9 +35,9 @@ extension SimulatorMediaError: LocalizedError {
 
 public struct SimulatorMediaCommands {
 
-  private let simulator: FBSimulator
+  private let simulator: Simulator
 
-  public static func commands(with simulator: FBSimulator) -> SimulatorMediaCommands {
+  public static func commands(with simulator: Simulator) -> SimulatorMediaCommands {
     SimulatorMediaCommands(simulator: simulator)
   }
 

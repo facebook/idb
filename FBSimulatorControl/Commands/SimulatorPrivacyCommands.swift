@@ -76,15 +76,15 @@ extension SimulatorPrivacyError: LocalizedError {
 /// Grants and revokes an application's access to privacy-gated services and deeplink schemes.
 public struct SimulatorPrivacyCommands {
 
-  private let simulator: FBSimulator
+  private let simulator: Simulator
 
   // MARK: - Initializers
 
-  public static func commands(with simulator: FBSimulator) -> SimulatorPrivacyCommands {
+  public static func commands(with simulator: Simulator) -> SimulatorPrivacyCommands {
     SimulatorPrivacyCommands(simulator: simulator)
   }
 
-  internal init(simulator: FBSimulator) {
+  internal init(simulator: Simulator) {
     self.simulator = simulator
   }
 

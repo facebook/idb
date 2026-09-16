@@ -9,7 +9,7 @@
 import Foundation
 
 struct AXBridgeOneshotTransport: AXBridgeTransport {
-  let simulator: FBSimulator
+  let simulator: Simulator
 
   func send(_ request: AXBridgeRequest) async throws -> Data {
     guard let helperPath = simulator.frameworkBridgePath else {

@@ -49,7 +49,7 @@ public final class CoreSimulatorNotifier {
     notifier?.unregisterNotificationHandler(handle, error: nil)
   }
 
-  class func notifier(for set: FBSimulatorSet, queue: DispatchQueue, block: @escaping @Sendable ([String: Any]) -> Void) -> CoreSimulatorNotifier {
+  class func notifier(for set: SimulatorSet, queue: DispatchQueue, block: @escaping @Sendable ([String: Any]) -> Void) -> CoreSimulatorNotifier {
     // notificationManager may be nil in test doubles (ObjC nil messaging returns nil).
     let notifier = (set.deviceSet as AnyObject).notificationManager as AnyObject?
     return CoreSimulatorNotifier(notifier: notifier, queue: queue, block: block)

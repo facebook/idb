@@ -31,7 +31,7 @@ actor SimulatorIndigoHIDTransport {
   /// The scale of the main screen.
   private let mainScreenScale: Float
   /// Whether the guest has handed its legacy keyboard HID over to `dtuhidd`, captured from
-  /// `FBSimulator.isLegacyKeyboardSuppressed` when the transport is built. `sendKeyboard` fails loudly on
+  /// `Simulator.isLegacyKeyboardSuppressed` when the transport is built. `sendKeyboard` fails loudly on
   /// it rather than typing into the void; the DTUHID transport is the workaround.
   private let legacyKeyboardSuppressed: Bool
   /// The product family of the target, captured at construction. Touchscreen touches are a no-op on
@@ -41,7 +41,7 @@ actor SimulatorIndigoHIDTransport {
   /// Creates a transport for the provided Simulator, registering a HID client.
   /// Will fail if a HID Port could not be registered for the provided Simulator.
   /// Registration may need to occur prior to booting.
-  static func indigo(for simulator: FBSimulator) throws -> SimulatorIndigoHIDTransport {
+  static func indigo(for simulator: Simulator) throws -> SimulatorIndigoHIDTransport {
     SimulatorIndigoHIDTransport(
       indigoClient: try SimulatorIndigoHIDClient(for: simulator.device),
       indigo: try SimulatorIndigoHID(),

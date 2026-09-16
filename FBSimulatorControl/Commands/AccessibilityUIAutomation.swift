@@ -18,11 +18,11 @@ import Foundation
 // patternlint-disable-next-line unchecked-sendable
 final class AccessibilityUIAutomation: UIAutomation, @unchecked Sendable {
 
-  private let simulator: FBSimulator
+  private let simulator: Simulator
 
   private var operations: any AccessibilityOperations { simulator.accessibility }
 
-  init(simulator: FBSimulator) {
+  init(simulator: Simulator) {
     self.simulator = simulator
   }
 

@@ -38,9 +38,9 @@ final class SimulatorPurpleHIDTransport: @unchecked Sendable {
   /// Serial, so concurrent sends to the same port queue behind one another rather than racing, and so
   /// the blocking `mach_msg` never runs on a cooperative thread.
   private let sendQueue = DispatchQueue(label: "com.facebook.FBSimulatorControl.purple-hid")
-  private weak var simulator: FBSimulator?
+  private weak var simulator: Simulator?
 
-  init(purple: SimulatorPurpleHID = SimulatorPurpleHID(), simulator: FBSimulator?) {
+  init(purple: SimulatorPurpleHID = SimulatorPurpleHID(), simulator: Simulator?) {
     self.purple = purple
     self.simulator = simulator
   }

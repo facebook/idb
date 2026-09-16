@@ -11,17 +11,17 @@ import Foundation
 
 final class SimulatorInflationStrategy {
 
-  private weak var set: FBSimulatorSet?
+  private weak var set: SimulatorSet?
 
-  class func strategy(for set: FBSimulatorSet) -> SimulatorInflationStrategy {
+  class func strategy(for set: SimulatorSet) -> SimulatorInflationStrategy {
     SimulatorInflationStrategy(set: set)
   }
 
-  private init(set: FBSimulatorSet) {
+  private init(set: SimulatorSet) {
     self.set = set
   }
 
-  func inflate(fromDevices simDevices: [Any], exitingSimulators simulators: [FBSimulator]) -> [FBSimulator] {
+  func inflate(fromDevices simDevices: [Any], exitingSimulators simulators: [Simulator]) -> [Simulator] {
     let existingSimulatorUDIDs = Set(simulators.map { $0.udid })
     var availableDevices: [String: SimDevice] = [:]
     for item in simDevices {
@@ -51,12 +51,12 @@ final class SimulatorInflationStrategy {
     return result + inflated
   }
 
-  private func inflateSimulators(_ udids: [String], availableDevices: [String: SimDevice]) -> [FBSimulator] {
+  private func inflateSimulators(_ udids: [String], availableDevices: [String: SimDevice]) -> [Simulator] {
     guard let set = self.set else { return [] }
-    var inflated: [FBSimulator] = []
+    var inflated: [Simulator] = []
     for udid in udids {
       if let device = availableDevices[udid] {
-        let simulator = FBSimulator.fromSimDevice(device, configuration: nil, set: set)
+        let simulator = Simulator.fromSimDevice(device, configuration: nil, set: set)
         inflated.append(simulator)
       }
     }

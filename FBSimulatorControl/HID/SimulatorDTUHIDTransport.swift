@@ -136,7 +136,7 @@ actor SimulatorDTUHIDTransport {
   // MARK: - Initializers
 
   /// Connects to the simulator's DTUHID service. Events can be sent immediately.
-  static func dtuhid(for simulator: FBSimulator) async throws -> SimulatorDTUHIDTransport {
+  static func dtuhid(for simulator: Simulator) async throws -> SimulatorDTUHIDTransport {
     guard let handle = dlopen(nil, RTLD_NOW) else {
       throw SimulatorHIDError.dtuhidXPCSymbolsUnavailable
     }

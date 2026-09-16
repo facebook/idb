@@ -13,7 +13,7 @@ import Foundation
 // racing the first construction. Commands that only wrap the simulator are built per call: a slot
 // for one would hold a box around a pointer back to the object owning the cache, closing a retain
 // cycle.
-extension FBSimulator {
+extension Simulator {
 
   // MARK: - Shared accessors
 

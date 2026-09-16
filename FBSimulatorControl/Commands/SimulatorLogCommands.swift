@@ -22,9 +22,9 @@ public enum SimulatorLogError: Error, LocalizedError {
 
 public struct SimulatorLogCommands: LogCommands {
 
-  private let simulator: FBSimulator
+  private let simulator: Simulator
 
-  public static func commands(with simulator: FBSimulator) -> SimulatorLogCommands {
+  public static func commands(with simulator: Simulator) -> SimulatorLogCommands {
     SimulatorLogCommands(simulator: simulator)
   }
 

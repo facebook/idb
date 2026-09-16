@@ -9,13 +9,13 @@
 @preconcurrency import FBControlCore
 @preconcurrency import Foundation
 
-extension FBSimulatorConfiguration {
+extension SimulatorConfiguration {
 
-  public static func inferSimulatorConfiguration(fromDevice simDevice: SimDevice) -> FBSimulatorConfiguration {
+  public static func inferSimulatorConfiguration(fromDevice simDevice: SimDevice) -> SimulatorConfiguration {
     configuration(deviceType: simDevice.deviceType, runtime: simDevice.runtime)
   }
 
-  static func configuration(deviceType: SimDeviceType?, runtime: SimRuntime?) -> FBSimulatorConfiguration {
+  static func configuration(deviceType: SimDeviceType?, runtime: SimRuntime?) -> SimulatorConfiguration {
     let family: FBControlCoreProductFamily
     switch deviceType?.productFamilyID {
     case 1: family = .familyiPhone
@@ -25,7 +25,7 @@ extension FBSimulatorConfiguration {
     case 5: family = .familyMac
     default: family = .familyUnknown
     }
-    return FBSimulatorConfiguration(
+    return SimulatorConfiguration(
       device: DeviceType(model: FBDeviceModel(rawValue: deviceType?.name ?? "unknown"), family: family),
       os: OSVersion(name: FBOSVersionName(rawValue: runtime?.name ?? "unknown"), versionString: runtime?.versionString ?? ""),
       deviceTypeIdentifier: deviceType?.identifier,
@@ -33,7 +33,7 @@ extension FBSimulatorConfiguration {
       runtimeBuildVersion: runtime?.buildVersionString)
   }
 
-  public static func availableConfigurations() throws -> [FBSimulatorConfiguration] {
+  public static func availableConfigurations() throws -> [SimulatorConfiguration] {
     let snapshot = try CoreSimulatorRuntimeIndex.load()
     return snapshot.index.availablePairs.map {
       configuration(deviceType: snapshot.deviceTypes[$0.device], runtime: snapshot.runtimes[$0.runtime])

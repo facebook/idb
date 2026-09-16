@@ -11,9 +11,9 @@ import Foundation
 
 public struct SimulatorLocationCommands: LocationCommands {
 
-  private let simulator: FBSimulator
+  private let simulator: Simulator
 
-  public static func commands(with simulator: FBSimulator) -> SimulatorLocationCommands {
+  public static func commands(with simulator: Simulator) -> SimulatorLocationCommands {
     SimulatorLocationCommands(simulator: simulator)
   }
 

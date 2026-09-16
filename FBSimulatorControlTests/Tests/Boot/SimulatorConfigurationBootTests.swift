@@ -11,7 +11,7 @@ import XCTest
 
 final class SimulatorConfigurationBootTests: XCTestCase {
   func testAdapterRetainsCompatibleCoreSimulatorObjects() throws {
-    try FBSimulatorControlFrameworkLoader.essentialFrameworks.loadPrivateFrameworks(ControlCoreGlobalConfiguration.defaultLogger)
+    try SimulatorControlFrameworkLoader.essentialFrameworks.loadPrivateFrameworks(ControlCoreGlobalConfiguration.defaultLogger)
     let service = try SimulatorServiceContext.sharedServiceContext()
     let deviceTypes = service.supportedDeviceTypes()
     let runtimes = service.supportedRuntimes()
@@ -37,10 +37,10 @@ final class SimulatorConfigurationBootTests: XCTestCase {
     XCTAssertEqual(runtime.identifier, availableRuntime.identifier)
     XCTAssertTrue(runtime.available)
     XCTAssertTrue(runtime.supportsDeviceType(device))
-    let configuration = FBSimulatorConfiguration.configuration(deviceType: device, runtime: runtime)
+    let configuration = SimulatorConfiguration.configuration(deviceType: device, runtime: runtime)
     XCTAssertEqual(configuration.os.versionString, runtime.versionString)
     XCTAssertEqual(configuration.runtimeBuildVersion, runtime.buildVersionString)
     XCTAssertEqual(configuration.device.model.rawValue, device.name)
-    XCTAssertTrue(try FBSimulatorConfiguration.availableConfigurations().contains(configuration))
+    XCTAssertTrue(try SimulatorConfiguration.availableConfigurations().contains(configuration))
   }
 }

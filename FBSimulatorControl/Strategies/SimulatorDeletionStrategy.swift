@@ -22,7 +22,7 @@ public enum SimulatorDeletionError: Error, LocalizedError {
 
 final class SimulatorDeletionStrategy {
 
-  static func delete(_ simulator: FBSimulator) async throws {
+  static func delete(_ simulator: Simulator) async throws {
     // Capture the Log Directory ahead of time as the Simulator will disappear on deletion.
     let coreSimulatorLogsDirectory = simulator.coreSimulatorLogsDirectory
     let udid = simulator.udid
@@ -54,13 +54,13 @@ final class SimulatorDeletionStrategy {
     logger.log("\(udid) has been removed from set")
   }
 
-  static func deleteAll(_ simulators: [FBSimulator]) async throws {
+  static func deleteAll(_ simulators: [Simulator]) async throws {
     for simulator in simulators {
       try await delete(simulator)
     }
   }
 
-  private static func confirmSimulatorUDID(_ udid: String, isRemovedFromSet set: FBSimulatorSet) async throws {
+  private static func confirmSimulatorUDID(_ udid: String, isRemovedFromSet set: SimulatorSet) async throws {
     // Deleting the device from the set can still leave it around for a few seconds.
     let timeout = ControlCoreGlobalConfiguration.regularTimeout
     let deadline = Date().addingTimeInterval(timeout)

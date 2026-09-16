@@ -20,7 +20,7 @@ final class AccessibilityElement {
   private let element: AXWritableElement
   private let request: AXTranslationRequest
   private let dispatcher: AXTranslationDispatcher
-  private weak var simulator: FBSimulator?
+  private weak var simulator: Simulator?
   private var closed: Bool = false
 
   /// The frame of the root this element was found under; `nil` for an element read directly. The
@@ -32,7 +32,7 @@ final class AccessibilityElement {
     element: AXWritableElement,
     request: AXTranslationRequest,
     dispatcher: AXTranslationDispatcher,
-    simulator: FBSimulator,
+    simulator: Simulator,
     rootBounds: CGRect? = nil
   ) {
     self.element = element

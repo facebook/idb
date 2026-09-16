@@ -49,16 +49,16 @@ public final class SimulatorXCTestCommands: XCTestExtendedCommands {
 
   // MARK: - Properties
 
-  private weak var simulator: FBSimulator?
+  private weak var simulator: Simulator?
   private var isRunningXcodeBuildOperation: Bool = false
 
   // MARK: - Initializers
 
-  public class func commands(with simulator: FBSimulator) -> SimulatorXCTestCommands {
+  public class func commands(with simulator: Simulator) -> SimulatorXCTestCommands {
     return SimulatorXCTestCommands(simulator: simulator)
   }
 
-  private init(simulator: FBSimulator) {
+  private init(simulator: Simulator) {
     self.simulator = simulator
   }
 

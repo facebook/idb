@@ -30,9 +30,9 @@ extension SimulatorNotificationError: LocalizedError {
 
 public struct SimulatorNotificationCommands {
 
-  private let simulator: FBSimulator
+  private let simulator: Simulator
 
-  public static func commands(with simulator: FBSimulator) -> SimulatorNotificationCommands {
+  public static func commands(with simulator: Simulator) -> SimulatorNotificationCommands {
     SimulatorNotificationCommands(simulator: simulator)
   }
 

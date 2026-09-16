@@ -11,16 +11,16 @@ import Foundation
 
 final class SimulatorNotificationUpdateStrategy: @unchecked Sendable {
 
-  private weak var set: FBSimulatorSet?
+  private weak var set: SimulatorSet?
   private var notifier: CoreSimulatorNotifier?
 
-  class func strategy(with set: FBSimulatorSet) -> SimulatorNotificationUpdateStrategy {
+  class func strategy(with set: SimulatorSet) -> SimulatorNotificationUpdateStrategy {
     let strategy = SimulatorNotificationUpdateStrategy(set: set)
     strategy.startNotifyingOfStateChanges()
     return strategy
   }
 
-  private init(set: FBSimulatorSet) {
+  private init(set: SimulatorSet) {
     self.set = set
   }
 

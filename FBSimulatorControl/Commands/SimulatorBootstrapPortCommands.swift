@@ -11,15 +11,15 @@ import Foundation
 /// Resolves names in the simulated device's bootstrap namespace.
 public struct SimulatorBootstrapPortCommands {
 
-  private let simulator: FBSimulator
+  private let simulator: Simulator
 
   // MARK: - Initializers
 
-  public static func commands(with simulator: FBSimulator) -> SimulatorBootstrapPortCommands {
+  public static func commands(with simulator: Simulator) -> SimulatorBootstrapPortCommands {
     SimulatorBootstrapPortCommands(simulator: simulator)
   }
 
-  internal init(simulator: FBSimulator) {
+  internal init(simulator: Simulator) {
     self.simulator = simulator
   }
 

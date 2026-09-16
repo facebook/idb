@@ -12,7 +12,7 @@ import Foundation
 
 // Every member of these doubles is messaged through the Objective-C runtime: each is
 // substituted for the CoreSimulator class of the same shape and reached either from
-// `FBSimulator.m` or from Swift through an `unsafeBitCast`. `@objc` is spelled out per
+// `Simulator.m` or from Swift through an `unsafeBitCast`. `@objc` is spelled out per
 // member rather than applied wholesale to the class, so a member that stops being
 // representable in Objective-C fails to compile instead of silently vanishing from the
 // class at runtime.

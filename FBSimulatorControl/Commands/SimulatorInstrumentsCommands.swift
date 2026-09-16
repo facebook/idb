@@ -9,13 +9,13 @@ import FBControlCore
 import Foundation
 
 public struct SimulatorInstrumentsCommands: InstrumentsCommands {
-  private let simulator: FBSimulator
+  private let simulator: Simulator
 
-  public static func commands(with simulator: FBSimulator) -> SimulatorInstrumentsCommands {
+  public static func commands(with simulator: Simulator) -> SimulatorInstrumentsCommands {
     SimulatorInstrumentsCommands(simulator: simulator)
   }
 
-  init(simulator: FBSimulator) {
+  init(simulator: Simulator) {
     self.simulator = simulator
   }
 

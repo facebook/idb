@@ -9,16 +9,16 @@
 @preconcurrency import FBControlCore
 import Foundation
 
-public final class FBSimulatorSet: FBiOSTargetSet {
+public final class SimulatorSet: FBiOSTargetSet {
 
-  public let configuration: FBSimulatorControlConfiguration
+  public let configuration: SimulatorControlConfiguration
   public let deviceSet: SimDeviceSet
   public weak var delegate: (any FBiOSTargetSetDelegate)?
   public let logger: any ControlCoreLogger
   public let workQueue: DispatchQueue
   public let asyncQueue: DispatchQueue
 
-  private var _allSimulators: [FBSimulator]
+  private var _allSimulators: [Simulator]
   // Guards _allSimulators: the allSimulators getter re-inflates and swaps the
   // backing array, and is called from arbitrary threads (lookups at companion
   // startup, delegate notification, description). Unsynchronized, the swap
@@ -32,13 +32,13 @@ public final class FBSimulatorSet: FBiOSTargetSet {
   /// - Parameter logger: nil means `ControlCoreGlobalConfiguration.defaultLogger`, which is
   ///   os_log-only unless the `FBCONTROLCORE_LOGGING`/`FBCONTROLCORE_DEBUG_LOGGING` environment
   ///   variables are set — see its documentation. The resolved logger is stored non-optionally.
-  public class func set(withConfiguration configuration: FBSimulatorControlConfiguration, deviceSet: SimDeviceSet, delegate: (any FBiOSTargetSetDelegate)?, logger: (any ControlCoreLogger)?) throws -> FBSimulatorSet {
+  public class func set(withConfiguration configuration: SimulatorControlConfiguration, deviceSet: SimDeviceSet, delegate: (any FBiOSTargetSetDelegate)?, logger: (any ControlCoreLogger)?) throws -> SimulatorSet {
     let resolvedLogger = logger ?? ControlCoreGlobalConfiguration.defaultLogger
-    try FBSimulatorControlFrameworkLoader.essentialFrameworks.loadPrivateFrameworks(resolvedLogger)
-    return FBSimulatorSet(configuration: configuration, deviceSet: deviceSet, delegate: delegate, logger: resolvedLogger)
+    try SimulatorControlFrameworkLoader.essentialFrameworks.loadPrivateFrameworks(resolvedLogger)
+    return SimulatorSet(configuration: configuration, deviceSet: deviceSet, delegate: delegate, logger: resolvedLogger)
   }
 
-  private init(configuration: FBSimulatorControlConfiguration, deviceSet: SimDeviceSet, delegate: (any FBiOSTargetSetDelegate)?, logger: any ControlCoreLogger) {
+  private init(configuration: SimulatorControlConfiguration, deviceSet: SimDeviceSet, delegate: (any FBiOSTargetSetDelegate)?, logger: any ControlCoreLogger) {
     self.configuration = configuration
     self.deviceSet = deviceSet
     self.delegate = delegate
@@ -55,13 +55,13 @@ public final class FBSimulatorSet: FBiOSTargetSet {
     return simulator(withUDID: udid)
   }
 
-  public func simulator(withUDID udid: String) -> FBSimulator? {
+  public func simulator(withUDID udid: String) -> Simulator? {
     return allSimulators.filter { FBiOSTargetPredicateForUDID(udid).evaluate(with: $0) }.first
   }
 
   // MARK: - Creation
 
-  public func createSimulator(with request: SimulatorCreationRequest) async throws -> FBSimulator {
+  public func createSimulator(with request: SimulatorCreationRequest) async throws -> Simulator {
     let deviceType: SimDeviceType
     let runtime: SimRuntime
     do {
@@ -83,26 +83,26 @@ public final class FBSimulatorSet: FBiOSTargetSet {
     return simulator
   }
 
-  public func cloneSimulator(_ simulator: FBSimulator, toDeviceSet destinationSet: FBSimulatorSet) async throws -> FBSimulator {
+  public func cloneSimulator(_ simulator: Simulator, toDeviceSet destinationSet: SimulatorSet) async throws -> Simulator {
     let device = try await Self.cloneDevice(on: deviceSet, device: simulator.device, toDeviceSet: destinationSet.deviceSet, queue: asyncQueue)
     return try destinationSet.fetchNewlyMadeSimulatorOrThrow(device)
   }
 
   // MARK: - Destructive Methods
 
-  public func shutdown(_ simulator: FBSimulator) async throws {
+  public func shutdown(_ simulator: Simulator) async throws {
     try await SimulatorShutdownStrategy.shutdown(simulator)
   }
 
-  public func delete(_ simulator: FBSimulator) async throws {
+  public func delete(_ simulator: Simulator) async throws {
     try await SimulatorDeletionStrategy.delete(simulator)
   }
 
-  func shutdownAll(_ simulators: [FBSimulator]) async throws {
+  func shutdownAll(_ simulators: [Simulator]) async throws {
     try await SimulatorShutdownStrategy.shutdownAll(simulators)
   }
 
-  public func deleteAll(_ simulators: [FBSimulator]) async throws {
+  public func deleteAll(_ simulators: [Simulator]) async throws {
     try await SimulatorDeletionStrategy.deleteAll(simulators)
   }
 
@@ -122,27 +122,27 @@ public final class FBSimulatorSet: FBiOSTargetSet {
     allSimulators
   }
 
-  public var allSimulators: [FBSimulator] {
+  public var allSimulators: [Simulator] {
     simulatorsLock.lock()
     defer { simulatorsLock.unlock() }
     _allSimulators = inflationStrategy.inflate(
       fromDevices: deviceSet.availableDevices,
       exitingSimulators: _allSimulators
     )
-    .sorted { ($0 as FBSimulator).compare($1 as any FBiOSTarget) == .orderedAscending }
+    .sorted { ($0 as Simulator).compare($1 as any FBiOSTarget) == .orderedAscending }
     return _allSimulators
   }
 
-  private class func keySimulatorsByUDID(_ simulators: [FBSimulator]) -> [String: FBSimulator] {
-    var dictionary: [String: FBSimulator] = [:]
+  private class func keySimulatorsByUDID(_ simulators: [Simulator]) -> [String: Simulator] {
+    var dictionary: [String: Simulator] = [:]
     for simulator in simulators {
       dictionary[simulator.udid] = simulator
     }
     return dictionary
   }
 
-  private func fetchNewlyMadeSimulatorOrThrow(_ device: SimDevice) throws -> FBSimulator {
-    guard let simulator = FBSimulatorSet.keySimulatorsByUDID(allSimulators)[device.udid.uuidString] else {
+  private func fetchNewlyMadeSimulatorOrThrow(_ device: SimDevice) throws -> Simulator {
+    guard let simulator = SimulatorSet.keySimulatorsByUDID(allSimulators)[device.udid.uuidString] else {
       throw SimulatorSetError.simulatorNotInflated(udid: device.udid.uuidString)
     }
     return simulator

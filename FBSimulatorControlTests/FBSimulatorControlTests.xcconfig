@@ -13,6 +13,6 @@ PRODUCT_NAME = FBSimulatorControlTests
 //
 // -all_load also pulls in code emitting class-metadata references to
 // CoreSimulator and AccessibilityPlatformTranslation classes. Both frameworks
-// are loaded at runtime by FBSimulatorControlFrameworkLoader; weak-link their
+// are loaded at runtime by SimulatorControlFrameworkLoader; weak-link their
 // TBD stubs so the linker is satisfied and the classes resolve at runtime.
 OTHER_LDFLAGS = $(inherited) -all_load -weak_library $(SRCROOT)/PrivateHeaders/CoreSimulator/CoreSimulator.tbd -weak_library $(SRCROOT)/PrivateHeaders/AccessibilityPlatformTranslation/AccessibilityPlatformTranslation.tbd

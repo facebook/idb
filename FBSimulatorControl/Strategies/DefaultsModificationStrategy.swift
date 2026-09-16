@@ -40,9 +40,9 @@ extension DefaultsModificationError: LocalizedError {
 
 class DefaultsModificationStrategy {
 
-  fileprivate let simulator: FBSimulator
+  fileprivate let simulator: Simulator
 
-  required init(simulator: FBSimulator) {
+  required init(simulator: Simulator) {
     self.simulator = simulator
   }
 

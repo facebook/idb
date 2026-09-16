@@ -179,14 +179,14 @@ public final class IDBCommandExecutor {
   }
 
   public func accessibility_tap(label: String) async throws {
-    guard let simulator = target as? FBSimulator else {
+    guard let simulator = target as? Simulator else {
       throw IDBCommandError.simulatorOnlyOperation(operation: "tap by accessibility label", targetDescription: String(describing: target))
     }
     try await simulator.uiAutomation(backend: .accessibility).tap(.marker(value: label, key: .label, depth: .max))
   }
 
   public func accessibility_tap(query: AccessibilityElementQuery, expectedValue: String?, expectedKey: AXSearchableKey) async throws {
-    guard let simulator = target as? FBSimulator else {
+    guard let simulator = target as? Simulator else {
       throw IDBCommandError.simulatorOnlyOperation(operation: "tap by accessibility", targetDescription: String(describing: target))
     }
     let assertion = expectedValue.map { TapOptions.Assertion(key: expectedKey, value: $0) }
@@ -195,7 +195,7 @@ public final class IDBCommandExecutor {
 
   /// Describes the single element `query` names, serialized in `options.format`.
   public func accessibility_describe(query: AccessibilityElementQuery, options: AccessibilityRequestOptions, backend: UIAutomationBackend = .accessibility) async throws -> Data {
-    guard let simulator = target as? FBSimulator else {
+    guard let simulator = target as? Simulator else {
       throw IDBCommandError.simulatorOnlyOperation(operation: "describe accessibility", targetDescription: String(describing: target))
     }
     return try await simulator.uiAutomation(backend: backend).describe(query, options: options)
@@ -203,21 +203,21 @@ public final class IDBCommandExecutor {
   }
 
   public func accessibility_wait(query: AccessibilityElementQuery, backend: UIAutomationBackend, timeout: TimeInterval, pollInterval: TimeInterval) async throws {
-    guard let simulator = target as? FBSimulator else {
+    guard let simulator = target as? Simulator else {
       throw IDBCommandError.simulatorOnlyOperation(operation: "wait for accessibility", targetDescription: String(describing: target))
     }
     try await simulator.uiAutomation(backend: backend).wait(query, timeout: timeout, pollInterval: pollInterval)
   }
 
   public func accessibility_scroll(query: AccessibilityElementQuery, direction: AccessibilityScrollDirection) async throws {
-    guard let simulator = target as? FBSimulator else {
+    guard let simulator = target as? Simulator else {
       throw IDBCommandError.simulatorOnlyOperation(operation: "scroll by accessibility", targetDescription: String(describing: target))
     }
     try await simulator.uiAutomation(backend: .accessibility).scroll(query, direction: direction)
   }
 
   public func accessibility_set_value(query: AccessibilityElementQuery, value: String) async throws {
-    guard let simulator = target as? FBSimulator else {
+    guard let simulator = target as? Simulator else {
       throw IDBCommandError.simulatorOnlyOperation(operation: "set value by accessibility", targetDescription: String(describing: target))
     }
     try await simulator.uiAutomation(backend: .accessibility).setValue(value, for: query)
@@ -228,7 +228,7 @@ public final class IDBCommandExecutor {
     to destination: AccessibilityElementQuery,
     options: DragOptions
   ) async throws {
-    guard let simulator = target as? FBSimulator else {
+    guard let simulator = target as? Simulator else {
       throw IDBCommandError.simulatorOnlyOperation(operation: "drag by accessibility", targetDescription: String(describing: target))
     }
     try await simulator.uiAutomation(backend: .accessibility).drag(from: source, to: destination, options: options)
@@ -240,7 +240,7 @@ public final class IDBCommandExecutor {
   }
 
   public func accessibility_info_at_point(_ value: NSValue?, options: AccessibilityRequestOptions, backend: UIAutomationBackend = .accessibility) async throws -> AccessibilityElementsResponse {
-    guard let simulator = target as? FBSimulator else {
+    guard let simulator = target as? Simulator else {
       throw IDBCommandError.simulatorOnlyOperation(operation: "provide accessibility commands", targetDescription: String(describing: target))
     }
     let query: AccessibilityElementQuery = value.map { .point($0.pointValue) } ?? .frontmost
@@ -258,7 +258,7 @@ public final class IDBCommandExecutor {
   /// The frame (in screen points) of the frontmost-app accessibility element whose
   /// label contains `label` -- the same lookup as `accessibility_tap`.
   public func repl_accessibility_frame(label: String) async throws -> CGRect {
-    guard let simulator = target as? FBSimulator else {
+    guard let simulator = target as? Simulator else {
       throw IDBCommandError.simulatorOnlyOperation(operation: "look up an accessibility frame", targetDescription: String(describing: target))
     }
     return try await simulator.uiAutomation(backend: .accessibility)
@@ -268,7 +268,7 @@ public final class IDBCommandExecutor {
   /// Captures a screenshot, optionally cropped to `cropRect` (in screen points),
   /// encoded as uncompressed TIFF (`asPNG == false`) or PNG.
   public func repl_screenshot(cropRect: CGRect?, asPNG: Bool) async throws -> Data {
-    guard let simulator = target as? FBSimulator else {
+    guard let simulator = target as? Simulator else {
       throw IDBCommandError.simulatorOnlyOperation(operation: "take a screenshot", targetDescription: String(describing: target))
     }
     return try await simulator.screenshot.takeForRepl(cropRect: cropRect, asPNG: asPNG)
@@ -423,7 +423,7 @@ public final class IDBCommandExecutor {
   /// `IDB_REPL_SOCKET_PATH`. The returned `ReplSession.run` future completes when
   /// the test process exits, i.e. once the control socket is closed.
   public func repl_start_test(bundlePath: String) async throws -> ReplSession {
-    guard let simulator = target as? FBSimulator else {
+    guard let simulator = target as? Simulator else {
       throw IDBCommandError.replTestsUnsupported(targetDescription: String(describing: target))
     }
     return try await simulator.repl.startTest(bundlePath: bundlePath)
@@ -447,7 +447,7 @@ public final class IDBCommandExecutor {
   /// REPL context. The returned `ReplSession.run` completes when the bridge
   /// process exits.
   public func repl_start_simulator() async throws -> ReplSession {
-    guard let simulator = target as? FBSimulator else {
+    guard let simulator = target as? Simulator else {
       throw IDBCommandError.replSessionsUnsupported(targetDescription: String(describing: target))
     }
     return try await simulator.repl.startSimulator()
@@ -458,7 +458,7 @@ public final class IDBCommandExecutor {
   /// REPL for the app. The returned `ReplSession.run` is already resolved: the app
   /// outlives the session (it resets and waits for the next client on disconnect).
   public func repl_start_app(bundleID: String, reuseSession: Bool) async throws -> ReplSession {
-    guard let simulator = target as? FBSimulator else {
+    guard let simulator = target as? Simulator else {
       throw IDBCommandError.replSessionsUnsupported(targetDescription: String(describing: target))
     }
     return try await simulator.repl.startApp(bundleID: bundleID, reuseSession: reuseSession)
@@ -491,7 +491,7 @@ public final class IDBCommandExecutor {
   /// path is deterministic, so a later `idb-repl app` reattaches. Simulator
   /// targets only.
   public func replAppLaunchEnvironment(bundleID: String) async throws -> [String: String] {
-    guard let simulator = target as? FBSimulator else {
+    guard let simulator = target as? Simulator else {
       throw IDBCommandError.replAppLaunchesUnsupported(targetDescription: String(describing: target))
     }
     return try await simulator.repl.appLaunchEnvironment(bundleID: bundleID)
@@ -786,8 +786,8 @@ public final class IDBCommandExecutor {
     }
   }
 
-  private func simulatorTarget() throws -> FBSimulator {
-    guard let simulator = target as? FBSimulator else {
+  private func simulatorTarget() throws -> Simulator {
+    guard let simulator = target as? Simulator else {
       throw IDBCommandError.notASimulator(targetDescription: String(describing: target))
     }
     return simulator
@@ -795,7 +795,7 @@ public final class IDBCommandExecutor {
 
   private func connectToHID() async throws -> SimulatorHID {
     let simulator = try simulatorTarget()
-    try FBSimulatorControlFrameworkLoader.xcodeFrameworks.loadPrivateFrameworks(target.logger)
+    try SimulatorControlFrameworkLoader.xcodeFrameworks.loadPrivateFrameworks(target.logger)
     return try await simulator.lifecycle.connectToHID()
   }
 

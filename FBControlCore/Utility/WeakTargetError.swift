@@ -13,7 +13,7 @@ public enum WeakTargetError: Error, CustomStringConvertible, LocalizedError {
   /// `target` is a human-readable description of what was deallocated, e.g. "Simulator".
   case deallocated(String)
 
-  /// A deallocated `FBSimulator`.
+  /// A deallocated `Simulator`.
   public static let simulator = WeakTargetError.deallocated("Simulator")
 
   public var description: String {

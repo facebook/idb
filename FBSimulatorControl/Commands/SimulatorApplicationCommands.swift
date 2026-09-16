@@ -112,11 +112,11 @@ enum SimulatorApplicationInstallAttempt {
 
 public struct SimulatorApplicationCommands: ApplicationCommands {
 
-  internal let simulator: FBSimulator
+  internal let simulator: Simulator
 
   // MARK: - Initializers
 
-  public static func commands(with simulator: FBSimulator) -> SimulatorApplicationCommands {
+  public static func commands(with simulator: Simulator) -> SimulatorApplicationCommands {
     return SimulatorApplicationCommands(simulator: simulator)
   }
 

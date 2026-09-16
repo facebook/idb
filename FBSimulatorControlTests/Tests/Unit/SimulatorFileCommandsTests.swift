@@ -10,7 +10,7 @@ import FBControlCore
 import XCTest
 
 /// A `SimDevice` stand-in that returns a canned `installedApps()` dictionary, letting the
-/// container-selection producers be exercised without a booted simulator. `FBSimulator`'s
+/// container-selection producers be exercised without a booted simulator. `Simulator`'s
 /// initializer only reads `device.UDID.UUIDString`, so `UDID` plus `installedAppsWithError:`
 /// is the whole surface these tests touch.
 private final class InstalledAppsStubDevice {
@@ -30,7 +30,7 @@ private final class InstalledAppsStubDevice {
 /// Locks the container path-mapping behaviour of `SimulatorFileCommands`.
 final class SimulatorFileCommandsTests: XCTestCase {
 
-  private func makeSimulator(installedApps: [String: Any]) -> FBSimulator {
+  private func makeSimulator(installedApps: [String: Any]) -> Simulator {
     SimulatorTestSupport.testableSimulator(withDevice: InstalledAppsStubDevice(apps: installedApps))
   }
 

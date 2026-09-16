@@ -13,7 +13,7 @@ final class SimulatorPrivacyCommandsTests: XCTestCase {
 
   // MARK: - Helpers
 
-  private func makeSimulator() -> FBSimulator {
+  private func makeSimulator() -> Simulator {
     SimulatorTestSupport.testableSimulator()
   }
 

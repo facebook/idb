@@ -14,7 +14,7 @@ final class SimulatorAccessibilityCommandsTests: XCTestCase {
   // MARK: - Properties
 
   private var fixture: AccessibilityTestFixture?
-  private var simulator: FBSimulator!
+  private var simulator: Simulator!
 
   // MARK: - Helpers
 
@@ -472,7 +472,7 @@ final class SimulatorAccessibilityCommandsTests: XCTestCase {
   }
 
   /// Creates and activates the fixture with the given root element tree, then
-  /// builds a real `FBSimulator`, a mock translation dispatcher, and registers an
+  /// builds a real `Simulator`, a mock translation dispatcher, and registers an
   /// `SimulatorAccessibilityCommands` with that dispatcher injected into the
   /// simulator's command cache. Production paths that resolve `accessibility`
   /// on the simulator will return it.
@@ -485,7 +485,7 @@ final class SimulatorAccessibilityCommandsTests: XCTestCase {
     try fixture!.setUp()
 
     let sim = SimulatorTestSupport.testableSimulator(withDevice: fixture!.device)
-    let dispatcher = FBSimulator.createAccessibilityTranslationDispatcher(withTranslator: fixture!.translator)
+    let dispatcher = Simulator.createAccessibilityTranslationDispatcher(withTranslator: fixture!.translator)
     let commands = SimulatorAccessibilityCommands(simulator: sim, translationDispatcher: dispatcher, launchCtl: launchCtl)
     sim.commandCache.register(commands, as: SimulatorAccessibilityCommands.self)
 

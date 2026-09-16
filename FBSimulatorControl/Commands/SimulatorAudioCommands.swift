@@ -159,15 +159,15 @@ public enum SimulatorAudioError: Error, LocalizedError {
 /// Reads and moves the simulated device's audio state.
 public struct SimulatorAudioCommands {
 
-  private let simulator: FBSimulator
+  private let simulator: Simulator
 
   // MARK: - Initializers
 
-  public static func commands(with simulator: FBSimulator) -> SimulatorAudioCommands {
+  public static func commands(with simulator: Simulator) -> SimulatorAudioCommands {
     SimulatorAudioCommands(simulator: simulator)
   }
 
-  internal init(simulator: FBSimulator) {
+  internal init(simulator: Simulator) {
     self.simulator = simulator
   }
 

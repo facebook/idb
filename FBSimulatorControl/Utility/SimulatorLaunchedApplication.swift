@@ -17,7 +17,7 @@ public final class SimulatorLaunchedApplication: LaunchedApplication, CustomStri
   // MARK: - Private Properties
 
   private let attachment: FBProcessFileAttachment
-  private weak var simulator: FBSimulator?
+  private weak var simulator: Simulator?
 
   // MARK: - LaunchedApplication Protocol
 
@@ -44,7 +44,7 @@ public final class SimulatorLaunchedApplication: LaunchedApplication, CustomStri
   // MARK: - Factory
 
   public class func application(
-    withSimulator simulator: FBSimulator,
+    withSimulator simulator: Simulator,
     configuration: ApplicationLaunchConfiguration,
     attachment: FBProcessFileAttachment,
     launchFuture: FBFuture<NSNumber>
@@ -69,7 +69,7 @@ public final class SimulatorLaunchedApplication: LaunchedApplication, CustomStri
   }
 
   public class func terminationFuture(
-    forSimulator simulator: FBSimulator,
+    forSimulator simulator: Simulator,
     processIdentifier: pid_t
   ) -> FBFuture<NSNull> {
     let notifierFuture =
@@ -87,7 +87,7 @@ public final class SimulatorLaunchedApplication: LaunchedApplication, CustomStri
   }
 
   private init(
-    simulator: FBSimulator,
+    simulator: Simulator,
     configuration: ApplicationLaunchConfiguration,
     attachment: FBProcessFileAttachment,
     processIdentifier: pid_t,

@@ -9,7 +9,7 @@
 import Foundation
 
 /// The private frameworks FBSimulatorControl loads on demand, grouped by what needs them.
-public enum FBSimulatorControlFrameworkLoader {
+public enum SimulatorControlFrameworkLoader {
 
   private static let name = "FBSimulatorControl"
 

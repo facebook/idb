@@ -22,9 +22,9 @@ public enum SimulatorMemoryError: Error, LocalizedError {
 
 public struct SimulatorMemoryCommands: MemoryCommands {
 
-  private let simulator: FBSimulator
+  private let simulator: Simulator
 
-  public static func commands(with simulator: FBSimulator) -> SimulatorMemoryCommands {
+  public static func commands(with simulator: Simulator) -> SimulatorMemoryCommands {
     SimulatorMemoryCommands(simulator: simulator)
   }
 

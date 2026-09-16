@@ -12,15 +12,15 @@
 /// Reads and overrides what the simulated device draws in its status bar.
 public struct SimulatorStatusBarCommands {
 
-  private let simulator: FBSimulator
+  private let simulator: Simulator
 
   // MARK: - Initializers
 
-  public static func commands(with simulator: FBSimulator) -> SimulatorStatusBarCommands {
+  public static func commands(with simulator: Simulator) -> SimulatorStatusBarCommands {
     SimulatorStatusBarCommands(simulator: simulator)
   }
 
-  internal init(simulator: FBSimulator) {
+  internal init(simulator: Simulator) {
     self.simulator = simulator
   }
 
