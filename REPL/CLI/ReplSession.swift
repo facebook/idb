@@ -125,7 +125,7 @@ final class ReplSession {
     if let udid = config.udid {
       sessionMetadata["udid"] = udid
     }
-    if config.companion != nil {
+    if config.companion != nil || !localCompanionDiscoverySupported {
       sessionMetadata["connection"] = "remote"
     }
     if let reason = config.reason {
@@ -354,11 +354,9 @@ final class ReplSession {
 
   // MARK: - Connection
 
-  /// `--companion host:port` bypasses discovery; otherwise a local companion is
-  /// discovered (by `--udid` or the single running / only-available-simulator default)
-  /// and started if needed, exiting after 5 idle minutes. Local discovery needs a local
-  /// `idb_companion`, which exists only on macOS, so other platforms require an explicit
-  /// `--companion`.
+  /// `--companion host:port` bypasses discovery. macOS otherwise discovers or starts a
+  /// local companion; other platforms select a remote companion from `IDB_COMPANION` or
+  /// the companion registry.
   private static func resolveCompanionAddress(config: ReplSessionConfig) async throws -> CompanionAddress {
     switch planCompanionRoute(companion: config.companion) {
     case let .tcp(companion):
@@ -375,9 +373,22 @@ final class ReplSession {
       }
       return try await companionManager(config: config)
         .defaultCompanion(idleShutdownTime: idleShutdownTime).address
-    case .localUnavailable:
-      throw ValidationError(
-        "idb-repl can only connect to a companion over TCP on this platform; please pass --companion <host:port>")
+    case .selectRemote:
+      do {
+        let environmentCompanion = ProcessInfo.processInfo.environment["IDB_COMPANION"]
+        if environmentCompanion != nil {
+          return try selectRemoteCompanion(
+            environmentCompanion: environmentCompanion,
+            companions: [],
+            udid: config.udid)
+        }
+        return try selectRemoteCompanion(
+          environmentCompanion: nil,
+          companions: CompanionRegistry().companions(),
+          udid: config.udid)
+      } catch let error as RemoteCompanionSelectionError {
+        throw ValidationError(error.description)
+      }
     }
   }
 

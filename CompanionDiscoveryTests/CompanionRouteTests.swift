@@ -8,8 +8,6 @@
 import CompanionDiscovery
 import Testing
 
-/// Tests the pure companion-routing decision: an explicit companion always wins,
-/// and local discovery is offered only when the platform supports it.
 @Suite
 struct CompanionRouteTests {
 
@@ -30,8 +28,116 @@ struct CompanionRouteTests {
   }
 
   @Test
-  func noCompanionIsUnavailableWhenLocalDisallowed() {
-    // e.g. Linux: no local idb_companion, so only an explicit companion works.
-    #expect(planCompanionRoute(companion: nil, localAllowed: false) == .localUnavailable)
+  func noCompanionSelectsRemoteWhenLocalDisallowed() {
+    #expect(planCompanionRoute(companion: nil, localAllowed: false) == .selectRemote)
+  }
+
+  @Test
+  func environmentCompanionWinsOverRegistry() throws {
+    let address = try selectRemoteCompanion(
+      environmentCompanion: "environment.example:1234",
+      companions: [tcpCompanion(udid: "registry", host: "registry.example", port: 5678)],
+      udid: "registry")
+
+    #expect(address == .tcp(host: "environment.example", port: 1234))
+  }
+
+  @Test
+  func invalidEnvironmentCompanionIsNotIgnored() {
+    #expect(throws: RemoteCompanionSelectionError.invalidEnvironmentCompanion("not-an-address")) {
+      try selectRemoteCompanion(
+        environmentCompanion: "not-an-address",
+        companions: [tcpCompanion(udid: "target", host: "registry.example", port: 5678)],
+        udid: "target")
+    }
+  }
+
+  @Test
+  func emptyEnvironmentCompanionIsNotIgnored() {
+    #expect(throws: RemoteCompanionSelectionError.invalidEnvironmentCompanion("")) {
+      try selectRemoteCompanion(
+        environmentCompanion: "",
+        companions: [tcpCompanion(udid: "target", host: "registry.example", port: 5678)],
+        udid: "target")
+    }
+  }
+
+  @Test
+  func udidSelectsMatchingTCPCompanion() throws {
+    let address = try selectRemoteCompanion(
+      environmentCompanion: nil,
+      companions: [
+        tcpCompanion(udid: "other", host: "other.example", port: 1234),
+        tcpCompanion(udid: "target", host: "target.example", port: 5678),
+      ],
+      udid: "target")
+
+    #expect(address == .tcp(host: "target.example", port: 5678))
+  }
+
+  @Test
+  func udidNeverSelectsDifferentCompanion() {
+    #expect(throws: RemoteCompanionSelectionError.noCompanions(udid: "missing")) {
+      try selectRemoteCompanion(
+        environmentCompanion: nil,
+        companions: [tcpCompanion(udid: "other", host: "other.example", port: 1234)],
+        udid: "missing")
+    }
+  }
+
+  @Test
+  func soleTCPCompanionIsSelectedWithoutUDID() throws {
+    let address = try selectRemoteCompanion(
+      environmentCompanion: nil,
+      companions: [
+        CompanionInfo(udid: "local", isLocal: true, pid: 1, address: .domainSocket(path: "/tmp/local.sock")),
+        tcpCompanion(udid: "remote", host: "remote.example", port: 1234),
+      ],
+      udid: nil)
+
+    #expect(address == .tcp(host: "remote.example", port: 1234))
+  }
+
+  @Test
+  func multipleTCPCompanionsRequireSelection() {
+    let first = tcpCompanion(udid: "first", host: "first.example", port: 1234)
+    let second = tcpCompanion(udid: "second", host: "second.example", port: 5678)
+
+    #expect(
+      throws: RemoteCompanionSelectionError.ambiguousCompanions(
+        udid: nil,
+        candidates: [first, second])
+    ) {
+      try selectRemoteCompanion(
+        environmentCompanion: nil,
+        companions: [second, first],
+        udid: nil)
+    }
+  }
+
+  @Test
+  func domainSocketsAreUnavailableRemotely() {
+    #expect(throws: RemoteCompanionSelectionError.noCompanions(udid: nil)) {
+      try selectRemoteCompanion(
+        environmentCompanion: nil,
+        companions: [
+          CompanionInfo(udid: "local", isLocal: true, pid: 1, address: .domainSocket(path: "/tmp/local.sock"))
+        ],
+        udid: nil)
+    }
+  }
+
+  @Test
+  func noCompanionErrorNamesEverySetupOption() {
+    let description = RemoteCompanionSelectionError.noCompanions(udid: nil).description
+
+    #expect(description.contains("--companion"))
+    #expect(description.contains("IDB_COMPANION"))
+    #expect(description.contains("/tmp/idb/state"))
+    #expect(description.contains("idb connect"))
+  }
+
+  private func tcpCompanion(udid: String, host: String, port: Int) -> CompanionInfo {
+    CompanionInfo(udid: udid, isLocal: false, pid: nil, address: .tcp(host: host, port: port))
   }
 }
