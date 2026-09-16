@@ -5,16 +5,11 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import CoreImage
 import CoreMedia
-import CoreServices
 import CoreVideo
 import FBControlCore
 import Foundation
 import IOSurface
-import ImageIO
-import Metal
-import UniformTypeIdentifiers
 import VideoToolbox
 
 enum SimulatorVideoStreamError: Error {
@@ -26,8 +21,6 @@ enum SimulatorVideoStreamError: Error {
   case failedToCreatePixelBufferFromSurfaceNil
   case mountSurfaceWithoutConsumer
   case noPixelBufferForScreenshot
-  case failedToCreateCGImage
-  case failedToEncodePNG
 }
 
 extension SimulatorVideoStreamError: LocalizedError {
@@ -49,10 +42,6 @@ extension SimulatorVideoStreamError: LocalizedError {
       return "Cannot mount surface when there is no consumer"
     case .noPixelBufferForScreenshot:
       return "No pixel buffer available for screenshot"
-    case .failedToCreateCGImage:
-      return "Failed to create CGImage from pixel buffer"
-    case .failedToEncodePNG:
-      return "Failed to encode PNG"
     }
   }
 }
@@ -214,12 +203,8 @@ public actor SimulatorVideoStream: FBVideoStream {
   /// writer's chapter track. Resolved in `mountSurface`, cleared in `stopStreaming`.
   var timedMetadataConsumer: (any TimedMetadataConsumer)?
 
-  // Overlay compositing
-  var overlayBuffer: CVPixelBuffer?
-  var compositorCIContext: CIContext?
-  var compositedBufferPool: CVPixelBufferPool?
-  var compositedWidth: Int = 0
-  var compositedHeight: Int = 0
+  /// Overlay and edge-inset compositing; configured for the source at every mount.
+  let compositor: OverlayCompositor
 
   // MARK: - Initializers
 
@@ -274,6 +259,7 @@ public actor SimulatorVideoStream: FBVideoStream {
     self.cadence = cadence
     self.encodedSampleConsumerOverride = encodedSampleConsumerOverride
     self.logger = logger
+    self.compositor = OverlayCompositor(edgeInsets: edgeInsets)
   }
 
   deinit {
@@ -376,8 +362,7 @@ public actor SimulatorVideoStream: FBVideoStream {
     }
     timedMetadataConsumer = nil
     frameWriters = nil
-    overlayBuffer = nil
-    compositedBufferPool = nil
+    compositor.reset()
     cadenceTeardown()
     resumeStopAwaiters()
     for awaiter in pendingStartAwaiters {
@@ -511,34 +496,11 @@ public actor SimulatorVideoStream: FBVideoStream {
       self.timedMetadataConsumer = TransportTimedMetadataConsumer(consumer: consumer, timedMetadataWriter: frameWriters?.timedMetadataWriter)
     }
 
-    if compositorCIContext == nil {
-      if let device = MTLCreateSystemDefaultDevice() {
-        compositorCIContext = CIContext(mtlDevice: device, options: [.cacheIntermediates: false])
-      } else {
-        compositorCIContext = CIContext(options: [.cacheIntermediates: false])
-      }
-    }
-    compositedBufferPool = nil
+    compositor.configure(
+      sourceWidth: CVPixelBufferGetWidth(buffer), sourceHeight: CVPixelBufferGetHeight(buffer), scaleFactor: configuration.scaleFactor)
     let insets = edgeInsets
-    // Must agree exactly with the encoder's dimensions — both derive from VideoOutputDimensions.
-    let dimensions = VideoOutputDimensions.calculate(
-      sourceWidth: CVPixelBufferGetWidth(buffer), sourceHeight: CVPixelBufferGetHeight(buffer),
-      scaleFactor: configuration.scaleFactor, edgeInsets: insets)
-    let compositedWidth = dimensions.width
-    let compositedHeight = dimensions.height
-    self.compositedWidth = compositedWidth
-    self.compositedHeight = compositedHeight
-    let compositedPoolAttrs: [String: Any] = [
-      kCVPixelBufferPixelFormatTypeKey as String: kCVPixelFormatType_32BGRA,
-      kCVPixelBufferWidthKey as String: compositedWidth,
-      kCVPixelBufferHeightKey as String: compositedHeight,
-      kCVPixelBufferIOSurfacePropertiesKey as String: [String: Any](),
-    ]
-    var pool: CVPixelBufferPool?
-    CVPixelBufferPoolCreate(nil, nil, compositedPoolAttrs as CFDictionary, &pool)
-    compositedBufferPool = pool
     if insets.top + insets.bottom + insets.left + insets.right > 0 {
-      logger.info().log("Composited pool includes edge insets (t=\(insets.top) b=\(insets.bottom) l=\(insets.left) r=\(insets.right)): w=\(compositedWidth)/h=\(compositedHeight)")
+      logger.info().log("Composited pool includes edge insets (t=\(insets.top) b=\(insets.bottom) l=\(insets.left) r=\(insets.right)): w=\(compositor.outputWidth)/h=\(compositor.outputHeight)")
     }
 
     // The first mount transitions `.starting` → `.streaming`, resuming anyone awaiting it. A
@@ -569,40 +531,6 @@ public actor SimulatorVideoStream: FBVideoStream {
     }
   }
 
-  /// Build a composited CIImage from the source pixel buffer, applying edge insets
-  /// and overlaying the overlay buffer if present. Returns nil if no compositing is needed.
-  func compositedImage(fromSource sourceBuffer: CVPixelBuffer) -> CIImage? {
-    let overlayBuf = overlayBuffer
-    let insets = edgeInsets
-    let hasInsets = (insets.top + insets.bottom + insets.left + insets.right) > 0
-    let needsComposite = hasInsets || (overlayBuf != nil)
-    guard needsComposite, compositorCIContext != nil, compositedBufferPool != nil else {
-      return nil
-    }
-
-    var sourceImage = CIImage(cvPixelBuffer: sourceBuffer)
-
-    // Scale source to fit within the composited output (excluding insets).
-    // CIImage origin is bottom-left, so after scaling we translate by (left, bottom)
-    // to position the video content inside the inset frame.
-    let sourceW = CVPixelBufferGetWidth(sourceBuffer)
-    let targetW = compositedWidth - Int(insets.left) - Int(insets.right)
-    if targetW != sourceW && sourceW > 0 {
-      let s = CGFloat(targetW) / CGFloat(sourceW)
-      sourceImage = sourceImage.transformed(by: CGAffineTransform(scaleX: s, y: s))
-    }
-    if insets.left > 0 || insets.bottom > 0 {
-      sourceImage = sourceImage.transformed(by: CGAffineTransform(translationX: CGFloat(insets.left), y: CGFloat(insets.bottom)))
-    }
-
-    var result = sourceImage
-    if let overlayBuf {
-      let overlayImage = CIImage(cvPixelBuffer: overlayBuf)
-      result = overlayImage.composited(over: sourceImage)
-    }
-    return result
-  }
-
   func pushFrame(forceKeyFrame: Bool) {
     guard let pixelBuffer, let consumer, let framePusher else {
       return
@@ -630,23 +558,9 @@ public actor SimulatorVideoStream: FBVideoStream {
     let seedBefore = sourceSurface.map { IOSurfaceGetSeed($0) }
     CVPixelBufferLockBaseAddress(pixelBuffer, .readOnly)
 
-    // Composite the overlay buffer over the source frame, or apply edge inset padding.
-    // When any edge inset > 0, every frame must be composited to match the output dimensions
-    // of the encoder (which includes the insets). Without this, raw framebuffer pixels
-    // would be fed to an encoder sized for the larger output, causing distortion.
-    var bufferToEncode = pixelBuffer
-    if let composited = compositedImage(fromSource: pixelBuffer), let compositedBufferPool {
-      var compositedBuffer: CVPixelBuffer?
-      let poolStatus = CVPixelBufferPoolCreatePixelBuffer(nil, compositedBufferPool, &compositedBuffer)
-      if poolStatus == kCVReturnSuccess, let compositedBuffer {
-        compositorCIContext?.render(composited, to: compositedBuffer)
-        bufferToEncode = compositedBuffer
-      }
-    }
-
     do {
       try framePusher.writeEncodedFrame(
-        bufferToEncode,
+        compositor.composite(pixelBuffer),
         frameNumber: frameNumber,
         timeAtFirstFrame: timeAtFirstFrame,
         frameDuration: frameDuration,
@@ -718,11 +632,9 @@ public actor SimulatorVideoStream: FBVideoStream {
   /// into keyframes, starving the motion budget.
   /// In eager/CFR mode: no extra push — the next cadence tick picks up the change without disrupting frame timing.
   public func updateOverlayBuffer(_ overlayBuffer: CVPixelBuffer?) {
-    let sameReference = (overlayBuffer === self.overlayBuffer)
-
-    // Skip atomic self-assignment when the caller is updating buffer contents in-place.
+    let sameReference = (overlayBuffer === compositor.overlayBuffer)
     if !sameReference {
-      self.overlayBuffer = overlayBuffer
+      compositor.overlayBuffer = overlayBuffer
     }
 
     let stateDescription = overlayBuffer != nil ? (sameReference ? "contents updated" : "buffer swapped") : "cleared"
@@ -761,27 +673,7 @@ public actor SimulatorVideoStream: FBVideoStream {
     guard let sourceBuffer = pixelBuffer else {
       throw SimulatorVideoStreamError.noPixelBufferForScreenshot
     }
-
-    // Only a CGImage is needed here, so render the composited CIImage directly rather than via a pool buffer.
-    let ciImage = compositedImage(fromSource: sourceBuffer) ?? CIImage(cvPixelBuffer: sourceBuffer)
-
-    let ctx = compositorCIContext ?? CIContext()
-    guard let cgImage = ctx.createCGImage(ciImage, from: ciImage.extent) else {
-      throw SimulatorVideoStreamError.failedToCreateCGImage
-    }
-
-    let pngData = NSMutableData()
-    guard let dest = CGImageDestinationCreateWithData(pngData as CFMutableData, UTType.png.identifier as CFString, 1, nil) else {
-      throw SimulatorVideoStreamError.failedToEncodePNG
-    }
-    CGImageDestinationAddImage(dest, cgImage, nil)
-    let finalized = CGImageDestinationFinalize(dest)
-
-    if !finalized {
-      throw SimulatorVideoStreamError.failedToEncodePNG
-    }
-
-    return pngData as Data
+    return try compositor.screenshotPNG(of: sourceBuffer)
   }
 
   // MARK: - Stats
