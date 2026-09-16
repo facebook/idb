@@ -11,24 +11,10 @@ import json
 import plistlib
 from typing import Any
 
-from .harness import Completed, IdbEndToEndTestCase, NotReady, run, wait_until
+from .harness import IdbEndToEndTestCase, NotReady, run, wait_until
 
 
 class ServiceMutationTests(IdbEndToEndTestCase):
-    async def guest(self, *arguments: str) -> Completed:
-        binary = (
-            self.environment.companion_path.parent
-            / "Resources"
-            / "SimulatorFrameworkBridge-iOS"
-        )
-        completed = await self.simctl.run("spawn", self.udid, str(binary), *arguments)
-        self.assertEqual(
-            completed.returncode,
-            0,
-            f"guest {arguments}: {completed.text}\n{completed.error_text}",
-        )
-        return completed
-
     async def probe_data(self, *arguments: str, stdin: bytes | None = None) -> bytes:
         completed = await run(
             self.simctl.argv(
@@ -129,6 +115,55 @@ class ServiceMutationTests(IdbEndToEndTestCase):
         await self.assert_notifications(bundle_id, True, 2)
         await self.guest("notifications", "revoke", bundle_id)
         await self.assert_notifications(bundle_id, False, 0)
+
+    async def test_idb_notification_permissions_update_guest_settings(self) -> None:
+        bundle_id = await self.install_fixture_app()
+        self.addAsyncCleanup(self.idb, "revoke", bundle_id, "notification")
+
+        approved = await self.idb("approve", bundle_id, "notification")
+
+        self.assertEqual(approved.stdout, b"")
+        await self.assert_notifications(bundle_id, True, 2)
+        revoked = await self.idb("revoke", bundle_id, "notification")
+        self.assertEqual(revoked.stdout, b"")
+        await self.assert_notifications(bundle_id, False, 0)
+
+    async def test_guest_accessibility_setting_write_reads_back(self) -> None:
+        arguments = ("--setting", "reduce-motion")
+        before = json.loads(
+            (await self.guest("accessibility", "settings-get", *arguments)).text
+        )
+        self.assertEqual(before.get("ok"), True)
+        self.assertIs(type(before.get("enabled")), bool)
+        self.addAsyncCleanup(
+            self.guest,
+            "accessibility",
+            "settings-set",
+            *arguments,
+            "--enabled",
+            "true" if before["enabled"] else "false",
+        )
+        wanted = not before["enabled"]
+
+        changed = json.loads(
+            (
+                await self.guest(
+                    "accessibility",
+                    "settings-set",
+                    *arguments,
+                    "--enabled",
+                    "true" if wanted else "false",
+                )
+            ).text
+        )
+
+        self.assertEqual(changed, {"ok": True, "enabled": wanted})
+        self.assertEqual(
+            json.loads(
+                (await self.guest("accessibility", "settings-get", *arguments)).text
+            ),
+            changed,
+        )
 
     async def assert_notifications(
         self, bundle_id: str, enabled: bool, status: int

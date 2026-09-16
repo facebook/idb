@@ -113,9 +113,12 @@ def _settings_row_positions(document: Any) -> dict[str, float]:
     }
 
 
-PYTHON_ONLY_TESTS = frozenset(
+READ_ONLY_CLIENT_EXCLUSIONS = frozenset(
     {
         "test_ui_scroll_moves_settings_rows_down_and_up",
+        "test_guest_describe_runs_each_tree_reader",
+        "test_guest_press_opens_general",
+        "test_public_and_guest_set_value_update_the_search_field",
         "test_ui_tap_opens_general_by_marker",
         "test_ui_tap_opens_general_by_point",
         "test_ui_wait_finds_an_existing_row_on_both_backends",
@@ -136,7 +139,7 @@ def load_tests(
     return unittest.TestSuite(
         AccessibilityTests(name)
         for name in loader.getTestCaseNames(AccessibilityTests)
-        if name not in PYTHON_ONLY_TESTS
+        if name not in READ_ONLY_CLIENT_EXCLUSIONS
     )
 
 
@@ -364,6 +367,147 @@ class AccessibilityTests(IdbEndToEndTestCase):
             expected_error="poll_interval",
         )
         self.assertEqual(completed.stdout, b"")
+
+    async def test_ui_describe_point_uses_the_guest_backend(self) -> None:
+        general = await self.wait_for_element(GENERAL_ROW_ID)
+        x, y = self.center(general)
+
+        document = await self.idb_json(
+            "ui",
+            "describe-point",
+            str(x),
+            str(y),
+            "--api",
+            "axbridge",
+            "--format",
+            "complete",
+        )
+
+        self.assertEqual(document["backend"], AXBRIDGE_BACKEND)
+        self.assertIn(
+            GENERAL_ROW_ID,
+            [element.get("identifier") for element in _elements(document["elements"])],
+        )
+
+    async def test_guest_describe_runs_each_tree_reader(self) -> None:
+        general = await self.wait_for_element(GENERAL_ROW_ID)
+        pid = general["pid"]
+        self.assertGreater(pid, 0)
+        for options in [
+            (),
+            ("--snapshot-tree", "true"),
+            ("--translator-vocabulary", "true"),
+        ]:
+            with self.subTest(options=options):
+                response = json.loads(
+                    (
+                        await self.guest(
+                            "accessibility",
+                            "describe",
+                            "--pid",
+                            str(pid),
+                            "--max-depth",
+                            "2",
+                            *options,
+                        )
+                    ).text
+                )
+                self.assertEqual(response["ok"], True)
+                self.assertEqual(response["pid"], pid)
+                self.assertIsInstance(response["tree"], dict)
+                self.assertTrue(response["tree"])
+                self.assertGreater(response["phases"]["mach_round_trips"], 0)
+
+    async def test_guest_press_opens_general(self) -> None:
+        general = await self.wait_for_element(GENERAL_ROW_ID)
+        title = _label(general)
+        self.assertTrue(title)
+        x, y = self.center(general)
+
+        response = json.loads(
+            (
+                await self.guest(
+                    "accessibility",
+                    "perform",
+                    "--action",
+                    "press",
+                    "--pid",
+                    str(general["pid"]),
+                    "--x",
+                    str(x),
+                    "--y",
+                    str(y),
+                )
+            ).text
+        )
+
+        self.assertEqual(response, {"ok": True, "pid": general["pid"]})
+        await self.wait_for_element(title, "NavigationBar")
+
+    async def wait_for_search_field(self, value: str | None = None) -> dict[str, Any]:
+        async def read() -> dict[str, Any]:
+            fields = [
+                element
+                for element in _elements(await self.wait_for_settings_snapshot())
+                if _has_area(element)
+                and (
+                    element.get("type") == "SearchField"
+                    or (
+                        element.get("type") == "TextField"
+                        and element.get("subrole") == "SearchField"
+                    )
+                )
+            ]
+            if len(fields) != 1:
+                raise NotReady(f"Expected one search field, found {len(fields)}")
+            if value is not None and fields[0].get("value") != value:
+                raise NotReady(
+                    f"Search field has value {fields[0].get('value')!r}, expected {value!r}"
+                )
+            return fields[0]
+
+        return await wait_until(
+            "Settings search field", UI_UPDATE_TIMEOUT_SECONDS, read
+        )
+
+    async def restore_search_field(self, value: str) -> None:
+        field = await self.wait_for_search_field()
+        x, y = self.center(field)
+        await self.idb("ui", "set-value", str(x), str(y), "--value", value)
+
+    async def test_public_and_guest_set_value_update_the_search_field(self) -> None:
+        field = await self.wait_for_search_field()
+        original = field.get("value") or ""
+        self.assertIsInstance(original, str)
+        self.addAsyncCleanup(self.restore_search_field, original)
+        x, y = self.center(field)
+
+        completed = await self.idb(
+            "ui", "set-value", str(x), str(y), "--value", "idb-first"
+        )
+
+        self.assertEqual(completed.stdout, b"")
+        field = await self.wait_for_search_field("idb-first")
+        x, y = self.center(field)
+        response = json.loads(
+            (
+                await self.guest(
+                    "accessibility",
+                    "setvalue",
+                    "--pid",
+                    str(field["pid"]),
+                    "--x",
+                    str(x),
+                    "--y",
+                    str(y),
+                    "--value",
+                    "idb-second",
+                )
+            ).text
+        )
+        self.assertEqual(response, {"ok": True, "pid": field["pid"]})
+        field = await self.wait_for_search_field("idb-second")
+        self.assertEqual(field["value"], "idb-second")
 
     @unittest.skipIf(read_only_client(), "selected client is read-only")
     async def test_ui_tap_opens_general_by_point(self) -> None:

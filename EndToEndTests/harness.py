@@ -862,6 +862,20 @@ class IdbEndToEndTestCase(unittest.IsolatedAsyncioTestCase):
         )
         return FIXTURE_APP_BUNDLE_ID
 
+    async def guest(self, *arguments: str) -> Completed:
+        binary = (
+            self.environment.companion_path.parent
+            / "Resources"
+            / "SimulatorFrameworkBridge-iOS"
+        )
+        completed = await self.simctl.run("spawn", self.udid, str(binary), *arguments)
+        self.assertEqual(
+            completed.returncode,
+            0,
+            f"guest {arguments}: {completed.text}\n{completed.error_text}",
+        )
+        return completed
+
     async def install_fixture_app(self) -> str:
         """Install ReplHost.app, register uninstall cleanup, and return its bundle ID."""
         fixture = self.environment.fixture_app
