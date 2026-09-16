@@ -31,10 +31,10 @@ struct AppOptions: ParsableArguments {
 struct ConnectionOptions: ParsableArguments {
   @Option(
     name: .long,
-    help: "UDID of the simulator to use for execution. If omitted, the single running companion is used, or one is started for the only available simulator.")
+    help: "UDID of the simulator to use for execution. Local discovery finds or starts its companion; remote discovery selects a matching registered TCP companion.")
   var udid: String?
 
-  @Option(name: .long, help: "Path to the Swift toolchain used to compile code. Defaults to the selected Xcode toolchain (xcode-select -p).")
+  @Option(name: .long, help: "Path to the Swift toolchain used to compile code. Defaults to the platform toolchain.")
   var toolchainPath: String?
 
   @Option(
