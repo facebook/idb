@@ -13,7 +13,7 @@ import Foundation
 // two callers racing the first construction, and hold their device weakly so the cache slot does
 // not close a cycle. Commands that only wrap the device are built per call and hold it strongly:
 // nothing outlives the call that builds them.
-extension FBDevice {
+extension Device {
 
   // MARK: - Shared accessors
 

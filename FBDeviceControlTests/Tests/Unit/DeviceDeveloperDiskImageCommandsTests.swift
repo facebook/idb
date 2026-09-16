@@ -28,7 +28,7 @@ struct DeviceDeveloperDiskImageCommandsTests {
     amDevice.service(ImageMounterService)
   }
 
-  private func makeDevice(mounterReplies: [Any]) -> FBDevice {
+  private func makeDevice(mounterReplies: [Any]) -> Device {
     let device = amDevice.makeDevice()
     mounter.messageReplies = mounterReplies
     amDevice.clearEvents()

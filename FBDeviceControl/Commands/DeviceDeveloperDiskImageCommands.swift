@@ -61,16 +61,16 @@ extension DeviceDiskImageError: LocalizedError {
 }
 
 public final class DeviceDeveloperDiskImageCommands: DeveloperDiskImageCommands {
-  private(set) weak var device: FBDevice?
+  private(set) weak var device: Device?
   private let diskImages: any DeveloperDiskImageProviding
 
   // MARK: - Initializers
 
-  public class func commands(with device: FBDevice) -> DeviceDeveloperDiskImageCommands {
+  public class func commands(with device: Device) -> DeviceDeveloperDiskImageCommands {
     DeviceDeveloperDiskImageCommands(device: device)
   }
 
-  init(device: FBDevice, diskImages: any DeveloperDiskImageProviding = InstalledDeveloperDiskImages()) {
+  init(device: Device, diskImages: any DeveloperDiskImageProviding = InstalledDeveloperDiskImages()) {
     self.device = device
     self.diskImages = diskImages
   }

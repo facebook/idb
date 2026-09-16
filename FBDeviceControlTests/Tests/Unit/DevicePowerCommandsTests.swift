@@ -11,7 +11,7 @@ import Testing
 
 private let DiagnosticsRelayService = "com.apple.mobile.diagnostics_relay"
 
-/// Driven through `FBDevice`'s public API against a scripted `AMDCalls` table, so what is asserted
+/// Driven through `Device`'s public API against a scripted `AMDCalls` table, so what is asserted
 /// is the AMDevice interaction a caller provokes.
 @MainActor
 // Serialized: the fake device's queues are the main queue, so parallel tests would interleave on it.
@@ -20,7 +20,7 @@ struct DevicePowerCommandsTests {
 
   private let amDevice = FakeAMDevice()
 
-  private func makeDevice(replying reply: Any?) -> FBDevice {
+  private func makeDevice(replying reply: Any?) -> Device {
     let device = amDevice.makeDevice()
     if let reply {
       amDevice.service(DiagnosticsRelayService).messageReplies = [reply]

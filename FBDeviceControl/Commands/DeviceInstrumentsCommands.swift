@@ -9,13 +9,13 @@ import FBControlCore
 import Foundation
 
 public struct DeviceInstrumentsCommands: InstrumentsCommands {
-  private let device: FBDevice
+  private let device: Device
 
-  public static func commands(with device: FBDevice) -> DeviceInstrumentsCommands {
+  public static func commands(with device: Device) -> DeviceInstrumentsCommands {
     DeviceInstrumentsCommands(device: device)
   }
 
-  init(device: FBDevice) {
+  init(device: Device) {
     self.device = device
   }
 

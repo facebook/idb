@@ -36,7 +36,7 @@ The process of discovering devices is asynchronous, which means that fetching th
 
 This API is extremely limited and only exists to describe devices and perform some actions that are only relevant for devices that are not yet in a booted state. This is used to move a booted device to a DFU/Restore state and back out again. It is useful for understanding why a device that appears to be connected may not be represented by an `AMDevice` instance.
 
-This is why `FBDeviceControl` can represent a single `FBDevice` instance to be backed by either or both of an `AMDevice`/`AMRestorableDevice`, for the sake of full observability into connected iOS Devices. `FBDevice` instances will also fail appropriately, for instance when attempting to install an Application to an iOS Device that is in DFU/Restore mode.
+This is why `FBDeviceControl` can represent a single `Device` instance to be backed by either or both of an `AMDevice`/`AMRestorableDevice`, for the sake of full observability into connected iOS Devices. `Device` instances will also fail appropriately, for instance when attempting to install an Application to an iOS Device that is in DFU/Restore mode.
 
 ### `AMDServiceConnection`
 

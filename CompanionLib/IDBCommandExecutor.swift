@@ -523,7 +523,7 @@ public final class IDBCommandExecutor {
   }
 
   public func diagnostic_information() async throws -> NSDictionary {
-    guard let device = target as? FBDevice else {
+    guard let device = target as? Device else {
       return NSDictionary()
     }
     return try await device.diagnosticInformation.fetch() as NSDictionary
@@ -700,7 +700,7 @@ public final class IDBCommandExecutor {
     body: (any AsyncFileContainer) async throws -> R
   ) async throws -> R {
     guard let containerType, !containerType.isEmpty else {
-      if target is FBDevice {
+      if target is Device {
         return try await target.file.withMediaDirectory { container in
           try await body(container)
         }
@@ -807,7 +807,7 @@ public final class IDBCommandExecutor {
   }
 
   private func installAppBundle(_ appBundle: BundleDescriptor, makeDebuggable: Bool) async throws -> InstalledArtifact {
-    let userDevelopmentAppIsRequired = target is FBDevice
+    let userDevelopmentAppIsRequired = target is Device
     try storageManager.application.checkArchitecture(appBundle)
     let installedApp = try await target.application.install(atPath: appBundle.path)
     // TODO: currently we have to persist it even if app is not used for debugging

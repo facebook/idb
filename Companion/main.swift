@@ -138,16 +138,16 @@ private let deviceDiscoveryTimeout: TimeInterval = 5
 private let deviceDiscoveryPollInterval: TimeInterval = 0.1
 private let restorableDevicePopulationNap: UInt64 = 200_000_000
 
-private func deviceSet(_ logger: ControlCoreLogger, ecidFilter: String?, waitForDevices: Bool = false) async throws -> FBDeviceSet {
-  // `FBDeviceSet` hardcodes `DispatchQueue.main` for its device managers and
+private func deviceSet(_ logger: ControlCoreLogger, ecidFilter: String?, waitForDevices: Bool = false) async throws -> DeviceSet {
+  // `DeviceSet` hardcodes `DispatchQueue.main` for its device managers and
   // registers MobileDevice notifications that expect the main run loop, so it
   // must be created on the main thread.
-  let set: FBDeviceSet = try await withCheckedThrowingContinuation { continuation in
+  let set: DeviceSet = try await withCheckedThrowingContinuation { continuation in
     DispatchQueue.main.async {
       do {
         // Give a more meaningful message if we can't load the frameworks.
-        try FBDeviceControlFrameworkLoader().loadPrivateFrameworks(logger)
-        continuation.resume(returning: try FBDeviceSet(logger: logger, delegate: nil, ecidFilter: ecidFilter))
+        try DeviceControlFrameworkLoader().loadPrivateFrameworks(logger)
+        continuation.resume(returning: try DeviceSet(logger: logger, delegate: nil, ecidFilter: ecidFilter))
       } catch {
         continuation.resume(throwing: error)
       }
@@ -165,7 +165,7 @@ private func deviceSet(_ logger: ControlCoreLogger, ecidFilter: String?, waitFor
 /// Waits for at least one device to land in `set`. Devices arrive asynchronously over MobileDevice
 /// notifications on the main run loop, so a freshly constructed set is briefly empty. Timing out is
 /// tolerated: a host with no device attached should still get the caller's usual "no targets" message.
-private func awaitDevicePopulation(of set: FBDeviceSet, logger: ControlCoreLogger) async throws {
+private func awaitDevicePopulation(of set: DeviceSet, logger: ControlCoreLogger) async throws {
   do {
     try await Task.timeout(nanoseconds: UInt64(deviceDiscoveryTimeout * Double(NSEC_PER_SEC))) {
       // The set is mutated on the main queue, so the condition is polled there.
@@ -214,7 +214,7 @@ private func targetForUDID(_ udid: String, userDefaults: UserDefaults, xcodeAvai
   return try FBiOSTargetProvider.target(withUDID: udid, targetSets: targetSets, warmUp: warmUp, logger: logger)
 }
 
-private func deviceForECID(_ ecid: String, logger: ControlCoreLogger) async throws -> FBDevice {
+private func deviceForECID(_ ecid: String, logger: ControlCoreLogger) async throws -> Device {
   let set = try await deviceSet(logger, ecidFilter: ecid.replacingOccurrences(of: "ecid:", with: ""), waitForDevices: true)
   let devices = set.allDevices
   if devices.isEmpty {
@@ -490,7 +490,7 @@ private func runForward(_ forward: String, userDefaults: UserDefaults, xcodeAvai
   let remotePort = Int32(components[1]) ?? 0
 
   let target = try await targetForUDID(udid, userDefaults: userDefaults, xcodeAvailable: xcodeAvailable, warmUp: false, logger: logger)
-  guard let socketForwarding = (target as? FBDevice)?.socketForwarding else {
+  guard let socketForwarding = (target as? Device)?.socketForwarding else {
     throw IDBCompanionError.socketForwardingUnsupported(targetDescription: String(describing: target))
   }
   try await socketForwarding.drainLocalFileInput(STDIN_FILENO, localFileOutput: STDOUT_FILENO, remotePort: remotePort)

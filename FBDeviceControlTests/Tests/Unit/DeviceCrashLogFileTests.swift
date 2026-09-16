@@ -39,7 +39,7 @@ struct DeviceCrashLogFileTests {
   private let amDevice = FakeAMDevice()
   private let afc = FakeAFC()
 
-  private func makeDevice(remoteFiles: [String: String]) -> FBDevice {
+  private func makeDevice(remoteFiles: [String: String]) -> Device {
     let device = amDevice.makeDevice()
     amDevice.service(CrashReportMoverService).readBuffer = Data("ping".utf8)
     amDevice.service(CrashReportCopyService).afc = afc
@@ -55,7 +55,7 @@ struct DeviceCrashLogFileTests {
     return device
   }
 
-  private func allCrashes(_ device: FBDevice) async throws -> [CrashLogInfo] {
+  private func allCrashes(_ device: Device) async throws -> [CrashLogInfo] {
     try await device.crashLog.crashes(matching: NSPredicate(value: true), useCache: false)
   }
 

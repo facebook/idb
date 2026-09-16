@@ -10,11 +10,11 @@ import Foundation
 
 /// Backed by an `FBAMDevice`, an `FBAMRestorableDevice`, or both, caching the target
 /// information of whichever it holds.
-public final class FBDevice: FBiOSTarget, DeviceCommands, CustomStringConvertible {
+public final class Device: FBiOSTarget, DeviceCommands, CustomStringConvertible {
 
   // MARK: - Properties
 
-  public private(set) weak var set: FBDeviceSet?
+  public private(set) weak var set: DeviceSet?
   public let commandCache: TargetCommandCache
   public private(set) var logger: any ControlCoreLogger
   public private(set) var calls: AMDCalls
@@ -81,7 +81,7 @@ public final class FBDevice: FBiOSTarget, DeviceCommands, CustomStringConvertibl
   public var allValues: [String: Any] { cachedAllValues ?? [:] }
 
   public init(
-    set: FBDeviceSet?,
+    set: DeviceSet?,
     amDevice: FBAMDevice?,
     restorableDevice: FBAMRestorableDevice?,
     logger: any ControlCoreLogger
@@ -108,7 +108,7 @@ public final class FBDevice: FBiOSTarget, DeviceCommands, CustomStringConvertibl
 
   public static func commands(with target: any FBiOSTarget) -> Self {
     guard let device = target as? Self else {
-      preconditionFailure("\(type(of: target)) is not an FBDevice, so it cannot provide device commands")
+      preconditionFailure("\(type(of: target)) is not an Device, so it cannot provide device commands")
     }
     return device
   }

@@ -35,16 +35,16 @@ extension DeviceXCTestError: LocalizedError {
 }
 
 public final class DeviceXCTestCommands: XCTestCommands {
-  private(set) weak var device: FBDevice?
+  private(set) weak var device: Device?
   private(set) var workingDirectory: String
   private(set) var processFetcher: FBProcessFetcher
   var runningXcodeBuildOperation = false
 
-  public class func commands(with device: FBDevice) -> DeviceXCTestCommands {
+  public class func commands(with device: Device) -> DeviceXCTestCommands {
     DeviceXCTestCommands(device: device, workingDirectory: NSTemporaryDirectory())
   }
 
-  init(device: FBDevice, workingDirectory: String) {
+  init(device: Device, workingDirectory: String) {
     self.device = device
     self.workingDirectory = workingDirectory
     self.processFetcher = FBProcessFetcher()
@@ -104,6 +104,6 @@ public final class DeviceXCTestCommands: XCTestCommands {
   }
 }
 
-// MARK: - FBDevice+XCTestTarget
+// MARK: - Device+XCTestTarget
 
-extension FBDevice: XCTestTarget {}
+extension Device: XCTestTarget {}

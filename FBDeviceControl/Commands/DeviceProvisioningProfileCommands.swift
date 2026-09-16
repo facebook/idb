@@ -34,13 +34,13 @@ extension DeviceProvisioningProfileError: LocalizedError {
 }
 
 public final class DeviceProvisioningProfileCommands: ProvisioningProfileCommands {
-  let device: FBDevice
+  let device: Device
 
-  public static func commands(with device: FBDevice) -> DeviceProvisioningProfileCommands {
+  public static func commands(with device: Device) -> DeviceProvisioningProfileCommands {
     return DeviceProvisioningProfileCommands(device: device)
   }
 
-  public init(device: FBDevice) {
+  public init(device: Device) {
     self.device = device
   }
 

@@ -36,7 +36,7 @@ private struct StubDiskImages: DeveloperDiskImageProviding {
   let availableDiskImages: [DeveloperDiskImage]
 }
 
-/// Exercises the `com.apple.dt.fetchsymbols` exchange through `FBDevice`'s public API. Every step
+/// Exercises the `com.apple.dt.fetchsymbols` exchange through `Device`'s public API. Every step
 /// the device would perform is scripted: the disk image the service requires is already mounted,
 /// so the operation reaches the symbol service itself.
 @MainActor
@@ -52,7 +52,7 @@ struct DeviceDebugSymbolsWireTests {
 
   /// Each symbol operation opens its own connection and mounts first, so the mounter is given
   /// enough identical replies to answer however many times it is asked.
-  private func makeDevice() -> FBDevice {
+  private func makeDevice() -> Device {
     let image = DeveloperDiskImage(
       diskImagePath: "/Images/DeveloperDiskImage-17.0.dmg",
       signature: Data([0x01]),

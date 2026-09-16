@@ -103,7 +103,7 @@ final class FakeAMDevice: NSObject {
   /// Every call the device made, in order, as `event` or `event:detail`.
   private(set) var events: [String] = []
 
-  /// Answers to `CopyValue`, which is also where `FBDevice` reads its cached device info.
+  /// Answers to `CopyValue`, which is also where `Device` reads its cached device info.
   var values: [String: Any] = [
     "UniqueDeviceID": "fake-udid",
     "ProductVersion": "17.0",
@@ -170,9 +170,9 @@ final class FakeAMDevice: NSObject {
     return device
   }
 
-  /// An `FBDevice` — the type the command classes take, and so the type public-API tests need.
-  func makeDevice() -> FBDevice {
-    FBDevice(
+  /// An `Device` — the type the command classes take, and so the type public-API tests need.
+  func makeDevice() -> Device {
+    Device(
       set: nil,
       amDevice: makeAMDevice(),
       restorableDevice: nil,

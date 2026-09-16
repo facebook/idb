@@ -11,13 +11,13 @@ import Foundation
 private let StartCommand: UInt32 = 0x00000000
 
 public struct DeviceLocationCommands: LocationCommands {
-  private let device: FBDevice
+  private let device: Device
 
-  public static func commands(with device: FBDevice) -> DeviceLocationCommands {
+  public static func commands(with device: Device) -> DeviceLocationCommands {
     DeviceLocationCommands(device: device)
   }
 
-  init(device: FBDevice) {
+  init(device: Device) {
     self.device = device
   }
 

@@ -9,13 +9,13 @@
 import Foundation
 
 public struct DeviceVideoStreamCommands: VideoStreamCommands {
-  private let device: FBDevice
+  private let device: Device
 
-  public static func commands(with device: FBDevice) -> DeviceVideoStreamCommands {
+  public static func commands(with device: Device) -> DeviceVideoStreamCommands {
     DeviceVideoStreamCommands(device: device)
   }
 
-  init(device: FBDevice) {
+  init(device: Device) {
     self.device = device
   }
 

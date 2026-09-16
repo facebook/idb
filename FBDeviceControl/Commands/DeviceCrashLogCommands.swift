@@ -35,7 +35,7 @@ extension DeviceCrashLogError: LocalizedError {
 }
 
 public final class DeviceCrashLogCommands: CrashLogCommands {
-  private weak var device: FBDevice?
+  private weak var device: Device?
   private let store: CrashLogStore
   /// Resolved at the point of use: `FBAFCConnection.defaultCalls` dlopens MobileDevice on first
   /// evaluation and aborts if the private frameworks are not loaded, so constructing these
@@ -49,13 +49,13 @@ public final class DeviceCrashLogCommands: CrashLogCommands {
 
   // MARK: - Initializers
 
-  public class func commands(with device: FBDevice) -> DeviceCrashLogCommands {
+  public class func commands(with device: Device) -> DeviceCrashLogCommands {
     let storeDirectory = (device.auxillaryDirectory as NSString).appendingPathComponent("crash_store")
     let store = CrashLogStore.store(forDirectories: [storeDirectory], logger: device.logger)
     return DeviceCrashLogCommands(device: device, store: store)
   }
 
-  init(device: FBDevice, store: CrashLogStore, afcCalls: AFCCalls? = nil) {
+  init(device: Device, store: CrashLogStore, afcCalls: AFCCalls? = nil) {
     self.device = device
     self.store = store
     self.injectedAFCCalls = afcCalls

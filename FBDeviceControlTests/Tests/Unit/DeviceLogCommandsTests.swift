@@ -34,7 +34,7 @@ private let syslogSessionEvents = [
 final class DeviceLogCommandsTests {
 
   private let amDevice = FakeAMDevice()
-  private let device: FBDevice
+  private let device: Device
 
   init() {
     device = amDevice.makeDevice()

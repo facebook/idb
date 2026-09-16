@@ -41,7 +41,7 @@ struct DeviceDiskImageMountingTests {
     productVersion: String? = "17.0",
     available: [DeveloperDiskImage],
     mounted: [DeveloperDiskImage] = []
-  ) -> FBDevice {
+  ) -> Device {
     if let productVersion {
       amDevice.values["ProductVersion"] = productVersion
     } else {

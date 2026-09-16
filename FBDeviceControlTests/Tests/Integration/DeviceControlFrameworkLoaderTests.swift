@@ -23,7 +23,7 @@ struct DeviceControlFrameworkLoaderTests {
 
   @Test
   func constructsDeviceSet() throws {
-    let deviceSet = try FBDeviceSet(logger: ControlCoreGlobalConfiguration.defaultLogger, delegate: nil, ecidFilter: nil)
+    let deviceSet = try DeviceSet(logger: ControlCoreGlobalConfiguration.defaultLogger, delegate: nil, ecidFilter: nil)
     let devices = deviceSet.allDevices
     #expect(devices.allSatisfy { !$0.udid.isEmpty })
     #expect(Set(devices.map(\.udid)).count == devices.count)

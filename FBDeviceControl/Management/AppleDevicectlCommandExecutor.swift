@@ -24,9 +24,9 @@ extension DevicectlError: LocalizedError {
 class AppleDevicectlCommandExecutor {
 
   let logger: ControlCoreLogger?
-  let device: FBDevice
+  let device: Device
 
-  init(device: FBDevice) {
+  init(device: Device) {
     logger = device.logger.withName("devicectl")
     self.device = device
   }

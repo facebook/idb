@@ -48,13 +48,13 @@ public final class DeviceLogOperation: LogOperation {
 // MARK: - DeviceLogCommands
 
 public struct DeviceLogCommands: LogCommands {
-  private let device: FBDevice
+  private let device: Device
 
-  public static func commands(with device: FBDevice) -> DeviceLogCommands {
+  public static func commands(with device: Device) -> DeviceLogCommands {
     DeviceLogCommands(device: device)
   }
 
-  init(device: FBDevice) {
+  init(device: Device) {
     self.device = device
   }
 

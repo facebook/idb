@@ -121,17 +121,17 @@ private class DeviceLaunchedApplication: LaunchedApplication {
 // MARK: - DeviceApplicationCommands
 
 public final class DeviceApplicationCommands: ApplicationCommands {
-  fileprivate weak var device: FBDevice?
+  fileprivate weak var device: Device?
   private let deltaUpdateDirectory: URL
 
   // MARK: - Initializers
 
-  public class func commands(with device: FBDevice) -> DeviceApplicationCommands {
+  public class func commands(with device: Device) -> DeviceApplicationCommands {
     let deltaUpdateDirectory = device.temporaryDirectory.temporaryDirectory()
     return DeviceApplicationCommands(device: device, deltaUpdateDirectory: deltaUpdateDirectory)
   }
 
-  init(device: FBDevice, deltaUpdateDirectory: URL) {
+  init(device: Device, deltaUpdateDirectory: URL) {
     self.device = device
     self.deltaUpdateDirectory = deltaUpdateDirectory
   }

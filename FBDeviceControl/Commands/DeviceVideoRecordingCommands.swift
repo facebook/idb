@@ -29,14 +29,14 @@ extension DeviceVideoRecordingCommandError: LocalizedError {
 }
 
 public final class DeviceVideoRecordingCommands: VideoRecordingCommands {
-  private weak var device: FBDevice?
+  private weak var device: Device?
   private var video: DeviceVideo?
 
-  public class func commands(with device: FBDevice) -> DeviceVideoRecordingCommands {
+  public class func commands(with device: Device) -> DeviceVideoRecordingCommands {
     DeviceVideoRecordingCommands(device: device)
   }
 
-  init(device: FBDevice) {
+  init(device: Device) {
     self.device = device
   }
 

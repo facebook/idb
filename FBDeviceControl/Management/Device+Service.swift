@@ -8,7 +8,7 @@
 @preconcurrency import FBControlCore
 import Foundation
 
-extension FBDevice {
+extension Device {
 
   /// Starts a service on the device, invalidating the connection once `body` returns or throws.
   ///

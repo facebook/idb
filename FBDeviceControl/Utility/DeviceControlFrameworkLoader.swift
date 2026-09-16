@@ -22,7 +22,7 @@ private func symbol<T>(_ handle: UnsafeMutableRawPointer, _ name: String) throws
 
 /// Loads the frameworks FBDeviceControl depends on and initializes values.
 @objc
-public final class FBDeviceControlFrameworkLoader: FBControlCoreFrameworkLoader {
+public final class DeviceControlFrameworkLoader: FBControlCoreFrameworkLoader {
 
   @objc
   public override init() {

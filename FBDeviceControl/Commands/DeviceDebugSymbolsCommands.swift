@@ -88,9 +88,9 @@ extension DeviceDebugSymbolsError: LocalizedError {
 }
 
 public final class DeviceDebugSymbolsCommands {
-  private let device: FBDevice
+  private let device: Device
 
-  init(device: FBDevice) {
+  init(device: Device) {
     self.device = device
   }
 

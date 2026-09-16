@@ -25,7 +25,7 @@ struct DeviceCrashLogPingbackTests {
     amDevice.service(CrashReportMoverService)
   }
 
-  private func makeDevice(answering answer: Data?) -> FBDevice {
+  private func makeDevice(answering answer: Data?) -> Device {
     let device = amDevice.makeDevice()
     if let answer {
       mover.readBuffer = answer
@@ -34,7 +34,7 @@ struct DeviceCrashLogPingbackTests {
     return device
   }
 
-  private func collectCrashes(_ device: FBDevice) async throws {
+  private func collectCrashes(_ device: Device) async throws {
     _ = try await device.crashLog.crashes(matching: NSPredicate(value: true), useCache: false)
   }
 

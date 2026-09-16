@@ -28,7 +28,7 @@ private final class DeviceEraseOperation: NSObject, FBiOSTargetSetDelegate, @unc
   private let deviceCameBack = FBMutableFuture<NSNull>()
   private let eraseCallbackResult = FBMutableFuture<NSNumber>()
 
-  init(device: FBDevice, logger: any ControlCoreLogger) {
+  init(device: Device, logger: any ControlCoreLogger) {
     let queue = DispatchQueue(label: "com.facebook.fbdeviceerase")
     self.udid = device.udid
     self.calls = device.calls
@@ -134,13 +134,13 @@ extension DeviceEraseError: LocalizedError {
 
 public final class DeviceEraseCommands: EraseCommands {
 
-  private let device: FBDevice
+  private let device: Device
 
-  public static func commands(with device: FBDevice) -> DeviceEraseCommands {
+  public static func commands(with device: Device) -> DeviceEraseCommands {
     DeviceEraseCommands(device: device)
   }
 
-  init(device: FBDevice) {
+  init(device: Device) {
     self.device = device
   }
 

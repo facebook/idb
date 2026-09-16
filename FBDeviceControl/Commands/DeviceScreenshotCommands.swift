@@ -24,13 +24,13 @@ extension DeviceScreenshotError: LocalizedError {
 }
 
 public struct DeviceScreenshotCommands: ScreenshotCommands {
-  private let device: FBDevice
+  private let device: Device
 
-  public static func commands(with device: FBDevice) -> DeviceScreenshotCommands {
+  public static func commands(with device: Device) -> DeviceScreenshotCommands {
     DeviceScreenshotCommands(device: device)
   }
 
-  init(device: FBDevice) {
+  init(device: Device) {
     self.device = device
   }
 
@@ -48,7 +48,7 @@ public struct DeviceScreenshotCommands: ScreenshotCommands {
     )
   }
 
-  private func capture(from device: FBDevice) async throws -> Data {
+  private func capture(from device: Device) async throws -> Data {
     try await device.withDeviceLinkClient("com.apple.mobile.screenshotr") { client in
       let response = try await client.processMessage(["MessageType": "ScreenShotRequest"])
       guard let screenshotData = response[ScreenShotDataKey] as? NSData else {

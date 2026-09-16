@@ -52,15 +52,15 @@ extension DeviceActivationError: LocalizedError {
 }
 
 public struct DeviceActivationCommands {
-  private let device: FBDevice
+  private let device: Device
 
   // MARK: - Initializers
 
-  public static func commands(with device: FBDevice) -> DeviceActivationCommands {
+  public static func commands(with device: Device) -> DeviceActivationCommands {
     DeviceActivationCommands(device: device)
   }
 
-  init(device: FBDevice) {
+  init(device: Device) {
     self.device = device
   }
 

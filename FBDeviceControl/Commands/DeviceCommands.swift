@@ -37,7 +37,7 @@ public enum DeviceKey: String, Sendable, CaseIterable {
   case isPaired = "IsPaired"
 }
 
-/// Defines properties that are required on classes related to the implementation of FBDevice.
+/// Defines properties that are required on classes related to the implementation of Device.
 public protocol DeviceProtocol: AnyObject {
 
   /// The AMDevice Calls to use.

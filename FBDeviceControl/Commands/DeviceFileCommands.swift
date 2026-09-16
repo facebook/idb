@@ -425,27 +425,27 @@ private class DeviceFileCommands_Symbols: AsyncFileContainer {
 // MARK: - DeviceFileCommands
 
 public final class DeviceFileCommands: FileCommands {
-  private weak var device: FBDevice?
+  private weak var device: Device?
   private let afcCalls: AFCCalls
 
   // MARK: - Initializers
 
-  public class func commands(with device: FBDevice) -> DeviceFileCommands {
+  public class func commands(with device: Device) -> DeviceFileCommands {
     DeviceFileCommands(device: device, afcCalls: FBAFCConnection.defaultCalls)
   }
 
-  public class func commands(with device: FBDevice, afcCalls: AFCCalls) -> DeviceFileCommands {
+  public class func commands(with device: Device, afcCalls: AFCCalls) -> DeviceFileCommands {
     DeviceFileCommands(device: device, afcCalls: afcCalls)
   }
 
-  init(device: FBDevice, afcCalls: AFCCalls) {
+  init(device: Device, afcCalls: AFCCalls) {
     self.device = device
     self.afcCalls = afcCalls
   }
 
   // MARK: - FBFileCommands
 
-  private func requireDevice() throws -> FBDevice {
+  private func requireDevice() throws -> Device {
     guard let device else {
       throw DeviceFileContainerError.deviceDeallocated
     }

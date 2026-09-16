@@ -28,16 +28,16 @@ extension DiagnosticsRelayError: LocalizedError {
 }
 
 public final class DeviceDiagnosticInformationCommands: FBiOSTargetCommand {
-  private let device: FBDevice
+  private let device: Device
 
   public class func commands(with target: any FBiOSTarget) -> Self {
-    guard let device = target as? FBDevice else {
-      preconditionFailure("Expected FBDevice target, got \(target)")
+    guard let device = target as? Device else {
+      preconditionFailure("Expected Device target, got \(target)")
     }
     return self.init(device: device)
   }
 
-  required init(device: FBDevice) {
+  required init(device: Device) {
     self.device = device
   }
 
@@ -55,7 +55,7 @@ public final class DeviceDiagnosticInformationCommands: FBiOSTargetCommand {
     return CollectionOperations.recursiveFilteredJSONSerializableRepresentation(of: merged) as [String: Any]
   }
 
-  private func fetchInformationFromDiagnosticsRelay(device: FBDevice) async throws -> Any {
+  private func fetchInformationFromDiagnosticsRelay(device: Device) async throws -> Any {
     try await device.withServiceConnection(DiagnosticsRelayService) { connection in
       guard let result = try connection.sendAndReceiveMessage(["Request": "All"]) as? NSDictionary else {
         throw DiagnosticsRelayError.unexpectedResponse
@@ -70,7 +70,7 @@ public final class DeviceDiagnosticInformationCommands: FBiOSTargetCommand {
     }
   }
 
-  private func fetchInformationFromSpringboard(device: FBDevice) async throws -> Any {
+  private func fetchInformationFromSpringboard(device: Device) async throws -> Any {
     let logger = device.logger
     return try await device.withServiceConnection(SpringboardServicesClient.serviceName) { connection in
       let client = SpringboardServicesClient(connection: connection, logger: logger)
@@ -78,7 +78,7 @@ public final class DeviceDiagnosticInformationCommands: FBiOSTargetCommand {
     }
   }
 
-  private func fetchInformationFromMobileConfiguration(device: FBDevice) async throws -> Any {
+  private func fetchInformationFromMobileConfiguration(device: Device) async throws -> Any {
     let logger = device.logger
     return try await device.withServiceConnection(ManagedConfigClient.serviceName) { connection in
       try await ManagedConfigClient.managedConfigClient(connection: connection, logger: logger).getCloudConfiguration()

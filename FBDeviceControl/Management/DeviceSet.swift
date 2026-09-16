@@ -8,18 +8,18 @@
 @preconcurrency import FBControlCore
 import Foundation
 
-public final class FBDeviceSet: FBiOSTargetSet, FBiOSTargetSetDelegate, CustomStringConvertible {
+public final class DeviceSet: FBiOSTargetSet, FBiOSTargetSetDelegate, CustomStringConvertible {
   // Loaded once per process; a failed load is cached and rethrown by every init rather than
   // aborting the process.
   private static let _amDeviceCalls: Result<AMDCalls, Error> = Result {
-    let loader = FBDeviceControlFrameworkLoader()
+    let loader = DeviceControlFrameworkLoader()
     try loader.loadPrivateFrameworks(ControlCoreGlobalConfiguration.defaultLogger)
     return try loader.amDeviceCalls
   }
 
   private let amDeviceManager: AMDeviceManager
   private let restorableDeviceManager: AMRestorableDeviceManager
-  private let storage: DeviceStorage<FBDevice>
+  private let storage: DeviceStorage<Device>
   public let logger: any ControlCoreLogger
   public weak var delegate: (any FBiOSTargetSetDelegate)?
 
@@ -39,7 +39,7 @@ public final class FBDeviceSet: FBiOSTargetSet, FBiOSTargetSetDelegate, CustomSt
     self.restorableDeviceManager = restorableDeviceManager
     self.logger = logger
     self.delegate = delegate
-    self.storage = DeviceStorage<FBDevice>(logger: logger)
+    self.storage = DeviceStorage<Device>(logger: logger)
     subscribeToDeviceNotifications()
   }
 
@@ -48,7 +48,7 @@ public final class FBDeviceSet: FBiOSTargetSet, FBiOSTargetSetDelegate, CustomSt
   }
 
   public var description: String {
-    "FBDeviceSet: \(CollectionInformation.oneLineDescription(from: allDevices))"
+    "DeviceSet: \(CollectionInformation.oneLineDescription(from: allDevices))"
   }
 
   // MARK: - Querying
@@ -57,7 +57,7 @@ public final class FBDeviceSet: FBiOSTargetSet, FBiOSTargetSetDelegate, CustomSt
     deviceWithUDID(udid)
   }
 
-  public func deviceWithUDID(_ udid: String) -> FBDevice? {
+  public func deviceWithUDID(_ udid: String) -> Device? {
     allDevices.first { $0.udid == udid }
   }
 
@@ -65,7 +65,7 @@ public final class FBDeviceSet: FBiOSTargetSet, FBiOSTargetSetDelegate, CustomSt
     allDevices
   }
 
-  public var allDevices: [FBDevice] {
+  public var allDevices: [Device] {
     Array(storage.attached.values).sorted { $0.uniqueIdentifier < $1.uniqueIdentifier }
   }
 
@@ -89,7 +89,7 @@ public final class FBDeviceSet: FBiOSTargetSet, FBiOSTargetSetDelegate, CustomSt
     if let device = storage.device(forKey: amDevice.uniqueIdentifier) {
       device.amDevice = amDevice
     } else {
-      let device = FBDevice(set: self, amDevice: amDevice, restorableDevice: nil, logger: logger)
+      let device = Device(set: self, amDevice: amDevice, restorableDevice: nil, logger: logger)
       storage.deviceAttached(device, forKey: amDevice.uniqueIdentifier)
     }
     if let device = storage.device(forKey: amDevice.uniqueIdentifier) {
@@ -115,7 +115,7 @@ public final class FBDeviceSet: FBiOSTargetSet, FBiOSTargetSetDelegate, CustomSt
     if let device = storage.device(forKey: restorableDevice.uniqueIdentifier) {
       device.restorableDevice = restorableDevice
     } else {
-      let device = FBDevice(set: self, amDevice: nil, restorableDevice: restorableDevice, logger: logger)
+      let device = Device(set: self, amDevice: nil, restorableDevice: restorableDevice, logger: logger)
       storage.deviceAttached(device, forKey: restorableDevice.uniqueIdentifier)
     }
     if let device = storage.device(forKey: restorableDevice.uniqueIdentifier) {

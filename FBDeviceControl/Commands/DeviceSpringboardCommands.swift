@@ -11,15 +11,15 @@ import Foundation
 /// Reads and writes the device's home screen through SpringBoardServices.
 public struct DeviceSpringboardCommands {
 
-  private let device: FBDevice
+  private let device: Device
 
   // MARK: - Initializers
 
-  public static func commands(with device: FBDevice) -> DeviceSpringboardCommands {
+  public static func commands(with device: Device) -> DeviceSpringboardCommands {
     DeviceSpringboardCommands(device: device)
   }
 
-  internal init(device: FBDevice) {
+  internal init(device: Device) {
     self.device = device
   }
 

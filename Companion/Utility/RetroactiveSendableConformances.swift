@@ -15,6 +15,6 @@ import FBDeviceControl
 // retroactively.
 extension FBSubprocess: @retroactive @unchecked Sendable {}
 extension FBProcessInput: @retroactive @unchecked Sendable {}
-extension FBDeviceSet: @retroactive @unchecked Sendable {}
+extension DeviceSet: @retroactive @unchecked Sendable {}
 extension IDBLogger: @retroactive @unchecked Sendable {}
 extension IDBCommandExecutor: @retroactive @unchecked Sendable {}

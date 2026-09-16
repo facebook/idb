@@ -10,7 +10,7 @@ import FBControlCore
 import Foundation
 import Testing
 
-/// Every command accessor on `FBDevice`, so the retention rule is checked against all of them
+/// Every command accessor on `Device`, so the retention rule is checked against all of them
 /// rather than a hand-picked few.
 enum DeviceCommandAccessor: CaseIterable, Sendable {
   case application
@@ -37,7 +37,7 @@ enum DeviceCommandAccessor: CaseIterable, Sendable {
   case socketForwarding
   case springboard
 
-  func resolve(on device: FBDevice) {
+  func resolve(on device: Device) {
     switch self {
     case .application:
       _ = device.application
@@ -104,8 +104,8 @@ struct DeviceCommandRetentionTests {
 
   /// Resolves a command, then reports whether the device survived the only strong reference to it
   /// going away.
-  private func deviceSurvives(_ resolve: (FBDevice) -> Void) -> Bool {
-    weak var weakDevice: FBDevice?
+  private func deviceSurvives(_ resolve: (Device) -> Void) -> Bool {
+    weak var weakDevice: Device?
     autoreleasepool {
       let device = FakeAMDevice().makeDevice()
       weakDevice = device
