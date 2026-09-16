@@ -92,6 +92,9 @@ static NSString *const kAXChildren = @"XC_kAXXCAttributeChildren";
     return nil;
   }
   _operations = [NSMutableArray array];
+  _snapshotResults = @[];
+  _snapshotNameMappings = @[];
+  _snapshotOwnerElements = [NSMutableArray array];
   _applicationElements = [NSMutableDictionary dictionary];
   _automationModeWrites = [NSMutableArray array];
   _deviceSettings = [NSMutableDictionary dictionary];
@@ -172,6 +175,11 @@ static NSDictionary *FBAXFakeSnapshotNode(FBAXFakeElement *element,
                         attributeNames:(NSArray<NSString *> *)names
                          namesByNumber:(NSDictionary<NSNumber *, NSString *> *_Nullable *_Nonnull)namesByNumber
 {
+  NSUInteger fetchIndex = self.snapshotCount - 1;
+  if (fetchIndex < self.snapshotResults.count) {
+    *namesByNumber = fetchIndex < self.snapshotNameMappings.count ? self.snapshotNameMappings[fetchIndex] : nil;
+    return self.snapshotResults[fetchIndex];
+  }
   NSMutableDictionary<NSNumber *, NSString *> *inverse = [NSMutableDictionary dictionary];
   NSMutableDictionary<NSString *, NSNumber *> *forward = [NSMutableDictionary dictionary];
   [names enumerateObjectsUsingBlock:^(NSString *name, NSUInteger index, BOOL *stop) {
@@ -206,10 +214,17 @@ static NSDictionary *FBAXFakeSnapshotNode(FBAXFakeElement *element,
 - (pid_t)owningProcessIdentifierForSnapshotElement:(id)element
 {
   [self recordOperation:@"snapshotOwner"];
+  if (element) {
+    [self.snapshotOwnerElements addObject:element];
+  }
   if (![element isKindOfClass:FBAXFakeElement.class]) {
     return 0;
   }
-  return ((FBAXFakeElement *)element).owningProcessIdentifier;
+  FBAXFakeElement *fake = element;
+  if (fake.snapshotOwnerRaiseReason) {
+    [NSException raise:NSInternalInconsistencyException format:@"%@", fake.snapshotOwnerRaiseReason];
+  }
+  return fake.owningProcessIdentifier;
 }
 
 - (nullable id)snapshotOfSnapshotElement:(id)element
@@ -224,6 +239,9 @@ static NSDictionary *FBAXFakeSnapshotNode(FBAXFakeElement *element,
     if (error) {
       *error = self.snapshotContinuationError;
     }
+    return nil;
+  }
+  if (self.snapshotContinuationAnswersNothing) {
     return nil;
   }
   return [self snapshotRootedAtElement:element attributeNames:names namesByNumber:namesByNumber];

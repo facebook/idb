@@ -510,6 +510,168 @@ final class AccessibilityRuntimeTests: XCTestCase {
     XCTAssertNil(axValue(response, "tree"))
   }
 
+  func testMalformedSnapshotRootsAreNotEmptyTrees() {
+    runtime.applicationElements[NSNumber(value: kAppPid)] = FBAXTestsNode([:], [])
+    for root in ["bad root", NSNull(), NSNumber(value: 1), [] as [Any]] as [Any] {
+      // The fake indexes responses across requests as well as continuations.
+      runtime.snapshotResults = Array(repeating: root, count: Int(runtime.snapshotCount) + 1)
+      let response = FBAXBridgeHandleRequest(FBAXTestsSnapshotRequest([:]))
+      assertEqualObjects(response, ["ok": false, "error": "the single-fetch read returned a shape with no root node"])
+    }
+    XCTAssertEqual(runtime.snapshotOwnerElements.count, 0)
+  }
+
+  func testMalformedSnapshotChildrenDoNotConsumeTheNodeBudget() {
+    runtime.applicationElements[NSNumber(value: kAppPid)] = FBAXTestsNode([:], [])
+    runtime.snapshotResults = [
+      [
+        "UIAccessibilitySnapshotKeyChildren": [
+          NSNull(),
+          ["UIAccessibilitySnapshotKeyAttributes": [7: "child"]],
+          "bad child",
+        ]
+      ]
+    ]
+    runtime.snapshotNameMappings = [[7: kAXLabel]]
+
+    let response = FBAXBridgeHandleRequest(FBAXTestsSnapshotRequest(["maxNodes": 2]))
+    assertEqualObjects(axValue(response, "tree"), [kAXChildren: [[kAXLabel: "child", kAXChildren: []]]])
+    assertEqualObjects(axValue(response, "truncated"), false)
+  }
+
+  func testMalformedSnapshotAttributesAndNestingAreIgnored() {
+    runtime.applicationElements[NSNumber(value: kAppPid)] = FBAXTestsNode([:], [])
+    runtime.snapshotResults = [
+      [
+        "UIAccessibilitySnapshotKeyAttributes": ["not", "a", "dictionary"],
+        "UIAccessibilitySnapshotKeyChildren": ["not": "an array"],
+      ]
+    ]
+
+    let response = FBAXBridgeHandleRequest(FBAXTestsSnapshotRequest([:]))
+    assertEqualObjects(axValue(response, "tree"), [kAXChildren: []])
+    assertEqualObjects(axValue(response, "truncated"), false)
+  }
+
+  func testEachSnapshotFetchUsesItsOwnAttributeMapping() {
+    let root = FBAXTestsNode([:], [])
+    root.owningProcessIdentifier = kAppPid
+    let boundary = FBAXTestsNode([:], [])
+    boundary.owningProcessIdentifier = kRemotePid
+    runtime.applicationElements[NSNumber(value: kAppPid)] = root
+    runtime.snapshotResults = [
+      [
+        "UIAccessibilitySnapshotKeyElement": root,
+        "UIAccessibilitySnapshotKeyAttributes": [7: "root"],
+        "UIAccessibilitySnapshotKeyChildren": [
+          [
+            "UIAccessibilitySnapshotKeyElement": boundary,
+            "UIAccessibilitySnapshotKeyAttributes": [7: "stub"],
+          ]
+        ],
+      ],
+      [
+        "UIAccessibilitySnapshotKeyElement": boundary,
+        "UIAccessibilitySnapshotKeyAttributes": [7: "remote-id", 42: "remote-label", 99: "unknown"],
+      ],
+    ]
+    runtime.snapshotNameMappings = [[7: kAXLabel], [7: "XC_kAXXCAttributeIdentifier", 42: kAXLabel]]
+
+    let response = FBAXBridgeHandleRequest(FBAXTestsSnapshotRequest([:]))
+    assertEqualObjects(
+      axValue(response, "tree"),
+      [
+        kAXLabel: "root",
+        kAXChildren: [
+          [
+            kAXLabel: "remote-label", "XC_kAXXCAttributeIdentifier": "remote-id", kAXChildren: [],
+          ]
+        ],
+      ])
+    XCTAssertEqual(runtime.snapshotCount, 2)
+    assertEqualObjects(runtime.snapshotOwnerElements, [root, boundary, boundary])
+  }
+
+  func testSnapshotWithoutANumericMappingOmitsAttributes() {
+    runtime.applicationElements[NSNumber(value: kAppPid)] = FBAXTestsNode([:], [])
+    runtime.snapshotResults = [["UIAccessibilitySnapshotKeyAttributes": [7: "unmapped"]]]
+
+    let response = FBAXBridgeHandleRequest(FBAXTestsSnapshotRequest([:]))
+    assertEqualObjects(axValue(response, "tree"), [kAXChildren: []])
+    assertEqualObjects(axValue(response, "ok"), true)
+  }
+
+  func testSnapshotContinuationWithoutAnErrorKeepsTheStub() {
+    runtime.applicationElements[NSNumber(value: kAppPid)] = FBAXTestsTreeWithProcessBoundary()
+    runtime.snapshotContinuationAnswersNothing = true
+
+    let response = FBAXBridgeHandleRequest(FBAXTestsSnapshotRequest([:]))
+    assertEqualObjects(FBAXTestsBoundaryNode(response), [kAXLabel: "remote element", kAXChildren: []])
+    assertEqualObjects(axValue(response, "ok"), true)
+    assertEqualObjects(axValue(response, "truncated"), false)
+    XCTAssertEqual(runtime.snapshotCount, 2)
+  }
+
+  func testSnapshotContinuationLimitRetainsTheLastStub() {
+    var subtree = FBAXTestsNode([kAXLabel: "65"], [])
+    subtree.owningProcessIdentifier = 1065
+    for index in (0..<65).reversed() {
+      let parent = FBAXTestsNode([kAXLabel: String(index)], [subtree])
+      parent.owningProcessIdentifier = pid_t(1000 + index)
+      subtree = parent
+    }
+    runtime.applicationElements[NSNumber(value: kAppPid)] = subtree
+
+    let response = FBAXBridgeHandleRequest(FBAXTestsSnapshotRequest([:]))
+    XCTAssertEqual(runtime.snapshotCount, 65, "one initial fetch plus 64 continuations")
+    assertEqualObjects(axValue(response, "truncated"), true)
+    var node = axValue(response, "tree")
+    for index in 0...65 {
+      assertEqualObjects(axValue(node, kAXLabel), String(index))
+      let children = axValue(node, kAXChildren) as? NSArray
+      XCTAssertEqual(children?.count, index == 65 ? 0 : 1)
+      node = children?.firstObject
+    }
+  }
+
+  func testSnapshotOwnerQueriesSkipNonLeavesAndNodesBeyondTheBudget() {
+    let leaf = FBAXTestsNode([:], [])
+    let middle = FBAXTestsNode([:], [leaf])
+    let root = FBAXTestsNode([:], [middle])
+    for element in [root, middle, leaf] {
+      element.owningProcessIdentifier = kAppPid
+    }
+    runtime.applicationElements[NSNumber(value: kAppPid)] = root
+
+    let response = FBAXBridgeHandleRequest(FBAXTestsSnapshotRequest(["maxNodes": 2]))
+    assertEqualObjects(axValue(response, "truncated"), true)
+    assertEqualObjects(runtime.snapshotOwnerElements, [root])
+    assertEqualObjects(runtime.operations, ["automationRead", "applicationElement", "snapshot", "snapshotOwner"])
+  }
+
+  func testAnUnknownSnapshotOwnerDisablesDescendantOwnerQueries() {
+    let root = FBAXTestsNode([:], [FBAXTestsNode([:], [])])
+    runtime.applicationElements[NSNumber(value: kAppPid)] = root
+
+    let response = FBAXBridgeHandleRequest(FBAXTestsSnapshotRequest([:]))
+    assertEqualObjects(axValue(response, "ok"), true)
+    assertEqualObjects(runtime.snapshotOwnerElements, [root])
+  }
+
+  func testAnExceptionAtADescendantOwnerAbortsBeforeTheNextSibling() {
+    let bad = FBAXTestsNode([:], [])
+    bad.snapshotOwnerRaiseReason = "descendant ownership failed"
+    let root = FBAXTestsNode([:], [bad, FBAXTestsNode([:], [])])
+    root.owningProcessIdentifier = kAppPid
+    runtime.applicationElements[NSNumber(value: kAppPid)] = root
+
+    let response = FBAXBridgeHandleRequest(FBAXTestsSnapshotRequest([:]))
+    assertEqualObjects(response, ["ok": false, "error": "the reader raised while answering: descendant ownership failed"])
+    assertEqualObjects(runtime.snapshotOwnerElements, [root, bad])
+    bad.snapshotOwnerRaiseReason = nil
+    assertEqualObjects(axValue(FBAXBridgeHandleRequest(FBAXTestsSnapshotRequest([:])), "ok"), true)
+  }
+
   // A snapshot answers frames as `AXValue`, not the `NSValue` the per-node walk answers with.
   func testASnapshotFrameIsUnwrappedFromAnAXValue() {
     runtime.applicationElements[NSNumber(value: kAppPid)] =

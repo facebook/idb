@@ -22,6 +22,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 /** An exception raised only when this element is read. */
 @property (nullable, nonatomic, copy) NSString *readRaiseReason;
+@property (nullable, nonatomic, copy) NSString *snapshotOwnerRaiseReason;
 
 /** The element's attributes, excluding children. */
 @property (nonatomic, copy) NSDictionary<NSString *, id> *attributes;
@@ -131,6 +132,12 @@ NS_ASSUME_NONNULL_BEGIN
  * with the stub rather than fail on.
  */
 @property (nullable, nonatomic, strong) NSError *snapshotContinuationError;
+@property (nonatomic, assign) BOOL snapshotContinuationAnswersNothing;
+
+/** Optional raw responses and per-fetch mappings, indexed across initial and continuation fetches. */
+@property (nonatomic, copy) NSArray<id> *snapshotResults;
+@property (nonatomic, copy) NSArray<NSDictionary<NSNumber *, NSString *> *> *snapshotNameMappings;
+@property (nonatomic, readonly, strong) NSMutableArray<id> *snapshotOwnerElements;
 
 /**
  * How many snapshots were fetched, root fetches and boundary continuations alike — one for a whole tree
