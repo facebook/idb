@@ -252,10 +252,6 @@ class SimulatorControlTests_AXPTranslator_Double: NSObject {
     translation.pid = pid
     return translation
   }
-
-  func resetTracking() {
-    methodCalls.removeAllObjects()
-  }
 }
 
 typealias AccessibilityResponseHandler = (Any, @escaping (Any?) -> Void) -> Void
@@ -283,10 +279,6 @@ class SimulatorControlTests_SimDevice_Accessibility_Double: NSObject {
         handler(nil)
       }
     }
-  }
-
-  func resetAccessibilityTracking() {
-    accessibilityRequests.removeAllObjects()
   }
 
   @objc var stateString: String {

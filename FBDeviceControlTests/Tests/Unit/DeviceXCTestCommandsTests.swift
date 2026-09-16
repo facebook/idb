@@ -10,33 +10,6 @@ import FBDeviceControl
 import Testing
 import XCTestBootstrap
 
-final class TestManagerTestReporterDouble: NSObject, XCTestReporter {
-
-  var testCaseDidStartForTestClassCalled = false
-  var testCaseDidFinishForTestClassCalled = false
-
-  func processWaitingForDebugger(withProcessIdentifier pid: pid_t) {}
-  func didBeginExecutingTestPlan() {}
-  func didFinishExecutingTestPlan() {}
-  func processUnderTestDidExit() {}
-  func testSuite(_ testSuite: String, didStartAt startTime: String) {}
-
-  func testCaseDidStart(forTestClass testClass: String, method: String) {
-    testCaseDidStartForTestClassCalled = true
-  }
-
-  func testCaseDidFinish(forTestClass testClass: String, method: String, with status: FBTestReportStatus, duration: TimeInterval, logs: [String]?) {
-    testCaseDidFinishForTestClassCalled = true
-  }
-
-  func testCaseDidFail(forTestClass testClass: String, method: String, exceptions: [FBExceptionInfo]) {}
-  func finished(with summary: TestManagerResultSummary) {}
-  func testHadOutput(_ output: String) {}
-  func handleExternalEvent(_ event: String) {}
-  func printReport() throws {}
-  func didCrashDuringTest(_ error: Error) {}
-}
-
 @Suite
 struct DeviceXCTestCommandsTests {
 

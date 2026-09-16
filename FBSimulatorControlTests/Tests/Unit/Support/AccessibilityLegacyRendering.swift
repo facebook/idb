@@ -36,22 +36,3 @@ extension FBAccessibilityDocumentElement {
     legacyFoundationObject
   }
 }
-
-extension FBAccessibilityDocumentElement {
-
-  /// An element with just the attributes a marker match reads. All three are set to `.some(...)`, so an
-  /// omitted one reads as "requested, and empty" rather than "not requested"; matching and geometry
-  /// flatten the pair with `?? nil` and cannot tell the two apart. A test that needs the distinction
-  /// should build its own element.
-  static func testElement(
-    label: String? = nil,
-    identifier: String? = nil,
-    frame: FBAccessibilityFrame? = nil
-  ) -> FBAccessibilityDocumentElement {
-    var element = FBAccessibilityDocumentElement()
-    element.label = .some(label)
-    element.identifier = .some(identifier)
-    element.frame = .some(frame)
-    return element
-  }
-}
