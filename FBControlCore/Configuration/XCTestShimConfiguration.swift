@@ -23,7 +23,7 @@ private enum CanonicalShim: CaseIterable {
 
   var codesigningRequired: Bool {
     switch self {
-    case .iOSSimulatorTest: return FBControlCoreGlobalConfiguration.confirmCodesignaturesAreValid
+    case .iOSSimulatorTest: return ControlCoreGlobalConfiguration.confirmCodesignaturesAreValid
     case .macTest: return false
     }
   }

@@ -55,7 +55,7 @@ public final class FileReader: NSObject, FileReaderProtocol {
   private let ioChannelRelinquishedControl: FBMutableFuture<AnyObject>
   private let fileDescriptor: Int32
   private let closeOnEndOfFile: Bool
-  private let logger: FBControlCoreLogger?
+  private let logger: ControlCoreLogger?
 
   @objc public private(set) var state: FBFileReaderState
   private var io: DispatchIO?
@@ -66,16 +66,16 @@ public final class FileReader: NSObject, FileReaderProtocol {
     DispatchQueue(label: "com.facebook.fbcontrolcore.fbfilereader")
   }
 
-  @objc public static func reader(withFileDescriptor fileDescriptor: Int32, closeOnEndOfFile: Bool, consumer: FBDataConsumer, logger: FBControlCoreLogger?) -> Self {
+  @objc public static func reader(withFileDescriptor fileDescriptor: Int32, closeOnEndOfFile: Bool, consumer: DataConsumer, logger: ControlCoreLogger?) -> Self {
     dispatchDataReader(withFileDescriptor: fileDescriptor, closeOnEndOfFile: closeOnEndOfFile, consumer: FBDataConsumerAdaptor.dispatchDataConsumer(for: consumer), logger: logger)
   }
 
-  @objc public static func dispatchDataReader(withFileDescriptor fileDescriptor: Int32, closeOnEndOfFile: Bool, consumer: DispatchDataConsumer, logger: FBControlCoreLogger?) -> Self {
+  @objc public static func dispatchDataReader(withFileDescriptor fileDescriptor: Int32, closeOnEndOfFile: Bool, consumer: DispatchDataConsumer, logger: ControlCoreLogger?) -> Self {
     let targeting = "fd \(fileDescriptor)"
     return self.init(fileDescriptor: fileDescriptor, closeOnEndOfFile: closeOnEndOfFile, consumer: consumer, targeting: targeting, queue: createQueue(), logger: logger)
   }
 
-  @objc public static func reader(withFilePath filePath: String, consumer: FBDataConsumer, logger: FBControlCoreLogger?) -> FBFuture<FileReader> {
+  @objc public static func reader(withFilePath filePath: String, consumer: DataConsumer, logger: ControlCoreLogger?) -> FBFuture<FileReader> {
     let queue = createQueue()
     return FBFuture<AnyObject>.onQueue(
       queue,
@@ -97,7 +97,7 @@ public final class FileReader: NSObject, FileReaderProtocol {
     ).retyped(FBFuture<FileReader>.self)
   }
 
-  required init(fileDescriptor: Int32, closeOnEndOfFile: Bool, consumer: DispatchDataConsumer, targeting: String, queue: DispatchQueue, logger: FBControlCoreLogger?) {
+  required init(fileDescriptor: Int32, closeOnEndOfFile: Bool, consumer: DispatchDataConsumer, targeting: String, queue: DispatchQueue, logger: ControlCoreLogger?) {
     self.fileDescriptor = fileDescriptor
     self.consumer = consumer
     self.targeting = targeting

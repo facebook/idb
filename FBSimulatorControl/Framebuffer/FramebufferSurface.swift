@@ -37,7 +37,7 @@ protocol FramebufferSurface: AnyObject {
 /// `@testable import`.
 private final class SimDisplayRenderableSurface: FramebufferSurface {
   private let surface: any SimDisplayIOSurfaceRenderable & SimDisplayRenderable
-  private let logger: any FBControlCoreLogger
+  private let logger: any ControlCoreLogger
   /// Dedicated serial queue the new-style `SimScreen` callbacks are delivered on, keeping frame and
   /// surface-changed events ordered. The render server delivers each callback with `clientQueue.sync`
   /// — it blocks its own notify thread until the callback returns, donating ~`.userInteractive` QoS —
@@ -48,7 +48,7 @@ private final class SimDisplayRenderableSurface: FramebufferSurface {
   /// own threads).
   private let callbackQueue = DispatchQueue(label: "com.facebook.FBSimulatorControl.framebuffer-callbacks", qos: .userInteractive)
 
-  init(surface: any SimDisplayIOSurfaceRenderable & SimDisplayRenderable, logger: any FBControlCoreLogger) {
+  init(surface: any SimDisplayIOSurfaceRenderable & SimDisplayRenderable, logger: any ControlCoreLogger) {
     self.surface = surface
     self.logger = logger
   }
@@ -167,7 +167,7 @@ private final class SimDisplayRenderableSurface: FramebufferSurface {
 /// `FramebufferSurface`. Kept separate from `Framebuffer` so that discovery, adaptation, and
 /// consumer fan-out are distinct concerns.
 enum FramebufferSurfaceLocator {
-  static func mainDisplaySurface(for simulator: FBSimulator, logger: any FBControlCoreLogger) throws -> any FramebufferSurface {
+  static func mainDisplaySurface(for simulator: FBSimulator, logger: any ControlCoreLogger) throws -> any FramebufferSurface {
     guard let ioClient = simulator.device.io else {
       throw FramebufferError.mainScreenSurfaceNotFound(description: "No IO client available on \(simulator.device)")
     }

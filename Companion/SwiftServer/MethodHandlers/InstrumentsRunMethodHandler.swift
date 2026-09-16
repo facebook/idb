@@ -15,9 +15,9 @@ import IDBGRPCSwift
 struct InstrumentsRunMethodHandler {
 
   let target: any FBiOSTarget
-  let targetLogger: FBControlCoreLogger
+  let targetLogger: ControlCoreLogger
   let commandExecutor: IDBCommandExecutor
-  let logger: FBControlCoreLogger
+  let logger: ControlCoreLogger
 
   func handle(requestStream: RequestStreamReader<Idb_InstrumentsRunRequest>, responseStream: RPCWriter<Idb_InstrumentsRunResponse>, context: ServerContext) async throws {
     @Atomic var finishedWriting = false

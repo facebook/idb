@@ -9,11 +9,11 @@
 
 #include <spawn.h>
 
+#import "ControlCoreLogger.h"
+#import "DataConsumer.h"
 #import "FBControlCore-Swift.h"
 #import "FBControlCore-SwiftImport.h"
-#import "FBControlCoreLogger.h"
 #import "FBDataBuffer.h"
-#import "FBDataConsumer.h"
 #import "FBProcessIO.h"
 #import "FBProcessStream.h"
 
@@ -84,7 +84,7 @@ static BOOL AddInputFileActions(posix_spawn_file_actions_t *fileActions, FBProce
   return self;
 }
 
-+ (FBFuture<FBSubprocess *> *)launchProcessWithConfiguration:(ProcessSpawnConfiguration *)configuration logger:(id<FBControlCoreLogger>)logger
++ (FBFuture<FBSubprocess *> *)launchProcessWithConfiguration:(ProcessSpawnConfiguration *)configuration logger:(id<ControlCoreLogger>)logger
 {
   dispatch_queue_t queue = dispatch_queue_create("com.facebook.fbcontrolcore.task", DISPATCH_QUEUE_SERIAL);
   return [[configuration.io
@@ -126,7 +126,7 @@ static BOOL AddInputFileActions(posix_spawn_file_actions_t *fileActions, FBProce
           mapReplace:@(signo)];
 }
 
-- (FBFuture<NSNumber *> *)sendSignal:(int)signo backingOffToKillWithTimeout:(NSTimeInterval)timeout logger:(id<FBControlCoreLogger>)logger
+- (FBFuture<NSNumber *> *)sendSignal:(int)signo backingOffToKillWithTimeout:(NSTimeInterval)timeout logger:(id<ControlCoreLogger>)logger
 {
   return [[[self
             sendSignal:signo]
@@ -171,7 +171,7 @@ static BOOL AddInputFileActions(posix_spawn_file_actions_t *fileActions, FBProce
                       failFuture];
 }
 
-+ (FBSubprocess *)processWithConfiguration:(ProcessSpawnConfiguration *)configuration attachment:(FBProcessIOAttachment *)attachment queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger error:(NSError **)error
++ (FBSubprocess *)processWithConfiguration:(ProcessSpawnConfiguration *)configuration attachment:(FBProcessIOAttachment *)attachment queue:(dispatch_queue_t)queue logger:(id<ControlCoreLogger>)logger error:(NSError **)error
 {
   NSArray<NSString *> *arguments = configuration.arguments;
   char *argv[arguments.count + 2]; // 0th arg is launch path, last arg is NULL
@@ -237,7 +237,7 @@ static BOOL AddInputFileActions(posix_spawn_file_actions_t *fileActions, FBProce
   return [[self alloc] initWithProcessIdentifier:processIdentifier statLoc:statLoc exitCode:exitCode signal:signal configuration:configuration queue:queue];
 }
 
-+ (void)resolveProcessCompletion:(pid_t)processIdentifier attachment:(FBProcessIOAttachment *)attachment statLoc:(FBMutableFuture<NSNumber *> *)statLoc exitCode:(FBMutableFuture<NSNumber *> *)exitCode signal:(FBMutableFuture<NSNumber *> *)signal configuration:(ProcessSpawnConfiguration *)configuration logger:(id<FBControlCoreLogger>)logger
++ (void)resolveProcessCompletion:(pid_t)processIdentifier attachment:(FBProcessIOAttachment *)attachment statLoc:(FBMutableFuture<NSNumber *> *)statLoc exitCode:(FBMutableFuture<NSNumber *> *)exitCode signal:(FBMutableFuture<NSNumber *> *)signal configuration:(ProcessSpawnConfiguration *)configuration logger:(id<ControlCoreLogger>)logger
 {
   dispatch_queue_t queue = dispatch_queue_create("com.facebook.fbcontrolcore.task.posix_spawn.wait", DISPATCH_QUEUE_SERIAL);
   dispatch_source_t source = dispatch_source_create(

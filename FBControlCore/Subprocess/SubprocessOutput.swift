@@ -23,9 +23,9 @@ extension Subprocess {
     enum Kind {
       case closed
       case nullDevice
-      case consumer(any FBDataConsumer)
-      case logger(any FBControlCoreLogger)
-      case loggerCapturingErrorMessage(any FBControlCoreLogger)
+      case consumer(any DataConsumer)
+      case logger(any ControlCoreLogger)
+      case loggerCapturingErrorMessage(any ControlCoreLogger)
       case lines(@Sendable (String) -> Void)
       case data
       case string
@@ -91,7 +91,7 @@ extension Subprocess {
 }
 
 // SAFETY: storage is a single immutable `let`. The non-Sendable payloads
-// (`any FBDataConsumer`, `any FBControlCoreLogger`) are read once, at launch,
+// (`any DataConsumer`, `any ControlCoreLogger`) are read once, at launch,
 // to construct the IO attachment; thereafter the engine confines all calls to
 // them to its own serial queues.
 // patternlint-disable-next-line unchecked-sendable
@@ -111,18 +111,18 @@ extension Subprocess.Output where Captured == Void {
   }
 
   /// Output is forwarded to `consumer` as it arrives.
-  public static func consumer(_ consumer: any FBDataConsumer) -> Self {
+  public static func consumer(_ consumer: any DataConsumer) -> Self {
     .init(.consumer(consumer))
   }
 
   /// Output is logged, line by line, to `logger`.
-  public static func logger(_ logger: any FBControlCoreLogger) -> Self {
+  public static func logger(_ logger: any ControlCoreLogger) -> Self {
     .init(.logger(logger))
   }
 
   /// Output is logged to `logger`, and its tail is retained for use in
   /// error messages.
-  public static func loggerCapturingErrorMessage(_ logger: any FBControlCoreLogger) -> Self {
+  public static func loggerCapturingErrorMessage(_ logger: any ControlCoreLogger) -> Self {
     .init(.loggerCapturingErrorMessage(logger))
   }
 

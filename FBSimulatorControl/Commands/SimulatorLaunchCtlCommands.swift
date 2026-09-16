@@ -226,7 +226,7 @@ public final class SimulatorLaunchCtlCommands: LaunchCtlCommands {
     return try SimulatorLaunchCtlCommands.stdout(orThrowFrom: output, command: command, logger: simulator.logger)
   }
 
-  static func stdout(orThrowFrom output: InSimulatorToolOutput, command: Command, logger: (any FBControlCoreLogger)?) throws -> String {
+  static func stdout(orThrowFrom output: InSimulatorToolOutput, command: Command, logger: (any ControlCoreLogger)?) throws -> String {
     if output.exitCode != 0 {
       let stderr = String(data: output.stderr, encoding: .utf8) ?? ""
       guard command.exitCodePolicy.accepts(output.exitCode) else {

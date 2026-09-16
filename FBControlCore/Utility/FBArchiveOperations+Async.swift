@@ -14,7 +14,7 @@ extension FBArchiveOperations {
     atPath path: String,
     toPath extractPath: String,
     overrideModificationTime overrideMTime: Bool,
-    logger: any FBControlCoreLogger
+    logger: any ControlCoreLogger
   ) async throws -> String {
     let value = try await bridgeFBFuture(
       extractArchive(
@@ -30,7 +30,7 @@ extension FBArchiveOperations {
     fromStream stream: FBProcessInput<AnyObject>,
     toPath extractPath: String,
     overrideModificationTime overrideMTime: Bool,
-    logger: any FBControlCoreLogger,
+    logger: any ControlCoreLogger,
     compression: FBCompressionFormat
   ) async throws -> String {
     let value = try await bridgeFBFuture(
@@ -47,7 +47,7 @@ extension FBArchiveOperations {
   public class func extractGzipAsync(
     fromStream stream: FBProcessInput<AnyObject>,
     toPath extractPath: String,
-    logger: any FBControlCoreLogger
+    logger: any ControlCoreLogger
   ) async throws -> String {
     let value = try await bridgeFBFuture(
       extractGzip(fromStream: stream, toPath: extractPath, logger: logger))
@@ -57,7 +57,7 @@ extension FBArchiveOperations {
   /// Async wrapper for `createGzipDataFromProcessInput:logger:`.
   public class func createGzipDataAsync(
     from input: FBProcessInput<AnyObject>,
-    logger: any FBControlCoreLogger
+    logger: any ControlCoreLogger
   ) async throws -> FBSubprocess<AnyObject, NSData, AnyObject> {
     return try await bridgeFBFuture(createGzipData(from: input, logger: logger))
   }
@@ -65,7 +65,7 @@ extension FBArchiveOperations {
   /// Async wrapper for `createGzipForPath:logger:`.
   public class func createGzipAsync(
     forPath path: String,
-    logger: any FBControlCoreLogger
+    logger: any ControlCoreLogger
   ) async throws -> FBSubprocess<NSNull, InputStream, AnyObject> {
     return try await bridgeFBFuture(createGzip(forPath: path, logger: logger))
   }
@@ -73,7 +73,7 @@ extension FBArchiveOperations {
   /// Async wrapper for `createGzippedTarForPath:logger:`.
   public class func createGzippedTarAsync(
     forPath path: String,
-    logger: any FBControlCoreLogger
+    logger: any ControlCoreLogger
   ) async throws -> FBSubprocess<NSNull, InputStream, AnyObject> {
     return try await bridgeFBFuture(createGzippedTar(forPath: path, logger: logger))
   }
@@ -82,7 +82,7 @@ extension FBArchiveOperations {
   public class func createGzippedTarDataAsync(
     forPath path: String,
     queue: DispatchQueue,
-    logger: any FBControlCoreLogger
+    logger: any ControlCoreLogger
   ) async throws -> Data {
     let value = try await bridgeFBFuture(
       createGzippedTarData(forPath: path, queue: queue, logger: logger))

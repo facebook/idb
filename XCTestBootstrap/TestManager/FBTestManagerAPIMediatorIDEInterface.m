@@ -31,7 +31,7 @@
 
 @property (nonatomic, readonly, weak) TestManagerAPIMediator *mediator;
 @property (nonatomic, readonly, strong) TestManagerContext *context;
-@property (nullable, nonatomic, readonly, strong) id<FBControlCoreLogger> logger;
+@property (nullable, nonatomic, readonly, strong) id<ControlCoreLogger> logger;
 @property (nonatomic, readonly, strong) FBTestReporterAdapter *reporterAdapter;
 
 @end
@@ -40,7 +40,7 @@
 
 #pragma mark - Initializers
 
-- (instancetype)initWithMediator:(TestManagerAPIMediator *)mediator context:(TestManagerContext *)context reporter:(id<XCTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger
+- (instancetype)initWithMediator:(TestManagerAPIMediator *)mediator context:(TestManagerContext *)context reporter:(id<XCTestReporter>)reporter logger:(id<ControlCoreLogger>)logger
 {
   self = [super init];
   if (!self) {

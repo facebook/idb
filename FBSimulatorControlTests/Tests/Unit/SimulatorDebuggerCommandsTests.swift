@@ -136,7 +136,7 @@ final class SimulatorDebuggerCommandsTests: XCTestCase {
 
   func testDebugServerPathCombinesXcodeContentsDirectoryWithLLDBRelativePath() {
     let path = SimulatorDebuggerCommands.resolveDebugServerPath()
-    let contentsDirectory = FBXcodeConfiguration.contentsDirectory
+    let contentsDirectory = XcodeConfiguration.contentsDirectory
     let expectedPath = (contentsDirectory as NSString)
       .appendingPathComponent("SharedFrameworks/LLDB.framework/Resources/debugserver")
     XCTAssertEqual(

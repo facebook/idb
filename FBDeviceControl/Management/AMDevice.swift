@@ -25,7 +25,7 @@ public final class FBAMDevice: FBiOSTargetInfo, DeviceCommands, CustomStringConv
   public var allValues: [String: Any]
   public let workQueue: DispatchQueue
   public let asyncQueue: DispatchQueue
-  public let logger: any FBControlCoreLogger
+  public let logger: any ControlCoreLogger
   // Created eagerly at the end of the initializer: both are constructed with this object, so they
   // cannot be `let` properties, and `lazy` would make first access from two threads a race. The
   // storage is populated before the object is shared, which is what makes the unsynchronised
@@ -80,7 +80,7 @@ public final class FBAMDevice: FBiOSTargetInfo, DeviceCommands, CustomStringConv
     serviceReuseTimeout: NSNumber?,
     work workQueue: DispatchQueue,
     asyncQueue: DispatchQueue,
-    logger: any FBControlCoreLogger
+    logger: any ControlCoreLogger
   ) {
     self.allValues = allValues
     self.calls = calls

@@ -8,7 +8,7 @@
 #import <Foundation/Foundation.h>
 
 @class WeakFramework;
-@protocol FBControlCoreLogger;
+@protocol ControlCoreLogger;
 
 /**
  A Base Framework loader, that will ensure that the current user can load Frameworks.
@@ -51,6 +51,6 @@
  Loads the frameworks, at most once per instance.
  A nil logger loads silently.
  */
-- (BOOL)loadPrivateFrameworks:(nullable id<FBControlCoreLogger>)logger error:(NSError * _Nullable * _Nullable)error;
+- (BOOL)loadPrivateFrameworks:(nullable id<ControlCoreLogger>)logger error:(NSError * _Nullable * _Nullable)error;
 
 @end

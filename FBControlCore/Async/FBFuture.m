@@ -636,7 +636,7 @@ static void final_resolveUntil(FBMutableFuture *final, dispatch_queue_t queue, F
   return self;
 }
 
-- (FBFuture *)logCompletion:(id<FBControlCoreLogger>)logger withPurpose:(NSString *)purpose
+- (FBFuture *)logCompletion:(id<ControlCoreLogger>)logger withPurpose:(NSString *)purpose
 {
   return [self onQueue:FBFuture.internalQueue
           notifyOfCompletion:^(FBFuture *resolved) {

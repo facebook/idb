@@ -163,7 +163,7 @@ final class XCTestResultToolOperationTests: XCTestCase {
 // MARK: - Logger double
 
 /// Records every line handed to it, so a test can assert on what a process forwarded.
-private final class RecordingLogger: NSObject, FBControlCoreLogger, @unchecked Sendable {
+private final class RecordingLogger: NSObject, ControlCoreLogger, @unchecked Sendable {
   private let lock = NSLock()
   private var recorded: [String] = []
 
@@ -176,16 +176,16 @@ private final class RecordingLogger: NSObject, FBControlCoreLogger, @unchecked S
   var name: String? { nil }
   var level: FBControlCoreLogLevel { .multiple }
 
-  func log(_ message: String) -> any FBControlCoreLogger {
+  func log(_ message: String) -> any ControlCoreLogger {
     lock.lock()
     recorded.append(message)
     lock.unlock()
     return self
   }
 
-  func info() -> any FBControlCoreLogger { self }
-  func debug() -> any FBControlCoreLogger { self }
-  func error() -> any FBControlCoreLogger { self }
-  func withName(_ name: String) -> any FBControlCoreLogger { self }
-  func withDateFormatEnabled(_ enabled: Bool) -> any FBControlCoreLogger { self }
+  func info() -> any ControlCoreLogger { self }
+  func debug() -> any ControlCoreLogger { self }
+  func error() -> any ControlCoreLogger { self }
+  func withName(_ name: String) -> any ControlCoreLogger { self }
+  func withDateFormatEnabled(_ enabled: Bool) -> any ControlCoreLogger { self }
 }

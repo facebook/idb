@@ -49,7 +49,7 @@ public final class WeakFramework: NSObject {
   @objc(xcodeFrameworkWithRelativePath:requiredClassNames:)
   public class func xcodeFramework(withRelativePath relativePath: String, requiredClassNames: [String]) -> WeakFramework {
     WeakFramework(
-      basePath: FBXcodeConfiguration.developerDirectory,
+      basePath: XcodeConfiguration.developerDirectory,
       relativePath: relativePath,
       requiredClassNames: requiredClassNames,
       rootPermitted: false
@@ -81,7 +81,7 @@ public final class WeakFramework: NSObject {
 
   /// A nil logger loads silently.
   @objc(loadWithLogger:error:)
-  public func load(with logger: (any FBControlCoreLogger)?) throws {
+  public func load(with logger: (any ControlCoreLogger)?) throws {
     try loadFromRelativeDirectory(basePath, logger: logger)
   }
 
@@ -93,7 +93,7 @@ public final class WeakFramework: NSObject {
     }
   }
 
-  private func loadFromRelativeDirectory(_ relativeDirectory: String, logger: (any FBControlCoreLogger)?) throws {
+  private func loadFromRelativeDirectory(_ relativeDirectory: String, logger: (any ControlCoreLogger)?) throws {
     if (try? allRequiredClassesExist()) != nil && !requiredClassNames.isEmpty {
       logger?.debug().log("\(name): Already loaded, skipping")
       try verifyIfLoaded(with: logger)
@@ -121,13 +121,13 @@ public final class WeakFramework: NSObject {
     try verifyIfLoaded(with: logger)
   }
 
-  private func verifyIfLoaded(with logger: (any FBControlCoreLogger)?) throws {
+  private func verifyIfLoaded(with logger: (any ControlCoreLogger)?) throws {
     for requiredClassName in requiredClassNames {
       try verifyRelativeDirectory(forPrivateClass: requiredClassName, logger: logger)
     }
   }
 
-  private func verifyRelativeDirectory(forPrivateClass className: String, logger: (any FBControlCoreLogger)?) throws {
+  private func verifyRelativeDirectory(forPrivateClass className: String, logger: (any ControlCoreLogger)?) throws {
     guard let cls = NSClassFromString(className) else {
       throw WeakFrameworkError.bundleUnavailable(className: className)
     }

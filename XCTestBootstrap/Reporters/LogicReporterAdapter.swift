@@ -11,11 +11,11 @@ import Foundation
 public final class LogicReporterAdapter: LogicXCTestReporter {
 
   private let reporter: XCTestReporter
-  private let logger: FBControlCoreLogger?
+  private let logger: ControlCoreLogger?
 
-  public init(reporter: XCTestReporter, logger: FBControlCoreLogger?) {
+  public init(reporter: XCTestReporter, logger: ControlCoreLogger?) {
     self.reporter = reporter
-    self.logger = logger?.withName("LogicReporterAdapter") as (any FBControlCoreLogger)?
+    self.logger = logger?.withName("LogicReporterAdapter") as (any ControlCoreLogger)?
   }
 
   // MARK: - LogicXCTestReporter

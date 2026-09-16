@@ -11,7 +11,7 @@ import XCTest
 
 final class SimulatorConfigurationBootTests: XCTestCase {
   func testAdapterRetainsCompatibleCoreSimulatorObjects() throws {
-    try FBSimulatorControlFrameworkLoader.essentialFrameworks.loadPrivateFrameworks(FBControlCoreGlobalConfiguration.defaultLogger)
+    try FBSimulatorControlFrameworkLoader.essentialFrameworks.loadPrivateFrameworks(ControlCoreGlobalConfiguration.defaultLogger)
     let service = try SimulatorServiceContext.sharedServiceContext()
     let deviceTypes = service.supportedDeviceTypes()
     let runtimes = service.supportedRuntimes()

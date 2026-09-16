@@ -20,7 +20,7 @@ private func afcConnectionCallback(
   _ arg1: UnsafeMutableRawPointer?,
   _ afcOperationPtr: UnsafeMutableRawPointer?
 ) {
-  let logger = FBControlCoreGlobalConfiguration.defaultLogger
+  let logger = ControlCoreGlobalConfiguration.defaultLogger
   logger.log("Connection \(String(describing: connectionRefPtr)), operation \(String(describing: afcOperationPtr))")
 }
 
@@ -94,7 +94,7 @@ public final class FBAFCConnection {
   // MARK: - Properties
 
   public let calls: AFCCalls
-  public let logger: (any FBControlCoreLogger)?
+  public let logger: (any ControlCoreLogger)?
 
   /// Held unretained. Unlike the service connection, `AFCConnectionClose` does release it, so
   /// closing nils this out without a release of its own.
@@ -106,7 +106,7 @@ public final class FBAFCConnection {
 
   // MARK: - Initializers
 
-  public init(connection: AFCConnection?, calls: AFCCalls, logger: (any FBControlCoreLogger)?) {
+  public init(connection: AFCConnection?, calls: AFCCalls, logger: (any ControlCoreLogger)?) {
     self.connectionRef = connection.map { Unmanaged.passUnretained($0 as AnyObject) }
     self.calls = calls
     self.logger = logger
@@ -117,7 +117,7 @@ public final class FBAFCConnection {
   static func afc(
     from serviceConnection: FBAMDServiceConnection,
     calls: AFCCalls,
-    logger: any FBControlCoreLogger
+    logger: any ControlCoreLogger
   ) throws -> FBAFCConnection {
     let connection = serviceConnection.asAFCConnection(
       calls: calls, callback: afcConnectionCallback, logger: logger)

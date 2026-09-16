@@ -42,11 +42,11 @@ extension InstrumentsError: LocalizedError {
 
 /// Watches the instruments output for the two lifecycle markers: template loading has
 /// begun, and the premature "Trace Complete" that signals a failed startup.
-final class InstrumentsConsumer: NSObject, FBDataConsumer {
+final class InstrumentsConsumer: NSObject, DataConsumer {
 
   let hasStoppedRecording: FBMutableFuture<NSNull>
   let hasStartedLoadingTemplate: FBMutableFuture<NSNull>
-  private let lineConsumer: any FBDataConsumer
+  private let lineConsumer: any DataConsumer
 
   override init() {
     // Lines arrive serially on the consumer's queue, so `logs` needs no synchronization. Captured
@@ -88,9 +88,9 @@ public final class InstrumentsOperation {
   public let task: FBSubprocess<AnyObject, AnyObject, AnyObject>
   public let traceFile: URL
   public let configuration: InstrumentsConfiguration
-  public let logger: any FBControlCoreLogger
+  public let logger: any ControlCoreLogger
 
-  init(task: FBSubprocess<AnyObject, AnyObject, AnyObject>, traceFile: URL, configuration: InstrumentsConfiguration, logger: any FBControlCoreLogger) {
+  init(task: FBSubprocess<AnyObject, AnyObject, AnyObject>, traceFile: URL, configuration: InstrumentsConfiguration, logger: any ControlCoreLogger) {
     self.task = task
     self.traceFile = traceFile
     self.configuration = configuration
@@ -107,7 +107,7 @@ public final class InstrumentsOperation {
   public class func operation(
     target: any FBiOSTarget,
     configuration: InstrumentsConfiguration,
-    logger: any FBControlCoreLogger
+    logger: any ControlCoreLogger
   ) async throws -> InstrumentsOperation {
     let deadline = Date().addingTimeInterval(configuration.timings.launchRetryTimeout)
     while true {
@@ -149,7 +149,7 @@ public final class InstrumentsOperation {
   private class func startSingleAttempt(
     target: any FBiOSTarget,
     configuration: InstrumentsConfiguration,
-    logger: any FBControlCoreLogger,
+    logger: any ControlCoreLogger,
     attemptTimeout: TimeInterval
   ) async throws -> InstrumentsOperation {
     let traceDir = (target.auxillaryDirectory as NSString).appendingPathComponent("instruments-" + UUID().uuidString)
@@ -219,7 +219,7 @@ public final class InstrumentsOperation {
     arguments: [String]?,
     traceFile: URL,
     queue: DispatchQueue,
-    logger: (any FBControlCoreLogger)?
+    logger: (any ControlCoreLogger)?
   ) async throws -> URL {
     guard let arguments, !arguments.isEmpty else {
       return traceFile

@@ -18,7 +18,7 @@ final class FBSubprocessTests: XCTestCase {
 
   private func runAndWaitForTaskFuture<S: AnyObject, O: AnyObject, E: AnyObject>(_ future: FBFuture<FBSubprocess<S, O, E>>) -> FBSubprocess<S, O, E> {
     let erasedFuture = future.retyped(FBFuture<AnyObject>.self)
-    let timedFuture = erasedFuture.timeout(FBControlCoreGlobalConfiguration.regularTimeout, waitingFor: "FBTask to complete")
+    let timedFuture = erasedFuture.timeout(ControlCoreGlobalConfiguration.regularTimeout, waitingFor: "FBTask to complete")
     _ = try? timedFuture.`await`()
     return future.result!
   }
@@ -26,7 +26,7 @@ final class FBSubprocessTests: XCTestCase {
   func testTrueExit() {
     let futureProcess = FBProcessBuilder<NSNull, NSData, NSData>
       .withLaunchPath("/bin/sh", arguments: ["-c", "true"])
-      .withTaskLifecycleLogging(to: FBControlCoreGlobalConfiguration.defaultLogger)
+      .withTaskLifecycleLogging(to: ControlCoreGlobalConfiguration.defaultLogger)
       .runUntilCompletion(withAcceptableExitCodes: nil)
 
     let process = runAndWaitForTaskFuture(futureProcess)
@@ -147,7 +147,7 @@ final class FBSubprocessTests: XCTestCase {
     XCTAssertEqual(process.statLoc.state, FBFutureState.done)
     XCTAssertEqual(process.exitCode.state, FBFutureState.done)
     XCTAssertEqual(process.signal.state, FBFutureState.failed)
-    XCTAssertTrue((process.stdOut as AnyObject).conforms(to: FBDataConsumer.self))
+    XCTAssertTrue((process.stdOut as AnyObject).conforms(to: DataConsumer.self))
     XCTAssertGreaterThan(process.processIdentifier, 1)
 
     _ = try? FBFuture<AnyObject>.empty().delay(2).`await`()
@@ -160,16 +160,16 @@ final class FBSubprocessTests: XCTestCase {
 
     let futureProcess = FBProcessBuilder<NSNull, NSData, NSData>
       .withLaunchPath("/usr/bin/file", arguments: [bundlePath])
-      .withStdErr(to: FBControlCoreLoggerDouble())
-      .withStdOut(to: FBControlCoreLoggerDouble())
+      .withStdErr(to: ControlCoreLoggerDouble())
+      .withStdOut(to: ControlCoreLoggerDouble())
       .runUntilCompletion(withAcceptableExitCodes: nil)
     let process = runAndWaitForTaskFuture(futureProcess)
 
     XCTAssertEqual(process.statLoc.state, FBFutureState.done)
     XCTAssertEqual(process.exitCode.state, FBFutureState.done)
     XCTAssertEqual(process.signal.state, FBFutureState.failed)
-    XCTAssertTrue((process.stdOut as AnyObject).isKind(of: FBControlCoreLoggerDouble.self))
-    XCTAssertTrue((process.stdErr as AnyObject).isKind(of: FBControlCoreLoggerDouble.self))
+    XCTAssertTrue((process.stdOut as AnyObject).isKind(of: ControlCoreLoggerDouble.self))
+    XCTAssertTrue((process.stdErr as AnyObject).isKind(of: ControlCoreLoggerDouble.self))
   }
 
   func testDevNull() {
@@ -194,7 +194,7 @@ final class FBSubprocessTests: XCTestCase {
       FBProcessBuilder<NSNull, NSData, NSData>.withLaunchPath("/bin/sleep", arguments: ["1"])
     )
 
-    try process.exitCode.await(withTimeout: FBControlCoreGlobalConfiguration.fastTimeout)
+    try process.exitCode.await(withTimeout: ControlCoreGlobalConfiguration.fastTimeout)
   }
 
   func testAwaitingTerminationOfShortLivedProcess() throws {
@@ -219,7 +219,7 @@ final class FBSubprocessTests: XCTestCase {
           expectation.fulfill()
         })
 
-    wait(for: [expectation], timeout: FBControlCoreGlobalConfiguration.fastTimeout)
+    wait(for: [expectation], timeout: ControlCoreGlobalConfiguration.fastTimeout)
   }
 
   func testAwaitingTerminationDoesNotTerminateStalledTask() throws {
@@ -254,7 +254,7 @@ final class FBSubprocessTests: XCTestCase {
         .withStdErrToDevNull()
     )
 
-    XCTAssertTrue((process.stdIn as AnyObject).conforms(to: FBDataConsumer.self))
+    XCTAssertTrue((process.stdIn as AnyObject).conforms(to: DataConsumer.self))
     let stdIn = try XCTUnwrap(process.stdIn)
     stdIn.consumeData(expected)
     stdIn.consumeEndOfFile()
@@ -387,13 +387,13 @@ final class FBSubprocessTests: XCTestCase {
           }
         }
     )
-    wait(for: [ignoringHUP], timeout: FBControlCoreGlobalConfiguration.fastTimeout)
+    wait(for: [ignoringHUP], timeout: ControlCoreGlobalConfiguration.fastTimeout)
 
     XCTAssertEqual(process.statLoc.state, FBFutureState.running)
     XCTAssertEqual(process.exitCode.state, FBFutureState.running)
     XCTAssertEqual(process.signal.state, FBFutureState.running)
 
-    try process.sendSignal(SIGHUP, backingOffToKillWithTimeout: 0.5, logger: FBControlCoreLoggerDouble()).`await`()
+    try process.sendSignal(SIGHUP, backingOffToKillWithTimeout: 0.5, logger: ControlCoreLoggerDouble()).`await`()
     XCTAssertEqual(process.statLoc.state, FBFutureState.done)
     XCTAssertEqual(process.exitCode.state, FBFutureState.failed)
     XCTAssertEqual(process.signal.state, FBFutureState.done)

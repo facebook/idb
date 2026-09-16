@@ -8,7 +8,7 @@
 import Foundation
 
 /// A consumer of NSData.
-@objc public protocol FBDataConsumer: NSObjectProtocol {
+@objc public protocol DataConsumer: NSObjectProtocol {
   /// Consumes the provided binary data.
   func consumeData(_ data: Data)
 
@@ -26,7 +26,7 @@ import Foundation
 }
 
 /// Consumer which consumes the data synchronously in the same context as the caller invoking consumeData.
-@objc public protocol FBDataConsumerSync: NSObjectProtocol {
+@objc public protocol DataConsumerSync: NSObjectProtocol {
 }
 
 /// Consumer which consumes the data asynchronously.
@@ -50,6 +50,6 @@ public extension DataConsumerLifecycle {
 
 // MARK: - Conformance extensions for ObjC classes
 
-extension FBLoggingDataConsumer: FBDataConsumer {}
-extension FBCompositeDataConsumer: FBDataConsumer, DataConsumerLifecycle {}
-extension FBNullDataConsumer: FBDataConsumer {}
+extension FBLoggingDataConsumer: DataConsumer {}
+extension FBCompositeDataConsumer: DataConsumer, DataConsumerLifecycle {}
+extension FBNullDataConsumer: DataConsumer {}

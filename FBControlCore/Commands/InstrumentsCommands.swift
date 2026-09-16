@@ -11,6 +11,6 @@ public protocol InstrumentsCommands {
 
   func start(
     configuration: InstrumentsConfiguration,
-    logger: any FBControlCoreLogger
+    logger: any ControlCoreLogger
   ) async throws -> InstrumentsOperation
 }

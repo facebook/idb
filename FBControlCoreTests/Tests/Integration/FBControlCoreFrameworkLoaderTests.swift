@@ -11,7 +11,7 @@ import XCTest
 final class FBControlCoreFrameworkLoaderTests: XCTestCase {
 
   private func assertLoadsFramework(_ framework: WeakFramework) {
-    XCTAssertNoThrow(try framework.load(with: FBControlCoreGlobalConfiguration.defaultLogger))
+    XCTAssertNoThrow(try framework.load(with: ControlCoreGlobalConfiguration.defaultLogger))
   }
 
   func testLoadsAccessibilityPlatformTranslation() {

@@ -13,17 +13,17 @@ public final class FBDeviceSet: FBiOSTargetSet, FBiOSTargetSetDelegate, CustomSt
   // aborting the process.
   private static let _amDeviceCalls: Result<AMDCalls, Error> = Result {
     let loader = FBDeviceControlFrameworkLoader()
-    try loader.loadPrivateFrameworks(FBControlCoreGlobalConfiguration.defaultLogger)
+    try loader.loadPrivateFrameworks(ControlCoreGlobalConfiguration.defaultLogger)
     return try loader.amDeviceCalls
   }
 
   private let amDeviceManager: AMDeviceManager
   private let restorableDeviceManager: AMRestorableDeviceManager
   private let storage: DeviceStorage<FBDevice>
-  public let logger: any FBControlCoreLogger
+  public let logger: any ControlCoreLogger
   public weak var delegate: (any FBiOSTargetSetDelegate)?
 
-  public convenience init(logger: any FBControlCoreLogger, delegate: (any FBiOSTargetSetDelegate)?, ecidFilter: String?) throws {
+  public convenience init(logger: any ControlCoreLogger, delegate: (any FBiOSTargetSetDelegate)?, ecidFilter: String?) throws {
     let calls = try Self._amDeviceCalls.get()
     let workQueue = DispatchQueue.main
     let asyncQueue = DispatchQueue.global(qos: .userInitiated)
@@ -34,7 +34,7 @@ public final class FBDeviceSet: FBiOSTargetSet, FBiOSTargetSetDelegate, CustomSt
     try restorableDeviceManager.startListening()
   }
 
-  private init(amDeviceManager: AMDeviceManager, restorableDeviceManager: AMRestorableDeviceManager, logger: any FBControlCoreLogger, delegate: (any FBiOSTargetSetDelegate)?) {
+  private init(amDeviceManager: AMDeviceManager, restorableDeviceManager: AMRestorableDeviceManager, logger: any ControlCoreLogger, delegate: (any FBiOSTargetSetDelegate)?) {
     self.amDeviceManager = amDeviceManager
     self.restorableDeviceManager = restorableDeviceManager
     self.logger = logger

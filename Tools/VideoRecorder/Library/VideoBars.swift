@@ -20,7 +20,7 @@ public struct VideoBars {
 
   /// Parse `--bar` arguments (and the deprecated status-bar flags) into per-bar (position, height,
   /// mode) triples, the effective `--bar-stats` positions, and the pad-mode edge insets.
-  public func resolve(deprecatedBottomStatusBar: Bool, deprecatedTopStatusBar: Bool, logger: any FBControlCoreLogger) -> (parsedBars: [(position: String, height: Int, mode: BarMode)], barStats: [String], edgeInsets: VideoStreamEdgeInsets) {
+  public func resolve(deprecatedBottomStatusBar: Bool, deprecatedTopStatusBar: Bool, logger: any ControlCoreLogger) -> (parsedBars: [(position: String, height: Int, mode: BarMode)], barStats: [String], edgeInsets: VideoStreamEdgeInsets) {
     // Syntax: --bar <position>[:<size>][:<mode>] — size defaults to defaultBarHeight,
     // mode defaults to `pad`. Examples: `--bar top`, `--bar top:24`, `--bar top:24:overlay`.
     var parsedBars: [(position: String, height: Int, mode: BarMode)] = []

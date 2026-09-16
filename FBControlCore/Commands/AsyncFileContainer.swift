@@ -15,7 +15,7 @@ public protocol AsyncFileContainer: AnyObject {
 
   /// Begins tailing `path` into `consumer` and returns the operation handle.
   /// Cancelling the returned handle stops tailing.
-  func tail(_ path: String, to consumer: any FBDataConsumer) async throws -> FileContainerTailOperation
+  func tail(_ path: String, to consumer: any DataConsumer) async throws -> FileContainerTailOperation
 
   func createDirectory(_ directoryPath: String) async throws
 

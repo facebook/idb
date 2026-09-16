@@ -16,7 +16,7 @@ struct DeviceControlTransientTests {
 
   @Test
   func attachAndLookupDevice() {
-    let storage = DeviceStorage<NSString>(logger: FBControlCoreGlobalConfiguration.defaultLogger)
+    let storage = DeviceStorage<NSString>(logger: ControlCoreGlobalConfiguration.defaultLogger)
     storage.deviceAttached("device1" as NSString, forKey: "key1")
 
     let retrieved = storage.device(forKey: "key1") as? NSString
@@ -25,7 +25,7 @@ struct DeviceControlTransientTests {
 
   @Test
   func attachedPropertyReflectsAttachedDevices() {
-    let storage = DeviceStorage<NSString>(logger: FBControlCoreGlobalConfiguration.defaultLogger)
+    let storage = DeviceStorage<NSString>(logger: ControlCoreGlobalConfiguration.defaultLogger)
     storage.deviceAttached("device1" as NSString, forKey: "key1")
     storage.deviceAttached("device2" as NSString, forKey: "key2")
 
@@ -37,7 +37,7 @@ struct DeviceControlTransientTests {
 
   @Test
   func detachRemovesFromAttached() {
-    let storage = DeviceStorage<NSString>(logger: FBControlCoreGlobalConfiguration.defaultLogger)
+    let storage = DeviceStorage<NSString>(logger: ControlCoreGlobalConfiguration.defaultLogger)
     storage.deviceAttached("device1" as NSString, forKey: "key1")
     storage.deviceDetached(forKey: "key1")
 
@@ -47,14 +47,14 @@ struct DeviceControlTransientTests {
 
   @Test
   func lookupReturnsNilForUnknownKey() {
-    let storage = DeviceStorage<NSString>(logger: FBControlCoreGlobalConfiguration.defaultLogger)
+    let storage = DeviceStorage<NSString>(logger: ControlCoreGlobalConfiguration.defaultLogger)
     let result = storage.device(forKey: "nonexistent")
     #expect((result) == nil)
   }
 
   @Test
   func reattachUpdatesDevice() {
-    let storage = DeviceStorage<NSString>(logger: FBControlCoreGlobalConfiguration.defaultLogger)
+    let storage = DeviceStorage<NSString>(logger: ControlCoreGlobalConfiguration.defaultLogger)
     storage.deviceAttached("old" as NSString, forKey: "key1")
     storage.deviceAttached("new" as NSString, forKey: "key1")
 
@@ -64,7 +64,7 @@ struct DeviceControlTransientTests {
 
   @Test
   func referencedPropertyTracksAllKnownDevices() {
-    let storage = DeviceStorage<NSString>(logger: FBControlCoreGlobalConfiguration.defaultLogger)
+    let storage = DeviceStorage<NSString>(logger: ControlCoreGlobalConfiguration.defaultLogger)
     storage.deviceAttached("d1" as NSString, forKey: "k1")
     storage.deviceAttached("d2" as NSString, forKey: "k2")
 
@@ -86,7 +86,7 @@ struct DeviceControlTransientTests {
 
   @Test
   func attachAndLookupNativeSwiftDevice() {
-    let storage = DeviceStorage<NativeDevice>(logger: FBControlCoreGlobalConfiguration.defaultLogger)
+    let storage = DeviceStorage<NativeDevice>(logger: ControlCoreGlobalConfiguration.defaultLogger)
     let device = NativeDevice()
     storage.deviceAttached(device, forKey: "key1")
 
@@ -97,7 +97,7 @@ struct DeviceControlTransientTests {
 
   @Test
   func detachedNativeSwiftDeviceIsStillLookupableWhileHeld() {
-    let storage = DeviceStorage<NativeDevice>(logger: FBControlCoreGlobalConfiguration.defaultLogger)
+    let storage = DeviceStorage<NativeDevice>(logger: ControlCoreGlobalConfiguration.defaultLogger)
     let device = NativeDevice()
     storage.deviceAttached(device, forKey: "key1")
     storage.deviceDetached(forKey: "key1")
@@ -109,7 +109,7 @@ struct DeviceControlTransientTests {
 
   @Test
   func detachedNativeSwiftDeviceLeavesTheReferenceMapOnceReleased() {
-    let storage = DeviceStorage<NativeDevice>(logger: FBControlCoreGlobalConfiguration.defaultLogger)
+    let storage = DeviceStorage<NativeDevice>(logger: ControlCoreGlobalConfiguration.defaultLogger)
     // The device goes into the reference map through an Objective-C accessor, which can leave an
     // autoreleased reference behind, so it is released inside a pool of its own rather than
     // relying on the scope end alone to be the point of deallocation.

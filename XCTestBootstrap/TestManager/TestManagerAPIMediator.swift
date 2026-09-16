@@ -35,7 +35,7 @@ public final class TestManagerAPIMediator: NSObject, @unchecked Sendable {
   private let context: TestManagerContext
   private let target: any XCTestExtendedTarget
   private let reporter: XCTestReporter
-  private let logger: FBControlCoreLogger
+  private let logger: ControlCoreLogger
   private let requestQueue: DispatchQueue
 
   private let tokenLock = NSLock()
@@ -50,7 +50,7 @@ public final class TestManagerAPIMediator: NSObject, @unchecked Sendable {
     with context: TestManagerContext,
     target: any XCTestExtendedTarget,
     reporter: XCTestReporter,
-    logger: FBControlCoreLogger
+    logger: ControlCoreLogger
   ) async throws {
     let mediator = TestManagerAPIMediator(context: context, target: target, reporter: reporter, logger: logger)
     try await mediator.connectAndRunUntilCompletion()
@@ -60,7 +60,7 @@ public final class TestManagerAPIMediator: NSObject, @unchecked Sendable {
     context: TestManagerContext,
     target: any XCTestExtendedTarget,
     reporter: XCTestReporter,
-    logger: FBControlCoreLogger
+    logger: ControlCoreLogger
   ) {
     self.context = context
     self.target = target

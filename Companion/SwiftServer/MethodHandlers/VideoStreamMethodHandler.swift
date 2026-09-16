@@ -28,7 +28,7 @@ extension VideoStreamMethodHandlerError: LocalizedError {
 struct VideoStreamMethodHandler {
 
   let target: any FBiOSTarget
-  let targetLogger: FBControlCoreLogger
+  let targetLogger: ControlCoreLogger
   let commandExecutor: IDBCommandExecutor
 
   func handle(requestStream: RequestStreamReader<Idb_VideoStreamRequest>, responseStream: RPCWriter<Idb_VideoStreamResponse>, context: ServerContext) async throws {
@@ -66,7 +66,7 @@ struct VideoStreamMethodHandler {
   }
 
   private func startVideoStream(request start: Idb_VideoStreamRequest.Start, responseStream: RPCWriter<Idb_VideoStreamResponse>, finished: Atomic<Bool>) async throws -> FBVideoStream {
-    let consumer: FBDataConsumer
+    let consumer: DataConsumer
 
     if start.filePath.isEmpty {
       let responseWriter = FIFOStreamWriter(stream: responseStream)

@@ -16,7 +16,7 @@ struct SimulatorOptions: ParsableArguments {
   @Option(help: "Booted simulator UDID") var udid: String
 
   @MainActor
-  func simulator(logger: any FBControlCoreLogger) throws -> FBSimulator {
+  func simulator(logger: any ControlCoreLogger) throws -> FBSimulator {
     let configuration = FBSimulatorControlConfiguration(deviceSetPath: set, logger: logger)
     let control = try SimulatorControlBootstrap.withConfiguration(configuration)
     guard let simulator = control.set.simulator(withUDID: udid) else {
@@ -87,7 +87,7 @@ struct VideoOptions: ParsableArguments {
   }
 
   @MainActor
-  func composition(simulator: FBSimulator, logger: any FBControlCoreLogger) throws -> (VideoStreamEdgeInsets, OverlayRenderer, [(position: String, height: Int, mode: BarMode)]) {
+  func composition(simulator: FBSimulator, logger: any ControlCoreLogger) throws -> (VideoStreamEdgeInsets, OverlayRenderer, [(position: String, height: Int, mode: BarMode)]) {
     if let screenshotDir { try FileManager.default.createDirectory(atPath: screenshotDir, withIntermediateDirectories: true) }
     let resolved = VideoBars(bars: bars, barStats: barStats).resolve(deprecatedBottomStatusBar: false, deprecatedTopStatusBar: false, logger: logger)
     let overlay = simulator.prepareVideoOverlay(edgeInsets: resolved.edgeInsets, scaleFactor: scale, overlayCoordSpace: OverlayCoordSpace(rawValue: overlayCoordSpace) ?? .composed)

@@ -68,7 +68,7 @@ public final class SimulatorHID: CustomStringConvertible, @unchecked Sendable {
     if let requested {
       return try await transport(requested, for: simulator)
     }
-    let logger = FBControlCoreGlobalConfiguration.defaultLogger
+    let logger = ControlCoreGlobalConfiguration.defaultLogger
     let preferred = simulator.defaultHIDTransport
     do {
       let transport = try await transport(preferred, for: simulator)
@@ -208,7 +208,7 @@ public final class SimulatorHID: CustomStringConvertible, @unchecked Sendable {
 
   /// Sends a (possibly composite) event, logging each sub-event, then drains once if any sub-event reached
   /// the HID transport — so a tap or typed string settles once, not per primitive.
-  public func send(event: SimulatorHIDEvent, logger: FBControlCoreLogger) async throws {
+  public func send(event: SimulatorHIDEvent, logger: ControlCoreLogger) async throws {
     var wroteToTransport = false
     for subEvent in event.subEvents ?? [event] {
       switch subEvent {

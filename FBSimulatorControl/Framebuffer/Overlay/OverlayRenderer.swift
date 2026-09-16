@@ -92,7 +92,7 @@ public final class OverlayRenderer {
   private let stateLock = NSRecursiveLock()
 
   /// Logger for diagnostic output.
-  public var logger: FBControlCoreLogger?
+  public var logger: ControlCoreLogger?
 
   /// Current content mode for each bar position.
   public private(set) var barContent: [String: BarContent] = [:]

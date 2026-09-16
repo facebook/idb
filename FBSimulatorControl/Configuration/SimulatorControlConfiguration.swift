@@ -25,13 +25,13 @@ public enum SimulatorDeviceSetError: Error, LocalizedError {
 public struct FBSimulatorControlConfiguration: Equatable, Hashable, CustomStringConvertible {
 
   public let deviceSetPath: String?
-  public let logger: FBControlCoreLogger
+  public let logger: ControlCoreLogger
 
-  /// - Parameter logger: nil means `FBControlCoreGlobalConfiguration.defaultLogger` (os_log-only
+  /// - Parameter logger: nil means `ControlCoreGlobalConfiguration.defaultLogger` (os_log-only
   ///   by default — see its documentation).
-  public init(deviceSetPath: String?, logger: (any FBControlCoreLogger)?) {
+  public init(deviceSetPath: String?, logger: (any ControlCoreLogger)?) {
     self.deviceSetPath = deviceSetPath
-    self.logger = logger ?? FBControlCoreGlobalConfiguration.defaultLogger
+    self.logger = logger ?? ControlCoreGlobalConfiguration.defaultLogger
   }
 
   // MARK: - Equatable, Hashable

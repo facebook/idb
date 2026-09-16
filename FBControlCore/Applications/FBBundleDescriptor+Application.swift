@@ -9,7 +9,7 @@ import Foundation
 
 extension FBBundleDescriptor {
 
-  public static func findAppPath(fromDirectory directory: URL, logger: FBControlCoreLogger?) throws -> FBBundleDescriptor {
+  public static func findAppPath(fromDirectory directory: URL, logger: ControlCoreLogger?) throws -> FBBundleDescriptor {
     let directoryEnumerator = FileManager.default.enumerator(
       at: directory,
       includingPropertiesForKeys: [.isDirectoryKey],

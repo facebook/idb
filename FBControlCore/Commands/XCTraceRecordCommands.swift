@@ -11,6 +11,6 @@ public protocol XCTraceRecordCommands {
 
   func start(
     configuration: XCTraceRecordConfiguration,
-    logger: any FBControlCoreLogger
+    logger: any ControlCoreLogger
   ) async throws -> XCTraceRecordOperation
 }

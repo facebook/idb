@@ -10,9 +10,9 @@ import XCTest
 
 /// Download piped straight into extraction, as the URL install path wires it: the
 /// download's `FBProcessInput` is the extractor's stdin.
-final class FBDataDownloadInputTests: XCTestCase {
+final class DataDownloadInputTests: XCTestCase {
 
-  private var logger: FBControlCoreLogger!
+  private var logger: ControlCoreLogger!
   private var tempDirectory: String!
 
   override func setUp() {
@@ -67,7 +67,7 @@ final class FBDataDownloadInputTests: XCTestCase {
     configuration.protocolClasses = [StubURLProtocol.self]
     // swiftlint:disable:next force_unwrapping
     let url = URL(string: "https://example.invalid/app.ipa")!
-    let download = FBDataDownloadInput.dataDownload(
+    let download = DataDownloadInput.dataDownload(
       withURL: url,
       configuration: configuration,
       logger: logger)
@@ -231,14 +231,14 @@ private final class StubURLProtocol: URLProtocol {
 }
 
 // SAFETY: stateless no-op.
-private final class DownloadTestLogger: NSObject, FBControlCoreLogger, @unchecked Sendable {
+private final class DownloadTestLogger: NSObject, ControlCoreLogger, @unchecked Sendable {
   var name: String? { nil }
   var level: FBControlCoreLogLevel { .multiple }
 
-  func log(_ message: String) -> any FBControlCoreLogger { self }
-  func info() -> any FBControlCoreLogger { self }
-  func debug() -> any FBControlCoreLogger { self }
-  func error() -> any FBControlCoreLogger { self }
-  func withName(_ name: String) -> any FBControlCoreLogger { self }
-  func withDateFormatEnabled(_ enabled: Bool) -> any FBControlCoreLogger { self }
+  func log(_ message: String) -> any ControlCoreLogger { self }
+  func info() -> any ControlCoreLogger { self }
+  func debug() -> any ControlCoreLogger { self }
+  func error() -> any ControlCoreLogger { self }
+  func withName(_ name: String) -> any ControlCoreLogger { self }
+  func withDateFormatEnabled(_ enabled: Bool) -> any ControlCoreLogger { self }
 }

@@ -66,7 +66,7 @@ extension IDBXCTestReporterError: LocalizedError {
   }
 }
 
-final class IDBXCTestReporter: NSObject, XCTestReporter, FBDataConsumer, @unchecked Sendable {
+final class IDBXCTestReporter: NSObject, XCTestReporter, DataConsumer, @unchecked Sendable {
 
   private let reportingTerminated = AsyncPromise<Int>()
 
@@ -76,13 +76,13 @@ final class IDBXCTestReporter: NSObject, XCTestReporter, FBDataConsumer, @unchec
   @Atomic private var responseStream: RPCWriter<Idb_XctestRunResponse>?
 
   private let queue: DispatchQueue
-  private let logger: FBControlCoreLogger
+  private let logger: ControlCoreLogger
 
   private let processUnderTestExited = AsyncPromise<Void>()
 
   @Atomic private var currentInfo = CurrentTestInfo()
 
-  init(responseStream: RPCWriter<Idb_XctestRunResponse>, queue: DispatchQueue, logger: FBControlCoreLogger) {
+  init(responseStream: RPCWriter<Idb_XctestRunResponse>, queue: DispatchQueue, logger: ControlCoreLogger) {
     self._responseStream = .init(wrappedValue: responseStream)
     self.queue = queue
     self.logger = logger
@@ -93,7 +93,7 @@ final class IDBXCTestReporter: NSObject, XCTestReporter, FBDataConsumer, @unchec
     try await reportingTerminated.value
   }
 
-  // MARK: - FBDataConsumer implementation
+  // MARK: - DataConsumer implementation
 
   func consumeData(_ data: Data) {
     let logOutput = String(data: data, encoding: .utf8) ?? ""

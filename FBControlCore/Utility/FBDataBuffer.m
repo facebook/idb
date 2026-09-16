@@ -9,7 +9,7 @@
 
 #import "FBControlCore-SwiftImport.h"
 
-@interface FBDataBuffer_Accumilating : NSObject <FBDataConsumer, AccumulatingBuffer>
+@interface FBDataBuffer_Accumilating : NSObject <DataConsumer, AccumulatingBuffer>
 
 @property (nonatomic, readwrite, strong) NSMutableData *buffer;
 @property (nonatomic, readonly, assign) size_t capacity;
@@ -64,7 +64,7 @@
   return [output componentsSeparatedByCharactersInSet:NSCharacterSet.newlineCharacterSet];
 }
 
-#pragma mark FBDataConsumer
+#pragma mark DataConsumer
 
 - (void)consumeData:(NSData *)data
 {
@@ -112,7 +112,7 @@
 
 @synthesize consumer = _consumer;
 
-- (instancetype)initWithTerminal:(NSData *)terminal consumer:(id<FBDataConsumer>)consumer queue:(dispatch_queue_t)queue
+- (instancetype)initWithTerminal:(NSData *)terminal consumer:(id<DataConsumer>)consumer queue:(dispatch_queue_t)queue
 {
   self = [super init];
   if (!self) {
@@ -130,7 +130,7 @@
 {
   NSData *partial = [buffer consumeUntil:self.terminal];
   dispatch_queue_t queue = self.queue;
-  id<FBDataConsumer> consumer = self.consumer;
+  id<DataConsumer> consumer = self.consumer;
   while (partial) {
     if (queue) {
       dispatch_async(queue, ^{
@@ -158,7 +158,7 @@
 
 @synthesize consumer = _consumer;
 
-- (instancetype)initWithHeaderLength:(NSUInteger)headerLength derivedLength:(NSUInteger (^)(NSData *))derivedLength consumer:(id<FBDataConsumer>)consumer queue:(dispatch_queue_t)queue
+- (instancetype)initWithHeaderLength:(NSUInteger)headerLength derivedLength:(NSUInteger (^)(NSData *))derivedLength consumer:(id<DataConsumer>)consumer queue:(dispatch_queue_t)queue
 {
   self = [super init];
   if (!self) {
@@ -184,7 +184,7 @@
   }
   NSData *data = [buffer consumeLength:self.knownderivedLength.unsignedIntegerValue];
   dispatch_queue_t queue = self.queue;
-  id<FBDataConsumer> consumer = self.consumer;
+  id<DataConsumer> consumer = self.consumer;
   if (data) {
     if (queue) {
       dispatch_async(queue, ^{
@@ -292,7 +292,7 @@
   return [[NSString alloc] initWithData:lineData encoding:NSUTF8StringEncoding];
 }
 
-- (BOOL)consume:(id<FBDataConsumer>)consumer onQueue:(dispatch_queue_t)queue untilTerminal:(NSData *)terminal error:(NSError **)error
+- (BOOL)consume:(id<DataConsumer>)consumer onQueue:(dispatch_queue_t)queue untilTerminal:(NSData *)terminal error:(NSError **)error
 {
   id<DataBuffer_Forwarder> forwarder = [[FBDataBuffer_Terminal_Forwarder alloc] initWithTerminal:terminal consumer:consumer queue:queue];
   return [self attachForwardingConsumer:forwarder error:error];
@@ -301,7 +301,7 @@
 - (FBFuture<NSData *> *)consumeAndNotifyWhen:(NSData *)terminal
 {
   FBMutableFuture<NSData *> *future = FBMutableFuture.future;
-  id<FBDataConsumer> consumer = [FBBlockDataConsumer synchronousDataConsumerWithBlock:^(NSData *data) {
+  id<DataConsumer> consumer = [FBBlockDataConsumer synchronousDataConsumerWithBlock:^(NSData *data) {
     [self removeForwardingConsumer];
     [future resolveWithResult:data];
   }];
@@ -316,7 +316,7 @@
 - (FBFuture<NSData *> *)consumeHeaderLength:(NSUInteger)headerLength derivedLength:(NSUInteger (^)(NSData *))derivedLength
 {
   FBMutableFuture<NSData *> *future = FBMutableFuture.future;
-  id<FBDataConsumer> consumer = [FBBlockDataConsumer synchronousDataConsumerWithBlock:^(NSData *data) {
+  id<DataConsumer> consumer = [FBBlockDataConsumer synchronousDataConsumerWithBlock:^(NSData *data) {
     [self removeForwardingConsumer];
     [future resolveWithResult:data];
   }];
@@ -329,7 +329,7 @@
   return future;
 }
 
-#pragma mark FBDataConsumer
+#pragma mark DataConsumer
 
 - (void)consumeData:(NSData *)data
 {
@@ -355,14 +355,14 @@
   return YES;
 }
 
-- (nullable id<FBDataConsumer>)removeForwardingConsumer
+- (nullable id<DataConsumer>)removeForwardingConsumer
 {
   id<DataBuffer_Forwarder> forwarder = self.forwarder;
   self.forwarder = nil;
   return forwarder.consumer;
 }
 
-- (BOOL)consume:(id<FBDataConsumer>)consumer untilTerminal:(NSData *)terminal error:(NSError **)error
+- (BOOL)consume:(id<DataConsumer>)consumer untilTerminal:(NSData *)terminal error:(NSError **)error
 {
   return [self consume:consumer onQueue:nil untilTerminal:terminal error:error];
 }
@@ -399,7 +399,7 @@
   return [self consumableBufferForwardingToConsumer:nil onQueue:nil terminal:nil];
 }
 
-+ (id<NotifyingBuffer>)consumableBufferForwardingToConsumer:(id<FBDataConsumer>)consumer onQueue:(nullable dispatch_queue_t)queue terminal:(NSData *)terminal
++ (id<NotifyingBuffer>)consumableBufferForwardingToConsumer:(id<DataConsumer>)consumer onQueue:(nullable dispatch_queue_t)queue terminal:(NSData *)terminal
 {
   FBDataBuffer_Terminal_Forwarder *forwarder = nil;
   if (consumer) {

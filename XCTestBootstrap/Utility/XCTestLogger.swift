@@ -22,13 +22,13 @@ enum XCTestLoggerError: Error, LocalizedError {
   }
 }
 
-// @unchecked Sendable: all stored state is immutable and FBControlCoreLogger implementations are required to be thread-safe.
-public final class XCTestLogger: NSObject, FBControlCoreLogger, @unchecked Sendable {
+// @unchecked Sendable: all stored state is immutable and ControlCoreLogger implementations are required to be thread-safe.
+public final class XCTestLogger: NSObject, ControlCoreLogger, @unchecked Sendable {
 
-  private let baseLogger: FBControlCoreLogger
+  private let baseLogger: ControlCoreLogger
   public let logDirectory: String
 
-  private init(baseLogger: FBControlCoreLogger, logDirectory: String) {
+  private init(baseLogger: ControlCoreLogger, logDirectory: String) {
     self.baseLogger = baseLogger
     self.logDirectory = logDirectory
     super.init()
@@ -91,31 +91,31 @@ public final class XCTestLogger: NSObject, FBControlCoreLogger, @unchecked Senda
     return XCTestLogger(baseLogger: baseLogger, logDirectory: directory)
   }
 
-  // MARK: - FBControlCoreLogger
+  // MARK: - ControlCoreLogger
 
   @discardableResult
-  public func log(_ string: String) -> FBControlCoreLogger {
+  public func log(_ string: String) -> ControlCoreLogger {
     baseLogger.log(string)
     return self
   }
 
-  public func info() -> FBControlCoreLogger {
+  public func info() -> ControlCoreLogger {
     XCTestLogger(baseLogger: baseLogger.info(), logDirectory: logDirectory)
   }
 
-  public func debug() -> FBControlCoreLogger {
+  public func debug() -> ControlCoreLogger {
     XCTestLogger(baseLogger: baseLogger.debug(), logDirectory: logDirectory)
   }
 
-  public func error() -> FBControlCoreLogger {
+  public func error() -> ControlCoreLogger {
     XCTestLogger(baseLogger: baseLogger.error(), logDirectory: logDirectory)
   }
 
-  public func withName(_ prefix: String) -> FBControlCoreLogger {
+  public func withName(_ prefix: String) -> ControlCoreLogger {
     XCTestLogger(baseLogger: baseLogger.withName(prefix), logDirectory: logDirectory)
   }
 
-  public func withDateFormatEnabled(_ enabled: Bool) -> FBControlCoreLogger {
+  public func withDateFormatEnabled(_ enabled: Bool) -> ControlCoreLogger {
     XCTestLogger(baseLogger: baseLogger.withDateFormatEnabled(enabled), logDirectory: logDirectory)
   }
 
@@ -129,14 +129,14 @@ public final class XCTestLogger: NSObject, FBControlCoreLogger, @unchecked Senda
 
   // MARK: - Log Consumption
 
-  public func logConsumption(of consumer: FBDataConsumer, toFileNamed fileName: String, logger: FBControlCoreLogger) -> FBFuture<AnyObject> {
+  public func logConsumption(of consumer: DataConsumer, toFileNamed fileName: String, logger: ControlCoreLogger) -> FBFuture<AnyObject> {
     let queue = DispatchQueue.global(qos: .userInitiated)
     let filePath = (logDirectory as NSString).appendingPathComponent(fileName)
 
     return FileWriter.asyncWriter(forFilePath: filePath).onQueue(
       queue,
       fmap: { writer -> FBFuture<AnyObject> in
-        guard let writer = writer as? FBDataConsumer else {
+        guard let writer = writer as? DataConsumer else {
           return FBFuture(error: XCTestLoggerError.notADataConsumer(path: filePath, writer: String(describing: writer)))
         }
         logger.info().log("Mirroring output to \(filePath)")

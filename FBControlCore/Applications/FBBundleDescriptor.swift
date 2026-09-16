@@ -58,7 +58,7 @@ public struct FBBundleDescriptor: Hashable, Sendable, CustomStringConvertible {
     "Name: \(name) | ID: \(identifier)"
   }
 
-  public func updatePathsForRelocation(withCodesign codesign: CodesignProvider, logger: FBControlCoreLogger) async throws {
+  public func updatePathsForRelocation(withCodesign codesign: CodesignProvider, logger: ControlCoreLogger) async throws {
     let replacements = try replacementsForBinary()
     if !replacements.isEmpty {
       var arguments: [String] = []
@@ -109,7 +109,7 @@ public struct FBBundleDescriptor: Hashable, Sendable, CustomStringConvertible {
         continue
       }
       let oldXcodePath = (rpath as NSString).substring(with: result.range(at: 1))
-      replacements[rpath] = rpath.replacingOccurrences(of: oldXcodePath, with: FBXcodeConfiguration.developerDirectory)
+      replacements[rpath] = rpath.replacingOccurrences(of: oldXcodePath, with: XcodeConfiguration.developerDirectory)
     }
     return replacements
   }

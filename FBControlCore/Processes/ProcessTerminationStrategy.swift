@@ -70,7 +70,7 @@ public final class ProcessTerminationStrategy {
   private let configuration: ProcessTerminationStrategyConfiguration
   private let processFetcher: FBProcessFetcher
   private let workQueue: DispatchQueue
-  private let logger: FBControlCoreLogger
+  private let logger: ControlCoreLogger
 
   // MARK: - Initializers
 
@@ -78,7 +78,7 @@ public final class ProcessTerminationStrategy {
     withConfiguration configuration: ProcessTerminationStrategyConfiguration,
     processFetcher: FBProcessFetcher,
     workQueue: DispatchQueue,
-    logger: FBControlCoreLogger
+    logger: ControlCoreLogger
   ) -> Self {
     self.init(configuration: configuration, processFetcher: processFetcher, workQueue: workQueue, logger: logger)
   }
@@ -86,7 +86,7 @@ public final class ProcessTerminationStrategy {
   public class func strategy(
     withProcessFetcher processFetcher: FBProcessFetcher,
     workQueue: DispatchQueue,
-    logger: FBControlCoreLogger
+    logger: ControlCoreLogger
   ) -> Self {
     self.init(
       configuration: FBProcessTerminationStrategyConfigurationDefault,
@@ -100,7 +100,7 @@ public final class ProcessTerminationStrategy {
     configuration: ProcessTerminationStrategyConfiguration,
     processFetcher: FBProcessFetcher,
     workQueue: DispatchQueue,
-    logger: FBControlCoreLogger
+    logger: ControlCoreLogger
   ) {
     precondition(
       configuration.signo > 0 && configuration.signo < 32,

@@ -17,7 +17,7 @@ public final class FBAMRestorableDevice: FBiOSTargetInfo, DeviceProtocol {
   public var allValues: [String: Any]
   public let workQueue: DispatchQueue
   public let asyncQueue: DispatchQueue
-  public let logger: any FBControlCoreLogger
+  public let logger: any ControlCoreLogger
 
   /// Owns a +1 reference: retained on assignment, released on replacement and in `deinit`.
   private var restorableDeviceRef: Unmanaged<AnyObject>
@@ -39,7 +39,7 @@ public final class FBAMRestorableDevice: FBiOSTargetInfo, DeviceProtocol {
     allValues: [String: Any],
     work workQueue: DispatchQueue,
     asyncQueue: DispatchQueue,
-    logger: any FBControlCoreLogger
+    logger: any ControlCoreLogger
   ) {
     self.calls = calls
     self.restorableDeviceRef = Unmanaged.passRetained(restorableDevice as AnyObject)

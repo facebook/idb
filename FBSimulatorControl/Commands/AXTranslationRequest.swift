@@ -47,7 +47,7 @@ final class AXTranslationRequest {
   /// Owned from construction: the dispatcher records acquisition timings before the caller reaches
   /// `serialize`.
   var collector: AccessibilityProfilingCollector
-  var logger: FBControlCoreLogger?
+  var logger: ControlCoreLogger?
   var translator: AXPTranslator?
 
   /// Per-request timeout (seconds) applied to each synchronous CoreSimulator

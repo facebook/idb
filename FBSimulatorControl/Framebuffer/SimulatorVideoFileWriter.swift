@@ -69,7 +69,7 @@ final class SimulatorVideoFileWriter: EncodedSampleConsumer, TimedMetadataConsum
   private let outputURL: URL
   private let fileType: AVFileType
   private let chaptersEnabled: Bool
-  private let logger: any FBControlCoreLogger
+  private let logger: any ControlCoreLogger
 
   private var assetWriter: AVAssetWriter?
   private var input: AVAssetWriterInput?
@@ -84,7 +84,7 @@ final class SimulatorVideoFileWriter: EncodedSampleConsumer, TimedMetadataConsum
   private var firstPresentationTime: CMTime = .invalid
   private var lastPresentationTime: CMTime = .invalid
 
-  init(filePath: String, fileType: AVFileType = .mp4, chaptersEnabled: Bool = false, logger: any FBControlCoreLogger) {
+  init(filePath: String, fileType: AVFileType = .mp4, chaptersEnabled: Bool = false, logger: any ControlCoreLogger) {
     self.outputURL = URL(fileURLWithPath: filePath)
     self.fileType = fileType
     self.chaptersEnabled = chaptersEnabled
@@ -93,7 +93,7 @@ final class SimulatorVideoFileWriter: EncodedSampleConsumer, TimedMetadataConsum
 
   // MARK: - EncodedSampleConsumer
 
-  func consume(_ sampleBuffer: CMSampleBuffer, logger: any FBControlCoreLogger) -> Bool {
+  func consume(_ sampleBuffer: CMSampleBuffer, logger: any ControlCoreLogger) -> Bool {
     if failed {
       return false
     }
@@ -125,7 +125,7 @@ final class SimulatorVideoFileWriter: EncodedSampleConsumer, TimedMetadataConsum
   // MARK: - TimedMetadataConsumer
 
   /// Buffer a chapter marker at the current video position. Written to the chapter track in `finish`.
-  func writeTimedMetadata(_ text: String, logger: any FBControlCoreLogger) {
+  func writeTimedMetadata(_ text: String, logger: any ControlCoreLogger) {
     guard chaptersEnabled else {
       logger.log("writeTimedMetadata: chapters not enabled on this recording, dropping")
       return

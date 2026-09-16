@@ -12,6 +12,6 @@ public protocol DapServerCommand: AnyObject {
   func launch(
     _ dapPath: String,
     stdIn: FBProcessInput<AnyObject>,
-    stdOut: any FBDataConsumer
-  ) async throws -> FBSubprocess<AnyObject, FBDataConsumer, NSString>
+    stdOut: any DataConsumer
+  ) async throws -> FBSubprocess<AnyObject, DataConsumer, NSString>
 }

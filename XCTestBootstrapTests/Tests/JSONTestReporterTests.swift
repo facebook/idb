@@ -12,7 +12,7 @@ import XCTest
 final class JSONTestReporterTests: XCTestCase {
 
   private var mutableLines: NSMutableArray!
-  var consumer: FBDataConsumer!
+  var consumer: DataConsumer!
   var reporter: JSONTestReporter!
 
   var lines: [String] {

@@ -62,7 +62,7 @@ extension DeviceVideoStreamError: LocalizedError {
 // @unchecked Sendable: frame state is confined to `writeQueue` (the AVCapture delegate queue);
 // lifecycle state is guarded by `lifecycleLock`.
 public class DeviceVideoStream: NSObject, FBVideoStream, @unchecked Sendable {
-  let logger: any FBControlCoreLogger
+  let logger: any ControlCoreLogger
   private let session: AVCaptureSession
   private let output: AVCaptureVideoDataOutput
   let writeQueue: DispatchQueue
@@ -76,12 +76,12 @@ public class DeviceVideoStream: NSObject, FBVideoStream, @unchecked Sendable {
   private var startAwaiters: [CheckedContinuation<Void, Never>] = []
   private var stopAwaiters: [CheckedContinuation<Void, Never>] = []
 
-  var consumer: (any FBDataConsumer)?
+  var consumer: (any DataConsumer)?
   var pixelBufferAttributes_: [String: Any]?
 
   // MARK: - Factory
 
-  public class func stream(withSession session: AVCaptureSession, configuration: VideoStreamConfiguration, logger: any FBControlCoreLogger) throws -> DeviceVideoStream {
+  public class func stream(withSession session: AVCaptureSession, configuration: VideoStreamConfiguration, logger: any ControlCoreLogger) throws -> DeviceVideoStream {
     let format = configuration.format
     guard let streamType = classForConfiguration(configuration) else {
       throw DeviceVideoStreamError.invalidStreamFormat("\(format)")
@@ -130,7 +130,7 @@ public class DeviceVideoStream: NSObject, FBVideoStream, @unchecked Sendable {
     output.videoSettings = [:]
   }
 
-  required init(session: AVCaptureSession, output: AVCaptureVideoDataOutput, writeQueue: DispatchQueue, logger: any FBControlCoreLogger) {
+  required init(session: AVCaptureSession, output: AVCaptureVideoDataOutput, writeQueue: DispatchQueue, logger: any ControlCoreLogger) {
     self.session = session
     self.output = output
     self.writeQueue = writeQueue
@@ -140,7 +140,7 @@ public class DeviceVideoStream: NSObject, FBVideoStream, @unchecked Sendable {
 
   // MARK: - Public Methods
 
-  public func startStreaming(_ consumer: any FBDataConsumer) async throws {
+  public func startStreaming(_ consumer: any DataConsumer) async throws {
     if self.consumer != nil {
       throw DeviceVideoStreamError.consumerAlreadyAttached
     }
@@ -259,7 +259,7 @@ private class DeviceVideoStream_BGRA: DeviceVideoStream, @unchecked Sendable {
 
     if let baseAddress = CVPixelBufferGetBaseAddress(pixelBuffer) {
       let size = CVPixelBufferGetDataSize(pixelBuffer)
-      if consumer.conforms(to: FBDataConsumerSync.self) {
+      if consumer.conforms(to: DataConsumerSync.self) {
         let data = Data(bytesNoCopy: baseAddress, count: size, deallocator: .none)
         consumer.consumeData(data)
       } else {

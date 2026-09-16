@@ -50,7 +50,7 @@ public protocol DeviceProtocol: AnyObject {
   var recoveryModeDeviceRef: AMRecoveryModeDevice? { get }
 
   /// The Device's Logger.
-  var logger: any FBControlCoreLogger { get }
+  var logger: any ControlCoreLogger { get }
 
   /// The Device's 'Product Version'.
   var productVersion: String? { get }

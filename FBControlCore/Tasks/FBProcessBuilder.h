@@ -10,8 +10,8 @@
 #import <FBControlCore/FBSubprocess.h>
 
 @protocol AccumulatingBuffer;
-@protocol FBControlCoreLogger;
-@protocol FBDataConsumer;
+@protocol ControlCoreLogger;
+@protocol DataConsumer;
 
 @class FBFuture;
 @class FBProcessInput;
@@ -95,7 +95,7 @@
 
  @return the receiver, for chaining.
  */
-- (nonnull FBProcessBuilder<id<FBDataConsumer>, StdOutType, StdErrType> *)withStdInConnected;
+- (nonnull FBProcessBuilder<id<DataConsumer>, StdOutType, StdErrType> *)withStdInConnected;
 
 /**
  Creates a Data Consumer for stdin.
@@ -149,7 +149,7 @@
  @param consumer the consumer to consume the data.
  @return the receiver, for chaining.
  */
-- (nonnull FBProcessBuilder<StdInType, id<FBDataConsumer>, StdErrType> *)withStdOutConsumer:(nonnull id<FBDataConsumer>)consumer;
+- (nonnull FBProcessBuilder<StdInType, id<DataConsumer>, StdErrType> *)withStdOutConsumer:(nonnull id<DataConsumer>)consumer;
 
 /**
  Redirects stdout to the reader block, on a per line basis.
@@ -157,7 +157,7 @@
  @param reader the block to use for reading lines
  @return the receiver, for chaining.
  */
-- (nonnull FBProcessBuilder<StdInType, id<FBDataConsumer>, StdErrType> *)withStdOutLineReader:(nonnull void (^)(NSString * _Nonnull))reader;
+- (nonnull FBProcessBuilder<StdInType, id<DataConsumer>, StdErrType> *)withStdOutLineReader:(nonnull void (^)(NSString * _Nonnull))reader;
 
 /**
  Redirects stdout to the provided logger, on a per line basis.
@@ -165,7 +165,7 @@
  @param logger the logger to use for logging lines.
  @return the receiver, for chaining.
  */
-- (nonnull FBProcessBuilder<StdInType, id<FBControlCoreLogger>, StdErrType> *)withStdOutToLogger:(nonnull id<FBControlCoreLogger>)logger;
+- (nonnull FBProcessBuilder<StdInType, id<ControlCoreLogger>, StdErrType> *)withStdOutToLogger:(nonnull id<ControlCoreLogger>)logger;
 
 /**
  Redirects stdout to the provided logger and prints the output in any error message that occurs.
@@ -173,7 +173,7 @@
  @param logger the logger to use for logging lines.
  @return the receiver, for chaining.
  */
-- (nonnull FBProcessBuilder<StdInType, id<AccumulatingBuffer>, StdErrType> *)withStdOutToLoggerAndErrorMessage:(nonnull id<FBControlCoreLogger>)logger;
+- (nonnull FBProcessBuilder<StdInType, id<AccumulatingBuffer>, StdErrType> *)withStdOutToLoggerAndErrorMessage:(nonnull id<ControlCoreLogger>)logger;
 
 #pragma mark stderr
 
@@ -212,7 +212,7 @@
  @param consumer the consumer to consume the data.
  @return the receiver, for chaining.
  */
-- (nonnull FBProcessBuilder<StdInType, StdOutType, id<FBDataConsumer>> *)withStdErrConsumer:(nonnull id<FBDataConsumer>)consumer;
+- (nonnull FBProcessBuilder<StdInType, StdOutType, id<DataConsumer>> *)withStdErrConsumer:(nonnull id<DataConsumer>)consumer;
 
 /**
  Redirects stderr to the reader block, on a per line basis.
@@ -220,7 +220,7 @@
  @param reader the block to use for reading lines
  @return the receiver, for chaining.
  */
-- (nonnull FBProcessBuilder<StdInType, StdOutType, id<FBDataConsumer>> *)withStdErrLineReader:(nonnull void (^)(NSString * _Nonnull))reader;
+- (nonnull FBProcessBuilder<StdInType, StdOutType, id<DataConsumer>> *)withStdErrLineReader:(nonnull void (^)(NSString * _Nonnull))reader;
 
 /**
  Redirects stderr to the provided logger, on a per line basis.
@@ -228,7 +228,7 @@
  @param logger the logger to use for logging lines.
  @return the receiver, for chaining.
  */
-- (nonnull FBProcessBuilder<StdInType, StdOutType, id<FBControlCoreLogger>> *)withStdErrToLogger:(nonnull id<FBControlCoreLogger>)logger;
+- (nonnull FBProcessBuilder<StdInType, StdOutType, id<ControlCoreLogger>> *)withStdErrToLogger:(nonnull id<ControlCoreLogger>)logger;
 
 /**
  Redirects stderr to the provided logger and prints the output in any error message that occurs.
@@ -236,7 +236,7 @@
  @param logger the logger to use for logging lines.
  @return the receiver, for chaining.
  */
-- (nonnull FBProcessBuilder<StdInType, StdOutType, id<AccumulatingBuffer>> *)withStdErrToLoggerAndErrorMessage:(nonnull id<FBControlCoreLogger>)logger;
+- (nonnull FBProcessBuilder<StdInType, StdOutType, id<AccumulatingBuffer>> *)withStdErrToLoggerAndErrorMessage:(nonnull id<ControlCoreLogger>)logger;
 
 #pragma mark Logging
 
@@ -246,7 +246,7 @@
  @param logger the logger to log to.
  @return the receiver for chaining.
  */
-- (nonnull instancetype)withTaskLifecycleLoggingTo:(nullable id<FBControlCoreLogger>)logger;
+- (nonnull instancetype)withTaskLifecycleLoggingTo:(nullable id<ControlCoreLogger>)logger;
 
 #pragma mark Building
 

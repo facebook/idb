@@ -9,10 +9,10 @@
 
 #import <FBControlCore/FBFuture.h>
 
-// Protocols defined in Swift (FBDataConsumer.swift)
-@protocol FBDataConsumer;
+// Protocols defined in Swift (DataConsumer.swift)
+@protocol DataConsumer;
 @protocol DispatchDataConsumer;
-@protocol FBDataConsumerSync;
+@protocol DataConsumerSync;
 @protocol DataConsumerAsync;
 @protocol DataConsumerLifecycle;
 
@@ -27,7 +27,7 @@
  @param consumer the consumer to adapt.
  @return a dispatch_data consumer.
  */
-+ (nonnull id<DispatchDataConsumer>)dispatchDataConsumerForDataConsumer:(nonnull id<FBDataConsumer>)consumer;
++ (nonnull id<DispatchDataConsumer>)dispatchDataConsumerForDataConsumer:(nonnull id<DataConsumer>)consumer;
 
 /**
  Adapts a dispatch_data consumer to an NSData consumer.
@@ -35,7 +35,7 @@
  @param consumer the consumer to adapt.
  @return a NSData consumer.
  */
-+ (nonnull id<FBDataConsumer, DataConsumerLifecycle>)dataConsumerForDispatchDataConsumer:(nonnull id<DispatchDataConsumer, DataConsumerLifecycle>)consumer;
++ (nonnull id<DataConsumer, DataConsumerLifecycle>)dataConsumerForDispatchDataConsumer:(nonnull id<DispatchDataConsumer, DataConsumerLifecycle>)consumer;
 
 /**
  Converts dispatch_data to NSData, copying only when the dispatch_data is non-contiguous.
@@ -59,7 +59,7 @@
  @param consumer the block to call when new data is available
  @return a new consumer.
  */
-+ (nonnull id<FBDataConsumer, DataConsumerLifecycle, FBDataConsumerSync>)synchronousDataConsumerWithBlock:(void (^_Nonnull)(NSData * _Nonnull))consumer;
++ (nonnull id<DataConsumer, DataConsumerLifecycle, DataConsumerSync>)synchronousDataConsumerWithBlock:(void (^_Nonnull)(NSData * _Nonnull))consumer;
 
 /**
  Creates a Consumer of lines from a block.
@@ -68,7 +68,7 @@
  @param consumer the block to call when a line has been consumed.
  @return a new consumer.
  */
-+ (nonnull id<FBDataConsumer, DataConsumerLifecycle, FBDataConsumerSync>)synchronousLineConsumerWithBlock:(void (^_Nonnull)(NSString * _Nonnull))consumer;
++ (nonnull id<DataConsumer, DataConsumerLifecycle, DataConsumerSync>)synchronousLineConsumerWithBlock:(void (^_Nonnull)(NSString * _Nonnull))consumer;
 
 /**
  Creates a consumer that delivers data when available.
@@ -78,7 +78,7 @@
  @param consumer the block to call when new data is available
  @return a new consumer.
  */
-+ (nonnull id<FBDataConsumer, DataConsumerLifecycle, DataConsumerAsync>)asynchronousDataConsumerOnQueue:(nonnull dispatch_queue_t)queue consumer:(void (^_Nonnull)(NSData * _Nonnull))consumer;
++ (nonnull id<DataConsumer, DataConsumerLifecycle, DataConsumerAsync>)asynchronousDataConsumerOnQueue:(nonnull dispatch_queue_t)queue consumer:(void (^_Nonnull)(NSData * _Nonnull))consumer;
 
 /**
  Creates a consumer that delivers data when available.
@@ -87,7 +87,7 @@
  @param consumer the block to call when new data is available
  @return a new consumer.
  */
-+ (nonnull id<FBDataConsumer, DataConsumerLifecycle, DataConsumerAsync>)asynchronousDataConsumerWithBlock:(void (^_Nonnull)(NSData * _Nonnull))consumer;
++ (nonnull id<DataConsumer, DataConsumerLifecycle, DataConsumerAsync>)asynchronousDataConsumerWithBlock:(void (^_Nonnull)(NSData * _Nonnull))consumer;
 
 /**
  Creates a Consumer of lines from a block.
@@ -96,7 +96,7 @@
  @param consumer the block to call when a line has been consumed.
  @return a new consumer.
  */
-+ (nonnull id<FBDataConsumer, DataConsumerLifecycle>)asynchronousLineConsumerWithBlock:(void (^_Nonnull)(NSString * _Nonnull))consumer;
++ (nonnull id<DataConsumer, DataConsumerLifecycle>)asynchronousLineConsumerWithBlock:(void (^_Nonnull)(NSString * _Nonnull))consumer;
 
 /**
  Creates a Consumer of lines from a block.
@@ -106,7 +106,7 @@
  @param consumer the block to call when a line has been consumed.
  @return a new consumer.
  */
-+ (nonnull id<FBDataConsumer, DataConsumerLifecycle>)asynchronousLineConsumerWithQueue:(nonnull dispatch_queue_t)queue consumer:(void (^_Nonnull)(NSString * _Nonnull))consumer;
++ (nonnull id<DataConsumer, DataConsumerLifecycle>)asynchronousLineConsumerWithQueue:(nonnull dispatch_queue_t)queue consumer:(void (^_Nonnull)(NSString * _Nonnull))consumer;
 
 /**
  Creates a Consumer of lines from a block.
@@ -116,11 +116,11 @@
  @param consumer the block to call when a line has been consumed.
  @return a new consumer.
  */
-+ (nonnull id<FBDataConsumer, DataConsumerLifecycle>)asynchronousLineConsumerWithQueue:(nonnull dispatch_queue_t)queue dataConsumer:(void (^_Nonnull)(NSData * _Nonnull))consumer;
++ (nonnull id<DataConsumer, DataConsumerLifecycle>)asynchronousLineConsumerWithQueue:(nonnull dispatch_queue_t)queue dataConsumer:(void (^_Nonnull)(NSData * _Nonnull))consumer;
 
 @end
 
-@protocol FBControlCoreLogger;
+@protocol ControlCoreLogger;
 
 /**
  A consumer that logs received data to a logger.
@@ -130,12 +130,12 @@
 /**
  A consumer that logs each received chunk, trimmed of newlines, to `logger`.
  */
-+ (nonnull instancetype)consumerWithLogger:(nonnull id<FBControlCoreLogger>)logger;
++ (nonnull instancetype)consumerWithLogger:(nonnull id<ControlCoreLogger>)logger;
 
 /**
  The wrapped logger.
  */
-@property (nonnull, nonatomic, readonly, strong) id<FBControlCoreLogger> logger;
+@property (nonnull, nonatomic, readonly, strong) id<ControlCoreLogger> logger;
 
 - (void)consumeData:(nonnull NSData *)data;
 - (void)consumeEndOfFile;
@@ -153,7 +153,7 @@
  @param consumers the consumers to compose.
  @return a new consumer.
  */
-+ (nonnull instancetype)consumerWithConsumers:(nonnull NSArray<id<FBDataConsumer>> *)consumers;
++ (nonnull instancetype)consumerWithConsumers:(nonnull NSArray<id<DataConsumer>> *)consumers;
 
 - (void)consumeData:(nonnull NSData *)data;
 - (void)consumeEndOfFile;

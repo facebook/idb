@@ -15,10 +15,10 @@ public let FBControlCoreDebugLogging = "FBCONTROLCORE_DEBUG_LOGGING"
 private let ConfirmShimsAreSignedEnv = "FBCONTROLCORE_CONFIRM_SIGNED_SHIMS"
 
 @objc
-public final class FBControlCoreGlobalConfiguration: NSObject {
+public final class ControlCoreGlobalConfiguration: NSObject {
 
   // Guarded by _loggerLock.
-  nonisolated(unsafe) private static var _logger: (any FBControlCoreLogger)?
+  nonisolated(unsafe) private static var _logger: (any ControlCoreLogger)?
   private static let _loggerLock = NSLock()
 
   // MARK: - Timeouts
@@ -35,7 +35,7 @@ public final class FBControlCoreGlobalConfiguration: NSObject {
   /// in a process without a terminal nothing reaches stderr and diagnostics are only visible via
   /// `log stream --predicate 'subsystem == "com.facebook.fbcontrolcore"'`.
   /// `FBCONTROLCORE_LOGGING` mirrors output to stderr; `FBCONTROLCORE_DEBUG_LOGGING` raises the level to debug.
-  @objc public class var defaultLogger: any FBControlCoreLogger {
+  @objc public class var defaultLogger: any ControlCoreLogger {
     get {
       _loggerLock.lock()
       defer { _loggerLock.unlock() }
@@ -75,7 +75,7 @@ public final class FBControlCoreGlobalConfiguration: NSObject {
     Self.description()
   }
 
-  private class func createDefaultLogger() -> any FBControlCoreLogger {
+  private class func createDefaultLogger() -> any ControlCoreLogger {
     FBControlCoreLoggerFactory.systemLoggerWriting(toStderr: stderrLoggingEnabledByDefault, withDebugLogging: debugLoggingEnabledByDefault)
   }
 

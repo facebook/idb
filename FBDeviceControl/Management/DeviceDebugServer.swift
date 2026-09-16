@@ -13,14 +13,14 @@ private let connectionReadSizeLimit: size_t = 1024
 private class DeviceDebugServer_TwistedPairFiles {
   let socket: Int32
   let connection: FBAMDServiceConnection
-  let logger: any FBControlCoreLogger
+  let logger: any ControlCoreLogger
   let socketToConnectionQueue: DispatchQueue
   let connectionToSocketQueue: DispatchQueue
 
   init(
     socket: Int32,
     connection: FBAMDServiceConnection,
-    logger: any FBControlCoreLogger
+    logger: any ControlCoreLogger
   ) {
     self.socket = socket
     self.connection = connection
@@ -104,7 +104,7 @@ public final class DeviceDebugServer: NSObject, SocketServerDelegate, DebugServe
   private let serviceConnection: FBAMDServiceConnection
   private lazy var tcpServer: FBSocketServer = FBSocketServer(onPort: self.port, delegate: self)
   private let port: in_port_t
-  private let logger: any FBControlCoreLogger
+  private let logger: any ControlCoreLogger
   private let teardown: FBMutableFuture<NSNull>
   private var twistedPair: DeviceDebugServer_TwistedPairFiles?
 
@@ -125,7 +125,7 @@ public final class DeviceDebugServer: NSObject, SocketServerDelegate, DebugServe
     port: in_port_t,
     lldbBootstrapCommands: [String],
     queue: DispatchQueue,
-    logger: any FBControlCoreLogger
+    logger: any ControlCoreLogger
   ) async throws -> DeviceDebugServer {
     let server = DeviceDebugServer(
       serviceConnection: serviceConnection,
@@ -148,7 +148,7 @@ public final class DeviceDebugServer: NSObject, SocketServerDelegate, DebugServe
     port: in_port_t,
     lldbBootstrapCommands: [String],
     queue: DispatchQueue,
-    logger: any FBControlCoreLogger
+    logger: any ControlCoreLogger
   ) {
     self.serviceConnection = serviceConnection
     self.port = port
@@ -233,7 +233,7 @@ public final class DeviceDebugServer: NSObject, SocketServerDelegate, DebugServe
   private static func stop(
     tcpServer: FBSocketServer,
     connection: FBAMDServiceConnection,
-    logger: any FBControlCoreLogger
+    logger: any ControlCoreLogger
   ) {
     tcpServer.stopListening()
     FBAMDevice.invalidateServiceConnection(connection, service: connection.name, logger: logger)

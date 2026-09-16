@@ -23,7 +23,7 @@ struct AMRestorableDeviceTests {
       allValues: allValues,
       work: DispatchQueue(label: "com.facebook.fbdevicecontrol.tests.work"),
       asyncQueue: DispatchQueue(label: "com.facebook.fbdevicecontrol.tests.async"),
-      logger: FBControlCoreGlobalConfiguration.defaultLogger)
+      logger: ControlCoreGlobalConfiguration.defaultLogger)
   }
 
   @Test

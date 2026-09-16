@@ -26,8 +26,8 @@ enum JSONTestReporterError: Error, LocalizedError {
 
 final class JSONTestReporter: NSObject, XCTestReporter {
 
-  private let dataConsumer: FBDataConsumer
-  private let logger: FBControlCoreLogger?
+  private let dataConsumer: DataConsumer
+  private let logger: ControlCoreLogger?
   private let testBundlePath: String
   private let testType: String
   private var events: [[String: Any]] = []
@@ -39,7 +39,7 @@ final class JSONTestReporter: NSObject, XCTestReporter {
   private var started: Bool = false
   private var finished: Bool = false
 
-  public init(testBundlePath: String, testType: String, logger: FBControlCoreLogger?, dataConsumer: FBDataConsumer) {
+  public init(testBundlePath: String, testType: String, logger: ControlCoreLogger?, dataConsumer: DataConsumer) {
     self.dataConsumer = dataConsumer
     self.logger = logger
     self.testBundlePath = testBundlePath

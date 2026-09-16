@@ -16,7 +16,7 @@ import Testing
 /// this is what distinguishes "the command parsed and dispatched" from "the line was rejected".
 ///
 /// `@unchecked Sendable` is sound because every access to `recorded` is behind `lock`.
-private final class RecordingLogger: NSObject, FBControlCoreLogger, @unchecked Sendable {
+private final class RecordingLogger: NSObject, ControlCoreLogger, @unchecked Sendable {
   /// The prefix of the decode-failure diagnostic. `DecodingError`'s own wording is interpolated
   /// after it and is not part of the wire protocol, so assertions elide it.
   static let decodeFailure = "Failed to decode stdin command:"
@@ -39,18 +39,18 @@ private final class RecordingLogger: NSObject, FBControlCoreLogger, @unchecked S
   }
 
   @discardableResult
-  func log(_ message: String) -> any FBControlCoreLogger {
+  func log(_ message: String) -> any ControlCoreLogger {
     lock.lock()
     defer { lock.unlock() }
     recorded.append(message)
     return self
   }
 
-  func info() -> any FBControlCoreLogger { self }
-  func debug() -> any FBControlCoreLogger { self }
-  func error() -> any FBControlCoreLogger { self }
-  func withName(_ name: String) -> any FBControlCoreLogger { self }
-  func withDateFormatEnabled(_ enabled: Bool) -> any FBControlCoreLogger { self }
+  func info() -> any ControlCoreLogger { self }
+  func debug() -> any ControlCoreLogger { self }
+  func error() -> any ControlCoreLogger { self }
+  func withName(_ name: String) -> any ControlCoreLogger { self }
+  func withDateFormatEnabled(_ enabled: Bool) -> any ControlCoreLogger { self }
 }
 
 /// Characterizes the stdin JSON wire protocol as `handleLine` implements it: which lines decode,

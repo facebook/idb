@@ -29,7 +29,7 @@ public final class FBDeviceControlFrameworkLoader: FBControlCoreFrameworkLoader 
     super.init(name: "FBDeviceControl", frameworks: [WeakFramework.mobileDevice])
   }
 
-  public override func loadPrivateFrameworks(_ logger: (any FBControlCoreLogger)?) throws {
+  public override func loadPrivateFrameworks(_ logger: (any ControlCoreLogger)?) throws {
     if hasLoadedFrameworks {
       return
     }

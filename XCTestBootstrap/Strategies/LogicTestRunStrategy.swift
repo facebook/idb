@@ -11,13 +11,13 @@ import Foundation
 private let EndOfFileFromStopReadingTimeout: TimeInterval = 5
 
 private final class LogicTestRunOutputs {
-  let stdOutConsumer: FBDataConsumer & DataConsumerLifecycle
-  let stdErrConsumer: FBDataConsumer & DataConsumerLifecycle
+  let stdOutConsumer: DataConsumer & DataConsumerLifecycle
+  let stdErrConsumer: DataConsumer & DataConsumerLifecycle
   let stdErrBuffer: ConsumableBuffer
-  let shimConsumer: FBDataConsumer & DataConsumerLifecycle
+  let shimConsumer: DataConsumer & DataConsumerLifecycle
   let shimOutput: ProcessFileOutput
 
-  init(stdOutConsumer: FBDataConsumer & DataConsumerLifecycle, stdErrConsumer: FBDataConsumer & DataConsumerLifecycle, stdErrBuffer: ConsumableBuffer, shimConsumer: FBDataConsumer & DataConsumerLifecycle, shimOutput: ProcessFileOutput) {
+  init(stdOutConsumer: DataConsumer & DataConsumerLifecycle, stdErrConsumer: DataConsumer & DataConsumerLifecycle, stdErrBuffer: ConsumableBuffer, shimConsumer: DataConsumer & DataConsumerLifecycle, shimOutput: ProcessFileOutput) {
     self.stdOutConsumer = stdOutConsumer
     self.stdErrConsumer = stdErrConsumer
     self.stdErrBuffer = stdErrBuffer
@@ -62,9 +62,9 @@ public final class LogicTestRunStrategy: XCTestRunner {
   private let target: any LogicTestTarget
   private let configuration: LogicTestConfiguration
   private let reporter: LogicXCTestReporter
-  private let logger: FBControlCoreLogger
+  private let logger: ControlCoreLogger
 
-  public init(target: any LogicTestTarget, configuration: LogicTestConfiguration, reporter: LogicXCTestReporter, logger: FBControlCoreLogger) {
+  public init(target: any LogicTestTarget, configuration: LogicTestConfiguration, reporter: LogicXCTestReporter, logger: ControlCoreLogger) {
     self.target = target
     self.configuration = configuration
     self.reporter = reporter
@@ -121,7 +121,7 @@ public final class LogicTestRunStrategy: XCTestRunner {
     // until the future chain resolves, exactly as the popped context did.
     return
       fbFutureFromAsync {
-        try await FBTemporaryDirectory(logger: self.logger).withTemporaryDirectory { temporaryDirectoryURL in
+        try await TemporaryDirectory(logger: self.logger).withTemporaryDirectory { temporaryDirectoryURL in
           let libraries = try await OToolDynamicLibs.findFullPath(forSanitiserDyldInBundle: self.configuration.testBundlePath)
           let environment = LogicTestRunStrategy.setupEnvironment(withDylibs: self.configuration.processUnderTestEnvironment, withLibraries: libraries, injectLibraries: self.configuration.injectLibraries, shimOutputFilePath: outputs.shimOutput.filePath, shimPath: shimPath, bundlePath: self.configuration.testBundlePath, coverageConfiguration: self.configuration.coverageConfiguration, logDirectoryPath: self.configuration.logDirectoryPath, waitForDebugger: self.configuration.waitForDebugger, target: self.target)
           return try await bridgeFBFuture(
@@ -280,9 +280,9 @@ public final class LogicTestRunStrategy: XCTestRunner {
     let mirrorToLogger = (configuration.mirroring.rawValue & LogicTestMirrorLogs.logger.rawValue) != 0
     let mirrorToFiles = (configuration.mirroring.rawValue & LogicTestMirrorLogs.fileLogs.rawValue) != 0
 
-    var shimConsumers: [FBDataConsumer] = []
-    var stdOutConsumers: [FBDataConsumer] = []
-    var stdErrConsumers: [FBDataConsumer] = []
+    var shimConsumers: [DataConsumer] = []
+    var stdOutConsumers: [DataConsumer] = []
+    var stdErrConsumers: [DataConsumer] = []
 
     let shimReportingConsumer = FBBlockDataConsumer.asynchronousLineConsumer(
       with: queue,
@@ -341,9 +341,9 @@ public final class LogicTestRunStrategy: XCTestRunner {
         fmap: { outputsObj -> FBFuture<AnyObject> in
           let outputsArray = outputsObj as [AnyObject]
           guard outputsArray.count == 3,
-            let resolvedStdOut = outputsArray[0] as? FBDataConsumer & DataConsumerLifecycle,
-            let resolvedStdErr = outputsArray[1] as? FBDataConsumer & DataConsumerLifecycle,
-            let resolvedShim = outputsArray[2] as? FBDataConsumer & DataConsumerLifecycle
+            let resolvedStdOut = outputsArray[0] as? DataConsumer & DataConsumerLifecycle,
+            let resolvedStdErr = outputsArray[1] as? DataConsumer & DataConsumerLifecycle,
+            let resolvedShim = outputsArray[2] as? DataConsumer & DataConsumerLifecycle
           else {
             return FBFuture(error: LogicTestRunError.missingOutputConsumers(result: String(describing: outputsArray)))
           }

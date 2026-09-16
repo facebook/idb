@@ -59,7 +59,7 @@ private func unwrapValue(_ wrapped: NSDictionary) -> Any? {
   wrapped["_value"]
 }
 
-private func accessAndUnwrapValues(_ dict: NSDictionary, _ key: String, _ logger: FBControlCoreLogger) -> NSArray? {
+private func accessAndUnwrapValues(_ dict: NSDictionary, _ key: String, _ logger: ControlCoreLogger) -> NSArray? {
   guard let wrapped = dict[key] as? NSDictionary else {
     logger.log("\(key) does not exist inside \(CollectionInformation.oneLineDescription(from: dict.allKeys))")
     return nil
@@ -71,7 +71,7 @@ private func accessAndUnwrapValues(_ dict: NSDictionary, _ key: String, _ logger
   return unwrapped
 }
 
-private func accessAndUnwrapValue(_ dict: NSDictionary, _ key: String, _ logger: FBControlCoreLogger) -> Any? {
+private func accessAndUnwrapValue(_ dict: NSDictionary, _ key: String, _ logger: ControlCoreLogger) -> Any? {
   guard let wrapped = dict[key] as? NSDictionary else {
     logger.log("\(key) does not exist inside \(CollectionInformation.oneLineDescription(from: dict.allKeys))")
     return nil
@@ -113,7 +113,7 @@ final class XCTestResultBundleParser {
 
   // MARK: - Public
 
-  public static func parse(_ resultBundlePath: String, target: any FBiOSTarget, reporter: XCTestReporter, logger: FBControlCoreLogger, extractScreenshots: Bool) -> FBFuture<NSNull> {
+  public static func parse(_ resultBundlePath: String, target: any FBiOSTarget, reporter: XCTestReporter, logger: ControlCoreLogger, extractScreenshots: Bool) -> FBFuture<NSNull> {
     logger.log("Parsing the result bundle \(resultBundlePath)")
 
     let testSummariesPath = (resultBundlePath as NSString).appendingPathComponent("TestSummaries.plist")
@@ -312,7 +312,7 @@ final class XCTestResultBundleParser {
 
   // MARK: - Private: Xcode 11+ XCTest Result Parsing
 
-  private static func parseActions(_ actions: NSDictionary, logger: FBControlCoreLogger) -> [String] {
+  private static func parseActions(_ actions: NSDictionary, logger: ControlCoreLogger) -> [String] {
     guard let actionValues = unwrapValues(actions) as? [NSDictionary] else {
       preconditionFailure("action values is nil")
     }
@@ -323,41 +323,41 @@ final class XCTestResultBundleParser {
     return ids
   }
 
-  private static func parseAction(_ action: NSDictionary, logger: FBControlCoreLogger) -> String {
+  private static func parseAction(_ action: NSDictionary, logger: ControlCoreLogger) -> String {
     parseActionResult(readDictionaryFromDict(action, "actionResult"), logger: logger)
   }
 
-  private static func parseActionResult(_ actionResult: NSDictionary, logger: FBControlCoreLogger) -> String {
+  private static func parseActionResult(_ actionResult: NSDictionary, logger: ControlCoreLogger) -> String {
     parseTestsRef(readDictionaryFromDict(actionResult, "testsRef"), logger: logger)
   }
 
-  private static func parseTestsRef(_ testsRef: NSDictionary, logger: FBControlCoreLogger) -> String {
+  private static func parseTestsRef(_ testsRef: NSDictionary, logger: ControlCoreLogger) -> String {
     guard let id = accessAndUnwrapValue(testsRef, "id", logger) as? String else {
       preconditionFailure("testsRef id is not a String")
     }
     return id
   }
 
-  private static func reportSummaries(_ summaries: NSArray?, reporter: XCTestReporter, queue: DispatchQueue, resultBundlePath: String, logger: FBControlCoreLogger, extractScreenshots: Bool) {
+  private static func reportSummaries(_ summaries: NSArray?, reporter: XCTestReporter, queue: DispatchQueue, resultBundlePath: String, logger: ControlCoreLogger, extractScreenshots: Bool) {
     guard let summaries = summaries as? [NSDictionary] else { return }
     for summary in summaries {
       reportResults(summary, reporter: reporter, queue: queue, resultBundlePath: resultBundlePath, logger: logger, extractScreenshots: extractScreenshots)
     }
   }
 
-  private static func reportResults(_ results: NSDictionary, reporter: XCTestReporter, queue: DispatchQueue, resultBundlePath: String, logger: FBControlCoreLogger, extractScreenshots: Bool) {
+  private static func reportResults(_ results: NSDictionary, reporter: XCTestReporter, queue: DispatchQueue, resultBundlePath: String, logger: ControlCoreLogger, extractScreenshots: Bool) {
     let testTargets = accessAndUnwrapValues(results, "testableSummaries", logger)
     reportTargetTests(testTargets, reporter: reporter, queue: queue, resultBundlePath: resultBundlePath, logger: logger, extractScreenshots: extractScreenshots)
   }
 
-  private static func reportTargetTests(_ targetTests: NSArray?, reporter: XCTestReporter, queue: DispatchQueue, resultBundlePath: String, logger: FBControlCoreLogger, extractScreenshots: Bool) {
+  private static func reportTargetTests(_ targetTests: NSArray?, reporter: XCTestReporter, queue: DispatchQueue, resultBundlePath: String, logger: ControlCoreLogger, extractScreenshots: Bool) {
     guard let targetTests = targetTests as? [NSDictionary] else { return }
     for targetTest in targetTests {
       reportTargetTest(targetTest, reporter: reporter, queue: queue, resultBundlePath: resultBundlePath, logger: logger, extractScreenshots: extractScreenshots)
     }
   }
 
-  private static func reportTargetTest(_ targetTest: NSDictionary, reporter: XCTestReporter, queue: DispatchQueue, resultBundlePath: String, logger: FBControlCoreLogger, extractScreenshots: Bool) {
+  private static func reportTargetTest(_ targetTest: NSDictionary, reporter: XCTestReporter, queue: DispatchQueue, resultBundlePath: String, logger: ControlCoreLogger, extractScreenshots: Bool) {
     let testBundleName = accessAndUnwrapValue(targetTest, "targetName", logger) as? String ?? ""
     let selectedTests = accessAndUnwrapValues(targetTest, "tests", logger)
     if selectedTests != nil {
@@ -373,14 +373,14 @@ final class XCTestResultBundleParser {
     }
   }
 
-  private static func reportSelectedTests(_ selectedTests: NSArray?, testBundleName: String, reporter: XCTestReporter, queue: DispatchQueue, resultBundlePath: String, logger: FBControlCoreLogger, extractScreenshots: Bool) {
+  private static func reportSelectedTests(_ selectedTests: NSArray?, testBundleName: String, reporter: XCTestReporter, queue: DispatchQueue, resultBundlePath: String, logger: ControlCoreLogger, extractScreenshots: Bool) {
     guard let selectedTests = selectedTests as? [NSDictionary] else { return }
     for selectedTest in selectedTests {
       reportSelectedTest(selectedTest, testBundleName: testBundleName, reporter: reporter, queue: queue, resultBundlePath: resultBundlePath, logger: logger, extractScreenshots: extractScreenshots)
     }
   }
 
-  private static func reportSelectedTest(_ selectedTest: NSDictionary, testBundleName: String, reporter: XCTestReporter, queue: DispatchQueue, resultBundlePath: String, logger: FBControlCoreLogger, extractScreenshots: Bool) {
+  private static func reportSelectedTest(_ selectedTest: NSDictionary, testBundleName: String, reporter: XCTestReporter, queue: DispatchQueue, resultBundlePath: String, logger: ControlCoreLogger, extractScreenshots: Bool) {
     let testTargetXctests = accessAndUnwrapValues(selectedTest, "subtests", logger)
     if testTargetXctests != nil {
       reportTestTargetXctests(testTargetXctests, testBundleName: testBundleName, reporter: reporter, queue: queue, resultBundlePath: resultBundlePath, logger: logger, extractScreenshots: extractScreenshots)
@@ -394,14 +394,14 @@ final class XCTestResultBundleParser {
     }
   }
 
-  private static func reportTestTargetXctests(_ testTargetXctests: NSArray?, testBundleName: String, reporter: XCTestReporter, queue: DispatchQueue, resultBundlePath: String, logger: FBControlCoreLogger, extractScreenshots: Bool) {
+  private static func reportTestTargetXctests(_ testTargetXctests: NSArray?, testBundleName: String, reporter: XCTestReporter, queue: DispatchQueue, resultBundlePath: String, logger: ControlCoreLogger, extractScreenshots: Bool) {
     guard let testTargetXctests = testTargetXctests as? [NSDictionary] else { return }
     for testTargetXctest in testTargetXctests {
       reportTestTargetXctest(testTargetXctest, testBundleName: testBundleName, reporter: reporter, queue: queue, resultBundlePath: resultBundlePath, logger: logger, extractScreenshots: extractScreenshots)
     }
   }
 
-  private static func reportTestTargetXctest(_ testTargetXctest: NSDictionary, testBundleName: String, reporter: XCTestReporter, queue: DispatchQueue, resultBundlePath: String, logger: FBControlCoreLogger, extractScreenshots: Bool) {
+  private static func reportTestTargetXctest(_ testTargetXctest: NSDictionary, testBundleName: String, reporter: XCTestReporter, queue: DispatchQueue, resultBundlePath: String, logger: ControlCoreLogger, extractScreenshots: Bool) {
     let testClasses = accessAndUnwrapValues(testTargetXctest, "subtests", logger)
     if testClasses != nil {
       reportTestClasses(testClasses, testBundleName: testBundleName, reporter: reporter, queue: queue, resultBundlePath: resultBundlePath, logger: logger, extractScreenshots: extractScreenshots)
@@ -415,14 +415,14 @@ final class XCTestResultBundleParser {
     }
   }
 
-  private static func reportTestClasses(_ testClasses: NSArray?, testBundleName: String, reporter: XCTestReporter, queue: DispatchQueue, resultBundlePath: String, logger: FBControlCoreLogger, extractScreenshots: Bool) {
+  private static func reportTestClasses(_ testClasses: NSArray?, testBundleName: String, reporter: XCTestReporter, queue: DispatchQueue, resultBundlePath: String, logger: ControlCoreLogger, extractScreenshots: Bool) {
     guard let testClasses = testClasses as? [NSDictionary] else { return }
     for testClass in testClasses {
       reportTestClass(testClass, testBundleName: testBundleName, reporter: reporter, queue: queue, resultBundlePath: resultBundlePath, logger: logger, extractScreenshots: extractScreenshots)
     }
   }
 
-  private static func reportTestClass(_ testClass: NSDictionary, testBundleName: String, reporter: XCTestReporter, queue: DispatchQueue, resultBundlePath: String, logger: FBControlCoreLogger, extractScreenshots: Bool) {
+  private static func reportTestClass(_ testClass: NSDictionary, testBundleName: String, reporter: XCTestReporter, queue: DispatchQueue, resultBundlePath: String, logger: ControlCoreLogger, extractScreenshots: Bool) {
     let testClassName = accessAndUnwrapValue(testClass, "identifier", logger) as? String ?? ""
     let testMethods = accessAndUnwrapValues(testClass, "subtests", logger)
     if testMethods != nil {
@@ -437,14 +437,14 @@ final class XCTestResultBundleParser {
     }
   }
 
-  private static func reportTestMethods(_ testMethods: NSArray?, testBundleName: String, testClassName: String, reporter: XCTestReporter, queue: DispatchQueue, resultBundlePath: String, logger: FBControlCoreLogger, extractScreenshots: Bool) {
+  private static func reportTestMethods(_ testMethods: NSArray?, testBundleName: String, testClassName: String, reporter: XCTestReporter, queue: DispatchQueue, resultBundlePath: String, logger: ControlCoreLogger, extractScreenshots: Bool) {
     guard let testMethods = testMethods as? [NSDictionary] else { return }
     for testMethod in testMethods {
       reportTestMethod(testMethod, testBundleName: testBundleName, testClassName: testClassName, reporter: reporter, queue: queue, resultBundlePath: resultBundlePath, logger: logger, extractScreenshots: extractScreenshots)
     }
   }
 
-  private static func reportTestMethod(_ testMethod: NSDictionary, testBundleName: String, testClassName: String, reporter: XCTestReporter, queue: DispatchQueue, resultBundlePath: String, logger: FBControlCoreLogger, extractScreenshots: Bool) {
+  private static func reportTestMethod(_ testMethod: NSDictionary, testBundleName: String, testClassName: String, reporter: XCTestReporter, queue: DispatchQueue, resultBundlePath: String, logger: ControlCoreLogger, extractScreenshots: Bool) {
     let testStatus = accessAndUnwrapValue(testMethod, "testStatus", logger) as? String ?? ""
     let testMethodIdentifier = accessAndUnwrapValue(testMethod, "identifier", logger) as? String ?? ""
     let duration = accessAndUnwrapValue(testMethod, "duration", logger) as? NSNumber ?? 0
@@ -511,7 +511,7 @@ final class XCTestResultBundleParser {
     }
   }
 
-  private static func buildTestLog(_ activitySummaries: [NSDictionary]?, testBundleName: String, testClassName: String, testMethodName: String, testPassed: Bool, duration: Double, logger: FBControlCoreLogger) -> [String] {
+  private static func buildTestLog(_ activitySummaries: [NSDictionary]?, testBundleName: String, testClassName: String, testMethodName: String, testPassed: Bool, duration: Double, logger: ControlCoreLogger) -> [String] {
     var logs: [String] = []
     let testCaseFullName = "-[\(testBundleName).\(testClassName) \(testMethodName)]"
     logs.append("Test Case '\(testCaseFullName)' started.")
@@ -536,7 +536,7 @@ final class XCTestResultBundleParser {
     return logs
   }
 
-  private static func addTestLogsFromActivitySummary(_ activitySummary: NSDictionary, logs: inout [String], testStartTimeInterval: Double, indent: UInt, logger: FBControlCoreLogger) {
+  private static func addTestLogsFromActivitySummary(_ activitySummary: NSDictionary, logs: inout [String], testStartTimeInterval: Double, indent: UInt, logger: ControlCoreLogger) {
     let message = accessAndUnwrapValue(activitySummary, "title", logger) as? String ?? ""
     let dateStr = accessAndUnwrapValue(activitySummary, "start", logger) as? String ?? ""
     let date = dateFromString(dateStr)
@@ -556,7 +556,7 @@ final class XCTestResultBundleParser {
     }
   }
 
-  private static func extractScreenshotsFromActivities(_ activities: [NSDictionary], queue: DispatchQueue, resultBundlePath: String, logger: FBControlCoreLogger) {
+  private static func extractScreenshotsFromActivities(_ activities: [NSDictionary], queue: DispatchQueue, resultBundlePath: String, logger: ControlCoreLogger) {
     let screenshotsPath: String
     do {
       screenshotsPath = try ensureSubdirectory("Attachments", insideResultBundle: resultBundlePath)
@@ -592,7 +592,7 @@ final class XCTestResultBundleParser {
     return subdirectoryFullPath
   }
 
-  private static func extractScreenshotsFromAttachments(_ attachments: [NSDictionary], to destination: String, queue: DispatchQueue, resultBundlePath: String, logger: FBControlCoreLogger) {
+  private static func extractScreenshotsFromAttachments(_ attachments: [NSDictionary], to destination: String, queue: DispatchQueue, resultBundlePath: String, logger: ControlCoreLogger) {
     for attachment in attachments {
       guard let filename = accessAndUnwrapValue(attachment, "filename", logger) as? String else { continue }
       guard filename.hasPrefix("Screenshot_"),
@@ -607,7 +607,7 @@ final class XCTestResultBundleParser {
     }
   }
 
-  private static func savePerformanceMetrics(_ performanceMetrics: [NSDictionary], toTestResultBundle resultBundlePath: String, forTestTarget testTarget: String, testClass: String, testMethod: String, logger: FBControlCoreLogger) {
+  private static func savePerformanceMetrics(_ performanceMetrics: [NSDictionary], toTestResultBundle resultBundlePath: String, forTestTarget testTarget: String, testClass: String, testMethod: String, logger: ControlCoreLogger) {
     var metrics: [[String: Any]] = []
     for performanceMetric in performanceMetrics {
       let metricName = accessAndUnwrapValue(performanceMetric, "displayName", logger) as? String ?? ""
@@ -646,7 +646,7 @@ final class XCTestResultBundleParser {
     }
   }
 
-  private static func buildErrorMessage(_ failureSummaries: NSArray?, logger: FBControlCoreLogger) -> String {
+  private static func buildErrorMessage(_ failureSummaries: NSArray?, logger: ControlCoreLogger) -> String {
     guard let failureSummaries = failureSummaries as? [NSDictionary] else { return "" }
     var messages: [String] = []
     for failureSummary in failureSummaries {

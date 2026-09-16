@@ -10,12 +10,12 @@ import XCTest
 
 final class FBArchiveOperationsTests: XCTestCase {
 
-  private var logger: FBControlCoreLoggerDouble!
+  private var logger: ControlCoreLoggerDouble!
   private var tempDirectory: String!
 
   override func setUp() {
     super.setUp()
-    logger = FBControlCoreLoggerDouble()
+    logger = ControlCoreLoggerDouble()
     tempDirectory = (NSTemporaryDirectory() as NSString)
       .appendingPathComponent(UUID().uuidString)
     try? FileManager.default.createDirectory(

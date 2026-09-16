@@ -7,7 +7,7 @@
 
 #import <Foundation/Foundation.h>
 
-#import <FBControlCore/FBDataConsumer.h>
+#import <FBControlCore/DataConsumer.h>
 
 // Protocols defined in Swift (FBDataBufferProtocols.swift)
 @protocol AccumulatingBuffer;
@@ -65,7 +65,7 @@
  @param terminal the terminal separator.
  @return a ConsumableBuffer implementation.
  */
-+ (nonnull id<NotifyingBuffer>)consumableBufferForwardingToConsumer:(nullable id<FBDataConsumer>)consumer onQueue:(nullable dispatch_queue_t)queue terminal:(nullable NSData *)terminal;
++ (nonnull id<NotifyingBuffer>)consumableBufferForwardingToConsumer:(nullable id<DataConsumer>)consumer onQueue:(nullable dispatch_queue_t)queue terminal:(nullable NSData *)terminal;
 
 /**
  NSData for a newline.

@@ -13,18 +13,18 @@ private let syslogRelayService = "com.apple.syslog_relay"
 // MARK: - DeviceLogOperation
 
 public final class DeviceLogOperation: LogOperation {
-  public let consumer: any FBDataConsumer
+  public let consumer: any DataConsumer
 
   /// Never resolves of its own accord: the device reaching the end of its log is not the end of the
   /// tail, and only the caller decides that. Cancelling is what invalidates the connection.
   public let completed: FBFuture<NSNull>
 
   init(
-    consumer: any FBDataConsumer,
+    consumer: any DataConsumer,
     connection: FBAMDServiceConnection,
     service: String,
     queue: DispatchQueue,
-    logger: any FBControlCoreLogger
+    logger: any ControlCoreLogger
   ) {
     self.consumer = consumer
     let tailing = FBMutableFuture<NSNull>(name: "Tailing \(service)")
@@ -60,7 +60,7 @@ public struct DeviceLogCommands: LogCommands {
 
   // MARK: - FBLogCommands
 
-  public func tail(arguments: [String], consumer: any FBDataConsumer) async throws -> any LogOperation {
+  public func tail(arguments: [String], consumer: any DataConsumer) async throws -> any LogOperation {
     if !arguments.isEmpty {
       let unsupportedArgumentsMessage = "[DeviceLogCommands][rdar://38452839] Unsupported arguments: \(arguments)"
       if let data = unsupportedArgumentsMessage.data(using: .utf8) {

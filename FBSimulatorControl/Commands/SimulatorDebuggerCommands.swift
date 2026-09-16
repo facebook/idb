@@ -67,7 +67,7 @@ public final class SimulatorDebuggerCommands: DebuggerCommands {
   private let applicationLauncher: (any ApplicationLaunching)?
 
   internal class func resolveDebugServerPath() -> String {
-    (FBXcodeConfiguration.contentsDirectory as NSString)
+    (XcodeConfiguration.contentsDirectory as NSString)
       .appendingPathComponent("SharedFrameworks/LLDB.framework/Resources/debugserver")
   }
 

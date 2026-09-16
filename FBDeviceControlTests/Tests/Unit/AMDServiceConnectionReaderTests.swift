@@ -40,7 +40,7 @@ struct AMDServiceConnectionReaderTests {
       connection: connection,
       device: "fake-device-ref" as AnyObject,
       calls: calls,
-      logger: FBControlCoreGlobalConfiguration.defaultLogger)
+      logger: ControlCoreGlobalConfiguration.defaultLogger)
   }
 
   @Test

@@ -15,13 +15,13 @@ import IOSurface
 /// `startTime` are read from a consumer's queue.
 final class FramebufferStatsRecorder: @unchecked Sendable {
 
-  private let logger: any FBControlCoreLogger
+  private let logger: any ControlCoreLogger
   private let lock = NSLock()
   private var stats = FramebufferStats()
   private var lastLoggedStats = FramebufferStats()
   private var timer = PeriodicStatsTimer(interval: 5.0)
 
-  init(logger: any FBControlCoreLogger) {
+  init(logger: any ControlCoreLogger) {
     self.logger = logger
   }
 

@@ -11,23 +11,23 @@ import FBControlCore
 import Foundation
 
 // SAFETY: writes are serialized by `lock`; tests read `messages` after the work under test finishes.
-final class CapturingLogger: NSObject, FBControlCoreLogger, @unchecked Sendable {
+final class CapturingLogger: NSObject, ControlCoreLogger, @unchecked Sendable {
   let messages = NSMutableArray()
   private let lock = NSLock()
 
   @discardableResult
-  func log(_ message: String) -> any FBControlCoreLogger {
+  func log(_ message: String) -> any ControlCoreLogger {
     lock.lock()
     defer { lock.unlock() }
     messages.add(message)
     return self
   }
 
-  func info() -> any FBControlCoreLogger { self }
-  func debug() -> any FBControlCoreLogger { self }
-  func error() -> any FBControlCoreLogger { self }
-  func withName(_ name: String) -> any FBControlCoreLogger { self }
-  func withDateFormatEnabled(_ enabled: Bool) -> any FBControlCoreLogger { self }
+  func info() -> any ControlCoreLogger { self }
+  func debug() -> any ControlCoreLogger { self }
+  func error() -> any ControlCoreLogger { self }
+  func withName(_ name: String) -> any ControlCoreLogger { self }
+  func withDateFormatEnabled(_ enabled: Bool) -> any ControlCoreLogger { self }
   var name: String? { nil }
   var level: FBControlCoreLogLevel { .multiple }
 }

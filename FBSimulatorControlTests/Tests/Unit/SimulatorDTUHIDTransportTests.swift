@@ -484,7 +484,7 @@ final class SimulatorDTUHIDTransportTests: XCTestCase {
   private func sendGesture(on hid: SimulatorHID) async throws {
     try await hid.send(
       event: .keyboard(direction: .up, keyCode: 0),
-      logger: FBControlCoreGlobalConfiguration.defaultLogger)
+      logger: ControlCoreGlobalConfiguration.defaultLogger)
   }
 
   private enum DrainReply {

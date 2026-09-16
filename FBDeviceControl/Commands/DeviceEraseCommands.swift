@@ -20,7 +20,7 @@ private final class DeviceEraseOperation: NSObject, FBiOSTargetSetDelegate, @unc
 
   private let udid: String
   private let calls: AMDCalls
-  private let logger: any FBControlCoreLogger
+  private let logger: any ControlCoreLogger
   private let queue: DispatchQueue
   private let deviceManager: AMRestorableDeviceManager
   private let deviceDetected = FBMutableFuture<NSNull>()
@@ -28,7 +28,7 @@ private final class DeviceEraseOperation: NSObject, FBiOSTargetSetDelegate, @unc
   private let deviceCameBack = FBMutableFuture<NSNull>()
   private let eraseCallbackResult = FBMutableFuture<NSNumber>()
 
-  init(device: FBDevice, logger: any FBControlCoreLogger) {
+  init(device: FBDevice, logger: any ControlCoreLogger) {
     let queue = DispatchQueue(label: "com.facebook.fbdeviceerase")
     self.udid = device.udid
     self.calls = device.calls

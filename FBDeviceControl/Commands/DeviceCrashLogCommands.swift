@@ -138,7 +138,7 @@ public final class DeviceCrashLogCommands: CrashLogCommands {
     }
   }
 
-  private func removeCrashLogsFromDevice(_ crashesToRemove: [CrashLogInfo], logger: (any FBControlCoreLogger)?) async throws -> [CrashLogInfo] {
+  private func removeCrashLogsFromDevice(_ crashesToRemove: [CrashLogInfo], logger: (any ControlCoreLogger)?) async throws -> [CrashLogInfo] {
     guard device != nil else {
       throw DeviceNilError.deviceNil
     }

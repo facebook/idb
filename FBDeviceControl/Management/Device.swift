@@ -16,7 +16,7 @@ public final class FBDevice: FBiOSTarget, DeviceCommands, CustomStringConvertibl
 
   public private(set) weak var set: FBDeviceSet?
   public let commandCache: TargetCommandCache
-  public private(set) var logger: any FBControlCoreLogger
+  public private(set) var logger: any ControlCoreLogger
   public private(set) var calls: AMDCalls
 
   private var amDeviceStorage: FBAMDevice?
@@ -84,7 +84,7 @@ public final class FBDevice: FBiOSTarget, DeviceCommands, CustomStringConvertibl
     set: FBDeviceSet?,
     amDevice: FBAMDevice?,
     restorableDevice: FBAMRestorableDevice?,
-    logger: any FBControlCoreLogger
+    logger: any ControlCoreLogger
   ) {
     self.set = set
     self.amDeviceStorage = amDevice
@@ -124,13 +124,13 @@ public final class FBDevice: FBiOSTarget, DeviceCommands, CustomStringConvertibl
     (amDevice?.asyncQueue ?? restorableDevice?.asyncQueue) ?? DispatchQueue.global()
   }
 
-  private var temporaryDirectoryStorage: FBTemporaryDirectory?
+  private var temporaryDirectoryStorage: TemporaryDirectory?
 
-  public var temporaryDirectory: FBTemporaryDirectory {
+  public var temporaryDirectory: TemporaryDirectory {
     if let temporaryDirectoryStorage {
       return temporaryDirectoryStorage
     }
-    let created = FBTemporaryDirectory(logger: logger)
+    let created = TemporaryDirectory(logger: logger)
     temporaryDirectoryStorage = created
     return created
   }
@@ -142,7 +142,7 @@ public final class FBDevice: FBiOSTarget, DeviceCommands, CustomStringConvertibl
 
   public var platformRootDirectory: String {
     get async {
-      (FBXcodeConfiguration.developerDirectory as NSString).appendingPathComponent("Platforms/iPhoneOS.platform")
+      (XcodeConfiguration.developerDirectory as NSString).appendingPathComponent("Platforms/iPhoneOS.platform")
     }
   }
 

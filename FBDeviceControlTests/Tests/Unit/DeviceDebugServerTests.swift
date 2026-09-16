@@ -66,7 +66,7 @@ final class DeviceDebugServerTests {
       port: 0,
       lldbBootstrapCommands: ["platform select remote-ios"],
       queue: DispatchQueue.main,
-      logger: FBControlCoreGlobalConfiguration.defaultLogger)
+      logger: ControlCoreGlobalConfiguration.defaultLogger)
   }
 
   /// The server holds the service connection open, with the AMDevice session that started the

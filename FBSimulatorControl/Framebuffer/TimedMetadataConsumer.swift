@@ -14,7 +14,7 @@ import Foundation
 /// either a streaming transport writer (fMP4 `emsg` / MPEG-TS ID3) or an `AVAssetWriter` chapter track.
 protocol TimedMetadataConsumer: AnyObject {
   /// Write a single timed-metadata marker for the current stream position.
-  func writeTimedMetadata(_ text: String, logger: any FBControlCoreLogger)
+  func writeTimedMetadata(_ text: String, logger: any ControlCoreLogger)
 }
 
 // MARK: - TransportTimedMetadataConsumer
@@ -23,17 +23,17 @@ protocol TimedMetadataConsumer: AnyObject {
 /// transport writer (MPEG-TS ID3 or fMP4 `emsg`). Transports that carry no timed-metadata channel
 /// (e.g. Annex-B) pass `nil` and drop markers with a log.
 final class TransportTimedMetadataConsumer: TimedMetadataConsumer {
-  private let consumer: any FBDataConsumer
+  private let consumer: any DataConsumer
   /// Transport writer that can mux timed metadata into the same byte stream. `nil` for stateless
   /// transports (Annex-B).
   private let timedMetadataWriter: (any VideoStreamTimedMetadataWriter)?
 
-  init(consumer: any FBDataConsumer, timedMetadataWriter: (any VideoStreamTimedMetadataWriter)?) {
+  init(consumer: any DataConsumer, timedMetadataWriter: (any VideoStreamTimedMetadataWriter)?) {
     self.consumer = consumer
     self.timedMetadataWriter = timedMetadataWriter
   }
 
-  func writeTimedMetadata(_ text: String, logger: any FBControlCoreLogger) {
+  func writeTimedMetadata(_ text: String, logger: any ControlCoreLogger) {
     guard let timedMetadataWriter else {
       logger.log("writeTimedMetadata: not supported for this transport, dropping")
       return

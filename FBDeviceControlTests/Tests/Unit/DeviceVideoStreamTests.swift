@@ -21,7 +21,7 @@ struct DeviceVideoStreamTests {
     VideoStreamConfiguration(format: format, framesPerSecond: nil, rateControl: nil, scaleFactor: nil, keyFrameRate: nil)
   }
 
-  private func makeStream(for format: VideoStreamFormat, consumer: (any FBDataConsumer)?) throws -> DeviceVideoStream {
+  private func makeStream(for format: VideoStreamFormat, consumer: (any DataConsumer)?) throws -> DeviceVideoStream {
     let streamType = try #require(DeviceVideoStream.classForConfiguration(configuration(format)), "Expected a stream type for \(format)")
     let stream = streamType.init(
       session: AVCaptureSession(),

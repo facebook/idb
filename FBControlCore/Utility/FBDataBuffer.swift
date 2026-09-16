@@ -8,7 +8,7 @@
 import Foundation
 
 /// The non-mutating methods of a buffer.
-@objc public protocol AccumulatingBuffer: FBDataConsumer, DataConsumerLifecycle {
+@objc public protocol AccumulatingBuffer: DataConsumer, DataConsumerLifecycle {
   /// Obtains a copy of the current output data.
   func data() -> Data
 
@@ -41,7 +41,7 @@ import Foundation
 /// A Consumable buffer that also allows forwarding and notifying.
 @objc public protocol NotifyingBuffer: ConsumableBuffer {
   /// Forwards to another data consumer, notifying every time a terminal is passed.
-  func consume(_ consumer: FBDataConsumer, onQueue queue: DispatchQueue?, untilTerminal terminal: Data, error: NSErrorPointer) -> Bool
+  func consume(_ consumer: DataConsumer, onQueue queue: DispatchQueue?, untilTerminal terminal: Data, error: NSErrorPointer) -> Bool
 
   /// Notifies when there has been consumption to a terminal.
   @objc(consumeAndNotifyWhen:)
@@ -54,5 +54,5 @@ import Foundation
 /// Internal forwarding protocol used by FBDataBuffer implementations.
 @objc public protocol DataBuffer_Forwarder: NSObjectProtocol {
   func run(_ buffer: ConsumableBuffer)
-  var consumer: FBDataConsumer { get }
+  var consumer: DataConsumer { get }
 }

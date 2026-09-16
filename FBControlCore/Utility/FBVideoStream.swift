@@ -11,7 +11,7 @@ import Foundation
 /// are awaited across concurrency domains.
 public protocol FBVideoStream: AnyObject, Sendable {
   /// Starts the Streaming, to a Data Consumer.
-  func startStreaming(_ consumer: FBDataConsumer) async throws
+  func startStreaming(_ consumer: DataConsumer) async throws
 
   /// Stops the Streaming.
   func stopStreaming() async throws

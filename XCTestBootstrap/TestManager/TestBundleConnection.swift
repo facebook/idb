@@ -47,7 +47,7 @@ final class TestBundleConnection {
   private let interface: NSObject
   private let testHostApplication: FBLaunchedApplication
   private let requestQueue: DispatchQueue
-  private let logger: FBControlCoreLogger
+  private let logger: ControlCoreLogger
 
   init(
     context: TestManagerContext,
@@ -56,7 +56,7 @@ final class TestBundleConnection {
     interface: NSObject,
     testHostApplication: FBLaunchedApplication,
     requestQueue: DispatchQueue,
-    logger: FBControlCoreLogger
+    logger: ControlCoreLogger
   ) {
     self.context = context
     self.target = target

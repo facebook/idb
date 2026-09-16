@@ -8,7 +8,7 @@
 import Foundation
 
 @objc
-public final class FBXcodeConfiguration: NSObject {
+public final class XcodeConfiguration: NSObject {
 
   // MARK: - Public Properties
 
@@ -21,7 +21,7 @@ public final class FBXcodeConfiguration: NSObject {
   }()
 
   @objc public static let xcodeVersionNumber: NSDecimalNumber = {
-    let versionString = FBXcodeConfiguration.readValue(forKey: "CFBundleShortVersionString", fromPlistAtPath: FBXcodeConfiguration.xcodeInfoPlistPath)
+    let versionString = XcodeConfiguration.readValue(forKey: "CFBundleShortVersionString", fromPlistAtPath: XcodeConfiguration.xcodeInfoPlistPath)
     return NSDecimalNumber(string: versionString as? String)
   }()
 
@@ -42,7 +42,7 @@ public final class FBXcodeConfiguration: NSObject {
   }()
 
   @objc public static let iosSDKVersion: String = {
-    return FBXcodeConfiguration.readValue(forKey: "Version", fromPlistAtPath: FBXcodeConfiguration.iPhoneSimulatorPlatformInfoPlistPath) as? String ?? ""
+    return XcodeConfiguration.readValue(forKey: "Version", fromPlistAtPath: XcodeConfiguration.iPhoneSimulatorPlatformInfoPlistPath) as? String ?? ""
   }()
 
   @objc public static let isXcode12OrGreater: Bool = {

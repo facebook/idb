@@ -18,7 +18,7 @@ extension WeakFramework {
     // to Contents/SharedFrameworks. Prefer the new location, falling back to the legacy one for
     // Xcode <= 26. xcodeFramework(withRelativePath:) resolves relative to the Developer directory.
     let sharedRelativePath = "../SharedFrameworks/SimulatorKit.framework"
-    let sharedAbsolutePath = ((FBXcodeConfiguration.developerDirectory as NSString).appendingPathComponent(sharedRelativePath) as NSString).standardizingPath
+    let sharedAbsolutePath = ((XcodeConfiguration.developerDirectory as NSString).appendingPathComponent(sharedRelativePath) as NSString).standardizingPath
     let relativePath = FileManager.default.fileExists(atPath: sharedAbsolutePath) ? sharedRelativePath : "Library/PrivateFrameworks/SimulatorKit.framework"
     return WeakFramework.xcodeFramework(withRelativePath: relativePath, requiredClassNames: [])
   }

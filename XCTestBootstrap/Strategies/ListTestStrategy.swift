@@ -76,9 +76,9 @@ public final class ListTestStrategy {
 
   let target: any LogicTestTarget
   private let configuration: ListTestConfiguration
-  private let logger: FBControlCoreLogger
+  private let logger: ControlCoreLogger
 
-  public init(target: any LogicTestTarget, configuration: ListTestConfiguration, logger: FBControlCoreLogger) {
+  public init(target: any LogicTestTarget, configuration: ListTestConfiguration, logger: ControlCoreLogger) {
     self.target = target
     self.configuration = configuration
     self.logger = logger
@@ -123,12 +123,12 @@ public final class ListTestStrategy {
 
   private func listTests(withShimPath shimPath: String, shimOutput: ProcessFileOutput, shimBuffer: ConsumableBuffer) -> FBFuture<NSArray> {
     let stdOutBuffer = FBDataBuffer.consumableBuffer()
-    let stdOutConsumer: FBDataConsumer = FBCompositeDataConsumer(consumers: [
+    let stdOutConsumer: DataConsumer = FBCompositeDataConsumer(consumers: [
       stdOutBuffer,
       FBLoggingDataConsumer(logger: logger),
     ])
     let stdErrBuffer = FBDataBuffer.consumableBuffer()
-    let stdErrConsumer: FBDataConsumer = FBCompositeDataConsumer(consumers: [
+    let stdErrConsumer: DataConsumer = FBCompositeDataConsumer(consumers: [
       stdErrBuffer,
       FBLoggingDataConsumer(logger: logger),
     ])
@@ -137,7 +137,7 @@ public final class ListTestStrategy {
     // until the future chain resolves, exactly as the popped context did.
     return
       fbFutureFromAsync {
-        try await FBTemporaryDirectory(logger: self.logger).withTemporaryDirectory { temporaryDirectoryURL in
+        try await TemporaryDirectory(logger: self.logger).withTemporaryDirectory { temporaryDirectoryURL in
           let libraries = try await OToolDynamicLibs.findFullPath(forSanitiserDyldInBundle: self.configuration.testBundlePath)
           let environment = ListTestStrategy.setupEnvironment(withDylibs: libraries, shimPath: shimPath, shimOutputFilePath: shimOutput.filePath, bundlePath: self.configuration.testBundlePath, target: self.target)
           return try await bridgeFBFuture(
@@ -234,7 +234,7 @@ public final class ListTestStrategy {
       .retyped(FBFuture<NSNull>.self)
   }
 
-  private static func listTestProcess(withTarget target: any LogicTestTarget, configuration: ListTestConfiguration, xctestPath: String, environment: [String: String], stdOutConsumer: FBDataConsumer, stdErrConsumer: FBDataConsumer, logger: FBControlCoreLogger, temporaryDirectory: URL) -> FBFuture<AnyObject> {
+  private static func listTestProcess(withTarget target: any LogicTestTarget, configuration: ListTestConfiguration, xctestPath: String, environment: [String: String], stdOutConsumer: DataConsumer, stdErrConsumer: DataConsumer, logger: ControlCoreLogger, temporaryDirectory: URL) -> FBFuture<AnyObject> {
     var launchPath = xctestPath
     var env = environment
 
@@ -243,7 +243,7 @@ public final class ListTestStrategy {
     let io = FBProcessIO<AnyObject, AnyObject, AnyObject>(stdIn: nil, stdOut: stdOut, stdErr: stdErr)
 
     if let runnerAppPath = configuration.runnerAppPath, FBBundleDescriptor.isApplication(atPath: runnerAppPath) {
-      let developerLibraryPath = (FBXcodeConfiguration.developerDirectory as NSString).appendingPathComponent("Platforms/iPhoneSimulator.platform/Developer/Library")
+      let developerLibraryPath = (XcodeConfiguration.developerDirectory as NSString).appendingPathComponent("Platforms/iPhoneSimulator.platform/Developer/Library")
       let testFrameworkPaths = [
         (developerLibraryPath as NSString).appendingPathComponent("Frameworks"),
         (developerLibraryPath as NSString).appendingPathComponent("PrivateFrameworks"),
@@ -271,7 +271,7 @@ public final class ListTestStrategy {
     }
   }
 
-  private static func listTestProcess(withSpawnConfiguration spawnConfiguration: ProcessSpawnConfiguration, onTarget target: any LogicTestTarget, timeout: TimeInterval, logger: FBControlCoreLogger) -> FBFuture<AnyObject> {
+  private static func listTestProcess(withSpawnConfiguration spawnConfiguration: ProcessSpawnConfiguration, onTarget target: any LogicTestTarget, timeout: TimeInterval, logger: ControlCoreLogger) -> FBFuture<AnyObject> {
     let launchFuture: FBFuture<FBSubprocess<AnyObject, AnyObject, AnyObject>> = fbFutureFromAsync {
       try await target.processSpawn.launchProcess(spawnConfiguration)
     }

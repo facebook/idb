@@ -41,7 +41,7 @@ extension FBiOSTargetProviderError: LocalizedError {
 
 public final class FBiOSTargetProvider {
 
-  public static func target(withUDID udid: String, targetSets: [FBiOSTargetSet], warmUp: Bool, logger: FBControlCoreLogger) throws -> any FBiOSTarget {
+  public static func target(withUDID udid: String, targetSets: [FBiOSTargetSet], warmUp: Bool, logger: ControlCoreLogger) throws -> any FBiOSTarget {
     switch udid.lowercased() {
     case "only":
       return try fetchSoleTarget(forTargetSets: targetSets, logger: logger)
@@ -52,7 +52,7 @@ public final class FBiOSTargetProvider {
     }
   }
 
-  private static func fetchTarget(withUDID udid: String, targetSets: [FBiOSTargetSet], logger: FBControlCoreLogger) throws -> any FBiOSTarget {
+  private static func fetchTarget(withUDID udid: String, targetSets: [FBiOSTargetSet], logger: ControlCoreLogger) throws -> any FBiOSTarget {
     if udid.lowercased() == "mac" {
       return MacDevice(logger: logger)
     }
@@ -69,7 +69,7 @@ public final class FBiOSTargetProvider {
     throw FBiOSTargetProviderError.targetNotFound(udid: udid, targetSetsDescription: String(describing: targetSets))
   }
 
-  private static func fetchSoleTarget(forTargetSets targetSets: [FBiOSTargetSet], logger: FBControlCoreLogger) throws -> any FBiOSTarget {
+  private static func fetchSoleTarget(forTargetSets targetSets: [FBiOSTargetSet], logger: ControlCoreLogger) throws -> any FBiOSTarget {
     var targets: [any FBiOSTarget] = []
     for targetSet in targetSets {
       for info in targetSet.allTargetInfos {
@@ -87,7 +87,7 @@ public final class FBiOSTargetProvider {
     return target
   }
 
-  private static func fetchSoleBootedTarget(forTargetSets targetSets: [FBiOSTargetSet], logger: FBControlCoreLogger) throws -> any FBiOSTarget {
+  private static func fetchSoleBootedTarget(forTargetSets targetSets: [FBiOSTargetSet], logger: ControlCoreLogger) throws -> any FBiOSTarget {
     var bootedTargets: [any FBiOSTarget] = []
     for targetSet in targetSets {
       for info in targetSet.allTargetInfos {

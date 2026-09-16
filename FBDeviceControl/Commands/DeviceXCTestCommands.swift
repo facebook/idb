@@ -55,7 +55,7 @@ public final class DeviceXCTestCommands: XCTestCommands {
   public func runTest(
     launchConfiguration testLaunchConfiguration: TestLaunchConfiguration,
     reporter: AnyObject,
-    logger: any FBControlCoreLogger
+    logger: any ControlCoreLogger
   ) async throws {
     if runningXcodeBuildOperation {
       throw DeviceXCTestError.testManagerAlreadyRunning(configurationDescription: String(describing: testLaunchConfiguration))
@@ -74,7 +74,7 @@ public final class DeviceXCTestCommands: XCTestCommands {
     try await bridgeFBFutureVoid(XcodeBuildOperation.confirmExit(ofXcodebuildOperation: task, configuration: testLaunchConfiguration, reporter: reporter, target: device, logger: logger))
   }
 
-  private func startTestWithLaunchConfiguration(configuration: TestLaunchConfiguration, logger: any FBControlCoreLogger) async throws -> FBSubprocess<AnyObject, AnyObject, AnyObject> {
+  private func startTestWithLaunchConfiguration(configuration: TestLaunchConfiguration, logger: any ControlCoreLogger) async throws -> FBSubprocess<AnyObject, AnyObject, AnyObject> {
     let filePath: String
     do {
       filePath = try XcodeBuildOperation.createXCTestRunFile(at: workingDirectory, fromConfiguration: configuration)

@@ -13,7 +13,7 @@ final class FBProcessStreamTests: XCTestCase {
   func testClosingActiveStreamStopsWriting() throws {
     let consumer = FBDataBuffer.consumableBuffer()
 
-    let output = FBProcessOutput<FBDataConsumer>(for: consumer)
+    let output = FBProcessOutput<DataConsumer>(for: consumer)
     let attachment: FBProcessStreamAttachment = try output.attach().`await`()
     XCTAssertTrue(attachment.fileDescriptor != 0)
     XCTAssertEqual(attachment.mode, FBProcessStreamAttachmentMode.output)
@@ -34,7 +34,7 @@ final class FBProcessStreamTests: XCTestCase {
 
   func testViaFifo() throws {
     let buffer = FBDataBuffer.accumulatingBuffer()
-    let output = FBProcessOutput<FBDataConsumer>(for: buffer)
+    let output = FBProcessOutput<DataConsumer>(for: buffer)
     let fileOutput: ProcessFileOutput = try output.providedThroughFile().`await`()
     XCTAssertNotNil(fileOutput)
 
@@ -63,7 +63,7 @@ final class FBProcessStreamTests: XCTestCase {
 
   func testConcurrentAttachmentIsProhibited() throws {
     let consumer = FBDataBuffer.consumableBuffer()
-    let output = FBProcessOutput<FBDataConsumer>(for: consumer)
+    let output = FBProcessOutput<DataConsumer>(for: consumer)
 
     let concurrentQueue = DispatchQueue.global(qos: .userInitiated)
     let group = DispatchGroup()

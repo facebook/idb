@@ -33,7 +33,7 @@ struct AMDServiceConnectionTests {
       connection: service,
       device: amDevice,
       calls: amDevice.calls,
-      logger: FBControlCoreGlobalConfiguration.defaultLogger)
+      logger: ControlCoreGlobalConfiguration.defaultLogger)
     return (connection, service)
   }
 
@@ -201,7 +201,7 @@ struct AMDServiceConnectionTests {
         connection: service,
         device: amDevice,
         calls: amDevice.calls,
-        logger: FBControlCoreGlobalConfiguration.defaultLogger)
+        logger: ControlCoreGlobalConfiguration.defaultLogger)
       _ = Unmanaged.passRetained(service)
       try connection.invalidate()
       #expect(released != nil, "the local reference is still in scope here")

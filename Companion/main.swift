@@ -120,14 +120,14 @@ private func writeTargetToStdOut(_ target: FBiOSTargetInfo) {
   writeJSONToStdOut(FBiOSTargetDescription(target: target).asJSON)
 }
 
-private func simulatorSetWithPath(_ deviceSetPath: String?, logger: FBControlCoreLogger) throws -> FBSimulatorSet {
+private func simulatorSetWithPath(_ deviceSetPath: String?, logger: ControlCoreLogger) throws -> FBSimulatorSet {
   // Give a more meaningful message if we can't load the frameworks.
   try FBSimulatorControlFrameworkLoader.essentialFrameworks.loadPrivateFrameworks(logger)
   let configuration = FBSimulatorControlConfiguration(deviceSetPath: deviceSetPath, logger: logger)
   return try SimulatorControlBootstrap.withConfiguration(configuration).set
 }
 
-private func simulatorSet(_ userDefaults: UserDefaults, logger: FBControlCoreLogger) throws -> FBSimulatorSet {
+private func simulatorSet(_ userDefaults: UserDefaults, logger: ControlCoreLogger) throws -> FBSimulatorSet {
   let deviceSetPath = userDefaults.string(forKey: "-device-set-path")
   return try simulatorSetWithPath(deviceSetPath, logger: logger)
 }
@@ -138,7 +138,7 @@ private let deviceDiscoveryTimeout: TimeInterval = 5
 private let deviceDiscoveryPollInterval: TimeInterval = 0.1
 private let restorableDevicePopulationNap: UInt64 = 200_000_000
 
-private func deviceSet(_ logger: FBControlCoreLogger, ecidFilter: String?, waitForDevices: Bool = false) async throws -> FBDeviceSet {
+private func deviceSet(_ logger: ControlCoreLogger, ecidFilter: String?, waitForDevices: Bool = false) async throws -> FBDeviceSet {
   // `FBDeviceSet` hardcodes `DispatchQueue.main` for its device managers and
   // registers MobileDevice notifications that expect the main run loop, so it
   // must be created on the main thread.
@@ -165,7 +165,7 @@ private func deviceSet(_ logger: FBControlCoreLogger, ecidFilter: String?, waitF
 /// Waits for at least one device to land in `set`. Devices arrive asynchronously over MobileDevice
 /// notifications on the main run loop, so a freshly constructed set is briefly empty. Timing out is
 /// tolerated: a host with no device attached should still get the caller's usual "no targets" message.
-private func awaitDevicePopulation(of set: FBDeviceSet, logger: FBControlCoreLogger) async throws {
+private func awaitDevicePopulation(of set: FBDeviceSet, logger: ControlCoreLogger) async throws {
   do {
     try await Task.timeout(nanoseconds: UInt64(deviceDiscoveryTimeout * Double(NSEC_PER_SEC))) {
       // The set is mutated on the main queue, so the condition is polled there.
@@ -180,7 +180,7 @@ private func awaitDevicePopulation(of set: FBDeviceSet, logger: FBControlCoreLog
   }
 }
 
-private func defaultTargetSets(_ userDefaults: UserDefaults, xcodeAvailable: Bool, waitForDevices: Bool = false, logger: FBControlCoreLogger) async throws -> [FBiOSTargetSet] {
+private func defaultTargetSets(_ userDefaults: UserDefaults, xcodeAvailable: Bool, waitForDevices: Bool = false, logger: ControlCoreLogger) async throws -> [FBiOSTargetSet] {
   let only = userDefaults.string(forKey: "-only")
   if let only {
     if only.lowercased().contains("simulator") {
@@ -209,12 +209,12 @@ private func defaultTargetSets(_ userDefaults: UserDefaults, xcodeAvailable: Boo
   ]
 }
 
-private func targetForUDID(_ udid: String, userDefaults: UserDefaults, xcodeAvailable: Bool, warmUp: Bool, logger: FBControlCoreLogger) async throws -> any FBiOSTarget {
+private func targetForUDID(_ udid: String, userDefaults: UserDefaults, xcodeAvailable: Bool, warmUp: Bool, logger: ControlCoreLogger) async throws -> any FBiOSTarget {
   let targetSets = try await defaultTargetSets(userDefaults, xcodeAvailable: xcodeAvailable, logger: logger)
   return try FBiOSTargetProvider.target(withUDID: udid, targetSets: targetSets, warmUp: warmUp, logger: logger)
 }
 
-private func deviceForECID(_ ecid: String, logger: FBControlCoreLogger) async throws -> FBDevice {
+private func deviceForECID(_ ecid: String, logger: ControlCoreLogger) async throws -> FBDevice {
   let set = try await deviceSet(logger, ecidFilter: ecid.replacingOccurrences(of: "ecid:", with: ""), waitForDevices: true)
   let devices = set.allDevices
   if devices.isEmpty {
@@ -223,7 +223,7 @@ private func deviceForECID(_ ecid: String, logger: FBControlCoreLogger) async th
   return devices[0]
 }
 
-private func resolveSimulator(_ udid: String, userDefaults: UserDefaults, logger: FBControlCoreLogger) async throws -> FBSimulator {
+private func resolveSimulator(_ udid: String, userDefaults: UserDefaults, logger: ControlCoreLogger) async throws -> FBSimulator {
   let set = try simulatorSet(userDefaults, logger: logger)
   let target = try FBiOSTargetProvider.target(withUDID: udid, targetSets: [set], warmUp: false, logger: logger)
   guard let simulator = target as? FBSimulator else {
@@ -232,12 +232,12 @@ private func resolveSimulator(_ udid: String, userDefaults: UserDefaults, logger
   return simulator
 }
 
-private func awaitTargetOffline(_ target: any FBiOSTarget, logger: FBControlCoreLogger) async throws {
+private func awaitTargetOffline(_ target: any FBiOSTarget, logger: ControlCoreLogger) async throws {
   try await target.lifecycle.resolveLeavesState(.booted)
   target.logger.log("Target is no longer booted, companion going offline")
 }
 
-private func runBoot(_ udid: String, userDefaults: UserDefaults, logger: FBControlCoreLogger) async throws {
+private func runBoot(_ udid: String, userDefaults: UserDefaults, logger: ControlCoreLogger) async throws {
   let headless = userDefaults.bool(forKey: "-headless")
   let verifyBooted = userDefaults.object(forKey: "-verify-booted") == nil ? true : userDefaults.bool(forKey: "-verify-booted")
   let simulator = try await resolveSimulator(udid, userDefaults: userDefaults, logger: logger)
@@ -284,22 +284,22 @@ private func runBoot(_ udid: String, userDefaults: UserDefaults, logger: FBContr
   }
 }
 
-private func runShutdown(_ udid: String, userDefaults: UserDefaults, xcodeAvailable: Bool, logger: FBControlCoreLogger) async throws {
+private func runShutdown(_ udid: String, userDefaults: UserDefaults, xcodeAvailable: Bool, logger: ControlCoreLogger) async throws {
   let target = try await targetForUDID(udid, userDefaults: userDefaults, xcodeAvailable: xcodeAvailable, warmUp: false, logger: logger)
   try await target.power.shutdown()
 }
 
-private func runReboot(_ udid: String, userDefaults: UserDefaults, xcodeAvailable: Bool, logger: FBControlCoreLogger) async throws {
+private func runReboot(_ udid: String, userDefaults: UserDefaults, xcodeAvailable: Bool, logger: ControlCoreLogger) async throws {
   let target = try await targetForUDID(udid, userDefaults: userDefaults, xcodeAvailable: xcodeAvailable, warmUp: false, logger: logger)
   try await target.power.reboot()
 }
 
-private func runErase(_ udid: String, userDefaults: UserDefaults, xcodeAvailable: Bool, logger: FBControlCoreLogger) async throws {
+private func runErase(_ udid: String, userDefaults: UserDefaults, xcodeAvailable: Bool, logger: ControlCoreLogger) async throws {
   let target = try await targetForUDID(udid, userDefaults: userDefaults, xcodeAvailable: xcodeAvailable, warmUp: false, logger: logger)
   try await target.erase.erase()
 }
 
-private func runDelete(_ udidOrAll: String, userDefaults: UserDefaults, logger: FBControlCoreLogger) async throws {
+private func runDelete(_ udidOrAll: String, userDefaults: UserDefaults, logger: ControlCoreLogger) async throws {
   let set = try simulatorSet(userDefaults, logger: logger)
   if udidOrAll.lowercased() == "all" {
     try await set.deleteAll()
@@ -311,7 +311,7 @@ private func runDelete(_ udidOrAll: String, userDefaults: UserDefaults, logger: 
   try await set.delete(simulator)
 }
 
-private func runList(_ userDefaults: UserDefaults, xcodeAvailable: Bool, logger: FBControlCoreLogger) async throws {
+private func runList(_ userDefaults: UserDefaults, xcodeAvailable: Bool, logger: ControlCoreLogger) async throws {
   let targetSets = try await defaultTargetSets(userDefaults, xcodeAvailable: xcodeAvailable, waitForDevices: true, logger: logger)
   var reportedCount: UInt = 0
   for targetSet in targetSets {
@@ -323,7 +323,7 @@ private func runList(_ userDefaults: UserDefaults, xcodeAvailable: Bool, logger:
   logger.log("Reported \(reportedCount) targets to stdout")
 }
 
-private func runCreate(_ create: String, userDefaults: UserDefaults, logger: FBControlCoreLogger) async throws {
+private func runCreate(_ create: String, userDefaults: UserDefaults, logger: ControlCoreLogger) async throws {
   let parameters = create.components(separatedBy: ",")
   func selector(_ value: String) -> SimulatorSelector {
     value.hasPrefix("com.apple.CoreSimulator.") ? .identifier(value) : .name(value)
@@ -335,7 +335,7 @@ private func runCreate(_ create: String, userDefaults: UserDefaults, logger: FBC
   writeTargetToStdOut(simulator)
 }
 
-private func runClone(_ udid: String, userDefaults: UserDefaults, logger: FBControlCoreLogger) async throws {
+private func runClone(_ udid: String, userDefaults: UserDefaults, logger: ControlCoreLogger) async throws {
   let destinationSet = userDefaults.string(forKey: "-clone-destination-set")
   let base = try await resolveSimulator(udid, userDefaults: userDefaults, logger: logger)
   let destination = try simulatorSetWithPath(destinationSet, logger: logger)
@@ -346,17 +346,17 @@ private func runClone(_ udid: String, userDefaults: UserDefaults, logger: FBCont
   writeTargetToStdOut(cloned)
 }
 
-private func runEnterRecovery(_ ecid: String, logger: FBControlCoreLogger) async throws {
+private func runEnterRecovery(_ ecid: String, logger: ControlCoreLogger) async throws {
   let device = try await deviceForECID(ecid, logger: logger)
   try await device.recovery.enter()
 }
 
-private func runExitRecovery(_ ecid: String, logger: FBControlCoreLogger) async throws {
+private func runExitRecovery(_ ecid: String, logger: ControlCoreLogger) async throws {
   let device = try await deviceForECID(ecid, logger: logger)
   try await device.recovery.exit()
 }
 
-private func runActivate(_ ecid: String, logger: FBControlCoreLogger) async throws {
+private func runActivate(_ ecid: String, logger: ControlCoreLogger) async throws {
   let device = try await deviceForECID(ecid, logger: logger)
   try await device.activation.activate()
 }
@@ -367,7 +367,7 @@ private func runClean(_ udid: String, userDefaults: UserDefaults, xcodeAvailable
   let commandExecutor = IDBCommandExecutor.commandExecutor(
     forTarget: target,
     storageManager: storageManager,
-    temporaryDirectory: FBTemporaryDirectory(logger: logger),
+    temporaryDirectory: TemporaryDirectory(logger: logger),
     debugserverPort: in_port_t(IDBPortsConfiguration(arguments: userDefaults).debugserverPort),
     logger: logger
   )
@@ -386,7 +386,7 @@ private func runCompanionServer(_ udid: String, userDefaults: UserDefaults, xcod
   ])
   reporter.report(EventReporterSubject(forEvent: "launched"))
 
-  let temporaryDirectory = FBTemporaryDirectory(logger: logger)
+  let temporaryDirectory = TemporaryDirectory(logger: logger)
   let storageManager = try IDBStorageManager.manager(forTarget: target, logger: logger)
 
   let ports = IDBPortsConfiguration(arguments: userDefaults)
@@ -462,7 +462,7 @@ private func runCompanionServer(_ udid: String, userDefaults: UserDefaults, xcod
   _ = try await Task.select(raceTasks).value
 }
 
-private func runNotifier(_ notify: String, userDefaults: UserDefaults, xcodeAvailable: Bool, logger: FBControlCoreLogger) async throws {
+private func runNotifier(_ notify: String, userDefaults: UserDefaults, xcodeAvailable: Bool, logger: ControlCoreLogger) async throws {
   let targetSets = try await defaultTargetSets(userDefaults, xcodeAvailable: xcodeAvailable, logger: logger)
   let notifier: FBiOSTargetStateChangeNotifier
   if notify == "stdout" {
@@ -481,7 +481,7 @@ private func runNotifier(_ notify: String, userDefaults: UserDefaults, xcodeAvai
   }
 }
 
-private func runForward(_ forward: String, userDefaults: UserDefaults, xcodeAvailable: Bool, logger: FBControlCoreLogger) async throws {
+private func runForward(_ forward: String, userDefaults: UserDefaults, xcodeAvailable: Bool, logger: ControlCoreLogger) async throws {
   let components = forward.components(separatedBy: ":")
   if components.count != 2 {
     throw IDBCompanionError.invalidForwardArgument(argument: forward)
@@ -568,7 +568,7 @@ private func runSelectedCommand(_ userDefaults: UserDefaults, xcodeAvailable: Bo
 
 /// Suspends until `signalCode` is delivered, returning the signal number. The default disposition is set
 /// to `SIG_IGN` so the dispatch source is the sole handler; cancelling the awaiting task tears it down.
-private func waitForSignal(_ signalCode: Int32, exitMessage: String, logger: FBControlCoreLogger) async throws -> Int32 {
+private func waitForSignal(_ signalCode: Int32, exitMessage: String, logger: ControlCoreLogger) async throws -> Int32 {
   let promise = AsyncPromise<Int32>()
   let source = DispatchSource.makeSignalSource(signal: signalCode, queue: DispatchQueue.main)
   source.setEventHandler {
@@ -585,7 +585,7 @@ private func waitForSignal(_ signalCode: Int32, exitMessage: String, logger: FBC
 
 /// Suspends until any of `signals` is delivered, returning the first signal
 /// number seen.
-private func waitForAnySignal(_ signals: [(code: Int32, message: String)], logger: FBControlCoreLogger) async throws -> Int32 {
+private func waitForAnySignal(_ signals: [(code: Int32, message: String)], logger: ControlCoreLogger) async throws -> Int32 {
   let tasks = signals.map { signal in
     Task { try await waitForSignal(signal.code, exitMessage: signal.message, logger: logger) }
   }
@@ -624,7 +624,7 @@ private func idbMain() async -> Int32 {
   let logger = IDBLogger.logger(withUserDefaults: userDefaults)
   logStartupInfo(logger)
 
-  guard FBXcodeConfiguration.developerDirectory != "" else {
+  guard XcodeConfiguration.developerDirectory != "" else {
     logger.error().log("Failed to resolve the Xcode developer directory. Ensure Xcode is installed and selected with xcode-select.")
     fputs(kXcodeHelpMessage, stderr)
     return 1

@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#import "FBControlCoreLogger+OSLog.h"
+#import "ControlCoreLogger+OSLog.h"
 
 #import <FBControlCore/FBControlCore-Swift.h>
 
@@ -15,7 +15,7 @@
 
 static const char *LoggerSubsystem = "com.facebook.fbcontrolcore";
 
-@interface FBControlCoreLogger_OSLog : NSObject <FBControlCoreLogger>
+@interface FBControlCoreLogger_OSLog : NSObject <ControlCoreLogger>
 
 @property (nonatomic, readonly, strong) os_log_t client;
 
@@ -40,7 +40,7 @@ static const char *LoggerSubsystem = "com.facebook.fbcontrolcore";
   return self;
 }
 
-- (id<FBControlCoreLogger>)log:(NSString *)message
+- (id<ControlCoreLogger>)log:(NSString *)message
 {
   switch (self.level) {
     case FBControlCoreLogLevelError:
@@ -60,28 +60,28 @@ static const char *LoggerSubsystem = "com.facebook.fbcontrolcore";
   return self;
 }
 
-- (id<FBControlCoreLogger>)info
+- (id<ControlCoreLogger>)info
 {
   return [[self.class alloc] initWithClient:self.client name:self.name level:FBControlCoreLogLevelInfo];
 }
 
-- (id<FBControlCoreLogger>)debug
+- (id<ControlCoreLogger>)debug
 {
   return [[self.class alloc] initWithClient:self.client name:self.name level:FBControlCoreLogLevelDebug];
 }
 
-- (id<FBControlCoreLogger>)error
+- (id<ControlCoreLogger>)error
 {
   return [[self.class alloc] initWithClient:self.client name:self.name level:FBControlCoreLogLevelError];
 }
 
-- (id<FBControlCoreLogger>)withName:(NSString *)name
+- (id<ControlCoreLogger>)withName:(NSString *)name
 {
   os_log_t client = os_log_create(LoggerSubsystem, name.UTF8String);
   return [[self.class alloc] initWithClient:client name:name level:self.level];
 }
 
-- (id<FBControlCoreLogger>)withDateFormatEnabled:(BOOL)dateFormat
+- (id<ControlCoreLogger>)withDateFormatEnabled:(BOOL)dateFormat
 {
   return self;
 }
@@ -92,7 +92,7 @@ static const char *LoggerSubsystem = "com.facebook.fbcontrolcore";
 
 @implementation FBControlCoreLoggerFactory (OSLog)
 
-+ (id<FBControlCoreLogger>)osLoggerWithLevel:(FBControlCoreLogLevel)level
++ (id<ControlCoreLogger>)osLoggerWithLevel:(FBControlCoreLogLevel)level
 {
 #if defined(__apple_build_version__)
   os_log_t client = os_log_create(LoggerSubsystem, "");

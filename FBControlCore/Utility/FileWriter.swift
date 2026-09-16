@@ -36,7 +36,7 @@ public class FileWriter: NSObject {
     return DispatchQueue(label: "com.facebook.fbcontrolcore.fbfilewriter")
   }
 
-  @objc public static var nullWriter: FBDataConsumer {
+  @objc public static var nullWriter: DataConsumer {
     return FBDataConsumerAdaptor.dataConsumer(forDispatchDataConsumer: FileWriter_Null())
   }
 
@@ -58,11 +58,11 @@ public class FileWriter: NSObject {
     return FBFuture(result: writer)
   }
 
-  @objc public static func syncWriter(withFileDescriptor fileDescriptor: Int32, closeOnEndOfFile: Bool) -> FBDataConsumer & DataConsumerLifecycle {
+  @objc public static func syncWriter(withFileDescriptor fileDescriptor: Int32, closeOnEndOfFile: Bool) -> DataConsumer & DataConsumerLifecycle {
     return FBDataConsumerAdaptor.dataConsumer(forDispatchDataConsumer: FileWriter_Sync(fileDescriptor: fileDescriptor, closeOnEndOfFile: closeOnEndOfFile))
   }
 
-  @objc public static func asyncWriter(withFileDescriptor fileDescriptor: Int32, closeOnEndOfFile: Bool, queue: DispatchQueue, error: NSErrorPointer) -> (FBDataConsumer & DataConsumerLifecycle)? {
+  @objc public static func asyncWriter(withFileDescriptor fileDescriptor: Int32, closeOnEndOfFile: Bool, queue: DispatchQueue, error: NSErrorPointer) -> (DataConsumer & DataConsumerLifecycle)? {
     let writer = FileWriter_Async(fileDescriptor: fileDescriptor, closeOnEndOfFile: closeOnEndOfFile, writeQueue: queue)
     do {
       try writer.startWriting()
@@ -73,12 +73,12 @@ public class FileWriter: NSObject {
     return FBDataConsumerAdaptor.dataConsumer(forDispatchDataConsumer: writer)
   }
 
-  @objc public static func asyncWriter(withFileDescriptor fileDescriptor: Int32, closeOnEndOfFile: Bool, error: NSErrorPointer) -> (FBDataConsumer & DataConsumerLifecycle)? {
+  @objc public static func asyncWriter(withFileDescriptor fileDescriptor: Int32, closeOnEndOfFile: Bool, error: NSErrorPointer) -> (DataConsumer & DataConsumerLifecycle)? {
     let queue = createWorkQueue()
     return asyncWriter(withFileDescriptor: fileDescriptor, closeOnEndOfFile: closeOnEndOfFile, queue: queue, error: error)
   }
 
-  @objc public static func syncWriter(forFilePath filePath: String, error: NSErrorPointer) -> (FBDataConsumer & DataConsumerLifecycle)? {
+  @objc public static func syncWriter(forFilePath filePath: String, error: NSErrorPointer) -> (DataConsumer & DataConsumerLifecycle)? {
     let fd: Int32
     do {
       fd = try fileDescriptor(forPath: filePath)
@@ -140,7 +140,7 @@ private class FileWriter_Null: FileWriter, DispatchDataConsumer, DataConsumerLif
 
 // MARK: - FileWriter_Sync
 
-private class FileWriter_Sync: FileWriter, DispatchDataConsumer, DataConsumerLifecycle, FBDataConsumerSync {
+private class FileWriter_Sync: FileWriter, DispatchDataConsumer, DataConsumerLifecycle, DataConsumerSync {
 
   func consumeData(_ data: __DispatchData) {
     let dispatchData = data as DispatchData

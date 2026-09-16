@@ -12,15 +12,15 @@ private let FBCrashLogAppeared = NSNotification.Name("FBCrashLogAppeared")
 public final class CrashLogStore {
 
   private let directories: [String]
-  private let logger: any FBControlCoreLogger
+  private let logger: any ControlCoreLogger
   private let ingestedCrashLogs: NSMutableDictionary
   private let queue: DispatchQueue
 
-  public class func store(forDirectories directories: [String], logger: any FBControlCoreLogger) -> Self {
+  public class func store(forDirectories directories: [String], logger: any ControlCoreLogger) -> Self {
     return self.init(directories: directories, logger: logger)
   }
 
-  required init(directories: [String], logger: any FBControlCoreLogger) {
+  required init(directories: [String], logger: any ControlCoreLogger) {
     self.directories = directories
     self.logger = logger
     self.ingestedCrashLogs = NSMutableDictionary()

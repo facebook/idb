@@ -14,7 +14,7 @@ public final class AppleSimctlCommandExecutor {
   private let deviceSetPath: String
   private let deviceUUID: String?
   private let queue: DispatchQueue
-  private let logger: any FBControlCoreLogger
+  private let logger: any ControlCoreLogger
 
   public class func executor(for simulator: FBSimulator) -> AppleSimctlCommandExecutor {
     // simctl addresses a simulator by its device set, so this is only reachable for a
@@ -28,14 +28,14 @@ public final class AppleSimctlCommandExecutor {
       logger: simulator.logger.withName("simctl"))
   }
 
-  private init(deviceSetPath: String, deviceUUID: String?, logger: any FBControlCoreLogger) {
+  private init(deviceSetPath: String, deviceUUID: String?, logger: any ControlCoreLogger) {
     self.deviceSetPath = deviceSetPath
     self.deviceUUID = deviceUUID
     self.logger = logger
     self.queue = DispatchQueue(label: "com.facebook.fbsimulatorcontrol.simctl_executor")
   }
 
-  public func taskBuilder(withCommand command: String, arguments: [String]) -> FBProcessBuilder<NSNull, FBControlCoreLogger, FBControlCoreLogger> {
+  public func taskBuilder(withCommand command: String, arguments: [String]) -> FBProcessBuilder<NSNull, ControlCoreLogger, ControlCoreLogger> {
     var derived: [String] = [
       "simctl",
       "--set",
@@ -47,7 +47,7 @@ public final class AppleSimctlCommandExecutor {
     }
     derived.append(contentsOf: arguments)
 
-    return FBProcessBuilder<NSNull, FBControlCoreLogger, FBControlCoreLogger>
+    return FBProcessBuilder<NSNull, ControlCoreLogger, ControlCoreLogger>
       .withLaunchPath("/usr/bin/xcrun", arguments: derived)
       .withStdOut(to: logger)
       .withStdErr(to: logger)

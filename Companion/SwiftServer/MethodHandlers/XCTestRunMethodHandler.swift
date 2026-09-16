@@ -19,7 +19,7 @@ struct XCTestRunMethodHandler {
   let target: any FBiOSTarget
   let commandExecutor: IDBCommandExecutor
   let reporter: EventReporter
-  let targetLogger: FBControlCoreLogger
+  let targetLogger: ControlCoreLogger
   let logger: IDBLogger
 
   func handle(request: Idb_XctestRunRequest, responseStream: RPCWriter<Idb_XctestRunResponse>, context: ServerContext) async throws {

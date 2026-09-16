@@ -7,9 +7,9 @@
 
 #import "FBControlCoreFrameworkLoader.h"
 
+#import "ControlCoreLogger.h"
 #import "FBControlCore-Swift.h"
 #import "FBControlCore-SwiftImport.h"
-#import "FBControlCoreLogger.h"
 
 @implementation FBControlCoreFrameworkLoader
 
@@ -36,7 +36,7 @@
 
 #pragma mark Public Methods.
 
-- (BOOL)loadPrivateFrameworks:(nullable id<FBControlCoreLogger>)logger error:(NSError **)error
+- (BOOL)loadPrivateFrameworks:(nullable id<ControlCoreLogger>)logger error:(NSError **)error
 {
   if (self.hasLoadedFrameworks) {
     return YES;
@@ -50,7 +50,7 @@
 
 #pragma mark Private
 
-+ (BOOL)loadPrivateFrameworks:(NSArray<WeakFramework *> *)weakFrameworks logger:(id<FBControlCoreLogger>)logger error:(NSError **)error
++ (BOOL)loadPrivateFrameworks:(NSArray<WeakFramework *> *)weakFrameworks logger:(id<ControlCoreLogger>)logger error:(NSError **)error
 {
   for (WeakFramework *framework in weakFrameworks) {
     NSError *innerError = nil;

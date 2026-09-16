@@ -147,13 +147,13 @@ public protocol FBiOSTarget: FBiOSTargetInfo, FBiOSTargetCommand {
   // MARK: - Target properties
 
   /// The Target's Logger.
-  var logger: any FBControlCoreLogger { get }
+  var logger: any ControlCoreLogger { get }
 
   /// The path to the custom (non-default) device set if applicable.
   var customDeviceSetPath: String? { get }
 
   /// The directory that the target uses to store scratch files on the host.
-  var temporaryDirectory: FBTemporaryDirectory { get }
+  var temporaryDirectory: TemporaryDirectory { get }
 
   /// The directory that the target uses to store per-target files on the host.
   /// This should only be used for storing files that need to be preserved over the lifespan of the target.

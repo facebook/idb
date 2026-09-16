@@ -329,12 +329,12 @@ public struct SimulatorPrivacyCommands {
     }
   }
 
-  private func grantAccessInTCCDatabase(_ databasePath: String, bundleIDs: Set<String>, services: Set<TargetSettingsService>, logger: (any FBControlCoreLogger)?) async throws {
+  private func grantAccessInTCCDatabase(_ databasePath: String, bundleIDs: Set<String>, services: Set<TargetSettingsService>, logger: (any ControlCoreLogger)?) async throws {
     let query = try await Self.buildApprovalInsertQuery(forDatabase: databasePath, bundleIDs: bundleIDs, services: services, logger: logger)
     _ = try await Self.runSqliteCommand(onDatabase: databasePath, arguments: [query], logger: logger)
   }
 
-  private func revokeAccessInTCCDatabase(_ databasePath: String, bundleIDs: Set<String>, services: Set<TargetSettingsService>, logger: (any FBControlCoreLogger)?) async throws {
+  private func revokeAccessInTCCDatabase(_ databasePath: String, bundleIDs: Set<String>, services: Set<TargetSettingsService>, logger: (any ControlCoreLogger)?) async throws {
     var deletions: [String] = []
     for bundleID in bundleIDs {
       for serviceName in Self.tccServiceNames(for: services) {
@@ -350,12 +350,12 @@ public struct SimulatorPrivacyCommands {
       logger: logger)
   }
 
-  private static func buildApprovalInsertQuery(forDatabase databasePath: String, bundleIDs: Set<String>, services: Set<TargetSettingsService>, logger: (any FBControlCoreLogger)?) async throws -> String {
+  private static func buildApprovalInsertQuery(forDatabase databasePath: String, bundleIDs: Set<String>, services: Set<TargetSettingsService>, logger: (any ControlCoreLogger)?) async throws -> String {
     let schema = try await runSqliteCommand(onDatabase: databasePath, arguments: [".schema access"], logger: logger)
     return approvalInsertQuery(forAccessSchema: schema, bundleIDs: bundleIDs, services: services)
   }
 
-  private static func runSqliteCommand(onDatabase databasePath: String, arguments: [String], logger: (any FBControlCoreLogger)?) async throws -> String {
+  private static func runSqliteCommand(onDatabase databasePath: String, arguments: [String], logger: (any ControlCoreLogger)?) async throws -> String {
     let allArguments = [databasePath] + arguments
     logger?.log("Running sqlite3 \(CollectionInformation.oneLineDescription(from: allArguments))")
     let result = try await Subprocess(executable: "/usr/bin/sqlite3", arguments: allArguments)

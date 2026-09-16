@@ -8,7 +8,7 @@
 @testable import FBControlCore
 import XCTest
 
-final class FBControlCoreLoggerTests: XCTestCase {
+final class ControlCoreLoggerTests: XCTestCase {
   func testLoggingToFileDescriptor() throws {
     let filename = "\(UUID().uuidString).log"
     let temporaryFilePath = NSTemporaryDirectory().appending(filename)

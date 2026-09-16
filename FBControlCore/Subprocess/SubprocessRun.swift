@@ -43,7 +43,7 @@ extension Subprocess {
     output: Output<Out>,
     error: Output<Err>,
     exitPolicy: ExitPolicy = .mustExitZero,
-    logger: (any FBControlCoreLogger)? = nil
+    logger: (any ControlCoreLogger)? = nil
   ) async throws -> Completed<Out, Err> {
     let stdOut = output.resolve()
     let stdErr = error.resolve()
@@ -83,7 +83,7 @@ extension Subprocess {
   /// applies, made visible in the return type.
   public func run(
     exitPolicy: ExitPolicy = .mustExitZero,
-    logger: (any FBControlCoreLogger)? = nil
+    logger: (any ControlCoreLogger)? = nil
   ) async throws -> Completed<String, String> {
     try await run(output: .string, error: .string, exitPolicy: exitPolicy, logger: logger)
   }

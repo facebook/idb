@@ -110,7 +110,7 @@ public final class SimulatorLifecycleCommands: LifecycleCommands {
   }
 
   private class func launchSimulatorApplicationForDefaultDeviceSet() async throws {
-    let applicationBundle = FBXcodeConfiguration.simulatorApp
+    let applicationBundle = XcodeConfiguration.simulatorApp
     let applicationURL = URL(fileURLWithPath: applicationBundle.path)
     let configuration = NSWorkspace.OpenConfiguration()
     configuration.activates = true
@@ -125,7 +125,7 @@ public final class SimulatorLifecycleCommands: LifecycleCommands {
     }
   }
 
-  public func disconnect(withTimeout timeout: TimeInterval, logger: (any FBControlCoreLogger)?) async throws {
+  public func disconnect(withTimeout timeout: TimeInterval, logger: (any ControlCoreLogger)?) async throws {
     guard self.simulator != nil else {
       throw WeakTargetError.simulator
     }

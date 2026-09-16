@@ -9,25 +9,25 @@ import Foundation
 
 /// Receives log messages. Conformers must be thread-safe: loggers are shared across queues,
 /// private-framework callback threads and actors.
-@objc public protocol FBControlCoreLogger: NSObjectProtocol, Sendable {
+@objc public protocol ControlCoreLogger: NSObjectProtocol, Sendable {
   /// Logs a Message with the provided String.
   @discardableResult
-  func log(_ message: String) -> FBControlCoreLogger
+  func log(_ message: String) -> ControlCoreLogger
 
   /// Returns the Info Logger variant.
-  func info() -> FBControlCoreLogger
+  func info() -> ControlCoreLogger
 
   /// Returns the Debug Logger variant.
-  func debug() -> FBControlCoreLogger
+  func debug() -> ControlCoreLogger
 
   /// Returns the Error Logger variant.
-  func error() -> FBControlCoreLogger
+  func error() -> ControlCoreLogger
 
   /// Returns a Logger for a named 'facility' or 'tag'.
-  func withName(_ name: String) -> FBControlCoreLogger
+  func withName(_ name: String) -> ControlCoreLogger
 
   /// Enables or Disables date formatting in the logger.
-  func withDateFormatEnabled(_ enabled: Bool) -> FBControlCoreLogger
+  func withDateFormatEnabled(_ enabled: Bool) -> ControlCoreLogger
 
   /// The Prefix for the Logger, if set.
   var name: String? { get }
@@ -42,4 +42,4 @@ import Foundation
 // required to be thread-safe by the protocol contract above.
 extension FBCompositeLogger: @unchecked Sendable {}
 
-extension FBCompositeLogger: FBControlCoreLogger {}
+extension FBCompositeLogger: ControlCoreLogger {}

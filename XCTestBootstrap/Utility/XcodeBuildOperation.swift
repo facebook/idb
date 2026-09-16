@@ -36,7 +36,7 @@ public final class XcodeBuildOperation {
 
   // MARK: - Initializers
 
-  public static func operation(withUDID udid: String, configuration: TestLaunchConfiguration, xcodeBuildPath: String, testRunFilePath: String, simDeviceSet simDeviceSetPath: String?, macOSTestShimPath: String?, logger: FBControlCoreLogger?) async throws -> FBSubprocess<AnyObject, AnyObject, AnyObject> {
+  public static func operation(withUDID udid: String, configuration: TestLaunchConfiguration, xcodeBuildPath: String, testRunFilePath: String, simDeviceSet simDeviceSetPath: String?, macOSTestShimPath: String?, logger: ControlCoreLogger?) async throws -> FBSubprocess<AnyObject, AnyObject, AnyObject> {
     var arguments = [
       "test-without-building",
       "-xctestrun", testRunFilePath,
@@ -125,7 +125,7 @@ public final class XcodeBuildOperation {
     return path
   }
 
-  public static func terminateAbandonedXcodebuildProcesses(forUDID udid: String, processFetcher: FBProcessFetcher, queue: DispatchQueue, logger: FBControlCoreLogger) async throws -> [FBProcessInfo] {
+  public static func terminateAbandonedXcodebuildProcesses(forUDID udid: String, processFetcher: FBProcessFetcher, queue: DispatchQueue, logger: ControlCoreLogger) async throws -> [FBProcessInfo] {
     let processes = XcodeBuildOperation.activeXcodebuildProcesses(forUDID: udid, processFetcher: processFetcher)
     if processes.isEmpty {
       logger.log("No processes for \(udid) to terminate")
@@ -138,7 +138,7 @@ public final class XcodeBuildOperation {
   }
 
   public static func xcodeBuildPath() throws -> String {
-    let path = (FBXcodeConfiguration.developerDirectory as NSString).appendingPathComponent("/usr/bin/xcodebuild")
+    let path = (XcodeConfiguration.developerDirectory as NSString).appendingPathComponent("/usr/bin/xcodebuild")
     if !FileManager.default.fileExists(atPath: path) {
       throw XcodeBuildError.xcodebuildMissing(path: path)
     }
@@ -160,7 +160,7 @@ public final class XcodeBuildOperation {
     return mutableTestRunProperties as NSDictionary
   }
 
-  public static func confirmExit(ofXcodebuildOperation task: FBSubprocess<AnyObject, AnyObject, AnyObject>, configuration: TestLaunchConfiguration, reporter: XCTestReporter, target: any FBiOSTarget, logger: FBControlCoreLogger) -> FBFuture<NSNull> {
+  public static func confirmExit(ofXcodebuildOperation task: FBSubprocess<AnyObject, AnyObject, AnyObject>, configuration: TestLaunchConfiguration, reporter: XCTestReporter, target: any FBiOSTarget, logger: ControlCoreLogger) -> FBFuture<NSNull> {
     return
       task.exited(withCodes: [0, 65]).retyped(FBFuture<AnyObject>.self)
       .onQueue(

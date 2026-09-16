@@ -73,15 +73,15 @@ public final class IDBCommandExecutor {
 
   public let storageManager: IDBStorageManager
   public var debugServer: DebugServer?
-  public let temporaryDirectory: FBTemporaryDirectory
+  public let temporaryDirectory: TemporaryDirectory
 
   // MARK: - Initializers
 
-  public static func commandExecutor(forTarget target: any FBiOSTarget, storageManager: IDBStorageManager, temporaryDirectory: FBTemporaryDirectory, debugserverPort: in_port_t, logger: IDBLogger) -> IDBCommandExecutor {
+  public static func commandExecutor(forTarget target: any FBiOSTarget, storageManager: IDBStorageManager, temporaryDirectory: TemporaryDirectory, debugserverPort: in_port_t, logger: IDBLogger) -> IDBCommandExecutor {
     IDBCommandExecutor(target: target, storageManager: storageManager, temporaryDirectory: temporaryDirectory, debugserverPort: debugserverPort, logger: logger.named("grpc_handler"))
   }
 
-  private init(target: any FBiOSTarget, storageManager: IDBStorageManager, temporaryDirectory: FBTemporaryDirectory, debugserverPort: in_port_t, logger: IDBLogger) {
+  private init(target: any FBiOSTarget, storageManager: IDBStorageManager, temporaryDirectory: TemporaryDirectory, debugserverPort: in_port_t, logger: IDBLogger) {
     self.target = target
     self.storageManager = storageManager
     self.temporaryDirectory = temporaryDirectory
@@ -412,7 +412,7 @@ public final class IDBCommandExecutor {
     return try await target.crashLog.pruneCrashes(matching: predicate)
   }
 
-  public func xctest_run(_ request: XCTestRunRequest, reporter: XCTestReporter, logger: FBControlCoreLogger) async throws -> IDBTestOperation {
+  public func xctest_run(_ request: XCTestRunRequest, reporter: XCTestReporter, logger: ControlCoreLogger) async throws -> IDBTestOperation {
     return try await request.start(withBundleStorageManager: storageManager.xctest, target: target, reporter: reporter, logger: logger, temporaryDirectory: temporaryDirectory)
   }
 
@@ -518,7 +518,7 @@ public final class IDBCommandExecutor {
     return server
   }
 
-  public func tail_companion_logs(_ consumer: FBDataConsumer) async throws -> any LogOperation {
+  public func tail_companion_logs(_ consumer: DataConsumer) async throws -> any LogOperation {
     return try await logger.tailToConsumer(consumer)
   }
 
@@ -599,7 +599,7 @@ public final class IDBCommandExecutor {
     }
   }
 
-  public func tail(_ path: String, to_consumer consumer: FBDataConsumer, in_container containerType: String?) async throws -> FileContainerTailOperation {
+  public func tail(_ path: String, to_consumer consumer: DataConsumer, in_container containerType: String?) async throws -> FileContainerTailOperation {
     return try await withFileContainer(for: containerType) { container in
       try await container.tail(path, to: consumer)
     }
@@ -636,7 +636,7 @@ public final class IDBCommandExecutor {
     }
   }
 
-  public func dapServer(withPath dapPath: String, stdIn: FBProcessInput<AnyObject>, stdOut: any FBDataConsumer) async throws -> FBSubprocess<AnyObject, FBDataConsumer, NSString> {
+  public func dapServer(withPath dapPath: String, stdIn: FBProcessInput<AnyObject>, stdOut: any DataConsumer) async throws -> FBSubprocess<AnyObject, DataConsumer, NSString> {
     return try await simulatorTarget().dapServer.launch(dapPath, stdIn: stdIn, stdOut: stdOut)
   }
 

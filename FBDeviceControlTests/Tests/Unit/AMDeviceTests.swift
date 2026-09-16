@@ -150,7 +150,7 @@ final class AMDeviceTests {
       serviceReuseTimeout: serviceReuseTimeout,
       work: DispatchQueue.main,
       asyncQueue: DispatchQueue.main,
-      logger: FBControlCoreGlobalConfiguration.defaultLogger
+      logger: ControlCoreGlobalConfiguration.defaultLogger
     )
     device.amDeviceRef = ("A DEVICE" as CFString)
     #expect(sAMDeviceEvents.isEmpty)
@@ -226,7 +226,7 @@ final class AMDeviceTests {
     await waitForDeviceEvents(Array(startServiceEvents.dropLast()))
 
     FBAMDevice.invalidateServiceConnection(
-      connection, service: connection.name, logger: FBControlCoreGlobalConfiguration.defaultLogger)
+      connection, service: connection.name, logger: ControlCoreGlobalConfiguration.defaultLogger)
 
     await waitForDeviceEvents(startServiceEvents)
     #expect((startServiceEvents) == (sAMDeviceEvents))

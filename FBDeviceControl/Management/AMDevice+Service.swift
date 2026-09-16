@@ -72,7 +72,7 @@ extension FBAMDevice {
   static func invalidateServiceConnection(
     _ connection: FBAMDServiceConnection?,
     service: String,
-    logger: any FBControlCoreLogger
+    logger: any ControlCoreLogger
   ) {
     guard let connection else {
       return
@@ -90,7 +90,7 @@ extension FBAMDevice {
     _ service: String,
     on connectedDevice: any DeviceCommands,
     calls: AMDCalls,
-    logger: any FBControlCoreLogger
+    logger: any ControlCoreLogger
   ) throws -> FBAMDServiceConnection {
     logger.log("Starting service \(service)")
     let userInfo: [String: Any] = ["CloseOnInvalidate": 1, "InvalidateOnDetach": 1]

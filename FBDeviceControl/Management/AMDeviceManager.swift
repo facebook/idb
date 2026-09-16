@@ -118,7 +118,7 @@ final class AMDeviceManager: DeviceManager<FBAMDevice> {
     work workQueue: DispatchQueue,
     asyncQueue: DispatchQueue,
     ecidFilter: String?,
-    logger: any FBControlCoreLogger
+    logger: any ControlCoreLogger
   ) {
     self.calls = calls
     self.workQueue = workQueue

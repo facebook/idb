@@ -61,12 +61,12 @@ final class ReplRecordingCoordinator: @unchecked Sendable {
   private static let subdirectoryName = "idb-repl-recordings"
 
   private let recordingsDirectory: URL
-  private let logger: FBControlCoreLogger?
+  private let logger: ControlCoreLogger?
   private let lock = NSLock()
   private var state: State = .idle
   private var counter = 0
 
-  init(auxillaryDirectory: String, logger: FBControlCoreLogger?) {
+  init(auxillaryDirectory: String, logger: ControlCoreLogger?) {
     self.recordingsDirectory = URL(fileURLWithPath: auxillaryDirectory).appendingPathComponent(Self.subdirectoryName)
     self.logger = logger
   }

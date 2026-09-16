@@ -8,7 +8,7 @@
 @testable import FBControlCore
 import XCTest
 
-final class FileReaderTests: XCTestCase, FBDataConsumer {
+final class FileReaderTests: XCTestCase, DataConsumer {
 
   var didRecieveEOF: Bool = false
 
@@ -33,7 +33,7 @@ final class FileReaderTests: XCTestCase, FBDataConsumer {
       expected == consumer.data()
     }
     let expectation = self.expectation(for: predicate, evaluatedWith: self, handler: nil)
-    wait(for: [expectation], timeout: FBControlCoreGlobalConfiguration.fastTimeout)
+    wait(for: [expectation], timeout: ControlCoreGlobalConfiguration.fastTimeout)
 
     let result: NSNumber = try reader.stopReading().`await`()
     XCTAssertEqual(result, 0)
@@ -71,7 +71,7 @@ final class FileReaderTests: XCTestCase, FBDataConsumer {
     XCTAssertNotNil(writerAndReader)
 
     // swiftlint:disable force_cast
-    let writer = writerAndReader![0] as! FBDataConsumer & DataConsumerLifecycle
+    let writer = writerAndReader![0] as! DataConsumer & DataConsumerLifecycle
     let reader = writerAndReader![1] as! FileReader
     // swiftlint:enable force_cast
 
@@ -105,7 +105,7 @@ final class FileReaderTests: XCTestCase, FBDataConsumer {
       expected == consumer.data()
     }
     let expectation = self.expectation(for: predicate, evaluatedWith: self, handler: nil)
-    wait(for: [expectation], timeout: FBControlCoreGlobalConfiguration.fastTimeout)
+    wait(for: [expectation], timeout: ControlCoreGlobalConfiguration.fastTimeout)
 
     let result: NSNumber = try reader.stopReading().`await`()
     XCTAssertEqual(result, NSNumber(value: ECANCELED))
@@ -232,7 +232,7 @@ final class FileReaderTests: XCTestCase, FBDataConsumer {
     let consumed = NSPredicate { _, _ in
       expected == consumer.data()
     }
-    wait(for: [expectation(for: consumed, evaluatedWith: self, handler: nil)], timeout: FBControlCoreGlobalConfiguration.fastTimeout)
+    wait(for: [expectation(for: consumed, evaluatedWith: self, handler: nil)], timeout: ControlCoreGlobalConfiguration.fastTimeout)
     XCTAssertNotEqual(fcntl(localSocket, F_GETFL) & O_NONBLOCK, 0)
 
     _ = try reader.stopReading().`await`()
@@ -254,7 +254,7 @@ final class FileReaderTests: XCTestCase, FBDataConsumer {
     XCTAssertEqual(reader.state, FBFileReaderState.finishedReadingInError)
   }
 
-  // MARK: - FBDataConsumer
+  // MARK: - DataConsumer
 
   func consumeEndOfFile() {
     didRecieveEOF = true

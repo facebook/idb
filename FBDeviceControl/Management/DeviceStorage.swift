@@ -28,11 +28,11 @@ public final class DeviceStorage<T: AnyObject> {
     return result
   }
 
-  private let logger: any FBControlCoreLogger
+  private let logger: any ControlCoreLogger
   private var attachedDevices: [String: T]
   private var referencedDevices: NSMapTable<NSString, AnyObject>
 
-  public init(logger: any FBControlCoreLogger) {
+  public init(logger: any ControlCoreLogger) {
     self.logger = logger
     self.attachedDevices = [:]
     self.referencedDevices = NSMapTable(keyOptions: .copyIn, valueOptions: .weakMemory)

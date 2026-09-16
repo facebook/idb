@@ -26,7 +26,7 @@ enum XCTestResultToolError: Error, LocalizedError {
 
 final class XCTestResultToolOperation {
 
-  private static func runProcess(launchPath: String, arguments: [String], logger: FBControlCoreLogger?) -> FBFuture<AnyObject> {
+  private static func runProcess(launchPath: String, arguments: [String], logger: ControlCoreLogger?) -> FBFuture<AnyObject> {
     let base = FBProcessBuilder<NSNull, NSData, NSData>.withLaunchPath(launchPath, arguments: arguments).withTaskLifecycleLogging(to: logger)
     if let logger {
       let withStdErr = base.withStdErr(to: logger)
@@ -36,7 +36,7 @@ final class XCTestResultToolOperation {
     }
   }
 
-  private static func internalOperation(withArguments arguments: [String], queue: DispatchQueue, logger: FBControlCoreLogger?) -> FBFuture<FBSubprocess<AnyObject, AnyObject, AnyObject>> {
+  private static func internalOperation(withArguments arguments: [String], queue: DispatchQueue, logger: ControlCoreLogger?) -> FBFuture<FBSubprocess<AnyObject, AnyObject, AnyObject>> {
     let xcrunArguments = ["xcresulttool"] + arguments
     return
       XCTestResultToolOperation.runProcess(launchPath: XcrunPath, arguments: xcrunArguments, logger: logger)
@@ -49,7 +49,7 @@ final class XCTestResultToolOperation {
       .retyped(FBFuture<FBSubprocess<AnyObject, AnyObject, AnyObject>>.self)
   }
 
-  private static func exportFrom(_ path: String, to destination: String, forId bundleObjectId: String, withType exportType: String, queue: DispatchQueue, logger: FBControlCoreLogger?) -> FBFuture<FBSubprocess<AnyObject, AnyObject, AnyObject>> {
+  private static func exportFrom(_ path: String, to destination: String, forId bundleObjectId: String, withType exportType: String, queue: DispatchQueue, logger: ControlCoreLogger?) -> FBFuture<FBSubprocess<AnyObject, AnyObject, AnyObject>> {
     let arguments = ["export", "--path", path, "--output-path", destination, "--id", bundleObjectId, "--type", exportType]
     return XCTestResultToolOperation.internalOperation(withArguments: arguments, queue: queue, logger: logger)
   }
@@ -63,7 +63,7 @@ final class XCTestResultToolOperation {
     return (try? JSONSerialization.jsonObject(with: data, options: [])) as? NSDictionary ?? NSDictionary()
   }
 
-  public static func getJSON(from path: String, forId bundleObjectId: String?, queue: DispatchQueue, logger: FBControlCoreLogger?) -> FBFuture<NSDictionary> {
+  public static func getJSON(from path: String, forId bundleObjectId: String?, queue: DispatchQueue, logger: ControlCoreLogger?) -> FBFuture<NSDictionary> {
     logger?.log("Getting json for id \(bundleObjectId ?? "nil")")
     var arguments = ["get", "--path", path, "--format", "json"]
     if let bundleObjectId, !bundleObjectId.isEmpty {
@@ -80,11 +80,11 @@ final class XCTestResultToolOperation {
       .retyped(FBFuture<NSDictionary>.self)
   }
 
-  public static func exportFile(from path: String, to destination: String, forId bundleObjectId: String, queue: DispatchQueue, logger: FBControlCoreLogger?) -> FBFuture<FBSubprocess<AnyObject, AnyObject, AnyObject>> {
+  public static func exportFile(from path: String, to destination: String, forId bundleObjectId: String, queue: DispatchQueue, logger: ControlCoreLogger?) -> FBFuture<FBSubprocess<AnyObject, AnyObject, AnyObject>> {
     return XCTestResultToolOperation.exportFrom(path, to: destination, forId: bundleObjectId, withType: "file", queue: queue, logger: logger)
   }
 
-  public static func exportJPEG(from path: String, to destination: String, forId bundleObjectId: String, type encodeType: String, queue: DispatchQueue, logger: FBControlCoreLogger?) -> FBFuture<FBSubprocess<AnyObject, AnyObject, AnyObject>> {
+  public static func exportJPEG(from path: String, to destination: String, forId bundleObjectId: String, type encodeType: String, queue: DispatchQueue, logger: ControlCoreLogger?) -> FBFuture<FBSubprocess<AnyObject, AnyObject, AnyObject>> {
     return
       XCTestResultToolOperation.exportFile(from: path, to: destination, forId: bundleObjectId, queue: queue, logger: logger)
       .retyped(FBFuture<AnyObject>.self)
@@ -103,11 +103,11 @@ final class XCTestResultToolOperation {
       .retyped(FBFuture<FBSubprocess<AnyObject, AnyObject, AnyObject>>.self)
   }
 
-  public static func exportDirectory(from path: String, to destination: String, forId bundleObjectId: String, queue: DispatchQueue, logger: FBControlCoreLogger?) -> FBFuture<FBSubprocess<AnyObject, AnyObject, AnyObject>> {
+  public static func exportDirectory(from path: String, to destination: String, forId bundleObjectId: String, queue: DispatchQueue, logger: ControlCoreLogger?) -> FBFuture<FBSubprocess<AnyObject, AnyObject, AnyObject>> {
     return XCTestResultToolOperation.exportFrom(path, to: destination, forId: bundleObjectId, withType: "directory", queue: queue, logger: logger)
   }
 
-  public static func describeFormat(_ queue: DispatchQueue, logger: FBControlCoreLogger?) -> FBFuture<NSDictionary> {
+  public static func describeFormat(_ queue: DispatchQueue, logger: ControlCoreLogger?) -> FBFuture<NSDictionary> {
     let arguments = ["formatDescription"]
     return
       XCTestResultToolOperation.internalOperation(withArguments: arguments, queue: queue, logger: logger)

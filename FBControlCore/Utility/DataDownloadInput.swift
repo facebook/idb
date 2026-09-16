@@ -7,7 +7,7 @@
 
 import Foundation
 
-public final class FBDataDownloadInput: NSObject, @unchecked Sendable {
+public final class DataDownloadInput: NSObject, @unchecked Sendable {
 
   public let input: FBProcessInput<AnyObject>
 
@@ -18,21 +18,21 @@ public final class FBDataDownloadInput: NSObject, @unchecked Sendable {
   }
 
   private let completedFuture: FBMutableFuture<NSNull>
-  private let logger: FBControlCoreLogger
+  private let logger: ControlCoreLogger
 
-  public static func dataDownload(withURL url: URL, logger: FBControlCoreLogger) -> FBDataDownloadInput {
+  public static func dataDownload(withURL url: URL, logger: ControlCoreLogger) -> DataDownloadInput {
     return dataDownload(withURL: url, configuration: .default, logger: logger)
   }
 
   /// Downloads over a caller-supplied session configuration, so that timeouts,
   /// caching policy and protocol handling are the caller's to decide.
-  public static func dataDownload(withURL url: URL, configuration: URLSessionConfiguration, logger: FBControlCoreLogger) -> FBDataDownloadInput {
-    let download = FBDataDownloadInput(logger: logger)
+  public static func dataDownload(withURL url: URL, configuration: URLSessionConfiguration, logger: ControlCoreLogger) -> DataDownloadInput {
+    let download = DataDownloadInput(logger: logger)
     download.startDownload(from: url, configuration: configuration)
     return download
   }
 
-  private init(logger: FBControlCoreLogger) {
+  private init(logger: ControlCoreLogger) {
     self.logger = logger
     self.completedFuture = FBMutableFuture<NSNull>()
     let rawInput = FBProcessInput<NSObject>.fromConsumer()
@@ -43,7 +43,7 @@ public final class FBDataDownloadInput: NSObject, @unchecked Sendable {
   // The session holds both the delegate and the resumed task for the lifetime of the download, so neither needs storing here.
   private func startDownload(from url: URL, configuration: URLSessionConfiguration) {
     let delegateQueue = OperationQueue()
-    delegateQueue.name = "FBControlCore.FBDataDownloadInput.urlSessionDelegate"
+    delegateQueue.name = "FBControlCore.DataDownloadInput.urlSessionDelegate"
     let session = URLSession(configuration: configuration, delegate: self, delegateQueue: delegateQueue)
     session.dataTask(with: url).resume()
   }
@@ -51,7 +51,7 @@ public final class FBDataDownloadInput: NSObject, @unchecked Sendable {
 
 // MARK: - URLSessionDataDelegate
 
-extension FBDataDownloadInput: URLSessionDataDelegate {
+extension DataDownloadInput: URLSessionDataDelegate {
 
   public func urlSession(_ session: URLSession, dataTask: URLSessionDataTask, didReceive response: URLResponse, completionHandler: @escaping (URLSession.ResponseDisposition) -> Void) {
     guard let httpResponse = response as? HTTPURLResponse else {
@@ -73,7 +73,7 @@ extension FBDataDownloadInput: URLSessionDataDelegate {
   }
 
   public func urlSession(_ session: URLSession, dataTask: URLSessionDataTask, didReceive data: Data) {
-    (input.contents as? FBDataConsumer)?.consumeData(data)
+    (input.contents as? DataConsumer)?.consumeData(data)
   }
 
   public func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
@@ -86,6 +86,6 @@ extension FBDataDownloadInput: URLSessionDataDelegate {
     } else {
       _ = completedFuture.resolve(withResult: NSNull())
     }
-    (input.contents as? FBDataConsumer)?.consumeEndOfFile()
+    (input.contents as? DataConsumer)?.consumeEndOfFile()
   }
 }

@@ -78,9 +78,9 @@ public class IDBStorage {
   public let target: any FBiOSTarget
   public let basePath: URL
   public let queue: DispatchQueue
-  public let logger: FBControlCoreLogger
+  public let logger: ControlCoreLogger
 
-  public init(target: any FBiOSTarget, basePath: URL, queue: DispatchQueue, logger: FBControlCoreLogger) {
+  public init(target: any FBiOSTarget, basePath: URL, queue: DispatchQueue, logger: ControlCoreLogger) {
     self.target = target
     self.basePath = basePath
     self.queue = queue
@@ -139,7 +139,7 @@ public final class FileStorage: IDBStorage {
 public class BundleStorage: IDBStorage {
   public let relocateLibraries: Bool
 
-  public init(target: any FBiOSTarget, basePath: URL, queue: DispatchQueue, logger: FBControlCoreLogger, relocateLibraries: Bool) {
+  public init(target: any FBiOSTarget, basePath: URL, queue: DispatchQueue, logger: ControlCoreLogger, relocateLibraries: Bool) {
     self.relocateLibraries = relocateLibraries
     super.init(target: target, basePath: basePath, queue: queue, logger: logger)
   }
@@ -453,9 +453,9 @@ public final class IDBStorageManager {
   public let dylib: FileStorage
   public let dsym: FileStorage
   public let framework: BundleStorage
-  public let logger: FBControlCoreLogger
+  public let logger: ControlCoreLogger
 
-  private init(xctest: XCTestBundleStorage, application: BundleStorage, dylib: FileStorage, dsym: FileStorage, framework: BundleStorage, logger: FBControlCoreLogger) {
+  private init(xctest: XCTestBundleStorage, application: BundleStorage, dylib: FileStorage, dsym: FileStorage, framework: BundleStorage, logger: ControlCoreLogger) {
     self.xctest = xctest
     self.application = application
     self.dylib = dylib
@@ -464,7 +464,7 @@ public final class IDBStorageManager {
     self.logger = logger
   }
 
-  public static func manager(forTarget target: any FBiOSTarget, logger: FBControlCoreLogger) throws -> IDBStorageManager {
+  public static func manager(forTarget target: any FBiOSTarget, logger: ControlCoreLogger) throws -> IDBStorageManager {
     let queue = DispatchQueue(label: "com.facebook.idb.bundle_storage")
 
     let xctestBasePath = try prepareStoragePath(withName: IdbTestBundlesFolder, target: target)

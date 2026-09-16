@@ -164,7 +164,7 @@ final class FakeAMDevice: NSObject {
       serviceReuseTimeout: nil,
       work: DispatchQueue.main,
       asyncQueue: DispatchQueue.main,
-      logger: FBControlCoreGlobalConfiguration.defaultLogger)
+      logger: ControlCoreGlobalConfiguration.defaultLogger)
     device.amDeviceRef = self
     clearEvents()
     return device
@@ -176,7 +176,7 @@ final class FakeAMDevice: NSObject {
       set: nil,
       amDevice: makeAMDevice(),
       restorableDevice: nil,
-      logger: FBControlCoreGlobalConfiguration.defaultLogger)
+      logger: ControlCoreGlobalConfiguration.defaultLogger)
   }
 
   // MARK: - The call table

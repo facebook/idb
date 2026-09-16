@@ -64,7 +64,7 @@ public final class MacDevice: NSObject, FBiOSTarget {
   public let asyncQueue: DispatchQueue
   public let auxillaryDirectory: String
   public var name: String
-  public var logger: any FBControlCoreLogger
+  public var logger: any ControlCoreLogger
   public let osVersion: OSVersion
   public var state: FBiOSTargetState
   public let targetType: FBiOSTargetType
@@ -72,7 +72,7 @@ public final class MacDevice: NSObject, FBiOSTarget {
   public let screenInfo: FBiOSTargetScreenInfo?
   public var deviceType: DeviceType = DeviceType.generic(withName: "Mac")
   public let udid: String
-  public let temporaryDirectory: FBTemporaryDirectory
+  public let temporaryDirectory: TemporaryDirectory
 
   // MARK: - Private properties
 
@@ -130,17 +130,17 @@ public final class MacDevice: NSObject, FBiOSTarget {
     screenInfo = nil
     osVersion = OSVersion.generic(withName: "mac")
     name = Host.current().localizedName ?? ""
-    self.logger = FBControlCoreGlobalConfiguration.defaultLogger
+    self.logger = ControlCoreGlobalConfiguration.defaultLogger
     self.catalyst = false
-    temporaryDirectory = FBTemporaryDirectory(logger: FBControlCoreGlobalConfiguration.defaultLogger)
+    temporaryDirectory = TemporaryDirectory(logger: ControlCoreGlobalConfiguration.defaultLogger)
     super.init()
   }
 
-  public convenience init(logger: FBControlCoreLogger) {
+  public convenience init(logger: ControlCoreLogger) {
     self.init(logger: logger, catalyst: false)
   }
 
-  public init(logger: FBControlCoreLogger, catalyst: Bool) {
+  public init(logger: ControlCoreLogger, catalyst: Bool) {
     architectures = Array(ArchitectureProcessAdapter.hostMachineSupportedArchitectures())
     asyncQueue = DispatchQueue.global(qos: .userInitiated)
     let explicitTmpDirectory = ProcessInfo.processInfo.environment["IDB_MAC_AUXILLIARY_DIR"]
@@ -161,7 +161,7 @@ public final class MacDevice: NSObject, FBiOSTarget {
     name = Host.current().localizedName ?? ""
     self.logger = logger
     self.catalyst = catalyst
-    temporaryDirectory = FBTemporaryDirectory(logger: logger)
+    temporaryDirectory = TemporaryDirectory(logger: logger)
     super.init()
   }
 
@@ -201,12 +201,12 @@ public final class MacDevice: NSObject, FBiOSTarget {
 
   public var platformRootDirectory: String {
     get async {
-      (FBXcodeConfiguration.developerDirectory as NSString).appendingPathComponent("Platforms/MacOSX.platform")
+      (XcodeConfiguration.developerDirectory as NSString).appendingPathComponent("Platforms/MacOSX.platform")
     }
   }
 
   public var path: String {
-    (FBXcodeConfiguration.developerDirectory as NSString).appendingPathComponent("usr/bin/xctest")
+    (XcodeConfiguration.developerDirectory as NSString).appendingPathComponent("usr/bin/xctest")
   }
 
   // MARK: - Device UDID
@@ -434,7 +434,7 @@ extension MacDevice: XCTestExtendedCommands {
   public func runTest(
     launchConfiguration: TestLaunchConfiguration,
     reporter: AnyObject,
-    logger: any FBControlCoreLogger
+    logger: any ControlCoreLogger
   ) async throws {
     guard let typedReporter = reporter as? XCTestReporter else {
       throw MacDeviceError.unexpectedReporter(reporterDescription: String(describing: reporter))

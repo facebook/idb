@@ -15,7 +15,7 @@ import IDBGRPCSwift
 struct InstallMethodHandler: @unchecked Sendable {
 
   let commandExecutor: IDBCommandExecutor
-  let targetLogger: FBControlCoreLogger
+  let targetLogger: ControlCoreLogger
 
   func handle(requestStream: RequestStreamReader<Idb_InstallRequest>, responseStream: RPCWriter<Idb_InstallResponse>, context: ServerContext) async throws {
 
@@ -164,7 +164,7 @@ struct InstallMethodHandler: @unchecked Sendable {
       guard let url = URL(string: urlString) else {
         throw RPCError(code: .invalidArgument, message: "Invalid url source")
       }
-      let download = FBDataDownloadInput.dataDownload(withURL: url, logger: targetLogger)
+      let download = DataDownloadInput.dataDownload(withURL: url, logger: targetLogger)
       let input = download.input
 
       return try await installSource(dataStream: input, skipSigningBundles: skipSigningBundles)

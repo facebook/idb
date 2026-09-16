@@ -116,13 +116,13 @@ public final class SimulatorXCTestCommands: XCTestExtendedCommands {
   }
 
   public var path: String {
-    (FBXcodeConfiguration.developerDirectory as NSString)
+    (XcodeConfiguration.developerDirectory as NSString)
       .appendingPathComponent("Platforms/iPhoneSimulator.platform/Developer/Library/Xcode/Agents/xctest")
   }
 
   // MARK: - Async
 
-  public func runTest(launchConfiguration: TestLaunchConfiguration, reporter: AnyObject, logger: any FBControlCoreLogger) async throws {
+  public func runTest(launchConfiguration: TestLaunchConfiguration, reporter: AnyObject, logger: any ControlCoreLogger) async throws {
     guard let simulator = self.simulator else {
       throw WeakTargetError.simulator
     }
@@ -183,7 +183,7 @@ public final class SimulatorXCTestCommands: XCTestExtendedCommands {
 
   // MARK: - Private
 
-  private func runTest(with testLaunchConfiguration: TestLaunchConfiguration, reporter: any XCTestReporter, logger: any FBControlCoreLogger, workingDirectory: String?) async throws {
+  private func runTest(with testLaunchConfiguration: TestLaunchConfiguration, reporter: any XCTestReporter, logger: any ControlCoreLogger, workingDirectory: String?) async throws {
     guard let simulator = self.simulator else {
       throw WeakTargetError.simulator
     }
@@ -195,7 +195,7 @@ public final class SimulatorXCTestCommands: XCTestExtendedCommands {
     try await ManagedTestRunStrategy.runToCompletion(
       withTarget: simulator,
       configuration: testLaunchConfiguration,
-      codesign: FBControlCoreGlobalConfiguration.confirmCodesignaturesAreValid
+      codesign: ControlCoreGlobalConfiguration.confirmCodesignaturesAreValid
         ? CodesignProvider.codeSignCommand(withIdentityName: "-", logger: simulator.logger)
         : nil,
       workingDirectory: simulator.auxillaryDirectory,
@@ -225,7 +225,7 @@ public final class SimulatorXCTestCommands: XCTestExtendedCommands {
     }
   }
 
-  private func startTest(with configuration: TestLaunchConfiguration, logger: any FBControlCoreLogger) async throws -> FBSubprocess<AnyObject, AnyObject, AnyObject> {
+  private func startTest(with configuration: TestLaunchConfiguration, logger: any ControlCoreLogger) async throws -> FBSubprocess<AnyObject, AnyObject, AnyObject> {
     guard let simulator = self.simulator else {
       throw WeakTargetError.simulator
     }

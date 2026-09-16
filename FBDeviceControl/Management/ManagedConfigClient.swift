@@ -59,7 +59,7 @@ extension ManagedConfigError: LocalizedError {
 class ManagedConfigClient {
   private let connection: FBAMDServiceConnection
   private let queue: DispatchQueue
-  private let logger: any FBControlCoreLogger
+  private let logger: any ControlCoreLogger
 
   // MARK: - Constants
 
@@ -72,7 +72,7 @@ class ManagedConfigClient {
 
   // MARK: - Initializers
 
-  static func managedConfigClient(connection: FBAMDServiceConnection, logger: any FBControlCoreLogger) -> ManagedConfigClient {
+  static func managedConfigClient(connection: FBAMDServiceConnection, logger: any ControlCoreLogger) -> ManagedConfigClient {
     let queue = DispatchQueue(label: "com.facebook.FBDeviceControl.managed_config")
     return ManagedConfigClient(connection: connection, queue: queue, logger: logger)
   }
@@ -80,7 +80,7 @@ class ManagedConfigClient {
   init(
     connection: FBAMDServiceConnection,
     queue: DispatchQueue,
-    logger: any FBControlCoreLogger
+    logger: any ControlCoreLogger
   ) {
     self.connection = connection
     self.queue = queue

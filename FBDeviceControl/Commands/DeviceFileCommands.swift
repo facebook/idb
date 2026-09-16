@@ -95,7 +95,7 @@ public final class DeviceFileContainer: AsyncFileContainer {
     return destination
   }
 
-  public func tail(_ path: String, to consumer: any FBDataConsumer) async throws -> FileContainerTailOperation {
+  public func tail(_ path: String, to consumer: any DataConsumer) async throws -> FileContainerTailOperation {
     throw DeviceFileContainerError.tailNotImplemented
   }
 
@@ -199,7 +199,7 @@ private class DeviceFileContainer_Wallpaper: AsyncFileContainer {
     return destinationPath
   }
 
-  func tail(_ path: String, to consumer: any FBDataConsumer) async throws -> FileContainerTailOperation {
+  func tail(_ path: String, to consumer: any DataConsumer) async throws -> FileContainerTailOperation {
     throw DeviceFileContainerError.tailUnsupported(container: "Wallpaper File Containers")
   }
 
@@ -240,7 +240,7 @@ private class DeviceFileContainer_MDMProfiles: AsyncFileContainer {
     throw DeviceFileContainerError.operationUnsupported(operation: #function, container: "MDM Profile File Containers")
   }
 
-  func tail(_ path: String, to consumer: any FBDataConsumer) async throws -> FileContainerTailOperation {
+  func tail(_ path: String, to consumer: any DataConsumer) async throws -> FileContainerTailOperation {
     throw DeviceFileContainerError.tailUnsupported(container: "MDM Profile File Containers")
   }
 
@@ -282,7 +282,7 @@ private class DeviceFileCommands_DiskImages: AsyncFileContainer {
     throw DeviceFileContainerError.operationUnsupported(operation: #function, container: "Disk Images")
   }
 
-  func tail(_ path: String, to consumer: any FBDataConsumer) async throws -> FileContainerTailOperation {
+  func tail(_ path: String, to consumer: any DataConsumer) async throws -> FileContainerTailOperation {
     throw DeviceFileContainerError.tailUnsupported(container: "Disk Images")
   }
 
@@ -400,7 +400,7 @@ private class DeviceFileCommands_Symbols: AsyncFileContainer {
     return try await commands.pullSymbolFile(sourcePath, toDestinationPath: destinationPath)
   }
 
-  func tail(_ path: String, to consumer: any FBDataConsumer) async throws -> FileContainerTailOperation {
+  func tail(_ path: String, to consumer: any DataConsumer) async throws -> FileContainerTailOperation {
     throw DeviceFileContainerError.tailUnsupported(container: "Symbols")
   }
 

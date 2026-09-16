@@ -75,7 +75,7 @@ private final class SpringboardDataBox: @unchecked Sendable {
 class SpringboardServicesClient {
   private let connection: FBAMDServiceConnection
   fileprivate let queue: DispatchQueue
-  private let logger: any FBControlCoreLogger
+  private let logger: any ControlCoreLogger
 
   // MARK: - Constants
 
@@ -85,12 +85,12 @@ class SpringboardServicesClient {
 
   // MARK: - Initializers
 
-  static func springboardServicesClient(connection: FBAMDServiceConnection, logger: any FBControlCoreLogger) -> SpringboardServicesClient {
+  static func springboardServicesClient(connection: FBAMDServiceConnection, logger: any ControlCoreLogger) -> SpringboardServicesClient {
     let queue = DispatchQueue(label: "com.facebook.FBDeviceControl.springboard_services")
     return SpringboardServicesClient(connection: connection, queue: queue, logger: logger)
   }
 
-  convenience init(connection: FBAMDServiceConnection, logger: any FBControlCoreLogger) {
+  convenience init(connection: FBAMDServiceConnection, logger: any ControlCoreLogger) {
     let queue = DispatchQueue(label: "com.facebook.FBDeviceControl.springboard_services")
     self.init(connection: connection, queue: queue, logger: logger)
   }
@@ -98,7 +98,7 @@ class SpringboardServicesClient {
   init(
     connection: FBAMDServiceConnection,
     queue: DispatchQueue,
-    logger: any FBControlCoreLogger
+    logger: any ControlCoreLogger
   ) {
     self.connection = connection
     self.queue = queue
@@ -225,7 +225,7 @@ class SpringboardServicesIconContainer: AsyncFileContainer {
     try await copyFromContainer(sourcePath: sourcePath, toHost: destinationPath)
   }
 
-  func tail(_ path: String, to consumer: any FBDataConsumer) async throws -> FileContainerTailOperation {
+  func tail(_ path: String, to consumer: any DataConsumer) async throws -> FileContainerTailOperation {
     throw SpringboardServicesError.tailNotImplemented
   }
 

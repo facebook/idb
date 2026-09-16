@@ -12,7 +12,7 @@ private let MaxAllowedUnprocessedDataCounts: Int = 2
 
 /// False when an async consumer has more than `MaxAllowedUnprocessedDataCounts` frames queued, in
 /// which case the caller should drop the frame.
-public func checkConsumerBufferLimit(_ consumer: any FBDataConsumer, _ logger: any FBControlCoreLogger) -> Bool {
+public func checkConsumerBufferLimit(_ consumer: any DataConsumer, _ logger: any ControlCoreLogger) -> Bool {
   if let asyncConsumer = consumer as? DataConsumerAsync {
     let framesInProcess = asyncConsumer.unprocessedDataCount()
     if framesInProcess > MaxAllowedUnprocessedDataCounts {
@@ -27,11 +27,11 @@ private let AVCCHeaderLength: Int = 4
 private let AnnexBStartCode: [UInt8] = [0x00, 0x00, 0x00, 0x01]
 
 public protocol EncodedFrameWriter {
-  func write(_ sampleBuffer: CMSampleBuffer, to consumer: any FBDataConsumer, logger: any FBControlCoreLogger) throws
+  func write(_ sampleBuffer: CMSampleBuffer, to consumer: any DataConsumer, logger: any ControlCoreLogger) throws
 }
 
 public protocol VideoStreamTimedMetadataWriter {
-  func writeTimedMetadata(_ text: String, to consumer: any FBDataConsumer)
+  func writeTimedMetadata(_ text: String, to consumer: any DataConsumer)
 }
 
 public struct VideoStreamFrameWriters {
@@ -97,9 +97,9 @@ extension VideoStreamWriterError: LocalizedError {
 }
 
 /// Sync consumers receive zero-copy Data backed by the block buffer; async consumers receive a copy.
-private func WriteBlockBufferToConsumer(_ blockBuffer: CMBlockBuffer, _ consumer: any FBDataConsumer) throws {
+private func WriteBlockBufferToConsumer(_ blockBuffer: CMBlockBuffer, _ consumer: any DataConsumer) throws {
   let dataLength = CMBlockBufferGetDataLength(blockBuffer)
-  let isSyncConsumer = consumer is FBDataConsumerSync
+  let isSyncConsumer = consumer is DataConsumerSync
   var offset = 0
   while offset < dataLength {
     var dataPointer: UnsafeMutablePointer<CChar>?
@@ -236,7 +236,7 @@ public struct AnnexBFrameWriter: EncodedFrameWriter {
     self.codec = codec
   }
 
-  public func write(_ sampleBuffer: CMSampleBuffer, to consumer: any FBDataConsumer, logger: any FBControlCoreLogger) throws {
+  public func write(_ sampleBuffer: CMSampleBuffer, to consumer: any DataConsumer, logger: any ControlCoreLogger) throws {
     if !CMSampleBufferDataIsReady(sampleBuffer) {
       throw VideoStreamWriterError.sampleBufferNotReady
     }
@@ -670,7 +670,7 @@ public final class MPEGTSFrameWriter: EncodedFrameWriter, VideoStreamTimedMetada
     return metadataStreamEnabled
   }
 
-  public func write(_ sampleBuffer: CMSampleBuffer, to consumer: any FBDataConsumer, logger: any FBControlCoreLogger) throws {
+  public func write(_ sampleBuffer: CMSampleBuffer, to consumer: any DataConsumer, logger: any ControlCoreLogger) throws {
     if !CMSampleBufferDataIsReady(sampleBuffer) {
       throw VideoStreamWriterError.sampleBufferNotReady
     }
@@ -793,7 +793,7 @@ public final class MPEGTSFrameWriter: EncodedFrameWriter, VideoStreamTimedMetada
     consumer.consumeData(tsData)
   }
 
-  public func writeTimedMetadata(_ text: String, to consumer: any FBDataConsumer) {
+  public func writeTimedMetadata(_ text: String, to consumer: any DataConsumer) {
     enableMetadataStream()
     guard let packets = timedMetadataPackets(for: text) else {
       return
@@ -805,7 +805,7 @@ public final class MPEGTSFrameWriter: EncodedFrameWriter, VideoStreamTimedMetada
 public struct MJPEGFrameWriter {
   public init() {}
 
-  public func write(_ jpegDataBuffer: CMBlockBuffer, to consumer: any FBDataConsumer, logger: any FBControlCoreLogger) throws {
+  public func write(_ jpegDataBuffer: CMBlockBuffer, to consumer: any DataConsumer, logger: any ControlCoreLogger) throws {
     try WriteBlockBufferToConsumer(jpegDataBuffer, consumer)
   }
 }
@@ -813,7 +813,7 @@ public struct MJPEGFrameWriter {
 public struct MinicapFrameWriter {
   public init() {}
 
-  public func write(_ jpegDataBuffer: CMBlockBuffer, to consumer: any FBDataConsumer, logger: any FBControlCoreLogger) throws {
+  public func write(_ jpegDataBuffer: CMBlockBuffer, to consumer: any DataConsumer, logger: any ControlCoreLogger) throws {
     let dataLength = CMBlockBufferGetDataLength(jpegDataBuffer)
     var imageLength = UInt32(dataLength).littleEndian
     let lengthData = Data(bytes: &imageLength, count: MemoryLayout<UInt32>.size)
@@ -825,7 +825,7 @@ public struct MinicapFrameWriter {
   // MinicapHeader is built byte-by-byte (24 bytes, all little-endian) rather than relying
   // on Swift struct layout, matching the `#pragma pack(push, 1)` C struct.
   // https://github.com/openstf/minicap#usage
-  public func writeHeader(width: UInt32, height: UInt32, to consumer: any FBDataConsumer, logger: any FBControlCoreLogger) {
+  public func writeHeader(width: UInt32, height: UInt32, to consumer: any DataConsumer, logger: any ControlCoreLogger) {
     let headerSize: UInt8 = 24
     let pid = UInt32(bitPattern: ProcessInfo.processInfo.processIdentifier).littleEndian
     let displayWidth = width.littleEndian
@@ -1249,7 +1249,7 @@ final class FMP4FrameWriter: EncodedFrameWriter, VideoStreamTimedMetadataWriter 
     self.lastPts90k = 0
   }
 
-  public func write(_ sampleBuffer: CMSampleBuffer, to consumer: any FBDataConsumer, logger: any FBControlCoreLogger) throws {
+  public func write(_ sampleBuffer: CMSampleBuffer, to consumer: any DataConsumer, logger: any ControlCoreLogger) throws {
     if !CMSampleBufferDataIsReady(sampleBuffer) {
       throw VideoStreamWriterError.sampleBufferNotReady
     }
@@ -1333,7 +1333,7 @@ final class FMP4FrameWriter: EncodedFrameWriter, VideoStreamTimedMetadataWriter 
 
   }
 
-  public func writeTimedMetadata(_ text: String, to consumer: any FBDataConsumer) {
+  public func writeTimedMetadata(_ text: String, to consumer: any DataConsumer) {
     consumer.consumeData(FBFMP4CreateEmsgBox(lastPts90k, text))
   }
 }

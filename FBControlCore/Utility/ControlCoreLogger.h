@@ -18,10 +18,10 @@ typedef NS_ENUM(NSUInteger, FBControlCoreLogLevel) {
   FBControlCoreLogLevelMultiple = 1000,
 };
 
-@protocol FBDataConsumer;
+@protocol DataConsumer;
 
 // Protocol defined in Swift (FBControlCoreLoggerProtocol.swift)
-@protocol FBControlCoreLogger;
+@protocol ControlCoreLogger;
 
 /**
   A composite logger that logs to many loggers
@@ -36,21 +36,21 @@ typedef NS_ENUM(NSUInteger, FBControlCoreLogLevel) {
  @param loggers the loggers to log to.
  @return a composite logger.
  */
-- (nonnull instancetype)initWithLoggers:(nonnull NSArray<id<FBControlCoreLogger>> *)loggers;
+- (nonnull instancetype)initWithLoggers:(nonnull NSArray<id<ControlCoreLogger>> *)loggers;
 
 #pragma mark Properties
 
 /**
   The loggers to log to.
  */
-@property (nonnull, nonatomic, readonly, strong) NSArray<id<FBControlCoreLogger>> *loggers;
+@property (nonnull, nonatomic, readonly, strong) NSArray<id<ControlCoreLogger>> *loggers;
 
-- (nonnull id<FBControlCoreLogger>)log:(nonnull NSString *)message;
-- (nonnull id<FBControlCoreLogger>)info;
-- (nonnull id<FBControlCoreLogger>)debug;
-- (nonnull id<FBControlCoreLogger>)error;
-- (nonnull id<FBControlCoreLogger>)withName:(nonnull NSString *)name;
-- (nonnull id<FBControlCoreLogger>)withDateFormatEnabled:(BOOL)enabled;
+- (nonnull id<ControlCoreLogger>)log:(nonnull NSString *)message;
+- (nonnull id<ControlCoreLogger>)info;
+- (nonnull id<ControlCoreLogger>)debug;
+- (nonnull id<ControlCoreLogger>)error;
+- (nonnull id<ControlCoreLogger>)withName:(nonnull NSString *)name;
+- (nonnull id<ControlCoreLogger>)withDateFormatEnabled:(BOOL)enabled;
 @property (nullable, nonatomic, readonly, copy) NSString *name;
 @property (nonatomic, readonly, assign) FBControlCoreLogLevel level;
 
@@ -66,7 +66,7 @@ typedef NS_ENUM(NSUInteger, FBControlCoreLogLevel) {
  writeToStdErr additionally mirrors output to stderr unless os_log already does so in this environment.
  debugLogging selects the debug level rather than info.
  */
-+ (nonnull id<FBControlCoreLogger>)systemLoggerWritingToStderr:(BOOL)writeToStdErr withDebugLogging:(BOOL)debugLogging;
++ (nonnull id<ControlCoreLogger>)systemLoggerWritingToStderr:(BOOL)writeToStdErr withDebugLogging:(BOOL)debugLogging;
 
 /**
  Compose multiple loggers into one.
@@ -74,7 +74,7 @@ typedef NS_ENUM(NSUInteger, FBControlCoreLogLevel) {
  @param loggers the loggers to compose.
  @return the composite logger.
  */
-+ (nonnull FBCompositeLogger *)compositeLoggerWithLoggers:(nonnull NSArray<id<FBControlCoreLogger>> *)loggers;
++ (nonnull FBCompositeLogger *)compositeLoggerWithLoggers:(nonnull NSArray<id<ControlCoreLogger>> *)loggers;
 
 /**
  Log to a Consumer.
@@ -82,7 +82,7 @@ typedef NS_ENUM(NSUInteger, FBControlCoreLogLevel) {
  @param consumer the consumer to write data to.
  @return a logger instance.
  */
-+ (nonnull id<FBControlCoreLogger>)loggerToConsumer:(nonnull id<FBDataConsumer>)consumer;
++ (nonnull id<ControlCoreLogger>)loggerToConsumer:(nonnull id<DataConsumer>)consumer;
 
 /**
  Log to a File Descriptor.
@@ -91,7 +91,7 @@ typedef NS_ENUM(NSUInteger, FBControlCoreLogLevel) {
  @param closeOnEndOfFile YES if the file descriptor should be closed on consumeEndOfFile, NO otherwise.
  @return a logger instance.
  */
-+ (nonnull id<FBControlCoreLogger>)loggerToFileDescriptor:(int)fileDescriptor closeOnEndOfFile:(BOOL)closeOnEndOfFile;
++ (nonnull id<ControlCoreLogger>)loggerToFileDescriptor:(int)fileDescriptor closeOnEndOfFile:(BOOL)closeOnEndOfFile;
 
 /**
  Trims surrounding whitespace and newlines; returns nil when nothing remains to log.

@@ -12,9 +12,9 @@ import Testing
 private struct BodyError: Error {}
 
 @Suite
-struct FBTemporaryDirectoryTests {
+struct TemporaryDirectoryTests {
 
-  private let temporaryDirectory = FBTemporaryDirectory(logger: FBControlCoreGlobalConfiguration.defaultLogger)
+  private let temporaryDirectory = TemporaryDirectory(logger: ControlCoreGlobalConfiguration.defaultLogger)
 
   private func exists(_ url: URL) -> Bool {
     FileManager.default.fileExists(atPath: url.path)

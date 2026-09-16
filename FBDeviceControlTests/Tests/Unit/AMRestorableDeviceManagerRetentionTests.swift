@@ -34,7 +34,7 @@ struct AMRestorableDeviceManagerRetentionTests {
       work: DispatchQueue(label: "com.facebook.fbdevicecontrol.test.work"),
       asyncQueue: DispatchQueue(label: "com.facebook.fbdevicecontrol.test.async"),
       ecidFilter: nil,
-      logger: FBControlCoreGlobalConfiguration.defaultLogger)
+      logger: ControlCoreGlobalConfiguration.defaultLogger)
   }
 
   @Test

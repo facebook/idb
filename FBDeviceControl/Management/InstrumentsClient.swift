@@ -194,13 +194,13 @@ final class InstrumentsClient {
   private let channels: [String: Any]
   private let connection: FBAMDServiceConnection
   private let queue: DispatchQueue
-  private let logger: any FBControlCoreLogger
+  private let logger: any ControlCoreLogger
 
   // MARK: - Initializers
 
   class func instrumentsClient(
     with connection: FBAMDServiceConnection,
-    logger: any FBControlCoreLogger
+    logger: any ControlCoreLogger
   ) -> FBFuture<InstrumentsClient> {
     let queue = DispatchQueue(label: "com.facebook.fbdevicecontrol.fbinstrumentsclient")
     return FBFuture<AnyObject>.onQueue(
@@ -227,7 +227,7 @@ final class InstrumentsClient {
     channels: [String: Any],
     lastMessageIdentifier: UInt32,
     queue: DispatchQueue,
-    logger: any FBControlCoreLogger
+    logger: any ControlCoreLogger
   ) {
     self.connection = connection
     self.channels = channels

@@ -63,10 +63,10 @@ extension DeviceApplicationError: LocalizedError {
 
 private class DeviceWorkflowStatistics {
   let workflowType: String
-  let logger: any FBControlCoreLogger
+  let logger: any ControlCoreLogger
   var lastEvent: [String: Any]?
 
-  init(workflowType: String, logger: any FBControlCoreLogger) {
+  init(workflowType: String, logger: any ControlCoreLogger) {
     self.workflowType = workflowType
     self.logger = logger
   }

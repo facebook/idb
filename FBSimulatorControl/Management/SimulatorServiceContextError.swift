@@ -14,7 +14,7 @@ public enum SimulatorServiceContextError: LocalizedError, Sendable {
   /// reported a successful load.
   case serviceContextClassUnavailable
 
-  /// No full Xcode is selected, so `FBXcodeConfiguration.developerDirectory` is empty. Resolving a
+  /// No full Xcode is selected, so `XcodeConfiguration.developerDirectory` is empty. Resolving a
   /// `SimServiceContext` against an empty developer directory crashes CoreSimulator with an opaque
   /// `NSException`, so this is thrown up-front instead.
   case noFullXcodeSelected

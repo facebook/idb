@@ -13,7 +13,7 @@ public protocol XCTestCommands {
   func runTest(
     launchConfiguration: TestLaunchConfiguration,
     reporter: AnyObject,
-    logger: any FBControlCoreLogger
+    logger: any ControlCoreLogger
   ) async throws
 }
 

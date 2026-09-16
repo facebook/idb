@@ -9,16 +9,16 @@ import Darwin
 @preconcurrency import FBControlCore
 import Foundation
 
-nonisolated(unsafe) private var globalLoggers: [FBControlCoreLogger] = []
+nonisolated(unsafe) private var globalLoggers: [ControlCoreLogger] = []
 private let globalLoggersLock = NSLock()
 
-private func addGlobalLogger(_ logger: FBControlCoreLogger) {
+private func addGlobalLogger(_ logger: ControlCoreLogger) {
   globalLoggersLock.lock()
   globalLoggers.append(logger)
   globalLoggersLock.unlock()
 }
 
-private func removeGlobalLogger(_ logger: FBControlCoreLogger) {
+private func removeGlobalLogger(_ logger: ControlCoreLogger) {
   globalLoggersLock.lock()
   globalLoggers.removeAll { $0 === logger }
   globalLoggersLock.unlock()
@@ -28,11 +28,11 @@ private func removeGlobalLogger(_ logger: FBControlCoreLogger) {
 // thread-safe ObjC objects, so instances are safe to hand back through the
 // continuation in tailToConsumer.
 private final class IDBLoggerOperation: NSObject, LogOperation, @unchecked Sendable {
-  let consumer: FBDataConsumer
-  let logger: FBControlCoreLogger
+  let consumer: DataConsumer
+  let logger: ControlCoreLogger
   let queue: DispatchQueue
 
-  init(consumer: FBDataConsumer, logger: FBControlCoreLogger, queue: DispatchQueue) {
+  init(consumer: DataConsumer, logger: ControlCoreLogger, queue: DispatchQueue) {
     self.consumer = consumer
     self.logger = logger
     self.queue = queue
@@ -63,7 +63,7 @@ public final class IDBLogger: FBCompositeLogger, @unchecked Sendable {
   public static func logger(withUserDefaults userDefaults: UserDefaults) -> IDBLogger {
     let debugLogging = userDefaults.string(forKey: "-log-level")?.lowercased() == "info" ? false : true
     let systemLogger = FBControlCoreLoggerFactory.systemLoggerWriting(toStderr: true, withDebugLogging: debugLogging)
-    var loggers: [FBControlCoreLogger] = [systemLogger]
+    var loggers: [ControlCoreLogger] = [systemLogger]
 
     let logFilePath = userDefaults.string(forKey: "-log-file-path")
     if let logFilePath {
@@ -87,16 +87,16 @@ public final class IDBLogger: FBCompositeLogger, @unchecked Sendable {
       loggers.append(FBControlCoreLoggerFactory.logger(toFileDescriptor: fileDescriptor, closeOnEndOfFile: true))
     }
     let logger = IDBLogger(loggers: loggers).dateFormatted()
-    FBControlCoreGlobalConfiguration.defaultLogger = logger
+    ControlCoreGlobalConfiguration.defaultLogger = logger
 
     return logger
   }
 
-  public override init(loggers: [FBControlCoreLogger]) {
+  public override init(loggers: [ControlCoreLogger]) {
     super.init(loggers: loggers)
   }
 
-  public override var loggers: [FBControlCoreLogger] {
+  public override var loggers: [ControlCoreLogger] {
     var all = super.loggers
     globalLoggersLock.lock()
     let global = globalLoggers
@@ -107,7 +107,7 @@ public final class IDBLogger: FBCompositeLogger, @unchecked Sendable {
 
   /// `FBCompositeLogger`'s builder methods allocate an instance of the receiver's dynamic class, so
   /// applying one to an `IDBLogger` always yields an `IDBLogger` — the Objective-C declarations
-  /// can only promise `FBControlCoreLogger`.
+  /// can only promise `ControlCoreLogger`.
   public func named(_ name: String) -> IDBLogger {
     unsafeDowncast(withName(name) as AnyObject, to: IDBLogger.self)
   }
@@ -116,9 +116,9 @@ public final class IDBLogger: FBCompositeLogger, @unchecked Sendable {
     unsafeDowncast(withDateFormatEnabled(true) as AnyObject, to: IDBLogger.self)
   }
 
-  func tailToConsumer(_ consumer: FBDataConsumer) async throws -> any LogOperation {
+  func tailToConsumer(_ consumer: DataConsumer) async throws -> any LogOperation {
     let queue = IDBLogger.loggerQueue
-    // FBDataConsumer is a thread-safe ObjC protocol that isn't Sendable.
+    // DataConsumer is a thread-safe ObjC protocol that isn't Sendable.
     nonisolated(unsafe) let consumer = consumer
     return await withCheckedContinuation { (continuation: CheckedContinuation<any LogOperation, Never>) in
       queue.async {

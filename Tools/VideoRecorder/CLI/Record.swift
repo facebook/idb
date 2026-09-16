@@ -70,7 +70,7 @@ struct Record: AsyncParsableCommand {
   }
 
   @MainActor
-  private func startRecording(framebuffer: Framebuffer, insets: VideoStreamEdgeInsets, chapters: Bool, logger: any FBControlCoreLogger) async throws -> (FBSimulatorControl.SimulatorVideo, RecordingEncoding) {
+  private func startRecording(framebuffer: Framebuffer, insets: VideoStreamEdgeInsets, chapters: Bool, logger: any ControlCoreLogger) async throws -> (FBSimulatorControl.SimulatorVideo, RecordingEncoding) {
     let candidates: [RecordingEncoding] = encoding == .auto ? [.hevc, .mjpeg] : [encoding]
     for candidate in candidates {
       let configuration = video.configuration(format: candidate.format)

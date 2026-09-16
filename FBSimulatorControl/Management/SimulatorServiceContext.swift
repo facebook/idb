@@ -19,10 +19,10 @@ public final class SimulatorServiceContext {
   private static let sharedLock = NSLock()
 
   public class func sharedServiceContext() throws -> SimulatorServiceContext {
-    return try sharedServiceContext(withLogger: FBControlCoreGlobalConfiguration.defaultLogger)
+    return try sharedServiceContext(withLogger: ControlCoreGlobalConfiguration.defaultLogger)
   }
 
-  public class func sharedServiceContext(withLogger logger: (any FBControlCoreLogger)?) throws -> SimulatorServiceContext {
+  public class func sharedServiceContext(withLogger logger: (any ControlCoreLogger)?) throws -> SimulatorServiceContext {
     sharedLock.lock()
     defer { sharedLock.unlock() }
     if let instance = _sharedInstance {
@@ -35,7 +35,7 @@ public final class SimulatorServiceContext {
 
   // MARK: - Private Initialization
 
-  private class func createServiceContext(withLogger logger: (any FBControlCoreLogger)?) throws -> SimulatorServiceContext {
+  private class func createServiceContext(withLogger logger: (any ControlCoreLogger)?) throws -> SimulatorServiceContext {
     try FBSimulatorControlFrameworkLoader.essentialFrameworks.loadPrivateFrameworks(logger)
     guard
       let serviceContextClass = NSClassFromString("SimServiceContext") as? SimServiceContext.Type,
@@ -45,7 +45,7 @@ public final class SimulatorServiceContext {
     }
     // An empty developer directory makes -[SimServiceContext sharedServiceContextForDeveloperDir:error:]
     // crash with an opaque NSException; throw a clear error instead.
-    let developerDirectory = FBXcodeConfiguration.developerDirectory
+    let developerDirectory = XcodeConfiguration.developerDirectory
     guard !developerDirectory.isEmpty else {
       throw SimulatorServiceContextError.noFullXcodeSelected
     }

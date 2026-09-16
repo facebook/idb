@@ -35,9 +35,9 @@ public final class XCTraceRecordOperation {
   public let queue: DispatchQueue
   public let traceDir: URL
   public let configuration: XCTraceRecordConfiguration
-  public let logger: FBControlCoreLogger
+  public let logger: ControlCoreLogger
 
-  public init(task: FBSubprocess<AnyObject, AnyObject, AnyObject>, traceDir: URL, configuration: XCTraceRecordConfiguration, queue: DispatchQueue, logger: FBControlCoreLogger) {
+  public init(task: FBSubprocess<AnyObject, AnyObject, AnyObject>, traceDir: URL, configuration: XCTraceRecordConfiguration, queue: DispatchQueue, logger: ControlCoreLogger) {
     self.task = task
     self.traceDir = traceDir
     self.configuration = configuration
@@ -45,7 +45,7 @@ public final class XCTraceRecordOperation {
     self.logger = logger
   }
 
-  public class func operation(with target: any FBiOSTarget, configuration: XCTraceRecordConfiguration, logger: FBControlCoreLogger) async throws -> XCTraceRecordOperation {
+  public class func operation(with target: any FBiOSTarget, configuration: XCTraceRecordConfiguration, logger: ControlCoreLogger) async throws -> XCTraceRecordOperation {
     let queue = DispatchQueue(label: "com.facebook.fbcontrolcore.xctrace")
     let traceDir = (target.auxillaryDirectory as NSString).appendingPathComponent("xctrace-" + UUID().uuidString)
     do {
@@ -138,7 +138,7 @@ public final class XCTraceRecordOperation {
   }
 
   public class func xctracePath() throws -> String {
-    let path = (FBXcodeConfiguration.developerDirectory as NSString).appendingPathComponent("/usr/bin/xctrace")
+    let path = (XcodeConfiguration.developerDirectory as NSString).appendingPathComponent("/usr/bin/xctrace")
     if !FileManager.default.fileExists(atPath: path) {
       throw XCTraceError.xctraceMissing(path: path)
     }

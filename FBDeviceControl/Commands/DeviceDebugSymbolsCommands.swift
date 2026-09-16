@@ -269,7 +269,7 @@ public final class DeviceDebugSymbolsCommands {
   private static func extractSharedCacheFile(
     _ sharedCacheFile: String,
     toDestinationDirectory destinationDirectory: String,
-    logger: any FBControlCoreLogger
+    logger: any ControlCoreLogger
   ) throws {
     let extractor = try sharedCacheExtractor()
     logger.log("Extracting shared cache at \(sharedCacheFile) to directory at \(destinationDirectory)")
@@ -298,7 +298,7 @@ public final class DeviceDebugSymbolsCommands {
   }
 
   private static func pathForSharedCacheExtractor() throws -> String {
-    let path = (FBXcodeConfiguration.developerDirectory as NSString)
+    let path = (XcodeConfiguration.developerDirectory as NSString)
       .appendingPathComponent("Platforms/iPhoneOS.platform/usr/lib/dsc_extractor.bundle")
     guard FileManager.default.fileExists(atPath: path) else {
       throw DeviceDebugSymbolsError.extractorNotFound(path: path)

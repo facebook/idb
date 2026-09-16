@@ -7,7 +7,7 @@
 
 #import <Foundation/Foundation.h>
 
-#import <FBControlCore/FBDataConsumer.h>
+#import <FBControlCore/DataConsumer.h>
 #import <FBControlCore/FBFuture.h>
 
 /**

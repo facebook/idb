@@ -7,9 +7,9 @@
 
 #import "FBFuture+Sync.h"
 
+#import "ControlCoreLogger.h"
 #import "FBControlCore-Swift.h"
 #import "FBControlCore-SwiftImport.h"
-#import "FBControlCoreLogger.h"
 #import "FBFuture.h"
 
 static id ExtractResult(FBFuture *future, NSTimeInterval timeout, BOOL completed, NSError **error)
@@ -49,7 +49,7 @@ static NSString *const KeyIsAwaiting = @"FBCONTROLCORE_IS_AWAITING";
   NSMutableDictionary *threadLocals = NSThread.currentThread.threadDictionary;
   BOOL spinningRecursively = spinning && [threadLocals[KeyIsAwaiting] boolValue];
   if (spinningRecursively) {
-    id<FBControlCoreLogger> logger = FBControlCoreGlobalConfiguration.defaultLogger;
+    id<ControlCoreLogger> logger = ControlCoreGlobalConfiguration.defaultLogger;
     [logger log:[NSString stringWithFormat:@"Awaiting Future Recursively %@", [CollectionInformation oneLineDescriptionFromArray:NSThread.callStackSymbols]]];
   }
   threadLocals[KeyIsAwaiting] = @(spinning);

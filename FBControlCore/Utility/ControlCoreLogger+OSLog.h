@@ -7,7 +7,7 @@
 
 #import <Foundation/Foundation.h>
 
-#import <FBControlCore/FBControlCoreLogger.h>
+#import <FBControlCore/ControlCoreLogger.h>
 
 /**
  A logger implementation on top of os_log.
@@ -17,7 +17,7 @@
 /**
  An os_log-backed logger, or nil when not built with an Apple compiler.
  */
-+ (nullable id<FBControlCoreLogger>)osLoggerWithLevel:(FBControlCoreLogLevel)level;
++ (nullable id<ControlCoreLogger>)osLoggerWithLevel:(FBControlCoreLogLevel)level;
 
 /**
  Returns YES if the system logger will log to stderr, NO otherwise.

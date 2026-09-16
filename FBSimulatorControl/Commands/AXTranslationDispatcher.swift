@@ -53,7 +53,7 @@ private final class AXPSerializedJob<T>: @unchecked Sendable {
 final class AXTranslationDispatcher: NSObject, AXPTranslationTokenDelegateHelper {
 
   private weak var translator: AXPTranslator?
-  private let logger: FBControlCoreLogger?
+  private let logger: ControlCoreLogger?
   private let callbackQueue: DispatchQueue
   private let lock = NSLock()
   private var tokenToRequest: [String: AXTranslationRequest] = [:]
@@ -67,7 +67,7 @@ final class AXTranslationDispatcher: NSObject, AXPTranslationTokenDelegateHelper
   // also keeps their synchronous XPC waits off the cooperative thread pool.
   private static let axpWorkQueue = DispatchQueue(label: "com.facebook.fbsimulatorcontrol.accessibility_translator.work")
 
-  init(translator: AXPTranslator, logger: FBControlCoreLogger?) {
+  init(translator: AXPTranslator, logger: ControlCoreLogger?) {
     self.translator = translator
     self.logger = logger
     self.callbackQueue = DispatchQueue(label: "com.facebook.fbsimulatorcontrol.accessibility_translator.callback")

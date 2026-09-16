@@ -10,10 +10,10 @@ import Foundation
 public final class ProcessLogOperation: LogOperation {
 
   public let process: FBSubprocess<AnyObject, AnyObject, AnyObject>
-  public let consumer: any FBDataConsumer
+  public let consumer: any DataConsumer
   private let queue: DispatchQueue
 
-  public init(process: FBSubprocess<AnyObject, AnyObject, AnyObject>, consumer: any FBDataConsumer, queue: DispatchQueue) {
+  public init(process: FBSubprocess<AnyObject, AnyObject, AnyObject>, consumer: any DataConsumer, queue: DispatchQueue) {
     self.process = process
     self.consumer = consumer
     self.queue = queue

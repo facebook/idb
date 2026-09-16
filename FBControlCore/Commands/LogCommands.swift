@@ -11,7 +11,7 @@ import Foundation
 public protocol LogOperation: AnyObject {
 
   /// The data consumer attached to the underlying log stream.
-  var consumer: any FBDataConsumer { get }
+  var consumer: any DataConsumer { get }
 
   /// Cancelling the calling task terminates the operation.
   func waitUntilCompleted() async throws
@@ -19,5 +19,5 @@ public protocol LogOperation: AnyObject {
 
 public protocol LogCommands {
 
-  func tail(arguments: [String], consumer: any FBDataConsumer) async throws -> any LogOperation
+  func tail(arguments: [String], consumer: any DataConsumer) async throws -> any LogOperation
 }

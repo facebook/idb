@@ -8,7 +8,7 @@
 @testable import FBControlCore
 import XCTest
 
-final class FBDataConsumerTests: XCTestCase {
+final class DataConsumerTests: XCTestCase {
   func testLineBufferAccumulation() {
     let consumer = FBDataBuffer.accumulatingBuffer()
     consumer.consumeData("FOO".data(using: .utf8)!)
@@ -80,7 +80,7 @@ final class FBDataConsumerTests: XCTestCase {
 
     consumer.consumeData("FOO\n".data(using: .utf8)!)
     consumer.consumeData("BAR\n".data(using: .utf8)!)
-    wait(for: [bothLines], timeout: FBControlCoreGlobalConfiguration.fastTimeout)
+    wait(for: [bothLines], timeout: ControlCoreGlobalConfiguration.fastTimeout)
     queue.sync { XCTAssertEqual(lines, ["FOO", "BAR"]) }
     XCTAssertFalse(consumer.finishedConsuming.hasCompleted)
 
@@ -132,7 +132,7 @@ final class FBDataConsumerTests: XCTestCase {
     consumer.consumeData("FOO".data(using: .utf8)!)
     consumer.consumeData("BAR".data(using: .utf8)!)
     consumer.consumeData("BAZ".data(using: .utf8)!)
-    wait(for: [allChunks], timeout: FBControlCoreGlobalConfiguration.fastTimeout)
+    wait(for: [allChunks], timeout: ControlCoreGlobalConfiguration.fastTimeout)
     XCTAssertEqual(expected, actual as Data)
     XCTAssertFalse(consumer.finishedConsuming.hasCompleted)
 
@@ -280,7 +280,7 @@ final class FBDataConsumerTests: XCTestCase {
     consumer.consumeData("FOO$$BAR\nBAZ".data(using: .utf8)!)
     consumer.consumeEndOfFile()
 
-    wait(for: [doneExpectation], timeout: FBControlCoreGlobalConfiguration.fastTimeout)
+    wait(for: [doneExpectation], timeout: ControlCoreGlobalConfiguration.fastTimeout)
   }
 
   func testHeaderConsumption() {
@@ -315,6 +315,6 @@ final class FBDataConsumerTests: XCTestCase {
     consumer.consumeData(payloadData)
     consumer.consumeEndOfFile()
 
-    wait(for: [doneExpectation], timeout: FBControlCoreGlobalConfiguration.fastTimeout)
+    wait(for: [doneExpectation], timeout: ControlCoreGlobalConfiguration.fastTimeout)
   }
 }

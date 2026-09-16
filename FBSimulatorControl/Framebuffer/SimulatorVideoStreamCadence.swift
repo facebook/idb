@@ -101,7 +101,7 @@ struct FrameCadence: AsyncSequence {
   typealias Element = FrameTrigger
 
   let framesPerSecond: UInt
-  let logger: any FBControlCoreLogger
+  let logger: any ControlCoreLogger
 
   func makeAsyncIterator() -> Iterator {
     Iterator(framesPerSecond: framesPerSecond, logger: logger)
@@ -112,11 +112,11 @@ struct FrameCadence: AsyncSequence {
     private let frameIntervalNanos: UInt64
     private let machNumer: UInt64
     private let machDenom: UInt64
-    private let logger: any FBControlCoreLogger
+    private let logger: any ControlCoreLogger
     private var nextTargetTime: UInt64
     private var firstTickPending = true
 
-    init(framesPerSecond: UInt, logger: any FBControlCoreLogger) {
+    init(framesPerSecond: UInt, logger: any ControlCoreLogger) {
       let frameIntervalNanos = NSEC_PER_SEC / UInt64(framesPerSecond)
       var timebase = mach_timebase_info_data_t()
       mach_timebase_info(&timebase)
@@ -167,7 +167,7 @@ struct CadenceStats {
   private let frameIntervalNanos: UInt64
   private let machToMs: Double
   private let statsIntervalMach: UInt64
-  private let logger: any FBControlCoreLogger
+  private let logger: any ControlCoreLogger
 
   private var statsStartTime: UInt64
   private var pushCount: UInt64 = 0
@@ -176,7 +176,7 @@ struct CadenceStats {
   private var pushMean = 0.0 // Welford mean (in Mach ticks)
   private var pushM2 = 0.0 // Welford M2 (sum of squared deviations)
 
-  init(frameIntervalNanos: UInt64, logger: any FBControlCoreLogger) {
+  init(frameIntervalNanos: UInt64, logger: any ControlCoreLogger) {
     var timebase = mach_timebase_info_data_t()
     mach_timebase_info(&timebase)
     self.machToMs = Double(timebase.numer) / Double(timebase.denom) / 1e6

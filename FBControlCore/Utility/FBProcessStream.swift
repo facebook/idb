@@ -44,7 +44,7 @@ public protocol ProcessOutputProtocol: NSObjectProtocol {
   func providedThroughFile() -> FBFuture<ProcessFileOutput>
 
   /// Allows the receiver to be written to via a Data Consumer.
-  func providedThroughConsumer() -> FBFuture<FBDataConsumer>
+  func providedThroughConsumer() -> FBFuture<DataConsumer>
 }
 
 // MARK: - Conformance extensions for ObjC classes

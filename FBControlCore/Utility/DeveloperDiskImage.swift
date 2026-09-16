@@ -57,9 +57,9 @@ public struct InstalledDeveloperDiskImages: DeveloperDiskImageProviding {
   }
 
   private static let scanned: [DeveloperDiskImage] = {
-    let xcodeVersion = FBXcodeConfiguration.xcodeVersion
-    let logger = FBControlCoreGlobalConfiguration.defaultLogger
-    let searchPath = (FBXcodeConfiguration.developerDirectory as NSString).appendingPathComponent("Platforms/iPhoneOS.platform/DeviceSupport")
+    let xcodeVersion = XcodeConfiguration.xcodeVersion
+    let logger = ControlCoreGlobalConfiguration.defaultLogger
+    let searchPath = (XcodeConfiguration.developerDirectory as NSString).appendingPathComponent("Platforms/iPhoneOS.platform/DeviceSupport")
     var found = InstalledDeveloperDiskImages.images(inDirectory: searchPath, xcodeVersion: xcodeVersion, logger: logger)
     if let extraPath = ProcessInfo.processInfo.environment[ExtraDeviceSupportDirEnv] {
       found += InstalledDeveloperDiskImages.images(inDirectory: extraPath, xcodeVersion: xcodeVersion, logger: logger)
@@ -70,7 +70,7 @@ public struct InstalledDeveloperDiskImages: DeveloperDiskImageProviding {
   private static func images(
     inDirectory searchPath: String,
     xcodeVersion: OperatingSystemVersion,
-    logger: any FBControlCoreLogger
+    logger: any ControlCoreLogger
   ) -> [DeveloperDiskImage] {
     var images: [DeveloperDiskImage] = []
     logger.log("Attempting to find Disk Images at path \(searchPath)")
@@ -125,10 +125,10 @@ public struct DeveloperDiskImage: Sendable, CustomStringConvertible {
 
   // MARK: - Public
 
-  public static func pathForDeveloperSymbols(_ buildVersion: String, logger: any FBControlCoreLogger) throws -> String {
+  public static func pathForDeveloperSymbols(_ buildVersion: String, logger: any ControlCoreLogger) throws -> String {
     let searchPaths = [
       (NSHomeDirectory() as NSString).appendingPathComponent("Library/Developer/Xcode/iOS DeviceSupport"),
-      (FBXcodeConfiguration.developerDirectory as NSString).appendingPathComponent("Platforms/iPhoneOS.platform/DeviceSupport"),
+      (XcodeConfiguration.developerDirectory as NSString).appendingPathComponent("Platforms/iPhoneOS.platform/DeviceSupport"),
     ]
     logger.log("Attempting to find Symbols directory by build version \(buildVersion)")
     var paths: [String] = []
@@ -163,7 +163,7 @@ public struct DeveloperDiskImage: Sendable, CustomStringConvertible {
     throw DeveloperDiskImageError.symbolsNotFound(buildVersion: buildVersion, searched: paths)
   }
 
-  public static func bestImage(forImages images: [DeveloperDiskImage], targetVersion: OperatingSystemVersion, logger: (any FBControlCoreLogger)?) throws -> DeveloperDiskImage {
+  public static func bestImage(forImages images: [DeveloperDiskImage], targetVersion: OperatingSystemVersion, logger: (any ControlCoreLogger)?) throws -> DeveloperDiskImage {
     if images.isEmpty {
       throw DeveloperDiskImageError.noImagesProvided
     }

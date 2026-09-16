@@ -35,7 +35,7 @@ private func asSimDeviceSet(_ object: AnyObject) -> SimDeviceSet {
 func createSimulatorSet(
   configuration: FBSimulatorControlConfiguration,
   fakeDeviceSet: AnyObject,
-  logger: (any FBControlCoreLogger)? = nil
+  logger: (any ControlCoreLogger)? = nil
 ) -> FBSimulatorSet {
   do {
     return try FBSimulatorSet.set(

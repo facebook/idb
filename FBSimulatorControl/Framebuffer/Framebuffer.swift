@@ -81,14 +81,14 @@ public final class Framebuffer: @unchecked Sendable {
 
   private let surface: any FramebufferSurface
   private let statsRecorder: FramebufferStatsRecorder
-  private let logger: any FBControlCoreLogger
+  private let logger: any ControlCoreLogger
 
-  public class func mainScreenSurface(for simulator: FBSimulator, logger: any FBControlCoreLogger) throws -> Framebuffer {
+  public class func mainScreenSurface(for simulator: FBSimulator, logger: any ControlCoreLogger) throws -> Framebuffer {
     let surface = try FramebufferSurfaceLocator.mainDisplaySurface(for: simulator, logger: logger)
     return Framebuffer(surface: surface, logger: logger)
   }
 
-  init(surface: any FramebufferSurface, logger: any FBControlCoreLogger) {
+  init(surface: any FramebufferSurface, logger: any ControlCoreLogger) {
     self.surface = surface
     self.statsRecorder = FramebufferStatsRecorder(logger: logger)
     self.logger = logger

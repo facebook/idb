@@ -23,7 +23,7 @@ extension DevicectlError: LocalizedError {
 
 class AppleDevicectlCommandExecutor {
 
-  let logger: FBControlCoreLogger?
+  let logger: ControlCoreLogger?
   let device: FBDevice
 
   init(device: FBDevice) {

@@ -21,19 +21,19 @@ public struct SurfaceImage: Sendable {
 /// confined by the `SimulatorImage` actor, which serializes `updateSurface` and `image()`.
 public final class SurfaceImageGenerator {
 
-  private let logger: (any FBControlCoreLogger)?
+  private let logger: (any ControlCoreLogger)?
   /// Created once and reused across renders: CIContext construction is expensive (it builds a GPU
   /// pipeline) and the context carries no per-image state.
   private let context = CIContext(options: nil)
 
   private var surface: IOSurface?
 
-  public convenience init(purpose: String, logger: (any FBControlCoreLogger)?) {
+  public convenience init(purpose: String, logger: (any ControlCoreLogger)?) {
     let namedLogger = logger?.withName("\(logger?.name ?? "")_\(purpose)")
     self.init(logger: namedLogger)
   }
 
-  private init(logger: (any FBControlCoreLogger)?) {
+  private init(logger: (any ControlCoreLogger)?) {
     self.logger = logger
   }
 

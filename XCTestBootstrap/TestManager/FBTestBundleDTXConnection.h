@@ -21,7 +21,7 @@
 /**
  @param interface the `XCTestManager_IDEInterface` / `XCTMessagingChannel_RunnerToIDE` implementor that bundle and daemon callbacks are forwarded to. Typed as `id` to keep private XCTest protocols out of this header.
  */
-- (nonnull instancetype)initWithContext:(nonnull TestManagerContext *)context workQueue:(nonnull dispatch_queue_t)workQueue socket:(int)socket interface:(nonnull id)interface requestQueue:(nonnull dispatch_queue_t)requestQueue logger:(nonnull id<FBControlCoreLogger>)logger;
+- (nonnull instancetype)initWithContext:(nonnull TestManagerContext *)context workQueue:(nonnull dispatch_queue_t)workQueue socket:(int)socket interface:(nonnull id)interface requestQueue:(nonnull dispatch_queue_t)requestQueue logger:(nonnull id<ControlCoreLogger>)logger;
 
 #pragma mark Step-wise connection API
 

@@ -5,14 +5,14 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#import "FBControlCoreLogger.h"
-#import "FBControlCoreLogger+OSLog.h"
+#import "ControlCoreLogger.h"
+#import "ControlCoreLogger+OSLog.h"
 
 #import <FBControlCore/FBControlCore-Swift.h>
 
-#import "FBDataConsumer.h"
+#import "DataConsumer.h"
 
-@interface FBControlCoreLogger_NSLog : NSObject <FBControlCoreLogger>
+@interface FBControlCoreLogger_NSLog : NSObject <ControlCoreLogger>
 
 @end
 
@@ -34,34 +34,34 @@
   return self;
 }
 
-- (id<FBControlCoreLogger>)log:(NSString *)message
+- (id<ControlCoreLogger>)log:(NSString *)message
 {
   NSString *string = self.name ? [NSString stringWithFormat:@"[%@] %@", self.name, message] : message;
   NSLog(@"%@", string);
   return self;
 }
 
-- (id<FBControlCoreLogger>)info
+- (id<ControlCoreLogger>)info
 {
   return self;
 }
 
-- (id<FBControlCoreLogger>)debug
+- (id<ControlCoreLogger>)debug
 {
   return self;
 }
 
-- (id<FBControlCoreLogger>)error
+- (id<ControlCoreLogger>)error
 {
   return self;
 }
 
-- (id<FBControlCoreLogger>)withName:(NSString *)name
+- (id<ControlCoreLogger>)withName:(NSString *)name
 {
   return [[self.class alloc] initWithname:name level:self.level];
 }
 
-- (id<FBControlCoreLogger>)withDateFormatEnabled:(BOOL)dateFormat
+- (id<ControlCoreLogger>)withDateFormatEnabled:(BOOL)dateFormat
 {
   return self;
 }
@@ -70,7 +70,7 @@
 
 @implementation FBCompositeLogger
 
-- (instancetype)initWithLoggers:(NSArray<id<FBControlCoreLogger>> *)loggers
+- (instancetype)initWithLoggers:(NSArray<id<ControlCoreLogger>> *)loggers
 {
   self = [super init];
   if (!self) {
@@ -82,39 +82,39 @@
   return self;
 }
 
-- (id<FBControlCoreLogger>)log:(NSString *)message
+- (id<ControlCoreLogger>)log:(NSString *)message
 {
   message = [FBControlCoreLoggerFactory loggableStringLine:message];
   if (!message) {
     return self;
   }
-  for (id<FBControlCoreLogger> logger in self.loggers) {
+  for (id<ControlCoreLogger> logger in self.loggers) {
     [logger log:message];
   }
   return self;
 }
 
-- (id<FBControlCoreLogger>)info
+- (id<ControlCoreLogger>)info
 {
   return [self loggerByApplyingSelector:_cmd];
 }
 
-- (id<FBControlCoreLogger>)debug
+- (id<ControlCoreLogger>)debug
 {
   return [self loggerByApplyingSelector:_cmd];
 }
 
-- (id<FBControlCoreLogger>)error
+- (id<ControlCoreLogger>)error
 {
   return [self loggerByApplyingSelector:_cmd];
 }
 
-- (id<FBControlCoreLogger>)withName:(NSString *)name
+- (id<ControlCoreLogger>)withName:(NSString *)name
 {
   return [self loggerByApplyingSelector:_cmd object:name];
 }
 
-- (id<FBControlCoreLogger>)withDateFormatEnabled:(BOOL)dateFormat
+- (id<ControlCoreLogger>)withDateFormatEnabled:(BOOL)dateFormat
 {
   return [self loggerByApplyingSelector:_cmd object:@(dateFormat)];
 }
@@ -132,19 +132,19 @@
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Warc-performSelector-leaks"
 
-- (id<FBControlCoreLogger>)loggerByApplyingSelector:(SEL)selector
+- (id<ControlCoreLogger>)loggerByApplyingSelector:(SEL)selector
 {
-  NSMutableArray<id<FBControlCoreLogger>> *loggers = [NSMutableArray arrayWithCapacity:self.loggers.count];
-  for (id<FBControlCoreLogger> logger in self.loggers) {
+  NSMutableArray<id<ControlCoreLogger>> *loggers = [NSMutableArray arrayWithCapacity:self.loggers.count];
+  for (id<ControlCoreLogger> logger in self.loggers) {
     [loggers addObject:[logger performSelector:selector]];
   }
   return [[self.class alloc] initWithLoggers:loggers];
 }
 
-- (id<FBControlCoreLogger>)loggerByApplyingSelector:(SEL)selector object:(id)object
+- (id<ControlCoreLogger>)loggerByApplyingSelector:(SEL)selector object:(id)object
 {
-  NSMutableArray<id<FBControlCoreLogger>> *loggers = [NSMutableArray arrayWithCapacity:self.loggers.count];
-  for (id<FBControlCoreLogger> logger in self.loggers) {
+  NSMutableArray<id<ControlCoreLogger>> *loggers = [NSMutableArray arrayWithCapacity:self.loggers.count];
+  for (id<ControlCoreLogger> logger in self.loggers) {
     [loggers addObject:[logger performSelector:selector withObject:object]];
   }
   return [[self.class alloc] initWithLoggers:loggers];
@@ -154,9 +154,9 @@
 
 @end
 
-@interface FBControlCoreLogger_Consumer : NSObject <FBControlCoreLogger>
+@interface FBControlCoreLogger_Consumer : NSObject <ControlCoreLogger>
 
-@property (nonatomic, readonly, strong) id<FBDataConsumer> consumer;
+@property (nonatomic, readonly, strong) id<DataConsumer> consumer;
 @property (nullable, nonatomic, readonly, strong) NSDateFormatter *dateFormatter;
 
 @end
@@ -166,7 +166,7 @@
 @synthesize name = _name;
 @synthesize level = _level;
 
-- (instancetype)initWithConsumer:(id<FBDataConsumer>)consumer name:(NSString *)name dateFormatter:(NSDateFormatter *)dateFormatter
+- (instancetype)initWithConsumer:(id<DataConsumer>)consumer name:(NSString *)name dateFormatter:(NSDateFormatter *)dateFormatter
 {
   self = [super init];
   if (!self) {
@@ -182,7 +182,7 @@
 
 #pragma mark Protocol Implementation
 
-- (id<FBControlCoreLogger>)log:(NSString *)message
+- (id<ControlCoreLogger>)log:(NSString *)message
 {
   message = [FBControlCoreLoggerFactory loggableStringLine:message];
   if (!message) {
@@ -205,27 +205,27 @@
   return self;
 }
 
-- (id<FBControlCoreLogger>)info
+- (id<ControlCoreLogger>)info
 {
   return [[self.class alloc] initWithConsumer:self.consumer name:self.name dateFormatter:self.dateFormatter];
 }
 
-- (id<FBControlCoreLogger>)debug
+- (id<ControlCoreLogger>)debug
 {
   return [[self.class alloc] initWithConsumer:self.consumer name:self.name dateFormatter:self.dateFormatter];
 }
 
-- (id<FBControlCoreLogger>)error
+- (id<ControlCoreLogger>)error
 {
   return [[self.class alloc] initWithConsumer:self.consumer name:self.name dateFormatter:self.dateFormatter];
 }
 
-- (id<FBControlCoreLogger>)withName:(NSString *)name
+- (id<ControlCoreLogger>)withName:(NSString *)name
 {
   return [[self.class alloc] initWithConsumer:self.consumer name:name dateFormatter:self.dateFormatter];
 }
 
-- (id<FBControlCoreLogger>)withDateFormatEnabled:(BOOL)enabled __attribute__((no_sanitize("bool")))
+- (id<ControlCoreLogger>)withDateFormatEnabled:(BOOL)enabled __attribute__((no_sanitize("bool")))
 {
   NSDateFormatter *dateFormatter = nil;
   if (enabled) {
@@ -244,10 +244,10 @@
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wundeclared-selector"
 
-+ (id<FBControlCoreLogger>)systemLoggerWritingToStderr:(BOOL)writeToStdErr withDebugLogging:(BOOL)debugLogging;
++ (id<ControlCoreLogger>)systemLoggerWritingToStderr:(BOOL)writeToStdErr withDebugLogging:(BOOL)debugLogging;
 {
   FBControlCoreLogLevel level = debugLogging ? FBControlCoreLogLevelDebug : FBControlCoreLogLevelInfo;
-  id<FBControlCoreLogger> systemLogger = [self osLoggerWithLevel:level] ?: [FBControlCoreLogger_NSLog new];
+  id<ControlCoreLogger> systemLogger = [self osLoggerWithLevel:level] ?: [FBControlCoreLogger_NSLog new];
 
   if (!writeToStdErr) {
     return systemLogger;
@@ -267,19 +267,19 @@
 
 #pragma clang diagnostic pop
 
-+ (FBCompositeLogger *)compositeLoggerWithLoggers:(NSArray<id<FBControlCoreLogger>> *)loggers
++ (FBCompositeLogger *)compositeLoggerWithLoggers:(NSArray<id<ControlCoreLogger>> *)loggers
 {
   return [[FBCompositeLogger alloc] initWithLoggers:loggers];
 }
 
-+ (id<FBControlCoreLogger>)loggerToConsumer:(id<FBDataConsumer>)consumer
++ (id<ControlCoreLogger>)loggerToConsumer:(id<DataConsumer>)consumer
 {
   return [[FBControlCoreLogger_Consumer alloc] initWithConsumer:consumer name:nil dateFormatter:nil];
 }
 
-+ (id<FBControlCoreLogger>)loggerToFileDescriptor:(int)fileDescriptor closeOnEndOfFile:(BOOL)closeOnEndOfFile
++ (id<ControlCoreLogger>)loggerToFileDescriptor:(int)fileDescriptor closeOnEndOfFile:(BOOL)closeOnEndOfFile
 {
-  id<FBDataConsumer> consumer = [FileWriter syncWriterWithFileDescriptor:fileDescriptor closeOnEndOfFile:closeOnEndOfFile];
+  id<DataConsumer> consumer = [FileWriter syncWriterWithFileDescriptor:fileDescriptor closeOnEndOfFile:closeOnEndOfFile];
   return [[FBControlCoreLogger_Consumer alloc] initWithConsumer:consumer name:nil dateFormatter:nil];
 }
 

@@ -14,11 +14,11 @@ import Foundation
 /// this class owns the registry of what is currently attached and notifies the delegate.
 class DeviceManager<PublicDevice: AnyObject>: NSObject, FBiOSTargetSet {
 
-  let logger: any FBControlCoreLogger
+  let logger: any ControlCoreLogger
   let storage: DeviceStorage<PublicDevice>
   weak var delegate: (any FBiOSTargetSetDelegate)?
 
-  init(logger: any FBControlCoreLogger) {
+  init(logger: any ControlCoreLogger) {
     self.logger = logger
     self.storage = DeviceStorage(logger: logger)
     super.init()

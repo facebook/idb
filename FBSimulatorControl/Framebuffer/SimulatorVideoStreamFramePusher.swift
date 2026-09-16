@@ -162,13 +162,13 @@ struct VideoOutputDimensions: Equatable {
 
 /// Writes raw BGRA pixel bytes (optionally scaled) straight through to the consumer, unframed.
 final class SimulatorVideoStreamFramePusher_Bitmap: SimulatorVideoStreamFramePusher {
-  let consumer: any FBDataConsumer
+  let consumer: any DataConsumer
   /// The scale factor between 0-1. nil for no scaling.
   let scaleFactor: Double?
   var scaledPixelBufferPool: CVPixelBufferPool?
   var pixelTransferSession: VTPixelTransferSession?
 
-  init(consumer: any FBDataConsumer, scaleFactor: Double?) {
+  init(consumer: any DataConsumer, scaleFactor: Double?) {
     self.consumer = consumer
     self.scaleFactor = scaleFactor
   }
@@ -217,7 +217,7 @@ final class SimulatorVideoStreamFramePusher_Bitmap: SimulatorVideoStreamFramePus
     guard let baseAddress = CVPixelBufferGetBaseAddress(bufferToWrite) else { return }
     let size = CVPixelBufferGetDataSize(bufferToWrite)
 
-    if consumer is FBDataConsumerSync {
+    if consumer is DataConsumerSync {
       let data = Data(bytesNoCopy: baseAddress, count: size, deallocator: .none)
       consumer.consumeData(data)
     } else {
@@ -250,8 +250,8 @@ final class SimulatorVideoStreamFramePusher_VideoToolbox: SimulatorVideoStreamFr
   /// block buffer directly to `consumer` in the encode handler.
   let encodedSampleConsumer: EncodedSampleConsumer?
   let timedMetadataWriter: (any VideoStreamTimedMetadataWriter)?
-  let consumer: any FBDataConsumer
-  let logger: any FBControlCoreLogger
+  let consumer: any DataConsumer
+  let logger: any ControlCoreLogger
   private let mjpegFrameWriter = MJPEGFrameWriter()
   private let minicapFrameWriter = MinicapFrameWriter()
 
@@ -280,11 +280,11 @@ final class SimulatorVideoStreamFramePusher_VideoToolbox: SimulatorVideoStreamFr
     configuration: VideoStreamConfiguration,
     compressionSessionProperties: [String: Any],
     videoCodec: CMVideoCodecType,
-    consumer: any FBDataConsumer,
+    consumer: any DataConsumer,
     outputMode: VideoToolboxOutputMode,
     encodedSampleConsumer: EncodedSampleConsumer?,
     timedMetadataWriter: (any VideoStreamTimedMetadataWriter)?,
-    logger: any FBControlCoreLogger
+    logger: any ControlCoreLogger
   ) {
     self.configuration = configuration
     self.compressionSessionProperties = compressionSessionProperties

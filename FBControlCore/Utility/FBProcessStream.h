@@ -7,7 +7,7 @@
 
 #import <Foundation/Foundation.h>
 
-#import <FBControlCore/FBDataConsumer.h>
+#import <FBControlCore/DataConsumer.h>
 #import <FBControlCore/FBFuture.h>
 
 typedef NS_ENUM(NSUInteger, FBProcessStreamAttachmentMode) {
@@ -83,7 +83,7 @@ typedef NS_ENUM(NSUInteger, FBProcessStreamAttachmentMode) {
  @param logger the logger to log to.
  @return a Process Output instance.
  */
-+ (nonnull FBProcessOutput<id<FBDataConsumer>> *)outputForDataConsumer:(nonnull id<FBDataConsumer>)dataConsumer logger:(nonnull id<FBControlCoreLogger>)logger;
++ (nonnull FBProcessOutput<id<DataConsumer>> *)outputForDataConsumer:(nonnull id<DataConsumer>)dataConsumer logger:(nonnull id<ControlCoreLogger>)logger;
 
 /**
  An Output Container that passes to Data Consumer.
@@ -91,7 +91,7 @@ typedef NS_ENUM(NSUInteger, FBProcessStreamAttachmentMode) {
  @param dataConsumer the data consumer to write to.
  @return a Process Output instance.
  */
-+ (nonnull FBProcessOutput<id<FBDataConsumer>> *)outputForDataConsumer:(nonnull id<FBDataConsumer>)dataConsumer;
++ (nonnull FBProcessOutput<id<DataConsumer>> *)outputForDataConsumer:(nonnull id<DataConsumer>)dataConsumer;
 
 /**
  An Output Container that writes to a logger
@@ -99,7 +99,7 @@ typedef NS_ENUM(NSUInteger, FBProcessStreamAttachmentMode) {
  @param logger the logger to log to.
  @return a Process Output instance.
  */
-+ (nonnull FBProcessOutput<id<FBControlCoreLogger>> *)outputForLogger:(nonnull id<FBControlCoreLogger>)logger;
++ (nonnull FBProcessOutput<id<ControlCoreLogger>> *)outputForLogger:(nonnull id<ControlCoreLogger>)logger;
 
 /**
  An Output Container that accumulates data in memory
@@ -127,7 +127,7 @@ typedef NS_ENUM(NSUInteger, FBProcessStreamAttachmentMode) {
 - (nonnull FBFuture<FBProcessStreamAttachment *> *)attach;
 - (nonnull FBFuture<NSNull *> *)detach;
 - (nonnull FBFuture<id<ProcessFileOutput>> *)providedThroughFile;
-- (nonnull FBFuture<id<FBDataConsumer>> *)providedThroughConsumer;
+- (nonnull FBFuture<id<DataConsumer>> *)providedThroughConsumer;
 
 @end
 
@@ -144,7 +144,7 @@ typedef NS_ENUM(NSUInteger, FBProcessStreamAttachmentMode) {
 
  @return a FBProcessInput instance wrapping a data consumer.
  */
-+ (nonnull FBProcessInput<id<FBDataConsumer>> *)inputFromConsumer;
++ (nonnull FBProcessInput<id<DataConsumer>> *)inputFromConsumer;
 
 /**
  An input container that provides an NSOutputStream.

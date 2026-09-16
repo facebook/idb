@@ -40,7 +40,7 @@ public final class VideoFileWriter: NSObject, AVCaptureFileOutputRecordingDelega
 
   private let session: AVCaptureSession
   private let output: AVCaptureMovieFileOutput
-  private let logger: any FBControlCoreLogger
+  private let logger: any ControlCoreLogger
   private let outputURL: URL
   private let lifecycleLock = NSLock()
   private var hasStarted = false
@@ -48,7 +48,7 @@ public final class VideoFileWriter: NSObject, AVCaptureFileOutputRecordingDelega
   private var startAwaiters: [CheckedContinuation<Void, Error>] = []
   private var finishAwaiters: [CheckedContinuation<Void, Error>] = []
 
-  public class func writer(withSession session: AVCaptureSession, filePath: String, logger: any FBControlCoreLogger) throws -> Self {
+  public class func writer(withSession session: AVCaptureSession, filePath: String, logger: any ControlCoreLogger) throws -> Self {
     let output = AVCaptureMovieFileOutput()
     if !session.canAddOutput(output) {
       throw VideoFileWriterError.cannotAddFileOutput(filePath: filePath)
@@ -57,7 +57,7 @@ public final class VideoFileWriter: NSObject, AVCaptureFileOutputRecordingDelega
     return self.init(session: session, output: output, filePath: filePath, logger: logger)
   }
 
-  required init(session: AVCaptureSession, output: AVCaptureMovieFileOutput, filePath: String, logger: any FBControlCoreLogger) {
+  required init(session: AVCaptureSession, output: AVCaptureMovieFileOutput, filePath: String, logger: any ControlCoreLogger) {
     self.session = session
     self.output = output
     self.outputURL = URL(fileURLWithPath: filePath)

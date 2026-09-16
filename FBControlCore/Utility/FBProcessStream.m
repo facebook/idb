@@ -56,8 +56,8 @@ static NSTimeInterval const ProcessDetachDrainTimeout = 4;
 
 @interface FBProcessFileOutput_Consumer : NSObject <ProcessFileOutput>
 
-@property (nonatomic, readonly, strong) id<FBDataConsumer> consumer;
-@property (nullable, nonatomic, readwrite, strong) FBSubprocess<NSNull *, id<FBDataConsumer>, NSNull *> *task;
+@property (nonatomic, readonly, strong) id<DataConsumer> consumer;
+@property (nullable, nonatomic, readwrite, strong) FBSubprocess<NSNull *, id<DataConsumer>, NSNull *> *task;
 @property (nonatomic, readonly, strong) dispatch_queue_t queue;
 
 @end
@@ -65,7 +65,7 @@ static NSTimeInterval const ProcessDetachDrainTimeout = 4;
 @interface FBProcessFileOutput_Reader : NSObject <ProcessFileOutput>
 
 @property (nonatomic, readonly, strong) FBProcessOutput *output;
-@property (nullable, nonatomic, readwrite, strong) id<FBDataConsumer> writer;
+@property (nullable, nonatomic, readwrite, strong) id<DataConsumer> writer;
 @property (nullable, nonatomic, readwrite, strong) id<ProcessFileOutput> nested;
 @property (nonatomic, readonly, strong) dispatch_queue_t queue;
 
@@ -120,7 +120,7 @@ static NSTimeInterval const ProcessDetachDrainTimeout = 4;
 
 #pragma mark Initializers
 
-- (instancetype)initWithConsumer:(id<FBDataConsumer>)consumer filePath:(NSString *)filePath queue:(dispatch_queue_t)queue
+- (instancetype)initWithConsumer:(id<DataConsumer>)consumer filePath:(NSString *)filePath queue:(dispatch_queue_t)queue
 {
   self = [super init];
   if (!self) {
@@ -140,7 +140,7 @@ static NSTimeInterval const ProcessDetachDrainTimeout = 4;
 {
   return [[FBFuture
            onQueue:self.queue
-           resolve:^FBFuture<FBSubprocess<NSNull *, id<FBDataConsumer>, NSNull *> *> *{
+           resolve:^FBFuture<FBSubprocess<NSNull *, id<DataConsumer>, NSNull *> *> *{
              if (self.task) {
                return (FBFuture *)[[ControlCoreError
                                     describe:@"Cannot start reading, already reading"]
@@ -154,7 +154,7 @@ static NSTimeInterval const ProcessDetachDrainTimeout = 4;
                      start];
            }]
           onQueue:self.queue
-          map:^(FBSubprocess<NSNull *, id<FBDataConsumer>, NSNull *> *task) {
+          map:^(FBSubprocess<NSNull *, id<DataConsumer>, NSNull *> *task) {
             self.task = task;
             return NSNull.null;
           }];
@@ -165,7 +165,7 @@ static NSTimeInterval const ProcessDetachDrainTimeout = 4;
   return [[FBFuture
            onQueue:self.queue
            resolve:^FBFuture<NSNumber *> *{
-             FBSubprocess<NSNull *, id<FBDataConsumer>, NSNull *> *task = self.task;
+             FBSubprocess<NSNull *, id<DataConsumer>, NSNull *> *task = self.task;
              self.task = nil;
              if (!task) {
                return (FBFuture *)[[ControlCoreError
@@ -221,11 +221,11 @@ static NSTimeInterval const ProcessDetachDrainTimeout = 4;
                 return [self.output attach];
               }]
              onQueue:self.queue
-             map:^id<FBDataConsumer>(FBProcessStreamAttachment *attachment) {
+             map:^id<DataConsumer>(FBProcessStreamAttachment *attachment) {
                return [FileWriter syncWriterWithFileDescriptor:attachment.fileDescriptor closeOnEndOfFile:attachment.closeOnEndOfFile];
              }]
             onQueue:self.queue
-            fmap:^FBFuture<id<ProcessFileOutput>> *(id<FBDataConsumer> writer) {
+            fmap:^FBFuture<id<ProcessFileOutput>> *(id<DataConsumer> writer) {
               self.writer = writer;
               id<ProcessFileOutput> consumer = [[FBProcessFileOutput_Consumer alloc] initWithConsumer:writer filePath:self.filePath queue:self.queue];
               return [[consumer startReading] mapReplace:consumer];
@@ -315,17 +315,17 @@ static NSTimeInterval const ProcessDetachDrainTimeout = 4;
 
 @interface FBProcessOutput_Consumer : FBProcessOutput_Pipe
 
-@property (nonatomic, readwrite, strong) id<FBDataConsumer> consumer;
+@property (nonatomic, readwrite, strong) id<DataConsumer> consumer;
 @property (nullable, nonatomic, readwrite, strong) FileReader *reader;
-@property (nullable, nonatomic, readwrite, strong) id<FBControlCoreLogger> logger;
+@property (nullable, nonatomic, readwrite, strong) id<ControlCoreLogger> logger;
 
-- (instancetype)initWithConsumer:(id<FBDataConsumer>)consumer logger:(nullable id<FBControlCoreLogger>)logger;
+- (instancetype)initWithConsumer:(id<DataConsumer>)consumer logger:(nullable id<ControlCoreLogger>)logger;
 
 @end
 
 @interface FBProcessOutput_Logger : FBProcessOutput_Consumer
 
-- (instancetype)initWithLogger:(id<FBControlCoreLogger>)logger;
+- (instancetype)initWithLogger:(id<ControlCoreLogger>)logger;
 
 @end
 
@@ -365,17 +365,17 @@ static NSTimeInterval const ProcessDetachDrainTimeout = 4;
   return [[FBProcessOutput_InputStream alloc] init];
 }
 
-+ (FBProcessOutput<id<FBDataConsumer>> *)outputForDataConsumer:(id<FBDataConsumer>)dataConsumer logger:(id<FBControlCoreLogger>)logger
++ (FBProcessOutput<id<DataConsumer>> *)outputForDataConsumer:(id<DataConsumer>)dataConsumer logger:(id<ControlCoreLogger>)logger
 {
   return [[FBProcessOutput_Consumer alloc] initWithConsumer:dataConsumer logger:logger];
 }
 
-+ (FBProcessOutput<id<FBDataConsumer>> *)outputForDataConsumer:(id<FBDataConsumer>)dataConsumer
++ (FBProcessOutput<id<DataConsumer>> *)outputForDataConsumer:(id<DataConsumer>)dataConsumer
 {
   return [[FBProcessOutput_Consumer alloc] initWithConsumer:dataConsumer logger:nil];
 }
 
-+ (FBProcessOutput<id<FBControlCoreLogger>> *)outputForLogger:(id<FBControlCoreLogger>)logger
++ (FBProcessOutput<id<ControlCoreLogger>> *)outputForLogger:(id<ControlCoreLogger>)logger
 {
   return [[FBProcessOutput_Logger alloc] initWithLogger:logger];
 }
@@ -439,7 +439,7 @@ static NSTimeInterval const ProcessDetachDrainTimeout = 4;
           }];
 }
 
-- (FBFuture<id<FBDataConsumer>> *)providedThroughConsumer
+- (FBFuture<id<DataConsumer>> *)providedThroughConsumer
 {
   NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
   return nil;
@@ -487,7 +487,7 @@ static NSTimeInterval const ProcessDetachDrainTimeout = 4;
   return [FBFuture futureWithResult:[[FBProcessFileOutput_DirectToFile alloc] initWithFilePath:@"/dev/null"]];
 }
 
-- (FBFuture<id<FBDataConsumer>> *)providedThroughConsumer
+- (FBFuture<id<DataConsumer>> *)providedThroughConsumer
 {
   return [FBFuture futureWithResult:FBNullDataConsumer.new];
 }
@@ -655,7 +655,7 @@ static NSTimeInterval const ProcessDetachDrainTimeout = 4;
 
 #pragma mark Initializers
 
-- (instancetype)initWithConsumer:(id<FBDataConsumer>)consumer logger:(nullable id<FBControlCoreLogger>)logger
+- (instancetype)initWithConsumer:(id<DataConsumer>)consumer logger:(nullable id<ControlCoreLogger>)logger
 {
   self = [super init];
   if (!self) {
@@ -684,8 +684,8 @@ static NSTimeInterval const ProcessDetachDrainTimeout = 4;
 
             // FileReader consumes the read end, the write end is passed out in the attachment.
             // The super's attach creates the pipe and the detach closes the write end.
-            id<FBDataConsumer> consumer = self.consumer;
-            id<FBControlCoreLogger> logger = self.logger;
+            id<DataConsumer> consumer = self.consumer;
+            id<ControlCoreLogger> logger = self.logger;
             if (logger) {
               consumer = [FBCompositeDataConsumer consumerWithConsumers:@[
                 consumer,
@@ -725,7 +725,7 @@ static NSTimeInterval const ProcessDetachDrainTimeout = 4;
           named:[NSString stringWithFormat:@"Detach %@", self.description]];
 }
 
-- (id<FBDataConsumer>)contents
+- (id<DataConsumer>)contents
 {
   return self.consumer;
 }
@@ -743,7 +743,7 @@ static NSTimeInterval const ProcessDetachDrainTimeout = 4;
           named:[NSString stringWithFormat:@"Relay %@ to file", self.description]];
 }
 
-- (FBFuture<id<FBDataConsumer>> *)providedThroughConsumer
+- (FBFuture<id<DataConsumer>> *)providedThroughConsumer
 {
   return [FBFuture futureWithResult:self.consumer];
 }
@@ -761,9 +761,9 @@ static NSTimeInterval const ProcessDetachDrainTimeout = 4;
 
 #pragma mark Initializers
 
-- (instancetype)initWithLogger:(id<FBControlCoreLogger>)logger
+- (instancetype)initWithLogger:(id<ControlCoreLogger>)logger
 {
-  id<FBDataConsumer> consumer = [FBLoggingDataConsumer consumerWithLogger:logger];
+  id<DataConsumer> consumer = [FBLoggingDataConsumer consumerWithLogger:logger];
   self = [super initWithConsumer:consumer logger:logger];
   if (!self) {
     return nil;
@@ -774,7 +774,7 @@ static NSTimeInterval const ProcessDetachDrainTimeout = 4;
 
 #pragma mark StandardStream
 
-- (id<FBControlCoreLogger>)contents
+- (id<ControlCoreLogger>)contents
 {
   return self.logger ?: [FBControlCoreLoggerFactory systemLoggerWritingToStderr:NO withDebugLogging:NO];
 }
@@ -860,9 +860,9 @@ static NSTimeInterval const ProcessDetachDrainTimeout = 4;
   return [FBFuture futureWithResult:[[FBProcessFileOutput_DirectToFile alloc] initWithFilePath:self.filePath]];
 }
 
-- (FBFuture<id<FBDataConsumer>> *)providedThroughConsumer
+- (FBFuture<id<DataConsumer>> *)providedThroughConsumer
 {
-  return (FBFuture<id<FBDataConsumer>> *) [FileWriter asyncWriterForFilePath:self.filePath];
+  return (FBFuture<id<DataConsumer>> *) [FileWriter asyncWriterForFilePath:self.filePath];
 }
 
 #pragma mark NSObject
@@ -942,9 +942,9 @@ static NSTimeInterval const ProcessDetachDrainTimeout = 4;
 
 @end
 
-@interface FBProcessInput_Consumer : FBProcessInput <FBDataConsumer>
+@interface FBProcessInput_Consumer : FBProcessInput <DataConsumer>
 
-@property (nullable, nonatomic, readwrite, strong) id<FBDataConsumer> writer;
+@property (nullable, nonatomic, readwrite, strong) id<DataConsumer> writer;
 
 @end
 
@@ -981,7 +981,7 @@ static NSTimeInterval const ProcessDetachDrainTimeout = 4;
 
 #pragma mark Initializers
 
-+ (FBProcessInput<id<FBDataConsumer>> *)inputFromConsumer
++ (FBProcessInput<id<DataConsumer>> *)inputFromConsumer
 {
   return [[FBProcessInput_Consumer alloc] init];
 }
@@ -1065,7 +1065,7 @@ static NSTimeInterval const ProcessDetachDrainTimeout = 4;
           named:[NSString stringWithFormat:@"Detach %@", self.description]];
 }
 
-- (id<FBDataConsumer>)contents
+- (id<DataConsumer>)contents
 {
   NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
   return nil;
@@ -1082,7 +1082,7 @@ static NSTimeInterval const ProcessDetachDrainTimeout = 4;
 
 #pragma mark StandardStream
 
-- (id<FBDataConsumer>)contents
+- (id<DataConsumer>)contents
 {
   return self;
 }
@@ -1096,7 +1096,7 @@ static NSTimeInterval const ProcessDetachDrainTimeout = 4;
              NSError *error = nil;
              // Construct a writer to write to, on eof the file descriptor is closed and the reading continues on the other side of the pipe.
              // The read end is closed in the superclassess detach.
-             id<FBDataConsumer> writer = [FileWriter asyncWriterWithFileDescriptor:self.writeEnd closeOnEndOfFile:YES error:&error];
+             id<DataConsumer> writer = [FileWriter asyncWriterWithFileDescriptor:self.writeEnd closeOnEndOfFile:YES error:&error];
              if (!writer) {
                return (FBFuture *)[[ControlCoreError
                                     describe:[NSString stringWithFormat:@"Failed to create a writer for pipe %@", error]]
@@ -1119,7 +1119,7 @@ static NSTimeInterval const ProcessDetachDrainTimeout = 4;
           named:[NSString stringWithFormat:@"Detach %@", self.description]];
 }
 
-#pragma mark FBDataConsumer
+#pragma mark DataConsumer
 
 - (void)consumeData:(NSData *)data
 {

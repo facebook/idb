@@ -39,11 +39,11 @@ final class FBiOSTargetStateChangeNotifier: NSObject, FBiOSTargetSetDelegate {
 
   private let filePath: String?
   private let targetSets: [FBiOSTargetSet]
-  private let logger: FBControlCoreLogger
+  private let logger: ControlCoreLogger
   private var current: [String: FBiOSTargetDescription]
   private let donePromise = AsyncPromise<Void>()
 
-  static func notifierToFilePath(_ filePath: String, withTargetSets targetSets: [FBiOSTargetSet], logger: FBControlCoreLogger) throws -> FBiOSTargetStateChangeNotifier {
+  static func notifierToFilePath(_ filePath: String, withTargetSets targetSets: [FBiOSTargetSet], logger: ControlCoreLogger) throws -> FBiOSTargetStateChangeNotifier {
     if targetSets.isEmpty {
       throw FBiOSTargetStateChangeNotifierError.noTargetSets
     }
@@ -65,7 +65,7 @@ final class FBiOSTargetStateChangeNotifier: NSObject, FBiOSTargetSetDelegate {
     return notifier
   }
 
-  static func notifierToStdOut(withTargetSets targetSets: [FBiOSTargetSet], logger: FBControlCoreLogger) throws -> FBiOSTargetStateChangeNotifier {
+  static func notifierToStdOut(withTargetSets targetSets: [FBiOSTargetSet], logger: ControlCoreLogger) throws -> FBiOSTargetStateChangeNotifier {
     if targetSets.isEmpty {
       throw FBiOSTargetStateChangeNotifierError.noTargetSets
     }
@@ -77,7 +77,7 @@ final class FBiOSTargetStateChangeNotifier: NSObject, FBiOSTargetSetDelegate {
     return notifier
   }
 
-  private init(filePath: String?, targetSets: [FBiOSTargetSet], logger: FBControlCoreLogger) {
+  private init(filePath: String?, targetSets: [FBiOSTargetSet], logger: ControlCoreLogger) {
     self.filePath = filePath
     self.targetSets = targetSets
     self.logger = logger

@@ -55,7 +55,7 @@ public final class DeviceVideo {
   }
 
   private class func findCaptureDevice(for device: FBDevice) async throws -> AVCaptureDevice {
-    let timeout = FBControlCoreGlobalConfiguration.fastTimeout
+    let timeout = ControlCoreGlobalConfiguration.fastTimeout
     let deadline = Date().addingTimeInterval(timeout)
     while true {
       if let captureDevice = AVCaptureDevice(uniqueID: device.udid) {

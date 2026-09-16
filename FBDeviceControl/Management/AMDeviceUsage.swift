@@ -17,14 +17,14 @@ private let mobileBackupDomain = "com.apple.mobile.backup"
 public enum AMDeviceUsage {
 
   /// Connects to the device and opens a session on it, pairing first if required.
-  public static func start(using device: AMDevice, calls: AMDCalls, logger: any FBControlCoreLogger) throws {
+  public static func start(using device: AMDevice, calls: AMDCalls, logger: any ControlCoreLogger) throws {
     try startConnection(to: device, calls: calls, logger: logger)
     try startSessionByPairing(with: device, calls: calls, logger: logger)
     logger.log("\(device) ready for use")
   }
 
   /// Ends the session and then the connection.
-  public static func stop(using device: AMDevice, calls: AMDCalls, logger: any FBControlCoreLogger) {
+  public static func stop(using device: AMDevice, calls: AMDCalls, logger: any ControlCoreLogger) {
     stopSession(with: device, calls: calls, logger: logger)
     stopConnection(to: device, calls: calls, logger: logger)
   }
@@ -34,7 +34,7 @@ public enum AMDeviceUsage {
   internal static func startConnection(
     to device: AMDevice,
     calls: AMDCalls,
-    logger: any FBControlCoreLogger
+    logger: any ControlCoreLogger
   ) throws {
     logger.log("Connecting to \(device)")
     let status = calls.Connect(device)
@@ -46,7 +46,7 @@ public enum AMDeviceUsage {
   internal static func startSessionByPairing(
     with device: AMDevice,
     calls: AMDCalls,
-    logger: any FBControlCoreLogger
+    logger: any ControlCoreLogger
   ) throws {
     logger.log("Checking whether \(device) is paired")
     if calls.IsPaired(device) == 0 {
@@ -76,7 +76,7 @@ public enum AMDeviceUsage {
   internal static func stopSession(
     with device: AMDevice,
     calls: AMDCalls,
-    logger: any FBControlCoreLogger
+    logger: any ControlCoreLogger
   ) {
     logger.log("Stopping Session on \(device)")
     _ = calls.StopSession(device)
@@ -85,7 +85,7 @@ public enum AMDeviceUsage {
   internal static func stopConnection(
     to device: AMDevice,
     calls: AMDCalls,
-    logger: any FBControlCoreLogger
+    logger: any ControlCoreLogger
   ) {
     logger.log("Disconnecting from \(device)")
     _ = calls.Disconnect(device)
@@ -140,7 +140,7 @@ final class AMDeviceSession: @unchecked Sendable {
 
   private weak var device: FBAMDevice?
   private let reuseTimeout: TimeInterval?
-  private let logger: any FBControlCoreLogger
+  private let logger: any ControlCoreLogger
 
   private let lock = NSLock()
   private var state: State = .closed
@@ -150,7 +150,7 @@ final class AMDeviceSession: @unchecked Sendable {
   private var waiters: [UUID: CheckedContinuation<Void, Error>] = [:]
   private var idleTeardown: Task<Void, Never>?
 
-  init(device: FBAMDevice, reuseTimeout: TimeInterval?, logger: any FBControlCoreLogger) {
+  init(device: FBAMDevice, reuseTimeout: TimeInterval?, logger: any ControlCoreLogger) {
     self.device = device
     self.reuseTimeout = reuseTimeout
     self.logger = logger

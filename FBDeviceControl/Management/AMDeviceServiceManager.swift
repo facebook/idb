@@ -52,7 +52,7 @@ final class HouseArrestService: @unchecked Sendable {
   private let bundleID: String
   private let afcCalls: AFCCalls
   private let reuseTimeout: TimeInterval?
-  private let logger: any FBControlCoreLogger
+  private let logger: any ControlCoreLogger
 
   private let lock = NSLock()
   private var connection: FBAFCConnection?

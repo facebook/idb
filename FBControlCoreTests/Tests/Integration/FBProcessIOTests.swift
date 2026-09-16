@@ -22,10 +22,10 @@ final class FBProcessIOTests: XCTestCase {
   func testDetachmentMultipleTimesIsPermitted() throws {
     let stdInConsumer = FBDataBuffer.consumableBuffer()
     let stdOutConsumer = FBDataBuffer.consumableBuffer()
-    let io = FBProcessIO<NSNull, FBDataConsumer, FBDataConsumer>(
+    let io = FBProcessIO<NSNull, DataConsumer, DataConsumer>(
       stdIn: nil,
-      stdOut: FBProcessOutput<FBDataConsumer>(for: stdInConsumer),
-      stdErr: FBProcessOutput<FBDataConsumer>(for: stdOutConsumer)
+      stdOut: FBProcessOutput<DataConsumer>(for: stdInConsumer),
+      stdErr: FBProcessOutput<DataConsumer>(for: stdOutConsumer)
     )
 
     let attachment = try io.attach().`await`()
@@ -69,10 +69,10 @@ final class FBProcessIOTests: XCTestCase {
   func testMultipleAttachmentIsNotPermitted() throws {
     let stdInConsumer = FBDataBuffer.consumableBuffer()
     let stdOutConsumer = FBDataBuffer.consumableBuffer()
-    let io = FBProcessIO<NSNull, FBDataConsumer, FBDataConsumer>(
+    let io = FBProcessIO<NSNull, DataConsumer, DataConsumer>(
       stdIn: nil,
-      stdOut: FBProcessOutput<FBDataConsumer>(for: stdInConsumer),
-      stdErr: FBProcessOutput<FBDataConsumer>(for: stdOutConsumer)
+      stdOut: FBProcessOutput<DataConsumer>(for: stdInConsumer),
+      stdErr: FBProcessOutput<DataConsumer>(for: stdOutConsumer)
     )
 
     let attachment = try io.attach().`await`()
@@ -84,10 +84,10 @@ final class FBProcessIOTests: XCTestCase {
   }
 
   func testDetachClosesConsumerBackedAttachmentDescriptors() throws {
-    let io = FBProcessIO<NSNull, FBDataConsumer, FBDataConsumer>(
+    let io = FBProcessIO<NSNull, DataConsumer, DataConsumer>(
       stdIn: nil,
-      stdOut: FBProcessOutput<FBDataConsumer>(for: FBDataBuffer.consumableBuffer()),
-      stdErr: FBProcessOutput<FBDataConsumer>(for: FBDataBuffer.consumableBuffer())
+      stdOut: FBProcessOutput<DataConsumer>(for: FBDataBuffer.consumableBuffer()),
+      stdErr: FBProcessOutput<DataConsumer>(for: FBDataBuffer.consumableBuffer())
     )
 
     let attachment = try io.attach().`await`()

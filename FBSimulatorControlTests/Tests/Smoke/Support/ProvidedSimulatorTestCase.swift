@@ -66,9 +66,9 @@ class ProvidedSimulatorTestCase: XCTestCase {
   /// Finds the simulator the environment provided, or skips: nothing supplied one, and this suite
   /// does not boot.
   private static func resolveProvidedSimulator() throws -> FBSimulator {
-    try FBSimulatorControlFrameworkLoader.essentialFrameworks.loadPrivateFrameworks(FBControlCoreGlobalConfiguration.defaultLogger)
+    try FBSimulatorControlFrameworkLoader.essentialFrameworks.loadPrivateFrameworks(ControlCoreGlobalConfiguration.defaultLogger)
     let environment = ProcessInfo.processInfo.environment
-    let noLogger: (any FBControlCoreLogger)? = nil
+    let noLogger: (any ControlCoreLogger)? = nil
     let configuration = FBSimulatorControlConfiguration(
       deviceSetPath: environment[DeviceSetPathEnvKey],
       logger: noLogger)

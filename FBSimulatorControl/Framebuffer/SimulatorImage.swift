@@ -12,17 +12,17 @@ import Foundation
 
 public actor SimulatorImage {
 
-  private let logger: (any FBControlCoreLogger)?
+  private let logger: (any ControlCoreLogger)?
   private let imageGenerator: SurfaceImageGenerator
   private let framebuffer: Framebuffer
   private var attachment: FramebufferAttachment?
   private var eventTask: Task<Void, Never>?
 
-  public static func image(with framebuffer: Framebuffer, logger: (any FBControlCoreLogger)?) -> SimulatorImage {
+  public static func image(with framebuffer: Framebuffer, logger: (any ControlCoreLogger)?) -> SimulatorImage {
     SimulatorImage(framebuffer: framebuffer, logger: logger)
   }
 
-  init(framebuffer: Framebuffer, logger: (any FBControlCoreLogger)?) {
+  init(framebuffer: Framebuffer, logger: (any ControlCoreLogger)?) {
     self.framebuffer = framebuffer
     self.logger = logger
     self.imageGenerator = SurfaceImageGenerator(purpose: "simulator_image", logger: logger)

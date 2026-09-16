@@ -63,7 +63,7 @@ extension MacDevice {
 
 extension MacDevice: VideoStreamCommands {
 
-  public func createStream(configuration: VideoStreamConfiguration, to consumer: any FBDataConsumer) async throws -> any FBVideoStream {
+  public func createStream(configuration: VideoStreamConfiguration, to consumer: any DataConsumer) async throws -> any FBVideoStream {
     throw macUnsupported("createStream")
   }
 }
@@ -152,7 +152,7 @@ extension MacDevice: LocationCommands {
 
 extension MacDevice: LogCommands {
 
-  public func tail(arguments: [String], consumer: any FBDataConsumer) async throws -> any LogOperation {
+  public func tail(arguments: [String], consumer: any DataConsumer) async throws -> any LogOperation {
     throw macUnsupported("tail")
   }
 }
@@ -179,7 +179,7 @@ extension MacDevice: VideoRecordingCommands {
 
 extension MacDevice: XCTraceRecordCommands {
 
-  public func start(configuration: XCTraceRecordConfiguration, logger: any FBControlCoreLogger) async throws -> XCTraceRecordOperation {
+  public func start(configuration: XCTraceRecordConfiguration, logger: any ControlCoreLogger) async throws -> XCTraceRecordOperation {
     throw macUnsupported("start")
   }
 }
@@ -188,7 +188,7 @@ extension MacDevice: XCTraceRecordCommands {
 
 extension MacDevice: InstrumentsCommands {
 
-  public func start(configuration: InstrumentsConfiguration, logger: any FBControlCoreLogger) async throws -> InstrumentsOperation {
+  public func start(configuration: InstrumentsConfiguration, logger: any ControlCoreLogger) async throws -> InstrumentsOperation {
     throw macUnsupported("start")
   }
 }

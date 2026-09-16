@@ -17,7 +17,7 @@ public protocol XCTestDescriptor: AnyObject {
   var architectures: Set<String> { get }
   var testBundle: FBBundleDescriptor { get }
   func setup(with request: XCTestRunRequest, target: any FBiOSTarget) -> FBFuture<NSNull>
-  func testConfig(withRunRequest request: XCTestRunRequest, testApps: TestApplicationsPair, logDirectoryPath: String?, logger: FBControlCoreLogger) async throws -> IDBAppHostedTestConfiguration
+  func testConfig(withRunRequest request: XCTestRunRequest, testApps: TestApplicationsPair, logDirectoryPath: String?, logger: ControlCoreLogger) async throws -> IDBAppHostedTestConfiguration
   func testAppPair(for request: XCTestRunRequest, target: any FBiOSTarget) async throws -> TestApplicationsPair
 }
 
@@ -121,7 +121,7 @@ final class XCTestBootstrapDescriptor: XCTestDescriptor, CustomStringConvertible
     return TestApplicationsPair(applicationUnderTest: nil, testHostApp: application)
   }
 
-  public func testConfig(withRunRequest request: XCTestRunRequest, testApps: TestApplicationsPair, logDirectoryPath: String?, logger: FBControlCoreLogger) async throws -> IDBAppHostedTestConfiguration {
+  public func testConfig(withRunRequest request: XCTestRunRequest, testApps: TestApplicationsPair, logDirectoryPath: String?, logger: ControlCoreLogger) async throws -> IDBAppHostedTestConfiguration {
     guard let testHostApp = testApps.testHostApp else {
       throw XCTestDescriptorError.noTestHostApplication(requestDescription: String(describing: request))
     }
@@ -208,7 +208,7 @@ final class XCodebuildTestRunDescriptor: XCTestDescriptor, CustomStringConvertib
     TestApplicationsPair(applicationUnderTest: nil, testHostApp: nil)
   }
 
-  public func testConfig(withRunRequest request: XCTestRunRequest, testApps: TestApplicationsPair, logDirectoryPath: String?, logger: FBControlCoreLogger) async throws -> IDBAppHostedTestConfiguration {
+  public func testConfig(withRunRequest request: XCTestRunRequest, testApps: TestApplicationsPair, logDirectoryPath: String?, logger: ControlCoreLogger) async throws -> IDBAppHostedTestConfiguration {
     let resultBundleName = "resultbundle_\(UUID().uuidString)"
     let resultBundlePath = (targetAuxillaryDirectory as NSString).appendingPathComponent(resultBundleName)
 
@@ -250,7 +250,7 @@ final class XCodebuildTestRunDescriptor: XCTestDescriptor, CustomStringConvertib
 
 // MARK: - Private Helper
 
-private func buildAppLaunchConfig(bundleID: String, environment: [String: String], arguments: [String], logger: FBControlCoreLogger, processLogDirectory: String?, waitForDebugger: Bool) async throws -> ApplicationLaunchConfiguration {
+private func buildAppLaunchConfig(bundleID: String, environment: [String: String], arguments: [String], logger: ControlCoreLogger, processLogDirectory: String?, waitForDebugger: Bool) async throws -> ApplicationLaunchConfiguration {
   let stdOutConsumer = FBLoggingDataConsumer(logger: logger)
   let stdErrConsumer = FBLoggingDataConsumer(logger: logger)
 
@@ -268,15 +268,15 @@ private func buildAppLaunchConfig(bundleID: String, environment: [String: String
   return applicationLaunchConfiguration(bundleID: bundleID, environment: environment, arguments: arguments, waitForDebugger: waitForDebugger, stdOut: stdOut, stdErr: stdErr)
 }
 
-private func mirroredConsumer(_ future: FBFuture<AnyObject>) async throws -> FBDataConsumer {
+private func mirroredConsumer(_ future: FBFuture<AnyObject>) async throws -> DataConsumer {
   let result = try await bridgeFBFuture(future)
-  guard let consumer = result as? FBDataConsumer else {
+  guard let consumer = result as? DataConsumer else {
     throw XCTestDescriptorError.notADataConsumer(result: String(describing: result))
   }
   return consumer
 }
 
-private func applicationLaunchConfiguration(bundleID: String, environment: [String: String], arguments: [String], waitForDebugger: Bool, stdOut: FBDataConsumer, stdErr: FBDataConsumer) -> ApplicationLaunchConfiguration {
+private func applicationLaunchConfiguration(bundleID: String, environment: [String: String], arguments: [String], waitForDebugger: Bool, stdOut: DataConsumer, stdErr: DataConsumer) -> ApplicationLaunchConfiguration {
   let io = FBProcessIO<AnyObject, AnyObject, AnyObject>(
     stdIn: nil,
     stdOut: FBProcessOutput<AnyObject>(for: stdOut),

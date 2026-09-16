@@ -7,7 +7,7 @@
 
 #import <Foundation/Foundation.h>
 
-@protocol FBControlCoreLogger;
+@protocol ControlCoreLogger;
 
 /**
  A State for the Future.
@@ -328,7 +328,7 @@ extern dispatch_time_t FBCreateDispatchTimeFromDuration(NSTimeInterval inDuratio
  @param purpose a description of the future.
  @return the receiver, for chaining
  */
-- (nonnull FBFuture<T> *)logCompletion:(nonnull id<FBControlCoreLogger>)logger withPurpose:(nonnull NSString *)purpose;
+- (nonnull FBFuture<T> *)logCompletion:(nonnull id<ControlCoreLogger>)logger withPurpose:(nonnull NSString *)purpose;
 
 #pragma mark Properties
 

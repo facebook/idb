@@ -50,7 +50,7 @@ typedef NS_ENUM(NSUInteger, FBCompressionFormat) {
  @param logger the logger to log to.
  @return a Future wrapping the extracted tar destination.
  */
-+ (nonnull FBFuture<NSString *> *)extractArchiveAtPath:(nonnull NSString *)path toPath:(nonnull NSString *)extractPath overrideModificationTime:(BOOL)overrideMTime logger:(nonnull id<FBControlCoreLogger>)logger;
++ (nonnull FBFuture<NSString *> *)extractArchiveAtPath:(nonnull NSString *)path toPath:(nonnull NSString *)extractPath overrideModificationTime:(BOOL)overrideMTime logger:(nonnull id<ControlCoreLogger>)logger;
 
 /**
  Builds a command to extract via stdin
@@ -78,7 +78,7 @@ typedef NS_ENUM(NSUInteger, FBCompressionFormat) {
  @param compression compression format used by client
  @return a Future wrapping the extracted tar destination.
  */
-+ (nonnull FBFuture<NSString *> *)extractArchiveFromStream:(nonnull FBProcessInput *)stream toPath:(nonnull NSString *)extractPath overrideModificationTime:(BOOL)overrideMTime logger:(nonnull id<FBControlCoreLogger>)logger compression:(FBCompressionFormat)compression;
++ (nonnull FBFuture<NSString *> *)extractArchiveFromStream:(nonnull FBProcessInput *)stream toPath:(nonnull NSString *)extractPath overrideModificationTime:(BOOL)overrideMTime logger:(nonnull id<ControlCoreLogger>)logger compression:(FBCompressionFormat)compression;
 
 /**
  Extracts a gzip from a stream to a single file.
@@ -89,7 +89,7 @@ typedef NS_ENUM(NSUInteger, FBCompressionFormat) {
  @param logger the logger to log to
  @return a Future wrapping the extracted tar destination.
  */
-+ (nonnull FBFuture<NSString *> *)extractGzipFromStream:(nonnull FBProcessInput *)stream toPath:(nonnull NSString *)extractPath logger:(nonnull id<FBControlCoreLogger>)logger;
++ (nonnull FBFuture<NSString *> *)extractGzipFromStream:(nonnull FBProcessInput *)stream toPath:(nonnull NSString *)extractPath logger:(nonnull id<ControlCoreLogger>)logger;
 
 /**
  Creates a gzipped archive compressing the data provided.
@@ -98,7 +98,7 @@ typedef NS_ENUM(NSUInteger, FBCompressionFormat) {
  @param logger the logger to log to.
  @return a Future wrapping the archive data.
  */
-+ (nonnull FBFuture<FBSubprocess<id, NSData *, id> *> *)createGzipDataFromProcessInput:(nonnull FBProcessInput *)input logger:(nonnull id<FBControlCoreLogger>)logger;
++ (nonnull FBFuture<FBSubprocess<id, NSData *, id> *> *)createGzipDataFromProcessInput:(nonnull FBProcessInput *)input logger:(nonnull id<ControlCoreLogger>)logger;
 
 /**
  Creates a gzips archive, returning an task that has an NSInputStream attached to stdout.
@@ -110,7 +110,7 @@ typedef NS_ENUM(NSUInteger, FBCompressionFormat) {
  @param logger the logger to log to.
  @return a Future containing a task with an NSInputStream attached to stdout.
  */
-+ (nonnull FBFuture<FBSubprocess<NSNull *, NSInputStream *, id> *> *)createGzipForPath:(nonnull NSString *)path logger:(nonnull id<FBControlCoreLogger>)logger;
++ (nonnull FBFuture<FBSubprocess<NSNull *, NSInputStream *, id> *> *)createGzipForPath:(nonnull NSString *)path logger:(nonnull id<ControlCoreLogger>)logger;
 
 /**
  Creates a gzipped tar archive, returning an task that has an NSInputStream attached to stdout.
@@ -121,7 +121,7 @@ typedef NS_ENUM(NSUInteger, FBCompressionFormat) {
  @param logger the logger to log to.
  @return a Future containing a task with an NSInputStream attached to stdout.
  */
-+ (nonnull FBFuture<FBSubprocess<NSNull *, NSInputStream *, id> *> *)createGzippedTarForPath:(nonnull NSString *)path logger:(nonnull id<FBControlCoreLogger>)logger;
++ (nonnull FBFuture<FBSubprocess<NSNull *, NSInputStream *, id> *> *)createGzippedTarForPath:(nonnull NSString *)path logger:(nonnull id<ControlCoreLogger>)logger;
 
 /**
  Creates a gzipped tar archive, returning an the data of the tar.
@@ -131,6 +131,6 @@ typedef NS_ENUM(NSUInteger, FBCompressionFormat) {
  @param logger the logger to log to.
  @return a Future containing the tar output.
  */
-+ (nonnull FBFuture<NSData *> *)createGzippedTarDataForPath:(nonnull NSString *)path queue:(nonnull dispatch_queue_t)queue logger:(nonnull id<FBControlCoreLogger>)logger;
++ (nonnull FBFuture<NSData *> *)createGzippedTarDataForPath:(nonnull NSString *)path queue:(nonnull dispatch_queue_t)queue logger:(nonnull id<ControlCoreLogger>)logger;
 
 @end

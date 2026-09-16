@@ -75,8 +75,8 @@ final class AMDeviceManagerUsageTests {
     return calls
   }
 
-  private var logger: any FBControlCoreLogger {
-    FBControlCoreGlobalConfiguration.defaultLogger
+  private var logger: any ControlCoreLogger {
+    ControlCoreGlobalConfiguration.defaultLogger
   }
 
   /// The stubs ignore the device entirely, so any object stands in for the opaque reference.

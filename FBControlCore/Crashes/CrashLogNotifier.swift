@@ -15,7 +15,7 @@ public final class CrashLogNotifier {
   public let store: CrashLogStore
   internal var sinceDate: Date
 
-  internal init(logger: any FBControlCoreLogger) {
+  internal init(logger: any ControlCoreLogger) {
     self.store = CrashLogStore.store(forDirectories: CrashLogInfo.diagnosticReportsPaths, logger: logger)
     self.sinceDate = Date()
   }
@@ -25,7 +25,7 @@ public final class CrashLogNotifier {
   }
 
   nonisolated(unsafe) private static let _sharedInstance: CrashLogNotifier = {
-    CrashLogNotifier(logger: FBControlCoreGlobalConfiguration.defaultLogger)
+    CrashLogNotifier(logger: ControlCoreGlobalConfiguration.defaultLogger)
   }()
 
   // MARK: - Notifications

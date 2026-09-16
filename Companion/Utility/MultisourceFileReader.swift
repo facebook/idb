@@ -18,7 +18,7 @@ enum MultisourceFileReader {
   /// the caller of the RPC and are handed through untouched.
   static func withFilePathURLs<Request: PayloadExtractable, T>(
     from requestStream: RequestStreamReader<Request>,
-    temporaryDirectory: FBTemporaryDirectory,
+    temporaryDirectory: TemporaryDirectory,
     extractFromSubdir: Bool,
     _ body: ([URL]) async throws -> T
   ) async throws -> T {

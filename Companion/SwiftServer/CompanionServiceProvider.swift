@@ -78,7 +78,7 @@ final class CompanionServiceProvider: Idb_CompanionService.SimpleServiceProtocol
     try await tracked { try await telemetry.bidiStreaming(method, body: body) }
   }
 
-  private var targetLogger: FBControlCoreLogger {
+  private var targetLogger: ControlCoreLogger {
     target.logger
   }
 

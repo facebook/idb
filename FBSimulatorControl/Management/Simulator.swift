@@ -34,10 +34,10 @@ public final class FBSimulator: FBiOSTarget, Hashable, CustomStringConvertible, 
 
   public let commandCache: TargetCommandCache
 
-  public let logger: any FBControlCoreLogger
+  public let logger: any ControlCoreLogger
   public let auxillaryDirectory: String
 
-  private var _temporaryDirectory: FBTemporaryDirectory?
+  private var _temporaryDirectory: TemporaryDirectory?
 
   // MARK: - Initializers
 
@@ -55,13 +55,13 @@ public final class FBSimulator: FBiOSTarget, Hashable, CustomStringConvertible, 
     configuration: FBSimulatorConfiguration,
     set: FBSimulatorSet?,
     auxillaryDirectory: String,
-    logger: (any FBControlCoreLogger)?
+    logger: (any ControlCoreLogger)?
   ) {
     self.device = device
     self.configuration = configuration
     self.set = set
     self.auxillaryDirectory = auxillaryDirectory
-    self.logger = (logger ?? FBControlCoreGlobalConfiguration.defaultLogger).withName(device.udid.uuidString)
+    self.logger = (logger ?? ControlCoreGlobalConfiguration.defaultLogger).withName(device.udid.uuidString)
     self.commandCache = TargetCommandCache()
   }
 
@@ -91,7 +91,7 @@ public final class FBSimulator: FBiOSTarget, Hashable, CustomStringConvertible, 
 
   public var platformRootDirectory: String {
     get async {
-      (FBXcodeConfiguration.developerDirectory as NSString).appendingPathComponent("Platforms/iPhoneSimulator.platform")
+      (XcodeConfiguration.developerDirectory as NSString).appendingPathComponent("Platforms/iPhoneSimulator.platform")
     }
   }
 
@@ -105,11 +105,11 @@ public final class FBSimulator: FBiOSTarget, Hashable, CustomStringConvertible, 
       scale: deviceType.mainScreenScale)
   }
 
-  public var temporaryDirectory: FBTemporaryDirectory {
+  public var temporaryDirectory: TemporaryDirectory {
     if let _temporaryDirectory {
       return _temporaryDirectory
     }
-    let directory = FBTemporaryDirectory.temporaryDirectory(logger: logger)
+    let directory = TemporaryDirectory.temporaryDirectory(logger: logger)
     _temporaryDirectory = directory
     return directory
   }

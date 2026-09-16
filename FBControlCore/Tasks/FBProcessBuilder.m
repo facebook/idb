@@ -9,8 +9,8 @@
 
 #import <FBControlCore/FBControlCore.h>
 
+#import "DataConsumer.h"
 #import "FBDataBuffer.h"
-#import "FBDataConsumer.h"
 #import "FBProcessIO.h"
 #import "FBProcessStream.h"
 #import "FBSubprocess.h"
@@ -23,7 +23,7 @@
 @property (nullable, nonatomic, readwrite, strong) FBProcessOutput *stdOut;
 @property (nullable, nonatomic, readwrite, strong) FBProcessOutput *stdErr;
 @property (nullable, nonatomic, readwrite, strong) FBProcessInput *stdIn;
-@property (nullable, nonatomic, readwrite, strong) id<FBControlCoreLogger> logger;
+@property (nullable, nonatomic, readwrite, strong) id<ControlCoreLogger> logger;
 
 @end
 
@@ -146,7 +146,7 @@
   return self;
 }
 
-- (instancetype)withStdOutConsumer:(id<FBDataConsumer>)consumer
+- (instancetype)withStdOutConsumer:(id<DataConsumer>)consumer
 {
   self.stdOut = [FBProcessOutput outputForDataConsumer:consumer];
   return self;
@@ -157,13 +157,13 @@
   return [self withStdOutConsumer:[FBBlockDataConsumer asynchronousLineConsumerWithBlock:reader]];
 }
 
-- (instancetype)withStdOutToLogger:(id<FBControlCoreLogger>)logger
+- (instancetype)withStdOutToLogger:(id<ControlCoreLogger>)logger
 {
   self.stdOut = [FBProcessOutput outputForLogger:logger];
   return self;
 }
 
-- (instancetype)withStdOutToLoggerAndErrorMessage:(id<FBControlCoreLogger>)logger
+- (instancetype)withStdOutToLoggerAndErrorMessage:(id<ControlCoreLogger>)logger
 {
   self.stdOut = [FBProcessOutput outputForDataConsumer:[FBDataBuffer accumulatingBufferWithCapacity:FBProcessOutputErrorMessageLength] logger:logger];
   return self;
@@ -196,7 +196,7 @@
   return self;
 }
 
-- (instancetype)withStdErrConsumer:(id<FBDataConsumer>)consumer
+- (instancetype)withStdErrConsumer:(id<DataConsumer>)consumer
 {
   self.stdErr = [FBProcessOutput outputForDataConsumer:consumer];
   return self;
@@ -207,13 +207,13 @@
   return [self withStdErrConsumer:[FBBlockDataConsumer asynchronousLineConsumerWithBlock:reader]];
 }
 
-- (instancetype)withStdErrToLogger:(id<FBControlCoreLogger>)logger
+- (instancetype)withStdErrToLogger:(id<ControlCoreLogger>)logger
 {
   self.stdErr = [FBProcessOutput outputForLogger:logger];
   return self;
 }
 
-- (instancetype)withStdErrToLoggerAndErrorMessage:(id<FBControlCoreLogger>)logger
+- (instancetype)withStdErrToLoggerAndErrorMessage:(id<ControlCoreLogger>)logger
 {
   self.stdErr = [FBProcessOutput outputForDataConsumer:[FBDataBuffer accumulatingBufferWithCapacity:FBProcessOutputErrorMessageLength] logger:logger];
   return self;
@@ -221,7 +221,7 @@
 
 #pragma mark Loggers
 
-- (instancetype)withTaskLifecycleLoggingTo:(id<FBControlCoreLogger>)logger;
+- (instancetype)withTaskLifecycleLoggingTo:(id<ControlCoreLogger>)logger;
 {
   self.logger = logger;
   return self;

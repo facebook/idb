@@ -27,17 +27,17 @@ enum CodesignError: Error, LocalizedError {
 public final class CodesignProvider {
 
   public let identityName: String
-  private let logger: FBControlCoreLogger?
+  private let logger: ControlCoreLogger?
 
-  public class func codeSignCommand(withIdentityName identityName: String, logger: FBControlCoreLogger?) -> Self {
+  public class func codeSignCommand(withIdentityName identityName: String, logger: ControlCoreLogger?) -> Self {
     self.init(identityName: identityName, logger: logger)
   }
 
-  public class func codeSignCommandWithAdHocIdentity(logger: FBControlCoreLogger?) -> Self {
+  public class func codeSignCommandWithAdHocIdentity(logger: ControlCoreLogger?) -> Self {
     self.init(identityName: "-", logger: logger)
   }
 
-  required init(identityName: String, logger: FBControlCoreLogger?) {
+  required init(identityName: String, logger: ControlCoreLogger?) {
     self.identityName = identityName
     self.logger = logger
   }

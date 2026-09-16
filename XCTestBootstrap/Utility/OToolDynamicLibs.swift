@@ -29,7 +29,7 @@ final class OToolDynamicLibs {
   public static func findFullPath(forSanitiserDyldInBundle bundlePath: String) async throws -> [String] {
     let libsList = try await OToolOperation.listSanitiserDylibsRequired(byBundle: bundlePath)
 
-    let clangLocation = (FBXcodeConfiguration.developerDirectory as NSString).appendingPathComponent("Toolchains/XcodeDefault.xctoolchain/usr/lib/clang")
+    let clangLocation = (XcodeConfiguration.developerDirectory as NSString).appendingPathComponent("Toolchains/XcodeDefault.xctoolchain/usr/lib/clang")
     let fileList: [URL]
     do {
       fileList = try FileManager.default.contentsOfDirectory(at: URL(fileURLWithPath: clangLocation), includingPropertiesForKeys: [.isDirectoryKey], options: [])

@@ -76,7 +76,7 @@ public final class FBAMDServiceConnection: CustomStringConvertible {
   public let name: String
   public let device: AMDevice
   public let calls: AMDCalls
-  public let logger: (any FBControlCoreLogger)?
+  public let logger: (any ControlCoreLogger)?
 
   /// Held unretained: MobileDevice hands the connection over at +1 and `invalidate` is what gives
   /// that back. Retaining it here would leave the release unbalanced.
@@ -95,7 +95,7 @@ public final class FBAMDServiceConnection: CustomStringConvertible {
     connection: AMDServiceConnection,
     device: AMDevice,
     calls: AMDCalls,
-    logger: (any FBControlCoreLogger)?
+    logger: (any ControlCoreLogger)?
   ) {
     // Raw transfer is used when there is no secure context, otherwise the service connection
     // wrapping must be used.
@@ -174,7 +174,7 @@ public final class FBAMDServiceConnection: CustomStringConvertible {
   func asAFCConnection(
     calls afcCalls: AFCCalls,
     callback: @escaping AFCNotificationCallback,
-    logger: any FBControlCoreLogger
+    logger: any ControlCoreLogger
   ) -> FBAFCConnection {
     let afcConnection = afcCalls.Create(nil, calls.ServiceConnectionGetSocket(connection), nil, callback, nil)
     let afcReference = afcConnection?.takeUnretainedValue()
@@ -273,7 +273,7 @@ public final class FBAMDServiceConnection: CustomStringConvertible {
   // MARK: - Streams
 
   func readFromConnectionWriting(
-    to consumer: any FBDataConsumer,
+    to consumer: any DataConsumer,
     on queue: DispatchQueue
   ) -> any FileReaderProtocol {
     let reader = AMDServiceConnectionReader(connection: self, consumer: consumer, queue: queue)
@@ -281,7 +281,7 @@ public final class FBAMDServiceConnection: CustomStringConvertible {
     return reader
   }
 
-  func writeWithConsumerWriting(on queue: DispatchQueue) -> any FBDataConsumer & DataConsumerLifecycle {
+  func writeWithConsumerWriting(on queue: DispatchQueue) -> any DataConsumer & DataConsumerLifecycle {
     FBBlockDataConsumer.asynchronousDataConsumer(on: queue) { [weak self] data in
       try? self?.send(data)
     }
@@ -334,7 +334,7 @@ public final class FBAMDServiceConnection: CustomStringConvertible {
 private final class AMDServiceConnectionReader: NSObject, FileReaderProtocol {
 
   private let connection: FBAMDServiceConnection
-  private let consumer: any FBDataConsumer
+  private let consumer: any DataConsumer
   private let queue: DispatchQueue
   private let finishedReadingMutable: FBMutableFuture<NSNumber>
 
@@ -356,7 +356,7 @@ private final class AMDServiceConnectionReader: NSObject, FileReaderProtocol {
     }
   }
 
-  init(connection: FBAMDServiceConnection, consumer: any FBDataConsumer, queue: DispatchQueue) {
+  init(connection: FBAMDServiceConnection, consumer: any DataConsumer, queue: DispatchQueue) {
     self.connection = connection
     self.consumer = consumer
     self.queue = queue

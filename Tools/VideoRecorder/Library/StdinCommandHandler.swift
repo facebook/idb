@@ -117,7 +117,7 @@ enum StdinCommand: Decodable {
 public final class StdinCommandHandler {
   public let renderer: OverlayRenderer
   let screenshotDir: String?
-  let logger: FBControlCoreLogger
+  let logger: ControlCoreLogger
 
   public private(set) var shutdownRequested = false
   private var shutdownContinuation: CheckedContinuation<Void, Never>?
@@ -129,7 +129,7 @@ public final class StdinCommandHandler {
   public init(
     renderer: OverlayRenderer,
     screenshotDir: String?,
-    logger: FBControlCoreLogger
+    logger: ControlCoreLogger
   ) {
     self.renderer = renderer
     self.screenshotDir = screenshotDir

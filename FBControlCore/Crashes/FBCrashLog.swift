@@ -187,7 +187,7 @@ public final class CrashLogInfo: CustomStringConvertible {
 
   // MARK: - Bulk Collection
 
-  public class func crashInfo(afterDate date: Date, logger: FBControlCoreLogger?) -> [CrashLogInfo] {
+  public class func crashInfo(afterDate date: Date, logger: ControlCoreLogger?) -> [CrashLogInfo] {
     var allCrashInfos: [CrashLogInfo] = []
 
     for basePath in diagnosticReportsPaths {

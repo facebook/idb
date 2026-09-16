@@ -16,7 +16,7 @@ import ReplProtocol
 struct ReplMethodHandler {
 
   let commandExecutor: IDBCommandExecutor
-  let targetLogger: FBControlCoreLogger
+  let targetLogger: ControlCoreLogger
   /// Owns the in-progress screen recording, which can outlive a single `repl`
   /// stream (in the app context). Shared across streams for one target.
   let recordingCoordinator: ReplRecordingCoordinator

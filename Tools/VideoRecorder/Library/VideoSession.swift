@@ -20,7 +20,7 @@ public enum VideoSession {
     screenshotDir: String?,
     parsedBars: [(position: String, height: Int, mode: BarMode)],
     barStats: [String],
-    logger: any FBControlCoreLogger
+    logger: any ControlCoreLogger
   ) -> (handler: StdinCommandHandler, statsTimers: [Task<Void, Never>]) {
     let handler = StdinCommandHandler(
       renderer: renderer,

@@ -15,13 +15,13 @@ import IDBGRPCSwift
 struct DapMethodHandler: @unchecked Sendable {
 
   let commandExecutor: IDBCommandExecutor
-  let targetLogger: FBControlCoreLogger
+  let targetLogger: ControlCoreLogger
 
   func handle(requestStream: RequestStreamReader<Idb_DapRequest>, responseStream: RPCWriter<Idb_DapResponse>, context: ServerContext) async throws {
     guard case let .start(start) = try await requestStream.requiredNext().control
     else { throw RPCError(code: .failedPrecondition, message: "Dap command expected a Start messaged in the beginning of the Stream") }
 
-    let writer = FBProcessInput<FBDataConsumer>.fromConsumer().retyped(FBProcessInput<AnyObject>.self)
+    let writer = FBProcessInput<DataConsumer>.fromConsumer().retyped(FBProcessInput<AnyObject>.self)
     let dapProcess = try await startDapServer(startRequest: start, processInput: writer, responseStream: responseStream)
 
     let tenHours: UInt64 = 36000 * 1000000000
@@ -37,11 +37,11 @@ struct DapMethodHandler: @unchecked Sendable {
     try await responseStream.send(stoppedResponse)
   }
 
-  private func startDapServer(startRequest: Idb_DapRequest.Start, processInput: FBProcessInput<AnyObject>, responseStream: RPCWriter<Idb_DapResponse>) async throws -> FBSubprocess<AnyObject, FBDataConsumer, NSString> {
+  private func startDapServer(startRequest: Idb_DapRequest.Start, processInput: FBProcessInput<AnyObject>, responseStream: RPCWriter<Idb_DapResponse>) async throws -> FBSubprocess<AnyObject, DataConsumer, NSString> {
 
     let lldbVSCode = "dap/\(startRequest.debuggerPkgID)/usr/bin/lldb-vscode"
 
-    // FBDataConsumer is a thread-safe ObjC protocol that isn't marked Sendable.
+    // DataConsumer is a thread-safe ObjC protocol that isn't marked Sendable.
     nonisolated(unsafe) let stdOutConsumer = createDataConsumer(to: responseStream)
     targetLogger.debug().log("Starting dap server with path \(lldbVSCode)")
 
@@ -59,7 +59,7 @@ struct DapMethodHandler: @unchecked Sendable {
     return process
   }
 
-  private func consumeElements(from requestStream: RequestStreamReader<Idb_DapRequest>, to writer: FBProcessInput<AnyObject>, dapProcess: FBSubprocess<AnyObject, FBDataConsumer, NSString>) async throws {
+  private func consumeElements(from requestStream: RequestStreamReader<Idb_DapRequest>, to writer: FBProcessInput<AnyObject>, dapProcess: FBSubprocess<AnyObject, DataConsumer, NSString>) async throws {
     for try await request in requestStream {
       switch request.control {
       case .start:
@@ -84,7 +84,7 @@ struct DapMethodHandler: @unchecked Sendable {
     }
   }
 
-  private func createDataConsumer(to responseStream: RPCWriter<Idb_DapResponse>) -> FBDataConsumer {
+  private func createDataConsumer(to responseStream: RPCWriter<Idb_DapResponse>) -> DataConsumer {
     let responseWriter = FIFOStreamWriter(stream: responseStream)
 
     return FBBlockDataConsumer.synchronousDataConsumer { data in

@@ -62,7 +62,7 @@ final class SimulatorDeletionStrategy {
 
   private static func confirmSimulatorUDID(_ udid: String, isRemovedFromSet set: FBSimulatorSet) async throws {
     // Deleting the device from the set can still leave it around for a few seconds.
-    let timeout = FBControlCoreGlobalConfiguration.regularTimeout
+    let timeout = ControlCoreGlobalConfiguration.regularTimeout
     let deadline = Date().addingTimeInterval(timeout)
     let pollIntervalNs = UInt64(0.1 * Double(NSEC_PER_SEC))
     while true {

@@ -13,7 +13,7 @@ final class CrashLogNotifierTests: XCTestCase {
   // MARK: - startListening
 
   func testStartListening_WithOnlyNewYES_SetsSinceDateToNow() {
-    let notifier = CrashLogNotifier(logger: FBControlCoreLoggerDouble())
+    let notifier = CrashLogNotifier(logger: ControlCoreLoggerDouble())
     notifier.sinceDate = .distantPast
 
     let before = Date()
@@ -31,7 +31,7 @@ final class CrashLogNotifierTests: XCTestCase {
   }
 
   func testStartListening_WithOnlyNewNO_SetsSinceDateToDistantPast() {
-    let notifier = CrashLogNotifier(logger: FBControlCoreLoggerDouble())
+    let notifier = CrashLogNotifier(logger: ControlCoreLoggerDouble())
 
     _ = notifier.startListening(false)
 
@@ -43,7 +43,7 @@ final class CrashLogNotifierTests: XCTestCase {
   // MARK: - nextCrashLogForPredicate
 
   func testNextCrashLogForPredicate_WhenNoMatchingCrashLog_PollDoesNotResolve() async throws {
-    let notifier = CrashLogNotifier(logger: FBControlCoreLoggerDouble())
+    let notifier = CrashLogNotifier(logger: ControlCoreLoggerDouble())
 
     let predicate = NSPredicate(value: false)
     let poll = Task { try await notifier.nextCrashLog(forPredicate: predicate) }

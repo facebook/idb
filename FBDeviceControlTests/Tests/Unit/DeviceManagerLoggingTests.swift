@@ -10,21 +10,21 @@ import FBControlCore
 import Testing
 
 /// Records every logged line so log content can be asserted.
-private final class RecordingLogger: NSObject, FBControlCoreLogger {
+private final class RecordingLogger: NSObject, ControlCoreLogger {
   private(set) var lines: [String] = []
   var name: String? { nil }
   var level: FBControlCoreLogLevel { .multiple }
 
-  func log(_ message: String) -> any FBControlCoreLogger {
+  func log(_ message: String) -> any ControlCoreLogger {
     lines.append(message)
     return self
   }
 
-  func info() -> any FBControlCoreLogger { self }
-  func debug() -> any FBControlCoreLogger { self }
-  func error() -> any FBControlCoreLogger { self }
-  func withName(_ name: String) -> any FBControlCoreLogger { self }
-  func withDateFormatEnabled(_ enabled: Bool) -> any FBControlCoreLogger { self }
+  func info() -> any ControlCoreLogger { self }
+  func debug() -> any ControlCoreLogger { self }
+  func error() -> any ControlCoreLogger { self }
+  func withName(_ name: String) -> any ControlCoreLogger { self }
+  func withDateFormatEnabled(_ enabled: Bool) -> any ControlCoreLogger { self }
 }
 
 @Suite

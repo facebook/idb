@@ -63,7 +63,7 @@ final class SimulatorShutdownStrategy {
         simulator,
         .shutdown,
         deadline: PollDeadline(
-          timeout: FBControlCoreGlobalConfiguration.regularTimeout,
+          timeout: ControlCoreGlobalConfiguration.regularTimeout,
           waitingFor: "Simulator to resolve state \(FBiOSTargetStateString.shutdown)"))
       return
     } catch {
@@ -87,7 +87,7 @@ final class SimulatorShutdownStrategy {
       simulator,
       .shutdown,
       deadline: PollDeadline(
-        timeout: FBControlCoreGlobalConfiguration.regularTimeout,
+        timeout: ControlCoreGlobalConfiguration.regularTimeout,
         waitingFor: "Simulator to transition from Creating -> Shutdown"))
   }
 }

@@ -94,7 +94,7 @@ static const size_t FBProcessOutputErrorMessageLength = 200;
  @param logger an optional logger to log process lifecycle events to.
  @return a future that resolves with the launched process once it has been started.
  */
-+ (nonnull FBFuture<FBSubprocess *> *)launchProcessWithConfiguration:(nonnull ProcessSpawnConfiguration *)configuration logger:(nullable id<FBControlCoreLogger>)logger;
++ (nonnull FBFuture<FBSubprocess *> *)launchProcessWithConfiguration:(nonnull ProcessSpawnConfiguration *)configuration logger:(nullable id<ControlCoreLogger>)logger;
 
 #pragma mark Methods
 
@@ -125,6 +125,6 @@ static const size_t FBProcessOutputErrorMessageLength = 200;
  @param logger used for log information when timeout happened, may be nil.
  @return a future that resolves to the signal sent when the process has been terminated.
  */
-- (nonnull FBFuture<NSNumber *> *)sendSignal:(int)signo backingOffToKillWithTimeout:(NSTimeInterval)timeout logger:(nullable id<FBControlCoreLogger>)logger;
+- (nonnull FBFuture<NSNumber *> *)sendSignal:(int)signo backingOffToKillWithTimeout:(NSTimeInterval)timeout logger:(nullable id<ControlCoreLogger>)logger;
 
 @end

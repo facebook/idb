@@ -145,7 +145,7 @@ private func bitmapStreamPixelBufferAttributes(from pixelBuffer: CVPixelBuffer) 
   ]
 }
 
-/// A real-time video stream of a Simulator's framebuffer, written to an `FBDataConsumer`.
+/// A real-time video stream of a Simulator's framebuffer, written to an `DataConsumer`.
 ///
 /// Concurrency model: the actor serializes start/stop, framebuffer event handling, and every frame
 /// push. Framebuffer events arrive on the attachment's ordered `AsyncStream`, consumed by an
@@ -163,7 +163,7 @@ public actor SimulatorVideoStream: FBVideoStream {
   /// When set (recording), encoded `.compressed` frames are routed to this sink — an `SimulatorVideoFileWriter`
   /// — instead of being byte-framed to `consumer`. nil for streaming.
   let encodedSampleConsumerOverride: EncodedSampleConsumer?
-  let logger: any FBControlCoreLogger
+  let logger: any ControlCoreLogger
 
   // MARK: - Lifecycle
 
@@ -173,10 +173,10 @@ public actor SimulatorVideoStream: FBVideoStream {
   /// attachment cancels, finishing the stream).
   /// Sendable so the nonisolated `deinit` backstop can reach the attachment and event task.
   private struct Session: Sendable {
-    // SAFETY: FBDataConsumer is a thread-safe ObjC protocol that predates Sendable auditing — the
+    // SAFETY: DataConsumer is a thread-safe ObjC protocol that predates Sendable auditing — the
     // `startStreaming` shim already carries it across the boundary on the same justification.
     // patternlint-disable-next-line swift-nonisolated-unsafe
-    nonisolated(unsafe) let consumer: any FBDataConsumer
+    nonisolated(unsafe) let consumer: any DataConsumer
     let attachment: FramebufferAttachment
     let eventTask: Task<Void, Never>
   }
@@ -218,7 +218,7 @@ public actor SimulatorVideoStream: FBVideoStream {
   var frameNumber: UInt = 0
   var pixelBufferAttributes: [String: Any]?
   /// The session's consumer while started, nil otherwise — the mount and push paths read this.
-  var consumer: (any FBDataConsumer)? {
+  var consumer: (any DataConsumer)? {
     switch lifecycle {
     case .idle, .stopped:
       return nil
@@ -241,12 +241,12 @@ public actor SimulatorVideoStream: FBVideoStream {
   // MARK: - Initializers
 
   /// Makes a stream with no edge insets. Cadence is derived from `configuration.framesPerSecond`.
-  public static func make(framebuffer: Framebuffer, configuration: VideoStreamConfiguration, logger: any FBControlCoreLogger) -> SimulatorVideoStream {
+  public static func make(framebuffer: Framebuffer, configuration: VideoStreamConfiguration, logger: any ControlCoreLogger) -> SimulatorVideoStream {
     make(framebuffer: framebuffer, configuration: configuration, edgeInsets: VideoStreamEdgeInsets(top: 0, bottom: 0, left: 0, right: 0), logger: logger)
   }
 
   /// Makes a stream whose output frame is extended by `edgeInsets` (reserved for overlay content).
-  public static func make(framebuffer: Framebuffer, configuration: VideoStreamConfiguration, edgeInsets: VideoStreamEdgeInsets, logger: any FBControlCoreLogger) -> SimulatorVideoStream {
+  public static func make(framebuffer: Framebuffer, configuration: VideoStreamConfiguration, edgeInsets: VideoStreamEdgeInsets, logger: any ControlCoreLogger) -> SimulatorVideoStream {
     SimulatorVideoStream(
       framebuffer: framebuffer,
       configuration: configuration,
@@ -256,9 +256,9 @@ public actor SimulatorVideoStream: FBVideoStream {
   }
 
   /// Constructs a recording stream: encoded `.compressed` frames are muxed into a file via `fileWriter`
-  /// rather than byte-framed to an `FBDataConsumer`. `edgeInsets` (default zero) reserves overlay bar
+  /// rather than byte-framed to an `DataConsumer`. `edgeInsets` (default zero) reserves overlay bar
   /// regions exactly as on the streaming path. Cadence is derived from `configuration.framesPerSecond`.
-  static func makeRecorder(framebuffer: Framebuffer, configuration: VideoStreamConfiguration, edgeInsets: VideoStreamEdgeInsets = VideoStreamEdgeInsets(top: 0, bottom: 0, left: 0, right: 0), fileWriter: SimulatorVideoFileWriter, logger: any FBControlCoreLogger) -> SimulatorVideoStream {
+  static func makeRecorder(framebuffer: Framebuffer, configuration: VideoStreamConfiguration, edgeInsets: VideoStreamEdgeInsets = VideoStreamEdgeInsets(top: 0, bottom: 0, left: 0, right: 0), fileWriter: SimulatorVideoFileWriter, logger: any ControlCoreLogger) -> SimulatorVideoStream {
     return SimulatorVideoStream(
       framebuffer: framebuffer,
       configuration: configuration,
@@ -269,7 +269,7 @@ public actor SimulatorVideoStream: FBVideoStream {
   }
 
   /// Makes and starts a stream to `consumer`.
-  public static func start(framebuffer: Framebuffer, configuration: VideoStreamConfiguration, edgeInsets: VideoStreamEdgeInsets = VideoStreamEdgeInsets(top: 0, bottom: 0, left: 0, right: 0), to consumer: any FBDataConsumer, logger: any FBControlCoreLogger) async throws -> SimulatorVideoStream {
+  public static func start(framebuffer: Framebuffer, configuration: VideoStreamConfiguration, edgeInsets: VideoStreamEdgeInsets = VideoStreamEdgeInsets(top: 0, bottom: 0, left: 0, right: 0), to consumer: any DataConsumer, logger: any ControlCoreLogger) async throws -> SimulatorVideoStream {
     let stream = make(framebuffer: framebuffer, configuration: configuration, edgeInsets: edgeInsets, logger: logger)
     try await stream.startStreaming(consumer)
     return stream
@@ -284,7 +284,7 @@ public actor SimulatorVideoStream: FBVideoStream {
     return .eager(framesPerSecond: UInt(framesPerSecond))
   }
 
-  init(framebuffer: Framebuffer, configuration: VideoStreamConfiguration, edgeInsets: VideoStreamEdgeInsets, cadence: VideoStreamCadence, logger: any FBControlCoreLogger, encodedSampleConsumerOverride: EncodedSampleConsumer? = nil) {
+  init(framebuffer: Framebuffer, configuration: VideoStreamConfiguration, edgeInsets: VideoStreamEdgeInsets, cadence: VideoStreamCadence, logger: any ControlCoreLogger, encodedSampleConsumerOverride: EncodedSampleConsumer? = nil) {
     self.framebuffer = framebuffer
     self.configuration = configuration
     self.edgeInsets = edgeInsets
@@ -311,15 +311,15 @@ public actor SimulatorVideoStream: FBVideoStream {
 
   // MARK: - Public
 
-  public nonisolated func startStreaming(_ consumer: any FBDataConsumer) async throws {
-    // FBDataConsumer is a thread-safe ObjC protocol that isn't Sendable; this single shim carries it
+  public nonisolated func startStreaming(_ consumer: any DataConsumer) async throws {
+    // DataConsumer is a thread-safe ObjC protocol that isn't Sendable; this single shim carries it
     // onto the actor, where it is confined thereafter.
     // patternlint-disable-next-line swift-nonisolated-unsafe
     nonisolated(unsafe) let consumer = consumer
     try await isolatedStartStreaming(consumer)
   }
 
-  private func isolatedStartStreaming(_ consumer: any FBDataConsumer) async throws {
+  private func isolatedStartStreaming(_ consumer: any DataConsumer) async throws {
     switch lifecycle {
     case .starting, .streaming:
       throw SimulatorVideoStreamError.startAlreadyStarted
@@ -726,9 +726,9 @@ public actor SimulatorVideoStream: FBVideoStream {
   static func framePusher(
     configuration: VideoStreamConfiguration,
     compressionSessionProperties: [String: Any],
-    consumer: any FBDataConsumer,
+    consumer: any DataConsumer,
     encodedSampleConsumerOverride: EncodedSampleConsumer?,
-    logger: any FBControlCoreLogger
+    logger: any ControlCoreLogger
   ) throws -> any SimulatorVideoStreamFramePusher {
     let derived = Self.compressionSessionProperties(for: configuration, callerProperties: compressionSessionProperties)
     switch configuration.format {

@@ -57,7 +57,7 @@
 
 + (void)setTestsToRun:(NSSet<NSString *> *)toRun andTestsToSkip:(NSSet<NSString *> *)toSkip to:(XCTestConfiguration *)configuration
 {
-  if (FBXcodeConfiguration.isXcode12_5OrGreater) {
+  if (XcodeConfiguration.isXcode12_5OrGreater) {
     configuration.testsToSkip = [self xctestIdentifierSetFromSetOfStrings:toSkip];
     configuration.testsToRun = [self xctestIdentifierSetFromSetOfStrings:toRun];
   } else {

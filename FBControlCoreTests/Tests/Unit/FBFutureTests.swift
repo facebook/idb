@@ -112,7 +112,7 @@ final class FBFutureTests: XCTestCase {
       return result
     }
     let expectation = self.expectation(for: predicate, evaluatedWith: self)
-    wait(for: [expectation], timeout: FBControlCoreGlobalConfiguration.fastTimeout)
+    wait(for: [expectation], timeout: ControlCoreGlobalConfiguration.fastTimeout)
   }
 
   func testDoActionCallback() {
@@ -137,7 +137,7 @@ final class FBFutureTests: XCTestCase {
           completionExpectation.fulfill()
         })
 
-    wait(for: [actionExpectation, completionExpectation], timeout: FBControlCoreGlobalConfiguration.fastTimeout)
+    wait(for: [actionExpectation, completionExpectation], timeout: ControlCoreGlobalConfiguration.fastTimeout)
   }
 
   func testCompositeSuccess() {
@@ -164,7 +164,7 @@ final class FBFutureTests: XCTestCase {
     }
 
     let expected = [NSNumber(value: true), NSNumber(value: false), NSNumber(value: 10)] as NSArray
-    wait(for: [expectation], timeout: FBControlCoreGlobalConfiguration.fastTimeout)
+    wait(for: [expectation], timeout: ControlCoreGlobalConfiguration.fastTimeout)
     XCTAssertEqual(compositeFuture.state, .done)
     XCTAssertEqual(compositeFuture.result, expected)
   }
@@ -249,7 +249,7 @@ final class FBFutureTests: XCTestCase {
       baseFuture.resolve(withResult: NSNumber(value: 1))
     }
 
-    wait(for: [step1, step2, step3], timeout: FBControlCoreGlobalConfiguration.fastTimeout)
+    wait(for: [step1, step2, step3], timeout: ControlCoreGlobalConfiguration.fastTimeout)
     XCTAssertEqual(chainFuture.state, .done)
     XCTAssertEqual(chainFuture.result as? NSNumber, NSNumber(value: 3))
   }
@@ -296,7 +296,7 @@ final class FBFutureTests: XCTestCase {
       baseFuture.resolve(withResult: NSNumber(value: 1))
     }
 
-    wait(for: [step1, step2, step3], timeout: FBControlCoreGlobalConfiguration.fastTimeout)
+    wait(for: [step1, step2, step3], timeout: ControlCoreGlobalConfiguration.fastTimeout)
     XCTAssertEqual(chainFuture.state, .failed)
     XCTAssertEqual(chainFuture.error as NSError?, error)
   }
@@ -402,7 +402,7 @@ final class FBFutureTests: XCTestCase {
       baseFuture.resolve(withResult: NSNumber(value: 1))
     }
 
-    wait(for: [step1, step2, step3, step4], timeout: FBControlCoreGlobalConfiguration.fastTimeout)
+    wait(for: [step1, step2, step3, step4], timeout: ControlCoreGlobalConfiguration.fastTimeout)
     XCTAssertEqual(chainFuture.state, .done)
     XCTAssertEqual(chainFuture.result as? NSNumber, NSNumber(value: 4))
   }
@@ -440,7 +440,7 @@ final class FBFutureTests: XCTestCase {
       baseFuture.cancel()
     }
 
-    wait(for: [completion, chained, remapped], timeout: FBControlCoreGlobalConfiguration.fastTimeout)
+    wait(for: [completion, chained, remapped], timeout: ControlCoreGlobalConfiguration.fastTimeout)
     XCTAssertEqual(chainFuture.state, .done)
     XCTAssertEqual(chainFuture.result as? NSNumber, NSNumber(value: 3))
   }
@@ -487,7 +487,7 @@ final class FBFutureTests: XCTestCase {
       baseFuture.resolve(withResult: NSNumber(value: 0))
     }
 
-    wait(for: [firstChain, secondChain, completion], timeout: FBControlCoreGlobalConfiguration.fastTimeout)
+    wait(for: [firstChain, secondChain, completion], timeout: ControlCoreGlobalConfiguration.fastTimeout)
     XCTAssertEqual(chainFuture.state, .cancelled)
   }
 
@@ -523,7 +523,7 @@ final class FBFutureTests: XCTestCase {
         completion.fulfill()
       })
 
-    wait(for: [completion, late1Cancelled, late2Cancelled], timeout: FBControlCoreGlobalConfiguration.fastTimeout)
+    wait(for: [completion, late1Cancelled, late2Cancelled], timeout: ControlCoreGlobalConfiguration.fastTimeout)
     XCTAssertEqual(raceFuture.state, .done)
     XCTAssertEqual(raceFuture.result as? NSNumber, NSNumber(value: 1))
     XCTAssertEqual(lateFuture1.state, .cancelled)
@@ -564,7 +564,7 @@ final class FBFutureTests: XCTestCase {
         completion.fulfill()
       })
 
-    wait(for: [completion, late1Cancelled, late2Cancelled], timeout: FBControlCoreGlobalConfiguration.fastTimeout)
+    wait(for: [completion, late1Cancelled, late2Cancelled], timeout: ControlCoreGlobalConfiguration.fastTimeout)
     XCTAssertEqual(raceFuture.state, .failed)
     XCTAssertEqual(raceFuture.error as NSError?, error)
     XCTAssertEqual(lateFuture1.state, .cancelled)
@@ -621,7 +621,7 @@ final class FBFutureTests: XCTestCase {
       cancelFuture3.cancel()
     }
 
-    wait(for: [completion, cancel1Called, cancel2Called, cancel3Called], timeout: FBControlCoreGlobalConfiguration.fastTimeout)
+    wait(for: [completion, cancel1Called, cancel2Called, cancel3Called], timeout: ControlCoreGlobalConfiguration.fastTimeout)
     XCTAssertEqual(raceFuture.state, .cancelled)
     XCTAssertEqual(cancelFuture1.state, .cancelled)
     XCTAssertEqual(cancelFuture2.state, .cancelled)
@@ -685,7 +685,7 @@ final class FBFutureTests: XCTestCase {
         return future
       })
 
-    wait(for: [resultCalled, errorCalled, cancelCalled], timeout: FBControlCoreGlobalConfiguration.fastTimeout)
+    wait(for: [resultCalled, errorCalled, cancelCalled], timeout: ControlCoreGlobalConfiguration.fastTimeout)
     XCTAssertEqual(resultFuture.state, .done)
     XCTAssertEqual(errorFuture.state, .failed)
     XCTAssertEqual(cancelFuture.state, .cancelled)
@@ -731,7 +731,7 @@ final class FBFutureTests: XCTestCase {
         completionCalled.fulfill()
       })
 
-    wait(for: [resolverCalled, completionCalled], timeout: FBControlCoreGlobalConfiguration.fastTimeout)
+    wait(for: [resolverCalled, completionCalled], timeout: ControlCoreGlobalConfiguration.fastTimeout)
   }
 
   func testTimedOutIn() {
@@ -751,7 +751,7 @@ final class FBFutureTests: XCTestCase {
       for: [
         keyValueObservingExpectation(for: future, keyPath: "hasCompleted", expectedValue: true),
         keyValueObservingExpectation(for: future, keyPath: "state", expectedValue: FBFutureState.failed.rawValue as NSNumber),
-      ], timeout: FBControlCoreGlobalConfiguration.fastTimeout)
+      ], timeout: ControlCoreGlobalConfiguration.fastTimeout)
   }
 
   func testResolveWhen() {
@@ -768,7 +768,7 @@ final class FBFutureTests: XCTestCase {
         keyValueObservingExpectation(for: future, keyPath: "hasCompleted", expectedValue: true),
         keyValueObservingExpectation(for: future, keyPath: "result", expectedValue: NSNull()),
         keyValueObservingExpectation(for: future, keyPath: "state", expectedValue: FBFutureState.done.rawValue as NSNumber),
-      ], timeout: FBControlCoreGlobalConfiguration.fastTimeout)
+      ], timeout: ControlCoreGlobalConfiguration.fastTimeout)
   }
 
   func testResolveOrFailWhenFailureCase() {
@@ -790,7 +790,7 @@ final class FBFutureTests: XCTestCase {
         keyValueObservingExpectation(for: future, keyPath: "hasCompleted", expectedValue: true),
         keyValueObservingExpectation(for: future, keyPath: "error", expectedValue: expectedError),
         keyValueObservingExpectation(for: future, keyPath: "state", expectedValue: FBFutureState.failed.rawValue as NSNumber),
-      ], timeout: FBControlCoreGlobalConfiguration.fastTimeout)
+      ], timeout: ControlCoreGlobalConfiguration.fastTimeout)
   }
 
   func testResolveOrFailWhenSuccessCase() {
@@ -810,7 +810,7 @@ final class FBFutureTests: XCTestCase {
         keyValueObservingExpectation(for: future, keyPath: "hasCompleted", expectedValue: true),
         keyValueObservingExpectation(for: future, keyPath: "result", expectedValue: NSNull()),
         keyValueObservingExpectation(for: future, keyPath: "state", expectedValue: FBFutureState.done.rawValue as NSNumber),
-      ], timeout: FBControlCoreGlobalConfiguration.fastTimeout)
+      ], timeout: ControlCoreGlobalConfiguration.fastTimeout)
   }
 
   func testChainReplaceSuccessful() {
@@ -824,7 +824,7 @@ final class FBFutureTests: XCTestCase {
       for: [
         keyValueObservingExpectation(for: future, keyPath: "result", expectedValue: NSNumber(value: true)),
         keyValueObservingExpectation(for: future, keyPath: "state", expectedValue: FBFutureState.done.rawValue as NSNumber),
-      ], timeout: FBControlCoreGlobalConfiguration.fastTimeout)
+      ], timeout: ControlCoreGlobalConfiguration.fastTimeout)
   }
 
   func testChainReplaceFailing() {
@@ -839,7 +839,7 @@ final class FBFutureTests: XCTestCase {
       for: [
         keyValueObservingExpectation(for: future, keyPath: "result", expectedValue: NSNumber(value: true)),
         keyValueObservingExpectation(for: future, keyPath: "state", expectedValue: FBFutureState.done.rawValue as NSNumber),
-      ], timeout: FBControlCoreGlobalConfiguration.fastTimeout)
+      ], timeout: ControlCoreGlobalConfiguration.fastTimeout)
   }
 
   func testRemappedTimeout() {
@@ -856,7 +856,7 @@ final class FBFutureTests: XCTestCase {
         keyValueObservingExpectation(for: future, keyPath: "hasCompleted", expectedValue: true),
         keyValueObservingExpectation(for: future, keyPath: "result", expectedValue: NSNumber(value: 1)),
         keyValueObservingExpectation(for: future, keyPath: "state", expectedValue: FBFutureState.done.rawValue as NSNumber),
-      ], timeout: FBControlCoreGlobalConfiguration.fastTimeout)
+      ], timeout: ControlCoreGlobalConfiguration.fastTimeout)
   }
 
   func testFallback() {
@@ -867,7 +867,7 @@ final class FBFutureTests: XCTestCase {
       for: [
         keyValueObservingExpectation(for: future, keyPath: "result", expectedValue: NSNumber(value: true)),
         keyValueObservingExpectation(for: future, keyPath: "state", expectedValue: FBFutureState.done.rawValue as NSNumber),
-      ], timeout: FBControlCoreGlobalConfiguration.fastTimeout)
+      ], timeout: ControlCoreGlobalConfiguration.fastTimeout)
   }
 
   func testRepeatedResolution() {
@@ -894,7 +894,7 @@ final class FBFutureTests: XCTestCase {
         XCTAssertEqual(inner.result as? NSNumber, NSNumber(value: true))
       })
 
-    wait(for: [completionCalled], timeout: FBControlCoreGlobalConfiguration.fastTimeout)
+    wait(for: [completionCalled], timeout: ControlCoreGlobalConfiguration.fastTimeout)
     XCTAssertEqual(future.state, .done)
     XCTAssertEqual(future.result as? NSNumber, NSNumber(value: true))
   }
@@ -925,7 +925,7 @@ final class FBFutureTests: XCTestCase {
         XCTAssertEqual(inner.state, .cancelled)
       })
 
-    wait(for: [completionCalled], timeout: FBControlCoreGlobalConfiguration.fastTimeout)
+    wait(for: [completionCalled], timeout: ControlCoreGlobalConfiguration.fastTimeout)
     XCTAssertEqual(future.state, .cancelled)
   }
 
@@ -947,7 +947,7 @@ final class FBFutureTests: XCTestCase {
           cancellationCallbackCalled.fulfill()
         })
 
-    wait(for: [respondCalled, cancellationCallbackCalled], timeout: FBControlCoreGlobalConfiguration.fastTimeout)
+    wait(for: [respondCalled, cancellationCallbackCalled], timeout: ControlCoreGlobalConfiguration.fastTimeout)
     XCTAssertEqual(future.state, .cancelled)
   }
 
@@ -995,7 +995,7 @@ final class FBFutureTests: XCTestCase {
         })
 
     future.cancel()
-    wait(for: [firstCancelCalled, secondCancelCalled, completionCalled], timeout: FBControlCoreGlobalConfiguration.fastTimeout)
+    wait(for: [firstCancelCalled, secondCancelCalled, completionCalled], timeout: ControlCoreGlobalConfiguration.fastTimeout)
   }
 
   func testCancellationHandlerIsNotCalledIfFutureIsNotCancelled() {
@@ -1020,7 +1020,7 @@ final class FBFutureTests: XCTestCase {
     baseFuture.resolve(withResult: NSNull())
     baseFuture.cancel()
 
-    wait(for: [completionCalled], timeout: FBControlCoreGlobalConfiguration.fastTimeout)
+    wait(for: [completionCalled], timeout: ControlCoreGlobalConfiguration.fastTimeout)
   }
 
   func testCancelingPropogatesOnAMappedFuture() {
@@ -1044,7 +1044,7 @@ final class FBFutureTests: XCTestCase {
         })
 
     chained.cancel()
-    wait(for: [delayedCalled], timeout: FBControlCoreGlobalConfiguration.fastTimeout)
+    wait(for: [delayedCalled], timeout: ControlCoreGlobalConfiguration.fastTimeout)
   }
 
   func testCancellationOfDelayedFutureWhenRacing() {
@@ -1082,7 +1082,7 @@ final class FBFutureTests: XCTestCase {
           raceCompletionCalled.fulfill()
         })
 
-    wait(for: [delayedCompletionCalled, immediateCompletionCalled, raceCompletionCalled], timeout: FBControlCoreGlobalConfiguration.fastTimeout)
+    wait(for: [delayedCompletionCalled, immediateCompletionCalled, raceCompletionCalled], timeout: ControlCoreGlobalConfiguration.fastTimeout)
     XCTAssertEqual(raced.result as? NSNumber, NSNumber(value: true))
   }
 
@@ -1093,7 +1093,7 @@ final class FBFutureTests: XCTestCase {
       for: [
         keyValueObservingExpectation(for: future, keyPath: "result", expectedValue: NSNumber(value: 21)),
         keyValueObservingExpectation(for: future, keyPath: "state", expectedValue: FBFutureState.done.rawValue as NSNumber),
-      ], timeout: FBControlCoreGlobalConfiguration.fastTimeout)
+      ], timeout: ControlCoreGlobalConfiguration.fastTimeout)
   }
 
   func testRephraseFailureReplacesErrorDescription() {
@@ -1112,7 +1112,7 @@ final class FBFutureTests: XCTestCase {
         completionCalled.fulfill()
       })
 
-    wait(for: [completionCalled], timeout: FBControlCoreGlobalConfiguration.fastTimeout)
+    wait(for: [completionCalled], timeout: ControlCoreGlobalConfiguration.fastTimeout)
   }
 
   func testLogCompletionIncludesPurposeAndResolvedState() {
@@ -1126,7 +1126,7 @@ final class FBFutureTests: XCTestCase {
       .named("Fetch")
       .logCompletion(logger, withPurpose: "loading value")
 
-    wait(for: [completionLogged], timeout: FBControlCoreGlobalConfiguration.fastTimeout)
+    wait(for: [completionLogged], timeout: ControlCoreGlobalConfiguration.fastTimeout)
     XCTAssertEqual(logger.messages.count, 1)
     XCTAssertTrue(logger.messages[0].contains("loading value"))
     XCTAssertTrue(logger.messages[0].contains("Fetch Future done"))
@@ -1160,11 +1160,11 @@ final class FBFutureTests: XCTestCase {
       resolveBlock(future)
     }
 
-    wait(for: expectations, timeout: FBControlCoreGlobalConfiguration.fastTimeout)
+    wait(for: expectations, timeout: ControlCoreGlobalConfiguration.fastTimeout)
   }
 }
 
-private final class CapturingFutureLogger: NSObject, FBControlCoreLogger, @unchecked Sendable {
+private final class CapturingFutureLogger: NSObject, ControlCoreLogger, @unchecked Sendable {
   private let lock = NSLock()
   private var storedMessages: [String] = []
   var onLog: (() -> Void)?
@@ -1177,7 +1177,7 @@ private final class CapturingFutureLogger: NSObject, FBControlCoreLogger, @unche
     return storedMessages
   }
 
-  func log(_ message: String) -> any FBControlCoreLogger {
+  func log(_ message: String) -> any ControlCoreLogger {
     lock.lock()
     storedMessages.append(message)
     let handler = onLog
@@ -1186,9 +1186,9 @@ private final class CapturingFutureLogger: NSObject, FBControlCoreLogger, @unche
     return self
   }
 
-  func info() -> any FBControlCoreLogger { self }
-  func debug() -> any FBControlCoreLogger { self }
-  func error() -> any FBControlCoreLogger { self }
-  func withName(_ name: String) -> any FBControlCoreLogger { self }
-  func withDateFormatEnabled(_ enabled: Bool) -> any FBControlCoreLogger { self }
+  func info() -> any ControlCoreLogger { self }
+  func debug() -> any ControlCoreLogger { self }
+  func error() -> any ControlCoreLogger { self }
+  func withName(_ name: String) -> any ControlCoreLogger { self }
+  func withDateFormatEnabled(_ enabled: Bool) -> any ControlCoreLogger { self }
 }

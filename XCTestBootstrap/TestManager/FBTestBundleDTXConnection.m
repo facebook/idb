@@ -46,7 +46,7 @@ static NSTimeInterval const DaemonSessionReadyTimeout = 60; // Time for `_IDE_in
 @property (nonatomic, readonly, assign) int testManagerdSocket;
 @property (nonatomic, readonly, strong) id<XCTestManager_IDEInterface, XCTMessagingChannel_RunnerToIDE, NSObject> interface;
 @property (nonatomic, readonly, strong) dispatch_queue_t requestQueue;
-@property (nonatomic, readonly, strong) id<FBControlCoreLogger> logger;
+@property (nonatomic, readonly, strong) id<ControlCoreLogger> logger;
 
 @property (nonatomic, readonly, strong) FBMutableFuture<NSNull *> *bundleDisconnected;
 @property (nonatomic, readonly, strong) FBMutableFuture<NSNull *> *bundleReadyFuture;
@@ -83,7 +83,7 @@ static NSTimeInterval const DaemonSessionReadyTimeout = 60; // Time for `_IDE_in
   return _clientProcessDisplayPath;
 }
 
-- (instancetype)initWithContext:(TestManagerContext *)context workQueue:(dispatch_queue_t)workQueue socket:(int)socket interface:(id)interface requestQueue:(dispatch_queue_t)requestQueue logger:(id<FBControlCoreLogger>)logger
+- (instancetype)initWithContext:(TestManagerContext *)context workQueue:(dispatch_queue_t)workQueue socket:(int)socket interface:(id)interface requestQueue:(dispatch_queue_t)requestQueue logger:(id<ControlCoreLogger>)logger
 {
   self = [super init];
   if (!self) {
@@ -130,7 +130,7 @@ static NSTimeInterval const DaemonSessionReadyTimeout = 60; // Time for `_IDE_in
 - (BOOL)connectWithError:(NSError **)error
 {
   int socket = self.testManagerdSocket;
-  id<FBControlCoreLogger> logger = self.logger;
+  id<ControlCoreLogger> logger = self.logger;
   [logger log:[NSString stringWithFormat:@"Wrapping testmanagerd socket (%d) in DTXTransport and DTXConnection", socket]];
   DTXConnection *connection;
   // DTX asserts internally on a dead socket; the raise would otherwise cross

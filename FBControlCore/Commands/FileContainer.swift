@@ -191,7 +191,7 @@ public final class ContainedFile_ContainedRoot: AsyncFileContainer {
     }
   }
 
-  public func tail(_ path: String, to consumer: any FBDataConsumer) async throws -> FileContainerTailOperation {
+  public func tail(_ path: String, to consumer: any DataConsumer) async throws -> FileContainerTailOperation {
     let rootFile = self.rootFile
     let serialQueue = queue
     let hostPath: String = try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<String, Error>) in
@@ -315,7 +315,7 @@ public final class FileContainer_ProvisioningProfile: AsyncFileContainer {
     throw FileContainerError.unsupportedForProvisioningProfiles(operation: #function)
   }
 
-  public func tail(_ path: String, to consumer: any FBDataConsumer) async throws -> FileContainerTailOperation {
+  public func tail(_ path: String, to consumer: any DataConsumer) async throws -> FileContainerTailOperation {
     throw FileContainerError.unsupportedForProvisioningProfiles(operation: #function)
   }
 

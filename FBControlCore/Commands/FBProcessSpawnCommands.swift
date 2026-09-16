@@ -37,7 +37,7 @@ public final class ProcessSpawnCommandHelpers: NSObject {
     processIdentifier: pid_t,
     configuration: ProcessSpawnConfiguration,
     queue: DispatchQueue,
-    logger: (any FBControlCoreLogger)?
+    logger: (any ControlCoreLogger)?
   ) {
     // One line per exit: the outcome below logs inside this completion handler,
     // so it inherently reports after IO teardown has finished. The separate

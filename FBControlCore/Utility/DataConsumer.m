@@ -5,13 +5,13 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#import "FBDataConsumer.h"
+#import "DataConsumer.h"
 
 #import <stdatomic.h>
 
+#import "ControlCoreLogger.h"
 #import "FBControlCore-Swift.h"
 #import "FBControlCore-SwiftImport.h"
-#import "FBControlCoreLogger.h"
 #import "FBDataBuffer.h"
 
 @interface FBDataConsumerAdaptor ()
@@ -22,7 +22,7 @@
 
 @interface FBDataConsumerAdaptor_ToNSData : NSObject <DispatchDataConsumer>
 
-@property (nonatomic, readonly, strong) id<FBDataConsumer> consumer;
+@property (nonatomic, readonly, strong) id<DataConsumer> consumer;
 
 @end
 
@@ -30,7 +30,7 @@
 
 #pragma mark Initializers
 
-- (instancetype)initWithConsumer:(id<FBDataConsumer>)consumer
+- (instancetype)initWithConsumer:(id<DataConsumer>)consumer
 {
   self = [super init];
   if (!self) {
@@ -42,7 +42,7 @@
   return self;
 }
 
-#pragma mark FBDataConsumer
+#pragma mark DataConsumer
 
 - (void)consumeData:(dispatch_data_t)dispatchData
 {
@@ -57,16 +57,16 @@
 
 @end
 
-@interface FBDataConsumerAdaptor_ToDispatchData : NSObject <FBDataConsumer, DataConsumerLifecycle>
+@interface FBDataConsumerAdaptor_ToDispatchData : NSObject <DataConsumer, DataConsumerLifecycle>
 
 @property (nonatomic, readonly, strong) id<DispatchDataConsumer, DataConsumerLifecycle> consumer;
 
 @end
 
 // Subclass used when the wrapped consumer is itself synchronous, so callers that
-// branch on `-conformsToProtocol:@protocol(FBDataConsumerSync)` (e.g.
+// branch on `-conformsToProtocol:@protocol(DataConsumerSync)` (e.g.
 // SimulatorVideoStream's zero-copy fast path) can still find the marker.
-@interface FBDataConsumerAdaptor_SyncToDispatchData : FBDataConsumerAdaptor_ToDispatchData <FBDataConsumerSync>
+@interface FBDataConsumerAdaptor_SyncToDispatchData : FBDataConsumerAdaptor_ToDispatchData <DataConsumerSync>
 @end
 
 @implementation FBDataConsumerAdaptor_SyncToDispatchData
@@ -88,7 +88,7 @@
   return self;
 }
 
-#pragma mark FBDataConsumer
+#pragma mark DataConsumer
 
 - (void)consumeData:(NSData *)data
 {
@@ -112,14 +112,14 @@
 
 #pragma mark Initializers
 
-+ (id<DispatchDataConsumer>)dispatchDataConsumerForDataConsumer:(id<FBDataConsumer>)consumer;
++ (id<DispatchDataConsumer>)dispatchDataConsumerForDataConsumer:(id<DataConsumer>)consumer;
 {
   return [[FBDataConsumerAdaptor_ToNSData alloc] initWithConsumer:consumer];
 }
 
-+ (id<FBDataConsumer, DataConsumerLifecycle>)dataConsumerForDispatchDataConsumer:(id<DispatchDataConsumer, DataConsumerLifecycle>)consumer;
++ (id<DataConsumer, DataConsumerLifecycle>)dataConsumerForDispatchDataConsumer:(id<DispatchDataConsumer, DataConsumerLifecycle>)consumer;
 {
-  Class adaptorClass = [consumer conformsToProtocol:@protocol(FBDataConsumerSync)]
+  Class adaptorClass = [consumer conformsToProtocol:@protocol(DataConsumerSync)]
   ? [FBDataConsumerAdaptor_SyncToDispatchData class]
   : [FBDataConsumerAdaptor_ToDispatchData class];
   return [[adaptorClass alloc] initWithConsumer:consumer];
@@ -165,7 +165,7 @@ static inline dataBlock FBDataConsumerToStringConsumer(void (^consumer)(NSString
   };
 }
 
-@interface FBBlockDataConsumer_Dispatcher : NSObject <FBDataConsumer>
+@interface FBBlockDataConsumer_Dispatcher : NSObject <DataConsumer>
 
 @property (nullable, nonatomic, readwrite, strong) dispatch_queue_t queue;
 @property (nullable, nonatomic, readwrite, strong) dispatch_group_t group;
@@ -233,13 +233,13 @@ static inline dataBlock FBDataConsumerToStringConsumer(void (^consumer)(NSString
 
 @end
 
-@interface FBBlockDataConsumer () <FBDataConsumer, DataConsumerLifecycle>
+@interface FBBlockDataConsumer () <DataConsumer, DataConsumerLifecycle>
 
 @property (nonatomic, readonly, strong) FBBlockDataConsumer_Dispatcher *dispatcher;
 
 @end
 
-@interface FBBlockDataConsumerAsync : NSObject <FBDataConsumer, DataConsumerLifecycle, DataConsumerAsync>
+@interface FBBlockDataConsumerAsync : NSObject <DataConsumer, DataConsumerLifecycle, DataConsumerAsync>
 
 @property (nonatomic, readonly, strong) FBBlockDataConsumer_Dispatcher *dispatcher;
 
@@ -256,14 +256,14 @@ static inline dataBlock FBDataConsumerToStringConsumer(void (^consumer)(NSString
 @end
 
 // Used when the dispatcher has no queue (synchronous delivery), so callers that
-// branch on `-conformsToProtocol:@protocol(FBDataConsumerSync)` find the marker.
-@interface FBBlockDataConsumer_Buffered_Sync : FBBlockDataConsumer_Buffered <FBDataConsumerSync>
+// branch on `-conformsToProtocol:@protocol(DataConsumerSync)` find the marker.
+@interface FBBlockDataConsumer_Buffered_Sync : FBBlockDataConsumer_Buffered <DataConsumerSync>
 @end
 
 @implementation FBBlockDataConsumer_Buffered_Sync
 @end
 
-@interface FBBlockDataConsumer_Unbuffered : FBBlockDataConsumer <FBDataConsumerSync>
+@interface FBBlockDataConsumer_Unbuffered : FBBlockDataConsumer <DataConsumerSync>
 
 @property (nonatomic, readonly, strong) FBMutableFuture<NSNull *> *finishedConsumingFuture;
 
@@ -279,44 +279,44 @@ static inline dataBlock FBDataConsumerToStringConsumer(void (^consumer)(NSString
 
 #pragma mark Initializers
 
-+ (id<FBDataConsumer, DataConsumerLifecycle>)synchronousDataConsumerWithBlock:(void (^)(NSData *))consumer
++ (id<DataConsumer, DataConsumerLifecycle>)synchronousDataConsumerWithBlock:(void (^)(NSData *))consumer
 {
   FBBlockDataConsumer_Dispatcher *dispatcher = [[FBBlockDataConsumer_Dispatcher alloc] initWithQueue:nil consumer:consumer];
   return [[FBBlockDataConsumer_Unbuffered alloc] initWithDispatcher:dispatcher];
 }
 
-+ (id<FBDataConsumer, DataConsumerLifecycle>)synchronousLineConsumerWithBlock:(void (^)(NSString *))consumer
++ (id<DataConsumer, DataConsumerLifecycle>)synchronousLineConsumerWithBlock:(void (^)(NSString *))consumer
 {
   FBBlockDataConsumer_Dispatcher *dispatcher = [[FBBlockDataConsumer_Dispatcher alloc] initWithQueue:nil consumer:FBDataConsumerToStringConsumer(consumer)];
   return [[FBBlockDataConsumer_Buffered_Sync alloc] initWithDispatcher:dispatcher terminal:FBDataBuffer.newlineTerminal];
 }
 
-+ (id<FBDataConsumer, DataConsumerLifecycle, DataConsumerAsync>)asynchronousDataConsumerOnQueue:(dispatch_queue_t)queue consumer:(void (^)(NSData *))consumer
++ (id<DataConsumer, DataConsumerLifecycle, DataConsumerAsync>)asynchronousDataConsumerOnQueue:(dispatch_queue_t)queue consumer:(void (^)(NSData *))consumer
 {
   FBBlockDataConsumer_Dispatcher *dispatcher = [[FBBlockDataConsumer_Dispatcher alloc] initWithQueue:queue consumer:consumer];
   return [[FBBlockDataConsumerAsync_Unbuffered alloc] initWithDispatcher:dispatcher];
 }
 
-+ (id<FBDataConsumer, DataConsumerLifecycle, DataConsumerAsync>)asynchronousDataConsumerWithBlock:(void (^)(NSData *))consumer
++ (id<DataConsumer, DataConsumerLifecycle, DataConsumerAsync>)asynchronousDataConsumerWithBlock:(void (^)(NSData *))consumer
 {
   dispatch_queue_t queue = dispatch_queue_create("com.facebook.FBControlCore.BlockDataConsumer.data", DISPATCH_QUEUE_SERIAL);
   return [self asynchronousDataConsumerOnQueue:queue consumer:consumer];
 }
 
-+ (id<FBDataConsumer, DataConsumerLifecycle>)asynchronousLineConsumerWithBlock:(void (^)(NSString *))consumer
++ (id<DataConsumer, DataConsumerLifecycle>)asynchronousLineConsumerWithBlock:(void (^)(NSString *))consumer
 {
   dispatch_queue_t queue = dispatch_queue_create("com.facebook.FBControlCore.BlockDataConsumer.lines", DISPATCH_QUEUE_SERIAL);
   FBBlockDataConsumer_Dispatcher *dispatcher = [[FBBlockDataConsumer_Dispatcher alloc] initWithQueue:queue consumer:FBDataConsumerToStringConsumer(consumer)];
   return [[FBBlockDataConsumer_Buffered alloc] initWithDispatcher:dispatcher terminal:FBDataBuffer.newlineTerminal];
 }
 
-+ (id<FBDataConsumer, DataConsumerLifecycle>)asynchronousLineConsumerWithQueue:(dispatch_queue_t)queue consumer:(void (^)(NSString *))consumer
++ (id<DataConsumer, DataConsumerLifecycle>)asynchronousLineConsumerWithQueue:(dispatch_queue_t)queue consumer:(void (^)(NSString *))consumer
 {
   FBBlockDataConsumer_Dispatcher *dispatcher = [[FBBlockDataConsumer_Dispatcher alloc] initWithQueue:queue consumer:FBDataConsumerToStringConsumer(consumer)];
   return [[FBBlockDataConsumer_Buffered alloc] initWithDispatcher:dispatcher terminal:FBDataBuffer.newlineTerminal];
 }
 
-+ (id<FBDataConsumer, DataConsumerLifecycle>)asynchronousLineConsumerWithQueue:(dispatch_queue_t)queue dataConsumer:(void (^)(NSData *))consumer
++ (id<DataConsumer, DataConsumerLifecycle>)asynchronousLineConsumerWithQueue:(dispatch_queue_t)queue dataConsumer:(void (^)(NSData *))consumer
 {
   FBBlockDataConsumer_Dispatcher *dispatcher = [[FBBlockDataConsumer_Dispatcher alloc] initWithQueue:queue consumer:consumer];
   return [[FBBlockDataConsumer_Buffered alloc] initWithDispatcher:dispatcher terminal:FBDataBuffer.newlineTerminal];
@@ -334,7 +334,7 @@ static inline dataBlock FBDataConsumerToStringConsumer(void (^consumer)(NSString
   return self;
 }
 
-#pragma mark FBDataConsumer
+#pragma mark DataConsumer
 
 - (void)consumeData:(NSData *)data
 {
@@ -370,7 +370,7 @@ static inline dataBlock FBDataConsumerToStringConsumer(void (^consumer)(NSString
   return self;
 }
 
-#pragma mark FBDataConsumer
+#pragma mark DataConsumer
 
 - (void)consumeData:(NSData *)data
 {
@@ -416,7 +416,7 @@ static inline dataBlock FBDataConsumerToStringConsumer(void (^consumer)(NSString
   return self;
 }
 
-#pragma mark FBDataConsumer
+#pragma mark DataConsumer
 
 - (void)consumeData:(NSData *)data
 {
@@ -457,7 +457,7 @@ static inline dataBlock FBDataConsumerToStringConsumer(void (^consumer)(NSString
   return self;
 }
 
-#pragma mark FBDataConsumer
+#pragma mark DataConsumer
 
 - (void)consumeData:(NSData *)data
 {
@@ -499,7 +499,7 @@ static inline dataBlock FBDataConsumerToStringConsumer(void (^consumer)(NSString
   return self;
 }
 
-#pragma mark FBDataConsumer
+#pragma mark DataConsumer
 
 - (void)consumeData:(NSData *)data
 {
@@ -537,12 +537,12 @@ static inline dataBlock FBDataConsumerToStringConsumer(void (^consumer)(NSString
 
 #pragma mark Initializers
 
-+ (instancetype)consumerWithLogger:(id<FBControlCoreLogger>)logger
++ (instancetype)consumerWithLogger:(id<ControlCoreLogger>)logger
 {
   return [[self alloc] initWithLogger:logger];
 }
 
-- (instancetype)initWithLogger:(id<FBControlCoreLogger>)logger
+- (instancetype)initWithLogger:(id<ControlCoreLogger>)logger
 {
   self = [super init];
   if (!self) {
@@ -554,7 +554,7 @@ static inline dataBlock FBDataConsumerToStringConsumer(void (^consumer)(NSString
   return self;
 }
 
-#pragma mark FBDataConsumer
+#pragma mark DataConsumer
 
 - (void)consumeData:(NSData *)data
 {
@@ -576,7 +576,7 @@ static inline dataBlock FBDataConsumerToStringConsumer(void (^consumer)(NSString
 
 @interface FBCompositeDataConsumer ()
 
-@property (nonatomic, readonly, copy) NSArray<id<FBDataConsumer>> *consumers;
+@property (nonatomic, readonly, copy) NSArray<id<DataConsumer>> *consumers;
 @property (nonatomic, readonly, strong) FBMutableFuture<NSNull *> *finishedConsumingFuture;
 
 @end
@@ -585,12 +585,12 @@ static inline dataBlock FBDataConsumerToStringConsumer(void (^consumer)(NSString
 
 #pragma mark Initializers
 
-+ (instancetype)consumerWithConsumers:(NSArray<id<FBDataConsumer>> *)consumers
++ (instancetype)consumerWithConsumers:(NSArray<id<DataConsumer>> *)consumers
 {
   return [[self alloc] initWithConsumers:consumers];
 }
 
-- (instancetype)initWithConsumers:(NSArray<id<FBDataConsumer>> *)consumers
+- (instancetype)initWithConsumers:(NSArray<id<DataConsumer>> *)consumers
 {
   self = [super init];
   if (!self) {
@@ -610,18 +610,18 @@ static inline dataBlock FBDataConsumerToStringConsumer(void (^consumer)(NSString
   return [NSString stringWithFormat:@"Composite Consumer %@", [CollectionInformation oneLineDescriptionFromArray:self.consumers]];
 }
 
-#pragma mark FBDataConsumer
+#pragma mark DataConsumer
 
 - (void)consumeData:(NSData *)data
 {
-  for (id<FBDataConsumer> consumer in self.consumers) {
+  for (id<DataConsumer> consumer in self.consumers) {
     [consumer consumeData:data];
   }
 }
 
 - (void)consumeEndOfFile
 {
-  for (id<FBDataConsumer> consumer in self.consumers) {
+  for (id<DataConsumer> consumer in self.consumers) {
     [consumer consumeEndOfFile];
   }
   [self.finishedConsumingFuture resolveWithResult:NSNull.null];
@@ -638,7 +638,7 @@ static inline dataBlock FBDataConsumerToStringConsumer(void (^consumer)(NSString
 
 @implementation FBNullDataConsumer
 
-#pragma mark FBDataConsumer
+#pragma mark DataConsumer
 
 - (void)consumeData:(NSData *)data
 {}

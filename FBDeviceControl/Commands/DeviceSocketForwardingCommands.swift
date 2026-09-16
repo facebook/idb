@@ -97,9 +97,9 @@ public struct DeviceSocketForwardingCommands {
   private static func stopForwarding(
     inputReader: FileReader,
     remoteReader: FileReader,
-    remoteWriter: FBDataConsumer & DataConsumerLifecycle,
+    remoteWriter: DataConsumer & DataConsumerLifecycle,
     localSocket: Int32,
-    logger: (any FBControlCoreLogger)?
+    logger: (any ControlCoreLogger)?
   ) async {
     remoteWriter.consumeEndOfFile()
     try? await bridgeFBFutureVoid(remoteWriter.finishedConsuming)
@@ -109,7 +109,7 @@ public struct DeviceSocketForwardingCommands {
     close(localSocket)
   }
 
-  private static func openLocalSocket(toRemotePort remotePort: Int, on device: any DeviceCommands, logger: (any FBControlCoreLogger)?) throws -> Int32 {
+  private static func openLocalSocket(toRemotePort remotePort: Int, on device: any DeviceCommands, logger: (any ControlCoreLogger)?) throws -> Int32 {
     guard let getConnectionID = device.calls.GetConnectionID else {
       throw DeviceSocketForwardingError.callUnavailable(function: "GetConnectionID")
     }

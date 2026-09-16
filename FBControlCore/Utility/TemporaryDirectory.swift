@@ -19,32 +19,32 @@ enum TemporaryDirectoryError: Error, LocalizedError {
 }
 
 /// A value over the root it manages: two values with the same root are the same directory.
-public struct FBTemporaryDirectory: Equatable {
+public struct TemporaryDirectory: Equatable {
 
   // MARK: - Properties
 
-  public let logger: any FBControlCoreLogger
+  public let logger: any ControlCoreLogger
 
   private let rootTemporaryDirectory: URL
 
-  public static func == (lhs: FBTemporaryDirectory, rhs: FBTemporaryDirectory) -> Bool {
+  public static func == (lhs: TemporaryDirectory, rhs: TemporaryDirectory) -> Bool {
     lhs.rootTemporaryDirectory == rhs.rootTemporaryDirectory
   }
 
   // MARK: - Initializers
 
-  public static func temporaryDirectory(logger: any FBControlCoreLogger) -> FBTemporaryDirectory {
+  public static func temporaryDirectory(logger: any ControlCoreLogger) -> TemporaryDirectory {
     let temporaryDirectory = uniqueTemporaryDirectoryURL()
     do {
       try FileManager.default.createDirectory(at: temporaryDirectory, withIntermediateDirectories: true, attributes: nil)
     } catch {
       assertionFailure("Failed to create temporary directory: \(error)")
     }
-    return FBTemporaryDirectory(rootDirectory: temporaryDirectory, logger: logger)
+    return TemporaryDirectory(rootDirectory: temporaryDirectory, logger: logger)
   }
 
-  public init(logger: any FBControlCoreLogger) {
-    let temporaryDirectory = FBTemporaryDirectory.uniqueTemporaryDirectoryURL()
+  public init(logger: any ControlCoreLogger) {
+    let temporaryDirectory = TemporaryDirectory.uniqueTemporaryDirectoryURL()
     do {
       try FileManager.default.createDirectory(at: temporaryDirectory, withIntermediateDirectories: true, attributes: nil)
     } catch {
@@ -60,7 +60,7 @@ public struct FBTemporaryDirectory: Equatable {
       .appendingPathComponent(UUID().uuidString)
   }
 
-  init(rootDirectory: URL, logger: any FBControlCoreLogger) {
+  init(rootDirectory: URL, logger: any ControlCoreLogger) {
     self.rootTemporaryDirectory = rootDirectory
     self.logger = logger
   }

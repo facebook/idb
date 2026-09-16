@@ -13,7 +13,7 @@ import Testing
 @Suite("FBSimulatorSet logger retention")
 struct SimulatorSetLoggerTests {
 
-  private static func makeSet(logger: (any FBControlCoreLogger)?) -> FBSimulatorSet {
+  private static func makeSet(logger: (any ControlCoreLogger)?) -> FBSimulatorSet {
     let deviceType = SimulatorControlTests_SimDeviceType_Double()
     deviceType.name = "iPhone 8"
     let runtime = SimulatorControlTests_SimDeviceRuntime_Double()
@@ -32,13 +32,13 @@ struct SimulatorSetLoggerTests {
   @Test("A nil logger is defaulted at the factory boundary")
   func nilLoggerIsDefaulted() {
     let set = Self.makeSet(logger: nil)
-    #expect(set.logger === FBControlCoreGlobalConfiguration.defaultLogger)
+    #expect(set.logger === ControlCoreGlobalConfiguration.defaultLogger)
     #expect(set.allSimulators.first?.logger != nil)
   }
 
   @Test("An explicit logger is retained")
   func explicitLoggerIsRetained() {
-    let logger = FBControlCoreGlobalConfiguration.defaultLogger.withName("logger-pin")
+    let logger = ControlCoreGlobalConfiguration.defaultLogger.withName("logger-pin")
     let set = Self.makeSet(logger: logger)
     #expect(set.logger === logger)
   }
