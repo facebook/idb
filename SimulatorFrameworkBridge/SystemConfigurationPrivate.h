@@ -48,3 +48,15 @@ typedef CFStringRef (*SCDynamicStoreKeyCreateProxies_fn)(CFAllocatorRef);
  * Optional — not all simulator runtimes export this symbol.
  */
 typedef Boolean (*SCDynamicStoreNotifyValue_fn)(SCDynStoreRef, CFStringRef);
+
+/**
+ * Removes a key from the dynamic store. Returns true on success.
+ */
+typedef Boolean (*SCDynamicStoreRemoveValue_fn)(SCDynStoreRef, CFStringRef);
+
+/**
+ * The status of the last SystemConfiguration call on this thread. The only
+ * value read here is kSCStatusNoKey (1004), which is how an absent key is told
+ * apart from a failed read: both answer NULL.
+ */
+typedef int (*SCError_fn)(void);

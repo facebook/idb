@@ -26,7 +26,7 @@ final class ServiceCommandTests: XCTestCase {
 
   func testEachRouteReceivesItsOriginalArgumentShape() {
     let services = RecordingServices()
-    for service in ["contacts", "dns", "photos", "notifications", "health", "proxy", "accessibility"] {
+    for service in ["contacts", "dns", "dynamic-store", "photos", "notifications", "health", "proxy", "accessibility"] {
       XCTAssertEqual(FBBridgeCommand.dispatch(service: service, action: "action", arguments: ["bundle", "type1", "type2"], services: services), 23)
     }
     XCTAssertEqual(
@@ -34,6 +34,7 @@ final class ServiceCommandTests: XCTestCase {
       [
         Call(service: "contacts", action: "action", arguments: []),
         Call(service: "dns", action: "action", arguments: ["bundle", "type1", "type2"]),
+        Call(service: "dynamic-store", action: "action", arguments: ["bundle", "type1", "type2"]),
         Call(service: "photos", action: "action", arguments: []),
         Call(service: "notifications", action: "action", arguments: ["bundle"]),
         Call(service: "health", action: "action", arguments: ["bundle", "type1", "type2"]),
@@ -88,6 +89,7 @@ private final class RecordingServices: NSObject, FBBridgeServiceHandling {
   func contacts(_ action: String) -> Int32 { record("contacts", action, []) }
   func health(_ action: String, bundleID: String?, typeIDs: [String]) -> Int32 { record("health", action, [bundleID] + typeIDs.map { $0 }) }
   func dns(_ action: String, arguments: [String]) -> Int32 { record("dns", action, arguments) }
+  func dynamicStore(_ action: String, arguments: [String]) -> Int32 { record("dynamic-store", action, arguments) }
   func photos(_ action: String) -> Int32 { record("photos", action, []) }
   func notifications(_ action: String, bundleID: String?) -> Int32 { record("notifications", action, [bundleID]) }
   func proxy(_ action: String, arguments: [String]) -> Int32 { record("proxy", action, arguments) }

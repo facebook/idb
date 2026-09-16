@@ -91,6 +91,22 @@ final class ServiceDispatchTests: XCTestCase {
     XCTAssertEqual(dispatchService("dns", "unknown", []), 1)
   }
 
+  // MARK: - Dynamic store routing
+
+  func testDispatchDynamicStoreUnknownAction() {
+    XCTAssertEqual(dispatchService("dynamic-store", "unknown", ["dns"]), 1)
+  }
+
+  func testDispatchDynamicStoreMissingKeyRoutes() {
+    XCTAssertEqual(dispatchService("dynamic-store", "snapshot", []), 1)
+  }
+
+  // The key reaches the service as its first argument: an unknown name is refused by the service
+  // rather than by the dispatcher, which knows nothing about keys.
+  func testDispatchDynamicStorePassesTheKey() {
+    XCTAssertEqual(dispatchService("dynamic-store", "snapshot", ["not a key"]), 1)
+  }
+
   // MARK: - Health routing
 
   func testDispatchHealthRoutes() {

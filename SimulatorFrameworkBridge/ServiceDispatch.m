@@ -11,6 +11,7 @@
 
 #import "AccessibilityService.h"
 #import "DnsService.h"
+#import "DynamicStoreService.h"
 #import "NotificationSettingsService.h"
 #import "PhotoLibraryService.h"
 #import "ProxyService.h"
@@ -41,6 +42,11 @@
 - (int32_t)dns:(NSString *)action arguments:(NSArray<NSString *> *)arguments
 {
   return handleDnsAction(action, arguments);
+}
+
+- (int32_t)dynamicStore:(NSString *)action arguments:(NSArray<NSString *> *)arguments
+{
+  return handleDynamicStoreAction(action, arguments);
 }
 
 - (int32_t)photos:(NSString *)action
@@ -117,7 +123,7 @@ static int unsupportedOnThisPlatform(NSString *service)
 {
   if (arguments.count < 3) {
     NSLog(@"Usage: %@ <service> <action> [args...]", arguments.count > 0 ? arguments[0] : @"SimulatorFrameworkBridge");
-    NSLog(@"Services: contacts, dns, photos, notifications, health, proxy, accessibility, repl");
+    NSLog(@"Services: contacts, dns, dynamic-store, photos, notifications, health, proxy, accessibility, repl");
     NSLog(@"Actions: clear, approve, revoke, check, set, list");
     return 1;
   }
@@ -138,6 +144,8 @@ static int unsupportedOnThisPlatform(NSString *service)
   #endif
   } else if ([service isEqualToString:@"dns"]) {
     return [services dns:action arguments:arguments];
+  } else if ([service isEqualToString:@"dynamic-store"]) {
+    return [services dynamicStore:action arguments:arguments];
   } else if ([service isEqualToString:@"photos"]) {
     return [services photos:action];
   } else if ([service isEqualToString:@"notifications"]) {
@@ -174,7 +182,7 @@ static int unsupportedOnThisPlatform(NSString *service)
     return 1;
   } else {
     NSLog(@"Unknown service: %@", service);
-    NSLog(@"Available services: contacts, dns, photos, notifications, health, proxy, accessibility, repl");
+    NSLog(@"Available services: contacts, dns, dynamic-store, photos, notifications, health, proxy, accessibility, repl");
     return 1;
   }
 }

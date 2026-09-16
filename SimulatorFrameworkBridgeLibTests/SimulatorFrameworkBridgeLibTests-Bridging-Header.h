@@ -6,6 +6,7 @@
  */
 
 #import "ContactsTestRuntime.h"
+#import "DynamicStoreTestRuntime.h"
 #import "FBAXFakeRuntime.h"
 #import "FBAXSignatureProbe.h"
 #import "HealthTestRuntime.h"

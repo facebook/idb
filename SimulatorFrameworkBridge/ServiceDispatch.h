@@ -18,6 +18,7 @@ int dispatchService(NSString *service, NSString *action, NSArray<NSString *> *ar
 - (int32_t)health:(NSString *)action bundleID:(nullable NSString *)bundleID typeIDs:(NSArray<NSString *> *)typeIDs;
 #endif
 - (int32_t)dns:(NSString *)action arguments:(NSArray<NSString *> *)arguments;
+- (int32_t)dynamicStore:(NSString *)action arguments:(NSArray<NSString *> *)arguments;
 - (int32_t)photos:(NSString *)action;
 - (int32_t)notifications:(NSString *)action bundleID:(nullable NSString *)bundleID;
 - (int32_t)proxy:(NSString *)action arguments:(NSArray<NSString *> *)arguments;
