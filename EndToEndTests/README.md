@@ -11,6 +11,7 @@ These tests run the `idb` CLI through `idb_companion` against a booted simulator
 | `IDB_SETUP_BIN` | optional client used only to prepare fixtures; defaults to `IDB_BIN` |
 | `IDB_E2E_COMPANION_PATH` | the `idb_companion` binary, with its `Resources/` directory beside it |
 | `IDB_E2E_RECORDER_PATH` | the built `sim-video` binary |
+| `IDB_E2E_SERVICE_PROBE_PATH` | the built `SimulatorServiceProbe-iOS` binary for service mutation tests |
 | `DEVICE_UDID` | the booted simulator to test against |
 | `DEVICE_SET_PATH` | the device set `DEVICE_UDID` lives in |
 | `IDB_E2E_STRICT` | `1` fails tests when `SimLaunchHostService` is unavailable; otherwise those tests skip |
@@ -18,6 +19,8 @@ These tests run the `idb` CLI through `idb_companion` against a booted simulator
 `IDB_BIN`, `IDB_E2E_COMPANION_PATH`, `IDB_E2E_RECORDER_PATH`, `DEVICE_UDID`, and `DEVICE_SET_PATH` are required. Everything the suite runs against is provided by its environment and none of it is discovered or defaulted, so missing variables, invalid binary paths, or a simulator that is not booted fail setup rather than skipping or selecting another target.
 
 Use a dedicated simulator. Tests install and remove `ReplHost.app`, change its permissions and files, and launch or terminate Settings and Safari. Cleanup removes the fixture app and stops test apps; it does not restore pre-existing app state. The suite does not boot, shut down, erase or delete the simulator.
+
+Service mutation tests also invoke the bundled guest directly. A separate probe snapshots network configuration as property lists. DNS and proxy tests restore the complete original value or its absence, retaining the original binary snapshot for restoration. The probe is a test resource and is not included in the distribution.
 
 The harness starts one companion per test process with `DEVICE_SET_PATH` and a private Unix socket. Every CLI command connects to it with `--companion`. Setup waits for accessibility reads to become available. If the companion exits, the current test reports the failure and the remaining tests stop.
 
@@ -31,6 +34,7 @@ From the source directory on macOS, build the distribution and provision a dedic
 
 ```
 ./build.sh build all
+./build.sh build SimulatorServiceProbe-iOS
 pip install .
 export DEVICE_SET_PATH="$(mktemp -d /tmp/idb-e2e-devices.XXXXXX)"
 export DEVICE_UDID="$(xcrun simctl --set "$DEVICE_SET_PATH" create e2e "iPhone 16")"
@@ -39,6 +43,7 @@ xcrun simctl --set "$DEVICE_SET_PATH" bootstatus "$DEVICE_UDID"
 IDB_BIN="$(command -v idb)" \
 IDB_E2E_COMPANION_PATH="$PWD/Build/Distribution/idb_companion" \
 IDB_E2E_RECORDER_PATH="$PWD/Build/Distribution/sim-video" \
+IDB_E2E_SERVICE_PROBE_PATH="$PWD/Build/EndToEndResources/SimulatorServiceProbe-iOS" \
 python3 -m unittest discover -s EndToEndTests -t . -v
 ```
 

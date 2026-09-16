@@ -288,6 +288,10 @@ class Environment:
     def fixture_app(self) -> Path:
         return self.companion_path.parent / "Resources" / FIXTURE_APP_NAME
 
+    @property
+    def service_probe(self) -> Path:
+        return _binary_from_environment("IDB_E2E_SERVICE_PROBE_PATH").resolve()
+
     @classmethod
     async def resolve(cls) -> "Environment":
         idb_bin = _binary_from_environment(IDB_BIN_ENV)

@@ -42,6 +42,21 @@ targetTemplates:
       - sdk: CoreData.framework
 
 targets:
+  SimulatorServiceProbe-iOS:
+    type: tool
+    platform: iOS
+    deploymentTarget: "15.0"
+    sources:
+      - path: ../EndToEndTests/Fixtures
+    settings:
+      base:
+        SDKROOT: iphonesimulator
+        PRODUCT_NAME: SimulatorServiceProbe-iOS
+        CLANG_ENABLE_OBJC_ARC: YES
+        CODE_SIGN_IDENTITY: "-"
+    dependencies:
+      - sdk: Foundation.framework
+
   # A command-line executable spawned inside the simulator runtime by idb_companion (from the bundled
   # `Resources/SimulatorFrameworkBridge-<platform>`) to drive privacy/services state, read the
   # accessibility tree and serve the REPL socket. Mirrors the Buck targets of the same names.
