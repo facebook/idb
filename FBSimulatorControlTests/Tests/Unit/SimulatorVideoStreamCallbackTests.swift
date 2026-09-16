@@ -60,7 +60,7 @@ final class SimulatorVideoStreamCallbackTests: XCTestCase {
       }
     }
     XCTAssertEqual(warmupMessageCount, 1, "Should log exactly one warmup completion message")
-    XCTAssertTrue(pusher.warmupComplete)
+    XCTAssertTrue(pusher.statsRecorder.warmupComplete)
   }
 
   func testStarvationDetectedDuringWarmup() {
@@ -79,7 +79,7 @@ final class SimulatorVideoStreamCallbackTests: XCTestCase {
       }
     }
     XCTAssertTrue(foundStarvationWarning, "Should warn about possible starvation after 20 warmup frames")
-    XCTAssertTrue(pusher.starvationWarningLogged)
+    XCTAssertTrue(pusher.statsRecorder.starvationWarningLogged)
   }
 
   func testPostWarmupStarvation() {
@@ -88,7 +88,7 @@ final class SimulatorVideoStreamCallbackTests: XCTestCase {
 
     let ready = makeReadySampleBuffer()
     pusher.handleCompressedSampleBuffer(ready, encodeStatus: noErr, infoFlags: VTEncodeInfoFlags())
-    XCTAssertTrue(pusher.warmupComplete)
+    XCTAssertTrue(pusher.statsRecorder.warmupComplete)
 
     for _ in 0..<10 {
       let notReady = makeNotReadySampleBuffer()
@@ -102,7 +102,7 @@ final class SimulatorVideoStreamCallbackTests: XCTestCase {
       }
     }
     XCTAssertTrue(foundStarvationWarning, "Should warn about post-warmup starvation after 10 consecutive failures")
-    XCTAssertTrue(pusher.starvationWarningLogged)
+    XCTAssertTrue(pusher.statsRecorder.starvationWarningLogged)
   }
 
   func testEncodeErrorLogged() {
@@ -118,7 +118,7 @@ final class SimulatorVideoStreamCallbackTests: XCTestCase {
       }
     }
     XCTAssertTrue(foundError, "Should log VideoToolbox encode error with status code")
-    XCTAssertEqual(pusher.stats.callbackCount, 1)
+    XCTAssertEqual(pusher.statsRecorder.snapshot.callbackCount, 1)
   }
 
   func testFrameDroppedCountedAsFailure() {
@@ -127,8 +127,8 @@ final class SimulatorVideoStreamCallbackTests: XCTestCase {
 
     pusher.handleCompressedSampleBuffer(nil, encodeStatus: noErr, infoFlags: .frameDropped)
 
-    XCTAssertEqual(pusher.consecutiveNotReadyFrameCount, 1)
-    XCTAssertEqual(pusher.stats.callbackCount, 1)
+    XCTAssertEqual(pusher.statsRecorder.consecutiveNotReadyFrameCount, 1)
+    XCTAssertEqual(pusher.statsRecorder.snapshot.callbackCount, 1)
     XCTAssertEqual(UInt(logger.messages.count), 1, "Should only log the first-callback message, not per-frame drop messages")
   }
 
@@ -157,7 +157,7 @@ final class SimulatorVideoStreamCallbackTests: XCTestCase {
     let ready = makeReadySampleBuffer()
     pusher.handleCompressedSampleBuffer(ready, encodeStatus: noErr, infoFlags: VTEncodeInfoFlags())
 
-    XCTAssertTrue(pusher.warmupComplete)
+    XCTAssertTrue(pusher.statsRecorder.warmupComplete)
 
     for msg in logger.messages {
       XCTAssertFalse((msg as! String).contains("Encoder warmed up"), "Should not log warmup message when first frame succeeds immediately")
@@ -193,14 +193,14 @@ final class SimulatorVideoStreamCallbackTests: XCTestCase {
 
     pusher.handleCompressedSampleBuffer(nil, encodeStatus: -12345, infoFlags: VTEncodeInfoFlags())
 
-    XCTAssertEqual(pusher.stats.writeCount, 3)
-    XCTAssertEqual(pusher.stats.dropCount, 2)
-    XCTAssertEqual(pusher.stats.encodeErrorCount, 1)
-    XCTAssertEqual(pusher.stats.callbackCount, 6)
+    XCTAssertEqual(pusher.statsRecorder.snapshot.writeCount, 3)
+    XCTAssertEqual(pusher.statsRecorder.snapshot.dropCount, 2)
+    XCTAssertEqual(pusher.statsRecorder.snapshot.encodeErrorCount, 1)
+    XCTAssertEqual(pusher.statsRecorder.snapshot.callbackCount, 6)
 
-    var timer = pusher.statsTimer
+    var timer = pusher.statsRecorder.statsTimer
     timer.backdateForTesting(by: 6.0)
-    pusher.statsTimer = timer
+    pusher.statsRecorder.statsTimer = timer
 
     let ready = makeReadySampleBuffer()
     pusher.handleCompressedSampleBuffer(ready, encodeStatus: noErr, infoFlags: VTEncodeInfoFlags())
@@ -228,9 +228,9 @@ final class SimulatorVideoStreamCallbackTests: XCTestCase {
       pusher.handleCompressedSampleBuffer(notReady, encodeStatus: noErr, infoFlags: VTEncodeInfoFlags())
     }
 
-    var timer = pusher.statsTimer
+    var timer = pusher.statsRecorder.statsTimer
     timer.backdateForTesting(by: 6.0)
-    pusher.statsTimer = timer
+    pusher.statsRecorder.statsTimer = timer
 
     let notReady = makeNotReadySampleBuffer()
     pusher.handleCompressedSampleBuffer(notReady, encodeStatus: noErr, infoFlags: VTEncodeInfoFlags())

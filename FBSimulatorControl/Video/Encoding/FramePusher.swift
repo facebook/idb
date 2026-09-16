@@ -12,50 +12,6 @@ import Foundation
 import IOSurface
 import VideoToolbox
 
-/// Stats tracked by the video encoder (VideoToolbox).
-/// Zeroed if the stream uses a non-encoded format (e.g. bitmap/BGRA).
-public struct VideoEncoderStats: Sendable {
-  public var callbackCount: UInt
-  public var writeCount: UInt
-  public var dropCount: UInt
-  var writeFailureCount: UInt
-  public var encodeErrorCount: UInt
-  public var tornFrameCount: UInt
-  public var totalEncodedBytes: UInt
-  var totalEncodeSubmitSeconds: CFTimeInterval
-
-  public init() {
-    self.callbackCount = 0
-    self.writeCount = 0
-    self.dropCount = 0
-    self.writeFailureCount = 0
-    self.encodeErrorCount = 0
-    self.tornFrameCount = 0
-    self.totalEncodedBytes = 0
-    self.totalEncodeSubmitSeconds = 0
-  }
-
-  public init(
-    callbackCount: UInt,
-    writeCount: UInt,
-    dropCount: UInt,
-    writeFailureCount: UInt,
-    encodeErrorCount: UInt,
-    tornFrameCount: UInt,
-    totalEncodedBytes: UInt,
-    totalEncodeSubmitSeconds: CFTimeInterval
-  ) {
-    self.callbackCount = callbackCount
-    self.writeCount = writeCount
-    self.dropCount = dropCount
-    self.writeFailureCount = writeFailureCount
-    self.encodeErrorCount = encodeErrorCount
-    self.tornFrameCount = tornFrameCount
-    self.totalEncodedBytes = totalEncodedBytes
-    self.totalEncodeSubmitSeconds = totalEncodeSubmitSeconds
-  }
-}
-
 // MARK: - Frame Pusher Protocol
 
 /// Frame pusher abstraction. Concrete pushers convert + write frames to the consumer.
@@ -152,18 +108,14 @@ final class SimulatorVideoStreamFramePusher_Bitmap: SimulatorVideoStreamFramePus
 
 // MARK: - VideoToolbox Frame Pusher
 
-/// Encodes BGRA frames via a VTCompressionSession (BGRA→NV12 via VTPixelTransferSession), then
+/// Encodes BGRA frames via a VTCompressionSession (BGRA→NV12 via `PixelBufferConverter`), then
 /// writes the encoded sample to the consumer through the chosen frame writer (or, for MJPEG/Minicap,
-/// directly in the encode handler). Tracks warmup/starvation counters and periodic stats.
+/// directly in the encode handler). Outcomes are accounted for by `EncoderStatsRecorder`.
 ///
 /// @unchecked Sendable: `VTCompressionSessionEncodeFrame`'s `@Sendable` output handler can run on a
-/// VideoToolbox thread after the encode call returns, so it captures `self`. Encoder state
-/// (warmup/starvation counters, `statsTimer`, `lastLoggedStats`) is only ever touched from that
-/// handler, and VideoToolbox invokes a session's output handlers serially, in decode order, so they
-/// never overlap each other; the owning actor's frame submissions touch none of it. `stats` is
-/// additionally read by `currentStats()` from other isolation domains and written by both sides, so
-/// it alone is guarded by `statsLock`. `tearDown` flushes every pending handler before it invalidates
-/// the session.
+/// VideoToolbox thread after the encode call returns, so it captures `self`. Everything it touches
+/// is immutable or is the stats recorder, which is safe for that thread by its own contract.
+/// `tearDown` flushes every pending handler before it invalidates the session.
 final class SimulatorVideoStreamFramePusher_VideoToolbox: SimulatorVideoStreamFramePusher, @unchecked Sendable {
   let settings: VideoToolboxEncoderSettings
   /// The scale factor between 0-1. nil for no scaling.
@@ -182,23 +134,7 @@ final class SimulatorVideoStreamFramePusher_VideoToolbox: SimulatorVideoStreamFr
   var compressionSession: VTCompressionSession?
   /// BGRA→NV12 at the encoded output size; nil until `setup`.
   private var converter: PixelBufferConverter?
-
-  var consecutiveNotReadyFrameCount: UInt = 0
-  var warmupComplete = false
-  var starvationWarningLogged = false
-  var stats = VideoEncoderStats()
-  var lastLoggedStats = VideoEncoderStats()
-  var statsTimer = PeriodicStatsTimer(interval: 5.0)
-
-  // Guards `stats` only: written from the VideoToolbox handler thread and the encode submission,
-  // read by `currentStats()` from arbitrary isolation domains.
-  private let statsLock = NSLock()
-
-  private func withStats<T>(_ body: (inout VideoEncoderStats) -> T) -> T {
-    statsLock.lock()
-    defer { statsLock.unlock() }
-    return body(&stats)
-  }
+  let statsRecorder: EncoderStatsRecorder
 
   init(
     settings: VideoToolboxEncoderSettings,
@@ -218,111 +154,27 @@ final class SimulatorVideoStreamFramePusher_VideoToolbox: SimulatorVideoStreamFr
     self.consumer = consumer
     self.logger = logger
     self.videoCodec = videoCodec
+    self.statsRecorder = EncoderStatsRecorder(logger: logger)
   }
 
+  /// The `.compressed` output path: hands the sample to the encoded-sample consumer and records the
+  /// outcome.
   func handleCompressedSampleBuffer(_ sampleBuffer: CMSampleBuffer?, encodeStatus: OSStatus, infoFlags: VTEncodeInfoFlags) {
-    if !statsTimer.hasStarted {
-      _ = statsTimer.tick()
-      logger.info().log("First encode callback received")
-    }
-
-    processCompressedSampleBuffer(sampleBuffer, encodeStatus: encodeStatus, infoFlags: infoFlags)
-
-    guard case let .elapsed(intervalDuration, totalElapsed) = statsTimer.tick() else {
-      return
-    }
-
-    let current = withStats { $0 }
-    let last = lastLoggedStats
-    let intervalCallbacks = current.callbackCount - last.callbackCount
-    let intervalWritten = current.writeCount - last.writeCount
-    let intervalDropped = current.dropCount - last.dropCount
-    let intervalWriteFailures = current.writeFailureCount - last.writeFailureCount
-    let intervalEncodeErrors = current.encodeErrorCount - last.encodeErrorCount
-    let intervalTornFrames = current.tornFrameCount - last.tornFrameCount
-    let intervalEncodedBytes = current.totalEncodedBytes - last.totalEncodedBytes
-    let intervalEncodeSubmitSeconds = current.totalEncodeSubmitSeconds - last.totalEncodeSubmitSeconds
-    lastLoggedStats = current
-
-    let totalFps = totalElapsed > 0 ? Double(current.callbackCount) / totalElapsed : 0
-    let intervalFps = intervalDuration > 0 ? Double(intervalCallbacks) / intervalDuration : 0
-    let intervalBitrateKbps = intervalDuration > 0 ? Double(intervalEncodedBytes) * 8.0 / 1000.0 / intervalDuration : 0
-    let totalBitrateKbps = totalElapsed > 0 ? Double(current.totalEncodedBytes) * 8.0 / 1000.0 / totalElapsed : 0
-    let intervalAvgEncodeMs = intervalCallbacks > 0 ? (intervalEncodeSubmitSeconds / Double(intervalCallbacks)) * 1000.0 : 0
-    let totalAvgEncodeMs = current.callbackCount > 0 ? (current.totalEncodeSubmitSeconds / Double(current.callbackCount)) * 1000.0 : 0
-
-    logger.info().log(
-      String(
-        format:
-          "Video stats (interval): %lu callbacks in %.1fs (%.1f fps, %.0f kbps, %.2f ms/frame encode) — %lu written, %lu dropped, %lu write failures, %lu encode errors, %lu torn",
-        intervalCallbacks, intervalDuration, intervalFps, intervalBitrateKbps, intervalAvgEncodeMs,
-        intervalWritten, intervalDropped, intervalWriteFailures, intervalEncodeErrors, intervalTornFrames))
-    logger.info().log(
-      String(
-        format:
-          "Video stats (total): %lu callbacks in %.1fs (%.1f fps, %.0f kbps, %.2f ms/frame encode) — %lu written, %lu dropped, %lu write failures, %lu encode errors, %lu torn",
-        current.callbackCount, totalElapsed, totalFps, totalBitrateKbps, totalAvgEncodeMs,
-        current.writeCount, current.dropCount, current.writeFailureCount, current.encodeErrorCount, current.tornFrameCount))
+    statsRecorder.record(outcome(of: sampleBuffer, encodeStatus: encodeStatus, infoFlags: infoFlags))
   }
 
-  private func processCompressedSampleBuffer(_ sampleBuffer: CMSampleBuffer?, encodeStatus: OSStatus, infoFlags: VTEncodeInfoFlags) {
-    withStats { $0.callbackCount += 1 }
-
+  private func outcome(of sampleBuffer: CMSampleBuffer?, encodeStatus: OSStatus, infoFlags: VTEncodeInfoFlags) -> EncoderStatsRecorder.Outcome {
     if encodeStatus != noErr {
-      withStats { $0.encodeErrorCount += 1 }
-      logger.log("VideoToolbox encode error: OSStatus \(encodeStatus)")
-      return
+      return .encodeError(encodeStatus)
     }
-
-    let frameDropped = infoFlags.contains(.frameDropped)
-    var writeSucceeded = false
-    if !frameDropped, let sampleBuffer {
-      if let encodedSampleConsumer {
-        writeSucceeded = encodedSampleConsumer.consume(sampleBuffer, logger: logger)
-      }
-      if writeSucceeded {
-        if let dataBuffer = CMSampleBufferGetDataBuffer(sampleBuffer) {
-          withStats { $0.totalEncodedBytes += UInt(CMBlockBufferGetDataLength(dataBuffer)) }
-        }
-      }
+    if infoFlags.contains(.frameDropped) {
+      return .dropped
     }
-
-    if frameDropped || !writeSucceeded {
-      if frameDropped {
-        withStats { $0.dropCount += 1 }
-      } else {
-        withStats { $0.writeFailureCount += 1 }
-      }
-      consecutiveNotReadyFrameCount += 1
-      let consecutiveFailures = consecutiveNotReadyFrameCount
-
-      if !warmupComplete {
-        let warmupWindowFrames: UInt = 20
-        if consecutiveFailures == warmupWindowFrames {
-          logger.log("Encoder has not produced a frame after \(consecutiveFailures) attempts — bitrate may be too low for this resolution")
-          starvationWarningLogged = true
-        }
-      } else {
-        let starvationThreshold: UInt = 10
-        if consecutiveFailures == starvationThreshold && !starvationWarningLogged {
-          logger.log("Encoder starvation: \(consecutiveFailures) consecutive frames not ready after warmup — bitrate is likely too low")
-          starvationWarningLogged = true
-        }
-      }
-      return
+    guard let sampleBuffer, let encodedSampleConsumer, encodedSampleConsumer.consume(sampleBuffer, logger: logger) else {
+      return .writeFailed
     }
-
-    withStats { $0.writeCount += 1 }
-    let failuresBefore = consecutiveNotReadyFrameCount
-    consecutiveNotReadyFrameCount = 0
-    starvationWarningLogged = false
-
-    if !warmupComplete {
-      warmupComplete = true
-      if failuresBefore > 0 {
-        logger.log("Encoder warmed up after \(failuresBefore) skipped frames")
-      }
-    }
+    let encodedBytes = CMSampleBufferGetDataBuffer(sampleBuffer).map(CMBlockBufferGetDataLength) ?? 0
+    return .written(encodedBytes: encodedBytes)
   }
 
   /// MJPEG output: writes the sample's JPEG block buffer straight to the stream, ignoring encode status/flags.
@@ -485,8 +337,7 @@ final class SimulatorVideoStreamFramePusher_VideoToolbox: SimulatorVideoStreamFr
       outputHandler: handler
     )
 
-    let encodeEnd = CFAbsoluteTimeGetCurrent()
-    withStats { $0.totalEncodeSubmitSeconds += (encodeEnd - encodeStart) }
+    statsRecorder.recordEncodeSubmission(seconds: CFAbsoluteTimeGetCurrent() - encodeStart)
 
     if status != 0 {
       throw SimulatorVideoStreamError.failedToCompress(status: status)
@@ -494,10 +345,10 @@ final class SimulatorVideoStreamFramePusher_VideoToolbox: SimulatorVideoStreamFr
   }
 
   func recordTornFrame() {
-    withStats { $0.tornFrameCount += 1 }
+    statsRecorder.recordTornFrame()
   }
 
   func currentStats() -> VideoEncoderStats? {
-    withStats { $0 }
+    statsRecorder.snapshot
   }
 }
