@@ -6,14 +6,13 @@
  */
 
 #import "ContactsService.h"
+#import "ContactsService+Testing.h"
 
 #import <Contacts/Contacts.h>
 #import <Foundation/Foundation.h>
 
-static int clearContacts(void)
+int FBContactsClearWithStore(CNContactStore *contactStore, CNSaveRequest *(^makeSaveRequest)(void))
 {
-  CNContactStore *contactStore = [[CNContactStore alloc] init];
-
   NSError *fetchError = nil;
   NSArray<CNContact *> *allContacts = [contactStore unifiedContactsMatchingPredicate:[NSPredicate predicateWithValue:YES]
                                                                          keysToFetch:@[]
@@ -31,7 +30,7 @@ static int clearContacts(void)
     return 0;
   }
 
-  CNSaveRequest *saveRequest = [[CNSaveRequest alloc] init];
+  CNSaveRequest *saveRequest = makeSaveRequest();
   for (CNContact *contact in allContacts) {
     CNMutableContact *mutableContact = [contact mutableCopy];
     [saveRequest deleteContact:mutableContact];
@@ -52,7 +51,7 @@ static int clearContacts(void)
 int handleContactsAction(NSString *action)
 {
   if ([action isEqualToString:@"clear"]) {
-    return clearContacts();
+    return FBContactsClearWithStore([[CNContactStore alloc] init], ^{ return [[CNSaveRequest alloc] init]; });
   } else {
     NSLog(@"Unknown action: %@", action);
     return 1;

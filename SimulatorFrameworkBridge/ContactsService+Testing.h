@@ -5,8 +5,10 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#import "ContactsTestRuntime.h"
-#import "FBAXFakeRuntime.h"
-#import "FBAXSignatureProbe.h"
-#import "NetworkConfigurationTestRuntime.h"
-#import "ServiceTestRuntime.h"
+#import <Contacts/Contacts.h>
+
+NS_ASSUME_NONNULL_BEGIN
+
+int FBContactsClearWithStore(CNContactStore *store, CNSaveRequest *(^makeSaveRequest)(void));
+
+NS_ASSUME_NONNULL_END
