@@ -146,16 +146,19 @@ final class ReplSession {
     let targetTriple: String
     let compilerArguments: [String]
     let linkerArguments: [String]
+    var resolvedCompanion: ResolvedCompanion?
     do {
       toolchain = try resolveToolchainPath(explicit: config.toolchainPath)
 
-      let address = try await resolveCompanionAddress(config: config)
+      let companion = try await resolveCompanion(config: config)
+      resolvedCompanion = companion
+      reporter.addMetadata(["connection_source": companion.source.rawValue])
 
       connection = try await ReplConnection.open(
         transport: try .http2NIOPosix(
-          target: connectionTarget(for: address),
+          target: connectionTarget(for: companion.address),
           transportSecurity: try channelTransportSecurity(
-            for: address, tls: planCompanionClientTLS(plaintext: config.plaintext))))
+            for: companion.address, tls: planCompanionClientTLS(plaintext: config.plaintext))))
 
       // Create a marker file so the companion can detect whether it shares our
       // filesystem (it checks this path's existence; see Start.probe_file_path).
@@ -220,10 +223,14 @@ final class ReplSession {
       linkerArguments = try resolveLinkerArguments(platform: platform, runtimeOSVersion: osVersion)
       FileHandle.standardError.write(Data("idb-repl: compiling injected code for \(targetTriple)\n".utf8))
     } catch {
+      let reportedError =
+        resolvedCompanion.map {
+          actionableCompanionConnectionError(error, companion: $0)
+        } ?? error
       reporter.report(
         ReplRunTelemetry.subject(
-          name: "start_session", start: sessionStart, failure: "\(error)", stage: .connect))
-      throw error
+          name: "start_session", start: sessionStart, failure: "\(reportedError)", stage: .connect))
+      throw reportedError
     }
     reporter.report(ReplRunTelemetry.subject(name: "start_session", start: sessionStart, failure: nil))
 
@@ -357,35 +364,41 @@ final class ReplSession {
   /// `--companion host:port` bypasses discovery. macOS otherwise discovers or starts a
   /// local companion; other platforms select a remote companion from `IDB_COMPANION` or
   /// the companion registry.
-  private static func resolveCompanionAddress(config: ReplSessionConfig) async throws -> CompanionAddress {
+  private static func resolveCompanion(config: ReplSessionConfig) async throws -> ResolvedCompanion {
     switch planCompanionRoute(companion: config.companion) {
     case let .tcp(companion):
       guard let address = CompanionAddress.parse(tcp: companion) else {
         throw ValidationError(
           "--companion expects host:port, e.g. 127.0.0.1:10882 (got '\(companion)')")
       }
-      return address
+      return ResolvedCompanion(address: address, source: .commandLine)
     case .discoverLocal:
       let idleShutdownTime = 5 * 60
       if let udid = config.udid {
-        return try await companionManager(config: config)
+        let address = try await companionManager(config: config)
           .companionInfo(forUDID: udid, idleShutdownTime: idleShutdownTime).address
+        return ResolvedCompanion(address: address, source: .localDiscovery)
       }
-      return try await companionManager(config: config)
+      let address = try await companionManager(config: config)
         .defaultCompanion(idleShutdownTime: idleShutdownTime).address
+      return ResolvedCompanion(address: address, source: .localDiscovery)
     case .selectRemote:
       do {
         let environmentCompanion = ProcessInfo.processInfo.environment["IDB_COMPANION"]
         if environmentCompanion != nil {
-          return try selectRemoteCompanion(
-            environmentCompanion: environmentCompanion,
-            companions: [],
-            udid: config.udid)
+          return ResolvedCompanion(
+            address: try selectRemoteCompanion(
+              environmentCompanion: environmentCompanion,
+              companions: [],
+              udid: config.udid),
+            source: .environment)
         }
-        return try selectRemoteCompanion(
-          environmentCompanion: nil,
-          companions: CompanionRegistry().companions(),
-          udid: config.udid)
+        return ResolvedCompanion(
+          address: try selectRemoteCompanion(
+            environmentCompanion: nil,
+            companions: CompanionRegistry().companions(),
+            udid: config.udid),
+          source: .registry)
       } catch let error as RemoteCompanionSelectionError {
         throw ValidationError(error.description)
       }
