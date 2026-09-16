@@ -22,17 +22,6 @@ final class FrameCadenceTests: XCTestCase {
   }
 
   func testTicksLandOnTheirDeadlines() async throws {
-    // Timer coalescing is a property of the host and the process's QoS; where a plain sleep already
-    // wakes on time there is nothing to observe.
-    var probe: [Duration] = []
-    for _ in 0..<5 {
-      let started = ContinuousClock.now
-      try await Task.sleep(for: .milliseconds(10), tolerance: .zero)
-      probe.append(ContinuousClock.now - started - .milliseconds(10))
-    }
-    probe.sort()
-    try XCTSkipUnless(probe[2] >= .milliseconds(10), "this host does not coalesce Task.sleep (median lateness \(probe[2]))")
-
     var iterator = FrameCadence(framesPerSecond: 20).makeAsyncIterator()
     _ = await iterator.next()
     var lateness: [Duration] = []
@@ -43,10 +32,8 @@ final class FrameCadenceTests: XCTestCase {
       lateness.append(ContinuousClock.now - expected)
     }
     lateness.sort()
-    // BUG: the clock waits with Task.sleep, which the scheduler coalesces, so on such a host every
-    // tick lands 25–40 ms late — most of a 30 fps frame budget. Flipped to a median under 10 ms in
-    // the following commit. The median, so one preempted tick does not decide the test.
-    XCTAssertGreaterThanOrEqual(lateness[5], .milliseconds(10), "median tick lateness \(lateness[5])")
+    // The median, so one preempted tick on a loaded host does not decide the test.
+    XCTAssertLessThan(lateness[5], .milliseconds(10), "median tick lateness \(lateness[5])")
   }
 
   func testStallCatchesUpWithASingleTick() async throws {
