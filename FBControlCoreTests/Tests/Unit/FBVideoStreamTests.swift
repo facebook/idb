@@ -1253,22 +1253,17 @@ final class FBVideoStreamTests: XCTestCase {
 
   // MARK: - Writes Per Frame
 
-  func testAnnexBKeyframeCostsOneWritePerParameterSetPlusOne() throws {
+  func testAnnexBKeyframeCostsOneWrite() throws {
     let counting = CountingConsumer()
     try AnnexBFrameWriter(codec: .h264).write(CreateH264SampleBuffer(isKeyFrame: true), to: counting.consumer, logger: ControlCoreLoggerDouble())
-    // BUG: an async consumer counts each write as an unprocessed item against a two-item drop threshold, so a
-    // keyframe delivered as SPS, PPS and NAL data is three items — flipped to one write per frame in a
-    // following commit.
-    XCTAssertEqual(counting.writes, 3)
+    XCTAssertEqual(counting.writes, 1)
     XCTAssertEqual(counting.bytes.count, 4 + 7 + 4 + 4 + 9)
   }
 
-  func testFMP4FirstKeyframeCostsFourWrites() throws {
+  func testFMP4FirstKeyframeCostsOneWrite() throws {
     let counting = CountingConsumer()
     try FMP4FrameWriter(codec: .h264).write(CreateH264SampleBuffer(isKeyFrame: true), to: counting.consumer, logger: ControlCoreLoggerDouble())
-    // BUG: ftyp, moov, the fragment header and the sample data are four writes — flipped to one in a
-    // following commit.
-    XCTAssertEqual(counting.writes, 4)
+    XCTAssertEqual(counting.writes, 1)
   }
 
   // MARK: - fMP4 Format Changes

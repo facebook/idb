@@ -249,8 +249,12 @@ public struct AnnexBFrameWriter: EncodedFrameWriter {
       throw VideoStreamWriterError.failedToGetDataBuffer
     }
 
+    // One write per frame: an async consumer counts writes against its drop threshold, so the
+    // parameter sets a keyframe carries and the NAL data must arrive as a single item.
+    let dataLength = CMBlockBufferGetDataLength(dataBuffer)
+    var frame = Data()
     if isKeyFrame {
-      // Keyframes: send parameter sets (SPS, PPS / VPS, SPS, PPS) first, then the converted block buffer.
+      // Keyframes: parameter sets (SPS, PPS / VPS, SPS, PPS) first, then the converted block buffer.
       guard let format = CMSampleBufferGetFormatDescription(sampleBuffer) else {
         throw VideoStreamWriterError.failedToGetFormatDescription
       }
@@ -266,17 +270,27 @@ public struct AnnexBFrameWriter: EncodedFrameWriter {
         if status != noErr {
           throw VideoStreamWriterError.failedToGetParameterSet(codecName: codec.displayName, index: i, status: status)
         }
-        var paramHeader = [UInt8]()
-        paramHeader.reserveCapacity(AVCCHeaderLength + paramSize)
-        paramHeader.append(contentsOf: AnnexBStartCode)
+        frame.append(contentsOf: AnnexBStartCode)
         if let parameterSet {
-          paramHeader.append(contentsOf: UnsafeBufferPointer(start: parameterSet, count: paramSize))
+          frame.append(parameterSet, count: paramSize)
         }
-        consumer.consumeData(Data(paramHeader))
       }
     }
+    try AppendBlockBuffer(dataBuffer, length: dataLength, to: &frame)
+    consumer.consumeData(frame)
+  }
+}
 
-    try WriteBlockBufferToConsumer(dataBuffer, consumer)
+/// Appends `length` bytes of `blockBuffer` to `data`, handling non-contiguous block buffers.
+private func AppendBlockBuffer(_ blockBuffer: CMBlockBuffer, length: Int, to data: inout Data) throws {
+  let offset = data.count
+  data.append(contentsOf: [UInt8](repeating: 0, count: length))
+  let status = data.withUnsafeMutableBytes { bytes -> OSStatus in
+    guard let base = bytes.baseAddress else { return kCMBlockBufferBlockAllocationFailedErr }
+    return CMBlockBufferCopyDataBytes(blockBuffer, atOffset: 0, dataLength: length, destination: base + offset)
+  }
+  if status != noErr {
+    throw VideoStreamWriterError.failedToCopyBlockBufferData(status: status)
   }
 }
 
@@ -1249,6 +1263,10 @@ final class FMP4FrameWriter: EncodedFrameWriter, VideoStreamTimedMetadataWriter 
     let prevPts90k = lastPts90k
     lastPts90k = pts90k
 
+    // One write per frame: an async consumer counts writes against its drop threshold, so the init
+    // segment, the fragment header and the sample data are assembled into a single item.
+    var output = Data()
+
     // On first keyframe: emit init segment (ftyp + moov).
     if !initWritten {
       if !isKeyFrame {
@@ -1260,11 +1278,8 @@ final class FMP4FrameWriter: EncodedFrameWriter, VideoStreamTimedMetadataWriter 
       }
       let dims = CMVideoFormatDescriptionGetDimensions(formatDesc)
 
-      let ftyp = FBFMP4CreateFtypBox(codec)
-      let moov = FBFMP4CreateMoovBox(formatDesc, codec, UInt32(dims.width), UInt32(dims.height), 90000)
-
-      consumer.consumeData(Data(ftyp))
-      consumer.consumeData(Data(moov))
+      output.append(contentsOf: FBFMP4CreateFtypBox(codec))
+      output.append(contentsOf: FBFMP4CreateMoovBox(formatDesc, codec, UInt32(dims.width), UInt32(dims.height), 90000))
 
       initWritten = true
       firstPts90k = pts90k
@@ -1295,29 +1310,11 @@ final class FMP4FrameWriter: EncodedFrameWriter, VideoStreamTimedMetadataWriter 
     }
     let dataLength = CMBlockBufferGetDataLength(dataBuffer)
 
-    // Emit moof + mdat header, then sample data — single copy only.
+    // moof + mdat header, then the sample data.
     sequenceNumber += 1
-    let header = FBFMP4CreateFragmentHeader(sequenceNumber, baseDecodeTime, duration90k, UInt32(dataLength), isKeyFrame)
-    consumer.consumeData(Data(header))
-
-    // Try zero-copy via CMBlockBufferGetDataPointer (works when buffer is contiguous).
-    var dataPointer: UnsafeMutablePointer<CChar>?
-    var lengthAtOffset = 0
-    let ptrStatus = CMBlockBufferGetDataPointer(dataBuffer, atOffset: 0, lengthAtOffsetOut: &lengthAtOffset, totalLengthOut: nil, dataPointerOut: &dataPointer)
-    if ptrStatus == noErr, let dataPointer, lengthAtOffset >= dataLength {
-      consumer.consumeData(Data(bytesNoCopy: dataPointer, count: dataLength, deallocator: .none))
-    } else {
-      // Fallback: copy when the block buffer is non-contiguous.
-      var sampleData = Data(count: dataLength)
-      let copyStatus = sampleData.withUnsafeMutableBytes { ptr -> OSStatus in
-        guard let dest = ptr.baseAddress else { return kCMBlockBufferBlockAllocationFailedErr }
-        return CMBlockBufferCopyDataBytes(dataBuffer, atOffset: 0, dataLength: dataLength, destination: dest)
-      }
-      if copyStatus != noErr {
-        throw VideoStreamWriterError.failedToCopyBlockBufferData(status: copyStatus)
-      }
-      consumer.consumeData(sampleData)
-    }
+    output.append(contentsOf: FBFMP4CreateFragmentHeader(sequenceNumber, baseDecodeTime, duration90k, UInt32(dataLength), isKeyFrame))
+    try AppendBlockBuffer(dataBuffer, length: dataLength, to: &output)
+    consumer.consumeData(output)
 
   }
 
