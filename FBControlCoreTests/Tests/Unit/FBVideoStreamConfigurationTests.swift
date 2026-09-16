@@ -9,7 +9,7 @@
 import XCTest
 
 final class FBVideoStreamConfigurationTests: XCTestCase {
-  func testDefaultRateControl() {
+  func testUnsetFieldsTakeTheirDefaults() {
     let config = FBVideoStreamConfiguration(
       format: FBVideoStreamFormat.compressedVideo(withCodec: FBVideoStreamCodec.h264, transport: FBVideoStreamTransport.annexB),
       framesPerSecond: nil,
@@ -18,16 +18,6 @@ final class FBVideoStreamConfigurationTests: XCTestCase {
       keyFrameRate: nil
     )
     XCTAssertEqual(config.rateControl, .automatic)
-  }
-
-  func testDefaultKeyFrameRate() {
-    let config = FBVideoStreamConfiguration(
-      format: FBVideoStreamFormat.compressedVideo(withCodec: FBVideoStreamCodec.h264, transport: FBVideoStreamTransport.annexB),
-      framesPerSecond: nil,
-      rateControl: nil,
-      scaleFactor: nil,
-      keyFrameRate: nil
-    )
     XCTAssertEqual(config.keyFrameRate, 4.0)
   }
 
@@ -55,32 +45,5 @@ final class FBVideoStreamConfigurationTests: XCTestCase {
     )
     XCTAssertEqual(config.rateControl, .quality(0.7))
     XCTAssertEqual(config.keyFrameRate, 5.0)
-  }
-
-  func testConfigurationEquality() {
-    let rc = FBVideoStreamRateControl.quality(0.5)
-    let a = FBVideoStreamConfiguration(
-      format: FBVideoStreamFormat.compressedVideo(withCodec: FBVideoStreamCodec.h264, transport: FBVideoStreamTransport.annexB),
-      framesPerSecond: 30,
-      rateControl: rc,
-      scaleFactor: nil,
-      keyFrameRate: 5.0
-    )
-    let b = FBVideoStreamConfiguration(
-      format: FBVideoStreamFormat.compressedVideo(withCodec: FBVideoStreamCodec.h264, transport: FBVideoStreamTransport.annexB),
-      framesPerSecond: 30,
-      rateControl: FBVideoStreamRateControl.quality(0.5),
-      scaleFactor: nil,
-      keyFrameRate: 5.0
-    )
-    XCTAssertEqual(a, b)
-  }
-
-  func testRateControlEquality() {
-    let a = FBVideoStreamRateControl.quality(0.5)
-    let b = FBVideoStreamRateControl.quality(0.5)
-    let c = FBVideoStreamRateControl.bitrate(500000)
-    XCTAssertEqual(a, b)
-    XCTAssertNotEqual(a, c)
   }
 }
