@@ -227,6 +227,10 @@ public actor SimulatorVideoStream: FBVideoStream {
     }
   }
   var framePusher: (any SimulatorVideoStreamFramePusher)?
+  /// The transport writers for compressed video, created on the first mount and shared by every
+  /// pusher the stream creates: they carry per-stream state (MPEG-TS continuity counters, the fMP4
+  /// init segment and sequence numbers) that must survive a surface swap. nil for other formats.
+  var frameWriters: VideoStreamFrameWriters?
   /// The timed-metadata (chapter) sink: the streaming transport writer, or (recording) the file
   /// writer's chapter track. Resolved in `mountSurface`, cleared in `stopStreaming`.
   var timedMetadataConsumer: (any TimedMetadataConsumer)?
@@ -392,6 +396,7 @@ public actor SimulatorVideoStream: FBVideoStream {
       }
     }
     timedMetadataConsumer = nil
+    frameWriters = nil
     overlayBuffer = nil
     compositedBufferPool = nil
     cadenceTeardown()
@@ -487,11 +492,15 @@ public actor SimulatorVideoStream: FBVideoStream {
     let attributes = bitmapStreamPixelBufferAttributes(from: buffer)
     logger.log("Mounting Surface \(IOSurfaceGetID(surface)) with Attributes: \(CollectionInformation.oneLineDescription(from: attributes))")
 
+    if frameWriters == nil, case let .compressedVideo(codec, transport) = configuration.format {
+      frameWriters = transport.frameWriters(for: codec)
+    }
     let framePusher = try Self.framePusher(
       configuration: configuration,
       compressionSessionProperties: compressionSessionProperties,
       consumer: consumer,
       encodedSampleConsumerOverride: encodedSampleConsumerOverride,
+      frameWriters: frameWriters,
       logger: logger)
     try framePusher.setup(with: buffer, edgeInsets: edgeInsets)
 
@@ -514,16 +523,13 @@ public actor SimulatorVideoStream: FBVideoStream {
         logger.log("Failed to tear down the previous frame pusher after a surface swap: \(error)")
       }
     }
-    let transportTimedMetadataWriter =
-      (framePusher as? SimulatorVideoStreamFramePusher_VideoToolbox)?.timedMetadataWriter
-
     // Resolve the timed-metadata (chapter) sink. A recording file writer that supports chapters
     // supplies its own consumer; otherwise the streaming transport writer (fMP4 emsg / MPEG-TS ID3)
     // handles markers, dropping them on transports with no metadata channel.
     if let recordingMetadata = encodedSampleConsumerOverride as? TimedMetadataConsumer {
       self.timedMetadataConsumer = recordingMetadata
     } else if case .compressedVideo = configuration.format {
-      self.timedMetadataConsumer = TransportTimedMetadataConsumer(consumer: consumer, timedMetadataWriter: transportTimedMetadataWriter)
+      self.timedMetadataConsumer = TransportTimedMetadataConsumer(consumer: consumer, timedMetadataWriter: frameWriters?.timedMetadataWriter)
     }
 
     if compositorCIContext == nil {
@@ -723,17 +729,20 @@ public actor SimulatorVideoStream: FBVideoStream {
     return derived
   }
 
+  /// Builds the pusher for one mounted surface. Compressed video writes through `frameWriters`,
+  /// which the stream owns so that state survives the pusher; a caller without one gets fresh writers.
   static func framePusher(
     configuration: VideoStreamConfiguration,
     compressionSessionProperties: [String: Any],
     consumer: any DataConsumer,
     encodedSampleConsumerOverride: EncodedSampleConsumer?,
+    frameWriters: VideoStreamFrameWriters?,
     logger: any ControlCoreLogger
   ) throws -> any SimulatorVideoStreamFramePusher {
     let derived = Self.compressionSessionProperties(for: configuration, callerProperties: compressionSessionProperties)
     switch configuration.format {
     case let .compressedVideo(codec, transport):
-      let frameWriters = transport.frameWriters(for: codec)
+      let frameWriters = frameWriters ?? transport.frameWriters(for: codec)
       let encodedSampleConsumer: EncodedSampleConsumer =
         encodedSampleConsumerOverride
         ?? DataConsumerEncodedSampleConsumer(consumer: consumer, frameWriter: frameWriters.frameWriter, timedMetadataWriter: frameWriters.timedMetadataWriter)

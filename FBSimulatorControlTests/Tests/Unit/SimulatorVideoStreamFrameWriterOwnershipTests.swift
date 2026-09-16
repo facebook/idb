@@ -21,23 +21,24 @@ final class SimulatorVideoStreamFrameWriterOwnershipTests: XCTestCase {
     scaleFactor: nil,
     keyFrameRate: nil)
 
-  private func makePusher() throws -> SimulatorVideoStreamFramePusher_VideoToolbox {
+  private func makePusher(frameWriters: VideoStreamFrameWriters?) throws -> SimulatorVideoStreamFramePusher_VideoToolbox {
     let pusher = try SimulatorVideoStream.framePusher(
       configuration: configuration,
       compressionSessionProperties: [:],
       consumer: FBDataBuffer.accumulatingBuffer(),
       encodedSampleConsumerOverride: nil,
+      frameWriters: frameWriters,
       logger: CapturingLogger())
     return try XCTUnwrap(pusher as? SimulatorVideoStreamFramePusher_VideoToolbox)
   }
 
-  func testEachFramePusherGetsItsOwnTransportWriter() throws {
+  func testFramePushersShareTheStreamsTransportWriter() throws {
     // The MPEG-TS writer is a class, so `===` compares the writer itself, not a boxed copy.
-    let first = try XCTUnwrap(makePusher().timedMetadataWriter as? MPEGTSFrameWriter)
-    let second = try XCTUnwrap(makePusher().timedMetadataWriter as? MPEGTSFrameWriter)
-    // BUG: a surface swap builds a new pusher and with it a new transport writer, so MPEG-TS
-    // continuity counters restart and fMP4 emits a second init segment mid-stream — flipped to a
-    // writer shared across pushers in the following commit.
-    XCTAssertFalse(first === second)
+    let shared = VideoStreamTransport.mpegts.frameWriters(for: .h264)
+    let first = try XCTUnwrap(makePusher(frameWriters: shared).timedMetadataWriter as? MPEGTSFrameWriter)
+    let second = try XCTUnwrap(makePusher(frameWriters: shared).timedMetadataWriter as? MPEGTSFrameWriter)
+    XCTAssertTrue(first === second)
+    XCTAssertTrue(first === shared.timedMetadataWriter as AnyObject?)
   }
+
 }
