@@ -7,38 +7,16 @@
 
 import AVFoundation
 import CoreMedia
-import CoreVideo
 @preconcurrency import FBControlCore
 import Foundation
 
-private func pixelBufferAttributes(from pixelBuffer: CVPixelBuffer) -> [String: Any] {
-  let width = CVPixelBufferGetWidth(pixelBuffer)
-  let height = CVPixelBufferGetHeight(pixelBuffer)
-  let frameSize = CVPixelBufferGetDataSize(pixelBuffer)
-  let rowSize = CVPixelBufferGetBytesPerRow(pixelBuffer)
-  let pixelFormat = CVPixelBufferGetPixelFormatType(pixelBuffer)
-  let pixelFormatString = pixelFormat.fourCharCodeString
-
-  return [
-    "width": width,
-    "height": height,
-    "row_size": rowSize,
-    "frame_size": frameSize,
-    "format": pixelFormatString,
-  ]
-}
-
-private enum DeviceVideoStreamError: Error {
+enum DeviceVideoStreamError: Error, LocalizedError {
   case invalidStreamFormat(String)
   case cannotAddDataOutput
   case noCaptureConnection
   case consumerAlreadyAttached
   case noConsumerAttached
-  case unsupportedBGRAOutput
-  case unsupportedJPEGCodec
-}
 
-extension DeviceVideoStreamError: LocalizedError {
   var errorDescription: String? {
     switch self {
     case .invalidStreamFormat(let formatDescription):
@@ -51,20 +29,21 @@ extension DeviceVideoStreamError: LocalizedError {
       return "Cannot start streaming, a consumer is already attached"
     case .noConsumerAttached:
       return "Cannot stop streaming, no consumer attached"
-    case .unsupportedBGRAOutput:
-      return "kCVPixelFormatType_32BGRA is not a supported output type"
-    case .unsupportedJPEGCodec:
-      return "AVVideoCodecTypeJPEG is not a supported codec type"
     }
   }
 }
 
-// @unchecked Sendable: frame state is confined to `writeQueue` (the AVCapture delegate queue);
-// lifecycle state is guarded by `lifecycleLock`.
-public class DeviceVideoStream: NSObject, FBVideoStream, @unchecked Sendable {
+/// Streams a physical device's screen: an `AVCaptureSession` on the device's screen-capture input
+/// delivers samples the device encoded itself, and a `DeviceSampleSink` for the requested format
+/// frames them for the consumer.
+///
+/// @unchecked Sendable: frame delivery is confined to `writeQueue` (the AVCapture delegate queue);
+/// lifecycle state is guarded by `lifecycleLock`.
+public final class DeviceVideoStream: NSObject, FBVideoStream, @unchecked Sendable {
   let logger: any ControlCoreLogger
   private let session: AVCaptureSession
   private let output: AVCaptureVideoDataOutput
+  private let sink: any DeviceSampleSink
   let writeQueue: DispatchQueue
 
   // Lifecycle state guarded by `lifecycleLock`: start/stop run on the caller's thread while the
@@ -77,19 +56,19 @@ public class DeviceVideoStream: NSObject, FBVideoStream, @unchecked Sendable {
   private var stopAwaiters: [CheckedContinuation<Void, Never>] = []
 
   var consumer: (any DataConsumer)?
-  var pixelBufferAttributes_: [String: Any]?
 
   // MARK: - Factory
 
-  public class func stream(withSession session: AVCaptureSession, configuration: VideoStreamConfiguration, logger: any ControlCoreLogger) throws -> DeviceVideoStream {
-    let format = configuration.format
-    guard let streamType = classForConfiguration(configuration) else {
-      throw DeviceVideoStreamError.invalidStreamFormat("\(format)")
+  public static func stream(withSession session: AVCaptureSession, configuration: VideoStreamConfiguration, logger: any ControlCoreLogger) throws -> DeviceVideoStream {
+    guard let sink = sink(for: configuration) else {
+      throw DeviceVideoStreamError.invalidStreamFormat("\(configuration.format)")
     }
 
     let output = AVCaptureVideoDataOutput()
-    try streamType.configureVideoOutput(output, configuration: configuration)
-    if !session.canAddOutput(output) {
+    output.alwaysDiscardsLateVideoFrames = true
+    output.videoSettings = [:]
+    try sink.configure(output)
+    guard session.canAddOutput(output) else {
       throw DeviceVideoStreamError.cannotAddDataOutput
     }
     session.addOutput(output)
@@ -98,47 +77,44 @@ public class DeviceVideoStream: NSObject, FBVideoStream, @unchecked Sendable {
       guard let connection = session.connections.first else {
         throw DeviceVideoStreamError.noCaptureConnection
       }
-      let frameTime: Float64 = 1.0 / Float64(fps)
-      connection.videoMinFrameDuration = CMTimeMakeWithSeconds(frameTime, preferredTimescale: Int32(NSEC_PER_SEC))
+      connection.videoMinFrameDuration = CMTimeMakeWithSeconds(1.0 / Float64(fps), preferredTimescale: Int32(NSEC_PER_SEC))
     }
 
-    let writeQueue = DispatchQueue(label: "com.facebook.fbdevicecontrol.streamencoder")
-    return streamType.init(session: session, output: output, writeQueue: writeQueue, logger: logger)
+    return DeviceVideoStream(
+      session: session, output: output, sink: sink,
+      writeQueue: DispatchQueue(label: "com.facebook.fbdevicecontrol.streamencoder"), logger: logger)
   }
 
-  class func classForConfiguration(_ configuration: VideoStreamConfiguration) -> DeviceVideoStream.Type? {
+  /// The sink for a format, or nil for one the device path cannot produce: the device encodes
+  /// H.264 only.
+  static func sink(for configuration: VideoStreamConfiguration) -> (any DeviceSampleSink)? {
     switch configuration.format {
     case let .compressedVideo(codec, transport):
       switch codec {
       case .h264:
-        return transport == .mpegts ? DeviceVideoStream_H264MPEGTS.self : DeviceVideoStream_H264.self
+        return EncodedDeviceSampleSink(codec: codec, transport: transport)
       case .hevc:
-        // HEVC is not yet supported on the device path.
         return nil
       }
     case .mjpeg:
-      return DeviceVideoStream_MJPEG.self
+      return MJPEGDeviceSampleSink()
     case .minicap:
-      return DeviceVideoStream_Minicap.self
+      return MinicapDeviceSampleSink()
     case .bgra:
-      return DeviceVideoStream_BGRA.self
+      return BGRADeviceSampleSink()
     }
   }
 
-  class func configureVideoOutput(_ output: AVCaptureVideoDataOutput, configuration: VideoStreamConfiguration) throws {
-    output.alwaysDiscardsLateVideoFrames = true
-    output.videoSettings = [:]
-  }
-
-  required init(session: AVCaptureSession, output: AVCaptureVideoDataOutput, writeQueue: DispatchQueue, logger: any ControlCoreLogger) {
+  init(session: AVCaptureSession, output: AVCaptureVideoDataOutput, sink: any DeviceSampleSink, writeQueue: DispatchQueue, logger: any ControlCoreLogger) {
     self.session = session
     self.output = output
+    self.sink = sink
     self.writeQueue = writeQueue
     self.logger = logger
     super.init()
   }
 
-  // MARK: - Public Methods
+  // MARK: - FBVideoStream
 
   public func startStreaming(_ consumer: any DataConsumer) async throws {
     if self.consumer != nil {
@@ -164,6 +140,24 @@ public class DeviceVideoStream: NSObject, FBVideoStream, @unchecked Sendable {
       }
     }
   }
+
+  public func awaitCompletion() async {
+    await withTaskCancellationHandler {
+      await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
+        registerStopAwaiter(continuation)
+      }
+    } onCancel: {
+      Task { [weak self] in try? await self?.stopStreaming() }
+    }
+  }
+
+  /// Frames one captured sample for the consumer. A no-op with no consumer attached.
+  func consumeSampleBuffer(_ sampleBuffer: CMSampleBuffer) {
+    guard let consumer else { return }
+    sink.consume(sampleBuffer, to: consumer, logger: logger)
+  }
+
+  // MARK: - Lifecycle state
 
   // The lifecycle state is guarded by `lifecycleLock`, whose `lock()`/`unlock()` are unavailable from
   // async contexts, so the critical sections live in these synchronous helpers.
@@ -218,27 +212,13 @@ public class DeviceVideoStream: NSObject, FBVideoStream, @unchecked Sendable {
       awaiter.resume()
     }
   }
-
-  func consumeSampleBuffer(_ sampleBuffer: CMSampleBuffer) {
-    fatalError("\(type(of: self)).\(#function) is abstract and should be overridden")
-  }
-
-  public func awaitCompletion() async {
-    await withTaskCancellationHandler {
-      await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
-        registerStopAwaiter(continuation)
-      }
-    } onCancel: {
-      Task { [weak self] in try? await self?.stopStreaming() }
-    }
-  }
 }
 
 // MARK: - AVCaptureVideoDataOutputSampleBufferDelegate
 
 extension DeviceVideoStream: AVCaptureVideoDataOutputSampleBufferDelegate {
   public func captureOutput(_ output: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection) {
-    guard let consumer = self.consumer else { return }
+    guard let consumer else { return }
     if !consumer.hasCapacityForFrame(logger: logger) { return }
     signalStarted()
     consumeSampleBuffer(sampleBuffer)
@@ -246,128 +226,5 @@ extension DeviceVideoStream: AVCaptureVideoDataOutputSampleBufferDelegate {
 
   public func captureOutput(_ output: AVCaptureOutput, didDrop sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection) {
     logger.log("Dropped a sample!")
-  }
-}
-
-// MARK: - BGRA Subclass
-
-private class DeviceVideoStream_BGRA: DeviceVideoStream, @unchecked Sendable {
-  override func consumeSampleBuffer(_ sampleBuffer: CMSampleBuffer) {
-    guard let consumer = self.consumer else { return }
-    guard let pixelBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) else { return }
-    CVPixelBufferLockBaseAddress(pixelBuffer, .readOnly)
-
-    if let baseAddress = CVPixelBufferGetBaseAddress(pixelBuffer) {
-      let size = CVPixelBufferGetDataSize(pixelBuffer)
-      if consumer.conforms(to: DataConsumerSync.self) {
-        let data = Data(bytesNoCopy: baseAddress, count: size, deallocator: .none)
-        consumer.consumeData(data)
-      } else {
-        let data = Data(bytes: baseAddress, count: size)
-        consumer.consumeData(data)
-      }
-    } else {
-      logger.log("Failed to get base address for pixel buffer")
-    }
-
-    CVPixelBufferUnlockBaseAddress(pixelBuffer, .readOnly)
-
-    if pixelBufferAttributes_ == nil {
-      let attributes = pixelBufferAttributes(from: pixelBuffer)
-      pixelBufferAttributes_ = attributes
-      logger.log("Mounting Surface with Attributes: \(CollectionInformation.oneLineDescription(from: attributes))")
-    }
-  }
-
-  override class func configureVideoOutput(_ output: AVCaptureVideoDataOutput, configuration: VideoStreamConfiguration) throws {
-    try super.configureVideoOutput(output, configuration: configuration)
-    if !output.availableVideoPixelFormatTypes.contains(kCVPixelFormatType_32BGRA) {
-      throw DeviceVideoStreamError.unsupportedBGRAOutput
-    }
-    output.videoSettings = [
-      kCVPixelBufferPixelFormatTypeKey as String: kCVPixelFormatType_32BGRA
-    ]
-  }
-}
-
-// MARK: - H264 Subclass
-
-private class DeviceVideoStream_H264: DeviceVideoStream, @unchecked Sendable {
-  private let frameWriter = AnnexBFrameWriter(codec: .h264)
-
-  override func consumeSampleBuffer(_ sampleBuffer: CMSampleBuffer) {
-    guard let consumer = self.consumer else { return }
-    do {
-      try frameWriter.write(sampleBuffer, to: consumer, logger: logger)
-    } catch {
-      logger.log("Failed to write H264 frame: \(error)")
-    }
-  }
-}
-
-// MARK: - H264 MPEGTS Subclass
-
-private class DeviceVideoStream_H264MPEGTS: DeviceVideoStream, @unchecked Sendable {
-  private let frameWriter = MPEGTSFrameWriter(codec: .h264)
-
-  override func consumeSampleBuffer(_ sampleBuffer: CMSampleBuffer) {
-    guard let consumer = self.consumer else { return }
-    do {
-      try frameWriter.write(sampleBuffer, to: consumer, logger: logger)
-    } catch {
-      logger.log("Failed to write H264 MPEG-TS frame: \(error)")
-    }
-  }
-}
-
-// MARK: - MJPEG Subclass
-
-private class DeviceVideoStream_MJPEG: DeviceVideoStream, @unchecked Sendable {
-  private let mjpegFrameWriter = MJPEGFrameWriter()
-
-  override func consumeSampleBuffer(_ sampleBuffer: CMSampleBuffer) {
-    guard let consumer = self.consumer, let jpegDataBuffer = CMSampleBufferGetDataBuffer(sampleBuffer) else { return }
-    do {
-      try mjpegFrameWriter.write(jpegDataBuffer, to: consumer, logger: logger)
-    } catch {
-      logger.log("Failed to write MJPEG frame: \(error)")
-    }
-  }
-
-  override class func configureVideoOutput(_ output: AVCaptureVideoDataOutput, configuration: VideoStreamConfiguration) throws {
-    try super.configureVideoOutput(output, configuration: configuration)
-    output.alwaysDiscardsLateVideoFrames = true
-    if !output.availableVideoCodecTypes.contains(.jpeg) {
-      throw DeviceVideoStreamError.unsupportedJPEGCodec
-    }
-    output.videoSettings = [
-      AVVideoCodecKey: AVVideoCodecType.jpeg.rawValue,
-      AVVideoCompressionPropertiesKey: [
-        AVVideoQualityKey: 0.2
-      ],
-    ]
-  }
-}
-
-// MARK: - Minicap Subclass
-
-private class DeviceVideoStream_Minicap: DeviceVideoStream_MJPEG, @unchecked Sendable {
-  private var hasSentHeader = false
-  private let minicapFrameWriter = MinicapFrameWriter()
-
-  override func consumeSampleBuffer(_ sampleBuffer: CMSampleBuffer) {
-    guard let consumer = self.consumer else { return }
-    if !hasSentHeader {
-      guard let format = CMSampleBufferGetFormatDescription(sampleBuffer) else { return }
-      let dimensions = CMVideoFormatDescriptionGetDimensions(format)
-      minicapFrameWriter.writeHeader(width: UInt32(dimensions.width), height: UInt32(dimensions.height), to: consumer, logger: logger)
-      hasSentHeader = true
-    }
-    guard let jpegDataBuffer = CMSampleBufferGetDataBuffer(sampleBuffer) else { return }
-    do {
-      try minicapFrameWriter.write(jpegDataBuffer, to: consumer, logger: logger)
-    } catch {
-      logger.log("Failed to write Minicap frame: \(error)")
-    }
   }
 }

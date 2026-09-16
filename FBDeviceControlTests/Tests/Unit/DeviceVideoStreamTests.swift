@@ -12,8 +12,8 @@ import FBControlCore
 @testable import FBDeviceControl
 import Testing
 
-/// Format → subclass dispatch and each subclass's `consumeSampleBuffer` byte contract. The
-/// AVFoundation capture plumbing needs hardware and is not covered here.
+/// Format → sink selection and each sink's byte contract. The AVFoundation capture plumbing needs
+/// hardware and is not covered here.
 @Suite
 struct DeviceVideoStreamTests {
 
@@ -22,10 +22,11 @@ struct DeviceVideoStreamTests {
   }
 
   private func makeStream(for format: VideoStreamFormat, consumer: (any DataConsumer)?) throws -> DeviceVideoStream {
-    let streamType = try #require(DeviceVideoStream.classForConfiguration(configuration(format)), "Expected a stream type for \(format)")
-    let stream = streamType.init(
+    let sink = try #require(DeviceVideoStream.sink(for: configuration(format)), "Expected a sink for \(format)")
+    let stream = DeviceVideoStream(
       session: AVCaptureSession(),
       output: AVCaptureVideoDataOutput(),
+      sink: sink,
       writeQueue: DispatchQueue(label: "test.device.video"),
       logger: CapturingLogger()
     )
@@ -33,31 +34,23 @@ struct DeviceVideoStreamTests {
     return stream
   }
 
-  // MARK: - Format → subclass dispatch
+  // MARK: - Format → sink selection
 
   @Test
-  func classForConfigurationResolvesSupportedFormats() {
-    #expect((DeviceVideoStream.classForConfiguration(configuration(.bgra))) != nil)
-    #expect((DeviceVideoStream.classForConfiguration(configuration(.mjpeg(encoder: .requireHardware)))) != nil)
-    #expect((DeviceVideoStream.classForConfiguration(configuration(.minicap))) != nil)
-    #expect((DeviceVideoStream.classForConfiguration(configuration(.compressedVideo(withCodec: .h264, transport: .annexB)))) != nil)
-    #expect((DeviceVideoStream.classForConfiguration(configuration(.compressedVideo(withCodec: .h264, transport: .mpegts)))) != nil)
+  func sinkResolvesSupportedFormats() {
+    #expect(DeviceVideoStream.sink(for: configuration(.bgra)) is BGRADeviceSampleSink)
+    #expect(DeviceVideoStream.sink(for: configuration(.mjpeg(encoder: .requireHardware))) is MJPEGDeviceSampleSink)
+    #expect(DeviceVideoStream.sink(for: configuration(.minicap)) is MinicapDeviceSampleSink)
+    #expect(DeviceVideoStream.sink(for: configuration(.compressedVideo(withCodec: .h264, transport: .annexB))) is EncodedDeviceSampleSink)
+    #expect(DeviceVideoStream.sink(for: configuration(.compressedVideo(withCodec: .h264, transport: .mpegts))) is EncodedDeviceSampleSink)
+    #expect(DeviceVideoStream.sink(for: configuration(.compressedVideo(withCodec: .h264, transport: .fmp4))) is EncodedDeviceSampleSink)
   }
 
   @Test
-  func classForConfigurationDistinguishesH264Transports() throws {
-    let annexB = try #require(DeviceVideoStream.classForConfiguration(configuration(.compressedVideo(withCodec: .h264, transport: .annexB))))
-    let mpegts = try #require(DeviceVideoStream.classForConfiguration(configuration(.compressedVideo(withCodec: .h264, transport: .mpegts))))
-    #expect((String(describing: annexB).contains("H264")))
-    #expect((String(describing: mpegts).contains("MPEGTS")))
-    #expect(!(annexB == mpegts))
-  }
-
-  @Test
-  func classForConfigurationRejectsHEVC() {
-    // HEVC is not supported on the device path.
-    #expect((DeviceVideoStream.classForConfiguration(configuration(.compressedVideo(withCodec: .hevc, transport: .annexB)))) == nil)
-    #expect((DeviceVideoStream.classForConfiguration(configuration(.compressedVideo(withCodec: .hevc, transport: .mpegts)))) == nil)
+  func sinkRejectsHEVC() {
+    // The device encodes H.264 only.
+    #expect(DeviceVideoStream.sink(for: configuration(.compressedVideo(withCodec: .hevc, transport: .annexB))) == nil)
+    #expect(DeviceVideoStream.sink(for: configuration(.compressedVideo(withCodec: .hevc, transport: .mpegts))) == nil)
   }
 
   // MARK: - consumeSampleBuffer byte contracts
