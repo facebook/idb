@@ -35,7 +35,7 @@ struct TestRunnerConfiguration {
   // MARK: - Properties
 
   public let sessionIdentifier: UUID
-  public let testRunner: FBBundleDescriptor
+  public let testRunner: BundleDescriptor
   public let launchEnvironment: [String: String]
   public let testedApplicationAdditionalEnvironment: [String: String]
   public let testConfiguration: FBTestConfiguration
@@ -47,7 +47,7 @@ struct TestRunnerConfiguration {
     ]
   }
 
-  public init(sessionIdentifier: UUID, testRunner: FBBundleDescriptor, launchEnvironment: [String: String], testedApplicationAdditionalEnvironment: [String: String], testConfiguration: FBTestConfiguration) {
+  public init(sessionIdentifier: UUID, testRunner: BundleDescriptor, launchEnvironment: [String: String], testedApplicationAdditionalEnvironment: [String: String], testConfiguration: FBTestConfiguration) {
     self.sessionIdentifier = sessionIdentifier
     self.testRunner = testRunner
     self.launchEnvironment = launchEnvironment
@@ -68,7 +68,7 @@ struct TestRunnerConfiguration {
     return try await prepareConfigurationAfterCodesignatureCheck(withTarget: target, testLaunchConfiguration: testLaunchConfiguration, workingDirectory: workingDirectory)
   }
 
-  public static func launchEnvironment(withHostApplication hostApplication: FBBundleDescriptor, hostApplicationAdditionalEnvironment: [String: String], testBundle: FBBundleDescriptor, testConfigurationPath: String, frameworkSearchPaths: [String]) -> [String: String] {
+  public static func launchEnvironment(withHostApplication hostApplication: BundleDescriptor, hostApplicationAdditionalEnvironment: [String: String], testBundle: BundleDescriptor, testConfigurationPath: String, frameworkSearchPaths: [String]) -> [String: String] {
     var environmentVariables = hostApplicationAdditionalEnvironment
     let frameworkSearchPath = frameworkSearchPaths.joined(separator: ":")
     environmentVariables["AppTargetLocation"] = hostApplication.binary?.path ?? ""
@@ -126,9 +126,9 @@ struct TestRunnerConfiguration {
     }
 
     let sessionIdentifier = UUID()
-    let testBundle: FBBundleDescriptor
+    let testBundle: BundleDescriptor
     do {
-      testBundle = try FBBundleDescriptor.bundle(fromPath: testLaunchConfiguration.testBundle.path)
+      testBundle = try BundleDescriptor.bundle(fromPath: testLaunchConfiguration.testBundle.path)
     } catch {
       throw TestRunnerConfigurationError.testBundlePreparationFailed(underlying: error)
     }

@@ -19,7 +19,7 @@ enum MacLaunchedApplicationError: Error, LocalizedError {
   }
 }
 
-public final class MacLaunchedApplication: FBLaunchedApplication {
+public final class MacLaunchedApplication: LaunchedApplication {
 
   public let bundleID: String
   public let processIdentifier: pid_t

@@ -76,7 +76,7 @@ public final class MacDevice: NSObject, FBiOSTarget {
 
   // MARK: - Private properties
 
-  private var bundleIDToProductMap: [String: FBBundleDescriptor]
+  private var bundleIDToProductMap: [String: BundleDescriptor]
   private var bundleIDToRunningTask: [String: FBSubprocess<AnyObject, AnyObject, AnyObject>]
   private var connection: NSXPCConnection?
   private let workingDirectory: String
@@ -94,15 +94,15 @@ public final class MacDevice: NSObject, FBiOSTarget {
     _applicationInstallDirectory
   }
 
-  public static func fetchInstalledApplications() -> [String: FBBundleDescriptor] {
-    var mapping: [String: FBBundleDescriptor] = [:]
+  public static func fetchInstalledApplications() -> [String: BundleDescriptor] {
+    var mapping: [String: BundleDescriptor] = [:]
     let content = try? FileManager.default.contentsOfDirectory(atPath: applicationInstallDirectory)
     for fileOrDirectory in content ?? [] {
       if (fileOrDirectory as NSString).pathExtension != "app" {
         continue
       }
       let path = (applicationInstallDirectory as NSString).appendingPathComponent(fileOrDirectory)
-      if let bundle = try? FBBundleDescriptor.bundle(fromPath: path) {
+      if let bundle = try? BundleDescriptor.bundle(fromPath: path) {
         mapping[bundle.identifier] = bundle
       }
     }
@@ -292,10 +292,10 @@ public final class MacDevice: NSObject, FBiOSTarget {
     return unsafeBitCast(NSNull(), to: Self.self)
   }
 
-  public func installApplication(withPath path: String) throws -> FBInstalledApplication {
-    let bundle = try FBBundleDescriptor.bundle(fromPath: path)
+  public func installApplication(withPath path: String) throws -> InstalledApplication {
+    let bundle = try BundleDescriptor.bundle(fromPath: path)
     bundleIDToProductMap[bundle.identifier] = bundle
-    return FBInstalledApplication(bundle: bundle, installType: .unknown, dataContainer: nil)
+    return InstalledApplication(bundle: bundle, installType: .unknown, dataContainer: nil)
   }
 
   public func uninstallApplication(withBundleID bundleID: String) -> FBFuture<NSNull> {
@@ -316,12 +316,12 @@ public final class MacDevice: NSObject, FBiOSTarget {
     return FBFuture(result: NSNull())
   }
 
-  public func installedApplication(withBundleID bundleID: String) throws -> FBInstalledApplication {
+  public func installedApplication(withBundleID bundleID: String) throws -> InstalledApplication {
     guard let existingBundle = bundleIDToProductMap[bundleID] else {
       throw MacDeviceError.bundleNotRegistered(bundleID: bundleID)
     }
-    let bundle = try FBBundleDescriptor.bundle(fromPath: existingBundle.path)
-    return FBInstalledApplication(bundle: bundle, installType: .mac, dataContainer: nil)
+    let bundle = try BundleDescriptor.bundle(fromPath: existingBundle.path)
+    return InstalledApplication(bundle: bundle, installType: .mac, dataContainer: nil)
   }
 
   public func killApplication(withBundleID bundleID: String) -> FBFuture<NSNull> {
@@ -390,9 +390,9 @@ public final class MacDevice: NSObject, FBiOSTarget {
   // MARK: - FBXCTestExtendedCommands
 
   public func listTests(forBundleAtPath bundlePath: String, timeout: TimeInterval, withAppAtPath appPath: String?) -> FBFuture<NSArray> {
-    let bundleDescriptor: FBBundleDescriptor
+    let bundleDescriptor: BundleDescriptor
     do {
-      bundleDescriptor = try FBBundleDescriptor.bundleWithFallbackIdentifier(fromPath: bundlePath)
+      bundleDescriptor = try BundleDescriptor.bundleWithFallbackIdentifier(fromPath: bundlePath)
     } catch {
       return FBFuture(error: error)
     }
@@ -475,7 +475,7 @@ extension MacDevice: XCTestExtendedCommands {
 
 extension MacDevice: ApplicationCommands {
 
-  public func install(atPath path: String) async throws -> FBInstalledApplication {
+  public func install(atPath path: String) async throws -> InstalledApplication {
     try installApplication(withPath: path)
   }
 
@@ -483,7 +483,7 @@ extension MacDevice: ApplicationCommands {
     try await bridgeFBFutureVoid(uninstallApplication(withBundleID: bundleID))
   }
 
-  public func launch(_ configuration: ApplicationLaunchConfiguration) async throws -> FBLaunchedApplication {
+  public func launch(_ configuration: ApplicationLaunchConfiguration) async throws -> LaunchedApplication {
     try await bridgeFBFuture(launchApplication(configuration))
   }
 
@@ -491,14 +491,14 @@ extension MacDevice: ApplicationCommands {
     try await bridgeFBFutureVoid(killApplication(withBundleID: bundleID))
   }
 
-  public func installed() async throws -> [FBInstalledApplication] {
+  public func installed() async throws -> [InstalledApplication] {
     try bundleIDToProductMap.values.map { existingBundle in
-      let bundle = try FBBundleDescriptor.bundle(fromPath: existingBundle.path)
-      return FBInstalledApplication(bundle: bundle, installType: .mac, dataContainer: nil)
+      let bundle = try BundleDescriptor.bundle(fromPath: existingBundle.path)
+      return InstalledApplication(bundle: bundle, installType: .mac, dataContainer: nil)
     }
   }
 
-  public func installed(bundleID: String) async throws -> FBInstalledApplication {
+  public func installed(bundleID: String) async throws -> InstalledApplication {
     try installedApplication(withBundleID: bundleID)
   }
 

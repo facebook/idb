@@ -15,7 +15,7 @@ public protocol XCTestDescriptor: AnyObject {
   var name: String { get }
   var testBundleID: String { get }
   var architectures: Set<String> { get }
-  var testBundle: FBBundleDescriptor { get }
+  var testBundle: BundleDescriptor { get }
   func setup(with request: XCTestRunRequest, target: any FBiOSTarget) -> FBFuture<NSNull>
   func testConfig(withRunRequest request: XCTestRunRequest, testApps: TestApplicationsPair, logDirectoryPath: String?, logger: ControlCoreLogger) async throws -> IDBAppHostedTestConfiguration
   func testAppPair(for request: XCTestRunRequest, target: any FBiOSTarget) async throws -> TestApplicationsPair
@@ -55,7 +55,7 @@ final class XCTestBootstrapDescriptor: XCTestDescriptor, CustomStringConvertible
 
   public let url: URL
   public let name: String
-  public let testBundle: FBBundleDescriptor
+  public let testBundle: BundleDescriptor
   private var targetAuxillaryDirectory: String = ""
 
   public var testBundleID: String {
@@ -67,7 +67,7 @@ final class XCTestBootstrapDescriptor: XCTestDescriptor, CustomStringConvertible
     return Set(arch.map(\.rawValue))
   }
 
-  public init(url: URL, name: String, testBundle: FBBundleDescriptor) {
+  public init(url: URL, name: String, testBundle: BundleDescriptor) {
     self.url = url
     self.name = name
     self.testBundle = testBundle
@@ -173,8 +173,8 @@ final class XCodebuildTestRunDescriptor: XCTestDescriptor, CustomStringConvertib
 
   public let url: URL
   public let name: String
-  public let testBundle: FBBundleDescriptor
-  public let testHostBundle: FBBundleDescriptor
+  public let testBundle: BundleDescriptor
+  public let testHostBundle: BundleDescriptor
   private var targetAuxillaryDirectory: String = ""
 
   public var testBundleID: String {
@@ -186,7 +186,7 @@ final class XCodebuildTestRunDescriptor: XCTestDescriptor, CustomStringConvertib
     return Set(arch.map(\.rawValue))
   }
 
-  public init(url: URL, name: String, testBundle: FBBundleDescriptor, testHostBundle: FBBundleDescriptor) {
+  public init(url: URL, name: String, testBundle: BundleDescriptor, testHostBundle: BundleDescriptor) {
     self.url = url
     self.name = name
     self.testBundle = testBundle

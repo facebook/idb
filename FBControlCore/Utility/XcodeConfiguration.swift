@@ -53,7 +53,7 @@ public final class XcodeConfiguration: NSObject {
     xcodeVersionNumber.compare(NSDecimalNumber(string: "12.5")) != .orderedAscending
   }()
 
-  public static let simulatorApp: FBBundleDescriptor = {
+  public static let simulatorApp: BundleDescriptor = {
     let path = simulatorApplicationPath
     guard let bundle = Bundle(path: path) else {
       fatalError("Could not load Simulator.app bundle at '\(path)'")
@@ -64,7 +64,7 @@ public final class XcodeConfiguration: NSObject {
       ?? ((path as NSString).deletingPathExtension as NSString).lastPathComponent
     let identifier = bundle.bundleIdentifier ?? "com.apple.iphonesimulator"
     // The binary is never needed.
-    return FBBundleDescriptor(name: name, identifier: identifier, path: path, binary: nil)
+    return BundleDescriptor(name: name, identifier: identifier, path: path, binary: nil)
   }()
 
   override public class func description() -> String {

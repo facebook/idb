@@ -72,7 +72,7 @@ extension MacDevice: VideoStreamCommands {
 
 extension MacDevice: DebuggerCommands {
 
-  public func launchDebugServer(forHostApplication application: FBBundleDescriptor, port: in_port_t) async throws -> any DebugServer {
+  public func launchDebugServer(forHostApplication application: BundleDescriptor, port: in_port_t) async throws -> any DebugServer {
     throw macUnsupported("launchDebugServer")
   }
 }

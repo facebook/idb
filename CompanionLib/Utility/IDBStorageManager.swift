@@ -144,7 +144,7 @@ public class BundleStorage: IDBStorage {
     super.init(target: target, basePath: basePath, queue: queue, logger: logger)
   }
 
-  func checkArchitecture(_ bundle: FBBundleDescriptor) throws {
+  func checkArchitecture(_ bundle: BundleDescriptor) throws {
     guard let binary = bundle.binary else {
       throw IDBStorageError.bundleMissingBinary(name: bundle.name)
     }
@@ -160,11 +160,11 @@ public class BundleStorage: IDBStorage {
     }
   }
 
-  func saveBundle(_ bundle: FBBundleDescriptor) async throws -> InstalledArtifact {
+  func saveBundle(_ bundle: BundleDescriptor) async throws -> InstalledArtifact {
     return try await saveBundle(bundle, usingSymlink: true, skipSigningBundles: false)
   }
 
-  func saveBundle(_ bundle: FBBundleDescriptor, usingSymlink useSymlink: Bool, skipSigningBundles: Bool) async throws -> InstalledArtifact {
+  func saveBundle(_ bundle: BundleDescriptor, usingSymlink useSymlink: Bool, skipSigningBundles: Bool) async throws -> InstalledArtifact {
     try checkArchitecture(bundle)
 
     let storageDirectory = basePath.appendingPathComponent(bundle.identifier)
@@ -185,7 +185,7 @@ public class BundleStorage: IDBStorage {
     if !relocateLibraries || !target.requiresBundlesToBeSigned() || skipSigningBundles {
       return artifact
     }
-    let updatedBundle = try FBBundleDescriptor.bundle(fromPath: destinationBundlePath.path)
+    let updatedBundle = try BundleDescriptor.bundle(fromPath: destinationBundlePath.path)
     let provider = CodesignProvider.codeSignCommand(withIdentityName: "-", logger: logger)
     try await updatedBundle.updatePathsForRelocation(withCodesign: provider, logger: logger)
     return artifact
@@ -196,8 +196,8 @@ public class BundleStorage: IDBStorage {
     return Set(contents ?? [])
   }
 
-  var persistedBundles: [String: FBBundleDescriptor] {
-    var mapping: [String: FBBundleDescriptor] = [:]
+  var persistedBundles: [String: BundleDescriptor] {
+    var mapping: [String: BundleDescriptor] = [:]
     guard let enumerator = FileManager.default.enumerator(at: basePath, includingPropertiesForKeys: nil, options: .skipsSubdirectoryDescendants, errorHandler: nil) else {
       return mapping
     }
@@ -207,7 +207,7 @@ public class BundleStorage: IDBStorage {
         continue
       }
       do {
-        let bundle = try FBBundleDescriptor.bundle(fromPath: bundlePath.path)
+        let bundle = try BundleDescriptor.bundle(fromPath: bundlePath.path)
         mapping[key] = bundle
       } catch {
         logger.log("Failed to get bundle info for bundle at path \(bundlePath)")
@@ -286,7 +286,7 @@ public final class XCTestBundleStorage: BundleStorage {
 
     for testURL in testURLs {
       do {
-        let bundle = try FBBundleDescriptor.bundleWithFallbackIdentifier(fromPath: testURL.path)
+        let bundle = try BundleDescriptor.bundleWithFallbackIdentifier(fromPath: testURL.path)
         let testDescriptor = XCTestBootstrapDescriptor(url: testURL, name: bundle.name, testBundle: bundle)
         testDescriptors.append(testDescriptor)
       } catch {
@@ -390,8 +390,8 @@ public final class XCTestBundleStorage: BundleStorage {
         logger.error().log("Using UseDestinationArtifacts requires FB_TestBundleIdentifier")
         return nil
       }
-      let testBundle = FBBundleDescriptor(name: testIdentifier, identifier: testIdentifier, path: "", binary: nil)
-      let hostBundle = FBBundleDescriptor(name: hostIdentifier, identifier: hostIdentifier, path: "", binary: nil)
+      let testBundle = BundleDescriptor(name: testIdentifier, identifier: testIdentifier, path: "", binary: nil)
+      let hostBundle = BundleDescriptor(name: hostIdentifier, identifier: hostIdentifier, path: "", binary: nil)
       return XCodebuildTestRunDescriptor(url: xctestrunURL, name: testTarget, testBundle: testBundle, testHostBundle: hostBundle)
     }
     guard let testHostPath = testTargetProperties["TestHostPath"] as? String,
@@ -399,17 +399,17 @@ public final class XCTestBundleStorage: BundleStorage {
     else {
       return nil
     }
-    guard let testHostBundle = try? FBBundleDescriptor.bundle(fromPath: testHostPath) else {
+    guard let testHostBundle = try? BundleDescriptor.bundle(fromPath: testHostPath) else {
       return nil
     }
-    guard let testBundle = try? FBBundleDescriptor.bundle(fromPath: testBundlePath) else {
+    guard let testBundle = try? BundleDescriptor.bundle(fromPath: testBundlePath) else {
       return nil
     }
     return XCodebuildTestRunDescriptor(url: xctestrunURL, name: testTarget, testBundle: testBundle, testHostBundle: testHostBundle)
   }
 
   private func saveTestBundle(_ testBundleURL: URL, usingSymlink useSymlink: Bool, skipSigningBundles: Bool) async throws -> InstalledArtifact {
-    let bundle = try FBBundleDescriptor.bundleWithFallbackIdentifier(fromPath: testBundleURL.path)
+    let bundle = try BundleDescriptor.bundleWithFallbackIdentifier(fromPath: testBundleURL.path)
     return try await saveBundle(bundle, usingSymlink: useSymlink, skipSigningBundles: skipSigningBundles)
   }
 

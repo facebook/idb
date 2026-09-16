@@ -81,8 +81,8 @@ public final class StorageUtils {
     }
   }
 
-  public class func bundle(inDirectory directory: URL) throws -> FBBundleDescriptor {
+  public class func bundle(inDirectory directory: URL) throws -> BundleDescriptor {
     let uniqueFile = try findUniqueFile(inDirectory: directory)
-    return try FBBundleDescriptor.bundle(fromPath: uniqueFile.path)
+    return try BundleDescriptor.bundle(fromPath: uniqueFile.path)
   }
 }

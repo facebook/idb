@@ -10,7 +10,7 @@ import Foundation
 public protocol DebuggerCommands {
 
   func launchDebugServer(
-    forHostApplication application: FBBundleDescriptor,
+    forHostApplication application: BundleDescriptor,
     port: in_port_t
   ) async throws -> any DebugServer
 }

@@ -8,7 +8,7 @@
 import FBControlCore
 import Foundation
 
-public final class SimulatorLaunchedApplication: FBLaunchedApplication, CustomStringConvertible {
+public final class SimulatorLaunchedApplication: LaunchedApplication, CustomStringConvertible {
 
   public let configuration: ApplicationLaunchConfiguration
   public let processIdentifier: pid_t
@@ -19,7 +19,7 @@ public final class SimulatorLaunchedApplication: FBLaunchedApplication, CustomSt
   private let attachment: FBProcessFileAttachment
   private weak var simulator: FBSimulator?
 
-  // MARK: - FBLaunchedApplication Protocol
+  // MARK: - LaunchedApplication Protocol
 
   public var bundleID: String {
     configuration.bundleID

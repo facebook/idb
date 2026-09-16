@@ -12,7 +12,7 @@ import XCTest
 final class MacDeviceTests: XCTestCase {
 
   var device: MacDevice!
-  var installedApp: FBInstalledApplication!
+  var installedApp: InstalledApplication!
   var tempInstallDir: String?
 
   override func setUpWithError() throws {
@@ -25,7 +25,7 @@ final class MacDeviceTests: XCTestCase {
     super.setUp()
     device = MacDevice()
 
-    let descriptor: FBBundleDescriptor
+    let descriptor: BundleDescriptor
     do {
       descriptor = try MacDeviceTests.macCommonApplication()
     } catch {

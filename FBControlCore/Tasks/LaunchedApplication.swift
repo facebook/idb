@@ -8,7 +8,7 @@
 import Foundation
 
 /// Unlike `FBSubprocess`, no exit code or signal status is available.
-public protocol FBLaunchedApplication: AnyObject {
+public protocol LaunchedApplication: AnyObject {
 
   /// The Bundle Identifier of the Launched Application.
   var bundleID: String { get }

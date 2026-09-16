@@ -91,7 +91,7 @@ public final class IDBCommandExecutor {
 
   // MARK: - Installation
 
-  public func list_apps(_ fetchProcessState: Bool) async throws -> [FBInstalledApplication: Any] {
+  public func list_apps(_ fetchProcessState: Bool) async throws -> [InstalledApplication: Any] {
     let installedApps = try await target.application.installed()
     let runningApps: [String: pid_t]
     if fetchProcessState {
@@ -99,7 +99,7 @@ public final class IDBCommandExecutor {
     } else {
       runningApps = [:]
     }
-    var listing: [FBInstalledApplication: Any] = [:]
+    var listing: [InstalledApplication: Any] = [:]
     for application in installedApps {
       if let pid = runningApps[application.bundle.identifier] {
         listing[application] = NSNumber(value: pid)
@@ -111,8 +111,8 @@ public final class IDBCommandExecutor {
   }
 
   public func install_app_file_path(_ filePath: String, make_debuggable makeDebuggable: Bool, override_modification_time overrideModificationTime: Bool) async throws -> InstalledArtifact {
-    if FBBundleDescriptor.isApplication(atPath: filePath) {
-      let bundleDescriptor = try FBBundleDescriptor.bundle(fromPath: filePath)
+    if BundleDescriptor.isApplication(atPath: filePath) {
+      let bundleDescriptor = try BundleDescriptor.bundle(fromPath: filePath)
       return try await installAppBundle(bundleDescriptor, makeDebuggable: makeDebuggable)
     } else {
       return try await temporaryDirectory.withArchiveExtracted(fromFile: filePath, overrideModificationTime: overrideModificationTime) { extractPath in
@@ -375,7 +375,7 @@ public final class IDBCommandExecutor {
     }
   }
 
-  public func launch_app(_ configuration: ApplicationLaunchConfiguration) async throws -> FBLaunchedApplication {
+  public func launch_app(_ configuration: ApplicationLaunchConfiguration) async throws -> LaunchedApplication {
     var replacements: [String: String] = [:]
     replacements.merge(storageManager.replacementMapping) { _, new in new }
     replacements.merge(target.replacementMapping()) { _, new in new }
@@ -684,7 +684,7 @@ public final class IDBCommandExecutor {
     }
   }
 
-  private func debugserver_prepare(_ bundleID: String) throws -> FBBundleDescriptor {
+  private func debugserver_prepare(_ bundleID: String) throws -> BundleDescriptor {
     if debugServer != nil {
       throw IDBCommandError.debugServerAlreadyRunning
     }
@@ -800,13 +800,13 @@ public final class IDBCommandExecutor {
   }
 
   private func installExtractedApp(_ extractPath: URL, makeDebuggable: Bool) async throws -> InstalledArtifact {
-    guard let bundleDescriptor = try? FBBundleDescriptor.findAppPath(fromDirectory: extractPath, logger: target.logger) else {
+    guard let bundleDescriptor = try? BundleDescriptor.findAppPath(fromDirectory: extractPath, logger: target.logger) else {
       throw IDBCommandError.noAppBundleExtracted
     }
     return try await installAppBundle(bundleDescriptor, makeDebuggable: makeDebuggable)
   }
 
-  private func installAppBundle(_ appBundle: FBBundleDescriptor, makeDebuggable: Bool) async throws -> InstalledArtifact {
+  private func installAppBundle(_ appBundle: BundleDescriptor, makeDebuggable: Bool) async throws -> InstalledArtifact {
     let userDevelopmentAppIsRequired = target is FBDevice
     try storageManager.application.checkArchitecture(appBundle)
     let installedApp = try await target.application.install(atPath: appBundle.path)

@@ -39,7 +39,7 @@ public final class TestManagerAPIMediator: NSObject, @unchecked Sendable {
   private let requestQueue: DispatchQueue
 
   private let tokenLock = NSLock()
-  private var tokenToLaunchedApp: [NSNumber: FBLaunchedApplication] = [:]
+  private var tokenToLaunchedApp: [NSNumber: LaunchedApplication] = [:]
 
   private lazy var ideInterface = FBTestManagerAPIMediatorIDEInterface(mediator: self, context: context, reporter: reporter, logger: logger)
 
@@ -100,7 +100,7 @@ public final class TestManagerAPIMediator: NSObject, @unchecked Sendable {
     try result.get()
   }
 
-  private func runUntilCompletion(launchedApplication: FBLaunchedApplication, timeout: TimeInterval) async throws {
+  private func runUntilCompletion(launchedApplication: LaunchedApplication, timeout: TimeInterval) async throws {
     let work: FBFuture<AnyObject> = fbFutureFromAsync { () -> AnyObject in
       // The transport socket is closed when this scope ends, so the whole connection must run inside it.
       try await self.target.xctest.withTransportForTestManagerService { socket in
@@ -138,19 +138,19 @@ public final class TestManagerAPIMediator: NSObject, @unchecked Sendable {
 
   // MARK: - Spawned process token map (synchronous, lock-guarded)
 
-  private func storeToken(_ token: NSNumber, launchedApplication: FBLaunchedApplication) {
+  private func storeToken(_ token: NSNumber, launchedApplication: LaunchedApplication) {
     tokenLock.lock()
     defer { tokenLock.unlock() }
     tokenToLaunchedApp[token] = launchedApplication
   }
 
-  private func launchedApplication(forToken token: NSNumber) -> FBLaunchedApplication? {
+  private func launchedApplication(forToken token: NSNumber) -> LaunchedApplication? {
     tokenLock.lock()
     defer { tokenLock.unlock() }
     return tokenToLaunchedApp[token]
   }
 
-  private func drainSpawnedApplications() -> [FBLaunchedApplication] {
+  private func drainSpawnedApplications() -> [LaunchedApplication] {
     tokenLock.lock()
     defer { tokenLock.unlock() }
     let apps = Array(tokenToLaunchedApp.values)
@@ -214,7 +214,7 @@ public final class TestManagerAPIMediator: NSObject, @unchecked Sendable {
     }
   }
 
-  private func launchUITestProcess(path: String?, bundleID: String, arguments: [String], environment: [String: String]) async throws -> FBLaunchedApplication {
+  private func launchUITestProcess(path: String?, bundleID: String, arguments: [String], environment: [String: String]) async throws -> LaunchedApplication {
     var targetEnvironment = context.testedApplicationAdditionalEnvironment
     for (key, value) in environment {
       targetEnvironment[key] = value
@@ -234,14 +234,14 @@ public final class TestManagerAPIMediator: NSObject, @unchecked Sendable {
     return try await launchApplication(launch, atPath: path)
   }
 
-  private func launchApplication(_ configuration: ApplicationLaunchConfiguration, atPath path: String?) async throws -> FBLaunchedApplication {
+  private func launchApplication(_ configuration: ApplicationLaunchConfiguration, atPath path: String?) async throws -> LaunchedApplication {
     if let installed = try? await target.application.installed(bundleID: configuration.bundleID), installed.bundle.path == path {
       return try await target.application.launch(configuration)
     }
     return try await installAndLaunchApplication(configuration, atPath: path)
   }
 
-  private func installAndLaunchApplication(_ configuration: ApplicationLaunchConfiguration, atPath path: String?) async throws -> FBLaunchedApplication {
+  private func installAndLaunchApplication(_ configuration: ApplicationLaunchConfiguration, atPath path: String?) async throws -> LaunchedApplication {
     guard let path else {
       throw TestManagerError.appUnderTestNotInstallable(configurationDescription: String(describing: configuration))
     }

@@ -59,7 +59,7 @@ public struct SimulatorReplCommands {
     // The shim binds this socket; the gRPC handler connects to it.
     let socketPath = "/tmp/idb_repl_\(UUID().uuidString).sock"
 
-    let bundle = try FBBundleDescriptor.bundle(fromPath: bundlePath)
+    let bundle = try BundleDescriptor.bundle(fromPath: bundlePath)
     let architectures = Set((bundle.binary?.architectures ?? []).map(\.rawValue))
 
     let configuration = LogicTestConfiguration(

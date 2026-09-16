@@ -7,9 +7,9 @@
 
 import Foundation
 
-extension FBBundleDescriptor {
+extension BundleDescriptor {
 
-  public static func findAppPath(fromDirectory directory: URL, logger: ControlCoreLogger?) throws -> FBBundleDescriptor {
+  public static func findAppPath(fromDirectory directory: URL, logger: ControlCoreLogger?) throws -> BundleDescriptor {
     let directoryEnumerator = FileManager.default.enumerator(
       at: directory,
       includingPropertiesForKeys: [.isDirectoryKey],
@@ -22,7 +22,7 @@ extension FBBundleDescriptor {
     if let enumerator = directoryEnumerator {
       for case let fileURL as URL in enumerator {
         let path = fileURL.path
-        if FBBundleDescriptor.isApplication(atPath: path) {
+        if BundleDescriptor.isApplication(atPath: path) {
           logger?.log("Found application at path \(path)")
           applicationPaths.append(path)
           enumerator.skipDescendants()
@@ -42,7 +42,7 @@ extension FBBundleDescriptor {
     }
     let applicationPath = applicationPaths[0]
     logger?.log("Using Application at path \(applicationPath)")
-    let bundle = try FBBundleDescriptor.bundle(fromPath: applicationPath)
+    let bundle = try BundleDescriptor.bundle(fromPath: applicationPath)
     logger?.log("Bundle in IPA is \(bundle)")
     return bundle
   }

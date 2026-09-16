@@ -29,7 +29,7 @@ private final class CapturingApplicationLauncher: ApplicationLaunching, @uncheck
     return _capturedConfiguration
   }
 
-  func launch(_ configuration: ApplicationLaunchConfiguration) async throws -> FBLaunchedApplication {
+  func launch(_ configuration: ApplicationLaunchConfiguration) async throws -> LaunchedApplication {
     capture(configuration)
     // Throw to unwind launchDebugServer before it reaches the
     // (process-spawning) debugServerTask path. The thrown error never
@@ -89,7 +89,7 @@ final class SimulatorDebuggerCommandsTests: XCTestCase {
 
   func testLaunchDebugServerConfiguresApplicationForDebugging() async {
     let harness = makeHarness()
-    let app = FBBundleDescriptor(
+    let app = BundleDescriptor(
       name: "MyApp",
       identifier: "com.example.myapp",
       path: "/path/to/MyApp.app",
@@ -115,7 +115,7 @@ final class SimulatorDebuggerCommandsTests: XCTestCase {
 
   func testLaunchDebugServerUsesApplicationDescriptorProperties() async {
     let harness = makeHarness()
-    let app = FBBundleDescriptor(
+    let app = BundleDescriptor(
       name: "SpecialApp",
       identifier: "com.example.special",
       path: "/path/to/SpecialApp.app",

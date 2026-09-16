@@ -92,7 +92,7 @@ private func workflowCallback(_ callbackDictionary: [String: Any]?, _ context: U
 
 // MARK: - DeviceLaunchedApplication
 
-private class DeviceLaunchedApplication: FBLaunchedApplication {
+private class DeviceLaunchedApplication: LaunchedApplication {
   let processIdentifier: pid_t
   private let _configuration: ApplicationLaunchConfiguration
   private let commands: DeviceApplicationCommands
@@ -138,11 +138,11 @@ public final class DeviceApplicationCommands: ApplicationCommands {
 
   // MARK: - Async
 
-  public func install(atPath path: String) async throws -> FBInstalledApplication {
+  public func install(atPath path: String) async throws -> InstalledApplication {
     guard let device else {
       throw DeviceNilError.deviceNil
     }
-    let bundle = try FBBundleDescriptor.bundle(fromPath: path)
+    let bundle = try BundleDescriptor.bundle(fromPath: path)
     let appURL = URL(fileURLWithPath: path, isDirectory: true)
     let options: [String: Any] = [
       "CFBundleIdentifier": bundle.identifier,
@@ -198,9 +198,9 @@ public final class DeviceApplicationCommands: ApplicationCommands {
     }
   }
 
-  public func installed() async throws -> [FBInstalledApplication] {
+  public func installed() async throws -> [InstalledApplication] {
     let applicationData = try await installedApplicationsData(Self.installedApplicationLookupAttributes)
-    var installedApplications: [FBInstalledApplication] = []
+    var installedApplications: [InstalledApplication] = []
     for app in applicationData.values {
       let application = try DeviceApplicationCommands.installedApplication(from: app)
       installedApplications.append(application)
@@ -208,7 +208,7 @@ public final class DeviceApplicationCommands: ApplicationCommands {
     return installedApplications
   }
 
-  public func installed(bundleID: String) async throws -> FBInstalledApplication {
+  public func installed(bundleID: String) async throws -> InstalledApplication {
     let applicationData = try await installedApplicationsData(Self.installedApplicationLookupAttributes)
     guard let app = applicationData[bundleID] else {
       throw DeviceApplicationError.applicationNotInstalled(bundleID: bundleID, installed: Array(applicationData.keys))
@@ -251,7 +251,7 @@ public final class DeviceApplicationCommands: ApplicationCommands {
     try await killApplication(withProcessIdentifier: pid)
   }
 
-  public func launch(_ configuration: ApplicationLaunchConfiguration) async throws -> any FBLaunchedApplication {
+  public func launch(_ configuration: ApplicationLaunchConfiguration) async throws -> any LaunchedApplication {
     guard let device else {
       throw DeviceNilError.deviceNil
     }
@@ -361,16 +361,16 @@ public final class DeviceApplicationCommands: ApplicationCommands {
     }
   }
 
-  private static func installedApplication(from app: [String: Any]) throws -> FBInstalledApplication {
+  private static func installedApplication(from app: [String: Any]) throws -> InstalledApplication {
     let bundleName = app[ApplicationInstallInfoKey.bundleName.rawValue] as? String ?? ""
     let path = app[ApplicationInstallInfoKey.path.rawValue] as? String ?? ""
     guard let bundleID = app[ApplicationInstallInfoKey.bundleIdentifier.rawValue] as? String else {
       throw DeviceApplicationError.missingBundleIdentifier(key: ApplicationInstallInfoKey.bundleIdentifier.rawValue, application: String(describing: app))
     }
 
-    let bundle = FBBundleDescriptor(name: bundleName, identifier: bundleID, path: path, binary: nil)
+    let bundle = BundleDescriptor(name: bundleName, identifier: bundleID, path: path, binary: nil)
 
-    return FBInstalledApplication.installedApplication(
+    return InstalledApplication.installedApplication(
       withBundle: bundle,
       installTypeString: app[ApplicationInstallInfoKey.applicationType.rawValue] as? String ?? "",
       signerIdentity: app[ApplicationInstallInfoKey.signerIdentity.rawValue] as? String ?? "",

@@ -14,8 +14,8 @@ final class FBControlCoreTransientTests: XCTestCase {
     return FBProcessIO<AnyObject, AnyObject, AnyObject>(stdIn: nil, stdOut: nil, stdErr: nil)
   }
 
-  private func makeBundle(name: String = "App", identifier: String = "com.test", path: String = "/tmp") -> FBBundleDescriptor {
-    return FBBundleDescriptor(name: name, identifier: identifier, path: path, binary: nil)
+  private func makeBundle(name: String = "App", identifier: String = "com.test", path: String = "/tmp") -> BundleDescriptor {
+    return BundleDescriptor(name: name, identifier: identifier, path: path, binary: nil)
   }
 
   private func makeAppLaunch(
@@ -34,7 +34,7 @@ final class FBControlCoreTransientTests: XCTestCase {
     )
   }
 
-  // MARK: - FBBundleDescriptor
+  // MARK: - BundleDescriptor
 
   /// The binary is a reference type, so this pins that a descriptor compares it by value:
   /// two descriptors carrying distinct but equal binaries are equal.
@@ -43,67 +43,67 @@ final class FBControlCoreTransientTests: XCTestCase {
     let secondBinary = try FBBinaryDescriptor.binary(withPath: "/usr/bin/codesign")
     XCTAssertFalse(firstBinary === secondBinary)
 
-    let a = FBBundleDescriptor(name: "App", identifier: "com.test", path: "/a", binary: firstBinary)
-    let b = FBBundleDescriptor(name: "App", identifier: "com.test", path: "/a", binary: secondBinary)
+    let a = BundleDescriptor(name: "App", identifier: "com.test", path: "/a", binary: firstBinary)
+    let b = BundleDescriptor(name: "App", identifier: "com.test", path: "/a", binary: secondBinary)
 
     XCTAssertEqual(a, b)
   }
 
   func testBundleDescriptorDescription() {
-    let bundle = FBBundleDescriptor(name: "TestApp", identifier: "com.example.test", path: "/tmp/test", binary: nil)
+    let bundle = BundleDescriptor(name: "TestApp", identifier: "com.example.test", path: "/tmp/test", binary: nil)
 
     XCTAssertTrue(bundle.description.contains("TestApp"))
     XCTAssertTrue(bundle.description.contains("com.example.test"))
   }
 
   func testBundleFromInvalidPathThrows() {
-    XCTAssertThrowsError(try FBBundleDescriptor.bundle(fromPath: "/nonexistent/path"))
+    XCTAssertThrowsError(try BundleDescriptor.bundle(fromPath: "/nonexistent/path"))
   }
 
-  // MARK: - FBInstalledApplication
+  // MARK: - InstalledApplication
 
   func testInstalledApplicationInstallTypeStringConversion() {
     let bundle = makeBundle()
 
-    XCTAssertEqual(FBInstalledApplication(bundle: bundle, installType: .user, dataContainer: nil as String?).installTypeString, "user")
-    XCTAssertEqual(FBInstalledApplication(bundle: bundle, installType: .system, dataContainer: nil as String?).installTypeString, "system")
-    XCTAssertEqual(FBInstalledApplication(bundle: bundle, installType: .mac, dataContainer: nil as String?).installTypeString, "mac")
-    XCTAssertEqual(FBInstalledApplication(bundle: bundle, installType: .unknown, dataContainer: nil as String?).installTypeString, "unknown")
-    XCTAssertEqual(FBInstalledApplication(bundle: bundle, installType: .userDevelopment, dataContainer: nil as String?).installTypeString, "user_development")
-    XCTAssertEqual(FBInstalledApplication(bundle: bundle, installType: .userEnterprise, dataContainer: nil as String?).installTypeString, "user_enterprise")
+    XCTAssertEqual(InstalledApplication(bundle: bundle, installType: .user, dataContainer: nil as String?).installTypeString, "user")
+    XCTAssertEqual(InstalledApplication(bundle: bundle, installType: .system, dataContainer: nil as String?).installTypeString, "system")
+    XCTAssertEqual(InstalledApplication(bundle: bundle, installType: .mac, dataContainer: nil as String?).installTypeString, "mac")
+    XCTAssertEqual(InstalledApplication(bundle: bundle, installType: .unknown, dataContainer: nil as String?).installTypeString, "unknown")
+    XCTAssertEqual(InstalledApplication(bundle: bundle, installType: .userDevelopment, dataContainer: nil as String?).installTypeString, "user_development")
+    XCTAssertEqual(InstalledApplication(bundle: bundle, installType: .userEnterprise, dataContainer: nil as String?).installTypeString, "user_enterprise")
   }
 
   func testInstalledApplicationFromInstallTypeString() {
     let bundle = makeBundle()
 
-    XCTAssertEqual(FBInstalledApplication(bundle: bundle, installTypeString: "System", signerIdentity: nil, dataContainer: nil as String?).installType, .system)
-    XCTAssertEqual(FBInstalledApplication(bundle: bundle, installTypeString: "User", signerIdentity: nil, dataContainer: nil as String?).installType, .user)
-    XCTAssertEqual(FBInstalledApplication(bundle: bundle, installTypeString: "mac", signerIdentity: nil, dataContainer: nil as String?).installType, .mac)
-    XCTAssertEqual(FBInstalledApplication(bundle: bundle, installTypeString: nil, signerIdentity: nil, dataContainer: nil as String?).installType, .unknown)
+    XCTAssertEqual(InstalledApplication(bundle: bundle, installTypeString: "System", signerIdentity: nil, dataContainer: nil as String?).installType, .system)
+    XCTAssertEqual(InstalledApplication(bundle: bundle, installTypeString: "User", signerIdentity: nil, dataContainer: nil as String?).installType, .user)
+    XCTAssertEqual(InstalledApplication(bundle: bundle, installTypeString: "mac", signerIdentity: nil, dataContainer: nil as String?).installType, .mac)
+    XCTAssertEqual(InstalledApplication(bundle: bundle, installTypeString: nil, signerIdentity: nil, dataContainer: nil as String?).installType, .unknown)
   }
 
   func testInstalledApplicationSignerIdentityEnterprise() {
     let bundle = makeBundle()
-    let app = FBInstalledApplication(bundle: bundle, installTypeString: "User", signerIdentity: "iPhone Distribution: Example Corp", dataContainer: nil as String?)
+    let app = InstalledApplication(bundle: bundle, installTypeString: "User", signerIdentity: "iPhone Distribution: Example Corp", dataContainer: nil as String?)
     XCTAssertEqual(app.installType, .userEnterprise)
   }
 
   func testInstalledApplicationSignerIdentityDevelopment() {
     let bundle = makeBundle()
 
-    let devApp = FBInstalledApplication(bundle: bundle, installTypeString: "User", signerIdentity: "iPhone Developer: test@example.com", dataContainer: nil as String?)
+    let devApp = InstalledApplication(bundle: bundle, installTypeString: "User", signerIdentity: "iPhone Developer: test@example.com", dataContainer: nil as String?)
     XCTAssertEqual(devApp.installType, .userDevelopment)
 
-    let appleDevApp = FBInstalledApplication(bundle: bundle, installTypeString: "User", signerIdentity: "Apple Development: test@example.com", dataContainer: nil as String?)
+    let appleDevApp = InstalledApplication(bundle: bundle, installTypeString: "User", signerIdentity: "Apple Development: test@example.com", dataContainer: nil as String?)
     XCTAssertEqual(appleDevApp.installType, .userDevelopment)
   }
 
   func testInstalledApplicationEquality() throws {
     let binary = try FBBinaryDescriptor.binary(withPath: "/usr/bin/codesign")
-    let bundle = FBBundleDescriptor(name: "App", identifier: "com.test", path: "/tmp", binary: binary)
-    let a = FBInstalledApplication(bundle: bundle, installType: .user, dataContainer: "/data")
-    let b = FBInstalledApplication(bundle: bundle, installType: .user, dataContainer: "/data")
-    let c = FBInstalledApplication(bundle: bundle, installType: .system, dataContainer: "/data")
+    let bundle = BundleDescriptor(name: "App", identifier: "com.test", path: "/tmp", binary: binary)
+    let a = InstalledApplication(bundle: bundle, installType: .user, dataContainer: "/data")
+    let b = InstalledApplication(bundle: bundle, installType: .user, dataContainer: "/data")
+    let c = InstalledApplication(bundle: bundle, installType: .system, dataContainer: "/data")
 
     XCTAssertEqual(a, b)
     XCTAssertNotEqual(a, c)
@@ -113,16 +113,16 @@ final class FBControlCoreTransientTests: XCTestCase {
   /// applications differing only by their container are unequal yet share a hash bucket.
   func testInstalledApplicationHashIgnoresDataContainer() throws {
     let binary = try FBBinaryDescriptor.binary(withPath: "/usr/bin/codesign")
-    let bundle = FBBundleDescriptor(name: "App", identifier: "com.test", path: "/tmp", binary: binary)
-    let a = FBInstalledApplication(bundle: bundle, installType: .user, dataContainer: "/data/one")
-    let b = FBInstalledApplication(bundle: bundle, installType: .user, dataContainer: "/data/two")
+    let bundle = BundleDescriptor(name: "App", identifier: "com.test", path: "/tmp", binary: binary)
+    let a = InstalledApplication(bundle: bundle, installType: .user, dataContainer: "/data/one")
+    let b = InstalledApplication(bundle: bundle, installType: .user, dataContainer: "/data/two")
 
     XCTAssertNotEqual(a, b)
     XCTAssertEqual(a.hashValue, b.hashValue)
   }
 
   func testInstalledApplicationDescription() {
-    let app = FBInstalledApplication(bundle: makeBundle(), installType: .user, dataContainer: "/data/container")
+    let app = InstalledApplication(bundle: makeBundle(), installType: .user, dataContainer: "/data/container")
 
     XCTAssertTrue(app.description.contains("user"))
     XCTAssertTrue(app.description.contains("/data/container"))

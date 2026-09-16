@@ -122,7 +122,7 @@ public struct SimulatorApplicationCommands: ApplicationCommands {
 
   // MARK: - Async
 
-  public func install(atPath path: String) async throws -> FBInstalledApplication {
+  public func install(atPath path: String) async throws -> InstalledApplication {
     try confirmApplicationInstallTargetIsReady()
     let appBundle = try await confirmCompatibilityOfApplication(atPath: path)
     let options: [String: Any] = ["CFBundleIdentifier": appBundle.identifier]
@@ -142,7 +142,7 @@ public struct SimulatorApplicationCommands: ApplicationCommands {
       })
   }
 
-  public func launch(_ configuration: ApplicationLaunchConfiguration) async throws -> FBLaunchedApplication {
+  public func launch(_ configuration: ApplicationLaunchConfiguration) async throws -> LaunchedApplication {
     try await ensureApplicationIsInstalled(configuration.bundleID)
     try await confirmApplicationLaunchState(configuration.bundleID, launchMode: configuration.launchMode, waitForDebugger: configuration.waitForDebugger)
     let attachment = try await bridgeFBFuture(configuration.io.attachViaFile())
@@ -157,9 +157,9 @@ public struct SimulatorApplicationCommands: ApplicationCommands {
     try simulator.device.terminateApplication(withID: bundleID)
   }
 
-  public func installed() async throws -> [FBInstalledApplication] {
+  public func installed() async throws -> [InstalledApplication] {
     let installedApps = try simulator.device.installedApps()
-    var applications: [FBInstalledApplication] = []
+    var applications: [InstalledApplication] = []
     for appInfo in installedApps.values {
       guard let dict = appInfo as? [String: Any],
         let application = try? SimulatorApplicationCommands.installedApplication(fromInfo: dict)
@@ -184,7 +184,7 @@ public struct SimulatorApplicationCommands: ApplicationCommands {
     }
   }
 
-  public func installed(bundleID: String) async throws -> FBInstalledApplication {
+  public func installed(bundleID: String) async throws -> InstalledApplication {
     try fetchInstalledApplication(bundleID: bundleID)
   }
 
@@ -213,7 +213,7 @@ public struct SimulatorApplicationCommands: ApplicationCommands {
 
   // MARK: - Private
 
-  private func fetchInstalledApplication(bundleID: String) throws -> FBInstalledApplication {
+  private func fetchInstalledApplication(bundleID: String) throws -> InstalledApplication {
     let device = simulator.device
     var applicationType: NSString?
     try device.applicationIsInstalled(bundleID, type: &applicationType)
@@ -437,7 +437,7 @@ public struct SimulatorApplicationCommands: ApplicationCommands {
 
   private static let keyDataContainer = "DataContainer"
 
-  private static func installedApplication(fromInfo appInfo: [String: Any]) throws -> FBInstalledApplication {
+  private static func installedApplication(fromInfo appInfo: [String: Any]) throws -> InstalledApplication {
     guard let appName = appInfo[ApplicationInstallInfoKey.bundleName.rawValue] as? String else {
       throw SimulatorApplicationLookupError.installInfoFieldNotAString(
         field: "Bundle Name",
@@ -471,22 +471,22 @@ public struct SimulatorApplicationCommands: ApplicationCommands {
       throw SimulatorApplicationLookupError.dataContainerNotAURL(value: String(describing: dataContainer), key: keyDataContainer, info: String(describing: appInfo))
     }
 
-    let bundle = try FBBundleDescriptor.bundle(fromPath: appPath)
+    let bundle = try BundleDescriptor.bundle(fromPath: appPath)
 
     _ = appName // used for validation only
-    return FBInstalledApplication.installedApplication(
+    return InstalledApplication.installedApplication(
       withBundle: bundle,
       installTypeString: typeString,
       signerIdentity: nil,
       dataContainer: (dataContainer as? URL)?.path)
   }
 
-  private func confirmCompatibilityOfApplication(atPath path: String) async throws -> FBBundleDescriptor {
-    guard let application = try? FBBundleDescriptor.bundle(fromPath: path) else {
+  private func confirmCompatibilityOfApplication(atPath path: String) async throws -> BundleDescriptor {
+    guard let application = try? BundleDescriptor.bundle(fromPath: path) else {
       throw SimulatorApplicationLookupError.applicationInfoUnavailable(path: path)
     }
 
-    let installed: FBInstalledApplication?
+    let installed: InstalledApplication?
     do {
       installed = try await self.installed(bundleID: application.identifier)
     } catch {

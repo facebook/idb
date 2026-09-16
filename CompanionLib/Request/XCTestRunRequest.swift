@@ -178,7 +178,7 @@ public struct XCTestRunRequest {
     case let .path(path):
       switch path.pathExtension {
       case "xctest":
-        let testBundle = try FBBundleDescriptor.bundle(fromPath: path.path)
+        let testBundle = try BundleDescriptor.bundle(fromPath: path.path)
         return XCTestBootstrapDescriptor(url: path, name: testBundle.name, testBundle: testBundle)
       case "xctestrun":
         let descriptors = try bundleStorage.getXCTestRunDescriptors(from: path)

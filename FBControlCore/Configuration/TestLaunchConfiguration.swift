@@ -9,15 +9,15 @@ import Foundation
 
 public struct TestLaunchConfiguration {
 
-  public let testBundle: FBBundleDescriptor
+  public let testBundle: BundleDescriptor
   public let applicationLaunchConfiguration: ApplicationLaunchConfiguration
-  public let testHostBundle: FBBundleDescriptor?
+  public let testHostBundle: BundleDescriptor?
   public let timeout: TimeInterval
   public let shouldInitializeUITesting: Bool
   public let shouldUseXcodebuild: Bool
   public let testsToRun: Set<String>?
   public let testsToSkip: Set<String>?
-  public let targetApplicationBundle: FBBundleDescriptor?
+  public let targetApplicationBundle: BundleDescriptor?
   public let xcTestRunProperties: [String: Any]?
   public let resultBundlePath: String?
   public let reportActivities: Bool
@@ -26,7 +26,7 @@ public struct TestLaunchConfiguration {
   public let logDirectoryPath: String?
   public let reportResultBundle: Bool
 
-  public init(testBundle: FBBundleDescriptor, applicationLaunchConfiguration: ApplicationLaunchConfiguration, testHostBundle: FBBundleDescriptor?, timeout: TimeInterval, initializeUITesting: Bool, useXcodebuild: Bool, testsToRun: Set<String>?, testsToSkip: Set<String>?, targetApplicationBundle: FBBundleDescriptor?, xcTestRunProperties: [String: Any]?, resultBundlePath: String?, reportActivities: Bool, coverageDirectoryPath: String?, enableContinuousCoverageCollection: Bool, logDirectoryPath: String?, reportResultBundle: Bool) {
+  public init(testBundle: BundleDescriptor, applicationLaunchConfiguration: ApplicationLaunchConfiguration, testHostBundle: BundleDescriptor?, timeout: TimeInterval, initializeUITesting: Bool, useXcodebuild: Bool, testsToRun: Set<String>?, testsToSkip: Set<String>?, targetApplicationBundle: BundleDescriptor?, xcTestRunProperties: [String: Any]?, resultBundlePath: String?, reportActivities: Bool, coverageDirectoryPath: String?, enableContinuousCoverageCollection: Bool, logDirectoryPath: String?, reportResultBundle: Bool) {
     self.testBundle = testBundle
     self.applicationLaunchConfiguration = applicationLaunchConfiguration
     self.testHostBundle = testHostBundle

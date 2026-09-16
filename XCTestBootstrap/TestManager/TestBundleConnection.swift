@@ -45,7 +45,7 @@ final class TestBundleConnection {
   private let target: any FBiOSTarget
   private let socket: Int32
   private let interface: NSObject
-  private let testHostApplication: FBLaunchedApplication
+  private let testHostApplication: LaunchedApplication
   private let requestQueue: DispatchQueue
   private let logger: ControlCoreLogger
 
@@ -54,7 +54,7 @@ final class TestBundleConnection {
     target: any FBiOSTarget,
     socket: Int32,
     interface: NSObject,
-    testHostApplication: FBLaunchedApplication,
+    testHostApplication: LaunchedApplication,
     requestQueue: DispatchQueue,
     logger: ControlCoreLogger
   ) {

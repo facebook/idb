@@ -318,7 +318,7 @@ extension StdinCommandHandler {
   /// Drive this handler's stdin command loop until it ends (stdin EOF or a `shutdown` command) or a
   /// termination signal (SIGINT/SIGTERM) arrives — whichever comes first — then return so the caller
   /// can finalize recording/streaming. Mirrors
-  /// `FBLaunchedApplication.waitForAppToExitOrSignal`: the signal/lifecycle handling lives in the layer
+  /// `LaunchedApplication.waitForAppToExitOrSignal`: the signal/lifecycle handling lives in the layer
   /// the command calls, so `video-stream`/`record` stay signal-agnostic.
   ///
   /// Uses `stdinLines`, whose read ends on cancellation, so a signal genuinely stops the loop instead

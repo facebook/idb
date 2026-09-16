@@ -62,7 +62,7 @@ public struct DeviceDebuggerCommands: DebuggerCommands {
 
   // MARK: - Async
 
-  public func launchDebugServer(forHostApplication application: FBBundleDescriptor, port: in_port_t) async throws -> any DebugServer {
+  public func launchDebugServer(forHostApplication application: BundleDescriptor, port: in_port_t) async throws -> any DebugServer {
     if device.osVersion.version.majorVersion >= 17 {
       throw DeviceDebuggerError.unsupportedOSVersion(version: device.osVersion.versionString)
     }
@@ -77,7 +77,7 @@ public struct DeviceDebuggerCommands: DebuggerCommands {
   }
 
   private func lldbBootstrapCommands(forApplicationAtPath path: String, port: in_port_t) async throws -> [String] {
-    let bundle = try FBBundleDescriptor.bundle(fromPath: path)
+    let bundle = try BundleDescriptor.bundle(fromPath: path)
     let platformSelect = try platformSelectCommand()
     let localTarget = "target create '\(path)'"
     let remote = try await remoteTarget(forBundleID: bundle.identifier)

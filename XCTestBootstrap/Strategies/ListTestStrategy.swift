@@ -242,7 +242,7 @@ public final class ListTestStrategy {
     let stdErr = FBProcessOutput<AnyObject>(for: stdErrConsumer)
     let io = FBProcessIO<AnyObject, AnyObject, AnyObject>(stdIn: nil, stdOut: stdOut, stdErr: stdErr)
 
-    if let runnerAppPath = configuration.runnerAppPath, FBBundleDescriptor.isApplication(atPath: runnerAppPath) {
+    if let runnerAppPath = configuration.runnerAppPath, BundleDescriptor.isApplication(atPath: runnerAppPath) {
       let developerLibraryPath = (XcodeConfiguration.developerDirectory as NSString).appendingPathComponent("Platforms/iPhoneSimulator.platform/Developer/Library")
       let testFrameworkPaths = [
         (developerLibraryPath as NSString).appendingPathComponent("Frameworks"),
@@ -251,9 +251,9 @@ public final class ListTestStrategy {
       env["DYLD_FALLBACK_FRAMEWORK_PATH"] = testFrameworkPaths.joined(separator: ":")
       env["DYLD_FALLBACK_LIBRARY_PATH"] = testFrameworkPaths.joined(separator: ":")
 
-      let appBundle: FBBundleDescriptor
+      let appBundle: BundleDescriptor
       do {
-        appBundle = try FBBundleDescriptor.bundle(fromPath: runnerAppPath)
+        appBundle = try BundleDescriptor.bundle(fromPath: runnerAppPath)
       } catch {
         return FBFuture<AnyObject>(error: error)
       }

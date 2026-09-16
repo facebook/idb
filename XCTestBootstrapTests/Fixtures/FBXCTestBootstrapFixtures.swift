@@ -21,8 +21,8 @@ extension XCTestCase {
     return Bundle(path: fixturePath)!
   }
 
-  class func macCommonApplication() throws -> FBBundleDescriptor {
+  class func macCommonApplication() throws -> BundleDescriptor {
     let path = Bundle(for: self).path(forResource: "MacCommonApp", ofType: "app")!
-    return try FBBundleDescriptor.bundle(fromPath: path)
+    return try BundleDescriptor.bundle(fromPath: path)
   }
 }

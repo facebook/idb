@@ -32,7 +32,7 @@ extension BundleDescriptorError: LocalizedError {
   }
 }
 
-public struct FBBundleDescriptor: Hashable, Sendable, CustomStringConvertible {
+public struct BundleDescriptor: Hashable, Sendable, CustomStringConvertible {
 
   public let name: String
   public let identifier: String
@@ -46,11 +46,11 @@ public struct FBBundleDescriptor: Hashable, Sendable, CustomStringConvertible {
     self.binary = binary
   }
 
-  public static func bundle(fromPath path: String) throws -> FBBundleDescriptor {
+  public static func bundle(fromPath path: String) throws -> BundleDescriptor {
     return try bundleFromPath(path, fallbackIdentifier: false)
   }
 
-  public static func bundleWithFallbackIdentifier(fromPath path: String) throws -> FBBundleDescriptor {
+  public static func bundleWithFallbackIdentifier(fromPath path: String) throws -> BundleDescriptor {
     return try bundleFromPath(path, fallbackIdentifier: true)
   }
 
@@ -95,7 +95,7 @@ public struct FBBundleDescriptor: Hashable, Sendable, CustomStringConvertible {
     guard let rpaths = try binary?.rpaths() else {
       return [:]
     }
-    return FBBundleDescriptor.interpolateRpathReplacements(forRPaths: rpaths)
+    return BundleDescriptor.interpolateRpathReplacements(forRPaths: rpaths)
   }
 
   private static func interpolateRpathReplacements(forRPaths rpaths: [String]) -> [String: String] {
@@ -114,7 +114,7 @@ public struct FBBundleDescriptor: Hashable, Sendable, CustomStringConvertible {
     return replacements
   }
 
-  private static func bundleFromPath(_ path: String, fallbackIdentifier: Bool) throws -> FBBundleDescriptor {
+  private static func bundleFromPath(_ path: String, fallbackIdentifier: Bool) throws -> BundleDescriptor {
     guard let bundle = Bundle(path: path) else {
       throw BundleDescriptorError.bundleLoadFailed(path: path)
     }
@@ -123,6 +123,6 @@ public struct FBBundleDescriptor: Hashable, Sendable, CustomStringConvertible {
       throw BundleDescriptorError.bundleIdentifierUnavailable(name: (path as NSString).lastPathComponent, path: path)
     }
     let binary = try binaryForBundle(bundle)
-    return FBBundleDescriptor(name: bundleName, identifier: identifier, path: path, binary: binary)
+    return BundleDescriptor(name: bundleName, identifier: identifier, path: path, binary: binary)
   }
 }

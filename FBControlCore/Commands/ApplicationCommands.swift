@@ -9,20 +9,20 @@ import Foundation
 
 public protocol ApplicationLaunching {
 
-  func launch(_ configuration: ApplicationLaunchConfiguration) async throws -> FBLaunchedApplication
+  func launch(_ configuration: ApplicationLaunchConfiguration) async throws -> LaunchedApplication
 }
 
 public protocol ApplicationCommands: ApplicationLaunching {
 
-  func install(atPath path: String) async throws -> FBInstalledApplication
+  func install(atPath path: String) async throws -> InstalledApplication
 
   func uninstall(bundleID: String) async throws
 
   func kill(bundleID: String) async throws
 
-  func installed() async throws -> [FBInstalledApplication]
+  func installed() async throws -> [InstalledApplication]
 
-  func installed(bundleID: String) async throws -> FBInstalledApplication
+  func installed(bundleID: String) async throws -> InstalledApplication
 
   func running() async throws -> [String: pid_t]
 

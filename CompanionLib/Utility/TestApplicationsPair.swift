@@ -10,10 +10,10 @@ import Foundation
 
 public struct TestApplicationsPair: CustomStringConvertible {
 
-  public let applicationUnderTest: FBInstalledApplication?
-  public let testHostApp: FBInstalledApplication?
+  public let applicationUnderTest: InstalledApplication?
+  public let testHostApp: InstalledApplication?
 
-  public init(applicationUnderTest: FBInstalledApplication?, testHostApp: FBInstalledApplication?) {
+  public init(applicationUnderTest: InstalledApplication?, testHostApp: InstalledApplication?) {
     self.applicationUnderTest = applicationUnderTest
     self.testHostApp = testHostApp
   }

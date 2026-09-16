@@ -44,32 +44,32 @@ public struct ApplicationInstallInfoKey: RawRepresentable, Hashable, Sendable {
   public static let signerIdentity = ApplicationInstallInfoKey(rawValue: "SignerIdentity")
 }
 
-public struct FBInstalledApplication: Hashable, Sendable, CustomStringConvertible {
+public struct InstalledApplication: Hashable, Sendable, CustomStringConvertible {
 
-  public let bundle: FBBundleDescriptor
+  public let bundle: BundleDescriptor
   public let installType: ApplicationInstallType
   public let dataContainer: String?
 
   public var installTypeString: String {
-    FBInstalledApplication.string(from: installType)
+    InstalledApplication.string(from: installType)
   }
 
-  public static func installedApplication(withBundle bundle: FBBundleDescriptor, installType: ApplicationInstallType, dataContainer: String?) -> FBInstalledApplication {
-    FBInstalledApplication(bundle: bundle, installType: installType, dataContainer: dataContainer)
+  public static func installedApplication(withBundle bundle: BundleDescriptor, installType: ApplicationInstallType, dataContainer: String?) -> InstalledApplication {
+    InstalledApplication(bundle: bundle, installType: installType, dataContainer: dataContainer)
   }
 
-  public static func installedApplication(withBundle bundle: FBBundleDescriptor, installTypeString: String?, signerIdentity: String?, dataContainer: String?) -> FBInstalledApplication {
-    FBInstalledApplication(bundle: bundle, installTypeString: installTypeString, signerIdentity: signerIdentity, dataContainer: dataContainer)
+  public static func installedApplication(withBundle bundle: BundleDescriptor, installTypeString: String?, signerIdentity: String?, dataContainer: String?) -> InstalledApplication {
+    InstalledApplication(bundle: bundle, installTypeString: installTypeString, signerIdentity: signerIdentity, dataContainer: dataContainer)
   }
 
-  public init(bundle: FBBundleDescriptor, installType: ApplicationInstallType, dataContainer: String?) {
+  public init(bundle: BundleDescriptor, installType: ApplicationInstallType, dataContainer: String?) {
     self.bundle = bundle
     self.installType = installType
     self.dataContainer = dataContainer
   }
 
-  public init(bundle: FBBundleDescriptor, installTypeString: String?, signerIdentity: String?, dataContainer: String?) {
-    let installType = FBInstalledApplication.installType(from: installTypeString, signerIdentity: signerIdentity)
+  public init(bundle: BundleDescriptor, installTypeString: String?, signerIdentity: String?, dataContainer: String?) {
+    let installType = InstalledApplication.installType(from: installTypeString, signerIdentity: signerIdentity)
     self.init(bundle: bundle, installType: installType, dataContainer: dataContainer)
   }
 
@@ -80,7 +80,7 @@ public struct FBInstalledApplication: Hashable, Sendable, CustomStringConvertibl
     hasher.combine(installType)
   }
 
-  public static func == (lhs: FBInstalledApplication, rhs: FBInstalledApplication) -> Bool {
+  public static func == (lhs: InstalledApplication, rhs: InstalledApplication) -> Bool {
     lhs.bundle == rhs.bundle
       && lhs.installType == rhs.installType
       && lhs.dataContainer == rhs.dataContainer

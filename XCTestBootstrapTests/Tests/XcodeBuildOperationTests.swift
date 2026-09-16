@@ -13,10 +13,10 @@ final class XcodeBuildOperationTests: XCTestCase {
 
   func testUITestConfiguration() {
     let testHostPath = "/tmp/test_host_path.app"
-    let testHostBundle = FBBundleDescriptor(name: "test.host.app", identifier: "test.host.app", path: testHostPath, binary: nil)
+    let testHostBundle = BundleDescriptor(name: "test.host.app", identifier: "test.host.app", path: testHostPath, binary: nil)
 
     let testBundlePath = "/tmp/test_host_path.app/test_bundle_path.xctest"
-    let testBundle = FBBundleDescriptor(name: "test.bundle", identifier: "test.bundle", path: testBundlePath, binary: nil)
+    let testBundle = BundleDescriptor(name: "test.bundle", identifier: "test.bundle", path: testBundlePath, binary: nil)
 
     let appLaunch = ApplicationLaunchConfiguration(
       bundleID: "com.bundle.id",
