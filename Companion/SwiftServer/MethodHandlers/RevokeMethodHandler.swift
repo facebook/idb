@@ -16,7 +16,7 @@ struct RevokeMethodHandler {
 
   func handle(request: Idb_RevokeRequest, context: ServerContext) async throws -> Idb_RevokeResponse {
 
-    let mapping: [Idb_RevokeRequest.Permission: FBTargetSettingsService] = [
+    let mapping: [Idb_RevokeRequest.Permission: TargetSettingsService] = [
       .microphone: .microphone,
       .photos: .photos,
       .camera: .camera,
@@ -27,7 +27,7 @@ struct RevokeMethodHandler {
     ]
 
     var services = try Set(
-      request.permissions.map { permission -> FBTargetSettingsService in
+      request.permissions.map { permission -> TargetSettingsService in
         guard let service = mapping[permission] else {
           throw RPCError(code: .invalidArgument, message: "Unrecognized permission \(permission)")
         }

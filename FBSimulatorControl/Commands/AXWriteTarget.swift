@@ -37,7 +37,7 @@ extension AXBridgeTreeReader {
       await warnIfTruncated(read.truncated)
       let elements = AXTreeWalk.describeAllElements(
         fromTree: read.tree,
-        keys: FBAXKeys.defaultSet.union([key.serializationKey]),
+        keys: AXKeys.defaultSet.union([key.serializationKey]),
         nestedFormat: false,
         pid: read.pid
       )
@@ -72,8 +72,8 @@ extension AXBridgeTreeReader {
   }
 
   private static func derivedAssertion(
-    from match: FBAccessibilityDocumentElement,
-    key: FBAXSearchableKey
+    from match: AccessibilityDocumentElement,
+    key: AXSearchableKey
   ) -> AXBridgeWriteAssertion? {
     guard let node = AXWire.Node(assertableSearchKey: key), let actual = match.searchableValue(for: key) else {
       return nil
@@ -82,7 +82,7 @@ extension AXBridgeTreeReader {
   }
 
   private func assertBeforeWriting(_ assertion: TapOptions.Assertion, atPoint point: CGPoint) async throws {
-    let options = FBAccessibilityRequestOptions(keys: FBAXKeys.defaultSet.union([assertion.key.serializationKey]))
+    let options = AccessibilityRequestOptions(keys: AXKeys.defaultSet.union([assertion.key.serializationKey]))
     guard let response = try await hitTest(at: point, options: options),
       let element = response.elements.elements.first
     else {
@@ -93,7 +93,7 @@ extension AXBridgeTreeReader {
 
   private func validate(
     _ assertion: TapOptions.Assertion?,
-    against element: FBAccessibilityDocumentElement
+    against element: AccessibilityDocumentElement
   ) throws {
     guard let assertion else {
       return

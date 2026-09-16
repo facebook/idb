@@ -42,7 +42,7 @@ public final class DeviceVideoRecordingCommands: VideoRecordingCommands {
 
   // MARK: - Async
 
-  public func startRecording(toFile filePath: String) async throws -> any FBVideoRecording {
+  public func startRecording(toFile filePath: String) async throws -> any VideoRecording {
     guard let device else {
       throw DeviceVideoRecordingCommandError.missingDevice
     }

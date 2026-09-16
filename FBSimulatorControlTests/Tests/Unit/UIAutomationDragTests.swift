@@ -57,15 +57,15 @@ private final class RecordingUIAutomation: UIAutomation, @unchecked Sendable {
 
   func describe(
     _ query: AccessibilityElementQuery,
-    options: FBAccessibilityRequestOptions
-  ) async throws -> FBAccessibilityElementsResponse {
+    options: AccessibilityRequestOptions
+  ) async throws -> AccessibilityElementsResponse {
     throw NotUnderTest()
   }
 
   func hitTest(
     at point: CGPoint,
-    options: FBAccessibilityRequestOptions
-  ) async throws -> FBAccessibilityElementsResponse? {
+    options: AccessibilityRequestOptions
+  ) async throws -> AccessibilityElementsResponse? {
     throw NotUnderTest()
   }
 
@@ -87,7 +87,7 @@ private final class RecordingUIAutomation: UIAutomation, @unchecked Sendable {
 
   func scroll(
     _ query: AccessibilityElementQuery,
-    direction: FBAccessibilityScrollDirection
+    direction: AccessibilityScrollDirection
   ) async throws {
     throw NotUnderTest()
   }

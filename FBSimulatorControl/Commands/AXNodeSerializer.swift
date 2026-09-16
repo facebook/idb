@@ -13,7 +13,7 @@ import Foundation
 /// compatible with the SimulatorBridge output downstream consumers parse.
 ///
 /// Each attribute is read into a statically-typed field; `axValue()` is genuinely `Any` and is
-/// classified into `FBAccessibilityAttributeValue` at the read site.
+/// classified into `AccessibilityAttributeValue` at the read site.
 enum AXNodeSerializer {
 
   // MARK: - Entry points
@@ -22,10 +22,10 @@ enum AXNodeSerializer {
     fromElement element: AXPlatformElement,
     token: String,
     nestedFormat: Bool,
-    keys: Set<FBAXKeys>,
+    keys: Set<AXKeys>,
     collector: AccessibilityProfilingCollector?,
     seenPids: SeenPIDs?
-  ) -> [FBAccessibilityDocumentElement] {
+  ) -> [AccessibilityDocumentElement] {
     element.axSetBridgeDelegateToken(token)
     if nestedFormat {
       return nestedRecursiveDescription(fromElement: element, token: token, keys: keys, collector: collector, seenPids: seenPids)
@@ -37,9 +37,9 @@ enum AXNodeSerializer {
     ofElement element: AXPlatformElement,
     token: String,
     nestedFormat: Bool,
-    keys: Set<FBAXKeys>,
+    keys: Set<AXKeys>,
     collector: AccessibilityProfilingCollector?
-  ) -> FBAccessibilityDocumentElement {
+  ) -> AccessibilityDocumentElement {
     element.axSetBridgeDelegateToken(token)
     var node = decoratedElement(forElement: element, token: token, keys: keys, collector: collector, seenPids: nil, isRemote: false)
     guard nestedFormat else {
@@ -48,7 +48,7 @@ enum AXNodeSerializer {
     // The target's descendants are built as a subtree of their own, rather than by walking the target
     // itself, so the target is always reported and always carries a `children` array — a filtered walk
     // rooted at the target could drop or replace it. The caller filters these children afterwards.
-    var children: [FBAccessibilityDocumentElement] = []
+    var children: [AccessibilityDocumentElement] = []
     for child in element.axChildren() {
       child.axSetBridgeDelegateToken(token)
       children.append(
@@ -75,17 +75,17 @@ enum AXNodeSerializer {
   static func nodeElement(
     forElement element: AXPlatformElement,
     token: String,
-    keys: Set<FBAXKeys>,
+    keys: Set<AXKeys>,
     collector: AccessibilityProfilingCollector?
-  ) -> FBAccessibilityDocumentElement {
+  ) -> AccessibilityDocumentElement {
     // The token must always be set so that the right callback is called.
     element.axSetBridgeDelegateToken(token)
 
     collector?.incrementElementCount()
 
-    var node = FBAccessibilityDocumentElement()
+    var node = AccessibilityDocumentElement()
 
-    func read<T>(_ key: FBAXKeys, _ value: @autoclosure () -> T?) -> T?? {
+    func read<T>(_ key: AXKeys, _ value: @autoclosure () -> T?) -> T?? {
       guard keys.contains(key) else {
         return nil
       }
@@ -94,19 +94,19 @@ enum AXNodeSerializer {
     }
 
     // Frame is always computed since it is used by multiple keys.
-    collector?.incrementAttributeFetchCount(forKey: FBAXKeys.frame.rawValue)
+    collector?.incrementAttributeFetchCount(forKey: AXKeys.frame.rawValue)
     let frame = element.axFrame()
 
     var role: String?
     var rawRole: String?
     if keys.contains(.role) {
-      collector?.incrementAttributeFetchCount(forKey: FBAXKeys.role.rawValue)
+      collector?.incrementAttributeFetchCount(forKey: AXKeys.role.rawValue)
       rawRole = element.axRole()
       node.role = .some(rawRole)
     }
     if keys.contains(.type) {
       if rawRole == nil {
-        collector?.incrementAttributeFetchCount(forKey: FBAXKeys.type.rawValue)
+        collector?.incrementAttributeFetchCount(forKey: AXKeys.type.rawValue)
         rawRole = element.axRole()
       }
       // accessibilityRole may be prefixed with "AX"; strip it to match the
@@ -118,7 +118,7 @@ enum AXNodeSerializer {
     if keys.contains(.frame) {
       node.axFrame = .some(NSStringFromRect(frame))
     }
-    node.value = read(.value, FBAccessibilityAttributeValue(element.axValue()))
+    node.value = read(.value, AccessibilityAttributeValue(element.axValue()))
     node.identifier = read(.uniqueID, element.axIdentifier())
 
     if keys.contains(.type) {
@@ -127,8 +127,8 @@ enum AXNodeSerializer {
 
     node.title = read(.title, element.axTitle())
     if keys.contains(.frameDict) {
-      collector?.incrementAttributeFetchCount(forKey: FBAXKeys.frameDict.rawValue)
-      node.frame = .some(FBAccessibilityFrame(frame))
+      collector?.incrementAttributeFetchCount(forKey: AXKeys.frameDict.rawValue)
+      node.frame = .some(AccessibilityFrame(frame))
     }
     node.help = read(.help, element.axHelp())
     node.enabled = read(.enabled, element.axIsEnabled())
@@ -138,7 +138,7 @@ enum AXNodeSerializer {
     node.contentRequired = read(.contentRequired, element.axIsRequired())
     node.pid = read(.pid, Int64(element.axTranslationPid))
     if keys.contains(.traits) {
-      collector?.incrementAttributeFetchCount(forKey: FBAXKeys.traits.rawValue)
+      collector?.incrementAttributeFetchCount(forKey: AXKeys.traits.rawValue)
       node.traits = .some(element.axTraits())
     }
     node.expanded = read(.expanded, element.axIsExpanded())
@@ -146,14 +146,14 @@ enum AXNodeSerializer {
     node.hidden = read(.hidden, element.axIsHidden())
     node.focused = read(.focused, element.axIsFocused())
     if keys.contains(.interactable) {
-      collector?.incrementAttributeFetchCount(forKey: FBAXKeys.interactable.rawValue)
+      collector?.incrementAttributeFetchCount(forKey: AXKeys.interactable.rawValue)
       node.interactable = .some(interactable(forElement: element, frame: frame))
       node.explainedBy = element.axExplainedBy().map { explanation in
         AccessibilityElementRef(
           type: explanation.axRole().map(AXRoleVocabulary.normalizeRole),
           identifier: explanation.axIdentifier(),
           label: explanation.axLabel(),
-          frame: FBAccessibilityFrame(explanation.axFrame()),
+          frame: AccessibilityFrame(explanation.axFrame()),
           pid: Int64(explanation.axTranslationPid)
         )
       }
@@ -213,19 +213,19 @@ enum AXNodeSerializer {
   /// element's pid in `seenPids` (so remote-content hit-testing can skip processes already present in the
   /// main tree) and, when `.isRemote` is requested, tagging the node's provenance — `true` for nodes
   /// discovered by remote grid hit-testing, `false` for the main-tree traversal. `.isRemote` is not in
-  /// `FBAXKeys.defaultSet`, so a default response is unchanged by the decorator.
+  /// `AXKeys.defaultSet`, so a default response is unchanged by the decorator.
   static func decoratedElement(
     forElement element: AXPlatformElement,
     token: String,
-    keys: Set<FBAXKeys>,
+    keys: Set<AXKeys>,
     collector: AccessibilityProfilingCollector?,
     seenPids: SeenPIDs?,
     isRemote: Bool
-  ) -> FBAccessibilityDocumentElement {
+  ) -> AccessibilityDocumentElement {
     var node = nodeElement(forElement: element, token: token, keys: keys, collector: collector)
     seenPids?.insert(element.axTranslationPid)
     if keys.contains(.isRemote) {
-      collector?.incrementAttributeFetchCount(forKey: FBAXKeys.isRemote.rawValue)
+      collector?.incrementAttributeFetchCount(forKey: AXKeys.isRemote.rawValue)
       node.isRemote = .some(isRemote)
     }
     return node
@@ -237,11 +237,11 @@ enum AXNodeSerializer {
   private static func flatRecursiveDescription(
     fromElement element: AXPlatformElement,
     token: String,
-    keys: Set<FBAXKeys>,
+    keys: Set<AXKeys>,
     collector: AccessibilityProfilingCollector?,
     seenPids: SeenPIDs?
-  ) -> [FBAccessibilityDocumentElement] {
-    var values: [FBAccessibilityDocumentElement] = [
+  ) -> [AccessibilityDocumentElement] {
+    var values: [AccessibilityDocumentElement] = [
       decoratedElement(forElement: element, token: token, keys: keys, collector: collector, seenPids: seenPids, isRemote: false)
     ]
     for child in element.axChildren() {
@@ -255,11 +255,11 @@ enum AXNodeSerializer {
   private static func nestedRecursiveDescription(
     fromElement element: AXPlatformElement,
     token: String,
-    keys: Set<FBAXKeys>,
+    keys: Set<AXKeys>,
     collector: AccessibilityProfilingCollector?,
     seenPids: SeenPIDs?
-  ) -> [FBAccessibilityDocumentElement] {
-    var childrenValues: [FBAccessibilityDocumentElement] = []
+  ) -> [AccessibilityDocumentElement] {
+    var childrenValues: [AccessibilityDocumentElement] = []
     for child in element.axChildren() {
       child.axSetBridgeDelegateToken(token)
       childrenValues.append(contentsOf: nestedRecursiveDescription(fromElement: child, token: token, keys: keys, collector: collector, seenPids: seenPids))

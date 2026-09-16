@@ -35,7 +35,7 @@ final class AXBridgeSocketTests: XCTestCase {
     XCTAssertGreaterThan(window.tv_usec, 0, "a sub-second deadline that converts to zero is no deadline")
   }
   func testEveryResolvedBackendNameRoundTrips() {
-    let cases: [(AXBridgePersistence, FBUIAutomationBackendName)] = [
+    let cases: [(AXBridgePersistence, UIAutomationBackendName)] = [
       (.oneShot, .axBridgeOneShot), (.shared, .axBridgePersistent), (.exclusive, .axBridgeExclusive),
     ]
     for (persistence, name) in cases {
@@ -47,15 +47,15 @@ final class AXBridgeSocketTests: XCTestCase {
   }
 
   func testTheOneShotCaseHasAnExplicitWireName() {
-    XCTAssertEqual(FBUIAutomationBackendName.axBridgeOneShot.rawValue, "axbridge-oneshot")
+    XCTAssertEqual(UIAutomationBackendName.axBridgeOneShot.rawValue, "axbridge-oneshot")
   }
 
   func testTheSharedCaseKeepsTheExistingWireName() {
-    XCTAssertEqual(FBUIAutomationBackendName.axBridgePersistent.rawValue, "axbridge-persistent")
+    XCTAssertEqual(UIAutomationBackendName.axBridgePersistent.rawValue, "axbridge-persistent")
   }
 
   func testTheExclusiveCaseHasItsOwnWireName() {
-    XCTAssertEqual(FBUIAutomationBackendName.axBridgeExclusive.rawValue, "axbridge-exclusive")
+    XCTAssertEqual(UIAutomationBackendName.axBridgeExclusive.rawValue, "axbridge-exclusive")
   }
 
   func testAConnectionSocketIsNamedForItsIdentifier() {

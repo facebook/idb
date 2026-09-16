@@ -48,10 +48,10 @@ final class AXBridgeSmokeTests: ProvidedSimulatorTestCase {
 
   /// Retries only a not-responding application, while its accessibility server starts. An
   /// unreachable guest, a broken handshake or a malformed response throw on the first attempt.
-  private func describeApplication(pid: pid_t, retries: Int = 4) async throws -> FBAccessibilityElementsResponse {
+  private func describeApplication(pid: pid_t, retries: Int = 4) async throws -> AccessibilityElementsResponse {
     let automation = try simulator.uiAutomation(
       backend: .axBridge(persistence: .shared, frontmostMethod: .windowServer, automationMode: true))
-    let options = FBAccessibilityRequestOptions()
+    let options = AccessibilityRequestOptions()
     for attempt in 0...retries {
       do {
         return try await skippingIfGuestServiceSpawnUnavailable {

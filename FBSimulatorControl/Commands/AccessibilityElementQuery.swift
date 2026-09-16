@@ -24,7 +24,7 @@ public enum AccessibilityElementQuery: Equatable, Sendable {
   ///
   /// `ignoresCase` defaults off and writes never set it, so a write cannot act on an element the caller
   /// did not name.
-  case marker(value: String, key: FBAXSearchableKey, depth: UInt, ignoresCase: Bool = false)
+  case marker(value: String, key: AXSearchableKey, depth: UInt, ignoresCase: Bool = false)
   case frontmost
   /// A specific application's whole element tree, anchored by its process identifier — read regardless
   /// of what is frontmost (e.g. an app behind a system modal), unlike `frontmost`. Callers resolve a

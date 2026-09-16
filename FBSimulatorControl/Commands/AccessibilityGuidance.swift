@@ -24,7 +24,7 @@ enum AccessibilityGuidance {
   static let automationMode = "Most elements in this read carry no frame. If the tree describes a screen other than the one displayed, the target may be caching stale accessibility children: set AutomationEnabled (com.apple.Accessibility) — e.g. `xcrun simctl spawn <UDID> defaults write com.apple.Accessibility AutomationEnabled -bool true` — which takes effect on the next read without relaunching."
 
   /// For a whole-tree read that asked for reachability, which the application answers by hit-testing
-  /// every node (see `FBAXKeys.interactable`). Logged at the read because the read still succeeds, so
+  /// every node (see `AXKeys.interactable`). Logged at the read because the read still succeeds, so
   /// nothing else in the output explains the latency.
   static let reachabilityAcrossTree = "Requesting reachability (interactable / occluded_by) across a whole tree makes the application hit-test every node, which is usually the dominant cost of the read. For a single element, use `ui describe-point <x> <y> --key interactable` instead."
 

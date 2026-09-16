@@ -89,9 +89,9 @@ final class AXTranslationRequest {
   /// match descends from the frontmost tree, so its request's `kind` is still `.frontmostApplication`.
   func run(
     _ element: AXPlatformElement,
-    options: FBAccessibilityRequestOptions,
+    options: AccessibilityRequestOptions,
     isMarkerMatch: Bool = false
-  ) throws -> FBAccessibilityElementsResponse {
+  ) throws -> AccessibilityElementsResponse {
     guard !isMarkerMatch else {
       return runNamedElement(element, options: options)
     }
@@ -107,7 +107,7 @@ final class AXTranslationRequest {
 
   /// Serializes the one element a caller named — by point, or by a marker match. The element itself is
   /// always reported; only its descendants are subject to the filter.
-  private func runNamedElement(_ element: AXPlatformElement, options: FBAccessibilityRequestOptions) -> FBAccessibilityElementsResponse {
+  private func runNamedElement(_ element: AXPlatformElement, options: AccessibilityRequestOptions) -> AccessibilityElementsResponse {
     let walkStart = CFAbsoluteTimeGetCurrent()
     collector.markWalkStart()
     var elements = AXNodeSerializer.formattedDescription(
@@ -130,7 +130,7 @@ final class AXTranslationRequest {
 
   // MARK: - Frontmost Application
 
-  private func runFrontmostApplication(_ element: AXPlatformElement, options: FBAccessibilityRequestOptions) -> FBAccessibilityElementsResponse {
+  private func runFrontmostApplication(_ element: AXPlatformElement, options: AccessibilityRequestOptions) -> AccessibilityElementsResponse {
     // Marked before the screen-bounds fetch so that fetch is inside the measured walk.
     let walkStart = CFAbsoluteTimeGetCurrent()
     collector.markWalkStart()
@@ -198,11 +198,11 @@ final class AXTranslationRequest {
     frontmostPid: pid_t,
     seenPids: SeenPIDs,
     coverageGrid: AccessibilityCoverageGrid?,
-    keys: Set<FBAXKeys>,
-    remoteOptions: FBAccessibilityRemoteContentOptions,
+    keys: Set<AXKeys>,
+    remoteOptions: AccessibilityRemoteContentOptions,
     translator: AXPTranslator
-  ) -> [FBAccessibilityDocumentElement] {
-    var discoveredElements: [FBAccessibilityDocumentElement] = []
+  ) -> [AccessibilityDocumentElement] {
+    var discoveredElements: [AccessibilityDocumentElement] = []
     var discoveredFrames = Set<String>()
 
     // Always include AXFrame for hit-tested elements (needed for nesting and coverage).
@@ -280,22 +280,22 @@ final class AXTranslationRequest {
   }
 
   private func processRemoteContent(
-    mainAppElements: [FBAccessibilityDocumentElement],
+    mainAppElements: [AccessibilityDocumentElement],
     nestedFormat: Bool,
-    filter: FBAccessibilityElementFilter,
+    filter: AccessibilityElementFilter,
     match: AccessibilityMatch?,
     screenBounds: CGRect,
     frontmostPid: pid_t,
     seenPids: SeenPIDs,
     coverageGrid: AccessibilityCoverageGrid?,
-    walkedElements: [FBAccessibilityDocumentElement],
+    walkedElements: [AccessibilityDocumentElement],
     collectFrameCoverage: Bool,
     reportProfile: Bool,
     walkStart: CFAbsoluteTime,
-    keys: Set<FBAXKeys>,
-    remoteOptions: FBAccessibilityRemoteContentOptions,
+    keys: Set<AXKeys>,
+    remoteOptions: AccessibilityRemoteContentOptions,
     translator: AXPTranslator
-  ) -> FBAccessibilityElementsResponse {
+  ) -> AccessibilityElementsResponse {
     let coverageBefore = coverageGrid?.coverageRatio() ?? 0
 
     let discoveredElements = discoverRemoteElements(
@@ -358,11 +358,11 @@ final class AXTranslationRequest {
     screen: AccessibilityScreenInfo?,
     reportProfile: Bool,
     narrowing: AccessibilityNarrowing? = nil
-  ) -> FBAccessibilityElementsResponse {
+  ) -> AccessibilityElementsResponse {
     let walkDuration = CFAbsoluteTimeGetCurrent() - walkStart
     // Collected always (cheap); reported only when profiling was requested.
     let profilingData = reportProfile ? collector.finalize(withWalkDuration: walkDuration) : nil
-    return FBAccessibilityElementsResponse(
+    return AccessibilityElementsResponse(
       elements: elements,
       profilingData: profilingData.map { .translator($0) },
       coverage: coverage,
@@ -381,7 +381,7 @@ final class AXTranslationRequest {
     return AccessibilityScreenInfo(width: Double(bounds.width), height: Double(bounds.height))
   }
 
-  private static func serializerKeys(_ options: FBAccessibilityRequestOptions) -> Set<FBAXKeys> {
+  private static func serializerKeys(_ options: AccessibilityRequestOptions) -> Set<AXKeys> {
     options.serializationKeys
   }
 }

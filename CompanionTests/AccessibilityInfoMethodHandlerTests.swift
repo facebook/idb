@@ -16,13 +16,13 @@ import XCTest
 /// simulator. `IDBCommandExecutor` is a `public final class`; `AccessibilityDescribing` is the seam
 /// the handler is written against, and this double stands in for it.
 private final class RecordingAccessibilityExecutor: AccessibilityDescribing {
-  private(set) var describeOptions: FBAccessibilityRequestOptions?
+  private(set) var describeOptions: AccessibilityRequestOptions?
   private(set) var describeQuery: AccessibilityElementQuery?
   private(set) var pointReadCount = 0
 
   func accessibility_describe(
     query: AccessibilityElementQuery,
-    options: FBAccessibilityRequestOptions,
+    options: AccessibilityRequestOptions,
     backend: UIAutomationBackend
   ) async throws -> Data {
     describeQuery = query
@@ -32,11 +32,11 @@ private final class RecordingAccessibilityExecutor: AccessibilityDescribing {
 
   func accessibility_info_at_point(
     _ value: NSValue?,
-    options: FBAccessibilityRequestOptions,
+    options: AccessibilityRequestOptions,
     backend: UIAutomationBackend
-  ) async throws -> FBAccessibilityElementsResponse {
+  ) async throws -> AccessibilityElementsResponse {
     pointReadCount += 1
-    return FBAccessibilityElementsResponse(elements: .single(FBAccessibilityDocumentElement()))
+    return AccessibilityElementsResponse(elements: .single(AccessibilityDocumentElement()))
   }
 }
 
@@ -56,7 +56,7 @@ final class AccessibilityInfoMethodHandlerTests: XCTestCase {
 
     let options = try XCTUnwrap(
       executor.describeOptions, "a marker read must reach the describe executor, not the at-point path")
-    let label = try XCTUnwrap(FBAXKeys(rawValue: "AXLabel"))
+    let label = try XCTUnwrap(AXKeys(rawValue: "AXLabel"))
     XCTAssertEqual(
       options.keys, Set([label]),
       "the request's --key must reach the executor on the marker path, not a format-only default set")

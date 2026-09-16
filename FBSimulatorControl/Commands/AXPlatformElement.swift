@@ -70,7 +70,7 @@ protocol AXPlatformElement: AnyObject {
 /// this refinement and the type system keeps actions off the read-only axbridge tree.
 protocol AXWritableElement: AXPlatformElement {
   func axPerformPress() -> Bool
-  func axScroll(_ direction: FBAccessibilityScrollDirection)
+  func axScroll(_ direction: AccessibilityScrollDirection)
   func axSetValue(_ value: Any?)
 }
 
@@ -135,7 +135,7 @@ extension AXPMacPlatformElement: AXPlatformElement {
 extension AXPMacPlatformElement: AXWritableElement {
   func axPerformPress() -> Bool { accessibilityPerformPress() }
 
-  func axScroll(_ direction: FBAccessibilityScrollDirection) {
+  func axScroll(_ direction: AccessibilityScrollDirection) {
     switch direction {
     case .down:
       performScrollDownByPageAction()

@@ -11,7 +11,7 @@ import Foundation
 import XCTest
 
 /// Byte-level pins for the host side of the axbridge wire contract: the `XC_kAXXC*` node-attribute
-/// keys the read path fetches, the output-schema keys (`FBAXKeys`), and the frontmost-method request
+/// keys the read path fetches, the output-schema keys (`AXKeys`), and the frontmost-method request
 /// selectors. These strings cross the guest↔host boundary with no shared header, so a rename here is a
 /// silent protocol break; pinning them exactly keeps `AXWire` byte-identical to the wire. The
 /// guest-side agreement is pinned against these same literals in the `SimulatorFrameworkBridge` tests.
@@ -56,10 +56,10 @@ final class AXWireContractTests: XCTestCase {
     )
   }
 
-  // MARK: - Output-schema keys (`FBAXKeys` raw values are the emitted JSON keys)
+  // MARK: - Output-schema keys (`AXKeys` raw values are the emitted JSON keys)
 
   func testAXKeyWireValues() {
-    let expected: [FBAXKeys: String] = [
+    let expected: [AXKeys: String] = [
       .label: "AXLabel",
       .frame: "AXFrame",
       .value: "AXValue",
@@ -86,7 +86,7 @@ final class AXWireContractTests: XCTestCase {
     ]
     // Pinned over `allCases` rather than against a count, so a case added without a pinned wire value
     // fails here instead of silently going unchecked.
-    XCTAssertEqual(Set(FBAXKeys.allCases), Set(expected.keys), "every FBAXKeys case must have its wire value pinned")
+    XCTAssertEqual(Set(AXKeys.allCases), Set(expected.keys), "every AXKeys case must have its wire value pinned")
     for (key, wireValue) in expected {
       XCTAssertEqual(key.rawValue, wireValue, "\(key) must serialize under its pinned wire key")
     }
@@ -96,19 +96,19 @@ final class AXWireContractTests: XCTestCase {
   // that adding a key never changes the bytes of a read that did not ask for it.
   func testDefaultKeySetMembership() {
     XCTAssertEqual(
-      FBAXKeys.defaultSet,
+      AXKeys.defaultSet,
       [
         .label, .frame, .value, .uniqueID, .type, .title, .frameDict, .help,
         .enabled, .customActions, .role, .roleDescription, .subrole,
         .contentRequired, .pid, .traits,
       ]
     )
-    XCTAssertEqual(FBAXKeys.defaultSet.count, 16)
+    XCTAssertEqual(AXKeys.defaultSet.count, 16)
     // Every case that is not in the default set is opt-in, derived rather than listed, so a new key is
     // covered by this the moment it exists.
-    let optIn = Set(FBAXKeys.allCases).subtracting(FBAXKeys.defaultSet)
+    let optIn = Set(AXKeys.allCases).subtracting(AXKeys.defaultSet)
     XCTAssertEqual(optIn, [.expanded, .placeholder, .hidden, .focused, .isRemote, .interactable, .occludedBy])
-    XCTAssertTrue(FBAXKeys.defaultSet.isDisjoint(with: optIn), "the opt-in keys must stay out of the default set")
+    XCTAssertTrue(AXKeys.defaultSet.isDisjoint(with: optIn), "the opt-in keys must stay out of the default set")
   }
 
   // MARK: - Failure kinds

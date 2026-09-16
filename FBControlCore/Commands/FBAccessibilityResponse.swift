@@ -162,14 +162,14 @@ public struct AccessibilityModalInfo: Sendable, Equatable, Encodable {
 }
 
 /// Response object containing accessibility elements and optional profiling data.
-public struct FBAccessibilityElementsResponse: Sendable {
+public struct AccessibilityElementsResponse: Sendable {
 
   /// The accessibility elements: an object (single element) or an array (flat/nested tree).
   public let elements: AccessibilityElementPayload
 
   /// Where the read spent its time, when the backend measured it. `.translator` and `.guestBridge`
   /// measure disjoint phases; `backend` says which to expect.
-  public let profilingData: FBAccessibilityProfile?
+  public let profilingData: AccessibilityProfile?
 
   /// How much of the screen the read's element frames cover, or `nil` when coverage was not requested.
   public let coverage: AccessibilityCoverage?
@@ -186,7 +186,7 @@ public struct FBAccessibilityElementsResponse: Sendable {
   public let screen: AccessibilityScreenInfo?
 
   /// Which backend produced the read.
-  public let backend: FBUIAutomationBackendName?
+  public let backend: UIAutomationBackendName?
 
   /// What the read was asked for.
   public let target: AccessibilityTargetDescriptor?
@@ -200,12 +200,12 @@ public struct FBAccessibilityElementsResponse: Sendable {
 
   public init(
     elements: AccessibilityElementPayload,
-    profilingData: FBAccessibilityProfile? = nil,
+    profilingData: AccessibilityProfile? = nil,
     coverage: AccessibilityCoverage? = nil,
     modal: AccessibilityModalInfo? = nil,
     truncated: Bool = false,
     screen: AccessibilityScreenInfo? = nil,
-    backend: FBUIAutomationBackendName? = nil,
+    backend: UIAutomationBackendName? = nil,
     target: AccessibilityTargetDescriptor? = nil,
     automation: AccessibilityAutomationState? = nil,
     narrowing: AccessibilityNarrowing? = nil
@@ -224,12 +224,12 @@ public struct FBAccessibilityElementsResponse: Sendable {
 
   /// A copy carrying the read's provenance; a `nil` argument leaves the existing value in place.
   public func withProvenance(
-    backend: FBUIAutomationBackendName? = nil,
+    backend: UIAutomationBackendName? = nil,
     target: AccessibilityTargetDescriptor? = nil,
     screen: AccessibilityScreenInfo? = nil,
     truncated: Bool? = nil
-  ) -> FBAccessibilityElementsResponse {
-    FBAccessibilityElementsResponse(
+  ) -> AccessibilityElementsResponse {
+    AccessibilityElementsResponse(
       elements: elements,
       profilingData: profilingData,
       coverage: coverage,
@@ -244,8 +244,8 @@ public struct FBAccessibilityElementsResponse: Sendable {
   }
 
   /// A copy reporting what narrowed the read.
-  public func withNarrowing(_ narrowing: AccessibilityNarrowing) -> FBAccessibilityElementsResponse {
-    FBAccessibilityElementsResponse(
+  public func withNarrowing(_ narrowing: AccessibilityNarrowing) -> AccessibilityElementsResponse {
+    AccessibilityElementsResponse(
       elements: elements,
       profilingData: profilingData,
       coverage: coverage,
@@ -260,8 +260,8 @@ public struct FBAccessibilityElementsResponse: Sendable {
   }
 
   /// A copy whose screen bounds are replaced, including with `nil` when a read has no screen context.
-  public func replacingScreen(_ screen: AccessibilityScreenInfo?) -> FBAccessibilityElementsResponse {
-    FBAccessibilityElementsResponse(
+  public func replacingScreen(_ screen: AccessibilityScreenInfo?) -> AccessibilityElementsResponse {
+    AccessibilityElementsResponse(
       elements: elements,
       profilingData: profilingData,
       coverage: coverage,
@@ -276,9 +276,9 @@ public struct FBAccessibilityElementsResponse: Sendable {
   }
 
   /// The `complete` output format for this read.
-  public var document: FBAccessibilityDocument {
+  public var document: AccessibilityDocument {
     let reported = elements.elements.map { $0.reportingChildren() }
-    return FBAccessibilityDocument(
+    return AccessibilityDocument(
       elements: reported,
       modal: modal,
       truncated: truncated,
@@ -296,8 +296,8 @@ public struct FBAccessibilityElementsResponse: Sendable {
 
 }
 
-extension FBAccessibilityElementsResponse: CustomStringConvertible {
+extension AccessibilityElementsResponse: CustomStringConvertible {
   public var description: String {
-    "<FBAccessibilityElementsResponse: elements=\(Swift.type(of: elements)), profiling=\(String(describing: profilingData)), coverage=\(String(describing: coverage)), modal=\(String(describing: modal))>"
+    "<AccessibilityElementsResponse: elements=\(Swift.type(of: elements)), profiling=\(String(describing: profilingData)), coverage=\(String(describing: coverage)), modal=\(String(describing: modal))>"
   }
 }

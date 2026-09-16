@@ -28,8 +28,8 @@ final class AccessibilityUIAutomation: UIAutomation, @unchecked Sendable {
 
   func describe(
     _ query: AccessibilityElementQuery,
-    options: FBAccessibilityRequestOptions
-  ) async throws -> FBAccessibilityElementsResponse {
+    options: AccessibilityRequestOptions
+  ) async throws -> AccessibilityElementsResponse {
     try await Self.translatingBackendErrors(query) {
       let element = try await operations.resolveElement(for: query)
       defer { element.close() }
@@ -68,8 +68,8 @@ final class AccessibilityUIAutomation: UIAutomation, @unchecked Sendable {
 
   func hitTest(
     at point: CGPoint,
-    options: FBAccessibilityRequestOptions
-  ) async throws -> FBAccessibilityElementsResponse? {
+    options: AccessibilityRequestOptions
+  ) async throws -> AccessibilityElementsResponse? {
     do {
       let element = try await operations.resolveElement(for: .point(point))
       defer { element.close() }
@@ -137,7 +137,7 @@ final class AccessibilityUIAutomation: UIAutomation, @unchecked Sendable {
     }
   }
 
-  func scroll(_ query: AccessibilityElementQuery, direction: FBAccessibilityScrollDirection) async throws {
+  func scroll(_ query: AccessibilityElementQuery, direction: AccessibilityScrollDirection) async throws {
     try await Self.translatingBackendErrors(query) {
       let element = try await operations.resolveElement(for: query)
       defer { element.close() }

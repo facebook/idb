@@ -170,7 +170,7 @@ extension MacDevice: ScreenshotCommands {
 
 extension MacDevice: VideoRecordingCommands {
 
-  public func startRecording(toFile filePath: String) async throws -> any FBVideoRecording {
+  public func startRecording(toFile filePath: String) async throws -> any VideoRecording {
     throw macUnsupported("startRecording")
   }
 }

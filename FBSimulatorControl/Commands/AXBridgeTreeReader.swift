@@ -26,17 +26,17 @@ protocol AXBridgeTreeReader: UIAutomation {
   ) async throws -> AXTreeRead
 
   /// The traversal axbridge performs when the request does not select one.
-  static func autoTraversal(for options: FBAccessibilityRequestOptions) -> AXTraversal
+  static func autoTraversal(for options: AccessibilityRequestOptions) -> AXTraversal
 
   /// Warns that the traversal could not answer keys the caller asked for, so a caller can tell "this read
   /// could not ask" from "the app set nothing".
-  func warnIfUnsatisfiable(_ keys: Set<FBAXKeys>, traversal: AXTraversal) async
+  func warnIfUnsatisfiable(_ keys: Set<AXKeys>, traversal: AXTraversal) async
 
   /// Warns that a read's tree was truncated by the depth or node bound.
   func warnIfTruncated(_ truncated: Bool) async
 
   /// Warns when a whole-tree read asked for reachability.
-  func warnIfReachabilityAcrossTree(_ keys: Set<FBAXKeys>) async
+  func warnIfReachabilityAcrossTree(_ keys: Set<AXKeys>) async
 
   /// Warns that most of a read's elements carry no rectangle.
   func warnIfMostElementsUnframed(_ frames: AccessibilityFrameSummary?) async
@@ -45,19 +45,19 @@ protocol AXBridgeTreeReader: UIAutomation {
   func profile(
     for read: AXTreeRead, elementCount: Int, serializeDuration: CFAbsoluteTime,
     traversal: AXTraversal
-  ) -> FBAccessibilityProfile?
+  ) -> AccessibilityProfile?
 }
 
 extension AXBridgeTreeReader {
 
   /// The traversal a read actually gets: the explicit request or axbridge's automatic choice.
-  static func resolvedTraversal(for options: FBAccessibilityRequestOptions) -> AXTraversal {
+  static func resolvedTraversal(for options: AccessibilityRequestOptions) -> AXTraversal {
     options.traversalStrategy.traversal ?? autoTraversal(for: options)
   }
 
   private static func readPlan(
-    for options: FBAccessibilityRequestOptions,
-    including extraKeys: Set<FBAXKeys> = [],
+    for options: AccessibilityRequestOptions,
+    including extraKeys: Set<AXKeys> = [],
     explainUnreachable: Bool
   ) -> AXBridgeReadPlan {
     AXBridgeReadPlan(
@@ -71,18 +71,18 @@ extension AXBridgeTreeReader {
 
 /// The derived values used throughout one axbridge tree read.
 private struct AXBridgeReadPlan {
-  let serializationKeys: Set<FBAXKeys>
+  let serializationKeys: Set<AXKeys>
   let attributes: [String]?
   let traversal: AXTraversal
-  let unsatisfiableKeys: Set<FBAXKeys>
+  let unsatisfiableKeys: Set<AXKeys>
   let nestedFormat: Bool
   let collectFrameCoverage: Bool
   let enableProfiling: Bool
   let explainUnreachable: Bool
 
   init(
-    options: FBAccessibilityRequestOptions,
-    serializationKeys: Set<FBAXKeys>,
+    options: AccessibilityRequestOptions,
+    serializationKeys: Set<AXKeys>,
     traversal: AXTraversal,
     explainUnreachable: Bool
   ) {
@@ -102,8 +102,8 @@ extension AXBridgeTreeReader {
   /// Resolves the query, reads the raw tree, serializes it, and attaches response metadata.
   func describeTree(
     _ query: AccessibilityElementQuery,
-    options: FBAccessibilityRequestOptions
-  ) async throws -> FBAccessibilityElementsResponse {
+    options: AccessibilityRequestOptions
+  ) async throws -> AccessibilityElementsResponse {
     switch query {
     case let .point(point):
       guard let response = try await hitTest(at: point, options: options) else {
@@ -136,7 +136,7 @@ extension AXBridgeTreeReader {
       // The match came from a flattened walk, so it carries no children of its own; reporting them
       // keeps a marker read the same shape as any other single-element read of the same format.
       let matched = plan.nestedFormat ? match.reportingChildren() : match
-      return FBAccessibilityElementsResponse(elements: .single(matched), modal: read.modal)
+      return AccessibilityElementsResponse(elements: .single(matched), modal: read.modal)
         .withProvenance(
           backend: backend.name,
           target: query.targetDescriptor,
@@ -150,7 +150,7 @@ extension AXBridgeTreeReader {
       )
       // A single fetch cannot answer reachability (the app hit-tests every node and times out). `.auto`
       // never routes here, so only an explicit choice can; refuse rather than time out in the guest.
-      let unanswerable = plan.serializationKeys.intersection(FBAXKeys.reachabilityKeys)
+      let unanswerable = plan.serializationKeys.intersection(AXKeys.reachabilityKeys)
       if plan.traversal == .singleFetch, !unanswerable.isEmpty {
         throw UIAutomationError.traversalCannotAnswer(
           backend: backend,
@@ -189,7 +189,7 @@ extension AXBridgeTreeReader {
         } : nil
       // Judged on the reported elements — what the caller's `--filter` shows them.
       await warnIfMostElementsUnframed(AccessibilityFrameSummary(elements: elements))
-      return FBAccessibilityElementsResponse(
+      return AccessibilityElementsResponse(
         elements: .tree(elements),
         profilingData: plan.enableProfiling
           ? profile(
@@ -216,14 +216,14 @@ extension AXBridgeTreeReader {
   /// leaves the reason unenriched rather than failing the read. Runs after the filter, and neither
   /// refinement changes an element's `status` — only which reasons it carries.
   private func refiningInteractable(
-    _ elements: [FBAccessibilityDocumentElement],
+    _ elements: [AccessibilityDocumentElement],
     screen: AccessibilityScreenInfo?,
-    options: FBAccessibilityRequestOptions
-  ) async throws -> [FBAccessibilityDocumentElement] {
+    options: AccessibilityRequestOptions
+  ) async throws -> [AccessibilityDocumentElement] {
     guard options.keys.contains(.occludedBy) || screen != nil else {
       return elements
     }
-    var refined: [FBAccessibilityDocumentElement] = []
+    var refined: [AccessibilityDocumentElement] = []
     refined.reserveCapacity(elements.count)
     for element in elements {
       let result = await refiningInteractable(of: element, ancestors: [], screen: screen, options: options)
@@ -233,17 +233,17 @@ extension AXBridgeTreeReader {
   }
 
   private func refiningInteractable(
-    of element: FBAccessibilityDocumentElement,
+    of element: AccessibilityDocumentElement,
     ancestors: [AXElementIdentity],
     screen: AccessibilityScreenInfo?,
-    options: FBAccessibilityRequestOptions
-  ) async -> (element: FBAccessibilityDocumentElement, identities: Set<AXElementIdentity>) {
+    options: AccessibilityRequestOptions
+  ) async -> (element: AccessibilityDocumentElement, identities: Set<AXElementIdentity>) {
     var element = element
     let identity = AXElementIdentity(element)
     let ancestryForChildren = ancestors + [identity]
     var descendantIdentities: Set<AXElementIdentity> = []
     if let children = element.children {
-      var refined: [FBAccessibilityDocumentElement] = []
+      var refined: [AccessibilityDocumentElement] = []
       refined.reserveCapacity(children.count)
       for child in children {
         let result = await refiningInteractable(
@@ -280,7 +280,7 @@ extension AXBridgeTreeReader {
   /// The frame of the element `query` names; a whole-tree query answers with the application root.
   /// Narrowing to `.frameDict` optimises serialization only — the guest walks the whole tree either way.
   func frameFromTree(_ query: AccessibilityElementQuery) async throws -> CGRect {
-    let response = try await describeTree(query, options: FBAccessibilityRequestOptions(keys: [.frameDict]))
+    let response = try await describeTree(query, options: AccessibilityRequestOptions(keys: [.frameDict]))
     // Throws rather than substituting a zero rect, which a caller could not tell apart from an element
     // genuinely at the origin.
     guard let element = response.elements.elements.first,
@@ -302,9 +302,9 @@ enum AXScreenBoundsClassifier {
   /// scrolled under a navigation bar is usually both. Blocked case only — an actionable element
   /// already carries a reachable point.
   static func notingScreenClipping(
-    _ element: FBAccessibilityDocumentElement,
+    _ element: AccessibilityDocumentElement,
     screen: AccessibilityScreenInfo?
-  ) -> FBAccessibilityDocumentElement {
+  ) -> AccessibilityDocumentElement {
     guard let screen,
       case let .blocked(reasons)?? = element.interactable,
       !reasons.contains(.clippedByScreen), // idempotent: ordering is guaranteed at encode, not here
@@ -338,7 +338,7 @@ struct AXElementIdentity: Hashable {
       rect: reference.frame?.rect)
   }
 
-  init(_ element: FBAccessibilityDocumentElement) {
+  init(_ element: AccessibilityDocumentElement) {
     self.init(
       type: element.type ?? nil, identifier: element.identifier ?? nil,
       label: element.label ?? nil, rect: (element.frame ?? nil)?.rect)

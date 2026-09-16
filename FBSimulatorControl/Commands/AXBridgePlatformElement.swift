@@ -40,7 +40,7 @@ final class AXBridgePlatformElement: AXPlatformElement {
   /// JSON has no infinity or NaN, so the guest sends null for a non-finite coordinate (routine for an
   /// off-screen or still-laying-out element). Restored to infinity so
   /// `CGRectMakeWithDictionaryRepresentation` does not fail and read the whole rect as zero;
-  /// `FBAccessibilityFrame` then nulls each non-finite edge independently.
+  /// `AccessibilityFrame` then nulls each non-finite edge independently.
   private static func restoringNonFinite(_ dictionary: NSDictionary) -> NSDictionary {
     guard dictionary.allValues.contains(where: { $0 is NSNull }) else {
       return dictionary

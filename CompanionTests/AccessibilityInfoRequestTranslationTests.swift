@@ -38,7 +38,7 @@ struct AccessibilityInfoRequestTranslationTests {
 
   @Test
   func searchableKeyMapsEveryWireValue() {
-    let expected: [(Idb_AccessibilityActionRequest.SearchableKey, FBAXSearchableKey)] = [
+    let expected: [(Idb_AccessibilityActionRequest.SearchableKey, AXSearchableKey)] = [
       (.label, .label), (.uniqueID, .uniqueID), (.value, .value), (.title, .title),
       (.role, .role), (.roleDescription, .roleDescription), (.subrole, .subrole),
       (.help, .help), (.placeholder, .placeholder),
@@ -132,7 +132,7 @@ struct AccessibilityInfoRequestTranslationTests {
 
   @Test
   func filterMapsEveryWireValue() {
-    let expected: [(Idb_AccessibilityInfoRequest.Filter, FBAccessibilityElementFilter)] = [
+    let expected: [(Idb_AccessibilityInfoRequest.Filter, AccessibilityElementFilter)] = [
       (.all, .all), (.interactable, .interactable),
     ]
     #expect(
@@ -221,7 +221,7 @@ struct AccessibilityInfoRequestTranslationTests {
   @Test
   func emptyKeysSelectTheDefaultSet() throws {
     let options = try AccessibilityInfoRequestTranslation.options(from: .init(), format: .default)
-    #expect((options.keys) == (FBAXKeys.defaultSet))
+    #expect((options.keys) == (AXKeys.defaultSet))
   }
 
   @Test
@@ -229,7 +229,7 @@ struct AccessibilityInfoRequestTranslationTests {
     var request = Idb_AccessibilityInfoRequest()
     request.keys = ["AXLabel", "not-a-key"]
     let options = try AccessibilityInfoRequestTranslation.options(from: request, format: .default)
-    let label = try #require(FBAXKeys(rawValue: "AXLabel"))
+    let label = try #require(AXKeys(rawValue: "AXLabel"))
     #expect((options.keys) == (Set([label])), "deliberately lenient: invalid keys drop silently as long as one key is recognized")
   }
 
@@ -291,29 +291,29 @@ struct AccessibilityInfoRequestTranslationTests {
 
   @Test
   func treeSerializesAsABareArray() throws {
-    let response = FBAccessibilityElementsResponse(elements: .tree([FBAccessibilityDocumentElement()]))
+    let response = AccessibilityElementsResponse(elements: .tree([AccessibilityDocumentElement()]))
     let data = try AccessibilityInfoRequestTranslation.legacyJSON(from: response)
     #expect((String(data: data, encoding: .utf8)) == ("[{}]"), "point/frontmost reads emit the bare element array — not the {\"elements\":…} envelope the marker path uses")
   }
 
   @Test
   func singleSerializesAsABareObject() throws {
-    let response = FBAccessibilityElementsResponse(elements: .single(FBAccessibilityDocumentElement()))
+    let response = AccessibilityElementsResponse(elements: .single(AccessibilityDocumentElement()))
     let data = try AccessibilityInfoRequestTranslation.legacyJSON(from: response)
     #expect((String(data: data, encoding: .utf8)) == ("{}"))
   }
 
   @Test
   func responseJSONKeepsTheLegacyShapesByteIdentical() throws {
-    let response = FBAccessibilityElementsResponse(elements: .tree([FBAccessibilityDocumentElement()]))
-    for format in [FBAccessibilityOutputFormat.default, .nested] {
+    let response = AccessibilityElementsResponse(elements: .tree([AccessibilityDocumentElement()]))
+    for format in [AccessibilityOutputFormat.default, .nested] {
       #expect((try AccessibilityInfoRequestTranslation.responseJSON(from: response, format: format)) == (try AccessibilityInfoRequestTranslation.legacyJSON(from: response)), "the legacy formats are byte-untouched by the format-aware encoder")
     }
   }
 
   @Test
   func responseJSONEmitsTheCompleteDocument() throws {
-    let response = FBAccessibilityElementsResponse(elements: .tree([FBAccessibilityDocumentElement()]), backend: .ax)
+    let response = AccessibilityElementsResponse(elements: .tree([AccessibilityDocumentElement()]), backend: .ax)
     let data = try AccessibilityInfoRequestTranslation.responseJSON(from: response, format: .complete)
     let document = try #require(try JSONSerialization.jsonObject(with: data) as? [String: Any])
     #expect((document["backend"] as? String) == ("ax"))
@@ -323,23 +323,23 @@ struct AccessibilityInfoRequestTranslationTests {
   @Test
   func theAllTokenExpandsToEveryKey() throws {
     var request = Idb_AccessibilityInfoRequest()
-    request.keys = [FBAXKeys.everythingToken]
+    request.keys = [AXKeys.everythingToken]
     let options = try AccessibilityInfoRequestTranslation.options(from: request, format: .default)
-    #expect((options.keys) == (FBAXKeys.everything))
+    #expect((options.keys) == (AXKeys.everything))
   }
 
   // `all` beside a named key still means all; intersecting would return less than either alone.
   @Test
   func theAllTokenWinsOverKeysNamedBesideIt() throws {
     var request = Idb_AccessibilityInfoRequest()
-    request.keys = ["AXLabel", FBAXKeys.everythingToken]
+    request.keys = ["AXLabel", AXKeys.everythingToken]
     let options = try AccessibilityInfoRequestTranslation.options(from: request, format: .default)
-    #expect((options.keys) == (FBAXKeys.everything))
+    #expect((options.keys) == (AXKeys.everything))
   }
 
   @Test
   func theAllTokenIsNotItselfAKey() {
-    #expect((FBAXKeys(rawValue: FBAXKeys.everythingToken)) == nil)
+    #expect((AXKeys(rawValue: AXKeys.everythingToken)) == nil)
   }
 
 }

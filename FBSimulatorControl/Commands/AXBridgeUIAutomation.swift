@@ -57,8 +57,8 @@ final class AXBridgeUIAutomation: AXBridgeTreeReader, @unchecked Sendable {
 
   func describe(
     _ query: AccessibilityElementQuery,
-    options: FBAccessibilityRequestOptions
-  ) async throws -> FBAccessibilityElementsResponse {
+    options: AccessibilityRequestOptions
+  ) async throws -> AccessibilityElementsResponse {
     try await describeTree(query, options: options)
   }
 
@@ -95,8 +95,8 @@ final class AXBridgeUIAutomation: AXBridgeTreeReader, @unchecked Sendable {
 
   /// A single fetch that asks for reachability hit-tests every node and times out rather than
   /// answering, so those keys force the per-node walk.
-  static func autoTraversal(for options: FBAccessibilityRequestOptions) -> AXTraversal {
-    guard options.serializationKeys.isDisjoint(with: FBAXKeys.reachabilityKeys) else {
+  static func autoTraversal(for options: AccessibilityRequestOptions) -> AXTraversal {
+    guard options.serializationKeys.isDisjoint(with: AXKeys.reachabilityKeys) else {
       return .viewHierarchy
     }
     return .singleFetch
@@ -149,8 +149,8 @@ final class AXBridgeUIAutomation: AXBridgeTreeReader, @unchecked Sendable {
 
   func hitTest(
     at point: CGPoint,
-    options: FBAccessibilityRequestOptions
-  ) async throws -> FBAccessibilityElementsResponse? {
+    options: AccessibilityRequestOptions
+  ) async throws -> AccessibilityElementsResponse? {
     try await translatingBackendErrors {
       let response = try await transport.send(
         .hitTest(
@@ -168,7 +168,7 @@ final class AXBridgeUIAutomation: AXBridgeTreeReader, @unchecked Sendable {
       if let children = formatted.children {
         formatted.children = options.filter.apply(to: children)
       }
-      return FBAccessibilityElementsResponse(elements: .single(formatted))
+      return AccessibilityElementsResponse(elements: .single(formatted))
         .withProvenance(backend: backend.name, target: .point(point))
     }
   }
@@ -187,7 +187,7 @@ final class AXBridgeUIAutomation: AXBridgeTreeReader, @unchecked Sendable {
         // single fetch is unmeasured on a transitioning screen.
         let read = try await self.readRawTree(for: .frontmost, attributes: nil, explainUnreachable: false, traversal: .viewHierarchy)
         let elements = AXTreeWalk.describeAllElements(
-          fromTree: read.tree, keys: FBAXKeys.defaultSet.union([key.serializationKey]), nestedFormat: false, pid: read.pid
+          fromTree: read.tree, keys: AXKeys.defaultSet.union([key.serializationKey]), nestedFormat: false, pid: read.pid
         )
         return AXTreeWalk.matchingElement(inElements: elements, markerValue: markerValue, key: key) != nil ? true : nil
       } catch let error as AXBridgeError {
@@ -219,7 +219,7 @@ final class AXBridgeUIAutomation: AXBridgeTreeReader, @unchecked Sendable {
     try await write(.setValue(value), to: target, query: query)
   }
 
-  func scroll(_ query: AccessibilityElementQuery, direction: FBAccessibilityScrollDirection) async throws {
+  func scroll(_ query: AccessibilityElementQuery, direction: AccessibilityScrollDirection) async throws {
     let target = try await writeTarget(for: query, operation: "Scroll", callerAssertion: nil)
     try await write(.perform(Self.action(for: direction)), to: target, query: query)
   }
@@ -243,7 +243,7 @@ final class AXBridgeUIAutomation: AXBridgeTreeReader, @unchecked Sendable {
   }
 
   /// The semantic action a scroll direction asks for.
-  private static func action(for direction: FBAccessibilityScrollDirection) -> AXWire.Action {
+  private static func action(for direction: AccessibilityScrollDirection) -> AXWire.Action {
     switch direction {
     case .up: .scrollUp
     case .down: .scrollDown
@@ -309,7 +309,7 @@ final class AXBridgeUIAutomation: AXBridgeTreeReader, @unchecked Sendable {
     return (Double(widthPixels) / pointsPerPixel / 2, Double(heightPixels) / pointsPerPixel / 2)
   }
 
-  func warnIfUnsatisfiable(_ keys: Set<FBAXKeys>, traversal: AXTraversal) {
+  func warnIfUnsatisfiable(_ keys: Set<AXKeys>, traversal: AXTraversal) {
     guard !keys.isEmpty else {
       return
     }
@@ -328,7 +328,7 @@ final class AXBridgeUIAutomation: AXBridgeTreeReader, @unchecked Sendable {
   func profile(
     for read: AXTreeRead, elementCount: Int, serializeDuration: CFAbsoluteTime,
     traversal: AXTraversal
-  ) -> FBAccessibilityProfile? {
+  ) -> AccessibilityProfile? {
     guard let timings = read.timings else {
       return nil
     }
@@ -346,7 +346,7 @@ final class AXBridgeUIAutomation: AXBridgeTreeReader, @unchecked Sendable {
       ))
   }
 
-  func warnIfReachabilityAcrossTree(_ keys: Set<FBAXKeys>) {
+  func warnIfReachabilityAcrossTree(_ keys: Set<AXKeys>) {
     guard keys.contains(.interactable) || keys.contains(.occludedBy) else { return }
     _ = simulator.logger.log(AccessibilityGuidance.reachabilityAcrossTree)
   }

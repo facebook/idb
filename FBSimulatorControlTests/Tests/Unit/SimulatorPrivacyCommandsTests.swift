@@ -35,7 +35,7 @@ final class SimulatorPrivacyCommandsTests: XCTestCase {
   // MARK: - Filtered TCC Approvals
 
   func testFilteredTCCApprovalsKeepsOnlyTCCServices() {
-    let input: Set<FBTargetSettingsService> = [
+    let input: Set<TargetSettingsService> = [
       .contacts, .photos, .location, .notification,
     ]
     let filtered = SimulatorPrivacyCommands.filteredTCCApprovals(input)
@@ -58,7 +58,7 @@ final class SimulatorPrivacyCommandsTests: XCTestCase {
 
   func testPreiOS12RowsContainBundleIDAndServiceName() {
     let bundleIDs: Set<String> = ["com.test.app"]
-    let services: Set<FBTargetSettingsService> = [.contacts]
+    let services: Set<TargetSettingsService> = [.contacts]
     let rows = SimulatorPrivacyCommands.preiOS12ApprovalRows(forBundleIDs: bundleIDs, services: services)
     XCTAssertTrue(
       rows.contains("kTCCServiceAddressBook"),
@@ -70,7 +70,7 @@ final class SimulatorPrivacyCommandsTests: XCTestCase {
 
   func testPostiOS15RowsUseAuthValue2ForAVCaptureCompatibility() {
     let bundleIDs: Set<String> = ["com.test.app"]
-    let services: Set<FBTargetSettingsService> = [.camera]
+    let services: Set<TargetSettingsService> = [.camera]
     let rows = SimulatorPrivacyCommands.postiOS15ApprovalRows(forBundleIDs: bundleIDs, services: services)
     // auth_value=2 is required for AVCaptureDevice.authorizationStatus to return
     // something other than notDetermined
@@ -81,7 +81,7 @@ final class SimulatorPrivacyCommandsTests: XCTestCase {
 
   func testPostiOS17RowsIncludePidAndBootUuidColumns() {
     let bundleIDs: Set<String> = ["com.test.app"]
-    let services: Set<FBTargetSettingsService> = [.microphone]
+    let services: Set<TargetSettingsService> = [.microphone]
     let rows17 = SimulatorPrivacyCommands.postiOS17ApprovalRows(forBundleIDs: bundleIDs, services: services)
     let rows15 = SimulatorPrivacyCommands.postiOS15ApprovalRows(forBundleIDs: bundleIDs, services: services)
     XCTAssertGreaterThan(
@@ -164,7 +164,7 @@ final class SimulatorPrivacyCommandsTests: XCTestCase {
 
   func testApprovalRowsGenerateCorrectCountForMultipleInputs() {
     let bundleIDs: Set<String> = ["com.app1", "com.app2"]
-    let services: Set<FBTargetSettingsService> = [.contacts, .photos]
+    let services: Set<TargetSettingsService> = [.contacts, .photos]
     let rows = SimulatorPrivacyCommands.preiOS12ApprovalRows(forBundleIDs: bundleIDs, services: services)
     let tuples = rows.components(separatedBy: "), (")
     XCTAssertEqual(
@@ -174,7 +174,7 @@ final class SimulatorPrivacyCommandsTests: XCTestCase {
 
   func testApprovalRowsFilterToTCCServicesOnly() {
     let bundleIDs: Set<String> = ["com.test.app"]
-    let services: Set<FBTargetSettingsService> = [.contacts, .location]
+    let services: Set<TargetSettingsService> = [.contacts, .location]
     let rows = SimulatorPrivacyCommands.preiOS12ApprovalRows(forBundleIDs: bundleIDs, services: services)
     XCTAssertTrue(
       rows.contains("kTCCServiceAddressBook"),

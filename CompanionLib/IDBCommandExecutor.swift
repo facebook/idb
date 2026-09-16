@@ -170,7 +170,7 @@ public final class IDBCommandExecutor {
 
   // MARK: - Public Methods
 
-  public func take_screenshot(_ format: FBScreenshotFormat) async throws -> Data {
+  public func take_screenshot(_ format: ScreenshotFormat) async throws -> Data {
     try await target.screenshot.take(format: format)
   }
 
@@ -185,7 +185,7 @@ public final class IDBCommandExecutor {
     try await simulator.uiAutomation(backend: .accessibility).tap(.marker(value: label, key: .label, depth: .max))
   }
 
-  public func accessibility_tap(query: AccessibilityElementQuery, expectedValue: String?, expectedKey: FBAXSearchableKey) async throws {
+  public func accessibility_tap(query: AccessibilityElementQuery, expectedValue: String?, expectedKey: AXSearchableKey) async throws {
     guard let simulator = target as? FBSimulator else {
       throw IDBCommandError.simulatorOnlyOperation(operation: "tap by accessibility", targetDescription: String(describing: target))
     }
@@ -194,7 +194,7 @@ public final class IDBCommandExecutor {
   }
 
   /// Describes the single element `query` names, serialized in `options.format`.
-  public func accessibility_describe(query: AccessibilityElementQuery, options: FBAccessibilityRequestOptions, backend: UIAutomationBackend = .accessibility) async throws -> Data {
+  public func accessibility_describe(query: AccessibilityElementQuery, options: AccessibilityRequestOptions, backend: UIAutomationBackend = .accessibility) async throws -> Data {
     guard let simulator = target as? FBSimulator else {
       throw IDBCommandError.simulatorOnlyOperation(operation: "describe accessibility", targetDescription: String(describing: target))
     }
@@ -209,7 +209,7 @@ public final class IDBCommandExecutor {
     try await simulator.uiAutomation(backend: backend).wait(query, timeout: timeout, pollInterval: pollInterval)
   }
 
-  public func accessibility_scroll(query: AccessibilityElementQuery, direction: FBAccessibilityScrollDirection) async throws {
+  public func accessibility_scroll(query: AccessibilityElementQuery, direction: AccessibilityScrollDirection) async throws {
     guard let simulator = target as? FBSimulator else {
       throw IDBCommandError.simulatorOnlyOperation(operation: "scroll by accessibility", targetDescription: String(describing: target))
     }
@@ -234,12 +234,12 @@ public final class IDBCommandExecutor {
     try await simulator.uiAutomation(backend: .accessibility).drag(from: source, to: destination, options: options)
   }
 
-  public func accessibility_info_at_point(_ value: NSValue?, format: FBAccessibilityOutputFormat) async throws -> FBAccessibilityElementsResponse {
+  public func accessibility_info_at_point(_ value: NSValue?, format: AccessibilityOutputFormat) async throws -> AccessibilityElementsResponse {
     return try await accessibility_info_at_point(
-      value, options: FBAccessibilityRequestOptions(format: format, enableLogging: false))
+      value, options: AccessibilityRequestOptions(format: format, enableLogging: false))
   }
 
-  public func accessibility_info_at_point(_ value: NSValue?, options: FBAccessibilityRequestOptions, backend: UIAutomationBackend = .accessibility) async throws -> FBAccessibilityElementsResponse {
+  public func accessibility_info_at_point(_ value: NSValue?, options: AccessibilityRequestOptions, backend: UIAutomationBackend = .accessibility) async throws -> AccessibilityElementsResponse {
     guard let simulator = target as? FBSimulator else {
       throw IDBCommandError.simulatorOnlyOperation(operation: "provide accessibility commands", targetDescription: String(describing: target))
     }
@@ -276,7 +276,7 @@ public final class IDBCommandExecutor {
 
   /// Starts recording the target's screen to `filePath`. The returned handle's
   /// `stop()` finalizes the file. Only one recording runs at a time.
-  public func repl_start_recording(toFile filePath: String) async throws -> any FBVideoRecording {
+  public func repl_start_recording(toFile filePath: String) async throws -> any VideoRecording {
     try await target.videoRecording.startRecording(toFile: filePath)
   }
 
@@ -300,11 +300,11 @@ public final class IDBCommandExecutor {
     try await simulatorTarget().keychain.clear()
   }
 
-  public func approve(_ services: Set<FBTargetSettingsService>, for_application bundleID: String) async throws {
+  public func approve(_ services: Set<TargetSettingsService>, for_application bundleID: String) async throws {
     try await simulatorTarget().privacy.grantAccess(Set([bundleID]), toServices: services)
   }
 
-  public func revoke(_ services: Set<FBTargetSettingsService>, for_application bundleID: String) async throws {
+  public func revoke(_ services: Set<TargetSettingsService>, for_application bundleID: String) async throws {
     try await simulatorTarget().privacy.revokeAccess(Set([bundleID]), toServices: services)
   }
 

@@ -8,7 +8,7 @@
 import Foundation
 
 /// How a describe read is rendered. Raw values are the CLI tokens.
-public enum FBAccessibilityOutputFormat: String, CaseIterable, Sendable {
+public enum AccessibilityOutputFormat: String, CaseIterable, Sendable {
   /// The elements flattened into one array, each node carrying no children.
   case `default`
   /// The elements as a tree, each node carrying its `children`.

@@ -9,14 +9,14 @@ import Foundation
 
 /// A handle to a running video recording. It is returned already recording; call `stop()` to finalize
 /// the file and obtain its URL.
-public protocol FBVideoRecording {
+public protocol VideoRecording {
 
   func stop() async throws -> URL
 }
 
 /// A closure-backed recording handle for command implementations that keep ownership of the
 /// underlying recording operation.
-public final class VideoRecordingHandle: FBVideoRecording {
+public final class VideoRecordingHandle: VideoRecording {
   private let stopAction: () async throws -> URL
 
   public init(stop: @escaping () async throws -> URL) {
@@ -30,11 +30,11 @@ public final class VideoRecordingHandle: FBVideoRecording {
 
 public protocol VideoRecordingCommands {
 
-  func startRecording(toFile filePath: String) async throws -> any FBVideoRecording
+  func startRecording(toFile filePath: String) async throws -> any VideoRecording
 
   /// Record using a caller-provided stream configuration (codec, frame rate, scale, rate control,
   /// key-frame rate). Mirrors `VideoStreamCommands.createStream(configuration:to:)`.
-  func startRecording(toFile filePath: String, configuration: FBVideoStreamConfiguration) async throws -> any FBVideoRecording
+  func startRecording(toFile filePath: String, configuration: FBVideoStreamConfiguration) async throws -> any VideoRecording
 
   /// Whether the overload above applies the configuration or discards it. A caller that was asked
   /// for a specific frame rate or output size can then refuse, rather than recording something else
@@ -45,7 +45,7 @@ public protocol VideoRecordingCommands {
 public extension VideoRecordingCommands {
 
   /// Default ignores the configuration. A conformer that can honor it overrides both members.
-  func startRecording(toFile filePath: String, configuration: FBVideoStreamConfiguration) async throws -> any FBVideoRecording {
+  func startRecording(toFile filePath: String, configuration: FBVideoStreamConfiguration) async throws -> any VideoRecording {
     try await startRecording(toFile: filePath)
   }
 

@@ -8,14 +8,14 @@
 import Foundation
 
 /// A screenshot format, matching the wire names accepted over the companion's API.
-public struct FBScreenshotFormat: RawRepresentable, Hashable, Sendable {
+public struct ScreenshotFormat: RawRepresentable, Hashable, Sendable {
   public let rawValue: String
   public init(rawValue: String) {
     self.rawValue = rawValue
   }
 
-  public static let jpeg = FBScreenshotFormat(rawValue: "jpeg")
-  public static let png = FBScreenshotFormat(rawValue: "png")
+  public static let jpeg = ScreenshotFormat(rawValue: "jpeg")
+  public static let png = ScreenshotFormat(rawValue: "png")
 }
 
 public protocol ScreenshotCommands {
@@ -27,7 +27,7 @@ public protocol ScreenshotCommands {
 public extension ScreenshotCommands {
 
   /// Captures the whole screen at its native resolution.
-  func take(format: FBScreenshotFormat) async throws -> Data {
+  func take(format: ScreenshotFormat) async throws -> Data {
     let configuration = ScreenshotConfiguration(encoding: try ScreenshotEncoding(format: format))
     return try await take(configuration: configuration).imageData
   }
@@ -48,8 +48,8 @@ extension ScreenshotFormatError: LocalizedError {
 
 public extension ScreenshotEncoding {
 
-  /// `FBScreenshotFormat` carries no encoder options, so JPEG gets `defaultJPEGQuality`.
-  init(format: FBScreenshotFormat) throws {
+  /// `ScreenshotFormat` carries no encoder options, so JPEG gets `defaultJPEGQuality`.
+  init(format: ScreenshotFormat) throws {
     switch format {
     case .png:
       self = .png

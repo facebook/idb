@@ -213,7 +213,7 @@ struct HostCommandDispatcher: @unchecked Sendable {
       guard let path = recordingCoordinator.reserveRecordingPath() else {
         return .raw(Data())
       }
-      let recording: any FBVideoRecording
+      let recording: any VideoRecording
       do {
         recording = try await commandExecutor.repl_start_recording(toFile: path)
       } catch {

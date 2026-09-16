@@ -42,7 +42,7 @@ public enum UIAutomationBackend: Sendable, Equatable {
 
 public extension UIAutomationBackend {
   /// The backend name reported in the `complete` output document.
-  var name: FBUIAutomationBackendName {
+  var name: UIAutomationBackendName {
     switch self {
     case .accessibility:
       return .ax
@@ -60,7 +60,7 @@ public extension UIAutomationBackend {
 
   /// Builds the resolved backend represented by `name`.
   init(
-    resolvedName name: FBUIAutomationBackendName,
+    resolvedName name: UIAutomationBackendName,
     frontmostMethod: AXBridgeFrontmostMethod = .windowServer,
     automationMode: Bool? = true
   ) {
@@ -87,10 +87,10 @@ public struct TapOptions: Sendable, Equatable {
   /// A pre-tap value assertion: read `key` on the resolved element and tap only if it equals `value`,
   /// else throw `UIAutomationError.valueMismatch`.
   public struct Assertion: Sendable, Equatable {
-    public var key: FBAXSearchableKey
+    public var key: AXSearchableKey
     public var value: String
 
-    public init(key: FBAXSearchableKey, value: String) {
+    public init(key: AXSearchableKey, value: String) {
       self.key = key
       self.value = value
     }
@@ -139,7 +139,7 @@ public struct DragOptions: Sendable, Equatable {
 /// What a drag endpoint names, once the queries that name no single element are refused.
 enum DragEndpoint: Equatable {
   case point(CGPoint)
-  case marker(value: String, key: FBAXSearchableKey, depth: UInt)
+  case marker(value: String, key: AXSearchableKey, depth: UInt)
 
   /// The verb named in the refusal.
   static let operation = "A drag endpoint"
@@ -167,8 +167,8 @@ public protocol UIAutomation: Sendable {
   /// `.point`/`.marker` yield a single element; `.frontmost` yields the whole tree.
   func describe(
     _ query: AccessibilityElementQuery,
-    options: FBAccessibilityRequestOptions
-  ) async throws -> FBAccessibilityElementsResponse
+    options: AccessibilityRequestOptions
+  ) async throws -> AccessibilityElementsResponse
 
   /// Reads the element at `point` — a targeted hit-test — serialized to the shared schema, or `nil`
   /// when no element sits at the point. Unlike `describe(.point:)`, which throws for an empty point,
@@ -176,8 +176,8 @@ public protocol UIAutomation: Sendable {
   /// from a reader failure, which still throws.
   func hitTest(
     at point: CGPoint,
-    options: FBAccessibilityRequestOptions
-  ) async throws -> FBAccessibilityElementsResponse?
+    options: AccessibilityRequestOptions
+  ) async throws -> AccessibilityElementsResponse?
 
   /// Taps the element named by `query`. `.point` taps the coordinate; `.marker` taps the element's
   /// centre. `options.assertion` checks the element's value for its key before tapping.
@@ -205,7 +205,7 @@ public protocol UIAutomation: Sendable {
   /// Scrolls the element named by `query` in `direction`.
   func scroll(
     _ query: AccessibilityElementQuery,
-    direction: FBAccessibilityScrollDirection
+    direction: AccessibilityScrollDirection
   ) async throws
 
   /// The frame (in screen points) of the element named by `query`. A geometry-only read for callers
@@ -239,11 +239,11 @@ public extension UIAutomation {
   }
 }
 
-public extension FBAccessibilityElementsResponse {
+public extension AccessibilityElementsResponse {
   /// `default`/`nested` are written by `JSONSerialization` because their byte form is a contract
   /// consumers parse, and it differs from `JSONEncoder` on non-integral doubles (17 significant digits
   /// vs the shortest round-trip form). `complete` is encoded from its `Encodable` model.
-  func formattedOutputJSON(format: FBAccessibilityOutputFormat) throws -> Data {
+  func formattedOutputJSON(format: AccessibilityOutputFormat) throws -> Data {
     switch format {
     case .default, .nested:
       return try JSONSerialization.data(
@@ -260,11 +260,11 @@ public extension FBAccessibilityElementsResponse {
   /// read. `default` and `nested` emit `{"elements":null}`; `complete` emits the ordinary document with
   /// no elements, so a consumer parses one shape whether or not the point was occupied.
   static func emptyOutputJSON(
-    format: FBAccessibilityOutputFormat,
+    format: AccessibilityOutputFormat,
     backend: UIAutomationBackend,
     target: AccessibilityTargetDescriptor
   ) throws -> Data {
-    let response = FBAccessibilityElementsResponse(
+    let response = AccessibilityElementsResponse(
       elements: .empty, backend: backend.name, target: target
     )
     return try response.formattedOutputJSON(format: format)

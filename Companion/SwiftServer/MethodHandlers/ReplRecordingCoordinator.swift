@@ -32,11 +32,11 @@ final class ReplRecordingCoordinator: @unchecked Sendable {
 
   private final class ActiveRecording {
     let id = UUID()
-    let recording: any FBVideoRecording
+    let recording: any VideoRecording
     let hostPath: String
     let containerPath: String
 
-    init(recording: any FBVideoRecording, hostPath: String, containerPath: String) {
+    init(recording: any VideoRecording, hostPath: String, containerPath: String) {
       self.recording = recording
       self.hostPath = hostPath
       self.containerPath = containerPath
@@ -94,7 +94,7 @@ final class ReplRecordingCoordinator: @unchecked Sendable {
   /// Records the started recording in the reserved slot and returns an identifier
   /// the app-exit watcher uses to drop only this recording.
   @discardableResult
-  func activate(recording: any FBVideoRecording, hostPath: String) -> UUID {
+  func activate(recording: any VideoRecording, hostPath: String) -> UUID {
     let filename = (hostPath as NSString).lastPathComponent
     lock.lock()
     defer { lock.unlock() }

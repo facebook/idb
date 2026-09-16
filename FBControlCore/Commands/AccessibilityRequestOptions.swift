@@ -10,7 +10,7 @@ import Foundation
 
 /// Options for fetching remote process elements (e.g., WebView content).
 /// Remote elements are in separate processes and require grid-based hit-testing.
-public struct FBAccessibilityRemoteContentOptions: Sendable {
+public struct AccessibilityRemoteContentOptions: Sendable {
 
   /// Grid step size in points for sampling. Smaller = more thorough but slower. Default: 50.0
   public var gridStepSize: CGFloat
@@ -28,16 +28,16 @@ public struct FBAccessibilityRemoteContentOptions: Sendable {
   }
 }
 
-extension FBAccessibilityRemoteContentOptions: CustomStringConvertible {
+extension AccessibilityRemoteContentOptions: CustomStringConvertible {
   public var description: String {
     let regionString = region.isNull ? "fullscreen" : "\(region)"
-    return "<FBAccessibilityRemoteContentOptions: stepSize=\(gridStepSize), region=\(regionString), maxPoints=\(maxPoints)>"
+    return "<AccessibilityRemoteContentOptions: stepSize=\(gridStepSize), region=\(regionString), maxPoints=\(maxPoints)>"
   }
 }
 
 /// Filters which elements a describe-all read returns. Applied in the shared serializer so every backend
 /// honors it identically; raw values are the CLI tokens.
-public enum FBAccessibilityElementFilter: String, Sendable, CaseIterable {
+public enum AccessibilityElementFilter: String, Sendable, CaseIterable {
   /// Every element in the tree (default).
   case all
   /// Elements that can be interacted with. Uses the backend's `interactable` verdict when the read serialized
@@ -48,7 +48,7 @@ public enum FBAccessibilityElementFilter: String, Sendable, CaseIterable {
 
   /// The attributes the filter matches on; `serializationKeys` unions these in so a narrow `--key` cannot
   /// starve the filter.
-  var requiredKeys: Set<FBAXKeys> {
+  var requiredKeys: Set<AXKeys> {
     switch self {
     case .all:
       return []
@@ -69,14 +69,14 @@ public struct AccessibilityMatch: Sendable, Equatable {
   public let value: String
 
   /// The attribute the substring is compared against.
-  public let key: FBAXSearchableKey
+  public let key: AXSearchableKey
 
   /// Compare case-insensitively.
   public let ignoresCase: Bool
 
   /// Nil for an empty value, so "the caller passed no match" and "the caller passed an empty one" reach
   /// the filter as the same thing rather than as a predicate that keeps everything by accident.
-  public init?(value: String, key: FBAXSearchableKey = .label, ignoresCase: Bool = false) {
+  public init?(value: String, key: AXSearchableKey = .label, ignoresCase: Bool = false) {
     guard !value.isEmpty else {
       return nil
     }
@@ -119,7 +119,7 @@ public enum AXTraversal: String, Sendable, CaseIterable {
 
   /// Keys this traversal cannot answer for every element: `semantic` maps only identified translator roles
   /// onto an `XCUIElementType` name, so `type` may be missing.
-  public var unsatisfiableKeys: Set<FBAXKeys> {
+  public var unsatisfiableKeys: Set<AXKeys> {
     switch self {
     case .viewHierarchy: []
     case .semantic: [.type]
@@ -131,7 +131,7 @@ public enum AXTraversal: String, Sendable, CaseIterable {
 
 /// The traversal a read asks for, or `auto` to let the serving backend choose. Kept apart from
 /// `AXTraversal` so an unresolved request can never be sent to a guest or reported as the walk that ran.
-public enum FBAXTraversalStrategy: String, Sendable, CaseIterable {
+public enum AXTraversalStrategy: String, Sendable, CaseIterable {
   /// Let the serving backend choose; a profiled read reports which traversal ran.
   case auto
   case viewHierarchy = "view-hierarchy"
@@ -150,22 +150,22 @@ public enum FBAXTraversalStrategy: String, Sendable, CaseIterable {
 }
 
 /// Request options for accessibility operations.
-public struct FBAccessibilityRequestOptions: Sendable {
+public struct AccessibilityRequestOptions: Sendable {
 
   /// How the read is rendered. Default: `.default` (a flat array).
-  public var format: FBAccessibilityOutputFormat
+  public var format: AccessibilityOutputFormat
 
   /// The keys a read must actually fetch: `keys` widened with whatever the format, filter, match and
   /// frame-coverage enrichers read from the serialized model, so narrowing `--key` narrows the output
-  /// without silently disabling them. Some widenings are costly — see `FBAXKeys.interactable`.
-  public var serializationKeys: Set<FBAXKeys> {
+  /// without silently disabling them. Some widenings are costly — see `AXKeys.interactable`.
+  public var serializationKeys: Set<AXKeys> {
     Self.serializationKeys(
       for: keys, format: format, filter: filter, match: match, collectFrameCoverage: collectFrameCoverage
     )
   }
 
   /// `serializationKeys` over `keys` plus `extraKeys`; the marker read passes the key it searched on.
-  public func serializationKeys(including extraKeys: Set<FBAXKeys>) -> Set<FBAXKeys> {
+  public func serializationKeys(including extraKeys: Set<AXKeys>) -> Set<AXKeys> {
     Self.serializationKeys(
       for: keys.union(extraKeys), format: format, filter: filter, match: match,
       collectFrameCoverage: collectFrameCoverage
@@ -174,21 +174,21 @@ public struct FBAccessibilityRequestOptions: Sendable {
 
   /// The attributes a frame-coverage calculation reads: the geometry to measure, the type identifying
   /// the application root it must skip, and the label its `content` dimension counts as perceivable.
-  private static let frameCoverageKeys: Set<FBAXKeys> = [.frameDict, .type, .label]
+  private static let frameCoverageKeys: Set<AXKeys> = [.frameDict, .type, .label]
 
   private static func serializationKeys(
-    for keys: Set<FBAXKeys>,
-    format: FBAccessibilityOutputFormat,
-    filter: FBAccessibilityElementFilter,
+    for keys: Set<AXKeys>,
+    format: AccessibilityOutputFormat,
+    filter: AccessibilityElementFilter,
     match: AccessibilityMatch?,
     collectFrameCoverage: Bool
-  ) -> Set<FBAXKeys> {
+  ) -> Set<AXKeys> {
     var expanded = keys
     // `occluded_by` enriches `interactable`'s reasons rather than emitting a field of its own, so asking
     // for it asks for the thing it enriches — and for the frame, since the hit-test it performs is aimed
     // at the element's centre and has nowhere else to get one.
     if expanded.contains(.occludedBy) {
-      expanded.formUnion(FBAXKeys.occluderIdentityKeys)
+      expanded.formUnion(AXKeys.occluderIdentityKeys)
     }
     if format == .complete {
       if keys.contains(.frame) {
@@ -219,7 +219,7 @@ public struct FBAccessibilityRequestOptions: Sendable {
   public var nestedFormat: Bool { format != .default }
 
   /// Which properties a read returns.
-  public var keys: Set<FBAXKeys>
+  public var keys: Set<AXKeys>
 
   /// Log accessibility requests and responses to the simulator's logger. Default: `false`.
   public var enableLogging: Bool
@@ -231,10 +231,10 @@ public struct FBAccessibilityRequestOptions: Sendable {
   public var collectFrameCoverage: Bool
 
   /// Options for remote content fetching. `nil` (default) means remote content is not fetched.
-  public var remoteContentOptions: FBAccessibilityRemoteContentOptions?
+  public var remoteContentOptions: AccessibilityRemoteContentOptions?
 
   /// Which elements to include in a describe-all read. Default: `.all`.
-  public var filter: FBAccessibilityElementFilter
+  public var filter: AccessibilityElementFilter
 
   /// A substring search narrowing which elements a describe-all read reports. `nil` (default) reports
   /// every element the filter kept.
@@ -244,23 +244,23 @@ public struct FBAccessibilityRequestOptions: Sendable {
   public var match: AccessibilityMatch?
 
   /// How the read asks to traverse.
-  public var traversalStrategy: FBAXTraversalStrategy
+  public var traversalStrategy: AXTraversalStrategy
 
   /// The requested keys the given traversal cannot answer for every element.
-  public func unsatisfiableKeys(for traversal: AXTraversal) -> Set<FBAXKeys> {
+  public func unsatisfiableKeys(for traversal: AXTraversal) -> Set<AXKeys> {
     serializationKeys.intersection(traversal.unsatisfiableKeys)
   }
 
   public init(
-    format: FBAccessibilityOutputFormat = .default,
-    keys: Set<FBAXKeys> = FBAXKeys.defaultSet,
+    format: AccessibilityOutputFormat = .default,
+    keys: Set<AXKeys> = AXKeys.defaultSet,
     enableLogging: Bool = false,
     enableProfiling: Bool = false,
     collectFrameCoverage: Bool = false,
-    remoteContentOptions: FBAccessibilityRemoteContentOptions? = nil,
-    filter: FBAccessibilityElementFilter = .all,
+    remoteContentOptions: AccessibilityRemoteContentOptions? = nil,
+    filter: AccessibilityElementFilter = .all,
     match: AccessibilityMatch? = nil,
-    traversalStrategy: FBAXTraversalStrategy = .auto
+    traversalStrategy: AXTraversalStrategy = .auto
   ) {
     self.format = format
     self.keys = keys
@@ -274,8 +274,8 @@ public struct FBAccessibilityRequestOptions: Sendable {
   }
 }
 
-extension FBAccessibilityRequestOptions: CustomStringConvertible {
+extension AccessibilityRequestOptions: CustomStringConvertible {
   public var description: String {
-    "<FBAccessibilityRequestOptions: format=\(format.rawValue), keys=\(keys), logging=\(enableLogging), profiling=\(enableProfiling), collectFrameCoverage=\(collectFrameCoverage), remote=\(String(describing: remoteContentOptions)), filter=\(filter.rawValue), match=\(match.map(String.init(describing:)) ?? "none"), traversal=\(traversalStrategy.rawValue)>"
+    "<AccessibilityRequestOptions: format=\(format.rawValue), keys=\(keys), logging=\(enableLogging), profiling=\(enableProfiling), collectFrameCoverage=\(collectFrameCoverage), remote=\(String(describing: remoteContentOptions)), filter=\(filter.rawValue), match=\(match.map(String.init(describing:)) ?? "none"), traversal=\(traversalStrategy.rawValue)>"
   }
 }

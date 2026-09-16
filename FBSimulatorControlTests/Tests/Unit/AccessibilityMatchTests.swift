@@ -11,7 +11,7 @@ import Foundation
 import XCTest
 
 /// `AccessibilityMatch` — the substring narrowing behind `describe-all --match` — and the hoisting it
-/// shares with `FBAccessibilityElementFilter`.
+/// shares with `AccessibilityElementFilter`.
 ///
 /// Pure functions over the serialized model, so none of this needs a simulator.
 final class AccessibilityMatchTests: XCTestCase {
@@ -21,9 +21,9 @@ final class AccessibilityMatchTests: XCTestCase {
     identifier: String? = nil,
     value: String? = nil,
     role: String? = nil,
-    children: [FBAccessibilityDocumentElement]? = nil
-  ) -> FBAccessibilityDocumentElement {
-    var element = FBAccessibilityDocumentElement()
+    children: [AccessibilityDocumentElement]? = nil
+  ) -> AccessibilityDocumentElement {
+    var element = AccessibilityDocumentElement()
     if let label {
       element.label = .some(label)
     }
@@ -40,12 +40,12 @@ final class AccessibilityMatchTests: XCTestCase {
     return element
   }
 
-  private static func labels(_ elements: [FBAccessibilityDocumentElement]) -> [String] {
+  private static func labels(_ elements: [AccessibilityDocumentElement]) -> [String] {
     elements.compactMap { $0.label ?? nil }
   }
 
   private static func match(
-    _ value: String, key: FBAXSearchableKey = .label, ignoresCase: Bool = false
+    _ value: String, key: AXSearchableKey = .label, ignoresCase: Bool = false
   ) throws -> AccessibilityMatch {
     try XCTUnwrap(AccessibilityMatch(value: value, key: key, ignoresCase: ignoresCase))
   }
@@ -151,11 +151,11 @@ final class AccessibilityMatchTests: XCTestCase {
 
   // Both `filter` and `match` hoist, so their order is observable when a match sits under a non-interactable container.
   func testFilterThenMatchKeepsAMatchingElementUnderADroppedContainer() throws {
-    var container = FBAccessibilityDocumentElement()
+    var container = AccessibilityDocumentElement()
     container.interactable = .some(nil)
     container.children = [Self.element(label: "Add to Cart", role: "AXButton")]
 
-    let filtered = FBAccessibilityElementFilter.interactable.apply(to: [container])
+    let filtered = AccessibilityElementFilter.interactable.apply(to: [container])
     XCTAssertEqual(Self.labels(filtered), ["Add to Cart"], "the unlabelled container is dropped, its child hoisted")
     XCTAssertEqual(Self.labels(try Self.match("Cart").apply(to: filtered)), ["Add to Cart"])
   }
@@ -165,7 +165,7 @@ final class AccessibilityMatchTests: XCTestCase {
   // The match runs over the serialized model, so the key it searches on has to be fetched — otherwise
   // `--key frame --match Buy` reports nothing rather than the buy button's frame.
   func testRequestingAMatchWidensTheSerializedKeySet() throws {
-    var options = FBAccessibilityRequestOptions(keys: [.frame])
+    var options = AccessibilityRequestOptions(keys: [.frame])
     options.match = try Self.match("Buy", key: .placeholder)
     XCTAssertTrue(options.serializationKeys.contains(.placeholder))
     XCTAssertTrue(options.serializationKeys.contains(.frame), "the caller's own keys are not replaced")
@@ -174,14 +174,14 @@ final class AccessibilityMatchTests: XCTestCase {
   // `complete` reports the raw `role` only through the normalized `type`, so matching on it needs the
   // counterpart the format arm already adds for a requested key.
   func testMatchingOnRoleUnderCompleteAlsoSerializesItsCounterpart() throws {
-    var options = FBAccessibilityRequestOptions(format: .complete, keys: [.label])
+    var options = AccessibilityRequestOptions(format: .complete, keys: [.label])
     options.match = try Self.match("Button", key: .role)
     XCTAssertTrue(options.serializationKeys.contains(.role))
     XCTAssertTrue(options.serializationKeys.contains(.type))
   }
 
   func testNoMatchLeavesTheSerializedKeySetUntouched() {
-    let options = FBAccessibilityRequestOptions(keys: [.label])
+    let options = AccessibilityRequestOptions(keys: [.label])
     XCTAssertEqual(options.serializationKeys, [.label])
   }
 }

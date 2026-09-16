@@ -97,8 +97,8 @@ final class AccessibilityCoverageGrid {
   ///
   /// A read that did not serialize the type cannot recognise the root, and one that did not serialize
   /// frames has nothing to mark; requesting coverage widens the key set so that neither happens
-  /// (`FBAccessibilityRequestOptions.serializationKeys`).
-  func markFilled(withElements elements: [FBAccessibilityDocumentElement]) {
+  /// (`AccessibilityRequestOptions.serializationKeys`).
+  func markFilled(withElements elements: [AccessibilityDocumentElement]) {
     for element in elements {
       if (element.type ?? nil) != Self.applicationType, let rect = (element.frame ?? nil)?.rect {
         markFilled(with: rect)
@@ -114,7 +114,7 @@ final class AccessibilityCoverageGrid {
 
   /// The proportion of `screenBounds` that `elements` cover, or `nil` when the bounds do not make a
   /// usable grid.
-  static func ratio(of elements: [FBAccessibilityDocumentElement], screenBounds: CGRect) -> Double? {
+  static func ratio(of elements: [AccessibilityDocumentElement], screenBounds: CGRect) -> Double? {
     guard let grid = AccessibilityCoverageGrid(screenBounds: screenBounds) else {
       return nil
     }
@@ -151,8 +151,8 @@ extension AccessibilityCoverage {
   /// its elements are leaves and reports no `leaf` ratio rather than one that would call every element
   /// a leaf.
   static func measured(
-    reported: [FBAccessibilityDocumentElement],
-    walked: [FBAccessibilityDocumentElement],
+    reported: [AccessibilityDocumentElement],
+    walked: [AccessibilityDocumentElement],
     screenBounds: CGRect,
     nested: Bool,
     additional: Double? = nil
@@ -177,9 +177,9 @@ extension AccessibilityCoverage {
   /// The innermost labelled elements: those carrying a label with no labelled descendant.
   /// Counting an element and its labelled descendant would count the same region twice.
   private static func innermostLabelled(
-    in elements: [FBAccessibilityDocumentElement]
-  ) -> [FBAccessibilityDocumentElement] {
-    elements.flatMap { element -> [FBAccessibilityDocumentElement] in
+    in elements: [AccessibilityDocumentElement]
+  ) -> [AccessibilityDocumentElement] {
+    elements.flatMap { element -> [AccessibilityDocumentElement] in
       let inner = innermostLabelled(in: element.children ?? [])
       guard inner.isEmpty, isLabelled(element) else {
         return inner
@@ -191,7 +191,7 @@ extension AccessibilityCoverage {
   }
 
   /// Whether an element carries a non-empty label — user-perceived, unlike an identifier.
-  private static func isLabelled(_ element: FBAccessibilityDocumentElement) -> Bool {
+  private static func isLabelled(_ element: AccessibilityDocumentElement) -> Bool {
     guard let label = element.label ?? nil else {
       return false
     }
@@ -200,8 +200,8 @@ extension AccessibilityCoverage {
 
   /// The childless elements of a nested walk, flattened. Reported without `children` so the grid marks
   /// each one and recurses no further.
-  private static func leaves(of elements: [FBAccessibilityDocumentElement]) -> [FBAccessibilityDocumentElement] {
-    elements.flatMap { element -> [FBAccessibilityDocumentElement] in
+  private static func leaves(of elements: [AccessibilityDocumentElement]) -> [AccessibilityDocumentElement] {
+    elements.flatMap { element -> [AccessibilityDocumentElement] in
       let children = element.children ?? []
       guard !children.isEmpty else {
         var leaf = element

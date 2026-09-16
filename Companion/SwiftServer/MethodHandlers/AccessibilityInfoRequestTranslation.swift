@@ -38,7 +38,7 @@ enum AccessibilityInfoRequestTranslation {
   }
 
   /// `FILTER_ALL` and an unrecognized value both mean the unfiltered read.
-  static func filter(from wire: Idb_AccessibilityInfoRequest.Filter) -> FBAccessibilityElementFilter {
+  static func filter(from wire: Idb_AccessibilityInfoRequest.Filter) -> AccessibilityElementFilter {
     switch wire {
     case .all:
       return .all
@@ -61,15 +61,15 @@ enum AccessibilityInfoRequestTranslation {
   /// than silently falling back to the default set and masking the caller's typo; an empty list means
   /// "defaults", and unrecognized keys in a partially-valid list are dropped. `--key all` expands to
   /// every key the reader can answer.
-  static func options(from request: Idb_AccessibilityInfoRequest, format: FBAccessibilityOutputFormat) throws -> FBAccessibilityRequestOptions {
-    let mappedKeys = FBAXKeys.requested(request.keys)
+  static func options(from request: Idb_AccessibilityInfoRequest, format: AccessibilityOutputFormat) throws -> AccessibilityRequestOptions {
+    let mappedKeys = AXKeys.requested(request.keys)
     if !request.keys.isEmpty && mappedKeys.isEmpty {
       throw RPCError(
         code: .invalidArgument,
         message: "no recognized accessibility keys in \(request.keys)")
     }
-    let keys = mappedKeys.isEmpty ? FBAXKeys.defaultSet : mappedKeys
-    return FBAccessibilityRequestOptions(
+    let keys = mappedKeys.isEmpty ? AXKeys.defaultSet : mappedKeys
+    return AccessibilityRequestOptions(
       format: format,
       keys: keys,
       enableLogging: false,
@@ -104,7 +104,7 @@ enum AccessibilityInfoRequestTranslation {
   }
 
   /// An unrecognized value falls back to `LEGACY`, the flat array the gRPC surface has always returned.
-  static func outputFormat(from format: Idb_AccessibilityInfoRequest.Format) -> FBAccessibilityOutputFormat {
+  static func outputFormat(from format: Idb_AccessibilityInfoRequest.Format) -> AccessibilityOutputFormat {
     switch format {
     case .legacy:
       return .default
@@ -117,7 +117,7 @@ enum AccessibilityInfoRequestTranslation {
     }
   }
 
-  static func searchableKey(from key: Idb_AccessibilityActionRequest.SearchableKey) -> FBAXSearchableKey {
+  static func searchableKey(from key: Idb_AccessibilityActionRequest.SearchableKey) -> AXSearchableKey {
     switch key {
     case .label:
       return .label
@@ -144,13 +144,13 @@ enum AccessibilityInfoRequestTranslation {
 
   /// The historical byte shape of a point / frontmost read: the bare element array, serialized without
   /// sorted keys — distinct from the marker path's `{"elements": …}` envelope.
-  static func legacyJSON(from response: FBAccessibilityElementsResponse) throws -> Data {
+  static func legacyJSON(from response: AccessibilityElementsResponse) throws -> Data {
     try JSONSerialization.data(withJSONObject: response.elements.legacyFoundationObject)
   }
 
   /// The response bytes for a point / frontmost read: the historical bare shape for the legacy
   /// formats, byte-untouched, and the consolidated document for `complete`.
-  static func responseJSON(from response: FBAccessibilityElementsResponse, format: FBAccessibilityOutputFormat) throws -> Data {
+  static func responseJSON(from response: AccessibilityElementsResponse, format: AccessibilityOutputFormat) throws -> Data {
     switch format {
     case .default, .nested:
       return try legacyJSON(from: response)

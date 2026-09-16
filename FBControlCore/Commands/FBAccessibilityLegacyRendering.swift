@@ -8,8 +8,8 @@
 import Foundation
 
 public enum AccessibilityElementPayload: Sendable, Equatable {
-  case tree([FBAccessibilityDocumentElement])
-  case single(FBAccessibilityDocumentElement)
+  case tree([AccessibilityDocumentElement])
+  case single(AccessibilityDocumentElement)
   /// A point read that succeeded but hit nothing.
   case empty
 
@@ -21,7 +21,7 @@ public enum AccessibilityElementPayload: Sendable, Equatable {
     }
   }
 
-  public var elements: [FBAccessibilityDocumentElement] {
+  public var elements: [AccessibilityDocumentElement] {
     switch self {
     case let .tree(elements): return elements
     case let .single(element): return [element]
@@ -44,7 +44,7 @@ public extension AccessibilityElementPayload {
   }
 }
 
-public extension FBAccessibilityDocumentElement {
+public extension AccessibilityDocumentElement {
   var legacyFoundationObject: [String: Any] {
     var object: [String: Any] = [:]
     func put(_ attribute: Any??, _ key: String) {
@@ -82,7 +82,7 @@ public extension FBAccessibilityDocumentElement {
   }
 }
 
-public extension FBAccessibilityFrame {
+public extension AccessibilityFrame {
   var legacyFoundationObject: [String: Any] {
     ["x": x ?? NSNull(), "y": y ?? NSNull(), "width": width ?? NSNull(), "height": height ?? NSNull()]
   }
@@ -126,7 +126,7 @@ public extension AccessibilityElementRef {
   }
 }
 
-public extension FBAccessibilityAttributeValue {
+public extension AccessibilityAttributeValue {
   var legacyFoundationValue: Any {
     switch self {
     case let .string(value): return value

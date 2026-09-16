@@ -12,7 +12,7 @@ import XCTest
 
 /// A recording double that records only whether it was stopped, returning a fixed
 /// URL (the file it was told to record to).
-private final class FakeRecording: FBVideoRecording, @unchecked Sendable {
+private final class FakeRecording: VideoRecording, @unchecked Sendable {
   let url: URL
   private let lock = NSLock()
   private var stopCountValue = 0
@@ -37,7 +37,7 @@ private final class FakeRecording: FBVideoRecording, @unchecked Sendable {
 
 /// A recording double whose `stop()` blocks until `release()` is called, so a test
 /// can observe the coordinator while a recording is mid-finalize.
-private final class BlockingRecording: FBVideoRecording, @unchecked Sendable {
+private final class BlockingRecording: VideoRecording, @unchecked Sendable {
   let url: URL
   private let lock = NSLock()
   private var onStopEnteredCallback: (() -> Void)?

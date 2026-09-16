@@ -9,7 +9,7 @@ import Foundation
 
 /// A file addressed within some container. Conformers are value types holding only
 /// the address, so the existential is `Sendable` and hops queues without boxing.
-public protocol FBContainedFile: Sendable {
+public protocol ContainedFile: Sendable {
 
   func removeItem() throws
 
@@ -21,13 +21,13 @@ public protocol FBContainedFile: Sendable {
 
   func fileExists() -> (exists: Bool, isDirectory: Bool)
 
-  func move(to destination: FBContainedFile) throws
+  func move(to destination: ContainedFile) throws
 
   func populate(withContentsOfHostPath path: String) throws
 
   func populateHostPath(withContents path: String) throws
 
-  func file(byAppendingPathComponent component: String) throws -> FBContainedFile
+  func file(byAppendingPathComponent component: String) throws -> ContainedFile
 
   var pathOnHostFileSystem: String? { get }
 
@@ -107,15 +107,15 @@ public final class FileContainerTailOperation {
   }
 }
 
-/// File container backed by a synchronous `FBContainedFile`. Each operation
+/// File container backed by a synchronous `ContainedFile`. Each operation
 /// resolves the target path and runs the synchronous file work on a serial
 /// queue.
 public final class ContainedFile_ContainedRoot: AsyncFileContainer {
 
-  private let rootFile: any FBContainedFile
+  private let rootFile: any ContainedFile
   private let queue: DispatchQueue
 
-  public init(rootFile: any FBContainedFile, queue: DispatchQueue) {
+  public init(rootFile: any ContainedFile, queue: DispatchQueue) {
     self.rootFile = rootFile
     self.queue = queue
   }
@@ -374,7 +374,7 @@ public struct FileContainerKind: RawRepresentable, Hashable, Sendable {
 // MARK: - Host Filesystem Contained Files
 
 /// A file on the host filesystem, addressed by absolute path.
-private struct ContainedFile_Host: FBContainedFile, CustomStringConvertible {
+private struct ContainedFile_Host: ContainedFile, CustomStringConvertible {
 
   let path: String
 
@@ -400,7 +400,7 @@ private struct ContainedFile_Host: FBContainedFile, CustomStringConvertible {
     return (exists, isDirectory.boolValue)
   }
 
-  func move(to destination: FBContainedFile) throws {
+  func move(to destination: ContainedFile) throws {
     guard let hostDestination = destination as? ContainedFile_Host else {
       throw FileContainerError.destinationNotOnHostFilesystem(destination: String(describing: destination))
     }
@@ -415,7 +415,7 @@ private struct ContainedFile_Host: FBContainedFile, CustomStringConvertible {
     try FileManager.default.copyItem(atPath: self.path, toPath: path)
   }
 
-  func file(byAppendingPathComponent component: String) throws -> FBContainedFile {
+  func file(byAppendingPathComponent component: String) throws -> ContainedFile {
     ContainedFile_Host(path: (path as NSString).appendingPathComponent(component))
   }
 
@@ -429,7 +429,7 @@ private struct ContainedFile_Host: FBContainedFile, CustomStringConvertible {
 }
 
 /// A virtual root that maps first path components onto host paths.
-private struct ContainedFile_Mapped_Host: FBContainedFile, CustomStringConvertible {
+private struct ContainedFile_Mapped_Host: ContainedFile, CustomStringConvertible {
 
   let mappingPaths: [String: String]
 
@@ -453,7 +453,7 @@ private struct ContainedFile_Mapped_Host: FBContainedFile, CustomStringConvertib
     (false, false)
   }
 
-  func move(to destination: FBContainedFile) throws {
+  func move(to destination: ContainedFile) throws {
     throw FileContainerError.movingUnsupportedOnVirtualRoot
   }
 
@@ -465,7 +465,7 @@ private struct ContainedFile_Mapped_Host: FBContainedFile, CustomStringConvertib
     throw FileContainerError.unsupportedOnVirtualRoot(operation: #function)
   }
 
-  func file(byAppendingPathComponent component: String) throws -> FBContainedFile {
+  func file(byAppendingPathComponent component: String) throws -> ContainedFile {
     // The root of the mapping itself has nothing further to resolve.
     let pathComponents = (component as NSString).pathComponents
     if Self.isRootPathOfContainer(pathComponents) {
@@ -504,13 +504,13 @@ private struct ContainedFile_Mapped_Host: FBContainedFile, CustomStringConvertib
 // MARK: - Factories
 
 /// Factories for the file containers a target exposes.
-public enum FBFileContainer {
+public enum FileContainer {
 
-  public static func containedFile(forBasePath basePath: String) -> FBContainedFile {
+  public static func containedFile(forBasePath basePath: String) -> ContainedFile {
     ContainedFile_Host(path: basePath)
   }
 
-  public static func containedFile(forPathMapping pathMapping: [String: String]) -> FBContainedFile {
+  public static func containedFile(forPathMapping pathMapping: [String: String]) -> ContainedFile {
     ContainedFile_Mapped_Host(mappingPaths: pathMapping)
   }
 
@@ -522,7 +522,7 @@ public enum FBFileContainer {
     fileContainer(for: containedFile(forPathMapping: pathMapping))
   }
 
-  public static func fileContainer(for containedFile: FBContainedFile) -> ContainedFile_ContainedRoot {
+  public static func fileContainer(for containedFile: ContainedFile) -> ContainedFile_ContainedRoot {
     ContainedFile_ContainedRoot(rootFile: containedFile, queue: DispatchQueue(label: "com.facebook.fbcontrolcore.file_container"))
   }
 }

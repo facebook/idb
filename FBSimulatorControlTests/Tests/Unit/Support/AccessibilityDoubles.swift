@@ -189,7 +189,7 @@ extension SimulatorControlTests_AXPMacPlatformElement_Double: AXPlatformElement 
 // Only press is exercised (via `AccessibilityElement.tap()`); scroll and set-value are inert.
 extension SimulatorControlTests_AXPMacPlatformElement_Double: AXWritableElement {
   func axPerformPress() -> Bool { accessibilityPerformPress() }
-  func axScroll(_ direction: FBAccessibilityScrollDirection) {}
+  func axScroll(_ direction: AccessibilityScrollDirection) {}
   func axSetValue(_ value: Any?) {}
 }
 

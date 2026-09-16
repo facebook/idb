@@ -9,7 +9,7 @@ import Foundation
 
 /// A privacy/permission service whose access can be granted or revoked on a target.
 /// Raw values are the wire/CLI names (e.g. `contacts`, `url`, `notification`).
-public enum FBTargetSettingsService: String, CaseIterable, Codable, Sendable {
+public enum TargetSettingsService: String, CaseIterable, Codable, Sendable {
   case contacts
   case photos
   case camera

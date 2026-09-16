@@ -17,15 +17,15 @@ import IDBGRPCSwift
 protocol AccessibilityDescribing {
   func accessibility_describe(
     query: AccessibilityElementQuery,
-    options: FBAccessibilityRequestOptions,
+    options: AccessibilityRequestOptions,
     backend: UIAutomationBackend
   ) async throws -> Data
 
   func accessibility_info_at_point(
     _ value: NSValue?,
-    options: FBAccessibilityRequestOptions,
+    options: AccessibilityRequestOptions,
     backend: UIAutomationBackend
-  ) async throws -> FBAccessibilityElementsResponse
+  ) async throws -> AccessibilityElementsResponse
 }
 
 extension IDBCommandExecutor: AccessibilityDescribing {}

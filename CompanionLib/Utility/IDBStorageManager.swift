@@ -95,7 +95,7 @@ public class IDBStorage {
   }
 
   func asFileContainer() -> any AsyncFileContainer {
-    FBFileContainer.fileContainer(forBasePath: basePath.path)
+    FileContainer.fileContainer(forBasePath: basePath.path)
   }
 
   public var replacementMapping: [String: String] {

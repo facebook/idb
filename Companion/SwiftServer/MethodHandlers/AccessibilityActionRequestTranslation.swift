@@ -19,8 +19,8 @@ enum AccessibilityActionRequestTranslation {
   /// A request that has been checked, with every endpoint and option resolved.
   enum Action: Equatable {
     case wait(query: AccessibilityElementQuery, backend: UIAutomationBackend, timeout: Double, pollInterval: Double)
-    case tap(query: AccessibilityElementQuery, expectedValue: String?, expectedKey: FBAXSearchableKey)
-    case scroll(query: AccessibilityElementQuery, direction: FBAccessibilityScrollDirection)
+    case tap(query: AccessibilityElementQuery, expectedValue: String?, expectedKey: AXSearchableKey)
+    case scroll(query: AccessibilityElementQuery, direction: AccessibilityScrollDirection)
     case setValue(query: AccessibilityElementQuery, value: String)
     case drag(source: AccessibilityElementQuery, destination: AccessibilityElementQuery, options: DragOptions)
   }
@@ -157,7 +157,7 @@ enum AccessibilityActionRequestTranslation {
     }
   }
 
-  private static func scrollDirection(from direction: Idb_AccessibilityActionRequest.Scroll.Direction) throws -> FBAccessibilityScrollDirection {
+  private static func scrollDirection(from direction: Idb_AccessibilityActionRequest.Scroll.Direction) throws -> AccessibilityScrollDirection {
     switch direction {
     case .up:
       return .up
@@ -174,7 +174,7 @@ enum AccessibilityActionRequestTranslation {
     }
   }
 
-  private static func searchableKey(from key: Idb_AccessibilityActionRequest.SearchableKey) throws -> FBAXSearchableKey {
+  private static func searchableKey(from key: Idb_AccessibilityActionRequest.SearchableKey) throws -> AXSearchableKey {
     switch key {
     case .label:
       return .label

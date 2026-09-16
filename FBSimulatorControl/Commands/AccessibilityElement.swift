@@ -58,7 +58,7 @@ final class AccessibilityElement {
   // MARK: - Serialization
 
   /// Serialize the element to a full response (preserves profiling/coverage data).
-  func serialize(with options: FBAccessibilityRequestOptions) async throws -> FBAccessibilityElementsResponse {
+  func serialize(with options: AccessibilityRequestOptions) async throws -> AccessibilityElementsResponse {
     if closed {
       throw AccessibilityError.closedElement(operation: "serialize")
     }
@@ -79,7 +79,7 @@ final class AccessibilityElement {
   }
 
   /// Read the string value of a searchable accessibility key from this element.
-  func stringValue(forSearchableKey key: FBAXSearchableKey) async throws -> String {
+  func stringValue(forSearchableKey key: AXSearchableKey) async throws -> String {
     if closed {
       throw AccessibilityError.closedElement(operation: "read from")
     }
@@ -110,7 +110,7 @@ final class AccessibilityElement {
   }
 
   /// Perform an accessibility scroll on the element.
-  func scroll(with direction: FBAccessibilityScrollDirection) async throws {
+  func scroll(with direction: AccessibilityScrollDirection) async throws {
     if closed {
       throw AccessibilityError.closedElement(operation: "scroll")
     }
@@ -155,7 +155,7 @@ final class AccessibilityElement {
   /// closed without popping. If not found, the receiver is closed and an error
   /// is thrown.
   func findElement(
-    withValue value: String, forKey key: FBAXSearchableKey, depth: UInt, ignoresCase: Bool = false
+    withValue value: String, forKey key: AXSearchableKey, depth: UInt, ignoresCase: Bool = false
   ) async throws -> AccessibilityElement {
     // The legacy accessibility tree is composed entirely of `AXPMacPlatformElement`, so a matched
     // descendant is always writable; a non-writable match is treated as not found.
@@ -193,7 +193,7 @@ final class AccessibilityElement {
 
   // MARK: - Private helpers
 
-  private static func stringValue(forKey key: FBAXSearchableKey, from element: AXPlatformElement) -> String? {
+  private static func stringValue(forKey key: AXSearchableKey, from element: AXPlatformElement) -> String? {
     switch key {
     case .label:
       return element.axLabel()
@@ -218,7 +218,7 @@ final class AccessibilityElement {
 
   private static func findElement(
     withValue value: String,
-    forKey key: FBAXSearchableKey,
+    forKey key: AXSearchableKey,
     in element: AXPlatformElement,
     token: String,
     remainingDepth: UInt,

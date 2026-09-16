@@ -9,7 +9,7 @@ import CoreGraphics
 import Foundation
 
 /// The canonical name of the backend that served a UI-automation request.
-public enum FBUIAutomationBackendName: String, Sendable, Encodable, CaseIterable {
+public enum UIAutomationBackendName: String, Sendable, Encodable, CaseIterable {
   case ax
   case axBridgeOneShot = "axbridge-oneshot"
   case axBridgePersistent = "axbridge-persistent"
@@ -23,7 +23,7 @@ public enum AccessibilityCoordinateSpace: String, Sendable, Encodable {
 
 /// An element's on-screen rectangle. An edge is `nil` when non-finite: an off-screen element can
 /// report one, and JSON cannot represent it.
-public struct FBAccessibilityFrame: Sendable, Equatable, Encodable {
+public struct AccessibilityFrame: Sendable, Equatable, Encodable {
 
   public let x: Double?
   public let y: Double?
@@ -67,7 +67,7 @@ public struct FBAccessibilityFrame: Sendable, Equatable, Encodable {
   }
 }
 
-public extension FBAccessibilityFrame {
+public extension AccessibilityFrame {
   /// The rectangle this frame describes, or `nil` when any edge was not representable.
   var rect: CGRect? {
     guard let x, let y, let width, let height else {
@@ -234,7 +234,7 @@ public struct AccessibilityCoverage: Sendable, Equatable, Encodable {
 ///
 /// `.actionable` is derived from the application's own render tree, which cannot see another
 /// process compositing on top of it (a system alert, SpringBoard chrome). Naming an occluder in
-/// another process requires the `FBAXKeys.occludedBy` hit-test.
+/// another process requires the `AXKeys.occludedBy` hit-test.
 public enum AccessibilityInteractable: Sendable, Equatable {
 
   /// The element can be acted on, at this point. Not necessarily the frame centre: for a partially
@@ -283,7 +283,7 @@ public struct AccessibilityPoint: Sendable, Equatable, Encodable {
     self.y = y
   }
 
-  /// Nil when either coordinate is non-finite, as `FBAccessibilityFrame` normalizes its edges.
+  /// Nil when either coordinate is non-finite, as `AccessibilityFrame` normalizes its edges.
   public init?(_ point: CGPoint) {
     guard point.x.isFinite, point.y.isFinite else {
       return nil
@@ -299,10 +299,10 @@ public struct AccessibilityElementRef: Sendable, Equatable, Encodable {
   public let type: String?
   public let identifier: String?
   public let label: String?
-  public let frame: FBAccessibilityFrame?
+  public let frame: AccessibilityFrame?
   public let pid: Int64?
 
-  public init(type: String?, identifier: String?, label: String?, frame: FBAccessibilityFrame?, pid: Int64?) {
+  public init(type: String?, identifier: String?, label: String?, frame: AccessibilityFrame?, pid: Int64?) {
     self.type = type
     self.identifier = identifier
     self.label = label
@@ -435,11 +435,11 @@ public struct AccessibilityInteractionSummary: Sendable, Equatable, Encodable {
 
   /// Tallies a serialized read. Nil (not zeroes) when no element carried a verdict, so a read that did
   /// not request `interactable`, or a backend that could not answer, never reads as "nothing blocked".
-  public init?(elements: [FBAccessibilityDocumentElement]) {
+  public init?(elements: [AccessibilityDocumentElement]) {
     var actionable = 0
     var blocked = 0
     var unexplained = 0
-    func visit(_ element: FBAccessibilityDocumentElement) {
+    func visit(_ element: AccessibilityDocumentElement) {
       switch element.interactable ?? nil {
       case .actionable:
         actionable += 1
@@ -501,10 +501,10 @@ public struct AccessibilityFrameSummary: Sendable, Equatable, Encodable {
   }
 
   /// Tallies a serialized read, or nil when no element carried a frame.
-  public init?(elements: [FBAccessibilityDocumentElement]) {
+  public init?(elements: [AccessibilityDocumentElement]) {
     var total = 0
     var framed = 0
-    func visit(_ element: FBAccessibilityDocumentElement) {
+    func visit(_ element: AccessibilityDocumentElement) {
       if let frame = element.frame {
         total += 1
         // Counts as framed only with area on both axes; a frame with a missing edge (`rect == nil`)
@@ -588,7 +588,7 @@ public struct AccessibilityNarrowing: Sendable, Equatable, Encodable {
 public extension AccessibilityNarrowing {
   /// The report for a read that applied `filter` and `match`, walking `walked` nodes and reporting
   /// `matched` of them.
-  init(filter: FBAccessibilityElementFilter, match: AccessibilityMatch?, walked: Int, matched: Int) {
+  init(filter: AccessibilityElementFilter, match: AccessibilityMatch?, walked: Int, matched: Int) {
     self.init(
       match: match?.value,
       matchKey: match?.key.rawValue,
@@ -601,11 +601,11 @@ public extension AccessibilityNarrowing {
   /// The report for a read that also hit-tested remote content. Discovered elements were walked and
   /// narrowed too: they add to `walked`, and any survivors are already in `reported`.
   init(
-    filter: FBAccessibilityElementFilter,
+    filter: AccessibilityElementFilter,
     match: AccessibilityMatch?,
-    walked: [FBAccessibilityDocumentElement],
-    discovered: [FBAccessibilityDocumentElement],
-    reported: [FBAccessibilityDocumentElement]
+    walked: [AccessibilityDocumentElement],
+    discovered: [AccessibilityDocumentElement],
+    reported: [AccessibilityDocumentElement]
   ) {
     self.init(
       filter: filter, match: match,
@@ -613,17 +613,17 @@ public extension AccessibilityNarrowing {
   }
 }
 
-public extension FBAccessibilityRequestOptions {
+public extension AccessibilityRequestOptions {
   /// The narrowing report for a read under these options that walked `walked` and reported `reported`.
   func narrowingReport(
-    walked: [FBAccessibilityDocumentElement], reported: [FBAccessibilityDocumentElement]
+    walked: [AccessibilityDocumentElement], reported: [AccessibilityDocumentElement]
   ) -> AccessibilityNarrowing {
     AccessibilityNarrowing(
       filter: filter, match: match, walked: walked.nodeCount, matched: reported.nodeCount)
   }
 }
 
-public extension [FBAccessibilityDocumentElement] {
+public extension [AccessibilityDocumentElement] {
   /// Elements in a serialized read, counted through `children`.
   ///
   /// The nested formats put a single root at the top level, so `count` would report 1 for any tree.
@@ -641,10 +641,10 @@ public extension [FBAccessibilityDocumentElement] {
 ///
 /// Legacy `AX`-prefixed names are spelled plainly here (`AXLabel` → `label`, `AXUniqueId` →
 /// `identifier`); the stringified frame and raw role are carried by `frame` and `type`.
-public struct FBAccessibilityDocumentElement: Sendable, Equatable, Encodable {
+public struct AccessibilityDocumentElement: Sendable, Equatable, Encodable {
 
   public var label: String??
-  public var value: FBAccessibilityAttributeValue??
+  public var value: AccessibilityAttributeValue??
   public var identifier: String??
   public var type: String??
   public var title: String??
@@ -652,7 +652,7 @@ public struct FBAccessibilityDocumentElement: Sendable, Equatable, Encodable {
   public var roleDescription: String??
   public var subrole: String??
   public var placeholder: String??
-  public var frame: FBAccessibilityFrame??
+  public var frame: AccessibilityFrame??
   public var enabled: Bool??
   public var contentRequired: Bool??
   public var expanded: Bool??
@@ -679,18 +679,18 @@ public struct FBAccessibilityDocumentElement: Sendable, Equatable, Encodable {
   ///
   /// A format that asks for a tree reports this on every element (see `reportingChildren()`); the flat
   /// format reports it on none.
-  public var children: [FBAccessibilityDocumentElement]?
+  public var children: [AccessibilityDocumentElement]?
 
   /// A copy that reports `children` on every node, empty where the read walked none. Backends differ
   /// in how much subtree a single-element read walks (the guest-backed readers resolve one node from a
   /// hit-test and stop), and without this the key set would vary with `--api`.
-  public func reportingChildren() -> FBAccessibilityDocumentElement {
+  public func reportingChildren() -> AccessibilityDocumentElement {
     var copy = self
     copy.children = (children ?? []).map { $0.reportingChildren() }
     return copy
   }
 
-  public init(children: [FBAccessibilityDocumentElement]? = nil) {
+  public init(children: [AccessibilityDocumentElement]? = nil) {
     self.children = children
   }
 
@@ -722,13 +722,13 @@ public struct FBAccessibilityDocumentElement: Sendable, Equatable, Encodable {
 
 /// An element's `value`, which the platform reports as an untyped object — usually a string,
 /// sometimes a number or flag (a slider's position, a switch's state), occasionally a collection.
-public enum FBAccessibilityAttributeValue: Sendable, Equatable, Encodable {
+public enum AccessibilityAttributeValue: Sendable, Equatable, Encodable {
   case string(String)
   case bool(Bool)
   case int(Int64)
   case double(Double)
-  case array([FBAccessibilityAttributeValue])
-  case object([String: FBAccessibilityAttributeValue])
+  case array([AccessibilityAttributeValue])
+  case object([String: AccessibilityAttributeValue])
   /// A null held *inside* a collection. Absence at the top level is carried by the element's own
   /// optional, so this case exists only for the position where that optional cannot reach.
   case null
@@ -759,8 +759,8 @@ public enum FBAccessibilityAttributeValue: Sendable, Equatable, Encodable {
   }
 
   /// A collection member: a failed `init?` can only mean null, which must stay in place inside a collection.
-  private static func member(_ object: Any) -> FBAccessibilityAttributeValue {
-    FBAccessibilityAttributeValue(object) ?? .null
+  private static func member(_ object: Any) -> AccessibilityAttributeValue {
+    AccessibilityAttributeValue(object) ?? .null
   }
 
   public func encode(to encoder: Encoder) throws {
@@ -795,15 +795,15 @@ public enum FBAccessibilityAttributeValue: Sendable, Equatable, Encodable {
 ///
 /// New fields are added additively and consumers ignore ones they do not know; there is no version
 /// field.
-public struct FBAccessibilityDocument: Sendable, Encodable {
+public struct AccessibilityDocument: Sendable, Encodable {
 
-  public let elements: [FBAccessibilityDocumentElement]
+  public let elements: [AccessibilityDocumentElement]
   public let modal: AccessibilityModalInfo?
   public let truncated: Bool
   public let screen: AccessibilityScreenInfo?
-  public let backend: FBUIAutomationBackendName?
+  public let backend: UIAutomationBackendName?
   public let target: AccessibilityTargetDescriptor?
-  public let profile: FBAccessibilityProfile?
+  public let profile: AccessibilityProfile?
   public let coverage: AccessibilityCoverage?
   /// How much of what this read found blocked it could explain. Nil when `interactable` was not
   /// requested, since there is then nothing to summarize.
@@ -818,13 +818,13 @@ public struct FBAccessibilityDocument: Sendable, Encodable {
   public let narrowing: AccessibilityNarrowing?
 
   public init(
-    elements: [FBAccessibilityDocumentElement],
+    elements: [AccessibilityDocumentElement],
     modal: AccessibilityModalInfo? = nil,
     truncated: Bool = false,
     screen: AccessibilityScreenInfo? = nil,
-    backend: FBUIAutomationBackendName? = nil,
+    backend: UIAutomationBackendName? = nil,
     target: AccessibilityTargetDescriptor? = nil,
-    profile: FBAccessibilityProfile? = nil,
+    profile: AccessibilityProfile? = nil,
     coverage: AccessibilityCoverage? = nil,
     interaction: AccessibilityInteractionSummary? = nil,
     frames: AccessibilityFrameSummary? = nil,
@@ -877,10 +877,10 @@ public struct FBAccessibilityDocument: Sendable, Encodable {
   }
 }
 
-public extension FBAccessibilityDocumentElement {
+public extension AccessibilityDocumentElement {
   /// The value a marker match reads for `key`. A marker is matched over the *serialized* element, so an
   /// attribute the read did not carry simply does not match.
-  func searchableValue(for key: FBAXSearchableKey) -> String? {
+  func searchableValue(for key: AXSearchableKey) -> String? {
     switch key {
     case .label: return label ?? nil
     case .uniqueID: return identifier ?? nil

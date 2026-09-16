@@ -42,7 +42,7 @@ enum UIAutomationPolling {
     backend: UIAutomationBackend,
     timeout: TimeInterval,
     pollInterval: TimeInterval,
-    probe: (_ value: String, _ key: FBAXSearchableKey, _ depth: UInt) async throws -> Bool?
+    probe: (_ value: String, _ key: AXSearchableKey, _ depth: UInt) async throws -> Bool?
   ) async throws {
     guard case let .marker(value, key, depth, _) = query else {
       throw UIAutomationError.markerRequired(backend: backend, operation: "Waiting")

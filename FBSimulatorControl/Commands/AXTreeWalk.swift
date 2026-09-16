@@ -15,7 +15,7 @@ enum AXTreeWalk {
 
   /// Serializes an attribute-dictionary tree into the schema, tagging each element with `pid`. The
   /// result is unfiltered so a caller can keep both the whole walk and the reported subset.
-  static func describeAllElements(fromTree tree: [String: Any], keys: Set<FBAXKeys>, nestedFormat: Bool, pid: pid_t) -> [FBAccessibilityDocumentElement] {
+  static func describeAllElements(fromTree tree: [String: Any], keys: Set<AXKeys>, nestedFormat: Bool, pid: pid_t) -> [AccessibilityDocumentElement] {
     let root = buildPlatformElementTree(from: tree, pid: pid)
     return AXNodeSerializer.recursiveDescription(
       fromElement: root,
@@ -53,11 +53,11 @@ enum AXTreeWalk {
   /// The first element whose `key` value contains `markerValue`, via `AccessibilityMatch` so a marker
   /// and `--match` agree on what "contains" means.
   static func matchingElement(
-    inElements elements: [FBAccessibilityDocumentElement],
+    inElements elements: [AccessibilityDocumentElement],
     markerValue: String,
-    key: FBAXSearchableKey,
+    key: AXSearchableKey,
     ignoresCase: Bool = false
-  ) -> FBAccessibilityDocumentElement? {
+  ) -> AccessibilityDocumentElement? {
     // An empty marker is not a search — every value contains it — so it resolves to the first element
     // carrying the key at all. `AccessibilityMatch` refuses to represent that, so it is spelled out
     // rather than quietly becoming "no match".
@@ -83,9 +83,9 @@ enum AXTreeWalk {
   /// element apart from an absent one. Matches through the same `AccessibilityMatch` predicate as
   /// `matchingElement`, so the asserted element and the tapped point cannot disagree.
   static func resolveMarker(
-    inElements elements: [FBAccessibilityDocumentElement],
+    inElements elements: [AccessibilityDocumentElement],
     markerValue: String,
-    key: FBAXSearchableKey,
+    key: AXSearchableKey,
     ignoresCase: Bool = false
   ) -> MarkerResolution {
     var matched = false
@@ -120,9 +120,9 @@ enum AXTreeWalk {
   /// treats both nil cases alike (keep polling); tap/set-value call `resolveMarker` directly to tell an
   /// off-screen match from a genuine miss.
   static func frameCenter(
-    inElements elements: [FBAccessibilityDocumentElement],
+    inElements elements: [AccessibilityDocumentElement],
     markerValue: String,
-    key: FBAXSearchableKey,
+    key: AXSearchableKey,
     ignoresCase: Bool = false
   ) -> (x: Double, y: Double)? {
     guard case let .resolved(x, y) = resolveMarker(inElements: elements, markerValue: markerValue, key: key, ignoresCase: ignoresCase) else {

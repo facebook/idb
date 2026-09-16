@@ -188,8 +188,8 @@ final class AXInteractableTests: XCTestCase {
     frame: CGRect,
     reasons: [AccessibilityInteractable.Reason] = [.notHittable]
   ) -> AccessibilityInteractable? {
-    var element = FBAccessibilityDocumentElement()
-    element.frame = .some(FBAccessibilityFrame(frame))
+    var element = AccessibilityDocumentElement()
+    element.frame = .some(AccessibilityFrame(frame))
     element.interactable = .some(.blocked(reasons: reasons))
     return AXScreenBoundsClassifier.notingScreenClipping(element, screen: screen).interactable ?? nil
   }
@@ -247,8 +247,8 @@ final class AXInteractableTests: XCTestCase {
   }
 
   func testAnActionableElementIsNeverNotedAsClipped() {
-    var element = FBAccessibilityDocumentElement()
-    element.frame = .some(FBAccessibilityFrame(CGRect(x: 16, y: -10, width: 370, height: 52)))
+    var element = AccessibilityDocumentElement()
+    element.frame = .some(AccessibilityFrame(CGRect(x: 16, y: -10, width: 370, height: 52)))
     element.interactable = .some(.actionable(at: AccessibilityPoint(x: 201, y: 20)))
     let refined: AccessibilityInteractable? =
       AXScreenBoundsClassifier.notingScreenClipping(element, screen: Self.screen).interactable ?? nil
@@ -286,7 +286,7 @@ final class AXInteractableTests: XCTestCase {
   func testHandledByEncodesTheElementThatTookTheTouch() throws {
     let owner = AccessibilityElementRef(
       type: "Button", identifier: "standby", label: "StandBy",
-      frame: FBAccessibilityFrame(CGRect(x: 16, y: 744, width: 370, height: 52)), pid: 3283
+      frame: AccessibilityFrame(CGRect(x: 16, y: 744, width: 370, height: 52)), pid: 3283
     )
     let encoded = try Self.encode(.blocked(reasons: [.handledBy(owner)]))
     let reasons = try XCTUnwrap(encoded["reasons"] as? [[String: Any]])
@@ -315,9 +315,9 @@ final class AXInteractableTests: XCTestCase {
 
   // An element explained by a relative counts as explained in the summary.
   func testAnElementHandledByARelativeIsNotUnexplained() throws {
-    var handled = FBAccessibilityDocumentElement()
+    var handled = AccessibilityDocumentElement()
     handled.interactable = .some(.blocked(reasons: [.handledBy(nil)]))
-    var bare = FBAccessibilityDocumentElement()
+    var bare = AccessibilityDocumentElement()
     bare.interactable = .some(.blocked(reasons: [.notHittable]))
     let summary = try XCTUnwrap(AccessibilityInteractionSummary(elements: [handled, bare]))
     XCTAssertEqual(summary.blocked, 2)
@@ -329,19 +329,19 @@ final class AXInteractableTests: XCTestCase {
   // `occluded_by` hit-tests the element's centre (from the frame) and then compares identity fields both reads can
   // see, so requesting it implies all of them.
   func testOccludedByImpliesTheKeysItsHitTestNeeds() {
-    let keys = FBAccessibilityRequestOptions(keys: [.occludedBy]).serializationKeys
+    let keys = AccessibilityRequestOptions(keys: [.occludedBy]).serializationKeys
     XCTAssertTrue(keys.contains(.interactable), "the thing it enriches")
     XCTAssertTrue(keys.contains(.frameDict), "the frame its hit-test is aimed by")
     XCTAssertTrue(keys.contains(.uniqueID), "and the fields identity is compared on")
     XCTAssertTrue(keys.contains(.type))
     XCTAssertTrue(keys.contains(.label))
-    XCTAssertTrue(keys.isSuperset(of: FBAXKeys.occluderIdentityKeys))
+    XCTAssertTrue(keys.isSuperset(of: AXKeys.occluderIdentityKeys))
   }
 
   // MARK: - Explanatory power
 
-  private static func element(_ value: AccessibilityInteractable?) -> FBAccessibilityDocumentElement {
-    var element = FBAccessibilityDocumentElement()
+  private static func element(_ value: AccessibilityInteractable?) -> AccessibilityDocumentElement {
+    var element = AccessibilityDocumentElement()
     element.interactable = .some(value)
     return element
   }
@@ -400,12 +400,12 @@ final class AXInteractableTests: XCTestCase {
   // MARK: - The `interactable` filter
 
   /// A two-element flat read: a reachable button and a covered one, both button-like.
-  private static func mixedRead() -> [FBAccessibilityDocumentElement] {
-    var reachable = FBAccessibilityDocumentElement()
+  private static func mixedRead() -> [AccessibilityDocumentElement] {
+    var reachable = AccessibilityDocumentElement()
     reachable.label = .some("StandBy")
     reachable.role = .some("AXButton")
     reachable.interactable = .some(.actionable(at: AccessibilityPoint(x: 201, y: 770)))
-    var covered = FBAccessibilityDocumentElement()
+    var covered = AccessibilityDocumentElement()
     covered.label = .some("Screen Time")
     covered.role = .some("AXButton")
     covered.interactable = .some(.blocked(reasons: [.notHittable]))
@@ -414,23 +414,23 @@ final class AXInteractableTests: XCTestCase {
 
   // The covered button is button-like by every structural measure; the backend's verdict outranks the heuristic.
   func testTheFilterKeepsOnlyElementsTheBackendReportsActionable() {
-    let kept = FBAccessibilityElementFilter.interactable.apply(to: Self.mixedRead())
+    let kept = AccessibilityElementFilter.interactable.apply(to: Self.mixedRead())
     XCTAssertEqual(kept.compactMap { $0.label ?? nil }, ["StandBy"])
   }
 
   // Where the backend returned no verdict, the structural heuristic still answers — so the flag degrades
   // in precision on the legacy path rather than reporting an empty screen.
   func testTheFilterFallsBackToTheHeuristicWhenTheBackendCannotAnswer() {
-    var unjudged = FBAccessibilityDocumentElement()
+    var unjudged = AccessibilityDocumentElement()
     unjudged.label = .some("Screen Time")
     unjudged.role = .some("AXButton")
     unjudged.interactable = .some(nil)
-    XCTAssertEqual(FBAccessibilityElementFilter.interactable.apply(to: [unjudged]).count, 1)
+    XCTAssertEqual(AccessibilityElementFilter.interactable.apply(to: [unjudged]).count, 1)
 
-    var unlabelledContainer = FBAccessibilityDocumentElement()
+    var unlabelledContainer = AccessibilityDocumentElement()
     unlabelledContainer.interactable = .some(nil)
     XCTAssertTrue(
-      FBAccessibilityElementFilter.interactable.apply(to: [unlabelledContainer]).isEmpty,
+      AccessibilityElementFilter.interactable.apply(to: [unlabelledContainer]).isEmpty,
       "the fallback is the old heuristic, not keep-everything"
     )
   }

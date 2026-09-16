@@ -467,7 +467,7 @@ public final class DeviceFileCommands: FileCommands {
     body: (any AsyncFileContainer) async throws -> R
   ) async throws -> R {
     let device = try requireDevice()
-    return try await body(FBFileContainer.fileContainer(forBasePath: device.auxillaryDirectory))
+    return try await body(FileContainer.fileContainer(forBasePath: device.auxillaryDirectory))
   }
 
   public func withApplicationContainers<R>(

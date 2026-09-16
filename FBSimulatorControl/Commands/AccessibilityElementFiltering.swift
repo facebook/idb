@@ -21,17 +21,17 @@ enum AccessibilityElementRetention {
   /// Shape is preserved rather than normalized: a flat read's elements carry no `children` key and must
   /// not grow one, so an element whose `children` is `nil` keeps it `nil`.
   static func retaining(
-    _ elements: [FBAccessibilityDocumentElement],
-    where keeps: (FBAccessibilityDocumentElement) -> Bool
-  ) -> [FBAccessibilityDocumentElement] {
+    _ elements: [AccessibilityDocumentElement],
+    where keeps: (AccessibilityDocumentElement) -> Bool
+  ) -> [AccessibilityDocumentElement] {
     elements.flatMap { retained(from: $0, where: keeps) }
   }
 
   /// `element` if it passes, otherwise the kept descendants that take its place.
   private static func retained(
-    from element: FBAccessibilityDocumentElement,
-    where keeps: (FBAccessibilityDocumentElement) -> Bool
-  ) -> [FBAccessibilityDocumentElement] {
+    from element: AccessibilityDocumentElement,
+    where keeps: (AccessibilityDocumentElement) -> Bool
+  ) -> [AccessibilityDocumentElement] {
     let keptChildren = (element.children ?? []).flatMap { retained(from: $0, where: keeps) }
     guard keeps(element) else {
       return keptChildren
@@ -44,11 +44,11 @@ enum AccessibilityElementRetention {
   }
 }
 
-extension FBAccessibilityElementFilter {
+extension AccessibilityElementFilter {
 
   /// The elements this filter keeps, with their kept descendants hoisted into the place of anything
   /// dropped. `.all` is the identity, and returns the input untouched rather than rebuilding it.
-  func apply(to elements: [FBAccessibilityDocumentElement]) -> [FBAccessibilityDocumentElement] {
+  func apply(to elements: [AccessibilityDocumentElement]) -> [AccessibilityDocumentElement] {
     guard self != .all else {
       return elements
     }
@@ -62,8 +62,8 @@ extension FBAccessibilityElementFilter {
   /// actionable role — applies only when the backend returned no verdict.
   ///
   /// An attribute the read did not serialize cannot be matched on, which is why requesting a filter
-  /// widens the serialized key set (`FBAccessibilityRequestOptions.serializationKeys`).
-  private func keeps(_ element: FBAccessibilityDocumentElement) -> Bool {
+  /// widens the serialized key set (`AccessibilityRequestOptions.serializationKeys`).
+  private func keeps(_ element: AccessibilityDocumentElement) -> Bool {
     switch self {
     case .all:
       return true
@@ -92,14 +92,14 @@ extension AccessibilityMatch {
 
   /// The elements whose `key` value contains this match's `value`, hoisted like the filter. No match is
   /// an empty list, not an error: `--match` reporting nothing is a true answer about the screen.
-  func apply(to elements: [FBAccessibilityDocumentElement]) -> [FBAccessibilityDocumentElement] {
+  func apply(to elements: [AccessibilityDocumentElement]) -> [AccessibilityDocumentElement] {
     AccessibilityElementRetention.retaining(elements, where: keeps)
   }
 
   /// Whether an element's searched attribute contains the substring. An element that does not carry the
   /// attribute — or a read that did not serialize it — does not match; `serializationKeys` unions the
   /// searched key in so the second case does not arise from a narrow `--key`.
-  private func keeps(_ element: FBAccessibilityDocumentElement) -> Bool {
+  private func keeps(_ element: AccessibilityDocumentElement) -> Bool {
     matches(element.searchableValue(for: key))
   }
 }
@@ -112,19 +112,19 @@ extension AccessibilityElementRetention {
   /// The order lives here, in one place, because it is observable: both hoist, so filtering a matching
   /// element's container away before the match runs is not the same as after.
   static func narrowing(
-    _ elements: [FBAccessibilityDocumentElement],
-    filter: FBAccessibilityElementFilter,
+    _ elements: [AccessibilityDocumentElement],
+    filter: AccessibilityElementFilter,
     match: AccessibilityMatch?
-  ) -> [FBAccessibilityDocumentElement] {
+  ) -> [AccessibilityDocumentElement] {
     let filtered = filter.apply(to: elements)
     return match.map { $0.apply(to: filtered) } ?? filtered
   }
 }
 
-extension FBAccessibilityRequestOptions {
+extension AccessibilityRequestOptions {
 
   /// The elements a describe-all read reports out of what it walked.
-  func narrowing(_ elements: [FBAccessibilityDocumentElement]) -> [FBAccessibilityDocumentElement] {
+  func narrowing(_ elements: [AccessibilityDocumentElement]) -> [AccessibilityDocumentElement] {
     AccessibilityElementRetention.narrowing(elements, filter: filter, match: match)
   }
 }

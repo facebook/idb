@@ -48,38 +48,38 @@ public final class SimulatorFileCommands: FileCommands {
     _ bundleID: String,
     body: (any AsyncFileContainer) async throws -> R
   ) async throws -> R {
-    try await body(FBFileContainer.fileContainer(for: try await containedFile(forApplication: bundleID)))
+    try await body(FileContainer.fileContainer(for: try await containedFile(forApplication: bundleID)))
   }
 
   public func withAuxiliary<R>(
     body: (any AsyncFileContainer) async throws -> R
   ) async throws -> R {
-    try await body(FBFileContainer.fileContainer(forBasePath: simulator.auxillaryDirectory))
+    try await body(FileContainer.fileContainer(forBasePath: simulator.auxillaryDirectory))
   }
 
   public func withApplicationContainers<R>(
     body: (any AsyncFileContainer) async throws -> R
   ) async throws -> R {
-    try await body(FBFileContainer.fileContainer(for: try containedFileForApplicationContainers()))
+    try await body(FileContainer.fileContainer(for: try containedFileForApplicationContainers()))
   }
 
   public func withGroupContainers<R>(
     body: (any AsyncFileContainer) async throws -> R
   ) async throws -> R {
-    try await body(FBFileContainer.fileContainer(for: try containedFileForGroupContainers()))
+    try await body(FileContainer.fileContainer(for: try containedFileForGroupContainers()))
   }
 
   public func withRootFilesystem<R>(
     body: (any AsyncFileContainer) async throws -> R
   ) async throws -> R {
-    try await body(FBFileContainer.fileContainer(forBasePath: try requireDataDirectory()))
+    try await body(FileContainer.fileContainer(forBasePath: try requireDataDirectory()))
   }
 
   public func withMediaDirectory<R>(
     body: (any AsyncFileContainer) async throws -> R
   ) async throws -> R {
     let mediaDirectory = (try requireDataDirectory() as NSString).appendingPathComponent("Media")
-    return try await body(FBFileContainer.fileContainer(forBasePath: mediaDirectory))
+    return try await body(FileContainer.fileContainer(forBasePath: mediaDirectory))
   }
 
   public func withProvisioningProfiles<R>(
@@ -120,15 +120,15 @@ public final class SimulatorFileCommands: FileCommands {
 
   // MARK: - Contained file accessors
 
-  private func containedFile(forApplication bundleID: String) async throws -> any FBContainedFile {
+  private func containedFile(forApplication bundleID: String) async throws -> any ContainedFile {
     let installedApplication = try await simulator.application.installed(bundleID: bundleID)
     guard let container = installedApplication.dataContainer else {
       throw SimulatorFileError.noDataContainer(applicationDescription: String(describing: installedApplication))
     }
-    return FBFileContainer.containedFile(forBasePath: container)
+    return FileContainer.containedFile(forBasePath: container)
   }
 
-  private func containedFileForApplicationContainers() throws -> any FBContainedFile {
+  private func containedFileForApplicationContainers() throws -> any ContainedFile {
     var mapping: [String: String] = [:]
     for (bundleID, appInfo) in try simulator.device.installedApps() {
       guard let bundleID = bundleID as? String,
@@ -139,10 +139,10 @@ public final class SimulatorFileCommands: FileCommands {
       }
       mapping[bundleID] = dataContainer.path
     }
-    return FBFileContainer.containedFile(forPathMapping: mapping)
+    return FileContainer.containedFile(forPathMapping: mapping)
   }
 
-  private func containedFileForGroupContainers() throws -> any FBContainedFile {
+  private func containedFileForGroupContainers() throws -> any ContainedFile {
     var bundleIDToURL: [String: URL] = [:]
     for appInfo in try simulator.device.installedApps().values {
       guard let info = appInfo as? [String: Any],
@@ -158,7 +158,7 @@ public final class SimulatorFileCommands: FileCommands {
     for (identifier, url) in bundleIDToURL {
       pathMapping[identifier] = url.path
     }
-    return FBFileContainer.containedFile(forPathMapping: pathMapping)
+    return FileContainer.containedFile(forPathMapping: pathMapping)
   }
 
   private func requireDataDirectory() throws -> String {

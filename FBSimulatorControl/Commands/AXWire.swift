@@ -77,7 +77,7 @@ enum AXWire {
       elementType, elementBaseType, label, value, identifier, frame, automationType, children,
     ].map(\.rawValue)
 
-    /// The attributes `FBAXKeys.interactable` is derived from. Fetched only when that key is requested.
+    /// The attributes `AXKeys.interactable` is derived from. Fetched only when that key is requested.
     static let interactableAttributes: [Node] = [.isVisible, .visiblePoint, .centerPoint, .userInteractionEnabled]
 
     /// The attribute list a read must request to serialize `keys`, or nil when the default list already
@@ -85,7 +85,7 @@ enum AXWire {
     ///
     /// Nil rather than "the default list" so the caller can omit the request field entirely, keeping a
     /// default read byte-identical to one from a host that predates the field.
-    static func fetchList(for keys: Set<FBAXKeys>) -> [String]? {
+    static func fetchList(for keys: Set<AXKeys>) -> [String]? {
       guard keys.contains(.interactable) || keys.contains(.occludedBy) else {
         return nil
       }
@@ -98,7 +98,7 @@ enum AXWire {
     /// Only three of the searchable keys name something the guest fetches, because the rest are host-side
     /// derivations the host-side platform element answers nil for over this wire in the first place.
     /// A marker on one of those still writes; it just goes unasserted.
-    init?(assertableSearchKey key: FBAXSearchableKey) {
+    init?(assertableSearchKey key: AXSearchableKey) {
       switch key {
       case .label:
         self = .label

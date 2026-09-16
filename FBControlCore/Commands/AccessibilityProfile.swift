@@ -70,7 +70,7 @@ public struct AXBridgeProfile: Sendable, Equatable, Encodable {
 }
 
 /// The backend-specific profile carried by a complete accessibility document.
-public enum FBAccessibilityProfile: Sendable, Equatable, Encodable {
+public enum AccessibilityProfile: Sendable, Equatable, Encodable {
   case translator(AccessibilityProfilingData)
   case guestBridge(AXBridgeProfile)
 

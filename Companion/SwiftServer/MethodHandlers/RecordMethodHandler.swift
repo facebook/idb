@@ -26,7 +26,7 @@ struct RecordMethodHandler {
       ? URL(fileURLWithPath: target.auxillaryDirectory).appendingPathComponent("idb_encode").appendingPathExtension("mp4").path
       : start.filePath
 
-    let recording: any FBVideoRecording
+    let recording: any VideoRecording
     if let encodeOptions = try RecordRequestTranslation.encodeOptions(from: start) {
       try RecordRequestTranslation.requireHonoredConfiguration(target.videoRecording, describing: "\(target)")
       recording = try await target.videoRecording.startRecording(

@@ -12,7 +12,7 @@ import XCTest
 
 /// Untyped views of the legacy JSON output. They go through the real encoder, so an assertion
 /// cannot pass on a value the encoder would never emit.
-extension FBAccessibilityElementsResponse {
+extension AccessibilityElementsResponse {
 
   func legacyJSONData() throws -> Data {
     try formattedOutputJSON(format: .default)
@@ -29,7 +29,7 @@ extension FBAccessibilityElementsResponse {
   }
 }
 
-extension FBAccessibilityDocumentElement {
+extension AccessibilityDocumentElement {
 
   /// This element alone, legacy-spelled, as Foundation.
   func legacyObject() -> [String: Any] {

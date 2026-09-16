@@ -13,11 +13,11 @@ public enum SimulatorPrivacyError: Error {
   case noDataDirectory
   case noDataDirectoryForPlists
   case noServicesToGrant(bundleIDs: Set<String>)
-  case noBundleIDsToGrant(services: Set<FBTargetSettingsService>)
-  case unhandledGrantServices(services: Set<FBTargetSettingsService>)
+  case noBundleIDsToGrant(services: Set<TargetSettingsService>)
+  case unhandledGrantServices(services: Set<TargetSettingsService>)
   case noServicesToRevoke(bundleIDs: Set<String>)
-  case noBundleIDsToRevoke(services: Set<FBTargetSettingsService>)
-  case unhandledRevokeServices(services: Set<FBTargetSettingsService>)
+  case noBundleIDsToRevoke(services: Set<TargetSettingsService>)
+  case unhandledRevokeServices(services: Set<TargetSettingsService>)
   case emptyScheme(operation: String)
   case emptyBundleIDs(operation: String)
   case schemeApprovalPlistUnreadable(path: String)
@@ -90,7 +90,7 @@ public struct SimulatorPrivacyCommands {
 
   // MARK: - Services
 
-  public func grantAccess(_ bundleIDs: Set<String>, toServices services: Set<FBTargetSettingsService>) async throws {
+  public func grantAccess(_ bundleIDs: Set<String>, toServices services: Set<TargetSettingsService>) async throws {
     if services.isEmpty {
       throw SimulatorPrivacyError.noServicesToGrant(bundleIDs: bundleIDs)
     }
@@ -119,9 +119,9 @@ public struct SimulatorPrivacyCommands {
       toApprove.subtract(tccServices)
       try await modifyTCCDatabase(withBundleIDs: bundleIDs, toServices: tccServices, grantAccess: true)
     }
-    if !toApprove.isEmpty && toApprove.contains(FBTargetSettingsService.location) {
+    if !toApprove.isEmpty && toApprove.contains(TargetSettingsService.location) {
       try await authorizeLocationSettings(Array(bundleIDs))
-      toApprove.remove(FBTargetSettingsService.location)
+      toApprove.remove(TargetSettingsService.location)
     }
     if !toApprove.isEmpty && toApprove.contains(.notification) {
       try await updateNotificationService(Array(bundleIDs), approve: true)
@@ -137,7 +137,7 @@ public struct SimulatorPrivacyCommands {
     }
   }
 
-  public func revokeAccess(_ bundleIDs: Set<String>, toServices services: Set<FBTargetSettingsService>) async throws {
+  public func revokeAccess(_ bundleIDs: Set<String>, toServices services: Set<TargetSettingsService>) async throws {
     if services.isEmpty {
       throw SimulatorPrivacyError.noServicesToRevoke(bundleIDs: bundleIDs)
     }
@@ -166,9 +166,9 @@ public struct SimulatorPrivacyCommands {
       toRevoke.subtract(tccServices)
       try await modifyTCCDatabase(withBundleIDs: bundleIDs, toServices: tccServices, grantAccess: false)
     }
-    if !toRevoke.isEmpty && toRevoke.contains(FBTargetSettingsService.location) {
+    if !toRevoke.isEmpty && toRevoke.contains(TargetSettingsService.location) {
       try await revokeLocationSettings(Array(bundleIDs))
-      toRevoke.remove(FBTargetSettingsService.location)
+      toRevoke.remove(TargetSettingsService.location)
     }
     if !toRevoke.isEmpty && toRevoke.contains(.notification) {
       try await updateNotificationService(Array(bundleIDs), approve: false)
@@ -304,7 +304,7 @@ public struct SimulatorPrivacyCommands {
 
   // MARK: - TCC Database
 
-  private func modifyTCCDatabase(withBundleIDs bundleIDs: Set<String>, toServices services: Set<FBTargetSettingsService>, grantAccess: Bool) async throws {
+  private func modifyTCCDatabase(withBundleIDs bundleIDs: Set<String>, toServices services: Set<TargetSettingsService>, grantAccess: Bool) async throws {
     guard let dataDirectory = simulator.dataDirectory else {
       throw SimulatorPrivacyError.noDataDirectory
     }
@@ -329,12 +329,12 @@ public struct SimulatorPrivacyCommands {
     }
   }
 
-  private func grantAccessInTCCDatabase(_ databasePath: String, bundleIDs: Set<String>, services: Set<FBTargetSettingsService>, logger: (any FBControlCoreLogger)?) async throws {
+  private func grantAccessInTCCDatabase(_ databasePath: String, bundleIDs: Set<String>, services: Set<TargetSettingsService>, logger: (any FBControlCoreLogger)?) async throws {
     let query = try await Self.buildApprovalInsertQuery(forDatabase: databasePath, bundleIDs: bundleIDs, services: services, logger: logger)
     _ = try await Self.runSqliteCommand(onDatabase: databasePath, arguments: [query], logger: logger)
   }
 
-  private func revokeAccessInTCCDatabase(_ databasePath: String, bundleIDs: Set<String>, services: Set<FBTargetSettingsService>, logger: (any FBControlCoreLogger)?) async throws {
+  private func revokeAccessInTCCDatabase(_ databasePath: String, bundleIDs: Set<String>, services: Set<TargetSettingsService>, logger: (any FBControlCoreLogger)?) async throws {
     var deletions: [String] = []
     for bundleID in bundleIDs {
       for serviceName in Self.tccServiceNames(for: services) {
@@ -350,7 +350,7 @@ public struct SimulatorPrivacyCommands {
       logger: logger)
   }
 
-  private static func buildApprovalInsertQuery(forDatabase databasePath: String, bundleIDs: Set<String>, services: Set<FBTargetSettingsService>, logger: (any FBControlCoreLogger)?) async throws -> String {
+  private static func buildApprovalInsertQuery(forDatabase databasePath: String, bundleIDs: Set<String>, services: Set<TargetSettingsService>, logger: (any FBControlCoreLogger)?) async throws -> String {
     let schema = try await runSqliteCommand(onDatabase: databasePath, arguments: [".schema access"], logger: logger)
     return approvalInsertQuery(forAccessSchema: schema, bundleIDs: bundleIDs, services: services)
   }
@@ -374,34 +374,34 @@ public struct SimulatorPrivacyCommands {
 
   // MARK: - Service Mappings
 
-  private static let tccDatabaseMapping: [FBTargetSettingsService: String] = [
-    FBTargetSettingsService.contacts: "kTCCServiceAddressBook",
-    FBTargetSettingsService.photos: "kTCCServicePhotos",
-    FBTargetSettingsService.camera: "kTCCServiceCamera",
-    FBTargetSettingsService.microphone: "kTCCServiceMicrophone",
+  private static let tccDatabaseMapping: [TargetSettingsService: String] = [
+    TargetSettingsService.contacts: "kTCCServiceAddressBook",
+    TargetSettingsService.photos: "kTCCServicePhotos",
+    TargetSettingsService.camera: "kTCCServiceCamera",
+    TargetSettingsService.microphone: "kTCCServiceMicrophone",
   ]
 
-  private static let coreSimulatorSettingMappingPreIos13: [FBTargetSettingsService: String] = [
-    FBTargetSettingsService.contacts: "kTCCServiceContactsFull",
-    FBTargetSettingsService.photos: "kTCCServicePhotos",
-    FBTargetSettingsService.camera: "camera",
-    FBTargetSettingsService.location: "__CoreLocationAlways",
-    FBTargetSettingsService.microphone: "kTCCServiceMicrophone",
+  private static let coreSimulatorSettingMappingPreIos13: [TargetSettingsService: String] = [
+    TargetSettingsService.contacts: "kTCCServiceContactsFull",
+    TargetSettingsService.photos: "kTCCServicePhotos",
+    TargetSettingsService.camera: "camera",
+    TargetSettingsService.location: "__CoreLocationAlways",
+    TargetSettingsService.microphone: "kTCCServiceMicrophone",
   ]
 
-  private static let coreSimulatorSettingMappingPostIos13: [FBTargetSettingsService: String] = [
-    FBTargetSettingsService.location: "__CoreLocationAlways"
+  private static let coreSimulatorSettingMappingPostIos13: [TargetSettingsService: String] = [
+    TargetSettingsService.location: "__CoreLocationAlways"
   ]
 
-  private static func coreSimulatorSettingMapping(forOSVersion osVersion: OSVersion) -> [FBTargetSettingsService: String] {
+  private static func coreSimulatorSettingMapping(forOSVersion osVersion: OSVersion) -> [TargetSettingsService: String] {
     osVersion.version.majorVersion >= 13 ? coreSimulatorSettingMappingPostIos13 : coreSimulatorSettingMappingPreIos13
   }
 
-  internal static func filteredTCCApprovals(_ approvals: Set<FBTargetSettingsService>) -> Set<FBTargetSettingsService> {
+  internal static func filteredTCCApprovals(_ approvals: Set<TargetSettingsService>) -> Set<TargetSettingsService> {
     approvals.intersection(Set(tccDatabaseMapping.keys))
   }
 
-  private static func tccServiceNames(for approvals: Set<FBTargetSettingsService>) -> [String] {
+  private static func tccServiceNames(for approvals: Set<TargetSettingsService>) -> [String] {
     filteredTCCApprovals(approvals).compactMap { tccDatabaseMapping[$0] }
   }
 
@@ -431,7 +431,7 @@ public struct SimulatorPrivacyCommands {
     "last_reminded",
   ].joined(separator: ", ")
 
-  internal static func approvalInsertQuery(forAccessSchema schema: String, bundleIDs: Set<String>, services: Set<FBTargetSettingsService>) -> String {
+  internal static func approvalInsertQuery(forAccessSchema schema: String, bundleIDs: Set<String>, services: Set<TargetSettingsService>) -> String {
     if schema.contains("last_reminded") {
       let rows = postiOS17ApprovalRows(forBundleIDs: bundleIDs, services: services)
       return "INSERT or REPLACE INTO access (\(postiOS17AccessColumns)) VALUES \(rows)"
@@ -448,7 +448,7 @@ public struct SimulatorPrivacyCommands {
     return "INSERT or REPLACE INTO access VALUES \(rows)"
   }
 
-  internal static func preiOS12ApprovalRows(forBundleIDs bundleIDs: Set<String>, services: Set<FBTargetSettingsService>) -> String {
+  internal static func preiOS12ApprovalRows(forBundleIDs bundleIDs: Set<String>, services: Set<TargetSettingsService>) -> String {
     var tuples: [String] = []
     for bundleID in bundleIDs {
       for serviceName in tccServiceNames(for: services) {
@@ -458,7 +458,7 @@ public struct SimulatorPrivacyCommands {
     return tuples.joined(separator: ", ")
   }
 
-  internal static func postiOS12ApprovalRows(forBundleIDs bundleIDs: Set<String>, services: Set<FBTargetSettingsService>) -> String {
+  internal static func postiOS12ApprovalRows(forBundleIDs bundleIDs: Set<String>, services: Set<TargetSettingsService>) -> String {
     let timestamp = UInt(Date().timeIntervalSince1970)
     var tuples: [String] = []
     for bundleID in bundleIDs {
@@ -469,7 +469,7 @@ public struct SimulatorPrivacyCommands {
     return tuples.joined(separator: ", ")
   }
 
-  internal static func postiOS15ApprovalRows(forBundleIDs bundleIDs: Set<String>, services: Set<FBTargetSettingsService>) -> String {
+  internal static func postiOS15ApprovalRows(forBundleIDs bundleIDs: Set<String>, services: Set<TargetSettingsService>) -> String {
     let timestamp = UInt(Date().timeIntervalSince1970)
     var tuples: [String] = []
     for bundleID in bundleIDs {
@@ -480,7 +480,7 @@ public struct SimulatorPrivacyCommands {
     return tuples.joined(separator: ", ")
   }
 
-  internal static func postiOS17ApprovalRows(forBundleIDs bundleIDs: Set<String>, services: Set<FBTargetSettingsService>) -> String {
+  internal static func postiOS17ApprovalRows(forBundleIDs bundleIDs: Set<String>, services: Set<TargetSettingsService>) -> String {
     let timestamp = UInt(Date().timeIntervalSince1970)
     var tuples: [String] = []
     for bundleID in bundleIDs {

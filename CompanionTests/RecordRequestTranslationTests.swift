@@ -14,7 +14,7 @@ import XCTest
 /// A target that records at whatever settings it chooses, which is what every conformer does until
 /// it overrides `honorsRecordingConfiguration`.
 private final class FixedConfigurationRecorder: VideoRecordingCommands {
-  func startRecording(toFile filePath: String) async throws -> any FBVideoRecording {
+  func startRecording(toFile filePath: String) async throws -> any VideoRecording {
     VideoRecordingHandle { URL(fileURLWithPath: filePath) }
   }
 }
@@ -22,7 +22,7 @@ private final class FixedConfigurationRecorder: VideoRecordingCommands {
 private final class ConfigurableRecorder: VideoRecordingCommands {
   var honorsRecordingConfiguration: Bool { true }
 
-  func startRecording(toFile filePath: String) async throws -> any FBVideoRecording {
+  func startRecording(toFile filePath: String) async throws -> any VideoRecording {
     VideoRecordingHandle { URL(fileURLWithPath: filePath) }
   }
 }

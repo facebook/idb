@@ -16,7 +16,7 @@ struct ApproveMethodHandler {
 
   func handle(request: Idb_ApproveRequest, context: ServerContext) async throws -> Idb_ApproveResponse {
 
-    let mapping: [Idb_ApproveRequest.Permission: FBTargetSettingsService] = [
+    let mapping: [Idb_ApproveRequest.Permission: TargetSettingsService] = [
       .microphone: .microphone,
       .photos: .photos,
       .camera: .camera,
@@ -27,7 +27,7 @@ struct ApproveMethodHandler {
     ]
 
     var services = try Set(
-      request.permissions.map { permission -> FBTargetSettingsService in
+      request.permissions.map { permission -> TargetSettingsService in
         guard let service = mapping[permission] else {
           throw RPCError(code: .invalidArgument, message: "Unrecognized permission \(permission)")
         }
