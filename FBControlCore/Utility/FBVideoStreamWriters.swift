@@ -1241,6 +1241,11 @@ final class FMP4FrameWriter: EncodedFrameWriter, VideoStreamTimedMetadataWriter 
   private var baseDecodeTime: UInt64
   private var firstPts90k: UInt64
   var lastPts90k: UInt64
+  /// The format description the current init segment describes. A keyframe carrying a different
+  /// one (a rotation changes the SPS) gets a fresh init segment ahead of it, so that the
+  /// `avcC`/`hvcC` record decoders configure themselves from matches the samples that follow. The
+  /// timeline continues across the re-initialisation.
+  private var initFormatDescription: CMFormatDescription?
 
   public init(codec: VideoStreamCodec) {
     self.codec = codec
@@ -1267,24 +1272,29 @@ final class FMP4FrameWriter: EncodedFrameWriter, VideoStreamTimedMetadataWriter 
     // segment, the fragment header and the sample data are assembled into a single item.
     var output = Data()
 
-    // On first keyframe: emit init segment (ftyp + moov).
-    if !initWritten {
-      if !isKeyFrame {
-        return // Drop frames before first keyframe.
-      }
+    if !initWritten, !isKeyFrame {
+      return // Drop frames before first keyframe.
+    }
 
+    // An init segment (ftyp + moov) ahead of the first keyframe, and again ahead of a keyframe whose
+    // format differs from the one the last init segment described.
+    if isKeyFrame {
       guard let formatDesc = CMSampleBufferGetFormatDescription(sampleBuffer) else {
         throw VideoStreamWriterError.failedToGetFormatDescription
       }
-      let dims = CMVideoFormatDescriptionGetDimensions(formatDesc)
-
-      output.append(contentsOf: FBFMP4CreateFtypBox(codec))
-      output.append(contentsOf: FBFMP4CreateMoovBox(formatDesc, codec, UInt32(dims.width), UInt32(dims.height), 90000))
-
-      initWritten = true
-      firstPts90k = pts90k
-      baseDecodeTime = 0
-      logger.log("fMP4 init segment written (\(dims.width)x\(dims.height), \(codec.displayName))")
+      let formatChanged = initFormatDescription.map { !CMFormatDescriptionEqual($0, otherFormatDescription: formatDesc) } ?? true
+      if formatChanged {
+        let dims = CMVideoFormatDescriptionGetDimensions(formatDesc)
+        output.append(contentsOf: FBFMP4CreateFtypBox(codec))
+        output.append(contentsOf: FBFMP4CreateMoovBox(formatDesc, codec, UInt32(dims.width), UInt32(dims.height), 90000))
+        if !initWritten {
+          initWritten = true
+          firstPts90k = pts90k
+          baseDecodeTime = 0
+        }
+        initFormatDescription = formatDesc
+        logger.log("fMP4 init segment written (\(dims.width)x\(dims.height), \(codec.displayName))")
+      }
     }
 
     let duration90k: UInt32

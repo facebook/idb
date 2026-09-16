@@ -1268,7 +1268,7 @@ final class FBVideoStreamTests: XCTestCase {
 
   // MARK: - fMP4 Format Changes
 
-  func testFMP4KeyframeWithANewFormatDescriptionDoesNotReemitTheInitSegment() throws {
+  func testFMP4KeyframeWithANewFormatDescriptionReemitsTheInitSegment() throws {
     let counting = CountingConsumer()
     let writer = FMP4FrameWriter(codec: .h264)
     let logger = ControlCoreLoggerDouble()
@@ -1278,10 +1278,7 @@ final class FBVideoStreamTests: XCTestCase {
     // Walk the box structure rather than scanning for the bytes "ftyp", which could occur inside a
     // payload.
     let initSegments = try FMP4BoxSignatures(counting.bytes, in: 0..<counting.bytes.count).filter { $0.hasPrefix("ftyp:") }.count
-    // BUG: a keyframe whose parameter sets differ from the init segment's (a rotation changes the
-    // SPS) is muxed under the stale `avcC`, so decoders keep the old parameters — flipped to a
-    // second init segment in a following commit.
-    XCTAssertEqual(initSegments, 1)
+    XCTAssertEqual(initSegments, 2)
   }
 
   // MARK: - MPEG-TS Program Map
