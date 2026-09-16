@@ -7,13 +7,19 @@
 
 from __future__ import annotations
 
+import contextlib
+import io
 import json
+import tempfile
 import unittest
 from pathlib import Path
 from typing import Any, Sequence
+from unittest import mock
 
+from . import provision_simulator
 from .provision_simulator import (
     environment_lines,
+    main,
     newest_iphone,
     newest_runtime,
     NoSimulatorError,
@@ -200,6 +206,63 @@ class ProvisionTests(unittest.TestCase):
 
         with self.assertRaises(NoSimulatorError):
             provision(recorder, name="e2e")
+
+
+class MainTests(unittest.TestCase):
+    def setUp(self) -> None:
+        self.root = Path(self.enterContext(tempfile.TemporaryDirectory()))
+        self.recorder = Recorder([])
+
+    def main(
+        self, *argv: str, runtimes: list[dict[str, Any]] | None = None
+    ) -> tuple[int, str, str]:
+        """Run the command line against recorded simctl responses."""
+        self.recorder = Recorder(
+            runtimes
+            if runtimes is not None
+            else [runtime("26.0", device_types=["iPhone 17"])]
+        )
+        out, error = io.StringIO(), io.StringIO()
+        with (
+            mock.patch.object(provision_simulator, "_run", self.recorder),
+            contextlib.redirect_stdout(out),
+            contextlib.redirect_stderr(error),
+        ):
+            status = main(list(argv))
+        return status, out.getvalue(), error.getvalue()
+
+    def test_writes_the_environment_to_stdout_for_the_caller_to_export(self) -> None:
+        # The caller appends stdout to $GITHUB_ENV, so anything else written
+        # there becomes a broken environment variable rather than a message.
+        status, out, _ = self.main("--name", "e2e")
+
+        self.assertEqual(status, 0)
+        self.assertEqual(out, f"DEVICE_UDID={UDID}\n")
+
+    def test_creates_the_device_set_it_was_given(self) -> None:
+        device_set = self.root / "sets" / "end-to-end"
+
+        status, out, _ = self.main("--name", "e2e", "--device-set", str(device_set))
+
+        self.assertEqual(status, 0)
+        self.assertTrue(device_set.is_dir())
+        self.assertEqual(out, f"DEVICE_SET_PATH={device_set}\nDEVICE_UDID={UDID}\n")
+        self.assertIn("e2e", self.recorder.commands[1])
+
+    def test_prefixes_every_name_it_writes(self) -> None:
+        status, out, _ = self.main("--name", "e2e", "--env-prefix", "TEST_RUNNER_")
+
+        self.assertEqual(status, 0)
+        self.assertEqual(out, f"TEST_RUNNER_DEVICE_UDID={UDID}\n")
+
+    def test_reports_a_machine_with_no_usable_runtime_without_exporting(self) -> None:
+        status, out, error = self.main(
+            "--name", "e2e", runtimes=[runtime("26.0", platform="tvOS")]
+        )
+
+        self.assertEqual(status, 1)
+        self.assertEqual(out, "")
+        self.assertIn("No iOS runtime is available", error)
 
 
 if __name__ == "__main__":
