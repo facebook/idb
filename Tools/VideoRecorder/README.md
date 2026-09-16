@@ -33,6 +33,7 @@ With piped stdin and no `--duration`, send one JSON object per line. This is a o
 | `overlay` | `overlays` | Replace overlay shapes; an empty array clears them while retaining active bars. |
 | `chapter` | `text` | Add a timed chapter; updates at the same video frame keep the latest title. |
 | `screenshot` | `index` | Atomically write `screenshot_<index>.png` in the configured directory, including prior overlay updates. |
+| `force_keyframe` | none | Make the next encoded frame a keyframe, so a consumer that just joined or lost frames can decode immediately instead of waiting for the next periodic one. |
 | `shutdown` | none | Stop and finalize. |
 
 Legacy `topStatus` and `bottomStatus` commands remain accepted. Malformed or unknown commands are logged and the session continues. Closing stdin, SIGINT, and SIGTERM also stop a session. With `--duration`, recording stops after that duration or a signal and does not process stdin commands.

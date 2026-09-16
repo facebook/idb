@@ -82,11 +82,25 @@ public final class StdinCommandHandler {
     case "topStatus":
       logger.log("topStatus is deprecated; use {method:\"bar\", params:{position:\"top\", ...}}")
       await handleBar(position: "top", content: command.params?.text == nil ? nil : "text", text: command.params?.text, fit: nil)
+    case "force_keyframe":
+      handleForceKeyframe()
     case "shutdown":
       handleShutdown()
     default:
       logger.log("Unknown stdin command: \(command.method)")
     }
+  }
+
+  /// `{"method":"force_keyframe"}` — the next encoded frame is an IDR. A consumer that has just
+  /// joined a stream (or lost frames) can decode immediately instead of waiting for the next
+  /// periodic keyframe; the same command the WebRTC streamer accepts, so callers need one spelling.
+  private func handleForceKeyframe() {
+    guard let videoStream else {
+      logger.log("force_keyframe requested but no video stream available")
+      return
+    }
+    videoStream.requestKeyFrame()
+    logger.log("Forwarded force_keyframe to video stream")
   }
 
   /// Wait for a shutdown command. Returns when "shutdown" is received or stdin closes.

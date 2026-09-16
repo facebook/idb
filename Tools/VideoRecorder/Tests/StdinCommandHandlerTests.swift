@@ -84,6 +84,13 @@ import Testing
   }
 
   @MainActor
+  @Test func testForceKeyframeWithoutVideoStreamDoesNotCrash() async {
+    let handler = makeHandler()
+    await handler.handleLine("{\"method\":\"force_keyframe\"}")
+    #expect(handler.shutdownRequested == false)
+  }
+
+  @MainActor
   @Test func testScreenshotWithoutVideoStreamDoesNotCrash() async {
     let handler = makeHandler(screenshotDir: NSTemporaryDirectory())
     await handler.handleLine("{\"method\":\"screenshot\",\"params\":{\"index\":0}}")
