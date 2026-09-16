@@ -29,7 +29,7 @@ class FBOverflownConsumerDouble: NSObject, FBDataConsumer, DataConsumerAsync {
 
 // MARK: - Helpers
 
-private func CreateH264SampleBuffer(isKeyFrame: Bool) -> CMSampleBuffer {
+private func CreateH264SampleBuffer(isKeyFrame: Bool, pts90k: Int64 = 0) -> CMSampleBuffer {
   let sps: [UInt8] = [0x67, 0x42, 0x00, 0x0a, 0xf8, 0x41, 0xa2]
   let pps: [UInt8] = [0x68, 0xce, 0x38, 0x80]
   let paramSizes: [Int] = [sps.count, pps.count]
@@ -84,7 +84,7 @@ private func CreateH264SampleBuffer(isKeyFrame: Bool) -> CMSampleBuffer {
   var sampleSize = avccDataCount
   var timing = CMSampleTimingInfo(
     duration: CMTimeMake(value: 1, timescale: 30),
-    presentationTimeStamp: CMTimeMake(value: 0, timescale: 90000),
+    presentationTimeStamp: CMTimeMake(value: pts90k, timescale: 90000),
     decodeTimeStamp: .invalid
   )
   let sampleStatus = CMSampleBufferCreate(
@@ -1016,6 +1016,35 @@ final class FBVideoStreamTests: XCTestCase {
     )
     XCTAssertEqual(metadata, metadataGolden)
     XCTAssertEqual(try FMP4BoxSignatures(metadata, in: 0..<metadata.count), ["emsg:61"])
+  }
+
+  func testFMP4FragmentBaseDecodeTimeFollowsPresentationTime() {
+    let writer = FMP4FrameWriter(codec: .h264)
+    let consumer = FBDataBuffer.accumulatingBuffer()
+    let logger = FBControlCoreLoggerDouble()
+
+    // A source that missed cadence: each sample declares 1/30 s but the frames are 100 ms apart.
+    let ptsList: [Int64] = [0, 9000, 18000, 27000]
+    for (index, pts) in ptsList.enumerated() {
+      XCTAssertNoThrow(try writer.write(CreateH264SampleBuffer(isKeyFrame: index == 0, pts90k: pts), to: consumer, logger: logger))
+    }
+
+    let output = consumer.data()
+    var tfdts: [UInt64] = []
+    var searchFrom = 0
+    while true {
+      let range = (output as NSData).range(of: Data("tfdt".utf8), options: [], in: NSRange(location: searchFrom, length: output.count - searchFrom))
+      if range.location == NSNotFound { break }
+      // tfdt v1: 4-byte type, 4-byte version/flags, 8-byte baseMediaDecodeTime
+      tfdts.append(output.withUnsafeBytes { ptr in UInt64(bigEndian: ptr.loadUnaligned(fromByteOffset: range.location + 8, as: UInt64.self)) })
+      searchFrom = range.location + 4
+    }
+    XCTAssertEqual(tfdts.count, ptsList.count)
+    // BUG: baseMediaDecodeTime is the running sum of the DECLARED durations (1/30 s = 3000 ticks each),
+    // not the sample's presentation time, so media time runs at 3000 ticks per frame while the frames
+    // are 9000 ticks apart — the stream's clock outruns wall time by 3x here. Flipped to the PTS-relative
+    // values `[0, 9000, 18000, 27000]` in the following commit.
+    XCTAssertEqual(tfdts, [0, 3000, 6000, 9000])
   }
 
   func testFMP4EmsgBoxStructure() {
