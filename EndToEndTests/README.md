@@ -62,7 +62,7 @@ The harness writes companion logs to `IDB_E2E_ARTIFACTS_DIR`, falling back to `T
 
 ## Recordings and diagnostics
 
-The harness starts one `sim-video` process alongside the companion. It records the simulator with padded bars for the active test and command, and adds a chapter at each test boundary. A timestamped JSON-lines trace preserves full test names, commands, exit codes, timing and final test results, including cleanup failures. Screenshots are captured before test cleanup.
+The harness starts one `sim-video` process alongside the companion. It uses the default variable frame rate to record when the screen or overlays change, with padded bars for the active test and command, and adds a chapter at each test boundary. A timestamped JSON-lines trace preserves full test names, commands, exit codes, timing and final test results, including cleanup failures. Screenshots are captured before test cleanup.
 
 Recording tries hardware HEVC first, then JPEG with software encoding allowed if HEVC cannot produce frames. If neither produces frames, the recorder log explains the failure, the command trace continues, and screenshots are attempted through idb. A missing or non-executable recorder path fails setup.
 

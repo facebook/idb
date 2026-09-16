@@ -49,8 +49,6 @@ class Recording:
                         str(device_set),
                         "--encoding",
                         encoding,
-                        "--fps",
-                        "10",
                         "--scale",
                         "0.5",
                         "--bar",
