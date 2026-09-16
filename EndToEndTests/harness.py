@@ -359,10 +359,41 @@ def _binary_from_environment(name: str) -> Path:
     return _executable(Path(_required(name, "a binary this suite drives")), name)
 
 
+def on_disk_path(path: Path) -> Path:
+    """The path as the filesystem spells it, component by component.
+
+    A simulator's `launchd_sim` resolves a program path case-sensitively, even
+    where the filesystem beneath it does not, and answers a spelling it does not
+    recognise with `LaunchdSimError 111 / Invalid or missing
+    Program/ProgramArguments` -- its answer for a path that does not exist.
+    Nothing on the host side distinguishes the two: opening, stat and code
+    signing all accept either spelling. So a binary about to be spawned in the
+    guest is named the way the directory that holds it is named.
+
+    A component matching nothing, or matching more than one entry on a
+    case-sensitive filesystem, is left as it was given: there is no single
+    spelling to prefer, and the caller's own checks decide what happens next.
+    """
+    on_disk = Path(path.anchor)
+    for component in path.relative_to(path.anchor).parts:
+        entries = []
+        try:
+            entries = os.listdir(on_disk)
+        except OSError:
+            pass
+        if component not in entries:
+            matches = [e for e in entries if e.lower() == component.lower()]
+            component = matches[0] if len(matches) == 1 else component
+        on_disk = on_disk / component
+    return on_disk
+
+
 def _executable(path: Path, name: str) -> Path:
     if not path.is_file() or not os.access(path, os.X_OK):
         raise HarnessError(f"{name}={path} is not an executable file")
-    return path
+    # abspath rather than resolve: the spelling is what matters here, and
+    # following symlinks would answer with a path the caller never named.
+    return on_disk_path(Path(os.path.abspath(path)))
 
 
 def artifact_directory() -> Path | None:

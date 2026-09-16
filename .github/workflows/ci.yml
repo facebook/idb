@@ -254,10 +254,17 @@ jobs:
         uses: actions/download-artifact@v5
         with:
           name: idb-companion-distribution
+      # Unpacked outside the checkout. `pip install .` above leaves setuptools'
+      # lowercase `build/` in it, and on the runner's case-insensitive
+      # filesystem a `Build` beside it is that same directory -- so the
+      # distribution would land under one spelling while the paths exported
+      # below name the other. Every host-side check accepts either; a
+      # simulator's `launchd_sim` resolves a program path case-sensitively and
+      # refuses the spelling it was not given.
       - name: Unpack the distribution
         run: |
-          mkdir -p Build
-          tar -C Build -xzf idb-companion-distribution.tgz
+          mkdir -p "$RUNNER_TEMP/artifacts"
+          tar -C "$RUNNER_TEMP/artifacts" -xzf idb-companion-distribution.tgz
       # Export DEVICE_UDID and DEVICE_SET_PATH for a dedicated simulator.
       - name: Provision a simulator
         run: python3 -m CI.provision_simulator --name end-to-end-provided --device-set "$RUNNER_TEMP/end-to-end-device-set" >> "$GITHUB_ENV"
@@ -265,9 +272,9 @@ jobs:
       - name: Run the end-to-end suite
         run: |
           IDB_BIN="$(command -v idb)" \
-          IDB_E2E_COMPANION_PATH="$PWD/Build/Distribution/idb_companion" \
-          IDB_E2E_RECORDER_PATH="$PWD/Build/Distribution/sim-video" \
-          IDB_E2E_SERVICE_PROBE_PATH="$PWD/Build/EndToEndResources/SimulatorServiceProbe-iOS" \
+          IDB_E2E_COMPANION_PATH="$RUNNER_TEMP/artifacts/Distribution/idb_companion" \
+          IDB_E2E_RECORDER_PATH="$RUNNER_TEMP/artifacts/Distribution/sim-video" \
+          IDB_E2E_SERVICE_PROBE_PATH="$RUNNER_TEMP/artifacts/EndToEndResources/SimulatorServiceProbe-iOS" \
           IDB_E2E_ARTIFACTS_DIR="$RUNNER_TEMP/end-to-end-diagnostics" \
           IDB_E2E_STRICT=1 \
           python -m unittest discover -s EndToEndTests -t . -v

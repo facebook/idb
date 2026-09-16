@@ -727,10 +727,9 @@ class BinaryPathTests(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual(resolved.companion_path, self.companion)
 
-    # BUG: the harness hands on a differently-cased path unchanged, which every
-    # host-side check accepts and `launchd_sim` refuses -- flipped in the
-    # following commit, where the answer becomes the path that is on disk.
-    async def test_a_differently_cased_companion_keeps_the_case_it_was_given(
+    # The spelling on disk, so that what reaches `launchd_sim` is a path it
+    # recognises rather than one that merely opens.
+    async def test_a_differently_cased_companion_resolves_to_the_path_on_disk(
         self,
     ) -> None:
         requested = self.as_exported(self.companion)
@@ -738,13 +737,11 @@ class BinaryPathTests(unittest.IsolatedAsyncioTestCase):
 
         resolved = await self.resolve(requested)
 
-        self.assertEqual(resolved.companion_path, requested)
-        self.assertNotEqual(resolved.companion_path, self.companion)
+        self.assertEqual(resolved.companion_path, self.companion)
 
-    # BUG: and so everything derived beside that companion carries the spelling
-    # the guest refuses, which is how one mis-spelled variable fails every
-    # single thing the suite spawns. Flipped in the following commit.
-    async def test_what_is_derived_beside_a_companion_carries_its_case(
+    # And so everything derived beside it is spelled the way the guest needs,
+    # which is what makes one corrected variable enough for the whole suite.
+    async def test_what_is_derived_beside_a_companion_carries_its_corrected_case(
         self,
     ) -> None:
         requested = self.as_exported(self.companion)
@@ -754,9 +751,7 @@ class BinaryPathTests(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual(
             resolved.fixture_app,
-            self.as_exported(self.distribution)
-            / "Resources"
-            / harness.FIXTURE_APP_NAME,
+            self.distribution / "Resources" / harness.FIXTURE_APP_NAME,
         )
 
     async def test_a_companion_that_is_not_there_under_either_spelling_is_refused(
