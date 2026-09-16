@@ -438,14 +438,14 @@ final class SimulatorVideoStreamDeliveryTests: XCTestCase {
     let mountedHandle = await stream.currentFramePusherHandle()
     let previous = try XCTUnwrap(mountedHandle)
     let previousPusher = try XCTUnwrap(previous.bitmapPusher)
-    XCTAssertNotNil(previousPusher.pixelTransferSession, "precondition: a scaled bitmap pusher owns a transfer session")
+    XCTAssertNotNil(previousPusher.scaler, "precondition: a scaled bitmap pusher owns a scaler")
 
     surface.ioSurfaceChanged?(makeTestIOSurface(width: 32, height: 32))
     try await expectEventually("a surface swap must install a new frame pusher") {
       await stream.currentFramePusherHandle()?.identity != previous.identity
     }
 
-    XCTAssertNil(previousPusher.pixelTransferSession, "a surface swap must tear down the displaced pusher")
+    XCTAssertNil(previousPusher.scaler, "a surface swap must tear down the displaced pusher")
     try await stream.stopStreaming()
   }
 

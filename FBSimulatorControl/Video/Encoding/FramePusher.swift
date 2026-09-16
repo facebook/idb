@@ -92,72 +92,6 @@ enum VideoToolboxOutputMode {
   case minicap
 }
 
-// MARK: - Pixel Buffer Pool Helpers
-
-private func createScaledPixelBufferPool(sourceBuffer: CVPixelBuffer, scaleFactor: Double) -> CVPixelBufferPool? {
-  let sourceWidth = CVPixelBufferGetWidth(sourceBuffer)
-  let sourceHeight = CVPixelBufferGetHeight(sourceBuffer)
-
-  let destinationWidth = Int(floor(scaleFactor * Double(sourceWidth)))
-  let destinationHeight = Int(floor(scaleFactor * Double(sourceHeight)))
-
-  let pixelBufferAttributes: [String: Any] = [
-    kCVPixelBufferWidthKey as String: destinationWidth,
-    kCVPixelBufferHeightKey as String: destinationHeight,
-    kCVPixelBufferPixelFormatTypeKey as String: CVPixelBufferGetPixelFormatType(sourceBuffer),
-    kCVPixelBufferIOSurfacePropertiesKey as String: [String: Any](),
-  ]
-  let pixelBufferPoolAttributes: [String: Any] = [
-    kCVPixelBufferPoolMinimumBufferCountKey as String: 4,
-    kCVPixelBufferPoolAllocationThresholdKey as String: 16,
-  ]
-
-  var scaledPixelBufferPool: CVPixelBufferPool?
-  CVPixelBufferPoolCreate(nil, pixelBufferPoolAttributes as CFDictionary, pixelBufferAttributes as CFDictionary, &scaledPixelBufferPool)
-  return scaledPixelBufferPool
-}
-
-private func createNV12PixelBufferPool(width: Int, height: Int) -> CVPixelBufferPool? {
-  let pixelBufferAttributes: [String: Any] = [
-    kCVPixelBufferWidthKey as String: width,
-    kCVPixelBufferHeightKey as String: height,
-    kCVPixelBufferPixelFormatTypeKey as String: kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange,
-    kCVPixelBufferIOSurfacePropertiesKey as String: [String: Any](),
-  ]
-  let pixelBufferPoolAttributes: [String: Any] = [
-    kCVPixelBufferPoolMinimumBufferCountKey as String: 4,
-    kCVPixelBufferPoolAllocationThresholdKey as String: 16,
-  ]
-  var pool: CVPixelBufferPool?
-  CVPixelBufferPoolCreate(nil, pixelBufferPoolAttributes as CFDictionary, pixelBufferAttributes as CFDictionary, &pool)
-  return pool
-}
-
-/// The output dimensions shared by the encoder pipeline and the composited-frame pool: the source
-/// scaled by the optional factor (only factors strictly between 0 and 1 apply), expanded by the edge
-/// insets, then rounded up to even — H.264 and NV12 require even dimensions. The VideoToolbox
-/// session and the composited pool must agree on these exactly (a mismatch feeds the encoder frames
-/// of a different size than it was created for, distorting the output), so both sites derive them
-/// from this single computation.
-struct VideoOutputDimensions: Equatable {
-  let width: Int
-  let height: Int
-
-  static func calculate(sourceWidth: Int, sourceHeight: Int, scaleFactor: Double?, edgeInsets: VideoStreamEdgeInsets) -> VideoOutputDimensions {
-    var width = sourceWidth
-    var height = sourceHeight
-    if let scaleFactor, scaleFactor > 0, scaleFactor < 1 {
-      width = Int(floor(scaleFactor * Double(sourceWidth)))
-      height = Int(floor(scaleFactor * Double(sourceHeight)))
-    }
-    width += Int(edgeInsets.left + edgeInsets.right)
-    height += Int(edgeInsets.top + edgeInsets.bottom)
-    width += width % 2
-    height += height % 2
-    return VideoOutputDimensions(width: width, height: height)
-  }
-}
-
 // MARK: - Bitmap Frame Pusher
 
 /// Writes raw BGRA pixel bytes (optionally scaled) straight through to the consumer, unframed.
@@ -165,8 +99,8 @@ final class SimulatorVideoStreamFramePusher_Bitmap: SimulatorVideoStreamFramePus
   let consumer: any DataConsumer
   /// The scale factor between 0-1. nil for no scaling.
   let scaleFactor: Double?
-  var scaledPixelBufferPool: CVPixelBufferPool?
-  var pixelTransferSession: VTPixelTransferSession?
+  /// Present only when scaling; a frame that fails to scale is written at source size.
+  private(set) var scaler: PixelBufferConverter?
 
   init(consumer: any DataConsumer, scaleFactor: Double?) {
     self.consumer = consumer
@@ -174,23 +108,18 @@ final class SimulatorVideoStreamFramePusher_Bitmap: SimulatorVideoStreamFramePus
   }
 
   func setup(with pixelBuffer: CVPixelBuffer, edgeInsets: VideoStreamEdgeInsets) throws {
-    if let scaleFactor, scaleFactor > 0, scaleFactor < 1 {
-      self.scaledPixelBufferPool = createScaledPixelBufferPool(sourceBuffer: pixelBuffer, scaleFactor: scaleFactor)
-      var transferSession: VTPixelTransferSession?
-      let status = VTPixelTransferSessionCreate(allocator: kCFAllocatorDefault, pixelTransferSessionOut: &transferSession)
-      if status != noErr {
-        throw SimulatorVideoStreamError.failedToCreatePixelTransferSession(status: status)
-      }
-      self.pixelTransferSession = transferSession
+    guard let scaleFactor, scaleFactor > 0, scaleFactor < 1 else {
+      return
     }
+    scaler = try PixelBufferConverter(
+      outputWidth: Int(floor(scaleFactor * Double(CVPixelBufferGetWidth(pixelBuffer)))),
+      outputHeight: Int(floor(scaleFactor * Double(CVPixelBufferGetHeight(pixelBuffer)))),
+      pixelFormat: CVPixelBufferGetPixelFormatType(pixelBuffer))
   }
 
   func tearDown() throws {
-    if let pixelTransferSession {
-      VTPixelTransferSessionInvalidate(pixelTransferSession)
-      self.pixelTransferSession = nil
-    }
-    self.scaledPixelBufferPool = nil
+    scaler?.invalidate()
+    scaler = nil
   }
 
   func writeEncodedFrame(
@@ -201,14 +130,8 @@ final class SimulatorVideoStreamFramePusher_Bitmap: SimulatorVideoStreamFramePus
     forceKeyFrame: Bool
   ) throws {
     var bufferToWrite = pixelBuffer
-    if let bufferPool = scaledPixelBufferPool, let pixelTransferSession {
-      var resizedBuffer: CVPixelBuffer?
-      if CVPixelBufferPoolCreatePixelBuffer(nil, bufferPool, &resizedBuffer) == kCVReturnSuccess, let resizedBuffer {
-        let status = VTPixelTransferSessionTransferImage(pixelTransferSession, from: pixelBuffer, to: resizedBuffer)
-        if status == noErr {
-          bufferToWrite = resizedBuffer
-        }
-      }
+    if let scaler, case let .converted(scaled) = scaler.convert(pixelBuffer) {
+      bufferToWrite = scaled
     }
 
     CVPixelBufferLockBaseAddress(bufferToWrite, .readOnly)
@@ -257,8 +180,8 @@ final class SimulatorVideoStreamFramePusher_VideoToolbox: SimulatorVideoStreamFr
   private let minicapFrameWriter = MinicapFrameWriter()
 
   var compressionSession: VTCompressionSession?
-  var nv12PixelBufferPool: CVPixelBufferPool?
-  var pixelTransferSession: VTPixelTransferSession?
+  /// BGRA→NV12 at the encoded output size; nil until `setup`.
+  private var converter: PixelBufferConverter?
 
   var consecutiveNotReadyFrameCount: UInt = 0
   var warmupComplete = false
@@ -446,26 +369,10 @@ final class SimulatorVideoStreamFramePusher_VideoToolbox: SimulatorVideoStreamFr
       logger.info().log("Applying \(scaleFactor) scale from w=\(sourceWidth)/h=\(sourceHeight) to output w=\(destinationWidth)/h=\(destinationHeight)")
     }
 
-    // Always create a VTPixelTransferSession to convert BGRA→NV12 (and scale if needed).
-    // VTCompressionSession's native input format is NV12 (420v). Feeding it BGRA causes
-    // an internal conversion pass. By converting explicitly we let VT pre-allocate its
-    // pipeline via sourceImageBufferAttributes and avoid the implicit conversion.
-    var transferSession: VTPixelTransferSession?
-    let transferStatus = VTPixelTransferSessionCreate(allocator: kCFAllocatorDefault, pixelTransferSessionOut: &transferSession)
-    if transferStatus != noErr {
-      throw SimulatorVideoStreamError.failedToCreatePixelTransferSession(status: transferStatus)
-    }
-    self.pixelTransferSession = transferSession
-    self.nv12PixelBufferPool = createNV12PixelBufferPool(width: destinationWidth, height: destinationHeight)
+    let converter = try PixelBufferConverter(
+      outputWidth: destinationWidth, outputHeight: destinationHeight, pixelFormat: PixelBufferConverter.encoderPixelFormat)
+    self.converter = converter
     logger.info().log("Created BGRA→NV12 conversion pipeline at w=\(destinationWidth)/h=\(destinationHeight) (GPU via VTPixelTransferSession)")
-
-    // Tell VTCompressionSession that it will receive NV12 IOSurface-backed buffers.
-    let sourceImageBufferAttributes: [String: Any] = [
-      kCVPixelBufferPixelFormatTypeKey as String: kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange,
-      kCVPixelBufferWidthKey as String: destinationWidth,
-      kCVPixelBufferHeightKey as String: destinationHeight,
-      kCVPixelBufferIOSurfacePropertiesKey as String: [String: Any](),
-    ]
 
     // No create-time output callback: each frame is encoded with the block-based
     // `VTCompressionSessionEncodeFrame(...outputHandler:)` overload (see `writeEncodedFrame`),
@@ -477,7 +384,7 @@ final class SimulatorVideoStreamFramePusher_VideoToolbox: SimulatorVideoStreamFr
       height: Int32(destinationHeight),
       codecType: videoCodec,
       encoderSpecification: encoderSpecification as CFDictionary,
-      imageBufferAttributes: sourceImageBufferAttributes as CFDictionary,
+      imageBufferAttributes: converter.outputBufferAttributes as CFDictionary,
       compressedDataAllocator: nil,
       outputCallback: nil,
       refcon: nil,
@@ -513,11 +420,8 @@ final class SimulatorVideoStreamFramePusher_VideoToolbox: SimulatorVideoStreamFr
       VTCompressionSessionInvalidate(compressionSession)
       self.compressionSession = nil
     }
-    if let pixelTransferSession {
-      VTPixelTransferSessionInvalidate(pixelTransferSession)
-      self.pixelTransferSession = nil
-    }
-    self.nv12PixelBufferPool = nil
+    converter?.invalidate()
+    converter = nil
   }
 
   func writeEncodedFrame(
@@ -535,19 +439,16 @@ final class SimulatorVideoStreamFramePusher_VideoToolbox: SimulatorVideoStreamFr
 
     let encodeStart = CFAbsoluteTimeGetCurrent()
 
-    // BGRA→NV12 (and scale, since the pool is destination-sized) in one VTPixelTransferSession pass.
-    if let nv12Pool = nv12PixelBufferPool, let pixelTransferSession {
-      var nv12Buffer: CVPixelBuffer?
-      let returnStatus = CVPixelBufferPoolCreatePixelBuffer(nil, nv12Pool, &nv12Buffer)
-      if returnStatus == kCVReturnSuccess, let nv12Buffer {
-        let transferStatus = VTPixelTransferSessionTransferImage(pixelTransferSession, from: pixelBuffer, to: nv12Buffer)
-        if transferStatus == noErr {
-          bufferToWrite = nv12Buffer
-        } else {
-          logger.log("VTPixelTransferSession BGRA→NV12 failed: \(transferStatus) — falling back to BGRA input")
-        }
-      } else {
-        logger.log("Failed to get a pixel buffer from the NV12 pool: \(returnStatus)")
+    // BGRA→NV12 (and scale, since the pool is destination-sized) in one pass; on failure the encoder
+    // takes the BGRA frame and converts internally.
+    if let converter {
+      switch converter.convert(pixelBuffer) {
+      case let .converted(nv12Buffer):
+        bufferToWrite = nv12Buffer
+      case let .transferFailed(status):
+        logger.log("VTPixelTransferSession BGRA→NV12 failed: \(status) — falling back to BGRA input")
+      case let .poolExhausted(status):
+        logger.log("Failed to get a pixel buffer from the NV12 pool: \(status)")
       }
     }
 
