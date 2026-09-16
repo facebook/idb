@@ -41,4 +41,27 @@ final class SimulatorVideoStreamFrameWriterOwnershipTests: XCTestCase {
     XCTAssertTrue(first === shared.timedMetadataWriter as AnyObject?)
   }
 
+  func testStreamKeepsItsTransportWriterAcrossSurfaceSwaps() async throws {
+    try VideoEncodingHostSupport.skipUnlessHardwareH264Encoding()
+    let surface = FakeFramebufferSurface()
+    surface.immediateSurface = makeTestIOSurface(width: 128, height: 128)
+    let framebuffer = Framebuffer(surface: surface, logger: CapturingLogger())
+    let stream = SimulatorVideoStream.make(framebuffer: framebuffer, configuration: configuration, logger: CapturingLogger())
+    try await stream.startStreaming(FBDataBuffer.accumulatingBuffer())
+    let firstWriter = await stream.frameWriters?.timedMetadataWriter as AnyObject?
+    let first = try XCTUnwrap(firstWriter)
+
+    surface.ioSurfaceChanged?(makeTestIOSurface(width: 256, height: 256))
+    for _ in 0..<500 {
+      try await Task.sleep(nanoseconds: 10_000_000)
+      if await stream.pixelBuffer.map(CVPixelBufferGetWidth) == 256 { break }
+    }
+    let width = await stream.pixelBuffer.map(CVPixelBufferGetWidth)
+    XCTAssertEqual(width, 256, "precondition: the swapped surface must have mounted")
+
+    let secondWriter = await stream.frameWriters?.timedMetadataWriter as AnyObject?
+    let second = try XCTUnwrap(secondWriter)
+    XCTAssertTrue(first === second)
+    try await stream.stopStreaming()
+  }
 }
