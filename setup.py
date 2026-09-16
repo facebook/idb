@@ -89,7 +89,7 @@ setuptools.setup(
     long_description=open("README.md").read(),
     long_description_content_type="text/markdown",
     url="https://github.com/facebook/idb",
-    packages=setuptools.find_packages(),
+    packages=setuptools.find_packages(exclude=("idb.fb", "idb.fb.*")),
     data_files=[("proto", ["proto/idb.proto"]), ("", ["protoc_compiler_template.py"])],
     license="MIT",
     classifiers=[
