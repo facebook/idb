@@ -522,8 +522,8 @@ final class FBVideoStreamTests: XCTestCase {
     let logger = ControlCoreLoggerDouble()
 
     // AccumulatingBuffer does not conform to DataConsumerAsync,
-    // so checkConsumerBufferLimit always returns YES.
-    XCTAssertTrue(checkConsumerBufferLimit(consumer, logger))
+    // so it always has capacity.
+    XCTAssertTrue(consumer.hasCapacityForFrame(logger: logger))
   }
 
   func testCheckConsumerBufferLimitDropsWhenOverflown() {
@@ -531,11 +531,11 @@ final class FBVideoStreamTests: XCTestCase {
     let logger = ControlCoreLoggerDouble()
 
     consumer.setUnprocessedDataCount(0)
-    XCTAssertTrue(checkConsumerBufferLimit(consumer, logger))
+    XCTAssertTrue(consumer.hasCapacityForFrame(logger: logger))
 
     // MaxAllowedUnprocessedDataCounts is 2; > 2 triggers drop
     consumer.setUnprocessedDataCount(3)
-    XCTAssertFalse(checkConsumerBufferLimit(consumer, logger))
+    XCTAssertFalse(consumer.hasCapacityForFrame(logger: logger))
   }
 
   // MARK: - MPEG-TS CRC32
@@ -543,7 +543,7 @@ final class FBVideoStreamTests: XCTestCase {
   func testMPEGTSCRC32KnownVector() {
     // MPEG-2 CRC32 of "123456789" is a well-known test vector
     let data: [UInt8] = [UInt8(ascii: "1"), UInt8(ascii: "2"), UInt8(ascii: "3"), UInt8(ascii: "4"), UInt8(ascii: "5"), UInt8(ascii: "6"), UInt8(ascii: "7"), UInt8(ascii: "8"), UInt8(ascii: "9")]
-    let crc = FBMPEGTS_CRC32(data)
+    let crc = MPEGTS.crc32(data)
     XCTAssertEqual(crc, 0x0376E6E7)
   }
 
@@ -551,7 +551,7 @@ final class FBVideoStreamTests: XCTestCase {
 
   func testPATPacketStructure() {
     var counter: UInt8 = 0
-    let pat = FBMPEGTSCreatePATPacket(&counter)
+    let pat = MPEGTS.patPacket(continuityCounter: &counter)
 
     XCTAssertEqual(pat.count, 188)
 
@@ -585,7 +585,7 @@ final class FBVideoStreamTests: XCTestCase {
 
   func testPMTPacketStructureHEVC() {
     var counter: UInt8 = 0
-    let pmt = FBMPEGTSCreatePMTPacket(&counter, 0x24)
+    let pmt = MPEGTS.pmtPacket(continuityCounter: &counter, videoStreamType: 0x24, includeTimedMetadata: false)
 
     XCTAssertEqual(pmt.count, 188)
 
@@ -615,9 +615,9 @@ final class FBVideoStreamTests: XCTestCase {
 
   func testPATContinuityCounterIncrements() {
     var counter: UInt8 = 0
-    _ = FBMPEGTSCreatePATPacket(&counter)
+    _ = MPEGTS.patPacket(continuityCounter: &counter)
     XCTAssertEqual(counter, 1)
-    _ = FBMPEGTSCreatePATPacket(&counter)
+    _ = MPEGTS.patPacket(continuityCounter: &counter)
     XCTAssertEqual(counter, 2)
   }
 
@@ -631,7 +631,7 @@ final class FBVideoStreamTests: XCTestCase {
     var videoCC: UInt8 = 0
     var patCC: UInt8 = 0
     var pmtCC: UInt8 = 0
-    let output = FBMPEGTSPacketizePES(pesData, false, 0x24, 90000, &videoCC, &patCC, &pmtCC)
+    let output = MPEGTS.videoPackets(accessUnit: [UInt8](pesData), isKeyFrame: false, videoStreamType: 0x24, pts90k: 90000, videoContinuityCounter: &videoCC, patContinuityCounter: &patCC, pmtContinuityCounter: &pmtCC)
 
     // Non-keyframe: no PAT/PMT, just one video TS packet
     XCTAssertEqual(output.count, 188)
@@ -661,7 +661,7 @@ final class FBVideoStreamTests: XCTestCase {
     var videoCC: UInt8 = 0
     var patCC: UInt8 = 0
     var pmtCC: UInt8 = 0
-    let output = FBMPEGTSPacketizePES(pesData, false, 0x24, 90000, &videoCC, &patCC, &pmtCC)
+    let output = MPEGTS.videoPackets(accessUnit: [UInt8](pesData), isKeyFrame: false, videoStreamType: 0x24, pts90k: 90000, videoContinuityCounter: &videoCC, patContinuityCounter: &patCC, pmtContinuityCounter: &pmtCC)
 
     XCTAssertEqual(output.count, 188 * 2)
 
@@ -683,7 +683,7 @@ final class FBVideoStreamTests: XCTestCase {
     var videoCC: UInt8 = 0
     var patCC: UInt8 = 0
     var pmtCC: UInt8 = 0
-    let output = FBMPEGTSPacketizePES(pesData, true, 0x24, 90000, &videoCC, &patCC, &pmtCC)
+    let output = MPEGTS.videoPackets(accessUnit: [UInt8](pesData), isKeyFrame: true, videoStreamType: 0x24, pts90k: 90000, videoContinuityCounter: &videoCC, patContinuityCounter: &patCC, pmtContinuityCounter: &pmtCC)
 
     // Keyframe: PAT + PMT + 1 video packet = 3 * 188 = 564
     XCTAssertEqual(output.count, 188 * 3)
@@ -713,7 +713,7 @@ final class FBVideoStreamTests: XCTestCase {
     var videoCC: UInt8 = 0
     var patCC: UInt8 = 0
     var pmtCC: UInt8 = 0
-    let output = FBMPEGTSPacketizePES(pesData, false, 0x24, 90000, &videoCC, &patCC, &pmtCC)
+    let output = MPEGTS.videoPackets(accessUnit: [UInt8](pesData), isKeyFrame: false, videoStreamType: 0x24, pts90k: 90000, videoContinuityCounter: &videoCC, patContinuityCounter: &patCC, pmtContinuityCounter: &pmtCC)
 
     // Non-keyframe: just 1 video packet
     XCTAssertEqual(output.count, 188)
@@ -735,7 +735,7 @@ final class FBVideoStreamTests: XCTestCase {
     var videoCC: UInt8 = 0
     var patCC: UInt8 = 0
     var pmtCC: UInt8 = 0
-    let output = FBMPEGTSPacketizePES(pesData, true, 0x1B, 90000, &videoCC, &patCC, &pmtCC)
+    let output = MPEGTS.videoPackets(accessUnit: [UInt8](pesData), isKeyFrame: true, videoStreamType: 0x1B, pts90k: 90000, videoContinuityCounter: &videoCC, patContinuityCounter: &patCC, pmtContinuityCounter: &pmtCC)
 
     // Keyframe: PAT + PMT + 1 video packet = 3 * 188 = 564
     XCTAssertEqual(output.count, 188 * 3)
@@ -754,7 +754,7 @@ final class FBVideoStreamTests: XCTestCase {
 
   func testPMTWithMetadataStreamContainsTwoEntries() {
     var counter: UInt8 = 0
-    let pmt = FBMPEGTSCreatePMTPacketWithMetadata(&counter, 0x24, true)
+    let pmt = MPEGTS.pmtPacket(continuityCounter: &counter, videoStreamType: 0x24, includeTimedMetadata: true)
 
     XCTAssertEqual(pmt.count, 188)
 
@@ -778,14 +778,14 @@ final class FBVideoStreamTests: XCTestCase {
     // Metadata stream entry at offset 17: stream_type = 0x15
     XCTAssertEqual(section[17], 0x15)
     let metaPid = UInt16(section[18] & 0x1F) << 8 | UInt16(section[19])
-    XCTAssertEqual(metaPid, FBMPEGTSMetadataPID)
+    XCTAssertEqual(metaPid, MPEGTS.PID.timedMetadata)
   }
 
   // MARK: - MPEG-TS Timed Metadata Packets
 
   func testTimedMetadataPacketStructure() {
     var counter: UInt8 = 0
-    let output = FBMPEGTSCreateTimedMetadataPackets("Chapter 1", 90000, &counter)
+    let output = MPEGTS.timedMetadataPackets(text: "Chapter 1", pts90k: 90000, continuityCounter: &counter)
 
     XCTAssertGreaterThan(output.count, 0)
     XCTAssertEqual(output.count % 188, 0)
@@ -800,7 +800,7 @@ final class FBVideoStreamTests: XCTestCase {
 
     // PID = MetadataPID (0x0102)
     let pid = UInt16(bytes[1] & 0x1F) << 8 | UInt16(bytes[2])
-    XCTAssertEqual(pid, FBMPEGTSMetadataPID)
+    XCTAssertEqual(pid, MPEGTS.PID.timedMetadata)
 
     XCTAssertEqual(counter, 1)
 
@@ -824,7 +824,7 @@ final class FBVideoStreamTests: XCTestCase {
 
   func testTimedMetadataShortTextFitsInOnePacket() {
     var counter: UInt8 = 0
-    let output = FBMPEGTSCreateTimedMetadataPackets("Hi", 0, &counter)
+    let output = MPEGTS.timedMetadataPackets(text: "Hi", pts90k: 0, continuityCounter: &counter)
     XCTAssertEqual(output.count, 188)
   }
 
@@ -834,7 +834,7 @@ final class FBVideoStreamTests: XCTestCase {
       longText.append("ABCDEFGHIJ")
     }
     var counter: UInt8 = 0
-    let output = FBMPEGTSCreateTimedMetadataPackets(longText, 45000, &counter)
+    let output = MPEGTS.timedMetadataPackets(text: longText, pts90k: 45000, continuityCounter: &counter)
     XCTAssertGreaterThan(output.count, 188)
     XCTAssertEqual(output.count % 188, 0)
 
@@ -843,7 +843,7 @@ final class FBVideoStreamTests: XCTestCase {
     for i in 0..<numPackets {
       XCTAssertEqual(bytes[i * 188], 0x47, "Packet \(i) should have sync byte")
       let pktPid = UInt16(bytes[i * 188 + 1] & 0x1F) << 8 | UInt16(bytes[i * 188 + 2])
-      XCTAssertEqual(pktPid, FBMPEGTSMetadataPID, "Packet \(i) should have metadata PID")
+      XCTAssertEqual(pktPid, MPEGTS.PID.timedMetadata, "Packet \(i) should have metadata PID")
     }
 
     XCTAssertTrue((bytes[1] & 0x40) != 0, "First packet should have payload_unit_start")
@@ -1301,7 +1301,7 @@ final class FBVideoStreamTests: XCTestCase {
 
     let pmt = try XCTUnwrap(TSPackets(consumer.data(), pid: 0x0100).first)
     var counter: UInt8 = 0
-    XCTAssertEqual(pmt, FBMPEGTSCreatePMTPacketWithMetadata(&counter, 0x1B, true))
+    XCTAssertEqual(pmt, MPEGTS.pmtPacket(continuityCounter: &counter, videoStreamType: 0x1B, includeTimedMetadata: true))
   }
 
   // MARK: - MPEG-TS Timed Metadata Stream
@@ -1320,7 +1320,7 @@ final class FBVideoStreamTests: XCTestCase {
     while i + 188 <= bytes.count {
       XCTAssertEqual(bytes[i], 0x47)
       let pid = (UInt16(bytes[i + 1] & 0x1F) << 8) | UInt16(bytes[i + 2])
-      XCTAssertEqual(pid, FBMPEGTSMetadataPID, "Timed metadata must be on the metadata PID")
+      XCTAssertEqual(pid, MPEGTS.PID.timedMetadata, "Timed metadata must be on the metadata PID")
       i += 188
     }
 

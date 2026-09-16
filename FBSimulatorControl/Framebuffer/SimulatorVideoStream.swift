@@ -638,7 +638,7 @@ public actor SimulatorVideoStream: FBVideoStream {
     guard let pixelBuffer, let consumer, let framePusher else {
       return
     }
-    if !checkConsumerBufferLimit(consumer, logger) {
+    if !consumer.hasCapacityForFrame(logger: logger) {
       return
     }
 

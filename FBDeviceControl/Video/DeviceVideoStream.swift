@@ -239,7 +239,7 @@ public class DeviceVideoStream: NSObject, FBVideoStream, @unchecked Sendable {
 extension DeviceVideoStream: AVCaptureVideoDataOutputSampleBufferDelegate {
   public func captureOutput(_ output: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection) {
     guard let consumer = self.consumer else { return }
-    if !checkConsumerBufferLimit(consumer, logger) { return }
+    if !consumer.hasCapacityForFrame(logger: logger) { return }
     signalStarted()
     consumeSampleBuffer(sampleBuffer)
   }

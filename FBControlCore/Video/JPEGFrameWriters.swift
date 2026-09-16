@@ -8,14 +8,17 @@
 import CoreMedia
 import Foundation
 
+/// Raw JPEG frames back to back; consumers split on the JPEG markers.
 public struct MJPEGFrameWriter {
   public init() {}
 
   public func write(_ jpegDataBuffer: CMBlockBuffer, to consumer: any DataConsumer, logger: any ControlCoreLogger) throws {
-    try WriteBlockBufferToConsumer(jpegDataBuffer, consumer)
+    try jpegDataBuffer.write(to: consumer)
   }
 }
 
+/// The Minicap wire format: a one-time 24-byte global header, then each JPEG frame prefixed with its
+/// little-endian 32-bit length. https://github.com/openstf/minicap#usage
 public struct MinicapFrameWriter {
   public init() {}
 
@@ -25,12 +28,11 @@ public struct MinicapFrameWriter {
     let lengthData = Data(bytes: &imageLength, count: MemoryLayout<UInt32>.size)
     consumer.consumeData(lengthData)
 
-    try WriteBlockBufferToConsumer(jpegDataBuffer, consumer)
+    try jpegDataBuffer.write(to: consumer)
   }
 
-  // MinicapHeader is built byte-by-byte (24 bytes, all little-endian) rather than relying
-  // on Swift struct layout, matching the `#pragma pack(push, 1)` C struct.
-  // https://github.com/openstf/minicap#usage
+  /// The header is built byte by byte (all fields little-endian) rather than from a Swift struct
+  /// layout, matching the `#pragma pack(push, 1)` C struct Minicap defines.
   public func writeHeader(width: UInt32, height: UInt32, to consumer: any DataConsumer, logger: any ControlCoreLogger) {
     let headerSize: UInt8 = 24
     let pid = UInt32(bitPattern: ProcessInfo.processInfo.processIdentifier).littleEndian
