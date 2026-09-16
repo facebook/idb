@@ -7,11 +7,14 @@
 
 from __future__ import annotations
 
+import contextlib
+import io
 import tempfile
 import unittest
 from pathlib import Path
 from unittest import mock
 
+from . import collect_diagnostics
 from .collect_diagnostics import (
     Capture,
     collect,
@@ -118,6 +121,27 @@ class CollectTests(unittest.TestCase):
         self.root = Path(self.enterContext(tempfile.TemporaryDirectory()))
         self.output = self.root / "diagnostics"
         self.run = Recorder()
+
+    def run_command_line(
+        self, environment: dict[str, str], *argv: str
+    ) -> tuple[int, str]:
+        """Run the command line with commands recorded rather than executed."""
+        error = io.StringIO()
+        with (
+            mock.patch.dict("os.environ", environment, clear=True),
+            mock.patch.object(collect_diagnostics, "_run", self.run),
+            contextlib.redirect_stderr(error),
+        ):
+            status = main(
+                [
+                    "--output",
+                    str(self.output),
+                    "--companion-root",
+                    str(self.root / "tmp"),
+                    *argv,
+                ]
+            )
+        return status, error.getvalue()
 
     def test_collects_flat_companion_logs_into_a_separate_directory(self) -> None:
         artifacts = self.root / "artifacts"
@@ -256,6 +280,34 @@ class CollectTests(unittest.TestCase):
         self.assertEqual(collected, ["devices.txt"])
         self.assertEqual((self.output / "devices.txt").read_text(), "xcrun simctl list")
         self.assertEqual(self.run.commands, [["xcrun", "simctl", "list"]])
+
+    def test_names_the_simulator_from_the_environment(self) -> None:
+        device_set = self.root / "devices"
+        write(device_set / UDID / "data/Library/Logs/CrashReporter/crash.ips", "crash")
+
+        status, _ = self.run_command_line(
+            {"DEVICE_SET_PATH": str(device_set), "DEVICE_UDID": UDID}
+        )
+
+        self.assertEqual(status, 0)
+        self.assertEqual(
+            (self.output / "simulator-crashes/crash.ips").read_text(), "crash"
+        )
+        self.assertEqual(
+            [command[:4] for command in self.run.commands],
+            [["xcrun", "simctl", "--set", str(device_set)]] * 2,
+        )
+
+    def test_an_empty_device_set_path_names_no_simulator(self) -> None:
+        # `Path("")` is the working directory, so an exported-but-unset
+        # variable has to read as absent rather than as a device set here.
+        status, error = self.run_command_line(
+            {"DEVICE_SET_PATH": "", "DEVICE_UDID": UDID}
+        )
+
+        self.assertEqual(status, 0)
+        self.assertEqual(self.run.commands, [])
+        self.assertIn("host-side diagnostics only", error)
 
     def test_collection_continues_after_source_error(self) -> None:
         def raising(argv):
