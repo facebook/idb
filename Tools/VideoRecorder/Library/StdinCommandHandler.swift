@@ -10,18 +10,102 @@ import FBControlCore
 import FBSimulatorControl
 import Foundation
 
-/// A JSON command received on stdin.
-struct StdinCommand: Decodable {
-  let method: String
-  let params: Params?
+/// A JSON command received on stdin, as the closed set of things a line can mean.
+enum StdinCommand: Decodable {
+  case overlay([OverlayShape])
+  case screenshot(index: Int)
+  case chapter(text: String)
+  case bar(position: String, content: BarContentSpec, fit: Bool?)
+  /// The deprecated `bottomStatus` / `topStatus` aliases: a bar fixed to one position, carrying
+  /// only text and never a `fit`.
+  case deprecatedStatus(position: String, content: BarContent)
+  case forceKeyframe
+  case shutdown
+  /// A recognized method whose required field is absent. Distinct from a decode failure, which
+  /// rejects a line before it can be classified at all.
+  case incomplete(Incomplete)
+  case unrecognized(method: String)
 
-  struct Params: Decodable {
-    let overlays: [OverlayShape]?
-    let index: Int?
-    let text: String?
-    let position: String?
-    let content: String?
-    let fit: Bool?
+  enum Incomplete {
+    case barMissingPosition
+    case chapterMissingText
+  }
+
+  /// The `bar` command's `content` selector folded together with its `text`. An unrecognized
+  /// selector stays a value rather than becoming a decode failure, because it leaves the bar
+  /// untouched instead of invalidating the line it arrived on.
+  enum BarContentSpec: Equatable {
+    case resolved(BarContent)
+    case unrecognized(String)
+
+    init(content: String?, text: String?) {
+      switch content {
+      case "text":
+        self = .resolved(.text(text ?? ""))
+      case "stats":
+        self = .resolved(.stats)
+      case nil, .some(""):
+        self = .resolved(.hidden)
+      case .some(let unknown):
+        self = .unrecognized(unknown)
+      }
+    }
+  }
+
+  private enum CodingKeys: String, CodingKey {
+    case method
+    case params
+  }
+
+  /// Every command's fields on the wire, in one container. Decoding it whole is load-bearing: the
+  /// protocol rejects a line with a malformed field even when the method it names never reads that
+  /// field, so classification has to happen after the container is decoded, not instead of it.
+  private struct Params: Decodable {
+    var overlays: [OverlayShape]?
+    var index: Int?
+    var text: String?
+    var position: String?
+    var content: String?
+    var fit: Bool?
+  }
+
+  init(from decoder: any Decoder) throws {
+    let container = try decoder.container(keyedBy: CodingKeys.self)
+    let method = try container.decode(String.self, forKey: .method)
+    let params = try container.decodeIfPresent(Params.self, forKey: .params) ?? Params()
+
+    switch method {
+    case "overlay":
+      self = .overlay(params.overlays ?? [])
+    case "screenshot":
+      self = .screenshot(index: params.index ?? 0)
+    case "chapter":
+      guard let text = params.text, !text.isEmpty else {
+        self = .incomplete(.chapterMissingText)
+        return
+      }
+      self = .chapter(text: text)
+    case "bar":
+      guard let position = params.position else {
+        self = .incomplete(.barMissingPosition)
+        return
+      }
+      self = .bar(
+        position: position,
+        content: BarContentSpec(content: params.content, text: params.text),
+        fit: params.fit
+      )
+    case "bottomStatus":
+      self = .deprecatedStatus(position: "bottom", content: params.text.map(BarContent.text) ?? .hidden)
+    case "topStatus":
+      self = .deprecatedStatus(position: "top", content: params.text.map(BarContent.text) ?? .hidden)
+    case "force_keyframe":
+      self = .forceKeyframe
+    case "shutdown":
+      self = .shutdown
+    default:
+      self = .unrecognized(method: method)
+    }
   }
 }
 
@@ -67,27 +151,28 @@ public final class StdinCommandHandler {
       return
     }
 
-    switch command.method {
-    case "overlay":
-      await handleOverlay(command.params?.overlays ?? [])
-    case "screenshot":
-      await handleScreenshot(index: command.params?.index ?? 0)
-    case "chapter":
-      await handleChapter(command.params?.text)
-    case "bar":
-      await handleBar(command.params)
-    case "bottomStatus":
-      logger.log("bottomStatus is deprecated; use {method:\"bar\", params:{position:\"bottom\", ...}}")
-      await handleBar(position: "bottom", content: command.params?.text == nil ? nil : "text", text: command.params?.text, fit: nil)
-    case "topStatus":
-      logger.log("topStatus is deprecated; use {method:\"bar\", params:{position:\"top\", ...}}")
-      await handleBar(position: "top", content: command.params?.text == nil ? nil : "text", text: command.params?.text, fit: nil)
-    case "force_keyframe":
+    switch command {
+    case .overlay(let overlays):
+      await handleOverlay(overlays)
+    case .screenshot(let index):
+      await handleScreenshot(index: index)
+    case .chapter(let text):
+      await handleChapter(text)
+    case .bar(let position, let content, let fit):
+      await handleBar(position: position, content: content, fit: fit)
+    case .deprecatedStatus(let position, let content):
+      logger.log("\(position)Status is deprecated; use {method:\"bar\", params:{position:\"\(position)\", ...}}")
+      await setBar(content, position: position, fit: nil)
+    case .forceKeyframe:
       handleForceKeyframe()
-    case "shutdown":
+    case .shutdown:
       handleShutdown()
-    default:
-      logger.log("Unknown stdin command: \(command.method)")
+    case .incomplete(.barMissingPosition):
+      logger.log("bar command missing position")
+    case .incomplete(.chapterMissingText):
+      logger.log("Chapter command missing text")
+    case .unrecognized(let method):
+      logger.log("Unknown stdin command: \(method)")
     }
   }
 
@@ -188,27 +273,16 @@ public final class StdinCommandHandler {
     logger.log("Screenshot \(index) written to \(finalPath) (\(pngData.count) bytes)")
   }
 
-  private func handleBar(_ params: StdinCommand.Params?) async {
-    guard let position = params?.position else {
-      logger.log("bar command missing position")
-      return
+  private func handleBar(position: String, content: StdinCommand.BarContentSpec, fit: Bool?) async {
+    switch content {
+    case .resolved(let barContent):
+      await setBar(barContent, position: position, fit: fit)
+    case .unrecognized(let unknown):
+      logger.log("bar command unknown content type: \(unknown)")
     }
-    await handleBar(position: position, content: params?.content, text: params?.text, fit: params?.fit)
   }
 
-  private func handleBar(position: String, content: String?, text: String?, fit: Bool?) async {
-    let barContent: BarContent
-    switch content {
-    case "text":
-      barContent = .text(text ?? "")
-    case "stats":
-      barContent = .stats
-    case nil, .some(""):
-      barContent = .hidden
-    case .some(let unknown):
-      logger.log("bar command unknown content type: \(unknown)")
-      return
-    }
+  private func setBar(_ barContent: BarContent, position: String, fit: Bool?) async {
     // `fit` is a per-bar setting: when provided it overrides; when omitted the previous value is
     // retained. It applies to whatever the bar currently displays (text or stats) so callers can
     // set it once and have subsequent stats updates inherit the shrink-to-fit behaviour.
@@ -220,11 +294,7 @@ public final class StdinCommandHandler {
     logger.log("bar \(position) set to \(barContent) (fit=\(renderer.barFit[position] ?? false))")
   }
 
-  private func handleChapter(_ text: String?) async {
-    guard let text, !text.isEmpty else {
-      logger.log("Chapter command missing text")
-      return
-    }
+  private func handleChapter(_ text: String) async {
     guard let videoStream else {
       logger.log("Chapter command received but no video stream available")
       return

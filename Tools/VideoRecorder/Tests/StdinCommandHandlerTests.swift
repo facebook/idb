@@ -266,9 +266,11 @@ import Testing
       {"method":"overlay","params":{"overlays":[{"circle":{"x":50,"y":74,"radius":10,"rgba":[64,64,64,0.5],"effect":{"fadeout":{"durationMs":350}}}}]}}
       """
     let cmd = try JSONDecoder().decode(StdinCommand.self, from: json.data(using: .utf8)!)
-    #expect(cmd.method == "overlay")
-    #expect(cmd.params?.overlays != nil)
-    #expect(cmd.params?.overlays?.count == 1)
+    guard case .overlay(let overlays) = cmd else {
+      Issue.record("expected an overlay command, got \(cmd)")
+      return
+    }
+    #expect(overlays.count == 1)
   }
 
   @Test func testParseScreenshotCommand() throws {
@@ -276,8 +278,11 @@ import Testing
       {"method":"screenshot","params":{"index":5}}
       """
     let cmd = try JSONDecoder().decode(StdinCommand.self, from: json.data(using: .utf8)!)
-    #expect(cmd.method == "screenshot")
-    #expect(cmd.params?.index == 5)
+    guard case .screenshot(let index) = cmd else {
+      Issue.record("expected a screenshot command, got \(cmd)")
+      return
+    }
+    #expect(index == 5)
   }
 
   @Test func testParseChapterCommand() throws {
@@ -285,8 +290,11 @@ import Testing
       {"method":"chapter","params":{"text":"Login Screen"}}
       """
     let cmd = try JSONDecoder().decode(StdinCommand.self, from: json.data(using: .utf8)!)
-    #expect(cmd.method == "chapter")
-    #expect(cmd.params?.text == "Login Screen")
+    guard case .chapter(let text) = cmd else {
+      Issue.record("expected a chapter command, got \(cmd)")
+      return
+    }
+    #expect(text == "Login Screen")
   }
 
   @Test func testParseShutdownCommand() throws {
@@ -294,8 +302,10 @@ import Testing
       {"method":"shutdown"}
       """
     let cmd = try JSONDecoder().decode(StdinCommand.self, from: json.data(using: .utf8)!)
-    #expect(cmd.method == "shutdown")
-    #expect(cmd.params == nil)
+    guard case .shutdown = cmd else {
+      Issue.record("expected a shutdown command, got \(cmd)")
+      return
+    }
   }
 
   @Test func testParseBarCommand() throws {
@@ -303,10 +313,13 @@ import Testing
       {"method":"bar","params":{"position":"bottom","content":"text","text":"hello"}}
       """
     let cmd = try JSONDecoder().decode(StdinCommand.self, from: json.data(using: .utf8)!)
-    #expect(cmd.method == "bar")
-    #expect(cmd.params?.position == "bottom")
-    #expect(cmd.params?.content == "text")
-    #expect(cmd.params?.text == "hello")
+    guard case .bar(let position, let content, let fit) = cmd else {
+      Issue.record("expected a bar command, got \(cmd)")
+      return
+    }
+    #expect(position == "bottom")
+    #expect(content == .resolved(.text("hello")))
+    #expect(fit == nil)
   }
 
   @Test func testParseBarStatsCommand() throws {
@@ -314,10 +327,12 @@ import Testing
       {"method":"bar","params":{"position":"top","content":"stats"}}
       """
     let cmd = try JSONDecoder().decode(StdinCommand.self, from: json.data(using: .utf8)!)
-    #expect(cmd.method == "bar")
-    #expect(cmd.params?.position == "top")
-    #expect(cmd.params?.content == "stats")
-    #expect(cmd.params?.text == nil)
+    guard case .bar(let position, let content, _) = cmd else {
+      Issue.record("expected a bar command, got \(cmd)")
+      return
+    }
+    #expect(position == "top")
+    #expect(content == .resolved(.stats))
   }
 
   @Test func testParseCommandWithNoParams() throws {
@@ -325,8 +340,11 @@ import Testing
       {"method":"overlay"}
       """
     let cmd = try JSONDecoder().decode(StdinCommand.self, from: json.data(using: .utf8)!)
-    #expect(cmd.method == "overlay")
-    #expect(cmd.params?.overlays == nil)
+    guard case .overlay(let overlays) = cmd else {
+      Issue.record("expected an overlay command, got \(cmd)")
+      return
+    }
+    #expect(overlays.isEmpty)
   }
 
   @Test func testParseCommandWithEmptyOverlays() throws {
@@ -334,8 +352,11 @@ import Testing
       {"method":"overlay","params":{"overlays":[]}}
       """
     let cmd = try JSONDecoder().decode(StdinCommand.self, from: json.data(using: .utf8)!)
-    #expect(cmd.method == "overlay")
-    #expect(cmd.params?.overlays?.count == 0)
+    guard case .overlay(let overlays) = cmd else {
+      Issue.record("expected an overlay command, got \(cmd)")
+      return
+    }
+    #expect(overlays.isEmpty)
   }
 
   @Test func testParseCommandWithMultipleOverlays() throws {
@@ -343,7 +364,11 @@ import Testing
       {"method":"overlay","params":{"overlays":[{"circle":{"x":10,"y":20,"radius":5,"rgba":[255,0,0,1]}},{"rectangle":{"x":0,"y":0,"width":-1,"height":24,"rgba":[64,64,64,1]}},{"label":{"text":"Step: Login","padding":4,"font":"Monaco 8"}}]}}
       """
     let cmd = try JSONDecoder().decode(StdinCommand.self, from: json.data(using: .utf8)!)
-    #expect(cmd.params?.overlays?.count == 3)
+    guard case .overlay(let overlays) = cmd else {
+      Issue.record("expected an overlay command, got \(cmd)")
+      return
+    }
+    #expect(overlays.count == 3)
   }
 
   @Test func testInvalidJSONReturnsDecodingError() async {
