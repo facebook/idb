@@ -61,8 +61,8 @@ extension Device {
     commandCache.resolve { DeviceXCTestCommands.commands(with: self) }
   }
 
-  public var xctraceRecord: FBXCTraceRecordCommands {
-    FBXCTraceRecordCommands.commands(with: self)
+  public var xctraceRecord: TargetXCTraceRecordCommands {
+    TargetXCTraceRecordCommands.commands(with: self)
   }
 
   public var instruments: DeviceInstrumentsCommands {

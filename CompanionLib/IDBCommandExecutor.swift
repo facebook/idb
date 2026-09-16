@@ -397,7 +397,7 @@ public final class IDBCommandExecutor {
     return try await target.crashLog.crashes(matching: predicate, useCache: false)
   }
 
-  public func crash_show(_ predicate: NSPredicate) async throws -> FBCrashLog {
+  public func crash_show(_ predicate: NSPredicate) async throws -> CrashReport {
     let crashArray = try await target.crashLog.crashes(matching: predicate, useCache: true)
     if crashArray.count > 1 {
       throw IDBCommandError.multipleCrashLogs(predicateDescription: String(describing: predicate))

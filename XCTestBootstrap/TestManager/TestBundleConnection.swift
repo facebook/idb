@@ -124,7 +124,7 @@ final class TestBundleConnection {
     return TestBundleConnectionError.connectionLost(message: notFound)
   }
 
-  private func findCrashedProcessLog() async throws -> FBCrashLog {
+  private func findCrashedProcessLog() async throws -> CrashReport {
     let bundleID = context.testHostLaunchConfiguration.bundleID
     if let runningPid = try? await target.application.processID(forBundleID: bundleID) {
       throw TestBundleConnectionError.processStillRunning(processIdentifier: runningPid)

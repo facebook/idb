@@ -23,7 +23,7 @@ public struct CrashLogInfoProcessType: OptionSet, Sendable {
   public static let custom = CrashLogInfoProcessType(rawValue: 1 << 2)
 }
 
-public final class FBCrashLog: CustomStringConvertible {
+public final class CrashReport: CustomStringConvertible {
 
   public let info: CrashLogInfo
   public let contents: String
@@ -40,11 +40,11 @@ public final class FBCrashLog: CustomStringConvertible {
   // MARK: - Public
 
   public class func dateFormatter() -> DateFormatter {
-    FBCrashLog_dateFormatter
+    CrashReportDateFormatter
   }
 }
 
-private let FBCrashLog_dateFormatter: DateFormatter = {
+private let CrashReportDateFormatter: DateFormatter = {
   let formatter = DateFormatter()
   formatter.dateFormat = "yyyy-MM-dd HH:mm:ss.SSS Z"
   formatter.isLenient = true
@@ -217,14 +217,14 @@ public final class CrashLogInfo: CustomStringConvertible {
 
   // MARK: - Contents
 
-  public func obtainCrashLog() throws -> FBCrashLog {
+  public func obtainCrashLog() throws -> CrashReport {
     let contents: String
     do {
       contents = try loadRawCrashLogString()
     } catch {
       throw CrashLogError.readFailed(path: crashPath, underlying: error)
     }
-    return FBCrashLog(info: self, contents: contents)
+    return CrashReport(info: self, contents: contents)
   }
 
   // MARK: - Predicates

@@ -8,7 +8,7 @@
 import Foundation
 
 @objc
-public final class FBProcessInfo: NSObject, NSCopying {
+public final class RunningProcessInfo: NSObject, NSCopying {
 
   @objc public let processIdentifier: pid_t
   @objc public let launchPath: String
@@ -33,7 +33,7 @@ public final class FBProcessInfo: NSObject, NSCopying {
   }
 
   public override func isEqual(_ object: Any?) -> Bool {
-    guard let other = object as? FBProcessInfo else { return false }
+    guard let other = object as? RunningProcessInfo else { return false }
     return processIdentifier == other.processIdentifier
       && launchPath == other.launchPath
       && arguments == other.arguments

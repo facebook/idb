@@ -7,7 +7,7 @@
 
 import Foundation
 
-private let FBCrashLogAppeared = NSNotification.Name("FBCrashLogAppeared")
+private let CrashLogAppeared = NSNotification.Name("CrashLogAppeared")
 
 public final class CrashLogStore {
 
@@ -96,7 +96,7 @@ public final class CrashLogStore {
     let box = try await withTaskCancellationHandler {
       try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<CrashLogResultBox, Error>) in
         holder.observer = NotificationCenter.default.addObserver(
-          forName: FBCrashLogAppeared,
+          forName: CrashLogAppeared,
           object: nil,
           queue: .main
         ) { notification in
@@ -142,7 +142,7 @@ public final class CrashLogStore {
   private func ingestCrashLog(_ crashLog: CrashLogInfo) -> CrashLogInfo {
     logger.log("Ingesting Crash Log \(crashLog)")
     ingestedCrashLogs[crashLog.name] = crashLog
-    NotificationCenter.default.post(name: FBCrashLogAppeared, object: crashLog)
+    NotificationCenter.default.post(name: CrashLogAppeared, object: crashLog)
     return crashLog
   }
 

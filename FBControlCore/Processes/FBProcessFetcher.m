@@ -73,7 +73,7 @@ static void IterateOpenFiles(pid_t *pidBuffer, size_t pidBufferSize, const char 
     });
 }
 
-static inline FBProcessInfo *ProcessInfoForProcessIdentifier(pid_t processIdentifier, char *buffer, size_t bufferSize)
+static inline RunningProcessInfo *ProcessInfoForProcessIdentifier(pid_t processIdentifier, char *buffer, size_t bufferSize)
 {
   // Much of the layout information here comes from libtop.c in Apple's top(1) Open Source implementation.
   int name[3] = {CTL_KERN, KERN_PROCARGS2, processIdentifier};
@@ -129,11 +129,11 @@ static inline FBProcessInfo *ProcessInfoForProcessIdentifier(pid_t processIdenti
     currentPosition += 1;
   }
 
-  FBProcessInfo *process = [[FBProcessInfo alloc]
-                            initWithProcessIdentifier:processIdentifier
-                            launchPath:launchPath
-                            arguments:arguments
-                            environment:environment];
+  RunningProcessInfo *process = [[RunningProcessInfo alloc]
+                                 initWithProcessIdentifier:processIdentifier
+                                 launchPath:launchPath
+                                 arguments:arguments
+                                 environment:environment];
 
   return process;
 }
@@ -204,7 +204,7 @@ static size_t const MaxPidBufferSize = 5568 * 2 * sizeof(int);  // From 'ulimit 
 
 #pragma mark Queries
 
-- (nullable FBProcessInfo *)processInfoFor:(pid_t)processIdentifier
+- (nullable RunningProcessInfo *)processInfoFor:(pid_t)processIdentifier
 {
   return ProcessInfoForProcessIdentifier(
     processIdentifier,
@@ -213,14 +213,14 @@ static size_t const MaxPidBufferSize = 5568 * 2 * sizeof(int);  // From 'ulimit 
   );
 }
 
-- (NSArray<FBProcessInfo *> *)subprocessesOf:(pid_t)parent
+- (NSArray<RunningProcessInfo *> *)subprocessesOf:(pid_t)parent
 {
   NSMutableArray *subprocesses = [NSMutableArray array];
 
   IterateSubprocessesOf(self.pidBuffer,
     self.pidBufferSize,
     parent, ^BOOL (pid_t pid) {
-      FBProcessInfo *info = [self processInfoFor:pid];
+      RunningProcessInfo *info = [self processInfoFor:pid];
       if (info) {
         [subprocesses addObject:info];
       }
@@ -230,7 +230,7 @@ static size_t const MaxPidBufferSize = 5568 * 2 * sizeof(int);  // From 'ulimit 
   return [subprocesses copy];
 }
 
-- (NSArray<FBProcessInfo *> *)processesWithProcessName:(NSString *)processName
+- (NSArray<RunningProcessInfo *> *)processesWithProcessName:(NSString *)processName
 {
   NSMutableArray *subprocesses = [NSMutableArray array];
   size_t bufferSize = self.argumentBufferSize;
@@ -245,7 +245,7 @@ static size_t const MaxPidBufferSize = 5568 * 2 * sizeof(int);  // From 'ulimit 
       if (strcmp(needle, buffer) != 0) {
         return YES;
       }
-      FBProcessInfo *info = [self processInfoFor:pid];
+      RunningProcessInfo *info = [self processInfoFor:pid];
       if (!info) {
         return YES;
       }

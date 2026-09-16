@@ -12,13 +12,13 @@ public protocol LaunchCtlCommands: AnyObject {
 
   func serviceName(forProcessIdentifier pid: pid_t) async throws -> String
 
-  func serviceName(forProcess process: FBProcessInfo) async throws -> String
+  func serviceName(forProcess process: RunningProcessInfo) async throws -> String
 
   func serviceNamesAndProcessIdentifiers(matching regex: NSRegularExpression) async throws -> [String: NSNumber]
 
   func firstServiceNameAndProcessIdentifier(matching regex: NSRegularExpression) async throws -> (serviceName: String, processIdentifier: pid_t)
 
-  func processIsRunning(onSimulator process: FBProcessInfo) async throws -> Bool
+  func processIsRunning(onSimulator process: RunningProcessInfo) async throws -> Bool
 
   func listServices() async throws -> [String: Any]
 

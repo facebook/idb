@@ -9,7 +9,7 @@
 
 #import <Foundation/Foundation.h>
 
-@class FBProcessInfo;
+@class RunningProcessInfo;
 
 @class FBFuture<T>;
 
@@ -22,25 +22,25 @@
  A Query for obtaining all of the process information for a given processIdentifier.
 
  @param processIdentifier the Process Identifier to obtain process info for.
- @return an FBProcessInfo object if a process with the given identifier could be found, nil otherwise.
+ @return an RunningProcessInfo object if a process with the given identifier could be found, nil otherwise.
  */
-- (nullable FBProcessInfo *)processInfoFor:(pid_t)processIdentifier;
+- (nullable RunningProcessInfo *)processInfoFor:(pid_t)processIdentifier;
 
 /**
  Obtain process info for child processes.
 
  @param parent the Process Identifier to obtain the subprocesses of
- @return an NSArray<FBProcessInfo> of the parent's child processes.
+ @return an NSArray<RunningProcessInfo> of the parent's child processes.
  */
-- (nonnull NSArray<FBProcessInfo *> *)subprocessesOf:(pid_t)parent;
+- (nonnull NSArray<RunningProcessInfo *> *)subprocessesOf:(pid_t)parent;
 
 /**
  A Query for returning the processes with a given name.
 
  @param processName the name of the processes to fetch.
- @return an NSArray<FBProcessInfo> of the found processes.
+ @return an NSArray<RunningProcessInfo> of the found processes.
  */
-- (nonnull NSArray<FBProcessInfo *> *)processesWithProcessName:(nonnull NSString *)processName;
+- (nonnull NSArray<RunningProcessInfo *> *)processesWithProcessName:(nonnull NSString *)processName;
 
 /**
  A Query for returning the first named child process of the provided parent.

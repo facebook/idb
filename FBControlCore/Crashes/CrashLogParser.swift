@@ -47,7 +47,7 @@ final class ConcatedJSONCrashLogParser: NSObject, CrashLogParser {
       parentProcessIdentifierOut.pointee = parentPid.int32Value
     }
     if let captureTime = parsedReport["captureTime"] as? String {
-      if let date = FBCrashLog.dateFormatter().date(from: captureTime) {
+      if let date = CrashReport.dateFormatter().date(from: captureTime) {
         dateOut.pointee = date as NSDate
       }
     }
@@ -198,6 +198,6 @@ final class PlainTextCrashLogParser: NSObject, CrashLogParser {
     let scanner = Scanner(string: line)
     guard scanner.scanString("Date/Time:") != nil else { return nil }
     let remaining = String(line[scanner.currentIndex...]).trimmingCharacters(in: .whitespaces)
-    return FBCrashLog.dateFormatter().date(from: remaining)
+    return CrashReport.dateFormatter().date(from: remaining)
   }
 }

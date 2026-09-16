@@ -38,10 +38,10 @@ final class SimulatorControlTests_LaunchCtl_Double: LaunchCtlCommands {
   func listServices() async throws -> [String: Any] { servicesResult }
 
   func serviceName(forProcessIdentifier pid: pid_t) async throws -> String { fatalError("unused in tests") }
-  func serviceName(forProcess process: FBProcessInfo) async throws -> String { fatalError("unused in tests") }
+  func serviceName(forProcess process: RunningProcessInfo) async throws -> String { fatalError("unused in tests") }
   func serviceNamesAndProcessIdentifiers(matching regex: NSRegularExpression) async throws -> [String: NSNumber] { fatalError("unused in tests") }
   func firstServiceNameAndProcessIdentifier(matching regex: NSRegularExpression) async throws -> (serviceName: String, processIdentifier: pid_t) { fatalError("unused in tests") }
-  func processIsRunning(onSimulator process: FBProcessInfo) async throws -> Bool { fatalError("unused in tests") }
+  func processIsRunning(onSimulator process: RunningProcessInfo) async throws -> Bool { fatalError("unused in tests") }
   func stopService(withName serviceName: String) async throws -> String {
     stoppedServices.append(serviceName)
     return ""

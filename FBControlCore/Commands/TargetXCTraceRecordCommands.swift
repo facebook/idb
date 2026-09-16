@@ -7,7 +7,7 @@
 
 import Foundation
 
-public final class FBXCTraceRecordCommands: FBiOSTargetCommand, XCTraceRecordCommands {
+public final class TargetXCTraceRecordCommands: FBiOSTargetCommand, XCTraceRecordCommands {
 
   public let target: any FBiOSTarget
 

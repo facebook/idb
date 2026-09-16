@@ -107,11 +107,11 @@ public final class SimulatorLaunchCtlCommands: LaunchCtlCommands {
     return (serviceName, processIdentifier.int32Value)
   }
 
-  public func serviceName(forProcess process: FBProcessInfo) async throws -> String {
+  public func serviceName(forProcess process: RunningProcessInfo) async throws -> String {
     try await serviceName(forProcessIdentifier: process.processIdentifier)
   }
 
-  public func processIsRunning(onSimulator process: FBProcessInfo) async throws -> Bool {
+  public func processIsRunning(onSimulator process: RunningProcessInfo) async throws -> Bool {
     _ = try await serviceName(forProcessIdentifier: process.processIdentifier)
     return true
   }
