@@ -1319,6 +1319,270 @@ final class AccessibilityRuntimeTests: XCTestCase {
     assertEqualObjects(axValue(response, "method"), "window-server")
   }
 
+  private func translatorRequest(_ extra: [String: Any] = [:]) -> [String: Any] {
+    var request: [String: Any] = ["verb": "describe", "pid": kAppPid, "translatorVocabulary": true]
+    request.merge(extra) { _, new in new }
+    return request
+  }
+
+  func testTranslatorBatchAndChildrenRequestsPreserveElementIdentity() {
+    let root = FBAXFakeElement.readable("UIApplication")
+    let child = FBAXFakeElement.readable("UIView")
+    runtime.applicationElements[NSNumber(value: kAppPid)] = root
+    runtime.translatorResponses = [[33: "root"], [8: [child]], [33: "child"], [:]]
+
+    let response = FBAXBridgeHandleRequest(translatorRequest())
+
+    assertEqualObjects(axValue(response, "tree"), [kAXLabel: "root", kAXChildren: [[kAXLabel: "child", kAXChildren: []]]])
+    let requests = runtime.translatorRequests.compactMap { $0 as? [String: Any] }
+    let batch = [33, 21, 25, 53, 32, 27, 45, 51, 112, 77, 128]
+    assertEqualObjects(requests.compactMap { $0["attributes"] }, [batch, [8], batch, [8]])
+    assertEqualObjects(requests.compactMap { $0["element"] }, [root, root, child, child])
+    assertEqualObjects(runtime.lastReadAttributes, [kAXElementType])
+    assertEqualObjects(axValue(axValue(response, "phases"), "mach_round_trips"), 4)
+  }
+
+  func testTranslatorRequestsChildrenAtTheDepthLimit() {
+    let root = FBAXFakeElement.readable("UIApplication")
+    runtime.applicationElements[NSNumber(value: kAppPid)] = root
+    runtime.translatorResponses = [[:], [8: [FBAXFakeElement.readable("child")]]]
+
+    let response = FBAXBridgeHandleRequest(translatorRequest(["maxDepth": 0]))
+
+    assertEqualObjects(axValue(response, "tree"), [kAXChildren: []])
+    assertEqualObjects(axValue(response, "truncated"), true)
+    XCTAssertEqual(runtime.translatorReadCount, 2)
+    assertEqualObjects((runtime.translatorRequests.lastObject as? [String: Any])?["attributes"], [8])
+  }
+
+  func testTranslatorSkipsAnOrdinaryFailedChildAndKeepsItsSibling() {
+    let root = FBAXFakeElement.readable("UIApplication")
+    let failed = FBAXFakeElement.readable("failed")
+    let sibling = FBAXFakeElement.readable("sibling")
+    runtime.applicationElements[NSNumber(value: kAppPid)] = root
+    runtime.translatorResponses = [[:], [8: [failed, sibling]], NSNull(), [33: "sibling"], [:]]
+
+    let response = FBAXBridgeHandleRequest(translatorRequest())
+
+    assertEqualObjects(axValue(response, "tree"), [kAXChildren: [[kAXLabel: "sibling", kAXChildren: []]]])
+    assertEqualObjects(axValue(response, "truncated"), false)
+    XCTAssertEqual(runtime.translatorReadCount, 5)
+  }
+
+  func testTranslatorNilChildrenAreAnEmptySuccessfulNode() {
+    runtime.applicationElements[NSNumber(value: kAppPid)] = FBAXFakeElement.readable("UIApplication")
+    runtime.translatorResponses = [[:], NSNull()]
+
+    let response = FBAXBridgeHandleRequest(translatorRequest())
+
+    assertEqualObjects(axValue(response, "ok"), true)
+    assertEqualObjects(axValue(response, "tree"), [kAXChildren: []])
+    assertEqualObjects(axValue(response, "truncated"), false)
+  }
+
+  func testTranslatorChildListExceptionsAbortAndLeaveTheNextRequestUsable() {
+    runtime.applicationElements[NSNumber(value: kAppPid)] = FBAXFakeElement.readable("UIApplication")
+    runtime.translatorAttributeValues = [:]
+    runtime.translatorRaiseAtRead = 2
+
+    let response = FBAXBridgeHandleRequest(translatorRequest())
+
+    assertEqualObjects(response, ["ok": false, "error": "the reader raised while answering: translator read 2 failed"])
+    XCTAssertEqual(runtime.translatorReadCount, 2)
+    runtime.translatorRaiseAtRead = 0
+    assertEqualObjects(axValue(FBAXBridgeHandleRequest(translatorRequest()), "ok"), true)
+  }
+
+  func testTranslatorChildExceptionsAbortBeforeTheNextSibling() {
+    let root = FBAXFakeElement.readable("UIApplication")
+    runtime.applicationElements[NSNumber(value: kAppPid)] = root
+    runtime.translatorResponses = [[:], [8: [FBAXFakeElement.readable("bad"), FBAXFakeElement.readable("sibling")]]]
+    runtime.translatorRaiseAtRead = 3
+
+    let response = FBAXBridgeHandleRequest(translatorRequest())
+
+    assertEqualObjects(response, ["ok": false, "error": "the reader raised while answering: translator read 3 failed"])
+    XCTAssertEqual(runtime.translatorReadCount, 3)
+  }
+
+  func testTranslatorBudgetCountsFailedChildren() {
+    runtime.applicationElements[NSNumber(value: kAppPid)] = FBAXFakeElement.readable("UIApplication")
+    runtime.translatorResponses = [[:], [8: [FBAXFakeElement.readable("bad"), FBAXFakeElement.readable("sibling")]], NSNull()]
+
+    let response = FBAXBridgeHandleRequest(translatorRequest(["maxNodes": 2]))
+
+    assertEqualObjects(axValue(response, "tree"), [kAXChildren: []])
+    assertEqualObjects(axValue(response, "truncated"), true)
+    XCTAssertEqual(runtime.translatorReadCount, 3)
+  }
+
+  // MARK: - Unreachable explanations
+
+  private func unreachableRoot(_ visible: Any = false) -> FBAXFakeElement {
+    let root = FBAXFakeElement.readable("UIApplication")
+    root.attributes = ["XC_kAXXCAttributeIsVisible": visible, "XC_kAXXCAttributeCenterPoint": ["X": 12, "Y": 34]]
+    runtime.applicationElements[NSNumber(value: kAppPid)] = root
+    return root
+  }
+
+  private func explanationRequest() -> [String: Any] {
+    return ["verb": "describe", "pid": kAppPid, "explainUnreachable": true]
+  }
+
+  func testUnreachableExplanationReadsTheDisplayWideHitElement() {
+    _ = unreachableRoot()
+    let overlay = FBAXFakeElement.readable("Overlay")
+    runtime.hitTestOutcome = FBAXHitTestOutcome.hit(overlay, owningProcessIdentifier: 9000)
+
+    let response = FBAXBridgeHandleRequest(explanationRequest())
+
+    let explanation = axValue(axValue(response, "tree"), "FBExplainedBy")
+    assertEqualObjects(explanation, [kAXElementType: "Overlay", kAXLabel: "Overlay", kAXChildren: ([] as NSArray).description])
+    XCTAssertEqual(runtime.lastHitTestProcessIdentifier, 0)
+    XCTAssertEqual(runtime.lastHitTestPoint, CGPoint(x: 12, y: 34))
+    assertEqualObjects(runtime.lastReadAttributes, [kAXElementType, kAXLabel, "XC_kAXXCAttributeIdentifier", kAXFrame, "XC_kAXXCAttributeAutomationType"])
+    assertEqualObjects(runtime.operations, ["automationRead", "applicationElement", "readAttributes", "hitTest", "readAttributes"])
+    assertEqualObjects(axValue(axValue(response, "phases"), "mach_round_trips"), 3)
+  }
+
+  func testUnreachableExplanationOmitsOrdinaryHitTestFailure() {
+    _ = unreachableRoot()
+    runtime.hitTestOutcome = FBAXHitTestOutcome.applicationNotResponding()
+
+    let response = FBAXBridgeHandleRequest(explanationRequest())
+
+    assertEqualObjects(axValue(response, "ok"), true)
+    XCTAssertNil(axValue(axValue(response, "tree"), "FBExplainedBy"))
+    assertEqualObjects(axValue(axValue(response, "phases"), "mach_round_trips"), 2)
+  }
+
+  func testUnreachableExplanationOmitsOrdinaryAttributeReadFailure() {
+    _ = unreachableRoot()
+    runtime.hitTestOutcome = FBAXHitTestOutcome.hit(FBAXFakeElement.applicationUnavailable(), owningProcessIdentifier: 9000)
+
+    let response = FBAXBridgeHandleRequest(explanationRequest())
+
+    assertEqualObjects(axValue(response, "ok"), true)
+    XCTAssertNil(axValue(axValue(response, "tree"), "FBExplainedBy"))
+    assertEqualObjects(axValue(axValue(response, "phases"), "mach_round_trips"), 3)
+  }
+
+  func testUnreachableExplanationReadExceptionAbortsAndRecovers() {
+    _ = unreachableRoot()
+    let overlay = FBAXFakeElement.readable("Overlay")
+    overlay.readRaiseReason = "explanation failed"
+    runtime.hitTestOutcome = FBAXHitTestOutcome.hit(overlay, owningProcessIdentifier: 9000)
+
+    assertEqualObjects(FBAXBridgeHandleRequest(explanationRequest()), ["ok": false, "error": "the reader raised while answering: explanation failed"])
+    overlay.readRaiseReason = nil
+    assertEqualObjects(axValue(FBAXBridgeHandleRequest(explanationRequest()), "ok"), true)
+  }
+
+  func testReachableAndUnclassifiedNodesDoNotRequestExplanations() {
+    for visible in [true, "unknown", NSNull()] as [Any] {
+      _ = unreachableRoot(visible)
+      assertEqualObjects(axValue(FBAXBridgeHandleRequest(explanationRequest()), "ok"), true)
+    }
+    XCTAssertEqual(runtime.hitTestCount, 0)
+  }
+
+  // MARK: - Private attribute values
+
+  func testWrongGeometryTypesAndMalformedDictionariesBecomeNull() {
+    let root = FBAXFakeElement.readable("UIApplication")
+    runtime.applicationElements[NSNumber(value: kAppPid)] = root
+    let values: [(String, Any)] = [
+      (kAXFrame, NSValue(cgPoint: CGPoint(x: 1, y: 2))),
+      (kAXVisiblePoint, NSValue(cgRect: CGRect(x: 1, y: 2, width: 3, height: 4))),
+      (kAXFrame, ["X": 1, "Y": 2]),
+      (kAXVisiblePoint, ["X": 1]),
+    ]
+    for (key, value) in values {
+      root.attributes = [key: value]
+      let response = FBAXBridgeHandleRequest(["verb": "describe", "pid": kAppPid])
+      assertEqualObjects(axValue(response, "ok"), true)
+      assertEqualObjects(axValue(axValue(response, "tree"), key), NSNull())
+    }
+  }
+
+  func testGeometryDictionariesPreserveAdditionalFields() {
+    let root = FBAXFakeElement.readable("UIApplication")
+    let frame = ["X": 1, "Y": 2, "Width": 3, "Height": 4, "extra": 5]
+    let point = ["X": 1, "Y": 2, "extra": 3]
+    root.attributes = [kAXFrame: frame, kAXVisiblePoint: point]
+    runtime.applicationElements[NSNumber(value: kAppPid)] = root
+
+    let tree = axValue(FBAXBridgeHandleRequest(["verb": "describe", "pid": kAppPid]), "tree")
+
+    assertEqualObjects(axValue(tree, kAXFrame), frame)
+    assertEqualObjects(axValue(tree, kAXVisiblePoint), point)
+  }
+
+  func testOpaqueValuesUseTheirDescriptionAndContainDescriptionExceptions() {
+    let value = FBAXFakeOpaqueValue()
+    let root = FBAXFakeElement.readable("UIApplication")
+    root.attributes = ["XC_kAXXCAttributeValue": value]
+    runtime.applicationElements[NSNumber(value: kAppPid)] = root
+    let request: [String: Any] = ["verb": "describe", "pid": kAppPid]
+
+    assertEqualObjects(axValue(axValue(FBAXBridgeHandleRequest(request), "tree"), "XC_kAXXCAttributeValue"), "opaque accessibility value")
+    value.raiseReason = "description failed"
+    assertEqualObjects(FBAXBridgeHandleRequest(request), ["ok": false, "error": "the reader raised while answering: description failed"])
+    value.raiseReason = nil
+    assertEqualObjects(axValue(FBAXBridgeHandleRequest(request), "ok"), true)
+  }
+
+  func testGeometryAccessorExceptionsAreContained() {
+    let root = FBAXFakeElement.readable("UIApplication")
+    runtime.applicationElements[NSNumber(value: kAppPid)] = root
+    for access in ["type", "value"] {
+      root.attributes = [kAXFrame: FBAXFakeGeometryValue.throwing(onAccess: access)]
+      let response = FBAXBridgeHandleRequest(["verb": "describe", "pid": kAppPid])
+      assertEqualObjects(response, ["ok": false, "error": "the reader raised while answering: geometry \(access) failed"])
+    }
+  }
+
+  func testFailedChildReadsStillConsumeTheNodeBudget() {
+    let root = FBAXFakeElement.readable("UIApplication")
+    root.children = [FBAXFakeElement.failed(nil), FBAXFakeElement.readable("sibling")]
+    runtime.applicationElements[NSNumber(value: kAppPid)] = root
+
+    let response = FBAXBridgeHandleRequest(["verb": "describe", "pid": kAppPid, "maxNodes": 1])
+
+    assertEqualObjects(axValue(axValue(response, "tree"), kAXChildren), [])
+    assertEqualObjects(axValue(response, "truncated"), true)
+    assertEqualObjects(runtime.operations, ["automationRead", "applicationElement", "readAttributes", "readAttributes"])
+  }
+
+  func testFailedDeviceSettingOutcomesRetainTheRuntimeReason() {
+    runtime.deviceSettings[NSNumber(value: FBAXDeviceSetting.reduceMotion.rawValue)] = false
+    runtime.deviceSettingReadOutcome = FBAXDeviceSettingOutcome.failed("read failed")
+    runtime.deviceSettingWriteOutcome = FBAXDeviceSettingOutcome.failed("write failed")
+
+    assertEqualObjects(FBAXBridgeHandleRequest(["verb": "settings-get", "setting": "reduce-motion"]), ["ok": false, "error": "read failed", "error_kind": "reader_unavailable"])
+    assertEqualObjects(FBAXBridgeHandleRequest(["verb": "settings-set", "setting": "reduce-motion", "enabled": true]), ["ok": false, "error": "write failed", "error_kind": "reader_unavailable"])
+  }
+
+  func testDeviceSettingWriteReportsADifferentAuthoritativeState() {
+    runtime.deviceSettings[NSNumber(value: FBAXDeviceSetting.reduceMotion.rawValue)] = false
+    runtime.deviceSettingWriteOutcome = FBAXDeviceSettingOutcome.resolved(false)
+
+    let response = FBAXBridgeHandleRequest(["verb": "settings-set", "setting": "reduce-motion", "enabled": true])
+
+    assertEqualObjects(response, ["ok": true, "enabled": false])
+    assertEqualObjects(runtime.deviceSettingWrites, [["setting": FBAXDeviceSetting.reduceMotion.rawValue, "enabled": true]])
+  }
+
+  func testBothWriteCommandsReportApplicationTimeoutWithTheOwningPid() {
+    self.seedHitElement(withAttributes: [:])
+    runtime.writeOutcome = FBAXWriteOutcome.applicationNotResponding()
+    for request in [FBAXTestsPress(), ["verb": "setvalue", "x": 1, "y": 2, "value": "text"]] {
+      assertEqualObjects(FBAXBridgeHandleRequest(request), ["ok": false, "error": "pid 4321 did not answer the write in time", "error_kind": "application_not_responding", "pid": kAppPid])
+    }
+    XCTAssertEqual(runtime.performCount, 1)
+    XCTAssertEqual(runtime.setValueCount, 1)
+  }
+
   // MARK: - Request-named attributes
 
   // The fake echoes what it holds, so only the ask can be asserted.

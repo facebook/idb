@@ -72,6 +72,16 @@ NS_ASSUME_NONNULL_BEGIN
 
 @end
 
+/** Values returned by private readers may raise while being described or unpacked. */
+@interface FBAXFakeOpaqueValue : NSObject
+@property (nullable, nonatomic, copy) NSString *raiseReason;
+@end
+
+@interface FBAXFakeGeometryValue : NSValue
+@property (nullable, nonatomic, copy) NSString *raiseOnAccess;
++ (instancetype)throwingOnAccess:(NSString *)access;
+@end
+
 /**
  * A fake `FBAXRuntime`, wired into the service by `FBAXBridgeSetRuntimeForTesting`.
  *
@@ -114,6 +124,12 @@ NS_ASSUME_NONNULL_BEGIN
 
 /** What `-translatorAttributes:ofElement:` answers with. Nil means the read could not be performed. */
 @property (nullable, nonatomic, copy) NSDictionary<NSNumber *, id> *translatorAttributeValues;
+/** Per-call answers; NSNull models a nil answer. Empty uses translatorAttributeValues. */
+@property (nonatomic, copy) NSArray<id> *translatorResponses;
+@property (nonatomic, assign) NSUInteger translatorRaiseAtRead;
+@property (nonatomic, readonly, strong) NSMutableArray<NSDictionary<NSString *, id> *> *translatorRequests;
+@property (nullable, nonatomic, strong) FBAXDeviceSettingOutcome *deviceSettingReadOutcome;
+@property (nullable, nonatomic, strong) FBAXDeviceSettingOutcome *deviceSettingWriteOutcome;
 
 /**
  * When set, `-snapshotOfElement:…` reports this instead of answering — the shape of a runtime with no

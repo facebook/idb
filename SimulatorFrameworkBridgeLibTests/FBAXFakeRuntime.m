@@ -78,6 +78,46 @@ static NSString *const kAXChildren = @"XC_kAXXCAttributeChildren";
 
 @end
 
+@implementation FBAXFakeOpaqueValue
+
+- (NSString *)description
+{
+  if (self.raiseReason) {
+    [NSException raise:NSInternalInconsistencyException format:@"%@", self.raiseReason];
+  }
+  return @"opaque accessibility value";
+}
+
+@end
+
+@implementation FBAXFakeGeometryValue
+
++ (instancetype)throwingOnAccess:(NSString *)access
+{
+  FBAXFakeGeometryValue *value = [[self alloc] init];
+  value.raiseOnAccess = access;
+  return value;
+}
+
+- (const char *)objCType
+{
+  if ([self.raiseOnAccess isEqualToString:@"type"]) {
+    [NSException raise:NSInternalInconsistencyException format:@"geometry type failed"];
+  }
+  return @encode(CGRect);
+}
+
+- (void)getValue:(void *)value size:(NSUInteger)size
+{
+  if ([self.raiseOnAccess isEqualToString:@"value"]) {
+    [NSException raise:NSInternalInconsistencyException format:@"geometry value failed"];
+  }
+  CGRect rect = CGRectMake(1, 2, 3, 4);
+  memcpy(value, &rect, MIN(size, sizeof(rect)));
+}
+
+@end
+
 @implementation FBAXFakeRuntime
 {
   NSUInteger _translatorReadCount;
@@ -92,6 +132,8 @@ static NSString *const kAXChildren = @"XC_kAXXCAttributeChildren";
     return nil;
   }
   _operations = [NSMutableArray array];
+  _translatorResponses = @[];
+  _translatorRequests = [NSMutableArray array];
   _snapshotResults = @[];
   _snapshotNameMappings = @[];
   _snapshotOwnerElements = [NSMutableArray array];
@@ -337,6 +379,15 @@ static NSDictionary *FBAXFakeSnapshotNode(FBAXFakeElement *element,
 {
   [self recordOperation:@"translatorAttributes"];
   _translatorReadCount++;
+  [self.translatorRequests addObject:@{@"attributes" : attributes, @"element" : element}];
+  if (self.translatorRaiseAtRead == self.translatorReadCount) {
+    [NSException raise:NSInternalInconsistencyException format:@"translator read %lu failed", (unsigned long)self.translatorReadCount];
+  }
+  NSUInteger responseIndex = self.translatorReadCount - 1;
+  if (responseIndex < self.translatorResponses.count) {
+    id response = self.translatorResponses[responseIndex];
+    return response == NSNull.null ? nil : response;
+  }
   return self.translatorAttributeValues;
 }
 
@@ -370,6 +421,9 @@ static NSDictionary *FBAXFakeSnapshotNode(FBAXFakeElement *element,
 - (FBAXDeviceSettingOutcome *)enabledStateForDeviceSetting:(FBAXDeviceSetting)setting
 {
   [self recordOperation:@"settingRead"];
+  if (self.deviceSettingReadOutcome) {
+    return self.deviceSettingReadOutcome;
+  }
   NSNumber *enabled = self.deviceSettings[@(setting)];
   return enabled
   ? [FBAXDeviceSettingOutcome resolved:enabled.boolValue]
@@ -383,6 +437,9 @@ static NSDictionary *FBAXFakeSnapshotNode(FBAXFakeElement *element,
     return [FBAXDeviceSettingOutcome unavailable:@"setting unavailable"];
   }
   [self.deviceSettingWrites addObject:@{@"setting" : @(setting), @"enabled" : @(enabled)}];
+  if (self.deviceSettingWriteOutcome) {
+    return self.deviceSettingWriteOutcome;
+  }
   self.deviceSettings[@(setting)] = @(enabled);
   return [FBAXDeviceSettingOutcome resolved:enabled];
 }
