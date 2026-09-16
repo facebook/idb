@@ -334,6 +334,59 @@ private func TSPacketPIDs(_ data: Data) -> [UInt16] {
   return pids
 }
 
+private enum FMP4BoxTestError: Error {
+  case malformed(String)
+}
+
+private let FMP4ContainerHeaderSizes: [String: Int] = [
+  "moov": 8,
+  "trak": 8,
+  "mdia": 8,
+  "minf": 8,
+  "dinf": 8,
+  "dref": 16,
+  "stbl": 8,
+  "stsd": 16,
+  "avc1": 86,
+  "hvc1": 86,
+  "mvex": 8,
+  "moof": 8,
+  "traf": 8,
+]
+
+private func FMP4BoxSignatures(_ data: Data, in range: Range<Int>, parentPath: String = "") throws -> [String] {
+  var signatures = [String]()
+  var offset = range.lowerBound
+
+  while offset < range.upperBound {
+    guard offset + 8 <= range.upperBound else {
+      throw FMP4BoxTestError.malformed("Incomplete box header at offset \(offset)")
+    }
+
+    let size = data.withUnsafeBytes { bytes in
+      Int(UInt32(bigEndian: bytes.loadUnaligned(fromByteOffset: offset, as: UInt32.self)))
+    }
+    guard size >= 8, offset + size <= range.upperBound else {
+      throw FMP4BoxTestError.malformed("Invalid box size \(size) at offset \(offset)")
+    }
+
+    let typeData = data.subdata(in: offset + 4..<offset + 8)
+    guard let type = String(data: typeData, encoding: .utf8) else {
+      throw FMP4BoxTestError.malformed("Invalid box type at offset \(offset)")
+    }
+
+    let path = parentPath.isEmpty ? type : "\(parentPath)/\(type)"
+    signatures.append("\(path):\(size)")
+
+    if let headerSize = FMP4ContainerHeaderSizes[type] {
+      signatures.append(contentsOf: try FMP4BoxSignatures(data, in: offset + headerSize..<offset + size, parentPath: path))
+    }
+    offset += size
+  }
+
+  return signatures
+}
+
 final class FBVideoStreamTests: XCTestCase {
 
   // MARK: - H264 Annex-B Writer
@@ -877,6 +930,106 @@ final class FBVideoStreamTests: XCTestCase {
     // A size of 0 would mean "box extends to end of file" (ISO 14496-12 §4.2), which Chrome's MSE
     // demuxer refuses ("ISO BMFF boxes that run to EOS are not supported").
     XCTAssertEqual(trunSize, expectedTrunSize)
+  }
+
+  func testFMP4EveryBoxHasPinnedBoundary() throws {
+    let writer = FMP4FrameWriter(codec: .h264)
+    let consumer = FBDataBuffer.accumulatingBuffer()
+    let logger = FBControlCoreLoggerDouble()
+
+    try writer.write(CreateH264SampleBuffer(isKeyFrame: true), to: consumer, logger: logger)
+
+    let output = consumer.data()
+    let h264Golden = try XCTUnwrap(
+      Data(
+        base64Encoded: """
+          AAAAHGZ0eXBpc29tAAACAGlzb21pc282bXA0MQAAAmVtb292AAAAbG12aGQAAAAAAAAAAAAAAAAAAV+QAAAAAAABAAABAAAA
+          AAAAAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAC
+          AAAByXRyYWsAAABcdGtoZAAAAAMAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAAAAAAAAAAAAAAAAAA
+          AAEAAAAAAAAAAAAAAAAAAEAAAAAAgAAAAGAAAAAAAWVtZGlhAAAAIG1kaGQAAAAAAAAAAAAAAAAAAV+QAAAAAFXEAAAAAAAt
+          aGRscgAAAAAAAAAAdmlkZQAAAAAAAAAAAAAAAFZpZGVvSGFuZGxlcgAAAAEQbWluZgAAABR2bWhkAAAAAQAAAAAAAAAAAAAA
+          JGRpbmYAAAAcZHJlZgAAAAAAAAABAAAADHVybCAAAAABAAAA0HN0YmwAAACEc3RzZAAAAAAAAAABAAAAdGF2YzEAAAAAAAAA
+          AQAAAAAAAAAAAAAAAAAAAAAAgABgAEgAAABIAAAAAAAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAY//8A
+          AAAeYXZjQwFCAAr/4QAHZ0IACvhBogEABGjOOIAAAAAQc3R0cwAAAAAAAAAAAAAAEHN0c2MAAAAAAAAAAAAAABRzdHN6AAAA
+          AAAAAAAAAAAAAAAAEHN0Y28AAAAAAAAAAAAAAChtdmV4AAAAIHRyZXgAAAAAAAAAAQAAAAEAAAAAAAAAAAAAAAAAAABkbW9v
+          ZgAAABBtZmhkAAAAAAAAAAEAAABMdHJhZgAAABB0ZmhkAAIAAAAAAAEAAAAUdGZkdAEAAAAAAAAAAAAAAAAAACB0cnVuAAAH
+          AQAAAAEAAABsAAALuAAAAAkCAAAAAAAAEW1kYXQAAAAFZYiAQAA=
+          """,
+        options: .ignoreUnknownCharacters
+      )
+    )
+    XCTAssertEqual(output, h264Golden)
+    XCTAssertEqual(
+      try FMP4BoxSignatures(output, in: 0..<output.count),
+      [
+        "ftyp:28",
+        "moov:613",
+        "moov/mvhd:108",
+        "moov/trak:457",
+        "moov/trak/tkhd:92",
+        "moov/trak/mdia:357",
+        "moov/trak/mdia/mdhd:32",
+        "moov/trak/mdia/hdlr:45",
+        "moov/trak/mdia/minf:272",
+        "moov/trak/mdia/minf/vmhd:20",
+        "moov/trak/mdia/minf/dinf:36",
+        "moov/trak/mdia/minf/dinf/dref:28",
+        "moov/trak/mdia/minf/dinf/dref/url :12",
+        "moov/trak/mdia/minf/stbl:208",
+        "moov/trak/mdia/minf/stbl/stsd:132",
+        "moov/trak/mdia/minf/stbl/stsd/avc1:116",
+        "moov/trak/mdia/minf/stbl/stsd/avc1/avcC:30",
+        "moov/trak/mdia/minf/stbl/stts:16",
+        "moov/trak/mdia/minf/stbl/stsc:16",
+        "moov/trak/mdia/minf/stbl/stsz:20",
+        "moov/trak/mdia/minf/stbl/stco:16",
+        "moov/mvex:40",
+        "moov/mvex/trex:32",
+        "moof:100",
+        "moof/mfhd:16",
+        "moof/traf:76",
+        "moof/traf/tfhd:16",
+        "moof/traf/tfdt:20",
+        "moof/traf/trun:32",
+        "mdat:17",
+      ]
+    )
+
+    let hevcWriter = FMP4FrameWriter(codec: .hevc)
+    let hevcConsumer = FBDataBuffer.accumulatingBuffer()
+    let hevcSampleBuffer = try XCTUnwrap(CreateHEVCSampleBuffer(isKeyFrame: true))
+    try hevcWriter.write(hevcSampleBuffer, to: hevcConsumer, logger: logger)
+    let hevcGolden = try XCTUnwrap(
+      Data(
+        base64Encoded: """
+          AAAAHGZ0eXBpc29tAAACAGlzb21pc282aHZjMQAAAr5tb292AAAAbG12aGQAAAAAAAAAAAAAAAAAAV+QAAAAAAABAAABAAAA
+          AAAAAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAC
+          AAACInRyYWsAAABcdGtoZAAAAAMAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAAAAAAAAAAAAAAAAAA
+          AAEAAAAAAAAAAAAAAAAAAEAAAAAHgAAABDgAAAAAAb5tZGlhAAAAIG1kaGQAAAAAAAAAAAAAAAAAAV+QAAAAAFXEAAAAAAAt
+          aGRscgAAAAAAAAAAdmlkZQAAAAAAAAAAAAAAAFZpZGVvSGFuZGxlcgAAAAFpbWluZgAAABR2bWhkAAAAAQAAAAAAAAAAAAAA
+          JGRpbmYAAAAcZHJlZgAAAAAAAAABAAAADHVybCAAAAABAAABKXN0YmwAAADdc3RzZAAAAAAAAAABAAAAzWh2YzEAAAAAAAAA
+          AQAAAAAAAAAAAAAAAAAAAAAHgAQ4AEgAAABIAAAAAAAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAY//8A
+          AAB3aHZjQwEBYAAAAJAAAAAAAHjwAPz9+PgAAA8DoAABABhAAQwB//8BYAAAAwCQAAADAAADAHiZmAmhAAEAKkIBAQFgAAAD
+          AJAAAAMAAAMAeKADwIAQ5ZZWaSTK4BAAAAMAEAAAAwHggKIAAQAHRAHBcrRiQAAAABBzdHRzAAAAAAAAAAAAAAAQc3RzYwAA
+          AAAAAAAAAAAAFHN0c3oAAAAAAAAAAAAAAAAAAAAQc3RjbwAAAAAAAAAAAAAAKG12ZXgAAAAgdHJleAAAAAAAAAABAAAAAQAA
+          AAAAAAAAAAAAAAAAAGRtb29mAAAAEG1maGQAAAAAAAAAAQAAAEx0cmFmAAAAEHRmaGQAAgAAAAAAAQAAABR0ZmR0AQAAAAAA
+          AAAAAAAAAAAAIHRydW4AAAcBAAAAAQAAAGwAAAu4AAAACgIAAAAAAAASbWRhdAAAAAYmAa8IQAA=
+          """,
+        options: .ignoreUnknownCharacters
+      )
+    )
+    XCTAssertEqual(hevcConsumer.data(), hevcGolden)
+
+    let metadataConsumer = FBDataBuffer.accumulatingBuffer()
+    writer.writeTimedMetadata("Chapter 1", to: metadataConsumer)
+    let metadata = metadataConsumer.data()
+    let metadataGolden = try XCTUnwrap(
+      Data(
+        base64Encoded: "AAAAPWVtc2cBAAAAAAFfkAAAAAAAAAAAAAAAAAAAAAB1cm46c2ltZTJlOmNoYXB0ZXIAAENoYXB0ZXIgMQ=="
+      )
+    )
+    XCTAssertEqual(metadata, metadataGolden)
+    XCTAssertEqual(try FMP4BoxSignatures(metadata, in: 0..<metadata.count), ["emsg:61"])
   }
 
   func testFMP4EmsgBoxStructure() {
