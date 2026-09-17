@@ -39,7 +39,7 @@ import Foundation
 
 /// Process output that can be redirected to a file path or to a data consumer.
 @objc(FBProcessOutput)
-public protocol ProcessOutputProtocol: NSObjectProtocol {
+public protocol ProcessOutput: NSObjectProtocol {
   /// Allows the receiver to be written to via a file instead of via a file handle.
   func providedThroughFile() -> FBFuture<ProcessFileOutput>
 
@@ -49,5 +49,5 @@ public protocol ProcessOutputProtocol: NSObjectProtocol {
 
 // MARK: - Conformance extensions for ObjC classes
 
-extension FBProcessOutput: StandardStream, ProcessOutputProtocol {}
+extension FBProcessOutput: StandardStream, ProcessOutput {}
 extension FBProcessInput: StandardStream {}
