@@ -77,7 +77,7 @@ public final class Simulator: Target, Hashable, CustomStringConvertible, @unchec
 
   public var targetType: FBTargetType { .simulator }
 
-  public var architectures: [FBArchitecture] { Array(ArchitectureProcessAdapter.hostMachineSupportedArchitectures()) }
+  public var architectures: [Architecture] { Array(ArchitectureProcessAdapter.hostMachineSupportedArchitectures()) }
 
   public var deviceType: DeviceType { configuration.device }
 

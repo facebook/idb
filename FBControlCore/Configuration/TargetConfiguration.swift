@@ -171,23 +171,21 @@ public struct OSVersion: Equatable, Hashable, CustomStringConvertible, Sendable 
 
 }
 
-@objc
-public final class TargetConfiguration: NSObject {
+public final class TargetConfiguration {
 
   // MARK: - Public Methods
 
-  @objc(baseArchsToCompatibleArch:)
-  public class func baseArchsToCompatibleArch(_ architectures: [FBArchitecture]) -> Set<FBArchitecture> {
-    let mapping: [FBArchitecture: Set<FBArchitecture>] = [
+  public class func baseArchsToCompatibleArch(_ architectures: [Architecture]) -> Set<Architecture> {
+    let mapping: [Architecture: Set<Architecture>] = [
       .arm64e: [.arm64e, .arm64, .armv7s, .armv7],
       .arm64: [.arm64, .armv7s, .armv7],
       .armv7s: [.armv7s, .armv7],
       .armv7: [.armv7],
-      FBArchitecture(rawValue: "i386"): [FBArchitecture(rawValue: "i386")],
-      FBArchitecture(rawValue: "x86_64"): [FBArchitecture(rawValue: "x86_64"), FBArchitecture(rawValue: "i386")],
+      .i386: [.i386],
+      .x86_64: [.x86_64, .i386],
     ]
 
-    var result = Set<FBArchitecture>()
+    var result = Set<Architecture>()
     for arch in architectures {
       if let compatible = mapping[arch] {
         result.formUnion(compatible)

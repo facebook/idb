@@ -7,6 +7,5 @@
 
 #import <Foundation/Foundation.h>
 
-#import <FBControlCore/FBArchitecture.h>
 #import <FBControlCore/FBFuture.h>
 #import <FBControlCore/FBTargetConstants.h>

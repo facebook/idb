@@ -87,8 +87,8 @@ public final class RestorableDevice: TargetInfo, DeviceProtocol {
     return DeviceType.generic(withName: productString)
   }
 
-  public var architectures: [FBArchitecture] {
-    [FBArchitecture(rawValue: UnknownValue)]
+  public var architectures: [Architecture] {
+    [Architecture(rawValue: UnknownValue)]
   }
 
   public var targetType: FBTargetType {

@@ -7,8 +7,6 @@
 
 #import <Foundation/Foundation.h>
 
-#import <FBControlCore/FBArchitecture.h>
-
 /**
  Raw values mirror CoreSimulator's -[SimDeviceType productFamilyID] and must not be renumbered.
  */

@@ -48,14 +48,14 @@ enum ArchitectureAdapterError: Error, LocalizedError {
 public enum ArchitectureProcessAdapter {
 
   private static func selectArchitecture(
-    from requestedArchitectures: Set<FBArchitecture>,
-    supportedArchitectures: Set<FBArchitecture>
-  ) -> FBArchitecture? {
+    from requestedArchitectures: Set<Architecture>,
+    supportedArchitectures: Set<Architecture>
+  ) -> Architecture? {
     if requestedArchitectures.contains(.arm64) && supportedArchitectures.contains(.arm64) {
       return .arm64
     }
-    if requestedArchitectures.contains(.X86_64) && supportedArchitectures.contains(.X86_64) {
-      return .X86_64
+    if requestedArchitectures.contains(.x86_64) && supportedArchitectures.contains(.x86_64) {
+      return .x86_64
     }
     return nil
   }
@@ -63,8 +63,8 @@ public enum ArchitectureProcessAdapter {
   /// Force binaries to be launched in desired architectures.
   public static func adaptProcessConfiguration(
     _ processConfiguration: ProcessSpawnConfiguration,
-    toAnyArchitectureIn requestedArchitectures: Set<FBArchitecture>,
-    hostArchitectures: Set<FBArchitecture> = ArchitectureProcessAdapter.hostMachineSupportedArchitectures(),
+    toAnyArchitectureIn requestedArchitectures: Set<Architecture>,
+    hostArchitectures: Set<Architecture> = ArchitectureProcessAdapter.hostMachineSupportedArchitectures(),
     temporaryDirectory: URL
   ) async throws -> ProcessSpawnConfiguration {
     guard let architecture = selectArchitecture(from: requestedArchitectures, supportedArchitectures: hostArchitectures) else {
@@ -93,7 +93,7 @@ public enum ArchitectureProcessAdapter {
   /// Verifies that we can extract desired architecture from binary
   private static func verifyArchitectureAvailable(
     _ binary: String,
-    architecture: FBArchitecture
+    architecture: Architecture
   ) async throws {
     let result = try await withTimeout(seconds: 20, waitingFor: "lipo -verify_arch") {
       try await Subprocess(executable: "/usr/bin/lipo", arguments: [binary, "-verify_arch", architecture.rawValue])
@@ -104,7 +104,7 @@ public enum ArchitectureProcessAdapter {
   }
 
   private static func extractArchitecture(
-    _ architecture: FBArchitecture,
+    _ architecture: Architecture,
     launchPath: String,
     outputPath: URL
   ) async throws {
@@ -229,19 +229,19 @@ public enum ArchitectureProcessAdapter {
   }
 
   /// Returns supported architectures based on companion launch architecture and launch under rosetta determination.
-  public static func hostMachineSupportedArchitectures() -> Set<FBArchitecture> {
+  public static func hostMachineSupportedArchitectures() -> Set<Architecture> {
     #if arch(x86_64)
     let isTranslated = processIsTranslated()
     if isTranslated == 1 {
       // Companion running as x86_64 with translation (Rosetta) -> Processor supports Arm64 and x86_64
-      return [.arm64, .X86_64]
+      return [.arm64, .x86_64]
     } else {
       // Companion running as x86_64 and translation is disabled or unknown
       // Assuming processor only supports x86_64 even if translation state is unknown
-      return [.X86_64]
+      return [.x86_64]
     }
     #else
-    return [.arm64, .X86_64]
+    return [.arm64, .x86_64]
     #endif
   }
 }

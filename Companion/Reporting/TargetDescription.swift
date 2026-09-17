@@ -14,7 +14,7 @@ public final class TargetDescription: TargetInfo {
   public let udid: String
   public let name: String
   public let deviceType: DeviceType
-  public let architectures: [FBArchitecture]
+  public let architectures: [Architecture]
   public let osVersion: OSVersion
   public let extendedInformation: [String: Any]
   public let targetType: FBTargetType

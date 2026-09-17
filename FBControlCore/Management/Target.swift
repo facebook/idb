@@ -35,7 +35,7 @@ public protocol TargetInfo: AnyObject {
   var deviceType: DeviceType { get }
 
   /// Available architecture of the iOS Target
-  var architectures: [FBArchitecture] { get }
+  var architectures: [Architecture] { get }
 
   /// The OS Version of the Target.
   var osVersion: OSVersion { get }

@@ -60,7 +60,7 @@ public final class MacDevice: NSObject, Target {
 
   // MARK: - Target synthesized properties
 
-  public let architectures: [FBArchitecture]
+  public let architectures: [Architecture]
   public let asyncQueue: DispatchQueue
   public let auxillaryDirectory: String
   public var name: String

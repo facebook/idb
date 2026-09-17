@@ -8,7 +8,6 @@
 #import <FBControlCore/ControlCoreLogger.h>
 #import <FBControlCore/ControlCoreLogger+OSLog.h>
 #import <FBControlCore/DataConsumer.h>
-#import <FBControlCore/FBArchitecture.h>
 #import <FBControlCore/FBArchiveOperations.h>
 #import <FBControlCore/FBBinaryDescriptor.h>
 #import <FBControlCore/FBControlCoreFrameworkLoader.h>

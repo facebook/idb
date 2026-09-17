@@ -117,11 +117,11 @@ public final class MobileDevice: TargetInfo, DeviceCommands, CustomStringConvert
     allValues[DeviceKey.deviceName.rawValue] as? String ?? UnknownValue
   }
 
-  public var architectures: [FBArchitecture] {
+  public var architectures: [Architecture] {
     guard let architecture = allValues[DeviceKey.cpuArchitecture.rawValue] as? String else {
       return []
     }
-    return [FBArchitecture(rawValue: architecture)]
+    return [Architecture(rawValue: architecture)]
   }
 
   public var deviceType: DeviceType {

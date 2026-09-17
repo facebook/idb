@@ -153,7 +153,7 @@ public class BundleStorage: IDBStorage {
     let supportedArchitectures = Set(TargetConfiguration.baseArchsToCompatibleArch(targetArchs).map { $0.rawValue })
 
     let containsExactArch = !binaryArchitectures.isDisjoint(with: supportedArchitectures)
-    let arm64eEquivalent = targetArchs.contains(FBArchitecture(rawValue: "arm64e")) && binaryArchitectures.contains("arm64")
+    let arm64eEquivalent = targetArchs.contains(Architecture.arm64e) && binaryArchitectures.contains("arm64")
 
     if !(containsExactArch || arm64eEquivalent) {
       throw IDBStorageError.architecturesIncompatible(supported: supportedArchitectures.sorted(), bundle: binaryArchitectures.sorted())

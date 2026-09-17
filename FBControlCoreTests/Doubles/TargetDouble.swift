@@ -16,6 +16,6 @@ final class TargetDouble: TargetInfo {
   var targetType: FBTargetType = .simulator
   var deviceType: DeviceType = .generic(withName: "TargetDouble")
   var osVersion: OSVersion = .generic(withName: "TargetDouble")
-  var architectures: [FBArchitecture] = []
+  var architectures: [Architecture] = []
   var extendedInformation: [String: Any] { [:] }
 }

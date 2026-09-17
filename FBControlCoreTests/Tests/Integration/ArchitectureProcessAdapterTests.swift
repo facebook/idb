@@ -67,7 +67,7 @@ struct ArchitectureProcessAdapterTests {
       _ = try await ArchitectureProcessAdapter.adaptProcessConfiguration(
         Self.configuration(launchPath: Self.fatBinary),
         toAnyArchitectureIn: [.arm64],
-        hostArchitectures: [.X86_64],
+        hostArchitectures: [.x86_64],
         temporaryDirectory: directory)
       Issue.record("Expected adaptation to fail when the requested architecture is unsupported")
     } catch {
@@ -92,8 +92,8 @@ struct ArchitectureProcessAdapterTests {
     do {
       _ = try await ArchitectureProcessAdapter.adaptProcessConfiguration(
         Self.configuration(launchPath: Self.fatBinary),
-        toAnyArchitectureIn: [.arm64, .X86_64],
-        hostArchitectures: [.arm64, .X86_64],
+        toAnyArchitectureIn: [.arm64, .x86_64],
+        hostArchitectures: [.arm64, .x86_64],
         temporaryDirectory: directory)
       Issue.record("Expected verification of the arm64 slice to fail")
     } catch {
@@ -104,8 +104,8 @@ struct ArchitectureProcessAdapterTests {
     // Take arm64 off the host and the same request succeeds on x86_64.
     let adapted = try await ArchitectureProcessAdapter.adaptProcessConfiguration(
       Self.configuration(launchPath: Self.fatBinary),
-      toAnyArchitectureIn: [.arm64, .X86_64],
-      hostArchitectures: [.X86_64],
+      toAnyArchitectureIn: [.arm64, .x86_64],
+      hostArchitectures: [.x86_64],
       temporaryDirectory: directory)
     #expect(try await Self.architectures(of: adapted.launchPath) == ["x86_64"])
   }
@@ -120,8 +120,8 @@ struct ArchitectureProcessAdapterTests {
 
     let adapted = try await ArchitectureProcessAdapter.adaptProcessConfiguration(
       original,
-      toAnyArchitectureIn: [.X86_64],
-      hostArchitectures: [.X86_64],
+      toAnyArchitectureIn: [.x86_64],
+      hostArchitectures: [.x86_64],
       temporaryDirectory: directory)
 
     let fileName = (adapted.launchPath as NSString).lastPathComponent
@@ -152,8 +152,8 @@ struct ArchitectureProcessAdapterTests {
 
     let adapted = try await ArchitectureProcessAdapter.adaptProcessConfiguration(
       Self.configuration(launchPath: binary),
-      toAnyArchitectureIn: [.X86_64],
-      hostArchitectures: [.X86_64],
+      toAnyArchitectureIn: [.x86_64],
+      hostArchitectures: [.x86_64],
       temporaryDirectory: directory)
 
     // The thinned copy lives in a temporary directory, so `@executable_path` no
@@ -172,8 +172,8 @@ struct ArchitectureProcessAdapterTests {
 
     let adapted = try await ArchitectureProcessAdapter.adaptProcessConfiguration(
       Self.configuration(launchPath: Self.fatBinary),
-      toAnyArchitectureIn: [.X86_64],
-      hostArchitectures: [.X86_64],
+      toAnyArchitectureIn: [.x86_64],
+      hostArchitectures: [.x86_64],
       temporaryDirectory: directory)
 
     // The variables are written unconditionally, so a binary with nothing to rewrite

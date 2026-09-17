@@ -56,7 +56,7 @@ public final class Device: Target, DeviceCommands, CustomStringConvertible {
   private var cachedUDID: String?
   private var cachedName: String?
   private var cachedDeviceType: DeviceType?
-  private var cachedArchitectures: [FBArchitecture]?
+  private var cachedArchitectures: [Architecture]?
   private var cachedOSVersion: OSVersion?
   private var cachedExtendedInformation: [String: Any]?
   private var cachedTargetType: FBTargetType?
@@ -71,7 +71,7 @@ public final class Device: Target, DeviceCommands, CustomStringConvertible {
   public var udid: String { cachedUDID ?? "" }
   public var name: String { cachedName ?? "" }
   public var deviceType: DeviceType { cachedDeviceType ?? DeviceType.generic(withName: "unknown") }
-  public var architectures: [FBArchitecture] { cachedArchitectures ?? [] }
+  public var architectures: [Architecture] { cachedArchitectures ?? [] }
   public var osVersion: OSVersion { cachedOSVersion ?? OSVersion.generic(withName: "unknown") }
   public var extendedInformation: [String: Any] { cachedExtendedInformation ?? [:] }
   public var targetType: FBTargetType { cachedTargetType ?? .none }
