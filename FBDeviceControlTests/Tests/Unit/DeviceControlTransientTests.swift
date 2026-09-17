@@ -19,7 +19,7 @@ struct DeviceControlTransientTests {
     let storage = DeviceStorage<NSString>(logger: ControlCoreGlobalConfiguration.defaultLogger)
     storage.deviceAttached("device1" as NSString, forKey: "key1")
 
-    let retrieved = storage.device(forKey: "key1") as? NSString
+    let retrieved = storage.device(forKey: "key1")
     #expect((retrieved) == ("device1"))
   }
 
@@ -29,10 +29,10 @@ struct DeviceControlTransientTests {
     storage.deviceAttached("device1" as NSString, forKey: "key1")
     storage.deviceAttached("device2" as NSString, forKey: "key2")
 
-    let attached = storage.attached as? [String: NSString]
-    #expect((attached?.count) == (2))
-    #expect((attached?["key1"]) == ("device1"))
-    #expect((attached?["key2"]) == ("device2"))
+    let attached = storage.attached
+    #expect((attached.count) == (2))
+    #expect((attached["key1"]) == ("device1"))
+    #expect((attached["key2"]) == ("device2"))
   }
 
   @Test
@@ -41,8 +41,8 @@ struct DeviceControlTransientTests {
     storage.deviceAttached("device1" as NSString, forKey: "key1")
     storage.deviceDetached(forKey: "key1")
 
-    let attached = storage.attached as? [String: NSString]
-    #expect((attached?.count) == (0))
+    let attached = storage.attached
+    #expect((attached.count) == (0))
   }
 
   @Test
@@ -58,7 +58,7 @@ struct DeviceControlTransientTests {
     storage.deviceAttached("old" as NSString, forKey: "key1")
     storage.deviceAttached("new" as NSString, forKey: "key1")
 
-    let retrieved = storage.device(forKey: "key1") as? NSString
+    let retrieved = storage.device(forKey: "key1")
     #expect((retrieved) == ("new"))
   }
 
@@ -68,16 +68,16 @@ struct DeviceControlTransientTests {
     storage.deviceAttached("d1" as NSString, forKey: "k1")
     storage.deviceAttached("d2" as NSString, forKey: "k2")
 
-    let referenced = storage.referenced as? [String: NSString]
-    #expect((referenced?.count) == (2))
+    let referenced = storage.referenced
+    #expect((referenced.count) == (2))
 
     // Only `attached` drops; `referenced` keeps both because string literals are immortal.
     storage.deviceDetached(forKey: "k1")
-    let attached = storage.attached as? [String: NSString]
-    #expect((attached?.count) == (1))
+    let attached = storage.attached
+    #expect((attached.count) == (1))
 
-    let referencedAfter = storage.referenced as? [String: NSString]
-    #expect((referencedAfter?.count) == (2))
+    let referencedAfter = storage.referenced
+    #expect((referencedAfter.count) == (2))
   }
 
   /// A device type that is not rooted in `NSObject`, which the weakly-referencing map has to hold

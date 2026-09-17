@@ -21,6 +21,12 @@ private final class UsageCallRecorder: @unchecked Sendable {
     events.append(event)
   }
 
+  func reset() {
+    lock.lock()
+    defer { lock.unlock() }
+    events.removeAll()
+  }
+
   var recorded: [String] {
     lock.lock()
     defer { lock.unlock() }
@@ -28,7 +34,7 @@ private final class UsageCallRecorder: @unchecked Sendable {
   }
 }
 
-private nonisolated(unsafe) var sUsageRecorder = UsageCallRecorder()
+private let sUsageRecorder = UsageCallRecorder()
 
 /// Pins the order in which `+startUsing:` and `+stopUsing:` drive the device.
 ///
@@ -41,7 +47,7 @@ private nonisolated(unsafe) var sUsageRecorder = UsageCallRecorder()
 final class AMDeviceManagerUsageTests {
 
   init() {
-    sUsageRecorder = UsageCallRecorder()
+    sUsageRecorder.reset()
   }
 
   private func stubbedCalls() -> AMDCalls {
@@ -70,8 +76,8 @@ final class AMDeviceManagerUsageTests {
       sUsageRecorder.record("stop_session")
       return 0
     }
-    calls.Retain = { $0 }
-    calls.Release = { $0 }
+    calls.Retain = { _ in }
+    calls.Release = { _ in }
     return calls
   }
 
