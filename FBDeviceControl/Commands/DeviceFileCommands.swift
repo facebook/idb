@@ -443,7 +443,7 @@ public final class DeviceFileCommands: FileCommands {
     self.afcCalls = afcCalls
   }
 
-  // MARK: - FBFileCommands
+  // MARK: - FileCommands
 
   private func requireDevice() throws -> Device {
     guard let device else {

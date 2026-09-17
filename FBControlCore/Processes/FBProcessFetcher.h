@@ -22,7 +22,7 @@
  A Query for obtaining all of the process information for a given processIdentifier.
 
  @param processIdentifier the Process Identifier to obtain process info for.
- @return an RunningProcessInfo object if a process with the given identifier could be found, nil otherwise.
+ @return a RunningProcessInfo object if a process with the given identifier could be found, nil otherwise.
  */
 - (nullable RunningProcessInfo *)processInfoFor:(pid_t)processIdentifier;
 

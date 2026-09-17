@@ -387,7 +387,7 @@ public final class MacDevice: NSObject, Target {
     }
   }
 
-  // MARK: - FBXCTestExtendedCommands
+  // MARK: - XCTestExtendedCommands
 
   public func listTests(forBundleAtPath bundlePath: String, timeout: TimeInterval, withAppAtPath appPath: String?) -> FBFuture<NSArray> {
     let bundleDescriptor: BundleDescriptor

@@ -58,7 +58,7 @@ public struct DeviceLogCommands: LogCommands {
     self.device = device
   }
 
-  // MARK: - FBLogCommands
+  // MARK: - LogCommands
 
   public func tail(arguments: [String], consumer: any DataConsumer) async throws -> any LogOperation {
     if !arguments.isEmpty {

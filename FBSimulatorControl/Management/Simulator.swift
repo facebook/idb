@@ -130,7 +130,7 @@ public final class Simulator: Target, Hashable, CustomStringConvertible, @unchec
   /// only trap (not catchable by `FBObjCExceptionGuard`).
   public static func commands(with target: any Target) -> Self {
     guard let simulator = target as? Self else {
-      preconditionFailure("\(type(of: target)) is not an Simulator, so it cannot provide simulator commands")
+      preconditionFailure("\(type(of: target)) is not a Simulator, so it cannot provide simulator commands")
     }
     return simulator
   }

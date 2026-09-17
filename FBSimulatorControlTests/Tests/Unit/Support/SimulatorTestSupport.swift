@@ -31,7 +31,7 @@ private func asSimDeviceSet(_ object: AnyObject) -> SimDeviceSet {
   Unmanaged<SimDeviceSet>.fromOpaque(Unmanaged.passUnretained(object).toOpaque()).takeUnretainedValue()
 }
 
-/// Builds an `SimulatorSet` around a device set double.
+/// Builds a `SimulatorSet` around a device set double.
 func createSimulatorSet(
   configuration: SimulatorControlConfiguration,
   fakeDeviceSet: AnyObject,
@@ -58,7 +58,7 @@ enum SimulatorTestSupport {
   }
 
   /// Reinterprets a device double as `SimDevice`, for code under test that takes the CoreSimulator
-  /// type directly rather than an `Simulator`.
+  /// type directly rather than a `Simulator`.
   static func asDevice(_ object: AnyObject) -> SimDevice {
     asSimDevice(object)
   }

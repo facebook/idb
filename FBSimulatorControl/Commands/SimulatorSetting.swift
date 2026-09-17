@@ -84,7 +84,7 @@ public extension SimulatorSetting {
   }
 }
 
-/// Raised when a `name`/`value` pair cannot be parsed into an `SimulatorSetting`.
+/// Raised when a `name`/`value` pair cannot be parsed into a `SimulatorSetting`.
 public enum SimulatorSettingError: Error, CustomStringConvertible, LocalizedError {
   case invalidValue(name: String, value: String, expected: String)
 

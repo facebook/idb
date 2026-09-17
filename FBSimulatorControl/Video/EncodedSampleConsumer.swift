@@ -22,7 +22,7 @@ protocol EncodedSampleConsumer: AnyObject {
 
 // MARK: - DataConsumerEncodedSampleConsumer
 
-/// The streaming `EncodedSampleConsumer`: byte-frames each sample to an `DataConsumer` through the
+/// The streaming `EncodedSampleConsumer`: byte-frames each sample to a `DataConsumer` through the
 /// format's `EncodedFrameWriter` (Annex-B / MPEG-TS / fMP4 / MJPEG / Minicap).
 final class DataConsumerEncodedSampleConsumer: EncodedSampleConsumer {
   let consumer: any DataConsumer

@@ -7,7 +7,7 @@
 
 import Foundation
 
-/// Errors thrown while creating or cloning simulators in an `SimulatorSet`.
+/// Errors thrown while creating or cloning simulators in a `SimulatorSet`.
 public enum SimulatorSetError: LocalizedError, Sendable {
   case deviceTypeOrRuntimeUnavailable(configuration: String, reason: String?)
   case shutdownAfterCreateFailed(reason: String?)

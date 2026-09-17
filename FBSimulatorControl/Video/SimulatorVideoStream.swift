@@ -113,7 +113,7 @@ private func bitmapStreamPixelBufferAttributes(from pixelBuffer: CVPixelBuffer) 
   ]
 }
 
-/// A real-time video stream of a Simulator's framebuffer, written to an `DataConsumer`.
+/// A real-time video stream of a Simulator's framebuffer, written to a `DataConsumer`.
 ///
 /// Concurrency model: the actor serializes start/stop, framebuffer event handling, and every frame
 /// push. Framebuffer events arrive on the attachment's ordered `AsyncStream`, consumed by an
@@ -128,7 +128,7 @@ public actor SimulatorVideoStream: VideoStreamOperation {
   let configuration: VideoStreamConfiguration
   let edgeInsets: VideoStreamEdgeInsets
   let cadence: VideoStreamCadence
-  /// When set (recording), encoded `.compressed` frames are routed to this sink — an `SimulatorVideoFileWriter`
+  /// When set (recording), encoded `.compressed` frames are routed to this sink — a `SimulatorVideoFileWriter`
   /// — instead of being byte-framed to `consumer`. nil for streaming.
   let encodedSampleConsumerOverride: EncodedSampleConsumer?
   let logger: any ControlCoreLogger
@@ -224,7 +224,7 @@ public actor SimulatorVideoStream: VideoStreamOperation {
   }
 
   /// Constructs a recording stream: encoded `.compressed` frames are muxed into a file via `fileWriter`
-  /// rather than byte-framed to an `DataConsumer`. `edgeInsets` (default zero) reserves overlay bar
+  /// rather than byte-framed to a `DataConsumer`. `edgeInsets` (default zero) reserves overlay bar
   /// regions exactly as on the streaming path. Cadence is derived from `configuration.framesPerSecond`.
   static func makeRecorder(framebuffer: Framebuffer, configuration: VideoStreamConfiguration, edgeInsets: VideoStreamEdgeInsets = VideoStreamEdgeInsets(top: 0, bottom: 0, left: 0, right: 0), fileWriter: SimulatorVideoFileWriter, logger: any ControlCoreLogger) -> SimulatorVideoStream {
     return SimulatorVideoStream(

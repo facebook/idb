@@ -43,7 +43,7 @@ final class SimulatorHIDEventPanTests: XCTestCase {
   }
 
   // The trackpad surface is absolute-normalized and the type enforces it: screen coordinates
-  // cannot be represented as an SimulatorTrackpadPoint, so `pan` cannot be handed them.
+  // cannot be represented as a SimulatorTrackpadPoint, so `pan` cannot be handed them.
   func testTrackpadPointRejectsCoordinatesOutsideTheSurface() throws {
     XCTAssertNil(SimulatorTrackpadPoint(x: 100, y: 200), "screen coordinates are not surface coordinates")
     XCTAssertNil(SimulatorTrackpadPoint(x: 0.5, y: 1.5), "one axis outside the unit square is enough")

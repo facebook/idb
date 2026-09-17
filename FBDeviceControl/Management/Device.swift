@@ -108,7 +108,7 @@ public final class Device: Target, DeviceCommands, CustomStringConvertible {
 
   public static func commands(with target: any Target) -> Self {
     guard let device = target as? Self else {
-      preconditionFailure("\(type(of: target)) is not an Device, so it cannot provide device commands")
+      preconditionFailure("\(type(of: target)) is not a Device, so it cannot provide device commands")
     }
     return device
   }

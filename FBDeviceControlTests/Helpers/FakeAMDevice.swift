@@ -170,7 +170,7 @@ final class FakeAMDevice: NSObject {
     return device
   }
 
-  /// An `Device` — the type the command classes take, and so the type public-API tests need.
+  /// A `Device` — the type the command classes take, and so the type public-API tests need.
   func makeDevice() -> Device {
     Device(
       set: nil,

@@ -8,7 +8,7 @@
 import CoreGraphics
 import Foundation
 
-/// Selects which transport an `SimulatorHID` uses for the touch / button / keyboard primitives.
+/// Selects which transport a `SimulatorHID` uses for the touch / button / keyboard primitives.
 public enum SimulatorHIDTransportType: Equatable, Sendable {
   /// The legacy Indigo path via SimulatorKit's runtime-only `SimDeviceLegacyHIDClient`.
   case indigo
