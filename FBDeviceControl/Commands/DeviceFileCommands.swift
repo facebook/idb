@@ -341,7 +341,7 @@ public final class DeviceFileCommands: FileCommands {
     body: (any AsyncFileContainer) async throws -> R
   ) async throws -> R {
     let device = try requireDevice()
-    return try await body(FileContainer_ProvisioningProfile(commands: DeviceProvisioningProfileCommands.commands(with: device)))
+    return try await body(FileContainer.ProvisioningProfile(commands: DeviceProvisioningProfileCommands.commands(with: device)))
   }
 
   public func withMDMProfiles<R>(

@@ -52,7 +52,7 @@ import Foundation
 }
 
 /// Internal forwarding protocol used by FBDataBuffer implementations.
-@objc public protocol DataBuffer_Forwarder: NSObjectProtocol {
+@objc public protocol BufferForwarder: NSObjectProtocol {
   func run(_ buffer: ConsumableBuffer)
   var consumer: DataConsumer { get }
 }
