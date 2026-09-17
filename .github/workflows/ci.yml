@@ -267,15 +267,27 @@ jobs:
       # Export DEVICE_UDID and DEVICE_SET_PATH for a dedicated simulator.
       - name: Provision a simulator
         run: python3 -m CI.provision_simulator --name end-to-end-provided --device-set "$RUNNER_TEMP/end-to-end-device-set" >> "$GITHUB_ENV"
-      # Fail if a required simulator host service is unavailable.
+      # Fail if a required simulator host service is unavailable. Record H.264
+      # rather than the default HEVC: this run's video is what the website
+      # publishes, and it is the encoding every browser decodes.
       - name: Run the end-to-end suite
         run: |
           IDB_BIN="$(command -v idb)" \
           IDB_E2E_COMPANION_PATH="$RUNNER_TEMP/artifacts/Distribution/idb_companion" \
           IDB_E2E_RECORDER_PATH="$RUNNER_TEMP/artifacts/Distribution/sim-video" \
           IDB_E2E_ARTIFACTS_DIR="$RUNNER_TEMP/end-to-end-diagnostics" \
+          IDB_E2E_RECORDER_ENCODING=h264 \
           IDB_E2E_STRICT=1 \
           python -m unittest discover -s EndToEndTests -t . -v
+      # Only a run in which every documented demo passed produces this, so the
+      # artifact's existence is what lets the site publish them.
+      - name: Document the demos this run performed
+        run: python3 -m CI.generate_documentation --artifacts-dir "$RUNNER_TEMP/end-to-end-diagnostics" --output "$RUNNER_TEMP/documentation"
+      - name: Upload the demo documentation
+        uses: actions/upload-artifact@v5
+        with:
+          name: documentation
+          path: ${{ runner.temp }}/documentation
       - name: Collect diagnostics
         if: always()
         run: python3 -m CI.collect_diagnostics --artifacts-dir "$RUNNER_TEMP/end-to-end-diagnostics" --output "$RUNNER_TEMP/end-to-end-diagnostics"
@@ -287,3 +299,48 @@ jobs:
           path: ${{ runner.temp }}/end-to-end-diagnostics
           if-no-files-found: ignore
           retention-days: 14
+
+  website:
+    name: Build the website
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: website
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+      - name: Test the demos generator
+        run: yarn test-scripts
+      # No run to document here, which is what a plain checkout builds.
+      - name: Build the site
+        run: yarn build
+
+  # The same site built from the demos the end-to-end run documented, so a
+  # manifest the website cannot render fails here rather than on deployment.
+  website-demos:
+    name: Build the website from the end-to-end run
+    runs-on: ubuntu-latest
+    needs: mac-end-to-end
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Download the demo documentation
+        uses: actions/download-artifact@v5
+        with:
+          name: documentation
+          path: documentation
+      - name: Build the site with this run's demos
+        working-directory: website
+        env:
+          IDB_DEMOS_DIR: ${{ github.workspace }}/documentation
+        run: |
+          yarn install --frozen-lockfile
+          yarn build

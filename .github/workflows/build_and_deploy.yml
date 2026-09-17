@@ -1,20 +1,69 @@
 name: facebook/idb/build_and_deploy
+# Deployment follows CI rather than the push that started it, so the site is
+# only ever published from a commit whose end-to-end run passed. That run is
+# also where the demos on the site come from.
 on:
-  push:
+  workflow_run:
+    workflows:
+    - CI
+    types:
+    - completed
     branches:
     - main
+concurrency:
+  group: deploy-website
+  cancel-in-progress: false
 jobs:
   deploy-website:
+    # A workflow_run fires for every CI run that completed, including one a
+    # pull request from a fork started, and the branch filter above matches
+    # that run's head branch — which a fork is free to call main. Deploying
+    # such a run would check out the fork's own commit and run its install and
+    # build scripts with contents: write, so the triggering run's provenance
+    # is established before anything is fetched: it has to be a push, and both
+    # the repository it ran in and the repository its head commit came from
+    # have to be this one.
+    #
+    # There is deliberately no workflow_dispatch here. A manual trigger would
+    # have to name a CI run to deploy and then re-derive all of that from the
+    # API, duplicating the gates in shell against attacker-chosen input; the
+    # recovery it would provide — deploying a CI run that already succeeded —
+    # is already available by re-running this workflow's own run from the
+    # Actions UI, which replays the original event payload through these same
+    # conditions.
+    if: >-
+      github.event.workflow_run.conclusion == 'success'
+      && github.event.workflow_run.event == 'push'
+      && github.event.workflow_run.repository.full_name == github.repository
+      && github.event.workflow_run.head_repository.full_name == github.repository
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      # The demos belong to the run that triggered this one, not to this run.
+      actions: read
     steps:
     - uses: actions/checkout@v4.1.0
+      with:
+        ref: ${{ github.event.workflow_run.head_sha }}
     - uses: actions/setup-node@v4
       with:
         node-version: 22
+    - name: Download the demos that run documented
+      uses: actions/download-artifact@v5
+      with:
+        name: documentation
+        path: documentation
+        run-id: ${{ github.event.workflow_run.id }}
+        github-token: ${{ secrets.GITHUB_TOKEN }}
     - name: Deploying to GitHub Pages
+      env:
+        IDB_DEMOS_DIR: ${{ github.workspace }}/documentation
       run: |
         git config --global user.email "docusaurus-bot@users.noreply.github.com"
         git config --global user.name "Website Deployment Script"
         echo "machine github.com login docusaurus-bot password ${{ secrets.GITHUB_TOKEN }}" > ~/.netrc
+        # `docusaurus deploy` reads the current branch, which a commit checked
+        # out by its SHA does not have.
+        git switch --create deploy-from-ci
         echo "Deploying website..."
         cd website && yarn install && GIT_USER=docusaurus-bot USE_SSH=false yarn deploy

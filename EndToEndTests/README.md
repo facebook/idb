@@ -89,3 +89,5 @@ Both the command and its output are normalised so two runs produce identical tex
 Demos are published as `h264`, the only encoding browsers agree on, by setting `IDB_E2E_RECORDER_ENCODING=h264`; the recording is then the `.mp4` a browser plays.
 
 `python3 -m CI.generate_documentation --artifacts-dir <dir> --output <dir>` turns a run's artifacts into the manifest and media the website reads. It enforces the other half of the contract: a slug the table publishes that this run did not perform, or performed and failed, means nothing is written and the command fails, so a broken demo blocks publication instead of leaving stale documentation up. A run without a playable recording still produces the transcript. A run with `IDB_E2E_READ_ONLY_CLIENT=1` documents a client the website is not about, so the generator refuses it outright.
+
+CI runs that generator after the suite and uploads its output as the `documentation` artifact, and the website is deployed from a CI run that succeeded, at the commit that run tested. The demos on the site are therefore always the ones the code being documented actually performed.

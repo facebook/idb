@@ -112,3 +112,5 @@ The demos generator has its own tests, which need only Node:
 ```
 yarn test-scripts
 ```
+
+The published site is deployed from a CI run that succeeded, at the commit that run tested, using the demos that run documented. A commit whose end-to-end suite fails is never deployed, so the site and the recording on it always come from the same working build. Only a push to this repository is deployed: a run started by a pull request, or one that ran in a fork, is never published, however its branch is named.
