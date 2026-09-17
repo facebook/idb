@@ -26,7 +26,7 @@ There are some exceptions to the level of support for iOS Device operations with
 
 To operate on an `AMDevice`, the phone must "trust" the host. You might recognize this as the ["Trust Dialog" that appears when connecting an iOS Device to a Mac](https://support.apple.com/en-gb/HT202778). Most calls will fail if this trust exchange has not been performed. The Mac maintains a local store of the cryptographic components that are used as part of this trust exchange. This local store means that an iOS Device will not constantly require trust to be authorized every time that the iOS Device is connected to the same host. If this process did not take place, then it would be completely infeasible for iOS Devices to be used in a Continuous Integration environment.
 
-Since this is such an important component of how to interact with iOS Devices, it is backed by the [`FBAMDevice`](https://github.com/facebook/idb/blob/main/FBDeviceControl/Management/AMDevice.swift) class.
+Since this is such an important component of how to interact with iOS Devices, it is backed by the [`MobileDevice`](https://github.com/facebook/idb/blob/main/FBDeviceControl/Management/MobileDevice.swift) class.
 
 The process of discovering devices is asynchronous, which means that fetching the list of `AMDevice`s at a snapshot in time is going to be unreliable. `FBDeviceControl` instead uses an API within `MobileDevice.framework` [for receiving an `AMDevice` instance every time there is a state change](https://github.com/facebook/idb/blob/main/FBDeviceControl/Management/AMDeviceManager.swift) in the availability of `AMDevice` instances. This property is also true of Apple's tools that build on top of `MobileDevice.framework`; [`xcodebuild` has a `-destination-timeout` parameter](https://mokacoding.com/blog/xcodebuild-destination-options/) and Apple Configurator's `cfgutil` has a `--timeout` parameter since device discovery is delivered asynchronously. You might never notice this in Xcode's "Devices and Simulators" window, but it is still there too.
 
@@ -46,7 +46,7 @@ There are a number of function calls relevant to this type, dealing with sending
 
 It is important to stress that this type is just a "Transport" rather than a "Protocol". Each "lockdown service" may have it's own very different binary protocol for sending and receiving data. In the simple case of `com.apple.syslog_relay`, the service just repeatedly sends text over the connection. Other protocols, for instance those used by Instruments are far more complicated. There is no single Protocol that is used by all lockdown services.
 
-There is one exception to this, the ["Plist Protocol"](https://github.com/facebook/idb/blob/main/FBDeviceControl/Management/AMDServiceConnection.swift). This is implemented in `AMDServiceConnection(Send|Receive)Message` calls. This is common across a range of services, such as the screenshot service and SpringBoard service. It writes a length header followed by a binary plist, on both the send and receive sides.
+There is one exception to this, the ["Plist Protocol"](https://github.com/facebook/idb/blob/main/FBDeviceControl/Management/LockdownServiceConnection.swift). This is implemented in `AMDServiceConnection(Send|Receive)Message` calls. This is common across a range of services, such as the screenshot service and SpringBoard service. It writes a length header followed by a binary plist, on both the send and receive sides.
 
 ### `AFC`: "Apple File Connection"
 

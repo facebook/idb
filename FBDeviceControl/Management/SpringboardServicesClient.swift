@@ -58,8 +58,8 @@ public enum SpringboardServicesError: Error, LocalizedError {
 
 /// Carries the non-`Sendable` connection across the serial-queue boundary; only touched on that queue.
 private final class SpringboardConnectionBox: @unchecked Sendable {
-  let connection: FBAMDServiceConnection
-  init(_ connection: FBAMDServiceConnection) {
+  let connection: LockdownServiceConnection
+  init(_ connection: LockdownServiceConnection) {
     self.connection = connection
   }
 }
@@ -73,7 +73,7 @@ private final class SpringboardDataBox: @unchecked Sendable {
 }
 
 class SpringboardServicesClient {
-  private let connection: FBAMDServiceConnection
+  private let connection: LockdownServiceConnection
   fileprivate let queue: DispatchQueue
   private let logger: any ControlCoreLogger
 
@@ -85,18 +85,18 @@ class SpringboardServicesClient {
 
   // MARK: - Initializers
 
-  static func springboardServicesClient(connection: FBAMDServiceConnection, logger: any ControlCoreLogger) -> SpringboardServicesClient {
+  static func springboardServicesClient(connection: LockdownServiceConnection, logger: any ControlCoreLogger) -> SpringboardServicesClient {
     let queue = DispatchQueue(label: "com.facebook.FBDeviceControl.springboard_services")
     return SpringboardServicesClient(connection: connection, queue: queue, logger: logger)
   }
 
-  convenience init(connection: FBAMDServiceConnection, logger: any ControlCoreLogger) {
+  convenience init(connection: LockdownServiceConnection, logger: any ControlCoreLogger) {
     let queue = DispatchQueue(label: "com.facebook.FBDeviceControl.springboard_services")
     self.init(connection: connection, queue: queue, logger: logger)
   }
 
   init(
-    connection: FBAMDServiceConnection,
+    connection: LockdownServiceConnection,
     queue: DispatchQueue,
     logger: any ControlCoreLogger
   ) {

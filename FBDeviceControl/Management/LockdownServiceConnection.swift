@@ -19,7 +19,7 @@ private let SendBufferSize = 1024 * 4
 /// is released.
 private let ReaderDrainTimeout: TimeInterval = 5
 
-public enum AMDServiceConnectionError: Error {
+public enum LockdownServiceConnectionError: Error {
   case sendMessageFailed(errorText: String, message: String, code: Int32)
   case receiveMessageFailed(errorText: String, code: Int32)
   case noConnectionToInvalidate
@@ -35,7 +35,7 @@ public enum AMDServiceConnectionError: Error {
   case cannotStopBeforeStarting
 }
 
-extension AMDServiceConnectionError: LocalizedError {
+extension LockdownServiceConnectionError: LocalizedError {
   public var errorDescription: String? {
     switch self {
     case let .sendMessageFailed(errorText, message, code):
@@ -69,7 +69,7 @@ extension AMDServiceConnectionError: LocalizedError {
 }
 
 /// An AMDServiceConnection is a connection to a "lockdown" service over USB.
-public final class FBAMDServiceConnection: CustomStringConvertible {
+public final class LockdownServiceConnection: CustomStringConvertible {
 
   // MARK: - Properties
 
@@ -118,7 +118,7 @@ public final class FBAMDServiceConnection: CustomStringConvertible {
     let result = calls.ServiceConnectionSendMessage(
       connection, message as CFPropertyList, CFPropertyListFormat.binaryFormat_v1_0, nil, nil, nil)
     guard result == 0 else {
-      throw AMDServiceConnectionError.sendMessageFailed(
+      throw LockdownServiceConnectionError.sendMessageFailed(
         errorText: errorText(result), message: String(describing: message), code: result)
     }
   }
@@ -127,7 +127,7 @@ public final class FBAMDServiceConnection: CustomStringConvertible {
     var message: Unmanaged<CFPropertyList>?
     let result = calls.ServiceConnectionReceiveMessage(connection, &message, nil, nil, nil, nil)
     guard result == 0 else {
-      throw AMDServiceConnectionError.receiveMessageFailed(errorText: errorText(result), code: result)
+      throw LockdownServiceConnectionError.receiveMessageFailed(errorText: errorText(result), code: result)
     }
     return message?.takeRetainedValue() as Any
   }
@@ -141,14 +141,14 @@ public final class FBAMDServiceConnection: CustomStringConvertible {
 
   func invalidate() throws {
     guard let connectionRef else {
-      throw AMDServiceConnectionError.noConnectionToInvalidate
+      throw LockdownServiceConnectionError.noConnectionToInvalidate
     }
     let reference = connectionRef.takeUnretainedValue()
     let connectionDescription = CFCopyDescription(reference) as String? ?? "unknown"
     logger?.log("Invalidating Connection \(connectionDescription)")
     let status = calls.ServiceConnectionInvalidate(reference)
     guard status == 0 else {
-      throw AMDServiceConnectionError.invalidateFailed(
+      throw LockdownServiceConnectionError.invalidateFailed(
         connection: connectionDescription, errorText: errorText(status))
     }
     logger?.log("Invalidated connection \(connectionDescription)")
@@ -175,13 +175,13 @@ public final class FBAMDServiceConnection: CustomStringConvertible {
     calls afcCalls: AFCCalls,
     callback: @escaping AFCNotificationCallback,
     logger: any ControlCoreLogger
-  ) -> FBAFCConnection {
+  ) -> FileConduit {
     let afcConnection = afcCalls.Create(nil, calls.ServiceConnectionGetSocket(connection), nil, callback, nil)
     let afcReference = afcConnection?.takeUnretainedValue()
     if let secureIOContext = calls.ServiceConnectionGetSecureIOContext(connection), let afcReference {
       afcCalls.SetSecureContext(afcReference, secureIOContext)
     }
-    return FBAFCConnection(connection: afcReference, calls: afcCalls, logger: self.logger)
+    return FileConduit(connection: afcReference, calls: afcCalls, logger: self.logger)
   }
 
   // MARK: - Sending
@@ -199,19 +199,19 @@ public final class FBAMDServiceConnection: CustomStringConvertible {
         return send(base.advanced(by: start), size: length)
       }
       if result == -1 {
-        throw AMDServiceConnectionError.sendFailed(bytes: length, reason: String(cString: strerror(errno)))
+        throw LockdownServiceConnectionError.sendFailed(bytes: length, reason: String(cString: strerror(errno)))
       }
       if result == 0 {
         break
       }
       let sentBytes = Int(result)
       guard sentBytes <= bytesRemaining else {
-        throw AMDServiceConnectionError.sentMoreThanRemained(sent: sentBytes, remaining: bytesRemaining)
+        throw LockdownServiceConnectionError.sentMoreThanRemained(sent: sentBytes, remaining: bytesRemaining)
       }
       bytesRemaining -= sentBytes
     }
     guard bytesRemaining == 0 else {
-      throw AMDServiceConnectionError.sendIncomplete(requested: data.count, remaining: bytesRemaining)
+      throw LockdownServiceConnectionError.sendIncomplete(requested: data.count, remaining: bytesRemaining)
     }
   }
 
@@ -257,7 +257,7 @@ public final class FBAMDServiceConnection: CustomStringConvertible {
       return Data()
     }
     if result == -1 {
-      throw AMDServiceConnectionError.receiveUpToFailed(size: size, reason: String(cString: strerror(errno)))
+      throw LockdownServiceConnectionError.receiveUpToFailed(size: size, reason: String(cString: strerror(errno)))
     }
     return Data(bytes: buffer, count: Int(result))
   }
@@ -276,7 +276,7 @@ public final class FBAMDServiceConnection: CustomStringConvertible {
     to consumer: any DataConsumer,
     on queue: DispatchQueue
   ) -> any FileReaderProtocol {
-    let reader = AMDServiceConnectionReader(connection: self, consumer: consumer, queue: queue)
+    let reader = LockdownServiceConnectionReader(connection: self, consumer: consumer, queue: queue)
     activeReaderFinished = reader.finishedReading
     return reader
   }
@@ -313,27 +313,27 @@ public final class FBAMDServiceConnection: CustomStringConvertible {
         break
       }
       if result == -1 {
-        throw AMDServiceConnectionError.receiveFailed(
+        throw LockdownServiceConnectionError.receiveFailed(
           bytes: maxReadBytes, reason: String(cString: strerror(errno)))
       }
       let readBytes = Int(result)
       guard readBytes <= bytesRemaining else {
-        throw AMDServiceConnectionError.readMoreThanRemained(read: readBytes, remaining: bytesRemaining)
+        throw LockdownServiceConnectionError.readMoreThanRemained(read: readBytes, remaining: bytesRemaining)
       }
       bytesRemaining -= readBytes
       enumerator(Data(bytesNoCopy: buffer, count: readBytes, deallocator: .none))
     }
 
     guard bytesRemaining == 0 else {
-      throw AMDServiceConnectionError.receiveIncomplete(requested: size, remaining: bytesRemaining)
+      throw LockdownServiceConnectionError.receiveIncomplete(requested: size, remaining: bytesRemaining)
     }
   }
 }
 
 /// Reads a service connection until it is exhausted, feeding a consumer.
-private final class AMDServiceConnectionReader: NSObject, FileReaderProtocol {
+private final class LockdownServiceConnectionReader: NSObject, FileReaderProtocol {
 
-  private let connection: FBAMDServiceConnection
+  private let connection: LockdownServiceConnection
   private let consumer: any DataConsumer
   private let queue: DispatchQueue
   private let finishedReadingMutable: FBMutableFuture<NSNumber>
@@ -356,7 +356,7 @@ private final class AMDServiceConnectionReader: NSObject, FileReaderProtocol {
     }
   }
 
-  init(connection: FBAMDServiceConnection, consumer: any DataConsumer, queue: DispatchQueue) {
+  init(connection: LockdownServiceConnection, consumer: any DataConsumer, queue: DispatchQueue) {
     self.connection = connection
     self.consumer = consumer
     self.queue = queue
@@ -371,7 +371,7 @@ private final class AMDServiceConnectionReader: NSObject, FileReaderProtocol {
 
   func startReading() -> FBFuture<NSNull> {
     guard state == .notStarted else {
-      return FBFuture<NSNull>(error: AMDServiceConnectionError.cannotStartReading(state: state.rawValue) as NSError)
+      return FBFuture<NSNull>(error: LockdownServiceConnectionError.cannotStartReading(state: state.rawValue) as NSError)
     }
 
     queue.async { [self] in
@@ -397,7 +397,7 @@ private final class AMDServiceConnectionReader: NSObject, FileReaderProtocol {
 
   func stopReading() -> FBFuture<NSNumber> {
     if state == .notStarted {
-      return FBFuture<NSNumber>(error: AMDServiceConnectionError.cannotStopBeforeStarting as NSError)
+      return FBFuture<NSNumber>(error: LockdownServiceConnectionError.cannotStopBeforeStarting as NSError)
     }
     if state != .reading {
       return finishedReading

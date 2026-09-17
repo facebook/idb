@@ -17,7 +17,7 @@ private let DeviceClassOSPrefixes = [
 ]
 
 /// An Object Wrapper around AMDeviceRef.
-public final class FBAMDevice: TargetInfo, DeviceCommands, CustomStringConvertible {
+public final class MobileDevice: TargetInfo, DeviceCommands, CustomStringConvertible {
 
   // MARK: - Properties
 
@@ -195,7 +195,7 @@ public final class FBAMDevice: TargetInfo, DeviceCommands, CustomStringConvertib
   public func withHouseArrestAFCConnection<T>(
     forBundleID bundleID: String,
     afcCalls: AFCCalls,
-    _ body: (FBAFCConnection) async throws -> T
+    _ body: (FileConduit) async throws -> T
   ) async throws -> T {
     try await withConnectedDevice(purpose: "house_arrest") { _ in
       let service = self.serviceManager.houseArrestService(forBundleID: bundleID, afcCalls: afcCalls)

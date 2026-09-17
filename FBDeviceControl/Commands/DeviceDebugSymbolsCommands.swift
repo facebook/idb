@@ -136,7 +136,7 @@ public final class DeviceDebugSymbolsCommands {
 
   /// Each operation takes its own connection, as the service's protocol is per-connection state:
   /// once a file has been requested the connection is spent.
-  private func withSymbolServiceConnection<T>(_ body: (FBAMDServiceConnection) async throws -> T) async throws -> T {
+  private func withSymbolServiceConnection<T>(_ body: (LockdownServiceConnection) async throws -> T) async throws -> T {
     _ = try await device.developerDiskImage.ensureMounted()
     return try await device.withServiceConnection(FetchSymbolsService, body)
   }
@@ -169,7 +169,7 @@ public final class DeviceDebugSymbolsCommands {
 
   // MARK: - The symbol service protocol
 
-  private static func obtainFileListing(from connection: FBAMDServiceConnection) throws -> [String] {
+  private static func obtainFileListing(from connection: LockdownServiceConnection) throws -> [String] {
     try sendCommand(ListFilesPlistCommand, withAck: ListFilesPlistAck, named: "ListFilesPlist", on: connection)
     let message: Any
     do {
@@ -189,7 +189,7 @@ public final class DeviceDebugSymbolsCommands {
     _ command: UInt32,
     withAck ack: UInt32,
     named commandName: String,
-    on connection: FBAMDServiceConnection
+    on connection: LockdownServiceConnection
   ) throws {
     do {
       try connection.sendUnsignedInt32(command)
@@ -210,7 +210,7 @@ public final class DeviceDebugSymbolsCommands {
   private static func getFile(
     index: UInt32,
     toDestinationPath destinationPath: String,
-    on connection: FBAMDServiceConnection
+    on connection: LockdownServiceConnection
   ) throws {
     try sendCommand(GetFileCommand, withAck: GetFileAck, named: "GetFiles", on: connection)
     do {

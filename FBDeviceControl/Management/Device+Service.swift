@@ -16,7 +16,7 @@ extension Device {
   /// AMDevice-backed devices.
   func withServiceConnection<T>(
     _ service: String,
-    _ body: (FBAMDServiceConnection) async throws -> T
+    _ body: (LockdownServiceConnection) async throws -> T
   ) async throws -> T {
     guard let amDevice else {
       throw AMDeviceServiceError.notAMDeviceBacked(service: service)
@@ -25,8 +25,8 @@ extension Device {
   }
 
   /// Starts a service whose connection outlives this call, handing ownership to the caller, who
-  /// hands it back to `FBAMDevice.invalidateServiceConnection`.
-  func openServiceConnection(_ service: String) async throws -> FBAMDServiceConnection {
+  /// hands it back to `MobileDevice.invalidateServiceConnection`.
+  func openServiceConnection(_ service: String) async throws -> LockdownServiceConnection {
     guard let amDevice else {
       throw AMDeviceServiceError.notAMDeviceBacked(service: service)
     }
@@ -48,8 +48,8 @@ extension Device {
   /// throws.
   func withAFCConnection<T>(
     _ service: String,
-    calls afcCalls: AFCCalls = FBAFCConnection.defaultCalls,
-    _ body: (FBAFCConnection) async throws -> T
+    calls afcCalls: AFCCalls = FileConduit.defaultCalls,
+    _ body: (FileConduit) async throws -> T
   ) async throws -> T {
     guard let amDevice else {
       throw AMDeviceServiceError.notAMDeviceBacked(service: service)

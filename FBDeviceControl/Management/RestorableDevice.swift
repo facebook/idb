@@ -11,7 +11,7 @@ import Foundation
 private let UnknownValue = "unknown"
 
 /// An Object Wrapper around AMRestorableDevice.
-public final class FBAMRestorableDevice: TargetInfo, DeviceProtocol {
+public final class RestorableDevice: TargetInfo, DeviceProtocol {
 
   public let calls: AMDCalls
   public var allValues: [String: Any]

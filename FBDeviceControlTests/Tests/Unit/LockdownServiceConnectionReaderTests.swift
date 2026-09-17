@@ -32,10 +32,10 @@ private func invalidateUnblockingReceive(_ connection: CFTypeRef?) -> Int32 {
 }
 
 @Suite(.serialized)
-struct AMDServiceConnectionReaderTests {
+struct LockdownServiceConnectionReaderTests {
 
-  private func makeConnection(calls: AMDCalls, connection: AnyObject = "fake-connection-ref" as AnyObject) -> FBAMDServiceConnection {
-    FBAMDServiceConnection(
+  private func makeConnection(calls: AMDCalls, connection: AnyObject = "fake-connection-ref" as AnyObject) -> LockdownServiceConnection {
+    LockdownServiceConnection(
       name: "test-connection",
       connection: connection,
       device: "fake-device-ref" as AnyObject,

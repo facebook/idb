@@ -85,7 +85,7 @@ public final class DeviceSet: TargetSet, TargetSetDelegate, CustomStringConverti
     restorableDeviceManager.delegate = nil
   }
 
-  private func amDeviceAdded(_ amDevice: FBAMDevice) {
+  private func amDeviceAdded(_ amDevice: MobileDevice) {
     if let device = storage.device(forKey: amDevice.uniqueIdentifier) {
       device.amDevice = amDevice
     } else {
@@ -97,7 +97,7 @@ public final class DeviceSet: TargetSet, TargetSetDelegate, CustomStringConverti
     }
   }
 
-  private func amDeviceRemoved(_ amDevice: FBAMDevice) {
+  private func amDeviceRemoved(_ amDevice: MobileDevice) {
     guard let device = storage.device(forKey: amDevice.uniqueIdentifier) else {
       logger.log("\(amDevice) was removed, but there's no active device for it")
       return
@@ -111,7 +111,7 @@ public final class DeviceSet: TargetSet, TargetSetDelegate, CustomStringConverti
     }
   }
 
-  private func restorableDeviceAdded(_ restorableDevice: FBAMRestorableDevice) {
+  private func restorableDeviceAdded(_ restorableDevice: RestorableDevice) {
     if let device = storage.device(forKey: restorableDevice.uniqueIdentifier) {
       device.restorableDevice = restorableDevice
     } else {
@@ -123,7 +123,7 @@ public final class DeviceSet: TargetSet, TargetSetDelegate, CustomStringConverti
     }
   }
 
-  private func restorableDeviceRemoved(_ restorableDevice: FBAMRestorableDevice) {
+  private func restorableDeviceRemoved(_ restorableDevice: RestorableDevice) {
     guard let device = storage.device(forKey: restorableDevice.uniqueIdentifier) else {
       logger.log("\(restorableDevice) was removed, but there's no active device for it")
       return
@@ -140,9 +140,9 @@ public final class DeviceSet: TargetSet, TargetSetDelegate, CustomStringConverti
   // MARK: - TargetSetDelegate
 
   public func targetAdded(_ targetInfo: any TargetInfo, in targetSet: any TargetSet) {
-    if let amDevice = targetInfo as? FBAMDevice {
+    if let amDevice = targetInfo as? MobileDevice {
       amDeviceAdded(amDevice)
-    } else if let restorableDevice = targetInfo as? FBAMRestorableDevice {
+    } else if let restorableDevice = targetInfo as? RestorableDevice {
       restorableDeviceAdded(restorableDevice)
     } else {
       logger.log("Ignoring \(targetInfo) as it is not a valid target type")
@@ -150,9 +150,9 @@ public final class DeviceSet: TargetSet, TargetSetDelegate, CustomStringConverti
   }
 
   public func targetRemoved(_ targetInfo: any TargetInfo, in targetSet: any TargetSet) {
-    if let amDevice = targetInfo as? FBAMDevice {
+    if let amDevice = targetInfo as? MobileDevice {
       amDeviceRemoved(amDevice)
-    } else if let restorableDevice = targetInfo as? FBAMRestorableDevice {
+    } else if let restorableDevice = targetInfo as? RestorableDevice {
       restorableDeviceRemoved(restorableDevice)
     } else {
       logger.log("Ignoring \(targetInfo) as it is not a valid target type")
@@ -164,9 +164,9 @@ public final class DeviceSet: TargetSet, TargetSetDelegate, CustomStringConverti
       assertionFailure("No existing device to update for \(targetInfo)")
       return
     }
-    if let amDevice = targetInfo as? FBAMDevice {
+    if let amDevice = targetInfo as? MobileDevice {
       device.amDevice = amDevice
-    } else if let restorableDevice = targetInfo as? FBAMRestorableDevice {
+    } else if let restorableDevice = targetInfo as? RestorableDevice {
       device.restorableDevice = restorableDevice
     } else {
       assertionFailure("No existing device to update for \(targetInfo)")

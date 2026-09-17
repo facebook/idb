@@ -25,7 +25,7 @@ extension AMDeviceServiceError: LocalizedError {
     case let .houseArrestConnectionMissing(bundleID):
       return "No house_arrest connection was returned for '\(bundleID)'"
     case let .notAnAFCConnection(context):
-      return "\(context) is not an FBAFCConnection"
+      return "\(context) is not a FileConduit"
     case let .secureStartServiceFailed(service, status, message):
       return "SecureStartService of \(service) Failed with 0x\(String(status, radix: 16)) \(message)"
     case let .deviceNotConnected(service):
@@ -48,19 +48,19 @@ final class HouseArrestService: @unchecked Sendable {
 
   // MARK: - Properties
 
-  private weak var device: FBAMDevice?
+  private weak var device: MobileDevice?
   private let bundleID: String
   private let afcCalls: AFCCalls
   private let reuseTimeout: TimeInterval?
   private let logger: any ControlCoreLogger
 
   private let lock = NSLock()
-  private var connection: FBAFCConnection?
+  private var connection: FileConduit?
   private var inUse = false
   private var waiters: [(id: UUID, continuation: CheckedContinuation<Void, Error>)] = []
   private var idleTeardown: Task<Void, Never>?
 
-  init(device: FBAMDevice, bundleID: String, afcCalls: AFCCalls, reuseTimeout: TimeInterval?) {
+  init(device: MobileDevice, bundleID: String, afcCalls: AFCCalls, reuseTimeout: TimeInterval?) {
     self.device = device
     self.bundleID = bundleID
     self.afcCalls = afcCalls
@@ -73,7 +73,7 @@ final class HouseArrestService: @unchecked Sendable {
   /// Waits for exclusive use of the connection, opening it if it is not already established.
   ///
   /// Every call that returns a connection must be paired with a `release()`.
-  func acquire() async throws -> FBAFCConnection {
+  func acquire() async throws -> FileConduit {
     try await takeExclusiveUse()
     if let established = establishedConnection() {
       logger.log("Re-using the existing house arrest connection for '\(bundleID)'")
@@ -167,19 +167,19 @@ final class HouseArrestService: @unchecked Sendable {
     continuation.resume(throwing: CancellationError())
   }
 
-  private func establishedConnection() -> FBAFCConnection? {
+  private func establishedConnection() -> FileConduit? {
     lock.lock()
     defer { lock.unlock() }
     return connection
   }
 
-  private func store(_ connection: FBAFCConnection) {
+  private func store(_ connection: FileConduit) {
     lock.lock()
     self.connection = connection
     lock.unlock()
   }
 
-  private func openConnection() throws -> FBAFCConnection {
+  private func openConnection() throws -> FileConduit {
     guard let device else {
       throw DeviceNilError.deviceNil
     }
@@ -199,7 +199,7 @@ final class HouseArrestService: @unchecked Sendable {
     guard let afcConnection else {
       throw AMDeviceServiceError.houseArrestConnectionMissing(bundleID: bundleID)
     }
-    return FBAFCConnection(connection: afcConnection.takeUnretainedValue(), calls: afcCalls, logger: logger)
+    return FileConduit(connection: afcConnection.takeUnretainedValue(), calls: afcCalls, logger: logger)
   }
 
   /// The idle window is best-effort cancelled rather than reliably so, hence the second check for
@@ -217,7 +217,7 @@ final class HouseArrestService: @unchecked Sendable {
     close(closing)
   }
 
-  private func close(_ connection: FBAFCConnection?) {
+  private func close(_ connection: FileConduit?) {
     guard let connection else {
       return
     }
@@ -236,12 +236,12 @@ final class HouseArrestService: @unchecked Sendable {
 /// `@unchecked Sendable`: the service map is guarded by `lock`.
 final class AMDeviceServiceManager: @unchecked Sendable {
 
-  private weak var device: FBAMDevice?
+  private weak var device: MobileDevice?
   private let serviceTimeout: TimeInterval?
   private let lock = NSLock()
   private var houseArrestServices: [String: HouseArrestService] = [:]
 
-  init(device: FBAMDevice, serviceTimeout: TimeInterval?) {
+  init(device: MobileDevice, serviceTimeout: TimeInterval?) {
     self.device = device
     self.serviceTimeout = serviceTimeout
   }

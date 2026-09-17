@@ -13,8 +13,8 @@ private let ExtractedSymbolsDirectory = "Symbols"
 
 /// Carries the non-`Sendable` connection across the serial-queue boundary; only touched on that queue.
 private final class AFCConnectionBox: @unchecked Sendable {
-  let connection: FBAFCConnection
-  init(_ connection: FBAFCConnection) {
+  let connection: FileConduit
+  init(_ connection: FileConduit) {
     self.connection = connection
   }
 }
@@ -64,7 +64,7 @@ public final class DeviceFileContainer: AsyncFileContainer {
   private let queue: DispatchQueue
   private let connectionBox: AFCConnectionBox
 
-  public init(afcConnection connection: FBAFCConnection, queue: DispatchQueue) {
+  public init(afcConnection connection: FileConduit, queue: DispatchQueue) {
     self.connectionBox = AFCConnectionBox(connection)
     self.queue = queue
   }
@@ -431,7 +431,7 @@ public final class DeviceFileCommands: FileCommands {
   // MARK: - Initializers
 
   public class func commands(with device: Device) -> DeviceFileCommands {
-    DeviceFileCommands(device: device, afcCalls: FBAFCConnection.defaultCalls)
+    DeviceFileCommands(device: device, afcCalls: FileConduit.defaultCalls)
   }
 
   public class func commands(with device: Device, afcCalls: AFCCalls) -> DeviceFileCommands {

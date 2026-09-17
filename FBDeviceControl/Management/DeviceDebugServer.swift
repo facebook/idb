@@ -12,14 +12,14 @@ private let connectionReadSizeLimit: size_t = 1024
 
 private class DeviceDebugServer_TwistedPairFiles {
   let socket: Int32
-  let connection: FBAMDServiceConnection
+  let connection: LockdownServiceConnection
   let logger: any ControlCoreLogger
   let socketToConnectionQueue: DispatchQueue
   let connectionToSocketQueue: DispatchQueue
 
   init(
     socket: Int32,
-    connection: FBAMDServiceConnection,
+    connection: LockdownServiceConnection,
     logger: any ControlCoreLogger
   ) {
     self.socket = socket
@@ -101,7 +101,7 @@ private class DeviceDebugServer_TwistedPairFiles {
 }
 
 public final class DeviceDebugServer: NSObject, SocketServerDelegate, DebugServer {
-  private let serviceConnection: FBAMDServiceConnection
+  private let serviceConnection: LockdownServiceConnection
   private lazy var tcpServer: FBSocketServer = FBSocketServer(onPort: self.port, delegate: self)
   private let port: in_port_t
   private let logger: any ControlCoreLogger
@@ -117,11 +117,11 @@ public final class DeviceDebugServer: NSObject, SocketServerDelegate, DebugServe
   /// Starts a debug server that proxies `serviceConnection` to whichever client connects on `port`.
   ///
   /// The server owns the connection: it is held open across the separate requests that start,
-  /// query and stop the server, and handed back to `FBAMDevice.invalidateServiceConnection` when
+  /// query and stop the server, and handed back to `MobileDevice.invalidateServiceConnection` when
   /// the server is cancelled or its client disconnects. A server that fails to start hands the
   /// connection back before throwing.
   public static func debugServer(
-    forServiceConnection serviceConnection: FBAMDServiceConnection,
+    forServiceConnection serviceConnection: LockdownServiceConnection,
     port: in_port_t,
     lldbBootstrapCommands: [String],
     queue: DispatchQueue,
@@ -137,14 +137,14 @@ public final class DeviceDebugServer: NSObject, SocketServerDelegate, DebugServe
     do {
       try await server.startListening()
     } catch {
-      FBAMDevice.invalidateServiceConnection(serviceConnection, service: serviceConnection.name, logger: logger)
+      MobileDevice.invalidateServiceConnection(serviceConnection, service: serviceConnection.name, logger: logger)
       throw error
     }
     return server
   }
 
   init(
-    serviceConnection: FBAMDServiceConnection,
+    serviceConnection: LockdownServiceConnection,
     port: in_port_t,
     lldbBootstrapCommands: [String],
     queue: DispatchQueue,
@@ -232,10 +232,10 @@ public final class DeviceDebugServer: NSObject, SocketServerDelegate, DebugServe
   /// connection itself.
   private static func stop(
     tcpServer: FBSocketServer,
-    connection: FBAMDServiceConnection,
+    connection: LockdownServiceConnection,
     logger: any ControlCoreLogger
   ) {
     tcpServer.stopListening()
-    FBAMDevice.invalidateServiceConnection(connection, service: connection.name, logger: logger)
+    MobileDevice.invalidateServiceConnection(connection, service: connection.name, logger: logger)
   }
 }

@@ -24,7 +24,7 @@ private func afcConnectionCallback(
   logger.log("Connection \(String(describing: connectionRefPtr)), operation \(String(describing: afcOperationPtr))")
 }
 
-public enum AFCConnectionError: Error {
+public enum FileConduitError: Error {
   case createDirectoryFailed(message: String)
   case openDirectoryFailed(path: String, message: String)
   case openFileFailed(path: String, message: String)
@@ -45,7 +45,7 @@ public enum AFCConnectionError: Error {
   case operationFailedWithUnderlying(info: String, code: Int)
 }
 
-extension AFCConnectionError: LocalizedError {
+extension FileConduitError: LocalizedError {
   public var errorDescription: String? {
     switch self {
     case let .createDirectoryFailed(message):
@@ -89,7 +89,7 @@ extension AFCConnectionError: LocalizedError {
 }
 
 /// An Object-Wrapper around AFCConnectionRef.
-public final class FBAFCConnection {
+public final class FileConduit {
 
   // MARK: - Properties
 
@@ -115,17 +115,17 @@ public final class FBAFCConnection {
   /// Wraps a service connection in an AFC client. A client AFC accepts is returned for the caller
   /// to own and close; one it rejects is closed here.
   static func afc(
-    from serviceConnection: FBAMDServiceConnection,
+    from serviceConnection: LockdownServiceConnection,
     calls: AFCCalls,
     logger: any ControlCoreLogger
-  ) throws -> FBAFCConnection {
+  ) throws -> FileConduit {
     let connection = serviceConnection.asAFCConnection(
       calls: calls, callback: afcConnectionCallback, logger: logger)
     guard connection.connectionIsValid else {
       // Discarding the close error: the caller's failure is the invalidity, not whatever closing
       // an already-invalid client reports.
       try? connection.close()
-      throw AFCConnectionError.connectionNotValid(description: String(describing: connection))
+      throw FileConduitError.connectionNotValid(description: String(describing: connection))
     }
     return connection
   }
@@ -135,7 +135,7 @@ public final class FBAFCConnection {
   public func copy(fromHost hostPath: String, toContainerPath containerPath: String) throws {
     var isDirectory: ObjCBool = false
     guard FileManager.default.fileExists(atPath: hostPath, isDirectory: &isDirectory) else {
-      throw AFCConnectionError.hostFileMissing(path: hostPath)
+      throw FileConduitError.hostFileMissing(path: hostPath)
     }
     let lastComponent = (hostPath as NSString).lastPathComponent
     if isDirectory.boolValue {
@@ -153,7 +153,7 @@ public final class FBAFCConnection {
     logger?.log("Creating Directory \(path)")
     let result = calls.DirectoryCreate(connection, path)
     guard result == 0 else {
-      throw AFCConnectionError.createDirectoryFailed(message: errorMessage(code: result))
+      throw FileConduitError.createDirectoryFailed(message: errorMessage(code: result))
     }
     logger?.log("Created Directory \(path)")
   }
@@ -163,7 +163,7 @@ public final class FBAFCConnection {
     var directory: Unmanaged<CFTypeRef>?
     let result = calls.DirectoryOpen(connection, path, &directory)
     guard result == 0 else {
-      throw AFCConnectionError.openDirectoryFailed(path: path, message: errorMessage(code: result))
+      throw FileConduitError.openDirectoryFailed(path: path, message: errorMessage(code: result))
     }
     let directoryRef = directory?.takeUnretainedValue()
 
@@ -191,7 +191,7 @@ public final class FBAFCConnection {
     var file: Unmanaged<CFTypeRef>?
     let result = calls.FileRefOpen(connection, path, FBAFCReadOnlyMode, &file)
     guard result == 0 else {
-      throw AFCConnectionError.openFileFailed(path: path, message: errorMessage(code: result))
+      throw FileConduitError.openFileFailed(path: path, message: errorMessage(code: result))
     }
     let fileRef = file?.takeUnretainedValue()
 
@@ -219,7 +219,7 @@ public final class FBAFCConnection {
     }
     _ = calls.FileRefClose(connection, fileRef)
     guard readResult == 0 else {
-      throw AFCConnectionError.readFileFailed(path: path, message: errorMessage(code: readResult))
+      throw FileConduitError.readFileFailed(path: path, message: errorMessage(code: readResult))
     }
     logger?.log("Read \(buffer.count) bytes from path \(path)")
     return buffer
@@ -233,7 +233,7 @@ public final class FBAFCConnection {
     logger?.log("Removing file path \(path)")
     let result = calls.RemovePath(connection, path)
     guard result == 0 else {
-      throw AFCConnectionError.removePathFailed(path: path, message: errorMessage(code: result))
+      throw FileConduitError.removePathFailed(path: path, message: errorMessage(code: result))
     }
     logger?.log("Removed file path \(path)")
   }
@@ -241,21 +241,21 @@ public final class FBAFCConnection {
   func renamePath(_ path: String, destination: String) throws {
     let result = calls.RenamePath(connection, path, destination)
     guard result == 0 else {
-      throw AFCConnectionError.renamePathFailed(
+      throw FileConduitError.renamePathFailed(
         path: path, destination: destination, message: errorMessage(code: result))
     }
   }
 
   public func close() throws {
     guard let connectionRef else {
-      throw AFCConnectionError.noConnectionToClose
+      throw FileConduitError.noConnectionToClose
     }
     let reference = connectionRef.takeUnretainedValue()
     let connectionDescription = CFCopyDescription(reference) as String? ?? "unknown"
     logger?.log("Closing \(connectionDescription)")
     let status = calls.ConnectionClose(reference)
     guard status == 0 else {
-      throw AFCConnectionError.closeFailed(status: status)
+      throw FileConduitError.closeFailed(status: status)
     }
     logger?.log("Closed AFC Connection \(connectionDescription)")
     self.connectionRef = nil
@@ -307,12 +307,12 @@ public final class FBAFCConnection {
   private func copyFile(fromHost hostPath: String, toContainerPath containerPath: String) throws {
     logger?.log("Copying \(hostPath) to \(containerPath)")
     guard let data = FileManager.default.contents(atPath: hostPath) else {
-      throw AFCConnectionError.hostFileMissing(path: hostPath)
+      throw FileConduitError.hostFileMissing(path: hostPath)
     }
     var fileReference: Unmanaged<CFTypeRef>?
     let result = calls.FileRefOpen(connection, containerPath, FBAFCreateReadAndWrite, &fileReference)
     guard result == 0 else {
-      throw AFCConnectionError.openFileFailed(path: containerPath, message: errorMessage(code: result))
+      throw FileConduitError.openFileFailed(path: containerPath, message: errorMessage(code: result))
     }
     let fileRef = fileReference?.takeUnretainedValue()
 
@@ -332,7 +332,7 @@ public final class FBAFCConnection {
     }
     _ = calls.FileRefClose(connection, fileRef)
     guard writeResult == 0 else {
-      throw AFCConnectionError.writeFileFailed(path: containerPath, message: errorMessage(code: writeResult))
+      throw FileConduitError.writeFileFailed(path: containerPath, message: errorMessage(code: writeResult))
     }
     logger?.log("Copied from \(hostPath) to \(containerPath)")
   }
@@ -365,11 +365,11 @@ public final class FBAFCConnection {
       let operation = calls.OperationCreateRemovePathAndContents(
         CFGetAllocator(connection), path as CFString, nil)?.takeRetainedValue()
     else {
-      throw AFCConnectionError.removalOperationNotCreated(path: path)
+      throw FileConduitError.removalOperationNotCreated(path: path)
     }
     let processResult = calls.ConnectionProcessOperation(connection, operation)
     guard processResult == 0 else {
-      throw AFCConnectionError.operationNotProcessed(status: processResult)
+      throw FileConduitError.operationNotProcessed(status: processResult)
     }
     try checkOperationSucceeded(operation)
   }
@@ -381,12 +381,12 @@ public final class FBAFCConnection {
     }
     let resultObject = calls.OperationGetResultObject(operation)?.takeUnretainedValue()
     guard let info = resultObject as? [String: Any] else {
-      throw AFCConnectionError.operationFailed(status: status, resultObject: String(describing: resultObject))
+      throw FileConduitError.operationFailed(status: status, resultObject: String(describing: resultObject))
     }
     guard let code = info[AFCCodeKey] as? NSNumber, info[AFCDomainKey] is String else {
-      throw AFCConnectionError.operationFailed(status: status, resultObject: String(describing: info))
+      throw FileConduitError.operationFailed(status: status, resultObject: String(describing: info))
     }
-    throw AFCConnectionError.operationFailedWithUnderlying(
+    throw FileConduitError.operationFailedWithUnderlying(
       info: String(describing: info), code: code.intValue)
   }
 

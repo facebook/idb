@@ -13,7 +13,7 @@ private let mobileBackupDomain = "com.apple.mobile.backup"
 /// Taking a single device into and out of use: connecting, pairing, and opening a session.
 ///
 /// Separate from `AMDeviceManager`, which discovers the *set* of devices. These operate on one
-/// device and are what `FBAMDevice` wraps around every operation it performs.
+/// device and are what `MobileDevice` wraps around every operation it performs.
 public enum AMDeviceUsage {
 
   /// Connects to the device and opens a session on it, pairing first if required.
@@ -138,7 +138,7 @@ final class AMDeviceSession: @unchecked Sendable {
 
   // MARK: - Properties
 
-  private weak var device: FBAMDevice?
+  private weak var device: MobileDevice?
   private let reuseTimeout: TimeInterval?
   private let logger: any ControlCoreLogger
 
@@ -150,7 +150,7 @@ final class AMDeviceSession: @unchecked Sendable {
   private var waiters: [UUID: CheckedContinuation<Void, Error>] = [:]
   private var idleTeardown: Task<Void, Never>?
 
-  init(device: FBAMDevice, reuseTimeout: TimeInterval?, logger: any ControlCoreLogger) {
+  init(device: MobileDevice, reuseTimeout: TimeInterval?, logger: any ControlCoreLogger) {
     self.device = device
     self.reuseTimeout = reuseTimeout
     self.logger = logger

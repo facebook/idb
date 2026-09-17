@@ -17,8 +17,8 @@ private let PayloadVersion = "PayloadVersion"
 
 /// Carries the non-`Sendable` connection across the serial-queue boundary; only touched on that queue.
 private final class ManagedConfigConnectionBox: @unchecked Sendable {
-  let connection: FBAMDServiceConnection
-  init(_ connection: FBAMDServiceConnection) {
+  let connection: LockdownServiceConnection
+  init(_ connection: LockdownServiceConnection) {
     self.connection = connection
   }
 }
@@ -57,7 +57,7 @@ extension ManagedConfigError: LocalizedError {
 }
 
 class ManagedConfigClient {
-  private let connection: FBAMDServiceConnection
+  private let connection: LockdownServiceConnection
   private let queue: DispatchQueue
   private let logger: any ControlCoreLogger
 
@@ -72,13 +72,13 @@ class ManagedConfigClient {
 
   // MARK: - Initializers
 
-  static func managedConfigClient(connection: FBAMDServiceConnection, logger: any ControlCoreLogger) -> ManagedConfigClient {
+  static func managedConfigClient(connection: LockdownServiceConnection, logger: any ControlCoreLogger) -> ManagedConfigClient {
     let queue = DispatchQueue(label: "com.facebook.FBDeviceControl.managed_config")
     return ManagedConfigClient(connection: connection, queue: queue, logger: logger)
   }
 
   init(
-    connection: FBAMDServiceConnection,
+    connection: LockdownServiceConnection,
     queue: DispatchQueue,
     logger: any ControlCoreLogger
   ) {

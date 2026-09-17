@@ -36,9 +36,9 @@ private func restorableDeviceListenerCallback(
   manager.handleNotification(device: device, status: status)
 }
 
-/// Obtains `FBAMRestorableDevice` instances.
+/// Obtains `RestorableDevice` instances.
 @objc(FBAMRestorableDeviceManager)
-final class AMRestorableDeviceManager: DeviceManager<FBAMRestorableDevice> {
+final class AMRestorableDeviceManager: DeviceManager<RestorableDevice> {
 
   private let calls: AMDCalls
   private let workQueue: DispatchQueue
@@ -66,7 +66,7 @@ final class AMRestorableDeviceManager: DeviceManager<FBAMRestorableDevice> {
   fileprivate func handleNotification(device: AMRestorableDevice, status: AMRestorableDeviceNotificationType) {
     // Unrecognised raw values map to `.unknown`; a zero default would be `.DFU`, a real state.
     let deviceState = AMRestorableDeviceState(rawValue: calls.RestorableDeviceGetState(device)) ?? .unknown
-    let targetState = FBAMRestorableDevice.targetState(for: deviceState)
+    let targetState = RestorableDevice.targetState(for: deviceState)
     let identifier = String(calls.RestorableDeviceGetECID(device))
     logger.log(
       "\(device) \(notificationTypeDescription(status)) in state \(targetState.stateString.rawValue)")
@@ -129,8 +129,8 @@ final class AMRestorableDeviceManager: DeviceManager<FBAMRestorableDevice> {
     _ privateDevice: CFTypeRef,
     identifier: String,
     info: [String: Any]?
-  ) -> FBAMRestorableDevice {
-    FBAMRestorableDevice(
+  ) -> RestorableDevice {
+    RestorableDevice(
       calls: calls,
       restorableDevice: privateDevice,
       allValues: info ?? [:],
@@ -140,7 +140,7 @@ final class AMRestorableDeviceManager: DeviceManager<FBAMRestorableDevice> {
   }
 
   override class func updatePublicReference(
-    _ publicDevice: FBAMRestorableDevice,
+    _ publicDevice: RestorableDevice,
     privateDevice: CFTypeRef,
     identifier: String,
     info: [String: Any]?
@@ -149,7 +149,7 @@ final class AMRestorableDeviceManager: DeviceManager<FBAMRestorableDevice> {
     publicDevice.allValues = info ?? [:]
   }
 
-  override class func extractPrivateReference(_ publicDevice: FBAMRestorableDevice) -> Unmanaged<AnyObject>? {
+  override class func extractPrivateReference(_ publicDevice: RestorableDevice) -> Unmanaged<AnyObject>? {
     Unmanaged.passUnretained(publicDevice.restorableDevice)
   }
 

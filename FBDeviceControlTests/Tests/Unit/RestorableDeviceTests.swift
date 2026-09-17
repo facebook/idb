@@ -14,10 +14,10 @@ import Testing
 /// and may omit keys or carry unexpectedly-typed values, so every accessor must degrade to the
 /// unknown value rather than trap.
 @Suite
-struct AMRestorableDeviceTests {
+struct RestorableDeviceTests {
 
-  private func device(allValues: [String: Any]) -> FBAMRestorableDevice {
-    FBAMRestorableDevice(
+  private func device(allValues: [String: Any]) -> RestorableDevice {
+    RestorableDevice(
       calls: CreateZeroedAMDCalls(),
       restorableDevice: "fake-restorable-ref" as AnyObject,
       allValues: allValues,

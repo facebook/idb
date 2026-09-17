@@ -92,7 +92,7 @@ private func fakeMountImage(
   return device.mountImageStatus
 }
 
-/// An `AMDCalls` table backed by scripted fakes, so a real `FBAMDevice` and its commands can be
+/// An `AMDCalls` table backed by scripted fakes, so a real `MobileDevice` and its commands can be
 /// driven through their public API with nothing device-side.
 ///
 /// Every entry a test might reach is populated: `CreateZeroedAMDCalls` leaves the rest as null
@@ -151,13 +151,13 @@ final class FakeAMDevice: NSObject {
 
   // MARK: - Building a device
 
-  /// An `FBAMDevice` whose every MobileDevice interaction lands on this fake.
+  /// A `MobileDevice` whose every `MobileDevice.framework` interaction lands on this fake.
   ///
   /// Both queues are the main queue, matching the other AMDevice tests: the callbacks mutate this
   /// object from whichever queue the device uses, so the assertions have to read it from the same
   /// one.
-  func makeAMDevice() -> FBAMDevice {
-    let device = FBAMDevice(
+  func makeAMDevice() -> MobileDevice {
+    let device = MobileDevice(
       allValues: values,
       calls: calls,
       connectionReuseTimeout: nil,
@@ -241,7 +241,7 @@ final class FakeAMDevice: NSObject {
       }
       device.record("secure_start_service:\(serviceName)")
       // Handed over at +1: `AMDServiceConnectionInvalidate` does not release the connection, so
-      // `FBAMDServiceConnection.invalidate` `CFRelease`s it itself. This object stays alive
+      // `LockdownServiceConnection.invalidate` `CFRelease`s it itself. This object stays alive
       // regardless, since the service dictionary holds its own reference.
       serviceOut?.pointee = Unmanaged.passRetained(device.service(serviceName) as CFTypeRef)
       return 0

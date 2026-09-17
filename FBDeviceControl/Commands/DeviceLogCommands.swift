@@ -21,7 +21,7 @@ public final class DeviceLogOperation: LogOperation {
 
   init(
     consumer: any DataConsumer,
-    connection: FBAMDServiceConnection,
+    connection: LockdownServiceConnection,
     service: String,
     queue: DispatchQueue,
     logger: any ControlCoreLogger
@@ -32,7 +32,7 @@ public final class DeviceLogOperation: LogOperation {
       tailing.onQueue(
         queue,
         respondToCancellation: {
-          FBAMDevice.invalidateServiceConnection(connection, service: service, logger: logger)
+          MobileDevice.invalidateServiceConnection(connection, service: service, logger: logger)
           return FBFuture<NSNull>.empty()
         }
       ))

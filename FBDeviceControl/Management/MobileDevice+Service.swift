@@ -8,7 +8,7 @@
 @preconcurrency import FBControlCore
 import Foundation
 
-extension FBAMDevice {
+extension MobileDevice {
 
   /// Starts a service on the device, invalidating the connection once `body` returns or throws.
   ///
@@ -18,7 +18,7 @@ extension FBAMDevice {
   /// long-running service fails the next operation on the device.
   func withServiceConnection<T>(
     _ service: String,
-    _ body: (FBAMDServiceConnection) async throws -> T
+    _ body: (LockdownServiceConnection) async throws -> T
   ) async throws -> T {
     let connection = try await openServiceConnection(service)
     defer { Self.invalidateServiceConnection(connection, service: service, logger: logger) }
@@ -46,12 +46,12 @@ extension FBAMDevice {
   /// two are released innermost first.
   func withAFCConnection<T>(
     _ service: String,
-    calls afcCalls: AFCCalls = FBAFCConnection.defaultCalls,
-    _ body: (FBAFCConnection) async throws -> T
+    calls afcCalls: AFCCalls = FileConduit.defaultCalls,
+    _ body: (FileConduit) async throws -> T
   ) async throws -> T {
     let logger = self.logger
     return try await withServiceConnection(service) { connection in
-      let afc = try FBAFCConnection.afc(from: connection, calls: afcCalls, logger: logger)
+      let afc = try FileConduit.afc(from: connection, calls: afcCalls, logger: logger)
       defer { try? afc.close() }
       return try await body(afc)
     }
@@ -60,7 +60,7 @@ extension FBAMDevice {
   /// Starts a service whose connection outlives this call, handing ownership to the caller, who
   /// hands it back to `invalidateServiceConnection`. `withServiceConnection` covers a connection
   /// whose lifetime fits inside a call.
-  func openServiceConnection(_ service: String) async throws -> FBAMDServiceConnection {
+  func openServiceConnection(_ service: String) async throws -> LockdownServiceConnection {
     let calls = self.calls
     let logger = self.logger
     return try await withConnectedDevice(purpose: "start_service_\(service)") { device in
@@ -70,7 +70,7 @@ extension FBAMDevice {
 
   /// Invalidates a connection handed out by `openServiceConnection`.
   static func invalidateServiceConnection(
-    _ connection: FBAMDServiceConnection?,
+    _ connection: LockdownServiceConnection?,
     service: String,
     logger: any ControlCoreLogger
   ) {
@@ -91,7 +91,7 @@ extension FBAMDevice {
     on connectedDevice: any DeviceCommands,
     calls: AMDCalls,
     logger: any ControlCoreLogger
-  ) throws -> FBAMDServiceConnection {
+  ) throws -> LockdownServiceConnection {
     logger.log("Starting service \(service)")
     let userInfo: [String: Any] = ["CloseOnInvalidate": 1, "InvalidateOnDetach": 1]
     var serviceConnection: Unmanaged<CFTypeRef>?
@@ -110,7 +110,7 @@ extension FBAMDevice {
       throw AMDeviceServiceError.deviceNotConnected(service: service)
     }
     // Unretained: the raw reference is handed straight to the connection, which owns it from here.
-    let connection = FBAMDServiceConnection(
+    let connection = LockdownServiceConnection(
       name: service,
       connection: serviceConnection.takeUnretainedValue(),
       device: amDeviceRef,

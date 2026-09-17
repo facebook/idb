@@ -18,17 +18,17 @@ private func payload(_ count: Int) -> Data {
   Data((0..<count).map { UInt8($0 % 251) })
 }
 
-/// Direct coverage of the raw byte plane of `FBAMDServiceConnection`, which the command-level tests
+/// Direct coverage of the raw byte plane of `LockdownServiceConnection`, which the command-level tests
 /// reach only incidentally. The chunking loops, the end-of-file handling and the length header's
 /// byte order are the parts a rewrite of this class would most easily get wrong.
 @Suite
-struct AMDServiceConnectionTests {
+struct LockdownServiceConnectionTests {
 
   private let amDevice = FakeAMDevice()
 
-  private func makeConnection(named name: String = "com.apple.test") -> (FBAMDServiceConnection, FakeLockdownService) {
+  private func makeConnection(named name: String = "com.apple.test") -> (LockdownServiceConnection, FakeLockdownService) {
     let service = amDevice.service(name)
-    let connection = FBAMDServiceConnection(
+    let connection = LockdownServiceConnection(
       name: name,
       connection: service,
       device: amDevice,
@@ -196,7 +196,7 @@ struct AMDServiceConnectionTests {
     do {
       let service = FakeLockdownService(serviceName: "com.apple.test")
       released = service
-      let connection = FBAMDServiceConnection(
+      let connection = LockdownServiceConnection(
         name: service.serviceName,
         connection: service,
         device: amDevice,

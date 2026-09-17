@@ -13,8 +13,8 @@ private let DeviceReady = "DLMessageDeviceReady"
 
 /// Carries the non-`Sendable` connection across the serial-queue boundary; only touched on that queue.
 private final class ConnectionBox: @unchecked Sendable {
-  let connection: FBAMDServiceConnection
-  init(_ connection: FBAMDServiceConnection) {
+  let connection: LockdownServiceConnection
+  init(_ connection: LockdownServiceConnection) {
     self.connection = connection
   }
 }
@@ -62,16 +62,16 @@ extension DeviceLinkError: LocalizedError {
 }
 
 public final class DeviceLinkClient {
-  private let connection: FBAMDServiceConnection
+  private let connection: LockdownServiceConnection
   private let queue: DispatchQueue
 
-  public static func deviceLinkClient(connection: FBAMDServiceConnection) async throws -> DeviceLinkClient {
+  public static func deviceLinkClient(connection: LockdownServiceConnection) async throws -> DeviceLinkClient {
     let queue = DispatchQueue(label: "com.facebook.fbdevicecontrol.fbdevicelinkclient")
     try await performVersionExchange(connection: connection, queue: queue)
     return DeviceLinkClient(connection: connection, queue: queue)
   }
 
-  init(connection: FBAMDServiceConnection, queue: DispatchQueue) {
+  init(connection: LockdownServiceConnection, queue: DispatchQueue) {
     self.connection = connection
     self.queue = queue
   }
@@ -108,7 +108,7 @@ public final class DeviceLinkClient {
     }
   }
 
-  private static func performVersionExchange(connection: FBAMDServiceConnection, queue: DispatchQueue) async throws {
+  private static func performVersionExchange(connection: LockdownServiceConnection, queue: DispatchQueue) async throws {
     let connectionBox = ConnectionBox(connection)
     try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
       queue.async {

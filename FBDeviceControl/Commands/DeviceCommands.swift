@@ -82,6 +82,6 @@ public protocol DeviceCommands: DeviceProtocol {
   func withHouseArrestAFCConnection<T>(
     forBundleID bundleID: String,
     afcCalls: AFCCalls,
-    _ body: (FBAFCConnection) async throws -> T
+    _ body: (FileConduit) async throws -> T
   ) async throws -> T
 }

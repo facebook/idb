@@ -192,14 +192,14 @@ final class InstrumentsClient {
   private var lastMessageIdentifier: UInt32
   private var lastChannelIdentifier: Int32 = 0
   private let channels: [String: Any]
-  private let connection: FBAMDServiceConnection
+  private let connection: LockdownServiceConnection
   private let queue: DispatchQueue
   private let logger: any ControlCoreLogger
 
   // MARK: - Initializers
 
   class func instrumentsClient(
-    with connection: FBAMDServiceConnection,
+    with connection: LockdownServiceConnection,
     logger: any ControlCoreLogger
   ) -> FBFuture<InstrumentsClient> {
     let queue = DispatchQueue(label: "com.facebook.fbdevicecontrol.fbinstrumentsclient")
@@ -223,7 +223,7 @@ final class InstrumentsClient {
   }
 
   private init(
-    connection: FBAMDServiceConnection,
+    connection: LockdownServiceConnection,
     channels: [String: Any],
     lastMessageIdentifier: UInt32,
     queue: DispatchQueue,
@@ -374,7 +374,7 @@ final class InstrumentsClient {
 
   // MARK: - The DTXMessage exchange
 
-  private static func availableChannels(on connection: FBAMDServiceConnection) throws -> ([String: Any], UInt32) {
+  private static func availableChannels(on connection: LockdownServiceConnection) throws -> ([String: Any], UInt32) {
     let request = RequestPayload(
       selector: "_notifyOfPublishedCapabilities:",
       argumentsData: [capabilitiesArgumentData],
@@ -390,7 +390,7 @@ final class InstrumentsClient {
   }
 
   private static func sendAndReceive(
-    _ request: RequestPayload, on connection: FBAMDServiceConnection
+    _ request: RequestPayload, on connection: LockdownServiceConnection
   ) throws -> ResponsePayload {
     try connection.send(requestData(from: request))
     return try receiveMessage(on: connection, request: request)
@@ -430,7 +430,7 @@ final class InstrumentsClient {
   }
 
   private static func receiveMessage(
-    on connection: FBAMDServiceConnection, request: RequestPayload
+    on connection: LockdownServiceConnection, request: RequestPayload
   ) throws -> ResponsePayload {
     var messageHeader = DTXMessageHeader()
     var payloadData = Data()

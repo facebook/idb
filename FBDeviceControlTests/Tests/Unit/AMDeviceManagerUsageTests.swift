@@ -32,7 +32,7 @@ private nonisolated(unsafe) var sUsageRecorder = UsageCallRecorder()
 
 /// Pins the order in which `+startUsing:` and `+stopUsing:` drive the device.
 ///
-/// These are the entry points `FBAMDevice` uses around every operation, and the sequence is the
+/// These are the entry points `MobileDevice` uses around every operation, and the sequence is the
 /// contract: connect before pairing, pair before a session, and unwind in reverse. Nothing here
 /// needs a device — every step is an `AMDCalls` function pointer.
 // Serialized: the stubs record into the file-scope `sUsageRecorder` that `init`

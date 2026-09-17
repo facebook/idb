@@ -60,7 +60,7 @@ private func contentsOfVirtualizedDirectory(_ directory: String) -> [String] {
 // Serialized: the C-callback stubs record into file-scope globals (`sEvents`
 // and friends) that `init` resets, which would race across parallel tests.
 @Suite(.serialized)
-final class AFCConnectionTests {
+final class FileConduitTests {
 
   private var rootHostDirectory: String = ""
   private var fooHostFilePath: String = ""
@@ -76,7 +76,7 @@ final class AFCConnectionTests {
     sEvents[RenamePathKey] = NSMutableArray()
     sVirtualizedFilesAndAttributes = nil
 
-    rootHostDirectory = (NSTemporaryDirectory() as NSString).appendingPathComponent("\(UUID().uuidString)_FBAFCConnectionTests")
+    rootHostDirectory = (NSTemporaryDirectory() as NSString).appendingPathComponent("\(UUID().uuidString)_FileConduitTests")
     fooHostFilePath = (rootHostDirectory as NSString).appendingPathComponent("foo.txt")
     barHostDirectory = (rootHostDirectory as NSString).appendingPathComponent("bar")
     bazHostFilePath = (barHostDirectory as NSString).appendingPathComponent("baz.empty")
@@ -107,7 +107,7 @@ final class AFCConnectionTests {
     ]
   }
 
-  private func setUpConnection() throws -> FBAFCConnection {
+  private func setUpConnection() throws -> FileConduit {
     var afcCalls = AFCCalls()
 
     afcCalls.ConnectionCopyLastErrorInfo = { _ in
@@ -251,7 +251,7 @@ final class AFCConnectionTests {
     try (FooFileContents as NSString).write(toFile: fooHostFilePath, atomically: true, encoding: String.Encoding.ascii.rawValue)
     FileManager.default.createFile(atPath: bazHostFilePath, contents: Data(), attributes: nil)
 
-    return FBAFCConnection(connection: NSNull(), calls: afcCalls, logger: nil)
+    return FileConduit(connection: NSNull(), calls: afcCalls, logger: nil)
   }
 
   private func assertExpectedDirectoryCreate(_ expectedDirectoryCreate: [String]) {

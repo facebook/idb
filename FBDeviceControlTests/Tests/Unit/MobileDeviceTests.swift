@@ -39,9 +39,9 @@ private let afcConnectionEvents =
 // main queue; parallel tests would interleave their recordings.
 @MainActor
 @Suite(.serialized)
-final class AMDeviceTests {
+final class MobileDeviceTests {
 
-  private let device: FBAMDevice
+  private let device: MobileDevice
 
   init() {
     device = Self.makeDevice(connectionReuseTimeout: nil, serviceReuseTimeout: nil)
@@ -139,11 +139,11 @@ final class AMDeviceTests {
     return calls
   }
 
-  private static func makeDevice(connectionReuseTimeout: NSNumber?, serviceReuseTimeout: NSNumber?) -> FBAMDevice {
+  private static func makeDevice(connectionReuseTimeout: NSNumber?, serviceReuseTimeout: NSNumber?) -> MobileDevice {
     sAMDeviceEvents.removeAll()
     #expect(sAMDeviceEvents.isEmpty)
 
-    let device = FBAMDevice(
+    let device = MobileDevice(
       allValues: ["UniqueDeviceID": "foo"],
       calls: stubbedCalls,
       connectionReuseTimeout: connectionReuseTimeout,
@@ -225,7 +225,7 @@ final class AMDeviceTests {
     #expect((connection.name) == ("com.apple.testservice"))
     await waitForDeviceEvents(Array(startServiceEvents.dropLast()))
 
-    FBAMDevice.invalidateServiceConnection(
+    MobileDevice.invalidateServiceConnection(
       connection, service: connection.name, logger: ControlCoreGlobalConfiguration.defaultLogger)
 
     await waitForDeviceEvents(startServiceEvents)
@@ -291,7 +291,7 @@ final class AMDeviceTests {
     var afcCalls = Self.stubbedAFCCalls
     afcCalls.ConnectionIsValid = { _ in 0 }
 
-    await #expect(throws: AFCConnectionError.self) {
+    await #expect(throws: FileConduitError.self) {
       try await device.withAFCConnection("com.apple.testservice", calls: afcCalls) { _ in
         Issue.record("Expected the invalid connection to be rejected before the body runs")
       }

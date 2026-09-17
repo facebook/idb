@@ -37,13 +37,13 @@ extension DeviceCrashLogError: LocalizedError {
 public final class DeviceCrashLogCommands: CrashLogCommands {
   private weak var device: Device?
   private let store: CrashLogStore
-  /// Resolved at the point of use: `FBAFCConnection.defaultCalls` dlopens MobileDevice on first
+  /// Resolved at the point of use: `FileConduit.defaultCalls` dlopens MobileDevice on first
   /// evaluation and aborts if the private frameworks are not loaded, so constructing these
   /// commands must not read it.
   private let injectedAFCCalls: AFCCalls?
 
   private var afcCalls: AFCCalls {
-    injectedAFCCalls ?? FBAFCConnection.defaultCalls
+    injectedAFCCalls ?? FileConduit.defaultCalls
   }
   private var hasPerformedInitialIngestion: Bool = false
 
@@ -157,7 +157,7 @@ public final class DeviceCrashLogCommands: CrashLogCommands {
     }
   }
 
-  private func crashLogInfo(afc: FBAFCConnection, path: String) throws -> CrashLogInfo {
+  private func crashLogInfo(afc: FileConduit, path: String) throws -> CrashLogInfo {
     let name = path
     if let existing = store.ingestedCrashLog(withName: path) {
       device?.logger.log("No need to re-ingest \(path)")
@@ -191,7 +191,7 @@ public final class DeviceCrashLogCommands: CrashLogCommands {
     }
   }
 
-  private func withCrashReportFileConnection<T>(_ body: (FBAFCConnection) async throws -> T) async throws -> T {
+  private func withCrashReportFileConnection<T>(_ body: (FileConduit) async throws -> T) async throws -> T {
     guard let device else {
       throw DeviceNilError.deviceNil
     }

@@ -8,7 +8,7 @@
 @preconcurrency import FBControlCore
 import Foundation
 
-/// Backed by an `FBAMDevice`, an `FBAMRestorableDevice`, or both, caching the target
+/// Backed by a `MobileDevice`, a `RestorableDevice`, or both, caching the target
 /// information of whichever it holds.
 public final class Device: Target, DeviceCommands, CustomStringConvertible {
 
@@ -19,10 +19,10 @@ public final class Device: Target, DeviceCommands, CustomStringConvertible {
   public private(set) var logger: any ControlCoreLogger
   public private(set) var calls: AMDCalls
 
-  private var amDeviceStorage: FBAMDevice?
-  private var restorableDeviceStorage: FBAMRestorableDevice?
+  private var amDeviceStorage: MobileDevice?
+  private var restorableDeviceStorage: RestorableDevice?
 
-  public var amDevice: FBAMDevice? {
+  public var amDevice: MobileDevice? {
     get {
       amDeviceStorage
     }
@@ -34,7 +34,7 @@ public final class Device: Target, DeviceCommands, CustomStringConvertible {
     }
   }
 
-  var restorableDevice: FBAMRestorableDevice? {
+  var restorableDevice: RestorableDevice? {
     get {
       restorableDeviceStorage
     }
@@ -82,8 +82,8 @@ public final class Device: Target, DeviceCommands, CustomStringConvertible {
 
   public init(
     set: DeviceSet?,
-    amDevice: FBAMDevice?,
-    restorableDevice: FBAMRestorableDevice?,
+    amDevice: MobileDevice?,
+    restorableDevice: RestorableDevice?,
     logger: any ControlCoreLogger
   ) {
     self.set = set
@@ -97,7 +97,7 @@ public final class Device: Target, DeviceCommands, CustomStringConvertible {
     } else if let restorableDevice {
       self.calls = restorableDevice.calls
     } else {
-      preconditionFailure("An FBAMDevice or FBAMRestorableDevice must be provided")
+      preconditionFailure("A MobileDevice or RestorableDevice must be provided")
     }
     self.logger = logger
     if let info: any TargetInfo & DeviceProtocol = amDevice ?? restorableDevice {
@@ -199,7 +199,7 @@ public final class Device: Target, DeviceCommands, CustomStringConvertible {
   public func withHouseArrestAFCConnection<T>(
     forBundleID bundleID: String,
     afcCalls: AFCCalls,
-    _ body: (FBAFCConnection) async throws -> T
+    _ body: (FileConduit) async throws -> T
   ) async throws -> T {
     guard let amDevice else {
       throw AMDeviceServiceError.notAMDeviceBacked(service: "withHouseArrestAFCConnection(forBundleID:afcCalls:)")

@@ -103,7 +103,7 @@ public struct DeviceActivationCommands {
     try await confirmActivationState(DeviceActivationState.activated)
   }
 
-  private func withMobileActivationService<T>(_ body: (FBAMDServiceConnection) async throws -> T) async throws -> T {
+  private func withMobileActivationService<T>(_ body: (LockdownServiceConnection) async throws -> T) async throws -> T {
     return try await device.withServiceConnection("com.apple.mobileactivationd", body)
   }
 

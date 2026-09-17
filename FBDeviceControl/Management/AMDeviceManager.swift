@@ -102,8 +102,8 @@ private func amDeviceListenerCallback(
   }
 }
 
-/// Obtains `FBAMDevice` instances.
-final class AMDeviceManager: DeviceManager<FBAMDevice> {
+/// Obtains `MobileDevice` instances.
+final class AMDeviceManager: DeviceManager<MobileDevice> {
 
   // MARK: - Properties
 
@@ -171,8 +171,8 @@ final class AMDeviceManager: DeviceManager<FBAMDevice> {
     _ privateDevice: CFTypeRef,
     identifier: String,
     info: [String: Any]?
-  ) -> FBAMDevice {
-    FBAMDevice(
+  ) -> MobileDevice {
+    MobileDevice(
       allValues: info ?? [:],
       calls: calls,
       connectionReuseTimeout: nil,
@@ -183,7 +183,7 @@ final class AMDeviceManager: DeviceManager<FBAMDevice> {
   }
 
   override class func updatePublicReference(
-    _ publicDevice: FBAMDevice,
+    _ publicDevice: MobileDevice,
     privateDevice: CFTypeRef,
     identifier: String,
     info: [String: Any]?
@@ -192,7 +192,7 @@ final class AMDeviceManager: DeviceManager<FBAMDevice> {
     publicDevice.allValues = info ?? [:]
   }
 
-  override class func extractPrivateReference(_ publicDevice: FBAMDevice) -> Unmanaged<AnyObject>? {
+  override class func extractPrivateReference(_ publicDevice: MobileDevice) -> Unmanaged<AnyObject>? {
     guard let reference = publicDevice.amDeviceRef else {
       return nil
     }
