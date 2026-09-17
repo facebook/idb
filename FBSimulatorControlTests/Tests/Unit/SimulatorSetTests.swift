@@ -13,14 +13,14 @@ final class SimulatorSetTests: SimulatorSetTestCase {
 
   func testInflatesSimulators() {
     createSet(withExistingSimDeviceSpecs: [
-      ["name": "iPhone 5", "state": FBiOSTargetState.creating.rawValue],
-      ["name": "iPhone 5", "state": FBiOSTargetState.shutdown.rawValue],
-      ["name": "iPhone 5", "state": FBiOSTargetState.booted.rawValue],
-      ["name": "iPhone 6s", "state": FBiOSTargetState.shuttingDown.rawValue],
-      ["name": "iPad 2", "family": 2, "state": FBiOSTargetState.booted.rawValue],
-      ["name": "iPad Air", "family": 2, "state": FBiOSTargetState.booted.rawValue],
-      ["name": "iPad Air 2", "family": 2, "state": FBiOSTargetState.creating.rawValue],
-      ["name": "iPhone 5", "state": FBiOSTargetState.shutdown.rawValue, "os": "iOS 10.0"],
+      ["name": "iPhone 5", "state": FBTargetState.creating.rawValue],
+      ["name": "iPhone 5", "state": FBTargetState.shutdown.rawValue],
+      ["name": "iPhone 5", "state": FBTargetState.booted.rawValue],
+      ["name": "iPhone 6s", "state": FBTargetState.shuttingDown.rawValue],
+      ["name": "iPad 2", "family": 2, "state": FBTargetState.booted.rawValue],
+      ["name": "iPad Air", "family": 2, "state": FBTargetState.booted.rawValue],
+      ["name": "iPad Air 2", "family": 2, "state": FBTargetState.creating.rawValue],
+      ["name": "iPhone 5", "state": FBTargetState.shutdown.rawValue, "os": "iOS 10.0"],
     ])
 
     let simulators = self.set.allSimulators
@@ -69,14 +69,14 @@ final class SimulatorSetTests: SimulatorSetTestCase {
 
   func testReferencesForSimulatorsAreTheSame() {
     createSet(withExistingSimDeviceSpecs: [
-      ["name": "iPhone 5", "state": FBiOSTargetState.creating.rawValue],
-      ["name": "iPhone 5", "state": FBiOSTargetState.shutdown.rawValue],
-      ["name": "iPhone 5", "state": FBiOSTargetState.booted.rawValue],
-      ["name": "iPhone 6s", "state": FBiOSTargetState.shuttingDown.rawValue],
-      ["name": "iPad 2", "family": 2, "state": FBiOSTargetState.booted.rawValue],
-      ["name": "iPad Air", "family": 2, "state": FBiOSTargetState.booted.rawValue],
-      ["name": "iPad Air 2", "family": 2, "state": FBiOSTargetState.creating.rawValue],
-      ["name": "iPhone 5", "state": FBiOSTargetState.shutdown.rawValue, "os": "iOS 10.0"],
+      ["name": "iPhone 5", "state": FBTargetState.creating.rawValue],
+      ["name": "iPhone 5", "state": FBTargetState.shutdown.rawValue],
+      ["name": "iPhone 5", "state": FBTargetState.booted.rawValue],
+      ["name": "iPhone 6s", "state": FBTargetState.shuttingDown.rawValue],
+      ["name": "iPad 2", "family": 2, "state": FBTargetState.booted.rawValue],
+      ["name": "iPad Air", "family": 2, "state": FBTargetState.booted.rawValue],
+      ["name": "iPad Air 2", "family": 2, "state": FBTargetState.creating.rawValue],
+      ["name": "iPhone 5", "state": FBTargetState.shutdown.rawValue, "os": "iOS 10.0"],
     ])
 
     let firstFetch = self.set.allSimulators

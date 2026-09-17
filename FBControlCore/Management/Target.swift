@@ -46,10 +46,10 @@ public protocol TargetInfo: AnyObject {
   var extendedInformation: [String: Any] { get }
 
   /// The Type of the iOS Target
-  var targetType: FBiOSTargetType { get }
+  var targetType: FBTargetType { get }
 
   /// The State of the iOS Target. Currently only applies to Simulators.
-  var state: FBiOSTargetState { get }
+  var state: FBTargetState { get }
 
   /// A Comparison Method for `sortedArrayUsingSelector:`
   func compare(_ target: any TargetInfo) -> ComparisonResult
@@ -188,7 +188,7 @@ public protocol Target: TargetInfo, TargetCommand {
   func environmentAdditions() -> [String: String]
 }
 
-/// String representations of `FBiOSTargetState`.
+/// String representations of `FBTargetState`.
 ///
 /// The state enum's numeric values are not stable across releases; these strings are, and are what
 /// gets serialised.
@@ -206,7 +206,7 @@ public enum TargetStateString: String, Sendable, CaseIterable {
 
 // MARK: - State conversions
 
-extension FBiOSTargetState {
+extension FBTargetState {
 
   /// The canonical string representation of the state enum.
   public var stateString: TargetStateString {
@@ -235,7 +235,7 @@ extension FBiOSTargetState {
   }
 }
 
-extension FBiOSTargetType {
+extension FBTargetType {
 
   /// The canonical string representation of the target type.
   public var stringRepresentation: String {
@@ -255,7 +255,7 @@ extension FBiOSTargetType {
 extension FBControlCoreProductFamily {
 
   /// The canonical string representation of the product family (the device "type": iphone, ipad,
-  /// watch, tv, mac), distinct from the simulator/device/mac distinction of FBiOSTargetType.
+  /// watch, tv, mac), distinct from the simulator/device/mac distinction of FBTargetType.
   public var stringRepresentation: String {
     switch self {
     case .familyiPhone:
@@ -297,7 +297,7 @@ public func TargetPredicateForUDIDs(_ udids: [String]) -> NSPredicate {
 /// - Parameter deadline: How long to wait for. Waits indefinitely when `nil`.
 public func TargetResolveState(
   _ target: any Target,
-  _ state: FBiOSTargetState,
+  _ state: FBTargetState,
   deadline: PollDeadline? = nil
 ) async throws {
   let box = TargetBox(target)
@@ -309,7 +309,7 @@ public func TargetResolveState(
 /// - Parameter deadline: How long to wait for. Waits indefinitely when `nil`.
 public func TargetResolveLeavesState(
   _ target: any Target,
-  _ state: FBiOSTargetState,
+  _ state: FBTargetState,
   deadline: PollDeadline? = nil
 ) async throws {
   let box = TargetBox(target)

@@ -19,7 +19,7 @@ final class CoreSimulatorNotifierTests: XCTestCase {
     super.setUp()
     notifier = SimDeviceNotifierDouble()
     device = SimDeviceDouble()
-    device.state = UInt64(FBiOSTargetState.booted.rawValue)
+    device.state = UInt64(FBTargetState.booted.rawValue)
     device.notificationManager = notifier
   }
 
@@ -40,7 +40,7 @@ final class CoreSimulatorNotifierTests: XCTestCase {
     let future = resolveLeavesBooted()
     XCTAssertEqual(notifier.registeredHandleCount, 1)
 
-    notifier.post(["notification": "device_state", "new_state": NSNumber(value: FBiOSTargetState.shutdown.rawValue)])
+    notifier.post(["notification": "device_state", "new_state": NSNumber(value: FBTargetState.shutdown.rawValue)])
 
     XCTAssertNotNil(try future.await(withTimeout: 1))
   }
@@ -48,7 +48,7 @@ final class CoreSimulatorNotifierTests: XCTestCase {
   func testUnregistersTheHandlerOnceResolved() throws {
     let future = resolveLeavesBooted()
 
-    notifier.post(["notification": "device_state", "new_state": NSNumber(value: FBiOSTargetState.shutdown.rawValue)])
+    notifier.post(["notification": "device_state", "new_state": NSNumber(value: FBTargetState.shutdown.rawValue)])
     _ = try future.await(withTimeout: 1)
     waitForUnregistration()
 
@@ -59,7 +59,7 @@ final class CoreSimulatorNotifierTests: XCTestCase {
   func testDoesNotResolveWhenTheDeviceReportsTheSameState() {
     let future = resolveLeavesBooted()
 
-    notifier.post(["notification": "device_state", "new_state": NSNumber(value: FBiOSTargetState.booted.rawValue)])
+    notifier.post(["notification": "device_state", "new_state": NSNumber(value: FBTargetState.booted.rawValue)])
 
     XCTAssertEqual(future.state, .running)
   }
@@ -67,7 +67,7 @@ final class CoreSimulatorNotifierTests: XCTestCase {
   func testIgnoresNotificationsThatAreNotStateChanges() {
     let future = resolveLeavesBooted()
 
-    notifier.post(["notification": "device_name", "new_state": NSNumber(value: FBiOSTargetState.shutdown.rawValue)])
+    notifier.post(["notification": "device_name", "new_state": NSNumber(value: FBTargetState.shutdown.rawValue)])
 
     XCTAssertEqual(future.state, .running)
   }

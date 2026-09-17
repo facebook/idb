@@ -145,11 +145,11 @@ public final class MobileDevice: TargetInfo, DeviceCommands, CustomStringConvert
     return OSVersion(name: FBOSVersionName(rawValue: name), versionString: productVersion ?? "")
   }
 
-  public var state: FBiOSTargetState {
+  public var state: FBTargetState {
     .booted
   }
 
-  public var targetType: FBiOSTargetType {
+  public var targetType: FBTargetType {
     .device
   }
 

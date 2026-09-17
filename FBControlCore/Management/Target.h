@@ -9,4 +9,4 @@
 
 #import <FBControlCore/FBArchitecture.h>
 #import <FBControlCore/FBFuture.h>
-#import <FBControlCore/FBiOSTargetConstants.h>
+#import <FBControlCore/FBTargetConstants.h>

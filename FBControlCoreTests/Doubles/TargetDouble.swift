@@ -12,8 +12,8 @@ final class TargetDouble: TargetInfo {
   var uniqueIdentifier: String = ""
   var udid: String = ""
   var name: String = ""
-  var state: FBiOSTargetState = .unknown
-  var targetType: FBiOSTargetType = .simulator
+  var state: FBTargetState = .unknown
+  var targetType: FBTargetType = .simulator
   var deviceType: DeviceType = .generic(withName: "TargetDouble")
   var osVersion: OSVersion = .generic(withName: "TargetDouble")
   var architectures: [FBArchitecture] = []

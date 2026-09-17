@@ -17,8 +17,8 @@ public final class TargetDescription: TargetInfo {
   public let architectures: [FBArchitecture]
   public let osVersion: OSVersion
   public let extendedInformation: [String: Any]
-  public let targetType: FBiOSTargetType
-  public let state: FBiOSTargetState
+  public let targetType: FBTargetType
+  public let state: FBTargetState
 
   private let model: FBDeviceModel?
 

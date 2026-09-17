@@ -73,9 +73,9 @@ public final class Simulator: Target, Hashable, CustomStringConvertible, @unchec
 
   public var name: String { device.name }
 
-  public var state: FBiOSTargetState { FBiOSTargetState(rawValue: UInt(device.state)) ?? .unknown }
+  public var state: FBTargetState { FBTargetState(rawValue: UInt(device.state)) ?? .unknown }
 
-  public var targetType: FBiOSTargetType { .simulator }
+  public var targetType: FBTargetType { .simulator }
 
   public var architectures: [FBArchitecture] { Array(ArchitectureProcessAdapter.hostMachineSupportedArchitectures()) }
 

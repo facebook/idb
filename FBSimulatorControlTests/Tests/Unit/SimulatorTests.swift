@@ -35,7 +35,7 @@ import XCTest
 @objc final class TestSimDevice: NSObject {
   @objc var UDID: NSUUID = NSUUID()
   @objc var name: String = "TestSimulator"
-  @objc var state: UInt = UInt(FBiOSTargetState.booted.rawValue)
+  @objc var state: UInt = UInt(FBTargetState.booted.rawValue)
   @objc var dataPath: String = "/tmp/test-sim-data"
   @objc var deviceType = TestSimDeviceType()
   @objc var runtime = TestSimRuntime()

@@ -19,7 +19,7 @@ public final class CoreSimulatorNotifier {
     return CoreSimulatorNotifier(notifier: notifier, queue: queue, block: block)
   }
 
-  public class func resolveLeavesState(_ state: FBiOSTargetState, for device: SimDevice) -> FBFuture<NSNull> {
+  public class func resolveLeavesState(_ state: FBTargetState, for device: SimDevice) -> FBFuture<NSNull> {
     let future = FBMutableFuture<NSNull>()
     let queue = DispatchQueue(label: "com.facebook.fbsimulatorcontrol.resolve_state")
     nonisolated(unsafe) let futureRef = future
@@ -30,7 +30,7 @@ public final class CoreSimulatorNotifier {
       guard let newStateNumber = info["new_state"] as? NSNumber else {
         return
       }
-      let newState = FBiOSTargetState(rawValue: newStateNumber.uintValue)
+      let newState = FBTargetState(rawValue: newStateNumber.uintValue)
       if newState == state {
         return
       }

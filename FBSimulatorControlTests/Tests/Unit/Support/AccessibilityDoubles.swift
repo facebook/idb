@@ -392,7 +392,7 @@ class AccessibilityTestElementBuilder {
 
 // MARK: - Test Fixture
 
-private let FBiOSTargetStateBooted_Value: UInt64 = 3
+private let FBTargetStateBooted_Value: UInt64 = 3
 
 class AccessibilityTestFixture: NSObject {
   private(set) var translator: AXPTranslatorDouble
@@ -402,7 +402,7 @@ class AccessibilityTestFixture: NSObject {
   private override init() {
     self.translator = AXPTranslatorDouble()
     self.device = SimDeviceAccessibilityDouble()
-    self.device.state = FBiOSTargetStateBooted_Value
+    self.device.state = FBTargetStateBooted_Value
     super.init()
   }
 
