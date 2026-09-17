@@ -2,14 +2,14 @@
 We want to make contributing to this project as easy and transparent as possible.
 
 ## Our Development Process
-`idb` is formed of an Objective-C++ server (the "companion") and a python client.
+`idb` is formed of a Swift server (the "companion") and a python client.
 
 There's a number of goals that we had in mind when building this out:
 - The companion is not optimized for APIs that are convenient for users to use, we're optimizing for making it as easy as possible to use with an RPC framework.
-- As much of the core functionality of dealing with Simulators and Devices is pushed down into the `FBSimulatorControl` and `FBDeviceControl` projects. This means that the companion is as simple as possible and that we build sane and easy-to-use Objective-C APIs.
-- `FBSimulatorControl` and `FBDeviceControl` are pure Objective-C. This makes interop with Swift as easy as possible.
-- `FBSimulatorControl` and `FBDeviceControl` projects vend their public API via protocols on `Simulator` and `Device` instances. These APIs should expose `FBFuture` instances so that they can operate asynchronously and propogate errors.
-- The companion server into the APIs of the above and performs the neccessary coercions between Objective-C data models and gRPC's Protocol Buffers.
+- As much of the core functionality of dealing with Simulators and Devices is pushed down into the `FBSimulatorControl` and `FBDeviceControl` projects. This means that the companion is as simple as possible and that we build sane and easy-to-use framework APIs.
+- `FBSimulatorControl` and `FBDeviceControl` are Swift. What Objective-C remains is an implementation detail of binding Apple's private C and Objective-C API, not part of the framework surface.
+- `FBSimulatorControl` and `FBDeviceControl` projects vend their public API via protocols on `Simulator` and `Device` instances. New APIs should be `async` and `throws` so that they can operate asynchronously and propagate errors; older Objective-C APIs expose an `FBFuture` instead.
+- The companion server calls into the APIs of the above and performs the necessary coercions between the frameworks' data models and gRPC's Protocol Buffers.
 - Any rpc that is:
   * Long Lived (e.g. `instruments`)
   * Provides incremental output (e.g. `log`)
@@ -40,7 +40,7 @@ We use GitHub issues to track public bugs. Please ensure your description is cle
 All issues will default to being created with the issue template. Please fill in as much as makes sense.
 
 ## Coding Style
-* 2 spaces for indentation in the Objective-C++ companion and the python client.
+* 2 spaces for indentation in the Swift companion and the python client.
 * 80 character line length for python. Please run [`black` against python code](https://github.com/ambv/black).
 
 ## License

@@ -91,19 +91,19 @@ flowchart TD
 
 ### Targets
 
-A instance of a target (`FBiOSTarget`) is an object that represents a single iOS Simulator or Device. `FBiOSTarget` is a protocol definition that describes the functionality that is implemented by both `FBSimulator` and `FBDevice`. This abstraction means that higher-level applications and Frameworks are able to treat a target the same, regardless of whether it is an iOS Simulator or Device.
+A instance of a target (`Target`) is an object that represents a single iOS Simulator or Device. `Target` is a protocol definition that describes the functionality that is implemented by both `Simulator` and `Device`. This abstraction means that higher-level applications and Frameworks are able to treat a target the same, regardless of whether it is an iOS Simulator or Device.
 
 As there are substantial differences in the way that iOS Simulators and Devices operate, this level of abstraction allows the Frameworks to smooth over the differences present in implementing common functionality.
 
 ### Target Sets
 
-A "Target Set" (`FBiOSTargetSet`) represents a collection of targets. These are implemented in both `FBSimulatorSet` and `FBDeviceSet`. A Simulator set represents a root directory that is common to a number of Simulators. A Device Set represents all of the Devices attached to the host.
+A "Target Set" (`TargetSet`) represents a collection of targets. These are implemented in both `SimulatorSet` and `DeviceSet`. A Simulator set represents a root directory that is common to a number of Simulators. A Device Set represents all of the Devices attached to the host.
 
 This abstraction allows for interfaces to "CRUD" operations on both Simulators and Devices, despite having different implementations. For instance the same API is used across Simulators and Devices for `erasing` them.
 
 ### Configuration Values
 
-Across the Frameworks, there are "Configuration" values. These are typically used for consolidating all the information required for a particular API call. For instance `FBApplicationLaunchConfiguration` defines launch arguments, environment and launch modes.
+Across the Frameworks, there are "Configuration" values. These are typically used for consolidating all the information required for a particular API call. For instance `ApplicationLaunchConfiguration` defines launch arguments, environment and launch modes.
 
 These types exist so that APIs do not require extremely long and cumbersome argument lists, as well as providing sane defaults. These types are intentionally as behaviour-less as possible, close to pure value types.
 
@@ -111,21 +111,21 @@ These types exist so that APIs do not require extremely long and cumbersome argu
 
 In order to keep a common API between Simulators and Devices, `idb` has a set of protocols that define an interface for separate implementations across iOS Simulators & Devices. This does encourage the creation of well thought-out APIs. The `idb_companion` can be agnostic to the underlying iOS target, instead interacting with these protocols. Older protocols are defined in Objective-C and expose their asynchronous work as an `FBFuture`; newer protocols are defined in Swift with `async` methods.
 
-There may be some protocols that are only supported by one or the other, depending on the target. For instance there is no concept of "Activation" on an iOS Simulator, so `FBDeviceActivationCommands` is only implemented by `FBDevice`. Where a target does not support a given protocol, `idb` will fail when these APIs are called, giving an error message that explains what functionality is missing.
+There may be some protocols that are only supported by one or the other, depending on the target. For instance there is no concept of "Activation" on an iOS Simulator, so `DeviceActivationCommands` is only implemented by `Device`. Where a target does not support a given protocol, `idb` will fail when these APIs are called, giving an error message that explains what functionality is missing.
 
-Implementations across Simulators & Devices are completely separated and implemented in their respective Frameworks. As an example, `FBApplicationCommands` (which provides an API for launching and listing Applications on an iOS Target), is implemented separately in `FBSimulatorApplicationCommands` and `FBDeviceApplicationCommands`.
+Implementations across Simulators & Devices are completely separated and implemented in their respective Frameworks. As an example, `ApplicationCommands` (which provides an API for launching and listing Applications on an iOS Target), is implemented separately in `SimulatorApplicationCommands` and `DeviceApplicationCommands`.
 
-If functionality is common to both Simulators & Devices, its protocol is added to `FBiOSTarget` so that implementors of `FBiOSTarget` are required to implement it. For functionality that is not common, the relevant protocol is added to the definition of the concrete `FBSimulator` or `FBDevice` class. For non-common protocols, the caller must either check for protocol conformance before calling an API, or use the concrete type directly.
+If functionality is common to both Simulators & Devices, its protocol is added to `Target` so that implementors of `Target` are required to implement it. For functionality that is not common, the relevant protocol is added to the definition of the concrete `Simulator` or `Device` class. For non-common protocols, the caller must either check for protocol conformance before calling an API, or use the concrete type directly.
 
 ### Logging
 
-`FBControlCoreLogger` is used throughout the codebase. This provides a common interface for logging out to system level loggers as well as files. Since all these Frameworks may be used in a variety of different scenarios, included where a logging client may be remote, this abstraction provides a common way of directing logs to the appropriate place. This is an "unstructured logger", which receives arbitrary strings.
+`ControlCoreLogger` is used throughout the codebase. This provides a common interface for logging out to system level loggers as well as files. Since all these Frameworks may be used in a variety of different scenarios, included where a logging client may be remote, this abstraction provides a common way of directing logs to the appropriate place. This is an "unstructured logger", which receives arbitrary strings.
 
-There are also classes that are used for intercepting internal calls (`FBLoggingWrapper`) and logging them out to a "structured logger" (`FBEventReporter`). This is used in `idb` to produce accurate logging of all API calls that are made in the server. This supports user-defined classes, so is ideal for pushing into datastores that support aggregation.
+Alongside it is a "structured logger" (`EventReporter`), which receives typed events rather than arbitrary strings. The `idb_companion` wraps every gRPC call in `CompanionTelemetry`, which reports one event per call, so the server produces accurate logging of all API calls that are made against it. `EventReporter` is a protocol, so a consumer can supply its own implementation and push these events into a datastore that supports aggregation.
 
 ### IO
 
-Due to the nature of the functionality that is offered in the Frameworks, IO is a very common task. There are a number of abstractions for reading and writing data between various sources and sinks. For example, the common interface (`FBFileReader`) is used to read output from a spawned Application process and relay it to a consumer (`FBFileWriter`). This is then used to pipe Application output over `idb`'s gRPC interface without the Application launcher having to be aware of what is consuming the output.
+Due to the nature of the functionality that is offered in the Frameworks, IO is a very common task. There are a number of abstractions for reading and writing data between various sources and sinks. For example, the common interface (`FileReader`) is used to read output from a spawned Application process and relay it to a consumer (`FileWriter`). This is then used to pipe Application output over `idb`'s gRPC interface without the Application launcher having to be aware of what is consuming the output.
 
 All of this is backed by `libdispatch`, due to its affordance for asynchronous IO, where file reading and writing is managed in an efficient manner without the user having to build their own IO multiplexer.
 
@@ -162,6 +162,6 @@ This is the gRPC server itself, built on [`grpc-swift`](https://github.com/grpc/
 
 Each RPC in the `idb.proto` interface is implemented by its own Swift method handler, for instance `InstallMethodHandler` or `AccessibilityInfoMethodHandler`. A handler translates the request's protobuf types into the value types used by the Frameworks, awaits the underlying work with Swift Concurrency, and translates the result back into a protobuf response. This keeps each RPC's implementation small, isolated and testable.
 
-### [`FBIDBCommandExecutor`](https://github.com/facebook/idb/blob/main/CompanionLib/FBIDBCommandExecutor.swift)
+### [`IDBCommandExecutor`](https://github.com/facebook/idb/blob/main/CompanionLib/IDBCommandExecutor.swift)
 
 This provides a facade over the many APIs in the underlying Frameworks, so that the method handlers do not need to be aware of how they operate. It lives in `CompanionLib`, which also contains the storage management for installed artifacts and the bridging between `FBFuture` and Swift Concurrency.

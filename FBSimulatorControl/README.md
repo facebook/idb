@@ -29,10 +29,10 @@ The original use-case for `FBSimulatorControl` was to boot multiple Simulators o
 
 The homebrew installation is derived from [the `build.sh`](../build.sh) script in the root of the repository. You can build `FBSimulatorControl` on its own with: `./build.sh build FBSimulatorControl` (or build every framework with `./build.sh build frameworks`).
 
-The `FBSimulatorControl.xcodeproj` builds the `FBSimulatorControl.framework` and the `FBSimulatorControlTests.xctest` bundles. The project file is generated from `project.yml` with [XcodeGen](https://github.com/yonaskolb/XcodeGen) (run `./build.sh generate`), so it is not checked into the repo.
+The `FBSimulatorControl.xcodeproj` builds the `FBSimulatorControl.framework` and its test bundles: `FBSimulatorControlUnitTests.xctest`, `FBSimulatorControlBootTests.xctest` and `FBSimulatorControlSmokeTests.xctest`. The project file is generated from `project.yml` with [XcodeGen](https://github.com/yonaskolb/XcodeGen) (run `./build.sh generate`), so it is not checked into the repo.
 
 Once you build the `FBSimulatorControl.framework`, it can be linked like any other 3rd-party Framework for your project:
-- Add `FBSimulatorControl.framework` to the [Target's 'Link Binary With Libraries' build phase](Documentation/link_binary_with_libraries.png).
+- Add `FBSimulatorControl.framework` to the Target's 'Link Binary With Libraries' build phase.
 - Ensure that `FBSimulatorControl` is copied into the Target's bundle (if your Target is an Application or Framework) or a path relative to the Executable if your project does not have a bundle.
 
 ## Usage
@@ -41,7 +41,7 @@ In order to support different Xcode versions and system environments, `FBSimulat
 
 Since the Frameworks upon which `FBSimulatorControl` depends are loaded lazily, they must be loaded before the Framework is functional. However, you do not have to do this manually as any of the `FBSimulatorControl` functionality that has this dependency will load these Private Frameworks when they are used for the first time.
 
-[The tests](FBSimulatorControlTests/Tests) should provide you with some basic guidance for using the API, and the `idb_companion` in this repository is a full-featured consumer of it.
+[The tests](../FBSimulatorControlTests/Tests) should provide you with some basic guidance for using the API, and the `idb_companion` in this repository is a full-featured consumer of it.
 
 For a high level overview:
 - `SimulatorControlBootstrap` is the entry point. It is the first object that you should create, with `SimulatorControlBootstrap.withConfiguration(_:)`. It creates a `SimulatorSet` upon creation, exposed as `set`.
@@ -60,7 +60,7 @@ let simulator = try await control.set.createSimulator(with: request)
 Use `.identifier(...)` for an exact CoreSimulator identifier, or `.name(...)` for a display name.
 An omitted runtime selects the newest available compatible version, with build numbers breaking
 version ties. An explicit runtime must match; it never falls back to another version.
-`FBSimulatorConfiguration.availableConfigurations()` lists available compatible pairs.
+`SimulatorConfiguration.availableConfigurations()` lists available compatible pairs.
 A simulator's `configuration` describes its actual device/runtime metadata, including identifiers
 and runtime build, even when the runtime is no longer available.
 Runtime identifiers do not pin a particular build: CoreSimulator can create the device
@@ -160,7 +160,7 @@ In order for other Applications (mainly `Simulator.app`, but also for video reco
 
 An `IOSurface` is an object that wraps a Framebuffer, with the contents of the Framebuffer being located within GPU memory. This `IOSurface` can be read and inspected across process boundaries. `Simulator.app` uses this `IOSurface` as the backing Framebuffer for its view of an iOS Simulator.
 
-`IOSurface` objects are also easily convertible to "Pixel Buffer" types that are used in video encoding, which [`SimulatorVideoStream`](https://github.com/facebook/idb/blob/main/FBSimulatorControl/Framebuffer/SimulatorVideoStream.swift) takes advantage of. This allows `FBSimulatorControl` to implement video encoding of an iOS Simulator's Framebuffer in a way that avoids large copies of bitmap framebuffers on a per-frame basis.
+`IOSurface` objects are also easily convertible to "Pixel Buffer" types that are used in video encoding, which [`SimulatorVideoStream`](https://github.com/facebook/idb/blob/main/FBSimulatorControl/Video/SimulatorVideoStream.swift) takes advantage of. This allows `FBSimulatorControl` to implement video encoding of an iOS Simulator's Framebuffer in a way that avoids large copies of bitmap framebuffers on a per-frame basis.
 
 ### HID: `IndigoHID` and `DTUHID`
 
