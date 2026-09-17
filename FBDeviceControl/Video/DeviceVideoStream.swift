@@ -34,8 +34,8 @@ enum DeviceVideoStreamError: Error, LocalizedError {
 }
 
 /// Streams a physical device's screen: an `AVCaptureSession` on the device's screen-capture input
-/// delivers samples the device encoded itself, and a `DeviceSampleSink` for the requested format
-/// frames them for the consumer.
+/// delivers samples in the requested `DeviceCaptureFormat` — the device encodes JPEG and H.264
+/// itself — and the format's `EncodedFrameWriter` frames them for the consumer.
 ///
 /// @unchecked Sendable: frame delivery is confined to `writeQueue` (the AVCapture delegate queue);
 /// lifecycle state is guarded by `lifecycleLock`.
@@ -43,8 +43,9 @@ public final class DeviceVideoStream: NSObject, VideoStreamOperation, @unchecked
   let logger: any ControlCoreLogger
   private let session: AVCaptureSession
   private let output: AVCaptureVideoDataOutput
-  private let sink: any DeviceSampleSink
+  private let frameWriter: any EncodedFrameWriter
   let writeQueue: DispatchQueue
+  private var hasLoggedFirstSample = false
 
   // Lifecycle state guarded by `lifecycleLock`: start/stop run on the caller's thread while the
   // started signal fires on `writeQueue`. `hasStarted` latches on the first delivered frame,
@@ -60,14 +61,13 @@ public final class DeviceVideoStream: NSObject, VideoStreamOperation, @unchecked
   // MARK: - Factory
 
   public static func stream(withSession session: AVCaptureSession, configuration: VideoStreamConfiguration, logger: any ControlCoreLogger) throws -> DeviceVideoStream {
-    guard let sink = sink(for: configuration) else {
+    guard let captureFormat = captureFormat(for: configuration.format) else {
       throw DeviceVideoStreamError.invalidStreamFormat("\(configuration.format)")
     }
 
     let output = AVCaptureVideoDataOutput()
     output.alwaysDiscardsLateVideoFrames = true
-    output.videoSettings = [:]
-    try sink.configure(output)
+    try captureFormat.configure(output)
     guard session.canAddOutput(output) else {
       throw DeviceVideoStreamError.cannotAddDataOutput
     }
@@ -81,34 +81,29 @@ public final class DeviceVideoStream: NSObject, VideoStreamOperation, @unchecked
     }
 
     return DeviceVideoStream(
-      session: session, output: output, sink: sink,
+      session: session, output: output, frameWriter: configuration.format.frameWriters().frameWriter,
       writeQueue: DispatchQueue(label: "com.facebook.fbdevicecontrol.streamencoder"), logger: logger)
   }
 
-  /// The sink for a format, or nil for one the device path cannot produce: the device encodes
-  /// H.264 only.
-  static func sink(for configuration: VideoStreamConfiguration) -> (any DeviceSampleSink)? {
-    switch configuration.format {
-    case let .compressedVideo(codec, transport):
-      switch codec {
-      case .h264:
-        return EncodedDeviceSampleSink(codec: codec, transport: transport)
-      case .hevc:
-        return nil
-      }
-    case .mjpeg:
-      return MJPEGDeviceSampleSink()
-    case .minicap:
-      return MinicapDeviceSampleSink()
+  /// What the capture output is asked for, or nil for a format the device cannot produce: it
+  /// encodes H.264 only.
+  static func captureFormat(for format: VideoStreamFormat) -> DeviceCaptureFormat? {
+    switch format {
+    case .compressedVideo(withCodec: .h264, transport: _):
+      return .h264
+    case .compressedVideo(withCodec: .hevc, transport: _):
+      return nil
+    case .mjpeg, .minicap:
+      return .jpeg
     case .bgra:
-      return BGRADeviceSampleSink()
+      return .bgra
     }
   }
 
-  init(session: AVCaptureSession, output: AVCaptureVideoDataOutput, sink: any DeviceSampleSink, writeQueue: DispatchQueue, logger: any ControlCoreLogger) {
+  init(session: AVCaptureSession, output: AVCaptureVideoDataOutput, frameWriter: any EncodedFrameWriter, writeQueue: DispatchQueue, logger: any ControlCoreLogger) {
     self.session = session
     self.output = output
-    self.sink = sink
+    self.frameWriter = frameWriter
     self.writeQueue = writeQueue
     self.logger = logger
     super.init()
@@ -154,7 +149,16 @@ public final class DeviceVideoStream: NSObject, VideoStreamOperation, @unchecked
   /// Frames one captured sample for the consumer. A no-op with no consumer attached.
   func consumeSampleBuffer(_ sampleBuffer: CMSampleBuffer) {
     guard let consumer else { return }
-    sink.consume(sampleBuffer, to: consumer, logger: logger)
+    if !hasLoggedFirstSample, let formatDescription = CMSampleBufferGetFormatDescription(sampleBuffer) {
+      hasLoggedFirstSample = true
+      let dimensions = CMVideoFormatDescriptionGetDimensions(formatDescription)
+      logger.log("First captured sample: \(dimensions.width)x\(dimensions.height) \(CMFormatDescriptionGetMediaSubType(formatDescription).fourCharCodeString)")
+    }
+    do {
+      try frameWriter.write(sampleBuffer, to: consumer, logger: logger)
+    } catch {
+      logger.log("Failed to write frame: \(error)")
+    }
   }
 
   // MARK: - Lifecycle state
