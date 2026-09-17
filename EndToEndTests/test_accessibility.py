@@ -233,7 +233,9 @@ class AccessibilityTests(IdbEndToEndTestCase):
                 raise NotReady("the simulator has no accessibility translation object")
             controls = _labelled_controls(json.loads(completed.text))
             if not controls:
-                raise NotReady("Settings has no labelled rows yet")
+                raise NotReady(
+                    f"Settings has no labelled rows yet; response: {completed.text}"
+                )
             return controls[0]
 
         try:
