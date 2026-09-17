@@ -1427,7 +1427,8 @@ static NSDictionary<NSString *, id> *FBAXBridgeDispatchRequest(NSDictionary<NSSt
   // guest resolves the frontmost app in-guest (via the selected method, anchored at `x`/`y`) and reads
   // its tree in this one call, with no separate pid round-trip.
   pid_t pid = 0;
-  NSString *frontmostMethod = nil;  // non-nil when the pid was resolved in-guest (fused frontmost read)
+  NSString *frontmostMethod = nil;  // non-nil when the pid is resolved in-guest (fused frontmost read)
+  CGPoint frontmostAnchor = CGPointZero;
   if (requestedPid) {
     pid = requestedPid.intValue;
   } else {
@@ -1441,9 +1442,29 @@ static NSDictionary<NSString *, id> *FBAXBridgeDispatchRequest(NSDictionary<NSSt
       );
     }
     NSString *requestedMethod = [request[kRequestMethod] isKindOfClass:NSString.class] ? request[kRequestMethod] : nil;
-    NSString *method = requestedMethod ?: kMethodWindowServer;
-    FBAXFrontmostOutcome *frontmost =
-    FBAXBridgeResolveFrontmost(runtime, method, CGPointMake(xNumber.doubleValue, yNumber.doubleValue));
+    frontmostMethod = requestedMethod ?: kMethodWindowServer;
+    frontmostAnchor = CGPointMake(xNumber.doubleValue, yNumber.doubleValue);
+  }
+
+  // Asserted before the frontmost pid is discovered and before the tree is read: the mode decides how
+  // much structure an accessibility read sees, so asking for it later would report a state neither the
+  // discovery nor the traversal of this read ran under.
+  BOOL automationAsserted = NO;
+  BOOL automationEnabled = [runtime automationModeEnabled];
+  id requestedAutomation = request[kRequestAutomationMode];
+  if ([requestedAutomation isKindOfClass:NSNumber.class]) {
+    const BOOL wanted = [(NSNumber *)requestedAutomation boolValue];
+    // Only write when it would change something. A no-op write is still a preference write, and
+    // reporting `asserted` for one would tell a caller this read altered a device it left alone.
+    if (wanted != automationEnabled) {
+      automationEnabled = [runtime setAutomationModeEnabled:wanted];
+      // True only if the write took; a preference write can be accepted and not apply.
+      automationAsserted = (automationEnabled == wanted);
+    }
+  }
+
+  if (frontmostMethod) {
+    FBAXFrontmostOutcome *frontmost = FBAXBridgeResolveFrontmost(runtime, frontmostMethod, frontmostAnchor);
     switch (frontmost.status) {
       case FBAXFrontmostStatusResolved:
         break;
@@ -1468,23 +1489,6 @@ static NSDictionary<NSString *, id> *FBAXBridgeDispatchRequest(NSDictionary<NSSt
         );
     }
     pid = frontmost.processIdentifier;
-    frontmostMethod = method;
-  }
-
-  // Asserted before the tree is read, not after: the mode decides how much structure the read sees, so
-  // asking for it afterwards would report a state this read did not benefit from.
-  BOOL automationAsserted = NO;
-  BOOL automationEnabled = [runtime automationModeEnabled];
-  id requestedAutomation = request[kRequestAutomationMode];
-  if ([requestedAutomation isKindOfClass:NSNumber.class]) {
-    const BOOL wanted = [(NSNumber *)requestedAutomation boolValue];
-    // Only write when it would change something. A no-op write is still a preference write, and
-    // reporting `asserted` for one would tell a caller this read altered a device it left alone.
-    if (wanted != automationEnabled) {
-      automationEnabled = [runtime setAutomationModeEnabled:wanted];
-      // True only if the write took; a preference write can be accepted and not apply.
-      automationAsserted = (automationEnabled == wanted);
-    }
   }
 
   id root = [runtime applicationElementForProcessIdentifier:pid];

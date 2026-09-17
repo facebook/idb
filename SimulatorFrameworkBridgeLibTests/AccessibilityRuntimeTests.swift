@@ -849,10 +849,10 @@ final class AccessibilityRuntimeTests: XCTestCase {
     ])
 
     assertEqualObjects(axValue(response, "error_kind"), "frontmost_unresolved")
-    // BUG: the resolver runs and returns before the mode is read or written, so a failed read leaves
-    // automation unasserted however often the host retries — flipped in the following commit.
-    assertEqualObjects(runtime.operations, ["windowServerFrontmost"])
-    assertEqualObjects(runtime.automationModeWrites, [])
+    // The mode is asserted even though this read goes on to fail, so a retry meets a guest that already
+    // has automation on.
+    assertEqualObjects(runtime.operations, ["automationRead", "automationWrite", "windowServerFrontmost"])
+    assertEqualObjects(runtime.automationModeWrites, [NSNumber(value: true)])
   }
 
   // MARK: - Device settings
