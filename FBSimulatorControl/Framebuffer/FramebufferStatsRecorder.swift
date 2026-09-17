@@ -10,69 +10,40 @@ import Foundation
 import IOSurface
 
 /// Accumulates framebuffer surface-change and frame-rendered counters and periodically logs
-/// interval/total rates. Owns the single lock guarding the counters and the cadence timer: the
-/// callbacks that feed it fire on arbitrary private-framework threads while `snapshot()` /
-/// `startTime` are read from a consumer's queue.
-final class FramebufferStatsRecorder: @unchecked Sendable {
+/// interval/total rates. The callbacks that feed it fire on arbitrary private-framework threads
+/// while `snapshot()` / `startTime` are read from a consumer's queue; all of it sits in one
+/// `PeriodicStatsLog`.
+final class FramebufferStatsRecorder: Sendable {
 
   private let logger: any ControlCoreLogger
-  private let lock = NSLock()
-  private var stats = FramebufferStats()
-  private var lastLoggedStats = FramebufferStats()
-  private var timer = PeriodicStatsTimer(interval: .seconds(5))
+  private let log = PeriodicStatsLog(initial: FramebufferStats())
 
   init(logger: any ControlCoreLogger) {
     self.logger = logger
   }
 
   func recordIOSurfaceChange(surface: IOSurface?) {
-    lock.lock()
-    stats.ioSurfaceChangeCount += 1
-    let isFirstChange = stats.ioSurfaceChangeCount == 1
-    lock.unlock()
+    let isFirstChange = log.update { stats -> Bool in
+      stats.ioSurfaceChangeCount += 1
+      return stats.ioSurfaceChangeCount == 1
+    }
     if isFirstChange {
       logger.info().log("First IOSurface change callback, surface=\(String(describing: surface))")
     }
   }
 
   func recordFrameRendered() {
-    lock.lock()
-    stats.frameRenderedCount += 1
-    lock.unlock()
-    logStatsIfNeeded()
-  }
-
-  func snapshot() -> FramebufferStats {
-    lock.lock()
-    defer { lock.unlock() }
-    return stats
-  }
-
-  var startTime: ContinuousClock.Instant? {
-    lock.lock()
-    defer { lock.unlock() }
-    return timer.firstTickTime
-  }
-
-  private func logStatsIfNeeded() {
-    lock.lock()
-    switch timer.tick() {
+    switch log.updateAndTick({ $0.frameRenderedCount += 1 }).1 {
     case .started:
-      lock.unlock()
       logger.info().log("First frame-rendered callback received")
     case .pending:
-      lock.unlock()
-    case let .elapsed(intervalDuration, totalElapsed):
-      let current = stats
-      let last = lastLoggedStats
-      lastLoggedStats = current
-      lock.unlock()
-
+      break
+    case let .elapsed(current, last, interval, total):
       let intervalCallbacks = current.frameRenderedCount - last.frameRenderedCount
       let intervalIOSurface = current.ioSurfaceChangeCount - last.ioSurfaceChangeCount
 
-      let intervalSeconds = intervalDuration.seconds
-      let totalSeconds = totalElapsed.seconds
+      let intervalSeconds = interval.seconds
+      let totalSeconds = total.seconds
       let intervalRate = intervalSeconds > 0 ? Double(intervalCallbacks) / intervalSeconds : 0
       let totalRate = totalSeconds > 0 ? Double(current.frameRenderedCount) / totalSeconds : 0
 
@@ -85,5 +56,13 @@ final class FramebufferStatsRecorder: @unchecked Sendable {
           format: "Framebuffer stats (total): %lu frames in %.1fs (%.1f/s) — %lu IOSurface changes",
           current.frameRenderedCount, totalSeconds, totalRate, current.ioSurfaceChangeCount))
     }
+  }
+
+  func snapshot() -> FramebufferStats {
+    log.snapshot
+  }
+
+  var startTime: ContinuousClock.Instant? {
+    log.startTime
   }
 }

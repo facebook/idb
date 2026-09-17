@@ -8,7 +8,6 @@
 import CoreMedia
 import FBControlCore
 import Foundation
-import os
 
 /// Stats tracked by the video encoder (VideoToolbox).
 /// Zeroed if the stream uses a non-encoded format (e.g. bitmap/BGRA).
@@ -28,13 +27,13 @@ public struct VideoEncoderStats: Sendable {
 /// Accounts for what the encoder does with each frame: the running `VideoEncoderStats`, the
 /// warmup and starvation diagnostics, and a stats line every `logInterval` seconds.
 ///
-/// Every mutable field lives under one `OSAllocatedUnfairLock`, so the recorder is `Sendable` as it stands: the
-/// VideoToolbox output handler records outcomes, the encode submission records its timing, and the
-/// owning actor reads snapshots, from whatever threads they run on.
+/// Every mutable field lives in one `PeriodicStatsLog`, so the recorder is `Sendable` as it stands:
+/// the VideoToolbox output handler records outcomes, the encode submission records its timing, and
+/// the owning actor reads snapshots, from whatever threads they run on.
 final class EncoderStatsRecorder: Sendable {
 
   /// What became of one frame the encoder was given.
-  enum Outcome {
+  enum Outcome: Sendable {
     /// The encoded sample reached the consumer, carrying this many bytes.
     case written(encodedBytes: Int)
     /// VideoToolbox dropped the frame (rate control had no budget for it).
@@ -45,13 +44,11 @@ final class EncoderStatsRecorder: Sendable {
     case encodeError(OSStatus)
   }
 
-  private struct State {
+  private struct State: Sendable {
     var stats = VideoEncoderStats()
-    var lastLoggedStats = VideoEncoderStats()
     var consecutiveNotReadyFrameCount: UInt = 0
     var warmupComplete = false
     var starvationWarningLogged = false
-    var statsTimer: PeriodicStatsTimer
   }
 
   /// Frames the encoder may take to produce its first output before that is worth a warning.
@@ -60,37 +57,37 @@ final class EncoderStatsRecorder: Sendable {
   static let starvationThreshold: UInt = 10
 
   private let logger: any ControlCoreLogger
-  private let state: OSAllocatedUnfairLock<State>
+  private let log: PeriodicStatsLog<State>
 
   init(logger: any ControlCoreLogger, logInterval: Duration = .seconds(5)) {
     self.logger = logger
-    self.state = OSAllocatedUnfairLock(initialState: State(statsTimer: PeriodicStatsTimer(interval: logInterval)))
+    self.log = PeriodicStatsLog(initial: State(), interval: logInterval)
   }
 
   /// The stats so far.
   var snapshot: VideoEncoderStats {
-    state.withLock { $0.stats }
+    log.snapshot.stats
   }
 
   var warmupComplete: Bool {
-    state.withLock { $0.warmupComplete }
+    log.snapshot.warmupComplete
   }
 
   var consecutiveNotReadyFrameCount: UInt {
-    state.withLock { $0.consecutiveNotReadyFrameCount }
+    log.snapshot.consecutiveNotReadyFrameCount
   }
 
   var starvationWarningLogged: Bool {
-    state.withLock { $0.starvationWarningLogged }
+    log.snapshot.starvationWarningLogged
   }
 
   /// Test seam: move the periodic log's last-fired time back so the next `record` logs.
   func backdateStatsTimerForTesting(by duration: Duration) {
-    state.withLock { $0.statsTimer.backdateForTesting(by: duration) }
+    log.backdateForTesting(by: duration)
   }
 
   /// A log line produced under the lock and emitted after it is released.
-  private enum LogLine {
+  private enum LogLine: Sendable {
     case info(String)
     case warning(String)
   }
@@ -98,32 +95,14 @@ final class EncoderStatsRecorder: Sendable {
   /// One encoder callback's outcome. Counts it, tracks warmup and starvation, and logs the periodic
   /// stats line when the interval has elapsed. Logging happens outside the lock.
   func record(_ outcome: Outcome) {
-    let lines = state.withLock { state -> [LogLine] in
-      var messages: [LogLine] = []
-      if !state.statsTimer.hasStarted {
-        _ = state.statsTimer.tick()
-        messages.append(.info("First encode callback received"))
-      }
-
-      state.stats.callbackCount += 1
-      switch outcome {
-      case let .encodeError(status):
-        state.stats.encodeErrorCount += 1
-        messages.append(.warning("VideoToolbox encode error: OSStatus \(status)"))
-      case .dropped:
-        state.stats.dropCount += 1
-        messages += Self.recordFrameNotProduced(&state)
-      case .writeFailed:
-        state.stats.writeFailureCount += 1
-        messages += Self.recordFrameNotProduced(&state)
-      case let .written(encodedBytes):
-        state.stats.writeCount += 1
-        state.stats.totalEncodedBytes += UInt(encodedBytes)
-        messages += Self.recordFrameProduced(&state)
-      }
-
-      messages += Self.periodicStatsIfDue(&state)
-      return messages
+    var (lines, tick) = log.updateAndTick { state in Self.record(outcome, in: &state) }
+    switch tick {
+    case .started:
+      lines.insert(.info("First encode callback received"), at: 0)
+    case .pending:
+      break
+    case let .elapsed(current, last, interval, total):
+      lines += Self.periodicStats(current: current.stats, last: last.stats, interval: interval, total: total)
     }
     for line in lines {
       switch line {
@@ -137,15 +116,34 @@ final class EncoderStatsRecorder: Sendable {
 
   /// How long an encode submission took, converter included.
   func recordEncodeSubmission(_ duration: Duration) {
-    state.withLock { $0.stats.totalEncodeSubmitSeconds += duration.seconds }
+    log.update { $0.stats.totalEncodeSubmitSeconds += duration.seconds }
   }
 
   /// The source surface changed while a frame was being read.
   func recordTornFrame() {
-    state.withLock { $0.stats.tornFrameCount += 1 }
+    log.update { $0.stats.tornFrameCount += 1 }
   }
 
   // MARK: - Warmup and starvation
+
+  private static func record(_ outcome: Outcome, in state: inout State) -> [LogLine] {
+    state.stats.callbackCount += 1
+    switch outcome {
+    case let .encodeError(status):
+      state.stats.encodeErrorCount += 1
+      return [.warning("VideoToolbox encode error: OSStatus \(status)")]
+    case .dropped:
+      state.stats.dropCount += 1
+      return recordFrameNotProduced(&state)
+    case .writeFailed:
+      state.stats.writeFailureCount += 1
+      return recordFrameNotProduced(&state)
+    case let .written(encodedBytes):
+      state.stats.writeCount += 1
+      state.stats.totalEncodedBytes += UInt(encodedBytes)
+      return recordFrameProduced(&state)
+    }
+  }
 
   private static func recordFrameNotProduced(_ state: inout State) -> [LogLine] {
     state.consecutiveNotReadyFrameCount += 1
@@ -175,15 +173,9 @@ final class EncoderStatsRecorder: Sendable {
 
   // MARK: - Periodic log
 
-  private static func periodicStatsIfDue(_ state: inout State) -> [LogLine] {
-    guard case let .elapsed(interval, total) = state.statsTimer.tick() else {
-      return []
-    }
+  private static func periodicStats(current: VideoEncoderStats, last: VideoEncoderStats, interval: Duration, total: Duration) -> [LogLine] {
     let intervalDuration = interval.seconds
     let totalElapsed = total.seconds
-    let current = state.stats
-    let last = state.lastLoggedStats
-    state.lastLoggedStats = current
 
     let intervalCallbacks = current.callbackCount - last.callbackCount
     let intervalEncodedBytes = current.totalEncodedBytes - last.totalEncodedBytes
