@@ -11,6 +11,7 @@ These tests run the `idb` CLI through `idb_companion` against a booted simulator
 | `IDB_SETUP_BIN` | optional client used only to prepare fixtures; defaults to `IDB_BIN` |
 | `IDB_E2E_COMPANION_PATH` | the `idb_companion` binary, with its `Resources/` directory beside it |
 | `IDB_E2E_RECORDER_PATH` | the built `sim-video` binary |
+| `IDB_E2E_SUITE_CAPABILITY` | optional suite scope and companion readiness: `companion-process`, `accessibility-read`, or `accessibility-interaction` (the default) |
 | `DEVICE_UDID` | the booted simulator to test against |
 | `DEVICE_SET_PATH` | the device set `DEVICE_UDID` lives in |
 | `IDB_E2E_STRICT` | `1` fails tests when `SimLaunchHostService` is unavailable; otherwise those tests skip |
@@ -21,7 +22,7 @@ Use a dedicated simulator. Tests install and remove `ReplHost.app`, change its p
 
 Service mutation tests also invoke the bundled guest directly. Its `dynamic-store` service snapshots and restores raw configd keys as property lists, so DNS and proxy tests put back the complete original value or its absence, retaining the original binary snapshot for restoration.
 
-The harness starts one companion per test process with `DEVICE_SET_PATH` and a private Unix socket. Every CLI command connects to it with `--companion`. Setup waits for accessibility reads to become available. If the companion exits, the current test reports the failure and the remaining tests stop.
+The harness starts one companion per test process with `DEVICE_SET_PATH` and a private Unix socket. Every CLI command connects to it with `--companion`. `companion-process` requires only the companion's readiness report; both accessibility capabilities additionally wait for an accessibility read through the selected client. If the companion exits, the current test reports the failure and the remaining tests stop.
 
 Cases derive from `unittest.IsolatedAsyncioTestCase` and every `idb` invocation is awaited, so a test can read from a command that is still running rather than only inspect one that has already exited. That is what the streaming commands need. The companion is the exception: it outlives any single test, and each test gets its own event loop, so it stays on a plain subprocess.
 

@@ -37,8 +37,15 @@ from .harness import (
     NotReady,
     run_with_registered_cleanup,
     running_bundle_ids_from_listing,
+    select_tests_for_capability,
+    shared_companion,
     Simctl,
     STRICT_ENV,
+    suite_capability,
+    SUITE_CAPABILITY_ENV,
+    suite_supports,
+    SuiteCapability,
+    wait_for_accessibility,
     wait_until,
 )
 from .recording import Recording
@@ -221,6 +228,300 @@ class SettingsCleanupTests(unittest.TestCase):
         result = self.run_setup_error(asyncio.CancelledError())
 
         self.assertIn("CancelledError", result.errors[0][1])
+
+
+class SuiteCapabilityTests(unittest.TestCase):
+    READ_TESTS = [
+        "test_ui_describe_all_accepts_keys_profiling_and_frame_coverage",
+        "test_ui_describe_all_over_both_backends",
+        "test_ui_describe_resolves_a_point_and_a_marker",
+    ]
+    INTERACTION_TESTS = [
+        *READ_TESTS,
+        "test_ui_scroll_moves_settings_rows_down_and_up",
+        "test_ui_tap_opens_general_by_marker",
+        "test_ui_tap_opens_general_by_point",
+    ]
+    REQUIREMENTS = {
+        "test_ui_describe_all_accepts_keys_profiling_and_frame_coverage": (
+            SuiteCapability.ACCESSIBILITY_READ
+        ),
+        "test_ui_describe_all_over_both_backends": SuiteCapability.ACCESSIBILITY_READ,
+        "test_ui_describe_resolves_a_point_and_a_marker": (
+            SuiteCapability.ACCESSIBILITY_READ
+        ),
+        "test_ui_scroll_moves_settings_rows_down_and_up": (
+            SuiteCapability.ACCESSIBILITY_INTERACTION
+        ),
+        "test_ui_tap_opens_general_by_marker": (
+            SuiteCapability.ACCESSIBILITY_INTERACTION
+        ),
+        "test_ui_tap_opens_general_by_point": (
+            SuiteCapability.ACCESSIBILITY_INTERACTION
+        ),
+    }
+
+    def selected(self) -> tuple[unittest.TestSuite, unittest.TestSuite]:
+        suite_type = type(
+            "_SuiteCapabilityFixture",
+            (unittest.TestCase,),
+            {name: lambda _self: None for name in self.INTERACTION_TESTS},
+        )
+        loader = unittest.TestLoader()
+        discovered = loader.loadTestsFromTestCase(suite_type)
+        selected = select_tests_for_capability(
+            loader,
+            discovered,
+            suite_type,
+            self.REQUIREMENTS,
+        )
+        return discovered, selected
+
+    @staticmethod
+    def names(suite: unittest.TestSuite) -> list[str]:
+        return [test._testMethodName for test in suite]
+
+    @mock.patch.dict(os.environ, {}, clear=True)
+    def test_unset_capability_defaults_to_interaction(self) -> None:
+        discovered, selected = self.selected()
+
+        self.assertIs(
+            suite_capability(),
+            SuiteCapability.ACCESSIBILITY_INTERACTION,
+        )
+        self.assertIs(selected, discovered)
+        self.assertEqual(self.names(selected), self.INTERACTION_TESTS)
+
+    def test_each_explicit_capability_parses(self) -> None:
+        for capability in SuiteCapability:
+            with (
+                self.subTest(capability=capability.value),
+                mock.patch.dict(
+                    os.environ,
+                    {SUITE_CAPABILITY_ENV: capability.value},
+                    clear=True,
+                ),
+            ):
+                self.assertIs(suite_capability(), capability)
+
+    def test_capabilities_select_exact_accessibility_identities(self) -> None:
+        expected = {
+            SuiteCapability.COMPANION_PROCESS: [],
+            SuiteCapability.ACCESSIBILITY_READ: self.READ_TESTS,
+            SuiteCapability.ACCESSIBILITY_INTERACTION: self.INTERACTION_TESTS,
+        }
+        for capability, names in expected.items():
+            with (
+                self.subTest(capability=capability.value),
+                mock.patch.dict(
+                    os.environ,
+                    {SUITE_CAPABILITY_ENV: capability.value},
+                    clear=True,
+                ),
+            ):
+                discovered, selected = self.selected()
+                if capability is SuiteCapability.ACCESSIBILITY_INTERACTION:
+                    self.assertIs(selected, discovered)
+                else:
+                    self.assertIsNot(selected, discovered)
+                self.assertEqual(self.names(selected), names)
+                self.assertEqual(
+                    [
+                        name
+                        for name, required in self.REQUIREMENTS.items()
+                        if suite_supports(required)
+                    ],
+                    names,
+                )
+
+    def test_empty_and_unknown_capabilities_fail_closed(self) -> None:
+        for configured in ("", "unknown"):
+            with (
+                self.subTest(configured=configured),
+                mock.patch.dict(
+                    os.environ,
+                    {SUITE_CAPABILITY_ENV: configured},
+                    clear=True,
+                ),
+                self.assertRaisesRegex(HarnessError, "not one of"),
+            ):
+                suite_capability()
+
+
+class SharedCompanionReadinessTests(unittest.IsolatedAsyncioTestCase):
+    def setUp(self) -> None:
+        super().setUp()
+        self.previous = (harness._companion, harness._acquisition_failure)
+        harness._companion = None
+        harness._acquisition_failure = None
+
+    def tearDown(self) -> None:
+        harness._companion, harness._acquisition_failure = self.previous
+        super().tearDown()
+
+    @mock.patch.dict(
+        os.environ,
+        {SUITE_CAPABILITY_ENV: SuiteCapability.COMPANION_PROCESS.value},
+        clear=True,
+    )
+    async def test_process_capability_does_not_probe_accessibility(self) -> None:
+        environment = mock.sentinel.environment
+        made = mock.Mock()
+        with (
+            mock.patch.object(
+                harness,
+                "shared_environment",
+                new=mock.AsyncMock(return_value=environment),
+            ),
+            mock.patch.object(harness, "Companion", return_value=made),
+            mock.patch.object(
+                harness,
+                "wait_for_accessibility",
+                new=mock.AsyncMock(),
+            ) as wait_for_accessibility,
+            mock.patch.object(harness.atexit, "register") as register,
+        ):
+            acquired = await shared_companion()
+
+        self.assertIs(acquired, made)
+        self.assertIs(harness._companion, made)
+        wait_for_accessibility.assert_not_awaited()
+        register.assert_called_once_with(made.stop)
+
+    async def test_accessibility_capabilities_probe_before_caching(self) -> None:
+        for capability in (
+            SuiteCapability.ACCESSIBILITY_READ,
+            SuiteCapability.ACCESSIBILITY_INTERACTION,
+        ):
+            with self.subTest(capability=capability.value):
+                harness._companion = None
+                environment = mock.sentinel.environment
+                made = mock.Mock()
+
+                async def probe(*_args: object) -> None:
+                    self.assertIsNone(harness._companion)
+
+                with (
+                    mock.patch.dict(
+                        os.environ,
+                        {SUITE_CAPABILITY_ENV: capability.value},
+                        clear=True,
+                    ),
+                    mock.patch.object(
+                        harness,
+                        "shared_environment",
+                        new=mock.AsyncMock(return_value=environment),
+                    ),
+                    mock.patch.object(harness, "Companion", return_value=made),
+                    mock.patch.object(
+                        harness,
+                        "wait_for_accessibility",
+                        new=mock.AsyncMock(side_effect=probe),
+                    ) as wait_for_accessibility,
+                    mock.patch.object(harness.atexit, "register") as register,
+                ):
+                    acquired = await shared_companion()
+
+                self.assertIs(acquired, made)
+                self.assertIs(harness._companion, made)
+                wait_for_accessibility.assert_awaited_once_with(environment, made)
+                register.assert_called_once_with(made.stop)
+
+    async def test_readiness_failure_and_cancellation_are_cached(self) -> None:
+        for error in (HarnessError("not ready"), asyncio.CancelledError()):
+            with self.subTest(error=type(error).__name__):
+                harness._companion = None
+                harness._acquisition_failure = None
+                made = mock.Mock()
+                with (
+                    mock.patch.dict(
+                        os.environ,
+                        {
+                            SUITE_CAPABILITY_ENV: (
+                                SuiteCapability.ACCESSIBILITY_READ.value
+                            )
+                        },
+                        clear=True,
+                    ),
+                    mock.patch.object(
+                        harness,
+                        "shared_environment",
+                        new=mock.AsyncMock(return_value=mock.sentinel.environment),
+                    ),
+                    mock.patch.object(harness, "Companion", return_value=made),
+                    mock.patch.object(
+                        harness,
+                        "wait_for_accessibility",
+                        new=mock.AsyncMock(side_effect=error),
+                    ),
+                    mock.patch.object(harness.atexit, "register") as register,
+                ):
+                    with self.assertRaises(type(error)) as raised:
+                        await shared_companion()
+
+                self.assertIs(raised.exception, error)
+                self.assertIs(harness._acquisition_failure, error)
+                self.assertIsNone(harness._companion)
+                made.stop.assert_called_once_with()
+                register.assert_not_called()
+
+                with (
+                    mock.patch.dict(
+                        os.environ,
+                        {
+                            SUITE_CAPABILITY_ENV: (
+                                SuiteCapability.ACCESSIBILITY_READ.value
+                            )
+                        },
+                        clear=True,
+                    ),
+                    mock.patch.object(harness, "Companion") as construct,
+                    self.assertRaises(type(error)) as repeated,
+                ):
+                    await shared_companion()
+                self.assertIs(repeated.exception, error)
+                construct.assert_not_called()
+
+    async def test_invalid_capability_fails_before_process_construction(self) -> None:
+        for configured in ("", "unknown"):
+            with (
+                self.subTest(configured=configured),
+                mock.patch.dict(
+                    os.environ,
+                    {SUITE_CAPABILITY_ENV: configured},
+                    clear=True,
+                ),
+                mock.patch.object(harness, "Companion") as construct,
+                self.assertRaisesRegex(HarnessError, "not one of"),
+            ):
+                await shared_companion()
+            construct.assert_not_called()
+
+
+class AccessibilityReadinessTests(unittest.IsolatedAsyncioTestCase):
+    async def test_probe_uses_the_selected_client_not_the_setup_client(self) -> None:
+        environment = SimpleNamespace(
+            idb_bin=Path("/selected-idb"),
+            idb_args=("--selected-argument",),
+            setup_idb_bin=Path("/setup-idb"),
+        )
+        selected = mock.AsyncMock(return_value=Completed(0, b"\xff", b"\xfe"))
+        with mock.patch.object(harness, "run", new=selected):
+            await wait_for_accessibility(
+                environment,
+                SimpleNamespace(address="/tmp/companion.sock"),
+            )
+
+        selected.assert_awaited_once_with(
+            [
+                "/selected-idb",
+                "--selected-argument",
+                "--companion",
+                "/tmp/companion.sock",
+                *harness.ACCESSIBILITY_PROBE_ARGS,
+            ],
+            timeout=harness.DEFAULT_COMMAND_TIMEOUT_SECONDS,
+        )
 
 
 class FailureReportingTests(unittest.TestCase):

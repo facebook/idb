@@ -7,7 +7,7 @@
 
 The caller supplies DEVICE_UDID, DEVICE_SET_PATH, IDB_BIN,
 IDB_E2E_COMPANION_PATH and IDB_E2E_RECORDER_PATH. The harness starts the companion
-and waits for accessibility readiness; it does not manage the simulator lifecycle.
+and applies the configured suite capability; it does not manage the simulator lifecycle.
 """
 
 from __future__ import annotations
@@ -40,7 +40,7 @@ IDB_BIN_ENV = "IDB_BIN"
 IDB_ARGS_ENV = "IDB_ARGS"
 IDB_E2E_COMPANION_PATH_ENV = "IDB_E2E_COMPANION_PATH"
 IDB_SETUP_BIN_ENV = "IDB_SETUP_BIN"
-READ_ONLY_CLIENT_ENV = "IDB_E2E_READ_ONLY_CLIENT"
+SUITE_CAPABILITY_ENV = "IDB_E2E_SUITE_CAPABILITY"
 IDB_E2E_RECORDER_PATH_ENV = "IDB_E2E_RECORDER_PATH"
 STRICT_ENV = "IDB_E2E_STRICT"
 ARTIFACTS_ENV = "IDB_E2E_ARTIFACTS_DIR"
@@ -139,6 +139,17 @@ class FailureKind(enum.Enum):
     HOST_SERVICE_UNAVAILABLE = enum.auto()
 
 
+class SuiteCapability(enum.Enum):
+    COMPANION_PROCESS = "companion-process"
+    ACCESSIBILITY_READ = "accessibility-read"
+    ACCESSIBILITY_INTERACTION = "accessibility-interaction"
+
+
+_SUITE_CAPABILITY_RANK = {
+    capability: rank for rank, capability in enumerate(SuiteCapability)
+}
+
+
 def classify_failure(completed: Completed) -> FailureKind:
     for marker in COMPANION_UNREACHABLE_MARKERS:
         if marker in completed.error_text:
@@ -153,8 +164,40 @@ def strict() -> bool:
     return os.environ.get(STRICT_ENV) == "1"
 
 
-def read_only_client() -> bool:
-    return os.environ.get(READ_ONLY_CLIENT_ENV) == "1"
+def suite_capability() -> SuiteCapability:
+    configured = os.environ.get(SUITE_CAPABILITY_ENV)
+    if configured is None:
+        return SuiteCapability.ACCESSIBILITY_INTERACTION
+    try:
+        return SuiteCapability(configured)
+    except ValueError:
+        expected = ", ".join(capability.value for capability in SuiteCapability)
+        raise HarnessError(
+            f"{SUITE_CAPABILITY_ENV}={configured!r} is not one of: {expected}"
+        ) from None
+
+
+def suite_supports(required: SuiteCapability) -> bool:
+    return (
+        _SUITE_CAPABILITY_RANK[required] <= _SUITE_CAPABILITY_RANK[suite_capability()]
+    )
+
+
+def select_tests_for_capability(
+    loader: unittest.TestLoader,
+    tests: unittest.TestSuite,
+    test_case: type[unittest.TestCase],
+    requirements: Mapping[str, SuiteCapability],
+) -> unittest.TestSuite:
+    names = loader.getTestCaseNames(test_case)
+    if set(names) != set(requirements):
+        raise HarnessError(
+            f"Capability requirements for {test_case.__name__} do not match its tests"
+        )
+    selected = [name for name in names if suite_supports(requirements[name])]
+    if selected == names:
+        return tests
+    return unittest.TestSuite(test_case(name) for name in selected)
 
 
 @dataclass(frozen=True)
@@ -587,6 +630,7 @@ async def shared_environment() -> Environment:
 
 async def shared_companion() -> Companion:
     global _companion, _acquisition_failure
+    capability = suite_capability()
     if _acquisition_failure is not None:
         raise _acquisition_failure
     if _companion is None:
@@ -597,13 +641,14 @@ async def shared_companion() -> Companion:
             _acquisition_failure = error
             raise
         try:
-            await wait_for_accessibility(environment, companion)
+            if capability is not SuiteCapability.COMPANION_PROCESS:
+                await wait_for_accessibility(environment, companion)
         except BaseException as error:
             companion.stop()
             _acquisition_failure = error
             raise
         _companion = companion
-        atexit.register(_companion.stop)
+        atexit.register(companion.stop)
     return _companion
 
 

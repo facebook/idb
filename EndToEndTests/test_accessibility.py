@@ -28,8 +28,10 @@ from .harness import (
     IdbEndToEndTestCase,
     NotReady,
     POLL_INTERVAL_SECONDS,
-    read_only_client,
     run_with_registered_cleanup,
+    select_tests_for_capability,
+    suite_supports,
+    SuiteCapability,
     wait_until,
 )
 
@@ -114,7 +116,15 @@ def _settings_row_positions(document: Any) -> dict[str, float]:
     }
 
 
-READ_ONLY_CLIENT_EXCLUSIONS = frozenset(
+ACCESSIBILITY_READ_TESTS = frozenset(
+    {
+        "test_ui_describe_all_accepts_keys_profiling_and_frame_coverage",
+        "test_ui_describe_all_over_both_backends",
+        "test_ui_describe_point_uses_the_guest_backend",
+        "test_ui_describe_resolves_a_point_and_a_marker",
+    }
+)
+INTERACTION_TESTS = frozenset(
     {
         "test_ui_scroll_moves_settings_rows_down_and_up",
         "test_guest_describe_runs_each_tree_reader",
@@ -128,6 +138,10 @@ READ_ONLY_CLIENT_EXCLUSIONS = frozenset(
         "test_ui_wait_rejects_an_invalid_poll_interval",
     }
 )
+ACCESSIBILITY_TEST_CAPABILITIES = {
+    **{name: SuiteCapability.ACCESSIBILITY_READ for name in ACCESSIBILITY_READ_TESTS},
+    **{name: SuiteCapability.ACCESSIBILITY_INTERACTION for name in INTERACTION_TESTS},
+}
 
 
 def load_tests(
@@ -135,12 +149,11 @@ def load_tests(
     tests: unittest.TestSuite,
     pattern: str | None,
 ) -> unittest.TestSuite:
-    if not read_only_client():
-        return tests
-    return unittest.TestSuite(
-        AccessibilityTests(name)
-        for name in loader.getTestCaseNames(AccessibilityTests)
-        if name not in READ_ONLY_CLIENT_EXCLUSIONS
+    return select_tests_for_capability(
+        loader,
+        tests,
+        AccessibilityTests,
+        ACCESSIBILITY_TEST_CAPABILITIES,
     )
 
 
@@ -148,6 +161,15 @@ class AccessibilityTests(IdbEndToEndTestCase):
     control: dict[str, Any]
 
     async def asyncSetUp(self) -> None:
+        required = ACCESSIBILITY_TEST_CAPABILITIES.get(self._testMethodName)
+        if required is None:
+            raise HarnessError(
+                f"No suite capability owns {type(self).__name__}.{self._testMethodName}"
+            )
+        if not suite_supports(required):
+            self.skipTest(
+                f"{self._testMethodName} requires {required.value} capability"
+            )
         await super().asyncSetUp()
         for bundle_id in (SAFARI_BUNDLE_ID, FIXTURE_APP_BUNDLE_ID, SETTINGS_BUNDLE_ID):
             await self.setup_terminate_quietly(bundle_id)
@@ -313,7 +335,6 @@ class AccessibilityTests(IdbEndToEndTestCase):
             result = await self.idb_json("ui", "wait", marker, "--api", api)
             self.assertEqual(result, {"found": True}, api)
 
-    @unittest.skipIf(read_only_client(), "selected client is read-only")
     async def test_ui_wait_returns_after_general_opens(self) -> None:
         general = await self.wait_for_element(GENERAL_ROW_ID)
         title = _label(general)
@@ -513,7 +534,6 @@ class AccessibilityTests(IdbEndToEndTestCase):
         field = await self.wait_for_search_field("idb-second")
         self.assertEqual(field["value"], "idb-second")
 
-    @unittest.skipIf(read_only_client(), "selected client is read-only")
     async def test_ui_tap_opens_general_by_point(self) -> None:
         general = await self.wait_for_element(GENERAL_ROW_ID)
         title = _label(general)
@@ -550,7 +570,6 @@ class AccessibilityTests(IdbEndToEndTestCase):
         await self.idb("ui", "tap", str(x), str(y), "--api", "ax")
         await self.wait_for_element(title, "NavigationBar")
 
-    @unittest.skipIf(read_only_client(), "selected client is read-only")
     async def test_ui_tap_opens_general_by_marker(self) -> None:
         general = await self.wait_for_element(GENERAL_ROW_ID)
         title = _label(general)
@@ -585,7 +604,6 @@ class AccessibilityTests(IdbEndToEndTestCase):
             f"Settings did not scroll {direction}", UI_UPDATE_TIMEOUT_SECONDS, read
         )
 
-    @unittest.skipIf(read_only_client(), "selected client is read-only")
     async def test_ui_scroll_moves_settings_rows_down_and_up(self) -> None:
         await self.wait_for_element(GENERAL_ROW_ID)
         before = _settings_row_positions(await self.describe_all_complete("axbridge"))
