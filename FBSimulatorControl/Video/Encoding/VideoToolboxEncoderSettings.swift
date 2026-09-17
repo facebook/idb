@@ -144,7 +144,7 @@ struct VideoToolboxEncoderSettings {
     let burstBytesPerSecond = averageBitRate * 3 / 16
     return [
       kVTCompressionPropertyKey_AverageBitRate as String: averageBitRate,
-      kVTCompressionPropertyKey_DataRateLimits as String: [NSNumber(value: burstBytesPerSecond), NSNumber(value: 1)],
+      kVTCompressionPropertyKey_DataRateLimits as String: [burstBytesPerSecond, 1],
     ]
   }
 }

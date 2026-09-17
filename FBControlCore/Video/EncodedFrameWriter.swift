@@ -191,11 +191,12 @@ extension CMSampleBuffer {
   /// Modern VideoToolbox marks a non-sync sample with `NotSync`; a sample without the attachment is a
   /// keyframe.
   var isKeyFrame: Bool {
-    guard let attachments = CMSampleBufferGetSampleAttachmentsArray(self, createIfNecessary: true), CFArrayGetCount(attachments) != 0 else {
+    guard let attachments = CMSampleBufferGetSampleAttachmentsArray(self, createIfNecessary: true) as? [[CFString: Any]],
+      let attachment = attachments.first
+    else {
       return false
     }
-    let attachment = unsafeBitCast(CFArrayGetValueAtIndex(attachments, 0), to: CFDictionary.self)
-    return !CFDictionaryContainsKey(attachment, Unmanaged.passUnretained(kCMSampleAttachmentKey_NotSync).toOpaque())
+    return attachment[kCMSampleAttachmentKey_NotSync] == nil
   }
 }
 

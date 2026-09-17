@@ -189,7 +189,7 @@ final class VideoToolboxEncoderSettingsTests: XCTestCase {
   }
 
   func testRateControlBoundsBurstsToOneAndAHalfTimesTheAverageOverOneSecond() {
-    let limits = retinaProperties(settings(h264, rateControl: .bitrate(8_000_000)))[kVTCompressionPropertyKey_DataRateLimits as String] as? [NSNumber]
+    let limits = retinaProperties(settings(h264, rateControl: .bitrate(8_000_000)))[kVTCompressionPropertyKey_DataRateLimits as String] as? [Int]
     // 8 Mbps × 1.5 = 12 Mbit = 1.5 MB per one-second window.
     XCTAssertEqual(limits, [1_500_000, 1])
   }
