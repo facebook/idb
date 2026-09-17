@@ -187,7 +187,6 @@ func createTestVideoStreamPusher(_ logger: ControlCoreLogger) -> VideoToolboxFra
     settings: VideoToolboxEncoderSettings(configuration: config, cadence: .eager(framesPerSecond: 30), sink: .live),
     scaleFactor: nil,
     videoCodec: kCMVideoCodecType_H264,
-    encodedSampleConsumer: DataConsumerEncodedSampleConsumer(
-      consumer: consumer, frameWriter: AnnexBFrameWriter(codec: .h264), timedMetadataWriter: nil),
+    encodedSampleConsumer: DataConsumerEncodedSampleConsumer(consumer: consumer, frameWriter: AnnexBFrameWriter(codec: .h264)),
     logger: logger)
 }

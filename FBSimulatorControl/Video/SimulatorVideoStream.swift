@@ -456,8 +456,8 @@ public actor SimulatorVideoStream: VideoStreamOperation {
     let attributes = bitmapStreamPixelBufferAttributes(from: buffer)
     logger.log("Mounting Surface \(IOSurfaceGetID(surface)) with Attributes: \(CollectionInformation.oneLineDescription(from: attributes))")
 
-    if frameWriters == nil, case let .compressedVideo(codec, transport) = configuration.format {
-      frameWriters = transport.frameWriters(for: codec)
+    if frameWriters == nil {
+      frameWriters = configuration.format.frameWriters()
     }
     let framePusher = try Self.framePusher(
       configuration: configuration,
@@ -587,29 +587,23 @@ public actor SimulatorVideoStream: VideoStreamOperation {
     frameWriters: VideoStreamFrameWriters?,
     logger: any ControlCoreLogger
   ) throws -> any FramePusher {
-    let settings = VideoToolboxEncoderSettings(
-      configuration: configuration, cadence: cadence, sink: encodedSampleConsumerOverride == nil ? .live : .file)
+    let videoCodec: CMVideoCodecType
     switch configuration.format {
-    case let .compressedVideo(codec, transport):
-      let frameWriters = frameWriters ?? transport.frameWriters(for: codec)
-      return VideoToolboxFramePusher(
-        settings: settings, scaleFactor: configuration.scaleFactor, videoCodec: codec.videoToolboxCodec,
-        encodedSampleConsumer: encodedSampleConsumerOverride
-          ?? DataConsumerEncodedSampleConsumer(consumer: consumer, frameWriter: frameWriters.frameWriter, timedMetadataWriter: frameWriters.timedMetadataWriter),
-        logger: logger)
-    case .mjpeg:
-      return VideoToolboxFramePusher(
-        settings: settings, scaleFactor: configuration.scaleFactor, videoCodec: kCMVideoCodecType_JPEG,
-        encodedSampleConsumer: encodedSampleConsumerOverride ?? MJPEGSampleConsumer(consumer: consumer),
-        logger: logger)
-    case .minicap:
-      return VideoToolboxFramePusher(
-        settings: settings, scaleFactor: configuration.scaleFactor, videoCodec: kCMVideoCodecType_JPEG,
-        encodedSampleConsumer: encodedSampleConsumerOverride ?? MinicapSampleConsumer(consumer: consumer),
-        logger: logger)
+    case let .compressedVideo(codec, _):
+      videoCodec = codec.videoToolboxCodec
+    case .mjpeg, .minicap:
+      videoCodec = kCMVideoCodecType_JPEG
     case .bgra:
       return BitmapFramePusher(consumer: consumer, scaleFactor: configuration.scaleFactor)
     }
+    let frameWriter = (frameWriters ?? configuration.format.frameWriters()).frameWriter
+    return VideoToolboxFramePusher(
+      settings: VideoToolboxEncoderSettings(
+        configuration: configuration, cadence: cadence, sink: encodedSampleConsumerOverride == nil ? .live : .file),
+      scaleFactor: configuration.scaleFactor,
+      videoCodec: videoCodec,
+      encodedSampleConsumer: encodedSampleConsumerOverride ?? DataConsumerEncodedSampleConsumer(consumer: consumer, frameWriter: frameWriter),
+      logger: logger)
   }
 
   /// Write a timed metadata marker (chapter) at the current stream position. Routed to the
