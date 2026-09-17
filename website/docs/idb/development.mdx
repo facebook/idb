@@ -87,3 +87,28 @@ $ IDB_COMPANION=localhost:10882 idb describe
 ```
 
 As long as you prefix this environment variable before all commands, you'll be able to run commands against the companion that you're currently debugging within Xcode.
+
+## Building this site
+
+The site is [Docusaurus](https://docusaurus.io), in `website/`:
+
+```
+cd website
+yarn install
+yarn start        # serve with live reload
+yarn build        # build into website/build
+```
+
+The [Demos](demos) page is generated from an end-to-end run rather than written by hand, so what it shows is what `idb` did. Produce a run's documentation with `python3 -m CI.generate_documentation --artifacts-dir <run> --output <docs>`, then point the site at it:
+
+```
+IDB_DEMOS_DIR=<docs> yarn build
+```
+
+`IDB_DEMOS_DIR` is the only place a run is read from. Without it the page is built empty, so a plain checkout still builds. With it, a manifest that is missing or incomplete fails the build: the demos were asked for, so publishing the page without them would be worse than not publishing at all.
+
+The demos generator has its own tests, which need only Node:
+
+```
+yarn test-scripts
+```

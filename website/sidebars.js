@@ -15,6 +15,7 @@ module.exports = {
         "idb/overview",
         "idb/installation",
         "idb/guided-tour",
+        "idb/demos",
         "idb/architecture",
         "idb/development",
         "idb/commands",

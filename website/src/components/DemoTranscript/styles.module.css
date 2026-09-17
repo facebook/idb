@@ -1,0 +1,94 @@
+/**
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
+
+.demo {
+  border-top: 1px solid var(--ifm-toc-border-color);
+  margin-top: 2rem;
+  padding-top: 1rem;
+}
+
+.figure {
+  margin: 0 0 1.5rem;
+}
+
+.video,
+.still {
+  background: #000;
+  border-radius: var(--ifm-global-radius);
+  height: auto;
+  max-height: 70vh;
+  max-width: 100%;
+}
+
+.steps {
+  list-style: decimal;
+  padding-left: 1.5rem;
+}
+
+.step,
+.stepSelected {
+  border-left: 3px solid transparent;
+  margin-bottom: 1.5rem;
+  padding-left: 0.75rem;
+}
+
+.stepSelected {
+  border-left-color: var(--ifm-color-primary);
+}
+
+.stepHeader {
+  align-items: baseline;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  justify-content: space-between;
+}
+
+.stepName {
+  font-size: 1.05rem;
+  margin: 0;
+}
+
+.play {
+  background: var(--ifm-color-emphasis-100);
+  border: 1px solid var(--ifm-color-emphasis-300);
+  border-radius: var(--ifm-global-radius);
+  color: var(--ifm-font-color-base);
+  cursor: pointer;
+  font-size: 0.85rem;
+  padding: 0.25rem 0.75rem;
+}
+
+.play:hover {
+  background: var(--ifm-color-emphasis-200);
+}
+
+.play[aria-current='true'] {
+  background: var(--ifm-color-primary);
+  border-color: var(--ifm-color-primary);
+  color: var(--ifm-color-white);
+}
+
+.label {
+  font-size: 0.85rem;
+  font-weight: var(--ifm-font-weight-bold);
+  margin-bottom: 0.25rem;
+  margin-top: 0.75rem;
+}
+
+.command,
+.output {
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.empty,
+.exit,
+.provenance {
+  color: var(--ifm-color-emphasis-700);
+  font-size: 0.85rem;
+}

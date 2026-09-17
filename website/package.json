@@ -1,6 +1,8 @@
 {
   "scripts": {
     "generate-framework-docs": "node scripts/generate-framework-docs.js",
+    "generate-demos": "node scripts/generate-demos.js",
+    "test-scripts": "node scripts/generate-demos-tests.js",
     "start": "docusaurus start",
     "build": "docusaurus build",
     "swizzle": "docusaurus swizzle",

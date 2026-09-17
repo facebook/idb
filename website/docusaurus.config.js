@@ -9,6 +9,9 @@
 // all — including `docusaurus deploy`, which builds internally without running
 // the package.json `build` script or its hooks.
 require('./scripts/generate-framework-docs');
+// Exports a function rather than generating on require, so its tests can
+// drive it against a scratch directory.
+require('./scripts/generate-demos').generate();
 
 module.exports = {
   title: 'idb',
