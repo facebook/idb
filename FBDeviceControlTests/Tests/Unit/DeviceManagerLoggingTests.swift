@@ -7,16 +7,27 @@
 
 import FBControlCore
 @testable import FBDeviceControl
+import Foundation
 import Testing
 
 /// Records every logged line so log content can be asserted.
-private final class RecordingLogger: NSObject, ControlCoreLogger {
-  private(set) var lines: [String] = []
+private final class RecordingLogger: NSObject, ControlCoreLogger, @unchecked Sendable {
+  private let lock = NSLock()
+  private var recordedLines: [String] = []
+
+  var lines: [String] {
+    lock.lock()
+    defer { lock.unlock() }
+    return recordedLines
+  }
+
   var name: String? { nil }
   var level: FBControlCoreLogLevel { .multiple }
 
   func log(_ message: String) -> any ControlCoreLogger {
-    lines.append(message)
+    lock.lock()
+    defer { lock.unlock() }
+    recordedLines.append(message)
     return self
   }
 
