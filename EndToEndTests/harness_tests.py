@@ -16,6 +16,7 @@ import io
 import json
 import os
 import shutil
+import sys
 import tempfile
 import unittest
 from pathlib import Path
@@ -34,6 +35,7 @@ from .harness import (
     HarnessError,
     IDB_SETUP_BIN_ENV,
     IdbEndToEndTestCase,
+    IdbProcess,
     NotReady,
     run_with_registered_cleanup,
     running_bundle_ids_from_listing,
@@ -129,6 +131,50 @@ def reported_by(case: HarnessCaseStub, stderr: str) -> str:
     except Failed as failed:
         return str(failed)
     raise AssertionError("fail_or_skip_for reported no failure")
+
+
+class ProcessOutputTests(unittest.IsolatedAsyncioTestCase):
+    async def test_empty_stdout_reports_stderr_and_exit_status(self) -> None:
+        script = (
+            "import os, sys; os.close(1); "
+            "sys.stderr.write('x' * 262144); "
+            "sys.stderr.write(chr(10) + 'application did not respond' + chr(10)); "
+            "sys.exit(7)"
+        )
+        with self.assertRaises(Failed) as raised:
+            async with IdbProcess(
+                HarnessCaseStub(), [sys.executable, "-c", script], "ui wait General"
+            ) as process:
+                await process.read_some(5)
+
+        self.assertIn(
+            "closed stdout without writing anything (rc=7)", str(raised.exception)
+        )
+        self.assertIn("application did not respond", str(raised.exception))
+
+    async def test_successful_exit_without_stdout_is_still_a_failure(self) -> None:
+        with self.assertRaises(Failed) as raised:
+            async with IdbProcess(
+                HarnessCaseStub(), [sys.executable, "-c", "pass"], "ui wait General"
+            ) as process:
+                await process.read_some(5)
+
+        self.assertIn(
+            "closed stdout without writing anything (rc=0)", str(raised.exception)
+        )
+
+    async def test_closed_stdout_does_not_wait_forever_for_exit(self) -> None:
+        script = "import os, time; os.write(1, b'ready'); os.close(1); time.sleep(60)"
+        with self.assertRaises(Failed) as raised:
+            async with IdbProcess(
+                HarnessCaseStub(), [sys.executable, "-c", script], "ui wait General"
+            ) as process:
+                self.assertEqual(await process.read_some(5), b"ready")
+                await process.read_some(1)
+
+        self.assertIn("closed stdout", str(raised.exception))
+        self.assertIn("did not exit within 1s", str(raised.exception))
+        self.assertIsNotNone(process.returncode)
 
 
 class ClientArgumentTests(unittest.TestCase):

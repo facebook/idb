@@ -1048,7 +1048,18 @@ class IdbProcess:
                 f"idb {self._what} wrote nothing to stdout within {timeout:.0f}s"
             )
         if not data:
-            self._test.fail(f"idb {self._what} closed stdout without writing anything")
+            process = self._process
+            assert process is not None
+            try:
+                _, stderr = await asyncio.wait_for(process.communicate(), timeout)
+            except asyncio.TimeoutError:
+                self._test.fail(
+                    f"idb {self._what} closed stdout but did not exit within {timeout:.0f}s"
+                )
+            self._test.fail(
+                f"idb {self._what} closed stdout without writing anything "
+                f"(rc={process.returncode})\nstderr: {stderr.decode(errors='replace')}"
+            )
         return data
 
     async def wait_for_exit(self, timeout: float) -> int:
