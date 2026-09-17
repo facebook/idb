@@ -173,252 +173,91 @@ public final class DeviceFileContainer: AsyncFileContainer {
     var isDir: ObjCBool = false
     return FileManager.default.fileExists(atPath: path, isDirectory: &isDir) && isDir.boolValue
   }
-}
 
-// MARK: - DeviceFileContainer_Wallpaper
+  // MARK: - Wallpaper
 
-private class DeviceFileContainer_Wallpaper: AsyncFileContainer {
-  let queue: DispatchQueue
-  let springboard: SpringboardServicesClient
-  let managedConfig: ManagedConfigClient
+  fileprivate class Wallpaper: AsyncFileContainer {
+    let queue: DispatchQueue
+    let springboard: SpringboardServicesClient
+    let managedConfig: ManagedConfigClient
 
-  init(springboard: SpringboardServicesClient, managedConfig: ManagedConfigClient, queue: DispatchQueue) {
-    self.springboard = springboard
-    self.managedConfig = managedConfig
-    self.queue = queue
-  }
-
-  func copy(fromHost sourcePath: String, toContainer destinationPath: String) async throws {
-    let data = try Data(contentsOf: URL(fileURLWithPath: sourcePath))
-    try await managedConfig.changeWallpaper(name: (destinationPath as NSString).lastPathComponent, data: data)
-  }
-
-  func copy(fromContainer sourcePath: String, toHost destinationPath: String) async throws -> String {
-    let imageData = try await springboard.wallpaperImageData(forKind: (sourcePath as NSString).lastPathComponent)
-    try imageData.write(to: URL(fileURLWithPath: destinationPath), options: .atomic)
-    return destinationPath
-  }
-
-  func tail(_ path: String, to consumer: any DataConsumer) async throws -> FileContainerTailOperation {
-    throw DeviceFileContainerError.tailUnsupported(container: "Wallpaper File Containers")
-  }
-
-  func createDirectory(_ directoryPath: String) async throws {
-    throw DeviceFileContainerError.operationUnsupported(operation: #function, container: "Wallpaper File Containers")
-  }
-
-  func move(from sourcePath: String, to destinationPath: String) async throws {
-    throw DeviceFileContainerError.operationUnsupported(operation: #function, container: "Wallpaper File Containers")
-  }
-
-  func remove(_ path: String) async throws {
-    throw DeviceFileContainerError.operationUnsupported(operation: #function, container: "Wallpaper File Containers")
-  }
-
-  func contents(ofDirectory path: String) async throws -> [String] {
-    [SpringboardServicesClient.wallpaperNameHomescreen, SpringboardServicesClient.wallpaperNameLockscreen]
-  }
-}
-
-// MARK: - DeviceFileContainer_MDMProfiles
-
-private class DeviceFileContainer_MDMProfiles: AsyncFileContainer {
-  let queue: DispatchQueue
-  let managedConfig: ManagedConfigClient
-
-  init(managedConfig: ManagedConfigClient, queue: DispatchQueue) {
-    self.managedConfig = managedConfig
-    self.queue = queue
-  }
-
-  func copy(fromHost sourcePath: String, toContainer destinationPath: String) async throws {
-    let data = try Data(contentsOf: URL(fileURLWithPath: sourcePath))
-    _ = try await managedConfig.installProfile(data)
-  }
-
-  func copy(fromContainer sourcePath: String, toHost destinationPath: String) async throws -> String {
-    throw DeviceFileContainerError.operationUnsupported(operation: #function, container: "MDM Profile File Containers")
-  }
-
-  func tail(_ path: String, to consumer: any DataConsumer) async throws -> FileContainerTailOperation {
-    throw DeviceFileContainerError.tailUnsupported(container: "MDM Profile File Containers")
-  }
-
-  func createDirectory(_ directoryPath: String) async throws {
-    throw DeviceFileContainerError.operationUnsupported(operation: #function, container: "MDM Profile File Containers")
-  }
-
-  func move(from sourcePath: String, to destinationPath: String) async throws {
-    throw DeviceFileContainerError.operationUnsupported(operation: #function, container: "MDM Profile File Containers")
-  }
-
-  func remove(_ path: String) async throws {
-    try await managedConfig.removeProfile(path)
-  }
-
-  func contents(ofDirectory path: String) async throws -> [String] {
-    try await managedConfig.getProfileList()
-  }
-}
-
-// MARK: - DeviceFileCommands_DiskImages
-
-private class DeviceFileCommands_DiskImages: AsyncFileContainer {
-  let commands: any DeveloperDiskImageCommands
-  let queue: DispatchQueue
-
-  init(commands: any DeveloperDiskImageCommands, queue: DispatchQueue) {
-    self.commands = commands
-    self.queue = queue
-  }
-
-  // MARK: - AsyncFileContainer
-
-  func copy(fromHost sourcePath: String, toContainer destinationPath: String) async throws {
-    throw DeviceFileContainerError.operationUnsupported(operation: #function, container: "Disk Images")
-  }
-
-  func copy(fromContainer sourcePath: String, toHost destinationPath: String) async throws -> String {
-    throw DeviceFileContainerError.operationUnsupported(operation: #function, container: "Disk Images")
-  }
-
-  func tail(_ path: String, to consumer: any DataConsumer) async throws -> FileContainerTailOperation {
-    throw DeviceFileContainerError.tailUnsupported(container: "Disk Images")
-  }
-
-  func createDirectory(_ directoryPath: String) async throws {
-    throw DeviceFileContainerError.operationUnsupported(operation: #function, container: "Disk Images")
-  }
-
-  func move(from sourcePath: String, to destinationPath: String) async throws {
-    if !destinationPath.hasPrefix(MountRootPath) {
-      throw DeviceFileContainerError.moveOutsideMounts(destination: destinationPath)
+    init(springboard: SpringboardServicesClient, managedConfig: ManagedConfigClient, queue: DispatchQueue) {
+      self.springboard = springboard
+      self.managedConfig = managedConfig
+      self.queue = queue
     }
-    let mountableImagesByPath = self.mountableDiskImagesByPath
-    guard let image = mountableImagesByPath[sourcePath] else {
-      throw DeviceFileContainerError.notAMountableImage(path: sourcePath, available: mountableImagesByPath.keys.sorted())
+
+    func copy(fromHost sourcePath: String, toContainer destinationPath: String) async throws {
+      let data = try Data(contentsOf: URL(fileURLWithPath: sourcePath))
+      try await managedConfig.changeWallpaper(name: (destinationPath as NSString).lastPathComponent, data: data)
     }
-    _ = try await commands.mountDiskImage(image)
-  }
 
-  func remove(_ path: String) async throws {
-    if !path.hasPrefix(MountRootPath) {
-      throw DeviceFileContainerError.removeOutsideMounts(path: path)
+    func copy(fromContainer sourcePath: String, toHost destinationPath: String) async throws -> String {
+      let imageData = try await springboard.wallpaperImageData(forKind: (sourcePath as NSString).lastPathComponent)
+      try imageData.write(to: URL(fileURLWithPath: destinationPath), options: .atomic)
+      return destinationPath
     }
-    let mountedImages = try await mountedDiskImages()
-    guard let image = mountedImages[path] else {
-      throw DeviceFileContainerError.notAMountedImage(path: path, available: Array(mountedImages.keys))
+
+    func tail(_ path: String, to consumer: any DataConsumer) async throws -> FileContainerTailOperation {
+      throw DeviceFileContainerError.tailUnsupported(container: "Wallpaper File Containers")
     }
-    try await commands.unmountDiskImage(image)
-  }
 
-  func contents(ofDirectory path: String) async throws -> [String] {
-    let diskImagePaths = try await allDiskImagePaths()
-    return DeviceFileCommands_DiskImages.traverseAndDescendPaths(diskImagePaths, path: path)
-  }
-
-  // MARK: - Private
-
-  private var mountableDiskImagesByPath: [String: DeveloperDiskImage] {
-    let images = commands.mountableDiskImages()
-    var mapping: [String: DeveloperDiskImage] = [:]
-    for image in images {
-      mapping[DeviceFileCommands_DiskImages.filePath(for: image)] = image
+    func createDirectory(_ directoryPath: String) async throws {
+      throw DeviceFileContainerError.operationUnsupported(operation: #function, container: "Wallpaper File Containers")
     }
-    return mapping
-  }
 
-  private func mountedDiskImages() async throws -> [String: DeveloperDiskImage] {
-    let mountedImages = try await commands.mountedDiskImages()
-    var imagesByPath: [String: DeveloperDiskImage] = [:]
-    for image in mountedImages {
-      let mountedFilePath = (MountRootPath as NSString).appendingPathComponent(DeviceFileCommands_DiskImages.filePath(for: image))
-      imagesByPath[mountedFilePath] = image
+    func move(from sourcePath: String, to destinationPath: String) async throws {
+      throw DeviceFileContainerError.operationUnsupported(operation: #function, container: "Wallpaper File Containers")
     }
-    return imagesByPath
-  }
 
-  private func allDiskImagePaths() async throws -> [String] {
-    let mountedDiskImages = try await mountedDiskImages()
-    var paths: [String] = []
-    let sortedKeys = self.mountableDiskImagesByPath.sorted { pair1, pair2 in
-      let v1 = pair1.value.version
-      let v2 = pair2.value.version
-      if v1.majorVersion != v2.majorVersion { return v1.majorVersion < v2.majorVersion }
-      return v1.minorVersion < v2.minorVersion
-    }.map { $0.key }
-    paths.append(contentsOf: sortedKeys)
-    paths.append(MountRootPath)
-    paths.append(contentsOf: mountedDiskImages.keys)
-    return paths
-  }
-
-  static func traverseAndDescendPaths(_ paths: [String], path: String) -> [String] {
-    let pathComponents = (path as NSString).pathComponents
-    let firstPath = pathComponents.first
-    if pathComponents.count == 1 && (firstPath == "." || firstPath == "/") {
-      return paths
+    func remove(_ path: String) async throws {
+      throw DeviceFileContainerError.operationUnsupported(operation: #function, container: "Wallpaper File Containers")
     }
-    var traversedPaths: [String] = []
-    for candidatePath in paths {
-      if !candidatePath.hasPrefix(path) {
-        continue
-      }
-      var relativePath = String(candidatePath.dropFirst(path.count))
-      if relativePath.hasPrefix("/") {
-        relativePath = String(relativePath.dropFirst())
-      }
-      traversedPaths.append(relativePath)
+
+    func contents(ofDirectory path: String) async throws -> [String] {
+      [SpringboardServicesClient.wallpaperNameHomescreen, SpringboardServicesClient.wallpaperNameLockscreen]
     }
-    return traversedPaths
   }
 
-  static func filePath(for image: DeveloperDiskImage) -> String {
-    "\(image.version.majorVersion).\(image.version.minorVersion)/\((image.diskImagePath as NSString).lastPathComponent)"
-  }
-}
+  // MARK: - MDMProfiles
 
-// MARK: - DeviceFileCommands_Symbols
+  fileprivate class MDMProfiles: AsyncFileContainer {
+    let queue: DispatchQueue
+    let managedConfig: ManagedConfigClient
 
-private class DeviceFileCommands_Symbols: AsyncFileContainer {
-  let commands: DeviceDebugSymbolsCommands
-  let queue: DispatchQueue
-
-  init(commands: DeviceDebugSymbolsCommands, queue: DispatchQueue) {
-    self.commands = commands
-    self.queue = queue
-  }
-
-  func copy(fromHost sourcePath: String, toContainer destinationPath: String) async throws {
-    throw DeviceFileContainerError.operationUnsupported(operation: #function, container: "Symbols")
-  }
-
-  func copy(fromContainer sourcePath: String, toHost destinationPath: String) async throws -> String {
-    if sourcePath == ExtractedSymbolsDirectory {
-      return try await commands.pullAndExtractSymbols(toDestinationDirectory: destinationPath)
+    init(managedConfig: ManagedConfigClient, queue: DispatchQueue) {
+      self.managedConfig = managedConfig
+      self.queue = queue
     }
-    return try await commands.pullSymbolFile(sourcePath, toDestinationPath: destinationPath)
-  }
 
-  func tail(_ path: String, to consumer: any DataConsumer) async throws -> FileContainerTailOperation {
-    throw DeviceFileContainerError.tailUnsupported(container: "Symbols")
-  }
+    func copy(fromHost sourcePath: String, toContainer destinationPath: String) async throws {
+      let data = try Data(contentsOf: URL(fileURLWithPath: sourcePath))
+      _ = try await managedConfig.installProfile(data)
+    }
 
-  func createDirectory(_ directoryPath: String) async throws {
-    throw DeviceFileContainerError.operationUnsupported(operation: #function, container: "Symbols")
-  }
+    func copy(fromContainer sourcePath: String, toHost destinationPath: String) async throws -> String {
+      throw DeviceFileContainerError.operationUnsupported(operation: #function, container: "MDM Profile File Containers")
+    }
 
-  func move(from sourcePath: String, to destinationPath: String) async throws {
-    throw DeviceFileContainerError.operationUnsupported(operation: #function, container: "Symbols")
-  }
+    func tail(_ path: String, to consumer: any DataConsumer) async throws -> FileContainerTailOperation {
+      throw DeviceFileContainerError.tailUnsupported(container: "MDM Profile File Containers")
+    }
 
-  func remove(_ path: String) async throws {
-    throw DeviceFileContainerError.operationUnsupported(operation: #function, container: "Symbols")
-  }
+    func createDirectory(_ directoryPath: String) async throws {
+      throw DeviceFileContainerError.operationUnsupported(operation: #function, container: "MDM Profile File Containers")
+    }
 
-  func contents(ofDirectory path: String) async throws -> [String] {
-    let listedSymbols = try await commands.listSymbols()
-    return listedSymbols + [ExtractedSymbolsDirectory]
+    func move(from sourcePath: String, to destinationPath: String) async throws {
+      throw DeviceFileContainerError.operationUnsupported(operation: #function, container: "MDM Profile File Containers")
+    }
+
+    func remove(_ path: String) async throws {
+      try await managedConfig.removeProfile(path)
+    }
+
+    func contents(ofDirectory path: String) async throws -> [String] {
+      try await managedConfig.getProfileList()
+    }
   }
 }
 
@@ -511,7 +350,7 @@ public final class DeviceFileCommands: FileCommands {
     let device = try requireDevice()
     return try await device.withServiceConnection(ManagedConfigClient.serviceName) { connection in
       let managedConfig = ManagedConfigClient.managedConfigClient(connection: connection, logger: device.logger)
-      return try await body(DeviceFileContainer_MDMProfiles(managedConfig: managedConfig, queue: device.workQueue))
+      return try await body(DeviceFileContainer.MDMProfiles(managedConfig: managedConfig, queue: device.workQueue))
     }
   }
 
@@ -534,7 +373,7 @@ public final class DeviceFileCommands: FileCommands {
         let springboard = SpringboardServicesClient.springboardServicesClient(connection: springboardConnection, logger: device.logger)
         let managedConfig = ManagedConfigClient.managedConfigClient(connection: managedConfigConnection, logger: device.logger)
         return try await body(
-          DeviceFileContainer_Wallpaper(springboard: springboard, managedConfig: managedConfig, queue: device.workQueue))
+          DeviceFileContainer.Wallpaper(springboard: springboard, managedConfig: managedConfig, queue: device.workQueue))
       }
     }
   }
@@ -543,13 +382,174 @@ public final class DeviceFileCommands: FileCommands {
     body: (any AsyncFileContainer) async throws -> R
   ) async throws -> R {
     let device = try requireDevice()
-    return try await body(DeviceFileCommands_DiskImages(commands: device.developerDiskImage, queue: device.asyncQueue))
+    return try await body(DiskImages(commands: device.developerDiskImage, queue: device.asyncQueue))
   }
 
   public func withSymbols<R>(
     body: (any AsyncFileContainer) async throws -> R
   ) async throws -> R {
     let device = try requireDevice()
-    return try await body(DeviceFileCommands_Symbols(commands: device.debugSymbols, queue: device.asyncQueue))
+    return try await body(Symbols(commands: device.debugSymbols, queue: device.asyncQueue))
+  }
+
+  // MARK: - DiskImages
+
+  private class DiskImages: AsyncFileContainer {
+    let commands: any DeveloperDiskImageCommands
+    let queue: DispatchQueue
+
+    init(commands: any DeveloperDiskImageCommands, queue: DispatchQueue) {
+      self.commands = commands
+      self.queue = queue
+    }
+
+    // MARK: - AsyncFileContainer
+
+    func copy(fromHost sourcePath: String, toContainer destinationPath: String) async throws {
+      throw DeviceFileContainerError.operationUnsupported(operation: #function, container: "Disk Images")
+    }
+
+    func copy(fromContainer sourcePath: String, toHost destinationPath: String) async throws -> String {
+      throw DeviceFileContainerError.operationUnsupported(operation: #function, container: "Disk Images")
+    }
+
+    func tail(_ path: String, to consumer: any DataConsumer) async throws -> FileContainerTailOperation {
+      throw DeviceFileContainerError.tailUnsupported(container: "Disk Images")
+    }
+
+    func createDirectory(_ directoryPath: String) async throws {
+      throw DeviceFileContainerError.operationUnsupported(operation: #function, container: "Disk Images")
+    }
+
+    func move(from sourcePath: String, to destinationPath: String) async throws {
+      if !destinationPath.hasPrefix(MountRootPath) {
+        throw DeviceFileContainerError.moveOutsideMounts(destination: destinationPath)
+      }
+      let mountableImagesByPath = self.mountableDiskImagesByPath
+      guard let image = mountableImagesByPath[sourcePath] else {
+        throw DeviceFileContainerError.notAMountableImage(path: sourcePath, available: mountableImagesByPath.keys.sorted())
+      }
+      _ = try await commands.mountDiskImage(image)
+    }
+
+    func remove(_ path: String) async throws {
+      if !path.hasPrefix(MountRootPath) {
+        throw DeviceFileContainerError.removeOutsideMounts(path: path)
+      }
+      let mountedImages = try await mountedDiskImages()
+      guard let image = mountedImages[path] else {
+        throw DeviceFileContainerError.notAMountedImage(path: path, available: Array(mountedImages.keys))
+      }
+      try await commands.unmountDiskImage(image)
+    }
+
+    func contents(ofDirectory path: String) async throws -> [String] {
+      let diskImagePaths = try await allDiskImagePaths()
+      return DiskImages.traverseAndDescendPaths(diskImagePaths, path: path)
+    }
+
+    // MARK: - Private
+
+    private var mountableDiskImagesByPath: [String: DeveloperDiskImage] {
+      let images = commands.mountableDiskImages()
+      var mapping: [String: DeveloperDiskImage] = [:]
+      for image in images {
+        mapping[DiskImages.filePath(for: image)] = image
+      }
+      return mapping
+    }
+
+    private func mountedDiskImages() async throws -> [String: DeveloperDiskImage] {
+      let mountedImages = try await commands.mountedDiskImages()
+      var imagesByPath: [String: DeveloperDiskImage] = [:]
+      for image in mountedImages {
+        let mountedFilePath = (MountRootPath as NSString).appendingPathComponent(DiskImages.filePath(for: image))
+        imagesByPath[mountedFilePath] = image
+      }
+      return imagesByPath
+    }
+
+    private func allDiskImagePaths() async throws -> [String] {
+      let mountedDiskImages = try await mountedDiskImages()
+      var paths: [String] = []
+      let sortedKeys = self.mountableDiskImagesByPath.sorted { pair1, pair2 in
+        let v1 = pair1.value.version
+        let v2 = pair2.value.version
+        if v1.majorVersion != v2.majorVersion { return v1.majorVersion < v2.majorVersion }
+        return v1.minorVersion < v2.minorVersion
+      }.map { $0.key }
+      paths.append(contentsOf: sortedKeys)
+      paths.append(MountRootPath)
+      paths.append(contentsOf: mountedDiskImages.keys)
+      return paths
+    }
+
+    static func traverseAndDescendPaths(_ paths: [String], path: String) -> [String] {
+      let pathComponents = (path as NSString).pathComponents
+      let firstPath = pathComponents.first
+      if pathComponents.count == 1 && (firstPath == "." || firstPath == "/") {
+        return paths
+      }
+      var traversedPaths: [String] = []
+      for candidatePath in paths {
+        if !candidatePath.hasPrefix(path) {
+          continue
+        }
+        var relativePath = String(candidatePath.dropFirst(path.count))
+        if relativePath.hasPrefix("/") {
+          relativePath = String(relativePath.dropFirst())
+        }
+        traversedPaths.append(relativePath)
+      }
+      return traversedPaths
+    }
+
+    static func filePath(for image: DeveloperDiskImage) -> String {
+      "\(image.version.majorVersion).\(image.version.minorVersion)/\((image.diskImagePath as NSString).lastPathComponent)"
+    }
+  }
+
+  // MARK: - Symbols
+
+  private class Symbols: AsyncFileContainer {
+    let commands: DeviceDebugSymbolsCommands
+    let queue: DispatchQueue
+
+    init(commands: DeviceDebugSymbolsCommands, queue: DispatchQueue) {
+      self.commands = commands
+      self.queue = queue
+    }
+
+    func copy(fromHost sourcePath: String, toContainer destinationPath: String) async throws {
+      throw DeviceFileContainerError.operationUnsupported(operation: #function, container: "Symbols")
+    }
+
+    func copy(fromContainer sourcePath: String, toHost destinationPath: String) async throws -> String {
+      if sourcePath == ExtractedSymbolsDirectory {
+        return try await commands.pullAndExtractSymbols(toDestinationDirectory: destinationPath)
+      }
+      return try await commands.pullSymbolFile(sourcePath, toDestinationPath: destinationPath)
+    }
+
+    func tail(_ path: String, to consumer: any DataConsumer) async throws -> FileContainerTailOperation {
+      throw DeviceFileContainerError.tailUnsupported(container: "Symbols")
+    }
+
+    func createDirectory(_ directoryPath: String) async throws {
+      throw DeviceFileContainerError.operationUnsupported(operation: #function, container: "Symbols")
+    }
+
+    func move(from sourcePath: String, to destinationPath: String) async throws {
+      throw DeviceFileContainerError.operationUnsupported(operation: #function, container: "Symbols")
+    }
+
+    func remove(_ path: String) async throws {
+      throw DeviceFileContainerError.operationUnsupported(operation: #function, container: "Symbols")
+    }
+
+    func contents(ofDirectory path: String) async throws -> [String] {
+      let listedSymbols = try await commands.listSymbols()
+      return listedSymbols + [ExtractedSymbolsDirectory]
+    }
   }
 }

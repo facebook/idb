@@ -10,103 +10,13 @@ import Foundation
 
 private let connectionReadSizeLimit: size_t = 1024
 
-private class DeviceDebugServer_TwistedPairFiles {
-  let socket: Int32
-  let connection: LockdownServiceConnection
-  let logger: any ControlCoreLogger
-  let socketToConnectionQueue: DispatchQueue
-  let connectionToSocketQueue: DispatchQueue
-
-  init(
-    socket: Int32,
-    connection: LockdownServiceConnection,
-    logger: any ControlCoreLogger
-  ) {
-    self.socket = socket
-    self.connection = connection
-    self.logger = logger
-    self.socketToConnectionQueue = DispatchQueue(label: "com.facebook.fbdevicecontrol.debugserver.socket_to_connection")
-    self.connectionToSocketQueue = DispatchQueue(label: "com.facebook.fbdevicecontrol.debugserver.connection_to_socket")
-  }
-
-  func start() -> FBFuture<NSNull>? {
-    // FBMutableFuture is a thread-safe ObjC type that isn't Sendable.
-    let logger = self.logger
-    let socket = self.socket
-    let socketReadHandle = FileHandle(fileDescriptor: socket)
-    nonisolated(unsafe) let connection = self.connection
-    nonisolated(unsafe) let socketReadCompleted = FBMutableFuture<NSNull>()
-    nonisolated(unsafe) let connectionReadCompleted = FBMutableFuture<NSNull>()
-
-    socketToConnectionQueue.async {
-      while socketReadCompleted.state == .running && connectionReadCompleted.state == .running {
-        let data = socketReadHandle.availableData
-        if data.isEmpty {
-          logger.log("Socket read reached end of file")
-          break
-        }
-        do {
-          try connection.send(data as Data)
-        } catch {
-          logger.log("Sending data to remote debugserver failed: \(error)")
-          break
-        }
-      }
-      logger.log("Exiting socket \(socket) read loop")
-      socketReadCompleted.resolve(withResult: NSNull())
-    }
-
-    connectionToSocketQueue.async {
-      while socketReadCompleted.state == .running && connectionReadCompleted.state == .running {
-        do {
-          let data = try connection.receiveUp(to: connectionReadSizeLimit)
-          if data.isEmpty {
-            logger.log("debugserver read ended")
-            break
-          }
-          data.withUnsafeBytes { bufferPointer in
-            guard let baseAddress = bufferPointer.baseAddress else { return }
-            var totalWritten = 0
-            while totalWritten < data.count {
-              let written = Darwin.write(socket, baseAddress.advanced(by: totalWritten), data.count - totalWritten)
-              if written <= 0 {
-                logger.log("Socket write failed")
-                return
-              }
-              totalWritten += written
-            }
-          }
-        } catch {
-          logger.log("debugserver read ended: \(error)")
-          break
-        }
-      }
-      logger.log("Exiting connection \(connection) read loop")
-      connectionReadCompleted.resolve(withResult: NSNull())
-    }
-
-    let combinedFuture = FBFuture<AnyObject>.combine([
-      socketReadCompleted,
-      connectionReadCompleted,
-    ])
-    .onQueue(
-      connectionToSocketQueue,
-      doOnResolved: { _ in
-        logger.log("Closing socket file descriptor \(socket)")
-        close(socket)
-      }
-    )
-    return combinedFuture.retyped(FBFuture<NSNull>.self)
-  }
-}
-
 public final class DeviceDebugServer: NSObject, SocketServerDelegate, DebugServer {
   private let serviceConnection: LockdownServiceConnection
   private lazy var tcpServer: FBSocketServer = FBSocketServer(onPort: self.port, delegate: self)
   private let port: in_port_t
   private let logger: any ControlCoreLogger
   private let teardown: FBMutableFuture<NSNull>
-  private var twistedPair: DeviceDebugServer_TwistedPairFiles?
+  private var twistedPair: TwistedPairFiles?
 
   public let lldbBootstrapCommands: [String]
 
@@ -178,7 +88,7 @@ public final class DeviceDebugServer: NSObject, SocketServerDelegate, DebugServe
       return
     }
     logger.log("Client connected, connecting all file handles")
-    let pair = DeviceDebugServer_TwistedPairFiles(
+    let pair = TwistedPairFiles(
       socket: fileDescriptor,
       connection: serviceConnection,
       logger: logger
@@ -237,5 +147,95 @@ public final class DeviceDebugServer: NSObject, SocketServerDelegate, DebugServe
   ) {
     tcpServer.stopListening()
     MobileDevice.invalidateServiceConnection(connection, service: connection.name, logger: logger)
+  }
+
+  private class TwistedPairFiles {
+    let socket: Int32
+    let connection: LockdownServiceConnection
+    let logger: any ControlCoreLogger
+    let socketToConnectionQueue: DispatchQueue
+    let connectionToSocketQueue: DispatchQueue
+
+    init(
+      socket: Int32,
+      connection: LockdownServiceConnection,
+      logger: any ControlCoreLogger
+    ) {
+      self.socket = socket
+      self.connection = connection
+      self.logger = logger
+      self.socketToConnectionQueue = DispatchQueue(label: "com.facebook.fbdevicecontrol.debugserver.socket_to_connection")
+      self.connectionToSocketQueue = DispatchQueue(label: "com.facebook.fbdevicecontrol.debugserver.connection_to_socket")
+    }
+
+    func start() -> FBFuture<NSNull>? {
+      // FBMutableFuture is a thread-safe ObjC type that isn't Sendable.
+      let logger = self.logger
+      let socket = self.socket
+      let socketReadHandle = FileHandle(fileDescriptor: socket)
+      nonisolated(unsafe) let connection = self.connection
+      nonisolated(unsafe) let socketReadCompleted = FBMutableFuture<NSNull>()
+      nonisolated(unsafe) let connectionReadCompleted = FBMutableFuture<NSNull>()
+
+      socketToConnectionQueue.async {
+        while socketReadCompleted.state == .running && connectionReadCompleted.state == .running {
+          let data = socketReadHandle.availableData
+          if data.isEmpty {
+            logger.log("Socket read reached end of file")
+            break
+          }
+          do {
+            try connection.send(data as Data)
+          } catch {
+            logger.log("Sending data to remote debugserver failed: \(error)")
+            break
+          }
+        }
+        logger.log("Exiting socket \(socket) read loop")
+        socketReadCompleted.resolve(withResult: NSNull())
+      }
+
+      connectionToSocketQueue.async {
+        while socketReadCompleted.state == .running && connectionReadCompleted.state == .running {
+          do {
+            let data = try connection.receiveUp(to: connectionReadSizeLimit)
+            if data.isEmpty {
+              logger.log("debugserver read ended")
+              break
+            }
+            data.withUnsafeBytes { bufferPointer in
+              guard let baseAddress = bufferPointer.baseAddress else { return }
+              var totalWritten = 0
+              while totalWritten < data.count {
+                let written = Darwin.write(socket, baseAddress.advanced(by: totalWritten), data.count - totalWritten)
+                if written <= 0 {
+                  logger.log("Socket write failed")
+                  return
+                }
+                totalWritten += written
+              }
+            }
+          } catch {
+            logger.log("debugserver read ended: \(error)")
+            break
+          }
+        }
+        logger.log("Exiting connection \(connection) read loop")
+        connectionReadCompleted.resolve(withResult: NSNull())
+      }
+
+      let combinedFuture = FBFuture<AnyObject>.combine([
+        socketReadCompleted,
+        connectionReadCompleted,
+      ])
+      .onQueue(
+        connectionToSocketQueue,
+        doOnResolved: { _ in
+          logger.log("Closing socket file descriptor \(socket)")
+          close(socket)
+        }
+      )
+      return combinedFuture.retyped(FBFuture<NSNull>.self)
+    }
   }
 }

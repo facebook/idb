@@ -374,7 +374,7 @@ public struct FileContainerKind: RawRepresentable, Hashable, Sendable {
 // MARK: - Host Filesystem Contained Files
 
 /// A file on the host filesystem, addressed by absolute path.
-private struct ContainedFile_Host: ContainedFile, CustomStringConvertible {
+private struct HostFile: ContainedFile, CustomStringConvertible {
 
   let path: String
 
@@ -401,7 +401,7 @@ private struct ContainedFile_Host: ContainedFile, CustomStringConvertible {
   }
 
   func move(to destination: ContainedFile) throws {
-    guard let hostDestination = destination as? ContainedFile_Host else {
+    guard let hostDestination = destination as? HostFile else {
       throw FileContainerError.destinationNotOnHostFilesystem(destination: String(describing: destination))
     }
     try FileManager.default.moveItem(atPath: path, toPath: hostDestination.path)
@@ -416,7 +416,7 @@ private struct ContainedFile_Host: ContainedFile, CustomStringConvertible {
   }
 
   func file(byAppendingPathComponent component: String) throws -> ContainedFile {
-    ContainedFile_Host(path: (path as NSString).appendingPathComponent(component))
+    HostFile(path: (path as NSString).appendingPathComponent(component))
   }
 
   var pathOnHostFileSystem: String? { path }
@@ -429,7 +429,7 @@ private struct ContainedFile_Host: ContainedFile, CustomStringConvertible {
 }
 
 /// A virtual root that maps first path components onto host paths.
-private struct ContainedFile_Mapped_Host: ContainedFile, CustomStringConvertible {
+private struct MappedHostFile: ContainedFile, CustomStringConvertible {
 
   let mappingPaths: [String: String]
 
@@ -474,7 +474,7 @@ private struct ContainedFile_Mapped_Host: ContainedFile, CustomStringConvertible
     guard let firstComponent = pathComponents.first, let mappedPath = mappingPaths[firstComponent] else {
       throw FileContainerError.invalidRootPath(component: pathComponents.first ?? "", available: Array(mappingPaths.keys))
     }
-    let mapped = ContainedFile_Host(path: mappedPath)
+    let mapped = HostFile(path: mappedPath)
     return try mapped.file(byAppendingPathComponent: Self.popFirstPathComponent(pathComponents))
   }
 
@@ -507,11 +507,11 @@ private struct ContainedFile_Mapped_Host: ContainedFile, CustomStringConvertible
 public enum FileContainer {
 
   public static func containedFile(forBasePath basePath: String) -> ContainedFile {
-    ContainedFile_Host(path: basePath)
+    HostFile(path: basePath)
   }
 
   public static func containedFile(forPathMapping pathMapping: [String: String]) -> ContainedFile {
-    ContainedFile_Mapped_Host(mappingPaths: pathMapping)
+    MappedHostFile(mappingPaths: pathMapping)
   }
 
   public static func fileContainer(forBasePath basePath: String) -> ContainedFile_ContainedRoot {

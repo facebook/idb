@@ -37,7 +37,7 @@ public class FileWriter: NSObject {
   }
 
   @objc public static var nullWriter: DataConsumer {
-    return FBDataConsumerAdaptor.dataConsumer(forDispatchDataConsumer: FileWriter_Null())
+    return FBDataConsumerAdaptor.dataConsumer(forDispatchDataConsumer: Null())
   }
 
   private static func fileDescriptor(forPath filePath: String) throws -> Int32 {
@@ -49,7 +49,7 @@ public class FileWriter: NSObject {
   }
 
   @objc public static func asyncDispatchDataWriter(withFileDescriptor fileDescriptor: Int32, closeOnEndOfFile: Bool) -> FBFuture<AnyObject> {
-    let writer = FileWriter_Async(fileDescriptor: fileDescriptor, closeOnEndOfFile: closeOnEndOfFile, writeQueue: createWorkQueue())
+    let writer = Async(fileDescriptor: fileDescriptor, closeOnEndOfFile: closeOnEndOfFile, writeQueue: createWorkQueue())
     do {
       try writer.startWriting()
     } catch {
@@ -59,11 +59,11 @@ public class FileWriter: NSObject {
   }
 
   @objc public static func syncWriter(withFileDescriptor fileDescriptor: Int32, closeOnEndOfFile: Bool) -> DataConsumer & DataConsumerLifecycle {
-    return FBDataConsumerAdaptor.dataConsumer(forDispatchDataConsumer: FileWriter_Sync(fileDescriptor: fileDescriptor, closeOnEndOfFile: closeOnEndOfFile))
+    return FBDataConsumerAdaptor.dataConsumer(forDispatchDataConsumer: Sync(fileDescriptor: fileDescriptor, closeOnEndOfFile: closeOnEndOfFile))
   }
 
   @objc public static func asyncWriter(withFileDescriptor fileDescriptor: Int32, closeOnEndOfFile: Bool, queue: DispatchQueue, error: NSErrorPointer) -> (DataConsumer & DataConsumerLifecycle)? {
-    let writer = FileWriter_Async(fileDescriptor: fileDescriptor, closeOnEndOfFile: closeOnEndOfFile, writeQueue: queue)
+    let writer = Async(fileDescriptor: fileDescriptor, closeOnEndOfFile: closeOnEndOfFile, writeQueue: queue)
     do {
       try writer.startWriting()
     } catch let e {
@@ -100,7 +100,7 @@ public class FileWriter: NSObject {
         } catch {
           return FBFuture(error: error)
         }
-        let writer = FileWriter_Async(fileDescriptor: fd, closeOnEndOfFile: true, writeQueue: queue)
+        let writer = Async(fileDescriptor: fd, closeOnEndOfFile: true, writeQueue: queue)
         do {
           try writer.startWriting()
         } catch {
@@ -120,103 +120,103 @@ public class FileWriter: NSObject {
   fileprivate override convenience init() {
     self.init(fileDescriptor: -1, closeOnEndOfFile: false)
   }
-}
 
-// MARK: - FileWriter_Null
+  // MARK: - Null
 
-private class FileWriter_Null: FileWriter, DispatchDataConsumer, DataConsumerLifecycle {
+  private class Null: FileWriter, DispatchDataConsumer, DataConsumerLifecycle {
 
-  func consumeData(_ data: __DispatchData) {
-  }
+    func consumeData(_ data: __DispatchData) {
+    }
 
-  func consumeEndOfFile() {
-    finishedConsumingMutable.resolve(withResult: NSNull())
-  }
+    func consumeEndOfFile() {
+      finishedConsumingMutable.resolve(withResult: NSNull())
+    }
 
-  var finishedConsuming: FBFuture<NSNull> {
-    return finishedConsumingMutable.retyped(FBFuture<NSNull>.self)
-  }
-}
-
-// MARK: - FileWriter_Sync
-
-private class FileWriter_Sync: FileWriter, DispatchDataConsumer, DataConsumerLifecycle, DataConsumerSync {
-
-  func consumeData(_ data: __DispatchData) {
-    let dispatchData = data as DispatchData
-    dispatchData.enumerateBytes { buffer, _, _ in
-      guard let baseAddress = buffer.baseAddress else { return }
-      write(self.fileDescriptor, baseAddress, buffer.count)
+    var finishedConsuming: FBFuture<NSNull> {
+      return finishedConsumingMutable.retyped(FBFuture<NSNull>.self)
     }
   }
 
-  func consumeEndOfFile() {
-    finishedConsumingMutable.resolve(withResult: NSNull())
-    if closeOnEndOfFile {
-      close(fileDescriptor)
+  // MARK: - Sync
+
+  private class Sync: FileWriter, DispatchDataConsumer, DataConsumerLifecycle, DataConsumerSync {
+
+    func consumeData(_ data: __DispatchData) {
+      let dispatchData = data as DispatchData
+      dispatchData.enumerateBytes { buffer, _, _ in
+        guard let baseAddress = buffer.baseAddress else { return }
+        write(self.fileDescriptor, baseAddress, buffer.count)
+      }
+    }
+
+    func consumeEndOfFile() {
+      finishedConsumingMutable.resolve(withResult: NSNull())
+      if closeOnEndOfFile {
+        close(fileDescriptor)
+      }
+    }
+
+    var finishedConsuming: FBFuture<NSNull> {
+      return finishedConsumingMutable.retyped(FBFuture<NSNull>.self)
     }
   }
 
-  var finishedConsuming: FBFuture<NSNull> {
-    return finishedConsumingMutable.retyped(FBFuture<NSNull>.self)
-  }
-}
+  // MARK: - Async
 
-// MARK: - FileWriter_Async
+  private class Async: FileWriter, DispatchDataConsumer, DataConsumerLifecycle {
 
-private class FileWriter_Async: FileWriter, DispatchDataConsumer, DataConsumerLifecycle {
+    let writeQueue: DispatchQueue
+    var io: DispatchIO?
 
-  let writeQueue: DispatchQueue
-  var io: DispatchIO?
-
-  init(fileDescriptor: Int32, closeOnEndOfFile: Bool, writeQueue: DispatchQueue) {
-    self.writeQueue = writeQueue
-    super.init(fileDescriptor: fileDescriptor, closeOnEndOfFile: closeOnEndOfFile)
-  }
-
-  func consumeData(_ data: __DispatchData) {
-    guard let io else { return }
-    io.write(offset: 0, data: data as DispatchData, queue: writeQueue) { _, _, _ in }
-  }
-
-  func consumeEndOfFile() {
-    guard let io else { return }
-    // The descriptor is closed in the DispatchIO cleanup handler; the barrier ensures no writes are
-    // pending before the channel is stopped.
-    io.barrier {
-      io.close(flags: .stop)
-    }
-  }
-
-  var finishedConsuming: FBFuture<NSNull> {
-    return finishedConsumingMutable.retyped(FBFuture<NSNull>.self)
-  }
-
-  func startWriting() throws {
-    assert(io == nil)
-
-    // O_NONBLOCK must be set before DispatchIO snapshots the descriptor flags; see
-    // FileReader.startReadingNow for why.
-    _ = fcntl(fileDescriptor, F_SETFL, fcntl(fileDescriptor, F_GETFL) | O_NONBLOCK)
-
-    let finishedConsuming = finishedConsumingMutable
-
-    io = DispatchIO(type: .stream, fileDescriptor: fileDescriptor, queue: writeQueue) { [weak self] errorCode in
-      self?.ioChannelDidClose(withError: errorCode)
-      // Since writing is asynchronous, wait until the io channel is fully closed.
-      finishedConsuming.resolve(withResult: NSNull())
-    }
-    guard io != nil else {
-      throw FileWriterError.ioChannelCreationFailed(fileDescriptor: fileDescriptor)
+    init(fileDescriptor: Int32, closeOnEndOfFile: Bool, writeQueue: DispatchQueue) {
+      self.writeQueue = writeQueue
+      super.init(fileDescriptor: fileDescriptor, closeOnEndOfFile: closeOnEndOfFile)
     }
 
-    io?.setLimit(lowWater: 1)
-  }
+    func consumeData(_ data: __DispatchData) {
+      guard let io else { return }
+      io.write(offset: 0, data: data as DispatchData, queue: writeQueue) { _, _, _ in }
+    }
 
-  private func ioChannelDidClose(withError errorCode: Int32) {
-    io = nil
-    if closeOnEndOfFile {
-      close(fileDescriptor)
+    func consumeEndOfFile() {
+      guard let io else { return }
+      // The descriptor is closed in the DispatchIO cleanup handler; the barrier ensures no writes are
+      // pending before the channel is stopped.
+      io.barrier {
+        io.close(flags: .stop)
+      }
+    }
+
+    var finishedConsuming: FBFuture<NSNull> {
+      return finishedConsumingMutable.retyped(FBFuture<NSNull>.self)
+    }
+
+    func startWriting() throws {
+      assert(io == nil)
+
+      // O_NONBLOCK must be set before DispatchIO snapshots the descriptor flags; see
+      // FileReader.startReadingNow for why.
+      _ = fcntl(fileDescriptor, F_SETFL, fcntl(fileDescriptor, F_GETFL) | O_NONBLOCK)
+
+      let finishedConsuming = finishedConsumingMutable
+
+      io = DispatchIO(type: .stream, fileDescriptor: fileDescriptor, queue: writeQueue) { [weak self] errorCode in
+        self?.ioChannelDidClose(withError: errorCode)
+        // Since writing is asynchronous, wait until the io channel is fully closed.
+        finishedConsuming.resolve(withResult: NSNull())
+      }
+      guard io != nil else {
+        throw FileWriterError.ioChannelCreationFailed(fileDescriptor: fileDescriptor)
+      }
+
+      io?.setLimit(lowWater: 1)
+    }
+
+    private func ioChannelDidClose(withError errorCode: Int32) {
+      io = nil
+      if closeOnEndOfFile {
+        close(fileDescriptor)
+      }
     }
   }
 }

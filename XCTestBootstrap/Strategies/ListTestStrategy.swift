@@ -36,42 +36,6 @@ extension ListTestError: LocalizedError {
   }
 }
 
-private final class ListTestStrategy_ReporterWrapped: XCTestRunner {
-
-  let strategy: ListTestStrategy
-  let reporter: XCTestReporter
-
-  init(strategy: ListTestStrategy, reporter: XCTestReporter) {
-    self.strategy = strategy
-    self.reporter = reporter
-  }
-
-  func execute() -> FBFuture<NSNull> {
-    reporter.didBeginExecutingTestPlan()
-
-    return
-      strategy.listTests()
-      .onQueue(
-        strategy.target.workQueue,
-        fmap: { testNamesObj -> FBFuture<AnyObject> in
-          guard let testNames = testNamesObj as? [String] else {
-            return FBFuture(error: ListTestError.testNamesMalformed(result: String(describing: testNamesObj)))
-          }
-          for testName in testNames {
-            guard let slashRange = testName.range(of: "/") else { continue }
-            let className = String(testName[testName.startIndex..<slashRange.lowerBound])
-            let methodName = String(testName[slashRange.upperBound...])
-            self.reporter.testCaseDidStart(forTestClass: className, method: methodName)
-            self.reporter.testCaseDidFinish(forTestClass: className, method: methodName, with: .passed, duration: 0, logs: nil)
-          }
-          self.reporter.didFinishExecutingTestPlan()
-          return FBFuture<AnyObject>(result: NSNull())
-        }
-      )
-      .retyped(FBFuture<NSNull>.self)
-  }
-}
-
 public final class ListTestStrategy {
 
   let target: any LogicTestTarget
@@ -116,7 +80,7 @@ public final class ListTestStrategy {
   }
 
   func wrapInReporter(_ reporter: XCTestReporter) -> XCTestRunner {
-    ListTestStrategy_ReporterWrapped(strategy: self, reporter: reporter)
+    ReporterWrapped(strategy: self, reporter: reporter)
   }
 
   // MARK: - Private
@@ -282,5 +246,41 @@ public final class ListTestStrategy {
         map: { process -> AnyObject in
           XCTestProcess.ensureProcess(process, completesWithin: timeout, crashLogCommands: nil, queue: target.workQueue, logger: logger) as AnyObject
         })
+  }
+
+  private final class ReporterWrapped: XCTestRunner {
+
+    let strategy: ListTestStrategy
+    let reporter: XCTestReporter
+
+    init(strategy: ListTestStrategy, reporter: XCTestReporter) {
+      self.strategy = strategy
+      self.reporter = reporter
+    }
+
+    func execute() -> FBFuture<NSNull> {
+      reporter.didBeginExecutingTestPlan()
+
+      return
+        strategy.listTests()
+        .onQueue(
+          strategy.target.workQueue,
+          fmap: { testNamesObj -> FBFuture<AnyObject> in
+            guard let testNames = testNamesObj as? [String] else {
+              return FBFuture(error: ListTestError.testNamesMalformed(result: String(describing: testNamesObj)))
+            }
+            for testName in testNames {
+              guard let slashRange = testName.range(of: "/") else { continue }
+              let className = String(testName[testName.startIndex..<slashRange.lowerBound])
+              let methodName = String(testName[slashRange.upperBound...])
+              self.reporter.testCaseDidStart(forTestClass: className, method: methodName)
+              self.reporter.testCaseDidFinish(forTestClass: className, method: methodName, with: .passed, duration: 0, logs: nil)
+            }
+            self.reporter.didFinishExecutingTestPlan()
+            return FBFuture<AnyObject>(result: NSNull())
+          }
+        )
+        .retyped(FBFuture<NSNull>.self)
+    }
   }
 }

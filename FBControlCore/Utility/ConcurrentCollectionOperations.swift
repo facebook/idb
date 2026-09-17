@@ -7,10 +7,6 @@
 
 @preconcurrency import Foundation
 
-private final class ConcurrentCollectionOperations_FilterTerminal: @unchecked Sendable {
-  static let terminal = ConcurrentCollectionOperations_FilterTerminal()
-}
-
 private final class UncheckedSendableBox<T>: @unchecked Sendable {
   let value: T
   init(_ value: T) { self.value = value }
@@ -58,24 +54,28 @@ final class ConcurrentCollectionOperations {
       var object: Any = block(sendableArray.value[iteration])
       let pass = sendablePredicate.value.evaluate(with: object)
       if !pass {
-        object = ConcurrentCollectionOperations_FilterTerminal.terminal
+        object = FilterTerminal.terminal
       }
       objc_sync_enter(sendableOutput.value)
       sendableOutput.value[iteration] = object
       objc_sync_exit(sendableOutput.value)
     }
 
-    return Array(output).filter { !($0 is ConcurrentCollectionOperations_FilterTerminal) }
+    return Array(output).filter { !($0 is FilterTerminal) }
   }
 
   public class func filterMap(_ array: [Any], predicate: NSPredicate, map block: @Sendable @escaping (Any) -> Any) -> [Any] {
     let sendablePredicate = UncheckedSendableBox(predicate)
     let mapped = self.map(array) { object -> Any in
       if !sendablePredicate.value.evaluate(with: object) {
-        return ConcurrentCollectionOperations_FilterTerminal.terminal
+        return FilterTerminal.terminal
       }
       return block(object)
     }
-    return mapped.filter { !($0 is ConcurrentCollectionOperations_FilterTerminal) }
+    return mapped.filter { !($0 is FilterTerminal) }
+  }
+
+  private final class FilterTerminal: @unchecked Sendable {
+    static let terminal = FilterTerminal()
   }
 }
