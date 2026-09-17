@@ -6,6 +6,7 @@
  */
 
 import Foundation
+import os
 
 /// A wait that fires on its deadline. `Task.sleep`, `usleep` and `mach_wait_until` are all subject to
 /// timer coalescing, which for a process at utility or background QoS — a recorder launched by a
@@ -15,24 +16,20 @@ import Foundation
 enum StrictTimer {
   private static let queue = DispatchQueue(label: "com.facebook.FBSimulatorControl.frame-cadence", qos: .userInteractive)
 
-  /// Resumes exactly once, whichever of the timer's handlers runs first.
-  // SAFETY: `continuation` is only read and written under `lock`, and `resume` takes it out under
-  // the lock so a second call finds nil.
-  // patternlint-disable-next-line unchecked-sendable
-  private final class Resumer: @unchecked Sendable {
-    private let lock = NSLock()
-    private var continuation: CheckedContinuation<Void, Error>?
+  /// Resumes exactly once, whichever of the timer's handlers runs first: the continuation is taken
+  /// out under the lock, so a second caller finds nothing to resume.
+  private final class Resumer: Sendable {
+    private let continuation: OSAllocatedUnfairLock<CheckedContinuation<Void, Error>?>
 
     init(_ continuation: CheckedContinuation<Void, Error>) {
-      self.continuation = continuation
+      self.continuation = OSAllocatedUnfairLock(initialState: continuation)
     }
 
     func resume(_ result: Result<Void, Error>) {
-      lock.lock()
-      let continuation = self.continuation
-      self.continuation = nil
-      lock.unlock()
-      continuation?.resume(with: result)
+      continuation.withLock { continuation in
+        defer { continuation = nil }
+        return continuation
+      }?.resume(with: result)
     }
   }
 

@@ -6,6 +6,7 @@
  */
 
 import Foundation
+import os
 
 /// A stimulus to push one frame, produced by either cadence: the `FrameCadence` clock (eager) or
 /// `LazyFrameTriggers` (lazy, fed by damage/overlay callbacks). Modelling both as the same element
@@ -28,9 +29,7 @@ struct FrameTrigger {
 /// still pushed but never twice within one display interval — a signal that lands mid-push would
 /// otherwise be pushed the instant the push returns, and a 120 Hz display would otherwise cost 120
 /// encodes a second for viewers that show 60.
-// @unchecked Sendable: `pendingKeyFrame` is mutable across threads but guarded by `lock`; the stream
-// and its continuation are Sendable.
-final class LazyFrameTriggers: AsyncSequence, @unchecked Sendable {
+final class LazyFrameTriggers: AsyncSequence, Sendable {
   typealias Element = FrameTrigger
 
   /// The default pace: one push per 60 Hz display interval.
@@ -38,10 +37,9 @@ final class LazyFrameTriggers: AsyncSequence, @unchecked Sendable {
 
   private let stream: AsyncStream<Void>
   private let continuation: AsyncStream<Void>.Continuation
-  private let lock = NSLock()
-  /// Whether the next pushed frame must be a keyframe. Guarded by `lock`; set by `signalKeyFrame`,
-  /// read-and-cleared by the iterator, so coalescing never drops a pending keyframe.
-  private var pendingKeyFrame = false
+  /// Whether the next pushed frame must be a keyframe. Set by `signalKeyFrame`, read-and-cleared by
+  /// the iterator, so coalescing never drops a pending keyframe.
+  private let pendingKeyFrame = OSAllocatedUnfairLock(initialState: false)
   fileprivate let minimumIntervalMach: UInt64
 
   init(maximumFramesPerSecond: UInt = LazyFrameTriggers.defaultMaximumFramesPerSecond) {
@@ -63,9 +61,7 @@ final class LazyFrameTriggers: AsyncSequence, @unchecked Sendable {
   /// Signal that the overlay changed — mark the next push a keyframe so consumers that need a keyframe
   /// can decode the change immediately, then enqueue a push.
   func signalKeyFrame() {
-    lock.lock()
-    pendingKeyFrame = true
-    lock.unlock()
+    pendingKeyFrame.withLock { $0 = true }
     continuation.yield(())
   }
 
@@ -76,11 +72,10 @@ final class LazyFrameTriggers: AsyncSequence, @unchecked Sendable {
 
   /// Atomically read and clear the sticky keyframe flag.
   private func takePendingKeyFrame() -> Bool {
-    lock.lock()
-    defer { lock.unlock() }
-    let pending = pendingKeyFrame
-    pendingKeyFrame = false
-    return pending
+    pendingKeyFrame.withLock { pending in
+      defer { pending = false }
+      return pending
+    }
   }
 
   func makeAsyncIterator() -> AsyncIterator {

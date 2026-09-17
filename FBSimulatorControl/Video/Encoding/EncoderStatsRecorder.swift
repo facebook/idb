@@ -8,59 +8,30 @@
 import CoreMedia
 import FBControlCore
 import Foundation
+import os
 
 /// Stats tracked by the video encoder (VideoToolbox).
 /// Zeroed if the stream uses a non-encoded format (e.g. bitmap/BGRA).
 public struct VideoEncoderStats: Sendable {
-  public var callbackCount: UInt
-  public var writeCount: UInt
-  public var dropCount: UInt
-  var writeFailureCount: UInt
-  public var encodeErrorCount: UInt
-  public var tornFrameCount: UInt
-  public var totalEncodedBytes: UInt
-  var totalEncodeSubmitSeconds: CFTimeInterval
+  public var callbackCount: UInt = 0
+  public var writeCount: UInt = 0
+  public var dropCount: UInt = 0
+  var writeFailureCount: UInt = 0
+  public var encodeErrorCount: UInt = 0
+  public var tornFrameCount: UInt = 0
+  public var totalEncodedBytes: UInt = 0
+  var totalEncodeSubmitSeconds: CFTimeInterval = 0
 
-  public init() {
-    self.callbackCount = 0
-    self.writeCount = 0
-    self.dropCount = 0
-    self.writeFailureCount = 0
-    self.encodeErrorCount = 0
-    self.tornFrameCount = 0
-    self.totalEncodedBytes = 0
-    self.totalEncodeSubmitSeconds = 0
-  }
-
-  public init(
-    callbackCount: UInt,
-    writeCount: UInt,
-    dropCount: UInt,
-    writeFailureCount: UInt,
-    encodeErrorCount: UInt,
-    tornFrameCount: UInt,
-    totalEncodedBytes: UInt,
-    totalEncodeSubmitSeconds: CFTimeInterval
-  ) {
-    self.callbackCount = callbackCount
-    self.writeCount = writeCount
-    self.dropCount = dropCount
-    self.writeFailureCount = writeFailureCount
-    self.encodeErrorCount = encodeErrorCount
-    self.tornFrameCount = tornFrameCount
-    self.totalEncodedBytes = totalEncodedBytes
-    self.totalEncodeSubmitSeconds = totalEncodeSubmitSeconds
-  }
+  public init() {}
 }
 
 /// Accounts for what the encoder does with each frame: the running `VideoEncoderStats`, the
 /// warmup and starvation diagnostics, and a stats line every `logInterval` seconds.
 ///
-/// @unchecked Sendable: `record(_:)` runs inside the VideoToolbox output handler, which a session
-/// invokes serially, so the diagnostic state it owns (`warmupComplete`, the consecutive-failure count,
-/// the log timer) is never touched concurrently. `stats` is also written from the encode submission
-/// and read by `snapshot` from arbitrary isolation domains, so it alone is guarded by `lock`.
-final class EncoderStatsRecorder: @unchecked Sendable {
+/// Every mutable field lives under one `OSAllocatedUnfairLock`, so the recorder is `Sendable` as it stands: the
+/// VideoToolbox output handler records outcomes, the encode submission records its timing, and the
+/// owning actor reads snapshots, from whatever threads they run on.
+final class EncoderStatsRecorder: Sendable {
 
   /// What became of one frame the encoder was given.
   enum Outcome {
@@ -74,116 +45,143 @@ final class EncoderStatsRecorder: @unchecked Sendable {
     case encodeError(OSStatus)
   }
 
-  private let logger: any ControlCoreLogger
-  private let lock = NSLock()
-  private var stats = VideoEncoderStats()
-
-  private var lastLoggedStats = VideoEncoderStats()
-  private(set) var consecutiveNotReadyFrameCount: UInt = 0
-  private(set) var warmupComplete = false
-  private(set) var starvationWarningLogged = false
-  var statsTimer: PeriodicStatsTimer
+  private struct State {
+    var stats = VideoEncoderStats()
+    var lastLoggedStats = VideoEncoderStats()
+    var consecutiveNotReadyFrameCount: UInt = 0
+    var warmupComplete = false
+    var starvationWarningLogged = false
+    var statsTimer: PeriodicStatsTimer
+  }
 
   /// Frames the encoder may take to produce its first output before that is worth a warning.
   static let warmupWindowFrames: UInt = 20
   /// Consecutive unproduced frames after warmup that indicate the bitrate is too low.
   static let starvationThreshold: UInt = 10
 
+  private let logger: any ControlCoreLogger
+  private let state: OSAllocatedUnfairLock<State>
+
   init(logger: any ControlCoreLogger, logInterval: CFTimeInterval = 5.0) {
     self.logger = logger
-    self.statsTimer = PeriodicStatsTimer(interval: logInterval)
+    self.state = OSAllocatedUnfairLock(initialState: State(statsTimer: PeriodicStatsTimer(interval: logInterval)))
   }
 
   /// The stats so far.
   var snapshot: VideoEncoderStats {
-    lock.lock()
-    defer { lock.unlock() }
-    return stats
+    state.withLock { $0.stats }
   }
 
-  private func update(_ body: (inout VideoEncoderStats) -> Void) {
-    lock.lock()
-    defer { lock.unlock() }
-    body(&stats)
+  var warmupComplete: Bool {
+    state.withLock { $0.warmupComplete }
+  }
+
+  var consecutiveNotReadyFrameCount: UInt {
+    state.withLock { $0.consecutiveNotReadyFrameCount }
+  }
+
+  var starvationWarningLogged: Bool {
+    state.withLock { $0.starvationWarningLogged }
+  }
+
+  /// Test seam: move the periodic log's last-fired time back so the next `record` logs.
+  func backdateStatsTimerForTesting(by seconds: CFTimeInterval) {
+    state.withLock { $0.statsTimer.backdateForTesting(by: seconds) }
+  }
+
+  /// A log line produced under the lock and emitted after it is released.
+  private enum LogLine {
+    case info(String)
+    case warning(String)
   }
 
   /// One encoder callback's outcome. Counts it, tracks warmup and starvation, and logs the periodic
-  /// stats line when the interval has elapsed.
+  /// stats line when the interval has elapsed. Logging happens outside the lock.
   func record(_ outcome: Outcome) {
-    if !statsTimer.hasStarted {
-      _ = statsTimer.tick()
-      logger.info().log("First encode callback received")
-    }
-
-    update { $0.callbackCount += 1 }
-    switch outcome {
-    case let .encodeError(status):
-      update { $0.encodeErrorCount += 1 }
-      logger.log("VideoToolbox encode error: OSStatus \(status)")
-    case .dropped:
-      update { $0.dropCount += 1 }
-      recordFrameNotProduced()
-    case .writeFailed:
-      update { $0.writeFailureCount += 1 }
-      recordFrameNotProduced()
-    case let .written(encodedBytes):
-      update {
-        $0.writeCount += 1
-        $0.totalEncodedBytes += UInt(encodedBytes)
+    let lines = state.withLock { state -> [LogLine] in
+      var messages: [LogLine] = []
+      if !state.statsTimer.hasStarted {
+        _ = state.statsTimer.tick()
+        messages.append(.info("First encode callback received"))
       }
-      recordFrameProduced()
-    }
 
-    logPeriodicStatsIfDue()
+      state.stats.callbackCount += 1
+      switch outcome {
+      case let .encodeError(status):
+        state.stats.encodeErrorCount += 1
+        messages.append(.warning("VideoToolbox encode error: OSStatus \(status)"))
+      case .dropped:
+        state.stats.dropCount += 1
+        messages += Self.recordFrameNotProduced(&state)
+      case .writeFailed:
+        state.stats.writeFailureCount += 1
+        messages += Self.recordFrameNotProduced(&state)
+      case let .written(encodedBytes):
+        state.stats.writeCount += 1
+        state.stats.totalEncodedBytes += UInt(encodedBytes)
+        messages += Self.recordFrameProduced(&state)
+      }
+
+      messages += Self.periodicStatsIfDue(&state)
+      return messages
+    }
+    for line in lines {
+      switch line {
+      case let .info(text):
+        logger.info().log(text)
+      case let .warning(text):
+        logger.log(text)
+      }
+    }
   }
 
   /// The wall time an encode submission took, converter included.
   func recordEncodeSubmission(seconds: CFTimeInterval) {
-    update { $0.totalEncodeSubmitSeconds += seconds }
+    state.withLock { $0.stats.totalEncodeSubmitSeconds += seconds }
   }
 
   /// The source surface changed while a frame was being read.
   func recordTornFrame() {
-    update { $0.tornFrameCount += 1 }
+    state.withLock { $0.stats.tornFrameCount += 1 }
   }
 
   // MARK: - Warmup and starvation
 
-  private func recordFrameNotProduced() {
-    consecutiveNotReadyFrameCount += 1
-    let consecutiveFailures = consecutiveNotReadyFrameCount
-    if !warmupComplete {
-      if consecutiveFailures == Self.warmupWindowFrames {
-        logger.log("Encoder has not produced a frame after \(consecutiveFailures) attempts — bitrate may be too low for this resolution")
-        starvationWarningLogged = true
+  private static func recordFrameNotProduced(_ state: inout State) -> [LogLine] {
+    state.consecutiveNotReadyFrameCount += 1
+    let consecutiveFailures = state.consecutiveNotReadyFrameCount
+    if !state.warmupComplete {
+      if consecutiveFailures == warmupWindowFrames {
+        state.starvationWarningLogged = true
+        return [.warning("Encoder has not produced a frame after \(consecutiveFailures) attempts — bitrate may be too low for this resolution")]
       }
-    } else if consecutiveFailures == Self.starvationThreshold && !starvationWarningLogged {
-      logger.log("Encoder starvation: \(consecutiveFailures) consecutive frames not ready after warmup — bitrate is likely too low")
-      starvationWarningLogged = true
+    } else if consecutiveFailures == starvationThreshold && !state.starvationWarningLogged {
+      state.starvationWarningLogged = true
+      return [.warning("Encoder starvation: \(consecutiveFailures) consecutive frames not ready after warmup — bitrate is likely too low")]
     }
+    return []
   }
 
-  private func recordFrameProduced() {
-    let failuresBefore = consecutiveNotReadyFrameCount
-    consecutiveNotReadyFrameCount = 0
-    starvationWarningLogged = false
-    if !warmupComplete {
-      warmupComplete = true
-      if failuresBefore > 0 {
-        logger.log("Encoder warmed up after \(failuresBefore) skipped frames")
-      }
+  private static func recordFrameProduced(_ state: inout State) -> [LogLine] {
+    let failuresBefore = state.consecutiveNotReadyFrameCount
+    state.consecutiveNotReadyFrameCount = 0
+    state.starvationWarningLogged = false
+    guard !state.warmupComplete else {
+      return []
     }
+    state.warmupComplete = true
+    return failuresBefore > 0 ? [.warning("Encoder warmed up after \(failuresBefore) skipped frames")] : []
   }
 
   // MARK: - Periodic log
 
-  private func logPeriodicStatsIfDue() {
-    guard case let .elapsed(intervalDuration, totalElapsed) = statsTimer.tick() else {
-      return
+  private static func periodicStatsIfDue(_ state: inout State) -> [LogLine] {
+    guard case let .elapsed(intervalDuration, totalElapsed) = state.statsTimer.tick() else {
+      return []
     }
-    let current = snapshot
-    let last = lastLoggedStats
-    lastLoggedStats = current
+    let current = state.stats
+    let last = state.lastLoggedStats
+    state.lastLoggedStats = current
 
     let intervalCallbacks = current.callbackCount - last.callbackCount
     let intervalEncodedBytes = current.totalEncodedBytes - last.totalEncodedBytes
@@ -196,18 +194,20 @@ final class EncoderStatsRecorder: @unchecked Sendable {
     let intervalAvgEncodeMs = intervalCallbacks > 0 ? (intervalEncodeSubmitSeconds / Double(intervalCallbacks)) * 1000.0 : 0
     let totalAvgEncodeMs = current.callbackCount > 0 ? (current.totalEncodeSubmitSeconds / Double(current.callbackCount)) * 1000.0 : 0
 
-    logger.info().log(
-      String(
-        format:
-          "Video stats (interval): %lu callbacks in %.1fs (%.1f fps, %.0f kbps, %.2f ms/frame encode) — %lu written, %lu dropped, %lu write failures, %lu encode errors, %lu torn",
-        intervalCallbacks, intervalDuration, intervalFps, intervalBitrateKbps, intervalAvgEncodeMs,
-        current.writeCount - last.writeCount, current.dropCount - last.dropCount, current.writeFailureCount - last.writeFailureCount,
-        current.encodeErrorCount - last.encodeErrorCount, current.tornFrameCount - last.tornFrameCount))
-    logger.info().log(
-      String(
-        format:
-          "Video stats (total): %lu callbacks in %.1fs (%.1f fps, %.0f kbps, %.2f ms/frame encode) — %lu written, %lu dropped, %lu write failures, %lu encode errors, %lu torn",
-        current.callbackCount, totalElapsed, totalFps, totalBitrateKbps, totalAvgEncodeMs,
-        current.writeCount, current.dropCount, current.writeFailureCount, current.encodeErrorCount, current.tornFrameCount))
+    return [
+      .info(
+        String(
+          format:
+            "Video stats (interval): %lu callbacks in %.1fs (%.1f fps, %.0f kbps, %.2f ms/frame encode) — %lu written, %lu dropped, %lu write failures, %lu encode errors, %lu torn",
+          intervalCallbacks, intervalDuration, intervalFps, intervalBitrateKbps, intervalAvgEncodeMs,
+          current.writeCount - last.writeCount, current.dropCount - last.dropCount, current.writeFailureCount - last.writeFailureCount,
+          current.encodeErrorCount - last.encodeErrorCount, current.tornFrameCount - last.tornFrameCount)),
+      .info(
+        String(
+          format:
+            "Video stats (total): %lu callbacks in %.1fs (%.1f fps, %.0f kbps, %.2f ms/frame encode) — %lu written, %lu dropped, %lu write failures, %lu encode errors, %lu torn",
+          current.callbackCount, totalElapsed, totalFps, totalBitrateKbps, totalAvgEncodeMs,
+          current.writeCount, current.dropCount, current.writeFailureCount, current.encodeErrorCount, current.tornFrameCount)),
+    ]
   }
 }

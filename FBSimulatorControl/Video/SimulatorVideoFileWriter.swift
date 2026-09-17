@@ -9,6 +9,7 @@ import AVFoundation
 import CoreMedia
 import FBControlCore
 import Foundation
+import os
 
 // MARK: - SimulatorVideoFileWriter
 
@@ -61,7 +62,7 @@ extension SimulatorVideoFileWriterError: LocalizedError {
 /// called once, from the recorder, after `stopStreaming` has flushed the encoder
 /// (`VTCompressionSessionCompleteFrames`), so it never overlaps `consume`. The
 /// timed-metadata path (`writeTimedMetadata`) arrives from other isolation domains (the stdin
-/// handler), so the chapter state it shares with `consume`/`finish` is guarded by `chapterLock`.
+/// handler), so the chapter state it shares with `consume`/`finish` lives under an `OSAllocatedUnfairLock`.
 final class SimulatorVideoFileWriter: EncodedSampleConsumer, TimedMetadataConsumer, @unchecked Sendable {
   private static let chapterTimeScale: CMTimeScale = 600
 
@@ -77,11 +78,13 @@ final class SimulatorVideoFileWriter: EncodedSampleConsumer, TimedMetadataConsum
   private var failed = false
 
   /// Chapter markers and the running video position, shared between the writeQueue (`consume`/`finish`)
-  /// and the stdin handler (`writeTimedMetadata`); guarded by `chapterLock`.
-  private let chapterLock = NSLock()
-  private var pendingChapters: [(time: CMTime, text: String)] = []
-  private var firstPresentationTime: CMTime = .invalid
-  private var lastPresentationTime: CMTime = .invalid
+  /// and the stdin handler (`writeTimedMetadata`).
+  private struct ChapterState {
+    var pendingChapters: [(time: CMTime, text: String)] = []
+    var firstPresentationTime: CMTime = .invalid
+    var lastPresentationTime: CMTime = .invalid
+  }
+  private let chapters = OSAllocatedUnfairLock(initialState: ChapterState())
 
   init(filePath: String, fileType: AVFileType = .mp4, chaptersEnabled: Bool = false, logger: any ControlCoreLogger) {
     self.outputURL = URL(fileURLWithPath: filePath)
@@ -129,12 +132,12 @@ final class SimulatorVideoFileWriter: EncodedSampleConsumer, TimedMetadataConsum
       logger.log("writeTimedMetadata: chapters not enabled on this recording, dropping")
       return
     }
-    chapterLock.lock()
-    defer { chapterLock.unlock() }
     // Timestamp the marker at the most recent frame; if none yet, anchor at the session start (filled
     // in once the first frame arrives) by using .invalid, resolved at finish.
-    let time = lastPresentationTime.isValid ? lastPresentationTime : firstPresentationTime
-    pendingChapters.append((time: time, text: text))
+    chapters.withLock { state in
+      let time = state.lastPresentationTime.isValid ? state.lastPresentationTime : state.firstPresentationTime
+      state.pendingChapters.append((time: time, text: text))
+    }
   }
 
   /// Finalize the file: mark the inputs finished and await `finishWriting`. Call once, after the
@@ -149,7 +152,7 @@ final class SimulatorVideoFileWriter: EncodedSampleConsumer, TimedMetadataConsum
     if assetWriter.status == .failed {
       throw SimulatorVideoFileWriterError.assetWriterFailedToFinish(errorDescription: assetWriter.error.map { String(describing: $0) } ?? "unknown error")
     }
-    if chaptersEnabled && chapterLock.withLock({ !pendingChapters.isEmpty }) {
+    if chaptersEnabled && chapters.withLock({ !$0.pendingChapters.isEmpty }) {
       try await addBufferedChapters()
     }
   }
@@ -157,12 +160,12 @@ final class SimulatorVideoFileWriter: EncodedSampleConsumer, TimedMetadataConsum
   // MARK: - Private
 
   private func recordVideoPosition(_ time: CMTime) {
-    chapterLock.lock()
-    defer { chapterLock.unlock() }
-    if !firstPresentationTime.isValid {
-      firstPresentationTime = time
+    chapters.withLock { state in
+      if !state.firstPresentationTime.isValid {
+        state.firstPresentationTime = time
+      }
+      state.lastPresentationTime = time
     }
-    lastPresentationTime = time
   }
 
   private func startIfNeeded(with sampleBuffer: CMSampleBuffer) throws -> AVAssetWriterInput {
@@ -288,8 +291,8 @@ final class SimulatorVideoFileWriter: EncodedSampleConsumer, TimedMetadataConsum
   /// Convert buffered markers to text samples with contiguous time ranges:
   /// each chapter runs until the next one, and the last until the end of the recorded video.
   private func makeBufferedChapterSamples() -> [CMSampleBuffer] {
-    let (chapters, sessionStart, videoEnd) = chapterLock.withLock {
-      (pendingChapters, firstPresentationTime, lastPresentationTime)
+    let (chapters, sessionStart, videoEnd) = self.chapters.withLock {
+      ($0.pendingChapters, $0.firstPresentationTime, $0.lastPresentationTime)
     }
 
     guard let formatDescription = chapterFormatDescription, !chapters.isEmpty else {

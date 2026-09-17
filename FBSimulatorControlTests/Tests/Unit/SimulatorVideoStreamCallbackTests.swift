@@ -198,9 +198,7 @@ final class SimulatorVideoStreamCallbackTests: XCTestCase {
     XCTAssertEqual(pusher.statsRecorder.snapshot.encodeErrorCount, 1)
     XCTAssertEqual(pusher.statsRecorder.snapshot.callbackCount, 6)
 
-    var timer = pusher.statsRecorder.statsTimer
-    timer.backdateForTesting(by: 6.0)
-    pusher.statsRecorder.statsTimer = timer
+    pusher.statsRecorder.backdateStatsTimerForTesting(by: 6.0)
 
     let ready = makeReadySampleBuffer()
     pusher.handleCompressedSampleBuffer(ready, encodeStatus: noErr, infoFlags: VTEncodeInfoFlags())
@@ -228,9 +226,7 @@ final class SimulatorVideoStreamCallbackTests: XCTestCase {
       pusher.handleCompressedSampleBuffer(notReady, encodeStatus: noErr, infoFlags: VTEncodeInfoFlags())
     }
 
-    var timer = pusher.statsRecorder.statsTimer
-    timer.backdateForTesting(by: 6.0)
-    pusher.statsRecorder.statsTimer = timer
+    pusher.statsRecorder.backdateStatsTimerForTesting(by: 6.0)
 
     let notReady = makeNotReadySampleBuffer()
     pusher.handleCompressedSampleBuffer(notReady, encodeStatus: noErr, infoFlags: VTEncodeInfoFlags())
