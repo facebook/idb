@@ -30,7 +30,9 @@ struct DeviceVideoStreamTests {
       writeQueue: DispatchQueue(label: "test.device.video"),
       logger: CapturingLogger()
     )
-    stream.consumer = consumer
+    if let consumer {
+      try stream.attach(consumer)
+    }
     return stream
   }
 

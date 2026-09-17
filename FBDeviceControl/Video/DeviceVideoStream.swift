@@ -9,6 +9,7 @@ import AVFoundation
 import CoreMedia
 @preconcurrency import FBControlCore
 import Foundation
+import os
 
 enum DeviceVideoStreamError: Error, LocalizedError {
   case invalidStreamFormat(String)
@@ -37,26 +38,36 @@ enum DeviceVideoStreamError: Error, LocalizedError {
 /// delivers samples in the requested `DeviceCaptureFormat` — the device encodes JPEG and H.264
 /// itself — and the format's `EncodedFrameWriter` frames them for the consumer.
 ///
-/// @unchecked Sendable: frame delivery is confined to `writeQueue` (the AVCapture delegate queue);
-/// lifecycle state is guarded by `lifecycleLock`.
-public final class DeviceVideoStream: NSObject, VideoStreamOperation, @unchecked Sendable {
+/// @unchecked Sendable: frame delivery is confined to `writeQueue` (the AVCapture delegate queue),
+/// which is the only place `frameWriter` and `hasLoggedFirstSample` are touched. `consumer` is
+/// written once by `attach`, before the session starts delivering, and read on `writeQueue` after.
+/// The phase, which start/stop drive from the caller's thread while the first frame lands on
+/// `writeQueue`, lives under `lifecycle`.
+public final class DeviceVideoStream: VideoStreamOperation, @unchecked Sendable {
   let logger: any ControlCoreLogger
   private let session: AVCaptureSession
   private let output: AVCaptureVideoDataOutput
   private let frameWriter: any EncodedFrameWriter
   let writeQueue: DispatchQueue
   private var hasLoggedFirstSample = false
+  private var relay: CaptureRelay?
+  private(set) var consumer: (any DataConsumer)?
 
-  // Lifecycle state guarded by `lifecycleLock`: start/stop run on the caller's thread while the
-  // started signal fires on `writeQueue`. `hasStarted` latches on the first delivered frame,
-  // `isStopped` on stop; the awaiter lists hold continuations resumed on those transitions.
-  private let lifecycleLock = NSLock()
-  private var hasStarted = false
-  private var isStopped = false
-  private var startAwaiters: [CheckedContinuation<Void, Never>] = []
-  private var stopAwaiters: [CheckedContinuation<Void, Never>] = []
+  /// Where the stream is in its life. `starting` holds whoever is waiting for the first frame;
+  /// `awaitCompletion` callers are held separately since completion can be awaited from any phase.
+  private struct Lifecycle {
+    enum Phase {
+      case idle
+      case starting(awaiters: [CheckedContinuation<Void, Never>])
+      case streaming
+      case stopped
+    }
 
-  var consumer: (any DataConsumer)?
+    var phase: Phase = .idle
+    var completionAwaiters: [CheckedContinuation<Void, Never>] = []
+  }
+
+  private let lifecycle = OSAllocatedUnfairLock(initialState: Lifecycle())
 
   // MARK: - Factory
 
@@ -106,44 +117,99 @@ public final class DeviceVideoStream: NSObject, VideoStreamOperation, @unchecked
     self.frameWriter = frameWriter
     self.writeQueue = writeQueue
     self.logger = logger
-    super.init()
   }
 
   // MARK: - VideoStreamOperation
 
   public func startStreaming(_ consumer: any DataConsumer) async throws {
-    if self.consumer != nil {
-      throw DeviceVideoStreamError.consumerAlreadyAttached
-    }
-    self.consumer = consumer
-    output.setSampleBufferDelegate(self, queue: writeQueue)
+    try attach(consumer)
+    let relay = CaptureRelay(
+      onSample: { [weak self] sampleBuffer in self?.deliver(sampleBuffer) },
+      onDrop: { [weak self] in self?.logger.log("Dropped a sample!") })
+    self.relay = relay
+    output.setSampleBufferDelegate(relay, queue: writeQueue)
     session.startRunning()
-    // Resolves once the first frame is delivered (see captureOutput).
+    // Resolves once the first frame is delivered (see `deliver`).
     await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
-      registerStartAwaiter(continuation)
+      let resumeNow = lifecycle.withLock { state -> Bool in
+        guard case let .starting(awaiters) = state.phase else {
+          return true
+        }
+        state.phase = .starting(awaiters: awaiters + [continuation])
+        return false
+      }
+      if resumeNow {
+        continuation.resume()
+      }
     }
   }
 
   public func stopStreaming() async throws {
-    if consumer == nil {
-      throw DeviceVideoStreamError.noConsumerAttached
+    let awaiters = try lifecycle.withLock { state -> [CheckedContinuation<Void, Never>] in
+      switch state.phase {
+      case .idle:
+        throw DeviceVideoStreamError.noConsumerAttached
+      case .stopped:
+        return []
+      case .starting, .streaming:
+        state.phase = .stopped
+        defer { state.completionAwaiters = [] }
+        return state.completionAwaiters
+      }
     }
     session.stopRunning()
-    if let awaiters = markStopped() {
-      for awaiter in awaiters {
-        awaiter.resume()
-      }
+    for awaiter in awaiters {
+      awaiter.resume()
     }
   }
 
   public func awaitCompletion() async {
     await withTaskCancellationHandler {
       await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
-        registerStopAwaiter(continuation)
+        let resumeNow = lifecycle.withLock { state -> Bool in
+          if case .stopped = state.phase {
+            return true
+          }
+          state.completionAwaiters.append(continuation)
+          return false
+        }
+        if resumeNow {
+          continuation.resume()
+        }
       }
     } onCancel: {
       Task { [weak self] in try? await self?.stopStreaming() }
     }
+  }
+
+  /// Attaches the consumer frames go to. Throws if one is already attached.
+  func attach(_ consumer: any DataConsumer) throws {
+    try lifecycle.withLock { state in
+      guard case .idle = state.phase else {
+        throw DeviceVideoStreamError.consumerAlreadyAttached
+      }
+      state.phase = .starting(awaiters: [])
+    }
+    self.consumer = consumer
+  }
+
+  /// One captured sample, on `writeQueue`: the first one moves the stream to `streaming` and
+  /// resumes whoever awaited the start; every one is framed for the consumer unless it is behind.
+  private func deliver(_ sampleBuffer: CMSampleBuffer) {
+    guard let consumer, consumer.hasCapacityForFrame(logger: logger) else {
+      return
+    }
+    let startAwaiters = lifecycle.withLock { state -> [CheckedContinuation<Void, Never>] in
+      guard case let .starting(awaiters) = state.phase else {
+        return []
+      }
+      state.phase = .streaming
+      return awaiters
+    }
+    for awaiter in startAwaiters {
+      awaiter.resume()
+    }
+    consumeSampleBuffer(sampleBuffer)
   }
 
   /// Frames one captured sample for the consumer. A no-op with no consumer attached.
@@ -160,75 +226,26 @@ public final class DeviceVideoStream: NSObject, VideoStreamOperation, @unchecked
       logger.log("Failed to write frame: \(error)")
     }
   }
-
-  // MARK: - Lifecycle state
-
-  // The lifecycle state is guarded by `lifecycleLock`, whose `lock()`/`unlock()` are unavailable from
-  // async contexts, so the critical sections live in these synchronous helpers.
-
-  private func registerStartAwaiter(_ continuation: CheckedContinuation<Void, Never>) {
-    lifecycleLock.lock()
-    if hasStarted {
-      lifecycleLock.unlock()
-      continuation.resume()
-    } else {
-      startAwaiters.append(continuation)
-      lifecycleLock.unlock()
-    }
-  }
-
-  private func registerStopAwaiter(_ continuation: CheckedContinuation<Void, Never>) {
-    lifecycleLock.lock()
-    if isStopped {
-      lifecycleLock.unlock()
-      continuation.resume()
-    } else {
-      stopAwaiters.append(continuation)
-      lifecycleLock.unlock()
-    }
-  }
-
-  /// Latch stopped and return the awaiters to resume, or nil if already stopped.
-  private func markStopped() -> [CheckedContinuation<Void, Never>]? {
-    lifecycleLock.lock()
-    defer { lifecycleLock.unlock() }
-    if isStopped {
-      return nil
-    }
-    isStopped = true
-    let awaiters = stopAwaiters
-    stopAwaiters = []
-    return awaiters
-  }
-
-  /// Latch the started state and resume start awaiters, on the first delivered frame.
-  private func signalStarted() {
-    lifecycleLock.lock()
-    if hasStarted {
-      lifecycleLock.unlock()
-      return
-    }
-    hasStarted = true
-    let awaiters = startAwaiters
-    startAwaiters = []
-    lifecycleLock.unlock()
-    for awaiter in awaiters {
-      awaiter.resume()
-    }
-  }
 }
 
-// MARK: - AVCaptureVideoDataOutputSampleBufferDelegate
+// MARK: - CaptureRelay
 
-extension DeviceVideoStream: AVCaptureVideoDataOutputSampleBufferDelegate {
-  public func captureOutput(_ output: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection) {
-    guard let consumer else { return }
-    if !consumer.hasCapacityForFrame(logger: logger) { return }
-    signalStarted()
-    consumeSampleBuffer(sampleBuffer)
+/// The one `NSObject` in the device video path: `AVCaptureVideoDataOutput` wants an Objective-C
+/// delegate, so this forwards its two callbacks to closures.
+private final class CaptureRelay: NSObject, AVCaptureVideoDataOutputSampleBufferDelegate {
+  private let onSample: (CMSampleBuffer) -> Void
+  private let onDrop: () -> Void
+
+  init(onSample: @escaping (CMSampleBuffer) -> Void, onDrop: @escaping () -> Void) {
+    self.onSample = onSample
+    self.onDrop = onDrop
   }
 
-  public func captureOutput(_ output: AVCaptureOutput, didDrop sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection) {
-    logger.log("Dropped a sample!")
+  func captureOutput(_ output: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection) {
+    onSample(sampleBuffer)
+  }
+
+  func captureOutput(_ output: AVCaptureOutput, didDrop sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection) {
+    onDrop()
   }
 }
