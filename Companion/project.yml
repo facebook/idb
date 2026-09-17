@@ -85,8 +85,10 @@ packages:
     exactVersion: 1.3.1
 
 targets:
+  # Xcode folds linked SwiftPM products into static archives. Keep these package
+  # edges compile-only; CompanionLib owns the package object code once below.
   IDBGRPCSwift:
-    type: framework
+    type: library.static
     platform: macOS
     deploymentTarget: "15.0"
     preBuildScripts:
@@ -127,12 +129,16 @@ targets:
     dependencies:
       - package: grpc-swift-2
         product: GRPCCore
+        link: false
       - package: grpc-swift-nio-transport
         product: GRPCNIOTransportHTTP2Posix
+        link: false
       - package: grpc-swift-protobuf
         product: GRPCProtobuf
+        link: false
       - package: swift-protobuf
         product: SwiftProtobuf
+        link: false
       - sdk: Foundation.framework
 
   ReplProtocol:
@@ -159,18 +165,12 @@ targets:
       - sdk: CoreGraphics.framework
       - sdk: Foundation.framework
 
-  # Everything the companion is apart from its entry point: the command executor
-  # and its request types, plus the gRPC service, configuration and reporting.
-  # `:CompanionLib` in Buck is the same target over the same directory, so the
-  # module `main.swift` imports exists in both builds. Its sources import the
-  # gRPC and NIO modules directly, and Xcode only hands a target the clang
-  # module maps of the package products it links itself -- a static library
-  # gets nothing through IDBGRPCSwift -- so the products are declared here too.
-  # libtool folds them into this archive as it does into IDBGRPCSwift's, which
-  # is why `idb_companion` links its Objective-C archives with `-force_load`
-  # rather than `-ObjC` below.
+  # Xcode and Buck both build these sources as the `CompanionLib` static
+  # library. Xcode links the shared SwiftPM products into this archive once;
+  # IDBGRPCSwift's compile-only edges preserve its module visibility without
+  # folding in a second copy.
   CompanionLib:
-    type: framework
+    type: library.static
     platform: macOS
     deploymentTarget: "15.0"
     sources:
@@ -219,12 +219,16 @@ targets:
     dependencies:
       - target: IDBGRPCSwift
         embed: false
+        link: false
       - target: ReplProtocol
         embed: false
+        link: false
       - package: grpc-swift-2
         product: GRPCCore
       - package: grpc-swift-nio-transport
         product: GRPCNIOTransportHTTP2Posix
+      - package: grpc-swift-protobuf
+        product: GRPCProtobuf
       - package: swift-nio
         product: NIOCore
       - package: swift-nio
@@ -276,21 +280,15 @@ targets:
         # The linked static archives ship loose .swiftmodule directories next
         # to the .a files; resolve them independently of -F framework semantics.
         SWIFT_INCLUDE_PATHS: $(SRCROOT)/../Build/Products/Release
-        # FBControlCore and XCTestBootstrap are static archives with category-only
-        # Objective-C object files, which the linker drops unless forced in, and
-        # their selectors are then missing at runtime. They are force-loaded by
-        # name rather than with `-ObjC`: that flag loads every member with
-        # Objective-C metadata from every archive, and CompanionLib and
-        # IDBGRPCSwift each carry a copy of the gRPC and NIO package objects,
-        # whose Swift classes have such metadata -- so it turns the second copy
-        # into thousands of duplicate symbols. Loaded on demand, the linker
-        # takes each member from the first archive that defines it.
+        # FBControlCore and XCTestBootstrap contain category-only Objective-C
+        # object files. Keep -ObjC so those members survive the final link, but
+        # do not force-load the same archives that project-deps.yml already links.
         #
         # CoreSimulator and AccessibilityPlatformTranslation are runtime-loaded
         # private frameworks. FBSimulatorControl used to weak-link their TBD stubs
         # at its own link step, but a static archive has no link step, so the final
         # executable must carry the weak links instead.
-        OTHER_LDFLAGS: $(inherited) -force_load $(SRCROOT)/../Build/Products/Release/FBControlCore.framework/FBControlCore -force_load $(SRCROOT)/../Build/Products/Release/XCTestBootstrap.framework/XCTestBootstrap -weak_library $(SRCROOT)/../PrivateHeaders/CoreSimulator/CoreSimulator.tbd -weak_library $(SRCROOT)/../PrivateHeaders/AccessibilityPlatformTranslation/AccessibilityPlatformTranslation.tbd
+        OTHER_LDFLAGS: $(inherited) -ObjC -weak_library $(SRCROOT)/../PrivateHeaders/CoreSimulator/CoreSimulator.tbd -weak_library $(SRCROOT)/../PrivateHeaders/AccessibilityPlatformTranslation/AccessibilityPlatformTranslation.tbd
         # Use ad-hoc code signing for local development
         CODE_SIGN_IDENTITY: "-"
         CODE_SIGNING_REQUIRED: NO
@@ -360,10 +358,9 @@ targets:
       - sdk: Foundation.framework
 
   # The `idb-repl` CLI. A small gRPC client that talks to a companion to drive a test/simulator REPL. It links the
-  # IDBGRPCSwift static archive (which bundles the gRPC/NIO/protobuf closure) and
-  # ArgumentParser; like idb_companion it must NOT depend on the gRPC packages
-  # directly (those symbols come from IDBGRPCSwift, and a second copy would be a
-  # duplicate-symbol error). It is placed in the distribution next to idb_companion.
+  # IDBGRPCSwift static archive and owns the gRPC/NIO/protobuf package products
+  # at its final executable link, matching the companion's single-owner model.
+  # It is placed in the distribution next to idb_companion.
   idb-repl:
     type: tool
     platform: macOS
@@ -420,6 +417,18 @@ targets:
         embed: false
       - target: ReplCompiler
         embed: false
+      - package: grpc-swift-2
+        product: GRPCCore
+      - package: grpc-swift-nio-transport
+        product: GRPCNIOTransportHTTP2Posix
+      - package: grpc-swift-protobuf
+        product: GRPCProtobuf
+      - package: swift-nio
+        product: NIOCore
+      - package: swift-nio
+        product: NIOPosix
+      - package: swift-protobuf
+        product: SwiftProtobuf
       - package: swift-argument-parser
         product: ArgumentParser
       - sdk: Foundation.framework
