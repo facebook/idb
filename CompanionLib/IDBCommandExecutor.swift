@@ -7,7 +7,7 @@
 
 import CoreGraphics
 import FBControlCore
-internal import FBDeviceControl
+import FBDeviceControl
 import FBSimulatorControl
 import Foundation
 import SimulatorXCTest

@@ -13,8 +13,6 @@
 targets:
   idb_companion:
     dependencies:
-      - framework: ../Build/Products/Release/libCompanionLib.a
-        embed: false
       - framework: ../Build/Products/Release/libCompanionUtilities.a
         embed: false
       - framework: ../Build/Products/Release/FBControlCore.framework

@@ -5,7 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import CompanionLib
 import GRPCCore
 
 /// The interceptors applied to every companion RPC, outermost first.

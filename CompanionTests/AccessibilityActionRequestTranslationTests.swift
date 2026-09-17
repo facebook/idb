@@ -5,8 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-@testable import Companion
-import CompanionLib
+@testable import CompanionLib
 import CoreGraphics
 @preconcurrency import FBControlCore
 @preconcurrency import FBSimulatorControl

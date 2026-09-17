@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-@testable import Companion
+@testable import CompanionLib
 import FBSimulatorControl
 import GRPCCore
 import XCTest

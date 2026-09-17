@@ -152,16 +152,83 @@ targets:
       - sdk: CoreGraphics.framework
       - sdk: Foundation.framework
 
-  idb_companion:
-    type: tool
+  # Everything the companion is apart from its entry point: the command executor
+  # and its request types, plus the gRPC service, configuration and reporting.
+  # `:CompanionLib` in Buck is the same target over the same two directories, so
+  # the module `main.swift` imports exists in both builds. Like `idb-repl`, it
+  # must NOT depend on the gRPC packages directly -- those symbols come from
+  # IDBGRPCSwift, and a second copy would be a duplicate-symbol error.
+  CompanionLib:
+    type: framework
     platform: macOS
     deploymentTarget: "15.0"
     sources:
+      - path: ../CompanionLib
+        excludes:
+          - "**/*-Info.plist"
       - path: .
         excludes:
           - "**/*-Info.plist"
           - "**/*.xcconfig"
           - "project.yml"
+          - "project-deps.yml"
+          - "Info.plist"
+          - "main.swift"
+      # BuildInfo.swift is generated into DERIVED_FILE_DIR by the preBuildScript
+      # below; the configuration reports `kBuildDate` / `kBuildTime`. The
+      # declarations are internal, so the library and the tool each compile
+      # their own copy, as they do under Buck.
+      - path: $(DERIVED_FILE_DIR)/BuildInfo.swift
+        optional: true
+        type: file
+    preBuildScripts:
+      - name: Generate BuildInfo.swift
+        script: |
+          set -e
+          mkdir -p "$DERIVED_FILE_DIR"
+          {
+            date +'let kBuildDate = "%b %-d %Y"'
+            date +'let kBuildTime = "%H:%M:%S"'
+          } > "$DERIVED_FILE_DIR/BuildInfo.swift"
+        # No inputFiles means Xcode runs this every build (the timestamp must
+        # always be fresh).
+        outputFiles:
+          - $(DERIVED_FILE_DIR)/BuildInfo.swift
+    settings:
+      base:
+        MACOSX_DEPLOYMENT_TARGET: "15.0"
+        PRODUCT_BUNDLE_IDENTIFIER: com.facebook.CompanionLib
+        PRODUCT_NAME: CompanionLib
+        DEFINES_MODULE: YES
+        MACH_O_TYPE: staticlib
+        SWIFT_VERSION: "6.0"
+        GENERATE_INFOPLIST_FILE: YES
+        HEADER_SEARCH_PATHS: $(inherited) $(SRCROOT)/../PrivateHeaders
+        FRAMEWORK_SEARCH_PATHS: $(inherited) $(SRCROOT)/../Build/Products/Release
+        # The linked static archives ship loose .swiftmodule directories next
+        # to the .a files; resolve them independently of -F framework semantics.
+        SWIFT_INCLUDE_PATHS: $(SRCROOT)/../Build/Products/Release
+      # Static archive: keep DWARF for the final link's dSYM, never strip.
+      configs:
+        Release:
+          DEBUG_INFORMATION_FORMAT: dwarf
+          STRIP_INSTALLED_PRODUCT: NO
+    dependencies:
+      - target: IDBGRPCSwift
+        embed: false
+      - target: ReplProtocol
+        embed: false
+      - sdk: CoreGraphics.framework
+      - sdk: Foundation.framework
+
+  idb_companion:
+    type: tool
+    platform: macOS
+    deploymentTarget: "15.0"
+    sources:
+      # The entry point alone; everything else it drives is CompanionLib.
+      - path: main.swift
+        type: file
       # BuildInfo.swift is generated into DERIVED_FILE_DIR by the preBuildScript
       # below. xcodegen needs a concrete pbxproj reference so the swiftc invocation
       # picks it up. Using `optional: true` allows xcodegen to add the reference
@@ -220,6 +287,8 @@ targets:
           DEBUG_INFORMATION_FORMAT: dwarf-with-dsym
           STRIP_INSTALLED_PRODUCT: YES
     dependencies:
+      - target: CompanionLib
+        embed: false
       - target: IDBGRPCSwift
         embed: false
       - target: ReplProtocol

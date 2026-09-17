@@ -5,8 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-@testable import Companion
-import CompanionLib
+@testable import CompanionLib
 @preconcurrency import FBControlCore
 import Foundation
 // ast-grep-ignore: swift-testing/swift/no-new-xctest
