@@ -23,6 +23,13 @@ public enum VideoStreamTransport: String, Sendable {
 /// The encoders an MJPEG stream may use. Hardware encoding is required by default; software
 /// encoding is a deliberate opt-in for hosts without a usable hardware JPEG encoder, trading CPU
 /// for availability.
+///
+/// There is no user-facing switch: each entry point picks for its use. The live paths — the
+/// companion's gRPC stream, `sim-video stream` and sime2e's `video-stream` — require hardware,
+/// because a software JPEG encoder cannot hold a screen-rate stream and the failure is better
+/// reported at session creation than as a stream that falls behind. `sim-video record` allows
+/// software: a recording tolerates a slower encoder, and the tool is run on developer machines
+/// where availability matters more than latency.
 public enum MJPEGEncoderSelection: Hashable, Sendable {
   case requireHardware
   case allowSoftware

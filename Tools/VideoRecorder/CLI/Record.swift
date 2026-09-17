@@ -110,6 +110,7 @@ enum RecordingEncoding: String, ExpressibleByArgument {
     switch self {
     case .h264: return .compressedVideo(withCodec: .h264, transport: .annexB)
     case .hevc, .auto: return .compressedVideo(withCodec: .hevc, transport: .annexB)
+    // A recording tolerates a slower encoder; see `MJPEGEncoderSelection`.
     case .mjpeg: return .mjpeg(encoder: .allowSoftware)
     }
   }
