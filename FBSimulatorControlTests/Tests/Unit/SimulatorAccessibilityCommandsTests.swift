@@ -108,7 +108,7 @@ final class SimulatorAccessibilityCommandsTests: XCTestCase {
   @discardableResult
   private func assertFlatOutput(
     withProfiling enableProfiling: Bool,
-    childElements: [SimulatorControlTests_AXPMacPlatformElement_Double]
+    childElements: [AXPMacPlatformElementDouble]
   ) async throws -> AccessibilityElementsResponse {
     let element = try await simulator.accessibility.resolveElement(for: .frontmost)
 
@@ -221,7 +221,7 @@ final class SimulatorAccessibilityCommandsTests: XCTestCase {
   private func assertElementAtPoint(
     withProfiling enableProfiling: Bool,
     point: CGPoint,
-    element elementDouble: SimulatorControlTests_AXPMacPlatformElement_Double,
+    element elementDouble: AXPMacPlatformElementDouble,
     expected: [String: Any]
   ) async throws -> AccessibilityElementsResponse {
     fixture!.translator.macPlatformElementResult = elementDouble
@@ -252,7 +252,7 @@ final class SimulatorAccessibilityCommandsTests: XCTestCase {
   @discardableResult
   private func assertNestedOutput(
     withProfiling enableProfiling: Bool,
-    childElements: [SimulatorControlTests_AXPMacPlatformElement_Double]
+    childElements: [AXPMacPlatformElementDouble]
   ) async throws -> AccessibilityElementsResponse {
     let element = try await simulator.accessibility.resolveElement(for: .frontmost)
 
@@ -369,7 +369,7 @@ final class SimulatorAccessibilityCommandsTests: XCTestCase {
   @discardableResult
   private func assertKeyFiltering(
     withProfiling enableProfiling: Bool,
-    childElements: [SimulatorControlTests_AXPMacPlatformElement_Double]
+    childElements: [AXPMacPlatformElementDouble]
   ) async throws -> AccessibilityElementsResponse {
     let element = try await simulator.accessibility.resolveElement(for: .frontmost)
 
@@ -477,7 +477,7 @@ final class SimulatorAccessibilityCommandsTests: XCTestCase {
   /// simulator's command cache. Production paths that resolve `accessibility`
   /// on the simulator will return it.
   private func setUp(
-    withRootElement rootElement: SimulatorControlTests_AXPMacPlatformElement_Double,
+    withRootElement rootElement: AXPMacPlatformElementDouble,
     launchCtl: (any LaunchCtlCommands)? = nil
   ) throws {
     fixture = AccessibilityTestFixture.bootedSimulator()
@@ -494,23 +494,23 @@ final class SimulatorAccessibilityCommandsTests: XCTestCase {
 
   // MARK: - Default Element Factories
 
-  private var defaultTitleLabel: SimulatorControlTests_AXPMacPlatformElement_Double {
+  private var defaultTitleLabel: AXPMacPlatformElementDouble {
     AccessibilityTestElementBuilder.staticText(withLabel: "Confirm Action", frame: NSRect(x: 20, y: 100, width: 350, height: 30))
   }
 
-  private var defaultOkButton: SimulatorControlTests_AXPMacPlatformElement_Double {
+  private var defaultOkButton: AXPMacPlatformElementDouble {
     AccessibilityTestElementBuilder.button(withLabel: "OK", identifier: "ok_button", frame: NSRect(x: 20, y: 750, width: 150, height: 44))
   }
 
-  private var defaultCancelButton: SimulatorControlTests_AXPMacPlatformElement_Double {
+  private var defaultCancelButton: AXPMacPlatformElementDouble {
     AccessibilityTestElementBuilder.button(withLabel: "Cancel", identifier: "cancel_button", frame: NSRect(x: 200, y: 750, width: 150, height: 44))
   }
 
-  private func defaultRoot(withChildren children: [SimulatorControlTests_AXPMacPlatformElement_Double]) -> SimulatorControlTests_AXPMacPlatformElement_Double {
+  private func defaultRoot(withChildren children: [AXPMacPlatformElementDouble]) -> AXPMacPlatformElementDouble {
     AccessibilityTestElementBuilder.application(withLabel: "App Window", frame: NSRect(x: 0, y: 0, width: 390, height: 844), children: children)
   }
 
-  private var defaultElementTree: SimulatorControlTests_AXPMacPlatformElement_Double {
+  private var defaultElementTree: AXPMacPlatformElementDouble {
     defaultRoot(withChildren: [defaultTitleLabel, defaultOkButton, defaultCancelButton])
   }
 
@@ -910,7 +910,7 @@ final class SimulatorAccessibilityCommandsTests: XCTestCase {
     // Object-at-point hit-testing returns a translation with a distinct pid that
     // maps to the remote element; the frontmost translation (pid 12345) still
     // resolves to the app element.
-    let remoteTranslation = SimulatorControlTests_AXPTranslationObject_Double()
+    let remoteTranslation = AXPTranslationObjectDouble()
     remoteTranslation.pid = 99999
     fixture!.translator.objectAtPointResult = remoteTranslation
     fixture!.translator.macPlatformElementResultsByPid = [99999: remoteElement]
@@ -936,7 +936,7 @@ final class SimulatorAccessibilityCommandsTests: XCTestCase {
 
   /// A root whose three children are one keeper and two elements `.interactable` drops — no label, no
   /// identifier, and `StaticText`, which is not an actionable role.
-  private func filterableRoot() -> SimulatorControlTests_AXPMacPlatformElement_Double {
+  private func filterableRoot() -> AXPMacPlatformElementDouble {
     AccessibilityTestElementBuilder.application(
       withLabel: "App Window",
       frame: NSRect(x: 0, y: 0, width: 390, height: 844),
@@ -1000,7 +1000,7 @@ final class SimulatorAccessibilityCommandsTests: XCTestCase {
   /// A screen shaped like a real one: full-screen containers nesting a little actual content. This is
   /// what saturates a single coverage ratio — the containers alone cover the whole screen — so it is
   /// what the dimensions have to tell apart.
-  private func containerHeavyRoot() -> SimulatorControlTests_AXPMacPlatformElement_Double {
+  private func containerHeavyRoot() -> AXPMacPlatformElementDouble {
     let button = AccessibilityTestElementBuilder.button(
       withLabel: "OK", identifier: "ok_button", frame: NSRect(x: 0, y: 0, width: 390, height: 211)
     )
@@ -1140,7 +1140,7 @@ final class SimulatorAccessibilityCommandsTests: XCTestCase {
     )
     try setUp(withRootElement: appElement)
 
-    let remoteTranslation = SimulatorControlTests_AXPTranslationObject_Double()
+    let remoteTranslation = AXPTranslationObjectDouble()
     remoteTranslation.pid = 99999
     fixture!.translator.objectAtPointResult = remoteTranslation
     fixture!.translator.macPlatformElementResultsByPid = [99999: remoteElement]
@@ -1374,7 +1374,7 @@ final class SimulatorAccessibilityCommandsTests: XCTestCase {
     // A zero-framed root whose owning pid (12345) is not a live launchd service is the
     // stale-SpringBoard signal: remediation must restart CoreSimulatorBridge, then retry.
     let zeroFrameRoot = AccessibilityTestElementBuilder.application(withLabel: "App", frame: .zero, children: [])
-    let launchCtl = SimulatorControlTests_LaunchCtl_Double.with(running: [:])
+    let launchCtl = LaunchCtlDouble.with(running: [:])
     try setUp(withRootElement: zeroFrameRoot, launchCtl: launchCtl)
 
     let element = try await simulator.accessibility.resolveElement(for: .frontmost)
@@ -1386,7 +1386,7 @@ final class SimulatorAccessibilityCommandsTests: XCTestCase {
   func testFrontmostDoesNotRemediateWhenZeroFramedRootPidIsLive() async throws {
     // A zero frame alone is not stale: when the owning pid is still a live service, no remediation.
     let zeroFrameRoot = AccessibilityTestElementBuilder.application(withLabel: "App", frame: .zero, children: [])
-    let launchCtl = SimulatorControlTests_LaunchCtl_Double.with(running: ["com.apple.SpringBoard": 12345])
+    let launchCtl = LaunchCtlDouble.with(running: ["com.apple.SpringBoard": 12345])
     try setUp(withRootElement: zeroFrameRoot, launchCtl: launchCtl)
 
     let element = try await simulator.accessibility.resolveElement(for: .frontmost)
@@ -1398,7 +1398,7 @@ final class SimulatorAccessibilityCommandsTests: XCTestCase {
   // MARK: - Frontmost nil-translation (describe-all SpringBoard-down classification)
 
   func testFrontmostDescribeAllReturnsSpringBoardNotRunningWhenSpringBoardDown() async throws {
-    try setUp(withRootElement: defaultElementTree, launchCtl: SimulatorControlTests_LaunchCtl_Double.with(running: [:]))
+    try setUp(withRootElement: defaultElementTree, launchCtl: LaunchCtlDouble.with(running: [:]))
     fixture!.translator.frontmostApplicationResult = nil
 
     do {
@@ -1412,7 +1412,7 @@ final class SimulatorAccessibilityCommandsTests: XCTestCase {
 
   func testFrontmostDescribeAllStaysNoTranslationObjectWhenSpringBoardRunning() async throws {
     // SpringBoard is up, so a nil translation is some other failure (e.g. a transient) — unchanged.
-    try setUp(withRootElement: defaultElementTree, launchCtl: SimulatorControlTests_LaunchCtl_Double.with(running: ["com.apple.SpringBoard": 4321]))
+    try setUp(withRootElement: defaultElementTree, launchCtl: LaunchCtlDouble.with(running: ["com.apple.SpringBoard": 4321]))
     fixture!.translator.frontmostApplicationResult = nil
 
     do {

@@ -12,13 +12,13 @@ import XCTest
 
 final class CoreSimulatorNotifierTests: XCTestCase {
 
-  private var notifier: SimulatorControlTests_SimDeviceNotifier_Double!
-  private var device: SimulatorControlTests_SimDevice_Double!
+  private var notifier: SimDeviceNotifierDouble!
+  private var device: SimDeviceDouble!
 
   override func setUp() {
     super.setUp()
-    notifier = SimulatorControlTests_SimDeviceNotifier_Double()
-    device = SimulatorControlTests_SimDevice_Double()
+    notifier = SimDeviceNotifierDouble()
+    device = SimDeviceDouble()
     device.state = UInt64(FBiOSTargetState.booted.rawValue)
     device.notificationManager = notifier
   }

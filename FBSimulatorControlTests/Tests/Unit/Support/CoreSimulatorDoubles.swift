@@ -17,13 +17,13 @@ import Foundation
 // representable in Objective-C fails to compile instead of silently vanishing from the
 // class at runtime.
 
-class SimulatorControlTests_SimDeviceType_Double: NSObject {
+class SimDeviceTypeDouble: NSObject {
   @objc var identifier: String?
   @objc var productFamilyID: Int32 = 1
   @objc var name: String = ""
 }
 
-class SimulatorControlTests_SimDeviceRuntime_Double: NSObject {
+class SimDeviceRuntimeDouble: NSObject {
   @objc var identifier: String?
   @objc var name: String = ""
   @objc var versionString: String = ""
@@ -32,7 +32,7 @@ class SimulatorControlTests_SimDeviceRuntime_Double: NSObject {
   @objc var supportedProductFamilyIDs: [NSNumber] = []
 }
 
-class SimulatorControlTests_SimDevice_Double: NSObject {
+class SimDeviceDouble: NSObject {
   @objc var name: String = ""
   @objc var UDID: NSUUID = NSUUID()
   private var _dataPath: String?
@@ -52,12 +52,12 @@ class SimulatorControlTests_SimDevice_Double: NSObject {
     }
   }
   @objc var state: UInt64 = 0
-  @objc var deviceType: SimulatorControlTests_SimDeviceType_Double?
-  @objc var runtime: SimulatorControlTests_SimDeviceRuntime_Double?
+  @objc var deviceType: SimDeviceTypeDouble?
+  @objc var runtime: SimDeviceRuntimeDouble?
   @objc var notificationManager: AnyObject?
 
   override func isEqual(_ object: Any?) -> Bool {
-    guard let other = object as? SimulatorControlTests_SimDevice_Double else { return false }
+    guard let other = object as? SimDeviceDouble else { return false }
     return UDID.isEqual(other.UDID)
   }
 
@@ -68,7 +68,7 @@ class SimulatorControlTests_SimDevice_Double: NSObject {
   }
 }
 
-class SimulatorControlTests_SimDeviceSet_Double: NSObject {
+class SimDeviceSetDouble: NSObject {
   @objc var availableDevices: [Any] = []
   @objc var notificationManager: AnyObject?
 }
@@ -77,7 +77,7 @@ class SimulatorControlTests_SimDeviceSet_Double: NSObject {
 /// registered handler directly and observe that it is unregistered.
 ///
 /// `@unchecked Sendable`: all mutable state is guarded by `lock`.
-final class SimulatorControlTests_SimDeviceNotifier_Double: NSObject, SimDeviceNotifier, @unchecked Sendable {
+final class SimDeviceNotifierDouble: NSObject, SimDeviceNotifier, @unchecked Sendable {
   private let lock = NSLock()
   private var nextHandle: UInt64 = 1
   private var handlers: [UInt64: (queue: DispatchQueue, handler: ([AnyHashable: Any]?) -> Void)] = [:]

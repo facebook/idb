@@ -63,7 +63,7 @@ final class SimulatorLaunchCtlCommandsTests: XCTestCase {
   // MARK: - Liveness queries (default protocol implementations over listServices())
 
   func testServiceIsRunningReflectsLivePid() async throws {
-    let launchCtl = SimulatorControlTests_LaunchCtl_Double.with(running: ["com.apple.SpringBoard": 4321], stopped: ["com.apple.idle"])
+    let launchCtl = LaunchCtlDouble.with(running: ["com.apple.SpringBoard": 4321], stopped: ["com.apple.idle"])
     let running = try await launchCtl.serviceIsRunning(named: "com.apple.SpringBoard")
     let stopped = try await launchCtl.serviceIsRunning(named: "com.apple.idle")
     let absent = try await launchCtl.serviceIsRunning(named: "com.apple.absent")
@@ -73,7 +73,7 @@ final class SimulatorLaunchCtlCommandsTests: XCTestCase {
   }
 
   func testProcessIsRunningReflectsLivePid() async throws {
-    let launchCtl = SimulatorControlTests_LaunchCtl_Double.with(running: ["com.apple.SpringBoard": 4321])
+    let launchCtl = LaunchCtlDouble.with(running: ["com.apple.SpringBoard": 4321])
     let livePidRunning = try await launchCtl.processIsRunning(withProcessIdentifier: 4321)
     let absentPidRunning = try await launchCtl.processIsRunning(withProcessIdentifier: 9999)
     XCTAssertTrue(livePidRunning)

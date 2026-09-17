@@ -13,7 +13,7 @@ import Foundation
 /// the protocol's `serviceIsRunning(named:)` / `processIsRunning(withProcessIdentifier:)`
 /// default implementations compute their verdict from it, so configuring `servicesResult`
 /// exercises the real decision logic. Methods the suites do not use trap.
-final class SimulatorControlTests_LaunchCtl_Double: LaunchCtlCommands {
+final class LaunchCtlDouble: LaunchCtlCommands {
 
   /// Mirrors `listServices()`: service-name -> `NSNumber(pid)` for a live service, `NSNull` for stopped.
   var servicesResult: [String: Any] = [:]
@@ -22,8 +22,8 @@ final class SimulatorControlTests_LaunchCtl_Double: LaunchCtlCommands {
   private(set) var stoppedServices: [String] = []
 
   /// Builds a double whose `listServices()` reports `running` as live pids and `stopped` as loaded-but-idle.
-  static func with(running: [String: pid_t] = [:], stopped: [String] = []) -> SimulatorControlTests_LaunchCtl_Double {
-    let double = SimulatorControlTests_LaunchCtl_Double()
+  static func with(running: [String: pid_t] = [:], stopped: [String] = []) -> LaunchCtlDouble {
+    let double = LaunchCtlDouble()
     var services: [String: Any] = [:]
     for (name, pid) in running {
       services[name] = NSNumber(value: pid)

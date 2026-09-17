@@ -18,7 +18,7 @@ import ObjectiveC
 // runtime. Only the substituted surface is `@objc`; the fixture and call-recording members
 // are read from Swift by the tests themselves and stay invisible to Objective-C.
 
-class SimulatorControlTests_AXPTranslationObject_Double: NSObject {
+class AXPTranslationObjectDouble: NSObject {
   @objc var bridgeDelegateToken: String?
   @objc var pid: pid_t = 12345
 }
@@ -26,7 +26,7 @@ class SimulatorControlTests_AXPTranslationObject_Double: NSObject {
 // MARK: - AXPMacPlatformElement Double
 
 @objc
-class SimulatorControlTests_AXPMacPlatformElement_Double: NSObject {
+class AXPMacPlatformElementDouble: NSObject {
   private let _label: String?
   private let _identifier: String?
   private let _role: String?
@@ -34,8 +34,8 @@ class SimulatorControlTests_AXPMacPlatformElement_Double: NSObject {
   private let _enabled: Bool
   private let _required: Bool
   private let _actionNames: [String]
-  private let _children: [SimulatorControlTests_AXPMacPlatformElement_Double]
-  private var _translation: SimulatorControlTests_AXPTranslationObject_Double
+  private let _children: [AXPMacPlatformElementDouble]
+  private var _translation: AXPTranslationObjectDouble
   @objc private(set) var accessedProperties = NSMutableSet()
 
   init(
@@ -45,7 +45,7 @@ class SimulatorControlTests_AXPMacPlatformElement_Double: NSObject {
     frame: NSRect,
     enabled: Bool,
     actionNames: [String]?,
-    children: [SimulatorControlTests_AXPMacPlatformElement_Double]?
+    children: [AXPMacPlatformElementDouble]?
   ) {
     _label = label
     _identifier = identifier
@@ -55,7 +55,7 @@ class SimulatorControlTests_AXPMacPlatformElement_Double: NSObject {
     _required = false
     _actionNames = actionNames ?? []
     _children = children ?? []
-    _translation = SimulatorControlTests_AXPTranslationObject_Double()
+    _translation = AXPTranslationObjectDouble()
     super.init()
   }
 
@@ -134,7 +134,7 @@ class SimulatorControlTests_AXPMacPlatformElement_Double: NSObject {
     return _actionNames.map { NSAccessibility.Action(rawValue: $0) }
   }
 
-  @objc var translation: SimulatorControlTests_AXPTranslationObject_Double {
+  @objc var translation: AXPTranslationObjectDouble {
     get {
       accessedProperties.add("translation")
       return _translation
@@ -151,7 +151,7 @@ class SimulatorControlTests_AXPMacPlatformElement_Double: NSObject {
 
 // Attributes the double does not model (placeholder/expanded/hidden/focused) are inert — none are
 // in the default key set.
-extension SimulatorControlTests_AXPMacPlatformElement_Double: AXPlatformElement {
+extension AXPMacPlatformElementDouble: AXPlatformElement {
   func axFrame() -> NSRect { accessibilityFrame }
   func axRole() -> String? { accessibilityRole?.rawValue }
   func axLabel() -> String? { accessibilityLabel }
@@ -187,7 +187,7 @@ extension SimulatorControlTests_AXPMacPlatformElement_Double: AXPlatformElement 
 }
 
 // Only press is exercised (via `AccessibilityElement.tap()`); scroll and set-value are inert.
-extension SimulatorControlTests_AXPMacPlatformElement_Double: AXWritableElement {
+extension AXPMacPlatformElementDouble: AXWritableElement {
   func axPerformPress() -> Bool { accessibilityPerformPress() }
   func axScroll(_ direction: AccessibilityScrollDirection) {}
   func axSetValue(_ value: Any?) {}
@@ -195,14 +195,14 @@ extension SimulatorControlTests_AXPMacPlatformElement_Double: AXWritableElement 
 
 // MARK: - AXPTranslator Double
 
-class SimulatorControlTests_AXPTranslator_Double: NSObject {
-  var frontmostApplicationResult: SimulatorControlTests_AXPTranslationObject_Double?
-  var objectAtPointResult: SimulatorControlTests_AXPTranslationObject_Double?
-  var macPlatformElementResult: SimulatorControlTests_AXPMacPlatformElement_Double?
+class AXPTranslatorDouble: NSObject {
+  var frontmostApplicationResult: AXPTranslationObjectDouble?
+  var objectAtPointResult: AXPTranslationObjectDouble?
+  var macPlatformElementResult: AXPMacPlatformElementDouble?
   /// Optional per-pid element results, keyed by the translation's pid. Lets a test
   /// return a distinct element for object-at-point hit-testing (remote content)
   /// versus the frontmost application. Falls back to `macPlatformElementResult`.
-  var macPlatformElementResultsByPid: [pid_t: SimulatorControlTests_AXPMacPlatformElement_Double] = [:]
+  var macPlatformElementResultsByPid: [pid_t: AXPMacPlatformElementDouble] = [:]
   /// Wall time burned inside the two calls the dispatcher times, so a test can assert a floor on the
   /// acquisition phases rather than merely non-negative. Zero by default.
   var frontmostApplicationDelay: TimeInterval = 0
@@ -215,7 +215,7 @@ class SimulatorControlTests_AXPTranslator_Double: NSObject {
   var resolutionEnterHook: (() -> Void)?
 
   @objc
-  func frontmostApplication(withDisplayId displayId: Int32, bridgeDelegateToken token: String) -> SimulatorControlTests_AXPTranslationObject_Double? {
+  func frontmostApplication(withDisplayId displayId: Int32, bridgeDelegateToken token: String) -> AXPTranslationObjectDouble? {
     resolutionEnterHook?()
     methodCalls.add("frontmostApplicationWithDisplayId:\(displayId) token:\(token)")
     if frontmostApplicationDelay > 0 {
@@ -227,7 +227,7 @@ class SimulatorControlTests_AXPTranslator_Double: NSObject {
   }
 
   @objc(objectAtPoint:displayId:bridgeDelegateToken:)
-  func object(at point: CGPoint, displayId: Int32, bridgeDelegateToken token: String) -> SimulatorControlTests_AXPTranslationObject_Double? {
+  func object(at point: CGPoint, displayId: Int32, bridgeDelegateToken token: String) -> AXPTranslationObjectDouble? {
     methodCalls.add("objectAtPoint:{\(String(format: "%.1f", point.x)),\(String(format: "%.1f", point.y))} displayId:\(displayId) token:\(token)")
     let result = objectAtPointResult
     result?.bridgeDelegateToken = token
@@ -235,7 +235,7 @@ class SimulatorControlTests_AXPTranslator_Double: NSObject {
   }
 
   @objc
-  func macPlatformElement(fromTranslation translation: SimulatorControlTests_AXPTranslationObject_Double) -> SimulatorControlTests_AXPMacPlatformElement_Double? {
+  func macPlatformElement(fromTranslation translation: AXPTranslationObjectDouble) -> AXPMacPlatformElementDouble? {
     methodCalls.add("macPlatformElementFromTranslation")
     if macPlatformElementDelay > 0 {
       Thread.sleep(forTimeInterval: macPlatformElementDelay)
@@ -246,9 +246,9 @@ class SimulatorControlTests_AXPTranslator_Double: NSObject {
   }
 
   @objc(translationApplicationObjectForPid:)
-  func translationApplicationObject(forPid pid: pid_t) -> SimulatorControlTests_AXPTranslationObject_Double? {
+  func translationApplicationObject(forPid pid: pid_t) -> AXPTranslationObjectDouble? {
     methodCalls.add("translationApplicationObjectForPid:\(pid)")
-    let translation = SimulatorControlTests_AXPTranslationObject_Double()
+    let translation = AXPTranslationObjectDouble()
     translation.pid = pid
     return translation
   }
@@ -258,7 +258,7 @@ typealias AccessibilityResponseHandler = (Any, @escaping (Any?) -> Void) -> Void
 
 // MARK: - SimDevice Accessibility Double
 
-class SimulatorControlTests_SimDevice_Accessibility_Double: NSObject {
+class SimDeviceAccessibilityDouble: NSObject {
   @objc var name: String = ""
   @objc var UDID: NSUUID = NSUUID()
   @objc var state: UInt64 = 0
@@ -289,11 +289,11 @@ class SimulatorControlTests_SimDevice_Accessibility_Double: NSObject {
 // MARK: - AXPTranslator Swizzling
 
 class AccessibilityTranslatorSwizzler {
-  private static var installedMockTranslator: SimulatorControlTests_AXPTranslator_Double?
+  private static var installedMockTranslator: AXPTranslatorDouble?
   private static var originalSharedInstanceIMP: IMP?
   private static var swizzleInstalled = false
 
-  class func installMockTranslator(_ mockTranslator: SimulatorControlTests_AXPTranslator_Double) {
+  class func installMockTranslator(_ mockTranslator: AXPTranslatorDouble) {
     precondition(!swizzleInstalled, "Mock translator already installed. Call uninstall first.")
 
     installedMockTranslator = mockTranslator
@@ -337,8 +337,8 @@ class AccessibilityTranslatorSwizzler {
 
 class AccessibilityTestElementBuilder {
 
-  class func element(withLabel label: String, frame: NSRect, children: [SimulatorControlTests_AXPMacPlatformElement_Double]?) -> SimulatorControlTests_AXPMacPlatformElement_Double {
-    return SimulatorControlTests_AXPMacPlatformElement_Double(
+  class func element(withLabel label: String, frame: NSRect, children: [AXPMacPlatformElementDouble]?) -> AXPMacPlatformElementDouble {
+    return AXPMacPlatformElementDouble(
       label: label,
       identifier: nil,
       role: "AXButton",
@@ -349,12 +349,12 @@ class AccessibilityTestElementBuilder {
     )
   }
 
-  class func rootElement(withChildren children: [SimulatorControlTests_AXPMacPlatformElement_Double]) -> SimulatorControlTests_AXPMacPlatformElement_Double {
+  class func rootElement(withChildren children: [AXPMacPlatformElementDouble]) -> AXPMacPlatformElementDouble {
     return application(withLabel: "Root", frame: NSRect(x: 0, y: 0, width: 390, height: 844), children: children)
   }
 
-  class func application(withLabel label: String, frame: NSRect, children: [SimulatorControlTests_AXPMacPlatformElement_Double]) -> SimulatorControlTests_AXPMacPlatformElement_Double {
-    return SimulatorControlTests_AXPMacPlatformElement_Double(
+  class func application(withLabel label: String, frame: NSRect, children: [AXPMacPlatformElementDouble]) -> AXPMacPlatformElementDouble {
+    return AXPMacPlatformElementDouble(
       label: label,
       identifier: nil,
       role: "AXApplication",
@@ -365,8 +365,8 @@ class AccessibilityTestElementBuilder {
     )
   }
 
-  class func button(withLabel label: String, identifier: String?, frame: NSRect) -> SimulatorControlTests_AXPMacPlatformElement_Double {
-    return SimulatorControlTests_AXPMacPlatformElement_Double(
+  class func button(withLabel label: String, identifier: String?, frame: NSRect) -> AXPMacPlatformElementDouble {
+    return AXPMacPlatformElementDouble(
       label: label,
       identifier: identifier,
       role: "AXButton",
@@ -377,8 +377,8 @@ class AccessibilityTestElementBuilder {
     )
   }
 
-  class func staticText(withLabel label: String, frame: NSRect) -> SimulatorControlTests_AXPMacPlatformElement_Double {
-    return SimulatorControlTests_AXPMacPlatformElement_Double(
+  class func staticText(withLabel label: String, frame: NSRect) -> AXPMacPlatformElementDouble {
+    return AXPMacPlatformElementDouble(
       label: label,
       identifier: nil,
       role: "AXStaticText",
@@ -395,13 +395,13 @@ class AccessibilityTestElementBuilder {
 private let FBiOSTargetStateBooted_Value: UInt64 = 3
 
 class AccessibilityTestFixture: NSObject {
-  private(set) var translator: SimulatorControlTests_AXPTranslator_Double
-  private(set) var device: SimulatorControlTests_SimDevice_Accessibility_Double
-  var rootElement: SimulatorControlTests_AXPMacPlatformElement_Double?
+  private(set) var translator: AXPTranslatorDouble
+  private(set) var device: SimDeviceAccessibilityDouble
+  var rootElement: AXPMacPlatformElementDouble?
 
   private override init() {
-    self.translator = SimulatorControlTests_AXPTranslator_Double()
-    self.device = SimulatorControlTests_SimDevice_Accessibility_Double()
+    self.translator = AXPTranslatorDouble()
+    self.device = SimDeviceAccessibilityDouble()
     self.device.state = FBiOSTargetStateBooted_Value
     super.init()
   }
@@ -417,7 +417,7 @@ class AccessibilityTestFixture: NSObject {
   func setUp() throws {
     try SimulatorControlFrameworkLoader.accessibilityFrameworks.loadPrivateFrameworks(ControlCoreGlobalConfiguration.defaultLogger)
 
-    let translation = SimulatorControlTests_AXPTranslationObject_Double()
+    let translation = AXPTranslationObjectDouble()
     translation.pid = 12345
 
     translator.frontmostApplicationResult = translation

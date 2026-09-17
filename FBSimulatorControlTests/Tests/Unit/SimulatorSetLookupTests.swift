@@ -14,14 +14,14 @@ import Testing
 struct SimulatorSetLookupTests {
 
   private static func makeSet(udids: [NSUUID]) -> SimulatorSet {
-    let deviceSet = SimulatorControlTests_SimDeviceSet_Double()
+    let deviceSet = SimDeviceSetDouble()
     deviceSet.availableDevices = udids.map { udid in
-      let deviceType = SimulatorControlTests_SimDeviceType_Double()
+      let deviceType = SimDeviceTypeDouble()
       deviceType.name = "iPhone 8"
-      let runtime = SimulatorControlTests_SimDeviceRuntime_Double()
+      let runtime = SimDeviceRuntimeDouble()
       runtime.name = "iOS 15.0"
       runtime.versionString = "15.0"
-      let device = SimulatorControlTests_SimDevice_Double()
+      let device = SimDeviceDouble()
       device.name = "iPhone 8"
       device.UDID = udid
       device.deviceType = deviceType

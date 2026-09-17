@@ -14,16 +14,16 @@ import Testing
 struct SimulatorSetLoggerTests {
 
   private static func makeSet(logger: (any ControlCoreLogger)?) -> SimulatorSet {
-    let deviceType = SimulatorControlTests_SimDeviceType_Double()
+    let deviceType = SimDeviceTypeDouble()
     deviceType.name = "iPhone 8"
-    let runtime = SimulatorControlTests_SimDeviceRuntime_Double()
+    let runtime = SimDeviceRuntimeDouble()
     runtime.name = "iOS 15.0"
     runtime.versionString = "15.0"
-    let device = SimulatorControlTests_SimDevice_Double()
+    let device = SimDeviceDouble()
     device.name = "iPhone 8"
     device.deviceType = deviceType
     device.runtime = runtime
-    let deviceSet = SimulatorControlTests_SimDeviceSet_Double()
+    let deviceSet = SimDeviceSetDouble()
     deviceSet.availableDevices = [device]
     let configuration = SimulatorControlConfiguration(deviceSetPath: nil, logger: nil)
     return createSimulatorSet(configuration: configuration, fakeDeviceSet: deviceSet, logger: logger)

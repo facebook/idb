@@ -30,15 +30,15 @@ class SimulatorSetTestCase: XCTestCase {
         state = .shutdown
       }
 
-      let deviceType = SimulatorControlTests_SimDeviceType_Double()
+      let deviceType = SimDeviceTypeDouble()
       deviceType.name = name
       deviceType.productFamilyID = Int32(simulatorSpec["family"] as? Int ?? 1)
 
-      let runtime = SimulatorControlTests_SimDeviceRuntime_Double()
+      let runtime = SimDeviceRuntimeDouble()
       runtime.name = os
       runtime.versionString = version
 
-      let device = SimulatorControlTests_SimDevice_Double()
+      let device = SimDeviceDouble()
       device.name = name
       device.UDID = uuid
       device.state = UInt64(state.rawValue)
@@ -48,7 +48,7 @@ class SimulatorSetTestCase: XCTestCase {
       simDevices.append(device)
     }
 
-    let deviceSet = SimulatorControlTests_SimDeviceSet_Double()
+    let deviceSet = SimDeviceSetDouble()
     deviceSet.availableDevices = simDevices
 
     let noLogger: (any ControlCoreLogger)? = nil
