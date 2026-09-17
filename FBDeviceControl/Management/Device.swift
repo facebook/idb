@@ -253,3 +253,157 @@ public final class Device: Target, DeviceCommands, CustomStringConvertible {
     }
   }
 }
+
+// Commands that own something outliving a single call — a notifier, an in-flight video, a set of
+// AFC calls — are memoized through `commandCache` (`TargetCommandCache`), whose lock also stops
+// two callers racing the first construction, and hold their device weakly so the cache slot does
+// not close a cycle. Commands that only wrap the device are built per call and hold it strongly:
+// nothing outlives the call that builds them.
+extension Device {
+
+  // MARK: - Shared accessors
+
+  public var application: DeviceApplicationCommands {
+    commandCache.resolve { DeviceApplicationCommands.commands(with: self) }
+  }
+
+  public var crashLog: DeviceCrashLogCommands {
+    commandCache.resolve { DeviceCrashLogCommands.commands(with: self) }
+  }
+
+  public var screenshot: DeviceScreenshotCommands {
+    DeviceScreenshotCommands.commands(with: self)
+  }
+
+  public var location: DeviceLocationCommands {
+    DeviceLocationCommands.commands(with: self)
+  }
+
+  public var debugger: DeviceDebuggerCommands {
+    DeviceDebuggerCommands.commands(with: self)
+  }
+
+  public var file: DeviceFileCommands {
+    commandCache.resolve { DeviceFileCommands.commands(with: self) }
+  }
+
+  public var lifecycle: DeviceLifecycleCommands {
+    DeviceLifecycleCommands.commands(with: self)
+  }
+
+  public var log: DeviceLogCommands {
+    DeviceLogCommands.commands(with: self)
+  }
+
+  public var videoRecording: DeviceVideoRecordingCommands {
+    commandCache.resolve { DeviceVideoRecordingCommands.commands(with: self) }
+  }
+
+  public var videoStream: DeviceVideoStreamCommands {
+    DeviceVideoStreamCommands.commands(with: self)
+  }
+
+  public var xctest: DeviceXCTestCommands {
+    commandCache.resolve { DeviceXCTestCommands.commands(with: self) }
+  }
+
+  public var xctraceRecord: TargetXCTraceRecordCommands {
+    TargetXCTraceRecordCommands.commands(with: self)
+  }
+
+  public var instruments: DeviceInstrumentsCommands {
+    DeviceInstrumentsCommands.commands(with: self)
+  }
+
+  // MARK: - Device-only accessors
+
+  public var diagnosticInformation: DeviceDiagnosticInformationCommands {
+    DeviceDiagnosticInformationCommands.commands(with: self)
+  }
+
+  public var erase: DeviceEraseCommands {
+    DeviceEraseCommands.commands(with: self)
+  }
+
+  public var power: DevicePowerCommands {
+    DevicePowerCommands.commands(with: self)
+  }
+
+  public var provisioningProfile: DeviceProvisioningProfileCommands {
+    DeviceProvisioningProfileCommands.commands(with: self)
+  }
+
+  public var activation: DeviceActivationCommands {
+    DeviceActivationCommands.commands(with: self)
+  }
+
+  public var recovery: DeviceRecoveryCommands {
+    DeviceRecoveryCommands.commands(with: self)
+  }
+
+  public var debugSymbols: DeviceDebugSymbolsCommands {
+    DeviceDebugSymbolsCommands(device: self)
+  }
+
+  public var developerDiskImage: DeviceDeveloperDiskImageCommands {
+    commandCache.resolve { DeviceDeveloperDiskImageCommands.commands(with: self) }
+  }
+
+  public var socketForwarding: DeviceSocketForwardingCommands {
+    DeviceSocketForwardingCommands.commands(with: self)
+  }
+
+  public var springboard: DeviceSpringboardCommands {
+    DeviceSpringboardCommands.commands(with: self)
+  }
+}
+
+extension Device {
+
+  /// Starts a service on the device, invalidating the connection once `body` returns or throws.
+  ///
+  /// The async counterpart of `startService`, which this mirrors including its restriction to
+  /// AMDevice-backed devices.
+  func withServiceConnection<T>(
+    _ service: String,
+    _ body: (LockdownServiceConnection) async throws -> T
+  ) async throws -> T {
+    guard let amDevice else {
+      throw AMDeviceServiceError.notAMDeviceBacked(service: service)
+    }
+    return try await amDevice.withServiceConnection(service, body)
+  }
+
+  /// Starts a service whose connection outlives this call, handing ownership to the caller, who
+  /// hands it back to `MobileDevice.invalidateServiceConnection`.
+  func openServiceConnection(_ service: String) async throws -> LockdownServiceConnection {
+    guard let amDevice else {
+      throw AMDeviceServiceError.notAMDeviceBacked(service: service)
+    }
+    return try await amDevice.openServiceConnection(service)
+  }
+
+  /// Starts a device link service, invalidating the connection once `body` returns or throws.
+  func withDeviceLinkClient<T>(
+    _ service: String,
+    _ body: (DeviceLinkClient) async throws -> T
+  ) async throws -> T {
+    guard let amDevice else {
+      throw AMDeviceServiceError.notAMDeviceBacked(service: service)
+    }
+    return try await amDevice.withDeviceLinkClient(service, body)
+  }
+
+  /// Starts a service and wraps it in an AFC client, tearing both down once `body` returns or
+  /// throws.
+  func withAFCConnection<T>(
+    _ service: String,
+    calls afcCalls: AFCCalls = FileConduit.defaultCalls,
+    _ body: (FileConduit) async throws -> T
+  ) async throws -> T {
+    guard let amDevice else {
+      throw AMDeviceServiceError.notAMDeviceBacked(service: service)
+    }
+    return try await amDevice.withAFCConnection(service, calls: afcCalls, body)
+  }
+}

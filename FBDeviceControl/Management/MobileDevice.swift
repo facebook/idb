@@ -219,3 +219,117 @@ public final class MobileDevice: TargetInfo, DeviceCommands, CustomStringConvert
     return "\(osPrefix) \(productVersion)"
   }
 }
+
+extension MobileDevice {
+
+  /// Starts a service on the device, invalidating the connection once `body` returns or throws.
+  ///
+  /// Two lifetimes are in play and they are not the same: the AMDevice *session* is released as
+  /// soon as the service has started, while the service *connection* is invalidated when `body`
+  /// is done. A session times out after 60 seconds, so holding one open for the duration of a
+  /// long-running service fails the next operation on the device.
+  func withServiceConnection<T>(
+    _ service: String,
+    _ body: (LockdownServiceConnection) async throws -> T
+  ) async throws -> T {
+    let connection = try await openServiceConnection(service)
+    defer { Self.invalidateServiceConnection(connection, service: service, logger: logger) }
+    return try await body(connection)
+  }
+
+  /// Starts a device link service, invalidating the connection once `body` returns or throws.
+  ///
+  /// The device link handshake is performed before `body` runs, so the client it receives is ready
+  /// to process messages.
+  func withDeviceLinkClient<T>(
+    _ service: String,
+    _ body: (DeviceLinkClient) async throws -> T
+  ) async throws -> T {
+    try await withServiceConnection(service) { connection in
+      let client = try await DeviceLinkClient.deviceLinkClient(connection: connection)
+      return try await body(client)
+    }
+  }
+
+  /// Starts a service and wraps it in an AFC client, tearing both down once `body` returns or
+  /// throws.
+  ///
+  /// The AFC connection is closed before the service connection beneath it is invalidated, so the
+  /// two are released innermost first.
+  func withAFCConnection<T>(
+    _ service: String,
+    calls afcCalls: AFCCalls = FileConduit.defaultCalls,
+    _ body: (FileConduit) async throws -> T
+  ) async throws -> T {
+    let logger = self.logger
+    return try await withServiceConnection(service) { connection in
+      let afc = try FileConduit.afc(from: connection, calls: afcCalls, logger: logger)
+      defer { try? afc.close() }
+      return try await body(afc)
+    }
+  }
+
+  /// Starts a service whose connection outlives this call, handing ownership to the caller, who
+  /// hands it back to `invalidateServiceConnection`. `withServiceConnection` covers a connection
+  /// whose lifetime fits inside a call.
+  func openServiceConnection(_ service: String) async throws -> LockdownServiceConnection {
+    let calls = self.calls
+    let logger = self.logger
+    return try await withConnectedDevice(purpose: "start_service_\(service)") { device in
+      try Self.startService(service, on: device, calls: calls, logger: logger)
+    }
+  }
+
+  /// Invalidates a connection handed out by `openServiceConnection`.
+  static func invalidateServiceConnection(
+    _ connection: LockdownServiceConnection?,
+    service: String,
+    logger: any ControlCoreLogger
+  ) {
+    guard let connection else {
+      return
+    }
+    logger.log("Invalidating service \(service)")
+    do {
+      try connection.invalidate()
+      logger.log("Invalidated service \(service)")
+    } catch {
+      logger.log("Failed to invalidate service \(service) with error \(error)")
+    }
+  }
+
+  private static func startService(
+    _ service: String,
+    on connectedDevice: any DeviceCommands,
+    calls: AMDCalls,
+    logger: any ControlCoreLogger
+  ) throws -> LockdownServiceConnection {
+    logger.log("Starting service \(service)")
+    let userInfo: [String: Any] = ["CloseOnInvalidate": 1, "InvalidateOnDetach": 1]
+    var serviceConnection: Unmanaged<CFTypeRef>?
+    let status =
+      calls.SecureStartService?(
+        connectedDevice.amDeviceRef,
+        service as CFString,
+        userInfo as CFDictionary,
+        &serviceConnection
+      ) ?? -1
+    guard status == 0 else {
+      let message = calls.CopyErrorText?(status)?.takeRetainedValue() as String? ?? "Unknown error"
+      throw AMDeviceServiceError.secureStartServiceFailed(service: service, status: status, message: message)
+    }
+    guard let amDeviceRef = connectedDevice.amDeviceRef, let serviceConnection else {
+      throw AMDeviceServiceError.deviceNotConnected(service: service)
+    }
+    // Unretained: the raw reference is handed straight to the connection, which owns it from here.
+    let connection = LockdownServiceConnection(
+      name: service,
+      connection: serviceConnection.takeUnretainedValue(),
+      device: amDeviceRef,
+      calls: calls,
+      logger: logger)
+    logger.log("Service \(service) started")
+    return connection
+  }
+
+}
