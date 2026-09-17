@@ -20,7 +20,7 @@ public struct VideoEncoderStats: Sendable {
   public var encodeErrorCount: UInt = 0
   public var tornFrameCount: UInt = 0
   public var totalEncodedBytes: UInt = 0
-  var totalEncodeSubmitSeconds: CFTimeInterval = 0
+  var totalEncodeSubmitSeconds: TimeInterval = 0
 
   public init() {}
 }
@@ -62,7 +62,7 @@ final class EncoderStatsRecorder: Sendable {
   private let logger: any ControlCoreLogger
   private let state: OSAllocatedUnfairLock<State>
 
-  init(logger: any ControlCoreLogger, logInterval: CFTimeInterval = 5.0) {
+  init(logger: any ControlCoreLogger, logInterval: Duration = .seconds(5)) {
     self.logger = logger
     self.state = OSAllocatedUnfairLock(initialState: State(statsTimer: PeriodicStatsTimer(interval: logInterval)))
   }
@@ -85,8 +85,8 @@ final class EncoderStatsRecorder: Sendable {
   }
 
   /// Test seam: move the periodic log's last-fired time back so the next `record` logs.
-  func backdateStatsTimerForTesting(by seconds: CFTimeInterval) {
-    state.withLock { $0.statsTimer.backdateForTesting(by: seconds) }
+  func backdateStatsTimerForTesting(by duration: Duration) {
+    state.withLock { $0.statsTimer.backdateForTesting(by: duration) }
   }
 
   /// A log line produced under the lock and emitted after it is released.
@@ -135,9 +135,9 @@ final class EncoderStatsRecorder: Sendable {
     }
   }
 
-  /// The wall time an encode submission took, converter included.
-  func recordEncodeSubmission(seconds: CFTimeInterval) {
-    state.withLock { $0.stats.totalEncodeSubmitSeconds += seconds }
+  /// How long an encode submission took, converter included.
+  func recordEncodeSubmission(_ duration: Duration) {
+    state.withLock { $0.stats.totalEncodeSubmitSeconds += duration.seconds }
   }
 
   /// The source surface changed while a frame was being read.
@@ -176,9 +176,11 @@ final class EncoderStatsRecorder: Sendable {
   // MARK: - Periodic log
 
   private static func periodicStatsIfDue(_ state: inout State) -> [LogLine] {
-    guard case let .elapsed(intervalDuration, totalElapsed) = state.statsTimer.tick() else {
+    guard case let .elapsed(interval, total) = state.statsTimer.tick() else {
       return []
     }
+    let intervalDuration = interval.seconds
+    let totalElapsed = total.seconds
     let current = state.stats
     let last = state.lastLoggedStats
     state.lastLoggedStats = current

@@ -11,26 +11,26 @@ import XCTest
 final class PeriodicStatsTimerTests: XCTestCase {
 
   func testFirstTickStartsTimer() {
-    var timer = PeriodicStatsTimer(interval: 5.0)
+    var timer = PeriodicStatsTimer(interval: .seconds(5))
     XCTAssertFalse(timer.hasStarted)
-    XCTAssertEqual(timer.firstTickTime, 0)
+    XCTAssertNil(timer.firstTickTime)
 
     XCTAssertEqual(timer.tick(), .started)
 
     XCTAssertTrue(timer.hasStarted)
-    XCTAssertGreaterThan(timer.firstTickTime, 0)
+    XCTAssertNotNil(timer.firstTickTime)
   }
 
   func testTickPendingWithinInterval() {
-    var timer = PeriodicStatsTimer(interval: 5.0)
+    var timer = PeriodicStatsTimer(interval: .seconds(5))
     XCTAssertEqual(timer.tick(), .started)
     XCTAssertEqual(timer.tick(), .pending)
   }
 
   func testTickElapsedAfterInterval() {
-    var timer = PeriodicStatsTimer(interval: 5.0)
+    var timer = PeriodicStatsTimer(interval: .seconds(5))
     XCTAssertEqual(timer.tick(), .started)
-    timer.backdateForTesting(by: 10.0)
+    timer.backdateForTesting(by: .seconds(10))
 
     guard case .elapsed = timer.tick() else {
       XCTFail("Expected .elapsed after backdating past the interval")

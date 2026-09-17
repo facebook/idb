@@ -181,8 +181,8 @@ public actor SimulatorVideoStream: VideoStreamOperation {
   private var lazyTriggers: LazyFrameTriggers?
 
   var pixelBuffer: CVPixelBuffer?
-  var timeAtFirstFrame: CFTimeInterval = 0
-  var timeAtLastPush: CFTimeInterval = 0
+  var timeAtFirstFrame: TimeInterval = 0
+  var timeAtLastPush: TimeInterval = 0
   var frameNumber: UInt = 0
   var pixelBufferAttributes: [String: Any]?
   /// The session's consumer while started, nil otherwise — the mount and push paths read this.
@@ -691,11 +691,11 @@ public actor SimulatorVideoStream: VideoStreamOperation {
   var currentFrameNumber: UInt { frameNumber }
 
   /// Wall-clock time when the first frame was pushed, or 0 if not yet started.
-  var currentTimeAtFirstFrame: CFTimeInterval { timeAtFirstFrame }
+  var currentTimeAtFirstFrame: TimeInterval { timeAtFirstFrame }
 
   /// Wall-clock time when the first framebuffer callback was received, or 0 if not yet started.
   /// `nonisolated`: reads only the immutable `framebuffer` reference.
-  public nonisolated var framebufferStatsStartTime: CFTimeInterval { framebuffer.statsStartTime }
+  public nonisolated var framebufferStatsStartTime: ContinuousClock.Instant? { framebuffer.statsStartTime }
 
   // MARK: - VideoStreamOperation
 

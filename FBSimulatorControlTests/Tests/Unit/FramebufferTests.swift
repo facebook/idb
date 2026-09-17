@@ -191,11 +191,11 @@ final class FramebufferTests: XCTestCase {
     let attachment = try framebuffer.attach()
     defer { attachment.cancel() }
 
-    XCTAssertEqual(framebuffer.statsStartTime, 0)
+    XCTAssertNil(framebuffer.statsStartTime)
 
     surface.frameRendered?()
 
-    XCTAssertGreaterThan(framebuffer.statsStartTime, 0)
+    XCTAssertNotNil(framebuffer.statsStartTime)
   }
 
   // MARK: - Attachment lifecycle

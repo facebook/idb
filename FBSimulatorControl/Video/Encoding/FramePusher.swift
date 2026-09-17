@@ -16,8 +16,8 @@ protocol FramePusher: AnyObject {
   func writeEncodedFrame(
     _ pixelBuffer: CVPixelBuffer,
     frameNumber: UInt,
-    timeAtFirstFrame: CFTimeInterval,
-    frameDuration: CFTimeInterval,
+    timeAtFirstFrame: TimeInterval,
+    frameDuration: TimeInterval,
     forceKeyFrame: Bool
   ) throws
   /// The source surface changed while the frame was being read; counted in the pusher's stats.

@@ -119,8 +119,8 @@ private final class RecordingFramePusher: FramePusher, @unchecked Sendable {
   struct Write {
     let time: TimeInterval
     let frameNumber: UInt
-    let timeAtFirstFrame: CFTimeInterval
-    let frameDuration: CFTimeInterval
+    let timeAtFirstFrame: TimeInterval
+    let frameDuration: TimeInterval
     let forceKeyFrame: Bool
   }
 
@@ -151,8 +151,8 @@ private final class RecordingFramePusher: FramePusher, @unchecked Sendable {
   func writeEncodedFrame(
     _ pixelBuffer: CVPixelBuffer,
     frameNumber: UInt,
-    timeAtFirstFrame: CFTimeInterval,
-    frameDuration: CFTimeInterval,
+    timeAtFirstFrame: TimeInterval,
+    frameDuration: TimeInterval,
     forceKeyFrame: Bool
   ) throws {
     let time = ProcessInfo.processInfo.systemUptime

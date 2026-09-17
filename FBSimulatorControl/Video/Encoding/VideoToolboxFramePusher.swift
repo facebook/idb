@@ -176,8 +176,8 @@ final class VideoToolboxFramePusher: FramePusher, @unchecked Sendable {
   func writeEncodedFrame(
     _ pixelBuffer: CVPixelBuffer,
     frameNumber: UInt,
-    timeAtFirstFrame: CFTimeInterval,
-    frameDuration: CFTimeInterval,
+    timeAtFirstFrame: TimeInterval,
+    frameDuration: TimeInterval,
     forceKeyFrame: Bool
   ) throws {
     guard let compressionSession else {
@@ -186,7 +186,7 @@ final class VideoToolboxFramePusher: FramePusher, @unchecked Sendable {
 
     var bufferToWrite = pixelBuffer
 
-    let encodeStart = CFAbsoluteTimeGetCurrent()
+    let encodeStart = ContinuousClock.now
 
     // BGRA→NV12 (and scale, since the pool is destination-sized) in one pass; on failure the encoder
     // takes the BGRA frame and converts internally.
@@ -225,7 +225,7 @@ final class VideoToolboxFramePusher: FramePusher, @unchecked Sendable {
       outputHandler: handler
     )
 
-    statsRecorder.recordEncodeSubmission(seconds: CFAbsoluteTimeGetCurrent() - encodeStart)
+    statsRecorder.recordEncodeSubmission(ContinuousClock.now - encodeStart)
 
     if status != 0 {
       throw VideoToolboxFramePusherError.failedToCompress(status: status)

@@ -72,7 +72,7 @@ enum VideoEncodingHostSupport {
       try pusher.writeEncodedFrame(
         pixelBuffer,
         frameNumber: 0,
-        timeAtFirstFrame: CFAbsoluteTimeGetCurrent(),
+        timeAtFirstFrame: ProcessInfo.processInfo.systemUptime,
         frameDuration: 0,
         forceKeyFrame: true)
     } catch {

@@ -116,7 +116,7 @@ public final class Framebuffer: @unchecked Sendable {
     statsRecorder.snapshot()
   }
 
-  var statsStartTime: CFTimeInterval {
+  var statsStartTime: ContinuousClock.Instant? {
     statsRecorder.startTime
   }
 

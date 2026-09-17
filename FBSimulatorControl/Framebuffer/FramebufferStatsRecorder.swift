@@ -19,7 +19,7 @@ final class FramebufferStatsRecorder: @unchecked Sendable {
   private let lock = NSLock()
   private var stats = FramebufferStats()
   private var lastLoggedStats = FramebufferStats()
-  private var timer = PeriodicStatsTimer(interval: 5.0)
+  private var timer = PeriodicStatsTimer(interval: .seconds(5))
 
   init(logger: any ControlCoreLogger) {
     self.logger = logger
@@ -48,7 +48,7 @@ final class FramebufferStatsRecorder: @unchecked Sendable {
     return stats
   }
 
-  var startTime: CFTimeInterval {
+  var startTime: ContinuousClock.Instant? {
     lock.lock()
     defer { lock.unlock() }
     return timer.firstTickTime
@@ -71,17 +71,19 @@ final class FramebufferStatsRecorder: @unchecked Sendable {
       let intervalCallbacks = current.frameRenderedCount - last.frameRenderedCount
       let intervalIOSurface = current.ioSurfaceChangeCount - last.ioSurfaceChangeCount
 
-      let intervalRate = intervalDuration > 0 ? Double(intervalCallbacks) / intervalDuration : 0
-      let totalRate = totalElapsed > 0 ? Double(current.frameRenderedCount) / totalElapsed : 0
+      let intervalSeconds = intervalDuration.seconds
+      let totalSeconds = totalElapsed.seconds
+      let intervalRate = intervalSeconds > 0 ? Double(intervalCallbacks) / intervalSeconds : 0
+      let totalRate = totalSeconds > 0 ? Double(current.frameRenderedCount) / totalSeconds : 0
 
       logger.info().log(
         String(
           format: "Framebuffer stats (interval): %lu frames in %.1fs (%.1f/s) — %lu IOSurface changes",
-          intervalCallbacks, intervalDuration, intervalRate, intervalIOSurface))
+          intervalCallbacks, intervalSeconds, intervalRate, intervalIOSurface))
       logger.info().log(
         String(
           format: "Framebuffer stats (total): %lu frames in %.1fs (%.1f/s) — %lu IOSurface changes",
-          current.frameRenderedCount, totalElapsed, totalRate, current.ioSurfaceChangeCount))
+          current.frameRenderedCount, totalSeconds, totalRate, current.ioSurfaceChangeCount))
     }
   }
 }

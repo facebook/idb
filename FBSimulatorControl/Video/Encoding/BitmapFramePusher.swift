@@ -40,8 +40,8 @@ final class BitmapFramePusher: FramePusher {
   func writeEncodedFrame(
     _ pixelBuffer: CVPixelBuffer,
     frameNumber: UInt,
-    timeAtFirstFrame: CFTimeInterval,
-    frameDuration: CFTimeInterval,
+    timeAtFirstFrame: TimeInterval,
+    frameDuration: TimeInterval,
     forceKeyFrame: Bool
   ) throws {
     var bufferToWrite = pixelBuffer

@@ -5,24 +5,25 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import CoreFoundation
+import Foundation
 
-/// Shared timing logic for periodic stats logging across the framebuffer and the encoder.
+/// Shared timing logic for periodic stats logging across the framebuffer and the encoder. Runs on
+/// the monotonic `ContinuousClock`, so a wall-clock step never fires or starves a log.
 struct PeriodicStatsTimer {
-  private var startTime: CFAbsoluteTime = 0
-  private var lastLogTime: CFAbsoluteTime = 0
-  private let interval: CFTimeInterval
+  private var startTime: ContinuousClock.Instant?
+  private var lastLogTime: ContinuousClock.Instant?
+  private let interval: Duration
 
-  /// Initialize with a log interval (e.g. 5.0 seconds).
-  init(interval: CFTimeInterval) {
+  /// Initialize with a log interval (e.g. five seconds).
+  init(interval: Duration) {
     self.interval = interval
   }
 
   /// Whether the first tick has been seen.
-  var hasStarted: Bool { startTime != 0 }
+  var hasStarted: Bool { startTime != nil }
 
-  /// Absolute time of the first tick, or 0 before it.
-  var firstTickTime: CFAbsoluteTime { startTime }
+  /// When the first tick happened, or nil before it.
+  var firstTickTime: ContinuousClock.Instant? { startTime }
 
   enum Tick: Equatable {
     /// The very first tick — the timer is now started.
@@ -30,29 +31,34 @@ struct PeriodicStatsTimer {
     /// Not enough time has elapsed since the last log.
     case pending
     /// The interval elapsed; carries the elapsed durations since the last log and since the start.
-    case elapsed(intervalDuration: CFTimeInterval, totalElapsed: CFTimeInterval)
+    case elapsed(intervalDuration: Duration, totalElapsed: Duration)
   }
 
   /// Record a tick. On the very first call it starts the timer and returns `.started`; afterwards it
   /// returns `.elapsed` once at least `interval` has passed since the last log, else `.pending`.
   mutating func tick() -> Tick {
-    let now = CFAbsoluteTimeGetCurrent()
-    if startTime == 0 {
-      startTime = now
-      lastLogTime = now
+    let now = ContinuousClock.now
+    guard let startTime, let lastLogTime else {
+      self.startTime = now
+      self.lastLogTime = now
       return .started
     }
     if now - lastLogTime < interval {
       return .pending
     }
-    let intervalDuration = now - lastLogTime
-    let totalElapsed = now - startTime
-    lastLogTime = now
-    return .elapsed(intervalDuration: intervalDuration, totalElapsed: totalElapsed)
+    self.lastLogTime = now
+    return .elapsed(intervalDuration: now - lastLogTime, totalElapsed: now - startTime)
   }
 
-  /// Test seam: move the last-log time back by `seconds` so the next `tick()` reports `.elapsed`.
-  mutating func backdateForTesting(by seconds: CFTimeInterval) {
-    lastLogTime -= seconds
+  /// Test seam: move the last-log time back so the next `tick()` reports `.elapsed`.
+  mutating func backdateForTesting(by duration: Duration) {
+    lastLogTime = lastLogTime.map { $0 - duration }
+  }
+}
+
+extension Duration {
+  /// The duration in seconds, for rates and averages.
+  var seconds: TimeInterval {
+    Double(components.seconds) + Double(components.attoseconds) / 1e18
   }
 }
