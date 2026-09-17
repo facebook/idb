@@ -162,9 +162,13 @@ targets:
   # Everything the companion is apart from its entry point: the command executor
   # and its request types, plus the gRPC service, configuration and reporting.
   # `:CompanionLib` in Buck is the same target over the same directory, so the
-  # module `main.swift` imports exists in both builds. Like `idb-repl`, it must
-  # NOT depend on the gRPC packages directly -- those symbols come from
-  # IDBGRPCSwift, and a second copy would be a duplicate-symbol error.
+  # module `main.swift` imports exists in both builds. Its sources import the
+  # gRPC and NIO modules directly, and Xcode only hands a target the clang
+  # module maps of the package products it links itself -- a static library
+  # gets nothing through IDBGRPCSwift -- so the products are declared here too.
+  # libtool folds them into this archive as it does into IDBGRPCSwift's, which
+  # is why `idb_companion` links its Objective-C archives with `-force_load`
+  # rather than `-ObjC` below.
   CompanionLib:
     type: framework
     platform: macOS
@@ -217,6 +221,16 @@ targets:
         embed: false
       - target: ReplProtocol
         embed: false
+      - package: grpc-swift-2
+        product: GRPCCore
+      - package: grpc-swift-nio-transport
+        product: GRPCNIOTransportHTTP2Posix
+      - package: swift-nio
+        product: NIOCore
+      - package: swift-nio
+        product: NIOPosix
+      - package: swift-protobuf
+        product: SwiftProtobuf
       - sdk: CoreGraphics.framework
       - sdk: Foundation.framework
 
@@ -262,16 +276,21 @@ targets:
         # The linked static archives ship loose .swiftmodule directories next
         # to the .a files; resolve them independently of -F framework semantics.
         SWIFT_INCLUDE_PATHS: $(SRCROOT)/../Build/Products/Release
-        # The frameworks are linked as static archives (MACH_O_TYPE=staticlib), so
-        # pass -ObjC to load every Objective-C class and category from them.
-        # Without it the linker drops category-only object files and their
-        # selectors are missing at runtime.
+        # FBControlCore and XCTestBootstrap are static archives with category-only
+        # Objective-C object files, which the linker drops unless forced in, and
+        # their selectors are then missing at runtime. They are force-loaded by
+        # name rather than with `-ObjC`: that flag loads every member with
+        # Objective-C metadata from every archive, and CompanionLib and
+        # IDBGRPCSwift each carry a copy of the gRPC and NIO package objects,
+        # whose Swift classes have such metadata -- so it turns the second copy
+        # into thousands of duplicate symbols. Loaded on demand, the linker
+        # takes each member from the first archive that defines it.
         #
         # CoreSimulator and AccessibilityPlatformTranslation are runtime-loaded
         # private frameworks. FBSimulatorControl used to weak-link their TBD stubs
         # at its own link step, but a static archive has no link step, so the final
         # executable must carry the weak links instead.
-        OTHER_LDFLAGS: $(inherited) -ObjC -weak_library $(SRCROOT)/../PrivateHeaders/CoreSimulator/CoreSimulator.tbd -weak_library $(SRCROOT)/../PrivateHeaders/AccessibilityPlatformTranslation/AccessibilityPlatformTranslation.tbd
+        OTHER_LDFLAGS: $(inherited) -force_load $(SRCROOT)/../Build/Products/Release/FBControlCore.framework/FBControlCore -force_load $(SRCROOT)/../Build/Products/Release/XCTestBootstrap.framework/XCTestBootstrap -weak_library $(SRCROOT)/../PrivateHeaders/CoreSimulator/CoreSimulator.tbd -weak_library $(SRCROOT)/../PrivateHeaders/AccessibilityPlatformTranslation/AccessibilityPlatformTranslation.tbd
         # Use ad-hoc code signing for local development
         CODE_SIGN_IDENTITY: "-"
         CODE_SIGNING_REQUIRED: NO
