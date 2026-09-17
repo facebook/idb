@@ -10,6 +10,7 @@
 #import <FBControlCore/FBControlCore.h>
 
 #import "DataConsumer.h"
+#import "FBControlCore-SwiftImport.h"
 #import "FBDataBuffer.h"
 #import "FBProcessIO.h"
 #import "FBProcessStream.h"

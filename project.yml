@@ -135,6 +135,9 @@ targets:
         excludes:
           - "**/*-Info.plist"
           - "**/*.xcconfig"
+          - "**/FBControlCore-SwiftImport.h"
+      - path: FBControlCore/Utility/FBControlCore-SwiftImport.h
+        headerVisibility: project
     settings:
       base:
         INFOPLIST_FILE: $(SRCROOT)/FBControlCore/FBControlCore-Info.plist

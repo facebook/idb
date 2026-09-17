@@ -6,9 +6,11 @@
  */
 
 // This header imports all ObjC types referenced by Swift code,
-// then imports FBControlCore-Swift.h. Stub headers for converted
-// classes should import this file so that ObjC consumers get the
-// Swift class declarations with all required types defined first.
+// then imports FBControlCore-Swift.h. The module's implementation
+// files import it to see the Swift class declarations with all
+// required types defined first. It is not part of the module's
+// interface: consumers get the Swift declarations from the module
+// map's Swift submodule, so the umbrella header does not list it.
 
 #import <Foundation/Foundation.h>
 
@@ -16,6 +18,4 @@
 #import <FBControlCore/FileReader.h>
 #import <FBControlCore/Target.h>
 
-#if __has_include(<FBControlCore/FBControlCore-Swift.h>)
- #import <FBControlCore/FBControlCore-Swift.h>
-#endif
+#import "FBControlCore-Swift.h"

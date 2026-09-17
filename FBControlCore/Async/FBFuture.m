@@ -8,6 +8,7 @@
 #import "FBFuture.h"
 
 #import "FBControlCore.h"
+#import "FBControlCore-SwiftImport.h"
 
 /**
  A String Mirror of the State.
