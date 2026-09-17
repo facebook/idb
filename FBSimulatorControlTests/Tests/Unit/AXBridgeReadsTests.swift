@@ -374,6 +374,143 @@ final class AXBridgeReadsTests: XCTestCase {
     XCTAssertTrue(description.contains("On") && description.contains("Off"), "message should name both values: \(description)")
   }
 
+  // MARK: - What a client can recover from a rendered axbridge failure
+
+  private static let overlongSocketPath = "/tmp/" + String(repeating: "a", count: 115) + ".sock"
+
+  /// Every pre-tree axbridge failure a client can be handed, and exactly what each one reads as.
+  ///
+  /// `ErrorMapping` renders a thrown error to `errorDescription` and the gRPC status carries that text
+  /// and nothing else, so this is the whole of what reaches `idb`'s stderr, and all a consumer has to
+  /// work from. The two application conditions appear as `UIAutomationError` because the conformer
+  /// re-raises them backend-neutrally, and twice each because a display-wide read resolves no pid.
+  private static let renderedAxbridgeFailures: [(name: String, error: any LocalizedError, expected: String)] = [
+    (
+      "bridgeUnavailable",
+      AXBridgeError.bridgeUnavailable,
+      "The SimulatorFrameworkBridge guest binary was not found in the companion Resources directory"
+    ),
+    (
+      "readerUnavailable",
+      AXBridgeError.readerUnavailable("XCTAccessibilityFramework unavailable"),
+      "The axbridge guest reader could not bind the simulator's accessibility runtime: XCTAccessibilityFramework unavailable"
+    ),
+    (
+      "frontmostUnresolved",
+      AXBridgeError.frontmostUnresolved(method: .windowServer, reason: "no frontmost application"),
+      "axbridge could not resolve the frontmost application using the window-server strategy: no frontmost application"
+    ),
+    (
+      "guestApplicationUnavailable",
+      AXBridgeError.applicationUnavailable(pid: 8865),
+      "The axbridge guest found no readable application with pid 8865"
+    ),
+    (
+      "guestApplicationUnavailableWithoutPid",
+      AXBridgeError.applicationUnavailable(pid: nil),
+      "The axbridge guest found no readable application at that point"
+    ),
+    (
+      "guestApplicationNotResponding",
+      AXBridgeError.applicationNotResponding(pid: 8865),
+      "The axbridge guest requested accessibility from the application with pid 8865, which did not answer in time"
+    ),
+    (
+      "assertionFailed",
+      AXBridgeError.assertionFailed("the element there is not the one named"),
+      "The axbridge guest refused the write: the element there is not the one named"
+    ),
+    (
+      "socketPathTooLong",
+      AXBridgeError.socketPathTooLong(path: AXBridgeReadsTests.overlongSocketPath, limit: 104),
+      "The axbridge serve socket path is 125 bytes, over the 104-byte sockaddr_un limit, so no guest can be reached at it: \(AXBridgeReadsTests.overlongSocketPath)"
+    ),
+    (
+      "guestDiedBeforeBinding",
+      AXBridgeError.guestDiedBeforeBinding(pid: 8901, signal: 9, exitCode: nil, path: "/tmp/axbridge.sock"),
+      "The axbridge guest (pid 8901) was killed by signal 9 before binding its serve socket at /tmp/axbridge.sock"
+    ),
+    (
+      "guestFailure",
+      AXBridgeError.guestFailure("the guest reported a failure with nothing further to say"),
+      "The axbridge guest reader failed: the guest reported a failure with nothing further to say"
+    ),
+    (
+      "applicationUnavailable",
+      UIAutomationError.applicationUnavailable(backend: AXBridgeReadsTests.axBridge, pid: 8865),
+      "The axbridge backend could not read the application with pid 8865: it is not a running app, or its accessibility server has not started. \(AccessibilityGuidance.accessibilityServer)"
+    ),
+    (
+      "applicationUnavailableWithoutPid",
+      UIAutomationError.applicationUnavailable(backend: AXBridgeReadsTests.axBridge, pid: nil),
+      "The axbridge backend could not read the application at that point: it is not a running app, or its accessibility server has not started. \(AccessibilityGuidance.accessibilityServer)"
+    ),
+    (
+      "applicationNotResponding",
+      UIAutomationError.applicationNotResponding(backend: AXBridgeReadsTests.axBridge, pid: 8865),
+      "The axbridge backend requested accessibility from the application with pid 8865, which did not answer in time"
+    ),
+    (
+      "applicationNotRespondingWithoutPid",
+      UIAutomationError.applicationNotResponding(backend: AXBridgeReadsTests.axBridge, pid: nil),
+      "The axbridge backend requested accessibility from the application at that point, which did not answer in time"
+    ),
+  ]
+
+  /// What a consumer can parse a kind out of a rendered message by: an `axbridge[<kind>]` tag leading
+  /// the message, with a `,pid=<n>` clause where the failure named a process. Found by scanning rather
+  /// than anchoring, because a client appends its own context to the text it received.
+  private static func kindToken(in description: String) -> String? {
+    guard let open = description.range(of: "axbridge["),
+      let close = description.range(of: "]", range: open.upperBound..<description.endIndex)
+    else {
+      return nil
+    }
+    return String(description[open.upperBound..<close.lowerBound])
+  }
+
+  func testEachAxbridgeFailureRendersExactlyThis() {
+    for failure in Self.renderedAxbridgeFailures {
+      XCTAssertEqual(failure.error.errorDescription, failure.expected, "\(failure.name) renders differently")
+    }
+  }
+
+  // A client is handed one string and nothing else, so a kind it can act on has to be in that string.
+  func testTheRenderedAxbridgeFailuresCarryTheseKindTokens() {
+    let tokens = Self.renderedAxbridgeFailures.map { Self.kindToken(in: $0.error.errorDescription ?? "") }
+    // BUG: no failure renders a machine-readable kind, so a consumer can only pattern-match the prose —
+    // flipped in the following commit.
+    XCTAssertEqual(tokens, Array(repeating: nil, count: Self.renderedAxbridgeFailures.count))
+  }
+
+  // The tag is an axbridge convention. The legacy backend has no guest and no kinds, so its messages
+  // must never claim one.
+  func testTheLegacyBackendRendersNoAxbridgeKindToken() {
+    let errors: [(String, any LocalizedError)] = [
+      ("applicationUnavailable", UIAutomationError.applicationUnavailable(backend: .accessibility, pid: 8865)),
+      ("applicationNotResponding", UIAutomationError.applicationNotResponding(backend: .accessibility, pid: 8865)),
+      ("noElementAtPoint", UIAutomationError.noElementAtPoint(backend: .accessibility, x: 1, y: 2)),
+    ]
+    for (name, error) in errors {
+      let description = error.errorDescription ?? ""
+      XCTAssertNil(Self.kindToken(in: description), "\(name) must carry no kind token: \(description)")
+    }
+  }
+
+  // A query fact is not a guest failure kind: an empty point is a successful read, and a marker that
+  // never appeared is about the app. Tagging those would invent vocabulary the guest never reported.
+  func testAxbridgeQueryFailuresCarryNoKindToken() {
+    let errors: [(String, any LocalizedError)] = [
+      ("noElementAtPoint", UIAutomationError.noElementAtPoint(backend: Self.axBridge, x: 1, y: 2)),
+      ("elementNotFound", UIAutomationError.elementNotFound(backend: Self.axBridge, key: "AXLabel", value: "General")),
+      ("timedOut", UIAutomationError.timedOut(backend: Self.axBridge, key: "AXLabel", value: "General", timeout: 5)),
+    ]
+    for (name, error) in errors {
+      let description = error.errorDescription ?? ""
+      XCTAssertNil(Self.kindToken(in: description), "\(name) must carry no kind token: \(description)")
+    }
+  }
+
   // MARK: - Automation-mode default
 
   func testSelectingAxbridgeByResolvedNameAssertsAutomationMode() {
