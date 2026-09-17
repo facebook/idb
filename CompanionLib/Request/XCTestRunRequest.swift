@@ -149,7 +149,7 @@ public struct XCTestRunRequest {
 
   // MARK: - Test Execution
 
-  func start(withBundleStorageManager bundleStorage: XCTestBundleStorage, target: any FBiOSTarget, reporter: XCTestReporter, logger: ControlCoreLogger, temporaryDirectory: TemporaryDirectory) async throws -> IDBTestOperation {
+  func start(withBundleStorageManager bundleStorage: XCTestBundleStorage, target: any Target, reporter: XCTestReporter, logger: ControlCoreLogger, temporaryDirectory: TemporaryDirectory) async throws -> IDBTestOperation {
     let descriptor = try await fetchAndSetupDescriptor(withBundleStorage: bundleStorage, target: target)
     var logDirectoryPath: String?
     if collectLogs {
@@ -165,7 +165,7 @@ public struct XCTestRunRequest {
     }
   }
 
-  private func fetchAndSetupDescriptor(withBundleStorage bundleStorage: XCTestBundleStorage, target: any FBiOSTarget) async throws -> XCTestDescriptor {
+  private func fetchAndSetupDescriptor(withBundleStorage bundleStorage: XCTestBundleStorage, target: any Target) async throws -> XCTestDescriptor {
     let descriptor = try fetchDescriptor(withBundleStorage: bundleStorage)
     try await descriptor.setupAsync(with: self, target: target)
     return descriptor
@@ -194,7 +194,7 @@ public struct XCTestRunRequest {
 
   // MARK: - Logic Tests
 
-  private func startLogicTest(with testDescriptor: XCTestDescriptor, logDirectoryPath: String?, target: any FBiOSTarget, reporter: XCTestReporter, logger: ControlCoreLogger, temporaryDirectory: TemporaryDirectory) throws -> IDBTestOperation {
+  private func startLogicTest(with testDescriptor: XCTestDescriptor, logDirectoryPath: String?, target: any Target, reporter: XCTestReporter, logger: ControlCoreLogger, temporaryDirectory: TemporaryDirectory) throws -> IDBTestOperation {
     let workingDirectory = temporaryDirectory.ephemeralTemporaryDirectory()
     try FileManager.default.createDirectory(at: workingDirectory, withIntermediateDirectories: true, attributes: nil)
 
@@ -235,7 +235,7 @@ public struct XCTestRunRequest {
     return try startLogicTestExecution(configuration, target: target, reporter: reporter, logger: logger)
   }
 
-  private func startLogicTestExecution(_ configuration: LogicTestConfiguration, target: any FBiOSTarget, reporter: XCTestReporter, logger: ControlCoreLogger) throws -> IDBTestOperation {
+  private func startLogicTestExecution(_ configuration: LogicTestConfiguration, target: any Target, reporter: XCTestReporter, logger: ControlCoreLogger) throws -> IDBTestOperation {
     guard let target = target as? any LogicTestTarget else {
       throw XCTestRunRequestError.logicTestsUnsupported(targetDescription: String(describing: target))
     }
@@ -270,7 +270,7 @@ public struct XCTestRunRequest {
 
   // MARK: - Application-Hosted Tests
 
-  private func startAppHostedTest(with testDescriptor: XCTestDescriptor, logDirectoryPath: String?, target: any FBiOSTarget, reporter: XCTestReporter, logger: ControlCoreLogger) async throws -> IDBTestOperation {
+  private func startAppHostedTest(with testDescriptor: XCTestDescriptor, logDirectoryPath: String?, target: any Target, reporter: XCTestReporter, logger: ControlCoreLogger) async throws -> IDBTestOperation {
     let appPair = try await testDescriptor.testAppPair(for: self, target: target)
     logger.log("Obtaining launch configuration for App Pair \(appPair) on descriptor \(testDescriptor)")
     let appHostedTestConfig = try await testDescriptor.testConfig(withRunRequest: self, testApps: appPair, logDirectoryPath: logDirectoryPath, logger: logger)
@@ -278,7 +278,7 @@ public struct XCTestRunRequest {
     return try Self.startAppHostedTestExecution(appHostedTestConfig, reportAttachments: reportAttachments, target: target, reporter: reporter, logger: logger, reportResultBundle: collectResultBundle)
   }
 
-  private static func startAppHostedTestExecution(_ configuration: IDBAppHostedTestConfiguration, reportAttachments: Bool, target: any FBiOSTarget, reporter: XCTestReporter, logger: ControlCoreLogger, reportResultBundle: Bool) throws -> IDBTestOperation {
+  private static func startAppHostedTestExecution(_ configuration: IDBAppHostedTestConfiguration, reportAttachments: Bool, target: any Target, reporter: XCTestReporter, logger: ControlCoreLogger, reportResultBundle: Bool) throws -> IDBTestOperation {
     guard let target = target as? any XCTestTarget else {
       throw XCTestRunRequestError.xctestUnsupported(targetDescription: String(describing: target))
     }

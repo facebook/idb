@@ -9,7 +9,7 @@ import FBControlCore
 import Foundation
 import Testing
 
-private final class FutureTarget: FBiOSTargetInfo {
+private final class FutureTarget: TargetInfo {
   let uniqueIdentifier = "future-udid"
   let udid = "future-udid"
   let name = "My Simulator"
@@ -24,7 +24,7 @@ private final class FutureTarget: FBiOSTargetInfo {
 struct TargetDescriptionTests {
   @Test
   func futureMetadataKeepsTheJSONContract() throws {
-    let data = try JSONSerialization.data(withJSONObject: FBiOSTargetDescription(target: FutureTarget()).asJSON)
+    let data = try JSONSerialization.data(withJSONObject: TargetDescription(target: FutureTarget()).asJSON)
     let json = try #require(JSONSerialization.jsonObject(with: data) as? [String: String])
     #expect(
       json == [

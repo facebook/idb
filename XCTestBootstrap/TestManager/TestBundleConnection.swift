@@ -42,7 +42,7 @@ extension TestBundleConnectionError: LocalizedError {
 final class TestBundleConnection {
 
   private let context: TestManagerContext
-  private let target: any FBiOSTarget
+  private let target: any Target
   private let socket: Int32
   private let interface: NSObject
   private let testHostApplication: LaunchedApplication
@@ -51,7 +51,7 @@ final class TestBundleConnection {
 
   init(
     context: TestManagerContext,
-    target: any FBiOSTarget,
+    target: any Target,
     socket: Int32,
     interface: NSObject,
     testHostApplication: LaunchedApplication,

@@ -16,7 +16,7 @@ import XCTestBootstrap
 
 struct XCTestRunMethodHandler {
 
-  let target: any FBiOSTarget
+  let target: any Target
   let commandExecutor: IDBCommandExecutor
   let reporter: EventReporter
   let targetLogger: ControlCoreLogger

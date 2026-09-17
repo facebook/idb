@@ -16,7 +16,7 @@ struct DescribeMethodHandler {
 
   let reporter: EventReporter
   let logger: IDBLogger
-  let target: any FBiOSTarget
+  let target: any Target
   let commandExecutor: IDBCommandExecutor
 
   func handle(request: Idb_TargetDescriptionRequest, context: ServerContext) async throws -> Idb_TargetDescriptionResponse {

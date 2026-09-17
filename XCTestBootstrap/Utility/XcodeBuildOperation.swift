@@ -160,7 +160,7 @@ public final class XcodeBuildOperation {
     return mutableTestRunProperties as NSDictionary
   }
 
-  public static func confirmExit(ofXcodebuildOperation task: FBSubprocess<AnyObject, AnyObject, AnyObject>, configuration: TestLaunchConfiguration, reporter: XCTestReporter, target: any FBiOSTarget, logger: ControlCoreLogger) -> FBFuture<NSNull> {
+  public static func confirmExit(ofXcodebuildOperation task: FBSubprocess<AnyObject, AnyObject, AnyObject>, configuration: TestLaunchConfiguration, reporter: XCTestReporter, target: any Target, logger: ControlCoreLogger) -> FBFuture<NSNull> {
     return
       task.exited(withCodes: [0, 65]).retyped(FBFuture<AnyObject>.self)
       .onQueue(

@@ -157,7 +157,7 @@ public final class ListTestStrategy {
       .retyped(FBFuture<NSArray>.self)
   }
 
-  private static func setupEnvironment(withDylibs libraries: [String], shimPath: String, shimOutputFilePath: String, bundlePath: String, target: any FBiOSTarget) -> [String: String] {
+  private static func setupEnvironment(withDylibs libraries: [String], shimPath: String, shimOutputFilePath: String, bundlePath: String, target: any Target) -> [String: String] {
     var librariesWithShim = [shimPath]
     librariesWithShim.append(contentsOf: libraries)
 

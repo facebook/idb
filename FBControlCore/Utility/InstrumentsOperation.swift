@@ -105,7 +105,7 @@ public final class InstrumentsOperation {
   /// To make it reliable, launches are retried until one succeeds or the launch-retry
   /// timeout elapses.
   public class func operation(
-    target: any FBiOSTarget,
+    target: any Target,
     configuration: InstrumentsConfiguration,
     logger: any ControlCoreLogger
   ) async throws -> InstrumentsOperation {
@@ -147,7 +147,7 @@ public final class InstrumentsOperation {
   }
 
   private class func startSingleAttempt(
-    target: any FBiOSTarget,
+    target: any Target,
     configuration: InstrumentsConfiguration,
     logger: any ControlCoreLogger,
     attemptTimeout: TimeInterval

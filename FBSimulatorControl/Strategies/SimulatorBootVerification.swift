@@ -23,7 +23,7 @@ private let bootVerificationStallInterval: TimeInterval = 1.5
 public func verifySimulatorIsBooted(_ simulator: Simulator, deadline: PollDeadline? = nil) async throws {
   // Taken before the first wait, so the two phases share one bound rather than getting one each.
   let expiry = deadline.map { (deadline: $0, time: DispatchTime.now() + $0.timeout) }
-  try await FBiOSTargetResolveState(simulator, .booted, deadline: deadline)
+  try await TargetResolveState(simulator, .booted, deadline: deadline)
 
   var lastBootInfo: SimDeviceBootInfo?
   var lastChange = Date()

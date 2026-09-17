@@ -45,7 +45,7 @@ public final class XCTraceRecordOperation {
     self.logger = logger
   }
 
-  public class func operation(with target: any FBiOSTarget, configuration: XCTraceRecordConfiguration, logger: ControlCoreLogger) async throws -> XCTraceRecordOperation {
+  public class func operation(with target: any Target, configuration: XCTraceRecordConfiguration, logger: ControlCoreLogger) async throws -> XCTraceRecordOperation {
     let queue = DispatchQueue(label: "com.facebook.fbcontrolcore.xctrace")
     let traceDir = (target.auxillaryDirectory as NSString).appendingPathComponent("xctrace-" + UUID().uuidString)
     do {

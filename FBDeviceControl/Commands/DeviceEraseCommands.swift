@@ -16,7 +16,7 @@ private let OnlineTimeout: TimeInterval = 300
 
 // MARK: - DeviceEraseOperation
 
-private final class DeviceEraseOperation: NSObject, FBiOSTargetSetDelegate, @unchecked Sendable {
+private final class DeviceEraseOperation: NSObject, TargetSetDelegate, @unchecked Sendable {
 
   private let udid: String
   private let calls: AMDCalls
@@ -97,9 +97,9 @@ private final class DeviceEraseOperation: NSObject, FBiOSTargetSetDelegate, @unc
     try await bridgeFBFutureVoid(timed)
   }
 
-  // MARK: - FBiOSTargetSetDelegate
+  // MARK: - TargetSetDelegate
 
-  func targetAdded(_ targetInfo: any FBiOSTargetInfo, in targetSet: any FBiOSTargetSet) {
+  func targetAdded(_ targetInfo: any TargetInfo, in targetSet: any TargetSet) {
     if deviceDetected.state == .running {
       logger.log("Got target \(targetInfo) added for the first time")
       deviceDetected.resolve(withResult: NSNull())
@@ -109,12 +109,12 @@ private final class DeviceEraseOperation: NSObject, FBiOSTargetSetDelegate, @unc
     }
   }
 
-  func targetRemoved(_ targetInfo: any FBiOSTargetInfo, in targetSet: any FBiOSTargetSet) {
+  func targetRemoved(_ targetInfo: any TargetInfo, in targetSet: any TargetSet) {
     logger.log("Got target \(targetInfo) removed")
     deviceWentAway.resolve(withResult: NSNull())
   }
 
-  func targetUpdated(_ targetInfo: any FBiOSTargetInfo, in targetSet: any FBiOSTargetSet) {}
+  func targetUpdated(_ targetInfo: any TargetInfo, in targetSet: any TargetSet) {}
 }
 
 // MARK: - DeviceEraseCommands

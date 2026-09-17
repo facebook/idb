@@ -56,9 +56,9 @@ extension MacDeviceError: LocalizedError {
   }
 }
 
-public final class MacDevice: NSObject, FBiOSTarget {
+public final class MacDevice: NSObject, Target {
 
-  // MARK: - FBiOSTarget synthesized properties
+  // MARK: - Target synthesized properties
 
   public let architectures: [FBArchitecture]
   public let asyncQueue: DispatchQueue
@@ -69,7 +69,7 @@ public final class MacDevice: NSObject, FBiOSTarget {
   public var state: FBiOSTargetState
   public let targetType: FBiOSTargetType
   public let workQueue: DispatchQueue
-  public let screenInfo: FBiOSTargetScreenInfo?
+  public let screenInfo: TargetScreenInfo?
   public var deviceType: DeviceType = DeviceType.generic(withName: "Mac")
   public let udid: String
   public let temporaryDirectory: TemporaryDirectory
@@ -281,13 +281,13 @@ public final class MacDevice: NSObject, FBiOSTarget {
     return ""
   }
 
-  // MARK: - FBiOSTarget
+  // MARK: - Target
 
   public func requiresBundlesToBeSigned() -> Bool {
     false
   }
 
-  public static func commands(with target: any FBiOSTarget) -> Self {
+  public static func commands(with target: any Target) -> Self {
     assertionFailure("commandsWithTarget is not yet supported")
     return unsafeBitCast(NSNull(), to: Self.self)
   }
@@ -367,7 +367,7 @@ public final class MacDevice: NSObject, FBiOSTarget {
     [:]
   }
 
-  public func compare(_ target: any FBiOSTargetInfo) -> ComparisonResult {
+  public func compare(_ target: any TargetInfo) -> ComparisonResult {
     .orderedSame
   }
 

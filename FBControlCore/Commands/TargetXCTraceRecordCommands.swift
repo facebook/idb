@@ -7,15 +7,15 @@
 
 import Foundation
 
-public final class TargetXCTraceRecordCommands: FBiOSTargetCommand, XCTraceRecordCommands {
+public final class TargetXCTraceRecordCommands: TargetCommand, XCTraceRecordCommands {
 
-  public let target: any FBiOSTarget
+  public let target: any Target
 
-  public class func commands(with target: any FBiOSTarget) -> Self {
+  public class func commands(with target: any Target) -> Self {
     self.init(target: target)
   }
 
-  required init(target: any FBiOSTarget) {
+  required init(target: any Target) {
     self.target = target
   }
 

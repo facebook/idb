@@ -64,7 +64,7 @@ public final class SimulatorLifecycleCommands: LifecycleCommands {
     guard let simulator = self.simulator else {
       throw WeakTargetError.simulator
     }
-    try await FBiOSTargetResolveState(simulator, state)
+    try await TargetResolveState(simulator, state)
   }
 
   public func resolveLeavesState(_ state: FBiOSTargetState) async throws {

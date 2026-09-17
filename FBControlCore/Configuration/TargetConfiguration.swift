@@ -7,9 +7,9 @@
 
 import Foundation
 
-// MARK: - FBiOSTargetScreenInfo
+// MARK: - TargetScreenInfo
 
-public struct FBiOSTargetScreenInfo: Equatable, Hashable, CustomStringConvertible {
+public struct TargetScreenInfo: Equatable, Hashable, CustomStringConvertible {
 
   public let widthPixels: UInt
   public let heightPixels: UInt
@@ -130,7 +130,7 @@ public struct OSVersion: Equatable, Hashable, CustomStringConvertible, Sendable 
 }
 
 @objc
-public final class FBiOSTargetConfiguration: NSObject {
+public final class TargetConfiguration: NSObject {
 
   // MARK: - Public Methods
 

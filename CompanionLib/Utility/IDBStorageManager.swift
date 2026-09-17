@@ -75,12 +75,12 @@ public final class InstalledArtifact {
 // MARK: - IDBStorage
 
 public class IDBStorage {
-  public let target: any FBiOSTarget
+  public let target: any Target
   public let basePath: URL
   public let queue: DispatchQueue
   public let logger: ControlCoreLogger
 
-  public init(target: any FBiOSTarget, basePath: URL, queue: DispatchQueue, logger: ControlCoreLogger) {
+  public init(target: any Target, basePath: URL, queue: DispatchQueue, logger: ControlCoreLogger) {
     self.target = target
     self.basePath = basePath
     self.queue = queue
@@ -139,7 +139,7 @@ public final class FileStorage: IDBStorage {
 public class BundleStorage: IDBStorage {
   public let relocateLibraries: Bool
 
-  public init(target: any FBiOSTarget, basePath: URL, queue: DispatchQueue, logger: ControlCoreLogger, relocateLibraries: Bool) {
+  public init(target: any Target, basePath: URL, queue: DispatchQueue, logger: ControlCoreLogger, relocateLibraries: Bool) {
     self.relocateLibraries = relocateLibraries
     super.init(target: target, basePath: basePath, queue: queue, logger: logger)
   }
@@ -150,7 +150,7 @@ public class BundleStorage: IDBStorage {
     }
     let binaryArchitectures = Set(binary.architectures.map { $0.rawValue })
     let targetArchs = target.architectures
-    let supportedArchitectures = Set(FBiOSTargetConfiguration.baseArchsToCompatibleArch(targetArchs).map { $0.rawValue })
+    let supportedArchitectures = Set(TargetConfiguration.baseArchsToCompatibleArch(targetArchs).map { $0.rawValue })
 
     let containsExactArch = !binaryArchitectures.isDisjoint(with: supportedArchitectures)
     let arm64eEquivalent = targetArchs.contains(FBArchitecture(rawValue: "arm64e")) && binaryArchitectures.contains("arm64")
@@ -464,7 +464,7 @@ public final class IDBStorageManager {
     self.logger = logger
   }
 
-  public static func manager(forTarget target: any FBiOSTarget, logger: ControlCoreLogger) throws -> IDBStorageManager {
+  public static func manager(forTarget target: any Target, logger: ControlCoreLogger) throws -> IDBStorageManager {
     let queue = DispatchQueue(label: "com.facebook.idb.bundle_storage")
 
     let xctestBasePath = try prepareStoragePath(withName: IdbTestBundlesFolder, target: target)
@@ -513,7 +513,7 @@ public final class IDBStorageManager {
     return combined
   }
 
-  private static func prepareStoragePath(withName name: String, target: any FBiOSTarget) throws -> URL {
+  private static func prepareStoragePath(withName name: String, target: any Target) throws -> URL {
     let basePath = URL(fileURLWithPath: target.auxillaryDirectory).appendingPathComponent(name)
     do {
       try FileManager.default.createDirectory(at: basePath, withIntermediateDirectories: true, attributes: nil)

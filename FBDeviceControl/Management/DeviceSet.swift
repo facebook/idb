@@ -8,7 +8,7 @@
 @preconcurrency import FBControlCore
 import Foundation
 
-public final class DeviceSet: FBiOSTargetSet, FBiOSTargetSetDelegate, CustomStringConvertible {
+public final class DeviceSet: TargetSet, TargetSetDelegate, CustomStringConvertible {
   // Loaded once per process; a failed load is cached and rethrown by every init rather than
   // aborting the process.
   private static let _amDeviceCalls: Result<AMDCalls, Error> = Result {
@@ -21,9 +21,9 @@ public final class DeviceSet: FBiOSTargetSet, FBiOSTargetSetDelegate, CustomStri
   private let restorableDeviceManager: AMRestorableDeviceManager
   private let storage: DeviceStorage<Device>
   public let logger: any ControlCoreLogger
-  public weak var delegate: (any FBiOSTargetSetDelegate)?
+  public weak var delegate: (any TargetSetDelegate)?
 
-  public convenience init(logger: any ControlCoreLogger, delegate: (any FBiOSTargetSetDelegate)?, ecidFilter: String?) throws {
+  public convenience init(logger: any ControlCoreLogger, delegate: (any TargetSetDelegate)?, ecidFilter: String?) throws {
     let calls = try Self._amDeviceCalls.get()
     let workQueue = DispatchQueue.main
     let asyncQueue = DispatchQueue.global(qos: .userInitiated)
@@ -34,7 +34,7 @@ public final class DeviceSet: FBiOSTargetSet, FBiOSTargetSetDelegate, CustomStri
     try restorableDeviceManager.startListening()
   }
 
-  private init(amDeviceManager: AMDeviceManager, restorableDeviceManager: AMRestorableDeviceManager, logger: any ControlCoreLogger, delegate: (any FBiOSTargetSetDelegate)?) {
+  private init(amDeviceManager: AMDeviceManager, restorableDeviceManager: AMRestorableDeviceManager, logger: any ControlCoreLogger, delegate: (any TargetSetDelegate)?) {
     self.amDeviceManager = amDeviceManager
     self.restorableDeviceManager = restorableDeviceManager
     self.logger = logger
@@ -53,7 +53,7 @@ public final class DeviceSet: FBiOSTargetSet, FBiOSTargetSetDelegate, CustomStri
 
   // MARK: - Querying
 
-  public func target(withUDID udid: String) -> (any FBiOSTargetInfo)? {
+  public func target(withUDID udid: String) -> (any TargetInfo)? {
     deviceWithUDID(udid)
   }
 
@@ -61,7 +61,7 @@ public final class DeviceSet: FBiOSTargetSet, FBiOSTargetSetDelegate, CustomStri
     allDevices.first { $0.udid == udid }
   }
 
-  public var allTargetInfos: [any FBiOSTargetInfo] {
+  public var allTargetInfos: [any TargetInfo] {
     allDevices
   }
 
@@ -137,9 +137,9 @@ public final class DeviceSet: FBiOSTargetSet, FBiOSTargetSetDelegate, CustomStri
     }
   }
 
-  // MARK: - FBiOSTargetSetDelegate
+  // MARK: - TargetSetDelegate
 
-  public func targetAdded(_ targetInfo: any FBiOSTargetInfo, in targetSet: any FBiOSTargetSet) {
+  public func targetAdded(_ targetInfo: any TargetInfo, in targetSet: any TargetSet) {
     if let amDevice = targetInfo as? FBAMDevice {
       amDeviceAdded(amDevice)
     } else if let restorableDevice = targetInfo as? FBAMRestorableDevice {
@@ -149,7 +149,7 @@ public final class DeviceSet: FBiOSTargetSet, FBiOSTargetSetDelegate, CustomStri
     }
   }
 
-  public func targetRemoved(_ targetInfo: any FBiOSTargetInfo, in targetSet: any FBiOSTargetSet) {
+  public func targetRemoved(_ targetInfo: any TargetInfo, in targetSet: any TargetSet) {
     if let amDevice = targetInfo as? FBAMDevice {
       amDeviceRemoved(amDevice)
     } else if let restorableDevice = targetInfo as? FBAMRestorableDevice {
@@ -159,7 +159,7 @@ public final class DeviceSet: FBiOSTargetSet, FBiOSTargetSetDelegate, CustomStri
     }
   }
 
-  public func targetUpdated(_ targetInfo: any FBiOSTargetInfo, in targetSet: any FBiOSTargetSet) {
+  public func targetUpdated(_ targetInfo: any TargetInfo, in targetSet: any TargetSet) {
     guard let device = storage.device(forKey: targetInfo.uniqueIdentifier) else {
       assertionFailure("No existing device to update for \(targetInfo)")
       return

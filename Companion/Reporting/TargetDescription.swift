@@ -8,7 +8,7 @@
 import FBControlCore
 import Foundation
 
-final class FBiOSTargetDescription: FBiOSTargetInfo {
+final class TargetDescription: TargetInfo {
 
   let uniqueIdentifier: String
   let udid: String
@@ -30,7 +30,7 @@ final class FBiOSTargetDescription: FBiOSTargetInfo {
   private static let keyType = "type"
   private static let keyUDID = "udid"
 
-  init(target: FBiOSTargetInfo) {
+  init(target: TargetInfo) {
     self.extendedInformation = target.extendedInformation
     self.model = target.deviceType.model
     self.name = target.name

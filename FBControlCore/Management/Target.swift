@@ -7,19 +7,19 @@
 
 import Foundation
 
-// MARK: - FBiOSTargetCommand Protocol
+// MARK: - TargetCommand Protocol
 
 /// A protocol that defines a command class that can be instantiated for a target.
 /// Concrete command classes (e.g. `SimulatorApplicationCommands`) adopt this directly.
-public protocol FBiOSTargetCommand: AnyObject {
+public protocol TargetCommand: AnyObject {
   /// Instantiates the Commands instance.
-  static func commands(with target: any FBiOSTarget) -> Self
+  static func commands(with target: any Target) -> Self
 }
 
-// MARK: - FBiOSTargetInfo Protocol
+// MARK: - TargetInfo Protocol
 
 /// A protocol that defines an informational target.
-public protocol FBiOSTargetInfo: AnyObject {
+public protocol TargetInfo: AnyObject {
 
   /// A Unique Identifier that describes this iOS Target.
   var uniqueIdentifier: String { get }
@@ -52,12 +52,12 @@ public protocol FBiOSTargetInfo: AnyObject {
   var state: FBiOSTargetState { get }
 
   /// A Comparison Method for `sortedArrayUsingSelector:`
-  func compare(_ target: any FBiOSTargetInfo) -> ComparisonResult
+  func compare(_ target: any TargetInfo) -> ComparisonResult
 }
 
-extension FBiOSTargetInfo {
+extension TargetInfo {
 
-  public func compare(_ target: any FBiOSTargetInfo) -> ComparisonResult {
+  public func compare(_ target: any TargetInfo) -> ComparisonResult {
     var comparison = NSNumber(value: targetType.rawValue).compare(NSNumber(value: target.targetType.rawValue))
     if comparison != .orderedSame {
       return comparison
@@ -87,10 +87,10 @@ extension FBiOSTargetInfo {
   }
 }
 
-// MARK: - FBiOSTarget Protocol
+// MARK: - Target Protocol
 
 /// A protocol that defines an interactible and informational target.
-public protocol FBiOSTarget: FBiOSTargetInfo, FBiOSTargetCommand {
+public protocol Target: TargetInfo, TargetCommand {
 
   // MARK: - Command nouns
 
@@ -99,7 +99,7 @@ public protocol FBiOSTarget: FBiOSTargetInfo, FBiOSTargetCommand {
   //
   // Each noun is an associated type rather than the capability existential so that a concrete target
   // keeps the concrete command type: `simulator.lifecycle` is a `SimulatorLifecycleCommands`, with
-  // the simulator-only operations it adds. A caller holding `any FBiOSTarget` sees the capability
+  // the simulator-only operations it adds. A caller holding `any Target` sees the capability
   // upper bound, `any LifecycleCommands`.
 
   associatedtype Application: ApplicationCommands
@@ -167,7 +167,7 @@ public protocol FBiOSTarget: FBiOSTargetInfo, FBiOSTargetCommand {
   var platformRootDirectory: String { get async }
 
   /// The Screen Info for the Target.
-  var screenInfo: FBiOSTargetScreenInfo? { get }
+  var screenInfo: TargetScreenInfo? { get }
 
   /// The Queue to serialize work on.
   /// This is a serial queue that should act as a lock for other tasks that will mutate the state of the target.
@@ -192,7 +192,7 @@ public protocol FBiOSTarget: FBiOSTargetInfo, FBiOSTargetCommand {
 ///
 /// The state enum's numeric values are not stable across releases; these strings are, and are what
 /// gets serialised.
-public enum FBiOSTargetStateString: String, Sendable, CaseIterable {
+public enum TargetStateString: String, Sendable, CaseIterable {
   case creating = "Creating"
   case shutdown = "Shutdown"
   case booting = "Booting"
@@ -209,7 +209,7 @@ public enum FBiOSTargetStateString: String, Sendable, CaseIterable {
 extension FBiOSTargetState {
 
   /// The canonical string representation of the state enum.
-  public var stateString: FBiOSTargetStateString {
+  public var stateString: TargetStateString {
     switch self {
     case .creating:
       return .creating
@@ -277,15 +277,15 @@ extension FBControlCoreProductFamily {
 }
 
 /// Constructs an NSPredicate matching the specified UDID.
-public func FBiOSTargetPredicateForUDID(_ udid: String) -> NSPredicate {
-  return FBiOSTargetPredicateForUDIDs([udid])
+public func TargetPredicateForUDID(_ udid: String) -> NSPredicate {
+  return TargetPredicateForUDIDs([udid])
 }
 
 /// Constructs an NSPredicate matching the specified UDIDs.
-public func FBiOSTargetPredicateForUDIDs(_ udids: [String]) -> NSPredicate {
+public func TargetPredicateForUDIDs(_ udids: [String]) -> NSPredicate {
   let udidsSet = Set(udids)
   return NSPredicate { (evaluatedObject, _) -> Bool in
-    guard let candidate = evaluatedObject as? FBiOSTargetInfo else {
+    guard let candidate = evaluatedObject as? TargetInfo else {
       return false
     }
     return udidsSet.contains(candidate.udid)
@@ -295,8 +295,8 @@ public func FBiOSTargetPredicateForUDIDs(_ udids: [String]) -> NSPredicate {
 /// Waits until the target resolves to a provided state.
 ///
 /// - Parameter deadline: How long to wait for. Waits indefinitely when `nil`.
-public func FBiOSTargetResolveState(
-  _ target: any FBiOSTarget,
+public func TargetResolveState(
+  _ target: any Target,
   _ state: FBiOSTargetState,
   deadline: PollDeadline? = nil
 ) async throws {
@@ -307,8 +307,8 @@ public func FBiOSTargetResolveState(
 /// Waits until the target leaves a provided state.
 ///
 /// - Parameter deadline: How long to wait for. Waits indefinitely when `nil`.
-public func FBiOSTargetResolveLeavesState(
-  _ target: any FBiOSTarget,
+public func TargetResolveLeavesState(
+  _ target: any Target,
   _ state: FBiOSTargetState,
   deadline: PollDeadline? = nil
 ) async throws {
@@ -319,8 +319,8 @@ public func FBiOSTargetResolveLeavesState(
 /// Carries a target into the `@Sendable` polling closure. The target is read only for its `state`,
 /// and only on its own work queue, which is the serialisation point the protocol documents.
 private final class TargetBox: @unchecked Sendable {
-  let target: any FBiOSTarget
-  init(_ target: any FBiOSTarget) {
+  let target: any Target
+  init(_ target: any Target) {
     self.target = target
   }
 }

@@ -67,7 +67,7 @@ extension IDBCommandError: LocalizedError {
 
 public final class IDBCommandExecutor {
 
-  private let target: any FBiOSTarget
+  private let target: any Target
   private let logger: IDBLogger
   private let debugserverPort: in_port_t
 
@@ -77,11 +77,11 @@ public final class IDBCommandExecutor {
 
   // MARK: - Initializers
 
-  public static func commandExecutor(forTarget target: any FBiOSTarget, storageManager: IDBStorageManager, temporaryDirectory: TemporaryDirectory, debugserverPort: in_port_t, logger: IDBLogger) -> IDBCommandExecutor {
+  public static func commandExecutor(forTarget target: any Target, storageManager: IDBStorageManager, temporaryDirectory: TemporaryDirectory, debugserverPort: in_port_t, logger: IDBLogger) -> IDBCommandExecutor {
     IDBCommandExecutor(target: target, storageManager: storageManager, temporaryDirectory: temporaryDirectory, debugserverPort: debugserverPort, logger: logger.named("grpc_handler"))
   }
 
-  private init(target: any FBiOSTarget, storageManager: IDBStorageManager, temporaryDirectory: TemporaryDirectory, debugserverPort: in_port_t, logger: IDBLogger) {
+  private init(target: any Target, storageManager: IDBStorageManager, temporaryDirectory: TemporaryDirectory, debugserverPort: in_port_t, logger: IDBLogger) {
     self.target = target
     self.storageManager = storageManager
     self.temporaryDirectory = temporaryDirectory

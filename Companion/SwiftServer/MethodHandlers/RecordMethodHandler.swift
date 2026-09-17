@@ -12,7 +12,7 @@ import IDBGRPCSwift
 
 struct RecordMethodHandler {
 
-  let target: any FBiOSTarget
+  let target: any Target
   let targetLogger: ControlCoreLogger
 
   func handle(requestStream: RequestStreamReader<Idb_RecordRequest>, responseStream: RPCWriter<Idb_RecordResponse>, context: ServerContext) async throws {

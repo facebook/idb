@@ -7,15 +7,15 @@
 
 import FBControlCore
 
-final class FBiOSTargetDouble: FBiOSTargetInfo {
+final class TargetDouble: TargetInfo {
 
   var uniqueIdentifier: String = ""
   var udid: String = ""
   var name: String = ""
   var state: FBiOSTargetState = .unknown
   var targetType: FBiOSTargetType = .simulator
-  var deviceType: DeviceType = .generic(withName: "FBiOSTargetDouble")
-  var osVersion: OSVersion = .generic(withName: "FBiOSTargetDouble")
+  var deviceType: DeviceType = .generic(withName: "TargetDouble")
+  var osVersion: OSVersion = .generic(withName: "TargetDouble")
   var architectures: [FBArchitecture] = []
   var extendedInformation: [String: Any] { [:] }
 }

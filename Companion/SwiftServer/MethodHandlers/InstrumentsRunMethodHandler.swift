@@ -14,7 +14,7 @@ import IDBGRPCSwift
 
 struct InstrumentsRunMethodHandler {
 
-  let target: any FBiOSTarget
+  let target: any Target
   let targetLogger: ControlCoreLogger
   let commandExecutor: IDBCommandExecutor
   let logger: ControlCoreLogger

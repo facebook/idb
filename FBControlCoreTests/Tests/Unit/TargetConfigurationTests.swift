@@ -8,7 +8,7 @@
 @testable import FBControlCore
 import XCTest
 
-final class FBiOSTargetConfigurationTests: XCTestCase {
+final class TargetConfigurationTests: XCTestCase {
   func testMetadataDoesNotRequireKnownNames() {
     let device = DeviceType(model: FBDeviceModel(rawValue: "Future Device"), family: .familyUnknown)
     let os = OSVersion(name: FBOSVersionName(rawValue: "Future Platform"), versionString: "99.10.2")
@@ -63,8 +63,8 @@ final class FBiOSTargetConfigurationTests: XCTestCase {
   }
 
   func testScreenInfoHashTruncatesScale() {
-    let integral = FBiOSTargetScreenInfo(widthPixels: 640, heightPixels: 960, scale: 2)
-    let fractional = FBiOSTargetScreenInfo(widthPixels: 640, heightPixels: 960, scale: 2.5)
+    let integral = TargetScreenInfo(widthPixels: 640, heightPixels: 960, scale: 2)
+    let fractional = TargetScreenInfo(widthPixels: 640, heightPixels: 960, scale: 2.5)
 
     // The hash casts the scale to Int, so a fractional difference collides while equality still separates them.
     XCTAssertNotEqual(integral, fractional)

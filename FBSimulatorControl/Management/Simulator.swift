@@ -11,11 +11,11 @@ import Foundation
 
 private let DefaultDeviceSet = "~/Library/Developer/CoreSimulator/Devices"
 
-/// An implementation of `FBiOSTarget` for iOS Simulators.
+/// An implementation of `Target` for iOS Simulators.
 ///
 /// The async commands serialize their work onto `FBFuture`'s internal queues, so instances are
 /// safe to pass across Swift concurrency domains.
-public final class Simulator: FBiOSTarget, Hashable, CustomStringConvertible, @unchecked Sendable {
+public final class Simulator: Target, Hashable, CustomStringConvertible, @unchecked Sendable {
 
   // MARK: - Properties
 
@@ -65,7 +65,7 @@ public final class Simulator: FBiOSTarget, Hashable, CustomStringConvertible, @u
     self.commandCache = TargetCommandCache()
   }
 
-  // MARK: - FBiOSTargetInfo
+  // MARK: - TargetInfo
 
   public var uniqueIdentifier: String { udid }
 
@@ -85,7 +85,7 @@ public final class Simulator: FBiOSTarget, Hashable, CustomStringConvertible, @u
 
   public var extendedInformation: [String: Any] { [:] }
 
-  // MARK: - FBiOSTarget
+  // MARK: - Target
 
   public var runtimeRootDirectory: String { get async { device.runtime.root } }
 
@@ -95,11 +95,11 @@ public final class Simulator: FBiOSTarget, Hashable, CustomStringConvertible, @u
     }
   }
 
-  public var screenInfo: FBiOSTargetScreenInfo? {
+  public var screenInfo: TargetScreenInfo? {
     guard let deviceType = device.deviceType else {
       return nil
     }
-    return FBiOSTargetScreenInfo(
+    return TargetScreenInfo(
       widthPixels: UInt(deviceType.mainScreenSize.width),
       heightPixels: UInt(deviceType.mainScreenSize.height),
       scale: deviceType.mainScreenScale)
@@ -128,7 +128,7 @@ public final class Simulator: FBiOSTarget, Hashable, CustomStringConvertible, @u
 
   /// A simulator is its own command source. The protocol requires a non-throwing `Self`, so a mismatch can
   /// only trap (not catchable by `FBObjCExceptionGuard`).
-  public static func commands(with target: any FBiOSTarget) -> Self {
+  public static func commands(with target: any Target) -> Self {
     guard let simulator = target as? Self else {
       preconditionFailure("\(type(of: target)) is not an Simulator, so it cannot provide simulator commands")
     }
@@ -154,7 +154,7 @@ public final class Simulator: FBiOSTarget, Hashable, CustomStringConvertible, @u
   }
 
   /// A string representation of the Simulator State.
-  public var stateString: FBiOSTargetStateString {
+  public var stateString: TargetStateString {
     state.stateString
   }
 

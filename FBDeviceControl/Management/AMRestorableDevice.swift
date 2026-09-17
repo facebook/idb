@@ -11,7 +11,7 @@ import Foundation
 private let UnknownValue = "unknown"
 
 /// An Object Wrapper around AMRestorableDevice.
-public final class FBAMRestorableDevice: FBiOSTargetInfo, DeviceProtocol {
+public final class FBAMRestorableDevice: TargetInfo, DeviceProtocol {
 
   public let calls: AMDCalls
   public var allValues: [String: Any]
@@ -53,7 +53,7 @@ public final class FBAMRestorableDevice: FBiOSTargetInfo, DeviceProtocol {
     restorableDeviceRef.release()
   }
 
-  // MARK: - FBiOSTargetInfo
+  // MARK: - TargetInfo
 
   // Restore info dictionaries are populated by MobileDevice and may omit keys or carry
   // unexpectedly-typed values; these accessors feed Swift's nonnull String bridging, so anything

@@ -27,10 +27,10 @@ extension DiagnosticsRelayError: LocalizedError {
   }
 }
 
-public final class DeviceDiagnosticInformationCommands: FBiOSTargetCommand {
+public final class DeviceDiagnosticInformationCommands: TargetCommand {
   private let device: Device
 
-  public class func commands(with target: any FBiOSTarget) -> Self {
+  public class func commands(with target: any Target) -> Self {
     guard let device = target as? Device else {
       preconditionFailure("Expected Device target, got \(target)")
     }

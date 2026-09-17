@@ -499,7 +499,7 @@ public struct SimulatorApplicationCommands: ApplicationCommands {
       throw SimulatorApplicationInstallError.applicationMissingExecutable(path: path)
     }
     let binaryArchRawValues = Set(binary.architectures.map { $0.rawValue })
-    let supportedArchitectures = FBiOSTargetConfiguration.baseArchsToCompatibleArch(simulator.architectures)
+    let supportedArchitectures = TargetConfiguration.baseArchsToCompatibleArch(simulator.architectures)
     let supportedArchRawValues = Set(supportedArchitectures.map { $0.rawValue })
     if binaryArchRawValues.isDisjoint(with: supportedArchRawValues) {
       throw SimulatorApplicationInstallError.unsupportedArchitectures(

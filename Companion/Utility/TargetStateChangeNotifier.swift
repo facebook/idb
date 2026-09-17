@@ -10,7 +10,7 @@ import CompanionUtilities
 import FBControlCore
 import Foundation
 
-enum FBiOSTargetStateChangeNotifierError: Error {
+enum TargetStateChangeNotifierError: Error {
   case noTargetSets
   case targetsFileCreationFailed(path: String, message: String)
   case initialStateWriteFailed
@@ -18,11 +18,11 @@ enum FBiOSTargetStateChangeNotifierError: Error {
   case updateWriteFailed(underlying: Error)
 }
 
-extension FBiOSTargetStateChangeNotifierError: LocalizedError {
+extension TargetStateChangeNotifierError: LocalizedError {
   var errorDescription: String? {
     switch self {
     case .noTargetSets:
-      return "Cannot initialize FBiOSTargetStateChangeNotifier without any sets to monitor"
+      return "Cannot initialize TargetStateChangeNotifier without any sets to monitor"
     case let .targetsFileCreationFailed(path, message):
       return "Failed to create local targets file: \(path) \(message)"
     case .initialStateWriteFailed:
@@ -35,17 +35,17 @@ extension FBiOSTargetStateChangeNotifierError: LocalizedError {
   }
 }
 
-final class FBiOSTargetStateChangeNotifier: NSObject, FBiOSTargetSetDelegate {
+final class TargetStateChangeNotifier: NSObject, TargetSetDelegate {
 
   private let filePath: String?
-  private let targetSets: [FBiOSTargetSet]
+  private let targetSets: [TargetSet]
   private let logger: ControlCoreLogger
-  private var current: [String: FBiOSTargetDescription]
+  private var current: [String: TargetDescription]
   private let donePromise = AsyncPromise<Void>()
 
-  static func notifierToFilePath(_ filePath: String, withTargetSets targetSets: [FBiOSTargetSet], logger: ControlCoreLogger) throws -> FBiOSTargetStateChangeNotifier {
+  static func notifierToFilePath(_ filePath: String, withTargetSets targetSets: [TargetSet], logger: ControlCoreLogger) throws -> TargetStateChangeNotifier {
     if targetSets.isEmpty {
-      throw FBiOSTargetStateChangeNotifierError.noTargetSets
+      throw TargetStateChangeNotifierError.noTargetSets
     }
 
     let didCreateFile = FileManager.default.createFile(
@@ -55,29 +55,29 @@ final class FBiOSTargetStateChangeNotifier: NSObject, FBiOSTargetSetDelegate {
     )
 
     if !didCreateFile {
-      throw FBiOSTargetStateChangeNotifierError.targetsFileCreationFailed(path: filePath, message: String(cString: strerror(errno)))
+      throw TargetStateChangeNotifierError.targetsFileCreationFailed(path: filePath, message: String(cString: strerror(errno)))
     }
 
-    let notifier = FBiOSTargetStateChangeNotifier(filePath: filePath, targetSets: targetSets, logger: logger)
+    let notifier = TargetStateChangeNotifier(filePath: filePath, targetSets: targetSets, logger: logger)
     for targetSet in targetSets {
       targetSet.delegate = notifier
     }
     return notifier
   }
 
-  static func notifierToStdOut(withTargetSets targetSets: [FBiOSTargetSet], logger: ControlCoreLogger) throws -> FBiOSTargetStateChangeNotifier {
+  static func notifierToStdOut(withTargetSets targetSets: [TargetSet], logger: ControlCoreLogger) throws -> TargetStateChangeNotifier {
     if targetSets.isEmpty {
-      throw FBiOSTargetStateChangeNotifierError.noTargetSets
+      throw TargetStateChangeNotifierError.noTargetSets
     }
 
-    let notifier = FBiOSTargetStateChangeNotifier(filePath: nil, targetSets: targetSets, logger: logger)
+    let notifier = TargetStateChangeNotifier(filePath: nil, targetSets: targetSets, logger: logger)
     for targetSet in targetSets {
       targetSet.delegate = notifier
     }
     return notifier
   }
 
-  private init(filePath: String?, targetSets: [FBiOSTargetSet], logger: ControlCoreLogger) {
+  private init(filePath: String?, targetSets: [TargetSet], logger: ControlCoreLogger) {
     self.filePath = filePath
     self.targetSets = targetSets
     self.logger = logger
@@ -88,11 +88,11 @@ final class FBiOSTargetStateChangeNotifier: NSObject, FBiOSTargetSetDelegate {
   func startNotifier() throws {
     for targetSet in targetSets {
       for target in targetSet.allTargetInfos {
-        current[target.uniqueIdentifier] = FBiOSTargetDescription(target: target)
+        current[target.uniqueIdentifier] = TargetDescription(target: target)
       }
     }
     guard writeTargets() else {
-      throw FBiOSTargetStateChangeNotifierError.initialStateWriteFailed
+      throw TargetStateChangeNotifierError.initialStateWriteFailed
     }
     // If we're writing to a file, we also need to signal to stdout on the first update
     if filePath != nil {
@@ -119,7 +119,7 @@ final class FBiOSTargetStateChangeNotifier: NSObject, FBiOSTargetSetDelegate {
       jsonArray.append(target.asJSON)
     }
     guard let data = try? JSONSerialization.data(withJSONObject: jsonArray) else {
-      donePromise.fail(FBiOSTargetStateChangeNotifierError.updateSerializationFailed)
+      donePromise.fail(TargetStateChangeNotifierError.updateSerializationFailed)
       return false
     }
     if let filePath {
@@ -135,7 +135,7 @@ final class FBiOSTargetStateChangeNotifier: NSObject, FBiOSTargetSetDelegate {
       return true
     } catch {
       logger.log("Failed writing updates \(error)")
-      donePromise.fail(FBiOSTargetStateChangeNotifierError.updateWriteFailed(underlying: error))
+      donePromise.fail(TargetStateChangeNotifierError.updateWriteFailed(underlying: error))
       return false
     }
   }
@@ -147,20 +147,20 @@ final class FBiOSTargetStateChangeNotifier: NSObject, FBiOSTargetSetDelegate {
     return true
   }
 
-  // MARK: - FBiOSTargetSetDelegate
+  // MARK: - TargetSetDelegate
 
-  func targetAdded(_ targetInfo: FBiOSTargetInfo, in targetSet: FBiOSTargetSet) {
-    current[targetInfo.uniqueIdentifier] = FBiOSTargetDescription(target: targetInfo)
+  func targetAdded(_ targetInfo: TargetInfo, in targetSet: TargetSet) {
+    current[targetInfo.uniqueIdentifier] = TargetDescription(target: targetInfo)
     writeTargets()
   }
 
-  func targetRemoved(_ targetInfo: FBiOSTargetInfo, in targetSet: FBiOSTargetSet) {
+  func targetRemoved(_ targetInfo: TargetInfo, in targetSet: TargetSet) {
     current.removeValue(forKey: targetInfo.uniqueIdentifier)
     writeTargets()
   }
 
-  func targetUpdated(_ targetInfo: FBiOSTargetInfo, in targetSet: FBiOSTargetSet) {
-    current[targetInfo.uniqueIdentifier] = FBiOSTargetDescription(target: targetInfo)
+  func targetUpdated(_ targetInfo: TargetInfo, in targetSet: TargetSet) {
+    current[targetInfo.uniqueIdentifier] = TargetDescription(target: targetInfo)
     writeTargets()
   }
 }

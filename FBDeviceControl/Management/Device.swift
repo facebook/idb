@@ -10,7 +10,7 @@ import Foundation
 
 /// Backed by an `FBAMDevice`, an `FBAMRestorableDevice`, or both, caching the target
 /// information of whichever it holds.
-public final class Device: FBiOSTarget, DeviceCommands, CustomStringConvertible {
+public final class Device: Target, DeviceCommands, CustomStringConvertible {
 
   // MARK: - Properties
 
@@ -100,20 +100,20 @@ public final class Device: FBiOSTarget, DeviceCommands, CustomStringConvertible 
       preconditionFailure("An FBAMDevice or FBAMRestorableDevice must be provided")
     }
     self.logger = logger
-    if let info: any FBiOSTargetInfo & DeviceProtocol = amDevice ?? restorableDevice {
+    if let info: any TargetInfo & DeviceProtocol = amDevice ?? restorableDevice {
       cacheValues(from: info, overwrite: true)
     }
     self.logger = logger.withName(udid)
   }
 
-  public static func commands(with target: any FBiOSTarget) -> Self {
+  public static func commands(with target: any Target) -> Self {
     guard let device = target as? Self else {
       preconditionFailure("\(type(of: target)) is not an Device, so it cannot provide device commands")
     }
     return device
   }
 
-  // MARK: - FBiOSTarget
+  // MARK: - Target
 
   public var workQueue: DispatchQueue {
     // One of the two backing devices is always present, per the initializer's contract.
@@ -150,7 +150,7 @@ public final class Device: FBiOSTarget, DeviceCommands, CustomStringConvertible 
     get async { await platformRootDirectory }
   }
 
-  public var screenInfo: FBiOSTargetScreenInfo? {
+  public var screenInfo: TargetScreenInfo? {
     nil
   }
 
@@ -211,7 +211,7 @@ public final class Device: FBiOSTarget, DeviceCommands, CustomStringConvertible 
 
   /// The AMDevice's richer information always overwrites; the restorable device's only fills what
   /// is not yet known. `calls` and `state` are refreshed from either.
-  private func cacheValues(from targetInfo: any FBiOSTargetInfo & DeviceProtocol, overwrite: Bool) {
+  private func cacheValues(from targetInfo: any TargetInfo & DeviceProtocol, overwrite: Bool) {
     calls = targetInfo.calls
     state = targetInfo.state
 

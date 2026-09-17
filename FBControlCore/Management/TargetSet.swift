@@ -7,32 +7,32 @@
 
 import Foundation
 
-// MARK: - FBiOSTargetSetDelegate Protocol
+// MARK: - TargetSetDelegate Protocol
 
 /// Delegate that informs of updates regarding the set of iOS Targets.
-public protocol FBiOSTargetSetDelegate: AnyObject {
+public protocol TargetSetDelegate: AnyObject {
 
   /// Called every time an iOS Target is added to the set.
-  func targetAdded(_ targetInfo: any FBiOSTargetInfo, in targetSet: any FBiOSTargetSet)
+  func targetAdded(_ targetInfo: any TargetInfo, in targetSet: any TargetSet)
 
   /// Called every time an iOS Target is removed from the set.
-  func targetRemoved(_ targetInfo: any FBiOSTargetInfo, in targetSet: any FBiOSTargetSet)
+  func targetRemoved(_ targetInfo: any TargetInfo, in targetSet: any TargetSet)
 
   /// Called every time the target info is changed.
-  func targetUpdated(_ targetInfo: any FBiOSTargetInfo, in targetSet: any FBiOSTargetSet)
+  func targetUpdated(_ targetInfo: any TargetInfo, in targetSet: any TargetSet)
 }
 
-// MARK: - FBiOSTargetSet Protocol
+// MARK: - TargetSet Protocol
 
 /// Common properties of iOS Target Sets, shared by Simulator & Device Sets.
-public protocol FBiOSTargetSet: AnyObject {
+public protocol TargetSet: AnyObject {
 
   /// Conformers must hold this weakly; a protocol requirement cannot say so.
-  var delegate: (any FBiOSTargetSetDelegate)? { get set }
+  var delegate: (any TargetSetDelegate)? { get set }
 
   /// Obtains all current targets infos within a set.
-  var allTargetInfos: [any FBiOSTargetInfo] { get }
+  var allTargetInfos: [any TargetInfo] { get }
 
   /// Fetches a Target by a UDID.
-  func target(withUDID udid: String) -> (any FBiOSTargetInfo)?
+  func target(withUDID udid: String) -> (any TargetInfo)?
 }

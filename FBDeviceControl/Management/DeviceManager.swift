@@ -12,11 +12,11 @@ import Foundation
 ///
 /// Subclasses supply how to listen and how to turn a private device reference into a public one;
 /// this class owns the registry of what is currently attached and notifies the delegate.
-class DeviceManager<PublicDevice: AnyObject>: NSObject, FBiOSTargetSet {
+class DeviceManager<PublicDevice: AnyObject>: NSObject, TargetSet {
 
   let logger: any ControlCoreLogger
   let storage: DeviceStorage<PublicDevice>
-  weak var delegate: (any FBiOSTargetSetDelegate)?
+  weak var delegate: (any TargetSetDelegate)?
 
   init(logger: any ControlCoreLogger) {
     self.logger = logger
@@ -94,7 +94,7 @@ class DeviceManager<PublicDevice: AnyObject>: NSObject, FBiOSTargetSet {
 
     storage.deviceAttached(device, forKey: identifier)
 
-    if let info = device as? any FBiOSTargetInfo {
+    if let info = device as? any TargetInfo {
       delegate?.targetAdded(info, in: self)
     }
   }
@@ -112,27 +112,27 @@ class DeviceManager<PublicDevice: AnyObject>: NSObject, FBiOSTargetSet {
 
     storage.deviceDetached(forKey: identifier)
 
-    if let info = device as? any FBiOSTargetInfo {
+    if let info = device as? any TargetInfo {
       delegate?.targetRemoved(info, in: self)
     }
   }
 
   var currentDeviceList: [PublicDevice] {
     Array(storage.attached.values).sorted { lhs, rhs in
-      let lhsID = (lhs as? any FBiOSTargetInfo)?.uniqueIdentifier ?? ""
-      let rhsID = (rhs as? any FBiOSTargetInfo)?.uniqueIdentifier ?? ""
+      let lhsID = (lhs as? any TargetInfo)?.uniqueIdentifier ?? ""
+      let rhsID = (rhs as? any TargetInfo)?.uniqueIdentifier ?? ""
       return lhsID < rhsID
     }
   }
 
-  // MARK: - FBiOSTargetSet
+  // MARK: - TargetSet
 
-  var allTargetInfos: [any FBiOSTargetInfo] {
-    currentDeviceList.compactMap { $0 as? any FBiOSTargetInfo }
+  var allTargetInfos: [any TargetInfo] {
+    currentDeviceList.compactMap { $0 as? any TargetInfo }
   }
 
-  func target(withUDID udid: String) -> (any FBiOSTargetInfo)? {
-    allTargetInfos.first { FBiOSTargetPredicateForUDID(udid).evaluate(with: $0) }
+  func target(withUDID udid: String) -> (any TargetInfo)? {
+    allTargetInfos.first { TargetPredicateForUDID(udid).evaluate(with: $0) }
   }
 
   override var description: String {

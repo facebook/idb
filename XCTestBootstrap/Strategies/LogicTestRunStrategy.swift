@@ -140,7 +140,7 @@ public final class LogicTestRunStrategy: XCTestRunner {
       .retyped(FBFuture<NSNull>.self)
   }
 
-  private static func setupEnvironment(withDylibs environment: [String: String], withLibraries libraries: [String], injectLibraries: [String], shimOutputFilePath: String, shimPath: String, bundlePath: String, coverageConfiguration: CodeCoverageConfiguration?, logDirectoryPath: String?, waitForDebugger: Bool, target: any FBiOSTarget) -> [String: String] {
+  private static func setupEnvironment(withDylibs environment: [String: String], withLibraries libraries: [String], injectLibraries: [String], shimOutputFilePath: String, shimPath: String, bundlePath: String, coverageConfiguration: CodeCoverageConfiguration?, logDirectoryPath: String?, waitForDebugger: Bool, target: any Target) -> [String: String] {
     var librariesWithShim = [shimPath]
     librariesWithShim.append(contentsOf: libraries)
     librariesWithShim.append(contentsOf: injectLibraries)

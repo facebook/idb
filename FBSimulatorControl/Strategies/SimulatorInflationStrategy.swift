@@ -43,7 +43,7 @@ final class SimulatorInflationStrategy {
     var result = simulators
 
     if !simulatorsToCull.isEmpty {
-      let culled = FBiOSTargetPredicateForUDIDs(Array(simulatorsToCull))
+      let culled = TargetPredicateForUDIDs(Array(simulatorsToCull))
       result = result.filter { !culled.evaluate(with: $0) }
     }
 

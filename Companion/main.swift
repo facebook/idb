@@ -116,8 +116,8 @@ private func writeJSONToStdOut(_ json: Any) {
   fflush(stdout)
 }
 
-private func writeTargetToStdOut(_ target: FBiOSTargetInfo) {
-  writeJSONToStdOut(FBiOSTargetDescription(target: target).asJSON)
+private func writeTargetToStdOut(_ target: TargetInfo) {
+  writeJSONToStdOut(TargetDescription(target: target).asJSON)
 }
 
 private func simulatorSetWithPath(_ deviceSetPath: String?, logger: ControlCoreLogger) throws -> SimulatorSet {
@@ -180,7 +180,7 @@ private func awaitDevicePopulation(of set: DeviceSet, logger: ControlCoreLogger)
   }
 }
 
-private func defaultTargetSets(_ userDefaults: UserDefaults, xcodeAvailable: Bool, waitForDevices: Bool = false, logger: ControlCoreLogger) async throws -> [FBiOSTargetSet] {
+private func defaultTargetSets(_ userDefaults: UserDefaults, xcodeAvailable: Bool, waitForDevices: Bool = false, logger: ControlCoreLogger) async throws -> [TargetSet] {
   let only = userDefaults.string(forKey: "-only")
   if let only {
     if only.lowercased().contains("simulator") {
@@ -209,9 +209,9 @@ private func defaultTargetSets(_ userDefaults: UserDefaults, xcodeAvailable: Boo
   ]
 }
 
-private func targetForUDID(_ udid: String, userDefaults: UserDefaults, xcodeAvailable: Bool, warmUp: Bool, logger: ControlCoreLogger) async throws -> any FBiOSTarget {
+private func targetForUDID(_ udid: String, userDefaults: UserDefaults, xcodeAvailable: Bool, warmUp: Bool, logger: ControlCoreLogger) async throws -> any Target {
   let targetSets = try await defaultTargetSets(userDefaults, xcodeAvailable: xcodeAvailable, logger: logger)
-  return try FBiOSTargetProvider.target(withUDID: udid, targetSets: targetSets, warmUp: warmUp, logger: logger)
+  return try TargetProvider.target(withUDID: udid, targetSets: targetSets, warmUp: warmUp, logger: logger)
 }
 
 private func deviceForECID(_ ecid: String, logger: ControlCoreLogger) async throws -> Device {
@@ -225,14 +225,14 @@ private func deviceForECID(_ ecid: String, logger: ControlCoreLogger) async thro
 
 private func resolveSimulator(_ udid: String, userDefaults: UserDefaults, logger: ControlCoreLogger) async throws -> Simulator {
   let set = try simulatorSet(userDefaults, logger: logger)
-  let target = try FBiOSTargetProvider.target(withUDID: udid, targetSets: [set], warmUp: false, logger: logger)
+  let target = try TargetProvider.target(withUDID: udid, targetSets: [set], warmUp: false, logger: logger)
   guard let simulator = target as? Simulator else {
     throw IDBCompanionError.simulatorLifecycleUnsupported(targetDescription: String(describing: target))
   }
   return simulator
 }
 
-private func awaitTargetOffline(_ target: any FBiOSTarget, logger: ControlCoreLogger) async throws {
+private func awaitTargetOffline(_ target: any Target, logger: ControlCoreLogger) async throws {
   try await target.lifecycle.resolveLeavesState(.booted)
   target.logger.log("Target is no longer booted, companion going offline")
 }
@@ -464,11 +464,11 @@ private func runCompanionServer(_ udid: String, userDefaults: UserDefaults, xcod
 
 private func runNotifier(_ notify: String, userDefaults: UserDefaults, xcodeAvailable: Bool, logger: ControlCoreLogger) async throws {
   let targetSets = try await defaultTargetSets(userDefaults, xcodeAvailable: xcodeAvailable, logger: logger)
-  let notifier: FBiOSTargetStateChangeNotifier
+  let notifier: TargetStateChangeNotifier
   if notify == "stdout" {
-    notifier = try FBiOSTargetStateChangeNotifier.notifierToStdOut(withTargetSets: targetSets, logger: logger)
+    notifier = try TargetStateChangeNotifier.notifierToStdOut(withTargetSets: targetSets, logger: logger)
   } else {
-    notifier = try FBiOSTargetStateChangeNotifier.notifierToFilePath(notify, withTargetSets: targetSets, logger: logger)
+    notifier = try TargetStateChangeNotifier.notifierToFilePath(notify, withTargetSets: targetSets, logger: logger)
   }
   logger.log("Starting Notifier \(notifier)")
   try notifier.startNotifier()

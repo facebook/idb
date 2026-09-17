@@ -9,11 +9,11 @@
 @preconcurrency import FBControlCore
 import Foundation
 
-public final class SimulatorSet: FBiOSTargetSet {
+public final class SimulatorSet: TargetSet {
 
   public let configuration: SimulatorControlConfiguration
   public let deviceSet: SimDeviceSet
-  public weak var delegate: (any FBiOSTargetSetDelegate)?
+  public weak var delegate: (any TargetSetDelegate)?
   public let logger: any ControlCoreLogger
   public let workQueue: DispatchQueue
   public let asyncQueue: DispatchQueue
@@ -32,13 +32,13 @@ public final class SimulatorSet: FBiOSTargetSet {
   /// - Parameter logger: nil means `ControlCoreGlobalConfiguration.defaultLogger`, which is
   ///   os_log-only unless the `FBCONTROLCORE_LOGGING`/`FBCONTROLCORE_DEBUG_LOGGING` environment
   ///   variables are set — see its documentation. The resolved logger is stored non-optionally.
-  public class func set(withConfiguration configuration: SimulatorControlConfiguration, deviceSet: SimDeviceSet, delegate: (any FBiOSTargetSetDelegate)?, logger: (any ControlCoreLogger)?) throws -> SimulatorSet {
+  public class func set(withConfiguration configuration: SimulatorControlConfiguration, deviceSet: SimDeviceSet, delegate: (any TargetSetDelegate)?, logger: (any ControlCoreLogger)?) throws -> SimulatorSet {
     let resolvedLogger = logger ?? ControlCoreGlobalConfiguration.defaultLogger
     try SimulatorControlFrameworkLoader.essentialFrameworks.loadPrivateFrameworks(resolvedLogger)
     return SimulatorSet(configuration: configuration, deviceSet: deviceSet, delegate: delegate, logger: resolvedLogger)
   }
 
-  private init(configuration: SimulatorControlConfiguration, deviceSet: SimDeviceSet, delegate: (any FBiOSTargetSetDelegate)?, logger: any ControlCoreLogger) {
+  private init(configuration: SimulatorControlConfiguration, deviceSet: SimDeviceSet, delegate: (any TargetSetDelegate)?, logger: any ControlCoreLogger) {
     self.configuration = configuration
     self.deviceSet = deviceSet
     self.delegate = delegate
@@ -51,12 +51,12 @@ public final class SimulatorSet: FBiOSTargetSet {
 
   // MARK: - Querying
 
-  public func target(withUDID udid: String) -> (any FBiOSTargetInfo)? {
+  public func target(withUDID udid: String) -> (any TargetInfo)? {
     return simulator(withUDID: udid)
   }
 
   public func simulator(withUDID udid: String) -> Simulator? {
-    return allSimulators.filter { FBiOSTargetPredicateForUDID(udid).evaluate(with: $0) }.first
+    return allSimulators.filter { TargetPredicateForUDID(udid).evaluate(with: $0) }.first
   }
 
   // MARK: - Creation
@@ -118,7 +118,7 @@ public final class SimulatorSet: FBiOSTargetSet {
     CollectionInformation.oneLineDescription(from: allSimulators)
   }
 
-  public var allTargetInfos: [any FBiOSTargetInfo] {
+  public var allTargetInfos: [any TargetInfo] {
     allSimulators
   }
 
@@ -129,7 +129,7 @@ public final class SimulatorSet: FBiOSTargetSet {
       fromDevices: deviceSet.availableDevices,
       exitingSimulators: _allSimulators
     )
-    .sorted { ($0 as Simulator).compare($1 as any FBiOSTarget) == .orderedAscending }
+    .sorted { ($0 as Simulator).compare($1 as any Target) == .orderedAscending }
     return _allSimulators
   }
 

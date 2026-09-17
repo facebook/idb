@@ -17,7 +17,7 @@ private let DeviceClassOSPrefixes = [
 ]
 
 /// An Object Wrapper around AMDeviceRef.
-public final class FBAMDevice: FBiOSTargetInfo, DeviceCommands, CustomStringConvertible {
+public final class FBAMDevice: TargetInfo, DeviceCommands, CustomStringConvertible {
 
   // MARK: - Properties
 
@@ -95,7 +95,7 @@ public final class FBAMDevice: FBiOSTargetInfo, DeviceCommands, CustomStringConv
       device: self, serviceTimeout: serviceReuseTimeout?.doubleValue)
   }
 
-  // MARK: - FBiOSTargetInfo
+  // MARK: - TargetInfo
 
   public var uniqueIdentifier: String {
     // The chip identifier arrives as a number on some devices and a string on others.

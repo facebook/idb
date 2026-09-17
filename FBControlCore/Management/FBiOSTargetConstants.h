@@ -8,7 +8,7 @@
 #import <Foundation/Foundation.h>
 
 /**
- Raw values are not stable across versions and must not be serialized; the Swift `FBiOSTargetStateString` form is.
+ Raw values are not stable across versions and must not be serialized; the Swift `TargetStateString` form is.
  */
 typedef NS_ENUM(NSUInteger, FBiOSTargetState) {
   FBiOSTargetStateCreating = 0,

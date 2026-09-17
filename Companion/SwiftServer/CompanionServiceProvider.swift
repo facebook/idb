@@ -16,7 +16,7 @@ import XCTestBootstrap
 
 final class CompanionServiceProvider: Idb_CompanionService.SimpleServiceProtocol, @unchecked Sendable {
 
-  private let target: any FBiOSTarget
+  private let target: any Target
   private let commandExecutor: IDBCommandExecutor
   private let reporter: EventReporter
   private let logger: IDBLogger
@@ -29,7 +29,7 @@ final class CompanionServiceProvider: Idb_CompanionService.SimpleServiceProtocol
   private let replRecordingCoordinator: ReplRecordingCoordinator
 
   init(
-    target: any FBiOSTarget,
+    target: any Target,
     commandExecutor: IDBCommandExecutor,
     reporter: EventReporter,
     logger: IDBLogger,

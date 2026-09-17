@@ -9,10 +9,10 @@
 import Foundation
 import XCTest
 
-final class FBiOSTargetTests: XCTestCase {
+final class TargetTests: XCTestCase {
   func testVersionComponentsDetermineOrdering() {
-    let earlier = FBiOSTargetDouble()
-    let later = FBiOSTargetDouble()
+    let earlier = TargetDouble()
+    let later = TargetDouble()
     earlier.osVersion = .generic(withName: "FutureOS 27.9")
     later.osVersion = .generic(withName: "FutureOS 27.10")
     XCTAssertEqual(earlier.compare(later), .orderedAscending)
@@ -30,13 +30,13 @@ final class FBiOSTargetTests: XCTestCase {
   }
 
   func testDevicesOrderedFirst() {
-    let first = FBiOSTargetDouble()
+    let first = TargetDouble()
     first.targetType = .device
     first.state = .booted
     first.deviceType = DeviceType(model: FBDeviceModel(rawValue: "Future Phone"), family: .familyiPhone)
     first.osVersion = OSVersion.generic(withName: "FutureOS 99.0")
 
-    let second = FBiOSTargetDouble()
+    let second = TargetDouble()
     second.targetType = .simulator
     second.state = .booted
     second.deviceType = DeviceType(model: FBDeviceModel(rawValue: "Future Phone"), family: .familyiPhone)
@@ -46,13 +46,13 @@ final class FBiOSTargetTests: XCTestCase {
   }
 
   func testOSVersionOrdering() {
-    let first = FBiOSTargetDouble()
+    let first = TargetDouble()
     first.targetType = .device
     first.state = .booted
     first.deviceType = DeviceType(model: FBDeviceModel(rawValue: "Future Phone"), family: .familyiPhone)
     first.osVersion = OSVersion.generic(withName: "FutureOS 99.0")
 
-    let second = FBiOSTargetDouble()
+    let second = TargetDouble()
     second.targetType = .device
     second.deviceType = DeviceType(model: FBDeviceModel(rawValue: "Future Phone"), family: .familyiPhone)
     second.osVersion = OSVersion.generic(withName: "FutureOS 99.1")
@@ -61,10 +61,10 @@ final class FBiOSTargetTests: XCTestCase {
   }
 
   func testiPhoneComesBeforeiPad() {
-    let deviceTypes = FBiOSTargetTests.iPhoneDeviceTypes + FBiOSTargetTests.iPadDeviceTypes
-    var input: [any FBiOSTargetInfo] = []
+    let deviceTypes = TargetTests.iPhoneDeviceTypes + TargetTests.iPadDeviceTypes
+    var input: [any TargetInfo] = []
     for deviceType in deviceTypes {
-      let target = FBiOSTargetDouble()
+      let target = TargetDouble()
       target.targetType = .device
       target.state = .booted
       target.deviceType = deviceType

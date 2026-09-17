@@ -11,7 +11,7 @@ import FBSimulatorControl
 import Foundation
 import XCTestBootstrap
 
-enum FBiOSTargetProviderError: Error {
+enum TargetProviderError: Error {
   case targetNotUsable(udid: String, targetDescription: String)
   case targetNotFound(udid: String, targetSetsDescription: String)
   case multipleTargets(targetsDescription: String)
@@ -20,7 +20,7 @@ enum FBiOSTargetProviderError: Error {
   case noBootedTargets(targetSetsDescription: String)
 }
 
-extension FBiOSTargetProviderError: LocalizedError {
+extension TargetProviderError: LocalizedError {
   public var errorDescription: String? {
     switch self {
     case let .targetNotUsable(udid, targetDescription):
@@ -39,9 +39,9 @@ extension FBiOSTargetProviderError: LocalizedError {
   }
 }
 
-public final class FBiOSTargetProvider {
+public final class TargetProvider {
 
-  public static func target(withUDID udid: String, targetSets: [FBiOSTargetSet], warmUp: Bool, logger: ControlCoreLogger) throws -> any FBiOSTarget {
+  public static func target(withUDID udid: String, targetSets: [TargetSet], warmUp: Bool, logger: ControlCoreLogger) throws -> any Target {
     switch udid.lowercased() {
     case "only":
       return try fetchSoleTarget(forTargetSets: targetSets, logger: logger)
@@ -52,7 +52,7 @@ public final class FBiOSTargetProvider {
     }
   }
 
-  private static func fetchTarget(withUDID udid: String, targetSets: [FBiOSTargetSet], logger: ControlCoreLogger) throws -> any FBiOSTarget {
+  private static func fetchTarget(withUDID udid: String, targetSets: [TargetSet], logger: ControlCoreLogger) throws -> any Target {
     if udid.lowercased() == "mac" {
       return MacDevice(logger: logger)
     }
@@ -60,48 +60,48 @@ public final class FBiOSTargetProvider {
       guard let targetInfo = targetSet.target(withUDID: udid) else {
         continue
       }
-      guard let target = targetInfo as? any FBiOSTarget else {
-        throw FBiOSTargetProviderError.targetNotUsable(udid: udid, targetDescription: String(describing: targetInfo))
+      guard let target = targetInfo as? any Target else {
+        throw TargetProviderError.targetNotUsable(udid: udid, targetDescription: String(describing: targetInfo))
       }
       return target
     }
 
-    throw FBiOSTargetProviderError.targetNotFound(udid: udid, targetSetsDescription: String(describing: targetSets))
+    throw TargetProviderError.targetNotFound(udid: udid, targetSetsDescription: String(describing: targetSets))
   }
 
-  private static func fetchSoleTarget(forTargetSets targetSets: [FBiOSTargetSet], logger: ControlCoreLogger) throws -> any FBiOSTarget {
-    var targets: [any FBiOSTarget] = []
+  private static func fetchSoleTarget(forTargetSets targetSets: [TargetSet], logger: ControlCoreLogger) throws -> any Target {
+    var targets: [any Target] = []
     for targetSet in targetSets {
       for info in targetSet.allTargetInfos {
-        if let target = info as? any FBiOSTarget {
+        if let target = info as? any Target {
           targets.append(target)
         }
       }
     }
     if targets.count > 1 {
-      throw FBiOSTargetProviderError.multipleTargets(targetsDescription: CollectionInformation.oneLineDescription(from: targets))
+      throw TargetProviderError.multipleTargets(targetsDescription: CollectionInformation.oneLineDescription(from: targets))
     }
     guard let target = targets.first else {
-      throw FBiOSTargetProviderError.noTargets(targetSetsDescription: CollectionInformation.oneLineDescription(from: targetSets))
+      throw TargetProviderError.noTargets(targetSetsDescription: CollectionInformation.oneLineDescription(from: targetSets))
     }
     return target
   }
 
-  private static func fetchSoleBootedTarget(forTargetSets targetSets: [FBiOSTargetSet], logger: ControlCoreLogger) throws -> any FBiOSTarget {
-    var bootedTargets: [any FBiOSTarget] = []
+  private static func fetchSoleBootedTarget(forTargetSets targetSets: [TargetSet], logger: ControlCoreLogger) throws -> any Target {
+    var bootedTargets: [any Target] = []
     for targetSet in targetSets {
       for info in targetSet.allTargetInfos {
-        guard let target = info as? any FBiOSTarget, target.state == .booted else {
+        guard let target = info as? any Target, target.state == .booted else {
           continue
         }
         bootedTargets.append(target)
       }
     }
     if bootedTargets.count > 1 {
-      throw FBiOSTargetProviderError.multipleBootedTargets(targetsDescription: CollectionInformation.oneLineDescription(from: bootedTargets))
+      throw TargetProviderError.multipleBootedTargets(targetsDescription: CollectionInformation.oneLineDescription(from: bootedTargets))
     }
     guard let target = bootedTargets.first else {
-      throw FBiOSTargetProviderError.noBootedTargets(targetSetsDescription: CollectionInformation.oneLineDescription(from: targetSets))
+      throw TargetProviderError.noBootedTargets(targetSetsDescription: CollectionInformation.oneLineDescription(from: targetSets))
     }
     return target
   }

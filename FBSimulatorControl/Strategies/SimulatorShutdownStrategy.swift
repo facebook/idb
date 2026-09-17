@@ -54,17 +54,17 @@ final class SimulatorShutdownStrategy {
         }
       }
     }
-    try await FBiOSTargetResolveState(simulator, .shutdown)
+    try await TargetResolveState(simulator, .shutdown)
   }
 
   private static func transitionCreatingToShutdown(_ simulator: Simulator) async throws {
     do {
-      try await FBiOSTargetResolveState(
+      try await TargetResolveState(
         simulator,
         .shutdown,
         deadline: PollDeadline(
           timeout: ControlCoreGlobalConfiguration.regularTimeout,
-          waitingFor: "Simulator to resolve state \(FBiOSTargetStateString.shutdown)"))
+          waitingFor: "Simulator to resolve state \(TargetStateString.shutdown)"))
       return
     } catch {
       try await eraseSimulator(simulator)
@@ -83,7 +83,7 @@ final class SimulatorShutdownStrategy {
         }
       }
     }
-    try await FBiOSTargetResolveState(
+    try await TargetResolveState(
       simulator,
       .shutdown,
       deadline: PollDeadline(

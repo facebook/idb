@@ -8,10 +8,10 @@
 import FBControlCore
 import Foundation
 
-/// A target that can run tests. The noun lives here rather than on `FBiOSTarget` so that a target can
+/// A target that can run tests. The noun lives here rather than on `Target` so that a target can
 /// be given it from a module of its own, additively, without the module declaring the target's
-/// `FBiOSTarget` conformance having to see XCTestBootstrap.
-public protocol XCTestTarget: FBiOSTarget {
+/// `Target` conformance having to see XCTestBootstrap.
+public protocol XCTestTarget: Target {
 
   associatedtype XCTest: XCTestCommands
   var xctest: XCTest { get }

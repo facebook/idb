@@ -16,7 +16,7 @@ struct XctraceRecordMethodHandler {
 
   let logger: ControlCoreLogger
   let targetLogger: ControlCoreLogger
-  let target: any FBiOSTarget
+  let target: any Target
 
   func handle(requestStream: RequestStreamReader<Idb_XctraceRecordRequest>, responseStream: RPCWriter<Idb_XctraceRecordResponse>, context: ServerContext) async throws {
 
