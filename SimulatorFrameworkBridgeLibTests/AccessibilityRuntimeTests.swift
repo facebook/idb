@@ -835,6 +835,26 @@ final class AccessibilityRuntimeTests: XCTestCase {
     assertEqualObjects(axValue(axValue(response, "automation"), "asserted"), NSNumber(value: false), "asserted is NO when the write did not take")
   }
 
+  // Records when the mode is asserted relative to frontmost discovery on a fused read whose discovery
+  // fails. The mode decides how much structure a read sees, so that order is observable behaviour.
+  func testAFusedFrontmostReadOrdersAutomationAndWindowServerOperations() {
+    runtime.automationMode = false
+    runtime.windowServerOutcome = FBAXFrontmostOutcome.unresolved("window-server frontmost returned no application object")
+
+    let response = FBAXBridgeHandleRequest([
+      "verb": "describe",
+      "x": NSNumber(value: 207),
+      "y": NSNumber(value: 448),
+      "automationMode": NSNumber(value: true),
+    ])
+
+    assertEqualObjects(axValue(response, "error_kind"), "frontmost_unresolved")
+    // BUG: the resolver runs and returns before the mode is read or written, so a failed read leaves
+    // automation unasserted however often the host retries — flipped in the following commit.
+    assertEqualObjects(runtime.operations, ["windowServerFrontmost"])
+    assertEqualObjects(runtime.automationModeWrites, [])
+  }
+
   // MARK: - Device settings
 
   func testEveryDeviceSettingNameReadsThroughItsSemanticSetting() {
