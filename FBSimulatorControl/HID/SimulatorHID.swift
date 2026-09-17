@@ -105,7 +105,7 @@ public final class SimulatorHID: CustomStringConvertible, @unchecked Sendable {
   /// Absent rather than fatal when it cannot be registered, since it carries the trackpad alone — a
   /// failure should cost a pan, not every other input on the target.
   private static func indigoAlongsideDTUHID(for simulator: Simulator) -> SimulatorIndigoHIDTransport? {
-    guard simulator.productFamily == .familyAppleTV else {
+    guard simulator.productFamily == .appleTV else {
       return nil
     }
     return try? SimulatorIndigoHIDTransport.indigo(for: simulator)

@@ -65,7 +65,7 @@ final class SimulatorMetadataTests: XCTestCase {
     XCTAssertEqual(configuration.os.name.rawValue, "Future Platform")
     XCTAssertEqual(configuration.os.version.majorVersion, 99)
     XCTAssertEqual(configuration.os.version.minorVersion, 10)
-    XCTAssertEqual(configuration.device.family, .familyUnknown)
+    XCTAssertEqual(configuration.device.family, .unknown)
     XCTAssertEqual(configuration.deviceTypeIdentifier, "future.device")
     XCTAssertEqual(configuration.runtimeIdentifier, "future.runtime")
     XCTAssertEqual(configuration.runtimeBuildVersion, "99A100")

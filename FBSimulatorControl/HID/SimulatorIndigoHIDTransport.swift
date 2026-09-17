@@ -36,7 +36,7 @@ actor SimulatorIndigoHIDTransport {
   private let legacyKeyboardSuppressed: Bool
   /// The product family of the target, captured at construction. Touchscreen touches are a no-op on
   /// tvOS (it has no digitizer), so the touch primitives reject `AppleTV` rather than failing silently.
-  private let productFamily: FBControlCoreProductFamily
+  private let productFamily: ProductFamily
 
   /// Creates a transport for the provided Simulator, registering a HID client.
   /// Will fail if a HID Port could not be registered for the provided Simulator.
@@ -57,7 +57,7 @@ actor SimulatorIndigoHIDTransport {
     mainScreenSize: CGSize,
     mainScreenScale: Float,
     legacyKeyboardSuppressed: Bool,
-    productFamily: FBControlCoreProductFamily
+    productFamily: ProductFamily
   ) {
     self.indigoClient = indigoClient
     self.indigo = indigo

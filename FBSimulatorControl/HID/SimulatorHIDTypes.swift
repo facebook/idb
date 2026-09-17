@@ -12,10 +12,10 @@ import FBControlCore
 /// transport's wire format. Each carries a single canonical `name` — the source of truth for the
 /// string forms used in event descriptions and (upper-cased) in CLI arguments.
 
-public extension FBControlCoreProductFamily {
+public extension ProductFamily {
 
   var hasTouchscreen: Bool {
-    self != .familyAppleTV
+    self != .appleTV
   }
 }
 

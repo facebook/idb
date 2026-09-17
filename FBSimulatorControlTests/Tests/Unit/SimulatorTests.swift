@@ -84,31 +84,31 @@ final class SimulatorTests: XCTestCase {
   func testProductFamily_WhenFamilyIDIs1_ReturnsiPhone() {
     stubDevice.deviceType.productFamilyID = 1
     let sim = Self.createSimulator(with: stubDevice)
-    XCTAssertEqual(sim.productFamily, .familyiPhone, "productFamilyID 1 should map to iPhone")
+    XCTAssertEqual(sim.productFamily, .iPhone, "productFamilyID 1 should map to iPhone")
   }
 
   func testProductFamily_WhenFamilyIDIs2_ReturnsiPad() {
     stubDevice.deviceType.productFamilyID = 2
     let sim = Self.createSimulator(with: stubDevice)
-    XCTAssertEqual(sim.productFamily, .familyiPad, "productFamilyID 2 should map to iPad")
+    XCTAssertEqual(sim.productFamily, .iPad, "productFamilyID 2 should map to iPad")
   }
 
   func testProductFamily_WhenFamilyIDIs3_ReturnsAppleTV() {
     stubDevice.deviceType.productFamilyID = 3
     let sim = Self.createSimulator(with: stubDevice)
-    XCTAssertEqual(sim.productFamily, .familyAppleTV, "productFamilyID 3 should map to AppleTV")
+    XCTAssertEqual(sim.productFamily, .appleTV, "productFamilyID 3 should map to AppleTV")
   }
 
   func testProductFamily_WhenFamilyIDIs4_ReturnsAppleWatch() {
     stubDevice.deviceType.productFamilyID = 4
     let sim = Self.createSimulator(with: stubDevice)
-    XCTAssertEqual(sim.productFamily, .familyAppleWatch, "productFamilyID 4 should map to AppleWatch")
+    XCTAssertEqual(sim.productFamily, .appleWatch, "productFamilyID 4 should map to AppleWatch")
   }
 
   func testProductFamily_WhenFamilyIDIsUnknown_ReturnsUnknown() {
     stubDevice.deviceType.productFamilyID = 99
     let sim = Self.createSimulator(with: stubDevice)
-    XCTAssertEqual(sim.productFamily, .familyUnknown, "Unrecognized productFamilyID should map to Unknown")
+    XCTAssertEqual(sim.productFamily, .unknown, "Unrecognized productFamilyID should map to Unknown")
   }
 
   // MARK: - Custom Device Set Path

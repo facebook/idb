@@ -14,7 +14,7 @@ private final class FutureTarget: TargetInfo {
   let uniqueIdentifier = "future-udid"
   let udid = "future-udid"
   let name = "My Simulator"
-  let deviceType = DeviceType(model: DeviceModel(rawValue: "Future Device"), family: .familyUnknown)
+  let deviceType = DeviceType(model: DeviceModel(rawValue: "Future Device"), family: .unknown)
   let architectures: [Architecture] = []
   let osVersion = OSVersion(name: OSVersionName(rawValue: "FutureOS 99.10"), versionString: "99.10")
   let extendedInformation: [String: Any] = ["custom": "preserved"]

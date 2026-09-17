@@ -108,7 +108,7 @@ final class SimulatorDTUHIDTransportTests: XCTestCase {
       connection: connection,
       mainScreenSize: CGSize(width: 100, height: 200),
       mainScreenScale: 2.0,
-      productFamily: .familyiPhone)
+      productFamily: .iPhone)
     defer { transport.disconnect() }
 
     // Apple Pay has no single HID usage (it is a double side-button press), so it stays unimplemented.
@@ -123,7 +123,7 @@ final class SimulatorDTUHIDTransportTests: XCTestCase {
       connection: connection,
       mainScreenSize: CGSize(width: 100, height: 200),
       mainScreenScale: 2.0,
-      productFamily: .familyAppleTV)
+      productFamily: .appleTV)
     defer { transport.disconnect() }
 
     await assertThrowsTouchUnsupported {
@@ -198,7 +198,7 @@ final class SimulatorDTUHIDTransportTests: XCTestCase {
       connection: connection,
       mainScreenSize: CGSize(width: 100, height: 200),
       mainScreenScale: 2.0,
-      productFamily: .familyiPhone)
+      productFamily: .iPhone)
     defer { transport.disconnect() }
 
     let message = try transport.encode(messageType: "Probe", payload: Probe(value: 7))
@@ -473,7 +473,7 @@ final class SimulatorDTUHIDTransportTests: XCTestCase {
       connection: connection,
       mainScreenSize: CGSize(width: 100, height: 200),
       mainScreenScale: 2.0,
-      productFamily: .familyiPhone,
+      productFamily: .iPhone,
       clock: recordingClock(recorder, reply: reply, gate: gate))
     addTeardownBlock { transport.disconnect() }
     return transport

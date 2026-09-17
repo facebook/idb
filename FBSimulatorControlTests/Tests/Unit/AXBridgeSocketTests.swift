@@ -357,13 +357,13 @@ final class AXBridgeSocketTests: XCTestCase {
   // Picking the wrong name aborts the guest before `main`, so the mapping is pinned per family.
   func testAnAppleTVTargetGetsTheTvOSGuest() {
     XCTAssertEqual(
-      SimulatorFrameworkBridgeSelection.resourceName(for: .familyAppleTV),
+      SimulatorFrameworkBridgeSelection.resourceName(for: .appleTV),
       "SimulatorFrameworkBridge-tvOS")
   }
 
   func testEveryNonTVFamilyGetsTheIOSGuest() {
-    let families: [FBControlCoreProductFamily] = [
-      .familyiPhone, .familyiPad, .familyAppleWatch, .familyMac, .familyUnknown,
+    let families: [ProductFamily] = [
+      .iPhone, .iPad, .appleWatch, .mac, .unknown,
     ]
     for family in families {
       XCTAssertEqual(

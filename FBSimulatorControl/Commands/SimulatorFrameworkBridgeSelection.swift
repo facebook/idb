@@ -14,14 +14,12 @@ import Foundation
 /// one built for another, so the companion ships one per platform rather than one binary for all.
 enum SimulatorFrameworkBridgeSelection {
 
-  static func resourceName(for productFamily: FBControlCoreProductFamily) -> String {
+  static func resourceName(for productFamily: ProductFamily) -> String {
     switch productFamily {
-    case .familyAppleTV:
+    case .appleTV:
       return "SimulatorFrameworkBridge-tvOS"
     // Only Apple TV has a guest of its own; every other family runs the iOS binary.
-    case .familyiPhone, .familyiPad, .familyAppleWatch, .familyMac, .familyUnknown:
-      return "SimulatorFrameworkBridge-iOS"
-    @unknown default:
+    case .iPhone, .iPad, .appleWatch, .mac, .unknown:
       return "SimulatorFrameworkBridge-iOS"
     }
   }

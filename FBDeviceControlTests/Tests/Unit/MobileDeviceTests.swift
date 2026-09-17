@@ -185,7 +185,7 @@ final class MobileDeviceTests {
     device.allValues[DeviceKey.productVersion.rawValue] = "99.10.2"
     device.allValues[DeviceKey.cpuArchitecture.rawValue] = "future64"
     #expect(device.deviceType.model.rawValue == "FuturePad99,1")
-    #expect(device.deviceType.family == .familyiPad)
+    #expect(device.deviceType.family == .iPad)
     #expect(device.osVersion.name.rawValue == "iOS 99.10.2")
     #expect(device.osVersion.versionString == "99.10.2")
     #expect(device.architectures.map(\.rawValue) == ["future64"])
@@ -196,13 +196,13 @@ final class MobileDeviceTests {
     device.allValues[DeviceKey.productType.rawValue] = "iPhone8,1"
     device.allValues[DeviceKey.deviceClass.rawValue] = "iPhone"
     #expect(device.deviceType.model.rawValue == "iPhone 6s")
-    #expect(device.deviceType.family == .familyiPhone)
+    #expect(device.deviceType.family == .iPhone)
   }
 
   @Test
   func missingHardwareMetadataRemainsDescribable() {
     #expect(device.deviceType.model.rawValue == "unknown")
-    #expect(device.deviceType.family == .familyUnknown)
+    #expect(device.deviceType.family == .unknown)
     #expect(device.osVersion.versionString.isEmpty)
     #expect(device.architectures.isEmpty)
   }

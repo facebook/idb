@@ -32,6 +32,19 @@ public struct TargetScreenInfo: Equatable, Hashable, CustomStringConvertible {
   }
 }
 
+// MARK: - ProductFamily
+
+/// The product family of a target. Raw values mirror CoreSimulator's `-[SimDeviceType productFamilyID]`
+/// and must not be renumbered.
+public enum ProductFamily: UInt, Sendable, CaseIterable {
+  case unknown = 0
+  case iPhone = 1
+  case iPad = 2
+  case appleTV = 3
+  case appleWatch = 4
+  case mac = 5
+}
+
 // MARK: - DeviceModel
 
 /// An open device model name supplied by the target.
@@ -58,13 +71,13 @@ public struct DeviceModel: RawRepresentable, Hashable, Codable, Sendable {
 public struct DeviceType: Equatable, Hashable, CustomStringConvertible, Sendable {
 
   public let model: DeviceModel
-  public let family: FBControlCoreProductFamily
+  public let family: ProductFamily
 
   public static func generic(withName name: String) -> DeviceType {
-    DeviceType(model: DeviceModel(rawValue: name), family: .familyUnknown)
+    DeviceType(model: DeviceModel(rawValue: name), family: .unknown)
   }
 
-  public init(model: DeviceModel, family: FBControlCoreProductFamily) {
+  public init(model: DeviceModel, family: ProductFamily) {
     self.model = model
     self.family = family
   }

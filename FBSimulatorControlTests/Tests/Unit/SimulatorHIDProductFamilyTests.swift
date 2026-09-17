@@ -16,12 +16,12 @@ struct SimulatorHIDProductFamilyTests {
   @Test(
     "Every family but Apple TV has a touchscreen",
     arguments: [
-      (FBControlCoreProductFamily.familyiPhone, true),
-      (.familyiPad, true),
-      (.familyAppleWatch, true),
-      (.familyAppleTV, false),
+      (ProductFamily.iPhone, true),
+      (.iPad, true),
+      (.appleWatch, true),
+      (.appleTV, false),
     ])
-  func hasTouchscreen(family: FBControlCoreProductFamily, expected: Bool) {
+  func hasTouchscreen(family: ProductFamily, expected: Bool) {
     #expect(family.hasTouchscreen == expected)
   }
 }

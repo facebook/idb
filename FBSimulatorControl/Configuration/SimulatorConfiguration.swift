@@ -66,14 +66,14 @@ extension SimulatorConfiguration {
   }
 
   static func configuration(deviceType: SimDeviceType?, runtime: SimRuntime?) -> SimulatorConfiguration {
-    let family: FBControlCoreProductFamily
+    let family: ProductFamily
     switch deviceType?.productFamilyID {
-    case 1: family = .familyiPhone
-    case 2: family = .familyiPad
-    case 3: family = .familyAppleTV
-    case 4: family = .familyAppleWatch
-    case 5: family = .familyMac
-    default: family = .familyUnknown
+    case 1: family = .iPhone
+    case 2: family = .iPad
+    case 3: family = .appleTV
+    case 4: family = .appleWatch
+    case 5: family = .mac
+    default: family = .unknown
     }
     return SimulatorConfiguration(
       device: DeviceType(model: DeviceModel(rawValue: deviceType?.name ?? "unknown"), family: family),

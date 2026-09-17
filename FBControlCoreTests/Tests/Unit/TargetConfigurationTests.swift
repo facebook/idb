@@ -10,7 +10,7 @@ import XCTest
 
 final class TargetConfigurationTests: XCTestCase {
   func testMetadataDoesNotRequireKnownNames() {
-    let device = DeviceType(model: DeviceModel(rawValue: "Future Device"), family: .familyUnknown)
+    let device = DeviceType(model: DeviceModel(rawValue: "Future Device"), family: .unknown)
     let os = OSVersion(name: OSVersionName(rawValue: "Future Platform"), versionString: "99.10.2")
     XCTAssertEqual(device.model.rawValue, "Future Device")
     XCTAssertEqual(os.name.rawValue, "Future Platform")
@@ -47,7 +47,7 @@ final class TargetConfigurationTests: XCTestCase {
   }
 
   func testDeviceTypeEqualityConsidersOnlyTheModel() {
-    let described = DeviceType(model: DeviceModel(rawValue: "Future Device"), family: .familyiPad)
+    let described = DeviceType(model: DeviceModel(rawValue: "Future Device"), family: .iPad)
     let generic = DeviceType.generic(withName: "Future Device")
     XCTAssertNotEqual(described.family, generic.family)
     XCTAssertEqual(described, generic)

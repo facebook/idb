@@ -126,14 +126,14 @@ public final class MobileDevice: TargetInfo, DeviceCommands, CustomStringConvert
 
   public var deviceType: DeviceType {
     let productType = allValues[DeviceKey.productType.rawValue] as? String ?? UnknownValue
-    let family: FBControlCoreProductFamily
+    let family: ProductFamily
     switch allValues[DeviceKey.deviceClass.rawValue] as? String {
-    case "iPhone", "iPod": family = .familyiPhone
-    case "iPad": family = .familyiPad
-    case "AppleTV": family = .familyAppleTV
-    case "Watch": family = .familyAppleWatch
-    case "Mac": family = .familyMac
-    default: family = .familyUnknown
+    case "iPhone", "iPod": family = .iPhone
+    case "iPad": family = .iPad
+    case "AppleTV": family = .appleTV
+    case "Watch": family = .appleWatch
+    case "Mac": family = .mac
+    default: family = .unknown
     }
     return DeviceType(model: DeviceModel(rawValue: legacyDeviceNames[productType] ?? productType), family: family)
   }

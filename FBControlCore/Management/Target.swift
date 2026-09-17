@@ -252,25 +252,23 @@ extension FBTargetType {
   }
 }
 
-extension FBControlCoreProductFamily {
+extension ProductFamily {
 
   /// The canonical string representation of the product family (the device "type": iphone, ipad,
   /// watch, tv, mac), distinct from the simulator/device/mac distinction of FBTargetType.
   public var stringRepresentation: String {
     switch self {
-    case .familyiPhone:
+    case .iPhone:
       return "iphone"
-    case .familyiPad:
+    case .iPad:
       return "ipad"
-    case .familyAppleWatch:
+    case .appleWatch:
       return "watch"
-    case .familyAppleTV:
+    case .appleTV:
       return "tv"
-    case .familyMac:
+    case .mac:
       return "mac"
-    case .familyUnknown:
-      return "unknown"
-    @unknown default:
+    case .unknown:
       return "unknown"
     }
   }

@@ -138,18 +138,18 @@ public final class Simulator: Target, Hashable, CustomStringConvertible, @unchec
   // MARK: - Simulator Properties
 
   /// The Product Family of the Simulator.
-  var productFamily: FBControlCoreProductFamily {
+  var productFamily: ProductFamily {
     switch device.deviceType?.productFamilyID {
     case .some(1):
-      return .familyiPhone
+      return .iPhone
     case .some(2):
-      return .familyiPad
+      return .iPad
     case .some(3):
-      return .familyAppleTV
+      return .appleTV
     case .some(4):
-      return .familyAppleWatch
+      return .appleWatch
     default:
-      return .familyUnknown
+      return .unknown
     }
   }
 

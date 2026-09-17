@@ -124,7 +124,7 @@ actor SimulatorDTUHIDTransport {
   nonisolated(unsafe) private let connection: xpc_connection_t
   private let mainScreenSize: CGSize
   private let mainScreenScale: Float
-  private let productFamily: FBControlCoreProductFamily
+  private let productFamily: ProductFamily
   private let clock: DTUHIDDrainClock
   private var contact = DigitizerContactTracker()
   private var twoFingerContact = DigitizerContactTracker()
@@ -177,7 +177,7 @@ actor SimulatorDTUHIDTransport {
     connection: xpc_connection_t,
     mainScreenSize: CGSize,
     mainScreenScale: Float,
-    productFamily: FBControlCoreProductFamily,
+    productFamily: ProductFamily,
     clock: DTUHIDDrainClock = .live
   ) {
     self.connection = connection
