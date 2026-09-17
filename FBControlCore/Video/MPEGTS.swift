@@ -7,6 +7,7 @@
 
 import CoreMedia
 import Foundation
+import os
 
 /// MPEG-2 transport stream (ISO 13818-1) packetisation for a single-program stream: one video
 /// elementary stream and one ID3 timed-metadata stream. Everything here is a pure function of its
@@ -359,13 +360,16 @@ extension VideoStreamCodec {
 /// point — including before the first keyframe — travels on a PID every demuxer already knows about.
 ///
 /// Frames arrive on the encoder's output thread and markers from other threads; the state they
-/// share (`lastPts90k`, the metadata continuity counter) is guarded by `metadataLock`. The video and
-/// table counters are touched only from `write`.
+/// share — the last video PTS a marker is stamped with, and the metadata continuity counter — lives
+/// under one `OSAllocatedUnfairLock`. The video and table counters are touched only from `write`.
 public final class MPEGTSFrameWriter: EncodedFrameWriter, VideoStreamTimedMetadataWriter {
+  private struct MetadataState {
+    var continuityCounter: UInt8 = 0
+    var lastPts90k: UInt64 = 0
+  }
+
   private let codec: VideoStreamCodec
-  private let metadataLock = NSLock()
-  private var metadataContinuityCounter: UInt8 = 0
-  private var lastPts90k: UInt64 = 0
+  private let metadata = OSAllocatedUnfairLock(initialState: MetadataState())
   private var videoContinuityCounter: UInt8 = 0
   private var patContinuityCounter: UInt8 = 0
   private var pmtContinuityCounter: UInt8 = 0
@@ -402,7 +406,7 @@ public final class MPEGTSFrameWriter: EncodedFrameWriter, VideoStreamTimedMetada
     try dataBuffer.appendBytes(to: &accessUnit)
 
     let pts90k = UInt64(CMTimeGetSeconds(CMSampleBufferGetPresentationTimeStamp(sampleBuffer)) * 90000.0)
-    recordVideoPTS(pts90k)
+    metadata.withLock { $0.lastPts90k = pts90k }
 
     consumer.consumeData(
       MPEGTS.videoPackets(
@@ -416,18 +420,9 @@ public final class MPEGTSFrameWriter: EncodedFrameWriter, VideoStreamTimedMetada
   }
 
   public func writeTimedMetadata(_ text: String, to consumer: any DataConsumer) {
-    consumer.consumeData(timedMetadataPackets(for: text))
-  }
-
-  private func recordVideoPTS(_ pts90k: UInt64) {
-    metadataLock.lock()
-    defer { metadataLock.unlock() }
-    lastPts90k = pts90k
-  }
-
-  private func timedMetadataPackets(for text: String) -> Data {
-    metadataLock.lock()
-    defer { metadataLock.unlock() }
-    return MPEGTS.timedMetadataPackets(text: text, pts90k: lastPts90k, continuityCounter: &metadataContinuityCounter)
+    let packets = metadata.withLock { state in
+      MPEGTS.timedMetadataPackets(text: text, pts90k: state.lastPts90k, continuityCounter: &state.continuityCounter)
+    }
+    consumer.consumeData(packets)
   }
 }
