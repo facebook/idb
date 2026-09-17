@@ -17,7 +17,7 @@ import NIOPosix
 
 struct IDBUnixDomainSocketPathWrongType: Error {}
 
-final class GRPCSwiftServer: @unchecked Sendable {
+public final class GRPCSwiftServer: @unchecked Sendable {
 
   private let server: GRPCServer<HTTP2ServerTransport.Posix>
   private let transport: HTTP2ServerTransport.Posix
@@ -43,7 +43,7 @@ final class GRPCSwiftServer: @unchecked Sendable {
   /// can discover this companion during the graceful-shutdown window that follows.
   private let onShutdownStarted: (@Sendable () -> Void)?
 
-  init(
+  public init(
     target: any Target,
     commandExecutor: IDBCommandExecutor,
     reporter: EventReporter,
@@ -86,7 +86,7 @@ final class GRPCSwiftServer: @unchecked Sendable {
     self.onShutdownStarted = onShutdownStarted
   }
 
-  func start() async throws -> [String: Any] {
+  public func start() async throws -> [String: Any] {
     if case .unixDomainSocket(let path) = ports.swiftServerTarget {
       try cleanupUnixDomainSocket(path: path)
     }
@@ -109,7 +109,7 @@ final class GRPCSwiftServer: @unchecked Sendable {
   /// Suspends until the server has stopped serving. If the awaiting task is cancelled
   /// (e.g. on SIGTERM), a graceful shutdown is initiated so `serve()` returns and this
   /// returns: nothing else stops the server, so without this a cancelled wait would hang forever.
-  func waitUntilClosed() async throws {
+  public func waitUntilClosed() async throws {
     guard let serveTask else { return }
     try await withTaskCancellationHandler {
       try await serveTask.value

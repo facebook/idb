@@ -35,7 +35,7 @@ extension TargetStateChangeNotifierError: LocalizedError {
   }
 }
 
-final class TargetStateChangeNotifier: NSObject, TargetSetDelegate {
+public final class TargetStateChangeNotifier: NSObject, TargetSetDelegate {
 
   private let filePath: String?
   private let targetSets: [TargetSet]
@@ -43,7 +43,7 @@ final class TargetStateChangeNotifier: NSObject, TargetSetDelegate {
   private var current: [String: TargetDescription]
   private let donePromise = AsyncPromise<Void>()
 
-  static func notifierToFilePath(_ filePath: String, withTargetSets targetSets: [TargetSet], logger: ControlCoreLogger) throws -> TargetStateChangeNotifier {
+  public static func notifierToFilePath(_ filePath: String, withTargetSets targetSets: [TargetSet], logger: ControlCoreLogger) throws -> TargetStateChangeNotifier {
     if targetSets.isEmpty {
       throw TargetStateChangeNotifierError.noTargetSets
     }
@@ -65,7 +65,7 @@ final class TargetStateChangeNotifier: NSObject, TargetSetDelegate {
     return notifier
   }
 
-  static func notifierToStdOut(withTargetSets targetSets: [TargetSet], logger: ControlCoreLogger) throws -> TargetStateChangeNotifier {
+  public static func notifierToStdOut(withTargetSets targetSets: [TargetSet], logger: ControlCoreLogger) throws -> TargetStateChangeNotifier {
     if targetSets.isEmpty {
       throw TargetStateChangeNotifierError.noTargetSets
     }
@@ -85,7 +85,7 @@ final class TargetStateChangeNotifier: NSObject, TargetSetDelegate {
     super.init()
   }
 
-  func startNotifier() throws {
+  public func startNotifier() throws {
     for targetSet in targetSets {
       for target in targetSet.allTargetInfos {
         current[target.uniqueIdentifier] = TargetDescription(target: target)
@@ -108,7 +108,7 @@ final class TargetStateChangeNotifier: NSObject, TargetSetDelegate {
   }
 
   /// Suspends until the notifier finishes (on a write error) or is cancelled.
-  func waitUntilDone() async throws {
+  public func waitUntilDone() async throws {
     try await donePromise.value
   }
 
@@ -149,17 +149,17 @@ final class TargetStateChangeNotifier: NSObject, TargetSetDelegate {
 
   // MARK: - TargetSetDelegate
 
-  func targetAdded(_ targetInfo: TargetInfo, in targetSet: TargetSet) {
+  public func targetAdded(_ targetInfo: TargetInfo, in targetSet: TargetSet) {
     current[targetInfo.uniqueIdentifier] = TargetDescription(target: targetInfo)
     writeTargets()
   }
 
-  func targetRemoved(_ targetInfo: TargetInfo, in targetSet: TargetSet) {
+  public func targetRemoved(_ targetInfo: TargetInfo, in targetSet: TargetSet) {
     current.removeValue(forKey: targetInfo.uniqueIdentifier)
     writeTargets()
   }
 
-  func targetUpdated(_ targetInfo: TargetInfo, in targetSet: TargetSet) {
+  public func targetUpdated(_ targetInfo: TargetInfo, in targetSet: TargetSet) {
     current[targetInfo.uniqueIdentifier] = TargetDescription(target: targetInfo)
     writeTargets()
   }

@@ -8,17 +8,17 @@
 import FBControlCore
 import Foundation
 
-final class TargetDescription: TargetInfo {
+public final class TargetDescription: TargetInfo {
 
-  let uniqueIdentifier: String
-  let udid: String
-  let name: String
-  let deviceType: DeviceType
-  let architectures: [FBArchitecture]
-  let osVersion: OSVersion
-  let extendedInformation: [String: Any]
-  let targetType: FBiOSTargetType
-  let state: FBiOSTargetState
+  public let uniqueIdentifier: String
+  public let udid: String
+  public let name: String
+  public let deviceType: DeviceType
+  public let architectures: [FBArchitecture]
+  public let osVersion: OSVersion
+  public let extendedInformation: [String: Any]
+  public let targetType: FBiOSTargetType
+  public let state: FBiOSTargetState
 
   private let model: FBDeviceModel?
 
@@ -30,7 +30,7 @@ final class TargetDescription: TargetInfo {
   private static let keyType = "type"
   private static let keyUDID = "udid"
 
-  init(target: TargetInfo) {
+  public init(target: TargetInfo) {
     self.extendedInformation = target.extendedInformation
     self.model = target.deviceType.model
     self.name = target.name
@@ -43,7 +43,7 @@ final class TargetDescription: TargetInfo {
     self.architectures = target.architectures
   }
 
-  var asJSON: [String: Any] {
+  public var asJSON: [String: Any] {
     var representation: [String: Any] = [
       Self.keyModel: model as Any? ?? NSNull(),
       Self.keyName: name as Any? ?? NSNull(),

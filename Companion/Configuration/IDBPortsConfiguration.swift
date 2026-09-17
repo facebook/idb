@@ -8,7 +8,7 @@
 import Foundation
 import GRPCNIOTransportCore
 
-enum GRPCConnectionTarget: CustomStringConvertible {
+public enum GRPCConnectionTarget: CustomStringConvertible {
   enum ExtractionError: Error {
     case failedToExtractAssociatedInfo
   }
@@ -45,7 +45,7 @@ enum GRPCConnectionTarget: CustomStringConvertible {
     }
   }
 
-  var description: String {
+  public var description: String {
     switch self {
     case let .tcpPort(port):
       return "tcp port \(port)"
@@ -64,7 +64,7 @@ enum GRPCConnectionTarget: CustomStringConvertible {
   }
 }
 
-struct IDBPortsConfiguration {
+public struct IDBPortsConfiguration {
 
   private enum Key {
     static let debugPort = "-debug-port"
@@ -77,12 +77,12 @@ struct IDBPortsConfiguration {
 
   private let grpcPort: Int
 
-  let debugserverPort: Int
+  public let debugserverPort: Int
 
   /// If nil, the TCP port listens unencrypted.
   let tlsCertPath: String?
 
-  var swiftServerTarget: GRPCConnectionTarget {
+  public var swiftServerTarget: GRPCConnectionTarget {
     if let grpcDomainSocket, !grpcDomainSocket.isEmpty {
       return .unixDomainSocket(grpcDomainSocket)
     } else {
@@ -90,7 +90,7 @@ struct IDBPortsConfiguration {
     }
   }
 
-  init(arguments: UserDefaults) {
+  public init(arguments: UserDefaults) {
     self.debugserverPort = arguments.string(forKey: Key.debugPort).flatMap(Int.init) ?? 10881
     self.grpcPort = arguments.string(forKey: Key.grpcPort).flatMap(Int.init) ?? 10882
     self.grpcDomainSocket = arguments.string(forKey: Key.grpcDomainSock)

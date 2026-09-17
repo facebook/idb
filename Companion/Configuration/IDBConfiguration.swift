@@ -9,9 +9,9 @@ import CompanionUtilities
 import FBControlCore
 import Foundation
 
-enum IDBConfiguration {
+public enum IDBConfiguration {
 
   // Set once at process startup before any request handling, so unsynchronized
   // access is safe.
-  nonisolated(unsafe) static var eventReporter: EventReporter = EmptyEventReporter.shared
+  public nonisolated(unsafe) static var eventReporter: EventReporter = EmptyEventReporter.shared
 }

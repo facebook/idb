@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+@testable import Companion
 @preconcurrency import FBControlCore
 import Foundation
 import GRPCCore

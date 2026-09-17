@@ -19,12 +19,12 @@ import Foundation
 /// and is cancelled as soon as new work arrives, so a long-running operation holds
 /// it off. When the countdown elapses with nothing in flight, `onShutdownStarted`
 /// runs synchronously and then `expired` resolves.
-final class IdleMonitor: @unchecked Sendable {
+public final class IdleMonitor: @unchecked Sendable {
 
   private let expiredPromise = AsyncPromise<Void>()
 
   /// Suspends until `idleTime` seconds pass with no active or newly-received requests.
-  func waitUntilExpired() async throws {
+  public func waitUntilExpired() async throws {
     try await expiredPromise.value
   }
 
@@ -45,7 +45,7 @@ final class IdleMonitor: @unchecked Sendable {
   /// Set once `expired` has resolved; no further work happens afterwards.
   private var fired = false
 
-  init(idleTime: TimeInterval, logger: IDBLogger, onShutdownStarted: (@Sendable () -> Void)? = nil) {
+  public init(idleTime: TimeInterval, logger: IDBLogger, onShutdownStarted: (@Sendable () -> Void)? = nil) {
     self.idleTime = idleTime
     self.logger = logger
     self.onShutdownStarted = onShutdownStarted
@@ -53,7 +53,7 @@ final class IdleMonitor: @unchecked Sendable {
 
   /// Starts the idle countdown if nothing is in flight. Call once the server is
   /// listening so that a companion which is never used still exits.
-  func start() {
+  public func start() {
     lock.lock()
     defer { lock.unlock() }
     guard !fired, activeRequests == 0 else { return }
