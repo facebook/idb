@@ -45,6 +45,23 @@ public extension VideoStreamTransport {
   }
 }
 
+public extension VideoStreamFormat {
+  /// Fresh writers for one stream in this format. Only the compressed-video transports carry a
+  /// metadata channel.
+  func frameWriters() -> VideoStreamFrameWriters {
+    switch self {
+    case let .compressedVideo(codec, transport):
+      return transport.frameWriters(for: codec)
+    case .mjpeg:
+      return VideoStreamFrameWriters(frameWriter: MJPEGFrameWriter(), timedMetadataWriter: nil)
+    case .minicap:
+      return VideoStreamFrameWriters(frameWriter: MinicapFrameWriter(), timedMetadataWriter: nil)
+    case .bgra:
+      return VideoStreamFrameWriters(frameWriter: BGRAFrameWriter(), timedMetadataWriter: nil)
+    }
+  }
+}
+
 enum EncodedFrameWriterError: Error {
   case failedToGetDataPointer(offset: Int, status: OSStatus)
   case failedToGetDataBuffer

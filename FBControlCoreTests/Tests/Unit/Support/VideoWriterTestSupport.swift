@@ -414,3 +414,62 @@ func fmp4BoxSignatures(_ data: Data, in range: Range<Int>, parentPath: String = 
 
   return signatures
 }
+
+/// Creates a BGRA CVPixelBuffer filled with a constant byte.
+func makeBGRAPixelBuffer(width: Int, height: Int, fill: UInt8) -> CVPixelBuffer {
+  let attributes: [String: Any] = [kCVPixelBufferIOSurfacePropertiesKey as String: [String: Any]()]
+  var pixelBuffer: CVPixelBuffer?
+  let status = CVPixelBufferCreate(nil, width, height, kCVPixelFormatType_32BGRA, attributes as CFDictionary, &pixelBuffer)
+  precondition(status == kCVReturnSuccess, "CVPixelBufferCreate failed: \(status)")
+  let buffer = pixelBuffer!
+  CVPixelBufferLockBaseAddress(buffer, [])
+  if let base = CVPixelBufferGetBaseAddress(buffer) {
+    memset(base, Int32(fill), CVPixelBufferGetDataSize(buffer))
+  }
+  CVPixelBufferUnlockBaseAddress(buffer, [])
+  return buffer
+}
+
+/// Wraps a constant-filled BGRA pixel buffer in a CMSampleBuffer (image-buffer backed), as the
+/// device's BGRA stream receives from the capture pipeline.
+func makeBGRASampleBuffer(width: Int, height: Int, fill: UInt8) -> CMSampleBuffer {
+  let pixelBuffer = makeBGRAPixelBuffer(width: width, height: height, fill: fill)
+  var formatDescription: CMVideoFormatDescription?
+  let formatStatus = CMVideoFormatDescriptionCreateForImageBuffer(allocator: kCFAllocatorDefault, imageBuffer: pixelBuffer, formatDescriptionOut: &formatDescription)
+  precondition(formatStatus == noErr, "CMVideoFormatDescriptionCreateForImageBuffer failed: \(formatStatus)")
+  var timing = CMSampleTimingInfo(duration: .invalid, presentationTimeStamp: CMTimeMake(value: 0, timescale: 1), decodeTimeStamp: .invalid)
+  var sampleBuffer: CMSampleBuffer?
+  let sampleStatus = CMSampleBufferCreateReadyWithImageBuffer(allocator: kCFAllocatorDefault, imageBuffer: pixelBuffer, formatDescription: formatDescription!, sampleTiming: &timing, sampleBufferOut: &sampleBuffer)
+  precondition(sampleStatus == noErr, "CMSampleBufferCreateReadyWithImageBuffer failed: \(sampleStatus)")
+  return sampleBuffer!
+}
+
+/// Wraps JPEG bytes in a CMSampleBuffer whose data buffer is a CMBlockBuffer, as the device's
+/// MJPEG/Minicap stream receives. When `width`/`height` are > 0 a JPEG video format description is
+/// attached so consumers can read the dimensions (the Minicap header needs them).
+func makeJPEGSampleBuffer(bytes: [UInt8], width: Int32 = 0, height: Int32 = 0) -> CMSampleBuffer {
+  let blockBuffer = makeBlockBuffer(bytes)
+  var formatDescription: CMFormatDescription?
+  if width > 0, height > 0 {
+    let formatStatus = CMVideoFormatDescriptionCreate(allocator: nil, codecType: kCMVideoCodecType_JPEG, width: width, height: height, extensions: nil, formatDescriptionOut: &formatDescription)
+    precondition(formatStatus == noErr, "CMVideoFormatDescriptionCreate failed: \(formatStatus)")
+  }
+  var sampleSize = bytes.count
+  var sampleBuffer: CMSampleBuffer?
+  let sampleStatus = CMSampleBufferCreate(
+    allocator: nil,
+    dataBuffer: blockBuffer,
+    dataReady: true,
+    makeDataReadyCallback: nil,
+    refcon: nil,
+    formatDescription: formatDescription,
+    sampleCount: 1,
+    sampleTimingEntryCount: 0,
+    sampleTimingArray: nil,
+    sampleSizeEntryCount: 1,
+    sampleSizeArray: &sampleSize,
+    sampleBufferOut: &sampleBuffer
+  )
+  precondition(sampleStatus == noErr, "Failed to create JPEG sample buffer: \(sampleStatus)")
+  return sampleBuffer!
+}

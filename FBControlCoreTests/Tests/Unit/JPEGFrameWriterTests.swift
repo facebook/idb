@@ -79,4 +79,43 @@ final class JPEGFrameWriterTests: XCTestCase {
     XCTAssertEqual(UInt32(littleEndian: length), UInt32(jpeg.count))
     XCTAssertEqual(output.subdata(in: 4..<output.count), Data(jpeg))
   }
+
+  // MARK: - As EncodedFrameWriters
+
+  func testMinicapWritesTheHeaderOnceFromTheFirstSample() throws {
+    let jpeg: [UInt8] = [0xFF, 0xD8, 0xFF, 0xD9]
+    let consumer = FBDataBuffer.accumulatingBuffer()
+    let logger = ControlCoreLoggerDouble()
+    let writer = MinicapFrameWriter()
+
+    try writer.write(makeJPEGSampleBuffer(bytes: jpeg, width: 320, height: 240), to: consumer, logger: logger)
+    let afterFirst = consumer.data().count
+    XCTAssertEqual(afterFirst, 24 + 4 + jpeg.count)
+    try writer.write(makeJPEGSampleBuffer(bytes: jpeg, width: 320, height: 240), to: consumer, logger: logger)
+    XCTAssertEqual(consumer.data().count - afterFirst, 4 + jpeg.count, "only the first frame carries the header")
+  }
+
+  func testMJPEGWritesTheSampleBytesThrough() throws {
+    let jpeg: [UInt8] = [0xFF, 0xD8, 0x01, 0x02, 0xFF, 0xD9]
+    let consumer = FBDataBuffer.accumulatingBuffer()
+    try MJPEGFrameWriter().write(makeJPEGSampleBuffer(bytes: jpeg, width: 8, height: 8), to: consumer, logger: ControlCoreLoggerDouble())
+    XCTAssertEqual(consumer.data(), Data(jpeg))
+  }
+
+  func testBGRAWritesThePixelBytesThrough() throws {
+    let consumer = FBDataBuffer.accumulatingBuffer()
+    let sampleBuffer = makeBGRASampleBuffer(width: 16, height: 8, fill: 0xAB)
+    try BGRAFrameWriter().write(sampleBuffer, to: consumer, logger: ControlCoreLoggerDouble())
+    let pixelBuffer = try XCTUnwrap(CMSampleBufferGetImageBuffer(sampleBuffer))
+    XCTAssertEqual(consumer.data().count, CVPixelBufferGetDataSize(pixelBuffer))
+    XCTAssertTrue(consumer.data().allSatisfy { $0 == 0xAB })
+  }
+
+  func testEveryFormatHasFrameWriters() {
+    XCTAssertTrue(VideoStreamFormat.mjpeg(encoder: .requireHardware).frameWriters().frameWriter is MJPEGFrameWriter)
+    XCTAssertTrue(VideoStreamFormat.minicap.frameWriters().frameWriter is MinicapFrameWriter)
+    XCTAssertTrue(VideoStreamFormat.bgra.frameWriters().frameWriter is BGRAFrameWriter)
+    XCTAssertTrue(VideoStreamFormat.compressedVideo(withCodec: .h264, transport: .mpegts).frameWriters().frameWriter is MPEGTSFrameWriter)
+    XCTAssertNil(VideoStreamFormat.minicap.frameWriters().timedMetadataWriter)
+  }
 }
