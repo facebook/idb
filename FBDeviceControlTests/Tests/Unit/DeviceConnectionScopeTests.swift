@@ -10,6 +10,15 @@ import FBControlCore
 import Foundation
 import Testing
 
+private func wait(for semaphore: DispatchSemaphore) async {
+  await withCheckedContinuation { continuation in
+    DispatchQueue.global().async {
+      semaphore.wait()
+      continuation.resume()
+    }
+  }
+}
+
 /// The AMDevice calls a single `withConnectedDevice` scope makes on the way in, and on the way out.
 private let sessionStart = ["connect", "is_paired", "validate_pairing", "start_session"]
 private let sessionEnd = ["stop_session", "disconnect"]
@@ -245,7 +254,7 @@ struct AMDeviceSessionOpeningTests {
     }
 
     let opener = Task.detached { try await session.acquire() }
-    connectStarted.wait()
+    await wait(for: connectStarted)
 
     // The connect is now held part way through, so the session is provably `opening` and this
     // caller cannot see it in any other state.
@@ -284,7 +293,7 @@ struct AMDeviceSessionOpeningTests {
     }
 
     let opener = Task.detached { try await session.acquire() }
-    connectStarted.wait()
+    await wait(for: connectStarted)
 
     let joiner = Task.detached { try await session.acquire() }
     try await Task.sleep(nanoseconds: 200_000_000)
