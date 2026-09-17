@@ -32,7 +32,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Awaitable, Callable, NoReturn, TypeVar
 
-from .recording import Recording
+from .documentation import demo_for, normalisation_rules, test_identity, Transcript
+from .recording import ENCODING_ENV, Recording
 
 DEVICE_UDID_ENV = "DEVICE_UDID"
 DEVICE_SET_PATH_ENV = "DEVICE_SET_PATH"
@@ -661,6 +662,7 @@ async def shared_recording(environment: Environment, companion: Companion) -> Re
             environment.device_set_path,
             artifact_directory() or companion.directory,
             companion.directory.name,
+            os.environ.get(ENCODING_ENV) or "auto",
         )
         atexit.register(_recording.trace.close)
         atexit.register(_recording.stop)
@@ -674,6 +676,10 @@ class IdbEndToEndTestCase(unittest.IsolatedAsyncioTestCase):
     environment: Environment
     companion: Companion
     recording: Recording | None = None
+
+    # Set only while a documented demo is running, which is what makes a named
+    # command capture its output.
+    transcript: Transcript | None = None
 
     # Keep the result so companion death can stop the remaining tests.
     _result: unittest.TestResult | None = None
@@ -714,10 +720,31 @@ class IdbEndToEndTestCase(unittest.IsolatedAsyncioTestCase):
         self.environment = await shared_environment()
         self.companion = await shared_companion()
         self.recording = await shared_recording(self.environment, self.companion)
-        self.recording.start_test(self.id())
+        self.recording.start_test(test_identity(self.id()))
+        self.start_demo()
         self.check_companion()
 
+    def start_demo(self) -> None:
+        demo = demo_for(self)
+        if demo is None or self.recording is None:
+            return
+        home = os.environ.get("HOME")
+        self.recording.demo(demo.slug, demo.title, demo.summary)
+        self.transcript = Transcript(
+            normalisation_rules(
+                self.environment.udid,
+                self.environment.device_set_path,
+                self.companion.directory,
+                artifacts=artifact_directory(),
+                home=Path(home) if home else None,
+                temporary_directory=Path(tempfile.gettempdir()),
+            )
+        )
+
     async def asyncTearDown(self) -> None:
+        # Stop capturing before teardown so its screenshot and cleanup commands
+        # stay out of the published transcript.
+        self.transcript = None
         if self.recording is not None:
             if await self.recording.screenshot() is None:
                 try:
@@ -771,8 +798,14 @@ class IdbEndToEndTestCase(unittest.IsolatedAsyncioTestCase):
         check: bool = True,
         timeout: float = DEFAULT_COMMAND_TIMEOUT_SECONDS,
         stdin: bytes | None = None,
+        step: str | None = None,
     ) -> Completed:
-        """Run idb; with check=True, report nonzero exits as failures or skips."""
+        """Run idb; with check=True, report nonzero exits as failures or skips.
+
+        step describes this command as one step of a documented demo. Only
+        named commands appear in the published transcript, so the polling a
+        test does around them stays out of the documentation.
+        """
         started = time.monotonic()
         if self.recording is not None:
             self.recording.command(["idb", *args])
@@ -784,6 +817,10 @@ class IdbEndToEndTestCase(unittest.IsolatedAsyncioTestCase):
             )
         except BaseException as error:
             if self.recording is not None:
+                # A command that raised is never published — a demo whose test
+                # failed stops the documentation being generated at all — so
+                # the argv is recorded as it ran rather than normalised, which
+                # is what someone reading the trace to debug the run needs.
                 self.recording.event(
                     "command_error",
                     argv=["idb", *args],
@@ -794,13 +831,30 @@ class IdbEndToEndTestCase(unittest.IsolatedAsyncioTestCase):
         if self.recording is not None:
             self.recording.event(
                 "command_finished",
-                argv=["idb", *args],
                 returncode=completed.returncode,
                 seconds=time.monotonic() - started,
+                **self._command_fields(step, ["idb", *args], completed),
             )
         if check and completed.returncode != 0:
             self.fail_or_skip_for(" ".join(args), completed)
         return completed
+
+    def _command_fields(
+        self, step: str | None, argv: Sequence[str], completed: Completed
+    ) -> dict[str, Any]:
+        """The trace fields of a finished command.
+
+        A command a demo named is published, so its argv is normalised
+        alongside its output. Every other command keeps the argv it really
+        ran, which is what a failure needs to be diagnosed from.
+        """
+        if step is None or self.transcript is None:
+            return {"argv": list(argv)}
+        return {
+            "argv": self.transcript.argv(argv),
+            "step": step,
+            **self.transcript.captures(completed.stdout, completed.stderr),
+        }
 
     async def setup_idb(
         self,

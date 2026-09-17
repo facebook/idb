@@ -14,6 +14,32 @@ import time
 from pathlib import Path
 from typing import Any, Sequence
 
+# The container each encoding is written in. The recorder takes the container
+# from the output's extension and rejects the pair that cannot hold the
+# encoding, so the two are chosen together: MPEG-4 for the encodings a browser
+# plays, QuickTime for the motion-JPEG fallback that only AVFoundation reads.
+CONTAINERS = {"h264": ".mp4", "hevc": ".mp4", "mjpeg": ".mov", "auto": ".mov"}
+
+# Where the encoding comes from, named in the error a bad one raises.
+ENCODING_ENV = "IDB_E2E_RECORDER_ENCODING"
+
+
+def container_for(encoding: str) -> str:
+    """The container the recorder writes this encoding in.
+
+    An encoding the recorder does not write has no container to write it in,
+    and standing one in would spawn a recorder whose output path disagrees
+    with what it was asked to encode, failing on the pair rather than on the
+    value that was wrong.
+    """
+    container = CONTAINERS.get(encoding)
+    if container is None:
+        raise ValueError(
+            f"{ENCODING_ENV}={encoding} is not an encoding the recorder writes; "
+            f"choose one of {', '.join(sorted(CONTAINERS))}"
+        )
+    return container
+
 
 class Recording:
     def __init__(
@@ -25,9 +51,10 @@ class Recording:
         prefix: str,
         encoding: str = "auto",
     ) -> None:
+        container = container_for(encoding)
         self.directory = directory
         self.prefix = prefix
-        self.video = directory / f"{prefix}.mov"
+        self.video = directory / f"{prefix}{container}"
         self.log = directory / f"{prefix}-recorder.log"
         self.screenshots = directory / f"{prefix}-screenshots"
         self.trace = (directory / f"{prefix}-commands.jsonl").open("w")
@@ -120,6 +147,9 @@ class Recording:
         self.send("bar", position="bottom", content="text", text="Setup", fit=True)
         self.send("chapter", text=name)
 
+    def demo(self, slug: str, title: str, summary: str) -> None:
+        self.event("demo", slug=slug, title=title, summary=summary)
+
     def finish_test(self, status: str) -> None:
         self.event("test_finished", status=status)
         self.send("bar", position="bottom", content="text", text=status, fit=True)
@@ -190,7 +220,9 @@ class Recording:
                 self.error = "Recorder did not finalize within 30 seconds"
                 self.process.kill()
                 self.process.wait()
-        report_path = self.video.with_suffix(".mov.json")
+        # The recorder appends to the whole output path rather than replacing
+        # its extension, so the report sits beside any container.
+        report_path = Path(f"{self.video}.json")
         status = (
             "recorded"
             if self.process.returncode == 0 and report_path.is_file()

@@ -63,6 +63,7 @@ jobs:
         run: |
           python -m unittest \
             EndToEndTests.harness_tests \
+            EndToEndTests.documentation_tests \
             -v
 
   mac-frameworks:

@@ -19,6 +19,7 @@ import re
 import unittest
 from typing import Any
 
+from .documentation import documented_demo
 from .harness import (
     ACCESSIBILITY_NOT_READY_MARKER,
     ACCESSIBILITY_READY_TIMEOUT_SECONDS,
@@ -570,12 +571,28 @@ class AccessibilityTests(IdbEndToEndTestCase):
         await self.idb("ui", "tap", str(x), str(y), "--api", "ax")
         await self.wait_for_element(title, "NavigationBar")
 
+    @documented_demo(
+        slug="tap-by-accessibility-id",
+        title="Tap an element by its accessibility id",
+        summary=(
+            "Tap the General row in Settings by its accessibility id, without "
+            "knowing where on the screen it is, and confirm the General page "
+            "opened."
+        ),
+    )
     async def test_ui_tap_opens_general_by_marker(self) -> None:
         general = await self.wait_for_element(GENERAL_ROW_ID)
         title = _label(general)
         self.assertTrue(title, "The General row has no label")
 
-        await self.idb("ui", "tap", GENERAL_ROW_ID, "--match-key", "AXUniqueId")
+        await self.idb(
+            "ui",
+            "tap",
+            GENERAL_ROW_ID,
+            "--match-key",
+            "AXUniqueId",
+            step="Tap the General row by its accessibility id",
+        )
         await self.wait_for_element(title, "NavigationBar")
 
     async def wait_for_scroll(
@@ -604,18 +621,38 @@ class AccessibilityTests(IdbEndToEndTestCase):
             f"Settings did not scroll {direction}", UI_UPDATE_TIMEOUT_SECONDS, read
         )
 
+    @documented_demo(
+        slug="scroll-a-list",
+        title="Scroll a list and check that it moved",
+        summary=(
+            "Scroll the Settings list down from a named row and back up again, "
+            "reading the accessibility tree to confirm the rows really moved."
+        ),
+    )
     async def test_ui_scroll_moves_settings_rows_down_and_up(self) -> None:
         await self.wait_for_element(GENERAL_ROW_ID)
         before = _settings_row_positions(await self.describe_all_complete("axbridge"))
         self.assertIn(GENERAL_ROW_ID, before)
 
         await self.idb(
-            "ui", "scroll", "down", GENERAL_ROW_ID, "--match-key", "AXUniqueId"
+            "ui",
+            "scroll",
+            "down",
+            GENERAL_ROW_ID,
+            "--match-key",
+            "AXUniqueId",
+            step="Scroll the Settings list down from the General row",
         )
         after_down = await self.wait_for_scroll(before, "down")
 
         row_after_scroll = next(iter(after_down))
         await self.idb(
-            "ui", "scroll", "up", row_after_scroll, "--match-key", "AXUniqueId"
+            "ui",
+            "scroll",
+            "up",
+            row_after_scroll,
+            "--match-key",
+            "AXUniqueId",
+            step="Scroll back up from a row that is now on screen",
         )
         await self.wait_for_scroll(after_down, "up")

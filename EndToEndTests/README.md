@@ -15,6 +15,7 @@ These tests run the `idb` CLI through `idb_companion` against a booted simulator
 | `DEVICE_UDID` | the booted simulator to test against |
 | `DEVICE_SET_PATH` | the device set `DEVICE_UDID` lives in |
 | `IDB_E2E_STRICT` | `1` fails tests when `SimLaunchHostService` is unavailable; otherwise those tests skip |
+| `IDB_E2E_RECORDER_ENCODING` | video encoding to record with: `h264`, `hevc`, `mjpeg`, or `auto` (the default, HEVC then JPEG) |
 
 `IDB_BIN`, `IDB_E2E_COMPANION_PATH`, `IDB_E2E_RECORDER_PATH`, `DEVICE_UDID`, and `DEVICE_SET_PATH` are required. Everything the suite runs against is provided by its environment and none of it is discovered or defaulted, so missing variables, invalid binary paths, or a simulator that is not booted fail setup rather than skipping or selecting another target.
 
@@ -56,10 +57,10 @@ The CI scripts and harness tests need only Python and run without a simulator:
 
 ```sh
 python3 -m unittest discover -s CI -p '*_tests.py' -t . -v
-python3 -m unittest EndToEndTests.harness_tests -v
+python3 -m unittest EndToEndTests.harness_tests EndToEndTests.documentation_tests -v
 ```
 
-`harness_tests.py` is named separately from `test_*.py` so e2e discovery does not include it. In GitHub CI, the `pure-python` job runs these tests; `mac-end-to-end` builds on the companion artifact, provisions a simulator through `CI.provision_simulator`, runs the e2e suite in strict mode, and collects diagnostics on success and failure.
+`harness_tests.py` and `documentation_tests.py` are named separately from `test_*.py` so e2e discovery does not include them. In GitHub CI, the `pure-python` job runs these tests; `mac-end-to-end` builds on the companion artifact, provisions a simulator through `CI.provision_simulator`, runs the e2e suite in strict mode, and collects diagnostics on success and failure.
 
 The harness writes companion logs to `IDB_E2E_ARTIFACTS_DIR`, falling back to `TEST_RESULT_ARTIFACTS_DIR` when available. Without either directory, logs stay at `/tmp/idb-e2e-*/companion.log`. The collector reads both layouts; `--artifacts-dir` overrides its artifact source without changing `--output`.
 
@@ -69,6 +70,20 @@ The harness starts one `sim-video` process alongside the companion. It uses the 
 
 Recording tries hardware HEVC first, then JPEG with software encoding allowed if HEVC cannot produce frames. If neither produces frames, the recorder log explains the failure, the command trace continues, and screenshots are attempted through idb. A missing or non-executable recorder path fails setup.
 
-The recorder finalizes before the companion stops at process exit. Successful recordings include a `.mov.json` report written after AVFoundation decodes a frame and checks the duration. A hard kill can prevent finalization. JPEG/MOV is readable by AVFoundation; browser playback support varies.
+The recorder finalizes before the companion stops at process exit. Successful recordings include a JSON report beside the recording, at the recording's own path with `.json` appended. A hard kill can prevent finalization. JPEG/MOV is readable by AVFoundation; browser playback support varies.
+
+The container follows the encoding, because the recorder takes the container from the output's extension and rejects a pair it cannot write: `h264` and `hevc` are recorded as `.mp4`, `mjpeg` and `auto` as `.mov`.
 
 All diagnostics use unique, flat names in `IDB_E2E_ARTIFACTS_DIR`, falling back to `TEST_RESULT_ARTIFACTS_DIR` or the companion's local `/tmp/idb-e2e-*` directory. Both successful and failed runs retain companion and recorder logs, command traces, screenshots, and available video. The tool's commands and line protocol are documented in [Tools/VideoRecorder](../Tools/VideoRecorder/README.md).
+
+## Documented demos
+
+A few tests are also the source of the demos the website publishes. `documentation.py` holds the contract: `DOCUMENTED_DEMOS` maps each published slug to the test that performs it, and `@documented_demo` on that test declares the slug, title and summary. Declaring a slug the table does not publish, or declaring one the table attributes to a different test, raises as the suite is imported, so renaming or moving a documented test fails immediately rather than leaving the website describing a test that no longer exists.
+
+The published name of a test is the one a checkout gives it, `EndToEndTests.<module>.<class>.<method>`. A build that imports these modules by repository path declares and records the same name, so one table serves both.
+
+Within such a test, passing `step="..."` to `idb()` publishes that command as a step of the demo. Only named commands are published, so the accessibility polling a test does around them stays out of the transcript, and the published command is the one the test really ran rather than a copy of it in markdown. Capturing stops before cleanup, so the teardown screenshot and its binary output are never published. Only a command that runs to completion can be a step: the streaming commands are read while they are still running and have no final output to publish, so a demo names the commands around them.
+
+Both the command and its output are normalised so two runs produce identical text. Each of the run's directories keeps its own placeholder — `$DEVICE_SET`, `$IDB_E2E_DIR`, `$IDB_E2E_ARTIFACTS`, `$TMPDIR`, `$HOME` — and the target udid, other UUIDs, timestamps, pids and addresses become placeholders too. Output is truncated past 4096 characters and says so. Output that is not UTF-8 is recorded as a length and a SHA-256 digest rather than embedded as bytes.
+
+Demos are published as `h264`, the only encoding browsers agree on, by setting `IDB_E2E_RECORDER_ENCODING=h264`; the recording is then the `.mp4` a browser plays.
