@@ -21,6 +21,13 @@ settings:
   base:
     HEADER_SEARCH_PATHS: $(inherited) $(SRCROOT)/../PrivateHeaders
     LD_RUNPATH_SEARCH_PATHS: $(inherited) @executable_path/Resources/Swift
+    # Shared.xcconfig turns warnings into errors and enables more of them than
+    # Buck does. The generated project neutralises the difference per target
+    # with the warning configuration read off the Buck graph; this project is
+    # hand-maintained and gets no such thing, so the two warnings its sources
+    # trip on importing the Objective-C framework headers are suppressed here
+    # for every target rather than rediscovered one target at a time.
+    OTHER_CFLAGS: $(inherited) -Wno-implicit-int-conversion -Wno-missing-field-initializers
 
 packages:
   grpc-swift-2:
@@ -154,9 +161,9 @@ targets:
 
   # Everything the companion is apart from its entry point: the command executor
   # and its request types, plus the gRPC service, configuration and reporting.
-  # `:CompanionLib` in Buck is the same target over the same two directories, so
-  # the module `main.swift` imports exists in both builds. Like `idb-repl`, it
-  # must NOT depend on the gRPC packages directly -- those symbols come from
+  # `:CompanionLib` in Buck is the same target over the same directory, so the
+  # module `main.swift` imports exists in both builds. Like `idb-repl`, it must
+  # NOT depend on the gRPC packages directly -- those symbols come from
   # IDBGRPCSwift, and a second copy would be a duplicate-symbol error.
   CompanionLib:
     type: framework
@@ -166,14 +173,6 @@ targets:
       - path: ../CompanionLib
         excludes:
           - "**/*-Info.plist"
-      - path: .
-        excludes:
-          - "**/*-Info.plist"
-          - "**/*.xcconfig"
-          - "project.yml"
-          - "project-deps.yml"
-          - "Info.plist"
-          - "main.swift"
       # BuildInfo.swift is generated into DERIVED_FILE_DIR by the preBuildScript
       # below; the configuration reports `kBuildDate` / `kBuildTime`. The
       # declarations are internal, so the library and the tool each compile
@@ -263,8 +262,6 @@ targets:
         # The linked static archives ship loose .swiftmodule directories next
         # to the .a files; resolve them independently of -F framework semantics.
         SWIFT_INCLUDE_PATHS: $(SRCROOT)/../Build/Products/Release
-        # Suppress warnings for existing code patterns that trigger errors with strict settings
-        OTHER_CFLAGS: $(inherited) -Wno-implicit-int-conversion -Wno-missing-field-initializers
         # The frameworks are linked as static archives (MACH_O_TYPE=staticlib), so
         # pass -ObjC to load every Objective-C class and category from them.
         # Without it the linker drops category-only object files and their

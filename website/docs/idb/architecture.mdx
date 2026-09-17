@@ -154,11 +154,11 @@ This is the entrypoint to the `idb_companion` and includes all of the various fl
 
 Additionally, it exposes a number of "CRUD" commands that are destructive for managing Simulators and Devices, for example `--create`, `--erase` and `--delete`. These commands are intentionally left out of the gRPC interface, to prevent unwanted behaviour. If you wish to perform destructive commands, these must be performed on the host where the iOS Simulators or Devices are present.
 
-### [`GRPCSwiftServer`](https://github.com/facebook/idb/blob/main/Companion/SwiftServer/GRPCSwiftServer.swift)
+### [`GRPCSwiftServer`](https://github.com/facebook/idb/blob/main/CompanionLib/SwiftServer/GRPCSwiftServer.swift)
 
 This is the gRPC server itself, built on [`grpc-swift`](https://github.com/grpc/grpc-swift) and SwiftNIO. It binds the [`idb.proto` interface](https://github.com/facebook/idb/blob/main/proto/idb.proto) on a TCP port or Unix domain socket, optionally over TLS.
 
-### [Method handlers](https://github.com/facebook/idb/tree/main/Companion/SwiftServer/MethodHandlers)
+### [Method handlers](https://github.com/facebook/idb/tree/main/CompanionLib/SwiftServer/MethodHandlers)
 
 Each RPC in the `idb.proto` interface is implemented by its own Swift method handler, for instance `InstallMethodHandler` or `AccessibilityInfoMethodHandler`. A handler translates the request's protobuf types into the value types used by the Frameworks, awaits the underlying work with Swift Concurrency, and translates the result back into a protobuf response. This keeps each RPC's implementation small, isolated and testable.
 
