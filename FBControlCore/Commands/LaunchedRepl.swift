@@ -11,7 +11,7 @@ import Foundation
 /// shim's `TestRepl/start`, which binds the control socket at `socketPath` and
 /// serves `dlopen`/`dlsym`/call requests. `run` completes when the test process
 /// exits, i.e. once the control socket is closed.
-public struct ReplSession {
+public struct LaunchedRepl {
   public let socketPath: String
   public let run: FBFuture<NSNull>
   /// Paths to pre-built `.swiftinterface` files (the `IDB` module's) that the

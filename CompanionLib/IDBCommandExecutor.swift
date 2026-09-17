@@ -420,9 +420,9 @@ public final class IDBCommandExecutor {
   /// REPL command (`SimulatorReplCommands`); this forwards to the target, which
   /// injects the REPL shim (`libRepl`), forces the shim's `TestRepl/start` test,
   /// and has the shim bind a control socket whose path is passed via
-  /// `IDB_REPL_SOCKET_PATH`. The returned `ReplSession.run` future completes when
+  /// `IDB_REPL_SOCKET_PATH`. The returned `LaunchedRepl.run` future completes when
   /// the test process exits, i.e. once the control socket is closed.
-  public func repl_start_test(bundlePath: String) async throws -> ReplSession {
+  public func repl_start_test(bundlePath: String) async throws -> LaunchedRepl {
     guard let simulator = target as? Simulator else {
       throw IDBCommandError.replTestsUnsupported(targetDescription: String(describing: target))
     }
@@ -444,9 +444,9 @@ public final class IDBCommandExecutor {
   }
 
   /// Launches `SimulatorFrameworkBridge` on the simulator for the "simulator"
-  /// REPL context. The returned `ReplSession.run` completes when the bridge
+  /// REPL context. The returned `LaunchedRepl.run` completes when the bridge
   /// process exits.
-  public func repl_start_simulator() async throws -> ReplSession {
+  public func repl_start_simulator() async throws -> LaunchedRepl {
     guard let simulator = target as? Simulator else {
       throw IDBCommandError.replSessionsUnsupported(targetDescription: String(describing: target))
     }
@@ -455,9 +455,9 @@ public final class IDBCommandExecutor {
 
   /// Launches an installed app with the REPL injected, for the `app` REPL
   /// context -- or, when `reuseSession` is true, reattaches to an already-running
-  /// REPL for the app. The returned `ReplSession.run` is already resolved: the app
+  /// REPL for the app. The returned `LaunchedRepl.run` is already resolved: the app
   /// outlives the session (it resets and waits for the next client on disconnect).
-  public func repl_start_app(bundleID: String, reuseSession: Bool) async throws -> ReplSession {
+  public func repl_start_app(bundleID: String, reuseSession: Bool) async throws -> LaunchedRepl {
     guard let simulator = target as? Simulator else {
       throw IDBCommandError.replSessionsUnsupported(targetDescription: String(describing: target))
     }

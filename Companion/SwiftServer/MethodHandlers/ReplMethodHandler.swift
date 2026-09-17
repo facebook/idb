@@ -26,7 +26,7 @@ struct ReplMethodHandler {
 
     targetLogger.debug().log("REPL session context: \(start.context)")
 
-    let session: ReplSession
+    let session: LaunchedRepl
     // Only the app context has an app whose exit should end a recording; the
     // test/simulator hosts are disposable and drop any recording at teardown. For
     // the app context an empty bundle id means "use the companion's bundled
@@ -62,7 +62,7 @@ struct ReplMethodHandler {
   /// connects to the socket, reports `ready`, forwards each `Execute` (a dylib
   /// plus a symbol) to the socket and streams back the result, and on stop/EOF
   /// closes the socket (which ends the served process) and reports `stopped`.
-  private func serve(session: ReplSession, sharedFilesystem: Bool, context: Idb_ReplRequest.Start.Context, appBundleID: String?, requestStream: RequestStreamReader<Idb_ReplRequest>, responseStream: RPCWriter<Idb_ReplResponse>) async throws {
+  private func serve(session: LaunchedRepl, sharedFilesystem: Bool, context: Idb_ReplRequest.Start.Context, appBundleID: String?, requestStream: RequestStreamReader<Idb_ReplRequest>, responseStream: RPCWriter<Idb_ReplResponse>) async throws {
     // Per-session scratch directory for the dylibs received over the wire. It
     // lives on the host filesystem, which the simulator process can read.
     let scratchDirectory = (NSTemporaryDirectory() as NSString).appendingPathComponent("idb_repl_\(UUID().uuidString)")

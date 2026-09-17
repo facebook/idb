@@ -45,7 +45,7 @@ public struct SimulatorReplCommands {
 
   // MARK: - Async
 
-  public func startTest(bundlePath: String) async throws -> ReplSession {
+  public func startTest(bundlePath: String) async throws -> LaunchedRepl {
     let logger = simulator.logger
 
     // The driver auto-imports the IDBAPI `.swiftinterface` so injected code can call `IDB`; the API
@@ -86,10 +86,10 @@ public struct SimulatorReplCommands {
       configuration: configuration,
       reporter: ReplNullReporter(),
       logger: logger)
-    return ReplSession(socketPath: socketPath, run: runner.execute(), extraInterfacePaths: extraInterfacePaths)
+    return LaunchedRepl(socketPath: socketPath, run: runner.execute(), extraInterfacePaths: extraInterfacePaths)
   }
 
-  public func startSimulator() async throws -> ReplSession {
+  public func startSimulator() async throws -> LaunchedRepl {
 
     guard let bridgePath = simulator.frameworkBridgePath else {
       throw SimulatorReplError.bundledResourceMissing(item: "SimulatorFrameworkBridge binary")
@@ -112,10 +112,10 @@ public struct SimulatorReplCommands {
     )
 
     // Launch without waiting; `statLoc` completes when the bridge exits (once
-    // the socket is closed), matching the `ReplSession.run` contract.
+    // the socket is closed), matching the `LaunchedRepl.run` contract.
     let process = try await simulator.processSpawn.launchProcess(configuration)
     let run = process.statLoc.retyped(FBFuture<NSNull>.self)
-    return ReplSession(socketPath: socketPath, run: run, extraInterfacePaths: [idbInterfacePath].compactMap { $0 })
+    return LaunchedRepl(socketPath: socketPath, run: run, extraInterfacePaths: [idbInterfacePath].compactMap { $0 })
   }
 
   public func appLaunchEnvironment(bundleID: String) async throws -> [String: String] {
@@ -129,7 +129,7 @@ public struct SimulatorReplCommands {
     ]
   }
 
-  public func startApp(bundleID: String, reuseSession: Bool) async throws -> ReplSession {
+  public func startApp(bundleID: String, reuseSession: Bool) async throws -> LaunchedRepl {
     let logger = simulator.logger
 
     // Read host-side by the companion, so the app sandbox need not contain it.
@@ -145,7 +145,7 @@ public struct SimulatorReplCommands {
     if reuseSession, await replListenerIsAlive(at: socketPath) {
       logger.info().log("Reattaching to the running REPL for \(bundleID) at \(socketPath)")
       let run: FBFuture<NSNull> = FBFuture(result: NSNull())
-      return ReplSession(socketPath: socketPath, run: run, extraInterfacePaths: extraInterfacePaths)
+      return LaunchedRepl(socketPath: socketPath, run: run, extraInterfacePaths: extraInterfacePaths)
     }
 
     // `.relaunchIfRunning` so an app already running without the dylib picks it up.
@@ -183,7 +183,7 @@ public struct SimulatorReplCommands {
     // next client on disconnect -- so `run` is already resolved: teardown must not
     // wait for the app to exit.
     let run: FBFuture<NSNull> = FBFuture(result: NSNull())
-    return ReplSession(socketPath: socketPath, run: run, extraInterfacePaths: extraInterfacePaths)
+    return LaunchedRepl(socketPath: socketPath, run: run, extraInterfacePaths: extraInterfacePaths)
   }
 }
 
