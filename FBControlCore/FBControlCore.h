@@ -26,6 +26,8 @@
 #import <FBControlCore/FileReader.h>
 #import <FBControlCore/Target.h>
 
+// Last: the shim ends by importing the generated Swift header, which needs
+// every Objective-C declaration above it.
 #if __has_include(<FBControlCore/FBControlCore-Swift.h>)
- #import <FBControlCore/FBControlCore-Swift.h>
+ #import <FBControlCore/FBControlCore-SwiftImport.h>
 #endif
