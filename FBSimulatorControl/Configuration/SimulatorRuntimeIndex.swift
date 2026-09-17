@@ -64,8 +64,8 @@ struct SimulatorRuntimeIndex {
   }
 
   private func precedes(_ left: Runtime, _ right: Runtime) -> Bool {
-    let leftVersion = OSVersion(name: FBOSVersionName(rawValue: left.name), versionString: left.version)
-    let rightVersion = OSVersion(name: FBOSVersionName(rawValue: right.name), versionString: right.version)
+    let leftVersion = OSVersion(name: OSVersionName(rawValue: left.name), versionString: left.version)
+    let rightVersion = OSVersion(name: OSVersionName(rawValue: right.name), versionString: right.version)
     let versionOrder = leftVersion.compare(rightVersion)
     if versionOrder != .orderedSame {
       return versionOrder == .orderedAscending

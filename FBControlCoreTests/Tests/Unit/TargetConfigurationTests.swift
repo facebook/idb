@@ -10,8 +10,8 @@ import XCTest
 
 final class TargetConfigurationTests: XCTestCase {
   func testMetadataDoesNotRequireKnownNames() {
-    let device = DeviceType(model: FBDeviceModel(rawValue: "Future Device"), family: .familyUnknown)
-    let os = OSVersion(name: FBOSVersionName(rawValue: "Future Platform"), versionString: "99.10.2")
+    let device = DeviceType(model: DeviceModel(rawValue: "Future Device"), family: .familyUnknown)
+    let os = OSVersion(name: OSVersionName(rawValue: "Future Platform"), versionString: "99.10.2")
     XCTAssertEqual(device.model.rawValue, "Future Device")
     XCTAssertEqual(os.name.rawValue, "Future Platform")
     XCTAssertEqual(os.version.majorVersion, 99)
@@ -35,7 +35,7 @@ final class TargetConfigurationTests: XCTestCase {
   }
 
   func testExplicitVersionOverridesDisplayName() {
-    let os = OSVersion(name: FBOSVersionName(rawValue: "iOS 15.2 Beta"), versionString: "99.10.2")
+    let os = OSVersion(name: OSVersionName(rawValue: "iOS 15.2 Beta"), versionString: "99.10.2")
     XCTAssertEqual(os.versionString, "99.10.2")
     XCTAssertEqual(os.version.majorVersion, 99)
   }
@@ -47,7 +47,7 @@ final class TargetConfigurationTests: XCTestCase {
   }
 
   func testDeviceTypeEqualityConsidersOnlyTheModel() {
-    let described = DeviceType(model: FBDeviceModel(rawValue: "Future Device"), family: .familyiPad)
+    let described = DeviceType(model: DeviceModel(rawValue: "Future Device"), family: .familyiPad)
     let generic = DeviceType.generic(withName: "Future Device")
     XCTAssertNotEqual(described.family, generic.family)
     XCTAssertEqual(described, generic)
@@ -55,7 +55,7 @@ final class TargetConfigurationTests: XCTestCase {
   }
 
   func testOSVersionEqualityConsidersOnlyTheName() {
-    let described = OSVersion(name: FBOSVersionName(rawValue: "Future Platform"), versionString: "99.0")
+    let described = OSVersion(name: OSVersionName(rawValue: "Future Platform"), versionString: "99.0")
     let generic = OSVersion.generic(withName: "Future Platform")
     XCTAssertNotEqual(described.versionString, generic.versionString)
     XCTAssertEqual(described, generic)

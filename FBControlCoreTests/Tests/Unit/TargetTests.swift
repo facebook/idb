@@ -22,24 +22,24 @@ final class TargetTests: XCTestCase {
   }
 
   static var iPhoneDeviceTypes: [DeviceType] {
-    ["Phone A", "Phone B"].map { DeviceType(model: FBDeviceModel(rawValue: $0), family: .familyiPhone) }
+    ["Phone A", "Phone B"].map { DeviceType(model: DeviceModel(rawValue: $0), family: .familyiPhone) }
   }
 
   static var iPadDeviceTypes: [DeviceType] {
-    ["Pad A", "Pad B"].map { DeviceType(model: FBDeviceModel(rawValue: $0), family: .familyiPad) }
+    ["Pad A", "Pad B"].map { DeviceType(model: DeviceModel(rawValue: $0), family: .familyiPad) }
   }
 
   func testDevicesOrderedFirst() {
     let first = TargetDouble()
     first.targetType = .device
     first.state = .booted
-    first.deviceType = DeviceType(model: FBDeviceModel(rawValue: "Future Phone"), family: .familyiPhone)
+    first.deviceType = DeviceType(model: DeviceModel(rawValue: "Future Phone"), family: .familyiPhone)
     first.osVersion = OSVersion.generic(withName: "FutureOS 99.0")
 
     let second = TargetDouble()
     second.targetType = .simulator
     second.state = .booted
-    second.deviceType = DeviceType(model: FBDeviceModel(rawValue: "Future Phone"), family: .familyiPhone)
+    second.deviceType = DeviceType(model: DeviceModel(rawValue: "Future Phone"), family: .familyiPhone)
     second.osVersion = OSVersion.generic(withName: "FutureOS 99.0")
 
     XCTAssertEqual(first.compare(second), .orderedDescending)
@@ -49,12 +49,12 @@ final class TargetTests: XCTestCase {
     let first = TargetDouble()
     first.targetType = .device
     first.state = .booted
-    first.deviceType = DeviceType(model: FBDeviceModel(rawValue: "Future Phone"), family: .familyiPhone)
+    first.deviceType = DeviceType(model: DeviceModel(rawValue: "Future Phone"), family: .familyiPhone)
     first.osVersion = OSVersion.generic(withName: "FutureOS 99.0")
 
     let second = TargetDouble()
     second.targetType = .device
-    second.deviceType = DeviceType(model: FBDeviceModel(rawValue: "Future Phone"), family: .familyiPhone)
+    second.deviceType = DeviceType(model: DeviceModel(rawValue: "Future Phone"), family: .familyiPhone)
     second.osVersion = OSVersion.generic(withName: "FutureOS 99.1")
 
     XCTAssertEqual(first.compare(second), .orderedAscending)

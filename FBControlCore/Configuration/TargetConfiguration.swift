@@ -32,18 +32,39 @@ public struct TargetScreenInfo: Equatable, Hashable, CustomStringConvertible {
   }
 }
 
+// MARK: - DeviceModel
+
+/// An open device model name supplied by the target.
+public struct DeviceModel: RawRepresentable, Hashable, Codable, Sendable {
+
+  public let rawValue: String
+
+  public init(rawValue: String) {
+    self.rawValue = rawValue
+  }
+
+  public init(from decoder: Decoder) throws {
+    rawValue = try decoder.singleValueContainer().decode(String.self)
+  }
+
+  public func encode(to encoder: Encoder) throws {
+    var container = encoder.singleValueContainer()
+    try container.encode(rawValue)
+  }
+}
+
 // MARK: - DeviceType
 
 public struct DeviceType: Equatable, Hashable, CustomStringConvertible, Sendable {
 
-  public let model: FBDeviceModel
+  public let model: DeviceModel
   public let family: FBControlCoreProductFamily
 
   public static func generic(withName name: String) -> DeviceType {
-    DeviceType(model: FBDeviceModel(rawValue: name), family: .familyUnknown)
+    DeviceType(model: DeviceModel(rawValue: name), family: .familyUnknown)
   }
 
-  public init(model: FBDeviceModel, family: FBControlCoreProductFamily) {
+  public init(model: DeviceModel, family: FBControlCoreProductFamily) {
     self.model = model
     self.family = family
   }
@@ -63,15 +84,36 @@ public struct DeviceType: Equatable, Hashable, CustomStringConvertible, Sendable
 
 }
 
+// MARK: - OSVersionName
+
+/// An open operating system name supplied by the target.
+public struct OSVersionName: RawRepresentable, Hashable, Codable, Sendable {
+
+  public let rawValue: String
+
+  public init(rawValue: String) {
+    self.rawValue = rawValue
+  }
+
+  public init(from decoder: Decoder) throws {
+    rawValue = try decoder.singleValueContainer().decode(String.self)
+  }
+
+  public func encode(to encoder: Encoder) throws {
+    var container = encoder.singleValueContainer()
+    try container.encode(rawValue)
+  }
+}
+
 // MARK: - OSVersion
 
 public struct OSVersion: Equatable, Hashable, CustomStringConvertible, Sendable {
 
-  public let name: FBOSVersionName
+  public let name: OSVersionName
   public let versionString: String
 
   public static func generic(withName name: String) -> OSVersion {
-    OSVersion(name: FBOSVersionName(rawValue: name))
+    OSVersion(name: OSVersionName(rawValue: name))
   }
 
   public static func operatingSystemVersion(fromName name: String) -> OperatingSystemVersion {
@@ -93,7 +135,7 @@ public struct OSVersion: Equatable, Hashable, CustomStringConvertible, Sendable 
     return version
   }
 
-  public init(name: FBOSVersionName, versionString: String? = nil) {
+  public init(name: OSVersionName, versionString: String? = nil) {
     self.name = name
     let derivedVersion = name.rawValue.split(whereSeparator: { $0.isWhitespace }).first(where: { $0.first?.isNumber == true })
     self.versionString = versionString ?? derivedVersion.map(String.init) ?? ""

@@ -37,7 +37,7 @@ final class SimulatorMetadataTests: XCTestCase {
 
   func testDifferentVersionsWithoutIdentifiersRemainDistinct() {
     let device = DeviceType.generic(withName: "Future Device")
-    let name = FBOSVersionName(rawValue: "Future Platform")
+    let name = OSVersionName(rawValue: "Future Platform")
     let first = SimulatorConfiguration(device: device, os: OSVersion(name: name, versionString: "99.0"))
     let second = SimulatorConfiguration(device: device, os: OSVersion(name: name, versionString: "100.0"))
     XCTAssertEqual(Set([first, second]).count, 2)

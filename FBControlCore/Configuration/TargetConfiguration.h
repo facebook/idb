@@ -21,14 +21,4 @@ typedef NS_ENUM(NSUInteger, FBControlCoreProductFamily) {
   FBControlCoreProductFamilyMac = 5,
 };
 
-/**
- Open device model names supplied by the target.
- */
-typedef NSString *FBDeviceModel NS_STRING_ENUM;
-
-/**
- Open operating system names supplied by the target.
- */
-typedef NSString *FBOSVersionName NS_STRING_ENUM;
-
 #import <FBControlCore/FBControlCore-SwiftImport.h>

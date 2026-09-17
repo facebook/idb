@@ -20,7 +20,7 @@ public final class TargetDescription: TargetInfo {
   public let targetType: FBTargetType
   public let state: FBTargetState
 
-  private let model: FBDeviceModel?
+  private let model: DeviceModel?
 
   // These values are parsed into TargetDescription in idb/common/types.py, so need to be stable.
   private static let keyModel = "model"
@@ -45,9 +45,9 @@ public final class TargetDescription: TargetInfo {
 
   public var asJSON: [String: Any] {
     var representation: [String: Any] = [
-      Self.keyModel: model as Any? ?? NSNull(),
+      Self.keyModel: model.map { $0.rawValue as Any } ?? NSNull(),
       Self.keyName: name as Any? ?? NSNull(),
-      Self.keyOSVersion: osVersion.name as Any? ?? NSNull(),
+      Self.keyOSVersion: osVersion.name.rawValue,
       Self.keyState: state.stateString.rawValue,
       Self.keyType: targetType.stringRepresentation,
       Self.keyUDID: udid as Any? ?? NSNull(),

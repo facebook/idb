@@ -14,9 +14,9 @@ private final class FutureTarget: TargetInfo {
   let uniqueIdentifier = "future-udid"
   let udid = "future-udid"
   let name = "My Simulator"
-  let deviceType = DeviceType(model: FBDeviceModel(rawValue: "Future Device"), family: .familyUnknown)
+  let deviceType = DeviceType(model: DeviceModel(rawValue: "Future Device"), family: .familyUnknown)
   let architectures: [FBArchitecture] = []
-  let osVersion = OSVersion(name: FBOSVersionName(rawValue: "FutureOS 99.10"), versionString: "99.10")
+  let osVersion = OSVersion(name: OSVersionName(rawValue: "FutureOS 99.10"), versionString: "99.10")
   let extendedInformation: [String: Any] = ["custom": "preserved"]
   let targetType: FBTargetType = .simulator
   let state: FBTargetState = .shutdown

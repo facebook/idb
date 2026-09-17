@@ -76,8 +76,8 @@ extension SimulatorConfiguration {
     default: family = .familyUnknown
     }
     return SimulatorConfiguration(
-      device: DeviceType(model: FBDeviceModel(rawValue: deviceType?.name ?? "unknown"), family: family),
-      os: OSVersion(name: FBOSVersionName(rawValue: runtime?.name ?? "unknown"), versionString: runtime?.versionString ?? ""),
+      device: DeviceType(model: DeviceModel(rawValue: deviceType?.name ?? "unknown"), family: family),
+      os: OSVersion(name: OSVersionName(rawValue: runtime?.name ?? "unknown"), versionString: runtime?.versionString ?? ""),
       deviceTypeIdentifier: deviceType?.identifier,
       runtimeIdentifier: runtime?.identifier,
       runtimeBuildVersion: runtime?.buildVersionString)

@@ -135,14 +135,14 @@ public final class MobileDevice: TargetInfo, DeviceCommands, CustomStringConvert
     case "Mac": family = .familyMac
     default: family = .familyUnknown
     }
-    return DeviceType(model: FBDeviceModel(rawValue: legacyDeviceNames[productType] ?? productType), family: family)
+    return DeviceType(model: DeviceModel(rawValue: legacyDeviceNames[productType] ?? productType), family: family)
   }
 
   public var osVersion: OSVersion {
     let name = Self.osVersionName(
       deviceClass: allValues[DeviceKey.deviceClass.rawValue] as? String,
       productVersion: productVersion)
-    return OSVersion(name: FBOSVersionName(rawValue: name), versionString: productVersion ?? "")
+    return OSVersion(name: OSVersionName(rawValue: name), versionString: productVersion ?? "")
   }
 
   public var state: FBTargetState {
