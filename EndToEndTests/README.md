@@ -57,10 +57,10 @@ The CI scripts and harness tests need only Python and run without a simulator:
 
 ```sh
 python3 -m unittest discover -s CI -p '*_tests.py' -t . -v
-python3 -m unittest EndToEndTests.harness_tests EndToEndTests.documentation_tests -v
+python3 -m unittest EndToEndTests.harness_tests EndToEndTests.documentation_tests EndToEndTests.accessibility_tests -v
 ```
 
-`harness_tests.py` and `documentation_tests.py` are named separately from `test_*.py` so e2e discovery does not include them. In GitHub CI, the `pure-python` job runs these tests; `mac-end-to-end` builds on the companion artifact, provisions a simulator through `CI.provision_simulator`, runs the e2e suite in strict mode, and collects diagnostics on success and failure.
+`harness_tests.py`, `documentation_tests.py` and `accessibility_tests.py` are named separately from `test_*.py` so e2e discovery does not include them; the last checks, against a captured tree, what the accessibility tests take to be on the screen. In GitHub CI, the `pure-python` job runs these tests; `mac-end-to-end` builds on the companion artifact, provisions a simulator through `CI.provision_simulator`, runs the e2e suite in strict mode, and collects diagnostics on success and failure.
 
 The harness writes companion logs to `IDB_E2E_ARTIFACTS_DIR`, falling back to `TEST_RESULT_ARTIFACTS_DIR` when available. Without either directory, logs stay at `/tmp/idb-e2e-*/companion.log`. The collector reads both layouts; `--artifacts-dir` overrides its artifact source without changing `--output`.
 

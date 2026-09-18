@@ -11,7 +11,6 @@ import sqlite3
 from contextlib import closing
 from pathlib import Path
 
-from .documentation import documented_demo
 from .harness import HarnessError, IdbEndToEndTestCase, NotReady, wait_until
 
 # Only Safari launch is checked; page loading does not need to succeed.
@@ -28,21 +27,13 @@ CONTACTS_SERVICE = "kTCCServiceAddressBook"
 
 
 class OpenUrlTests(IdbEndToEndTestCase):
-    @documented_demo(
-        slug="open-a-url",
-        title="Open a URL on a simulator",
-        summary=(
-            "Hand a URL to the simulator and let it pick the app that handles "
-            "it, checking with launchctl that Safari really started."
-        ),
-    )
     async def test_opening_a_url_launches_the_app_that_handles_it(self) -> None:
         # Start with Safari stopped so the test can detect the URL launching it.
         await self.terminate_quietly(SAFARI_BUNDLE_ID)
         await self.wait_until_running(SAFARI_BUNDLE_ID, False)
         self.addAsyncCleanup(self.terminate_quietly, SAFARI_BUNDLE_ID)
 
-        await self.idb("open", URL, step="Open a URL on the simulator")
+        await self.idb("open", URL)
 
         await self.wait_until_running(SAFARI_BUNDLE_ID, True)
 

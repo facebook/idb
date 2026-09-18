@@ -39,6 +39,9 @@ from .harness import (
 SETTINGS_BUNDLE_ID = "com.apple.Preferences"
 SAFARI_BUNDLE_ID = "com.apple.mobilesafari"
 GENERAL_ROW_ID = "com.apple.settings.general"
+SETTINGS_ROW_PREFIX = "com.apple.settings."
+# Views that carry the rows' identifier prefix without being rows.
+ROW_CONTAINER_TYPES = frozenset({"CollectionView", "Table", "ScrollView", "List"})
 UI_UPDATE_TIMEOUT_SECONDS = 30.0
 MINIMUM_SCROLL_DISTANCE = 20.0
 
@@ -108,13 +111,95 @@ def _labels(document: Any) -> set[str]:
     return {_label(element) for element in _labelled_controls(document)}
 
 
+def _screen(document: Any) -> dict[str, float] | None:
+    """The bounds of the screen everything in a document sits on.
+
+    A complete document says which screen it was read from. One that does not
+    is measured by its largest frame, which is only the screen when the tree
+    holds nothing larger: a list's background can extend well above the
+    window, and the application's own frame can be reported in pixels.
+    """
+    reported = document.get("screen") if isinstance(document, dict) else None
+    if isinstance(reported, dict) and reported.get("width") and reported.get("height"):
+        return {
+            "x": 0.0,
+            "y": 0.0,
+            "width": float(reported["width"]),
+            "height": float(reported["height"]),
+        }
+    frames = [element["frame"] for element in _elements(document) if _has_area(element)]
+    if not frames:
+        return None
+    return max(frames, key=lambda frame: frame["width"] * frame["height"])
+
+
+def _on_screen(element: dict[str, Any], screen: dict[str, float] | None) -> bool:
+    """Something a viewer can see: it has area, is not hidden, and is on the screen.
+
+    The accessibility tree holds what an app has built, not what is in front of
+    the viewer: a row scrolled out of the window, a zero-sized placeholder and a
+    hidden element are all in it. A demo is a recording of a screen, so what it
+    claims to show has to be on that screen.
+    """
+    if screen is None or not _has_area(element) or element.get("hidden") is True:
+        return False
+    frame = element["frame"]
+    return (
+        frame["x"] < screen["x"] + screen["width"]
+        and frame["y"] < screen["y"] + screen["height"]
+        and frame["x"] + frame["width"] > screen["x"]
+        and frame["y"] + frame["height"] > screen["y"]
+    )
+
+
+def _visible(
+    document: Any, identifier: str, element_type: str | None = None
+) -> list[dict[str, Any]]:
+    """Every element on screen with this identifier, and this type if one is named."""
+    screen = _screen(document)
+    return [
+        element
+        for element in _elements(document)
+        if element.get("identifier") == identifier
+        and (element_type is None or element.get("type") == element_type)
+        and _on_screen(element, screen)
+    ]
+
+
+def _settings_rows(document: Any) -> list[dict[str, Any]]:
+    """The Settings rows, which are the elements identified with their prefix.
+
+    The list the rows sit in shares that prefix without being a row: its
+    position never changes as it scrolls, and it is not something a scroll can
+    be asked to begin from.
+    """
+    return [
+        element
+        for element in _elements(document)
+        if str(element.get("identifier", "")).startswith(SETTINGS_ROW_PREFIX)
+        and element.get("type") not in ROW_CONTAINER_TYPES
+        and _has_area(element)
+    ]
+
+
 def _settings_row_positions(document: Any) -> dict[str, float]:
+    """Where every row is, on the screen or off it, so movement can be measured."""
     return {
         element["identifier"]: element["frame"]["y"]
-        for element in _elements(document)
-        if str(element.get("identifier", "")).startswith("com.apple.settings.")
-        and _has_area(element)
+        for element in _settings_rows(document)
     }
+
+
+def _settings_rows_on_screen(document: Any) -> list[str]:
+    """The rows a viewer can see, from the top of the screen down."""
+    screen = _screen(document)
+    return [
+        element["identifier"]
+        for element in sorted(
+            _settings_rows(document), key=lambda element: element["frame"]["y"]
+        )
+        if _on_screen(element, screen)
+    ]
 
 
 ACCESSIBILITY_READ_TESTS = frozenset(
@@ -131,6 +216,7 @@ INTERACTION_TESTS = frozenset(
         "test_guest_describe_runs_each_tree_reader",
         "test_guest_press_opens_general",
         "test_public_and_guest_set_value_update_the_search_field",
+        "test_ui_opens_general_by_identifier_and_confirms_it",
         "test_ui_tap_opens_general_by_marker",
         "test_ui_tap_opens_general_by_point",
         "test_ui_wait_finds_an_existing_row_on_both_backends",
@@ -573,19 +659,64 @@ class AccessibilityTests(IdbEndToEndTestCase):
         await self.idb("ui", "tap", str(x), str(y), "--api", "ax")
         await self.wait_for_element(title, "NavigationBar")
 
-    @documented_demo(
-        slug="tap-by-accessibility-id",
-        title="Tap an element by its accessibility id",
-        summary=(
-            "Tap the General row in Settings by its accessibility id, without "
-            "knowing where on the screen it is, and confirm the General page "
-            "opened."
-        ),
-    )
     async def test_ui_tap_opens_general_by_marker(self) -> None:
         general = await self.wait_for_element(GENERAL_ROW_ID)
         title = _label(general)
         self.assertTrue(title, "The General row has no label")
+
+        await self.idb("ui", "tap", GENERAL_ROW_ID, "--match-key", "AXUniqueId")
+        await self.wait_for_element(title, "NavigationBar")
+
+    @documented_demo(
+        slug="open-a-settings-page-by-id",
+        title="Open a Settings page by accessibility id",
+        summary=(
+            "Read the Settings screen from inside the simulator, wait for the "
+            "General row by its accessibility id, open it with a tap "
+            "addressed by that same id rather than by a coordinate, and read "
+            "the screen again to confirm the page that opened."
+        ),
+    )
+    async def test_ui_opens_general_by_identifier_and_confirms_it(self) -> None:
+        await self.wait_for_element(GENERAL_ROW_ID)
+
+        before = await self.idb_json(
+            "ui",
+            "describe-all",
+            "--api",
+            "axbridge",
+            "--format",
+            "complete",
+            step="Read the Settings screen from inside the simulator",
+        )
+        self.assertEqual(before["backend"], AXBRIDGE_BACKEND)
+        # The row the demo opens, and the label it is published under, both come
+        # from this one reading of the screen the clip is showing.
+        rows = _visible(before, GENERAL_ROW_ID)
+        self.assertEqual(len(rows), 1, f"Expected one General row on screen: {rows}")
+        title = _label(rows[0])
+        self.assertTrue(title, "The General row has no label")
+        self.assertEqual(
+            _visible(before, title, "NavigationBar"),
+            [],
+            "General is already open, so the demo would show nothing opening",
+        )
+
+        self.assertEqual(
+            await self.idb_json(
+                "ui",
+                "wait",
+                GENERAL_ROW_ID,
+                "--match-key",
+                "AXUniqueId",
+                "--api",
+                "axbridge",
+                "--timeout",
+                str(UI_UPDATE_TIMEOUT_SECONDS),
+                step="Wait for the row, by the id the tap will address",
+            ),
+            {"found": True},
+        )
 
         await self.idb(
             "ui",
@@ -593,15 +724,50 @@ class AccessibilityTests(IdbEndToEndTestCase):
             GENERAL_ROW_ID,
             "--match-key",
             "AXUniqueId",
-            step="Tap the General row by its accessibility id",
+            step="Open it with a tap addressed by that id",
         )
-        await self.wait_for_element(title, "NavigationBar")
+
+        self.assertEqual(
+            await self.idb_json(
+                "ui",
+                "wait",
+                title,
+                "--match-key",
+                "AXUniqueId",
+                "--api",
+                "axbridge",
+                "--timeout",
+                str(UI_UPDATE_TIMEOUT_SECONDS),
+                step="Wait for the page the tap opened",
+            ),
+            {"found": True},
+        )
+
+        after = await self.idb_json(
+            "ui",
+            "describe-all",
+            "--api",
+            "axbridge",
+            "--format",
+            "complete",
+            step="Read the screen again to confirm which page is open",
+        )
+        self.assertEqual(after["backend"], AXBRIDGE_BACKEND)
+        opened = _visible(after, title, "NavigationBar")
+        self.assertEqual(
+            len(opened),
+            1,
+            f"No navigation bar named {title!r} is on screen after the tap",
+        )
 
     async def wait_for_scroll(
         self, before: dict[str, float], direction: str
-    ) -> dict[str, float]:
-        async def read() -> dict[str, float]:
-            after = _settings_row_positions(await self.wait_for_settings_snapshot())
+    ) -> tuple[dict[str, float], dict[str, Any]]:
+        """Where the rows are once the list has moved the way it was scrolled, and the reading that showed it."""
+
+        async def read() -> tuple[dict[str, float], dict[str, Any]]:
+            snapshot = await self.wait_for_settings_snapshot()
+            after = _settings_row_positions(snapshot)
             movement = {
                 identifier: after[identifier] - y
                 for identifier, y in before.items()
@@ -617,7 +783,7 @@ class AccessibilityTests(IdbEndToEndTestCase):
                 )
             if not moved:
                 raise NotReady(f"Row movement after scrolling {direction}: {movement}")
-            return after
+            return after, snapshot
 
         return await wait_until(
             f"Settings did not scroll {direction}", UI_UPDATE_TIMEOUT_SECONDS, read
@@ -645,9 +811,14 @@ class AccessibilityTests(IdbEndToEndTestCase):
             "AXUniqueId",
             step="Scroll the Settings list down from the General row",
         )
-        after_down = await self.wait_for_scroll(before, "down")
+        after_down, scrolled = await self.wait_for_scroll(before, "down")
 
-        row_after_scroll = next(iter(after_down))
+        on_screen = _settings_rows_on_screen(scrolled)
+        self.assertTrue(on_screen, "No Settings row is on screen after scrolling down")
+        # A row from the middle of the screen: one at an edge can sit half
+        # under the bar the list scrolls beneath, which is not where a scroll
+        # can begin.
+        row_after_scroll = on_screen[len(on_screen) // 2]
         await self.idb(
             "ui",
             "scroll",

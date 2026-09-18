@@ -64,6 +64,7 @@ jobs:
           python -m unittest \
             EndToEndTests.harness_tests \
             EndToEndTests.documentation_tests \
+            EndToEndTests.accessibility_tests \
             -v
 
   mac-frameworks:
