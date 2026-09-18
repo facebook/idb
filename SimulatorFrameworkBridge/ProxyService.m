@@ -7,19 +7,11 @@
 
 #import "ProxyService.h"
 
-#import <dlfcn.h>
-
-#import "SystemConfigurationLoader.h"
-#import "SystemConfigurationPrivate.h"
-
-static void *loadSystemConfiguration(void)
-{
-  void *sc = FBSystemConfigurationLoad();
-  if (!sc) {
-    NSLog(@"[ProxyService] Failed to load SystemConfiguration.framework: %s", dlerror());
-  }
-  return sc;
-}
+#if __has_include(<SimulatorFrameworkBridgeRuntime/NetworkConfigurationStore.h>)
+ #import <SimulatorFrameworkBridgeRuntime/NetworkConfigurationStore.h>
+#else
+ #import "Runtime/NetworkConfigurationStore.h"
+#endif
 
 NSDictionary<NSString *, id> *buildHTTPProxyDict(NSString *host, int port)
 {
@@ -55,38 +47,18 @@ NSDictionary<NSString *, id> *buildEmptyProxyDict(void)
 
 int handleProxyAction(NSString *action, NSArray<NSString *> *arguments)
 {
-  void *sc = loadSystemConfiguration();
-  if (!sc) {
-    return 1;
-  }
-
-  SCDynamicStoreCreate_fn fn_create = FBSystemConfigurationLookup(sc, "SCDynamicStoreCreate");
-  SCDynamicStoreKeyCreateProxies_fn fn_key = FBSystemConfigurationLookup(sc, "SCDynamicStoreKeyCreateProxies");
-
-  if (!fn_create || !fn_key) {
-    NSLog(@"[ProxyService] Required SCDynamicStore symbols not found");
-    return 1;
-  }
-
-  SCDynStoreRef store = fn_create(NULL, CFSTR("SimulatorFrameworkBridge.proxy"), NULL, NULL);
+  FBNetworkConfigurationStore *store = [FBNetworkConfigurationStore proxyStore];
   if (!store) {
-    NSLog(@"[ProxyService] SCDynamicStoreCreate failed");
     return 1;
   }
-
-  CFStringRef key = fn_key(NULL);
 
   if ([action isEqualToString:@"list"]) {
-    SCDynamicStoreCopyValue_fn fn_copy = FBSystemConfigurationLookup(sc, "SCDynamicStoreCopyValue");
-    if (!fn_copy) {
-      NSLog(@"[ProxyService] SCDynamicStoreCopyValue not found");
-      CFRelease(key);
-      CFRelease(store);
+    FBNetworkConfigurationRead *read = [store readConfiguration];
+    if (!read) {
       return 1;
     }
-    CFPropertyListRef value = fn_copy(store, key);
-    if (value) {
-      NSDictionary *dict = (__bridge_transfer NSDictionary *)value;
+    if (read.configuration) {
+      NSDictionary *dict = read.configuration;
       NSData *json = [NSJSONSerialization dataWithJSONObject:dict options:NSJSONWritingPrettyPrinted error:nil];
       NSString *str = json ? [[NSString alloc] initWithData:json encoding:NSUTF8StringEncoding] : nil;
       if (str) {
@@ -95,18 +67,10 @@ int handleProxyAction(NSString *action, NSArray<NSString *> *arguments)
     } else {
       printf("{}\n");
     }
-    CFRelease(key);
-    CFRelease(store);
     return 0;
   }
 
-  SCDynamicStoreSetValue_fn fn_set = FBSystemConfigurationLookup(sc, "SCDynamicStoreSetValue");
-  SCDynamicStoreNotifyValue_fn fn_notify = FBSystemConfigurationLookup(sc, "SCDynamicStoreNotifyValue");
-
-  if (!fn_set) {
-    NSLog(@"[ProxyService] SCDynamicStoreSetValue not found");
-    CFRelease(key);
-    CFRelease(store);
+  if (![store prepareToWrite]) {
     return 1;
   }
 
@@ -114,8 +78,6 @@ int handleProxyAction(NSString *action, NSArray<NSString *> *arguments)
   if ([action isEqualToString:@"set"]) {
     if (arguments.count < 2) {
       NSLog(@"[ProxyService] set requires <host> <port> [http|socks]");
-      CFRelease(key);
-      CFRelease(store);
       return 1;
     }
     NSString *host = arguments[0];
@@ -133,26 +95,17 @@ int handleProxyAction(NSString *action, NSArray<NSString *> *arguments)
     NSLog(@"[ProxyService] Clearing proxy settings");
   } else {
     NSLog(@"[ProxyService] Unknown action: %@. Use 'set', 'clear', or 'list'.", action);
-    CFRelease(key);
-    CFRelease(store);
     return 1;
   }
 
-  Boolean success = fn_set(store, key, (__bridge CFDictionaryRef)proxyDict);
+  BOOL success = [store writeConfiguration:proxyDict];
 
   if (!success) {
-    NSLog(@"[ProxyService] SCDynamicStoreSetValue failed");
-    CFRelease(key);
-    CFRelease(store);
     return 1;
   }
 
-  if (fn_notify) {
-    fn_notify(store, key);
-  }
+  [store notifyChange];
 
   NSLog(@"[ProxyService] Proxy settings updated successfully");
-  CFRelease(key);
-  CFRelease(store);
   return 0;
 }

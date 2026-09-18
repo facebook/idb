@@ -7,19 +7,11 @@
 
 #import "DnsService.h"
 
-#import <dlfcn.h>
-
-#import "SystemConfigurationLoader.h"
-#import "SystemConfigurationPrivate.h"
-
-static void *loadSystemConfiguration(void)
-{
-  void *sc = FBSystemConfigurationLoad();
-  if (!sc) {
-    NSLog(@"[DnsService] Failed to load SystemConfiguration.framework: %s", dlerror());
-  }
-  return sc;
-}
+#if __has_include(<SimulatorFrameworkBridgeRuntime/NetworkConfigurationStore.h>)
+ #import <SimulatorFrameworkBridgeRuntime/NetworkConfigurationStore.h>
+#else
+ #import "Runtime/NetworkConfigurationStore.h"
+#endif
 
 NSDictionary<NSString *, id> *buildDnsDict(NSArray<NSString *> *servers)
 {
@@ -35,36 +27,18 @@ NSDictionary<NSString *, id> *buildEmptyDnsDict(void)
 
 int handleDnsAction(NSString *action, NSArray<NSString *> *arguments)
 {
-  void *sc = loadSystemConfiguration();
-  if (!sc) {
-    return 1;
-  }
-
-  SCDynamicStoreCreate_fn fn_create = FBSystemConfigurationLookup(sc, "SCDynamicStoreCreate");
-
-  if (!fn_create) {
-    NSLog(@"[DnsService] Required SCDynamicStore symbols not found");
-    return 1;
-  }
-
-  SCDynStoreRef store = fn_create(NULL, CFSTR("SimulatorFrameworkBridge.dns"), NULL, NULL);
+  FBNetworkConfigurationStore *store = [FBNetworkConfigurationStore dnsStore];
   if (!store) {
-    NSLog(@"[DnsService] SCDynamicStoreCreate failed");
     return 1;
   }
-
-  CFStringRef key = CFSTR("State:/Network/Global/DNS");
 
   if ([action isEqualToString:@"list"]) {
-    SCDynamicStoreCopyValue_fn fn_copy = FBSystemConfigurationLookup(sc, "SCDynamicStoreCopyValue");
-    if (!fn_copy) {
-      NSLog(@"[DnsService] SCDynamicStoreCopyValue not found");
-      CFRelease(store);
+    FBNetworkConfigurationRead *read = [store readConfiguration];
+    if (!read) {
       return 1;
     }
-    CFPropertyListRef value = fn_copy(store, key);
-    if (value) {
-      NSDictionary *dict = (__bridge_transfer NSDictionary *)value;
+    if (read.configuration) {
+      NSDictionary *dict = read.configuration;
       NSData *json = [NSJSONSerialization dataWithJSONObject:dict options:NSJSONWritingPrettyPrinted error:nil];
       NSString *str = json ? [[NSString alloc] initWithData:json encoding:NSUTF8StringEncoding] : nil;
       if (str) {
@@ -73,16 +47,10 @@ int handleDnsAction(NSString *action, NSArray<NSString *> *arguments)
     } else {
       printf("{}\n");
     }
-    CFRelease(store);
     return 0;
   }
 
-  SCDynamicStoreSetValue_fn fn_set = FBSystemConfigurationLookup(sc, "SCDynamicStoreSetValue");
-  SCDynamicStoreNotifyValue_fn fn_notify = FBSystemConfigurationLookup(sc, "SCDynamicStoreNotifyValue");
-
-  if (!fn_set) {
-    NSLog(@"[DnsService] SCDynamicStoreSetValue not found");
-    CFRelease(store);
+  if (![store prepareToWrite]) {
     return 1;
   }
 
@@ -90,7 +58,6 @@ int handleDnsAction(NSString *action, NSArray<NSString *> *arguments)
   if ([action isEqualToString:@"set"]) {
     if (arguments.count < 1) {
       NSLog(@"[DnsService] set requires at least one DNS server address");
-      CFRelease(store);
       return 1;
     }
     dnsDict = buildDnsDict(arguments);
@@ -100,23 +67,17 @@ int handleDnsAction(NSString *action, NSArray<NSString *> *arguments)
     NSLog(@"[DnsService] Clearing DNS configuration");
   } else {
     NSLog(@"[DnsService] Unknown action: %@. Use 'set', 'clear', or 'list'.", action);
-    CFRelease(store);
     return 1;
   }
 
-  Boolean success = fn_set(store, key, (__bridge CFDictionaryRef)dnsDict);
+  BOOL success = [store writeConfiguration:dnsDict];
 
   if (!success) {
-    NSLog(@"[DnsService] SCDynamicStoreSetValue failed");
-    CFRelease(store);
     return 1;
   }
 
-  if (fn_notify) {
-    fn_notify(store, key);
-  }
+  [store notifyChange];
 
   NSLog(@"[DnsService] DNS configuration updated successfully");
-  CFRelease(store);
   return 0;
 }
