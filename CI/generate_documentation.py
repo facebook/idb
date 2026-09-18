@@ -59,7 +59,10 @@ VIDEO_TYPES = {".mp4": "video/mp4", ".mov": "video/quicktime"}
 # v2, a JSON header followed by one JSON event per line. It is written from
 # the trace the suite recorded rather than captured from a terminal, so it
 # carries the same normalised output the transcript does, and two generations
-# of one run write the same bytes.
+# of one run write the same bytes. Output events carry what was printed;
+# marker events name each step where it begins.
+OUTPUT = "o"
+MARKER = "m"
 # Where the suite is published, and the commit a run tested it at: a demo
 # links the test that performed it, pinned to the source the clip was cut
 # from rather than to whatever that file has become since.
@@ -68,9 +71,10 @@ SOURCE_SHA_ENV = "GITHUB_SHA"
 
 TERMINAL_SUFFIX = ".cast"
 TERMINAL_TYPE = "application/x-asciicast"
-# Wide enough for the commands the suite publishes, and tall enough to hold
-# one of them with its output.
-TERMINAL_COLUMNS = 100
+# Narrow enough to be legible in the column the page plays it in beside a
+# portrait clip -- a long command line wraps, as it would in a terminal that
+# size -- and tall enough to hold a command with its output.
+TERMINAL_COLUMNS = 80
 TERMINAL_ROWS = 24
 
 # An argument a shell passes through unchanged, and so one a terminal can
@@ -340,21 +344,24 @@ class Demo:
             origin=max(0.0, self.first_command() - LEAD_SECONDS), duration=None
         )
 
-    def session(self, timeline: Timeline) -> list[tuple[float, str]]:
+    def session(self, timeline: Timeline) -> list[tuple[float, str, str]]:
         """What the terminal printed, and when, over this demo's own timeline.
 
         A command reaches the terminal twice: the command line where it was
         run, and its output where it finished, so a reader watching the clip
-        sees the command land and the answer arrive when they really did.
+        sees the command land and the answer arrive when they really did. Each
+        step is also marked where it begins, so a player's timeline shows the
+        steps and can jump between them.
         """
-        events: list[tuple[float, str]] = []
+        events: list[tuple[float, str, str]] = []
         for command in self.commands:
-            events.append(
-                (timeline.at(command.start), f"$ {command_line(command.argv)}\n")
-            )
+            at = timeline.at(command.start)
+            events.append((at, MARKER, command.step))
+            events.append((at, OUTPUT, f"$ {command_line(command.argv)}\n"))
             events.append(
                 (
                     timeline.at(command.start + command.seconds),
+                    OUTPUT,
                     printed(command.stdout)
                     + printed(command.stderr)
                     + f"[exited {command.returncode} after "
@@ -755,10 +762,10 @@ def write_terminal(demo: Demo, timeline: Timeline, media: Path) -> Terminal:
     given the session alone plays it for as long as the demo lasted.
     """
     events = demo.session(timeline)
-    printed_until = max((at for at, _ in events), default=0.0)
+    printed_until = max((at for at, _, _ in events), default=0.0)
     duration = printed_until if timeline.duration is None else timeline.duration
     if duration > printed_until:
-        events.append((duration, ""))
+        events.append((duration, OUTPUT, ""))
     header = {
         "version": 2,
         "width": TERMINAL_COLUMNS,
@@ -767,7 +774,8 @@ def write_terminal(demo: Demo, timeline: Timeline, media: Path) -> Terminal:
         "env": {"SHELL": "/bin/sh", "TERM": "xterm-256color"},
     }
     lines = [json.dumps(header, sort_keys=True)] + [
-        json.dumps([round(at, 3), "o", ended(text)]) for at, text in events
+        json.dumps([round(at, 3), kind, ended(text) if kind == OUTPUT else text])
+        for at, kind, text in events
     ]
     name = f"{demo.slug}{TERMINAL_SUFFIX}"
     (media / name).write_text("\n".join(lines) + "\n")

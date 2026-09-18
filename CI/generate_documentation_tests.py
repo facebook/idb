@@ -297,6 +297,11 @@ def cast_of(output: Path, slug: str = SLUG) -> list[Any]:
     return [json.loads(line) for line in lines]
 
 
+def printed_by(output: Path, slug: str = SLUG) -> list[Any]:
+    """The events of a demo's asciicast that print something, without the markers between them."""
+    return [event for event in cast_of(output, slug)[1:] if event[1] == "o"]
+
+
 class PublishedDemoTests(unittest.TestCase):
     def test_publishes_what_the_demo_declared(self) -> None:
         with artifacts() as (source, output):
@@ -645,7 +650,7 @@ class TerminalTests(unittest.TestCase):
             {
                 "source": f"media/{SLUG}.cast",
                 "type": "application/x-asciicast",
-                "columns": 100,
+                "columns": 80,
                 "rows": 24,
                 "duration": 3.5,
             },
@@ -657,20 +662,20 @@ class TerminalTests(unittest.TestCase):
             header = cast_of(output)[0]
 
         self.assertEqual(header["version"], 2)
-        self.assertEqual((header["width"], header["height"]), (100, 24))
+        self.assertEqual((header["width"], header["height"]), (80, 24))
         self.assertEqual(header["title"], "Open a URL on a simulator")
 
     def test_prints_a_command_where_the_demo_ran_it(self) -> None:
         with artifacts(video=report()) as (source, output):
             self.assertEqual(generate(source, output), 0)
-            events = cast_of(output)[1:]
+            events = printed_by(output)
 
         self.assertEqual(events[0], [1.0, "o", "$ idb open https://example.com\r\n"])
 
     def test_prints_what_a_command_said_where_it_finished(self) -> None:
         with artifacts(video=report()) as (source, output):
             self.assertEqual(generate(source, output), 0)
-            events = cast_of(output)[1:]
+            events = printed_by(output)
 
         self.assertEqual(events[1], [1.5, "o", "opened\r\n[exited 0 after 0.50s]\r\n"])
 
@@ -687,7 +692,7 @@ class TerminalTests(unittest.TestCase):
         with artifacts() as (source, output):
             self.assertEqual(generate(source, output), 0)
             demo = manifest(output)["demos"][0]
-            events = cast_of(output)[1:]
+            events = printed_by(output)
 
         self.assertIsNone(demo["video"])
         self.assertEqual(demo["terminal"]["duration"], 1.5)
@@ -699,8 +704,8 @@ class TerminalTests(unittest.TestCase):
         # where it opens rather than where the run had got to by then.
         with artifacts({PREFIX: two_tests()}) as (source, output):
             self.assertEqual(generate(source, output, BOTH), 0)
-            first = cast_of(output, SLUG)[1:]
-            second = cast_of(output, OTHER_SLUG)[1:]
+            first = printed_by(output, SLUG)
+            second = printed_by(output, OTHER_SLUG)
             published = demos(output)
 
         self.assertEqual(first[0][0], second[0][0])
@@ -726,7 +731,7 @@ class TerminalTests(unittest.TestCase):
         events[-2]["stdout"] = crlf
         with artifacts({PREFIX: events}) as (source, output):
             self.assertEqual(generate(source, output), 0)
-            printed = cast_of(output)[2][2]
+            printed = printed_by(output)[1][2]
 
         self.assertEqual(printed, "opened\r\n[exited 0 after 0.50s]\r\n")
 
@@ -734,10 +739,32 @@ class TerminalTests(unittest.TestCase):
         with artifacts(video=report()) as (source, output):
             self.assertEqual(generate(source, output), 0)
             command = manifest(output)["demos"][0]["commands"][0]
-            events = cast_of(output)[1:]
+            events = printed_by(output)
 
         self.assertEqual(command["start"], events[0][0])
         self.assertEqual(command["finished"], events[1][0])
+
+    def test_marks_each_step_where_it_begins(self) -> None:
+        events = trace_events(steps=("Find the row", "Open it"))
+        with artifacts({PREFIX: events}, video=report()) as (source, output):
+            self.assertEqual(generate(source, output), 0)
+            rows = cast_of(output)
+            commands = manifest(output)["demos"][0]["commands"]
+
+        markers = [row for row in rows[1:] if row[1] == "m"]
+        self.assertEqual(
+            markers,
+            [[command["start"], "m", command["step"]] for command in commands],
+        )
+
+    def test_puts_a_step_s_marker_before_its_command_line(self) -> None:
+        with artifacts(video=report()) as (source, output):
+            self.assertEqual(generate(source, output), 0)
+            rows = cast_of(output)
+
+        kinds = [row[1] for row in rows[1:]]
+        self.assertEqual(kinds[:2], ["m", "o"])
+        self.assertTrue(rows[2][2].startswith("$ "))
 
     def test_writes_the_same_session_for_the_same_run(self) -> None:
         with artifacts(video=report()) as (source, output):
