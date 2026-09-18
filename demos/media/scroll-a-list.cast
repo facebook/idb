@@ -1,0 +1,6 @@
+{"env": {"SHELL": "/bin/sh", "TERM": "xterm-256color"}, "height": 24, "title": "Scroll a list and check that it moved", "version": 2, "width": 100}
+[1.0, "o", "$ idb ui scroll down com.apple.settings.general --match-key AXUniqueId\r\n"]
+[2.109, "o", "[exited 0 after 1.11s]\r\n"]
+[2.921, "o", "$ idb ui scroll up com.apple.settings.siri --match-key AXUniqueId\r\n"]
+[3.829, "o", "[exited 0 after 0.91s]\r\n"]
+[4.97, "o", ""]

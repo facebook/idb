@@ -1,0 +1,4 @@
+{"env": {"SHELL": "/bin/sh", "TERM": "xterm-256color"}, "height": 24, "title": "Open a URL on a simulator", "version": 2, "width": 100}
+[1.0, "o", "$ idb open https://example.com\r\n"]
+[17.692, "o", "[exited 0 after 16.69s]\r\n"]
+[46.112, "o", ""]
