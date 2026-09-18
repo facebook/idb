@@ -50,6 +50,43 @@ final class HealthMutationTests: XCTestCase {
     XCTAssertEqual(listOutput, ["action": "list", "bundleID": bundleID, "ok": true, "error": NSNull(), "records": []] as NSDictionary)
   }
 
+  func testSetAndListStatusRemainJSONNumbers() throws {
+    for action in ["approve", "revoke", "list"] {
+      for success in [true, false] {
+        let runtime = runtimeWithType()
+        runtime.setOK = success
+        runtime.fetchError = success ? nil : "fetch failed"
+        let (status, output) = try run(runtime, action: action, types: ["step"])
+        let ok = try XCTUnwrap(output["ok"] as? NSNumber)
+        XCTAssertEqual(status, success ? 0 : 1)
+        XCTAssertEqual(ok.intValue, success ? 1 : 0)
+        XCTAssertNotEqual(CFGetTypeID(ok), CFBooleanGetTypeID(), action)
+      }
+    }
+  }
+
+  func testClearAndResolutionFailuresRemainJSONBooleans() throws {
+    for success in [true, false] {
+      let runtime = FBHealthTestRuntime()
+      runtime.clearOK = success
+      let (status, output) = try run(runtime, action: "clear")
+      let ok = try XCTUnwrap(output["ok"] as? NSNumber)
+      XCTAssertEqual(status, success ? 0 : 1)
+      XCTAssertEqual(ok.boolValue, success)
+      XCTAssertEqual(CFGetTypeID(ok), CFBooleanGetTypeID())
+    }
+    for variants in [0, 1] {
+      let runtime = FBHealthTestRuntime()
+      runtime.setterVariants = UInt(variants)
+      runtime.typeFactories = variants == 0 ? ["step": "HKQuantityType"] : [:]
+      let (status, output) = try run(runtime, action: "approve", types: ["step"])
+      let ok = try XCTUnwrap(output["ok"] as? NSNumber)
+      XCTAssertEqual(status, 1)
+      XCTAssertFalse(ok.boolValue)
+      XCTAssertEqual(CFGetTypeID(ok), CFBooleanGetTypeID())
+    }
+  }
+
   func testDefaultApprovalAndRevocationSeedBeforeEitherSetterSpelling() throws {
     for (action, statusCode) in [("approve", 101), ("revoke", 104)] {
       for variants in [1, 2, 3] {
