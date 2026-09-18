@@ -120,6 +120,18 @@ private func bitmapStreamPixelBufferAttributes(from pixelBuffer: CVPixelBuffer) 
 /// actor-isolated task, rather than queue-delivered callbacks. The cadence is selected by the
 /// `cadence` strategy: `.lazy` pushes a frame when a frame-rendered event pokes the trigger stream
 /// (variable frame rate), while `.eager` runs a cadence `Task` on the actor that pushes at a fixed frame rate.
+/// The clocks a stream reads: the monotonic one every frame is timed against, and the wall clock a
+/// recording's start is reported on. Injected so a test can move either without waiting or setting
+/// the machine's clock.
+struct VideoStreamClock: Sendable {
+  let uptime: @Sendable () -> TimeInterval
+  let wallClock: @Sendable () -> TimeInterval
+
+  static let system = VideoStreamClock(
+    uptime: { ProcessInfo.processInfo.systemUptime },
+    wallClock: { Date().timeIntervalSince1970 })
+}
+
 public actor SimulatorVideoStream: VideoStreamOperation {
 
   // MARK: - Properties
@@ -132,6 +144,7 @@ public actor SimulatorVideoStream: VideoStreamOperation {
   /// — instead of being byte-framed to `consumer`. nil for streaming.
   let encodedSampleConsumerOverride: EncodedSampleConsumer?
   let logger: any ControlCoreLogger
+  let clock: VideoStreamClock
 
   // MARK: - Lifecycle
 
@@ -249,13 +262,14 @@ public actor SimulatorVideoStream: VideoStreamOperation {
     return .eager(framesPerSecond: UInt(framesPerSecond))
   }
 
-  init(framebuffer: Framebuffer, configuration: VideoStreamConfiguration, edgeInsets: VideoStreamEdgeInsets, cadence: VideoStreamCadence, logger: any ControlCoreLogger, encodedSampleConsumerOverride: EncodedSampleConsumer? = nil) {
+  init(framebuffer: Framebuffer, configuration: VideoStreamConfiguration, edgeInsets: VideoStreamEdgeInsets, cadence: VideoStreamCadence, logger: any ControlCoreLogger, encodedSampleConsumerOverride: EncodedSampleConsumer? = nil, clock: VideoStreamClock = .system) {
     self.framebuffer = framebuffer
     self.configuration = configuration
     self.edgeInsets = edgeInsets
     self.cadence = cadence
     self.encodedSampleConsumerOverride = encodedSampleConsumerOverride
     self.logger = logger
+    self.clock = clock
     self.compositor = OverlayCompositor(edgeInsets: edgeInsets)
   }
 
@@ -534,7 +548,7 @@ public actor SimulatorVideoStream: VideoStreamOperation {
 
     // Uptime is monotonic; the wall clock steps under NTP and can hand the encoder (and a file
     // writer) a timestamp earlier than the previous frame's.
-    let now = ProcessInfo.processInfo.systemUptime
+    let now = clock.uptime()
     let frameNumber = self.frameNumber
     if frameNumber == 0 {
       timeAtFirstFrame = now
@@ -686,6 +700,20 @@ public actor SimulatorVideoStream: VideoStreamOperation {
   /// `systemUptime` when the first frame was pushed, or 0 if not yet started. Uptime, not wall
   /// clock, because it is what every frame's presentation timestamp is measured from.
   var currentTimeAtFirstFrame: TimeInterval { timeAtFirstFrame }
+
+  /// The Unix timestamp of media time zero, for a file anchored `anchor` seconds after the first
+  /// pushed frame, or nil before a frame was pushed. Uptime and wall clock are read as one adjacent
+  /// pair and differenced, which keeps the answer right however long the recording ran or
+  /// finalization took.
+  func mediaOrigin(anchor: TimeInterval) -> TimeInterval? {
+    guard timeAtFirstFrame > 0 else {
+      return nil
+    }
+    return MediaOrigin(uptimeAtFirstFrame: timeAtFirstFrame).startedAt(
+      anchor: anchor,
+      uptimeNow: clock.uptime(),
+      wallClockNow: clock.wallClock())
+  }
 
   /// Wall-clock time when the first framebuffer callback was received, or 0 if not yet started.
   /// `nonisolated`: reads only the immutable `framebuffer` reference.

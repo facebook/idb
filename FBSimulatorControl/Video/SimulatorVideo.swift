@@ -59,13 +59,7 @@ public actor SimulatorVideo {
     guard let anchor = fileWriter.startPresentationTime else {
       return nil
     }
-    let timeAtFirstFrame = await stream.currentTimeAtFirstFrame
-    guard timeAtFirstFrame > 0 else {
-      return nil
-    }
-    let uptime = ProcessInfo.processInfo.systemUptime
-    let wallClock = Date().timeIntervalSince1970
-    return wallClock - (uptime - (timeAtFirstFrame + anchor.seconds))
+    return await stream.mediaOrigin(anchor: anchor.seconds)
   }
 
   public func stop() async throws -> URL {
