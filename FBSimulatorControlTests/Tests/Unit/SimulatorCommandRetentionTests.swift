@@ -29,7 +29,6 @@ enum SimulatorCommandAccessor: CaseIterable, Sendable {
   case instruments
   case lifecycle
   case power
-  case erase
   case media
   case keychain
   case privacy
@@ -82,8 +81,6 @@ enum SimulatorCommandAccessor: CaseIterable, Sendable {
       _ = simulator.lifecycle
     case .power:
       _ = simulator.power
-    case .erase:
-      _ = simulator.erase
     case .media:
       _ = simulator.media
     case .keychain:

@@ -296,7 +296,7 @@ private func runReboot(_ udid: String, userDefaults: UserDefaults, xcodeAvailabl
 
 private func runErase(_ udid: String, userDefaults: UserDefaults, xcodeAvailable: Bool, logger: ControlCoreLogger) async throws {
   let target = try await targetForUDID(udid, userDefaults: userDefaults, xcodeAvailable: xcodeAvailable, warmUp: false, logger: logger)
-  try await target.erase.erase()
+  try await target.erase()
 }
 
 private func runDelete(_ udidOrAll: String, userDefaults: UserDefaults, logger: ControlCoreLogger) async throws {

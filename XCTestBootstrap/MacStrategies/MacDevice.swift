@@ -561,8 +561,6 @@ extension MacDevice {
 
   public var debugger: MacDevice { self }
 
-  public var erase: MacDevice { self }
-
   public var file: MacDevice { self }
 
   public var instruments: MacDevice { self }
@@ -606,9 +604,9 @@ extension MacDevice: DebuggerCommands {
   }
 }
 
-// MARK: - MacDevice+EraseCommands
+// MARK: - MacDevice+Erase
 
-extension MacDevice: EraseCommands {
+extension MacDevice {
 
   public func erase() async throws {
     throw macUnsupported("erase")

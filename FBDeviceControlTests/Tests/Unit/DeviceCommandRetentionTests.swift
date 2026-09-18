@@ -27,7 +27,6 @@ enum DeviceCommandAccessor: CaseIterable, Sendable {
   case xctraceRecord
   case instruments
   case diagnosticInformation
-  case erase
   case power
   case provisioningProfile
   case recovery
@@ -66,8 +65,6 @@ enum DeviceCommandAccessor: CaseIterable, Sendable {
       _ = device.instruments
     case .diagnosticInformation:
       _ = device.diagnosticInformation
-    case .erase:
-      _ = device.erase
     case .power:
       _ = device.power
     case .provisioningProfile:

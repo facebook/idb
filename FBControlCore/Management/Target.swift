@@ -101,6 +101,12 @@ public protocol Target: TargetInfo, TargetCommand {
   // keeps the concrete command type: `simulator.lifecycle` is a `SimulatorLifecycleCommands`, with
   // the simulator-only operations it adds. A caller holding `any Target` sees the capability
   // upper bound, `any LifecycleCommands`.
+  //
+  // A capability earns a noun when the noun namespaces more than one verb, or when its single verb
+  // has a name generic enough — `clear`, `set`, `take`, `fetch`, `tail` — that the noun is what gives
+  // it meaning. `keychain.clear()` and `photos.clear()` are one verb each and both keep their noun
+  // for that reason. A capability whose single verb restates the noun is declared as a verb on the
+  // target instead, below.
 
   associatedtype Application: ApplicationCommands
   var application: Application { get }
@@ -110,9 +116,6 @@ public protocol Target: TargetInfo, TargetCommand {
 
   associatedtype Debugger: DebuggerCommands
   var debugger: Debugger { get }
-
-  associatedtype Erase: EraseCommands
-  var erase: Erase { get }
 
   associatedtype File: FileCommands
   var file: File { get }
@@ -143,6 +146,11 @@ public protocol Target: TargetInfo, TargetCommand {
 
   associatedtype XCTraceRecord: XCTraceRecordCommands
   var xctraceRecord: XCTraceRecord { get }
+
+  // MARK: - Command verbs
+
+  /// Erases the target, restoring it to a factory state.
+  func erase() async throws
 
   // MARK: - Target properties
 

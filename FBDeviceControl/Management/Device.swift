@@ -321,10 +321,6 @@ extension Device {
     DeviceDiagnosticInformationCommands.commands(with: self)
   }
 
-  public var erase: DeviceEraseCommands {
-    DeviceEraseCommands.commands(with: self)
-  }
-
   public var power: DevicePowerCommands {
     DevicePowerCommands.commands(with: self)
   }
@@ -353,7 +349,11 @@ extension Device {
     DeviceSpringboardCommands.commands(with: self)
   }
 
-  // MARK: - Device-only verbs
+  // MARK: - Command verbs
+
+  public func erase() async throws {
+    try await DeviceEraseStrategy.erase(self)
+  }
 
   /// Activates the device against Apple's activation servers, if it is not already activated.
   public func activate() async throws {

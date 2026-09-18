@@ -262,10 +262,6 @@ extension Simulator {
     SimulatorPowerCommands.commands(with: self)
   }
 
-  public var erase: SimulatorEraseCommands {
-    SimulatorEraseCommands.commands(with: self)
-  }
-
   public var media: SimulatorMediaCommands {
     SimulatorMediaCommands.commands(with: self)
   }
@@ -360,6 +356,12 @@ extension Simulator {
 
   public var bootstrapPorts: SimulatorBootstrapPortCommands {
     SimulatorBootstrapPortCommands.commands(with: self)
+  }
+
+  // MARK: - Command verbs
+
+  public func erase() async throws {
+    try await SimulatorEraseStrategy.erase(self)
   }
 }
 
