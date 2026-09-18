@@ -109,6 +109,23 @@
   padding-left: 1.25rem;
 }
 
+/* A piece of the output a note named. */
+.highlight {
+  background: var(--ifm-color-primary-contrast-background);
+  border-radius: 2px;
+  color: var(--ifm-color-primary-contrast-foreground);
+  padding: 0 0.15em;
+}
+
+/* Long output, folded behind a native disclosure so it is still in the
+   document for a reader without JavaScript and for a search. */
+.more > summary {
+  color: var(--ifm-color-emphasis-700);
+  cursor: pointer;
+  font-size: 0.85rem;
+  margin-bottom: 0.5rem;
+}
+
 /* Output a command had not printed yet at this point of the timeline. It
    stays in the document — the page is a transcript first — and is marked
    beside rather than faded: a reader without JavaScript sees every line at

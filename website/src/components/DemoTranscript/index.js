@@ -11,6 +11,11 @@ import styles from './styles.module.css';
 
 const SAFE_ARGUMENT = /^[A-Za-z0-9_@%+=:,./-]+$/;
 
+// Output longer than this is folded behind a disclosure, with an excerpt shown
+// in its place: the lines a note pointed at, or failing those the first few.
+const FOLD_LINES = 12;
+const EXCERPT_LINES = 8;
+
 // How often the terminal's own clock advances when there is no clip to take
 // the time from. Close enough that a command appears when it ran, and slow
 // enough that a page of demos is not re-rendering constantly.
@@ -133,7 +138,65 @@ function useTimeline(player, duration, driven) {
   return {seconds, setSeconds, playing, setPlaying, seek, toggle, restart};
 }
 
-function Output({label, stream}) {
+// Output that is JSON reads better laid out than on the one line a command
+// prints it on. Anything else, and anything cut off before it closed, is shown
+// as it was printed.
+function laidOut(text) {
+  const trimmed = text.trim();
+  if (!trimmed.startsWith('{') && !trimmed.startsWith('[')) {
+    return text;
+  }
+  try {
+    return `${JSON.stringify(JSON.parse(trimmed), null, 2)}\n`;
+  } catch (error) {
+    return text;
+  }
+}
+
+function escaped(mark) {
+  return mark.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+// One line of output, with the pieces a note named wrapped so a reader can
+// find them.
+function Marked({line, marks}) {
+  if (marks.length === 0 || !marks.some((mark) => line.includes(mark))) {
+    return line;
+  }
+  const pattern = new RegExp(`(${marks.map(escaped).join('|')})`, 'g');
+  return line
+    .split(pattern)
+    .map((part, index) =>
+      marks.includes(part) ? (
+        <mark key={index} className={styles.highlight}>
+          {part}
+        </mark>
+      ) : (
+        part
+      )
+    );
+}
+
+function Lines({lines, marks}) {
+  return (
+    <pre className={styles.output}>
+      <code>
+        {lines.map((line, index) => (
+          <React.Fragment key={index}>
+            <Marked line={line} marks={marks} />
+            {'\n'}
+          </React.Fragment>
+        ))}
+      </code>
+    </pre>
+  );
+}
+
+// A stream as printed, laid out, marked, and folded when it is long: the whole
+// of it stays in the document behind a native disclosure, so a reader without
+// JavaScript can open it and a search finds it, and what is shown unfolded is
+// the part a note pointed at.
+function Output({label, stream, marks}) {
   if (!stream || stream.bytes === 0) {
     return (
       <p className={styles.empty}>
@@ -149,12 +212,28 @@ function Output({label, stream}) {
       </p>
     );
   }
+  const lines = laidOut(stream.text).replace(/\n$/, '').split('\n');
+  const pointedAt = lines.filter((line) => marks.some((mark) => line.includes(mark)));
+  const folded = lines.length > FOLD_LINES;
+  const excerpt = (pointedAt.length > 0 ? pointedAt : lines).slice(0, EXCERPT_LINES);
   return (
     <>
       <p className={styles.label}>{label}</p>
-      <pre className={styles.output}>
-        <code>{stream.text}</code>
-      </pre>
+      {folded ? (
+        <>
+          <Lines lines={excerpt} marks={marks} />
+          <details className={styles.more}>
+            <summary>
+              {pointedAt.length > 0
+                ? `Show all ${lines.length} lines, not only the ${excerpt.length} a note points at`
+                : `Show all ${lines.length} lines`}
+            </summary>
+            <Lines lines={lines} marks={marks} />
+          </details>
+        </>
+      ) : (
+        <Lines lines={lines} marks={marks} />
+      )}
       {stream.truncated ? (
         <p className={styles.empty}>
           <em>Output continues past what is shown; {stream.bytes} bytes in all.</em>
@@ -189,6 +268,7 @@ function Notes({notes}) {
 // demo is in, and whether the output below it has been printed yet.
 function Step({command, index, current, printed, seekable, onSelect}) {
   const reached = useRef(null);
+  const marks = (command.notes || []).flatMap((note) => note.marks);
   useEffect(() => {
     if (!current || !reached.current || !reached.current.scrollIntoView) {
       return;
@@ -230,8 +310,8 @@ function Step({command, index, current, printed, seekable, onSelect}) {
       </pre>
       <Notes notes={command.notes} />
       <div className={printed ? undefined : styles.pending}>
-        <Output label="Output" stream={command.stdout} />
-        <Output label="Errors" stream={command.stderr} />
+        <Output label="Output" stream={command.stdout} marks={marks} />
+        <Output label="Errors" stream={command.stderr} marks={marks} />
         <p className={styles.exit}>
           Exited {command.returncode} after {command.seconds.toFixed(2)} seconds.
         </p>
