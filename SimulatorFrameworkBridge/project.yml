@@ -30,6 +30,7 @@ targetTemplates:
         HEADER_SEARCH_PATHS: $(inherited) $(TARGET_TEMP_DIR)/ReplExecutorHeaders $(OBJECT_FILE_DIR_normal)/$(CURRENT_ARCH)
         PRODUCT_MODULE_NAME: SimulatorFrameworkBridgeSupport
         SWIFT_VERSION: "6"
+        SWIFT_OBJC_BRIDGING_HEADER: SimulatorFrameworkBridge-Bridging-Header.h
         OTHER_SWIFT_FLAGS: $(inherited) -parse-as-library -Wwarning DeprecatedDeclaration
         # Ad-hoc sign with the bridge's private entitlements (TCC/HealthKit) so the
         # services it drives are permitted inside the simulator.
@@ -73,7 +74,7 @@ targets:
     sources:
       # Contacts and HealthKit are absent from the tvOS SDK, and UserNotifications has no
       # delivered-notification API there, so the three services built on them are not compiled here.
-      # `ServiceDispatch.m` refuses their verbs under `TARGET_OS_TV`.
+      # `ServiceCommand.swift` refuses their verbs on tvOS.
       - path: .
         excludes:
           - "**/*.entitlements"
