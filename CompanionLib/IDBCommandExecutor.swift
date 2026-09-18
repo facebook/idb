@@ -647,6 +647,10 @@ public final class IDBCommandExecutor {
     try await remove_all_storage_and_clear_keychain()
   }
 
+  public func deliveredNotifications(forBundleID bundleID: String) async throws -> [DeliveredNotification] {
+    try await simulatorTarget().notification.deliveredNotifications(forBundleID: bundleID)
+  }
+
   public func sendPushNotification(forBundleID bundleID: String, jsonPayload: String) async throws {
     try await simulatorTarget().notification.sendPush(forBundleID: bundleID, jsonPayload: jsonPayload)
   }

@@ -34,6 +34,8 @@ service CompanionService {
   rpc set_location(SetLocationRequest) returns (SetLocationResponse) {}
   rpc send_notification(SendNotificationRequest)
       returns (SendNotificationResponse) {}
+  rpc delivered_notifications(DeliveredNotificationsRequest)
+      returns (DeliveredNotificationsResponse) {}
   rpc simulate_memory_warning(SimulateMemoryWarningRequest)
       returns (SimulateMemoryWarningResponse) {}
   // Settings
@@ -1279,6 +1281,28 @@ message SendNotificationRequest {
 }
 
 message SendNotificationResponse {}
+
+message DeliveredNotificationsRequest {
+  string bundle_id = 1;
+}
+
+message DeliveredNotification {
+  string bundle_id = 1;
+  string identifier = 2;
+  string title = 3;
+  string subtitle = 4;
+  string body = 5;
+  string thread_identifier = 6;
+  // Presence distinguishes a record with no date from one dated at the Unix
+  // epoch while remaining compatible with older protobuf generators.
+  oneof optional_date {
+    double date = 7;
+  }
+}
+
+message DeliveredNotificationsResponse {
+  repeated DeliveredNotification notifications = 1;
+}
 
 message DapRequest {
   message Start {
