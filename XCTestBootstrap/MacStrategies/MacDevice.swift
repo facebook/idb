@@ -588,8 +588,8 @@ extension MacDevice {
 
 extension MacDevice: VideoStreamCommands {
 
-  public func createStream(configuration: VideoStreamConfiguration, to consumer: any DataConsumer) async throws -> any VideoStreamOperation {
-    throw macUnsupported("createStream")
+  public func create(configuration: VideoStreamConfiguration, to consumer: any DataConsumer) async throws -> any VideoStreamOperation {
+    throw macUnsupported("create")
   }
 }
 

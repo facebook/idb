@@ -33,7 +33,7 @@ public protocol VideoRecordingCommands {
   func startRecording(toFile filePath: String) async throws -> any VideoRecording
 
   /// Record using a caller-provided stream configuration (codec, frame rate, scale, rate control,
-  /// key-frame rate). Mirrors `VideoStreamCommands.createStream(configuration:to:)`.
+  /// key-frame rate). Mirrors `VideoStreamCommands.create(configuration:to:)`.
   func startRecording(toFile filePath: String, configuration: VideoStreamConfiguration) async throws -> any VideoRecording
 
   /// Whether the overload above applies the configuration or discards it. A caller that was asked
