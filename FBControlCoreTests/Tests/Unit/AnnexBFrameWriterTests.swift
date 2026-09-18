@@ -64,46 +64,45 @@ final class AnnexBFrameWriterTests: XCTestCase {
 
   // MARK: - Malformed AVCC Lengths
 
-  func testAnnexBLengthPrefixShorterThanItsNALOverwritesPayloadWithAStartCode() throws {
-    // One eight-byte NAL whose prefix claims three bytes.
+  func testAnnexBLengthPrefixShorterThanItsNALIsRefused() throws {
+    // One eight-byte NAL whose prefix claims three bytes: the bytes after the claimed three do not
+    // form a prefix that fits, so the sample is refused rather than emitted with them rewritten.
     let avcc: [UInt8] = [
       0x00, 0x00, 0x00, 0x03,
       0x65, 0x88, 0x80, 0x40, 0x00, 0x11, 0x22, 0x33,
     ]
     let consumer = FBDataBuffer.accumulatingBuffer()
-    try AnnexBFrameWriter(codec: .h264).write(makeH264SampleBuffer(isKeyFrame: false, avccBytes: avcc), to: consumer, logger: ControlCoreLoggerDouble())
-
-    // BUG: after the three claimed bytes the walk reads `40 00 11 22` as the next length prefix and
-    // overwrites those payload bytes with a start code — flipped to a thrown error in the following
-    // commit.
-    XCTAssertEqual([UInt8](consumer.data()), [0x00, 0x00, 0x00, 0x01, 0x65, 0x88, 0x80, 0x00, 0x00, 0x00, 0x01, 0x33])
+    XCTAssertThrowsError(try AnnexBFrameWriter(codec: .h264).write(makeH264SampleBuffer(isKeyFrame: false, avccBytes: avcc), to: consumer, logger: ControlCoreLoggerDouble())) { error in
+      guard case .malformedNALUnitLength(offset: 7, length: 0x4000_1122, remaining: 1) = error as? EncodedFrameWriterError else {
+        return XCTFail("Expected malformedNALUnitLength at the misread prefix, got \(error)")
+      }
+    }
+    XCTAssertEqual(consumer.data().count, 0, "Nothing reaches the consumer for a refused sample")
   }
 
-  func testAnnexBLengthPrefixLongerThanTheBufferIsWrittenAsIs() throws {
+  func testAnnexBLengthPrefixLongerThanTheBufferIsRefused() throws {
     // One NAL whose prefix claims 200 bytes; only five follow.
     let avcc: [UInt8] = [
       0x00, 0x00, 0x00, 0xC8,
       0x65, 0x88, 0x80, 0x40, 0x00,
     ]
     let consumer = FBDataBuffer.accumulatingBuffer()
-    try AnnexBFrameWriter(codec: .h264).write(makeH264SampleBuffer(isKeyFrame: false, avccBytes: avcc), to: consumer, logger: ControlCoreLoggerDouble())
-
-    // BUG: the truncated sample is emitted as though well-formed — flipped to a thrown error in the
-    // following commit.
-    XCTAssertEqual([UInt8](consumer.data()), [0x00, 0x00, 0x00, 0x01, 0x65, 0x88, 0x80, 0x40, 0x00])
+    XCTAssertThrowsError(try AnnexBFrameWriter(codec: .h264).write(makeH264SampleBuffer(isKeyFrame: false, avccBytes: avcc), to: consumer, logger: ControlCoreLoggerDouble())) { error in
+      guard case .malformedNALUnitLength(offset: 0, length: 200, remaining: 5) = error as? EncodedFrameWriterError else {
+        return XCTFail("Expected malformedNALUnitLength for the oversize prefix, got \(error)")
+      }
+    }
+    XCTAssertEqual(consumer.data().count, 0)
   }
 
-  func testAnnexBTrailingPartialPrefixIsPassedThrough() throws {
+  func testAnnexBTrailingPartialPrefixIsRefused() throws {
     let avcc: [UInt8] = [
       0x00, 0x00, 0x00, 0x02, 0x65, 0x88,
       0x00, 0x00, // two bytes where a prefix should be
     ]
     let consumer = FBDataBuffer.accumulatingBuffer()
-    try AnnexBFrameWriter(codec: .h264).write(makeH264SampleBuffer(isKeyFrame: false, avccBytes: avcc), to: consumer, logger: ControlCoreLoggerDouble())
-
-    // BUG: the two stray bytes ride out after the NAL unit — flipped to a thrown error in the
-    // following commit.
-    XCTAssertEqual([UInt8](consumer.data()), [0x00, 0x00, 0x00, 0x01, 0x65, 0x88, 0x00, 0x00])
+    XCTAssertThrowsError(try AnnexBFrameWriter(codec: .h264).write(makeH264SampleBuffer(isKeyFrame: false, avccBytes: avcc), to: consumer, logger: ControlCoreLoggerDouble()))
+    XCTAssertEqual(consumer.data().count, 0)
   }
 
   func testAnnexBTwoWellFormedNALUnitsBothGetStartCodes() throws {

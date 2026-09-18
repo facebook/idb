@@ -72,6 +72,8 @@ enum EncodedFrameWriterError: Error {
   case failedToGetParameterSetCount(codecName: String, status: OSStatus)
   case failedToGetParameterSet(codecName: String, index: Int, status: OSStatus)
   case failedToCopyBlockBufferData(status: OSStatus)
+  /// An AVCC length prefix that does not fit the bytes that follow it.
+  case malformedNALUnitLength(offset: Int, length: Int, remaining: Int)
 }
 
 extension EncodedFrameWriterError: LocalizedError {
@@ -95,6 +97,8 @@ extension EncodedFrameWriterError: LocalizedError {
       return "Failed to get \(codecName) parameter set at index \(index): \(status)"
     case let .failedToCopyBlockBufferData(status):
       return "Failed to copy block buffer data: \(status)"
+    case let .malformedNALUnitLength(offset, length, remaining):
+      return "Malformed AVCC length prefix at offset \(offset): claims \(length) bytes with \(remaining) remaining"
     }
   }
 }
@@ -109,6 +113,8 @@ enum AnnexB {
   static let lengthPrefixSize = 4
 
   /// Replaces every AVCC length prefix in the sample's data buffer with an Annex-B start code.
+  /// Throws if a prefix is zero, claims more bytes than follow it, or leaves a partial prefix at the
+  /// end, so a malformed sample is refused rather than emitted with its payload rewritten.
   static func replaceLengthPrefixes(in sampleBuffer: CMSampleBuffer) throws {
     guard let dataBuffer = CMSampleBufferGetDataBuffer(sampleBuffer) else {
       throw EncodedFrameWriterError.failedToGetDataBuffer
@@ -116,7 +122,7 @@ enum AnnexB {
     let dataLength = CMBlockBufferGetDataLength(dataBuffer)
 
     var offset = 0
-    while offset < dataLength - lengthPrefixSize {
+    while offset + lengthPrefixSize <= dataLength {
       var lengthBytes = [UInt8](repeating: 0, count: lengthPrefixSize)
       var lengthPointer: UnsafeMutablePointer<CChar>?
       var status = lengthBytes.withUnsafeMutableBytes { temp -> OSStatus in
@@ -132,6 +138,10 @@ enum AnnexB {
           nalLength = (UInt32(bytes[0]) << 24) | (UInt32(bytes[1]) << 16) | (UInt32(bytes[2]) << 8) | UInt32(bytes[3])
         }
       }
+      let remaining = dataLength - offset - lengthPrefixSize
+      guard nalLength > 0, Int(nalLength) <= remaining else {
+        throw EncodedFrameWriterError.malformedNALUnitLength(offset: offset, length: Int(nalLength), remaining: remaining)
+      }
       status = startCode.withUnsafeBytes { start -> OSStatus in
         guard let startBase = start.baseAddress else { return kCMBlockBufferBlockAllocationFailedErr }
         return CMBlockBufferReplaceDataBytes(with: startBase, blockBuffer: dataBuffer, offsetIntoDestination: offset, dataLength: lengthPrefixSize)
@@ -140,6 +150,9 @@ enum AnnexB {
         throw EncodedFrameWriterError.failedToReplaceBlockBufferData(offset: offset, status: status)
       }
       offset += lengthPrefixSize + Int(nalLength)
+    }
+    if offset != dataLength {
+      throw EncodedFrameWriterError.malformedNALUnitLength(offset: offset, length: 0, remaining: dataLength - offset)
     }
   }
 }
