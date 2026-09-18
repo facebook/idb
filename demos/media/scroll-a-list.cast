@@ -1,8 +1,8 @@
 {"env": {"SHELL": "/bin/sh", "TERM": "xterm-256color"}, "height": 24, "title": "Scroll a list and check that it moved", "version": 2, "width": 80}
 [1.0, "m", "Scroll the Settings list down from the General row"]
 [1.0, "o", "$ idb ui scroll down com.apple.settings.general --match-key AXUniqueId\r\n"]
-[1.782, "o", "[exited 0 after 0.78s]\r\n"]
-[2.468, "m", "Scroll back up from a row that is now on screen"]
-[2.468, "o", "$ idb ui scroll up com.apple.settings.passcodeAndBiometrics --match-key AXUniqueId\r\n"]
-[2.935, "o", "[exited 0 after 0.47s]\r\n"]
-[4.552, "o", ""]
+[2.38, "o", "[exited 0 after 1.38s]\r\n"]
+[3.306, "m", "Scroll back up from a row that is now on screen"]
+[3.306, "o", "$ idb ui scroll up com.apple.settings.passcodeAndBiometrics --match-key AXUniqueId\r\n"]
+[4.262, "o", "[exited 0 after 0.96s]\r\n"]
+[5.34, "o", ""]
