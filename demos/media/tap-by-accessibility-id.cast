@@ -1,4 +1,0 @@
-{"env": {"SHELL": "/bin/sh", "TERM": "xterm-256color"}, "height": 24, "title": "Tap an element by its accessibility id", "version": 2, "width": 100}
-[1.0, "o", "$ idb ui tap com.apple.settings.general --match-key AXUniqueId\r\n"]
-[2.785, "o", "[exited 0 after 1.78s]\r\n"]
-[4.043, "o", ""]
