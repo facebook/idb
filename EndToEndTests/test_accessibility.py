@@ -667,37 +667,72 @@ class AccessibilityTests(IdbEndToEndTestCase):
         await self.idb("ui", "tap", GENERAL_ROW_ID, "--match-key", "AXUniqueId")
         await self.wait_for_element(title, "NavigationBar")
 
+    async def describe_by_id(self, identifier: str, *, step: str) -> dict[str, Any]:
+        """One element, read from inside the simulator by its accessibility id.
+
+        A read addressed to the element is the read a demo can show: it answers
+        with that element, its frame and the screen it sits on, rather than
+        with everything the app has built.
+        """
+        document = await self.idb_json(
+            "ui",
+            "describe",
+            identifier,
+            "--match-key",
+            "AXUniqueId",
+            "--api",
+            "axbridge",
+            "--format",
+            "complete",
+            step=step,
+        )
+        self.assertEqual(document["backend"], AXBRIDGE_BACKEND)
+        return document
+
+    @staticmethod
+    def _placed(element: dict[str, Any], screen: dict[str, float] | None) -> str:
+        frame = element["frame"]
+        where = (
+            f"{frame['width']:.0f}×{frame['height']:.0f} points at "
+            f"({frame['x']:.0f}, {frame['y']:.0f})"
+        )
+        if screen is None:
+            return where
+        return f"{where} on a {screen['width']:.0f}×{screen['height']:.0f} screen"
+
     @documented_demo(
         slug="open-a-settings-page-by-id",
         title="Open a Settings page by accessibility id",
         summary=(
-            "Read the Settings screen from inside the simulator, wait for the "
-            "General row by its accessibility id, open it with a tap "
-            "addressed by that same id rather than by a coordinate, and read "
-            "the screen again to confirm the page that opened."
+            "Find the General row from inside the simulator by its "
+            "accessibility id, wait for it, open it with a tap addressed by "
+            "that same id rather than by a coordinate, wait for the page that "
+            "opens, and read that page's bar to confirm which page it is."
         ),
     )
     async def test_ui_opens_general_by_identifier_and_confirms_it(self) -> None:
         await self.wait_for_element(GENERAL_ROW_ID)
 
-        before = await self.idb_json(
-            "ui",
-            "describe-all",
-            "--api",
-            "axbridge",
-            "--format",
-            "complete",
-            step="Read the Settings screen from inside the simulator",
+        before = await self.describe_by_id(
+            GENERAL_ROW_ID, step="Find the General row from inside the simulator"
         )
-        self.assertEqual(before["backend"], AXBRIDGE_BACKEND)
         # The row the demo opens, and the label it is published under, both come
-        # from this one reading of the screen the clip is showing.
+        # from this one reading of the element the clip is showing.
         rows = _visible(before, GENERAL_ROW_ID)
         self.assertEqual(len(rows), 1, f"Expected one General row on screen: {rows}")
         title = _label(rows[0])
         self.assertTrue(title, "The General row has no label")
+        self.note(
+            f"A {rows[0].get('type')} identified {GENERAL_ROW_ID}, labelled "
+            f"{title!r}, {self._placed(rows[0], _screen(before))}.",
+            GENERAL_ROW_ID,
+            title,
+        )
+        already_open = await self.idb_json(
+            "ui", "describe-all", "--api", "axbridge", "--format", "complete"
+        )
         self.assertEqual(
-            _visible(before, title, "NavigationBar"),
+            _visible(already_open, title, "NavigationBar"),
             [],
             "General is already open, so the demo would show nothing opening",
         )
@@ -717,6 +752,7 @@ class AccessibilityTests(IdbEndToEndTestCase):
             ),
             {"found": True},
         )
+        self.note("The row is there to be addressed.", "found")
 
         await self.idb(
             "ui",
@@ -726,6 +762,7 @@ class AccessibilityTests(IdbEndToEndTestCase):
             "AXUniqueId",
             step="Open it with a tap addressed by that id",
         )
+        self.note("Tapped by id, with no coordinate to work out.")
 
         self.assertEqual(
             await self.idb_json(
@@ -742,22 +779,22 @@ class AccessibilityTests(IdbEndToEndTestCase):
             ),
             {"found": True},
         )
+        self.note(f"Something identified {title!r} has appeared.", "found")
 
-        after = await self.idb_json(
-            "ui",
-            "describe-all",
-            "--api",
-            "axbridge",
-            "--format",
-            "complete",
-            step="Read the screen again to confirm which page is open",
+        after = await self.describe_by_id(
+            title, step="Read the bar of the page that opened"
         )
-        self.assertEqual(after["backend"], AXBRIDGE_BACKEND)
         opened = _visible(after, title, "NavigationBar")
         self.assertEqual(
             len(opened),
             1,
             f"No navigation bar named {title!r} is on screen after the tap",
+        )
+        self.note(
+            f"A NavigationBar identified {title!r}, "
+            f"{self._placed(opened[0], _screen(after))}.",
+            "NavigationBar",
+            title,
         )
 
     async def wait_for_scroll(
@@ -812,6 +849,7 @@ class AccessibilityTests(IdbEndToEndTestCase):
             step="Scroll the Settings list down from the General row",
         )
         after_down, scrolled = await self.wait_for_scroll(before, "down")
+        self.note(self._movement(before, after_down, "up"), GENERAL_ROW_ID)
 
         on_screen = _settings_rows_on_screen(scrolled)
         self.assertTrue(on_screen, "No Settings row is on screen after scrolling down")
@@ -819,6 +857,11 @@ class AccessibilityTests(IdbEndToEndTestCase):
         # under the bar the list scrolls beneath, which is not where a scroll
         # can begin.
         row_after_scroll = on_screen[len(on_screen) // 2]
+        self.note(
+            f"{on_screen[0]} is now the top row, and {row_after_scroll} is "
+            "in the middle of the screen.",
+            row_after_scroll,
+        )
         await self.idb(
             "ui",
             "scroll",
@@ -828,4 +871,21 @@ class AccessibilityTests(IdbEndToEndTestCase):
             "AXUniqueId",
             step="Scroll back up from a row that is now on screen",
         )
-        await self.wait_for_scroll(after_down, "up")
+        after_up, _ = await self.wait_for_scroll(after_down, "up")
+        self.note(self._movement(after_down, after_up, "down"), row_after_scroll)
+
+    @staticmethod
+    def _movement(
+        before: dict[str, float], after: dict[str, float], direction: str
+    ) -> str:
+        """What the rows did, read from where they were and where they are."""
+        moved = {
+            identifier: after[identifier] - y
+            for identifier, y in before.items()
+            if identifier in after
+        }
+        furthest = max(moved.values(), key=abs, default=0.0)
+        return (
+            f"{len(moved)} rows moved {direction} the screen by up to "
+            f"{abs(furthest):.0f} points."
+        )
