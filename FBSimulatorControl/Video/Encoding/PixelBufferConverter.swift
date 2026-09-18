@@ -54,6 +54,23 @@ final class PixelBufferConverter {
     self.pool = pool
   }
 
+  /// The destination colour description the transfer session has been given, keyed by the
+  /// `kVTPixelTransferPropertyKey_Destination*` keys; empty when it converts by its own defaults.
+  var destinationColorProperties: [String: String] {
+    guard let transferSession else { return [:] }
+    var properties: [String: String] = [:]
+    for key in [kVTPixelTransferPropertyKey_DestinationColorPrimaries, kVTPixelTransferPropertyKey_DestinationTransferFunction, kVTPixelTransferPropertyKey_DestinationYCbCrMatrix] {
+      var value: UnsafeMutableRawPointer?
+      withUnsafeMutablePointer(to: &value) { pointer in
+        _ = VTSessionCopyProperty(transferSession, key: key, allocator: kCFAllocatorDefault, valueOut: pointer)
+      }
+      if let value {
+        properties[key as String] = Unmanaged<CFString>.fromOpaque(value).takeRetainedValue() as String
+      }
+    }
+    return properties
+  }
+
   /// The attributes of the buffers `convert` produces, for a `VTCompressionSession` to expect.
   var outputBufferAttributes: [String: Any] {
     [

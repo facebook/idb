@@ -135,6 +135,30 @@ final class VideoToolboxEncoderSettingsTests: XCTestCase {
     XCTAssertNil(props[kVTCompressionPropertyKey_H264EntropyMode as String])
   }
 
+  // MARK: - Colour tags
+
+  func testCompressedVideoSessionsCarryNoColorTags() {
+    for format in [h264, hevc] {
+      let props = retinaProperties(settings(format))
+      // BUG: the simulator renders sRGB and the converter produces BT.709 YCbCr, but the session
+      // is told neither, so the bitstream carries no colour description and every player guesses —
+      // flipped to BT.709 primaries and matrix with the sRGB transfer function in the following
+      // commit.
+      XCTAssertNil(props[kVTCompressionPropertyKey_ColorPrimaries as String], "\(format)")
+      XCTAssertNil(props[kVTCompressionPropertyKey_TransferFunction as String], "\(format)")
+      XCTAssertNil(props[kVTCompressionPropertyKey_YCbCrMatrix as String], "\(format)")
+    }
+  }
+
+  func testJPEGSessionsCarryNoColorTags() {
+    for format in [VideoStreamFormat.mjpeg(encoder: .requireHardware), .minicap, .bgra] {
+      let props = retinaProperties(settings(format))
+      XCTAssertNil(props[kVTCompressionPropertyKey_ColorPrimaries as String], "\(format)")
+      XCTAssertNil(props[kVTCompressionPropertyKey_TransferFunction as String], "\(format)")
+      XCTAssertNil(props[kVTCompressionPropertyKey_YCbCrMatrix as String], "\(format)")
+    }
+  }
+
   // MARK: - JPEG rate control
 
   func testJPEGSessionsGetNoReorderingOrDelayKeys() {
