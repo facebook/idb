@@ -259,6 +259,12 @@ def clip_of(output: Path, slug: str = SLUG) -> str:
     return (output / "media" / f"{slug}.mp4").read_text()
 
 
+def cast_of(output: Path, slug: str = SLUG) -> list[Any]:
+    """The asciicast a demo published, as its header and its events."""
+    lines = (output / "media" / f"{slug}.cast").read_text().splitlines()
+    return [json.loads(line) for line in lines]
+
+
 class PublishedDemoTests(unittest.TestCase):
     def test_publishes_what_the_demo_declared(self) -> None:
         with artifacts() as (source, output):
@@ -287,7 +293,8 @@ class PublishedDemoTests(unittest.TestCase):
                     "step": "Open a URL on the simulator",
                     "argv": PUBLISHED,
                     "returncode": 0,
-                    "start": 4.5,
+                    "start": 1.0,
+                    "finished": 1.5,
                     "seconds": 0.5,
                     "stdout": OPENED,
                     "stderr": NO_OUTPUT,
@@ -435,7 +442,7 @@ class ClipTests(unittest.TestCase):
             self.assertEqual(generate(source, output), 0)
             served = sorted(path.name for path in (output / "media").iterdir())
 
-        self.assertEqual(served, [f"{SLUG}.mp4"])
+        self.assertEqual(served, [f"{SLUG}.cast", f"{SLUG}.mp4"])
 
     def test_cuts_with_the_recorder_the_environment_names(self) -> None:
         with artifacts(video=report()) as (source, output):
@@ -471,7 +478,9 @@ class DegradationTests(unittest.TestCase):
 
         self.assertIsNone(published[SLUG]["video"])
         self.assertIn("does not describe a clip", said)
-        self.assertEqual(served, [f"{OTHER_SLUG}.mp4"])
+        self.assertEqual(
+            served, [f"{SLUG}.cast", f"{OTHER_SLUG}.cast", f"{OTHER_SLUG}.mp4"]
+        )
 
     def test_documents_a_demo_the_recording_is_too_short_for(self) -> None:
         with artifacts({PREFIX: two_tests()}, video=report(duration=11.3)) as (
@@ -512,6 +521,159 @@ class DegradationTests(unittest.TestCase):
                 refused(source, output, BOTH)
 
             self.assertFalse((output / MANIFEST_NAME).exists())
+
+
+class TerminalTests(unittest.TestCase):
+    """The terminal session each demo publishes beside its clip."""
+
+    def test_publishes_a_session_per_demo(self) -> None:
+        with artifacts(video=report()) as (source, output):
+            self.assertEqual(generate(source, output), 0)
+            published = manifest(output)["demos"][0]["terminal"]
+
+        self.assertEqual(
+            published,
+            {
+                "source": f"media/{SLUG}.cast",
+                "type": "application/x-asciicast",
+                "columns": 100,
+                "rows": 24,
+                "duration": 3.5,
+            },
+        )
+
+    def test_publishes_a_session_an_asciicast_player_can_read(self) -> None:
+        with artifacts(video=report()) as (source, output):
+            self.assertEqual(generate(source, output), 0)
+            header = cast_of(output)[0]
+
+        self.assertEqual(header["version"], 2)
+        self.assertEqual((header["width"], header["height"]), (100, 24))
+        self.assertEqual(header["title"], "Open a URL on a simulator")
+
+    def test_prints_a_command_where_the_demo_ran_it(self) -> None:
+        with artifacts(video=report()) as (source, output):
+            self.assertEqual(generate(source, output), 0)
+            events = cast_of(output)[1:]
+
+        self.assertEqual(events[0], [1.0, "o", "$ idb open https://example.com\r\n"])
+
+    def test_prints_what_a_command_said_where_it_finished(self) -> None:
+        with artifacts(video=report()) as (source, output):
+            self.assertEqual(generate(source, output), 0)
+            events = cast_of(output)[1:]
+
+        self.assertEqual(events[1], [1.5, "o", "opened\r\n[exited 0 after 0.50s]\r\n"])
+
+    def test_plays_for_as_long_as_the_clip_beside_it(self) -> None:
+        with artifacts(video=report()) as (source, output):
+            self.assertEqual(generate(source, output), 0)
+            demo = manifest(output)["demos"][0]
+            last = cast_of(output)[-1][0]
+
+        self.assertEqual(demo["terminal"]["duration"], demo["video"]["duration"])
+        self.assertEqual(last, demo["terminal"]["duration"])
+
+    def test_publishes_a_session_for_a_demo_with_no_clip(self) -> None:
+        with artifacts() as (source, output):
+            self.assertEqual(generate(source, output), 0)
+            demo = manifest(output)["demos"][0]
+            events = cast_of(output)[1:]
+
+        self.assertIsNone(demo["video"])
+        self.assertEqual(demo["terminal"]["duration"], 1.5)
+        self.assertEqual(events[0][0], 1.0)
+
+    def test_times_a_demo_with_no_clip_from_its_own_first_command(self) -> None:
+        # Two demos, the second performed ten seconds into the run, and no
+        # recording to cut either out of. Each is still a demo, so each opens
+        # where it opens rather than where the run had got to by then.
+        with artifacts({PREFIX: two_tests()}) as (source, output):
+            self.assertEqual(generate(source, output, BOTH), 0)
+            first = cast_of(output, SLUG)[1:]
+            second = cast_of(output, OTHER_SLUG)[1:]
+            published = demos(output)
+
+        self.assertEqual(first[0][0], second[0][0])
+        self.assertEqual(published[OTHER_SLUG]["commands"][0]["start"], 1.0)
+
+    def test_times_a_demo_the_same_wherever_the_run_put_it(self) -> None:
+        # The same demo, performed after another test that took a minute
+        # longer: nothing it publishes moves with it.
+        with artifacts({PREFIX: two_tests()}) as (source, output):
+            self.assertEqual(generate(source, output, BOTH), 0)
+            near = cast_of(output, OTHER_SLUG)
+        with artifacts({PREFIX: two_tests(shift=70.0)}) as (source, output):
+            self.assertEqual(generate(source, output, BOTH), 0)
+            far = cast_of(output, OTHER_SLUG)
+
+        self.assertEqual(near, far)
+
+    def test_writes_a_session_a_terminal_would_have_printed(self) -> None:
+        # Output the run captured with its lines already ended the way a
+        # terminal ends them is written as it was, not doubled.
+        crlf = {"bytes": 8, "text": "opened\r\n", "truncated": False}
+        events = trace_events()
+        events[-2]["stdout"] = crlf
+        with artifacts({PREFIX: events}) as (source, output):
+            self.assertEqual(generate(source, output), 0)
+            printed = cast_of(output)[2][2]
+
+        self.assertEqual(printed, "opened\r\n[exited 0 after 0.50s]\r\n")
+
+    def test_times_a_command_from_the_clip_it_is_played_beside(self) -> None:
+        with artifacts(video=report()) as (source, output):
+            self.assertEqual(generate(source, output), 0)
+            command = manifest(output)["demos"][0]["commands"][0]
+            events = cast_of(output)[1:]
+
+        self.assertEqual(command["start"], events[0][0])
+        self.assertEqual(command["finished"], events[1][0])
+
+    def test_writes_the_same_session_for_the_same_run(self) -> None:
+        with artifacts(video=report()) as (source, output):
+            generate(source, output / "first")
+            generate(source, output / "second")
+            first = (output / "first" / "media" / f"{SLUG}.cast").read_bytes()
+            second = (output / "second" / "media" / f"{SLUG}.cast").read_bytes()
+
+        self.assertEqual(first, second)
+
+
+class TerminalTextTests(unittest.TestCase):
+    """What the terminal prints for a command line and for a stream."""
+
+    def test_quotes_an_argument_a_shell_would_read_as_more_than_one(self) -> None:
+        self.assertEqual(
+            generate_documentation.command_line(["idb", "ui", "text", "two words"]),
+            "idb ui text 'two words'",
+        )
+
+    def test_quotes_an_argument_holding_a_quote(self) -> None:
+        self.assertEqual(
+            generate_documentation.command_line(["idb", "ui", "text", "it's"]),
+            "idb ui text 'it'\\''s'",
+        )
+
+    def test_prints_nothing_for_a_stream_that_printed_nothing(self) -> None:
+        self.assertEqual(generate_documentation.printed(NO_OUTPUT), "")
+
+    def test_prints_output_that_was_not_text_as_what_was_there(self) -> None:
+        printed = generate_documentation.printed(
+            {"bytes": 12, "binary": True, "sha256": "abc123"}
+        )
+
+        self.assertEqual(printed, "[12 bytes that are not text, sha256 abc123]\n")
+
+    def test_says_where_output_was_cut_off(self) -> None:
+        printed = generate_documentation.printed(
+            {"bytes": 9000, "text": "a line\n", "truncated": True}
+        )
+
+        self.assertEqual(
+            printed,
+            "a line\n[output continues past what was captured; 9000 bytes in all]\n",
+        )
 
 
 class RecordingTests(unittest.TestCase):

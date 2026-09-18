@@ -10,9 +10,10 @@ python3 -m CI.generate_documentation --artifacts-dir "$RUNNER_TEMP/e2e" --output
 Reads the command trace the suite wrote, keeps the commands its documented
 demos named, and cuts each demo its own clip out of the run's recording, so a
 demo plays only itself rather than seeking into a recording of the whole
-suite. A demo the suite no longer performs, or performed and failed, is an
-error: nothing is written and the run fails, so broken documentation is never
-published.
+suite. Each demo also publishes its terminal session, so what the commands
+printed can be played back beside the clip on one timeline. A demo the suite
+no longer performs, or performed and failed, is an error: nothing is written
+and the run fails, so broken documentation is never published.
 """
 
 from __future__ import annotations
@@ -20,6 +21,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -52,6 +54,23 @@ RECORDER_ENV = "IDB_E2E_RECORDER_PATH"
 PUBLISHABLE_ENCODING = "h264"
 PUBLISHABLE_TYPE = "video/mp4"
 VIDEO_TYPES = {".mp4": "video/mp4", ".mov": "video/quicktime"}
+
+# A demo's terminal session, in the format terminal players read: asciicast
+# v2, a JSON header followed by one JSON event per line. It is written from
+# the trace the suite recorded rather than captured from a terminal, so it
+# carries the same normalised output the transcript does, and two generations
+# of one run write the same bytes.
+TERMINAL_SUFFIX = ".cast"
+TERMINAL_TYPE = "application/x-asciicast"
+# Wide enough for the commands the suite publishes, and tall enough to hold
+# one of them with its output.
+TERMINAL_COLUMNS = 100
+TERMINAL_ROWS = 24
+
+# An argument a shell passes through unchanged, and so one a terminal can
+# print unquoted. The website quotes by the same rule, so the command line a
+# reader copies is the same one either renders.
+SAFE_ARGUMENT = re.compile(r"[A-Za-z0-9_@%+=:,./-]+\Z")
 
 # What each clip keeps either side of the demo, so it does not open on the
 # first command already in flight or cut the last one off mid-animation. Both
@@ -89,6 +108,51 @@ def within(offset: float, duration: float | None) -> float:
     return offset
 
 
+def quote(argument: str) -> str:
+    """One argument of a command line, quoted as a shell would need it."""
+    if SAFE_ARGUMENT.match(argument):
+        return argument
+    quoted = argument.replace("'", "'\\''")
+    return f"'{quoted}'"
+
+
+def command_line(argv: Sequence[str]) -> str:
+    return " ".join(quote(argument) for argument in argv)
+
+
+def ended(text: str) -> str:
+    """The same text, ending its lines the way a terminal does.
+
+    What the run captured may already end its lines that way, so the ending is
+    normalised first rather than doubled.
+    """
+    return text.replace("\r\n", "\n").replace("\n", "\r\n")
+
+
+def printed(stream: dict[str, Any]) -> str:
+    """One stream of a command as a terminal showed it.
+
+    Output that did not decode as text was never printable, so the session
+    says what was there rather than replaying bytes no font can render.
+    """
+    if not stream.get("bytes"):
+        return ""
+    if stream.get("binary"):
+        return (
+            f"[{stream['bytes']} bytes that are not text, "
+            f"sha256 {stream.get('sha256', '')}]\n"
+        )
+    text = str(stream.get("text", ""))
+    if text and not text.endswith("\n"):
+        text += "\n"
+    if stream.get("truncated"):
+        text += (
+            f"[output continues past what was captured; "
+            f"{stream['bytes']} bytes in all]\n"
+        )
+    return text
+
+
 @dataclass(frozen=True)
 class Video:
     """A clip of the run's recording, in a form the website can play."""
@@ -107,6 +171,37 @@ class Video:
             "height": self.height,
             "duration": round(self.duration, 3),
         }
+
+
+@dataclass(frozen=True)
+class Terminal:
+    """A demo's terminal session, on the same timeline as its clip."""
+
+    name: str
+    columns: int
+    rows: int
+    duration: float
+
+    def as_json(self) -> dict[str, Any]:
+        return {
+            "source": f"{MEDIA_DIRECTORY}/{self.name}",
+            "type": TERMINAL_TYPE,
+            "columns": self.columns,
+            "rows": self.rows,
+            "duration": round(self.duration, 3),
+        }
+
+
+@dataclass(frozen=True)
+class Timeline:
+    """What one demo is timed against, and how long it runs for."""
+
+    origin: float
+    duration: float | None
+
+    def at(self, moment: float) -> float:
+        """A moment of the run, on this timeline."""
+        return round(within(moment - self.origin, self.duration), 3)
 
 
 @dataclass(frozen=True)
@@ -138,14 +233,13 @@ class Command:
     stdout: dict[str, Any]
     stderr: dict[str, Any]
 
-    def as_json(self, clip: Clip | None) -> dict[str, Any]:
-        offset = self.start - (0.0 if clip is None else clip.offset)
-        duration = None if clip is None else clip.video.duration
+    def as_json(self, timeline: Timeline) -> dict[str, Any]:
         return {
             "step": self.step,
             "argv": list(self.argv),
             "returncode": self.returncode,
-            "start": round(within(offset, duration), 3),
+            "start": timeline.at(self.start),
+            "finished": timeline.at(self.start + self.seconds),
             "seconds": round(self.seconds, 3),
             "stdout": self.stdout,
             "stderr": self.stderr,
@@ -189,7 +283,50 @@ class Demo:
             end = min(end, self.next_test)
         return start, min(end, duration)
 
-    def as_json(self, poster: str | None, clip: Clip | None) -> dict[str, Any]:
+    def timeline(self, clip: Clip | None) -> Timeline:
+        """What this demo is timed against.
+
+        Its clip, when it has one. A demo with no clip is still a demo rather
+        than a moment of the run it was performed in: timing it from the run
+        would open a demo performed ten minutes in ten minutes late, with no
+        video to have caught up by then.
+        """
+        if clip is not None:
+            return Timeline(origin=clip.offset, duration=clip.video.duration)
+        return Timeline(
+            origin=max(0.0, self.first_command() - LEAD_SECONDS), duration=None
+        )
+
+    def session(self, timeline: Timeline) -> list[tuple[float, str]]:
+        """What the terminal printed, and when, over this demo's own timeline.
+
+        A command reaches the terminal twice: the command line where it was
+        run, and its output where it finished, so a reader watching the clip
+        sees the command land and the answer arrive when they really did.
+        """
+        events: list[tuple[float, str]] = []
+        for command in self.commands:
+            events.append(
+                (timeline.at(command.start), f"$ {command_line(command.argv)}\n")
+            )
+            events.append(
+                (
+                    timeline.at(command.start + command.seconds),
+                    printed(command.stdout)
+                    + printed(command.stderr)
+                    + f"[exited {command.returncode} after "
+                    f"{command.seconds:.2f}s]\n",
+                )
+            )
+        return events
+
+    def as_json(
+        self,
+        poster: str | None,
+        clip: Clip | None,
+        terminal: Terminal,
+        timeline: Timeline,
+    ) -> dict[str, Any]:
         return {
             "slug": self.slug,
             "title": self.title,
@@ -197,7 +334,8 @@ class Demo:
             "test": self.test,
             "poster": poster,
             "video": None if clip is None else clip.video.as_json(),
-            "commands": [command.as_json(clip) for command in self.commands],
+            "terminal": terminal.as_json(),
+            "commands": [command.as_json(timeline) for command in self.commands],
         }
 
 
@@ -535,6 +673,40 @@ def cut_clips(
     return clips
 
 
+def write_terminal(demo: Demo, timeline: Timeline, media: Path) -> Terminal:
+    """Write a demo's terminal session beside its clip, as asciicast v2.
+
+    The session lasts as long as the clip it is played beside, so a player
+    given both holds one timeline; a demo whose clip could not be cut keeps
+    the timeline its own commands describe. A session whose last command
+    printed before the clip ended is held open to the end of it, so a player
+    given the session alone plays it for as long as the demo lasted.
+    """
+    events = demo.session(timeline)
+    printed_until = max((at for at, _ in events), default=0.0)
+    duration = printed_until if timeline.duration is None else timeline.duration
+    if duration > printed_until:
+        events.append((duration, ""))
+    header = {
+        "version": 2,
+        "width": TERMINAL_COLUMNS,
+        "height": TERMINAL_ROWS,
+        "title": demo.title,
+        "env": {"SHELL": "/bin/sh", "TERM": "xterm-256color"},
+    }
+    lines = [json.dumps(header, sort_keys=True)] + [
+        json.dumps([round(at, 3), "o", ended(text)]) for at, text in events
+    ]
+    name = f"{demo.slug}{TERMINAL_SUFFIX}"
+    (media / name).write_text("\n".join(lines) + "\n")
+    return Terminal(
+        name=name,
+        columns=TERMINAL_COLUMNS,
+        rows=TERMINAL_ROWS,
+        duration=duration,
+    )
+
+
 def copy_poster(demo: Demo, artifacts: Path, media: Path) -> str | None:
     """The demo's final screenshot, which stands in for the clip that may not exist."""
     for name in reversed(demo.screenshots):
@@ -564,12 +736,19 @@ def write(
     clips: dict[str, Clip] = {}
     if recording is not None and recorder is not None:
         clips = cut_clips(recorder, recording, demos, media)
-    manifest = {
-        "demos": [
-            demo.as_json(copy_poster(demo, artifacts, media), clips.get(demo.slug))
-            for demo in sorted(demos, key=lambda demo: demo.slug)
-        ]
-    }
+    published = []
+    for demo in sorted(demos, key=lambda demo: demo.slug):
+        clip = clips.get(demo.slug)
+        timeline = demo.timeline(clip)
+        published.append(
+            demo.as_json(
+                copy_poster(demo, artifacts, media),
+                clip,
+                write_terminal(demo, timeline, media),
+                timeline,
+            )
+        )
+    manifest = {"demos": published}
     (output / MANIFEST_NAME).write_text(json.dumps(manifest, indent=2) + "\n")
 
 
