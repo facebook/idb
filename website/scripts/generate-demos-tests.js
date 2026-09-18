@@ -28,6 +28,15 @@ function demoFixture(slug, test, duration) {
     title: 'Open a URL on a simulator',
     summary: 'Hand a URL to the simulator and let it pick the app.',
     test,
+    source: {
+      path: 'EndToEndTests/test_system.py',
+      line: 31,
+      sha: '0123456789abcdef0123456789abcdef01234567',
+      url:
+        'https://github.com/facebook/idb/blob/' +
+        '0123456789abcdef0123456789abcdef01234567/' +
+        'EndToEndTests/test_system.py#L31',
+    },
     poster: `media/${slug}.png`,
     video: {
       source: `media/${slug}.mp4`,
@@ -373,6 +382,70 @@ test('refuses a terminal session from outside the run', () => {
   assert.throws(
     () => run(websiteDir, {IDB_DEMOS_DIR: source}),
     /has a terminal session at \.\.\/\.\.\/elsewhere\/session\.cast, outside the run/
+  );
+});
+
+test('links the test that performed each demo', () => {
+  const {websiteDir, source} = scratch(manifestFixture());
+
+  const published = run(websiteDir, {IDB_DEMOS_DIR: source});
+
+  assert.strictEqual(
+    published.demos[0].source.url,
+    'https://github.com/facebook/idb/blob/' +
+      '0123456789abcdef0123456789abcdef01234567/EndToEndTests/test_system.py#L31'
+  );
+  assert.strictEqual(published.demos[0].source.line, 31);
+});
+
+test('publishes a demo whose run recorded no declaration', () => {
+  const manifest = manifestFixture();
+  manifest.demos[0].source = null;
+  const {websiteDir, source} = scratch(manifest);
+
+  const published = run(websiteDir, {IDB_DEMOS_DIR: source});
+
+  assert.strictEqual(published.demos[0].source, null);
+});
+
+test('publishes a declaration the run could not pin to a commit', () => {
+  const manifest = manifestFixture();
+  manifest.demos[0].source = {
+    path: 'EndToEndTests/test_system.py',
+    line: 31,
+    sha: null,
+    url: null,
+  };
+  const {websiteDir, source} = scratch(manifest);
+
+  const published = run(websiteDir, {IDB_DEMOS_DIR: source});
+
+  assert.strictEqual(published.demos[0].source.url, null);
+  assert.strictEqual(published.demos[0].source.path, 'EndToEndTests/test_system.py');
+});
+
+test('refuses a source link that points anywhere else', () => {
+  for (const url of ['javascript:alert(1)', 'https://example.com/idb.py#L1']) {
+    const manifest = manifestFixture();
+    manifest.demos[0].source.url = url;
+    const {websiteDir, source} = scratch(manifest);
+
+    assert.throws(
+      () => run(websiteDir, {IDB_DEMOS_DIR: source}),
+      /links its source somewhere other than/,
+      url
+    );
+  }
+});
+
+test('fails when a demo names a source it cannot link', () => {
+  const manifest = manifestFixture();
+  delete manifest.demos[0].source.path;
+  const {websiteDir, source} = scratch(manifest);
+
+  assert.throws(
+    () => run(websiteDir, {IDB_DEMOS_DIR: source}),
+    /names a source file it cannot link/
   );
 });
 

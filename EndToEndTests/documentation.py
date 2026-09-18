@@ -91,6 +91,8 @@ class Demo:
     slug: str
     title: str
     summary: str
+    source: str = ""
+    line: int = 0
 
     def __post_init__(self) -> None:
         if not _SLUG.match(self.slug):
@@ -98,8 +100,14 @@ class Demo:
         if not self.title or not self.summary:
             raise ValueError(f"Demo {self.slug!r} needs both a title and a summary")
 
-    def as_json(self) -> dict[str, str]:
-        return {"slug": self.slug, "title": self.title, "summary": self.summary}
+    def as_json(self) -> dict[str, Any]:
+        return {
+            "slug": self.slug,
+            "title": self.title,
+            "summary": self.summary,
+            "source": self.source,
+            "line": self.line,
+        }
 
 
 def test_identity(identity: str) -> str:
@@ -118,11 +126,22 @@ def test_identity(identity: str) -> str:
     return identity[index + 1 :]
 
 
+def source_path(module: str) -> str:
+    """The file a test module is published as, in the open-source repository.
+
+    The suite is exported to the root of that repository, so the module's own
+    name is its path there whichever build imported it.
+    """
+    return f"{test_identity(module).replace('.', '/')}.py"
+
+
 def documented_demo(
     slug: str, title: str, summary: str
 ) -> Callable[[_Method], _Method]:
     """Mark a test method as the source of a documented demo."""
-    demo = Demo(slug=slug, title=title, summary=summary)
+    # Built once here so a demo declared with a bad slug, or with no title or
+    # summary, is refused as the suite is imported rather than as it runs.
+    Demo(slug=slug, title=title, summary=summary)
 
     def decorate(method: _Method) -> _Method:
         test = test_identity(f"{method.__module__}.{method.__qualname__}")
@@ -136,7 +155,20 @@ def documented_demo(
             raise ValueError(
                 f"Demo {slug!r} is published as {published} but declared by {test}"
             )
-        setattr(method, DEMO_ATTRIBUTE, demo)
+        setattr(
+            method,
+            DEMO_ATTRIBUTE,
+            Demo(
+                slug=slug,
+                title=title,
+                summary=summary,
+                source=source_path(method.__module__),
+                # Where the demo is declared: the first line of the
+                # declaration, which is this decorator rather than the `def`
+                # under it.
+                line=method.__code__.co_firstlineno,
+            ),
+        )
         return method
 
     return decorate

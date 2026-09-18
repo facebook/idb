@@ -60,6 +60,12 @@ VIDEO_TYPES = {".mp4": "video/mp4", ".mov": "video/quicktime"}
 # the trace the suite recorded rather than captured from a terminal, so it
 # carries the same normalised output the transcript does, and two generations
 # of one run write the same bytes.
+# Where the suite is published, and the commit a run tested it at: a demo
+# links the test that performed it, pinned to the source the clip was cut
+# from rather than to whatever that file has become since.
+SOURCE_REPOSITORY = "https://github.com/facebook/idb/blob"
+SOURCE_SHA_ENV = "GITHUB_SHA"
+
 TERMINAL_SUFFIX = ".cast"
 TERMINAL_TYPE = "application/x-asciicast"
 # Wide enough for the commands the suite publishes, and tall enough to hold
@@ -205,6 +211,29 @@ class Timeline:
 
 
 @dataclass(frozen=True)
+class Source:
+    """Where the test that performed a demo is declared, as published."""
+
+    path: str
+    line: int
+    sha: str | None
+
+    def as_json(self) -> dict[str, Any]:
+        return {
+            "path": self.path,
+            "line": self.line,
+            "sha": self.sha,
+            # Only a run that knows which commit it tested can link one: a
+            # link to a branch would point at whatever the file becomes.
+            "url": (
+                None
+                if self.sha is None
+                else f"{SOURCE_REPOSITORY}/{self.sha}/{self.path}#L{self.line}"
+            ),
+        }
+
+
+@dataclass(frozen=True)
 class Clip:
     """One demo's own clip: what the website plays, and where it came from."""
 
@@ -254,6 +283,7 @@ class Demo:
     title: str
     summary: str
     test: str
+    source: Source | None
     status: str
     began: float
     test_began: float
@@ -332,6 +362,7 @@ class Demo:
             "title": self.title,
             "summary": self.summary,
             "test": self.test,
+            "source": None if self.source is None else self.source.as_json(),
             "poster": poster,
             "video": None if clip is None else clip.video.as_json(),
             "terminal": terminal.as_json(),
@@ -347,6 +378,7 @@ class _Performance:
     title: str
     summary: str
     test: str
+    source: Source | None
     began: float
     test_began: float
     screenshots: list[str] = field(default_factory=list)
@@ -358,6 +390,7 @@ class _Performance:
             title=self.title,
             summary=self.summary,
             test=self.test,
+            source=self.source,
             status=status,
             began=self.began,
             test_began=self.test_began,
@@ -442,7 +475,9 @@ def started_tests(events: Sequence[dict[str, Any]], origin: float) -> dict[str, 
     return starts
 
 
-def read_demos(events: Sequence[dict[str, Any]], origin: float) -> list[Demo]:
+def read_demos(
+    events: Sequence[dict[str, Any]], origin: float, sha: str | None = None
+) -> list[Demo]:
     """The demos the run performed, in the order the trace records them.
 
     A demo can only be read while the test performing it runs, so one that
@@ -470,6 +505,11 @@ def read_demos(events: Sequence[dict[str, Any]], origin: float) -> list[Demo]:
                 title=event["title"],
                 summary=event["summary"],
                 test=identity or "",
+                source=(
+                    Source(path=event["source"], line=int(event["line"]), sha=sha)
+                    if event.get("source")
+                    else None
+                ),
                 began=at,
                 test_began=starts.get(identity or "", at),
             )
@@ -794,7 +834,11 @@ def main(argv: Sequence[str] | None = None) -> int:
     try:
         trace, events = select_trace(arguments.artifacts_dir)
         recording = read_recording(trace)
-        demos = read_demos(events, origin_of(events, recording))
+        demos = read_demos(
+            events,
+            origin_of(events, recording),
+            os.environ.get(SOURCE_SHA_ENV) or None,
+        )
         issues = problems(demos)
         if issues:
             for issue in issues:

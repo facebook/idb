@@ -23,6 +23,11 @@ const DEMOS_DIR_ENV = 'IDB_DEMOS_DIR';
 const MANIFEST_NAME = 'demos.json';
 const SERVED_PATH = '/demos/media';
 
+// The one place a demo's source link may point: the published repository, at
+// a commit. Anything else in a generated page's href is refused here rather
+// than rendered into the site.
+const SOURCE_PREFIX = 'https://github.com/facebook/idb/blob/';
+
 const EMPTY = {demos: []};
 
 const STREAM_KEYS = ['stdout', 'stderr'];
@@ -109,6 +114,24 @@ function problemsWithTerminal(name, terminal) {
   return problems;
 }
 
+// Where the test that performed the demo is declared. A run that recorded no
+// declaration publishes none, and one that did not know which commit it
+// tested publishes the file and line without a link.
+function problemsWithSource(name, source) {
+  const problems = [];
+  if (typeof source.path !== 'string' || source.path === '') {
+    problems.push(`${name} names a source file it cannot link`);
+  }
+  if (!isNumber(source.line)) {
+    problems.push(`${name} has a source with no line`);
+  }
+  const url = source.url;
+  if (url !== null && url !== undefined && !String(url).startsWith(SOURCE_PREFIX)) {
+    problems.push(`${name} links its source somewhere other than ${SOURCE_PREFIX}`);
+  }
+  return problems;
+}
+
 function problemsWithCommands(name, commands) {
   const problems = [];
   for (const command of commands) {
@@ -185,6 +208,10 @@ function problemsWith(manifest) {
     // so a missing clip is a demo to publish rather than a manifest to refuse.
     if (video !== null && video !== undefined) {
       problems.push(...problemsWithClip(name, video));
+    }
+    const source = (demo || {}).source;
+    if (source !== null && source !== undefined) {
+      problems.push(...problemsWithSource(name, source));
     }
     const terminal = (demo || {}).terminal;
     if (typeof terminal !== 'object' || terminal === null) {

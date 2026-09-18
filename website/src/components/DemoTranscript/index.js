@@ -264,6 +264,28 @@ function Screen({demo, video, source, poster, player, onTime}) {
   );
 }
 
+// Where the test that performed this demo is declared, pinned to the commit
+// the run tested rather than to a branch, which would be whatever that file
+// becomes later. A run that did not record a declaration shows none.
+function Declaration({source}) {
+  if (!source) {
+    return null;
+  }
+  const where = `${source.path}:${source.line}`;
+  return (
+    <p className={styles.empty}>
+      Performed by{' '}
+      {source.url ? (
+        <a href={source.url}>
+          <code>{where}</code>
+        </a>
+      ) : (
+        <code>{where}</code>
+      )}
+    </p>
+  );
+}
+
 function Demo({demo}) {
   const player = useRef(null);
   const video = demo.video;
@@ -337,6 +359,7 @@ function Demo({demo}) {
             </a>{' '}
             as an asciicast.
           </p>
+          <Declaration source={demo.source} />
         </div>
       </div>
     </section>

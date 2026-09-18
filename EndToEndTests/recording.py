@@ -147,8 +147,23 @@ class Recording:
         self.send("bar", position="bottom", content="text", text="Setup", fit=True)
         self.send("chapter", text=name)
 
-    def demo(self, slug: str, title: str, summary: str) -> None:
-        self.event("demo", slug=slug, title=title, summary=summary)
+    def demo(
+        self,
+        slug: str,
+        title: str,
+        summary: str,
+        *,
+        source: str = "",
+        line: int = 0,
+    ) -> None:
+        """Record a demo beginning, and where the test performing it is declared."""
+        described: dict[str, Any] = {"slug": slug, "title": title, "summary": summary}
+        # A demo whose declaration is not known publishes no source link
+        # rather than one pointing nowhere.
+        if source:
+            described["source"] = source
+            described["line"] = line
+        self.event("demo", **described)
 
     def finish_test(self, status: str) -> None:
         self.event("test_finished", status=status)

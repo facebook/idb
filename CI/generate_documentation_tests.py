@@ -28,6 +28,12 @@ OTHER_TEST = "EndToEndTests.test_accessibility.AccessibilityTests.test_ui_tap"
 TABLE = {SLUG: TEST}
 BOTH = {SLUG: TEST, OTHER_SLUG: OTHER_TEST}
 
+# Where the suite says the fixture's demo is declared, as the test module is
+# published rather than as it is checked out.
+SOURCE_FILE = "EndToEndTests/test_system.py"
+SOURCE_LINE = 31
+SHA = "0123456789abcdef0123456789abcdef01234567"
+
 PREFIX = "idb-e2e-fixture"
 ORIGIN = 1000.0
 # The prefix a build that imports the suite by its path in the repository adds
@@ -103,6 +109,8 @@ def trace_events(
     shift: float = 0.0,
     setup: float = 1.0,
     commands_after: float = 3.0,
+    source: str = SOURCE_FILE,
+    line: int = SOURCE_LINE,
 ) -> list[dict[str, Any]]:
     """One documented test's worth of trace, with the polling it really does.
 
@@ -123,6 +131,7 @@ def trace_events(
             "slug": slug,
             "title": "Open a URL on a simulator",
             "summary": "Hand a URL to the simulator and let it pick the app.",
+            **({"source": source, "line": line} if source else {}),
         },
         {"time": began + 1, "event": "command_started", "test": test, "argv": POLLED},
         {
@@ -521,6 +530,49 @@ class DegradationTests(unittest.TestCase):
                 refused(source, output, BOTH)
 
             self.assertFalse((output / MANIFEST_NAME).exists())
+
+
+class SourceTests(unittest.TestCase):
+    """Where a demo says the test that performed it is declared."""
+
+    def test_links_the_declaration_at_the_commit_the_run_tested(self) -> None:
+        with artifacts() as (source, output):
+            with mock.patch.dict(os.environ, {"GITHUB_SHA": SHA}):
+                self.assertEqual(generate(source, output), 0)
+            published = manifest(output)["demos"][0]["source"]
+
+        self.assertEqual(
+            published,
+            {
+                "path": SOURCE_FILE,
+                "line": SOURCE_LINE,
+                "sha": SHA,
+                "url": (
+                    f"https://github.com/facebook/idb/blob/{SHA}/"
+                    f"{SOURCE_FILE}#L{SOURCE_LINE}"
+                ),
+            },
+        )
+
+    def test_names_the_declaration_when_the_run_knows_no_commit(self) -> None:
+        with artifacts() as (source, output):
+            with mock.patch.dict(os.environ, {}, clear=True):
+                self.assertEqual(generate(source, output), 0)
+            published = manifest(output)["demos"][0]["source"]
+
+        self.assertEqual(published["path"], SOURCE_FILE)
+        self.assertEqual(published["line"], SOURCE_LINE)
+        self.assertIsNone(published["sha"])
+        # Nothing to pin a link to: a link to a branch would point at whatever
+        # the file becomes rather than at what this run documented.
+        self.assertIsNone(published["url"])
+
+    def test_publishes_no_declaration_a_run_did_not_record(self) -> None:
+        with artifacts({PREFIX: trace_events(source="")}) as (source, output):
+            with mock.patch.dict(os.environ, {"GITHUB_SHA": SHA}):
+                self.assertEqual(generate(source, output), 0)
+
+            self.assertIsNone(manifest(output)["demos"][0]["source"])
 
 
 class TerminalTests(unittest.TestCase):

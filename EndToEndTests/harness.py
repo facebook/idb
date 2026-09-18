@@ -733,7 +733,13 @@ class IdbEndToEndTestCase(unittest.IsolatedAsyncioTestCase):
         if demo is None or self.recording is None:
             return
         home = os.environ.get("HOME")
-        self.recording.demo(demo.slug, demo.title, demo.summary)
+        self.recording.demo(
+            demo.slug,
+            demo.title,
+            demo.summary,
+            source=demo.source,
+            line=demo.line,
+        )
         self.transcript = Transcript(
             normalisation_rules(
                 self.environment.udid,
