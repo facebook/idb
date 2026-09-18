@@ -31,7 +31,7 @@ private final class CapturingApplicationLauncher: ApplicationLaunching, @uncheck
 
   func launch(_ configuration: ApplicationLaunchConfiguration) async throws -> LaunchedApplication {
     capture(configuration)
-    // Throw to unwind launchDebugServer before it reaches the
+    // Throw to unwind launchServer before it reaches the
     // (process-spawning) debugServerTask path. The thrown error never
     // surfaces — tests poll the captured configuration directly.
     throw LaunchCaptureStop()
@@ -87,7 +87,7 @@ final class SimulatorDebuggerCommandsTests: XCTestCase {
 
   // MARK: - Launch Configuration
 
-  func testLaunchDebugServerConfiguresApplicationForDebugging() async {
+  func testLaunchServerConfiguresApplicationForDebugging() async {
     let harness = makeHarness()
     let app = BundleDescriptor(
       name: "MyApp",
@@ -95,7 +95,7 @@ final class SimulatorDebuggerCommandsTests: XCTestCase {
       path: "/path/to/MyApp.app",
       binary: nil)
 
-    _ = try? await harness.commands.launchDebugServer(forHostApplication: app, port: 12345)
+    _ = try? await harness.commands.launchServer(forHostApplication: app, port: 12345)
 
     let config = awaitCapturedConfig(harness.wrapper)
     XCTAssertNotNil(config, "Should have captured the launch configuration")
@@ -113,7 +113,7 @@ final class SimulatorDebuggerCommandsTests: XCTestCase {
       "No custom environment variables should be passed to the debugged application")
   }
 
-  func testLaunchDebugServerUsesApplicationDescriptorProperties() async {
+  func testLaunchServerUsesApplicationDescriptorProperties() async {
     let harness = makeHarness()
     let app = BundleDescriptor(
       name: "SpecialApp",
@@ -121,7 +121,7 @@ final class SimulatorDebuggerCommandsTests: XCTestCase {
       path: "/path/to/SpecialApp.app",
       binary: nil)
 
-    _ = try? await harness.commands.launchDebugServer(forHostApplication: app, port: 9999)
+    _ = try? await harness.commands.launchServer(forHostApplication: app, port: 9999)
 
     let config = awaitCapturedConfig(harness.wrapper)
     XCTAssertEqual(

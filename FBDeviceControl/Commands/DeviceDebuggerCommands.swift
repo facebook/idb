@@ -51,7 +51,7 @@ public struct DeviceDebuggerCommands: DebuggerCommands {
   ///
   /// The developer disk image is mounted first, because the service does not exist until it is.
   /// The connection is unscoped: whoever receives it decides when it is invalidated.
-  public func connectToDebugServer() async throws -> LockdownServiceConnection {
+  public func connectToServer() async throws -> LockdownServiceConnection {
     let diskImage = try await device.developerDiskImage.ensureMounted()
     let serviceName =
       diskImage.xcodeVersion.majorVersion >= 12
@@ -62,13 +62,13 @@ public struct DeviceDebuggerCommands: DebuggerCommands {
 
   // MARK: - Async
 
-  public func launchDebugServer(forHostApplication application: BundleDescriptor, port: in_port_t) async throws -> any DebugServer {
+  public func launchServer(forHostApplication application: BundleDescriptor, port: in_port_t) async throws -> any DebugServer {
     if device.osVersion.version.majorVersion >= 17 {
       throw DeviceDebuggerError.unsupportedOSVersion(version: device.osVersion.versionString)
     }
     let commands = try await lldbBootstrapCommands(forApplicationAtPath: application.path, port: port)
     return try await DeviceDebugServer.debugServer(
-      forServiceConnection: connectToDebugServer(),
+      forServiceConnection: connectToServer(),
       port: port,
       lldbBootstrapCommands: commands,
       queue: device.workQueue,
