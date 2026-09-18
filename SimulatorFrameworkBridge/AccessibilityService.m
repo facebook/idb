@@ -18,6 +18,11 @@
 #import "AccessibilityRuntime.h"
 #import "AccessibilityServiceServer.h"
 #import "AccessibilityService_Private.h"
+#if __has_include(<SimulatorFrameworkBridgeSupport/SimulatorFrameworkBridgeSupport-Swift.h>)
+ #import <SimulatorFrameworkBridgeSupport/SimulatorFrameworkBridgeSupport-Swift.h>
+#else
+ #import "SimulatorFrameworkBridgeSupport-Swift.h"
+#endif
 
 // The `XC_kAXXC*` attribute keys. These MUST match `AXWire.Node` host-side so the emitted tree feeds
 // the shared serializer (via `AXBridgePlatformElement`) unchanged.
@@ -1612,55 +1617,7 @@ static NSDictionary<NSString *, id> *FBAXBridgeDispatchRequest(NSDictionary<NSSt
 
 NSDictionary<NSString *, id> *FBAXBridgeRequestFromArguments(NSString *action, NSArray<NSString *> *arguments)
 {
-  NSMutableDictionary<NSString *, id> *request = [NSMutableDictionary dictionary];
-  request[kRequestVerb] = action;
-  for (NSUInteger i = 0; i + 1 < arguments.count; i += 2) {
-    NSString *flag = arguments[i];
-    NSString *argValue = arguments[i + 1];
-    if ([flag isEqualToString:@"--pid"]) {
-      request[kRequestPid] = @(argValue.intValue);
-    } else if ([flag isEqualToString:@"--max-depth"]) {
-      request[kRequestMaxDepth] = @(argValue.intValue);
-    } else if ([flag isEqualToString:@"--max-nodes"]) {
-      request[kRequestMaxNodes] = @(argValue.intValue);
-    } else if ([flag isEqualToString:@"--translator-vocabulary"]) {
-      // Takes a value like every other flag: the argv parser walks pairs, so a valueless flag is
-      // silently dropped rather than rejected.
-      request[kRequestTranslatorVocabulary] = @(argValue.boolValue);
-    } else if ([flag isEqualToString:@"--snapshot-tree"]) {
-      request[kRequestSnapshotTree] = @([argValue boolValue]);
-    } else if ([flag isEqualToString:@"--explain-unreachable"]) {
-      request[kRequestExplainUnreachable] = @([argValue boolValue]);
-    } else if ([flag isEqualToString:@"--attributes"]) {
-      // Comma-separated, because argv is read strictly in flag/value pairs and an attribute name never
-      // contains a comma. The socket transport sends the same field as a JSON array.
-      request[kRequestAttributes] = [argValue componentsSeparatedByString:@","];
-    } else if ([flag isEqualToString:@"--x"]) {
-      request[kRequestX] = @(argValue.doubleValue);
-    } else if ([flag isEqualToString:@"--y"]) {
-      request[kRequestY] = @(argValue.doubleValue);
-    } else if ([flag isEqualToString:@"--method"]) {
-      request[kRequestMethod] = argValue;
-    } else if ([flag isEqualToString:@"--action"]) {
-      request[kRequestAction] = argValue;
-    } else if ([flag isEqualToString:@"--value"]) {
-      request[kRequestValue] = argValue;
-    } else if ([flag isEqualToString:@"--setting"]) {
-      request[kRequestSetting] = argValue;
-    } else if ([flag isEqualToString:@"--enabled"]) {
-      if ([argValue isEqualToString:@"true"]) {
-        request[kRequestEnabled] = @YES;
-      } else if ([argValue isEqualToString:@"false"]) {
-        request[kRequestEnabled] = @NO;
-      } else {
-        request[kRequestEnabled] = argValue;
-      }
-    } else if ([flag isEqualToString:@"--assert-key"]) {
-      request[kRequestAssertKey] = argValue;
-    } else if ([flag isEqualToString:@"--assert-value"]) {
-      request[kRequestAssertValue] = argValue;
-    }
-  }
+  NSDictionary<NSString *, id> *request = [FBAXBridgeArguments requestWithAction:action arguments:arguments];
 
   return request;
 }

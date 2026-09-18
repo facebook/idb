@@ -18,9 +18,11 @@
 #import "AccessibilityService.h"
 #import "AccessibilityService+Testing.h"
 #import "AccessibilityService_Private.h"
-
-static NSString *const kFlagIdleTimeout = @"--idle-timeout";
-static NSString *const kFlagExitOnDisconnect = @"--exit-on-disconnect";
+#if __has_include(<SimulatorFrameworkBridgeSupport/SimulatorFrameworkBridgeSupport-Swift.h>)
+ #import <SimulatorFrameworkBridgeSupport/SimulatorFrameworkBridgeSupport-Swift.h>
+#else
+ #import "SimulatorFrameworkBridgeSupport-Swift.h"
+#endif
 
 static const uint32_t kMaxFrameBytes = 16 * 1024 * 1024;
 static const int kDefaultIdleTimeoutSeconds = 300;
@@ -64,34 +66,6 @@ static BOOL FBAXBridgeReadFully(int fd, void *buffer, size_t length)
     offset += (size_t)received;
   }
   return YES;
-}
-
-static BOOL FBAXBridgeBoolFromArguments(NSArray<NSString *> *arguments, NSString *flag)
-{
-  for (NSUInteger index = 0; index + 1 < arguments.count; index += 2) {
-    if ([arguments[index] isEqualToString:flag]) {
-      return [arguments[index + 1] boolValue];
-    }
-  }
-  return NO;
-}
-
-static int FBAXBridgeIdleTimeoutFromArguments(NSArray<NSString *> *arguments, int fallback)
-{
-  for (NSUInteger index = 0; index + 1 < arguments.count; index += 2) {
-    if (![arguments[index] isEqualToString:kFlagIdleTimeout]) {
-      continue;
-    }
-    NSString *rawValue = arguments[index + 1];
-    NSScanner *scanner = [NSScanner scannerWithString:rawValue];
-    int seconds = 0;
-    if (![scanner scanInt:&seconds] || !scanner.isAtEnd || seconds <= 0) {
-      NSLog(@"[AccessibilityService] ignoring unusable %@ '%@'; using %ds", kFlagIdleTimeout, rawValue, fallback);
-      return fallback;
-    }
-    return seconds;
-  }
-  return fallback;
 }
 
 static BOOL FBAXBridgeServeConnection(int connection, int idleTimeoutSeconds, FBAXBridgeSocketResponse *(^handleRequest)(NSData *))
@@ -226,8 +200,8 @@ static BOOL FBAXBridgeServeConnection(int connection, int idleTimeoutSeconds, FB
 int FBAXBridgeServe(NSString *socketPath, NSArray<NSString *> *arguments)
 {
   return [FBAXBridgeServer serveWithSocketPath:socketPath
-                            idleTimeoutSeconds:FBAXBridgeIdleTimeoutFromArguments(arguments, kDefaultIdleTimeoutSeconds)
-                              exitOnDisconnect:FBAXBridgeBoolFromArguments(arguments, kFlagExitOnDisconnect)
+                            idleTimeoutSeconds:[FBAXBridgeArguments idleTimeoutWithArguments:arguments fallback:kDefaultIdleTimeoutSeconds]
+                              exitOnDisconnect:[FBAXBridgeArguments exitOnDisconnectWithArguments:arguments]
                                 prepareRuntime:^{ FBAXBridgePrepareRuntime(); }
                                  handleRequest:^FBAXBridgeSocketResponse *(NSData *request) {
                                    BOOL shutdown = NO;
@@ -243,7 +217,7 @@ int FBAXBridgeServeBacklogForTesting(void)
 
 int FBAXBridgeIdleTimeoutForTesting(NSArray<NSString *> *arguments, int fallback)
 {
-  return FBAXBridgeIdleTimeoutFromArguments(arguments, fallback);
+  return [FBAXBridgeArguments idleTimeoutWithArguments:arguments fallback:fallback];
 }
 
 int FBAXBridgeDefaultIdleTimeoutForTesting(void)
@@ -253,5 +227,5 @@ int FBAXBridgeDefaultIdleTimeoutForTesting(void)
 
 BOOL FBAXBridgeExitOnDisconnectForTesting(NSArray<NSString *> *arguments)
 {
-  return FBAXBridgeBoolFromArguments(arguments, kFlagExitOnDisconnect);
+  return [FBAXBridgeArguments exitOnDisconnectWithArguments:arguments];
 }
