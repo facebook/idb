@@ -10,7 +10,6 @@
 #import <FBControlCore/DataConsumer.h>
 #import <FBControlCore/FBArchiveOperations.h>
 #import <FBControlCore/FBBinaryDescriptor.h>
-#import <FBControlCore/FBControlCoreFrameworkLoader.h>
 #import <FBControlCore/FBDataBuffer.h>
 #import <FBControlCore/FBFuture.h>
 #import <FBControlCore/FBFuture+Sync.h>

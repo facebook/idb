@@ -25,7 +25,7 @@ private func symbol<T>(_ handle: UnsafeMutableRawPointer, _ name: String) throws
 public final class DeviceControlFrameworkLoader: FBControlCoreFrameworkLoader {
 
   @objc
-  public override init() {
+  public init() {
     super.init(name: "FBDeviceControl", frameworks: [WeakFramework.mobileDevice])
   }
 
