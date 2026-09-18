@@ -386,44 +386,6 @@ static id FBAXBridgePointDictionary(id pointValue)
   return (NSDictionary *)CFBridgingRelease(CGPointCreateDictionaryRepresentation(point));
 }
 
-// JSON cannot represent infinity or NaN: `NSJSONSerialization` *raises* an `NSInvalidArgumentException`
-// on a non-finite number rather than returning an error, which would abort this process and drop the
-// client's connection mid-read. An element that is off-screen or still being laid out (common on the
-// first read after launch) reports a non-finite frame coordinate, so every number is checked and a
-// non-finite one is emitted as null — matching the host serializer, which sanitizes the same way.
-static id FBAXBridgeJSONSafeNumber(NSNumber *number)
-{
-  if (CFNumberIsFloatType((__bridge CFNumberRef)number) && !isfinite(number.doubleValue)) {
-    return NSNull.null;
-  }
-  return number;
-}
-
-// Recursively replaces every non-finite number in a response with null before serialization.
-static id FBAXBridgeJSONSanitized(id value)
-{
-  if ([value isKindOfClass:NSNumber.class]) {
-    return FBAXBridgeJSONSafeNumber(value);
-  }
-  if ([value isKindOfClass:NSDictionary.class]) {
-    NSDictionary *dictionary = value;
-    NSMutableDictionary *sanitized = [NSMutableDictionary dictionaryWithCapacity:dictionary.count];
-    for (id key in dictionary) {
-      sanitized[key] = FBAXBridgeJSONSanitized(dictionary[key]);
-    }
-    return sanitized;
-  }
-  if ([value isKindOfClass:NSArray.class]) {
-    NSArray *array = value;
-    NSMutableArray *sanitized = [NSMutableArray arrayWithCapacity:array.count];
-    for (id element in array) {
-      [sanitized addObject:FBAXBridgeJSONSanitized(element)];
-    }
-    return sanitized;
-  }
-  return value;
-}
-
 // Coerce an attribute value to a JSON-serializable form. Strings and numbers pass through; the frame
 // becomes a dictionary; anything else is stringified so the payload never fails serialization.
 static id FBAXBridgeJSONSafeValue(id _Nullable value, NSString *key)
@@ -968,9 +930,9 @@ NSDictionary<NSString *, id> *FBAXBridgeHandleRequest(NSDictionary<NSString *, i
 
 NSDictionary<NSString *, id> *FBAXBridgeHandleRequestData(NSData *data, BOOL *_Nullable shutdownRequested)
 {
-  id parsed = [NSJSONSerialization JSONObjectWithData:data options:0 error:NULL];
+  NSDictionary<NSString *, id> *parsed = [FBAXBridgeWire requestFromData:data];
   NSDictionary<NSString *, id> *response;
-  if ([parsed isKindOfClass:NSDictionary.class]) {
+  if (parsed) {
     response = FBAXBridgeHandleRequest(parsed);
   } else {
     response = FBAXBridgeTaggedErrorResponse(@"malformed request frame", kErrorKindBadRequest, nil);
@@ -986,7 +948,7 @@ NSData *FBAXBridgeSerializeResponse(NSDictionary<NSString *, id> *response)
   // Sanitize first (non-finite numbers would otherwise raise), then still guard the call: an
   // unforeseen unserializable value must degrade to an error frame the client can read, never abort
   // the process and sever the connection.
-  id sanitized = FBAXBridgeJSONSanitized(response);
+  id sanitized = [FBAXBridgeWire sanitized:response];
   NSData *data = nil;
   if ([NSJSONSerialization isValidJSONObject:sanitized]) {
     @try {
