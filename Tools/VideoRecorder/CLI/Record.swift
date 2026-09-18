@@ -64,7 +64,8 @@ struct Record: AsyncParsableCommand {
       }
     }
     let url = try await recording.stop()
-    let report = try await RecordingReport.read(url: url, encoding: selected.rawValue)
+    let startedAt = await recording.startedAt()
+    let report = try await RecordingReport.read(url: url, encoding: selected.rawValue, startedAt: startedAt)
     try JSONEncoder().encode(report).write(to: URL(fileURLWithPath: output + ".json"), options: .atomic)
     logger.info().log("Recorded \(report.duration) seconds to \(output) (\(selected.rawValue))")
   }
@@ -132,8 +133,11 @@ struct RecordingReport: Encodable {
   let width: Int
   let height: Int
   let duration: Double
+  /// The Unix timestamp the first frame was captured at, so a caller timestamping its own events can
+  /// place them on the recording's timeline. Absent when the recorder could not establish it.
+  let startedAt: Double?
 
-  static func read(url: URL, encoding: String) async throws -> Self {
+  static func read(url: URL, encoding: String, startedAt: Double?) async throws -> Self {
     let asset = AVURLAsset(url: url)
     guard let track = try await asset.loadTracks(withMediaType: .video).first else { throw RecordingError.unreadable }
     let reader = try AVAssetReader(asset: asset)
@@ -143,6 +147,6 @@ struct RecordingReport: Encodable {
     reader.cancelReading()
     let duration = try await asset.load(.duration).seconds
     guard duration.isFinite, duration > 0 else { throw RecordingError.unreadable }
-    return Self(encoding: encoding, width: CVPixelBufferGetWidth(image), height: CVPixelBufferGetHeight(image), duration: duration)
+    return Self(encoding: encoding, width: CVPixelBufferGetWidth(image), height: CVPixelBufferGetHeight(image), duration: duration, startedAt: startedAt)
   }
 }

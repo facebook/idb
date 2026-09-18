@@ -46,6 +46,28 @@ public actor SimulatorVideo {
     try await stream.startStreaming(FBNullDataConsumer())
   }
 
+  /// The Unix timestamp of the recording's own media time zero, or nil before a frame was muxed.
+  ///
+  /// The file's timeline is anchored at the first encoded sample's presentation timestamp, and the
+  /// encoder stamps presentation timestamps as an offset from `systemUptime` at the first pushed
+  /// frame, so media zero is `timeAtFirstFrame + anchor` on the uptime clock. Uptime and wall clock
+  /// are read as one adjacent pair and differenced, which keeps the answer right however long the
+  /// recording ran or finalization took. Callers measuring their own wall-clock events against the
+  /// recording need this rather than the moment they observed the recorder come up, which trails
+  /// media zero by however long readiness took to detect.
+  public func startedAt() async -> Double? {
+    guard let anchor = fileWriter.startPresentationTime else {
+      return nil
+    }
+    let timeAtFirstFrame = await stream.currentTimeAtFirstFrame
+    guard timeAtFirstFrame > 0 else {
+      return nil
+    }
+    let uptime = ProcessInfo.processInfo.systemUptime
+    let wallClock = Date().timeIntervalSince1970
+    return wallClock - (uptime - (timeAtFirstFrame + anchor.seconds))
+  }
+
   public func stop() async throws -> URL {
     if hasStopped {
       return outputURL

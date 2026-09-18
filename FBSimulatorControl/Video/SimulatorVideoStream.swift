@@ -690,7 +690,8 @@ public actor SimulatorVideoStream: VideoStreamOperation {
   /// Total number of frames pushed to the encoder since streaming started.
   var currentFrameNumber: UInt { frameNumber }
 
-  /// Wall-clock time when the first frame was pushed, or 0 if not yet started.
+  /// `systemUptime` when the first frame was pushed, or 0 if not yet started. Uptime, not wall
+  /// clock, because it is what every frame's presentation timestamp is measured from.
   var currentTimeAtFirstFrame: TimeInterval { timeAtFirstFrame }
 
   /// Wall-clock time when the first framebuffer callback was received, or 0 if not yet started.

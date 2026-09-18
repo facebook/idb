@@ -86,6 +86,17 @@ final class SimulatorVideoFileWriter: EncodedSampleConsumer, TimedMetadataConsum
   }
   private let chapters = OSAllocatedUnfairLock(initialState: ChapterState())
 
+  /// The presentation timestamp `startSession` anchored the movie at, which is the file's media time
+  /// zero. Distinct from `ChapterState.firstPresentationTime`, the first sample actually appended,
+  /// which is only tracked when chapters are enabled. Read from the recorder's isolation domain.
+  private let anchor = OSAllocatedUnfairLock(initialState: CMTime.invalid)
+
+  /// The file's media time zero, or nil until the first sample has opened the writer.
+  var startPresentationTime: CMTime? {
+    let time = anchor.withLock { $0 }
+    return time.isValid ? time : nil
+  }
+
   init(filePath: String, fileType: AVFileType = .mp4, chaptersEnabled: Bool = false, logger: any ControlCoreLogger) {
     self.outputURL = URL(fileURLWithPath: filePath)
     self.fileType = fileType
@@ -189,7 +200,9 @@ final class SimulatorVideoFileWriter: EncodedSampleConsumer, TimedMetadataConsum
     guard assetWriter.startWriting() else {
       throw SimulatorVideoFileWriterError.assetWriterFailedToStart(errorDescription: assetWriter.error.map { String(describing: $0) } ?? "unknown error")
     }
-    assetWriter.startSession(atSourceTime: CMSampleBufferGetPresentationTimeStamp(sampleBuffer))
+    let start = CMSampleBufferGetPresentationTimeStamp(sampleBuffer)
+    assetWriter.startSession(atSourceTime: start)
+    anchor.withLock { $0 = start }
     self.assetWriter = assetWriter
     self.input = input
     return input
