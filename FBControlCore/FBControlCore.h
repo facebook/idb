@@ -22,4 +22,3 @@
 #import <FBControlCore/FBSubprocess.h>
 #import <FBControlCore/FBTargetConstants.h>
 #import <FBControlCore/FileReader.h>
-#import <FBControlCore/Target.h>
