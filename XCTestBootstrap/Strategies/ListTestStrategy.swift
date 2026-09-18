@@ -237,7 +237,7 @@ public final class ListTestStrategy {
 
   private static func listTestProcess(withSpawnConfiguration spawnConfiguration: ProcessSpawnConfiguration, onTarget target: any LogicTestTarget, timeout: TimeInterval, logger: ControlCoreLogger) -> FBFuture<AnyObject> {
     let launchFuture: FBFuture<FBSubprocess<AnyObject, AnyObject, AnyObject>> = fbFutureFromAsync {
-      try await target.processSpawn.launchProcess(spawnConfiguration)
+      try await target.spawn(spawnConfiguration)
     }
     return
       launchFuture

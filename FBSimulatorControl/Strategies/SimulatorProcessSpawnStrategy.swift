@@ -22,13 +22,7 @@ extension SimulatorProcessSpawnError: LocalizedError {
   }
 }
 
-public struct SimulatorProcessSpawnCommands: ProcessSpawnCommands {
-
-  private let simulator: Simulator
-
-  public static func commands(with simulator: Simulator) -> SimulatorProcessSpawnCommands {
-    return SimulatorProcessSpawnCommands(simulator: simulator)
-  }
+final class SimulatorProcessSpawnStrategy {
 
   // MARK: - Launch Options
 
@@ -42,7 +36,7 @@ public struct SimulatorProcessSpawnCommands: ProcessSpawnCommands {
     return options
   }
 
-  public func launchProcess(_ configuration: ProcessSpawnConfiguration) async throws -> FBSubprocess<AnyObject, AnyObject, AnyObject> {
+  static func spawn(_ simulator: Simulator, configuration: ProcessSpawnConfiguration) async throws -> FBSubprocess<AnyObject, AnyObject, AnyObject> {
     // Rejected before attaching, so that no file descriptor is opened for an input
     // that could never be read: SimDevice's launch options address stdout and stderr
     // by file descriptor and have no equivalent for stdin.
@@ -50,7 +44,7 @@ public struct SimulatorProcessSpawnCommands: ProcessSpawnCommands {
       throw SimulatorProcessSpawnError.stdInUnsupported
     }
     let attachment = try await bridgeFBFuture(configuration.io.attach())
-    return try await SimulatorProcessSpawnCommands.launchProcess(
+    return try await launchProcess(
       withSimulator: simulator,
       configuration: configuration,
       attachment: attachment

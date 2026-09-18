@@ -90,7 +90,7 @@ public struct SimulatorRuntimeToolCommands {
       mode: .default
     )
 
-    let process = try await simulator.processSpawn.launchProcess(configuration)
+    let process = try await simulator.spawn(configuration)
     let exitCode = try await bridgeFBFuture(process.exitCode)
 
     return InSimulatorToolOutput(

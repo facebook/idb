@@ -21,7 +21,6 @@ enum SimulatorCommandAccessor: CaseIterable, Sendable {
   case debugger
   case file
   case log
-  case processSpawn
   case videoRecording
   case videoStream
   case launchCtl
@@ -65,8 +64,6 @@ enum SimulatorCommandAccessor: CaseIterable, Sendable {
       _ = simulator.file
     case .log:
       _ = simulator.log
-    case .processSpawn:
-      _ = simulator.processSpawn
     case .videoRecording:
       _ = simulator.videoRecording
     case .videoStream:

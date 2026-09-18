@@ -13,7 +13,7 @@ import XCTest
 /// handling, `standalone` resolution, stdio keys. Pure-function assertions except the stdin
 /// case, which drives the launcher against a recording device double because what it asserts
 /// is that the device is never reached.
-final class SimulatorProcessSpawnCommandsTests: XCTestCase {
+final class SimulatorProcessSpawnStrategyTests: XCTestCase {
 
   private func simulator(state: TargetState) -> Simulator {
     SimulatorTestSupport.testableSimulator(withDevice: StubStateDevice(state: state))
@@ -22,7 +22,7 @@ final class SimulatorProcessSpawnCommandsTests: XCTestCase {
   // MARK: - Raw process spawn options
 
   func testRawSpawnOptionsPrependLaunchPathAsArgv0() {
-    let options = SimulatorProcessSpawnCommands.simDeviceLaunchOptions(
+    let options = SimulatorProcessSpawnStrategy.simDeviceLaunchOptions(
       withSimulator: simulator(state: .booted),
       launchPath: "/bin/echo",
       arguments: ["hello", "world"],
@@ -38,7 +38,7 @@ final class SimulatorProcessSpawnCommandsTests: XCTestCase {
   }
 
   func testRawSpawnOptionsCarryEnvironmentAndOmitWaitForDebuggerWhenFalse() {
-    let options = SimulatorProcessSpawnCommands.simDeviceLaunchOptions(
+    let options = SimulatorProcessSpawnStrategy.simDeviceLaunchOptions(
       withSimulator: simulator(state: .booted),
       launchPath: "/bin/echo",
       arguments: [],
@@ -55,7 +55,7 @@ final class SimulatorProcessSpawnCommandsTests: XCTestCase {
   }
 
   func testRawSpawnOptionsSetWaitForDebuggerWhenRequested() {
-    let options = SimulatorProcessSpawnCommands.simDeviceLaunchOptions(
+    let options = SimulatorProcessSpawnStrategy.simDeviceLaunchOptions(
       withSimulator: simulator(state: .booted),
       launchPath: "/bin/echo",
       arguments: [],
@@ -71,12 +71,12 @@ final class SimulatorProcessSpawnCommandsTests: XCTestCase {
   func testRawSpawnOptionsStandaloneReflectsMode() {
     let booted = simulator(state: .booted)
 
-    let launchd = SimulatorProcessSpawnCommands.simDeviceLaunchOptions(
+    let launchd = SimulatorProcessSpawnStrategy.simDeviceLaunchOptions(
       withSimulator: booted, launchPath: "/bin/echo", arguments: [], environment: [:],
       waitForDebugger: false, stdOut: nil, stdErr: nil, mode: .launchd)
     XCTAssertEqual((launchd["standalone"] as? NSNumber)?.boolValue, false)
 
-    let posix = SimulatorProcessSpawnCommands.simDeviceLaunchOptions(
+    let posix = SimulatorProcessSpawnStrategy.simDeviceLaunchOptions(
       withSimulator: booted, launchPath: "/bin/echo", arguments: [], environment: [:],
       waitForDebugger: false, stdOut: nil, stdErr: nil, mode: .posixSpawn)
     XCTAssertEqual((posix["standalone"] as? NSNumber)?.boolValue, true)
@@ -85,21 +85,21 @@ final class SimulatorProcessSpawnCommandsTests: XCTestCase {
   // MARK: - standalone resolution
 
   func testStandaloneIsTrueForPosixSpawnRegardlessOfState() {
-    XCTAssertTrue(SimulatorProcessSpawnCommands.shouldLaunchStandalone(onSimulator: simulator(state: .booted), mode: .posixSpawn))
-    XCTAssertTrue(SimulatorProcessSpawnCommands.shouldLaunchStandalone(onSimulator: simulator(state: .shutdown), mode: .posixSpawn))
+    XCTAssertTrue(SimulatorProcessSpawnStrategy.shouldLaunchStandalone(onSimulator: simulator(state: .booted), mode: .posixSpawn))
+    XCTAssertTrue(SimulatorProcessSpawnStrategy.shouldLaunchStandalone(onSimulator: simulator(state: .shutdown), mode: .posixSpawn))
   }
 
   func testStandaloneIsFalseForLaunchdRegardlessOfState() {
-    XCTAssertFalse(SimulatorProcessSpawnCommands.shouldLaunchStandalone(onSimulator: simulator(state: .booted), mode: .launchd))
-    XCTAssertFalse(SimulatorProcessSpawnCommands.shouldLaunchStandalone(onSimulator: simulator(state: .shutdown), mode: .launchd))
+    XCTAssertFalse(SimulatorProcessSpawnStrategy.shouldLaunchStandalone(onSimulator: simulator(state: .booted), mode: .launchd))
+    XCTAssertFalse(SimulatorProcessSpawnStrategy.shouldLaunchStandalone(onSimulator: simulator(state: .shutdown), mode: .launchd))
   }
 
   func testStandaloneDefaultModeFollowsBootState() {
     XCTAssertFalse(
-      SimulatorProcessSpawnCommands.shouldLaunchStandalone(onSimulator: simulator(state: .booted), mode: .default),
+      SimulatorProcessSpawnStrategy.shouldLaunchStandalone(onSimulator: simulator(state: .booted), mode: .default),
       "When booted, default mode launches into launchd (not standalone)")
     XCTAssertTrue(
-      SimulatorProcessSpawnCommands.shouldLaunchStandalone(onSimulator: simulator(state: .shutdown), mode: .default),
+      SimulatorProcessSpawnStrategy.shouldLaunchStandalone(onSimulator: simulator(state: .shutdown), mode: .default),
       "When not booted, default mode launches standalone")
   }
 
@@ -121,7 +121,7 @@ final class SimulatorProcessSpawnCommandsTests: XCTestCase {
     // descriptors but has no stdin key at all, so there is nowhere for the
     // attached input to go.
     do {
-      _ = try await simulator.processSpawn.launchProcess(configuration)
+      _ = try await simulator.spawn(configuration)
       XCTFail("Expected the launch to be rejected, but a process was returned")
     } catch SimulatorProcessSpawnError.stdInUnsupported {
       // Expected.

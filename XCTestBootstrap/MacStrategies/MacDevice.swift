@@ -415,11 +415,11 @@ public final class MacDevice: NSObject, Target {
 
 }
 
-// MARK: - MacDevice+ProcessSpawnCommands
+// MARK: - MacDevice+ProcessSpawn
 
-extension MacDevice: ProcessSpawnCommands {
+extension MacDevice {
 
-  public func launchProcess(
+  public func spawn(
     _ configuration: ProcessSpawnConfiguration
   ) async throws -> FBSubprocess<AnyObject, AnyObject, AnyObject> {
     let logger = self.logger
@@ -572,8 +572,6 @@ extension MacDevice {
   public var log: MacDevice { self }
 
   public var power: MacDevice { self }
-
-  public var processSpawn: MacDevice { self }
 
   public var screenshot: MacDevice { self }
 

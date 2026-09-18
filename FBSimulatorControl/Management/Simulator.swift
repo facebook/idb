@@ -228,10 +228,6 @@ extension Simulator {
     SimulatorLogCommands.commands(with: self)
   }
 
-  public var processSpawn: SimulatorProcessSpawnCommands {
-    SimulatorProcessSpawnCommands.commands(with: self)
-  }
-
   public var videoRecording: SimulatorVideoRecordingCommands {
     commandCache.resolve { SimulatorVideoRecordingCommands.commands(with: self) }
   }
@@ -362,6 +358,10 @@ extension Simulator {
 
   public func erase() async throws {
     try await SimulatorEraseStrategy.erase(self)
+  }
+
+  public func spawn(_ configuration: ProcessSpawnConfiguration) async throws -> FBSubprocess<AnyObject, AnyObject, AnyObject> {
+    try await SimulatorProcessSpawnStrategy.spawn(self, configuration: configuration)
   }
 }
 

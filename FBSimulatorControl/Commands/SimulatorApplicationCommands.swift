@@ -422,7 +422,7 @@ public struct SimulatorApplicationCommands: ApplicationCommands {
   }
 
   static func simDeviceLaunchOptions(for configuration: ApplicationLaunchConfiguration, stdOutPath: String?, stdErrPath: String?) -> [String: Any] {
-    var options = SimulatorProcessSpawnCommands.launchOptions(
+    var options = SimulatorProcessSpawnStrategy.launchOptions(
       withArguments: configuration.arguments,
       environment: configuration.environment,
       waitForDebugger: configuration.waitForDebugger)

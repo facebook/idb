@@ -372,7 +372,7 @@ public final class LogicTestRunStrategy: XCTestRunner {
     let launchAdaptedProcess: (ProcessSpawnConfiguration) -> FBFuture<AnyObject> = { mappedConfig in
       let target = self.target
       let launchFuture: FBFuture<FBSubprocess<AnyObject, AnyObject, AnyObject>> = fbFutureFromAsync {
-        try await target.processSpawn.launchProcess(mappedConfig)
+        try await target.spawn(mappedConfig)
       }
       return launchFuture.onQueue(
         queue,
