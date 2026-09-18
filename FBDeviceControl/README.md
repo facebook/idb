@@ -143,7 +143,7 @@ Debugging an app on an iOS Device isn't quite as simple as an `lldb` one-liner. 
 
 1. The Application to debug is installed on the iOS Device. A copy of the Application is also present/saved on the host attached to the device. The copy of the App is required on the host as this is needed for `lldb` to be able to symbolicate symbols within the debugged app.
 2. [A Developer Disk Image](#developer-disk-images) for the current device is mounted. This is required as the `debugserver` lockdown service is contained within the Developer Disk Image.
-3. The [`debugserver` service is started via lockdown](https://github.com/facebook/idb/blob/main/FBDeviceControl/Commands/DeviceDebuggerCommands.swift). This results in a bi-directional socket stream that `lldb` can talk to. This is a [remote debugging server, using the gdb protocol](https://lldb.llvm.org/use/remote.html).
+3. The [`debugserver` service is started via lockdown](https://github.com/facebook/idb/blob/main/FBDeviceControl/Commands/DeviceDebugServerCommands.swift). This results in a bi-directional socket stream that `lldb` can talk to. This is a [remote debugging server, using the gdb protocol](https://lldb.llvm.org/use/remote.html).
 4. The `debugserver` service must be made accessible to `lldb`. This is done by wrapping the `debugserver` connection within a socket, so that it can be connected to outside of the process that obtained the `debugserver` socket.
 5. `lldb` is started and then connects to the `debugserver` via the exposed socket. A series of commands are sent to `lldb` so that it understands how to connect to the remote debugserver and how to talk to it.
 6. `lldb` can now launch and debug the application.

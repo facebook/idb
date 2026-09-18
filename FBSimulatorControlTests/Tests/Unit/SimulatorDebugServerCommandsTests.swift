@@ -17,7 +17,7 @@ private struct LaunchCaptureStop: Error {}
 
 /// A stand-in launcher that records the configuration production supplies.
 ///
-/// Injected into `SimulatorDebuggerCommands` as its `applicationLauncher`, so the test does not
+/// Injected into `SimulatorDebugServerCommands` as its `applicationLauncher`, so the test does not
 /// have to subclass a production command class or install one in the simulator's command cache.
 private final class CapturingApplicationLauncher: ApplicationLaunching, @unchecked Sendable {
   private let lock = NSLock()
@@ -31,7 +31,7 @@ private final class CapturingApplicationLauncher: ApplicationLaunching, @uncheck
 
   func launch(_ configuration: ApplicationLaunchConfiguration) async throws -> LaunchedApplication {
     capture(configuration)
-    // Throw to unwind launchServer before it reaches the
+    // Throw to unwind launch before it reaches the
     // (process-spawning) debugServerTask path. The thrown error never
     // surfaces — tests poll the captured configuration directly.
     throw LaunchCaptureStop()
@@ -48,26 +48,26 @@ private final class CapturingApplicationLauncher: ApplicationLaunching, @uncheck
 
 // MARK: - Tests
 
-final class SimulatorDebuggerCommandsTests: XCTestCase {
+final class SimulatorDebugServerCommandsTests: XCTestCase {
 
   /// Holds strong references to the real `Simulator` and the capturing wrapper
-  /// for the duration of a test. `SimulatorDebuggerCommands.simulator` and
+  /// for the duration of a test. `SimulatorDebugServerCommands.simulator` and
   /// `SimulatorApplicationCommands.simulator` are both `weak`, so without an
   /// external strong ref the simulator deallocates the moment `makeCommands`
   /// returns and the production code throws "Simulator deallocated" before the
   /// override has a chance to capture.
   private struct Harness {
     let simulator: Simulator
-    let commands: SimulatorDebuggerCommands
+    let commands: SimulatorDebugServerCommands
     let wrapper: CapturingApplicationLauncher
   }
 
   /// Builds a real `Simulator` (with a stub device — see SimulatorTestSupport) and constructs
-  /// the production `SimulatorDebuggerCommands` against it, with a capturing launcher injected.
+  /// the production `SimulatorDebugServerCommands` against it, with a capturing launcher injected.
   private func makeHarness() -> Harness {
     let simulator = SimulatorTestSupport.testableSimulator()
     let wrapper = CapturingApplicationLauncher()
-    let commands = SimulatorDebuggerCommands(
+    let commands = SimulatorDebugServerCommands(
       simulator: simulator,
       debugServerPath: "/fake/debugserver",
       applicationLauncher: wrapper)
@@ -95,7 +95,7 @@ final class SimulatorDebuggerCommandsTests: XCTestCase {
       path: "/path/to/MyApp.app",
       binary: nil)
 
-    _ = try? await harness.commands.launchServer(forHostApplication: app, port: 12345)
+    _ = try? await harness.commands.launch(forHostApplication: app, port: 12345)
 
     let config = awaitCapturedConfig(harness.wrapper)
     XCTAssertNotNil(config, "Should have captured the launch configuration")
@@ -121,7 +121,7 @@ final class SimulatorDebuggerCommandsTests: XCTestCase {
       path: "/path/to/SpecialApp.app",
       binary: nil)
 
-    _ = try? await harness.commands.launchServer(forHostApplication: app, port: 9999)
+    _ = try? await harness.commands.launch(forHostApplication: app, port: 9999)
 
     let config = awaitCapturedConfig(harness.wrapper)
     XCTAssertEqual(
@@ -135,7 +135,7 @@ final class SimulatorDebuggerCommandsTests: XCTestCase {
   // MARK: - Path Construction
 
   func testDebugServerPathCombinesXcodeContentsDirectoryWithLLDBRelativePath() {
-    let path = SimulatorDebuggerCommands.resolveDebugServerPath()
+    let path = SimulatorDebugServerCommands.resolveDebugServerPath()
     let contentsDirectory = XcodeConfiguration.contentsDirectory
     let expectedPath = (contentsDirectory as NSString)
       .appendingPathComponent("SharedFrameworks/LLDB.framework/Resources/debugserver")

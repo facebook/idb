@@ -17,7 +17,7 @@ enum DeviceCommandAccessor: CaseIterable, Sendable {
   case crashLog
   case screenshot
   case location
-  case debugger
+  case debugServer
   case file
   case lifecycle
   case log
@@ -45,8 +45,8 @@ enum DeviceCommandAccessor: CaseIterable, Sendable {
       _ = device.screenshot
     case .location:
       _ = device.location
-    case .debugger:
-      _ = device.debugger
+    case .debugServer:
+      _ = device.debugServer
     case .file:
       _ = device.file
     case .lifecycle:

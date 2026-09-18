@@ -23,11 +23,11 @@ Much of the implementation here comes from:
  - It is also possible to use lldb's internal logging to see the API calls that it is making. This is done by configuring lldb via adding a line in ~/.lldbinit (e.g `log enable -v -f /tmp/lldb.log lldb api`)
  */
 
-public enum DeviceDebuggerError: Error {
+public enum DeviceDebugServerError: Error {
   case unsupportedOSVersion(version: String)
 }
 
-extension DeviceDebuggerError: LocalizedError {
+extension DeviceDebugServerError: LocalizedError {
   public var errorDescription: String? {
     switch self {
     case let .unsupportedOSVersion(version):
@@ -36,11 +36,11 @@ extension DeviceDebuggerError: LocalizedError {
   }
 }
 
-public struct DeviceDebuggerCommands: DebuggerCommands {
+public struct DeviceDebugServerCommands: DebugServerCommands {
   private let device: Device
 
-  public static func commands(with device: Device) -> DeviceDebuggerCommands {
-    DeviceDebuggerCommands(device: device)
+  public static func commands(with device: Device) -> DeviceDebugServerCommands {
+    DeviceDebugServerCommands(device: device)
   }
 
   init(device: Device) {
@@ -51,7 +51,7 @@ public struct DeviceDebuggerCommands: DebuggerCommands {
   ///
   /// The developer disk image is mounted first, because the service does not exist until it is.
   /// The connection is unscoped: whoever receives it decides when it is invalidated.
-  public func connectToServer() async throws -> LockdownServiceConnection {
+  public func connect() async throws -> LockdownServiceConnection {
     let diskImage = try await device.developerDiskImage.ensureMounted()
     let serviceName =
       diskImage.xcodeVersion.majorVersion >= 12
@@ -62,13 +62,13 @@ public struct DeviceDebuggerCommands: DebuggerCommands {
 
   // MARK: - Async
 
-  public func launchServer(forHostApplication application: BundleDescriptor, port: in_port_t) async throws -> any DebugServer {
+  public func launch(forHostApplication application: BundleDescriptor, port: in_port_t) async throws -> any DebugServer {
     if device.osVersion.version.majorVersion >= 17 {
-      throw DeviceDebuggerError.unsupportedOSVersion(version: device.osVersion.versionString)
+      throw DeviceDebugServerError.unsupportedOSVersion(version: device.osVersion.versionString)
     }
     let commands = try await lldbBootstrapCommands(forApplicationAtPath: application.path, port: port)
     return try await DeviceDebugServer.debugServer(
-      forServiceConnection: connectToServer(),
+      forServiceConnection: connect(),
       port: port,
       lldbBootstrapCommands: commands,
       queue: device.workQueue,

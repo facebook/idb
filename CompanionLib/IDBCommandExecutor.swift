@@ -499,7 +499,7 @@ public final class IDBCommandExecutor {
 
   public func debugserver_start(_ bundleID: String) async throws -> DebugServer {
     let bundle = try debugserver_prepare(bundleID)
-    let server = try await target.debugger.launchServer(forHostApplication: bundle, port: debugserverPort)
+    let server = try await target.debugServer.launch(forHostApplication: bundle, port: debugserverPort)
     debugServer = server
     return server
   }

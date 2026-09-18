@@ -279,8 +279,8 @@ extension Device {
     DeviceLocationCommands.commands(with: self)
   }
 
-  public var debugger: DeviceDebuggerCommands {
-    DeviceDebuggerCommands.commands(with: self)
+  public var debugServer: DeviceDebugServerCommands {
+    DeviceDebugServerCommands.commands(with: self)
   }
 
   public var file: DeviceFileCommands {

@@ -216,8 +216,8 @@ extension Simulator {
     SimulatorLocationCommands.commands(with: self)
   }
 
-  public var debugger: SimulatorDebuggerCommands {
-    commandCache.resolve { SimulatorDebuggerCommands.commands(with: self) }
+  public var debugServer: SimulatorDebugServerCommands {
+    commandCache.resolve { SimulatorDebugServerCommands.commands(with: self) }
   }
 
   public var file: SimulatorFileCommands {

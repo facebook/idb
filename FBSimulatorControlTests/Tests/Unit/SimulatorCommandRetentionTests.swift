@@ -18,7 +18,7 @@ enum SimulatorCommandAccessor: CaseIterable, Sendable {
   case crashLog
   case screenshot
   case location
-  case debugger
+  case debugServer
   case file
   case log
   case videoRecording
@@ -58,8 +58,8 @@ enum SimulatorCommandAccessor: CaseIterable, Sendable {
       _ = simulator.screenshot
     case .location:
       _ = simulator.location
-    case .debugger:
-      _ = simulator.debugger
+    case .debugServer:
+      _ = simulator.debugServer
     case .file:
       _ = simulator.file
     case .log:

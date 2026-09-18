@@ -114,8 +114,8 @@ public protocol Target: TargetInfo, TargetCommand {
   associatedtype CrashLog: CrashLogCommands
   var crashLog: CrashLog { get }
 
-  associatedtype Debugger: DebuggerCommands
-  var debugger: Debugger { get }
+  associatedtype DebugServer: DebugServerCommands
+  var debugServer: DebugServer { get }
 
   associatedtype File: FileCommands
   var file: File { get }

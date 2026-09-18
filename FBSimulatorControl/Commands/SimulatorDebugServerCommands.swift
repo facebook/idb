@@ -58,7 +58,7 @@ private final class SimulatorDebugServer: DebugServer {
   }
 }
 
-public final class SimulatorDebuggerCommands: DebuggerCommands {
+public final class SimulatorDebugServerCommands: DebugServerCommands {
 
   internal weak var simulator: Simulator?
   internal let debugServerPath: String
@@ -71,8 +71,8 @@ public final class SimulatorDebuggerCommands: DebuggerCommands {
       .appendingPathComponent("SharedFrameworks/LLDB.framework/Resources/debugserver")
   }
 
-  public class func commands(with simulator: Simulator) -> SimulatorDebuggerCommands {
-    SimulatorDebuggerCommands(
+  public class func commands(with simulator: Simulator) -> SimulatorDebugServerCommands {
+    SimulatorDebugServerCommands(
       simulator: simulator,
       debugServerPath: resolveDebugServerPath()
     )
@@ -88,7 +88,7 @@ public final class SimulatorDebuggerCommands: DebuggerCommands {
     self.applicationLauncher = applicationLauncher
   }
 
-  public func launchServer(forHostApplication application: BundleDescriptor, port: in_port_t) async throws -> any DebugServer {
+  public func launch(forHostApplication application: BundleDescriptor, port: in_port_t) async throws -> any DebugServer {
     guard let simulator = self.simulator else {
       throw WeakTargetError.simulator
     }

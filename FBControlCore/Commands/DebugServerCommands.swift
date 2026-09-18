@@ -7,9 +7,9 @@
 
 import Foundation
 
-public protocol DebuggerCommands {
+public protocol DebugServerCommands {
 
-  func launchServer(
+  func launch(
     forHostApplication application: BundleDescriptor,
     port: in_port_t
   ) async throws -> any DebugServer

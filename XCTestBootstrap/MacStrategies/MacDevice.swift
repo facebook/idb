@@ -559,7 +559,7 @@ extension MacDevice {
 
   public var crashLog: MacDevice { self }
 
-  public var debugger: MacDevice { self }
+  public var debugServer: MacDevice { self }
 
   public var file: MacDevice { self }
 
@@ -593,12 +593,14 @@ extension MacDevice: VideoStreamCommands {
   }
 }
 
-// MARK: - MacDevice+DebuggerCommands
+// MARK: - MacDevice+DebugServerCommands
 
-extension MacDevice: DebuggerCommands {
+extension MacDevice: DebugServerCommands {
 
-  public func launchServer(forHostApplication application: BundleDescriptor, port: in_port_t) async throws -> any DebugServer {
-    throw macUnsupported("launchServer")
+  // Qualified: `Target`'s `DebugServer` associated type resolves to `MacDevice` inside this scope
+  // and shadows the protocol of the same name, exactly as it does for `VideoRecording` above.
+  public func launch(forHostApplication application: BundleDescriptor, port: in_port_t) async throws -> any FBControlCore.DebugServer {
+    throw macUnsupported("launch")
   }
 }
 
