@@ -30,11 +30,11 @@ public final class VideoRecordingHandle: VideoRecording {
 
 public protocol VideoRecordingCommands {
 
-  func startRecording(toFile filePath: String) async throws -> any VideoRecording
+  func start(toFile filePath: String) async throws -> any VideoRecording
 
   /// Record using a caller-provided stream configuration (codec, frame rate, scale, rate control,
   /// key-frame rate). Mirrors `VideoStreamCommands.create(configuration:to:)`.
-  func startRecording(toFile filePath: String, configuration: VideoStreamConfiguration) async throws -> any VideoRecording
+  func start(toFile filePath: String, configuration: VideoStreamConfiguration) async throws -> any VideoRecording
 
   /// Whether the overload above applies the configuration or discards it. A caller that was asked
   /// for a specific frame rate or output size can then refuse, rather than recording something else
@@ -45,8 +45,8 @@ public protocol VideoRecordingCommands {
 public extension VideoRecordingCommands {
 
   /// Default ignores the configuration. A conformer that can honor it overrides both members.
-  func startRecording(toFile filePath: String, configuration: VideoStreamConfiguration) async throws -> any VideoRecording {
-    try await startRecording(toFile: filePath)
+  func start(toFile filePath: String, configuration: VideoStreamConfiguration) async throws -> any VideoRecording {
+    try await start(toFile: filePath)
   }
 
   var honorsRecordingConfiguration: Bool { false }

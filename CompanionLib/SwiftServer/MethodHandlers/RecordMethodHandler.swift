@@ -28,7 +28,7 @@ struct RecordMethodHandler {
     let recording: any VideoRecording
     if let encodeOptions = try RecordRequestTranslation.encodeOptions(from: start) {
       try RecordRequestTranslation.requireHonoredConfiguration(target.videoRecording, describing: "\(target)")
-      recording = try await target.videoRecording.startRecording(
+      recording = try await target.videoRecording.start(
         toFile: filePath,
         configuration: RecordRequestTranslation.configuration(for: encodeOptions))
       do {
@@ -43,7 +43,7 @@ struct RecordMethodHandler {
         throw error
       }
     } else {
-      recording = try await target.videoRecording.startRecording(toFile: filePath)
+      recording = try await target.videoRecording.start(toFile: filePath)
     }
 
     _ = try await requestStream.requiredNext()

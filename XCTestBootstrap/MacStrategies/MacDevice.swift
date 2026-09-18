@@ -697,8 +697,8 @@ extension MacDevice: VideoRecordingCommands {
 
   // Module-qualified because `Target.VideoRecording` is an associated type whose witness here is
   // `MacDevice` itself, which shadows the protocol of the same name inside any `MacDevice` extension.
-  public func startRecording(toFile filePath: String) async throws -> any FBControlCore.VideoRecording {
-    throw macUnsupported("startRecording")
+  public func start(toFile filePath: String) async throws -> any FBControlCore.VideoRecording {
+    throw macUnsupported("start")
   }
 }
 

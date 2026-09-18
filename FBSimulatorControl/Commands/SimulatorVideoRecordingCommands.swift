@@ -54,11 +54,11 @@ public final class SimulatorVideoRecordingCommands: VideoRecordingCommands {
   /// handed rather than imposing a fixed one.
   public var honorsRecordingConfiguration: Bool { true }
 
-  public func startRecording(toFile filePath: String) async throws -> any VideoRecording {
-    try await startRecording(toFile: filePath, configuration: Self.recordingConfiguration)
+  public func start(toFile filePath: String) async throws -> any VideoRecording {
+    try await start(toFile: filePath, configuration: Self.recordingConfiguration)
   }
 
-  public func startRecording(toFile filePath: String, configuration: VideoStreamConfiguration) async throws -> any VideoRecording {
+  public func start(toFile filePath: String, configuration: VideoStreamConfiguration) async throws -> any VideoRecording {
     guard let simulator = self.simulator else {
       throw WeakTargetError.simulator
     }
