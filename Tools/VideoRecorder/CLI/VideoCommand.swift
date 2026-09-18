@@ -14,7 +14,7 @@ struct VideoCommand: AsyncParsableCommand {
   static let configuration = CommandConfiguration(
     commandName: "sim-video",
     abstract: "Record or stream a simulator with JSON-line overlay control",
-    subcommands: [Record.self, Stream.self])
+    subcommands: [Clip.self, Record.self, Stream.self])
 }
 
 func waitForStopSignal() async {
