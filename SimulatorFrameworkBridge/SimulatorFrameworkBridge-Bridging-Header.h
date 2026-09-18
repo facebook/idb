@@ -6,9 +6,17 @@
  */
 
 #if __has_include(<SimulatorFrameworkBridgeRuntime/NetworkConfigurationStore.h>)
+ #import <SimulatorFrameworkBridgeRuntime/AccessibilityClient.h>
+ #import <SimulatorFrameworkBridgeRuntime/AccessibilityClientProvider.h>
+ #import <SimulatorFrameworkBridgeRuntime/AccessibilityResponseEncoder.h>
+ #import <SimulatorFrameworkBridgeRuntime/AccessibilityWireValue.h>
  #import <SimulatorFrameworkBridgeRuntime/NetworkConfigurationStore.h>
  #import <SimulatorFrameworkBridgeRuntime/NotificationSettingsClient.h>
 #else
+ #import "Runtime/AccessibilityClient.h"
+ #import "Runtime/AccessibilityClientProvider.h"
+ #import "Runtime/AccessibilityResponseEncoder.h"
+ #import "Runtime/AccessibilityWireValue.h"
  #import "Runtime/NetworkConfigurationStore.h"
  #import "Runtime/NotificationSettingsClient.h"
 #endif

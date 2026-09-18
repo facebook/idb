@@ -81,6 +81,10 @@ NS_ASSUME_NONNULL_BEGIN
 - (nullable FBAXTranslatorRead *)translatorAttributesOfElement:(FBAXElement *)element error:(NSError **)error;
 - (nullable NSArray<FBAXElement *> *)translatorChildrenOfElement:(FBAXElement *)element error:(NSError **)error;
 
+/** Opaque inputs prevent Swift from enumerating a dictionary before entering the exception guard. */
+- (nullable NSNumber *)isValidRectangleDictionary:(id)value error:(NSError **)error NS_SWIFT_NAME(isValidRectangle(_:));
+- (nullable NSNumber *)isValidPointDictionary:(id)value error:(NSError **)error NS_SWIFT_NAME(isValidPoint(_:));
+- (nullable NSNumber *)matchesValue:(nullable id)value expected:(NSString *)expected error:(NSError **)error NS_SWIFT_NAME(matches(_:expected:));
 /** Only a value of the requested geometry type is returned. Unsupported values are ordinary absence. */
 - (nullable FBAXOptionalValue<NSValue *> *)rectangleFromValue:(id)value error:(NSError **)error;
 - (nullable FBAXOptionalValue<NSValue *> *)pointFromValue:(id)value error:(NSError **)error;

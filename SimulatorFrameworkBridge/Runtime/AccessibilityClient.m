@@ -290,6 +290,44 @@ static void FBAXClientException(NSException *exception, NSError **error)
   }
 }
 
+- (NSNumber *)isValidRectangleDictionary:(id)value error:(NSError **)error
+{
+  @try {
+    CGRect geometry = CGRectZero;
+    return @(CGRectMakeWithDictionaryRepresentation((__bridge CFDictionaryRef)value, &geometry));
+  } @catch (NSException *exception) {
+    FBAXClientException(exception, error);
+    return nil;
+  }
+}
+
+- (NSNumber *)isValidPointDictionary:(id)value error:(NSError **)error
+{
+  @try {
+    CGPoint geometry = CGPointZero;
+    return @(CGPointMakeWithDictionaryRepresentation((__bridge CFDictionaryRef)value, &geometry));
+  } @catch (NSException *exception) {
+    FBAXClientException(exception, error);
+    return nil;
+  }
+}
+
+- (NSNumber *)matchesValue:(id)value expected:(NSString *)expected error:(NSError **)error
+{
+  @try {
+    if ([value isKindOfClass:NSString.class]) {
+      return @([value isEqualToString:expected]);
+    }
+    if (!value || value == NSNull.null) {
+      return @NO;
+    }
+    return @([[value description] isEqualToString:expected]);
+  } @catch (NSException *exception) {
+    FBAXClientException(exception, error);
+    return nil;
+  }
+}
+
 - (FBAXOptionalValue<NSValue *> *)rectangleFromValue:(id)value error:(NSError **)error
 {
   @try {
@@ -315,7 +353,9 @@ static void FBAXClientException(NSException *exception, NSError **error)
   @try {
     CGPoint geometry = CGPointZero;
     BOOL valid = NO;
-    if ([value isKindOfClass:NSValue.class]) {
+    if ([value isKindOfClass:NSDictionary.class]) {
+      valid = CGPointMakeWithDictionaryRepresentation((__bridge CFDictionaryRef)value, &geometry);
+    } else if ([value isKindOfClass:NSValue.class]) {
       if (strcmp([value objCType], @encode(CGPoint)) == 0) {
         [value getValue:&geometry size:sizeof(geometry)];
         valid = YES;
