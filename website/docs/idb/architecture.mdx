@@ -111,7 +111,7 @@ These types exist so that APIs do not require extremely long and cumbersome argu
 
 In order to keep a common API between Simulators and Devices, `idb` has a set of protocols that define an interface for separate implementations across iOS Simulators & Devices. This does encourage the creation of well thought-out APIs. The `idb_companion` can be agnostic to the underlying iOS target, instead interacting with these protocols. Older protocols are defined in Objective-C and expose their asynchronous work as an `FBFuture`; newer protocols are defined in Swift with `async` methods.
 
-There may be some protocols that are only supported by one or the other, depending on the target. For instance there is no concept of "Activation" on an iOS Simulator, so `DeviceActivationCommands` is only implemented by `Device`. Where a target does not support a given protocol, `idb` will fail when these APIs are called, giving an error message that explains what functionality is missing.
+There may be some capabilities that are only supported by one or the other, depending on the target. For instance there is no concept of "Activation" on an iOS Simulator, so `activate()` is only declared on `Device`. Where a target does not support a given protocol, `idb` will fail when these APIs are called, giving an error message that explains what functionality is missing.
 
 Implementations across Simulators & Devices are completely separated and implemented in their respective Frameworks. As an example, `ApplicationCommands` (which provides an API for launching and listing Applications on an iOS Target), is implemented separately in `SimulatorApplicationCommands` and `DeviceApplicationCommands`.
 

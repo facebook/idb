@@ -333,10 +333,6 @@ extension Device {
     DeviceProvisioningProfileCommands.commands(with: self)
   }
 
-  public var activation: DeviceActivationCommands {
-    DeviceActivationCommands.commands(with: self)
-  }
-
   public var recovery: DeviceRecoveryCommands {
     DeviceRecoveryCommands.commands(with: self)
   }
@@ -355,6 +351,13 @@ extension Device {
 
   public var springboard: DeviceSpringboardCommands {
     DeviceSpringboardCommands.commands(with: self)
+  }
+
+  // MARK: - Device-only verbs
+
+  /// Activates the device against Apple's activation servers, if it is not already activated.
+  public func activate() async throws {
+    try await DeviceActivationStrategy.activate(self)
   }
 }
 

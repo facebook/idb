@@ -358,7 +358,7 @@ private func runExitRecovery(_ ecid: String, logger: ControlCoreLogger) async th
 
 private func runActivate(_ ecid: String, logger: ControlCoreLogger) async throws {
   let device = try await deviceForECID(ecid, logger: logger)
-  try await device.activation.activate()
+  try await device.activate()
 }
 
 private func runClean(_ udid: String, userDefaults: UserDefaults, xcodeAvailable: Bool, logger: IDBLogger) async throws {

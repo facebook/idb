@@ -30,7 +30,6 @@ enum DeviceCommandAccessor: CaseIterable, Sendable {
   case erase
   case power
   case provisioningProfile
-  case activation
   case recovery
   case debugSymbols
   case developerDiskImage
@@ -73,8 +72,6 @@ enum DeviceCommandAccessor: CaseIterable, Sendable {
       _ = device.power
     case .provisioningProfile:
       _ = device.provisioningProfile
-    case .activation:
-      _ = device.activation
     case .recovery:
       _ = device.recovery
     case .debugSymbols:
