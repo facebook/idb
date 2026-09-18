@@ -280,9 +280,10 @@ jobs:
           IDB_E2E_STRICT=1 \
           python -m unittest discover -s EndToEndTests -t . -v
       # Only a run in which every documented demo passed produces this, so the
-      # artifact's existence is what lets the site publish them.
+      # artifact's existence is what lets the site publish them. The recorder
+      # that captured the run is also what cuts each demo's clip out of it.
       - name: Document the demos this run performed
-        run: python3 -m CI.generate_documentation --artifacts-dir "$RUNNER_TEMP/end-to-end-diagnostics" --output "$RUNNER_TEMP/documentation"
+        run: python3 -m CI.generate_documentation --artifacts-dir "$RUNNER_TEMP/end-to-end-diagnostics" --output "$RUNNER_TEMP/documentation" --recorder "$RUNNER_TEMP/artifacts/Distribution/sim-video"
       - name: Upload the demo documentation
         uses: actions/upload-artifact@v5
         with:
