@@ -5,4 +5,9 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+#if __has_include(<SimulatorFrameworkBridgeRuntime/NetworkConfigurationStore.h>)
+ #import <SimulatorFrameworkBridgeRuntime/NetworkConfigurationStore.h>
+#else
+ #import "Runtime/NetworkConfigurationStore.h"
+#endif
 #import "ServiceDispatch.h"
