@@ -27,8 +27,8 @@ final class SimulatorGuestServicesSmokeTests: ProvidedSimulatorTestCase {
     XCTAssertFalse(services.isEmpty, "A booted simulator should report launchd services")
 
     // The SimulatorFrameworkBridge helper, spawned into the booted launchd domain.
-    _ = try await simulator.network.listProxy()
-    _ = try await simulator.network.listDns()
+    _ = try await simulator.network.proxy.list()
+    _ = try await simulator.network.dns.list()
 
     // A settings write, read back through the backing the getter actually consults.
     let original = try await simulator.preferences.getCurrentPreference("AutoFillPasswords", domain: nil)

@@ -34,12 +34,12 @@ final class SimulatorNetworkCommandsTests: XCTestCase {
 
   // MARK: - DNS Validation
 
-  func testSetDnsServersRejectsEmptyArray() async {
+  func testDnsSetRejectsEmptyArray() async {
     let simulator = makeSimulator()
     await assertThrowsAsync(
-      "setDnsServers should reject empty array",
+      "dns.set should reject an empty array",
       {
-        try await simulator.network.setDnsServers([])
+        try await simulator.network.dns.set([])
       }
     ) { if case .noDnsServers = $0 { return true } else { return false } }
   }
