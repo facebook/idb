@@ -17,8 +17,12 @@
 #import "AccessibilityRuntime.h"
 #if __has_include(<SimulatorFrameworkBridgeRuntime/AccessibilityClient.h>)
  #import <SimulatorFrameworkBridgeRuntime/AccessibilityClient.h>
+ #import <SimulatorFrameworkBridgeRuntime/AccessibilityClientProvider.h>
+ #import <SimulatorFrameworkBridgeRuntime/AccessibilityResponseEncoder.h>
 #else
  #import "Runtime/AccessibilityClient.h"
+ #import "Runtime/AccessibilityClientProvider.h"
+ #import "Runtime/AccessibilityResponseEncoder.h"
 #endif
 #import "AccessibilityServiceServer.h"
 #import "AccessibilityService_Private.h"
@@ -201,63 +205,19 @@ static const int kDefaultNodeBudget = 5000;
 
 #pragma mark - AX client setup
 
-// Set by `FBAXBridgeSetRuntimeForTesting`; nil in the product.
-static id<FBAXRuntime> gInjectedRuntime = nil;
-static FBAXRuntimeFactory gInjectedRuntimeFactory = nil;
-
-static id<FBAXRuntime> _Nullable FBAXBridgeCreateRuntime(FBAXRuntimeFactory factory, NSString *_Nullable *_Nullable error)
-{
-  @try {
-    return factory(error);
-  } @catch (NSException *exception) {
-    NSLog(@"[AccessibilityService] runtime initialization raised: %@", exception);
-    if (error) {
-      *error = [NSString stringWithFormat:@"accessibility initialization raised: %@", exception.reason ?: exception.name];
-    }
-    return nil;
-  }
-}
-
-// The runtime is bound once and reused across requests: `dlopen` + `initForRemoteAccess` is the
-// dominant setup cost (~260ms), so caching it is what makes the persistent `serve` mode fast.
-// Not thread-safe by design — requests are handled serially.
-static id<FBAXRuntime> _Nullable FBAXBridgeSharedRuntime(NSString *_Nullable *_Nullable error)
-{
-  if (gInjectedRuntime) {
-    return gInjectedRuntime;
-  }
-  if (gInjectedRuntimeFactory) {
-    return FBAXBridgeCreateRuntime(gInjectedRuntimeFactory, error);
-  }
-  static id<FBAXRuntime> shared;
-  static NSString *cachedError;
-  static dispatch_once_t onceToken;
-  dispatch_once(&onceToken, ^{
-    NSString *setupError = nil;
-    shared = FBAXBridgeCreateRuntime(^id<FBAXRuntime>(NSString **initializationError) {
-      return [[FBAXLiveRuntime alloc] initWithError:initializationError];
-    }, &setupError);
-    cachedError = setupError;
-  });
-  if (!shared && error) {
-    *error = cachedError ?: @"accessibility setup failed";
-  }
-  return shared;
-}
-
 void FBAXBridgePrepareRuntime(void)
 {
-  FBAXBridgeSharedRuntime(NULL);
+  [FBAXClientProvider prepare];
 }
 
 void FBAXBridgeSetRuntimeForTesting(id<FBAXRuntime> _Nullable runtime)
 {
-  gInjectedRuntime = runtime;
+  [FBAXClientProvider setRuntimeForTesting:runtime];
 }
 
 void FBAXBridgeSetRuntimeFactoryForTesting(FBAXRuntimeFactory _Nullable factory)
 {
-  gInjectedRuntimeFactory = [factory copy];
+  [FBAXClientProvider setRuntimeFactoryForTesting:factory];
 }
 
 // Kept short: read once per unreachable element.
@@ -994,12 +954,7 @@ NSData *FBAXBridgeSerializeResponse(NSDictionary<NSString *, id> *response)
   id sanitized = [FBAXBridgeWire sanitized:response];
   NSData *data = nil;
   if ([NSJSONSerialization isValidJSONObject:sanitized]) {
-    @try {
-      data = [NSJSONSerialization dataWithJSONObject:sanitized options:0 error:NULL];
-    } @catch (NSException *exception) {
-      NSLog(@"[AccessibilityService] response serialization raised: %@", exception);
-      data = nil;
-    }
+    data = [FBAXResponseEncoder dataForObject:sanitized];
   } else {
     NSLog(@"[AccessibilityService] response is not a valid JSON object; emitting an error frame");
   }
@@ -1444,19 +1399,17 @@ static NSDictionary<NSString *, id> *FBAXBridgeDispatchRequest(NSDictionary<NSSt
     );
   }
 
-  NSString *setupError = nil;
-  id<FBAXRuntime> runtime = FBAXBridgeSharedRuntime(&setupError);
-  if (!runtime) {
+  NSError *setupError = nil;
+  FBAXClient *client = [FBAXClientProvider clientWithError:&setupError];
+  if (!client) {
     // Neither the request nor the application can fix a reader that cannot bind; the message is the only
     // place the missing class and drifted signatures are named.
     return FBAXBridgeTaggedErrorResponse(
-      setupError ?: @"accessibility setup failed",
+      setupError.localizedDescription ?: @"accessibility setup failed",
       kErrorKindReaderUnavailable,
       nil
     );
   }
-
-  FBAXClient *client = [[FBAXClient alloc] initWithRuntime:runtime];
 
   if (isGetDeviceSetting || isSetDeviceSetting) {
     return FBAXBridgeDeviceSetting(client, request, isSetDeviceSetting, exceptionError);

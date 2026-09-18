@@ -428,6 +428,8 @@ typedef NS_ENUM(NSUInteger, FBAXDeviceSettingStatus) {
 
 @end
 
+typedef id<FBAXRuntime> _Nullable (^FBAXRuntimeFactory)(NSString *_Nullable *_Nullable error);
+
 /** The one conformer in the product. Constructing one is the whole bind; failure is a named setup error. */
 @interface FBAXLiveRuntime : NSObject <FBAXRuntime>
 
