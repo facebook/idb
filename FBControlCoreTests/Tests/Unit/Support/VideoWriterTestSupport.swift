@@ -33,7 +33,14 @@ let defaultTestSPS: [UInt8] = [0x67, 0x42, 0x00, 0x0a, 0xf8, 0x41, 0xa2]
 /// The default SPS at a different level, so a sample carrying it has a distinct format description.
 let alternateTestSPS: [UInt8] = [0x67, 0x42, 0x00, 0x1e, 0xf8, 0x41, 0xa2]
 
-func makeH264SampleBuffer(isKeyFrame: Bool, pts90k: Int64 = 0, sps: [UInt8] = defaultTestSPS) -> CMSampleBuffer {
+/// The AVCC payload `makeH264SampleBuffer` carries by default: one five-byte NAL unit behind its
+/// four-byte big-endian length.
+let defaultTestAVCCBytes: [UInt8] = [
+  0x00, 0x00, 0x00, 0x05, // NAL length = 5
+  0x65, 0x88, 0x80, 0x40, 0x00, // fake IDR slice
+]
+
+func makeH264SampleBuffer(isKeyFrame: Bool, pts90k: Int64 = 0, sps: [UInt8] = defaultTestSPS, avccBytes: [UInt8] = defaultTestAVCCBytes) -> CMSampleBuffer {
   let pps: [UInt8] = [0x68, 0xce, 0x38, 0x80]
   let paramSizes: [Int] = [sps.count, pps.count]
 
@@ -57,11 +64,6 @@ func makeH264SampleBuffer(isKeyFrame: Bool, pts90k: Int64 = 0, sps: [UInt8] = de
   }
   assert(status == noErr, "Failed to create H264 format description: \(status)")
 
-  // AVCC NAL data: [4-byte big-endian length][NAL bytes]
-  let avccBytes: [UInt8] = [
-    0x00, 0x00, 0x00, 0x05, // NAL length = 5
-    0x65, 0x88, 0x80, 0x40, 0x00, // fake IDR slice
-  ]
   let avccDataCount = avccBytes.count
   // Allocate persistent memory that outlives the block buffer
   let avccPtr = UnsafeMutablePointer<UInt8>.allocate(capacity: avccDataCount)
@@ -145,11 +147,7 @@ func makeNotReadySampleBuffer() -> CMSampleBuffer {
   }
   assert(status == noErr, "Failed to create H264 format description: \(status)")
 
-  // AVCC NAL data: [4-byte big-endian length][NAL bytes]
-  let avccBytes: [UInt8] = [
-    0x00, 0x00, 0x00, 0x05, // NAL length = 5
-    0x65, 0x88, 0x80, 0x40, 0x00, // fake IDR slice
-  ]
+  let avccBytes = defaultTestAVCCBytes
   let avccDataCount = avccBytes.count
   // Allocate persistent memory that outlives the block buffer
   let avccPtr = UnsafeMutablePointer<UInt8>.allocate(capacity: avccDataCount)

@@ -33,26 +33,30 @@ func createH264SampleBuffer() -> CMSampleBuffer {
   }
   precondition(status1 == noErr, "Failed to create H264 format description: \(status1)")
 
-  var avccData: [UInt8] = [
+  let avccData: [UInt8] = [
     0x00, 0x00, 0x00, 0x05,
     0x65, 0x88, 0x80, 0x40, 0x00,
   ]
 
+  // The block buffer must own its bytes: wrapping the array's storage with `kCFAllocatorNull`
+  // leaves a pointer that dangles once this function returns.
   var blockBuf: CMBlockBuffer?
-  let status2 = avccData.withUnsafeMutableBufferPointer { ptr in
-    CMBlockBufferCreateWithMemoryBlock(
-      allocator: nil,
-      memoryBlock: ptr.baseAddress,
-      blockLength: ptr.count,
-      blockAllocator: kCFAllocatorNull,
-      customBlockSource: nil,
-      offsetToData: 0,
-      dataLength: ptr.count,
-      flags: 0,
-      blockBufferOut: &blockBuf
-    )
-  }
+  let status2 = CMBlockBufferCreateWithMemoryBlock(
+    allocator: kCFAllocatorDefault,
+    memoryBlock: nil,
+    blockLength: avccData.count,
+    blockAllocator: kCFAllocatorDefault,
+    customBlockSource: nil,
+    offsetToData: 0,
+    dataLength: avccData.count,
+    flags: 0,
+    blockBufferOut: &blockBuf
+  )
   precondition(status2 == noErr, "Failed to create block buffer: \(status2)")
+  let fillStatus = avccData.withUnsafeBytes { bytes in
+    CMBlockBufferReplaceDataBytes(with: bytes.baseAddress!, blockBuffer: blockBuf!, offsetIntoDestination: 0, dataLength: avccData.count)
+  }
+  precondition(fillStatus == noErr, "Failed to fill block buffer: \(fillStatus)")
 
   var sampleBuf: CMSampleBuffer?
   var sampleSize = avccData.count
@@ -102,26 +106,30 @@ func createNotReadySampleBuffer() -> CMSampleBuffer {
   }
   precondition(status1 == noErr, "Failed to create H264 format description: \(status1)")
 
-  var avccData: [UInt8] = [
+  let avccData: [UInt8] = [
     0x00, 0x00, 0x00, 0x05,
     0x65, 0x88, 0x80, 0x40, 0x00,
   ]
 
+  // The block buffer must own its bytes: wrapping the array's storage with `kCFAllocatorNull`
+  // leaves a pointer that dangles once this function returns.
   var blockBuf: CMBlockBuffer?
-  let status2 = avccData.withUnsafeMutableBufferPointer { ptr in
-    CMBlockBufferCreateWithMemoryBlock(
-      allocator: nil,
-      memoryBlock: ptr.baseAddress,
-      blockLength: ptr.count,
-      blockAllocator: kCFAllocatorNull,
-      customBlockSource: nil,
-      offsetToData: 0,
-      dataLength: ptr.count,
-      flags: 0,
-      blockBufferOut: &blockBuf
-    )
-  }
+  let status2 = CMBlockBufferCreateWithMemoryBlock(
+    allocator: kCFAllocatorDefault,
+    memoryBlock: nil,
+    blockLength: avccData.count,
+    blockAllocator: kCFAllocatorDefault,
+    customBlockSource: nil,
+    offsetToData: 0,
+    dataLength: avccData.count,
+    flags: 0,
+    blockBufferOut: &blockBuf
+  )
   precondition(status2 == noErr, "Failed to create block buffer: \(status2)")
+  let fillStatus = avccData.withUnsafeBytes { bytes in
+    CMBlockBufferReplaceDataBytes(with: bytes.baseAddress!, blockBuffer: blockBuf!, offsetIntoDestination: 0, dataLength: avccData.count)
+  }
+  precondition(fillStatus == noErr, "Failed to fill block buffer: \(fillStatus)")
 
   var sampleBuf: CMSampleBuffer?
   var sampleSize = avccData.count
