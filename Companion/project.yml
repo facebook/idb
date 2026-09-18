@@ -300,6 +300,11 @@ targets:
         Release:
           DEBUG_INFORMATION_FORMAT: dwarf-with-dsym
           STRIP_INSTALLED_PRODUCT: YES
+    # Not the import list -- main.swift imports only CompanionLib of these.
+    # Every framework here is a staticlib, so the tool is the one link step in
+    # the build and has to name each archive that goes into it, including the
+    # ones it reaches only through CompanionLib. Buck propagates those through
+    # `exported_deps` instead, which is why `:idb-companion` names fewer.
     dependencies:
       - target: CompanionLib
         embed: false
