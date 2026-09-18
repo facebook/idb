@@ -145,11 +145,9 @@ final class SimulatorVideoStreamPushFrameTests: XCTestCase {
 
     let origin = await started.stream.mediaOrigin(anchor: 0)
 
-    // BUG: the first frame was pushed at 1_000_000, and setting the wall clock afterwards cannot
-    // change when that happened. The origin is worked out from a wall clock reading taken when it
-    // is asked for, so a clock set in between carries the answer with it -- flipped in the
-    // following commit.
-    XCTAssertEqual(origin, 1_000_060)
+    // The first frame was pushed at 1_000_000, and setting the wall clock afterwards cannot change
+    // when that happened.
+    XCTAssertEqual(origin, 1_000_000)
   }
 
   func testSurfaceWrittenDuringPushIsCountedAsTorn() async throws {

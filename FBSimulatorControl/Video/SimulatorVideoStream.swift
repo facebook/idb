@@ -192,6 +192,7 @@ public actor SimulatorVideoStream: VideoStreamOperation {
 
   var pixelBuffer: CVPixelBuffer?
   var timeAtFirstFrame: TimeInterval = 0
+  var wallClockAtFirstFrame: TimeInterval = 0
   var timeAtLastPush: TimeInterval = 0
   var frameNumber: UInt = 0
   var pixelBufferAttributes: [String: Any]?
@@ -552,6 +553,9 @@ public actor SimulatorVideoStream: VideoStreamOperation {
     let frameNumber = self.frameNumber
     if frameNumber == 0 {
       timeAtFirstFrame = now
+      // Read here, beside the monotonic one, because this is the only moment at which the wall
+      // clock says when this frame was captured. A reading taken later has had time to be set.
+      wallClockAtFirstFrame = clock.wallClock()
     }
     let timeAtFirstFrame = self.timeAtFirstFrame
     let frameDuration = timeAtLastPush > 0 ? (now - timeAtLastPush) : 0
@@ -702,17 +706,14 @@ public actor SimulatorVideoStream: VideoStreamOperation {
   var currentTimeAtFirstFrame: TimeInterval { timeAtFirstFrame }
 
   /// The Unix timestamp of media time zero, for a file anchored `anchor` seconds after the first
-  /// pushed frame, or nil before a frame was pushed. Uptime and wall clock are read as one adjacent
-  /// pair and differenced, which keeps the answer right however long the recording ran or
-  /// finalization took.
+  /// pushed frame, or nil before a frame was pushed. Worked out from the wall clock as it read when
+  /// that frame was pushed, so the answer is unchanged by how long the recording ran and by the
+  /// clock being set since.
   func mediaOrigin(anchor: TimeInterval) -> TimeInterval? {
     guard timeAtFirstFrame > 0 else {
       return nil
     }
-    return MediaOrigin(uptimeAtFirstFrame: timeAtFirstFrame).startedAt(
-      anchor: anchor,
-      uptimeNow: clock.uptime(),
-      wallClockNow: clock.wallClock())
+    return MediaOrigin(wallClockAtFirstFrame: wallClockAtFirstFrame).startedAt(anchor: anchor)
   }
 
   /// Wall-clock time when the first framebuffer callback was received, or 0 if not yet started.

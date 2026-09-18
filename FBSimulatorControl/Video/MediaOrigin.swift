@@ -9,25 +9,21 @@ import Foundation
 
 /// Where a recording's media time zero falls on the wall clock.
 ///
-/// The encoder stamps every presentation timestamp as an offset from `systemUptime` at the frame
-/// it was first pushed, and the file's timeline is anchored at the first sample actually muxed, so
-/// media zero is `uptimeAtFirstFrame + anchor` on the uptime clock. Saying where that falls on the
-/// wall clock takes a reading of both clocks, because only one of them is monotonic.
+/// The file's timeline is anchored at the first sample actually muxed, which the encoder stamps
+/// relative to the frame it was first pushed, so media zero is `anchor` seconds after that frame.
+/// When that frame was captured is read from the wall clock as it was captured: a clock read any
+/// later has had time to be set, and would move a moment that has already happened.
 public struct MediaOrigin: Equatable, Sendable {
-  /// `systemUptime` when the first frame was pushed into the encoder.
-  public let uptimeAtFirstFrame: TimeInterval
+  /// The Unix timestamp when the first frame was pushed into the encoder, read then.
+  public let wallClockAtFirstFrame: TimeInterval
 
-  public init(uptimeAtFirstFrame: TimeInterval) {
-    self.uptimeAtFirstFrame = uptimeAtFirstFrame
+  public init(wallClockAtFirstFrame: TimeInterval) {
+    self.wallClockAtFirstFrame = wallClockAtFirstFrame
   }
 
-  /// The Unix timestamp of media time zero, for a recording anchored `anchor` seconds after the
-  /// first pushed frame, from one adjacent pair of clock readings.
-  public func startedAt(
-    anchor: TimeInterval,
-    uptimeNow: TimeInterval,
-    wallClockNow: TimeInterval
-  ) -> TimeInterval {
-    wallClockNow - (uptimeNow - (uptimeAtFirstFrame + anchor))
+  /// The Unix timestamp of media time zero, for a recording whose file is anchored `anchor`
+  /// seconds after the first pushed frame.
+  public func startedAt(anchor: TimeInterval) -> TimeInterval {
+    wallClockAtFirstFrame + anchor
   }
 }
