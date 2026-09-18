@@ -12,9 +12,8 @@ import styles from './styles.module.css';
 
 const SAFE_ARGUMENT = /^[A-Za-z0-9_@%+=:,./-]+$/;
 
-// Output longer than this is folded behind a disclosure, with an excerpt shown
-// in its place: the lines a note pointed at, or failing those the first few.
-const FOLD_LINES = 12;
+// At most this many of the lines a note points at are shown beside the note.
+// The rest of the output is a disclosure away.
 const EXCERPT_LINES = 8;
 
 // How far the terminal and the clip may drift apart before the terminal is
@@ -30,10 +29,6 @@ const GESTURE_SECONDS = 0.4;
 
 // How often that clock is read.
 const POLL_MILLISECONDS = 100;
-
-// Where the clip and the terminal are side by side, and the terminal scrolls
-// within its own column. Matches the stylesheet's breakpoint.
-const SIDE_BY_SIDE = '(min-width: 997px)';
 
 function quote(argument) {
   return SAFE_ARGUMENT.test(argument)
@@ -128,129 +123,138 @@ function Lines({lines, marks}) {
   );
 }
 
-// A stream as printed, laid out, marked, and folded when it is long: the whole
-// of it stays in the document behind a native disclosure, so a reader without
-// JavaScript can open it and a search finds it, and what is shown unfolded is
-// the part a note pointed at.
-function Output({label, stream, marks}) {
-  if (!stream || stream.bytes === 0) {
+// A stream as lines, or nothing when there is nothing to show. Output that is
+// JSON is laid out; a stream that is not text has no lines to give.
+function textOf(stream) {
+  if (!stream || stream.bytes === 0 || stream.binary) {
+    return null;
+  }
+  return laidOut(stream.text).replace(/\n$/, '').split('\n');
+}
+
+// What a step ran and what came back.
+//
+// The terminal beside this has already played all of it — the command line
+// included — so showing it again in full would say everything twice. What
+// stays on the page is the handful of lines a note is pointing at, which is
+// the evidence for what the note claims. The command and the rest of the
+// output sit behind one disclosure, so they are still in the document for a
+// reader without JavaScript and for a search, and the summary carries how the
+// command ended rather than spending a row on it.
+function Printed({command, marks}) {
+  const exit = `Exited ${command.returncode} after ${command.seconds.toFixed(2)}s`;
+  const line = (
+    <pre className={styles.command}>
+      <code>
+        <span className={styles.prompt}>$ </span>
+        {commandLine(command.argv)}
+      </code>
+    </pre>
+  );
+
+  const binary = [command.stdout, command.stderr].find(
+    (stream) => stream && stream.binary
+  );
+  if (binary) {
     return (
-      <p className={styles.empty}>
-        {label}: <em>no output</em>
-      </p>
+      <details className={styles.more}>
+        <summary>
+          {exit}, printing {binary.bytes} bytes that are not text, sha256{' '}
+          <code>{binary.sha256}</code>; show the command
+        </summary>
+        {line}
+      </details>
     );
   }
-  if (stream.binary) {
-    return (
-      <p className={styles.empty}>
-        {label}: {stream.bytes} bytes that are not text, sha256{' '}
-        <code>{stream.sha256}</code>
-      </p>
-    );
-  }
-  const lines = laidOut(stream.text).replace(/\n$/, '').split('\n');
-  const pointedAt = lines.filter((line) => marks.some((mark) => line.includes(mark)));
-  const folded = lines.length > FOLD_LINES;
-  const excerpt = (pointedAt.length > 0 ? pointedAt : lines).slice(0, EXCERPT_LINES);
+
+  const printed = textOf(command.stdout) || [];
+  const errors = textOf(command.stderr) || [];
+  const pointedAt = printed.filter((one) =>
+    marks.some((mark) => one.includes(mark))
+  );
+  const excerpt = pointedAt.slice(0, EXCERPT_LINES);
+  // A short output can be entirely the lines a note points at, and then the
+  // disclosure has only the command left to show.
+  const whole = excerpt.length === printed.length && errors.length === 0;
+  const nothing = printed.length === 0 && errors.length === 0;
+
   return (
     <>
-      <p className={styles.label}>{label}</p>
-      {folded ? (
-        <>
-          <Lines lines={excerpt} marks={marks} />
-          <details className={styles.more}>
-            <summary>
-              {pointedAt.length > 0
-                ? `Show all ${lines.length} lines, not only the ${excerpt.length} a note points at`
-                : `Show all ${lines.length} lines`}
-            </summary>
-            <Lines lines={lines} marks={marks} />
-          </details>
-        </>
-      ) : (
-        <Lines lines={lines} marks={marks} />
-      )}
-      {stream.truncated ? (
-        <p className={styles.empty}>
-          <em>Output continues past what is shown; {stream.bytes} bytes in all.</em>
-        </p>
-      ) : null}
+      {excerpt.length > 0 ? <Lines lines={excerpt} marks={marks} /> : null}
+      <details className={styles.more}>
+        <summary>
+          {exit}
+          {nothing ? ', printing nothing' : ''}; show the command
+          {whole
+            ? ''
+            : ` and all ${printed.length + errors.length} lines it printed`}
+        </summary>
+        {line}
+        {whole ? null : (
+          <>
+            {printed.length > 0 ? <Lines lines={printed} marks={marks} /> : null}
+            {errors.length > 0 ? (
+              <>
+                <p className={styles.label}>Errors</p>
+                <Lines lines={errors} marks={marks} />
+              </>
+            ) : null}
+          </>
+        )}
+        {command.stdout && command.stdout.truncated ? (
+          <p className={styles.exit}>
+            Output continues past what is shown; {command.stdout.bytes} bytes in
+            all.
+          </p>
+        ) : null}
+      </details>
     </>
   );
 }
 
-// What the test made of a step's output, beside the step: the element it
-// found, where, and what that proves. The output below stays what the command
-// printed; this is the reading of it that a viewer would otherwise have to do.
+// What the test made of a step's output. This is the one thing on the page
+// that the terminal beside it cannot show, so it is the step's body rather
+// than an annotation on it.
 function Notes({notes}) {
   if (!notes || notes.length === 0) {
     return null;
   }
   return (
-    <aside className={styles.notes} aria-label="What this step showed">
-      <p className={styles.notesLabel}>What this showed</p>
-      <ul className={styles.noteList}>
-        {notes.map((note, index) => (
-          <li key={index}>{note.text}</li>
-        ))}
-      </ul>
-    </aside>
+    <div className={styles.notes}>
+      {notes.map((note, index) => (
+        <p key={index} className={styles.note}>
+          {note.text}
+        </p>
+      ))}
+    </div>
   );
 }
 
-// Every step is rendered, always: the page is a transcript first, and a
-// reader on the server, without JavaScript, or through a screen reader gets
-// all of it. What the timeline changes is which step is marked as the one the
-// demo is in, and whether the output below it has been printed yet.
-function Step({command, index, current, printed, seekable, onSelect}) {
-  const reached = useRef(null);
+// Every step is in the document, always: the page is a transcript first, and
+// a reader on the server or without JavaScript gets all of them as a list.
+// Once there is a clock, the steps are stacked one on top of another and the
+// one the demo is in is the one shown, so the narration changes with the clip
+// rather than running on past it.
+//
+// There is no button to play a step from here. The terminal's scrubber carries
+// a marker per step, which is the same affordance in the place a reader is
+// already looking for it.
+function Step({command, index, total, showing, printed}) {
   const marks = (command.notes || []).flatMap((note) => note.marks);
-  useEffect(() => {
-    if (!current || !reached.current || !reached.current.scrollIntoView) {
-      return;
-    }
-    // Only where the terminal is its own scrolling column. In the one-column
-    // layout the nearest scrolling thing is the page, and scrolling that
-    // would take the clip the reader is watching off the screen.
-    if (!window.matchMedia(SIDE_BY_SIDE).matches) {
-      return;
-    }
-    reached.current.scrollIntoView({block: 'nearest'});
-  }, [current]);
-
   return (
     <li
-      ref={reached}
-      className={current ? styles.stepCurrent : styles.step}
-      aria-current={current ? 'step' : undefined}>
+      className={styles.step}
+      data-showing={showing ? 'true' : 'false'}
+      aria-current={showing ? 'step' : undefined}>
       <div className={styles.stepHeader}>
+        <span className={styles.count}>
+          {index + 1} of {total}
+        </span>
         <h3 className={styles.stepName}>{command.step}</h3>
-        {seekable ? (
-          <button
-            type="button"
-            className={styles.play}
-            // A demo is a list of these buttons, so the visible label alone
-            // would name every one of them identically to anyone navigating
-            // by control rather than reading the heading beside it.
-            aria-label={`Play this step: ${command.step}`}
-            onClick={() => onSelect(command.start)}>
-            Play this step
-          </button>
-        ) : null}
       </div>
-      <pre className={styles.command}>
-        <code>
-          <span className={styles.prompt}>$ </span>
-          {commandLine(command.argv)}
-        </code>
-      </pre>
       <Notes notes={command.notes} />
       <div className={printed ? undefined : styles.pending}>
-        <Output label="Output" stream={command.stdout} marks={marks} />
-        <Output label="Errors" stream={command.stderr} marks={marks} />
-        <p className={styles.exit}>
-          Exited {command.returncode} after {command.seconds.toFixed(2)} seconds.
-        </p>
+        <Printed command={command} marks={marks} />
       </div>
     </li>
   );
@@ -279,7 +283,6 @@ function Screen({demo, video, source, poster, player, onTime}) {
           onEnded={onTime}>
           <source src={source} type={video.type} />
         </video>
-        <figcaption>{demo.title}, recorded while the test ran.</figcaption>
       </figure>
     );
   }
@@ -300,25 +303,19 @@ function Screen({demo, video, source, poster, player, onTime}) {
   );
 }
 
-// Where the test that performed this demo is declared, pinned to the commit
-// the run tested rather than to a branch, which would be whatever that file
-// becomes later. A run that did not record a declaration shows none.
-function Declaration({source}) {
-  if (!source) {
-    return null;
+// The demo's name, linked to the test that performed it. The link is pinned to
+// the commit the run tested rather than to a branch, which would be whatever
+// that file becomes later. A run that recorded no declaration, or one with no
+// link for it, is named without one.
+function Name({demo}) {
+  const source = demo.source;
+  if (!source || !source.url) {
+    return demo.title;
   }
-  const where = `${source.path}:${source.line}`;
   return (
-    <p className={styles.empty}>
-      Performed by{' '}
-      {source.url ? (
-        <a href={source.url}>
-          <code>{where}</code>
-        </a>
-      ) : (
-        <code>{where}</code>
-      )}
-    </p>
+    <a href={source.url} title={`Performed by ${source.path}:${source.line}`}>
+      {demo.title}
+    </a>
   );
 }
 
@@ -410,27 +407,7 @@ function useSynchronised(clip, terminal, duration) {
     [duration, terminal]
   );
 
-  // A step, from either side at once, so neither has to notice the other.
-  const select = useCallback(
-    (at) => {
-      const player = terminal.current;
-      if (player) {
-        player.seek(at);
-        started(player);
-        track(at);
-      }
-      const screen = clip.current;
-      if (screen) {
-        screen.currentTime = clamp(at, duration);
-        started(screen);
-        return;
-      }
-      setSeconds(clamp(at, duration));
-    },
-    [clip, terminal, duration, track]
-  );
-
-  return {seconds, transport, watch, select};
+  return {seconds, transport, watch};
 }
 
 // The recorded terminal, played in the page rather than downloaded to be
@@ -458,6 +435,7 @@ function Terminal({source, onReady, onTransport}) {
           // A marker is where a step begins, not somewhere to stop: the clip
           // beside it keeps running either way.
           pauseOnMarkers: false,
+          controls: true,
           preload: true,
           poster: 'npt:0:0',
         });
@@ -502,7 +480,7 @@ function Demo({demo}) {
   const source = useBaseUrl(video ? video.source : '/');
   const poster = useBaseUrl(demo.poster || '/');
   const session = useBaseUrl(demo.terminal.source);
-  const {seconds, transport, watch, select} = useSynchronised(
+  const {seconds, transport, watch} = useSynchronised(
     clip,
     terminal,
     duration
@@ -513,15 +491,26 @@ function Demo({demo}) {
     setReady(Boolean(player));
   }, []);
 
+  // Nothing is a clock until the page is live in a browser. Rendered on the
+  // server the demo is its full list of steps, which is what a reader without
+  // JavaScript keeps.
+  const [live, setLive] = useState(false);
+  useEffect(() => setLive(true), []);
+
   // Without a clip and without the terminal there is no clock, and no step
   // the demo can be said to be in. Every step then reads as finished, which
   // is what it is: this is a transcript of a run that already happened.
-  const clocked = Boolean(video) || ready;
-  const current = clocked ? stepAt(demo.commands, seconds) : -1;
+  const clocked = live && (Boolean(video) || ready);
+  const reached = stepAt(demo.commands, seconds);
+  // Before the first command there is no step to be in, so the first one
+  // stands in for it rather than leaving the narration blank.
+  const current = reached < 0 ? 0 : reached;
 
   return (
     <section className={styles.demo} aria-labelledby={`${demo.slug}-title`}>
-      <h2 id={`${demo.slug}-title`}>{demo.title}</h2>
+      <h2 id={`${demo.slug}-title`}>
+        <Name demo={demo} />
+      </h2>
       <p>{demo.summary}</p>
       <div className={styles.stage}>
         <div className={styles.screen}>
@@ -540,28 +529,19 @@ function Demo({demo}) {
             onReady={onReady}
             onTransport={transport}
           />
-          <div className={styles.scroller}>
-            <ol className={styles.steps}>
+          <div className={styles.narration}>
+            <ol className={clocked ? styles.phases : styles.steps}>
               {demo.commands.map((command, index) => (
                 <Step
                   key={`${demo.slug}-${index}`}
                   command={command}
                   index={index}
-                  current={current === index}
+                  total={demo.commands.length}
+                  showing={!clocked || current === index}
                   printed={!clocked || command.finished <= seconds}
-                  seekable={clocked}
-                  onSelect={select}
                 />
               ))}
             </ol>
-            <p className={styles.empty}>
-              The terminal above is an{' '}
-              <a href={session} download>
-                asciicast
-              </a>
-              , recorded as the test ran.
-            </p>
-            <Declaration source={demo.source} />
           </div>
         </div>
       </div>

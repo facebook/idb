@@ -11,19 +11,21 @@
   padding-top: 1rem;
 }
 
-/* The clip beside the terminal it plays with: one column sized for a
-   portrait simulator, the other taking what is left. Below the width where
-   two columns would each be too narrow to read, they become one. */
+/* The clip beside the terminal it plays with: one column sized for a portrait
+   simulator, the other taking what is left. Both are exactly as tall as the
+   clip, so a demo is one card rather than a column of narration running on
+   past the thing it is narrating. Below the width where two columns would
+   each be too narrow to read, they become one. */
 .stage {
-  align-items: start;
+  --clip-height: min(70vh, 44rem);
+
   display: grid;
   gap: 1.5rem;
   grid-template-columns: minmax(0, 20rem) minmax(0, 1fr);
 }
 
 .screen {
-  position: sticky;
-  top: calc(var(--ifm-navbar-height) + 1rem);
+  height: var(--clip-height);
 }
 
 .figure {
@@ -34,85 +36,121 @@
 .still {
   background: #000;
   border-radius: var(--ifm-global-radius);
-  height: auto;
-  max-height: 70vh;
+  display: block;
+  height: 100%;
+  margin: 0 auto;
   max-width: 100%;
+  object-fit: contain;
+  width: auto;
 }
 
-/* The terminal stays put at the top of the column while the transcript
-   beneath it scrolls, so the step being read and the terminal playing it are
-   on the screen at the same time. */
+.figure {
+  height: 100%;
+}
+
+/* The terminal takes the height it needs and the narration takes the rest, so
+   the two of them come to exactly the clip's height. The narration is the only
+   thing that scrolls, and it scrolls beside a terminal and a clip that stay
+   where they are. */
 .session {
   display: flex;
   flex-direction: column;
   gap: 1rem;
-  max-height: 70vh;
+  height: var(--clip-height);
+  min-height: 0;
 }
 
-.scroller {
-  overflow-y: auto;
-}
-
-/* The player sizes its own type to the width it is given, so this only has to
-   keep it from being given the whole page. */
 .terminal {
-  max-width: 100%;
+  flex: 0 0 auto;
 }
 
+/* No scrollbar: the narration is a phase at a time, not a column to scroll.
+   It stays scrollable so a step taller than the space left is still reachable
+   by wheel or keyboard, but nothing about it invites scrolling. */
+.narration {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+
+.narration::-webkit-scrollbar {
+  display: none;
+}
+
+/* One column, and nothing bounded by anything: the clip, the terminal and the
+   narration each take the height they need and the page scrolls past them. */
 @media (max-width: 996px) {
   .stage {
     grid-template-columns: minmax(0, 1fr);
   }
 
-  .screen {
-    position: static;
-  }
-
+  .screen,
   .session {
-    max-height: none;
+    height: auto;
   }
 
-  .scroller {
+  .video,
+  .still {
+    height: auto;
+    max-height: 70vh;
+  }
+
+  .figure {
+    height: auto;
+  }
+
+  .narration {
     overflow-y: visible;
   }
 }
 
-.steps {
-  list-style: decimal;
-  padding-left: 1.5rem;
-}
-
-.step,
-.stepCurrent {
-  border-left: 3px solid transparent;
-  margin-bottom: 1.5rem;
-  padding-left: 0.75rem;
-}
-
-.stepCurrent {
-  border-left-color: var(--ifm-color-primary);
-}
-
-/* The test's reading of a step's output, set off from the output itself. */
-.notes {
-  background: var(--ifm-color-emphasis-100);
-  border-left: 3px solid var(--ifm-color-primary);
-  border-radius: 0 var(--ifm-global-radius) var(--ifm-global-radius) 0;
-  font-size: 0.9rem;
-  margin: 0.5rem 0 0.75rem;
-  padding: 0.5rem 0.75rem;
-}
-
-.notesLabel {
-  font-size: 0.8rem;
-  font-weight: var(--ifm-font-weight-bold);
-  margin: 0 0 0.25rem;
-  text-transform: uppercase;
-}
-
-.noteList {
+.steps,
+.phases {
+  list-style: none;
   margin: 0;
-  padding-left: 1.25rem;
+  padding: 0;
+}
+
+/* Every step occupies the same cell, so which one is shown changes nothing
+   about the layout and the fade has nothing to move. */
+.phases {
+  display: grid;
+}
+
+.phases > .step {
+  grid-area: 1 / 1;
+  margin: 0;
+}
+
+.phases > .step[data-showing='false'] {
+  opacity: 0;
+  pointer-events: none;
+  visibility: hidden;
+}
+
+.step {
+  margin-bottom: 1.5rem;
+  opacity: 1;
+  transition: opacity 250ms ease-in-out;
+  visibility: visible;
+}
+
+/* Which step of how many, so a phase on its own still says where it sits. */
+.count {
+  color: var(--ifm-color-emphasis-600);
+  font-size: 0.8rem;
+  font-variant-numeric: tabular-nums;
+}
+
+/* The test's reading of a step's output. It is the step's body, not an aside
+   on one, so it is set as prose rather than boxed. */
+.notes {
+  margin: 0.25rem 0 0.5rem;
+}
+
+.note {
+  margin: 0 0 0.35rem;
 }
 
 /* A piece of the output a note named. */
@@ -146,27 +184,13 @@
   align-items: baseline;
   display: flex;
   flex-wrap: wrap;
-  gap: 0.75rem;
-  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.35rem;
 }
 
 .stepName {
   font-size: 1.05rem;
   margin: 0;
-}
-
-.play {
-  background: var(--ifm-color-emphasis-100);
-  border: 1px solid var(--ifm-color-emphasis-300);
-  border-radius: var(--ifm-global-radius);
-  color: var(--ifm-font-color-base);
-  cursor: pointer;
-  font-size: 0.85rem;
-  padding: 0.25rem 0.75rem;
-}
-
-.play:hover {
-  background: var(--ifm-color-emphasis-200);
 }
 
 .prompt {
@@ -191,4 +215,10 @@
 .exit {
   color: var(--ifm-color-emphasis-700);
   font-size: 0.85rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .step {
+    transition: none;
+  }
 }
