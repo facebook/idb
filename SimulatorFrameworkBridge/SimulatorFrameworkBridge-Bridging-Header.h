@@ -7,7 +7,9 @@
 
 #if __has_include(<SimulatorFrameworkBridgeRuntime/NetworkConfigurationStore.h>)
  #import <SimulatorFrameworkBridgeRuntime/NetworkConfigurationStore.h>
+ #import <SimulatorFrameworkBridgeRuntime/NotificationSettingsClient.h>
 #else
  #import "Runtime/NetworkConfigurationStore.h"
+ #import "Runtime/NotificationSettingsClient.h"
 #endif
 #import "ServiceDispatch.h"
