@@ -894,9 +894,10 @@ function test_target() {
   # Per-test time allowances turn a hung test into a named failure in about a
   # minute; without them a single hang stalls the suite until the CI job's
   # 60-minute timeout cancels it with no indication of which test hung. Most
-  # tests run in seconds; the boot-lifecycle tests create and boot a simulator,
-  # which can take minutes on a hosted runner, and raise their own allowance
-  # (up to the maximum here) via `executionTimeAllowance`.
+  # tests run in seconds; the boot-lifecycle tests create and boot a simulator
+  # and the smoke tests drive a real guest, either of which can take minutes on
+  # a hosted runner, so those raise their own allowance (up to the maximum here)
+  # via `executionTimeAllowance`.
   invoke_xcodebuild \
     -project FBSimulatorControl.xcodeproj \
     -scheme "$name" \

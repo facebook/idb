@@ -20,12 +20,6 @@ final class AXBridgeSmokeTests: ProvidedSimulatorTestCase {
 
   private static let bundleID = "com.apple.Preferences"
 
-  override func setUp() async throws {
-    try await super.setUp()
-    // A guest spawn outruns the default allowance.
-    executionTimeAllowance = 600
-  }
-
   private func launchedApplicationPID() async throws -> pid_t {
     let simulator = self.simulator!
     let io: FBProcessIO<AnyObject, AnyObject, AnyObject> = .outputToDevNull()

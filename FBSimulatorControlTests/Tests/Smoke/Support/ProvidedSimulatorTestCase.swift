@@ -41,6 +41,9 @@ class ProvidedSimulatorTestCase: XCTestCase {
 
   override func setUp() async throws {
     continueAfterFailure = false
+    // Acquisition waits out a boot and every case here drives a real guest, both of which outrun
+    // the default allowance. Set before acquiring, so the wait is covered too.
+    executionTimeAllowance = 600
     simulator = try await Self.acquireSimulator()
   }
 
