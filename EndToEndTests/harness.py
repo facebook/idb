@@ -222,24 +222,28 @@ async def run(
     stdin: bytes | None = None,
     env: Mapping[str, str] | None = None,
 ) -> Completed:
-    process = await asyncio.create_subprocess_exec(
-        *argv,
-        env=env,
-        stdin=asyncio.subprocess.PIPE
-        if stdin is not None
-        else asyncio.subprocess.DEVNULL,
-        stdout=asyncio.subprocess.PIPE,
-        stderr=asyncio.subprocess.PIPE,
-    )
-    try:
-        stdout, stderr = await asyncio.wait_for(process.communicate(stdin), timeout)
-    except asyncio.TimeoutError:
-        process.kill()
-        await process.wait()
-        raise HarnessError(
-            f"{' '.join(argv)} did not finish within {timeout:.0f}s"
-        ) from None
-    return Completed(process.returncode or 0, stdout, stderr)
+    # A spawned guest can retain pipes after simctl exits, preventing pipe EOF.
+    with tempfile.TemporaryFile() as stdout, tempfile.TemporaryFile() as stderr:
+        process = await asyncio.create_subprocess_exec(
+            *argv,
+            env=env,
+            stdin=asyncio.subprocess.PIPE
+            if stdin is not None
+            else asyncio.subprocess.DEVNULL,
+            stdout=stdout,
+            stderr=stderr,
+        )
+        try:
+            await asyncio.wait_for(process.communicate(stdin), timeout)
+        except asyncio.TimeoutError:
+            process.kill()
+            await process.wait()
+            raise HarnessError(
+                f"{' '.join(argv)} did not finish within {timeout:.0f}s"
+            ) from None
+        stdout.seek(0)
+        stderr.seek(0)
+        return Completed(process.returncode or 0, stdout.read(), stderr.read())
 
 
 class Simctl:

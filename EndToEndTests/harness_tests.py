@@ -1191,7 +1191,7 @@ class SubprocessTimeoutTests(unittest.IsolatedAsyncioTestCase):
                 asyncio, "create_subprocess_exec", side_effect=create_ready_process
             )
         )
-        with self.assertRaises(asyncio.TimeoutError):
+        with self.assertRaisesRegex(HarnessError, "did not finish within"):
             await asyncio.wait_for(
                 harness.run([sys.executable, "-c", parent], timeout=0.5), timeout=12
             )
