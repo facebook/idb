@@ -375,12 +375,13 @@ class ClipTests(unittest.TestCase):
 
         self.assertEqual(demo["commands"][0]["start"], 1.0)
 
-    def test_bounds_a_demo_by_the_clip_it_is_published_as(self) -> None:
+    def test_publishes_a_demo_with_no_interval_to_seek_to(self) -> None:
         with artifacts(video=report()) as (source, output):
             self.assertEqual(generate(source, output), 0)
             demo = manifest(output)["demos"][0]
 
-        self.assertEqual((demo["start"], demo["end"]), (0.0, 2.5))
+        self.assertNotIn("start", demo)
+        self.assertNotIn("end", demo)
         self.assertEqual(demo["video"]["duration"], 3.5)
 
     def test_keeps_a_clip_out_of_the_test_that_ran_before_it(self) -> None:

@@ -23,15 +23,14 @@ const DEMOS_DIR_ENV = 'IDB_DEMOS_DIR';
 const MANIFEST_NAME = 'demos.json';
 const SERVED_PATH = '/demos/media';
 
-const EMPTY = {video: null, demos: []};
+const EMPTY = {demos: []};
 
 const STREAM_KEYS = ['stdout', 'stderr'];
 
 // The numbers the page reads back out of the manifest without checking them:
-// a demo's fragment offsets, and each command's exit code, offset and
-// duration. A manifest missing one of these renders NaN or throws in the
+// each command's exit code, offset and duration, and each clip's size and
+// length. A manifest missing one of these renders NaN or throws in the
 // browser, so it fails the build here instead.
-const DEMO_NUMBERS = ['start', 'end'];
 const COMMAND_NUMBERS = ['returncode', 'start', 'seconds'];
 const VIDEO_NUMBERS = ['width', 'height', 'duration'];
 
@@ -68,19 +67,19 @@ function whole(stream) {
     : typeof stream.text === 'string';
 }
 
-function problemsWithVideo(video) {
+function problemsWithClip(name, video) {
   const problems = [];
   if (typeof video.source !== 'string' || video.source === '') {
-    problems.push('the recording has no source');
+    problems.push(`${name} has a clip with no source`);
   } else if (!inside(video.source)) {
-    problems.push(`the recording is at ${video.source}, outside the run`);
+    problems.push(`${name} has a clip at ${video.source}, outside the run`);
   }
   if (typeof video.type !== 'string' || video.type === '') {
-    problems.push('the recording has no type');
+    problems.push(`${name} has a clip with no type`);
   }
   for (const key of VIDEO_NUMBERS) {
     if (!isNumber(video[key])) {
-      problems.push(`the recording has no ${key}`);
+      problems.push(`${name} has a clip with no ${key}`);
     }
   }
   return problems;
@@ -113,13 +112,12 @@ function problemsWithCommands(name, commands) {
   return problems;
 }
 
-// Everything the site serves out of a run: the recording, when there is one,
+// Everything the site serves out of a run: each demo's clip, when it has one,
 // and each demo's poster.
 function media(manifest) {
-  return [
-    ...(manifest.video ? [manifest.video.source] : []),
-    ...manifest.demos.map((demo) => (demo || {}).poster).filter(Boolean),
-  ];
+  return manifest.demos
+    .flatMap((demo) => [((demo || {}).video || {}).source, (demo || {}).poster])
+    .filter(Boolean);
 }
 
 // The site serves all of it from one directory, so two files of the run that
@@ -147,9 +145,6 @@ function problemsWith(manifest) {
     return ['it has no demos array'];
   }
   const problems = [];
-  if (manifest.video !== null && manifest.video !== undefined) {
-    problems.push(...problemsWithVideo(manifest.video));
-  }
   for (const demo of manifest.demos) {
     const name = demo && demo.slug ? demo.slug : JSON.stringify(demo);
     for (const key of ['slug', 'title', 'summary', 'test']) {
@@ -157,10 +152,11 @@ function problemsWith(manifest) {
         problems.push(`${name} has no ${key}`);
       }
     }
-    for (const key of DEMO_NUMBERS) {
-      if (!isNumber((demo || {})[key])) {
-        problems.push(`${name} has no ${key}`);
-      }
+    const video = (demo || {}).video;
+    // A demo whose clip could not be cut publishes its transcript and poster,
+    // so a missing clip is a demo to publish rather than a manifest to refuse.
+    if (video !== null && video !== undefined) {
+      problems.push(...problemsWithClip(name, video));
     }
     const poster = (demo || {}).poster;
     if (poster !== null && poster !== undefined) {
@@ -218,8 +214,8 @@ function copyMedia(source, websiteDir, manifest) {
   const destination = path.join(websiteDir, 'static', 'demos', 'media');
   fs.rmSync(path.join(websiteDir, 'static', 'demos'), {recursive: true, force: true});
   const wanted = media(manifest);
-  // A run with neither a recording nor a poster, or no run at all, leaves the
-  // site with nothing to serve, so the source is never read.
+  // A run with neither a clip nor a poster, or no run at all, leaves the site
+  // with nothing to serve, so the source is never read.
   if (wanted.length === 0) {
     return;
   }
@@ -263,10 +259,13 @@ function generate(options) {
 
   copyMedia(directory, websiteDir, manifest);
   const published = {
-    video: manifest.video
-      ? {...manifest.video, source: served(manifest.video.source)}
-      : null,
-    demos: manifest.demos.map((demo) => ({...demo, poster: served(demo.poster)})),
+    demos: manifest.demos.map((demo) => ({
+      ...demo,
+      poster: served(demo.poster),
+      video: demo.video
+        ? {...demo.video, source: served(demo.video.source)}
+        : null,
+    })),
   };
 
   const manifestPath = path.join(websiteDir, 'src', 'demos', MANIFEST_NAME);

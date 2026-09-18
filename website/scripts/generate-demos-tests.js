@@ -17,37 +17,44 @@ const {generate} = require('./generate-demos');
 
 const SLUG = 'open-a-url';
 const TEST = 'EndToEndTests.test_system.OpenUrlTests.test_opening_a_url';
+const OTHER_SLUG = 'scroll-a-list';
+const OTHER_TEST = 'EndToEndTests.test_accessibility.AccessibilityTests.test_scroll';
 
-function manifestFixture(overrides) {
+// Each demo names its own clip, so the media a run holds is one file per demo
+// rather than one recording every demo seeks into.
+function demoFixture(slug, test, duration) {
   return {
+    slug,
+    title: 'Open a URL on a simulator',
+    summary: 'Hand a URL to the simulator and let it pick the app.',
+    test,
+    poster: `media/${slug}.png`,
     video: {
-      source: 'media/idb-e2e-fixture.mp4',
+      source: `media/${slug}.mp4`,
       type: 'video/mp4',
       width: 590,
       height: 1278,
-      duration: 37.5,
+      duration,
     },
-    demos: [
+    commands: [
       {
-        slug: SLUG,
-        title: 'Open a URL on a simulator',
-        summary: 'Hand a URL to the simulator and let it pick the app.',
-        test: TEST,
-        start: 6.0,
-        end: 13.0,
-        poster: 'media/open-a-url.png',
-        commands: [
-          {
-            step: 'Open a URL on the simulator',
-            argv: ['idb', 'open', 'https://example.com'],
-            returncode: 0,
-            start: 10.58,
-            seconds: 0.42,
-            stdout: {bytes: 0, text: '', truncated: false},
-            stderr: {bytes: 0, text: '', truncated: false},
-          },
-        ],
+        step: 'Open a URL on the simulator',
+        argv: ['idb', 'open', 'https://example.com'],
+        returncode: 0,
+        start: 4.58,
+        seconds: 0.42,
+        stdout: {bytes: 0, text: '', truncated: false},
+        stderr: {bytes: 0, text: '', truncated: false},
       },
+    ],
+  };
+}
+
+function manifestFixture(overrides) {
+  return {
+    demos: [
+      demoFixture(SLUG, TEST, 7.0),
+      demoFixture(OTHER_SLUG, OTHER_TEST, 12.5),
     ],
     ...overrides,
   };
@@ -64,8 +71,10 @@ function scratch(manifest) {
       path.join(source, 'demos.json'),
       JSON.stringify(manifest, null, 2)
     );
-    fs.writeFileSync(path.join(source, 'media', 'idb-e2e-fixture.mp4'), 'a recording');
-    fs.writeFileSync(path.join(source, 'media', 'open-a-url.png'), 'a screenshot');
+    for (const slug of [SLUG, OTHER_SLUG]) {
+      fs.writeFileSync(path.join(source, 'media', `${slug}.mp4`), `a clip of ${slug}`);
+      fs.writeFileSync(path.join(source, 'media', `${slug}.png`), 'a screenshot');
+    }
   }
   return {websiteDir, source};
 }
@@ -95,8 +104,10 @@ test('publishes the demos a run produced', () => {
 
   const published = run(websiteDir, {IDB_DEMOS_DIR: source});
 
-  assert.strictEqual(published.demos.length, 1);
-  assert.strictEqual(published.demos[0].slug, SLUG);
+  assert.deepStrictEqual(
+    published.demos.map((demo) => demo.slug),
+    [SLUG, OTHER_SLUG]
+  );
   assert.deepStrictEqual(
     JSON.parse(read(websiteDir, 'src', 'demos', 'demos.json')),
     published
@@ -108,22 +119,41 @@ test('rewrites media paths to what the site serves', () => {
 
   const published = run(websiteDir, {IDB_DEMOS_DIR: source});
 
-  assert.strictEqual(published.video.source, '/demos/media/idb-e2e-fixture.mp4');
+  assert.strictEqual(published.demos[0].video.source, '/demos/media/open-a-url.mp4');
   assert.strictEqual(published.demos[0].poster, '/demos/media/open-a-url.png');
 });
 
-test('serves the recording and the posters as static files', () => {
+test('gives each demo a clip of its own to play', () => {
+  const {websiteDir, source} = scratch(manifestFixture());
+
+  const published = run(websiteDir, {IDB_DEMOS_DIR: source});
+
+  assert.deepStrictEqual(
+    published.demos.map((demo) => [demo.video.source, demo.video.duration]),
+    [
+      ['/demos/media/open-a-url.mp4', 7.0],
+      ['/demos/media/scroll-a-list.mp4', 12.5],
+    ]
+  );
+});
+
+test("serves each demo's clip and poster as static files", () => {
   const {websiteDir, source} = scratch(manifestFixture());
 
   run(websiteDir, {IDB_DEMOS_DIR: source});
 
-  assert.strictEqual(
-    read(websiteDir, 'static', 'demos', 'media', 'idb-e2e-fixture.mp4'),
-    'a recording'
+  assert.deepStrictEqual(
+    fs.readdirSync(path.join(websiteDir, 'static', 'demos', 'media')).sort(),
+    [
+      'open-a-url.mp4',
+      'open-a-url.png',
+      'scroll-a-list.mp4',
+      'scroll-a-list.png',
+    ]
   );
   assert.strictEqual(
-    read(websiteDir, 'static', 'demos', 'media', 'open-a-url.png'),
-    'a screenshot'
+    read(websiteDir, 'static', 'demos', 'media', 'scroll-a-list.mp4'),
+    'a clip of scroll-a-list'
   );
 });
 
@@ -139,21 +169,30 @@ test('the page imports the component and the manifest', () => {
   assert.ok(page.includes('<DemoTranscript {...manifest} />'), page);
 });
 
-test('publishes the transcript when the run recorded no video', () => {
-  const {websiteDir, source} = scratch(manifestFixture({video: null}));
+test('publishes the transcript of a demo whose clip could not be cut', () => {
+  const manifest = manifestFixture();
+  manifest.demos[0].video = null;
+  const {websiteDir, source} = scratch(manifest);
 
   const published = run(websiteDir, {IDB_DEMOS_DIR: source});
 
-  assert.strictEqual(published.video, null);
-  assert.strictEqual(published.demos.length, 1);
+  assert.strictEqual(published.demos[0].video, null);
+  assert.strictEqual(published.demos[0].poster, '/demos/media/open-a-url.png');
+  assert.strictEqual(published.demos[1].video.source, '/demos/media/scroll-a-list.mp4');
+  assert.ok(
+    !fs.existsSync(path.join(websiteDir, 'static', 'demos', 'media', 'open-a-url.mp4'))
+  );
 });
 
 test('forgets the media an earlier run published', () => {
   const {websiteDir, source} = scratch(manifestFixture());
   run(websiteDir, {IDB_DEMOS_DIR: source});
 
-  const without = manifestFixture({video: null});
-  without.demos[0].poster = null;
+  const without = manifestFixture();
+  for (const demo of without.demos) {
+    demo.video = null;
+    demo.poster = null;
+  }
   fs.writeFileSync(
     path.join(source, 'demos.json'),
     JSON.stringify(without, null, 2)
@@ -168,7 +207,7 @@ test('builds an empty page when no run is beside the site', () => {
 
   const published = run(websiteDir, {});
 
-  assert.deepStrictEqual(published, {video: null, demos: []});
+  assert.deepStrictEqual(published, {demos: []});
   assert.ok(read(websiteDir, 'docs', 'idb', 'demos.mdx').includes('id: demos'));
 });
 
@@ -229,15 +268,14 @@ test('fails when a demo does not say which test performed it', () => {
   assert.throws(() => run(websiteDir, {IDB_DEMOS_DIR: source}), /has no test/);
 });
 
-test('fails when a demo has no offsets to seek to', () => {
+test('fails when a demo names a clip with nothing to play', () => {
   const manifest = manifestFixture();
-  delete manifest.demos[0].start;
-  manifest.demos[0].end = null;
+  delete manifest.demos[0].video.source;
   const {websiteDir, source} = scratch(manifest);
 
   assert.throws(
     () => run(websiteDir, {IDB_DEMOS_DIR: source}),
-    /has no start[\s\S]*has no end/
+    /open-a-url has a clip with no source/
   );
 });
 
@@ -293,40 +331,51 @@ test('fails when output is neither text nor a digest', () => {
 
 test('fails when two files of the run would be served as one', () => {
   const manifest = manifestFixture();
-  manifest.demos[0].poster = 'shots/idb-e2e-fixture.mp4';
+  manifest.demos[1].video.source = 'clips/open-a-url.mp4';
   const {websiteDir, source} = scratch(manifest);
 
   assert.throws(
     () => run(websiteDir, {IDB_DEMOS_DIR: source}),
-    /both served as idb-e2e-fixture\.mp4/
+    /both served as open-a-url\.mp4/
   );
 });
 
-test('fails when the recording is missing a dimension the page sets', () => {
+test('fails when a clip is missing a dimension the page sets', () => {
   const manifest = manifestFixture();
-  delete manifest.video.width;
+  delete manifest.demos[0].video.width;
   const {websiteDir, source} = scratch(manifest);
 
   assert.throws(
     () => run(websiteDir, {IDB_DEMOS_DIR: source}),
-    /the recording has no width/
+    /open-a-url has a clip with no width/
   );
 });
 
-test('fails when the recording is not served as any type', () => {
+test('fails when a clip does not say how long it is', () => {
   const manifest = manifestFixture();
-  delete manifest.video.type;
+  manifest.demos[0].video.duration = null;
   const {websiteDir, source} = scratch(manifest);
 
   assert.throws(
     () => run(websiteDir, {IDB_DEMOS_DIR: source}),
-    /the recording has no type/
+    /open-a-url has a clip with no duration/
+  );
+});
+
+test('fails when a clip is not served as any type', () => {
+  const manifest = manifestFixture();
+  delete manifest.demos[0].video.type;
+  const {websiteDir, source} = scratch(manifest);
+
+  assert.throws(
+    () => run(websiteDir, {IDB_DEMOS_DIR: source}),
+    /open-a-url has a clip with no type/
   );
 });
 
 test('refuses media from outside the run', () => {
   const manifest = manifestFixture();
-  manifest.video.source = '/etc/passwd';
+  manifest.demos[0].video.source = '/etc/passwd';
   manifest.demos[0].poster = '../../elsewhere/poster.png';
   const {websiteDir, source} = scratch(manifest);
 
@@ -342,7 +391,7 @@ test('reads a run from nowhere but the directory it is pointed at', () => {
 
   const published = run(websiteDir, {});
 
-  assert.deepStrictEqual(published, {video: null, demos: []});
+  assert.deepStrictEqual(published, {demos: []});
 });
 
 let failed = 0;

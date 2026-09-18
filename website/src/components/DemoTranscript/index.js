@@ -83,8 +83,8 @@ function Step({command, index, video, selected, onSelect}) {
   );
 }
 
-// What the demo looked like: the recording when there is one, and otherwise
-// the screenshot the test ended on, so a run the recorder produced nothing for
+// What the demo looked like: its clip when there is one, and otherwise the
+// screenshot the test ended on, so a demo the recorder produced nothing for
 // still shows the simulator rather than only the commands.
 function Screen({demo, video, source, poster, player}) {
   if (video) {
@@ -116,20 +116,21 @@ function Screen({demo, video, source, poster, player}) {
         alt={`${demo.title}, as the test left the screen`}
       />
       <figcaption>
-        {demo.title}, as the test left the screen. This run has no recording.
+        {demo.title}, as the test left the screen. This demo has no recording.
       </figcaption>
     </figure>
   );
 }
 
-function Demo({demo, video}) {
+function Demo({demo}) {
   const player = useRef(null);
   const [selected, setSelected] = useState(null);
-  // The whole suite is one recording, so a demo is a fragment of it rather
-  // than a file of its own; the fragment is what a reader without JavaScript
-  // gets, and seeking is what they get with it.
-  const fragment = `#t=${demo.start},${demo.end}`;
-  const source = useBaseUrl(video ? `${video.source}${fragment}` : '/');
+  // A demo is its own clip, so the player's controls are already scoped to it:
+  // the duration they show is the demo's, playback stops where the demo ends,
+  // and a reader without JavaScript gets the same thing without a fragment
+  // that browsers treat as a hint. Step offsets are measured from the clip.
+  const video = demo.video;
+  const source = useBaseUrl(video ? video.source : '/');
   const poster = useBaseUrl(demo.poster || '/');
 
   const select = useCallback((index, start) => {
@@ -175,7 +176,7 @@ function Demo({demo, video}) {
   );
 }
 
-export default function DemoTranscript({video, demos}) {
+export default function DemoTranscript({demos}) {
   if (!demos || demos.length === 0) {
     return (
       <p className={styles.empty}>
@@ -187,7 +188,7 @@ export default function DemoTranscript({video, demos}) {
   return (
     <>
       {demos.map((demo) => (
-        <Demo key={demo.slug} demo={demo} video={video} />
+        <Demo key={demo.slug} demo={demo} />
       ))}
     </>
   );

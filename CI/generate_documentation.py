@@ -190,8 +190,6 @@ class Demo:
         return start, min(end, duration)
 
     def as_json(self, poster: str | None, clip: Clip | None) -> dict[str, Any]:
-        offset = 0.0 if clip is None else clip.offset
-        duration = None if clip is None else clip.video.duration
         return {
             "slug": self.slug,
             "title": self.title,
@@ -199,12 +197,6 @@ class Demo:
             "test": self.test,
             "poster": poster,
             "video": None if clip is None else clip.video.as_json(),
-            # The website reads a demo as an interval to seek to within a
-            # longer recording, and refuses a manifest without one. It is a
-            # clip of its own from here on, so the interval it seeks to is the
-            # whole of that clip, until the page stops asking for one.
-            "start": round(within(self.began - offset, duration), 3),
-            "end": round(within(self.test_ended - offset, duration), 3),
             "commands": [command.as_json(clip) for command in self.commands],
         }
 
