@@ -166,14 +166,6 @@ public final class Simulator: Target, Hashable, CustomStringConvertible, @unchec
     return setPath == (DefaultDeviceSet as NSString).expandingTildeInPath ? nil : setPath
   }
 
-  /// A command executor for simctl.
-  ///
-  /// Used by an out-of-tree consumer for clipboard support (`simctl pbcopy` /
-  /// `simctl pbpaste`), which has no CoreSimulator API.
-  public var simctlExecutor: AppleSimctlCommandExecutor {
-    AppleSimctlCommandExecutor.executor(for: self)
-  }
-
   /// The directory path of the expected location of the CoreSimulator logs directory.
   var coreSimulatorLogsDirectory: String {
     ((NSHomeDirectory() as NSString).appendingPathComponent("Library/Logs/CoreSimulator") as NSString)
