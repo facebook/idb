@@ -8,7 +8,7 @@
 import Foundation
 
 /// The address at which a companion's gRPC server can be reached.
-public enum CompanionAddress: Equatable {
+public enum CompanionAddress: Equatable, Sendable {
   case tcp(host: String, port: Int)
   case domainSocket(path: String)
 }
@@ -32,7 +32,7 @@ extension CompanionAddress {
 }
 
 /// A record of a single running companion, keyed by the simulator/device `udid`.
-public struct CompanionInfo: Codable, Equatable {
+public struct CompanionInfo: Codable, Equatable, Sendable {
   public let udid: String
   public let isLocal: Bool
   public let pid: Int32?
