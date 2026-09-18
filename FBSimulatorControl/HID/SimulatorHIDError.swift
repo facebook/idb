@@ -35,6 +35,8 @@ public enum SimulatorHIDError: Error, LocalizedError {
   case dtuhidXPCSymbolsUnavailable
   /// The `dtuhidd` host XPC connection could not be created.
   case dtuhidConnectionFailed
+  /// The connection was built, but no live `dtuhidd` answered behind it.
+  case dtuhidUnresponsive(attempts: Int, underlying: Error?)
   /// A touchscreen touch was attempted on a tvOS target, which has no touchscreen.
   case touchUnsupportedOnAppleTV
 
@@ -69,8 +71,26 @@ public enum SimulatorHIDError: Error, LocalizedError {
       return "Could not resolve the private _4sim XPC endpoint symbols required for the DTUHID transport"
     case .dtuhidConnectionFailed:
       return "Could not create the dtuhidd host XPC connection"
+    case let .dtuhidUnresponsive(attempts, underlying):
+      let detail = underlying.map { " (\($0))" } ?? ""
+      return
+        "dtuhidd did not answer a liveness probe in \(attempts) attempts\(detail) — the daemon is not running and launchd is not keeping it up, so every HID event sent to it would be discarded without error"
     case .touchUnsupportedOnAppleTV:
       return "Touch input is not supported on tvOS targets (no touchscreen)"
+    }
+  }
+
+  /// Whether this failure could clear on its own, so connecting is worth another attempt.
+  ///
+  /// The service lookup fails while the job is being torn down and respawned, which is the state a
+  /// retry exists to ride out. Absent `_4sim` symbols are the opposite: a property of the toolchain
+  /// that no amount of waiting changes.
+  var isTransientDTUHIDFailure: Bool {
+    switch self {
+    case .dtuhidDigitizerServiceUnavailable, .dtuhidConnectionFailed, .dtuhidUnresponsive:
+      return true
+    default:
+      return false
     }
   }
 
@@ -80,7 +100,8 @@ public enum SimulatorHIDError: Error, LocalizedError {
   /// to surface to the caller.
   var isDTUHIDUnreachable: Bool {
     switch self {
-    case .dtuhidXPCSymbolsUnavailable, .dtuhidDigitizerServiceUnavailable, .dtuhidConnectionFailed:
+    case .dtuhidXPCSymbolsUnavailable, .dtuhidDigitizerServiceUnavailable, .dtuhidConnectionFailed,
+      .dtuhidUnresponsive:
       return true
     default:
       return false

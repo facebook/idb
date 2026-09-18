@@ -400,6 +400,80 @@ final class SimulatorDTUHIDTransportTests: XCTestCase {
     XCTAssertEqual(sleeps, [DTUHIDTiming.replyTail, DTUHIDTiming.drain])
   }
 
+  // MARK: - Connect-time liveness
+
+  func testLivenessProbeSettlesTheColdDrain() async throws {
+    let recorder = DrainRecorder()
+    let transport = makeTransport(recorder)
+
+    try await transport.confirmLiveness()
+    try await transport.send(
+      messageType: "IndigoKeyboardButtonEvent", payload: IndigoKeyboardButtonEvent(usageCode: 0, state: .up))
+    try await transport.flush()
+
+    // The probe paid the tail, so the first gesture takes the warm drain rather than round-tripping
+    // a second barrier.
+    let replies = await recorder.replies
+    let sleeps = await recorder.sleeps
+    XCTAssertEqual(replies, 0)
+    XCTAssertEqual(sleeps, [DTUHIDTiming.replyTail, DTUHIDTiming.drain])
+  }
+
+  func testLivenessProbeCarriesAnInertBarrier() async throws {
+    let recorder = DrainRecorder()
+    let transport = makeTransport(recorder)
+
+    try await transport.confirmLiveness()
+
+    let probes = await recorder.livenessProbes
+    XCTAssertEqual(probes.count, 1)
+    let probe = try XCTUnwrap(probes.first)
+    XCTAssertTrue(xpc_dictionary_get_bool(probe, "isBarrier"))
+    XCTAssertEqual(messageString(probe, "messageType"), "IndigoKeyboardButtonEvent")
+    // Usage 0 is "no event indicated", so a guest that is listening still sees no keypress.
+    let payload = try XCTUnwrap(xpc_dictionary_get_dictionary(probe, "payload"))
+    XCTAssertEqual(xpc_dictionary_get_uint64(payload, "usageCode"), 0)
+  }
+
+  func testLivenessProbeFailureLeavesTheColdDrainOutstanding() async throws {
+    let recorder = DrainRecorder()
+    let transport = makeTransport(recorder, liveness: .unanswered)
+
+    do {
+      try await transport.confirmLiveness()
+      XCTFail("expected the probe to fail")
+    } catch is DTUHIDLivenessFailure {
+    } catch {
+      XCTFail("unexpected error: \(error)")
+    }
+
+    // A failed probe must not mark the daemon as activated: the caller either reconnects or falls
+    // back, and a transport that is used anyway still owes its cold drain.
+    try await transport.send(
+      messageType: "IndigoKeyboardButtonEvent", payload: IndigoKeyboardButtonEvent(usageCode: 0, state: .up))
+    try await transport.flush()
+
+    let replies = await recorder.replies
+    XCTAssertEqual(replies, 1)
+  }
+
+  func testAMidRespawnLookupFailureIsRetriedRatherThanTerminal() {
+    // The lookup fails while launchd is tearing the job down to respawn it, which is the state the
+    // retry exists to ride out; treating it as terminal falls back to Indigo and costs the keyboard.
+    XCTAssertTrue(
+      SimulatorHIDError.dtuhidDigitizerServiceUnavailable(underlying: nil).isTransientDTUHIDFailure)
+    XCTAssertTrue(SimulatorHIDError.dtuhidConnectionFailed.isTransientDTUHIDFailure)
+    // A toolchain without the `_4sim` symbols does not grow them by being asked again.
+    XCTAssertFalse(SimulatorHIDError.dtuhidXPCSymbolsUnavailable.isTransientDTUHIDFailure)
+  }
+
+  func testUnresponsiveDTUHIDIsWorthFallingBackFrom() {
+    // `SimulatorHID` negotiates around exactly the `isDTUHIDUnreachable` cases, so an unanswered
+    // probe has to be one of them or a wedged daemon costs every input rather than the keyboard.
+    XCTAssertTrue(
+      SimulatorHIDError.dtuhidUnresponsive(attempts: 3, underlying: nil).isDTUHIDUnreachable)
+  }
+
   // MARK: - Teardown
 
   func testCloseWithUndrainedSend() async throws {
@@ -464,7 +538,8 @@ final class SimulatorDTUHIDTransportTests: XCTestCase {
   }
 
   private func makeTransport(
-    _ recorder: DrainRecorder, reply: DrainReply = .answer, gate: SleepGate? = nil
+    _ recorder: DrainRecorder, reply: DrainReply = .answer, gate: SleepGate? = nil,
+    liveness: LivenessReply = .answer
   ) -> SimulatorDTUHIDTransport {
     let connection = xpc_connection_create("com.facebook.fbsimulatorcontrol.test.dtuhid", nil)
     xpc_connection_set_event_handler(connection) { _ in }
@@ -474,7 +549,7 @@ final class SimulatorDTUHIDTransportTests: XCTestCase {
       mainScreenSize: CGSize(width: 100, height: 200),
       mainScreenScale: 2.0,
       productFamily: .iPhone,
-      clock: recordingClock(recorder, reply: reply, gate: gate))
+      clock: recordingClock(recorder, reply: reply, gate: gate, liveness: liveness))
     addTeardownBlock { transport.disconnect() }
     return transport
   }
@@ -492,6 +567,11 @@ final class SimulatorDTUHIDTransportTests: XCTestCase {
     case timeout
   }
 
+  private enum LivenessReply {
+    case answer
+    case unanswered
+  }
+
   private enum DrainFailure: Error {
     case injected
   }
@@ -500,7 +580,12 @@ final class SimulatorDTUHIDTransportTests: XCTestCase {
     var sleeps: [Duration] = []
     var replies = 0
     var barriers: [xpc_object_t] = []
+    var livenessProbes: [xpc_object_t] = []
     var failsNextSleep = false
+
+    func probe(_ message: xpc_object_t) {
+      livenessProbes.append(message)
+    }
 
     func setFailNextSleep() {
       failsNextSleep = true
@@ -555,7 +640,8 @@ final class SimulatorDTUHIDTransportTests: XCTestCase {
   }
 
   private func recordingClock(
-    _ recorder: DrainRecorder, reply: DrainReply = .answer, gate: SleepGate? = nil
+    _ recorder: DrainRecorder, reply: DrainReply = .answer, gate: SleepGate? = nil,
+    liveness: LivenessReply = .answer
   ) -> DTUHIDDrainClock {
     DTUHIDDrainClock(
       sleep: { duration in
@@ -567,6 +653,12 @@ final class SimulatorDTUHIDTransportTests: XCTestCase {
         await recorder.reply(message)
         if reply == .timeout {
           throw DTUHIDDrainTimeout.expired
+        }
+      },
+      awaitLivenessReply: { _, message in
+        await recorder.probe(message)
+        if liveness == .unanswered {
+          throw DTUHIDLivenessFailure.timedOut
         }
       })
   }
