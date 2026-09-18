@@ -27,7 +27,10 @@ final class PixelBufferConverter {
   private var pool: CVPixelBufferPool?
 
   /// Throws `VideoToolboxFramePusherError.failedToCreatePixelTransferSession` if the transfer session cannot be made.
-  init(outputWidth: Int, outputHeight: Int, pixelFormat: OSType) throws {
+  /// `destinationColor` names the colour space the output is converted into; nil leaves the choice
+  /// to VideoToolbox, which is right for a same-space BGRA→BGRA scale and wrong for BGRA→YCbCr,
+  /// where the matrix must match what the bitstream will be tagged with.
+  init(outputWidth: Int, outputHeight: Int, pixelFormat: OSType, destinationColor: VideoColorDescription? = nil) throws {
     self.outputWidth = outputWidth
     self.outputHeight = outputHeight
     self.pixelFormat = pixelFormat
@@ -36,6 +39,12 @@ final class PixelBufferConverter {
     let status = VTPixelTransferSessionCreate(allocator: kCFAllocatorDefault, pixelTransferSessionOut: &transferSession)
     if status != noErr {
       throw VideoToolboxFramePusherError.failedToCreatePixelTransferSession(status: status)
+    }
+    if let transferSession, let destinationColor {
+      let colorStatus = VTSessionSetProperties(transferSession, propertyDictionary: destinationColor.pixelTransferDestinationProperties as CFDictionary)
+      if colorStatus != noErr {
+        throw VideoToolboxFramePusherError.failedToCreatePixelTransferSession(status: colorStatus)
+      }
     }
     self.transferSession = transferSession
 

@@ -12,13 +12,16 @@ import XCTest
 
 final class PixelBufferConverterTests: XCTestCase {
 
-  func testEncoderConverterTellsTheTransferSessionNoDestinationColor() throws {
-    let converter = try PixelBufferConverter(outputWidth: 64, outputHeight: 64, pixelFormat: PixelBufferConverter.encoderPixelFormat)
+  func testEncoderConverterTellsTheTransferSessionItsDestinationColor() throws {
+    let converter = try PixelBufferConverter(outputWidth: 64, outputHeight: 64, pixelFormat: PixelBufferConverter.encoderPixelFormat, destinationColor: .sRGB)
     defer { converter.invalidate() }
-    // BUG: the BGRA→NV12 conversion runs on VideoToolbox's default matrix for the frame size, so
-    // what the encoder is fed is not necessarily what the bitstream will claim — flipped to an
-    // explicit BT.709 destination in the following commit.
-    XCTAssertEqual(converter.destinationColorProperties, [:])
+    XCTAssertEqual(
+      converter.destinationColorProperties,
+      [
+        kVTPixelTransferPropertyKey_DestinationColorPrimaries as String: kCVImageBufferColorPrimaries_ITU_R_709_2 as String,
+        kVTPixelTransferPropertyKey_DestinationTransferFunction as String: kCVImageBufferTransferFunction_sRGB as String,
+        kVTPixelTransferPropertyKey_DestinationYCbCrMatrix as String: kCVImageBufferYCbCrMatrix_ITU_R_709_2 as String,
+      ])
   }
 
   func testBitmapConverterTellsTheTransferSessionNoDestinationColor() throws {

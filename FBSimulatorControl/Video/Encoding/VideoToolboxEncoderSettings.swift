@@ -19,6 +19,41 @@ public enum VideoEncodeSink: Sendable {
   case file
 }
 
+/// How the encoded frames' colour is described to the pipeline and, through it, to the decoder: the
+/// same three values go to the pixel-transfer session as its destination (so BGRA→YCbCr is done
+/// with this matrix) and to the compression session (so the bitstream says so).
+struct VideoColorDescription: Equatable, Sendable {
+  let primaries: String
+  let transferFunction: String
+  let matrix: String
+
+  /// What the simulator renders: sRGB, whose primaries and white point are BT.709's. The transfer
+  /// function is tagged as sRGB rather than BT.709's camera curve, which is what the pixels actually
+  /// are; the matrix is BT.709, the one every HD decoder assumes when unsure.
+  static let sRGB = VideoColorDescription(
+    primaries: kCVImageBufferColorPrimaries_ITU_R_709_2 as String,
+    transferFunction: kCVImageBufferTransferFunction_sRGB as String,
+    matrix: kCVImageBufferYCbCrMatrix_ITU_R_709_2 as String)
+
+  /// For `VTSessionSetProperties` on a `VTCompressionSession`.
+  var compressionProperties: [String: Any] {
+    [
+      kVTCompressionPropertyKey_ColorPrimaries as String: primaries,
+      kVTCompressionPropertyKey_TransferFunction as String: transferFunction,
+      kVTCompressionPropertyKey_YCbCrMatrix as String: matrix,
+    ]
+  }
+
+  /// For `VTSessionSetProperties` on a `VTPixelTransferSession`, describing its output.
+  var pixelTransferDestinationProperties: [String: Any] {
+    [
+      kVTPixelTransferPropertyKey_DestinationColorPrimaries as String: primaries,
+      kVTPixelTransferPropertyKey_DestinationTransferFunction as String: transferFunction,
+      kVTPixelTransferPropertyKey_DestinationYCbCrMatrix as String: matrix,
+    ]
+  }
+}
+
 /// Everything a `VTCompressionSession` is told, derived once from the stream configuration, the
 /// cadence it runs at and the sink its output goes to. The encoder specification is fixed at
 /// creation; the session properties depend on the encoded output size, which is only known once a
@@ -30,6 +65,18 @@ struct VideoToolboxEncoderSettings {
   let keyFrameInterval: Double
   let cadence: VideoStreamCadence
   let sink: VideoEncodeSink
+
+  /// What H.264/HEVC output is tagged as, and what the converter is asked to produce for it. JPEG has
+  /// nowhere in JFIF to carry a description and its YCbCr is BT.601 by convention, so the JPEG
+  /// formats get none and the converter is left to VideoToolbox's default for them.
+  var colorDescription: VideoColorDescription? {
+    switch format {
+    case .compressedVideo:
+      return .sRGB
+    case .mjpeg, .minicap, .bgra:
+      return nil
+    }
+  }
 
   init(configuration: VideoStreamConfiguration, cadence: VideoStreamCadence, sink: VideoEncodeSink) {
     self.format = configuration.format
@@ -83,6 +130,7 @@ struct VideoToolboxEncoderSettings {
         properties[kVTCompressionPropertyKey_AllowFrameReordering as String] = true
       }
       properties.merge(rateControlProperties(outputWidth: outputWidth, outputHeight: outputHeight)) { _, resolved in resolved }
+      properties.merge(VideoColorDescription.sRGB.compressionProperties) { _, color in color }
       switch codec {
       case .h264:
         properties[kVTCompressionPropertyKey_ProfileLevel as String] = kVTProfileLevel_H264_High_AutoLevel as String

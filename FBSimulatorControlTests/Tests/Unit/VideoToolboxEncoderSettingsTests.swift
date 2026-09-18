@@ -137,22 +137,20 @@ final class VideoToolboxEncoderSettingsTests: XCTestCase {
 
   // MARK: - Colour tags
 
-  func testCompressedVideoSessionsCarryNoColorTags() {
+  func testCompressedVideoSessionsAreTaggedAsSRGBOverBT709() {
     for format in [h264, hevc] {
       let props = retinaProperties(settings(format))
-      // BUG: the simulator renders sRGB and the converter produces BT.709 YCbCr, but the session
-      // is told neither, so the bitstream carries no colour description and every player guesses —
-      // flipped to BT.709 primaries and matrix with the sRGB transfer function in the following
-      // commit.
-      XCTAssertNil(props[kVTCompressionPropertyKey_ColorPrimaries as String], "\(format)")
-      XCTAssertNil(props[kVTCompressionPropertyKey_TransferFunction as String], "\(format)")
-      XCTAssertNil(props[kVTCompressionPropertyKey_YCbCrMatrix as String], "\(format)")
+      XCTAssertEqual(props[kVTCompressionPropertyKey_ColorPrimaries as String] as? String, kCVImageBufferColorPrimaries_ITU_R_709_2 as String, "\(format)")
+      XCTAssertEqual(props[kVTCompressionPropertyKey_TransferFunction as String] as? String, kCVImageBufferTransferFunction_sRGB as String, "\(format)")
+      XCTAssertEqual(props[kVTCompressionPropertyKey_YCbCrMatrix as String] as? String, kCVImageBufferYCbCrMatrix_ITU_R_709_2 as String, "\(format)")
+      XCTAssertEqual(settings(format).colorDescription, .sRGB)
     }
   }
 
   func testJPEGSessionsCarryNoColorTags() {
     for format in [VideoStreamFormat.mjpeg(encoder: .requireHardware), .minicap, .bgra] {
       let props = retinaProperties(settings(format))
+      XCTAssertNil(settings(format).colorDescription, "\(format)")
       XCTAssertNil(props[kVTCompressionPropertyKey_ColorPrimaries as String], "\(format)")
       XCTAssertNil(props[kVTCompressionPropertyKey_TransferFunction as String], "\(format)")
       XCTAssertNil(props[kVTCompressionPropertyKey_YCbCrMatrix as String], "\(format)")

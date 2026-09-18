@@ -119,7 +119,8 @@ final class VideoToolboxFramePusher: FramePusher, @unchecked Sendable {
     }
 
     let converter = try PixelBufferConverter(
-      outputWidth: destinationWidth, outputHeight: destinationHeight, pixelFormat: PixelBufferConverter.encoderPixelFormat)
+      outputWidth: destinationWidth, outputHeight: destinationHeight, pixelFormat: PixelBufferConverter.encoderPixelFormat,
+      destinationColor: settings.colorDescription)
     self.converter = converter
     logger.info().log("Created BGRA→NV12 conversion pipeline at w=\(destinationWidth)/h=\(destinationHeight) (GPU via VTPixelTransferSession)")
 
