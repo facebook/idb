@@ -21,14 +21,17 @@ enum FileWriterError: Error, LocalizedError {
   }
 }
 
+/// @unchecked Sendable: the descriptor and the flag are immutable; `finishedConsumingMutable` is an
+/// `FBMutableFuture`, which is internally synchronised and resolved once. The async subclass keeps
+/// its `DispatchIO` channel confined to its write queue.
 @objc
-public class FileWriter: NSObject {
+public class FileWriter: NSObject, @unchecked Sendable {
 
   // MARK: - Properties
 
   fileprivate let fileDescriptor: Int32
   fileprivate let closeOnEndOfFile: Bool
-  fileprivate var finishedConsumingMutable: FBMutableFuture<AnyObject>
+  fileprivate let finishedConsumingMutable: FBMutableFuture<AnyObject>
 
   // MARK: - Initializers
 
@@ -123,7 +126,7 @@ public class FileWriter: NSObject {
 
   // MARK: - Null
 
-  private class Null: FileWriter, DispatchDataConsumer, DataConsumerLifecycle {
+  private final class Null: FileWriter, DispatchDataConsumer, DataConsumerLifecycle, @unchecked Sendable {
 
     func consumeData(_ data: __DispatchData) {
     }
@@ -139,7 +142,7 @@ public class FileWriter: NSObject {
 
   // MARK: - Sync
 
-  private class Sync: FileWriter, DispatchDataConsumer, DataConsumerLifecycle, DataConsumerSync {
+  private final class Sync: FileWriter, DispatchDataConsumer, DataConsumerLifecycle, DataConsumerSync, @unchecked Sendable {
 
     func consumeData(_ data: __DispatchData) {
       let dispatchData = data as DispatchData
@@ -163,7 +166,7 @@ public class FileWriter: NSObject {
 
   // MARK: - Async
 
-  private class Async: FileWriter, DispatchDataConsumer, DataConsumerLifecycle {
+  private final class Async: FileWriter, DispatchDataConsumer, DataConsumerLifecycle, @unchecked Sendable {
 
     let writeQueue: DispatchQueue
     var io: DispatchIO?

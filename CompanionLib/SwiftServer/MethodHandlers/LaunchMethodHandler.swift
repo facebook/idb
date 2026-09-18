@@ -78,7 +78,6 @@ struct LaunchMethodHandler: @unchecked Sendable {
 
     try await withThrowingTaskGroup(of: Void.self) { group in
       for consumer in consumers {
-        nonisolated(unsafe) let consumer = consumer
         group.addTask {
           try await consumer.awaitFinishedConsuming()
         }

@@ -42,7 +42,10 @@ extension InstrumentsError: LocalizedError {
 
 /// Watches the instruments output for the two lifecycle markers: template loading has
 /// begun, and the premature "Trace Complete" that signals a failed startup.
-final class InstrumentsConsumer: NSObject, DataConsumer {
+///
+/// @unchecked Sendable: the two futures are `FBMutableFuture`s, internally synchronised; the line
+/// consumer is itself a `DataConsumer`.
+final class InstrumentsConsumer: NSObject, DataConsumer, @unchecked Sendable {
 
   let hasStoppedRecording: FBMutableFuture<NSNull>
   let hasStartedLoadingTemplate: FBMutableFuture<NSNull>

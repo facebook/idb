@@ -141,10 +141,7 @@ public actor SimulatorVideoStream: VideoStreamOperation {
   /// attachment cancels, finishing the stream).
   /// Sendable so the nonisolated `deinit` backstop can reach the attachment and event task.
   private struct Session: Sendable {
-    // SAFETY: DataConsumer is a thread-safe ObjC protocol that predates Sendable auditing — the
-    // `startStreaming` shim already carries it across the boundary on the same justification.
-    // patternlint-disable-next-line swift-nonisolated-unsafe
-    nonisolated(unsafe) let consumer: any DataConsumer
+    let consumer: any DataConsumer
     let attachment: FramebufferAttachment
     let eventTask: Task<Void, Never>
   }
@@ -281,10 +278,6 @@ public actor SimulatorVideoStream: VideoStreamOperation {
   // MARK: - Public
 
   public nonisolated func startStreaming(_ consumer: any DataConsumer) async throws {
-    // DataConsumer is a thread-safe ObjC protocol that isn't Sendable; this single shim carries it
-    // onto the actor, where it is confined thereafter.
-    // patternlint-disable-next-line swift-nonisolated-unsafe
-    nonisolated(unsafe) let consumer = consumer
     try await isolatedStartStreaming(consumer)
   }
 

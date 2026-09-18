@@ -118,8 +118,6 @@ public final class IDBLogger: FBCompositeLogger, @unchecked Sendable {
 
   func tailToConsumer(_ consumer: DataConsumer) async throws -> any LogOperation {
     let queue = IDBLogger.loggerQueue
-    // DataConsumer is a thread-safe ObjC protocol that isn't Sendable.
-    nonisolated(unsafe) let consumer = consumer
     return await withCheckedContinuation { (continuation: CheckedContinuation<any LogOperation, Never>) in
       queue.async {
         let logger = FBControlCoreLoggerFactory.logger(to: consumer)

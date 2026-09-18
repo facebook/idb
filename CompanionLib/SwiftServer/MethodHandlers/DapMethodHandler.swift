@@ -40,8 +40,7 @@ struct DapMethodHandler: @unchecked Sendable {
 
     let lldbVSCode = "dap/\(startRequest.debuggerPkgID)/usr/bin/lldb-vscode"
 
-    // DataConsumer is a thread-safe ObjC protocol that isn't marked Sendable.
-    nonisolated(unsafe) let stdOutConsumer = createDataConsumer(to: responseStream)
+    let stdOutConsumer = createDataConsumer(to: responseStream)
     targetLogger.debug().log("Starting dap server with path \(lldbVSCode)")
 
     let tenMinutes: UInt64 = 600 * 1000000000

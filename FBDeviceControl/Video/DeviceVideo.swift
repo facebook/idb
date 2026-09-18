@@ -7,7 +7,7 @@
 
 import AVFoundation
 import CoreMediaIO
-@preconcurrency import FBControlCore
+import FBControlCore
 import Foundation
 
 private enum DeviceVideoError: Error {

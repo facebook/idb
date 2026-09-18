@@ -7,7 +7,7 @@
 
 import AVFoundation
 import CoreMedia
-@preconcurrency import FBControlCore
+import FBControlCore
 import Foundation
 import os
 
