@@ -95,7 +95,10 @@ from idb.cli.commands.location import LocationSetCommand
 from idb.cli.commands.log import CompanionLogCommand, LogCommand
 from idb.cli.commands.media import MediaAddCommand
 from idb.cli.commands.memory import SimulateMemoryWarningCommand
-from idb.cli.commands.notification import SendNotificationCommand
+from idb.cli.commands.notification import (
+    NotificationListCommand,
+    SendNotificationCommand,
+)
 from idb.cli.commands.photos import PhotosClearCommand
 from idb.cli.commands.revoke import RevokeCommand
 from idb.cli.commands.screenshot import ScreenshotCommand
@@ -276,6 +279,11 @@ def build_builtin_commands(shell_command: ShellCommand) -> list[Command]:
         LocationSetCommand(),
         SimulateMemoryWarningCommand(),
         SendNotificationCommand(),
+        CommandGroup(
+            name="notification",
+            description="Notification operations on target",
+            commands=[NotificationListCommand()],
+        ),
         ApproveCommand(),
         RevokeCommand(),
         TargetConnectCommand(),

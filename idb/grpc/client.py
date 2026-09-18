@@ -64,6 +64,7 @@ from idb.common.types import (
     CrashLogInfo,
     CrashLogQuery,
     DEFAULT_SCREENSHOT_OPTIONS,
+    DeliveredNotification,
     DomainSocketAddress,
     FileContainer,
     FileContainerType,
@@ -111,6 +112,7 @@ from idb.grpc.idb_pb2 import (
     CrashShowRequest,
     DebugServerRequest,
     DebugServerResponse,
+    DeliveredNotificationsRequest,
     FocusRequest,
     GetSettingRequest,
     InstallRequest,
@@ -742,6 +744,26 @@ class Client(ClientBase):
                 json_payload=json_payload,
             )
         )
+
+    @log_and_handle_exceptions("delivered_notifications")
+    async def delivered_notifications(
+        self, bundle_id: str
+    ) -> list[DeliveredNotification]:
+        response = await self.stub.delivered_notifications(
+            DeliveredNotificationsRequest(bundle_id=bundle_id)
+        )
+        return [
+            DeliveredNotification(
+                bundle_id=notification.bundle_id,
+                identifier=notification.identifier,
+                title=notification.title,
+                subtitle=notification.subtitle,
+                body=notification.body,
+                thread_identifier=notification.thread_identifier,
+                date=notification.date if notification.HasField("date") else None,
+            )
+            for notification in response.notifications
+        ]
 
     @log_and_handle_exceptions("terminate")
     async def terminate(self, bundle_id: str) -> None:

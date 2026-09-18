@@ -34,6 +34,7 @@ from idb.common.types import (
     AccessibilitySearchableKey,
     Compression,
     CrashLogQuery,
+    DeliveredNotification,
     DomainSocketAddress,
     FileContainerType,
     HIDButtonType,
@@ -58,6 +59,67 @@ from idb.utils.testing import AsyncContextManagerMock, AsyncMock, TestCase
 
 T = TypeVar("T")
 COMPANION_PATH: str | None = get_default_companion_path()
+DELIVERED_NOTIFICATION = DeliveredNotification(
+    bundle_id="com.foo.bar",
+    identifier="identifier-1",
+    title="Title",
+    subtitle="Subtitle",
+    body="Body",
+    thread_identifier="thread-1",
+    date=1700000000.0,
+)
+AWKWARD_DELIVERED_NOTIFICATION = DeliveredNotification(
+    bundle_id="com.foo.bar",
+    identifier="",
+    title="Line one\nLine two \u0085\u2028\u2029🚀",
+    subtitle="",
+    body='Body with a | separator, a "quote" and 日本語',
+    thread_identifier="",
+    date=None,
+)
+UNREADABLE_DATE_DELIVERED_NOTIFICATION = DeliveredNotification(
+    bundle_id="com.foo.bar",
+    identifier="identifier-3",
+    title="Title",
+    subtitle="Subtitle",
+    body="Body",
+    thread_identifier="thread-3",
+    # Past what `time_t` can hold, which a device with a bad clock can report.
+    date=1e20,
+)
+NAN_DATE_DELIVERED_NOTIFICATION = DeliveredNotification(
+    bundle_id="com.foo.bar",
+    identifier="identifier-4",
+    title="Title",
+    subtitle="Subtitle",
+    body="Body",
+    thread_identifier="thread-4",
+    date=float("nan"),
+)
+INFINITE_DATE_DELIVERED_NOTIFICATION = DeliveredNotification(
+    bundle_id="com.foo.bar",
+    identifier="identifier-5",
+    title="Title",
+    subtitle="Subtitle",
+    body="Body",
+    thread_identifier="thread-5",
+    date=float("inf"),
+)
+
+
+def _strict_json_loads(line: str) -> Any:
+    """Parses a line the way a reader that is not Python's would.
+
+    `json.loads` accepts the bare `Infinity` and `NaN` that `json.dumps` writes for
+    a non-finite double, and readers in other languages do not, so asserting with it
+    alone would pass on output nothing else could take. `parse_constant` is the hook
+    those tokens go through, and raising from it is what makes this reject them.
+    """
+
+    def reject(token: str) -> Any:
+        raise AssertionError(f"`{token}` is not a value a strict JSON reader accepts")
+
+    return json.loads(line, parse_constant=reject)
 
 
 class AsyncGeneratorMock(AsyncMock):
@@ -2604,6 +2666,82 @@ class TestParser(TestCase):
         self.client_mock.focus = AsyncMock(return_value=["aaa", "bbb"])
         await cli_main(cmd_input=["focus"])
         self.client_mock.focus.assert_called_once()
+
+    async def test_notification_list(self) -> None:
+        self.client_mock.delivered_notifications = AsyncMock(
+            return_value=[
+                DELIVERED_NOTIFICATION,
+                AWKWARD_DELIVERED_NOTIFICATION,
+                UNREADABLE_DATE_DELIVERED_NOTIFICATION,
+                NAN_DATE_DELIVERED_NOTIFICATION,
+                INFINITE_DATE_DELIVERED_NOTIFICATION,
+            ]
+        )
+        output = StringIO()
+        with redirect_stdout(output):
+            await cli_main(cmd_input=["notification", "list", "com.foo.bar"])
+        self.client_mock.delivered_notifications.assert_called_once_with("com.foo.bar")
+        # Split into lines rather than compared whole, so that a newline in a
+        # field fails here instead of quietly reading as a further record. A field
+        # the app left empty reads as `""` rather than as a stand-in for a field
+        # that was not there, and text it wrote outside ASCII reads as itself. The
+        # last three dates are ones no platform can render -- out of range, not a
+        # number, infinite -- and the whole list is still expected: one bad field
+        # does not cost the other notifications.
+        self.assertEqual(
+            output.getvalue().splitlines(),
+            [
+                '"com.foo.bar" | "identifier-1" | "Title" | "Subtitle" | "Body"'
+                ' | "thread-1" | 2023-11-14T22:13:20+00:00',
+                '"com.foo.bar" | "" | "Line one\\nLine two \\u0085\\u2028\\u2029🚀"'
+                ' | "" | "Body with a | separator, a \\"quote\\" and 日本語"'
+                ' | "" | no date',
+                '"com.foo.bar" | "identifier-3" | "Title" | "Subtitle" | "Body"'
+                ' | "thread-3" | unreadable date',
+                '"com.foo.bar" | "identifier-4" | "Title" | "Subtitle" | "Body"'
+                ' | "thread-4" | unreadable date',
+                '"com.foo.bar" | "identifier-5" | "Title" | "Subtitle" | "Body"'
+                ' | "thread-5" | unreadable date',
+            ],
+        )
+
+    async def test_notification_list_json(self) -> None:
+        self.client_mock.delivered_notifications = AsyncMock(
+            return_value=[
+                DELIVERED_NOTIFICATION,
+                UNREADABLE_DATE_DELIVERED_NOTIFICATION,
+                NAN_DATE_DELIVERED_NOTIFICATION,
+                INFINITE_DATE_DELIVERED_NOTIFICATION,
+            ]
+        )
+        output = StringIO()
+        with redirect_stdout(output):
+            await cli_main(cmd_input=["notification", "list", "com.foo.bar", "--json"])
+        # Read strictly, so that a line carrying a bare `Infinity` or `NaN` fails
+        # here rather than passing on Python's lenient reader while breaking every
+        # other one -- `--json` is the form callers are told to parse.
+        records = [_strict_json_loads(line) for line in output.getvalue().splitlines()]
+        self.assertEqual(
+            records[0],
+            {
+                "bundle_id": "com.foo.bar",
+                "identifier": "identifier-1",
+                "title": "Title",
+                "subtitle": "Subtitle",
+                "body": "Body",
+                "thread_identifier": "thread-1",
+                "date": 1700000000.0,
+            },
+        )
+        # The value as it arrived, not the placeholder the human format shows
+        # for it: a caller that knows better than this process what the device
+        # meant by it can only do so if it is still here.
+        self.assertEqual(records[1]["date"], 1e20)
+        # A NaN and an infinity have no JSON number between them, so they read as
+        # the same `null` an absent date does. Carrying them through as they
+        # arrived is the one thing that cannot be done: it is not JSON.
+        self.assertIsNone(records[2]["date"])
+        self.assertIsNone(records[3]["date"])
 
     async def test_debugserver_start(self) -> None:
         self.client_mock.debugserver_start = AsyncMock(return_value=["aaa", "bbb"])

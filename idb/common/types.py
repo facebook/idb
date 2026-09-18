@@ -52,6 +52,20 @@ class TargetType(str, Enum):
 
 
 @dataclass(frozen=True)
+class DeliveredNotification:
+    """One notification the system retained for an app."""
+
+    bundle_id: str
+    identifier: str
+    title: str
+    subtitle: str
+    body: str
+    thread_identifier: str
+    # Seconds since the Unix epoch; None when the record carried no date.
+    date: Optional[float]
+
+
+@dataclass(frozen=True)
 class ECIDFilter:
     ecid: int
 
@@ -897,6 +911,12 @@ class Client(ABC):
 
     @abstractmethod
     async def send_notification(self, bundle_id: str, json_payload: str) -> None:
+        pass
+
+    @abstractmethod
+    async def delivered_notifications(
+        self, bundle_id: str
+    ) -> list[DeliveredNotification]:
         pass
 
     @abstractmethod

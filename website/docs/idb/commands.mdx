@@ -422,6 +422,18 @@ idb send-notification com.apple.Maps '{"aps": {"alert": "Hello"}}'
 
 Delivers a push notification payload to an installed app, with no APNs certificate or network setup. The payload is the JSON the app would receive from APNs.
 
+### List delivered notifications
+
+```
+idb notification list com.apple.Maps
+# One JSON object per notification, one per line
+idb notification list --json com.apple.Maps
+```
+
+Lists the notifications an app has had delivered to it and still holds on a simulator. Physical devices are not supported. The app does not have to be running, and nothing here launches or foregrounds it, so this can be read after a test has killed the app it pushed to.
+
+Each notification is reported with its bundle ID, identifier, title, subtitle, body, thread identifier, and delivery date. Without `--json` the text fields are quoted and escaped as JSON strings, so a title or body carrying a newline still reads as one record on one line; text outside ASCII is left as the app wrote it rather than escaped, and a field the app left empty reads as `""`. A ` | ` inside a field survives the quoting, so the quotes show where a field ends rather than making a naive split on ` | ` safe — use `--json` where fields have to be taken apart reliably. The date is seconds since the Unix epoch under `--json`, and an ISO 8601 UTC timestamp otherwise. A notification that carried no date reads as `null` and `no date` respectively, rather than being given an epoch timestamp. A finite date too far out for the host calendar remains numeric under `--json` and reads as `unreadable date` in the text form.
+
 ### Simulate a memory warning
 
 ```

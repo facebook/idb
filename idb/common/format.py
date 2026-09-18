@@ -7,7 +7,9 @@
 
 import base64
 import json
+import math
 from dataclasses import dataclass
+from datetime import datetime, timezone
 from textwrap import indent
 from typing import Any, Dict, List, Optional, Union
 
@@ -15,6 +17,7 @@ from idb.common.types import (
     AppProcessState,
     CompanionInfo,
     DebuggerInfo,
+    DeliveredNotification,
     DomainSocketAddress,
     IdbException,
     InstalledAppInfo,
@@ -358,3 +361,83 @@ def json_format_debugger_info(info: DebuggerInfo) -> str:
         "pid": info.pid,
     }
     return json.dumps(data)
+
+
+def _quoted(text: str) -> str:
+    """Quotes and escapes the way JSON writes a string, so that a newline in
+    text the sending app chose cannot end the record early. A ` | ` inside the
+    quotes is still a ` | `, so the quotes show where a field ends rather than
+    making a naive split safe; `--json` is the form to parse.
+
+    Only what would break the line is escaped: a title in an alphabet other than
+    this one, or with an emoji in it, stays as the app wrote it rather than being
+    written out as `\\uXXXX` escapes for a person to decode. An empty field is
+    written as `""`, since every string here is one the app set or left empty --
+    there is no absent case to keep it distinct from.
+    """
+    return (
+        json.dumps(text, ensure_ascii=False)
+        .replace("\u0085", "\\u0085")
+        .replace("\u2028", "\\u2028")
+        .replace("\u2029", "\\u2029")
+    )
+
+
+def _human_date(date: Optional[float]) -> str:
+    """Renders a wire date, or says it could not be.
+
+    The wire field is a double the companion read off the device, so it can be one
+    no platform can turn into a date -- outside `time_t`, or a NaN. Listing the other
+    notifications is worth more than raising on one bad field, and `--json` still
+    carries a finite one as it arrived for anyone who wants to look.
+    """
+    if date is None:
+        return "no date"
+    try:
+        return datetime.fromtimestamp(date, timezone.utc).isoformat()
+    except (OverflowError, OSError, ValueError):
+        return "unreadable date"
+
+
+def human_format_delivered_notification(notification: DeliveredNotification) -> str:
+    return " | ".join(
+        [
+            _quoted(notification.bundle_id),
+            _quoted(notification.identifier),
+            _quoted(notification.title),
+            _quoted(notification.subtitle),
+            _quoted(notification.body),
+            _quoted(notification.thread_identifier),
+            _human_date(notification.date),
+        ]
+    )
+
+
+def _json_date(date: Optional[float]) -> Optional[float]:
+    """The wire date as JSON can carry it, or `None` where it cannot.
+
+    JSON has no number for an infinity or a NaN, and `json.dumps` writes one as a
+    bare `Infinity` or `NaN` that a strict reader rejects -- so a single bad field
+    would cost the caller the whole record rather than just that field. `null` is
+    what an absent date already reads as, and it is the one value every reader
+    already has for "no date here". The human format still tells the two apart.
+    """
+    if date is None or not math.isfinite(date):
+        return None
+    return date
+
+
+def json_format_delivered_notification(notification: DeliveredNotification) -> str:
+    data = {
+        "bundle_id": notification.bundle_id,
+        "identifier": notification.identifier,
+        "title": notification.title,
+        "subtitle": notification.subtitle,
+        "body": notification.body,
+        "thread_identifier": notification.thread_identifier,
+        "date": _json_date(notification.date),
+    }
+    # Nothing above can reach this with a non-finite value any more; `allow_nan=False`
+    # is so that anything that later does raises here rather than printing a line no
+    # strict reader will take.
+    return json.dumps(data, allow_nan=False)
