@@ -26,13 +26,28 @@ final class SimulatorVideoStreamPushFrameTests: XCTestCase {
     let logger: CapturingLogger
   }
 
-  private func startStream() async throws -> Started {
+  private func makeStream(clock: VideoStreamClock = .system) -> Started {
     let surface = FakeFramebufferSurface()
     let ioSurface = makeTestIOSurface()
     surface.immediateSurface = ioSurface
     let logger = CapturingLogger()
     let framebuffer = Framebuffer(surface: surface, logger: logger)
-    let stream = SimulatorVideoStream.make(framebuffer: framebuffer, configuration: Self.lazyConfiguration, logger: logger)
+    let stream = SimulatorVideoStream(
+      framebuffer: framebuffer,
+      configuration: Self.lazyConfiguration,
+      edgeInsets: VideoStreamEdgeInsets(top: 0, bottom: 0, left: 0, right: 0),
+      cadence: .lazy,
+      logger: logger,
+      clock: clock)
+    return Started(stream: stream, pusher: RecordingFramePusher(), surface: surface, ioSurface: ioSurface, logger: logger)
+  }
+
+  private func startStream(clock: VideoStreamClock = .system) async throws -> Started {
+    let made = makeStream(clock: clock)
+    let stream = made.stream
+    let surface = made.surface
+    let ioSurface = made.ioSurface
+    let logger = made.logger
     try await stream.startStreaming(FBDataBuffer.accumulatingBuffer())
     let pusher = RecordingFramePusher()
     await stream.installFramePusher(pusher)
@@ -91,6 +106,50 @@ final class SimulatorVideoStreamPushFrameTests: XCTestCase {
     XCTAssertEqual(started.pusher.writes.count, 1)
     let encodeFailureLogs = started.logger.messages.compactMap { $0 as? String }.filter { $0.contains("-12902") }
     XCTAssertEqual(encodeFailureLogs.count, 1, "an encode submission failure must be logged once: \(started.logger.messages)")
+  }
+
+  func testMediaOriginIsUnknownBeforeAFrameWasPushed() async throws {
+    // Starting a stream pushes its first frame as the surface mounts, so the only stream that has
+    // pushed nothing is one that has not started.
+    let made = makeStream()
+
+    let origin = await made.stream.mediaOrigin(anchor: 0)
+
+    XCTAssertNil(origin)
+  }
+
+  func testMediaOriginIsTheWallClockAtTheFirstFramePlusTheFileSAnchor() async throws {
+    let clock = SettableClock(uptime: 100, wallClock: 1_000_000)
+    let started = try await startStream(clock: clock.streamClock)
+    defer { Task { try? await started.stream.stopStreaming() } }
+
+    await started.stream.pushFrame(forceKeyFrame: false)
+    // A minute of recording on both clocks, and a file anchored on a sample muxed 2 seconds after
+    // the first frame was pushed.
+    clock.advance(by: 60)
+
+    let origin = await started.stream.mediaOrigin(anchor: 2)
+
+    XCTAssertEqual(origin, 1_000_002)
+  }
+
+  func testMediaOriginWhenTheWallClockIsSetDuringTheRecording() async throws {
+    let clock = SettableClock(uptime: 100, wallClock: 1_000_000)
+    let started = try await startStream(clock: clock.streamClock)
+    defer { Task { try? await started.stream.stopStreaming() } }
+
+    await started.stream.pushFrame(forceKeyFrame: false)
+    // A minute of recording, during which the wall clock was also set forward by a minute.
+    clock.advance(by: 60)
+    clock.wallClock += 60
+
+    let origin = await started.stream.mediaOrigin(anchor: 0)
+
+    // BUG: the first frame was pushed at 1_000_000, and setting the wall clock afterwards cannot
+    // change when that happened. The origin is worked out from a wall clock reading taken when it
+    // is asked for, so a clock set in between carries the answer with it -- flipped in the
+    // following commit.
+    XCTAssertEqual(origin, 1_000_060)
   }
 
   func testSurfaceWrittenDuringPushIsCountedAsTorn() async throws {
@@ -169,5 +228,41 @@ private final class RecordingFramePusher: FramePusher, @unchecked Sendable {
 extension SimulatorVideoStream {
   fileprivate func installFramePusher(_ pusher: any FramePusher & Sendable) {
     framePusher = pusher
+  }
+}
+
+/// A pair of clocks a test moves by hand, in place of the machine's.
+// SAFETY: both readings are guarded by `lock`.
+// patternlint-disable-next-line unchecked-sendable
+private final class SettableClock: @unchecked Sendable {
+  private let lock = NSLock()
+  private var uptimeReading: TimeInterval
+  private var wallClockReading: TimeInterval
+
+  init(uptime: TimeInterval, wallClock: TimeInterval) {
+    uptimeReading = uptime
+    wallClockReading = wallClock
+  }
+
+  var uptime: TimeInterval {
+    get { lock.withLock { uptimeReading } }
+    set { lock.withLock { uptimeReading = newValue } }
+  }
+
+  var wallClock: TimeInterval {
+    get { lock.withLock { wallClockReading } }
+    set { lock.withLock { wallClockReading = newValue } }
+  }
+
+  /// Time passing, as it does on both clocks at once.
+  func advance(by seconds: TimeInterval) {
+    lock.withLock {
+      uptimeReading += seconds
+      wallClockReading += seconds
+    }
+  }
+
+  var streamClock: VideoStreamClock {
+    VideoStreamClock(uptime: { self.uptime }, wallClock: { self.wallClock })
   }
 }
