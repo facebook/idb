@@ -31,6 +31,25 @@ final class HealthMutationTests: XCTestCase {
     return runtime
   }
 
+  func testClearFailureDoesNotLeakIntoFollowingClearOrList() throws {
+    let runtime = FBHealthTestRuntime()
+    runtime.clearOK = false
+    runtime.clearError = "clear failed"
+    let (failedStatus, failedOutput) = try run(runtime, action: "clear")
+    XCTAssertEqual(failedStatus, 1)
+    XCTAssertEqual(failedOutput, ["action": "clear", "bundleID": bundleID, "ok": false, "error": "clear failed"] as NSDictionary)
+
+    runtime.clearOK = true
+    runtime.clearError = nil
+    let (clearStatus, clearOutput) = try run(runtime, action: "clear")
+    XCTAssertEqual(clearStatus, 0)
+    XCTAssertEqual(clearOutput, ["action": "clear", "bundleID": bundleID, "ok": true, "error": NSNull()] as NSDictionary)
+
+    let (listStatus, listOutput) = try run(runtime, action: "list")
+    XCTAssertEqual(listStatus, 0)
+    XCTAssertEqual(listOutput, ["action": "list", "bundleID": bundleID, "ok": true, "error": NSNull(), "records": []] as NSDictionary)
+  }
+
   func testDefaultApprovalAndRevocationSeedBeforeEitherSetterSpelling() throws {
     for (action, statusCode) in [("approve", 101), ("revoke", 104)] {
       for variants in [1, 2, 3] {

@@ -9,6 +9,26 @@ import Foundation
 import XCTest
 
 final class PhotoLibraryMutationTests: XCTestCase {
+  func testClearRetriesAfterSaveFailureAndAcceptsAnEmptyLibrary() throws {
+    let runtime = FBPhotosTestRuntime()
+    runtime.saveSucceeds = false
+    XCTAssertEqual(runtime.run(), 1)
+    let failedOperations = try XCTUnwrap(runtime.operations as? [String])
+    XCTAssertTrue(failedOperations.contains("save"))
+    XCTAssertEqual(failedOperations.last, "transactionEnd")
+
+    runtime.operations.removeAllObjects()
+    runtime.saveSucceeds = true
+    XCTAssertEqual(runtime.run(), 0)
+    XCTAssertEqual(runtime.operations as? [String], failedOperations)
+    XCTAssertTrue(runtime.allMutationsInsideTransaction)
+
+    runtime.operations.removeAllObjects()
+    runtime.assetCount = 0
+    XCTAssertEqual(runtime.run(), 0)
+    XCTAssertEqual(runtime.operations.count, 0)
+  }
+
   func testEmptyLibraryDoesNotAccessPrivateStorage() {
     let runtime = FBPhotosTestRuntime()
     runtime.assetCount = 0

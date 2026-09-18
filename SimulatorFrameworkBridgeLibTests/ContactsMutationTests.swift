@@ -9,6 +9,31 @@ import Contacts
 import XCTest
 
 final class ContactsMutationTests: XCTestCase {
+  func testClearRetriesAfterSaveFailureAndAcceptsAnEmptyStore() {
+    let contact = CNMutableContact()
+    contact.givenName = "Retry"
+    let runtime = FBContactsTestRuntime()
+    runtime.contacts = [contact]
+    runtime.saveSucceeds = false
+
+    XCTAssertEqual(runtime.run(), 1)
+    XCTAssertEqual(runtime.saves, 1)
+    XCTAssertEqual(runtime.deletedContacts.count, 1)
+
+    runtime.saveSucceeds = true
+    XCTAssertEqual(runtime.run(), 0)
+    XCTAssertEqual(runtime.requestCreations, 2)
+    XCTAssertEqual(runtime.saves, 2)
+    XCTAssertEqual(runtime.deletedContacts.count, 2)
+    XCTAssertTrue(runtime.savedExpectedRequest)
+
+    runtime.contacts = []
+    XCTAssertEqual(runtime.run(), 0)
+    XCTAssertEqual(runtime.fetches, 3)
+    XCTAssertEqual(runtime.requestCreations, 2)
+    XCTAssertEqual(runtime.saves, 2)
+  }
+
   func testEmptyStoreDoesNotCreateOrExecuteADeletionRequest() {
     let runtime = FBContactsTestRuntime()
     XCTAssertEqual(runtime.run(), 0)

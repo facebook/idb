@@ -15,6 +15,21 @@ from .harness import IdbEndToEndTestCase, NotReady, run, wait_until
 
 
 class ServiceMutationTests(IdbEndToEndTestCase):
+    async def test_health_list_for_installed_application(self) -> None:
+        bundle_id = await self.install_fixture_app()
+        listed = json.loads((await self.guest("health", "list", bundle_id)).stdout)
+        self.assertEqual(
+            listed,
+            {
+                "action": "list",
+                "bundleID": bundle_id,
+                "ok": 1,
+                "error": None,
+                "records": [],
+            },
+        )
+        self.assertIs(type(listed["ok"]), int)
+
     async def store_data(self, *arguments: str, stdin: bytes | None = None) -> bytes:
         completed = await run(
             self.simctl.argv(
