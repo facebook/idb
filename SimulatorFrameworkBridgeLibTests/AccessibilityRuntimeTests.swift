@@ -1042,6 +1042,39 @@ final class AccessibilityRuntimeTests: XCTestCase {
     XCTAssertEqual(runtime.performCount, 3)
   }
 
+  func testWriteAssertionsPreserveNSStringUnicodeEquality() {
+    let actual = "\u{00E9}"
+    let equivalent = "e\u{0301}"
+    XCTAssertFalse((actual as NSString).isEqual(to: equivalent))
+    XCTAssertEqual(actual, equivalent)
+
+    for useDescription in [false, true] {
+      for verb in ["perform", "setvalue"] {
+        let opaque = FBAXFakeOpaqueValue()
+        opaque.descriptionValue = actual
+        let value: Any = useDescription ? opaque : actual
+        seedHitElement(withAttributes: [kAXLabel: value])
+        let performedBefore = runtime.performCount
+        let setBefore = runtime.setValueCount
+        var request: [String: Any] = [
+          "verb": verb, "x": 1, "y": 2, "action": "press", "value": "replacement",
+          "assertKey": kAXLabel, "assertValue": equivalent,
+        ]
+
+        let rejected = FBAXBridgeHandleRequest(request)
+        assertEqualObjects(axValue(rejected, "ok"), false)
+        assertEqualObjects(axValue(rejected, "error_kind"), "assertion_failed")
+        XCTAssertEqual(runtime.performCount, performedBefore)
+        XCTAssertEqual(runtime.setValueCount, setBefore)
+
+        request["assertValue"] = actual
+        assertEqualObjects(axValue(FBAXBridgeHandleRequest(request), "ok"), true)
+        XCTAssertEqual(runtime.performCount, performedBefore + (verb == "perform" ? 1 : 0))
+        XCTAssertEqual(runtime.setValueCount, setBefore + (verb == "setvalue" ? 1 : 0))
+      }
+    }
+  }
+
   func testAnAssertionThatDoesNotMatchRefusesTheWrite() {
     self.seedHitElement(withAttributes: [kAXLabel: "Wi-Fi"])
 
@@ -1498,6 +1531,37 @@ final class AccessibilityRuntimeTests: XCTestCase {
     assertEqualObjects(axValue(FBAXBridgeHandleRequest(explanationRequest()), "ok"), true)
   }
 
+  func testVisibilityExceptionAbortsBeforeHitTestingAndNextRequestRecovers() {
+    let visibility = FBAXFakeVisibilityValue()
+    visibility.raises = true
+    let root = unreachableRoot(visibility)
+    runtime.hitTestOutcome = FBAXHitTestOutcome.hit(FBAXFakeElement.readable("Overlay"), owningProcessIdentifier: 9000)
+
+    assertEqualObjects(FBAXBridgeHandleRequest(explanationRequest()), ["ok": false, "error": "the reader raised while answering: visibility failed"])
+    XCTAssertEqual(runtime.hitTestCount, 0)
+
+    root.attributes = ["XC_kAXXCAttributeIsVisible": false, "XC_kAXXCAttributeCenterPoint": ["X": 12, "Y": 34]]
+    assertEqualObjects(axValue(FBAXBridgeHandleRequest(explanationRequest()), "ok"), true)
+    XCTAssertEqual(runtime.hitTestCount, 1)
+  }
+
+  func testCentreCoordinateExceptionAbortsBeforeHitTestingAndNextRequestRecovers() {
+    let coordinate = FBAXFakeVisibilityValue()
+    let visibility = FBAXFakeVisibilityValue()
+    visibility.coordinateToInvalidate = coordinate
+    let root = unreachableRoot(visibility)
+    let centre: [String: Any] = ["X": coordinate, "Y": 34]
+    root.attributes = ["XC_kAXXCAttributeIsVisible": visibility, "XC_kAXXCAttributeCenterPoint": centre]
+    runtime.hitTestOutcome = FBAXHitTestOutcome.hit(FBAXFakeElement.readable("Overlay"), owningProcessIdentifier: 9000)
+
+    assertEqualObjects(FBAXBridgeHandleRequest(explanationRequest()), ["ok": false, "error": "the reader raised while answering: geometry coordinate failed"])
+    XCTAssertEqual(runtime.hitTestCount, 0)
+
+    root.attributes = ["XC_kAXXCAttributeIsVisible": false, "XC_kAXXCAttributeCenterPoint": ["X": 12, "Y": 34]]
+    assertEqualObjects(axValue(FBAXBridgeHandleRequest(explanationRequest()), "ok"), true)
+    XCTAssertEqual(runtime.hitTestCount, 1)
+  }
+
   func testReachableAndUnclassifiedNodesDoNotRequestExplanations() {
     for visible in [true, "unknown", NSNull()] as [Any] {
       _ = unreachableRoot(visible)
@@ -1550,6 +1614,38 @@ final class AccessibilityRuntimeTests: XCTestCase {
     assertEqualObjects(FBAXBridgeHandleRequest(request), ["ok": false, "error": "the reader raised while answering: description failed"])
     value.raiseReason = nil
     assertEqualObjects(axValue(FBAXBridgeHandleRequest(request), "ok"), true)
+  }
+
+  func testCoreGraphicsDictionaryExceptionsAreObservableInsideObjectiveC() {
+    for rectangle in [false, true] {
+      let healthy = FBAXGeometryDictionaryProbe(rectangle, false)
+      assertEqualObjects(healthy["accepted"], true)
+      assertEqualObjects(healthy["raised"], false)
+      XCTAssertGreaterThan((healthy["lookups"] as? NSNumber)?.intValue ?? 0, 0)
+
+      let raised = FBAXGeometryDictionaryProbe(rectangle, true)
+      assertEqualObjects(raised["accepted"], false)
+      assertEqualObjects(raised["raised"], true)
+      assertEqualObjects(raised["reason"], "geometry dictionary lookup failed")
+      XCTAssertGreaterThan((raised["lookups"] as? NSNumber)?.intValue ?? 0, 0)
+    }
+  }
+
+  func testGeometryDictionaryExceptionsAreContainedAndTheNextRequestSucceeds() {
+    let root = FBAXFakeElement.readable("UIApplication")
+    runtime.applicationElements[NSNumber(value: kAppPid)] = root
+    for key in [kAXFrame, "XC_kAXXCAttributeVisiblePoint", "XC_kAXXCAttributeCenterPoint"] {
+      let value = FBAXGeometryDictionaryProbeValue.geometry()
+      value.raises = true
+      root.attributes = [key: value]
+      let request: [String: Any] = ["verb": "describe", "pid": kAppPid, "attributes": [key]]
+      assertEqualObjects(
+        FBAXBridgeHandleRequest(request),
+        ["ok": false, "error": "the reader raised while answering: geometry dictionary lookup failed"])
+      XCTAssertGreaterThan(value.lookups, 0)
+      root.attributes = [key: ["X": 1, "Y": 2, "Width": 3, "Height": 4]]
+      assertEqualObjects(axValue(FBAXBridgeHandleRequest(request), "ok"), true)
+    }
   }
 
   func testGeometryAccessorExceptionsAreContained() {

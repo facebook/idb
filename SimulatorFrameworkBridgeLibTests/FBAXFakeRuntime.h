@@ -11,6 +11,15 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
+@interface FBAXGeometryDictionaryProbeValue : NSDictionary
+@property (nonatomic) BOOL raises;
+@property (nonatomic) NSUInteger lookups;
++ (instancetype)geometry;
+@end
+
+/** Exercises CoreGraphics dictionary access wholly inside an Objective-C exception guard. */
+NSDictionary<NSString *, id> *FBAXGeometryDictionaryProbe(BOOL rectangle, BOOL raises);
+
 /**
  * An element in a fake accessibility tree.
  *
@@ -72,8 +81,16 @@ NS_ASSUME_NONNULL_BEGIN
 
 @end
 
+@interface FBAXFakeVisibilityValue : NSNumber
+@property (nonatomic) BOOL raises;
+@property (nonatomic) BOOL raisesOnNumericRead;
+@property (nullable, nonatomic, strong) FBAXFakeVisibilityValue *coordinateToInvalidate;
++ (instancetype)value;
+@end
+
 /** Values returned by private readers may raise while being described or unpacked. */
 @interface FBAXFakeOpaqueValue : NSObject
+@property (nullable, nonatomic, copy) NSString *descriptionValue;
 @property (nullable, nonatomic, copy) NSString *raiseReason;
 @end
 

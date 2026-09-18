@@ -11,6 +11,75 @@ static NSString *const kAXElementType = @"XC_kAXXCAttributeElementType";
 static NSString *const kAXLabel = @"XC_kAXXCAttributeLabel";
 static NSString *const kAXChildren = @"XC_kAXXCAttributeChildren";
 
+@implementation FBAXGeometryDictionaryProbeValue
+{
+  NSDictionary *_values;
+}
+
+- (instancetype)initWithObjects:(const id [])objects forKeys:(const id<NSCopying> [])keys count:(NSUInteger)count
+{
+  self = [super init];
+  if (self) {
+    _values = [[NSDictionary alloc] initWithObjects:objects forKeys:keys count:count];
+  }
+  return self;
+}
+
++ (instancetype)geometry
+{
+  id objects[] = {@1, @2, @3, @4};
+  id<NSCopying> keys[] = {@"X", @"Y", @"Width", @"Height"};
+  return [[self alloc] initWithObjects:objects forKeys:keys count:4];
+}
+
+- (NSUInteger)count
+{
+  return _values.count;
+}
+
+- (NSEnumerator *)keyEnumerator
+{
+  return [_values keyEnumerator];
+}
+
+- (id)objectForKey:(id)key
+{
+  self.lookups++;
+  if (self.raises) {
+    [NSException raise:NSInternalInconsistencyException format:@"geometry dictionary lookup failed"];
+  }
+  return [_values objectForKey:key];
+}
+
+- (id)copyWithZone:(NSZone *)zone
+{
+  return self;
+}
+
+@end
+
+NSDictionary<NSString *, id> *FBAXGeometryDictionaryProbe(BOOL rectangle, BOOL raises)
+{
+  FBAXGeometryDictionaryProbeValue *value = nil;
+  @try {
+    value = [FBAXGeometryDictionaryProbeValue geometry];
+    value.raises = raises;
+    CGRect rect = CGRectZero;
+    CGPoint point = CGPointZero;
+    BOOL accepted = rectangle
+    ? CGRectMakeWithDictionaryRepresentation((__bridge CFDictionaryRef)value, &rect)
+    : CGPointMakeWithDictionaryRepresentation((__bridge CFDictionaryRef)value, &point);
+    return @{@"accepted" : @(accepted), @"raised" : @NO, @"lookups" : @(value.lookups)};
+  } @catch (NSException *exception) {
+    return @{
+      @"accepted" : @NO,
+      @"raised" : @YES,
+      @"lookups" : @(value.lookups),
+      @"reason" : exception.reason ?: exception.name,
+    };
+  }
+}
+
 @implementation FBAXFakeElement
 
 - (instancetype)init
@@ -78,6 +147,61 @@ static NSString *const kAXChildren = @"XC_kAXXCAttributeChildren";
 
 @end
 
+@implementation FBAXFakeVisibilityValue
+
++ (instancetype)value
+{
+  return [[self alloc] init];
+}
+
+- (const char *)objCType
+{
+  return @encode(int);
+}
+
+- (void)checkNumericRead
+{
+  if (self.raisesOnNumericRead) {
+    [NSException raise:NSInternalInconsistencyException format:@"geometry coordinate failed"];
+  }
+}
+
+- (void)getValue:(void *)value size:(NSUInteger)size
+{
+  [self checkNumericRead];
+  int number = 0;
+  memcpy(value, &number, MIN(size, sizeof(number)));
+}
+
+- (long long)longLongValue
+{
+  [self checkNumericRead];
+  return 0;
+}
+
+- (unsigned long long)unsignedLongLongValue
+{
+  [self checkNumericRead];
+  return 0;
+}
+
+- (double)doubleValue
+{
+  [self checkNumericRead];
+  return 0;
+}
+
+- (BOOL)boolValue
+{
+  self.coordinateToInvalidate.raisesOnNumericRead = YES;
+  if (self.raises) {
+    [NSException raise:NSInternalInconsistencyException format:@"visibility failed"];
+  }
+  return NO;
+}
+
+@end
+
 @implementation FBAXFakeOpaqueValue
 
 - (NSString *)description
@@ -85,7 +209,7 @@ static NSString *const kAXChildren = @"XC_kAXXCAttributeChildren";
   if (self.raiseReason) {
     [NSException raise:NSInternalInconsistencyException format:@"%@", self.raiseReason];
   }
-  return @"opaque accessibility value";
+  return self.descriptionValue ?: @"opaque accessibility value";
 }
 
 @end
