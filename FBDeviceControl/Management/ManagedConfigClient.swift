@@ -35,7 +35,7 @@ public enum ManagedConfigError: Error {
   case invalidWallpaperName(name: String)
   case orderedIdentifiersMissing(key: String)
   case orderedIdentifiersNotStrings(key: String)
-  case profileNotInstalled(profileName: String, identifiers: [Any])
+  case profileNotInstalled(profileName: String, identifiers: [String])
   case removeFailed(response: String)
 }
 
@@ -174,7 +174,7 @@ class ManagedConfigClient {
           guard let metadata = resultDict[ProfileMetadata] as? [String: Any],
             let profileMetadata = metadata[profileName] as? [String: Any]
           else {
-            let identifiers = resultDict[OrderedIdentifiers] as? [Any] ?? []
+            let identifiers = (resultDict[OrderedIdentifiers] as? [Any] ?? []).map { String(describing: $0) }
             continuation.resume(throwing: ManagedConfigError.profileNotInstalled(profileName: profileName, identifiers: identifiers))
             return
           }
