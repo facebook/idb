@@ -8,99 +8,22 @@
 #import "PhotoLibraryService.h"
 #import "PhotoLibraryService+Testing.h"
 
-#import "PhotosPrivate.h"
-
-static PLPhotoLibrary *getPLPhotoLibrary(PHPhotoLibrary *photoLibrary)
-{
-  @try {
-    id lazyPhotoLibrary = [photoLibrary valueForKey:@"_lazyPhotoLibrary"];
-    return [lazyPhotoLibrary objectValue];
-  } @catch (NSException *exception) {
-    NSLog(@"Failed to access PLPhotoLibrary: %@", exception);
-    return nil;
-  }
-}
-
-static BOOL deletePhotosFromManagedObjectContext(NSManagedObjectContext *moc, PHFetchResult<PHAsset *> *allPhotos)
-{
-  for (PHAsset *asset in allPhotos) {
-    NSManagedObjectID *objectID = asset.objectID;
-    if (!objectID) {
-      NSLog(@"Failed to get objectID for photo asset %@", asset.localIdentifier);
-      return NO;
-    }
-
-    @try {
-      NSManagedObject *managedObject = [moc objectWithID:objectID];
-      if (!managedObject) {
-        NSLog(@"Failed to get managedObject for photo asset %@", asset.localIdentifier);
-        return NO;
-      }
-      [moc deleteObject:managedObject];
-    } @catch (NSException *exception) {
-      NSLog(@"Failed to delete photo asset %@: %@", asset.localIdentifier, exception);
-      return NO;
-    }
-  }
-
-  return YES;
-}
-
-static BOOL saveManagedObjectContext(NSManagedObjectContext *moc, NSError **outError)
-{
-  return [moc save:outError];
-}
-
-static int clearPhotoLibraryWithLibrary(PHPhotoLibrary *photoLibrary, PHFetchResult<PHAsset *> *allPhotos)
-{
-  if (allPhotos.count == 0) {
-    NSLog(@"No photos to delete");
-    return 0;
-  }
-
-  NSLog(@"Found %lu photos to delete", (unsigned long)allPhotos.count);
-
-  PLPhotoLibrary *plPhotoLibrary = getPLPhotoLibrary(photoLibrary);
-  if (!plPhotoLibrary) {
-    NSLog(@"PLPhotoLibrary not available");
-    return 1;
-  }
-
-  __block BOOL success = NO;
-  __block NSError *transactionError = nil;
-  [plPhotoLibrary performTransactionAndWait:^{
-    NSManagedObjectContext *moc = nil;
-    @try {
-      moc = plPhotoLibrary.managedObjectContext;
-    } @catch (NSException *exception) {
-      return;
-    }
-
-    if (!moc) {
-      return;
-    }
-
-    if (!deletePhotosFromManagedObjectContext(moc, allPhotos)) {
-      NSLog(@"Failed to delete all photos");
-      return;
-    }
-
-    success = saveManagedObjectContext(moc, &transactionError);
-  }];
-
-  if (success) {
-    NSLog(@"Successfully deleted all photos");
-    return 0;
-  }
-
-  NSLog(@"PLPhotoLibrary transaction completed but success was NO. Error: %@", transactionError);
-  return 1;
-}
+#if __has_include(<SimulatorFrameworkBridgeRuntime/PhotoLibraryClient.h>)
+ #import <SimulatorFrameworkBridgeRuntime/PhotoLibraryClient.h>
+#else
+ #import "Runtime/PhotoLibraryClient.h"
+#endif
 
 int FBPhotoLibraryClearWithLibrary(PHPhotoLibrary *photoLibrary, PHFetchResult<PHAsset *> *allPhotos)
 {
   @try {
-    return clearPhotoLibraryWithLibrary(photoLibrary, allPhotos);
+    FBPhotoLibraryClient *client = [[FBPhotoLibraryClient alloc] initWithPhotoLibrary:photoLibrary assets:allPhotos];
+    if (client.assetCount == 0) {
+      NSLog(@"No photos to delete");
+      return 0;
+    }
+    NSLog(@"Found %lu photos to delete", (unsigned long)client.assetCount);
+    return [client deleteAssets] ? 0 : 1;
   } @catch (NSException *exception) {
     NSLog(@"Failed to clear photo library: %@", exception);
     return 1;

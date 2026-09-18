@@ -12,6 +12,7 @@
  #import <SimulatorFrameworkBridgeRuntime/AccessibilityWireValue.h>
  #import <SimulatorFrameworkBridgeRuntime/NetworkConfigurationStore.h>
  #import <SimulatorFrameworkBridgeRuntime/NotificationSettingsClient.h>
+ #import <SimulatorFrameworkBridgeRuntime/PhotoLibraryClient.h>
 #else
  #import "Runtime/AccessibilityClient.h"
  #import "Runtime/AccessibilityClientProvider.h"
@@ -19,5 +20,6 @@
  #import "Runtime/AccessibilityWireValue.h"
  #import "Runtime/NetworkConfigurationStore.h"
  #import "Runtime/NotificationSettingsClient.h"
+ #import "Runtime/PhotoLibraryClient.h"
 #endif
 #import "ServiceDispatch.h"
