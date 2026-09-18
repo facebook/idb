@@ -76,7 +76,7 @@ The former release constants, configuration catalogs, `defaultConfiguration()`, 
 
 `FBSimulatorControl` supported "Multisim" (booting many Simulators concurrently on one host, headlessly, isolated in custom device sets) years before Xcode and `simctl` did. Apple's tools now provide all of this, so it is no longer a reason to pick the framework.
 
-Even where the functionality overlaps with `simctl`, the framework provides it differently. `simctl` launches a process per operation: every call pays a process launch and a fresh binding to `CoreSimulator` before doing any work. `FBSimulatorControl` links `CoreSimulator` and `SimulatorKit` directly and provides the same operations as an in-process API, over a connection that is bound once and reused. This makes the framework practical to embed in an application instead of shelling out to `simctl`. It is also why individual operations in the `idb_companion` are fast: the companion binds `CoreSimulator` at startup, not once per command.
+Even where the functionality overlaps with `simctl`, the framework provides it differently: as an in-process API over a `CoreSimulator` connection that is bound once and reused, rather than a `simctl` process per operation. This makes the framework practical to embed in an application instead of shelling out, and is why individual operations in the `idb_companion` are fast. The [`simctl` section](#simctl) below describes the difference in detail.
 
 The framework also provides functionality that has no equivalent in `simctl`, `xcodebuild` or the host app. Most of it is built on protocols and services that Apple's own tools use internally but do not expose:
 
@@ -107,7 +107,10 @@ The framework is built on the private frameworks and services that Apple's own t
 
 `simctl` is a CLI that exposes iOS Simulator functionality by linking and using `CoreSimulator`. This binary is bundled inside of Xcode, and typically addressed via the `xcrun` command. `xcrun` is a trampoline that locates binaries bundled within Xcode, using the value defined in `xcode-select`.
 
-The overwhelming majority of Simulator functionality is not implemented in `simctl`, it is implemented within `CoreSimulator` with `simctl` providing an accessible way of using this functionality. Having this behaviour implemented at the Framework level means that `Simulator.app` and `simctl` behave consistently, as they share the same implementation.
+Functionality that is implemented within `CoreSimulator` is shared by all of its clients, so `Simulator.app` and `simctl` behave consistently wherever they use the same Framework implementation.
+
+`FBSimulatorControl` does not shell out to `simctl`; it binds the same `CoreSimulator` APIs that `simctl` is built on. Every `simctl` invocation is a new process, which has to load `CoreSimulator` and establish its XPC connection to `CoreSimulatorService` before it can do any work. For a one-off command this doesn't matter, but the per-exec cost adds up when commands are issued in a hot inner loop. `Simulator.app` and `DeviceHub.app` don't pay this cost, since they hold a single connection to `CoreSimulatorService` for their entire lifetime. A process that links `FBSimulatorControl`, such as the `idb_companion`, behaves the same way: `CoreSimulator` is bound once and reused, so each operation is as fast as it is in Apple's own applications.
+
 ### `CoreSimulatorService`
 
 `CoreSimulatorService` is a user-level daemon that is bootstrapped by any usage of `SimServiceContext`, effectively any usage of iOS Simulators will cause this service to be created and launched. This is an XPC service contained within the `CoreSimulator.framework` bundle. This service is responsible for starting and managing Simulators.
