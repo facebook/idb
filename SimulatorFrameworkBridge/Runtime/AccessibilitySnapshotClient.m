@@ -8,6 +8,7 @@
 #import "AccessibilitySnapshotClient.h"
 
 #import "AccessibilityRuntime.h"
+#import "Private/AccessibilityElement_Private.h"
 
 static NSString *const kSnapshotAttributes = @"UIAccessibilitySnapshotKeyAttributes";
 static NSString *const kSnapshotChildren = @"UIAccessibilitySnapshotKeyChildren";
@@ -161,12 +162,12 @@ static void FBAXSnapshotException(NSException *exception, NSError **error)
   return self;
 }
 
-- (FBAXSnapshotRead *)readElement:(id)element attributeNames:(NSArray<NSString *> *)names error:(NSError **)error
+- (FBAXSnapshotRead *)readElement:(FBAXElement *)element attributeNames:(NSArray<NSString *> *)names error:(NSError **)error
 {
   @try {
     NSDictionary<NSNumber *, NSString *> *namesByNumber = nil;
     NSError *readError = nil;
-    id snapshot = [_runtime snapshotOfElement:element attributeNames:names namesByNumber:&namesByNumber error:&readError];
+    id snapshot = [_runtime snapshotOfElement:element.value attributeNames:names namesByNumber:&namesByNumber error:&readError];
     return [[FBAXSnapshotRead alloc] initWithSnapshot:snapshot namesByNumber:namesByNumber error:readError];
   } @catch (NSException *exception) {
     FBAXSnapshotException(exception, error);

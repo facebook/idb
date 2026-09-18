@@ -14,12 +14,11 @@
 
 #import <CoreGraphics/CoreGraphics.h>
 
-#import "AXPAttributes.h"
 #import "AccessibilityRuntime.h"
-#if __has_include(<SimulatorFrameworkBridgeRuntime/AccessibilitySnapshotClient.h>)
- #import <SimulatorFrameworkBridgeRuntime/AccessibilitySnapshotClient.h>
+#if __has_include(<SimulatorFrameworkBridgeRuntime/AccessibilityClient.h>)
+ #import <SimulatorFrameworkBridgeRuntime/AccessibilityClient.h>
 #else
- #import "Runtime/AccessibilitySnapshotClient.h"
+ #import "Runtime/AccessibilityClient.h"
 #endif
 #import "AccessibilityServiceServer.h"
 #import "AccessibilityService_Private.h"
@@ -334,7 +333,7 @@ static id FBAXBridgeRejectedGeometry(NSString *kind, id value)
 // The frame arrives from `attributesForElement:` as an `NSValue`-wrapped `CGRect` (or, tolerantly, an
 // existing dictionary representation). Emit the CGRect dictionary representation the host consumes via
 // `CGRectMakeWithDictionaryRepresentation`.
-static id FBAXBridgeFrameDictionary(id frameValue)
+static id FBAXBridgeFrameDictionary(FBAXClient *client, id frameValue, NSError **exceptionError)
 {
   CGRect rect = CGRectZero;
   if ([frameValue isKindOfClass:NSDictionary.class]) {
@@ -343,18 +342,14 @@ static id FBAXBridgeFrameDictionary(id frameValue)
     }
     return (NSDictionary *)frameValue;
   }
-  if ([frameValue isKindOfClass:NSValue.class]) {
-    NSValue *value = (NSValue *)frameValue;
-    if (strcmp(value.objCType, @encode(CGRect)) != 0) {
-      return FBAXBridgeRejectedGeometry(@"frame", frameValue);
-    }
-    [value getValue:&rect size:sizeof(rect)];
-  } else if (frameValue && [FBAXBridgeSharedRuntime(NULL) getRect:&rect fromValue:frameValue]) {
-    // An `AXValue`-wrapped rect, which is how the single-fetch read answers. Not an `NSValue`: it is a
-    // CFType with its own accessor, so the `NSValue` branch above sees only `__NSCFType` and drops it.
-  } else {
+  FBAXOptionalValue<NSValue *> *result = [client rectangleFromValue:frameValue error:exceptionError];
+  if (!result) {
+    return nil;
+  }
+  if (!result.value) {
     return FBAXBridgeRejectedGeometry(@"frame", frameValue);
   }
+  [result.value getValue:&rect size:sizeof(rect)];
   return (NSDictionary *)CFBridgingRelease(CGRectCreateDictionaryRepresentation(rect));
 }
 
@@ -367,7 +362,7 @@ static BOOL FBAXBridgeIsPointAttribute(NSString *key)
 
 // Emit the `CGPoint` dictionary representation the host consumes, as the frame's coercion does. Rejection
 // matters more here than for the frame: the host taps these points and `{0,0}` is a plausible target.
-static id FBAXBridgePointDictionary(id pointValue)
+static id FBAXBridgePointDictionary(FBAXClient *client, id pointValue, NSError **exceptionError)
 {
   CGPoint point = CGPointZero;
   if ([pointValue isKindOfClass:NSDictionary.class]) {
@@ -376,33 +371,29 @@ static id FBAXBridgePointDictionary(id pointValue)
     }
     return (NSDictionary *)pointValue;
   }
-  if ([pointValue isKindOfClass:NSValue.class]) {
-    NSValue *value = (NSValue *)pointValue;
-    if (strcmp(value.objCType, @encode(CGPoint)) != 0) {
-      return FBAXBridgeRejectedGeometry(@"point", pointValue);
-    }
-    [value getValue:&point size:sizeof(point)];
-  } else if (pointValue && [FBAXBridgeSharedRuntime(NULL) getPoint:&point fromValue:pointValue]) {
-    // An `AXValue`-wrapped point, which is how the single-fetch read answers. Not an `NSValue`: it is a
-    // CFType with its own accessor, so the `NSValue` branch above sees only `__NSCFType` and drops it.
-  } else {
+  FBAXOptionalValue<NSValue *> *result = [client pointFromValue:pointValue error:exceptionError];
+  if (!result) {
+    return nil;
+  }
+  if (!result.value) {
     return FBAXBridgeRejectedGeometry(@"point", pointValue);
   }
+  [result.value getValue:&point size:sizeof(point)];
   return (NSDictionary *)CFBridgingRelease(CGPointCreateDictionaryRepresentation(point));
 }
 
 // Coerce an attribute value to a JSON-serializable form. Strings and numbers pass through; the frame
 // becomes a dictionary; anything else is stringified so the payload never fails serialization.
-static id FBAXBridgeJSONSafeValue(id _Nullable value, NSString *key)
+static id FBAXBridgeJSONSafeValue(FBAXClient *client, id _Nullable value, NSString *key, NSError **exceptionError)
 {
   if (value == nil || value == NSNull.null) {
     return NSNull.null;
   }
   if ([key isEqualToString:kAXFrame]) {
-    return FBAXBridgeFrameDictionary(value);
+    return FBAXBridgeFrameDictionary(client, value, exceptionError);
   }
   if (FBAXBridgeIsPointAttribute(key)) {
-    return FBAXBridgePointDictionary(value);
+    return FBAXBridgePointDictionary(client, value, exceptionError);
   }
   if ([value isKindOfClass:NSString.class] || [value isKindOfClass:NSNumber.class]) {
     return value;
@@ -415,7 +406,7 @@ static id FBAXBridgeJSONSafeValue(id _Nullable value, NSString *key)
   if ([value isKindOfClass:NSError.class]) {
     return NSNull.null;
   }
-  return [value description];
+  return [client descriptionOfValue:value error:exceptionError].value;
 }
 
 #pragma mark - Tree walk
@@ -430,25 +421,34 @@ static BOOL FBAXBridgeNodeIsUnreachable(NSDictionary<NSString *, id> *node)
 
 // The element a display-wide hit-test finds at `point`, described by the explanation fetch list, or nil.
 // Display-wide on purpose: an element covered by another process's chrome is covered whoever drew it.
-static NSDictionary<NSString *, id> *_Nullable FBAXBridgeExplanationAtPoint(id<FBAXRuntime> runtime, CGPoint point)
+static NSDictionary<NSString *, id> *_Nullable FBAXBridgeExplanationAtPoint(FBAXClient *client, CGPoint point, NSError **exceptionError)
 {
   FBAXBridgeCountRoundTrip();
-  FBAXHitTestOutcome *hit = [runtime hitTestAtPoint:point processIdentifier:0];
+  FBAXElementHit *hit = [client hitTestAtPoint:point processIdentifier:0 error:exceptionError];
+  if (*exceptionError) {
+    return nil;
+  }
   if (hit.status != FBAXHitTestStatusHit) {
     return nil;
   }
-  id hitElement = hit.element;
+  FBAXElement *hitElement = hit.element;
   if (!hitElement) {
     return nil;
   }
   FBAXBridgeCountRoundTrip();
-  FBAXReadOutcome *read = [runtime readAttributes:FBAXBridgeExplanationFetchList() ofElement:hitElement];
+  FBAXElementRead *read = [client readAttributes:FBAXBridgeExplanationFetchList() ofElement:hitElement error:exceptionError];
+  if (*exceptionError) {
+    return nil;
+  }
   if (read.status != FBAXReadStatusRead || !read.attributes) {
     return nil;
   }
   NSMutableDictionary *explanation = [NSMutableDictionary dictionaryWithCapacity:read.attributes.count];
   for (NSString *key in read.attributes) {
-    explanation[key] = FBAXBridgeJSONSafeValue(read.attributes[key], key);
+    explanation[key] = FBAXBridgeJSONSafeValue(client, read.attributes[key], key, exceptionError);
+    if (*exceptionError) {
+      return nil;
+    }
   }
   return explanation;
 }
@@ -469,19 +469,31 @@ static BOOL FBAXBridgeNodeCentre(NSDictionary<NSString *, id> *node, CGPoint *po
 //
 // The outcome describes only *this* element. A child that fails to read is dropped from the tree rather
 // than failing the whole read, so a child's outcome never becomes the caller's.
-static FBAXReadOutcome *FBAXBridgeBuildNode(id<FBAXRuntime> runtime,
-                                            id element,
+static FBAXReadOutcome *FBAXBridgeBuildNode(FBAXClient *client,
+                                            FBAXElement *element,
                                             NSArray<NSString *> *fetchList,
                                             BOOL explainUnreachable,
                                             int depth,
                                             int maxDepth,
                                             int *budget,
-                                            BOOL *truncated)
+                                            BOOL *truncated,
+                                            NSError **exceptionError)
 {
   FBAXBridgeCountRoundTrip();
-  FBAXReadOutcome *outcome = [runtime readAttributes:fetchList ofElement:element];
-  if (outcome.status != FBAXReadStatusRead) {
-    return outcome;
+  FBAXElementRead *outcome = [client readAttributes:fetchList ofElement:element error:exceptionError];
+  if (!outcome) {
+    return nil;
+  }
+  switch (outcome.status) {
+    case FBAXReadStatusApplicationUnavailable:
+      return [FBAXReadOutcome applicationUnavailable];
+    case FBAXReadStatusApplicationNotResponding:
+      return [FBAXReadOutcome applicationNotResponding];
+    case FBAXReadStatusFailed:
+    default:
+      return [FBAXReadOutcome failed:outcome.error];
+    case FBAXReadStatusRead:
+      break;
   }
   NSDictionary<NSString *, id> *attributes = outcome.attributes;
   if (!attributes) {
@@ -499,26 +511,44 @@ static FBAXReadOutcome *FBAXBridgeBuildNode(id<FBAXRuntime> runtime,
       if (!readFailures) {
         readFailures = [NSMutableDictionary dictionary];
       }
-      readFailures[key] = [(NSError *)value localizedDescription] ?: [value description];
+      FBAXOptionalValue<NSString *> *description = [client localizedDescriptionOfError:value error:exceptionError];
+      if (!description) {
+        return nil;
+      }
+      if (!description.value) {
+        description = [client descriptionOfValue:value error:exceptionError];
+        if (!description) {
+          return nil;
+        }
+      }
+      readFailures[key] = description.value;
     }
-    node[key] = FBAXBridgeJSONSafeValue(value, key);
+    node[key] = FBAXBridgeJSONSafeValue(client, value, key, exceptionError);
+    if (*exceptionError) {
+      return nil;
+    }
   }
   if (readFailures) {
     node[kNodeAttributeReadFailures] = readFailures;
   }
 
   NSMutableArray<NSDictionary *> *children = [NSMutableArray array];
-  NSArray *childElements =
-  [attributes[kAXChildren] isKindOfClass:NSArray.class] ? attributes[kAXChildren] : nil;
+  NSArray<FBAXElement *> *childElements = [outcome childrenWithError:exceptionError];
+  if (!childElements) {
+    return nil;
+  }
   if (depth < maxDepth) {
-    for (id child in childElements) {
+    for (FBAXElement *child in childElements) {
       if (*budget <= 0) {
         *truncated = YES;
         break;
       }
       (*budget)--;
       FBAXReadOutcome *childOutcome =
-      FBAXBridgeBuildNode(runtime, child, fetchList, explainUnreachable, depth + 1, maxDepth, budget, truncated);
+      FBAXBridgeBuildNode(client, child, fetchList, explainUnreachable, depth + 1, maxDepth, budget, truncated, exceptionError);
+      if (*exceptionError) {
+        return nil;
+      }
       if (childOutcome.status == FBAXReadStatusRead) {
         [children addObject:(NSDictionary *)childOutcome.attributes];
       }
@@ -530,7 +560,10 @@ static FBAXReadOutcome *FBAXBridgeBuildNode(id<FBAXRuntime> runtime,
 
   CGPoint centre = CGPointZero;
   if (explainUnreachable && FBAXBridgeNodeIsUnreachable(node) && FBAXBridgeNodeCentre(node, &centre)) {
-    NSDictionary *explanation = FBAXBridgeExplanationAtPoint(runtime, centre);
+    NSDictionary *explanation = FBAXBridgeExplanationAtPoint(client, centre, exceptionError);
+    if (*exceptionError) {
+      return nil;
+    }
     if (explanation) {
       node[kNodeExplainedBy] = explanation;
     }
@@ -544,12 +577,13 @@ static FBAXReadOutcome *FBAXBridgeBuildNode(id<FBAXRuntime> runtime,
 // two vocabularies agree, so the serializer above needs no knowledge of which one produced a tree. The two
 // attributes XCTest has no counterpart for — `enabled` and the translator's own `role` — are keyed in the
 // reader's namespace instead; see `kNodeIsEnabled` and `kNodeTranslatorRole`.
-static NSDictionary *_Nullable FBAXBridgeBuildTranslatorNode(id<FBAXRuntime> runtime,
-                                                             id element,
+static NSDictionary *_Nullable FBAXBridgeBuildTranslatorNode(FBAXClient *client,
+                                                             FBAXElement *element,
                                                              int depth,
                                                              int maxDepth,
                                                              int *budget,
-                                                             BOOL *truncated)
+                                                             BOOL *truncated,
+                                                             NSError **exceptionError)
 {
   if (*budget <= 0) {
     *truncated = YES;
@@ -557,67 +591,74 @@ static NSDictionary *_Nullable FBAXBridgeBuildTranslatorNode(id<FBAXRuntime> run
   }
   (*budget)--;
 
-  NSArray<NSNumber *> *wanted = @[
-    @(FBAXPAttributeLabel), @(FBAXPAttributeFrame), @(FBAXPAttributeIdentifier),
-    @(FBAXPAttributeValue), @(FBAXPAttributeIsVisible), @(FBAXPAttributeIsEnabled),
-    @(FBAXPAttributeRole), @(FBAXPAttributeSubrole), @(FBAXPAttributeVisiblePoint),
-    @(FBAXPAttributeTraits), @(FBAXPAttributeMemoryAddress),
-  ];
   FBAXBridgeCountRoundTrip();
-  NSDictionary<NSNumber *, id> *values = [runtime translatorAttributes:wanted ofElement:element];
+  FBAXTranslatorRead *values = [client translatorAttributesOfElement:element error:exceptionError];
   // Nil is "could not read", not "empty element": building a node from it would report a failed bind as a
   // healthy application with no content.
-  if (!values) {
+  if (!values || !values.available) {
     return nil;
   }
   NSMutableDictionary *node = [NSMutableDictionary dictionary];
-  if (values[@(FBAXPAttributeLabel)]) {
-    node[kAXLabel] = values[@(FBAXPAttributeLabel)];
+  if (values.label) {
+    node[kAXLabel] = values.label;
   }
-  if (values[@(FBAXPAttributeIdentifier)]) {
-    node[kAXIdentifier] = values[@(FBAXPAttributeIdentifier)];
+  if (values.identifier) {
+    node[kAXIdentifier] = values.identifier;
   }
-  if (values[@(FBAXPAttributeValue)]) {
-    node[kAXValue] = FBAXBridgeJSONSafeValue(values[@(FBAXPAttributeValue)], kAXValue);
+  if (values.value) {
+    node[kAXValue] = FBAXBridgeJSONSafeValue(client, values.value, kAXValue, exceptionError);
+    if (*exceptionError) {
+      return nil;
+    }
   }
-  if (values[@(FBAXPAttributeFrame)]) {
-    node[kAXFrame] = FBAXBridgeJSONSafeValue(values[@(FBAXPAttributeFrame)], kAXFrame);
+  if (values.frame) {
+    node[kAXFrame] = FBAXBridgeJSONSafeValue(client, values.frame, kAXFrame, exceptionError);
+    if (*exceptionError) {
+      return nil;
+    }
   }
-  if (values[@(FBAXPAttributeIsVisible)]) {
-    node[kAXIsVisible] = values[@(FBAXPAttributeIsVisible)];
+  if (values.visible) {
+    node[kAXIsVisible] = values.visible;
   }
-  if (values[@(FBAXPAttributeIsEnabled)]) {
-    node[kNodeIsEnabled] = values[@(FBAXPAttributeIsEnabled)];
+  if (values.enabled) {
+    node[kNodeIsEnabled] = values.enabled;
   }
-  if (values[@(FBAXPAttributeRole)]) {
-    node[kNodeTranslatorRole] = values[@(FBAXPAttributeRole)];
+  if (values.role) {
+    node[kNodeTranslatorRole] = values.role;
   }
-  if (values[@(FBAXPAttributeSubrole)]) {
-    node[kNodeTranslatorSubrole] = values[@(FBAXPAttributeSubrole)];
+  if (values.subrole) {
+    node[kNodeTranslatorSubrole] = values.subrole;
   }
-  if (values[@(FBAXPAttributeTraits)]) {
-    node[kNodeTraits] = values[@(FBAXPAttributeTraits)];
+  if (values.traits) {
+    node[kNodeTraits] = values.traits;
   }
-  if (values[@(FBAXPAttributeMemoryAddress)]) {
-    node[kNodeElementIdentity] = values[@(FBAXPAttributeMemoryAddress)];
+  if (values.memoryAddress) {
+    node[kNodeElementIdentity] = values.memoryAddress;
   }
   // Keyed as XCTest names it, because the host derives `interactable` from that key and the two answer
   // the same question. Without it the derivation has hittability and no point, which is the shape it
   // reports as no verdict at all.
-  if (values[@(FBAXPAttributeVisiblePoint)]) {
-    node[kAXVisiblePoint] = FBAXBridgeJSONSafeValue(values[@(FBAXPAttributeVisiblePoint)], kAXVisiblePoint);
+  if (values.visiblePoint) {
+    node[kAXVisiblePoint] = FBAXBridgeJSONSafeValue(client, values.visiblePoint, kAXVisiblePoint, exceptionError);
+    if (*exceptionError) {
+      return nil;
+    }
   }
 
   NSMutableArray *children = [NSMutableArray array];
   // Children are a separate request (the handler special-cases the attribute out of the batch). Asked even
   // at the depth cap, because `truncated` needs to know whether this node has children.
   FBAXBridgeCountRoundTrip();
-  NSDictionary<NSNumber *, id> *kids = [runtime translatorAttributes:@[@(FBAXPAttributeChildren)] ofElement:element];
-  id list = kids[@(FBAXPAttributeChildren)];
-  NSArray *childElements = [list isKindOfClass:NSArray.class] ? (NSArray *)list : nil;
+  NSArray<FBAXElement *> *childElements = [client translatorChildrenOfElement:element error:exceptionError];
+  if (!childElements) {
+    return nil;
+  }
   if (depth < maxDepth) {
-    for (id child in childElements) {
-      NSDictionary *built = FBAXBridgeBuildTranslatorNode(runtime, child, depth + 1, maxDepth, budget, truncated);
+    for (FBAXElement *child in childElements) {
+      NSDictionary *built = FBAXBridgeBuildTranslatorNode(client, child, depth + 1, maxDepth, budget, truncated, exceptionError);
+      if (*exceptionError) {
+        return nil;
+      }
       if (built) {
         [children addObject:built];
       }
@@ -690,10 +731,13 @@ NSDictionary<NSString *, NSString *> *_Nullable FBAXBridgeModalDescriptor(NSDict
 //
 // A *positional* proxy for frontmost: agrees with the window server for a fullscreen app or the home
 // screen, but a centred element owned by another process (e.g. a system modal) answers that process.
-static FBAXFrontmostOutcome *FBAXBridgeCenterPointFrontmost(id<FBAXRuntime> runtime, CGPoint anchor)
+static FBAXFrontmostOutcome *FBAXBridgeCenterPointFrontmost(FBAXClient *client, CGPoint anchor, NSError **exceptionError)
 {
   FBAXBridgeCountRoundTrip();
-  FBAXHitTestOutcome *outcome = [runtime hitTestAtPoint:anchor processIdentifier:0];
+  FBAXElementHit *outcome = [client hitTestAtPoint:anchor processIdentifier:0 error:exceptionError];
+  if (*exceptionError) {
+    return nil;
+  }
   switch (outcome.status) {
     case FBAXHitTestStatusHit:
       return [FBAXFrontmostOutcome resolved:outcome.owningProcessIdentifier];
@@ -718,16 +762,16 @@ static FBAXFrontmostOutcome *FBAXBridgeCenterPointFrontmost(id<FBAXRuntime> runt
 // `center-point` is the positional hit-test at `anchor`; `window-server` (default) is the in-guest
 // AXPTranslator query; `runningboard` reads RunningBoard's visibility endowment. No fallback between
 // them: a caller who asked for the authoritative answer is not served by silently getting the proxy.
-static FBAXFrontmostOutcome *FBAXBridgeResolveFrontmost(id<FBAXRuntime> runtime, NSString *method, CGPoint anchor)
+static FBAXFrontmostOutcome *FBAXBridgeResolveFrontmost(FBAXClient *client, NSString *method, CGPoint anchor, NSError **exceptionError)
 {
   if ([method isEqualToString:kMethodCenterPoint]) {
-    return FBAXBridgeCenterPointFrontmost(runtime, anchor);
+    return FBAXBridgeCenterPointFrontmost(client, anchor, exceptionError);
   }
   if ([method isEqualToString:kMethodWindowServer]) {
-    return [runtime windowServerFrontmost];
+    return [client windowServerFrontmostWithError:exceptionError];
   }
   if ([method isEqualToString:kMethodRunningBoard]) {
-    return [runtime runningBoardFrontmost];
+    return [client runningBoardFrontmostWithError:exceptionError];
   }
   return [FBAXFrontmostOutcome unresolved:[NSString stringWithFormat:@"unsupported frontmost method: %@", method]];
 }
@@ -754,9 +798,9 @@ static NSDictionary *FBAXBridgeTaggedErrorResponse(NSString *message, NSString *
 
 // The response a failed read answers with, or nil when it succeeded. Only the XCTest read produces these
 // statuses, which is why the translator path spends a round trip to obtain one.
-static NSDictionary *_Nullable FBAXBridgeReadFailureResponse(FBAXReadOutcome *read, pid_t pid)
+static NSDictionary *_Nullable FBAXBridgeReadFailureResponse(FBAXClient *client, FBAXReadStatus status, NSError *readError, pid_t pid, NSError **exceptionError)
 {
-  switch (read.status) {
+  switch (status) {
     case FBAXReadStatusRead:
       return nil;
     case FBAXReadStatusApplicationUnavailable:
@@ -772,12 +816,17 @@ static NSDictionary *_Nullable FBAXBridgeReadFailureResponse(FBAXReadOutcome *re
         @(pid)
       );
     case FBAXReadStatusFailed:
-    default:
+    default: {
+      FBAXOptionalValue<NSString *> *description = [client localizedDescriptionOfError:readError error:exceptionError];
+      if (!description) {
+        return nil;
+      }
       return FBAXBridgeErrorResponse(
         [NSString stringWithFormat:@"failed to read the element tree for pid %d: %@",
          pid,
-         read.error.localizedDescription ?: @"the accessibility runtime reported no error"]
+         description.value ?: @"the accessibility runtime reported no error"]
       );
+    }
   }
 }
 
@@ -790,7 +839,7 @@ static const int kSnapshotBoundaryFetchBudget = 64;
 
 // Maps a snapshot lazily so the caller's budgets also bound cross-process continuations.
 // A continuation failure leaves the stub childless; an exception aborts the whole request.
-static NSDictionary *_Nullable FBAXBridgeNodeFromSnapshot(FBAXSnapshotClient *client,
+static NSDictionary *_Nullable FBAXBridgeNodeFromSnapshot(FBAXClient *client,
                                                           FBAXSnapshotNode *snapshotNode,
                                                           NSArray<NSString *> *fetchList,
                                                           pid_t ownerPid,
@@ -816,7 +865,7 @@ static NSDictionary *_Nullable FBAXBridgeNodeFromSnapshot(FBAXSnapshotClient *cl
     return nil;
   }
   if (ownerPid != 0 && nesting.count == 0) {
-    NSNumber *processIdentifier = [client processIdentifierForNode:snapshotNode error:exceptionError];
+    NSNumber *processIdentifier = [client.snapshots processIdentifierForNode:snapshotNode error:exceptionError];
     if (!processIdentifier) {
       return nil;
     }
@@ -829,7 +878,7 @@ static NSDictionary *_Nullable FBAXBridgeNodeFromSnapshot(FBAXSnapshotClient *cl
       } else {
         (*boundaryFetches)--;
         FBAXBridgeCountRoundTrip();
-        FBAXSnapshotRead *continuation = [client readContinuation:snapshotNode attributeNames:fetchList error:exceptionError];
+        FBAXSnapshotRead *continuation = [client.snapshots readContinuation:snapshotNode attributeNames:fetchList error:exceptionError];
         if (!continuation) {
           return nil;
         }
@@ -860,7 +909,10 @@ static NSDictionary *_Nullable FBAXBridgeNodeFromSnapshot(FBAXSnapshotClient *cl
   }
   NSMutableDictionary *node = [NSMutableDictionary dictionary];
   for (FBAXSnapshotAttribute *attribute in attributes) {
-    node[attribute.name] = FBAXBridgeJSONSafeValue(attribute.value, attribute.name);
+    node[attribute.name] = FBAXBridgeJSONSafeValue(client, attribute.value, attribute.name, exceptionError);
+    if (*exceptionError) {
+      return nil;
+    }
   }
 
   if (depth >= maxDepth) {
@@ -895,7 +947,7 @@ static NSDictionary *_Nullable FBAXBridgeNodeFromSnapshot(FBAXSnapshotClient *cl
   return node;
 }
 
-static NSDictionary<NSString *, id> *FBAXBridgeDispatchRequest(NSDictionary<NSString *, id> *request);
+static NSDictionary<NSString *, id> *FBAXBridgeDispatchRequest(NSDictionary<NSString *, id> *request, NSError **exceptionError);
 
 // Answers a request, turning a raise into a response. This is the only way into the dispatcher, so the
 // serve loop, the argv front-end and the tests are all guarded alike. The private frameworks raise where
@@ -905,7 +957,12 @@ static NSDictionary<NSString *, id> *FBAXBridgeDispatchRequest(NSDictionary<NSSt
 NSDictionary<NSString *, id> *FBAXBridgeHandleRequest(NSDictionary<NSString *, id> *request)
 {
   @try {
-    return FBAXBridgeDispatchRequest(request);
+    NSError *exceptionError = nil;
+    NSDictionary *response = FBAXBridgeDispatchRequest(request, &exceptionError);
+    if (exceptionError) {
+      return FBAXBridgeErrorResponse([NSString stringWithFormat:@"the reader raised while answering: %@", exceptionError.localizedDescription]);
+    }
+    return response;
   } @catch (NSException *exception) {
     NSLog(@"[AccessibilityService] answering a request raised: %@", exception);
     return FBAXBridgeErrorResponse(
@@ -955,7 +1012,7 @@ NSData *FBAXBridgeSerializeResponse(NSDictionary<NSString *, id> *response)
 
 // Answers `hittest`: one round trip reading only the element at the point. With no pid it is
 // display-wide, so the host learns the owning app without a separate frontmost query.
-static NSDictionary *FBAXBridgeHitTest(id<FBAXRuntime> runtime, NSDictionary *request)
+static NSDictionary *FBAXBridgeHitTest(FBAXClient *client, NSDictionary *request, NSError **exceptionError)
 {
   NSNumber *xNumber = request[kRequestX];
   NSNumber *yNumber = request[kRequestY];
@@ -966,8 +1023,12 @@ static NSDictionary *FBAXBridgeHitTest(id<FBAXRuntime> runtime, NSDictionary *re
 
   FBAXBridgeCountRoundTrip();
 
-  FBAXHitTestOutcome *outcome = [runtime hitTestAtPoint:CGPointMake(xNumber.doubleValue, yNumber.doubleValue)
-                                      processIdentifier:pidNumber ? pidNumber.intValue : 0];
+  FBAXElementHit *outcome = [client hitTestAtPoint:CGPointMake(xNumber.doubleValue, yNumber.doubleValue)
+                                 processIdentifier:pidNumber ? pidNumber.intValue : 0
+                                             error:exceptionError];
+  if (*exceptionError) {
+    return nil;
+  }
   switch (outcome.status) {
     case FBAXHitTestStatusHit:
       break;
@@ -995,12 +1056,15 @@ static NSDictionary *FBAXBridgeHitTest(id<FBAXRuntime> runtime, NSDictionary *re
   int budget = 1;
   BOOL truncated = NO;
   // maxDepth 0 reads just the hit element's own attributes (no child recursion) — the leaf at the point.
-  id hitElement = outcome.element;
+  FBAXElement *hitElement = outcome.element;
   if (!hitElement) {
     return FBAXBridgeErrorResponse(@"the hit-test reported an element but returned none");
   }
   FBAXReadOutcome *read =
-  FBAXBridgeBuildNode(runtime, hitElement, FBAXBridgeFetchListForRequest(request), NO, 0, 0, &budget, &truncated);
+  FBAXBridgeBuildNode(client, hitElement, FBAXBridgeFetchListForRequest(request), NO, 0, 0, &budget, &truncated, exceptionError);
+  if (*exceptionError) {
+    return nil;
+  }
   switch (read.status) {
     case FBAXReadStatusRead:
       break;
@@ -1057,7 +1121,7 @@ static BOOL FBAXBridgeActionForName(NSString *name, FBAXAction *action)
 }
 
 // Compared in the coerced wire form: the host derived the assertion from a tree it read off this wire.
-static BOOL FBAXBridgeAttributeMatches(id _Nullable actual, NSString *expected)
+static BOOL FBAXBridgeAttributeMatches(FBAXClient *client, id _Nullable actual, NSString *expected, NSError **exceptionError)
 {
   if ([actual isKindOfClass:NSString.class]) {
     return [(NSString *)actual isEqualToString:expected];
@@ -1065,7 +1129,7 @@ static BOOL FBAXBridgeAttributeMatches(id _Nullable actual, NSString *expected)
   if (!actual || actual == NSNull.null) {
     return NO;
   }
-  return [[actual description] isEqualToString:expected];
+  return [[client descriptionOfValue:actual error:exceptionError].value isEqualToString:expected];
 }
 
 static NSDictionary *_Nullable FBAXBridgeWriteArgumentError(NSDictionary *request)
@@ -1097,10 +1161,11 @@ static NSDictionary *_Nullable FBAXBridgeWriteArgumentError(NSDictionary *reques
 // Between the host's read and this hit-test the element under the point can have changed (occlusion, a
 // non-rectangular element, a screen that moved on). Checking one attribute of what is actually there is
 // what stops the action landing somewhere else.
-static FBAXWriteOutcome *_Nullable FBAXBridgeResolveWriteTarget(id<FBAXRuntime> runtime,
+static FBAXWriteOutcome *_Nullable FBAXBridgeResolveWriteTarget(FBAXClient *client,
                                                                 NSDictionary *request,
-                                                                id _Nullable *element,
-                                                                pid_t *pid)
+                                                                FBAXElement *_Nullable *element,
+                                                                pid_t *pid,
+                                                                NSError **exceptionError)
 {
   NSNumber *xNumber = request[kRequestX];
   NSNumber *yNumber = request[kRequestY];
@@ -1109,8 +1174,12 @@ static FBAXWriteOutcome *_Nullable FBAXBridgeResolveWriteTarget(id<FBAXRuntime> 
 
   NSNumber *pidNumber = [request[kRequestPid] isKindOfClass:NSNumber.class] ? request[kRequestPid] : nil;
   FBAXBridgeCountRoundTrip();
-  FBAXHitTestOutcome *hit = [runtime hitTestAtPoint:CGPointMake(xNumber.doubleValue, yNumber.doubleValue)
-                                  processIdentifier:pidNumber ? pidNumber.intValue : 0];
+  FBAXElementHit *hit = [client hitTestAtPoint:CGPointMake(xNumber.doubleValue, yNumber.doubleValue)
+                             processIdentifier:pidNumber ? pidNumber.intValue : 0
+                                         error:exceptionError];
+  if (*exceptionError) {
+    return nil;
+  }
   switch (hit.status) {
     case FBAXHitTestStatusHit:
       break;
@@ -1124,14 +1193,17 @@ static FBAXWriteOutcome *_Nullable FBAXBridgeResolveWriteTarget(id<FBAXRuntime> 
     default:
       return [FBAXWriteOutcome failed:hit.failureReason ?: @"the hit-test failed"];
   }
-  id hitElement = hit.element;
+  FBAXElement *hitElement = hit.element;
   if (!hitElement) {
     return [FBAXWriteOutcome failed:@"the hit-test reported an element but returned none"];
   }
 
   if (assertKey) {
     FBAXBridgeCountRoundTrip();
-    FBAXReadOutcome *read = [runtime readAttributes:@[assertKey] ofElement:hitElement];
+    FBAXElementRead *read = [client readAttributes:@[assertKey] ofElement:hitElement error:exceptionError];
+    if (*exceptionError) {
+      return nil;
+    }
     switch (read.status) {
       case FBAXReadStatusRead:
         break;
@@ -1146,11 +1218,22 @@ static FBAXWriteOutcome *_Nullable FBAXBridgeResolveWriteTarget(id<FBAXRuntime> 
         return [FBAXWriteOutcome failed:
                 [NSString stringWithFormat:@"could not read %@ to check the assertion", assertKey]];
     }
-    id actual = FBAXBridgeJSONSafeValue(read.attributes[assertKey], assertKey);
-    if (!FBAXBridgeAttributeMatches(actual, assertValue)) {
+    id actual = FBAXBridgeJSONSafeValue(client, read.attributes[assertKey], assertKey, exceptionError);
+    if (*exceptionError) {
+      return nil;
+    }
+    BOOL matches = FBAXBridgeAttributeMatches(client, actual, assertValue, exceptionError);
+    if (*exceptionError) {
+      return nil;
+    }
+    if (!matches) {
+      FBAXOptionalValue<NSString *> *description = [client descriptionOfValue:actual error:exceptionError];
+      if (!description) {
+        return nil;
+      }
       return [FBAXWriteOutcome assertionFailed:
               [NSString stringWithFormat:@"the element at (%.1f, %.1f) has %@ %@, expected %@",
-               xNumber.doubleValue, yNumber.doubleValue, assertKey, actual, assertValue]];
+               xNumber.doubleValue, yNumber.doubleValue, assertKey, description.value, assertValue]];
     }
   }
 
@@ -1196,7 +1279,7 @@ static NSDictionary *FBAXBridgeWriteResponse(FBAXWriteOutcome *outcome, pid_t pi
 
 // Answers `perform`. No pre-check that the element accepts the action — see
 // `+[FBAXWriteOutcome outcomeForWriteError:]`.
-static NSDictionary *FBAXBridgePerform(id<FBAXRuntime> runtime, NSDictionary *request)
+static NSDictionary *FBAXBridgePerform(FBAXClient *client, NSDictionary *request, NSError **exceptionError)
 {
   id requestedAction = request[kRequestAction];
   NSString *name = [requestedAction isKindOfClass:NSString.class] ? requestedAction : nil;
@@ -1213,19 +1296,25 @@ static NSDictionary *FBAXBridgePerform(id<FBAXRuntime> runtime, NSDictionary *re
     return argumentError;
   }
 
-  id element = nil;
+  FBAXElement *element = nil;
   pid_t pid = 0;
-  FBAXWriteOutcome *outcome = FBAXBridgeResolveWriteTarget(runtime, request, &element, &pid);
+  FBAXWriteOutcome *outcome = FBAXBridgeResolveWriteTarget(client, request, &element, &pid, exceptionError);
+  if (*exceptionError) {
+    return nil;
+  }
   if (!outcome) {
     FBAXBridgeCountRoundTrip();
-    outcome = [runtime performAction:action onElement:element];
+    outcome = [client performAction:action onElement:element error:exceptionError];
+    if (*exceptionError) {
+      return nil;
+    }
   }
   return FBAXBridgeWriteResponse(outcome, pid);
 }
 
 // Answers `setvalue`. Nothing an element reports says whether its value is writable, so — as with a
 // `perform` — the runtime's own answer is the only judgement.
-static NSDictionary *FBAXBridgeSetValue(id<FBAXRuntime> runtime, NSDictionary *request)
+static NSDictionary *FBAXBridgeSetValue(FBAXClient *client, NSDictionary *request, NSError **exceptionError)
 {
   id requestedValue = request[kRequestValue];
   if (![requestedValue isKindOfClass:NSString.class]) {
@@ -1236,12 +1325,18 @@ static NSDictionary *FBAXBridgeSetValue(id<FBAXRuntime> runtime, NSDictionary *r
     return argumentError;
   }
 
-  id element = nil;
+  FBAXElement *element = nil;
   pid_t pid = 0;
-  FBAXWriteOutcome *outcome = FBAXBridgeResolveWriteTarget(runtime, request, &element, &pid);
+  FBAXWriteOutcome *outcome = FBAXBridgeResolveWriteTarget(client, request, &element, &pid, exceptionError);
+  if (*exceptionError) {
+    return nil;
+  }
   if (!outcome) {
     FBAXBridgeCountRoundTrip();
-    outcome = [runtime setValue:requestedValue onElement:element];
+    outcome = [client setValue:requestedValue onElement:element error:exceptionError];
+    if (*exceptionError) {
+      return nil;
+    }
   }
   return FBAXBridgeWriteResponse(outcome, pid);
 }
@@ -1262,9 +1357,10 @@ static BOOL FBAXBridgeDeviceSettingForName(NSString *name, FBAXDeviceSetting *se
   return YES;
 }
 
-static NSDictionary<NSString *, id> *FBAXBridgeDeviceSetting(id<FBAXRuntime> runtime,
+static NSDictionary<NSString *, id> *FBAXBridgeDeviceSetting(FBAXClient *client,
                                                              NSDictionary<NSString *, id> *request,
-                                                             BOOL shouldSet)
+                                                             BOOL shouldSet,
+                                                             NSError **exceptionError)
 {
   id requestedName = request[kRequestSetting];
   if (![requestedName isKindOfClass:NSString.class]) {
@@ -1288,8 +1384,11 @@ static NSDictionary<NSString *, id> *FBAXBridgeDeviceSetting(id<FBAXRuntime> run
     );
   }
   FBAXDeviceSettingOutcome *outcome = shouldSet
-  ? [runtime setEnabled:[requestedEnabled boolValue] forDeviceSetting:setting]
-  : [runtime enabledStateForDeviceSetting:setting];
+  ? [client setEnabled:[requestedEnabled boolValue] forDeviceSetting:setting error:exceptionError]
+  : [client enabledStateForDeviceSetting:setting error:exceptionError];
+  if (*exceptionError) {
+    return nil;
+  }
   switch (outcome.status) {
     case FBAXDeviceSettingStatusResolved:
       return @{kResponseOk : @YES, kResponseEnabled : @(outcome.enabled)};
@@ -1309,7 +1408,7 @@ static NSDictionary<NSString *, id> *FBAXBridgeDeviceSetting(id<FBAXRuntime> run
   }
 }
 
-static NSDictionary<NSString *, id> *FBAXBridgeDispatchRequest(NSDictionary<NSString *, id> *request)
+static NSDictionary<NSString *, id> *FBAXBridgeDispatchRequest(NSDictionary<NSString *, id> *request, NSError **exceptionError)
 {
   // The frame is JSON from the client, so the value can be of any type — narrow it to a string before
   // comparing, rather than sending `isEqualToString:` to whatever arrived.
@@ -1357,23 +1456,25 @@ static NSDictionary<NSString *, id> *FBAXBridgeDispatchRequest(NSDictionary<NSSt
     );
   }
 
+  FBAXClient *client = [[FBAXClient alloc] initWithRuntime:runtime];
+
   if (isGetDeviceSetting || isSetDeviceSetting) {
-    return FBAXBridgeDeviceSetting(runtime, request, isSetDeviceSetting);
+    return FBAXBridgeDeviceSetting(client, request, isSetDeviceSetting, exceptionError);
   }
 
   // `hittest` is self-contained: with a pid it hit-tests that app; with no pid it hit-tests display-wide
   // — the app owning the point, resolved in-guest, with no frontmost pid query.
   if (isHitTest) {
-    return FBAXBridgeHitTest(runtime, request);
+    return FBAXBridgeHitTest(client, request, exceptionError);
   }
 
   // Writes are point-addressed: a one-shot guest exits between requests, so an element handle cannot
   // survive one.
   if (isPerform) {
-    return FBAXBridgePerform(runtime, request);
+    return FBAXBridgePerform(client, request, exceptionError);
   }
   if (isSetValue) {
-    return FBAXBridgeSetValue(runtime, request);
+    return FBAXBridgeSetValue(client, request, exceptionError);
   }
 
   // `describe`: an explicit `pid` names the app directly; with no pid it is a fused frontmost read — the
@@ -1403,21 +1504,32 @@ static NSDictionary<NSString *, id> *FBAXBridgeDispatchRequest(NSDictionary<NSSt
   // much structure an accessibility read sees, so asking for it later would report a state neither the
   // discovery nor the traversal of this read ran under.
   BOOL automationAsserted = NO;
-  BOOL automationEnabled = [runtime automationModeEnabled];
+  NSNumber *automation = [client automationModeEnabledWithError:exceptionError];
+  if (!automation) {
+    return nil;
+  }
+  BOOL automationEnabled = automation.boolValue;
   id requestedAutomation = request[kRequestAutomationMode];
   if ([requestedAutomation isKindOfClass:NSNumber.class]) {
     const BOOL wanted = [(NSNumber *)requestedAutomation boolValue];
     // Only write when it would change something. A no-op write is still a preference write, and
     // reporting `asserted` for one would tell a caller this read altered a device it left alone.
     if (wanted != automationEnabled) {
-      automationEnabled = [runtime setAutomationModeEnabled:wanted];
+      automation = [client setAutomationModeEnabled:wanted error:exceptionError];
+      if (!automation) {
+        return nil;
+      }
+      automationEnabled = automation.boolValue;
       // True only if the write took; a preference write can be accepted and not apply.
       automationAsserted = (automationEnabled == wanted);
     }
   }
 
   if (frontmostMethod) {
-    FBAXFrontmostOutcome *frontmost = FBAXBridgeResolveFrontmost(runtime, frontmostMethod, frontmostAnchor);
+    FBAXFrontmostOutcome *frontmost = FBAXBridgeResolveFrontmost(client, frontmostMethod, frontmostAnchor, exceptionError);
+    if (*exceptionError) {
+      return nil;
+    }
     switch (frontmost.status) {
       case FBAXFrontmostStatusResolved:
         break;
@@ -1444,7 +1556,11 @@ static NSDictionary<NSString *, id> *FBAXBridgeDispatchRequest(NSDictionary<NSSt
     pid = frontmost.processIdentifier;
   }
 
-  id root = [runtime applicationElementForProcessIdentifier:pid];
+  FBAXOptionalValue<FBAXElement *> *application = [client applicationElementForProcessIdentifier:pid error:exceptionError];
+  if (!application) {
+    return nil;
+  }
+  FBAXElement *root = application.value;
   if (!root) {
     return FBAXBridgeErrorResponse([NSString stringWithFormat:@"no application element for pid %d", pid]);
   }
@@ -1462,16 +1578,18 @@ static NSDictionary<NSString *, id> *FBAXBridgeDispatchRequest(NSDictionary<NSSt
   const CFAbsoluteTime traverseStarted = CFAbsoluteTimeGetCurrent();
   if ([request[kRequestSnapshotTree] boolValue]) {
     NSArray<NSString *> *names = FBAXBridgeFetchListForRequest(request);
-    FBAXSnapshotClient *client = [[FBAXSnapshotClient alloc] initWithRuntime:runtime];
-    NSError *exceptionError = nil;
-    FBAXSnapshotRead *snapshot = [client readElement:root attributeNames:names error:&exceptionError];
+    FBAXSnapshotRead *snapshot = [client.snapshots readElement:root attributeNames:names error:exceptionError];
     if (!snapshot) {
-      return FBAXBridgeErrorResponse([NSString stringWithFormat:@"the reader raised while answering: %@", exceptionError.localizedDescription]);
+      return nil;
     }
     FBAXSnapshotNode *snapshotRoot = snapshot.root;
     if (!snapshotRoot) {
+      FBAXOptionalValue<NSString *> *description = [client localizedDescriptionOfError:snapshot.error error:exceptionError];
+      if (!description) {
+        return nil;
+      }
       return FBAXBridgeTaggedErrorResponse(
-        snapshot.error.localizedDescription ?: @"the single-fetch read returned no tree",
+        description.value ?: @"the single-fetch read returned no tree",
         kErrorKindApplicationNotResponding,
         @(pid)
       );
@@ -1482,9 +1600,9 @@ static NSDictionary<NSString *, id> *FBAXBridgeDispatchRequest(NSDictionary<NSSt
     // The owner every node's element is compared against, read from the snapshot's own root element
     // rather than taken from the request: the two agree on a live runtime, and a runtime that cannot
     // attribute elements answers 0, which disables boundary continuation rather than mistargeting it.
-    NSNumber *processIdentifier = [client processIdentifierForNode:snapshotRoot error:&exceptionError];
+    NSNumber *processIdentifier = [client.snapshots processIdentifierForNode:snapshotRoot error:exceptionError];
     if (!processIdentifier) {
-      return FBAXBridgeErrorResponse([NSString stringWithFormat:@"the reader raised while answering: %@", exceptionError.localizedDescription]);
+      return nil;
     }
     pid_t ownerPid = processIdentifier.intValue;
     int boundaryFetches = kSnapshotBoundaryFetchBudget;
@@ -1498,10 +1616,10 @@ static NSDictionary<NSString *, id> *FBAXBridgeDispatchRequest(NSDictionary<NSSt
       &budget,
       &boundaryFetches,
       &truncated,
-      &exceptionError
+      exceptionError
     );
-    if (exceptionError) {
-      return FBAXBridgeErrorResponse([NSString stringWithFormat:@"the reader raised while answering: %@", exceptionError.localizedDescription]);
+    if (*exceptionError) {
+      return nil;
     }
     if (!tree) {
       return FBAXBridgeErrorResponse(@"the single-fetch read returned a shape with no root node");
@@ -1511,28 +1629,44 @@ static NSDictionary<NSString *, id> *FBAXBridgeDispatchRequest(NSDictionary<NSSt
     // vends an application element for any pid, including one that names no process, and the translator
     // answers against it with synthesized defaults rather than failing — so without this check the read
     // would report a healthy tree for a dead process. One extra round trip, on the opt-in path only.
-    NSDictionary *unavailable =
-    FBAXBridgeReadFailureResponse([runtime readAttributes:@[kAXElementType] ofElement:root], pid);
+    FBAXElementRead *availability = [client readAttributes:@[kAXElementType] ofElement:root error:exceptionError];
+    if (!availability) {
+      return nil;
+    }
+    NSDictionary *unavailable = FBAXBridgeReadFailureResponse(client, availability.status, availability.error, pid, exceptionError);
+    if (*exceptionError) {
+      return nil;
+    }
     if (unavailable) {
       return unavailable;
     }
-    tree = FBAXBridgeBuildTranslatorNode(runtime, root, 0, maxDepth, &budget, &truncated);
+    tree = FBAXBridgeBuildTranslatorNode(client, root, 0, maxDepth, &budget, &truncated, exceptionError);
+    if (*exceptionError) {
+      return nil;
+    }
     if (!tree) {
       return FBAXBridgeErrorResponse(@"the translator vocabulary returned no attributes for this element");
     }
   } else {
     FBAXReadOutcome *read =
     FBAXBridgeBuildNode(
-      runtime,
+      client,
       root,
       FBAXBridgeFetchListForRequest(request),
       [request[kRequestExplainUnreachable] boolValue],
       0,
       maxDepth,
       &budget,
-      &truncated
+      &truncated,
+      exceptionError
     );
-    NSDictionary *failure = FBAXBridgeReadFailureResponse(read, pid);
+    if (!read) {
+      return nil;
+    }
+    NSDictionary *failure = FBAXBridgeReadFailureResponse(client, read.status, read.error, pid, exceptionError);
+    if (*exceptionError) {
+      return nil;
+    }
     if (failure) {
       return failure;
     }

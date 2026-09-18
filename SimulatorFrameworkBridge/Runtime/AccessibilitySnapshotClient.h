@@ -10,6 +10,7 @@
 NS_ASSUME_NONNULL_BEGIN
 
 @protocol FBAXRuntime;
+@class FBAXElement;
 
 /** One named attribute, preserving the runtime's iteration order before value coercion. */
 @interface FBAXSnapshotAttribute : NSObject
@@ -53,7 +54,7 @@ NS_ASSUME_NONNULL_BEGIN
 + (instancetype)new NS_UNAVAILABLE;
 
 /** Returns a result even when the runtime cannot fetch a tree. Only a private exception throws. */
-- (nullable FBAXSnapshotRead *)readElement:(id)element
+- (nullable FBAXSnapshotRead *)readElement:(FBAXElement *)element
                             attributeNames:(NSArray<NSString *> *)names
                                      error:(NSError **)error;
 
