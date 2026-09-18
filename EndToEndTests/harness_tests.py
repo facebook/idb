@@ -1114,5 +1114,86 @@ class BinaryPathTests(unittest.IsolatedAsyncioTestCase):
             await self.resolve(absent)
 
 
-if __name__ == "__main__":
-    unittest.main()
+class SubprocessTimeoutTests(unittest.IsolatedAsyncioTestCase):
+    async def test_preserves_binary_output_input_environment_and_exit_code(
+        self,
+    ) -> None:
+        code = (
+            "import os,sys; "
+            "sys.stdout.buffer.write(os.environ['IDB_TEST_VALUE'].encode() + "
+            "sys.stdin.buffer.read()[::-1]); "
+            "sys.stderr.buffer.write(b'\\xff'); sys.exit(7)"
+        )
+        result = await harness.run(
+            [sys.executable, "-c", code],
+            timeout=10,
+            stdin=b"\x00\xfe",
+            env={**os.environ, "IDB_TEST_VALUE": "prefix"},
+        )
+
+        self.assertEqual(result, Completed(7, b"prefix\xfe\x00", b"\xff"))
+
+    async def test_reports_timeout_for_a_running_process(self) -> None:
+        with self.assertRaisesRegex(HarnessError, "did not finish within"):
+            await harness.run(
+                [sys.executable, "-c", "import time; time.sleep(30)"], timeout=0.5
+            )
+
+    async def test_timeout_with_inherited_output_pipes(self) -> None:
+        directory = self.enterContext(tempfile.TemporaryDirectory())
+        ready = Path(directory) / "ready"
+        stop = Path(directory) / "stop"
+        exited = Path(directory) / "exited"
+        child = (
+            "import time; from pathlib import Path\n"
+            "for _ in range(3000):\n"
+            f"    if Path({str(stop)!r}).exists(): break\n"
+            "    time.sleep(0.01)\n"
+            f"Path({str(exited)!r}).touch()\n"
+        )
+        parent = (
+            "import subprocess,sys,time; from pathlib import Path; "
+            f"subprocess.Popen([sys.executable, '-c', {child!r}]); "
+            f"Path({str(ready)!r}).touch(); time.sleep(30)"
+        )
+        process = None
+        create_process = asyncio.create_subprocess_exec
+
+        async def wait_for_file(path: Path) -> None:
+            while not path.is_file():
+                await asyncio.sleep(0.01)
+
+        async def cleanup() -> None:
+            if process is not None and process.returncode is None:
+                try:
+                    process.kill()
+                except ProcessLookupError:
+                    pass
+            stop.touch()
+            try:
+                if ready.is_file():
+                    await asyncio.wait_for(wait_for_file(exited), timeout=10)
+            finally:
+                if process is not None:
+                    await asyncio.wait_for(process.wait(), timeout=10)
+
+        self.addAsyncCleanup(cleanup)
+
+        async def create_ready_process(*args, **kwargs):
+            nonlocal process
+            process = await create_process(*args, **kwargs)
+            # Start the harness deadline only after a descendant owns the outputs.
+            await asyncio.wait_for(wait_for_file(ready), timeout=10)
+            return process
+
+        self.enterContext(
+            mock.patch.object(
+                asyncio, "create_subprocess_exec", side_effect=create_ready_process
+            )
+        )
+        with self.assertRaises(asyncio.TimeoutError):
+            await asyncio.wait_for(
+                harness.run([sys.executable, "-c", parent], timeout=0.5), timeout=12
+            )
+        self.assertTrue(ready.is_file(), "Descendant must be spawned before timeout")
+        self.assertFalse(exited.is_file(), "Descendant must still hold the outputs")
