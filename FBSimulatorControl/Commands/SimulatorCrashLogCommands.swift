@@ -49,7 +49,7 @@ public final class SimulatorCrashLogCommands: CrashLogCommands {
     return notifier.store.ingestedCrashLogs(matchingPredicate: predicate)
   }
 
-  public func pruneCrashes(matching predicate: NSPredicate) async throws -> [CrashLogInfo] {
+  public func prune(matching predicate: NSPredicate) async throws -> [CrashLogInfo] {
     guard let simulator = self.simulator else {
       throw WeakTargetError.simulator
     }

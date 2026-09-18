@@ -409,7 +409,7 @@ public final class IDBCommandExecutor {
   }
 
   public func crash_delete(_ predicate: NSPredicate) async throws -> [CrashLogInfo] {
-    return try await target.crashLog.pruneCrashes(matching: predicate)
+    return try await target.crashLog.prune(matching: predicate)
   }
 
   public func xctest_run(_ request: XCTestRunRequest, reporter: XCTestReporter, logger: ControlCoreLogger) async throws -> IDBTestOperation {

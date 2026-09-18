@@ -13,7 +13,7 @@ public protocol CrashLogCommands {
 
   func notifyOfCrash(matching predicate: NSPredicate) async throws -> CrashLogInfo
 
-  func pruneCrashes(matching predicate: NSPredicate) async throws -> [CrashLogInfo]
+  func prune(matching predicate: NSPredicate) async throws -> [CrashLogInfo]
 
   func withFiles<R>(body: (any AsyncFileContainer) async throws -> R) async throws -> R
 }

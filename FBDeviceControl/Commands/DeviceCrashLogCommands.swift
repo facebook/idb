@@ -86,7 +86,7 @@ public final class DeviceCrashLogCommands: CrashLogCommands {
     return store.ingestedCrashLogs(matchingPredicate: predicate)
   }
 
-  public func pruneCrashes(matching predicate: NSPredicate) async throws -> [CrashLogInfo] {
+  public func prune(matching predicate: NSPredicate) async throws -> [CrashLogInfo] {
     guard let device else {
       throw DeviceNilError.deviceNil
     }

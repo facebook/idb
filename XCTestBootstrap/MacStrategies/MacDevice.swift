@@ -528,8 +528,8 @@ extension MacDevice: CrashLogCommands {
     try await CrashLogNotifier.sharedInstance.nextCrashLog(forPredicate: predicate)
   }
 
-  public func pruneCrashes(matching predicate: NSPredicate) async throws -> [CrashLogInfo] {
-    throw MacDeviceError.notImplemented(selector: "pruneCrashes:")
+  public func prune(matching predicate: NSPredicate) async throws -> [CrashLogInfo] {
+    throw MacDeviceError.notImplemented(selector: "prune:")
   }
 
   public func withFiles<R>(body: (any AsyncFileContainer) async throws -> R) async throws -> R {

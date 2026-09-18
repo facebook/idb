@@ -110,7 +110,7 @@ struct DeviceCrashLogFileTests {
   func pruningRemovesTheReportFromTheDevice() async throws {
     let device = makeDevice(remoteFiles: ["SomeApp-2026-01-01.ips": crashReport])
 
-    let pruned = try await device.crashLog.pruneCrashes(matching: NSPredicate(value: true))
+    let pruned = try await device.crashLog.prune(matching: NSPredicate(value: true))
 
     #expect(pruned.map(\.name) == ["SomeApp-2026-01-01.ips"])
     #expect(afc.removedPaths == ["SomeApp-2026-01-01.ips"])
