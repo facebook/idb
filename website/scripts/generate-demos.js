@@ -132,6 +132,32 @@ function problemsWithSource(name, source) {
   return problems;
 }
 
+// What the test made of a step's output, published beside it: text, and the
+// pieces of the output it names. A note the page cannot show fails the build
+// rather than rendering as `undefined`.
+function problemsWithNotes(name, notes) {
+  if (notes === undefined) {
+    return [];
+  }
+  if (!Array.isArray(notes)) {
+    return [`${name} has a step whose notes are not a list`];
+  }
+  const problems = [];
+  for (const note of notes) {
+    const fields = note || {};
+    if (typeof fields.text !== 'string' || fields.text === '') {
+      problems.push(`${name} has a step with a note that says nothing`);
+    }
+    if (
+      !Array.isArray(fields.marks) ||
+      !fields.marks.every((mark) => typeof mark === 'string')
+    ) {
+      problems.push(`${name} has a step with a note that marks something that is not text`);
+    }
+  }
+  return problems;
+}
+
 function problemsWithCommands(name, commands) {
   const problems = [];
   for (const command of commands) {
@@ -155,6 +181,7 @@ function problemsWithCommands(name, commands) {
         problems.push(`${name} has a command with no ${key}`);
       }
     }
+    problems.push(...problemsWithNotes(name, fields.notes));
   }
   return problems;
 }

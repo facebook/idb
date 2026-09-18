@@ -32,7 +32,13 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Awaitable, Callable, NoReturn, TypeVar
 
-from .documentation import demo_for, normalisation_rules, test_identity, Transcript
+from .documentation import (
+    demo_for,
+    normalisation_rules,
+    normalise,
+    test_identity,
+    Transcript,
+)
 from .recording import ENCODING_ENV, Recording
 
 DEVICE_UDID_ENV = "DEVICE_UDID"
@@ -865,6 +871,24 @@ class IdbEndToEndTestCase(unittest.IsolatedAsyncioTestCase):
             "step": step,
             **self.transcript.captures(completed.stdout, completed.stderr),
         }
+
+    def note(self, text: str, *marks: str) -> None:
+        """Say what the last published step showed, beside it in the demo.
+
+        A step's output is what the command printed, not what the test made of
+        it. A note is the test's reading of that output -- which element it
+        found, where, and what that proves -- published beside the step, with
+        the pieces of the output it names marked so a reader can find them in
+        it. Outside a documented demo there is nothing to publish, so nothing
+        is recorded.
+        """
+        if self.transcript is None or self.recording is None:
+            return
+        self.recording.event(
+            "step_note",
+            text=normalise(text, self.transcript.rules),
+            marks=[normalise(mark, self.transcript.rules) for mark in marks],
+        )
 
     async def setup_idb(
         self,

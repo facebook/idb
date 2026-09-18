@@ -87,6 +87,28 @@
   border-left-color: var(--ifm-color-primary);
 }
 
+/* The test's reading of a step's output, set off from the output itself. */
+.notes {
+  background: var(--ifm-color-emphasis-100);
+  border-left: 3px solid var(--ifm-color-primary);
+  border-radius: 0 var(--ifm-global-radius) var(--ifm-global-radius) 0;
+  font-size: 0.9rem;
+  margin: 0.5rem 0 0.75rem;
+  padding: 0.5rem 0.75rem;
+}
+
+.notesLabel {
+  font-size: 0.8rem;
+  font-weight: var(--ifm-font-weight-bold);
+  margin: 0 0 0.25rem;
+  text-transform: uppercase;
+}
+
+.noteList {
+  margin: 0;
+  padding-left: 1.25rem;
+}
+
 /* Output a command had not printed yet at this point of the timeline. It
    stays in the document — the page is a transcript first — and is marked
    beside rather than faded: a reader without JavaScript sees every line at

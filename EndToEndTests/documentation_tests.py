@@ -314,6 +314,7 @@ class DemoCaseStub:
     """Drive IdbEndToEndTestCase.idb against a real trace, without a simulator."""
 
     idb = IdbEndToEndTestCase.idb
+    note = IdbEndToEndTestCase.note
     run_client = IdbEndToEndTestCase.run_client
     _command_fields = IdbEndToEndTestCase._command_fields
 
@@ -485,6 +486,30 @@ class DemoTraceTests(unittest.IsolatedAsyncioTestCase):
 
         self.assertNotIn("step", finished)
         self.assertNotIn("stdout", finished)
+
+    async def noted(self, transcript: Transcript | None) -> list[dict[str, Any]]:
+        with trace() as recording:
+            recording.start_test("EndToEndTests.test_demo.DemoTests.test_demo")
+            recording.demo("open-a-url", "Open a URL", "Open a URL on a simulator")
+            case = DemoCaseStub(recording, transcript)
+            with mock.patch.object(
+                harness, "run", new=mock.AsyncMock(return_value=Completed(0, b"", b""))
+            ):
+                await case.idb("open", "https://example.com", step="Open a URL")
+            case.note(f"Safari opened on {UDID}", UDID, "Safari")
+            recording.finish_test("passed")
+            recorded = events(recording)
+        return [event for event in recorded if event["event"] == "step_note"]
+
+    async def test_a_note_is_recorded_after_the_step_it_describes(self) -> None:
+        noted = await self.noted(Transcript(rules()))
+
+        self.assertEqual(len(noted), 1)
+        self.assertEqual(noted[0]["text"], f"Safari opened on {UDID_PLACEHOLDER}")
+        self.assertEqual(noted[0]["marks"], [UDID_PLACEHOLDER, "Safari"])
+
+    async def test_a_note_outside_a_demo_is_not_recorded(self) -> None:
+        self.assertEqual(await self.noted(None), [])
 
     async def test_the_demo_event_carries_what_the_website_publishes(self) -> None:
         with trace() as recording:

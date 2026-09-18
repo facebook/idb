@@ -449,6 +449,42 @@ test('fails when a demo names a source it cannot link', () => {
   );
 });
 
+test('publishes what a step showed beside it', () => {
+  const manifest = manifestFixture();
+  manifest.demos[0].commands[0].notes = [
+    {text: 'Safari came to the front', marks: ['com.apple.mobilesafari']},
+  ];
+  const {websiteDir, source} = scratch(manifest);
+
+  const published = run(websiteDir, {IDB_DEMOS_DIR: source});
+
+  assert.deepStrictEqual(published.demos[0].commands[0].notes, [
+    {text: 'Safari came to the front', marks: ['com.apple.mobilesafari']},
+  ]);
+});
+
+test('fails when a note says nothing', () => {
+  const manifest = manifestFixture();
+  manifest.demos[0].commands[0].notes = [{text: '', marks: []}];
+  const {websiteDir, source} = scratch(manifest);
+
+  assert.throws(
+    () => run(websiteDir, {IDB_DEMOS_DIR: source}),
+    /note that says nothing/
+  );
+});
+
+test('fails when a note marks something that is not text', () => {
+  const manifest = manifestFixture();
+  manifest.demos[0].commands[0].notes = [{text: 'It opened', marks: [42]}];
+  const {websiteDir, source} = scratch(manifest);
+
+  assert.throws(
+    () => run(websiteDir, {IDB_DEMOS_DIR: source}),
+    /marks something that is not text/
+  );
+});
+
 test('fails when a command lost a number the page prints', () => {
   for (const key of ['returncode', 'start', 'finished', 'seconds']) {
     const manifest = manifestFixture();

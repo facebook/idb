@@ -25,7 +25,7 @@ import re
 import shutil
 import subprocess
 import sys
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from pathlib import Path
 from typing import Any, Sequence
 
@@ -251,8 +251,19 @@ class Recording:
 
 
 @dataclass(frozen=True)
+class Note:
+    """What the test made of a step's output: its reading, and the pieces of the output it names."""
+
+    text: str
+    marks: tuple[str, ...]
+
+    def as_json(self) -> dict[str, Any]:
+        return {"text": self.text, "marks": list(self.marks)}
+
+
+@dataclass(frozen=True)
 class Command:
-    """One command a demo named, and what it printed."""
+    """One command a demo named, what it printed, and what the test made of that."""
 
     step: str
     argv: tuple[str, ...]
@@ -261,6 +272,7 @@ class Command:
     seconds: float
     stdout: dict[str, Any]
     stderr: dict[str, Any]
+    notes: tuple[Note, ...] = ()
 
     def as_json(self, timeline: Timeline) -> dict[str, Any]:
         return {
@@ -272,6 +284,7 @@ class Command:
             "seconds": round(self.seconds, 3),
             "stdout": self.stdout,
             "stderr": self.stderr,
+            "notes": [note.as_json() for note in self.notes],
         }
 
 
@@ -455,6 +468,13 @@ def command_of(event: dict[str, Any], origin: float) -> Command:
     )
 
 
+def note_of(event: dict[str, Any]) -> Note:
+    return Note(
+        text=str(event["text"]),
+        marks=tuple(str(mark) for mark in event.get("marks", [])),
+    )
+
+
 def test_starts(events: Sequence[dict[str, Any]], origin: float) -> list[float]:
     """When each test of the run began, in the order the trace records them."""
     return [
@@ -517,6 +537,18 @@ def read_demos(
             continue
         elif kind == "command_finished" and "step" in event:
             performing.commands.append(command_of(event, origin))
+        elif kind == "step_note":
+            # A note reads the output of the step before it; one with no step
+            # to read is a test that noted before it published anything.
+            if not performing.commands:
+                raise GenerationError(
+                    f"{performing.slug} notes {event['text']!r} before any step "
+                    "it could describe"
+                )
+            last = performing.commands[-1]
+            performing.commands[-1] = replace(
+                last, notes=last.notes + (note_of(event),)
+            )
         elif kind == "screenshot":
             performing.screenshots.append(event["path"])
         elif kind == "test_finished":

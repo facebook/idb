@@ -164,6 +164,25 @@ function Output({label, stream}) {
   );
 }
 
+// What the test made of a step's output, beside the step: the element it
+// found, where, and what that proves. The output below stays what the command
+// printed; this is the reading of it that a viewer would otherwise have to do.
+function Notes({notes}) {
+  if (!notes || notes.length === 0) {
+    return null;
+  }
+  return (
+    <aside className={styles.notes} aria-label="What this step showed">
+      <p className={styles.notesLabel}>What this showed</p>
+      <ul className={styles.noteList}>
+        {notes.map((note, index) => (
+          <li key={index}>{note.text}</li>
+        ))}
+      </ul>
+    </aside>
+  );
+}
+
 // Every step is rendered, always: the page is a transcript first, and a
 // reader on the server, without JavaScript, or through a screen reader gets
 // all of it. What the timeline changes is which step is marked as the one the
@@ -209,6 +228,7 @@ function Step({command, index, current, printed, seekable, onSelect}) {
           {commandLine(command.argv)}
         </code>
       </pre>
+      <Notes notes={command.notes} />
       <div className={printed ? undefined : styles.pending}>
         <Output label="Output" stream={command.stdout} />
         <Output label="Errors" stream={command.stderr} />

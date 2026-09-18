@@ -111,13 +111,16 @@ def trace_events(
     commands_after: float = 3.0,
     source: str = SOURCE_FILE,
     line: int = SOURCE_LINE,
+    notes: Sequence[tuple[str, Sequence[str]]] = (),
+    noted_before_any_step: bool = False,
 ) -> list[dict[str, Any]]:
     """One documented test's worth of trace, with the polling it really does.
 
     `shift` moves the whole test later, so two of these make one run of two
     tests; `setup` is how long the test spent before the demo was marked, and
     `commands_after` how long it spent after that before the first command the
-    demo publishes -- which is where the clip's lead is taken from.
+    demo publishes -- which is where the clip's lead is taken from. `notes`
+    follow the last step, as a test's reading of its output does.
     """
     started = ORIGIN + 1 + shift
     began = started + setup
@@ -144,6 +147,16 @@ def trace_events(
         },
     ]
     at = began + commands_after
+    if noted_before_any_step:
+        recorded.append(
+            {
+                "time": at,
+                "event": "step_note",
+                "test": test,
+                "text": "too soon",
+                "marks": [],
+            }
+        )
     for index, step in enumerate(steps):
         recorded.append(
             {
@@ -159,6 +172,16 @@ def trace_events(
             }
         )
     at += len(steps)
+    for text, marks in notes:
+        recorded.append(
+            {
+                "time": at,
+                "event": "step_note",
+                "test": test,
+                "text": text,
+                "marks": list(marks),
+            }
+        )
     for index, name in enumerate(screenshots):
         recorded.append(
             {"time": at + index, "event": "screenshot", "test": test, "path": name}
@@ -307,6 +330,7 @@ class PublishedDemoTests(unittest.TestCase):
                     "seconds": 0.5,
                     "stdout": OPENED,
                     "stderr": NO_OUTPUT,
+                    "notes": [],
                 }
             ],
         )
@@ -336,6 +360,39 @@ class PublishedDemoTests(unittest.TestCase):
             second = (output / "second" / MANIFEST_NAME).read_bytes()
 
         self.assertEqual(first, second)
+
+
+class NoteTests(unittest.TestCase):
+    def test_publishes_a_note_beside_the_step_it_followed(self) -> None:
+        events = trace_events(
+            steps=("Find the row", "Open it"),
+            notes=[("The row is on screen", ["com.apple.settings.general"])],
+        )
+        with artifacts({PREFIX: events}) as (source, output):
+            self.assertEqual(generate(source, output), 0)
+            commands = manifest(output)["demos"][0]["commands"]
+
+        self.assertEqual(commands[0]["notes"], [])
+        self.assertEqual(
+            commands[1]["notes"],
+            [{"text": "The row is on screen", "marks": ["com.apple.settings.general"]}],
+        )
+
+    def test_keeps_every_note_a_step_was_given_in_order(self) -> None:
+        events = trace_events(notes=[("first", []), ("second", ["a", "b"])])
+        with artifacts({PREFIX: events}) as (source, output):
+            self.assertEqual(generate(source, output), 0)
+            notes = manifest(output)["demos"][0]["commands"][0]["notes"]
+
+        self.assertEqual([note["text"] for note in notes], ["first", "second"])
+        self.assertEqual(notes[1]["marks"], ["a", "b"])
+
+    def test_refuses_a_note_with_no_step_to_describe(self) -> None:
+        events = trace_events(noted_before_any_step=True)
+        with artifacts({PREFIX: events}) as (source, output):
+            said = refused(source, output)
+
+        self.assertIn("notes 'too soon' before any step", said)
 
 
 class OriginTests(unittest.TestCase):
