@@ -39,9 +39,24 @@
   max-width: 100%;
 }
 
+/* The terminal stays put at the top of the column while the transcript
+   beneath it scrolls, so the step being read and the terminal playing it are
+   on the screen at the same time. */
 .session {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
   max-height: 70vh;
+}
+
+.scroller {
   overflow-y: auto;
+}
+
+/* The player sizes its own type to the width it is given, so this only has to
+   keep it from being given the whole page. */
+.terminal {
+  max-width: 100%;
 }
 
 @media (max-width: 996px) {
@@ -55,20 +70,11 @@
 
   .session {
     max-height: none;
+  }
+
+  .scroller {
     overflow-y: visible;
   }
-}
-
-.transport {
-  align-items: center;
-  display: flex;
-  gap: 0.75rem;
-  margin-bottom: 1rem;
-}
-
-.clock {
-  color: var(--ifm-color-emphasis-700);
-  font-size: 0.85rem;
 }
 
 .steps {

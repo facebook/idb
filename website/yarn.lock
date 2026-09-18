@@ -1178,7 +1178,7 @@
     "@babel/plugin-transform-modules-commonjs" "^7.25.9"
     "@babel/plugin-transform-typescript" "^7.25.9"
 
-"@babel/runtime@>=7.26.10", "@babel/runtime@^7.1.2", "@babel/runtime@^7.10.3", "@babel/runtime@^7.12.13", "@babel/runtime@^7.12.5", "@babel/runtime@^7.25.9", "@babel/runtime@^7.8.4":
+"@babel/runtime@>=7.26.10", "@babel/runtime@^7.1.2", "@babel/runtime@^7.10.3", "@babel/runtime@^7.12.13", "@babel/runtime@^7.12.5", "@babel/runtime@^7.21.0", "@babel/runtime@^7.25.9", "@babel/runtime@^7.8.4":
   version "7.29.2"
   resolved "https://registry.yarnpkg.com/@babel/runtime/-/runtime-7.29.2.tgz#9a6e2d05f4b6692e1801cd4fb176ad823930ed5e"
   integrity sha512-JiDShH45zKHWyGe4ZNVRrCjBz8Nh9TMmZG1kh4QTK8hCBTWBi8Da+i7s1fJw7/lYpM4ccepSNfqzZ/QvABBi5g==
@@ -2764,6 +2764,23 @@
     micromark-util-character "^1.1.0"
     micromark-util-symbol "^1.0.1"
 
+"@solid-primitives/refs@^1.0.5":
+  version "1.1.4"
+  resolved "https://registry.yarnpkg.com/@solid-primitives/refs/-/refs-1.1.4.tgz#d8aef55a51d5141527b6ad151f7c98a207d3b644"
+  integrity sha512-bLjwIs6ZPu8NQnuw04sU3Zc8qKSpbc0umUU/O4SHf6oWOdO4+dHY8vb1T7C4b/Tg103+9WGr6sEE0+NFlbaB/A==
+  dependencies:
+    "@solid-primitives/utils" "^6.4.1"
+
+"@solid-primitives/transition-group@^1.0.2":
+  version "1.1.2"
+  resolved "https://registry.yarnpkg.com/@solid-primitives/transition-group/-/transition-group-1.1.2.tgz#be9af05871a7ca6323277f9782f4aeb20cb7f73f"
+  integrity sha512-gnHS0OmcdjeoHN9n7Khu8KNrOlRc8a2weETDt2YT6o1zeW/XtUC6Db3Q9pkMU/9cCKdEmN4b0a/41MKAHRhzWA==
+
+"@solid-primitives/utils@^6.4.1":
+  version "6.4.1"
+  resolved "https://registry.yarnpkg.com/@solid-primitives/utils/-/utils-6.4.1.tgz#aaa9006ac9dfa7b99b1060ab78669a8723ab2962"
+  integrity sha512-ISSB5QX1qP2ynrheIpYwc4oKR5Ny4siNuUyf1qZniy+Il+p/PtDB0QK1Dnle8noiHpwRD3gpPdubOC3qI/Zamg==
+
 "@svgr/babel-plugin-add-jsx-attribute@8.0.0":
   version "8.0.0"
   resolved "https://registry.yarnpkg.com/@svgr/babel-plugin-add-jsx-attribute/-/babel-plugin-add-jsx-attribute-8.0.0.tgz#4001f5d5dd87fa13303e36ee106e3ff3a7eb8b22"
@@ -3763,6 +3780,15 @@ array-union@^2.1.0:
   resolved "https://registry.yarnpkg.com/array-union/-/array-union-2.1.0.tgz#b798420adbeb1de828d84acd8a2e23d3efe85e8d"
   integrity sha512-HGyxoOTYUyCM6stUe6EJgnd4EoewAI7zMdfqO+kGjnlZmBDz/cR5pf8r/cR4Wq60sL/p0IkcjUEEPwS3GFrIyw==
 
+asciinema-player@^3.17.0:
+  version "3.17.0"
+  resolved "https://registry.yarnpkg.com/asciinema-player/-/asciinema-player-3.17.0.tgz#6d503e2d3648e6775696b288ee49073603b6bc79"
+  integrity sha512-JbjNJmA2TLIeYNaOEja+kVSzXadKoqpIzVVmfBGNj2DmdtE/vExBCnkE8NYEcpaQcDvUYg8Ltt0urT80frACmw==
+  dependencies:
+    "@babel/runtime" "^7.21.0"
+    solid-js "^1.3.0"
+    solid-transition-group "^0.2.3"
+
 asn1js@^3.0.6:
   version "3.0.10"
   resolved "https://registry.yarnpkg.com/asn1js/-/asn1js-3.0.10.tgz#df26c874c8a8b41ca605efea47b2ad07551013dd"
@@ -4610,6 +4636,11 @@ csstype@^3.0.2:
   version "3.1.3"
   resolved "https://registry.yarnpkg.com/csstype/-/csstype-3.1.3.tgz#d80ff294d114fb0e6ac500fbf85b60137d7eff81"
   integrity sha512-M1uQkMl8rQK/szD0LNhtqxIPLpimGm8sOBwU7lLnCpSbTyY3yeU1Vc7l4KT5zT4s/yOxHH5O7tIuuLOCnLADRw==
+
+csstype@^3.1.0:
+  version "3.2.3"
+  resolved "https://registry.yarnpkg.com/csstype/-/csstype-3.2.3.tgz#ec48c0f3e993e50648c86da559e2610995cf989a"
+  integrity sha512-z1HGKcYy2xA8AGQfwrn0PAy+PB7X/GSj3UVJW9qKyn43xWa+gl5nXmU4qqLMRzWVLFC8KusUX8T/0kCiOYpAIQ==
 
 cytoscape-cose-bilkent@^4.1.0:
   version "4.1.0"
@@ -9177,6 +9208,16 @@ serialize-javascript@>=7.0.5, serialize-javascript@^6.0.0, serialize-javascript@
   resolved "https://registry.yarnpkg.com/serialize-javascript/-/serialize-javascript-7.0.5.tgz#c798cc0552ffbb08981914a42a8756e339d0d5b1"
   integrity sha512-F4LcB0UqUl1zErq+1nYEEzSHJnIwb3AF2XWB94b+afhrekOUijwooAYqFyRbjYkm2PAKBabx6oYv/xDxNi8IBw==
 
+seroval-plugins@~1.5.4:
+  version "1.5.6"
+  resolved "https://registry.yarnpkg.com/seroval-plugins/-/seroval-plugins-1.5.6.tgz#7bca495aceb5b2428b9cb44b4b09e67c2de1c948"
+  integrity sha512-HXuLAX2pu/UByPpaeo/TaMfvMIi+1QqIoPJYCcAtU8QkVNwgR6MPlGuCQTErV1JwraaMbYaWVIBX7mppzGLATQ==
+
+seroval@~1.5.4:
+  version "1.5.6"
+  resolved "https://registry.yarnpkg.com/seroval/-/seroval-1.5.6.tgz#68d4f6a05c3bde25daaaea6b7220146ff42353ca"
+  integrity sha512-rVQVWjjSvlINzaQPZH5JFqsqEsIWdTxY3iJZCnTL/5gQbXIRooVZKI60tVCkOVfzcRPejboxO2t0P89dg5mQaA==
+
 serve-handler@^6.1.7:
   version "6.1.7"
   resolved "https://registry.yarnpkg.com/serve-handler/-/serve-handler-6.1.7.tgz#e9bb864e87ee71e8dab874cde44d146b77e3fb78"
@@ -9366,6 +9407,23 @@ sockjs@^0.3.24:
     faye-websocket "^0.11.3"
     uuid "^8.3.2"
     websocket-driver "^0.7.4"
+
+solid-js@^1.3.0:
+  version "1.9.15"
+  resolved "https://registry.yarnpkg.com/solid-js/-/solid-js-1.9.15.tgz#209cbd4e0c7108d1e9bd1537ea7f91e03277a763"
+  integrity sha512-EeiY2xfpZJqPLjXspVEKjAII4yv8NyG//NxZ3IpOFHdUNnnTyL0uJOeS9LWGvA7cFCz5y94cjFwYlmw5Luncsg==
+  dependencies:
+    csstype "^3.1.0"
+    seroval "~1.5.4"
+    seroval-plugins "~1.5.4"
+
+solid-transition-group@^0.2.3:
+  version "0.2.3"
+  resolved "https://registry.yarnpkg.com/solid-transition-group/-/solid-transition-group-0.2.3.tgz#ef441d9e4620cddc4d29cdbc958b09f94db515c4"
+  integrity sha512-iB72c9N5Kz9ykRqIXl0lQohOau4t0dhel9kjwFvx81UZJbVwaChMuBuyhiZmK24b8aKEK0w3uFM96ZxzcyZGdg==
+  dependencies:
+    "@solid-primitives/refs" "^1.0.5"
+    "@solid-primitives/transition-group" "^1.0.2"
 
 sort-css-media-queries@2.2.0:
   version "2.2.0"

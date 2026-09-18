@@ -7,6 +7,7 @@
 
 import React, {useCallback, useEffect, useRef, useState} from 'react';
 import useBaseUrl from '@docusaurus/useBaseUrl';
+import 'asciinema-player/dist/bundle/asciinema-player.css';
 import styles from './styles.module.css';
 
 const SAFE_ARGUMENT = /^[A-Za-z0-9_@%+=:,./-]+$/;
@@ -16,10 +17,19 @@ const SAFE_ARGUMENT = /^[A-Za-z0-9_@%+=:,./-]+$/;
 const FOLD_LINES = 12;
 const EXCERPT_LINES = 8;
 
-// How often the terminal's own clock advances when there is no clip to take
-// the time from. Close enough that a command appears when it ran, and slow
-// enough that a page of demos is not re-rendering constantly.
-const TICK_MILLISECONDS = 100;
+// How far the terminal and the clip may drift apart before the terminal is
+// pulled back to the clip. Small enough that a command still appears while
+// the screen is doing it, wide enough that a playing terminal is not seeked
+// on every reading.
+const DRIFT_SECONDS = 0.5;
+
+// The terminal reports no event for being scrubbed, so its clock is read
+// instead. A jump larger than this between two readings is someone dragging
+// its scrubber rather than it playing.
+const GESTURE_SECONDS = 0.4;
+
+// How often that clock is read.
+const POLL_MILLISECONDS = 100;
 
 // Where the clip and the terminal are side by side, and the terminal scrolls
 // within its own column. Matches the stylesheet's breakpoint.
@@ -33,6 +43,15 @@ function quote(argument) {
 
 function commandLine(argv) {
   return argv.map(quote).join(' ');
+}
+
+// Both players return a promise from play() that rejects when the browser
+// declines to start, which is not a failure worth reporting anywhere.
+function started(what) {
+  const playing = what.play();
+  if (playing && typeof playing.catch === 'function') {
+    playing.catch(() => {});
+  }
 }
 
 function clamp(seconds, duration) {
@@ -53,89 +72,6 @@ function stepAt(commands, seconds) {
     }
   }
   return found;
-}
-
-// One timeline for the demo, whatever is driving it.
-//
-// A demo with a clip is driven by the clip: the element is the clock and its
-// own controls are the transport, and this only reads it. Nothing here writes
-// `currentTime` except an explicit seek, so a time update cannot feed back
-// into a seek that produces another time update.
-//
-// A demo whose clip could not be cut has no element to take the time from, so
-// the terminal runs its own clock over the session's duration and carries its
-// own transport.
-function useTimeline(player, duration, driven) {
-  const [seconds, setSeconds] = useState(0);
-  const [playing, setPlaying] = useState(false);
-
-  // The clock advances the timeline by however long each tick took, rather
-  // than from an origin taken when it started: a seek while playing — which
-  // is what restarting is — moves the timeline under a clock that is already
-  // running, and an origin would drag it back to where the seek began.
-  useEffect(() => {
-    if (driven || !playing) {
-      return undefined;
-    }
-    let previous = Date.now();
-    const tick = setInterval(() => {
-      const now = Date.now();
-      const elapsed = (now - previous) / 1000;
-      previous = now;
-      setSeconds((was) => clamp(was + elapsed, duration));
-    }, TICK_MILLISECONDS);
-    return () => clearInterval(tick);
-  }, [driven, playing, duration]);
-
-  // Reaching the end stops the clock rather than leaving it running against a
-  // timeline that cannot advance.
-  useEffect(() => {
-    if (!driven && playing && seconds >= duration) {
-      setPlaying(false);
-    }
-  }, [driven, playing, seconds, duration]);
-
-  const seek = useCallback(
-    (to, andPlay) => {
-      const at = clamp(to, duration);
-      const element = player.current;
-      if (element) {
-        element.currentTime = at;
-        if (andPlay) {
-          const started = element.play();
-          if (started && typeof started.catch === 'function') {
-            started.catch(() => {});
-          }
-        }
-        return;
-      }
-      setSeconds(at);
-      if (andPlay) {
-        setPlaying(true);
-      }
-    },
-    [duration, player]
-  );
-
-  const toggle = useCallback(() => {
-    const element = player.current;
-    if (element) {
-      if (element.paused) {
-        const started = element.play();
-        if (started && typeof started.catch === 'function') {
-          started.catch(() => {});
-        }
-      } else {
-        element.pause();
-      }
-      return;
-    }
-    setPlaying((was) => !was);
-  }, [player]);
-
-  const restart = useCallback(() => seek(0, true), [seek]);
-
-  return {seconds, setSeconds, playing, setPlaying, seek, toggle, restart};
 }
 
 // Output that is JSON reads better laid out than on the one line a command
@@ -386,30 +322,202 @@ function Declaration({source}) {
   );
 }
 
-function Demo({demo}) {
-  const player = useRef(null);
-  const video = demo.video;
-  const terminal = demo.terminal;
-  const duration = video ? video.duration : terminal.duration;
-  const source = useBaseUrl(video ? video.source : '/');
-  const poster = useBaseUrl(demo.poster || '/');
-  const session = useBaseUrl(terminal.source);
-  const {seconds, setSeconds, playing, setPlaying, seek, toggle, restart} =
-    useTimeline(player, duration, Boolean(video));
+// The terminal, the clip, and the step the two of them are in.
+//
+// The clip is the timeline of record when there is one. The terminal follows
+// it, and a gesture made on the terminal — dragging its scrubber, clicking a
+// step's marker, pressing its play button — is turned into the same gesture on
+// the clip, which then propagates back. Only one of them is ever written to as
+// a consequence of the other having moved, so neither can drive the other in a
+// loop. A demo whose clip could not be cut has no clip to defer to, and the
+// terminal is the timeline itself.
+function useSynchronised(clip, terminal, duration) {
+  const [seconds, setSeconds] = useState(0);
+  const playing = useRef(false);
+  // What the terminal's clock read when it was last looked at, and when. The
+  // next reading is measured against where playing alone would have carried
+  // it from here.
+  const read = useRef({at: 0, seconds: 0});
 
-  // The clip is the clock when there is one: this reads the element's time
-  // and never writes it, so the two cannot drive each other in a loop.
-  const onTime = useCallback(
-    (event) => {
-      const element = event.currentTarget;
-      setSeconds(clamp(element.currentTime, duration));
-      setPlaying(!element.paused);
+  const track = useCallback((at) => {
+    read.current = {at: Date.now(), seconds: at};
+  }, []);
+
+  useEffect(() => {
+    const tick = setInterval(() => {
+      const player = terminal.current;
+      if (!player) {
+        return;
+      }
+      const at = player.getCurrentTime();
+      const screen = clip.current;
+      if (!screen) {
+        setSeconds(clamp(at, duration));
+        track(at);
+        return;
+      }
+      const elapsed = playing.current ? (Date.now() - read.current.at) / 1000 : 0;
+      if (Math.abs(at - (read.current.seconds + elapsed)) > GESTURE_SECONDS) {
+        screen.currentTime = clamp(at, duration);
+        track(at);
+        return;
+      }
+      if (Math.abs(at - screen.currentTime) > DRIFT_SECONDS) {
+        player.seek(screen.currentTime);
+        track(screen.currentTime);
+        return;
+      }
+      track(at);
+    }, POLL_MILLISECONDS);
+    return () => clearInterval(tick);
+  }, [clip, terminal, duration, track]);
+
+  // The terminal's transport, mirrored onto the clip. Asking a player to do
+  // what it is already doing is not an event, so these settle rather than
+  // bouncing between the two.
+  const transport = useCallback(
+    (isPlaying) => {
+      playing.current = isPlaying;
+      const screen = clip.current;
+      if (!screen || screen.paused !== isPlaying) {
+        return;
+      }
+      if (isPlaying) {
+        started(screen);
+      } else {
+        screen.pause();
+      }
     },
-    [duration, setPlaying, setSeconds]
+    [clip]
   );
 
-  const select = useCallback((start) => seek(start, true), [seek]);
-  const current = stepAt(demo.commands, seconds);
+  // And the clip's transport, mirrored onto the terminal. Its time is only
+  // read here; the interval above is what carries it to the terminal.
+  const watch = useCallback(
+    (event) => {
+      const screen = event.currentTarget;
+      setSeconds(clamp(screen.currentTime, duration));
+      const player = terminal.current;
+      if (!player || screen.paused === !playing.current) {
+        return;
+      }
+      if (screen.paused) {
+        player.pause();
+      } else {
+        started(player);
+      }
+    },
+    [duration, terminal]
+  );
+
+  // A step, from either side at once, so neither has to notice the other.
+  const select = useCallback(
+    (at) => {
+      const player = terminal.current;
+      if (player) {
+        player.seek(at);
+        started(player);
+        track(at);
+      }
+      const screen = clip.current;
+      if (screen) {
+        screen.currentTime = clamp(at, duration);
+        started(screen);
+        return;
+      }
+      setSeconds(clamp(at, duration));
+    },
+    [clip, terminal, duration, track]
+  );
+
+  return {seconds, transport, watch, select};
+}
+
+// The recorded terminal, played in the page rather than downloaded to be
+// played elsewhere. Its scrubber carries a marker per step, so the steps are
+// on the timeline and can be jumped between from it.
+//
+// It is built in an effect and so never on the server: the transcript below
+// is what a reader without JavaScript gets, and it is the whole of the demo
+// in text. Nothing readable depends on this loading.
+function Terminal({source, onReady, onTransport}) {
+  const box = useRef(null);
+  const [failed, setFailed] = useState(false);
+
+  useEffect(() => {
+    let player = null;
+    let gone = false;
+    import('asciinema-player')
+      .then((asciinema) => {
+        if (gone || !box.current) {
+          return;
+        }
+        player = asciinema.create(source, box.current, {
+          fit: 'width',
+          terminalFontSize: 'small',
+          // A marker is where a step begins, not somewhere to stop: the clip
+          // beside it keeps running either way.
+          pauseOnMarkers: false,
+          preload: true,
+          poster: 'npt:0:0',
+        });
+        player.addEventListener('play', () => onTransport(true));
+        player.addEventListener('playing', () => onTransport(true));
+        player.addEventListener('pause', () => onTransport(false));
+        player.addEventListener('ended', () => onTransport(false));
+        onReady(player);
+      })
+      .catch(() => setFailed(true));
+    return () => {
+      gone = true;
+      onReady(null);
+      if (player) {
+        player.dispose();
+      }
+    };
+  }, [source, onReady, onTransport]);
+
+  return (
+    <div className={styles.terminal}>
+      <div ref={box} />
+      {failed ? (
+        <p className={styles.empty}>
+          The terminal could not be played here.{' '}
+          <a href={source} download>
+            Download it as an asciicast
+          </a>{' '}
+          to play it locally.
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
+function Demo({demo}) {
+  const clip = useRef(null);
+  const terminal = useRef(null);
+  const [ready, setReady] = useState(false);
+  const video = demo.video;
+  const duration = video ? video.duration : demo.terminal.duration;
+  const source = useBaseUrl(video ? video.source : '/');
+  const poster = useBaseUrl(demo.poster || '/');
+  const session = useBaseUrl(demo.terminal.source);
+  const {seconds, transport, watch, select} = useSynchronised(
+    clip,
+    terminal,
+    duration
+  );
+
+  const onReady = useCallback((player) => {
+    terminal.current = player;
+    setReady(Boolean(player));
+  }, []);
+
+  // Without a clip and without the terminal there is no clock, and no step
+  // the demo can be said to be in. Every step then reads as finished, which
+  // is what it is: this is a transcript of a run that already happened.
+  const clocked = Boolean(video) || ready;
+  const current = clocked ? stepAt(demo.commands, seconds) : -1;
 
   return (
     <section className={styles.demo} aria-labelledby={`${demo.slug}-title`}>
@@ -422,44 +530,39 @@ function Demo({demo}) {
             video={video}
             source={source}
             poster={poster}
-            player={player}
-            onTime={onTime}
+            player={clip}
+            onTime={watch}
           />
         </div>
         <div className={styles.session}>
-          {video ? null : (
-            <div className={styles.transport}>
-              <button type="button" className={styles.play} onClick={toggle}>
-                {playing ? 'Pause' : 'Play'}
-              </button>
-              <button type="button" className={styles.play} onClick={restart}>
-                Restart
-              </button>
-              <span className={styles.clock}>
-                {seconds.toFixed(1)}s of {duration.toFixed(1)}s
-              </span>
-            </div>
-          )}
-          <ol className={styles.steps}>
-            {demo.commands.map((command, index) => (
-              <Step
-                key={`${demo.slug}-${index}`}
-                command={command}
-                index={index}
-                current={current === index}
-                printed={command.finished <= seconds}
-                seekable={Boolean(video)}
-                onSelect={select}
-              />
-            ))}
-          </ol>
-          <p className={styles.empty}>
-            <a href={session} download>
-              Download this terminal session
-            </a>{' '}
-            as an asciicast.
-          </p>
-          <Declaration source={demo.source} />
+          <Terminal
+            source={session}
+            onReady={onReady}
+            onTransport={transport}
+          />
+          <div className={styles.scroller}>
+            <ol className={styles.steps}>
+              {demo.commands.map((command, index) => (
+                <Step
+                  key={`${demo.slug}-${index}`}
+                  command={command}
+                  index={index}
+                  current={current === index}
+                  printed={!clocked || command.finished <= seconds}
+                  seekable={clocked}
+                  onSelect={select}
+                />
+              ))}
+            </ol>
+            <p className={styles.empty}>
+              The terminal above is an{' '}
+              <a href={session} download>
+                asciicast
+              </a>
+              , recorded as the test ran.
+            </p>
+            <Declaration source={demo.source} />
+          </div>
         </div>
       </div>
     </section>
