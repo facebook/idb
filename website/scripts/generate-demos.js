@@ -31,8 +31,9 @@ const STREAM_KEYS = ['stdout', 'stderr'];
 // each command's exit code, offset and duration, and each clip's size and
 // length. A manifest missing one of these renders NaN or throws in the
 // browser, so it fails the build here instead.
-const COMMAND_NUMBERS = ['returncode', 'start', 'seconds'];
+const COMMAND_NUMBERS = ['returncode', 'start', 'finished', 'seconds'];
 const VIDEO_NUMBERS = ['width', 'height', 'duration'];
+const TERMINAL_NUMBERS = ['columns', 'rows', 'duration'];
 
 function sourceDirectory(env) {
   const named = env[DEMOS_DIR_ENV];
@@ -85,6 +86,29 @@ function problemsWithClip(name, video) {
   return problems;
 }
 
+// The terminal session the page plays beside the clip. Every demo has one,
+// whether or not its clip could be cut, because it is written from the trace
+// rather than from the recording.
+function problemsWithTerminal(name, terminal) {
+  const problems = [];
+  if (typeof terminal.source !== 'string' || terminal.source === '') {
+    problems.push(`${name} has a terminal session with no source`);
+  } else if (!inside(terminal.source)) {
+    problems.push(
+      `${name} has a terminal session at ${terminal.source}, outside the run`
+    );
+  }
+  if (typeof terminal.type !== 'string' || terminal.type === '') {
+    problems.push(`${name} has a terminal session with no type`);
+  }
+  for (const key of TERMINAL_NUMBERS) {
+    if (!isNumber(terminal[key])) {
+      problems.push(`${name} has a terminal session with no ${key}`);
+    }
+  }
+  return problems;
+}
+
 function problemsWithCommands(name, commands) {
   const problems = [];
   for (const command of commands) {
@@ -112,11 +136,15 @@ function problemsWithCommands(name, commands) {
   return problems;
 }
 
-// Everything the site serves out of a run: each demo's clip, when it has one,
-// and each demo's poster.
+// Everything the site serves out of a run: each demo's clip, when it has
+// one, its terminal session, and its poster.
 function media(manifest) {
   return manifest.demos
-    .flatMap((demo) => [((demo || {}).video || {}).source, (demo || {}).poster])
+    .flatMap((demo) => [
+      ((demo || {}).video || {}).source,
+      ((demo || {}).terminal || {}).source,
+      (demo || {}).poster,
+    ])
     .filter(Boolean);
 }
 
@@ -157,6 +185,12 @@ function problemsWith(manifest) {
     // so a missing clip is a demo to publish rather than a manifest to refuse.
     if (video !== null && video !== undefined) {
       problems.push(...problemsWithClip(name, video));
+    }
+    const terminal = (demo || {}).terminal;
+    if (typeof terminal !== 'object' || terminal === null) {
+      problems.push(`${name} publishes no terminal session`);
+    } else {
+      problems.push(...problemsWithTerminal(name, terminal));
     }
     const poster = (demo || {}).poster;
     if (poster !== null && poster !== undefined) {
@@ -265,6 +299,7 @@ function generate(options) {
       video: demo.video
         ? {...demo.video, source: served(demo.video.source)}
         : null,
+      terminal: {...demo.terminal, source: served(demo.terminal.source)},
     })),
   };
 

@@ -11,8 +11,23 @@
   padding-top: 1rem;
 }
 
+/* The clip beside the terminal it plays with: one column sized for a
+   portrait simulator, the other taking what is left. Below the width where
+   two columns would each be too narrow to read, they become one. */
+.stage {
+  align-items: start;
+  display: grid;
+  gap: 1.5rem;
+  grid-template-columns: minmax(0, 20rem) minmax(0, 1fr);
+}
+
+.screen {
+  position: sticky;
+  top: calc(var(--ifm-navbar-height) + 1rem);
+}
+
 .figure {
-  margin: 0 0 1.5rem;
+  margin: 0;
 }
 
 .video,
@@ -24,20 +39,62 @@
   max-width: 100%;
 }
 
+.session {
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+@media (max-width: 996px) {
+  .stage {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .screen {
+    position: static;
+  }
+
+  .session {
+    max-height: none;
+    overflow-y: visible;
+  }
+}
+
+.transport {
+  align-items: center;
+  display: flex;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.clock {
+  color: var(--ifm-color-emphasis-700);
+  font-size: 0.85rem;
+}
+
 .steps {
   list-style: decimal;
   padding-left: 1.5rem;
 }
 
 .step,
-.stepSelected {
+.stepCurrent {
   border-left: 3px solid transparent;
   margin-bottom: 1.5rem;
   padding-left: 0.75rem;
 }
 
-.stepSelected {
+.stepCurrent {
   border-left-color: var(--ifm-color-primary);
+}
+
+/* Output a command had not printed yet at this point of the timeline. It
+   stays in the document — the page is a transcript first — and is marked
+   beside rather than faded: a reader without JavaScript sees every line at
+   full contrast, and nothing anyone can read depends on the clip playing. */
+.pending {
+  border-left: 2px dashed var(--ifm-color-emphasis-300);
+  margin-left: -0.75rem;
+  padding-left: 0.5rem;
 }
 
 .stepHeader {
@@ -67,10 +124,9 @@
   background: var(--ifm-color-emphasis-200);
 }
 
-.play[aria-current='true'] {
-  background: var(--ifm-color-primary);
-  border-color: var(--ifm-color-primary);
-  color: var(--ifm-color-white);
+.prompt {
+  color: var(--ifm-color-emphasis-600);
+  user-select: none;
 }
 
 .label {
@@ -87,8 +143,7 @@
 }
 
 .empty,
-.exit,
-.provenance {
+.exit {
   color: var(--ifm-color-emphasis-700);
   font-size: 0.85rem;
 }

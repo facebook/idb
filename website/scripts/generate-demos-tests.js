@@ -36,12 +36,20 @@ function demoFixture(slug, test, duration) {
       height: 1278,
       duration,
     },
+    terminal: {
+      source: `media/${slug}.cast`,
+      type: 'application/x-asciicast',
+      columns: 100,
+      rows: 24,
+      duration,
+    },
     commands: [
       {
         step: 'Open a URL on the simulator',
         argv: ['idb', 'open', 'https://example.com'],
         returncode: 0,
         start: 4.58,
+        finished: 5.0,
         seconds: 0.42,
         stdout: {bytes: 0, text: '', truncated: false},
         stderr: {bytes: 0, text: '', truncated: false},
@@ -74,6 +82,10 @@ function scratch(manifest) {
     for (const slug of [SLUG, OTHER_SLUG]) {
       fs.writeFileSync(path.join(source, 'media', `${slug}.mp4`), `a clip of ${slug}`);
       fs.writeFileSync(path.join(source, 'media', `${slug}.png`), 'a screenshot');
+      fs.writeFileSync(
+        path.join(source, 'media', `${slug}.cast`),
+        `{"version": 2}\n[0.0, "o", "$ idb ${slug}\\r\\n"]\n`
+      );
     }
   }
   return {websiteDir, source};
@@ -145,8 +157,10 @@ test("serves each demo's clip and poster as static files", () => {
   assert.deepStrictEqual(
     fs.readdirSync(path.join(websiteDir, 'static', 'demos', 'media')).sort(),
     [
+      'open-a-url.cast',
       'open-a-url.mp4',
       'open-a-url.png',
+      'scroll-a-list.cast',
       'scroll-a-list.mp4',
       'scroll-a-list.png',
     ]
@@ -199,7 +213,13 @@ test('forgets the media an earlier run published', () => {
   );
   run(websiteDir, {IDB_DEMOS_DIR: source});
 
-  assert.ok(!fs.existsSync(path.join(websiteDir, 'static', 'demos', 'media')));
+  // Every demo still publishes its terminal session, which is written from
+  // the run's trace rather than from a recording, so what a run with no clip
+  // and no poster leaves behind is the sessions and nothing else.
+  assert.deepStrictEqual(
+    fs.readdirSync(path.join(websiteDir, 'static', 'demos', 'media')).sort(),
+    ['open-a-url.cast', 'scroll-a-list.cast']
+  );
 });
 
 test('builds an empty page when no run is beside the site', () => {
@@ -279,8 +299,85 @@ test('fails when a demo names a clip with nothing to play', () => {
   );
 });
 
+test('plays a terminal session beside each demo', () => {
+  const {websiteDir, source} = scratch(manifestFixture());
+
+  const published = run(websiteDir, {IDB_DEMOS_DIR: source});
+
+  assert.deepStrictEqual(
+    published.demos.map((demo) => demo.terminal.source),
+    ['/demos/media/open-a-url.cast', '/demos/media/scroll-a-list.cast']
+  );
+  assert.strictEqual(published.demos[0].terminal.type, 'application/x-asciicast');
+});
+
+test('plays a terminal session for a demo whose clip could not be cut', () => {
+  const manifest = manifestFixture();
+  manifest.demos[0].video = null;
+  const {websiteDir, source} = scratch(manifest);
+
+  const published = run(websiteDir, {IDB_DEMOS_DIR: source});
+
+  assert.strictEqual(published.demos[0].video, null);
+  assert.strictEqual(
+    published.demos[0].terminal.source,
+    '/demos/media/open-a-url.cast'
+  );
+  assert.strictEqual(
+    read(websiteDir, 'static', 'demos', 'media', 'open-a-url.cast').split('\n')[0],
+    '{"version": 2}'
+  );
+});
+
+test('fails when a demo publishes no terminal session', () => {
+  const manifest = manifestFixture();
+  delete manifest.demos[0].terminal;
+  const {websiteDir, source} = scratch(manifest);
+
+  assert.throws(
+    () => run(websiteDir, {IDB_DEMOS_DIR: source}),
+    /open-a-url publishes no terminal session/
+  );
+});
+
+test('fails when a terminal session has nothing to play', () => {
+  const manifest = manifestFixture();
+  delete manifest.demos[0].terminal.source;
+  const {websiteDir, source} = scratch(manifest);
+
+  assert.throws(
+    () => run(websiteDir, {IDB_DEMOS_DIR: source}),
+    /open-a-url has a terminal session with no source/
+  );
+});
+
+test('fails when a terminal session lost a number the page reads', () => {
+  for (const key of ['columns', 'rows', 'duration']) {
+    const manifest = manifestFixture();
+    delete manifest.demos[0].terminal[key];
+    const {websiteDir, source} = scratch(manifest);
+
+    assert.throws(
+      () => run(websiteDir, {IDB_DEMOS_DIR: source}),
+      new RegExp(`has a terminal session with no ${key}`),
+      key
+    );
+  }
+});
+
+test('refuses a terminal session from outside the run', () => {
+  const manifest = manifestFixture();
+  manifest.demos[0].terminal.source = '../../elsewhere/session.cast';
+  const {websiteDir, source} = scratch(manifest);
+
+  assert.throws(
+    () => run(websiteDir, {IDB_DEMOS_DIR: source}),
+    /has a terminal session at \.\.\/\.\.\/elsewhere\/session\.cast, outside the run/
+  );
+});
+
 test('fails when a command lost a number the page prints', () => {
-  for (const key of ['returncode', 'start', 'seconds']) {
+  for (const key of ['returncode', 'start', 'finished', 'seconds']) {
     const manifest = manifestFixture();
     manifest.demos[0].commands[0][key] = 'not a number';
     const {websiteDir, source} = scratch(manifest);
