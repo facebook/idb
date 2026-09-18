@@ -14,7 +14,6 @@ IDBGRPCSwift/*.swift
 
 ## Build & Test Generated
 Build/
-fbsimctl/cli-tests/executable-under-test
 DerivedData
 libMaculator.dylib
 libShimulator.dylib
@@ -54,9 +53,6 @@ xcuserdata/
 
 Carthage/Build
 Carthage/Checkouts
-fbsimctl/Carthage/Build
-fbsimctl/Carthage/Checkouts
-fbsimctl/cli-tests/supports_metal
 
 output/
 .clang-format
