@@ -14,7 +14,7 @@ import Foundation
 enum DefaultsModificationError: Error, CustomStringConvertible {
   case couldNotCreateDirectory(plist: String, underlying: Error)
   case couldNotWritePlist(String)
-  case invalidState(FBTargetState, action: String)
+  case invalidState(TargetState, action: String)
   case commandFailed(command: String, exitCode: Int32, stderr: String)
   case noDataDirectory
 

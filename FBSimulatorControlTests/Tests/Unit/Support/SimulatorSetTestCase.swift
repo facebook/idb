@@ -23,9 +23,9 @@ class SimulatorSetTestCase: XCTestCase {
       let uuid = simulatorSpec["uuid"] as? NSUUID ?? NSUUID()
       let os = simulatorSpec["os"] as? String ?? "iOS 9.0"
       let version = os.components(separatedBy: CharacterSet.whitespaces).last ?? os
-      let state: FBTargetState
+      let state: TargetState
       if let stateRaw = simulatorSpec["state"] as? UInt {
-        state = FBTargetState(rawValue: stateRaw)!
+        state = TargetState(rawValue: stateRaw)!
       } else {
         state = .shutdown
       }

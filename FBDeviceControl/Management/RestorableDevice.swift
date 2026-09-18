@@ -78,7 +78,7 @@ public final class RestorableDevice: TargetInfo, DeviceProtocol {
     allValues[DeviceKey.deviceName.rawValue] as? String ?? UnknownValue
   }
 
-  public var state: FBTargetState {
+  public var state: TargetState {
     Self.targetState(for: AMRestorableDeviceState(rawValue: calls.RestorableDeviceGetState(restorableDevice)) ?? .unknown)
   }
 
@@ -91,7 +91,7 @@ public final class RestorableDevice: TargetInfo, DeviceProtocol {
     [Architecture(rawValue: UnknownValue)]
   }
 
-  public var targetType: FBTargetType {
+  public var targetType: TargetType {
     .device
   }
 
@@ -126,7 +126,7 @@ public final class RestorableDevice: TargetInfo, DeviceProtocol {
   }
 
   /// `AMRestorableGetStringForState` is private, and the mapping is simple enough to restate.
-  public class func targetState(for state: AMRestorableDeviceState) -> FBTargetState {
+  public class func targetState(for state: AMRestorableDeviceState) -> TargetState {
     switch state {
     case .DFU:
       return .DFU

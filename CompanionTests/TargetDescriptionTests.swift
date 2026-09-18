@@ -18,8 +18,8 @@ private final class FutureTarget: TargetInfo {
   let architectures: [Architecture] = []
   let osVersion = OSVersion(name: OSVersionName(rawValue: "FutureOS 99.10"), versionString: "99.10")
   let extendedInformation: [String: Any] = ["custom": "preserved"]
-  let targetType: FBTargetType = .simulator
-  let state: FBTargetState = .shutdown
+  let targetType: TargetType = .simulator
+  let state: TargetState = .shutdown
 }
 
 struct TargetDescriptionTests {

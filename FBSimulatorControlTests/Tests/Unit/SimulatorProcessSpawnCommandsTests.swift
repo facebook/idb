@@ -15,7 +15,7 @@ import XCTest
 /// is that the device is never reached.
 final class SimulatorProcessSpawnCommandsTests: XCTestCase {
 
-  private func simulator(state: FBTargetState) -> Simulator {
+  private func simulator(state: TargetState) -> Simulator {
     SimulatorTestSupport.testableSimulator(withDevice: StubStateDevice(state: state))
   }
 
@@ -165,7 +165,7 @@ private final class StubStateDevice {
   @objc(UDID) let udid = NSUUID()
   @objc let state: UInt64
 
-  init(state: FBTargetState) {
+  init(state: TargetState) {
     self.state = UInt64(state.rawValue)
   }
 }
@@ -176,7 +176,7 @@ private final class StubStateDevice {
 /// assertion rather than as a timeout.
 private final class RecordingSpawnDevice: @unchecked Sendable {
   @objc(UDID) let udid = NSUUID()
-  @objc let state = UInt64(FBTargetState.booted.rawValue)
+  @objc let state = UInt64(TargetState.booted.rawValue)
 
   private(set) var spawnedOptions: [String: Any]?
 

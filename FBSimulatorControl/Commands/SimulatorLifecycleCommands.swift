@@ -60,14 +60,14 @@ public final class SimulatorLifecycleCommands: LifecycleCommands {
     try await SimulatorBootStrategy.boot(simulator, with: configuration)
   }
 
-  public func resolveState(_ state: FBTargetState) async throws {
+  public func resolveState(_ state: TargetState) async throws {
     guard let simulator = self.simulator else {
       throw WeakTargetError.simulator
     }
     try await TargetResolveState(simulator, state)
   }
 
-  public func resolveLeavesState(_ state: FBTargetState) async throws {
+  public func resolveLeavesState(_ state: TargetState) async throws {
     guard let simulator = self.simulator else {
       throw WeakTargetError.simulator
     }

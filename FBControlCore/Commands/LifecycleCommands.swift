@@ -9,7 +9,7 @@ import Foundation
 
 public protocol LifecycleCommands {
 
-  func resolveState(_ state: FBTargetState) async throws
+  func resolveState(_ state: TargetState) async throws
 
-  func resolveLeavesState(_ state: FBTargetState) async throws
+  func resolveLeavesState(_ state: TargetState) async throws
 }

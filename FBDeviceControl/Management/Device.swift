@@ -59,13 +59,13 @@ public final class Device: Target, DeviceCommands, CustomStringConvertible {
   private var cachedArchitectures: [Architecture]?
   private var cachedOSVersion: OSVersion?
   private var cachedExtendedInformation: [String: Any]?
-  private var cachedTargetType: FBTargetType?
+  private var cachedTargetType: TargetType?
   private var cachedBuildVersion: String?
   private var cachedProductVersion: String?
   private var cachedActivationState: String?
   private var cachedAllValues: [String: Any]?
 
-  public private(set) var state: FBTargetState = .unknown
+  public private(set) var state: TargetState = .unknown
 
   public var uniqueIdentifier: String { cachedUniqueIdentifier ?? "" }
   public var udid: String { cachedUDID ?? "" }
@@ -74,7 +74,7 @@ public final class Device: Target, DeviceCommands, CustomStringConvertible {
   public var architectures: [Architecture] { cachedArchitectures ?? [] }
   public var osVersion: OSVersion { cachedOSVersion ?? OSVersion.generic(withName: "unknown") }
   public var extendedInformation: [String: Any] { cachedExtendedInformation ?? [:] }
-  public var targetType: FBTargetType { cachedTargetType ?? .none }
+  public var targetType: TargetType { cachedTargetType ?? .none }
   public var buildVersion: String? { cachedBuildVersion }
   public var productVersion: String? { cachedProductVersion }
   public var activationState: String { cachedActivationState ?? "" }

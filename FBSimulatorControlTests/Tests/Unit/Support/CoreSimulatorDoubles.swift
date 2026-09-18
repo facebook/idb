@@ -64,7 +64,7 @@ class SimDeviceDouble: NSObject {
   /// Mirrors the real `SimDevice`, which vends this as a string to the Objective-C runtime.
   @objc var stateString: String {
     // A state the enum does not name reads as unknown, rather than trapping the whole suite.
-    return (FBTargetState(rawValue: UInt(state)) ?? .unknown).stateString.rawValue
+    return (TargetState(rawValue: UInt(state)) ?? .unknown).stateString.rawValue
   }
 }
 

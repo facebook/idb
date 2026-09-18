@@ -46,10 +46,10 @@ public protocol TargetInfo: AnyObject {
   var extendedInformation: [String: Any] { get }
 
   /// The Type of the iOS Target
-  var targetType: FBTargetType { get }
+  var targetType: TargetType { get }
 
   /// The State of the iOS Target. Currently only applies to Simulators.
-  var state: FBTargetState { get }
+  var state: TargetState { get }
 
   /// A Comparison Method for `sortedArrayUsingSelector:`
   func compare(_ target: any TargetInfo) -> ComparisonResult
@@ -188,7 +188,31 @@ public protocol Target: TargetInfo, TargetCommand {
   func environmentAdditions() -> [String: String]
 }
 
-/// String representations of `FBTargetState`.
+// MARK: - Target state and type
+
+/// The lifecycle state of a target. Raw values match CoreSimulator's device states and are not stable
+/// across releases; `TargetStateString` is the form that gets serialised.
+public enum TargetState: UInt, Sendable, CaseIterable {
+  case creating = 0
+  case shutdown = 1
+  case booting = 2
+  case booted = 3
+  case shuttingDown = 4
+  case DFU = 5
+  case recovery = 6
+  case restoreOS = 7
+  case unknown = 99
+}
+
+/// The kind of a target.
+public enum TargetType: UInt, Sendable, CaseIterable {
+  case none = 0
+  case simulator = 1
+  case device = 2
+  case localMac = 4
+}
+
+/// String representations of `TargetState`.
 ///
 /// The state enum's numeric values are not stable across releases; these strings are, and are what
 /// gets serialised.
@@ -206,7 +230,7 @@ public enum TargetStateString: String, Sendable, CaseIterable {
 
 // MARK: - State conversions
 
-extension FBTargetState {
+extension TargetState {
 
   /// The canonical string representation of the state enum.
   public var stateString: TargetStateString {
@@ -229,33 +253,31 @@ extension FBTargetState {
       return .restoreOS
     case .unknown:
       return .unknown
-    @unknown default:
-      return .unknown
     }
   }
 }
 
-extension FBTargetType {
+extension TargetType {
 
   /// The canonical string representation of the target type.
   public var stringRepresentation: String {
-    if self == .device {
+    switch self {
+    case .device:
       return "Device"
-    }
-    if self == .simulator {
+    case .simulator:
       return "Simulator"
-    }
-    if self == .localMac {
+    case .localMac:
       return "Mac"
+    case .none:
+      return "Unknown"
     }
-    return "Unknown"
   }
 }
 
 extension ProductFamily {
 
   /// The canonical string representation of the product family (the device "type": iphone, ipad,
-  /// watch, tv, mac), distinct from the simulator/device/mac distinction of FBTargetType.
+  /// watch, tv, mac), distinct from the simulator/device/mac distinction of TargetType.
   public var stringRepresentation: String {
     switch self {
     case .iPhone:
@@ -295,7 +317,7 @@ public func TargetPredicateForUDIDs(_ udids: [String]) -> NSPredicate {
 /// - Parameter deadline: How long to wait for. Waits indefinitely when `nil`.
 public func TargetResolveState(
   _ target: any Target,
-  _ state: FBTargetState,
+  _ state: TargetState,
   deadline: PollDeadline? = nil
 ) async throws {
   let box = TargetBox(target)
@@ -307,7 +329,7 @@ public func TargetResolveState(
 /// - Parameter deadline: How long to wait for. Waits indefinitely when `nil`.
 public func TargetResolveLeavesState(
   _ target: any Target,
-  _ state: FBTargetState,
+  _ state: TargetState,
   deadline: PollDeadline? = nil
 ) async throws {
   let box = TargetBox(target)

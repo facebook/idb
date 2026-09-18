@@ -298,7 +298,7 @@ public struct SimulatorApplicationCommands: ApplicationCommands {
   }
 
   static func confirmApplicationInstallTargetIsReady(
-    state: FBTargetState,
+    state: TargetState,
     stateDescription: String,
     checkAvailability: () throws -> Void
   ) throws {

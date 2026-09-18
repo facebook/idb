@@ -66,8 +66,8 @@ public final class MacDevice: NSObject, Target {
   public var name: String
   public var logger: any ControlCoreLogger
   public let osVersion: OSVersion
-  public var state: FBTargetState
-  public let targetType: FBTargetType
+  public var state: TargetState
+  public let targetType: TargetType
   public let workQueue: DispatchQueue
   public let screenInfo: TargetScreenInfo?
   public var deviceType: DeviceType = DeviceType.generic(withName: "Mac")
@@ -728,11 +728,11 @@ extension MacDevice: InstrumentsCommands {
 
 extension MacDevice: LifecycleCommands {
 
-  public func resolveState(_ state: FBTargetState) async throws {
+  public func resolveState(_ state: TargetState) async throws {
     throw macUnsupported("resolveState")
   }
 
-  public func resolveLeavesState(_ state: FBTargetState) async throws {
+  public func resolveLeavesState(_ state: TargetState) async throws {
     throw macUnsupported("resolveLeavesState")
   }
 }

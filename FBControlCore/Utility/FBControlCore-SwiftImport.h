@@ -16,7 +16,6 @@
 
 #import <FBControlCore/FBArchiveOperations.h>
 #import <FBControlCore/FBFuture.h>
-#import <FBControlCore/FBTargetConstants.h>
 #import <FBControlCore/FileReader.h>
 
 #import "FBControlCore-Swift.h"
