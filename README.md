@@ -100,13 +100,16 @@ Head over [to the main documentation](https://www.fbidb.io) for more details on 
 ./build.sh help
 ```
 
-The individual build products are written under `Build/Products/Release`. A full `./build.sh build` also assembles a self-contained distribution at `Build/Distribution`, laid out the way `idb_companion` expects at runtime:
+The build writes individual products under `Build/Products`, with macOS products under `Build/Products/Release` and simulator products under platform-specific `Release-*` directories. The framework targets are static libraries linked into the executables, so they are not copied into the runtime distribution. A full `./build.sh build` assembles the self-contained distribution at `Build/Distribution`:
 
 ```
 Build/Distribution/
-  idb_companion              # the executable
-  *.framework               # frameworks, resolved via @executable_path
+  idb_companion              # the companion executable
+  idb-repl                   # the REPL client
+  sim-video                  # the simulator video recorder
+  *.bundle                   # SwiftPM resource bundles, when present
   Resources/
+    Swift/                   # Swift back-deployment libraries
     libShimulator-iOS.dylib
     libShimulator-macOS.dylib
     libRepl-iOS.dylib
@@ -117,7 +120,7 @@ Build/Distribution/
     IDBAPI.swiftinterface
 ```
 
-`idb_companion` discovers the shims and `SimulatorFrameworkBridge` from the `Resources` directory next to the executable, so run it from `Build/Distribution` (or copy that directory as a unit).
+The executables resolve their bundled runtime dependencies relative to their own location. Keep `Build/Distribution` together when copying or relocating it.
 
 ### Running Tests
 
