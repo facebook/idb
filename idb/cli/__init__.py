@@ -117,7 +117,8 @@ class BaseCommand(Command, metaclass=ABCMeta):
             # Runs inside log_call so a plugin rejection is recorded as a
             # failed invocation rather than escaping before logging starts.
             plugin.on_command_parsed(logger=self.logger, command=self, args=args)
-            await self._run_impl(args)
+            with plugin.scoped_invocation_metadata({"idb_nested_cli_invocation": True}):
+                await self._run_impl(args)
 
     @abstractmethod
     async def _run_impl(self, args: Namespace) -> None:
