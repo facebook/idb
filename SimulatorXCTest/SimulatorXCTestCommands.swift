@@ -143,7 +143,7 @@ public final class SimulatorXCTestCommands: XCTestExtendedCommands {
 
     _ = try await XcodeBuildOperation.terminateAbandonedXcodebuildProcesses(
       forUDID: simulator.udid,
-      processFetcher: FBProcessFetcher(),
+      processFetcher: ProcessFetcher(),
       queue: simulator.workQueue,
       logger: logger)
 

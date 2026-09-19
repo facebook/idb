@@ -281,12 +281,12 @@ public struct SimulatorApplicationCommands: ApplicationCommands {
 
   private func confirmApplicationInstallPreconditions(bundleID: String) async throws {
     try confirmApplicationInstallTargetIsReady()
-    let processFetcher = FBProcessFetcher()
+    let processFetcher = ProcessFetcher()
     try await Self.confirmApplicationProcessIsInstallable(
       bundleID: bundleID,
       resolveProcessIdentifier: { try await self.processID(forBundleID: bundleID) },
-      processIsSuspended: { (try? processFetcher.isProcessStopped($0)) != nil },
-      debuggerIsAttached: { (try? processFetcher.isDebuggerAttached(to: $0)) != nil })
+      processIsSuspended: { (try? processFetcher.isProcessStopped($0)) == true },
+      debuggerIsAttached: { (try? processFetcher.isDebuggerAttached(to: $0)) == true })
   }
 
   private func confirmApplicationInstallTargetIsReady() throws {
@@ -327,7 +327,7 @@ public struct SimulatorApplicationCommands: ApplicationCommands {
       return
     }
 
-    // Process inspection is advisory: FBProcessFetcher imports false and inspection failures as
+    // Process inspection is advisory: ProcessFetcher imports false and inspection failures as
     // throws, so either result fails open rather than blocking an otherwise valid install.
     let processSuspended = processIsSuspended(processIdentifier)
     let debuggerAttached = debuggerIsAttached(processIdentifier)

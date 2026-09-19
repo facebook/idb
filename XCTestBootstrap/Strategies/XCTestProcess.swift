@@ -85,24 +85,27 @@ final class XCTestProcess {
   }
 
   private static func performSampleStackshot(onProcess process: FBSubprocess<AnyObject, AnyObject, AnyObject>, forTimeout timeout: TimeInterval, queue: DispatchQueue, logger: ControlCoreLogger) -> FBFuture<AnyObject> {
-    (FBProcessFetcher.performSampleStackshot(forProcessIdentifier: process.processIdentifier, queue: queue) as FBFuture)
-      .onQueue(
-        queue,
-        fmap: { stackshot -> FBFuture<AnyObject> in
-          FBFuture(error: XCTestProcessError.stalled(timeout: timeout, processIdentifier: process.processIdentifier, stackshot: String(describing: stackshot)))
-        }
-      )
-      .onQueue(
-        queue,
-        notifyOfCompletion: { _ in
-          logger.log("Terminating stalled xctest process \(process)")
-          process.sendSignal(SIGTERM, backingOffToKillWithTimeout: KillBackoffTimeout, logger: logger)
-            .onQueue(
-              queue,
-              notifyOfCompletion: { _ in
-                logger.log("Stalled xctest process \(process) has been terminated")
-              })
-        })
+    fbFutureFromAsync {
+      try await ProcessFetcher.sampleStackshot(processIdentifier: process.processIdentifier) as NSString
+    }
+    .retyped(FBFuture<AnyObject>.self)
+    .onQueue(
+      queue,
+      fmap: { stackshot -> FBFuture<AnyObject> in
+        FBFuture(error: XCTestProcessError.stalled(timeout: timeout, processIdentifier: process.processIdentifier, stackshot: String(describing: stackshot)))
+      }
+    )
+    .onQueue(
+      queue,
+      notifyOfCompletion: { _ in
+        logger.log("Terminating stalled xctest process \(process)")
+        process.sendSignal(SIGTERM, backingOffToKillWithTimeout: KillBackoffTimeout, logger: logger)
+          .onQueue(
+            queue,
+            notifyOfCompletion: { _ in
+              logger.log("Stalled xctest process \(process) has been terminated")
+            })
+      })
   }
 
   private static func performCrashLogQuery(forProcess process: FBSubprocess<AnyObject, AnyObject, AnyObject>, startDate: Date, crashLogCommands: any CrashLogCommands, crashLogWaitTime: TimeInterval, queue: DispatchQueue, logger: ControlCoreLogger) -> FBFuture<NSNumber> {

@@ -68,7 +68,7 @@ public final class ProcessTerminationStrategy {
   // MARK: - Private Properties
 
   private let configuration: ProcessTerminationStrategyConfiguration
-  private let processFetcher: FBProcessFetcher
+  private let processFetcher: ProcessFetcher
   private let workQueue: DispatchQueue
   private let logger: ControlCoreLogger
 
@@ -76,7 +76,7 @@ public final class ProcessTerminationStrategy {
 
   public class func strategy(
     withConfiguration configuration: ProcessTerminationStrategyConfiguration,
-    processFetcher: FBProcessFetcher,
+    processFetcher: ProcessFetcher,
     workQueue: DispatchQueue,
     logger: ControlCoreLogger
   ) -> Self {
@@ -84,7 +84,7 @@ public final class ProcessTerminationStrategy {
   }
 
   public class func strategy(
-    withProcessFetcher processFetcher: FBProcessFetcher,
+    withProcessFetcher processFetcher: ProcessFetcher,
     workQueue: DispatchQueue,
     logger: ControlCoreLogger
   ) -> Self {
@@ -98,7 +98,7 @@ public final class ProcessTerminationStrategy {
 
   required init(
     configuration: ProcessTerminationStrategyConfiguration,
-    processFetcher: FBProcessFetcher,
+    processFetcher: ProcessFetcher,
     workQueue: DispatchQueue,
     logger: ControlCoreLogger
   ) {
@@ -189,7 +189,7 @@ public final class ProcessTerminationStrategy {
     )
   }
 
-  private func waitForProcessIdentifierToDie(_ processIdentifier: pid_t, on queue: DispatchQueue, processFetcher: FBProcessFetcher) -> FBFuture<NSNull> {
+  private func waitForProcessIdentifierToDie(_ processIdentifier: pid_t, on queue: DispatchQueue, processFetcher: ProcessFetcher) -> FBFuture<NSNull> {
     FBFuture<NSNull>.onQueue(
       queue,
       resolveWhen: {

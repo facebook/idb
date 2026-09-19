@@ -125,7 +125,7 @@ public final class XcodeBuildOperation {
     return path
   }
 
-  public static func terminateAbandonedXcodebuildProcesses(forUDID udid: String, processFetcher: FBProcessFetcher, queue: DispatchQueue, logger: ControlCoreLogger) async throws -> [RunningProcessInfo] {
+  public static func terminateAbandonedXcodebuildProcesses(forUDID udid: String, processFetcher: ProcessFetcher, queue: DispatchQueue, logger: ControlCoreLogger) async throws -> [RunningProcessInfo] {
     let processes = XcodeBuildOperation.activeXcodebuildProcesses(forUDID: udid, processFetcher: processFetcher)
     if processes.isEmpty {
       logger.log("No processes for \(udid) to terminate")
@@ -194,7 +194,7 @@ public final class XcodeBuildOperation {
 
   // MARK: - Private
 
-  private static func activeXcodebuildProcesses(forUDID udid: String, processFetcher: FBProcessFetcher) -> [RunningProcessInfo] {
+  private static func activeXcodebuildProcesses(forUDID udid: String, processFetcher: ProcessFetcher) -> [RunningProcessInfo] {
     let xcodebuildProcesses = processFetcher.processes(withProcessName: "xcodebuild")
     var relevantProcesses: [RunningProcessInfo] = []
     for process in xcodebuildProcesses {

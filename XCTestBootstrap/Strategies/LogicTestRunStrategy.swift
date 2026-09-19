@@ -259,7 +259,11 @@ public final class LogicTestRunStrategy: XCTestRunner {
     let waitQueue = DispatchQueue(label: "com.facebook.xctestbootstrap.debugger_wait")
 
     return
-      FBProcessFetcher.waitStopSignal(forProcess: processIdentifier).retyped(FBFuture<AnyObject>.self)
+      fbFutureFromAsync {
+        try await ProcessFetcher.waitForStopSignal(process: processIdentifier)
+        return NSNull()
+      }
+      .retyped(FBFuture<AnyObject>.self)
       .onQueue(
         waitQueue,
         chain: { future -> FBFuture<AnyObject> in

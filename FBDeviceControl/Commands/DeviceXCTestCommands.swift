@@ -37,7 +37,7 @@ extension DeviceXCTestError: LocalizedError {
 public final class DeviceXCTestCommands: XCTestCommands {
   private(set) weak var device: Device?
   private(set) var workingDirectory: String
-  private(set) var processFetcher: FBProcessFetcher
+  private(set) var processFetcher: ProcessFetcher
   var runningXcodeBuildOperation = false
 
   public class func commands(with device: Device) -> DeviceXCTestCommands {
@@ -47,7 +47,7 @@ public final class DeviceXCTestCommands: XCTestCommands {
   init(device: Device, workingDirectory: String) {
     self.device = device
     self.workingDirectory = workingDirectory
-    self.processFetcher = FBProcessFetcher()
+    self.processFetcher = ProcessFetcher()
   }
 
   // MARK: - Async

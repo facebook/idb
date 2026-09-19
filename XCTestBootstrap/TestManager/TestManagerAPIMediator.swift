@@ -80,7 +80,7 @@ public final class TestManagerAPIMediator: NSObject, @unchecked Sendable {
       do {
         if context.testHostLaunchConfiguration.waitForDebugger {
           reporter.processWaitingForDebugger(withProcessIdentifier: launchedApplication.processIdentifier)
-          try await bridgeFBFutureVoid(FBProcessFetcher.waitForDebuggerToAttachAndContinue(for: launchedApplication.processIdentifier))
+          try await ProcessFetcher.waitForDebuggerToAttachAndContinue(for: launchedApplication.processIdentifier)
         }
         try await runUntilCompletion(launchedApplication: launchedApplication, timeout: timeout)
         result = .success(())
@@ -132,8 +132,7 @@ public final class TestManagerAPIMediator: NSObject, @unchecked Sendable {
   }
 
   private func sampleStack(forProcessIdentifier processIdentifier: pid_t) async throws -> String {
-    let result: AnyObject = try await bridgeFBFuture(FBProcessFetcher.performSampleStackshot(forProcessIdentifier: processIdentifier, queue: requestQueue))
-    return (result as? String) ?? ""
+    try await ProcessFetcher.sampleStackshot(processIdentifier: processIdentifier)
   }
 
   // MARK: - Spawned process token map (synchronous, lock-guarded)

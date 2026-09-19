@@ -8,7 +8,7 @@
 @testable import FBControlCore
 import XCTest
 
-final class FBProcessFetcherTests: XCTestCase {
+final class ProcessFetcherTests: XCTestCase {
 
   private var task: Process!
 
@@ -31,51 +31,51 @@ final class FBProcessFetcherTests: XCTestCase {
   }
 
   func testIsProcessRunningRunningProcess() throws {
-    let fetcher = FBProcessFetcher()
-    try fetcher.isProcessRunning(task.processIdentifier)
+    let fetcher = ProcessFetcher()
+    XCTAssertTrue(try fetcher.isProcessRunning(task.processIdentifier))
   }
 
   func testIsProcessRunningDeadProcess() {
-    let fetcher = FBProcessFetcher()
+    let fetcher = ProcessFetcher()
     task.terminate()
     task.waitUntilExit()
     XCTAssertThrowsError(try fetcher.isProcessRunning(task.processIdentifier))
   }
 
-  func testIsProcessRunningSuspendedProcess() {
-    let fetcher = FBProcessFetcher()
+  func testIsProcessRunningSuspendedProcess() throws {
+    let fetcher = ProcessFetcher()
     task.suspend()
-    XCTAssertThrowsError(try fetcher.isProcessRunning(task.processIdentifier))
+    XCTAssertFalse(try fetcher.isProcessRunning(task.processIdentifier))
   }
 
-  func testIsProcessStoppedRunningProcess() {
-    let fetcher = FBProcessFetcher()
-    XCTAssertThrowsError(try fetcher.isProcessStopped(task.processIdentifier))
+  func testIsProcessStoppedRunningProcess() throws {
+    let fetcher = ProcessFetcher()
+    XCTAssertFalse(try fetcher.isProcessStopped(task.processIdentifier))
   }
 
   func testIsProcessStoppedDeadProcess() {
-    let fetcher = FBProcessFetcher()
+    let fetcher = ProcessFetcher()
     task.terminate()
     task.waitUntilExit()
     XCTAssertThrowsError(try fetcher.isProcessStopped(task.processIdentifier))
   }
 
   func testIsProcessStoppedSuspendedProcess() throws {
-    let fetcher = FBProcessFetcher()
+    let fetcher = ProcessFetcher()
     task.suspend()
-    try fetcher.isProcessStopped(task.processIdentifier)
+    XCTAssertTrue(try fetcher.isProcessStopped(task.processIdentifier))
   }
 
   func testIsDebuggerAttachedToDeadProcess() {
-    let fetcher = FBProcessFetcher()
+    let fetcher = ProcessFetcher()
     task.terminate()
     task.waitUntilExit()
     XCTAssertThrowsError(try fetcher.isDebuggerAttached(to: task.processIdentifier))
   }
 
-  func testIsDebuggerAttachedToProcessNoDebugger() {
-    let fetcher = FBProcessFetcher()
-    XCTAssertThrowsError(try fetcher.isDebuggerAttached(to: task.processIdentifier))
+  func testIsDebuggerAttachedToProcessNoDebugger() throws {
+    let fetcher = ProcessFetcher()
+    XCTAssertFalse(try fetcher.isDebuggerAttached(to: task.processIdentifier))
   }
 
   // MARK: - Process table queries
@@ -101,7 +101,7 @@ final class FBProcessFetcherTests: XCTestCase {
 
   func testProcessInfoReadsTheLaunchPathAndArguments() throws {
     let process = try launch("/bin/sleep", arguments: ["10"])
-    let info = try XCTUnwrap(FBProcessFetcher().processInfo(for: process.processIdentifier))
+    let info = try XCTUnwrap(ProcessFetcher().processInfo(for: process.processIdentifier))
     XCTAssertEqual(info.processIdentifier, process.processIdentifier)
     XCTAssertEqual(info.launchPath, "/bin/sleep")
     XCTAssertEqual(info.arguments, ["/bin/sleep", "10"])
@@ -110,7 +110,7 @@ final class FBProcessFetcherTests: XCTestCase {
   // No arguments beyond argv[0], so the walk from the launch path to argv crosses only padding.
   func testProcessInfoForAProcessWithNoArguments() throws {
     let process = try launch("/bin/cat", arguments: [])
-    let info = try XCTUnwrap(FBProcessFetcher().processInfo(for: process.processIdentifier))
+    let info = try XCTUnwrap(ProcessFetcher().processInfo(for: process.processIdentifier))
     XCTAssertEqual(info.launchPath, "/bin/cat")
     XCTAssertEqual(info.arguments, ["/bin/cat"])
   }
@@ -118,21 +118,20 @@ final class FBProcessFetcherTests: XCTestCase {
   func testProcessInfoForAProcessThatHasExited() {
     task.terminate()
     task.waitUntilExit()
-    XCTAssertNil(FBProcessFetcher().processInfo(for: task.processIdentifier))
+    XCTAssertNil(ProcessFetcher().processInfo(for: task.processIdentifier))
   }
 
   func testProcessesWithProcessNameFindsTheProcess() {
-    let found = FBProcessFetcher().processes(withProcessName: "sleep")
+    let found = ProcessFetcher().processes(withProcessName: "sleep")
     XCTAssertTrue(found.contains { $0.processIdentifier == task.processIdentifier }, "\(found)")
   }
 
   func testProcessesWithProcessNameForAnUnknownName() {
-    XCTAssertEqual(FBProcessFetcher().processes(withProcessName: "idb-no-such-process-\(getpid())"), [])
+    XCTAssertEqual(ProcessFetcher().processes(withProcessName: "idb-no-such-process-\(getpid())"), [])
   }
 
-  func testWaitStopSignalResolvesOnceTheProcessIsStopped() async throws {
-    let waiting = FBProcessFetcher.waitStopSignal(forProcess: task.processIdentifier)
+  func testWaitForStopSignalResolvesOnceTheProcessIsStopped() async throws {
     task.suspend()
-    try await bridgeFBFutureVoid(waiting)
+    try await ProcessFetcher.waitForStopSignal(process: task.processIdentifier)
   }
 }

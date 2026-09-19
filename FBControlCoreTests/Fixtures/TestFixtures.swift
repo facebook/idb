@@ -44,6 +44,6 @@ extension XCTestCase {
 
   /// Returns the process info for the current process (equivalent to launchctl).
   func launchCtlProcess() -> RunningProcessInfo? {
-    return FBProcessFetcher().processInfo(for: ProcessInfo.processInfo.processIdentifier)
+    return ProcessFetcher().processInfo(for: ProcessInfo.processInfo.processIdentifier)
   }
 }

@@ -111,7 +111,7 @@ final class TestBundleConnection {
       // drive, so there is no bundle to connect to.
       return TestBundleConnectionError.hostRelaunchedByOS(underlying: error)
     }
-    if let stackshot = (try? await bridgeFBFuture(FBProcessFetcher.performSampleStackshot(forProcessIdentifier: expectedPid, queue: target.workQueue))) as? String {
+    if let stackshot = try? await ProcessFetcher.sampleStackshot(processIdentifier: expectedPid) {
       return TestBundleConnectionError.hostStalled(processIdentifier: expectedPid, stackshot: stackshot)
     }
     return error
