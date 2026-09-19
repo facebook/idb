@@ -12,10 +12,10 @@ import XCTest
 final class TestRunnerConfigurationTests: XCTestCase {
 
   func testLaunchEnvironment() {
-    let testBundleBinary = FBBinaryDescriptor(name: "TestBinaryName", architectures: Set(), uuid: UUID(), path: "/blackhole/xctwda.xctest/test")
+    let testBundleBinary = BinaryDescriptor(name: "TestBinaryName", architectures: Set(), uuid: UUID(), path: "/blackhole/xctwda.xctest/test")
     let testBundle = BundleDescriptor(name: "TestBundleName", identifier: "TestBundleIdentifier", path: "/blackhole/xctwda.xctest", binary: testBundleBinary)
 
-    let hostApplicationBinary = FBBinaryDescriptor(name: "HostApplicationBinaryName", architectures: Set(), uuid: UUID(), path: "/blackhole/pray.app/app")
+    let hostApplicationBinary = BinaryDescriptor(name: "HostApplicationBinaryName", architectures: Set(), uuid: UUID(), path: "/blackhole/pray.app/app")
     let hostApplication = BundleDescriptor(
       name: "HostApplicationName",
       identifier: "HostApplicationIdentifier",

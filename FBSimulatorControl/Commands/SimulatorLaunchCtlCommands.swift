@@ -56,7 +56,7 @@ public final class SimulatorLaunchCtlCommands: LaunchCtlCommands {
     let path = (simulator.device.runtime.root as NSString)
       .appendingPathComponent("bin")
       .appending("/launchctl")
-    let binary = try FBBinaryDescriptor.binary(withPath: path)
+    let binary = try BinaryDescriptor.binary(withPath: path)
     return binary.path
   }
 

@@ -37,9 +37,9 @@ public struct BundleDescriptor: Hashable, Sendable, CustomStringConvertible {
   public let name: String
   public let identifier: String
   public let path: String
-  public let binary: FBBinaryDescriptor?
+  public let binary: BinaryDescriptor?
 
-  public init(name: String, identifier: String, path: String, binary: FBBinaryDescriptor?) {
+  public init(name: String, identifier: String, path: String, binary: BinaryDescriptor?) {
     self.name = name
     self.identifier = identifier
     self.path = path
@@ -78,11 +78,11 @@ public struct BundleDescriptor: Hashable, Sendable, CustomStringConvertible {
     try await codesign.signBundle(atPath: path)
   }
 
-  private static func binaryForBundle(_ bundle: Bundle) throws -> FBBinaryDescriptor {
+  private static func binaryForBundle(_ bundle: Bundle) throws -> BinaryDescriptor {
     guard let binaryPath = bundle.executablePath else {
       throw BundleDescriptorError.binaryPathUnavailable(bundlePath: bundle.bundlePath)
     }
-    return try FBBinaryDescriptor.binary(withPath: binaryPath)
+    return try BinaryDescriptor.binary(withPath: binaryPath)
   }
 
   private static func bundleNameForBundle(_ bundle: Bundle) -> String {

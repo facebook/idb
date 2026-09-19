@@ -36,12 +36,10 @@ final class FBControlCoreTransientTests: XCTestCase {
 
   // MARK: - BundleDescriptor
 
-  /// The binary is a reference type, so this pins that a descriptor compares it by value:
-  /// two descriptors carrying distinct but equal binaries are equal.
+  /// Two descriptors carrying separately parsed but equal binaries are equal.
   func testBundleDescriptorWithBinaryEquality() throws {
-    let firstBinary = try FBBinaryDescriptor.binary(withPath: "/usr/bin/codesign")
-    let secondBinary = try FBBinaryDescriptor.binary(withPath: "/usr/bin/codesign")
-    XCTAssertFalse(firstBinary === secondBinary)
+    let firstBinary = try BinaryDescriptor.binary(withPath: "/usr/bin/codesign")
+    let secondBinary = try BinaryDescriptor.binary(withPath: "/usr/bin/codesign")
 
     let a = BundleDescriptor(name: "App", identifier: "com.test", path: "/a", binary: firstBinary)
     let b = BundleDescriptor(name: "App", identifier: "com.test", path: "/a", binary: secondBinary)
@@ -99,7 +97,7 @@ final class FBControlCoreTransientTests: XCTestCase {
   }
 
   func testInstalledApplicationEquality() throws {
-    let binary = try FBBinaryDescriptor.binary(withPath: "/usr/bin/codesign")
+    let binary = try BinaryDescriptor.binary(withPath: "/usr/bin/codesign")
     let bundle = BundleDescriptor(name: "App", identifier: "com.test", path: "/tmp", binary: binary)
     let a = InstalledApplication(bundle: bundle, installType: .user, dataContainer: "/data")
     let b = InstalledApplication(bundle: bundle, installType: .user, dataContainer: "/data")
@@ -112,7 +110,7 @@ final class FBControlCoreTransientTests: XCTestCase {
   /// The data container takes part in equality but deliberately not in the hash, so two
   /// applications differing only by their container are unequal yet share a hash bucket.
   func testInstalledApplicationHashIgnoresDataContainer() throws {
-    let binary = try FBBinaryDescriptor.binary(withPath: "/usr/bin/codesign")
+    let binary = try BinaryDescriptor.binary(withPath: "/usr/bin/codesign")
     let bundle = BundleDescriptor(name: "App", identifier: "com.test", path: "/tmp", binary: binary)
     let a = InstalledApplication(bundle: bundle, installType: .user, dataContainer: "/data/one")
     let b = InstalledApplication(bundle: bundle, installType: .user, dataContainer: "/data/two")

@@ -56,7 +56,7 @@ public struct SimulatorLogCommands: LogCommands {
       .appendingPathComponent("usr") as NSString)
       .appendingPathComponent("bin") as NSString)
       .appendingPathComponent("log")
-    let binary = try FBBinaryDescriptor.binary(withPath: path)
+    let binary = try BinaryDescriptor.binary(withPath: path)
     return binary.path
   }
 }

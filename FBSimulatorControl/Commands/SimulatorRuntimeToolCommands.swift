@@ -107,7 +107,7 @@ public struct SimulatorRuntimeToolCommands {
       throw SimulatorLogError.runtimeRootUnavailable
     }
     let path = (root as NSString).appendingPathComponent(relativePath)
-    let binary = try FBBinaryDescriptor.binary(withPath: path)
+    let binary = try BinaryDescriptor.binary(withPath: path)
     return binary.path
   }
 }
