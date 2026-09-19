@@ -48,6 +48,79 @@ final class SimulatorVideoFileWriterTests: XCTestCase {
     XCTAssertEqual(readSamples, frameCount, "every appended frame should be readable back")
   }
 
+  func testRecordingIsReadableBeforeFinishSoAnInterruptedRunKeepsItsFrames() async throws {
+    let path = (NSTemporaryDirectory() as NSString).appendingPathComponent("SimulatorVideoFileWriterTests-fragmented-\(UUID().uuidString).mp4")
+    defer { try? FileManager.default.removeItem(atPath: path) }
+
+    let logger = CapturingLogger()
+    let writer = SimulatorVideoFileWriter(filePath: path, logger: logger)
+
+    // A frame a second, so a few frames span several fragment intervals.
+    let frameCount = 20
+    for index in 0..<frameCount {
+      let sample = sampleBuffer(frameIndex: index, timestamp: CMTimeMake(value: Int64(index), timescale: 1))
+      XCTAssertTrue(writer.consume(sample, logger: logger), "frame \(index) should append")
+    }
+
+    // `finish` is deliberately not called: this is the state a recording is left in when the writer
+    // never reaches finalization. Written as one un-fragmented movie the file would carry no index
+    // at all here and could not be opened, losing every frame above.
+    //
+    // Read samples back rather than just loading the track list. A fragmented movie publishes its
+    // tracks in the initial `moov`, so a track would be discoverable even with no usable fragment
+    // behind it; the property worth asserting is that frames actually come back.
+    let deadline = Date().addingTimeInterval(30)
+    var recoveredSamples = 0
+    while recoveredSamples == 0 && Date() < deadline {
+      recoveredSamples = (try? await Self.readableSampleCount(atPath: path)) ?? 0
+      if recoveredSamples == 0 {
+        try await Task.sleep(nanoseconds: 200_000_000)
+      }
+    }
+    // Only whole fragments are recoverable, so the frames written since the last flush are expected
+    // to be missing. The claim is that an interrupted recording keeps most of itself, not all.
+    XCTAssertGreaterThanOrEqual(
+      recoveredSamples,
+      10,
+      "an unfinished recording should hand back the frames in its completed fragments; logs=\(logger.messages)")
+    XCTAssertLessThanOrEqual(recoveredSamples, frameCount, "cannot recover more frames than were appended")
+
+    // Finalizing still produces a complete, readable movie.
+    try await writer.finish()
+    let asset = AVURLAsset(url: URL(fileURLWithPath: path))
+    let finishedTracks = try await asset.loadTracks(withMediaType: .video)
+    XCTAssertEqual(finishedTracks.count, 1, "finished recording should have exactly one video track")
+    let duration = try await asset.load(.duration)
+    XCTAssertGreaterThan(CMTimeGetSeconds(duration), 0, "duration should be non-zero")
+  }
+
+  /// Frames the movie at `path` can hand back right now, read the way any consumer would. Zero
+  /// covers both "no track yet" and "a track with nothing readable behind it".
+  fileprivate static func readableSampleCount(atPath path: String) async throws -> Int {
+    let asset = AVURLAsset(url: URL(fileURLWithPath: path))
+    guard let track = try await asset.loadTracks(withMediaType: .video).first else {
+      return 0
+    }
+    let reader = try AVAssetReader(asset: asset)
+    let output = AVAssetReaderTrackOutput(track: track, outputSettings: nil)
+    reader.add(output)
+    guard reader.startReading() else {
+      return 0
+    }
+    defer {
+      if reader.status == .reading {
+        reader.cancelReading()
+      }
+    }
+    var samples = 0
+    while let sample = output.copyNextSampleBuffer() {
+      if CMSampleBufferGetNumSamples(sample) > 0 {
+        samples += 1
+      }
+    }
+    return samples
+  }
+
   func testWritesReadableChapterTrack() async throws {
     let path = (NSTemporaryDirectory() as NSString).appendingPathComponent("SimulatorVideoFileWriterTests-chapters-\(UUID().uuidString).mp4")
     defer { try? FileManager.default.removeItem(atPath: path) }
