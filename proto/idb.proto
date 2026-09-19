@@ -391,6 +391,11 @@ message AccessibilityActionRequest {
   // case-insensitively. Absent on an older client, which matches
   // case-sensitively as before.
   bool ignore_case = 9;
+  // Which backend serves the action, for every action including wait.
+  // UNSPECIFIED preserves the historical behaviour, so an older client — or
+  // one that does not ask — is unaffected; an older server ignores this field
+  // entirely and acts as if it were unset.
+  AccessibilityInfoRequest.Backend backend = 11;
 
   message Tap {
     bool check_expected_value = 1;

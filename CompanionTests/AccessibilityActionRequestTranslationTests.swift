@@ -149,6 +149,67 @@ final class AccessibilityActionRequestTranslationTests: XCTestCase {
     }
   }
 
+  // MARK: - Backend
+
+  // BUG: every action but wait drops the request's backend, so an element only the guest reader can
+  // see cannot be tapped, scrolled, set or dragged -- flipped in the following commit.
+  func testTapDropsTheRequestedBackend() throws {
+    let translated = try action {
+      $0.backend = .axbridge
+      $0.marker = "GETTING STARTED"
+      $0.tap = .init()
+    }
+    XCTAssertEqual(
+      translated,
+      .tap(query: .marker(value: "GETTING STARTED", key: .label, depth: 0), expectedValue: nil, expectedKey: .label))
+  }
+
+  func testScrollDropsTheRequestedBackend() throws {
+    let translated = try action {
+      $0.backend = .axbridge
+      $0.marker = "Notification Center"
+      $0.scroll = .with { $0.direction = .down }
+    }
+    XCTAssertEqual(
+      translated, .scroll(query: .marker(value: "Notification Center", key: .label, depth: 0), direction: .down))
+  }
+
+  func testSetValueDropsTheRequestedBackend() throws {
+    let translated = try action {
+      $0.backend = .axbridge
+      $0.marker = "Search"
+      $0.setValue = .with { $0.value = "hello" }
+    }
+    XCTAssertEqual(
+      translated, .setValue(query: .marker(value: "Search", key: .label, depth: 0), value: "hello"))
+  }
+
+  func testDragDropsTheRequestedBackend() throws {
+    guard case let .drag(source, destination, _) = try drag({ $0.backend = .axbridge }) else {
+      return XCTFail("expected a drag")
+    }
+    XCTAssertEqual(source, .point(CGPoint(x: 10, y: 20)))
+    XCTAssertEqual(destination, .point(CGPoint(x: 200, y: 20)))
+  }
+
+  // BUG: wait reads only its own deprecated field, so a client that sets the request-level backend
+  // and leaves Wait's unset is served by the default backend -- flipped in the following commit.
+  func testWaitIgnoresTheRequestLevelBackend() throws {
+    let translated = try action {
+      $0.backend = .axbridge
+      $0.marker = "Settings"
+      $0.wait = .with {
+        $0.timeout = 10
+        $0.pollInterval = 0.5
+      }
+    }
+    XCTAssertEqual(
+      translated,
+      .wait(
+        query: .marker(value: "Settings", key: .label, depth: 0),
+        backend: .accessibility, timeout: 10, pollInterval: 0.5))
+  }
+
   // MARK: - Routing
 
   func testADragRequestBecomesADrag() throws {
