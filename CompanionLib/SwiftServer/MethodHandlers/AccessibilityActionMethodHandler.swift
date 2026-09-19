@@ -11,11 +11,48 @@ import Foundation
 import GRPCCore
 import IDBGRPCSwift
 
+/// Seam over the five `IDBCommandExecutor` actions this handler drives, so the request-to-action
+/// wiring can be tested against a double.
+protocol AccessibilityActing {
+  func accessibility_wait(
+    query: AccessibilityElementQuery,
+    backend: UIAutomationBackend,
+    timeout: TimeInterval,
+    pollInterval: TimeInterval
+  ) async throws
+
+  func accessibility_tap(
+    query: AccessibilityElementQuery,
+    expectedValue: String?,
+    expectedKey: AXSearchableKey
+  ) async throws
+
+  func accessibility_scroll(query: AccessibilityElementQuery, direction: AccessibilityScrollDirection) async throws
+
+  func accessibility_set_value(query: AccessibilityElementQuery, value: String) async throws
+
+  func accessibility_drag(
+    from source: AccessibilityElementQuery,
+    to destination: AccessibilityElementQuery,
+    options: DragOptions
+  ) async throws
+}
+
+extension IDBCommandExecutor: AccessibilityActing {}
+
 struct AccessibilityActionMethodHandler {
 
   let commandExecutor: IDBCommandExecutor
 
   func handle(request: Idb_AccessibilityActionRequest, context: ServerContext) async throws -> Idb_AccessibilityActionResponse {
+    try await Self.respond(to: request, using: commandExecutor)
+  }
+
+  /// Lifted out of `handle` so it can be tested without a `ServerContext`.
+  static func respond(
+    to request: Idb_AccessibilityActionRequest,
+    using commandExecutor: any AccessibilityActing
+  ) async throws -> Idb_AccessibilityActionResponse {
     switch try AccessibilityActionRequestTranslation.action(from: request) {
     case let .wait(query, backend, timeout, pollInterval):
       return try await AccessibilityActionRequestTranslation.waitResponse {
