@@ -17,7 +17,7 @@ import Testing
 /// `IDBCommandExecutor` is a `public final class`; `AccessibilityActing` is the seam the handler is
 /// written against, and this double stands in for it.
 private final class RecordingAccessibilityActor: AccessibilityActing {
-  private(set) var waitedBackend: UIAutomationBackend?
+  private(set) var backend: UIAutomationBackend?
   private(set) var tapped: AccessibilityElementQuery?
   private(set) var scrolled: AccessibilityElementQuery?
   private(set) var scrolledDirection: AccessibilityScrollDirection?
@@ -32,39 +32,54 @@ private final class RecordingAccessibilityActor: AccessibilityActing {
     timeout: TimeInterval,
     pollInterval: TimeInterval
   ) async throws {
-    waitedBackend = backend
+    self.backend = backend
   }
 
   func accessibility_tap(
     query: AccessibilityElementQuery,
+    backend: UIAutomationBackend,
     expectedValue: String?,
     expectedKey: AXSearchableKey
   ) async throws {
     tapped = query
+    self.backend = backend
   }
 
-  func accessibility_scroll(query: AccessibilityElementQuery, direction: AccessibilityScrollDirection) async throws {
+  func accessibility_scroll(
+    query: AccessibilityElementQuery,
+    backend: UIAutomationBackend,
+    direction: AccessibilityScrollDirection
+  ) async throws {
     scrolled = query
     scrolledDirection = direction
+    self.backend = backend
   }
 
-  func accessibility_set_value(query: AccessibilityElementQuery, value: String) async throws {
+  func accessibility_set_value(
+    query: AccessibilityElementQuery,
+    backend: UIAutomationBackend,
+    value: String
+  ) async throws {
     valueSetOn = query
     valueSet = value
+    self.backend = backend
   }
 
   func accessibility_drag(
     from source: AccessibilityElementQuery,
     to destination: AccessibilityElementQuery,
+    backend: UIAutomationBackend,
     options: DragOptions
   ) async throws {
     draggedFrom = source
     draggedTo = destination
+    self.backend = backend
   }
 }
 
-/// Asserts what the *handler* hands the executor. The four mutating verbs reach the executor with no
-/// backend at all -- pinned here so the commit that gives them one has something to flip.
+/// Asserts what the *handler* hands the executor: the action it dispatches to, the endpoints it
+/// resolved, and the backend the request asked for. Losing the backend here is silent -- the action
+/// still runs, served by whichever backend the executor defaults to.
 @Suite
 struct AccessibilityActionMethodHandlerTests {
 
@@ -86,6 +101,7 @@ struct AccessibilityActionMethodHandlerTests {
       $0.tap = .init()
     }
     #expect(executor.tapped == .marker(value: "GETTING STARTED", key: .label, depth: 0))
+    #expect(executor.backend == .guest)
   }
 
   @Test
@@ -97,6 +113,7 @@ struct AccessibilityActionMethodHandlerTests {
     }
     #expect(executor.scrolled == .marker(value: "Notification Center", key: .label, depth: 0))
     #expect(executor.scrolledDirection == .down)
+    #expect(executor.backend == .guest)
   }
 
   /// A scroll with no target is the common invocation, and the one the frontmost query comes from.
@@ -107,6 +124,7 @@ struct AccessibilityActionMethodHandlerTests {
       $0.scroll = .with { $0.direction = .down }
     }
     #expect(executor.scrolled == .frontmost)
+    #expect(executor.backend == .guest)
   }
 
   @Test
@@ -118,6 +136,7 @@ struct AccessibilityActionMethodHandlerTests {
     }
     #expect(executor.valueSetOn == .marker(value: "Search", key: .label, depth: 0))
     #expect(executor.valueSet == "hello")
+    #expect(executor.backend == .guest)
   }
 
   @Test
@@ -137,9 +156,11 @@ struct AccessibilityActionMethodHandlerTests {
     }
     #expect(executor.draggedFrom == .point(CGPoint(x: 10, y: 20)))
     #expect(executor.draggedTo == .point(CGPoint(x: 200, y: 20)))
+    #expect(executor.backend == .guest)
   }
 
-  /// Wait is the one action that already selects a backend, through its own deprecated field.
+  /// Wait selected a backend before the others could, through its own deprecated field. A client
+  /// older than the request-level one still sends only this, so it has to keep working.
   @Test
   func waitCarriesItsOwnBackendToTheExecutor() async throws {
     let executor = try await respond {
@@ -150,12 +171,11 @@ struct AccessibilityActionMethodHandlerTests {
         $0.pollInterval = 0.5
       }
     }
-    #expect(executor.waitedBackend == UIAutomationBackend(resolvedName: .axBridgeExclusive))
+    #expect(executor.backend == .guest)
   }
 
-  // BUG: the request-level backend never reaches the executor -- flipped in the following commit.
   @Test
-  func waitIgnoresTheRequestLevelBackend() async throws {
+  func waitCarriesTheRequestLevelBackendToTheExecutor() async throws {
     let executor = try await respond {
       $0.backend = .axbridge
       $0.marker = "Settings"
@@ -164,6 +184,21 @@ struct AccessibilityActionMethodHandlerTests {
         $0.pollInterval = 0.5
       }
     }
-    #expect(executor.waitedBackend == .accessibility)
+    #expect(executor.backend == .guest)
   }
+
+  /// A request that names no backend is served by the executor's default, which is what an older
+  /// client sends and what keeps its behaviour unchanged.
+  @Test
+  func anUnaskedBackendReachesTheExecutorAsTheDefault() async throws {
+    let executor = try await respond {
+      $0.marker = "General"
+      $0.tap = .init()
+    }
+    #expect(executor.backend == .accessibility)
+  }
+}
+
+extension UIAutomationBackend {
+  fileprivate static let guest = UIAutomationBackend(resolvedName: .axBridgeExclusive)
 }

@@ -23,17 +23,27 @@ protocol AccessibilityActing {
 
   func accessibility_tap(
     query: AccessibilityElementQuery,
+    backend: UIAutomationBackend,
     expectedValue: String?,
     expectedKey: AXSearchableKey
   ) async throws
 
-  func accessibility_scroll(query: AccessibilityElementQuery, direction: AccessibilityScrollDirection) async throws
+  func accessibility_scroll(
+    query: AccessibilityElementQuery,
+    backend: UIAutomationBackend,
+    direction: AccessibilityScrollDirection
+  ) async throws
 
-  func accessibility_set_value(query: AccessibilityElementQuery, value: String) async throws
+  func accessibility_set_value(
+    query: AccessibilityElementQuery,
+    backend: UIAutomationBackend,
+    value: String
+  ) async throws
 
   func accessibility_drag(
     from source: AccessibilityElementQuery,
     to destination: AccessibilityElementQuery,
+    backend: UIAutomationBackend,
     options: DragOptions
   ) async throws
 }
@@ -58,14 +68,16 @@ struct AccessibilityActionMethodHandler {
       return try await AccessibilityActionRequestTranslation.waitResponse {
         try await commandExecutor.accessibility_wait(query: query, backend: backend, timeout: timeout, pollInterval: pollInterval)
       }
-    case let .tap(query, expectedValue, expectedKey):
-      try await commandExecutor.accessibility_tap(query: query, expectedValue: expectedValue, expectedKey: expectedKey)
-    case let .scroll(query, direction):
-      try await commandExecutor.accessibility_scroll(query: query, direction: direction)
-    case let .setValue(query, value):
-      try await commandExecutor.accessibility_set_value(query: query, value: value)
-    case let .drag(source, destination, options):
-      try await commandExecutor.accessibility_drag(from: source, to: destination, options: options)
+    case let .tap(query, backend, expectedValue, expectedKey):
+      try await commandExecutor.accessibility_tap(
+        query: query, backend: backend, expectedValue: expectedValue, expectedKey: expectedKey)
+    case let .scroll(query, backend, direction):
+      try await commandExecutor.accessibility_scroll(query: query, backend: backend, direction: direction)
+    case let .setValue(query, backend, value):
+      try await commandExecutor.accessibility_set_value(query: query, backend: backend, value: value)
+    case let .drag(source, destination, backend, options):
+      try await commandExecutor.accessibility_drag(
+        from: source, to: destination, backend: backend, options: options)
     }
     return .init()
   }

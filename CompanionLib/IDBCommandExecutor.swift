@@ -185,12 +185,17 @@ public final class IDBCommandExecutor {
     try await simulator.uiAutomation(backend: .accessibility).tap(.marker(value: label, key: .label, depth: .max))
   }
 
-  public func accessibility_tap(query: AccessibilityElementQuery, expectedValue: String?, expectedKey: AXSearchableKey) async throws {
+  public func accessibility_tap(
+    query: AccessibilityElementQuery,
+    backend: UIAutomationBackend = .accessibility,
+    expectedValue: String?,
+    expectedKey: AXSearchableKey
+  ) async throws {
     guard let simulator = target as? Simulator else {
       throw IDBCommandError.simulatorOnlyOperation(operation: "tap by accessibility", targetDescription: String(describing: target))
     }
     let assertion = expectedValue.map { TapOptions.Assertion(key: expectedKey, value: $0) }
-    try await simulator.uiAutomation(backend: .accessibility).tap(query, options: TapOptions(assertion: assertion))
+    try await simulator.uiAutomation(backend: backend).tap(query, options: TapOptions(assertion: assertion))
   }
 
   /// Describes the single element `query` names, serialized in `options.format`.
@@ -209,29 +214,38 @@ public final class IDBCommandExecutor {
     try await simulator.uiAutomation(backend: backend).wait(query, timeout: timeout, pollInterval: pollInterval)
   }
 
-  public func accessibility_scroll(query: AccessibilityElementQuery, direction: AccessibilityScrollDirection) async throws {
+  public func accessibility_scroll(
+    query: AccessibilityElementQuery,
+    backend: UIAutomationBackend = .accessibility,
+    direction: AccessibilityScrollDirection
+  ) async throws {
     guard let simulator = target as? Simulator else {
       throw IDBCommandError.simulatorOnlyOperation(operation: "scroll by accessibility", targetDescription: String(describing: target))
     }
-    try await simulator.uiAutomation(backend: .accessibility).scroll(query, direction: direction)
+    try await simulator.uiAutomation(backend: backend).scroll(query, direction: direction)
   }
 
-  public func accessibility_set_value(query: AccessibilityElementQuery, value: String) async throws {
+  public func accessibility_set_value(
+    query: AccessibilityElementQuery,
+    backend: UIAutomationBackend = .accessibility,
+    value: String
+  ) async throws {
     guard let simulator = target as? Simulator else {
       throw IDBCommandError.simulatorOnlyOperation(operation: "set value by accessibility", targetDescription: String(describing: target))
     }
-    try await simulator.uiAutomation(backend: .accessibility).setValue(value, for: query)
+    try await simulator.uiAutomation(backend: backend).setValue(value, for: query)
   }
 
   public func accessibility_drag(
     from source: AccessibilityElementQuery,
     to destination: AccessibilityElementQuery,
+    backend: UIAutomationBackend = .accessibility,
     options: DragOptions
   ) async throws {
     guard let simulator = target as? Simulator else {
       throw IDBCommandError.simulatorOnlyOperation(operation: "drag by accessibility", targetDescription: String(describing: target))
     }
-    try await simulator.uiAutomation(backend: .accessibility).drag(from: source, to: destination, options: options)
+    try await simulator.uiAutomation(backend: backend).drag(from: source, to: destination, options: options)
   }
 
   public func accessibility_info_at_point(_ value: NSValue?, format: AccessibilityOutputFormat) async throws -> AccessibilityElementsResponse {

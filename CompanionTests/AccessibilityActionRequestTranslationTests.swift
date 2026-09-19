@@ -151,9 +151,9 @@ final class AccessibilityActionRequestTranslationTests: XCTestCase {
 
   // MARK: - Backend
 
-  // BUG: every action but wait drops the request's backend, so an element only the guest reader can
-  // see cannot be tapped, scrolled, set or dragged -- flipped in the following commit.
-  func testTapDropsTheRequestedBackend() throws {
+  private let guest = UIAutomationBackend(resolvedName: .axBridgeExclusive)
+
+  func testTapCarriesTheRequestedBackend() throws {
     let translated = try action {
       $0.backend = .axbridge
       $0.marker = "GETTING STARTED"
@@ -161,40 +161,67 @@ final class AccessibilityActionRequestTranslationTests: XCTestCase {
     }
     XCTAssertEqual(
       translated,
-      .tap(query: .marker(value: "GETTING STARTED", key: .label, depth: 0), expectedValue: nil, expectedKey: .label))
+      .tap(
+        query: .marker(value: "GETTING STARTED", key: .label, depth: 0), backend: guest, expectedValue: nil,
+        expectedKey: .label))
   }
 
-  func testScrollDropsTheRequestedBackend() throws {
+  func testScrollCarriesTheRequestedBackend() throws {
     let translated = try action {
       $0.backend = .axbridge
       $0.marker = "Notification Center"
       $0.scroll = .with { $0.direction = .down }
     }
     XCTAssertEqual(
-      translated, .scroll(query: .marker(value: "Notification Center", key: .label, depth: 0), direction: .down))
+      translated,
+      .scroll(query: .marker(value: "Notification Center", key: .label, depth: 0), backend: guest, direction: .down))
   }
 
-  func testSetValueDropsTheRequestedBackend() throws {
+  func testSetValueCarriesTheRequestedBackend() throws {
     let translated = try action {
       $0.backend = .axbridge
       $0.marker = "Search"
       $0.setValue = .with { $0.value = "hello" }
     }
     XCTAssertEqual(
-      translated, .setValue(query: .marker(value: "Search", key: .label, depth: 0), value: "hello"))
+      translated,
+      .setValue(query: .marker(value: "Search", key: .label, depth: 0), backend: guest, value: "hello"))
   }
 
-  func testDragDropsTheRequestedBackend() throws {
-    guard case let .drag(source, destination, _) = try drag({ $0.backend = .axbridge }) else {
+  func testDragCarriesTheRequestedBackend() throws {
+    guard case let .drag(source, destination, backend, _) = try drag({ $0.backend = .axbridge }) else {
       return XCTFail("expected a drag")
     }
     XCTAssertEqual(source, .point(CGPoint(x: 10, y: 20)))
     XCTAssertEqual(destination, .point(CGPoint(x: 200, y: 20)))
+    XCTAssertEqual(backend, guest)
   }
 
-  // BUG: wait reads only its own deprecated field, so a client that sets the request-level backend
-  // and leaves Wait's unset is served by the default backend -- flipped in the following commit.
-  func testWaitIgnoresTheRequestLevelBackend() throws {
+  func testAnUnaskedBackendIsTheDefault() throws {
+    let translated = try action {
+      $0.marker = "General"
+      $0.tap = .init()
+    }
+    XCTAssertEqual(
+      translated,
+      .tap(
+        query: .marker(value: "General", key: .label, depth: 0), backend: .accessibility, expectedValue: nil,
+        expectedKey: .label))
+  }
+
+  func testAnUnknownBackendIsRefused() {
+    XCTAssertThrowsError(
+      try action {
+        $0.backend = .UNRECOGNIZED(99)
+        $0.marker = "General"
+        $0.tap = .init()
+      }
+    ) { error in
+      XCTAssertEqual((error as? RPCError)?.code, .invalidArgument)
+    }
+  }
+
+  func testWaitCarriesTheRequestLevelBackend() throws {
     let translated = try action {
       $0.backend = .axbridge
       $0.marker = "Settings"
@@ -207,13 +234,32 @@ final class AccessibilityActionRequestTranslationTests: XCTestCase {
       translated,
       .wait(
         query: .marker(value: "Settings", key: .label, depth: 0),
-        backend: .accessibility, timeout: 10, pollInterval: 0.5))
+        backend: guest, timeout: 10, pollInterval: 0.5))
+  }
+
+  func testTheRequestLevelBackendWinsOverWaitsOwn() throws {
+    // Set to different values only a version-skewed client would send; the request-level field is
+    // the one that is not deprecated, so it decides.
+    let translated = try action {
+      $0.backend = .ax
+      $0.marker = "Settings"
+      $0.wait = .with {
+        $0.backend = .axbridge
+        $0.timeout = 10
+        $0.pollInterval = 0.5
+      }
+    }
+    XCTAssertEqual(
+      translated,
+      .wait(
+        query: .marker(value: "Settings", key: .label, depth: 0),
+        backend: UIAutomationBackend(resolvedName: .ax), timeout: 10, pollInterval: 0.5))
   }
 
   // MARK: - Routing
 
   func testADragRequestBecomesADrag() throws {
-    guard case let .drag(source, destination, _) = try drag() else {
+    guard case let .drag(source, destination, _, _) = try drag() else {
       return XCTFail("a request carrying a drag must not reach another action")
     }
     XCTAssertEqual(source, .point(CGPoint(x: 10, y: 20)))
@@ -243,7 +289,7 @@ final class AccessibilityActionRequestTranslationTests: XCTestCase {
         drag.destinationDepth = 3
       }
     }
-    guard case let .drag(source, destination, _) = action else {
+    guard case let .drag(source, destination, _, _) = action else {
       return XCTFail("expected a drag")
     }
     XCTAssertEqual(source, .marker(value: "Photo", key: .uniqueID, depth: 5))
@@ -263,7 +309,7 @@ final class AccessibilityActionRequestTranslationTests: XCTestCase {
         drag.destinationDepth = 3
       }
     }
-    guard case let .drag(source, destination, _) = action else {
+    guard case let .drag(source, destination, _, _) = action else {
       return XCTFail("expected a drag")
     }
     XCTAssertEqual(source, .marker(value: "Photo", key: .uniqueID, depth: 5, ignoresCase: false))
@@ -282,7 +328,7 @@ final class AccessibilityActionRequestTranslationTests: XCTestCase {
         drag.destinationDepth = 3
       }
     }
-    guard case let .drag(source, destination, _) = action else {
+    guard case let .drag(source, destination, _, _) = action else {
       return XCTFail("expected a drag")
     }
     XCTAssertEqual(source, .marker(value: "Photo", key: .uniqueID, depth: 5, ignoresCase: true))
@@ -312,7 +358,7 @@ final class AccessibilityActionRequestTranslationTests: XCTestCase {
   // MARK: - Options
 
   func testUnsetOptionsAreTheDefaults() throws {
-    guard case let .drag(_, _, options) = try drag() else {
+    guard case let .drag(_, _, _, options) = try drag() else {
       return XCTFail("expected a drag")
     }
     // Zero is unset on the wire and none of these are useful at zero, so the server's defaults
@@ -327,7 +373,7 @@ final class AccessibilityActionRequestTranslationTests: XCTestCase {
       $0.drag.releaseDuration = 0.25
       $0.drag.delta = 5
     }
-    guard case let .drag(_, _, options) = action else {
+    guard case let .drag(_, _, _, options) = action else {
       return XCTFail("expected a drag")
     }
     XCTAssertEqual(
@@ -359,7 +405,7 @@ final class AccessibilityActionRequestTranslationTests: XCTestCase {
         drag.delta = 10_000
       }
     }
-    guard case let .drag(_, _, options) = action else {
+    guard case let .drag(_, _, _, options) = action else {
       return XCTFail("expected a drag")
     }
     XCTAssertEqual(options.delta, 10_000)

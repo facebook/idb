@@ -19,13 +19,16 @@ enum AccessibilityActionRequestTranslation {
   /// A request that has been checked, with every endpoint and option resolved.
   enum Action: Equatable {
     case wait(query: AccessibilityElementQuery, backend: UIAutomationBackend, timeout: Double, pollInterval: Double)
-    case tap(query: AccessibilityElementQuery, expectedValue: String?, expectedKey: AXSearchableKey)
-    case scroll(query: AccessibilityElementQuery, direction: AccessibilityScrollDirection)
-    case setValue(query: AccessibilityElementQuery, value: String)
-    case drag(source: AccessibilityElementQuery, destination: AccessibilityElementQuery, options: DragOptions)
+    case tap(query: AccessibilityElementQuery, backend: UIAutomationBackend, expectedValue: String?, expectedKey: AXSearchableKey)
+    case scroll(query: AccessibilityElementQuery, backend: UIAutomationBackend, direction: AccessibilityScrollDirection)
+    case setValue(query: AccessibilityElementQuery, backend: UIAutomationBackend, value: String)
+    case drag(
+      source: AccessibilityElementQuery, destination: AccessibilityElementQuery, backend: UIAutomationBackend,
+      options: DragOptions)
   }
 
   static func action(from request: Idb_AccessibilityActionRequest) throws -> Action {
+    let backend = try backend(from: request)
     switch request.action {
     case let .wait(wait):
       guard case .marker = request.target, !request.marker.isEmpty else {
@@ -37,26 +40,26 @@ enum AccessibilityActionRequestTranslation {
       guard wait.timeout.isFinite, wait.timeout >= 0, wait.pollInterval.isFinite, wait.pollInterval > 0, wait.pollInterval * 1_000_000_000 < Double(UInt64.max) else {
         throw RPCError(code: .invalidArgument, message: "wait requires a finite nonnegative timeout and a finite positive poll_interval")
       }
-      if case .UNRECOGNIZED = wait.backend {
-        throw RPCError(code: .invalidArgument, message: "unknown wait backend")
-      }
       return .wait(
         query: try requiredQuery(from: request, action: "wait"),
-        backend: AccessibilityInfoRequestTranslation.backend(from: wait.backend),
+        backend: backend,
         timeout: wait.timeout, pollInterval: wait.pollInterval)
     case let .tap(tap):
       return .tap(
         query: try requiredQuery(from: request, action: "tap"),
+        backend: backend,
         expectedValue: tap.checkExpectedValue ? tap.expectedValue : nil,
         expectedKey: try searchableKey(from: tap.expectedKey))
     case let .scroll(scroll):
       return .scroll(
         query: try targetedQuery(from: request) ?? .frontmost,
+        backend: backend,
         direction: try scrollDirection(from: scroll.direction))
     case let .setValue(setValue):
-      return .setValue(query: try requiredQuery(from: request, action: "set_value"), value: setValue.value)
+      return .setValue(
+        query: try requiredQuery(from: request, action: "set_value"), backend: backend, value: setValue.value)
     case let .drag(drag):
-      return try dragAction(request: request, drag: drag)
+      return try dragAction(request: request, drag: drag, backend: backend)
     case .none:
       // Also what an action this companion is too old to know reads as: proto3 deserializes an
       // unrecognized oneof member as unset. Say so, rather than reporting an empty request.
@@ -79,9 +82,33 @@ enum AccessibilityActionRequestTranslation {
     }
   }
 
+  // MARK: - Backend
+
+  /// The backend serving the request. `Wait` carries a deprecated backend of its own, read only when
+  /// the request-level field is unset, so a client older than that field still selects one for wait.
+  private static func backend(from request: Idb_AccessibilityActionRequest) throws -> UIAutomationBackend {
+    if case .UNRECOGNIZED = request.backend {
+      throw RPCError(code: .invalidArgument, message: "unknown accessibility backend")
+    }
+    guard case .unspecified = request.backend else {
+      return AccessibilityInfoRequestTranslation.backend(from: request.backend)
+    }
+    guard case let .wait(wait) = request.action else {
+      return .accessibility
+    }
+    if case .UNRECOGNIZED = wait.backend {
+      throw RPCError(code: .invalidArgument, message: "unknown wait backend")
+    }
+    return AccessibilityInfoRequestTranslation.backend(from: wait.backend)
+  }
+
   // MARK: - Drag
 
-  private static func dragAction(request: Idb_AccessibilityActionRequest, drag: Idb_AccessibilityActionRequest.Drag) throws -> Action {
+  private static func dragAction(
+    request: Idb_AccessibilityActionRequest,
+    drag: Idb_AccessibilityActionRequest.Drag,
+    backend: UIAutomationBackend
+  ) throws -> Action {
     guard let source = try targetedQuery(from: request) else {
       throw RPCError(code: .invalidArgument, message: "accessibility_action drag requires a marker or point source")
     }
@@ -102,7 +129,7 @@ enum AccessibilityActionRequestTranslation {
           message: "accessibility_action drag delta (\(options.delta)) must be smaller than the distance dragged (\(distance))")
       }
     }
-    return .drag(source: source, destination: destination, options: options)
+    return .drag(source: source, destination: destination, backend: backend, options: options)
   }
 
   private static func dragDestination(_ drag: Idb_AccessibilityActionRequest.Drag, ignoresCase: Bool) throws -> AccessibilityElementQuery? {

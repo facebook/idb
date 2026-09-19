@@ -443,7 +443,10 @@ message AccessibilityActionRequest {
   message Wait {
     double timeout = 1;
     double poll_interval = 2;
-    AccessibilityInfoRequest.Backend backend = 3;
+    // Superseded by AccessibilityActionRequest.backend, which every action
+    // shares. Still read when that field is unset, so a client older than it
+    // keeps selecting a backend for wait.
+    AccessibilityInfoRequest.Backend backend = 3 [ deprecated = true ];
   }
 
   oneof action {
