@@ -8,15 +8,14 @@
 import FBControlCore
 import Foundation
 
-public final class XCTestBootstrapFrameworkLoader: FBControlCoreFrameworkLoader {
+/// The private frameworks XCTestBootstrap loads on demand.
+public enum XCTestBootstrapFrameworkLoader {
 
-  public static nonisolated(unsafe) let allDependentFrameworks: XCTestBootstrapFrameworkLoader = {
-    return XCTestBootstrapFrameworkLoader(
-      name: "XCTestBootstrap",
-      frameworks: [
-        WeakFramework.dtxConnectionServices,
-        WeakFramework.xcTest,
-      ]
-    )
-  }()
+  public static let allDependentFrameworks = FrameworkLoader(
+    name: "XCTestBootstrap",
+    frameworks: [
+      WeakFramework.dtxConnectionServices,
+      WeakFramework.xcTest,
+    ]
+  )
 }

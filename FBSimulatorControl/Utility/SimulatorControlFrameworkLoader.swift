@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-@preconcurrency import FBControlCore
+import FBControlCore
 import Foundation
 
 /// The private frameworks FBSimulatorControl loads on demand, grouped by what needs them.
@@ -14,17 +14,17 @@ public enum SimulatorControlFrameworkLoader {
   private static let name = "FBSimulatorControl"
 
   /// The frameworks needed for most operations.
-  public static let essentialFrameworks = FBControlCoreFrameworkLoader(
+  public static let essentialFrameworks = FrameworkLoader(
     name: name,
     frameworks: [WeakFramework.coreSimulator])
 
   /// The frameworks needed for accessibility operations.
-  public static let accessibilityFrameworks = FBControlCoreFrameworkLoader(
+  public static let accessibilityFrameworks = FrameworkLoader(
     name: name,
     frameworks: [WeakFramework.accessibilityPlatformTranslation])
 
   /// The frameworks needed for operations involving the HID and framebuffer.
-  public static let xcodeFrameworks = FBControlCoreFrameworkLoader(
+  public static let xcodeFrameworks = FrameworkLoader(
     name: name,
     frameworks: [WeakFramework.simulatorKit])
 }

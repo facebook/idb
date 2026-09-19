@@ -14,12 +14,18 @@ import XCTest
 /// Counts `loadPrivateFrameworks` calls without dlopening anything, so a test can observe whether the
 /// code under test asks for its frameworks. The process-global load state cannot answer that: the
 /// other suites in this test bundle share the process and have already loaded them.
-private final class RecordingFrameworkLoader: FBControlCoreFrameworkLoader {
+// patternlint-disable-next-line unchecked-sendable
+private final class RecordingFrameworkLoader: FrameworkLoading, @unchecked Sendable {
 
-  private(set) var loadCount = 0
+  private let lock = NSLock()
+  private var count = 0
 
-  override func loadPrivateFrameworks(_ logger: ControlCoreLogger?) throws {
-    loadCount += 1
+  var loadCount: Int {
+    lock.withLock { count }
+  }
+
+  func loadPrivateFrameworks(_ logger: (any ControlCoreLogger)?) throws {
+    lock.withLock { count += 1 }
   }
 }
 
@@ -369,7 +375,7 @@ final class SimulatorIndigoHIDTests: XCTestCase {
   // `SimDeviceLegacyHIDClient` is vended by SimulatorKit, which only the `xcodeFrameworks` loader
   // dlopens — `FBSimulatorControl` on its own loads just the essential set (CoreSimulator).
   func testResolvingTheClientClassLoadsTheXcodeFrameworks() {
-    let loader = RecordingFrameworkLoader(name: "SimulatorKit", frameworks: [])
+    let loader = RecordingFrameworkLoader()
     // `try?`: the class itself has relocated across Xcodes, so whether the lookup succeeds on the
     // host running this test is beside the point — what is pinned is the loading, not the result.
     _ = try? SimulatorIndigoHIDClient.resolveClientClass(loader: loader)

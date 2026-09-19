@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-@preconcurrency import FBControlCore
+import FBControlCore
 import Foundation
 
 /// Reinterprets a `dlsym` result as the function pointer the call table expects.
@@ -21,35 +21,39 @@ private func symbol<T>(_ handle: UnsafeMutableRawPointer, _ name: String) throws
 }
 
 /// Loads the frameworks FBDeviceControl depends on and initializes values.
-@objc
-public final class DeviceControlFrameworkLoader: FBControlCoreFrameworkLoader {
+///
+/// `@unchecked Sendable`: the resolved call table is the only mutable state, and `lock` guards it.
+// patternlint-disable-next-line unchecked-sendable
+public final class DeviceControlFrameworkLoader: FrameworkLoading, @unchecked Sendable {
 
-  @objc
-  public init() {
-    super.init(name: "FBDeviceControl", frameworks: [WeakFramework.mobileDevice])
-  }
+  private let frameworks = FrameworkLoader(name: "FBDeviceControl", frameworks: [WeakFramework.mobileDevice])
+  private let lock = NSLock()
+  private var resolvedCalls: AMDCalls?
 
-  public override func loadPrivateFrameworks(_ logger: (any ControlCoreLogger)?) throws {
-    if hasLoadedFrameworks {
-      return
+  public init() {}
+
+  /// Loads MobileDevice and resolves its call table, at most once per instance.
+  public func loadPrivateFrameworks(_ logger: (any ControlCoreLogger)?) throws {
+    try lock.withLock {
+      if resolvedCalls != nil {
+        return
+      }
+      try frameworks.loadPrivateFrameworks(logger)
+      let calls = try Self.resolveAMDeviceCalls()
+      calls.InitializeMobileDevice()
+      resolvedCalls = calls
     }
-    try super.loadPrivateFrameworks(logger)
-    let calls = try Self.resolveAMDeviceCalls()
-    calls.InitializeMobileDevice()
-    resolvedCalls = calls
   }
 
   /// The AMDevice calls to use, resolved by a successful `loadPrivateFrameworks`.
   var amDeviceCalls: AMDCalls {
     get throws {
-      guard let resolvedCalls else {
+      guard let resolvedCalls = lock.withLock({ resolvedCalls }) else {
         throw DeviceControlFrameworkLoaderError.frameworksNotLoaded
       }
       return resolvedCalls
     }
   }
-
-  private var resolvedCalls: AMDCalls?
 
   /// Memberwise, so a symbol added to `AMDCalls` without being resolved here fails to compile.
   private static func resolveAMDeviceCalls() throws -> AMDCalls {

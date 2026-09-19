@@ -10,7 +10,7 @@ import Foundation
 import Testing
 
 @Suite("Framework loader error contract")
-struct FBControlCoreFrameworkLoaderErrorTests {
+struct FrameworkLoaderErrorTests {
 
   @Test("A throwing load surfaces a descriptive error for an unloadable framework")
   func throwingLoadSurfacesADescriptiveError() throws {
@@ -20,7 +20,7 @@ struct FBControlCoreFrameworkLoaderErrorTests {
       requiredClassNames: ["IDBNonexistentClass"],
       rootPermitted: false
     )
-    let loader = FBControlCoreFrameworkLoader(name: "TestFrameworks", frameworks: [framework])
+    let loader = FrameworkLoader(name: "TestFrameworks", frameworks: [framework])
 
     let error = #expect(throws: (any Error).self) {
       try loader.loadPrivateFrameworks(nil)
