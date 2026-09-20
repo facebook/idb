@@ -16,6 +16,24 @@ final class BinaryDescriptorTests: XCTestCase {
   /// A fat system binary carrying two `LC_RPATH` commands.
   private static let binaryWithRpaths = "/usr/bin/xprotect"
 
+  /// A minimal thin arm64 Mach-O carrying one `LC_UUID` command.
+  private static let thinBinary = Data([
+    0xcf, 0xfa, 0xed, 0xfe, // MH_MAGIC_64
+    0x0c, 0x00, 0x00, 0x01, // CPU_TYPE_ARM64
+    0x00, 0x00, 0x00, 0x00, // CPU_SUBTYPE_ARM64_ALL
+    0x02, 0x00, 0x00, 0x00, // MH_EXECUTE
+    0x01, 0x00, 0x00, 0x00, // ncmds
+    0x18, 0x00, 0x00, 0x00, // sizeofcmds
+    0x00, 0x00, 0x00, 0x00, // flags
+    0x00, 0x00, 0x00, 0x00, // reserved
+    0x1b, 0x00, 0x00, 0x00, // LC_UUID
+    0x18, 0x00, 0x00, 0x00, // cmdsize
+    0x00, 0x01, 0x02, 0x03,
+    0x04, 0x05, 0x06, 0x07,
+    0x08, 0x09, 0x0a, 0x0b,
+    0x0c, 0x0d, 0x0e, 0x0f,
+  ])
+
   private func temporaryFile(named name: String, contents: Data) throws -> String {
     let directory = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent("BinaryDescriptorTests-\(UUID().uuidString)", isDirectory: true)
     try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
@@ -56,10 +74,10 @@ final class BinaryDescriptorTests: XCTestCase {
   }
 
   func testThinBinaryYieldsOneArchitecture() throws {
-    let path = (XcodeConfiguration.developerDirectory as NSString).appendingPathComponent("usr/bin/xcodebuild")
+    let path = try temporaryFile(named: "thin", contents: Self.thinBinary)
     let descriptor = try BinaryDescriptor.binary(withPath: path)
-    XCTAssertEqual(descriptor.architectures.count, 1)
-    XCTAssertNotNil(descriptor.uuid)
+    XCTAssertEqual(descriptor.architectures, [.arm64])
+    XCTAssertEqual(descriptor.uuid, UUID(uuidString: "00010203-0405-0607-0809-0A0B0C0D0E0F"))
   }
 
   func testRpathsAreReadFromTheLoadCommands() throws {
