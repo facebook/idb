@@ -725,19 +725,19 @@ class AccessibilityTests(IdbEndToEndTestCase):
 
     @documented_demo(
         slug="open-a-settings-page-by-id",
-        title="Open a Settings page by accessibility id",
+        title="Open a Settings page by accessibility identifier",
         summary=(
-            "Find the General row from inside the simulator by its "
-            "accessibility id, wait for it, open it with a tap addressed by "
-            "that same id rather than by a coordinate, wait for the page that "
-            "opens, and read that page's bar to confirm which page it is."
+            "Use an accessibility identifier to find and tap the General row "
+            "in Settings without calculating screen coordinates. Then wait "
+            "for the General page and read its navigation bar to verify that "
+            "the tap opened the expected destination."
         ),
     )
     async def test_ui_opens_general_by_identifier_and_confirms_it(self) -> None:
         await self.wait_for_element(GENERAL_ROW_ID)
 
         before = await self.describe_by_id(
-            GENERAL_ROW_ID, step="Find the General row from inside the simulator"
+            GENERAL_ROW_ID, step="Find the General row by accessibility identifier"
         )
         # The row the demo opens, and the label it is published under, both come
         # from this one reading of the element the clip is showing.
@@ -746,8 +746,9 @@ class AccessibilityTests(IdbEndToEndTestCase):
         title = _label(rows[0])
         self.assertTrue(title, "The General row has no label")
         self.note(
-            f"A {rows[0].get('type')} identified {GENERAL_ROW_ID}, labelled "
-            f"{title!r}, {self._placed(rows[0], _screen(before))}.",
+            f"The row is a {rows[0].get('type')} labelled {title!r}, with "
+            f"accessibility identifier {GENERAL_ROW_ID}. It is "
+            f"{self._placed(rows[0], _screen(before))}.",
             GENERAL_ROW_ID,
             title,
         )
@@ -771,11 +772,11 @@ class AccessibilityTests(IdbEndToEndTestCase):
                 "axbridge",
                 "--timeout",
                 str(UI_UPDATE_TIMEOUT_SECONDS),
-                step="Wait for the row, by the id the tap will address",
+                step="Wait until the General row is available",
             ),
             {"found": True},
         )
-        self.note("The row is there to be addressed.", "found")
+        self.note("The row is available, so idb can address it by identifier.", "found")
 
         await self.idb(
             "ui",
@@ -783,9 +784,12 @@ class AccessibilityTests(IdbEndToEndTestCase):
             GENERAL_ROW_ID,
             "--match-key",
             "AXUniqueId",
-            step="Open it with a tap addressed by that id",
+            step="Tap the General row by accessibility identifier",
         )
-        self.note("Tapped by id, with no coordinate to work out.")
+        self.note(
+            "idb tapped the row by identifier; the test did not calculate a "
+            "screen coordinate."
+        )
 
         self.assertEqual(
             await self.idb_json(
@@ -798,14 +802,14 @@ class AccessibilityTests(IdbEndToEndTestCase):
                 "axbridge",
                 "--timeout",
                 str(UI_UPDATE_TIMEOUT_SECONDS),
-                step="Wait for the page the tap opened",
+                step="Wait for the General page to open",
             ),
             {"found": True},
         )
-        self.note(f"Something identified {title!r} has appeared.", "found")
+        self.note("The General page's navigation bar is now present.", "found")
 
         after = await self.describe_by_id(
-            title, step="Read the bar of the page that opened"
+            title, step="Verify that the General page opened"
         )
         opened = _visible(after, title, "NavigationBar")
         self.assertEqual(
@@ -814,8 +818,8 @@ class AccessibilityTests(IdbEndToEndTestCase):
             f"No navigation bar named {title!r} is on screen after the tap",
         )
         self.note(
-            f"A NavigationBar identified {title!r}, "
-            f"{self._placed(opened[0], _screen(after))}.",
+            f"The navigation bar labelled {title!r} confirms that the expected "
+            f"page opened. It is {self._placed(opened[0], _screen(after))}.",
             "NavigationBar",
             title,
         )
@@ -851,10 +855,14 @@ class AccessibilityTests(IdbEndToEndTestCase):
 
     @documented_demo(
         slug="scroll-a-list",
-        title="Scroll a list and check that it moved",
+        title="Scroll a list and verify the result",
         summary=(
-            "Scroll the Settings list down from a named row and back up again, "
-            "reading the accessibility tree to confirm the rows really moved."
+            "Scroll the Settings list down from the General row and use the "
+            "accessibility tree to measure how far the rows moved. Pick a "
+            "visible row as the starting point for the reverse gesture, scroll "
+            "back up, and measure again. This verifies the effect of each "
+            "gesture instead of treating a successful command as proof that "
+            "the list moved."
         ),
     )
     async def test_ui_scroll_moves_settings_rows_down_and_up(self) -> None:
@@ -869,7 +877,7 @@ class AccessibilityTests(IdbEndToEndTestCase):
             GENERAL_ROW_ID,
             "--match-key",
             "AXUniqueId",
-            step="Scroll the Settings list down from the General row",
+            step="Scroll down from the General row",
         )
         after_down, scrolled = await self.wait_for_scroll(before, "down")
         self.note(self._movement(before, after_down, "up"), GENERAL_ROW_ID)
@@ -881,8 +889,8 @@ class AccessibilityTests(IdbEndToEndTestCase):
         # can begin.
         row_after_scroll = on_screen[len(on_screen) // 2]
         self.note(
-            f"{on_screen[0]} is now the top row, and {row_after_scroll} is "
-            "in the middle of the screen.",
+            f"{on_screen[0]} is now the top visible row. {row_after_scroll} is "
+            "near the middle and can be used to start the reverse scroll.",
             row_after_scroll,
         )
         await self.idb(
@@ -892,7 +900,7 @@ class AccessibilityTests(IdbEndToEndTestCase):
             row_after_scroll,
             "--match-key",
             "AXUniqueId",
-            step="Scroll back up from a row that is now on screen",
+            step="Scroll back up from a visible row",
         )
         after_up, _ = await self.wait_for_scroll(after_down, "up")
         self.note(self._movement(after_down, after_up, "down"), row_after_scroll)
@@ -909,7 +917,7 @@ class AccessibilityTests(IdbEndToEndTestCase):
         }
         furthest = max(moved.values(), key=abs, default=0.0)
         return (
-            f"{len(moved)} rows moved {direction} the screen by up to "
+            f"{len(moved)} rows moved {direction} by as much as "
             f"{abs(furthest):.0f} points."
         )
 
@@ -925,16 +933,15 @@ class AccessibilityTests(IdbEndToEndTestCase):
 
     @documented_demo(
         slug="deliver-a-notification-and-watch-it-clear",
-        title="Approve notifications before the app asks for them",
+        title="Test notification delivery without handling a permission prompt",
         summary=(
-            "An app puts up its permission prompt when it decides to, so "
-            "answering one means knowing when it will appear. idb sets the "
-            "permission instead, and no prompt is ever drawn. With "
-            "notifications granted, deliver one while the app is not "
-            "running and read the banner the system draws — SpringBoard's "
-            "view rather than the app's, read through the backend running "
-            "inside the simulator. Then open the notification and watch the "
-            "system stop holding it."
+            "Prepare a simulator for notification testing without launching "
+            "the app or automating its permission prompt. Grant notification "
+            "permission directly, deliver a push while the app is not running, "
+            "and use the in-simulator accessibility backend to inspect the "
+            "banner that SpringBoard draws. Open the banner, then query the "
+            "delivered-notification list again to verify that the system "
+            "removed it."
         ),
     )
     async def test_a_delivered_notification_is_held_until_it_is_opened(self) -> None:
@@ -957,11 +964,12 @@ class AccessibilityTests(IdbEndToEndTestCase):
             "approve",
             NEWS_BUNDLE_ID,
             "notification",
-            step="Grant notification permission",
+            step="Grant notification permission without showing a prompt",
         )
         self.note(
-            f"{NEWS_BUNDLE_ID} can be sent notifications, and nothing had to "
-            f"wait on it asking to be allowed them.",
+            f"Notification permission is already granted to {NEWS_BUNDLE_ID}, "
+            "so the test can deliver a notification without waiting for the "
+            "app to request access.",
             NEWS_BUNDLE_ID,
         )
 
@@ -969,31 +977,34 @@ class AccessibilityTests(IdbEndToEndTestCase):
             "notification",
             "list",
             NEWS_BUNDLE_ID,
-            step="Ask what the system is holding for it",
+            step="List notifications before delivery",
         )
         held = {identifier for identifier, _ in self._retained(before.text)}
         self.note(
-            "Nothing has been delivered to it yet."
+            "No delivered notifications are currently stored for this app."
             if not held
-            else f"{len(held)} from earlier."
+            else (
+                f"The system already holds {len(held)} delivered notifications "
+                "for this app; the test records them so it can identify the new one."
+            )
         )
 
         await self.idb(
             "ui",
             "button",
             "HOME",
-            step="Put the simulator on the Home Screen",
+            step="Return to the Home Screen before delivery",
         )
         self.note(
-            "So the banner is drawn over SpringBoard, which is what a read "
-            "reaches once nothing else is in front of it."
+            "With no app in front, SpringBoard owns the visible accessibility "
+            "tree. The notification banner will appear there."
         )
 
         await self.idb(
             "send-notification",
             NEWS_BUNDLE_ID,
             NOTIFICATION_PAYLOAD,
-            step="Deliver a notification to it",
+            step="Deliver a notification while the app is not running",
         )
         await self.setup_idb(
             "ui",
@@ -1019,7 +1030,7 @@ class AccessibilityTests(IdbEndToEndTestCase):
             "--match-key",
             "AXUniqueId",
             *LABEL_AND_FRAME_KEYS,
-            step="Read the banner the system drew",
+            step="Read the notification banner from inside the simulator",
         )
         self.assertEqual(banner["backend"], AXBRIDGE_BACKEND)
         platters = [
@@ -1031,8 +1042,7 @@ class AccessibilityTests(IdbEndToEndTestCase):
         platter = platters[0]
         self.assertIn(NOTIFICATION_TITLE, _label(platter))
         self.note(
-            f"The banner belongs to SpringBoard rather than to "
-            f"{NEWS_BUNDLE_ID}, and it is "
+            f"SpringBoard, not {NEWS_BUNDLE_ID}, owns the banner. The banner is "
             f"{self._placed(platter, _screen(banner))}.",
             BANNER_ID,
         )
@@ -1041,7 +1051,7 @@ class AccessibilityTests(IdbEndToEndTestCase):
             "notification",
             "list",
             NEWS_BUNDLE_ID,
-            step="Ask again what the system is holding",
+            step="List notifications after delivery",
         )
         delivered = [
             identifier
@@ -1050,9 +1060,10 @@ class AccessibilityTests(IdbEndToEndTestCase):
         ]
         self.assertEqual(len(delivered), 1, f"expected one new {NOTIFICATION_TITLE!r}")
         self.note(
-            f"The one just delivered, titled {NOTIFICATION_TITLE!r}. The "
-            f"identifier beside it is the system's own, and is what the last "
-            f"of these reads is checked against.",
+            f"The delivered-notification list now contains a new entry titled "
+            f"{NOTIFICATION_TITLE!r}. The test keeps its system-assigned "
+            "identifier so it can verify that the same entry is removed after "
+            "it opens.",
             NOTIFICATION_TITLE,
         )
 
@@ -1064,7 +1075,7 @@ class AccessibilityTests(IdbEndToEndTestCase):
             f"{frame['y'] + frame['height'] / 2:.0f}",
             "--reason",
             "the banner is SpringBoard's, so a marker tap cannot resolve it",
-            step="Open it at the point the read reported",
+            step="Open the banner at its reported position",
         )
 
         async def released() -> None:
@@ -1082,9 +1093,12 @@ class AccessibilityTests(IdbEndToEndTestCase):
             "notification",
             "list",
             NEWS_BUNDLE_ID,
-            step="Ask a third time what the system is holding",
+            step="List notifications after opening the banner",
         )
         self.assertNotIn(
             delivered[0], [identifier for identifier, _ in self._retained(cleared.text)]
         )
-        self.note("Opened, so the system is no longer holding it.")
+        self.note(
+            "The notification is no longer in the delivered-notification list, "
+            "confirming that opening it cleared the stored entry."
+        )
