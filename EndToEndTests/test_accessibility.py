@@ -9,6 +9,8 @@ The ax API runs on the host; axbridge runs SimulatorFrameworkBridge inside
 the simulator. Complete output identifies which backend served the request.
 Tests select labelled Settings rows at runtime to avoid locale-specific names.
 Tap and scroll tests verify navigation and movement through the simulator API.
+SpringBoard is read as well, for an element the host API cannot reach: the
+notification banner it draws for an app that is not running.
 """
 
 from __future__ import annotations
@@ -54,6 +56,26 @@ MINIMUM_CONTROL_WIDTH = 100
 
 CONTROL_DISCOVERY_TIMEOUT_SECONDS = ACCESSIBILITY_READY_TIMEOUT_SECONDS
 DESCRIBE_ALL_ARGS = ("ui", "describe-all", "--nested")
+
+NEWS_BUNDLE_ID = "com.apple.news"
+NOTIFICATION_TITLE = "Breaking"
+NOTIFICATION_PAYLOAD = json.dumps(
+    {
+        "aps": {
+            "alert": {
+                "title": NOTIFICATION_TITLE,
+                "body": "idb delivered this without the app running.",
+            }
+        }
+    }
+)
+# SpringBoard draws the banner, and a read is scoped to the frontmost
+# application, so the banner is only in the tree while SpringBoard is it.
+BANNER_ID = "ShortLook.Platter.Content.Seamless"
+NOTIFICATION_STORE_TIMEOUT_SECONDS = 300.0
+# Enough of a matched element to say what it is and where it sits, rather
+# than every attribute a read would otherwise carry on every match.
+LABEL_AND_FRAME_KEYS = ("--key", "AXLabel", "--key", "AXFrame")
 
 
 def _elements(node: Any) -> list[dict[str, Any]]:
@@ -223,6 +245,7 @@ INTERACTION_TESTS = frozenset(
         "test_ui_wait_returns_after_general_opens",
         "test_ui_wait_reports_a_missing_marker_timeout",
         "test_ui_wait_rejects_an_invalid_poll_interval",
+        "test_a_delivered_notification_is_held_until_it_is_opened",
     }
 )
 ACCESSIBILITY_TEST_CAPABILITIES = {
@@ -889,3 +912,179 @@ class AccessibilityTests(IdbEndToEndTestCase):
             f"{len(moved)} rows moved {direction} the screen by up to "
             f"{abs(furthest):.0f} points."
         )
+
+    @staticmethod
+    def _retained(text: str) -> list[tuple[str, str]]:
+        """The identifier and title of each notification the system still holds."""
+        held = []
+        for line in text.splitlines():
+            fields = [field.strip().strip('"') for field in line.split("|")]
+            if len(fields) >= 3:
+                held.append((fields[1], fields[2]))
+        return held
+
+    @documented_demo(
+        slug="deliver-a-notification-and-watch-it-clear",
+        title="Approve notifications before the app asks for them",
+        summary=(
+            "An app puts up its permission prompt when it decides to, so "
+            "answering one means knowing when it will appear. idb sets the "
+            "permission instead, and no prompt is ever drawn. With "
+            "notifications granted, deliver one while the app is not "
+            "running and read the banner the system draws — SpringBoard's "
+            "view rather than the app's, read through the backend running "
+            "inside the simulator. Then open the notification and watch the "
+            "system stop holding it."
+        ),
+    )
+    async def test_a_delivered_notification_is_held_until_it_is_opened(self) -> None:
+        self.addAsyncCleanup(self.setup_terminate_quietly, NEWS_BUNDLE_ID)
+        await self.setup_terminate_quietly(NEWS_BUNDLE_ID)
+        # The first push a simulator receives after it is erased waits on the
+        # system building its notification store, for long enough that a
+        # banner would be drawn and withdrawn before the command returned.
+        # This one is sent before the permission is granted, so the system
+        # refuses it and stores nothing, and the demo's own push is quick.
+        await self.setup_idb(
+            "send-notification",
+            NEWS_BUNDLE_ID,
+            NOTIFICATION_PAYLOAD,
+            check=False,
+            timeout=NOTIFICATION_STORE_TIMEOUT_SECONDS,
+        )
+
+        await self.idb(
+            "approve",
+            NEWS_BUNDLE_ID,
+            "notification",
+            step="Grant notification permission",
+        )
+        self.note(
+            f"{NEWS_BUNDLE_ID} can be sent notifications, and nothing had to "
+            f"wait on it asking to be allowed them.",
+            NEWS_BUNDLE_ID,
+        )
+
+        before = await self.idb(
+            "notification",
+            "list",
+            NEWS_BUNDLE_ID,
+            step="Ask what the system is holding for it",
+        )
+        held = {identifier for identifier, _ in self._retained(before.text)}
+        self.note(
+            "Nothing has been delivered to it yet."
+            if not held
+            else f"{len(held)} from earlier."
+        )
+
+        await self.idb(
+            "ui",
+            "button",
+            "HOME",
+            step="Put the simulator on the Home Screen",
+        )
+        self.note(
+            "So the banner is drawn over SpringBoard, which is what a read "
+            "reaches once nothing else is in front of it."
+        )
+
+        await self.idb(
+            "send-notification",
+            NEWS_BUNDLE_ID,
+            NOTIFICATION_PAYLOAD,
+            step="Deliver a notification to it",
+        )
+        await self.setup_idb(
+            "ui",
+            "wait",
+            BANNER_ID,
+            "--match-key",
+            "AXUniqueId",
+            "--api",
+            "axbridge",
+            "--timeout",
+            str(UI_UPDATE_TIMEOUT_SECONDS),
+        )
+
+        banner = await self.idb_json(
+            "ui",
+            "describe-all",
+            "--api",
+            "axbridge",
+            "--format",
+            "complete",
+            "--match",
+            BANNER_ID,
+            "--match-key",
+            "AXUniqueId",
+            *LABEL_AND_FRAME_KEYS,
+            step="Read the banner the system drew",
+        )
+        self.assertEqual(banner["backend"], AXBRIDGE_BACKEND)
+        platters = [
+            element
+            for element in _elements(banner["elements"])
+            if element.get("identifier") == BANNER_ID and _has_area(element)
+        ]
+        self.assertTrue(platters, f"no {BANNER_ID} was reported")
+        platter = platters[0]
+        self.assertIn(NOTIFICATION_TITLE, _label(platter))
+        self.note(
+            f"The banner belongs to SpringBoard rather than to "
+            f"{NEWS_BUNDLE_ID}, and it is "
+            f"{self._placed(platter, _screen(banner))}.",
+            BANNER_ID,
+        )
+
+        after = await self.idb(
+            "notification",
+            "list",
+            NEWS_BUNDLE_ID,
+            step="Ask again what the system is holding",
+        )
+        delivered = [
+            identifier
+            for identifier, title in self._retained(after.text)
+            if title == NOTIFICATION_TITLE and identifier not in held
+        ]
+        self.assertEqual(len(delivered), 1, f"expected one new {NOTIFICATION_TITLE!r}")
+        self.note(
+            f"The one just delivered, titled {NOTIFICATION_TITLE!r}. The "
+            f"identifier beside it is the system's own, and is what the last "
+            f"of these reads is checked against.",
+            NOTIFICATION_TITLE,
+        )
+
+        frame = platter["frame"]
+        await self.idb(
+            "ui",
+            "tap",
+            f"{frame['x'] + frame['width'] / 2:.0f}",
+            f"{frame['y'] + frame['height'] / 2:.0f}",
+            "--reason",
+            "the banner is SpringBoard's, so a marker tap cannot resolve it",
+            step="Open it at the point the read reported",
+        )
+
+        async def released() -> None:
+            completed = await self.setup_idb("notification", "list", NEWS_BUNDLE_ID)
+            if delivered[0] in [i for i, _ in self._retained(completed.text)]:
+                raise NotReady(f"{NOTIFICATION_TITLE!r} is still held")
+
+        await wait_until(
+            f"The system did not release {NOTIFICATION_TITLE!r}",
+            UI_UPDATE_TIMEOUT_SECONDS,
+            released,
+        )
+
+        cleared = await self.idb(
+            "notification",
+            "list",
+            NEWS_BUNDLE_ID,
+            step="Ask a third time what the system is holding",
+        )
+        self.assertNotIn(
+            delivered[0], [identifier for identifier, _ in self._retained(cleared.text)]
+        )
+        self.note("Opened, so the system is no longer holding it.")

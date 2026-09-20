@@ -49,6 +49,10 @@ DOCUMENTED_DEMOS: Mapping[str, str] = {
         "EndToEndTests.test_accessibility.AccessibilityTests"
         ".test_ui_scroll_moves_settings_rows_down_and_up"
     ),
+    "deliver-a-notification-and-watch-it-clear": (
+        "EndToEndTests.test_accessibility.AccessibilityTests"
+        ".test_a_delivered_notification_is_held_until_it_is_opened"
+    ),
 }
 
 PACKAGE = "EndToEndTests"
