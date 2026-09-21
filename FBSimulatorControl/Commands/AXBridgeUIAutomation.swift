@@ -189,14 +189,14 @@ final class AXBridgeUIAutomation: AXBridgeTreeReader, @unchecked Sendable {
         let elements = AXTreeWalk.describeAllElements(
           fromTree: read.tree, keys: AXKeys.defaultSet.union([key.serializationKey]), nestedFormat: false, pid: read.pid
         )
-        return AXTreeWalk.matchingElement(inElements: elements, markerValue: markerValue, key: key) != nil ? true : nil
+        return AccessibilitySearchResult(match: AXTreeWalk.matchingElement(inElements: elements, markerValue: markerValue, key: key) != nil ? true : nil)
       } catch UIAutomationError.applicationUnavailable, UIAutomationError.applicationNotResponding {
-        return nil
+        return AccessibilitySearchResult(match: nil)
       } catch let error as AXBridgeError {
         guard error.isTransientDuringMarkerWait else {
           throw error
         }
-        return nil
+        return AccessibilitySearchResult(match: nil)
       }
     }
   }

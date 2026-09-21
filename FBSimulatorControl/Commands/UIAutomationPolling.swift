@@ -11,22 +11,20 @@ import Foundation
 /// Polling shared by the accessibility and axbridge `wait` implementations.
 enum UIAutomationPolling {
 
-  /// Polls `probe` until it returns a non-nil value or `timeout` elapses (measured by `clock`),
+  /// Polls `probe` until it returns a match or `timeout` elapses (measured by `clock`),
   /// sleeping `pollInterval` between attempts. `clock`/`sleep` are injected for deterministic tests.
   static func pollUntilFound<T>(
     timeout: TimeInterval,
     pollInterval: TimeInterval,
     clock: () -> TimeInterval,
     sleep: (TimeInterval) async throws -> Void,
-    probe: () async throws -> T?
-  ) async throws -> T? {
+    probe: () async throws -> AccessibilitySearchResult<T>
+  ) async throws -> AccessibilitySearchResult<T> {
     let deadline = clock() + timeout
     while true {
-      if let value = try await probe() {
-        return value
-      }
-      if clock() >= deadline {
-        return nil
+      let result = try await probe()
+      if result.match != nil || clock() >= deadline {
+        return result
       }
       try await sleep(pollInterval)
     }
@@ -34,15 +32,14 @@ enum UIAutomationPolling {
 
   /// The whole `wait` verb, for a backend that can answer "is the marker there yet?".
   ///
-  /// `probe` returns `true` once the element is present and `nil` while it is not yet — a probe should
-  /// treat "not there" as `nil` rather than throwing, and throw only on a genuine failure, which ends
-  /// the wait immediately instead of burning the timeout.
+  /// A probe returns a match once the element is present and diagnostics for an unsuccessful read.
+  /// Terminal failures throw immediately; retryable failures belong to the probe's diagnostics.
   static func waitForMarker(
     _ query: AccessibilityElementQuery,
     backend: UIAutomationBackend,
     timeout: TimeInterval,
     pollInterval: TimeInterval,
-    probe: (_ value: String, _ key: AXSearchableKey, _ depth: UInt) async throws -> Bool?
+    probe: (_ value: String, _ key: AXSearchableKey, _ depth: UInt) async throws -> AccessibilitySearchResult<Bool>
   ) async throws {
     guard case let .marker(value, key, depth, _) = query else {
       throw UIAutomationError.markerRequired(backend: backend, operation: "Waiting")
@@ -52,7 +49,7 @@ enum UIAutomationPolling {
     guard pollInterval >= 0 else {
       throw UIAutomationError.invalidPollInterval(backend: backend, pollInterval: pollInterval)
     }
-    let found = try await pollUntilFound(
+    let result = try await pollUntilFound(
       timeout: timeout,
       pollInterval: pollInterval,
       clock: { Date().timeIntervalSinceReferenceDate },
@@ -60,8 +57,9 @@ enum UIAutomationPolling {
     ) {
       try await probe(value, key, depth)
     }
-    if found == nil {
-      throw UIAutomationError.timedOut(backend: backend, key: key.rawValue, value: value, timeout: timeout)
+    if result.match == nil {
+      throw UIAutomationError.timedOut(
+        backend: backend, key: key.rawValue, value: value, timeout: timeout, diagnostics: result.diagnostics)
     }
   }
 }

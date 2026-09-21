@@ -674,7 +674,7 @@ final class AXBridgeReadsTests: XCTestCase {
       do {
         try await reader.wait(.marker(value: "ready", key: .label, depth: 10), timeout: 0, pollInterval: 0)
         XCTFail("a failed read cannot satisfy the wait")
-      } catch let UIAutomationError.timedOut(backend, key, value, timeout) {
+      } catch let UIAutomationError.timedOut(backend, key, value, timeout, _) {
         XCTAssertEqual(backend, reader.backend)
         XCTAssertEqual(key, AXSearchableKey.label.rawValue)
         XCTAssertEqual(value, "ready")

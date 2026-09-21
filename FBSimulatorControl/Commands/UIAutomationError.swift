@@ -37,7 +37,7 @@ public enum UIAutomationError: LocalizedError, CustomStringConvertible, Sendable
   /// being nothing wrong to remedy.
   case noElementAtPoint(backend: UIAutomationBackend, x: Double, y: Double)
   /// The wait for a marker element elapsed.
-  case timedOut(backend: UIAutomationBackend, key: String, value: String, timeout: TimeInterval)
+  case timedOut(backend: UIAutomationBackend, key: String, value: String, timeout: TimeInterval, diagnostics: AccessibilitySearchDiagnostics? = nil)
   /// A verb that requires a marker target was given a point or a whole-tree query.
   case markerRequired(backend: UIAutomationBackend, operation: String)
   /// A verb that requires a point or marker target was given a whole-tree query.
@@ -78,8 +78,8 @@ public enum UIAutomationError: LocalizedError, CustomStringConvertible, Sendable
       return "\(backend.displayName) read \(query), but the read carried no frame to report"
     case let .noElementAtPoint(backend, x, y):
       return "\(backend.displayName) found no element at (\(x), \(y)); the point is empty"
-    case let .timedOut(backend, key, value, timeout):
-      return "\(backend.displayName) timed out after \(timeout)s waiting for \(key) containing \"\(value)\"; it never appeared. Describe the tree to see what is on screen"
+    case let .timedOut(backend, key, value, timeout, _):
+      return "\(backend.displayName) timed out after \(timeout)s waiting for \(key) containing \"\(value)\"; it never appeared."
     case let .markerRequired(_, operation):
       return "\(operation) requires a marker target, not a point or a whole-tree query"
     case let .pointOrMarkerRequired(_, operation):

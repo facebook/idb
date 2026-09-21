@@ -125,12 +125,12 @@ final class AccessibilityUIAutomation: UIAutomation, @unchecked Sendable {
       do {
         let element = try await operations.resolveElement(for: .marker(value: markerValue, key: key, depth: depth))
         element.close()
-        return true
+        return AccessibilitySearchResult(match: true)
       } catch let error as AccessibilityError {
         // The matcher throws `.elementNotFound` when the element isn't in the tree yet — keep
         // polling on that alone, and surface every other failure (boot/dispatcher/IPC) at once.
         if case .elementNotFound = error {
-          return nil
+          return AccessibilitySearchResult(match: nil)
         }
         throw error
       }
