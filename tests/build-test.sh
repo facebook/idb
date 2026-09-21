@@ -606,7 +606,7 @@ output="$(in_package "$dir" '
             command sed "$@"
         fi
     }
-    XCODEGEN_STRIP_XATTRS=true generate_xcodeproj Shims/Repl Repl
+    XATTRS_SUPPORTED=false generate_xcodeproj Shims/Repl Repl
 ')"
 assert_equal "a nested project generates through the workaround" 0 "$?"
 pbxproj="$dir/Shims/Repl/Repl.xcodeproj/project.pbxproj"

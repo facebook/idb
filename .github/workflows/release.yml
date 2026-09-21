@@ -83,7 +83,6 @@ jobs:
       contents: write
       actions: read
     env:
-      XCODEGEN_STRIP_XATTRS: 'false'
       RELEASE_TAG: ${{ startsWith(github.ref, 'refs/tags/v') && github.ref_name || inputs.version }}
     steps:
       - uses: actions/checkout@v5

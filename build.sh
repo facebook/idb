@@ -37,8 +37,10 @@ function setup_build_directory() {
 
   # Use build directory outside of repo if xattrs not supported (for Xcode compatibility)
   if supports_xattrs; then
+    XATTRS_SUPPORTED=true
     BUILD_DIRECTORY="$(pwd)/Build"
   else
+    XATTRS_SUPPORTED=false
     BUILD_DIRECTORY="/tmp/idb-build-$(basename "$(pwd)")"
     echo "Note: Using external build directory at $BUILD_DIRECTORY (xattrs not supported)"
     # Companion/project.yml hard-codes framework refs as
@@ -125,7 +127,13 @@ with open(pbxproj, "w") as handle:
 PY
 }
 
-# Generate a single xcodeproj, optionally stripping xattrs for filesystem compatibility
+# Generate a single xcodeproj. xcodegen writes the project into a temporary
+# directory and copies it into place with its xattrs, which a filesystem that
+# refuses xattrs (EdenFS) rejects outright; there, the project is generated to
+# a temporary directory here instead and copied in without them. The probe in
+# setup_build_directory decides, so the same checkout takes the same path
+# whoever runs it and wherever, and CI needs no switch to say what its
+# filesystem is.
 # Usage: generate_xcodeproj <project_dir> <project_name>
 function generate_xcodeproj() {
   local project_dir="$1"
@@ -133,10 +141,7 @@ function generate_xcodeproj() {
   local xcodeproj_name="${project_name}.xcodeproj"
   local dest_path="${project_dir}/${xcodeproj_name}"
 
-  # Default to stripping xattrs for filesystem compatibility
-  local strip_xattrs="${XCODEGEN_STRIP_XATTRS:-true}"
-
-  if [[ "$strip_xattrs" == "true" ]] && has_ditto; then
+  if [ "$XATTRS_SUPPORTED" != true ] && has_ditto; then
     # Generate to temp dir outside filesystem, then copy without xattrs
     local temp_dir=$(mktemp -d)
     local abs_project_dir
