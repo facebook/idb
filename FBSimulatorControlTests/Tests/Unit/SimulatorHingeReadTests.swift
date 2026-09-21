@@ -11,12 +11,12 @@ import XCTest
 @preconcurrency import XPC
 
 private func hingeEvent(channel: UUID, degrees: Double = 130, timestamp: Double = 200, valid: Bool = true, unit: String = "°") -> xpc_object_t {
-  let dictionary = SimulatorHingeProtocol.dictionary
+  let dictionary = SimulatorCoreDevice.dictionary
   return dictionary([
     "XPCSideChannel.uniqueIdentifier": xpc_string_create(channel.uuidString),
     "CoreDevice.XPCMessageKey.sideChannelStatus": dictionary([
       "pushing": dictionary([
-        "elements": SimulatorHingeProtocol.array([
+        "elements": SimulatorCoreDevice.array([
           dictionary([
             "angle": dictionary([
               "value": xpc_double_create(degrees),
@@ -36,7 +36,7 @@ private func hingeEvent(channel: UUID, degrees: Double = 130, timestamp: Double 
 
 // SAFETY: All state, including the test script and callbacks, is accessed on the session queue.
 // patternlint-disable-next-line unchecked-sendable
-private final class HingeTransportStub: HingeReadTransport, @unchecked Sendable {
+private final class HingeTransportStub: SimulatorCoreDeviceTransport, @unchecked Sendable {
   let script: @Sendable (HingeTransportStub) -> Void
   var event: (@Sendable (xpc_object_t) -> Void)?
   var reply: (@Sendable (xpc_object_t) -> Void)?
@@ -58,7 +58,7 @@ private final class HingeTransportStub: HingeReadTransport, @unchecked Sendable 
   }
 
   func complete() {
-    reply?(SimulatorHingeProtocol.dictionary(["CoreDevice.output": xpc_dictionary_create(nil, nil, 0)]))
+    reply?(SimulatorCoreDevice.dictionary(["CoreDevice.output": xpc_dictionary_create(nil, nil, 0)]))
   }
 
   func cancel() { cancellations += 1 }

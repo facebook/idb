@@ -8,19 +8,10 @@
 import Foundation
 @preconcurrency import XPC
 
-protocol HingeReadTransport: Sendable {
-  func start(
-    request: xpc_object_t,
-    event: @escaping @Sendable (xpc_object_t) -> Void,
-    reply: @escaping @Sendable (xpc_object_t) -> Void)
-  func acknowledge(_ event: xpc_object_t, cancelling: Bool)
-  func cancel()
-}
-
 // SAFETY: All mutable state and transport calls are confined to queue, including cancellation.
 // patternlint-disable-next-line unchecked-sendable
 final class SimulatorHingeReadSession: @unchecked Sendable {
-  private let transport: any HingeReadTransport
+  private let transport: any SimulatorCoreDeviceTransport
   private let queue: DispatchQueue
   private let timeout: DispatchTimeInterval
   private let now: @Sendable () -> TimeInterval
@@ -31,7 +22,7 @@ final class SimulatorHingeReadSession: @unchecked Sendable {
   private var startedAt: TimeInterval = 0
 
   init(
-    transport: any HingeReadTransport,
+    transport: any SimulatorCoreDeviceTransport,
     queue: DispatchQueue,
     timeout: DispatchTimeInterval = .seconds(5),
     channel: UUID = UUID(),

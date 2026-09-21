@@ -26,22 +26,9 @@ enum SimulatorHingeReadError: Error, LocalizedError {
 
 enum SimulatorHingeProtocol {
   static let service = "com.apple.coredevice.feature.monitormotion"
-  static let cancellationKey = "CoreDevice.XPCMessageKey.cancellationRequested"
-
-  static func installedVersion() throws -> String {
-    let url = URL(fileURLWithPath: "/Library/Developer/PrivateFrameworks/CoreDevice.framework")
-    guard let version = Bundle(url: url)?.object(forInfoDictionaryKey: "CFBundleVersion") as? String else {
-      throw SimulatorHingeReadError.unavailable("CoreDevice version metadata")
-    }
-    return version
-  }
 
   static func request(deviceID: String, version: String, channel: UUID) throws -> xpc_object_t {
-    let parts = version.split(separator: ".", omittingEmptySubsequences: false)
-    let components = parts.compactMap { UInt64($0) }
-    guard !components.isEmpty, components.count == parts.count else {
-      throw SimulatorHingeReadError.unavailable("Invalid CoreDevice version \(version)")
-    }
+    let dictionary = SimulatorCoreDevice.dictionary
     var uuid = channel.uuid
     let identifier = withUnsafePointer(to: &uuid) {
       $0.withMemoryRebound(to: UInt8.self, capacity: 16) { xpc_uuid_create($0) }
@@ -50,25 +37,16 @@ enum SimulatorHingeProtocol {
       "symbol": xpc_string_create("°"),
       "converter": dictionary(["coefficient": xpc_double_create(1), "constant": xpc_double_create(0)]),
     ])
-    return dictionary([
-      "CoreDevice.actionIdentifier": xpc_string_create("com.apple.coredevice.action.streamhingeangle"),
-      "CoreDevice.deviceIdentifier": xpc_string_create(deviceID),
-      "CoreDevice.invocationIdentifier": xpc_string_create(UUID().uuidString),
-      "CoreDevice.CoreDeviceDDIProtocolVersion": xpc_int64_create(1),
-      "CoreDevice.coreDeviceVersion": dictionary([
-        "components": array(components.map(xpc_uint64_create)),
-        "originalComponentsCount": xpc_int64_create(Int64(components.count)),
-        "stringValue": xpc_string_create(version),
-      ]),
-      "CoreDevice.input": dictionary([
+    return try SimulatorCoreDevice.request(
+      action: "com.apple.coredevice.action.streamhingeangle", deviceID: deviceID, version: version,
+      input: dictionary([
         "actualInput": dictionary([
           "changeThreshold": dictionary(["value": xpc_double_create(0.1), "unit": unit]),
           // Duration encodes signed high bits and unsigned low bits, in attoseconds (100ms).
-          "updateInterval": array([xpc_int64_create(0), xpc_uint64_create(100_000_000_000_000_000)]),
+          "updateInterval": SimulatorCoreDevice.array([xpc_int64_create(0), xpc_uint64_create(100_000_000_000_000_000)]),
         ]),
         "streamProxy": dictionary(["sideChannel": identifier]),
-      ]),
-    ])
+      ]))
   }
 
   static func sample(
@@ -112,18 +90,6 @@ enum SimulatorHingeProtocol {
       throw SimulatorHingeReadError.unavailable("\(domain) (\(code))")
     }
     _ = try field(reply, "CoreDevice.output", XPC_TYPE_DICTIONARY)
-  }
-
-  static func dictionary(_ values: [String: xpc_object_t]) -> xpc_object_t {
-    let result = xpc_dictionary_create(nil, nil, 0)
-    for (key, value) in values { xpc_dictionary_set_value(result, key, value) }
-    return result
-  }
-
-  static func array(_ values: [xpc_object_t]) -> xpc_object_t {
-    let result = xpc_array_create(nil, 0)
-    for value in values { xpc_array_append_value(result, value) }
-    return result
   }
 
   private static func requireDictionary(_ value: xpc_object_t) throws {

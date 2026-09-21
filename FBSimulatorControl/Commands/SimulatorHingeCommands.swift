@@ -22,9 +22,9 @@ public struct SimulatorHingeCommands {
   /// Reads a fresh measured angle. During a hinge animation this can be between its endpoints.
   public func angle() async throws -> SimulatorHingeAngle {
     try SimulatorHingeAngle.requireSupportedModel(simulator.device.deviceType?.modelIdentifier)
-    let version = try SimulatorHingeProtocol.installedVersion()
+    let version = try SimulatorCoreDevice.installedVersion()
     let queue = DispatchQueue(label: "com.facebook.FBSimulatorControl.hinge-read")
-    let transport = try SimulatorHingeReadTransport(simulator: simulator, queue: queue)
+    let transport = try SimulatorCoreDeviceXPCTransport(simulator: simulator, service: SimulatorHingeProtocol.service, queue: queue)
     let session = SimulatorHingeReadSession(transport: transport, queue: queue)
     return try await session.read(deviceID: simulator.udid, version: version)
   }
