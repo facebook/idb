@@ -31,6 +31,7 @@ public enum SimulatorHIDError: Error, LocalizedError {
   case notImplementedOnDTUHIDTransport(operation: String)
   /// The `dtuhidd` digitizer service could not be looked up in the simulator's bootstrap namespace.
   case dtuhidDigitizerServiceUnavailable(underlying: Error?)
+  case dtuhidServiceUnavailable(name: String, underlying: Error?)
   /// The private `_4sim` XPC endpoint symbols could not be resolved (older toolchain).
   case dtuhidXPCSymbolsUnavailable
   /// The `dtuhidd` host XPC connection could not be created.
@@ -65,6 +66,8 @@ public enum SimulatorHIDError: Error, LocalizedError {
         "Keyboard HID is suppressed: CoreSimulator-1155.4 (Xcode 27) and later hand the legacy keyboard service over to dtuhidd for the lifetime of the boot. Use the DTUHID transport, which is the default on this CoreSimulator."
     case let .notImplementedOnDTUHIDTransport(operation):
       return "\(operation) is not implemented on the DTUHID transport"
+    case let .dtuhidServiceUnavailable(name, _):
+      return "Could not look up the dtuhidd service (\(name))"
     case .dtuhidDigitizerServiceUnavailable:
       return "Could not look up the dtuhidd digitizer service (com.apple.coredevice.feature.remote.hid.digitizer)"
     case .dtuhidXPCSymbolsUnavailable:
@@ -87,7 +90,7 @@ public enum SimulatorHIDError: Error, LocalizedError {
   /// that no amount of waiting changes.
   var isTransientDTUHIDFailure: Bool {
     switch self {
-    case .dtuhidDigitizerServiceUnavailable, .dtuhidConnectionFailed, .dtuhidUnresponsive:
+    case .dtuhidServiceUnavailable, .dtuhidDigitizerServiceUnavailable, .dtuhidConnectionFailed, .dtuhidUnresponsive:
       return true
     default:
       return false
@@ -100,7 +103,7 @@ public enum SimulatorHIDError: Error, LocalizedError {
   /// to surface to the caller.
   var isDTUHIDUnreachable: Bool {
     switch self {
-    case .dtuhidXPCSymbolsUnavailable, .dtuhidDigitizerServiceUnavailable, .dtuhidConnectionFailed,
+    case .dtuhidXPCSymbolsUnavailable, .dtuhidServiceUnavailable, .dtuhidDigitizerServiceUnavailable, .dtuhidConnectionFailed,
       .dtuhidUnresponsive:
       return true
     default:

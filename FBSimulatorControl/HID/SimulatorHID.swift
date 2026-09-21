@@ -23,6 +23,8 @@ import Foundation
 
  2. Darwin notifications — e.g. shake, in-call status bar — posted via the SimDevice.
 
+ 3. Vendor-defined DTUHID reports — hinge angle control on supported simulators.
+
  See `Indigo.h` and `GSEvent.h` for wire format documentation.
 
  Indigo-family sends are serialized by the transport, so the type is `@unchecked Sendable`.
@@ -218,7 +220,7 @@ public final class SimulatorHID: CustomStringConvertible, @unchecked Sendable {
       case let .delay(duration):
         logger.log("Delay \(duration)s")
       case .touch, .button, .remoteButton, .keyboard, .twoFingerTouch, .trackpad,
-        .deviceOrientation, .lockDevice, .shake, .toggleInCallStatusBar, .composite:
+        .deviceOrientation, .hinge, .lockDevice, .shake, .toggleInCallStatusBar, .composite:
         logger.log("Sending \(subEvent)")
       }
       if try await deliver(subEvent) {
@@ -258,6 +260,15 @@ public final class SimulatorHID: CustomStringConvertible, @unchecked Sendable {
       return false
     case .lockDevice:
       try await sendLockDevice()
+      return false
+    case let .hinge(angle):
+      guard let simulator else { throw WeakTargetError.simulator }
+      try SimulatorHingeAngle.requireSupportedModel(simulator.device.deviceType?.modelIdentifier)
+      let vendor = try await SimulatorDTUHIDTransport.dtuhid(
+        for: simulator, serviceName: SimulatorDTUHIDTransport.vendorDefinedServiceName)
+      defer { vendor.disconnect() }
+      try await vendor.send(messageType: "IndigoVendorDefinedEvent", payload: angle.vendorEvent())
+      try await vendor.flush()
       return false
     case .shake:
       try await sendShake()

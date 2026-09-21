@@ -20,7 +20,7 @@ import XPC
 struct XPCEncoder {
   func encode<Value: Encodable>(_ value: Value) throws -> xpc_object_t {
     let encoder = XPCEncoderImpl()
-    try value.encode(to: encoder)
+    try encoder.encode(value)
     guard let object = encoder.storage.object else {
       throw EncodingError.invalidValue(
         value, EncodingError.Context(codingPath: [], debugDescription: "Value did not encode any XPC object"))
@@ -42,6 +42,14 @@ private struct XPCEncoderImpl: Encoder {
   init(storage: XPCBox = XPCBox(), codingPath: [CodingKey] = []) {
     self.storage = storage
     self.codingPath = codingPath
+  }
+
+  func encode(_ value: some Encodable) throws {
+    if let data = value as? Data {
+      storage.object = data.withUnsafeBytes { xpc_data_create($0.baseAddress, $0.count) }
+    } else {
+      try value.encode(to: self)
+    }
   }
 
   func container<Key: CodingKey>(keyedBy type: Key.Type) -> KeyedEncodingContainer<Key> {
@@ -82,7 +90,7 @@ private struct XPCKeyedContainer<Key: CodingKey>: KeyedEncodingContainerProtocol
 
   func encode<T: Encodable>(_ value: T, forKey key: Key) throws {
     let nested = XPCEncoderImpl(codingPath: codingPath + [key])
-    try value.encode(to: nested)
+    try nested.encode(value)
     guard let object = nested.storage.object else {
       throw EncodingError.invalidValue(
         value, EncodingError.Context(codingPath: codingPath + [key], debugDescription: "Nested value did not encode any XPC object"))
@@ -129,6 +137,6 @@ private struct XPCSingleValueContainer: SingleValueEncodingContainer {
 
   mutating func encode<T: Encodable>(_ value: T) throws {
     let nested = XPCEncoderImpl(storage: storage, codingPath: codingPath)
-    try value.encode(to: nested)
+    try nested.encode(value)
   }
 }

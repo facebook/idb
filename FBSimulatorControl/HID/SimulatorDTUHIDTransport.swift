@@ -181,7 +181,7 @@ struct DigitizerContactTracker {
  The DTUHID transport (Xcode 27 / macOS 26 / iOS 26+).
 
  Drives the modern `dtuhidd` daemon: events cross the host→guest boundary as plain-XPC dictionaries
- delivered to the `com.apple.coredevice.feature.remote.hid.digitizer` service. Each message is built
+ delivered to the digitizer or vendor-defined HID service. Each message is built
  as an `Encodable` model (e.g. `IndigoDigitizerEvent`) wrapped in a `DTUHIDMessage` envelope and
  serialized with `XPCEncoder`, rather than hand-rolled `xpc_dictionary_set_*` calls. The host XPC
  connection is built from the simulator's Mach port via the private `_4sim` endpoint symbols
@@ -193,6 +193,7 @@ struct DigitizerContactTracker {
  */
 actor SimulatorDTUHIDTransport {
 
+  static let vendorDefinedServiceName = "com.apple.coredevice.feature.remote.hid.vendordefined"
   static let digitizerServiceName = "com.apple.coredevice.feature.remote.hid.digitizer"
 
   // Private XPC endpoint functions, resolved at runtime (not in the XPC module headers).
@@ -203,6 +204,7 @@ actor SimulatorDTUHIDTransport {
   // SAFETY: XPC connections support concurrent sending and cancellation.
   // patternlint-disable-next-line swift-nonisolated-unsafe
   nonisolated(unsafe) private let connection: xpc_connection_t
+  private let serviceName: String
   private let mainScreenSize: CGSize
   private let mainScreenScale: Float
   private let productFamily: ProductFamily
@@ -226,12 +228,12 @@ actor SimulatorDTUHIDTransport {
   /// still yields a port and every send is then silently discarded. The window is seconds wide and
   /// closes once the boot settles, so a backed-off retry recovers the full transport, keyboard
   /// included, where giving up would cost the keyboard for the lifetime of the boot.
-  static func dtuhid(for simulator: Simulator) async throws -> SimulatorDTUHIDTransport {
+  static func dtuhid(for simulator: Simulator, serviceName: String = digitizerServiceName) async throws -> SimulatorDTUHIDTransport {
     let logger = ControlCoreGlobalConfiguration.defaultLogger
     var lastFailure: Error?
     for attempt in 1...DTUHIDTiming.livenessAttempts {
       do {
-        return try await connected(to: simulator)
+        return try await connected(to: simulator, serviceName: serviceName)
       } catch let error as SimulatorHIDError where !error.isTransientDTUHIDFailure {
         // A toolchain that has no DTUHID at all will not grow one by being asked again.
         throw error
@@ -254,9 +256,10 @@ actor SimulatorDTUHIDTransport {
   /// The lookup belongs to the attempt rather than preceding the loop. It fails while the job is
   /// mid-respawn, which is exactly the state being retried out of, so hoisting it turns the most
   /// recoverable moment into a terminal one.
-  private static func connected(to simulator: Simulator) async throws -> SimulatorDTUHIDTransport {
+  private static func connected(to simulator: Simulator, serviceName: String) async throws -> SimulatorDTUHIDTransport {
     let transport = SimulatorDTUHIDTransport(
-      connection: try connection(for: simulator),
+      connection: try connection(for: simulator, serviceName: serviceName),
+      serviceName: serviceName,
       mainScreenSize: simulator.device.deviceType.mainScreenSize,
       mainScreenScale: simulator.device.deviceType.mainScreenScale,
       productFamily: simulator.productFamily)
@@ -269,9 +272,9 @@ actor SimulatorDTUHIDTransport {
     return transport
   }
 
-  /// A resumed host XPC connection to the guest's digitizer service. Says nothing about whether
+  /// A resumed host XPC connection to the requested guest HID service. Says nothing about whether
   /// `dtuhidd` is able to run — launchd vends the port for a demand-launched job either way.
-  private static func connection(for simulator: Simulator) throws -> xpc_connection_t {
+  private static func connection(for simulator: Simulator, serviceName: String) throws -> xpc_connection_t {
     guard let handle = dlopen(nil, RTLD_NOW) else {
       throw SimulatorHIDError.dtuhidXPCSymbolsUnavailable
     }
@@ -284,9 +287,9 @@ actor SimulatorDTUHIDTransport {
     }
 
     var lookupError: NSError?
-    let servicePort = simulator.device.lookup(digitizerServiceName, error: &lookupError)
+    let servicePort = simulator.device.lookup(serviceName, error: &lookupError)
     if servicePort == 0 {
-      throw SimulatorHIDError.dtuhidDigitizerServiceUnavailable(underlying: lookupError)
+      throw SimulatorHIDError.dtuhidServiceUnavailable(name: serviceName, underlying: lookupError)
     }
 
     guard
@@ -320,12 +323,14 @@ actor SimulatorDTUHIDTransport {
 
   init(
     connection: xpc_connection_t,
+    serviceName: String = digitizerServiceName,
     mainScreenSize: CGSize,
     mainScreenScale: Float,
     productFamily: ProductFamily,
     clock: DTUHIDDrainClock = .live
   ) {
     self.connection = connection
+    self.serviceName = serviceName
     self.mainScreenSize = mainScreenSize
     self.mainScreenScale = mainScreenScale
     self.productFamily = productFamily
@@ -403,7 +408,7 @@ actor SimulatorDTUHIDTransport {
   nonisolated func encode(messageType: String, payload: some Encodable, isBarrier: Bool = false) throws -> xpc_object_t {
     let message = DTUHIDMessage(
       messageType: messageType,
-      featureIdentifier: Self.digitizerServiceName,
+      featureIdentifier: serviceName,
       isBarrier: isBarrier,
       payload: payload)
     return try XPCEncoder().encode(message)

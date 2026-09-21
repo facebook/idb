@@ -27,6 +27,7 @@ public indirect enum SimulatorHIDEvent: Equatable, Hashable, Sendable {
   case trackpad(phase: SimulatorTrackpadPhase, point: SimulatorTrackpadPoint)
   case delay(TimeInterval)
   case deviceOrientation(SimulatorHIDDeviceOrientation)
+  case hinge(SimulatorHingeAngle)
   case shake
   case toggleInCallStatusBar
   case lockDevice
@@ -318,6 +319,8 @@ extension SimulatorHIDEvent: CustomStringConvertible {
       return "Delay for \(duration)"
     case let .deviceOrientation(orientation):
       return "Set Orientation \(orientation.name)"
+    case let .hinge(angle):
+      return "Set Hinge Angle \(angle.degrees) degrees"
     case .shake:
       return "Shake"
     case .toggleInCallStatusBar:

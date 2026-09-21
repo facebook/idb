@@ -31,6 +31,25 @@ final class XPCEncoderTests: XCTestCase {
     let optional: Point?
   }
 
+  func testDataUsesNativeXPCDataAtRootAndInSingleValueContainer() throws {
+    struct WrappedData: Encodable {
+      let data: Data
+      func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(data)
+      }
+    }
+    for data in [Data(), Data([0, 255, 1, 0])] {
+      for encoded in [try XPCEncoder().encode(data), try XPCEncoder().encode(WrappedData(data: data))] {
+        XCTAssertEqual(xpc_get_type(encoded), XPC_TYPE_DATA)
+        XCTAssertEqual(xpc_data_get_length(encoded), data.count)
+        if !data.isEmpty {
+          XCTAssertEqual(Data(bytes: xpc_data_get_bytes_ptr(encoded)!, count: data.count), data)
+        }
+      }
+    }
+  }
+
   func testEncodesScalarsNestedAndOmitsNilOptionals() throws {
     let object = try XPCEncoder().encode(
       Sample(name: "hello", flag: false, count: 7, phase: .end, point: Point(x: 0.25, y: 0.75), optional: nil))
