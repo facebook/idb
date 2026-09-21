@@ -39,6 +39,6 @@ public final class MacLaunchedApplication: LaunchedApplication {
 
   public func terminate() async throws {
     guard let device else { return }
-    try await bridgeFBFutureVoid(device.killApplication(withBundleID: bundleID))
+    try device.killApplication(withBundleID: bundleID)
   }
 }

@@ -168,28 +168,27 @@ public final class MacDevice: NSObject, Target {
   // MARK: - Public
 
   func restorePrimaryDeviceState() -> FBFuture<NSNull> {
-    var queuedFutures: [FBFuture<AnyObject>] = []
-
-    var killFutures: [FBFuture<AnyObject>] = []
+    // Every teardown ran even when an earlier one failed, and the `FBFuture(race:)` over each
+    // eagerly-resolved group surfaced only the first outcome of that group.
+    var firstFailure: Error?
     for bundleID in Array(bundleIDToRunningTask.keys) {
-      killFutures.append(killApplication(withBundleID: bundleID).retyped(FBFuture<AnyObject>.self))
+      do {
+        try killApplication(withBundleID: bundleID)
+      } catch {
+        firstFailure = firstFailure ?? error
+      }
     }
-    if !killFutures.isEmpty {
-      queuedFutures.append(FBFuture(race: killFutures))
-    }
-
-    var uninstallFutures: [FBFuture<AnyObject>] = []
     for bundleID in Array(bundleIDToProductMap.keys) {
-      uninstallFutures.append(uninstallApplication(withBundleID: bundleID).retyped(FBFuture<AnyObject>.self))
+      do {
+        try uninstallApplication(withBundleID: bundleID)
+      } catch {
+        firstFailure = firstFailure ?? error
+      }
     }
-    if !uninstallFutures.isEmpty {
-      queuedFutures.append(FBFuture(race: uninstallFutures))
+    if let firstFailure {
+      return FBFuture(error: firstFailure)
     }
-
-    if !queuedFutures.isEmpty {
-      // Re-typed in place rather than mapped: callers rely on this resolving synchronously when the inputs are already resolved.
-      return FBFuture<AnyObject>.combine(queuedFutures).retyped(FBFuture<NSNull>.self)
-    }
+    // Callers rely on this resolving synchronously.
     return FBFuture(result: NSNull())
   }
 
@@ -269,11 +268,11 @@ public final class MacDevice: NSObject, Target {
     return transport
   }
 
-  public func processID(withBundleID bundleID: String) -> FBFuture<NSNumber> {
+  public func processID(withBundleID bundleID: String) throws -> pid_t {
     guard let task = bundleIDToRunningTask[bundleID] else {
-      return FBFuture(error: MacDeviceError.applicationNotLaunched(bundleID: bundleID))
+      throw MacDeviceError.applicationNotLaunched(bundleID: bundleID)
     }
-    return FBFuture(result: NSNumber(value: task.processIdentifier))
+    return task.processIdentifier
   }
 
   var consoleString: String {
@@ -298,22 +297,17 @@ public final class MacDevice: NSObject, Target {
     return InstalledApplication(bundle: bundle, installType: .unknown, dataContainer: nil)
   }
 
-  public func uninstallApplication(withBundleID bundleID: String) -> FBFuture<NSNull> {
+  public func uninstallApplication(withBundleID bundleID: String) throws {
     guard let bundle = bundleIDToProductMap[bundleID] else {
-      return FBFuture(error: MacDeviceError.applicationNotInstalled(bundleID: bundleID))
+      throw MacDeviceError.applicationNotInstalled(bundleID: bundleID)
     }
 
     if !FileManager.default.fileExists(atPath: bundle.path) {
-      return FBFuture(result: NSNull())
+      return
     }
 
-    do {
-      try FileManager.default.removeItem(atPath: bundle.path)
-    } catch {
-      return FBFuture(error: error)
-    }
+    try FileManager.default.removeItem(atPath: bundle.path)
     bundleIDToProductMap.removeValue(forKey: bundleID)
-    return FBFuture(result: NSNull())
   }
 
   public func installedApplication(withBundleID bundleID: String) throws -> InstalledApplication {
@@ -324,39 +318,12 @@ public final class MacDevice: NSObject, Target {
     return InstalledApplication(bundle: bundle, installType: .mac, dataContainer: nil)
   }
 
-  public func killApplication(withBundleID bundleID: String) -> FBFuture<NSNull> {
+  public func killApplication(withBundleID bundleID: String) throws {
     guard let task = bundleIDToRunningTask[bundleID] else {
-      return FBFuture(error: MacDeviceError.applicationNotLaunched(bundleID: bundleID))
+      throw MacDeviceError.applicationNotLaunched(bundleID: bundleID)
     }
     task.sendSignal(SIGTERM, backingOffToKillWithTimeout: 2, logger: self.logger)
     bundleIDToRunningTask.removeValue(forKey: bundleID)
-    return FBFuture(result: NSNull())
-  }
-
-  public func launchApplication(_ configuration: ApplicationLaunchConfiguration) -> FBFuture<MacLaunchedApplication> {
-    guard let bundle = bundleIDToProductMap[configuration.bundleID] else {
-      return FBFuture(error: MacDeviceError.applicationNotFound(bundleID: configuration.bundleID))
-    }
-    guard let binary = bundle.binary else {
-      return FBFuture(error: MacDeviceError.applicationHasNoExecutable(bundleID: bundle.identifier))
-    }
-    return FBProcessBuilder<AnyObject, AnyObject, AnyObject>.withLaunchPath(binary.path, arguments: configuration.arguments)
-      .withEnvironment(configuration.environment)
-      .start()
-      .retyped(FBFuture<FBSubprocess<AnyObject, AnyObject, AnyObject>>.self)
-      .onQueue(
-        workQueue,
-        map: { task in
-          self.bundleIDToRunningTask[bundle.identifier] = task
-          return MacLaunchedApplication(
-            bundleID: bundle.identifier,
-            processIdentifier: task.processIdentifier,
-            device: self,
-            queue: self.workQueue
-          )
-        }
-      )
-      .retyped(FBFuture<MacLaunchedApplication>.self)
   }
 
   public var uniqueIdentifier: String {
@@ -480,15 +447,32 @@ extension MacDevice: ApplicationCommands {
   }
 
   public func uninstall(bundleID: String) async throws {
-    try await bridgeFBFutureVoid(uninstallApplication(withBundleID: bundleID))
+    try uninstallApplication(withBundleID: bundleID)
   }
 
   public func launch(_ configuration: ApplicationLaunchConfiguration) async throws -> LaunchedApplication {
-    try await bridgeFBFuture(launchApplication(configuration))
+    guard let bundle = bundleIDToProductMap[configuration.bundleID] else {
+      throw MacDeviceError.applicationNotFound(bundleID: configuration.bundleID)
+    }
+    guard let binary = bundle.binary else {
+      throw MacDeviceError.applicationHasNoExecutable(bundleID: bundle.identifier)
+    }
+    let task = try await bridgeFBFuture(
+      FBProcessBuilder<AnyObject, AnyObject, AnyObject>.withLaunchPath(binary.path, arguments: configuration.arguments)
+        .withEnvironment(configuration.environment)
+        .start()
+        .retyped(FBFuture<FBSubprocess<AnyObject, AnyObject, AnyObject>>.self))
+    bundleIDToRunningTask[bundle.identifier] = task
+    return MacLaunchedApplication(
+      bundleID: bundle.identifier,
+      processIdentifier: task.processIdentifier,
+      device: self,
+      queue: workQueue
+    )
   }
 
   public func kill(bundleID: String) async throws {
-    try await bridgeFBFutureVoid(killApplication(withBundleID: bundleID))
+    try killApplication(withBundleID: bundleID)
   }
 
   public func installed() async throws -> [InstalledApplication] {
@@ -511,8 +495,7 @@ extension MacDevice: ApplicationCommands {
   }
 
   public func processID(forBundleID bundleID: String) async throws -> pid_t {
-    let n = try await bridgeFBFuture(processID(withBundleID: bundleID))
-    return n.int32Value
+    try processID(withBundleID: bundleID)
   }
 }
 

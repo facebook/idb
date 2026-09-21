@@ -105,10 +105,10 @@ final class MacDeviceTests: XCTestCase {
   }
 
   func testUninstallApplicationByIncorrectBundleID() {
-    XCTAssertNotNil(device.uninstallApplication(withBundleID: "not.existed").error)
+    XCTAssertThrowsError(try device.uninstallApplication(withBundleID: "not.existed"))
   }
 
-  func testLaunchingNotInstalledAppByBuntleID() {
+  func testLaunchingNotInstalledAppByBuntleID() async {
     let config = ApplicationLaunchConfiguration(
       bundleID: "not.existed",
       bundleName: "not.existed",
@@ -118,15 +118,15 @@ final class MacDeviceTests: XCTestCase {
       io: FBProcessIO<AnyObject, AnyObject, AnyObject>.outputToDevNull(),
       launchMode: .relaunchIfRunning
     )
-    let launchAppFuture = device.launchApplication(config)
-
-    XCTAssertNotNil(
-      launchAppFuture.error,
-      "Launhing not existed app should fail immidiately"
-    )
+    do {
+      _ = try await device.launch(config)
+      XCTFail("Launhing not existed app should fail")
+    } catch {
+      // Expected.
+    }
   }
 
-  func testLaunchingExistedApp() throws {
+  func testLaunchingExistedApp() async throws {
     let config = ApplicationLaunchConfiguration(
       bundleID: installedApp.bundle.identifier,
       bundleName: installedApp.bundle.name,
@@ -137,6 +137,6 @@ final class MacDeviceTests: XCTestCase {
       launchMode: .relaunchIfRunning
     )
 
-    try device.launchApplication(config).await(withTimeout: 5)
+    _ = try await device.launch(config)
   }
 }
