@@ -70,12 +70,14 @@ class LaunchOutputTests(IdbEndToEndTestCase):
 
     async def test_launch_wait_for_reports_pid_on_stdout(self) -> None:
         async with self.idb_process("launch", "--wait-for", self.bundle_id) as launch:
-            report, _ = _leading_json_object(
-                await launch.read_some(PID_REPORT_TIMEOUT_SECONDS)
-            )
+            chunk = await launch.read_some(PID_REPORT_TIMEOUT_SECONDS)
+            report, consumed = _leading_json_object(chunk)
             self.assertIsInstance(report, dict)
             pid = report["pid"]
             self.assertGreater(pid, 0)
+            # The report is newline-terminated, so a line-based reader finds it
+            # without waiting on the app's own output to supply a delimiter.
+            self.assertEqual(chunk[consumed : consumed + 1], b"\n")
 
             running = (await self.installed_apps())[self.bundle_id]
             self.assertEqual(running["process_state"], "Running")
@@ -112,18 +114,3 @@ class LaunchOutputTests(IdbEndToEndTestCase):
             )
         except HarnessError as error:
             self.fail(str(error))
-
-    async def test_pid_report_is_newline_terminated(self) -> None:
-        """The PID report is a JSON object terminated by a newline.
-
-        Line-based readers can find it without waiting on the app's own
-        output to supply a delimiter.
-        """
-        async with self.idb_process("launch", "--wait-for", self.bundle_id) as launch:
-            chunk = await launch.read_some(PID_REPORT_TIMEOUT_SECONDS)
-            _, consumed = _leading_json_object(chunk)
-            self.assertEqual(
-                chunk[consumed : consumed + 1],
-                b"\n",
-                "the pid report should be newline-terminated",
-            )

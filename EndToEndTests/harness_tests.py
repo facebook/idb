@@ -278,31 +278,29 @@ class SettingsCleanupTests(unittest.TestCase):
 
 class SuiteCapabilityTests(unittest.TestCase):
     READ_TESTS = [
-        "test_ui_describe_all_accepts_keys_profiling_and_frame_coverage",
-        "test_ui_describe_all_over_both_backends",
+        "test_ui_describe_all_reads_both_backends_and_honours_its_options",
         "test_ui_describe_resolves_a_point_and_a_marker",
     ]
     INTERACTION_TESTS = [
         *READ_TESTS,
         "test_ui_scroll_moves_settings_rows_down_and_up",
-        "test_ui_tap_opens_general_by_marker",
         "test_ui_tap_opens_general_by_point",
+        "test_ui_wait_returns_after_general_opens",
     ]
     REQUIREMENTS = {
-        "test_ui_describe_all_accepts_keys_profiling_and_frame_coverage": (
+        "test_ui_describe_all_reads_both_backends_and_honours_its_options": (
             SuiteCapability.ACCESSIBILITY_READ
         ),
-        "test_ui_describe_all_over_both_backends": SuiteCapability.ACCESSIBILITY_READ,
         "test_ui_describe_resolves_a_point_and_a_marker": (
             SuiteCapability.ACCESSIBILITY_READ
         ),
         "test_ui_scroll_moves_settings_rows_down_and_up": (
             SuiteCapability.ACCESSIBILITY_INTERACTION
         ),
-        "test_ui_tap_opens_general_by_marker": (
+        "test_ui_tap_opens_general_by_point": (
             SuiteCapability.ACCESSIBILITY_INTERACTION
         ),
-        "test_ui_tap_opens_general_by_point": (
+        "test_ui_wait_returns_after_general_opens": (
             SuiteCapability.ACCESSIBILITY_INTERACTION
         ),
     }

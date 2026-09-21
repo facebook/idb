@@ -283,9 +283,7 @@ def _settings_rows_on_screen(document: Any) -> list[str]:
 
 ACCESSIBILITY_READ_TESTS = frozenset(
     {
-        "test_ui_describe_all_accepts_keys_profiling_and_frame_coverage",
-        "test_ui_describe_all_over_both_backends",
-        "test_ui_describe_point_uses_the_guest_backend",
+        "test_ui_describe_all_reads_both_backends_and_honours_its_options",
         "test_ui_describe_resolves_a_point_and_a_marker",
     }
 )
@@ -294,12 +292,9 @@ INTERACTION_TESTS = frozenset(
         "test_ui_scroll_moves_settings_rows_down_and_up",
         "test_ui_set_value_updates_the_search_field",
         "test_ui_opens_general_by_identifier_and_confirms_it",
-        "test_ui_tap_opens_general_by_marker",
         "test_ui_tap_opens_general_by_point",
-        "test_ui_wait_finds_an_existing_row_on_both_backends",
         "test_ui_wait_returns_after_general_opens",
-        "test_ui_wait_reports_a_missing_marker_timeout",
-        "test_ui_wait_rejects_an_invalid_poll_interval",
+        "test_ui_wait_times_out_and_rejects_an_invalid_poll_interval",
         "test_a_delivered_notification_is_held_until_it_is_opened",
         "test_web_content_is_readable_from_inside_the_simulator",
     }
@@ -450,7 +445,9 @@ class AccessibilityTests(IdbEndToEndTestCase):
             int(frame["y"] + frame["height"] / 2),
         )
 
-    async def test_ui_describe_all_over_both_backends(self) -> None:
+    async def test_ui_describe_all_reads_both_backends_and_honours_its_options(
+        self,
+    ) -> None:
         host = await self.describe_all_complete("ax")
         bridge = await self.describe_all_complete("axbridge")
 
@@ -467,10 +464,11 @@ class AccessibilityTests(IdbEndToEndTestCase):
             f"{AXBRIDGE_BACKEND} saw {sorted(_labels(bridge))}",
         )
 
-    async def test_ui_describe_all_accepts_keys_profiling_and_frame_coverage(
-        self,
-    ) -> None:
-        document = await self.describe_all(
+        selected = await self.idb_json(
+            "ui",
+            "describe-all",
+            "--format",
+            "complete",
             "--key",
             "AXLabel",
             "--key",
@@ -478,10 +476,20 @@ class AccessibilityTests(IdbEndToEndTestCase):
             "--profile",
             "--collect-frame-coverage",
         )
-        self.assertTrue(
-            _elements(document),
-            "describe-all returned no elements with the requested options",
+        # A frame is a dictionary too, so what is an element is what has a type.
+        elements = [
+            element for element in _elements(selected["elements"]) if "type" in element
+        ]
+        self.assertTrue(elements, "describe-all reported no elements")
+        self.assertEqual(
+            {key for element in elements for key in element},
+            {"type", "children", "label", "frame"},
+            "describe-all reported keys it was not asked for",
         )
+        self.assertEqual(selected["profile"]["element_count"], len(elements))
+        self.assertGreater(selected["profile"]["total_duration_ms"], 0)
+        self.assertEqual(selected["frames"]["total"], len(elements))
+        self.assertGreater(selected["coverage"]["frame"], 0)
 
     async def test_ui_describe_resolves_a_point_and_a_marker(self) -> None:
         marker = _label(self.control)
@@ -504,6 +512,23 @@ class AccessibilityTests(IdbEndToEndTestCase):
             f"the guest bridge should resolve the marker {marker!r}",
         )
 
+        guest_point = await self.idb_json(
+            "ui",
+            "describe-point",
+            str(x),
+            str(y),
+            "--api",
+            "axbridge",
+            "--format",
+            "complete",
+        )
+        self.assertEqual(guest_point["backend"], AXBRIDGE_BACKEND)
+        self.assertIn(
+            marker,
+            [_label(element) for element in _elements(guest_point["elements"])],
+            f"the guest bridge resolved {(x, y)} to something other than {marker!r}",
+        )
+
         await self.idb_expect_failure(
             "ui",
             "describe",
@@ -511,18 +536,19 @@ class AccessibilityTests(IdbEndToEndTestCase):
             expected_error="found no element whose",
         )
 
-    async def test_ui_wait_finds_an_existing_row_on_both_backends(self) -> None:
-        marker = _label(self.control)
-        for api in ("ax", "axbridge"):
-            result = await self.idb_json("ui", "wait", marker, "--api", api)
-            self.assertEqual(result, {"found": True}, api)
-
     async def test_ui_wait_returns_after_general_opens(self) -> None:
         general = await self.wait_for_element(GENERAL_ROW_ID)
         title = _label(general)
         self.assertTrue(title, "The General row has no label")
         before = _elements(await self.describe_all_complete("axbridge"))
         self.assertNotIn(title, [element.get("identifier") for element in before])
+        marker = _label(self.control)
+        for api in ("ax", "axbridge"):
+            self.assertEqual(
+                await self.idb_json("ui", "wait", marker, "--api", api),
+                {"found": True},
+                api,
+            )
 
         async with self.idb_process(
             "ui",
@@ -551,8 +577,10 @@ class AccessibilityTests(IdbEndToEndTestCase):
             ],
         )
 
-    async def test_ui_wait_reports_a_missing_marker_timeout(self) -> None:
-        completed = await self.idb_expect_failure(
+    async def test_ui_wait_times_out_and_rejects_an_invalid_poll_interval(
+        self,
+    ) -> None:
+        timed_out = await self.idb_expect_failure(
             "ui",
             "wait",
             "idb-e2e-no-such-element",
@@ -561,10 +589,9 @@ class AccessibilityTests(IdbEndToEndTestCase):
             "--json",
             expected_error="Timed out waiting for",
         )
-        self.assertEqual(json.loads(completed.text), {"found": False})
+        self.assertEqual(json.loads(timed_out.text), {"found": False})
 
-    async def test_ui_wait_rejects_an_invalid_poll_interval(self) -> None:
-        completed = await self.idb_expect_failure(
+        rejected = await self.idb_expect_failure(
             "ui",
             "wait",
             GENERAL_ROW_ID,
@@ -573,28 +600,7 @@ class AccessibilityTests(IdbEndToEndTestCase):
             "--json",
             expected_error="poll_interval",
         )
-        self.assertEqual(completed.stdout, b"")
-
-    async def test_ui_describe_point_uses_the_guest_backend(self) -> None:
-        general = await self.wait_for_element(GENERAL_ROW_ID)
-        x, y = self.center(general)
-
-        document = await self.idb_json(
-            "ui",
-            "describe-point",
-            str(x),
-            str(y),
-            "--api",
-            "axbridge",
-            "--format",
-            "complete",
-        )
-
-        self.assertEqual(document["backend"], AXBRIDGE_BACKEND)
-        self.assertIn(
-            GENERAL_ROW_ID,
-            [element.get("identifier") for element in _elements(document["elements"])],
-        )
+        self.assertEqual(rejected.stdout, b"")
 
     async def wait_for_search_field(self, value: str | None = None) -> dict[str, Any]:
         async def read() -> dict[str, Any]:
@@ -682,14 +688,6 @@ class AccessibilityTests(IdbEndToEndTestCase):
         general = await self.wait_for_element(GENERAL_ROW_ID)
         x, y = self.center(general)
         await self.idb("ui", "tap", str(x), str(y), "--api", "ax")
-        await self.wait_for_element(title, "NavigationBar")
-
-    async def test_ui_tap_opens_general_by_marker(self) -> None:
-        general = await self.wait_for_element(GENERAL_ROW_ID)
-        title = _label(general)
-        self.assertTrue(title, "The General row has no label")
-
-        await self.idb("ui", "tap", GENERAL_ROW_ID, "--match-key", "AXUniqueId")
         await self.wait_for_element(title, "NavigationBar")
 
     async def describe_by_id(self, identifier: str, *, step: str) -> dict[str, Any]:
