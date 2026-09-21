@@ -254,6 +254,10 @@ extension Simulator {
     commandCache.resolve { SimulatorLifecycleCommands.commands(with: self) }
   }
 
+  public var hinge: SimulatorHingeCommands {
+    SimulatorHingeCommands.commands(with: self)
+  }
+
   public var power: SimulatorPowerCommands {
     SimulatorPowerCommands.commands(with: self)
   }
