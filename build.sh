@@ -447,12 +447,33 @@ function build_swift_protobuf_plugin() {
   build_protoc_plugin protoc-gen-swift
 }
 
+# The published repository holds the proto at `proto/idb.proto`. The monorepo
+# exports a directory of its own to that path and so has none, which leaves the
+# ancestor holding that directory as the only way to name the proto from here.
+function proto_directory() {
+  if [ -f "proto/idb.proto" ]; then
+    echo "proto"
+    return 0
+  fi
+  local ancestor="$PWD"
+  while [ "$ancestor" != "/" ]; do
+    ancestor="$(dirname "$ancestor")"
+    if [ -f "$ancestor/xplat/idb/idb.proto" ]; then
+      echo "$ancestor/xplat/idb"
+      return 0
+    fi
+  done
+  echo "error: no idb.proto in proto/, nor in the xplat/idb of any ancestor" >&2
+  return 1
+}
+
 function generate_proto() {
   check_protobuf
   build_grpc_swift_plugin || return
   build_swift_protobuf_plugin || return
 
-  local proto_dir="proto"
+  local proto_dir
+  proto_dir="$(proto_directory)" || return 1
   local output_dir="IDBGRPCSwift"
   local protoc=$(which protoc)
   local swift_plugin grpc_plugin

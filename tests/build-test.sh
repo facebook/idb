@@ -550,13 +550,9 @@ touch "$monorepo/xplat/idb/idb.proto"
 : > "$PROTOC_STUB_LOG"
 
 output="$(in_package "$dir" 'generate_proto')"
-# BUG: the proto directory is the published path unconditionally, so codegen
-# from the monorepo asks protoc for a directory only the published repository
-# has -- flipped in the following commit.
-assert_contains "protoc is asked for the published path, which is not there" \
-    "$(cat "$PROTOC_STUB_LOG")" "--proto_path=proto"
-assert_contains "protoc reports the path it could not read" \
-    "$output" "Could not make proto path relative"
+assert_equal "codegen in the monorepo succeeds" 0 "$?"
+assert_contains "protoc reads the directory the published proto is exported from" \
+    "$(cat "$PROTOC_STUB_LOG")" "--proto_path=$monorepo/xplat/idb"
 
 # ---------------------------------------------------------------------------
 # Xcode gets the same lock and must preserve it.
