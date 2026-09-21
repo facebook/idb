@@ -34,6 +34,7 @@ NS_ASSUME_NONNULL_BEGIN
  callbacks are delivered on callbackQueue.
  */
 @protocol SimScreen <FoundationXPCProtocolProxyable>
+@property (nonatomic, readonly) id screenProperties;
 - (void)registerScreenCallbacksWithUUID:(NSUUID *)arg1
                           callbackQueue:(dispatch_queue_t)arg2
                           frameCallback:(void (^)(void))arg3

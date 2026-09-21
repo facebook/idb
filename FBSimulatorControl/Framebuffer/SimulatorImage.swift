@@ -41,9 +41,9 @@ public actor SimulatorImage {
 
   /// Renders the current surface with `configuration` applied during the render rather than after
   /// it. See `SurfaceImageGenerator.image(configuration:screenScale:)`.
-  public func image(configuration: ScreenshotConfiguration, screenScale: Double?) throws -> SurfaceImage? {
+  public func image(configuration: ScreenshotConfiguration, screenScale: Double?, display: SimulatorDisplay? = nil) throws -> SurfaceImage? {
     try attachIfNeeded()
-    return try imageGenerator.image(configuration: configuration, screenScale: screenScale)
+    return try imageGenerator.image(configuration: configuration, screenScale: screenScale, display: display)
   }
 
   /// One-time lazy attach; actor isolation makes this attach-exactly-once regardless of caller

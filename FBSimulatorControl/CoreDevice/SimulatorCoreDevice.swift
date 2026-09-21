@@ -12,9 +12,11 @@ import XPC
 
 enum SimulatorCoreDeviceError: Error, LocalizedError {
   case unavailable(String)
+  case unsupported(String)
 
   var errorDescription: String? {
     switch self {
+    case let .unsupported(detail): "Simulator CoreDevice capability unavailable: \(detail)"
     case let .unavailable(detail): "Simulator CoreDevice service unavailable: \(detail)"
     }
   }
@@ -26,7 +28,7 @@ enum SimulatorCoreDevice {
   static func installedVersion() throws -> String {
     let url = URL(fileURLWithPath: "/Library/Developer/PrivateFrameworks/CoreDevice.framework")
     guard let version = Bundle(url: url)?.object(forInfoDictionaryKey: "CFBundleVersion") as? String else {
-      throw SimulatorCoreDeviceError.unavailable("CoreDevice version metadata")
+      throw SimulatorCoreDeviceError.unsupported("CoreDevice version metadata")
     }
     return version
   }
@@ -74,10 +76,13 @@ enum SimulatorCoreDevice {
       let endpointFromPort = symbol(handle, "xpc_endpoint_create_mach_port_4sim", as: EndpointFromPort.self),
       let connectionFromEndpoint = symbol(handle, "xpc_connection_create_from_endpoint", as: ConnectionFromEndpoint.self),
       let enableSim2Host = symbol(handle, "xpc_connection_enable_sim2host_4sim", as: EnableSim2Host.self)
-    else { throw SimulatorCoreDeviceError.unavailable("Simulator XPC symbols") }
+    else { throw SimulatorCoreDeviceError.unsupported("Simulator XPC symbols") }
     var error: NSError?
     let port = simulator.device.lookup(service, error: &error)
     guard port != MACH_PORT_NULL else {
+      if error?.domain == "com.apple.CoreSimulator.SimError", error?.code == 405 {
+        throw SimulatorCoreDeviceError.unsupported(service)
+      }
       throw SimulatorCoreDeviceError.unavailable(error?.localizedDescription ?? service)
     }
     // Both Create functions return +1. The endpoint consumes the lookup's send right.

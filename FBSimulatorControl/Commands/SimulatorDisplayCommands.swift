@@ -61,14 +61,28 @@ public struct SimulatorDisplayCommands {
 
   /// Reads configured displays. Requires a current report with explicit per-display activity.
   public func list() async throws -> [SimulatorDisplay] {
+    try await read(decode: SimulatorDisplayProtocol.displays)
+  }
+
+  /// Returns nil only when the provider lacks the capability needed to select a display.
+  func activeIntegratedDisplayIfSupported() async throws -> SimulatorDisplay? {
+    do {
+      guard let displays = try await read(decode: SimulatorDisplayProtocol.captureDisplays) else { return nil }
+      return try Self.activeIntegratedDisplay(in: displays)
+    } catch SimulatorCoreDeviceError.unsupported(_) {
+      return nil
+    }
+  }
+
+  private func read<Response: Sendable>(decode: @escaping @Sendable (xpc_object_t) throws -> Response) async throws -> Response {
     let request = try SimulatorCoreDevice.request(
       action: "com.apple.coredevice.action.displayinfo", deviceID: simulator.udid,
       version: SimulatorCoreDevice.installedVersion(), input: SimulatorCoreDevice.dictionary([:]))
     let queue = DispatchQueue(label: "com.facebook.FBSimulatorControl.display-info")
     let transport = try SimulatorCoreDeviceXPCTransport(
       simulator: simulator, service: "com.apple.coredevice.feature.getdisplayinfo", queue: queue)
-    return try await SimulatorCoreDeviceRequest<[SimulatorDisplay]>(transport: transport, queue: queue)
-      .read(request, decode: SimulatorDisplayProtocol.displays)
+    return try await SimulatorCoreDeviceRequest<Response>(transport: transport, queue: queue)
+      .read(request, decode: decode)
   }
 
   public func activeIntegratedDisplay() async throws -> SimulatorDisplay {

@@ -9,7 +9,33 @@ import Foundation
 import XPC
 
 enum SimulatorDisplayProtocol {
-  static func displays(_ reply: xpc_object_t) throws -> [SimulatorDisplay] {
+  /// Older providers omit both activity and stable identity from every display.
+  static func captureDisplays(_ reply: xpc_object_t) throws -> [SimulatorDisplay]? {
+    let values = try displayValues(reply)
+    var hasCaptureFields = false
+    for index in 0..<xpc_array_get_count(values) {
+      let value = xpc_array_get_value(values, index)
+      guard xpc_get_type(value) == XPC_TYPE_DICTIONARY else { throw SimulatorDisplayError.invalidResponse("Invalid display") }
+      hasCaptureFields = hasCaptureFields || xpc_dictionary_get_value(value, "active") != nil || xpc_dictionary_get_value(value, "uniqueId") != nil
+    }
+    if !hasCaptureFields, xpc_array_get_count(values) > 0 {
+      for index in 0..<xpc_array_get_count(values) {
+        let value = xpc_array_get_value(values, index)
+        _ = try string(value, "name")
+        _ = try boolean(value, "primary")
+        _ = try rectangle(field(value, "bounds", XPC_TYPE_ARRAY))
+        let scale = xpc_int64_get_value(try field(value, "pointScale", XPC_TYPE_INT64))
+        let type = try field(value, "type", XPC_TYPE_DICTIONARY)
+        guard scale > 0, xpc_dictionary_get_count(type) == 1,
+          try SimulatorDisplayRotation(rawValue: string(value, "currentOrientation")) != nil
+        else { throw SimulatorDisplayError.invalidResponse("Invalid legacy display") }
+      }
+      return nil
+    }
+    return try displays(reply)
+  }
+
+  private static func displayValues(_ reply: xpc_object_t) throws -> xpc_object_t {
     guard xpc_get_type(reply) == XPC_TYPE_DICTIONARY else {
       throw SimulatorDisplayError.invalidResponse("Connection closed")
     }
@@ -22,6 +48,11 @@ enum SimulatorDisplayProtocol {
     guard try boolean(output, "current") else { throw SimulatorDisplayError.invalidResponse("Report is not current") }
     let values = try field(output, "displays", XPC_TYPE_ARRAY)
     guard xpc_array_get_count(values) <= 32 else { throw SimulatorDisplayError.invalidResponse("Too many displays") }
+    return values
+  }
+
+  static func displays(_ reply: xpc_object_t) throws -> [SimulatorDisplay] {
+    let values = try displayValues(reply)
     var identifiers: Set<String> = []
     var displays: [SimulatorDisplay] = []
     for index in 0..<xpc_array_get_count(values) {

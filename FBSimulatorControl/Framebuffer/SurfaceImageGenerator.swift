@@ -37,6 +37,10 @@ public final class SurfaceImageGenerator {
     self.logger = logger
   }
 
+  deinit {
+    surface?.decrementUseCount()
+  }
+
   /// Renders the whole surface at its native resolution.
   public func image() throws -> CGImage? {
     try image(configuration: ScreenshotConfiguration(), screenScale: nil)?.image
@@ -46,11 +50,22 @@ public final class SurfaceImageGenerator {
   /// screenshot is never materialised at full resolution. The plan is resolved here, against the surface
   /// being rendered: a surface can be replaced (e.g. by rotation) between a caller reading its size and
   /// asking for an image, and a crop resolved against the old size would silently name the wrong region.
-  public func image(configuration: ScreenshotConfiguration, screenScale: Double?) throws -> SurfaceImage? {
+  public func image(configuration: ScreenshotConfiguration, screenScale: Double?, display: SimulatorDisplay? = nil) throws -> SurfaceImage? {
     guard let surface = self.surface else {
       return nil
     }
-    let source = CIImage(ioSurface: unsafeBitCast(surface, to: IOSurfaceRef.self))
+    var source = CIImage(ioSurface: unsafeBitCast(surface, to: IOSurfaceRef.self))
+    if let display {
+      guard source.extent == display.bounds else { throw SimulatorDisplayError.changed }
+      let orientation: Int32
+      switch display.rotation {
+      case .upright: orientation = 1
+      case .clockwise: orientation = 6
+      case .upsideDown: orientation = 3
+      case .counterclockwise: orientation = 8
+      }
+      source = source.oriented(forExifOrientation: orientation)
+    }
     let sourceSize = source.extent.size
     let plan = try ScreenshotGeometry.plan(for: configuration, sourceSize: sourceSize, screenScale: screenScale)
     guard let image = render(source, plan: plan) else {

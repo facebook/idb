@@ -167,6 +167,36 @@ private final class SimDisplayRenderableSurface: FramebufferSurface {
 /// `FramebufferSurface`. Kept separate from `Framebuffer` so that discovery, adaptation, and
 /// consumer fan-out are distinct concerns.
 enum FramebufferSurfaceLocator {
+  static func framebuffer(for display: SimulatorDisplay, simulator: Simulator) async throws -> Framebuffer {
+    guard let ports = simulator.device.io?.ioPorts() else {
+      throw SimulatorDisplayError.invalidResponse("No simulator IO ports")
+    }
+    var matches: [any SimScreen] = []
+    for port in ports {
+      guard let adapter = port.descriptor as? any SimScreenAdapter else { continue }
+      let pending = FBMutableFuture<NSArray>()
+      try FBObjCExceptionGuard.guarded {
+        adapter.enumerateScreens(withCompletionQueue: .global(qos: .userInitiated)) { values in
+          pending.resolve(withResult: values as NSArray)
+        }
+      }
+      let values = try await bridgeFBFuture(
+        convertFBMutableFuture(pending).timeout(5, waitingFor: "simulator displays").retyped(FBFuture<NSArray>.self))
+      for value in values {
+        guard let screen = value as? any SimScreen else { continue }
+        let identity =
+          try FBObjCExceptionGuard.guarded {
+            (screen.screenProperties as? any SimScreenProperties)?.uniqueId
+          } as? String
+        if identity == display.uniqueID { matches.append(screen) }
+      }
+    }
+    guard matches.count == 1,
+      let renderable = matches.first as? (any SimDisplayIOSurfaceRenderable & SimDisplayRenderable)
+    else { throw SimulatorDisplayError.invalidResponse("Active display has no unique framebuffer") }
+    return Framebuffer(surface: SimDisplayRenderableSurface(surface: renderable, logger: simulator.logger), logger: simulator.logger)
+  }
+
   static func mainDisplaySurface(for simulator: Simulator, logger: any ControlCoreLogger) throws -> any FramebufferSurface {
     guard let ioClient = simulator.device.io else {
       throw FramebufferError.mainScreenSurfaceNotFound(description: "No IO client available on \(simulator.device)")

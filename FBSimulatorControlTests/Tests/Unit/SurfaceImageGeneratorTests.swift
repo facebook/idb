@@ -141,6 +141,51 @@ final class SurfaceImageGeneratorTests: XCTestCase {
     }
   }
 
+  func testDisplayRotationMapsEveryPixelBeforeCropping() throws {
+    let generator = try generator()
+    let original = try pixels(of: render(ScreenshotConfiguration(), generator: generator).image)
+    for rotation: SimulatorDisplayRotation in [.upright, .clockwise, .upsideDown, .counterclockwise] {
+      let display = SimulatorDisplay(
+        uniqueID: "inner", name: "inner", isActive: true, isPrimary: false, isIntegrated: true,
+        bounds: CGRect(origin: .zero, size: surfaceSize), scale: 2, rotation: rotation)
+      let full = try XCTUnwrap(generator.image(configuration: ScreenshotConfiguration(), screenScale: 2, display: display))
+      XCTAssertEqual(full.sourceSize, display.size)
+      let actual = try pixels(of: full.image)
+      for y in 0..<full.image.height {
+        for x in 0..<full.image.width {
+          let source: (Int, Int)
+          switch rotation {
+          case .upright: source = (x, y)
+          case .clockwise: source = (y, 31 - x)
+          case .upsideDown: source = (63 - x, 31 - y)
+          case .counterclockwise: source = (63 - y, x)
+          }
+          let input = (source.1 * 64 + source.0) * 4
+          let output = (y * full.image.width + x) * 4
+          XCTAssertEqual(Array(actual[output..<output + 4]), Array(original[input..<input + 4]), "\(rotation) at \(x),\(y)")
+        }
+      }
+      let crop = CGRect(x: 3, y: 5, width: 8, height: 6)
+      let cropped = try XCTUnwrap(
+        generator.image(
+          configuration: ScreenshotConfiguration(cropRect: crop, unit: .points), screenScale: 2, display: display))
+      let expected = try XCTUnwrap(full.image.cropping(to: CGRect(x: 6, y: 10, width: 16, height: 12)))
+      XCTAssertEqual(try pixels(of: cropped.image), try pixels(of: expected))
+      let scaled = try XCTUnwrap(
+        generator.image(
+          configuration: ScreenshotConfiguration(scale: .factor(0.5)), screenScale: 2, display: display))
+      XCTAssertEqual(scaled.image.width, full.image.width / 2)
+      XCTAssertEqual(scaled.image.height, full.image.height / 2)
+    }
+  }
+
+  func testDisplayGeometryChangeRejectsCapture() throws {
+    let display = SimulatorDisplay(
+      uniqueID: "inner", name: "inner", isActive: true, isPrimary: false, isIntegrated: true,
+      bounds: CGRect(x: 0, y: 0, width: 32, height: 64), scale: 2, rotation: .clockwise)
+    XCTAssertThrowsError(try generator().image(configuration: ScreenshotConfiguration(), screenScale: 2, display: display))
+  }
+
   // MARK: - Scale
 
   /// An odd source must not come back a pixel short: the read-out uses the planned size, not

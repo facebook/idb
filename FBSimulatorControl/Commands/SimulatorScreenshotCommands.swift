@@ -44,6 +44,9 @@ public final class SimulatorScreenshotCommands: ScreenshotCommands {
     guard let simulator = self.simulator else {
       throw WeakTargetError.simulator
     }
+    if let display = try await simulator.displays.activeIntegratedDisplayIfSupported() {
+      return try await takeActiveDisplay(display, configuration: configuration, simulator: simulator)
+    }
     let image = try await connectToImage()
     let screenScale = simulator.screenInfo.map { Double($0.scale) }
     guard let captured = try await image.image(configuration: configuration, screenScale: screenScale) else {
@@ -55,6 +58,18 @@ public final class SimulatorScreenshotCommands: ScreenshotCommands {
       encoding: configuration.encoding,
       screenScale: screenScale
     )
+  }
+
+  private func takeActiveDisplay(_ display: SimulatorDisplay, configuration: ScreenshotConfiguration, simulator: Simulator) async throws -> ScreenshotResult {
+    let framebuffer = try await FramebufferSurfaceLocator.framebuffer(for: display, simulator: simulator)
+    let image = SimulatorImage(framebuffer: framebuffer, logger: simulator.logger)
+    guard let captured = try await image.image(configuration: configuration, screenScale: display.scale, display: display) else {
+      throw SimulatorScreenshotError.captureFailed
+    }
+    guard try await simulator.displays.activeIntegratedDisplay() == display else { throw SimulatorDisplayError.changed }
+    return try ScreenshotRenderer.render(
+      transformed: captured.image, sourceSize: captured.sourceSize,
+      encoding: configuration.encoding, screenScale: display.scale)
   }
 
   private func connectToImage() async throws -> SimulatorImage {

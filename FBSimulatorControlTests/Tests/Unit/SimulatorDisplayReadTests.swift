@@ -51,6 +51,34 @@ private final class DisplayTransportStub: SimulatorCoreDeviceTransport, @uncheck
 }
 
 final class SimulatorDisplayReadTests: XCTestCase {
+  func testLegacyReportWithoutIdentityOrActivityDeclinesCaptureCapability() throws {
+    let value = displayValue(id: "legacy", active: true)
+    xpc_dictionary_set_value(value, "active", nil)
+    xpc_dictionary_set_value(value, "uniqueId", nil)
+    XCTAssertNil(try SimulatorDisplayProtocol.captureDisplays(displayReply([value])))
+    XCTAssertThrowsError(try SimulatorDisplayProtocol.displays(displayReply([value])))
+    XCTAssertThrowsError(try SimulatorDisplayProtocol.captureDisplays(displayReply([value], current: false)))
+  }
+
+  func testPartialOrMalformedCaptureCapabilityDoesNotFallBack() {
+    XCTAssertThrowsError(try SimulatorDisplayProtocol.captureDisplays(displayReply([SimulatorCoreDevice.dictionary([:])])))
+    let partial = displayValue(id: "inner", active: true)
+    xpc_dictionary_set_value(partial, "active", nil)
+    XCTAssertThrowsError(try SimulatorDisplayProtocol.captureDisplays(displayReply([partial])))
+    let malformed = displayValue(id: "inner", active: true)
+    xpc_dictionary_set_string(malformed, "active", "true")
+    XCTAssertThrowsError(try SimulatorDisplayProtocol.captureDisplays(displayReply([malformed])))
+    let legacy = displayValue(id: "legacy", active: true)
+    xpc_dictionary_set_value(legacy, "active", nil)
+    xpc_dictionary_set_value(legacy, "uniqueId", nil)
+    XCTAssertThrowsError(try SimulatorDisplayProtocol.captureDisplays(displayReply([displayValue(id: "inner", active: true), legacy])))
+  }
+
+  func testEmptyCurrentReportDoesNotFallBack() throws {
+    let displays = try XCTUnwrap(SimulatorDisplayProtocol.captureDisplays(displayReply([])))
+    XCTAssertThrowsError(try SimulatorDisplayCommands.activeIntegratedDisplay(in: displays))
+  }
+
   func testExplicitActivitySelectsInnerDespiteNonemptyPrimaryBounds() throws {
     let displays = try SimulatorDisplayProtocol.displays(
       displayReply([
