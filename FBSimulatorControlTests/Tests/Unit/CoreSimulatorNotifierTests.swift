@@ -57,27 +57,33 @@ final class CoreSimulatorNotifierTests: XCTestCase {
   }
 
   func testDoesNotResolveWhenTheDeviceReportsTheSameState() {
-    let future = resolveLeavesBooted()
+    _ = resolveLeavesBooted()
 
     notifier.post(["notification": "device_state", "new_state": NSNumber(value: TargetState.booted.rawValue)])
 
-    XCTAssertEqual(future.state, .running)
+    // The handler outliving the notification is the wait still being live: it is unregistered as
+    // part of finishing, whether that is by resolution or by cancellation. Unregistration lands
+    // asynchronously, so the pin is that it has not happened within a bounded wait.
+    waitForUnregistration(timeout: 0.5)
+    XCTAssertEqual(notifier.registeredHandleCount, 1)
   }
 
   func testIgnoresNotificationsThatAreNotStateChanges() {
-    let future = resolveLeavesBooted()
+    _ = resolveLeavesBooted()
 
     notifier.post(["notification": "device_name", "new_state": NSNumber(value: TargetState.shutdown.rawValue)])
 
-    XCTAssertEqual(future.state, .running)
+    waitForUnregistration(timeout: 0.5)
+    XCTAssertEqual(notifier.registeredHandleCount, 1)
   }
 
   func testIgnoresStateChangesThatCarryNoNewState() {
-    let future = resolveLeavesBooted()
+    _ = resolveLeavesBooted()
 
     notifier.post(["notification": "device_state"])
 
-    XCTAssertEqual(future.state, .running)
+    waitForUnregistration(timeout: 0.5)
+    XCTAssertEqual(notifier.registeredHandleCount, 1)
   }
 
   func testUnregistersTheHandlerWhenCancelled() throws {
