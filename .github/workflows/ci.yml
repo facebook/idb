@@ -66,6 +66,8 @@ jobs:
             EndToEndTests.documentation_tests \
             EndToEndTests.accessibility_tests \
             -v
+      - name: Check the documentation's links into the repository
+        run: python -m CI.check_documentation_links
 
   mac-frameworks:
     name: Build frameworks (macOS)
