@@ -46,6 +46,9 @@ SETTINGS_ROW_PREFIX = "com.apple.settings."
 # Views that carry the rows' identifier prefix without being rows.
 ROW_CONTAINER_TYPES = frozenset({"CollectionView", "Table", "ScrollView", "List"})
 UI_UPDATE_TIMEOUT_SECONDS = 30.0
+# A tap idb refused does nothing at all, so a wait long enough to catch a
+# screen that did change is short.
+NOTHING_OPENS_TIMEOUT_SECONDS = 2.0
 MINIMUM_SCROLL_DISTANCE = 20.0
 
 # The companion uses an exclusive simulator process for --api axbridge.
@@ -659,21 +662,22 @@ class AccessibilityTests(IdbEndToEndTestCase):
             "idb-e2e-value-it-does-not-have",
             expected_error="before tapping",
         )
-        deadline = Deadline(UI_UPDATE_TIMEOUT_SECONDS)
-        while True:
-            after_rejection = await self.wait_for_settings_snapshot()
-            self.assertNotIn(
-                title,
-                [
-                    e.get("identifier")
-                    for e in _elements(after_rejection)
-                    if e.get("type") == "NavigationBar"
-                ],
-                "The rejected tap opened General",
-            )
-            if deadline.passed:
-                break
-            await asyncio.sleep(min(POLL_INTERVAL_SECONDS, deadline.remaining))
+        rejected = await self.idb_expect_failure(
+            "ui",
+            "wait",
+            title,
+            "--match-key",
+            "AXUniqueId",
+            "--timeout",
+            str(NOTHING_OPENS_TIMEOUT_SECONDS),
+            "--json",
+            expected_error="Timed out waiting for",
+        )
+        self.assertEqual(
+            json.loads(rejected.text),
+            {"found": False},
+            "The rejected tap opened General",
+        )
 
         general = await self.wait_for_element(GENERAL_ROW_ID)
         x, y = self.center(general)
