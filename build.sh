@@ -534,6 +534,44 @@ function check_xcode_version() {
 }
 
 
+# <xcodebuild arguments>. One file per invocation under the build directory,
+# numbered in invocation order and named after the scheme, so a multi-step
+# build leaves a readable sequence behind.
+function xcodebuild_log_path() {
+  local dir="$BUILD_DIRECTORY/Logs/xcodebuild"
+  mkdir -p "$dir"
+  local scheme="xcodebuild" argument previous=""
+  for argument in "$@"; do
+    if [ "$previous" = "-scheme" ]; then
+      scheme="$argument"
+      break
+    fi
+    previous="$argument"
+  done
+  local count
+  count="$(find "$dir" -name '*.log' | wc -l | tr -d ' ')"
+  printf '%s/%02d-%s.log\n' "$dir" "$((count + 1))" "$scheme"
+}
+
+# <raw log>. The diagnostics from a failed xcodebuild, read back from the raw
+# log rather than from whatever the formatter chose to show: every compiler,
+# linker and xcodebuild error line, then the failing-commands summary.
+function report_xcodebuild_failure() {
+  local log="$1"
+  echo "error: xcodebuild failed; the complete output is in $log" >&2
+  # In emission order, duplicates dropped; a failure with no recognisable
+  # diagnostic (grep exits 1) is still a failure to report, not to abort on.
+  {
+    grep -E \
+      -e ': (fatal )?error: ' \
+      -e '^(xcodebuild|ld|clang|swift-frontend|error): ' \
+      -e 'duplicate symbol' \
+      -e 'Undefined symbols' \
+      "$log" || true
+  } | awk '!seen[$0]++' | head -40 >&2
+  sed -n '/^The following build commands failed:/,$p' "$log" | head -20 >&2 || true
+}
+
 function invoke_xcodebuild() {
   local symroot="$BUILD_DIRECTORY/Products"
   local objroot="$BUILD_DIRECTORY/Intermediates"
@@ -550,10 +588,30 @@ function invoke_xcodebuild() {
     CLANG_ENABLE_EXPLICIT_MODULES=NO
     ARCHS=arm64
   )
+  # Every invocation keeps its complete, unformatted output. A formatter only
+  # shows what it recognises -- xcpretty drops a compile error with no file
+  # path, such as `<unknown>:0: error: missing required module` -- so the raw
+  # log is the record, and on failure its diagnostics are printed regardless
+  # of what the formatter kept. stderr goes into the same pipe: xcodebuild's
+  # own errors (a missing scheme, a broken project) arrive there.
+  local log
+  log="$(xcodebuild_log_path "$@")"
+  # xcodebuild's own status, not the pipeline's: under pipefail a formatter
+  # that exits non-zero on a failed build would replace the code, and errexit
+  # would end the script before it could be read.
+  local errexit=""
+  [[ $- == *e* ]] && errexit=1
+  set +e
   if [[ -n $HAS_XCPRETTY ]]; then
-    NSUnbufferedIO=YES xcodebuild "${common_settings[@]}" SYMROOT="$symroot" OBJROOT="$objroot" "$@" | xcpretty -c || return
+    NSUnbufferedIO=YES xcodebuild "${common_settings[@]}" SYMROOT="$symroot" OBJROOT="$objroot" "$@" 2>&1 | tee "$log" | xcpretty -c
   else
-    xcodebuild "${common_settings[@]}" SYMROOT="$symroot" OBJROOT="$objroot" "$@" || return
+    NSUnbufferedIO=YES xcodebuild "${common_settings[@]}" SYMROOT="$symroot" OBJROOT="$objroot" "$@" 2>&1 | tee "$log"
+  fi
+  local status="${PIPESTATUS[0]}"
+  [ -n "$errexit" ] && set -e
+  if [ "$status" -ne 0 ]; then
+    report_xcodebuild_failure "$log"
+    return "$status"
   fi
   local argument
   for argument in "$@"; do

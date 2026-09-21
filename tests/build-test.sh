@@ -504,11 +504,30 @@ output="$(in_package "$dir" '
     invoke_xcodebuild -project Companion/idb_companion.xcodeproj -scheme idb_companion build
 ')"
 assert_equal "a formatted Xcode failure still fails" 8 "$?"
-# BUG: the formatter is the only reader of xcodebuild's output, so a diagnostic
-# it does not recognise is gone and no raw log survives to find it in --
-# flipped in the following commit.
-assert_equal "the path-less error is reported" 0 "$(grep -c "missing required module" <<< "$output")"
-assert_equal "a raw xcodebuild log is kept" 0 "$(find "$dir/Build" -path '*Logs/xcodebuild/*.log' 2>/dev/null | wc -l | tr -d ' ')"
+assert_equal "the path-less error is reported" 1 "$(grep -c "missing required module" <<< "$output")"
+assert_equal "a raw xcodebuild log is kept" 1 "$(find "$dir/Build" -path '*Logs/xcodebuild/*idb_companion.log' 2>/dev/null | wc -l | tr -d ' ')"
+
+# The script runs under errexit and pipefail. A failure whose output has no
+# recognisable diagnostic, and a formatter that exits non-zero on failure,
+# must still report xcodebuild's own status.
+export XCODE_STUB_OUTPUT="nothing the report recognises"
+cat > "$WORK/stubs/xcpretty" <<'STUB'
+#!/bin/bash
+grep -E '^/.*: (fatal )?error: |^\*\* BUILD'
+exit 1
+STUB
+output="$(in_package "$dir" '
+    set -e
+    HAS_XCPRETTY=true
+    invoke_xcodebuild -project Companion/idb_companion.xcodeproj -scheme idb_companion build
+')"
+assert_equal "xcodebuild status survives errexit and a failing formatter" 8 "$?"
+assert_contains "the failure is still reported" "$output" "error: xcodebuild failed; the complete output is in"
+cat > "$WORK/stubs/xcpretty" <<'STUB'
+#!/bin/bash
+grep -E '^/.*: (fatal )?error: |^\*\* BUILD'
+exit 0
+STUB
 unset XCODE_STUB_FAIL XCODE_STUB_OUTPUT
 
 # Existing generated files do not prove that they match today's plugin pins.
