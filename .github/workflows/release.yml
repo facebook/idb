@@ -108,7 +108,7 @@ jobs:
           fi
       - name: Install tools
         if: steps.reuse.outputs.reused != 'true'
-        run: brew install xcodegen protobuf
+        run: brew install xcodegen protobuf xcbeautify
       - name: Cache protoc plugins
         if: steps.reuse.outputs.reused != 'true'
         uses: actions/cache@v5
@@ -119,6 +119,16 @@ jobs:
       - name: Build everything and assemble the distribution
         if: steps.reuse.outputs.reused != 'true'
         run: ./build.sh build all
+      # The raw xcodebuild output build.sh keeps for every invocation; the
+      # formatted job log shows only what the formatter recognised.
+      - name: Upload xcodebuild logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v5
+        with:
+          name: companion-xcodebuild-logs
+          path: Build/Logs/xcodebuild/*.log
+          if-no-files-found: ignore
+          retention-days: 14
       - name: Package
         if: steps.reuse.outputs.reused != 'true'
         run: tar -C Build/Distribution -czf idb-companion.macos-arm64.tar.gz .

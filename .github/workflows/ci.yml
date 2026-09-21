@@ -80,9 +80,19 @@ jobs:
     steps:
       - uses: actions/checkout@v5
       - name: Install tools
-        run: brew install xcodegen
+        run: brew install xcodegen xcbeautify
       - name: Build frameworks
         run: ./build.sh build frameworks
+      # The raw xcodebuild output build.sh keeps for every invocation; the
+      # formatted job log shows only what the formatter recognised.
+      - name: Upload xcodebuild logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v5
+        with:
+          name: frameworks-xcodebuild-logs
+          path: Build/Logs/xcodebuild/*.log
+          if-no-files-found: ignore
+          retention-days: 14
 
   mac-tests:
     name: Test ${{ matrix.target }} (macOS)
@@ -109,7 +119,7 @@ jobs:
     steps:
       - uses: actions/checkout@v5
       - name: Install tools
-        run: brew install xcodegen
+        run: brew install xcodegen xcbeautify
       # The smoke suite takes a booted simulator from its environment and does
       # not boot one itself, so this job is the harness that supplies it, named
       # by DEVICE_UDID (forwarded through xcodebuild's TEST_RUNNER_ prefix).
@@ -131,6 +141,16 @@ jobs:
           path: Build/Logs/Test/*.xcresult
           if-no-files-found: ignore
           retention-days: 14
+      # The raw xcodebuild output build.sh keeps for every invocation; the
+      # formatted job log shows only what the formatter recognised.
+      - name: Upload xcodebuild logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v5
+        with:
+          name: ${{ matrix.target }}-xcodebuild-logs
+          path: Build/Logs/xcodebuild/*.log
+          if-no-files-found: ignore
+          retention-days: 14
 
   mac-companion:
     name: Build companion + distribution (macOS)
@@ -141,7 +161,7 @@ jobs:
     steps:
       - uses: actions/checkout@v5
       - name: Install tools
-        run: brew install xcodegen protobuf
+        run: brew install xcodegen protobuf xcbeautify
       # build.sh compiles both protoc plugins from source on first run;
       # cache those builds to keep this job fast. The checkout directories carry
       # the pinned version, so the glob picks up whichever one the pin names.
@@ -153,6 +173,16 @@ jobs:
           key: protoc-plugins-${{ hashFiles('Package.swift', 'Package.resolved') }}-${{ runner.os }}
       - name: Build everything and assemble the distribution
         run: ./build.sh build all
+      # The raw xcodebuild output build.sh keeps for every invocation; the
+      # formatted job log shows only what the formatter recognised.
+      - name: Upload xcodebuild logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v5
+        with:
+          name: companion-xcodebuild-logs
+          path: Build/Logs/xcodebuild/*.log
+          if-no-files-found: ignore
+          retention-days: 14
       # Archived first: artifact upload does not keep file modes, and the
       # end-to-end job has to execute what it downloads.
       - name: Archive the distribution
