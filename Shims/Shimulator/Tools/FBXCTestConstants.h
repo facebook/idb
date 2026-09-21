@@ -25,7 +25,6 @@ static NSString *const kReporter_Events_EndTest = @"end-test";
 static NSString *const kReporter_Events_BeginStatus = @"begin-status";
 static NSString *const kReporter_Events_EndStatus = @"end-status";
 
-static NSString *const kReporter_TestSuite_TopLevelSuiteName = @"Toplevel Test Suite";
 static NSString *const kReporter_BeginTestSuite_SuiteKey = @"suite";
 
 static NSString *const kReporter_EndTestSuite_SuiteKey = @"suite";

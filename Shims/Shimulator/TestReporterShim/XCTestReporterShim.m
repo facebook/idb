@@ -133,11 +133,6 @@ static void XCToolLog_testSuiteDidStart(NSString *name)
   __testSuiteDepth++;
 }
 
-static void XCTestLog_testSuiteDidStart(id self, SEL sel, XCTestSuiteRun *run)
-{
-  XCToolLog_testSuiteDidStart(kReporter_TestSuite_TopLevelSuiteName);
-}
-
 static void XCTestLog_testSuiteWillStart(id self, SEL sel, XCTestSuite *suite)
 {
   XCToolLog_testSuiteDidStart(parseXCTestSuiteKey(suite));
@@ -164,11 +159,6 @@ static void XCToolLog_testSuiteDidStop(NSString *testSuiteName, XCTestSuiteRun *
       PrintJSON(json);
     });
   }
-}
-
-static void XCTestLog_testSuiteDidStop(id self, SEL sel, XCTestSuiteRun *run)
-{
-  XCToolLog_testSuiteDidStop(kReporter_TestSuite_TopLevelSuiteName, run);
 }
 
 static void XCTestLog_testSuiteDidFinish(id self, SEL sel, XCTestSuite *suite)
