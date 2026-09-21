@@ -12,6 +12,7 @@ import XCTest
 
 private let kAXElementType = "XC_kAXXCAttributeElementType"
 private let kAXLabel = "XC_kAXXCAttributeLabel"
+private let kAXValue = "XC_kAXXCAttributeValue"
 private let kAXChildren = "XC_kAXXCAttributeChildren"
 private let kAXFrame = "XC_kAXXCAttributeFrame"
 private let kAXVisiblePoint = "XC_kAXXCAttributeVisiblePoint"
@@ -741,6 +742,43 @@ final class AccessibilityRuntimeTests: XCTestCase {
     XCTAssertTrue(((rejected.failureReason)?.contains("-25201") == true), "\(String(describing: rejected.failureReason))")
   }
 
+  func testRejectedPressDoesNotAttemptNativeActivation() {
+    var fallbackCount = 0
+    let outcome = FBAXWriteOutcome(forPressError: -25200) {
+      fallbackCount += 1
+      return FBAXWriteOutcome.written()
+    }
+
+    XCTAssertEqual(outcome.status, FBAXWriteStatus.failed)
+    XCTAssertTrue(outcome.failureReason?.contains("-25200") == true)
+    XCTAssertEqual(fallbackCount, 0)
+  }
+
+  func testOtherPressOutcomesDoNotAttemptNativeActivation() {
+    let cases: [(Int32, FBAXWriteStatus)] = [
+      (FBAXError.success.rawValue, .written),
+      (FBAXError.serverNotFound.rawValue, .applicationUnavailable),
+      (FBAXError.ipcTimeout.rawValue, .applicationNotResponding),
+      (FBAXError.invalidUIElement.rawValue, .failed),
+      (-25201, .failed),
+    ]
+    for (error, expectedStatus) in cases {
+      var fallbackCount = 0
+      let outcome = FBAXWriteOutcome(forPressError: error) {
+        fallbackCount += 1
+        return FBAXWriteOutcome.written()
+      }
+
+      XCTAssertEqual(outcome.status, expectedStatus, "AX error \(error)")
+      if expectedStatus == .failed {
+        XCTAssertTrue(outcome.failureReason?.contains(String(error)) == true)
+      } else {
+        XCTAssertNil(outcome.failureReason)
+      }
+      XCTAssertEqual(fallbackCount, 0, "AX error \(error)")
+    }
+  }
+
   // `FBAXSignatureWarnings` sweeps only ObjC selectors; a C entry point has nothing but this presence check.
   func testTheAXRuntimeWriteEntryPointsResolve() {
     XCTAssertTrue(dlopen(FBAXPathAXRuntime, RTLD_NOW) != nil, "AXRuntime could not be opened")
@@ -1159,6 +1197,76 @@ final class AccessibilityRuntimeTests: XCTestCase {
     assertEqualObjects(runtime.lastWrittenValue, "hello")
     assertEqualObjects(runtime.lastWrittenElement, element, "the write must act on the element the hit-test found")
     XCTAssertEqual(runtime.performCount, 0, "a set-value is not an action")
+    assertEqualObjects(runtime.operations, ["hitTest", "setValue"])
+  }
+
+  func testSetValueTimeoutIsReportedEvenWhenTheRequestedValueIsReadable() {
+    self.seedHitElement(withAttributes: [kAXValue: "hello"])
+    runtime.writeOutcome = FBAXWriteOutcome.applicationNotResponding()
+
+    let response = FBAXBridgeHandleRequest(["verb": "setvalue", "x": 30, "y": 40, "value": "hello"])
+
+    assertEqualObjects(response, ["ok": false, "error": "pid 4321 did not answer the write in time", "error_kind": "application_not_responding", "pid": kAppPid])
+    XCTAssertEqual(runtime.setValueCount, 1)
+    assertEqualObjects(runtime.operations, ["hitTest", "setValue"])
+  }
+
+  func testSetValueTimeoutIsPreservedWithoutAnExactStringValue() {
+    let cases: [(String, Any?)] = [
+      ("hello", "different"),
+      ("hello", nil),
+      ("hello", NSNull()),
+      ("123", NSNumber(value: 123)),
+      ("\u{00E9}", "e\u{0301}"),
+    ]
+    runtime.writeOutcome = FBAXWriteOutcome.applicationNotResponding()
+    for (requested, actual) in cases {
+      self.seedHitElement(withAttributes: actual.map { [kAXValue: $0] } ?? [:])
+      runtime.operations.removeAllObjects()
+      let writesBefore = runtime.setValueCount
+
+      let response = FBAXBridgeHandleRequest(["verb": "setvalue", "x": 30, "y": 40, "value": requested])
+
+      assertEqualObjects(axValue(response, "error_kind"), "application_not_responding")
+      assertEqualObjects(axValue(response, "pid"), kAppPid)
+      XCTAssertEqual(runtime.setValueCount, writesBefore + 1)
+      assertEqualObjects(runtime.operations, ["hitTest", "setValue"])
+    }
+  }
+
+  func testSetValueTimeoutIsPreservedWhenTheValueCannotBeRead() {
+    let cases: [(FBAXReadStatus, String?)] = [
+      (.applicationUnavailable, nil),
+      (.applicationNotResponding, nil),
+      (.failed, nil),
+      (.read, "value read failed"),
+    ]
+    runtime.writeOutcome = FBAXWriteOutcome.applicationNotResponding()
+    for (status, raiseReason) in cases {
+      let element = self.seedHitElement(withAttributes: [kAXValue: "hello"])
+      element.readStatus = status
+      element.readRaiseReason = raiseReason
+      runtime.operations.removeAllObjects()
+      let writesBefore = runtime.setValueCount
+
+      let response = FBAXBridgeHandleRequest(["verb": "setvalue", "x": 30, "y": 40, "value": "hello"])
+
+      assertEqualObjects(axValue(response, "error_kind"), "application_not_responding")
+      assertEqualObjects(axValue(response, "pid"), kAppPid)
+      XCTAssertEqual(runtime.setValueCount, writesBefore + 1)
+      assertEqualObjects(runtime.operations, ["hitTest", "setValue"])
+    }
+  }
+
+  func testUnavailableSetValueDoesNotReadTheValue() {
+    self.seedHitElement(withAttributes: [kAXValue: "hello"])
+    runtime.writeOutcome = FBAXWriteOutcome.applicationUnavailable()
+
+    let response = FBAXBridgeHandleRequest(["verb": "setvalue", "x": 30, "y": 40, "value": "hello"])
+
+    assertEqualObjects(axValue(response, "error_kind"), "application_unavailable")
+    XCTAssertEqual(runtime.setValueCount, 1)
+    assertEqualObjects(runtime.operations, ["hitTest", "setValue"])
   }
 
   func testSetValueRequiresAStringValue() {

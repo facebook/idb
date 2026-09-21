@@ -205,6 +205,11 @@
   return [self failed:[NSString stringWithFormat:@"the accessibility runtime rejected the write (%d)", axError]];
 }
 
++ (instancetype)outcomeForPressError:(int32_t)axError fallback:(FBAXWriteOutcome *(^)(void))fallback
+{
+  return [self outcomeForWriteError:axError];
+}
+
 @end
 
 @implementation FBAXDeviceSettingOutcome
@@ -354,6 +359,9 @@ typedef struct {
 } FBAXBoundSelector;
 
 static const FBAXBoundSelector kFBAXBoundSelectors[] = {
+  // AXRuntime
+  {"AXElement", "elementWithAXUIElement:", YES, "@@:^{__AXUIElement=}"},
+  {"AXElement", "press", NO, "B@:"},
   // XCTAutomationSupport
   {"XCTAccessibilityFramework", "initForRemoteAccess", NO, "@@:"},
   {"XCTAccessibilityFramework", "attributesForElement:attributes:error:", NO, "@@:@@^@"},
@@ -1154,6 +1162,22 @@ static NSError *FBAXSnapshotFailure(NSInteger code, NSString *description)
   int32_t axError = [reference axErrorFromElement:^int32_t (void *raw) {
     return self->_functions.performAction(raw, identifier);
   }];
+  if (action == FBAXActionPress) {
+    return [FBAXWriteOutcome outcomeForPressError:axError
+                                         fallback:^FBAXWriteOutcome * {
+                                           return [reference objectFromElement:^id (void *raw) {
+                                             Class<FBAXNativeElementClass> nativeClass = (Class<FBAXNativeElementClass>)objc_lookUpClass("AXElement");
+                                             if (![nativeClass respondsToSelector:@selector(elementWithAXUIElement:)]) {
+                                               return [FBAXWriteOutcome failed:@"AXPress was refused (-25200), and this runtime has no native element activation API"];
+                                             }
+                                             AXElement *native = [nativeClass elementWithAXUIElement:raw];
+                                             if (![native respondsToSelector:@selector(press)]) {
+                                               return [FBAXWriteOutcome failed:@"AXPress was refused (-25200), and the element has no native press operation"];
+                                             }
+                                             return [native press] ? [FBAXWriteOutcome written] : [FBAXWriteOutcome failed:@"AXPress was refused (-25200), and native activation could not activate the element or tap its visible point"];
+                                           }];
+                                         }];
+  }
   return [FBAXWriteOutcome outcomeForWriteError:axError];
 }
 

@@ -172,6 +172,9 @@ typedef NS_ENUM(NSUInteger, FBAXWriteStatus) {
  */
 + (instancetype)outcomeForWriteError:(int32_t)axError;
 
+/** Classifies a press result with a deferred fallback for native element activation. */
++ (instancetype)outcomeForPressError:(int32_t)axError fallback:(FBAXWriteOutcome *(^)(void))fallback;
+
 @end
 
 #pragma mark - Frontmost

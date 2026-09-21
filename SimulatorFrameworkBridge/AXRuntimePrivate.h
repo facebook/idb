@@ -18,6 +18,17 @@
 
 #import <Foundation/Foundation.h>
 
+/** Native activation, including remote elements and a touch at the element's visible point. */
+@interface AXElement : NSObject
+/** Retains the borrowed reference through its AXUIElement wrapper. */
++ (instancetype)elementWithAXUIElement:(void *)element;
+- (BOOL)press;
+@end
+
+@protocol FBAXNativeElementClass <NSObject>
++ (AXElement *)elementWithAXUIElement:(void *)element;
+@end
+
 /** The framework's path inside the booted runtime root, for dlopen. */
 #define FBAXPathAXRuntime "/System/Library/PrivateFrameworks/AXRuntime.framework/AXRuntime"
 
