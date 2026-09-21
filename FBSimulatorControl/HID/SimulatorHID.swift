@@ -263,7 +263,7 @@ public final class SimulatorHID: CustomStringConvertible, @unchecked Sendable {
       return false
     case let .hinge(angle):
       guard let simulator else { throw WeakTargetError.simulator }
-      try SimulatorHingeAngle.requireSupportedModel(simulator.device.deviceType?.modelIdentifier)
+      try await SimulatorHingeCapability.requireSupported(on: simulator)
       let vendor = try await SimulatorDTUHIDTransport.dtuhid(
         for: simulator, serviceName: SimulatorDTUHIDTransport.vendorDefinedServiceName)
       defer { vendor.disconnect() }

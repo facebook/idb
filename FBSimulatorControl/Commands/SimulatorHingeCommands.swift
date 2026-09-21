@@ -5,7 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-@preconcurrency import CoreSimulator
 import Foundation
 
 public struct SimulatorHingeCommands {
@@ -21,7 +20,7 @@ public struct SimulatorHingeCommands {
 
   /// Reads a fresh measured angle. During a hinge animation this can be between its endpoints.
   public func angle() async throws -> SimulatorHingeAngle {
-    try SimulatorHingeAngle.requireSupportedModel(simulator.device.deviceType?.modelIdentifier)
+    try await SimulatorHingeCapability.requireSupported(on: simulator)
     let version = try SimulatorCoreDevice.installedVersion()
     let queue = DispatchQueue(label: "com.facebook.FBSimulatorControl.hinge-read")
     let transport = try SimulatorCoreDeviceXPCTransport(simulator: simulator, service: SimulatorHingeProtocol.service, queue: queue)

@@ -19,11 +19,6 @@ public struct SimulatorHingeAngle: Equatable, Hashable, Sendable {
     self.degrees = degrees
   }
 
-  static func requireSupportedModel(_ model: String?) throws {
-    // The device profile does not advertise a hinge feature; this is the demonstrated model.
-    guard model == "iPhone19,4" else { throw HingeError.unsupportedModel }
-  }
-
   func vendorEvent() throws -> IndigoVendorDefinedEvent {
     let payload: [String: Any] = [
       "provider": "com.apple.Virtualization.VirtualMachines",
@@ -40,13 +35,11 @@ public struct SimulatorHingeAngle: Equatable, Hashable, Sendable {
 
 private enum HingeError: Error, LocalizedError {
   case invalidAngle
-  case unsupportedModel
   case serializationFailed
 
   var errorDescription: String? {
     switch self {
     case .invalidAngle: "Hinge angle must be finite and between 0 and 180 degrees"
-    case .unsupportedModel: "Hinge input is supported only on iPhone Duo simulators"
     case .serializationFailed: "Could not serialize the simulator hinge input"
     }
   }

@@ -17,11 +17,42 @@ final class SimulatorHingeTests: XCTestCase {
     }
   }
 
-  func testRejectsDevicesWithoutTheDemonstratedHinge() throws {
-    try SimulatorHingeAngle.requireSupportedModel("iPhone19,4")
-    for model in [nil, "iPhone18,1", "iPad16,3"] {
-      XCTAssertThrowsError(try SimulatorHingeAngle.requireSupportedModel(model))
+  func testRequiresAdvertisedHingeCapability() throws {
+    try SimulatorHingeCapability.requireSupported(in: capabilityReply(xpc_bool_create(true)))
+    XCTAssertThrowsError(try SimulatorHingeCapability.requireSupported(in: capabilityReply(xpc_bool_create(false)))) { error in
+      guard case SimulatorCoreDeviceError.unsupported = error else { return XCTFail("Expected unsupported hinge, got \(error)") }
     }
+  }
+
+  func testMalformedCapabilityDoesNotBecomeUnsupported() {
+    for value in [nil, xpc_int64_create(1), xpc_string_create("true"), xpc_null_create()] {
+      XCTAssertThrowsError(try SimulatorHingeCapability.requireSupported(in: capabilityReply(value))) { error in
+        guard case SimulatorCoreDeviceError.unavailable = error else { return XCTFail("Expected invalid response, got \(error)") }
+      }
+    }
+    for reply in [xpc_null_create(), SimulatorCoreDevice.dictionary([:]), SimulatorCoreDevice.dictionary(["CoreDevice.output": xpc_bool_create(true)])] {
+      XCTAssertThrowsError(try SimulatorHingeCapability.requireSupported(in: reply))
+    }
+  }
+
+  func testProviderErrorTakesPrecedenceOverAdvertisedCapability() {
+    let reply = capabilityReply(xpc_bool_create(true))
+    xpc_dictionary_set_value(
+      reply, "CoreDevice.error",
+      SimulatorCoreDevice.dictionary([
+        "domain": xpc_string_create("MotionProvider"), "code": xpc_int64_create(42),
+      ]))
+    XCTAssertThrowsError(try SimulatorHingeCapability.requireSupported(in: reply)) { error in
+      XCTAssertTrue(error.localizedDescription.contains("MotionProvider (42)"))
+    }
+    xpc_dictionary_set_string(reply, "CoreDevice.error", "invalid")
+    XCTAssertThrowsError(try SimulatorHingeCapability.requireSupported(in: reply))
+  }
+
+  private func capabilityReply(_ hinge: xpc_object_t?) -> xpc_object_t {
+    let output = SimulatorCoreDevice.dictionary([:])
+    xpc_dictionary_set_value(output, "hingeAngle", hinge)
+    return SimulatorCoreDevice.dictionary(["CoreDevice.output": output])
   }
 
   func testHingeReportCarriesBinaryControlPayload() throws {
