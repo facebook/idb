@@ -165,6 +165,29 @@ cat > "$WORK/stubs/ditto" <<'STUB'
 cp -R "$1" "$2"
 STUB
 
+# The real protoc rejects a --proto_path that does not exist, and then cannot
+# make the file it was given relative to one. Both are kept here: where the
+# proto is found is the whole of what the codegen cases below turn on.
+cat > "$WORK/stubs/protoc" <<'STUB'
+#!/bin/bash
+printf '%s\n' "$*" >> "$PROTOC_STUB_LOG"
+path=""
+file=""
+for arg in "$@"; do
+    case "$arg" in
+        --proto_path=*) path="${arg#--proto_path=}" ;;
+        --*) ;;
+        *) file="$arg" ;;
+    esac
+done
+if [ ! -d "$path" ]; then
+    echo "$path: warning: directory does not exist." >&2
+    echo "Could not make proto path relative: $file: No such file or directory" >&2
+    exit 1
+fi
+exit 0
+STUB
+
 chmod +x "$WORK/stubs"/*
 
 # <dir> <grpc-swift-2 version> <swift-protobuf version>. A package the pin guard
@@ -499,6 +522,41 @@ output="$(in_package "$dir" 'build_grpc_swift_plugin')"
 assert_equal "resolver revision drift fails codegen" 1 "$?"
 assert_contains "codegen identifies resolver drift" "$output" "grpc-swift-2: expected"
 unset SWIFT_STUB_DRIFT
+
+# ---------------------------------------------------------------------------
+# Codegen finds the proto in whichever repository it is run from.
+#
+# The published repository has it at `proto/idb.proto`. The monorepo exports
+# `xplat/idb` to that path, so it has no `proto/` of its own and the package
+# sits several directories below the one holding `xplat`.
+# ---------------------------------------------------------------------------
+
+export PROTOC_STUB_LOG="$WORK/protoc.log"
+
+dir="$(stage_package published 2.4.3 1.38.1)"
+mkdir -p "$dir/proto"
+touch "$dir/proto/idb.proto"
+: > "$PROTOC_STUB_LOG"
+
+output="$(in_package "$dir" 'generate_proto')"
+assert_equal "codegen in the published repository succeeds" 0 "$?"
+assert_contains "protoc reads the published proto directory" \
+    "$(cat "$PROTOC_STUB_LOG")" "--proto_path=proto"
+
+monorepo="$WORK/monorepo"
+dir="$(stage_package monorepo/fbobjc/Tools/idb/Source 2.4.3 1.38.1)"
+mkdir -p "$monorepo/xplat/idb"
+touch "$monorepo/xplat/idb/idb.proto"
+: > "$PROTOC_STUB_LOG"
+
+output="$(in_package "$dir" 'generate_proto')"
+# BUG: the proto directory is the published path unconditionally, so codegen
+# from the monorepo asks protoc for a directory only the published repository
+# has -- flipped in the following commit.
+assert_contains "protoc is asked for the published path, which is not there" \
+    "$(cat "$PROTOC_STUB_LOG")" "--proto_path=proto"
+assert_contains "protoc reports the path it could not read" \
+    "$output" "Could not make proto path relative"
 
 # ---------------------------------------------------------------------------
 # Xcode gets the same lock and must preserve it.
