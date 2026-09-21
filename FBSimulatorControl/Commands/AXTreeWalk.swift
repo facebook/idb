@@ -58,13 +58,29 @@ enum AXTreeWalk {
     key: AXSearchableKey,
     ignoresCase: Bool = false
   ) -> AccessibilityDocumentElement? {
-    // An empty marker is not a search — every value contains it — so it resolves to the first element
-    // carrying the key at all. `AccessibilityMatch` refuses to represent that, so it is spelled out
-    // rather than quietly becoming "no match".
-    guard let match = AccessibilityMatch(value: markerValue, key: key, ignoresCase: ignoresCase) else {
-      return elements.first { $0.searchableValue(for: key) != nil }
+    search(inElements: elements, markerValue: markerValue, key: key, ignoresCase: ignoresCase).match
+  }
+
+  /// Searches in order, retaining only nonmatching values of `key` visited before the first match.
+  static func search(
+    inElements elements: [AccessibilityDocumentElement],
+    markerValue: String,
+    key: AXSearchableKey,
+    ignoresCase: Bool = false
+  ) -> AccessibilitySearchResult<AccessibilityDocumentElement> {
+    let predicate = AccessibilityMatch(value: markerValue, key: key, ignoresCase: ignoresCase)
+    var diagnostics = AccessibilitySearchDiagnostics()
+    for element in elements {
+      guard let value = element.searchableValue(for: key) else {
+        continue
+      }
+      // An empty marker matches every element carrying the requested key.
+      if predicate?.matches(value) ?? true {
+        return AccessibilitySearchResult(match: element, diagnostics: diagnostics)
+      }
+      diagnostics.record(value)
     }
-    return elements.first { match.matches($0.searchableValue(for: key)) }
+    return AccessibilitySearchResult(match: nil, diagnostics: diagnostics)
   }
 
   /// The outcome of resolving a marker to a point: a match with no usable frame is distinguished from no

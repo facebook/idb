@@ -189,14 +189,25 @@ final class AXBridgeUIAutomation: AXBridgeTreeReader, @unchecked Sendable {
         let elements = AXTreeWalk.describeAllElements(
           fromTree: read.tree, keys: AXKeys.defaultSet.union([key.serializationKey]), nestedFormat: false, pid: read.pid
         )
-        return AccessibilitySearchResult(match: AXTreeWalk.matchingElement(inElements: elements, markerValue: markerValue, key: key) != nil ? true : nil)
-      } catch UIAutomationError.applicationUnavailable, UIAutomationError.applicationNotResponding {
-        return AccessibilitySearchResult(match: nil)
+        var result = AXTreeWalk.search(inElements: elements, markerValue: markerValue, key: key)
+        if read.truncated {
+          result.diagnostics?.truncated = true
+        }
+        return result.map { _ in true }
+      } catch let error as UIAutomationError {
+        switch error {
+        case .applicationUnavailable, .applicationNotResponding:
+          return AccessibilitySearchResult(match: nil, diagnostics: AccessibilitySearchDiagnostics(readError: error.localizedDescription))
+        case .elementNotFound, .elementNotOnScreen, .frameUnavailable, .noElementAtPoint,
+          .timedOut, .markerRequired, .pointOrMarkerRequired, .invalidPollInterval,
+          .operationUnsupported, .valueMismatch, .elementMoved, .traversalCannotAnswer:
+          throw error
+        }
       } catch let error as AXBridgeError {
         guard error.isTransientDuringMarkerWait else {
           throw error
         }
-        return AccessibilitySearchResult(match: nil)
+        return AccessibilitySearchResult(match: nil, diagnostics: AccessibilitySearchDiagnostics(readError: error.localizedDescription))
       }
     }
   }

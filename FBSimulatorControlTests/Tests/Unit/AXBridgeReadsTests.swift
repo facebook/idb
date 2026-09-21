@@ -674,15 +674,73 @@ final class AXBridgeReadsTests: XCTestCase {
       do {
         try await reader.wait(.marker(value: "ready", key: .label, depth: 10), timeout: 0, pollInterval: 0)
         XCTFail("a failed read cannot satisfy the wait")
-      } catch let UIAutomationError.timedOut(backend, key, value, timeout, _) {
+      } catch let UIAutomationError.timedOut(backend, key, value, timeout, diagnostics) {
         XCTAssertEqual(backend, reader.backend)
         XCTAssertEqual(key, AXSearchableKey.label.rawValue)
         XCTAssertEqual(value, "ready")
         XCTAssertEqual(timeout, 0)
+        XCTAssertEqual(diagnostics?.unmatchedValues, [])
+        XCTAssertNotNil(diagnostics?.readError)
       }
       let readCount = await transport.readCount
       XCTAssertEqual(readCount, 1, "an expired wait must not retry \(kind)")
     }
+  }
+
+  func testNativeWaitReportsOnlyTheSearchedKeyWithoutAnotherRead() async throws {
+    let response = try envelope([
+      "ok": true, "pid": 42, "truncated": true,
+      "tree": [
+        AXWire.Node.label.rawValue: "unrelated label",
+        AXWire.Node.identifier.rawValue: "settings_id",
+      ],
+    ])
+    let (reader, transport) = nativeWaitReader(responses: [response])
+    do {
+      try await reader.wait(.marker(value: "missing", key: .uniqueID, depth: 10), timeout: 0, pollInterval: 0)
+      XCTFail("a missing identifier must time out")
+    } catch let UIAutomationError.timedOut(_, _, _, _, diagnostics) {
+      XCTAssertEqual(diagnostics?.unmatchedValues, ["settings_id"])
+      XCTAssertEqual(diagnostics?.truncated, true)
+      XCTAssertNil(diagnostics?.readError)
+    }
+    let readCount = await transport.readCount
+    XCTAssertEqual(readCount, 1)
+  }
+
+  func testSearchReturnsOnlyVisitedNonmatchingValuesOfTheKey() {
+    let elements = AXTreeWalk.describeAllElements(
+      fromTree: [
+        AXWire.Node.label.rawValue: "root", AXWire.Node.identifier.rawValue: "unrelated_id",
+        AXWire.Node.children.rawValue: [
+          [AXWire.Node.identifier.rawValue: "missing_label"],
+          [AXWire.Node.label.rawValue: "ready"],
+          [AXWire.Node.label.rawValue: "unvisited"],
+        ],
+      ], keys: AXKeys.defaultSet, nestedFormat: false, pid: 42)
+    let result = AXTreeWalk.search(inElements: elements, markerValue: "ready", key: .label)
+    XCTAssertEqual(result.match?.label ?? nil, "ready")
+    XCTAssertEqual(result.diagnostics?.unmatchedValues, ["root"])
+    XCTAssertEqual(result.diagnostics?.truncated, false)
+    let missing = AXTreeWalk.search(inElements: elements, markerValue: "absent", key: .label)
+    XCTAssertNil(missing.match)
+    XCTAssertEqual(missing.diagnostics?.unmatchedValues, ["root", "ready", "unvisited"])
+    let noValues = AXTreeWalk.search(inElements: elements, markerValue: "absent", key: .help)
+    XCTAssertNil(noValues.match)
+    XCTAssertEqual(noValues.diagnostics, AccessibilitySearchDiagnostics())
+  }
+
+  func testSearchContinuesAfterItsDiagnosticSampleFills() {
+    let elements = AXTreeWalk.describeAllElements(
+      fromTree: [
+        AXWire.Node.label.rawValue: "root",
+        AXWire.Node.children.rawValue: (0..<60).map { [AXWire.Node.label.rawValue: "label \($0)"] }
+          + [[AXWire.Node.label.rawValue: "ready"]],
+      ], keys: AXKeys.defaultSet, nestedFormat: false, pid: 42)
+    let result = AXTreeWalk.search(inElements: elements, markerValue: "ready", key: .label)
+    XCTAssertEqual(result.match?.label ?? nil, "ready")
+    XCTAssertEqual(result.diagnostics?.unmatchedValues.count, 50)
+    XCTAssertEqual(result.diagnostics?.truncated, true)
   }
 
   func testNativeWaitPreservesTerminalReaderFailure() async throws {
