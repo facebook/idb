@@ -80,9 +80,12 @@ public final class SimulatorLaunchedApplication: LaunchedApplication, CustomStri
       .onQueue(
         simulator.workQueue,
         respondToCancellation: {
-          ProcessTerminationStrategy
-            .strategy(withProcessFetcher: ProcessFetcher(), workQueue: simulator.workQueue, logger: simulator.logger)
-            .killProcessIdentifier(processIdentifier)
+          fbFutureFromAsync {
+            try await ProcessTerminationStrategy
+              .strategy(withProcessFetcher: ProcessFetcher(), workQueue: simulator.workQueue, logger: simulator.logger)
+              .killProcessIdentifier(processIdentifier)
+            return NSNull()
+          }
         })
   }
 

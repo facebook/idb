@@ -133,7 +133,16 @@ public final class XcodeBuildOperation {
     }
     logger.log("Terminating abandoned xcodebuild processes \(CollectionInformation.oneLineDescription(from: processes))")
     let strategy = ProcessTerminationStrategy.strategy(withProcessFetcher: processFetcher, workQueue: queue, logger: logger)
-    _ = try await bridgeFBFutures(processes.map { strategy.killProcessIdentifier($0.processIdentifier) })
+    // Each termination waits for its process to leave the process table, so they are run
+    // concurrently rather than one after another.
+    try await withThrowingTaskGroup(of: Void.self) { group in
+      for processIdentifier in processes.map(\.processIdentifier) {
+        group.addTask {
+          try await strategy.killProcessIdentifier(processIdentifier)
+        }
+      }
+      try await group.waitForAll()
+    }
     return processes
   }
 

@@ -43,6 +43,8 @@ private let FBProcessTerminationStrategyConfigurationDefault = ProcessTerminatio
 enum ProcessTerminationStrategyError: Error, LocalizedError {
   case processDoesNotExist(processIdentifier: pid_t)
   case killFailed(processIdentifier: pid_t, message: String)
+  /// Never produced: exceeding the process table removal timeout is reported as
+  /// `processDidNotDisappear`, or escalated to SIGKILL. Kept for source compatibility.
   case processTableRemovalTimedOut(processIdentifier: pid_t)
   case processDidNotDisappear(processIdentifier: pid_t, processInfo: String)
   case sigkillAfterFailedKill(processIdentifier: pid_t, signo: Int32, underlying: Error)
@@ -63,7 +65,10 @@ enum ProcessTerminationStrategyError: Error, LocalizedError {
   }
 }
 
-public final class ProcessTerminationStrategy {
+// SAFETY: every stored property is immutable; the fetcher serialises its own buffers, and the
+// logger is shared across threads throughout the tree.
+// patternlint-disable-next-line unchecked-sendable
+public final class ProcessTerminationStrategy: @unchecked Sendable {
 
   // MARK: - Private Properties
 
@@ -113,65 +118,43 @@ public final class ProcessTerminationStrategy {
 
   // MARK: - Public Methods
 
-  @discardableResult
-  public func killProcessIdentifier(_ processIdentifier: pid_t) -> FBFuture<NSNull> {
+  public func killProcessIdentifier(_ processIdentifier: pid_t) async throws {
     let checkExists = hasOption(.checkProcessExistsBeforeSignal)
     if checkExists && processFetcher.processInfo(for: processIdentifier) == nil {
-      return FBFuture(error: ProcessTerminationStrategyError.processDoesNotExist(processIdentifier: processIdentifier))
+      throw ProcessTerminationStrategyError.processDoesNotExist(processIdentifier: processIdentifier)
     }
 
     logger.debug().log("Killing \(processIdentifier)")
     if kill(processIdentifier, configuration.signo) != 0 {
-      return FBFuture(error: ProcessTerminationStrategyError.killFailed(processIdentifier: processIdentifier, message: String(cString: strerror(errno))))
+      throw ProcessTerminationStrategyError.killFailed(processIdentifier: processIdentifier, message: String(cString: strerror(errno)))
     }
 
     let checkDeath = hasOption(.checkDeathAfterSignal)
     if !checkDeath {
       logger.debug().log("Killed \(processIdentifier)")
-      return FBFuture<NSNull>.empty()
+      return
     }
 
     logger.debug().log("Waiting on \(processIdentifier) to disappear from the process table")
+    if try await waitForProcessIdentifierToDie(processIdentifier) {
+      logger.debug().log("Process \(processIdentifier) terminated")
+      return
+    }
 
-    let waitFuture: FBFuture<NSNull> = waitForProcessIdentifierToDie(processIdentifier, on: workQueue, processFetcher: processFetcher)
+    let backoff = hasOption(.backoffToSIGKILL)
+    if configuration.signo == SIGKILL || !backoff {
+      let processInfo: Any = processFetcher.processInfo(for: processIdentifier) ?? ("No Process Info" as NSString)
+      throw ProcessTerminationStrategyError.processDidNotDisappear(processIdentifier: processIdentifier, processInfo: String(describing: processInfo))
+    }
 
-    return
-      waitFuture
-      .onQueue(
-        workQueue, timeout: ProcessTableRemovalTimeout,
-        handler: { () -> FBFuture<AnyObject> in
-          FBFuture<AnyObject>(error: ProcessTerminationStrategyError.processTableRemovalTimedOut(processIdentifier: processIdentifier))
-        }
-      )
-      .onQueue(
-        workQueue,
-        chain: { (future: FBFuture<AnyObject>) -> FBFuture<AnyObject> in
-          if future.result != nil {
-            self.logger.debug().log("Process \(processIdentifier) terminated")
-            return FBFuture<NSNull>.empty().retyped(FBFuture<AnyObject>.self)
-          }
-          let backoff = self.hasOption(.backoffToSIGKILL)
-          if self.configuration.signo == SIGKILL || !backoff {
-            let processInfo: Any = self.processFetcher.processInfo(for: processIdentifier) ?? ("No Process Info" as NSString)
-            return FBFuture(error: ProcessTerminationStrategyError.processDidNotDisappear(processIdentifier: processIdentifier, processInfo: String(describing: processInfo)))
-          }
-
-          var newConfiguration = self.configuration
-          newConfiguration.signo = SIGKILL
-          self.logger.debug().log("Backing off kill of \(processIdentifier) to SIGKILL")
-          let sigkillFuture: FBFuture<NSNull> = self.strategyWith(configuration: newConfiguration)
-            .killProcessIdentifier(processIdentifier)
-
-          return sigkillFuture.onQueue(
-            self.workQueue,
-            chain: { (innerFuture: FBFuture<AnyObject>) -> FBFuture<AnyObject> in
-              if let error = innerFuture.error {
-                return FBFuture(error: ProcessTerminationStrategyError.sigkillAfterFailedKill(processIdentifier: processIdentifier, signo: self.configuration.signo, underlying: error))
-              }
-              return innerFuture
-            })
-        }
-      ).retyped(FBFuture<NSNull>.self)
+    var newConfiguration = configuration
+    newConfiguration.signo = SIGKILL
+    logger.debug().log("Backing off kill of \(processIdentifier) to SIGKILL")
+    do {
+      try await strategyWith(configuration: newConfiguration).killProcessIdentifier(processIdentifier)
+    } catch {
+      throw ProcessTerminationStrategyError.sigkillAfterFailedKill(processIdentifier: processIdentifier, signo: configuration.signo, underlying: error)
+    }
   }
 
   // MARK: - Private
@@ -189,11 +172,19 @@ public final class ProcessTerminationStrategy {
     )
   }
 
-  private func waitForProcessIdentifierToDie(_ processIdentifier: pid_t, on queue: DispatchQueue, processFetcher: ProcessFetcher) -> FBFuture<NSNull> {
-    FBFuture<NSNull>.onQueue(
-      queue,
-      resolveWhen: {
+  /// Returns false when the process was still in the process table at the deadline.
+  private func waitForProcessIdentifierToDie(_ processIdentifier: pid_t) async throws -> Bool {
+    let processFetcher = self.processFetcher
+    do {
+      try await pollUntilTrue(
+        on: workQueue,
+        deadline: PollDeadline(timeout: ProcessTableRemovalTimeout, waitingFor: "process \(processIdentifier) to be removed from the process table")
+      ) {
         processFetcher.processInfo(for: processIdentifier) == nil
-      })
+      }
+      return true
+    } catch is PollTimeoutError {
+      return false
+    }
   }
 }

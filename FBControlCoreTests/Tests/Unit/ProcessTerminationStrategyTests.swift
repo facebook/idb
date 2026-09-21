@@ -75,7 +75,7 @@ final class ProcessTerminationStrategyTests: XCTestCase {
     let strategy = strategy(options: [.checkProcessExistsBeforeSignal], processFetcher: AbsentProcessFetcher())
 
     do {
-      try await bridgeFBFutureVoid(strategy.killProcessIdentifier(process.processIdentifier))
+      try await strategy.killProcessIdentifier(process.processIdentifier)
       XCTFail("Expected the kill to fail for a process the fetcher does not report")
     } catch {
       guard case .processDoesNotExist(let processIdentifier)? = terminationError(error) else {
@@ -91,7 +91,7 @@ final class ProcessTerminationStrategyTests: XCTestCase {
     let strategy = strategy(options: [])
 
     do {
-      try await bridgeFBFutureVoid(strategy.killProcessIdentifier(unallocatablePID))
+      try await strategy.killProcessIdentifier(unallocatablePID)
       XCTFail("Expected the kill of an unallocatable process identifier to fail")
     } catch {
       guard case .killFailed(let processIdentifier, _)? = terminationError(error) else {
@@ -105,7 +105,7 @@ final class ProcessTerminationStrategyTests: XCTestCase {
     let process = try spawnBlockedProcess()
     let strategy = strategy(options: [])
 
-    try await bridgeFBFutureVoid(strategy.killProcessIdentifier(process.processIdentifier))
+    try await strategy.killProcessIdentifier(process.processIdentifier)
 
     process.waitUntilExit()
     XCTAssertEqual(process.terminationReason, .uncaughtSignal)
@@ -119,7 +119,7 @@ final class ProcessTerminationStrategyTests: XCTestCase {
       process.waitUntilExit()
     }
 
-    try await bridgeFBFutureVoid(strategy.killProcessIdentifier(process.processIdentifier))
+    try await strategy.killProcessIdentifier(process.processIdentifier)
 
     XCTAssertNil(ProcessFetcher().processInfo(for: process.processIdentifier))
   }
