@@ -10,6 +10,7 @@ from enum import Enum, unique
 
 from idb.cli import ClientCommand
 from idb.common.types import (
+    ACCESSIBILITY_BACKEND_BY_NAME,
     ACCESSIBILITY_KEY_BY_NAME as _SEARCHABLE_KEY_NAMES,
     AccessibilityMarker,
     AccessibilityPoint,
@@ -50,15 +51,17 @@ class TapCommand(ClientCommand):
             "target",
             nargs="+",
             help="Either 'x y' coordinates, or a single accessibility marker "
-            "string (implies --api ax)",
+            "string (always an accessibility press)",
         )
         parser.add_argument("--duration", help="Press duration", type=float)
         parser.add_argument(
             "--api",
-            choices=["hid", "ax"],
+            choices=["hid", *ACCESSIBILITY_BACKEND_BY_NAME],
             default=None,
-            help="Interaction API for a point: hid (coordinate touch) or ax "
-            "(accessibility press). A marker always uses ax.",
+            help="How the tap is delivered: hid is a coordinate touch; ax and "
+            "axbridge are accessibility presses, served by the named backend. "
+            "axbridge is the only one that can see across a process boundary, "
+            "such as web content in Safari. A marker is always a press.",
         )
         parser.add_argument(
             "--match-key",
@@ -96,7 +99,9 @@ class TapCommand(ClientCommand):
             len(target) == 2
             and _is_int(target[0])
             and _is_int(target[1])
-            and args.api != "ax"
+            # Every --api value but hid names an accessibility backend, so only
+            # hid or no choice at all leaves a coordinate on the HID path.
+            and args.api not in ACCESSIBILITY_BACKEND_BY_NAME
             and args.expected_value is None
         )
 
@@ -121,8 +126,8 @@ class TapCommand(ClientCommand):
         # applies to a coordinate, so reject the contradiction outright.
         if is_marker and args.api == "hid":
             raise IdbException(
-                "a marker tap always uses --api ax; drop --api hid or pass "
-                "'x y' coordinates"
+                "a marker tap is always an accessibility press; drop --api hid, "
+                "name an accessibility backend, or pass 'x y' coordinates"
             )
 
         if self.is_coordinate_hid_tap(args):
@@ -153,4 +158,5 @@ class TapCommand(ClientCommand):
             expected_value=args.expected_value,
             expected_key=_SEARCHABLE_KEY_NAMES[args.expected_key],
             ignore_case=args.ignore_case,
+            backend=ACCESSIBILITY_BACKEND_BY_NAME.get(args.api),
         )

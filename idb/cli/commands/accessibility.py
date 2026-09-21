@@ -205,10 +205,12 @@ def _add_backend_arg(parser: ArgumentParser) -> None:
         choices=list(ACCESSIBILITY_BACKEND_BY_NAME),
         default=None,
         help=(
-            "Which backend serves the read (default: the companion's standard "
-            "accessibility backend). axbridge uses the companion's private, "
-            "persistent guest reader. A companion that predates backend "
-            "selection ignores this and serves the default backend."
+            "Which backend serves the read or action (default: the companion's "
+            "standard accessibility backend). axbridge uses the companion's "
+            "private, persistent guest reader, which is the only one that can "
+            "see across a process boundary such as web content in Safari. A "
+            "companion that predates backend selection ignores this and uses "
+            "the default backend."
         ),
     )
 
@@ -482,6 +484,7 @@ class AccessibilityScrollCommand(ClientCommand):
             "--depth", type=int, default=10, help="Maximum tree depth to search"
         )
         _add_ignore_case_arg(parser, subject="the marker")
+        _add_backend_arg(parser)
 
     async def run_with_client(self, args: Namespace, client: Client) -> None:
         target = _parse_target(
@@ -493,6 +496,7 @@ class AccessibilityScrollCommand(ClientCommand):
             target=target,
             direction=AccessibilityScrollDirection[args.direction.upper()],
             ignore_case=args.ignore_case,
+            backend=_backend(args),
         )
 
 
@@ -523,6 +527,7 @@ class AccessibilitySetValueCommand(ClientCommand):
             "--depth", type=int, default=10, help="Maximum tree depth to search"
         )
         _add_ignore_case_arg(parser, subject="the marker")
+        _add_backend_arg(parser)
 
     async def run_with_client(self, args: Namespace, client: Client) -> None:
         target = _parse_target(
@@ -533,7 +538,10 @@ class AccessibilitySetValueCommand(ClientCommand):
         if target is None:
             raise IdbException("set-value requires 'x y' coordinates or a marker")
         await client.accessibility_set_value(
-            target=target, value=args.value, ignore_case=args.ignore_case
+            target=target,
+            value=args.value,
+            ignore_case=args.ignore_case,
+            backend=_backend(args),
         )
 
 
@@ -609,6 +617,7 @@ class AccessibilityDragAndDropCommand(ClientCommand):
             "in one jump, which reads as a flick.",
         )
         _add_ignore_case_arg(parser, subject="the markers")
+        _add_backend_arg(parser)
 
     async def run_with_client(self, args: Namespace, client: Client) -> None:
         source_tokens, destination_tokens = _split_endpoints(args.endpoints)
@@ -634,4 +643,5 @@ class AccessibilityDragAndDropCommand(ClientCommand):
                 delta=args.delta,
             ),
             ignore_case=args.ignore_case,
+            backend=_backend(args),
         )

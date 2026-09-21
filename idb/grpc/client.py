@@ -534,6 +534,9 @@ class Client(ClientBase):
                 marker=target.value,
                 match_key=target.match_key.value,
                 depth=target.depth,
+                backend=backend.value,
+                # Deprecated, and still sent: a companion older than the
+                # request-level field reads only this one.
                 wait=AccessibilityActionRequest.Wait(
                     timeout=timeout, poll_interval=poll_interval, backend=backend.value
                 ),
@@ -552,6 +555,7 @@ class Client(ClientBase):
         expected_value: str | None = None,
         expected_key: AccessibilitySearchableKey = AccessibilitySearchableKey.LABEL,
         ignore_case: bool = False,
+        backend: AccessibilityBackend | None = None,
     ) -> None:
         request = AccessibilityActionRequest(
             tap=AccessibilityActionRequest.Tap(
@@ -568,6 +572,8 @@ class Client(ClientBase):
             request.point.x = target.x
             request.point.y = target.y
         request.ignore_case = ignore_case
+        if backend is not None:
+            request.backend = backend.value
         await self.stub.accessibility_action(request)
 
     @log_and_handle_exceptions("accessibility_scroll")
@@ -576,6 +582,7 @@ class Client(ClientBase):
         target: AccessibilityTarget | None,
         direction: AccessibilityScrollDirection,
         ignore_case: bool = False,
+        backend: AccessibilityBackend | None = None,
     ) -> None:
         request = AccessibilityActionRequest(
             scroll=AccessibilityActionRequest.Scroll(direction=direction.value),
@@ -588,6 +595,8 @@ class Client(ClientBase):
             request.point.x = target.x
             request.point.y = target.y
         request.ignore_case = ignore_case
+        if backend is not None:
+            request.backend = backend.value
         await self.stub.accessibility_action(request)
 
     @log_and_handle_exceptions("accessibility_set_value")
@@ -596,6 +605,7 @@ class Client(ClientBase):
         target: AccessibilityTarget,
         value: str,
         ignore_case: bool = False,
+        backend: AccessibilityBackend | None = None,
     ) -> None:
         request = AccessibilityActionRequest(
             set_value=AccessibilityActionRequest.SetValue(value=value),
@@ -608,6 +618,8 @@ class Client(ClientBase):
             request.point.x = target.x
             request.point.y = target.y
         request.ignore_case = ignore_case
+        if backend is not None:
+            request.backend = backend.value
         await self.stub.accessibility_action(request)
 
     @log_and_handle_exceptions("accessibility_drag")
@@ -617,6 +629,7 @@ class Client(ClientBase):
         destination: AccessibilityTarget,
         options: AccessibilityDragOptions,
         ignore_case: bool = False,
+        backend: AccessibilityBackend | None = None,
     ) -> None:
         drag = AccessibilityActionRequest.Drag(
             press_duration=options.press_duration or 0.0,
@@ -640,6 +653,8 @@ class Client(ClientBase):
             request.point.x = source.x
             request.point.y = source.y
         request.ignore_case = ignore_case
+        if backend is not None:
+            request.backend = backend.value
         await self.stub.accessibility_action(request)
 
     @log_and_handle_exceptions("add_media")

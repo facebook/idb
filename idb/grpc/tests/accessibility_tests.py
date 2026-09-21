@@ -11,11 +11,13 @@ from grpclib.const import Status
 from grpclib.exceptions import GRPCError
 from idb.common.types import (
     AccessibilityBackend,
+    AccessibilityDragOptions,
     AccessibilityElementFilter,
     AccessibilityInfoOptions,
     AccessibilityMarker,
     AccessibilityOutputFormat,
     AccessibilityPoint,
+    AccessibilityScrollDirection,
     AccessibilitySearchableKey,
     IdbException,
 )
@@ -212,12 +214,32 @@ class AccessibilityWaitTests(TestCase):
                 marker="General",
                 match_key=AccessibilitySearchableKey.UNIQUE_ID.value,
                 depth=12,
+                backend=AccessibilityBackend.AX.value,
                 wait=AccessibilityActionRequest.Wait(
                     timeout=30,
                     poll_interval=0.25,
                     backend=AccessibilityBackend.AX.value,
                 ),
             )
+        )
+
+    async def test_wait_sends_the_backend_on_both_fields(self) -> None:
+        # The request-level field is the one a current companion reads; Wait's own
+        # is deprecated and still sent, because a companion older than the
+        # request-level field reads only that one.
+        self.client.stub.accessibility_action.return_value = (
+            AccessibilityActionResponse(wait_result=AccessibilityActionResponse.FOUND)
+        )
+        await self.client.accessibility_wait(
+            AccessibilityMarker("General"),
+            backend=AccessibilityBackend.AXBRIDGE_PERSISTENT,
+        )
+        request = self.client.stub.accessibility_action.await_args[0][0]
+        self.assertEqual(
+            request.backend, AccessibilityBackend.AXBRIDGE_PERSISTENT.value
+        )
+        self.assertEqual(
+            request.wait.backend, AccessibilityBackend.AXBRIDGE_PERSISTENT.value
         )
 
     async def test_wait_timeout_returns_false(self) -> None:
@@ -243,3 +265,69 @@ class AccessibilityWaitTests(TestCase):
         )
         with self.assertRaises(IdbException):
             await self.client.accessibility_wait(AccessibilityMarker("missing"))
+
+
+class AccessibilityActionBackendTests(TestCase):
+    """Every mutating action carries the caller's backend on the request."""
+
+    def setUp(self) -> None:
+        super().setUp()
+        self.client = Client.__new__(Client)
+        self.client.logger = MagicMock()
+        self.client.stub = MagicMock()
+        self.client.stub.accessibility_action = AsyncMock()
+
+    def sent_request(self) -> AccessibilityActionRequest:
+        return self.client.stub.accessibility_action.await_args[0][0]
+
+    async def test_tap_carries_the_backend(self) -> None:
+        await self.client.accessibility_tap(
+            AccessibilityMarker("GETTING STARTED"),
+            backend=AccessibilityBackend.AXBRIDGE_PERSISTENT,
+        )
+        self.assertEqual(
+            self.sent_request().backend,
+            AccessibilityBackend.AXBRIDGE_PERSISTENT.value,
+        )
+
+    async def test_scroll_carries_the_backend(self) -> None:
+        await self.client.accessibility_scroll(
+            None,
+            AccessibilityScrollDirection.DOWN,
+            backend=AccessibilityBackend.AXBRIDGE_PERSISTENT,
+        )
+        self.assertEqual(
+            self.sent_request().backend,
+            AccessibilityBackend.AXBRIDGE_PERSISTENT.value,
+        )
+
+    async def test_set_value_carries_the_backend(self) -> None:
+        await self.client.accessibility_set_value(
+            AccessibilityMarker("Field"),
+            "hello",
+            backend=AccessibilityBackend.AXBRIDGE_PERSISTENT,
+        )
+        self.assertEqual(
+            self.sent_request().backend,
+            AccessibilityBackend.AXBRIDGE_PERSISTENT.value,
+        )
+
+    async def test_drag_carries_the_backend(self) -> None:
+        await self.client.accessibility_drag(
+            AccessibilityPoint(x=10, y=20),
+            AccessibilityPoint(x=30, y=40),
+            AccessibilityDragOptions(),
+            backend=AccessibilityBackend.AXBRIDGE_PERSISTENT,
+        )
+        self.assertEqual(
+            self.sent_request().backend,
+            AccessibilityBackend.AXBRIDGE_PERSISTENT.value,
+        )
+
+    async def test_an_unasked_backend_is_left_unset(self) -> None:
+        # Unset is the wire default, which the companion reads as its own default,
+        # so a caller that does not choose is unaffected.
+        await self.client.accessibility_tap(AccessibilityMarker("General"))
+        self.assertEqual(
+            self.sent_request().backend, AccessibilityInfoRequest.BACKEND_UNSPECIFIED
+        )
