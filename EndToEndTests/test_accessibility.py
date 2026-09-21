@@ -421,12 +421,26 @@ class AccessibilityTests(IdbEndToEndTestCase):
             "--timeout",
             str(UI_UPDATE_TIMEOUT_SECONDS),
         )
-        for element in _elements(await self.wait_for_settings_snapshot()):
-            if element.get("identifier") == identifier and (
-                element_type is None or element.get("type") == element_type
-            ):
-                return element
-        self.fail(f"No {element_type or 'element'} with identifier {identifier!r}")
+
+        # `ui wait` resolves the marker through the host backend and the
+        # snapshot is read through the guest, so the two can disagree for a
+        # moment after the screen the element sits on has changed.
+        async def read() -> dict[str, Any]:
+            for element in _elements(await self.wait_for_settings_snapshot()):
+                if element.get("identifier") == identifier and (
+                    element_type is None or element.get("type") == element_type
+                ):
+                    return element
+            raise NotReady("the guest backend has not reported it yet")
+
+        try:
+            return await wait_until(
+                f"No {element_type or 'element'} with identifier {identifier!r}",
+                UI_UPDATE_TIMEOUT_SECONDS,
+                read,
+            )
+        except HarnessError as error:
+            self.fail(str(error))
 
     def center(self, element: dict[str, Any]) -> tuple[int, int]:
         frame = element["frame"]
