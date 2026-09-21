@@ -92,7 +92,71 @@ private final class RecordingUIAutomation: UIAutomation, @unchecked Sendable {
     throw NotUnderTest()
   }
 
+  var applicationFrame: CGRect?
+  private(set) var framedQuery: AccessibilityElementQuery?
+
   func frame(_ query: AccessibilityElementQuery) async throws -> CGRect {
-    throw NotUnderTest()
+    framedQuery = query
+    guard let applicationFrame else {
+      throw NotUnderTest()
+    }
+    return applicationFrame
+  }
+}
+
+/// A scroll bubbles from the element it names up to that element's scrollable container, so what an
+/// untargeted scroll resolves to decides whether it can scroll at all: the application element has no
+/// container above it and can never be scrolled, on either backend.
+final class UIAutomationScrollTargetTests: XCTestCase {
+
+  func testAnUntargetedScrollAimsAtTheCentreOfTheApplication() async throws {
+    let automation = RecordingUIAutomation()
+    automation.applicationFrame = CGRect(x: 0, y: 0, width: 420, height: 912)
+
+    let target = try await automation.scrollTarget(for: .frontmost, backend: .accessibility)
+
+    XCTAssertEqual(target, .point(CGPoint(x: 210, y: 456)))
+    XCTAssertEqual(automation.framedQuery, .frontmost, "the centre has to come from the application's own frame")
+  }
+
+  /// An application that does not fill the screen is scrolled at its own centre, not the screen's.
+  func testTheCentreIsTheApplicationsRatherThanTheScreens() async throws {
+    let automation = RecordingUIAutomation()
+    automation.applicationFrame = CGRect(x: 100, y: 200, width: 200, height: 400)
+
+    let target = try await automation.scrollTarget(for: .frontmost, backend: .accessibility)
+
+    XCTAssertEqual(target, .point(CGPoint(x: 200, y: 400)))
+  }
+
+  func testATargetedScrollIsLeftAlone() async throws {
+    let automation = RecordingUIAutomation()
+    automation.applicationFrame = CGRect(x: 0, y: 0, width: 420, height: 912)
+
+    for query in [
+      AccessibilityElementQuery.point(CGPoint(x: 12, y: 34)),
+      .marker(value: "List", key: .label, depth: 10),
+      .application(pid: 99),
+    ] {
+      let target = try await automation.scrollTarget(for: query, backend: .accessibility)
+      XCTAssertEqual(target, query, "\(query) names an element already")
+    }
+    XCTAssertNil(automation.framedQuery, "a targeted scroll must not pay for a frame read it does not use")
+  }
+
+  // A degenerate frame would resolve to the origin, which is a corner of the screen and not the
+  // application the caller asked to scroll.
+  func testAnApplicationWithNoFrameIsRefusedRatherThanScrolledAtTheOrigin() async throws {
+    let automation = RecordingUIAutomation()
+    automation.applicationFrame = .zero
+
+    do {
+      _ = try await automation.scrollTarget(for: .frontmost, backend: .accessibility)
+      XCTFail("a zero frame must not resolve to a point")
+    } catch let error as UIAutomationError {
+      guard case .frameUnavailable = error else {
+        return XCTFail("expected frameUnavailable, got \(error)")
+      }
+    }
   }
 }

@@ -138,6 +138,7 @@ final class AccessibilityUIAutomation: UIAutomation, @unchecked Sendable {
   }
 
   func scroll(_ query: AccessibilityElementQuery, direction: AccessibilityScrollDirection) async throws {
+    let query = try await scrollTarget(for: query, backend: .accessibility)
     try await Self.translatingBackendErrors(query) {
       let element = try await operations.resolveElement(for: query)
       defer { element.close() }

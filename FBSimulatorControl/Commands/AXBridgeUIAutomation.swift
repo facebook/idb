@@ -222,8 +222,9 @@ final class AXBridgeUIAutomation: AXBridgeTreeReader, @unchecked Sendable {
   }
 
   func scroll(_ query: AccessibilityElementQuery, direction: AccessibilityScrollDirection) async throws {
-    let target = try await writeTarget(for: query, operation: "Scroll", callerAssertion: nil)
-    try await write(.perform(Self.action(for: direction)), to: target, query: query)
+    let scrolled = try await scrollTarget(for: query, backend: backend)
+    let target = try await writeTarget(for: scrolled, operation: "Scroll", callerAssertion: nil)
+    try await write(.perform(Self.action(for: direction)), to: target, query: scrolled)
   }
 
   /// Synthesized over HID: a drag is a touch path, not an action on a single element, so the guest has

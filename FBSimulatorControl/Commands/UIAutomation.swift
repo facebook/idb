@@ -237,6 +237,26 @@ public extension UIAutomation {
   func drag(from source: AccessibilityElementQuery, to destination: AccessibilityElementQuery) async throws {
     try await drag(from: source, to: destination, options: DragOptions())
   }
+
+  /// What a scroll acts on, given what the caller named.
+  ///
+  /// A scroll is not an action on the element it names: iOS models it as `accessibilityScroll:`, which
+  /// UIKit bubbles *up* from that element to the nearest scrollable container. An application element
+  /// has no container above it, so scrolling one can never do anything -- which is why an untargeted
+  /// scroll aims at the centre of the application instead, where its scroll view is.
+  func scrollTarget(
+    for query: AccessibilityElementQuery,
+    backend: UIAutomationBackend
+  ) async throws -> AccessibilityElementQuery {
+    guard case .frontmost = query else {
+      return query
+    }
+    let application = try await frame(.frontmost)
+    guard application.width > 0, application.height > 0 else {
+      throw UIAutomationError.frameUnavailable(backend: backend, query: query)
+    }
+    return .point(CGPoint(x: application.midX, y: application.midY))
+  }
 }
 
 public extension AccessibilityElementsResponse {
