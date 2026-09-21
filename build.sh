@@ -95,6 +95,36 @@ function validate_xcodeproj() {
   return 0
 }
 
+# <project.pbxproj> <directory it was generated in> <directory it will live in>.
+# A reference that climbs out of the generation directory is resolved against
+# it and re-expressed relative to the destination, whatever its depth and
+# wherever the temporary directory was. References that stay inside a group
+# (no leading `../`) are relative to their parent group and are left alone.
+function rebase_pbxproj_paths() {
+  python3 - "$1" "$2" "$3" <<'PY'
+import os
+import re
+import sys
+
+pbxproj, generated_in, destination = sys.argv[1:4]
+
+
+def rebase(match):
+    quote, path = match.group(1), match.group(2)
+    if not path.startswith("../"):
+        return match.group(0)
+    absolute = os.path.normpath(os.path.join(generated_in, path))
+    return f"path = {quote}{os.path.relpath(absolute, destination)}{quote};"
+
+
+with open(pbxproj) as handle:
+    text = handle.read()
+text = re.sub(r'path = ("?)([^";]+)\1;', rebase, text)
+with open(pbxproj, "w") as handle:
+    handle.write(text)
+PY
+}
+
 # Generate a single xcodeproj, optionally stripping xattrs for filesystem compatibility
 # Usage: generate_xcodeproj <project_dir> <project_name>
 function generate_xcodeproj() {
@@ -116,31 +146,11 @@ function generate_xcodeproj() {
     rm -rf "$dest_path"
     (cd "$project_dir" && xcodegen generate -p "$temp_dir")
 
-    # Fix paths in pbxproj - XcodeGen creates relative paths from temp dir
-    # We need to convert these back to paths relative to the project dir
+    # xcodegen spelled every reference relative to the temporary directory.
+    # Re-base each one onto the directory the project is about to live in.
     local pbxproj="${temp_dir}/${xcodeproj_name}/project.pbxproj"
     if [ -f "$pbxproj" ]; then
-      # Calculate the wrong relative prefix that XcodeGen created
-      # and replace it with correct relative path
-      local escaped_path
-      escaped_path=$(echo "$abs_project_dir/" | sed 's/[\/&]/\\&/g')
-      local abs_parent_dir
-      abs_parent_dir=$(dirname "$abs_project_dir")
-      local escaped_parent
-      escaped_parent=$(echo "$abs_parent_dir/" | sed 's/[\/&]/\\&/g')
-      local escaped_parent_no_slash
-      escaped_parent_no_slash=$(echo "$abs_parent_dir" | sed 's/[\/&]/\\&/g')
-      # Order matters: handle the longer (project-dir) prefix first so it
-      # doesn't get partially eaten by the parent-dir pattern, then handle
-      # references that point into the project's parent directory.
-      # Files inside project_dir become bare paths.
-      sed -i '' "s|[.][.]/[^;\"]*${escaped_path}||g" "$pbxproj"
-      # Files in project_dir's parent become "../" relative to project_dir.
-      sed -i '' "s|[.][.]/[^;\"]*${escaped_parent}|../|g" "$pbxproj"
-      # The parent dir itself (no trailing path component) becomes "..".
-      # Match the terminator (`;` or `"`) and preserve it.
-      sed -i '' "s|[.][.]/[^;\"]*${escaped_parent_no_slash};|..;|g" "$pbxproj"
-      sed -i '' "s|[.][.]/[^;\"]*${escaped_parent_no_slash}\"|..\"|g" "$pbxproj"
+      rebase_pbxproj_paths "$pbxproj" "$temp_dir" "$abs_project_dir"
       echo "  [xattr workaround] Fixed relative paths in project.pbxproj"
     fi
 

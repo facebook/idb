@@ -612,13 +612,10 @@ assert_equal "a nested project generates through the workaround" 0 "$?"
 pbxproj="$dir/Shims/Repl/Repl.xcodeproj/project.pbxproj"
 assert_contains "a file in the project directory is a bare path" "$(cat "$pbxproj")" 'path = "main.m";'
 assert_contains "a file in the parent directory is one level up" "$(cat "$pbxproj")" 'path = "../Shared.h";'
-# BUG: the rewrite knows the project directory and its parent, nothing above;
-# a reference two levels up keeps the temporary directory's `../` chain and
-# resolves to a doubled absolute path -- flipped in the following commit.
-assert_equal "a file two levels up is rewritten" 0 "$(grep -c 'path = "../../REPL/Executor/ReplSocketServer.h";' "$pbxproj")"
-assert_equal "the directory two levels up is rewritten" 0 "$(grep -c 'path = "../..";' "$pbxproj")"
+assert_equal "a file two levels up is rewritten" 1 "$(grep -c 'path = "../../REPL/Executor/ReplSocketServer.h";' "$pbxproj")"
+assert_equal "the directory two levels up is rewritten" 1 "$(grep -c 'path = "../..";' "$pbxproj")"
 # A reference that still names the package directory was never re-based.
-assert_equal "references keeping the temporary directory's chain" 2 "$(grep -c '/xcode[/"]' "$pbxproj")"
+assert_equal "references keeping the temporary directory's chain" 0 "$(grep -c '/xcode[/"]' "$pbxproj")"
 unset XCODEGEN_STUB_NAME
 
 # Existing generated files do not prove that they match today's plugin pins.
