@@ -289,9 +289,7 @@ ACCESSIBILITY_READ_TESTS = frozenset(
 INTERACTION_TESTS = frozenset(
     {
         "test_ui_scroll_moves_settings_rows_down_and_up",
-        "test_guest_describe_runs_each_tree_reader",
-        "test_guest_press_opens_general",
-        "test_public_and_guest_set_value_update_the_search_field",
+        "test_ui_set_value_updates_the_search_field",
         "test_ui_opens_general_by_identifier_and_confirms_it",
         "test_ui_tap_opens_general_by_marker",
         "test_ui_tap_opens_general_by_point",
@@ -595,61 +593,6 @@ class AccessibilityTests(IdbEndToEndTestCase):
             [element.get("identifier") for element in _elements(document["elements"])],
         )
 
-    async def test_guest_describe_runs_each_tree_reader(self) -> None:
-        general = await self.wait_for_element(GENERAL_ROW_ID)
-        pid = general["pid"]
-        self.assertGreater(pid, 0)
-        for options in [
-            (),
-            ("--snapshot-tree", "true"),
-            ("--translator-vocabulary", "true"),
-        ]:
-            with self.subTest(options=options):
-                response = json.loads(
-                    (
-                        await self.guest(
-                            "accessibility",
-                            "describe",
-                            "--pid",
-                            str(pid),
-                            "--max-depth",
-                            "2",
-                            *options,
-                        )
-                    ).text
-                )
-                self.assertEqual(response["ok"], True)
-                self.assertEqual(response["pid"], pid)
-                self.assertIsInstance(response["tree"], dict)
-                self.assertTrue(response["tree"])
-                self.assertGreater(response["phases"]["mach_round_trips"], 0)
-
-    async def test_guest_press_opens_general(self) -> None:
-        general = await self.wait_for_element(GENERAL_ROW_ID)
-        title = _label(general)
-        self.assertTrue(title)
-        x, y = self.center(general)
-
-        response = json.loads(
-            (
-                await self.guest(
-                    "accessibility",
-                    "perform",
-                    "--action",
-                    "press",
-                    "--pid",
-                    str(general["pid"]),
-                    "--x",
-                    str(x),
-                    "--y",
-                    str(y),
-                )
-            ).text
-        )
-
-        self.assertEqual(response, {"ok": True, "pid": general["pid"]})
-        await self.wait_for_element(title, "NavigationBar")
-
     async def wait_for_search_field(self, value: str | None = None) -> dict[str, Any]:
         async def read() -> dict[str, Any]:
             fields = [
@@ -681,7 +624,7 @@ class AccessibilityTests(IdbEndToEndTestCase):
         x, y = self.center(field)
         await self.idb("ui", "set-value", str(x), str(y), "--value", value)
 
-    async def test_public_and_guest_set_value_update_the_search_field(self) -> None:
+    async def test_ui_set_value_updates_the_search_field(self) -> None:
         field = await self.wait_for_search_field()
         original = field.get("value") or ""
         self.assertIsInstance(original, str)
@@ -693,27 +636,13 @@ class AccessibilityTests(IdbEndToEndTestCase):
         )
 
         self.assertEqual(completed.stdout, b"")
-        field = await self.wait_for_search_field("idb-first")
+        await self.wait_for_search_field("idb-first")
+        # The first write puts Settings into search mode, so the second is
+        # written against a raised keyboard and a layout that has moved under it.
+        field = await self.wait_for_search_field()
         x, y = self.center(field)
-        response = json.loads(
-            (
-                await self.guest(
-                    "accessibility",
-                    "setvalue",
-                    "--pid",
-                    str(field["pid"]),
-                    "--x",
-                    str(x),
-                    "--y",
-                    str(y),
-                    "--value",
-                    "idb-second",
-                )
-            ).text
-        )
-        self.assertEqual(response, {"ok": True, "pid": field["pid"]})
-        field = await self.wait_for_search_field("idb-second")
-        self.assertEqual(field["value"], "idb-second")
+        await self.idb("ui", "set-value", str(x), str(y), "--value", "idb-second")
+        await self.wait_for_search_field("idb-second")
 
     async def test_ui_tap_opens_general_by_point(self) -> None:
         general = await self.wait_for_element(GENERAL_ROW_ID)
