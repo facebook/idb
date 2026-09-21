@@ -3,14 +3,15 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-"""Read Settings accessibility elements through the host and simulator APIs.
+"""Read accessibility elements through the host and simulator APIs.
 
 The ax API runs on the host; axbridge runs SimulatorFrameworkBridge inside
 the simulator. Complete output identifies which backend served the request.
 Tests select labelled Settings rows at runtime to avoid locale-specific names.
 Tap and scroll tests verify navigation and movement through the simulator API.
-SpringBoard is read as well, for an element the host API cannot reach: the
-notification banner it draws for an app that is not running.
+SpringBoard and Safari are read as well, for the elements the host API
+cannot reach: the notification banner drawn for an app that is not
+running, and the web content another process is showing.
 """
 
 from __future__ import annotations
@@ -73,9 +74,62 @@ NOTIFICATION_PAYLOAD = json.dumps(
 # application, so the banner is only in the tree while SpringBoard is it.
 BANNER_ID = "ShortLook.Platter.Content.Seamless"
 NOTIFICATION_STORE_TIMEOUT_SECONDS = 300.0
+
 # Enough of a matched element to say what it is and where it sits, rather
 # than every attribute a read would otherwise carry on every match.
 LABEL_AND_FRAME_KEYS = ("--key", "AXLabel", "--key", "AXFrame")
+
+SAFARI_ADDRESS_BAR_ID = "TabBarItemTitle"
+# Safari names the address bar this only once it has the cursor.
+SAFARI_URL_FIELD_ID = "URL"
+RETURN_KEY_CODE = 40
+# idb's own documentation, read by idb. Each page is long enough that what the
+# demo asks for is far below what Safari has drawn, and what it asks for on the
+# second one is a label inside a rendered diagram.
+LIVE_ORIGIN = "https://fbidb.io"
+FIRST_PAGE_PATH = "/docs/idb/fbsimulatorcontrol"
+FIRST_PAGE_HEADING = "Functionality beyond Apple's tools"
+# Matched without the apostrophe, so the published command does not have to
+# quote its way around one.
+FIRST_PAGE_MATCH = "Functionality beyond Apple"
+SECOND_PAGE_PATH = "/docs/idb/accessibility"
+SECOND_PAGE_LABEL = "SimulatorFrameworkBridge"
+
+
+def _stand_in_page(title: str, body: str) -> str:
+    """One page of the site served in place of the live one.
+
+    Padded above the part the demo reads so that, as on the live page, what
+    it asks for is below what Safari has drawn.
+    """
+    filler = "".join(
+        f"<p>Paragraph {index}, above what this page is read for.</p>"
+        for index in range(1, 60)
+    )
+    return (
+        "<!doctype html><html lang='en'><head><meta charset='utf-8'>"
+        "<meta name='viewport' content='width=device-width, initial-scale=1'>"
+        f"<title>{title}</title></head><body>{filler}{body}</body></html>"
+    )
+
+
+STAND_IN_PAGES = {
+    FIRST_PAGE_PATH: _stand_in_page(
+        "FBSimulatorControl",
+        f"<h2>{FIRST_PAGE_HEADING}</h2>"
+        "<p>What the framework reaches that the shipped tools do not.</p>",
+    ),
+    SECOND_PAGE_PATH: _stand_in_page(
+        "Accessibility",
+        f"<h2>{SECOND_PAGE_LABEL}</h2>"
+        f"<p>A read is served by {SECOND_PAGE_LABEL}, which runs inside the "
+        "simulator rather than beside it.</p>"
+        "<figure><figcaption>How a read reaches the guest</figcaption>"
+        "<div style='border:1px solid #333;width:200px;padding:4px'>"
+        f"<span style='font-size:7px'>{SECOND_PAGE_LABEL}</span>"
+        "</div></figure>",
+    ),
+}
 
 
 def _elements(node: Any) -> list[dict[str, Any]]:
@@ -246,6 +300,7 @@ INTERACTION_TESTS = frozenset(
         "test_ui_wait_reports_a_missing_marker_timeout",
         "test_ui_wait_rejects_an_invalid_poll_interval",
         "test_a_delivered_notification_is_held_until_it_is_opened",
+        "test_web_content_is_readable_from_inside_the_simulator",
     }
 )
 ACCESSIBILITY_TEST_CAPABILITIES = {
@@ -1101,4 +1156,216 @@ class AccessibilityTests(IdbEndToEndTestCase):
         self.note(
             "The notification is no longer in the delivered-notification list, "
             "confirming that opening it cleared the stored entry."
+        )
+
+    async def wait_for_tappable_address_bar(self) -> None:
+        """Wait for the address bar to be drawn, before it is tapped.
+
+        Safari settles its chrome for a second or two after a page arrives,
+        and a marker tap resolves through the host backend, so the wait has
+        to look at what the tap will rather than through the guest.
+        """
+        await self.setup_idb(
+            "ui",
+            "wait",
+            SAFARI_ADDRESS_BAR_ID,
+            "--match-key",
+            "AXUniqueId",
+            "--timeout",
+            str(UI_UPDATE_TIMEOUT_SECONDS),
+        )
+
+    async def wait_for_address_bar(self) -> None:
+        """Wait for the address bar to take the cursor, before anything is typed."""
+        await self.setup_idb(
+            "ui",
+            "wait",
+            SAFARI_URL_FIELD_ID,
+            "--match-key",
+            "AXUniqueId",
+            "--api",
+            "axbridge",
+            "--timeout",
+            str(UI_UPDATE_TIMEOUT_SECONDS),
+        )
+
+    async def safari_shows_first_page(self, url: str) -> bool:
+        """Whether Safari can open this address and draw the page behind it."""
+        await self.setup_idb("open", url)
+        arrived = await self.setup_idb(
+            "ui",
+            "wait",
+            FIRST_PAGE_HEADING,
+            "--match-key",
+            "AXLabel",
+            "--api",
+            "axbridge",
+            "--timeout",
+            str(UI_UPDATE_TIMEOUT_SECONDS),
+            check=False,
+        )
+        return arrived.returncode == 0
+
+    async def wait_for_web_label(self, label: str) -> None:
+        await self.setup_idb(
+            "ui",
+            "wait",
+            label,
+            "--match-key",
+            "AXLabel",
+            "--api",
+            "axbridge",
+            "--timeout",
+            str(UI_UPDATE_TIMEOUT_SECONDS),
+        )
+
+    @documented_demo(
+        slug="read-a-web-page-in-safari",
+        title="Read a web page's content from inside the simulator",
+        summary=(
+            "Use the accessibility backend that runs inside the simulator to "
+            "read a web page's own content rather than Safari's chrome. Find a "
+            "single heading among the hundreds of elements the page builds, "
+            "without scrolling to bring it on screen. Then navigate to a second "
+            "page by typing into Safari's address bar and submitting it with a "
+            "key press, and verify what loaded by finding a label drawn inside "
+            "one of that page's diagrams."
+        ),
+    )
+    async def test_web_content_is_readable_from_inside_the_simulator(self) -> None:
+        self.addAsyncCleanup(self.setup_terminate_quietly, SAFARI_BUNDLE_ID)
+        await self.setup_terminate_quietly(SAFARI_BUNDLE_ID)
+        origin = await self.setup_web_origin(
+            LIVE_ORIGIN, STAND_IN_PAGES, self.safari_shows_first_page
+        )
+        first_page = origin + FIRST_PAGE_PATH
+        second_page = origin + SECOND_PAGE_PATH
+
+        await self.idb("open", first_page, step="Open idb's documentation in Safari")
+        await self.wait_for_web_label(FIRST_PAGE_HEADING)
+        self.note("Safari has loaded the page and its content is now readable.")
+
+        first = await self.idb_json(
+            "ui",
+            "describe-all",
+            "--api",
+            "axbridge",
+            "--format",
+            "complete",
+            "--match",
+            FIRST_PAGE_MATCH,
+            *LABEL_AND_FRAME_KEYS,
+            step="Find a single heading in the page's accessibility tree",
+        )
+        self.assertEqual(first["backend"], AXBRIDGE_BACKEND)
+        headings = [
+            element
+            for element in _elements(first["elements"])
+            if _label(element) == FIRST_PAGE_HEADING and _has_area(element)
+        ]
+        self.assertTrue(headings, f"no {FIRST_PAGE_HEADING!r} heading was reported")
+        self.note(
+            f"idb walked {first['narrowing']['walked']} elements to find the "
+            f"heading, and they belong to the page rather than to Safari's "
+            f"chrome. The heading is {self._placed(headings[0], _screen(first))}, "
+            f"far below the visible part of the page, and no scrolling was "
+            f"needed to read it.",
+            FIRST_PAGE_HEADING,
+            str(first["narrowing"]["walked"]),
+        )
+
+        await self.wait_for_tappable_address_bar()
+        await self.idb(
+            "ui",
+            "tap",
+            SAFARI_ADDRESS_BAR_ID,
+            "--match-key",
+            "AXUniqueId",
+            step="Tap the address bar by accessibility identifier",
+        )
+        await self.wait_for_address_bar()
+        self.note(
+            "The address bar belongs to Safari rather than to the web page, so "
+            "idb can address it by its accessibility identifier."
+        )
+
+        await self.idb(
+            "ui", "text", second_page, step="Type the address of a second page"
+        )
+        # Typing is delivered key by key, so the field holds part of the
+        # address for as long as the rest is still arriving.
+        await self.setup_idb(
+            "ui",
+            "wait",
+            second_page,
+            "--match-key",
+            "AXValue",
+            "--api",
+            "axbridge",
+            "--timeout",
+            str(UI_UPDATE_TIMEOUT_SECONDS),
+        )
+        typed = await self.idb_json(
+            "ui",
+            "describe",
+            SAFARI_URL_FIELD_ID,
+            "--match-key",
+            "AXUniqueId",
+            "--api",
+            "axbridge",
+            "--format",
+            "complete",
+            step="Read the address bar's value back",
+        )
+        fields = [
+            element
+            for element in _elements(typed["elements"])
+            if element.get("identifier") == SAFARI_URL_FIELD_ID
+        ]
+        self.assertEqual([field.get("value") for field in fields], [second_page])
+        self.note(
+            f"The address bar holds {second_page!r}, character for character, "
+            f"so every keystroke arrived.",
+            second_page,
+        )
+
+        await self.idb(
+            "ui",
+            "key",
+            str(RETURN_KEY_CODE),
+            step="Submit the address with a key press",
+        )
+        await self.wait_for_web_label(SECOND_PAGE_LABEL)
+
+        second = await self.idb_json(
+            "ui",
+            "describe-all",
+            "--api",
+            "axbridge",
+            "--format",
+            "complete",
+            "--match",
+            SECOND_PAGE_LABEL,
+            *LABEL_AND_FRAME_KEYS,
+            step="Verify that the second page loaded",
+        )
+        named = [
+            element
+            for element in _elements(second["elements"])
+            if SECOND_PAGE_LABEL in _label(element) and _has_area(element)
+        ]
+        self.assertTrue(
+            named, f"the page that loaded does not name {SECOND_PAGE_LABEL}"
+        )
+        smallest = min(
+            named,
+            key=lambda element: element["frame"]["width"] * element["frame"]["height"],
+        )
+        self.note(
+            f"The page that loaded names {SECOND_PAGE_LABEL} in {len(named)} "
+            f"places, which confirms that the typed address opened. The smallest "
+            f"is {self._placed(smallest, _screen(second))}: a label drawn inside "
+            f"one of the page's diagrams, which the accessibility tree reports "
+            f"as an ordinary element.",
+            SECOND_PAGE_LABEL,
         )

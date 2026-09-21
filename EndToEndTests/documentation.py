@@ -53,6 +53,10 @@ DOCUMENTED_DEMOS: Mapping[str, str] = {
         "EndToEndTests.test_accessibility.AccessibilityTests"
         ".test_a_delivered_notification_is_held_until_it_is_opened"
     ),
+    "read-a-web-page-in-safari": (
+        "EndToEndTests.test_accessibility.AccessibilityTests"
+        ".test_web_content_is_readable_from_inside_the_simulator"
+    ),
 }
 
 PACKAGE = "EndToEndTests"
@@ -84,6 +88,10 @@ _TIMESTAMP = re.compile(
 )
 _ADDRESS = re.compile(r"0x[0-9a-f]{6,}", re.IGNORECASE)
 _PID = re.compile(r"(?<=\bpid )\d+", re.IGNORECASE)
+# A loopback server takes whichever port is free, so the one it was given says
+# nothing and would otherwise differ between runs. What precedes the host is
+# not matched, since JSON output escapes the slashes of a URL.
+_LOOPBACK_PORT = re.compile(r"(?<=\blocalhost:)\d+|(?<=\b127\.0\.0\.1:)\d+")
 
 _Method = TypeVar("_Method", bound=Callable[..., Any])
 
@@ -236,6 +244,7 @@ def normalisation_rules(
             Rule(_TIMESTAMP, "TIMESTAMP"),
             Rule(_ADDRESS, "0xADDRESS"),
             Rule(_PID, "PID"),
+            Rule(_LOOPBACK_PORT, "PORT"),
         ]
     )
 

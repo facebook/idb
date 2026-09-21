@@ -15,6 +15,7 @@ from __future__ import annotations
 import asyncio
 import atexit
 import enum
+import http.server
 import json
 import logging
 import os
@@ -25,6 +26,7 @@ import shutil
 import signal
 import subprocess
 import tempfile
+import threading
 import time
 import unittest
 from collections.abc import Mapping, Sequence
@@ -680,6 +682,66 @@ async def shared_recording(environment: Environment, companion: Companion) -> Re
     return _recording
 
 
+LOOPBACK_ADDRESS = "127.0.0.1"
+
+
+class LocalPages:
+    """A fixed set of pages served over loopback, keyed by request path."""
+
+    def __init__(self, pages: Mapping[str, str]) -> None:
+        self._pages = dict(pages)
+        self._server: http.server.ThreadingHTTPServer | None = None
+        self._thread: threading.Thread | None = None
+
+    def start(self) -> str:
+        """Serve the pages on an arbitrary free port, and answer their origin."""
+        pages = self._pages
+
+        class Handler(http.server.BaseHTTPRequestHandler):
+            protocol_version = "HTTP/1.1"
+
+            def _respond(self, body: bytes | None) -> None:
+                if body is None:
+                    self.send_error(404)
+                    return
+                self.send_response(200)
+                self.send_header("Content-Type", "text/html; charset=utf-8")
+                self.send_header("Content-Length", str(len(body)))
+                self.end_headers()
+                self.wfile.write(body)
+
+            def do_HEAD(self) -> None:
+                page = pages.get(self.path)
+                self._respond(None if page is None else b"")
+
+            def do_GET(self) -> None:
+                page = pages.get(self.path)
+                self._respond(None if page is None else page.encode())
+
+            def log_message(self, format: str, *args: Any) -> None:
+                logging.debug("local pages " + format, *args)
+
+        server = http.server.ThreadingHTTPServer((LOOPBACK_ADDRESS, 0), Handler)
+        thread = threading.Thread(target=server.serve_forever, daemon=True)
+        thread.start()
+        self._server = server
+        self._thread = thread
+        # Addressed by the same literal it is bound to: a name would leave the
+        # simulator to resolve it, and it can resolve to an address nothing is
+        # listening on.
+        return f"http://{LOOPBACK_ADDRESS}:{server.server_address[1]}"
+
+    def stop(self) -> None:
+        if self._server is None:
+            return
+        self._server.shutdown()
+        self._server.server_close()
+        if self._thread is not None:
+            self._thread.join(timeout=5.0)
+        self._server = None
+        self._thread = None
+
+
 class IdbEndToEndTestCase(unittest.IsolatedAsyncioTestCase):
     """Run CLI tests against the shared companion and simulator."""
 
@@ -916,6 +978,36 @@ class IdbEndToEndTestCase(unittest.IsolatedAsyncioTestCase):
     async def setup_uninstall_quietly(self, bundle_id: str) -> None:
         await self.setup_terminate_quietly(bundle_id)
         await self.setup_idb("uninstall", bundle_id, check=False)
+
+    async def setup_web_origin(
+        self,
+        live: str,
+        stand_in: Mapping[str, str],
+        arrives: Callable[[str], Awaitable[bool]],
+    ) -> str:
+        """The origin a web test reads from, live where the simulator has it.
+
+        Only the simulator can answer this. Fetching the page from the host
+        answers a different question and gets it wrong in both directions: a
+        continuous integration host reaches the internet through a proxy its
+        simulator does not use, and a corporate laptop refuses the test
+        process egress that its simulator is given. So the browser is asked
+        to open the first page the test will read, and `arrives` reports
+        whether it appeared; when it did not, the stand-in pages are served
+        over loopback and the same journey runs against those.
+        """
+        first = next(iter(stand_in))
+        if await arrives(live + first):
+            return live
+        pages = LocalPages(stand_in)
+        origin = pages.start()
+        self.addCleanup(pages.stop)
+        logging.info(
+            "%s did not open in the simulator; serving stand-in pages from %s",
+            live,
+            origin,
+        )
+        return origin
 
     def idb_process(self, *args: str) -> "IdbProcess":
         """Start a streaming command and stop it when the async context exits."""

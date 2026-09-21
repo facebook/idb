@@ -220,6 +220,18 @@ class NormalisationTests(unittest.TestCase):
             "TIMESTAMP pid PID at 0xADDRESS",
         )
 
+    def test_replaces_a_loopback_port_but_not_a_port_elsewhere(self) -> None:
+        text = (
+            "open http://localhost:52341/docs http://127.0.0.1:52341/docs "
+            '{"value": "http:\\/\\/localhost:52341\\/docs"} https://fbidb.io:443/docs'
+        )
+
+        self.assertEqual(
+            normalise(text, rules()),
+            "open http://localhost:PORT/docs http://127.0.0.1:PORT/docs "
+            '{"value": "http:\\/\\/localhost:PORT\\/docs"} https://fbidb.io:443/docs',
+        )
+
     def test_keeps_json_punctuation_around_a_temporary_path(self) -> None:
         text = '{"container": "/var/folders/ab/cd/T/install", "ok": true}'
 
