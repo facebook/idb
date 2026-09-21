@@ -7,7 +7,3 @@
 
 // Re-exported for consumers of this umbrella.
 #import <FBControlCore/FBControlCore.h>
-
-#if __has_include(<FBSimulatorControl/FBSimulatorControl-Swift.h>)
- #import <FBSimulatorControl/FBSimulatorControl-Swift.h>
-#endif
