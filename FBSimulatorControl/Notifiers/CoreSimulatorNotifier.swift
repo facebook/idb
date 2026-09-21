@@ -9,6 +9,65 @@
 @preconcurrency import FBControlCore
 import Foundation
 
+/// Arbitrates the single hand-off between the notification block, task cancellation and the
+/// continuation, any of which can arrive first, and owns unregistering the handler exactly once.
+///
+/// `@unchecked Sendable`: all mutable state is guarded by `lock`.
+private final class StateChangeWaiter: @unchecked Sendable {
+  private let lock = NSLock()
+  private var continuation: CheckedContinuation<Void, Error>?
+  private var notifier: CoreSimulatorNotifier?
+  private var finished = false
+
+  /// Returns false when cancellation beat the continuation, in which case it is resumed here and
+  /// the caller must not register a handler.
+  func park(_ continuation: CheckedContinuation<Void, Error>) -> Bool {
+    lock.lock()
+    if finished {
+      lock.unlock()
+      continuation.resume(throwing: CancellationError())
+      return false
+    }
+    self.continuation = continuation
+    lock.unlock()
+    return true
+  }
+
+  /// Takes ownership of the handler's registration. The notification block runs as soon as it is
+  /// registered, so the wait can already be over by the time the notifier is handed over.
+  func attach(_ notifier: CoreSimulatorNotifier) {
+    lock.lock()
+    if finished {
+      lock.unlock()
+      notifier.terminate()
+      return
+    }
+    self.notifier = notifier
+    lock.unlock()
+  }
+
+  func finish(throwing error: Error?) {
+    lock.lock()
+    if finished {
+      lock.unlock()
+      return
+    }
+    finished = true
+    let continuation = self.continuation
+    let notifier = self.notifier
+    self.continuation = nil
+    self.notifier = nil
+    lock.unlock()
+
+    notifier?.terminate()
+    if let error {
+      continuation?.resume(throwing: error)
+    } else {
+      continuation?.resume()
+    }
+  }
+}
+
 public final class CoreSimulatorNotifier {
 
   private let handle: UInt64
@@ -19,30 +78,34 @@ public final class CoreSimulatorNotifier {
     return CoreSimulatorNotifier(notifier: notifier, queue: queue, block: block)
   }
 
-  public class func resolveLeavesState(_ state: TargetState, for device: SimDevice) -> FBFuture<NSNull> {
-    let future = FBMutableFuture<NSNull>()
-    let queue = DispatchQueue(label: "com.facebook.fbsimulatorcontrol.resolve_state")
-    nonisolated(unsafe) let futureRef = future
-    let notifier = self.notifier(for: device, queue: queue) { info in
-      guard let notification = info["notification"] as? String, notification == "device_state" else {
-        return
+  /// Suspends until `device` reports a state other than `state`. The CoreSimulator notification
+  /// handler is unregistered whether the state change arrives or the calling task is cancelled.
+  public class func resolveLeavesState(_ state: TargetState, for device: SimDevice) async throws {
+    let waiter = StateChangeWaiter()
+    try await withTaskCancellationHandler {
+      try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+        guard waiter.park(continuation) else {
+          return
+        }
+        let queue = DispatchQueue(label: "com.facebook.fbsimulatorcontrol.resolve_state")
+        let notifier = self.notifier(for: device, queue: queue) { info in
+          guard let notification = info["notification"] as? String, notification == "device_state" else {
+            return
+          }
+          guard let newStateNumber = info["new_state"] as? NSNumber else {
+            return
+          }
+          let newState = TargetState(rawValue: newStateNumber.uintValue)
+          if newState == state {
+            return
+          }
+          waiter.finish(throwing: nil)
+        }
+        waiter.attach(notifier)
       }
-      guard let newStateNumber = info["new_state"] as? NSNumber else {
-        return
-      }
-      let newState = TargetState(rawValue: newStateNumber.uintValue)
-      if newState == state {
-        return
-      }
-      futureRef.resolve(withResult: NSNull())
+    } onCancel: {
+      waiter.finish(throwing: CancellationError())
     }
-    return
-      convertFBMutableFuture(future)
-      .onQueue(
-        queue,
-        notifyOfCompletion: { (_: Any) in
-          notifier.terminate()
-        })
   }
 
   public func terminate() {

@@ -71,7 +71,7 @@ public final class SimulatorLifecycleCommands: LifecycleCommands {
     guard let simulator = self.simulator else {
       throw WeakTargetError.simulator
     }
-    try await bridgeFBFutureVoid(CoreSimulatorNotifier.resolveLeavesState(state, for: simulator.device))
+    try await CoreSimulatorNotifier.resolveLeavesState(state, for: simulator.device)
   }
 
   public func focus() async throws {
