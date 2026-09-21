@@ -2820,6 +2820,18 @@ class TestParser(TestCase):
         await cli_main(cmd_input=["focus"])
         self.client_mock.focus.assert_called_once()
 
+    async def test_notification_send_and_legacy_send_notification(self) -> None:
+        payload = '{"aps":{"alert":"Hello"}}'
+        for command in (
+            ["notification", "send", "com.foo.bar", payload],
+            ["send-notification", "com.foo.bar", payload],
+        ):
+            with self.subTest(command=command):
+                send_notification = AsyncMock()
+                self.client_mock.send_notification = send_notification
+                await cli_main(cmd_input=command)
+                send_notification.assert_called_once_with("com.foo.bar", payload)
+
     async def test_notification_list(self) -> None:
         self.client_mock.delivered_notifications = AsyncMock(
             return_value=[

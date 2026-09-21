@@ -111,7 +111,7 @@ BUILT_IN_GROUP_CHILDREN: dict[str, tuple[str, ...]] = {
     ),
     "framework": ("install",),
     "list": ("locale",),
-    "notification": ("list",),
+    "notification": ("list", "send"),
     "photos": ("clear",),
     "record": ("video",),
     "ui": (
@@ -138,8 +138,8 @@ BUILT_IN_GROUP_CHILDREN: dict[str, tuple[str, ...]] = {
     "xctrace": ("record",),
 }
 
-BUILT_IN_TERMINAL_COUNT = 86
-BUILT_IN_NODE_COUNT = 102
+BUILT_IN_TERMINAL_COUNT = 87
+BUILT_IN_NODE_COUNT = 103
 
 BUILT_IN_ALIAS_PATHS: tuple[tuple[str, ...], ...] = (
     ("file", "mv"),
@@ -337,6 +337,17 @@ class CommandTreeTest(unittest.TestCase):
         self.assertNotIn(
             "aaa-extension",
             [command.name for command in self.graph.root_command.subcommands],
+        )
+
+    def test_legacy_send_notification_is_deprecated_in_help_only(self) -> None:
+        canonical = _resolve(self.graph.root_command, ("notification", "send"))
+        legacy = _resolve(self.graph.root_command, ("send-notification",))
+
+        self.assertNotIn("Deprecated", canonical.description)
+        self.assertEqual(
+            legacy.description,
+            "Send a push notification to an app. "
+            "Deprecated: use 'idb notification send'. Retained for compatibility.",
         )
 
     def test_extension_commands_are_loaded_and_sorted_in(self) -> None:

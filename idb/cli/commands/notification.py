@@ -15,14 +15,14 @@ from idb.common.format import (
 from idb.common.types import Client
 
 
-class SendNotificationCommand(ClientCommand):
+class NotificationSendCommand(ClientCommand):
     @property
     def description(self) -> str:
-        return "Open a URL"
+        return "Send a push notification to an app"
 
     @property
     def name(self) -> str:
-        return "send-notification"
+        return "send"
 
     def add_parser_arguments(self, parser: ArgumentParser) -> None:
         parser.add_argument("bundle_id", help="Target app", type=str)
@@ -33,6 +33,21 @@ class SendNotificationCommand(ClientCommand):
 
     async def run_with_client(self, args: Namespace, client: Client) -> None:
         await client.send_notification(args.bundle_id, args.json_payload)
+
+
+class SendNotificationCommand(NotificationSendCommand):
+    """Compatibility entrypoint for the original top-level command."""
+
+    @property
+    def description(self) -> str:
+        return (
+            "Send a push notification to an app. "
+            "Deprecated: use 'idb notification send'. Retained for compatibility."
+        )
+
+    @property
+    def name(self) -> str:
+        return "send-notification"
 
 
 class NotificationListCommand(ClientCommand):

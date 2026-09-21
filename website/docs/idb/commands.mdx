@@ -417,10 +417,10 @@ This works both with web addresses and URL schemes present on the target.
 ### Send a push notification
 
 ```
-idb send-notification com.apple.Maps '{"aps": {"alert": "Hello"}}'
+idb notification send com.apple.Maps '{"aps": {"alert": "Hello"}}'
 ```
 
-Delivers a push notification payload to an installed app, with no APNs certificate or network setup. The payload is the JSON the app would receive from APNs.
+Delivers a push notification payload to an installed app, with no APNs certificate or network setup. The payload is the JSON the app would receive from APNs. The original `idb send-notification` spelling remains supported for existing callers.
 
 ### List delivered notifications
 
