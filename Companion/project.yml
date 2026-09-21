@@ -19,15 +19,8 @@ configFiles:
 
 settings:
   base:
-    HEADER_SEARCH_PATHS: $(inherited) $(SRCROOT)/../PrivateHeaders
+    SYSTEM_HEADER_SEARCH_PATHS: $(inherited) $(SRCROOT)/../PrivateHeaders
     LD_RUNPATH_SEARCH_PATHS: $(inherited) @executable_path/Resources/Swift
-    # Shared.xcconfig turns warnings into errors and enables more of them than
-    # Buck does. The generated project neutralises the difference per target
-    # with the warning configuration read off the Buck graph; this project is
-    # hand-maintained and gets no such thing, so the two warnings its sources
-    # trip on importing the Objective-C framework headers are suppressed here
-    # for every target rather than rediscovered one target at a time.
-    OTHER_CFLAGS: $(inherited) -Wno-implicit-int-conversion -Wno-missing-field-initializers
 
 packages:
   grpc-swift-2:
@@ -206,7 +199,7 @@ targets:
         MACH_O_TYPE: staticlib
         SWIFT_VERSION: "6.0"
         GENERATE_INFOPLIST_FILE: YES
-        HEADER_SEARCH_PATHS: $(inherited) $(SRCROOT)/../PrivateHeaders
+        SYSTEM_HEADER_SEARCH_PATHS: $(inherited) $(SRCROOT)/../PrivateHeaders
         FRAMEWORK_SEARCH_PATHS: $(inherited) $(SRCROOT)/../Build/Products/Release
         # The linked static archives ship loose .swiftmodule directories next
         # to the .a files; resolve them independently of -F framework semantics.
@@ -275,7 +268,7 @@ targets:
         SWIFT_VERSION: "6.0"
         SWIFT_OBJC_INTERFACE_HEADER_NAME: idb-Swift.h
         INFOPLIST_FILE: $(SRCROOT)/Info.plist
-        HEADER_SEARCH_PATHS: $(inherited) $(SRCROOT)/../PrivateHeaders
+        SYSTEM_HEADER_SEARCH_PATHS: $(inherited) $(SRCROOT)/../PrivateHeaders
         FRAMEWORK_SEARCH_PATHS: $(inherited) $(SRCROOT)/../Build/Products/Release
         # The linked static archives ship loose .swiftmodule directories next
         # to the .a files; resolve them independently of -F framework semantics.
@@ -455,7 +448,7 @@ targets:
         CODE_SIGN_IDENTITY: "-"
         CODE_SIGNING_REQUIRED: NO
         CODE_SIGNING_ALLOWED: NO
-        HEADER_SEARCH_PATHS: $(inherited) $(SRCROOT)/../PrivateHeaders
+        SYSTEM_HEADER_SEARCH_PATHS: $(inherited) $(SRCROOT)/../PrivateHeaders
         FRAMEWORK_SEARCH_PATHS: $(inherited) $(SRCROOT)/../Build/Products/Release
         SWIFT_INCLUDE_PATHS: $(SRCROOT)/../Build/Products/Release
         OTHER_LDFLAGS: $(inherited) -ObjC -weak_library $(SRCROOT)/../PrivateHeaders/CoreSimulator/CoreSimulator.tbd -weak_library $(SRCROOT)/../PrivateHeaders/AccessibilityPlatformTranslation/AccessibilityPlatformTranslation.tbd

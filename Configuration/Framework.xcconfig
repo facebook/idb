@@ -11,4 +11,5 @@ FRAMEWORK_VERSION = A
 VERSIONING_SYSTEM = apple-generic
 LD_RUNPATH_SEARCH_PATHS = $(inherited) @executable_path @loader_path/Frameworks
 // Only expose PrivateHeaders to Framework targets. Framework targets never expose PrivateHeader imports themselves.
-HEADER_SEARCH_PATHS = $(inherited) $(SRCROOT)/PrivateHeaders
+// System, so the warnings Shared.xcconfig makes fatal are not raised against declarations reverse-engineered from Apple's.
+SYSTEM_HEADER_SEARCH_PATHS = $(inherited) $(SRCROOT)/PrivateHeaders
