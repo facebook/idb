@@ -105,6 +105,7 @@ STUB
 cat > "$WORK/stubs/xcodebuild" <<'STUB'
 #!/bin/bash
 printf '%s\n' "$@" >> "$XCODE_STUB_LOG"
+[ -n "${XCODE_STUB_OUTPUT:-}" ] && printf '%s\n' "$XCODE_STUB_OUTPUT"
 [ "${XCODE_STUB_FAIL:-0}" = 1 ] && exit 8
 if [ "${XCODE_STUB_DRIFT:-0}" = 1 ]; then
     lock=Companion/idb_companion.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved
@@ -112,6 +113,15 @@ if [ "${XCODE_STUB_DRIFT:-0}" = 1 ]; then
         "$lock" > "$lock.changed"
     mv "$lock.changed" "$lock"
 fi
+exit 0
+STUB
+
+# xcpretty's COMPILE_ERROR_MATCHER is anchored on a leading `/`, and a line it
+# does not recognise is dropped rather than passed through. This stub keeps
+# exactly that contract so the cases below exercise the pipeline, not xcpretty.
+cat > "$WORK/stubs/xcpretty" <<'STUB'
+#!/bin/bash
+grep -E '^/.*: (fatal )?error: |^\*\* BUILD'
 exit 0
 STUB
 
@@ -483,6 +493,23 @@ output="$(in_package "$dir" 'invoke_xcodebuild -project Companion/idb_companion.
 assert_equal "Xcode revision drift fails the build" 1 "$?"
 assert_contains "Xcode identifies resolver drift" "$output" "grpc-swift-2: expected"
 unset XCODE_STUB_DRIFT
+
+# A Swift compile that fails before it has a file to point at reports
+# `<unknown>:0: error: ...`, which the formatter does not recognise.
+export XCODE_STUB_FAIL=1
+export XCODE_STUB_OUTPUT="<unknown>:0: error: missing required module 'CNIOAtomics'
+** BUILD FAILED **"
+output="$(in_package "$dir" '
+    HAS_XCPRETTY=true
+    invoke_xcodebuild -project Companion/idb_companion.xcodeproj -scheme idb_companion build
+')"
+assert_equal "a formatted Xcode failure still fails" 8 "$?"
+# BUG: the formatter is the only reader of xcodebuild's output, so a diagnostic
+# it does not recognise is gone and no raw log survives to find it in --
+# flipped in the following commit.
+assert_equal "the path-less error is reported" 0 "$(grep -c "missing required module" <<< "$output")"
+assert_equal "a raw xcodebuild log is kept" 0 "$(find "$dir/Build" -path '*Logs/xcodebuild/*.log' 2>/dev/null | wc -l | tr -d ' ')"
+unset XCODE_STUB_FAIL XCODE_STUB_OUTPUT
 
 # Existing generated files do not prove that they match today's plugin pins.
 mkdir -p "$dir/IDBGRPCSwift"
