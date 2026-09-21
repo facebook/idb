@@ -28,8 +28,15 @@
   height: var(--clip-height);
 }
 
+/* A column so a caption, when there is one, takes its height off the media
+   rather than out of the section below. */
 .figure {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  height: 100%;
   margin: 0;
+  min-height: 0;
 }
 
 .video,
@@ -37,15 +44,18 @@
   background: #000;
   border-radius: var(--ifm-global-radius);
   display: block;
-  height: 100%;
+  flex: 1 1 auto;
   margin: 0 auto;
   max-width: 100%;
+  min-height: 0;
   object-fit: contain;
   width: auto;
 }
 
-.figure {
-  height: 100%;
+.caption {
+  color: var(--ifm-color-emphasis-700);
+  flex: 0 0 auto;
+  font-size: 0.85rem;
 }
 
 /* The terminal takes the height it needs and the narration takes the rest, so
@@ -92,7 +102,6 @@
 
   .video,
   .still {
-    height: auto;
     max-height: 70vh;
   }
 

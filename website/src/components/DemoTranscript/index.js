@@ -296,7 +296,7 @@ function Screen({demo, video, source, poster, player, onTime}) {
         src={poster}
         alt={`${demo.title}, as the test left the screen`}
       />
-      <figcaption>
+      <figcaption className={styles.caption}>
         {demo.title}, as the test left the screen. This demo has no recording.
       </figcaption>
     </figure>
