@@ -465,6 +465,24 @@ message AccessibilityActionResponse {
     TIMED_OUT = 2;
   }
   WaitResult wait_result = 1;
+
+  message WaitResponse {
+    WaitResult result = 1;
+    string message = 2;
+    // Absent when the backend does not supply diagnostics. An empty message
+    // with no read_error means the final read found no values for the key.
+    WaitDiagnostics diagnostics = 3;
+  }
+  // New companions populate both fields. Clients use wait_result when wait
+  // is absent, as it is on older companions.
+  WaitResponse wait = 2;
+
+  message WaitDiagnostics {
+    // Nonmatching values of the searched key from the final poll only.
+    repeated string unmatched_values = 1;
+    bool truncated = 2;
+    string read_error = 3;
+  }
 }
 
 message ApproveRequest {
