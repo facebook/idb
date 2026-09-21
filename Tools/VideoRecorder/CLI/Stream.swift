@@ -5,11 +5,11 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-@_implementationOnly import ArgumentParser
-@_implementationOnly import FBControlCore
-@_implementationOnly import FBSimulatorControl
+import ArgumentParser
+import FBControlCore
+import FBSimulatorControl
 import Foundation
-@_implementationOnly import SimulatorVideo
+import SimulatorVideo
 
 struct Stream: AsyncParsableCommand {
   static let configuration = CommandConfiguration(abstract: "Stream encoded frames with JSON-line overlay control")

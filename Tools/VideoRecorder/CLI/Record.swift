@@ -6,13 +6,13 @@
  */
 
 import AVFoundation
-@_implementationOnly import ArgumentParser
+import ArgumentParser
 import CoreMedia
 import CoreVideo
-@_implementationOnly import FBControlCore
-@_implementationOnly import FBSimulatorControl
+import FBControlCore
+import FBSimulatorControl
 import Foundation
-@_implementationOnly import SimulatorVideo
+import SimulatorVideo
 
 struct Record: AsyncParsableCommand {
   static let configuration = CommandConfiguration(abstract: "Record a playable file with overlay and chapter control")

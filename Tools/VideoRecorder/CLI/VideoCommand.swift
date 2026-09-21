@@ -5,8 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-@_implementationOnly import ArgumentParser
-@_implementationOnly import CompanionUtilities
+import ArgumentParser
+import CompanionUtilities
 import Foundation
 
 @main

@@ -6,12 +6,12 @@
  */
 
 import AVFoundation
-@_implementationOnly import ArgumentParser
+import ArgumentParser
 import CoreMedia
 import CoreVideo
-@_implementationOnly import FBControlCore
+import FBControlCore
 import Foundation
-@_implementationOnly import SimulatorVideo
+import SimulatorVideo
 
 /// Cut an independently playable clip out of a recording.
 ///
