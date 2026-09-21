@@ -1157,6 +1157,20 @@ private final class AccessibilityRequest {
     if outcome == nil, let element {
       FBAXBridgeCountRoundTrip()
       outcome = try client.setValue(requestedValue, on: element)
+      if outcome?.status == FBAXWriteStatus.applicationNotResponding {
+        // A timed-out write can have taken effect. Confirm once without repeating the write.
+        do {
+          FBAXBridgeCountRoundTrip()
+          let read = try client.readAttributes([axValue], of: element)
+          if read.status == FBAXReadStatus.read,
+            try FBAXWireValue.matchesString(read.attributes?[axValue], expected: requestedValue).boolValue
+          {
+            outcome = FBAXWriteOutcome.written()
+          }
+        } catch {
+          // An unsuccessful confirmation must preserve the original write timeout.
+        }
+      }
     }
     guard let outcome else {
       throw FBAXBridgeInvariantError(description: "the write resolved no target or outcome")

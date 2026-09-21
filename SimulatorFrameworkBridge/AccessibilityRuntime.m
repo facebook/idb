@@ -207,6 +207,9 @@
 
 + (instancetype)outcomeForPressError:(int32_t)axError fallback:(FBAXWriteOutcome *(^)(void))fallback
 {
+  if (axError == FBAXErrorFailure) {
+    return fallback();
+  }
   return [self outcomeForWriteError:axError];
 }
 
@@ -1163,20 +1166,20 @@ static NSError *FBAXSnapshotFailure(NSInteger code, NSString *description)
     return self->_functions.performAction(raw, identifier);
   }];
   if (action == FBAXActionPress) {
-    return [FBAXWriteOutcome outcomeForPressError:axError
-                                         fallback:^FBAXWriteOutcome * {
-                                           return [reference objectFromElement:^id (void *raw) {
-                                             Class<FBAXNativeElementClass> nativeClass = (Class<FBAXNativeElementClass>)objc_lookUpClass("AXElement");
-                                             if (![nativeClass respondsToSelector:@selector(elementWithAXUIElement:)]) {
-                                               return [FBAXWriteOutcome failed:@"AXPress was refused (-25200), and this runtime has no native element activation API"];
-                                             }
-                                             AXElement *native = [nativeClass elementWithAXUIElement:raw];
-                                             if (![native respondsToSelector:@selector(press)]) {
-                                               return [FBAXWriteOutcome failed:@"AXPress was refused (-25200), and the element has no native press operation"];
-                                             }
-                                             return [native press] ? [FBAXWriteOutcome written] : [FBAXWriteOutcome failed:@"AXPress was refused (-25200), and native activation could not activate the element or tap its visible point"];
-                                           }];
-                                         }];
+    FBAXWriteOutcome *(^fallback)(void) = ^FBAXWriteOutcome * {
+      return [reference objectFromElement:^id (void *raw) {
+        Class<FBAXNativeElementClass> nativeClass = (Class<FBAXNativeElementClass>)objc_lookUpClass("AXElement");
+        if (![nativeClass respondsToSelector:@selector(elementWithAXUIElement:)]) {
+          return [FBAXWriteOutcome failed:@"AXPress was refused (-25200), and this runtime has no native element activation API"];
+        }
+        AXElement *native = [nativeClass elementWithAXUIElement:raw];
+        if (![native respondsToSelector:@selector(press)]) {
+          return [FBAXWriteOutcome failed:@"AXPress was refused (-25200), and the element has no native press operation"];
+        }
+        return [native press] ? [FBAXWriteOutcome written] : [FBAXWriteOutcome failed:@"AXPress was refused (-25200), and native activation could not activate the element or tap its visible point"];
+      }];
+    };
+    return [FBAXWriteOutcome outcomeForPressError:axError fallback:fallback];
   }
   return [FBAXWriteOutcome outcomeForWriteError:axError];
 }

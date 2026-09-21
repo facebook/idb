@@ -13,6 +13,7 @@ NS_ASSUME_NONNULL_BEGIN
 @interface FBAXWireValue : NSObject
 + (nullable NSNumber *)booleanFromValue:(nullable id)value error:(NSError **)error NS_SWIFT_NAME(boolean(from:));
 + (nullable NSString *)formattedDescriptionOfValue:(nullable id)value error:(NSError **)error NS_SWIFT_NAME(formattedDescription(of:));
++ (nullable NSNumber *)matchesStringValue:(nullable id)value expected:(NSString *)expected error:(NSError **)error NS_SWIFT_NAME(matchesString(_:expected:));
 @end
 
 NS_ASSUME_NONNULL_END

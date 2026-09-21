@@ -37,4 +37,14 @@ static void FBAXWireValueException(NSException *exception, NSError **error)
   }
 }
 
++ (NSNumber *)matchesStringValue:(id)value expected:(NSString *)expected error:(NSError **)error
+{
+  @try {
+    return @([value isKindOfClass:NSString.class] && [value isEqualToString:expected]);
+  } @catch (NSException *exception) {
+    FBAXWireValueException(exception, error);
+    return nil;
+  }
+}
+
 @end

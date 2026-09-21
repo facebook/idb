@@ -43,6 +43,8 @@
 typedef NS_ENUM(int32_t, FBAXError) {
   /** kAXErrorSuccess. */
   FBAXErrorSuccess = 0,
+  /** kAXErrorFailure: the runtime refused the operation without a more specific reason. */
+  FBAXErrorFailure = -25200,
   /** kAXErrorInvalidUIElement: the point is genuinely empty — a valid empty result, not a failure. */
   FBAXErrorInvalidUIElement = -25202,
   /** kAXErrorServerNotFound: nothing answered — a dead pid, or a process that is not an application. */

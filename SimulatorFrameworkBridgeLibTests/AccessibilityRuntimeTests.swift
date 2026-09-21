@@ -742,16 +742,24 @@ final class AccessibilityRuntimeTests: XCTestCase {
     XCTAssertTrue(((rejected.failureReason)?.contains("-25201") == true), "\(String(describing: rejected.failureReason))")
   }
 
-  func testRejectedPressDoesNotAttemptNativeActivation() {
+  func testRejectedPressUsesNativeActivation() {
     var fallbackCount = 0
     let outcome = FBAXWriteOutcome(forPressError: -25200) {
       fallbackCount += 1
       return FBAXWriteOutcome.written()
     }
 
+    XCTAssertEqual(outcome.status, FBAXWriteStatus.written)
+    XCTAssertEqual(fallbackCount, 1)
+  }
+
+  func testRejectedPressPreservesNativeActivationFailure() {
+    let outcome = FBAXWriteOutcome(forPressError: -25200) {
+      FBAXWriteOutcome.failed("native activation could not reach the element")
+    }
+
     XCTAssertEqual(outcome.status, FBAXWriteStatus.failed)
-    XCTAssertTrue(outcome.failureReason?.contains("-25200") == true)
-    XCTAssertEqual(fallbackCount, 0)
+    XCTAssertEqual(outcome.failureReason, "native activation could not reach the element")
   }
 
   func testOtherPressOutcomesDoNotAttemptNativeActivation() {
@@ -1200,15 +1208,15 @@ final class AccessibilityRuntimeTests: XCTestCase {
     assertEqualObjects(runtime.operations, ["hitTest", "setValue"])
   }
 
-  func testSetValueTimeoutIsReportedEvenWhenTheRequestedValueIsReadable() {
+  func testSetValueTimeoutSucceedsWhenTheRequestedValueIsReadable() {
     self.seedHitElement(withAttributes: [kAXValue: "hello"])
     runtime.writeOutcome = FBAXWriteOutcome.applicationNotResponding()
 
     let response = FBAXBridgeHandleRequest(["verb": "setvalue", "x": 30, "y": 40, "value": "hello"])
 
-    assertEqualObjects(response, ["ok": false, "error": "pid 4321 did not answer the write in time", "error_kind": "application_not_responding", "pid": kAppPid])
+    assertEqualObjects(response, ["ok": true, "pid": kAppPid])
     XCTAssertEqual(runtime.setValueCount, 1)
-    assertEqualObjects(runtime.operations, ["hitTest", "setValue"])
+    assertEqualObjects(runtime.operations, ["hitTest", "setValue", "readAttributes"])
   }
 
   func testSetValueTimeoutIsPreservedWithoutAnExactStringValue() {
@@ -1230,7 +1238,7 @@ final class AccessibilityRuntimeTests: XCTestCase {
       assertEqualObjects(axValue(response, "error_kind"), "application_not_responding")
       assertEqualObjects(axValue(response, "pid"), kAppPid)
       XCTAssertEqual(runtime.setValueCount, writesBefore + 1)
-      assertEqualObjects(runtime.operations, ["hitTest", "setValue"])
+      assertEqualObjects(runtime.operations, ["hitTest", "setValue", "readAttributes"])
     }
   }
 
@@ -1254,7 +1262,7 @@ final class AccessibilityRuntimeTests: XCTestCase {
       assertEqualObjects(axValue(response, "error_kind"), "application_not_responding")
       assertEqualObjects(axValue(response, "pid"), kAppPid)
       XCTAssertEqual(runtime.setValueCount, writesBefore + 1)
-      assertEqualObjects(runtime.operations, ["hitTest", "setValue"])
+      assertEqualObjects(runtime.operations, ["hitTest", "setValue", "readAttributes"])
     }
   }
 
