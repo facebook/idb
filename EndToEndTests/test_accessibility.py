@@ -3,14 +3,14 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-"""Read accessibility elements through the host and simulator APIs.
+"""Read accessibility elements through the ax and axbridge APIs.
 
-The ax API runs on the host; axbridge runs SimulatorFrameworkBridge inside
-the simulator. Complete output identifies which backend served the request.
-Tests select labelled Settings rows at runtime to avoid locale-specific names.
-Tap and scroll tests verify navigation and movement through the simulator API.
-SpringBoard and Safari are read as well, for the elements the host API
-cannot reach: the notification banner drawn for an app that is not
+`--api ax` reads from macOS; `--api axbridge` runs SimulatorFrameworkBridge
+inside the simulator. Complete output identifies which backend served the
+request. Tests select labelled Settings rows at runtime to avoid
+locale-specific names. Tap and scroll tests verify navigation and movement
+through axbridge. SpringBoard and Safari are read as well, for the elements
+ax cannot reach: the notification banner drawn for an app that is not
 running, and the web content another process is showing.
 """
 
@@ -127,7 +127,7 @@ STAND_IN_PAGES = {
         f"<h2>{SECOND_PAGE_LABEL}</h2>"
         f"<p>A read is served by {SECOND_PAGE_LABEL}, which runs inside the "
         "simulator rather than beside it.</p>"
-        "<figure><figcaption>How a read reaches the guest</figcaption>"
+        "<figure><figcaption>How a read reaches axbridge</figcaption>"
         "<div style='border:1px solid #333;width:200px;padding:4px'>"
         f"<span style='font-size:7px'>{SECOND_PAGE_LABEL}</span>"
         "</div></figure>",
@@ -418,16 +418,16 @@ class AccessibilityTests(IdbEndToEndTestCase):
             str(UI_UPDATE_TIMEOUT_SECONDS),
         )
 
-        # `ui wait` resolves the marker through the host backend and the
-        # snapshot is read through the guest, so the two can disagree for a
-        # moment after the screen the element sits on has changed.
+        # `ui wait` resolves the marker through ax and the snapshot is read
+        # through axbridge, so the two can disagree for a moment after the
+        # screen the element sits on has changed.
         async def read() -> dict[str, Any]:
             for element in _elements(await self.wait_for_settings_snapshot()):
                 if element.get("identifier") == identifier and (
                     element_type is None or element.get("type") == element_type
                 ):
                     return element
-            raise NotReady("the guest backend has not reported it yet")
+            raise NotReady("axbridge has not reported it yet")
 
         try:
             return await wait_until(
@@ -448,20 +448,20 @@ class AccessibilityTests(IdbEndToEndTestCase):
     async def test_ui_describe_all_reads_both_backends_and_honours_its_options(
         self,
     ) -> None:
-        host = await self.describe_all_complete("ax")
-        bridge = await self.describe_all_complete("axbridge")
+        ax = await self.describe_all_complete("ax")
+        axbridge = await self.describe_all_complete("axbridge")
 
-        self.assertEqual(host["backend"], AX_BACKEND)
-        self.assertEqual(bridge["backend"], AXBRIDGE_BACKEND)
-        for name, document in ((AX_BACKEND, host), (AXBRIDGE_BACKEND, bridge)):
+        self.assertEqual(ax["backend"], AX_BACKEND)
+        self.assertEqual(axbridge["backend"], AXBRIDGE_BACKEND)
+        for name, document in ((AX_BACKEND, ax), (AXBRIDGE_BACKEND, axbridge)):
             controls = _labelled_controls(document)
             self.assertTrue(controls, f"{name} should see Settings' rows")
-        shared = _labels(host) & _labels(bridge)
+        shared = _labels(ax) & _labels(axbridge)
         self.assertTrue(
             shared,
             f"the backends named no row in common; "
-            f"{AX_BACKEND} saw {sorted(_labels(host))} and "
-            f"{AXBRIDGE_BACKEND} saw {sorted(_labels(bridge))}",
+            f"{AX_BACKEND} saw {sorted(_labels(ax))} and "
+            f"{AXBRIDGE_BACKEND} saw {sorted(_labels(axbridge))}",
         )
 
         selected = await self.idb_json(
@@ -509,10 +509,10 @@ class AccessibilityTests(IdbEndToEndTestCase):
         self.assertEqual(document["backend"], AXBRIDGE_BACKEND)
         self.assertTrue(
             _elements(document["elements"]),
-            f"the guest bridge should resolve the marker {marker!r}",
+            f"{AXBRIDGE_BACKEND} should resolve the marker {marker!r}",
         )
 
-        guest_point = await self.idb_json(
+        axbridge_point = await self.idb_json(
             "ui",
             "describe-point",
             str(x),
@@ -522,11 +522,11 @@ class AccessibilityTests(IdbEndToEndTestCase):
             "--format",
             "complete",
         )
-        self.assertEqual(guest_point["backend"], AXBRIDGE_BACKEND)
+        self.assertEqual(axbridge_point["backend"], AXBRIDGE_BACKEND)
         self.assertIn(
             marker,
-            [_label(element) for element in _elements(guest_point["elements"])],
-            f"the guest bridge resolved {(x, y)} to something other than {marker!r}",
+            [_label(element) for element in _elements(axbridge_point["elements"])],
+            f"{AXBRIDGE_BACKEND} resolved {(x, y)} to something other than {marker!r}",
         )
 
         await self.idb_expect_failure(
@@ -1110,8 +1110,8 @@ class AccessibilityTests(IdbEndToEndTestCase):
         """Wait for the address bar to be drawn, before it is tapped.
 
         Safari settles its chrome for a second or two after a page arrives,
-        and a marker tap resolves through the host backend, so the wait has
-        to look at what the tap will rather than through the guest.
+        and a marker tap resolves through ax, so the wait has to look at
+        what the tap will rather than through axbridge.
         """
         await self.setup_idb(
             "ui",
