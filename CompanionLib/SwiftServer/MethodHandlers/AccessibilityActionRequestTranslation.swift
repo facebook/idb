@@ -71,14 +71,27 @@ enum AccessibilityActionRequestTranslation {
   }
 
   static func waitResponse(operation: () async throws -> Void) async throws -> Idb_AccessibilityActionResponse {
+    var wait = Idb_AccessibilityActionResponse.WaitResponse()
     do {
       try await operation()
-      return .with { $0.waitResult = .found }
+      wait.result = .found
     } catch let error as UIAutomationError {
-      if case .timedOut = error {
-        return .with { $0.waitResult = .timedOut }
+      guard case let .timedOut(_, _, _, _, diagnostics) = error else {
+        throw error
       }
-      throw error
+      wait.result = .timedOut
+      wait.message = error.localizedDescription
+      if let diagnostics {
+        wait.diagnostics = .with {
+          $0.unmatchedValues = diagnostics.unmatchedValues
+          $0.truncated = diagnostics.truncated
+          $0.readError = diagnostics.readError ?? ""
+        }
+      }
+    }
+    return .with {
+      $0.waitResult = wait.result
+      $0.wait = wait
     }
   }
 

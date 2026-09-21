@@ -122,10 +122,19 @@ final class AccessibilityActionRequestTranslationTests: XCTestCase {
   func testWaitDistinguishesFoundTimeoutAndFailure() async throws {
     let found = try await AccessibilityActionRequestTranslation.waitResponse {}
     XCTAssertEqual(found.waitResult, .found)
+    XCTAssertTrue(found.hasWait)
+    XCTAssertEqual(found.wait.result, .found)
+    XCTAssertEqual(found.wait.message, "")
+    XCTAssertFalse(found.wait.hasDiagnostics)
     let timeout = try await AccessibilityActionRequestTranslation.waitResponse {
       throw UIAutomationError.timedOut(backend: .accessibility, key: "AXLabel", value: "missing", timeout: 1)
     }
     XCTAssertEqual(timeout.waitResult, .timedOut)
+    XCTAssertTrue(timeout.hasWait)
+    XCTAssertEqual(timeout.wait.result, .timedOut)
+    XCTAssertTrue(timeout.wait.message.contains("AXLabel"))
+    XCTAssertTrue(timeout.wait.message.contains("missing"))
+    XCTAssertFalse(timeout.wait.hasDiagnostics)
     do {
       _ = try await AccessibilityActionRequestTranslation.waitResponse {
         throw UIAutomationError.applicationNotResponding(backend: .accessibility, pid: 123)
@@ -135,6 +144,29 @@ final class AccessibilityActionRequestTranslationTests: XCTestCase {
       guard case .applicationNotResponding = error else {
         return XCTFail("unexpected error: \(error)")
       }
+    }
+  }
+
+  func testWaitCarriesFinalProbeDiagnostics() async throws {
+    for diagnostics in [
+      AccessibilitySearchDiagnostics(unmatchedValues: ["Settings", "General"], truncated: true),
+      AccessibilitySearchDiagnostics(),
+      AccessibilitySearchDiagnostics(readError: "application unavailable"),
+    ] {
+      let response = try await AccessibilityActionRequestTranslation.waitResponse {
+        throw UIAutomationError.timedOut(
+          backend: .accessibility, key: "AXLabel", value: "missing", timeout: 1, diagnostics: diagnostics)
+      }
+      XCTAssertEqual(response.waitResult, .timedOut)
+      XCTAssertTrue(response.hasWait)
+      XCTAssertEqual(response.wait.result, .timedOut)
+      XCTAssertTrue(response.wait.hasDiagnostics)
+      XCTAssertEqual(response.wait.diagnostics.unmatchedValues, diagnostics.unmatchedValues)
+      XCTAssertEqual(response.wait.diagnostics.truncated, diagnostics.truncated)
+      XCTAssertEqual(response.wait.diagnostics.readError, diagnostics.readError ?? "")
+      XCTAssertEqual(
+        response.wait.message,
+        "The accessibility backend timed out after 1.0s waiting for AXLabel containing \"missing\"; it never appeared.")
     }
   }
 
