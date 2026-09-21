@@ -171,6 +171,7 @@ STUB
 cat > "$WORK/stubs/protoc" <<'STUB'
 #!/bin/bash
 printf '%s\n' "$*" >> "$PROTOC_STUB_LOG"
+[ "${PROTOC_STUB_FAIL:-0}" = 1 ] && exit 9
 path=""
 file=""
 for arg in "$@"; do
@@ -553,6 +554,16 @@ output="$(in_package "$dir" 'generate_proto')"
 assert_equal "codegen in the monorepo succeeds" 0 "$?"
 assert_contains "protoc reads the directory the published proto is exported from" \
     "$(cat "$PROTOC_STUB_LOG")" "--proto_path=$monorepo/xplat/idb"
+
+export PROTOC_STUB_FAIL=1
+output="$(in_package "$dir" 'generate_proto')"
+# BUG: protoc's status is not read, so a generation that wrote nothing is
+# reported as one that finished, and the build carries on to compile sources
+# that are not there -- flipped in the following commit.
+assert_equal "a failed protoc does not fail codegen" 0 "$?"
+assert_equal "the build is told generation finished" 1 \
+    "$(grep -c "Generated gRPC Swift files" <<< "$output")"
+unset PROTOC_STUB_FAIL
 
 # ---------------------------------------------------------------------------
 # Xcode gets the same lock and must preserve it.
