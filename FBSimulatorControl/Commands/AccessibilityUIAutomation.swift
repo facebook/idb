@@ -122,18 +122,11 @@ final class AccessibilityUIAutomation: UIAutomation, @unchecked Sendable {
     try await UIAutomationPolling.waitForMarker(
       query, backend: .accessibility, timeout: timeout, pollInterval: pollInterval
     ) { markerValue, key, depth in
-      do {
-        let element = try await operations.resolveElement(for: .marker(value: markerValue, key: key, depth: depth))
-        element.close()
-        return AccessibilitySearchResult(match: true)
-      } catch let error as AccessibilityError {
-        // The matcher throws `.elementNotFound` when the element isn't in the tree yet — keep
-        // polling on that alone, and surface every other failure (boot/dispatcher/IPC) at once.
-        if case .elementNotFound = error {
-          return AccessibilitySearchResult(match: nil)
-        }
-        throw error
-      }
+      let root = try await operations.resolveElement(for: .frontmost)
+      defer { root.close() }
+      let result = try await root.searchElement(withValue: markerValue, forKey: key, depth: depth)
+      result.match?.close()
+      return result.map { _ in true }
     }
   }
 

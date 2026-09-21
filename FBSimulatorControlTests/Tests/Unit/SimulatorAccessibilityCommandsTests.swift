@@ -1166,8 +1166,12 @@ final class SimulatorAccessibilityCommandsTests: XCTestCase {
   func testAccessibilityElementMatchingFindsDescendantByLabel() async throws {
     try setUp(withRootElement: defaultElementTree)
 
-    let element = try await simulator.accessibility.resolveElement(for: .marker(value: "OK", key: .label, depth: 10))
+    let root = try await simulator.accessibility.resolveElement(for: .frontmost)
+    let result = try await root.searchElement(withValue: "OK", forKey: .label, depth: 10)
+    let element = try XCTUnwrap(result.match)
     defer { element.close() }
+    XCTAssertEqual(result.diagnostics?.unmatchedValues, ["App Window", "Confirm Action"])
+    XCTAssertEqual(result.diagnostics?.truncated, false)
 
     let elementLabel = try await element.stringValue(forSearchableKey: .label)
     XCTAssertEqual(elementLabel, "OK")
@@ -1216,6 +1220,30 @@ final class SimulatorAccessibilityCommandsTests: XCTestCase {
     XCTAssertEqual(elementLabel, "OK")
   }
 
+  func testSearchReturnsNonmatchingIdentifiersOnly() async throws {
+    let child = AccessibilityTestElementBuilder.button(
+      withLabel: "Unrelated label", identifier: "button_id", frame: NSRect(x: 0, y: 0, width: 10, height: 10))
+    try setUp(withRootElement: defaultRoot(withChildren: [child]))
+    let root = try await simulator.accessibility.resolveElement(for: .frontmost)
+    let result = try await root.searchElement(withValue: "missing", forKey: .uniqueID, depth: 10)
+    XCTAssertNil(result.match)
+    XCTAssertEqual(result.diagnostics?.unmatchedValues, ["button_id"])
+    XCTAssertNil(result.diagnostics?.readError)
+  }
+
+  func testLegacyWaitCarriesTheTraversalNonmatches() async throws {
+    try setUp(withRootElement: defaultElementTree)
+    let reader = AccessibilityUIAutomation(simulator: simulator)
+    do {
+      try await reader.wait(.marker(value: "missing", key: .label, depth: 10), timeout: 0, pollInterval: 0)
+      XCTFail("a missing label must time out")
+    } catch let UIAutomationError.timedOut(_, _, _, _, diagnostics) {
+      XCTAssertEqual(diagnostics?.unmatchedValues, ["App Window", "Confirm Action", "OK", "Cancel"])
+      XCTAssertNil(diagnostics?.readError)
+    }
+    try await reader.wait(.marker(value: "OK", key: .label, depth: 10), timeout: 0, pollInterval: 0)
+  }
+
   func testAccessibilityElementMatchingNotFoundThrows() async throws {
     try setUp(withRootElement: defaultElementTree)
 
@@ -1251,17 +1279,15 @@ final class SimulatorAccessibilityCommandsTests: XCTestCase {
     )
     try setUp(withRootElement: root)
 
-    // depth 1 cannot reach a level-2 descendant.
-    do {
-      let tooShallow = try await simulator.accessibility.resolveElement(for: .marker(value: "Deep", key: .label, depth: 1))
-      tooShallow.close()
-      XCTFail("Expected depth-1 search not to reach a level-2 element")
-    } catch {
-      // expected
-    }
+    let shallowRoot = try await simulator.accessibility.resolveElement(for: .frontmost)
+    let shallow = try await shallowRoot.searchElement(withValue: "Deep", forKey: .label, depth: 1)
+    XCTAssertNil(shallow.match)
+    XCTAssertEqual(shallow.diagnostics?.unmatchedValues, ["App Window", "Container"])
 
-    // depth 2 reaches it.
-    let found = try await simulator.accessibility.resolveElement(for: .marker(value: "Deep", key: .label, depth: 2))
+    let deepRoot = try await simulator.accessibility.resolveElement(for: .frontmost)
+    let deep = try await deepRoot.searchElement(withValue: "Deep", forKey: .label, depth: 2)
+    XCTAssertEqual(deep.diagnostics?.unmatchedValues, ["App Window", "Container"])
+    let found = try XCTUnwrap(deep.match)
     defer { found.close() }
     let foundLabel = try await found.stringValue(forSearchableKey: .label)
     XCTAssertEqual(foundLabel, "Deep")

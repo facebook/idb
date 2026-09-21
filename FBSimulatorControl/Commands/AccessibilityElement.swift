@@ -157,30 +157,41 @@ final class AccessibilityElement {
   func findElement(
     withValue value: String, forKey key: AXSearchableKey, depth: UInt, ignoresCase: Bool = false
   ) async throws -> AccessibilityElement {
-    // The legacy accessibility tree is composed entirely of `AXPMacPlatformElement`, so a matched
-    // descendant is always writable; a non-writable match is treated as not found.
-    //
-    // The root's bounds are read in the same serialized hop, before handing ownership on: this element
-    // is the root the match was found under, and once the new handle is serializing there is nothing
-    // left that knows the bounds the match's frame is relative to.
-    let element = self.element
-    let token = request.token
-    let match = try await dispatcher.performSerialized { () -> (found: AXWritableElement, rootBounds: CGRect)? in
-      guard
-        let found = Self.findElement(
-          withValue: value, forKey: key, in: element, token: token, remainingDepth: depth, ignoresCase: ignoresCase
-        ) as? AXWritableElement
-      else {
-        return nil
-      }
-      element.axSetBridgeDelegateToken(token)
-      return (found, element.axFrame())
-    }
-    guard let match else {
-      close()
+    let result = try await searchElement(withValue: value, forKey: key, depth: depth, ignoresCase: ignoresCase)
+    guard let match = result.match else {
       throw AccessibilityError.elementNotFound(key: key.rawValue, value: value, depth: depth)
     }
-    assert(!closed, "Cannot transfer ownership from a closed element")
+    return match
+  }
+
+  /// Consumes this root handle, transferring its request to the match or closing it on a miss.
+  /// Nonmatching values come from the same traversal and never require another attribute read.
+  func searchElement(
+    withValue value: String, forKey key: AXSearchableKey, depth: UInt, ignoresCase: Bool = false
+  ) async throws -> AccessibilitySearchResult<AccessibilityElement> {
+    if closed {
+      throw AccessibilityError.closedElement(operation: "search")
+    }
+    // Root geometry must be read before ownership passes to a matching descendant.
+    let element = self.element
+    let token = request.token
+    let result = try await dispatcher.performSerialized { () -> AccessibilitySearchResult<(found: AXWritableElement, rootBounds: CGRect)> in
+      var diagnostics = AccessibilitySearchDiagnostics()
+      guard
+        let found = Self.findElement(
+          withValue: value, forKey: key, in: element, token: token, remainingDepth: depth,
+          ignoresCase: ignoresCase, diagnostics: &diagnostics
+        ) as? AXWritableElement
+      else {
+        return AccessibilitySearchResult(match: nil, diagnostics: diagnostics)
+      }
+      element.axSetBridgeDelegateToken(token)
+      return AccessibilitySearchResult(match: (found, element.axFrame()), diagnostics: diagnostics)
+    }
+    guard let match = result.match else {
+      close()
+      return AccessibilitySearchResult(match: nil, diagnostics: result.diagnostics)
+    }
     guard let simulator else {
       throw WeakTargetError.simulator
     }
@@ -188,7 +199,7 @@ final class AccessibilityElement {
       element: match.found, request: request, dispatcher: dispatcher, simulator: simulator, rootBounds: match.rootBounds
     )
     closed = true
-    return newHandle
+    return AccessibilitySearchResult(match: newHandle, diagnostics: result.diagnostics)
   }
 
   // MARK: - Private helpers
@@ -222,11 +233,15 @@ final class AccessibilityElement {
     in element: AXPlatformElement,
     token: String,
     remainingDepth: UInt,
-    ignoresCase: Bool
+    ignoresCase: Bool,
+    diagnostics: inout AccessibilitySearchDiagnostics
   ) -> AXPlatformElement? {
     element.axSetBridgeDelegateToken(token)
-    if let propertyValue = stringValue(forKey: key, from: element), contains(value, in: propertyValue, ignoringCase: ignoresCase) {
-      return element
+    if let propertyValue = stringValue(forKey: key, from: element) {
+      if contains(value, in: propertyValue, ignoringCase: ignoresCase) {
+        return element
+      }
+      diagnostics.record(propertyValue)
     }
     if remainingDepth == 0 {
       return nil
@@ -234,7 +249,8 @@ final class AccessibilityElement {
     for child in element.axChildren() {
       child.axSetBridgeDelegateToken(token)
       if let found = findElement(
-        withValue: value, forKey: key, in: child, token: token, remainingDepth: remainingDepth - 1, ignoresCase: ignoresCase
+        withValue: value, forKey: key, in: child, token: token, remainingDepth: remainingDepth - 1,
+        ignoresCase: ignoresCase, diagnostics: &diagnostics
       ) {
         return found
       }
