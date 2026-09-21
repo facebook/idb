@@ -10,7 +10,7 @@ import Foundation
 extension FBArchiveOperations {
 
   /// Async wrapper for `extractArchiveAtPath:toPath:overrideModificationTime:logger:`.
-  public class func extractArchiveAsync(
+  public static func extractArchiveAsync(
     atPath path: String,
     toPath extractPath: String,
     overrideModificationTime overrideMTime: Bool,
@@ -26,7 +26,7 @@ extension FBArchiveOperations {
   }
 
   /// Async wrapper for `extractArchiveFromStream:toPath:overrideModificationTime:logger:compression:`.
-  public class func extractArchiveAsync(
+  public static func extractArchiveAsync(
     fromStream stream: FBProcessInput<AnyObject>,
     toPath extractPath: String,
     overrideModificationTime overrideMTime: Bool,
@@ -44,7 +44,7 @@ extension FBArchiveOperations {
   }
 
   /// Async wrapper for `extractGzipFromStream:toPath:logger:`.
-  public class func extractGzipAsync(
+  public static func extractGzipAsync(
     fromStream stream: FBProcessInput<AnyObject>,
     toPath extractPath: String,
     logger: any ControlCoreLogger
@@ -55,7 +55,7 @@ extension FBArchiveOperations {
   }
 
   /// Async wrapper for `createGzipDataFromProcessInput:logger:`.
-  public class func createGzipDataAsync(
+  public static func createGzipDataAsync(
     from input: FBProcessInput<AnyObject>,
     logger: any ControlCoreLogger
   ) async throws -> FBSubprocess<AnyObject, NSData, AnyObject> {
@@ -63,7 +63,7 @@ extension FBArchiveOperations {
   }
 
   /// Async wrapper for `createGzipForPath:logger:`.
-  public class func createGzipAsync(
+  public static func createGzipAsync(
     forPath path: String,
     logger: any ControlCoreLogger
   ) async throws -> FBSubprocess<NSNull, InputStream, AnyObject> {
@@ -71,7 +71,7 @@ extension FBArchiveOperations {
   }
 
   /// Async wrapper for `createGzippedTarForPath:logger:`.
-  public class func createGzippedTarAsync(
+  public static func createGzippedTarAsync(
     forPath path: String,
     logger: any ControlCoreLogger
   ) async throws -> FBSubprocess<NSNull, InputStream, AnyObject> {
@@ -79,7 +79,7 @@ extension FBArchiveOperations {
   }
 
   /// Async wrapper for `createGzippedTarDataForPath:queue:logger:`.
-  public class func createGzippedTarDataAsync(
+  public static func createGzippedTarDataAsync(
     forPath path: String,
     queue: DispatchQueue,
     logger: any ControlCoreLogger
