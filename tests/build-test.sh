@@ -125,6 +125,46 @@ grep -E '^/.*: (fatal )?error: |^\*\* BUILD'
 exit 0
 STUB
 
+# xcodegen writes where -p says and, like the real one, spells every file
+# reference relative to that directory -- which is the whole problem when that
+# directory is a temporary one. The references cover the three depths the
+# projects use: a file in the project directory, one in its parent, and one two
+# levels up (Shims/Repl reaches ../../REPL/Executor).
+cat > "$WORK/stubs/xcodegen" <<'STUB'
+#!/bin/bash
+out=""
+args=("$@")
+for i in "${!args[@]}"; do
+    [ "${args[$i]}" = "-p" ] && out="${args[$((i + 1))]}"
+done
+[ -n "$out" ] || out="$PWD"
+mkdir -p "$out/$XCODEGEN_STUB_NAME.xcodeproj"
+# xcodegen's temporary directory and a checkout share no prefix but `/`, so a
+# reference is `../` once per component of the temporary directory, then the
+# absolute path -- the form the paths take in a real run, spelled out here so
+# the case does not depend on where this test's own temporary directory is.
+relative() {
+    local absolute depth
+    absolute="$(cd "$(dirname "$1")" && pwd)/$(basename "$1")"
+    depth="$(printf '%s' "$out" | tr -cd '/' | wc -c | tr -d ' ')"
+    printf '%s%s' "$(printf '../%.0s' $(seq 1 "$depth"))" "${absolute#/}"
+}
+{
+    echo "// PBXProject"
+    echo "path = \"$(relative "$PWD/main.m")\";"
+    echo "path = \"$(relative "$PWD/../Shared.h")\";"
+    echo "path = \"$(relative "$PWD/../../REPL/Executor/ReplSocketServer.h")\";"
+    echo "path = \"$(relative "$PWD/../../.")\";"
+} > "$out/$XCODEGEN_STUB_NAME.xcodeproj/project.pbxproj"
+STUB
+
+# The workaround copies with ditto to shed xattrs; the copy is all that matters here.
+cat > "$WORK/stubs/ditto" <<'STUB'
+#!/bin/bash
+[ "$1" = "--noextattr" ] && shift
+cp -R "$1" "$2"
+STUB
+
 chmod +x "$WORK/stubs"/*
 
 # <dir> <grpc-swift-2 version> <swift-protobuf version>. A package the pin guard
@@ -548,6 +588,38 @@ assert_contains "xcpretty is the fallback" "$output" "formatter=xcpretty"
 # shellcheck disable=SC2016
 output="$(in_package "$dir" 'PATH=/usr/bin:/bin detect_xcode_formatter; echo "formatter=[$XCODE_FORMATTER]"')"
 assert_contains "no formatter is not an error" "$output" "formatter=[]"
+
+# A project generated through the xattr workaround must reference its sources
+# exactly as one generated in place would: the temporary directory xcodegen
+# wrote to must leave no trace in the paths.
+mkdir -p "$dir/Shims/Repl" "$dir/REPL/Executor"
+export XCODEGEN_STUB_NAME=Repl
+# shellcheck disable=SC2016
+output="$(in_package "$dir" '
+    # BSD sed takes `-i ""`; GNU sed reads that "" as the script. Give GNU sed
+    # the BSD calling convention so the rewrite under test runs the same way
+    # on both, rather than skipping it (as the companion case does).
+    sed() {
+        if [ "$1" = "-i" ] && [ -z "$2" ] && command sed --version > /dev/null 2>&1; then
+            shift 2; command sed -i "$@"
+        else
+            command sed "$@"
+        fi
+    }
+    XCODEGEN_STRIP_XATTRS=true generate_xcodeproj Shims/Repl Repl
+')"
+assert_equal "a nested project generates through the workaround" 0 "$?"
+pbxproj="$dir/Shims/Repl/Repl.xcodeproj/project.pbxproj"
+assert_contains "a file in the project directory is a bare path" "$(cat "$pbxproj")" 'path = "main.m";'
+assert_contains "a file in the parent directory is one level up" "$(cat "$pbxproj")" 'path = "../Shared.h";'
+# BUG: the rewrite knows the project directory and its parent, nothing above;
+# a reference two levels up keeps the temporary directory's `../` chain and
+# resolves to a doubled absolute path -- flipped in the following commit.
+assert_equal "a file two levels up is rewritten" 0 "$(grep -c 'path = "../../REPL/Executor/ReplSocketServer.h";' "$pbxproj")"
+assert_equal "the directory two levels up is rewritten" 0 "$(grep -c 'path = "../..";' "$pbxproj")"
+# A reference that still names the package directory was never re-based.
+assert_equal "references keeping the temporary directory's chain" 2 "$(grep -c '/xcode[/"]' "$pbxproj")"
+unset XCODEGEN_STUB_NAME
 
 # Existing generated files do not prove that they match today's plugin pins.
 mkdir -p "$dir/IDBGRPCSwift"
