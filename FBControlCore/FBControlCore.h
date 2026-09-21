@@ -16,6 +16,5 @@
 #import <FBControlCore/FBProcessBuilder.h>
 #import <FBControlCore/FBProcessIO.h>
 #import <FBControlCore/FBProcessStream.h>
-#import <FBControlCore/FBSocketServer.h>
 #import <FBControlCore/FBSubprocess.h>
 #import <FBControlCore/FileReader.h>
