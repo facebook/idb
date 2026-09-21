@@ -126,6 +126,21 @@ idb ui describe com.apple.settings.general --match-key AXUniqueId
 
 These commands resolve a target through the accessibility system and then perform the action the platform itself would perform. They are not synthesized touches: an accessibility press activates the element directly, so it does not depend on where the element is on screen at the moment of the press.
 
+### The backend an action is served by
+
+`--api` selects the backend, as it does for the read commands, and every acting command accepts it. Unlike a read, an action defaults to `axbridge`: the host backend cannot see across a process boundary, so a marker that `describe --api axbridge` resolves is one the host backend would fail to find. Web content in Safari is the clearest case — every element on the page belongs to another process — but it holds for any out-of-process view.
+
+```
+# The guest reader sees the link inside Safari's web content process
+idb ui describe 'GETTING STARTED' --match-key AXLabel --api axbridge
+# ...and so does the tap, without naming a backend
+idb ui tap 'GETTING STARTED' --match-key AXLabel
+# The backend the actions used before, still one flag away
+idb ui tap General --api ax
+```
+
+One consequence worth knowing: an `axbridge` action asserts automation mode device-wide, exactly as an `axbridge` read does — see [Accessibility](accessibility.mdx#automation-mode).
+
 ### `idb ui tap`
 
 `tap` can be either a HID operation or an accessibility operation, depending on how the target is addressed:
@@ -134,7 +149,7 @@ These commands resolve a target through the accessibility system and then perfor
 flowchart TD
     tap["idb ui tap TARGET"] --> kind{"How is the target addressed?"}
     kind -- "X Y coordinates" --> hid["Synthesized touch — HID"]
-    kind -- "X Y with --api ax" --> press["Accessibility press"]
+    kind -- "X Y with --api ax or axbridge" --> press["Accessibility press"]
     kind -- "a marker" --> press
     kind -- "any target with --expected-value" --> press
 ```
@@ -147,6 +162,8 @@ idb ui tap 201 286 --api ax
 # A marker — always an accessibility press
 idb ui tap General
 ```
+
+`--api` does double duty here. `hid` is the synthesized touch; `ax` and `axbridge` are accessibility presses, served by the backend they name. So naming a backend for a coordinate moves it onto the accessibility path, as `--api ax` always has.
 
 A marker is always resolved through the accessibility system; passing `--api hid` with one is rejected rather than silently ignored.
 
@@ -175,6 +192,8 @@ idb ui scroll left 201 286
 ```
 
 `DIRECTION` is one of `up`, `down`, `left`, `right` or `visible`. `visible` scrolls the target into view rather than in a direction. `--match-key`, `--depth` and `--ignore-case` apply to a marker target.
+
+A scroll is not an action on the element it names. iOS models it as `accessibilityScroll:`, which UIKit bubbles *up* from that element to the nearest scrollable container — which is why naming a row inside a list scrolls the list, and why the application element, having no container above it, cannot be scrolled at all. A scroll with no target therefore aims at the centre of the frontmost application, where its scroll view is.
 
 ### `idb ui set-value TARGET --value VALUE`
 

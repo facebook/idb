@@ -20,7 +20,9 @@ These primitives support a number of scenarios:
 
 ## Backends
 
-A read is served by one of two backends, selected with `--api` on `idb ui describe-all`, `idb ui describe-point` and `idb ui describe`. They differ in where the read runs, which determines how much of the screen they can see and how much each read costs.
+A read or an action is served by one of two backends, selected with `--api` — on `idb ui describe-all`, `idb ui describe-point` and `idb ui describe`, and on `idb ui tap`, `idb ui scroll`, `idb ui set-value` and `idb ui drag-and-drop`. They differ in where the work runs, which determines how much of the screen they can see and how much each read costs.
+
+The two defaults differ, deliberately. A read defaults to `ax`, so a caller who asks for nothing gets the historical backend and does not assert automation mode on the device. An action defaults to `axbridge`, because the host backend cannot reach an element in another process and an action that cannot find its element is a failure rather than a smaller answer.
 
 Every backend ultimately reads the same source of truth — the accessibility server running *inside* the target application — but they reach it along different paths:
 
@@ -117,7 +119,7 @@ Narrowing a read with `--key` does not put it on that path unless a reachability
 
 ### Compatibility
 
-Omitting `--api` preserves the historical behaviour, and the field is only set on the wire when a backend is asked for. A companion that predates backend selection ignores the field and serves the read as if it were unset.
+On a **read**, omitting `--api` preserves the historical behaviour, and the field is only set on the wire when a backend is asked for. On an **action** it is not: omitting `--api` selects `axbridge`, which is sent on the wire like any other choice. Either way a companion that predates backend selection ignores the field and serves the request as if it were unset.
 
 When a backend is selected but cannot run, the read fails with a clear error rather than falling back to a different one — a silent downgrade would report a smaller tree as if it were the whole screen.
 
@@ -303,7 +305,7 @@ A read that reports far fewer elements than the screen shows is usually one of t
 
 Automation mode (`AutomationEnabled` in the `com.apple.Accessibility` domain) is the mode a UI-test host puts an application into; a read without it can see a different, smaller tree than `XCUITest` would. It is a device-wide simulator setting and affects every accessibility consumer on that simulator, not just your read.
 
-`--api axbridge` asserts the mode on every read. What that means in practice:
+`--api axbridge` asserts the mode on every read, and on every action it serves — which, since the acting commands default to `axbridge`, is what an ordinary `idb ui tap General` now does. What that means in practice:
 
 - **The setting persists after the read.** Nothing restores it when the process exits, because restoring would flip a device-wide setting twice per read, with a window in which a concurrent reader sees the wrong value. A later `--api ax` read, or another tool entirely, sees a device left in the mode. To read without changing anything, use `--api ax`.
 - **The read says whether it changed anything.** `--format complete` carries an `automation` object with `enabled` and `asserted`: the mode the read ran in, and whether this read put it there. A read that found the mode already on reports `asserted: false`.
