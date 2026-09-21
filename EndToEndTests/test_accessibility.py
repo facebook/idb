@@ -1004,6 +1004,29 @@ class AccessibilityTests(IdbEndToEndTestCase):
             NOTIFICATION_PAYLOAD,
             step="Deliver a notification while the app is not running",
         )
+        after = await self.idb(
+            "notification",
+            "list",
+            NEWS_BUNDLE_ID,
+            step="List notifications after delivery",
+        )
+        delivered = [
+            identifier
+            for identifier, title in self._retained(after.text)
+            if title == NOTIFICATION_TITLE and identifier not in held
+        ]
+        self.assertEqual(len(delivered), 1, f"expected one new {NOTIFICATION_TITLE!r}")
+        self.note(
+            f"The delivered-notification list now contains a new entry titled "
+            f"{NOTIFICATION_TITLE!r}. The test keeps its system-assigned "
+            "identifier so it can verify that the same entry is removed after "
+            "it opens.",
+            NOTIFICATION_TITLE,
+        )
+
+        # SpringBoard withdraws the banner about eight seconds after delivery,
+        # so the list of what the system is holding is read first and the wait,
+        # the frame read and the tap follow it back to back.
         await self.setup_idb(
             "ui",
             "wait",
@@ -1043,26 +1066,6 @@ class AccessibilityTests(IdbEndToEndTestCase):
             f"SpringBoard, not {NEWS_BUNDLE_ID}, owns the banner. The banner is "
             f"{self._placed(platter, _screen(banner))}.",
             BANNER_ID,
-        )
-
-        after = await self.idb(
-            "notification",
-            "list",
-            NEWS_BUNDLE_ID,
-            step="List notifications after delivery",
-        )
-        delivered = [
-            identifier
-            for identifier, title in self._retained(after.text)
-            if title == NOTIFICATION_TITLE and identifier not in held
-        ]
-        self.assertEqual(len(delivered), 1, f"expected one new {NOTIFICATION_TITLE!r}")
-        self.note(
-            f"The delivered-notification list now contains a new entry titled "
-            f"{NOTIFICATION_TITLE!r}. The test keeps its system-assigned "
-            "identifier so it can verify that the same entry is removed after "
-            "it opens.",
-            NOTIFICATION_TITLE,
         )
 
         frame = platter["frame"]
