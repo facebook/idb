@@ -218,7 +218,7 @@ function in_package() {
         PATH="$WORK/stubs:/usr/bin:/bin"
         # shellcheck disable=SC1090,SC1091
         source ./build.sh
-        export HAS_XCPRETTY=""
+        export XCODE_FORMATTER=""
         set -o pipefail
         setup_build_directory > /dev/null
         eval "$script"
@@ -500,7 +500,7 @@ export XCODE_STUB_FAIL=1
 export XCODE_STUB_OUTPUT="<unknown>:0: error: missing required module 'CNIOAtomics'
 ** BUILD FAILED **"
 output="$(in_package "$dir" '
-    HAS_XCPRETTY=true
+    XCODE_FORMATTER=xcpretty
     invoke_xcodebuild -project Companion/idb_companion.xcodeproj -scheme idb_companion build
 ')"
 assert_equal "a formatted Xcode failure still fails" 8 "$?"
@@ -516,9 +516,10 @@ cat > "$WORK/stubs/xcpretty" <<'STUB'
 grep -E '^/.*: (fatal )?error: |^\*\* BUILD'
 exit 1
 STUB
+# shellcheck disable=SC2016
 output="$(in_package "$dir" '
     set -e
-    HAS_XCPRETTY=true
+    XCODE_FORMATTER=xcpretty
     invoke_xcodebuild -project Companion/idb_companion.xcodeproj -scheme idb_companion build
 ')"
 assert_equal "xcodebuild status survives errexit and a failing formatter" 8 "$?"
@@ -529,6 +530,24 @@ grep -E '^/.*: (fatal )?error: |^\*\* BUILD'
 exit 0
 STUB
 unset XCODE_STUB_FAIL XCODE_STUB_OUTPUT
+
+# The formatter is chosen by what is installed: xcbeautify first, xcpretty as
+# the fallback, and none at all is not an error.
+cat > "$WORK/stubs/xcbeautify" <<'STUB'
+#!/bin/bash
+cat
+STUB
+chmod +x "$WORK/stubs/xcbeautify"
+# shellcheck disable=SC2016
+output="$(in_package "$dir" 'detect_xcode_formatter; echo "formatter=$XCODE_FORMATTER"')"
+assert_contains "xcbeautify is preferred when installed" "$output" "formatter=xcbeautify"
+rm "$WORK/stubs/xcbeautify"
+# shellcheck disable=SC2016
+output="$(in_package "$dir" 'detect_xcode_formatter; echo "formatter=$XCODE_FORMATTER"')"
+assert_contains "xcpretty is the fallback" "$output" "formatter=xcpretty"
+# shellcheck disable=SC2016
+output="$(in_package "$dir" 'PATH=/usr/bin:/bin detect_xcode_formatter; echo "formatter=[$XCODE_FORMATTER]"')"
+assert_contains "no formatter is not an error" "$output" "formatter=[]"
 
 # Existing generated files do not prove that they match today's plugin pins.
 mkdir -p "$dir/IDBGRPCSwift"

@@ -33,9 +33,7 @@ function setup_build_directory() {
     fi
   done
 
-  if hash xcpretty 2>/dev/null; then
-    HAS_XCPRETTY=true
-  fi
+  detect_xcode_formatter
 
   # Use build directory outside of repo if xattrs not supported (for Xcode compatibility)
   if supports_xattrs; then
@@ -534,6 +532,31 @@ function check_xcode_version() {
 }
 
 
+# xcbeautify is preferred: it recognises the diagnostics xcpretty drops (a
+# compile error with no file path, duplicate symbols) and passes through the
+# lines it does not recognise. xcpretty remains a fallback, and with neither the
+# output is shown as xcodebuild wrote it.
+function detect_xcode_formatter() {
+  if command -v xcbeautify > /dev/null 2>&1; then
+    XCODE_FORMATTER=xcbeautify
+  elif command -v xcpretty > /dev/null 2>&1; then
+    XCODE_FORMATTER=xcpretty
+  else
+    XCODE_FORMATTER=""
+  fi
+}
+
+function format_xcodebuild_output() {
+  case "$XCODE_FORMATTER" in
+    xcbeautify)
+      xcbeautify --disable-logging;;
+    xcpretty)
+      xcpretty -c;;
+    *)
+      cat;;
+  esac
+}
+
 # <xcodebuild arguments>. One file per invocation under the build directory,
 # numbered in invocation order and named after the scheme, so a multi-step
 # build leaves a readable sequence behind.
@@ -589,11 +612,10 @@ function invoke_xcodebuild() {
     ARCHS=arm64
   )
   # Every invocation keeps its complete, unformatted output. A formatter only
-  # shows what it recognises -- xcpretty drops a compile error with no file
-  # path, such as `<unknown>:0: error: missing required module` -- so the raw
-  # log is the record, and on failure its diagnostics are printed regardless
-  # of what the formatter kept. stderr goes into the same pipe: xcodebuild's
-  # own errors (a missing scheme, a broken project) arrive there.
+  # shows what it recognises, so the raw log is the record, and on failure its
+  # diagnostics are printed regardless of what the formatter kept. stderr goes
+  # into the same pipe: xcodebuild's own errors (a missing scheme, a broken
+  # project) arrive there.
   local log
   log="$(xcodebuild_log_path "$@")"
   # xcodebuild's own status, not the pipeline's: under pipefail a formatter
@@ -602,11 +624,7 @@ function invoke_xcodebuild() {
   local errexit=""
   [[ $- == *e* ]] && errexit=1
   set +e
-  if [[ -n $HAS_XCPRETTY ]]; then
-    NSUnbufferedIO=YES xcodebuild "${common_settings[@]}" SYMROOT="$symroot" OBJROOT="$objroot" "$@" 2>&1 | tee "$log" | xcpretty -c
-  else
-    NSUnbufferedIO=YES xcodebuild "${common_settings[@]}" SYMROOT="$symroot" OBJROOT="$objroot" "$@" 2>&1 | tee "$log"
-  fi
+  NSUnbufferedIO=YES xcodebuild "${common_settings[@]}" SYMROOT="$symroot" OBJROOT="$objroot" "$@" 2>&1 | tee "$log" | format_xcodebuild_output
   local status="${PIPESTATUS[0]}"
   [ -n "$errexit" ] && set -e
   if [ "$status" -ne 0 ]; then
