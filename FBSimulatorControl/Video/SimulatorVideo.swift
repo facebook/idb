@@ -25,6 +25,19 @@ public actor SimulatorVideo {
   public nonisolated let stream: SimulatorVideoStream
   private let fileWriter: SimulatorVideoFileWriter
   private var hasStopped = false
+  private var keyFrames: Task<Void, Never>?
+
+  /// How often the recording asks the encoder for a keyframe, at half the writer's fragment
+  /// interval so that a sync sample always falls between two fragment boundaries.
+  ///
+  /// A fragmented movie can only begin a fragment at a sync sample, and the encoder's keyframe
+  /// interval is a maximum in *source* duration: it can only be honoured on a frame, and the
+  /// simulator's screen supplies frames only as it changes. A screen that sits still through a slow
+  /// step stretches the gap between sync samples far past the nominal interval -- twelve seconds
+  /// against a nominal four, measured on a recording of the end-to-end suite -- and a fragment
+  /// boundary landing in that gap is refused, ending the recording. The request pushes a frame of
+  /// its own, so the gap is bounded by this interval whatever the screen is doing.
+  private static let keyFrameInterval = Duration.seconds(SimulatorVideoFileWriter.movieFragmentInterval.seconds / 2)
 
   public static func video(withFramebuffer framebuffer: Framebuffer, configuration: VideoStreamConfiguration, filePath: String, fileType: AVFileType = .mp4, edgeInsets: VideoStreamEdgeInsets = VideoStreamEdgeInsets(top: 0, bottom: 0, left: 0, right: 0), chaptersEnabled: Bool = false, logger: any ControlCoreLogger) -> SimulatorVideo {
     SimulatorVideo(framebuffer: framebuffer, configuration: configuration, filePath: filePath, fileType: fileType, edgeInsets: edgeInsets, chaptersEnabled: chaptersEnabled, logger: logger)
@@ -44,6 +57,13 @@ public actor SimulatorVideo {
     // passthrough muxing needs that sample's format); the stream's byte consumer is unused, so a
     // no-op consumer satisfies its streaming bookkeeping (and never reports back-pressure).
     try await stream.startStreaming(FBNullDataConsumer())
+    keyFrames = Task { [stream] in
+      while !Task.isCancelled {
+        try? await Task.sleep(for: Self.keyFrameInterval)
+        guard !Task.isCancelled else { return }
+        stream.requestKeyFrame()
+      }
+    }
   }
 
   /// The Unix timestamp of the recording's own media time zero, or nil before a frame was muxed.
@@ -67,6 +87,8 @@ public actor SimulatorVideo {
       return outputURL
     }
     hasStopped = true
+    keyFrames?.cancel()
+    keyFrames = nil
     // Stop the framebuffer push and flush the encoder (tearDown's VTCompressionSessionCompleteFrames
     // drains all pending frames into `fileWriter`) before finalizing the file's moov.
     try await stream.stopStreaming()

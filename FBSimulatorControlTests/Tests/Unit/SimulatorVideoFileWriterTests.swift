@@ -495,10 +495,7 @@ final class SimulatorVideoTests: XCTestCase {
     let url = try await video.stop()
 
     let longest = try await Self.longestStretchWithoutASyncSample(in: url, over: recorded)
-    // BUG: a still screen leaves the whole recording without a second sync sample, so a fragment
-    // boundary lands where there is none to begin the next fragment at — flipped in the following
-    // commit.
-    XCTAssertGreaterThan(longest, fragmentInterval, "longest stretch without a sync sample")
+    XCTAssertLessThanOrEqual(longest, fragmentInterval, "longest stretch without a sync sample")
   }
 
   func testSecondStopReturnsSameURLWithoutRefinalizing() async throws {
