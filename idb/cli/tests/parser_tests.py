@@ -1267,7 +1267,7 @@ class TestParser(TestCase):
             expected_value="Ready",
             expected_key=AccessibilitySearchableKey.VALUE,
             ignore_case=False,
-            backend=None,
+            backend=AccessibilityBackend.AXBRIDGE_PERSISTENT,
         )
 
     async def test_tap_ax_point(self) -> None:
@@ -1293,7 +1293,7 @@ class TestParser(TestCase):
             expected_value=None,
             expected_key=AccessibilitySearchableKey.LABEL,
             ignore_case=False,
-            backend=None,
+            backend=AccessibilityBackend.AXBRIDGE_PERSISTENT,
         )
 
     async def test_tap_marker_with_ignore_case(self) -> None:
@@ -1308,7 +1308,7 @@ class TestParser(TestCase):
             expected_value=None,
             expected_key=AccessibilitySearchableKey.LABEL,
             ignore_case=True,
-            backend=None,
+            backend=AccessibilityBackend.AXBRIDGE_PERSISTENT,
         )
 
     async def test_tap_marker_expected_value(self) -> None:
@@ -1333,7 +1333,7 @@ class TestParser(TestCase):
             expected_value="Ready",
             expected_key=AccessibilitySearchableKey.VALUE,
             ignore_case=False,
-            backend=None,
+            backend=AccessibilityBackend.AXBRIDGE_PERSISTENT,
         )
 
     async def test_tap_marker_on_the_guest_backend(self) -> None:
@@ -1351,6 +1351,23 @@ class TestParser(TestCase):
             backend=AccessibilityBackend.AXBRIDGE_PERSISTENT,
         )
 
+    async def test_tap_marker_on_the_host_backend(self) -> None:
+        # The escape hatch from the guest default, for a caller that wants the
+        # backend marker taps used before the default changed.
+        self.client_mock.accessibility_tap = AsyncMock(return_value=[])
+        await cli_main(cmd_input=["ui", "tap", "Login", "--api", "ax"])
+        self.client_mock.accessibility_tap.assert_called_once_with(
+            target=AccessibilityMarker(
+                value="Login",
+                match_key=AccessibilitySearchableKey.LABEL,
+                depth=10,
+            ),
+            expected_value=None,
+            expected_key=AccessibilitySearchableKey.LABEL,
+            ignore_case=False,
+            backend=AccessibilityBackend.AX,
+        )
+
     async def test_tap_point_on_the_guest_backend_is_not_a_hid_tap(self) -> None:
         # Naming an accessibility backend moves a coordinate off the HID path, the
         # same way --api ax always has.
@@ -1361,6 +1378,33 @@ class TestParser(TestCase):
         self.client_mock.accessibility_tap.assert_called_once_with(
             target=AccessibilityPoint(x=10, y=20),
             expected_value=None,
+            expected_key=AccessibilitySearchableKey.LABEL,
+            ignore_case=False,
+            backend=AccessibilityBackend.AXBRIDGE_PERSISTENT,
+        )
+
+    async def test_tap_coordinate_with_expected_value_and_api_hid(self) -> None:
+        # --expected-value moves even a coordinate onto the accessibility path, so
+        # `hid` reaches the backend resolution without naming an accessibility
+        # backend. It reads as no choice rather than raising.
+        self.client_mock.tap = AsyncMock(return_value=[])
+        self.client_mock.accessibility_tap = AsyncMock(return_value=[])
+        await cli_main(
+            cmd_input=[
+                "ui",
+                "tap",
+                "10",
+                "20",
+                "--api",
+                "hid",
+                "--expected-value",
+                "Ready",
+            ]
+        )
+        self.client_mock.tap.assert_not_called()
+        self.client_mock.accessibility_tap.assert_called_once_with(
+            target=AccessibilityPoint(x=10, y=20),
+            expected_value="Ready",
             expected_key=AccessibilitySearchableKey.LABEL,
             ignore_case=False,
             backend=AccessibilityBackend.AXBRIDGE_PERSISTENT,
@@ -1434,13 +1478,15 @@ class TestParser(TestCase):
         self.assertEqual(output.getvalue(), "")
 
     async def test_scroll_frontmost(self) -> None:
+        # No target is not a reason to fall back: the guest addresses the
+        # application by pid rather than by point.
         self.client_mock.accessibility_scroll = AsyncMock(return_value=[])
         await cli_main(cmd_input=["ui", "scroll", "down"])
         self.client_mock.accessibility_scroll.assert_called_once_with(
             target=None,
             direction=AccessibilityScrollDirection.DOWN,
             ignore_case=False,
-            backend=None,
+            backend=AccessibilityBackend.AXBRIDGE_PERSISTENT,
         )
 
     async def test_scroll_marker(self) -> None:
@@ -1454,7 +1500,7 @@ class TestParser(TestCase):
             ),
             direction=AccessibilityScrollDirection.UP,
             ignore_case=False,
-            backend=None,
+            backend=AccessibilityBackend.AXBRIDGE_PERSISTENT,
         )
 
     async def test_scroll_marker_with_ignore_case(self) -> None:
@@ -1468,7 +1514,7 @@ class TestParser(TestCase):
             ),
             direction=AccessibilityScrollDirection.UP,
             ignore_case=True,
-            backend=None,
+            backend=AccessibilityBackend.AXBRIDGE_PERSISTENT,
         )
 
     async def test_scroll_point(self) -> None:
@@ -1478,7 +1524,7 @@ class TestParser(TestCase):
             target=AccessibilityPoint(x=100, y=200),
             direction=AccessibilityScrollDirection.DOWN,
             ignore_case=False,
-            backend=None,
+            backend=AccessibilityBackend.AXBRIDGE_PERSISTENT,
         )
 
     async def test_scroll_on_the_guest_backend(self) -> None:
@@ -1510,7 +1556,7 @@ class TestParser(TestCase):
             ),
             value="hello",
             ignore_case=False,
-            backend=None,
+            backend=AccessibilityBackend.AXBRIDGE_PERSISTENT,
         )
 
     async def test_set_value_on_the_guest_backend(self) -> None:
@@ -1550,7 +1596,7 @@ class TestParser(TestCase):
             ),
             value="hello",
             ignore_case=True,
-            backend=None,
+            backend=AccessibilityBackend.AXBRIDGE_PERSISTENT,
         )
 
     async def test_drag_and_drop_points(self) -> None:
@@ -1563,7 +1609,7 @@ class TestParser(TestCase):
                 press_duration=None, duration=None, release_duration=None, delta=None
             ),
             ignore_case=False,
-            backend=None,
+            backend=AccessibilityBackend.AXBRIDGE_PERSISTENT,
         )
 
     async def test_drag_and_drop_on_the_guest_backend(self) -> None:
@@ -1620,7 +1666,7 @@ class TestParser(TestCase):
                 press_duration=None, duration=None, release_duration=None, delta=None
             ),
             ignore_case=False,
-            backend=None,
+            backend=AccessibilityBackend.AXBRIDGE_PERSISTENT,
         )
 
     async def test_drag_and_drop_markers_with_ignore_case(self) -> None:
@@ -1643,7 +1689,7 @@ class TestParser(TestCase):
                 press_duration=None, duration=None, release_duration=None, delta=None
             ),
             ignore_case=True,
-            backend=None,
+            backend=AccessibilityBackend.AXBRIDGE_PERSISTENT,
         )
 
     async def test_drag_and_drop_destination_overrides_the_source_key(self) -> None:
@@ -1677,7 +1723,7 @@ class TestParser(TestCase):
                 press_duration=None, duration=None, release_duration=None, delta=None
             ),
             ignore_case=False,
-            backend=None,
+            backend=AccessibilityBackend.AXBRIDGE_PERSISTENT,
         )
 
     async def test_drag_and_drop_timings(self) -> None:
@@ -1707,7 +1753,7 @@ class TestParser(TestCase):
                 press_duration=1.0, duration=2.0, release_duration=0.25, delta=5.0
             ),
             ignore_case=False,
-            backend=None,
+            backend=AccessibilityBackend.AXBRIDGE_PERSISTENT,
         )
 
     async def test_drag_and_drop_point_to_marker(self) -> None:
@@ -1725,7 +1771,7 @@ class TestParser(TestCase):
                 press_duration=None, duration=None, release_duration=None, delta=None
             ),
             ignore_case=False,
-            backend=None,
+            backend=AccessibilityBackend.AXBRIDGE_PERSISTENT,
         )
 
     async def test_drag_and_drop_marker_to_point(self) -> None:
@@ -1744,7 +1790,7 @@ class TestParser(TestCase):
                 press_duration=None, duration=None, release_duration=None, delta=None
             ),
             ignore_case=False,
-            backend=None,
+            backend=AccessibilityBackend.AXBRIDGE_PERSISTENT,
         )
 
     async def test_drag_and_drop_all_numeric_endpoints_read_the_source_greedily(
@@ -1767,7 +1813,7 @@ class TestParser(TestCase):
                 press_duration=None, duration=None, release_duration=None, delta=None
             ),
             ignore_case=False,
-            backend=None,
+            backend=AccessibilityBackend.AXBRIDGE_PERSISTENT,
         )
 
     async def test_drag_and_drop_rejects_a_bare_coordinate_pair(self) -> None:

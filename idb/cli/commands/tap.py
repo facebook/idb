@@ -9,6 +9,7 @@ from argparse import ArgumentParser, Namespace
 from enum import Enum, unique
 
 from idb.cli import ClientCommand
+from idb.cli.commands.accessibility import action_backend
 from idb.common.types import (
     ACCESSIBILITY_BACKEND_BY_NAME,
     ACCESSIBILITY_KEY_BY_NAME as _SEARCHABLE_KEY_NAMES,
@@ -60,8 +61,10 @@ class TapCommand(ClientCommand):
             default=None,
             help="How the tap is delivered: hid is a coordinate touch; ax and "
             "axbridge are accessibility presses, served by the named backend. "
-            "axbridge is the only one that can see across a process boundary, "
-            "such as web content in Safari. A marker is always a press.",
+            "A marker is always a press, served by axbridge unless this says "
+            "otherwise, because it is the only backend that can see across a "
+            "process boundary such as web content in Safari. A coordinate with "
+            "no choice here is a hid touch, as before.",
         )
         parser.add_argument(
             "--match-key",
@@ -158,5 +161,5 @@ class TapCommand(ClientCommand):
             expected_value=args.expected_value,
             expected_key=_SEARCHABLE_KEY_NAMES[args.expected_key],
             ignore_case=args.ignore_case,
-            backend=ACCESSIBILITY_BACKEND_BY_NAME.get(args.api),
+            backend=action_backend(args),
         )

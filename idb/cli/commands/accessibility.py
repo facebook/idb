@@ -205,19 +205,31 @@ def _add_backend_arg(parser: ArgumentParser) -> None:
         choices=list(ACCESSIBILITY_BACKEND_BY_NAME),
         default=None,
         help=(
-            "Which backend serves the read or action (default: the companion's "
-            "standard accessibility backend). axbridge uses the companion's "
-            "private, persistent guest reader, which is the only one that can "
-            "see across a process boundary such as web content in Safari. A "
-            "companion that predates backend selection ignores this and uses "
-            "the default backend."
+            "Which backend serves the read or action. axbridge uses the "
+            "companion's private, persistent guest reader, which is the only "
+            "one that can see across a process boundary such as web content in "
+            "Safari. Reads default to the companion's standard accessibility "
+            "backend; actions default to axbridge. A companion that predates "
+            "backend selection ignores this and uses the default backend."
         ),
     )
 
 
 def _backend(args: Namespace) -> AccessibilityBackend | None:
-    api = getattr(args, "api", None)
-    return ACCESSIBILITY_BACKEND_BY_NAME[api] if api else None
+    # `.get`, not a subscript: `tap` shares this flag with its hid/ax dispatch, so
+    # `--api hid` is a value that names no accessibility backend and has to read as
+    # no choice rather than raise.
+    return ACCESSIBILITY_BACKEND_BY_NAME.get(getattr(args, "api", None) or "")
+
+
+def action_backend(args: Namespace) -> AccessibilityBackend:
+    """The backend serving an action the caller did not choose a backend for.
+
+    Actions default to the guest reader where reads do not: the host backend
+    cannot see across a process boundary, so a marker a read resolves through
+    axbridge is one the host backend fails to find.
+    """
+    return _backend(args) or ACCESSIBILITY_BACKEND_BY_NAME["axbridge"]
 
 
 def _add_format_arg(parser: ArgumentParser) -> None:
@@ -496,7 +508,7 @@ class AccessibilityScrollCommand(ClientCommand):
             target=target,
             direction=AccessibilityScrollDirection[args.direction.upper()],
             ignore_case=args.ignore_case,
-            backend=_backend(args),
+            backend=action_backend(args),
         )
 
 
@@ -541,7 +553,7 @@ class AccessibilitySetValueCommand(ClientCommand):
             target=target,
             value=args.value,
             ignore_case=args.ignore_case,
-            backend=_backend(args),
+            backend=action_backend(args),
         )
 
 
@@ -643,5 +655,5 @@ class AccessibilityDragAndDropCommand(ClientCommand):
                 delta=args.delta,
             ),
             ignore_case=args.ignore_case,
-            backend=_backend(args),
+            backend=action_backend(args),
         )
