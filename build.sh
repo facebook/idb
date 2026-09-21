@@ -489,7 +489,7 @@ function generate_proto() {
     --grpc-swift_out=Visibility=Public,Client=true,Server=true:"$output_dir" \
     --plugin=protoc-gen-grpc-swift="$grpc_plugin" \
     --plugin=protoc-gen-swift="$swift_plugin" \
-    "$proto_dir/idb.proto"
+    "$proto_dir/idb.proto" || return
 
   echo "Generated gRPC Swift files in $output_dir"
 }

@@ -557,11 +557,8 @@ assert_contains "protoc reads the directory the published proto is exported from
 
 export PROTOC_STUB_FAIL=1
 output="$(in_package "$dir" 'generate_proto')"
-# BUG: protoc's status is not read, so a generation that wrote nothing is
-# reported as one that finished, and the build carries on to compile sources
-# that are not there -- flipped in the following commit.
-assert_equal "a failed protoc does not fail codegen" 0 "$?"
-assert_equal "the build is told generation finished" 1 \
+assert_equal "a failed protoc fails codegen" 9 "$?"
+assert_equal "the build is not told generation finished" 0 \
     "$(grep -c "Generated gRPC Swift files" <<< "$output")"
 unset PROTOC_STUB_FAIL
 
