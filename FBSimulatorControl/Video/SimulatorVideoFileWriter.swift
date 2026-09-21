@@ -67,7 +67,7 @@ final class SimulatorVideoFileWriter: EncodedSampleConsumer, TimedMetadataConsum
   /// describing where any of them are, and the file cannot be opened at all. Fragmenting bounds
   /// what an interrupted recording loses to the fragment in progress; five seconds costs ~0.1% in
   /// file size at 30fps.
-  private static let movieFragmentInterval = CMTime(seconds: 5, preferredTimescale: 600)
+  static let movieFragmentInterval = CMTime(seconds: 5, preferredTimescale: 600)
 
   private var assetWriter: AVAssetWriter?
   private var input: AVAssetWriterInput?

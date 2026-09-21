@@ -350,7 +350,7 @@ final class SimulatorVideoTests: XCTestCase {
   /// A recorder over a fake display surface writing to a temp path removed at teardown. The eager
   /// cadence (positive framesPerSecond) pushes frames on the clock from the mounted surface without
   /// needing frame-rendered events from the fake.
-  private func makeRecordingFixture(immediateSurface: IOSurface?, format: VideoStreamFormat = .compressedVideo(withCodec: .h264, transport: .fmp4), fileType: AVFileType = .mp4, chaptersEnabled: Bool = false) -> (video: SimulatorVideo, path: String) {
+  private func makeRecordingFixture(immediateSurface: IOSurface?, format: VideoStreamFormat = .compressedVideo(withCodec: .h264, transport: .fmp4), fileType: AVFileType = .mp4, chaptersEnabled: Bool = false, framesPerSecond: Int? = 30) -> (video: SimulatorVideo, path: String) {
     let extensionName = fileType == .mov ? "mov" : "mp4"
     let path = (NSTemporaryDirectory() as NSString).appendingPathComponent("SimulatorVideoTests-\(UUID().uuidString).\(extensionName)")
     addTeardownBlock { try? FileManager.default.removeItem(atPath: path) }
@@ -359,7 +359,7 @@ final class SimulatorVideoTests: XCTestCase {
     let framebuffer = Framebuffer(surface: surface, logger: CapturingLogger())
     let configuration = VideoStreamConfiguration(
       format: format,
-      framesPerSecond: 30,
+      framesPerSecond: framesPerSecond,
       rateControl: nil,
       scaleFactor: nil,
       keyFrameRate: nil)
@@ -447,6 +447,58 @@ final class SimulatorVideoTests: XCTestCase {
     let chapterTracks = try await asset.loadTracks(withMediaType: .text)
     let chapterTrack = try XCTUnwrap(chapterTracks.first)
     XCTAssertEqual(try SimulatorVideoFileWriterTests.readChapterTitles(track: chapterTrack, asset: asset), ["First", "Second"])
+  }
+
+  /// The longest stretch of `url`'s video track with no sync sample in it, over a recording that
+  /// ran for `duration`. Measured against how long the recording ran rather than against its last
+  /// frame, because a source that stops producing frames is the case this is about: the stretch
+  /// that matters is the one still open when the recorder is stopped.
+  private static func longestStretchWithoutASyncSample(in url: URL, over duration: TimeInterval) async throws -> TimeInterval {
+    let asset = AVURLAsset(url: url)
+    let tracks = try await asset.loadTracks(withMediaType: .video)
+    let track = try XCTUnwrap(tracks.first)
+    let reader = try AVAssetReader(asset: asset)
+    let output = AVAssetReaderTrackOutput(track: track, outputSettings: nil)
+    reader.add(output)
+    XCTAssertTrue(reader.startReading())
+    var previousSync = 0.0
+    var longest = 0.0
+    while let sample = output.copyNextSampleBuffer() {
+      let time = CMSampleBufferGetPresentationTimeStamp(sample).seconds
+      guard time.isFinite else { continue }
+      let attachments = CMSampleBufferGetSampleAttachmentsArray(sample, createIfNecessary: false) as? [[CFString: Any]]
+      guard (attachments?.first?[kCMSampleAttachmentKey_NotSync] as? Bool) != true else { continue }
+      longest = max(longest, time - previousSync)
+      previousSync = time
+    }
+    XCTAssertEqual(reader.status, .completed)
+    return max(longest, duration - previousSync)
+  }
+
+  /// A fragmented movie can only begin a fragment at a sync sample, so the recording has to carry
+  /// one at least as often as it flushes a fragment. The encoder's own keyframe interval cannot
+  /// promise that: it is a maximum in source duration and can only be honoured on a frame, and a
+  /// simulator screen that sits still through a slow step supplies almost none.
+  ///
+  /// Recorded here over a surface that never changes, which is that case at its worst: the
+  /// framebuffer signals a frame once, when the surface mounts, and nothing after it.
+  func testSyncSamplesKeepPaceWithTheFragmentIntervalWhileTheScreenIsStill() async throws {
+    try VideoEncodingHostSupport.skipUnlessHardwareH264Encoding()
+    let (video, path) = makeRecordingFixture(immediateSurface: makeTestIOSurface(width: 128, height: 128), framesPerSecond: nil)
+
+    try await video.startRecording()
+    try await waitForFirstSample(at: path)
+    let mediaZero = ContinuousClock.now
+    let fragmentInterval = SimulatorVideoFileWriter.movieFragmentInterval.seconds
+    try await Task.sleep(for: .seconds(fragmentInterval * 2))
+    let recorded = (ContinuousClock.now - mediaZero).seconds
+    let url = try await video.stop()
+
+    let longest = try await Self.longestStretchWithoutASyncSample(in: url, over: recorded)
+    // BUG: a still screen leaves the whole recording without a second sync sample, so a fragment
+    // boundary lands where there is none to begin the next fragment at — flipped in the following
+    // commit.
+    XCTAssertGreaterThan(longest, fragmentInterval, "longest stretch without a sync sample")
   }
 
   func testSecondStopReturnsSameURLWithoutRefinalizing() async throws {
