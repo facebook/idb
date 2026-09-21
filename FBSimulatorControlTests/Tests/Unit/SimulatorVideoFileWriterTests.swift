@@ -69,11 +69,12 @@ final class SimulatorVideoFileWriterTests: XCTestCase {
     // Read samples back rather than just loading the track list. A fragmented movie publishes its
     // tracks in the initial `moov`, so a track would be discoverable even with no usable fragment
     // behind it; the property worth asserting is that frames actually come back.
+    let minimumRecoveredSamples = 10
     let deadline = Date().addingTimeInterval(30)
     var recoveredSamples = 0
-    while recoveredSamples == 0 && Date() < deadline {
+    while recoveredSamples < minimumRecoveredSamples && Date() < deadline {
       recoveredSamples = (try? await Self.readableSampleCount(atPath: path)) ?? 0
-      if recoveredSamples == 0 {
+      if recoveredSamples < minimumRecoveredSamples {
         try await Task.sleep(nanoseconds: 200_000_000)
       }
     }
@@ -81,7 +82,7 @@ final class SimulatorVideoFileWriterTests: XCTestCase {
     // to be missing. The claim is that an interrupted recording keeps most of itself, not all.
     XCTAssertGreaterThanOrEqual(
       recoveredSamples,
-      10,
+      minimumRecoveredSamples,
       "an unfinished recording should hand back the frames in its completed fragments; logs=\(logger.messages)")
     XCTAssertLessThanOrEqual(recoveredSamples, frameCount, "cannot recover more frames than were appended")
 
