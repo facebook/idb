@@ -500,6 +500,13 @@ def artifact_directory() -> Path | None:
     return directory
 
 
+def _prepare_artifact_file(path: Path) -> None:
+    path.touch()
+    # Older companions preserve an existing mode but create logs too narrowly
+    # for the remote artifact uploader to read after the test exits.
+    path.chmod(0o644)
+
+
 class Companion:
     """Share a companion across tests.
 
@@ -517,6 +524,7 @@ class Companion:
             if artifacts is not None
             else self.directory / "companion.log"
         )
+        _prepare_artifact_file(self.log_path)
         self.process = subprocess.Popen(
             [
                 str(environment.companion_path.resolve()),

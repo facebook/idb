@@ -29,6 +29,7 @@ from unittest import mock
 from . import harness, recording as recording_module
 from .harness import (
     _optional_binary_from_environment,
+    _prepare_artifact_file,
     client_argv,
     Companion,
     CompanionDied,
@@ -1120,6 +1121,19 @@ class ExpectedFailureTest(unittest.IsolatedAsyncioTestCase):
 
 
 class CompanionLifecycleTests(unittest.TestCase):
+    def test_prepared_companion_log_is_uploader_readable_without_truncation(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            log = Path(directory) / "companion.log"
+            log.write_text("existing log\n")
+            log.chmod(0o600)
+
+            _prepare_artifact_file(log)
+
+            self.assertEqual(log.read_text(), "existing log\n")
+            self.assertEqual(log.stat().st_mode & 0o777, 0o644)
+
     def test_running_companion_has_no_exit_error(self) -> None:
         self.assertIsNone(companion(None).died())
 
