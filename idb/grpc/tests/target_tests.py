@@ -5,13 +5,17 @@
 # LICENSE file in the root directory of this source tree.
 
 
-from unittest import TestCase
+import unittest
+from unittest.mock import AsyncMock, MagicMock
 
 from idb.common.types import CompanionInfo, TargetDescription, TargetType, TCPAddress
+from idb.grpc.client import Client
+from idb.grpc.idb_pb2 import FocusRequest
 from idb.grpc.target import merge_connected_targets
+from idb.utils.testing import TestCase
 
 
-class TargetTests(TestCase):
+class TargetTests(unittest.TestCase):
     def test_merge_connected_targets(self) -> None:
         merged_targets = merge_connected_targets(
             local_targets=[
@@ -134,3 +138,17 @@ class TargetTests(TestCase):
                 ),
             ],
         )
+
+
+class FocusTests(TestCase):
+    def setUp(self) -> None:
+        super().setUp()
+        self.client = Client.__new__(Client)
+        self.client.logger = MagicMock()
+        self.client.stub = MagicMock()
+        self.client.stub.focus = AsyncMock()
+
+    async def test_focus_sends_one_unary_request(self) -> None:
+        await self.client.focus()
+
+        self.client.stub.focus.assert_awaited_once_with(FocusRequest())

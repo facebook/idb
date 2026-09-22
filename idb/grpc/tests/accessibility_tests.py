@@ -27,6 +27,7 @@ from idb.grpc.idb_pb2 import (
     AccessibilityActionRequest,
     AccessibilityActionResponse,
     AccessibilityInfoRequest,
+    Point,
 )
 from idb.utils.testing import TestCase
 
@@ -188,6 +189,117 @@ class AccessibilityInfoRequestTests(TestCase):
         self.assertEqual(request.match, "Cart")
         self.assertEqual(request.filter, AccessibilityInfoRequest.FILTER_INTERACTABLE)
         self.assertEqual(request.backend, AccessibilityInfoRequest.AXBRIDGE)
+
+
+class AccessibilityActionTests(TestCase):
+    def setUp(self) -> None:
+        super().setUp()
+        self.client = Client.__new__(Client)
+        self.client.logger = MagicMock()
+        self.client.stub = MagicMock()
+        self.client.stub.accessibility_action = AsyncMock()
+
+    async def test_every_action_request_maps_exactly(self) -> None:
+        cases = [
+            (
+                "tap",
+                lambda: self.client.accessibility_tap(
+                    AccessibilityMarker(
+                        "Tap",
+                        AccessibilitySearchableKey.UNIQUE_ID,
+                        3,
+                    ),
+                    expected_value="selected",
+                    expected_key=AccessibilitySearchableKey.VALUE,
+                    ignore_case=True,
+                ),
+                AccessibilityActionRequest(
+                    marker="Tap",
+                    match_key=AccessibilitySearchableKey.UNIQUE_ID.value,
+                    depth=3,
+                    ignore_case=True,
+                    tap=AccessibilityActionRequest.Tap(
+                        check_expected_value=True,
+                        expected_value="selected",
+                        expected_key=AccessibilitySearchableKey.VALUE.value,
+                    ),
+                ),
+            ),
+            (
+                "scroll",
+                lambda: self.client.accessibility_scroll(
+                    None,
+                    AccessibilityScrollDirection.RIGHT,
+                    ignore_case=True,
+                ),
+                AccessibilityActionRequest(
+                    ignore_case=True,
+                    scroll=AccessibilityActionRequest.Scroll(
+                        direction=AccessibilityScrollDirection.RIGHT.value,
+                    ),
+                ),
+            ),
+            (
+                "set_value",
+                lambda: self.client.accessibility_set_value(
+                    AccessibilityMarker(
+                        "Field",
+                        AccessibilitySearchableKey.VALUE,
+                        6,
+                    ),
+                    "replacement",
+                    ignore_case=True,
+                ),
+                AccessibilityActionRequest(
+                    marker="Field",
+                    match_key=AccessibilitySearchableKey.VALUE.value,
+                    depth=6,
+                    ignore_case=True,
+                    set_value=AccessibilityActionRequest.SetValue(
+                        value="replacement",
+                    ),
+                ),
+            ),
+            (
+                "drag",
+                lambda: self.client.accessibility_drag(
+                    AccessibilityPoint(1, 2),
+                    AccessibilityMarker(
+                        "Destination",
+                        AccessibilitySearchableKey.TITLE,
+                        7,
+                    ),
+                    AccessibilityDragOptions(
+                        press_duration=0.25,
+                        duration=0.5,
+                        release_duration=0.75,
+                        delta=4.0,
+                    ),
+                    ignore_case=True,
+                ),
+                AccessibilityActionRequest(
+                    point=Point(x=1, y=2),
+                    ignore_case=True,
+                    drag=AccessibilityActionRequest.Drag(
+                        marker="Destination",
+                        destination_match_key=AccessibilitySearchableKey.TITLE.value,
+                        destination_depth=7,
+                        press_duration=0.25,
+                        duration=0.5,
+                        release_duration=0.75,
+                        delta=4.0,
+                    ),
+                ),
+            ),
+        ]
+
+        for action, invoke, expected_request in cases:
+            with self.subTest(action=action):
+                self.client.stub.accessibility_action.reset_mock()
+                await invoke()
+                self.client.stub.accessibility_action.assert_awaited_once_with(
+                    expected_request
+                )
 
 
 class AccessibilityWaitTests(TestCase):

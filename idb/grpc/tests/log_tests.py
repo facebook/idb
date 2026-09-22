@@ -6,9 +6,14 @@
 
 
 import asyncio
-from typing import AsyncIterator
+from collections.abc import AsyncIterator
 from unittest import IsolatedAsyncioTestCase
 from unittest.mock import AsyncMock, MagicMock, patch
+
+from idb.grpc.client import Client
+from idb.grpc.idb_pb2 import LogRequest, LogResponse
+from idb.grpc.tests.stream_test_support import make_client, ScriptedStream
+from idb.utils.testing import TestCase
 
 
 class MockMessage:
@@ -37,9 +42,6 @@ class LogDecodingTest(IsolatedAsyncioTestCase):
         (like "…" which is 0xe2 0x80 0xa6) gets split at a 64KB buffer boundary.
         Without the incremental decoder fix, this would raise UnicodeDecodeError.
         """
-        from idb.grpc.client import Client
-        from idb.grpc.idb_pb2 import LogRequest
-
         # Create mock messages that simulate a split multi-byte character
         # "Hello…world" where "…" (ellipsis = 0xe2 0x80 0xa6) is split across messages
         chunk1 = b"Hello\xe2"  # First byte of ellipsis at end
@@ -91,9 +93,6 @@ class LogDecodingTest(IsolatedAsyncioTestCase):
 
     async def test_tail_specific_logs_handles_invalid_utf8_gracefully(self) -> None:
         """Test that truly invalid UTF-8 sequences are replaced, not crashed on."""
-        from idb.grpc.client import Client
-        from idb.grpc.idb_pb2 import LogRequest
-
         # 0xff is never valid in UTF-8
         chunk = b"Hello \xff world"
 
@@ -130,3 +129,75 @@ class LogDecodingTest(IsolatedAsyncioTestCase):
         combined = "".join(results)
         # The invalid byte should be replaced with the Unicode replacement character
         self.assertEqual(combined, "Hello \ufffd world")
+
+
+class LogStreamTests(TestCase):
+    async def test_target_and_companion_requests_cancel_and_eof(self) -> None:
+        target_arguments: tuple[tuple[str, list[str] | None], ...] = (
+            ("implicit", None),
+            ("empty", []),
+            ("collect", ["collect"]),
+            ("config", ["config"]),
+            ("erase", ["erase"]),
+            ("show", ["show"]),
+            ("stream", ["stream", "--style", "json"]),
+            ("stats", ["stats"]),
+            ("native", ["unrecognized", "--native-flag"]),
+        )
+        cases = (
+            (
+                "companion",
+                True,
+                None,
+                LogRequest(source=LogRequest.COMPANION),
+            ),
+            *(
+                (
+                    name,
+                    False,
+                    arguments,
+                    LogRequest(arguments=arguments, source=LogRequest.TARGET),
+                )
+                for name, arguments in target_arguments
+            ),
+        )
+
+        for name, companion, arguments, expected_request in cases:
+            for termination in ("cancel", "eof"):
+                with self.subTest(name=name, termination=termination):
+                    stream = ScriptedStream(
+                        LogResponse(output=b"log"),
+                        block_after_responses=termination == "cancel",
+                    )
+                    client, open_rpc = make_client("log", stream)
+                    stop = asyncio.Event()
+                    iterator = (
+                        client.tail_companion_logs(stop=stop)
+                        if companion
+                        else client.tail_logs(stop=stop, arguments=arguments)
+                    )
+
+                    self.assertEqual(await anext(iterator), "log")
+                    if termination == "cancel":
+                        stop.set()
+                    with self.assertRaises(StopAsyncIteration):
+                        await anext(iterator)
+
+                    if termination == "eof":
+                        # Complete stop_wrapper's normal-EOF stop task.
+                        stop.set()
+                        await asyncio.sleep(0)
+
+                    self.assertEqual(stream.sent, [(expected_request, True)])
+                    self.assertEqual(
+                        sum(action == "cancel" for action, _ in stream.transcript),
+                        1 if termination == "cancel" else 0,
+                    )
+                    self.assertEqual(
+                        stream.read_cancellations,
+                        1 if termination == "cancel" else 0,
+                    )
+                    self.assertNotIn(("end", None), stream.transcript)
+                    open_rpc.assert_called_once_with()
+                    self.assertTrue(stream.entered)
+                    self.assertTrue(stream.exited)

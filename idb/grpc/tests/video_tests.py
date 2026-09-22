@@ -7,11 +7,18 @@
 
 import asyncio
 from collections.abc import AsyncIterator
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
-from idb.common.types import CompanionInfo, DomainSocketAddress
+from idb.common.types import CompanionInfo, DomainSocketAddress, VideoFormat
 from idb.grpc.client import Client
-from idb.grpc.idb_pb2 import Payload, RecordRequest, RecordResponse
+from idb.grpc.idb_pb2 import (
+    Payload,
+    RecordRequest,
+    RecordResponse,
+    VideoStreamRequest,
+    VideoStreamResponse,
+)
+from idb.grpc.tests.stream_test_support import make_client, ScriptedStream
 from idb.grpc.video import generate_video_bytes
 from idb.utils.testing import TestCase
 
@@ -121,6 +128,169 @@ class RecordVideoTests(TestCase):
         # Nothing echoes a request that set no options, so warning on one would fire every time.
         await self._record(_FakeStream())
         self.logger.warning.assert_not_called()
+
+    async def test_local_and_remote_stop_and_publication_transcript(self) -> None:
+        applied = _echo(
+            fps=15,
+            scale_factor=0.5,
+            avg_bitrate=1_000_000,
+            key_frame_rate=2,
+        )
+        first = _payload(b"first")
+        second = _payload(b"second")
+
+        for name, is_local, output_file in (
+            ("local_path", True, "out.mp4"),
+            ("local_dash", True, "-"),
+            ("remote_path", False, "out.mp4"),
+            ("remote_dash", False, "-"),
+        ):
+            with self.subTest(name=name):
+                terminal = RecordResponse(log_output=output_file.encode())
+                responses = (
+                    (applied, terminal) if is_local else (applied, first, second)
+                )
+                stream = ScriptedStream[RecordResponse](*responses)
+                client, open_rpc = make_client(
+                    "record",
+                    stream,
+                    is_local=is_local,
+                )
+                publications: list[tuple[str, list[bytes]]] = []
+
+                async def publish(
+                    stream: AsyncIterator[bytes],
+                    output_path: str,
+                    publication_log: list[tuple[str, list[bytes]]] = publications,
+                ) -> None:
+                    publication_log.append(
+                        (output_path, [chunk async for chunk in stream])
+                    )
+
+                with patch("idb.grpc.client.drain_gzip_decompress", new=publish):
+                    await client.record_video(
+                        stop=self.stop,
+                        output_file=output_file,
+                        fps=15,
+                        scale_factor=0.5,
+                        bitrate=1_000_000,
+                        key_frame_rate=2,
+                    )
+
+                start = RecordRequest(
+                    start=RecordRequest.Start(
+                        file_path=output_file if is_local else "",
+                        fps=15,
+                        scale_factor=0.5,
+                        avg_bitrate=1_000_000,
+                        key_frame_rate=2,
+                    )
+                )
+                prefix = [
+                    ("send", start),
+                    ("send", RecordRequest(stop=RecordRequest.Stop())),
+                    ("end", None),
+                ]
+                expected_transcript = (
+                    prefix + [("recv", applied), ("recv", terminal)]
+                    if is_local
+                    else prefix
+                    + [
+                        ("recv", applied),
+                        ("recv", first),
+                        ("recv", second),
+                        ("recv", None),
+                    ]
+                )
+                self.assertEqual(stream.transcript, expected_transcript)
+                self.assertEqual(
+                    publications,
+                    [] if is_local else [(output_file, [b"first", b"second"])],
+                )
+                open_rpc.assert_called_once_with()
+                client.logger.warning.assert_not_called()
+
+
+class VideoStreamTests(TestCase):
+    async def test_start_payload_stop_and_output_destination(self) -> None:
+        first = VideoStreamResponse(payload=Payload(data=b"first"))
+        second = VideoStreamResponse(payload=Payload(data=b"second"))
+
+        for name, is_local, output_file in (
+            ("local_stdout", True, None),
+            ("local_file", True, "out.h264"),
+            ("local_dash", True, "-"),
+            ("remote_stdout", False, None),
+            ("remote_file", False, "out.h264"),
+            ("remote_dash", False, "-"),
+        ):
+            with self.subTest(name=name):
+                responses = (
+                    () if is_local and output_file is not None else (first, second)
+                )
+                stream = ScriptedStream[VideoStreamResponse](*responses)
+                client, open_rpc = make_client(
+                    "video_stream",
+                    stream,
+                    is_local=is_local,
+                )
+                publications: list[tuple[str, list[bytes]]] = []
+
+                async def publish(
+                    stream: AsyncIterator[bytes],
+                    file_path: str,
+                    publication_log: list[tuple[str, list[bytes]]] = publications,
+                ) -> None:
+                    publication_log.append(
+                        (file_path, [chunk async for chunk in stream])
+                    )
+
+                with patch("idb.grpc.client.drain_to_file", new=publish):
+                    output = [
+                        chunk
+                        async for chunk in client.stream_video(
+                            output_file=output_file,
+                            fps=15,
+                            format=VideoFormat.H264,
+                            compression_quality=0.2,
+                            scale_factor=0.5,
+                        )
+                    ]
+
+                start = VideoStreamRequest(
+                    start=VideoStreamRequest.Start(
+                        file_path=(
+                            output_file if is_local and output_file is not None else ""
+                        ),
+                        fps=15,
+                        format=VideoStreamRequest.H264,
+                        compression_quality=0.2,
+                        scale_factor=0.5,
+                    )
+                )
+                self.assertEqual(
+                    stream.transcript,
+                    [
+                        ("send", start),
+                        *[("recv", response) for response in responses],
+                        ("recv", None),
+                        ("send", VideoStreamRequest(stop=VideoStreamRequest.Stop())),
+                        ("end", None),
+                    ],
+                )
+                self.assertEqual(
+                    output,
+                    [b"first", b"second"] if output_file is None else [],
+                )
+                self.assertEqual(
+                    publications,
+                    (
+                        [(output_file, [b"first", b"second"])]
+                        if not is_local and output_file is not None
+                        else []
+                    ),
+                )
+                open_rpc.assert_called_once_with()
 
 
 class VideoTests(TestCase):
