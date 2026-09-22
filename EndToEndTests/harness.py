@@ -55,6 +55,8 @@ SUITE_CAPABILITY_ENV = "IDB_E2E_SUITE_CAPABILITY"
 IDB_E2E_RECORDER_PATH_ENV = "IDB_E2E_RECORDER_PATH"
 STRICT_ENV = "IDB_E2E_STRICT"
 ARTIFACTS_ENV = "IDB_E2E_ARTIFACTS_DIR"
+ROUTE_ATTESTATION_ENV = "IDB_E2E_ROUTER_ATTESTATION"
+EXPECTED_IMPLEMENTATION_ENV = "IDB_E2E_EXPECTED_IMPLEMENTATION"
 
 T = TypeVar("T")
 
@@ -83,6 +85,7 @@ COMPANION_READY_TIMEOUT_SECONDS = 180.0
 ACCESSIBILITY_READY_TIMEOUT_SECONDS = 180.0
 DEFAULT_COMMAND_TIMEOUT_SECONDS = 120.0
 INSTALL_TIMEOUT_SECONDS = 300.0
+ROUTE_ATTESTATION_TIMEOUT_SECONDS = 10.0
 
 
 class HarnessError(Exception):
@@ -183,6 +186,30 @@ def classify_failure(completed: Completed) -> FailureKind:
 
 def strict() -> bool:
     return os.environ.get(STRICT_ENV) == "1"
+
+
+def expected_implementation() -> str | None:
+    value = os.environ.get(EXPECTED_IMPLEMENTATION_ENV)
+    if value is None:
+        return None
+    if value not in {"python", "rust"}:
+        raise HarnessError(
+            f"{EXPECTED_IMPLEMENTATION_ENV}={value!r} is not 'python' or 'rust'"
+        )
+    return value
+
+
+def verify_route_attestation(path: Path, expected: str) -> None:
+    try:
+        actual = path.read_text().strip()
+    except OSError as error:
+        raise HarnessError(
+            f"the {expected} lane produced no route attestation at {path}: {error}"
+        ) from None
+    if actual != expected:
+        raise HarnessError(
+            f"the {expected} lane executed the {actual or '<empty>'} sidecar"
+        )
 
 
 def suite_capability() -> SuiteCapability:
@@ -874,13 +901,25 @@ class IdbEndToEndTestCase(unittest.IsolatedAsyncioTestCase):
     def simctl(self) -> Simctl:
         return self.environment.simctl
 
+    def _route_attestation(self) -> tuple[dict[str, str], Path]:
+        attestation = self.make_temporary_directory() / "selected"
+        environment = dict(os.environ)
+        environment[ROUTE_ATTESTATION_ENV] = str(attestation)
+        return environment, attestation
+
     async def run_client(
         self,
         argv: Sequence[str],
         timeout: float,
         stdin: bytes | None = None,
     ) -> Completed:
-        return await run(argv, timeout=timeout, stdin=stdin)
+        expected = expected_implementation()
+        if expected is None:
+            return await run(argv, timeout=timeout, stdin=stdin)
+        environment, attestation = self._route_attestation()
+        completed = await run(argv, timeout=timeout, stdin=stdin, env=environment)
+        verify_route_attestation(attestation, expected)
+        return completed
 
     async def idb(
         self,
@@ -1027,6 +1066,12 @@ class IdbEndToEndTestCase(unittest.IsolatedAsyncioTestCase):
         process_config: IdbProcessConfig | None = None,
     ) -> "IdbProcess":
         """Start a streaming command and stop it when the async context exits."""
+        expected = expected_implementation()
+        environment = None
+        expected_route = None
+        if expected is not None:
+            environment, attestation = self._route_attestation()
+            expected_route = (attestation, expected)
         return IdbProcess(
             idb_argv(self.environment, self.companion, *args),
             " ".join(args),
@@ -1034,6 +1079,8 @@ class IdbEndToEndTestCase(unittest.IsolatedAsyncioTestCase):
             failure=self.fail,
             recording=self.recording,
             config=process_config,
+            env=environment,
+            route_attestation=expected_route,
         )
 
     def fail_or_skip_for(self, what: str, completed: Completed) -> NoReturn:
@@ -1333,6 +1380,7 @@ class IdbProcess:
         config: IdbProcessConfig | None = None,
         env: Mapping[str, str] | None = None,
         cwd: Path | None = None,
+        route_attestation: tuple[Path, str] | None = None,
     ) -> None:
         self._argv = list(argv)
         self._display_argv = list(display_argv or argv)
@@ -1342,6 +1390,7 @@ class IdbProcess:
         self._config = config or IdbProcessConfig()
         self._env = None if env is None else dict(env)
         self._cwd = cwd
+        self._route_attestation = route_attestation
         self._process: asyncio.subprocess.Process | None = None
         self._captures: dict[ProcessStream, _OutputSpool] = {}
         self._reader_tasks: dict[ProcessStream, asyncio.Task[None]] = {}
@@ -1386,6 +1435,11 @@ class IdbProcess:
             self._close_spools()
             raise
         self._start_tasks(process)
+        try:
+            await self._wait_for_route_attestation()
+        except BaseException:
+            await self.aclose()
+            raise
         return self
 
     async def __aexit__(
@@ -1433,6 +1487,32 @@ class IdbProcess:
         }
         self._completion_task = asyncio.create_task(
             self._complete(), name="idb-e2e-process-completion"
+        )
+
+    async def _wait_for_route_attestation(self) -> None:
+        if self._route_attestation is None:
+            return
+        path, expected = self._route_attestation
+
+        async def inspect() -> None:
+            if not path.exists():
+                completion = self._require_completion()
+                if completion.done():
+                    await completion
+                    stderr = self.spooled_output(ProcessStream.STDERR).decode(
+                        errors="replace"
+                    )
+                    raise HarnessError(
+                        f"idb {self._what} exited with {self.returncode} before "
+                        f"attesting the {expected} route\nstderr: {stderr}"
+                    )
+                raise NotReady(f"the route attestation file does not exist at {path}")
+            verify_route_attestation(path, expected)
+
+        await wait_until(
+            f"idb {self._what} did not attest the {expected} route",
+            ROUTE_ATTESTATION_TIMEOUT_SECONDS,
+            inspect,
         )
 
     async def _drain(self, stream: ProcessStream, reader: asyncio.StreamReader) -> None:

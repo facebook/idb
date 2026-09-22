@@ -34,6 +34,7 @@ from .harness import (
     CompanionDied,
     Completed,
     Deadline,
+    EXPECTED_IMPLEMENTATION_ENV,
     HarnessError,
     IDB_SETUP_BIN_ENV,
     IdbEndToEndTestCase,
@@ -41,6 +42,7 @@ from .harness import (
     IdbProcessConfig,
     NotReady,
     ProcessStream,
+    ROUTE_ATTESTATION_ENV,
     run_with_registered_cleanup,
     running_bundle_ids_from_listing,
     select_tests_for_capability,
@@ -236,6 +238,114 @@ class ClientArgumentTests(unittest.TestCase):
                 )
 
         self.assertEqual(selected, Path(executable.name))
+
+
+class RouteAttestationTests(unittest.IsolatedAsyncioTestCase):
+    def case(self) -> IdbEndToEndTestCase:
+        case = IdbEndToEndTestCase()
+        self.addCleanup(case.doCleanups)
+        return case
+
+    @mock.patch.dict(
+        os.environ,
+        {EXPECTED_IMPLEMENTATION_ENV: "rust"},
+        clear=True,
+    )
+    async def test_run_client_supplies_and_verifies_a_fresh_path(self) -> None:
+        paths: list[Path] = []
+
+        async def run_attested(
+            argv: Sequence[str],
+            timeout: float,
+            stdin: bytes | None = None,
+            env: dict[str, str] | None = None,
+        ) -> Completed:
+            self.assertEqual(argv, ["idb", "describe"])
+            self.assertEqual(timeout, 1.0)
+            self.assertIsNone(stdin)
+            self.assertIsNotNone(env)
+            assert env is not None
+            path = Path(env[ROUTE_ATTESTATION_ENV])
+            paths.append(path)
+            path.write_text("rust\n")
+            return Completed(0, b"ok", b"")
+
+        with mock.patch.object(harness, "run", side_effect=run_attested):
+            case = self.case()
+            first = await case.run_client(["idb", "describe"], timeout=1.0)
+            second = await case.run_client(["idb", "describe"], timeout=1.0)
+
+        self.assertEqual(first.stdout, b"ok")
+        self.assertEqual(second.stdout, b"ok")
+        self.assertEqual(len(set(paths)), 2)
+
+    @mock.patch.dict(
+        os.environ,
+        {EXPECTED_IMPLEMENTATION_ENV: "rust"},
+        clear=True,
+    )
+    async def test_run_client_rejects_the_wrong_route(self) -> None:
+        async def run_wrong_route(
+            argv: Sequence[str],
+            timeout: float,
+            stdin: bytes | None = None,
+            env: dict[str, str] | None = None,
+        ) -> Completed:
+            assert env is not None
+            Path(env[ROUTE_ATTESTATION_ENV]).write_text("python\n")
+            return Completed(0, b"", b"")
+
+        with (
+            mock.patch.object(harness, "run", side_effect=run_wrong_route),
+            self.assertRaisesRegex(HarnessError, "executed the python sidecar"),
+        ):
+            await self.case().run_client(["idb", "describe"], timeout=1.0)
+
+    async def test_streaming_process_attests_before_it_is_yielded(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            attestation = Path(directory) / "selected"
+            environment = dict(os.environ)
+            environment[ROUTE_ATTESTATION_ENV] = str(attestation)
+            script = (
+                "import os, time; from pathlib import Path; "
+                f"Path(os.environ[{ROUTE_ATTESTATION_ENV!r}]).write_text('rust\\n'); "
+                "print('ready', flush=True); time.sleep(60)"
+            )
+            async with IdbProcess(
+                [sys.executable, "-u", "-c", script],
+                "log",
+                env=environment,
+                route_attestation=(attestation, "rust"),
+                config=IdbProcessConfig(
+                    graceful_stop_seconds=0.1,
+                    kill_wait_seconds=1.0,
+                ),
+            ) as process:
+                self.assertEqual(attestation.read_text(), "rust\n")
+                self.assertEqual((await process.read_some(1.0)).strip(), b"ready")
+
+    async def test_streaming_process_rejects_the_wrong_route_before_yield(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            attestation = Path(directory) / "selected"
+            environment = dict(os.environ)
+            environment[ROUTE_ATTESTATION_ENV] = str(attestation)
+            script = (
+                "import os, time; from pathlib import Path; "
+                f"Path(os.environ[{ROUTE_ATTESTATION_ENV!r}]).write_text('python\\n'); "
+                "time.sleep(60)"
+            )
+            with self.assertRaisesRegex(HarnessError, "executed the python sidecar"):
+                async with IdbProcess(
+                    [sys.executable, "-u", "-c", script],
+                    "log",
+                    env=environment,
+                    route_attestation=(attestation, "rust"),
+                    config=IdbProcessConfig(
+                        graceful_stop_seconds=0.1,
+                        kill_wait_seconds=1.0,
+                    ),
+                ):
+                    self.fail("the process was yielded before route attestation")
 
 
 class IdbProcessTests(unittest.IsolatedAsyncioTestCase):
