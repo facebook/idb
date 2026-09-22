@@ -16,6 +16,7 @@ private enum BridgeService: String {
   case notifications
   case proxy
   case accessibility
+  case orientation
   case repl
 }
 
@@ -30,11 +31,12 @@ private enum BridgeService: String {
   func notifications(_ action: String, bundleID: String?) -> Int32
   func proxy(_ action: String, arguments: [String]) -> Int32
   func accessibility(_ action: String, arguments: [String]) -> Int32
+  func orientation(_ action: String, arguments: [String]) -> Int32
   func repl(_ socketPath: String?, libraryPath: String) -> Int32
 }
 
 @objc public final class FBBridgeCommand: NSObject {
-  private static let serviceNames = "contacts, dns, dynamic-store, photos, notifications, health, proxy, accessibility, repl"
+  private static let serviceNames = "contacts, dns, dynamic-store, photos, notifications, health, proxy, accessibility, orientation, repl"
 
   @objc public static func run(arguments: [String], services: FBBridgeServiceHandling) -> Int32 {
     guard arguments.count >= 3 else {
@@ -65,6 +67,7 @@ private enum BridgeService: String {
     case .notifications: return services.notifications(action, bundleID: arguments.first)
     case .proxy: return services.proxy(action, arguments: arguments)
     case .accessibility: return services.accessibility(action, arguments: arguments)
+    case .orientation: return services.orientation(action, arguments: arguments)
     case .repl:
       guard action == "start" else {
         NSLog("Unknown repl action: %@", action)

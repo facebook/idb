@@ -188,12 +188,12 @@ public final class SimulatorHID: CustomStringConvertible, @unchecked Sendable {
   // MARK: - Purple / GSEvents
 
   /// Rotates through vendor HID when device motion is supported, otherwise through Purple.
-  func sendOrientation(_ orientation: SimulatorHIDDeviceOrientation) async throws {
+  func sendOrientation(_ orientation: SimulatorHIDDeviceOrientation, legacyPurpleEncoding: Bool = true) async throws {
     guard let simulator else { throw WeakTargetError.simulator }
     do {
       try await SimulatorMotionCapability.deviceMotionState.requireSupported(on: simulator)
     } catch SimulatorCoreDeviceError.unsupported {
-      try await purple.sendOrientation(orientation)
+      try await purple.sendOrientation(legacyPurpleEncoding ? orientation : orientation.physicalPurpleOrientation)
       return
     }
     try await sendVendorEvent(orientation.vendorEvent(), on: simulator)

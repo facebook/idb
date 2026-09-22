@@ -29,3 +29,15 @@ extension SimulatorHIDDeviceOrientation {
     return IndigoVendorDefinedEvent(usagePage: 0xff61, usage: 0x5b, version: 0, data: serialized as Data)
   }
 }
+
+extension SimulatorHIDDeviceOrientation {
+  // The legacy HID API uses interface-style landscape numbers. BackBoard's physical device
+  // convention swaps those values; keep the legacy event API stable for existing clients.
+  var physicalPurpleOrientation: Self {
+    switch self {
+    case .landscapeLeft: return .landscapeRight
+    case .landscapeRight: return .landscapeLeft
+    case .portrait, .portraitUpsideDown: return self
+    }
+  }
+}

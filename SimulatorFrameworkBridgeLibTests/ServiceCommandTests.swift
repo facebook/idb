@@ -10,6 +10,11 @@ import Foundation
 import XCTest
 
 final class ServiceCommandTests: XCTestCase {
+  func testOrientationRejectsWritesAndExtraArguments() {
+    XCTAssertEqual(FBOrientationService.run(action: "set", arguments: []), 1)
+    XCTAssertEqual(FBOrientationService.run(action: "get", arguments: ["ignored"]), 1)
+  }
+
   func testIncompleteCommandDoesNotCallAService() {
     let services = RecordingServices()
     for arguments in [[], ["bridge"], ["bridge", "dns"]] {
@@ -26,7 +31,7 @@ final class ServiceCommandTests: XCTestCase {
 
   func testEachRouteReceivesItsOriginalArgumentShape() {
     let services = RecordingServices()
-    for service in ["contacts", "dns", "dynamic-store", "photos", "notifications", "health", "proxy", "accessibility"] {
+    for service in ["contacts", "dns", "dynamic-store", "photos", "notifications", "health", "proxy", "accessibility", "orientation"] {
       XCTAssertEqual(FBBridgeCommand.dispatch(service: service, action: "action", arguments: ["bundle", "type1", "type2"], services: services), 23)
     }
     XCTAssertEqual(
@@ -40,6 +45,7 @@ final class ServiceCommandTests: XCTestCase {
         Call(service: "health", action: "action", arguments: ["bundle", "type1", "type2"]),
         Call(service: "proxy", action: "action", arguments: ["bundle", "type1", "type2"]),
         Call(service: "accessibility", action: "action", arguments: ["bundle", "type1", "type2"]),
+        Call(service: "orientation", action: "action", arguments: ["bundle", "type1", "type2"]),
       ])
   }
 
@@ -94,5 +100,6 @@ private final class RecordingServices: NSObject, FBBridgeServiceHandling {
   func notifications(_ action: String, bundleID: String?) -> Int32 { record("notifications", action, [bundleID]) }
   func proxy(_ action: String, arguments: [String]) -> Int32 { record("proxy", action, arguments) }
   func accessibility(_ action: String, arguments: [String]) -> Int32 { record("accessibility", action, arguments) }
+  func orientation(_ action: String, arguments: [String]) -> Int32 { record("orientation", action, arguments) }
   func repl(_ socketPath: String?, libraryPath: String) -> Int32 { record("repl", "start", [socketPath, libraryPath]) }
 }

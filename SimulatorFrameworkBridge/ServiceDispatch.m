@@ -84,6 +84,11 @@
   return handleAccessibilityAction(action, arguments);
 }
 
+- (int32_t)orientation:(NSString *)action arguments:(NSArray<NSString *> *)arguments
+{
+  return [FBOrientationService runWithAction:action arguments:arguments];
+}
+
 - (int32_t)repl:(NSString *)socketPath libraryPath:(NSString *)libraryPath
 {
   // The socket server and injected IDB API must use libRepl's one control connection.

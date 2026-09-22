@@ -258,6 +258,10 @@ extension Simulator {
     SimulatorDisplayCommands.commands(with: self)
   }
 
+  public var orientation: SimulatorOrientationCommands {
+    SimulatorOrientationCommands.commands(with: self)
+  }
+
   public var hinge: SimulatorHingeCommands {
     SimulatorHingeCommands.commands(with: self)
   }

@@ -27,6 +27,7 @@ enum SimulatorCommandAccessor: CaseIterable, Sendable {
   case xctraceRecord
   case instruments
   case lifecycle
+  case orientation
   case power
   case media
   case keychain
@@ -76,6 +77,8 @@ enum SimulatorCommandAccessor: CaseIterable, Sendable {
       _ = simulator.instruments
     case .lifecycle:
       _ = simulator.lifecycle
+    case .orientation:
+      _ = simulator.orientation
     case .power:
       _ = simulator.power
     case .media:

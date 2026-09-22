@@ -11,6 +11,7 @@
  #import <SimulatorFrameworkBridgeRuntime/AccessibilityResponseEncoder.h>
  #import <SimulatorFrameworkBridgeRuntime/AccessibilityWireValue.h>
  #import <SimulatorFrameworkBridgeRuntime/ContactsStoreClient.h>
+ #import <SimulatorFrameworkBridgeRuntime/DeviceStateClient.h>
  #import <SimulatorFrameworkBridgeRuntime/HealthSettingsClient.h>
  #import <SimulatorFrameworkBridgeRuntime/NetworkConfigurationStore.h>
  #import <SimulatorFrameworkBridgeRuntime/NotificationSettingsClient.h>
@@ -21,6 +22,7 @@
  #import "Runtime/AccessibilityResponseEncoder.h"
  #import "Runtime/AccessibilityWireValue.h"
  #import "Runtime/ContactsStoreClient.h"
+ #import "Runtime/DeviceStateClient.h"
  #import "Runtime/HealthSettingsClient.h"
  #import "Runtime/NetworkConfigurationStore.h"
  #import "Runtime/NotificationSettingsClient.h"
