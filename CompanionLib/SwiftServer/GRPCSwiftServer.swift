@@ -37,6 +37,11 @@ public final class GRPCSwiftServer: @unchecked Sendable {
   /// throughput a function of latency rather than bandwidth.
   private static let targetWindowSize = 8 * 1024 * 1024
 
+  /// The most concurrent streams one client may open. The transport leaves this unlimited, but
+  /// each stream can hold a subprocess or an exclusive simulator operation, so without a cap a
+  /// client can open work faster than the companion retires it.
+  private static let maximumConcurrentStreams = 100
+
   private let shutdownLock = NSLock()
   private var didInitiateShutdown = false
   /// The task running `serve()`; cancelling it is the forceful close.
@@ -78,6 +83,7 @@ public final class GRPCSwiftServer: @unchecked Sendable {
       config: .defaults { config in
         config.rpc.maxRequestPayloadSize = Self.maximumReceiveMessageLength
         config.http2.targetWindowSize = Self.targetWindowSize
+        config.http2.maxConcurrentStreams = Self.maximumConcurrentStreams
       },
       eventLoopGroup: group)
 
