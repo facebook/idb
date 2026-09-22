@@ -102,7 +102,7 @@ public final class SimulatorDebugServerCommands: DebugServerCommands {
       launchMode: .failIfRunning
     )
     let launchedApp = try await (applicationLauncher ?? simulator.application).launch(configuration)
-    let debugTask = try await bridgeFBFuture(debugServerTask(forPort: port, processIdentifier: launchedApp.processIdentifier, simulator: simulator, debugServerPath: debugServerPath))
+    let debugTask = try await debugServerTask(forPort: port, processIdentifier: launchedApp.processIdentifier, simulator: simulator, debugServerPath: debugServerPath)
     let lldbBootstrapCommands = [
       "process connect connect://localhost:\(port)"
     ]
@@ -112,15 +112,15 @@ public final class SimulatorDebugServerCommands: DebugServerCommands {
     )
   }
 
-  private func debugServerTask(forPort port: in_port_t, processIdentifier: pid_t, simulator: Simulator, debugServerPath: String) -> FBFuture<FBSubprocess<NSNull, AnyObject, AnyObject>> {
+  private func debugServerTask(forPort port: in_port_t, processIdentifier: pid_t, simulator: Simulator, debugServerPath: String) async throws -> FBSubprocess<NSNull, AnyObject, AnyObject> {
     let logger = simulator.logger
-    return
+    return try await bridgeFBFuture(
       FBProcessBuilder<NSNull, AnyObject, AnyObject>
-      .withLaunchPath(debugServerPath)
-      .withArguments(["localhost:\(port)", "--attach", "\(processIdentifier)"])
-      .withStdOut(to: logger)
-      .withStdErr(to: logger)
-      .start()
-      .retyped(FBFuture<FBSubprocess<NSNull, AnyObject, AnyObject>>.self)
+        .withLaunchPath(debugServerPath)
+        .withArguments(["localhost:\(port)", "--attach", "\(processIdentifier)"])
+        .withStdOut(to: logger)
+        .withStdErr(to: logger)
+        .start()
+        .retyped(FBFuture<FBSubprocess<NSNull, AnyObject, AnyObject>>.self))
   }
 }
