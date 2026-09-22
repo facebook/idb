@@ -11,7 +11,14 @@ import XCTest
 final class SimulatorOrientationSmokeTests: ProvidedSimulatorTestCase {
   func testPhysicalOrientationRoundTrips() async throws {
     let simulator = self.simulator!
-    let original = try await simulator.orientation.current()
+    let original: SimulatorDeviceOrientation
+    do {
+      original = try await simulator.orientation.current()
+    } catch SimulatorCoreDeviceError.unsupported(let reason) {
+      // A runtime that vends neither the motion capability nor the orientation feature has no
+      // physical orientation to round trip.
+      throw XCTSkip(reason)
+    }
     guard (try? original.hidOrientation) != nil else {
       throw XCTSkip("Requires a restorable non-flat initial orientation")
     }
