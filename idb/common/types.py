@@ -21,6 +21,25 @@ from typing import IO, Optional, Union
 LoggingMetadata = dict[str, Optional[Union[str, list[str], int, float]]]
 
 
+@dataclass
+class AccessibilitySearchDiagnostics:
+    """Nonmatching values of the searched key from the final poll only."""
+
+    unmatched_values: list[str] = field(default_factory=list)
+    truncated: bool = False
+    read_error: str | None = None
+
+
+@dataclass
+class AccessibilityWaitResult:
+    found: bool
+    message: str | None = None
+    diagnostics: AccessibilitySearchDiagnostics | None = None
+
+    def __bool__(self) -> bool:
+        return self.found
+
+
 class IdbException(Exception):
     pass
 
@@ -1044,8 +1063,25 @@ class Client(ABC):
         poll_interval: float = 0.5,
         backend: AccessibilityBackend = AccessibilityBackend.AXBRIDGE,
     ) -> bool:
-        """Return True when found, False on timeout; propagate operation failures."""
+        """Wait for a marker; return False on timeout and propagate other failures."""
         pass
+
+    async def accessibility_wait_result(
+        self,
+        target: AccessibilityMarker,
+        timeout: float = 10.0,
+        poll_interval: float = 0.5,
+        backend: AccessibilityBackend = AccessibilityBackend.AXBRIDGE,
+    ) -> AccessibilityWaitResult:
+        """Return available wait details, falling back to the boolean API for older clients."""
+        return AccessibilityWaitResult(
+            found=await self.accessibility_wait(
+                target=target,
+                timeout=timeout,
+                poll_interval=poll_interval,
+                backend=backend,
+            )
+        )
 
     @abstractmethod
     async def accessibility_tap(

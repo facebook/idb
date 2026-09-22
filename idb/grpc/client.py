@@ -52,7 +52,9 @@ from idb.common.types import (
     AccessibilityPoint,
     AccessibilityScrollDirection,
     AccessibilitySearchableKey,
+    AccessibilitySearchDiagnostics,
     AccessibilityTarget,
+    AccessibilityWaitResult,
     Address,
     AppProcessState,
     Client as ClientBase,
@@ -529,6 +531,37 @@ class Client(ClientBase):
         poll_interval: float = 0.5,
         backend: AccessibilityBackend = AccessibilityBackend.AXBRIDGE,
     ) -> bool:
+        return (
+            await self._accessibility_wait_result(
+                target=target,
+                timeout=timeout,
+                poll_interval=poll_interval,
+                backend=backend,
+            )
+        ).found
+
+    @log_and_handle_exceptions("accessibility_wait_result")
+    async def accessibility_wait_result(
+        self,
+        target: AccessibilityMarker,
+        timeout: float = 10.0,
+        poll_interval: float = 0.5,
+        backend: AccessibilityBackend = AccessibilityBackend.AXBRIDGE,
+    ) -> AccessibilityWaitResult:
+        return await self._accessibility_wait_result(
+            target=target,
+            timeout=timeout,
+            poll_interval=poll_interval,
+            backend=backend,
+        )
+
+    async def _accessibility_wait_result(
+        self,
+        target: AccessibilityMarker,
+        timeout: float,
+        poll_interval: float,
+        backend: AccessibilityBackend,
+    ) -> AccessibilityWaitResult:
         response = await self.stub.accessibility_action(
             AccessibilityActionRequest(
                 marker=target.value,
@@ -542,11 +575,25 @@ class Client(ClientBase):
                 ),
             )
         )
-        if response.wait_result == AccessibilityActionResponse.FOUND:
-            return True
-        if response.wait_result == AccessibilityActionResponse.TIMED_OUT:
-            return False
-        raise IdbException("The companion did not report a wait result")
+        wait = response.wait
+        result = wait.result if response.HasField("wait") else response.wait_result
+        if result not in (
+            AccessibilityActionResponse.FOUND,
+            AccessibilityActionResponse.TIMED_OUT,
+        ):
+            raise IdbException("The companion did not report a wait result")
+        diagnostics = None
+        if wait.HasField("diagnostics"):
+            diagnostics = AccessibilitySearchDiagnostics(
+                unmatched_values=list(wait.diagnostics.unmatched_values),
+                truncated=wait.diagnostics.truncated,
+                read_error=wait.diagnostics.read_error or None,
+            )
+        return AccessibilityWaitResult(
+            found=result == AccessibilityActionResponse.FOUND,
+            message=wait.message or None,
+            diagnostics=diagnostics,
+        )
 
     @log_and_handle_exceptions("accessibility_tap")
     async def accessibility_tap(

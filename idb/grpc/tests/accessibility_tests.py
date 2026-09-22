@@ -19,6 +19,9 @@ from idb.common.types import (
     AccessibilityPoint,
     AccessibilityScrollDirection,
     AccessibilitySearchableKey,
+    AccessibilitySearchDiagnostics,
+    AccessibilityWaitResult,
+    Client as BaseClient,
     IdbException,
 )
 from idb.grpc.accessibility import accessibility_info_to_grpc
@@ -312,7 +315,12 @@ class AccessibilityWaitTests(TestCase):
 
     async def test_wait_sends_marker_and_options(self) -> None:
         self.client.stub.accessibility_action.return_value = (
-            AccessibilityActionResponse(wait_result=AccessibilityActionResponse.FOUND)
+            AccessibilityActionResponse(
+                wait_result=AccessibilityActionResponse.TIMED_OUT,
+                wait=AccessibilityActionResponse.WaitResponse(
+                    result=AccessibilityActionResponse.FOUND,
+                ),
+            )
         )
         found = await self.client.accessibility_wait(
             AccessibilityMarker("General", AccessibilitySearchableKey.UNIQUE_ID, 12),
@@ -320,7 +328,7 @@ class AccessibilityWaitTests(TestCase):
             poll_interval=0.25,
             backend=AccessibilityBackend.AX,
         )
-        self.assertTrue(found)
+        self.assertIs(found, True)
         self.client.stub.accessibility_action.assert_awaited_once_with(
             AccessibilityActionRequest(
                 marker="General",
@@ -360,16 +368,112 @@ class AccessibilityWaitTests(TestCase):
                 wait_result=AccessibilityActionResponse.TIMED_OUT
             )
         )
-        self.assertFalse(
-            await self.client.accessibility_wait(AccessibilityMarker("missing"))
+        self.assertIs(
+            await self.client.accessibility_wait(AccessibilityMarker("missing")), False
         )
 
-    async def test_missing_wait_result_is_an_error(self) -> None:
+    async def test_wait_returns_diagnostics_and_message(self) -> None:
         self.client.stub.accessibility_action.return_value = (
-            AccessibilityActionResponse()
+            AccessibilityActionResponse(
+                wait_result=AccessibilityActionResponse.FOUND,
+                wait=AccessibilityActionResponse.WaitResponse(
+                    result=AccessibilityActionResponse.TIMED_OUT,
+                    message="Timed out waiting for AXLabel containing 'missing'",
+                    diagnostics=AccessibilityActionResponse.WaitDiagnostics(
+                        unmatched_values=["Settings", "General"],
+                        truncated=True,
+                    ),
+                ),
+            )
         )
-        with self.assertRaisesRegex(IdbException, "did not report a wait result"):
-            await self.client.accessibility_wait(AccessibilityMarker("missing"))
+        result = await self.client.accessibility_wait_result(
+            AccessibilityMarker("missing")
+        )
+        self.assertFalse(result)
+        self.assertEqual(
+            result,
+            AccessibilityWaitResult(
+                found=False,
+                message="Timed out waiting for AXLabel containing 'missing'",
+                diagnostics=AccessibilitySearchDiagnostics(
+                    unmatched_values=["Settings", "General"], truncated=True
+                ),
+            ),
+        )
+
+    async def test_wait_distinguishes_missing_empty_and_failed_observations(
+        self,
+    ) -> None:
+        target = AccessibilityMarker("missing")
+        for payload, found in [(b"\x08\x01", True), (b"\x08\x02", False)]:
+            with self.subTest(legacy_wire=payload):
+                self.client.stub.accessibility_action.return_value = (
+                    AccessibilityActionResponse.FromString(payload)
+                )
+                self.assertEqual(
+                    await self.client.accessibility_wait_result(target),
+                    AccessibilityWaitResult(found=found),
+                )
+                self.assertIs(await self.client.accessibility_wait(target), found)
+                legacy = MagicMock(spec=BaseClient)
+                legacy.accessibility_wait = AsyncMock(return_value=found)
+                self.assertEqual(
+                    await BaseClient.accessibility_wait_result(legacy, target),
+                    AccessibilityWaitResult(found=found),
+                )
+                legacy.accessibility_wait.assert_awaited_once_with(
+                    target=target,
+                    timeout=10.0,
+                    poll_interval=0.5,
+                    backend=AccessibilityBackend.AXBRIDGE,
+                )
+        for wire, expected in [
+            (None, None),
+            (
+                AccessibilityActionResponse.WaitDiagnostics(),
+                AccessibilitySearchDiagnostics(),
+            ),
+            (
+                AccessibilityActionResponse.WaitDiagnostics(
+                    read_error="app unavailable"
+                ),
+                AccessibilitySearchDiagnostics(read_error="app unavailable"),
+            ),
+        ]:
+            with self.subTest(diagnostics=wire):
+                self.client.stub.accessibility_action.return_value = (
+                    AccessibilityActionResponse(
+                        wait=AccessibilityActionResponse.WaitResponse(
+                            result=AccessibilityActionResponse.TIMED_OUT,
+                            diagnostics=wire,
+                        ),
+                    )
+                )
+                result = await self.client.accessibility_wait_result(
+                    AccessibilityMarker("missing")
+                )
+                self.assertFalse(result.found)
+                self.assertEqual(result.diagnostics, expected)
+
+    async def test_missing_wait_result_is_an_error(self) -> None:
+        for response in [
+            AccessibilityActionResponse(),
+            AccessibilityActionResponse(wait_result=99),
+            AccessibilityActionResponse(
+                wait_result=AccessibilityActionResponse.FOUND,
+                wait=AccessibilityActionResponse.WaitResponse(),
+            ),
+            AccessibilityActionResponse(
+                wait_result=AccessibilityActionResponse.FOUND,
+                wait=AccessibilityActionResponse.WaitResponse(result=99),
+            ),
+        ]:
+            with self.subTest(response=response):
+                self.client.stub.accessibility_action.return_value = response
+                with self.assertRaisesRegex(
+                    IdbException, "did not report a wait result"
+                ):
+                    await self.client.accessibility_wait(AccessibilityMarker("missing"))
 
     async def test_transport_failure_is_not_a_timeout_result(self) -> None:
         self.client.stub.accessibility_action.side_effect = GRPCError(
