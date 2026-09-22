@@ -1219,6 +1219,23 @@ final class AccessibilityRuntimeTests: XCTestCase {
     assertEqualObjects(runtime.operations, ["hitTest", "setValue", "readAttributes"])
   }
 
+  func testSetValueStopsBeforeADelayedValueCanBeConfirmed() {
+    for firstRead in [FBAXReadOutcome.applicationNotResponding(), FBAXReadOutcome.read([kAXValue: "old"])] {
+      self.seedHitElement(withAttributes: [:])
+      runtime.writeOutcome = FBAXWriteOutcome.applicationNotResponding()
+      runtime.readOutcomes = [firstRead, FBAXReadOutcome.read([kAXValue: "hello"])]
+      runtime.operations.removeAllObjects()
+      let writesBefore = runtime.setValueCount
+
+      let response = FBAXBridgeHandleRequest(["verb": "setvalue", "x": 30, "y": 40, "value": "hello"])
+
+      assertEqualObjects(axValue(response, "error_kind"), "application_not_responding")
+      XCTAssertEqual(runtime.setValueCount, writesBefore + 1)
+      assertEqualObjects(runtime.operations, ["hitTest", "setValue", "readAttributes"])
+      XCTAssertEqual(runtime.readOutcomes.count, 1)
+    }
+  }
+
   func testSetValueTimeoutIsPreservedWithoutAnExactStringValue() {
     let cases: [(String, Any?)] = [
       ("hello", "different"),

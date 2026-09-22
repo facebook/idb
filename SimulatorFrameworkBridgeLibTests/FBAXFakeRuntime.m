@@ -256,6 +256,7 @@ NSDictionary<NSString *, id> *FBAXGeometryDictionaryProbe(BOOL rectangle, BOOL r
     return nil;
   }
   _operations = [NSMutableArray array];
+  _readOutcomes = @[];
   _translatorResponses = @[];
   _translatorRequests = [NSMutableArray array];
   _snapshotResults = @[];
@@ -439,6 +440,11 @@ static NSDictionary *FBAXFakeSnapshotNode(FBAXFakeElement *element,
   [self recordOperation:@"readAttributes"];
   // Recorded before the outcome switch, so a read that fails still evidences what it asked for.
   _lastReadAttributes = [attributes copy];
+  if (self.readOutcomes.count > 0) {
+    FBAXReadOutcome *outcome = self.readOutcomes.firstObject;
+    self.readOutcomes = [self.readOutcomes subarrayWithRange:NSMakeRange(1, self.readOutcomes.count - 1)];
+    return outcome;
+  }
   if (self.readRaiseReason) {
     [NSException raise:NSInternalInconsistencyException format:@"%@", self.readRaiseReason];
   }

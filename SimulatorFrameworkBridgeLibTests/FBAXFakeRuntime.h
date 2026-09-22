@@ -201,6 +201,8 @@ NSDictionary<NSString *, id> *FBAXGeometryDictionaryProbe(BOOL rectangle, BOOL r
 @property (nonatomic, readonly) NSUInteger setValueCount;
 /** The attribute list the most recent read asked for — the fake echoes what the element holds, so this is the only evidence of the ask. */
 @property (nullable, nonatomic, readonly, copy) NSArray<NSString *> *lastReadAttributes;
+/** Scripted read responses, consumed before the element's default response. */
+@property (nonatomic, copy) NSArray<FBAXReadOutcome *> *readOutcomes;
 
 /** The point of the most recent hit-test, and the pid it was scoped to (0 for display-wide). */
 @property (nonatomic, readonly) CGPoint lastHitTestPoint;

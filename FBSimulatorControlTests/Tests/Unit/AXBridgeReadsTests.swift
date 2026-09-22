@@ -651,6 +651,61 @@ final class AXBridgeReadsTests: XCTestCase {
     ])
   }
 
+  private func tapMatchingEnvelope() throws -> Data {
+    try envelope([
+      "ok": true, "pid": 42,
+      "tree": [
+        AXWire.Node.label.rawValue: "General",
+        AXWire.Node.frame.rawValue: CGRectCreateDictionaryRepresentation(CGRect(x: 10, y: 100, width: 100, height: 44)),
+      ],
+    ])
+  }
+
+  func testMarkerTapStopsAtATransientTargetReadTimeout() async throws {
+    let (reader, transport) = try nativeWaitReader(responses: [
+      waitErrorEnvelope("application_not_responding"), tapMatchingEnvelope(), envelope(["ok": true, "pid": 42]),
+    ])
+    do {
+      try await reader.tap(.marker(value: "General", key: .label, depth: 10), options: TapOptions())
+      XCTFail("the first target read timeout currently ends the tap")
+    } catch UIAutomationError.applicationNotResponding {
+    }
+    let reads = await transport.readCount
+    let writes = await transport.writeCount
+    XCTAssertEqual(reads, 1)
+    XCTAssertEqual(writes, 0)
+  }
+
+  func testMarkerTapDoesNotRepeatATimedOutWrite() async throws {
+    let (reader, transport) = try nativeWaitReader(responses: [
+      tapMatchingEnvelope(), waitErrorEnvelope("application_not_responding"), envelope(["ok": true, "pid": 42]),
+    ])
+    do {
+      try await reader.tap(.marker(value: "General", key: .label, depth: 10), options: TapOptions())
+      XCTFail("a timed-out press has an unknown outcome")
+    } catch UIAutomationError.applicationNotResponding {
+    }
+    let reads = await transport.readCount
+    let writes = await transport.writeCount
+    XCTAssertEqual(reads, 1)
+    XCTAssertEqual(writes, 1)
+  }
+
+  func testMarkerTapBoundsTargetReadAttempts() async throws {
+    let (reader, transport) = try nativeWaitReader(responses: [
+      waitErrorEnvelope("application_not_responding"), waitErrorEnvelope("application_not_responding"), tapMatchingEnvelope(),
+    ])
+    do {
+      try await reader.tap(.marker(value: "General", key: .label, depth: 10), options: TapOptions())
+      XCTFail("an unresolved target must fail")
+    } catch UIAutomationError.applicationNotResponding {
+    }
+    let reads = await transport.readCount
+    let writes = await transport.writeCount
+    XCTAssertEqual(reads, 1)
+    XCTAssertEqual(writes, 0)
+  }
+
   private func assertNativeWaitRecovers(from kind: String) async throws {
     let (reader, transport) = try nativeWaitReader(responses: [
       waitErrorEnvelope(kind), waitMatchingEnvelope(),
@@ -2445,13 +2500,18 @@ final class AXKeySetTests: XCTestCase {
 private actor StubAXBridgeWaitTransport: AXBridgeTransport {
   private var responses: [Data]
   private(set) var readCount = 0
+  private(set) var writeCount = 0
 
   init(responses: [Data]) {
     self.responses = responses
   }
 
   func send(_ request: AXBridgeRequest) async throws -> Data {
-    readCount += 1
+    if case .write = request {
+      writeCount += 1
+    } else {
+      readCount += 1
+    }
     guard !responses.isEmpty else {
       throw AXBridgeError.bridgeUnavailable
     }
