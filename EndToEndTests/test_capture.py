@@ -7,33 +7,13 @@
 
 from __future__ import annotations
 
-import unittest
-
-from .harness import IdbEndToEndTestCase, select_tests_for_capability, SuiteCapability
+from .harness import IdbEndToEndTestCase
 
 PNG_SIGNATURE = b"\x89PNG\r\n\x1a\n"
 
 SETTINGS_BUNDLE_ID = "com.apple.Preferences"
 
 LOG_TIMEOUT_SECONDS = 60.0
-
-CAPTURE_TEST_CAPABILITIES = {
-    "test_log_streams_simulator_output": SuiteCapability.LONG_LIVED_STREAM,
-    "test_screenshot_writes_a_png_to_a_file_and_to_stdout": SuiteCapability.ARTIFACT_PUBLICATION,
-}
-
-
-def load_tests(
-    loader: unittest.TestLoader,
-    tests: unittest.TestSuite,
-    pattern: str | None,
-) -> unittest.TestSuite:
-    return select_tests_for_capability(
-        loader,
-        tests,
-        CaptureTests,
-        CAPTURE_TEST_CAPABILITIES,
-    )
 
 
 class CaptureTests(IdbEndToEndTestCase):
