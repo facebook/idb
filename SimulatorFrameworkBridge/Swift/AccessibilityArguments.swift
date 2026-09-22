@@ -48,8 +48,7 @@ public final class FBAXBridgeArguments: NSObject {
       return fallback
     }
     let scanner = Scanner(string: value)
-    var seconds: Int32 = 0
-    guard scanner.scanInt32(&seconds), scanner.isAtEnd, seconds > 0 else {
+    guard let seconds = scanner.scanInt32(), scanner.isAtEnd, seconds > 0 else {
       NSLog("[AccessibilityService] ignoring unusable --idle-timeout '%@'; using %ds", value, fallback)
       return fallback
     }
