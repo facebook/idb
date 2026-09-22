@@ -79,6 +79,8 @@ final class XCTestProcess {
       return "Missing executable"
     case 13: // TestShimExitCodeXCTestFailedLoading
       return "XCTest Framework failed loading"
+    case 14: // TestShimExitCodeTestListWriteError
+      return "Failed to write the test list"
     default:
       return "Unknown xctest exit code \(exitCode)"
     }

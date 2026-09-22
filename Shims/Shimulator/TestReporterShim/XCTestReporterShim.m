@@ -553,13 +553,20 @@ static void listBundle(NSString *testBundlePath, NSString *outputFile)
   }];
   NSError *error = nil;
   NSData *output = [NSJSONSerialization dataWithJSONObject:testsToReport options:0 error:&error];
-  NSCAssert(output, @"Failed to generate test list JSON", error);
-  bool fileWrittenSuccessfully = [fileHandle writeData:output error:&error];
-  NSCAssert(fileWrittenSuccessfully, @"Failed to write test list to file", error);
+  if (!output) {
+    fprintf(stderr, "Failed to generate test list JSON: %s\n", error.localizedDescription.UTF8String);
+    exit(TestShimExitCodeTestListWriteError);
+  }
+  if (![fileHandle writeData:output error:&error]) {
+    fprintf(stderr, "Failed to write test list: %s\n", error.localizedDescription.UTF8String);
+    exit(TestShimExitCodeTestListWriteError);
+  }
 
   // Close the file so the other end knows this is the end of the input.
-  bool fileClosedSuccessfully = [fileHandle closeAndReturnError:&error];
-  NSCAssert(fileClosedSuccessfully, @"Failed to close file with test list", error);
+  if (![fileHandle closeAndReturnError:&error]) {
+    fprintf(stderr, "Failed to close file with test list: %s\n", error.localizedDescription.UTF8String);
+    exit(TestShimExitCodeTestListWriteError);
+  }
   NSLog(@"Completed writing test list to %@", outputFile);
   exit(TestShimExitCodeSuccess);
 }

@@ -13,6 +13,7 @@ typedef NS_ENUM(NSInteger, TestShimExitCode) {
   TestShimExitCodeBundleOpenError = 11,
   TestShimExitCodeMissingExecutable = 12,
   TestShimExitCodeXCTestFailedLoading = 13,
+  TestShimExitCodeTestListWriteError = 14,
 };
 
 static NSString *const kReporter_TimestampKey = @"timestamp";
