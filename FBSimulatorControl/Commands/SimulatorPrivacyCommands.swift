@@ -10,7 +10,6 @@
 @preconcurrency import Foundation
 
 public enum SimulatorPrivacyError: Error {
-  case noDataDirectory
   case noDataDirectoryForPlists
   case noServicesToGrant(bundleIDs: Set<String>)
   case noBundleIDsToGrant(services: Set<TargetSettingsService>)
@@ -23,18 +22,11 @@ public enum SimulatorPrivacyError: Error {
   case schemeApprovalPlistUnreadable(path: String)
   case schemeApprovalDirectoryCreationFailed(underlying: Error)
   case schemeApprovalPlistWriteFailed
-  case tccDatabaseMissing(path: String)
-  case tccDatabaseIsDirectory(path: String)
-  case tccDatabaseNotWritable(path: String)
-  case sqliteTaskFailed(exitCode: Int, stdOut: String, stdErr: String)
-  case sqliteCommandFailed(stderr: String)
 }
 
 extension SimulatorPrivacyError: LocalizedError {
   public var errorDescription: String? {
     switch self {
-    case .noDataDirectory:
-      return "Simulator has no data directory"
     case .noDataDirectoryForPlists:
       return "The Simulator has no data directory, so its plists cannot be located"
     case let .noServicesToGrant(bundleIDs):
@@ -59,16 +51,6 @@ extension SimulatorPrivacyError: LocalizedError {
       return "Failed to create folders for scheme approval plist"
     case .schemeApprovalPlistWriteFailed:
       return "Failed to write scheme approval plist"
-    case let .tccDatabaseMissing(path):
-      return "Expected file to exist at path \(path) but it was not there"
-    case let .tccDatabaseIsDirectory(path):
-      return "Expected file to exist at path \(path) but it is a directory"
-    case let .tccDatabaseNotWritable(path):
-      return "Database file at path \(path) is not writable"
-    case let .sqliteTaskFailed(exitCode, stdOut, stdErr):
-      return "Task did not exit 0: \(exitCode) \(stdOut) \(stdErr)"
-    case let .sqliteCommandFailed(stderr):
-      return "Failed to execute sqlite command: \(stderr)"
     }
   }
 }
@@ -99,7 +81,7 @@ public struct SimulatorPrivacyCommands {
     }
 
     var toApprove = services
-    let coreSimulatorSettingMapping = Self.coreSimulatorSettingMapping(forOSVersion: simulator.osVersion)
+    let coreSimulatorSettingMapping = Self.coreSimulatorSettingMapping
 
     if simulator.device.responds(to: NSSelectorFromString("setPrivacyAccessForService:bundleID:granted:error:")) {
       let simDeviceServices = toApprove.intersection(Set(coreSimulatorSettingMapping.keys))
@@ -114,10 +96,10 @@ public struct SimulatorPrivacyCommands {
         try coreSimulatorApprove(withBundleIDs: bundleIDs, toServices: internalServices)
       }
     }
-    if !toApprove.isEmpty && !toApprove.isDisjoint(with: Set(Self.tccDatabaseMapping.keys)) {
-      let tccServices = toApprove.intersection(Set(Self.tccDatabaseMapping.keys))
+    if !toApprove.isEmpty && !toApprove.isDisjoint(with: Set(Self.privacyServiceMapping.keys)) {
+      let tccServices = toApprove.intersection(Set(Self.privacyServiceMapping.keys))
       toApprove.subtract(tccServices)
-      try await modifyTCCDatabase(withBundleIDs: bundleIDs, toServices: tccServices, grantAccess: true)
+      try await updatePrivacyService(bundleIDs, services: tccServices, approve: true)
     }
     if !toApprove.isEmpty && toApprove.contains(TargetSettingsService.location) {
       try await authorizeLocationSettings(Array(bundleIDs))
@@ -146,7 +128,7 @@ public struct SimulatorPrivacyCommands {
     }
 
     var toRevoke = services
-    let coreSimulatorSettingMapping = Self.coreSimulatorSettingMapping(forOSVersion: simulator.osVersion)
+    let coreSimulatorSettingMapping = Self.coreSimulatorSettingMapping
 
     if simulator.device.responds(to: NSSelectorFromString("setPrivacyAccessForService:bundleID:granted:error:")) {
       let simDeviceServices = toRevoke.intersection(Set(coreSimulatorSettingMapping.keys))
@@ -161,10 +143,10 @@ public struct SimulatorPrivacyCommands {
         try coreSimulatorRevoke(withBundleIDs: bundleIDs, toServices: internalServices)
       }
     }
-    if !toRevoke.isEmpty && !toRevoke.isDisjoint(with: Set(Self.tccDatabaseMapping.keys)) {
-      let tccServices = toRevoke.intersection(Set(Self.tccDatabaseMapping.keys))
+    if !toRevoke.isEmpty && !toRevoke.isDisjoint(with: Set(Self.privacyServiceMapping.keys)) {
+      let tccServices = toRevoke.intersection(Set(Self.privacyServiceMapping.keys))
       toRevoke.subtract(tccServices)
-      try await modifyTCCDatabase(withBundleIDs: bundleIDs, toServices: tccServices, grantAccess: false)
+      try await updatePrivacyService(bundleIDs, services: tccServices, approve: false)
     }
     if !toRevoke.isEmpty && toRevoke.contains(TargetSettingsService.location) {
       try await revokeLocationSettings(Array(bundleIDs))
@@ -302,192 +284,47 @@ public struct SimulatorPrivacyCommands {
     }
   }
 
-  // MARK: - TCC Database
-
-  private func modifyTCCDatabase(withBundleIDs bundleIDs: Set<String>, toServices services: Set<TargetSettingsService>, grantAccess: Bool) async throws {
-    guard let dataDirectory = simulator.dataDirectory else {
-      throw SimulatorPrivacyError.noDataDirectory
-    }
-    let databasePath = (dataDirectory as NSString).appendingPathComponent("Library/TCC/TCC.db")
-    var isDirectory: ObjCBool = true
-    if !FileManager.default.fileExists(atPath: databasePath, isDirectory: &isDirectory) {
-      throw SimulatorPrivacyError.tccDatabaseMissing(path: databasePath)
-    }
-    if isDirectory.boolValue {
-      throw SimulatorPrivacyError.tccDatabaseIsDirectory(path: databasePath)
-    }
-    if !FileManager.default.isWritableFile(atPath: databasePath) {
-      throw SimulatorPrivacyError.tccDatabaseNotWritable(path: databasePath)
-    }
-
-    let logger = simulator.logger.withName("sqlite_auth")
-
-    if grantAccess {
-      try await grantAccessInTCCDatabase(databasePath, bundleIDs: bundleIDs, services: services, logger: logger)
-    } else {
-      try await revokeAccessInTCCDatabase(databasePath, bundleIDs: bundleIDs, services: services, logger: logger)
+  private func updatePrivacyService(_ bundleIDs: Set<String>, services: Set<TargetSettingsService>, approve: Bool) async throws {
+    for invocation in Self.privacyInvocations(bundleIDs: bundleIDs, services: services, approve: approve) {
+      try await simulator.runSimulatorFrameworkBridge(
+        withService: "privacy",
+        action: invocation.action,
+        arguments: invocation.arguments)
     }
   }
 
-  private func grantAccessInTCCDatabase(_ databasePath: String, bundleIDs: Set<String>, services: Set<TargetSettingsService>, logger: (any ControlCoreLogger)?) async throws {
-    let query = try await Self.buildApprovalInsertQuery(forDatabase: databasePath, bundleIDs: bundleIDs, services: services, logger: logger)
-    _ = try await Self.runSqliteCommand(onDatabase: databasePath, arguments: [query], logger: logger)
+  /// One `privacy <action> <bundleID> <service>...` call on the guest.
+  internal struct PrivacyInvocation: Equatable {
+    let action: String
+    let arguments: [String]
   }
 
-  private func revokeAccessInTCCDatabase(_ databasePath: String, bundleIDs: Set<String>, services: Set<TargetSettingsService>, logger: (any ControlCoreLogger)?) async throws {
-    var deletions: [String] = []
-    for bundleID in bundleIDs {
-      for serviceName in Self.tccServiceNames(for: services) {
-        deletions.append("(service = '\(serviceName)' AND client = '\(bundleID)')")
-      }
-    }
-    if deletions.isEmpty {
-      return
-    }
-    _ = try await Self.runSqliteCommand(
-      onDatabase: databasePath,
-      arguments: ["DELETE FROM access WHERE \(deletions.joined(separator: " OR "))"],
-      logger: logger)
-  }
-
-  private static func buildApprovalInsertQuery(forDatabase databasePath: String, bundleIDs: Set<String>, services: Set<TargetSettingsService>, logger: (any ControlCoreLogger)?) async throws -> String {
-    let schema = try await runSqliteCommand(onDatabase: databasePath, arguments: [".schema access"], logger: logger)
-    return approvalInsertQuery(forAccessSchema: schema, bundleIDs: bundleIDs, services: services)
-  }
-
-  private static func runSqliteCommand(onDatabase databasePath: String, arguments: [String], logger: (any ControlCoreLogger)?) async throws -> String {
-    let allArguments = [databasePath] + arguments
-    logger?.log("Running sqlite3 \(CollectionInformation.oneLineDescription(from: allArguments))")
-    let result = try await Subprocess(executable: "/usr/bin/sqlite3", arguments: allArguments)
-      .run(exitPolicy: .mustExit([0, 1]), logger: logger)
-    try result.checkExitedCleanly { code in
-      SimulatorPrivacyError.sqliteTaskFailed(
-        exitCode: Int(code),
-        stdOut: result.standardOutput,
-        stdErr: result.standardError)
-    }
-    if result.standardError.hasPrefix("Error") {
-      throw SimulatorPrivacyError.sqliteCommandFailed(stderr: result.standardError)
-    }
-    return result.standardOutput
+  /// The guest calls an approve or revoke resolves to: one per bundle id, each
+  /// carrying every requested service, ordered so a trace is comparable between runs.
+  internal static func privacyInvocations(
+    bundleIDs: Set<String>,
+    services: Set<TargetSettingsService>,
+    approve: Bool
+  ) -> [PrivacyInvocation] {
+    let names = services.compactMap { privacyServiceMapping[$0] }.sorted()
+    let action = approve ? "approve" : "revoke"
+    return bundleIDs.sorted().map { PrivacyInvocation(action: action, arguments: [$0] + names) }
   }
 
   // MARK: - Service Mappings
 
-  private static let tccDatabaseMapping: [TargetSettingsService: String] = [
-    TargetSettingsService.contacts: "kTCCServiceAddressBook",
-    TargetSettingsService.photos: "kTCCServicePhotos",
-    TargetSettingsService.camera: "kTCCServiceCamera",
-    TargetSettingsService.microphone: "kTCCServiceMicrophone",
+  private static let privacyServiceMapping: [TargetSettingsService: String] = [
+    .contacts: "contacts",
+    .photos: "photos",
+    .camera: "camera",
+    .microphone: "microphone",
   ]
 
-  private static let coreSimulatorSettingMappingPreIos13: [TargetSettingsService: String] = [
-    TargetSettingsService.contacts: "kTCCServiceContactsFull",
-    TargetSettingsService.photos: "kTCCServicePhotos",
-    TargetSettingsService.camera: "camera",
-    TargetSettingsService.location: "__CoreLocationAlways",
-    TargetSettingsService.microphone: "kTCCServiceMicrophone",
+  private static let coreSimulatorSettingMapping: [TargetSettingsService: String] = [
+    .location: "__CoreLocationAlways"
   ]
-
-  private static let coreSimulatorSettingMappingPostIos13: [TargetSettingsService: String] = [
-    TargetSettingsService.location: "__CoreLocationAlways"
-  ]
-
-  private static func coreSimulatorSettingMapping(forOSVersion osVersion: OSVersion) -> [TargetSettingsService: String] {
-    osVersion.version.majorVersion >= 13 ? coreSimulatorSettingMappingPostIos13 : coreSimulatorSettingMappingPreIos13
-  }
-
-  internal static func filteredTCCApprovals(_ approvals: Set<TargetSettingsService>) -> Set<TargetSettingsService> {
-    approvals.intersection(Set(tccDatabaseMapping.keys))
-  }
-
-  private static func tccServiceNames(for approvals: Set<TargetSettingsService>) -> [String] {
-    filteredTCCApprovals(approvals).compactMap { tccDatabaseMapping[$0] }
-  }
 
   internal static func magicDeeplinkKey(forScheme scheme: String) -> String {
     "com.apple.CoreSimulator.CoreSimulatorBridge-->\(scheme)"
-  }
-
-  // MARK: - Approval Rows
-
-  private static let postiOS17AccessColumns = [
-    "service",
-    "client",
-    "client_type",
-    "auth_value",
-    "auth_reason",
-    "auth_version",
-    "csreq",
-    "policy_id",
-    "indirect_object_identifier_type",
-    "indirect_object_identifier",
-    "indirect_object_code_identity",
-    "flags",
-    "last_modified",
-    "pid",
-    "pid_version",
-    "boot_uuid",
-    "last_reminded",
-  ].joined(separator: ", ")
-
-  internal static func approvalInsertQuery(forAccessSchema schema: String, bundleIDs: Set<String>, services: Set<TargetSettingsService>) -> String {
-    if schema.contains("last_reminded") {
-      let rows = postiOS17ApprovalRows(forBundleIDs: bundleIDs, services: services)
-      return "INSERT or REPLACE INTO access (\(postiOS17AccessColumns)) VALUES \(rows)"
-    }
-
-    let rows: String
-    if schema.contains("auth_value") {
-      rows = postiOS15ApprovalRows(forBundleIDs: bundleIDs, services: services)
-    } else if schema.contains("last_modified") {
-      rows = postiOS12ApprovalRows(forBundleIDs: bundleIDs, services: services)
-    } else {
-      rows = preiOS12ApprovalRows(forBundleIDs: bundleIDs, services: services)
-    }
-    return "INSERT or REPLACE INTO access VALUES \(rows)"
-  }
-
-  internal static func preiOS12ApprovalRows(forBundleIDs bundleIDs: Set<String>, services: Set<TargetSettingsService>) -> String {
-    var tuples: [String] = []
-    for bundleID in bundleIDs {
-      for serviceName in tccServiceNames(for: services) {
-        tuples.append("('\(serviceName)', '\(bundleID)', 0, 1, 0, 0, 0)")
-      }
-    }
-    return tuples.joined(separator: ", ")
-  }
-
-  internal static func postiOS12ApprovalRows(forBundleIDs bundleIDs: Set<String>, services: Set<TargetSettingsService>) -> String {
-    let timestamp = UInt(Date().timeIntervalSince1970)
-    var tuples: [String] = []
-    for bundleID in bundleIDs {
-      for serviceName in tccServiceNames(for: services) {
-        tuples.append("('\(serviceName)', '\(bundleID)', 0, 1, 1, NULL, NULL, NULL, 'UNUSED', NULL, NULL, \(timestamp))")
-      }
-    }
-    return tuples.joined(separator: ", ")
-  }
-
-  internal static func postiOS15ApprovalRows(forBundleIDs bundleIDs: Set<String>, services: Set<TargetSettingsService>) -> String {
-    let timestamp = UInt(Date().timeIntervalSince1970)
-    var tuples: [String] = []
-    for bundleID in bundleIDs {
-      for serviceName in tccServiceNames(for: services) {
-        tuples.append("('\(serviceName)', '\(bundleID)', 0, 2, 2, 2, NULL, NULL, NULL, 'UNUSED', NULL, NULL, \(timestamp))")
-      }
-    }
-    return tuples.joined(separator: ", ")
-  }
-
-  internal static func postiOS17ApprovalRows(forBundleIDs bundleIDs: Set<String>, services: Set<TargetSettingsService>) -> String {
-    let timestamp = UInt(Date().timeIntervalSince1970)
-    var tuples: [String] = []
-    for bundleID in bundleIDs {
-      for serviceName in tccServiceNames(for: services) {
-        tuples.append("('\(serviceName)', '\(bundleID)', 0, 2, 2, 2, NULL, NULL, NULL, 'UNUSED', NULL, NULL, \(timestamp), NULL, NULL, 'UNUSED', \(timestamp))")
-      }
-    }
-    return tuples.joined(separator: ", ")
   }
 }
