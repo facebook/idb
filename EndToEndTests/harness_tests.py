@@ -12,10 +12,12 @@ uses test*.py. Run it separately with python -m unittest EndToEndTests.harness_t
 from __future__ import annotations
 
 import asyncio
+import hashlib
 import io
 import json
 import os
 import shutil
+import signal
 import sys
 import tempfile
 import unittest
@@ -36,7 +38,9 @@ from .harness import (
     IDB_SETUP_BIN_ENV,
     IdbEndToEndTestCase,
     IdbProcess,
+    IdbProcessConfig,
     NotReady,
+    ProcessStream,
     run_with_registered_cleanup,
     running_bundle_ids_from_listing,
     select_tests_for_capability,
@@ -143,7 +147,9 @@ class ProcessOutputTests(unittest.IsolatedAsyncioTestCase):
         )
         with self.assertRaises(Failed) as raised:
             async with IdbProcess(
-                HarnessCaseStub(), [sys.executable, "-c", script], "ui wait General"
+                [sys.executable, "-c", script],
+                "ui wait General",
+                failure=HarnessCaseStub().fail,
             ) as process:
                 await process.read_some(5)
 
@@ -155,7 +161,9 @@ class ProcessOutputTests(unittest.IsolatedAsyncioTestCase):
     async def test_successful_exit_without_stdout_is_still_a_failure(self) -> None:
         with self.assertRaises(Failed) as raised:
             async with IdbProcess(
-                HarnessCaseStub(), [sys.executable, "-c", "pass"], "ui wait General"
+                [sys.executable, "-c", "pass"],
+                "ui wait General",
+                failure=HarnessCaseStub().fail,
             ) as process:
                 await process.read_some(5)
 
@@ -167,7 +175,9 @@ class ProcessOutputTests(unittest.IsolatedAsyncioTestCase):
         script = "import os, time; os.write(1, b'ready'); os.close(1); time.sleep(60)"
         with self.assertRaises(Failed) as raised:
             async with IdbProcess(
-                HarnessCaseStub(), [sys.executable, "-c", script], "ui wait General"
+                [sys.executable, "-c", script],
+                "ui wait General",
+                failure=HarnessCaseStub().fail,
             ) as process:
                 self.assertEqual(await process.read_some(5), b"ready")
                 await process.read_some(1)
@@ -228,6 +238,289 @@ class ClientArgumentTests(unittest.TestCase):
         self.assertEqual(selected, Path(executable.name))
 
 
+class IdbProcessTests(unittest.IsolatedAsyncioTestCase):
+    def process(
+        self,
+        source: str,
+        *,
+        config: IdbProcessConfig | None = None,
+        recording: Recording | None = None,
+        actual_args: Sequence[str] = (),
+        display_argv: Sequence[str] = ("probe",),
+    ) -> IdbProcess:
+        return IdbProcess(
+            [sys.executable, "-u", "-c", source, *actual_args],
+            "test process",
+            display_argv=display_argv,
+            recording=recording,
+            config=config,
+        )
+
+    async def test_captures_binary_stdout_and_stderr_exactly(self) -> None:
+        stdout = bytes(range(256)) * 2
+        stderr = b"\x00\xffstderr\x80"
+        process = self.process(
+            f"import os; os.write(1, {stdout!r}); os.write(2, {stderr!r})"
+        )
+
+        async with process as running:
+            self.assertEqual(await running.wait(5), 0)
+            self.assertEqual(running.spooled_output(ProcessStream.STDOUT), stdout)
+            self.assertEqual(running.spooled_output(ProcessStream.STDERR), stderr)
+            self.assertEqual(
+                running.stdout_capture.sha256, hashlib.sha256(stdout).hexdigest()
+            )
+            self.assertEqual(
+                running.stderr_capture.sha256, hashlib.sha256(stderr).hexdigest()
+            )
+
+    async def test_observation_log_tags_harness_observed_interleaving(self) -> None:
+        source = """
+import os
+for descriptor, payload in ((1, b'one'), (2, b'two'), (1, b'three')):
+    if not os.read(0, 1):
+        raise RuntimeError('missing release byte')
+    os.write(descriptor, payload)
+"""
+        process = self.process(source, config=IdbProcessConfig(read_chunk_bytes=16))
+
+        async with process as running:
+            for count in range(1, 4):
+                await running.send(b"x")
+                await running.wait_for_observations(count, 5)
+            await running.close_stdin()
+            self.assertEqual(await running.wait(5), 0)
+            observations = running.observation_log()
+
+        self.assertEqual(
+            [(item.stream, item.data) for item in observations],
+            [
+                (ProcessStream.STDOUT, b"one"),
+                (ProcessStream.STDERR, b"two"),
+                (ProcessStream.STDOUT, b"three"),
+            ],
+        )
+        self.assertEqual([item.sequence for item in observations], [0, 1, 2])
+        self.assertEqual(
+            [item.observed_at_ns for item in observations],
+            sorted(item.observed_at_ns for item in observations),
+        )
+
+    async def test_large_output_keeps_bounded_memory_and_full_spool(self) -> None:
+        repetitions = 4096
+        expected = bytes(range(256)) * repetitions
+        process = self.process(
+            "import os\nchunk = bytes(range(256))\n"
+            f"for _ in range({repetitions}): os.write(1, chunk)\n",
+            config=IdbProcessConfig(
+                read_chunk_bytes=4096,
+                prefix_bytes=17,
+                tail_bytes=19,
+            ),
+        )
+
+        async with process as running:
+            self.assertEqual(await running.wait(10), 0)
+            capture = running.stdout_capture
+            self.assertEqual(capture.total_bytes, len(expected))
+            self.assertEqual(capture.prefix, expected[:17])
+            self.assertEqual(capture.tail, expected[-19:])
+            self.assertEqual(capture.sha256, hashlib.sha256(expected).hexdigest())
+            self.assertEqual(running.spooled_output(ProcessStream.STDOUT), expected)
+
+    async def test_slow_reader_applies_backpressure_without_losing_bytes(self) -> None:
+        count = 128
+        chunk = b"slow-consumer" * 256
+        expected = chunk * count
+        process = self.process(
+            f"import os\nchunk = {chunk!r}\n"
+            f"for _ in range({count}): os.write(1, chunk)\n",
+            config=IdbProcessConfig(
+                read_chunk_bytes=1024,
+                reader_throttle_seconds=0.001,
+                prefix_bytes=32,
+                tail_bytes=32,
+            ),
+        )
+
+        async with process as running:
+            self.assertEqual(await running.wait(10), 0)
+            self.assertEqual(running.stdout_capture.total_bytes, len(expected))
+            self.assertEqual(
+                running.stdout_capture.sha256, hashlib.sha256(expected).hexdigest()
+            )
+
+    async def test_reader_gate_controls_observed_pipe_order(self) -> None:
+        stdout_gate = asyncio.Event()
+
+        async def gate(stream: ProcessStream) -> None:
+            if stream is ProcessStream.STDOUT:
+                await stdout_gate.wait()
+
+        process = self.process(
+            "import os\nos.write(1, b'stdout')\nos.write(2, b'stderr')\n"
+            "os.read(0, 1)\n",
+            config=IdbProcessConfig(reader_gate=gate),
+        )
+
+        async with process as running:
+            await running.wait_for_observations(1, 5)
+            self.assertEqual(running.observation_log()[0].stream, ProcessStream.STDERR)
+            stdout_gate.set()
+            await running.wait_for_observations(2, 5)
+            await running.close_stdin()
+            self.assertEqual(await running.wait(5), 0)
+            self.assertEqual(
+                [item.stream for item in running.observation_log()],
+                [ProcessStream.STDERR, ProcessStream.STDOUT],
+            )
+
+    async def test_stdin_signal_and_wait_are_explicit_and_idempotent(self) -> None:
+        if not hasattr(signal, "SIGUSR1"):
+            self.skipTest("SIGUSR1 is unavailable on this platform")
+        source = """
+import os
+import signal
+signal.signal(signal.SIGUSR1, lambda *_: os.write(1, b'signal:'))
+os.write(1, b'ready:')
+data = b''
+while True:
+    chunk = os.read(0, 4096)
+    if not chunk:
+        break
+    data += chunk
+os.write(1, b'stdin:' + data)
+"""
+        process = self.process(source)
+
+        async with process as running:
+            await running.wait_for_observations(1, 5)
+            running.send_signal(signal.SIGUSR1)
+            await running.send(b"\x00payload\xff")
+            await running.close_stdin()
+            await running.close_stdin()
+            first = await running.wait(5)
+            second = await running.wait(0)
+            output = running.spooled_output(ProcessStream.STDOUT)
+
+        self.assertEqual((first, second), (0, 0))
+        self.assertIn(b"ready:", output)
+        self.assertIn(b"signal:", output)
+        self.assertIn(b"stdin:\x00payload\xff", output)
+        self.assertIn(int(signal.SIGUSR1), process.signals_sent)
+
+    async def test_send_reports_a_broken_producer(self) -> None:
+        process = self.process("raise SystemExit(7)")
+
+        async with process as running:
+            self.assertEqual(await running.wait(5), 7)
+            with self.assertRaisesRegex(HarnessError, "exited with 7"):
+                await running.send(b"too late")
+            await running.close_stdin()
+            await running.close_stdin()
+
+    async def test_broken_reader_fails_and_reaps_the_producer(self) -> None:
+        async def broken_consumer(stream: ProcessStream) -> None:
+            if stream is ProcessStream.STDOUT:
+                raise OSError("consumer stopped")
+
+        process = self.process(
+            "import os\nwhile True: os.write(1, b'x' * 4096)\n",
+            config=IdbProcessConfig(
+                reader_gate=broken_consumer,
+                graceful_stop_seconds=0.1,
+                kill_wait_seconds=2,
+            ),
+        )
+
+        with self.assertRaisesRegex(HarnessError, "consumer stopped"):
+            async with process as running:
+                await running.wait(5)
+
+        self.assertIsNotNone(process.returncode)
+        self.assertTrue(process.reader_tasks_done)
+        self.assertTrue(process.closed)
+
+    async def test_timed_wait_does_not_cancel_later_waits(self) -> None:
+        process = self.process("import sys\nsys.stdin.buffer.read()\n")
+
+        async with process as running:
+            with self.assertRaisesRegex(HarnessError, "did not exit"):
+                await running.wait(0.01)
+            await running.close_stdin()
+            self.assertEqual(await running.wait(5), 0)
+            self.assertEqual(await running.wait(0), 0)
+
+    async def test_stop_escalates_from_graceful_signal_to_kill(self) -> None:
+        source = """
+import os
+import signal
+import time
+signal.signal(signal.SIGTERM, signal.SIG_IGN)
+os.write(1, b'ready')
+while True:
+    time.sleep(1)
+"""
+        process = self.process(
+            source,
+            config=IdbProcessConfig(
+                graceful_stop_seconds=0.05,
+                kill_wait_seconds=2,
+            ),
+        )
+
+        async with process as running:
+            await running.wait_for_observations(1, 5)
+            returncode = await running.stop()
+            self.assertNotEqual(returncode, 0)
+            self.assertEqual(
+                running.signals_sent,
+                (int(signal.SIGTERM), int(getattr(signal, "SIGKILL", signal.SIGTERM))),
+            )
+            self.assertTrue(running.was_killed)
+
+    async def test_context_cleanup_reaps_tasks_and_removes_spools(self) -> None:
+        process = self.process(
+            "import os, time\nos.write(1, b'ready')\ntime.sleep(60)\n",
+            config=IdbProcessConfig(
+                graceful_stop_seconds=1,
+                kill_wait_seconds=2,
+            ),
+        )
+        spool_directory: Path | None = None
+
+        with self.assertRaisesRegex(RuntimeError, "body failed"):
+            async with process as running:
+                await running.wait_for_observations(1, 5)
+                spool_directory = running.spool_directory
+                assert spool_directory is not None
+                self.assertTrue(spool_directory.is_dir())
+                raise RuntimeError("body failed")
+
+        assert spool_directory is not None
+        self.assertFalse(spool_directory.exists())
+        self.assertTrue(process.reader_tasks_done)
+        self.assertIsNotNone(process.returncode)
+        self.assertTrue(process.closed)
+
+    async def test_recording_uses_explicit_display_arguments(self) -> None:
+        recording = mock.Mock(spec=Recording)
+        process = self.process(
+            "pass",
+            recording=recording,
+            actual_args=("--nonempty-idb-argument",),
+            display_argv=("idb", "log"),
+        )
+
+        async with process as running:
+            self.assertEqual(await running.wait(5), 0)
+
+        recording.command.assert_called_once_with(["idb", "log"])
+        recording.event.assert_called_once_with(
+            "command_finished", argv=["idb", "log"], returncode=0
+        )
+
+
 class _SettingsCleanupSuite(unittest.IsolatedAsyncioTestCase):
     events: list[str] = []
     launch_error: BaseException = HarnessError("launch failed")
@@ -277,17 +570,12 @@ class SettingsCleanupTests(unittest.TestCase):
 
 
 class SuiteCapabilityTests(unittest.TestCase):
-    READ_TESTS = [
-        "test_ui_describe_all_reads_both_backends_and_honours_its_options",
-        "test_ui_describe_resolves_a_point_and_a_marker",
-    ]
-    INTERACTION_TESTS = [
-        *READ_TESTS,
-        "test_ui_scroll_moves_settings_rows_down_and_up",
-        "test_ui_tap_opens_general_by_point",
-        "test_ui_wait_returns_after_general_opens",
-    ]
     REQUIREMENTS = {
+        "test_controls_process_lifetime": SuiteCapability.PROCESS_CONTROL,
+        "test_mutates_target": SuiteCapability.TARGET_MUTATION,
+        "test_process_liveness": SuiteCapability.COMPANION_PROCESS,
+        "test_publishes_artifact": SuiteCapability.ARTIFACT_PUBLICATION,
+        "test_streams_output": SuiteCapability.LONG_LIVED_STREAM,
         "test_ui_describe_all_reads_both_backends_and_honours_its_options": (
             SuiteCapability.ACCESSIBILITY_READ
         ),
@@ -304,12 +592,13 @@ class SuiteCapabilityTests(unittest.TestCase):
             SuiteCapability.ACCESSIBILITY_INTERACTION
         ),
     }
+    ALL_TESTS = sorted(REQUIREMENTS)
 
     def selected(self) -> tuple[unittest.TestSuite, unittest.TestSuite]:
         suite_type = type(
             "_SuiteCapabilityFixture",
             (unittest.TestCase,),
-            {name: lambda _self: None for name in self.INTERACTION_TESTS},
+            {name: lambda _self: None for name in self.ALL_TESTS},
         )
         loader = unittest.TestLoader()
         discovered = loader.loadTestsFromTestCase(suite_type)
@@ -334,7 +623,7 @@ class SuiteCapabilityTests(unittest.TestCase):
             SuiteCapability.ACCESSIBILITY_INTERACTION,
         )
         self.assertIs(selected, discovered)
-        self.assertEqual(self.names(selected), self.INTERACTION_TESTS)
+        self.assertEqual(self.names(selected), self.ALL_TESTS)
 
     def test_each_explicit_capability_parses(self) -> None:
         for capability in SuiteCapability:
@@ -348,13 +637,21 @@ class SuiteCapabilityTests(unittest.TestCase):
             ):
                 self.assertIs(suite_capability(), capability)
 
-    def test_capabilities_select_exact_accessibility_identities(self) -> None:
-        expected = {
-            SuiteCapability.COMPANION_PROCESS: [],
-            SuiteCapability.ACCESSIBILITY_READ: self.READ_TESTS,
-            SuiteCapability.ACCESSIBILITY_INTERACTION: self.INTERACTION_TESTS,
-        }
-        for capability, names in expected.items():
+    def test_capabilities_form_the_ordered_semantic_ladder(self) -> None:
+        self.assertEqual(
+            list(SuiteCapability),
+            [
+                SuiteCapability.COMPANION_PROCESS,
+                SuiteCapability.LONG_LIVED_STREAM,
+                SuiteCapability.PROCESS_CONTROL,
+                SuiteCapability.ARTIFACT_PUBLICATION,
+                SuiteCapability.TARGET_MUTATION,
+                SuiteCapability.ACCESSIBILITY_READ,
+                SuiteCapability.ACCESSIBILITY_INTERACTION,
+            ],
+        )
+        ordered = list(SuiteCapability)
+        for capability in ordered:
             with (
                 self.subTest(capability=capability.value),
                 mock.patch.dict(
@@ -364,19 +661,42 @@ class SuiteCapabilityTests(unittest.TestCase):
                 ),
             ):
                 discovered, selected = self.selected()
-                if capability is SuiteCapability.ACCESSIBILITY_INTERACTION:
-                    self.assertIs(selected, discovered)
-                else:
-                    self.assertIsNot(selected, discovered)
-                self.assertEqual(self.names(selected), names)
+                expected = sorted(
+                    name
+                    for name, required in self.REQUIREMENTS.items()
+                    if ordered.index(required) <= ordered.index(capability)
+                )
+                self.assertEqual(self.names(selected), expected)
                 self.assertEqual(
                     [
                         name
-                        for name, required in self.REQUIREMENTS.items()
-                        if suite_supports(required)
+                        for name in self.ALL_TESTS
+                        if suite_supports(self.REQUIREMENTS[name])
                     ],
-                    names,
+                    expected,
                 )
+
+    @mock.patch.dict(
+        os.environ,
+        {SUITE_CAPABILITY_ENV: SuiteCapability.COMPANION_PROCESS.value},
+        clear=True,
+    )
+    def test_process_capability_selects_process_tests(self) -> None:
+        _, selected = self.selected()
+
+        self.assertEqual(self.names(selected), ["test_process_liveness"])
+
+    def test_capability_map_must_cover_the_discovered_suite_exactly(self) -> None:
+        suite_type = type(
+            "_IncompleteCapabilityFixture",
+            (unittest.TestCase,),
+            {"test_unowned": lambda _self: None},
+        )
+        loader = unittest.TestLoader()
+        discovered = loader.loadTestsFromTestCase(suite_type)
+
+        with self.assertRaisesRegex(HarnessError, "do not match its tests"):
+            select_tests_for_capability(loader, discovered, suite_type, {})
 
     def test_empty_and_unknown_capabilities_fail_closed(self) -> None:
         for configured in ("", "unknown"):
@@ -403,34 +723,43 @@ class SharedCompanionReadinessTests(unittest.IsolatedAsyncioTestCase):
         harness._companion, harness._acquisition_failure = self.previous
         super().tearDown()
 
-    @mock.patch.dict(
-        os.environ,
-        {SUITE_CAPABILITY_ENV: SuiteCapability.COMPANION_PROCESS.value},
-        clear=True,
-    )
-    async def test_process_capability_does_not_probe_accessibility(self) -> None:
-        environment = mock.sentinel.environment
-        made = mock.Mock()
-        with (
-            mock.patch.object(
-                harness,
-                "shared_environment",
-                new=mock.AsyncMock(return_value=environment),
-            ),
-            mock.patch.object(harness, "Companion", return_value=made),
-            mock.patch.object(
-                harness,
-                "wait_for_accessibility",
-                new=mock.AsyncMock(),
-            ) as wait_for_accessibility,
-            mock.patch.object(harness.atexit, "register") as register,
+    async def test_only_accessibility_capabilities_probe_accessibility(self) -> None:
+        for capability in (
+            SuiteCapability.COMPANION_PROCESS,
+            SuiteCapability.LONG_LIVED_STREAM,
+            SuiteCapability.PROCESS_CONTROL,
+            SuiteCapability.ARTIFACT_PUBLICATION,
+            SuiteCapability.TARGET_MUTATION,
         ):
-            acquired = await shared_companion()
+            with self.subTest(capability=capability.value):
+                harness._companion = None
+                environment = mock.sentinel.environment
+                made = mock.Mock()
+                with (
+                    mock.patch.dict(
+                        os.environ,
+                        {SUITE_CAPABILITY_ENV: capability.value},
+                        clear=True,
+                    ),
+                    mock.patch.object(
+                        harness,
+                        "shared_environment",
+                        new=mock.AsyncMock(return_value=environment),
+                    ),
+                    mock.patch.object(harness, "Companion", return_value=made),
+                    mock.patch.object(
+                        harness,
+                        "wait_for_accessibility",
+                        new=mock.AsyncMock(),
+                    ) as wait_for_accessibility,
+                    mock.patch.object(harness.atexit, "register") as register,
+                ):
+                    acquired = await shared_companion()
 
-        self.assertIs(acquired, made)
-        self.assertIs(harness._companion, made)
-        wait_for_accessibility.assert_not_awaited()
-        register.assert_called_once_with(made.stop)
+                self.assertIs(acquired, made)
+                self.assertIs(harness._companion, made)
+                wait_for_accessibility.assert_not_awaited()
+                register.assert_called_once_with(made.stop)
 
     async def test_accessibility_capabilities_probe_before_caching(self) -> None:
         for capability in (

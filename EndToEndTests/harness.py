@@ -15,6 +15,7 @@ from __future__ import annotations
 import asyncio
 import atexit
 import enum
+import hashlib
 import http.server
 import json
 import logging
@@ -24,6 +25,7 @@ import select
 import shlex
 import shutil
 import signal
+import struct
 import subprocess
 import tempfile
 import threading
@@ -32,7 +34,7 @@ import unittest
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Awaitable, Callable, NoReturn, TypeVar
+from typing import Any, Awaitable, BinaryIO, Callable, NoReturn, TypeVar
 
 from .documentation import (
     demo_for,
@@ -150,6 +152,10 @@ class FailureKind(enum.Enum):
 
 class SuiteCapability(enum.Enum):
     COMPANION_PROCESS = "companion-process"
+    LONG_LIVED_STREAM = "long-lived-stream"
+    PROCESS_CONTROL = "process-control"
+    ARTIFACT_PUBLICATION = "artifact-publication"
+    TARGET_MUTATION = "target-mutation"
     ACCESSIBILITY_READ = "accessibility-read"
     ACCESSIBILITY_INTERACTION = "accessibility-interaction"
 
@@ -157,6 +163,12 @@ class SuiteCapability(enum.Enum):
 _SUITE_CAPABILITY_RANK = {
     capability: rank for rank, capability in enumerate(SuiteCapability)
 }
+_ACCESSIBILITY_CAPABILITIES = frozenset(
+    {
+        SuiteCapability.ACCESSIBILITY_READ,
+        SuiteCapability.ACCESSIBILITY_INTERACTION,
+    }
+)
 
 
 def classify_failure(completed: Completed) -> FailureKind:
@@ -654,7 +666,7 @@ async def shared_companion() -> Companion:
             _acquisition_failure = error
             raise
         try:
-            if capability is not SuiteCapability.COMPANION_PROCESS:
+            if capability in _ACCESSIBILITY_CAPABILITIES:
                 await wait_for_accessibility(environment, companion)
         except BaseException as error:
             companion.stop()
@@ -1009,10 +1021,19 @@ class IdbEndToEndTestCase(unittest.IsolatedAsyncioTestCase):
         )
         return origin
 
-    def idb_process(self, *args: str) -> "IdbProcess":
+    def idb_process(
+        self,
+        *args: str,
+        process_config: IdbProcessConfig | None = None,
+    ) -> "IdbProcess":
         """Start a streaming command and stop it when the async context exits."""
         return IdbProcess(
-            self, idb_argv(self.environment, self.companion, *args), " ".join(args)
+            idb_argv(self.environment, self.companion, *args),
+            " ".join(args),
+            display_argv=["idb", *args],
+            failure=self.fail,
+            recording=self.recording,
+            config=process_config,
         )
 
     def fail_or_skip_for(self, what: str, completed: Completed) -> NoReturn:
@@ -1166,86 +1187,649 @@ class IdbEndToEndTestCase(unittest.IsolatedAsyncioTestCase):
         return directory
 
 
+class ProcessStream(enum.Enum):
+    STDOUT = "stdout"
+    STDERR = "stderr"
+
+
+@dataclass(frozen=True)
+class ProcessOutput:
+    """Bounded in-memory output metadata backed by a temporary spool."""
+
+    total_bytes: int
+    sha256: str
+    prefix: bytes
+    tail: bytes
+
+
+@dataclass(frozen=True)
+class ProcessObservation:
+    """One chunk in harness-observed read order.
+
+    The sequence is assigned when a drain task resumes from its pipe read. It
+    intentionally describes the order observed by this harness, not an
+    unknowable ordering between writes to separate operating-system pipes.
+    """
+
+    sequence: int
+    observed_at_ns: int
+    stream: ProcessStream
+    stream_offset: int
+    data: bytes
+
+
+@dataclass(frozen=True)
+class IdbProcessConfig:
+    read_chunk_bytes: int = 64 * 1024
+    prefix_bytes: int = 64 * 1024
+    tail_bytes: int = 64 * 1024
+    reader_throttle_seconds: float = 0.0
+    reader_gate: Callable[[ProcessStream], Awaitable[None]] | None = None
+    graceful_stop_seconds: float = 60.0
+    kill_wait_seconds: float = 10.0
+
+    def __post_init__(self) -> None:
+        if self.read_chunk_bytes <= 0:
+            raise ValueError("read_chunk_bytes must be positive")
+        for name, value in (
+            ("prefix_bytes", self.prefix_bytes),
+            ("tail_bytes", self.tail_bytes),
+            ("reader_throttle_seconds", self.reader_throttle_seconds),
+            ("graceful_stop_seconds", self.graceful_stop_seconds),
+            ("kill_wait_seconds", self.kill_wait_seconds),
+        ):
+            if value < 0:
+                raise ValueError(f"{name} must not be negative")
+
+
+_OBSERVATION_RECORD: struct.Struct = struct.Struct("!QBQQQ")
+_PROCESS_STREAM_TAG: dict[ProcessStream, int] = {
+    ProcessStream.STDOUT: 1,
+    ProcessStream.STDERR: 2,
+}
+_PROCESS_STREAM_FROM_TAG: dict[int, ProcessStream] = {
+    tag: stream for stream, tag in _PROCESS_STREAM_TAG.items()
+}
+_KILL_SIGNAL: int = int(getattr(signal, "SIGKILL", signal.SIGTERM))
+
+
+class _OutputSpool:
+    def __init__(self, path: Path, prefix_bytes: int, tail_bytes: int) -> None:
+        self.path = path
+        self._file: BinaryIO = path.open("w+b", buffering=0)
+        self._prefix_limit = prefix_bytes
+        self._tail_limit = tail_bytes
+        self._prefix = bytearray()
+        self._tail = bytearray()
+        self._digest = hashlib.sha256()
+        self.total_bytes = 0
+        self.eof = False
+        self.error: Exception | None = None
+        self.changed = asyncio.Event()
+
+    def append(self, data: bytes) -> int:
+        offset = self.total_bytes
+        self._file.write(data)
+        self._digest.update(data)
+        self.total_bytes += len(data)
+        prefix_remaining = self._prefix_limit - len(self._prefix)
+        if prefix_remaining > 0:
+            self._prefix.extend(data[:prefix_remaining])
+        if self._tail_limit > 0:
+            self._tail.extend(data)
+            if len(self._tail) > self._tail_limit:
+                del self._tail[: len(self._tail) - self._tail_limit]
+        self.changed.set()
+        return offset
+
+    def read(self, offset: int, length: int) -> bytes:
+        if self._file.closed:
+            raise HarnessError(f"The output spool {self.path} is closed")
+        position = self._file.tell()
+        self._file.seek(offset)
+        data = self._file.read(length)
+        self._file.seek(position)
+        return data
+
+    def read_all(self) -> bytes:
+        return self.read(0, self.total_bytes)
+
+    def finish(self) -> None:
+        self.eof = True
+        self.changed.set()
+
+    def fail(self, error: Exception) -> None:
+        self.error = error
+        self.changed.set()
+
+    def snapshot(self) -> ProcessOutput:
+        return ProcessOutput(
+            total_bytes=self.total_bytes,
+            sha256=self._digest.copy().hexdigest(),
+            prefix=bytes(self._prefix),
+            tail=bytes(self._tail),
+        )
+
+    def close(self) -> None:
+        if not self._file.closed:
+            self._file.close()
+
+
+def _raise_process_failure(message: str) -> NoReturn:
+    raise HarnessError(message)
+
+
 class IdbProcess:
-    """Manage a streaming idb subprocess with an async context manager."""
+    """Manage one subprocess with bounded, ordered, binary-exact capture."""
 
     def __init__(
-        self, test: IdbEndToEndTestCase, argv: Sequence[str], what: str
+        self,
+        argv: Sequence[str],
+        what: str,
+        *,
+        display_argv: Sequence[str] | None = None,
+        failure: Callable[[str], NoReturn] | None = None,
+        recording: Recording | None = None,
+        config: IdbProcessConfig | None = None,
+        env: Mapping[str, str] | None = None,
+        cwd: Path | None = None,
     ) -> None:
-        self._test = test
         self._argv = list(argv)
+        self._display_argv = list(display_argv or argv)
         self._what = what
+        self._failure = failure or _raise_process_failure
+        self._recording = recording
+        self._config = config or IdbProcessConfig()
+        self._env = None if env is None else dict(env)
+        self._cwd = cwd
         self._process: asyncio.subprocess.Process | None = None
-        self._stderr: bytes = b""
+        self._captures: dict[ProcessStream, _OutputSpool] = {}
+        self._reader_tasks: dict[ProcessStream, asyncio.Task[None]] = {}
+        self._process_wait_task: asyncio.Task[int] | None = None
+        self._completion_task: asyncio.Task[int] | None = None
+        self._stop_task: asyncio.Task[int] | None = None
+        self._close_task: asyncio.Task[None] | None = None
+        self._observation_spool: BinaryIO | None = None
+        self._observation_count = 0
+        self._observation_event = asyncio.Event()
+        self._last_observed_at_ns = 0
+        self._read_offsets = dict.fromkeys(ProcessStream, 0)
+        self._spool_directory: Path | None = None
+        self._stdin_closed = False
+        self._recording_finished = False
+        self._signals_sent: list[int] = []
+        self._killed = False
+        self._started = False
+        self._closed = False
 
     async def __aenter__(self) -> "IdbProcess":
-        if self._test.recording is not None:
-            self._test.recording.command(["idb", *self._argv[3:]])
-        self._process = await asyncio.create_subprocess_exec(
-            *self._argv,
-            stdin=asyncio.subprocess.DEVNULL,
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE,
-        )
+        if self._started:
+            raise HarnessError(f"{self._what} was already started")
+        self._started = True
+        self._create_spools()
+        if self._recording is not None:
+            self._recording.command(self._display_argv)
+        try:
+            process = await asyncio.create_subprocess_exec(
+                *self._argv,
+                env=self._env,
+                cwd=None if self._cwd is None else str(self._cwd),
+                stdin=asyncio.subprocess.PIPE,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE,
+            )
+        except BaseException as error:
+            if self._recording is not None:
+                self._recording.event(
+                    "command_error", argv=self._display_argv, error=str(error)
+                )
+            self._close_spools()
+            raise
+        self._start_tasks(process)
         return self
 
-    async def __aexit__(self, *exception: object) -> None:
-        process = self._process
-        if process is None:
-            return
-        if process.returncode is None:
-            process.terminate()
+    async def __aexit__(
+        self, _exception_type: object, exception: object, _traceback: object
+    ) -> None:
         try:
-            _, self._stderr = await asyncio.wait_for(process.communicate(), 60.0)
-        except asyncio.TimeoutError:
-            process.kill()
-            await process.wait()
+            await self.aclose()
+        except BaseException as cleanup_error:
+            if isinstance(exception, BaseException):
+                exception.add_note(f"Process cleanup also failed: {cleanup_error}")
+                return
+            raise
 
-        if self._test.recording is not None:
-            self._test.recording.event(
-                "command_finished",
-                argv=["idb", *self._argv[3:]],
-                returncode=process.returncode,
+    def _create_spools(self) -> None:
+        directory = Path(tempfile.mkdtemp(prefix="idb-e2e-process-"))
+        self._spool_directory = directory
+        self._captures = {
+            stream: _OutputSpool(
+                directory / f"{stream.value}.bin",
+                self._config.prefix_bytes,
+                self._config.tail_bytes,
             )
+            for stream in ProcessStream
+        }
+        self._observation_spool = (directory / "observations.bin").open(
+            "w+b", buffering=0
+        )
 
-    @property
-    def stdout(self) -> asyncio.StreamReader:
+    def _start_tasks(self, process: asyncio.subprocess.Process) -> None:
+        assert process.stdout is not None and process.stderr is not None
+        self._process = process
+        self._process_wait_task = asyncio.create_task(
+            process.wait(), name="idb-e2e-process-wait"
+        )
+        readers = {
+            ProcessStream.STDOUT: process.stdout,
+            ProcessStream.STDERR: process.stderr,
+        }
+        self._reader_tasks = {
+            stream: asyncio.create_task(
+                self._drain(stream, reader),
+                name=f"idb-e2e-{stream.value}-drain",
+            )
+            for stream, reader in readers.items()
+        }
+        self._completion_task = asyncio.create_task(
+            self._complete(), name="idb-e2e-process-completion"
+        )
+
+    async def _drain(self, stream: ProcessStream, reader: asyncio.StreamReader) -> None:
+        capture = self._captures[stream]
+        try:
+            while True:
+                if self._config.reader_gate is not None:
+                    await self._config.reader_gate(stream)
+                data = await reader.read(self._config.read_chunk_bytes)
+                if not data:
+                    return
+                self._record_observation(stream, data)
+                if self._config.reader_throttle_seconds:
+                    await asyncio.sleep(self._config.reader_throttle_seconds)
+        except asyncio.CancelledError:
+            raise
+        except Exception as error:
+            capture.fail(error)
+            self._kill_after_reader_failure()
+        finally:
+            capture.finish()
+            self._observation_event.set()
+
+    def _record_observation(self, stream: ProcessStream, data: bytes) -> None:
+        capture = self._captures[stream]
+        offset = capture.append(data)
+        observed_at_ns = max(time.monotonic_ns(), self._last_observed_at_ns)
+        self._last_observed_at_ns = observed_at_ns
+        spool = self._observation_spool
+        if spool is None or spool.closed:
+            raise HarnessError("The process observation spool is closed")
+        spool.write(
+            _OBSERVATION_RECORD.pack(
+                self._observation_count,
+                _PROCESS_STREAM_TAG[stream],
+                observed_at_ns,
+                offset,
+                len(data),
+            )
+        )
+        self._observation_count += 1
+        self._observation_event.set()
+
+    def _kill_after_reader_failure(self) -> None:
         process = self._process
-        assert process is not None and process.stdout is not None
-        return process.stdout
+        if process is None or process.returncode is not None or self._killed:
+            return
+        self._killed = True
+        self._signals_sent.append(_KILL_SIGNAL)
+        try:
+            process.kill()
+        except ProcessLookupError:
+            pass
+
+    async def _complete(self) -> int:
+        process_wait = self._process_wait_task
+        assert process_wait is not None
+        returncode = await process_wait
+        await asyncio.gather(*self._reader_tasks.values(), return_exceptions=True)
+        for stream, capture in self._captures.items():
+            if capture.error is not None:
+                raise HarnessError(
+                    f"Reading {stream.value} from {self._what} failed: {capture.error}"
+                )
+        return returncode
 
     @property
     def returncode(self) -> int | None:
         process = self._process
         return None if process is None else process.returncode
 
-    async def read_some(self, timeout: float) -> bytes:
-        """Read a stdout chunk. Some commands omit newlines, so readline can block."""
+    @property
+    def pid(self) -> int | None:
+        process = self._process
+        return None if process is None else process.pid
+
+    @property
+    def observation_count(self) -> int:
+        return self._observation_count
+
+    @property
+    def spool_directory(self) -> Path | None:
+        return self._spool_directory
+
+    @property
+    def closed(self) -> bool:
+        return self._closed
+
+    @property
+    def reader_tasks_done(self) -> bool:
+        return bool(self._reader_tasks) and all(
+            task.done() for task in self._reader_tasks.values()
+        )
+
+    @property
+    def signals_sent(self) -> tuple[int, ...]:
+        return tuple(self._signals_sent)
+
+    @property
+    def was_killed(self) -> bool:
+        return self._killed
+
+    @property
+    def stdout_capture(self) -> ProcessOutput:
+        return self._captures[ProcessStream.STDOUT].snapshot()
+
+    @property
+    def stderr_capture(self) -> ProcessOutput:
+        return self._captures[ProcessStream.STDERR].snapshot()
+
+    def spooled_output(self, stream: ProcessStream) -> bytes:
+        return self._captures[stream].read_all()
+
+    def observation_log(self) -> list[ProcessObservation]:
+        spool = self._observation_spool
+        if spool is None or spool.closed:
+            raise HarnessError("The process observation spool is closed")
+        position = spool.tell()
+        spool.seek(0)
+        observations: list[ProcessObservation] = []
         try:
-            data = await asyncio.wait_for(self.stdout.read(4096), timeout)
-        except asyncio.TimeoutError:
-            self._test.fail(
-                f"idb {self._what} wrote nothing to stdout within {timeout:.0f}s"
-            )
-        if not data:
-            process = self._process
-            assert process is not None
-            try:
-                _, stderr = await asyncio.wait_for(process.communicate(), timeout)
-            except asyncio.TimeoutError:
-                self._test.fail(
-                    f"idb {self._what} closed stdout but did not exit within {timeout:.0f}s"
+            while header := spool.read(_OBSERVATION_RECORD.size):
+                if len(header) != _OBSERVATION_RECORD.size:
+                    raise HarnessError("The process observation spool is truncated")
+                sequence, tag, observed_at_ns, offset, length = (
+                    _OBSERVATION_RECORD.unpack(header)
                 )
-            self._test.fail(
-                f"idb {self._what} closed stdout without writing anything "
-                f"(rc={process.returncode})\nstderr: {stderr.decode(errors='replace')}"
-            )
+                stream = _PROCESS_STREAM_FROM_TAG.get(tag)
+                if stream is None:
+                    raise HarnessError(f"Unknown process observation stream tag {tag}")
+                data = self._captures[stream].read(offset, length)
+                if len(data) != length:
+                    raise HarnessError("The process output spool is truncated")
+                observations.append(
+                    ProcessObservation(
+                        sequence=sequence,
+                        observed_at_ns=observed_at_ns,
+                        stream=stream,
+                        stream_offset=offset,
+                        data=data,
+                    )
+                )
+        finally:
+            spool.seek(position)
+        return observations
+
+    async def read_some(
+        self, timeout: float, stream: ProcessStream = ProcessStream.STDOUT
+    ) -> bytes:
+        """Read the next captured chunk without requiring a newline."""
+        capture = self._captures[stream]
+        offset = self._read_offsets[stream]
+        await self._wait_for_stream_data(stream, capture, offset, timeout)
+        available = capture.total_bytes - offset
+        data = capture.read(offset, min(available, self._config.read_chunk_bytes))
+        self._read_offsets[stream] += len(data)
         return data
 
-    async def wait_for_exit(self, timeout: float) -> int:
-        process = self._process
-        assert process is not None
+    async def _wait_for_stream_data(
+        self,
+        stream: ProcessStream,
+        capture: _OutputSpool,
+        offset: int,
+        timeout: float,
+    ) -> None:
+        deadline = Deadline(timeout)
+        while capture.total_bytes <= offset and not capture.eof:
+            capture.changed.clear()
+            if capture.total_bytes > offset or capture.eof:
+                break
+            try:
+                await asyncio.wait_for(capture.changed.wait(), deadline.remaining)
+            except asyncio.TimeoutError:
+                self._failure(
+                    f"{self._what} wrote nothing to {stream.value} within {timeout:.0f}s"
+                )
+        if capture.error is not None:
+            self._failure(
+                f"Reading {stream.value} from {self._what} failed: {capture.error}"
+            )
+        if capture.total_bytes <= offset:
+            completion = self._require_completion()
+            try:
+                await asyncio.wait_for(asyncio.shield(completion), deadline.remaining)
+            except asyncio.TimeoutError:
+                self._failure(
+                    f"idb {self._what} closed {stream.value} but did not exit "
+                    f"within {timeout:.0f}s"
+                )
+            stderr = self.spooled_output(ProcessStream.STDERR).decode(errors="replace")
+            self._failure(
+                f"idb {self._what} closed {stream.value} without writing anything "
+                f"(rc={self.returncode})\nstderr: {stderr}"
+            )
+
+    async def wait_for_observations(self, count: int, timeout: float) -> None:
+        if count < 0:
+            raise ValueError("count must not be negative")
+        deadline = Deadline(timeout)
+        while self._observation_count < count:
+            self._observation_event.clear()
+            if self._observation_count >= count:
+                return
+            completion = self._completion_task
+            if completion is not None and completion.done():
+                self._failure(
+                    f"{self._what} ended after {self._observation_count} observations; "
+                    f"expected {count}"
+                )
+            try:
+                await asyncio.wait_for(
+                    self._observation_event.wait(), deadline.remaining
+                )
+            except asyncio.TimeoutError:
+                self._failure(
+                    f"{self._what} produced fewer than {count} observations within "
+                    f"{timeout:.0f}s"
+                )
+
+    async def send(self, data: bytes) -> None:
+        process = self._require_process()
+        if self._stdin_closed:
+            self._failure(f"stdin for {self._what} is already closed")
+        if process.returncode is not None:
+            self._failure(
+                f"Cannot write to {self._what}; it exited with {process.returncode}"
+            )
+        stdin = process.stdin
+        assert stdin is not None
         try:
-            return await asyncio.wait_for(process.wait(), timeout)
+            stdin.write(data)
+            await stdin.drain()
+        except (BrokenPipeError, ConnectionResetError) as error:
+            self._failure(f"Writing stdin for {self._what} failed: {error}")
+
+    async def close_stdin(self) -> None:
+        if self._stdin_closed:
+            return
+        self._stdin_closed = True
+        process = self._require_process()
+        stdin = process.stdin
+        assert stdin is not None
+        stdin.close()
+        try:
+            await stdin.wait_closed()
+        except (BrokenPipeError, ConnectionResetError):
+            pass
+
+    def send_signal(self, process_signal: int | signal.Signals) -> None:
+        process = self._require_process()
+        if process.returncode is not None:
+            self._failure(
+                f"Cannot signal {self._what}; it exited with {process.returncode}"
+            )
+        numeric_signal = int(process_signal)
+        try:
+            process.send_signal(numeric_signal)
+        except ProcessLookupError:
+            self._failure(f"Cannot signal {self._what}; its process no longer exists")
+        self._signals_sent.append(numeric_signal)
+
+    async def wait(self, timeout: float) -> int:
+        if timeout < 0:
+            raise ValueError("timeout must not be negative")
+        completion = self._require_completion()
+        if completion.done():
+            return await completion
+        try:
+            return await asyncio.wait_for(asyncio.shield(completion), timeout)
         except asyncio.TimeoutError:
-            self._test.fail(f"idb {self._what} did not exit within {timeout:.0f}s")
+            self._failure(f"{self._what} did not exit within {timeout:.0f}s")
+        except HarnessError as error:
+            self._failure(str(error))
+
+    async def wait_for_exit(self, timeout: float) -> int:
+        return await self.wait(timeout)
+
+    async def stop(
+        self,
+        graceful_timeout: float | None = None,
+        kill_timeout: float | None = None,
+    ) -> int:
+        if self._stop_task is None:
+            graceful = (
+                self._config.graceful_stop_seconds
+                if graceful_timeout is None
+                else graceful_timeout
+            )
+            kill = (
+                self._config.kill_wait_seconds if kill_timeout is None else kill_timeout
+            )
+            if graceful < 0 or kill < 0:
+                raise ValueError("stop timeouts must not be negative")
+            self._stop_task = asyncio.create_task(
+                self._stop(graceful, kill), name="idb-e2e-process-stop"
+            )
+        return await asyncio.shield(self._stop_task)
+
+    async def _stop(self, graceful_timeout: float, kill_timeout: float) -> int:
+        process = self._require_process()
+        await self.close_stdin()
+        completion = self._require_completion()
+        if completion.done():
+            return await completion
+        if process.returncode is None:
+            self._send_cleanup_signal(int(signal.SIGTERM))
+        try:
+            return await asyncio.wait_for(asyncio.shield(completion), graceful_timeout)
+        except asyncio.TimeoutError:
+            pass
+        if process.returncode is None:
+            self._killed = True
+            self._send_cleanup_signal(_KILL_SIGNAL, kill=True)
+        try:
+            return await asyncio.wait_for(asyncio.shield(completion), kill_timeout)
+        except asyncio.TimeoutError:
+            for task in self._reader_tasks.values():
+                if not task.done():
+                    task.cancel()
+            try:
+                return await asyncio.wait_for(asyncio.shield(completion), kill_timeout)
+            except asyncio.TimeoutError:
+                raise HarnessError(
+                    f"{self._what} could not be reaped after forced termination"
+                ) from None
+
+    def _send_cleanup_signal(self, process_signal: int, *, kill: bool = False) -> None:
+        process = self._require_process()
+        self._signals_sent.append(process_signal)
+        try:
+            if kill:
+                process.kill()
+            else:
+                process.send_signal(process_signal)
+        except ProcessLookupError:
+            pass
+
+    async def aclose(self) -> None:
+        if self._close_task is None:
+            self._close_task = asyncio.create_task(
+                self._close(), name="idb-e2e-process-close"
+            )
+        try:
+            await asyncio.shield(self._close_task)
+        except asyncio.CancelledError:
+            await self._close_task
+            raise
+
+    async def _close(self) -> None:
+        if self._closed:
+            return
+        try:
+            if self._process is not None:
+                await self.stop()
+        finally:
+            await self._cancel_remaining_tasks()
+            self._finish_recording()
+            self._close_spools()
+            self._closed = True
+
+    async def _cancel_remaining_tasks(self) -> None:
+        tasks: list[asyncio.Task[object]] = []
+        for task in (
+            *self._reader_tasks.values(),
+            self._completion_task,
+            self._process_wait_task,
+        ):
+            if task is not None and not task.done():
+                task.cancel()
+                tasks.append(task)
+        if tasks:
+            await asyncio.gather(*tasks, return_exceptions=True)
+
+    def _finish_recording(self) -> None:
+        if self._recording is None or self._recording_finished:
+            return
+        self._recording_finished = True
+        self._recording.event(
+            "command_finished",
+            argv=self._display_argv,
+            returncode=self.returncode,
+        )
+
+    def _close_spools(self) -> None:
+        for capture in self._captures.values():
+            capture.close()
+        if self._observation_spool is not None and not self._observation_spool.closed:
+            self._observation_spool.close()
+        if self._spool_directory is not None:
+            shutil.rmtree(self._spool_directory, ignore_errors=True)
+
+    def _require_process(self) -> asyncio.subprocess.Process:
+        if self._process is None:
+            raise HarnessError(f"{self._what} has not been started")
+        return self._process
+
+    def _require_completion(self) -> asyncio.Task[int]:
+        if self._completion_task is None:
+            raise HarnessError(f"{self._what} has not been started")
+        return self._completion_task
