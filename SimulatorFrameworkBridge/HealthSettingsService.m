@@ -8,9 +8,11 @@
 #import "HealthSettingsService.h"
 #import "HealthSettingsService+Testing.h"
 
-#import <dlfcn.h>
-
-#import "HealthKitPrivate.h"
+#if __has_include(<SimulatorFrameworkBridgeRuntime/HealthSettingsClient.h>)
+ #import <SimulatorFrameworkBridgeRuntime/HealthSettingsClient.h>
+#else
+ #import "Runtime/HealthSettingsClient.h"
+#endif
 
 // HKInternalAuthorizationStatus values, as healthd expects them (from `_HKInternalAuthorizationStatusMake`
 // and `+[HDAuthorizationEntity _insertAuthorizationWith…]`). NOT the public HKAuthorizationStatus 0..4.
@@ -34,48 +36,6 @@ static NSArray<NSString *> *defaultApproveTypeIdentifiers(void)
   return defaults;
 }
 
-#pragma mark - Framework loader
-
-static Class (^healthClassLookup)(NSString *);
-
-void FBHealthSetClassLookupForTesting(Class (^lookup)(NSString *))
-{
-  healthClassLookup = [lookup copy];
-}
-
-static Class healthClassForName(NSString *name)
-{
-  return healthClassLookup ? healthClassLookup(name) : NSClassFromString(name);
-}
-
-static id loadHealthStore(void)
-{
-  if (!dlopen("/System/Library/Frameworks/HealthKit.framework/HealthKit", RTLD_NOW)) {
-    NSLog(@"[Health] Failed to load HealthKit.framework: %s", dlerror());
-    return nil;
-  }
-  Class HKHealthStoreClass = healthClassForName(@"HKHealthStore");
-  if (!HKHealthStoreClass) {
-    NSLog(@"[Health] HKHealthStore class not found");
-    return nil;
-  }
-  return [[HKHealthStoreClass alloc] init];
-}
-
-static HKAuthorizationStore *loadAuthStore(void)
-{
-  id store = loadHealthStore();
-  if (!store) {
-    return nil;
-  }
-  Class HKAuthStoreClass = healthClassForName(@"HKAuthorizationStore");
-  if (!HKAuthStoreClass) {
-    NSLog(@"[Health] HKAuthorizationStore class not found");
-    return nil;
-  }
-  return [[HKAuthStoreClass alloc] initWithHealthStore:store];
-}
-
 #pragma mark - JSON output helpers
 
 static NSString *jsonStringFromObject(id obj)
@@ -88,86 +48,24 @@ static NSString *jsonStringFromObject(id obj)
   return [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];
 }
 
-static NSDictionary *recordToDictionary(id record)
+static NSDictionary *recordToDictionary(FBHealthAuthorizationRecord *record)
 {
-  // The records are HKObjectType instances (HKQuantityType etc.), not dedicated record objects; the
-  // authorization state is exposed as properties on the type. Guarded per key in case a runtime drops one.
-  static NSArray<NSString *> *probeKeys;
-  static dispatch_once_t onceToken;
-  dispatch_once(&onceToken, ^{
-    probeKeys = @[
-      @"identifier",
-      @"sharingAuthorizationAllowed",
-      @"readingAuthorizationAllowed",
-    ];
-  });
-
   NSMutableDictionary *out = [NSMutableDictionary dictionary];
-  for (NSString *key in probeKeys) {
-    if (![record respondsToSelector:NSSelectorFromString(key)]) {
-      continue;
-    }
-    id value = [record valueForKey:key];
-    if (!value) {
-      continue;
-    }
-    if ([value isKindOfClass:NSString.class] || [value isKindOfClass:NSNumber.class]) {
-      out[key] = value;
-    } else {
-      out[key] = [NSString stringWithFormat:@"%@", value];
-    }
+  if (record.identifier) {
+    out[@"identifier"] = record.identifier;
+  }
+  if (record.sharingAuthorizationAllowed) {
+    out[@"sharingAuthorizationAllowed"] = record.sharingAuthorizationAllowed;
+  }
+  if (record.readingAuthorizationAllowed) {
+    out[@"readingAuthorizationAllowed"] = record.readingAuthorizationAllowed;
   }
   return out;
 }
 
-#pragma mark - HKObjectType resolution
-
-static id resolveHealthKitObjectType(NSString *identifier)
-{
-  static NSArray<NSString *> *factoryClasses;
-  static NSArray<NSString *> *factorySelectors;
-  static dispatch_once_t onceToken;
-  dispatch_once(&onceToken, ^{
-    factoryClasses = @[
-      @"HKQuantityType",
-      @"HKCategoryType",
-      @"HKCharacteristicType",
-      @"HKCorrelationType",
-      @"HKDocumentType",
-    ];
-    factorySelectors = @[
-      @"quantityTypeForIdentifier:",
-      @"categoryTypeForIdentifier:",
-      @"characteristicTypeForIdentifier:",
-      @"correlationTypeForIdentifier:",
-      @"documentTypeForIdentifier:",
-    ];
-  });
-
-  for (NSUInteger i = 0; i < factoryClasses.count; i++) {
-    Class cls = healthClassForName(factoryClasses[i]);
-    SEL sel = NSSelectorFromString(factorySelectors[i]);
-    if (!cls || ![cls respondsToSelector:sel]) {
-      continue;
-    }
-    NSMethodSignature *sig = [cls methodSignatureForSelector:sel];
-    NSInvocation *inv = [NSInvocation invocationWithMethodSignature:sig];
-    inv.target = cls;
-    inv.selector = sel;
-    [inv setArgument:&identifier atIndex:2];
-    [inv invoke];
-    __unsafe_unretained id type = nil;
-    [inv getReturnValue:&type];
-    if (type) {
-      return type;
-    }
-  }
-  return nil;
-}
-
 #pragma mark - Verb implementations
 
-static int handleSetAction(HKAuthorizationStore *authStore,
+static int handleSetAction(FBHealthSettingsClient *client,
                            NSString *bundleID,
                            NSArray<NSString *> *typeIdentifiers,
                            NSUInteger statusCode,
@@ -177,20 +75,22 @@ static int handleSetAction(HKAuthorizationStore *authStore,
   ? typeIdentifiers
   : defaultApproveTypeIdentifiers();
 
-  NSMutableSet *resolvedTypes = [NSMutableSet set];
+  FBHealthTypeSelection *selection = [[FBHealthTypeSelection alloc] init];
   NSMutableArray<NSString *> *resolvedIdentifiers = [NSMutableArray array];
   NSMutableArray<NSString *> *unresolvedIdentifiers = [NSMutableArray array];
   for (NSString *identifier in requested) {
-    id type = resolveHealthKitObjectType(identifier);
-    if (type) {
-      [resolvedTypes addObject:type];
+    NSNumber *resolved = [selection resolveIdentifier:identifier error:nil];
+    if (!resolved) {
+      return 1;
+    }
+    if (resolved.boolValue) {
       [resolvedIdentifiers addObject:identifier];
     } else {
       NSLog(@"[Health] Skipping unresolved HK type identifier: %@", identifier);
       [unresolvedIdentifiers addObject:identifier];
     }
   }
-  if (resolvedTypes.count == 0) {
+  if (selection.isEmpty) {
     NSDictionary *output = @{
       @"action" : actionName,
       @"bundleID" : bundleID,
@@ -202,53 +102,17 @@ static int handleSetAction(HKAuthorizationStore *authStore,
     return 1;
   }
 
-  // Seed the authorisation request rows first: the daemon silently drops
-  // status writes for unseen (bundleID, type) pairs.
-  __block BOOL seedOK = NO;
-  __block NSError *seedError = nil;
-  dispatch_semaphore_t seedSem = dispatch_semaphore_create(0);
-  [authStore setRequestedAuthorizationForBundleIdentifier:bundleID
-                                               shareTypes:resolvedTypes
-                                                readTypes:resolvedTypes
-                                               completion:^(BOOL ok, NSError *_Nullable err) {
-                                                 seedOK = ok;
-                                                 seedError = err;
-                                                 dispatch_semaphore_signal(seedSem);
-                                               }];
-  dispatch_semaphore_wait(seedSem, dispatch_time(DISPATCH_TIME_NOW, 5 * NSEC_PER_SEC));
-
-  NSMutableDictionary *statuses = [NSMutableDictionary dictionary];
-  for (id type in resolvedTypes) {
-    statuses[type] = @(statusCode);
+  // Seed first: the daemon drops status writes for unseen bundle/type pairs.
+  FBHealthOperationResult *seed = [client seedAuthorizationForBundleIdentifier:bundleID selection:selection error:nil];
+  if (!seed) {
+    return 1;
   }
-  __block BOOL setOK = NO;
-  __block NSError *setError = nil;
-  dispatch_semaphore_t setSem = dispatch_semaphore_create(0);
-  void (^setCompletion)(BOOL, NSError *_Nullable) = ^(BOOL ok, NSError *_Nullable err) {
-    setOK = ok;
-    setError = err;
-    dispatch_semaphore_signal(setSem);
-  };
-  // The selector was renamed in iOS 27 to take `modeInfos:`. Exactly one spelling is present on any
-  // runtime, so ask rather than assume: sending the wrong one raises out of a service entry point that
-  // has to answer with an exit code. Both are declared in HealthKitPrivate.h, so these are checked sends
-  // rather than casts, and `options` is the integer both runtimes actually take.
-  if ([authStore respondsToSelector:@selector(setAuthorizationStatuses:authorizationModes:modeInfos:forBundleIdentifier:options:completion:)]) {
-    [authStore setAuthorizationStatuses:statuses
-                     authorizationModes:@{}
-                              modeInfos:@{}
-                    forBundleIdentifier:bundleID
-                                options:0
-                             completion:setCompletion];
-  } else if ([authStore respondsToSelector:@selector(setAuthorizationStatuses:authorizationModes:forBundleIdentifier:options:completion:)]) {
-    [authStore setAuthorizationStatuses:statuses
-                     authorizationModes:@{}
-                    forBundleIdentifier:bundleID
-                                options:0
-                             completion:setCompletion];
-  } else {
-    // A runtime with neither spelling is a third rename. Report it as the failure it is, naming what was
-    // looked for, rather than raising or reporting a write that never happened as a success.
+  FBHealthAuthorizationWrite *write = [client setAuthorizationForBundleIdentifier:bundleID selection:selection status:statusCode error:nil];
+  if (!write) {
+    return 1;
+  }
+  FBHealthOperationResult *set = write.operation;
+  if (!set) {
     NSDictionary *output = @{
       @"action" : actionName,
       @"bundleID" : bundleID,
@@ -260,78 +124,87 @@ static int handleSetAction(HKAuthorizationStore *authStore,
     printf("%s\n", jsonStringFromObject(output).UTF8String);
     return 1;
   }
-  dispatch_semaphore_wait(setSem, dispatch_time(DISPATCH_TIME_NOW, 5 * NSEC_PER_SEC));
-
+  NSNumber *ok = @(seed.success && set.success);
+  id seedError = [seed readErrorValueWithError:nil];
+  if (!seedError) {
+    return 1;
+  }
+  id setError = [set readErrorValueWithError:nil];
+  if (!setError) {
+    return 1;
+  }
   NSDictionary *output = @{
     @"action" : actionName,
     @"bundleID" : bundleID,
-    @"ok" : @(seedOK && setOK),
+    @"ok" : ok,
     @"resolvedTypes" : resolvedIdentifiers,
     @"unresolvedTypes" : unresolvedIdentifiers,
-    @"seedError" : seedError.localizedDescription ?: [NSNull null],
-    @"setError" : setError.localizedDescription ?: [NSNull null],
+    @"seedError" : seedError,
+    @"setError" : setError,
   };
   printf("%s\n", jsonStringFromObject(output).UTF8String);
-  return (seedOK && setOK) ? 0 : 1;
+  return (seed.success && set.success) ? 0 : 1;
 }
 
-static int handleClearAction(HKAuthorizationStore *authStore, NSString *bundleID)
+static int handleClearAction(FBHealthSettingsClient *client, NSString *bundleID)
 {
-  __block BOOL clearOK = NO;
-  __block NSError *clearError = nil;
-  dispatch_semaphore_t sem = dispatch_semaphore_create(0);
-  [authStore resetAuthorizationStatusForBundleIdentifier:bundleID
-                                              completion:^(BOOL ok, NSError *_Nullable e) {
-                                                clearOK = ok;
-                                                clearError = e;
-                                                dispatch_semaphore_signal(sem);
-                                              }];
-  dispatch_semaphore_wait(sem, dispatch_time(DISPATCH_TIME_NOW, 5 * NSEC_PER_SEC));
+  FBHealthOperationResult *result = [client clearAuthorizationForBundleIdentifier:bundleID error:nil];
+  if (!result) {
+    return 1;
+  }
+  NSNumber *ok = @(result.success);
+  id clearError = [result readErrorValueWithError:nil];
+  if (!clearError) {
+    return 1;
+  }
 
   NSDictionary *output = @{
     @"action" : @"clear",
     @"bundleID" : bundleID,
-    @"ok" : @(clearOK),
-    @"error" : clearError.localizedDescription ?: [NSNull null],
+    @"ok" : ok,
+    @"error" : clearError,
   };
   printf("%s\n", jsonStringFromObject(output).UTF8String);
-  return clearOK ? 0 : 1;
+  return result.success ? 0 : 1;
 }
 
-static int handleListAction(HKAuthorizationStore *authStore, NSString *bundleID)
+static int handleListAction(FBHealthSettingsClient *client, NSString *bundleID)
 {
-  __block NSArray *records = nil;
-  __block NSError *fetchError = nil;
-  dispatch_semaphore_t sem = dispatch_semaphore_create(0);
-  [authStore fetchAuthorizationRecordsForBundleIdentifier:bundleID
-                                               completion:^(NSArray *_Nullable r, NSError *_Nullable e) {
-                                                 records = r;
-                                                 fetchError = e;
-                                                 dispatch_semaphore_signal(sem);
-                                               }];
-  dispatch_semaphore_wait(sem, dispatch_time(DISPATCH_TIME_NOW, 5 * NSEC_PER_SEC));
+  FBHealthRecordsResult *result = [client fetchRecordsForBundleIdentifier:bundleID error:nil];
+  if (!result) {
+    return 1;
+  }
+  NSArray<FBHealthAuthorizationRecord *> *records = [result readRecordsWithError:nil];
+  if (!records) {
+    return 1;
+  }
 
   NSMutableArray *recordDicts = [NSMutableArray array];
-  for (id record in records) {
+  for (FBHealthAuthorizationRecord *record in records) {
     [recordDicts addObject:recordToDictionary(record)];
+  }
+  NSNumber *ok = @(!result.hasError);
+  id fetchError = [result readErrorValueWithError:nil];
+  if (!fetchError) {
+    return 1;
   }
   NSDictionary *output = @{
     @"action" : @"list",
     @"bundleID" : bundleID,
-    @"ok" : @(fetchError == nil),
-    @"error" : fetchError.localizedDescription ?: [NSNull null],
+    @"ok" : ok,
+    @"error" : fetchError,
     @"records" : recordDicts,
   };
   printf("%s\n", jsonStringFromObject(output).UTF8String);
-  return fetchError == nil ? 0 : 1;
+  return !result.hasError ? 0 : 1;
 }
 
 #pragma mark - Dispatch
 
 static int handleHealthSettingsActionImpl(NSString *action, NSString *bundleID, NSArray<NSString *> *typeIdentifiers)
 {
-  HKAuthorizationStore *authStore = loadAuthStore();
-  if (!authStore) {
+  FBHealthSettingsClient *client = [FBHealthSettingsClient liveClient];
+  if (!client) {
     return 1;
   }
   if (!bundleID) {
@@ -339,14 +212,14 @@ static int handleHealthSettingsActionImpl(NSString *action, NSString *bundleID, 
     return 1;
   }
   if ([action isEqualToString:@"list"]) {
-    return handleListAction(authStore, bundleID);
+    return handleListAction(client, bundleID);
   }
   if ([action isEqualToString:@"clear"]) {
-    return handleClearAction(authStore, bundleID);
+    return handleClearAction(client, bundleID);
   }
   if ([action isEqualToString:@"approve"]) {
     return handleSetAction(
-      authStore,
+      client,
       bundleID,
       typeIdentifiers,
       kHealthInternalAuthShareAndRead,
@@ -355,7 +228,7 @@ static int handleHealthSettingsActionImpl(NSString *action, NSString *bundleID, 
   }
   if ([action isEqualToString:@"revoke"]) {
     return handleSetAction(
-      authStore,
+      client,
       bundleID,
       typeIdentifiers,
       kHealthInternalAuthShareAndReadDenied,

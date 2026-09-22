@@ -10,6 +10,7 @@
  #import <SimulatorFrameworkBridgeRuntime/AccessibilityClientProvider.h>
  #import <SimulatorFrameworkBridgeRuntime/AccessibilityResponseEncoder.h>
  #import <SimulatorFrameworkBridgeRuntime/AccessibilityWireValue.h>
+ #import <SimulatorFrameworkBridgeRuntime/HealthSettingsClient.h>
  #import <SimulatorFrameworkBridgeRuntime/NetworkConfigurationStore.h>
  #import <SimulatorFrameworkBridgeRuntime/NotificationSettingsClient.h>
  #import <SimulatorFrameworkBridgeRuntime/PhotoLibraryClient.h>
@@ -18,6 +19,7 @@
  #import "Runtime/AccessibilityClientProvider.h"
  #import "Runtime/AccessibilityResponseEncoder.h"
  #import "Runtime/AccessibilityWireValue.h"
+ #import "Runtime/HealthSettingsClient.h"
  #import "Runtime/NetworkConfigurationStore.h"
  #import "Runtime/NotificationSettingsClient.h"
  #import "Runtime/PhotoLibraryClient.h"
