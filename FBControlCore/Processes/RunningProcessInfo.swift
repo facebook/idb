@@ -7,43 +7,40 @@
 
 import Foundation
 
-@objc
-public final class RunningProcessInfo: NSObject, NSCopying {
+/// A process in the host's process table, as read by `ProcessFetcher`.
+public struct RunningProcessInfo: Hashable, Sendable, CustomStringConvertible {
 
-  @objc public let processIdentifier: pid_t
-  @objc public let launchPath: String
-  @objc public let arguments: [String]
-  @objc public let environment: [String: String]
+  public let processIdentifier: pid_t
+  public let launchPath: String
+  public let arguments: [String]
+  public let environment: [String: String]
 
-  @objc public var processName: String {
+  public var processName: String {
     (launchPath as NSString).lastPathComponent
   }
 
-  @objc
   public init(processIdentifier: pid_t, launchPath: String, arguments: [String], environment: [String: String]) {
     self.processIdentifier = processIdentifier
     self.launchPath = launchPath
     self.arguments = arguments
     self.environment = environment
-    super.init()
   }
 
-  public override var hash: Int {
-    Int(processIdentifier) ^ (launchPath as NSString).hash ^ (arguments as NSArray).hash
+  // The environment takes no part in equality or hashing.
+
+  public static func == (lhs: RunningProcessInfo, rhs: RunningProcessInfo) -> Bool {
+    lhs.processIdentifier == rhs.processIdentifier
+      && lhs.launchPath == rhs.launchPath
+      && lhs.arguments == rhs.arguments
   }
 
-  public override func isEqual(_ object: Any?) -> Bool {
-    guard let other = object as? RunningProcessInfo else { return false }
-    return processIdentifier == other.processIdentifier
-      && launchPath == other.launchPath
-      && arguments == other.arguments
+  public func hash(into hasher: inout Hasher) {
+    hasher.combine(processIdentifier)
+    hasher.combine(launchPath)
+    hasher.combine(arguments)
   }
 
-  public override var description: String {
+  public var description: String {
     "Process \(processName) | PID \(processIdentifier)"
-  }
-
-  public func copy(with zone: NSZone? = nil) -> Any {
-    self
   }
 }

@@ -158,7 +158,7 @@ final class FBControlCoreTransientTests: XCTestCase {
   func testProcessInfoHash() {
     let a = RunningProcessInfo(processIdentifier: 10, launchPath: "/usr/bin/ls", arguments: ["-la"], environment: [:])
     let b = RunningProcessInfo(processIdentifier: 10, launchPath: "/usr/bin/ls", arguments: ["-la"], environment: [:])
-    XCTAssertEqual(a.hash, b.hash)
+    XCTAssertEqual(a.hashValue, b.hashValue)
   }
 
   // MARK: - ApplicationLaunchConfiguration
