@@ -11,6 +11,7 @@ import ImageIO
 import UniformTypeIdentifiers
 
 public enum ScreenshotRenderError: Error, Hashable {
+  case colorSpaceCreationFailed
   case croppingFailed(cropRect: CGRect, sourceSize: CGSize)
   case contextCreationFailed(size: CGSize)
   case scalingFailed(size: CGSize)
@@ -25,6 +26,8 @@ public enum ScreenshotRenderError: Error, Hashable {
 extension ScreenshotRenderError: LocalizedError {
   public var errorDescription: String? {
     switch self {
+    case .colorSpaceCreationFailed:
+      return "Failed to create the sRGB screenshot color space"
     case let .croppingFailed(cropRect, sourceSize):
       return "Failed to crop an image of \(Int(sourceSize.width))x\(Int(sourceSize.height)) pixels to \(cropRect)"
     case let .contextCreationFailed(size):

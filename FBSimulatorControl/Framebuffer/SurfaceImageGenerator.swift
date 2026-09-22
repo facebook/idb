@@ -21,6 +21,7 @@ public struct SurfaceImage: Sendable {
 /// confined by the `SimulatorImage` actor, which serializes `updateSurface` and `image()`.
 public final class SurfaceImageGenerator {
 
+  private static let screenshotColorSpace = CGColorSpace(name: CGColorSpace.sRGB)
   private let logger: (any ControlCoreLogger)?
   /// Created once and reused across renders: CIContext construction is expensive (it builds a GPU
   /// pipeline) and the context carries no per-image state.
@@ -54,7 +55,11 @@ public final class SurfaceImageGenerator {
     guard let surface = self.surface else {
       return nil
     }
-    var source = CIImage(ioSurface: unsafeBitCast(surface, to: IOSurfaceRef.self))
+    guard let colorSpace = Self.screenshotColorSpace else {
+      throw ScreenshotRenderError.colorSpaceCreationFailed
+    }
+    // CoreSimulator screenshots interpret framebuffer samples as sRGB, even when the surface is tagged P3.
+    var source = CIImage(ioSurface: unsafeBitCast(surface, to: IOSurfaceRef.self), options: [.colorSpace: colorSpace])
     if let display {
       guard source.extent == display.bounds else { throw SimulatorDisplayError.changed }
       let orientation: Int32

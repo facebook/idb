@@ -39,7 +39,7 @@ final class SurfaceImageGeneratorTests: XCTestCase {
           height: image.height,
           bitsPerComponent: 8,
           bytesPerRow: image.width * 4,
-          space: CGColorSpaceCreateDeviceRGB(),
+          space: try XCTUnwrap(CGColorSpace(name: CGColorSpace.sRGB)),
           bitmapInfo: CGImageAlphaInfo.premultipliedFirst.rawValue | CGBitmapInfo.byteOrder32Little.rawValue
         )
       else {
@@ -81,6 +81,30 @@ final class SurfaceImageGeneratorTests: XCTestCase {
     let bare = try XCTUnwrap(generator.image())
     let configured = try render(ScreenshotConfiguration(), generator: generator)
     XCTAssertEqual(try pixels(of: bare), try pixels(of: configured.image))
+  }
+
+  func testFramebufferScreenshotSamplesRemainSRGBRegardlessOfSurfaceTag() throws {
+    // Observed CoreSimulator tags: 7 on the cover (P3_D65 / Display P3), 15 on the inner
+    // display (ITU_R_709_2 / sRGB). These are opaque provider values, not public color-space enums.
+    for colorSpace in [7, 15] {
+      let surface = try makeTestIOSurface(width: 64, height: 64) { _, _ in
+        (b: 77, g: 128, r: 180, a: 255)
+      }
+      IOSurfaceSetValue(unsafeBitCast(surface, to: IOSurfaceRef.self), "IOSurfaceColorSpace" as CFString, colorSpace as CFNumber)
+      let generator = SurfaceImageGenerator(purpose: "color-test", logger: nil)
+      generator.updateSurface(surface)
+      for configuration in [
+        ScreenshotConfiguration(),
+        ScreenshotConfiguration(cropRect: CGRect(x: 16, y: 16, width: 32, height: 32), scale: .factor(0.5)),
+      ] {
+        let image = try render(configuration, generator: generator).image
+        let actual = try pixels(of: image)
+        let center = ((image.height / 2) * image.width + image.width / 2) * 4
+        for (channel, expected) in [77, 128, 180, 255].enumerated() {
+          XCTAssertEqual(Int(actual[center + channel]), expected, accuracy: 1, "surface color space \(colorSpace)")
+        }
+      }
+    }
   }
 
   // MARK: - Crop orientation

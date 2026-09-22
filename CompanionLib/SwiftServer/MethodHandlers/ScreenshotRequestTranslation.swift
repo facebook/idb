@@ -153,7 +153,7 @@ enum ScreenshotRequestTranslation {
   /// bare `UNKNOWN`.
   static func status(for error: ScreenshotRenderError) -> RPCError {
     switch error {
-    case .croppingFailed, .contextCreationFailed, .scalingFailed, .destinationCreationFailed,
+    case .colorSpaceCreationFailed, .croppingFailed, .contextCreationFailed, .scalingFailed, .destinationCreationFailed,
       .encodingFailed, .unreadableImageData, .unknownImageDimensions, .decodingFailed:
       return RPCError(code: .internalError, message: error.localizedDescription)
     case .compressionQualityOutOfRange:
