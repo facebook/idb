@@ -621,7 +621,13 @@ private func idbMain() async -> Int32 {
   }
 
   let userDefaults = UserDefaults.standard
-  let logger = IDBLogger.logger(withUserDefaults: userDefaults)
+  let logger: IDBLogger
+  do {
+    logger = try IDBLogger.logger(withUserDefaults: userDefaults)
+  } catch {
+    IDBLogger.systemLogger(withUserDefaults: userDefaults).error().log(error.localizedDescription)
+    return 1
+  }
   logStartupInfo(logger)
 
   guard XcodeConfiguration.developerDirectory != "" else {

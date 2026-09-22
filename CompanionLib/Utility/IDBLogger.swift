@@ -60,36 +60,52 @@ public final class IDBLogger: FBCompositeLogger, @unchecked Sendable {
 
   private static let loggerQueue: DispatchQueue = DispatchQueue(label: "com.facebook.idb.logger")
 
-  public static func logger(withUserDefaults userDefaults: UserDefaults) -> IDBLogger {
-    let debugLogging = userDefaults.string(forKey: "-log-level")?.lowercased() == "info" ? false : true
-    let systemLogger = FBControlCoreLoggerFactory.systemLoggerWriting(toStderr: true, withDebugLogging: debugLogging)
-    var loggers: [ControlCoreLogger] = [systemLogger]
-
-    let logFilePath = userDefaults.string(forKey: "-log-file-path")
-    if let logFilePath {
-      let logFileURL = URL(fileURLWithPath: logFilePath)
-      do {
-        try FileManager.default.createDirectory(at: logFileURL.deletingLastPathComponent(), withIntermediateDirectories: true, attributes: [:])
-      } catch {
-        systemLogger.error().log("Couldn't create log directory at \(logFileURL.deletingLastPathComponent()): \(error)")
-        exit(1)
-      }
-
-      // O_CLOEXEC because the companion spawns processes throughout its life and
-      // none of them have any business inheriting the log.
-      let fileDescriptor = open(logFileURL.path, O_WRONLY | O_APPEND | O_CREAT | O_CLOEXEC, 0o644)
-      let openError = errno
-      if fileDescriptor < 0 {
-        systemLogger.error().log("Couldn't create log file at \(logFileURL.path) \(String(cString: strerror(openError)))")
-        exit(1)
-      }
-
+  /// The logger the companion writes to, which is the stderr logger plus, when
+  /// `-log-file-path` is given, a logger appending to that file.
+  ///
+  /// - Throws: `IDBLoggerError` if the log file's directory cannot be created or the file
+  ///   cannot be opened. A caller handling that has `systemLogger(withUserDefaults:)` to
+  ///   report it through.
+  public static func logger(withUserDefaults userDefaults: UserDefaults) throws -> IDBLogger {
+    var loggers: [ControlCoreLogger] = [systemLoggerSink(withUserDefaults: userDefaults)]
+    if let logFilePath = userDefaults.string(forKey: "-log-file-path") {
+      let fileDescriptor = try openLogFile(atPath: logFilePath)
       loggers.append(FBControlCoreLoggerFactory.logger(toFileDescriptor: fileDescriptor, closeOnEndOfFile: true))
     }
     let logger = IDBLogger(loggers: loggers).dateFormatted()
     ControlCoreGlobalConfiguration.defaultLogger = logger
 
     return logger
+  }
+
+  /// The stderr-only logger. Nothing about it can fail, so a caller can build one to report
+  /// a failure of `logger(withUserDefaults:)` itself.
+  public static func systemLogger(withUserDefaults userDefaults: UserDefaults) -> IDBLogger {
+    IDBLogger(loggers: [systemLoggerSink(withUserDefaults: userDefaults)]).dateFormatted()
+  }
+
+  private static func systemLoggerSink(withUserDefaults userDefaults: UserDefaults) -> ControlCoreLogger {
+    let debugLogging = userDefaults.string(forKey: "-log-level")?.lowercased() != "info"
+    return FBControlCoreLoggerFactory.systemLoggerWriting(toStderr: true, withDebugLogging: debugLogging)
+  }
+
+  private static func openLogFile(atPath path: String) throws -> Int32 {
+    let logFileURL = URL(fileURLWithPath: path)
+    let directoryURL = logFileURL.deletingLastPathComponent()
+    do {
+      try FileManager.default.createDirectory(at: directoryURL, withIntermediateDirectories: true, attributes: [:])
+    } catch {
+      throw IDBLoggerError.logDirectoryCreationFailed(path: directoryURL.path, underlyingError: error)
+    }
+
+    // O_CLOEXEC because the companion spawns processes throughout its life and
+    // none of them have any business inheriting the log.
+    let fileDescriptor = open(logFileURL.path, O_WRONLY | O_APPEND | O_CREAT | O_CLOEXEC, 0o644)
+    let openError = errno
+    guard fileDescriptor >= 0 else {
+      throw IDBLoggerError.logFileOpenFailed(path: logFileURL.path, code: openError)
+    }
+    return fileDescriptor
   }
 
   public override init(loggers: [ControlCoreLogger]) {
