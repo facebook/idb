@@ -702,6 +702,54 @@ final class AXBridgeReadsTests: XCTestCase {
     XCTAssertEqual(writes, 0)
   }
 
+  func testMarkerTapStopsAtAMovedElement() async throws {
+    let (reader, transport) = try nativeWaitReader(responses: [
+      tapMatchingEnvelope(), waitErrorEnvelope("assertion_failed"),
+      tapMatchingEnvelope(), envelope(["ok": true, "pid": 42]),
+    ])
+    do {
+      try await reader.tap(.marker(value: "General", key: .label, depth: 10), options: TapOptions())
+      XCTFail("a refused assertion currently ends the tap")
+    } catch UIAutomationError.elementMoved {
+    }
+    let reads = await transport.readCount
+    let writes = await transport.writeCount
+    XCTAssertEqual(reads, 1)
+    XCTAssertEqual(writes, 1)
+  }
+
+  func testMarkerTapBoundsMovedElementAttempts() async throws {
+    let (reader, transport) = try nativeWaitReader(responses: [
+      tapMatchingEnvelope(), waitErrorEnvelope("assertion_failed"),
+      tapMatchingEnvelope(), waitErrorEnvelope("assertion_failed"),
+    ])
+    do {
+      try await reader.tap(.marker(value: "General", key: .label, depth: 10), options: TapOptions())
+      XCTFail("an element that keeps moving must fail")
+    } catch UIAutomationError.elementMoved {
+    }
+    let reads = await transport.readCount
+    let writes = await transport.writeCount
+    XCTAssertEqual(reads, 1)
+    XCTAssertEqual(writes, 1)
+  }
+
+  func testMarkerSetValueStopsAtAMovedElement() async throws {
+    let (reader, transport) = try nativeWaitReader(responses: [
+      tapMatchingEnvelope(), waitErrorEnvelope("assertion_failed"),
+      tapMatchingEnvelope(), envelope(["ok": true, "pid": 42]),
+    ])
+    do {
+      try await reader.setValue("hello", for: .marker(value: "General", key: .label, depth: 10))
+      XCTFail("a refused assertion currently ends the value write")
+    } catch UIAutomationError.elementMoved {
+    }
+    let reads = await transport.readCount
+    let writes = await transport.writeCount
+    XCTAssertEqual(reads, 1)
+    XCTAssertEqual(writes, 1)
+  }
+
   private func assertNativeWaitRecovers(from kind: String) async throws {
     let (reader, transport) = try nativeWaitReader(responses: [
       waitErrorEnvelope(kind), waitMatchingEnvelope(),
