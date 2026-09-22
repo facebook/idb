@@ -32,6 +32,11 @@ public final class GRPCSwiftServer: @unchecked Sendable {
   /// chunks, so this is well above the transport's 4 MiB default.
   private static let maximumReceiveMessageLength = 16_777_216
 
+  /// The HTTP/2 flow-control window advertised to clients. The transport defaults this to
+  /// 64 KiB, which bounds an upload to one window per round trip and so makes install
+  /// throughput a function of latency rather than bandwidth.
+  private static let targetWindowSize = 8 * 1024 * 1024
+
   private let shutdownLock = NSLock()
   private var didInitiateShutdown = false
   /// The task running `serve()`; cancelling it is the forceful close.
@@ -72,6 +77,7 @@ public final class GRPCSwiftServer: @unchecked Sendable {
       transportSecurity: transportSecurity,
       config: .defaults { config in
         config.rpc.maxRequestPayloadSize = Self.maximumReceiveMessageLength
+        config.http2.targetWindowSize = Self.targetWindowSize
       },
       eventLoopGroup: group)
 
