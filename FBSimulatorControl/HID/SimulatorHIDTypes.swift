@@ -162,7 +162,7 @@ public enum SimulatorTrackpadPhase: Sendable, Equatable, Hashable, CaseIterable 
   }
 }
 
-/// Device orientation. Values match UIDeviceOrientation (1-4, excluding faceUp/faceDown).
+/// Device orientation. Raw values preserve the legacy Purple event encoding.
 public enum SimulatorHIDDeviceOrientation: Int32, Sendable, CaseIterable {
   case portrait = 1
   case portraitUpsideDown = 2

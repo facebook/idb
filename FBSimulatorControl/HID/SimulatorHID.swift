@@ -23,7 +23,7 @@ import Foundation
 
  2. Darwin notifications — e.g. shake, in-call status bar — posted via the SimDevice.
 
- 3. Vendor-defined DTUHID reports — hinge angle control on supported simulators.
+ 3. Vendor-defined DTUHID reports — hinge and orientation controls on supported simulators.
 
  See `Indigo.h` and `GSEvent.h` for wire format documentation.
 
@@ -187,9 +187,24 @@ public final class SimulatorHID: CustomStringConvertible, @unchecked Sendable {
 
   // MARK: - Purple / GSEvents
 
-  /// Rotates the device. Delivered as a GSEvent over Purple, not through the HID transport.
+  /// Rotates through vendor HID when device motion is supported, otherwise through Purple.
   func sendOrientation(_ orientation: SimulatorHIDDeviceOrientation) async throws {
-    try await purple.sendOrientation(orientation)
+    guard let simulator else { throw WeakTargetError.simulator }
+    do {
+      try await SimulatorMotionCapability.deviceMotionState.requireSupported(on: simulator)
+    } catch SimulatorCoreDeviceError.unsupported {
+      try await purple.sendOrientation(orientation)
+      return
+    }
+    try await sendVendorEvent(orientation.vendorEvent(), on: simulator)
+  }
+
+  private func sendVendorEvent(_ event: IndigoVendorDefinedEvent, on simulator: Simulator) async throws {
+    let vendor = try await SimulatorDTUHIDTransport.dtuhid(
+      for: simulator, serviceName: SimulatorDTUHIDTransport.vendorDefinedServiceName)
+    defer { vendor.disconnect() }
+    try await vendor.send(messageType: "IndigoVendorDefinedEvent", payload: event)
+    try await vendor.flush()
   }
 
   /// Locks the device. Delivered as a GSEvent over Purple, not through the HID transport.
@@ -263,12 +278,8 @@ public final class SimulatorHID: CustomStringConvertible, @unchecked Sendable {
       return false
     case let .hinge(angle):
       guard let simulator else { throw WeakTargetError.simulator }
-      try await SimulatorHingeCapability.requireSupported(on: simulator)
-      let vendor = try await SimulatorDTUHIDTransport.dtuhid(
-        for: simulator, serviceName: SimulatorDTUHIDTransport.vendorDefinedServiceName)
-      defer { vendor.disconnect() }
-      try await vendor.send(messageType: "IndigoVendorDefinedEvent", payload: angle.vendorEvent())
-      try await vendor.flush()
+      try await SimulatorMotionCapability.hingeAngle.requireSupported(on: simulator)
+      try await sendVendorEvent(angle.vendorEvent(), on: simulator)
       return false
     case .shake:
       try await sendShake()

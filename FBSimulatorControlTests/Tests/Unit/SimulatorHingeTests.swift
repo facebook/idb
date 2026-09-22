@@ -18,20 +18,22 @@ final class SimulatorHingeTests: XCTestCase {
   }
 
   func testRequiresAdvertisedHingeCapability() throws {
-    try SimulatorHingeCapability.requireSupported(in: capabilityReply(xpc_bool_create(true)))
-    XCTAssertThrowsError(try SimulatorHingeCapability.requireSupported(in: capabilityReply(xpc_bool_create(false)))) { error in
-      guard case SimulatorCoreDeviceError.unsupported = error else { return XCTFail("Expected unsupported hinge, got \(error)") }
+    try SimulatorMotionCapability.hingeAngle.requireSupported(in: capabilityReply(xpc_bool_create(true)))
+    for value in [nil, xpc_bool_create(false)] {
+      XCTAssertThrowsError(try SimulatorMotionCapability.hingeAngle.requireSupported(in: capabilityReply(value))) { error in
+        guard case SimulatorCoreDeviceError.unsupported = error else { return XCTFail("Expected unsupported hinge, got \(error)") }
+      }
     }
   }
 
   func testMalformedCapabilityDoesNotBecomeUnsupported() {
-    for value in [nil, xpc_int64_create(1), xpc_string_create("true"), xpc_null_create()] {
-      XCTAssertThrowsError(try SimulatorHingeCapability.requireSupported(in: capabilityReply(value))) { error in
+    for value in [xpc_int64_create(1), xpc_string_create("true"), xpc_null_create()] {
+      XCTAssertThrowsError(try SimulatorMotionCapability.hingeAngle.requireSupported(in: capabilityReply(value))) { error in
         guard case SimulatorCoreDeviceError.unavailable = error else { return XCTFail("Expected invalid response, got \(error)") }
       }
     }
     for reply in [xpc_null_create(), SimulatorCoreDevice.dictionary([:]), SimulatorCoreDevice.dictionary(["CoreDevice.output": xpc_bool_create(true)])] {
-      XCTAssertThrowsError(try SimulatorHingeCapability.requireSupported(in: reply))
+      XCTAssertThrowsError(try SimulatorMotionCapability.hingeAngle.requireSupported(in: reply))
     }
   }
 
@@ -42,11 +44,11 @@ final class SimulatorHingeTests: XCTestCase {
       SimulatorCoreDevice.dictionary([
         "domain": xpc_string_create("MotionProvider"), "code": xpc_int64_create(42),
       ]))
-    XCTAssertThrowsError(try SimulatorHingeCapability.requireSupported(in: reply)) { error in
+    XCTAssertThrowsError(try SimulatorMotionCapability.hingeAngle.requireSupported(in: reply)) { error in
       XCTAssertTrue(error.localizedDescription.contains("MotionProvider (42)"))
     }
     xpc_dictionary_set_string(reply, "CoreDevice.error", "invalid")
-    XCTAssertThrowsError(try SimulatorHingeCapability.requireSupported(in: reply))
+    XCTAssertThrowsError(try SimulatorMotionCapability.hingeAngle.requireSupported(in: reply))
   }
 
   private func capabilityReply(_ hinge: xpc_object_t?) -> xpc_object_t {
