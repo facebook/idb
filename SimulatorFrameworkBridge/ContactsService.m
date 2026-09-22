@@ -8,52 +8,18 @@
 #import "ContactsService.h"
 #import "ContactsService+Testing.h"
 
-#import <Contacts/Contacts.h>
-#import <Foundation/Foundation.h>
+#if __has_include(<SimulatorFrameworkBridgeSupport/SimulatorFrameworkBridgeSupport-Swift.h>)
+ #import <SimulatorFrameworkBridgeSupport/SimulatorFrameworkBridgeSupport-Swift.h>
+#else
+ #import "SimulatorFrameworkBridgeSupport-Swift.h"
+#endif
 
-int FBContactsClearWithStore(CNContactStore *contactStore, CNSaveRequest *(^makeSaveRequest)(void))
+int FBContactsClearWithStore(CNContactStore *store, CNSaveRequest *(^makeSaveRequest)(void))
 {
-  NSError *fetchError = nil;
-  NSArray<CNContact *> *allContacts = [contactStore unifiedContactsMatchingPredicate:[NSPredicate predicateWithValue:YES]
-                                                                         keysToFetch:@[]
-                                                                               error:&fetchError];
-
-  if (!allContacts) {
-    NSLog(@"Failed to fetch contacts: %@", fetchError.localizedDescription);
-    return 1;
-  }
-
-  NSLog(@"Found %lu contacts to delete", (unsigned long)allContacts.count);
-
-  if (allContacts.count == 0) {
-    NSLog(@"No contacts to delete");
-    return 0;
-  }
-
-  CNSaveRequest *saveRequest = makeSaveRequest();
-  for (CNContact *contact in allContacts) {
-    CNMutableContact *mutableContact = [contact mutableCopy];
-    [saveRequest deleteContact:mutableContact];
-  }
-
-  NSError *deleteError = nil;
-  BOOL success = [contactStore executeSaveRequest:saveRequest error:&deleteError];
-
-  if (!success) {
-    NSLog(@"Failed to delete contacts: %@", deleteError.localizedDescription);
-    return 1;
-  }
-
-  NSLog(@"Successfully deleted all contacts");
-  return 0;
+  return (int)[ContactsServiceStaticFuncs clearWithStore:store makeSaveRequest:makeSaveRequest];
 }
 
 int handleContactsAction(NSString *action)
 {
-  if ([action isEqualToString:@"clear"]) {
-    return FBContactsClearWithStore([[CNContactStore alloc] init], ^{ return [[CNSaveRequest alloc] init]; });
-  } else {
-    NSLog(@"Unknown action: %@", action);
-    return 1;
-  }
+  return (int)[ContactsServiceStaticFuncs handleContactsAction:action ?: @"(null)"];
 }
