@@ -4,11 +4,13 @@ options:
   createIntermediateGroups: true
 
 targets:
-  # An empty SwiftUI app, built for the iOS simulator and bundled into the
+  # A SwiftUI app, built for the iOS simulator and bundled into the
   # distribution's Resources/ as ReplHost.app. It is the default host app for the
   # `app` REPL context: `idb-repl app` without --bundle-id has the companion
   # install this app on demand (IDBCommandExecutor.ensureReplHostAppInstalled)
-  # and drive the REPL against it. Mirrors the Buck `ReplHost` apple_bundle.
+  # and drive the REPL against it. It also requests privacy-gated services on
+  # demand, so a caller that pre-approved them from outside the container can
+  # confirm the approval landed. Mirrors the Buck `ReplHost` apple_bundle.
   ReplHost:
     type: application
     platform: iOS
@@ -34,6 +36,9 @@ targets:
         CODE_SIGN_IDENTITY: "-"
         CODE_SIGN_ENTITLEMENTS: Entitlements.plist
     dependencies:
+      - sdk: AVFoundation.framework
+      - sdk: Contacts.framework
       - sdk: Foundation.framework
+      - sdk: Photos.framework
       - sdk: SwiftUI.framework
       - sdk: UIKit.framework

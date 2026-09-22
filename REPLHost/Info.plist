@@ -20,6 +20,14 @@
 	<string>1</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>Requested on demand so a test can observe whether a pre-approval removed the system prompt.</string>
+	<key>NSContactsUsageDescription</key>
+	<string>Requested on demand so a test can observe whether a pre-approval removed the system prompt.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Requested on demand so a test can observe whether a pre-approval removed the system prompt.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Requested on demand so a test can observe whether a pre-approval removed the system prompt.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>
