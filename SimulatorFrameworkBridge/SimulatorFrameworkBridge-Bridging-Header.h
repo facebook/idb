@@ -16,6 +16,7 @@
  #import <SimulatorFrameworkBridgeRuntime/NetworkConfigurationStore.h>
  #import <SimulatorFrameworkBridgeRuntime/NotificationSettingsClient.h>
  #import <SimulatorFrameworkBridgeRuntime/PhotoLibraryClient.h>
+ #import <SimulatorFrameworkBridgeRuntime/PrivacyRuntime.h>
 #else
  #import "Runtime/AccessibilityClient.h"
  #import "Runtime/AccessibilityClientProvider.h"
@@ -27,5 +28,6 @@
  #import "Runtime/NetworkConfigurationStore.h"
  #import "Runtime/NotificationSettingsClient.h"
  #import "Runtime/PhotoLibraryClient.h"
+ #import "Runtime/PrivacyRuntime.h"
 #endif
 #import "ServiceDispatch.h"
