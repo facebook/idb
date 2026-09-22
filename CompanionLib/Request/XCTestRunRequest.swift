@@ -167,7 +167,7 @@ public struct XCTestRunRequest {
 
   private func fetchAndSetupDescriptor(withBundleStorage bundleStorage: XCTestBundleStorage, target: any Target) async throws -> XCTestDescriptor {
     let descriptor = try fetchDescriptor(withBundleStorage: bundleStorage)
-    try await descriptor.setupAsync(with: self, target: target)
+    try await descriptor.setup(with: self, target: target)
     return descriptor
   }
 

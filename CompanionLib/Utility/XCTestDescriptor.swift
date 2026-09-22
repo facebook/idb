@@ -16,15 +16,9 @@ public protocol XCTestDescriptor: AnyObject {
   var testBundleID: String { get }
   var architectures: Set<String> { get }
   var testBundle: BundleDescriptor { get }
-  func setup(with request: XCTestRunRequest, target: any Target) -> FBFuture<NSNull>
+  func setup(with request: XCTestRunRequest, target: any Target) async throws
   func testConfig(withRunRequest request: XCTestRunRequest, testApps: TestApplicationsPair, logDirectoryPath: String?, logger: ControlCoreLogger) async throws -> IDBAppHostedTestConfiguration
   func testAppPair(for request: XCTestRunRequest, target: any Target) async throws -> TestApplicationsPair
-}
-
-public extension XCTestDescriptor {
-  func setupAsync(with request: XCTestRunRequest, target: any Target) async throws {
-    try await bridgeFBFutureVoid(self.setup(with: request, target: target))
-  }
 }
 
 // MARK: - XCTestBootstrapDescriptor
@@ -79,25 +73,21 @@ final class XCTestBootstrapDescriptor: XCTestDescriptor, CustomStringConvertible
 
   // MARK: - Private
 
-  private static func killAllRunningApplications(_ target: any Target) -> FBFuture<NSNull> {
-    let future: FBFuture<NSNull> = fbFutureFromAsync {
-      let running = try await target.application.running()
-      try await Array(running.keys).concurrentForEachThrowingFirstError { bundleID in
-        try await target.application.kill(bundleID: bundleID)
-      }
-      return NSNull()
+  private static func killAllRunningApplications(_ target: any Target) async throws {
+    let running = try await target.application.running()
+    try await Array(running.keys).concurrentForEachThrowingFirstError { bundleID in
+      try await target.application.kill(bundleID: bundleID)
     }
-    return future
   }
 
   // MARK: - XCTestDescriptor
 
-  public func setup(with request: XCTestRunRequest, target: any Target) -> FBFuture<NSNull> {
+  public func setup(with request: XCTestRunRequest, target: any Target) async throws {
     targetAuxillaryDirectory = target.auxillaryDirectory
     if request.isLogicTest {
-      return FBFuture<NSNull>.empty()
+      return
     }
-    return XCTestBootstrapDescriptor.killAllRunningApplications(target).mapReplace(NSNull()).retyped(FBFuture<NSNull>.self)
+    try await XCTestBootstrapDescriptor.killAllRunningApplications(target)
   }
 
   public func testAppPair(for request: XCTestRunRequest, target: any Target) async throws -> TestApplicationsPair {
@@ -199,9 +189,8 @@ final class XCodebuildTestRunDescriptor: XCTestDescriptor, CustomStringConvertib
 
   // MARK: - XCTestDescriptor
 
-  public func setup(with request: XCTestRunRequest, target: any Target) -> FBFuture<NSNull> {
+  public func setup(with request: XCTestRunRequest, target: any Target) async throws {
     targetAuxillaryDirectory = target.auxillaryDirectory
-    return FBFuture<NSNull>.empty()
   }
 
   public func testAppPair(for request: XCTestRunRequest, target: any Target) async throws -> TestApplicationsPair {
