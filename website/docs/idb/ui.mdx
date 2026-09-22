@@ -122,6 +122,21 @@ idb ui describe com.apple.settings.general --match-key AXUniqueId
 | `--match-key KEY` | `describe` | Attribute the marker is matched against, default `AXLabel` |
 | `--depth N` | `describe` | Maximum tree depth searched for the marker, default `10` |
 
+## Waiting for an element
+
+`idb ui wait MARKER` polls for a case-sensitive substring match, using `AXLabel` by default:
+
+```
+idb ui wait General --timeout 10 --poll-interval 0.5 --json
+idb ui wait com.apple.settings.general --match-key AXUniqueId --json
+```
+
+A match exits successfully and prints `{"found": true}` with `--json`. A timeout exits with an error and prints `found: false` plus an `error` message naming the searched key and marker. The JSON `error` contains only the timeout explanation; observed values appear separately in `diagnostics`. Without `--json`, the CLI formats those values beneath the explanation.
+
+With either `--api axbridge` (the default) or `--api ax`, timeout `diagnostics.unmatched_values` contains only nonmatching values of the searched key from the final poll: labels for a label search, identifiers for an identifier search. It contains no other element attributes and requires no additional tree read. The sample holds at most 50 values, each limited to 200 characters; `diagnostics.truncated` indicates omitted text. Older companions and backends that do not supply diagnostics omit the field.
+
+For `axbridge`, `diagnostics.truncated` also records a truncated tree read. If its final poll ended in a retryable read failure, `diagnostics.read_error` explains why and the values are empty. The `ax` backend propagates read failures as errors instead.
+
 ## Acting on elements
 
 These commands resolve a target through the accessibility system and then perform the action the platform itself would perform. They are not synthesized touches: an accessibility press activates the element directly, so it does not depend on where the element is on screen at the moment of the press.

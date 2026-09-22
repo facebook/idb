@@ -577,19 +577,42 @@ class AccessibilityTests(IdbEndToEndTestCase):
             ],
         )
 
-    async def test_ui_wait_times_out_and_rejects_an_invalid_poll_interval(
-        self,
-    ) -> None:
-        timed_out = await self.idb_expect_failure(
-            "ui",
-            "wait",
-            "idb-e2e-no-such-element",
-            "--timeout",
-            "1",
-            "--json",
-            expected_error="Timed out waiting for",
-        )
-        self.assertEqual(json.loads(timed_out.text), {"found": False})
+    async def test_ui_wait_times_out_and_rejects_an_invalid_poll_interval(self) -> None:
+        for backend in ("axbridge", "ax"):
+            with self.subTest(backend=backend):
+                completed = await self.idb_expect_failure(
+                    "ui",
+                    "wait",
+                    "idb-e2e-no-such-element",
+                    "--api",
+                    backend,
+                    "--timeout",
+                    "1",
+                    "--json",
+                    expected_error="timed out after",
+                )
+                result = json.loads(completed.text)
+                self.assertFalse(result["found"])
+                self.assertIn("AXLabel", result["error"])
+                self.assertIn("idb-e2e-no-such-element", result["error"])
+                backend_name = "accessibility" if backend == "ax" else backend
+                self.assertEqual(
+                    result["error"],
+                    f"The {backend_name} backend timed out after 1.0s waiting for "
+                    'AXLabel containing "idb-e2e-no-such-element"; it never appeared.',
+                )
+                diagnostics = result["diagnostics"]
+                self.assertIsNone(diagnostics["read_error"])
+                self.assertTrue(diagnostics["unmatched_values"])
+                self.assertTrue(
+                    all(
+                        isinstance(value, str)
+                        for value in diagnostics["unmatched_values"]
+                    )
+                )
+                self.assertNotIn(
+                    "idb-e2e-no-such-element", diagnostics["unmatched_values"]
+                )
 
         rejected = await self.idb_expect_failure(
             "ui",
@@ -677,11 +700,10 @@ class AccessibilityTests(IdbEndToEndTestCase):
             "--timeout",
             str(NOTHING_OPENS_TIMEOUT_SECONDS),
             "--json",
-            expected_error="Timed out waiting for",
+            expected_error="timed out after",
         )
-        self.assertEqual(
-            json.loads(rejected.text),
-            {"found": False},
+        self.assertFalse(
+            json.loads(rejected.text)["found"],
             "The rejected tap opened General",
         )
 

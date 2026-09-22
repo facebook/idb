@@ -8,6 +8,8 @@
 import json
 import sys
 from argparse import ArgumentParser, Namespace
+from dataclasses import asdict
+from typing import Any
 
 from idb.cli import ClientCommand
 from idb.common.types import (
@@ -446,7 +448,7 @@ class AccessibilityWaitCommand(ClientCommand):
         )
 
     async def run_with_client(self, args: Namespace, client: Client) -> None:
-        found = await client.accessibility_wait(
+        result = await client.accessibility_wait_result(
             target=AccessibilityMarker(
                 value=args.marker,
                 match_key=ACCESSIBILITY_KEY_BY_NAME[args.match_key],
@@ -455,12 +457,33 @@ class AccessibilityWaitCommand(ClientCommand):
             poll_interval=args.poll_interval,
             backend=ACCESSIBILITY_BACKEND_BY_NAME[args.api],
         )
+        message = result.message or (
+            f"Timed out waiting for {args.match_key} containing {args.marker!r} "
+            f"after {args.timeout:g}s"
+        )
         if args.json:
-            print(json.dumps({"found": found}))
-        if not found:
-            raise IdbException(
-                f"Timed out waiting for {args.marker!r} after {args.timeout:g}s"
-            )
+            output: dict[str, Any] = {"found": result.found}
+            if not result.found:
+                output["error"] = message
+                if result.diagnostics is not None:
+                    output["diagnostics"] = asdict(result.diagnostics)
+            print(json.dumps(output))
+        if result.found:
+            return
+        if not args.json and result.diagnostics is not None:
+            diagnostics = result.diagnostics
+            if diagnostics.read_error is not None:
+                message += (
+                    f"\nLast poll could not read the tree: {diagnostics.read_error}"
+                )
+            else:
+                suffix = " (truncated)" if diagnostics.truncated else ""
+                message += f"\nLast poll's nonmatching {args.match_key} values{suffix}:"
+                message += "\n" + (
+                    "\n".join(f"  {value!r}" for value in diagnostics.unmatched_values)
+                    or "  (none)"
+                )
+        raise IdbException(message)
 
 
 class AccessibilityScrollCommand(ClientCommand):

@@ -32,6 +32,8 @@ from idb.common.types import (
     AccessibilityPoint,
     AccessibilityScrollDirection,
     AccessibilitySearchableKey,
+    AccessibilitySearchDiagnostics,
+    AccessibilityWaitResult,
     Compression,
     CrashLogQuery,
     DeliveredNotification,
@@ -1435,7 +1437,9 @@ class TestParser(TestCase):
         )
 
     async def test_wait_for_marker(self) -> None:
-        self.client_mock.accessibility_wait = AsyncMock(return_value=True)
+        self.client_mock.accessibility_wait_result = AsyncMock(
+            return_value=AccessibilityWaitResult(found=True)
+        )
         exit_code = await cli_main(
             cmd_input=[
                 "ui",
@@ -1452,7 +1456,7 @@ class TestParser(TestCase):
             ]
         )
         self.assertEqual(exit_code, 0)
-        self.client_mock.accessibility_wait.assert_called_once_with(
+        self.client_mock.accessibility_wait_result.assert_called_once_with(
             target=AccessibilityMarker(
                 "General", AccessibilitySearchableKey.UNIQUE_ID, 10
             ),
@@ -1462,14 +1466,86 @@ class TestParser(TestCase):
         )
 
     async def test_wait_timeout_has_a_distinct_json_result(self) -> None:
-        self.client_mock.accessibility_wait = AsyncMock(return_value=False)
+        self.client_mock.accessibility_wait_result = AsyncMock(
+            return_value=AccessibilityWaitResult(found=False)
+        )
         with redirect_stdout(StringIO()) as output:
             exit_code = await cli_main(cmd_input=["ui", "wait", "missing", "--json"])
         self.assertEqual(exit_code, 1)
-        self.assertEqual(json.loads(output.getvalue()), {"found": False})
+        self.assertEqual(
+            json.loads(output.getvalue()),
+            {
+                "found": False,
+                "error": "Timed out waiting for AXLabel containing 'missing' after 10s",
+            },
+        )
+
+    async def test_wait_timeout_reports_final_probe_diagnostics(self) -> None:
+        self.client_mock.accessibility_wait_result = AsyncMock(
+            return_value=AccessibilityWaitResult(
+                found=False,
+                message="Timed out waiting for AXLabel containing 'missing'",
+                diagnostics=AccessibilitySearchDiagnostics(
+                    unmatched_values=["Settings", "General"]
+                ),
+            )
+        )
+        with redirect_stdout(StringIO()) as output:
+            exit_code = await cli_main(cmd_input=["ui", "wait", "missing", "--json"])
+        self.assertEqual(exit_code, 1)
+        self.assertEqual(
+            json.loads(output.getvalue()),
+            {
+                "found": False,
+                "error": "Timed out waiting for AXLabel containing 'missing'",
+                "diagnostics": {
+                    "unmatched_values": ["Settings", "General"],
+                    "truncated": False,
+                    "read_error": None,
+                },
+            },
+        )
+
+    async def test_wait_text_formats_structured_diagnostics(self) -> None:
+        message = "Timed out waiting for AXLabel containing 'missing'"
+        for diagnostics, detail in [
+            (
+                AccessibilitySearchDiagnostics(
+                    unmatched_values=["Settings", "General"], truncated=True
+                ),
+                "Last poll's nonmatching AXLabel values (truncated):\n  'Settings'\n  'General'",
+            ),
+            (
+                AccessibilitySearchDiagnostics(),
+                "Last poll's nonmatching AXLabel values:\n  (none)",
+            ),
+            (
+                AccessibilitySearchDiagnostics(read_error="application unavailable"),
+                "Last poll could not read the tree: application unavailable",
+            ),
+        ]:
+            with self.subTest(diagnostics=diagnostics):
+                self.client_mock.accessibility_wait_result = AsyncMock(
+                    return_value=AccessibilityWaitResult(
+                        found=False, message=message, diagnostics=diagnostics
+                    )
+                )
+                with redirect_stderr(StringIO()) as error:
+                    exit_code = await cli_main(cmd_input=["ui", "wait", "missing"])
+                self.assertEqual(exit_code, 1)
+                self.assertEqual(error.getvalue(), f"{message}\n{detail}\n")
+
+    async def test_wait_success_preserves_json_shape(self) -> None:
+        self.client_mock.accessibility_wait_result = AsyncMock(
+            return_value=AccessibilityWaitResult(found=True)
+        )
+        with redirect_stdout(StringIO()) as output:
+            exit_code = await cli_main(cmd_input=["ui", "wait", "ready", "--json"])
+        self.assertEqual(exit_code, 0)
+        self.assertEqual(json.loads(output.getvalue()), {"found": True})
 
     async def test_wait_command_error_has_no_timeout_result(self) -> None:
-        self.client_mock.accessibility_wait = AsyncMock(
+        self.client_mock.accessibility_wait_result = AsyncMock(
             side_effect=IdbException("reader failed")
         )
         with redirect_stdout(StringIO()) as output:
