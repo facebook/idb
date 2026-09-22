@@ -223,19 +223,16 @@ final class AXBridgeUIAutomation: AXBridgeTreeReader, @unchecked Sendable {
     guard options.duration == nil else {
       throw UIAutomationError.operationUnsupported(backend: backend, operation: "A tap with a hold duration")
     }
-    let target = try await resolveWriteTarget(for: query, operation: "A tap", callerAssertion: options.assertion)
-    try await write(.perform(.press), to: target, query: query)
+    try await resolveAndWrite(.perform(.press), for: query, operation: "A tap", callerAssertion: options.assertion)
   }
 
   func setValue(_ value: String, for query: AccessibilityElementQuery) async throws {
-    let target = try await resolveWriteTarget(for: query, operation: "Setting a value", callerAssertion: nil)
-    try await write(.setValue(value), to: target, query: query)
+    try await resolveAndWrite(.setValue(value), for: query, operation: "Setting a value", callerAssertion: nil)
   }
 
   func scroll(_ query: AccessibilityElementQuery, direction: AccessibilityScrollDirection) async throws {
     let scrolled = try await scrollTarget(for: query, backend: backend)
-    let target = try await resolveWriteTarget(for: scrolled, operation: "Scroll", callerAssertion: nil)
-    try await write(.perform(Self.action(for: direction)), to: target, query: scrolled)
+    try await resolveAndWrite(.perform(Self.action(for: direction)), for: scrolled, operation: "Scroll", callerAssertion: nil)
   }
 
   /// Synthesized over HID: a drag is a touch path, not an action on a single element, so the guest has
@@ -254,6 +251,27 @@ final class AXBridgeUIAutomation: AXBridgeTreeReader, @unchecked Sendable {
         releaseDuration: options.releaseDuration
       )
     )
+  }
+
+  /// A marker names an element; the point it resolves to is an inference from one tree read, and the
+  /// guest refuses the write when the element it hit no longer carries the asserted value. Nothing is
+  /// written in that case, so the read can be taken again and the write sent once more — and only idb
+  /// holds the tree the marker resolved against, so no caller could do this instead.
+  private func resolveAndWrite(
+    _ kind: AXBridgeWriteRequest.Kind,
+    for query: AccessibilityElementQuery,
+    operation: String,
+    callerAssertion: TapOptions.Assertion?
+  ) async throws {
+    do {
+      let target = try await resolveWriteTarget(for: query, operation: operation, callerAssertion: callerAssertion)
+      try await write(kind, to: target, query: query)
+    } catch UIAutomationError.elementMoved {
+      try Task.checkCancellation()
+      _ = simulator.logger.log("axbridge \(operation): the element moved before the write landed; re-reading the tree once")
+      let target = try await resolveWriteTarget(for: query, operation: operation, callerAssertion: callerAssertion)
+      try await write(kind, to: target, query: query)
+    }
   }
 
   private func resolveWriteTarget(
