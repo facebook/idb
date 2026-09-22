@@ -11,7 +11,7 @@ import Testing
 
 /// Records the clients handed to it, so a test can observe an accepted connection. The file
 /// descriptors are owned by the delegate once delivered — nothing else closes them.
-private final class RecordingSocketServerDelegate: NSObject, SocketServerDelegate {
+private final class RecordingSocketServerDelegate: SocketServerDelegate {
 
   let queue = DispatchQueue(label: "com.facebook.fbcontrolcore.tests.socketserver")
 
@@ -24,7 +24,7 @@ private final class RecordingSocketServerDelegate: NSObject, SocketServerDelegat
     return connected
   }
 
-  func socketServer(_ server: FBSocketServer, clientConnected address: in6_addr, fileDescriptor: Int32) {
+  func socketServer(_ server: SocketServer, clientConnected address: in6_addr, fileDescriptor: Int32) {
     lock.lock()
     connected.append(fileDescriptor)
     lock.unlock()
@@ -41,7 +41,7 @@ private final class RecordingSocketServerDelegate: NSObject, SocketServerDelegat
 /// reads back from the kernel, the two failures it reports for a lifecycle called out of order, and
 /// the delegate callback an accepted client produces.
 @Suite("Socket server")
-struct FBSocketServerTests {
+struct SocketServerTests {
 
   /// Port zero asks the kernel for an ephemeral port, so nothing here collides with a port another
   /// test or another process has already bound.
@@ -82,10 +82,10 @@ struct FBSocketServerTests {
   @Test("Listening on port zero reads back the port the kernel bound")
   func listeningOnPortZeroReadsBackTheBoundPort() throws {
     let delegate = RecordingSocketServerDelegate()
-    let server = FBSocketServer(onPort: Self.ephemeralPort, delegate: delegate)
-    defer { _ = server.stopListening() }
+    let server = SocketServer(onPort: Self.ephemeralPort, delegate: delegate)
+    defer { try? server.stopListening() }
 
-    try server.startListening().`await`()
+    try server.startListening()
 
     #expect(server.port != 0)
   }
@@ -93,34 +93,34 @@ struct FBSocketServerTests {
   @Test("A server that is already listening refuses to listen again")
   func listeningTwiceFails() throws {
     let delegate = RecordingSocketServerDelegate()
-    let server = FBSocketServer(onPort: Self.ephemeralPort, delegate: delegate)
-    defer { _ = server.stopListening() }
-    try server.startListening().`await`()
+    let server = SocketServer(onPort: Self.ephemeralPort, delegate: delegate)
+    defer { try? server.stopListening() }
+    try server.startListening()
 
     #expect(throws: (any Error).self) {
-      try server.startListening().`await`()
+      try server.startListening()
     }
   }
 
   @Test("A server that is not listening refuses to stop")
   func stoppingWithoutListeningFails() throws {
     let delegate = RecordingSocketServerDelegate()
-    let server = FBSocketServer(onPort: Self.ephemeralPort, delegate: delegate)
+    let server = SocketServer(onPort: Self.ephemeralPort, delegate: delegate)
 
     #expect(throws: (any Error).self) {
-      try server.stopListening().`await`()
+      try server.stopListening()
     }
   }
 
   @Test("A connected client reaches the delegate with its file descriptor")
   func connectedClientReachesTheDelegate() throws {
     let delegate = RecordingSocketServerDelegate()
-    let server = FBSocketServer(onPort: Self.ephemeralPort, delegate: delegate)
+    let server = SocketServer(onPort: Self.ephemeralPort, delegate: delegate)
     defer {
-      _ = server.stopListening()
+      try? server.stopListening()
       delegate.closeAll()
     }
-    try server.startListening().`await`()
+    try server.startListening()
 
     let client = try Self.connect(toPort: server.port)
     defer { close(client) }

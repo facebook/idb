@@ -8,7 +8,7 @@
 import Foundation
 
 /// The Delegate for the Server.
-@objc public protocol SocketServerDelegate: NSObjectProtocol {
+public protocol SocketServerDelegate: AnyObject {
 
   /// Called when the socket server has a new client connected.
   /// The File Descriptor will not be automatically be closed, so it's up to implementors to ensure that this happens so file descriptors do not leak.
@@ -18,10 +18,9 @@ import Foundation
   ///   - server: the socket server.
   ///   - address: the IP Address of the connected client.
   ///   - fileDescriptor: the file descriptor of the connected socket.
-  @objc(socketServer:clientConnected:fileDescriptor:)
-  func socketServer(_ server: FBSocketServer, clientConnected address: in6_addr, fileDescriptor: Int32)
+  func socketServer(_ server: SocketServer, clientConnected address: in6_addr, fileDescriptor: Int32)
 
   /// The Queue on which the Delegate will be called.
   /// This may be a serial or a concurrent queue.
-  @objc var queue: DispatchQueue { get }
+  var queue: DispatchQueue { get }
 }

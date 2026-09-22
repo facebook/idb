@@ -31,8 +31,7 @@ public enum SocketServerError: Error, LocalizedError {
 }
 
 /// A generic socket server.
-@objc
-public final class FBSocketServer: NSObject {
+public final class SocketServer {
 
   /// The port the server is bound on.
   public private(set) var port: in_port_t
@@ -44,31 +43,23 @@ public final class FBSocketServer: NSObject {
   public init(onPort port: in_port_t, delegate: any SocketServerDelegate) {
     self.port = port
     self.delegate = delegate
-    super.init()
   }
 
   /// Create and listen to the socket.
-  public func startListening() -> FBFuture<NSNull> {
+  public func startListening() throws {
     if acceptSource != nil {
-      return FBFuture<NSNull>(error: SocketServerError.alreadyListening)
+      throw SocketServerError.alreadyListening
     }
-    do {
-      try createSocket(port: port)
-    } catch {
-      return FBFuture<NSNull>(error: error)
-    }
-    return FBFuture<NSNull>.empty()
+    try createSocket(port: port)
   }
 
   /// Stop listening to the socket.
-  @discardableResult
-  public func stopListening() -> FBFuture<NSNull> {
+  public func stopListening() throws {
     guard let acceptSource else {
-      return FBFuture<NSNull>(error: SocketServerError.notListening)
+      throw SocketServerError.notListening
     }
     acceptSource.cancel()
     self.acceptSource = nil
-    return FBFuture<NSNull>.empty()
   }
 
   private func createSocket(port: in_port_t) throws {

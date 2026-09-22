@@ -108,7 +108,7 @@ final class DeviceDebugServerTests {
     var sockets: [Int32] = [-1, -1]
     #expect((socketpair(AF_UNIX, SOCK_STREAM, 0, &sockets)) == (0))
     server.socketServer(
-      FBSocketServer(onPort: 0, delegate: server),
+      SocketServer(onPort: 0, delegate: server),
       clientConnected: in6addr_any,
       fileDescriptor: sockets[0])
     // The device has nothing to relay, so the connection-side loop ends on its first read; hanging

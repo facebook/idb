@@ -10,9 +10,9 @@ import Foundation
 
 private let connectionReadSizeLimit: size_t = 1024
 
-public final class DeviceDebugServer: NSObject, SocketServerDelegate, DebugServer {
+public final class DeviceDebugServer: SocketServerDelegate, DebugServer {
   private let serviceConnection: LockdownServiceConnection
-  private lazy var tcpServer: FBSocketServer = FBSocketServer(onPort: self.port, delegate: self)
+  private lazy var tcpServer: SocketServer = SocketServer(onPort: self.port, delegate: self)
   private let port: in_port_t
   private let logger: any ControlCoreLogger
   private let teardown: FBMutableFuture<NSNull>
@@ -66,13 +66,12 @@ public final class DeviceDebugServer: NSObject, SocketServerDelegate, DebugServe
     self.queue = queue
     self.logger = logger
     self.teardown = FBMutableFuture<NSNull>(name: "Debug server for \(serviceConnection.name)")
-    super.init()
   }
 
   // MARK: - SocketServerDelegate
 
   public func socketServer(
-    _ server: FBSocketServer,
+    _ server: SocketServer,
     clientConnected address: in6_addr,
     fileDescriptor: Int32
   ) {
@@ -118,7 +117,7 @@ public final class DeviceDebugServer: NSObject, SocketServerDelegate, DebugServe
   }
 
   private func startListening() async throws {
-    try await bridgeFBFutureVoid(tcpServer.startListening())
+    try tcpServer.startListening()
     logger.log("TCP Server now running, bootstrap commands for lldb are \(lldbBootstrapCommands.joined(separator: "\n"))")
     let tcpServer = self.tcpServer
     let connection = serviceConnection
@@ -141,11 +140,11 @@ public final class DeviceDebugServer: NSObject, SocketServerDelegate, DebugServe
   /// Innermost first: the socket a client would reach the connection through goes before the
   /// connection itself.
   private static func stop(
-    tcpServer: FBSocketServer,
+    tcpServer: SocketServer,
     connection: LockdownServiceConnection,
     logger: any ControlCoreLogger
   ) {
-    tcpServer.stopListening()
+    try? tcpServer.stopListening()
     MobileDevice.invalidateServiceConnection(connection, service: connection.name, logger: logger)
   }
 
