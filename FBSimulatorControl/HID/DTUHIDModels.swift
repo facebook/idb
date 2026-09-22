@@ -99,3 +99,15 @@ struct IndigoButtonEvent: Encodable {
   let usageCode: UInt64
   let state: HIDButtonState
 }
+
+/**
+ The `dtuhidd` `IndigoVendorDefinedEvent` payload, sent to the vendor-defined service: a HID
+ `usagePage` / `usage` pair identifying the control and an opaque `data` report the guest's
+ virtual-machine provider decodes (the hinge slider and orientation picker controls).
+ */
+struct IndigoVendorDefinedEvent: Encodable {
+  let usagePage: UInt16
+  let usage: UInt16
+  let version: UInt32
+  let data: Data
+}

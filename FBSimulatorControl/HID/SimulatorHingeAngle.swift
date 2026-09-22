@@ -44,10 +44,3 @@ private enum HingeError: Error, LocalizedError {
     }
   }
 }
-
-struct IndigoVendorDefinedEvent: Encodable {
-  let usagePage: UInt16
-  let usage: UInt16
-  let version: UInt32
-  let data: Data
-}
