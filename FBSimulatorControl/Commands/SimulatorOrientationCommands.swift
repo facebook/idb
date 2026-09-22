@@ -25,7 +25,7 @@ public enum SimulatorDeviceOrientation: String, CaseIterable, Sendable {
       case .landscapeLeft: return .landscapeLeft
       case .landscapeRight: return .landscapeRight
       case .unknown, .faceUp, .faceDown:
-        throw SimulatorCoreDeviceError.unsupported("Setting device orientation to \(rawValue)")
+        throw SimulatorOrientationError.unwritable(self)
       }
     }
   }
@@ -40,6 +40,17 @@ public enum SimulatorDeviceOrientation: String, CaseIterable, Sendable {
     case 5: return .faceUp
     case 6: return .faceDown
     default: throw SimulatorCoreDeviceError.unavailable("Unrecognized device orientation: \(value)")
+    }
+  }
+}
+
+public enum SimulatorOrientationError: Error, LocalizedError, Equatable {
+  /// Only the four physical directions can be written; flat and unknown states are read-only.
+  case unwritable(SimulatorDeviceOrientation)
+
+  public var errorDescription: String? {
+    switch self {
+    case let .unwritable(orientation): "Device orientation \(orientation.rawValue) cannot be set; choose portrait, portraitUpsideDown, landscapeLeft or landscapeRight"
     }
   }
 }

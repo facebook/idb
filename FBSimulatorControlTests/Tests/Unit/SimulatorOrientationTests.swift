@@ -20,11 +20,11 @@ final class SimulatorOrientationTests: XCTestCase {
     }
   }
 
-  func testUnwritablePhysicalOrientationsAreUnsupported() {
+  func testUnwritablePhysicalOrientationsAreInvalidArguments() {
     for orientation: SimulatorDeviceOrientation in [.unknown, .faceUp, .faceDown] {
       XCTAssertThrowsError(try orientation.hidOrientation) { error in
-        guard case SimulatorCoreDeviceError.unsupported = error else {
-          return XCTFail("Expected unsupported orientation, got \(error)")
+        guard case SimulatorOrientationError.unwritable(orientation) = error else {
+          return XCTFail("Expected an unwritable orientation, got \(error)")
         }
       }
     }
