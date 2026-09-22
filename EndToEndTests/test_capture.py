@@ -7,13 +7,33 @@
 
 from __future__ import annotations
 
-from .harness import IdbEndToEndTestCase
+import unittest
+
+from .harness import IdbEndToEndTestCase, select_tests_for_capability, SuiteCapability
 
 PNG_SIGNATURE = b"\x89PNG\r\n\x1a\n"
 
 SETTINGS_BUNDLE_ID = "com.apple.Preferences"
 
 LOG_TIMEOUT_SECONDS = 60.0
+
+CAPTURE_TEST_CAPABILITIES = {
+    "test_log_streams_simulator_output": SuiteCapability.LONG_LIVED_STREAM,
+    "test_screenshot_writes_a_png_to_a_file_and_to_stdout": SuiteCapability.ARTIFACT_PUBLICATION,
+}
+
+
+def load_tests(
+    loader: unittest.TestLoader,
+    tests: unittest.TestSuite,
+    pattern: str | None,
+) -> unittest.TestSuite:
+    return select_tests_for_capability(
+        loader,
+        tests,
+        CaptureTests,
+        CAPTURE_TEST_CAPABILITIES,
+    )
 
 
 class CaptureTests(IdbEndToEndTestCase):
@@ -38,10 +58,10 @@ class CaptureTests(IdbEndToEndTestCase):
 
     async def test_log_streams_simulator_output(self) -> None:
         async with self.idb_process("log") as log:
-            # Launching Settings produces log activity. Stop any existing instance first.
-            self.addAsyncCleanup(self.terminate_quietly, SETTINGS_BUNDLE_ID)
-            await self.terminate_quietly(SETTINGS_BUNDLE_ID)
-            await self.idb("launch", SETTINGS_BUNDLE_ID)
+            # The setup client owns both the stimulus and its cleanup.
+            self.addAsyncCleanup(self.setup_terminate_quietly, SETTINGS_BUNDLE_ID)
+            await self.setup_terminate_quietly(SETTINGS_BUNDLE_ID)
+            await self.setup_idb("launch", SETTINGS_BUNDLE_ID)
 
             self.assertTrue(
                 (await log.read_some(LOG_TIMEOUT_SECONDS)).strip(),
