@@ -564,6 +564,10 @@ public final class IDBCommandExecutor {
     try await simulatorTarget().preferences.apply(.locale(localeIdentifier: identifier))
   }
 
+  public func hinge_angle() async throws -> Double {
+    try await simulatorTarget().hinge.angle().degrees
+  }
+
   public func get_current_locale_identifier() async throws -> String {
     try await simulatorTarget().preferences.getCurrentPreference("AppleLocale", domain: nil)
   }

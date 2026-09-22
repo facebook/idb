@@ -13,6 +13,7 @@ from idb.common.types import (
     HIDDelay,
     HIDDirection,
     HIDEvent,
+    HIDHinge,
     HIDKey,
     HIDOrientation,
     HIDOrientationType,
@@ -29,6 +30,7 @@ from idb.grpc.idb_pb2 import HIDEvent as GrpcHIDEvent, Point as GrpcPoint
 
 GrpcHIDButton = GrpcHIDEvent.HIDButton
 GrpcHIDDelay = GrpcHIDEvent.HIDDelay
+GrpcHIDHinge = GrpcHIDEvent.HIDHinge
 GrpcHIDKey = GrpcHIDEvent.HIDKey
 GrpcHIDPinch = GrpcHIDEvent.HIDPinch
 GrpcHIDPress = GrpcHIDEvent.HIDPress
@@ -163,6 +165,8 @@ def event_to_grpc(event: HIDEvent) -> GrpcHIDEvent:
         return GrpcHIDEvent(pinch=pinch_to_grpc(event))
     elif isinstance(event, HIDOrientation):
         return GrpcHIDEvent(orientation=orientation_to_grpc(event))
+    elif isinstance(event, HIDHinge):
+        return GrpcHIDEvent(hinge=GrpcHIDHinge(angle=event.angle))
     elif isinstance(event, HIDShake):
         return GrpcHIDEvent(shake=shake_to_grpc(event))
     else:

@@ -1995,6 +1995,36 @@ class TestParser(TestCase):
             orientation=HIDOrientationType.LANDSCAPE_LEFT
         )
 
+    async def test_hinge_get(self) -> None:
+        self.client_mock.get_hinge_angle = AsyncMock(return_value=130.0)
+        with redirect_stdout(StringIO()) as output:
+            self.assertEqual(await cli_main(cmd_input=["hinge"]), 0)
+        self.assertEqual(output.getvalue().strip(), "130.0")
+        self.client_mock.get_hinge_angle.assert_called_once_with()
+
+    async def test_hinge_get_json(self) -> None:
+        self.client_mock.get_hinge_angle = AsyncMock(return_value=0.0)
+        with redirect_stdout(StringIO()) as output:
+            self.assertEqual(await cli_main(cmd_input=["hinge", "--json"]), 0)
+        self.assertEqual(json.loads(output.getvalue()), {"angle": 0.0})
+
+    async def test_hinge(self) -> None:
+        self.client_mock.get_hinge_angle = AsyncMock()
+        self.client_mock.set_hinge_angle = AsyncMock(return_value=None)
+        for angle in [0, 90, 135.5, 180]:
+            with self.subTest(angle=angle):
+                await cli_main(cmd_input=["hinge", str(angle)])
+                self.client_mock.set_hinge_angle.assert_called_with(angle=angle)
+        self.client_mock.get_hinge_angle.assert_not_called()
+
+    async def test_hinge_rejects_invalid_angles(self) -> None:
+        self.client_mock.set_hinge_angle = AsyncMock(return_value=None)
+        for angle in ["-1", "181", "nan", "inf", "-inf"]:
+            with self.subTest(angle=angle):
+                exit_code = await cli_main(cmd_input=["hinge", angle])
+                self.assertEqual(exit_code, 2)
+        self.client_mock.set_hinge_angle.assert_not_called()
+
     async def test_shake(self) -> None:
         self.client_mock.shake = AsyncMock(return_value=[])
         await cli_main(cmd_input=["ui", "shake"])

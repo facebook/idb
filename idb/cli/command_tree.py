@@ -87,6 +87,7 @@ from idb.cli.commands.hid import (
     SwipeCommand,
     TextCommand,
 )
+from idb.cli.commands.hinge import HingeCommand
 from idb.cli.commands.instruments import InstrumentsCommand
 from idb.cli.commands.keychain import KeychainClearCommand
 from idb.cli.commands.kill import KillCommand
@@ -299,6 +300,7 @@ def build_builtin_commands(shell_command: ShellCommand) -> list[Command]:
         TargetDeleteCommand(),
         TargetDeleteAllCommand(),
         ScreenshotCommand(),
+        HingeCommand(),
         CommandGroup(
             name="ui",
             description="UI interactions on target",

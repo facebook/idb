@@ -7,6 +7,7 @@
 
 import asyncio
 import json
+import math
 from abc import ABC, abstractmethod
 from asyncio import StreamReader, StreamWriter
 from collections.abc import AsyncGenerator, AsyncIterable, AsyncIterator, Mapping
@@ -659,7 +660,20 @@ class HIDShake:
     pass
 
 
-HIDEvent = Union[HIDPress, HIDSwipe, HIDDelay, HIDPinch, HIDOrientation, HIDShake]
+@dataclass(frozen=True)
+class HIDHinge:
+    """Simulator hinge angle in degrees: 0 is closed and 180 is flat."""
+
+    angle: float
+
+    def __post_init__(self) -> None:
+        if not math.isfinite(self.angle) or not 0 <= self.angle <= 180:
+            raise ValueError("Hinge angle must be finite and between 0 and 180 degrees")
+
+
+HIDEvent = Union[
+    HIDPress, HIDSwipe, HIDDelay, HIDPinch, HIDOrientation, HIDShake, HIDHinge
+]
 
 
 @dataclass(frozen=True)
@@ -1003,6 +1017,14 @@ class Client(ABC):
 
     @abstractmethod
     async def rotate(self, orientation: HIDOrientationType) -> None:
+        pass
+
+    @abstractmethod
+    async def get_hinge_angle(self) -> float:
+        pass
+
+    @abstractmethod
+    async def set_hinge_angle(self, angle: float) -> None:
         pass
 
     @abstractmethod

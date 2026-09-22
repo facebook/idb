@@ -74,6 +74,7 @@ from idb.common.types import (
     FileListing,
     HIDButtonType,
     HIDEvent,
+    HIDHinge,
     HIDOrientationType,
     IdbConnectionException,
     IdbException,
@@ -117,6 +118,7 @@ from idb.grpc.idb_pb2 import (
     DeliveredNotificationsRequest,
     FocusRequest,
     GetSettingRequest,
+    HingeAngleRequest,
     InstallRequest,
     InstrumentsRunRequest,
     LaunchRequest,
@@ -1131,6 +1133,15 @@ class Client(ClientBase):
     @log_and_handle_exceptions("hid")
     async def rotate(self, orientation: HIDOrientationType) -> None:
         await self.send_events(rotate_to_events(orientation))
+
+    @log_and_handle_exceptions("hinge_angle")
+    async def get_hinge_angle(self) -> float:
+        response = await self.stub.hinge_angle(HingeAngleRequest())
+        return response.angle
+
+    @log_and_handle_exceptions("hid")
+    async def set_hinge_angle(self, angle: float) -> None:
+        await self.send_events([HIDHinge(angle=angle)])
 
     @log_and_handle_exceptions("hid")
     async def shake(self) -> None:

@@ -185,6 +185,15 @@ final class CompanionServiceProvider: Idb_CompanionService.SimpleServiceProtocol
     }
   }
 
+  func hinge_angle(request: Idb_HingeAngleRequest, context: ServerContext) async throws -> Idb_HingeAngleResponse {
+    return try await trackedUnaryCall("hinge_angle", request: request) {
+      try await TeardownContext.withAutocleanup {
+        try await HingeAngleMethodHandler(commandExecutor: commandExecutor)
+          .handle(request: request, context: context)
+      }
+    }
+  }
+
   func hid(request: RPCAsyncSequence<Idb_HIDEvent, any Error>, context: ServerContext) async throws -> Idb_HIDResponse {
     let reader = RequestStreamReader(request)
     return try await trackedClientStreaming("hid") {

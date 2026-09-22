@@ -15,6 +15,7 @@ from idb.grpc.hid import (
     GrpcHIDButton,
     GrpcHIDDelay,
     GrpcHIDEvent,
+    GrpcHIDHinge,
     GrpcHIDKey,
     GrpcHIDOrientation,
     GrpcHIDPinch,
@@ -28,6 +29,7 @@ from idb.grpc.hid import (
     HIDButtonType,
     HIDDelay,
     HIDDirection,
+    HIDHinge,
     HIDKey,
     HIDOrientation,
     HIDOrientationType,
@@ -43,6 +45,19 @@ from idb.utils.testing import TestCase
 
 
 class HidTests(TestCase):
+    def test_hinge(self) -> None:
+        for angle in [0, 90, 135.5, 180]:
+            with self.subTest(angle=angle):
+                self.assertEqual(
+                    event_to_grpc(HIDHinge(angle=angle)),
+                    GrpcHIDEvent(hinge=GrpcHIDHinge(angle=angle)),
+                )
+
+    def test_hinge_rejects_invalid_angles(self) -> None:
+        for angle in [-1, 180.001, float("nan"), float("inf"), -float("inf")]:
+            with self.subTest(angle=angle), self.assertRaises(ValueError):
+                HIDHinge(angle=angle)
+
     def test_press(self) -> None:
         actions = [
             HIDTouch(point=Point(x=1, y=2)),

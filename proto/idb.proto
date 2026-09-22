@@ -29,6 +29,7 @@ service CompanionService {
   rpc accessibility_action(AccessibilityActionRequest)
       returns (AccessibilityActionResponse) {}
   rpc focus(FocusRequest) returns (FocusResponse) {}
+  rpc hinge_angle(HingeAngleRequest) returns (HingeAngleResponse) {}
   rpc hid(stream HIDEvent) returns (HIDResponse) {}
   rpc open_url(OpenUrlRequest) returns (OpenUrlRequest) {}
   rpc set_location(SetLocationRequest) returns (SetLocationResponse) {}
@@ -80,6 +81,13 @@ service CompanionService {
   rpc pull(PullRequest) returns (stream PullResponse) {}
   rpc push(stream PushRequest) returns (PushResponse) {}
   rpc tail(stream TailRequest) returns (stream TailResponse) {}
+}
+
+message HingeAngleRequest {}
+
+message HingeAngleResponse {
+  // A fresh measured hinge angle in degrees, from 0 (closed) to 180 (flat).
+  double angle = 1;
 }
 
 message Payload {
@@ -645,6 +653,14 @@ message HIDEvent {
 
   message HIDShake {}
 
+  message HIDHinge {
+    // Degrees from 0 (closed) to 180 (flat), inclusive.
+    double angle = 1;
+  }
+
+  // Experimental display-selection clients used field 7.
+  reserved 7;
+
   oneof event {
     HIDPress press = 1;
     HIDSwipe swipe = 2;
@@ -652,6 +668,7 @@ message HIDEvent {
     HIDPinch pinch = 4;
     HIDOrientation orientation = 5;
     HIDShake shake = 6;
+    HIDHinge hinge = 8;
   }
 }
 

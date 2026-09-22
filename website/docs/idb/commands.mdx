@@ -10,6 +10,20 @@ title: Commands
  * LICENSE file in the root directory of this source tree.
  */}
 
+## Simulator hinge
+
+`idb hinge` reads a fresh measured hinge angle in degrees. `idb hinge ANGLE` sets the angle from 0 (closed) to 180 (flat). These commands require a simulator runtime that supports hinge motion. They are validated with iPhone Duo on iOS 27.1 and Xcode 27.1.
+
+```
+idb hinge 0
+idb hinge
+idb hinge 130
+idb hinge --json
+idb hinge 180
+```
+
+Device Hub's Closed, Book and Open presets correspond to 0, 130 and 180 degrees. Reads also observe changes made in Device Hub; during an animation they can report an intermediate angle. `get --json` prints an object such as `{"angle": 130.0}`. A read fails if the simulator cannot provide a fresh valid sample within five seconds.
+
 ## iOS Target Manipulation
 
 All `idb` cli commands run against a specific iOS Target (Simulator or Device). Since a single host will almost certainly have more than one target attached, there needs to be a way of specifying which iOS Target to run the command against.

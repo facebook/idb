@@ -16,13 +16,13 @@ struct HidMethodHandler {
 
   func handle(requestStream: RequestStreamReader<Idb_HIDEvent>, context: ServerContext) async throws -> Idb_HIDResponse {
     for try await request in requestStream {
-      let event = try fbSimulatorHIDEvent(from: request)
+      let event = try Self.fbSimulatorHIDEvent(from: request)
       try await commandExecutor.hid(event)
     }
     return .init()
   }
 
-  private func fbSimulatorHIDEvent(from request: Idb_HIDEvent) throws -> SimulatorHIDEvent {
+  static func fbSimulatorHIDEvent(from request: Idb_HIDEvent) throws -> SimulatorHIDEvent {
     switch request.event {
     case let .press(press):
       switch press.action.action {
@@ -92,12 +92,19 @@ struct HidMethodHandler {
     case .shake:
       return .shake
 
+    case let .hinge(hinge):
+      do {
+        return .hinge(try SimulatorHingeAngle(degrees: hinge.angle))
+      } catch {
+        throw RPCError(code: .invalidArgument, message: error.localizedDescription)
+      }
+
     case .none:
       throw RPCError(code: .invalidArgument, message: "Unrecognized request.event")
     }
   }
 
-  private func fbSimulatorHIDDeviceOrientation(from request: Idb_HIDEvent.HIDOrientationType) -> SimulatorHIDDeviceOrientation? {
+  private static func fbSimulatorHIDDeviceOrientation(from request: Idb_HIDEvent.HIDOrientationType) -> SimulatorHIDDeviceOrientation? {
     switch request {
     case .portrait:
       return .portrait
@@ -112,7 +119,7 @@ struct HidMethodHandler {
     }
   }
 
-  private func fbSimulatorHIDButton(from request: Idb_HIDEvent.HIDButtonType) -> SimulatorHIDButton? {
+  private static func fbSimulatorHIDButton(from request: Idb_HIDEvent.HIDButtonType) -> SimulatorHIDButton? {
     switch request {
     case .applePay:
       return .applePay
