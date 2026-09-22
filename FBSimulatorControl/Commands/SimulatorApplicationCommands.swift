@@ -150,7 +150,7 @@ public struct SimulatorApplicationCommands: ApplicationCommands {
       throw SimulatorApplicationLaunchError.attachmentMissingFiles(bundleID: configuration.bundleID)
     }
     let launchFuture = launch(configuration, stdOut: stdOut, stdErr: stdErr)
-    return try await bridgeFBFuture(SimulatorLaunchedApplication.application(withSimulator: simulator, configuration: configuration, attachment: attachment, launchFuture: launchFuture))
+    return try await SimulatorLaunchedApplication.application(withSimulator: simulator, configuration: configuration, attachment: attachment, launchFuture: launchFuture)
   }
 
   public func kill(bundleID: String) async throws {

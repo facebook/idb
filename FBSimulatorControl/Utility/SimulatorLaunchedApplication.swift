@@ -8,16 +8,98 @@
 import FBControlCore
 import Foundation
 
+/// Arbitrates the hand-off between the process exit source, an explicit `terminate()` and whoever
+/// is waiting on the exit.
+///
+/// `@unchecked Sendable`: all mutable state is guarded by `lock`.
+private final class TerminationState: @unchecked Sendable {
+  private let lock = NSLock()
+  private var continuations: [CheckedContinuation<Void, Never>] = []
+  private var exited = false
+  private var explicitlyTerminated = false
+
+  var hasExited: Bool {
+    lock.withLock { exited }
+  }
+
+  var wasExplicitlyTerminated: Bool {
+    lock.withLock { explicitlyTerminated }
+  }
+
+  /// Returns false when the process had already exited, in which case there is nothing left to
+  /// terminate and waiters still see a normal exit, or when another caller is already
+  /// terminating it, so the kill is issued once.
+  func markExplicitlyTerminated() -> Bool {
+    lock.withLock {
+      if exited || explicitlyTerminated {
+        return false
+      }
+      explicitlyTerminated = true
+      return true
+    }
+  }
+
+  /// Undoes `markExplicitlyTerminated()` for a kill that did not happen, so an exit that
+  /// follows is reported as the normal exit it is.
+  func clearExplicitTermination() {
+    lock.withLock { explicitlyTerminated = false }
+  }
+
+  /// Idempotent: the exit source's handler can be invoked again before the cancellation it
+  /// requests takes effect.
+  func markExited() {
+    lock.lock()
+    if exited {
+      lock.unlock()
+      return
+    }
+    exited = true
+    let continuations = self.continuations
+    self.continuations = []
+    lock.unlock()
+
+    for continuation in continuations {
+      continuation.resume()
+    }
+  }
+
+  func waitForExit() async {
+    await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
+      lock.lock()
+      if exited {
+        lock.unlock()
+        continuation.resume()
+        return
+      }
+      continuations.append(continuation)
+      lock.unlock()
+    }
+  }
+}
+
+/// Carries the attachment into the termination task.
+///
+/// `@unchecked Sendable`: `FBProcessFileAttachment` is not annotated, but the task is its only
+/// consumer there and `detach` is documented as safe to call more than once.
+private final class AttachmentBox: @unchecked Sendable {
+  let attachment: FBProcessFileAttachment
+
+  init(_ attachment: FBProcessFileAttachment) {
+    self.attachment = attachment
+  }
+}
+
 public final class SimulatorLaunchedApplication: LaunchedApplication, CustomStringConvertible {
 
   public let configuration: ApplicationLaunchConfiguration
   public let processIdentifier: pid_t
-  private let applicationTerminated: FBFuture<NSNull>
 
   // MARK: - Private Properties
 
   private let attachment: FBProcessFileAttachment
-  private weak var simulator: Simulator?
+  private let terminationStrategy: ProcessTerminationStrategy
+  private let state: TerminationState
+  private let terminationTask: Task<Void, Never>
 
   // MARK: - LaunchedApplication Protocol
 
@@ -26,11 +108,25 @@ public final class SimulatorLaunchedApplication: LaunchedApplication, CustomStri
   }
 
   public func waitForTermination() async throws {
-    try await bridgeFBFutureVoid(applicationTerminated)
+    await terminationTask.value
+    // An explicit `terminate()` is reported as a cancellation rather than as an observed exit.
+    if state.wasExplicitlyTerminated {
+      throw CancellationError()
+    }
   }
 
   public func terminate() async throws {
-    try await bridgeFBFutureVoid(applicationTerminated.cancel())
+    guard state.markExplicitlyTerminated() else {
+      await terminationTask.value
+      return
+    }
+    do {
+      try await terminationStrategy.killProcessIdentifier(processIdentifier)
+    } catch {
+      state.clearExplicitTermination()
+      throw error
+    }
+    await terminationTask.value
   }
 
   public var stdOut: (any ProcessFileOutput)? {
@@ -48,94 +144,57 @@ public final class SimulatorLaunchedApplication: LaunchedApplication, CustomStri
     configuration: ApplicationLaunchConfiguration,
     attachment: FBProcessFileAttachment,
     launchFuture: FBFuture<NSNumber>
-  ) -> FBFuture<SimulatorLaunchedApplication> {
-    return launchFuture.onQueue(
-      simulator.workQueue,
-      map: { processIdentifierNumber -> SimulatorLaunchedApplication in
-        let processIdentifier = processIdentifierNumber.int32Value
-        let terminationFuture = Self.terminationFuture(
-          forSimulator: simulator,
-          processIdentifier: processIdentifier
-        )
-        return SimulatorLaunchedApplication(
-          simulator: simulator,
-          configuration: configuration,
-          attachment: attachment,
-          processIdentifier: processIdentifier,
-          terminationFuture: terminationFuture
-        )
-      }
-    ).retyped(FBFuture<SimulatorLaunchedApplication>.self)
-  }
-
-  public class func terminationFuture(
-    forSimulator simulator: Simulator,
-    processIdentifier: pid_t
-  ) -> FBFuture<NSNull> {
-    let notifierFuture =
-      processTerminationFutureNotifier(forProcessIdentifier: processIdentifier)
-      .mapReplace(NSNull()).retyped(FBFuture<NSNull>.self)
-    return
-      notifierFuture
-      .onQueue(
-        simulator.workQueue,
-        respondToCancellation: {
-          fbFutureFromAsync {
-            try await ProcessTerminationStrategy
-              .strategy(withProcessFetcher: ProcessFetcher(), workQueue: simulator.workQueue, logger: simulator.logger)
-              .killProcessIdentifier(processIdentifier)
-            return NSNull()
-          }
-        })
+  ) async throws -> SimulatorLaunchedApplication {
+    let processIdentifier = try await bridgeFBFuture(launchFuture).int32Value
+    return SimulatorLaunchedApplication(
+      simulator: simulator,
+      configuration: configuration,
+      attachment: attachment,
+      processIdentifier: processIdentifier
+    )
   }
 
   private init(
     simulator: Simulator,
     configuration: ApplicationLaunchConfiguration,
     attachment: FBProcessFileAttachment,
-    processIdentifier: pid_t,
-    terminationFuture: FBFuture<NSNull>
+    processIdentifier: pid_t
   ) {
-    self.simulator = simulator
+    let state = TerminationState()
     self.configuration = configuration
     self.attachment = attachment
     self.processIdentifier = processIdentifier
-    self.applicationTerminated =
-      terminationFuture.onQueue(
-        simulator.workQueue,
-        chain: { future in
-          attachment.detach().chainReplace(future)
-        }
-      ).retyped(FBFuture<NSNull>.self)
+    self.state = state
+    self.terminationStrategy = ProcessTerminationStrategy.strategy(
+      withProcessFetcher: ProcessFetcher(),
+      workQueue: simulator.workQueue,
+      logger: simulator.logger)
+    // Armed before the task so that a `terminate()` racing construction cannot signal the process
+    // before anything is watching for its exit.
+    Self.armExitSource(forProcessIdentifier: processIdentifier, state: state)
+    let attachmentBox = AttachmentBox(attachment)
+    self.terminationTask = Task {
+      await state.waitForExit()
+      // Detaching is best-effort; its outcome was never reported to a waiter.
+      try? await bridgeFBFutureVoid(attachmentBox.attachment.detach())
+    }
   }
 
-  private class func processTerminationFutureNotifier(
-    forProcessIdentifier processIdentifier: pid_t
-  ) -> FBFuture<NSNumber> {
+  private class func armExitSource(forProcessIdentifier processIdentifier: pid_t, state: TerminationState) {
     let queue = DispatchQueue(label: "com.facebook.fbsimulatorcontrol.application_termination_notifier")
     let source = DispatchSource.makeProcessSource(
       identifier: processIdentifier,
       eventMask: .exit,
       queue: queue
     )
-
-    let future = FBMutableFuture<NSNumber>()
-    _ = future.onQueue(
-      queue,
-      respondToCancellation: {
-        source.cancel()
-        return FBFuture<NSNull>.empty()
-      })
     source.setEventHandler {
-      future.resolve(withResult: NSNumber(value: processIdentifier))
       source.cancel()
+      state.markExited()
     }
     source.resume()
-
-    return convertFBMutableFuture(future)
   }
 
   public var description: String {
-    "Application Operation \(configuration.description) | pid \(processIdentifier) | State \(applicationTerminated)"
+    "Application Operation \(configuration.description) | pid \(processIdentifier) | Exited \(state.hasExited)"
   }
 }
