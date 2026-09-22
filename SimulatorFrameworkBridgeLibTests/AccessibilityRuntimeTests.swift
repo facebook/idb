@@ -794,6 +794,24 @@ final class AccessibilityRuntimeTests: XCTestCase {
     XCTAssertTrue(dlsym(UnsafeMutableRawPointer(bitPattern: -2), "AXUIElementSetAttributeValue") != nil)
   }
 
+  func testLiveRuntimeLeavesTheInheritedMessagingTimeoutUnchanged() throws {
+    XCTAssertNotNil(dlopen(FBAXPathAXRuntime, RTLD_NOW))
+    let scope = UnsafeMutableRawPointer(bitPattern: -2)
+    let create = unsafeBitCast(try XCTUnwrap(dlsym(scope, "AXUIElementCreateSystemWide")), to: (@convention(c) () -> UnsafeMutableRawPointer?).self)
+    let set = unsafeBitCast(try XCTUnwrap(dlsym(scope, "AXUIElementSetMessagingTimeout")), to: (@convention(c) (UnsafeMutableRawPointer, Float) -> Int32).self)
+    let get = unsafeBitCast(try XCTUnwrap(dlsym(scope, "AXUIElementMessagingTimeout")), to: (@convention(c) () -> Float).self)
+    let system = try XCTUnwrap(create())
+    let original = get()
+    defer {
+      _ = set(system, Float(original) / 1000)
+      Unmanaged<AnyObject>.fromOpaque(system).release()
+    }
+    XCTAssertEqual(set(system, 1), 0)
+    var error: NSString?
+    XCTAssertNotNil(FBAXLiveRuntime(error: &error), String(describing: error))
+    XCTAssertEqual(get(), 1000)
+  }
+
   // Optional in the live runtime; this asserts it is present today, not that the code requires it.
   func testTheAutomationModeReadEntryPointResolves() {
     XCTAssertTrue(dlopen(FBAXPathAXRuntime, RTLD_NOW) != nil, "AXRuntime could not be opened")
