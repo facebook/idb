@@ -35,7 +35,8 @@ import Foundation
       return 1
     }
 
-    if action == "list" {
+    let selectedAction = NetworkConfigurationAction(rawValue: action)
+    if selectedAction == .list {
       let read = store.readConfiguration()
       guard let read else {
         return 1
@@ -59,7 +60,7 @@ import Foundation
     }
 
     let proxyDict: [String: Any]
-    if action == "set" {
+    if selectedAction == .set {
       if arguments.count < 2 {
         NSLog("[ProxyService] set requires <host> <port> [http|socks]")
         return 1
@@ -74,7 +75,7 @@ import Foundation
         proxyDict = ProxyServiceStaticFuncs.buildHTTPProxyDict(host: host, port: port)
       }
       NSLog("[ProxyService] Setting %@ proxy to %@:%d", type, host, port)
-    } else if action == "clear" {
+    } else if selectedAction == .clear {
       proxyDict = ProxyServiceStaticFuncs.buildEmptyProxyDict()
       NSLog("[ProxyService] Clearing proxy settings")
     } else {

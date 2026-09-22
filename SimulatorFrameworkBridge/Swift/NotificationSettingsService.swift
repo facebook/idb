@@ -53,7 +53,8 @@ private func handleNotificationSettingsActionWithClient(
   client: FBNotificationSettingsClient
 ) -> Int {
   do {
-    if action == "check" || action == "list" {
+    let selectedAction = action.flatMap(NotificationSettingsAction.init(rawValue:))
+    if selectedAction == .check || selectedAction == .list {
       if let bundleID {
         let section = try client.section(forIdentifier: bundleID)
         guard printSectionJSON(bundleID: bundleID, section: section) else {
@@ -77,7 +78,7 @@ private func handleNotificationSettingsActionWithClient(
     }
 
     var section = try client.section(forIdentifier: bundleID)
-    if action == "approve" {
+    if selectedAction == .approve {
       if !section.isFound {
         section = try client.createSection(forIdentifier: bundleID)
         NSLog("[NotificationSettings] Created new section info for %@", bundleID)
@@ -95,7 +96,7 @@ private func handleNotificationSettingsActionWithClient(
           bundleID
         )
       }
-    } else if action == "revoke" {
+    } else if selectedAction == .revoke {
       guard section.isFound else {
         NSLog("[NotificationSettings] No section info for %@, nothing to revoke.", bundleID)
         return 0

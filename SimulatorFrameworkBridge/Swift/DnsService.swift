@@ -30,7 +30,8 @@ import Foundation
       return 1
     }
 
-    if action == "list" {
+    let selectedAction = NetworkConfigurationAction(rawValue: action)
+    if selectedAction == .list {
       let read = store.readConfiguration()
       guard let read else {
         return 1
@@ -54,14 +55,14 @@ import Foundation
     }
 
     let dnsDict: [String: Any]
-    if action == "set" {
+    if selectedAction == .set {
       if arguments.isEmpty {
         NSLog("[DnsService] set requires at least one DNS server address")
         return 1
       }
       dnsDict = DnsServiceStaticFuncs.buildDnsDict(servers: arguments)
       NSLog("[DnsService] Setting DNS servers to %@", arguments.joined(separator: ", "))
-    } else if action == "clear" {
+    } else if selectedAction == .clear {
       dnsDict = DnsServiceStaticFuncs.buildEmptyDnsDict()
       NSLog("[DnsService] Clearing DNS configuration")
     } else {

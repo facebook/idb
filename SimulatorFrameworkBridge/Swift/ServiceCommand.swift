@@ -7,6 +7,18 @@
 
 import Foundation
 
+private enum BridgeService: String {
+  case contacts
+  case health
+  case dns
+  case dynamicStore = "dynamic-store"
+  case photos
+  case notifications
+  case proxy
+  case accessibility
+  case repl
+}
+
 @objc public protocol FBBridgeServiceHandling: AnyObject {
   #if !os(tvOS)
   func contacts(_ action: String) -> Int32
@@ -35,24 +47,25 @@ import Foundation
   }
 
   @objc public static func dispatch(service: String, action: String, arguments: [String], services: FBBridgeServiceHandling) -> Int32 {
-    switch service {
-    case "contacts", "health":
+    let selectedService = BridgeService(rawValue: service)
+    switch selectedService {
+    case .contacts, .health:
       #if os(tvOS)
       NSLog("The %@ service is not available in a tvOS guest", service)
       return 1
       #else
-      if service == "contacts" {
+      if selectedService == .contacts {
         return services.contacts(action)
       }
       return services.health(action, bundleID: arguments.first, typeIDs: Array(arguments.dropFirst()))
       #endif
-    case "dns": return services.dns(action, arguments: arguments)
-    case "dynamic-store": return services.dynamicStore(action, arguments: arguments)
-    case "photos": return services.photos(action)
-    case "notifications": return services.notifications(action, bundleID: arguments.first)
-    case "proxy": return services.proxy(action, arguments: arguments)
-    case "accessibility": return services.accessibility(action, arguments: arguments)
-    case "repl":
+    case .dns: return services.dns(action, arguments: arguments)
+    case .dynamicStore: return services.dynamicStore(action, arguments: arguments)
+    case .photos: return services.photos(action)
+    case .notifications: return services.notifications(action, bundleID: arguments.first)
+    case .proxy: return services.proxy(action, arguments: arguments)
+    case .accessibility: return services.accessibility(action, arguments: arguments)
+    case .repl:
       guard action == "start" else {
         NSLog("Unknown repl action: %@", action)
         return 1
@@ -62,7 +75,7 @@ import Foundation
         return 1
       }
       return services.repl(arguments.first, libraryPath: arguments[1])
-    default:
+    case nil:
       NSLog("Unknown service: %@", service)
       NSLog("Available services: %@", serviceNames)
       return 1
