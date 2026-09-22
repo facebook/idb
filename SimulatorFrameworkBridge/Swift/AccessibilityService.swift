@@ -147,33 +147,60 @@ private let modalLabel = "label"
 // UIKit alert controller view (matched by prefix — the concrete class varies by idiom/OS).
 private let systemAlertWindowClass = "SBAlertItemWindow"
 private let alertControllerClassPrefix = "_UIAlertController"
-private let verbDescribe = "describe"
-private let verbHitTest = "hittest"
-// Asks a `serve` process to exit; answered before exiting so the caller learns it was honoured. The serve
-// loop holds one client at a time, so any answer proves the caller is the only client — being answered is
-// how a host learns a bridge is free.
-private let verbShutdown = "shutdown"
-private let verbPerform = "perform"
-private let verbSetValue = "setvalue"
-private let verbGetDeviceSetting = "settings-get"
-private let verbSetDeviceSetting = "settings-set"
+private enum AccessibilityVerb: String {
+  case describe
+  case hitTest = "hittest"
+  case shutdown
+  case perform
+  case setValue = "setvalue"
+  case settingsGet = "settings-get"
+  case settingsSet = "settings-set"
+}
+
 private let actionServe = "serve"
-// The semantic actions a `perform` request can name — the wire spelling of `FBAXAction`, which is what the
-// host sends and what the guest maps back. Unrelated to `kActionServe`, which is an argv sub-command.
-private let actionPress = "press"
-private let actionScrollUp = "scroll-up"
-private let actionScrollDown = "scroll-down"
-private let actionScrollLeft = "scroll-left"
-private let actionScrollRight = "scroll-right"
-private let actionScrollToVisible = "scroll-to-visible"
-// The frontmost-resolution methods, shared by the request `method` selector and the response `method`
-// value: a request selects a strategy with one of these, and a fused frontmost response echoes back the
-// one that answered, so a guest-reported `method` round-trips into the host's `AXBridgeFrontmostMethod`.
-// `center-point` is the positional system-wide hit-test; `window-server` is the authoritative query, and
-// the default when a request names no method.
-private let methodCenterPoint = "center-point"
-private let methodWindowServer = "window-server"
-private let methodRunningBoard = "runningboard"
+
+private enum AccessibilityAction: String {
+  case press
+  case scrollUp = "scroll-up"
+  case scrollDown = "scroll-down"
+  case scrollLeft = "scroll-left"
+  case scrollRight = "scroll-right"
+  case scrollToVisible = "scroll-to-visible"
+
+  var runtimeValue: FBAXAction {
+    switch self {
+    case .press: return .press
+    case .scrollUp: return .scrollUp
+    case .scrollDown: return .scrollDown
+    case .scrollLeft: return .scrollLeft
+    case .scrollRight: return .scrollRight
+    case .scrollToVisible: return .scrollToVisible
+    }
+  }
+}
+
+private enum AccessibilityDeviceSetting: String {
+  case reduceMotion = "reduce-motion"
+  case reduceTransparency = "reduce-transparency"
+  case buttonShapes = "button-shapes"
+  case voiceOver = "voiceover"
+
+  var runtimeValue: FBAXDeviceSetting {
+    switch self {
+    case .reduceMotion: return .reduceMotion
+    case .reduceTransparency: return .reduceTransparency
+    case .buttonShapes: return .buttonShapes
+    case .voiceOver: return .voiceOver
+    }
+  }
+}
+
+private enum FrontmostMethod: String {
+  case centerPoint = "center-point"
+  case windowServer = "window-server"
+  case runningBoard = "runningboard"
+}
+
 // A depth cap and a total-node budget guard against pathological trees. A request carries the
 // caller's own bounds (the host sets them so every backend truncates alike); these apply only when it
 // does not — e.g. the one-shot front-end invoked by hand.
@@ -675,16 +702,16 @@ private final class AccessibilityRequest {
     method: String,
     anchor: CGPoint
   ) throws -> FBAXFrontmostOutcome {
-    if method == methodCenterPoint {
+    switch FrontmostMethod(rawValue: method) {
+    case .centerPoint:
       return try FBAXBridgeCenterPointFrontmost(client: client, anchor: anchor)
-    }
-    if method == methodWindowServer {
+    case .windowServer:
       return try client.windowServerFrontmost()
-    }
-    if method == methodRunningBoard {
+    case .runningBoard:
       return try client.runningBoardFrontmost()
+    case nil:
+      return FBAXFrontmostOutcome.unresolved("unsupported frontmost method: \(method)")
     }
-    return FBAXFrontmostOutcome.unresolved("unsupported frontmost method: \(method)")
   }
 
   // MARK: - Request handling
@@ -927,27 +954,6 @@ private final class AccessibilityRequest {
 
   // MARK: - Writes
 
-  // The semantic action a wire name asks for. Answers NO for a name this guest does not know, leaving
-  // `*action` untouched — an unrecognised action must be refused rather than quietly becoming a press.
-  fileprivate func FBAXBridgeActionForName(name: String, action: inout FBAXAction) -> Bool {
-    if name == actionPress {
-      action = FBAXAction.press
-    } else if name == actionScrollUp {
-      action = FBAXAction.scrollUp
-    } else if name == actionScrollDown {
-      action = FBAXAction.scrollDown
-    } else if name == actionScrollLeft {
-      action = FBAXAction.scrollLeft
-    } else if name == actionScrollRight {
-      action = FBAXAction.scrollRight
-    } else if name == actionScrollToVisible {
-      action = FBAXAction.scrollToVisible
-    } else {
-      return false
-    }
-    return true
-  }
-
   // Compared in the coerced wire form: the host derived the assertion from a tree it read off this wire.
   fileprivate func FBAXBridgeAttributeMatches(
     client: FBAXClient,
@@ -1097,8 +1103,7 @@ private final class AccessibilityRequest {
   ) throws -> [String: Any] {
     let requestedAction = request[requestAction]
     let name = requestedAction as? String
-    var action = FBAXAction.press
-    guard let name, FBAXBridgeActionForName(name: name, action: &action) else {
+    guard let name, let action = AccessibilityAction(rawValue: name)?.runtimeValue else {
       return FBAXBridgeTaggedErrorResponse(
         message: "unsupported action: \(try FBAXWireValue.formattedDescription(of: requestedAction ?? "(nil)"))",
         kind: errorKindBadRequest,
@@ -1178,21 +1183,6 @@ private final class AccessibilityRequest {
     return FBAXBridgeWriteResponse(outcome: outcome, pid: pid)
   }
 
-  fileprivate func FBAXBridgeDeviceSettingForName(name: String, setting: inout FBAXDeviceSetting) -> Bool {
-    if name == "reduce-motion" {
-      setting = FBAXDeviceSetting.reduceMotion
-    } else if name == "reduce-transparency" {
-      setting = FBAXDeviceSetting.reduceTransparency
-    } else if name == "button-shapes" {
-      setting = FBAXDeviceSetting.buttonShapes
-    } else if name == "voiceover" {
-      setting = FBAXDeviceSetting.voiceOver
-    } else {
-      return false
-    }
-    return true
-  }
-
   fileprivate func FBAXBridgeDeviceSetting(
     client: FBAXClient,
     request: [String: Any],
@@ -1205,8 +1195,7 @@ private final class AccessibilityRequest {
         pid: nil
       )
     }
-    var setting: FBAXDeviceSetting = .reduceMotion
-    guard FBAXBridgeDeviceSettingForName(name: requestedName, setting: &setting) else {
+    guard let setting = AccessibilityDeviceSetting(rawValue: requestedName)?.runtimeValue else {
       return FBAXBridgeTaggedErrorResponse(
         message: "unsupported device setting: \(requestedName)",
         kind: errorKindBadRequest,
@@ -1247,24 +1236,16 @@ private final class AccessibilityRequest {
     // The frame is JSON from the client, so the value can be of any type — narrow it to a string before
     // comparing, rather than sending `isEqualToString:` to whatever arrived.
     let requestedVerb = request[requestVerb]
-    let verb = requestedVerb as? String
-    let isDescribe = verb == verbDescribe
-    let isHitTest = verb == verbHitTest
-    let isPerform = verb == verbPerform
-    let isSetValue = verb == verbSetValue
-    let isGetDeviceSetting = verb == verbGetDeviceSetting
-    let isSetDeviceSetting = verb == verbSetDeviceSetting
-    if verb == verbShutdown {
-      // Answered here, above the pid check and the runtime bind: shutting down needs neither, and a
-      // reader that cannot bind is exactly the one a caller most wants to be able to end.
-      return [responseOk: true, responseShutdown: true]
-    }
-    guard isDescribe || isHitTest || isPerform || isSetValue || isGetDeviceSetting || isSetDeviceSetting else {
+    guard let name = requestedVerb as? String, let verb = AccessibilityVerb(rawValue: name) else {
       return FBAXBridgeTaggedErrorResponse(
         message: "unsupported verb: \(try FBAXWireValue.formattedDescription(of: requestedVerb ?? "(nil)"))",
         kind: errorKindBadRequest,
         pid: nil
       )
+    }
+    if verb == .shutdown {
+      // Shutdown needs neither a pid nor a runtime binding.
+      return [responseOk: true, responseShutdown: true]
     }
     // Process-addressed verbs reject non-positive pids before runtime setup. Device-setting verbs carry no
     // pid, but an explicitly malformed one is still refused rather than silently ignored.
@@ -1288,24 +1269,24 @@ private final class AccessibilityRequest {
       )
     }
 
-    if isGetDeviceSetting || isSetDeviceSetting {
+    if (verb == .settingsGet) || (verb == .settingsSet) {
       return try FBAXBridgeDeviceSetting(
         client: client,
         request: request,
-        shouldSet: isSetDeviceSetting
+        shouldSet: (verb == .settingsSet)
       )
     }
     // `hittest` is self-contained: with a pid it hit-tests that app; with no pid it hit-tests display-wide
     // — the app owning the point, resolved in-guest, with no frontmost pid query.
-    if isHitTest {
+    if verb == .hitTest {
       return try FBAXBridgeHitTest(client: client, request: request)
     }
     // Writes are point-addressed: a one-shot guest exits between requests, so an element handle cannot
     // survive one.
-    if isPerform {
+    if verb == .perform {
       return try FBAXBridgePerform(client: client, request: request)
     }
-    if isSetValue {
+    if verb == .setValue {
       return try FBAXBridgeSetValue(client: client, request: request)
     }
     // `describe`: an explicit `pid` names the app directly; with no pid it is a fused frontmost read — the
@@ -1327,7 +1308,7 @@ private final class AccessibilityRequest {
         )
       }
       let requestedMethod = request[requestMethod] as? String
-      frontmostMethod = requestedMethod ?? methodWindowServer
+      frontmostMethod = requestedMethod ?? FrontmostMethod.windowServer.rawValue
       frontmostAnchor = CGPoint(x: xNumber?.doubleValue ?? 0.0, y: yNumber?.doubleValue ?? 0.0)
     }
 
@@ -1514,7 +1495,7 @@ private final class AccessibilityRequest {
   fileprivate func FBAXBridgeWireConstantsForTesting() -> [String: String] {
     [
       "node.elementType": axElementType, "node.elementBaseType": axElementBaseType, "node.label": axLabel, "node.value": axValue, "node.identifier": axIdentifier, "node.frame": axFrame, "node.automationType": axAutomationType, "node.children": axChildren, "request.verb": requestVerb, "request.pid": requestPid, "request.maxDepth": requestMaxDepth, "request.maxNodes": requestMaxNodes, "request.automationMode": requestAutomationMode, "request.attributes": requestAttributes, "request.translatorVocabulary": requestTranslatorVocabulary, "request.explainUnreachable": requestExplainUnreachable, "node.explainedBy": nodeExplainedBy, "node.isEnabled": nodeIsEnabled, "node.translatorRole": nodeTranslatorRole, "node.translatorSubrole": nodeTranslatorSubrole, "node.traits": nodeTraits, "node.elementIdentity": nodeElementIdentity, "request.x": requestX, "request.y": requestY, "request.method": requestMethod, "request.action": requestAction, "request.value": requestValue, "request.setting": requestSetting, "request.enabled": requestEnabled, "request.assertKey": requestAssertKey, "request.assertValue": requestAssertValue, "envelope.ok": responseOk, "envelope.enabled": responseEnabled, "envelope.tree": responseTree, "envelope.error": responseError, "envelope.empty": responseEmpty, "envelope.errorKind": responseErrorKind, "envelope.errorKindApplicationUnavailable": errorKindApplicationUnavailable, "envelope.errorKindApplicationNotResponding": errorKindApplicationNotResponding, "envelope.errorKindFrontmostUnresolved": errorKindFrontmostUnresolved, "envelope.errorKindReaderUnavailable": errorKindReaderUnavailable, "envelope.errorKindBadRequest": errorKindBadRequest, "envelope.errorKindAssertionFailed": errorKindAssertionFailed, "envelope.truncated": responseTruncated, "envelope.pid": responsePid, "envelope.method": responseMethod, "envelope.modal": responseModal, "envelope.automation": responseAutomation, "envelope.phases": responsePhases, "phases.traverse": phaseTraverse,
-      "phases.machRoundTrips": phaseMachRoundTrips, "automation.enabled": kAutomationEnabled, "automation.asserted": kAutomationAsserted, "modal.kind": modalKind, "modal.kindSystem": modalKindSystem, "modal.kindApp": modalKindApp, "modal.elementType": modalElementType, "modal.label": modalLabel, "modal.systemAlertWindowClass": systemAlertWindowClass, "modal.alertControllerClassPrefix": alertControllerClassPrefix, "verb.describe": verbDescribe, "verb.hittest": verbHitTest, "verb.perform": verbPerform, "verb.setvalue": verbSetValue, "verb.settingsGet": verbGetDeviceSetting, "verb.settingsSet": verbSetDeviceSetting, "verb.shutdown": verbShutdown, "action.press": actionPress, "action.scrollUp": actionScrollUp, "action.scrollDown": actionScrollDown, "action.scrollLeft": actionScrollLeft, "action.scrollRight": actionScrollRight, "action.scrollToVisible": actionScrollToVisible, "method.centerPoint": methodCenterPoint, "method.windowServer": methodWindowServer, "method.runningBoard": methodRunningBoard,
+      "phases.machRoundTrips": phaseMachRoundTrips, "automation.enabled": kAutomationEnabled, "automation.asserted": kAutomationAsserted, "modal.kind": modalKind, "modal.kindSystem": modalKindSystem, "modal.kindApp": modalKindApp, "modal.elementType": modalElementType, "modal.label": modalLabel, "modal.systemAlertWindowClass": systemAlertWindowClass, "modal.alertControllerClassPrefix": alertControllerClassPrefix, "verb.describe": AccessibilityVerb.describe.rawValue, "verb.hittest": AccessibilityVerb.hitTest.rawValue, "verb.perform": AccessibilityVerb.perform.rawValue, "verb.setvalue": AccessibilityVerb.setValue.rawValue, "verb.settingsGet": AccessibilityVerb.settingsGet.rawValue, "verb.settingsSet": AccessibilityVerb.settingsSet.rawValue, "verb.shutdown": AccessibilityVerb.shutdown.rawValue, "action.press": AccessibilityAction.press.rawValue, "action.scrollUp": AccessibilityAction.scrollUp.rawValue, "action.scrollDown": AccessibilityAction.scrollDown.rawValue, "action.scrollLeft": AccessibilityAction.scrollLeft.rawValue, "action.scrollRight": AccessibilityAction.scrollRight.rawValue, "action.scrollToVisible": AccessibilityAction.scrollToVisible.rawValue, "method.centerPoint": FrontmostMethod.centerPoint.rawValue, "method.windowServer": FrontmostMethod.windowServer.rawValue, "method.runningBoard": FrontmostMethod.runningBoard.rawValue,
     ]
   }
 
