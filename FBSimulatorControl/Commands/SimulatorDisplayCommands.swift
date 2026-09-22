@@ -64,6 +64,17 @@ public struct SimulatorDisplayCommands {
     try await read(decode: SimulatorDisplayProtocol.displays)
   }
 
+  /// Lists connected touchscreens. Match `displayUniqueID` to a display snapshot before routing input.
+  public func touchscreens() async throws -> [SimulatorTouchscreen] {
+    // Universal HID can advertise a virtual digitizer even when the target has no touch display.
+    guard simulator.productFamily.hasTouchscreen else { return [] }
+    let queue = DispatchQueue(label: "com.facebook.FBSimulatorControl.touchscreen-info")
+    let transport = try SimulatorCoreDeviceXPCTransport(
+      simulator: simulator, service: SimulatorTouchscreenProtocol.service, queue: queue)
+    return try await SimulatorCoreDeviceRequest<[SimulatorTouchscreen]>(transport: transport, queue: queue)
+      .read(SimulatorTouchscreenProtocol.request(), decode: SimulatorTouchscreenProtocol.touchscreens)
+  }
+
   /// Returns nil only when the provider lacks the capability needed to select a display.
   func activeIntegratedDisplayIfSupported() async throws -> SimulatorDisplay? {
     do {
