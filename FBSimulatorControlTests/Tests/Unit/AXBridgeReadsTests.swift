@@ -661,19 +661,15 @@ final class AXBridgeReadsTests: XCTestCase {
     ])
   }
 
-  func testMarkerTapStopsAtATransientTargetReadTimeout() async throws {
+  func testMarkerTapRetriesATransientTargetReadTimeout() async throws {
     let (reader, transport) = try nativeWaitReader(responses: [
       waitErrorEnvelope("application_not_responding"), tapMatchingEnvelope(), envelope(["ok": true, "pid": 42]),
     ])
-    do {
-      try await reader.tap(.marker(value: "General", key: .label, depth: 10), options: TapOptions())
-      XCTFail("the first target read timeout currently ends the tap")
-    } catch UIAutomationError.applicationNotResponding {
-    }
+    try await reader.tap(.marker(value: "General", key: .label, depth: 10), options: TapOptions())
     let reads = await transport.readCount
     let writes = await transport.writeCount
-    XCTAssertEqual(reads, 1)
-    XCTAssertEqual(writes, 0)
+    XCTAssertEqual(reads, 2)
+    XCTAssertEqual(writes, 1)
   }
 
   func testMarkerTapDoesNotRepeatATimedOutWrite() async throws {
@@ -702,7 +698,7 @@ final class AXBridgeReadsTests: XCTestCase {
     }
     let reads = await transport.readCount
     let writes = await transport.writeCount
-    XCTAssertEqual(reads, 1)
+    XCTAssertEqual(reads, 2)
     XCTAssertEqual(writes, 0)
   }
 

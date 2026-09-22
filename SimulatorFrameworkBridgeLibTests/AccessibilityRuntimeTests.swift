@@ -1219,7 +1219,7 @@ final class AccessibilityRuntimeTests: XCTestCase {
     assertEqualObjects(runtime.operations, ["hitTest", "setValue", "readAttributes"])
   }
 
-  func testSetValueStopsBeforeADelayedValueCanBeConfirmed() {
+  func testSetValueConfirmsADelayedValueWithoutRepeatingTheWrite() {
     for firstRead in [FBAXReadOutcome.applicationNotResponding(), FBAXReadOutcome.read([kAXValue: "old"])] {
       self.seedHitElement(withAttributes: [:])
       runtime.writeOutcome = FBAXWriteOutcome.applicationNotResponding()
@@ -1229,10 +1229,10 @@ final class AccessibilityRuntimeTests: XCTestCase {
 
       let response = FBAXBridgeHandleRequest(["verb": "setvalue", "x": 30, "y": 40, "value": "hello"])
 
-      assertEqualObjects(axValue(response, "error_kind"), "application_not_responding")
+      assertEqualObjects(response, ["ok": true, "pid": kAppPid])
       XCTAssertEqual(runtime.setValueCount, writesBefore + 1)
-      assertEqualObjects(runtime.operations, ["hitTest", "setValue", "readAttributes"])
-      XCTAssertEqual(runtime.readOutcomes.count, 1)
+      assertEqualObjects(runtime.operations, ["hitTest", "setValue", "readAttributes", "readAttributes"])
+      XCTAssertEqual(runtime.readOutcomes.count, 0)
     }
   }
 
@@ -1255,7 +1255,7 @@ final class AccessibilityRuntimeTests: XCTestCase {
       assertEqualObjects(axValue(response, "error_kind"), "application_not_responding")
       assertEqualObjects(axValue(response, "pid"), kAppPid)
       XCTAssertEqual(runtime.setValueCount, writesBefore + 1)
-      assertEqualObjects(runtime.operations, ["hitTest", "setValue", "readAttributes"])
+      assertEqualObjects(runtime.operations, ["hitTest", "setValue", "readAttributes", "readAttributes"])
     }
   }
 
@@ -1279,7 +1279,8 @@ final class AccessibilityRuntimeTests: XCTestCase {
       assertEqualObjects(axValue(response, "error_kind"), "application_not_responding")
       assertEqualObjects(axValue(response, "pid"), kAppPid)
       XCTAssertEqual(runtime.setValueCount, writesBefore + 1)
-      assertEqualObjects(runtime.operations, ["hitTest", "setValue", "readAttributes"])
+      let reads = status == .applicationNotResponding ? ["readAttributes", "readAttributes"] : ["readAttributes"]
+      assertEqualObjects(runtime.operations, ["hitTest", "setValue"] + reads)
     }
   }
 

@@ -223,18 +223,18 @@ final class AXBridgeUIAutomation: AXBridgeTreeReader, @unchecked Sendable {
     guard options.duration == nil else {
       throw UIAutomationError.operationUnsupported(backend: backend, operation: "A tap with a hold duration")
     }
-    let target = try await writeTarget(for: query, operation: "A tap", callerAssertion: options.assertion)
+    let target = try await resolveWriteTarget(for: query, operation: "A tap", callerAssertion: options.assertion)
     try await write(.perform(.press), to: target, query: query)
   }
 
   func setValue(_ value: String, for query: AccessibilityElementQuery) async throws {
-    let target = try await writeTarget(for: query, operation: "Setting a value", callerAssertion: nil)
+    let target = try await resolveWriteTarget(for: query, operation: "Setting a value", callerAssertion: nil)
     try await write(.setValue(value), to: target, query: query)
   }
 
   func scroll(_ query: AccessibilityElementQuery, direction: AccessibilityScrollDirection) async throws {
     let scrolled = try await scrollTarget(for: query, backend: backend)
-    let target = try await writeTarget(for: scrolled, operation: "Scroll", callerAssertion: nil)
+    let target = try await resolveWriteTarget(for: scrolled, operation: "Scroll", callerAssertion: nil)
     try await write(.perform(Self.action(for: direction)), to: target, query: scrolled)
   }
 
@@ -245,8 +245,8 @@ final class AXBridgeUIAutomation: AXBridgeTreeReader, @unchecked Sendable {
     to destination: AccessibilityElementQuery,
     options: DragOptions
   ) async throws {
-    let start = try await writeTarget(for: source, operation: DragEndpoint.operation, callerAssertion: nil).point
-    let end = try await writeTarget(for: destination, operation: DragEndpoint.operation, callerAssertion: nil).point
+    let start = try await resolveWriteTarget(for: source, operation: DragEndpoint.operation, callerAssertion: nil).point
+    let end = try await resolveWriteTarget(for: destination, operation: DragEndpoint.operation, callerAssertion: nil).point
     try await simulator.sendHIDGesture(
       .drag(
         Double(start.x), yStart: Double(start.y), xEnd: Double(end.x), yEnd: Double(end.y),
@@ -254,6 +254,21 @@ final class AXBridgeUIAutomation: AXBridgeTreeReader, @unchecked Sendable {
         releaseDuration: options.releaseDuration
       )
     )
+  }
+
+  private func resolveWriteTarget(
+    for query: AccessibilityElementQuery,
+    operation: String,
+    callerAssertion: TapOptions.Assertion?
+  ) async throws -> AXWriteTarget {
+    do {
+      return try await writeTarget(for: query, operation: operation, callerAssertion: callerAssertion)
+    } catch UIAutomationError.applicationNotResponding {
+      // Only target resolution is repeated. A write timeout does not establish whether it was applied.
+      try Task.checkCancellation()
+      _ = simulator.logger.log("axbridge \(operation): target read timed out; retrying once before sending the write")
+      return try await writeTarget(for: query, operation: operation, callerAssertion: callerAssertion)
+    }
   }
 
   /// The semantic action a scroll direction asks for.

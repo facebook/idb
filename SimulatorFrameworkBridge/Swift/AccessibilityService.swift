@@ -1125,7 +1125,10 @@ private final class AccessibilityRequest {
     )
     if outcome == nil, let element {
       FBAXBridgeCountRoundTrip()
-      outcome = try client.perform(action, on: element)
+      NSLog("%@", "[AccessibilityService] perform \(name) on pid \(pid): sending action once")
+      let written = try client.perform(action, on: element)
+      outcome = written
+      NSLog("%@", "[AccessibilityService] perform \(name) on pid \(pid): status \(written.status.rawValue)")
     }
     guard let outcome else {
       throw FBAXBridgeInvariantError(description: "the write resolved no target or outcome")
@@ -1161,19 +1164,33 @@ private final class AccessibilityRequest {
     )
     if outcome == nil, let element {
       FBAXBridgeCountRoundTrip()
-      outcome = try client.setValue(requestedValue, on: element)
+      NSLog("%@", "[AccessibilityService] setvalue on pid \(pid): sending write once")
+      let written = try client.setValue(requestedValue, on: element)
+      outcome = written
+      NSLog("%@", "[AccessibilityService] setvalue on pid \(pid): status \(written.status.rawValue)")
       if outcome?.status == FBAXWriteStatus.applicationNotResponding {
-        // A timed-out write can have taken effect. Confirm once without repeating the write.
-        do {
-          FBAXBridgeCountRoundTrip()
-          let read = try client.readAttributes([axValue], of: element)
-          if read.status == FBAXReadStatus.read,
-            try FBAXWireValue.matchesString(read.attributes?[axValue], expected: requestedValue).boolValue
-          {
-            outcome = FBAXWriteOutcome.written()
+        // A keyboard transition can outlast the first confirmation. Two attempts bound recovery
+        // to ten seconds of AX reply waits without repeating the write.
+        for attempt in 1...2 {
+          if attempt > 1 {
+            Thread.sleep(forTimeInterval: 0.1)
           }
-        } catch {
-          // An unsuccessful confirmation must preserve the original write timeout.
+          do {
+            FBAXBridgeCountRoundTrip()
+            let read = try client.readAttributes([axValue], of: element)
+            NSLog("%@", "[AccessibilityService] setvalue confirmation \(attempt) on pid \(pid): status \(read.status.rawValue)")
+            if read.status == FBAXReadStatus.read {
+              if try FBAXWireValue.matchesString(read.attributes?[axValue], expected: requestedValue).boolValue {
+                outcome = FBAXWriteOutcome.written()
+                break
+              }
+            } else if read.status != FBAXReadStatus.applicationNotResponding {
+              break
+            }
+          } catch {
+            NSLog("%@", "[AccessibilityService] setvalue confirmation \(attempt) on pid \(pid) failed: \(error)")
+            break
+          }
         }
       }
     }
