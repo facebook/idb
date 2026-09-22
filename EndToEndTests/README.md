@@ -2,6 +2,8 @@
 
 These tests run the `idb` CLI through `idb_companion` against a booted simulator. They cover app lifecycle, file transfers, screenshots, logs, URLs, permissions and accessibility. Tests check command output and, where available, compare results with `simctl` or files on the host. Tap and scroll tests verify the resulting navigation and visible elements. Wait tests cover existing elements, delayed navigation and timeout results.
 
+The permission test asks for what approving a service actually buys: the app stops having to ask for it. TCC authorization is scoped to the requesting client, so it is only observable from inside the app -- the fixture requests camera, microphone, Photos and Contacts on demand and reports each outcome as a marker element. Unapproved, the request reaches the user as a system prompt, which SpringBoard presents under its own pid. Pre-approved, the same request is answered without one, and Photos reports full authorization rather than a limited selection.
+
 ## What the environment provides
 
 | Variable | Meaning |
