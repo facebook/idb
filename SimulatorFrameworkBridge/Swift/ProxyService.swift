@@ -11,21 +11,42 @@ import Foundation
 @_implementationOnly import SimulatorFrameworkBridgeRuntime
 #endif
 
+private enum ProxyConfiguration {
+  case http(host: String, port: Int32)
+  case socks(host: String, port: Int32)
+  case cleared
+
+  init(host: String, port: Int32, type: String) {
+    self = type == "socks" ? .socks(host: host, port: port) : .http(host: host, port: port)
+  }
+
+  var dictionary: [String: Any] {
+    switch self {
+    case let .http(host, port):
+      return ["HTTPEnable": 1, "HTTPProxy": host, "HTTPPort": port as NSNumber, "HTTPSEnable": 1, "HTTPSProxy": host, "HTTPSPort": port as NSNumber, "FTPPassive": 1, "ExceptionsList": ["*.local", "169.254/16"]]
+    case let .socks(host, port):
+      return ["SOCKSEnable": 1, "SOCKSProxy": host, "SOCKSPort": port as NSNumber, "FTPPassive": 1, "ExceptionsList": ["*.local", "169.254/16"]]
+    case .cleared:
+      return ["FTPPassive": 1]
+    }
+  }
+}
+
 @objc public final class ProxyServiceStaticFuncs: NSObject {
 
   @objc(buildHTTPProxyDict:port:)
   public static func buildHTTPProxyDict(host: String, port: Int32) -> [String: Any] {
-    ["HTTPEnable": 1, "HTTPProxy": host, "HTTPPort": port as NSNumber, "HTTPSEnable": 1, "HTTPSProxy": host, "HTTPSPort": port as NSNumber, "FTPPassive": 1, "ExceptionsList": ["*.local", "169.254/16"]]
+    ProxyConfiguration.http(host: host, port: port).dictionary
   }
 
   @objc(buildSOCKSProxyDict:port:)
   public static func buildSOCKSProxyDict(host: String, port: Int32) -> [String: Any] {
-    ["SOCKSEnable": 1, "SOCKSProxy": host, "SOCKSPort": port as NSNumber, "FTPPassive": 1, "ExceptionsList": ["*.local", "169.254/16"]]
+    ProxyConfiguration.socks(host: host, port: port).dictionary
   }
 
   @objc(buildEmptyProxyDict)
   public static func buildEmptyProxyDict() -> [String: Any] {
-    ["FTPPassive": 1]
+    ProxyConfiguration.cleared.dictionary
   }
 
   @objc(handleProxyAction:arguments:)
@@ -69,11 +90,7 @@ import Foundation
       let port = (arguments[1] as NSString).intValue
       let type = arguments.count >= 3 ? arguments[2] : "http"
 
-      if type == "socks" {
-        proxyDict = ProxyServiceStaticFuncs.buildSOCKSProxyDict(host: host, port: port)
-      } else {
-        proxyDict = ProxyServiceStaticFuncs.buildHTTPProxyDict(host: host, port: port)
-      }
+      proxyDict = ProxyConfiguration(host: host, port: port, type: type).dictionary
       NSLog("[ProxyService] Setting %@ proxy to %@:%d", type, host, port)
     } else if selectedAction == .clear {
       proxyDict = ProxyServiceStaticFuncs.buildEmptyProxyDict()
