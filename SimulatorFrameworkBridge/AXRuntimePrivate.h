@@ -32,6 +32,9 @@
 /** The framework's path inside the booted runtime root, for dlopen. */
 #define FBAXPathAXRuntime "/System/Library/PrivateFrameworks/AXRuntime.framework/AXRuntime"
 
+/** Seconds per AX reply. A system-wide element sets the calling process's default, not a device setting. */
+typedef int32_t (*FBAXSetMessagingTimeoutFn)(void *element, float seconds);
+
 /**
  * The AX runtime's C ABI error codes, as observed on a booted simulator runtime — no SDK header
  * available to the guest declares them. Named as an enum so that a result is compared against the

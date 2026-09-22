@@ -446,6 +446,7 @@ typedef struct {
   int32_t (*getPid)(void *element, pid_t *pid);                               // borrows
   int32_t (*performAction)(void *element, uint32_t action);                   // borrows
   int32_t (*setAttributeValue)(void *element, uint32_t attribute, const void *value);  // borrows both
+  FBAXSetMessagingTimeoutFn setMessagingTimeout;
   // Device-wide accessibility automation mode. Optional: a runtime without it is not a setup failure,
   // because every read this bundle performs works either way — the flag changes how much structure the
   // target exposes, not whether it answers.
@@ -774,6 +775,7 @@ static NSString *const kFrontboardVisibilityEndowment = @"com.apple.frontboard.v
   _functions.getPid = dlsym(RTLD_DEFAULT, "AXUIElementGetPid");
   _functions.performAction = dlsym(RTLD_DEFAULT, "AXUIElementPerformAction");
   _functions.setAttributeValue = dlsym(RTLD_DEFAULT, "AXUIElementSetAttributeValue");
+  _functions.setMessagingTimeout = dlsym(RTLD_DEFAULT, "AXUIElementSetMessagingTimeout");
   // Not part of the null check below: this one is optional, so a runtime without it degrades to
   // "cannot say" rather than failing a bind that every read would otherwise have survived.
   _functions.automationEnabled = dlsym(RTLD_DEFAULT, "_AXSAutomationEnabled");
@@ -786,9 +788,30 @@ static NSString *const kFrontboardVisibilityEndowment = @"com.apple.frontboard.v
   _functions.attributeNumbersForNames = dlsym(RTLD_DEFAULT, "XCAXAccessibilityAttributesForStringAttributes");
   _functions.elementTypeID = dlsym(RTLD_DEFAULT, "AXUIElementGetTypeID");
   if (!_functions.createSystemWide || !_functions.copyElementAtPosition || !_functions.getPid
-      || !_functions.performAction || !_functions.setAttributeValue) {
+      || !_functions.performAction || !_functions.setAttributeValue || !_functions.setMessagingTimeout) {
     if (error) {
-      *error = @"AXUIElementCreateSystemWide/CopyElementAtPosition/GetPid/PerformAction/SetAttributeValue unavailable";
+      *error = @"AXUIElementCreateSystemWide/CopyElementAtPosition/GetPid/PerformAction/SetAttributeValue/SetMessagingTimeout unavailable";
+    }
+    return nil;
+  }
+
+  // AX replies default to three seconds, including writes that initialize a keyboard or navigate.
+  // Five seconds per reply leaves room for hit-test, assertion, write and two confirmation reads
+  // inside the host's thirty-second socket wait. This changes only this guest client's process.
+  void *system = _functions.createSystemWide();
+  if (!system) {
+    if (error) {
+      *error = @"could not create a system-wide element to configure the AX reply timeout";
+    }
+    return nil;
+  }
+  FBAXElementRef *reference = [[FBAXElementRef alloc] initWithOwnedElement:system];
+  int32_t timeoutError = [reference axErrorFromElement:^int32_t (void *element) {
+    return self->_functions.setMessagingTimeout(element, 5.0f);
+  }];
+  if (timeoutError != FBAXErrorSuccess) {
+    if (error) {
+      *error = [NSString stringWithFormat:@"could not configure the AX reply timeout (%d)", timeoutError];
     }
     return nil;
   }

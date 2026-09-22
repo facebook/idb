@@ -794,7 +794,7 @@ final class AccessibilityRuntimeTests: XCTestCase {
     XCTAssertTrue(dlsym(UnsafeMutableRawPointer(bitPattern: -2), "AXUIElementSetAttributeValue") != nil)
   }
 
-  func testLiveRuntimeLeavesTheInheritedMessagingTimeoutUnchanged() throws {
+  func testLiveRuntimeSetsAFiveSecondMessagingTimeout() throws {
     XCTAssertNotNil(dlopen(FBAXPathAXRuntime, RTLD_NOW))
     let scope = UnsafeMutableRawPointer(bitPattern: -2)
     let create = unsafeBitCast(try XCTUnwrap(dlsym(scope, "AXUIElementCreateSystemWide")), to: (@convention(c) () -> UnsafeMutableRawPointer?).self)
@@ -809,7 +809,7 @@ final class AccessibilityRuntimeTests: XCTestCase {
     XCTAssertEqual(set(system, 1), 0)
     var error: NSString?
     XCTAssertNotNil(FBAXLiveRuntime(error: &error), String(describing: error))
-    XCTAssertEqual(get(), 1000)
+    XCTAssertEqual(get(), 5000)
   }
 
   // Optional in the live runtime; this asserts it is present today, not that the code requires it.
