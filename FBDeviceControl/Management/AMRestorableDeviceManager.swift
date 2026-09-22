@@ -37,7 +37,6 @@ private func restorableDeviceListenerCallback(
 }
 
 /// Obtains `RestorableDevice` instances.
-@objc(FBAMRestorableDeviceManager)
 final class AMRestorableDeviceManager: DeviceManager<RestorableDevice> {
 
   private let calls: AMDCalls

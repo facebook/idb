@@ -35,10 +35,9 @@ extension WeakFrameworkError: LocalizedError {
   }
 }
 
-@objc
-public final class WeakFramework: NSObject {
+public final class WeakFramework: Sendable {
 
-  @objc public let name: String
+  public let name: String
   private let basePath: String
   private let relativePath: String
   private let requiredClassNames: [String]
@@ -46,7 +45,6 @@ public final class WeakFramework: NSObject {
 
   // MARK: - Factory Methods
 
-  @objc(xcodeFrameworkWithRelativePath:requiredClassNames:)
   public class func xcodeFramework(withRelativePath relativePath: String, requiredClassNames: [String]) -> WeakFramework {
     WeakFramework(
       basePath: XcodeConfiguration.developerDirectory,
@@ -56,7 +54,6 @@ public final class WeakFramework: NSObject {
     )
   }
 
-  @objc(frameworkWithPath:requiredClassNames:rootPermitted:)
   public class func framework(withPath absolutePath: String, requiredClassNames: [String], rootPermitted: Bool) -> WeakFramework {
     WeakFramework(
       basePath: absolutePath,
@@ -76,11 +73,9 @@ public final class WeakFramework: NSObject {
     self.relativePath = relativePath
     self.requiredClassNames = requiredClassNames
     self.rootPermitted = rootPermitted
-    super.init()
   }
 
   /// A nil logger loads silently.
-  @objc(loadWithLogger:error:)
   public func load(with logger: (any ControlCoreLogger)?) throws {
     try loadFromRelativeDirectory(basePath, logger: logger)
   }
@@ -145,11 +140,11 @@ public final class WeakFramework: NSObject {
 
 extension WeakFramework {
 
-  @objc(CoreSimulator) public class var coreSimulator: WeakFramework {
+  public static var coreSimulator: WeakFramework {
     WeakFramework.framework(withPath: "/Library/Developer/PrivateFrameworks/CoreSimulator.framework", requiredClassNames: ["SimDevice"], rootPermitted: false)
   }
 
-  @objc(SimulatorKit) public class var simulatorKit: WeakFramework {
+  public static var simulatorKit: WeakFramework {
     // Xcode 27 moved SimulatorKit.framework from Contents/Developer/Library/PrivateFrameworks
     // to Contents/SharedFrameworks. Prefer the new location, falling back to the legacy one for
     // Xcode <= 26. xcodeFramework(withRelativePath:) resolves relative to the Developer directory.
@@ -159,19 +154,19 @@ extension WeakFramework {
     return WeakFramework.xcodeFramework(withRelativePath: relativePath, requiredClassNames: [])
   }
 
-  @objc(DTXConnectionServices) public class var dtxConnectionServices: WeakFramework {
+  public static var dtxConnectionServices: WeakFramework {
     WeakFramework.xcodeFramework(withRelativePath: "../SharedFrameworks/DTXConnectionServices.framework", requiredClassNames: ["DTXConnection", "DTXRemoteInvocationReceipt"])
   }
 
-  @objc(XCTest) public class var xcTest: WeakFramework {
+  public static var xcTest: WeakFramework {
     WeakFramework.xcodeFramework(withRelativePath: "Platforms/MacOSX.platform/Developer/Library/Frameworks/XCTest.framework", requiredClassNames: ["XCTestConfiguration", "XCSynthesizedEventRecord", "XCAccessibilityElement"])
   }
 
-  @objc(MobileDevice) public class var mobileDevice: WeakFramework {
+  public static var mobileDevice: WeakFramework {
     WeakFramework.framework(withPath: "/System/Library/PrivateFrameworks/MobileDevice.framework", requiredClassNames: [], rootPermitted: true)
   }
 
-  @objc(AccessibilityPlatformTranslation) public class var accessibilityPlatformTranslation: WeakFramework {
+  public static var accessibilityPlatformTranslation: WeakFramework {
     WeakFramework.framework(withPath: "/System/Library/PrivateFrameworks/AccessibilityPlatformTranslation.framework", requiredClassNames: ["AXPTranslationObject"], rootPermitted: false)
   }
 }

@@ -10,7 +10,6 @@ import Foundation
 
 public let FBDeviceControlErrorDomain = "com.facebook.FBDeviceControl"
 
-@objc(FBDeviceControlError)
 open class DeviceControlError: ControlCoreError {
 
   public required init() {
