@@ -507,7 +507,7 @@ class Companion:
     each test, while the companion must keep running.
     """
 
-    def __init__(self, environment: Environment) -> None:
+    def __init__(self, environment: Environment, *, cwd: Path | None = None) -> None:
         # Use /tmp to stay within the Unix socket path limit on macOS.
         self.directory = Path(tempfile.mkdtemp(prefix="idb-e2e-", dir="/tmp"))
         self.socket_path = self.directory / "companion.sock"
@@ -519,7 +519,7 @@ class Companion:
         )
         self.process = subprocess.Popen(
             [
-                str(environment.companion_path),
+                str(environment.companion_path.resolve()),
                 "--udid",
                 environment.udid,
                 "--device-set-path",
@@ -532,6 +532,7 @@ class Companion:
             stdout=subprocess.PIPE,
             stderr=subprocess.DEVNULL,
             stdin=subprocess.DEVNULL,
+            cwd=None if cwd is None else str(cwd),
         )
         try:
             self.address = self._wait_until_ready()
