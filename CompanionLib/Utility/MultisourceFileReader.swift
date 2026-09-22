@@ -89,7 +89,9 @@ enum MultisourceFileReader {
     return filePaths
   }
 
-  // TODO: Do we really need multithreading here? Isnt we just fill the stream sequentially while read is blocked and only then read starts?
+  // The producer has to run concurrently with the extractor reading the other end: the pipe
+  // holds only a buffer's worth, so filling it sequentially before the reader starts would
+  // deadlock on anything larger than that.
   private static func pipeToInput<Request: PayloadExtractable>(initialData: Data, requestStream: RequestStreamReader<Request>) -> (Task<Void, Error>, FBProcessInput<OutputStream>) {
     let input = FBProcessInput<OutputStream>.fromStream()
     let stream = input.contents
@@ -97,22 +99,33 @@ enum MultisourceFileReader {
     let readFromStreamTask = Task {
       stream.open()
       defer { stream.close() }
-
-      var buffer = [UInt8](initialData)
-      stream.write(&buffer, maxLength: buffer.count)
-
-      for try await request in requestStream {
-        guard let payload = request.extractPayload()
-        else { throw RPCError(code: .invalidArgument, message: "Unrecogized buffer frame. Expect payload, got \(request)") }
-
-        guard case .data(let data) = payload.source
-        else { throw RPCError(code: .invalidArgument, message: "Unrecogized buffer frame. Expect file path, got \(payload.source as Any)") }
-
-        var buffer = [UInt8](data)
-        stream.write(&buffer, maxLength: buffer.count)
-      }
+      try await writePayloads(initialData: initialData, from: requestStream, to: stream)
     }
 
     return (readFromStreamTask, input)
+  }
+
+  /// Writes `initialData` and then every payload in `requestStream` to `stream`.
+  ///
+  /// Takes the stream as a parameter rather than owning it so the loop can be exercised against a
+  /// stub sink; a real `FBProcessInput` stream cannot be opened until a process attaches to it.
+  static func writePayloads<Request: PayloadExtractable>(
+    initialData: Data,
+    from requestStream: RequestStreamReader<Request>,
+    to stream: OutputStream
+  ) async throws {
+    var buffer = [UInt8](initialData)
+    stream.write(&buffer, maxLength: buffer.count)
+
+    for try await request in requestStream {
+      guard let payload = request.extractPayload()
+      else { throw RPCError(code: .invalidArgument, message: "Unrecogized buffer frame. Expect payload, got \(request)") }
+
+      guard case .data(let data) = payload.source
+      else { throw RPCError(code: .invalidArgument, message: "Unrecogized buffer frame. Expect file path, got \(payload.source as Any)") }
+
+      var buffer = [UInt8](data)
+      stream.write(&buffer, maxLength: buffer.count)
+    }
   }
 }
