@@ -14,7 +14,9 @@ NS_ASSUME_NONNULL_BEGIN
 - (instancetype)init NS_UNAVAILABLE;
 + (instancetype)new NS_UNAVAILABLE;
 
-@property (nonatomic, readonly) NSUInteger assetCount;
++ (nullable instancetype)makeWithPhotoLibrary:(PHPhotoLibrary *)photoLibrary assets:(PHFetchResult<PHAsset *> *)assets NS_SWIFT_NAME(make(library:assets:));
+
+- (nullable NSNumber *)readAssetCountWithError:(NSError **)error;
 
 - (instancetype)initWithPhotoLibrary:(PHPhotoLibrary *)photoLibrary assets:(PHFetchResult<PHAsset *> *)assets NS_DESIGNATED_INITIALIZER NS_SWIFT_NAME(init(library:assets:));
 - (BOOL)deleteAssets;

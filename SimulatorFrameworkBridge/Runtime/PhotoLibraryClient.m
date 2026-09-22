@@ -56,6 +56,16 @@ static BOOL saveManagedObjectContext(NSManagedObjectContext *moc, NSError **outE
   PHFetchResult<PHAsset *> *_assets;
 }
 
++ (nullable instancetype)makeWithPhotoLibrary:(PHPhotoLibrary *)photoLibrary assets:(PHFetchResult<PHAsset *> *)assets
+{
+  @try {
+    return [[self alloc] initWithPhotoLibrary:photoLibrary assets:assets];
+  } @catch (NSException *exception) {
+    NSLog(@"Failed to clear photo library: %@", exception);
+    return nil;
+  }
+}
+
 - (instancetype)initWithPhotoLibrary:(PHPhotoLibrary *)photoLibrary assets:(PHFetchResult<PHAsset *> *)assets
 {
   self = [super init];
@@ -66,9 +76,17 @@ static BOOL saveManagedObjectContext(NSManagedObjectContext *moc, NSError **outE
   return self;
 }
 
-- (NSUInteger)assetCount
+- (NSNumber *)readAssetCountWithError:(NSError **)error
 {
-  return _assets.count;
+  @try {
+    return @(_assets.count);
+  } @catch (NSException *exception) {
+    NSLog(@"Failed to clear photo library: %@", exception);
+    if (error) {
+      *error = [NSError errorWithDomain:@"FBPhotoLibraryException" code:1 userInfo:@{NSLocalizedDescriptionKey : exception.reason ?: exception.name}];
+    }
+    return nil;
+  }
 }
 
 - (BOOL)deleteAssets
