@@ -9,18 +9,13 @@
 import Foundation
 import Testing
 
-// Serialized because the factory installs its result as
-// ControlCoreGlobalConfiguration.defaultLogger, which is process-global.
-@Suite(.serialized)
+@Suite
 struct IDBLoggerTests {
 
-  private func userDefaults(logFilePath: String? = nil, logLevel: String? = nil) -> UserDefaults {
+  private func userDefaults(logFilePath: String? = nil) -> UserDefaults {
     let defaults = UserDefaults(suiteName: "idb-logger-tests-\(UUID().uuidString)")!
     if let logFilePath {
       defaults.set(logFilePath, forKey: "-log-file-path")
-    }
-    if let logLevel {
-      defaults.set(logLevel, forKey: "-log-level")
     }
     return defaults
   }

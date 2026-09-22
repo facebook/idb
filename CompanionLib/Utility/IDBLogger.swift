@@ -72,10 +72,7 @@ public final class IDBLogger: FBCompositeLogger, @unchecked Sendable {
       let fileDescriptor = try openLogFile(atPath: logFilePath)
       loggers.append(FBControlCoreLoggerFactory.logger(toFileDescriptor: fileDescriptor, closeOnEndOfFile: true))
     }
-    let logger = IDBLogger(loggers: loggers).dateFormatted()
-    ControlCoreGlobalConfiguration.defaultLogger = logger
-
-    return logger
+    return IDBLogger(loggers: loggers).dateFormatted()
   }
 
   /// The stderr-only logger. Nothing about it can fail, so a caller can build one to report
