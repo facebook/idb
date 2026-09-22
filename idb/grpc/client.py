@@ -67,6 +67,7 @@ from idb.common.types import (
     CrashLogQuery,
     DEFAULT_SCREENSHOT_OPTIONS,
     DeliveredNotification,
+    DeviceOrientation,
     DomainSocketAddress,
     FileContainer,
     FileContainerType,
@@ -117,6 +118,8 @@ from idb.grpc.idb_pb2 import (
     DebugServerResponse,
     DeliveredNotificationsRequest,
     FocusRequest,
+    GetOrientationRequest,
+    GetOrientationResponse,
     GetSettingRequest,
     HingeAngleRequest,
     InstallRequest,
@@ -141,6 +144,7 @@ from idb.grpc.idb_pb2 import (
     RmRequest,
     SendNotificationRequest,
     SetLocationRequest,
+    SetOrientationRequest,
     SettingRequest,
     SimulateMemoryWarningRequest,
     TailRequest,
@@ -1129,6 +1133,24 @@ class Client(ClientBase):
         self, button_type: HIDButtonType, duration: float | None = None
     ) -> None:
         await self.send_events(button_press_to_events(button_type, duration))
+
+    @log_and_handle_exceptions("get_orientation")
+    async def get_orientation(self) -> DeviceOrientation:
+        response = await self.stub.get_orientation(GetOrientationRequest())
+        try:
+            return DeviceOrientation[
+                GetOrientationResponse.Orientation.Name(response.orientation)
+            ]
+        except (ValueError, KeyError) as error:
+            raise IdbException(
+                f"Unrecognized device orientation: {response.orientation}"
+            ) from error
+
+    @log_and_handle_exceptions("set_orientation")
+    async def set_orientation(self, orientation: HIDOrientationType) -> None:
+        await self.stub.set_orientation(
+            SetOrientationRequest(orientation=orientation.value)
+        )
 
     @log_and_handle_exceptions("hid")
     async def rotate(self, orientation: HIDOrientationType) -> None:

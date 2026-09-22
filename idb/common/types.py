@@ -643,6 +643,16 @@ class HIDPinch:
     radius: float
 
 
+class DeviceOrientation(Enum):
+    UNKNOWN = 0
+    PORTRAIT = 1
+    PORTRAIT_UPSIDE_DOWN = 2
+    LANDSCAPE_LEFT = 3
+    LANDSCAPE_RIGHT = 4
+    FACE_UP = 5
+    FACE_DOWN = 6
+
+
 class HIDOrientationType(Enum):
     PORTRAIT = 0
     PORTRAIT_UPSIDE_DOWN = 1
@@ -1013,6 +1023,14 @@ class Client(ABC):
     async def button(
         self, button_type: HIDButtonType, duration: float | None = None
     ) -> None:
+        pass
+
+    @abstractmethod
+    async def get_orientation(self) -> DeviceOrientation:
+        pass
+
+    @abstractmethod
+    async def set_orientation(self, orientation: HIDOrientationType) -> None:
         pass
 
     @abstractmethod

@@ -10,6 +10,22 @@ title: Commands
  * LICENSE file in the root directory of this source tree.
  */}
 
+## Physical rotation
+
+`idb rotation` reads the simulator's current physical orientation. Add `--json`
+for `{"orientation": "PORTRAIT"}`. Reads also preserve `UNKNOWN`, `FACE_UP`, and
+`FACE_DOWN` when the runtime reports them.
+
+`idb rotation PORTRAIT` sets physical orientation. Supported values are
+`PORTRAIT`, `PORTRAIT_UPSIDE_DOWN`, `LANDSCAPE_LEFT`, and `LANDSCAPE_RIGHT`.
+The getter uses the same direction names as the setter and observes changes
+made in Device Hub. An app may keep its interface orientation locked even when
+the physical device rotates.
+
+The existing `idb ui rotate` command retains its historical behavior. On legacy
+simulators its landscape directions use the opposite convention; use the new
+`rotation` commands together for physical orientation.
+
 ## Simulator hinge
 
 `idb hinge` reads a fresh measured hinge angle in degrees. `idb hinge ANGLE` sets the angle from 0 (closed) to 180 (flat). These commands require a simulator runtime that supports hinge motion. They are validated with iPhone Duo on iOS 27.1 and Xcode 27.1.

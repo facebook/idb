@@ -564,6 +564,14 @@ public final class IDBCommandExecutor {
     try await simulatorTarget().preferences.apply(.locale(localeIdentifier: identifier))
   }
 
+  public func get_orientation() async throws -> SimulatorDeviceOrientation {
+    try await simulatorTarget().orientation.current()
+  }
+
+  public func set_orientation(_ orientation: SimulatorDeviceOrientation) async throws {
+    try await simulatorTarget().orientation.setOrientation(orientation)
+  }
+
   public func hinge_angle() async throws -> Double {
     try await simulatorTarget().hinge.angle().degrees
   }

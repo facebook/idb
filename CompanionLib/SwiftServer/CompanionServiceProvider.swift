@@ -185,6 +185,22 @@ final class CompanionServiceProvider: Idb_CompanionService.SimpleServiceProtocol
     }
   }
 
+  func get_orientation(request: Idb_GetOrientationRequest, context: ServerContext) async throws -> Idb_GetOrientationResponse {
+    try await trackedUnaryCall("get_orientation", request: request) {
+      try await TeardownContext.withAutocleanup {
+        try await OrientationMethodHandler(commandExecutor: commandExecutor).get()
+      }
+    }
+  }
+
+  func set_orientation(request: Idb_SetOrientationRequest, context: ServerContext) async throws -> Idb_SetOrientationResponse {
+    try await trackedUnaryCall("set_orientation", request: request) {
+      try await TeardownContext.withAutocleanup {
+        try await OrientationMethodHandler(commandExecutor: commandExecutor).set(request: request)
+      }
+    }
+  }
+
   func hinge_angle(request: Idb_HingeAngleRequest, context: ServerContext) async throws -> Idb_HingeAngleResponse {
     return try await trackedUnaryCall("hinge_angle", request: request) {
       try await TeardownContext.withAutocleanup {

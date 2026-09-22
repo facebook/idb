@@ -103,6 +103,7 @@ from idb.cli.commands.notification import (
 )
 from idb.cli.commands.photos import PhotosClearCommand
 from idb.cli.commands.revoke import RevokeCommand
+from idb.cli.commands.rotation import RotationCommand
 from idb.cli.commands.screenshot import ScreenshotCommand
 from idb.cli.commands.settings import (
     build_list_command,
@@ -300,6 +301,7 @@ def build_builtin_commands(shell_command: ShellCommand) -> list[Command]:
         TargetDeleteCommand(),
         TargetDeleteAllCommand(),
         ScreenshotCommand(),
+        RotationCommand(),
         HingeCommand(),
         CommandGroup(
             name="ui",

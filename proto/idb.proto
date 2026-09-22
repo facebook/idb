@@ -29,6 +29,8 @@ service CompanionService {
   rpc accessibility_action(AccessibilityActionRequest)
       returns (AccessibilityActionResponse) {}
   rpc focus(FocusRequest) returns (FocusResponse) {}
+  rpc get_orientation(GetOrientationRequest) returns (GetOrientationResponse) {}
+  rpc set_orientation(SetOrientationRequest) returns (SetOrientationResponse) {}
   rpc hinge_angle(HingeAngleRequest) returns (HingeAngleResponse) {}
   rpc hid(stream HIDEvent) returns (HIDResponse) {}
   rpc open_url(OpenUrlRequest) returns (OpenUrlRequest) {}
@@ -82,6 +84,30 @@ service CompanionService {
   rpc push(stream PushRequest) returns (PushResponse) {}
   rpc tail(stream TailRequest) returns (stream TailResponse) {}
 }
+
+message GetOrientationRequest {}
+
+message GetOrientationResponse {
+  enum Orientation {
+    UNKNOWN = 0;
+    PORTRAIT = 1;
+    PORTRAIT_UPSIDE_DOWN = 2;
+    LANDSCAPE_LEFT = 3;
+    LANDSCAPE_RIGHT = 4;
+    FACE_UP = 5;
+    FACE_DOWN = 6;
+  }
+  // Physical device orientation, independent of application interface rotation.
+  Orientation orientation = 1;
+}
+
+message SetOrientationRequest {
+  // Physical landscape directions; legacy HID orientation encoding is
+  // unchanged.
+  HIDEvent.HIDOrientationType orientation = 1;
+}
+
+message SetOrientationResponse {}
 
 message HingeAngleRequest {}
 

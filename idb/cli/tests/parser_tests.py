@@ -37,6 +37,7 @@ from idb.common.types import (
     Compression,
     CrashLogQuery,
     DeliveredNotification,
+    DeviceOrientation,
     DomainSocketAddress,
     FileContainerType,
     HIDButtonType,
@@ -1994,6 +1995,44 @@ class TestParser(TestCase):
         self.client_mock.rotate.assert_called_once_with(
             orientation=HIDOrientationType.LANDSCAPE_LEFT
         )
+
+    async def test_rotation_get_plain_and_json(self) -> None:
+        self.client_mock.set_orientation = AsyncMock()
+        for orientation in DeviceOrientation:
+            self.client_mock.get_orientation = AsyncMock(return_value=orientation)
+            for options in [[], ["--json"]]:
+                with redirect_stdout(StringIO()) as output:
+                    self.assertEqual(
+                        await cli_main(cmd_input=["rotation"] + options), 0
+                    )
+                expected = (
+                    {"orientation": orientation.name} if options else orientation.name
+                )
+                actual = (
+                    json.loads(output.getvalue())
+                    if options
+                    else output.getvalue().strip()
+                )
+                self.assertEqual(actual, expected)
+
+        self.client_mock.set_orientation.assert_not_called()
+
+    async def test_rotation_set_preserves_direction_names(self) -> None:
+        self.client_mock.get_orientation = AsyncMock()
+        self.client_mock.set_orientation = AsyncMock(return_value=None)
+        for orientation in HIDOrientationType:
+            self.assertEqual(
+                await cli_main(cmd_input=["rotation", orientation.name]), 0
+            )
+            self.client_mock.set_orientation.assert_called_with(orientation=orientation)
+
+        self.client_mock.get_orientation.assert_not_called()
+
+    async def test_rotation_rejects_read_only_states(self) -> None:
+        self.client_mock.set_orientation = AsyncMock(return_value=None)
+        for orientation in ["UNKNOWN", "FACE_UP", "FACE_DOWN", "sideways"]:
+            self.assertEqual(await cli_main(cmd_input=["rotation", orientation]), 2)
+        self.client_mock.set_orientation.assert_not_called()
 
     async def test_hinge_get(self) -> None:
         self.client_mock.get_hinge_angle = AsyncMock(return_value=130.0)

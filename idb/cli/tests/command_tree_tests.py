@@ -76,6 +76,7 @@ BUILT_IN_ROOT_ENTRIES: tuple[str, ...] = (
     "photos",
     "record",
     "revoke",
+    "rotation",
     "screenshot",
     "send-notification",
     "set",
@@ -139,8 +140,8 @@ BUILT_IN_GROUP_CHILDREN: dict[str, tuple[str, ...]] = {
     "xctrace": ("record",),
 }
 
-BUILT_IN_TERMINAL_COUNT = 88
-BUILT_IN_NODE_COUNT = 104
+BUILT_IN_TERMINAL_COUNT = 89
+BUILT_IN_NODE_COUNT = 105
 
 BUILT_IN_ALIAS_PATHS: tuple[tuple[str, ...], ...] = (
     ("file", "mv"),
