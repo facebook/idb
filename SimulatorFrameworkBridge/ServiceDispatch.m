@@ -74,6 +74,11 @@
   return handleNotificationSettingsAction(action, bundleID);
 }
 
+- (int32_t)privacy:(NSString *)action arguments:(NSArray<NSString *> *)arguments
+{
+  return [FBPrivacyService handleAction:action arguments:arguments];
+}
+
 - (int32_t)proxy:(NSString *)action arguments:(NSArray<NSString *> *)arguments
 {
   return handleProxyAction(action, arguments);

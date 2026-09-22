@@ -14,6 +14,7 @@ private enum BridgeService: String {
   case dynamicStore = "dynamic-store"
   case photos
   case notifications
+  case privacy
   case proxy
   case accessibility
   case orientation
@@ -29,6 +30,7 @@ private enum BridgeService: String {
   func dynamicStore(_ action: String, arguments: [String]) -> Int32
   func photos(_ action: String) -> Int32
   func notifications(_ action: String, bundleID: String?) -> Int32
+  func privacy(_ action: String, arguments: [String]) -> Int32
   func proxy(_ action: String, arguments: [String]) -> Int32
   func accessibility(_ action: String, arguments: [String]) -> Int32
   func orientation(_ action: String, arguments: [String]) -> Int32
@@ -36,7 +38,7 @@ private enum BridgeService: String {
 }
 
 @objc public final class FBBridgeCommand: NSObject {
-  private static let serviceNames = "contacts, dns, dynamic-store, photos, notifications, health, proxy, accessibility, orientation, repl"
+  private static let serviceNames = "contacts, dns, dynamic-store, photos, notifications, health, privacy, proxy, accessibility, orientation, repl"
 
   @objc public static func run(arguments: [String], services: FBBridgeServiceHandling) -> Int32 {
     guard arguments.count >= 3 else {
@@ -65,6 +67,7 @@ private enum BridgeService: String {
     case .dynamicStore: return services.dynamicStore(action, arguments: arguments)
     case .photos: return services.photos(action)
     case .notifications: return services.notifications(action, bundleID: arguments.first)
+    case .privacy: return services.privacy(action, arguments: arguments)
     case .proxy: return services.proxy(action, arguments: arguments)
     case .accessibility: return services.accessibility(action, arguments: arguments)
     case .orientation: return services.orientation(action, arguments: arguments)

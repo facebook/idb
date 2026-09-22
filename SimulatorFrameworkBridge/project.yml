@@ -36,6 +36,7 @@ targetTemplates:
         # services it drives are permitted inside the simulator.
         CODE_SIGN_IDENTITY: "-"
         CODE_SIGN_ENTITLEMENTS: SimulatorFrameworkBridge.entitlements
+        OTHER_LDFLAGS: $(inherited) -Wl,-sectcreate,__TEXT,__entitlements,$(SRCROOT)/SimulatorFrameworkBridge.entitlements
         OTHER_CFLAGS: $(inherited) -Wno-deprecated-declarations
     dependencies:
       # Everything else the bridge reaches (BulletinBoard, SystemConfiguration, the accessibility

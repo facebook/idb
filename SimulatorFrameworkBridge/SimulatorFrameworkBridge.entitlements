@@ -19,5 +19,19 @@
         <string>reset</string>
         <string>write</string>
     </array>
+    <key>com.apple.private.tcc.manager.access.modify</key>
+    <array>
+        <string>kTCCServiceCamera</string>
+        <string>kTCCServiceMicrophone</string>
+        <string>kTCCServicePhotos</string>
+        <string>kTCCServiceAddressBook</string>
+    </array>
+    <key>com.apple.private.tcc.manager.access.delete</key>
+    <array>
+        <string>kTCCServiceCamera</string>
+        <string>kTCCServiceMicrophone</string>
+        <string>kTCCServicePhotos</string>
+        <string>kTCCServiceAddressBook</string>
+    </array>
 </dict>
 </plist>

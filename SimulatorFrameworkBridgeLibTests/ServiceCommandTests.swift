@@ -31,7 +31,7 @@ final class ServiceCommandTests: XCTestCase {
 
   func testEachRouteReceivesItsOriginalArgumentShape() {
     let services = RecordingServices()
-    for service in ["contacts", "dns", "dynamic-store", "photos", "notifications", "health", "proxy", "accessibility", "orientation"] {
+    for service in ["contacts", "dns", "dynamic-store", "photos", "notifications", "health", "privacy", "proxy", "accessibility", "orientation"] {
       XCTAssertEqual(FBBridgeCommand.dispatch(service: service, action: "action", arguments: ["bundle", "type1", "type2"], services: services), 23)
     }
     XCTAssertEqual(
@@ -43,6 +43,7 @@ final class ServiceCommandTests: XCTestCase {
         Call(service: "photos", action: "action", arguments: []),
         Call(service: "notifications", action: "action", arguments: ["bundle"]),
         Call(service: "health", action: "action", arguments: ["bundle", "type1", "type2"]),
+        Call(service: "privacy", action: "action", arguments: ["bundle", "type1", "type2"]),
         Call(service: "proxy", action: "action", arguments: ["bundle", "type1", "type2"]),
         Call(service: "accessibility", action: "action", arguments: ["bundle", "type1", "type2"]),
         Call(service: "orientation", action: "action", arguments: ["bundle", "type1", "type2"]),
@@ -98,6 +99,7 @@ private final class RecordingServices: NSObject, FBBridgeServiceHandling {
   func dynamicStore(_ action: String, arguments: [String]) -> Int32 { record("dynamic-store", action, arguments) }
   func photos(_ action: String) -> Int32 { record("photos", action, []) }
   func notifications(_ action: String, bundleID: String?) -> Int32 { record("notifications", action, [bundleID]) }
+  func privacy(_ action: String, arguments: [String]) -> Int32 { record("privacy", action, arguments) }
   func proxy(_ action: String, arguments: [String]) -> Int32 { record("proxy", action, arguments) }
   func accessibility(_ action: String, arguments: [String]) -> Int32 { record("accessibility", action, arguments) }
   func orientation(_ action: String, arguments: [String]) -> Int32 { record("orientation", action, arguments) }
