@@ -86,6 +86,40 @@ ACCESSIBILITY_READY_TIMEOUT_SECONDS = 180.0
 DEFAULT_COMMAND_TIMEOUT_SECONDS = 120.0
 INSTALL_TIMEOUT_SECONDS = 300.0
 ROUTE_ATTESTATION_TIMEOUT_SECONDS = 10.0
+PROCESS_GROUP_GRACE_SECONDS = 2.0
+
+
+def _process_group_alive(process_group: int) -> bool:
+    try:
+        os.killpg(process_group, 0)
+    except ProcessLookupError:
+        return False
+    return True
+
+
+def _signal_process_group(process_group: int, process_signal: int) -> None:
+    try:
+        os.killpg(process_group, process_signal)
+    except ProcessLookupError:
+        pass
+
+
+async def _wait_for_process_group_exit(process_group: int, timeout: float) -> bool:
+    deadline = Deadline(timeout)
+    while _process_group_alive(process_group):
+        if deadline.passed:
+            return False
+        await asyncio.sleep(min(POLL_INTERVAL_SECONDS / 10, max(deadline.remaining, 0)))
+    return True
+
+
+def _wait_for_process_group_exit_sync(process_group: int, timeout: float) -> bool:
+    deadline = Deadline(timeout)
+    while _process_group_alive(process_group):
+        if deadline.passed:
+            return False
+        time.sleep(min(POLL_INTERVAL_SECONDS / 10, max(deadline.remaining, 0)))
+    return True
 
 
 class HarnessError(Exception):
@@ -202,14 +236,16 @@ def expected_implementation() -> str | None:
 def verify_route_attestation(path: Path, expected: str) -> None:
     try:
         actual = path.read_text().strip()
+    except FileNotFoundError:
+        raise NotReady(f"the route attestation file does not exist at {path}") from None
     except OSError as error:
         raise HarnessError(
-            f"the {expected} lane produced no route attestation at {path}: {error}"
+            f"the {expected} lane route attestation at {path} is unreadable: {error}"
         ) from None
+    if not actual:
+        raise NotReady(f"the route attestation file is not complete at {path}")
     if actual != expected:
-        raise HarnessError(
-            f"the {expected} lane executed the {actual or '<empty>'} sidecar"
-        )
+        raise HarnessError(f"the {expected} lane executed the {actual} sidecar")
 
 
 def suite_capability() -> SuiteCapability:
@@ -263,6 +299,55 @@ class Completed:
         return self.stderr.decode(errors="replace")
 
 
+async def _terminate_run_process(
+    process: asyncio.subprocess.Process,
+    communication: asyncio.Task[tuple[bytes | None, bytes | None]],
+    argv: Sequence[str],
+) -> None:
+    survived = False
+    _signal_process_group(process.pid, int(signal.SIGTERM))
+    try:
+        await asyncio.wait_for(
+            asyncio.shield(communication), PROCESS_GROUP_GRACE_SECONDS
+        )
+    except asyncio.TimeoutError:
+        pass
+    if not await _wait_for_process_group_exit(process.pid, PROCESS_GROUP_GRACE_SECONDS):
+        _signal_process_group(process.pid, _KILL_SIGNAL)
+        survived = not await _wait_for_process_group_exit(
+            process.pid, PROCESS_GROUP_GRACE_SECONDS
+        )
+    if process.returncode is None:
+        try:
+            await asyncio.wait_for(process.wait(), PROCESS_GROUP_GRACE_SECONDS)
+        except asyncio.TimeoutError:
+            survived = True
+    if not communication.done():
+        communication.cancel()
+    await asyncio.gather(communication, return_exceptions=True)
+    if survived:
+        raise HarnessError(f"{' '.join(argv)} descendants survived forced termination")
+
+
+async def _terminate_run_process_reliably(
+    process: asyncio.subprocess.Process,
+    communication: asyncio.Task[tuple[bytes | None, bytes | None]],
+    argv: Sequence[str],
+) -> None:
+    termination = asyncio.create_task(
+        _terminate_run_process(process, communication, argv)
+    )
+    interrupted: asyncio.CancelledError | None = None
+    while not termination.done():
+        try:
+            await asyncio.shield(termination)
+        except asyncio.CancelledError as error:
+            interrupted = error
+    termination.result()
+    if interrupted is not None:
+        raise interrupted
+
+
 async def run(
     argv: Sequence[str],
     timeout: float,
@@ -279,12 +364,19 @@ async def run(
             else asyncio.subprocess.DEVNULL,
             stdout=stdout,
             stderr=stderr,
+            start_new_session=True,
         )
+        communication = asyncio.create_task(process.communicate(stdin))
+        timed_out = False
         try:
-            await asyncio.wait_for(process.communicate(stdin), timeout)
+            await asyncio.wait_for(asyncio.shield(communication), timeout)
         except asyncio.TimeoutError:
-            process.kill()
-            await process.wait()
+            timed_out = True
+            await _terminate_run_process_reliably(process, communication, argv)
+        except BaseException:
+            await _terminate_run_process_reliably(process, communication, argv)
+            raise
+        if timed_out:
             raise HarnessError(
                 f"{' '.join(argv)} did not finish within {timeout:.0f}s"
             ) from None
@@ -525,6 +617,7 @@ class Companion:
             else self.directory / "companion.log"
         )
         _prepare_artifact_file(self.log_path)
+        self._stopped = False
         self.process = subprocess.Popen(
             [
                 str(environment.companion_path.resolve()),
@@ -541,6 +634,7 @@ class Companion:
             stderr=subprocess.DEVNULL,
             stdin=subprocess.DEVNULL,
             cwd=None if cwd is None else str(cwd),
+            start_new_session=True,
         )
         try:
             self.address = self._wait_until_ready()
@@ -604,15 +698,35 @@ class Companion:
             return "<no companion log>"
 
     def stop(self) -> None:
-        if self.process.poll() is None:
-            self.process.send_signal(signal.SIGTERM)
-            try:
-                self.process.wait(timeout=15)
-            except subprocess.TimeoutExpired:
-                self.process.kill()
-                self.process.wait()
-        if self.process.stdout is not None:
-            self.process.stdout.close()
+        if self._stopped:
+            return
+        self._stopped = True
+        process_group = self.process.pid
+        forced = False
+        try:
+            _signal_process_group(process_group, int(signal.SIGTERM))
+            if self.process.poll() is None:
+                try:
+                    self.process.wait(timeout=15)
+                except subprocess.TimeoutExpired:
+                    pass
+            if _process_group_alive(process_group):
+                _signal_process_group(process_group, _KILL_SIGNAL)
+                forced = True
+            if self.process.poll() is None:
+                try:
+                    self.process.wait(timeout=15)
+                except subprocess.TimeoutExpired as error:
+                    raise HarnessError(
+                        "companion survived forced process-group termination"
+                    ) from error
+            if forced and not _wait_for_process_group_exit_sync(process_group, 15):
+                raise HarnessError(
+                    "companion descendants survived forced process-group termination"
+                )
+        finally:
+            if self.process.stdout is not None:
+                self.process.stdout.close()
 
 
 def client_argv(
@@ -927,7 +1041,13 @@ class IdbEndToEndTestCase(unittest.IsolatedAsyncioTestCase):
             return await run(argv, timeout=timeout, stdin=stdin)
         environment, attestation = self._route_attestation()
         completed = await run(argv, timeout=timeout, stdin=stdin, env=environment)
-        verify_route_attestation(attestation, expected)
+        try:
+            verify_route_attestation(attestation, expected)
+        except NotReady as error:
+            raise HarnessError(
+                f"the {expected} lane exited before completing route attestation at "
+                f"{attestation}: {error}"
+            ) from None
         return completed
 
     async def idb(
@@ -1401,6 +1521,7 @@ class IdbProcess:
         self._cwd = cwd
         self._route_attestation = route_attestation
         self._process: asyncio.subprocess.Process | None = None
+        self._process_group: int | None = None
         self._captures: dict[ProcessStream, _OutputSpool] = {}
         self._reader_tasks: dict[ProcessStream, asyncio.Task[None]] = {}
         self._process_wait_task: asyncio.Task[int] | None = None
@@ -1435,6 +1556,7 @@ class IdbProcess:
                 stdin=asyncio.subprocess.PIPE,
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE,
+                start_new_session=True,
             )
         except BaseException as error:
             if self._recording is not None:
@@ -1480,6 +1602,7 @@ class IdbProcess:
     def _start_tasks(self, process: asyncio.subprocess.Process) -> None:
         assert process.stdout is not None and process.stderr is not None
         self._process = process
+        self._process_group = process.pid
         self._process_wait_task = asyncio.create_task(
             process.wait(), name="idb-e2e-process-wait"
         )
@@ -1504,7 +1627,9 @@ class IdbProcess:
         path, expected = self._route_attestation
 
         async def inspect() -> None:
-            if not path.exists():
+            try:
+                verify_route_attestation(path, expected)
+            except NotReady as error:
                 completion = self._require_completion()
                 if completion.done():
                     await completion
@@ -1513,10 +1638,9 @@ class IdbProcess:
                     )
                     raise HarnessError(
                         f"idb {self._what} exited with {self.returncode} before "
-                        f"attesting the {expected} route\nstderr: {stderr}"
-                    )
-                raise NotReady(f"the route attestation file does not exist at {path}")
-            verify_route_attestation(path, expected)
+                        f"attesting the {expected} route: {error}\nstderr: {stderr}"
+                    ) from None
+                raise
 
         await wait_until(
             f"idb {self._what} did not attest the {expected} route",
@@ -1571,10 +1695,9 @@ class IdbProcess:
             return
         self._killed = True
         self._signals_sent.append(_KILL_SIGNAL)
-        try:
-            process.kill()
-        except ProcessLookupError:
-            pass
+        process_group = self._process_group
+        assert process_group is not None
+        _signal_process_group(process_group, _KILL_SIGNAL)
 
     async def _complete(self) -> int:
         process_wait = self._process_wait_task
@@ -1777,10 +1900,14 @@ class IdbProcess:
                 f"Cannot signal {self._what}; it exited with {process.returncode}"
             )
         numeric_signal = int(process_signal)
+        process_group = self._process_group
+        assert process_group is not None
         try:
-            process.send_signal(numeric_signal)
+            os.killpg(process_group, numeric_signal)
         except ProcessLookupError:
-            self._failure(f"Cannot signal {self._what}; its process no longer exists")
+            self._failure(
+                f"Cannot signal {self._what}; its process group no longer exists"
+            )
         self._signals_sent.append(numeric_signal)
 
     async def wait(self, timeout: float) -> int:
@@ -1821,43 +1948,50 @@ class IdbProcess:
         return await asyncio.shield(self._stop_task)
 
     async def _stop(self, graceful_timeout: float, kill_timeout: float) -> int:
-        process = self._require_process()
         await self.close_stdin()
         completion = self._require_completion()
-        if completion.done():
-            return await completion
-        if process.returncode is None:
+        process_group = self._process_group
+        assert process_group is not None
+        if _process_group_alive(process_group):
             self._send_cleanup_signal(int(signal.SIGTERM))
         try:
-            return await asyncio.wait_for(asyncio.shield(completion), graceful_timeout)
+            returncode = await asyncio.wait_for(
+                asyncio.shield(completion), graceful_timeout
+            )
         except asyncio.TimeoutError:
-            pass
-        if process.returncode is None:
             self._killed = True
-            self._send_cleanup_signal(_KILL_SIGNAL, kill=True)
-        try:
-            return await asyncio.wait_for(asyncio.shield(completion), kill_timeout)
-        except asyncio.TimeoutError:
-            for task in self._reader_tasks.values():
-                if not task.done():
-                    task.cancel()
+            self._send_cleanup_signal(_KILL_SIGNAL)
             try:
-                return await asyncio.wait_for(asyncio.shield(completion), kill_timeout)
+                returncode = await asyncio.wait_for(
+                    asyncio.shield(completion), kill_timeout
+                )
             except asyncio.TimeoutError:
-                raise HarnessError(
-                    f"{self._what} could not be reaped after forced termination"
-                ) from None
+                for task in self._reader_tasks.values():
+                    if not task.done():
+                        task.cancel()
+                try:
+                    returncode = await asyncio.wait_for(
+                        asyncio.shield(completion), kill_timeout
+                    )
+                except asyncio.TimeoutError:
+                    raise HarnessError(
+                        f"{self._what} could not be reaped after forced termination"
+                    ) from None
 
-    def _send_cleanup_signal(self, process_signal: int, *, kill: bool = False) -> None:
-        process = self._require_process()
+        if not await _wait_for_process_group_exit(process_group, graceful_timeout):
+            self._killed = True
+            self._send_cleanup_signal(_KILL_SIGNAL)
+            if not await _wait_for_process_group_exit(process_group, kill_timeout):
+                raise HarnessError(
+                    f"{self._what} descendants survived forced termination"
+                )
+        return returncode
+
+    def _send_cleanup_signal(self, process_signal: int) -> None:
+        process_group = self._process_group
+        assert process_group is not None
         self._signals_sent.append(process_signal)
-        try:
-            if kill:
-                process.kill()
-            else:
-                process.send_signal(process_signal)
-        except ProcessLookupError:
-            pass
+        _signal_process_group(process_group, process_signal)
 
     async def aclose(self) -> None:
         if self._close_task is None:

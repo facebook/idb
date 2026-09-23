@@ -93,6 +93,8 @@ class Skipped(Exception):
 class ProcessStub:
     def __init__(self, returncode: int | None) -> None:
         self.returncode = returncode
+        self.pid = 4321
+        self.stdout = None
 
     def poll(self) -> int | None:
         return self.returncode
@@ -309,7 +311,10 @@ class RouteAttestationTests(unittest.IsolatedAsyncioTestCase):
             environment[ROUTE_ATTESTATION_ENV] = str(attestation)
             script = (
                 "import os, time; from pathlib import Path; "
-                f"Path(os.environ[{ROUTE_ATTESTATION_ENV!r}]).write_text('rust\\n'); "
+                f"p=Path(os.environ[{ROUTE_ATTESTATION_ENV!r}]); "
+                "p.write_text(''); time.sleep(0.1); "
+                "p.with_suffix('.tmp').write_text('rust\\n'); "
+                "p.with_suffix('.tmp').replace(p); "
                 "print('ready', flush=True); time.sleep(60)"
             )
             async with IdbProcess(
@@ -589,6 +594,47 @@ while True:
                 (int(signal.SIGTERM), int(getattr(signal, "SIGKILL", signal.SIGTERM))),
             )
             self.assertTrue(running.was_killed)
+
+    async def test_context_cleanup_terminates_descendants_after_parent_exit(
+        self,
+    ) -> None:
+        directory = self.enterContext(tempfile.TemporaryDirectory())
+        child_ready = Path(directory) / "child-ready"
+        child_exited = Path(directory) / "child-exited"
+        child = (
+            "import signal, time\n"
+            "from pathlib import Path\n"
+            f"exited = Path({str(child_exited)!r})\n"
+            "def stop(_signal, _frame):\n"
+            "    exited.touch()\n"
+            "    raise SystemExit(0)\n"
+            "signal.signal(signal.SIGTERM, stop)\n"
+            f"Path({str(child_ready)!r}).touch()\n"
+            "while True:\n"
+            "    time.sleep(1)\n"
+        )
+        parent = (
+            "import os, subprocess, sys, time\n"
+            "from pathlib import Path\n"
+            f"subprocess.Popen([sys.executable, '-c', {child!r}])\n"
+            f"ready = Path({str(child_ready)!r})\n"
+            "while not ready.exists():\n"
+            "    time.sleep(0.01)\n"
+            "os.write(1, b'ready')\n"
+        )
+        process = self.process(
+            parent,
+            config=IdbProcessConfig(
+                graceful_stop_seconds=2,
+                kill_wait_seconds=2,
+            ),
+        )
+
+        async with process as running:
+            await running.wait_for_observations(1, 5)
+
+        self.assertTrue(child_exited.is_file())
+        self.assertTrue(process.closed)
 
     async def test_context_cleanup_reaps_tasks_and_removes_spools(self) -> None:
         process = self.process(
@@ -1149,6 +1195,42 @@ class CompanionLifecycleTests(unittest.TestCase):
         self.assertIn("exited with 9", str(died))
         self.assertIn("last thing the companion served", str(died))
 
+    def test_stop_waits_for_descendants_after_the_leader_exits(self) -> None:
+        made = companion(0)
+        made._stopped = False
+        with (
+            mock.patch.object(harness, "_process_group_alive", return_value=True),
+            mock.patch.object(harness, "_signal_process_group") as signal_group,
+            mock.patch.object(
+                harness, "_wait_for_process_group_exit_sync", return_value=True
+            ) as wait_for_group,
+        ):
+            made.stop()
+
+        signal_group.assert_has_calls(
+            [
+                mock.call(4321, int(signal.SIGTERM)),
+                mock.call(4321, harness._KILL_SIGNAL),
+            ]
+        )
+        wait_for_group.assert_called_once_with(4321, 15)
+
+    def test_stop_fails_if_descendants_survive_sigkill(self) -> None:
+        made = companion(0)
+        made._stopped = False
+        with (
+            mock.patch.object(harness, "_process_group_alive", return_value=True),
+            mock.patch.object(harness, "_signal_process_group"),
+            mock.patch.object(
+                harness, "_wait_for_process_group_exit_sync", return_value=False
+            ),
+            self.assertRaisesRegex(
+                HarnessError,
+                "descendants survived forced process-group termination",
+            ),
+        ):
+            made.stop()
+
     def test_companion_exit_stops_the_suite(self) -> None:
         case = HarnessCaseStub(companion_returncode=1)
 
@@ -1584,6 +1666,56 @@ class SubprocessTimeoutTests(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual(result, Completed(7, b"prefix\xfe\x00", b"\xff"))
 
+    async def test_cancellation_reaps_process_and_communication_task(self) -> None:
+        directory = self.enterContext(tempfile.TemporaryDirectory())
+        ready = Path(directory) / "ready"
+        exited = Path(directory) / "exited"
+        code = (
+            "import signal, time\n"
+            "from pathlib import Path\n"
+            f"ready = Path({str(ready)!r})\n"
+            f"exited = Path({str(exited)!r})\n"
+            "def stop(_signal, _frame):\n"
+            "    exited.touch()\n"
+            "    raise SystemExit(0)\n"
+            "signal.signal(signal.SIGTERM, stop)\n"
+            "ready.touch()\n"
+            "while True: time.sleep(1)\n"
+        )
+        cleanup_started = asyncio.Event()
+        continue_cleanup = asyncio.Event()
+        terminate = harness._terminate_run_process
+
+        async def delayed_termination(
+            process: asyncio.subprocess.Process,
+            communication: asyncio.Task[tuple[bytes | None, bytes | None]],
+            argv: Sequence[str],
+        ) -> None:
+            cleanup_started.set()
+            await continue_cleanup.wait()
+            await terminate(process, communication, argv)
+
+        previous_tasks = set(asyncio.all_tasks())
+        with mock.patch.object(
+            harness, "_terminate_run_process", side_effect=delayed_termination
+        ):
+            running = asyncio.create_task(
+                harness.run([sys.executable, "-c", code], timeout=30)
+            )
+            while not ready.is_file():
+                await asyncio.sleep(0.01)
+            running.cancel()
+            await cleanup_started.wait()
+            running.cancel()
+            continue_cleanup.set()
+            with self.assertRaises(asyncio.CancelledError):
+                await running
+        self.assertTrue(exited.is_file())
+        leaked = [
+            task for task in asyncio.all_tasks() - previous_tasks if not task.done()
+        ]
+        self.assertEqual(leaked, [])
+
     async def test_reports_timeout_for_a_running_process(self) -> None:
         with self.assertRaisesRegex(HarnessError, "did not finish within"):
             await harness.run(
@@ -1593,19 +1725,27 @@ class SubprocessTimeoutTests(unittest.IsolatedAsyncioTestCase):
     async def test_timeout_with_inherited_output_pipes(self) -> None:
         directory = self.enterContext(tempfile.TemporaryDirectory())
         ready = Path(directory) / "ready"
-        stop = Path(directory) / "stop"
+        child_ready = Path(directory) / "child-ready"
         exited = Path(directory) / "exited"
         child = (
-            "import time; from pathlib import Path\n"
-            "for _ in range(3000):\n"
-            f"    if Path({str(stop)!r}).exists(): break\n"
-            "    time.sleep(0.01)\n"
-            f"Path({str(exited)!r}).touch()\n"
+            "import signal, time; from pathlib import Path\n"
+            f"exited = Path({str(exited)!r})\n"
+            "def stop(_signal, _frame):\n"
+            "    exited.touch()\n"
+            "    raise SystemExit(0)\n"
+            "signal.signal(signal.SIGTERM, stop)\n"
+            f"Path({str(child_ready)!r}).touch()\n"
+            "while True: time.sleep(1)\n"
         )
         parent = (
-            "import subprocess,sys,time; from pathlib import Path; "
-            f"subprocess.Popen([sys.executable, '-c', {child!r}]); "
-            f"Path({str(ready)!r}).touch(); time.sleep(30)"
+            "import subprocess, sys, time\n"
+            "from pathlib import Path\n"
+            f"subprocess.Popen([sys.executable, '-c', {child!r}])\n"
+            f"child_ready = Path({str(child_ready)!r})\n"
+            "while not child_ready.exists():\n"
+            "    time.sleep(0.01)\n"
+            f"Path({str(ready)!r}).touch()\n"
+            "time.sleep(30)\n"
         )
         process = None
         create_process = asyncio.create_subprocess_exec
@@ -1615,18 +1755,11 @@ class SubprocessTimeoutTests(unittest.IsolatedAsyncioTestCase):
                 await asyncio.sleep(0.01)
 
         async def cleanup() -> None:
-            if process is not None and process.returncode is None:
-                try:
-                    process.kill()
-                except ProcessLookupError:
-                    pass
-            stop.touch()
-            try:
-                if ready.is_file():
-                    await asyncio.wait_for(wait_for_file(exited), timeout=10)
-            finally:
-                if process is not None:
-                    await asyncio.wait_for(process.wait(), timeout=10)
+            if process is not None:
+                harness._signal_process_group(
+                    process.pid, int(getattr(signal, "SIGKILL", signal.SIGTERM))
+                )
+                await asyncio.wait_for(process.wait(), timeout=10)
 
         self.addAsyncCleanup(cleanup)
 
@@ -1647,4 +1780,4 @@ class SubprocessTimeoutTests(unittest.IsolatedAsyncioTestCase):
                 harness.run([sys.executable, "-c", parent], timeout=0.5), timeout=12
             )
         self.assertTrue(ready.is_file(), "Descendant must be spawned before timeout")
-        self.assertFalse(exited.is_file(), "Descendant must still hold the outputs")
+        await asyncio.wait_for(wait_for_file(exited), timeout=10)
