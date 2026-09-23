@@ -175,7 +175,7 @@ class _SingleResponseStream:
         return self.response
 
 
-class Wave8OutputTests(TestCase):
+class InteractiveOutputTests(TestCase):
     def _resolve(self, argv: list[str]) -> tuple[Namespace, ClientCommand]:
         graph = build_command_graph(extension_loader=lambda: [])
         args = graph.parser.parse_args(argv)

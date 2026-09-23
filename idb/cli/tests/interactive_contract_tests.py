@@ -55,7 +55,7 @@ class _RecordingClient:
             yield cast(TestRunInfo, None)
 
 
-class Wave8ContractTests(TestCase):
+class InteractiveContractTests(TestCase):
     def _resolve(
         self, argv: list[str]
     ) -> tuple[CommandGraph, Namespace, ClientCommand]:
