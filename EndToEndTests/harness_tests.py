@@ -12,6 +12,7 @@ uses test*.py. Run it separately with python -m unittest EndToEndTests.harness_t
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import hashlib
 import io
 import json
@@ -27,6 +28,7 @@ from typing import Awaitable, Callable, NoReturn, Sequence
 from unittest import mock
 
 from . import harness, recording as recording_module
+from .documentation import Transcript
 from .harness import (
     _optional_binary_from_environment,
     _prepare_artifact_file,
@@ -1115,6 +1117,7 @@ class CommandTestCaseStub(HarnessCaseStub):
     idb_expect_failure = IdbEndToEndTestCase.idb_expect_failure
     fail_or_skip_for = IdbEndToEndTestCase.fail_or_skip_for
     run_client = IdbEndToEndTestCase.run_client
+    _command_fields = IdbEndToEndTestCase._command_fields
 
 
 class ExpectedFailureTest(unittest.IsolatedAsyncioTestCase):
@@ -1164,6 +1167,132 @@ class ExpectedFailureTest(unittest.IsolatedAsyncioTestCase):
                 Completed(1, b"", b"not a dictionary\n"),
                 companion_returncode=9,
             )
+
+
+UNANSWERED = Completed(
+    1,
+    b"",
+    b"The axbridge backend requested accessibility from the application with "
+    b"pid 10891, which did not answer in time\n",
+)
+ELEMENT_MOVED = Completed(
+    1,
+    b"",
+    b'The axbridge backend resolved AXUniqueId containing "TabBarItemTitle" and '
+    b"the element had moved by the time the write reached it; nothing was "
+    b"written. Read the tree again and retry\n",
+)
+SUCCEEDED = Completed(0, b"", b"")
+SET_VALUE = ("ui", "set-value", "200", "822", "--value", "idb-first")
+TAP = ("ui", "tap", "TabBarItemTitle", "--match-key", "AXUniqueId")
+
+
+class DeadlineAfter:
+    """A Deadline that passes on a given check rather than on the clock."""
+
+    def __init__(self, checks: int) -> None:
+        self.checks = checks
+
+    def __call__(self, seconds: float) -> DeadlineAfter:
+        return self
+
+    @property
+    def passed(self) -> bool:
+        self.checks -= 1
+        return self.checks < 0
+
+
+class TransientAccessibilityAnswerTests(unittest.IsolatedAsyncioTestCase):
+    """An idb answer that the tree was momentarily out of step with a command."""
+
+    async def attempt(
+        self,
+        args: Sequence[str],
+        answers: Sequence[Completed],
+        deadline: DeadlineAfter | None = None,
+        **kwargs: object,
+    ) -> tuple[Completed | Failed, mock.AsyncMock, mock.Mock]:
+        case = CommandTestCaseStub()
+        recording = mock.Mock(spec=Recording)
+        case.recording = recording
+        case.transcript = Transcript(rules=())
+        run = mock.AsyncMock(side_effect=answers)
+        with contextlib.ExitStack() as stack:
+            stack.enter_context(mock.patch.object(harness, "run", new=run))
+            stack.enter_context(
+                mock.patch.object(harness, "POLL_INTERVAL_SECONDS", new=0)
+            )
+            if deadline is not None:
+                stack.enter_context(
+                    mock.patch.object(harness, "Deadline", new=deadline)
+                )
+            try:
+                outcome: Completed | Failed = await case.idb(*args, **kwargs)
+            except Failed as failed:
+                outcome = failed
+        return outcome, run, recording
+
+    async def test_a_set_value_the_application_did_not_answer(self) -> None:
+        outcome, run, _ = await self.attempt(SET_VALUE, [UNANSWERED, SUCCEEDED])
+
+        # BUG: a set-value is safe to repeat after an unanswered request, but
+        # the first transient answer fails the test. Flipped in the following
+        # commit.
+        self.assertIsInstance(outcome, Failed)
+        self.assertEqual(run.await_count, 1)
+
+    async def test_a_tap_whose_element_moved(self) -> None:
+        outcome, run, _ = await self.attempt(TAP, [ELEMENT_MOVED, SUCCEEDED])
+
+        # BUG: idb wrote nothing and asked to be retried, but the first
+        # transient answer fails the test. Flipped in the following commit.
+        self.assertIsInstance(outcome, Failed)
+        self.assertEqual(run.await_count, 1)
+
+    async def test_a_tap_the_application_did_not_answer_is_not_repeated(
+        self,
+    ) -> None:
+        # The tap may have landed, and a second one would tap twice.
+        outcome, run, _ = await self.attempt(TAP, [UNANSWERED, SUCCEEDED])
+
+        self.assertIsInstance(outcome, Failed)
+        self.assertIn("did not answer in time", str(outcome))
+        self.assertEqual(run.await_count, 1)
+
+    async def test_an_unrelated_failure_is_not_repeated(self) -> None:
+        outcome, run, _ = await self.attempt(SET_VALUE, [FAILED, SUCCEEDED])
+
+        self.assertIsInstance(outcome, Failed)
+        self.assertEqual(run.await_count, 1)
+
+    async def test_a_request_that_is_never_answered(self) -> None:
+        outcome, run, _ = await self.attempt(
+            SET_VALUE, [UNANSWERED] * 5, deadline=DeadlineAfter(2)
+        )
+
+        self.assertIsInstance(outcome, Failed)
+        self.assertIn("did not answer in time", str(outcome))
+        # BUG: gives up on the first attempt rather than when the deadline
+        # passes. Flipped in the following commit.
+        self.assertEqual(run.await_count, 1)
+
+    async def test_a_documented_step_is_published_once(self) -> None:
+        outcome, _, recording = await self.attempt(
+            SET_VALUE,
+            [UNANSWERED, SUCCEEDED],
+            check=False,
+            step="Set the search field's value",
+        )
+
+        steps = [
+            call.kwargs.get("step")
+            for call in recording.event.call_args_list
+            if call.args == ("command_finished",)
+        ]
+        # BUG: the unanswered attempt is the one published. Flipped in the
+        # following commit.
+        self.assertEqual(outcome, UNANSWERED)
+        self.assertEqual(steps, ["Set the search field's value"])
 
 
 class CompanionLifecycleTests(unittest.TestCase):
