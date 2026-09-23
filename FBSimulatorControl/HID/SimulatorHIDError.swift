@@ -83,6 +83,18 @@ public enum SimulatorHIDError: Error, LocalizedError {
     }
   }
 
+  /// How a failure to build the host XPC connection reads for the DTUHID transport.
+  init(dtuhidConnection error: SimulatorXPCConnectionError) {
+    switch error {
+    case .symbolsUnavailable:
+      self = .dtuhidXPCSymbolsUnavailable
+    case let .lookupFailed(service, underlying):
+      self = .dtuhidServiceUnavailable(name: service, underlying: underlying)
+    case .connectionFailed:
+      self = .dtuhidConnectionFailed
+    }
+  }
+
   /// Whether this failure could clear on its own, so connecting is worth another attempt.
   ///
   /// The service lookup fails while the job is being torn down and respawned, which is the state a

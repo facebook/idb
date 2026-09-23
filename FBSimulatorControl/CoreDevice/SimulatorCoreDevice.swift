@@ -6,7 +6,6 @@
  */
 
 @preconcurrency import CoreSimulator
-import Darwin
 import Foundation
 import XPC
 
@@ -65,36 +64,26 @@ enum SimulatorCoreDevice {
     return result
   }
 
-  private typealias EndpointFromPort = @convention(c) (mach_port_t, UInt64, UInt64) -> Unmanaged<AnyObject>?
-  private typealias ConnectionFromEndpoint = @convention(c) (xpc_object_t) -> Unmanaged<AnyObject>?
-  private typealias EnableSim2Host = @convention(c) (xpc_connection_t) -> Void
-
   static func connect(simulator: Simulator, service: String) throws -> xpc_connection_t {
-    guard let handle = dlopen(nil, RTLD_NOW) else { throw SimulatorCoreDeviceError.unavailable("XPC symbols") }
-    defer { dlclose(handle) }
-    guard
-      let endpointFromPort = symbol(handle, "xpc_endpoint_create_mach_port_4sim", as: EndpointFromPort.self),
-      let connectionFromEndpoint = symbol(handle, "xpc_connection_create_from_endpoint", as: ConnectionFromEndpoint.self),
-      let enableSim2Host = symbol(handle, "xpc_connection_enable_sim2host_4sim", as: EnableSim2Host.self)
-    else { throw SimulatorCoreDeviceError.unsupported("Simulator XPC symbols") }
-    var error: NSError?
-    let port = simulator.device.lookup(service, error: &error)
-    guard port != MACH_PORT_NULL else {
-      if error?.domain == "com.apple.CoreSimulator.SimError", error?.code == 405 {
-        throw SimulatorCoreDeviceError.unsupported(service)
-      }
-      throw SimulatorCoreDeviceError.unavailable(error?.localizedDescription ?? service)
+    do {
+      return try SimulatorXPCConnection.connect(simulator: simulator, service: service)
+    } catch let error as SimulatorXPCConnectionError {
+      throw SimulatorCoreDeviceError(connection: error)
     }
-    // Both Create functions return +1. The endpoint consumes the lookup's send right.
-    guard let endpoint = endpointFromPort(port, 0, 0)?.takeRetainedValue() as? xpc_object_t,
-      let connection = connectionFromEndpoint(endpoint)?.takeRetainedValue() as? xpc_connection_t
-    else { throw SimulatorCoreDeviceError.unavailable("Simulator XPC connection") }
-    enableSim2Host(connection)
-    return connection
   }
+}
 
-  private static func symbol<T>(_ handle: UnsafeMutableRawPointer, _ name: String, as type: T.Type) -> T? {
-    guard let pointer = dlsym(handle, name) else { return nil }
-    return unsafeBitCast(pointer, to: type)
+extension SimulatorCoreDeviceError {
+  /// A service the runtime does not vend, and a toolchain without the simulator XPC symbols, are
+  /// both a missing capability; everything else is operational.
+  init(connection error: SimulatorXPCConnectionError) {
+    switch error {
+    case .symbolsUnavailable:
+      self = .unsupported("Simulator XPC symbols")
+    case let .lookupFailed(service, underlying):
+      self = error.isServiceUnsupported ? .unsupported(service) : .unavailable(underlying?.localizedDescription ?? service)
+    case .connectionFailed:
+      self = .unavailable("Simulator XPC connection")
+    }
   }
 }

@@ -184,9 +184,8 @@ struct DigitizerContactTracker {
  delivered to the digitizer or vendor-defined HID service. Each message is built
  as an `Encodable` model (e.g. `IndigoDigitizerEvent`) wrapped in a `DTUHIDMessage` envelope and
  serialized with `XPCEncoder`, rather than hand-rolled `xpc_dictionary_set_*` calls. The host XPC
- connection is built from the simulator's Mach port via the private `_4sim` endpoint symbols
- (resolved with `dlsym`) and must be marked simulator-to-host with `xpc_connection_enable_sim2host_4sim`
- before messages reach the service handler.
+ connection is built by `SimulatorXPCConnection`, the same way the CoreDevice features reach the
+ guest.
 
  An `actor`: the mutable contact state is actor-isolated, so the type needs no `@unchecked Sendable`.
  The XPC connection handle is thread-safe, so `disconnect()` cancels it from a `nonisolated` context.
@@ -195,11 +194,6 @@ actor SimulatorDTUHIDTransport {
 
   static let vendorDefinedServiceName = "com.apple.coredevice.feature.remote.hid.vendordefined"
   static let digitizerServiceName = "com.apple.coredevice.feature.remote.hid.digitizer"
-
-  // Private XPC endpoint functions, resolved at runtime (not in the XPC module headers).
-  private typealias EndpointFromMachPortFn = @convention(c) (mach_port_t, UInt64, UInt64) -> xpc_object_t?
-  private typealias ConnectionFromEndpointFn = @convention(c) (xpc_object_t) -> xpc_connection_t?
-  private typealias EnableSim2HostFn = @convention(c) (xpc_connection_t) -> Void
 
   // SAFETY: XPC connections support concurrent sending and cancellation.
   // patternlint-disable-next-line swift-nonisolated-unsafe
@@ -275,32 +269,12 @@ actor SimulatorDTUHIDTransport {
   /// A resumed host XPC connection to the requested guest HID service. Says nothing about whether
   /// `dtuhidd` is able to run — launchd vends the port for a demand-launched job either way.
   private static func connection(for simulator: Simulator, serviceName: String) throws -> xpc_connection_t {
-    guard let handle = dlopen(nil, RTLD_NOW) else {
-      throw SimulatorHIDError.dtuhidXPCSymbolsUnavailable
+    let connection: xpc_connection_t
+    do {
+      connection = try SimulatorXPCConnection.connect(simulator: simulator, service: serviceName)
+    } catch let error as SimulatorXPCConnectionError {
+      throw SimulatorHIDError(dtuhidConnection: error)
     }
-    guard
-      let endpointFromPort = symbol(handle, "xpc_endpoint_create_mach_port_4sim", as: EndpointFromMachPortFn.self),
-      let connectionFromEndpoint = symbol(handle, "xpc_connection_create_from_endpoint", as: ConnectionFromEndpointFn.self),
-      let enableSim2Host = symbol(handle, "xpc_connection_enable_sim2host_4sim", as: EnableSim2HostFn.self)
-    else {
-      throw SimulatorHIDError.dtuhidXPCSymbolsUnavailable
-    }
-
-    var lookupError: NSError?
-    let servicePort = simulator.device.lookup(serviceName, error: &lookupError)
-    if servicePort == 0 {
-      throw SimulatorHIDError.dtuhidServiceUnavailable(name: serviceName, underlying: lookupError)
-    }
-
-    guard
-      let endpoint = endpointFromPort(servicePort, 0, 0),
-      let connection = connectionFromEndpoint(endpoint)
-    else {
-      throw SimulatorHIDError.dtuhidConnectionFailed
-    }
-
-    // The load-bearing step: without this the daemon observes the peer but never the payload.
-    enableSim2Host(connection)
     xpc_connection_set_event_handler(connection) { _ in }
     xpc_connection_resume(connection)
     return connection
@@ -335,13 +309,6 @@ actor SimulatorDTUHIDTransport {
     self.mainScreenScale = mainScreenScale
     self.productFamily = productFamily
     self.clock = clock
-  }
-
-  private static func symbol<T>(_ handle: UnsafeMutableRawPointer, _ name: String, as type: T.Type) -> T? {
-    guard let sym = dlsym(handle, name) else {
-      return nil
-    }
-    return unsafeBitCast(sym, to: type)
   }
 
   // MARK: - Sends
