@@ -37,6 +37,7 @@ public final class Simulator: Target, Hashable, CustomStringConvertible, @unchec
   public let logger: any ControlCoreLogger
   public let auxillaryDirectory: String
 
+  private let temporaryDirectoryLock = NSLock()
   private var _temporaryDirectory: TemporaryDirectory?
 
   // MARK: - Initializers
@@ -106,12 +107,14 @@ public final class Simulator: Target, Hashable, CustomStringConvertible, @unchec
   }
 
   public var temporaryDirectory: TemporaryDirectory {
-    if let _temporaryDirectory {
-      return _temporaryDirectory
+    temporaryDirectoryLock.withLock {
+      if let _temporaryDirectory {
+        return _temporaryDirectory
+      }
+      let directory = TemporaryDirectory.temporaryDirectory(logger: logger)
+      _temporaryDirectory = directory
+      return directory
     }
-    let directory = TemporaryDirectory.temporaryDirectory(logger: logger)
-    _temporaryDirectory = directory
-    return directory
   }
 
   public var workQueue: DispatchQueue { .main }

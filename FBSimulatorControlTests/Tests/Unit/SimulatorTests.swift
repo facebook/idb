@@ -170,8 +170,6 @@ final class SimulatorTests: XCTestCase {
     XCTAssertEqual(first, second, "temporaryDirectory should return the same cached directory on subsequent access")
   }
 
-  /// BUG: concurrent first accesses each create a root, and all but the cached one are never
-  /// cleaned up — flipped in the following commit.
   func testTemporaryDirectory_ConcurrentFirstAccess() {
     let simulator = simulator!
     let lock = NSLock()
@@ -181,7 +179,7 @@ final class SimulatorTests: XCTestCase {
       lock.withLock { directories.append(directory) }
     }
     XCTAssertEqual(directories.count, 64)
-    XCTAssertFalse(directories.allSatisfy { $0 == directories[0] })
+    XCTAssertTrue(directories.allSatisfy { $0 == directories[0] })
   }
 
   // MARK: - Healthcheck Helpers
