@@ -1235,19 +1235,14 @@ class TransientAccessibilityAnswerTests(unittest.IsolatedAsyncioTestCase):
     async def test_a_set_value_the_application_did_not_answer(self) -> None:
         outcome, run, _ = await self.attempt(SET_VALUE, [UNANSWERED, SUCCEEDED])
 
-        # BUG: a set-value is safe to repeat after an unanswered request, but
-        # the first transient answer fails the test. Flipped in the following
-        # commit.
-        self.assertIsInstance(outcome, Failed)
-        self.assertEqual(run.await_count, 1)
+        self.assertEqual(outcome, SUCCEEDED)
+        self.assertEqual(run.await_count, 2)
 
     async def test_a_tap_whose_element_moved(self) -> None:
         outcome, run, _ = await self.attempt(TAP, [ELEMENT_MOVED, SUCCEEDED])
 
-        # BUG: idb wrote nothing and asked to be retried, but the first
-        # transient answer fails the test. Flipped in the following commit.
-        self.assertIsInstance(outcome, Failed)
-        self.assertEqual(run.await_count, 1)
+        self.assertEqual(outcome, SUCCEEDED)
+        self.assertEqual(run.await_count, 2)
 
     async def test_a_tap_the_application_did_not_answer_is_not_repeated(
         self,
@@ -1272,9 +1267,7 @@ class TransientAccessibilityAnswerTests(unittest.IsolatedAsyncioTestCase):
 
         self.assertIsInstance(outcome, Failed)
         self.assertIn("did not answer in time", str(outcome))
-        # BUG: gives up on the first attempt rather than when the deadline
-        # passes. Flipped in the following commit.
-        self.assertEqual(run.await_count, 1)
+        self.assertEqual(run.await_count, 3)
 
     async def test_a_documented_step_is_published_once(self) -> None:
         outcome, _, recording = await self.attempt(
@@ -1289,10 +1282,8 @@ class TransientAccessibilityAnswerTests(unittest.IsolatedAsyncioTestCase):
             for call in recording.event.call_args_list
             if call.args == ("command_finished",)
         ]
-        # BUG: the unanswered attempt is the one published. Flipped in the
-        # following commit.
-        self.assertEqual(outcome, UNANSWERED)
-        self.assertEqual(steps, ["Set the search field's value"])
+        self.assertEqual(outcome, SUCCEEDED)
+        self.assertEqual(steps, [None, "Set the search field's value"])
 
 
 class CompanionLifecycleTests(unittest.TestCase):

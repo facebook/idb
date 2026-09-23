@@ -79,7 +79,26 @@ COMPANION_UNREACHABLE_MARKERS = ("Failed to connect to companion",)
 ACCESSIBILITY_NOT_READY_MARKER = "No translation object returned"
 ACCESSIBILITY_PROBE_ARGS = ("ui", "describe-all", "--json")
 
+# idb's answers when the accessibility tree was momentarily out of step with a
+# command, rather than wrong about it.
+UNANSWERED = re.compile(
+    r"requested accessibility from the application (?:with pid \d+|at that point), "
+    r"which did not answer in time"
+)
+NOTHING_WRITTEN_MARKER = "nothing was written. Read the tree again and retry"
+# The commands that can be repeated when idb cannot say whether they ran: reads,
+# and a write that sets a value rather than adding to one.
+REPEATABLE_COMMANDS = frozenset(
+    {
+        ("ui", "describe"),
+        ("ui", "describe-all"),
+        ("ui", "describe-point"),
+        ("ui", "set-value"),
+    }
+)
+
 POLL_INTERVAL_SECONDS = 1.0
+TRANSIENT_ANSWER_TIMEOUT_SECONDS = 60.0
 
 COMPANION_READY_TIMEOUT_SECONDS = 180.0
 ACCESSIBILITY_READY_TIMEOUT_SECONDS = 180.0
@@ -216,6 +235,23 @@ def classify_failure(completed: Completed) -> FailureKind:
         if marker in completed.error_text:
             return FailureKind.HOST_SERVICE_UNAVAILABLE
     return FailureKind.COMMAND
+
+
+def worth_repeating(args: Sequence[str], completed: Completed) -> bool:
+    """Whether a failed idb command is a transient answer it is safe to repeat.
+
+    Nothing was written, so anything can be repeated. An application that did
+    not answer leaves a write's outcome unknown, so only a command that does
+    the same thing when run twice can be.
+    """
+    if completed.returncode == 0:
+        return False
+    if NOTHING_WRITTEN_MARKER in completed.error_text:
+        return True
+    return (
+        UNANSWERED.search(completed.error_text) is not None
+        and tuple(args[:2]) in REPEATABLE_COMMANDS
+    )
 
 
 def strict() -> bool:
@@ -1063,36 +1099,49 @@ class IdbEndToEndTestCase(unittest.IsolatedAsyncioTestCase):
         step describes this command as one step of a documented demo. Only
         named commands appear in the published transcript, so the polling a
         test does around them stays out of the documentation.
+
+        A transient accessibility answer is repeated where `worth_repeating`
+        allows, until TRANSIENT_ANSWER_TIMEOUT_SECONDS pass. Only the attempt
+        that ends the command is published as the step.
         """
-        started = time.monotonic()
-        if self.recording is not None:
-            self.recording.command(["idb", *args])
-        try:
-            completed = await self.run_client(
-                idb_argv(self.environment, self.companion, *args),
-                timeout=timeout,
-                stdin=stdin,
-            )
-        except BaseException as error:
+        deadline = Deadline(TRANSIENT_ANSWER_TIMEOUT_SECONDS)
+        while True:
+            started = time.monotonic()
             if self.recording is not None:
-                # A command that raised is never published — a demo whose test
-                # failed stops the documentation being generated at all — so
-                # the argv is recorded as it ran rather than normalised, which
-                # is what someone reading the trace to debug the run needs.
-                self.recording.event(
-                    "command_error",
-                    argv=["idb", *args],
-                    error=str(error),
-                    seconds=time.monotonic() - started,
+                self.recording.command(["idb", *args])
+            try:
+                completed = await self.run_client(
+                    idb_argv(self.environment, self.companion, *args),
+                    timeout=timeout,
+                    stdin=stdin,
                 )
-            raise
-        if self.recording is not None:
-            self.recording.event(
-                "command_finished",
-                returncode=completed.returncode,
-                seconds=time.monotonic() - started,
-                **self._command_fields(step, ["idb", *args], completed),
-            )
+            except BaseException as error:
+                if self.recording is not None:
+                    # A command that raised is never published — a demo whose
+                    # test failed stops the documentation being generated at
+                    # all — so the argv is recorded as it ran rather than
+                    # normalised, which is what someone reading the trace to
+                    # debug the run needs.
+                    self.recording.event(
+                        "command_error",
+                        argv=["idb", *args],
+                        error=str(error),
+                        seconds=time.monotonic() - started,
+                    )
+                raise
+            repeat = worth_repeating(args, completed) and not deadline.passed
+            if self.recording is not None:
+                self.recording.event(
+                    "command_finished",
+                    returncode=completed.returncode,
+                    seconds=time.monotonic() - started,
+                    **self._command_fields(
+                        None if repeat else step, ["idb", *args], completed
+                    ),
+                )
+            if not repeat:
+                break
+            await asyncio.sleep(POLL_INTERVAL_SECONDS)
         if check and completed.returncode != 0:
             self.fail_or_skip_for(" ".join(args), completed)
         return completed

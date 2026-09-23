@@ -18,7 +18,6 @@ from __future__ import annotations
 
 import asyncio
 import json
-import re
 import unittest
 from typing import Any
 
@@ -355,28 +354,6 @@ class AccessibilityTests(IdbEndToEndTestCase):
         )
         return document
 
-    async def wait_for_settings_snapshot(self) -> dict[str, Any]:
-        async def read() -> dict[str, Any]:
-            args = ("ui", "describe-all", "--api", "axbridge", "--format", "complete")
-            completed = await self.idb(*args, "--json", check=False)
-            if completed.returncode != 0:
-                if re.fullmatch(
-                    r"The axbridge backend requested accessibility from the application "
-                    r"with pid \d+, which did not answer in time",
-                    completed.error_text.strip(),
-                ):
-                    raise NotReady(completed.error_text.strip())
-                self.fail_or_skip_for(" ".join(args), completed)
-            document = json.loads(completed.text)
-            self.assertIsInstance(document, dict)
-            return document
-
-        return await wait_until(
-            "Settings did not answer accessibility requests",
-            UI_UPDATE_TIMEOUT_SECONDS,
-            read,
-        )
-
     async def wait_for_control(self) -> dict[str, Any]:
         """Wait for a labelled Settings row. Relaunch Settings if it has exited.
 
@@ -422,7 +399,7 @@ class AccessibilityTests(IdbEndToEndTestCase):
         # through axbridge, so the two can disagree for a moment after the
         # screen the element sits on has changed.
         async def read() -> dict[str, Any]:
-            for element in _elements(await self.wait_for_settings_snapshot()):
+            for element in _elements(await self.describe_all_complete("axbridge")):
                 if element.get("identifier") == identifier and (
                     element_type is None or element.get("type") == element_type
                 ):
@@ -629,7 +606,7 @@ class AccessibilityTests(IdbEndToEndTestCase):
         async def read() -> dict[str, Any]:
             fields = [
                 element
-                for element in _elements(await self.wait_for_settings_snapshot())
+                for element in _elements(await self.describe_all_complete("axbridge"))
                 if _has_area(element)
                 and (
                     element.get("type") == "SearchField"
@@ -852,7 +829,7 @@ class AccessibilityTests(IdbEndToEndTestCase):
         """Where the rows are once the list has moved the way it was scrolled, and the reading that showed it."""
 
         async def read() -> tuple[dict[str, float], dict[str, Any]]:
-            snapshot = await self.wait_for_settings_snapshot()
+            snapshot = await self.describe_all_complete("axbridge")
             after = _settings_row_positions(snapshot)
             movement = {
                 identifier: after[identifier] - y
