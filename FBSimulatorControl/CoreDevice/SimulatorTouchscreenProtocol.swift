@@ -15,6 +15,8 @@ public struct SimulatorTouchscreen: Equatable, Sendable {
   public let digitizerTarget: UInt32
 }
 
+/// The universal HID service's `connectedServices` listing, of which the touchscreens are the
+/// digitizer-page records that carry a display identity.
 enum SimulatorTouchscreenProtocol {
   static let service = "com.apple.coredevice.feature.remote.universalhidservice"
 
@@ -31,40 +33,66 @@ enum SimulatorTouchscreenProtocol {
     try XPCEncoder().encode(Request())
   }
 
+  /// The reply as the provider sends it: every HID service, with only the touchscreens read further.
+  struct Reply: Decodable {
+    /// One connected HID service. Only a digitizer-page touchscreen record is inspected beyond its
+    /// usage; the keyboards, trackpads and buttons beside it can carry anything.
+    struct Service: Decodable {
+      struct Touchscreen {
+        let serviceID: UInt64
+        let displayUUID: String?
+      }
+
+      let touchscreen: Touchscreen?
+
+      private enum CodingKeys: String, CodingKey {
+        case primaryUsagePage = "PrimaryUsagePage"
+        case primaryUsage = "PrimaryUsage"
+        case serviceID = "_ServiceID"
+        case displayUUID
+      }
+
+      init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        let page = try container.decodeIfPresent(XPCValue.self, forKey: .primaryUsagePage)
+        let usage = try container.decodeIfPresent(XPCValue.self, forKey: .primaryUsage)
+        guard page == .uint64(0x0D), usage == .uint64(0x04) else {
+          touchscreen = nil
+          return
+        }
+        touchscreen = Touchscreen(
+          serviceID: try container.decode(UInt64.self, forKey: .serviceID),
+          displayUUID: try container.decodeIfPresent(String.self, forKey: .displayUUID))
+      }
+    }
+
+    let connectedServices: [Service]
+  }
+
+  private static let maximumServices = 256
+  private static let maximumIdentityLength = 1024
+
   static func touchscreens(_ reply: xpc_object_t) throws -> [SimulatorTouchscreen] {
-    let services = try field(reply, "connectedServices", XPC_TYPE_ARRAY)
-    guard xpc_array_get_count(services) <= 256 else {
+    let services = try SimulatorCoreDevice.decode(Reply.self, from: reply).connectedServices
+    guard services.count <= maximumServices else {
       throw SimulatorCoreDeviceError.malformed("Too many HID services")
     }
     var identities: Set<String> = []
     var targets: Set<UInt32> = []
     var touchscreens: [SimulatorTouchscreen] = []
     var missingIdentity = false
-    for index in 0..<xpc_array_get_count(services) {
-      let service = xpc_array_get_value(services, index)
-      guard xpc_get_type(service) == XPC_TYPE_DICTIONARY else {
-        throw SimulatorCoreDeviceError.malformed("Invalid HID service")
-      }
-      guard let page = xpc_dictionary_get_value(service, "PrimaryUsagePage"), xpc_get_type(page) == XPC_TYPE_UINT64,
-        let usage = xpc_dictionary_get_value(service, "PrimaryUsage"), xpc_get_type(usage) == XPC_TYPE_UINT64,
-        xpc_uint64_get_value(page) == 0x0D, xpc_uint64_get_value(usage) == 0x04
-      else { continue }
-      let serviceID = xpc_uint64_get_value(try field(service, "_ServiceID", XPC_TYPE_UINT64))
+    for service in services {
+      guard let touchscreen = service.touchscreen else { continue }
       // HIDServiceID.touchscreenDisplayID accepts the 0x100 namespace. Indigo target zero is a main-screen alias.
-      guard serviceID & ~0xFF == 0x100, serviceID & 0xFF != 0 else {
+      guard touchscreen.serviceID & ~0xFF == 0x100, touchscreen.serviceID & 0xFF != 0 else {
         throw SimulatorCoreDeviceError.malformed("HID service has no explicit touchscreen target")
       }
-      let target = UInt32(serviceID & 0xFF)
-      guard let identity = xpc_dictionary_get_value(service, "displayUUID") else {
+      let target = UInt32(touchscreen.serviceID & 0xFF)
+      guard let uniqueID = touchscreen.displayUUID else {
         missingIdentity = true
         continue
       }
-      guard xpc_get_type(identity) == XPC_TYPE_STRING,
-        xpc_string_get_length(identity) > 0, xpc_string_get_length(identity) <= 1024,
-        let bytes = xpc_string_get_string_ptr(identity)
-      else { throw SimulatorCoreDeviceError.malformed("Invalid touchscreen display identity") }
-      let data = Data(bytes: bytes, count: xpc_string_get_length(identity))
-      guard !data.contains(0), let uniqueID = String(data: data, encoding: .utf8) else {
+      guard !uniqueID.isEmpty, uniqueID.utf8.count <= maximumIdentityLength else {
         throw SimulatorCoreDeviceError.malformed("Invalid touchscreen display identity")
       }
       guard targets.insert(target).inserted else {
@@ -80,12 +108,5 @@ enum SimulatorTouchscreenProtocol {
       throw SimulatorCoreDeviceError.unsupported("Touchscreen display identities")
     }
     return touchscreens.sorted { $0.displayUniqueID < $1.displayUniqueID }
-  }
-
-  private static func field(_ object: xpc_object_t, _ key: String, _ type: xpc_type_t) throws -> xpc_object_t {
-    guard xpc_get_type(object) == XPC_TYPE_DICTIONARY,
-      let value = xpc_dictionary_get_value(object, key), xpc_get_type(value) == type
-    else { throw SimulatorCoreDeviceError.malformed("Invalid HID field: \(key)") }
-    return value
   }
 }
