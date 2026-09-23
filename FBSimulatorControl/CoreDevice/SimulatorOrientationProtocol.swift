@@ -8,11 +8,16 @@
 import Foundation
 import XPC
 
+/// The orientation service older runtimes vend, which speaks the `dtuhidd` message envelope.
 enum SimulatorOrientationProtocol {
   static let service = "com.apple.coredevice.feature.remote.devicecontrol.orientation"
 
   private enum Request: Encodable {
     case currentOrientation
+  }
+
+  struct Reply: Decodable {
+    let currentDeviceOrientation: SimulatorDeviceOrientation
   }
 
   static func read(on simulator: Simulator) async throws -> SimulatorDeviceOrientation {
@@ -24,10 +29,6 @@ enum SimulatorOrientationProtocol {
   }
 
   static func orientation(_ reply: xpc_object_t) throws -> SimulatorDeviceOrientation {
-    guard xpc_get_type(reply) == XPC_TYPE_DICTIONARY,
-      let value = xpc_dictionary_get_value(reply, "currentDeviceOrientation"), xpc_get_type(value) == XPC_TYPE_STRING,
-      let string = xpc_string_get_string_ptr(value), let orientation = SimulatorDeviceOrientation(rawValue: String(cString: string))
-    else { throw SimulatorCoreDeviceError.unavailable("Missing or invalid currentDeviceOrientation") }
-    return orientation
+    try SimulatorCoreDevice.decode(Reply.self, from: reply).currentDeviceOrientation
   }
 }

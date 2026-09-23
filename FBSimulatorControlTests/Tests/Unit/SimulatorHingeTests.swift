@@ -29,7 +29,7 @@ final class SimulatorHingeTests: XCTestCase {
   func testMalformedCapabilityDoesNotBecomeUnsupported() {
     for value in [xpc_int64_create(1), xpc_string_create("true"), xpc_null_create()] {
       XCTAssertThrowsError(try SimulatorMotionCapability.hingeAngle.requireSupported(in: capabilityReply(value))) { error in
-        guard case SimulatorCoreDeviceError.unavailable = error else { return XCTFail("Expected invalid response, got \(error)") }
+        guard case SimulatorCoreDeviceError.malformed = error else { return XCTFail("Expected invalid response, got \(error)") }
       }
     }
     for reply in [xpc_null_create(), SimulatorCoreDevice.dictionary([:]), SimulatorCoreDevice.dictionary(["CoreDevice.output": xpc_bool_create(true)])] {

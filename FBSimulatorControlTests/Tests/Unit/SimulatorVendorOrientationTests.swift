@@ -69,7 +69,7 @@ final class SimulatorVendorOrientationTests: XCTestCase {
       xpc_dictionary_set_value(output, "deviceMotionState", value)
       let reply = SimulatorCoreDevice.dictionary(["CoreDevice.output": output])
       XCTAssertThrowsError(try SimulatorMotionCapability.deviceMotionState.requireSupported(in: reply)) { error in
-        guard case SimulatorCoreDeviceError.unavailable = error else { return XCTFail("Expected invalid reply, got \(error)") }
+        guard case SimulatorCoreDeviceError.malformed = error else { return XCTFail("Expected invalid reply, got \(error)") }
       }
     }
   }

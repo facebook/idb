@@ -8,7 +8,7 @@
 import Foundation
 
 /// Physical device orientation, independently of an application's interface rotation.
-public enum SimulatorDeviceOrientation: String, CaseIterable, Sendable {
+public enum SimulatorDeviceOrientation: String, CaseIterable, Sendable, Decodable {
   case unknown
   case portrait
   case portraitUpsideDown
