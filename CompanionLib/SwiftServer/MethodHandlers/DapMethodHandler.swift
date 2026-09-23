@@ -8,6 +8,7 @@
 import CompanionUtilities
 import FBControlCore
 import FBSimulatorControl
+import Foundation
 import GRPCCore
 import IDBGRPCSwift
 
@@ -24,8 +25,22 @@ struct DapMethodHandler: @unchecked Sendable {
     let dapProcess = try await startDapServer(startRequest: start, processInput: writer, responseStream: responseStream)
 
     let tenHours: UInt64 = 36000 * 1000000000
-    try await Task.timeout(nanoseconds: tenHours) {
-      try await consumeElements(from: requestStream, to: writer, dapProcess: dapProcess)
+    do {
+      try await Task.timeout(nanoseconds: tenHours) {
+        try await consumeElements(from: requestStream, to: writer)
+      }
+    } catch {
+      do {
+        try await stopDapServer(dapProcess)
+      } catch let stopError {
+        targetLogger.error().log("Failed to stop dap server after request failure: \(stopError)")
+      }
+      throw error
+    }
+    do {
+      try await stopDapServer(dapProcess)
+    } catch {
+      targetLogger.error().log("Failed to stop dap server after request completion: \(error)")
     }
 
     let stoppedResponse = Idb_DapResponse.with {
@@ -57,7 +72,19 @@ struct DapMethodHandler: @unchecked Sendable {
     return process
   }
 
-  private func consumeElements(from requestStream: RequestStreamReader<Idb_DapRequest>, to writer: FBProcessInput<AnyObject>, dapProcess: FBSubprocess<AnyObject, DataConsumer, NSString>) async throws {
+  private func stopDapServer(_ dapProcess: FBSubprocess<AnyObject, DataConsumer, NSString>) async throws {
+    guard !dapProcess.statLoc.hasCompleted else { return }
+    targetLogger.debug().log("Stopping dap server with pid \(dapProcess.processIdentifier). Stderr: \(dapProcess.stdErr ?? "Empty")")
+    _ = try await bridgeFBFuture(
+      dapProcess.sendSignal(
+        SIGTERM,
+        backingOffToKillWithTimeout: 1,
+        logger: targetLogger
+      )
+    )
+  }
+
+  private func consumeElements(from requestStream: RequestStreamReader<Idb_DapRequest>, to writer: FBProcessInput<AnyObject>) async throws {
     for try await request in requestStream {
       switch request.control {
       case .start:
@@ -76,7 +103,6 @@ struct DapMethodHandler: @unchecked Sendable {
 
       case .stop:
         targetLogger.debug().log("Received stop from Dap Request")
-        targetLogger.debug().log("Stopping dap server with pid \(dapProcess.processIdentifier). Stderr: \(dapProcess.stdErr ?? "Empty")")
         return
       }
     }
