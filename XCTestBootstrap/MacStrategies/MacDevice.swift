@@ -167,9 +167,9 @@ public final class MacDevice: NSObject, Target {
 
   // MARK: - Public
 
-  func restorePrimaryDeviceState() -> FBFuture<NSNull> {
-    // Every teardown ran even when an earlier one failed, and the `FBFuture(race:)` over each
-    // eagerly-resolved group surfaced only the first outcome of that group.
+  /// Kills every launched application and uninstalls every registered one, reporting the first
+  /// failure only after every teardown has run.
+  func restorePrimaryDeviceState() throws {
     var firstFailure: Error?
     for bundleID in Array(bundleIDToRunningTask.keys) {
       do {
@@ -186,10 +186,8 @@ public final class MacDevice: NSObject, Target {
       }
     }
     if let firstFailure {
-      return FBFuture(error: firstFailure)
+      throw firstFailure
     }
-    // Callers rely on this resolving synchronously.
-    return FBFuture(result: NSNull())
   }
 
   // MARK: - Paths
@@ -356,16 +354,10 @@ public final class MacDevice: NSObject, Target {
 
   // MARK: - XCTestExtendedCommands
 
-  public func listTests(forBundleAtPath bundlePath: String, timeout: TimeInterval, withAppAtPath appPath: String?) -> FBFuture<NSArray> {
-    let bundleDescriptor: BundleDescriptor
-    do {
-      bundleDescriptor = try BundleDescriptor.bundleWithFallbackIdentifier(fromPath: bundlePath)
-    } catch {
-      return FBFuture(error: error)
-    }
-
+  public func listTests(forBundleAtPath bundlePath: String, timeout: TimeInterval, withAppAtPath appPath: String?) async throws -> [String] {
+    let bundleDescriptor = try BundleDescriptor.bundleWithFallbackIdentifier(fromPath: bundlePath)
     guard let binary = bundleDescriptor.binary else {
-      return FBFuture(error: MacDeviceError.testBundleHasNoBinary(path: bundlePath))
+      throw MacDeviceError.testBundleHasNoBinary(path: bundlePath)
     }
     let configuration = ListTestConfiguration(
       environment: [:],
@@ -377,7 +369,7 @@ public final class MacDevice: NSObject, Target {
       architectures: Set(binary.architectures.map { $0.rawValue })
     )
 
-    return ListTestStrategy(target: self, configuration: configuration, logger: self.logger).listTests()
+    return try await bridgeFBFutureArray(ListTestStrategy(target: self, configuration: configuration, logger: self.logger).listTests())
   }
 
 }
@@ -414,15 +406,6 @@ extension MacDevice: XCTestExtendedCommands {
       reporter: typedReporter,
       logger: logger
     )
-  }
-
-  public func listTests(
-    forBundleAtPath bundlePath: String,
-    timeout: TimeInterval,
-    withAppAtPath appPath: String?
-  ) async throws -> [String] {
-    try await bridgeFBFutureArray(
-      listTests(forBundleAtPath: bundlePath, timeout: timeout, withAppAtPath: appPath))
   }
 
   public func extendedTestShim() async throws -> String {

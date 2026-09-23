@@ -58,7 +58,7 @@ final class MacDeviceTests: XCTestCase {
   override func tearDownWithError() throws {
     var teardownError: Error?
     do {
-      try device.restorePrimaryDeviceState().await(withTimeout: 5)
+      try device.restorePrimaryDeviceState()
     } catch {
       teardownError = error
       NSLog("Failed to tearDown test gracefully %@. Further tests may be affected", error.localizedDescription)
@@ -84,10 +84,7 @@ final class MacDeviceTests: XCTestCase {
   }
 
   func testMacStateRestorationWithEmptyTasks() {
-    XCTAssertNotNil(
-      device.restorePrimaryDeviceState().result,
-      "State restoration without launched task should complete immidiately"
-    )
+    XCTAssertNoThrow(try device.restorePrimaryDeviceState(), "State restoration without launched tasks should succeed")
   }
 
   func testInstallNotExistedApplicationAtPath() {
