@@ -298,6 +298,27 @@ struct CompanionTelemetryTests {
     #expect((PullMethodHandler.formatBytes(2 * 1024 * 1024 * 1024)) == ("2.0 GB"))
   }
 
+  /// The event name of every RPC the companion reports, as consumers see it.
+  ///
+  /// Spelled out rather than derived: these are a logged dimension, so a proto rename that
+  /// silently moved one would otherwise reach Scuba with nothing failing in between.
+  private static let expectedMethodNames: Set<String> = [
+    "connect", "debugserver", "dap", "describe", "install", "instruments_run", "log",
+    "xctrace_record", "accessibility_info", "accessibility_action", "focus", "hid", "open_url",
+    "set_location", "send_notification", "delivered_notifications", "simulate_memory_warning",
+    "approve", "revoke", "clear_keychain", "contacts_update", "contacts_clear", "photos_clear",
+    "setting", "get_setting", "list_settings", "launch", "list_apps", "terminate", "uninstall",
+    "add_media", "record", "screenshot", "video_stream", "crash_delete", "crash_list",
+    "crash_show", "xctest_list_bundles", "xctest_list_tests", "xctest_run", "repl", "ls", "mkdir",
+    "mv", "rm", "pull", "push", "tail", "get_orientation", "set_orientation", "hinge_angle",
+  ]
+
+  @Test
+  func generatedDescriptorsCarryTheReportedMethodNames() {
+    let descriptorNames = Set(Idb_CompanionService.Method.descriptors.map(\.method))
+    #expect((descriptorNames) == (Self.expectedMethodNames))
+  }
+
   @Test
   func bidiStreamingFailureReportsFailureSubject() async {
     let (telemetry, recorder) = makeTelemetry()
