@@ -9,20 +9,29 @@ import Darwin
 @preconcurrency import FBControlCore
 import Foundation
 
-nonisolated(unsafe) private var globalLoggers: [ControlCoreLogger] = []
-private let globalLoggersLock = NSLock()
+/// The loggers every `IDBLogger` fans out to in addition to its own, added and removed by the
+/// log operations that tail the companion's output.
+///
+// SAFETY: `loggers` is only ever read or written inside `lock`.
+// patternlint-disable-next-line unchecked-sendable
+private final class GlobalLoggers: @unchecked Sendable {
+  private let lock = NSLock()
+  private var loggers: [ControlCoreLogger] = []
 
-private func addGlobalLogger(_ logger: ControlCoreLogger) {
-  globalLoggersLock.lock()
-  globalLoggers.append(logger)
-  globalLoggersLock.unlock()
+  var all: [ControlCoreLogger] {
+    lock.withLock { loggers }
+  }
+
+  func add(_ logger: ControlCoreLogger) {
+    lock.withLock { loggers.append(logger) }
+  }
+
+  func remove(_ logger: ControlCoreLogger) {
+    lock.withLock { loggers.removeAll { $0 === logger } }
+  }
 }
 
-private func removeGlobalLogger(_ logger: ControlCoreLogger) {
-  globalLoggersLock.lock()
-  globalLoggers.removeAll { $0 === logger }
-  globalLoggersLock.unlock()
-}
+private let globalLoggers = GlobalLoggers()
 
 // @unchecked Sendable: all stored properties are immutable lets wrapping
 // thread-safe ObjC objects, so instances are safe to hand back through the
@@ -44,7 +53,7 @@ private final class IDBLoggerOperation: NSObject, LogOperation, @unchecked Senda
     return convertFBMutableFuture(FBMutableFuture<NSNull>()).onQueue(
       self.queue,
       respondToCancellation: {
-        removeGlobalLogger(logger)
+        globalLoggers.remove(logger)
         return FBFuture<NSNull>.empty()
       })
   }
@@ -110,12 +119,7 @@ public final class IDBLogger: FBCompositeLogger, @unchecked Sendable {
   }
 
   public override var loggers: [ControlCoreLogger] {
-    var all = super.loggers
-    globalLoggersLock.lock()
-    let global = globalLoggers
-    globalLoggersLock.unlock()
-    all.append(contentsOf: global)
-    return all
+    super.loggers + globalLoggers.all
   }
 
   /// `FBCompositeLogger`'s builder methods allocate an instance of the receiver's dynamic class, so
@@ -135,7 +139,7 @@ public final class IDBLogger: FBCompositeLogger, @unchecked Sendable {
       queue.async {
         let logger = FBControlCoreLoggerFactory.logger(to: consumer)
         let operation = IDBLoggerOperation(consumer: consumer, logger: logger, queue: queue)
-        addGlobalLogger(logger)
+        globalLoggers.add(logger)
         continuation.resume(returning: operation)
       }
     }
