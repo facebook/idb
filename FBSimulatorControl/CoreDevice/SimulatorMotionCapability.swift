@@ -19,15 +19,12 @@ enum SimulatorMotionCapability: String {
     }
   }
 
+  static let service = "com.apple.coredevice.feature.monitormotion"
+  static let action = "com.apple.coredevice.action.querymotioncapabilities"
+
   func requireSupported(on simulator: Simulator) async throws {
-    let request = try CoreDeviceRequest(
-      action: "com.apple.coredevice.action.querymotioncapabilities", deviceID: simulator.udid,
-      version: CoreDeviceVersion.installed(), input: CoreDeviceEmptyInput())
-    let queue = DispatchQueue(label: "com.facebook.FBSimulatorControl.motion-capability")
-    let transport = try SimulatorCoreDeviceXPCTransport(
-      simulator: simulator, service: "com.apple.coredevice.feature.monitormotion", queue: queue)
-    try await CoreDeviceSession<Void>(transport: transport, queue: queue)
-      .read(request.encoded(), decode: requireSupported(in:))
+    try await simulator.coreDevice.perform(
+      action: Self.action, service: Self.service, input: CoreDeviceEmptyInput(), decode: requireSupported(in:))
   }
 
   func requireSupported(in reply: xpc_object_t) throws {

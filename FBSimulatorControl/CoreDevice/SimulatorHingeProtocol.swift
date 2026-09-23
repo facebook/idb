@@ -10,6 +10,7 @@ import XPC
 
 enum SimulatorHingeProtocol {
   static let service = "com.apple.coredevice.feature.monitormotion"
+  static let action = "com.apple.coredevice.action.streamhingeangle"
 
   /// A CoreDevice duration: signed high bits and unsigned low bits, in attoseconds.
   struct Duration: Encodable {
@@ -58,13 +59,6 @@ enum SimulatorHingeProtocol {
       actualInput = ActualInput(changeThreshold: Measurement(value: 0.1, unit: .degrees), updateInterval: .hundredMilliseconds)
       streamProxy = StreamProxy(sideChannel: channel)
     }
-  }
-
-  static func request(deviceID: String, version: CoreDeviceVersion, channel: UUID) throws -> xpc_object_t {
-    try CoreDeviceRequest(
-      action: "com.apple.coredevice.action.streamhingeangle", deviceID: deviceID, version: version,
-      input: StreamInput(channel: channel)
-    ).encoded()
   }
 
   static func sample(

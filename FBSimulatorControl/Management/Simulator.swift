@@ -258,6 +258,12 @@ extension Simulator {
     commandCache.resolve { SimulatorHIDCommands.commands(with: self) }
   }
 
+  /// The simulator's CoreDevice features. One client per simulator, so the installed CoreDevice
+  /// version is read once.
+  var coreDevice: SimulatorCoreDeviceClient {
+    commandCache.resolve { SimulatorCoreDeviceClient(simulator: self) }
+  }
+
   public var displays: SimulatorDisplayCommands {
     SimulatorDisplayCommands.commands(with: self)
   }

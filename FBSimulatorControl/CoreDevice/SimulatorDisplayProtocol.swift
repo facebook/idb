@@ -9,6 +9,9 @@ import Foundation
 import XPC
 
 enum SimulatorDisplayProtocol {
+  static let service = "com.apple.coredevice.feature.getdisplayinfo"
+  static let action = "com.apple.coredevice.action.displayinfo"
+
   /// Older providers omit both activity and stable identity from every display.
   static func captureDisplays(_ reply: xpc_object_t) throws -> [SimulatorDisplay]? {
     let values = try displayValues(reply)

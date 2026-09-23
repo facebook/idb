@@ -22,12 +22,12 @@ public struct SimulatorHingeCommands {
   public func angle() async throws -> SimulatorHingeAngle {
     try await SimulatorMotionCapability.hingeAngle.requireSupported(on: simulator)
     let channel = UUID()
-    let request = try SimulatorHingeProtocol.request(deviceID: simulator.udid, version: CoreDeviceVersion.installed(), channel: channel)
-    let queue = DispatchQueue(label: "com.facebook.FBSimulatorControl.hinge-read")
-    let transport = try SimulatorCoreDeviceXPCTransport(simulator: simulator, service: SimulatorHingeProtocol.service, queue: queue)
     // Samples older than the request are the provider replaying its last known state.
     let notBefore = ProcessInfo.processInfo.systemUptime
-    return try await CoreDeviceSession<SimulatorHingeAngle>(transport: transport, queue: queue).stream(request) { event in
+    return try await simulator.coreDevice.stream(
+      action: SimulatorHingeProtocol.action, service: SimulatorHingeProtocol.service,
+      input: SimulatorHingeProtocol.StreamInput(channel: channel)
+    ) { event in
       try SimulatorHingeProtocol.sample(event, channel: channel, notBefore: notBefore, now: ProcessInfo.processInfo.systemUptime)
     }
   }

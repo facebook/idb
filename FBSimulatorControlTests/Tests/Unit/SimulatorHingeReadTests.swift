@@ -34,6 +34,14 @@ private func hingeEvent(channel: UUID, degrees: Double = 130, timestamp: Double 
   ])
 }
 
+/// The stream request as the client encodes it for the hinge command.
+private func hingeRequest(channel: UUID) throws -> xpc_object_t {
+  try CoreDeviceRequest(
+    action: SimulatorHingeProtocol.action, deviceID: "device", version: CoreDeviceVersion("651.13.4"),
+    input: SimulatorHingeProtocol.StreamInput(channel: channel)
+  ).encoded()
+}
+
 // SAFETY: All state, including the test script and callbacks, is accessed on the session queue.
 // patternlint-disable-next-line unchecked-sendable
 private final class HingeTransportStub: SimulatorCoreDeviceTransport, @unchecked Sendable {
@@ -67,7 +75,8 @@ private final class HingeTransportStub: SimulatorCoreDeviceTransport, @unchecked
 final class SimulatorHingeReadTests: XCTestCase {
   func testRequestUsesNativeUUIDAndUnsignedDurationLowBits() throws {
     let channel = UUID()
-    let request = try SimulatorHingeProtocol.request(deviceID: "device", version: CoreDeviceVersion("651.13.4"), channel: channel)
+    let request = try hingeRequest(channel: channel)
+    XCTAssertEqual(String(cString: xpc_dictionary_get_string(request, "CoreDevice.actionIdentifier")!), SimulatorHingeProtocol.action)
     let version = try XCTUnwrap(xpc_dictionary_get_dictionary(request, "CoreDevice.coreDeviceVersion"))
     let components = try XCTUnwrap(xpc_dictionary_get_array(version, "components"))
     XCTAssertEqual(xpc_array_get_count(components), 3)
@@ -114,7 +123,7 @@ final class SimulatorHingeReadTests: XCTestCase {
   private func readAngle(
     _ transport: HingeTransportStub, queue: DispatchQueue, channel: UUID = UUID(), timeout: DispatchTimeInterval = .seconds(5)
   ) async throws -> SimulatorHingeAngle {
-    let request = try SimulatorHingeProtocol.request(deviceID: "device", version: CoreDeviceVersion("651.13.4"), channel: channel)
+    let request = try hingeRequest(channel: channel)
     return try await CoreDeviceSession<SimulatorHingeAngle>(transport: transport, queue: queue, timeout: timeout).stream(request) { event in
       try SimulatorHingeProtocol.sample(event, channel: channel, notBefore: 200, now: 200)
     }
