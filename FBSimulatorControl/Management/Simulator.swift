@@ -254,7 +254,11 @@ extension Simulator {
   // MARK: - Sim-only accessors
 
   public var lifecycle: SimulatorLifecycleCommands {
-    commandCache.resolve { SimulatorLifecycleCommands.commands(with: self) }
+    SimulatorLifecycleCommands(simulator: self)
+  }
+
+  public var framebuffer: SimulatorFramebufferCommands {
+    SimulatorFramebufferCommands(simulator: self)
   }
 
   public var hid: SimulatorHIDCommands {

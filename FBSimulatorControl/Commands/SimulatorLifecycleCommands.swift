@@ -34,49 +34,27 @@ extension SimulatorLifecycleError: LocalizedError {
   }
 }
 
-public final class SimulatorLifecycleCommands: LifecycleCommands {
+public struct SimulatorLifecycleCommands: LifecycleCommands, Sendable {
 
-  // MARK: - Properties
+  private let simulator: Simulator
 
-  private weak var simulator: Simulator?
-
-  // MARK: - Initializers
-
-  public class func commands(with simulator: Simulator) -> SimulatorLifecycleCommands {
-    SimulatorLifecycleCommands(simulator: simulator)
-  }
-
-  private init(simulator: Simulator) {
+  init(simulator: Simulator) {
     self.simulator = simulator
   }
 
-  // MARK: - Async
-
   public func boot(_ configuration: SimulatorBootConfiguration) async throws {
-    guard let simulator = self.simulator else {
-      throw WeakTargetError.simulator
-    }
     try await SimulatorBootStrategy.boot(simulator, with: configuration)
   }
 
   public func resolveState(_ state: TargetState) async throws {
-    guard let simulator = self.simulator else {
-      throw WeakTargetError.simulator
-    }
     try await TargetResolveState(simulator, state)
   }
 
   public func resolveLeavesState(_ state: TargetState) async throws {
-    guard let simulator = self.simulator else {
-      throw WeakTargetError.simulator
-    }
     try await CoreSimulatorNotifier.resolveLeavesState(state, for: simulator.device)
   }
 
   public func focus() async throws {
-    guard let simulator = self.simulator else {
-      throw WeakTargetError.simulator
-    }
     // The Simulator host app (Simulator.app, or DeviceHub.app on Xcode 27+) only displays
     // simulators in the default device set, so 'focus' is unsupported for a custom device set.
     // This is also why Xcode parallel testing — which clones into a non-default device set — is
@@ -108,7 +86,7 @@ public final class SimulatorLifecycleCommands: LifecycleCommands {
     }
   }
 
-  private class func launchSimulatorApplicationForDefaultDeviceSet() async throws {
+  private static func launchSimulatorApplicationForDefaultDeviceSet() async throws {
     let applicationBundle = XcodeConfiguration.simulatorApp
     let applicationURL = URL(fileURLWithPath: applicationBundle.path)
     let configuration = NSWorkspace.OpenConfiguration()
@@ -124,17 +102,7 @@ public final class SimulatorLifecycleCommands: LifecycleCommands {
     }
   }
 
-  public func connectToFramebuffer() async throws -> Framebuffer {
-    guard let simulator = self.simulator else {
-      throw WeakTargetError.simulator
-    }
-    return try Framebuffer.mainScreenSurface(for: simulator, logger: simulator.logger)
-  }
-
   public func open(_ url: URL) async throws {
-    guard let simulator = self.simulator else {
-      throw WeakTargetError.simulator
-    }
     var lastError: NSError?
     for _ in 0...openURLRetries {
       lastError = nil

@@ -79,7 +79,7 @@ public final class SimulatorScreenshotCommands: ScreenshotCommands {
     guard let simulator = self.simulator else {
       throw WeakTargetError.simulator
     }
-    let framebuffer = try await simulator.lifecycle.connectToFramebuffer()
+    let framebuffer = try simulator.framebuffer.connect()
     let image = SimulatorImage(framebuffer: framebuffer, logger: simulator.logger)
     self.image = image
     return image

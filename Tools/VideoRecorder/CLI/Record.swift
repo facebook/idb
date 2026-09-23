@@ -46,7 +46,7 @@ struct Record: AsyncParsableCommand {
     let logger = FBControlCoreLoggerFactory.systemLoggerWriting(toStderr: true, withDebugLogging: false)
     let simulator = try target.simulator(logger: logger)
     let (insets, renderer, bars) = try video.composition(simulator: simulator, logger: logger)
-    let framebuffer = try await simulator.lifecycle.connectToFramebuffer()
+    let framebuffer = try simulator.framebuffer.connect()
     let stdinDriven = duration == nil && isatty(FileHandle.standardInput.fileDescriptor) == 0
     let (recording, selected) = try await startRecording(framebuffer: framebuffer, insets: insets, chapters: stdinDriven, logger: logger)
     let (handler, timers) = VideoSession.makeHandler(videoStream: recording.stream, renderer: renderer, screenshotDir: video.screenshotDir, parsedBars: bars, barStats: video.barStats, logger: logger)
