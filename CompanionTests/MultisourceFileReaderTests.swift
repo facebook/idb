@@ -44,18 +44,23 @@ private final class StubOutputStream: OutputStream {
 
 final class MultisourceFileReaderTests: XCTestCase {
 
-  func testWritePayloadsContinuesAfterTheSinkFails() async throws {
+  func testWritePayloadsStopsWhenTheSinkFails() async throws {
     let stream = StubOutputStream(failFromWrite: 2)
 
-    try await MultisourceFileReader.writePayloads(
-      initialData: Data([0xFF]),
-      from: Self.requestStream(chunkCount: 4),
-      to: stream)
+    do {
+      try await MultisourceFileReader.writePayloads(
+        initialData: Data([0xFF]),
+        from: Self.requestStream(chunkCount: 4),
+        to: stream)
+      XCTFail("Expected the failed write to end the transfer")
+    } catch let error as RPCError {
+      XCTAssertEqual(error.code, .aborted)
+      XCTAssertTrue(error.message.contains(StubOutputStream.failureReason))
+    }
 
-    // BUG: the result of each write is discarded, so a sink that has begun reporting failure is
-    // written to once per remaining chunk and the request stream is drained to its end -- the
-    // initial write plus all four chunks, returning normally. Flipped in the following commit.
-    XCTAssertEqual(stream.writeCount, 5)
+    // The initial write plus the first chunk, which is the one that failed. The three chunks
+    // after it are neither written nor pulled from the request stream.
+    XCTAssertEqual(stream.writeCount, 2)
   }
 
   private static func requestStream(chunkCount: Int) -> RequestStreamReader<Idb_PushRequest> {

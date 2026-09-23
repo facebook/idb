@@ -114,8 +114,7 @@ enum MultisourceFileReader {
     from requestStream: RequestStreamReader<Request>,
     to stream: OutputStream
   ) async throws {
-    var buffer = [UInt8](initialData)
-    stream.write(&buffer, maxLength: buffer.count)
+    try write(initialData, to: stream)
 
     for try await request in requestStream {
       guard let payload = request.extractPayload()
@@ -124,8 +123,18 @@ enum MultisourceFileReader {
       guard case .data(let data) = payload.source
       else { throw RPCError(code: .invalidArgument, message: "Unrecogized buffer frame. Expect file path, got \(payload.source as Any)") }
 
-      var buffer = [UInt8](data)
-      stream.write(&buffer, maxLength: buffer.count)
+      try write(data, to: stream)
+    }
+  }
+
+  /// The stream writes every byte or none: it loops internally until the whole buffer is gone and
+  /// reports `-1` only on a real failure, so a negative result ends the transfer rather than
+  /// being something to retry or resume from.
+  private static func write(_ data: Data, to stream: OutputStream) throws {
+    var buffer = [UInt8](data)
+    guard stream.write(&buffer, maxLength: buffer.count) >= 0 else {
+      let reason = stream.streamError?.localizedDescription ?? "Unknown"
+      throw RPCError(code: .aborted, message: "Failed to write \(buffer.count) bytes to the extraction pipe: \(reason)")
     }
   }
 }
