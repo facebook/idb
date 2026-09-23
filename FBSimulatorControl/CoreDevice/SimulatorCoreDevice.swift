@@ -48,18 +48,6 @@ enum SimulatorCoreDevice {
     }
   }
 
-  static func dictionary(_ values: [String: xpc_object_t]) -> xpc_object_t {
-    let result = xpc_dictionary_create(nil, nil, 0)
-    for (key, value) in values { xpc_dictionary_set_value(result, key, value) }
-    return result
-  }
-
-  static func array(_ values: [xpc_object_t]) -> xpc_object_t {
-    let result = xpc_array_create(nil, 0)
-    for value in values { xpc_array_append_value(result, value) }
-    return result
-  }
-
   static func connect(simulator: Simulator, service: String) throws -> xpc_connection_t {
     do {
       return try SimulatorXPCConnection.connect(simulator: simulator, service: service)

@@ -8,6 +8,7 @@
 import Foundation
 import XPC
 
+/// The `streamhingeangle` feature: the stream it asks for and the samples it pushes back.
 enum SimulatorHingeProtocol {
   static let service = "com.apple.coredevice.feature.monitormotion"
   static let action = "com.apple.coredevice.action.streamhingeangle"
@@ -25,9 +26,9 @@ enum SimulatorHingeProtocol {
     }
   }
 
-  /// A CoreDevice measurement unit; the hinge angle is requested in plain degrees.
-  struct Unit: Encodable {
-    struct Converter: Encodable {
+  /// A CoreDevice measurement unit; the hinge angle is requested and reported in plain degrees.
+  struct Unit: Codable, Equatable {
+    struct Converter: Codable, Equatable {
       let coefficient: Double
       let constant: Double
     }
@@ -37,7 +38,7 @@ enum SimulatorHingeProtocol {
     static let degrees = Unit(symbol: "°", converter: Converter(coefficient: 1, constant: 0))
   }
 
-  struct Measurement: Encodable {
+  struct Measurement: Codable {
     let value: Double
     let unit: Unit
   }
@@ -61,62 +62,73 @@ enum SimulatorHingeProtocol {
     }
   }
 
+  /// One pushed event: the side channel it belongs to and a batch of samples.
+  struct StreamEvent: Decodable {
+    /// A sample the provider marks invalid is not read further, and a valid one's angle is only
+    /// read if the sample is fresh enough to be used, so junk in a skipped sample is ignored.
+    enum Sample: Decodable {
+      case invalid
+      case valid(timestamp: Double, angle: Result<Measurement, DecodingError>)
+
+      private enum CodingKeys: String, CodingKey {
+        case isAngleValid, timestamp, angle
+      }
+
+      init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        guard try container.decode(Bool.self, forKey: .isAngleValid) else {
+          self = .invalid
+          return
+        }
+        let timestamp = try container.decode(Double.self, forKey: .timestamp)
+        do {
+          self = .valid(timestamp: timestamp, angle: .success(try container.decode(Measurement.self, forKey: .angle)))
+        } catch let error as DecodingError {
+          self = .valid(timestamp: timestamp, angle: .failure(error))
+        }
+      }
+    }
+    struct Pushing: Decodable {
+      let elements: [Sample]
+    }
+    struct Status: Decodable {
+      let pushing: Pushing
+    }
+
+    let channel: String
+    let status: Status
+
+    private enum CodingKeys: String, CodingKey {
+      case channel = "XPCSideChannel.uniqueIdentifier"
+      case status = "CoreDevice.XPCMessageKey.sideChannelStatus"
+    }
+  }
+
+  private static let maximumSamples = 64
+
+  /// The freshest valid angle in `event` measured at or after `notBefore`, or nil when the batch
+  /// holds none. A sample from the future, in a unit other than degrees, or on another channel is
+  /// malformed.
   static func sample(
     _ event: xpc_object_t, channel: UUID, notBefore: TimeInterval, now: TimeInterval
   ) throws -> SimulatorHingeAngle? {
-    try requireDictionary(event)
-    guard try string(event, "XPCSideChannel.uniqueIdentifier") == channel.uuidString else {
-      throw SimulatorCoreDeviceError.malformed("Unexpected side channel")
-    }
-    let status = try field(event, "CoreDevice.XPCMessageKey.sideChannelStatus", XPC_TYPE_DICTIONARY)
-    let pushing = try field(status, "pushing", XPC_TYPE_DICTIONARY)
-    let elements = try field(pushing, "elements", XPC_TYPE_ARRAY)
-    guard xpc_array_get_count(elements) <= 64 else { throw SimulatorCoreDeviceError.malformed("Oversized sample batch") }
+    let event = try SimulatorCoreDevice.decode(StreamEvent.self, from: event)
+    guard event.channel == channel.uuidString else { throw SimulatorCoreDeviceError.malformed("Unexpected side channel") }
+    let samples = event.status.pushing.elements
+    guard samples.count <= maximumSamples else { throw SimulatorCoreDeviceError.malformed("Oversized sample batch") }
     var latest: (timestamp: Double, angle: SimulatorHingeAngle)?
-    for index in 0..<xpc_array_get_count(elements) {
-      let sample = xpc_array_get_value(elements, index)
-      try requireDictionary(sample)
-      guard xpc_bool_get_value(try field(sample, "isAngleValid", XPC_TYPE_BOOL)) else { continue }
-      let timestamp = try number(sample, "timestamp")
+    for case let .valid(timestamp, angle) in samples {
+      guard timestamp.isFinite else { throw SimulatorCoreDeviceError.malformed("timestamp") }
       guard timestamp <= now else { throw SimulatorCoreDeviceError.malformed("Sample timestamp is in the future") }
       guard timestamp >= notBefore else { continue }
-      let measurement = try field(sample, "angle", XPC_TYPE_DICTIONARY)
-      let unit = try field(measurement, "unit", XPC_TYPE_DICTIONARY)
-      let converter = try field(unit, "converter", XPC_TYPE_DICTIONARY)
-      guard try string(unit, "symbol") == "°", try number(converter, "coefficient") == 1, try number(converter, "constant") == 0 else {
-        throw SimulatorCoreDeviceError.malformed("Angle is not in degrees")
-      }
-      let angle = try SimulatorHingeAngle(degrees: number(measurement, "value"))
+      let measurement: Measurement
+      do { measurement = try angle.get() } catch { throw SimulatorCoreDeviceError(decoding: error) }
+      guard measurement.value.isFinite else { throw SimulatorCoreDeviceError.malformed("angle") }
+      guard measurement.unit == .degrees else { throw SimulatorCoreDeviceError.malformed("Angle is not in degrees") }
+      let angle = try SimulatorHingeAngle(degrees: measurement.value)
       if let latest, timestamp < latest.timestamp { continue }
       latest = (timestamp, angle)
     }
     return latest?.angle
-  }
-
-  private static func requireDictionary(_ value: xpc_object_t) throws {
-    guard xpc_get_type(value) == XPC_TYPE_DICTIONARY else {
-      throw SimulatorCoreDeviceError.unavailable("Motion connection closed or returned a non-dictionary value")
-    }
-  }
-
-  private static func field(_ object: xpc_object_t, _ key: String, _ type: xpc_type_t) throws -> xpc_object_t {
-    guard let value = xpc_dictionary_get_value(object, key), xpc_get_type(value) == type else {
-      throw SimulatorCoreDeviceError.malformed(key)
-    }
-    return value
-  }
-
-  private static func number(_ object: xpc_object_t, _ key: String) throws -> Double {
-    let value = xpc_double_get_value(try field(object, key, XPC_TYPE_DOUBLE))
-    guard value.isFinite else { throw SimulatorCoreDeviceError.malformed(key) }
-    return value
-  }
-
-  private static func string(_ object: xpc_object_t, _ key: String) throws -> String {
-    let value = try field(object, key, XPC_TYPE_STRING)
-    guard xpc_string_get_length(value) <= 256, let bytes = xpc_string_get_string_ptr(value) else {
-      throw SimulatorCoreDeviceError.malformed(key)
-    }
-    return String(cString: bytes)
   }
 }
