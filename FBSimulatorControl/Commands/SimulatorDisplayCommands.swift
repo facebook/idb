@@ -37,7 +37,6 @@ public struct SimulatorDisplay: Equatable, Sendable {
 }
 
 public enum SimulatorDisplayError: Error, LocalizedError {
-  case invalidResponse(String)
   case noActiveIntegratedDisplay
   case ambiguousActiveDisplays([String])
   case changed
@@ -45,7 +44,6 @@ public enum SimulatorDisplayError: Error, LocalizedError {
 
   public var errorDescription: String? {
     switch self {
-    case let .invalidResponse(detail): "Invalid simulator display response: \(detail)"
     case let .screensNotReported(seconds): "Simulator did not report its displays within \(seconds) seconds"
     case .noActiveIntegratedDisplay: "Simulator has no active integrated display"
     case let .ambiguousActiveDisplays(ids): "Simulator has multiple active integrated displays: \(ids.joined(separator: ", "))"

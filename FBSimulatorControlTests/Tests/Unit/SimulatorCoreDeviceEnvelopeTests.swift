@@ -115,7 +115,7 @@ final class SimulatorCoreDeviceEnvelopeTests: XCTestCase {
       XCTAssertEqual(detail, "com.example.provider (7)")
     }
     XCTAssertThrowsError(try SimulatorHingeProtocol.checkReply(reply)) { error in
-      guard case let SimulatorHingeReadError.unavailable(detail) = error else { return XCTFail("Hinge: \(error)") }
+      guard case let SimulatorCoreDeviceError.unavailable(detail) = error else { return XCTFail("Hinge: \(error)") }
       XCTAssertEqual(detail, "com.example.provider (7)")
     }
   }

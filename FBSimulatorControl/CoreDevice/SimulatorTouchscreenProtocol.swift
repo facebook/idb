@@ -34,7 +34,7 @@ enum SimulatorTouchscreenProtocol {
   static func touchscreens(_ reply: xpc_object_t) throws -> [SimulatorTouchscreen] {
     let services = try field(reply, "connectedServices", XPC_TYPE_ARRAY)
     guard xpc_array_get_count(services) <= 256 else {
-      throw SimulatorDisplayError.invalidResponse("Too many HID services")
+      throw SimulatorCoreDeviceError.malformed("Too many HID services")
     }
     var identities: Set<String> = []
     var targets: Set<UInt32> = []
@@ -43,7 +43,7 @@ enum SimulatorTouchscreenProtocol {
     for index in 0..<xpc_array_get_count(services) {
       let service = xpc_array_get_value(services, index)
       guard xpc_get_type(service) == XPC_TYPE_DICTIONARY else {
-        throw SimulatorDisplayError.invalidResponse("Invalid HID service")
+        throw SimulatorCoreDeviceError.malformed("Invalid HID service")
       }
       guard let page = xpc_dictionary_get_value(service, "PrimaryUsagePage"), xpc_get_type(page) == XPC_TYPE_UINT64,
         let usage = xpc_dictionary_get_value(service, "PrimaryUsage"), xpc_get_type(usage) == XPC_TYPE_UINT64,
@@ -52,7 +52,7 @@ enum SimulatorTouchscreenProtocol {
       let serviceID = xpc_uint64_get_value(try field(service, "_ServiceID", XPC_TYPE_UINT64))
       // HIDServiceID.touchscreenDisplayID accepts the 0x100 namespace. Indigo target zero is a main-screen alias.
       guard serviceID & ~0xFF == 0x100, serviceID & 0xFF != 0 else {
-        throw SimulatorDisplayError.invalidResponse("HID service has no explicit touchscreen target")
+        throw SimulatorCoreDeviceError.malformed("HID service has no explicit touchscreen target")
       }
       let target = UInt32(serviceID & 0xFF)
       guard let identity = xpc_dictionary_get_value(service, "displayUUID") else {
@@ -62,21 +62,21 @@ enum SimulatorTouchscreenProtocol {
       guard xpc_get_type(identity) == XPC_TYPE_STRING,
         xpc_string_get_length(identity) > 0, xpc_string_get_length(identity) <= 1024,
         let bytes = xpc_string_get_string_ptr(identity)
-      else { throw SimulatorDisplayError.invalidResponse("Invalid touchscreen display identity") }
+      else { throw SimulatorCoreDeviceError.malformed("Invalid touchscreen display identity") }
       let data = Data(bytes: bytes, count: xpc_string_get_length(identity))
       guard !data.contains(0), let uniqueID = String(data: data, encoding: .utf8) else {
-        throw SimulatorDisplayError.invalidResponse("Invalid touchscreen display identity")
+        throw SimulatorCoreDeviceError.malformed("Invalid touchscreen display identity")
       }
       guard targets.insert(target).inserted else {
-        throw SimulatorDisplayError.invalidResponse("Ambiguous touchscreen target")
+        throw SimulatorCoreDeviceError.malformed("Ambiguous touchscreen target")
       }
       guard identities.insert(uniqueID).inserted else {
-        throw SimulatorDisplayError.invalidResponse("Ambiguous touchscreen display identity")
+        throw SimulatorCoreDeviceError.malformed("Ambiguous touchscreen display identity")
       }
       touchscreens.append(SimulatorTouchscreen(displayUniqueID: uniqueID, digitizerTarget: target))
     }
     if missingIdentity {
-      guard touchscreens.isEmpty else { throw SimulatorDisplayError.invalidResponse("Partial touchscreen display identities") }
+      guard touchscreens.isEmpty else { throw SimulatorCoreDeviceError.malformed("Partial touchscreen display identities") }
       throw SimulatorCoreDeviceError.unsupported("Touchscreen display identities")
     }
     return touchscreens.sorted { $0.displayUniqueID < $1.displayUniqueID }
@@ -85,7 +85,7 @@ enum SimulatorTouchscreenProtocol {
   private static func field(_ object: xpc_object_t, _ key: String, _ type: xpc_type_t) throws -> xpc_object_t {
     guard xpc_get_type(object) == XPC_TYPE_DICTIONARY,
       let value = xpc_dictionary_get_value(object, key), xpc_get_type(value) == type
-    else { throw SimulatorDisplayError.invalidResponse("Invalid HID field: \(key)") }
+    else { throw SimulatorCoreDeviceError.malformed("Invalid HID field: \(key)") }
     return value
   }
 }

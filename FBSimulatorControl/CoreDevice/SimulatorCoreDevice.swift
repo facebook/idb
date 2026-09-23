@@ -9,14 +9,24 @@
 import Foundation
 import XPC
 
+/// How a CoreDevice feature fails. Callers switch on `unsupported` to choose a fallback; the other
+/// three are operational and surface as they are.
 enum SimulatorCoreDeviceError: Error, LocalizedError {
-  case unavailable(String)
+  /// The runtime does not vend the feature, field or capability named.
   case unsupported(String)
+  /// The service exists but could not be reached or answered with an error.
+  case unavailable(String)
+  /// The service answered with something the protocol does not describe.
+  case malformed(String)
+  /// The service did not answer within the request's deadline.
+  case timedOut
 
   var errorDescription: String? {
     switch self {
     case let .unsupported(detail): "Simulator CoreDevice capability unavailable: \(detail)"
     case let .unavailable(detail): "Simulator CoreDevice service unavailable: \(detail)"
+    case let .malformed(detail): "Invalid simulator CoreDevice response: \(detail)"
+    case .timedOut: "Timed out waiting for the simulator CoreDevice reply"
     }
   }
 }

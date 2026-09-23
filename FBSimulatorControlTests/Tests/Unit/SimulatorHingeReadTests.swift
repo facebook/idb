@@ -137,7 +137,7 @@ final class SimulatorHingeReadTests: XCTestCase {
       _ = try await session.read(deviceID: "device", version: "651.13.4")
       XCTFail("Expected timeout awaiting provider cancellation")
     } catch {
-      guard case SimulatorHingeReadError.timedOut = error else { return XCTFail("Unexpected error: \(error)") }
+      guard case SimulatorCoreDeviceError.timedOut = error else { return XCTFail("Unexpected error: \(error)") }
     }
     queue.sync { XCTAssertEqual(transport.cancellations, 1) }
   }
@@ -150,7 +150,7 @@ final class SimulatorHingeReadTests: XCTestCase {
       _ = try await session.read(deviceID: "device", version: "651.13.4")
       XCTFail("Expected missing sample error")
     } catch {
-      guard case SimulatorHingeReadError.endedWithoutSample = error else { return XCTFail("Unexpected error: \(error)") }
+      guard case SimulatorCoreDeviceError.unavailable = error else { return XCTFail("Unexpected error: \(error)") }
     }
     queue.sync { XCTAssertEqual(transport.cancellations, 1) }
   }
@@ -168,7 +168,7 @@ final class SimulatorHingeReadTests: XCTestCase {
       _ = try await session.read(deviceID: "device", version: "651.13.4")
       XCTFail("Expected connection error")
     } catch {
-      guard case SimulatorHingeReadError.unavailable = error else { return XCTFail("Unexpected error: \(error)") }
+      guard case SimulatorCoreDeviceError.unavailable = error else { return XCTFail("Unexpected error: \(error)") }
     }
     queue.sync { XCTAssertEqual(transport.cancellations, 1) }
   }

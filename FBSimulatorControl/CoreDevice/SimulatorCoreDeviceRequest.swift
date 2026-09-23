@@ -44,7 +44,7 @@ final class SimulatorCoreDeviceRequest<Response: Sendable>: @unchecked Sendable 
               do { self.finish(.success(try decode(reply))) } catch { self.finish(.failure(error)) }
             })
           self.queue.asyncAfter(deadline: .now() + self.timeout) { [weak self] in
-            self?.finish(.failure(SimulatorCoreDeviceError.unavailable("Response timed out")))
+            self?.finish(.failure(SimulatorCoreDeviceError.timedOut))
           }
         }
       }

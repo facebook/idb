@@ -212,7 +212,7 @@ enum FramebufferSurfaceLocator {
 
   static func framebuffer(for display: SimulatorDisplay, simulator: Simulator) async throws -> Framebuffer {
     guard let ports = simulator.device.io?.ioPorts() else {
-      throw SimulatorDisplayError.invalidResponse("No simulator IO ports")
+      throw FramebufferError.mainScreenSurfaceNotFound(description: "No simulator IO ports")
     }
     var matches: [any SimScreen] = []
     for port in ports {
@@ -227,7 +227,7 @@ enum FramebufferSurfaceLocator {
     }
     guard matches.count == 1,
       let renderable = matches.first as? (any SimDisplayIOSurfaceRenderable & SimDisplayRenderable)
-    else { throw SimulatorDisplayError.invalidResponse("Active display has no unique framebuffer") }
+    else { throw FramebufferError.mainScreenSurfaceNotFound(description: "Active display has no unique framebuffer") }
     return Framebuffer(surface: SimDisplayRenderableSurface(surface: renderable, logger: simulator.logger), logger: simulator.logger)
   }
 

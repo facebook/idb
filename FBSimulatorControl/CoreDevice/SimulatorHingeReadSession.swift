@@ -52,7 +52,7 @@ final class SimulatorHingeReadSession: @unchecked Sendable {
               event: { [weak self] event in self?.handleEvent(event) },
               reply: { [weak self] reply in self?.handleReply(reply) })
             self.queue.asyncAfter(deadline: .now() + self.timeout) { [weak self] in
-              self?.finish(.failure(SimulatorHingeReadError.timedOut))
+              self?.finish(.failure(SimulatorCoreDeviceError.timedOut))
             }
           } catch {
             self.finish(.failure(error))
@@ -68,7 +68,7 @@ final class SimulatorHingeReadSession: @unchecked Sendable {
     dispatchPrecondition(condition: .onQueue(queue))
     guard result == nil else { return }
     guard xpc_get_type(event) == XPC_TYPE_DICTIONARY else {
-      finish(.failure(SimulatorHingeReadError.unavailable("Motion connection closed")))
+      finish(.failure(SimulatorCoreDeviceError.unavailable("Motion connection closed")))
       return
     }
     do {
@@ -86,7 +86,7 @@ final class SimulatorHingeReadSession: @unchecked Sendable {
     guard result == nil else { return }
     do {
       try SimulatorHingeProtocol.checkReply(reply)
-      guard let selectedAngle else { throw SimulatorHingeReadError.endedWithoutSample }
+      guard let selectedAngle else { throw SimulatorCoreDeviceError.unavailable("Hinge stream ended without a fresh valid sample") }
       finish(.success(selectedAngle))
     } catch {
       finish(.failure(error))

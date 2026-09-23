@@ -68,11 +68,11 @@ final class SimulatorTouchscreenReadTests: XCTestCase {
     }
     let identified = touchscreenValue(id: "display-b", serviceID: 0x128)
     XCTAssertThrowsError(try SimulatorTouchscreenProtocol.touchscreens(touchscreenReply([legacy, identified]))) { error in
-      XCTAssertTrue(error is SimulatorDisplayError)
+      guard case SimulatorCoreDeviceError.malformed = error else { return XCTFail("Expected malformed: \(error)") }
     }
     xpc_dictionary_set_int64(legacy, "_ServiceID", 0x127)
     XCTAssertThrowsError(try SimulatorTouchscreenProtocol.touchscreens(touchscreenReply([legacy]))) { error in
-      XCTAssertTrue(error is SimulatorDisplayError)
+      guard case SimulatorCoreDeviceError.malformed = error else { return XCTFail("Expected malformed: \(error)") }
     }
   }
 
