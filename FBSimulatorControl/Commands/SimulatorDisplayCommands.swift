@@ -71,7 +71,7 @@ public struct SimulatorDisplayCommands {
     let queue = DispatchQueue(label: "com.facebook.FBSimulatorControl.touchscreen-info")
     let transport = try SimulatorCoreDeviceXPCTransport(
       simulator: simulator, service: SimulatorTouchscreenProtocol.service, queue: queue)
-    return try await SimulatorCoreDeviceRequest<[SimulatorTouchscreen]>(transport: transport, queue: queue)
+    return try await CoreDeviceSession<[SimulatorTouchscreen]>(transport: transport, queue: queue)
       .read(SimulatorTouchscreenProtocol.request(), decode: SimulatorTouchscreenProtocol.touchscreens)
   }
 
@@ -92,7 +92,7 @@ public struct SimulatorDisplayCommands {
     let queue = DispatchQueue(label: "com.facebook.FBSimulatorControl.display-info")
     let transport = try SimulatorCoreDeviceXPCTransport(
       simulator: simulator, service: "com.apple.coredevice.feature.getdisplayinfo", queue: queue)
-    return try await SimulatorCoreDeviceRequest<Response>(transport: transport, queue: queue)
+    return try await CoreDeviceSession<Response>(transport: transport, queue: queue)
       .read(request.encoded(), decode: decode)
   }
 

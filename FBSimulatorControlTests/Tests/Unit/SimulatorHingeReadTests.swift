@@ -107,6 +107,19 @@ final class SimulatorHingeReadTests: XCTestCase {
     XCTAssertThrowsError(try SimulatorHingeProtocol.sample(hingeEvent(channel: channel), channel: UUID(), notBefore: 199, now: 201))
   }
 
+  // MARK: - Streaming through the session
+
+  /// A hinge read as `SimulatorHingeCommands` performs it: a stream that samples until a fresh
+  /// angle arrives, with the clock pinned so timestamps are deterministic.
+  private func readAngle(
+    _ transport: HingeTransportStub, queue: DispatchQueue, channel: UUID = UUID(), timeout: DispatchTimeInterval = .seconds(5)
+  ) async throws -> SimulatorHingeAngle {
+    let request = try SimulatorHingeProtocol.request(deviceID: "device", version: CoreDeviceVersion("651.13.4"), channel: channel)
+    return try await CoreDeviceSession<SimulatorHingeAngle>(transport: transport, queue: queue, timeout: timeout).stream(request) { event in
+      try SimulatorHingeProtocol.sample(event, channel: channel, notBefore: 200, now: 200)
+    }
+  }
+
   func testStaleInitialSampleDoesNotCompleteRead() async throws {
     let channel = UUID()
     let queue = DispatchQueue(label: "hinge-read-test")
@@ -116,8 +129,7 @@ final class SimulatorHingeReadTests: XCTestCase {
       transport.event?(hingeEvent(channel: channel, degrees: 90))
       transport.complete()
     }
-    let session = SimulatorHingeReadSession(transport: transport, queue: queue, channel: channel, now: { 200 })
-    let angle = try await session.read(deviceID: "device", version: CoreDeviceVersion("651.13.4"))
+    let angle = try await readAngle(transport, queue: queue, channel: channel)
     XCTAssertEqual(angle.degrees, 0)
     queue.sync {
       XCTAssertEqual(transport.acknowledgements, [false, true])
@@ -132,9 +144,8 @@ final class SimulatorHingeReadTests: XCTestCase {
       transport.completesCancellation = false
       transport.event?(hingeEvent(channel: channel))
     }
-    let session = SimulatorHingeReadSession(transport: transport, queue: queue, timeout: .milliseconds(10), channel: channel, now: { 200 })
     do {
-      _ = try await session.read(deviceID: "device", version: CoreDeviceVersion("651.13.4"))
+      _ = try await readAngle(transport, queue: queue, channel: channel, timeout: .milliseconds(10))
       XCTFail("Expected timeout awaiting provider cancellation")
     } catch {
       guard case SimulatorCoreDeviceError.timedOut = error else { return XCTFail("Unexpected error: \(error)") }
@@ -145,14 +156,33 @@ final class SimulatorHingeReadTests: XCTestCase {
   func testPrematureCompletionIsAnError() async {
     let queue = DispatchQueue(label: "hinge-read-test")
     let transport = HingeTransportStub { $0.complete() }
-    let session = SimulatorHingeReadSession(transport: transport, queue: queue)
     do {
-      _ = try await session.read(deviceID: "device", version: CoreDeviceVersion("651.13.4"))
+      _ = try await readAngle(transport, queue: queue)
       XCTFail("Expected missing sample error")
     } catch {
       guard case SimulatorCoreDeviceError.unavailable = error else { return XCTFail("Unexpected error: \(error)") }
     }
     queue.sync { XCTAssertEqual(transport.cancellations, 1) }
+  }
+
+  func testAProviderErrorInTheFinalReplyFails() async {
+    let channel = UUID()
+    let queue = DispatchQueue(label: "hinge-read-test")
+    let transport = HingeTransportStub { transport in
+      transport.completesCancellation = false
+      transport.event?(hingeEvent(channel: channel))
+      transport.reply?(
+        SimulatorCoreDevice.dictionary([
+          "CoreDevice.error": SimulatorCoreDevice.dictionary(["domain": xpc_string_create("com.example"), "code": xpc_int64_create(9)])
+        ]))
+    }
+    do {
+      _ = try await readAngle(transport, queue: queue, channel: channel)
+      XCTFail("Expected provider error")
+    } catch {
+      guard case let SimulatorCoreDeviceError.unavailable(detail) = error else { return XCTFail("Unexpected error: \(error)") }
+      XCTAssertEqual(detail, "com.example (9)")
+    }
   }
 
   func testPeerLossWhileAwaitingCancellationFails() async {
@@ -163,9 +193,8 @@ final class SimulatorHingeReadTests: XCTestCase {
       transport.event?(hingeEvent(channel: channel))
       transport.event?(XPC_ERROR_CONNECTION_INVALID)
     }
-    let session = SimulatorHingeReadSession(transport: transport, queue: queue, channel: channel, now: { 200 })
     do {
-      _ = try await session.read(deviceID: "device", version: CoreDeviceVersion("651.13.4"))
+      _ = try await readAngle(transport, queue: queue, channel: channel)
       XCTFail("Expected connection error")
     } catch {
       guard case SimulatorCoreDeviceError.unavailable = error else { return XCTFail("Unexpected error: \(error)") }
@@ -176,10 +205,9 @@ final class SimulatorHingeReadTests: XCTestCase {
   func testCancellationBeforeSetupDoesNotStartRequest() async {
     let queue = DispatchQueue(label: "hinge-read-test")
     let transport = HingeTransportStub { _ in XCTFail("Cancelled request started") }
-    let session = SimulatorHingeReadSession(transport: transport, queue: queue)
     let task = Task {
       withUnsafeCurrentTask { $0?.cancel() }
-      return try await session.read(deviceID: "device", version: CoreDeviceVersion("651.13.4"))
+      return try await readAngle(transport, queue: queue)
     }
     do {
       _ = try await task.value
@@ -192,8 +220,7 @@ final class SimulatorHingeReadTests: XCTestCase {
     let started = expectation(description: "request started")
     let queue = DispatchQueue(label: "hinge-read-test")
     let transport = HingeTransportStub { _ in started.fulfill() }
-    let session = SimulatorHingeReadSession(transport: transport, queue: queue)
-    let task = Task { try await session.read(deviceID: "device", version: CoreDeviceVersion("651.13.4")) }
+    let task = Task { try await readAngle(transport, queue: queue) }
     await fulfillment(of: [started], timeout: 2)
     task.cancel()
     do {

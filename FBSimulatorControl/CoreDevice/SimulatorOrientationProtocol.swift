@@ -19,7 +19,7 @@ enum SimulatorOrientationProtocol {
     let message = try request()
     let queue = DispatchQueue(label: "com.facebook.FBSimulatorControl.orientation")
     let transport = try SimulatorCoreDeviceXPCTransport(simulator: simulator, service: service, queue: queue)
-    return try await SimulatorCoreDeviceRequest<SimulatorDeviceOrientation>(transport: transport, queue: queue)
+    return try await CoreDeviceSession<SimulatorDeviceOrientation>(transport: transport, queue: queue)
       .read(message, decode: orientation)
   }
 

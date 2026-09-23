@@ -26,7 +26,7 @@ enum SimulatorMotionCapability: String {
     let queue = DispatchQueue(label: "com.facebook.FBSimulatorControl.motion-capability")
     let transport = try SimulatorCoreDeviceXPCTransport(
       simulator: simulator, service: "com.apple.coredevice.feature.monitormotion", queue: queue)
-    try await SimulatorCoreDeviceRequest<Void>(transport: transport, queue: queue)
+    try await CoreDeviceSession<Void>(transport: transport, queue: queue)
       .read(request.encoded(), decode: requireSupported(in:))
   }
 

@@ -117,7 +117,7 @@ final class SimulatorCoreDeviceEnvelopeTests: XCTestCase {
       guard case let SimulatorCoreDeviceError.unavailable(detail) = error else { return XCTFail("Capability: \(error)") }
       XCTAssertEqual(detail, "com.example.provider (7)")
     }
-    XCTAssertThrowsError(try SimulatorHingeProtocol.checkReply(reply)) { error in
+    XCTAssertThrowsError(try CoreDeviceReply.output(of: reply)) { error in
       guard case let SimulatorCoreDeviceError.unavailable(detail) = error else { return XCTFail("Hinge: \(error)") }
       XCTAssertEqual(detail, "com.example.provider (7)")
     }
@@ -132,7 +132,7 @@ final class SimulatorCoreDeviceEnvelopeTests: XCTestCase {
     for reply in malformed {
       XCTAssertThrowsError(try SimulatorDisplayProtocol.displays(reply))
       XCTAssertThrowsError(try SimulatorMotionCapability.hingeAngle.requireSupported(in: reply))
-      XCTAssertThrowsError(try SimulatorHingeProtocol.checkReply(reply))
+      XCTAssertThrowsError(try CoreDeviceReply.output(of: reply))
     }
   }
 
@@ -144,7 +144,7 @@ final class SimulatorCoreDeviceEnvelopeTests: XCTestCase {
     XCTAssertThrowsError(try SimulatorMotionCapability.hingeAngle.requireSupported(in: reply)) { error in
       guard case SimulatorCoreDeviceError.unavailable = error else { return XCTFail("Capability: \(error)") }
     }
-    XCTAssertThrowsError(try SimulatorHingeProtocol.checkReply(reply))
+    XCTAssertThrowsError(try CoreDeviceReply.output(of: reply))
   }
 
   func testARepliedOutputThatIsNotADictionaryIsRejected() {
@@ -152,7 +152,7 @@ final class SimulatorCoreDeviceEnvelopeTests: XCTestCase {
       let reply = SimulatorCoreDevice.dictionary(["CoreDevice.output": output])
       XCTAssertThrowsError(try SimulatorDisplayProtocol.displays(reply))
       XCTAssertThrowsError(try SimulatorMotionCapability.hingeAngle.requireSupported(in: reply))
-      XCTAssertThrowsError(try SimulatorHingeProtocol.checkReply(reply))
+      XCTAssertThrowsError(try CoreDeviceReply.output(of: reply))
     }
   }
 }

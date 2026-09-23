@@ -99,10 +99,6 @@ enum SimulatorHingeProtocol {
     return latest?.angle
   }
 
-  static func checkReply(_ reply: xpc_object_t) throws {
-    _ = try CoreDeviceReply.output(of: reply)
-  }
-
   private static func requireDictionary(_ value: xpc_object_t) throws {
     guard xpc_get_type(value) == XPC_TYPE_DICTIONARY else {
       throw SimulatorCoreDeviceError.unavailable("Motion connection closed or returned a non-dictionary value")

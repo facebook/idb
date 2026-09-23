@@ -133,7 +133,7 @@ final class SimulatorDisplayReadTests: XCTestCase {
       transport.reply?(displayReply([]))
       transport.event?(XPC_ERROR_CONNECTION_INVALID)
     }
-    let operation = SimulatorCoreDeviceRequest<[SimulatorDisplay]>(transport: transport, queue: queue)
+    let operation = CoreDeviceSession<[SimulatorDisplay]>(transport: transport, queue: queue)
     let result = try await operation.read(SimulatorCoreDevice.dictionary([:]), decode: SimulatorDisplayProtocol.displays)
     XCTAssertEqual(result.map(\.uniqueID), ["inner"])
     XCTAssertEqual(queue.sync { transport.cancellations }, 1)
@@ -145,7 +145,7 @@ final class SimulatorDisplayReadTests: XCTestCase {
       let transport = DisplayTransportStub { transport in
         if peerLoss { transport.event?(XPC_ERROR_CONNECTION_INVALID) }
       }
-      let operation = SimulatorCoreDeviceRequest<[SimulatorDisplay]>(transport: transport, queue: queue, timeout: .milliseconds(10))
+      let operation = CoreDeviceSession<[SimulatorDisplay]>(transport: transport, queue: queue, timeout: .milliseconds(10))
       do {
         _ = try await operation.read(SimulatorCoreDevice.dictionary([:]), decode: SimulatorDisplayProtocol.displays)
         XCTFail("Expected a failed snapshot")
@@ -164,7 +164,7 @@ final class SimulatorDisplayReadTests: XCTestCase {
           ])
         ]))
     }
-    let operation = SimulatorCoreDeviceRequest<[SimulatorDisplay]>(transport: transport, queue: queue)
+    let operation = CoreDeviceSession<[SimulatorDisplay]>(transport: transport, queue: queue)
     do {
       _ = try await operation.read(SimulatorCoreDevice.dictionary([:]), decode: SimulatorDisplayProtocol.displays)
       XCTFail("Expected provider failure")
@@ -175,7 +175,7 @@ final class SimulatorDisplayReadTests: XCTestCase {
   func testCancellationClosesOutstandingSnapshot() async {
     let queue = DispatchQueue(label: #function)
     let transport = DisplayTransportStub { _ in }
-    let operation = SimulatorCoreDeviceRequest<[SimulatorDisplay]>(transport: transport, queue: queue)
+    let operation = CoreDeviceSession<[SimulatorDisplay]>(transport: transport, queue: queue)
     let task = Task { try await operation.read(SimulatorCoreDevice.dictionary([:]), decode: SimulatorDisplayProtocol.displays) }
     task.cancel()
     do {
