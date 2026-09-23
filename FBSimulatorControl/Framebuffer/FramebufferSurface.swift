@@ -10,6 +10,7 @@
 @preconcurrency import FBControlCore
 import Foundation
 import IOSurface
+import os
 
 /// The seam between `Framebuffer` and the private CoreSimulator display surface. Expressed purely
 /// in public/standard types so the private, internally imported renderable protocols never leak
@@ -163,10 +164,52 @@ private final class SimDisplayRenderableSurface: FramebufferSurface {
   }
 }
 
+extension SimScreenAdapter {
+  /// `enumerateScreens` as a single awaitable, failing with `screensNotReported` if CoreSimulator has
+  /// not reported within `timeout`.
+  fileprivate func screens(timeout: TimeInterval) async throws -> [any SimScreen] {
+    try await FramebufferSurfaceLocator.reportedScreens(timeout: timeout) { report in
+      try FBObjCExceptionGuard.guarded {
+        enumerateScreens(withCompletionQueue: .global(qos: .userInitiated), completionHandler: report)
+      }
+    }.compactMap { $0 as? any SimScreen }
+  }
+}
+
 /// Locates the simulator's main-display surface among its IO ports and wraps it in a production
 /// `FramebufferSurface`. Kept separate from `Framebuffer` so that discovery, adaptation, and
 /// consumer fan-out are distinct concerns.
 enum FramebufferSurfaceLocator {
+  /// Awaits the screens a one-shot enumeration reports. `enumerate` starts the underlying call and
+  /// hands it `report`; the await ends on the first report, or with `screensNotReported` once
+  /// `timeout` has passed. Later reports are ignored, and an error thrown by `enumerate` is rethrown.
+  /// Internal, and expressed in standard types, so the deadline and the exactly-once resume can be
+  /// exercised in tests without the private CoreSimulator protocols.
+  static func reportedScreens(
+    timeout: TimeInterval,
+    enumerate: (_ report: @escaping @Sendable ([Any]) -> Void) throws -> Void
+  ) async throws -> [Any] {
+    try await withCheckedThrowingContinuation { continuation in
+      // A continuation resumes exactly once; the completion, the deadline and a start failure race
+      // to take it, and the losers find nothing.
+      let pending = OSAllocatedUnfairLock<CheckedContinuation<[Any], any Error>?>(initialState: continuation)
+      DispatchQueue.global().asyncAfter(deadline: .now() + timeout) {
+        pending.withLock { $0.take() }?.resume(throwing: SimulatorDisplayError.screensNotReported(within: timeout))
+      }
+      do {
+        try enumerate { values in
+          // SAFETY: CoreSimulator's completion is declared without `sending`, but it gives the screens
+          // up; only the awaiting task reads them afterwards.
+          // patternlint-disable-next-line swift-nonisolated-unsafe
+          nonisolated(unsafe) let values = values
+          pending.withLock { $0.take() }?.resume(returning: values)
+        }
+      } catch {
+        pending.withLock { $0.take() }?.resume(throwing: error)
+      }
+    }
+  }
+
   static func framebuffer(for display: SimulatorDisplay, simulator: Simulator) async throws -> Framebuffer {
     guard let ports = simulator.device.io?.ioPorts() else {
       throw SimulatorDisplayError.invalidResponse("No simulator IO ports")
@@ -174,16 +217,7 @@ enum FramebufferSurfaceLocator {
     var matches: [any SimScreen] = []
     for port in ports {
       guard let adapter = port.descriptor as? any SimScreenAdapter else { continue }
-      let pending = FBMutableFuture<NSArray>()
-      try FBObjCExceptionGuard.guarded {
-        adapter.enumerateScreens(withCompletionQueue: .global(qos: .userInitiated)) { values in
-          pending.resolve(withResult: values as NSArray)
-        }
-      }
-      let values = try await bridgeFBFuture(
-        convertFBMutableFuture(pending).timeout(5, waitingFor: "simulator displays").retyped(FBFuture<NSArray>.self))
-      for value in values {
-        guard let screen = value as? any SimScreen else { continue }
+      for screen in try await adapter.screens(timeout: 5) {
         let identity =
           try FBObjCExceptionGuard.guarded {
             (screen.screenProperties as? any SimScreenProperties)?.uniqueId

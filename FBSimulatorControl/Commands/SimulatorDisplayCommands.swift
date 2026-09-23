@@ -41,10 +41,12 @@ public enum SimulatorDisplayError: Error, LocalizedError {
   case noActiveIntegratedDisplay
   case ambiguousActiveDisplays([String])
   case changed
+  case screensNotReported(within: TimeInterval)
 
   public var errorDescription: String? {
     switch self {
     case let .invalidResponse(detail): "Invalid simulator display response: \(detail)"
+    case let .screensNotReported(seconds): "Simulator did not report its displays within \(seconds) seconds"
     case .noActiveIntegratedDisplay: "Simulator has no active integrated display"
     case let .ambiguousActiveDisplays(ids): "Simulator has multiple active integrated displays: \(ids.joined(separator: ", "))"
     case .changed: "Simulator display changed during capture"
