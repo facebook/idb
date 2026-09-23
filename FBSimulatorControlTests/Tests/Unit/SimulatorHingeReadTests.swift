@@ -12,24 +12,29 @@ import XCTest
 
 private func hingeEvent(channel: UUID, degrees: Double = 130, timestamp: Double = 200, valid: Bool = true, unit: String = "°") -> xpc_object_t {
   let dictionary = SimulatorCoreDevice.dictionary
+  return hingeEvent(
+    channel: channel,
+    elements: [
+      dictionary([
+        "angle": dictionary([
+          "value": xpc_double_create(degrees),
+          "unit": dictionary([
+            "symbol": xpc_string_create(unit),
+            "converter": dictionary(["coefficient": xpc_double_create(1), "constant": xpc_double_create(0)]),
+          ]),
+        ]),
+        "timestamp": xpc_double_create(timestamp),
+        "isAngleValid": xpc_bool_create(valid),
+      ])
+    ])
+}
+
+private func hingeEvent(channel: UUID, elements: [xpc_object_t]) -> xpc_object_t {
+  let dictionary = SimulatorCoreDevice.dictionary
   return dictionary([
     "XPCSideChannel.uniqueIdentifier": xpc_string_create(channel.uuidString),
     "CoreDevice.XPCMessageKey.sideChannelStatus": dictionary([
-      "pushing": dictionary([
-        "elements": SimulatorCoreDevice.array([
-          dictionary([
-            "angle": dictionary([
-              "value": xpc_double_create(degrees),
-              "unit": dictionary([
-                "symbol": xpc_string_create(unit),
-                "converter": dictionary(["coefficient": xpc_double_create(1), "constant": xpc_double_create(0)]),
-              ]),
-            ]),
-            "timestamp": xpc_double_create(timestamp),
-            "isAngleValid": xpc_bool_create(valid),
-          ])
-        ])
-      ])
+      "pushing": dictionary(["elements": SimulatorCoreDevice.array(elements)])
     ]),
   ])
 }
@@ -104,6 +109,15 @@ final class SimulatorHingeReadTests: XCTestCase {
     let channel = UUID()
     XCTAssertNil(try SimulatorHingeProtocol.sample(hingeEvent(channel: channel, timestamp: 198), channel: channel, notBefore: 199, now: 201))
     XCTAssertNil(try SimulatorHingeProtocol.sample(hingeEvent(channel: channel, valid: false), channel: channel, notBefore: 199, now: 201))
+  }
+
+  func testSkippedSamplesAreNotRead() throws {
+    let channel = UUID()
+    let junk = xpc_string_create("junk")
+    let invalid = SimulatorCoreDevice.dictionary(["isAngleValid": xpc_bool_create(false), "timestamp": junk, "angle": junk])
+    let stale = SimulatorCoreDevice.dictionary(["isAngleValid": xpc_bool_create(true), "timestamp": xpc_double_create(198), "angle": junk])
+    let event = hingeEvent(channel: channel, elements: [invalid, stale])
+    XCTAssertNil(try SimulatorHingeProtocol.sample(event, channel: channel, notBefore: 199, now: 201))
   }
 
   func testRejectsBadValuesAndFutureTimestamps() {
