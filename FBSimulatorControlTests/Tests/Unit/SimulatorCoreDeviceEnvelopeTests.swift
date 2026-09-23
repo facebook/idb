@@ -110,7 +110,7 @@ final class SimulatorCoreDeviceEnvelopeTests: XCTestCase {
       guard case let SimulatorCoreDeviceError.unavailable(detail) = error else { return XCTFail("Display: \(error)") }
       XCTAssertEqual(detail, "com.example.provider (7)")
     }
-    XCTAssertThrowsError(try SimulatorDisplayProtocol.captureDisplays(reply)) { error in
+    XCTAssertThrowsError(try SimulatorDisplayProtocol.snapshot(reply)) { error in
       guard case SimulatorCoreDeviceError.unavailable = error else { return XCTFail("Capture: \(error)") }
     }
     XCTAssertThrowsError(try SimulatorMotionCapability.hingeAngle.requireSupported(in: reply)) { error in

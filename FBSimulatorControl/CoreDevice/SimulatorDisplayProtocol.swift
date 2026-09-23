@@ -8,111 +8,98 @@
 import Foundation
 import XPC
 
+/// The `displayinfo` feature: what the provider reports about each display, and what a current
+/// report has to say before a display can be selected from it.
 enum SimulatorDisplayProtocol {
   static let service = "com.apple.coredevice.feature.getdisplayinfo"
   static let action = "com.apple.coredevice.action.displayinfo"
 
-  /// Older providers omit both activity and stable identity from every display.
-  static func captureDisplays(_ reply: xpc_object_t) throws -> [SimulatorDisplay]? {
-    let values = try displayValues(reply)
-    var hasCaptureFields = false
-    for index in 0..<xpc_array_get_count(values) {
-      let value = xpc_array_get_value(values, index)
-      guard xpc_get_type(value) == XPC_TYPE_DICTIONARY else { throw SimulatorCoreDeviceError.malformed("Invalid display") }
-      hasCaptureFields = hasCaptureFields || xpc_dictionary_get_value(value, "active") != nil || xpc_dictionary_get_value(value, "uniqueId") != nil
+  /// The output as the provider sends it. Activity and stable identity are optional only because
+  /// older providers omit both from every display; see `snapshot`.
+  struct Report: Decodable {
+    struct Record: Decodable {
+      let uniqueId: String?
+      let name: String
+      let active: Bool?
+      let primary: Bool
+      let bounds: [[Double]]
+      let pointScale: Int64
+      let currentOrientation: SimulatorDisplayRotation
+      let type: [String: XPCValue]
     }
-    if !hasCaptureFields, xpc_array_get_count(values) > 0 {
-      for index in 0..<xpc_array_get_count(values) {
-        let value = xpc_array_get_value(values, index)
-        _ = try string(value, "name")
-        _ = try boolean(value, "primary")
-        _ = try rectangle(field(value, "bounds", XPC_TYPE_ARRAY))
-        let scale = xpc_int64_get_value(try field(value, "pointScale", XPC_TYPE_INT64))
-        let type = try field(value, "type", XPC_TYPE_DICTIONARY)
-        guard scale > 0, xpc_dictionary_get_count(type) == 1,
-          try SimulatorDisplayRotation(rawValue: string(value, "currentOrientation")) != nil
-        else { throw SimulatorCoreDeviceError.malformed("Invalid legacy display") }
-      }
-      return nil
-    }
-    return try displays(reply)
+
+    let current: Bool
+    let displays: [Record]
   }
 
-  private static func displayValues(_ reply: xpc_object_t) throws -> xpc_object_t {
-    let output = try CoreDeviceReply.output(of: reply)
-    guard try boolean(output, "current") else { throw SimulatorCoreDeviceError.malformed("Report is not current") }
-    let values = try field(output, "displays", XPC_TYPE_ARRAY)
-    guard xpc_array_get_count(values) <= 32 else { throw SimulatorCoreDeviceError.malformed("Too many displays") }
-    return values
+  /// Whether a report can select a display, or comes from a provider that cannot say which is active.
+  enum Snapshot: Equatable {
+    case displays([SimulatorDisplay])
+    case legacyProvider
   }
 
+  private static let maximumDisplays = 32
+  private static let maximumStringLength = 1024
+
+  /// A report with identity and activity yields displays; one that omits both from every display
+  /// is a legacy provider. A report that has them on some displays but not others is malformed.
+  static func snapshot(_ reply: xpc_object_t) throws -> Snapshot {
+    let report = try validated(CoreDeviceReply.decode(Report.self, from: reply))
+    let legacy = report.displays.allSatisfy { $0.active == nil && $0.uniqueId == nil }
+    guard legacy, !report.displays.isEmpty else {
+      return .displays(try displays(in: report))
+    }
+    for record in report.displays {
+      _ = try validated(record)
+    }
+    return .legacyProvider
+  }
+
+  /// A current report with explicit per-display activity and identity.
   static func displays(_ reply: xpc_object_t) throws -> [SimulatorDisplay] {
-    let values = try displayValues(reply)
+    try displays(in: validated(CoreDeviceReply.decode(Report.self, from: reply)))
+  }
+
+  private static func validated(_ report: Report) throws -> Report {
+    guard report.current else { throw SimulatorCoreDeviceError.malformed("Report is not current") }
+    guard report.displays.count <= maximumDisplays else { throw SimulatorCoreDeviceError.malformed("Too many displays") }
+    return report
+  }
+
+  private static func displays(in report: Report) throws -> [SimulatorDisplay] {
     var identifiers: Set<String> = []
     var displays: [SimulatorDisplay] = []
-    for index in 0..<xpc_array_get_count(values) {
-      let value = xpc_array_get_value(values, index)
-      let id = try string(value, "uniqueId")
-      guard !id.isEmpty, identifiers.insert(id).inserted else { throw SimulatorCoreDeviceError.malformed("Duplicate or empty display identity") }
-      let bounds = try rectangle(field(value, "bounds", XPC_TYPE_ARRAY))
-      let active = try boolean(value, "active")
-      guard !active || !bounds.isEmpty else { throw SimulatorCoreDeviceError.malformed("Active display has empty bounds") }
-      let scale = xpc_int64_get_value(try field(value, "pointScale", XPC_TYPE_INT64))
-      guard scale > 0 else { throw SimulatorCoreDeviceError.malformed("Invalid display scale") }
-      guard let rotation = try SimulatorDisplayRotation(rawValue: string(value, "currentOrientation")) else {
-        throw SimulatorCoreDeviceError.malformed("Unknown display rotation")
+    for record in report.displays {
+      let validated = try validated(record)
+      guard let id = record.uniqueId, !id.isEmpty, id.utf8.count <= maximumStringLength, identifiers.insert(id).inserted else {
+        throw SimulatorCoreDeviceError.malformed("Duplicate or empty display identity")
       }
-      let type = try field(value, "type", XPC_TYPE_DICTIONARY)
-      guard xpc_dictionary_get_count(type) == 1 else { throw SimulatorCoreDeviceError.malformed("Invalid display type") }
-      let integrated = xpc_dictionary_get_value(type, "integrated") != nil
+      guard let active = record.active else { throw SimulatorCoreDeviceError.malformed("Display has no activity") }
+      guard !active || !validated.bounds.isEmpty else { throw SimulatorCoreDeviceError.malformed("Active display has empty bounds") }
       displays.append(
         SimulatorDisplay(
-          uniqueID: id, name: try string(value, "name"), isActive: active,
-          isPrimary: try boolean(value, "primary"), isIntegrated: integrated,
-          bounds: bounds, scale: Double(scale), rotation: rotation))
+          uniqueID: id, name: record.name, isActive: active, isPrimary: record.primary, isIntegrated: validated.integrated,
+          bounds: validated.bounds, scale: Double(record.pointScale), rotation: record.currentOrientation))
     }
     return displays.sorted { $0.uniqueID < $1.uniqueID }
   }
 
-  private static func field(_ object: xpc_object_t, _ key: String, _ type: xpc_type_t) throws -> xpc_object_t {
-    guard xpc_get_type(object) == XPC_TYPE_DICTIONARY,
-      let value = xpc_dictionary_get_value(object, key), xpc_get_type(value) == type
-    else { throw SimulatorCoreDeviceError.malformed(key) }
-    return value
+  /// The fields every record has to satisfy, legacy or not.
+  private static func validated(_ record: Report.Record) throws -> (bounds: CGRect, integrated: Bool) {
+    guard record.name.utf8.count <= maximumStringLength else { throw SimulatorCoreDeviceError.malformed("name") }
+    guard record.pointScale > 0 else { throw SimulatorCoreDeviceError.malformed("Invalid display scale") }
+    guard record.type.count == 1 else { throw SimulatorCoreDeviceError.malformed("Invalid display type") }
+    return (try rectangle(record.bounds), record.type["integrated"] != nil)
   }
 
-  private static func boolean(_ object: xpc_object_t, _ key: String) throws -> Bool {
-    xpc_bool_get_value(try field(object, key, XPC_TYPE_BOOL))
-  }
-
-  private static func string(_ object: xpc_object_t, _ key: String) throws -> String {
-    let value = try field(object, key, XPC_TYPE_STRING)
-    guard xpc_string_get_length(value) <= 1024, let bytes = xpc_string_get_string_ptr(value) else {
-      throw SimulatorCoreDeviceError.malformed(key)
+  /// Bounds arrive as `[[x, y], [width, height]]`.
+  private static func rectangle(_ value: [[Double]]) throws -> CGRect {
+    guard value.count == 2, value[0].count == 2, value[1].count == 2 else {
+      throw SimulatorCoreDeviceError.malformed("Invalid bounds")
     }
-    return String(cString: bytes)
-  }
-
-  private static func pair(_ value: xpc_object_t) throws -> (Double, Double) {
-    guard xpc_get_type(value) == XPC_TYPE_ARRAY, xpc_array_get_count(value) == 2 else {
-      throw SimulatorCoreDeviceError.malformed("Invalid coordinate pair")
-    }
-    let first = xpc_array_get_value(value, 0)
-    let second = xpc_array_get_value(value, 1)
-    guard xpc_get_type(first) == XPC_TYPE_DOUBLE, xpc_get_type(second) == XPC_TYPE_DOUBLE else {
-      throw SimulatorCoreDeviceError.malformed("Non-double coordinate")
-    }
-    let x = xpc_double_get_value(first)
-    let y = xpc_double_get_value(second)
-    guard x.isFinite, y.isFinite else { throw SimulatorCoreDeviceError.malformed("Non-finite coordinate") }
-    return (x, y)
-  }
-
-  private static func rectangle(_ value: xpc_object_t) throws -> CGRect {
-    guard xpc_array_get_count(value) == 2 else { throw SimulatorCoreDeviceError.malformed("Invalid bounds") }
-    let origin = try pair(xpc_array_get_value(value, 0))
-    let size = try pair(xpc_array_get_value(value, 1))
-    guard size.0 >= 0, size.1 >= 0 else { throw SimulatorCoreDeviceError.malformed("Negative size") }
-    return CGRect(x: origin.0, y: origin.1, width: size.0, height: size.1)
+    let (x, y, width, height) = (value[0][0], value[0][1], value[1][0], value[1][1])
+    guard [x, y, width, height].allSatisfy(\.isFinite) else { throw SimulatorCoreDeviceError.malformed("Non-finite coordinate") }
+    guard width >= 0, height >= 0 else { throw SimulatorCoreDeviceError.malformed("Negative size") }
+    return CGRect(x: x, y: y, width: width, height: height)
   }
 }

@@ -55,28 +55,43 @@ final class SimulatorDisplayReadTests: XCTestCase {
     let value = displayValue(id: "legacy", active: true)
     xpc_dictionary_set_value(value, "active", nil)
     xpc_dictionary_set_value(value, "uniqueId", nil)
-    XCTAssertNil(try SimulatorDisplayProtocol.captureDisplays(displayReply([value])))
+    XCTAssertEqual(try SimulatorDisplayProtocol.snapshot(displayReply([value])), .legacyProvider)
     XCTAssertThrowsError(try SimulatorDisplayProtocol.displays(displayReply([value])))
-    XCTAssertThrowsError(try SimulatorDisplayProtocol.captureDisplays(displayReply([value], current: false)))
+    XCTAssertThrowsError(try SimulatorDisplayProtocol.snapshot(displayReply([value], current: false)))
+    // A legacy record is still held to the rest of the shape.
+    xpc_dictionary_set_int64(value, "pointScale", 0)
+    XCTAssertThrowsError(try SimulatorDisplayProtocol.snapshot(displayReply([value])))
   }
 
   func testPartialOrMalformedCaptureCapabilityDoesNotFallBack() {
-    XCTAssertThrowsError(try SimulatorDisplayProtocol.captureDisplays(displayReply([SimulatorCoreDevice.dictionary([:])])))
+    XCTAssertThrowsError(try SimulatorDisplayProtocol.snapshot(displayReply([SimulatorCoreDevice.dictionary([:])])))
     let partial = displayValue(id: "inner", active: true)
     xpc_dictionary_set_value(partial, "active", nil)
-    XCTAssertThrowsError(try SimulatorDisplayProtocol.captureDisplays(displayReply([partial])))
+    XCTAssertThrowsError(try SimulatorDisplayProtocol.snapshot(displayReply([partial])))
     let malformed = displayValue(id: "inner", active: true)
     xpc_dictionary_set_string(malformed, "active", "true")
-    XCTAssertThrowsError(try SimulatorDisplayProtocol.captureDisplays(displayReply([malformed])))
+    XCTAssertThrowsError(try SimulatorDisplayProtocol.snapshot(displayReply([malformed])))
     let legacy = displayValue(id: "legacy", active: true)
     xpc_dictionary_set_value(legacy, "active", nil)
     xpc_dictionary_set_value(legacy, "uniqueId", nil)
-    XCTAssertThrowsError(try SimulatorDisplayProtocol.captureDisplays(displayReply([displayValue(id: "inner", active: true), legacy])))
+    XCTAssertThrowsError(try SimulatorDisplayProtocol.snapshot(displayReply([displayValue(id: "inner", active: true), legacy])))
   }
 
   func testEmptyCurrentReportDoesNotFallBack() throws {
-    let displays = try XCTUnwrap(SimulatorDisplayProtocol.captureDisplays(displayReply([])))
+    guard case let .displays(displays) = try SimulatorDisplayProtocol.snapshot(displayReply([])) else {
+      return XCTFail("An empty current report is not a legacy provider")
+    }
     XCTAssertThrowsError(try SimulatorDisplayCommands.activeIntegratedDisplay(in: displays))
+  }
+
+  func testDisplayStringsAreBounded() {
+    let long = String(repeating: "x", count: 1025)
+    for key in ["uniqueId", "name"] {
+      let value = displayValue(id: "inner", active: true)
+      xpc_dictionary_set_string(value, key, long)
+      XCTAssertThrowsError(try SimulatorDisplayProtocol.displays(displayReply([value])), key)
+    }
+    XCTAssertThrowsError(try SimulatorDisplayProtocol.displays(displayReply([displayValue(id: "", active: true)])))
   }
 
   func testExplicitActivitySelectsInnerDespiteNonemptyPrimaryBounds() throws {

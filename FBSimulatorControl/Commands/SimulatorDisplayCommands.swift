@@ -8,7 +8,7 @@
 import Foundation
 import XPC
 
-public enum SimulatorDisplayRotation: String, Sendable {
+public enum SimulatorDisplayRotation: String, Sendable, Decodable {
   case upright = "rot0"
   case clockwise = "rot90"
   case upsideDown = "rot180"
@@ -76,8 +76,10 @@ public struct SimulatorDisplayCommands {
   /// Returns nil only when the provider lacks the capability needed to select a display.
   func activeIntegratedDisplayIfSupported() async throws -> SimulatorDisplay? {
     do {
-      guard let displays = try await read(decode: SimulatorDisplayProtocol.captureDisplays) else { return nil }
-      return try Self.activeIntegratedDisplay(in: displays)
+      switch try await read(decode: SimulatorDisplayProtocol.snapshot) {
+      case let .displays(displays): return try Self.activeIntegratedDisplay(in: displays)
+      case .legacyProvider: return nil
+      }
     } catch SimulatorCoreDeviceError.unsupported(_) {
       return nil
     }
