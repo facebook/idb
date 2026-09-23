@@ -254,6 +254,10 @@ extension Simulator {
     commandCache.resolve { SimulatorLifecycleCommands.commands(with: self) }
   }
 
+  public var hid: SimulatorHIDCommands {
+    commandCache.resolve { SimulatorHIDCommands.commands(with: self) }
+  }
+
   public var displays: SimulatorDisplayCommands {
     SimulatorDisplayCommands.commands(with: self)
   }

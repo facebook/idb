@@ -826,7 +826,7 @@ public final class IDBCommandExecutor {
   private func connectToHID() async throws -> SimulatorHID {
     let simulator = try simulatorTarget()
     try SimulatorControlFrameworkLoader.xcodeFrameworks.loadPrivateFrameworks(target.logger)
-    return try await simulator.lifecycle.connectToHID()
+    return try await simulator.hid.connect()
   }
 
   private func installExtractedApp(_ extractPath: URL, makeDebuggable: Bool) async throws -> InstalledArtifact {

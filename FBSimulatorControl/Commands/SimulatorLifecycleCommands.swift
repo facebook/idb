@@ -39,7 +39,6 @@ public final class SimulatorLifecycleCommands: LifecycleCommands {
   // MARK: - Properties
 
   private weak var simulator: Simulator?
-  private var hid: SimulatorHID?
 
   // MARK: - Initializers
 
@@ -125,45 +124,11 @@ public final class SimulatorLifecycleCommands: LifecycleCommands {
     }
   }
 
-  public func disconnect(withTimeout timeout: TimeInterval, logger: (any ControlCoreLogger)?) async throws {
-    guard self.simulator != nil else {
-      throw WeakTargetError.simulator
-    }
-    let date = Date()
-    let teardownFuture =
-      fbFutureFromAsync { [self] in
-        try await terminateConnections()
-        return NSNull()
-      }
-      .timeout(timeout, waitingFor: "Simulator connections to teardown")
-      .retyped(FBFuture<NSNull>.self)
-    try await bridgeFBFutureVoid(teardownFuture)
-    logger?.debug().log("Simulator connections torn down in \(Date().timeIntervalSince(date)) seconds")
-  }
-
-  private func terminateConnections() async throws {
-    let hid = self.hid
-    self.hid = nil
-    await hid?.close()
-  }
-
   public func connectToFramebuffer() async throws -> Framebuffer {
     guard let simulator = self.simulator else {
       throw WeakTargetError.simulator
     }
     return try Framebuffer.mainScreenSurface(for: simulator, logger: simulator.logger)
-  }
-
-  public func connectToHID() async throws -> SimulatorHID {
-    if let hid = self.hid {
-      return hid
-    }
-    guard let simulator = self.simulator else {
-      throw WeakTargetError.simulator
-    }
-    let hid = try await SimulatorHID(for: simulator)
-    self.hid = hid
-    return hid
   }
 
   public func open(_ url: URL) async throws {

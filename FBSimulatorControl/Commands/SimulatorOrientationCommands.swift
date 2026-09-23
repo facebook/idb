@@ -65,7 +65,7 @@ public struct SimulatorOrientationCommands {
   /// Sets physical device orientation using the same landscape convention as `current()`.
   public func setOrientation(_ orientation: SimulatorDeviceOrientation) async throws {
     let hidOrientation = try orientation.hidOrientation
-    try await simulator.lifecycle.connectToHID().sendOrientation(hidOrientation, legacyPurpleEncoding: false)
+    try await simulator.hid.connect().sendOrientation(hidOrientation, legacyPurpleEncoding: false)
   }
 
   public func current() async throws -> SimulatorDeviceOrientation {

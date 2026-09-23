@@ -47,9 +47,9 @@ final class SimulatorNotificationUpdateStrategy: @unchecked Sendable {
     guard let simulator = set.simulator(withUDID: device.udid.uuidString) else {
       return
     }
-    _ = fbFutureFromAsync {
-      try await simulator.lifecycle.disconnect(withTimeout: ControlCoreGlobalConfiguration.regularTimeout, logger: simulator.logger)
-      return NSNull()
+    // The notification must not wait on the teardown.
+    Task {
+      await simulator.hid.disconnect()
     }
     if let simulatorSet = simulator.set {
       set.delegate?.targetUpdated(simulator, in: simulatorSet)
