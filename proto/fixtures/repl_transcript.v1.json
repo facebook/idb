@@ -1,0 +1,29 @@
+{
+  "version": 1,
+  "scope": "swift-protobuf-wire-contract",
+  "steps": [
+    {
+      "kind": "Start",
+      "protobuf_base64": "CjQKE0ZpeHR1cmVUZXN0cy54Y3Rlc3QQASobL3RtcC9pZGItcmVwbC1maXh0dXJlLXByb2Jl"
+    },
+    {
+      "kind": "Ready",
+      "protobuf_base64": "CkIKBmlwaG9uZRIfCgNJREISGHB1YmxpYyBzdHJ1Y3QgRml4dHVyZSB7fSIEMjYuMDABOg9maXh0dXJlLXNlc3Npb24="
+    },
+    {
+      "kind": "Execute",
+      "protobuf_base64": "EhAKAsr+EgppZGJfcmVwbF8w"
+    },
+    {
+      "kind": "Result",
+      "protobuf_base64": "Em8IARICb2sYASJlCjMvdG1wL2lkYi1yZXBsLWFydGlmYWN0cy9maXh0dXJlLXNlc3Npb24vY2FwdHVyZS5wbmcSLmlkYi1yZXBsLWFydGlmYWN0cy9maXh0dXJlLXNlc3Npb24vY2FwdHVyZS5wbmc="
+    },
+    {
+      "kind": "client_half_close"
+    },
+    {
+      "kind": "Stopped",
+      "protobuf_base64": "GhQKElJFUEwgc2Vzc2lvbiBlbmRlZA=="
+    }
+  ]
+}
