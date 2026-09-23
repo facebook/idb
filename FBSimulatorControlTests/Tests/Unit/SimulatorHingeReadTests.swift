@@ -67,7 +67,7 @@ private final class HingeTransportStub: SimulatorCoreDeviceTransport, @unchecked
 final class SimulatorHingeReadTests: XCTestCase {
   func testRequestUsesNativeUUIDAndUnsignedDurationLowBits() throws {
     let channel = UUID()
-    let request = try SimulatorHingeProtocol.request(deviceID: "device", version: "651.13.4", channel: channel)
+    let request = try SimulatorHingeProtocol.request(deviceID: "device", version: CoreDeviceVersion("651.13.4"), channel: channel)
     let version = try XCTUnwrap(xpc_dictionary_get_dictionary(request, "CoreDevice.coreDeviceVersion"))
     let components = try XCTUnwrap(xpc_dictionary_get_array(version, "components"))
     XCTAssertEqual(xpc_array_get_count(components), 3)
@@ -82,7 +82,7 @@ final class SimulatorHingeReadTests: XCTestCase {
     XCTAssertEqual(xpc_get_type(xpc_array_get_value(interval, 0)), XPC_TYPE_INT64)
     XCTAssertEqual(xpc_get_type(xpc_array_get_value(interval, 1)), XPC_TYPE_UINT64)
     XCTAssertEqual(xpc_array_get_uint64(interval, 1), 100_000_000_000_000_000)
-    XCTAssertThrowsError(try SimulatorHingeProtocol.request(deviceID: "device", version: "651..4", channel: channel))
+    XCTAssertThrowsError(try CoreDeviceVersion("651..4"))
   }
 
   func testAcceptsMeasuredIntermediateAngle() throws {
@@ -117,7 +117,7 @@ final class SimulatorHingeReadTests: XCTestCase {
       transport.complete()
     }
     let session = SimulatorHingeReadSession(transport: transport, queue: queue, channel: channel, now: { 200 })
-    let angle = try await session.read(deviceID: "device", version: "651.13.4")
+    let angle = try await session.read(deviceID: "device", version: CoreDeviceVersion("651.13.4"))
     XCTAssertEqual(angle.degrees, 0)
     queue.sync {
       XCTAssertEqual(transport.acknowledgements, [false, true])
@@ -134,7 +134,7 @@ final class SimulatorHingeReadTests: XCTestCase {
     }
     let session = SimulatorHingeReadSession(transport: transport, queue: queue, timeout: .milliseconds(10), channel: channel, now: { 200 })
     do {
-      _ = try await session.read(deviceID: "device", version: "651.13.4")
+      _ = try await session.read(deviceID: "device", version: CoreDeviceVersion("651.13.4"))
       XCTFail("Expected timeout awaiting provider cancellation")
     } catch {
       guard case SimulatorCoreDeviceError.timedOut = error else { return XCTFail("Unexpected error: \(error)") }
@@ -147,7 +147,7 @@ final class SimulatorHingeReadTests: XCTestCase {
     let transport = HingeTransportStub { $0.complete() }
     let session = SimulatorHingeReadSession(transport: transport, queue: queue)
     do {
-      _ = try await session.read(deviceID: "device", version: "651.13.4")
+      _ = try await session.read(deviceID: "device", version: CoreDeviceVersion("651.13.4"))
       XCTFail("Expected missing sample error")
     } catch {
       guard case SimulatorCoreDeviceError.unavailable = error else { return XCTFail("Unexpected error: \(error)") }
@@ -165,7 +165,7 @@ final class SimulatorHingeReadTests: XCTestCase {
     }
     let session = SimulatorHingeReadSession(transport: transport, queue: queue, channel: channel, now: { 200 })
     do {
-      _ = try await session.read(deviceID: "device", version: "651.13.4")
+      _ = try await session.read(deviceID: "device", version: CoreDeviceVersion("651.13.4"))
       XCTFail("Expected connection error")
     } catch {
       guard case SimulatorCoreDeviceError.unavailable = error else { return XCTFail("Unexpected error: \(error)") }
@@ -179,7 +179,7 @@ final class SimulatorHingeReadTests: XCTestCase {
     let session = SimulatorHingeReadSession(transport: transport, queue: queue)
     let task = Task {
       withUnsafeCurrentTask { $0?.cancel() }
-      return try await session.read(deviceID: "device", version: "651.13.4")
+      return try await session.read(deviceID: "device", version: CoreDeviceVersion("651.13.4"))
     }
     do {
       _ = try await task.value
@@ -193,7 +193,7 @@ final class SimulatorHingeReadTests: XCTestCase {
     let queue = DispatchQueue(label: "hinge-read-test")
     let transport = HingeTransportStub { _ in started.fulfill() }
     let session = SimulatorHingeReadSession(transport: transport, queue: queue)
-    let task = Task { try await session.read(deviceID: "device", version: "651.13.4") }
+    let task = Task { try await session.read(deviceID: "device", version: CoreDeviceVersion("651.13.4")) }
     await fulfillment(of: [started], timeout: 2)
     task.cancel()
     do {

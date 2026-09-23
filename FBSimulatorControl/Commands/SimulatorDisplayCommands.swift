@@ -86,14 +86,14 @@ public struct SimulatorDisplayCommands {
   }
 
   private func read<Response: Sendable>(decode: @escaping @Sendable (xpc_object_t) throws -> Response) async throws -> Response {
-    let request = try SimulatorCoreDevice.request(
+    let request = try CoreDeviceRequest(
       action: "com.apple.coredevice.action.displayinfo", deviceID: simulator.udid,
-      version: SimulatorCoreDevice.installedVersion(), input: SimulatorCoreDevice.dictionary([:]))
+      version: CoreDeviceVersion.installed(), input: CoreDeviceEmptyInput())
     let queue = DispatchQueue(label: "com.facebook.FBSimulatorControl.display-info")
     let transport = try SimulatorCoreDeviceXPCTransport(
       simulator: simulator, service: "com.apple.coredevice.feature.getdisplayinfo", queue: queue)
     return try await SimulatorCoreDeviceRequest<Response>(transport: transport, queue: queue)
-      .read(request, decode: decode)
+      .read(request.encoded(), decode: decode)
   }
 
   public func activeIntegratedDisplay() async throws -> SimulatorDisplay {

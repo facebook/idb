@@ -11,26 +11,60 @@ import XPC
 enum SimulatorHingeProtocol {
   static let service = "com.apple.coredevice.feature.monitormotion"
 
-  static func request(deviceID: String, version: String, channel: UUID) throws -> xpc_object_t {
-    let dictionary = SimulatorCoreDevice.dictionary
-    var uuid = channel.uuid
-    let identifier = withUnsafePointer(to: &uuid) {
-      $0.withMemoryRebound(to: UInt8.self, capacity: 16) { xpc_uuid_create($0) }
+  /// A CoreDevice duration: signed high bits and unsigned low bits, in attoseconds.
+  struct Duration: Encodable {
+    let attoseconds: UInt64
+
+    static let hundredMilliseconds = Duration(attoseconds: 100_000_000_000_000_000)
+
+    func encode(to encoder: Encoder) throws {
+      var container = encoder.unkeyedContainer()
+      try container.encode(Int64(0))
+      try container.encode(attoseconds)
     }
-    let unit = dictionary([
-      "symbol": xpc_string_create("°"),
-      "converter": dictionary(["coefficient": xpc_double_create(1), "constant": xpc_double_create(0)]),
-    ])
-    return try SimulatorCoreDevice.request(
+  }
+
+  /// A CoreDevice measurement unit; the hinge angle is requested in plain degrees.
+  struct Unit: Encodable {
+    struct Converter: Encodable {
+      let coefficient: Double
+      let constant: Double
+    }
+    let symbol: String
+    let converter: Converter
+
+    static let degrees = Unit(symbol: "°", converter: Converter(coefficient: 1, constant: 0))
+  }
+
+  struct Measurement: Encodable {
+    let value: Double
+    let unit: Unit
+  }
+
+  /// The input of `streamhingeangle`: how often and on what change to push samples, and the side
+  /// channel they are pushed on.
+  struct StreamInput: Encodable {
+    struct ActualInput: Encodable {
+      let changeThreshold: Measurement
+      let updateInterval: Duration
+    }
+    struct StreamProxy: Encodable {
+      let sideChannel: UUID
+    }
+    let actualInput: ActualInput
+    let streamProxy: StreamProxy
+
+    init(channel: UUID) {
+      actualInput = ActualInput(changeThreshold: Measurement(value: 0.1, unit: .degrees), updateInterval: .hundredMilliseconds)
+      streamProxy = StreamProxy(sideChannel: channel)
+    }
+  }
+
+  static func request(deviceID: String, version: CoreDeviceVersion, channel: UUID) throws -> xpc_object_t {
+    try CoreDeviceRequest(
       action: "com.apple.coredevice.action.streamhingeangle", deviceID: deviceID, version: version,
-      input: dictionary([
-        "actualInput": dictionary([
-          "changeThreshold": dictionary(["value": xpc_double_create(0.1), "unit": unit]),
-          // Duration encodes signed high bits and unsigned low bits, in attoseconds (100ms).
-          "updateInterval": SimulatorCoreDevice.array([xpc_int64_create(0), xpc_uint64_create(100_000_000_000_000_000)]),
-        ]),
-        "streamProxy": dictionary(["sideChannel": identifier]),
-      ]))
+      input: StreamInput(channel: channel)
+    ).encoded()
   }
 
   static func sample(
@@ -66,14 +100,7 @@ enum SimulatorHingeProtocol {
   }
 
   static func checkReply(_ reply: xpc_object_t) throws {
-    try requireDictionary(reply)
-    if let error = xpc_dictionary_get_value(reply, "CoreDevice.error") {
-      try requireDictionary(error)
-      let domain = try string(error, "domain")
-      let code = xpc_int64_get_value(try field(error, "code", XPC_TYPE_INT64))
-      throw SimulatorCoreDeviceError.unavailable("\(domain) (\(code))")
-    }
-    _ = try field(reply, "CoreDevice.output", XPC_TYPE_DICTIONARY)
+    _ = try CoreDeviceReply.output(of: reply)
   }
 
   private static func requireDictionary(_ value: xpc_object_t) throws {

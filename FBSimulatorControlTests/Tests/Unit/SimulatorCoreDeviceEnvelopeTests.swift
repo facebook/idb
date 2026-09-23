@@ -13,9 +13,10 @@ import XPC
 /// envelope every reply parser has to recognise.
 final class SimulatorCoreDeviceEnvelopeTests: XCTestCase {
 
-  private func request(version: String = "651.13.4", input: xpc_object_t = SimulatorCoreDevice.dictionary([:])) throws -> xpc_object_t {
-    try SimulatorCoreDevice.request(
-      action: "com.apple.coredevice.action.example", deviceID: "0000-DEVICE", version: version, input: input)
+  private func request(version: String = "651.13.4", input: some Encodable = CoreDeviceEmptyInput()) throws -> xpc_object_t {
+    try CoreDeviceRequest(
+      action: "com.apple.coredevice.action.example", deviceID: "0000-DEVICE", version: CoreDeviceVersion(version), input: input
+    ).encoded()
   }
 
   func testRequestCarriesEveryEnvelopeKeyWithItsWireType() throws {
@@ -65,8 +66,10 @@ final class SimulatorCoreDeviceEnvelopeTests: XCTestCase {
   }
 
   func testRequestPassesTheInputThrough() throws {
-    let input = SimulatorCoreDevice.dictionary(["flag": xpc_bool_create(true)])
-    let request = try request(input: input)
+    struct Input: Encodable {
+      let flag = true
+    }
+    let request = try request(input: Input())
     let carried = try XCTUnwrap(xpc_dictionary_get_value(request, "CoreDevice.input"))
     XCTAssertTrue(xpc_dictionary_get_bool(carried, "flag"))
   }

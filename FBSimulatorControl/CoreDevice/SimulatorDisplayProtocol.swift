@@ -36,15 +36,7 @@ enum SimulatorDisplayProtocol {
   }
 
   private static func displayValues(_ reply: xpc_object_t) throws -> xpc_object_t {
-    guard xpc_get_type(reply) == XPC_TYPE_DICTIONARY else {
-      throw SimulatorCoreDeviceError.malformed("Connection closed")
-    }
-    if let error = xpc_dictionary_get_value(reply, "CoreDevice.error") {
-      let domain = try string(error, "domain")
-      let code = xpc_int64_get_value(try field(error, "code", XPC_TYPE_INT64))
-      throw SimulatorCoreDeviceError.unavailable("\(domain) (\(code))")
-    }
-    let output = try field(reply, "CoreDevice.output", XPC_TYPE_DICTIONARY)
+    let output = try CoreDeviceReply.output(of: reply)
     guard try boolean(output, "current") else { throw SimulatorCoreDeviceError.malformed("Report is not current") }
     let values = try field(output, "displays", XPC_TYPE_ARRAY)
     guard xpc_array_get_count(values) <= 32 else { throw SimulatorCoreDeviceError.malformed("Too many displays") }

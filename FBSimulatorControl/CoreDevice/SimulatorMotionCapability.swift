@@ -20,30 +20,18 @@ enum SimulatorMotionCapability: String {
   }
 
   func requireSupported(on simulator: Simulator) async throws {
-    let request = try SimulatorCoreDevice.request(
+    let request = try CoreDeviceRequest(
       action: "com.apple.coredevice.action.querymotioncapabilities", deviceID: simulator.udid,
-      version: SimulatorCoreDevice.installedVersion(), input: SimulatorCoreDevice.dictionary([:]))
+      version: CoreDeviceVersion.installed(), input: CoreDeviceEmptyInput())
     let queue = DispatchQueue(label: "com.facebook.FBSimulatorControl.motion-capability")
     let transport = try SimulatorCoreDeviceXPCTransport(
       simulator: simulator, service: "com.apple.coredevice.feature.monitormotion", queue: queue)
     try await SimulatorCoreDeviceRequest<Void>(transport: transport, queue: queue)
-      .read(request, decode: requireSupported(in:))
+      .read(request.encoded(), decode: requireSupported(in:))
   }
 
   func requireSupported(in reply: xpc_object_t) throws {
-    guard xpc_get_type(reply) == XPC_TYPE_DICTIONARY else {
-      throw SimulatorCoreDeviceError.unavailable("Invalid motion capabilities reply")
-    }
-    if let error = xpc_dictionary_get_value(reply, "CoreDevice.error") {
-      guard xpc_get_type(error) == XPC_TYPE_DICTIONARY,
-        let domain = xpc_dictionary_get_value(error, "domain"), xpc_get_type(domain) == XPC_TYPE_STRING,
-        let domainString = xpc_string_get_string_ptr(domain),
-        let code = xpc_dictionary_get_value(error, "code"), xpc_get_type(code) == XPC_TYPE_INT64
-      else { throw SimulatorCoreDeviceError.unavailable("Invalid motion capabilities error") }
-      throw SimulatorCoreDeviceError.unavailable("\(String(cString: domainString)) (\(xpc_int64_get_value(code)))")
-    }
-    guard let output = xpc_dictionary_get_value(reply, "CoreDevice.output"), xpc_get_type(output) == XPC_TYPE_DICTIONARY
-    else { throw SimulatorCoreDeviceError.unavailable("Invalid motion capabilities output") }
+    let output = try CoreDeviceReply.output(of: reply)
     guard let capability = xpc_dictionary_get_value(output, rawValue) else {
       throw SimulatorCoreDeviceError.unsupported(name)
     }

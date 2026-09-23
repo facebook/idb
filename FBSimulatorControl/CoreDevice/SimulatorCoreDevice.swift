@@ -34,32 +34,18 @@ enum SimulatorCoreDeviceError: Error, LocalizedError {
 enum SimulatorCoreDevice {
   static let cancellationKey = "CoreDevice.XPCMessageKey.cancellationRequested"
 
-  static func installedVersion() throws -> String {
-    let url = URL(fileURLWithPath: "/Library/Developer/PrivateFrameworks/CoreDevice.framework")
-    guard let version = Bundle(url: url)?.object(forInfoDictionaryKey: "CFBundleVersion") as? String else {
-      throw SimulatorCoreDeviceError.unsupported("CoreDevice version metadata")
+  /// Decodes a reply object. An XPC error object means the peer went away before answering; a
+  /// decoding failure means the peer answered with something the protocol does not describe.
+  static func decode<T: Decodable>(_ type: T.Type, from object: xpc_object_t) throws -> T {
+    if xpc_get_type(object) == XPC_TYPE_ERROR {
+      let description = xpc_dictionary_get_string(object, XPC_ERROR_KEY_DESCRIPTION).map { String(cString: $0) }
+      throw SimulatorCoreDeviceError.unavailable(description ?? "Connection closed before reply")
     }
-    return version
-  }
-
-  static func request(action: String, deviceID: String, version: String, input: xpc_object_t) throws -> xpc_object_t {
-    let parts = version.split(separator: ".", omittingEmptySubsequences: false)
-    let components = parts.compactMap { UInt64($0) }
-    guard !components.isEmpty, components.count == parts.count else {
-      throw SimulatorCoreDeviceError.unavailable("Invalid CoreDevice version \(version)")
+    do {
+      return try XPCDecoder().decode(type, from: object)
+    } catch let error as DecodingError {
+      throw SimulatorCoreDeviceError(decoding: error)
     }
-    return dictionary([
-      "CoreDevice.actionIdentifier": xpc_string_create(action),
-      "CoreDevice.deviceIdentifier": xpc_string_create(deviceID),
-      "CoreDevice.invocationIdentifier": xpc_string_create(UUID().uuidString),
-      "CoreDevice.CoreDeviceDDIProtocolVersion": xpc_int64_create(1),
-      "CoreDevice.coreDeviceVersion": dictionary([
-        "components": array(components.map(xpc_uint64_create)),
-        "originalComponentsCount": xpc_int64_create(Int64(components.count)),
-        "stringValue": xpc_string_create(version),
-      ]),
-      "CoreDevice.input": input,
-    ])
   }
 
   static func dictionary(_ values: [String: xpc_object_t]) -> xpc_object_t {
@@ -95,5 +81,19 @@ extension SimulatorCoreDeviceError {
     case .connectionFailed:
       self = .unavailable("Simulator XPC connection")
     }
+  }
+
+  /// A reply the protocol does not describe, named by the path of the field that broke.
+  init(decoding error: DecodingError) {
+    let context: DecodingError.Context
+    switch error {
+    case let .typeMismatch(_, mismatch): context = mismatch
+    case let .valueNotFound(_, missing): context = missing
+    case let .keyNotFound(key, missing): context = DecodingError.Context(codingPath: missing.codingPath + [key], debugDescription: missing.debugDescription)
+    case let .dataCorrupted(corrupted): context = corrupted
+    @unknown default: context = DecodingError.Context(codingPath: [], debugDescription: "\(error)")
+    }
+    let path = context.codingPath.map(\.stringValue).joined(separator: ".")
+    self = .malformed(path.isEmpty ? context.debugDescription : "\(path): \(context.debugDescription)")
   }
 }

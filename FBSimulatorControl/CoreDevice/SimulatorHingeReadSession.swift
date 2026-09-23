@@ -35,7 +35,7 @@ final class SimulatorHingeReadSession: @unchecked Sendable {
     self.now = now
   }
 
-  func read(deviceID: String, version: String) async throws -> SimulatorHingeAngle {
+  func read(deviceID: String, version: CoreDeviceVersion) async throws -> SimulatorHingeAngle {
     try await withTaskCancellationHandler {
       try await withCheckedThrowingContinuation { continuation in
         queue.async { [self] in
