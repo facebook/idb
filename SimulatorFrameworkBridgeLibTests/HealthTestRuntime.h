@@ -21,6 +21,10 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nullable, nonatomic, copy) NSString *clearError;
 @property (nullable, nonatomic, copy) NSString *fetchError;
 @property (nonatomic, copy) NSString *omittedCompletion;
+@property (nonatomic, copy) NSString *deferredCompletion;
+- (void)install;
+- (void)uninstall;
+- (void)completePendingCallbacks;
 @property (nonatomic, copy) NSString *raisedOperation;
 @property (nonatomic, copy) NSArray<NSDictionary<NSString *, id> *> *records;
 @property (nonatomic, readonly) NSMutableArray<NSString *> *operations;

@@ -13,6 +13,10 @@
 #import <SimulatorFrameworkBridgeLib/HealthSettingsService.h>
 #import <SimulatorFrameworkBridgeLib/HealthSettingsService+Testing.h>
 
+@interface FBHealthTestRuntime ()
+@property (nonatomic, strong) NSMutableArray<void (^)(void)> *pendingCallbacks;
+@end
+
 static FBHealthTestRuntime *currentRuntime;
 
 static void raiseIfRequested(NSString *operation)
@@ -33,7 +37,9 @@ static void completeBoolean(NSString *stage, BOOL ok, NSString *message, void (^
     return;
   }
   NSError *error = testError(message);
-  if (currentRuntime.asyncCompletions) {
+  if ([currentRuntime.deferredCompletion isEqual:stage]) {
+    [currentRuntime.pendingCallbacks addObject:^{ completion(ok, error); }];
+  } else if (currentRuntime.asyncCompletions) {
     dispatch_async(dispatch_get_global_queue(QOS_CLASS_DEFAULT, 0), ^{ completion(ok, error); });
   } else {
     completion(ok, error);
@@ -187,7 +193,9 @@ static void completeBoolean(NSString *stage, BOOL ok, NSString *message, void (^
     return;
   }
   NSError *error = testError(currentRuntime.fetchError);
-  if (currentRuntime.asyncCompletions) {
+  if ([currentRuntime.deferredCompletion isEqual:@"list"]) {
+    [currentRuntime.pendingCallbacks addObject:^{ completion(records, error); }];
+  } else if (currentRuntime.asyncCompletions) {
     dispatch_async(dispatch_get_global_queue(QOS_CLASS_DEFAULT, 0), ^{ completion(records, error); });
   } else {
     completion(records, error);
@@ -208,6 +216,8 @@ static void completeBoolean(NSString *stage, BOOL ok, NSString *message, void (^
     _setOK = YES;
     _clearOK = YES;
     _omittedCompletion = @"";
+    _deferredCompletion = @"";
+    _pendingCallbacks = [NSMutableArray array];
     _raisedOperation = @"";
     _records = @[];
     _operations = [NSMutableArray array];
@@ -217,7 +227,7 @@ static void completeBoolean(NSString *stage, BOOL ok, NSString *message, void (^
   return self;
 }
 
-- (NSDictionary<NSString *, id> *)runAction:(NSString *)action bundleID:(NSString *)bundleID types:(NSArray<NSString *> *)types
+- (void)install
 {
   currentRuntime = self;
   FBHealthSetClassLookupForTesting(^Class (NSString *name) {
@@ -232,6 +242,31 @@ static void completeBoolean(NSString *stage, BOOL ok, NSString *message, void (^
     }
     return FBHealthTypeProbe.class;
   });
+}
+
+- (void)completePendingCallbacks
+{
+  NSArray<void (^)(void)> *callbacks = [self.pendingCallbacks copy];
+  [self.pendingCallbacks removeAllObjects];
+  dispatch_semaphore_t finished = dispatch_semaphore_create(0);
+  dispatch_async(dispatch_get_global_queue(QOS_CLASS_DEFAULT, 0), ^{
+    for (void (^callback)(void) in callbacks) {
+      callback();
+    }
+    dispatch_semaphore_signal(finished);
+  });
+  dispatch_semaphore_wait(finished, DISPATCH_TIME_FOREVER);
+}
+
+- (void)uninstall
+{
+  FBHealthSetClassLookupForTesting(nil);
+  currentRuntime = nil;
+}
+
+- (NSDictionary<NSString *, id> *)runAction:(NSString *)action bundleID:(NSString *)bundleID types:(NSArray<NSString *> *)types
+{
+  [self install];
   fflush(stdout);
   FILE *capture = tmpfile();
   int saved = dup(STDOUT_FILENO);
@@ -248,8 +283,7 @@ static void completeBoolean(NSString *stage, BOOL ok, NSString *message, void (^
     fflush(stdout);
     dup2(saved, STDOUT_FILENO);
     close(saved);
-    FBHealthSetClassLookupForTesting(nil);
-    currentRuntime = nil;
+    [self uninstall];
   }
   rewind(capture);
   NSMutableData *data = [NSMutableData data];

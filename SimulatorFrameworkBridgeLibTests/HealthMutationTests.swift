@@ -6,6 +6,7 @@
  */
 
 import Foundation
+@_implementationOnly import SimulatorFrameworkBridgeRuntime
 import XCTest
 
 final class HealthMutationTests: XCTestCase {
@@ -291,6 +292,59 @@ final class HealthMutationTests: XCTestCase {
         XCTAssertEqual(output, ["action": "clear", "bundleID": bundleID, "ok": false, "error": NSNull()] as NSDictionary)
       } else {
         XCTAssertEqual(output, ["action": "list", "bundleID": bundleID, "ok": true, "error": NSNull(), "records": []] as NSDictionary)
+      }
+    }
+  }
+
+  func testLateCompletionsCannotChangeReturnedResultsOrTheNextOperation() throws {
+    for stage in ["seed", "set", "clear", "list"] {
+      let runtime = runtimeWithType()
+      runtime.deferredCompletion = stage
+      runtime.seedError = "late seed"
+      runtime.setError = "late set"
+      runtime.clearError = "late clear"
+      runtime.fetchError = "late list"
+      runtime.records = [["identifier": "late record"]]
+      runtime.install()
+      defer { runtime.uninstall() }
+      let client = try XCTUnwrap(FBHealthSettingsClient.live())
+      let selection = FBHealthTypeSelection()
+      XCTAssertTrue(try selection.resolveIdentifier("step").boolValue)
+      let operation: () throws -> FBHealthOperationResult = {
+        switch stage {
+        case "seed":
+          return try client.seedAuthorization(forBundleIdentifier: self.bundleID, selection: selection)
+        case "set":
+          return try XCTUnwrap(client.setAuthorizationForBundleIdentifier(self.bundleID, selection: selection, status: 101).operation)
+        case "clear":
+          return try client.clearAuthorization(forBundleIdentifier: self.bundleID)
+        default:
+          return try client.fetchRecords(forBundleIdentifier: self.bundleID)
+        }
+      }
+      let timedOut = try operation()
+      XCTAssertFalse(timedOut.success, stage)
+      XCTAssertFalse(timedOut.hasError, stage)
+      XCTAssertTrue(try timedOut.readErrorValue() is NSNull, stage)
+      runtime.completePendingCallbacks()
+      XCTAssertFalse(timedOut.success, stage)
+      XCTAssertFalse(timedOut.hasError, stage)
+      XCTAssertTrue(try timedOut.readErrorValue() is NSNull, stage)
+      if let records = timedOut as? FBHealthRecordsResult {
+        XCTAssertTrue(try records.readRecords().isEmpty)
+      }
+      runtime.deferredCompletion = ""
+      runtime.seedError = nil
+      runtime.setError = nil
+      runtime.clearError = nil
+      runtime.fetchError = nil
+      runtime.records = [["identifier": "next record"]]
+      let next = try operation()
+      XCTAssertFalse(next.hasError, stage)
+      if let records = next as? FBHealthRecordsResult {
+        XCTAssertEqual(try records.readRecords().map { $0.identifier as? String }, ["next record"])
+      } else {
+        XCTAssertTrue(next.success, stage)
       }
     }
   }

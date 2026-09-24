@@ -113,15 +113,20 @@ static BOOL performHealthOperation(void (^operation)(void), NSError **error)
 }
 
 @interface FBHealthOperationResult ()
-@property (nonatomic, readwrite) BOOL success;
-@property (nullable, nonatomic, strong) NSError *operationError;
-- (instancetype)initPending;
+@property (nullable, nonatomic, readonly, strong) NSError *operationError;
+- (instancetype)initWithSuccess:(BOOL)success error:(nullable NSError *)error completed:(BOOL)completed;
 @end
 
 @implementation FBHealthOperationResult
-- (instancetype)initPending
+- (instancetype)initWithSuccess:(BOOL)success error:(NSError *)error completed:(BOOL)completed
 {
-  return [super init];
+  self = [super init];
+  if (self) {
+    _success = success;
+    _operationError = error;
+    _status = completed ? FBHealthCompletionStatusCompleted : FBHealthCompletionStatusTimedOut;
+  }
+  return self;
 }
 
 - (BOOL)hasError
@@ -136,6 +141,49 @@ static BOOL performHealthOperation(void (^operation)(void), NSError **error)
     return nil;
   }
   return value;
+}
+
+@end
+
+@interface FBHealthCompletion : NSObject
+- (void)completeWithResult:(FBHealthOperationResult *)result;
+- (nullable FBHealthOperationResult *)wait;
+@end
+
+@implementation FBHealthCompletion
+{
+  dispatch_semaphore_t _semaphore;
+  FBHealthOperationResult *_result;
+}
+
+- (instancetype)init
+{
+  self = [super init];
+  if (self) {
+    _semaphore = dispatch_semaphore_create(0);
+  }
+  return self;
+}
+
+- (void)completeWithResult:(FBHealthOperationResult *)result
+{
+  @synchronized(self) {
+    if (_result) {
+      return;
+    }
+    _result = result;
+  }
+  dispatch_semaphore_signal(_semaphore);
+}
+
+- (FBHealthOperationResult *)wait
+{
+  if (dispatch_semaphore_wait(_semaphore, dispatch_time(DISPATCH_TIME_NOW, 5 * NSEC_PER_SEC)) != 0) {
+    return nil;
+  }
+  @synchronized(self) {
+    return _result;
+  }
 }
 
 @end
@@ -179,10 +227,20 @@ static id readHealthRecordValue(id record, NSString *key)
 @end
 
 @interface FBHealthRecordsResult ()
-@property (nullable, nonatomic, strong) NSArray *records;
+@property (nullable, nonatomic, readonly, strong) NSArray *records;
+- (instancetype)initWithRecords:(nullable NSArray *)records error:(nullable NSError *)error completed:(BOOL)completed;
 @end
 
 @implementation FBHealthRecordsResult
+- (instancetype)initWithRecords:(NSArray *)records error:(NSError *)error completed:(BOOL)completed
+{
+  self = [super initWithSuccess:NO error:error completed:completed];
+  if (self) {
+    _records = records;
+  }
+  return self;
+}
+
 - (NSArray<FBHealthAuthorizationRecord *> *)readRecordsWithError:(NSError **)error
 {
   NSMutableArray<FBHealthAuthorizationRecord *> *values = [NSMutableArray array];
@@ -262,18 +320,16 @@ static id readHealthRecordValue(id record, NSString *key)
 
 - (FBHealthOperationResult *)seedAuthorizationForBundleIdentifier:(NSString *)bundleID selection:(FBHealthTypeSelection *)selection error:(NSError **)error
 {
-  FBHealthOperationResult *result = [[FBHealthOperationResult alloc] initPending];
+  __block FBHealthOperationResult *result = nil;
   if (!performHealthOperation(^{
-    dispatch_semaphore_t sem = dispatch_semaphore_create(0);
+    FBHealthCompletion *completion = [FBHealthCompletion new];
     [self->_authorizationStore setRequestedAuthorizationForBundleIdentifier:bundleID
                                                                  shareTypes:selection.types
                                                                   readTypes:selection.types
                                                                  completion:^(BOOL ok, NSError *_Nullable operationError) {
-                                                                   result.success = ok;
-                                                                   result.operationError = operationError;
-                                                                   dispatch_semaphore_signal(sem);
+                                                                   [completion completeWithResult:[[FBHealthOperationResult alloc] initWithSuccess:ok error:operationError completed:YES]];
                                                                  }];
-    dispatch_semaphore_wait(sem, dispatch_time(DISPATCH_TIME_NOW, 5 * NSEC_PER_SEC));
+    result = [completion wait] ?: [[FBHealthOperationResult alloc] initWithSuccess:NO error:nil completed:NO];
   }, error)) {
     return nil;
   }
@@ -288,12 +344,9 @@ static id readHealthRecordValue(id record, NSString *key)
     for (id type in selection.types) {
       statuses[type] = @(status);
     }
-    FBHealthOperationResult *result = [[FBHealthOperationResult alloc] initPending];
-    dispatch_semaphore_t sem = dispatch_semaphore_create(0);
+    FBHealthCompletion *pending = [FBHealthCompletion new];
     void (^completion)(BOOL, NSError *_Nullable) = ^(BOOL ok, NSError *_Nullable operationError) {
-      result.success = ok;
-      result.operationError = operationError;
-      dispatch_semaphore_signal(sem);
+      [pending completeWithResult:[[FBHealthOperationResult alloc] initWithSuccess:ok error:operationError completed:YES]];
     };
     if ([self->_authorizationStore respondsToSelector:@selector(setAuthorizationStatuses:authorizationModes:modeInfos:forBundleIdentifier:options:completion:)]) {
       [self->_authorizationStore setAuthorizationStatuses:statuses authorizationModes:@{} modeInfos:@{} forBundleIdentifier:bundleID options:0 completion:completion];
@@ -303,7 +356,7 @@ static id readHealthRecordValue(id record, NSString *key)
       write = [[FBHealthAuthorizationWrite alloc] initWithOperation:nil];
       return;
     }
-    dispatch_semaphore_wait(sem, dispatch_time(DISPATCH_TIME_NOW, 5 * NSEC_PER_SEC));
+    FBHealthOperationResult *result = [pending wait] ?: [[FBHealthOperationResult alloc] initWithSuccess:NO error:nil completed:NO];
     write = [[FBHealthAuthorizationWrite alloc] initWithOperation:result];
   }, error)) {
     return nil;
@@ -313,16 +366,14 @@ static id readHealthRecordValue(id record, NSString *key)
 
 - (FBHealthOperationResult *)clearAuthorizationForBundleIdentifier:(NSString *)bundleID error:(NSError **)error
 {
-  FBHealthOperationResult *result = [[FBHealthOperationResult alloc] initPending];
+  __block FBHealthOperationResult *result = nil;
   if (!performHealthOperation(^{
-    dispatch_semaphore_t sem = dispatch_semaphore_create(0);
+    FBHealthCompletion *completion = [FBHealthCompletion new];
     [self->_authorizationStore resetAuthorizationStatusForBundleIdentifier:bundleID
                                                                 completion:^(BOOL ok, NSError *_Nullable operationError) {
-                                                                  result.success = ok;
-                                                                  result.operationError = operationError;
-                                                                  dispatch_semaphore_signal(sem);
+                                                                  [completion completeWithResult:[[FBHealthOperationResult alloc] initWithSuccess:ok error:operationError completed:YES]];
                                                                 }];
-    dispatch_semaphore_wait(sem, dispatch_time(DISPATCH_TIME_NOW, 5 * NSEC_PER_SEC));
+    result = [completion wait] ?: [[FBHealthOperationResult alloc] initWithSuccess:NO error:nil completed:NO];
   }, error)) {
     return nil;
   }
@@ -331,16 +382,14 @@ static id readHealthRecordValue(id record, NSString *key)
 
 - (FBHealthRecordsResult *)fetchRecordsForBundleIdentifier:(NSString *)bundleID error:(NSError **)error
 {
-  FBHealthRecordsResult *result = [[FBHealthRecordsResult alloc] initPending];
+  __block FBHealthRecordsResult *result = nil;
   if (!performHealthOperation(^{
-    dispatch_semaphore_t sem = dispatch_semaphore_create(0);
+    FBHealthCompletion *completion = [FBHealthCompletion new];
     [self->_authorizationStore fetchAuthorizationRecordsForBundleIdentifier:bundleID
                                                                  completion:^(NSArray *_Nullable records, NSError *_Nullable operationError) {
-                                                                   result.records = records;
-                                                                   result.operationError = operationError;
-                                                                   dispatch_semaphore_signal(sem);
+                                                                   [completion completeWithResult:[[FBHealthRecordsResult alloc] initWithRecords:records error:operationError completed:YES]];
                                                                  }];
-    dispatch_semaphore_wait(sem, dispatch_time(DISPATCH_TIME_NOW, 5 * NSEC_PER_SEC));
+    result = (FBHealthRecordsResult *)[completion wait] ?: [[FBHealthRecordsResult alloc] initWithRecords:nil error:nil completed:NO];
   }, error)) {
     return nil;
   }
