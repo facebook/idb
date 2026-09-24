@@ -33,6 +33,51 @@ extension BridgeCommand {
   }
 }
 
+extension BridgeCommand {
+  /// `<service> <action>`, as the positional CLI spells it.
+  var serviceAndAction: String {
+    switch self {
+    case .clearContacts: "contacts clear"
+    case .clearPhotos: "photos clear"
+    case let .dns(command):
+      switch command {
+      case .list: "dns list"
+      case .set: "dns set"
+      case .clear: "dns clear"
+      }
+    case let .proxy(command):
+      switch command {
+      case .list: "proxy list"
+      case .set: "proxy set"
+      case .clear: "proxy clear"
+      }
+    case let .notifications(command):
+      switch command {
+      case .list: "notifications list"
+      case .approve: "notifications approve"
+      case .revoke: "notifications revoke"
+      case .delivered: "notifications delivered"
+      case .clearDelivered: "notifications clear-delivered"
+      }
+    case let .health(command):
+      switch command {
+      case .list: "health list"
+      case .clear: "health clear"
+      case .approve: "health approve"
+      case .revoke: "health revoke"
+      }
+    case let .accessibility(parameters):
+      if case let .string(verb) = parameters[BridgeAXWire.Request.verb.key] {
+        "accessibility \(verb)"
+      } else {
+        "accessibility"
+      }
+    case .ping: "ping"
+    case .shutdown: "shutdown"
+    }
+  }
+}
+
 /// Launches a copy of the guest that daemons see as a particular app.
 ///
 /// The guest is spawned by host path — `SimDevice` resolves `launchPath` against the host
@@ -147,9 +192,19 @@ extension Simulator {
   /// Executes a typed guest command; the result retains partial output when the guest fails.
   func frameworkBridge(_ command: BridgeCommand) async throws -> BridgeResult {
     let request = BridgeRequest(command: command)
-    switch command.route {
-    case let .staged(bundleIdentity): return try await SimulatorFrameworkBridgeOneshotTransport(simulator: self, bundleIdentity: bundleIdentity).send(request)
-    case .persistent: return try await frameworkBridgeTransport(scope: .shared).send(request)
+    do {
+      switch command.route {
+      case let .staged(bundleIdentity): return try await SimulatorFrameworkBridgeOneshotTransport(simulator: self, bundleIdentity: bundleIdentity).send(request)
+      case .persistent: return try await frameworkBridgeTransport(scope: .shared).send(request)
+      }
+    } catch AXBridgeError.bridgeUnavailable {
+      throw SimulatorFrameworkBridgeError.binaryMissing
+    } catch let AXBridgeError.guestFailure(reason) {
+      // The transports report in accessibility's terms because accessibility classifies these failures; other
+      // services only need the reason.
+      throw SimulatorFrameworkBridgeError.transportFailed(command: command.serviceAndAction, reason: reason)
+    } catch let error as AXBridgeError {
+      throw SimulatorFrameworkBridgeError.transportFailed(command: command.serviceAndAction, reason: error.localizedDescription)
     }
   }
 
@@ -158,7 +213,7 @@ extension Simulator {
     let result = try await frameworkBridge(command)
     let output = try [result.error, result.jsonLines].compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: "\n")
     guard result.exitCode == 0 else {
-      throw SimulatorFrameworkBridgeError.requestFailed(command: command, exitCode: result.exitCode, output: output)
+      throw SimulatorFrameworkBridgeError.commandFailed(command: command.serviceAndAction, exitCode: result.exitCode, output: output)
     }
     return output
   }

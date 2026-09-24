@@ -15,10 +15,11 @@ public enum SimulatorFrameworkBridgeError: Error, LocalizedError {
   /// The bridge binary is not present in the companion's Resources directory.
   case binaryMissing
 
-  case requestFailed(command: BridgeCommand, exitCode: Int32, output: String)
+  /// The guest ran `command`, spelled `<service> <action>`, and reported a failure.
+  case commandFailed(command: String, exitCode: Int32, output: String)
 
-  /// The bridge ran and reported a failure.
-  case serviceFailed(service: String, action: String, exitCode: Int32, stderr: String)
+  /// The guest could not be reached, or did not answer `command` with a well-formed response.
+  case transportFailed(command: String, reason: String)
 
   static func failureDetails(stderr: Data, stdout: Data) -> String {
     let details = [stderr, stdout]
@@ -32,10 +33,10 @@ public enum SimulatorFrameworkBridgeError: Error, LocalizedError {
     switch self {
     case .binaryMissing:
       return "SimulatorFrameworkBridge binary not found in the companion Resources directory"
-    case let .requestFailed(command, exitCode, output):
+    case let .commandFailed(command, exitCode, output):
       return "SimulatorFrameworkBridge \(command) failed with exit code \(exitCode): \(output.isEmpty ? "no output" : output)"
-    case let .serviceFailed(service, action, exitCode, stderr):
-      return "SimulatorFrameworkBridge \(service) \(action) failed with exit code \(exitCode): \(stderr)"
+    case let .transportFailed(command, reason):
+      return "SimulatorFrameworkBridge \(command) did not complete: \(reason)"
     }
   }
 }
@@ -61,11 +62,10 @@ extension Simulator {
       let details = SimulatorFrameworkBridgeError.failureDetails(
         stderr: output.stderr,
         stdout: output.stdout)
-      throw SimulatorFrameworkBridgeError.serviceFailed(
-        service: service,
-        action: action,
+      throw SimulatorFrameworkBridgeError.commandFailed(
+        command: "\(service) \(action)",
         exitCode: output.exitCode,
-        stderr: details)
+        output: details)
     }
     logger.log("SimulatorFrameworkBridge \(service) \(action) completed successfully")
     return String(data: output.stdout, encoding: .utf8) ?? ""

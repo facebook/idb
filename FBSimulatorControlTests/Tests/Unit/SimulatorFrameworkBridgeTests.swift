@@ -98,6 +98,22 @@ final class SimulatorFrameworkBridgeTests: XCTestCase {
     }
   }
 
+  func testCommandsAreDescribedAsTheirPositionalServiceAndAction() {
+    XCTAssertEqual(BridgeCommand.dns(.set(servers: ["1.1.1.1"])).serviceAndAction, "dns set")
+    XCTAssertEqual(BridgeCommand.notifications(.clearDelivered(bundleID: "com.apple.news")).serviceAndAction, "notifications clear-delivered")
+    XCTAssertEqual(BridgeCommand.health(.approve(bundleID: "com.apple.news", typeIDs: [])).serviceAndAction, "health approve")
+    XCTAssertEqual(BridgeCommand.accessibility(["verb": .string("describe")]).serviceAndAction, "accessibility describe")
+  }
+
+  func testFailuresNameTheCommandRatherThanTheAccessibilityReader() {
+    XCTAssertEqual(
+      SimulatorFrameworkBridgeError.commandFailed(command: "dns set", exitCode: 1, output: "").localizedDescription,
+      "SimulatorFrameworkBridge dns set failed with exit code 1: no output")
+    XCTAssertEqual(
+      SimulatorFrameworkBridgeError.transportFailed(command: "dns set", reason: "serve socket closed by peer").localizedDescription,
+      "SimulatorFrameworkBridge dns set did not complete: serve socket closed by peer")
+  }
+
   func testFailureDetailsPreserveBothStreams() {
     XCTAssertEqual(
       SimulatorFrameworkBridgeError.failureDetails(
