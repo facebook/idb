@@ -32,6 +32,13 @@ static NSString *const kAXChildren = @"XC_kAXXCAttributeChildren";
   return [[self alloc] initWithObjects:objects forKeys:keys count:4];
 }
 
++ (instancetype)attributes
+{
+  id objects[] = {@"UIApplication", @"label", @[]};
+  id<NSCopying> keys[] = {kAXElementType, kAXLabel, kAXChildren};
+  return [[self alloc] initWithObjects:objects forKeys:keys count:3];
+}
+
 - (NSUInteger)count
 {
   return _values.count;
@@ -472,6 +479,9 @@ static NSDictionary *FBAXFakeSnapshotNode(FBAXFakeElement *element,
   }
   // Children come back as element handles, exactly as the live runtime returns them — the tree walk is
   // what turns them into nested dictionaries, and covering that is the point.
+  if (self.attributeRead) {
+    return [FBAXReadOutcome read:self.attributeRead];
+  }
   NSMutableDictionary<NSString *, id> *read = [fake.attributes mutableCopy];
   read[kAXChildren] = fake.children;
   return [FBAXReadOutcome read:read];

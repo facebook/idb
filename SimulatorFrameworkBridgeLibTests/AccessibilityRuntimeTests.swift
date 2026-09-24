@@ -1828,6 +1828,29 @@ final class AccessibilityRuntimeTests: XCTestCase {
     }
   }
 
+  func testOuterAttributeContainersAreDetachedUnderTheRuntimeGuard() throws {
+    let root = FBAXFakeElement.readable("UIApplication")
+    runtime.applicationElements[NSNumber(value: kAppPid)] = root
+    let attributes = FBAXGeometryDictionaryProbeValue.attributes()
+    runtime.attributeRead = attributes
+    attributes.raises = true
+    let request: [String: Any] = ["verb": "describe", "pid": kAppPid]
+
+    assertEqualObjects(FBAXBridgeHandleRequest(request), ["ok": false, "error": "the reader raised while answering: geometry dictionary lookup failed"])
+
+    attributes.raises = false
+    attributes.lookups = 0
+    attributes.maximumSuccessfulLookups = UInt(attributes.count)
+    let response = FBAXBridgeHandleRequest(request)
+    let decoded = try XCTUnwrap(JSONSerialization.jsonObject(with: FBAXBridgeSerializeResponse(response)) as? [String: Any])
+    assertEqualObjects(decoded["ok"], true)
+    assertEqualObjects(axValue(decoded["tree"], kAXElementType), "UIApplication")
+    assertEqualObjects(axValue(decoded["tree"], kAXLabel), "label")
+    XCTAssertEqual(attributes.lookups, attributes.maximumSuccessfulLookups)
+    runtime.attributeRead = nil
+    assertEqualObjects(axValue(FBAXBridgeHandleRequest(request), "ok"), true)
+  }
+
   func testGeometryAccessorExceptionsAreContained() {
     let root = FBAXFakeElement.readable("UIApplication")
     runtime.applicationElements[NSNumber(value: kAppPid)] = root

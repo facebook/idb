@@ -16,6 +16,7 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic) NSUInteger lookups;
 @property (nonatomic) NSUInteger maximumSuccessfulLookups;
 + (instancetype)geometry;
++ (instancetype)attributes;
 @end
 
 /** Exercises CoreGraphics dictionary access wholly inside an Objective-C exception guard. */
@@ -109,6 +110,8 @@ NSDictionary<NSString *, id> *FBAXGeometryDictionaryProbe(BOOL rectangle, BOOL r
  * rather than only what came back.
  */
 @interface FBAXFakeRuntime : NSObject <FBAXRuntime>
+
+@property (nullable, nonatomic, strong) FBAXGeometryDictionaryProbeValue *attributeRead;
 
 /** The named interaction to raise from; nil disables injection. */
 @property (nullable, nonatomic, copy) NSString *raiseOnOperation;

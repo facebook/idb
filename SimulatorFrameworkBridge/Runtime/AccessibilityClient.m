@@ -75,7 +75,13 @@ static void FBAXClientException(NSException *exception, NSError **error)
   self = [super init];
   if (self) {
     _status = outcome.status;
-    _attributes = [outcome.attributes copy];
+    if (outcome.attributes) {
+      NSMutableDictionary *attributes = [NSMutableDictionary dictionary];
+      for (id key in outcome.attributes) {
+        attributes[key] = outcome.attributes[key];
+      }
+      _attributes = [attributes copy];
+    }
     _error = outcome.error;
   }
   return self;
