@@ -1791,6 +1791,123 @@ class BinaryPathTests(unittest.IsolatedAsyncioTestCase):
             await self.resolve(absent)
 
 
+class GuestRPCLifecycleTests(unittest.IsolatedAsyncioTestCase):
+    def setUp(self) -> None:
+        self.process = mock.Mock(spec=asyncio.subprocess.Process)
+        self.process.returncode = None
+        self.process.wait = mock.AsyncMock(side_effect=self.reap)
+
+        async def create_process(*args, **kwargs):
+            socket_path = Path(args[args.index("serve") + 1])
+            self.addCleanup(shutil.rmtree, socket_path.parent, ignore_errors=True)
+            self.addCleanup(kwargs["stdout"].close)
+            self.addCleanup(kwargs["stderr"].close)
+            return self.process
+
+        self.create = self.enterContext(
+            mock.patch.object(
+                asyncio, "create_subprocess_exec", side_effect=create_process
+            )
+        )
+        self.connect = self.enterContext(
+            mock.patch.object(asyncio, "open_unix_connection")
+        )
+        self.test = SimpleNamespace(
+            environment=SimpleNamespace(
+                guest_binary=Path("/package/Resources/SimulatorFrameworkBridge-iOS")
+            ),
+            simctl=Simctl("test-udid", Path("/simulators")),
+            udid="test-udid",
+            assertEqual=self.assertEqual,
+            assertGreater=self.assertGreater,
+            assertLessEqual=self.assertLessEqual,
+            assertFalse=self.assertFalse,
+        )
+
+    async def reap(self) -> int:
+        self.process.returncode = 0
+        return 0
+
+    def captured_resources(self) -> tuple[Path, io.BufferedRandom, io.BufferedRandom]:
+        arguments = self.create.call_args.args
+        socket_path = Path(arguments[arguments.index("serve") + 1])
+        stdout = self.create.call_args.kwargs["stdout"]
+        stderr = self.create.call_args.kwargs["stderr"]
+        return socket_path, stdout, stderr
+
+    def assert_no_signals(self) -> None:
+        self.process.kill.assert_not_called()
+        self.process.terminate.assert_not_called()
+        self.process.send_signal.assert_not_called()
+
+    async def test_startup_failure_reaps_without_a_connected_writer(self) -> None:
+        original = RuntimeError("socket setup failed")
+        self.connect.side_effect = original
+
+        with self.assertRaises(RuntimeError) as raised:
+            async with harness.GuestRPC(self.test, persistent=True):
+                self.fail("a failed startup must not enter the context")
+
+        self.assertIs(raised.exception, original)
+        self.process.wait.assert_awaited_once_with()
+        self.assert_no_signals()
+        socket_path, stdout, stderr = self.captured_resources()
+        self.assertFalse(socket_path.parent.exists())
+        self.assertTrue(stdout.closed)
+        self.assertTrue(stderr.closed)
+        arguments = self.create.call_args.args
+        self.assertEqual(arguments[arguments.index("--startup-timeout") + 1], "10")
+        self.assertEqual(arguments[arguments.index("--idle-timeout") + 1], "120")
+        self.assertEqual(arguments[arguments.index("--exit-on-disconnect") + 1], "1")
+
+    async def test_startup_failure_keeps_the_original_error_when_reaping_fails(
+        self,
+    ) -> None:
+        original = RuntimeError("socket setup failed")
+        self.connect.side_effect = original
+        self.process.wait.side_effect = asyncio.TimeoutError
+
+        with self.assertRaises(RuntimeError) as raised:
+            async with harness.GuestRPC(self.test, persistent=True):
+                self.fail("a failed startup must not enter the context")
+
+        self.assertIs(raised.exception, original)
+        self.assertIn("retaining its socket directory", " ".join(original.__notes__))
+        self.process.wait.assert_awaited_once_with()
+        self.assert_no_signals()
+        socket_path, stdout, stderr = self.captured_resources()
+        self.assertTrue(socket_path.parent.exists())
+        self.assertFalse(stdout.closed)
+        self.assertFalse(stderr.closed)
+
+    async def test_body_failure_survives_disconnect_cleanup_failure(self) -> None:
+        reader = asyncio.StreamReader()
+        payload = json.dumps(
+            {"version": 1, "id": "test-1", "result": {"exitCode": 0, "values": []}}
+        ).encode()
+        reader.feed_data(len(payload).to_bytes(4, "big") + payload)
+        writer = mock.Mock(spec=asyncio.StreamWriter)
+        writer.drain = mock.AsyncMock()
+        writer.wait_closed = mock.AsyncMock()
+        self.connect.return_value = reader, writer
+        self.process.wait.side_effect = asyncio.TimeoutError
+        original = RuntimeError("test assertion failed")
+
+        with self.assertRaises(RuntimeError) as raised:
+            async with harness.GuestRPC(self.test, persistent=True):
+                raise original
+
+        self.assertIs(raised.exception, original)
+        self.assertIn("retaining its socket directory", " ".join(original.__notes__))
+        writer.close.assert_called_once_with()
+        self.process.wait.assert_awaited_once_with()
+        self.assert_no_signals()
+        socket_path, stdout, stderr = self.captured_resources()
+        self.assertTrue(socket_path.parent.exists())
+        self.assertFalse(stdout.closed)
+        self.assertFalse(stderr.closed)
+
+
 class SubprocessTimeoutTests(unittest.IsolatedAsyncioTestCase):
     async def test_preserves_binary_output_input_environment_and_exit_code(
         self,

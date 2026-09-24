@@ -11,7 +11,7 @@ import json
 import plistlib
 from typing import Any
 
-from .harness import IdbEndToEndTestCase, NotReady, run, wait_until
+from .harness import GuestRPC, IdbEndToEndTestCase, NotReady, run, wait_until
 
 
 class ServiceMutationTests(IdbEndToEndTestCase):
@@ -29,6 +29,100 @@ class ServiceMutationTests(IdbEndToEndTestCase):
             },
         )
         self.assertIs(type(listed["ok"]), int)
+        command = {"health": {"_0": {"list": {"bundleID": bundle_id}}}}
+        for persistent in (False, True):
+            with self.subTest(persistent=persistent):
+                async with GuestRPC(self, persistent=persistent) as rpc:
+                    values = await rpc.send(command)
+                    self.assertEqual(values, [listed])
+                    self.assertIs(type(values[0]["ok"]), int)
+
+    async def test_rpc_modes_share_service_reads_on_one_connection(self) -> None:
+        cases = [
+            ({"dns": {"_0": {"list": {}}}}, ("dns", "list")),
+            ({"proxy": {"_0": {"list": {}}}}, ("proxy", "list")),
+            (
+                {
+                    "accessibility": {
+                        "_0": {"verb": "settings-get", "setting": "reduce-motion"}
+                    }
+                },
+                ("accessibility", "settings-get", "--setting", "reduce-motion"),
+            ),
+        ]
+        for persistent in (False, True):
+            with self.subTest(persistent=persistent):
+                async with GuestRPC(self, persistent=persistent) as rpc:
+                    for command, arguments in cases:
+                        with self.subTest(command=command):
+                            expected = json.loads((await self.guest(*arguments)).stdout)
+                            self.assertEqual(await rpc.send(command), [expected])
+
+    async def test_rpc_modes_mutate_network_and_notification_state(self) -> None:
+        for service in ("dns", "proxy"):
+            snapshot = await self.store_data("snapshot", service)
+            self.addAsyncCleanup(self.restore_network, service, snapshot)
+        bundle_id = await self.install_fixture_app()
+        self.addAsyncCleanup(self.guest, "notifications", "revoke", bundle_id)
+        for persistent in (False, True):
+            with self.subTest(persistent=persistent):
+                async with GuestRPC(self, persistent=persistent) as rpc:
+                    self.assertEqual(
+                        await rpc.send(
+                            {"dns": {"_0": {"set": {"servers": ["192.0.2.10"]}}}}
+                        ),
+                        [],
+                    )
+                    await self.assert_network(
+                        "dns", {"ServerAddresses": ["192.0.2.10"]}
+                    )
+                    self.assertEqual(await rpc.send({"dns": {"_0": {"clear": {}}}}), [])
+                    await self.assert_network("dns", {})
+                    self.assertEqual(
+                        await rpc.send(
+                            {
+                                "proxy": {
+                                    "_0": {
+                                        "set": {
+                                            "host": "192.0.2.11",
+                                            "port": 1080,
+                                            "kind": "socks",
+                                        }
+                                    }
+                                }
+                            }
+                        ),
+                        [],
+                    )
+                    await self.assert_network(
+                        "proxy",
+                        {
+                            "SOCKSEnable": 1,
+                            "SOCKSProxy": "192.0.2.11",
+                            "SOCKSPort": 1080,
+                            "FTPPassive": 1,
+                            "ExceptionsList": ["*.local", "169.254/16"],
+                        },
+                    )
+                    self.assertEqual(
+                        await rpc.send({"proxy": {"_0": {"clear": {}}}}), []
+                    )
+                    await self.assert_network("proxy", {"FTPPassive": 1})
+                    for action, enabled, status in (
+                        ("approve", True, 2),
+                        ("revoke", False, 0),
+                    ):
+                        self.assertEqual(
+                            await rpc.send(
+                                {
+                                    "notifications": {
+                                        "_0": {action: {"bundleID": bundle_id}}
+                                    }
+                                }
+                            ),
+                            [],
+                        )
+                        await self.assert_notifications(bundle_id, enabled, status)
 
     async def store_data(self, *arguments: str, stdin: bytes | None = None) -> bytes:
         completed = await run(

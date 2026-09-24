@@ -32,6 +32,7 @@ import threading
 import time
 import unittest
 from collections.abc import Mapping, Sequence
+from contextlib import ExitStack
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Awaitable, BinaryIO, Callable, NoReturn, TypeVar
@@ -2105,3 +2106,138 @@ class IdbProcess:
         if self._completion_task is None:
             raise HarnessError(f"{self._what} has not been started")
         return self._completion_task
+
+
+class GuestRPC:
+    """Exercise the packaged bridge contract through argv or one owned socket."""
+
+    def __init__(self, test: IdbEndToEndTestCase, *, persistent: bool) -> None:
+        self.test = test
+        self.persistent = persistent
+        self._lifetime = ExitStack()
+        self._process: asyncio.subprocess.Process | None = None
+        self._reader: asyncio.StreamReader | None = None
+        self._writer: asyncio.StreamWriter | None = None
+        self._sequence = 0
+
+    async def __aenter__(self) -> GuestRPC:
+        if not self.persistent:
+            return self
+        try:
+            directory = tempfile.mkdtemp(prefix="idb-rpc-", dir="/tmp")
+            self._lifetime.callback(shutil.rmtree, directory)
+            self._path = Path(directory) / "bridge.sock"
+            self._stdout = self._lifetime.enter_context(tempfile.TemporaryFile())
+            self._stderr = self._lifetime.enter_context(tempfile.TemporaryFile())
+            self._binary = self.test.environment.guest_binary
+            self._process = await asyncio.create_subprocess_exec(
+                *self.test.simctl.argv(
+                    "spawn",
+                    self.test.udid,
+                    str(self._binary),
+                    "serve",
+                    str(self._path),
+                    "--startup-timeout",
+                    "10",
+                    "--idle-timeout",
+                    "120",
+                    "--exit-on-disconnect",
+                    "1",
+                ),
+                stdin=asyncio.subprocess.DEVNULL,
+                stdout=self._stdout,
+                stderr=self._stderr,
+            )
+
+            async def connect() -> tuple[asyncio.StreamReader, asyncio.StreamWriter]:
+                if self._process is not None and self._process.returncode is not None:
+                    raise HarnessError(
+                        f"guest exited before connecting: {self._diagnostics()}"
+                    )
+                try:
+                    return await asyncio.wait_for(
+                        asyncio.open_unix_connection(self._path), 1.0
+                    )
+                except (OSError, asyncio.TimeoutError) as error:
+                    raise NotReady(str(error)) from error
+
+            self._reader, self._writer = await wait_until(
+                "guest RPC socket", 10.0, connect
+            )
+            self.test.assertEqual(await self.send({"ping": {}}), [])
+            return self
+        except BaseException as error:
+            await self._close_preserving(error)
+            raise
+
+    def _diagnostics(self) -> str:
+        self._stdout.seek(0)
+        self._stderr.seek(0)
+        return f"stdout: {self._stdout.read()!r}; stderr: {self._stderr.read()!r}"
+
+    async def send(self, command: dict[str, Any]) -> list[Any]:
+        self._sequence += 1
+        request = {"version": 1, "id": f"test-{self._sequence}", "command": command}
+        payload = json.dumps(request).encode()
+        if self.persistent:
+            assert self._reader is not None and self._writer is not None
+            self._writer.write(len(payload).to_bytes(4, "big") + payload)
+            await asyncio.wait_for(self._writer.drain(), 60.0)
+            header = await asyncio.wait_for(self._reader.readexactly(4), 60.0)
+            size = int.from_bytes(header, "big")
+            self.test.assertGreater(size, 0)
+            self.test.assertLessEqual(size, 16 * 1024 * 1024)
+            response = json.loads(
+                await asyncio.wait_for(self._reader.readexactly(size), 60.0)
+            )
+        else:
+            response = json.loads(
+                (await self.test.guest("rpc", payload.decode())).stdout
+            )
+        self.test.assertEqual(response["version"], 1)
+        self.test.assertEqual(response["id"], request["id"])
+        self.test.assertEqual(response["result"]["exitCode"], 0, response)
+        return response["result"]["values"]
+
+    async def __aexit__(self, *exception: object) -> None:
+        error = exception[1] if isinstance(exception[1], BaseException) else None
+        try:
+            if self.persistent and exception[0] is None:
+                self.test.assertEqual(await self.send({"shutdown": {}}), [])
+                assert self._reader is not None
+                self.test.assertEqual(
+                    await asyncio.wait_for(self._reader.read(), 5.0), b""
+                )
+                assert self._process is not None
+                await asyncio.wait_for(self._process.wait(), 5.0)
+                self.test.assertEqual(self._process.returncode, 0, self._diagnostics())
+                self.test.assertFalse(self._path.exists())
+        except BaseException as shutdown_error:
+            error = shutdown_error
+            raise
+        finally:
+            await self._close_preserving(error)
+
+    async def _close_preserving(self, error: BaseException | None) -> None:
+        try:
+            await self._close()
+        except BaseException as cleanup_error:
+            if error is None:
+                raise
+            error.add_note(f"GuestRPC cleanup failed: {cleanup_error}")
+
+    async def _close(self) -> None:
+        if self._writer is not None:
+            self._writer.close()
+            try:
+                await asyncio.wait_for(self._writer.wait_closed(), 5.0)
+            except (OSError, asyncio.TimeoutError):
+                pass
+        if self._process is not None and self._process.returncode is None:
+            try:
+                await asyncio.wait_for(self._process.wait(), 60.0)
+            except asyncio.TimeoutError as error:
+                raise HarnessError(
+                    "owned guest did not exit after disconnect; retaining its socket directory"
+                ) from error
+        self._lifetime.close()
