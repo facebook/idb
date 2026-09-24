@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+@preconcurrency import FBControlCore
 import Foundation
 
 /// The transport for vendor-defined HID reports: the hinge slider and the orientation picker of a
