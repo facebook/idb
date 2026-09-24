@@ -8,7 +8,7 @@
 import XCTest
 import XCTestBootstrap
 
-/// `XCActivityRecord` lives in `XCTestPrivate`, which cannot be imported alongside `XCTest` (both define `XCTAttachment`/`XCTIssue`), so the input record is built and `+[FBActivityRecord from:]` is invoked through the Objective-C runtime.
+/// `XCActivityRecord` lives in `XCTestPrivate`, which cannot be imported alongside `XCTest` (both define `XCTAttachment`/`XCTIssue`), so the input record is built through the Objective-C runtime.
 final class FBActivityRecordTests: XCTestCase {
 
   private func makeXCActivityRecord(
@@ -37,18 +37,7 @@ final class FBActivityRecordTests: XCTestCase {
   }
 
   private func wrapActivity(_ record: NSObject) -> FBActivityRecord {
-    let selector = NSSelectorFromString("from:")
-    guard let method = class_getClassMethod(FBActivityRecord.self, selector) else {
-      preconditionFailure("FBActivityRecord +from: is missing; the class layout has changed.")
-    }
-    typealias FromIMP = @convention(c) (AnyClass, Selector, AnyObject) -> Unmanaged<AnyObject>
-    let imp = method_getImplementation(method)
-    let fromFn = unsafeBitCast(imp, to: FromIMP.self)
-    let result = fromFn(FBActivityRecord.self, selector, record).takeUnretainedValue()
-    guard let wrapped = result as? FBActivityRecord else {
-      preconditionFailure("FBActivityRecord +from: returned an unexpected type.")
-    }
-    return wrapped
+    FBActivityRecord.from(record)
   }
 
   // MARK: - from(_:) field mapping
