@@ -24,9 +24,7 @@ struct MotionCapabilities: Decodable, Equatable, Sendable {
   /// The capabilities the simulator advertises. A runtime, CoreDevice installation or toolchain
   /// that cannot answer the query at all advertises `none`; an operational failure is an error.
   static func resolve(on simulator: Simulator) async throws -> MotionCapabilities {
-    try await resolve {
-      try await simulator.coreDevice.perform(action: action, service: service, input: CoreDeviceEmptyInput(), as: MotionCapabilities.self)
-    }
+    try await resolve { try await simulator.coreDevice.motionCapabilities() }
   }
 
   static func resolve(_ query: () async throws -> MotionCapabilities) async throws -> MotionCapabilities {

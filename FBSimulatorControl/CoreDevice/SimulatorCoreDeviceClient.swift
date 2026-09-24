@@ -15,7 +15,7 @@ import Foundation
 /// describe their action, service, `Encodable` input and `Decodable` output, and nothing else.
 /// Memoized per `Simulator` through its command cache.
 ///
-// SAFETY: The version cache is guarded by its lock; everything else is immutable.
+// SAFETY: The version and capability caches are guarded by the lock; everything else is immutable.
 // patternlint-disable-next-line unchecked-sendable
 final class SimulatorCoreDeviceClient: @unchecked Sendable {
   typealias TransportFactory = @Sendable (_ service: String, _ queue: DispatchQueue) throws -> any SimulatorCoreDeviceTransport
@@ -27,6 +27,7 @@ final class SimulatorCoreDeviceClient: @unchecked Sendable {
   private let readVersion: VersionSource
   private let lock = NSLock()
   private var cachedVersion: CoreDeviceVersion?
+  private var cachedMotionCapabilities: MotionCapabilities?
 
   convenience init(simulator: Simulator) {
     self.init(
@@ -50,6 +51,30 @@ final class SimulatorCoreDeviceClient: @unchecked Sendable {
     let version = try readVersion()
     cachedVersion = version
     return version
+  }
+
+  /// The motion capabilities the simulator advertises, queried once: they are a property of the
+  /// runtime and device type, fixed for the simulator's lifetime. Only an answered query is kept.
+  /// A runtime that cannot answer is asked again, since a simulator that is not yet booted cannot
+  /// answer either.
+  func motionCapabilities() async throws -> MotionCapabilities {
+    if let cached = rememberedMotionCapabilities() { return cached }
+    let capabilities = try await perform(
+      action: MotionCapabilities.action, service: MotionCapabilities.service, input: CoreDeviceEmptyInput(), as: MotionCapabilities.self)
+    remember(capabilities)
+    return capabilities
+  }
+
+  private func rememberedMotionCapabilities() -> MotionCapabilities? {
+    lock.lock()
+    defer { lock.unlock() }
+    return cachedMotionCapabilities
+  }
+
+  private func remember(_ capabilities: MotionCapabilities) {
+    lock.lock()
+    defer { lock.unlock() }
+    cachedMotionCapabilities = capabilities
   }
 
   // MARK: - CoreDevice actions

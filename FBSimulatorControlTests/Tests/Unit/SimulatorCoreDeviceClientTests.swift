@@ -142,6 +142,46 @@ final class SimulatorCoreDeviceClientTests: XCTestCase {
     }
   }
 
+  // MARK: - Motion capabilities
+
+  private static let advertised = SimulatorCoreDevice.dictionary([
+    "CoreDevice.output": SimulatorCoreDevice.dictionary(["hingeAngle": xpc_bool_create(true), "deviceMotionState": xpc_bool_create(true)])
+  ])
+
+  func testAnAnsweredCapabilityQueryIsKeptForTheSimulator() async throws {
+    let recorder = Recorder()
+    recorder.reply = Self.advertised
+    for _ in 0..<3 {
+      let capabilities = try await recorder.client.motionCapabilities()
+      XCTAssertEqual(capabilities, MotionCapabilities(hingeAngle: true, deviceMotionState: true, spatialOrientation: nil))
+    }
+    XCTAssertEqual(recorder.transports.count, 1)
+    XCTAssertEqual(recorder.transports.first?.service, MotionCapabilities.service)
+    let request = try XCTUnwrap(recorder.transports.first?.requests.first)
+    XCTAssertEqual(String(cString: xpc_dictionary_get_string(request, "CoreDevice.actionIdentifier")!), MotionCapabilities.action)
+  }
+
+  func testAnUnansweredCapabilityQueryIsAskedAgain() async {
+    let recorder = Recorder()
+    recorder.reply = SimulatorCoreDevice.dictionary([
+      "CoreDevice.error": SimulatorCoreDevice.dictionary(["domain": xpc_string_create("com.example"), "code": xpc_int64_create(1)])
+    ])
+    for _ in 0..<2 {
+      do {
+        _ = try await recorder.client.motionCapabilities()
+        XCTFail("Expected the provider error")
+      } catch {
+        guard case SimulatorCoreDeviceError.unavailable = error else { return XCTFail("\(error)") }
+      }
+    }
+    XCTAssertEqual(recorder.transports.count, 2)
+
+    recorder.reply = Self.advertised
+    _ = try? await recorder.client.motionCapabilities()
+    _ = try? await recorder.client.motionCapabilities()
+    XCTAssertEqual(recorder.transports.count, 3)
+  }
+
   func testSendPassesAPlainMessageThroughUnchanged() async throws {
     let recorder = Recorder()
     recorder.reply = SimulatorCoreDevice.dictionary(["currentDeviceOrientation": xpc_string_create("portrait")])
