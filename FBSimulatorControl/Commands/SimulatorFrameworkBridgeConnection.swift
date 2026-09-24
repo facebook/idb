@@ -81,7 +81,8 @@ final class SimulatorFrameworkBridgeConnection: BridgeConnection, @unchecked Sen
   static func connect(
     path: String,
     timeout: TimeInterval,
-    guest: FBSubprocess<AnyObject, AnyObject, AnyObject>? = nil
+    guest: FBSubprocess<AnyObject, AnyObject, AnyObject>? = nil,
+    attempt: @escaping @Sendable (String) -> Int32? = attemptConnection
   ) async throws -> Int32 {
     guard path.utf8.count < sunPathCapacity else {
       throw AXBridgeError.socketPathTooLong(path: path, limit: sunPathCapacity)
@@ -90,7 +91,7 @@ final class SimulatorFrameworkBridgeConnection: BridgeConnection, @unchecked Sen
       DispatchQueue.global().async {
         let deadline = Date().addingTimeInterval(timeout)
         repeat {
-          if let fileDescriptor = attemptConnection(toPath: path) {
+          if let fileDescriptor = attempt(path) {
             continuation.resume(returning: fileDescriptor)
             return
           }
@@ -98,7 +99,7 @@ final class SimulatorFrameworkBridgeConnection: BridgeConnection, @unchecked Sen
           // another host's guest, so try once more before failing. `.done` rather than `hasCompleted`: a
           // cancelled or failed future is not evidence the process terminated.
           if let guest, guest.statLoc.state == .done {
-            if let fileDescriptor = attemptConnection(toPath: path) {
+            if let fileDescriptor = attempt(path) {
               continuation.resume(returning: fileDescriptor)
               return
             }

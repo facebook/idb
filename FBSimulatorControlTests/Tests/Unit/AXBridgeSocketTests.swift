@@ -10,6 +10,7 @@ import FBControlCore
 @testable import FBSimulatorControl
 import Foundation
 import XCTest
+import os
 
 /// Bridge socket naming and location, the deadlines a host reaches one with, and the spawn arguments
 /// and backend names that decide which guest it gets.
@@ -173,6 +174,65 @@ final class AXBridgeSocketTests: XCTestCase {
       signal: convertFBMutableFuture(signalled),
       configuration: configuration,
       queue: DispatchQueue(label: "com.facebook.FBSimulatorControl.tests.axbridge"))
+  }
+
+  private func normallyExitedGuest(code: Int32) -> FBSubprocess<AnyObject, AnyObject, AnyObject> {
+    let configuration = ProcessSpawnConfiguration(
+      launchPath: "/usr/bin/true", arguments: [], environment: [:],
+      io: FBProcessIO<AnyObject, AnyObject, AnyObject>.outputToDevNull(), mode: .default)
+    let status = FBMutableFuture<NSNumber>()
+    status.resolve(withResult: NSNumber(value: code << 8))
+    let exit = FBMutableFuture<NSNumber>()
+    exit.resolve(withResult: NSNumber(value: code))
+    let signal = FBMutableFuture<NSNumber>()
+    signal.resolveWithError(ProcessTerminationError.exitedWithCode(processIdentifier: 4242, processName: "SimulatorFrameworkBridge", exitCode: code))
+    return FBSubprocess(
+      processIdentifier: 4242, statLoc: convertFBMutableFuture(status),
+      exitCode: convertFBMutableFuture(exit), signal: convertFBMutableFuture(signal),
+      configuration: configuration, queue: DispatchQueue(label: "com.facebook.FBSimulatorControl.tests.bridge-startup"))
+  }
+
+  func testSharedLockLoserWaitsForTheWinnerWithoutHidingFailedStartups() async throws {
+    var pair: [Int32] = [-1, -1]
+    XCTAssertEqual(socketpair(AF_UNIX, SOCK_STREAM, 0, &pair), 0)
+    let descriptor = pair[0]
+    defer {
+      close(pair[0])
+      close(pair[1])
+    }
+    let cases: [(BridgeServiceScope, FBSubprocess<AnyObject, AnyObject, AnyObject>, Int?, Int?)] = [
+      // BUG: a shared lock loser that exits cleanly before the winner binds fails startup — flipped in the following commit.
+      (.shared, normallyExitedGuest(code: 0), 0, nil),
+      (.exclusive, normallyExitedGuest(code: 0), 0, nil),
+      (.shared, normallyExitedGuest(code: 3), 3, nil),
+      (.shared, exitedGuest(pid: 4242, signal: SIGABRT), nil, Int(SIGABRT)),
+    ]
+    for (scope, guest, exitCode, signal) in cases {
+      let attempts = OSAllocatedUnfairLock(initialState: 0)
+      do {
+        let connected = try await SimulatorFrameworkBridgeConnection.connect(
+          path: "\(directory)/contended.sock", timeout: 2, guest: guest,
+          attempt: { _ in
+            attempts.withLock { count in
+              count += 1
+              return count >= 3 ? descriptor : nil
+            }
+          })
+        XCTAssertNil(exitCode, "\(scope)")
+        XCTAssertNil(signal, "\(scope)")
+        XCTAssertEqual(connected, descriptor, "\(scope)")
+        XCTAssertEqual(attempts.withLock { $0 }, 3, "\(scope)")
+      } catch let error as AXBridgeError {
+        guard case let .guestDiedBeforeBinding(pid, actualSignal, actualCode, _) = error else {
+          return XCTFail("unexpected connection error: \(error)")
+        }
+        XCTAssertTrue(exitCode != nil || signal != nil, "\(scope)")
+        XCTAssertEqual(pid, 4242)
+        XCTAssertEqual(actualCode, exitCode, "\(scope)")
+        XCTAssertEqual(actualSignal, signal, "\(scope)")
+        XCTAssertEqual(attempts.withLock { $0 }, 2, "\(scope)")
+      }
+    }
   }
 
   // The death check runs after the connect attempt, so a guest that bound before dying still yields its descriptor.
