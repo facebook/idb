@@ -36,15 +36,19 @@ struct FBSubprocessCancellationTests {
     "while [ ! -e '\(path)' ]; do sleep 0.05; done"
   }
 
-  private static func waitForFile(atPath path: String) async -> Bool {
-    let deadline = Date().addingTimeInterval(TimeInterval(pollingDeadlineSeconds))
+  private static func waitUntil(seconds: Int = pollingDeadlineSeconds, _ condition: () -> Bool) async -> Bool {
+    let deadline = Date().addingTimeInterval(TimeInterval(seconds))
     while Date() < deadline {
-      if FileManager.default.fileExists(atPath: path) {
+      if condition() {
         return true
       }
       try? await Task.sleep(nanoseconds: 10_000_000)
     }
     return false
+  }
+
+  private static func waitForFile(atPath path: String) async -> Bool {
+    await waitUntil { FileManager.default.fileExists(atPath: path) }
   }
 
   @Test("Cancelling a runUntilCompletion future abandons the observation and leaves the process running")
@@ -113,5 +117,51 @@ struct FBSubprocessCancellationTests {
     // delivers the code it was going to carry.
     #expect(FileManager.default.createFile(atPath: gate, contents: nil))
     #expect(try await bridgeFBFuture(process.statLoc).intValue == 7 << 8)
+  }
+
+  // MARK: - Stranded children
+
+  @Test("A child waiting on a gate keeps polling after the gate's directory is removed")
+  func aGateWaitWhoseDirectoryIsRemoved() async throws {
+    let directory = URL(fileURLWithPath: NSTemporaryDirectory())
+      .appendingPathComponent("FBSubprocessCancellationTests-\(UUID().uuidString)", isDirectory: true)
+    try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+    defer { try? FileManager.default.removeItem(at: directory) }
+    let started = directory.appendingPathComponent("started").path
+    let gate = directory.appendingPathComponent("gate").path
+
+    let process = try await bridgeFBFuture(
+      FBProcessBuilder<NSNull, NSData, NSData>
+        .withLaunchPath("/bin/sh", arguments: ["-c", "/usr/bin/touch '\(started)'; \(Self.shellWait(forFileAtPath: gate))"])
+        .start())
+    defer { _ = process.sendSignal(SIGKILL) }
+    #expect(await Self.waitForFile(atPath: started), "The child never launched")
+
+    // What each case's `defer` does when a thrown error skips the line that opens the gate.
+    try FileManager.default.removeItem(at: directory)
+
+    // BUG: the gate can never open, yet the child polls for it indefinitely — flipped in the following commit.
+    #expect(await Self.waitUntil(seconds: 1) { process.statLoc.state != .running } == false)
+  }
+
+  @Test("A child waiting on a gate keeps polling after the process that started it has gone")
+  func aGateWaitWhoseParentHasGone() async throws {
+    let directory = URL(fileURLWithPath: NSTemporaryDirectory())
+      .appendingPathComponent("FBSubprocessCancellationTests-\(UUID().uuidString)", isDirectory: true)
+    try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+    defer { try? FileManager.default.removeItem(at: directory) }
+    let gate = directory.appendingPathComponent("gate").path
+
+    // The outer shell backgrounds the waiter and exits at once, orphaning it as a killed test runner would.
+    let launcher = try await bridgeFBFuture(
+      FBProcessBuilder<NSNull, NSData, NSData>
+        .withLaunchPath("/bin/sh", arguments: ["-c", "/bin/sh -c \"$1\" </dev/null >/dev/null 2>&1 & echo $!", "sh", Self.shellWait(forFileAtPath: gate)])
+        .withStdOutInMemoryAsString()
+        .runUntilCompletion(withAcceptableExitCodes: nil))
+    let pid = try #require(pid_t(((launcher.stdOut as String?) ?? "").trimmingCharacters(in: .whitespacesAndNewlines)))
+    defer { kill(pid, SIGKILL) }
+
+    // BUG: nothing will ever open the gate, yet the orphan polls for it indefinitely — flipped in the following commit.
+    #expect(await Self.waitUntil(seconds: 1) { kill(pid, 0) != 0 } == false)
   }
 }
