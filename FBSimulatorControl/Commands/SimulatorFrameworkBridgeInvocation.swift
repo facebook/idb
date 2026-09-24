@@ -57,11 +57,12 @@ struct SimulatorFrameworkBridgeInvocation {
   ///
   /// `usernotificationsd` answers a client only for the bundle `BSBundleIDForPID` reports for
   /// it, and that is read from the `Info.plist` beside the client's executable. The delivered
-  /// notifications of an app are therefore only reachable by a guest that appears to be it.
+  /// notifications of an app can therefore only be read or withdrawn by a guest that appears
+  /// to be it.
   /// An argument that could not name an app gets no identity, which also keeps it from being
   /// used as a path component when staging.
   var bundleIdentity: String? {
-    guard service == "notifications", action == "delivered",
+    guard service == "notifications", ["delivered", "clear-delivered"].contains(action),
       let bundleID = arguments.first,
       bundleID.range(of: "^[A-Za-z0-9.-]+$", options: .regularExpression) != nil,
       bundleID != ".", bundleID != ".."

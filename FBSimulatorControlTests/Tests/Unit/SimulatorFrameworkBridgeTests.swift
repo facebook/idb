@@ -83,6 +83,22 @@ final class SimulatorFrameworkBridgeTests: XCTestCase {
     XCTAssertEqual(info["CFBundleExecutable"], URL(fileURLWithPath: launched).lastPathComponent)
   }
 
+  func testAClearDeliveredNotificationsInvocationLaunchesWithTheTargetAppsBundleIdentity() throws {
+    let invocation = SimulatorFrameworkBridgeInvocation(
+      service: "notifications",
+      action: "clear-delivered",
+      arguments: ["com.apple.news"])
+    let launched =
+      try invocation
+      .executablePath(bundledGuestPath: bundledGuestPath, stagingDirectory: stagingDirectory)
+    let siblingInfoPlist = URL(fileURLWithPath: launched)
+      .deletingLastPathComponent()
+      .appendingPathComponent("Info.plist")
+    let info = try XCTUnwrap(NSDictionary(contentsOf: siblingInfoPlist) as? [String: String])
+    XCTAssertEqual(info["CFBundleIdentifier"], "com.apple.news")
+    XCTAssertEqual(info["CFBundleExecutable"], URL(fileURLWithPath: launched).lastPathComponent)
+  }
+
   /// The identity is written beside the executable, so two target apps cannot share one.
   func testEachTargetAppLaunchesItsOwnGuest() throws {
     let news = SimulatorFrameworkBridgeInvocation(

@@ -69,6 +69,19 @@ public struct SimulatorNotificationCommands {
     return try DeliveredNotification.records(fromBridgeOutput: output)
   }
 
+  /// Withdraws every notification the system is holding for an app.
+  ///
+  /// The counterpart to `deliveredNotifications`, and reaches the same records: the app
+  /// does not have to be running, and nothing here launches or foregrounds it. Clearing
+  /// is what lets a test start from a known inbox rather than from whatever earlier runs
+  /// left behind, since a delivered notification outlives the app that received it.
+  public func clearDeliveredNotifications(forBundleID bundleID: String) async throws {
+    _ = try await simulator.runSimulatorFrameworkBridge(
+      withService: "notifications",
+      action: "clear-delivered",
+      arguments: [bundleID])
+  }
+
 }
 
 /// One notification the system retained for an app.
