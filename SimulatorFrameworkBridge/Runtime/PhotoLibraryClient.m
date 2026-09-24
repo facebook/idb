@@ -101,23 +101,21 @@ static BOOL saveManagedObjectContext(NSManagedObjectContext *moc, NSError **outE
     __block BOOL success = NO;
     __block NSError *transactionError = nil;
     [plPhotoLibrary performTransactionAndWait:^{
-      NSManagedObjectContext *moc = nil;
       @try {
-        moc = plPhotoLibrary.managedObjectContext;
+        NSManagedObjectContext *moc = plPhotoLibrary.managedObjectContext;
+        if (!moc) {
+          return;
+        }
+
+        if (!deletePhotosFromManagedObjectContext(moc, self->_assets)) {
+          NSLog(@"Failed to delete all photos");
+          return;
+        }
+
+        success = saveManagedObjectContext(moc, &transactionError);
       } @catch (NSException *exception) {
-        return;
+        transactionError = [NSError errorWithDomain:@"FBPhotoLibraryException" code:1 userInfo:@{NSLocalizedDescriptionKey : exception.reason ?: exception.name}];
       }
-
-      if (!moc) {
-        return;
-      }
-
-      if (!deletePhotosFromManagedObjectContext(moc, self->_assets)) {
-        NSLog(@"Failed to delete all photos");
-        return;
-      }
-
-      success = saveManagedObjectContext(moc, &transactionError);
     }];
 
     if (success) {

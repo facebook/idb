@@ -102,11 +102,30 @@ final class PhotoLibraryMutationTests: XCTestCase {
       XCTAssertTrue(runtime.allMutationsInsideTransaction)
     }
   }
-  func testPrivateExceptionsAtCommandBoundary() {
+  func testPrivateExceptionsReturnCommandFailure() {
     for failure in ["transactionException", "idException", "saveException"] {
       let runtime = FBPhotosTestRuntime()
       runtime.failure = failure
       XCTAssertEqual(runtime.runCatchingException() as NSDictionary, ["status": 1] as NSDictionary)
+    }
+  }
+
+  func testPrivateExceptionsStayInsideTheWorkerTransaction() {
+    for failure in ["contextException", "idException", "lookupException", "deleteException", "saveException"] {
+      let runtime = FBPhotosTestRuntime()
+      runtime.runTransactionsOnWorkerQueue = true
+      runtime.failure = failure
+
+      XCTAssertEqual(runtime.run(), 1, failure)
+
+      XCTAssertTrue(runtime.transactionRanOnWorkerThread, failure)
+      XCTAssertNil(runtime.escapedTransactionException, failure)
+      XCTAssertEqual((runtime.operations as? [String])?.last, "transactionEnd", failure)
+      if failure != "saveException" {
+        XCTAssertFalse(runtime.operations.contains("save"), failure)
+      } else {
+        XCTAssertTrue(runtime.operations.contains("save"), failure)
+      }
     }
   }
 }
