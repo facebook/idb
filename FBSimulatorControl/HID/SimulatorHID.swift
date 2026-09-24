@@ -24,7 +24,7 @@ import Foundation
  2. Darwin notifications — e.g. shake, in-call status bar — posted via the SimDevice.
 
  3. Vendor-defined DTUHID reports — the hinge, and device orientation on a runtime that reports
-    device motion. A second `dtuhidd` connection, established on first use and kept.
+    device motion. The `vendorDefined` connection owned by `simulator.hid`.
 
  Which of 1 and 3 carries a rotation is decided by the simulator's `MotionCapabilities`.
 
@@ -42,8 +42,6 @@ public final class SimulatorHID: CustomStringConvertible, @unchecked Sendable {
   private let purple: SimulatorPurpleHIDTransport
   /// The transport for the Darwin-notification inputs (shake, in-call status bar).
   private let notification: SimulatorDarwinNotificationTransport
-  /// The transport for the vendor-defined reports (hinge, and orientation on runtimes with device motion).
-  private let vendor: SimulatorVendorHIDTransport
 
   private weak var simulator: Simulator?
 
@@ -62,7 +60,6 @@ public final class SimulatorHID: CustomStringConvertible, @unchecked Sendable {
       transport: try await Self.transport(for: simulator, requested: transportType),
       purple: SimulatorPurpleHIDTransport(simulator: simulator),
       notification: SimulatorDarwinNotificationTransport(simulator: simulator),
-      vendor: SimulatorVendorHIDTransport(simulator: simulator),
       simulator: simulator)
   }
 
@@ -128,13 +125,11 @@ public final class SimulatorHID: CustomStringConvertible, @unchecked Sendable {
     transport: SimulatorHIDTransport,
     purple: SimulatorPurpleHIDTransport,
     notification: SimulatorDarwinNotificationTransport,
-    vendor: SimulatorVendorHIDTransport? = nil,
     simulator: Simulator?
   ) {
     self.transport = transport
     self.purple = purple
     self.notification = notification
-    self.vendor = vendor ?? SimulatorVendorHIDTransport(simulator: simulator)
     self.simulator = simulator
   }
 
@@ -144,7 +139,6 @@ public final class SimulatorHID: CustomStringConvertible, @unchecked Sendable {
     let drain = Task { try await flush() }
     try? await drain.value
     transport.disconnect()
-    await vendor.disconnect()
   }
 
   // MARK: - Input transport
@@ -174,7 +168,7 @@ public final class SimulatorHID: CustomStringConvertible, @unchecked Sendable {
     guard let simulator else { throw WeakTargetError.simulator }
     switch try await MotionCapabilities.resolve(on: simulator).orientationWriteBackend {
     case .vendorHID:
-      try await vendor.send(orientation.vendorEvent())
+      try await simulator.hid.vendorDefined.send(orientation.vendorEvent())
     case .purple:
       try await purple.sendOrientation(legacyPurpleEncoding ? orientation : orientation.physicalPurpleOrientation)
     }
@@ -251,8 +245,7 @@ public final class SimulatorHID: CustomStringConvertible, @unchecked Sendable {
       return false
     case let .hinge(angle):
       guard let simulator else { throw WeakTargetError.simulator }
-      try await MotionCapabilities.resolve(on: simulator).require(.hingeAngle)
-      try await vendor.send(angle.vendorEvent())
+      try await simulator.hinge.setAngle(angle)
       return false
     case .shake:
       try await sendShake()

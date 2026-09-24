@@ -12,10 +12,12 @@ import Foundation
 /// beside the digitizer, so this is a second DTUHID connection rather than a second use of the
 /// first.
 ///
-/// Established on first use, since most simulators never send one, and then kept for the owning
-/// `SimulatorHID`'s lifetime so a rotation or hinge change costs a send rather than a connect, a
-/// liveness probe and a disconnect. A connection that could not be established is attempted again
-/// on the next send.
+/// Established on first use, since most simulators never send one, and then kept so a rotation or
+/// hinge change costs a send rather than a connect, a liveness probe and a disconnect. A connection
+/// that could not be established is attempted again on the next send.
+///
+/// One per simulator, owned by `simulator.hid` and dropped with its input connection when the
+/// simulator changes state, since a connection made before a reboot is dead.
 actor SimulatorVendorHIDTransport {
   typealias Connect = @Sendable () async throws -> SimulatorDTUHIDTransport
 

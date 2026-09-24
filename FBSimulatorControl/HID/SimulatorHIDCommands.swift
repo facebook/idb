@@ -8,19 +8,22 @@
 import FBControlCore
 import Foundation
 
-/// Owns the simulator's HID connection: made on first use, shared by every caller, and dropped
+/// Owns the simulator's HID connections: made on first use, shared by every caller, and dropped
 /// when the simulator changes state.
 public actor SimulatorHIDCommands {
 
   private weak var simulator: Simulator?
   private var connection: Task<SimulatorHID, Error>?
+  /// The hinge, and rotation on a runtime that reports device motion.
+  let vendorDefined: SimulatorVendorHIDTransport
 
   public static func commands(with simulator: Simulator) -> SimulatorHIDCommands {
     SimulatorHIDCommands(simulator: simulator)
   }
 
-  private init(simulator: Simulator) {
+  init(simulator: Simulator?, vendorDefined: SimulatorVendorHIDTransport? = nil) {
     self.simulator = simulator
+    self.vendorDefined = vendorDefined ?? SimulatorVendorHIDTransport(simulator: simulator)
   }
 
   /// The connected HID, connecting on first use. Callers that arrive while a connection is being
@@ -45,14 +48,13 @@ public actor SimulatorHIDCommands {
     }
   }
 
-  /// Closes the connection, flushing what it still has queued, so the next `connect()` starts
-  /// afresh.
+  /// Closes the connections, flushing what the input connection still has queued, so the next
+  /// `connect()` or vendor-defined send starts afresh.
   public func disconnect() async {
-    guard let connection else {
-      return
-    }
+    let connection = self.connection
     self.connection = nil
-    if let hid = try? await connection.value {
+    await vendorDefined.disconnect()
+    if let hid = try? await connection?.value {
       await hid.close()
     }
   }

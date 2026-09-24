@@ -15,7 +15,8 @@ public struct SimulatorHingeCommands {
   }
 
   public func setAngle(_ angle: SimulatorHingeAngle) async throws {
-    try await simulator.sendHIDGesture(.hinge(angle))
+    try await MotionCapabilities.resolve(on: simulator).require(.hingeAngle)
+    try await simulator.hid.vendorDefined.send(angle.vendorEvent())
   }
 
   /// Reads a fresh measured angle. During a hinge animation this can be between its endpoints.

@@ -83,6 +83,17 @@ final class SimulatorVendorHIDTransportTests: XCTestCase {
     await vendor.disconnect()
   }
 
+  func testDisconnectingTheHIDCommandsDropsTheVendorConnection() async throws {
+    let connections = Connections()
+    let hid = SimulatorHIDCommands(simulator: nil, vendorDefined: SimulatorVendorHIDTransport { try await connections.connect() })
+    try await hid.vendorDefined.send(event())
+    await hid.disconnect()
+    try await hid.vendorDefined.send(event())
+    let attempts = await connections.attempts
+    XCTAssertEqual(attempts, 2)
+    await hid.disconnect()
+  }
+
   func testConcurrentFirstSendsShareOneConnection() async throws {
     let connections = Connections()
     let vendor = SimulatorVendorHIDTransport { try await connections.connect() }
