@@ -9,7 +9,7 @@ import Darwin
 import Foundation
 import SimulatorFrameworkBridgeProtocol
 
-@objc public final class FBAXBridgeSocketResponse: NSObject {
+@objc public final class BridgeSocketResponse: NSObject {
   @objc public let data: Data
   @objc public let shutdown: Bool
 
@@ -20,7 +20,7 @@ import SimulatorFrameworkBridgeProtocol
   }
 }
 
-@objc public final class FBAXBridgeServer: NSObject {
+@objc public final class BridgeServer: NSObject {
   @objc public static let defaultIdleTimeoutSeconds: Int32 = 300
   @objc public static let serveBacklog: Int32 = 16
   public static func pollTimeoutMilliseconds(seconds: Int32) -> Int32 {
@@ -33,7 +33,7 @@ import SimulatorFrameworkBridgeProtocol
     idleTimeoutSeconds: Int32,
     exitOnDisconnect: Bool,
     prepareRuntime: () -> Void,
-    handleRequest: (Data) -> FBAXBridgeSocketResponse
+    handleRequest: (Data) -> BridgeSocketResponse
   ) -> Int32 {
     serve(
       socketPath: socketPath,
@@ -51,14 +51,14 @@ import SimulatorFrameworkBridgeProtocol
     initialClientTimeoutSeconds: Int32?,
     exitOnDisconnect: Bool,
     prepareRuntime: () -> Void,
-    handleRequest: (Data) -> FBAXBridgeSocketResponse
+    handleRequest: (Data) -> BridgeSocketResponse
   ) -> Int32 {
     let pathString = socketPath as NSString
     return withExtendedLifetime(pathString) {
       let path = pathString.fileSystemRepresentation
       let listenFD = socket(AF_UNIX, SOCK_STREAM, 0)
       guard listenFD >= 0 else {
-        NSLog("[AccessibilityService] socket() failed: %@", String(cString: strerror(errno)))
+        NSLog("[BridgeServer] socket() failed: %@", String(cString: strerror(errno)))
         return 1
       }
       defer { close(listenFD) }
@@ -67,7 +67,7 @@ import SimulatorFrameworkBridgeProtocol
       address.sun_family = sa_family_t(AF_UNIX)
       let pathLength = strlen(path)
       guard pathLength < MemoryLayout.size(ofValue: address.sun_path) else {
-        NSLog("[AccessibilityService] socket path too long: %@", socketPath)
+        NSLog("[BridgeServer] socket path too long: %@", socketPath)
         return 1
       }
       withUnsafeMutableBytes(of: &address.sun_path) {
@@ -87,11 +87,11 @@ import SimulatorFrameworkBridgeProtocol
         }
       }
       guard bound == 0 else {
-        NSLog("[AccessibilityService] bind(%@) failed: %@", socketPath, String(cString: strerror(errno)))
+        NSLog("[BridgeServer] bind(%@) failed: %@", socketPath, String(cString: strerror(errno)))
         return 1
       }
       guard listen(listenFD, serveBacklog) == 0 else {
-        NSLog("[AccessibilityService] listen() failed: %@", String(cString: strerror(errno)))
+        NSLog("[BridgeServer] listen() failed: %@", String(cString: strerror(errno)))
         return 1
       }
       defer { unlink(path) }
@@ -100,7 +100,7 @@ import SimulatorFrameworkBridgeProtocol
       var initialClientDeadline = initialClientTimeoutSeconds.map {
         ProcessInfo.processInfo.systemUptime + Double(max(1, $0))
       }
-      NSLog("[AccessibilityService] serving accessibility on %@ (idle timeout %ds)", socketPath, idleTimeoutSeconds)
+      NSLog("[BridgeServer] serving on %@ (idle timeout %ds)", socketPath, idleTimeoutSeconds)
       while true {
         var listener = pollfd(fd: listenFD, events: Int16(POLLIN), revents: 0)
         let timeout: Int32
@@ -114,9 +114,9 @@ import SimulatorFrameworkBridgeProtocol
         let ready = poll(&listener, 1, timeout)
         if ready == 0 {
           if initialClientDeadline != nil {
-            NSLog("[AccessibilityService] initial client timeout; exiting")
+            NSLog("[BridgeServer] initial client timeout; exiting")
           } else {
-            NSLog("[AccessibilityService] idle %ds with no client; exiting", idleTimeoutSeconds)
+            NSLog("[BridgeServer] idle %ds with no client; exiting", idleTimeoutSeconds)
           }
           break
         }
@@ -133,11 +133,11 @@ import SimulatorFrameworkBridgeProtocol
         let shutdown = serveConnection(connection, idleTimeoutSeconds: idleTimeoutSeconds, handleRequest: handleRequest)
         close(connection)
         if exitOnDisconnect {
-          NSLog("[AccessibilityService] exclusive client disconnected; exiting")
+          NSLog("[BridgeServer] exclusive client disconnected; exiting")
           break
         }
         if shutdown {
-          NSLog("[AccessibilityService] shutdown requested by client; exiting")
+          NSLog("[BridgeServer] shutdown requested by client; exiting")
           break
         }
       }
@@ -152,7 +152,7 @@ import SimulatorFrameworkBridgeProtocol
   private static func serveConnection(
     _ connection: Int32,
     idleTimeoutSeconds: Int32,
-    handleRequest: (Data) -> FBAXBridgeSocketResponse
+    handleRequest: (Data) -> BridgeSocketResponse
   ) -> Bool {
     var timeout = timeval(tv_sec: Int(idleTimeoutSeconds), tv_usec: 0)
     setsockopt(connection, SOL_SOCKET, SO_RCVTIMEO, &timeout, socklen_t(MemoryLayout<timeval>.size))

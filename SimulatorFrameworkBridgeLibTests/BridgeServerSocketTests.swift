@@ -12,7 +12,7 @@ import Foundation
 @_implementationOnly import SimulatorFrameworkBridgeSupport
 import XCTest
 
-final class AccessibilitySocketTests: XCTestCase {
+final class BridgeServerSocketTests: XCTestCase {
   var socketPath = ""
   var finished: XCTestExpectation?
 
@@ -24,7 +24,7 @@ final class AccessibilitySocketTests: XCTestCase {
   }
 
   func serve(_ path: String, exclusive: Bool, idleTimeoutSeconds: Int32 = 10) -> Int32 {
-    FBAXBridgeServer.serve(socketPath: path, idleTimeoutSeconds: idleTimeoutSeconds, exitOnDisconnect: exclusive, prepareRuntime: {}) {
+    BridgeServer.serve(socketPath: path, idleTimeoutSeconds: idleTimeoutSeconds, exitOnDisconnect: exclusive, prepareRuntime: {}) {
       BridgeRPC.handle($0)
     }
   }
@@ -171,9 +171,9 @@ final class AccessibilitySocketTests: XCTestCase {
   }
 
   func testLargeIdleTimeoutCannotOverflowToAnUnboundedPoll() {
-    XCTAssertEqual(FBAXBridgeServer.pollTimeoutMilliseconds(seconds: 300), 300_000)
-    XCTAssertEqual(FBAXBridgeServer.pollTimeoutMilliseconds(seconds: .max), .max)
-    XCTAssertGreaterThan(FBAXBridgeServer.pollTimeoutMilliseconds(seconds: 0), 0)
+    XCTAssertEqual(BridgeServer.pollTimeoutMilliseconds(seconds: 300), 300_000)
+    XCTAssertEqual(BridgeServer.pollTimeoutMilliseconds(seconds: .max), .max)
+    XCTAssertGreaterThan(BridgeServer.pollTimeoutMilliseconds(seconds: 0), 0)
   }
 
   func testRPCHandlesMixedServicesAndMalformedRequestsOnOneConnection() throws {
@@ -183,7 +183,7 @@ final class AccessibilitySocketTests: XCTestCase {
     let path = socketPath
     DispatchQueue.global().async {
       XCTAssertEqual(
-        FBAXBridgeServer.serve(socketPath: path, idleTimeoutSeconds: 5, exitOnDisconnect: true, prepareRuntime: {}) { data in
+        BridgeServer.serve(socketPath: path, idleTimeoutSeconds: 5, exitOnDisconnect: true, prepareRuntime: {}) { data in
           BridgeRPC.handle(data) { command in
             BridgeResult(exitCode: command == .shutdown ? 0 : 23, values: [.string("first"), .string("second")])
           }
@@ -215,8 +215,8 @@ final class AccessibilitySocketTests: XCTestCase {
     let path = socketPath
     DispatchQueue.global().async {
       XCTAssertEqual(
-        FBAXBridgeServer.serve(socketPath: path, idleTimeoutSeconds: 1, exitOnDisconnect: true, prepareRuntime: {}) { _ in
-          FBAXBridgeSocketResponse(data: Data(repeating: 120, count: BridgeFrame.maximumSize), shutdown: false)
+        BridgeServer.serve(socketPath: path, idleTimeoutSeconds: 1, exitOnDisconnect: true, prepareRuntime: {}) { _ in
+          BridgeSocketResponse(data: Data(repeating: 120, count: BridgeFrame.maximumSize), shutdown: false)
         }, 0)
       finished.fulfill()
     }
@@ -306,14 +306,14 @@ final class AccessibilitySocketTests: XCTestCase {
     self.finished = finished
     let path = socketPath
     DispatchQueue.global().async {
-      let result = FBAXBridgeServer.serve(
+      let result = BridgeServer.serve(
         socketPath: path,
         idleTimeoutSeconds: 30,
         initialClientTimeoutSeconds: 1,
         exitOnDisconnect: true,
         prepareRuntime: {}
       ) { _ in
-        FBAXBridgeSocketResponse(data: Data(#"{"ok":true}"#.utf8), shutdown: false)
+        BridgeSocketResponse(data: Data(#"{"ok":true}"#.utf8), shutdown: false)
       }
       XCTAssertEqual(result, 0)
       finished.fulfill()
@@ -359,7 +359,7 @@ final class AccessibilitySocketTests: XCTestCase {
     let callingThread = Thread.current
     var preparations = 0
     var requests = 0
-    let result = FBAXBridgeServer.serve(socketPath: socketPath, idleTimeoutSeconds: 10, exitOnDisconnect: true) {
+    let result = BridgeServer.serve(socketPath: socketPath, idleTimeoutSeconds: 10, exitOnDisconnect: true) {
       XCTAssertEqual(Thread.current, callingThread)
       preparations += 1
     } handleRequest: { request in
@@ -367,7 +367,7 @@ final class AccessibilitySocketTests: XCTestCase {
       XCTAssertEqual(preparations, 1)
       XCTAssertEqual(request, "probe".data(using: .utf8))
       requests += 1
-      return FBAXBridgeSocketResponse(data: Data("{\"ok\":true}".utf8), shutdown: true)
+      return BridgeSocketResponse(data: Data("{\"ok\":true}".utf8), shutdown: true)
     }
     XCTAssertEqual(result, 0)
     XCTAssertEqual(preparations, 1)

@@ -43,42 +43,4 @@ public final class FBAXBridgeArguments: NSObject {
     }
     return request
   }
-
-  @objc public static func idleTimeout(arguments: [String], fallback: Int32) -> Int32 {
-    timeout(arguments: arguments, flag: "--idle-timeout", fallback: fallback) ?? fallback
-  }
-
-  public static func startupTimeout(arguments: [String]) -> Int32? {
-    timeout(arguments: arguments, flag: "--startup-timeout", fallback: nil)
-  }
-
-  private static func timeout(arguments: [String], flag: String, fallback: Int32?) -> Int32? {
-    guard let value = firstValue(for: flag, in: arguments) else {
-      return fallback
-    }
-    let scanner = Scanner(string: value)
-    guard let seconds = scanner.scanInt32(), scanner.isAtEnd, seconds > 0 else {
-      if let fallback {
-        NSLog("[AccessibilityService] ignoring unusable %@ '%@'; using %ds", flag, value, fallback)
-      } else {
-        NSLog("[AccessibilityService] ignoring unusable %@ '%@'", flag, value)
-      }
-      return fallback
-    }
-    return seconds
-  }
-
-  @objc public static func exitOnDisconnect(arguments: [String]) -> Bool {
-    (firstValue(for: "--exit-on-disconnect", in: arguments) as NSString?)?.boolValue ?? false
-  }
-
-  // Serve options have always used the first duplicate, unlike accessibility request flags.
-  private static func firstValue(for flag: String, in arguments: [String]) -> String? {
-    for index in stride(from: 0, to: max(0, arguments.count - 1), by: 2) {
-      if arguments[index] == flag {
-        return arguments[index + 1]
-      }
-    }
-    return nil
-  }
 }

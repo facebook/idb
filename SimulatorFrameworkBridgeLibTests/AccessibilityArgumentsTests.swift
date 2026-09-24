@@ -57,29 +57,4 @@ final class AccessibilityArgumentsTests: XCTestCase {
     }
     XCTAssertNil(FBAXBridgeRequestFromArguments("describe", ["--pid", "42"])["automationMode"])
   }
-
-  func testServeOptionsUseFirstDuplicateEvenWhenInvalid() {
-    XCTAssertEqual(FBAXBridgeArguments.idleTimeout(arguments: ["--idle-timeout", "bad", "--idle-timeout", "45"], fallback: 300), 300)
-    XCTAssertEqual(FBAXBridgeArguments.idleTimeout(arguments: ["--idle-timeout", "45", "--idle-timeout", "90"], fallback: 300), 45)
-    XCTAssertFalse(FBAXBridgeArguments.exitOnDisconnect(arguments: ["--exit-on-disconnect", "0", "--exit-on-disconnect", "1"]))
-    XCTAssertTrue(FBAXBridgeArguments.exitOnDisconnect(arguments: ["--exit-on-disconnect", "YES"]))
-    XCTAssertFalse(FBAXBridgeArguments.exitOnDisconnect(arguments: ["--exit-on-disconnect"]))
-  }
-
-  func testServeTimeoutKeepsScannerWhitespaceAndSignHandling() {
-    XCTAssertEqual(FBAXBridgeArguments.idleTimeout(arguments: ["--idle-timeout", "  +45"], fallback: 300), 45)
-    XCTAssertEqual(FBAXBridgeArguments.idleTimeout(arguments: ["--idle-timeout", "45tail"], fallback: 300), 300)
-  }
-
-  func testStartupTimeoutIsOptionalAndUsesServeOptionParsing() {
-    XCTAssertNil(FBAXBridgeArguments.startupTimeout(arguments: []))
-    for value in ["0", "-1", "bad", "12tail"] {
-      XCTAssertNil(FBAXBridgeArguments.startupTimeout(arguments: ["--startup-timeout", value]))
-    }
-    XCTAssertNil(FBAXBridgeArguments.startupTimeout(arguments: ["--startup-timeout"]))
-    XCTAssertNil(FBAXBridgeArguments.startupTimeout(arguments: ["--startup-timeout", "bad", "--startup-timeout", "10"]))
-    XCTAssertEqual(FBAXBridgeArguments.startupTimeout(arguments: ["--startup-timeout", "  +10", "--startup-timeout", "20"]), 10)
-    XCTAssertEqual(FBAXBridgeArguments.startupTimeout(arguments: ["--startup-timeout", String(Int32.max)]), Int32.max)
-  }
-
 }

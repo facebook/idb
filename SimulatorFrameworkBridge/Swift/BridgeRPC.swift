@@ -45,9 +45,9 @@ public enum BridgeRPC {
     return BridgeRPCReply(data: data, exitCode: 1, shutdown: false)
   }
 
-  public static func handle(_ data: Data, execute: (BridgeCommand) -> BridgeResult = BridgeServices.execute) -> FBAXBridgeSocketResponse {
+  public static func handle(_ data: Data, execute: (BridgeCommand) -> BridgeResult = BridgeServices.execute) -> BridgeSocketResponse {
     let reply = process(data, execute: execute)
-    return FBAXBridgeSocketResponse(data: reply.data, shutdown: reply.shutdown)
+    return BridgeSocketResponse(data: reply.data, shutdown: reply.shutdown)
   }
 
   static func run(arguments: [String]) -> Int32? {
@@ -62,11 +62,11 @@ public enum BridgeRPC {
     case "serve":
       guard arguments.count >= 3, !arguments[2].isEmpty else { return 1 }
       let options = Array(arguments.dropFirst(3))
-      return FBAXBridgeServer.serve(
+      return BridgeServer.serve(
         socketPath: arguments[2],
-        idleTimeoutSeconds: FBAXBridgeArguments.idleTimeout(arguments: options, fallback: FBAXBridgeServer.defaultIdleTimeoutSeconds),
-        initialClientTimeoutSeconds: FBAXBridgeArguments.startupTimeout(arguments: options),
-        exitOnDisconnect: FBAXBridgeArguments.exitOnDisconnect(arguments: options),
+        idleTimeoutSeconds: BridgeServeOptions.idleTimeout(arguments: options, fallback: BridgeServer.defaultIdleTimeoutSeconds),
+        initialClientTimeoutSeconds: BridgeServeOptions.startupTimeout(arguments: options),
+        exitOnDisconnect: BridgeServeOptions.exitOnDisconnect(arguments: options),
         // Bind the accessibility frameworks before the first client so the first read does not pay
         // for it inside the client's timeout.
         prepareRuntime: { FBAXClientProvider.prepare() },
