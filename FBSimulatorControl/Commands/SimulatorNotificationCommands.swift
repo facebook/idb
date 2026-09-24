@@ -62,10 +62,7 @@ public struct SimulatorNotificationCommands {
   /// killed an app to exercise its push path can therefore still assert on what
   /// arrived.
   public func deliveredNotifications(forBundleID bundleID: String) async throws -> [DeliveredNotification] {
-    let output = try await simulator.runSimulatorFrameworkBridge(
-      withService: "notifications",
-      action: "delivered",
-      arguments: [bundleID])
+    let output = try await simulator.runSimulatorFrameworkBridge(.notifications(.delivered(bundleID: bundleID)))
     return try DeliveredNotification.records(fromBridgeOutput: output)
   }
 
@@ -76,10 +73,7 @@ public struct SimulatorNotificationCommands {
   /// is what lets a test start from a known inbox rather than from whatever earlier runs
   /// left behind, since a delivered notification outlives the app that received it.
   public func clearDeliveredNotifications(forBundleID bundleID: String) async throws {
-    _ = try await simulator.runSimulatorFrameworkBridge(
-      withService: "notifications",
-      action: "clear-delivered",
-      arguments: [bundleID])
+    try await simulator.runSimulatorFrameworkBridge(.notifications(.clearDelivered(bundleID: bundleID)))
   }
 
 }

@@ -8,6 +8,7 @@
 import Darwin
 import FBControlCore
 import Foundation
+import SimulatorFrameworkBridgeProtocol
 
 /// Selects how an in-guest frontmost read resolves the foreground application.
 public enum AXBridgeFrontmostMethod: String, Sendable, CaseIterable {
@@ -38,26 +39,6 @@ struct AXBridgeWriteRequest: Sendable, Equatable {
     case .perform: .perform
     case .setValue: .setValue
     }
-  }
-
-  var arguments: [String] {
-    var arguments = ["accessibility", verb.rawValue]
-    arguments += AXWire.Request.x.argument("\(x)")
-    arguments += AXWire.Request.y.argument("\(y)")
-    if let pid {
-      arguments += AXWire.Request.pid.argument("\(pid)")
-    }
-    switch kind {
-    case let .perform(action):
-      arguments += AXWire.Request.action.argument(action.rawValue)
-    case let .setValue(value):
-      arguments += AXWire.Request.value.argument(value)
-    }
-    if let assertion {
-      arguments += AXWire.Request.assertKey.argument(assertion.key.rawValue)
-      arguments += AXWire.Request.assertValue.argument(assertion.value)
-    }
-    return arguments
   }
 
   var payload: [String: Any] {
@@ -91,30 +72,6 @@ struct AXBridgeReadRequest: Sendable, Equatable {
   let traversal: AXTraversal
   let automationMode: Bool?
 
-  func appendingArguments(to arguments: [String]) -> [String] {
-    var arguments = arguments
-    arguments += AXWire.Request.maxDepth.argument("\(maxDepth)")
-    arguments += AXWire.Request.maxNodes.argument("\(maxNodes)")
-    if let attributes, !attributes.isEmpty {
-      arguments += AXWire.Request.attributes.argument(attributes.joined(separator: ","))
-    }
-    if explainUnreachable {
-      arguments += AXWire.Request.explainUnreachable.argument("1")
-    }
-    switch traversal {
-    case .semantic:
-      arguments += AXWire.Request.translatorVocabulary.argument("1")
-    case .singleFetch:
-      arguments += AXWire.Request.snapshotTree.argument("1")
-    case .viewHierarchy:
-      break
-    }
-    if let automationMode {
-      arguments += AXWire.Request.automationMode.argument(automationMode ? "1" : "0")
-    }
-    return arguments
-  }
-
   func appendingPayload(to payload: [String: Any]) -> [String: Any] {
     var payload = payload
     payload[AXWire.Request.maxDepth.key] = maxDepth
@@ -145,50 +102,15 @@ enum AXBridgeRequest: Sendable {
   case write(AXBridgeWriteRequest)
   case deviceSettingRead(String)
   case deviceSettingWrite(String, enabled: Bool)
-  case ping
 
-  var mayRetry: Bool {
-    switch self {
-    case .write, .deviceSettingWrite:
-      false
-    case .read, .readFrontmost, .hitTest, .deviceSettingRead, .ping:
-      true
-    }
+  var command: BridgeCommand {
+    get throws { .accessibility(try payload.mapValues(BridgeJSONValue.init(foundationValue:))) }
   }
 
+  var mayRetry: Bool { (try? command.mayRetry) ?? false }
+
   var arguments: [String] {
-    switch self {
-    case let .read(pid, options):
-      return options.appendingArguments(
-        to: ["accessibility", AXWire.Verb.describe.rawValue]
-          + AXWire.Request.pid.argument("\(pid)"))
-    case let .readFrontmost(x, y, method, options):
-      return options.appendingArguments(
-        to: ["accessibility", AXWire.Verb.describe.rawValue]
-          + AXWire.Request.x.argument("\(x)")
-          + AXWire.Request.y.argument("\(y)")
-          + AXWire.Request.method.argument(method.rawValue))
-    case let .hitTest(x, y, attributes):
-      var arguments =
-        ["accessibility", AXWire.Verb.hitTest.rawValue]
-        + AXWire.Request.x.argument("\(x)")
-        + AXWire.Request.y.argument("\(y)")
-      if let attributes, !attributes.isEmpty {
-        arguments += AXWire.Request.attributes.argument(attributes.joined(separator: ","))
-      }
-      return arguments
-    case let .write(request):
-      return request.arguments
-    case let .deviceSettingRead(setting):
-      return ["accessibility", AXWire.Verb.settingsGet.rawValue]
-        + AXWire.Request.setting.argument(setting)
-    case let .deviceSettingWrite(setting, enabled):
-      return ["accessibility", AXWire.Verb.settingsSet.rawValue]
-        + AXWire.Request.setting.argument(setting)
-        + AXWire.Request.enabled.argument(enabled ? "true" : "false")
-    case .ping:
-      return ["accessibility", "ping"]
-    }
+    get throws { try BridgeRequest(command: command).arguments }
   }
 
   var payload: [String: Any] {
@@ -228,8 +150,6 @@ enum AXBridgeRequest: Sendable {
         AXWire.Request.setting.key: setting,
         AXWire.Request.enabled.key: enabled,
       ]
-    case .ping:
-      return [AXWire.Request.verb.key: "ping"]
     }
   }
 }

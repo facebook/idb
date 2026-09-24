@@ -7,22 +7,13 @@
 
 @preconcurrency import FBControlCore
 import Foundation
+import SimulatorFrameworkBridgeProtocol
 
 struct AXBridgeOneshotTransport: AXBridgeTransport {
   let simulator: Simulator
 
   func send(_ request: AXBridgeRequest) async throws -> Data {
-    guard let helperPath = simulator.frameworkBridgePath else {
-      throw AXBridgeError.bridgeUnavailable
-    }
-    let output = try await simulator.runtimeTools.launchConsumingOutput(
-      launchPath: helperPath,
-      arguments: request.arguments
-    )
-    guard !output.stdout.isEmpty else {
-      let stderr = String(data: output.stderr, encoding: .utf8) ?? ""
-      throw AXBridgeError.guestFailure("exit \(output.exitCode); no output. stderr: \(stderr)")
-    }
-    return output.stdout
+    try await SimulatorFrameworkBridgeOneshotTransport(simulator: simulator)
+      .send(BridgeRequest(command: request.command)).accessibilityData()
   }
 }

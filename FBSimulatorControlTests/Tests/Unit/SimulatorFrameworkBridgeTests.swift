@@ -7,6 +7,7 @@
 
 @testable import FBSimulatorControl
 import Foundation
+@_implementationOnly import SimulatorFrameworkBridgeProtocol
 import XCTest
 
 final class SimulatorFrameworkBridgeTests: XCTestCase {
@@ -38,26 +39,19 @@ final class SimulatorFrameworkBridgeTests: XCTestCase {
     try super.tearDownWithError()
   }
 
-  private func deliveredNotificationsInvocation() -> SimulatorFrameworkBridgeInvocation {
-    SimulatorFrameworkBridgeInvocation(
-      service: "notifications",
-      action: "delivered",
-      arguments: ["com.apple.news"])
-  }
-
-  func testTheGuestParsesTheServiceThenTheActionThenTheRest() {
-    XCTAssertEqual(
-      deliveredNotificationsInvocation().guestArguments,
-      ["notifications", "delivered", "com.apple.news"])
-  }
-
   private var stagingDirectory: URL {
     directory.appendingPathComponent("staging")
   }
 
-  func testADeliveredNotificationsInvocationLaunchesAStagedCopyOfTheGuest() throws {
-    let launched = try deliveredNotificationsInvocation()
-      .executablePath(bundledGuestPath: bundledGuestPath, stagingDirectory: stagingDirectory)
+  private func staged(_ bundleIdentity: String) throws -> String {
+    try SimulatorFrameworkBridgeStaging.stagedExecutablePath(
+      bundledGuestPath: bundledGuestPath,
+      bundleIdentity: bundleIdentity,
+      stagingDirectory: stagingDirectory)
+  }
+
+  func testAStagedGuestIsACopyOfTheBundledGuest() throws {
+    let launched = try staged("com.apple.news")
     XCTAssertNotEqual(launched, bundledGuestPath)
     XCTAssertEqual(
       URL(fileURLWithPath: launched).lastPathComponent,
@@ -70,10 +64,8 @@ final class SimulatorFrameworkBridgeTests: XCTestCase {
     XCTAssertEqual(type, .typeRegular)
   }
 
-  func testADeliveredNotificationsInvocationLaunchesWithTheTargetAppsBundleIdentity() throws {
-    let launched = try deliveredNotificationsInvocation()
-      .executablePath(bundledGuestPath: bundledGuestPath, stagingDirectory: stagingDirectory)
-    XCTAssertTrue(FileManager.default.fileExists(atPath: launched))
+  func testAStagedGuestLaunchesWithTheTargetAppsBundleIdentity() throws {
+    let launched = try staged("com.apple.news")
     let siblingInfoPlist = URL(fileURLWithPath: launched)
       .deletingLastPathComponent()
       .appendingPathComponent("Info.plist")
@@ -83,45 +75,27 @@ final class SimulatorFrameworkBridgeTests: XCTestCase {
     XCTAssertEqual(info["CFBundleExecutable"], URL(fileURLWithPath: launched).lastPathComponent)
   }
 
-  func testAClearDeliveredNotificationsInvocationLaunchesWithTheTargetAppsBundleIdentity() throws {
-    let invocation = SimulatorFrameworkBridgeInvocation(
-      service: "notifications",
-      action: "clear-delivered",
-      arguments: ["com.apple.news"])
-    let launched =
-      try invocation
-      .executablePath(bundledGuestPath: bundledGuestPath, stagingDirectory: stagingDirectory)
-    let siblingInfoPlist = URL(fileURLWithPath: launched)
-      .deletingLastPathComponent()
-      .appendingPathComponent("Info.plist")
-    let info = try XCTUnwrap(NSDictionary(contentsOf: siblingInfoPlist) as? [String: String])
-    XCTAssertEqual(info["CFBundleIdentifier"], "com.apple.news")
-    XCTAssertEqual(info["CFBundleExecutable"], URL(fileURLWithPath: launched).lastPathComponent)
-  }
-
   /// The identity is written beside the executable, so two target apps cannot share one.
   func testEachTargetAppLaunchesItsOwnGuest() throws {
-    let news = SimulatorFrameworkBridgeInvocation(
-      service: "notifications",
-      action: "delivered",
-      arguments: ["com.apple.news"])
-    let weather = SimulatorFrameworkBridgeInvocation(
-      service: "notifications",
-      action: "delivered",
-      arguments: ["com.apple.weather"])
-    XCTAssertNotEqual(
-      try news.executablePath(bundledGuestPath: bundledGuestPath, stagingDirectory: stagingDirectory),
-      try weather.executablePath(bundledGuestPath: bundledGuestPath, stagingDirectory: stagingDirectory))
+    XCTAssertNotEqual(try staged("com.apple.news"), try staged("com.apple.weather"))
   }
 
-  func testAnAccessibilityInvocationLaunchesTheBundledGuest() throws {
-    let invocation = SimulatorFrameworkBridgeInvocation(
-      service: "accessibility",
-      action: "describe",
-      arguments: ["--pid", "42"])
-    XCTAssertEqual(
-      try invocation.executablePath(bundledGuestPath: bundledGuestPath, stagingDirectory: stagingDirectory),
-      bundledGuestPath)
+  func testOnlyABundleIdentifierCanBeStagedAsAnIdentity() {
+    XCTAssertEqual(SimulatorFrameworkBridgeStaging.bundleIdentity("com.apple.news"), "com.apple.news")
+    for bundleID in ["", ".", "..", "../news", "com/apple"] {
+      XCTAssertNil(SimulatorFrameworkBridgeStaging.bundleIdentity(bundleID), bundleID)
+    }
+  }
+
+  func testDeliveredNotificationCommandsAreStaged() {
+    XCTAssertEqual(BridgeCommand.notifications(.delivered(bundleID: "com.apple.news")).route, .staged(bundleIdentity: "com.apple.news"))
+    XCTAssertEqual(BridgeCommand.notifications(.clearDelivered(bundleID: "com.apple.news")).route, .staged(bundleIdentity: "com.apple.news"))
+  }
+
+  func testCommandsWithoutAnIdentityUseThePersistentGuest() {
+    for command: BridgeCommand in [.notifications(.list(bundleID: "com.apple.news")), .notifications(.delivered(bundleID: "../news")), .clearPhotos, .accessibility([:])] {
+      XCTAssertEqual(command.route, .persistent, "\(command)")
+    }
   }
 
   func testFailureDetailsPreserveBothStreams() {

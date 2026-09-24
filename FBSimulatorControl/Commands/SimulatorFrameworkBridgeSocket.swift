@@ -7,12 +7,13 @@
 
 import Darwin
 import Foundation
+import SimulatorFrameworkBridgeProtocol
 
 /// Where a persistent bridge's socket lives, and how to recognise one.
 ///
 /// Its own file because it is shared vocabulary: two processes that never speak to each other have to
 /// derive the same path for the same simulator, or each starts a bridge the other cannot find.
-enum AXBridgeSocket {
+enum SimulatorFrameworkBridgeSocket {
   static let suffix = ".sock"
 
   /// A directory of our own beneath the per-user temporary directory, owner-only.
@@ -21,7 +22,7 @@ enum AXBridgeSocket {
   /// can bind it first.
   static let directory: String = {
     let base = userTemporaryDirectory()
-    return "\(base.hasSuffix("/") ? String(base.dropLast()) : base)/idb-ax"
+    return "\(base.hasSuffix("/") ? String(base.dropLast()) : base)/idb-sfb-v\(BridgeRequest.currentVersion)"
   }()
 
   /// From `confstr`, not `$TMPDIR`: `NSTemporaryDirectory()` honours an environment variable a harness

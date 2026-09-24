@@ -293,45 +293,9 @@ public extension AccessibilityElementsResponse {
 
 public extension Simulator {
 
-  /// Memoized per scope: the spawn plus `initForRemoteAccess` behind a transport is the cost the
-  /// persistent modes exist to avoid. Shared and exclusive transports are never interchangeable.
-  /// `frontmostMethod` and `automationMode` belong to the reader, so readers differing in those share
-  /// a transport.
-  internal func axBridgeTransport(scope: AXBridgeServiceScope) -> AXBridgePersistentTransport {
-    commandCache.resolve { AXBridgeTransportsByScope() }
-      .transport(for: scope) { AXBridgePersistentTransport(simulator: self, scope: scope) }
-  }
-
   /// Delivers one composed gesture over HID, which drains the transport once for the whole gesture
   /// rather than once per primitive event.
   internal func sendHIDGesture(_ event: SimulatorHIDEvent) async throws {
     try await hid.connect().send(event: event, logger: logger)
-  }
-}
-
-/// One socket-backed transport per service scope, for one target.
-///
-/// `TargetCommandCache` keys its slots by type, and the two scopes need separate transports that
-/// are the same type, so this holds them apart.
-///
-// SAFETY: `transports` is only read or written with `lock` held, so no mutable state is reachable from
-// two threads at once.
-// patternlint-disable-next-line unchecked-sendable
-final class AXBridgeTransportsByScope: @unchecked Sendable {
-  private let lock = NSLock()
-  private var transports: [AXBridgeServiceScope: AXBridgePersistentTransport] = [:]
-
-  func transport(
-    for scope: AXBridgeServiceScope,
-    build: () -> AXBridgePersistentTransport
-  ) -> AXBridgePersistentTransport {
-    lock.lock()
-    defer { lock.unlock() }
-    if let existing = transports[scope] {
-      return existing
-    }
-    let created = build()
-    transports[scope] = created
-    return created
   }
 }

@@ -7,12 +7,15 @@
 
 import FBControlCore
 import Foundation
+import SimulatorFrameworkBridgeProtocol
 
 /// The failures of running a service inside the guest with `SimulatorFrameworkBridge`.
 public enum SimulatorFrameworkBridgeError: Error, LocalizedError {
 
   /// The bridge binary is not present in the companion's Resources directory.
   case binaryMissing
+
+  case requestFailed(command: BridgeCommand, exitCode: Int32, output: String)
 
   /// The bridge ran and reported a failure.
   case serviceFailed(service: String, action: String, exitCode: Int32, stderr: String)
@@ -29,81 +32,11 @@ public enum SimulatorFrameworkBridgeError: Error, LocalizedError {
     switch self {
     case .binaryMissing:
       return "SimulatorFrameworkBridge binary not found in the companion Resources directory"
+    case let .requestFailed(command, exitCode, output):
+      return "SimulatorFrameworkBridge \(command) failed with exit code \(exitCode): \(output.isEmpty ? "no output" : output)"
     case let .serviceFailed(service, action, exitCode, stderr):
       return "SimulatorFrameworkBridge \(service) \(action) failed with exit code \(exitCode): \(stderr)"
     }
-  }
-}
-
-/// One run of a `SimulatorFrameworkBridge` service, and where it launches from.
-///
-/// The guest is spawned by host path — `SimDevice` resolves `launchPath` against the host
-/// filesystem rather than the runtime root — so the directory the executable sits in is
-/// something the simulator can see, not only a detail of how the companion is packaged.
-/// Resolving that path here rather than at the call site is what lets one invocation run the
-/// same binary from somewhere else without every caller learning why.
-struct SimulatorFrameworkBridgeInvocation {
-
-  let service: String
-  let action: String
-  let arguments: [String]
-
-  /// The argument vector the guest parses, which is `<service> <action> [args...]`.
-  var guestArguments: [String] {
-    [service, action] + arguments
-  }
-
-  /// The app the guest has to be seen as by the daemons this invocation asks, if any.
-  ///
-  /// `usernotificationsd` answers a client only for the bundle `BSBundleIDForPID` reports for
-  /// it, and that is read from the `Info.plist` beside the client's executable. The delivered
-  /// notifications of an app can therefore only be read or withdrawn by a guest that appears
-  /// to be it.
-  /// An argument that could not name an app gets no identity, which also keeps it from being
-  /// used as a path component when staging.
-  var bundleIdentity: String? {
-    guard service == "notifications", ["delivered", "clear-delivered"].contains(action),
-      let bundleID = arguments.first,
-      bundleID.range(of: "^[A-Za-z0-9.-]+$", options: .regularExpression) != nil,
-      bundleID != ".", bundleID != ".."
-    else {
-      return nil
-    }
-    return bundleID
-  }
-
-  /// The executable this invocation launches.
-  ///
-  /// `bundledGuestPath` is the guest shipped in the companion's `Resources`, shared by every
-  /// invocation, so it cannot carry any one app's identity. An invocation with a
-  /// `bundleIdentity` instead launches a copy of it staged in `stagingDirectory` beside an
-  /// `Info.plist` naming that app. The copy is a hardlink where the filesystem allows it, and
-  /// never a symlink: `proc_pidpath` resolves a symlink back to `Resources`, where there is no
-  /// `Info.plist` to read.
-  func executablePath(bundledGuestPath: String, stagingDirectory: URL) throws -> String {
-    guard let bundleIdentity else {
-      return bundledGuestPath
-    }
-    let guest = URL(fileURLWithPath: bundledGuestPath)
-    let bundle = stagingDirectory.appendingPathComponent(bundleIdentity, isDirectory: true)
-    let staged = bundle.appendingPathComponent(guest.lastPathComponent)
-    try FileManager.default.createDirectory(at: bundle, withIntermediateDirectories: true)
-    do {
-      try FileManager.default.linkItem(at: guest, to: staged)
-    } catch {
-      // Resources and the temporary directory need not share a filesystem.
-      try FileManager.default.copyItem(at: guest, to: staged)
-    }
-    let infoPlist: [String: String] = [
-      "CFBundleExecutable": guest.lastPathComponent,
-      "CFBundleIdentifier": bundleIdentity,
-      "CFBundlePackageType": "APPL",
-      "CFBundleVersion": "1",
-    ]
-    try PropertyListSerialization
-      .data(fromPropertyList: infoPlist, format: .xml, options: 0)
-      .write(to: bundle.appendingPathComponent("Info.plist"))
-    return staged.path
   }
 }
 
@@ -111,10 +44,7 @@ struct SimulatorFrameworkBridgeInvocation {
 
 extension Simulator {
 
-  /// Runs one of `SimulatorFrameworkBridge`'s services inside the guest, returning its stdout.
-  ///
-  /// The bridge is a guest binary spawned into the booted simulator, so it reaches frameworks and
-  /// daemons that exist only there. `ServiceDispatch.m` holds the set of services and their actions.
+  /// Runs a positional `SimulatorFrameworkBridge` command for services that `BridgeCommand` does not model yet.
   @discardableResult
   func runSimulatorFrameworkBridge(
     withService service: String,
@@ -124,25 +54,9 @@ extension Simulator {
     guard let bundledGuestPath = frameworkBridgePath else {
       throw SimulatorFrameworkBridgeError.binaryMissing
     }
-    let invocation = SimulatorFrameworkBridgeInvocation(
-      service: service,
-      action: action,
-      arguments: arguments)
-
-    let output: InSimulatorToolOutput
-    if invocation.bundleIdentity == nil {
-      output = try await runtimeTools.launchConsumingOutput(
-        launchPath: bundledGuestPath,
-        arguments: invocation.guestArguments)
-    } else {
-      output = try await temporaryDirectory.withTemporaryDirectory { stagingDirectory in
-        try await runtimeTools.launchConsumingOutput(
-          launchPath: invocation.executablePath(
-            bundledGuestPath: bundledGuestPath,
-            stagingDirectory: stagingDirectory),
-          arguments: invocation.guestArguments)
-      }
-    }
+    let output = try await runtimeTools.launchConsumingOutput(
+      launchPath: bundledGuestPath,
+      arguments: [service, action] + arguments)
     guard output.exitCode == 0 else {
       let details = SimulatorFrameworkBridgeError.failureDetails(
         stderr: output.stderr,

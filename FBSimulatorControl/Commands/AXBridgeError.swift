@@ -69,7 +69,7 @@ public enum AXBridgeError: LocalizedError, Sendable {
 
   /// A clause, not a sentence: the caller has already named the process it is about.
   ///
-  /// Signal zero is not a signal, matching `AXBridgeConnection.socketClosedMessage`.
+  /// Signal zero is not a signal, matching `SimulatorFrameworkBridgeConnection.socketClosedMessage`.
   private static func exitPhrase(signal: Int?, exitCode: Int?) -> String {
     if let signal, signal != 0 {
       return "was killed by signal \(signal)"

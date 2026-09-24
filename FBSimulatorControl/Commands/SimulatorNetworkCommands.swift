@@ -55,17 +55,15 @@ public struct SimulatorNetworkCommands {
 
     public func set(host: String, port: UInt, type: String) async throws {
       try await simulator.runSimulatorFrameworkBridge(
-        withService: "proxy",
-        action: "set",
-        arguments: [host, "\(port)", type.isEmpty ? "http" : type])
+        .proxy(.set(host: host, port: (String(port) as NSString).intValue, kind: type == "socks" ? .socks : .http)))
     }
 
     public func clear() async throws {
-      try await simulator.runSimulatorFrameworkBridge(withService: "proxy", action: "clear")
+      try await simulator.runSimulatorFrameworkBridge(.proxy(.clear))
     }
 
     public func list() async throws -> String {
-      try await simulator.runSimulatorFrameworkBridge(withService: "proxy", action: "list")
+      try await simulator.runSimulatorFrameworkBridge(.proxy(.list))
     }
   }
 
@@ -82,15 +80,15 @@ public struct SimulatorNetworkCommands {
       if servers.isEmpty {
         throw SimulatorNetworkError.noDnsServers
       }
-      try await simulator.runSimulatorFrameworkBridge(withService: "dns", action: "set", arguments: servers)
+      try await simulator.runSimulatorFrameworkBridge(.dns(.set(servers: servers)))
     }
 
     public func clear() async throws {
-      try await simulator.runSimulatorFrameworkBridge(withService: "dns", action: "clear")
+      try await simulator.runSimulatorFrameworkBridge(.dns(.clear))
     }
 
     public func list() async throws -> String {
-      try await simulator.runSimulatorFrameworkBridge(withService: "dns", action: "list")
+      try await simulator.runSimulatorFrameworkBridge(.dns(.list))
     }
   }
 }

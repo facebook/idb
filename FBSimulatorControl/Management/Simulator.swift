@@ -345,8 +345,8 @@ extension Simulator {
       let transport: any AXBridgeTransport =
         switch persistence {
         case .oneShot: AXBridgeOneshotTransport(simulator: self)
-        case .shared: axBridgeTransport(scope: .shared)
-        case .exclusive: axBridgeTransport(scope: .exclusive)
+        case .shared: frameworkBridgeTransport(scope: .shared)
+        case .exclusive: frameworkBridgeTransport(scope: .exclusive)
         }
       return AXBridgeUIAutomation(
         simulator: self, transport: transport, persistence: persistence, frontmostMethod: frontmostMethod,

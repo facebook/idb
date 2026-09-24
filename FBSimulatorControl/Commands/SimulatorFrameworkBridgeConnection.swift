@@ -8,9 +8,10 @@
 import Darwin
 @preconcurrency import FBControlCore
 import Foundation
+import SimulatorFrameworkBridgeProtocol
 
 // SAFETY: the subprocess handle is retained for diagnostics and only queried through thread-safe futures.
-enum AXBridgeGuestOwnership: @unchecked Sendable {
+enum BridgeGuestOwnership: @unchecked Sendable {
   case privateToThisHost(FBSubprocess<AnyObject, AnyObject, AnyObject>)
   case shared(FBSubprocess<AnyObject, AnyObject, AnyObject>?)
 
@@ -30,12 +31,14 @@ enum AXBridgeGuestOwnership: @unchecked Sendable {
 }
 
 /// A serialized connection to a guest serving length-prefixed JSON over a Unix socket.
-// SAFETY: stored state is immutable and all socket I/O runs on `queue`.
+// SAFETY: socket I/O and `terminalError` are accessed only on `queue`.
 // patternlint-disable-next-line unchecked-sendable
-final class AXBridgeConnection: @unchecked Sendable {
+final class SimulatorFrameworkBridgeConnection: BridgeConnection, @unchecked Sendable {
   private let fileDescriptor: Int32
-  private let ownership: AXBridgeGuestOwnership
-  private let queue = DispatchQueue(label: "com.facebook.FBSimulatorControl.axbridge.connection")
+  private let ownership: BridgeGuestOwnership
+  private let queue = DispatchQueue(label: "com.facebook.FBSimulatorControl.frameworkbridge.connection")
+
+  private var terminalError: Error?
 
   /// The per-`recv` silence deadline, rather than a deadline for the whole response.
   static let receiveTimeoutSeconds = 30
@@ -45,7 +48,7 @@ final class AXBridgeConnection: @unchecked Sendable {
     ownership.isPrivate
   }
 
-  init(fileDescriptor: Int32, ownership: AXBridgeGuestOwnership) {
+  init(fileDescriptor: Int32, ownership: BridgeGuestOwnership) {
     self.fileDescriptor = fileDescriptor
     self.ownership = ownership
   }
@@ -56,12 +59,16 @@ final class AXBridgeConnection: @unchecked Sendable {
 
   func roundTrip(_ requestData: Data) async throws -> Data {
     try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Data, Error>) in
-      queue.async { [fileDescriptor, ownership] in
+      queue.async { [self] in
         do {
-          try AXBridgeConnection.writeFrame(fileDescriptor, requestData)
-          let responseData = try AXBridgeConnection.readFrame(fileDescriptor, guest: ownership.process)
+          if let terminalError { throw terminalError }
+          let request = try BridgeRequest.decode(requestData)
+          try SimulatorFrameworkBridgeConnection.writeFrame(fileDescriptor, requestData)
+          let responseData = try SimulatorFrameworkBridgeConnection.readFrame(fileDescriptor, guest: ownership.process)
+          _ = try BridgeResponse.decode(responseData, for: request)
           continuation.resume(returning: responseData)
         } catch {
+          terminalError = error
           continuation.resume(throwing: error)
         }
       }
@@ -122,6 +129,7 @@ final class AXBridgeConnection: @unchecked Sendable {
     setsockopt(fileDescriptor, SOL_SOCKET, SO_NOSIGPIPE, &noSigPipe, socklen_t(MemoryLayout<Int32>.size))
     var readTimeout = timeval(tv_sec: receiveTimeoutSeconds, tv_usec: 0)
     setsockopt(fileDescriptor, SOL_SOCKET, SO_RCVTIMEO, &readTimeout, socklen_t(MemoryLayout<timeval>.size))
+    setsockopt(fileDescriptor, SOL_SOCKET, SO_SNDTIMEO, &readTimeout, socklen_t(MemoryLayout<timeval>.size))
     return fileDescriptor
   }
 
@@ -149,7 +157,7 @@ final class AXBridgeConnection: @unchecked Sendable {
   }
 
   static func writeFrame(_ fileDescriptor: Int32, _ payload: Data) throws {
-    try writeAll(fileDescriptor, encodeLength(payload.count))
+    try writeAll(fileDescriptor, BridgeFrame.header(forSize: payload.count))
     try writeAll(fileDescriptor, payload)
   }
 
@@ -158,23 +166,8 @@ final class AXBridgeConnection: @unchecked Sendable {
     guest: FBSubprocess<AnyObject, AnyObject, AnyObject>?
   ) throws -> Data {
     let header = try readAll(fileDescriptor, count: 4, guest: guest)
-    let length = decodeLength(header)
-    guard length > 0, length < 16 * 1024 * 1024 else {
-      throw AXBridgeError.guestFailure("invalid response frame length \(length)")
-    }
+    let length = try BridgeFrame.size(fromHeader: header)
     return try readAll(fileDescriptor, count: length, guest: guest)
-  }
-
-  private static func encodeLength(_ count: Int) -> Data {
-    let value = UInt32(count)
-    return Data([
-      UInt8((value >> 24) & 0xff), UInt8((value >> 16) & 0xff), UInt8((value >> 8) & 0xff), UInt8(value & 0xff),
-    ])
-  }
-
-  private static func decodeLength(_ data: Data) -> Int {
-    let bytes = [UInt8](data)
-    return (Int(bytes[0]) << 24) | (Int(bytes[1]) << 16) | (Int(bytes[2]) << 8) | Int(bytes[3])
   }
 
   private static func writeAll(_ fileDescriptor: Int32, _ data: Data) throws {
@@ -264,7 +257,7 @@ final class AXBridgeConnection: @unchecked Sendable {
           throw AXBridgeError.guestFailure("socket read failed: \(String(cString: strerror(errno)))")
         }
         if received == 0 {
-          throw AXBridgeError.guestFailure(AXBridgeConnection.socketClosedMessage(process: guest))
+          throw AXBridgeError.guestFailure(SimulatorFrameworkBridgeConnection.socketClosedMessage(process: guest))
         }
         offset += received
       }

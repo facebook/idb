@@ -10,7 +10,7 @@ import FBControlCore
 import XCTest
 
 /// Reads a real accessibility tree out of the provided simulator through the axbridge backend —
-/// the `SimulatorFrameworkBridge` `accessibility serve` guest, reached over its unix socket. The
+/// the `SimulatorFrameworkBridge` `serve` guest, reached over its unix socket. The
 /// doubles-backed suites cover the envelope and the serialization; nothing else starts the guest
 /// or walks a live tree.
 ///

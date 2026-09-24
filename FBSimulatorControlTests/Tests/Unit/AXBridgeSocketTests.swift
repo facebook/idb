@@ -30,8 +30,8 @@ final class AXBridgeSocketTests: XCTestCase {
 
   // The adoption deadline is sub-second, so the conversion has to keep fractions.
   func testTheAdoptionDeadlineIsSubSecondAndNonZero() {
-    let window = AXBridgePersistentTransport.receiveWindow(AXBridgePersistentTransport.adoptionTimeout)
-    XCTAssertLessThan(AXBridgePersistentTransport.adoptionTimeout, 1)
+    let window = SimulatorFrameworkBridgePersistentTransport.receiveWindow(SimulatorFrameworkBridgePersistentTransport.adoptionTimeout)
+    XCTAssertLessThan(SimulatorFrameworkBridgePersistentTransport.adoptionTimeout, 1)
     XCTAssertGreaterThan(window.tv_usec, 0, "a sub-second deadline that converts to zero is no deadline")
   }
   func testEveryResolvedBackendNameRoundTrips() {
@@ -59,23 +59,23 @@ final class AXBridgeSocketTests: XCTestCase {
   }
 
   func testAConnectionSocketIsNamedForItsIdentifier() {
-    let path = AXBridgeSocket.path(forConnection: "ABC")
-    XCTAssertEqual(path, "\(AXBridgeSocket.directory)/ABC.sock")
-    XCTAssertTrue(path.hasSuffix(AXBridgeSocket.suffix))
+    let path = SimulatorFrameworkBridgeSocket.path(forConnection: "ABC")
+    XCTAssertEqual(path, "\(SimulatorFrameworkBridgeSocket.directory)/ABC.sock")
+    XCTAssertTrue(path.hasSuffix(SimulatorFrameworkBridgeSocket.suffix))
   }
 
   // A predictable socket name in a world-writable directory can be bound by somebody else first.
   func testTheSocketDirectoryIsPrivateToThisUser() throws {
-    try AXBridgeSocket.prepareDirectory()
+    try SimulatorFrameworkBridgeSocket.prepareDirectory()
     // `realpath` rather than `resolvingSymlinksInPath`, which deliberately leaves `/tmp` alone: on
     // macOS that is a 0755 symlink to the 1777 directory that used to hold the sockets, and it is the
     // latter's mode that decides who can write there.
-    let resolved = try XCTUnwrap(resolvingSymlinks(AXBridgeSocket.directory))
+    let resolved = try XCTUnwrap(resolvingSymlinks(SimulatorFrameworkBridgeSocket.directory))
     let attributes = try FileManager.default.attributesOfItem(atPath: resolved)
     let permissions = try XCTUnwrap(attributes[.posixPermissions] as? NSNumber).uint16Value
     XCTAssertEqual(
       permissions & 0o077, 0,
-      "dir=\(AXBridgeSocket.directory) resolved=\(resolved) mode=\(String(permissions, radix: 8))")
+      "dir=\(SimulatorFrameworkBridgeSocket.directory) resolved=\(resolved) mode=\(String(permissions, radix: 8))")
   }
 
   // `createDirectory` applies its attributes only when it creates something, so on the `/tmp` fallback another
@@ -87,7 +87,7 @@ final class AXBridgeSocketTests: XCTestCase {
     try FileManager.default.setAttributes([.posixPermissions: 0o777], ofItemAtPath: loose)
     XCTAssertEqual(try mode(of: loose), 0o777, "precondition: the directory starts world-writable")
 
-    try AXBridgeSocket.prepareDirectory(loose)
+    try SimulatorFrameworkBridgeSocket.prepareDirectory(loose)
 
     let tightened = try mode(of: loose)
     XCTAssertEqual(tightened & 0o077, 0, "mode=\(String(tightened, radix: 8))")
@@ -101,10 +101,10 @@ final class AXBridgeSocketTests: XCTestCase {
   // The directory has to be there before a spawn, because the guest binds into it and `bind` does not
   // create intermediate directories. Asking twice must be fine — every spawn asks.
   func testPreparingTheSocketDirectoryIsRepeatable() throws {
-    try AXBridgeSocket.prepareDirectory()
-    try AXBridgeSocket.prepareDirectory()
+    try SimulatorFrameworkBridgeSocket.prepareDirectory()
+    try SimulatorFrameworkBridgeSocket.prepareDirectory()
     var isDirectory: ObjCBool = false
-    XCTAssertTrue(FileManager.default.fileExists(atPath: AXBridgeSocket.directory, isDirectory: &isDirectory))
+    XCTAssertTrue(FileManager.default.fileExists(atPath: SimulatorFrameworkBridgeSocket.directory, isDirectory: &isDirectory))
     XCTAssertTrue(isDirectory.boolValue)
   }
 
@@ -119,7 +119,7 @@ final class AXBridgeSocketTests: XCTestCase {
   // `bind` truncates an over-long `sun_path` silently rather than failing, which would land two simulators on
   // one socket; the headroom is about six bytes on a stock layout.
   func testABridgeSocketPathFitsInSunPath() {
-    let path = AXBridgeSocket.path(forConnection: UUID().uuidString)
+    let path = SimulatorFrameworkBridgeSocket.path(forConnection: UUID().uuidString)
     XCTAssertLessThan(path.utf8.count, 104, "\(path) is \(path.utf8.count) bytes")
   }
 
@@ -128,12 +128,12 @@ final class AXBridgeSocketTests: XCTestCase {
     let tooLong = "\(directory)/\(String(repeating: "x", count: 120)).sock"
     XCTAssertGreaterThan(tooLong.utf8.count, 103)
     do {
-      _ = try await AXBridgeConnection.connect(path: tooLong, timeout: 1)
+      _ = try await SimulatorFrameworkBridgeConnection.connect(path: tooLong, timeout: 1)
       XCTFail("connecting to a path that cannot fit in sun_path must not succeed")
     } catch {
       let message = error.localizedDescription
       XCTAssertTrue(message.contains("sockaddr_un limit"), message)
-      XCTAssertTrue(message.contains("\(AXBridgeConnection.sunPathCapacity)"), message)
+      XCTAssertTrue(message.contains("\(SimulatorFrameworkBridgeConnection.sunPathCapacity)"), message)
       XCTAssertFalse(message.contains("timed out connecting"), message)
     }
   }
@@ -142,7 +142,7 @@ final class AXBridgeSocketTests: XCTestCase {
   func testAnOverLongSocketPathIsRejectedWithoutWaiting() async throws {
     let tooLong = "\(directory)/\(String(repeating: "x", count: 120)).sock"
     let started = Date()
-    _ = try? await AXBridgeConnection.connect(path: tooLong, timeout: 10)
+    _ = try? await SimulatorFrameworkBridgeConnection.connect(path: tooLong, timeout: 10)
     XCTAssertLessThan(Date().timeIntervalSince(started), 1)
   }
 
@@ -202,7 +202,7 @@ final class AXBridgeSocketTests: XCTestCase {
     XCTAssertEqual(bindResult, 0, "precondition: the socket binds")
     XCTAssertEqual(listen(listener, 1), 0)
 
-    let connected = try await AXBridgeConnection.connect(
+    let connected = try await SimulatorFrameworkBridgeConnection.connect(
       path: bound, timeout: 2, guest: exitedGuest(pid: 4242, signal: SIGABRT))
     XCTAssertGreaterThanOrEqual(connected, 0)
     close(connected)
@@ -213,7 +213,7 @@ final class AXBridgeSocketTests: XCTestCase {
     let unbound = "\(directory)/dead.sock"
     let guest = exitedGuest(pid: 4242, signal: SIGABRT)
     let started = Date()
-    _ = try? await AXBridgeConnection.connect(path: unbound, timeout: 2, guest: guest)
+    _ = try? await SimulatorFrameworkBridgeConnection.connect(path: unbound, timeout: 2, guest: guest)
     XCTAssertLessThan(Date().timeIntervalSince(started), 1)
   }
 
@@ -223,7 +223,7 @@ final class AXBridgeSocketTests: XCTestCase {
     let unbound = "\(directory)/dead.sock"
     let guest = exitedGuest(pid: 4242, signal: SIGABRT)
     do {
-      _ = try await AXBridgeConnection.connect(path: unbound, timeout: 1, guest: guest)
+      _ = try await SimulatorFrameworkBridgeConnection.connect(path: unbound, timeout: 1, guest: guest)
       XCTFail("connecting to a socket no guest will ever bind must not succeed")
     } catch let error as AXBridgeError {
       guard case let .guestDiedBeforeBinding(pid, signal, exitCode, _) = error else {
@@ -244,13 +244,13 @@ final class AXBridgeSocketTests: XCTestCase {
   // The two statuses that name an outcome. A signalled process reports the signal in the low seven
   // bits; an exited one reports its code in the next byte, and the two must not be read as each other.
   func testASignalledStatusDecodesToItsSignal() {
-    let cause = AXBridgeConnection.terminationCause(waitpidStatus: SIGABRT)
+    let cause = SimulatorFrameworkBridgeConnection.terminationCause(waitpidStatus: SIGABRT)
     XCTAssertEqual(cause.signal, Int(SIGABRT))
     XCTAssertNil(cause.exitCode)
   }
 
   func testAnExitedStatusDecodesToItsCode() {
-    let cause = AXBridgeConnection.terminationCause(waitpidStatus: 3 << 8)
+    let cause = SimulatorFrameworkBridgeConnection.terminationCause(waitpidStatus: 3 << 8)
     XCTAssertEqual(cause.exitCode, 3)
     XCTAssertNil(cause.signal)
   }
@@ -259,14 +259,14 @@ final class AXBridgeSocketTests: XCTestCase {
   // Decoding it as an exit would report `exited with code 19` for a process that is merely paused.
   func testAStoppedStatusDecodesToNeither() {
     let stopped = (SIGSTOP << 8) | 0x7f
-    let cause = AXBridgeConnection.terminationCause(waitpidStatus: stopped)
+    let cause = SimulatorFrameworkBridgeConnection.terminationCause(waitpidStatus: stopped)
     XCTAssertNil(cause.signal)
     XCTAssertNil(cause.exitCode)
   }
 
   // No status is not the same as a zero status, which would read as a clean exit the guest never made.
   func testAMissingStatusDecodesToNeither() {
-    let cause = AXBridgeConnection.terminationCause(waitpidStatus: nil)
+    let cause = SimulatorFrameworkBridgeConnection.terminationCause(waitpidStatus: nil)
     XCTAssertNil(cause.signal)
     XCTAssertNil(cause.exitCode)
     let error = AXBridgeError.guestDiedBeforeBinding(
@@ -284,72 +284,72 @@ final class AXBridgeSocketTests: XCTestCase {
   // deadline that rounds to zero removes the bound instead of shortening it.
 
   func testAWholeSecondDeadlineConvertsExactly() {
-    let window = AXBridgePersistentTransport.receiveWindow(2)
+    let window = SimulatorFrameworkBridgePersistentTransport.receiveWindow(2)
     XCTAssertEqual(window.tv_sec, 2)
     XCTAssertEqual(window.tv_usec, 0)
   }
 
   func testAFractionalDeadlineKeepsItsFraction() {
-    let window = AXBridgePersistentTransport.receiveWindow(1.5)
+    let window = SimulatorFrameworkBridgePersistentTransport.receiveWindow(1.5)
     XCTAssertEqual(window.tv_sec, 1)
     XCTAssertEqual(window.tv_usec, 500_000)
   }
 
   // Zero must only ever come from a caller asking for no deadline.
   func testAZeroDeadlineStaysZero() {
-    let window = AXBridgePersistentTransport.receiveWindow(0)
+    let window = SimulatorFrameworkBridgePersistentTransport.receiveWindow(0)
     XCTAssertEqual(window.tv_sec, 0)
     XCTAssertEqual(window.tv_usec, 0)
   }
 
   func testTheSunPathCapacityMatchesThePlatform() {
-    XCTAssertEqual(AXBridgeConnection.sunPathCapacity, 104)
+    XCTAssertEqual(SimulatorFrameworkBridgeConnection.sunPathCapacity, 104)
   }
 
   // Nobody else can reach an exclusive guest's socket, so once its client goes there is no next one to wait for.
   func testAnExclusiveSpawnPassesExitOnDisconnect() {
-    let arguments = AXBridgePersistentTransport.serveArguments(
+    let arguments = SimulatorFrameworkBridgePersistentTransport.serveArguments(
       socketPath: "/x/y.sock", scope: .exclusive)
     XCTAssertEqual(Array(arguments.suffix(2)), ["--exit-on-disconnect", "1"])
   }
 
   // A shared guest must stay up for the next client, so the flag is never passed there.
   func testASharedSpawnOmitsExitOnDisconnect() {
-    let arguments = AXBridgePersistentTransport.serveArguments(
+    let arguments = SimulatorFrameworkBridgePersistentTransport.serveArguments(
       socketPath: "/x/y.sock", scope: .shared)
     XCTAssertFalse(arguments.contains("--exit-on-disconnect"))
   }
 
   func testASpawnPassesTheDefaultIdleTimeout() {
-    let arguments = AXBridgePersistentTransport.serveArguments(socketPath: "/x/y.sock", scope: .shared)
+    let arguments = SimulatorFrameworkBridgePersistentTransport.serveArguments(socketPath: "/x/y.sock", scope: .shared)
     XCTAssertEqual(
       arguments,
-      ["accessibility", "serve", "/x/y.sock", "--idle-timeout", "\(AXBridgePersistentTransport.idleTimeoutSeconds)"])
+      ["serve", "/x/y.sock", "--idle-timeout", "\(SimulatorFrameworkBridgePersistentTransport.idleTimeoutSeconds)"])
   }
 
   func testASpawnCanAskForADifferentIdleTimeout() {
-    let arguments = AXBridgePersistentTransport.serveArguments(socketPath: "/x/y.sock", scope: .shared, idleTimeoutSeconds: 7)
-    XCTAssertEqual(arguments, ["accessibility", "serve", "/x/y.sock", "--idle-timeout", "7"])
+    let arguments = SimulatorFrameworkBridgePersistentTransport.serveArguments(socketPath: "/x/y.sock", scope: .shared, idleTimeoutSeconds: 7)
+    XCTAssertEqual(arguments, ["serve", "/x/y.sock", "--idle-timeout", "7"])
   }
 
   // A UDID is hex and can reach two callers in different cases; both must land on one socket.
   func testTheSocketForASimulatorIgnoresUdidCase() {
-    let upper = AXBridgeSocket.path(forSimulator: "AE4DEFD9-F94B-4543-84F1-849D4B5C4351")
-    let lower = AXBridgeSocket.path(forSimulator: "ae4defd9-f94b-4543-84f1-849d4b5c4351")
+    let upper = SimulatorFrameworkBridgeSocket.path(forSimulator: "AE4DEFD9-F94B-4543-84F1-849D4B5C4351")
+    let lower = SimulatorFrameworkBridgeSocket.path(forSimulator: "ae4defd9-f94b-4543-84f1-849d4b5c4351")
     XCTAssertEqual(upper, lower)
   }
 
   func testASimulatorSocketIsNamedForItsSimulator() {
-    let path = AXBridgeSocket.path(forSimulator: "AE4DEFD9-F94B-4543-84F1-849D4B5C4351")
-    XCTAssertEqual(path, "\(AXBridgeSocket.directory)/AE4DEFD9F94B454384F1849D4B5C4351.sock")
-    XCTAssertTrue(path.hasSuffix(AXBridgeSocket.suffix))
+    let path = SimulatorFrameworkBridgeSocket.path(forSimulator: "AE4DEFD9-F94B-4543-84F1-849D4B5C4351")
+    XCTAssertEqual(path, "\(SimulatorFrameworkBridgeSocket.directory)/AE4DEFD9F94B454384F1849D4B5C4351.sock")
+    XCTAssertTrue(path.hasSuffix(SimulatorFrameworkBridgeSocket.suffix))
   }
 
   // `bind` truncates rather than failing, so the margin is checked against the real limit.
   func testASimulatorSocketPathFitsInSunPath() {
-    let path = AXBridgeSocket.path(forSimulator: "AE4DEFD9-F94B-4543-84F1-849D4B5C4351")
+    let path = SimulatorFrameworkBridgeSocket.path(forSimulator: "AE4DEFD9-F94B-4543-84F1-849D4B5C4351")
     XCTAssertLessThan(
-      path.utf8.count, AXBridgeConnection.sunPathCapacity, "\(path) is \(path.utf8.count) bytes")
+      path.utf8.count, SimulatorFrameworkBridgeConnection.sunPathCapacity, "\(path) is \(path.utf8.count) bytes")
   }
 
   // MARK: - Which guest a target gets

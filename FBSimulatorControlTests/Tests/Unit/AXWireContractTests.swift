@@ -221,10 +221,7 @@ final class AXWireContractTests: XCTestCase {
 
   // MARK: - Write requests
 
-  // The two transports send the same write in different shapes, so the shapes are pinned together: a
-  // field added to one rendering and forgotten in the other is a write that behaves differently
-  // depending on which transport the caller happens to hold.
-  func testAWriteRendersTheSameFieldsForBothTransports() {
+  func testAWriteRendersTheSameFieldsForBothTransports() throws {
     let request = AXBridgeWriteRequest(
       kind: .perform(.press),
       x: 201,
@@ -234,11 +231,8 @@ final class AXWireContractTests: XCTestCase {
     )
     let transportRequest = AXBridgeRequest.write(request)
     XCTAssertEqual(
-      transportRequest.arguments,
-      [
-        "accessibility", "perform", "--x", "201.0", "--y", "406.0", "--pid", "4321",
-        "--action", "press", "--assert-key", "XC_kAXXCAttributeLabel", "--assert-value", "General",
-      ]
+      try decodedBridgeAXArguments(transportRequest) as NSDictionary,
+      ["verb": "perform", "x": 201.0, "y": 406.0, "pid": 4321, "action": "press", "assertKey": "XC_kAXXCAttributeLabel", "assertValue": "General"] as NSDictionary
     )
     XCTAssertEqual(
       transportRequest.payload as NSDictionary,
@@ -249,36 +243,33 @@ final class AXWireContractTests: XCTestCase {
     )
   }
 
-  func testASetValueRendersItsValueRatherThanAnAction() {
+  func testASetValueRendersItsValueRatherThanAnAction() throws {
     let request = AXBridgeWriteRequest(kind: .setValue("hello"), x: 1, y: 2, pid: nil, assertion: nil)
     XCTAssertEqual(request.verb, .setValue)
     let transportRequest = AXBridgeRequest.write(request)
-    XCTAssertEqual(transportRequest.arguments, ["accessibility", "setvalue", "--x", "1.0", "--y", "2.0", "--value", "hello"])
+    XCTAssertEqual(try decodedBridgeAXArguments(transportRequest) as NSDictionary, ["verb": "setvalue", "x": 1.0, "y": 2.0, "value": "hello"] as NSDictionary)
     XCTAssertEqual(
       transportRequest.payload as NSDictionary,
       ["verb": "setvalue", "x": 1.0, "y": 2.0, "value": "hello"] as NSDictionary
     )
   }
 
-  // An absent pid and an absent assertion contribute nothing at all. The guest reads argv in flag/value
-  // pairs and rejects a pid that is present and non-positive, so an option rendered as an empty string
-  // or a zero would be read as a request the caller never made.
-  func testAbsentOptionsAreOmittedRatherThanSentEmpty() {
+  func testAbsentOptionsAreOmittedRatherThanSentEmpty() throws {
     let request = AXBridgeWriteRequest(kind: .perform(.scrollDown), x: 10, y: 20, pid: nil, assertion: nil)
     let transportRequest = AXBridgeRequest.write(request)
-    XCTAssertEqual(transportRequest.arguments, ["accessibility", "perform", "--x", "10.0", "--y", "20.0", "--action", "scroll-down"])
-    XCTAssertFalse(transportRequest.arguments.contains("--pid"))
-    XCTAssertFalse(transportRequest.arguments.contains("--assert-key"))
+    XCTAssertEqual(try decodedBridgeAXArguments(transportRequest) as NSDictionary, ["verb": "perform", "x": 10.0, "y": 20.0, "action": "scroll-down"] as NSDictionary)
+    XCTAssertNil(try decodedBridgeAXArguments(transportRequest)["pid"])
+    XCTAssertNil(try decodedBridgeAXArguments(transportRequest)["assertKey"])
     XCTAssertNil(transportRequest.payload["pid"])
     XCTAssertNil(transportRequest.payload["assertKey"])
     XCTAssertNil(transportRequest.payload["assertValue"])
-    XCTAssertEqual(transportRequest.arguments.count % 2, 0, "the guest reads argv in pairs, so a flag must never be left without a value")
+    XCTAssertEqual(try transportRequest.arguments.count, 2, "rpc takes one encoded request")
     XCTAssertFalse(transportRequest.mayRetry, "writes must not be resent after a dropped response")
   }
 
-  func testDeviceSettingRequestsRenderTheSameFieldsForBothTransports() {
+  func testDeviceSettingRequestsRenderTheSameFieldsForBothTransports() throws {
     let read = AXBridgeRequest.deviceSettingRead("button-shapes")
-    XCTAssertEqual(read.arguments, ["accessibility", "settings-get", "--setting", "button-shapes"])
+    XCTAssertEqual(try decodedBridgeAXArguments(read) as NSDictionary, ["verb": "settings-get", "setting": "button-shapes"] as NSDictionary)
     XCTAssertEqual(
       read.payload as NSDictionary,
       ["verb": "settings-get", "setting": "button-shapes"] as NSDictionary)
@@ -286,8 +277,8 @@ final class AXWireContractTests: XCTestCase {
 
     let write = AXBridgeRequest.deviceSettingWrite("reduce-motion", enabled: true)
     XCTAssertEqual(
-      write.arguments,
-      ["accessibility", "settings-set", "--setting", "reduce-motion", "--enabled", "true"])
+      try decodedBridgeAXArguments(write) as NSDictionary,
+      ["verb": "settings-set", "setting": "reduce-motion", "enabled": true] as NSDictionary)
     XCTAssertEqual(
       write.payload as NSDictionary,
       ["verb": "settings-set", "setting": "reduce-motion", "enabled": true] as NSDictionary)

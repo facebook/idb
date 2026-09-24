@@ -1,0 +1,192 @@
+/*
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
+
+import Foundation
+import SimulatorFrameworkBridgeProtocol
+
+/// Where a typed command runs.
+enum SimulatorFrameworkBridgeRoute: Equatable {
+  case persistent
+  /// A oneshot guest staged to appear as `bundleIdentity`.
+  case staged(bundleIdentity: String)
+}
+
+extension BridgeCommand {
+  /// The persistent guest is launched from `Resources` and shared by every command, so it cannot appear as any one
+  /// app: a command that needs an identity is staged.
+  var route: SimulatorFrameworkBridgeRoute {
+    if case let .notifications(command) = self {
+      switch command {
+      case let .delivered(bundleID), let .clearDelivered(bundleID):
+        if let bundleIdentity = SimulatorFrameworkBridgeStaging.bundleIdentity(bundleID) {
+          return .staged(bundleIdentity: bundleIdentity)
+        }
+      case .list, .approve, .revoke:
+        break
+      }
+    }
+    return .persistent
+  }
+}
+
+/// Launches a copy of the guest that daemons see as a particular app.
+///
+/// The guest is spawned by host path — `SimDevice` resolves `launchPath` against the host
+/// filesystem rather than the runtime root — so the directory the executable sits in is
+/// something the simulator can see, not only a detail of how the companion is packaged.
+enum SimulatorFrameworkBridgeStaging {
+
+  /// The app identity a guest may be staged as, or nil for an argument that could not name an app.
+  ///
+  /// `usernotificationsd` answers a client only for the bundle `BSBundleIDForPID` reports for
+  /// it, and that is read from the `Info.plist` beside the client's executable. The delivered
+  /// notifications of an app can therefore only be read or withdrawn by a guest that appears
+  /// to be it. Rejecting anything else also keeps the identity from being used as an arbitrary
+  /// path component when staging.
+  static func bundleIdentity(_ bundleID: String) -> String? {
+    guard bundleID.range(of: "^[A-Za-z0-9.-]+$", options: .regularExpression) != nil, bundleID != ".", bundleID != ".." else {
+      return nil
+    }
+    return bundleID
+  }
+
+  /// `bundledGuestPath` is the guest shipped in the companion's `Resources`, shared by every
+  /// command, so it cannot carry any one app's identity. This stages a copy of it in
+  /// `stagingDirectory` beside an `Info.plist` naming that app. The copy is a hardlink where the
+  /// filesystem allows it, and never a symlink: `proc_pidpath` resolves a symlink back to
+  /// `Resources`, where there is no `Info.plist` to read.
+  static func stagedExecutablePath(bundledGuestPath: String, bundleIdentity: String, stagingDirectory: URL) throws -> String {
+    let guest = URL(fileURLWithPath: bundledGuestPath)
+    let bundle = stagingDirectory.appendingPathComponent(bundleIdentity, isDirectory: true)
+    let staged = bundle.appendingPathComponent(guest.lastPathComponent)
+    try FileManager.default.createDirectory(at: bundle, withIntermediateDirectories: true)
+    do {
+      try FileManager.default.linkItem(at: guest, to: staged)
+    } catch {
+      // Resources and the temporary directory need not share a filesystem.
+      try FileManager.default.copyItem(at: guest, to: staged)
+    }
+    let infoPlist: [String: String] = [
+      "CFBundleExecutable": guest.lastPathComponent,
+      "CFBundleIdentifier": bundleIdentity,
+      "CFBundlePackageType": "APPL",
+      "CFBundleVersion": "1",
+    ]
+    try PropertyListSerialization
+      .data(fromPropertyList: infoPlist, format: .xml, options: 0)
+      .write(to: bundle.appendingPathComponent("Info.plist"))
+    return staged.path
+  }
+}
+
+struct SimulatorFrameworkBridgeOneshotTransport {
+  private let launch: ([String]) async throws -> InSimulatorToolOutput
+
+  init(simulator: Simulator, bundleIdentity: String? = nil) {
+    launch = { arguments in
+      guard let path = simulator.frameworkBridgePath else { throw SimulatorFrameworkBridgeError.binaryMissing }
+      guard let bundleIdentity else {
+        return try await simulator.runtimeTools.launchConsumingOutput(launchPath: path, arguments: arguments)
+      }
+      return try await simulator.temporaryDirectory.withTemporaryDirectory { stagingDirectory in
+        try await simulator.runtimeTools.launchConsumingOutput(
+          launchPath: SimulatorFrameworkBridgeStaging.stagedExecutablePath(
+            bundledGuestPath: path,
+            bundleIdentity: bundleIdentity,
+            stagingDirectory: stagingDirectory),
+          arguments: arguments)
+      }
+    }
+  }
+
+  init(launch: @escaping ([String]) async throws -> InSimulatorToolOutput) {
+    self.launch = launch
+  }
+
+  func send(_ request: BridgeRequest) async throws -> BridgeResult {
+    let output = try await launch(request.arguments)
+    guard !output.stdout.isEmpty else {
+      throw AXBridgeError.guestFailure("exit \(output.exitCode); \(SimulatorFrameworkBridgeError.failureDetails(stderr: output.stderr, stdout: output.stdout))")
+    }
+    let response = try BridgeResponse.decode(output.stdout, for: request)
+    guard output.exitCode == response.result.exitCode else {
+      throw AXBridgeError.guestFailure("process exited with \(output.exitCode) after reporting \(response.result.exitCode)")
+    }
+    return response.result
+  }
+}
+
+extension BridgeResult {
+  func accessibilityData() throws -> Data {
+    guard values.count == 1, case .object = values[0] else {
+      throw AXBridgeError.guestFailure(error ?? "accessibility returned \(values.count) values instead of one response object")
+    }
+    return try JSONEncoder().encode(values[0])
+  }
+
+  var jsonLines: String {
+    get throws {
+      let encoder = JSONEncoder()
+      encoder.outputFormatting = .sortedKeys
+      return try values.map { String(decoding: try encoder.encode($0), as: UTF8.self) + "\n" }.joined()
+    }
+  }
+}
+
+extension Simulator {
+  /// Reuses guest startup across services while keeping shared and exclusive connections separate.
+  func frameworkBridgeTransport(scope: BridgeServiceScope) -> SimulatorFrameworkBridgePersistentTransport {
+    commandCache.resolve { BridgeTransportsByScope() }
+      .transport(for: scope) { SimulatorFrameworkBridgePersistentTransport(simulator: self, scope: scope) }
+  }
+
+  /// Executes a typed guest command; the result retains partial output when the guest fails.
+  func frameworkBridge(_ command: BridgeCommand) async throws -> BridgeResult {
+    let request = BridgeRequest(command: command)
+    switch command.route {
+    case let .staged(bundleIdentity): return try await SimulatorFrameworkBridgeOneshotTransport(simulator: self, bundleIdentity: bundleIdentity).send(request)
+    case .persistent: return try await frameworkBridgeTransport(scope: .shared).send(request)
+    }
+  }
+
+  @discardableResult
+  func runSimulatorFrameworkBridge(_ command: BridgeCommand) async throws -> String {
+    let result = try await frameworkBridge(command)
+    let output = try [result.error, result.jsonLines].compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: "\n")
+    guard result.exitCode == 0 else {
+      throw SimulatorFrameworkBridgeError.requestFailed(command: command, exitCode: result.exitCode, output: output)
+    }
+    return output
+  }
+}
+
+/// One socket-backed transport per service scope, for one target.
+///
+/// `TargetCommandCache` keys its slots by type, and the two scopes need separate transports that
+/// are the same type, so this holds them apart.
+///
+// SAFETY: `transports` is only read or written with `lock` held, so no mutable state is reachable from
+// two threads at once.
+// patternlint-disable-next-line unchecked-sendable
+final class BridgeTransportsByScope: @unchecked Sendable {
+  private let lock = NSLock()
+  private var transports: [BridgeServiceScope: SimulatorFrameworkBridgePersistentTransport] = [:]
+
+  func transport(
+    for scope: BridgeServiceScope,
+    build: () -> SimulatorFrameworkBridgePersistentTransport
+  ) -> SimulatorFrameworkBridgePersistentTransport {
+    lock.lock()
+    defer { lock.unlock() }
+    if let existing = transports[scope] {
+      return existing
+    }
+    let created = build()
+    transports[scope] = created
+    return created
+  }
+}

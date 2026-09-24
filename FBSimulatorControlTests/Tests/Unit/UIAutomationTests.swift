@@ -32,10 +32,10 @@ final class UIAutomationTests: XCTestCase {
 
   private func transport(
     _ simulator: Simulator, _ persistence: AXBridgePersistence
-  ) throws -> AXBridgePersistentTransport {
+  ) throws -> SimulatorFrameworkBridgePersistentTransport {
     let reader = try simulator.uiAutomation(backend: Self.backend(persistence))
     let bridgeReader = try XCTUnwrap(reader as? AXBridgeUIAutomation)
-    return try XCTUnwrap(bridgeReader.transport as? AXBridgePersistentTransport)
+    return try XCTUnwrap(bridgeReader.transport as? SimulatorFrameworkBridgePersistentTransport)
   }
 
   func testEverySharedBackendCallSharesOneTransport() throws {
@@ -69,7 +69,7 @@ final class UIAutomationTests: XCTestCase {
     let reader = try XCTUnwrap(try simulator.uiAutomation(backend: otherOptions) as? AXBridgeUIAutomation)
     // `frontmostMethod` and `automationMode` are the reader's, not the transport's, so differing on
     // them must not cost a second guest.
-    XCTAssertTrue((reader.transport as? AXBridgePersistentTransport) === shared)
+    XCTAssertTrue((reader.transport as? SimulatorFrameworkBridgePersistentTransport) === shared)
   }
 
   func testEachOneShotBackendCallBuildsAOneShotTransport() throws {

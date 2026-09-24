@@ -2305,26 +2305,26 @@ final class AXAutoTraversalTests: XCTestCase {
 
   // The guest reads one request whichever transport carried it, so a default that snapshots over argv but walks over
   // the socket would be a read whose cost depends on how the host happened to connect.
-  func testADefaultGuestReadAsksTheGuestForASnapshot() {
+  func testADefaultGuestReadAsksTheGuestForASnapshot() throws {
     let traversal = AXBridgeUIAutomation.autoTraversal(for: AccessibilityRequestOptions())
     let request = Self.readRequest(traversal: traversal)
-    XCTAssertTrue(request.arguments.contains("--snapshot-tree"))
+    XCTAssertEqual(try decodedBridgeAXArguments(request)["snapshotTree"] as? Bool, true)
     XCTAssertEqual(request.payload["snapshotTree"] as? Bool, true)
   }
 
   // The same wire pin for a reachability read: it resolves to the walk, so its argv and payload stay
   // empty.
-  func testAReachabilityReadAsksTheGuestForNoSnapshot() {
+  func testAReachabilityReadAsksTheGuestForNoSnapshot() throws {
     let traversal = AXBridgeUIAutomation.autoTraversal(for: AccessibilityRequestOptions(keys: [.interactable]))
     let request = Self.readRequest(traversal: traversal)
-    XCTAssertFalse(request.arguments.contains("--snapshot-tree"))
+    XCTAssertNil(try decodedBridgeAXArguments(request)["snapshotTree"])
     XCTAssertNil(request.payload["snapshotTree"])
   }
 
   // Pinned in its own right, not only as the current default.
-  func testTheSingleFetchAsksTheGuestForASnapshot() {
+  func testTheSingleFetchAsksTheGuestForASnapshot() throws {
     let request = Self.readRequest(traversal: .singleFetch)
-    XCTAssertTrue(request.arguments.contains("--snapshot-tree"))
+    XCTAssertEqual(try decodedBridgeAXArguments(request)["snapshotTree"] as? Bool, true)
     XCTAssertEqual(request.payload["snapshotTree"] as? Bool, true)
   }
 
@@ -2359,20 +2359,20 @@ final class AXBridgeGuestDeathTests: XCTestCase {
   // The motivating case: a guest killed by the system. The signal points at the environment rather
   // than at whatever change the caller happens to be testing.
   func testAKilledGuestIsReportedWithItsSignal() {
-    let message = AXBridgeConnection.socketClosedMessage(pid: 4321, signal: 9, exitCode: nil)
+    let message = SimulatorFrameworkBridgeConnection.socketClosedMessage(pid: 4321, signal: 9, exitCode: nil)
     XCTAssertTrue(message.contains("killed by signal 9"), message)
     XCTAssertTrue(message.contains("pid 4321"), message)
   }
 
   func testAGuestThatExitedIsReportedWithItsCode() {
-    let message = AXBridgeConnection.socketClosedMessage(pid: 4321, signal: nil, exitCode: 3)
+    let message = SimulatorFrameworkBridgeConnection.socketClosedMessage(pid: 4321, signal: nil, exitCode: 3)
     XCTAssertTrue(message.contains("exited with code 3"), message)
   }
 
   // A signalled exit wins over an exit code, because it names something outside the reader as the cause
   // and that is the more actionable of the two.
   func testASignalTakesPrecedenceOverAnExitCode() {
-    let message = AXBridgeConnection.socketClosedMessage(pid: 4321, signal: 9, exitCode: 0)
+    let message = SimulatorFrameworkBridgeConnection.socketClosedMessage(pid: 4321, signal: 9, exitCode: 0)
     XCTAssertTrue(message.contains("killed by signal 9"), message)
     XCTAssertFalse(message.contains("exited with code"), message)
   }
@@ -2380,23 +2380,23 @@ final class AXBridgeGuestDeathTests: XCTestCase {
   // A clean exit is a different problem from a kill, and the guest is gone either way.
   func testACleanExitIsStillReported() {
     XCTAssertTrue(
-      AXBridgeConnection.socketClosedMessage(pid: 4321, signal: 0, exitCode: 0).contains("exited with code 0")
+      SimulatorFrameworkBridgeConnection.socketClosedMessage(pid: 4321, signal: 0, exitCode: 0).contains("exited with code 0")
     )
   }
 
   // Nothing to consult, nothing added: a caller is told what is true and no more.
   func testSocketClosedMessageOmitsDetailWhenPidAndStatusUnknown() {
     XCTAssertEqual(
-      AXBridgeConnection.socketClosedMessage(pid: nil, signal: nil, exitCode: nil),
+      SimulatorFrameworkBridgeConnection.socketClosedMessage(pid: nil, signal: nil, exitCode: nil),
       "serve socket closed by peer"
     )
-    XCTAssertEqual(AXBridgeConnection.socketClosedMessage(process: nil), "serve socket closed by peer")
+    XCTAssertEqual(SimulatorFrameworkBridgeConnection.socketClosedMessage(process: nil), "serve socket closed by peer")
   }
 
   // A process whose exit status never resolved is still named, rather than the message pretending it
   // knows or the read stalling to find out.
   func testAGuestWithNoRecordedStatusIsStillNamed() {
-    let message = AXBridgeConnection.socketClosedMessage(pid: 4321, signal: nil, exitCode: nil)
+    let message = SimulatorFrameworkBridgeConnection.socketClosedMessage(pid: 4321, signal: nil, exitCode: nil)
     XCTAssertTrue(message.contains("no exit status recorded"), message)
     XCTAssertTrue(message.contains("pid 4321"), message)
   }

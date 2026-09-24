@@ -251,9 +251,12 @@ public struct SimulatorPrivacyCommands {
     if bundleIDs.isEmpty {
       throw SimulatorPrivacyError.emptyBundleIDs(operation: "health approve")
     }
-    let action = approved ? "approve" : "revoke"
     for bundleID in bundleIDs {
-      try await simulator.runSimulatorFrameworkBridge(withService: "health", action: action, arguments: [bundleID])
+      try await simulator.runSimulatorFrameworkBridge(
+        .health(
+          approved
+            ? .approve(bundleID: bundleID, typeIDs: [])
+            : .revoke(bundleID: bundleID, typeIDs: [])))
     }
   }
 
@@ -262,9 +265,12 @@ public struct SimulatorPrivacyCommands {
       throw SimulatorPrivacyError.emptyBundleIDs(operation: "notifications approve")
     }
 
-    let action = approved ? "approve" : "revoke"
     for bundleID in bundleIDs {
-      try await simulator.runSimulatorFrameworkBridge(withService: "notifications", action: action, arguments: [bundleID])
+      try await simulator.runSimulatorFrameworkBridge(
+        .notifications(
+          approved
+            ? .approve(bundleID: bundleID)
+            : .revoke(bundleID: bundleID)))
     }
   }
 

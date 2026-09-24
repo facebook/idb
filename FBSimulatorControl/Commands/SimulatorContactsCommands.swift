@@ -68,7 +68,7 @@ public struct SimulatorContactsCommands {
   }
 
   public func clear() async throws {
-    try await simulator.runSimulatorFrameworkBridge(withService: "contacts", action: "clear")
+    try await simulator.runSimulatorFrameworkBridge(.clearContacts)
   }
 
   // MARK: - Private
