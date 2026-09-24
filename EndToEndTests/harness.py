@@ -1183,44 +1183,67 @@ class IdbEndToEndTestCase(unittest.IsolatedAsyncioTestCase):
         """
         deadline = Deadline(TRANSIENT_ANSWER_TIMEOUT_SECONDS)
         while True:
-            started = time.monotonic()
-            if self.recording is not None:
-                self.recording.command(["idb", *args])
-            try:
-                completed = await self.run_client(
-                    idb_argv(self.environment, self.companion, *args),
-                    timeout=timeout,
-                    stdin=stdin,
-                )
-            except BaseException as error:
-                if self.recording is not None:
-                    # A command that raised is never published — a demo whose
-                    # test failed stops the documentation being generated at
-                    # all — so the argv is recorded as it ran rather than
-                    # normalised, which is what someone reading the trace to
-                    # debug the run needs.
-                    self.recording.event(
-                        "command_error",
-                        argv=["idb", *args],
-                        error=str(error),
-                        seconds=time.monotonic() - started,
-                    )
-                raise
-            repeat = worth_repeating(args, completed) and not deadline.passed
-            if self.recording is not None:
-                self.recording.event(
-                    "command_finished",
-                    returncode=completed.returncode,
-                    seconds=time.monotonic() - started,
-                    **self._command_fields(
-                        None if repeat else step, ["idb", *args], completed
-                    ),
-                )
+            repeat = False
+
+            def published(completed: Completed) -> str | None:
+                nonlocal repeat
+                repeat = worth_repeating(args, completed) and not deadline.passed
+                return None if repeat else step
+
+            completed = await self._run_once(
+                args, timeout=timeout, stdin=stdin, published=published
+            )
             if not repeat:
                 break
             await asyncio.sleep(POLL_INTERVAL_SECONDS)
         if check and completed.returncode != 0:
             self.fail_or_skip_for(" ".join(args), completed)
+        return completed
+
+    async def _run_once(
+        self,
+        args: Sequence[str],
+        *,
+        timeout: float,
+        stdin: bytes | None = None,
+        published: Callable[[Completed], str | None],
+    ) -> Completed:
+        """Run idb once and trace it, published as the step `published` names.
+
+        `published` sees the answer before it is traced, so a caller that
+        repeats a command can publish only the attempt that ends it.
+        """
+        started = time.monotonic()
+        if self.recording is not None:
+            self.recording.command(["idb", *args])
+        try:
+            completed = await self.run_client(
+                idb_argv(self.environment, self.companion, *args),
+                timeout=timeout,
+                stdin=stdin,
+            )
+        except BaseException as error:
+            if self.recording is not None:
+                # A command that raised is never published — a demo whose
+                # test failed stops the documentation being generated at
+                # all — so the argv is recorded as it ran rather than
+                # normalised, which is what someone reading the trace to
+                # debug the run needs.
+                self.recording.event(
+                    "command_error",
+                    argv=["idb", *args],
+                    error=str(error),
+                    seconds=time.monotonic() - started,
+                )
+            raise
+        step = published(completed)
+        if self.recording is not None:
+            self.recording.event(
+                "command_finished",
+                returncode=completed.returncode,
+                seconds=time.monotonic() - started,
+                **self._command_fields(step, ["idb", *args], completed),
+            )
         return completed
 
     def _command_fields(

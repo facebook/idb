@@ -326,6 +326,7 @@ class DemoCaseStub:
     """Drive IdbEndToEndTestCase.idb against a real trace, without a simulator."""
 
     idb = IdbEndToEndTestCase.idb
+    _run_once = IdbEndToEndTestCase._run_once
     note = IdbEndToEndTestCase.note
     run_client = IdbEndToEndTestCase.run_client
     _command_fields = IdbEndToEndTestCase._command_fields

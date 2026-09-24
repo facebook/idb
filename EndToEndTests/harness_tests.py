@@ -1114,6 +1114,7 @@ class FailureReportingTests(unittest.TestCase):
 
 class CommandTestCaseStub(HarnessCaseStub):
     idb = IdbEndToEndTestCase.idb
+    _run_once = IdbEndToEndTestCase._run_once
     idb_expect_failure = IdbEndToEndTestCase.idb_expect_failure
     fail_or_skip_for = IdbEndToEndTestCase.fail_or_skip_for
     run_client = IdbEndToEndTestCase.run_client
