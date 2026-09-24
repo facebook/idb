@@ -19,6 +19,7 @@ public final class FBAXBridgeArguments: NSObject {
       case "--pid": request["pid"] = string.intValue
       case "--max-depth": request["maxDepth"] = string.intValue
       case "--max-nodes": request["maxNodes"] = string.intValue
+      case "--automation-mode": request["automationMode"] = string.boolValue
       case "--translator-vocabulary": request["translatorVocabulary"] = string.boolValue
       case "--snapshot-tree": request["snapshotTree"] = string.boolValue
       case "--explain-unreachable": request["explainUnreachable"] = string.boolValue

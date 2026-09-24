@@ -53,8 +53,7 @@ final class AccessibilityArgumentsTests: XCTestCase {
   func testAutomationModeHonorsBothValuesAndPreservesOmission() {
     for (input, expected) in [("1", true), ("0", false)] {
       let request = FBAXBridgeRequestFromArguments("describe", ["--automation-mode", input])
-      // BUG: one-shot parsing drops `--automation-mode` instead of forwarding its value — flipped in the following commit.
-      XCTAssertNil(request["automationMode"], "\(expected)")
+      XCTAssertEqual(request["automationMode"] as? Bool, expected)
     }
     XCTAssertNil(FBAXBridgeRequestFromArguments("describe", ["--pid", "42"])["automationMode"])
   }
