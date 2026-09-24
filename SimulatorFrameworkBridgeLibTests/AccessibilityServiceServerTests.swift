@@ -49,23 +49,4 @@ final class AccessibilityServiceServerTests: XCTestCase {
     XCTAssertEqual(FBAXBridgeArguments.idleTimeout(arguments: ["--idle-timeout", "12x"], fallback: 300), 300)
     XCTAssertEqual(FBAXBridgeArguments.idleTimeout(arguments: ["--idle-timeout"], fallback: 300), 300)
   }
-
-  func testAMalformedFrameUsesTheServiceBadRequestEnvelope() {
-    var shutdownRequested = ObjCBool(true)
-    let response = FBAXBridgeHandleRequestData(Data("not json".utf8), &shutdownRequested)
-
-    XCTAssertEqual(response["ok"] as? NSNumber, NSNumber(value: false))
-    XCTAssertEqual(response["error"] as? String, "malformed request frame")
-    XCTAssertEqual(response["error_kind"] as? String, "bad_request")
-    XCTAssertFalse(shutdownRequested.boolValue)
-  }
-
-  func testAShutdownFrameReportsItsControlSignalBesideTheResponse() throws {
-    let request = try JSONSerialization.data(withJSONObject: ["verb": "shutdown"])
-    var shutdownRequested = ObjCBool(false)
-    let response = FBAXBridgeHandleRequestData(request, &shutdownRequested)
-
-    XCTAssertEqual(response["ok"] as? NSNumber, NSNumber(value: true))
-    XCTAssertTrue(shutdownRequested.boolValue)
-  }
 }

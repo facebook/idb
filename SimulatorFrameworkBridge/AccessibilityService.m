@@ -41,11 +41,6 @@ NSDictionary<NSString *, id> *FBAXBridgeHandleRequest(NSDictionary<NSString *, i
   return [AccessibilityServiceStaticFuncs handleRequest:request];
 }
 
-NSDictionary<NSString *, id> *FBAXBridgeHandleRequestData(NSData *data, BOOL *shutdownRequested)
-{
-  return [AccessibilityServiceStaticFuncs handleRequestData:data shutdownRequested:shutdownRequested];
-}
-
 NSData *FBAXBridgeSerializeResponse(NSDictionary<NSString *, id> *response)
 {
   return [AccessibilityServiceStaticFuncs serializeResponse:response];

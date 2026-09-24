@@ -14,8 +14,4 @@ NSDictionary<NSString *, id> *FBAXBridgeRequestFromArguments(NSString *action, N
 
 void FBAXBridgePrepareRuntime(void);
 
-NSDictionary<NSString *, id> *FBAXBridgeHandleRequestData(
-  NSData *data,
-  BOOL *_Nullable shutdownRequested);
-
 NS_ASSUME_NONNULL_END

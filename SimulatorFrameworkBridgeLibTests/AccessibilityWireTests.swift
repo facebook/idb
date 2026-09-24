@@ -10,26 +10,6 @@ import Foundation
 import XCTest
 
 final class AccessibilityWireTests: XCTestCase {
-  func testNonObjectFramesAreRejectedAndClearShutdown() {
-    for input in ["", "not json", "[]", "[{}]", "null", "true", "42", "\"shutdown\""] {
-      var shutdown = ObjCBool(true)
-      let response = FBAXBridgeHandleRequestData(Data(input.utf8), &shutdown)
-      XCTAssertEqual(
-        response as NSDictionary,
-        [
-          "ok": false, "error": "malformed request frame", "error_kind": "bad_request",
-        ] as NSDictionary, input)
-      XCTAssertFalse(shutdown.boolValue, input)
-    }
-  }
-
-  func testShutdownObjectSurvivesDecoding() {
-    var shutdown = ObjCBool(false)
-    let response = FBAXBridgeHandleRequestData(Data(#"{"verb":"shutdown","pid":0}"#.utf8), &shutdown)
-    XCTAssertEqual(response as NSDictionary, ["ok": true, "shutdown": true] as NSDictionary)
-    XCTAssertTrue(shutdown.boolValue)
-  }
-
   func testNestedNonFiniteNumbersBecomeNullWithoutChangingOtherScalars() throws {
     let response: [String: Any] = [
       "ok": true,

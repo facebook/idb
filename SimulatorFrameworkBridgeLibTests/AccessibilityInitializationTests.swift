@@ -62,15 +62,6 @@ final class AccessibilityInitializationTests: XCTestCase {
       ] as NSDictionary)
   }
 
-  func testShutdownDoesNotInitializeTheRuntime() {
-    XCTAssertEqual(
-      FBAXRuntimeInitializationProbe(.exceptionWithReason, false, ["verb": "shutdown"]) as NSDictionary,
-      [
-        "preparationException": NSNull(), "calls": 0,
-        "response": ["ok": true, "shutdown": true],
-      ] as NSDictionary)
-  }
-
   func testInvalidPidDoesNotInitializeTheRuntime() {
     XCTAssertEqual(
       FBAXRuntimeInitializationProbe(.exceptionWithReason, false, ["verb": "describe", "pid": 0]) as NSDictionary,

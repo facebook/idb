@@ -153,7 +153,6 @@ final class AXWireContractTests: XCTestCase {
       .setValue: "setvalue",
       .settingsGet: "settings-get",
       .settingsSet: "settings-set",
-      .shutdown: "shutdown",
     ]
     XCTAssertEqual(Set(AXWire.Verb.allCases), Set(expected.keys), "every verb must have its wire value pinned")
     for (verb, wireValue) in expected {

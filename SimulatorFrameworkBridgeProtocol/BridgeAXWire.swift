@@ -77,7 +77,6 @@ public enum BridgeAXWire {
   /// Top-level keys of the guest's `{ ok, tree | error, ... }` response envelope, parsed by
   /// `AXTreeRead`.
   public enum Envelope: String, Codable, Sendable {
-    case shutdown
     case method
     case ok
     case enabled
@@ -137,8 +136,6 @@ public enum BridgeAXWire {
     case setValue = "setvalue"
     case settingsGet = "settings-get"
     case settingsSet = "settings-set"
-    /// Asks a persistent `serve` guest to exit. Only a `serve` process has anything to answer.
-    case shutdown
   }
 
   /// The fields of a request, in both spellings the guest accepts them in.

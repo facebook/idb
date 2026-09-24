@@ -72,9 +72,6 @@ private let nodeElementIdentity = BridgeAXWire.Node.elementIdentity.rawValue
 // Present only on a node where at least one attribute failed to read, mapping the attribute's key to the
 // reason.
 private let nodeAttributeReadFailures = BridgeAXWire.Node.attributeReadFailures.rawValue
-// Echoed back by the shutdown verb so a caller can tell an honoured shutdown from an ok-shaped response
-// to something else.
-private let responseShutdown = BridgeAXWire.Envelope.shutdown.rawValue
 private let requestX = BridgeAXWire.Request.x.rawValue
 private let requestY = BridgeAXWire.Request.y.rawValue
 // Selects how a fused frontmost read (a `describe` with no pid) resolves the foreground app. Optional;
@@ -1267,10 +1264,6 @@ private final class AccessibilityRequest {
         pid: nil
       )
     }
-    if verb == .shutdown {
-      // Shutdown needs neither a pid nor a runtime binding.
-      return [responseOk: true, responseShutdown: true]
-    }
     // Process-addressed verbs reject non-positive pids before runtime setup. Device-setting verbs carry no
     // pid, but an explicitly malformed one is still refused rather than silently ignored.
     let requestedPid = request[requestPid] as? NSNumber
@@ -1538,7 +1531,7 @@ private final class AccessibilityRequest {
   fileprivate func FBAXBridgeWireConstantsForTesting() -> [String: String] {
     [
       "node.elementType": axElementType, "node.elementBaseType": axElementBaseType, "node.label": axLabel, "node.value": axValue, "node.identifier": axIdentifier, "node.frame": axFrame, "node.automationType": axAutomationType, "node.children": axChildren, "request.verb": requestVerb, "request.pid": requestPid, "request.maxDepth": requestMaxDepth, "request.maxNodes": requestMaxNodes, "request.automationMode": requestAutomationMode, "request.attributes": requestAttributes, "request.translatorVocabulary": requestTranslatorVocabulary, "request.explainUnreachable": requestExplainUnreachable, "node.explainedBy": nodeExplainedBy, "node.isEnabled": nodeIsEnabled, "node.translatorRole": nodeTranslatorRole, "node.translatorSubrole": nodeTranslatorSubrole, "node.traits": nodeTraits, "node.elementIdentity": nodeElementIdentity, "request.x": requestX, "request.y": requestY, "request.method": requestMethod, "request.action": requestAction, "request.value": requestValue, "request.setting": requestSetting, "request.enabled": requestEnabled, "request.assertKey": requestAssertKey, "request.assertValue": requestAssertValue, "envelope.ok": responseOk, "envelope.enabled": responseEnabled, "envelope.tree": responseTree, "envelope.error": responseError, "envelope.empty": responseEmpty, "envelope.errorKind": responseErrorKind, "envelope.errorKindApplicationUnavailable": errorKindApplicationUnavailable, "envelope.errorKindApplicationNotResponding": errorKindApplicationNotResponding, "envelope.errorKindFrontmostUnresolved": errorKindFrontmostUnresolved, "envelope.errorKindReaderUnavailable": errorKindReaderUnavailable, "envelope.errorKindBadRequest": errorKindBadRequest, "envelope.errorKindAssertionFailed": errorKindAssertionFailed, "envelope.truncated": responseTruncated, "envelope.pid": responsePid, "envelope.method": responseMethod, "envelope.modal": responseModal, "envelope.automation": responseAutomation, "envelope.phases": responsePhases, "phases.traverse": phaseTraverse,
-      "phases.machRoundTrips": phaseMachRoundTrips, "automation.enabled": kAutomationEnabled, "automation.asserted": kAutomationAsserted, "modal.kind": modalKind, "modal.kindSystem": modalKindSystem, "modal.kindApp": modalKindApp, "modal.elementType": modalElementType, "modal.label": modalLabel, "modal.systemAlertWindowClass": systemAlertWindowClass, "modal.alertControllerClassPrefix": alertControllerClassPrefix, "verb.displays": AccessibilityVerb.displays.rawValue, "verb.describe": AccessibilityVerb.describe.rawValue, "verb.hittest": AccessibilityVerb.hitTest.rawValue, "verb.perform": AccessibilityVerb.perform.rawValue, "verb.setvalue": AccessibilityVerb.setValue.rawValue, "verb.settingsGet": AccessibilityVerb.settingsGet.rawValue, "verb.settingsSet": AccessibilityVerb.settingsSet.rawValue, "verb.shutdown": AccessibilityVerb.shutdown.rawValue, "action.press": AccessibilityAction.press.rawValue, "action.scrollUp": AccessibilityAction.scrollUp.rawValue, "action.scrollDown": AccessibilityAction.scrollDown.rawValue, "action.scrollLeft": AccessibilityAction.scrollLeft.rawValue, "action.scrollRight": AccessibilityAction.scrollRight.rawValue, "action.scrollToVisible": AccessibilityAction.scrollToVisible.rawValue, "method.centerPoint": FrontmostMethod.centerPoint.rawValue, "method.windowServer": FrontmostMethod.windowServer.rawValue, "method.runningBoard": FrontmostMethod.runningBoard.rawValue,
+      "phases.machRoundTrips": phaseMachRoundTrips, "automation.enabled": kAutomationEnabled, "automation.asserted": kAutomationAsserted, "modal.kind": modalKind, "modal.kindSystem": modalKindSystem, "modal.kindApp": modalKindApp, "modal.elementType": modalElementType, "modal.label": modalLabel, "modal.systemAlertWindowClass": systemAlertWindowClass, "modal.alertControllerClassPrefix": alertControllerClassPrefix, "verb.displays": AccessibilityVerb.displays.rawValue, "verb.describe": AccessibilityVerb.describe.rawValue, "verb.hittest": AccessibilityVerb.hitTest.rawValue, "verb.perform": AccessibilityVerb.perform.rawValue, "verb.setvalue": AccessibilityVerb.setValue.rawValue, "verb.settingsGet": AccessibilityVerb.settingsGet.rawValue, "verb.settingsSet": AccessibilityVerb.settingsSet.rawValue, "action.press": AccessibilityAction.press.rawValue, "action.scrollUp": AccessibilityAction.scrollUp.rawValue, "action.scrollDown": AccessibilityAction.scrollDown.rawValue, "action.scrollLeft": AccessibilityAction.scrollLeft.rawValue, "action.scrollRight": AccessibilityAction.scrollRight.rawValue, "action.scrollToVisible": AccessibilityAction.scrollToVisible.rawValue, "method.centerPoint": FrontmostMethod.centerPoint.rawValue, "method.windowServer": FrontmostMethod.windowServer.rawValue, "method.runningBoard": FrontmostMethod.runningBoard.rawValue,
     ]
   }
 
@@ -1554,17 +1547,6 @@ private final class AccessibilityRequest {
     } catch {
       return [responseOk: false, responseError: "the reader raised while answering: \(error.localizedDescription)"]
     }
-  }
-
-  @objc public static func handleRequestData(_ data: Data, shutdownRequested: UnsafeMutablePointer<ObjCBool>?) -> [String: Any] {
-    let response: [String: Any]
-    if let request = FBAXBridgeWire.request(from: data) {
-      response = handleRequest(request)
-    } else {
-      response = [responseOk: false, responseError: "malformed request frame", responseErrorKind: errorKindBadRequest]
-    }
-    shutdownRequested?.pointee = ObjCBool((response[responseShutdown] as? NSNumber)?.boolValue ?? false)
-    return response
   }
 
   @objc public static func modalDescriptor(_ tree: [String: Any]) -> [String: String]? {

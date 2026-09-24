@@ -39,8 +39,8 @@ final class AccessibilityArgumentsTests: XCTestCase {
       ])
     XCTAssertEqual(request as NSDictionary, ["verb": "describe", "pid": 20] as NSDictionary)
     XCTAssertEqual(
-      FBAXBridgeRequestFromArguments("shutdown", []) as NSDictionary,
-      ["verb": "shutdown"] as NSDictionary)
+      FBAXBridgeRequestFromArguments("settings-get", []) as NSDictionary,
+      ["verb": "settings-get"] as NSDictionary)
   }
 
   func testEnabledOnlyCoercesExactBooleanSpellings() {

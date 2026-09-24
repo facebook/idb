@@ -66,21 +66,6 @@ final class AccessibilityServiceTests: XCTestCase {
     }
   }
 
-  func testShutdownIsAnsweredWithoutARuntimeOrAPid() {
-    FBAXBridgeSetRuntimeForTesting(nil)
-    let response = FBAXBridgeHandleRequest(["verb": "shutdown"])
-    XCTAssertEqual(response["ok"] as? NSNumber, NSNumber(value: true))
-    XCTAssertEqual(response["shutdown"] as? NSNumber, NSNumber(value: true))
-    XCTAssertNil(response["error"])
-  }
-
-  // A caller reaping an orphan has no pid in mind; refusing would make the orphan unreapable.
-  func testShutdownIgnoresAnUnusablePid() {
-    let response = FBAXBridgeHandleRequest(["verb": "shutdown", "pid": 0])
-    XCTAssertEqual(response["ok"] as? NSNumber, NSNumber(value: true))
-    XCTAssertEqual(response["shutdown"] as? NSNumber, NSNumber(value: true))
-  }
-
   // `nil` takes `isEqualToString:` without complaint and matches no verb.
   func testMissingVerbIsRejectedWithAnErrorFrame() {
     let response = FBAXBridgeHandleRequest(["pid": 1234])
@@ -112,7 +97,7 @@ final class AccessibilityServiceTests: XCTestCase {
   func testGuestWireConstantsMatchTheHostContract() {
     let expected = [
       "node.elementType": "XC_kAXXCAttributeElementType", "node.elementBaseType": "XC_kAXXCAttributeElementBaseType", "node.label": "XC_kAXXCAttributeLabel", "node.value": "XC_kAXXCAttributeValue", "node.identifier": "XC_kAXXCAttributeIdentifier", "node.frame": "XC_kAXXCAttributeFrame", "node.automationType": "XC_kAXXCAttributeAutomationType", "node.children": "XC_kAXXCAttributeChildren", "request.verb": "verb", "request.pid": "pid", "request.maxDepth": "maxDepth", "request.maxNodes": "maxNodes", "request.automationMode": "automationMode", "request.attributes": "attributes", "request.translatorVocabulary": "translatorVocabulary", "request.explainUnreachable": "explainUnreachable", "node.explainedBy": "FBExplainedBy", "node.isEnabled": "FBIsEnabled", "node.translatorRole": "FBTranslatorRole", "node.translatorSubrole": "FBTranslatorSubrole", "node.traits": "FBTraits", "node.elementIdentity": "FBElementIdentity", "request.x": "x", "request.y": "y", "request.method": "method", "request.action": "action", "request.value": "value", "request.setting": "setting", "request.enabled": "enabled", "request.assertKey": "assertKey", "request.assertValue": "assertValue", "envelope.ok": "ok", "envelope.enabled": "enabled", "envelope.tree": "tree", "envelope.error": "error", "envelope.empty": "empty", "envelope.errorKind": "error_kind", "envelope.errorKindApplicationUnavailable": "application_unavailable", "envelope.errorKindApplicationNotResponding": "application_not_responding", "envelope.errorKindFrontmostUnresolved": "frontmost_unresolved", "envelope.errorKindReaderUnavailable": "reader_unavailable", "envelope.errorKindBadRequest": "bad_request", "envelope.errorKindAssertionFailed": "assertion_failed", "envelope.truncated": "truncated", "envelope.pid": "pid", "envelope.method": "method", "envelope.modal": "modal", "envelope.automation": "automation", "envelope.phases": "phases", "phases.traverse": "traverse_ms", "phases.machRoundTrips": "mach_round_trips",
-      "automation.enabled": "enabled", "automation.asserted": "asserted", "modal.kind": "kind", "modal.kindSystem": "system", "modal.kindApp": "app", "modal.elementType": "elementType", "modal.label": "label", "modal.systemAlertWindowClass": "SBAlertItemWindow", "modal.alertControllerClassPrefix": "_UIAlertController", "verb.displays": "displays", "verb.describe": "describe", "verb.hittest": "hittest", "verb.perform": "perform", "verb.setvalue": "setvalue", "verb.settingsGet": "settings-get", "verb.settingsSet": "settings-set", "verb.shutdown": "shutdown", "action.press": "press", "action.scrollUp": "scroll-up", "action.scrollDown": "scroll-down", "action.scrollLeft": "scroll-left", "action.scrollRight": "scroll-right", "action.scrollToVisible": "scroll-to-visible", "method.centerPoint": "center-point", "method.windowServer": "window-server", "method.runningBoard": "runningboard",
+      "automation.enabled": "enabled", "automation.asserted": "asserted", "modal.kind": "kind", "modal.kindSystem": "system", "modal.kindApp": "app", "modal.elementType": "elementType", "modal.label": "label", "modal.systemAlertWindowClass": "SBAlertItemWindow", "modal.alertControllerClassPrefix": "_UIAlertController", "verb.displays": "displays", "verb.describe": "describe", "verb.hittest": "hittest", "verb.perform": "perform", "verb.setvalue": "setvalue", "verb.settingsGet": "settings-get", "verb.settingsSet": "settings-set", "action.press": "press", "action.scrollUp": "scroll-up", "action.scrollDown": "scroll-down", "action.scrollLeft": "scroll-left", "action.scrollRight": "scroll-right", "action.scrollToVisible": "scroll-to-visible", "method.centerPoint": "center-point", "method.windowServer": "window-server", "method.runningBoard": "runningboard",
     ]
     // Whole-dictionary equality also fails on any guest constant this test forgot to pin (or any removed),
     // not just a changed value.
