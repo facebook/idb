@@ -15,15 +15,18 @@ import Foundation
 
  Touch, button, and keyboard events are delivered through a pluggable `SimulatorHIDTransport`
  (the legacy Indigo `SimDeviceLegacyHIDClient` path by default). The remaining event families are
- not transport-switchable and are sent directly from here:
+ not transport-switchable and each has a transport of its own here:
 
- 1. PurpleWorkspacePort — for GSEvent-based events (e.g., device orientation changes).
-    Payloads are constructed by `SimulatorPurpleHID` and sent via raw `mach_msg`.
-    Guest-side: `GraphicsServices._PurpleEventCallback` → backboardd.
+ 1. PurpleWorkspacePort — for GSEvent-based events: device lock, and device orientation on a
+    runtime that does not report device motion. Payloads are constructed by `SimulatorPurpleHID`
+    and sent via raw `mach_msg`. Guest-side: `GraphicsServices._PurpleEventCallback` → backboardd.
 
  2. Darwin notifications — e.g. shake, in-call status bar — posted via the SimDevice.
 
- 3. Vendor-defined DTUHID reports — hinge and orientation controls on supported simulators.
+ 3. Vendor-defined DTUHID reports — the hinge, and device orientation on a runtime that reports
+    device motion. A second `dtuhidd` connection, established on first use and kept.
+
+ Which of 1 and 3 carries a rotation is decided by the simulator's `MotionCapabilities`.
 
  See `Indigo.h` and `GSEvent.h` for wire format documentation.
 
@@ -35,10 +38,12 @@ public final class SimulatorHID: CustomStringConvertible, @unchecked Sendable {
 
   /// The transport for the touch / button / keyboard primitives.
   private let transport: SimulatorHIDTransport
-  /// The transport for GSEvents (orientation, lock).
+  /// The transport for GSEvents (lock, and orientation on runtimes without device motion).
   private let purple: SimulatorPurpleHIDTransport
   /// The transport for the Darwin-notification inputs (shake, in-call status bar).
   private let notification: SimulatorDarwinNotificationTransport
+  /// The transport for the vendor-defined reports (hinge, and orientation on runtimes with device motion).
+  private let vendor: SimulatorVendorHIDTransport
 
   private weak var simulator: Simulator?
 
@@ -57,6 +62,7 @@ public final class SimulatorHID: CustomStringConvertible, @unchecked Sendable {
       transport: try await Self.transport(for: simulator, requested: transportType),
       purple: SimulatorPurpleHIDTransport(simulator: simulator),
       notification: SimulatorDarwinNotificationTransport(simulator: simulator),
+      vendor: SimulatorVendorHIDTransport(simulator: simulator),
       simulator: simulator)
   }
 
@@ -116,17 +122,19 @@ public final class SimulatorHID: CustomStringConvertible, @unchecked Sendable {
     return try? SimulatorIndigoHIDTransport.indigo(for: simulator)
   }
 
-  /// `simulator` is weak and may be absent: the Purple and Darwin paths need it and throw
+  /// `simulator` is weak and may be absent: the Purple, Darwin and vendor paths need it and throw
   /// `WeakTargetError.simulator` without one; the transport primitives never touch it.
   init(
     transport: SimulatorHIDTransport,
     purple: SimulatorPurpleHIDTransport,
     notification: SimulatorDarwinNotificationTransport,
+    vendor: SimulatorVendorHIDTransport? = nil,
     simulator: Simulator?
   ) {
     self.transport = transport
     self.purple = purple
     self.notification = notification
+    self.vendor = vendor ?? SimulatorVendorHIDTransport(simulator: simulator)
     self.simulator = simulator
   }
 
@@ -136,6 +144,7 @@ public final class SimulatorHID: CustomStringConvertible, @unchecked Sendable {
     let drain = Task { try await flush() }
     try? await drain.value
     transport.disconnect()
+    await vendor.disconnect()
   }
 
   // MARK: - Indigo Event Send Primitives
@@ -185,7 +194,7 @@ public final class SimulatorHID: CustomStringConvertible, @unchecked Sendable {
     try await indigo.sendTrackpad(point: point, phase: phase)
   }
 
-  // MARK: - Purple / GSEvents
+  // MARK: - Purple / GSEvents and vendor reports
 
   /// Rotates through the backend the simulator's motion capabilities select: vendor HID where the
   /// runtime reports device motion, Purple otherwise.
@@ -193,18 +202,10 @@ public final class SimulatorHID: CustomStringConvertible, @unchecked Sendable {
     guard let simulator else { throw WeakTargetError.simulator }
     switch try await MotionCapabilities.resolve(on: simulator).orientationWriteBackend {
     case .vendorHID:
-      try await sendVendorEvent(orientation.vendorEvent(), on: simulator)
+      try await vendor.send(orientation.vendorEvent())
     case .purple:
       try await purple.sendOrientation(legacyPurpleEncoding ? orientation : orientation.physicalPurpleOrientation)
     }
-  }
-
-  private func sendVendorEvent(_ event: IndigoVendorDefinedEvent, on simulator: Simulator) async throws {
-    let vendor = try await SimulatorDTUHIDTransport.dtuhid(
-      for: simulator, serviceName: SimulatorDTUHIDTransport.vendorDefinedServiceName)
-    defer { vendor.disconnect() }
-    try await vendor.send(messageType: "IndigoVendorDefinedEvent", payload: event)
-    try await vendor.flush()
   }
 
   /// Locks the device. Delivered as a GSEvent over Purple, not through the HID transport.
@@ -279,7 +280,7 @@ public final class SimulatorHID: CustomStringConvertible, @unchecked Sendable {
     case let .hinge(angle):
       guard let simulator else { throw WeakTargetError.simulator }
       try await MotionCapabilities.resolve(on: simulator).require(.hingeAngle)
-      try await sendVendorEvent(angle.vendorEvent(), on: simulator)
+      try await vendor.send(angle.vendorEvent())
       return false
     case .shake:
       try await sendShake()
