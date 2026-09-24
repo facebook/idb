@@ -57,57 +57,27 @@ public struct LogicTestMirrorLogs: OptionSet, Sendable {
 
 // MARK: - XCTestRunConfiguration
 
-public class XCTestRunConfiguration: NSObject, NSCopying {
-
-  public let processUnderTestEnvironment: [String: String]
-  public let workingDirectory: String
-  public let testBundlePath: String
-  public let waitForDebugger: Bool
-  public let testTimeout: TimeInterval
-
-  var testType: XCTestType {
-    fatalError("-[\(type(of: self)) testType] is abstract and should be overridden")
+private func resolveTestTimeout(_ timeout: TimeInterval) -> TimeInterval {
+  if let timeoutFromEnv = ProcessInfo.processInfo.environment["FB_TEST_TIMEOUT"],
+    let envTimeout = TimeInterval(timeoutFromEnv)
+  {
+    return envTimeout
   }
+  return timeout > 0 ? timeout : kDefaultTimeoutValue
+}
 
-  public init(environment: [String: String], workingDirectory: String, testBundlePath: String, waitForDebugger: Bool, timeout: TimeInterval) {
-    self.processUnderTestEnvironment = environment
-    self.workingDirectory = workingDirectory
-    self.testBundlePath = testBundlePath
-    self.waitForDebugger = waitForDebugger
+/// The configuration shared by every kind of xctest run.
+protocol XCTestRunConfiguration: Sendable {
+  var processUnderTestEnvironment: [String: String] { get }
+  var workingDirectory: String { get }
+  var testBundlePath: String { get }
+  var waitForDebugger: Bool { get }
+  var testTimeout: TimeInterval { get }
+  var testType: XCTestType { get }
+  func jsonSerializableRepresentation() -> [String: Any]
+}
 
-    if let timeoutFromEnv = ProcessInfo.processInfo.environment["FB_TEST_TIMEOUT"],
-      let envTimeout = TimeInterval(timeoutFromEnv)
-    {
-      self.testTimeout = envTimeout
-    } else {
-      self.testTimeout = timeout > 0 ? timeout : kDefaultTimeoutValue
-    }
-    super.init()
-  }
-
-  public override var description: String {
-    guard let data = try? JSONSerialization.data(withJSONObject: jsonSerializableRepresentation(), options: []) else {
-      return super.description
-    }
-    return String(data: data, encoding: .utf8) ?? super.description
-  }
-
-  public override func isEqual(_ object: Any?) -> Bool {
-    guard let other = object as? XCTestRunConfiguration else { return false }
-    guard type(of: other) == type(of: self) else { return false }
-    return processUnderTestEnvironment == other.processUnderTestEnvironment
-      && workingDirectory == other.workingDirectory
-      && testBundlePath == other.testBundlePath
-      && testType.rawValue == other.testType.rawValue
-      && waitForDebugger == other.waitForDebugger
-      && testTimeout == other.testTimeout
-  }
-
-  public override var hash: Int {
-    (processUnderTestEnvironment as NSDictionary).hash ^ (workingDirectory as NSString).hash ^ (testBundlePath as NSString).hash ^ (testType.rawValue as NSString).hash ^ (waitForDebugger ? 1 : 0) ^ Int(testTimeout)
-  }
-
-  // MARK: - Public
+extension XCTestRunConfiguration {
 
   func buildEnvironment(withEntries entries: [String: String]) -> [String: String] {
     var parentEnvironment = ProcessInfo.processInfo.environment
@@ -131,7 +101,7 @@ public class XCTestRunConfiguration: NSObject, NSCopying {
     return environment
   }
 
-  func jsonSerializableRepresentation() -> [String: Any] {
+  var baseJSONSerializableRepresentation: [String: Any] {
     [
       KeyEnvironment: processUnderTestEnvironment,
       KeyWorkingDirectory: workingDirectory,
@@ -143,15 +113,25 @@ public class XCTestRunConfiguration: NSObject, NSCopying {
     ]
   }
 
-  public func copy(with zone: NSZone? = nil) -> Any {
-    self
+  var jsonDescription: String {
+    guard let data = try? JSONSerialization.data(withJSONObject: jsonSerializableRepresentation(), options: []),
+      let string = String(data: data, encoding: .utf8)
+    else {
+      return String(describing: type(of: self))
+    }
+    return string
   }
 }
 
 // MARK: - ListTestConfiguration
 
-public final class ListTestConfiguration: XCTestRunConfiguration {
+public struct ListTestConfiguration: XCTestRunConfiguration, Hashable, CustomStringConvertible {
 
+  public let processUnderTestEnvironment: [String: String]
+  public let workingDirectory: String
+  public let testBundlePath: String
+  public let waitForDebugger: Bool
+  public let testTimeout: TimeInterval
   public let architectures: Set<String>
   public let runnerAppPath: String?
 
@@ -160,17 +140,25 @@ public final class ListTestConfiguration: XCTestRunConfiguration {
   }
 
   public init(environment: [String: String], workingDirectory: String, testBundlePath: String, runnerAppPath: String?, waitForDebugger: Bool, timeout: TimeInterval, architectures: Set<String>) {
+    self.processUnderTestEnvironment = environment
+    self.workingDirectory = workingDirectory
+    self.testBundlePath = testBundlePath
+    self.waitForDebugger = waitForDebugger
+    self.testTimeout = resolveTestTimeout(timeout)
     self.runnerAppPath = runnerAppPath
     self.architectures = architectures
-    super.init(environment: environment, workingDirectory: workingDirectory, testBundlePath: testBundlePath, waitForDebugger: waitForDebugger, timeout: timeout)
   }
 
-  override var testType: XCTestType {
+  var testType: XCTestType {
     XCTestType.listTest
   }
 
-  override func jsonSerializableRepresentation() -> [String: Any] {
-    var json = super.jsonSerializableRepresentation()
+  public var description: String {
+    jsonDescription
+  }
+
+  func jsonSerializableRepresentation() -> [String: Any] {
+    var json = baseJSONSerializableRepresentation
     json[KeyListTestsOnly] = true
     json[KeyRunnerAppPath] = runnerAppPath ?? NSNull()
     return json
@@ -179,35 +167,48 @@ public final class ListTestConfiguration: XCTestRunConfiguration {
 
 // MARK: - TestManagerTestConfiguration
 
-final class TestManagerTestConfiguration: XCTestRunConfiguration {
+struct TestManagerTestConfiguration: XCTestRunConfiguration, CustomStringConvertible {
 
-  public let runnerAppPath: String
-  public let testTargetAppPath: String?
-  public let testFilter: String?
-  public let osLogPath: String?
-  public let videoRecordingPath: String?
-  public let testArtifactsFilenameGlobs: [String]?
+  let processUnderTestEnvironment: [String: String]
+  let workingDirectory: String
+  let testBundlePath: String
+  let waitForDebugger: Bool
+  let testTimeout: TimeInterval
+  let runnerAppPath: String
+  let testTargetAppPath: String?
+  let testFilter: String?
+  let osLogPath: String?
+  let videoRecordingPath: String?
+  let testArtifactsFilenameGlobs: [String]?
 
-  public static func configuration(withEnvironment environment: [String: String], workingDirectory: String, testBundlePath: String, waitForDebugger: Bool, timeout: TimeInterval, runnerAppPath: String, testTargetAppPath: String?, testFilter: String?, videoRecordingPath: String?, testArtifactsFilenameGlobs: [String]?, osLogPath: String?) -> TestManagerTestConfiguration {
+  static func configuration(withEnvironment environment: [String: String], workingDirectory: String, testBundlePath: String, waitForDebugger: Bool, timeout: TimeInterval, runnerAppPath: String, testTargetAppPath: String?, testFilter: String?, videoRecordingPath: String?, testArtifactsFilenameGlobs: [String]?, osLogPath: String?) -> TestManagerTestConfiguration {
     TestManagerTestConfiguration(environment: environment, workingDirectory: workingDirectory, testBundlePath: testBundlePath, waitForDebugger: waitForDebugger, timeout: timeout, runnerAppPath: runnerAppPath, testTargetAppPath: testTargetAppPath, testFilter: testFilter, videoRecordingPath: videoRecordingPath, testArtifactsFilenameGlobs: testArtifactsFilenameGlobs, osLogPath: osLogPath)
   }
 
-  public init(environment: [String: String], workingDirectory: String, testBundlePath: String, waitForDebugger: Bool, timeout: TimeInterval, runnerAppPath: String, testTargetAppPath: String?, testFilter: String?, videoRecordingPath: String?, testArtifactsFilenameGlobs: [String]?, osLogPath: String?) {
+  init(environment: [String: String], workingDirectory: String, testBundlePath: String, waitForDebugger: Bool, timeout: TimeInterval, runnerAppPath: String, testTargetAppPath: String?, testFilter: String?, videoRecordingPath: String?, testArtifactsFilenameGlobs: [String]?, osLogPath: String?) {
+    self.processUnderTestEnvironment = environment
+    self.workingDirectory = workingDirectory
+    self.testBundlePath = testBundlePath
+    self.waitForDebugger = waitForDebugger
+    self.testTimeout = resolveTestTimeout(timeout)
     self.runnerAppPath = runnerAppPath
     self.testTargetAppPath = testTargetAppPath
     self.testFilter = testFilter
     self.videoRecordingPath = videoRecordingPath
     self.testArtifactsFilenameGlobs = testArtifactsFilenameGlobs
     self.osLogPath = osLogPath
-    super.init(environment: environment, workingDirectory: workingDirectory, testBundlePath: testBundlePath, waitForDebugger: waitForDebugger, timeout: timeout)
   }
 
-  override var testType: XCTestType {
+  var testType: XCTestType {
     testTargetAppPath != nil ? XCTestType.uiTest : XCTestType.applicationTest
   }
 
-  override func jsonSerializableRepresentation() -> [String: Any] {
-    var json = super.jsonSerializableRepresentation()
+  var description: String {
+    jsonDescription
+  }
+
+  func jsonSerializableRepresentation() -> [String: Any] {
+    var json = baseJSONSerializableRepresentation
     json[KeyRunnerAppPath] = runnerAppPath
     if let testTargetAppPath { json[KeyRunnerTargetPath] = testTargetAppPath }
     if let testFilter { json[KeyTestFilter] = testFilter }
@@ -220,8 +221,13 @@ final class TestManagerTestConfiguration: XCTestRunConfiguration {
 
 // MARK: - LogicTestConfiguration
 
-public final class LogicTestConfiguration: XCTestRunConfiguration {
+public struct LogicTestConfiguration: XCTestRunConfiguration, CustomStringConvertible {
 
+  public let processUnderTestEnvironment: [String: String]
+  public let workingDirectory: String
+  public let testBundlePath: String
+  public let waitForDebugger: Bool
+  public let testTimeout: TimeInterval
   public let testFilter: String?
   public let mirroring: LogicTestMirrorLogs
   public let coverageConfiguration: CodeCoverageConfiguration?
@@ -235,6 +241,11 @@ public final class LogicTestConfiguration: XCTestRunConfiguration {
   }
 
   public init(environment: [String: String], workingDirectory: String, testBundlePath: String, waitForDebugger: Bool, timeout: TimeInterval, testFilter: String?, mirroring: LogicTestMirrorLogs, coverageConfiguration: CodeCoverageConfiguration?, binaryPath: String?, logDirectoryPath: String?, architectures: Set<String>, injectLibraries: [String] = []) {
+    self.processUnderTestEnvironment = environment
+    self.workingDirectory = workingDirectory
+    self.testBundlePath = testBundlePath
+    self.waitForDebugger = waitForDebugger
+    self.testTimeout = resolveTestTimeout(timeout)
     self.testFilter = testFilter
     self.mirroring = mirroring
     self.coverageConfiguration = coverageConfiguration
@@ -242,15 +253,18 @@ public final class LogicTestConfiguration: XCTestRunConfiguration {
     self.logDirectoryPath = logDirectoryPath
     self.architectures = architectures
     self.injectLibraries = injectLibraries
-    super.init(environment: environment, workingDirectory: workingDirectory, testBundlePath: testBundlePath, waitForDebugger: waitForDebugger, timeout: timeout)
   }
 
-  override var testType: XCTestType {
+  var testType: XCTestType {
     XCTestType.logicTest
   }
 
-  override func jsonSerializableRepresentation() -> [String: Any] {
-    var json = super.jsonSerializableRepresentation()
+  public var description: String {
+    jsonDescription
+  }
+
+  func jsonSerializableRepresentation() -> [String: Any] {
+    var json = baseJSONSerializableRepresentation
     json[KeyTestFilter] = testFilter ?? NSNull()
     return json
   }

@@ -157,7 +157,7 @@ final class XCTestRunConfigurationTransientTests: XCTestCase {
     let config1 = makeListConfig()
     let config2 = makeListConfig()
     XCTAssertEqual(config1, config2)
-    XCTAssertEqual(config1.hash, config2.hash)
+    XCTAssertEqual(config1.hashValue, config2.hashValue)
   }
 
   // MARK: - TestManagerTestConfiguration
@@ -231,7 +231,7 @@ final class XCTestRunConfigurationTransientTests: XCTestCase {
     XCTAssertTrue(desc.contains("MyFilter"), "Description should contain test filter")
   }
 
-  // MARK: - XCTestRunConfiguration base class
+  // MARK: - XCTestRunConfiguration
 
   func testBuildEnvironmentWithEntries() {
     let config = makeListConfig()
@@ -243,18 +243,6 @@ final class XCTestRunConfigurationTransientTests: XCTestCase {
   func testConfigurationDefaultTimeout() {
     let config = makeListConfig(timeout: 0)
     XCTAssertGreaterThan(config.testTimeout, 0)
-  }
-
-  func testConfigurationCopy() {
-    let config = makeListConfig()
-    let copied = config.copy() as! ListTestConfiguration
-    XCTAssertEqual(config, copied)
-  }
-
-  func testConfigurationInequalityAcrossSubclasses() {
-    let listConfig = makeListConfig()
-    let logicConfig = makeLogicConfig(architectures: ["x86_64"])
-    XCTAssertFalse(listConfig.isEqual(logicConfig))
   }
 
   func testConfigurationDescription() {
