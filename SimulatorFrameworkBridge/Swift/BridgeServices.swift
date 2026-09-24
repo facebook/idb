@@ -22,10 +22,10 @@ public enum BridgeServices {
       #if os(tvOS)
       return unavailable("The contacts service", output: output)
       #else
-      return Int32(ContactsServiceStaticFuncs.handleContactsAction(action: "clear", output: output))
+      return Int32(FBContactsService.handleContactsAction(action: "clear", output: output))
       #endif
     case .clearPhotos:
-      return Int32(PhotoLibraryServiceStaticFuncs.handlePhotoLibraryAction(action: "clear", output: output))
+      return Int32(FBPhotoLibraryService.handlePhotoLibraryAction(action: "clear", output: output))
     case let .dns(command):
       let action: String
       let arguments: [String]
@@ -40,13 +40,13 @@ public enum BridgeServices {
         action = "set"
         arguments = servers
       }
-      return Int32(DnsServiceStaticFuncs.handleDnsAction(action: action, arguments: arguments, output: output))
+      return Int32(FBDnsService.handleDnsAction(action: action, arguments: arguments, output: output))
     case let .dynamicStore(command):
       switch command {
       case let .snapshot(key):
-        return DynamicStoreServiceStaticFuncs.run(action: "snapshot", arguments: [key], input: { Data() }, output: output)
+        return Int32(FBDynamicStoreService.handleDynamicStoreAction(action: "snapshot", arguments: [key], input: { Data() }, output: output))
       case let .restore(key, snapshot):
-        return DynamicStoreServiceStaticFuncs.run(action: "restore", arguments: [key], input: { snapshot }, output: output)
+        return Int32(FBDynamicStoreService.handleDynamicStoreAction(action: "restore", arguments: [key], input: { snapshot }, output: output))
       }
     case let .proxy(command):
       let action: String
@@ -62,7 +62,7 @@ public enum BridgeServices {
         action = "set"
         arguments = [host, String(port), kind.rawValue]
       }
-      return Int32(ProxyServiceStaticFuncs.handleProxyAction(action: action, arguments: arguments, output: output))
+      return Int32(FBProxyService.handleProxyAction(action: action, arguments: arguments, output: output))
     case let .notifications(command):
       let action: String
       let bundleID: String?
@@ -89,7 +89,7 @@ public enum BridgeServices {
         return FBDeliveredNotificationsService.handleAction("clear-delivered", bundleID: identifier, directory: nil, timeout: 0, output: output)
         #endif
       }
-      return Int32(NotificationSettingsServiceStaticFuncs.handleNotificationSettingsAction(action: action, bundleID: bundleID, output: output))
+      return Int32(FBNotificationSettingsService.handleNotificationSettingsAction(action: action, bundleID: bundleID, output: output))
     case let .health(command):
       #if os(tvOS)
       return unavailable("The health service", output: output)
@@ -115,11 +115,11 @@ public enum BridgeServices {
         bundleID = identifier
         types = identifiers
       }
-      return Int32(HealthSettingsServiceStaticFuncs.handleHealthSettingsAction(action: action, bundleID: bundleID, typeIdentifiers: types, output: output))
+      return Int32(FBHealthSettingsService.handleHealthSettingsAction(action: action, bundleID: bundleID, typeIdentifiers: types, output: output))
       #endif
     case let .accessibility(parameters):
-      let response = AccessibilityServiceStaticFuncs.handleRequest(parameters.mapValues(\.foundationValue))
-      let data = AccessibilityServiceStaticFuncs.serializeResponse(response)
+      let response = FBAccessibilityService.handleRequest(parameters.mapValues(\.foundationValue))
+      let data = FBAccessibilityService.serializeResponse(response)
       guard let value = output.write(json: data) else { return 1 }
       if case let .object(fields) = value, fields[BridgeAXWire.Envelope.ok.rawValue] == .bool(true) { return 0 }
       return 1

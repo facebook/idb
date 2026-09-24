@@ -24,7 +24,7 @@ private func clearPhotoLibrary(client: FBPhotoLibraryClient, output: BridgeOutpu
   }
 }
 
-@objc public final class PhotoLibraryServiceStaticFuncs: NSObject {
+@objc public final class FBPhotoLibraryService: NSObject {
 
   @objc(handlePhotoLibraryAction:)
   public static func handlePhotoLibraryAction(action: String) -> Int {

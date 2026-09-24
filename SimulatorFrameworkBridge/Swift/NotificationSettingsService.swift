@@ -48,7 +48,7 @@ private func printSectionJSON(bundleID: String, section: FBNotificationSection, 
   return true
 }
 
-@objc public final class NotificationSettingsServiceStaticFuncs: NSObject {
+@objc public final class FBNotificationSettingsService: NSObject {
   @objc(handleNotificationSettingsAction:bundleID:)
   public static func handleNotificationSettingsAction(action: String?, bundleID: String?) -> Int {
     handleNotificationSettingsAction(action: action, bundleID: bundleID, output: nil)

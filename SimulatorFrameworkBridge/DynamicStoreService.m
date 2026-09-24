@@ -15,10 +15,10 @@
 
 NSString *dynamicStoreKeyForName(NSString *name)
 {
-  return [DynamicStoreServiceStaticFuncs keyForName:name];
+  return [FBDynamicStoreService keyForName:name];
 }
 
 int handleDynamicStoreAction(NSString *action, NSArray<NSString *> *arguments)
 {
-  return [DynamicStoreServiceStaticFuncs handleDynamicStoreAction:action arguments:arguments];
+  return (int)[FBDynamicStoreService handleDynamicStoreAction:action arguments:arguments];
 }

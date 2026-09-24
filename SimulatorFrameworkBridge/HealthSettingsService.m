@@ -15,5 +15,5 @@
 
 int handleHealthSettingsAction(NSString *action, NSString *bundleID, NSArray<NSString *> *typeIdentifiers)
 {
-  return (int)[HealthSettingsServiceStaticFuncs handleHealthSettingsAction:action ?: @"(null)" bundleID:bundleID typeIdentifiers:typeIdentifiers ?: @[]];
+  return (int)[FBHealthSettingsService handleHealthSettingsAction:action ?: @"(null)" bundleID:bundleID typeIdentifiers:typeIdentifiers ?: @[]];
 }

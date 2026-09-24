@@ -17,10 +17,10 @@ int handleNotificationSettingsActionWithGateway(NSString *action, NSString *bund
 
 int handleNotificationSettingsAction(NSString *action, NSString *bundleID)
 {
-  return (int)[NotificationSettingsServiceStaticFuncs handleNotificationSettingsAction:action bundleID:bundleID];
+  return (int)[FBNotificationSettingsService handleNotificationSettingsAction:action bundleID:bundleID];
 }
 
 int handleNotificationSettingsActionWithGateway(NSString *action, NSString *bundleID, id gateway)
 {
-  return (int)[NotificationSettingsServiceStaticFuncs handleNotificationSettingsActionWithGateway:action bundleID:bundleID gateway:gateway];
+  return (int)[FBNotificationSettingsService handleNotificationSettingsActionWithGateway:action bundleID:bundleID gateway:gateway];
 }

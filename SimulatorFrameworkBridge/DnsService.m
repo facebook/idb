@@ -15,10 +15,10 @@
 
 NSDictionary<NSString *, id> *buildDnsDict(NSArray<NSString *> *servers)
 {
-  return [DnsServiceStaticFuncs buildDnsDict:servers];
+  return [FBDnsService buildDnsDict:servers];
 }
 
 int handleDnsAction(NSString *action, NSArray<NSString *> *arguments)
 {
-  return (int)[DnsServiceStaticFuncs handleDnsAction:action arguments:arguments];
+  return (int)[FBDnsService handleDnsAction:action arguments:arguments];
 }

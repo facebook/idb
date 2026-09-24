@@ -16,10 +16,10 @@
 
 int FBContactsClearWithStore(CNContactStore *store, CNSaveRequest *(^makeSaveRequest)(void))
 {
-  return (int)[ContactsServiceStaticFuncs clearWithStore:store makeSaveRequest:makeSaveRequest];
+  return (int)[FBContactsService clearWithStore:store makeSaveRequest:makeSaveRequest];
 }
 
 int handleContactsAction(NSString *action)
 {
-  return (int)[ContactsServiceStaticFuncs handleContactsAction:action ?: @"(null)"];
+  return (int)[FBContactsService handleContactsAction:action ?: @"(null)"];
 }

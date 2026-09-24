@@ -201,7 +201,7 @@ private func handleHealthSettingsActionImpl(
   return sink?.failure("Unknown Health action: \(action)") ?? 1
 }
 
-@objc public final class HealthSettingsServiceStaticFuncs: NSObject {
+@objc public final class FBHealthSettingsService: NSObject {
 
   @objc(handleHealthSettingsAction:bundleID:typeIdentifiers:)
   public static func handleHealthSettingsAction(

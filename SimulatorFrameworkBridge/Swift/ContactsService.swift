@@ -50,7 +50,7 @@ private func FBContactsClearWithStore(contactStore: CNContactStore, makeSaveRequ
   return 0
 }
 
-@objc public final class ContactsServiceStaticFuncs: NSObject {
+@objc public final class FBContactsService: NSObject {
   @objc(clearWithStore:makeSaveRequest:)
   public static func clear(with store: CNContactStore, makeSaveRequest: () -> CNSaveRequest) -> Int {
     FBContactsClearWithStore(contactStore: store, makeSaveRequest: makeSaveRequest)

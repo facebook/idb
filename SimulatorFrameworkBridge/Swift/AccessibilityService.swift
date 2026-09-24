@@ -1539,7 +1539,7 @@ private final class AccessibilityRequest {
 
 // Objective-C runtime clients convert private-framework exceptions to NSError before returning here.
 // Answer those errors on the shared dispatcher path so the serve connection can handle later requests.
-@objc public final class AccessibilityServiceStaticFuncs: NSObject {
+@objc public final class FBAccessibilityService: NSObject {
 
   @objc public static func handleRequest(_ request: [String: Any]) -> [String: Any] {
     do {

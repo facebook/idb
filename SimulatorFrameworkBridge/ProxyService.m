@@ -15,20 +15,20 @@
 
 NSDictionary<NSString *, id> *buildHTTPProxyDict(NSString *host, int port)
 {
-  return [ProxyServiceStaticFuncs buildHTTPProxyDict:host port:port];
+  return [FBProxyService buildHTTPProxyDict:host port:port];
 }
 
 NSDictionary<NSString *, id> *buildSOCKSProxyDict(NSString *host, int port)
 {
-  return [ProxyServiceStaticFuncs buildSOCKSProxyDict:host port:port];
+  return [FBProxyService buildSOCKSProxyDict:host port:port];
 }
 
 NSDictionary<NSString *, id> *buildEmptyProxyDict(void)
 {
-  return [ProxyServiceStaticFuncs buildEmptyProxyDict];
+  return [FBProxyService buildEmptyProxyDict];
 }
 
 int handleProxyAction(NSString *action, NSArray<NSString *> *arguments)
 {
-  return (int)[ProxyServiceStaticFuncs handleProxyAction:action arguments:arguments];
+  return (int)[FBProxyService handleProxyAction:action arguments:arguments];
 }

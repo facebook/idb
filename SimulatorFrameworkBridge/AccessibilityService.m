@@ -38,22 +38,22 @@ void FBAXBridgeSetRuntimeFactoryForTesting(FBAXRuntimeFactory factory)
 
 NSDictionary<NSString *, id> *FBAXBridgeHandleRequest(NSDictionary<NSString *, id> *request)
 {
-  return [AccessibilityServiceStaticFuncs handleRequest:request];
+  return [FBAccessibilityService handleRequest:request];
 }
 
 NSData *FBAXBridgeSerializeResponse(NSDictionary<NSString *, id> *response)
 {
-  return [AccessibilityServiceStaticFuncs serializeResponse:response];
+  return [FBAccessibilityService serializeResponse:response];
 }
 
 NSDictionary<NSString *, NSString *> *FBAXBridgeModalDescriptor(NSDictionary<NSString *, id> *tree)
 {
-  return [AccessibilityServiceStaticFuncs modalDescriptor:tree];
+  return [FBAccessibilityService modalDescriptor:tree];
 }
 
 NSDictionary<NSString *, NSString *> *FBAXBridgeWireConstantsForTesting(void)
 {
-  return [AccessibilityServiceStaticFuncs wireConstantsForTesting];
+  return [FBAccessibilityService wireConstantsForTesting];
 }
 
 NSDictionary<NSString *, id> *FBAXBridgeRequestFromArguments(NSString *action, NSArray<NSString *> *arguments)
@@ -63,10 +63,10 @@ NSDictionary<NSString *, id> *FBAXBridgeRequestFromArguments(NSString *action, N
 
 int handleAccessibilityAction(NSString *action, NSArray<NSString *> *arguments)
 {
-  return [AccessibilityServiceStaticFuncs handleAction:action
-                                             arguments:arguments
-                                         writeResponse:^(NSData *data) {
-                                           fwrite(data.bytes, 1, data.length, stdout);
-                                           fputc('\n', stdout);
-                                         }];
+  return [FBAccessibilityService handleAction:action
+                                    arguments:arguments
+                                writeResponse:^(NSData *data) {
+                                  fwrite(data.bytes, 1, data.length, stdout);
+                                  fputc('\n', stdout);
+                                }];
 }

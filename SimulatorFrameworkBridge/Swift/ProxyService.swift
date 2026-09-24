@@ -32,7 +32,7 @@ private enum ProxyConfiguration {
   }
 }
 
-@objc public final class ProxyServiceStaticFuncs: NSObject {
+@objc public final class FBProxyService: NSObject {
 
   @objc(buildHTTPProxyDict:port:)
   public static func buildHTTPProxyDict(host: String, port: Int32) -> [String: Any] {

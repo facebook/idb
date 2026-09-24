@@ -11,7 +11,7 @@ import Foundation
 @_implementationOnly import SimulatorFrameworkBridgeRuntime
 #endif
 
-@objc public final class DynamicStoreServiceStaticFuncs: NSObject {
+@objc public final class FBDynamicStoreService: NSObject {
   private enum Action: String {
     case snapshot
     case restore
@@ -25,11 +25,12 @@ import Foundation
     }
   }
 
-  @objc public static func handleDynamicStoreAction(_ action: String, arguments: [String]) -> Int32 {
-    run(action: action, arguments: arguments, input: { FileHandle.standardInput.readDataToEndOfFile() })
+  @objc(handleDynamicStoreAction:arguments:)
+  public static func handleDynamicStoreAction(action: String, arguments: [String]) -> Int {
+    handleDynamicStoreAction(action: action, arguments: arguments, input: { FileHandle.standardInput.readDataToEndOfFile() }, output: nil)
   }
 
-  static func run(action: String, arguments: [String], input: () -> Data, output: BridgeOutput? = nil) -> Int32 {
+  static func handleDynamicStoreAction(action: String, arguments: [String], input: () -> Data, output: BridgeOutput?) -> Int {
     guard let selectedAction = Action(rawValue: action) else {
       NSLog("[DynamicStoreService] Unknown action: %@. Use 'snapshot' or 'restore'.", action)
       return failed("Unknown dynamic-store action", output: output)
@@ -67,8 +68,8 @@ import Foundation
     }
   }
 
-  private static func failed(_ message: String, output: BridgeOutput?) -> Int32 {
-    Int32(output?.failure(message) ?? 1)
+  private static func failed(_ message: String, output: BridgeOutput?) -> Int {
+    output?.failure(message) ?? 1
   }
 
   private enum Snapshot {
@@ -95,16 +96,14 @@ import Foundation
     }
   }
 
-  private static func writeSnapshot(_ value: Any?, output: BridgeOutput?) -> Int32 {
+  private static func writeSnapshot(_ value: Any?, output: BridgeOutput?) -> Int {
     let snapshot: [String: Any] = value.map { ["present": true, "value": $0] } ?? ["present": false]
-    if let output { return output.write(propertyList: snapshot) ? 0 : 1 }
-    do {
-      let data = try PropertyListSerialization.data(fromPropertyList: snapshot, format: .binary, options: 0)
-      FileHandle.standardOutput.write(data)
-      return 0
-    } catch {
-      NSLog("[DynamicStoreService] Cannot serialise the snapshot: %@", error as NSError)
+    let encoder = output ?? BridgeOutput()
+    guard encoder.write(propertyList: snapshot), let data = encoder.propertyList else {
+      NSLog("[DynamicStoreService] Cannot serialise the snapshot: %@", encoder.error ?? "")
       return 1
     }
+    if output == nil { FileHandle.standardOutput.write(data) }
+    return 0
   }
 }

@@ -11,7 +11,7 @@ import Foundation
 @_implementationOnly import SimulatorFrameworkBridgeRuntime
 #endif
 
-@objc public final class DnsServiceStaticFuncs: NSObject {
+@objc public final class FBDnsService: NSObject {
 
   @objc(buildDnsDict:)
   public static func buildDnsDict(servers: [String]) -> [String: Any] {

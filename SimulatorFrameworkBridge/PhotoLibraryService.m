@@ -22,10 +22,10 @@ int FBPhotoLibraryClearWithLibrary(PHPhotoLibrary *photoLibrary, PHFetchResult<P
   if (!client) {
     return 1;
   }
-  return (int)[PhotoLibraryServiceStaticFuncs clearWithClient:client];
+  return (int)[FBPhotoLibraryService clearWithClient:client];
 }
 
 int handlePhotoLibraryAction(NSString *action)
 {
-  return (int)[PhotoLibraryServiceStaticFuncs handlePhotoLibraryAction:action ?: @"(null)"];
+  return (int)[FBPhotoLibraryService handlePhotoLibraryAction:action ?: @"(null)"];
 }
