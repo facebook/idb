@@ -21,9 +21,9 @@ extension SubprocessError: LocalizedError {
     case let .unacceptableTermination(status, _, executable, processIdentifier):
       switch status {
       case .exited(let code):
-        return "Process \(processIdentifier) (\(executable)) exited with code \(code), which is not an acceptable exit"
+        return "Process \(processIdentifier) (\(executable)) exited with code \(code), which is not acceptable"
       case .signalled(let signo):
-        return "Process \(processIdentifier) (\(executable)) terminated with signal \(signo), which is not an acceptable exit"
+        return "Process \(processIdentifier) (\(executable)) terminated with signal \(signo), which is not acceptable"
       }
     case let .launchFailed(executable, message):
       return "Failed to launch \(executable): \(message)"

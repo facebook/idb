@@ -19,7 +19,6 @@ import XCTest
 final class XCTestResultToolOperationTests: XCTestCase {
 
   private var temporaryDirectory: URL!
-  private let queue = DispatchQueue(label: "com.facebook.xctestbootstrap.tests.xcresulttool")
 
   override func setUpWithError() throws {
     try super.setUpWithError()
@@ -42,8 +41,7 @@ final class XCTestResultToolOperationTests: XCTestCase {
 
   func testGettingJSONFailsWhenTheToolExitsNonZero() async throws {
     do {
-      _ = try await bridgeFBFuture(
-        XCTestResultToolOperation.getJSON(from: absentResultBundlePath, forId: nil, queue: queue, logger: nil))
+      _ = try await XCTestResultToolOperation.getJSON(from: absentResultBundlePath, forId: nil, logger: nil)
       XCTFail("Expected reading an absent result bundle to fail")
     } catch {
       // Every entry point launches with `[0]` as the only acceptable exit code, so a
@@ -55,13 +53,11 @@ final class XCTestResultToolOperationTests: XCTestCase {
 
   func testExportingAFileFailsWhenTheToolExitsNonZero() async throws {
     do {
-      _ = try await bridgeFBFuture(
-        XCTestResultToolOperation.exportFile(
-          from: absentResultBundlePath,
-          to: temporaryDirectory.appendingPathComponent("out.bin").path,
-          forId: "0~abcdef",
-          queue: queue,
-          logger: nil))
+      _ = try await XCTestResultToolOperation.exportFile(
+        from: absentResultBundlePath,
+        to: temporaryDirectory.appendingPathComponent("out.bin").path,
+        forId: "0~abcdef",
+        logger: nil)
       XCTFail("Expected exporting from an absent result bundle to fail")
     } catch {
       XCTAssertTrue(error.localizedDescription.contains("is not acceptable"), error.localizedDescription)
@@ -70,14 +66,12 @@ final class XCTestResultToolOperationTests: XCTestCase {
 
   func testAnUnrecognizedScreenshotEncodingIsMaskedByAnExportFailure() async throws {
     do {
-      _ = try await bridgeFBFuture(
-        XCTestResultToolOperation.exportJPEG(
-          from: absentResultBundlePath,
-          to: temporaryDirectory.appendingPathComponent("out.jpg").path,
-          forId: "0~abcdef",
-          type: "public.png",
-          queue: queue,
-          logger: nil))
+      _ = try await XCTestResultToolOperation.exportJPEG(
+        from: absentResultBundlePath,
+        to: temporaryDirectory.appendingPathComponent("out.jpg").path,
+        forId: "0~abcdef",
+        type: "public.png",
+        logger: nil)
       XCTFail("Expected the failing export to throw")
     } catch {
       // The export runs first, so an unusable result bundle masks the encoding
@@ -100,13 +94,12 @@ final class XCTestResultToolOperationTests: XCTestCase {
     }
 
     // A logger is the only way to see the tool's stderr from these entry points:
-    // `withStdErr(to:)` is applied only when one is supplied, and every failing
-    // launch throws the exit-code rejection rather than returning the process.
+    // the stderr-to-logger sink is attached only when one is supplied, and every
+    // failing run throws the exit-code rejection rather than returning output.
     let logger = RecordingLogger()
 
     do {
-      _ = try await bridgeFBFuture(
-        XCTestResultToolOperation.getJSON(from: absentResultBundlePath, forId: nil, queue: queue, logger: logger))
+      _ = try await XCTestResultToolOperation.getJSON(from: absentResultBundlePath, forId: nil, logger: logger)
     } catch {
       // The failure itself is covered above; this case is about what was logged.
     }

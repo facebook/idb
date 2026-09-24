@@ -36,7 +36,7 @@ public final class XcodeBuildOperation {
 
   // MARK: - Initializers
 
-  public static func operation(withUDID udid: String, configuration: TestLaunchConfiguration, xcodeBuildPath: String, testRunFilePath: String, simDeviceSet simDeviceSetPath: String?, macOSTestShimPath: String?, logger: ControlCoreLogger?) async throws -> FBSubprocess<AnyObject, AnyObject, AnyObject> {
+  public static func operation(withUDID udid: String, configuration: TestLaunchConfiguration, xcodeBuildPath: String, testRunFilePath: String, simDeviceSet simDeviceSetPath: String?, macOSTestShimPath: String?, logger: ControlCoreLogger?) async throws -> RunningSubprocess {
     var arguments = [
       "test-without-building",
       "-xctestrun", testRunFilePath,
@@ -72,19 +72,17 @@ public final class XcodeBuildOperation {
     }
 
     logger?.log("Starting test with xcodebuild | Arguments: \(arguments.joined(separator: " ")) | Environments: \(environment)")
-    let base = FBProcessBuilder<NSNull, NSData, NSData>.withLaunchPath(xcodeBuildPath, arguments: arguments)
-      .withEnvironment(environment)
-      .withTaskLifecycleLogging(to: logger)
-    let startFuture: FBFuture<AnyObject>
+    let subprocess = Subprocess(executable: xcodeBuildPath, arguments: arguments, environment: .exact(environment))
+    let running: RunningSubprocess
     if let logger {
-      let configured = base.withStdOut(toLoggerAndErrorMessage: logger).withStdErr(toLoggerAndErrorMessage: logger)
-      startFuture = configured.start().retyped(FBFuture<AnyObject>.self)
+      running = try await subprocess.launch(output: .loggerCapturingErrorMessage(logger), error: .loggerCapturingErrorMessage(logger), logger: logger)
     } else {
-      startFuture = base.start().retyped(FBFuture<AnyObject>.self)
+      // The unset builder default buffered both streams into memory that
+      // nothing ever read; an open null device discards them outright.
+      running = try await subprocess.launch(output: .nullDevice, error: .nullDevice, logger: nil)
     }
-    let task = try await bridgeFBFuture(startFuture.retyped(FBFuture<FBSubprocess<AnyObject, AnyObject, AnyObject>>.self))
-    logger?.log("Task started \(task) for xcodebuild \(arguments.joined(separator: " "))")
-    return task
+    logger?.log("Task started pid \(running.processIdentifier) for xcodebuild \(arguments.joined(separator: " "))")
+    return running
   }
 
   // MARK: - Public Methods
@@ -169,36 +167,31 @@ public final class XcodeBuildOperation {
     return mutableTestRunProperties as NSDictionary
   }
 
-  public static func confirmExit(ofXcodebuildOperation task: FBSubprocess<AnyObject, AnyObject, AnyObject>, configuration: TestLaunchConfiguration, reporter: XCTestReporter, target: any Target, logger: ControlCoreLogger) -> FBFuture<NSNull> {
-    return
-      task.exited(withCodes: [0, 65]).retyped(FBFuture<AnyObject>.self)
-      .onQueue(
-        target.workQueue,
-        respondToCancellation: { () -> FBFuture<NSNull> in
-          task.sendSignal(SIGTERM, backingOffToKillWithTimeout: 1, logger: logger).retyped(FBFuture<NSNull>.self)
-        }
-      )
-      .onQueue(
-        target.workQueue,
-        fmap: { _ -> FBFuture<AnyObject> in
-          logger.log("xcodebuild operation completed successfully \(task)")
-          if let resultBundlePath = configuration.resultBundlePath {
-            return XCTestResultBundleParser.parse(resultBundlePath, target: target, reporter: reporter, logger: logger, extractScreenshots: configuration.reportResultBundle)
-              .retyped(FBFuture<AnyObject>.self)
-          }
-          logger.log("No result bundle to parse")
-          return FBFuture(result: NSNull() as AnyObject)
-        }
-      )
-      .onQueue(
-        target.workQueue,
-        fmap: { _ -> FBFuture<AnyObject> in
-          logger.log("Reporting test results")
-          reporter.didFinishExecutingTestPlan()
-          return FBFuture(result: NSNull() as AnyObject)
-        }
-      )
-      .retyped(FBFuture<NSNull>.self)
+  public static func confirmExit(ofXcodebuildOperation running: RunningSubprocess, configuration: TestLaunchConfiguration, reporter: XCTestReporter, target: any Target, logger: ControlCoreLogger) async throws {
+    // Cancellation terminates xcodebuild with the same one-second SIGTERM
+    // grace the future's cancellation handler applied.
+    let status = try await withTaskCancellationHandler {
+      try await running.terminationStatus
+    } onCancel: {
+      Task {
+        _ = try? await running.terminate(gracePeriod: 1)
+      }
+    }
+    guard case .exited(let code) = status, code == 0 || code == 65 else {
+      throw SubprocessError.unacceptableTermination(
+        status: status,
+        policy: .mustExit([0, 65]),
+        executable: "xcodebuild",
+        processIdentifier: running.processIdentifier)
+    }
+    logger.log("xcodebuild operation completed successfully with pid \(running.processIdentifier)")
+    if let resultBundlePath = configuration.resultBundlePath {
+      try await XCTestResultBundleParser.parse(resultBundlePath, target: target, reporter: reporter, logger: logger, extractScreenshots: configuration.reportResultBundle)
+    } else {
+      logger.log("No result bundle to parse")
+    }
+    logger.log("Reporting test results")
+    reporter.didFinishExecutingTestPlan()
   }
 
   // MARK: - Private
