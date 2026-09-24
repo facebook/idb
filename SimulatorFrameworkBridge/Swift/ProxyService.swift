@@ -55,67 +55,23 @@ private enum ProxyConfiguration {
   }
 
   static func handleProxyAction(action: String, arguments: [String], output: BridgeOutput?) -> Int {
-    let store = FBNetworkConfigurationStore.proxy()
-    guard let store else {
-      return output?.failure("The proxy private API is unavailable") ?? 1
-    }
-
-    let selectedAction = NetworkConfigurationAction(rawValue: action)
-    if selectedAction == .list {
-      let read = store.readConfiguration()
-      guard let read else {
-        return output?.failure("Could not read proxy configuration") ?? 1
-      }
-      if let output {
-        return output.write(read.configuration ?? [:]) ? 0 : 1
-      }
-      if let dict = read.configuration {
-        if let json = try? JSONSerialization.data(withJSONObject: dict, options: .prettyPrinted),
-          let str = String(data: json, encoding: .utf8)
-        {
-          // patternlint-disable-next-line avoid-print-to-prevent-production-overhead
-          print(str)
-        }
-      } else {
-        // patternlint-disable-next-line avoid-print-to-prevent-production-overhead
-        print("{}")
-      }
-      return 0
-    }
-
-    guard store.prepareToWrite() else {
-      return output?.failure("Could not prepare proxy configuration for writing") ?? 1
-    }
-
-    let proxyDict: [String: Any]
-    if selectedAction == .set {
-      if arguments.count < 2 {
+    NetworkConfigurationService(
+      name: "proxy",
+      logTag: "[ProxyService]",
+      store: FBNetworkConfigurationStore.proxy(),
+      clearedConfiguration: buildEmptyProxyDict(),
+      clearingMessage: "Clearing proxy settings",
+      updatedMessage: "Proxy settings updated successfully"
+    ) { arguments in
+      guard arguments.count >= 2 else {
         NSLog("[ProxyService] set requires <host> <port> [http|socks]")
-        return output?.failure("Invalid proxy set arguments") ?? 1
+        return nil
       }
       let host = arguments[0]
       let port = (arguments[1] as NSString).intValue
       let type = arguments.count >= 3 ? arguments[2] : "http"
-
-      proxyDict = ProxyConfiguration(host: host, port: port, type: type).dictionary
       NSLog("[ProxyService] Setting %@ proxy to %@:%d", type, host, port)
-    } else if selectedAction == .clear {
-      proxyDict = ProxyServiceStaticFuncs.buildEmptyProxyDict()
-      NSLog("[ProxyService] Clearing proxy settings")
-    } else {
-      NSLog("[ProxyService] Unknown action: %@. Use 'set', 'clear', or 'list'.", action)
-      return output?.failure("Unknown proxy action") ?? 1
-    }
-
-    let success = store.writeConfiguration(proxyDict)
-
-    guard success else {
-      return output?.failure("Could not write proxy configuration") ?? 1
-    }
-
-    store.notifyChange()
-
-    NSLog("[ProxyService] Proxy settings updated successfully")
-    return 0
+      return ProxyConfiguration(host: host, port: port, type: type).dictionary
+    }.handle(action: action, arguments: arguments, output: output)
   }
 }
