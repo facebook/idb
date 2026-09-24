@@ -116,6 +116,7 @@ ACCESSIBILITY_READY_TIMEOUT_SECONDS = 180.0
 DEFAULT_COMMAND_TIMEOUT_SECONDS = 120.0
 INSTALL_TIMEOUT_SECONDS = 300.0
 ROUTE_ATTESTATION_TIMEOUT_SECONDS = 10.0
+APP_STATE_TIMEOUT_SECONDS = 60.0
 PROCESS_GROUP_GRACE_SECONDS = 2.0
 
 
@@ -497,6 +498,17 @@ class Simctl:
         if not path:
             raise HarnessError(f"simctl reported no {kind} container for {bundle_id}")
         return Path(path)
+
+
+class AppState(enum.Enum):
+    """What an app is, as simctl reports it independently of idb."""
+
+    # launchctl lists a live UIKitApplication job for it, or does not.
+    RUNNING = "running"
+    STOPPED = "stopped"
+    # simctl listapps includes it, or does not.
+    INSTALLED = "installed"
+    ABSENT = "absent"
 
 
 # A stopped launchd job remains in the listing with `-` instead of a PID. Only
@@ -1702,6 +1714,33 @@ class IdbEndToEndTestCase(unittest.IsolatedAsyncioTestCase):
         try:
             return await wait_until(
                 f"{query} was not {until.value}", max(deadline.remaining, 0.0), read
+            )
+        except HarnessError as error:
+            self.fail(str(error))
+
+    async def wait_for_app(
+        self,
+        bundle_id: str,
+        state: AppState,
+        *,
+        timeout: float = APP_STATE_TIMEOUT_SECONDS,
+    ) -> None:
+        """Wait until simctl reports the app `state`, whatever idb reports."""
+        if state in (AppState.RUNNING, AppState.STOPPED):
+            listing = self.simctl.running_bundle_ids
+            listed, unlisted = AppState.RUNNING, AppState.STOPPED
+        else:
+            listing = self.simctl.installed_bundle_ids
+            listed, unlisted = AppState.INSTALLED, AppState.ABSENT
+
+        async def check() -> None:
+            reported = listed if bundle_id in await listing() else unlisted
+            if reported is not state:
+                raise NotReady(f"simctl reports it {reported.value}")
+
+        try:
+            await wait_until(
+                f"{bundle_id} did not become {state.value}", timeout, check
             )
         except HarnessError as error:
             self.fail(str(error))

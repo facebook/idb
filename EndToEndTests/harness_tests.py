@@ -33,6 +33,7 @@ from .harness import (
     _optional_binary_from_environment,
     _prepare_artifact_file,
     AccessibilityApi,
+    AppState,
     client_argv,
     Companion,
     CompanionDied,
@@ -1845,6 +1846,77 @@ class WaitUntilTests(unittest.IsolatedAsyncioTestCase):
             await wait_until("Never", 60.0, poll)
 
         self.assertEqual(str(raised.exception), "the companion is gone")
+
+
+class AppCaseStub(HarnessCaseStub):
+    wait_for_app = IdbEndToEndTestCase.wait_for_app
+
+    def __init__(
+        self,
+        running: Sequence[set[str] | Exception] = (),
+        installed: Sequence[set[str] | Exception] = (),
+    ) -> None:
+        super().__init__()
+        self.simctl = SimpleNamespace(
+            running_bundle_ids=mock.AsyncMock(side_effect=running),
+            installed_bundle_ids=mock.AsyncMock(side_effect=installed),
+        )
+
+
+@mock.patch.object(harness, "POLL_INTERVAL_SECONDS", 0.0)
+class AppWaitTests(unittest.IsolatedAsyncioTestCase):
+    """Waiting for an app to reach a state simctl reports."""
+
+    async def test_running_is_waited_for_until_launchctl_lists_it(self) -> None:
+        case = AppCaseStub(running=[set(), {"com.example.app"}])
+
+        await case.wait_for_app("com.example.app", AppState.RUNNING)
+
+        self.assertEqual(case.simctl.running_bundle_ids.await_count, 2)
+        case.simctl.installed_bundle_ids.assert_not_awaited()
+
+    async def test_stopped_is_waited_for_until_launchctl_no_longer_lists_it(
+        self,
+    ) -> None:
+        case = AppCaseStub(running=[{"com.example.app"}, {"com.example.other"}])
+
+        await case.wait_for_app("com.example.app", AppState.STOPPED)
+
+        self.assertEqual(case.simctl.running_bundle_ids.await_count, 2)
+
+    async def test_installed_and_absent_read_the_installed_apps(self) -> None:
+        case = AppCaseStub(installed=[set(), {"com.example.app"}, set()])
+
+        await case.wait_for_app("com.example.app", AppState.INSTALLED)
+        await case.wait_for_app("com.example.app", AppState.ABSENT)
+
+        self.assertEqual(case.simctl.installed_bundle_ids.await_count, 3)
+        case.simctl.running_bundle_ids.assert_not_awaited()
+
+    async def test_a_timeout_fails_the_test_with_what_simctl_last_reported(
+        self,
+    ) -> None:
+        case = AppCaseStub(running=[{"com.example.app"}])
+
+        with self.assertRaises(Failed) as failed:
+            await case.wait_for_app("com.example.app", AppState.STOPPED, timeout=0.0)
+
+        self.assertEqual(
+            str(failed.exception),
+            "com.example.app did not become stopped within 0s: "
+            "simctl reports it running",
+        )
+
+    async def test_a_simctl_failure_fails_the_test_at_once(self) -> None:
+        case = AppCaseStub(
+            installed=[HarnessError("simctl listapps failed (rc=1): boom"), set()]
+        )
+
+        with self.assertRaises(Failed) as failed:
+            await case.wait_for_app("com.example.app", AppState.INSTALLED)
+
+        self.assertEqual(str(failed.exception), "simctl listapps failed (rc=1): boom")
+        self.assertEqual(case.simctl.installed_bundle_ids.await_count, 1)
 
 
 class EnvironmentSelectionTests(unittest.IsolatedAsyncioTestCase):
