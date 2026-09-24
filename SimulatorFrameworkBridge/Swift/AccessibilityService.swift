@@ -207,6 +207,45 @@ private enum FrontmostMethod: String {
 private let defaultMaxDepth = 100
 private let defaultNodeBudget = 5000
 
+private enum AccessibilityFailure {
+  case plain(message: String)
+  case tagged(message: String, kind: String, pid: NSNumber?)
+
+  var dictionary: [String: Any] {
+    switch self {
+    case let .plain(message):
+      return [responseOk: false, responseError: message]
+    case let .tagged(message, kind, pid):
+      var response: [String: Any] = [responseOk: false, responseError: message, responseErrorKind: kind]
+      if let pid {
+        response[responsePid] = pid
+      }
+      return response
+    }
+  }
+}
+
+private struct AccessibilityDescriptionResponse {
+  let tree: [String: Any]
+  let truncated: Bool
+  let pid: pid_t
+  let automationEnabled: Bool
+  let automationAsserted: Bool
+  let traverseDuration: CFAbsoluteTime
+  let roundTrips: Int64
+  let frontmostMethod: String?
+
+  var dictionary: [String: Any] {
+    var response: [String: Any] = [responseOk: true, responseTree: tree, responseTruncated: truncated as NSNumber, responsePid: pid as NSNumber]
+    response[responseAutomation] = [kAutomationEnabled: automationEnabled as NSNumber, kAutomationAsserted: automationAsserted as NSNumber]
+    response[responsePhases] = [phaseTraverse: (traverseDuration * 1000) as NSNumber, phaseMachRoundTrips: roundTrips as NSNumber]
+    if let frontmostMethod {
+      response[responseMethod] = frontmostMethod
+    }
+    return response
+  }
+}
+
 private struct TraversalContext {
   var remainingNodes = 0
   // How many boundary continuations one read may fetch. Depth and node budget already bound the recursion
@@ -722,7 +761,7 @@ private final class AccessibilityRequest {
   // MARK: - Request handling
 
   fileprivate func FBAXBridgeErrorResponse(message: String) -> [String: Any] {
-    [responseOk: false, responseError: message]
+    AccessibilityFailure.plain(message: message).dictionary
   }
 
   // A failure the host can act on: the message says what happened, the kind says what class of thing it
@@ -733,11 +772,7 @@ private final class AccessibilityRequest {
     kind: String,
     pid: NSNumber?
   ) -> [String: Any] {
-    var response: [String: Any] = [responseOk: false, responseError: message, responseErrorKind: kind]
-    if let pid {
-      response[responsePid] = pid
-    }
-    return response
+    AccessibilityFailure.tagged(message: message, kind: kind, pid: pid).dictionary
   }
 
   // The response a failed read answers with, or nil when it succeeded. Only the XCTest read produces these
@@ -1463,12 +1498,16 @@ private final class AccessibilityRequest {
     guard let tree else {
       throw FBAXBridgeInvariantError(description: "the tree read reported success but returned no attributes")
     }
-    var response: [String: Any] = [responseOk: true, responseTree: tree, responseTruncated: traversal.truncated as NSNumber, responsePid: pid as NSNumber]
-    response[responseAutomation] = [kAutomationEnabled: automationEnabled as NSNumber, kAutomationAsserted: automationAsserted as NSNumber]
-    response[responsePhases] = [phaseTraverse: (traverseDuration * 1000) as NSNumber, phaseMachRoundTrips: traversal.roundTrips as NSNumber]
-    if let frontmostMethod {
-      response[responseMethod] = frontmostMethod
-    }
+    var response = AccessibilityDescriptionResponse(
+      tree: tree,
+      truncated: traversal.truncated,
+      pid: pid,
+      automationEnabled: automationEnabled,
+      automationAsserted: automationAsserted,
+      traverseDuration: traverseDuration,
+      roundTrips: traversal.roundTrips,
+      frontmostMethod: frontmostMethod
+    ).dictionary
     // Enrich the wire with a fullscreen-modal descriptor when one is present in the tree (host-facing;
     // not emitted in the serialized CLI output).
     let modal = FBAXBridgeModalDescriptor(tree: tree)
