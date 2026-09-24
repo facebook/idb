@@ -216,11 +216,34 @@ final class BridgeExecutionTests: XCTestCase {
       guard case let .object(value)? = result.values.first else { return XCTFail("missing timeout response") }
       XCTAssertEqual(value["completionStatus"], .string("timedOut"))
       XCTAssertEqual(value["ok"], .bool(false))
+      // BUG: the timeout is only in the values, so the RPC diagnostic is empty — flipped in the following commit.
+      XCTAssertNil(result.error, stage)
       runtime.completePendingCallbacks()
       XCTAssertEqual(result.values.first, .object(value))
       runtime.deferredCompletion = ""
       XCTAssertEqual(BridgeServices.execute(command).exitCode, 0)
     }
+  }
+
+  func testTypedHealthFailuresCarryTheirDiagnostic() {
+    let runtime = FBHealthTestRuntime()
+    runtime.typeFactories = ["step": "HKQuantityType"]
+    runtime.setOK = false
+    runtime.setError = "set failed"
+    runtime.clearOK = false
+    runtime.clearError = "clear failed"
+    runtime.fetchError = "fetch failed"
+    runtime.install()
+    defer { runtime.uninstall() }
+    let results = [
+      BridgeServices.execute(.health(.approve(bundleID: "app", typeIDs: ["step"]))),
+      BridgeServices.execute(.health(.approve(bundleID: "app", typeIDs: ["unknown"]))),
+      BridgeServices.execute(.health(.clear(bundleID: "app"))),
+      BridgeServices.execute(.health(.list(bundleID: "app"))),
+    ]
+    XCTAssertEqual(results.map(\.exitCode), [1, 1, 1, 1])
+    // BUG: failures are only in the values, so the RPC diagnostic is empty — flipped in the following commit.
+    XCTAssertEqual(results.map(\.error), [nil, nil, nil, nil])
   }
 
   func testDynamicStoreAdaptersPreserveBinaryPlistsWithoutWritingStdout() throws {
