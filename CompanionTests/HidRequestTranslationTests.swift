@@ -30,4 +30,29 @@ final class HidRequestTranslationTests: XCTestCase {
       }
     }
   }
+
+  func testOrientationsKeepTheirNamesOnTheWire() throws {
+    let expected: [(Idb_HIDEvent.HIDOrientationType, SimulatorHIDDeviceOrientation)] = [
+      (.portrait, .portrait),
+      (.portraitUpsideDown, .portraitUpsideDown),
+      (.landscapeLeft, .landscapeLeft),
+      (.landscapeRight, .landscapeRight),
+    ]
+    for (wire, orientation) in expected {
+      let request = Idb_HIDEvent.with { $0.orientation.orientation = wire }
+      XCTAssertEqual(try HidMethodHandler.fbSimulatorHIDEvent(from: request), .deviceOrientation(orientation))
+    }
+  }
+
+  func testAnUnrecognizedOrientationIsAnInvalidArgument() {
+    let request = Idb_HIDEvent.with { $0.orientation.orientation = .UNRECOGNIZED(99) }
+    XCTAssertThrowsError(try HidMethodHandler.fbSimulatorHIDEvent(from: request)) { error in
+      XCTAssertEqual((error as? RPCError)?.code, .invalidArgument)
+    }
+  }
+
+  func testShakeTranslatesToShake() throws {
+    let request = Idb_HIDEvent.with { $0.shake = Idb_HIDEvent.HIDShake() }
+    XCTAssertEqual(try HidMethodHandler.fbSimulatorHIDEvent(from: request), .shake)
+  }
 }
