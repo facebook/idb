@@ -206,6 +206,19 @@ private enum FrontmostMethod: String {
 // does not — e.g. the one-shot front-end invoked by hand.
 private let defaultMaxDepth = 100
 private let defaultNodeBudget = 5000
+
+private struct TraversalContext {
+  var remainingNodes = 0
+  // How many boundary continuations one read may fetch. Depth and node budget already bound the recursion
+  // — a continuation replaces a node at its own depth and never re-triggers on its own root, so every
+  // further boundary sits at least one level deeper — but each continuation is fetched before the node it
+  // replaces is counted, and this caps what a pathological ownership graph can spend on fetches. Screens
+  // measured so far carry one or two boundaries; a read that hits the cap reports `truncated`.
+  var remainingBoundaryFetches = 64
+  var truncated = false
+  var roundTrips: Int64 = 0
+}
+
 private final class AccessibilityRequest {
   // MARK: - AX client setup
 
@@ -247,9 +260,9 @@ private final class AccessibilityRequest {
 
   // Counted rather than inferred from node count, which would undercount by up to 2x (the translator walk
   // makes two requests per node; explaining an unreachable element adds two more).
-  private var gRoundTrips: Int64 = 0
+  private var traversal = TraversalContext()
   fileprivate func FBAXBridgeCountRoundTrip() {
-    gRoundTrips += 1
+    traversal.roundTrips += 1
   }
 
   // An outcome whose status and payload disagree. Unreachable through the factories; reported as a response
@@ -414,9 +427,7 @@ private final class AccessibilityRequest {
     fetchList: [String],
     explainUnreachable: Bool,
     depth: Int,
-    maxDepth: Int,
-    budget: inout Int,
-    truncated: inout Bool
+    maxDepth: Int
   ) throws -> FBAXReadOutcome {
     FBAXBridgeCountRoundTrip()
     let outcome = try client.readAttributes(fetchList, of: element)
@@ -464,27 +475,25 @@ private final class AccessibilityRequest {
     let childElements = try outcome.children()
     if depth < maxDepth {
       for child in childElements {
-        if budget <= 0 {
-          truncated = true
+        if traversal.remainingNodes <= 0 {
+          traversal.truncated = true
           break
         }
-        budget -= 1
+        traversal.remainingNodes -= 1
         let childOutcome = try FBAXBridgeBuildNode(
           client: client,
           element: child,
           fetchList: fetchList,
           explainUnreachable: explainUnreachable,
           depth: depth + 1,
-          maxDepth: maxDepth,
-          budget: &budget,
-          truncated: &truncated
+          maxDepth: maxDepth
         )
         if childOutcome.status == FBAXReadStatus.read, let attributes = childOutcome.attributes {
           children.append(attributes)
         }
       }
     } else if !childElements.isEmpty {
-      truncated = true
+      traversal.truncated = true
     }
     node[axChildren] = children
 
@@ -511,15 +520,13 @@ private final class AccessibilityRequest {
     client: FBAXClient,
     element: FBAXElement,
     depth: Int,
-    maxDepth: Int,
-    budget: inout Int,
-    truncated: inout Bool
+    maxDepth: Int
   ) throws -> [String: Any]? {
-    if budget <= 0 {
-      truncated = true
+    if traversal.remainingNodes <= 0 {
+      traversal.truncated = true
       return nil
     }
-    budget -= 1
+    traversal.remainingNodes -= 1
 
     FBAXBridgeCountRoundTrip()
     let values = try client.translatorAttributes(of: element)
@@ -589,16 +596,14 @@ private final class AccessibilityRequest {
           client: client,
           element: child,
           depth: depth + 1,
-          maxDepth: maxDepth,
-          budget: &budget,
-          truncated: &truncated
+          maxDepth: maxDepth
         )
         if let built {
           children.append(built)
         }
       }
     } else if !childElements.isEmpty {
-      truncated = true
+      traversal.truncated = true
     }
     node[axChildren] = children
     return node
@@ -766,12 +771,6 @@ private final class AccessibilityRequest {
     }
   }
 
-  // How many boundary continuations one read may fetch. Depth and node budget already bound the recursion
-  // — a continuation replaces a node at its own depth and never re-triggers on its own root, so every
-  // further boundary sits at least one level deeper — but each continuation is fetched before the node it
-  // replaces is counted, and this caps what a pathological ownership graph can spend on fetches. Screens
-  // measured so far carry one or two boundaries; a read that hits the cap reports `truncated`.
-  private let snapshotBoundaryFetchBudget = 64
   // Maps a snapshot lazily so the caller's budgets also bound cross-process continuations.
   // A continuation failure leaves the stub childless; an exception aborts the whole request.
   fileprivate func FBAXBridgeNodeFromSnapshot(
@@ -780,17 +779,14 @@ private final class AccessibilityRequest {
     fetchList: [String],
     ownerPid: pid_t,
     depth: Int,
-    maxDepth: Int,
-    budget: inout Int,
-    boundaryFetches: inout Int,
-    truncated: inout Bool
+    maxDepth: Int
   ) throws -> [String: Any]? {
     let valid = try snapshotNode.valid()
     guard valid.boolValue else {
       return nil
     }
-    if budget <= 0 {
-      truncated = true
+    if traversal.remainingNodes <= 0 {
+      traversal.truncated = true
       return nil
     }
 
@@ -799,12 +795,12 @@ private final class AccessibilityRequest {
       let processIdentifier = try client.snapshots.processIdentifier(for: snapshotNode)
       let elementPid = processIdentifier.int32Value
       if elementPid != 0 && elementPid != ownerPid {
-        if depth >= maxDepth || boundaryFetches <= 0 {
+        if depth >= maxDepth || traversal.remainingBoundaryFetches <= 0 {
           // A bound stopped the continuation, so the subtree is missing for the same reason one below the
           // depth cap is — and is reported the same way.
-          truncated = true
+          traversal.truncated = true
         } else {
-          boundaryFetches -= 1
+          traversal.remainingBoundaryFetches -= 1
           FBAXBridgeCountRoundTrip()
           let continuation = try client.snapshots.readContinuation(snapshotNode, attributeNames: fetchList)
           if let root = continuation.root {
@@ -814,10 +810,7 @@ private final class AccessibilityRequest {
               fetchList: fetchList,
               ownerPid: elementPid,
               depth: depth,
-              maxDepth: maxDepth,
-              budget: &budget,
-              boundaryFetches: &boundaryFetches,
-              truncated: &truncated
+              maxDepth: maxDepth
             )
           }
           // Fall through and map the stub: absence, not an error, is also the walk's answer at a boundary
@@ -825,7 +818,7 @@ private final class AccessibilityRequest {
         }
       }
     }
-    budget -= 1
+    traversal.remainingNodes -= 1
 
     let attributes = try snapshotNode.attributes()
     var node = [String: Any]()
@@ -839,7 +832,7 @@ private final class AccessibilityRequest {
 
     if depth >= maxDepth {
       if !nesting.isEmpty {
-        truncated = true
+        traversal.truncated = true
       }
       return node
     }
@@ -852,10 +845,7 @@ private final class AccessibilityRequest {
         fetchList: fetchList,
         ownerPid: ownerPid,
         depth: depth + 1,
-        maxDepth: maxDepth,
-        budget: &budget,
-        boundaryFetches: &boundaryFetches,
-        truncated: &truncated
+        maxDepth: maxDepth
       )
       if let built {
         children.append(built)
@@ -908,8 +898,8 @@ private final class AccessibilityRequest {
       return FBAXBridgeErrorResponse(message: outcome.failureReason ?? "the hit-test failed")
     }
 
-    var budget = 1
-    var truncated = false
+    traversal.remainingNodes = 1
+    traversal.truncated = false
     // maxDepth 0 reads just the hit element's own attributes (no child recursion) — the leaf at the point.
     let hitElement = outcome.element
     guard let hitElement else {
@@ -921,9 +911,7 @@ private final class AccessibilityRequest {
       fetchList: FBAXBridgeFetchListForRequest(request: request),
       explainUnreachable: false,
       depth: 0,
-      maxDepth: 0,
-      budget: &budget,
-      truncated: &truncated
+      maxDepth: 0
     )
     switch read.status {
     case FBAXReadStatus.read:
@@ -1385,11 +1373,10 @@ private final class AccessibilityRequest {
     }
 
     let maxDepth = (request[requestMaxDepth] as? NSNumber).map { Int($0.int32Value) } ?? defaultMaxDepth
-    var budget = (request[requestMaxNodes] as? NSNumber).map { Int($0.int32Value) } ?? defaultNodeBudget
+    let nodeBudget = (request[requestMaxNodes] as? NSNumber).map { Int($0.int32Value) } ?? defaultNodeBudget
 
-    var truncated = false
     var tree: [String: Any]?
-    gRoundTrips = 0
+    traversal = TraversalContext(remainingNodes: nodeBudget)
     let traverseStarted = CFAbsoluteTimeGetCurrent()
     if try FBAXWireValue.boolean(from: request[requestSnapshotTree]).boolValue == true {
       let names = FBAXBridgeFetchListForRequest(request: request)
@@ -1404,23 +1391,19 @@ private final class AccessibilityRequest {
       }
       // One fetch for the whole tree, counted up-front so the boundary continuations the mapper fetches
       // land on top of it.
-      gRoundTrips = 1
+      traversal.roundTrips = 1
       // The owner every node's element is compared against, read from the snapshot's own root element
       // rather than taken from the request: the two agree on a live runtime, and a runtime that cannot
       // attribute elements answers 0, which disables boundary continuation rather than mistargeting it.
       let processIdentifier = try client.snapshots.processIdentifier(for: snapshotRoot)
       let ownerPid = processIdentifier.int32Value
-      var boundaryFetches = snapshotBoundaryFetchBudget
       tree = try FBAXBridgeNodeFromSnapshot(
         client: client,
         snapshotNode: snapshotRoot,
         fetchList: names,
         ownerPid: ownerPid,
         depth: 0,
-        maxDepth: maxDepth,
-        budget: &budget,
-        boundaryFetches: &boundaryFetches,
-        truncated: &truncated
+        maxDepth: maxDepth
       )
       if tree == nil {
         return FBAXBridgeErrorResponse(message: "the single-fetch read returned a shape with no root node")
@@ -1444,9 +1427,7 @@ private final class AccessibilityRequest {
         client: client,
         element: root,
         depth: 0,
-        maxDepth: maxDepth,
-        budget: &budget,
-        truncated: &truncated
+        maxDepth: maxDepth
       )
       if tree == nil {
         return FBAXBridgeErrorResponse(message: "the translator vocabulary returned no attributes for this element")
@@ -1458,9 +1439,7 @@ private final class AccessibilityRequest {
         fetchList: FBAXBridgeFetchListForRequest(request: request),
         explainUnreachable: try FBAXWireValue.boolean(from: request[requestExplainUnreachable]).boolValue,
         depth: 0,
-        maxDepth: maxDepth,
-        budget: &budget,
-        truncated: &truncated
+        maxDepth: maxDepth
       )
       let failure = try FBAXBridgeReadFailureResponse(
         client: client,
@@ -1484,9 +1463,9 @@ private final class AccessibilityRequest {
     guard let tree else {
       throw FBAXBridgeInvariantError(description: "the tree read reported success but returned no attributes")
     }
-    var response: [String: Any] = [responseOk: true, responseTree: tree, responseTruncated: truncated as NSNumber, responsePid: pid as NSNumber]
+    var response: [String: Any] = [responseOk: true, responseTree: tree, responseTruncated: traversal.truncated as NSNumber, responsePid: pid as NSNumber]
     response[responseAutomation] = [kAutomationEnabled: automationEnabled as NSNumber, kAutomationAsserted: automationAsserted as NSNumber]
-    response[responsePhases] = [phaseTraverse: (traverseDuration * 1000) as NSNumber, phaseMachRoundTrips: gRoundTrips as NSNumber]
+    response[responsePhases] = [phaseTraverse: (traverseDuration * 1000) as NSNumber, phaseMachRoundTrips: traversal.roundTrips as NSNumber]
     if let frontmostMethod {
       response[responseMethod] = frontmostMethod
     }
