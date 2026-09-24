@@ -677,6 +677,10 @@ public final class IDBCommandExecutor {
     try await simulatorTarget().notification.deliveredNotifications(forBundleID: bundleID)
   }
 
+  public func clearDeliveredNotifications(forBundleID bundleID: String) async throws {
+    try await simulatorTarget().notification.clearDeliveredNotifications(forBundleID: bundleID)
+  }
+
   public func sendPushNotification(forBundleID bundleID: String, jsonPayload: String) async throws {
     try await simulatorTarget().notification.sendPush(forBundleID: bundleID, jsonPayload: jsonPayload)
   }

@@ -237,6 +237,13 @@ final class CompanionServiceProvider: Idb_CompanionService.SimpleServiceProtocol
     }
   }
 
+  func clear_delivered_notifications(request: Idb_ClearDeliveredNotificationsRequest, context: ServerContext) async throws -> Idb_ClearDeliveredNotificationsResponse {
+    return try await trackedUnaryCall(context, request: request) {
+      try await ClearDeliveredNotificationsMethodHandler(commandExecutor: commandExecutor)
+        .handle(request: request, context: context)
+    }
+  }
+
   func send_notification(request: Idb_SendNotificationRequest, context: ServerContext) async throws -> Idb_SendNotificationResponse {
     return try await trackedUnaryCall(context, request: request) {
       try await SendNotificationMethodHandler(commandExecutor: commandExecutor)

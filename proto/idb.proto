@@ -39,6 +39,8 @@ service CompanionService {
       returns (SendNotificationResponse) {}
   rpc delivered_notifications(DeliveredNotificationsRequest)
       returns (DeliveredNotificationsResponse) {}
+  rpc clear_delivered_notifications(ClearDeliveredNotificationsRequest)
+      returns (ClearDeliveredNotificationsResponse) {}
   rpc simulate_memory_warning(SimulateMemoryWarningRequest)
       returns (SimulateMemoryWarningResponse) {}
   // Settings
@@ -1372,6 +1374,12 @@ message DeliveredNotification {
 message DeliveredNotificationsResponse {
   repeated DeliveredNotification notifications = 1;
 }
+
+message ClearDeliveredNotificationsRequest {
+  string bundle_id = 1;
+}
+
+message ClearDeliveredNotificationsResponse {}
 
 message DapRequest {
   message Start {
