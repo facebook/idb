@@ -2042,3 +2042,7 @@ class SubprocessTimeoutTests(unittest.IsolatedAsyncioTestCase):
             )
         self.assertTrue(ready.is_file(), "Descendant must be spawned before timeout")
         await asyncio.wait_for(wait_for_file(exited), timeout=10)
+
+
+if __name__ == "__main__":
+    unittest.main()
