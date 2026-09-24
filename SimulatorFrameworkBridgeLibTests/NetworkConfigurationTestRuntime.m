@@ -70,7 +70,7 @@ static Boolean notifyValue(SCDynStoreRef store, CFStringRef key)
   return self;
 }
 
-- (int)runService:(NSString *)service action:(NSString *)action arguments:(NSArray<NSString *> *)arguments
+- (void)install
 {
   runtime = self;
   FBSystemConfigurationSetLoaderForTesting(^void *{
@@ -99,6 +99,17 @@ static Boolean notifyValue(SCDynStoreRef store, CFStringRef key)
     }
     return NULL;
   });
+}
+
+- (void)uninstall
+{
+  FBSystemConfigurationSetLoaderForTesting(nil, nil);
+  runtime = nil;
+}
+
+- (int)runService:(NSString *)service action:(NSString *)action arguments:(NSArray<NSString *> *)arguments
+{
+  [self install];
   fflush(stdout);
   FILE *capture = tmpfile();
   int saved = dup(STDOUT_FILENO);
@@ -120,8 +131,7 @@ static Boolean notifyValue(SCDynStoreRef store, CFStringRef key)
     }
     fclose(capture);
     _output = [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];
-    FBSystemConfigurationSetLoaderForTesting(nil, nil);
-    runtime = nil;
+    [self uninstall];
   }
 }
 

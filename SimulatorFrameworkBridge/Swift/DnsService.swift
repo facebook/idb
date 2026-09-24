@@ -25,6 +25,10 @@ import Foundation
 
   @objc(handleDnsAction:arguments:)
   public static func handleDnsAction(action: String, arguments: [String]) -> Int {
+    handleDnsAction(action: action, arguments: arguments, output: nil)
+  }
+
+  static func handleDnsAction(action: String, arguments: [String], output: BridgeOutput?) -> Int {
     let store = FBNetworkConfigurationStore.dns()
     guard let store else {
       return 1
@@ -35,6 +39,9 @@ import Foundation
       let read = store.readConfiguration()
       guard let read else {
         return 1
+      }
+      if let output {
+        return output.write(read.configuration ?? [:]) ? 0 : 1
       }
       if let dict = read.configuration {
         if let json = try? JSONSerialization.data(withJSONObject: dict, options: .prettyPrinted),

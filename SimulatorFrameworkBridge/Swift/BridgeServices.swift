@@ -1,0 +1,131 @@
+/*
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
+
+import Foundation
+import SimulatorFrameworkBridgeProtocol
+
+public enum BridgeServices {
+  public static func execute(_ command: BridgeCommand) -> BridgeResult {
+    let output = BridgeOutput()
+    return output.finish(status: run(command, output: output))
+  }
+
+  private static func run(_ command: BridgeCommand, output: BridgeOutput) -> Int32 {
+    switch command {
+    case .ping, .shutdown:
+      return 0
+    case .clearContacts:
+      #if os(tvOS)
+      return unavailable("contacts", output: output)
+      #else
+      return Int32(ContactsServiceStaticFuncs.handleContactsAction(action: "clear"))
+      #endif
+    case .clearPhotos:
+      return Int32(PhotoLibraryServiceStaticFuncs.handlePhotoLibraryAction(action: "clear"))
+    case let .dns(command):
+      let action: String
+      let arguments: [String]
+      switch command {
+      case .list:
+        action = "list"
+        arguments = []
+      case .clear:
+        action = "clear"
+        arguments = []
+      case let .set(servers):
+        action = "set"
+        arguments = servers
+      }
+      return Int32(DnsServiceStaticFuncs.handleDnsAction(action: action, arguments: arguments, output: output))
+    case let .proxy(command):
+      let action: String
+      let arguments: [String]
+      switch command {
+      case .list:
+        action = "list"
+        arguments = []
+      case .clear:
+        action = "clear"
+        arguments = []
+      case let .set(host, port, kind):
+        action = "set"
+        arguments = [host, String(port), kind.rawValue]
+      }
+      return Int32(ProxyServiceStaticFuncs.handleProxyAction(action: action, arguments: arguments, output: output))
+    case let .notifications(command):
+      let action: String
+      let bundleID: String?
+      switch command {
+      case let .list(identifier):
+        action = "list"
+        bundleID = identifier
+      case let .approve(identifier):
+        action = "approve"
+        bundleID = identifier
+      case let .revoke(identifier):
+        action = "revoke"
+        bundleID = identifier
+      case let .delivered(identifier):
+        #if os(tvOS)
+        return unavailable("notifications delivered", output: output)
+        #else
+        return FBDeliveredNotificationsService.handleAction("delivered", bundleID: identifier, directory: nil, timeout: 30, output: output)
+        #endif
+      case let .clearDelivered(identifier):
+        #if os(tvOS)
+        return unavailable("notifications clear-delivered", output: output)
+        #else
+        return FBDeliveredNotificationsService.handleAction("clear-delivered", bundleID: identifier, directory: nil, timeout: 30, output: output)
+        #endif
+      }
+      return Int32(NotificationSettingsServiceStaticFuncs.handleNotificationSettingsAction(action: action, bundleID: bundleID, output: output))
+    case let .health(command):
+      #if os(tvOS)
+      return unavailable("health", output: output)
+      #else
+      let action: String
+      let bundleID: String
+      let types: [String]
+      switch command {
+      case let .list(identifier):
+        action = "list"
+        bundleID = identifier
+        types = []
+      case let .clear(identifier):
+        action = "clear"
+        bundleID = identifier
+        types = []
+      case let .approve(identifier, identifiers):
+        action = "approve"
+        bundleID = identifier
+        types = identifiers
+      case let .revoke(identifier, identifiers):
+        action = "revoke"
+        bundleID = identifier
+        types = identifiers
+      }
+      return Int32(HealthSettingsServiceStaticFuncs.handleHealthSettingsAction(action: action, bundleID: bundleID, typeIdentifiers: types, output: output))
+      #endif
+    case let .accessibility(parameters):
+      let response = AccessibilityServiceStaticFuncs.handleRequest(parameters.mapValues(\.foundationValue))
+      let data = AccessibilityServiceStaticFuncs.serializeResponse(response)
+      do {
+        let value = try JSONDecoder().decode(BridgeJSONValue.self, from: data)
+        output.write(value.foundationValue)
+        if case let .object(fields) = value, fields[BridgeAXWire.Envelope.ok.rawValue] == .bool(true) { return 0 }
+        return 1
+      } catch {
+        return 1
+      }
+    }
+  }
+
+  private static func unavailable(_ service: String, output: BridgeOutput) -> Int32 {
+    output.write(["error": "The \(service) service is not available in a tvOS guest"])
+    return 1
+  }
+}

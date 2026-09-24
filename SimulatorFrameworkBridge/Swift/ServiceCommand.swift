@@ -42,6 +42,7 @@ private enum BridgeService: String {
   private static let serviceNames = "contacts, dns, dynamic-store, photos, notifications, health, privacy, proxy, accessibility, orientation, repl"
 
   @objc public static func run(arguments: [String], services: FBBridgeServiceHandling) -> Int32 {
+    if let status = BridgeRPC.run(arguments: arguments) { return status }
     guard arguments.count >= 3 else {
       NSLog("Usage: %@ <service> <action> [args...]", arguments.first ?? "SimulatorFrameworkBridge")
       NSLog("Services: %@", serviceNames)

@@ -34,7 +34,11 @@ private func jsonStringFromObject(obj: Any) -> String {
   }
 }
 
-private func printHealthJSON(_ object: [String: Any]) {
+private func printHealthJSON(_ object: [String: Any], output: BridgeOutput?) {
+  if let output {
+    output.write(object)
+    return
+  }
   let json = jsonStringFromObject(obj: object)
   // The existing C writer stops at the first NUL.
   // patternlint-disable-next-line avoid-print-to-prevent-production-overhead
@@ -62,7 +66,8 @@ private func handleSetAction(
   bundleID: String,
   typeIdentifiers: [String],
   statusCode: UInt,
-  actionName: String
+  actionName: String,
+  sink: BridgeOutput?
 ) throws -> Int {
   let requested = !typeIdentifiers.isEmpty ? typeIdentifiers : defaultApproveTypeIdentifiers()
 
@@ -80,37 +85,54 @@ private func handleSetAction(
   }
   if selection.isEmpty {
     let output: [String: Any] = ["action": actionName, "bundleID": bundleID, "ok": false, "error": "no resolvable HK types in request", "unresolvedTypes": unresolvedIdentifiers]
-    printHealthJSON(output)
+    printHealthJSON(output, output: sink)
     return 1
   }
   // Seed first: the daemon drops status writes for unseen bundle/type pairs.
   let seed = try client.seedAuthorization(forBundleIdentifier: bundleID, selection: selection)
+
+  if let sink, seed.status == .timedOut {
+    sink.write(["action": actionName, "bundleID": bundleID, "ok": false, "error": "Health seed timed out", "completionStatus": "timedOut"])
+    return 1
+  }
   let write = try client.setAuthorizationForBundleIdentifier(bundleID, selection: selection, status: statusCode)
   guard let set = write.operation else {
     let output: [String: Any] = ["action": actionName, "bundleID": bundleID, "ok": false, "error": "HKAuthorizationStore declares no known setAuthorizationStatuses: spelling", "resolvedTypes": resolvedIdentifiers, "unresolvedTypes": unresolvedIdentifiers]
-    printHealthJSON(output)
+    printHealthJSON(output, output: sink)
+    return 1
+  }
+  if let sink, set.status == .timedOut {
+    sink.write(["action": actionName, "bundleID": bundleID, "ok": false, "error": "Health authorization write timed out", "completionStatus": "timedOut"])
     return 1
   }
   let ok = NSNumber(value: seed.success && set.success ? 1 : 0)
   let seedError = try seed.readErrorValue()
   let setError = try set.readErrorValue()
   let output: [String: Any] = ["action": actionName, "bundleID": bundleID, "ok": ok, "resolvedTypes": resolvedIdentifiers, "unresolvedTypes": unresolvedIdentifiers, "seedError": seedError, "setError": setError]
-  printHealthJSON(output)
+  printHealthJSON(output, output: sink)
   return (seed.success && set.success) ? 0 : 1
 }
 
-private func handleClearAction(client: FBHealthSettingsClient, bundleID: String) throws -> Int {
+private func handleClearAction(client: FBHealthSettingsClient, bundleID: String, sink: BridgeOutput?) throws -> Int {
   let result = try client.clearAuthorization(forBundleIdentifier: bundleID)
+  if let sink, result.status == .timedOut {
+    sink.write(["action": "clear", "bundleID": bundleID, "ok": false, "error": "Health clear timed out", "completionStatus": "timedOut"])
+    return 1
+  }
   let ok = NSNumber(value: result.success)
   let clearError = try result.readErrorValue()
 
   let output: [String: Any] = ["action": "clear", "bundleID": bundleID, "ok": ok, "error": clearError]
-  printHealthJSON(output)
+  printHealthJSON(output, output: sink)
   return result.success ? 0 : 1
 }
 
-private func handleListAction(client: FBHealthSettingsClient, bundleID: String) throws -> Int {
+private func handleListAction(client: FBHealthSettingsClient, bundleID: String, sink: BridgeOutput?) throws -> Int {
   let result = try client.fetchRecords(forBundleIdentifier: bundleID)
+  if let sink, result.status == .timedOut {
+    sink.write(["action": "list", "bundleID": bundleID, "ok": false, "error": "Health list timed out", "completionStatus": "timedOut"])
+    return 1
+  }
   let records = try result.readRecords()
 
   var recordDicts: [Any] = []
@@ -120,7 +142,7 @@ private func handleListAction(client: FBHealthSettingsClient, bundleID: String) 
   let ok = NSNumber(value: result.hasError ? 0 : 1)
   let fetchError = try result.readErrorValue()
   let output: [String: Any] = ["action": "list", "bundleID": bundleID, "ok": ok, "error": fetchError, "records": recordDicts]
-  printHealthJSON(output)
+  printHealthJSON(output, output: sink)
   return !result.hasError ? 0 : 1
 }
 
@@ -129,7 +151,8 @@ private func handleListAction(client: FBHealthSettingsClient, bundleID: String) 
 private func handleHealthSettingsActionImpl(
   action: String,
   bundleID: String?,
-  typeIdentifiers: [String]
+  typeIdentifiers: [String],
+  sink: BridgeOutput?
 ) throws -> Int {
   let client = FBHealthSettingsClient.live()
   guard let client else {
@@ -140,10 +163,10 @@ private func handleHealthSettingsActionImpl(
     return 1
   }
   if action == "list" {
-    return try handleListAction(client: client, bundleID: bundleID)
+    return try handleListAction(client: client, bundleID: bundleID, sink: sink)
   }
   if action == "clear" {
-    return try handleClearAction(client: client, bundleID: bundleID)
+    return try handleClearAction(client: client, bundleID: bundleID, sink: sink)
   }
   if action == "approve" {
     return try handleSetAction(
@@ -151,7 +174,8 @@ private func handleHealthSettingsActionImpl(
       bundleID: bundleID,
       typeIdentifiers: typeIdentifiers,
       statusCode: healthInternalAuthShareAndRead,
-      actionName: "approve"
+      actionName: "approve",
+      sink: sink
     )
   }
   if action == "revoke" {
@@ -160,7 +184,8 @@ private func handleHealthSettingsActionImpl(
       bundleID: bundleID,
       typeIdentifiers: typeIdentifiers,
       statusCode: healthInternalAuthShareAndReadDenied,
-      actionName: "revoke"
+      actionName: "revoke",
+      sink: sink
     )
   }
   NSLog("[Health] Unknown action '%@'. Supported: list, clear, approve, revoke", action)
@@ -175,8 +200,12 @@ private func handleHealthSettingsActionImpl(
     bundleID: String?,
     typeIdentifiers: [String]
   ) -> Int {
+    handleHealthSettingsAction(action: action, bundleID: bundleID, typeIdentifiers: typeIdentifiers, output: nil)
+  }
+
+  static func handleHealthSettingsAction(action: String, bundleID: String?, typeIdentifiers: [String], output: BridgeOutput?) -> Int {
     do {
-      return try handleHealthSettingsActionImpl(action: action, bundleID: bundleID, typeIdentifiers: typeIdentifiers)
+      return try handleHealthSettingsActionImpl(action: action, bundleID: bundleID, typeIdentifiers: typeIdentifiers, sink: output)
     } catch {
       return 1
     }

@@ -51,6 +51,10 @@ private enum ProxyConfiguration {
 
   @objc(handleProxyAction:arguments:)
   public static func handleProxyAction(action: String, arguments: [String]) -> Int {
+    handleProxyAction(action: action, arguments: arguments, output: nil)
+  }
+
+  static func handleProxyAction(action: String, arguments: [String], output: BridgeOutput?) -> Int {
     let store = FBNetworkConfigurationStore.proxy()
     guard let store else {
       return 1
@@ -61,6 +65,9 @@ private enum ProxyConfiguration {
       let read = store.readConfiguration()
       guard let read else {
         return 1
+      }
+      if let output {
+        return output.write(read.configuration ?? [:]) ? 0 : 1
       }
       if let dict = read.configuration {
         if let json = try? JSONSerialization.data(withJSONObject: dict, options: .prettyPrinted),

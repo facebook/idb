@@ -20,6 +20,8 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, readonly) NSMutableArray<NSString *> *keys;
 @property (nonatomic, readonly) NSMutableArray<NSDictionary<NSString *, id> *> *writes;
 @property (nonatomic, readonly, copy) NSString *output;
+- (void)install;
+- (void)uninstall;
 - (int)runService:(NSString *)service action:(NSString *)action arguments:(NSArray<NSString *> *)arguments
   NS_SWIFT_NAME(run(service:action:arguments:));
 @end

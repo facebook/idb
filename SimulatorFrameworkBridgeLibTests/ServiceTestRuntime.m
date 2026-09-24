@@ -18,6 +18,7 @@
 #import <SimulatorFrameworkBridgeLib/AccessibilityService_Private.h>
 #import <SimulatorFrameworkBridgeLib/BulletinBoardPrivate.h>
 #import <SimulatorFrameworkBridgeLib/HealthSettingsService.h>
+#import <SimulatorFrameworkBridgeLib/ServiceDispatch.h>
 
 #import "FBAXFakeRuntime.h"
 
@@ -252,6 +253,23 @@ NSDictionary<NSString *, id> *FBAXRuntimeInitializationProbe(FBAXRuntimeInitiali
     FBAXBridgeSetRuntimeFactoryForTesting(nil);
   }
   return @{@"preparationException" : preparationException ?: NSNull.null, @"calls" : @(calls), @"response" : response};
+}
+
+NSDictionary<NSString *, NSNumber *> *FBAXBridgeServeProbe(NSArray<NSString *> *arguments)
+{
+  FBAXFakeRuntime *runtime = [FBAXFakeRuntime new];
+  __block NSUInteger calls = 0;
+  FBAXBridgeSetRuntimeFactoryForTesting(^id<FBAXRuntime>(NSString **error) {
+    calls++;
+    return runtime;
+  });
+  int status;
+  @try {
+    status = runBridgeCommand(arguments);
+  } @finally {
+    FBAXBridgeSetRuntimeFactoryForTesting(nil);
+  }
+  return @{@"status" : @(status), @"calls" : @(calls)};
 }
 
 @implementation FBFakeDeliveredNotificationsCenter

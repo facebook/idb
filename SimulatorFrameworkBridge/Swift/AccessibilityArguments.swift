@@ -44,12 +44,24 @@ public final class FBAXBridgeArguments: NSObject {
   }
 
   @objc public static func idleTimeout(arguments: [String], fallback: Int32) -> Int32 {
-    guard let value = firstValue(for: "--idle-timeout", in: arguments) else {
+    timeout(arguments: arguments, flag: "--idle-timeout", fallback: fallback) ?? fallback
+  }
+
+  public static func startupTimeout(arguments: [String]) -> Int32? {
+    timeout(arguments: arguments, flag: "--startup-timeout", fallback: nil)
+  }
+
+  private static func timeout(arguments: [String], flag: String, fallback: Int32?) -> Int32? {
+    guard let value = firstValue(for: flag, in: arguments) else {
       return fallback
     }
     let scanner = Scanner(string: value)
     guard let seconds = scanner.scanInt32(), scanner.isAtEnd, seconds > 0 else {
-      NSLog("[AccessibilityService] ignoring unusable --idle-timeout '%@'; using %ds", value, fallback)
+      if let fallback {
+        NSLog("[AccessibilityService] ignoring unusable %@ '%@'; using %ds", flag, value, fallback)
+      } else {
+        NSLog("[AccessibilityService] ignoring unusable %@ '%@'", flag, value)
+      }
       return fallback
     }
     return seconds

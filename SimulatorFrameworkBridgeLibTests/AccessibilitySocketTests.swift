@@ -8,6 +8,7 @@
 import Darwin
 import Foundation
 @_implementationOnly import SimulatorFrameworkBridgeLib
+@_implementationOnly import SimulatorFrameworkBridgeProtocol
 @_implementationOnly import SimulatorFrameworkBridgeSupport
 import XCTest
 
@@ -48,6 +49,7 @@ final class AccessibilitySocketTests: XCTestCase {
     }
     finished = nil
     XCTAssertFalse(FileManager.default.fileExists(atPath: socketPath))
+    try? FileManager.default.removeItem(atPath: socketPath + ".lock")
   }
 
   func connectClient() -> Int32 {
@@ -147,6 +149,76 @@ final class AccessibilitySocketTests: XCTestCase {
     XCTAssertEqual(recv(fd, &byte, 1, 0), 0)
   }
 
+  func testAnotherStarterCannotUnlinkTheLiveListener() {
+    startServerExclusive(exclusive: false)
+    close(connectClient())
+    XCTAssertEqual(FBAXBridgeServe(socketPath, ["--idle-timeout", "1"]), 0)
+    let client = connectClient()
+    defer { close(client) }
+    sendData(data: frame(payload: "{\"verb\":\"shutdown\"}"), to: client)
+    XCTAssertEqual(readResponse(fd: client), ["ok": true, "shutdown": true])
+    finishServer()
+  }
+
+  func testLargeIdleTimeoutCannotOverflowToAnUnboundedPoll() {
+    XCTAssertEqual(FBAXBridgeServer.pollTimeoutMilliseconds(seconds: 300), 300_000)
+    XCTAssertEqual(FBAXBridgeServer.pollTimeoutMilliseconds(seconds: .max), .max)
+    XCTAssertGreaterThan(FBAXBridgeServer.pollTimeoutMilliseconds(seconds: 0), 0)
+  }
+
+  func testRPCHandlesMixedServicesAndMalformedRequestsOnOneConnection() throws {
+    socketPath = "/tmp/sfb-" + UUID().uuidString
+    let finished = expectation(description: "RPC server exits")
+    self.finished = finished
+    let path = socketPath
+    DispatchQueue.global().async {
+      XCTAssertEqual(
+        FBAXBridgeServer.serve(socketPath: path, idleTimeoutSeconds: 5, exitOnDisconnect: true, prepareRuntime: {}) { data in
+          BridgeRPC.handle(data) { command in
+            BridgeResult(exitCode: command == .shutdown ? 0 : 23, values: [.string("first"), .string("second")])
+          }
+        }, 0)
+      finished.fulfill()
+    }
+    let client = connectClient()
+    defer { close(client) }
+    sendData(data: frame(payload: "malformed"), to: client)
+    XCTAssertEqual((readResponse(fd: client)?["result"] as? NSDictionary)?["exitCode"] as? Int, 1)
+    let commands: [BridgeCommand] = [.dns(.list), .proxy(.clear), .health(.list(bundleID: "app")), .notifications(.delivered(bundleID: "app")), .clearContacts, .clearPhotos, .accessibility(["verb": .string("describe")]), .shutdown]
+    for command in commands {
+      let request = BridgeRequest(command: command)
+      let bytes = try request.encoded()
+      sendData(data: try BridgeFrame.header(forSize: bytes.count), to: client)
+      sendData(data: bytes, to: client)
+      let object = try XCTUnwrap(readResponse(fd: client))
+      let response = try BridgeResponse.decode(JSONSerialization.data(withJSONObject: object), for: request)
+      XCTAssertEqual(response.result, BridgeResult(exitCode: command == .shutdown ? 0 : 23, values: [.string("first"), .string("second")]))
+    }
+    assertEOF(fd: client)
+    finishServer()
+  }
+
+  func testStalledReaderCannotHoldTheServerPastItsSendDeadline() {
+    socketPath = "/tmp/sfb-" + UUID().uuidString
+    let finished = expectation(description: "stalled writer exits")
+    self.finished = finished
+    let path = socketPath
+    DispatchQueue.global().async {
+      XCTAssertEqual(
+        FBAXBridgeServer.serve(socketPath: path, idleTimeoutSeconds: 1, exitOnDisconnect: true, prepareRuntime: {}) { _ in
+          FBAXBridgeSocketResponse(data: Data(repeating: 120, count: BridgeFrame.maximumSize), shutdown: false)
+        }, 0)
+      finished.fulfill()
+    }
+    let client = connectClient()
+    defer { close(client) }
+    sendData(data: frame(payload: "request"), to: client)
+    wait(for: [finished], timeout: 5)
+    self.finished = nil
+    XCTAssertFalse(FileManager.default.fileExists(atPath: socketPath))
+    try? FileManager.default.removeItem(atPath: socketPath + ".lock")
+  }
+
   func testFragmentedFramesAndShutdownResponseOnOneConnection() {
     startServerExclusive(exclusive: true)
     let client = connectClient()
@@ -225,6 +297,46 @@ final class AccessibilitySocketTests: XCTestCase {
 
   func testIdleListenerExitsAndRemovesItsSocket() {
     startServerExclusive(exclusive: false, idleTimeoutSeconds: 1)
+    finishServer()
+  }
+
+  func startServerWithInitialTimeout() {
+    socketPath = "/tmp/sfb-" + UUID().uuidString
+    let finished = expectation(description: "server exits")
+    self.finished = finished
+    let path = socketPath
+    DispatchQueue.global().async {
+      let result = FBAXBridgeServer.serve(
+        socketPath: path,
+        idleTimeoutSeconds: 30,
+        initialClientTimeoutSeconds: 1,
+        exitOnDisconnect: true,
+        prepareRuntime: {}
+      ) { _ in
+        FBAXBridgeSocketResponse(data: Data(#"{"ok":true}"#.utf8), shutdown: false)
+      }
+      XCTAssertEqual(result, 0)
+      finished.fulfill()
+    }
+  }
+
+  func testInitialClientTimeoutExitsWithoutWaitingForTheIdleTimeout() {
+    startServerWithInitialTimeout()
+    finishServer()
+  }
+
+  func testAcceptedClientKeepsTheIdleTimeoutAfterTheInitialDeadline() {
+    startServerWithInitialTimeout()
+    let client = connectClient()
+    defer { close(client) }
+    sendData(data: frame(payload: "probe"), to: client)
+    XCTAssertEqual(readResponse(fd: client), ["ok": true])
+    var connection = pollfd(fd: client, events: Int16(POLLIN), revents: 0)
+    XCTAssertEqual(poll(&connection, 1, 2000), 0)
+    sendData(data: frame(payload: "probe"), to: client)
+    XCTAssertEqual(readResponse(fd: client), ["ok": true])
+    shutdown(client, SHUT_WR)
+    assertEOF(fd: client)
     finishServer()
   }
 

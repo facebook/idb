@@ -7,6 +7,7 @@
 
 import Darwin
 import Foundation
+import SimulatorFrameworkBridgeProtocol
 
 @objc public final class FBAXBridgeSocketResponse: NSObject {
   @objc public let data: Data
@@ -22,12 +23,32 @@ import Foundation
 @objc public final class FBAXBridgeServer: NSObject {
   @objc public static let defaultIdleTimeoutSeconds: Int32 = 300
   @objc public static let serveBacklog: Int32 = 16
-  private static let maxFrameBytes: UInt32 = 16 * 1024 * 1024
+  public static func pollTimeoutMilliseconds(seconds: Int32) -> Int32 {
+    Int32(clamping: Int64(max(1, seconds)) * 1000)
+  }
 
   /// Runs synchronously; runtime preparation and request handling stay on the caller's thread.
   @objc public static func serve(
     socketPath: String,
     idleTimeoutSeconds: Int32,
+    exitOnDisconnect: Bool,
+    prepareRuntime: () -> Void,
+    handleRequest: (Data) -> FBAXBridgeSocketResponse
+  ) -> Int32 {
+    serve(
+      socketPath: socketPath,
+      idleTimeoutSeconds: idleTimeoutSeconds,
+      initialClientTimeoutSeconds: nil,
+      exitOnDisconnect: exitOnDisconnect,
+      prepareRuntime: prepareRuntime,
+      handleRequest: handleRequest
+    )
+  }
+
+  public static func serve(
+    socketPath: String,
+    idleTimeoutSeconds: Int32,
+    initialClientTimeoutSeconds: Int32?,
     exitOnDisconnect: Bool,
     prepareRuntime: () -> Void,
     handleRequest: (Data) -> FBAXBridgeSocketResponse
@@ -52,6 +73,13 @@ import Foundation
       withUnsafeMutableBytes(of: &address.sun_path) {
         $0.copyBytes(from: UnsafeRawBufferPointer(start: path, count: pathLength + 1))
       }
+      // Keep the inode stable: unlinking a lock file lets another starter lock a different inode.
+      let lockFD = open(socketPath + ".lock", O_CREAT | O_RDWR | O_NOFOLLOW, mode_t(0o600))
+      guard lockFD >= 0 else { return 1 }
+      defer { close(lockFD) }
+      guard flock(lockFD, LOCK_EX | LOCK_NB) == 0 else {
+        return errno == EWOULDBLOCK ? 0 : 1
+      }
       unlink(path)
       let bound = withUnsafePointer(to: &address) {
         $0.withMemoryRebound(to: sockaddr.self, capacity: 1) {
@@ -69,12 +97,27 @@ import Foundation
       defer { unlink(path) }
 
       prepareRuntime()
+      var initialClientDeadline = initialClientTimeoutSeconds.map {
+        ProcessInfo.processInfo.systemUptime + Double(max(1, $0))
+      }
       NSLog("[AccessibilityService] serving accessibility on %@ (idle timeout %ds)", socketPath, idleTimeoutSeconds)
       while true {
         var listener = pollfd(fd: listenFD, events: Int16(POLLIN), revents: 0)
-        let ready = poll(&listener, 1, idleTimeoutSeconds &* 1000)
+        let timeout: Int32
+        if let initialClientDeadline {
+          let remaining = initialClientDeadline - ProcessInfo.processInfo.systemUptime
+          guard remaining > 0 else { break }
+          timeout = Int32(clamping: Int64(ceil(remaining * 1000)))
+        } else {
+          timeout = pollTimeoutMilliseconds(seconds: idleTimeoutSeconds)
+        }
+        let ready = poll(&listener, 1, timeout)
         if ready == 0 {
-          NSLog("[AccessibilityService] idle %ds with no client; exiting", idleTimeoutSeconds)
+          if initialClientDeadline != nil {
+            NSLog("[AccessibilityService] initial client timeout; exiting")
+          } else {
+            NSLog("[AccessibilityService] idle %ds with no client; exiting", idleTimeoutSeconds)
+          }
           break
         }
         if ready < 0 {
@@ -86,6 +129,7 @@ import Foundation
           if errno == EINTR { continue }
           break
         }
+        initialClientDeadline = nil
         let shutdown = serveConnection(connection, idleTimeoutSeconds: idleTimeoutSeconds, handleRequest: handleRequest)
         close(connection)
         if exitOnDisconnect {
@@ -112,17 +156,17 @@ import Foundation
   ) -> Bool {
     var timeout = timeval(tv_sec: Int(idleTimeoutSeconds), tv_usec: 0)
     setsockopt(connection, SOL_SOCKET, SO_RCVTIMEO, &timeout, socklen_t(MemoryLayout<timeval>.size))
+    setsockopt(connection, SOL_SOCKET, SO_SNDTIMEO, &timeout, socklen_t(MemoryLayout<timeval>.size))
     while true {
       let step: ConnectionStep = autoreleasepool {
         guard let header = readFully(connection, count: 4) else { return .disconnected }
-        let length = header.reduce(UInt32(0)) { ($0 << 8) | UInt32($1) }
-        guard length > 0, length <= maxFrameBytes,
-          let request = readFully(connection, count: Int(length))
+        guard let length = try? BridgeFrame.size(fromHeader: header),
+          let request = readFully(connection, count: length)
         else { return .disconnected }
         let response = handleRequest(request)
-        var responseLength = UInt32(truncatingIfNeeded: response.data.count).bigEndian
-        let responseHeader = withUnsafeBytes(of: &responseLength) { Data($0) }
-        guard writeFully(connection, data: responseHeader), writeFully(connection, data: response.data) else { return .disconnected }
+        guard let responseHeader = try? BridgeFrame.header(forSize: response.data.count),
+          writeFully(connection, data: responseHeader), writeFully(connection, data: response.data)
+        else { return .disconnected }
         return response.shutdown ? .shutdown : .next
       }
       switch step {

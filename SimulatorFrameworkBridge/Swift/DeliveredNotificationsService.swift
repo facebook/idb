@@ -166,7 +166,8 @@ private struct NotificationArchive {
 }
 
 private enum DeliveredNotificationOutput {
-  static func write(_ notification: DeliveredNotification) -> Bool {
+  static func write(_ notification: DeliveredNotification, output: BridgeOutput?) -> Bool {
+    if let output { return output.write(notification.jsonObject) }
     let object = notification.jsonObject
     guard JSONSerialization.isValidJSONObject(object) else {
       NSLog("[DeliveredNotifications] Notification %@ holds a value JSON cannot represent, such as a non-finite date", notification.identifier)
@@ -189,7 +190,8 @@ private enum DeliveredNotificationOutput {
     return true
   }
 
-  static func flush() -> Int32 {
+  static func flush(output: BridgeOutput?) -> Int32 {
+    if let output { return output.finish(status: 0).exitCode }
     guard fflush(stdout) == 0 else {
       NSLog("[DeliveredNotifications] Could not flush stdout: %@", String(cString: strerror(errno)))
       return 1
@@ -244,7 +246,7 @@ private struct DeliveredNotificationStore {
     return .absent
   }
 
-  func printNotifications(bundleID: String) -> Int32 {
+  func printNotifications(bundleID: String, output: BridgeOutput?) -> Int32 {
     let directory: String
     switch location(bundleID: bundleID) {
     case .absent: return 0
@@ -261,7 +263,7 @@ private struct DeliveredNotificationStore {
     case .archive(let value): archive = value
     }
     if NotificationArchive.isNull(archive.root) {
-      return DeliveredNotificationOutput.flush()
+      return DeliveredNotificationOutput.flush(output: output)
     }
     guard let root = archive.root as? [String: Any] else {
       NSLog("[DeliveredNotifications] %@ holds no archived root dictionary", path)
@@ -289,7 +291,7 @@ private struct DeliveredNotificationStore {
       }
       do {
         let notification = try DeliveredNotification(fields: dictionary.fields, bundleID: bundleID)
-        if !DeliveredNotificationOutput.write(notification) { unreported += 1 }
+        if !DeliveredNotificationOutput.write(notification, output: output) { unreported += 1 }
       } catch DeliveredNotification.DecodeError.missingIdentifier {
         NSLog("[DeliveredNotifications] A record in %@ carries no notification identifier", path)
         unreported += 1
@@ -302,7 +304,7 @@ private struct DeliveredNotificationStore {
       NSLog("[DeliveredNotifications] %lu of %lu records in %@ could not be reported; failing rather than returning a short list", unreported, references.count, path)
       return 1
     }
-    return DeliveredNotificationOutput.flush()
+    return DeliveredNotificationOutput.flush(output: output)
   }
 
   // A mapping that could not be read is a failure rather than nothing to clear: the store it would have
@@ -341,6 +343,10 @@ private struct DeliveredNotificationStore {
   }
 
   @objc public static func handleAction(_ action: String?, bundleID: String?, directory: String?, timeout: TimeInterval) -> Int32 {
+    handleAction(action, bundleID: bundleID, directory: directory, timeout: timeout, output: nil)
+  }
+
+  static func handleAction(_ action: String?, bundleID: String?, directory: String?, timeout: TimeInterval, output: BridgeOutput?) -> Int32 {
     guard let bundleID, !bundleID.isEmpty else {
       NSLog("[DeliveredNotifications] bundleID required for %@", action ?? "(null)")
       return 1
@@ -354,9 +360,9 @@ private struct DeliveredNotificationStore {
     }
     guard let client = FBDeliveredNotificationsClient.live(bundleID: bundleID) else {
       NSLog("[DeliveredNotifications] No center for %@; reading the store", bundleID)
-      return store(directory: directory).printNotifications(bundleID: bundleID)
+      return store(directory: directory).printNotifications(bundleID: bundleID, output: output)
     }
-    return handle(client: client, bundleID: bundleID, directory: directory, timeout: timeout)
+    return handle(client: client, bundleID: bundleID, directory: directory, timeout: timeout, output: output)
   }
 
   @objc public static func handleActionWithCenter(_ action: String?, bundleID: String?, center: Any?, directory: String?, timeout: TimeInterval) -> Int32 {
@@ -364,7 +370,7 @@ private struct DeliveredNotificationStore {
       NSLog("[DeliveredNotifications] Unknown action: %@. Use delivered.", action ?? "(null)")
       return 1
     }
-    return handle(client: FBDeliveredNotificationsClient(center: center), bundleID: bundleID ?? "", directory: directory, timeout: timeout)
+    return handle(client: FBDeliveredNotificationsClient(center: center), bundleID: bundleID ?? "", directory: directory, timeout: timeout, output: nil)
   }
 
   @objc public static func clear(bundleID: String?, remover: Any?, directory: String?, timeout: TimeInterval) -> Int32 {
@@ -396,21 +402,21 @@ private struct DeliveredNotificationStore {
     }
   }
 
-  private static func handle(client: FBDeliveredNotificationsClient, bundleID: String, directory: String?, timeout: TimeInterval) -> Int32 {
+  private static func handle(client: FBDeliveredNotificationsClient, bundleID: String, directory: String?, timeout: TimeInterval, output: BridgeOutput?) -> Int32 {
     let result = client.read(timeout: timeout > 0 ? timeout : 30)
     switch result.status {
     case .raised:
       NSLog("[DeliveredNotifications] getDeliveredNotificationsWithCompletionHandler: raised for %@: %@; reading the store", bundleID, result.exceptionDescription ?? "(null)")
-      return store(directory: directory).printNotifications(bundleID: bundleID)
+      return store(directory: directory).printNotifications(bundleID: bundleID, output: output)
     case .timedOut:
       NSLog("[DeliveredNotifications] Timed out reading notifications for %@; reading the store", bundleID)
-      return store(directory: directory).printNotifications(bundleID: bundleID)
+      return store(directory: directory).printNotifications(bundleID: bundleID, output: output)
     case .received: break
     @unknown default: return 1
     }
     guard !result.notifications.isEmpty else {
       NSLog("[DeliveredNotifications] Center reported none for %@; reading the store", bundleID)
-      return store(directory: directory).printNotifications(bundleID: bundleID)
+      return store(directory: directory).printNotifications(bundleID: bundleID, output: output)
     }
     var unreported = 0
     for values in result.notifications {
@@ -419,7 +425,7 @@ private struct DeliveredNotificationStore {
         unreported += 1
         continue
       }
-      if !DeliveredNotificationOutput.write(DeliveredNotification(values: values, bundleID: bundleID)) {
+      if !DeliveredNotificationOutput.write(DeliveredNotification(values: values, bundleID: bundleID), output: output) {
         unreported += 1
       }
     }
@@ -427,7 +433,7 @@ private struct DeliveredNotificationStore {
       NSLog("[DeliveredNotifications] %lu of %lu notifications for %@ could not be reported; failing rather than returning a short list", unreported, result.notifications.count, bundleID)
       return 1
     }
-    return DeliveredNotificationOutput.flush()
+    return DeliveredNotificationOutput.flush(output: output)
   }
 }
 #endif

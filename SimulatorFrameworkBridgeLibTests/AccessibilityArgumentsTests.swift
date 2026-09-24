@@ -7,6 +7,7 @@
 
 import Foundation
 @_implementationOnly import SimulatorFrameworkBridgeLib
+@_implementationOnly import SimulatorFrameworkBridgeSupport
 import XCTest
 
 final class AccessibilityArgumentsTests: XCTestCase {
@@ -61,4 +62,16 @@ final class AccessibilityArgumentsTests: XCTestCase {
     XCTAssertEqual(FBAXBridgeIdleTimeoutForTesting(["--idle-timeout", "  +45"], 300), 45)
     XCTAssertEqual(FBAXBridgeIdleTimeoutForTesting(["--idle-timeout", "45tail"], 300), 300)
   }
+
+  func testStartupTimeoutIsOptionalAndUsesServeOptionParsing() {
+    XCTAssertNil(FBAXBridgeArguments.startupTimeout(arguments: []))
+    for value in ["0", "-1", "bad", "12tail"] {
+      XCTAssertNil(FBAXBridgeArguments.startupTimeout(arguments: ["--startup-timeout", value]))
+    }
+    XCTAssertNil(FBAXBridgeArguments.startupTimeout(arguments: ["--startup-timeout"]))
+    XCTAssertNil(FBAXBridgeArguments.startupTimeout(arguments: ["--startup-timeout", "bad", "--startup-timeout", "10"]))
+    XCTAssertEqual(FBAXBridgeArguments.startupTimeout(arguments: ["--startup-timeout", "  +10", "--startup-timeout", "20"]), 10)
+    XCTAssertEqual(FBAXBridgeArguments.startupTimeout(arguments: ["--startup-timeout", String(Int32.max)]), Int32.max)
+  }
+
 }
