@@ -31,14 +31,14 @@ import Foundation
   static func handleDnsAction(action: String, arguments: [String], output: BridgeOutput?) -> Int {
     let store = FBNetworkConfigurationStore.dns()
     guard let store else {
-      return 1
+      return output?.failure("The DNS private API is unavailable") ?? 1
     }
 
     let selectedAction = NetworkConfigurationAction(rawValue: action)
     if selectedAction == .list {
       let read = store.readConfiguration()
       guard let read else {
-        return 1
+        return output?.failure("Could not read DNS configuration") ?? 1
       }
       if let output {
         return output.write(read.configuration ?? [:]) ? 0 : 1
@@ -58,14 +58,14 @@ import Foundation
     }
 
     guard store.prepareToWrite() else {
-      return 1
+      return output?.failure("Could not prepare DNS configuration for writing") ?? 1
     }
 
     let dnsDict: [String: Any]
     if selectedAction == .set {
       if arguments.isEmpty {
         NSLog("[DnsService] set requires at least one DNS server address")
-        return 1
+        return output?.failure("Invalid DNS set arguments") ?? 1
       }
       dnsDict = DnsServiceStaticFuncs.buildDnsDict(servers: arguments)
       NSLog("[DnsService] Setting DNS servers to %@", arguments.joined(separator: ", "))
@@ -74,13 +74,13 @@ import Foundation
       NSLog("[DnsService] Clearing DNS configuration")
     } else {
       NSLog("[DnsService] Unknown action: %@. Use 'set', 'clear', or 'list'.", action)
-      return 1
+      return output?.failure("Unknown DNS action") ?? 1
     }
 
     let success = store.writeConfiguration(dnsDict)
 
     guard success else {
-      return 1
+      return output?.failure("Could not write DNS configuration") ?? 1
     }
 
     store.notifyChange()

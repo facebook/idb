@@ -18,7 +18,7 @@ final class BridgeExecutionTests: XCTestCase {
       .notifications(.delivered(bundleID: "app")), .notifications(.clearDelivered(bundleID: "app")),
       .accessibility(["verb": .string("describe")]), .ping,
     ]
-    let expected = BridgeResult(exitCode: 23, values: [.object(["identifier": .string("first")]), .object(["identifier": .string("second")])])
+    let expected = BridgeResult(exitCode: 23, values: [.object(["identifier": .string("first")]), .object(["identifier": .string("second")])], error: "The remaining records could not be read")
     var received: [BridgeCommand] = []
     for command in commands {
       let request = BridgeRequest(command: command, id: "test")
@@ -88,8 +88,8 @@ final class BridgeExecutionTests: XCTestCase {
   }
 
   private func failureMessage(_ result: BridgeResult) -> String? {
-    guard result.values.count == 1, case let .object(fields) = result.values[0], case let .string(message)? = fields["error"] else { return nil }
-    return message
+    guard result.values.isEmpty else { return nil }
+    return result.error
   }
 
   func testServeBindsTheAccessibilityRuntimeBeforeItsFirstClient() throws {
@@ -115,8 +115,32 @@ final class BridgeExecutionTests: XCTestCase {
     XCTAssertTrue(first.write(["id": "first"]))
     XCTAssertFalse(first.write(["date": Double.infinity]))
     XCTAssertTrue(first.write(["id": "second"]))
-    XCTAssertEqual(first.finish(status: 0), BridgeResult(exitCode: 1, values: [.object(["id": .string("first")]), .object(["id": .string("second")])]))
+    let result = first.finish(status: 0)
+    XCTAssertEqual(result.exitCode, 1)
+    XCTAssertEqual(result.values, [.object(["id": .string("first")]), .object(["id": .string("second")])])
+    XCTAssertTrue(result.error?.hasPrefix("Could not encode command output:") == true)
     XCTAssertEqual(BridgeOutput().finish(status: 0), BridgeResult(exitCode: 0))
+  }
+
+  func testMalformedSerializedOutputReportsFailureInBothAdaptersAndAllowsRecovery() throws {
+    let request = BridgeRequest(command: .accessibility(["verb": .string("describe")]), id: "decode")
+    for text in ["{", "", #"{"ok":true,"value":1e999}"#] {
+      let output = BridgeOutput()
+      XCTAssertNil(output.write(json: Data(text.utf8)))
+      let result = output.finish(status: 0)
+      XCTAssertEqual(result.exitCode, 1)
+      XCTAssertTrue(result.values.isEmpty)
+      XCTAssertTrue(result.error?.hasPrefix("Could not decode command output:") == true)
+      let cli = BridgeRPC.process(try request.encoded()) { _ in result }
+      let socket = BridgeRPC.handle(try request.encoded()) { _ in result }
+      XCTAssertEqual(cli.data, socket.data)
+      XCTAssertEqual(try BridgeResponse.decode(cli.data, for: request).result, result)
+    }
+
+    let output = BridgeOutput()
+    let expected: BridgeJSONValue = .object(["ok": .bool(true)])
+    XCTAssertEqual(output.write(json: Data(#"{"ok":true}"#.utf8)), expected)
+    XCTAssertEqual(output.finish(status: 0), BridgeResult(exitCode: 0, values: [expected]))
   }
 
   func testNetworkCommandsCollectResultsWithoutWritingStdout() throws {
@@ -141,8 +165,24 @@ final class BridgeExecutionTests: XCTestCase {
 
   // An unset proto3 string arrives empty, and answering 0 would report a malformed request as done.
   func testDeliveredNotificationCommandsRefuseAnEmptyBundleIDBeforeReachingTheDaemon() {
-    XCTAssertEqual(BridgeServices.execute(.notifications(.delivered(bundleID: ""))).exitCode, 1)
-    XCTAssertEqual(BridgeServices.execute(.notifications(.clearDelivered(bundleID: ""))).exitCode, 1)
+    for command: BridgeCommand.Notifications in [.delivered(bundleID: ""), .clearDelivered(bundleID: "")] {
+      let result = BridgeServices.execute(.notifications(command))
+      XCTAssertEqual(result.exitCode, 1)
+      XCTAssertEqual(result.error, "Delivered notifications require a bundle identifier")
+    }
+  }
+
+  func testRuntimeFailureDiagnosticsAreRequestLocal() {
+    let runtime = FBNetworkConfigurationTestRuntime()
+    runtime.install()
+    defer { runtime.uninstall() }
+    runtime.writeSucceeds = false
+    XCTAssertEqual(BridgeServices.execute(.dns(.clear)).error, "Could not write DNS configuration")
+    XCTAssertEqual(BridgeServices.execute(.proxy(.clear)).error, "Could not write proxy configuration")
+    runtime.writeSucceeds = true
+    XCTAssertEqual(BridgeServices.execute(.dns(.clear)), BridgeResult(exitCode: 0))
+    runtime.libraryAvailable = false
+    XCTAssertEqual(BridgeServices.execute(.dns(.list)).error, "The DNS private API is unavailable")
   }
 
   func testTypedHealthTimeoutsReportFailureWithoutMutatingTheNextResult() throws {

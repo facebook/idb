@@ -64,10 +64,12 @@ public struct BridgeRequest: Codable, Equatable, Sendable {
 public struct BridgeResult: Codable, Equatable, Sendable {
   public let exitCode: Int32
   public let values: [BridgeJSONValue]
+  public let error: String?
 
-  public init(exitCode: Int32, values: [BridgeJSONValue] = []) {
+  public init(exitCode: Int32, values: [BridgeJSONValue] = [], error: String? = nil) {
     self.exitCode = exitCode
     self.values = values
+    self.error = error
   }
 }
 

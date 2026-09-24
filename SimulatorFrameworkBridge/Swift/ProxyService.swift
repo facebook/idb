@@ -57,14 +57,14 @@ private enum ProxyConfiguration {
   static func handleProxyAction(action: String, arguments: [String], output: BridgeOutput?) -> Int {
     let store = FBNetworkConfigurationStore.proxy()
     guard let store else {
-      return 1
+      return output?.failure("The proxy private API is unavailable") ?? 1
     }
 
     let selectedAction = NetworkConfigurationAction(rawValue: action)
     if selectedAction == .list {
       let read = store.readConfiguration()
       guard let read else {
-        return 1
+        return output?.failure("Could not read proxy configuration") ?? 1
       }
       if let output {
         return output.write(read.configuration ?? [:]) ? 0 : 1
@@ -84,14 +84,14 @@ private enum ProxyConfiguration {
     }
 
     guard store.prepareToWrite() else {
-      return 1
+      return output?.failure("Could not prepare proxy configuration for writing") ?? 1
     }
 
     let proxyDict: [String: Any]
     if selectedAction == .set {
       if arguments.count < 2 {
         NSLog("[ProxyService] set requires <host> <port> [http|socks]")
-        return 1
+        return output?.failure("Invalid proxy set arguments") ?? 1
       }
       let host = arguments[0]
       let port = (arguments[1] as NSString).intValue
@@ -104,13 +104,13 @@ private enum ProxyConfiguration {
       NSLog("[ProxyService] Clearing proxy settings")
     } else {
       NSLog("[ProxyService] Unknown action: %@. Use 'set', 'clear', or 'list'.", action)
-      return 1
+      return output?.failure("Unknown proxy action") ?? 1
     }
 
     let success = store.writeConfiguration(proxyDict)
 
     guard success else {
-      return 1
+      return output?.failure("Could not write proxy configuration") ?? 1
     }
 
     store.notifyChange()

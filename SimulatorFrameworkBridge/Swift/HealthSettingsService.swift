@@ -156,11 +156,11 @@ private func handleHealthSettingsActionImpl(
 ) throws -> Int {
   let client = FBHealthSettingsClient.live()
   guard let client else {
-    return 1
+    return sink?.failure("The Health authorization private API is unavailable") ?? 1
   }
   guard let bundleID else {
     NSLog("[Health] bundleID is required for action '%@'", action)
-    return 1
+    return sink?.failure("Health requires a bundle identifier") ?? 1
   }
   if action == "list" {
     return try handleListAction(client: client, bundleID: bundleID, sink: sink)
@@ -189,7 +189,7 @@ private func handleHealthSettingsActionImpl(
     )
   }
   NSLog("[Health] Unknown action '%@'. Supported: list, clear, approve, revoke", action)
-  return 1
+  return sink?.failure("Unknown Health action: \(action)") ?? 1
 }
 
 @objc public final class HealthSettingsServiceStaticFuncs: NSObject {
@@ -207,7 +207,7 @@ private func handleHealthSettingsActionImpl(
     do {
       return try handleHealthSettingsActionImpl(action: action, bundleID: bundleID, typeIdentifiers: typeIdentifiers, sink: output)
     } catch {
-      return 1
+      return output?.failure("Health authorization failed: \(error.localizedDescription)") ?? 1
     }
   }
 }

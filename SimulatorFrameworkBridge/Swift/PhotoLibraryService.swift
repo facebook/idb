@@ -11,16 +11,16 @@ import Photos
 #if canImport(SimulatorFrameworkBridgeRuntime)
 @_implementationOnly import SimulatorFrameworkBridgeRuntime
 #endif
-private func clearPhotoLibrary(client: FBPhotoLibraryClient) -> Int {
+private func clearPhotoLibrary(client: FBPhotoLibraryClient, output: BridgeOutput? = nil) -> Int {
   do {
     if try client.readAssetCount().uintValue == 0 {
       NSLog("No photos to delete")
       return 0
     }
     NSLog("Found %lu photos to delete", try client.readAssetCount().uintValue)
-    return client.deleteAssets() ? 0 : 1
+    return client.deleteAssets() ? 0 : (output?.failure("Photo library deletion transaction failed") ?? 1)
   } catch {
-    return 1
+    return output?.failure("Could not read photo assets: \(error.localizedDescription)") ?? 1
   }
 }
 
@@ -28,13 +28,17 @@ private func clearPhotoLibrary(client: FBPhotoLibraryClient) -> Int {
 
   @objc(handlePhotoLibraryAction:)
   public static func handlePhotoLibraryAction(action: String) -> Int {
+    handlePhotoLibraryAction(action: action, output: nil)
+  }
+
+  static func handlePhotoLibraryAction(action: String, output: BridgeOutput?) -> Int {
     if action == "clear" {
       let library = PHPhotoLibrary.shared()
       let options = PHFetchOptions()
       guard let client = FBPhotoLibraryClient.make(library: library, assets: PHAsset.fetchAssets(with: options)) else {
-        return 1
+        return output?.failure("The photo library private API is unavailable") ?? 1
       }
-      return clearPhotoLibrary(client: client)
+      return clearPhotoLibrary(client: client, output: output)
     } else {
       NSLog("Unknown action: %@", action)
       return 1

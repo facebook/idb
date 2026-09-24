@@ -22,10 +22,10 @@ public enum BridgeServices {
       #if os(tvOS)
       return unavailable("contacts", output: output)
       #else
-      return Int32(ContactsServiceStaticFuncs.handleContactsAction(action: "clear"))
+      return Int32(ContactsServiceStaticFuncs.handleContactsAction(action: "clear", output: output))
       #endif
     case .clearPhotos:
-      return Int32(PhotoLibraryServiceStaticFuncs.handlePhotoLibraryAction(action: "clear"))
+      return Int32(PhotoLibraryServiceStaticFuncs.handlePhotoLibraryAction(action: "clear", output: output))
     case let .dns(command):
       let action: String
       let arguments: [String]
@@ -113,14 +113,9 @@ public enum BridgeServices {
     case let .accessibility(parameters):
       let response = AccessibilityServiceStaticFuncs.handleRequest(parameters.mapValues(\.foundationValue))
       let data = AccessibilityServiceStaticFuncs.serializeResponse(response)
-      do {
-        let value = try JSONDecoder().decode(BridgeJSONValue.self, from: data)
-        output.write(value.foundationValue)
-        if case let .object(fields) = value, fields[BridgeAXWire.Envelope.ok.rawValue] == .bool(true) { return 0 }
-        return 1
-      } catch {
-        return 1
-      }
+      guard let value = output.write(json: data) else { return 1 }
+      if case let .object(fields) = value, fields[BridgeAXWire.Envelope.ok.rawValue] == .bool(true) { return 0 }
+      return 1
     }
   }
 

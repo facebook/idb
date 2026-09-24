@@ -13,14 +13,14 @@ import Foundation
 @_implementationOnly import SimulatorFrameworkBridgeRuntime
 #endif
 
-private func FBContactsClearWithStore(contactStore: CNContactStore, makeSaveRequest: () -> CNSaveRequest) -> Int {
+private func FBContactsClearWithStore(contactStore: CNContactStore, makeSaveRequest: () -> CNSaveRequest, output: BridgeOutput? = nil) -> Int {
   let client = FBContactsStoreClient(store: contactStore)
   var fetchError: NSError?
   let allContacts = client.fetchContacts(error: &fetchError)
 
   guard let allContacts else {
     NSLog("Failed to fetch contacts: %@", fetchError?.localizedDescription ?? "(null)")
-    return 1
+    return output?.failure("Failed to fetch contacts: \(fetchError?.localizedDescription ?? "unknown error")") ?? 1
   }
 
   NSLog("Found %lu contacts to delete", UInt(allContacts.count))
@@ -33,7 +33,7 @@ private func FBContactsClearWithStore(contactStore: CNContactStore, makeSaveRequ
   let saveRequest = makeSaveRequest()
   for contact in allContacts {
     guard let mutableContact = contact.mutableCopy() as? CNMutableContact else {
-      return 1
+      return output?.failure("Could not create a mutable contact for deletion") ?? 1
     }
     saveRequest.delete(mutableContact)
   }
@@ -43,7 +43,7 @@ private func FBContactsClearWithStore(contactStore: CNContactStore, makeSaveRequ
 
   guard success else {
     NSLog("Failed to delete contacts: %@", deleteError?.localizedDescription ?? "(null)")
-    return 1
+    return output?.failure("Failed to delete contacts: \(deleteError?.localizedDescription ?? "unknown error")") ?? 1
   }
 
   NSLog("Successfully deleted all contacts")
@@ -58,12 +58,17 @@ private func FBContactsClearWithStore(contactStore: CNContactStore, makeSaveRequ
 
   @objc(handleContactsAction:)
   public static func handleContactsAction(action: String) -> Int {
+    handleContactsAction(action: action, output: nil)
+  }
+
+  static func handleContactsAction(action: String, output: BridgeOutput?) -> Int {
     if action == "clear" {
       return FBContactsClearWithStore(
         contactStore: CNContactStore(),
         makeSaveRequest: {
           CNSaveRequest()
-        }
+        },
+        output: output
       )
     } else {
       NSLog("Unknown action: %@", action)

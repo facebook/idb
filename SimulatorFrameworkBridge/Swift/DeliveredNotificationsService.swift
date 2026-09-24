@@ -250,7 +250,7 @@ private struct DeliveredNotificationStore {
     let directory: String
     switch location(bundleID: bundleID) {
     case .absent: return 0
-    case .unreadable: return 1
+    case .unreadable: return Int32(output?.failure("Could not locate the delivered notification store for \(bundleID)") ?? 1)
     case .directory(let value): directory = value
     }
     let path = (directory as NSString).appendingPathComponent("DeliveredNotifications.plist")
@@ -259,7 +259,7 @@ private struct DeliveredNotificationStore {
     case .absent: return 0
     case .invalid:
       NSLog("[DeliveredNotifications] %@ could not be read as a keyed archive", path)
-      return 1
+      return Int32(output?.failure("Could not read a keyed archive from \(path)") ?? 1)
     case .archive(let value): archive = value
     }
     if NotificationArchive.isNull(archive.root) {
@@ -267,11 +267,11 @@ private struct DeliveredNotificationStore {
     }
     guard let root = archive.root as? [String: Any] else {
       NSLog("[DeliveredNotifications] %@ holds no archived root dictionary", path)
-      return 1
+      return Int32(output?.failure("No archived root dictionary in \(path)") ?? 1)
     }
     guard let references = root["NS.objects"] as? [Any] else {
       NSLog("[DeliveredNotifications] Archived root in %@ has no NS.objects array", path)
-      return 1
+      return Int32(output?.failure("Archived root has no NS.objects array in \(path)") ?? 1)
     }
     var unreported = 0
     for reference in references {
@@ -302,18 +302,18 @@ private struct DeliveredNotificationStore {
     }
     guard unreported == 0 else {
       NSLog("[DeliveredNotifications] %lu of %lu records in %@ could not be reported; failing rather than returning a short list", unreported, references.count, path)
-      return 1
+      return Int32(output?.failure("Could not report all delivered notification records from \(path)") ?? 1)
     }
     return DeliveredNotificationOutput.flush(output: output)
   }
 
   // A mapping that could not be read is a failure rather than nothing to clear: the store it would have
   // named may hold records, and answering 0 would report them as cleared.
-  func clearNotifications(bundleID: String) -> Int32 {
+  func clearNotifications(bundleID: String, output: BridgeOutput?) -> Int32 {
     let directory: String
     switch location(bundleID: bundleID) {
     case .absent: return 0
-    case .unreadable: return 1
+    case .unreadable: return Int32(output?.failure("Could not locate the delivered notification store for \(bundleID)") ?? 1)
     case .directory(let value): directory = value
     }
     let path = (directory as NSString).appendingPathComponent("DeliveredNotifications.plist")
@@ -328,7 +328,7 @@ private struct DeliveredNotificationStore {
         return 0
       }
       NSLog("[DeliveredNotifications] %@ could not be removed: %@", path, failure)
-      return 1
+      return Int32(output?.failure("Could not remove \(path)") ?? 1)
     }
   }
 }
@@ -349,14 +349,14 @@ private struct DeliveredNotificationStore {
   static func handleAction(_ action: String?, bundleID: String?, directory: String?, timeout: TimeInterval, output: BridgeOutput?) -> Int32 {
     guard let bundleID, !bundleID.isEmpty else {
       NSLog("[DeliveredNotifications] bundleID required for %@", action ?? "(null)")
-      return 1
+      return Int32(output?.failure("Delivered notifications require a bundle identifier") ?? 1)
     }
     if action == "clear-delivered" {
-      return clear(client: FBDeliveredNotificationsRemovalClient.live(), bundleID: bundleID, directory: directory, timeout: timeout)
+      return clear(client: FBDeliveredNotificationsRemovalClient.live(), bundleID: bundleID, directory: directory, timeout: timeout, output: output)
     }
     guard action == "delivered" else {
       NSLog("[DeliveredNotifications] Unknown action: %@. Use delivered or clear-delivered.", action ?? "(null)")
-      return 1
+      return Int32(output?.failure("Unknown delivered notification action") ?? 1)
     }
     guard let client = FBDeliveredNotificationsClient.live(bundleID: bundleID) else {
       NSLog("[DeliveredNotifications] No center for %@; reading the store", bundleID)
@@ -374,16 +374,16 @@ private struct DeliveredNotificationStore {
   }
 
   @objc public static func clear(bundleID: String?, remover: Any?, directory: String?, timeout: TimeInterval) -> Int32 {
-    clear(client: remover.map { FBDeliveredNotificationsRemovalClient(remover: $0) }, bundleID: bundleID ?? "", directory: directory, timeout: timeout)
+    clear(client: remover.map { FBDeliveredNotificationsRemovalClient(remover: $0) }, bundleID: bundleID ?? "", directory: directory, timeout: timeout, output: nil)
   }
 
-  private static func clear(client: FBDeliveredNotificationsRemovalClient?, bundleID: String, directory: String?, timeout: TimeInterval) -> Int32 {
+  private static func clear(client: FBDeliveredNotificationsRemovalClient?, bundleID: String, directory: String?, timeout: TimeInterval, output: BridgeOutput?) -> Int32 {
     // Deleting the file leaves later reads agreeing that the app holds nothing, but the daemon still does,
     // so anything already on screen stays there. That is the outcome for a guest the daemon does not see
     // as the app, which is why it is logged rather than taken silently.
     func clearStoreInstead(_ reason: String) -> Int32 {
       NSLog("[DeliveredNotifications] %@ for %@; clearing the store instead, which withdraws nothing already on screen", reason, bundleID)
-      return store(directory: directory).clearNotifications(bundleID: bundleID)
+      return store(directory: directory).clearNotifications(bundleID: bundleID, output: output)
     }
     guard let client else {
       return clearStoreInstead("No connection to usernotificationsd")
@@ -398,7 +398,7 @@ private struct DeliveredNotificationStore {
       return clearStoreInstead("usernotificationsd refused the removal")
     // The daemon rewrites the store itself as it withdraws, so it is the daemon's to update.
     case .removed: return 0
-    @unknown default: return 1
+    @unknown default: return Int32(output?.failure("Unknown delivered notification removal status") ?? 1)
     }
   }
 
@@ -412,7 +412,7 @@ private struct DeliveredNotificationStore {
       NSLog("[DeliveredNotifications] Timed out reading notifications for %@; reading the store", bundleID)
       return store(directory: directory).printNotifications(bundleID: bundleID, output: output)
     case .received: break
-    @unknown default: return 1
+    @unknown default: return Int32(output?.failure("Unknown delivered notification read status") ?? 1)
     }
     guard !result.notifications.isEmpty else {
       NSLog("[DeliveredNotifications] Center reported none for %@; reading the store", bundleID)
@@ -422,6 +422,7 @@ private struct DeliveredNotificationStore {
     for values in result.notifications {
       if let error = values.readError {
         NSLog("[DeliveredNotifications] Could not read notification for %@: %@", bundleID, error)
+        output?.failure("Could not read delivered notification: \(error)")
         unreported += 1
         continue
       }

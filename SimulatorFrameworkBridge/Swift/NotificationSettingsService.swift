@@ -16,7 +16,11 @@ private let UNAuthorizationStatusAuthorized: UInt = 2
 private func printSectionJSON(bundleID: String, section: FBNotificationSection, output: BridgeOutput?) -> Bool {
   if let output {
     guard section.isFound else { return output.write(["bundleID": bundleID, "found": false]) }
-    guard let values = try? section.readValues() else { return false }
+    let values: FBNotificationSectionValues
+    do { values = try section.readValues() } catch {
+      output.failure("Could not read notification settings: \(error.localizedDescription)")
+      return false
+    }
     return output.write([
       "bundleID": bundleID,
       "found": true,
@@ -52,7 +56,7 @@ private func printSectionJSON(bundleID: String, section: FBNotificationSection, 
 
   static func handleNotificationSettingsAction(action: String?, bundleID: String?, output: BridgeOutput?) -> Int {
     guard let client = FBNotificationSettingsClient.live() else {
-      return 1
+      return output?.failure("The notification settings private API is unavailable") ?? 1
     }
     return handleNotificationSettingsActionWithClient(action: action, bundleID: bundleID, client: client, output: output)
   }
@@ -129,6 +133,6 @@ private func handleNotificationSettingsActionWithClient(
     NSLog("[NotificationSettings] %@ notifications for %@", action ?? "(null)", bundleID)
     return 0
   } catch {
-    return 1
+    return output?.failure("Notification settings failed: \(error.localizedDescription)") ?? 1
   }
 }
