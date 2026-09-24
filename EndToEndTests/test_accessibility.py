@@ -7,12 +7,13 @@
 
 `--api ax` reads from macOS; `--api axbridge` runs SimulatorFrameworkBridge
 inside the simulator. Complete output identifies which backend served the
-request. Tests select labelled Settings rows at runtime to avoid
-locale-specific names. Tap and scroll tests verify navigation and movement
-through axbridge. Safari is read as well, for the web content another
-process is showing, which ax cannot reach. A notification delivered to an app
-that is not running is followed through idb's notification commands, from
-delivery until it is cleared.
+request. Tests read and drive the fixed screen ReplHost shows when launched
+with `--accessibility-fixture`, whose elements carry known identifiers and
+change only when a test acts on them. Tap and scroll tests verify navigation
+and movement through axbridge. Safari is read as well, for the web content
+another process is showing, which ax cannot reach. A notification delivered
+to an app that is not running is followed through idb's notification
+commands, from delivery until it is cleared.
 """
 
 from __future__ import annotations
@@ -39,7 +40,6 @@ from .harness import (
     NotReady,
     POLL_INTERVAL_SECONDS,
     Query,
-    run_with_registered_cleanup,
     select_tests_for_capability,
     suite_supports,
     SuiteCapability,
@@ -48,11 +48,12 @@ from .harness import (
     wait_until,
 )
 
-SETTINGS_BUNDLE_ID = "com.apple.Preferences"
 SAFARI_BUNDLE_ID = "com.apple.mobilesafari"
-GENERAL_ROW_ID = "com.apple.settings.general"
+FIXTURE_LAUNCH_ARGUMENT = "--accessibility-fixture"
+ROW_PREFIX = "com.facebook.idb.replhost.row."
+GENERAL_ROW_ID = f"{ROW_PREFIX}general"
 GENERAL_ROW = Query(GENERAL_ROW_ID)
-SETTINGS_ROW_PREFIX = "com.apple.settings."
+SEARCH_FIELD_ID = "com.facebook.idb.replhost.search"
 # Views that carry the rows' identifier prefix without being rows.
 ROW_CONTAINER_TYPES = frozenset({"CollectionView", "Table", "ScrollView", "List"})
 # A tap idb refused does nothing at all, so a wait long enough to catch a
@@ -164,6 +165,11 @@ def _labelled_controls(document: Any) -> list[dict[str, Any]]:
     ]
 
 
+def _identifier(element: dict[str, Any]) -> str | None:
+    """Read the identifier from legacy output (AXUniqueId) or complete output."""
+    return element.get("AXUniqueId") or element.get("identifier")
+
+
 def _labels(document: Any) -> set[str]:
     return {_label(element) for element in _labelled_controls(document)}
 
@@ -182,8 +188,8 @@ def _visible(
     ]
 
 
-def _settings_rows(document: Any) -> list[dict[str, Any]]:
-    """The Settings rows, which are the elements identified with their prefix.
+def _rows(document: Any) -> list[dict[str, Any]]:
+    """The fixture's rows, which are the elements identified with their prefix.
 
     The list the rows sit in shares that prefix without being a row: its
     position never changes as it scrolls, and it is not something a scroll can
@@ -192,27 +198,24 @@ def _settings_rows(document: Any) -> list[dict[str, Any]]:
     return [
         element
         for element in _elements(document)
-        if str(element.get("identifier", "")).startswith(SETTINGS_ROW_PREFIX)
+        if str(element.get("identifier", "")).startswith(ROW_PREFIX)
         and element.get("type") not in ROW_CONTAINER_TYPES
         and _has_area(element)
     ]
 
 
-def _settings_row_positions(document: Any) -> dict[str, float]:
+def _row_positions(document: Any) -> dict[str, float]:
     """Where every row is, on the screen or off it, so movement can be measured."""
-    return {
-        element["identifier"]: element["frame"]["y"]
-        for element in _settings_rows(document)
-    }
+    return {element["identifier"]: element["frame"]["y"] for element in _rows(document)}
 
 
-def _settings_rows_on_screen(document: Any) -> list[str]:
+def _rows_on_screen(document: Any) -> list[str]:
     """The rows a viewer can see, from the top of the screen down."""
     screen = _screen(document)
     return [
         element["identifier"]
         for element in sorted(
-            _settings_rows(document), key=lambda element: element["frame"]["y"]
+            _rows(document), key=lambda element: element["frame"]["y"]
         )
         if _on_screen(element, screen)
     ]
@@ -226,7 +229,7 @@ ACCESSIBILITY_READ_TESTS = frozenset(
 )
 INTERACTION_TESTS = frozenset(
     {
-        "test_ui_scroll_moves_settings_rows_down_and_up",
+        "test_ui_scroll_moves_rows_down_and_up",
         "test_ui_set_value_updates_the_search_field",
         "test_ui_opens_general_by_identifier_and_confirms_it",
         "test_ui_tap_opens_general_by_point",
@@ -236,6 +239,15 @@ INTERACTION_TESTS = frozenset(
         "test_web_content_is_readable_from_inside_the_simulator",
     }
 )
+# The tests that read and drive the fixture, which the others have no use for.
+FIXTURE_TESTS = ACCESSIBILITY_READ_TESTS | {
+    "test_ui_scroll_moves_rows_down_and_up",
+    "test_ui_set_value_updates_the_search_field",
+    "test_ui_opens_general_by_identifier_and_confirms_it",
+    "test_ui_tap_opens_general_by_point",
+    "test_ui_wait_returns_after_general_opens",
+    "test_ui_wait_times_out_and_rejects_an_invalid_poll_interval",
+}
 ACCESSIBILITY_TEST_CAPABILITIES = {
     **{name: SuiteCapability.ACCESSIBILITY_READ for name in ACCESSIBILITY_READ_TESTS},
     **{name: SuiteCapability.ACCESSIBILITY_INTERACTION for name in INTERACTION_TESTS},
@@ -269,13 +281,12 @@ class AccessibilityTests(IdbEndToEndTestCase):
                 f"{self._testMethodName} requires {required.value} capability"
             )
         await super().asyncSetUp()
-        for bundle_id in (SAFARI_BUNDLE_ID, FIXTURE_APP_BUNDLE_ID, SETTINGS_BUNDLE_ID):
+        for bundle_id in (SAFARI_BUNDLE_ID, FIXTURE_APP_BUNDLE_ID):
             await self.setup_terminate_quietly(bundle_id)
-        await run_with_registered_cleanup(
-            self.addAsyncCleanup,
-            lambda: self.setup_terminate_quietly(SETTINGS_BUNDLE_ID),
-            lambda: self.setup_idb("launch", SETTINGS_BUNDLE_ID),
-        )
+        if self._testMethodName not in FIXTURE_TESTS:
+            return
+        await self.setup_install_fixture_app()
+        await self.setup_idb("launch", FIXTURE_APP_BUNDLE_ID, FIXTURE_LAUNCH_ARGUMENT)
         self.control = await self.wait_for_control()
 
     async def describe_all(self, *extra: str) -> Any:
@@ -293,7 +304,7 @@ class AccessibilityTests(IdbEndToEndTestCase):
         return document
 
     async def wait_for_control(self) -> dict[str, Any]:
-        """Wait for a labelled Settings row. Relaunch Settings if it has exited.
+        """Wait for the fixture's General row. Relaunch the fixture if it has exited.
 
         Retry only an empty result or a missing translation object.
         """
@@ -303,19 +314,28 @@ class AccessibilityTests(IdbEndToEndTestCase):
             if completed.returncode != 0:
                 if ACCESSIBILITY_NOT_READY_MARKER not in completed.error_text:
                     self.fail_or_skip_for(" ".join(DESCRIBE_ALL_ARGS), completed)
-                if SETTINGS_BUNDLE_ID not in await self.simctl.running_bundle_ids():
-                    await self.setup_idb("launch", SETTINGS_BUNDLE_ID, check=False)
+                if FIXTURE_APP_BUNDLE_ID not in await self.simctl.running_bundle_ids():
+                    await self.setup_idb(
+                        "launch",
+                        FIXTURE_APP_BUNDLE_ID,
+                        FIXTURE_LAUNCH_ARGUMENT,
+                        check=False,
+                    )
                 raise NotReady("the simulator has no accessibility translation object")
-            controls = _labelled_controls(json.loads(completed.text))
+            controls = [
+                control
+                for control in _labelled_controls(json.loads(completed.text))
+                if _identifier(control) == GENERAL_ROW_ID
+            ]
             if not controls:
                 raise NotReady(
-                    f"Settings has no labelled rows yet; response: {completed.text}"
+                    f"The fixture has no General row yet; response: {completed.text}"
                 )
             return controls[0]
 
         try:
             return await wait_until(
-                "No labelled control", CONTROL_DISCOVERY_TIMEOUT_SECONDS, read
+                "No General row", CONTROL_DISCOVERY_TIMEOUT_SECONDS, read
             )
         except HarnessError as error:
             self.fail(str(error))
@@ -330,7 +350,7 @@ class AccessibilityTests(IdbEndToEndTestCase):
         self.assertEqual(axbridge["backend"], AXBRIDGE_BACKEND)
         for name, document in ((AX_BACKEND, ax), (AXBRIDGE_BACKEND, axbridge)):
             controls = _labelled_controls(document)
-            self.assertTrue(controls, f"{name} should see Settings' rows")
+            self.assertTrue(controls, f"{name} should see the fixture's rows")
         shared = _labels(ax) & _labels(axbridge)
         self.assertTrue(
             shared,
@@ -505,14 +525,7 @@ class AccessibilityTests(IdbEndToEndTestCase):
             fields = [
                 element
                 for element in _elements(await self.describe_all_complete("axbridge"))
-                if _has_area(element)
-                and (
-                    element.get("type") == "SearchField"
-                    or (
-                        element.get("type") == "TextField"
-                        and element.get("subrole") == "SearchField"
-                    )
-                )
+                if element.get("identifier") == SEARCH_FIELD_ID and _has_area(element)
             ]
             if len(fields) != 1:
                 raise NotReady(f"Expected one search field, found {len(fields)}")
@@ -523,19 +536,11 @@ class AccessibilityTests(IdbEndToEndTestCase):
             return fields[0]
 
         return await wait_until(
-            "Settings search field", UI_UPDATE_TIMEOUT_SECONDS, read
+            "The fixture's search field", UI_UPDATE_TIMEOUT_SECONDS, read
         )
-
-    async def restore_search_field(self, value: str) -> None:
-        field = await self.wait_for_search_field()
-        x, y = _center(field)
-        await self.idb("ui", "set-value", str(x), str(y), "--value", value)
 
     async def test_ui_set_value_updates_the_search_field(self) -> None:
         field = await self.wait_for_search_field()
-        original = field.get("value") or ""
-        self.assertIsInstance(original, str)
-        self.addAsyncCleanup(self.restore_search_field, original)
         x, y = _center(field)
 
         completed = await self.idb(
@@ -544,8 +549,8 @@ class AccessibilityTests(IdbEndToEndTestCase):
 
         self.assertEqual(completed.stdout, b"")
         await self.wait_for_search_field("idb-first")
-        # The first write puts Settings into search mode, so the second is
-        # written against a raised keyboard and a layout that has moved under it.
+        # The first write can give the field the keyboard, so the second is
+        # written at wherever the field is once that has settled.
         field = await self.wait_for_search_field()
         x, y = _center(field)
         await self.idb("ui", "set-value", str(x), str(y), "--value", "idb-second")
@@ -621,13 +626,13 @@ class AccessibilityTests(IdbEndToEndTestCase):
         return f"{where} on a {screen['width']:.0f}×{screen['height']:.0f} screen"
 
     @documented_demo(
-        slug="open-a-settings-page-by-id",
-        title="Open a Settings page by accessibility identifier",
+        slug="open-a-page-by-id",
+        title="Open a page by accessibility identifier",
         summary=(
             "Use an accessibility identifier to find and tap the General row "
-            "in Settings without calculating screen coordinates. Then wait "
-            "for the General page and read its navigation bar to verify that "
-            "the tap opened the expected destination."
+            "of a list without calculating screen coordinates. Then wait for "
+            "the General page and read its navigation bar to verify that the "
+            "tap opened the expected destination."
         ),
     )
     async def test_ui_opens_general_by_identifier_and_confirms_it(self) -> None:
@@ -728,7 +733,7 @@ class AccessibilityTests(IdbEndToEndTestCase):
 
         async def read() -> tuple[dict[str, float], dict[str, Any]]:
             snapshot = await self.describe_all_complete("axbridge")
-            after = _settings_row_positions(snapshot)
+            after = _row_positions(snapshot)
             movement = {
                 identifier: after[identifier] - y
                 for identifier, y in before.items()
@@ -747,14 +752,14 @@ class AccessibilityTests(IdbEndToEndTestCase):
             return after, snapshot
 
         return await wait_until(
-            f"Settings did not scroll {direction}", UI_UPDATE_TIMEOUT_SECONDS, read
+            f"The list did not scroll {direction}", UI_UPDATE_TIMEOUT_SECONDS, read
         )
 
     @documented_demo(
         slug="scroll-a-list",
         title="Scroll a list and verify the result",
         summary=(
-            "Scroll the Settings list down from the General row and use the "
+            "Scroll a list down from its General row and use the "
             "accessibility tree to measure how far the rows moved. Pick a "
             "visible row as the starting point for the reverse gesture, scroll "
             "back up, and measure again. This verifies the effect of each "
@@ -762,9 +767,9 @@ class AccessibilityTests(IdbEndToEndTestCase):
             "the list moved."
         ),
     )
-    async def test_ui_scroll_moves_settings_rows_down_and_up(self) -> None:
+    async def test_ui_scroll_moves_rows_down_and_up(self) -> None:
         await self.wait_for(GENERAL_ROW, lookup=UiWait())
-        before = _settings_row_positions(await self.describe_all_complete("axbridge"))
+        before = _row_positions(await self.describe_all_complete("axbridge"))
         self.assertIn(GENERAL_ROW_ID, before)
 
         await self.idb(
@@ -779,8 +784,8 @@ class AccessibilityTests(IdbEndToEndTestCase):
         after_down, scrolled = await self.wait_for_scroll(before, "down")
         self.note(self._movement(before, after_down, "up"), GENERAL_ROW_ID)
 
-        on_screen = _settings_rows_on_screen(scrolled)
-        self.assertTrue(on_screen, "No Settings row is on screen after scrolling down")
+        on_screen = _rows_on_screen(scrolled)
+        self.assertTrue(on_screen, "No row is on screen after scrolling down")
         # A row from the middle of the screen: one at an edge can sit half
         # under the bar the list scrolls beneath, which is not where a scroll
         # can begin.

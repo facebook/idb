@@ -747,7 +747,7 @@ class SuiteCapabilityTests(unittest.TestCase):
         "test_ui_describe_resolves_a_point_and_a_marker": (
             SuiteCapability.ACCESSIBILITY_READ
         ),
-        "test_ui_scroll_moves_settings_rows_down_and_up": (
+        "test_ui_scroll_moves_rows_down_and_up": (
             SuiteCapability.ACCESSIBILITY_INTERACTION
         ),
         "test_ui_tap_opens_general_by_point": (
