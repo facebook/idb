@@ -67,11 +67,13 @@ final class ServiceCommandTests: XCTestCase {
     let services = RecordingServices()
     XCTAssertEqual(FBBridgeCommand.dispatch(service: "notifications", action: "delivered", arguments: ["com.example.app", "ignored"], services: services), 23)
     XCTAssertEqual(FBBridgeCommand.dispatch(service: "notifications", action: "delivered", arguments: [], services: services), 23)
+    XCTAssertEqual(FBBridgeCommand.dispatch(service: "notifications", action: "clear-delivered", arguments: ["com.example.app"], services: services), 23)
     XCTAssertEqual(
       services.calls,
       [
         Call(service: "deliveredNotifications", action: "delivered", arguments: ["com.example.app"]),
         Call(service: "deliveredNotifications", action: "delivered", arguments: [nil]),
+        Call(service: "deliveredNotifications", action: "clear-delivered", arguments: ["com.example.app"]),
       ])
   }
 
