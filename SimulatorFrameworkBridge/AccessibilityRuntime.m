@@ -215,6 +215,52 @@
 
 @end
 
+@implementation FBAXDisplayIdentity
+
+- (instancetype)initWithUniqueID:(NSString *)uniqueID displayID:(uint32_t)displayID
+{
+  self = [super init];
+  if (self) {
+    _uniqueID = [uniqueID copy];
+    _displayID = displayID;
+  }
+  return self;
+}
+
+@end
+
+@implementation FBAXDisplayInventoryOutcome
+
+- (instancetype)initWithStatus:(FBAXDisplayInventoryStatus)status
+                      displays:(NSArray<FBAXDisplayIdentity *> *)displays
+                 failureReason:(nullable NSString *)failureReason
+{
+  self = [super init];
+  if (self) {
+    _status = status;
+    _displays = [displays copy];
+    _failureReason = [failureReason copy];
+  }
+  return self;
+}
+
++ (instancetype)available:(NSArray<FBAXDisplayIdentity *> *)displays
+{
+  return [[self alloc] initWithStatus:FBAXDisplayInventoryStatusAvailable displays:displays failureReason:nil];
+}
+
++ (instancetype)unavailable:(NSString *)failureReason
+{
+  return [[self alloc] initWithStatus:FBAXDisplayInventoryStatusUnavailable displays:@[] failureReason:failureReason];
+}
+
++ (instancetype)failed:(NSString *)failureReason
+{
+  return [[self alloc] initWithStatus:FBAXDisplayInventoryStatusFailed displays:@[] failureReason:failureReason];
+}
+
+@end
+
 @implementation FBAXDeviceSettingOutcome
 
 - (instancetype)initWithStatus:(FBAXDeviceSettingStatus)status
@@ -361,6 +407,11 @@ typedef struct {
   const char *expected;
 } FBAXBoundSelector;
 
+static const FBAXBoundSelector kFBAXDisplaySelectors[] = {
+  {"XCTAutomationSupport.XCTDisplayManager", "allDisplayIDs", YES, "@16@0:8"},
+  {"XCTAutomationSupport.XCTDisplayManager", "uniqueIDForDisplayWithID:", YES, "@20@0:8I16"},
+};
+
 static const FBAXBoundSelector kFBAXBoundSelectors[] = {
   // AXRuntime
   {"AXElement", "elementWithAXUIElement:", YES, "@@:^{__AXUIElement=}"},
@@ -416,6 +467,16 @@ NSArray<NSString *> *FBAXSignatureWarnings(void)
   NSMutableArray<NSString *> *warnings = [NSMutableArray array];
   for (size_t index = 0; index < sizeof(kFBAXBoundSelectors) / sizeof(*kFBAXBoundSelectors); index++) {
     const FBAXBoundSelector bound = kFBAXBoundSelectors[index];
+    NSString *mismatch = FBAXSignatureMismatch(bound.className, bound.selectorName, bound.isClassMethod, bound.expected);
+    if (mismatch) {
+      [warnings addObject:mismatch];
+    }
+  }
+  for (size_t index = 0; index < sizeof(kFBAXDisplaySelectors) / sizeof(*kFBAXDisplaySelectors); index++) {
+    const FBAXBoundSelector bound = kFBAXDisplaySelectors[index];
+    if (!objc_lookUpClass(bound.className)) {
+      continue;
+    }
     NSString *mismatch = FBAXSignatureMismatch(bound.className, bound.selectorName, bound.isClassMethod, bound.expected);
     if (mismatch) {
       [warnings addObject:mismatch];
@@ -817,6 +878,48 @@ static NSString *const kFrontboardVisibilityEndowment = @"com.apple.frontboard.v
   }
 
   return self;
+}
+
+#pragma mark Display inventory
+
+- (FBAXDisplayInventoryOutcome *)displayInventory
+{
+  Class<XCTDisplayManagerClass> manager = (Class<XCTDisplayManagerClass>)objc_lookUpClass("XCTAutomationSupport.XCTDisplayManager");
+  if (!manager || ![manager respondsToSelector:@selector(allDisplayIDs)] || ![manager respondsToSelector:@selector(uniqueIDForDisplayWithID:)]) {
+    return [FBAXDisplayInventoryOutcome unavailable:@"Accessibility display inventory is unavailable"];
+  }
+  for (size_t index = 0; index < sizeof(kFBAXDisplaySelectors) / sizeof(*kFBAXDisplaySelectors); index++) {
+    const FBAXBoundSelector bound = kFBAXDisplaySelectors[index];
+    NSString *mismatch = FBAXSignatureMismatch(bound.className, bound.selectorName, bound.isClassMethod, bound.expected);
+    if (mismatch) {
+      return [FBAXDisplayInventoryOutcome unavailable:mismatch];
+    }
+  }
+  NSArray<NSNumber *> *identifiers = [manager allDisplayIDs];
+  if (![identifiers isKindOfClass:NSArray.class] || identifiers.count > 32) {
+    return [FBAXDisplayInventoryOutcome failed:@"Invalid accessibility display inventory"];
+  }
+  NSMutableSet<NSNumber *> *displayIDs = [NSMutableSet set];
+  NSMutableSet<NSString *> *uniqueIDs = [NSMutableSet set];
+  NSMutableArray<FBAXDisplayIdentity *> *displays = [NSMutableArray array];
+  for (NSNumber *identifier in identifiers) {
+    if (![identifier isKindOfClass:NSNumber.class]
+        || CFGetTypeID((__bridge CFTypeRef)identifier) == CFBooleanGetTypeID()
+        || CFNumberIsFloatType((__bridge CFNumberRef)identifier)
+        || identifier.longLongValue <= 0 || identifier.unsignedLongLongValue > UINT32_MAX
+        || [displayIDs containsObject:identifier]) {
+      return [FBAXDisplayInventoryOutcome failed:@"Invalid or duplicate accessibility display ID"];
+    }
+    [displayIDs addObject:identifier];
+    NSString *uniqueID = [manager uniqueIDForDisplayWithID:identifier.unsignedIntValue];
+    if (![uniqueID isKindOfClass:NSString.class] || uniqueID.length == 0 || uniqueID.length > 1024 || [uniqueIDs containsObject:uniqueID]) {
+      return [FBAXDisplayInventoryOutcome failed:@"Invalid or duplicate accessibility display identity"];
+    }
+    uniqueID = [uniqueID copy];
+    [uniqueIDs addObject:uniqueID];
+    [displays addObject:[[FBAXDisplayIdentity alloc] initWithUniqueID:uniqueID displayID:identifier.unsignedIntValue]];
+  }
+  return [FBAXDisplayInventoryOutcome available:displays];
 }
 
 #pragma mark Automation mode

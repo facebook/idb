@@ -266,6 +266,7 @@ NSDictionary<NSString *, id> *FBAXGeometryDictionaryProbe(BOOL rectangle, BOOL r
   _automationModeWrites = [NSMutableArray array];
   _deviceSettings = [NSMutableDictionary dictionary];
   _deviceSettingWrites = [NSMutableArray array];
+  _displayInventoryOutcome = [FBAXDisplayInventoryOutcome available:@[]];
   _hitTestOutcome = [FBAXHitTestOutcome empty];
   _windowServerOutcome = [FBAXFrontmostOutcome unresolved:@"no window-server outcome configured"];
   _runningBoardOutcome = [FBAXFrontmostOutcome unresolved:@"no running-board outcome configured"];
@@ -287,6 +288,12 @@ NSDictionary<NSString *, id> *FBAXGeometryDictionaryProbe(BOOL rectangle, BOOL r
 {
   [self recordOperation:@"applicationElement"];
   return self.applicationElements[@(pid)];
+}
+
+- (FBAXDisplayInventoryOutcome *)displayInventory
+{
+  [self recordOperation:@"displayInventory"];
+  return self.displayInventoryOutcome;
 }
 
 // The snapshot API's own keys, spelled here rather than shared with the service so a test fails if the

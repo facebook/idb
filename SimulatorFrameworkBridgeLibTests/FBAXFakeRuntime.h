@@ -114,6 +114,8 @@ NSDictionary<NSString *, id> *FBAXGeometryDictionaryProbe(BOOL rectangle, BOOL r
 /** Every interaction attempted, including the one that raised. */
 @property (nonatomic, readonly, strong) NSMutableArray<NSString *> *operations;
 
+@property (nonatomic, strong) FBAXDisplayInventoryOutcome *displayInventoryOutcome;
+
 /** Application elements by pid. A pid absent here is answered with nil, as an unknown pid is. */
 @property (nonatomic, strong) NSMutableDictionary<NSNumber *, FBAXFakeElement *> *applicationElements;
 

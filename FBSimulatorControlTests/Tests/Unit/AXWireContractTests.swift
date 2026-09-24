@@ -146,6 +146,7 @@ final class AXWireContractTests: XCTestCase {
   // so a verb added host-side without a guest that answers it fails here.
   func testVerbWireValues() {
     let expected: [AXWire.Verb: String] = [
+      .displays: "displays",
       .describe: "describe",
       .hitTest: "hittest",
       .perform: "perform",

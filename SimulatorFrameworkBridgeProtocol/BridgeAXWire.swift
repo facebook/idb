@@ -130,6 +130,7 @@ public enum BridgeAXWire {
   /// The guest verbs — the one-shot CLI subcommand and the persistent-transport `verb` value share this
   /// spelling.
   public enum Verb: String, Codable, Sendable, CaseIterable {
+    case displays
     case describe
     case hitTest = "hittest"
     case perform

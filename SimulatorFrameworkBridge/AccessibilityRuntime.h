@@ -291,6 +291,34 @@ typedef NS_ENUM(NSUInteger, FBAXDeviceSettingStatus) {
 
 @end
 
+#pragma mark - Display inventory
+
+@interface FBAXDisplayIdentity : NSObject
+@property (nonatomic, readonly, copy) NSString *uniqueID;
+@property (nonatomic, readonly) uint32_t displayID;
+- (instancetype)initWithUniqueID:(NSString *)uniqueID displayID:(uint32_t)displayID;
+- (instancetype)init NS_UNAVAILABLE;
++ (instancetype)new NS_UNAVAILABLE;
+@end
+
+typedef NS_ENUM(NSUInteger, FBAXDisplayInventoryStatus) {
+  FBAXDisplayInventoryStatusAvailable,
+  FBAXDisplayInventoryStatusUnavailable,
+  FBAXDisplayInventoryStatusFailed,
+};
+
+@interface FBAXDisplayInventoryOutcome : NSObject
+@property (nonatomic, readonly) FBAXDisplayInventoryStatus status;
+/** Owned identities, meaningful only when available. */
+@property (nonatomic, readonly, copy) NSArray<FBAXDisplayIdentity *> *displays;
+@property (nullable, nonatomic, readonly, copy) NSString *failureReason;
++ (instancetype)available:(NSArray<FBAXDisplayIdentity *> *)displays;
++ (instancetype)unavailable:(NSString *)failureReason;
++ (instancetype)failed:(NSString *)failureReason;
+- (instancetype)init NS_UNAVAILABLE;
++ (instancetype)new NS_UNAVAILABLE;
+@end
+
 #pragma mark - The runtime
 
 /**
@@ -299,6 +327,9 @@ typedef NS_ENUM(NSUInteger, FBAXDeviceSettingStatus) {
  * elements are opaque handles only the runtime interprets.
  */
 @protocol FBAXRuntime <NSObject>
+
+/** Maps stable display identities to the accessibility display namespace. */
+- (FBAXDisplayInventoryOutcome *)displayInventory;
 
 /**
  * An opaque handle to a process's application element, to be read with `-readAttributes:ofElement:`.

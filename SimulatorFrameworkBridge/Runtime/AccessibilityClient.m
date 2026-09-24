@@ -235,6 +235,15 @@ static void FBAXClientException(NSException *exception, NSError **error)
   }
 }
 
+- (FBAXDisplayInventoryOutcome *)displayInventory
+{
+  @try {
+    return [_runtime displayInventory];
+  } @catch (NSException *exception) {
+    return [FBAXDisplayInventoryOutcome failed:[NSString stringWithFormat:@"the reader raised while answering: %@", exception.reason ?: exception.name]];
+  }
+}
+
 - (FBAXDeviceSettingOutcome *)enabledStateForDeviceSetting:(FBAXDeviceSetting)setting error:(NSError **)error
 {
   @try {

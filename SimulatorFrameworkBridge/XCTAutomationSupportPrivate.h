@@ -121,4 +121,10 @@ typedef NSArray<NSNumber *> *_Nullable (*FBAXAttributeNumbersForNamesFn)(NSArray
 + (nullable XCAccessibilityElement *)elementWithAXUIElement:(void *)axUIElement;
 @end
 
+/** Display inventory returned at +0; callers copy identifiers before returning owned results. */
+@protocol XCTDisplayManagerClass <NSObject>
++ (nullable NSArray<NSNumber *> *)allDisplayIDs;
++ (nullable NSString *)uniqueIDForDisplayWithID:(unsigned int)displayID;
+@end
+
 NS_ASSUME_NONNULL_END

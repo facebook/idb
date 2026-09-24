@@ -1295,6 +1295,30 @@ private final class AccessibilityRequest {
       )
     }
 
+    if verb == .displays {
+      let outcome = client.displayInventory()
+      switch outcome.status {
+      case .available:
+        return [
+          responseOk: true,
+          "displays": outcome.displays.map { display -> [String: Any] in
+            ["uniqueID": display.uniqueID, "displayID": display.displayID]
+          },
+        ]
+      case .unavailable:
+        return FBAXBridgeTaggedErrorResponse(
+          message: outcome.failureReason ?? "Accessibility display inventory is unavailable",
+          kind: "capability_unavailable", pid: nil)
+      case .failed:
+        return FBAXBridgeTaggedErrorResponse(
+          message: outcome.failureReason ?? "Accessibility display inventory failed",
+          kind: errorKindReaderUnavailable, pid: nil)
+      @unknown default:
+        return FBAXBridgeTaggedErrorResponse(
+          message: "Unknown accessibility display inventory outcome",
+          kind: errorKindReaderUnavailable, pid: nil)
+      }
+    }
     if (verb == .settingsGet) || (verb == .settingsSet) {
       return try FBAXBridgeDeviceSetting(
         client: client,
@@ -1516,7 +1540,7 @@ private final class AccessibilityRequest {
   fileprivate func FBAXBridgeWireConstantsForTesting() -> [String: String] {
     [
       "node.elementType": axElementType, "node.elementBaseType": axElementBaseType, "node.label": axLabel, "node.value": axValue, "node.identifier": axIdentifier, "node.frame": axFrame, "node.automationType": axAutomationType, "node.children": axChildren, "request.verb": requestVerb, "request.pid": requestPid, "request.maxDepth": requestMaxDepth, "request.maxNodes": requestMaxNodes, "request.automationMode": requestAutomationMode, "request.attributes": requestAttributes, "request.translatorVocabulary": requestTranslatorVocabulary, "request.explainUnreachable": requestExplainUnreachable, "node.explainedBy": nodeExplainedBy, "node.isEnabled": nodeIsEnabled, "node.translatorRole": nodeTranslatorRole, "node.translatorSubrole": nodeTranslatorSubrole, "node.traits": nodeTraits, "node.elementIdentity": nodeElementIdentity, "request.x": requestX, "request.y": requestY, "request.method": requestMethod, "request.action": requestAction, "request.value": requestValue, "request.setting": requestSetting, "request.enabled": requestEnabled, "request.assertKey": requestAssertKey, "request.assertValue": requestAssertValue, "envelope.ok": responseOk, "envelope.enabled": responseEnabled, "envelope.tree": responseTree, "envelope.error": responseError, "envelope.empty": responseEmpty, "envelope.errorKind": responseErrorKind, "envelope.errorKindApplicationUnavailable": errorKindApplicationUnavailable, "envelope.errorKindApplicationNotResponding": errorKindApplicationNotResponding, "envelope.errorKindFrontmostUnresolved": errorKindFrontmostUnresolved, "envelope.errorKindReaderUnavailable": errorKindReaderUnavailable, "envelope.errorKindBadRequest": errorKindBadRequest, "envelope.errorKindAssertionFailed": errorKindAssertionFailed, "envelope.truncated": responseTruncated, "envelope.pid": responsePid, "envelope.method": responseMethod, "envelope.modal": responseModal, "envelope.automation": responseAutomation, "envelope.phases": responsePhases, "phases.traverse": phaseTraverse,
-      "phases.machRoundTrips": phaseMachRoundTrips, "automation.enabled": kAutomationEnabled, "automation.asserted": kAutomationAsserted, "modal.kind": modalKind, "modal.kindSystem": modalKindSystem, "modal.kindApp": modalKindApp, "modal.elementType": modalElementType, "modal.label": modalLabel, "modal.systemAlertWindowClass": systemAlertWindowClass, "modal.alertControllerClassPrefix": alertControllerClassPrefix, "verb.describe": AccessibilityVerb.describe.rawValue, "verb.hittest": AccessibilityVerb.hitTest.rawValue, "verb.perform": AccessibilityVerb.perform.rawValue, "verb.setvalue": AccessibilityVerb.setValue.rawValue, "verb.settingsGet": AccessibilityVerb.settingsGet.rawValue, "verb.settingsSet": AccessibilityVerb.settingsSet.rawValue, "verb.shutdown": AccessibilityVerb.shutdown.rawValue, "action.press": AccessibilityAction.press.rawValue, "action.scrollUp": AccessibilityAction.scrollUp.rawValue, "action.scrollDown": AccessibilityAction.scrollDown.rawValue, "action.scrollLeft": AccessibilityAction.scrollLeft.rawValue, "action.scrollRight": AccessibilityAction.scrollRight.rawValue, "action.scrollToVisible": AccessibilityAction.scrollToVisible.rawValue, "method.centerPoint": FrontmostMethod.centerPoint.rawValue, "method.windowServer": FrontmostMethod.windowServer.rawValue, "method.runningBoard": FrontmostMethod.runningBoard.rawValue,
+      "phases.machRoundTrips": phaseMachRoundTrips, "automation.enabled": kAutomationEnabled, "automation.asserted": kAutomationAsserted, "modal.kind": modalKind, "modal.kindSystem": modalKindSystem, "modal.kindApp": modalKindApp, "modal.elementType": modalElementType, "modal.label": modalLabel, "modal.systemAlertWindowClass": systemAlertWindowClass, "modal.alertControllerClassPrefix": alertControllerClassPrefix, "verb.displays": AccessibilityVerb.displays.rawValue, "verb.describe": AccessibilityVerb.describe.rawValue, "verb.hittest": AccessibilityVerb.hitTest.rawValue, "verb.perform": AccessibilityVerb.perform.rawValue, "verb.setvalue": AccessibilityVerb.setValue.rawValue, "verb.settingsGet": AccessibilityVerb.settingsGet.rawValue, "verb.settingsSet": AccessibilityVerb.settingsSet.rawValue, "verb.shutdown": AccessibilityVerb.shutdown.rawValue, "action.press": AccessibilityAction.press.rawValue, "action.scrollUp": AccessibilityAction.scrollUp.rawValue, "action.scrollDown": AccessibilityAction.scrollDown.rawValue, "action.scrollLeft": AccessibilityAction.scrollLeft.rawValue, "action.scrollRight": AccessibilityAction.scrollRight.rawValue, "action.scrollToVisible": AccessibilityAction.scrollToVisible.rawValue, "method.centerPoint": FrontmostMethod.centerPoint.rawValue, "method.windowServer": FrontmostMethod.windowServer.rawValue, "method.runningBoard": FrontmostMethod.runningBoard.rawValue,
     ]
   }
 
