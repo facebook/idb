@@ -10,7 +10,9 @@ targets:
   # install this app on demand (IDBCommandExecutor.ensureReplHostAppInstalled)
   # and drive the REPL against it. It also requests privacy-gated services on
   # demand, so a caller that pre-approved them from outside the container can
-  # confirm the approval landed. Mirrors the Buck `ReplHost` apple_bundle.
+  # confirm the approval landed. Launched with --accessibility-fixture, it shows
+  # a fixed screen for the accessibility end-to-end tests instead. Mirrors the
+  # Buck `ReplHost` apple_bundle.
   ReplHost:
     type: application
     platform: iOS

@@ -14,7 +14,12 @@ import SwiftUI
 struct ReplHost: App {
   var body: some Scene {
     WindowGroup {
-      ContentView()
+      if AccessibilityFixture.isRequested {
+        AccessibilityFixture()
+          .ignoresSafeArea()
+      } else {
+        ContentView()
+      }
     }
   }
 }
