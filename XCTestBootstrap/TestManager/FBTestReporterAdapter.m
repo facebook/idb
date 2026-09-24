@@ -11,7 +11,6 @@
 #import <XCTestPrivate/XCActivityRecord.h>
 #import <XCTestPrivate/XCTestManager_IDEInterface-Protocol.h>
 
-#import "FBActivityRecord.h"
 #import "TestManagerResultSummary.h"
 
 #pragma clang diagnostic push

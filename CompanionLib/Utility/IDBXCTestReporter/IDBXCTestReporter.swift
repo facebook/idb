@@ -253,7 +253,7 @@ final class IDBXCTestReporter: NSObject, XCTestReporter, DataConsumer, @unchecke
           try .with {
             $0.payload = attachment.payload ?? Data()
             $0.name = attachment.name
-            $0.timestamp = attachment.timestamp.timeIntervalSince1970
+            $0.timestamp = attachment.timestamp?.timeIntervalSince1970 ?? 0
             $0.uniformTypeIdentifier = attachment.uniformTypeIdentifier
             if let userInfo = attachment.userInfo {
               $0.userInfoJson = try translate(attachmentUserInfo: userInfo)
