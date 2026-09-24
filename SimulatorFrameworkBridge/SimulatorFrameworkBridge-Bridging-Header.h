@@ -13,6 +13,7 @@
  #import <SimulatorFrameworkBridgeRuntime/ContactsStoreClient.h>
  #import <SimulatorFrameworkBridgeRuntime/DeliveredNotificationsClient.h>
  #import <SimulatorFrameworkBridgeRuntime/DeviceStateClient.h>
+ #import <SimulatorFrameworkBridgeRuntime/DynamicStoreClient.h>
  #import <SimulatorFrameworkBridgeRuntime/HealthSettingsClient.h>
  #import <SimulatorFrameworkBridgeRuntime/KeyedArchiveReference.h>
  #import <SimulatorFrameworkBridgeRuntime/NetworkConfigurationStore.h>
@@ -27,6 +28,7 @@
  #import "Runtime/ContactsStoreClient.h"
  #import "Runtime/DeliveredNotificationsClient.h"
  #import "Runtime/DeviceStateClient.h"
+ #import "Runtime/DynamicStoreClient.h"
  #import "Runtime/HealthSettingsClient.h"
  #import "Runtime/KeyedArchiveReference.h"
  #import "Runtime/NetworkConfigurationStore.h"
