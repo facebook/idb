@@ -86,6 +86,17 @@ final class NetworkConfigurationTests: XCTestCase {
     }
   }
 
+  func testListPreservesArrayValuesInTheStore() throws {
+    for service in ["dns", "proxy"] {
+      let runtime = FBNetworkConfigurationTestRuntime()
+      runtime.configuration = ["first", ["nested": true]] as [Any]
+
+      // BUG: the read is typed as a dictionary, so an array-valued entry raises instead of listing — flipped in the following commit.
+      let exception = FBExceptionRaisedBy { _ = runtime.run(service: service, action: "list", arguments: []) }
+      XCTAssertEqual(exception?.name, .invalidArgumentException, service)
+    }
+  }
+
   func testMissingListConfigurationPrintsEmptyObject() {
     for service in ["dns", "proxy"] {
       let runtime = FBNetworkConfigurationTestRuntime()

@@ -72,6 +72,8 @@ int handleNotificationSettingsActionWithGateway(NSString *_Nullable action, NSSt
 Class _Nullable FBHealthAuthorizationStoreClass(void);
 BOOL FBHealthRuntimeDeclaresSelector(NSString *selectorName);
 NSException *_Nullable FBHealthApproveException(NSArray<NSString *> *types);
+/** Catches an Objective-C exception raised by `block`, which Swift cannot. */
+NSException *_Nullable FBExceptionRaisedBy(void(NS_NOESCAPE ^ block)(void));
 
 /** Exercises the runtime queue from Objective-C so no exception unwinds through Swift. */
 NSDictionary<NSString *, NSNumber *> *FBAXRuntimeQueueProbe(BOOL raise);

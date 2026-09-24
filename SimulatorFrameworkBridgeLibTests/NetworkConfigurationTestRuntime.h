@@ -15,7 +15,7 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic) BOOL writeSucceeds;
 @property (nonatomic) BOOL notifySucceeds;
 @property (nonatomic, copy) NSSet<NSString *> *missingSymbols;
-@property (nullable, nonatomic, copy) NSDictionary<NSString *, id> *configuration;
+@property (nullable, nonatomic, copy) id configuration;
 @property (nonatomic, readonly) NSMutableArray<NSString *> *operations;
 @property (nonatomic, readonly) NSMutableArray<NSString *> *keys;
 @property (nonatomic, readonly) NSMutableArray<NSDictionary<NSString *, id> *> *writes;
