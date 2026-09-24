@@ -187,16 +187,16 @@ public final class SimulatorHID: CustomStringConvertible, @unchecked Sendable {
 
   // MARK: - Purple / GSEvents
 
-  /// Rotates through vendor HID when device motion is supported, otherwise through Purple.
+  /// Rotates through the backend the simulator's motion capabilities select: vendor HID where the
+  /// runtime reports device motion, Purple otherwise.
   func sendOrientation(_ orientation: SimulatorHIDDeviceOrientation, legacyPurpleEncoding: Bool = true) async throws {
     guard let simulator else { throw WeakTargetError.simulator }
-    do {
-      try await SimulatorMotionCapability.deviceMotionState.requireSupported(on: simulator)
-    } catch SimulatorCoreDeviceError.unsupported {
+    switch try await MotionCapabilities.resolve(on: simulator).orientationWriteBackend {
+    case .vendorHID:
+      try await sendVendorEvent(orientation.vendorEvent(), on: simulator)
+    case .purple:
       try await purple.sendOrientation(legacyPurpleEncoding ? orientation : orientation.physicalPurpleOrientation)
-      return
     }
-    try await sendVendorEvent(orientation.vendorEvent(), on: simulator)
   }
 
   private func sendVendorEvent(_ event: IndigoVendorDefinedEvent, on simulator: Simulator) async throws {
@@ -278,7 +278,7 @@ public final class SimulatorHID: CustomStringConvertible, @unchecked Sendable {
       return false
     case let .hinge(angle):
       guard let simulator else { throw WeakTargetError.simulator }
-      try await SimulatorMotionCapability.hingeAngle.requireSupported(on: simulator)
+      try await MotionCapabilities.resolve(on: simulator).require(.hingeAngle)
       try await sendVendorEvent(angle.vendorEvent(), on: simulator)
       return false
     case .shake:

@@ -69,15 +69,15 @@ public struct SimulatorOrientationCommands {
   }
 
   public func current() async throws -> SimulatorDeviceOrientation {
-    do {
-      try await SimulatorMotionCapability.deviceMotionState.requireSupported(on: simulator)
-    } catch SimulatorCoreDeviceError.unsupported {
+    switch try await MotionCapabilities.resolve(on: simulator).orientationReadBackend {
+    case .legacyService:
       return try await SimulatorOrientationProtocol.read(on: simulator)
+    case .guestMotionState:
+      // A fresh guest client reads the motion provider's current state, including rotations made
+      // outside this process.
+      let output = try await simulator.runSimulatorFrameworkBridge(withService: "orientation", action: "get")
+      return try Self.decodeMotionState(output)
     }
-    // The CoreDevice motion stream may replay an old daemon snapshot. A fresh guest client reads
-    // the motion provider's current state, including rotations made outside this process.
-    let output = try await simulator.runSimulatorFrameworkBridge(withService: "orientation", action: "get")
-    return try Self.decodeMotionState(output)
   }
 
   static func decodeMotionState(_ output: String) throws -> SimulatorDeviceOrientation {

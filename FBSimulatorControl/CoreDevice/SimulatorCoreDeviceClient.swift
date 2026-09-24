@@ -74,6 +74,19 @@ final class SimulatorCoreDeviceClient: @unchecked Sendable {
     }
   }
 
+  /// `perform`, for a feature the caller can do without: nil when the runtime, the CoreDevice
+  /// installation or the toolchain cannot provide it at all.
+  func performIfSupported<Input: Encodable, Response: Sendable>(
+    action: String, service: String, input: Input,
+    decode: @escaping @Sendable (xpc_object_t) throws -> Response
+  ) async throws -> Response? {
+    do {
+      return try await perform(action: action, service: service, input: input, decode: decode)
+    } catch SimulatorCoreDeviceError.unsupported {
+      return nil
+    }
+  }
+
   /// One action whose provider pushes events; see `CoreDeviceSession.stream`.
   func stream<Input: Encodable, Response: Sendable>(
     action: String, service: String, input: Input,

@@ -73,15 +73,15 @@ public struct SimulatorDisplayCommands {
       decode: SimulatorTouchscreenProtocol.touchscreens)
   }
 
-  /// Returns nil only when the provider lacks the capability needed to select a display.
+  /// Returns nil only when the runtime lacks the feature, or the provider the fields, needed to
+  /// select a display.
   func activeIntegratedDisplayIfSupported() async throws -> SimulatorDisplay? {
-    do {
-      switch try await read(decode: SimulatorDisplayProtocol.snapshot) {
-      case let .displays(displays): return try Self.activeIntegratedDisplay(in: displays)
-      case .legacyProvider: return nil
-      }
-    } catch SimulatorCoreDeviceError.unsupported(_) {
-      return nil
+    let snapshot = try await simulator.coreDevice.performIfSupported(
+      action: SimulatorDisplayProtocol.action, service: SimulatorDisplayProtocol.service, input: CoreDeviceEmptyInput(),
+      decode: SimulatorDisplayProtocol.snapshot)
+    switch snapshot {
+    case let .displays(displays): return try Self.activeIntegratedDisplay(in: displays)
+    case .legacyProvider, nil: return nil
     }
   }
 

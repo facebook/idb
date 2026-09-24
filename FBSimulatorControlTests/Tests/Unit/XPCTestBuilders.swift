@@ -23,3 +23,11 @@ extension SimulatorCoreDevice {
     return result
   }
 }
+
+extension SimulatorMotionCapability {
+  /// Decodes a capability reply and requires this capability of it, as the commands do of a
+  /// resolved `MotionCapabilities`.
+  func requireSupported(in reply: xpc_object_t) throws {
+    try CoreDeviceReply.decode(MotionCapabilities.self, from: reply).require(self)
+  }
+}

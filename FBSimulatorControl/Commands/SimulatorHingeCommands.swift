@@ -20,7 +20,7 @@ public struct SimulatorHingeCommands {
 
   /// Reads a fresh measured angle. During a hinge animation this can be between its endpoints.
   public func angle() async throws -> SimulatorHingeAngle {
-    try await SimulatorMotionCapability.hingeAngle.requireSupported(on: simulator)
+    try await MotionCapabilities.resolve(on: simulator).require(.hingeAngle)
     let channel = UUID()
     // Samples older than the request are the provider replaying its last known state.
     let notBefore = ProcessInfo.processInfo.systemUptime
