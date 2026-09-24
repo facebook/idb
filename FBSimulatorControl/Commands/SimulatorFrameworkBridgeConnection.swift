@@ -75,13 +75,14 @@ final class SimulatorFrameworkBridgeConnection: BridgeConnection, @unchecked Sen
     }
   }
 
-  /// Connects to `path`, retrying until `timeout` elapses or `guest` is known to have exited.
+  /// Connects until the deadline or guest failure. A shared lock loser may exit before its winner binds.
   ///
   /// `guest` is the process expected to bind `path`, passed only when this host spawned it.
   static func connect(
     path: String,
     timeout: TimeInterval,
     guest: FBSubprocess<AnyObject, AnyObject, AnyObject>? = nil,
+    scope: BridgeServiceScope = .exclusive,
     attempt: @escaping @Sendable (String) -> Int32? = attemptConnection
   ) async throws -> Int32 {
     guard path.utf8.count < sunPathCapacity else {
@@ -99,15 +100,17 @@ final class SimulatorFrameworkBridgeConnection: BridgeConnection, @unchecked Sen
           // another host's guest, so try once more before failing. `.done` rather than `hasCompleted`: a
           // cancelled or failed future is not evidence the process terminated.
           if let guest, guest.statLoc.state == .done {
-            if let fileDescriptor = attempt(path) {
-              continuation.resume(returning: fileDescriptor)
+            let exit = terminationCause(waitpidStatus: guest.statLoc.result?.int32Value)
+            if scope != .shared || exit.signal != nil || exit.exitCode != 0 {
+              if let fileDescriptor = attempt(path) {
+                continuation.resume(returning: fileDescriptor)
+                return
+              }
+              continuation.resume(
+                throwing: AXBridgeError.guestDiedBeforeBinding(
+                  pid: guest.processIdentifier, signal: exit.signal, exitCode: exit.exitCode, path: path))
               return
             }
-            let exit = terminationCause(waitpidStatus: guest.statLoc.result?.int32Value)
-            continuation.resume(
-              throwing: AXBridgeError.guestDiedBeforeBinding(
-                pid: guest.processIdentifier, signal: exit.signal, exitCode: exit.exitCode, path: path))
-            return
           }
           usleep(100_000)
         } while Date() < deadline

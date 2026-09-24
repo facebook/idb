@@ -218,7 +218,7 @@ actor SimulatorFrameworkBridgePersistentTransport: AXBridgeTransport {
     )
     let process = try await simulator.spawn(configuration)
     do {
-      let fileDescriptor = try await SimulatorFrameworkBridgeConnection.connect(path: socketPath, timeout: 10, guest: process)
+      let fileDescriptor = try await SimulatorFrameworkBridgeConnection.connect(path: socketPath, timeout: 10, guest: process, scope: scope)
       return SimulatorFrameworkBridgeConnection(fileDescriptor: fileDescriptor, ownership: ownership(process))
     } catch {
       simulator.logger.log("Could not reach the SimulatorFrameworkBridge guest just spawned on \(socketPath): \(error)")

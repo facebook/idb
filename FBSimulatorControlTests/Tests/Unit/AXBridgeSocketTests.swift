@@ -201,8 +201,7 @@ final class AXBridgeSocketTests: XCTestCase {
       close(pair[1])
     }
     let cases: [(BridgeServiceScope, FBSubprocess<AnyObject, AnyObject, AnyObject>, Int?, Int?)] = [
-      // BUG: a shared lock loser that exits cleanly before the winner binds fails startup — flipped in the following commit.
-      (.shared, normallyExitedGuest(code: 0), 0, nil),
+      (.shared, normallyExitedGuest(code: 0), nil, nil),
       (.exclusive, normallyExitedGuest(code: 0), 0, nil),
       (.shared, normallyExitedGuest(code: 3), 3, nil),
       (.shared, exitedGuest(pid: 4242, signal: SIGABRT), nil, Int(SIGABRT)),
@@ -211,7 +210,7 @@ final class AXBridgeSocketTests: XCTestCase {
       let attempts = OSAllocatedUnfairLock(initialState: 0)
       do {
         let connected = try await SimulatorFrameworkBridgeConnection.connect(
-          path: "\(directory)/contended.sock", timeout: 2, guest: guest,
+          path: "\(directory)/contended.sock", timeout: 2, guest: guest, scope: scope,
           attempt: { _ in
             attempts.withLock { count in
               count += 1
