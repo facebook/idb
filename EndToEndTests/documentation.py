@@ -51,7 +51,7 @@ DOCUMENTED_DEMOS: Mapping[str, str] = {
     ),
     "deliver-a-notification-and-watch-it-clear": (
         "EndToEndTests.test_accessibility.AccessibilityTests"
-        ".test_a_delivered_notification_is_held_until_it_is_opened"
+        ".test_a_delivered_notification_is_held_until_it_is_cleared"
     ),
     "read-a-web-page-in-safari": (
         "EndToEndTests.test_accessibility.AccessibilityTests"

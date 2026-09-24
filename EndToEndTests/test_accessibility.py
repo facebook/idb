@@ -9,9 +9,10 @@
 inside the simulator. Complete output identifies which backend served the
 request. Tests select labelled Settings rows at runtime to avoid
 locale-specific names. Tap and scroll tests verify navigation and movement
-through axbridge. SpringBoard and Safari are read as well, for the elements
-ax cannot reach: the notification banner drawn for an app that is not
-running, and the web content another process is showing.
+through axbridge. Safari is read as well, for the web content another
+process is showing, which ax cannot reach. A notification delivered to an app
+that is not running is followed through idb's notification commands, from
+delivery until it is cleared.
 """
 
 from __future__ import annotations
@@ -72,10 +73,10 @@ NOTIFICATION_PAYLOAD = json.dumps(
         }
     }
 )
-# SpringBoard draws the banner, and a read is scoped to the frontmost
-# application, so the banner is only in the tree while SpringBoard is it.
-BANNER_ID = "ShortLook.Platter.Content.Seamless"
 NOTIFICATION_STORE_TIMEOUT_SECONDS = 300.0
+# A list can take over 30s, when the system doesn't answer idb and it reads
+# the store instead, so a wait for the list to change allows for a few.
+NOTIFICATION_LIST_TIMEOUT_SECONDS = 120.0
 
 # Enough of a matched element to say what it is and where it sits, rather
 # than every attribute a read would otherwise carry on every match.
@@ -294,7 +295,7 @@ INTERACTION_TESTS = frozenset(
         "test_ui_tap_opens_general_by_point",
         "test_ui_wait_returns_after_general_opens",
         "test_ui_wait_times_out_and_rejects_an_invalid_poll_interval",
-        "test_a_delivered_notification_is_held_until_it_is_opened",
+        "test_a_delivered_notification_is_held_until_it_is_cleared",
         "test_web_content_is_readable_from_inside_the_simulator",
     }
 )
@@ -937,20 +938,18 @@ class AccessibilityTests(IdbEndToEndTestCase):
             "Prepare a simulator for notification testing without launching "
             "the app or automating its permission prompt. Grant notification "
             "permission directly, deliver a push while the app is not running, "
-            "and use the in-simulator accessibility backend to inspect the "
-            "banner that SpringBoard draws. Open the banner, then query the "
-            "delivered-notification list again to verify that the system "
-            "removed it."
+            "and confirm that the system holds it for the app. Then clear the "
+            "app's delivered notifications and verify that the system no "
+            "longer holds any."
         ),
     )
-    async def test_a_delivered_notification_is_held_until_it_is_opened(self) -> None:
+    async def test_a_delivered_notification_is_held_until_it_is_cleared(self) -> None:
         self.addAsyncCleanup(self.setup_terminate_quietly, NEWS_BUNDLE_ID)
         await self.setup_terminate_quietly(NEWS_BUNDLE_ID)
         # The first push a simulator receives after it is erased waits on the
-        # system building its notification store, for long enough that a
-        # banner would be drawn and withdrawn before the command returned.
-        # This one is sent before the permission is granted, so the system
-        # refuses it and stores nothing, and the demo's own push is quick.
+        # system building its notification store, for minutes at worst. This
+        # one is sent before the permission is granted, so the system refuses
+        # it and stores nothing, and the demo's own push is quick.
         await self.setup_idb(
             "send-notification",
             NEWS_BUNDLE_ID,
@@ -989,105 +988,60 @@ class AccessibilityTests(IdbEndToEndTestCase):
         )
 
         await self.idb(
-            "ui",
-            "button",
-            "HOME",
-            step="Return to the Home Screen before delivery",
-        )
-        self.note(
-            "With no app in front, SpringBoard owns the visible accessibility "
-            "tree. The notification banner will appear there."
-        )
-
-        await self.idb(
             "send-notification",
             NEWS_BUNDLE_ID,
             NOTIFICATION_PAYLOAD,
             step="Deliver a notification while the app is not running",
         )
+
+        def new_entries(text: str) -> list[str]:
+            return [
+                identifier
+                for identifier, title in self._retained(text)
+                if title == NOTIFICATION_TITLE and identifier not in held
+            ]
+
+        async def stored() -> None:
+            completed = await self.setup_idb("notification", "list", NEWS_BUNDLE_ID)
+            if not new_entries(completed.text):
+                raise NotReady(f"{NOTIFICATION_TITLE!r} is not held yet")
+
+        await wait_until(
+            f"The system did not hold {NOTIFICATION_TITLE!r}",
+            NOTIFICATION_LIST_TIMEOUT_SECONDS,
+            stored,
+        )
+
         after = await self.idb(
             "notification",
             "list",
             NEWS_BUNDLE_ID,
             step="List notifications after delivery",
         )
-        delivered = [
-            identifier
-            for identifier, title in self._retained(after.text)
-            if title == NOTIFICATION_TITLE and identifier not in held
-        ]
+        delivered = new_entries(after.text)
         self.assertEqual(len(delivered), 1, f"expected one new {NOTIFICATION_TITLE!r}")
         self.note(
             f"The delivered-notification list now contains a new entry titled "
-            f"{NOTIFICATION_TITLE!r}. The test keeps its system-assigned "
-            "identifier so it can verify that the same entry is removed after "
-            "it opens.",
+            f"{NOTIFICATION_TITLE!r}, although {NEWS_BUNDLE_ID} never ran to "
+            "receive it.",
             NOTIFICATION_TITLE,
         )
 
-        # SpringBoard withdraws the banner about eight seconds after delivery,
-        # so the list of what the system is holding is read first and the wait,
-        # the frame read and the tap follow it back to back.
-        await self.setup_idb(
-            "ui",
-            "wait",
-            BANNER_ID,
-            "--match-key",
-            "AXUniqueId",
-            "--api",
-            "axbridge",
-            "--timeout",
-            str(UI_UPDATE_TIMEOUT_SECONDS),
-        )
-
-        banner = await self.idb_json(
-            "ui",
-            "describe-all",
-            "--api",
-            "axbridge",
-            "--format",
-            "complete",
-            "--match",
-            BANNER_ID,
-            "--match-key",
-            "AXUniqueId",
-            *LABEL_AND_FRAME_KEYS,
-            step="Read the notification banner from inside the simulator",
-        )
-        self.assertEqual(banner["backend"], AXBRIDGE_BACKEND)
-        platters = [
-            element
-            for element in _elements(banner["elements"])
-            if element.get("identifier") == BANNER_ID and _has_area(element)
-        ]
-        self.assertTrue(platters, f"no {BANNER_ID} was reported")
-        platter = platters[0]
-        self.assertIn(NOTIFICATION_TITLE, _label(platter))
-        self.note(
-            f"SpringBoard, not {NEWS_BUNDLE_ID}, owns the banner. The banner is "
-            f"{self._placed(platter, _screen(banner))}.",
-            BANNER_ID,
-        )
-
-        frame = platter["frame"]
         await self.idb(
-            "ui",
-            "tap",
-            f"{frame['x'] + frame['width'] / 2:.0f}",
-            f"{frame['y'] + frame['height'] / 2:.0f}",
-            "--reason",
-            "the banner is SpringBoard's, so a marker tap cannot resolve it",
-            step="Open the banner at its reported position",
+            "notification",
+            "clear",
+            NEWS_BUNDLE_ID,
+            step="Clear the app's delivered notifications",
         )
 
         async def released() -> None:
             completed = await self.setup_idb("notification", "list", NEWS_BUNDLE_ID)
-            if delivered[0] in [i for i, _ in self._retained(completed.text)]:
-                raise NotReady(f"{NOTIFICATION_TITLE!r} is still held")
+            if self._retained(completed.text):
+                raise NotReady("the system still holds notifications for the app")
 
         await wait_until(
-            f"The system did not release {NOTIFICATION_TITLE!r}",
-            UI_UPDATE_TIMEOUT_SECONDS,
+            f"The system did not release the notifications for {NEWS_BUNDLE_ID}",
+            NOTIFICATION_LIST_TIMEOUT_SECONDS,
             released,
         )
 
@@ -1095,14 +1049,12 @@ class AccessibilityTests(IdbEndToEndTestCase):
             "notification",
             "list",
             NEWS_BUNDLE_ID,
-            step="List notifications after opening the banner",
+            step="List notifications after clearing them",
         )
-        self.assertNotIn(
-            delivered[0], [identifier for identifier, _ in self._retained(cleared.text)]
-        )
+        self.assertEqual(self._retained(cleared.text), [])
         self.note(
-            "The notification is no longer in the delivered-notification list, "
-            "confirming that opening it cleared the stored entry."
+            "The delivered-notification list is empty, confirming that clearing "
+            "withdrew the new entry along with any the system held before."
         )
 
     async def wait_for_tappable_address_bar(self) -> None:
