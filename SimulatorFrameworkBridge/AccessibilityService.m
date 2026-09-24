@@ -8,7 +8,6 @@
 #import "AccessibilityService.h"
 #import "AccessibilityService+Testing.h"
 
-#import "AccessibilityServiceServer.h"
 #import "AccessibilityService_Private.h"
 
 #if __has_include(<SimulatorFrameworkBridgeRuntime/AccessibilityClientProvider.h>)
@@ -71,9 +70,6 @@ int handleAccessibilityAction(NSString *action, NSArray<NSString *> *arguments)
 {
   return [AccessibilityServiceStaticFuncs handleAction:action
                                              arguments:arguments
-                                                 serve:^int32_t (NSString *socketPath, NSArray<NSString *> *serveArguments) {
-                                                   return FBAXBridgeServe(socketPath, serveArguments);
-                                                 }
                                          writeResponse:^(NSData *data) {
                                            fwrite(data.bytes, 1, data.length, stdout);
                                            fputc('\n', stdout);

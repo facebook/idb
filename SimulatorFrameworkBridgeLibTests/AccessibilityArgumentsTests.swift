@@ -59,16 +59,16 @@ final class AccessibilityArgumentsTests: XCTestCase {
   }
 
   func testServeOptionsUseFirstDuplicateEvenWhenInvalid() {
-    XCTAssertEqual(FBAXBridgeIdleTimeoutForTesting(["--idle-timeout", "bad", "--idle-timeout", "45"], 300), 300)
-    XCTAssertEqual(FBAXBridgeIdleTimeoutForTesting(["--idle-timeout", "45", "--idle-timeout", "90"], 300), 45)
-    XCTAssertFalse(FBAXBridgeExitOnDisconnectForTesting(["--exit-on-disconnect", "0", "--exit-on-disconnect", "1"]))
-    XCTAssertTrue(FBAXBridgeExitOnDisconnectForTesting(["--exit-on-disconnect", "YES"]))
-    XCTAssertFalse(FBAXBridgeExitOnDisconnectForTesting(["--exit-on-disconnect"]))
+    XCTAssertEqual(FBAXBridgeArguments.idleTimeout(arguments: ["--idle-timeout", "bad", "--idle-timeout", "45"], fallback: 300), 300)
+    XCTAssertEqual(FBAXBridgeArguments.idleTimeout(arguments: ["--idle-timeout", "45", "--idle-timeout", "90"], fallback: 300), 45)
+    XCTAssertFalse(FBAXBridgeArguments.exitOnDisconnect(arguments: ["--exit-on-disconnect", "0", "--exit-on-disconnect", "1"]))
+    XCTAssertTrue(FBAXBridgeArguments.exitOnDisconnect(arguments: ["--exit-on-disconnect", "YES"]))
+    XCTAssertFalse(FBAXBridgeArguments.exitOnDisconnect(arguments: ["--exit-on-disconnect"]))
   }
 
   func testServeTimeoutKeepsScannerWhitespaceAndSignHandling() {
-    XCTAssertEqual(FBAXBridgeIdleTimeoutForTesting(["--idle-timeout", "  +45"], 300), 45)
-    XCTAssertEqual(FBAXBridgeIdleTimeoutForTesting(["--idle-timeout", "45tail"], 300), 300)
+    XCTAssertEqual(FBAXBridgeArguments.idleTimeout(arguments: ["--idle-timeout", "  +45"], fallback: 300), 45)
+    XCTAssertEqual(FBAXBridgeArguments.idleTimeout(arguments: ["--idle-timeout", "45tail"], fallback: 300), 300)
   }
 
   func testStartupTimeoutIsOptionalAndUsesServeOptionParsing() {

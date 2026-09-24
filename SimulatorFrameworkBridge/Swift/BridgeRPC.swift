@@ -67,8 +67,8 @@ public enum BridgeRPC {
         idleTimeoutSeconds: FBAXBridgeArguments.idleTimeout(arguments: options, fallback: FBAXBridgeServer.defaultIdleTimeoutSeconds),
         initialClientTimeoutSeconds: FBAXBridgeArguments.startupTimeout(arguments: options),
         exitOnDisconnect: FBAXBridgeArguments.exitOnDisconnect(arguments: options),
-        // Bind the accessibility frameworks before the first client, as `accessibility serve` did,
-        // so the first read does not pay for it inside the client's timeout.
+        // Bind the accessibility frameworks before the first client so the first read does not pay
+        // for it inside the client's timeout.
         prepareRuntime: { FBAXClientProvider.prepare() },
         handleRequest: { handle($0) }
       )

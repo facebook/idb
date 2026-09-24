@@ -148,8 +148,6 @@ private let systemAlertWindowClass = "SBAlertItemWindow"
 private let alertControllerClassPrefix = "_UIAlertController"
 private typealias AccessibilityVerb = BridgeAXWire.Verb
 
-private let actionServe = "serve"
-
 private typealias AccessibilityAction = BridgeAXWire.Action
 
 private extension BridgeAXWire.Action {
@@ -1597,14 +1595,7 @@ private final class AccessibilityRequest {
     return Data(StaticVars.fallback.utf8)
   }
 
-  @objc public static func handleAction(_ action: String, arguments: [String], serve: (String, [String]) -> Int32, writeResponse: (Data) -> Void) -> Int32 {
-    if action == actionServe {
-      guard let socketPath = arguments.first, !socketPath.isEmpty else {
-        NSLog("[AccessibilityService] serve requires a socket path argument")
-        return 1
-      }
-      return serve(socketPath, Array(arguments.dropFirst()))
-    }
+  @objc public static func handleAction(_ action: String, arguments: [String], writeResponse: (Data) -> Void) -> Int32 {
     let request = FBAXBridgeArguments.request(action: action, arguments: arguments)
     let response = handleRequest(request)
     writeResponse(serializeResponse(response))

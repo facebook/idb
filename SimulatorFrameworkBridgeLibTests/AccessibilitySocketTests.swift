@@ -16,27 +16,26 @@ final class AccessibilitySocketTests: XCTestCase {
   var socketPath = ""
   var finished: XCTestExpectation?
 
-  override func setUp() {
-    super.setUp()
-    FBAXBridgeSetRuntimeForTesting(FBAXFakeRuntime())
-  }
-
   override func tearDown() {
     if finished != nil {
       finishServer()
     }
-    FBAXBridgeSetRuntimeForTesting(nil)
     super.tearDown()
   }
 
-  func startServerExclusive(exclusive: Bool, idleTimeoutSeconds: Int = 10) {
+  func serve(_ path: String, exclusive: Bool, idleTimeoutSeconds: Int32 = 10) -> Int32 {
+    FBAXBridgeServer.serve(socketPath: path, idleTimeoutSeconds: idleTimeoutSeconds, exitOnDisconnect: exclusive, prepareRuntime: {}) {
+      BridgeRPC.handle($0)
+    }
+  }
+
+  func startServerExclusive(exclusive: Bool, idleTimeoutSeconds: Int32 = 10) {
     socketPath = "/tmp/sfb-" + UUID().uuidString
     let finished = expectation(description: "server exits")
     self.finished = finished
     let path = socketPath
     DispatchQueue.global().async {
-      let result = FBAXBridgeServe(path, ["--idle-timeout", String(idleTimeoutSeconds), "--exit-on-disconnect", exclusive ? "1" : "0"])
-      XCTAssertEqual(result, 0)
+      XCTAssertEqual(self.serve(path, exclusive: exclusive, idleTimeoutSeconds: idleTimeoutSeconds), 0)
       finished.fulfill()
     }
   }
@@ -102,6 +101,17 @@ final class AccessibilitySocketTests: XCTestCase {
     return frame
   }
 
+  func frame(command: BridgeCommand) throws -> Data {
+    let bytes = try BridgeRequest(command: command).encoded()
+    var frame = try BridgeFrame.header(forSize: bytes.count)
+    frame.append(bytes)
+    return frame
+  }
+
+  func exitCode(of response: NSDictionary?) -> Int? {
+    (response?["result"] as? NSDictionary)?["exitCode"] as? Int
+  }
+
   func sendData(data: Data, to fd: Int32) {
     data.withUnsafeBytes { buffer in
       guard let bytes = buffer.baseAddress else { return }
@@ -149,14 +159,14 @@ final class AccessibilitySocketTests: XCTestCase {
     XCTAssertEqual(recv(fd, &byte, 1, 0), 0)
   }
 
-  func testAnotherStarterCannotUnlinkTheLiveListener() {
+  func testAnotherStarterCannotUnlinkTheLiveListener() throws {
     startServerExclusive(exclusive: false)
     close(connectClient())
-    XCTAssertEqual(FBAXBridgeServe(socketPath, ["--idle-timeout", "1"]), 0)
+    XCTAssertEqual(serve(socketPath, exclusive: false, idleTimeoutSeconds: 1), 0)
     let client = connectClient()
     defer { close(client) }
-    sendData(data: frame(payload: "{\"verb\":\"shutdown\"}"), to: client)
-    XCTAssertEqual(readResponse(fd: client), ["ok": true, "shutdown": true])
+    sendData(data: try frame(command: .shutdown), to: client)
+    XCTAssertEqual(exitCode(of: readResponse(fd: client)), 0)
     finishServer()
   }
 
@@ -219,25 +229,15 @@ final class AccessibilitySocketTests: XCTestCase {
     try? FileManager.default.removeItem(atPath: socketPath + ".lock")
   }
 
-  func testFragmentedFramesAndShutdownResponseOnOneConnection() {
+  func testFragmentedFramesAndShutdownResponseOnOneConnection() throws {
     startServerExclusive(exclusive: true)
     let client = connectClient()
-    let payloads = ["not json", "{\"verb\":\"shutdown\"}"]
-    for payload in payloads {
-      let frame = frame(payload: payload)
+    for (frame, expectedExitCode) in [(frame(payload: "not json"), 1), (try frame(command: .shutdown), 0)] {
       for index in 0..<frame.count {
         sendData(data: frame.subdata(in: index..<(index + 1)), to: client)
         usleep(1000)
       }
-      let response = readResponse(fd: client)
-      if payload == "not json" {
-        XCTAssertEqual(
-          response,
-          ["ok": false, "error": "malformed request frame", "error_kind": "bad_request"]
-        )
-      } else {
-        XCTAssertEqual(response, ["ok": true, "shutdown": true])
-      }
+      XCTAssertEqual(exitCode(of: readResponse(fd: client)), expectedExitCode)
     }
     assertEOF(fd: client)
     close(client)
@@ -255,8 +255,8 @@ final class AccessibilitySocketTests: XCTestCase {
     }
   }
 
-  func testTruncatedHeaderAndPayloadCloseTheConnection() {
-    let frame = frame(payload: "{\"verb\":\"shutdown\"}")
+  func testTruncatedHeaderAndPayloadCloseTheConnection() throws {
+    let frame = try frame(command: .shutdown)
     for length in [1, 6] {
       startServerExclusive(exclusive: true)
       let client = connectClient()
@@ -268,13 +268,13 @@ final class AccessibilitySocketTests: XCTestCase {
     }
   }
 
-  func testSharedServerAcceptsAnotherClientAfterDisconnect() {
+  func testSharedServerAcceptsAnotherClientAfterDisconnect() throws {
     startServerExclusive(exclusive: false)
     var client = connectClient()
     close(client)
     client = connectClient()
-    sendData(data: frame(payload: "{\"verb\":\"shutdown\"}"), to: client)
-    XCTAssertEqual(readResponse(fd: client), ["ok": true, "shutdown": true])
+    sendData(data: try frame(command: .shutdown), to: client)
+    XCTAssertEqual(exitCode(of: readResponse(fd: client)), 0)
     assertEOF(fd: client)
     close(client)
     finishServer()
@@ -342,7 +342,7 @@ final class AccessibilitySocketTests: XCTestCase {
 
   func testOverlongSocketPathIsRejected() {
     let path = "/tmp/".padding(toLength: 200, withPad: "x", startingAt: 0)
-    XCTAssertEqual(FBAXBridgeServe(path, []), 1)
+    XCTAssertEqual(serve(path, exclusive: true), 1)
   }
 
   func testRuntimeCallbacksStayOnTheCallingThread() {
