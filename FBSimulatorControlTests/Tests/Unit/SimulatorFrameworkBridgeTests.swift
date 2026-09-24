@@ -51,28 +51,40 @@ final class SimulatorFrameworkBridgeTests: XCTestCase {
       ["notifications", "delivered", "com.apple.news"])
   }
 
-  func testADeliveredNotificationsInvocationLaunchesTheBundledGuest() {
-    XCTAssertEqual(
-      deliveredNotificationsInvocation().executablePath(bundledGuestPath: bundledGuestPath),
-      bundledGuestPath)
+  private var stagingDirectory: URL {
+    directory.appendingPathComponent("staging")
   }
 
-  /// BUG: the guest launches from a directory with no `Info.plist`, so `BSBundleIDForPID` answers
-  /// nil for it and `usernotificationsd` refuses every cross-bundle request — flipped in the
-  /// following commit.
-  func testADeliveredNotificationsInvocationLaunchesWithNoBundleIdentity() {
-    let launched = deliveredNotificationsInvocation()
-      .executablePath(bundledGuestPath: bundledGuestPath)
+  func testADeliveredNotificationsInvocationLaunchesAStagedCopyOfTheGuest() throws {
+    let launched = try deliveredNotificationsInvocation()
+      .executablePath(bundledGuestPath: bundledGuestPath, stagingDirectory: stagingDirectory)
+    XCTAssertNotEqual(launched, bundledGuestPath)
+    XCTAssertEqual(
+      URL(fileURLWithPath: launched).lastPathComponent,
+      URL(fileURLWithPath: bundledGuestPath).lastPathComponent)
+    XCTAssertEqual(
+      FileManager.default.contents(atPath: launched),
+      FileManager.default.contents(atPath: bundledGuestPath))
+    // `proc_pidpath` resolves a symlink back to the bundled guest, whose directory names no app.
+    let type = try FileManager.default.attributesOfItem(atPath: launched)[.type] as? FileAttributeType
+    XCTAssertEqual(type, .typeRegular)
+  }
+
+  func testADeliveredNotificationsInvocationLaunchesWithTheTargetAppsBundleIdentity() throws {
+    let launched = try deliveredNotificationsInvocation()
+      .executablePath(bundledGuestPath: bundledGuestPath, stagingDirectory: stagingDirectory)
     XCTAssertTrue(FileManager.default.fileExists(atPath: launched))
     let siblingInfoPlist = URL(fileURLWithPath: launched)
       .deletingLastPathComponent()
       .appendingPathComponent("Info.plist")
-    XCTAssertFalse(FileManager.default.fileExists(atPath: siblingInfoPlist.path))
+    let info = try XCTUnwrap(NSDictionary(contentsOf: siblingInfoPlist) as? [String: String])
+    XCTAssertEqual(info["CFBundleIdentifier"], "com.apple.news")
+    // The lookup is rejected unless this names the executable it sits beside.
+    XCTAssertEqual(info["CFBundleExecutable"], URL(fileURLWithPath: launched).lastPathComponent)
   }
 
-  /// The guest shipped in `Resources` is shared by every invocation, so an identity established
-  /// by writing beside it would be one identity for all of them.
-  func testTheBundledGuestIsSharedBetweenTargetApps() {
+  /// The identity is written beside the executable, so two target apps cannot share one.
+  func testEachTargetAppLaunchesItsOwnGuest() throws {
     let news = SimulatorFrameworkBridgeInvocation(
       service: "notifications",
       action: "delivered",
@@ -81,18 +93,18 @@ final class SimulatorFrameworkBridgeTests: XCTestCase {
       service: "notifications",
       action: "delivered",
       arguments: ["com.apple.weather"])
-    XCTAssertEqual(
-      news.executablePath(bundledGuestPath: bundledGuestPath),
-      weather.executablePath(bundledGuestPath: bundledGuestPath))
+    XCTAssertNotEqual(
+      try news.executablePath(bundledGuestPath: bundledGuestPath, stagingDirectory: stagingDirectory),
+      try weather.executablePath(bundledGuestPath: bundledGuestPath, stagingDirectory: stagingDirectory))
   }
 
-  func testAnAccessibilityInvocationLaunchesTheBundledGuest() {
+  func testAnAccessibilityInvocationLaunchesTheBundledGuest() throws {
     let invocation = SimulatorFrameworkBridgeInvocation(
       service: "accessibility",
       action: "describe",
       arguments: ["--pid", "42"])
     XCTAssertEqual(
-      invocation.executablePath(bundledGuestPath: bundledGuestPath),
+      try invocation.executablePath(bundledGuestPath: bundledGuestPath, stagingDirectory: stagingDirectory),
       bundledGuestPath)
   }
 

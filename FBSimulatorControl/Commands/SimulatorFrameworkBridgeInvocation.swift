@@ -53,12 +53,56 @@ struct SimulatorFrameworkBridgeInvocation {
     [service, action] + arguments
   }
 
+  /// The app the guest has to be seen as by the daemons this invocation asks, if any.
+  ///
+  /// `usernotificationsd` answers a client only for the bundle `BSBundleIDForPID` reports for
+  /// it, and that is read from the `Info.plist` beside the client's executable. The delivered
+  /// notifications of an app are therefore only reachable by a guest that appears to be it.
+  /// An argument that could not name an app gets no identity, which also keeps it from being
+  /// used as a path component when staging.
+  var bundleIdentity: String? {
+    guard service == "notifications", action == "delivered",
+      let bundleID = arguments.first,
+      bundleID.range(of: "^[A-Za-z0-9.-]+$", options: .regularExpression) != nil,
+      bundleID != ".", bundleID != ".."
+    else {
+      return nil
+    }
+    return bundleID
+  }
+
   /// The executable this invocation launches.
   ///
-  /// `bundledGuestPath` is the guest shipped in the companion's `Resources`, which every
-  /// invocation runs as-is.
-  func executablePath(bundledGuestPath: String) -> String {
-    bundledGuestPath
+  /// `bundledGuestPath` is the guest shipped in the companion's `Resources`, shared by every
+  /// invocation, so it cannot carry any one app's identity. An invocation with a
+  /// `bundleIdentity` instead launches a copy of it staged in `stagingDirectory` beside an
+  /// `Info.plist` naming that app. The copy is a hardlink where the filesystem allows it, and
+  /// never a symlink: `proc_pidpath` resolves a symlink back to `Resources`, where there is no
+  /// `Info.plist` to read.
+  func executablePath(bundledGuestPath: String, stagingDirectory: URL) throws -> String {
+    guard let bundleIdentity else {
+      return bundledGuestPath
+    }
+    let guest = URL(fileURLWithPath: bundledGuestPath)
+    let bundle = stagingDirectory.appendingPathComponent(bundleIdentity, isDirectory: true)
+    let staged = bundle.appendingPathComponent(guest.lastPathComponent)
+    try FileManager.default.createDirectory(at: bundle, withIntermediateDirectories: true)
+    do {
+      try FileManager.default.linkItem(at: guest, to: staged)
+    } catch {
+      // Resources and the temporary directory need not share a filesystem.
+      try FileManager.default.copyItem(at: guest, to: staged)
+    }
+    let infoPlist: [String: String] = [
+      "CFBundleExecutable": guest.lastPathComponent,
+      "CFBundleIdentifier": bundleIdentity,
+      "CFBundlePackageType": "APPL",
+      "CFBundleVersion": "1",
+    ]
+    try PropertyListSerialization
+      .data(fromPropertyList: infoPlist, format: .xml, options: 0)
+      .write(to: bundle.appendingPathComponent("Info.plist"))
+    return staged.path
   }
 }
 
@@ -84,9 +128,20 @@ extension Simulator {
       action: action,
       arguments: arguments)
 
-    let output = try await runtimeTools.launchConsumingOutput(
-      launchPath: invocation.executablePath(bundledGuestPath: bundledGuestPath),
-      arguments: invocation.guestArguments)
+    let output: InSimulatorToolOutput
+    if invocation.bundleIdentity == nil {
+      output = try await runtimeTools.launchConsumingOutput(
+        launchPath: bundledGuestPath,
+        arguments: invocation.guestArguments)
+    } else {
+      output = try await temporaryDirectory.withTemporaryDirectory { stagingDirectory in
+        try await runtimeTools.launchConsumingOutput(
+          launchPath: invocation.executablePath(
+            bundledGuestPath: bundledGuestPath,
+            stagingDirectory: stagingDirectory),
+          arguments: invocation.guestArguments)
+      }
+    }
     guard output.exitCode == 0 else {
       let details = SimulatorFrameworkBridgeError.failureDetails(
         stderr: output.stderr,
