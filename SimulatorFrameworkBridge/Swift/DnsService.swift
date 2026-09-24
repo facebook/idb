@@ -18,11 +18,6 @@ import Foundation
     ["ServerAddresses": servers]
   }
 
-  @objc(buildEmptyDnsDict)
-  public static func buildEmptyDnsDict() -> [String: Any] {
-    [:]
-  }
-
   @objc(handleDnsAction:arguments:)
   public static func handleDnsAction(action: String, arguments: [String]) -> Int {
     handleDnsAction(action: action, arguments: arguments, output: nil)
@@ -33,7 +28,7 @@ import Foundation
       name: "DNS",
       logTag: "[DnsService]",
       store: FBNetworkConfigurationStore.dns(),
-      clearedConfiguration: buildEmptyDnsDict(),
+      clearedConfiguration: [:],
       clearingMessage: "Clearing DNS configuration",
       updatedMessage: "DNS configuration updated successfully"
     ) { servers in

@@ -46,7 +46,7 @@ private enum BridgeService: String {
     guard arguments.count >= 3 else {
       NSLog("Usage: %@ <service> <action> [args...]", arguments.first ?? "SimulatorFrameworkBridge")
       NSLog("Services: %@", serviceNames)
-      NSLog("Actions: clear, approve, revoke, check, set, list")
+      NSLog("Actions: clear, approve, revoke, check, set, list, delivered, clear-delivered, snapshot, restore")
       return 1
     }
     return dispatch(service: arguments[1], action: arguments[2], arguments: Array(arguments.dropFirst(3)), services: services)

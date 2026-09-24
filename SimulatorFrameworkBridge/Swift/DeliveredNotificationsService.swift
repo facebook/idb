@@ -136,9 +136,7 @@ private struct NotificationArchive {
       data = try Data(contentsOf: URL(fileURLWithPath: path))
     } catch {
       let failure = error as NSError
-      if (failure.domain == NSCocoaErrorDomain && failure.code == NSFileReadNoSuchFileError)
-        || (failure.domain == NSPOSIXErrorDomain && failure.code == Int(ENOENT))
-      {
+      if isMissingFile(failure) {
         return .absent
       }
       NSLog("[DeliveredNotifications] %@ could not be read: %@", (path as NSString).lastPathComponent, failure)
@@ -163,6 +161,11 @@ private struct NotificationArchive {
     }
     return .archive(NotificationArchive(objects: objects, rootIndex: rootIndex))
   }
+}
+
+private func isMissingFile(_ error: NSError) -> Bool {
+  (error.domain == NSCocoaErrorDomain && (error.code == NSFileReadNoSuchFileError || error.code == NSFileNoSuchFileError))
+    || (error.domain == NSPOSIXErrorDomain && error.code == Int(ENOENT))
 }
 
 private enum DeliveredNotificationOutput {
@@ -191,7 +194,7 @@ private enum DeliveredNotificationOutput {
   }
 
   static func flush(output: BridgeOutput?) -> Int32 {
-    if let output { return output.finish(status: 0).exitCode }
+    if let output { return output.failed ? 1 : 0 }
     guard fflush(stdout) == 0 else {
       NSLog("[DeliveredNotifications] Could not flush stdout: %@", String(cString: strerror(errno)))
       return 1
@@ -322,9 +325,7 @@ private struct DeliveredNotificationStore {
       return 0
     } catch {
       let failure = error as NSError
-      if (failure.domain == NSCocoaErrorDomain && failure.code == NSFileNoSuchFileError)
-        || (failure.domain == NSPOSIXErrorDomain && failure.code == Int(ENOENT))
-      {
+      if isMissingFile(failure) {
         return 0
       }
       NSLog("[DeliveredNotifications] %@ could not be removed: %@", path, failure)
@@ -334,6 +335,9 @@ private struct DeliveredNotificationStore {
 }
 
 @objc public final class FBDeliveredNotificationsService: NSObject {
+  /// Used whenever a caller passes a non-positive timeout.
+  static let defaultTimeout: TimeInterval = 30
+
   private static func store(directory override: String?) -> DeliveredNotificationStore {
     let directory =
       override
@@ -388,7 +392,7 @@ private struct DeliveredNotificationStore {
     guard let client else {
       return clearStoreInstead("No connection to usernotificationsd")
     }
-    let result = client.removeAll(bundleID: bundleID, timeout: timeout > 0 ? timeout : 30)
+    let result = client.removeAll(bundleID: bundleID, timeout: timeout > 0 ? timeout : defaultTimeout)
     switch result.status {
     case .raised:
       return clearStoreInstead("removeAllDeliveredNotificationsForBundleIdentifier: raised \(result.exceptionDescription ?? "(null)")")
@@ -403,7 +407,7 @@ private struct DeliveredNotificationStore {
   }
 
   private static func handle(client: FBDeliveredNotificationsClient, bundleID: String, directory: String?, timeout: TimeInterval, output: BridgeOutput?) -> Int32 {
-    let result = client.read(timeout: timeout > 0 ? timeout : 30)
+    let result = client.read(timeout: timeout > 0 ? timeout : defaultTimeout)
     switch result.status {
     case .raised:
       NSLog("[DeliveredNotifications] getDeliveredNotificationsWithCompletionHandler: raised for %@: %@; reading the store", bundleID, result.exceptionDescription ?? "(null)")

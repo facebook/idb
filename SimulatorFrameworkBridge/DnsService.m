@@ -18,11 +18,6 @@ NSDictionary<NSString *, id> *buildDnsDict(NSArray<NSString *> *servers)
   return [DnsServiceStaticFuncs buildDnsDict:servers];
 }
 
-NSDictionary<NSString *, id> *buildEmptyDnsDict(void)
-{
-  return [DnsServiceStaticFuncs buildEmptyDnsDict];
-}
-
 int handleDnsAction(NSString *action, NSArray<NSString *> *arguments)
 {
   return (int)[DnsServiceStaticFuncs handleDnsAction:action arguments:arguments];

@@ -18,6 +18,4 @@ int handleDnsAction(NSString *action, NSArray<NSString *> *arguments);
 
 NSDictionary<NSString *, id> *buildDnsDict(NSArray<NSString *> *servers);
 
-NSDictionary<NSString *, id> *buildEmptyDnsDict(void);
-
 NS_ASSUME_NONNULL_END
