@@ -32,12 +32,19 @@ struct FBSubprocessCancellationTests {
   /// cancellation, rather than sleeping for a fixed interval. The window in which
   /// the child is alive therefore cannot close early, however loaded or suspended
   /// the machine — each case's assertions run while the gate is still shut.
+  ///
+  /// The wait gives up once the gate can no longer open: when its directory is
+  /// gone, which each case's `defer` ensures even when a thrown error skips the
+  /// line that opens the gate, or when the process that started the child is,
+  /// as when the test runner is killed. `$PPID` is fixed at shell startup, so it
+  /// still names the original parent after the child has been reparented.
   private static func shellWait(forFileAtPath path: String) -> String {
-    "while [ ! -e '\(path)' ]; do sleep 0.05; done"
+    let directory = (path as NSString).deletingLastPathComponent
+    return "while [ ! -e '\(path)' ]; do [ -d '\(directory)' ] && kill -0 $PPID 2>/dev/null || exit 1; sleep 0.05; done"
   }
 
-  private static func waitUntil(seconds: Int = pollingDeadlineSeconds, _ condition: () -> Bool) async -> Bool {
-    let deadline = Date().addingTimeInterval(TimeInterval(seconds))
+  private static func waitUntil(_ condition: () -> Bool) async -> Bool {
+    let deadline = Date().addingTimeInterval(TimeInterval(pollingDeadlineSeconds))
     while Date() < deadline {
       if condition() {
         return true
@@ -121,7 +128,7 @@ struct FBSubprocessCancellationTests {
 
   // MARK: - Stranded children
 
-  @Test("A child waiting on a gate keeps polling after the gate's directory is removed")
+  @Test("A child waiting on a gate gives up once the gate's directory is removed")
   func aGateWaitWhoseDirectoryIsRemoved() async throws {
     let directory = URL(fileURLWithPath: NSTemporaryDirectory())
       .appendingPathComponent("FBSubprocessCancellationTests-\(UUID().uuidString)", isDirectory: true)
@@ -140,11 +147,10 @@ struct FBSubprocessCancellationTests {
     // What each case's `defer` does when a thrown error skips the line that opens the gate.
     try FileManager.default.removeItem(at: directory)
 
-    // BUG: the gate can never open, yet the child polls for it indefinitely — flipped in the following commit.
-    #expect(await Self.waitUntil(seconds: 1) { process.statLoc.state != .running } == false)
+    #expect(await Self.waitUntil { process.statLoc.state != .running }, "The child is still polling for a gate that can never open")
   }
 
-  @Test("A child waiting on a gate keeps polling after the process that started it has gone")
+  @Test("A child waiting on a gate gives up once the process that started it has gone")
   func aGateWaitWhoseParentHasGone() async throws {
     let directory = URL(fileURLWithPath: NSTemporaryDirectory())
       .appendingPathComponent("FBSubprocessCancellationTests-\(UUID().uuidString)", isDirectory: true)
@@ -161,7 +167,6 @@ struct FBSubprocessCancellationTests {
     let pid = try #require(pid_t(((launcher.stdOut as String?) ?? "").trimmingCharacters(in: .whitespacesAndNewlines)))
     defer { kill(pid, SIGKILL) }
 
-    // BUG: nothing will ever open the gate, yet the orphan polls for it indefinitely — flipped in the following commit.
-    #expect(await Self.waitUntil(seconds: 1) { kill(pid, 0) != 0 } == false)
+    #expect(await Self.waitUntil { kill(pid, 0) != 0 }, "The orphan is still polling for a gate nothing will ever open")
   }
 }
