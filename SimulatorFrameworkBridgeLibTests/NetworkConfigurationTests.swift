@@ -89,11 +89,15 @@ final class NetworkConfigurationTests: XCTestCase {
   func testListPreservesArrayValuesInTheStore() throws {
     for service in ["dns", "proxy"] {
       let runtime = FBNetworkConfigurationTestRuntime()
-      runtime.configuration = ["first", ["nested": true]] as [Any]
+      let expected: [Any] = ["first", ["nested": true]]
+      runtime.configuration = expected
 
-      // BUG: the read is typed as a dictionary, so an array-valued entry raises instead of listing — flipped in the following commit.
-      let exception = FBExceptionRaisedBy { _ = runtime.run(service: service, action: "list", arguments: []) }
-      XCTAssertEqual(exception?.name, .invalidArgumentException, service)
+      XCTAssertEqual(runtime.run(service: service, action: "list", arguments: []), 0)
+
+      let json = try JSONSerialization.jsonObject(with: Data(runtime.output.utf8))
+      XCTAssertEqual(json as? NSArray, expected as NSArray)
+      XCTAssertEqual(runtime.keys as NSArray, [key(service)] as NSArray)
+      XCTAssertEqual(runtime.writes.count, 0)
     }
   }
 

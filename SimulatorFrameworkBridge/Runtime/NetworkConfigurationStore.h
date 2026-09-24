@@ -10,7 +10,7 @@
 NS_ASSUME_NONNULL_BEGIN
 
 @interface FBNetworkConfigurationRead : NSObject
-@property (nullable, nonatomic, readonly) NSDictionary<NSString *, id> *configuration;
+@property (nullable, nonatomic, readonly) id configuration;
 @end
 
 @interface FBNetworkConfigurationStore : NSObject

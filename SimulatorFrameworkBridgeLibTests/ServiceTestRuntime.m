@@ -77,16 +77,6 @@ NSException *FBHealthApproveException(NSArray<NSString *> *types)
   }
 }
 
-NSException *FBExceptionRaisedBy(void(NS_NOESCAPE ^ block)(void))
-{
-  @try {
-    block();
-    return nil;
-  } @catch (NSException *exception) {
-    return exception;
-  }
-}
-
 @implementation FBSectionInfoWithOnlyNotificationCenterFlag
 @end
 

@@ -171,9 +171,9 @@ final class BridgeExecutionTests: XCTestCase {
     XCTAssertEqual(BridgeServices.execute(.proxy(.set(host: "::1", port: 1080, kind: .socks))).exitCode, 0)
     XCTAssertEqual((runtime.writes.lastObject as? [String: Any])?["SOCKSPort"] as? Int, 1080)
     runtime.configuration = ["first", 42] as [Any]
-    // BUG: an array-valued entry raises instead of listing — flipped in the following commit.
-    XCTAssertEqual(FBExceptionRaisedBy { _ = BridgeServices.execute(.dns(.list)) }?.name, .invalidArgumentException)
-    XCTAssertEqual(FBExceptionRaisedBy { _ = BridgeServices.execute(.proxy(.list)) }?.name, .invalidArgumentException)
+    let array = BridgeResult(exitCode: 0, values: [.array([.string("first"), .integer(42)])])
+    XCTAssertEqual(BridgeServices.execute(.dns(.list)), array)
+    XCTAssertEqual(BridgeServices.execute(.proxy(.list)), array)
   }
 
   // An unset proto3 string arrives empty, and answering 0 would report a malformed request as done.
