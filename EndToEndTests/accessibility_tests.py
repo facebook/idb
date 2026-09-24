@@ -17,6 +17,7 @@ from __future__ import annotations
 import unittest
 from typing import Any
 
+from .harness import _elements
 from .test_accessibility import (
     _row_positions,
     _rows_on_screen,
@@ -24,6 +25,7 @@ from .test_accessibility import (
     _visible,
     GENERAL_ROW_ID,
     ROW_PREFIX,
+    SEARCH_FIELD_ID,
 )
 
 LIST_ID = f"{ROW_PREFIX}list"
@@ -121,6 +123,75 @@ def fixture_list() -> dict[str, Any]:
         "screen": {"coordinate_space": "screen", "width": 402, "height": 874},
         "elements": [application],
     }
+
+
+def fixture_search_field() -> dict[str, Any]:
+    """The search field as the guest bridge reads it in its complete format.
+
+    A touch on the placeholder is delivered to the field, so the placeholder's
+    `interactable` names the field: a reference that carries the field's
+    identifier and frame without being an element of the tree.
+    """
+    field_frame = frame(16, 176, 370, 36)
+    placeholder = element(
+        type="StaticText",
+        label="Search",
+        frame=frame(52, 184, 60, 20),
+        interactable={
+            "status": "blocked",
+            "reasons": [
+                {
+                    "kind": "handled_by",
+                    "by": {
+                        "type": "SearchField",
+                        "identifier": SEARCH_FIELD_ID,
+                        "label": None,
+                        "frame": field_frame,
+                        "pid": 4242,
+                    },
+                }
+            ],
+        },
+    )
+    field = element(
+        type="SearchField",
+        identifier=SEARCH_FIELD_ID,
+        frame=field_frame,
+        children=[placeholder],
+    )
+    application = element(
+        type="Application", frame=frame(0, 0, 402, 874), children=[field]
+    )
+    return {
+        "backend": "axbridge-exclusive",
+        "screen": {"coordinate_space": "screen", "width": 402, "height": 874},
+        "elements": [application],
+    }
+
+
+class ElementTests(unittest.TestCase):
+    def test_reaches_every_element_of_the_tree(self) -> None:
+        self.assertEqual(
+            [
+                element["type"]
+                for element in _elements(fixture_search_field())
+                if "children" in element
+            ],
+            ["Application", "SearchField", "StaticText"],
+        )
+
+    def test_a_reference_to_the_element_that_takes_a_touch_is_not_an_element(
+        self,
+    ) -> None:
+        fields = [
+            element
+            for element in _elements(fixture_search_field())
+            if element.get("identifier") == SEARCH_FIELD_ID
+        ]
+
+        # BUG: the placeholder's reference to the field is counted as a second
+        # field -- flipped in the following commit.
+        self.assertEqual(len(fields), 2)
 
 
 class ScreenTests(unittest.TestCase):
