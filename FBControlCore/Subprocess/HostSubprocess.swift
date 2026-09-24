@@ -67,88 +67,35 @@ enum HostSubprocess {
   }
 
   /// Waits for `processIdentifier` to exit and returns the raw `wait(2)`
-  /// status word.
+  /// status word. Not a cancellation point: the exit monitor that calls this
+  /// must always reap, whatever happens to the tasks observing it.
   ///
   /// The event handler deliberately holds the only strong reference to its
   /// dispatch source and cancels it after the event fires. Weakening that
   /// capture deallocates the source before the exit arrives, `waitpid` never
   /// runs, and the wait never resolves — do not "fix" the cycle.
-  ///
-  /// Cancellation abandons observation without killing the process, and the
-  /// source stays registered so the child is still reaped when it exits.
-  static func waitForExit(of processIdentifier: pid_t, logger: (any ControlCoreLogger)?) async throws -> Int32 {
-    let resumer = SingleResumer<Int32>()
-    return try await withTaskCancellationHandler {
-      try await withCheckedThrowingContinuation { continuation in
-        resumer.register(continuation)
-        let queue = DispatchQueue(label: "com.facebook.fbcontrolcore.subprocess.wait")
-        let source = DispatchSource.makeProcessSource(identifier: processIdentifier, eventMask: .exit, queue: queue)
-        source.setEventHandler {
-          var statLoc: Int32 = 0
-          // The event means the child is already a zombie, so the reap
-          // returns it. Anything else leaves the status word at zero, which
-          // decodes as a clean exit — a failed reap must not be mistaken for
-          // one, so it falls back to a blocking wait before giving up.
-          var reaped = waitpid(processIdentifier, &statLoc, WNOHANG)
-          if reaped == 0 {
-            reaped = waitpid(processIdentifier, &statLoc, 0)
-          }
-          if reaped != processIdentifier {
-            logger?.log("Failed to get the exit status with waitpid: \(String(cString: strerror(errno)))")
-          }
-          resumer.resume(with: .success(statLoc))
-          source.cancel()
+  static func exitStatLoc(of processIdentifier: pid_t, logger: (any ControlCoreLogger)?) async -> Int32 {
+    await withCheckedContinuation { continuation in
+      let queue = DispatchQueue(label: "com.facebook.fbcontrolcore.subprocess.wait")
+      let source = DispatchSource.makeProcessSource(identifier: processIdentifier, eventMask: .exit, queue: queue)
+      source.setEventHandler {
+        var statLoc: Int32 = 0
+        // The event means the child is already a zombie, so the reap returns
+        // it. Anything else leaves the status word at zero, which decodes as
+        // a clean exit — a failed reap must not be mistaken for one, so it
+        // falls back to a blocking wait before giving up.
+        var reaped = waitpid(processIdentifier, &statLoc, WNOHANG)
+        if reaped == 0 {
+          reaped = waitpid(processIdentifier, &statLoc, 0)
         }
-        source.resume()
+        if reaped != processIdentifier {
+          logger?.log("Failed to get the exit status with waitpid: \(String(cString: strerror(errno)))")
+        }
+        continuation.resume(returning: statLoc)
+        source.cancel()
       }
-    } onCancel: {
-      resumer.resume(with: .failure(CancellationError()))
+      source.resume()
     }
-  }
-}
-
-/// Resolves a continuation exactly once, from whichever of the exit event and
-/// task cancellation arrives first — in either order relative to the
-/// continuation being registered.
-///
-// SAFETY: `continuation`, `pending` and `resumed` are only ever read or
-// written inside `lock`, and the continuation is resumed after the lock is
-// released, so no caller code runs under it.
-// patternlint-disable-next-line unchecked-sendable
-private final class SingleResumer<Value: Sendable>: @unchecked Sendable {
-  private let lock = NSLock()
-  private var continuation: CheckedContinuation<Value, any Error>?
-  private var pending: Result<Value, any Error>?
-  private var resumed = false
-
-  func register(_ continuation: CheckedContinuation<Value, any Error>) {
-    let immediate: Result<Value, any Error>? = lock.withLock {
-      if let pending, !resumed {
-        resumed = true
-        return pending
-      }
-      self.continuation = continuation
-      return nil
-    }
-    if let immediate {
-      continuation.resume(with: immediate)
-    }
-  }
-
-  func resume(with result: Result<Value, any Error>) {
-    let continuation: CheckedContinuation<Value, any Error>? = lock.withLock {
-      guard !resumed else {
-        return nil
-      }
-      guard let registered = self.continuation else {
-        pending = result
-        return nil
-      }
-      resumed = true
-      self.continuation = nil
-      return registered
-    }
-    continuation?.resume(with: result)
   }
 }
 

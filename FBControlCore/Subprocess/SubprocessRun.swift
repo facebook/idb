@@ -62,49 +62,18 @@ extension Subprocess {
       throw failure
     }
 
-    let processName = (executable as NSString).lastPathComponent
-    let processIdentifier: pid_t
-    do {
-      for reader in [stdOut.reader, stdErr.reader].compactMap({ $0 }) {
-        _ = try await bridgeFBFuture(reader.startReading())
-      }
-      processIdentifier = try HostSubprocess.spawn(
-        executable: executable,
-        arguments: arguments,
-        environment: environment.resolved(against: ProcessInfo.processInfo.environment),
-        standardOutput: stdOut.childDescriptor,
-        standardError: stdErr.childDescriptor)
-    } catch let failure {
-      stdOut.dispose()
-      stdErr.dispose()
-      throw failure
-    }
-    stdOut.closeChildDescriptor()
-    stdErr.closeChildDescriptor()
-    logger?.log("\(processName) Launched with pid \(processIdentifier)")
-
-    let statLoc = try await HostSubprocess.waitForExit(of: processIdentifier, logger: logger)
-    for reader in [stdOut.reader, stdErr.reader].compactMap({ $0 }) {
-      _ = try? await bridgeFBFuture(reader.finishedReading(withTimeout: HostSubprocess.drainTimeout))
-    }
-
-    let status = TerminationStatus(statLoc: statLoc)
-    switch status {
-    case .exited(let code):
-      logger?.log("Process \(processIdentifier) (\(processName)) exited with code \(code)")
-    case .signalled(let signo):
-      logger?.log("Process \(processIdentifier) (\(processName)) exited with signal \(signo)")
-    }
+    let running = try await startOnHost(stdOut: &stdOut, stdErr: &stdErr, logger: logger)
+    let status = try await running.terminationStatus
     guard exitPolicy.accepts(status) else {
       throw SubprocessError.unacceptableTermination(
         status: status,
         policy: exitPolicy,
         executable: executable,
-        processIdentifier: processIdentifier)
+        processIdentifier: running.processIdentifier)
     }
     return Completed(
       executable: executable,
-      processIdentifier: processIdentifier,
+      processIdentifier: running.processIdentifier,
       terminationStatus: status,
       standardOutput: captureOut(),
       standardError: captureErr())
