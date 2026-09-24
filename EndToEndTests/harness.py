@@ -76,7 +76,8 @@ HOST_SERVICE_UNAVAILABLE_MARKERS = (
 # Match the connection error emitted by idb/grpc/client.py.
 COMPANION_UNREACHABLE_MARKERS = ("Failed to connect to companion",)
 
-# This accessibility error is retryable while the simulator starts.
+# The simulator had no accessibility translation object: nothing was read or
+# written. Retryable while the simulator starts, and for a read at any time.
 ACCESSIBILITY_NOT_READY_MARKER = "No translation object returned"
 ACCESSIBILITY_PROBE_ARGS = ("ui", "describe-all", "--json")
 
@@ -87,16 +88,16 @@ UNANSWERED = re.compile(
     r"which did not answer in time"
 )
 NOTHING_WRITTEN_MARKER = "nothing was written. Read the tree again and retry"
-# The commands that can be repeated when idb cannot say whether they ran: reads,
-# and a write that sets a value rather than adding to one.
-REPEATABLE_COMMANDS = frozenset(
+READ_COMMANDS = frozenset(
     {
         ("ui", "describe"),
         ("ui", "describe-all"),
         ("ui", "describe-point"),
-        ("ui", "set-value"),
     }
 )
+# The commands that can be repeated when idb cannot say whether they ran: reads,
+# and a write that sets a value rather than adding to one.
+REPEATABLE_COMMANDS = READ_COMMANDS | {("ui", "set-value")}
 
 POLL_INTERVAL_SECONDS = 1.0
 TRANSIENT_ANSWER_TIMEOUT_SECONDS = 60.0
@@ -243,12 +244,15 @@ def worth_repeating(args: Sequence[str], completed: Completed) -> bool:
 
     Nothing was written, so anything can be repeated. An application that did
     not answer leaves a write's outcome unknown, so only a command that does
-    the same thing when run twice can be.
+    the same thing when run twice can be. A tree that was not ready yet is
+    repeated only for a read, since a write's target may not be where it was.
     """
     if completed.returncode == 0:
         return False
     if NOTHING_WRITTEN_MARKER in completed.error_text:
         return True
+    if ACCESSIBILITY_NOT_READY_MARKER in completed.error_text:
+        return tuple(args[:2]) in READ_COMMANDS
     return (
         UNANSWERED.search(completed.error_text) is not None
         and tuple(args[:2]) in REPEATABLE_COMMANDS

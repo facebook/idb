@@ -1265,12 +1265,8 @@ class TransientAccessibilityAnswerTests(unittest.IsolatedAsyncioTestCase):
     async def test_a_read_before_the_tree_was_ready(self) -> None:
         outcome, run, _ = await self.attempt(DESCRIBE_ALL, [NOT_READY, SUCCEEDED])
 
-        # BUG: a read that found no translation object fails on its first
-        # attempt, though nothing ran and the next read answers. Flipped in
-        # the following commit.
-        self.assertIsInstance(outcome, Failed)
-        self.assertIn("No translation object", str(outcome))
-        self.assertEqual(run.await_count, 1)
+        self.assertEqual(outcome, SUCCEEDED)
+        self.assertEqual(run.await_count, 2)
 
     async def test_a_tap_before_the_tree_was_ready_is_not_repeated(self) -> None:
         outcome, run, _ = await self.attempt(TAP, [NOT_READY, SUCCEEDED])
