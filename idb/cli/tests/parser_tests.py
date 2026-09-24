@@ -3053,6 +3053,16 @@ class TestParser(TestCase):
         self.assertIsNone(records[2]["date"])
         self.assertIsNone(records[3]["date"])
 
+    async def test_notification_clear(self) -> None:
+        self.client_mock.clear_delivered_notifications = AsyncMock()
+        output = StringIO()
+        with redirect_stdout(output):
+            await cli_main(cmd_input=["notification", "clear", "com.foo.bar"])
+        self.client_mock.clear_delivered_notifications.assert_called_once_with(
+            "com.foo.bar"
+        )
+        self.assertEqual(output.getvalue(), "")
+
     async def test_debugserver_start(self) -> None:
         self.client_mock.debugserver_start = AsyncMock(return_value=["aaa", "bbb"])
         await cli_main(cmd_input=["debugserver", "start", "com.foo.bar"])

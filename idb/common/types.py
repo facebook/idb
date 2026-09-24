@@ -963,6 +963,10 @@ class Client(ABC):
         pass
 
     @abstractmethod
+    async def clear_delivered_notifications(self, bundle_id: str) -> None:
+        pass
+
+    @abstractmethod
     async def approve(
         self, bundle_id: str, permissions: set[Permission], scheme: str | None = None
     ) -> None:

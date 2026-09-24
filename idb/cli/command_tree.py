@@ -97,6 +97,7 @@ from idb.cli.commands.log import CompanionLogCommand, LogCommand
 from idb.cli.commands.media import MediaAddCommand
 from idb.cli.commands.memory import SimulateMemoryWarningCommand
 from idb.cli.commands.notification import (
+    NotificationClearCommand,
     NotificationListCommand,
     NotificationSendCommand,
     SendNotificationCommand,
@@ -285,7 +286,11 @@ def build_builtin_commands(shell_command: ShellCommand) -> list[Command]:
         CommandGroup(
             name="notification",
             description="Notification operations on target",
-            commands=[NotificationListCommand(), NotificationSendCommand()],
+            commands=[
+                NotificationListCommand(),
+                NotificationSendCommand(),
+                NotificationClearCommand(),
+            ],
         ),
         ApproveCommand(),
         RevokeCommand(),

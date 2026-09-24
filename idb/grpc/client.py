@@ -109,6 +109,7 @@ from idb.grpc.idb_pb2 import (
     AddMediaRequest,
     ANY as AnySetting,
     ApproveRequest,
+    ClearDeliveredNotificationsRequest,
     ClearKeychainRequest,
     ConnectRequest,
     ContactsClearRequest,
@@ -832,6 +833,12 @@ class Client(ClientBase):
             )
             for notification in response.notifications
         ]
+
+    @log_and_handle_exceptions("clear_delivered_notifications")
+    async def clear_delivered_notifications(self, bundle_id: str) -> None:
+        await self.stub.clear_delivered_notifications(
+            ClearDeliveredNotificationsRequest(bundle_id=bundle_id)
+        )
 
     @log_and_handle_exceptions("terminate")
     async def terminate(self, bundle_id: str) -> None:

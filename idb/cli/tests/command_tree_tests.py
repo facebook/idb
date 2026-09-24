@@ -113,7 +113,7 @@ BUILT_IN_GROUP_CHILDREN: dict[str, tuple[str, ...]] = {
     ),
     "framework": ("install",),
     "list": ("locale",),
-    "notification": ("list", "send"),
+    "notification": ("list", "send", "clear"),
     "photos": ("clear",),
     "record": ("video",),
     "ui": (
@@ -140,8 +140,8 @@ BUILT_IN_GROUP_CHILDREN: dict[str, tuple[str, ...]] = {
     "xctrace": ("record",),
 }
 
-BUILT_IN_TERMINAL_COUNT = 89
-BUILT_IN_NODE_COUNT = 105
+BUILT_IN_TERMINAL_COUNT = 90
+BUILT_IN_NODE_COUNT = 106
 
 BUILT_IN_ALIAS_PATHS: tuple[tuple[str, ...], ...] = (
     ("file", "mv"),

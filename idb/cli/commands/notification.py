@@ -69,3 +69,20 @@ class NotificationListCommand(ClientCommand):
             formatter = json_format_delivered_notification
         for notification in await client.delivered_notifications(args.bundle_id):
             print(formatter(notification))
+
+
+class NotificationClearCommand(ClientCommand):
+    @property
+    def description(self) -> str:
+        return "Withdraw every notification an app has had delivered to it"
+
+    @property
+    def name(self) -> str:
+        return "clear"
+
+    def add_parser_arguments(self, parser: ArgumentParser) -> None:
+        parser.add_argument("bundle_id", help="Target app", type=str)
+        super().add_parser_arguments(parser)
+
+    async def run_with_client(self, args: Namespace, client: Client) -> None:
+        await client.clear_delivered_notifications(args.bundle_id)
