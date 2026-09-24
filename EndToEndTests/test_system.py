@@ -13,6 +13,7 @@ from pathlib import Path
 from typing import Any, Awaitable, Callable
 
 from .harness import (
+    AppState,
     HarnessError,
     IdbEndToEndTestCase,
     NotReady,
@@ -24,8 +25,6 @@ from .harness import (
 # Only Safari launch is checked; page loading does not need to succeed.
 URL = "https://example.com"
 SAFARI_BUNDLE_ID = "com.apple.mobilesafari"
-
-RUNNING_TIMEOUT_SECONDS = 60.0
 
 TCC_DATABASE = Path("Library") / "TCC" / "TCC.db"
 TCC_ALLOWED = 2
@@ -57,30 +56,12 @@ class OpenUrlTests(IdbEndToEndTestCase):
     async def test_opening_a_url_launches_the_app_that_handles_it(self) -> None:
         # Start with Safari stopped so the test can detect the URL launching it.
         await self.terminate_quietly(SAFARI_BUNDLE_ID)
-        await self.wait_until_running(SAFARI_BUNDLE_ID, False)
+        await self.wait_for_app(SAFARI_BUNDLE_ID, AppState.STOPPED)
         self.addAsyncCleanup(self.terminate_quietly, SAFARI_BUNDLE_ID)
 
         await self.idb("open", URL)
 
-        await self.wait_until_running(SAFARI_BUNDLE_ID, True)
-
-    async def wait_until_running(self, bundle_id: str, running: bool) -> None:
-        async def check() -> None:
-            listed = bundle_id in await self.simctl.running_bundle_ids()
-            if listed != running:
-                raise NotReady(
-                    "launchctl still lists it"
-                    if listed
-                    else "launchctl does not list it"
-                )
-
-        state = "running" if running else "stopped"
-        try:
-            await wait_until(
-                f"{bundle_id} was not {state}", RUNNING_TIMEOUT_SECONDS, check
-            )
-        except HarnessError as error:
-            self.fail(str(error))
+        await self.wait_for_app(SAFARI_BUNDLE_ID, AppState.RUNNING)
 
 
 class PermissionTests(IdbEndToEndTestCase):
