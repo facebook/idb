@@ -28,6 +28,7 @@ typedef NS_ENUM(NSInteger, FBDeliveredNotificationsReadStatus) {
 @property (nullable, nonatomic, readonly, copy) NSString *body;
 @property (nullable, nonatomic, readonly, copy) NSString *threadIdentifier;
 @property (nullable, nonatomic, readonly) NSNumber *date;
+@property (nullable, nonatomic, readonly, copy) NSString *readError;
 @end
 
 @interface FBDeliveredNotificationsReadResult : NSObject

@@ -119,6 +119,9 @@ NSDictionary<NSString *, NSNumber *> *FBAXRuntimeQueueProbe(BOOL raise);
 @property (nullable, nonatomic, copy) NSDate *date;
 @end
 
+@interface FBRaisingDeliveredNotification : FBFakeDeliveredNotification
+@end
+
 typedef NS_ENUM(NSInteger, FBAXRuntimeInitializationMode) {
   FBAXRuntimeInitializationModeSuccess,
   FBAXRuntimeInitializationModeFailureWithMessage,

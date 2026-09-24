@@ -116,6 +116,24 @@ final class DeliveredNotificationsServiceTests: XCTestCase {
       ] as NSDictionary)
   }
 
+  func testRecordExceptionPreservesOtherRecordsWithoutFallingBackToStore() {
+    let bundleID = "com.example.test.recordexception"
+    writeStore(forBundleID: bundleID, records: [["AppNotificationIdentifier": "fallback"]])
+    let first = FBFakeDeliveredNotification()
+    first.identifier = "first"
+    let last = FBFakeDeliveredNotification()
+    last.identifier = "last"
+    let center = FBFakeDeliveredNotificationsCenter()
+    center.notifications = [first, FBRaisingDeliveredNotification(), last]
+    var result: Int32 = -1
+    let output = FBStdoutWhileRunning {
+      result = handleDeliveredNotificationsActionWithCenter("delivered", bundleID, center)
+    }
+    XCTAssertEqual(result, 1)
+    XCTAssertTrue(center.wasAsked)
+    XCTAssertEqual(output.split(separator: "\n").compactMap { FBParsedJSONLine(String($0))?["identifier"] as? String }, ["first", "last"])
+  }
+
   func testNilCenterFallsBackToStoreAfterTimeout() {
     let bundleID = "com.example.test.nilcenter"
     writeStore(forBundleID: bundleID, records: [["AppNotificationIdentifier": "stored"]])

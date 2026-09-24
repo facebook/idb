@@ -76,15 +76,19 @@ static id DaemonConnection(void)
 {
   self = [super init];
   if (self) {
-    UNNotificationRequest *request = notification.request;
-    UNNotificationContent *content = request.content;
-    _identifier = [request.identifier copy];
-    _title = [content.title copy];
-    _subtitle = [content.subtitle copy];
-    _body = [content.body copy];
-    _threadIdentifier = [content.threadIdentifier copy];
-    if (notification.date) {
-      _date = @([notification.date timeIntervalSince1970]);
+    @try {
+      UNNotificationRequest *request = notification.request;
+      UNNotificationContent *content = request.content;
+      _identifier = [request.identifier copy];
+      _title = [content.title copy];
+      _subtitle = [content.subtitle copy];
+      _body = [content.body copy];
+      _threadIdentifier = [content.threadIdentifier copy];
+      if (notification.date) {
+        _date = @([notification.date timeIntervalSince1970]);
+      }
+    } @catch (NSException *exception) {
+      _readError = [NSString stringWithFormat:@"%@", exception];
     }
   }
   return self;

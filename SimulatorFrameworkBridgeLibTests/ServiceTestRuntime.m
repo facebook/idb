@@ -355,3 +355,12 @@ NSDictionary<NSString *, id> *FBAXRuntimeInitializationProbe(FBAXRuntimeInitiali
 }
 
 @end
+
+@implementation FBRaisingDeliveredNotification
+- (id)content
+{
+  [NSException raise:NSInvalidArgumentException format:@"notification content unavailable"];
+  return nil;
+}
+
+@end

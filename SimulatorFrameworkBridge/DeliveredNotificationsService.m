@@ -586,6 +586,11 @@ static int HandleWithClient(NSString *action, NSString *bundleID, FBDeliveredNot
   if (received.count > 0) {
     NSUInteger unreportedCount = 0;
     for (FBDeliveredNotificationValues *notification in received) {
+      if (notification.readError) {
+        NSLog(@"[DeliveredNotifications] Could not read notification for %@: %@", bundleID, notification.readError);
+        unreportedCount++;
+        continue;
+      }
       if (!PrintJSONLine(NotificationJSONObject(notification, bundleID))) {
         unreportedCount++;
       }
