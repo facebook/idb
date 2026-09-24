@@ -116,6 +116,41 @@ final class FileWriterTests: XCTestCase {
     XCTAssertNotEqual(fcntl(localSocket, F_GETFL) & O_NONBLOCK, 0)
   }
 
+  func testPipeIsClosedWhenTheWriterIsReleasedBeforeTeardown() throws {
+    var descriptors: [Int32] = [0, 0]
+    XCTAssertEqual(pipe(&descriptors), 0)
+    let readEnd = descriptors[0]
+    let writeEnd = descriptors[1]
+    defer { close(readEnd) }
+    _ = fcntl(readEnd, F_SETFL, fcntl(readEnd, F_GETFL) | O_NONBLOCK)
+
+    // A caller that hands the read end to a child and keeps nothing of its own
+    // releases the writer as soon as it has ended it — before the channel's
+    // asynchronous teardown runs. `finishedConsuming` is retained separately
+    // and resolves from that teardown either way, so it still orders the reads
+    // below after the write and the close.
+    let finishedConsuming: FBFuture<NSNull> = try autoreleasepool {
+      var writeError: NSError?
+      guard let writer = FileWriter.asyncWriter(withFileDescriptor: writeEnd, closeOnEndOfFile: true, error: &writeError) else {
+        throw writeError!
+      }
+      writer.consumeData("ping".data(using: .utf8)!)
+      writer.consumeEndOfFile()
+      return writer.finishedConsuming
+    }
+    _ = try finishedConsuming.`await`(withTimeout: 10)
+
+    var buffer = [UInt8](repeating: 0, count: 16)
+    XCTAssertEqual(read(readEnd, &buffer, buffer.count), 4)
+
+    // BUG: the write end is never closed, because the only close is reached
+    // through a weak reference to the released writer. A reader therefore
+    // never sees end-of-file and a child on the other end blocks forever —
+    // flipped in the following commit.
+    XCTAssertEqual(read(readEnd, &buffer, buffer.count), -1)
+    XCTAssertEqual(errno, EAGAIN)
+  }
+
   func testStopThenCloseTeardownOfSocketReaderAndDuplicatedWriter() throws {
     var descriptors: [Int32] = [0, 0]
     XCTAssertEqual(socketpair(AF_UNIX, SOCK_STREAM, 0, &descriptors), 0)
