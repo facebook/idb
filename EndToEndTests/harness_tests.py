@@ -32,6 +32,7 @@ from .documentation import Transcript
 from .harness import (
     _optional_binary_from_environment,
     _prepare_artifact_file,
+    AccessibilityApi,
     client_argv,
     Companion,
     CompanionDied,
@@ -43,8 +44,10 @@ from .harness import (
     IdbEndToEndTestCase,
     IdbProcess,
     IdbProcessConfig,
+    MatchKey,
     NotReady,
     ProcessStream,
+    Query,
     ROUTE_ATTESTATION_ENV,
     run_with_registered_cleanup,
     running_bundle_ids_from_listing,
@@ -56,6 +59,8 @@ from .harness import (
     SUITE_CAPABILITY_ENV,
     suite_supports,
     SuiteCapability,
+    UiWait,
+    Until,
     wait_for_accessibility,
     wait_until,
 )
@@ -1206,6 +1211,10 @@ class DeadlineAfter:
         return self
 
     @property
+    def remaining(self) -> float:
+        return 1.0 if self.checks >= 0 else 0.0
+
+    @property
     def passed(self) -> bool:
         self.checks -= 1
         return self.checks < 0
@@ -1305,6 +1314,297 @@ class TransientAccessibilityAnswerTests(unittest.IsolatedAsyncioTestCase):
         ]
         self.assertEqual(outcome, SUCCEEDED)
         self.assertEqual(steps, [None, "Set the search field's value"])
+
+
+BANNER = Query("ShortLook.Platter.Content.Seamless")
+SCREEN = {"width": 402.0, "height": 874.0}
+
+
+def read(*ys: float, identifier: str = BANNER.value) -> Completed:
+    """A complete read of the banner, with one element at each y given."""
+    return Completed(
+        0,
+        json.dumps(
+            {
+                "backend": "axbridge-exclusive",
+                "screen": SCREEN,
+                "elements": [
+                    {
+                        "identifier": identifier,
+                        "type": "Other",
+                        "label": "Breaking",
+                        "frame": {"x": 9.0, "y": y, "width": 384.0, "height": 88.0},
+                    }
+                    for y in ys
+                ],
+            }
+        ).encode(),
+        b"",
+    )
+
+
+NOT_REPORTED = Completed(
+    1,
+    b"",
+    b'found no element whose AXUniqueId contains "ShortLook.Platter.Content.Seamless"\n',
+)
+
+
+class WaitCaseStub(CommandTestCaseStub):
+    wait_for = IdbEndToEndTestCase.wait_for
+    tap_when_settled = IdbEndToEndTestCase.tap_when_settled
+    setup_idb = IdbEndToEndTestCase.setup_idb
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.environment.setup_idb_bin = Path("/tmp/setup-idb")
+
+
+class ElementWaitTests(unittest.IsolatedAsyncioTestCase):
+    """Waiting for an element through reads of it, and tapping where it settled."""
+
+    async def wait(
+        self,
+        answers: Sequence[Completed],
+        operation: Callable[[WaitCaseStub], Awaitable[object]],
+        deadline: DeadlineAfter | None = None,
+    ) -> tuple[object, mock.AsyncMock, mock.Mock]:
+        case = WaitCaseStub()
+        recording = mock.Mock(spec=Recording)
+        case.recording = recording
+        case.transcript = Transcript(rules=())
+        run = mock.AsyncMock(side_effect=answers)
+        with contextlib.ExitStack() as stack:
+            stack.enter_context(mock.patch.object(harness, "run", new=run))
+            stack.enter_context(
+                mock.patch.object(harness, "POLL_INTERVAL_SECONDS", new=0)
+            )
+            if deadline is not None:
+                stack.enter_context(
+                    mock.patch.object(harness, "Deadline", new=deadline)
+                )
+            try:
+                outcome = await operation(case)
+            except Failed as failed:
+                outcome = failed
+        return outcome, run, recording
+
+    def api(self, run: mock.AsyncMock, index: int) -> str:
+        """The accessibility api the command run at `index` asked for."""
+        argv = run.await_args_list[index].args[0]
+        return argv[argv.index("--api") + 1]
+
+    def commands(self, run: mock.AsyncMock) -> list[tuple[str, ...]]:
+        """The subcommand of every idb command run, after the companion address."""
+        return [
+            tuple(call.args[0][call.args[0].index("ui") :][:2])
+            for call in run.await_args_list
+        ]
+
+    async def test_an_element_that_is_not_there_yet_is_waited_for(self) -> None:
+        outcome, run, _ = await self.wait(
+            [NOT_REPORTED, read(92)], lambda case: case.wait_for(BANNER)
+        )
+
+        self.assertEqual(outcome.element["frame"]["y"], 92)
+        self.assertEqual(run.await_count, 2)
+
+    async def test_a_substring_match_sends_the_wait_to_the_whole_screen(
+        self,
+    ) -> None:
+        outcome, run, _ = await self.wait(
+            [
+                read(92, identifier=BANNER.value + ".Title"),
+                read(92, identifier=BANNER.value + ".Title"),
+                read(92),
+            ],
+            lambda case: case.wait_for(BANNER),
+        )
+
+        self.assertEqual(outcome.element["identifier"], BANNER.value)
+        # `ui describe` would keep answering with the element that shadows it.
+        self.assertEqual(
+            self.commands(run),
+            [("ui", "describe"), ("ui", "describe-all"), ("ui", "describe-all")],
+        )
+        self.assertEqual(self.api(run, 1), "axbridge")
+
+    async def test_a_match_on_a_label(self) -> None:
+        outcome, _, _ = await self.wait(
+            [read(92)],
+            lambda case: case.wait_for(Query("Breaking", MatchKey.LABEL)),
+        )
+
+        self.assertEqual(outcome.element["label"], "Breaking")
+        self.assertEqual(outcome.document["screen"], SCREEN)
+
+    async def test_an_element_partly_off_screen_is_not_on_screen(self) -> None:
+        outcome, run, _ = await self.wait(
+            [read(-66), read(92)],
+            lambda case: case.wait_for(BANNER, until=Until.ON_SCREEN),
+        )
+
+        self.assertEqual(outcome.element["frame"]["y"], 92)
+        self.assertEqual(run.await_count, 2)
+
+    async def test_an_element_is_settled_once_reads_agree_on_its_frame(self) -> None:
+        outcome, run, _ = await self.wait(
+            [read(-66), read(40), read(92), read(92)],
+            lambda case: case.wait_for(BANNER, until=Until.SETTLED),
+        )
+
+        self.assertEqual(outcome.element["frame"]["y"], 92)
+        self.assertEqual(run.await_count, 4)
+
+    async def test_an_element_that_leaves_between_reads_starts_settling_again(
+        self,
+    ) -> None:
+        outcome, run, _ = await self.wait(
+            [read(92), NOT_REPORTED, read(92), read(92)],
+            lambda case: case.wait_for(BANNER, until=Until.SETTLED),
+        )
+
+        self.assertEqual(outcome.element["frame"]["y"], 92)
+        self.assertEqual(run.await_count, 4)
+
+    async def test_transient_answers_are_waited_through(self) -> None:
+        outcome, run, _ = await self.wait(
+            [read(92), UNANSWERED, NOT_READY, read(92), read(92)],
+            lambda case: case.wait_for(BANNER, until=Until.SETTLED),
+        )
+
+        self.assertEqual(outcome.element["frame"]["y"], 92)
+        # The reads either side of the transient answers are not two in a row.
+        self.assertEqual(run.await_count, 5)
+
+    async def test_an_unrelated_failure_fails_at_once(self) -> None:
+        outcome, run, _ = await self.wait(
+            [FAILED, read(92)], lambda case: case.wait_for(BANNER)
+        )
+
+        self.assertIsInstance(outcome, Failed)
+        self.assertEqual(run.await_count, 1)
+
+    async def test_an_element_that_never_settles_fails_the_wait(self) -> None:
+        outcome, run, _ = await self.wait(
+            [read(-66), read(40), read(92)],
+            lambda case: case.wait_for(BANNER, until=Until.SETTLED),
+            deadline=DeadlineAfter(2),
+        )
+
+        self.assertIsInstance(outcome, Failed)
+        self.assertIn(f"{BANNER} was not settled on screen within", str(outcome))
+        self.assertIn("still moving", str(outcome))
+        self.assertEqual(run.await_count, 3)
+
+    async def test_only_the_read_that_ends_the_wait_is_published(self) -> None:
+        _, _, recording = await self.wait(
+            [read(-66), read(92), read(92)],
+            lambda case: case.wait_for(
+                BANNER, until=Until.SETTLED, step="Read the banner"
+            ),
+        )
+
+        steps = [
+            call.kwargs.get("step")
+            for call in recording.event.call_args_list
+            if call.args == ("command_finished",)
+        ]
+        self.assertEqual(steps, [None, None, "Read the banner"])
+
+    async def test_each_read_describes_the_element_with_the_keys_asked_for_and_matched_on(
+        self,
+    ) -> None:
+        _, run, _ = await self.wait(
+            [read(92)],
+            lambda case: case.wait_for(BANNER, keys=("AXLabel", "AXFrame")),
+        )
+
+        argv = run.await_args_list[0].args[0]
+        self.assertEqual(
+            argv[argv.index("ui") :],
+            [
+                "ui",
+                "describe",
+                BANNER.value,
+                "--match-key",
+                "AXUniqueId",
+                "--api",
+                "axbridge",
+                "--format",
+                "complete",
+                "--key",
+                "AXLabel",
+                "--key",
+                "AXFrame",
+                "--key",
+                "AXUniqueId",
+                "--key",
+                "frame",
+                "--json",
+            ],
+        )
+
+    async def test_a_narrowed_read_of_a_typed_query_reports_the_type(self) -> None:
+        outcome, run, _ = await self.wait(
+            [read(92)],
+            lambda case: case.wait_for(
+                Query("Breaking", MatchKey.LABEL, element_type="Other"),
+                keys=("AXLabel",),
+            ),
+        )
+
+        argv = run.await_args_list[0].args[0]
+        keys = [argv[i + 1] for i, argument in enumerate(argv) if argument == "--key"]
+        self.assertEqual(keys, ["AXLabel", "frame", "type"])
+        self.assertEqual(outcome.element["label"], "Breaking")
+
+    async def test_each_command_is_bounded_by_what_is_left_of_the_wait(
+        self,
+    ) -> None:
+        _, run, _ = await self.wait(
+            [SUCCEEDED, read(92)],
+            lambda case: case.wait_for(BANNER, lookup=UiWait(), timeout=0),
+        )
+
+        timeouts = [call.kwargs["timeout"] for call in run.await_args_list]
+        self.assertEqual(
+            timeouts,
+            [1.0 + harness.MIN_READ_TIMEOUT_SECONDS, harness.MIN_READ_TIMEOUT_SECONDS],
+        )
+
+    async def test_ui_wait_finds_the_element_before_it_is_read(self) -> None:
+        outcome, run, _ = await self.wait(
+            [SUCCEEDED, read(92)],
+            lambda case: case.wait_for(BANNER, lookup=UiWait()),
+        )
+
+        self.assertEqual(outcome.element["frame"]["y"], 92)
+        self.assertEqual(self.commands(run), [("ui", "wait"), ("ui", "describe")])
+        self.assertEqual(run.await_args_list[0].args[0][0], "/tmp/setup-idb")
+        self.assertEqual(self.api(run, 0), "axbridge")
+
+    async def test_ui_wait_can_find_the_element_through_another_api(self) -> None:
+        _, run, _ = await self.wait(
+            [SUCCEEDED, read(92)],
+            lambda case: case.wait_for(BANNER, lookup=UiWait(AccessibilityApi.AX)),
+        )
+
+        self.assertEqual(self.commands(run), [("ui", "wait"), ("ui", "describe")])
+        self.assertEqual(self.api(run, 0), "ax")
+        self.assertEqual(self.api(run, 1), "axbridge")
+
+    async def test_a_tap_goes_to_the_centre_of_the_settled_frame(self) -> None:
+        _, run, _ = await self.wait(
+            [read(-66), read(92), read(92), SUCCEEDED],
+            lambda case: case.tap_when_settled(BANNER, "--reason", "it is there"),
+        )
+
+        argv = run.await_args_list[-1].args[0]
+        self.assertEqual(
+            argv[argv.index("ui") :],
+            ["ui", "tap", "201", "136", "--reason", "it is there"],
+        )
 
 
 class CompanionLifecycleTests(unittest.TestCase):

@@ -33,7 +33,7 @@ import time
 import unittest
 from collections.abc import Mapping, Sequence
 from contextlib import ExitStack
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import Any, Awaitable, BinaryIO, Callable, NoReturn, TypeVar
 
@@ -88,6 +88,15 @@ UNANSWERED = re.compile(
     r"which did not answer in time"
 )
 NOTHING_WRITTEN_MARKER = "nothing was written. Read the tree again and retry"
+ELEMENT_NOT_FOUND_MARKER = "found no element whose"
+UI_UPDATE_TIMEOUT_SECONDS = 30.0
+# The least a wait gives one read, so one begun as the wait's time runs out can
+# still answer.
+MIN_READ_TIMEOUT_SECONDS = 10.0
+# Consecutive reads that must agree on an element's frame before it has
+# settled. Fewer than the three JestE2E asks for, since SpringBoard withdraws
+# a notification banner about eight seconds after it arrives.
+SETTLED_READS = 2
 READ_COMMANDS = frozenset(
     {
         ("ui", "describe"),
@@ -153,6 +162,10 @@ class CompanionDied(HarnessError):
 
 class NotReady(Exception):
     """Retry this poll because the expected condition is not met yet."""
+
+
+class NoExactMatch(NotReady):
+    """A read answered, but with no element exactly the one a query is for."""
 
 
 class Deadline:
@@ -1017,6 +1030,200 @@ def _on_screen(element: dict[str, Any], screen: dict[str, float] | None) -> bool
     )
 
 
+def _wholly_on_screen(element: dict[str, Any], screen: dict[str, float] | None) -> bool:
+    """On the screen from edge to edge, so a touch at its centre lands on it.
+
+    A banner sliding in, or a row half scrolled away, overlaps the screen
+    while its centre is still off it.
+    """
+    if not _on_screen(element, screen):
+        return False
+    assert screen is not None
+    frame = element["frame"]
+    return (
+        frame["x"] >= screen["x"]
+        and frame["y"] >= screen["y"]
+        and frame["x"] + frame["width"] <= screen["x"] + screen["width"]
+        and frame["y"] + frame["height"] <= screen["y"] + screen["height"]
+    )
+
+
+def _center(element: dict[str, Any]) -> tuple[int, int]:
+    frame = element["frame"]
+    return (
+        int(frame["x"] + frame["width"] / 2),
+        int(frame["y"] + frame["height"] / 2),
+    )
+
+
+class MatchKey(enum.Enum):
+    """An accessibility key a query matches, and the field a complete read reports it in."""
+
+    IDENTIFIER = ("AXUniqueId", "identifier")
+    LABEL = ("AXLabel", "label")
+
+    def __init__(self, flag: str, field: str) -> None:
+        self.flag = flag
+        self.field = field
+
+
+class AccessibilityApi(enum.Enum):
+    AX = "ax"
+    AXBRIDGE = "axbridge"
+
+
+class Until(enum.Enum):
+    """What an element has to be before a wait for it is over."""
+
+    PRESENT = "reported"
+    ON_SCREEN = "wholly on screen"
+    # Wholly on screen, with the same frame on SETTLED_READS reads in a row.
+    SETTLED = "settled on screen"
+
+
+@dataclass(frozen=True)
+class Describe:
+    """Find an element by polling `ui describe`, every answer to which carries it."""
+
+
+@dataclass(frozen=True)
+class UiWait:
+    """Let `ui wait` find an element first, through `api` or else the query's own.
+
+    `ui wait` only answers whether the element is there, so `ui describe`
+    reads still decide everything else.
+    """
+
+    api: AccessibilityApi | None = None
+
+
+# How a wait finds an element before reading it.
+Lookup = Describe | UiWait
+DESCRIBE = Describe()
+
+
+@dataclass(frozen=True)
+class Query:
+    """One element, as a wait addresses it."""
+
+    value: str
+    match_key: MatchKey = MatchKey.IDENTIFIER
+    element_type: str | None = None
+    api: AccessibilityApi = AccessibilityApi.AXBRIDGE
+
+    @property
+    def marker_args(self) -> tuple[str, ...]:
+        return (
+            self.value,
+            "--match-key",
+            self.match_key.flag,
+            "--api",
+            self.api.value,
+        )
+
+    def matches(self, element: dict[str, Any]) -> bool:
+        """`ui describe` matches a substring; a query is for exactly this element."""
+        return element.get(self.match_key.field) == self.value and (
+            self.element_type is None or element.get("type") == self.element_type
+        )
+
+    def describe_keys(self, keys: Sequence[str]) -> tuple[str, ...]:
+        """`keys`, with what `matches` and a frame check read added.
+
+        `--key` drops every attribute not asked for, so a narrowed read has to
+        ask for these too or no element in it could match.
+        """
+        if not keys:
+            return ()
+        needed = (self.match_key.flag, "frame") + (
+            ("type",) if self.element_type is not None else ()
+        )
+        return tuple(dict.fromkeys((*keys, *needed)))
+
+    def __str__(self) -> str:
+        return (
+            f"the {self.element_type or 'element'} whose "
+            f"{self.match_key.flag} is {self.value!r}"
+        )
+
+
+@dataclass(frozen=True)
+class Found:
+    """An element, and the read of it that ended a wait."""
+
+    element: dict[str, Any]
+    document: dict[str, Any]
+
+
+class UnexpectedAnswer(Exception):
+    """A read failed for a reason waiting longer would not change."""
+
+    def __init__(self, completed: Completed) -> None:
+        super().__init__(completed.error_text)
+        self.completed = completed
+
+
+class ElementWait:
+    """What successive reads of one query have shown, against the condition a wait needs."""
+
+    def __init__(self, query: Query, until: Until) -> None:
+        self.query = query
+        self.until = until
+        self._frame: dict[str, Any] | None = None
+        self._agreeing = 0
+
+    def observe(self, completed: Completed) -> Found:
+        """The element and its read, once the reads so far satisfy the condition.
+
+        Raises NotReady while they do not, and UnexpectedAnswer for a failure
+        that is neither a missing element nor a transient answer.
+        """
+        if completed.returncode != 0:
+            if ELEMENT_NOT_FOUND_MARKER in completed.error_text:
+                self._agreeing = 0
+                raise NotReady(f"{self.query} is not reported")
+            if worth_repeating(("ui", "describe"), completed):
+                # Reads either side of it were not in a row, so it cannot
+                # settle anything.
+                self._agreeing = 0
+                raise NotReady(f"a transient answer: {completed.error_text.strip()}")
+            raise UnexpectedAnswer(completed)
+        document = json.loads(completed.text)
+        exact = [
+            element for element in _elements(document) if self.query.matches(element)
+        ]
+        if not exact:
+            self._agreeing = 0
+            raise NoExactMatch(f"{self.query} is not among the elements reported")
+        matches = [element for element in exact if _has_area(element)]
+        if not matches:
+            self._agreeing = 0
+            raise NotReady(f"{self.query} is not reported with a frame")
+        if self.until is Until.PRESENT:
+            return Found(matches[0], document)
+        screen = _screen(document)
+        on_screen = [
+            element for element in matches if _wholly_on_screen(element, screen)
+        ]
+        if not on_screen:
+            self._agreeing = 0
+            raise NotReady(
+                f"{self.query} is at {matches[0]['frame']}, not wholly on the "
+                f"screen {screen}"
+            )
+        element = on_screen[0]
+        if self.until is Until.ON_SCREEN:
+            return Found(element, document)
+        if element["frame"] == self._frame:
+            self._agreeing += 1
+        else:
+            self._frame = element["frame"]
+            self._agreeing = 1
+        if self._agreeing < SETTLED_READS:
+            raise NotReady(f"{self.query} is still moving, now at {self._frame}")
+        return Found(element, document)
+
+
 class IdbEndToEndTestCase(unittest.IsolatedAsyncioTestCase):
     """Run CLI tests against the shared companion and simulator."""
 
@@ -1415,6 +1622,101 @@ class IdbEndToEndTestCase(unittest.IsolatedAsyncioTestCase):
     async def idb_json_lines(self, *args: str, **kwargs: Any) -> list[Any]:
         text = await self.idb_text(*args, "--json", **kwargs)
         return [json.loads(line) for line in text.splitlines() if line.strip()]
+
+    async def wait_for(
+        self,
+        query: Query,
+        *,
+        until: Until = Until.PRESENT,
+        lookup: Lookup = DESCRIBE,
+        keys: Sequence[str] = (),
+        timeout: float = UI_UPDATE_TIMEOUT_SECONDS,
+        step: str | None = None,
+    ) -> Found:
+        """Wait until the query's element is `until`, and return it as last read.
+
+        Every read is one `ui describe` of the element, so the frame returned
+        is the frame the condition was judged on, not one read afterwards.
+        `ui describe` answers with the first element whose value contains the
+        query's, so once it answers with another element, the rest of the wait
+        reads the whole screen with `ui describe-all` instead. An element that
+        is not there yet and a transient answer are both waited through; any
+        other failure fails the test at once, as does a read that outlasts the
+        wait. Only the read that ends the wait is published, as `step`. `keys`
+        narrows what each read reports, with `--key`.
+        """
+        deadline = Deadline(timeout)
+        if isinstance(lookup, UiWait):
+            seconds = max(deadline.remaining, 1.0)
+            await self.setup_idb(
+                "ui",
+                "wait",
+                *replace(query, api=lookup.api or query.api).marker_args,
+                "--timeout",
+                f"{seconds:.0f}",
+                timeout=seconds + MIN_READ_TIMEOUT_SECONDS,
+            )
+        reported = (
+            "--format",
+            "complete",
+            *(
+                argument
+                for key in query.describe_keys(keys)
+                for argument in ("--key", key)
+            ),
+            "--json",
+        )
+        args = ("ui", "describe", *query.marker_args, *reported)
+        wait = ElementWait(query, until)
+
+        async def read() -> Found:
+            nonlocal args
+            outcome: Found | Exception | None = None
+
+            def published(completed: Completed) -> str | None:
+                nonlocal outcome
+                try:
+                    outcome = wait.observe(completed)
+                except (NotReady, UnexpectedAnswer) as error:
+                    outcome = error
+                    return None
+                return step
+
+            await self._run_once(
+                args,
+                timeout=min(
+                    DEFAULT_COMMAND_TIMEOUT_SECONDS,
+                    max(deadline.remaining, MIN_READ_TIMEOUT_SECONDS),
+                ),
+                published=published,
+            )
+            if isinstance(outcome, UnexpectedAnswer):
+                self.fail_or_skip_for(" ".join(args), outcome.completed)
+            if isinstance(outcome, NoExactMatch):
+                args = ("ui", "describe-all", "--api", query.api.value, *reported)
+            if isinstance(outcome, Exception):
+                raise outcome
+            assert outcome is not None
+            return outcome
+
+        try:
+            return await wait_until(
+                f"{query} was not {until.value}", max(deadline.remaining, 0.0), read
+            )
+        except HarnessError as error:
+            self.fail(str(error))
+
+    async def tap_when_settled(
+        self, query: Query, *tap_args: str, step: str | None = None
+    ) -> Found:
+        """Tap the centre of the query's element once it has settled on screen.
+
+        The tap goes to the frame of the read that found it settled.
+        """
+        found = await self.wait_for(query, until=Until.SETTLED)
+        x, y = _center(found.element)
+        await self.idb("ui", "tap", str(x), str(y), *tap_args, step=step)
+        return found
 
     async def idb_expect_failure(
         self,
