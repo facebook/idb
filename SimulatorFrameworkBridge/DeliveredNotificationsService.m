@@ -8,51 +8,16 @@
 #import "DeliveredNotificationsService.h"
 #import "DeliveredNotificationsService+Testing.h"
 
-#import <dlfcn.h>
 #import <errno.h>
 #import <string.h>
 
-#import <UserNotifications/UserNotifications.h>
-
-#import "KeyedArchivePrivate.h"
-#import "UserNotificationsPrivate.h"
-
-/**
- * A center bound to another app's bundle identifier.
- *
- * `+currentNotificationCenter` is scoped to the calling process, which is never the
- * app under test, so it would always report nothing. The private initialiser is the
- * only way to ask about another bundle, and UserNotifications answers it for any
- * bundle that has registered notification settings.
- */
-static id<FBDeliveredNotificationsCenter> CenterForBundleID(NSString *bundleID)
-{
-  Class centerClass = NSClassFromString(@"UNUserNotificationCenter");
-  if (!centerClass) {
-    NSLog(@"[DeliveredNotifications] UNUserNotificationCenter class not found");
-    return nil;
-  }
-  if (![centerClass instancesRespondToSelector:@selector(initWithBundleIdentifier:)]) {
-    NSLog(@"[DeliveredNotifications] UNUserNotificationCenter has no initWithBundleIdentifier:");
-    return nil;
-  }
-  // Declaring the selector says what its signature is if the runtime has it, not that the
-  // runtime will accept this bundle: it raises for one with no registered notification
-  // settings, and nothing above this has a handler, so an uncaught raise ends the guest
-  // before the store fallback the caller has for exactly that case.
-  UNUserNotificationCenter *center = nil;
-  @try {
-    center = [[centerClass alloc] initWithBundleIdentifier:bundleID];
-  } @catch (NSException *exception) {
-    NSLog(@"[DeliveredNotifications] initWithBundleIdentifier: raised for %@: %@", bundleID, exception);
-    return nil;
-  }
-  if (!center) {
-    NSLog(@"[DeliveredNotifications] No notification center for %@", bundleID);
-    return nil;
-  }
-  return (id<FBDeliveredNotificationsCenter>)center;
-}
+#if __has_include(<SimulatorFrameworkBridgeRuntime/DeliveredNotificationsClient.h>)
+ #import <SimulatorFrameworkBridgeRuntime/DeliveredNotificationsClient.h>
+ #import <SimulatorFrameworkBridgeRuntime/KeyedArchiveReference.h>
+#else
+ #import "Runtime/DeliveredNotificationsClient.h"
+ #import "Runtime/KeyedArchiveReference.h"
+#endif
 
 /**
  * Maps one delivered notification to the JSON object printed for it.
@@ -61,19 +26,17 @@ static id<FBDeliveredNotificationsCenter> CenterForBundleID(NSString *bundleID)
  * set. A key only one of the two paths emits is one they can come to disagree on without
  * anything noticing, since no reader would be looking at it.
  */
-static NSDictionary<NSString *, id> *NotificationJSONObject(UNNotification *notification, NSString *bundleID)
+static NSDictionary<NSString *, id> *NotificationJSONObject(FBDeliveredNotificationValues *notification, NSString *bundleID)
 {
-  UNNotificationRequest *request = notification.request;
-  UNNotificationContent *content = request.content;
   NSMutableDictionary<NSString *, id> *object = [NSMutableDictionary dictionary];
   object[@"bundleID"] = bundleID ?: @"";
-  object[@"identifier"] = request.identifier ?: @"";
-  object[@"title"] = content.title ?: @"";
-  object[@"subtitle"] = content.subtitle ?: @"";
-  object[@"body"] = content.body ?: @"";
-  object[@"threadIdentifier"] = content.threadIdentifier ?: @"";
+  object[@"identifier"] = notification.identifier ?: @"";
+  object[@"title"] = notification.title ?: @"";
+  object[@"subtitle"] = notification.subtitle ?: @"";
+  object[@"body"] = notification.body ?: @"";
+  object[@"threadIdentifier"] = notification.threadIdentifier ?: @"";
   if (notification.date) {
-    object[@"date"] = @([notification.date timeIntervalSince1970]);
+    object[@"date"] = notification.date;
   }
   return object;
 }
@@ -154,24 +117,12 @@ typedef struct {
 
 static BOOL IsArchiveReference(id object, NSUInteger *index)
 {
-  static FBKeyedArchiverUIDGetTypeIDFn getTypeID;
-  static FBKeyedArchiverUIDGetValueFn getValue;
-  static dispatch_once_t onceToken;
-  dispatch_once(&onceToken, ^{
-    getTypeID = (FBKeyedArchiverUIDGetTypeIDFn)dlsym(RTLD_DEFAULT, "_CFKeyedArchiverUIDGetTypeID");
-    getValue = (FBKeyedArchiverUIDGetValueFn)dlsym(RTLD_DEFAULT, "_CFKeyedArchiverUIDGetValue");
-    if (!getTypeID || !getValue) {
-      NSLog(@"[DeliveredNotifications] CoreFoundation does not export the keyed-archive UID accessors; no archive can be read");
-    }
-  });
-  if (!object || !getTypeID || !getValue) {
-    return NO;
-  }
-  if (CFGetTypeID((__bridge CFTypeRef)object) != getTypeID()) {
+  NSNumber *reference = [FBKeyedArchiveReference indexOfObject:object];
+  if (!reference) {
     return NO;
   }
   if (index) {
-    *index = getValue((__bridge const void *)object);
+    *index = reference.unsignedIntegerValue;
   }
   return YES;
 }
@@ -571,26 +522,8 @@ static int ClearDeliveredNotificationsFromStore(NSString *bundleID)
   return 1;
 }
 
-/**
- * The shared connection to `usernotificationsd`, or nil where this runtime has none to vend.
- *
- * Unlike a center, it is not scoped to a bundle: which app's notifications it may remove is
- * decided by the daemon from who is asking, not by anything this process tells it.
- */
-static id<FBDeliveredNotificationsRemover> DaemonRemover(void)
-{
-  Class connectionClass = NSClassFromString(@"UNUserNotificationServiceConnection");
-  if (!connectionClass) {
-    NSLog(@"[DeliveredNotifications] UNUserNotificationServiceConnection class not found");
-    return nil;
-  }
-  if (![connectionClass respondsToSelector:@selector(sharedInstance)]
-      || ![connectionClass instancesRespondToSelector:@selector(removeAllDeliveredNotificationsForBundleIdentifier:completionHandler:)]) {
-    NSLog(@"[DeliveredNotifications] UNUserNotificationServiceConnection cannot remove delivered notifications");
-    return nil;
-  }
-  return (id<FBDeliveredNotificationsRemover>)[connectionClass sharedInstance];
-}
+static int HandleWithClient(NSString *action, NSString *bundleID, FBDeliveredNotificationsClient *client);
+static int ClearWithRemovalClient(NSString *bundleID, FBDeliveredNotificationsRemovalClient *client);
 
 int handleDeliveredNotificationsAction(NSString *action, NSString *bundleID)
 {
@@ -602,20 +535,20 @@ int handleDeliveredNotificationsAction(NSString *action, NSString *bundleID)
     return 1;
   }
   if (IsClearDeliveredAction(action)) {
-    return clearDeliveredNotificationsWithRemover(bundleID, DaemonRemover());
+    return ClearWithRemovalClient(bundleID, [FBDeliveredNotificationsRemovalClient liveClient]);
   }
   if (!IsDeliveredAction(action)) {
     NSLog(@"[DeliveredNotifications] Unknown action: %@. Use delivered or clear-delivered.", action);
     return 1;
   }
-  id<FBDeliveredNotificationsCenter> center = CenterForBundleID(bundleID);
-  if (!center) {
+  FBDeliveredNotificationsClient *client = [FBDeliveredNotificationsClient liveClientForBundleID:bundleID];
+  if (!client) {
     // The store holds the same records, so a guest whose UserNotifications will not
     // hand one out still answers rather than failing.
     NSLog(@"[DeliveredNotifications] No center for %@; reading the store", bundleID);
     return PrintDeliveredNotificationsFromStore(bundleID);
   }
-  return handleDeliveredNotificationsActionWithCenter(action, bundleID, center);
+  return HandleWithClient(action, bundleID, client);
 }
 
 static const NSTimeInterval kDeliveredNotificationsTimeout = 30;
@@ -627,44 +560,32 @@ void FBDeliveredNotificationsSetTimeoutForTesting(NSTimeInterval timeout)
   gTimeoutForTesting = timeout;
 }
 
-int handleDeliveredNotificationsActionWithCenter(NSString *action,
-                                                 NSString *bundleID,
-                                                 id<FBDeliveredNotificationsCenter> center
-)
+int handleDeliveredNotificationsActionWithCenter(NSString *action, NSString *bundleID, id<FBDeliveredNotificationsCenter> center)
+{
+  return HandleWithClient(action, bundleID, [[FBDeliveredNotificationsClient alloc] initWithCenter:center]);
+}
+
+static int HandleWithClient(NSString *action, NSString *bundleID, FBDeliveredNotificationsClient *client)
 {
   if (!IsDeliveredAction(action)) {
     NSLog(@"[DeliveredNotifications] Unknown action: %@. Use delivered.", action);
     return 1;
   }
 
-  // The completion handler runs on an internal queue, so block until it has. It is also
-  // still live after a timeout gives up on it, so it writes into a container it owns a
-  // reference to rather than into this frame: a late handler then fills something nobody
-  // reads, and everything it holds goes when the daemon releases it.
-  dispatch_semaphore_t semaphore = dispatch_semaphore_create(0);
-  NSMutableArray<UNNotification *> *received = [NSMutableArray array];
-  @try {
-    [center getDeliveredNotificationsWithCompletionHandler:^(NSArray<UNNotification *> *notifications) {
-      if (notifications.count > 0) {
-        [received addObjectsFromArray:notifications];
-      }
-      dispatch_semaphore_signal(semaphore);
-    }];
-  } @catch (NSException *exception) {
-    // The store holds the same records, so a runtime that refuses the send still answers.
-    NSLog(@"[DeliveredNotifications] getDeliveredNotificationsWithCompletionHandler: raised for %@: %@; reading the store", bundleID, exception);
+  NSTimeInterval timeout = gTimeoutForTesting > 0 ? gTimeoutForTesting : kDeliveredNotificationsTimeout;
+  FBDeliveredNotificationsReadResult *result = [client readWithTimeout:timeout];
+  if (result.status == FBDeliveredNotificationsReadStatusRaised) {
+    NSLog(@"[DeliveredNotifications] getDeliveredNotificationsWithCompletionHandler: raised for %@: %@; reading the store", bundleID, result.exceptionDescription);
     return PrintDeliveredNotificationsFromStore(bundleID);
   }
-  NSTimeInterval timeout = gTimeoutForTesting > 0 ? gTimeoutForTesting : kDeliveredNotificationsTimeout;
-  if (dispatch_semaphore_wait(semaphore, dispatch_time(DISPATCH_TIME_NOW, (int64_t)(timeout * NSEC_PER_SEC))) != 0) {
-    // The store holds the same records, so a center that has not come back is the degraded
-    // case the others here already answer from disk for rather than failing on.
+  if (result.status == FBDeliveredNotificationsReadStatusTimedOut) {
     NSLog(@"[DeliveredNotifications] Timed out reading notifications for %@; reading the store", bundleID);
     return PrintDeliveredNotificationsFromStore(bundleID);
   }
+  NSArray<FBDeliveredNotificationValues *> *received = result.notifications;
   if (received.count > 0) {
     NSUInteger unreportedCount = 0;
-    for (UNNotification *notification in received) {
+    for (FBDeliveredNotificationValues *notification in received) {
       if (!PrintJSONLine(NotificationJSONObject(notification, bundleID))) {
         unreportedCount++;
       }
@@ -709,34 +630,30 @@ static int ClearDeliveredNotificationsFromStoreInstead(NSString *bundleID, NSStr
   return ClearDeliveredNotificationsFromStore(bundleID);
 }
 
-int clearDeliveredNotificationsWithRemover(NSString *bundleID, id<FBDeliveredNotificationsRemover> remover)
+static int ClearWithRemovalClient(NSString *bundleID, FBDeliveredNotificationsRemovalClient *client)
 {
-  if (!remover) {
+  if (!client) {
     return ClearDeliveredNotificationsFromStoreInstead(bundleID, @"No connection to usernotificationsd");
   }
-  // The same shape as the read: the handler may run after a timeout has given up on it, so it
-  // writes into a container it owns rather than into this frame.
-  dispatch_semaphore_t semaphore = dispatch_semaphore_create(0);
-  NSMutableArray<NSNumber *> *answer = [NSMutableArray array];
-  @try {
-    [remover removeAllDeliveredNotificationsForBundleIdentifier:bundleID
-                                              completionHandler:^(BOOL success) {
-                                                [answer addObject:@(success)];
-                                                dispatch_semaphore_signal(semaphore);
-                                              }];
-  } @catch (NSException *exception) {
+  NSTimeInterval timeout = gTimeoutForTesting > 0 ? gTimeoutForTesting : kDeliveredNotificationsTimeout;
+  FBDeliveredNotificationsRemovalResult *result = [client removeAllForBundleID:bundleID timeout:timeout];
+  if (result.status == FBDeliveredNotificationsRemovalStatusRaised) {
     return ClearDeliveredNotificationsFromStoreInstead(
       bundleID,
-      [NSString stringWithFormat:@"removeAllDeliveredNotificationsForBundleIdentifier: raised %@", exception]
+      [NSString stringWithFormat:@"removeAllDeliveredNotificationsForBundleIdentifier: raised %@", result.exceptionDescription]
     );
   }
-  NSTimeInterval timeout = gTimeoutForTesting > 0 ? gTimeoutForTesting : kDeliveredNotificationsTimeout;
-  if (dispatch_semaphore_wait(semaphore, dispatch_time(DISPATCH_TIME_NOW, (int64_t)(timeout * NSEC_PER_SEC))) != 0) {
+  if (result.status == FBDeliveredNotificationsRemovalStatusTimedOut) {
     return ClearDeliveredNotificationsFromStoreInstead(bundleID, @"usernotificationsd did not answer the removal");
   }
-  if (![answer.firstObject boolValue]) {
+  if (result.status == FBDeliveredNotificationsRemovalStatusRefused) {
     return ClearDeliveredNotificationsFromStoreInstead(bundleID, @"usernotificationsd refused the removal");
   }
   // The daemon rewrites the store itself as it withdraws, so it is the daemon's to update.
   return 0;
+}
+
+int clearDeliveredNotificationsWithRemover(NSString *bundleID, id<FBDeliveredNotificationsRemover> remover)
+{
+  return ClearWithRemovalClient(bundleID, remover ? [[FBDeliveredNotificationsRemovalClient alloc] initWithRemover:remover] : nil);
 }

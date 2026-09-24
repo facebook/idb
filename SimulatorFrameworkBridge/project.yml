@@ -75,7 +75,7 @@ targets:
     sources:
       # Contacts and HealthKit are absent from the tvOS SDK, and UserNotifications has no
       # delivered-notification API there, so the three services built on them are not compiled here.
-      # `ServiceCommand.swift` refuses their verbs on tvOS.
+      # Unavailable actions are refused before their service is invoked.
       - path: .
         excludes:
           - "**/*.entitlements"
