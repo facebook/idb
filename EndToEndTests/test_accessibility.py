@@ -24,6 +24,7 @@ from typing import Any
 
 from .documentation import documented_demo
 from .harness import (
+    _center,
     _elements,
     _has_area,
     _label,
@@ -37,20 +38,23 @@ from .harness import (
     IdbEndToEndTestCase,
     NotReady,
     POLL_INTERVAL_SECONDS,
+    Query,
     run_with_registered_cleanup,
     select_tests_for_capability,
     suite_supports,
     SuiteCapability,
+    UI_UPDATE_TIMEOUT_SECONDS,
+    UiWait,
     wait_until,
 )
 
 SETTINGS_BUNDLE_ID = "com.apple.Preferences"
 SAFARI_BUNDLE_ID = "com.apple.mobilesafari"
 GENERAL_ROW_ID = "com.apple.settings.general"
+GENERAL_ROW = Query(GENERAL_ROW_ID)
 SETTINGS_ROW_PREFIX = "com.apple.settings."
 # Views that carry the rows' identifier prefix without being rows.
 ROW_CONTAINER_TYPES = frozenset({"CollectionView", "Table", "ScrollView", "List"})
-UI_UPDATE_TIMEOUT_SECONDS = 30.0
 # A tap idb refused does nothing at all, so a wait long enough to catch a
 # screen that did change is short.
 NOTHING_OPENS_TIMEOUT_SECONDS = 2.0
@@ -316,46 +320,6 @@ class AccessibilityTests(IdbEndToEndTestCase):
         except HarnessError as error:
             self.fail(str(error))
 
-    async def wait_for_element(
-        self, identifier: str, element_type: str | None = None
-    ) -> dict[str, Any]:
-        await self.setup_idb(
-            "ui",
-            "wait",
-            identifier,
-            "--match-key",
-            "AXUniqueId",
-            "--timeout",
-            str(UI_UPDATE_TIMEOUT_SECONDS),
-        )
-
-        # `ui wait` resolves the marker through ax and the snapshot is read
-        # through axbridge, so the two can disagree for a moment after the
-        # screen the element sits on has changed.
-        async def read() -> dict[str, Any]:
-            for element in _elements(await self.describe_all_complete("axbridge")):
-                if element.get("identifier") == identifier and (
-                    element_type is None or element.get("type") == element_type
-                ):
-                    return element
-            raise NotReady("axbridge has not reported it yet")
-
-        try:
-            return await wait_until(
-                f"No {element_type or 'element'} with identifier {identifier!r}",
-                UI_UPDATE_TIMEOUT_SECONDS,
-                read,
-            )
-        except HarnessError as error:
-            self.fail(str(error))
-
-    def center(self, element: dict[str, Any]) -> tuple[int, int]:
-        frame = element["frame"]
-        return (
-            int(frame["x"] + frame["width"] / 2),
-            int(frame["y"] + frame["height"] / 2),
-        )
-
     async def test_ui_describe_all_reads_both_backends_and_honours_its_options(
         self,
     ) -> None:
@@ -404,7 +368,7 @@ class AccessibilityTests(IdbEndToEndTestCase):
 
     async def test_ui_describe_resolves_a_point_and_a_marker(self) -> None:
         marker = _label(self.control)
-        x, y = self.center(self.control)
+        x, y = _center(self.control)
 
         self.assertTrue(
             await self.idb_json("ui", "describe-point", str(x), str(y)),
@@ -448,7 +412,7 @@ class AccessibilityTests(IdbEndToEndTestCase):
         )
 
     async def test_ui_wait_returns_after_general_opens(self) -> None:
-        general = await self.wait_for_element(GENERAL_ROW_ID)
+        general = (await self.wait_for(GENERAL_ROW, lookup=UiWait())).element
         title = _label(general)
         self.assertTrue(title, "The General row has no label")
         before = _elements(await self.describe_all_complete("axbridge"))
@@ -564,7 +528,7 @@ class AccessibilityTests(IdbEndToEndTestCase):
 
     async def restore_search_field(self, value: str) -> None:
         field = await self.wait_for_search_field()
-        x, y = self.center(field)
+        x, y = _center(field)
         await self.idb("ui", "set-value", str(x), str(y), "--value", value)
 
     async def test_ui_set_value_updates_the_search_field(self) -> None:
@@ -572,7 +536,7 @@ class AccessibilityTests(IdbEndToEndTestCase):
         original = field.get("value") or ""
         self.assertIsInstance(original, str)
         self.addAsyncCleanup(self.restore_search_field, original)
-        x, y = self.center(field)
+        x, y = _center(field)
 
         completed = await self.idb(
             "ui", "set-value", str(x), str(y), "--value", "idb-first"
@@ -583,12 +547,12 @@ class AccessibilityTests(IdbEndToEndTestCase):
         # The first write puts Settings into search mode, so the second is
         # written against a raised keyboard and a layout that has moved under it.
         field = await self.wait_for_search_field()
-        x, y = self.center(field)
+        x, y = _center(field)
         await self.idb("ui", "set-value", str(x), str(y), "--value", "idb-second")
         await self.wait_for_search_field("idb-second")
 
     async def test_ui_tap_opens_general_by_point(self) -> None:
-        general = await self.wait_for_element(GENERAL_ROW_ID)
+        general = (await self.wait_for(GENERAL_ROW, lookup=UiWait())).element
         title = _label(general)
         self.assertTrue(title, "The General row has no label")
 
@@ -618,10 +582,10 @@ class AccessibilityTests(IdbEndToEndTestCase):
             "The rejected tap opened General",
         )
 
-        general = await self.wait_for_element(GENERAL_ROW_ID)
-        x, y = self.center(general)
+        general = (await self.wait_for(GENERAL_ROW, lookup=UiWait())).element
+        x, y = _center(general)
         await self.idb("ui", "tap", str(x), str(y), "--api", "ax")
-        await self.wait_for_element(title, "NavigationBar")
+        await self.wait_for(Query(title, element_type="NavigationBar"), lookup=UiWait())
 
     async def describe_by_id(self, identifier: str, *, step: str) -> dict[str, Any]:
         """One element, read from inside the simulator by its accessibility id.
@@ -667,7 +631,7 @@ class AccessibilityTests(IdbEndToEndTestCase):
         ),
     )
     async def test_ui_opens_general_by_identifier_and_confirms_it(self) -> None:
-        await self.wait_for_element(GENERAL_ROW_ID)
+        await self.wait_for(GENERAL_ROW, lookup=UiWait())
 
         before = await self.describe_by_id(
             GENERAL_ROW_ID, step="Find the General row by accessibility identifier"
@@ -799,7 +763,7 @@ class AccessibilityTests(IdbEndToEndTestCase):
         ),
     )
     async def test_ui_scroll_moves_settings_rows_down_and_up(self) -> None:
-        await self.wait_for_element(GENERAL_ROW_ID)
+        await self.wait_for(GENERAL_ROW, lookup=UiWait())
         before = _settings_row_positions(await self.describe_all_complete("axbridge"))
         self.assertIn(GENERAL_ROW_ID, before)
 
