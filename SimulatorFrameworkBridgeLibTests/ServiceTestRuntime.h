@@ -83,6 +83,20 @@ NSDictionary<NSString *, NSNumber *> *FBAXRuntimeQueueProbe(BOOL raise);
 @property (nonatomic) BOOL wasAsked;
 @end
 
+/** Answers every removal with `succeeds`, as the daemon does for a guest it does or does not see as the app. */
+@interface FBFakeDeliveredNotificationsRemover : NSObject <FBDeliveredNotificationsRemover>
+@property (nonatomic) BOOL succeeds;
+@property (nonatomic, copy) NSArray<NSString *> *removedBundleIDs;
+@end
+
+/** Raises on the send, as a connection that will not take the request does. */
+@interface FBRaisingDeliveredNotificationsRemover : NSObject <FBDeliveredNotificationsRemover>
+@end
+
+/** Never answers, as a daemon that has stopped servicing the request does. */
+@interface FBSilentDeliveredNotificationsRemover : NSObject <FBDeliveredNotificationsRemover>
+@end
+
 /** Raises the way a runtime that has the selector but will not answer for the bundle does. */
 @interface FBRaisingDeliveredNotificationsCenter : NSObject <FBDeliveredNotificationsCenter>
 @end

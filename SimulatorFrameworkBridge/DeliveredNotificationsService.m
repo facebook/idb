@@ -197,7 +197,9 @@ static id ResolveArchiveObject(FBKeyedArchive archive, id object)
 static BOOL IsNoSuchFileError(NSError *error)
 {
   if ([error.domain isEqualToString:NSCocoaErrorDomain]) {
-    return error.code == NSFileReadNoSuchFileError;
+    // Two codes for one condition: a read of a path with nothing at it reports
+    // `NSFileReadNoSuchFileError`, a removal of the same path `NSFileNoSuchFileError`.
+    return error.code == NSFileReadNoSuchFileError || error.code == NSFileNoSuchFileError;
   }
   if ([error.domain isEqualToString:NSPOSIXErrorDomain]) {
     return error.code == ENOENT;
@@ -536,6 +538,60 @@ static BOOL IsDeliveredAction(NSString *action)
   return [action isEqualToString:@"delivered"];
 }
 
+static BOOL IsClearDeliveredAction(NSString *action)
+{
+  return [action isEqualToString:@"clear-delivered"];
+}
+
+/**
+ * Deletes the records the store holds for `bundleID`.
+ *
+ * A bundle the mapping does not name, and a store that was never written, both have nothing
+ * to clear, which is success. A mapping that could not be read is not: the store it would
+ * have named may hold records, and answering 0 there would report them as cleared.
+ */
+static int ClearDeliveredNotificationsFromStore(NSString *bundleID)
+{
+  BOOL unreadable = NO;
+  NSString *directory = StoreDirectoryForBundleID(bundleID, &unreadable);
+  if (!directory) {
+    return unreadable ? 1 : 0;
+  }
+  NSString *storePath = [[NotificationsDirectory()
+                          stringByAppendingPathComponent:directory]
+                         stringByAppendingPathComponent:@"DeliveredNotifications.plist"];
+  NSError *error = nil;
+  if ([NSFileManager.defaultManager removeItemAtPath:storePath error:&error]) {
+    return 0;
+  }
+  if (IsNoSuchFileError(error)) {
+    return 0;
+  }
+  NSLog(@"[DeliveredNotifications] %@ could not be removed: %@", storePath, error);
+  return 1;
+}
+
+/**
+ * The shared connection to `usernotificationsd`, or nil where this runtime has none to vend.
+ *
+ * Unlike a center, it is not scoped to a bundle: which app's notifications it may remove is
+ * decided by the daemon from who is asking, not by anything this process tells it.
+ */
+static id<FBDeliveredNotificationsRemover> DaemonRemover(void)
+{
+  Class connectionClass = NSClassFromString(@"UNUserNotificationServiceConnection");
+  if (!connectionClass) {
+    NSLog(@"[DeliveredNotifications] UNUserNotificationServiceConnection class not found");
+    return nil;
+  }
+  if (![connectionClass respondsToSelector:@selector(sharedInstance)]
+      || ![connectionClass instancesRespondToSelector:@selector(removeAllDeliveredNotificationsForBundleIdentifier:completionHandler:)]) {
+    NSLog(@"[DeliveredNotifications] UNUserNotificationServiceConnection cannot remove delivered notifications");
+    return nil;
+  }
+  return (id<FBDeliveredNotificationsRemover>)[connectionClass sharedInstance];
+}
+
 int handleDeliveredNotificationsAction(NSString *action, NSString *bundleID)
 {
   // Empty as well as nil: an unset proto3 string arrives as the empty one, and the mapping
@@ -545,8 +601,11 @@ int handleDeliveredNotificationsAction(NSString *action, NSString *bundleID)
     NSLog(@"[DeliveredNotifications] bundleID required for %@", action);
     return 1;
   }
+  if (IsClearDeliveredAction(action)) {
+    return clearDeliveredNotificationsWithRemover(bundleID, DaemonRemover());
+  }
   if (!IsDeliveredAction(action)) {
-    NSLog(@"[DeliveredNotifications] Unknown action: %@. Use delivered.", action);
+    NSLog(@"[DeliveredNotifications] Unknown action: %@. Use delivered or clear-delivered.", action);
     return 1;
   }
   id<FBDeliveredNotificationsCenter> center = CenterForBundleID(bundleID);
@@ -631,4 +690,53 @@ int handleDeliveredNotificationsActionWithCenter(NSString *action,
   // fall back to it rather than reporting an empty list that is not true.
   NSLog(@"[DeliveredNotifications] Center reported none for %@; reading the store", bundleID);
   return PrintDeliveredNotificationsFromStore(bundleID);
+}
+
+/**
+ * Clears the store as the last resort of a clear the daemon did not carry out.
+ *
+ * Deleting the file leaves later reads agreeing that the app holds nothing, but the daemon
+ * still does, so anything already on screen stays there. That is the outcome for a guest the
+ * daemon does not see as the app, which is why it is logged rather than taken silently.
+ */
+static int ClearDeliveredNotificationsFromStoreInstead(NSString *bundleID, NSString *reason)
+{
+  NSLog(
+    @"[DeliveredNotifications] %@ for %@; clearing the store instead, which withdraws nothing already on screen",
+    reason,
+    bundleID
+  );
+  return ClearDeliveredNotificationsFromStore(bundleID);
+}
+
+int clearDeliveredNotificationsWithRemover(NSString *bundleID, id<FBDeliveredNotificationsRemover> remover)
+{
+  if (!remover) {
+    return ClearDeliveredNotificationsFromStoreInstead(bundleID, @"No connection to usernotificationsd");
+  }
+  // The same shape as the read: the handler may run after a timeout has given up on it, so it
+  // writes into a container it owns rather than into this frame.
+  dispatch_semaphore_t semaphore = dispatch_semaphore_create(0);
+  NSMutableArray<NSNumber *> *answer = [NSMutableArray array];
+  @try {
+    [remover removeAllDeliveredNotificationsForBundleIdentifier:bundleID
+                                              completionHandler:^(BOOL success) {
+                                                [answer addObject:@(success)];
+                                                dispatch_semaphore_signal(semaphore);
+                                              }];
+  } @catch (NSException *exception) {
+    return ClearDeliveredNotificationsFromStoreInstead(
+      bundleID,
+      [NSString stringWithFormat:@"removeAllDeliveredNotificationsForBundleIdentifier: raised %@", exception]
+    );
+  }
+  NSTimeInterval timeout = gTimeoutForTesting > 0 ? gTimeoutForTesting : kDeliveredNotificationsTimeout;
+  if (dispatch_semaphore_wait(semaphore, dispatch_time(DISPATCH_TIME_NOW, (int64_t)(timeout * NSEC_PER_SEC))) != 0) {
+    return ClearDeliveredNotificationsFromStoreInstead(bundleID, @"usernotificationsd did not answer the removal");
+  }
+  if (![answer.firstObject boolValue]) {
+    return ClearDeliveredNotificationsFromStoreInstead(bundleID, @"usernotificationsd refused the removal");
+  }
+  // The daemon rewrites the store itself as it withdraws, so it is the daemon's to update.
+  return 0;
 }

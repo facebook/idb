@@ -12,7 +12,7 @@ NS_ASSUME_NONNULL_BEGIN
 /** Reads from `directory` instead of the device's notification store, or restores it with nil. */
 void FBDeliveredNotificationsSetDirectoryForTesting(NSString *_Nullable directory);
 
-/** Uses `timeout` for center replies, or restores the default with 0. */
+/** Uses `timeout` for center and daemon replies, or restores the default with 0. */
 void FBDeliveredNotificationsSetTimeoutForTesting(NSTimeInterval timeout);
 
 NS_ASSUME_NONNULL_END

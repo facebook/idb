@@ -23,3 +23,22 @@
 - (instancetype)initWithBundleIdentifier:(NSString *)bundleIdentifier;
 
 @end
+
+/**
+ * The client end of the connection to `usernotificationsd`, which every center shares.
+ *
+ * The daemon honours a request only for the bundle it identifies the calling process as, so a
+ * guest can remove another app's notifications only while it is launched as that app.
+ */
+@interface UNUserNotificationServiceConnection : NSObject
+
++ (instancetype)sharedInstance;
+
+/**
+ * The daemon replies with `(BOOL success, NSError *error)`, but the second argument is not
+ * always a valid object on this side, so the handler is declared without it.
+ */
+- (void)removeAllDeliveredNotificationsForBundleIdentifier:(NSString *)bundleIdentifier
+                                         completionHandler:(void (^)(BOOL success))completionHandler;
+
+@end

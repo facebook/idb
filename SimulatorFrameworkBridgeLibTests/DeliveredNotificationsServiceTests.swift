@@ -123,6 +123,120 @@ final class DeliveredNotificationsServiceTests: XCTestCase {
     )
   }
 
+  /// The path a cleared store is read back through, so a clear is checked by what a later
+  /// `delivered` reports rather than by the file it deleted.
+  private func deliveredCount(forBundleID bundleID: String) -> Int {
+    let center = FBFakeDeliveredNotificationsCenter()
+    var result: Int32 = -1
+    let output = FBStdoutWhileRunning {
+      result = handleDeliveredNotificationsActionWithCenter("delivered", bundleID, center)
+    }
+    XCTAssertEqual(result, 0)
+    return output.split(separator: "\n").filter { !$0.isEmpty }.count
+  }
+
+  private func storePath(forDirectory directory: String) -> String {
+    ((notificationsDirectory as NSString).appendingPathComponent(directory) as NSString)
+      .appendingPathComponent("DeliveredNotifications.plist")
+  }
+
+  func testClearDeliveredAsksTheDaemonToWithdrawTheAppsNotifications() {
+    let bundleID = "com.example.test.clear"
+    let remover = FBFakeDeliveredNotificationsRemover()
+    remover.succeeds = true
+
+    XCTAssertEqual(clearDeliveredNotificationsWithRemover(bundleID, remover), 0)
+
+    XCTAssertEqual(remover.removedBundleIDs, [bundleID])
+  }
+
+  func testClearDeliveredLeavesTheStoreToTheDaemonWhenItWithdraws() {
+    let bundleID = "com.example.test.clear.withdrawn"
+    writeStore(forBundleID: bundleID, records: [["AppNotificationIdentifier": "identifier-1"]])
+    let remover = FBFakeDeliveredNotificationsRemover()
+    remover.succeeds = true
+
+    XCTAssertEqual(clearDeliveredNotificationsWithRemover(bundleID, remover), 0)
+
+    // The daemon rewrites the store as it withdraws; this fake does not, so what is left is
+    // what the guest itself touched.
+    XCTAssertTrue(FileManager.default.fileExists(atPath: storePath(forDirectory: storeDirectory)))
+  }
+
+  func testClearDeliveredClearsTheStoreWhenTheDaemonRefuses() {
+    let bundleID = "com.example.test.clear.refused"
+    writeStore(
+      forBundleID: bundleID,
+      records: [["AppNotificationIdentifier": "identifier-1"], ["AppNotificationIdentifier": "identifier-2"]]
+    )
+    XCTAssertEqual(deliveredCount(forBundleID: bundleID), 2)
+    let remover = FBFakeDeliveredNotificationsRemover()
+
+    XCTAssertEqual(clearDeliveredNotificationsWithRemover(bundleID, remover), 0)
+
+    XCTAssertEqual(remover.removedBundleIDs, [bundleID])
+    XCTAssertEqual(deliveredCount(forBundleID: bundleID), 0)
+  }
+
+  func testClearDeliveredClearsTheStoreWhenTheDaemonDoesNotAnswer() {
+    let bundleID = "com.example.test.clear.silent"
+    writeStore(forBundleID: bundleID, records: [["AppNotificationIdentifier": "identifier-1"]])
+    FBDeliveredNotificationsSetTimeoutForTesting(0.1)
+
+    XCTAssertEqual(clearDeliveredNotificationsWithRemover(bundleID, FBSilentDeliveredNotificationsRemover()), 0)
+
+    XCTAssertEqual(deliveredCount(forBundleID: bundleID), 0)
+  }
+
+  func testClearDeliveredClearsTheStoreWhenTheRemovalRaises() {
+    let bundleID = "com.example.test.clear.raising"
+    writeStore(forBundleID: bundleID, records: [["AppNotificationIdentifier": "identifier-1"]])
+
+    XCTAssertEqual(clearDeliveredNotificationsWithRemover(bundleID, FBRaisingDeliveredNotificationsRemover()), 0)
+
+    XCTAssertEqual(deliveredCount(forBundleID: bundleID), 0)
+  }
+
+  func testClearDeliveredClearsTheStoreWithNoConnectionToTheDaemon() {
+    let bundleID = "com.example.test.clear.disconnected"
+    writeStore(forBundleID: bundleID, records: [["AppNotificationIdentifier": "identifier-1"]])
+
+    XCTAssertEqual(clearDeliveredNotificationsWithRemover(bundleID, nil), 0)
+
+    XCTAssertEqual(deliveredCount(forBundleID: bundleID), 0)
+  }
+
+  func testClearingTheStoreSucceedsWhenTheStoreFileIsAlreadyGone() {
+    let bundleID = "com.example.test.clear.twice"
+    writeStore(forBundleID: bundleID, records: [["AppNotificationIdentifier": "identifier-1"]])
+    let remover = FBFakeDeliveredNotificationsRemover()
+    XCTAssertEqual(clearDeliveredNotificationsWithRemover(bundleID, remover), 0)
+
+    // The mapping still names the directory, so this reaches the removal and finds nothing
+    // there. Removing a path with nothing at it reports a different code to reading one, and
+    // taking only the read's code left a second clear reporting failure.
+    XCTAssertEqual(clearDeliveredNotificationsWithRemover(bundleID, remover), 0)
+  }
+
+  func testClearingTheStoreSucceedsWhenNothingWasEverDelivered() {
+    // A bundle the mapping never named has nothing to clear, which is not a failure.
+    XCTAssertEqual(
+      clearDeliveredNotificationsWithRemover("com.example.test.clear.absent", FBFakeDeliveredNotificationsRemover()),
+      0
+    )
+  }
+
+  func testClearingTheStoreDoesNotReportSuccessWhenTheMappingCannotBeRead() {
+    let bundleID = "com.example.test.clear.unreadable"
+    XCTAssertNoThrow(
+      try Data("not a property list".utf8).write(to: URL(fileURLWithPath: libraryPath))
+    )
+
+    // The store this would have named may hold records, so reporting them cleared is the
+    // silent wrong answer the read path refuses for the same reason.
+    XCTAssertEqual(clearDeliveredNotificationsWithRemover(bundleID, FBFakeDeliveredNotificationsRemover()), 1)
+  }
+
   func testARecordThatWillNotDecodeFailsRatherThanShorteningTheList() {
     // Reporting only the records that did decode is a wrong answer that looks like a right one:
     // a test asserting an app received three notifications fails, and the reason it failed is
@@ -502,6 +616,8 @@ final class DeliveredNotificationsServiceTests: XCTestCase {
     // to keep a malformed request away from the private initialiser.
     XCTAssertEqual(handleDeliveredNotificationsAction("delivered", ""), 1)
     XCTAssertEqual(handleDeliveredNotificationsAction("delivered", nil), 1)
+    // A clear of nothing would be reported as a clear that succeeded.
+    XCTAssertEqual(handleDeliveredNotificationsAction("clear-delivered", ""), 1)
   }
 
   func testAMappingThatNamesThisBundleWithANonStringIsNotReportedAsNothingDelivered() {

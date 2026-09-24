@@ -264,6 +264,44 @@ NSDictionary<NSString *, id> *FBAXRuntimeInitializationProbe(FBAXRuntimeInitiali
 
 @end
 
+@implementation FBFakeDeliveredNotificationsRemover
+
+- (instancetype)init
+{
+  self = [super init];
+  if (self) {
+    _removedBundleIDs = @[];
+  }
+  return self;
+}
+
+- (void)removeAllDeliveredNotificationsForBundleIdentifier:(NSString *)bundleIdentifier
+                                         completionHandler:(void (^)(BOOL success))completionHandler
+{
+  self.removedBundleIDs = [self.removedBundleIDs arrayByAddingObject:bundleIdentifier];
+  completionHandler(self.succeeds);
+}
+
+@end
+
+@implementation FBRaisingDeliveredNotificationsRemover
+
+- (void)removeAllDeliveredNotificationsForBundleIdentifier:(NSString *)bundleIdentifier
+                                         completionHandler:(void (^)(BOOL success))completionHandler
+{
+  [NSException raise:NSInternalInconsistencyException format:@"connection invalidated"];
+}
+
+@end
+
+@implementation FBSilentDeliveredNotificationsRemover
+
+- (void)removeAllDeliveredNotificationsForBundleIdentifier:(NSString *)bundleIdentifier
+                                         completionHandler:(void (^)(BOOL success))completionHandler
+{}
+
+@end
+
 @implementation FBRaisingDeliveredNotificationsCenter
 
 - (void)getDeliveredNotificationsWithCompletionHandler:(void (^)(NSArray<UNNotification *> *notifications))completionHandler

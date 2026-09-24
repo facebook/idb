@@ -62,10 +62,10 @@
 - (int32_t)notifications:(NSString *)action bundleID:(NSString *)bundleID
 {
   // `list` on this service means "list the apps' settings", so the delivered notifications of
-  // one app are read with their own verb.
-  if ([action isEqualToString:@"delivered"]) {
+  // one app are read and cleared with their own verbs.
+  if ([action isEqualToString:@"delivered"] || [action isEqualToString:@"clear-delivered"]) {
   #if TARGET_OS_TV
-    NSLog(@"The notifications delivered action is not available in a tvOS guest");
+    NSLog(@"The notifications %@ action is not available in a tvOS guest", action);
     return 1;
   #else
     return handleDeliveredNotificationsAction(action, bundleID);

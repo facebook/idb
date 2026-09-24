@@ -16,6 +16,7 @@
  * test that killed the app in order to exercise its push path.
  *
  * `delivered` prints one JSON object per delivered notification to stdout.
+ * `clear-delivered` withdraws every notification the app is holding, printing nothing.
  * Returns 0 on success.
  */
 int handleDeliveredNotificationsAction(NSString *action, NSString *bundleID);
@@ -45,3 +46,24 @@ int handleDeliveredNotificationsActionWithCenter(
   NSString *bundleID,
   id<FBDeliveredNotificationsCenter> center
 );
+
+/**
+ * The part of `UNUserNotificationServiceConnection` the clear uses.
+ *
+ * Declared so the clear can be tested without a notification daemon; the real connection
+ * satisfies it as-is.
+ */
+@protocol FBDeliveredNotificationsRemover <NSObject>
+
+- (void)removeAllDeliveredNotificationsForBundleIdentifier:(NSString *)bundleIdentifier
+                                         completionHandler:(void (^)(BOOL success))completionHandler;
+
+@end
+
+/**
+ * The `clear-delivered` action against a remover the caller supplies, or none.
+ *
+ * The seam a test drives, as `handleDeliveredNotificationsActionWithCenter` is for reads. A nil
+ * remover is the guest whose runtime has no connection to vend.
+ */
+int clearDeliveredNotificationsWithRemover(NSString *bundleID, id<FBDeliveredNotificationsRemover> remover);
