@@ -45,6 +45,11 @@ extension BridgeCommand {
       case .set: "dns set"
       case .clear: "dns clear"
       }
+    case let .dynamicStore(command):
+      switch command {
+      case .snapshot: "dynamic-store snapshot"
+      case .restore: "dynamic-store restore"
+      }
     case let .proxy(command):
       switch command {
       case .list: "proxy list"

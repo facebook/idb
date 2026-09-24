@@ -41,6 +41,13 @@ public enum BridgeServices {
         arguments = servers
       }
       return Int32(DnsServiceStaticFuncs.handleDnsAction(action: action, arguments: arguments, output: output))
+    case let .dynamicStore(command):
+      switch command {
+      case let .snapshot(key):
+        return DynamicStoreServiceStaticFuncs.run(action: "snapshot", arguments: [key], input: { Data() }, output: output)
+      case let .restore(key, snapshot):
+        return DynamicStoreServiceStaticFuncs.run(action: "restore", arguments: [key], input: { snapshot }, output: output)
+      }
     case let .proxy(command):
       let action: String
       let arguments: [String]

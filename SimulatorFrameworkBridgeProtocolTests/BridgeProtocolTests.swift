@@ -13,6 +13,7 @@ final class BridgeProtocolTests: XCTestCase {
   func testEveryServiceUsesTheSameRequestForArgumentsAndFrames() throws {
     let commands: [BridgeCommand] = [
       .clearContacts, .clearPhotos,
+      .dynamicStore(.snapshot(key: "dns")), .dynamicStore(.restore(key: "State:/custom", snapshot: Data([0, 255]))),
       .dns(.list), .dns(.set(servers: ["1.1.1.1", "::1"])), .dns(.clear),
       .proxy(.list), .proxy(.set(host: "localhost", port: 8080, kind: .http)),
       .proxy(.set(host: "::1", port: 1080, kind: .socks)), .proxy(.clear),
@@ -44,7 +45,7 @@ final class BridgeProtocolTests: XCTestCase {
       .notifications(.approve(bundleID: "app")), .notifications(.revoke(bundleID: "app")),
       .notifications(.clearDelivered(bundleID: "app")),
       .health(.approve(bundleID: "app", typeIDs: [])), .health(.revoke(bundleID: "app", typeIDs: [])),
-      .health(.clear(bundleID: "app")), .shutdown,
+      .health(.clear(bundleID: "app")), .shutdown, .dynamicStore(.restore(key: "dns", snapshot: Data())),
       .accessibility(["verb": .string("perform")]), .accessibility(["verb": .string("setvalue")]),
       .accessibility(["verb": .string("settings-set")]), .accessibility(["verb": .string("unknown")]),
       .accessibility([:]),
@@ -55,7 +56,7 @@ final class BridgeProtocolTests: XCTestCase {
       XCTAssertTrue(BridgeCommand.accessibility(["verb": .string("hittest"), "automationMode": mode]).mayRetry)
       XCTAssertFalse(BridgeCommand.accessibility(["verb": .string("perform"), "automationMode": mode]).mayRetry)
     }
-    let reads: [BridgeCommand] = [.ping, .dns(.list), .proxy(.list), .notifications(.list(bundleID: nil)), .notifications(.delivered(bundleID: "app")), .health(.list(bundleID: "app")), .accessibility(["verb": .string("describe")])]
+    let reads: [BridgeCommand] = [.dynamicStore(.snapshot(key: "dns")), .ping, .dns(.list), .proxy(.list), .notifications(.list(bundleID: nil)), .notifications(.delivered(bundleID: "app")), .health(.list(bundleID: "app")), .accessibility(["verb": .string("describe")])]
     for command in reads {
       XCTAssertTrue(command.mayRetry, "\(command)")
     }
@@ -70,6 +71,15 @@ final class BridgeProtocolTests: XCTestCase {
     XCTAssertThrowsError(try BridgeResponse.decode(data, for: other)) {
       XCTAssertEqual($0 as? BridgeProtocolError, .mismatchedResponse)
     }
+  }
+
+  func testBinaryPropertyListsSurviveResponseEncodingWithoutJSONCoercion() throws {
+    let value: [String: Any] = ["present": true, "value": [Data([0, 255]), Date(timeIntervalSince1970: 1234)]]
+    let bytes = try PropertyListSerialization.data(fromPropertyList: value, format: .binary, options: 0)
+    let request = BridgeRequest(command: .dynamicStore(.snapshot(key: "dns")))
+    let result = BridgeResult(exitCode: 0, propertyList: bytes)
+    XCTAssertEqual(try BridgeResponse.decode(BridgeResponse(request: request, result: result).encoded(), for: request).result, result)
+    XCTAssertEqual(try PropertyListSerialization.propertyList(from: XCTUnwrap(result.propertyList), options: [], format: nil) as? NSDictionary, value as NSDictionary)
   }
 
   func testRejectsUnsupportedVersionsAndMalformedRequests() throws {
@@ -102,6 +112,9 @@ final class BridgeProtocolTests: XCTestCase {
       (#"{"clearPhotos":{}}"#, .clearPhotos),
       (#"{"dns":{"_0":{"list":{}}}}"#, .dns(.list)),
       (#"{"dns":{"_0":{"set":{"servers":["::1"]}}}}"#, .dns(.set(servers: ["::1"]))),
+      (#"{"dynamicStore":{"_0":{"snapshot":{"key":"k"}}}}"#, .dynamicStore(.snapshot(key: "k"))),
+      // `Data` travels as base64, which the Python harness encodes itself.
+      (#"{"dynamicStore":{"_0":{"restore":{"key":"k","snapshot":"AP8="}}}}"#, .dynamicStore(.restore(key: "k", snapshot: Data([0, 255])))),
       (#"{"proxy":{"_0":{"set":{"host":"::1","kind":"socks","port":1080}}}}"#, .proxy(.set(host: "::1", port: 1080, kind: .socks))),
       (#"{"notifications":{"_0":{"list":{}}}}"#, .notifications(.list(bundleID: nil))),
       (#"{"notifications":{"_0":{"delivered":{"bundleID":"app"}}}}"#, .notifications(.delivered(bundleID: "app"))),

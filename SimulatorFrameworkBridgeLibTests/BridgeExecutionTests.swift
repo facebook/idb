@@ -76,15 +76,24 @@ final class BridgeExecutionTests: XCTestCase {
 
   func testOversizedAndInvalidOutputBecomesAMatchingFailureInBothAdapters() throws {
     let request = BridgeRequest(command: .dns(.list), id: "bounded")
-    for value in [BridgeJSONValue.string(String(repeating: "x", count: BridgeFrame.maximumSize)), .number(.infinity)] {
-      let execute: (BridgeCommand) -> BridgeResult = { _ in BridgeResult(exitCode: 0, values: [value]) }
+    let results = [
+      BridgeResult(exitCode: 0, values: [.string(String(repeating: "x", count: BridgeFrame.maximumSize))]),
+      BridgeResult(exitCode: 0, values: [.number(.infinity)]),
+      BridgeResult(exitCode: 0, propertyList: try PropertyListSerialization.data(fromPropertyList: ["value": Data(repeating: 0, count: 13 * 1024 * 1024)], format: .binary, options: 0)),
+    ]
+    for result in results {
+      let execute: (BridgeCommand) -> BridgeResult = { _ in result }
       let cli = BridgeRPC.process(try request.encoded(), execute: execute)
       let socket = BridgeRPC.handle(try request.encoded(), execute: execute)
       XCTAssertEqual(cli.data, socket.data)
       XCTAssertEqual(cli.exitCode, 1)
       XCTAssertLessThan(cli.data.count, BridgeFrame.maximumSize)
-      XCTAssertEqual(try BridgeResponse.decode(cli.data, for: request).result.exitCode, 1)
+      let failure = try BridgeResponse.decode(cli.data, for: request).result
+      XCTAssertEqual(failure.exitCode, 1)
+      XCTAssertNil(failure.propertyList)
     }
+    let ping = BridgeRequest(command: .ping)
+    XCTAssertEqual(try BridgeResponse.decode(BridgeRPC.process(ping.encoded()).data, for: ping).result, BridgeResult(exitCode: 0))
   }
 
   private func failureMessage(_ result: BridgeResult) -> String? {
@@ -207,6 +216,63 @@ final class BridgeExecutionTests: XCTestCase {
       XCTAssertEqual(result.values.first, .object(value))
       runtime.deferredCompletion = ""
       XCTAssertEqual(BridgeServices.execute(command).exitCode, 0)
+    }
+  }
+
+  func testDynamicStoreAdaptersPreserveBinaryPlistsWithoutWritingStdout() throws {
+    let value: [Any] = [Data([0, 255]), Date(timeIntervalSince1970: 1234), ["nested": true]]
+    let present: [String: Any] = ["present": true, "value": value]
+    let absent: [String: Any] = ["present": false]
+    let data = try PropertyListSerialization.data(fromPropertyList: present, format: .binary, options: 0)
+    let empty = try PropertyListSerialization.data(fromPropertyList: absent, format: .binary, options: 0)
+    let cases: [(BridgeCommand, [String: Any])] = [
+      (.dynamicStore(.restore(key: "dns", snapshot: data)), present),
+      (.dynamicStore(.snapshot(key: "dns")), present),
+      (.dynamicStore(.restore(key: "dns", snapshot: empty)), absent),
+      (.dynamicStore(.snapshot(key: "dns")), absent),
+    ]
+    for socket in [false, true] {
+      let runtime = FBDynamicStoreTestRuntime()
+      runtime.install()
+      defer { runtime.uninstall() }
+      for (command, expected) in cases {
+        let request = BridgeRequest(command: command)
+        let encoded = try request.encoded()
+        var response = Data()
+        let printed = FBStdoutWhileRunning {
+          response = socket ? BridgeRPC.handle(encoded).data : BridgeRPC.process(encoded).data
+        }
+        let result = try BridgeResponse.decode(response, for: request).result
+        XCTAssertEqual(printed, "")
+        XCTAssertEqual(result.exitCode, 0)
+        XCTAssertEqual(result.values, [])
+        XCTAssertNil(result.error)
+        let snapshot = try XCTUnwrap(result.propertyList)
+        XCTAssertTrue(snapshot.starts(with: Data("bplist00".utf8)))
+        XCTAssertEqual(try PropertyListSerialization.propertyList(from: snapshot, options: [], format: nil) as? NSDictionary, expected as NSDictionary)
+      }
+    }
+  }
+
+  func testDynamicStoreFailureDoesNotLeakDataIntoTheNextRequest() throws {
+    let runtime = FBDynamicStoreTestRuntime()
+    runtime.install()
+    defer { runtime.uninstall() }
+    for socket in [false, true] {
+      let request = BridgeRequest(command: .dynamicStore(.restore(key: "dns", snapshot: Data("invalid".utf8))))
+      let encoded = try request.encoded()
+      let response = socket ? BridgeRPC.handle(encoded).data : BridgeRPC.process(encoded).data
+      let result = try BridgeResponse.decode(response, for: request).result
+      XCTAssertEqual(result.exitCode, 1)
+      XCTAssertNotNil(result.error)
+      XCTAssertNil(result.propertyList)
+      XCTAssertEqual(result.values, [])
+      XCTAssertFalse(runtime.operations.contains("write"))
+      let recovered = BridgeServices.execute(.dynamicStore(.snapshot(key: "dns")))
+      XCTAssertEqual(recovered.exitCode, 0)
+      XCTAssertNil(recovered.error)
+      let snapshot = try XCTUnwrap(recovered.propertyList)
+      XCTAssertEqual(try PropertyListSerialization.propertyList(from: snapshot, options: [], format: nil) as? NSDictionary, ["present": false] as NSDictionary)
     }
   }
 }

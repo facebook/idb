@@ -23,6 +23,8 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, readonly) NSMutableArray<NSString *> *operations;
 @property (nonatomic, readonly) NSMutableArray<NSString *> *keys;
 @property (nonatomic, readonly, copy) NSData *output;
+- (void)install;
+- (void)uninstall;
 - (int)runAction:(NSString *)action arguments:(NSArray<NSString *> *)arguments input:(nullable NSData *)input
   NS_SWIFT_NAME(run(action:arguments:input:));
 @end

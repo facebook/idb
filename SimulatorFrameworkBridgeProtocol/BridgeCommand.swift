@@ -15,6 +15,11 @@ public enum BridgeCommand: Codable, Equatable, Sendable {
     case clear
   }
 
+  public enum DynamicStore: Codable, Equatable, Sendable {
+    case snapshot(key: String)
+    case restore(key: String, snapshot: Data)
+  }
+
   public enum Proxy: Codable, Equatable, Sendable {
     public enum Kind: String, Codable, Sendable { case http, socks }
     case list
@@ -40,6 +45,7 @@ public enum BridgeCommand: Codable, Equatable, Sendable {
   case clearContacts
   case clearPhotos
   case dns(DNS)
+  case dynamicStore(DynamicStore)
   case proxy(Proxy)
   case notifications(Notifications)
   case health(Health)
@@ -55,6 +61,11 @@ public enum BridgeCommand: Codable, Equatable, Sendable {
       switch command {
       case .list: true
       case .set, .clear: false
+      }
+    case let .dynamicStore(command):
+      switch command {
+      case .snapshot: true
+      case .restore: false
       }
     case let .proxy(command):
       switch command {

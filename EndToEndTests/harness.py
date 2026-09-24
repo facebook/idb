@@ -2176,6 +2176,9 @@ class GuestRPC:
         return f"stdout: {self._stdout.read()!r}; stderr: {self._stderr.read()!r}"
 
     async def send(self, command: dict[str, Any]) -> list[Any]:
+        return (await self.send_result(command))["values"]
+
+    async def send_result(self, command: dict[str, Any]) -> dict[str, Any]:
         self._sequence += 1
         request = {"version": 1, "id": f"test-{self._sequence}", "command": command}
         payload = json.dumps(request).encode()
@@ -2197,7 +2200,7 @@ class GuestRPC:
         self.test.assertEqual(response["version"], 1)
         self.test.assertEqual(response["id"], request["id"])
         self.test.assertEqual(response["result"]["exitCode"], 0, response)
-        return response["result"]["values"]
+        return response["result"]
 
     async def __aexit__(self, *exception: object) -> None:
         error = exception[1] if isinstance(exception[1], BaseException) else None

@@ -10,6 +10,7 @@ import SimulatorFrameworkBridgeProtocol
 
 public final class BridgeOutput {
   public private(set) var values: [BridgeJSONValue] = []
+  public private(set) var propertyList: Data?
   public private(set) var failed = false
   public private(set) var error: String?
 
@@ -39,6 +40,17 @@ public final class BridgeOutput {
   }
 
   @discardableResult
+  public func write(propertyList object: Any) -> Bool {
+    do {
+      propertyList = try PropertyListSerialization.data(fromPropertyList: object, format: .binary, options: 0)
+      return true
+    } catch {
+      failure("Could not encode property-list output: \(error.localizedDescription)")
+      return false
+    }
+  }
+
+  @discardableResult
   public func failure(_ message: String) -> Int {
     failed = true
     if error == nil { error = message }
@@ -46,6 +58,6 @@ public final class BridgeOutput {
   }
 
   public func finish(status: Int32) -> BridgeResult {
-    BridgeResult(exitCode: failed ? 1 : status, values: values, error: error)
+    BridgeResult(exitCode: failed ? 1 : status, values: values, error: error, propertyList: propertyList)
   }
 }

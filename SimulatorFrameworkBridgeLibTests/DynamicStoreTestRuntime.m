@@ -87,7 +87,7 @@ static int lastError(void)
   return self;
 }
 
-- (int)runAction:(NSString *)action arguments:(NSArray<NSString *> *)arguments input:(NSData *)input
+- (void)install
 {
   runtime = self;
   readIndex = 0;
@@ -120,7 +120,17 @@ static int lastError(void)
     }
     return NULL;
   });
+}
 
+- (void)uninstall
+{
+  FBSystemConfigurationSetLoaderForTesting(nil, nil);
+  runtime = nil;
+}
+
+- (int)runAction:(NSString *)action arguments:(NSArray<NSString *> *)arguments input:(NSData *)input
+{
+  [self install];
   // The service reads the snapshot to restore from stdin and writes its own to stdout, so both
   // descriptors are replaced for the duration of the call rather than passed in.
   fflush(stdout);
@@ -154,8 +164,7 @@ static int lastError(void)
     fclose(capture);
     fclose(feed);
     _output = data;
-    FBSystemConfigurationSetLoaderForTesting(nil, nil);
-    runtime = nil;
+    [self uninstall];
   }
 }
 

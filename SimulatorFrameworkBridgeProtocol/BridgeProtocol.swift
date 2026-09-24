@@ -65,11 +65,13 @@ public struct BridgeResult: Codable, Equatable, Sendable {
   public let exitCode: Int32
   public let values: [BridgeJSONValue]
   public let error: String?
+  public let propertyList: Data?
 
-  public init(exitCode: Int32, values: [BridgeJSONValue] = [], error: String? = nil) {
+  public init(exitCode: Int32, values: [BridgeJSONValue] = [], error: String? = nil, propertyList: Data? = nil) {
     self.exitCode = exitCode
     self.values = values
     self.error = error
+    self.propertyList = propertyList
   }
 }
 

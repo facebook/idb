@@ -7,8 +7,10 @@
 
 from __future__ import annotations
 
+import base64
 import json
 import plistlib
+import uuid
 from typing import Any
 
 from .harness import GuestRPC, IdbEndToEndTestCase, NotReady, run, wait_until
@@ -123,6 +125,40 @@ class ServiceMutationTests(IdbEndToEndTestCase):
                             [],
                         )
                         await self.assert_notifications(bundle_id, enabled, status)
+
+    async def test_rpc_modes_restore_lossless_dynamic_store_snapshots(self) -> None:
+        key = f"State:/idb-tests/{uuid.uuid4()}"
+        original = await self.store_data("snapshot", key)
+        self.addAsyncCleanup(self.restore_network, key, original)
+        snapshots = [
+            {
+                "present": True,
+                "value": {"bytes": b"\x00\xff", "items": [True, 1, "text"]},
+            },
+            {"present": False},
+        ]
+        for persistent in (False, True):
+            with self.subTest(persistent=persistent):
+                async with GuestRPC(self, persistent=persistent) as rpc:
+                    for snapshot in snapshots:
+                        data = base64.b64encode(plistlib.dumps(snapshot)).decode()
+                        commands = [
+                            {"restore": {"key": key, "snapshot": data}},
+                            {"snapshot": {"key": key}},
+                        ]
+                        for command in commands:
+                            result = await rpc.send_result(
+                                {"dynamicStore": {"_0": command}}
+                            )
+                            self.assertEqual(result["values"], [])
+                            encoded = base64.b64decode(
+                                result["propertyList"], validate=True
+                            )
+                            self.assertTrue(encoded.startswith(b"bplist00"))
+                            self.assertEqual(plistlib.loads(encoded), snapshot)
+                            self.assertEqual(
+                                await self.store("snapshot", key), snapshot
+                            )
 
     async def store_data(self, *arguments: str, stdin: bytes | None = None) -> bytes:
         completed = await run(
