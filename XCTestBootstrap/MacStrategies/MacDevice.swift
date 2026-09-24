@@ -77,7 +77,7 @@ public final class MacDevice: NSObject, Target {
   // MARK: - Private properties
 
   private var bundleIDToProductMap: [String: BundleDescriptor]
-  private var bundleIDToRunningTask: [String: FBSubprocess<AnyObject, AnyObject, AnyObject>]
+  private var bundleIDToRunningTask: [String: RunningSubprocess]
   private var connection: NSXPCConnection?
   private let workingDirectory: String
   private let catalyst: Bool
@@ -320,7 +320,13 @@ public final class MacDevice: NSObject, Target {
     guard let task = bundleIDToRunningTask[bundleID] else {
       throw MacDeviceError.applicationNotLaunched(bundleID: bundleID)
     }
-    task.sendSignal(SIGTERM, backingOffToKillWithTimeout: 2, logger: self.logger)
+    Task { [logger] in
+      do {
+        _ = try await task.terminate(gracePeriod: 2)
+      } catch {
+        logger.error().log("Failed to terminate \(bundleID): \(error)")
+      }
+    }
     bundleIDToRunningTask.removeValue(forKey: bundleID)
   }
 
@@ -440,11 +446,10 @@ extension MacDevice: ApplicationCommands {
     guard let binary = bundle.binary else {
       throw MacDeviceError.applicationHasNoExecutable(bundleID: bundle.identifier)
     }
-    let task = try await bridgeFBFuture(
-      FBProcessBuilder<AnyObject, AnyObject, AnyObject>.withLaunchPath(binary.path, arguments: configuration.arguments)
-        .withEnvironment(configuration.environment)
-        .start()
-        .retyped(FBFuture<FBSubprocess<AnyObject, AnyObject, AnyObject>>.self))
+    // The unset builder default buffered both streams into memory that
+    // nothing ever read; an open null device discards them outright.
+    let task = try await Subprocess(executable: binary.path, arguments: configuration.arguments, environment: .exact(configuration.environment))
+      .launch(output: .nullDevice, error: .nullDevice, logger: logger)
     bundleIDToRunningTask[bundle.identifier] = task
     return MacLaunchedApplication(
       bundleID: bundle.identifier,
