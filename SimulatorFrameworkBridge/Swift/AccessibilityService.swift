@@ -9,135 +9,134 @@ import CoreFoundation
 import CoreGraphics
 import Darwin
 import Foundation
+import SimulatorFrameworkBridgeProtocol
 
 #if canImport(SimulatorFrameworkBridgeRuntime)
 @_implementationOnly import SimulatorFrameworkBridgeRuntime
 #endif
 
-// The `XC_kAXXC*` attribute keys. These MUST match `AXWire.Node` host-side so the emitted tree feeds
-// the shared serializer (via `AXBridgePlatformElement`) unchanged.
-private let axElementType = "XC_kAXXCAttributeElementType"
-private let axElementBaseType = "XC_kAXXCAttributeElementBaseType"
-private let axLabel = "XC_kAXXCAttributeLabel"
-private let axValue = "XC_kAXXCAttributeValue"
-private let axIdentifier = "XC_kAXXCAttributeIdentifier"
-private let axFrame = "XC_kAXXCAttributeFrame"
-private let axAutomationType = "XC_kAXXCAttributeAutomationType"
-private let axChildren = "XC_kAXXCAttributeChildren"
+private let axElementType = BridgeAXWire.Node.elementType.rawValue
+private let axElementBaseType = BridgeAXWire.Node.elementBaseType.rawValue
+private let axLabel = BridgeAXWire.Node.label.rawValue
+private let axValue = BridgeAXWire.Node.value.rawValue
+private let axIdentifier = BridgeAXWire.Node.identifier.rawValue
+private let axFrame = BridgeAXWire.Node.frame.rawValue
+private let axAutomationType = BridgeAXWire.Node.automationType.rawValue
+private let axChildren = BridgeAXWire.Node.children.rawValue
 // Both answered as CGPoint. `VisiblePoint` reads `(-1, -1)` when the server believes no touch reaches the
 // element; carried verbatim, sentinel included — deciding what unreachable means is the host's job.
-private let axVisiblePoint = "XC_kAXXCAttributeVisiblePoint"
-private let axCenterPoint = "XC_kAXXCAttributeCenterPoint"
+private let axVisiblePoint = BridgeAXWire.Node.visiblePoint.rawValue
+private let axCenterPoint = BridgeAXWire.Node.centerPoint.rawValue
 // Whether the server can name a point at which a touch reaches the element; the walk uses it to pick
 // nodes worth explaining.
-private let axisVisible = "XC_kAXXCAttributeIsVisible"
-private let requestVerb = "verb"
-private let requestPid = "pid"
-private let requestMaxDepth = "maxDepth"
-private let requestMaxNodes = "maxNodes"
+private let axisVisible = BridgeAXWire.Node.isVisible.rawValue
+private let requestVerb = BridgeAXWire.Request.verb.rawValue
+private let requestPid = BridgeAXWire.Request.pid.rawValue
+private let requestMaxDepth = BridgeAXWire.Request.maxDepth.rawValue
+private let requestMaxNodes = BridgeAXWire.Request.maxNodes.rawValue
 // The attributes fetched per element. Optional: absent means `FBAXBridgeDefaultFetchList()`. Named per
 // request so an attribute nobody asked for stays off the wire entirely.
-private let requestAttributes = "attributes"
+private let requestAttributes = BridgeAXWire.Request.attributes.rawValue
 // Whether this read wants the device in accessibility automation mode. Tri-state on purpose: **absent**
 // means observe and report without touching the device, which is what a host that does not know about
 // this field gets; `true` and `false` each assert that state. Absent and `false` are not the same thing —
 // one leaves the device alone and the other actively turns the mode off.
-private let requestAutomationMode = "automationMode"
+private let requestAutomationMode = BridgeAXWire.Request.automationMode.rawValue
 // Asks the walk to explain each element the accessibility server reports unreachable, by hit-testing that
 // element's centre and reporting whatever answered. Optional and off by default: it costs an extra AX
 // round trip per unreachable element, and only a caller that intends to use the answer should pay.
-private let requestExplainUnreachable = "explainUnreachable"
+private let requestExplainUnreachable = BridgeAXWire.Request.explainUnreachable.rawValue
 // Reads through the translator's vocabulary instead of XCTest's. Off by default; the two disagree on
 // some screens.
-private let requestTranslatorVocabulary = "translatorVocabulary"
+private let requestTranslatorVocabulary = BridgeAXWire.Request.translatorVocabulary.rawValue
 // Reads the whole subtree in one call, through `userTestingSnapshotForElement:options:error:`, instead
 // of one call per node. Selected by the host's `single-fetch` traversal; the per-node walk is still the
 // default.
-private let requestSnapshotTree = "snapshotTree"
+private let requestSnapshotTree = BridgeAXWire.Request.snapshotTree.rawValue
 // Reader-derived keys (below) are spelled in the reader's own namespace, not `XC_kAXXC*`, so the two
 // kinds stay distinguishable on the wire.
-private let nodeExplainedBy = "FBExplainedBy"
+private let nodeExplainedBy = BridgeAXWire.Node.explainedBy.rawValue
 // The translator's own `enabled` answer; XCTest's vocabulary has no counterpart. Only a translator read
 // carries this.
-private let nodeIsEnabled = "FBIsEnabled"
+private let nodeIsEnabled = BridgeAXWire.Node.isEnabled.rawValue
 // The translator's `role`, carried as its raw integer for the host to map. Not folded into `elementType`,
 // which carries `XCUIElementType` names.
-private let nodeTranslatorRole = "FBTranslatorRole"
+private let nodeTranslatorRole = BridgeAXWire.Node.translatorRole.rawValue
 // The translator's `subrole`, as its raw integer; it refines the role rather than replacing it.
-private let nodeTranslatorSubrole = "FBTranslatorSubrole"
+private let nodeTranslatorSubrole = BridgeAXWire.Node.translatorSubrole.rawValue
 // The `UIAccessibilityTraits` bitmask, carried raw. Decoding it needs the trait constants, which live in
 // a macOS-only header this binary cannot import — so the number rides the wire and the host names it.
-private let nodeTraits = "FBTraits"
+private let nodeTraits = BridgeAXWire.Node.traits.rawValue
 // A per-element identity from the translator, so two reads can be compared element by element.
-private let nodeElementIdentity = "FBElementIdentity"
+private let nodeElementIdentity = BridgeAXWire.Node.elementIdentity.rawValue
 // Present only on a node where at least one attribute failed to read, mapping the attribute's key to the
 // reason.
-private let nodeAttributeReadFailures = "FBAttributeReadFailures"
+private let nodeAttributeReadFailures = BridgeAXWire.Node.attributeReadFailures.rawValue
 // Echoed back by the shutdown verb so a caller can tell an honoured shutdown from an ok-shaped response
 // to something else.
-private let responseShutdown = "shutdown"
-private let requestX = "x"
-private let requestY = "y"
+private let responseShutdown = BridgeAXWire.Envelope.shutdown.rawValue
+private let requestX = BridgeAXWire.Request.x.rawValue
+private let requestY = BridgeAXWire.Request.y.rawValue
 // Selects how a fused frontmost read (a `describe` with no pid) resolves the foreground app. Optional;
 // defaults to `window-server` (the authoritative query).
-private let requestMethod = "method"
+private let requestMethod = BridgeAXWire.Request.method.rawValue
 // The semantic action a `perform` asks for, and the string a `setvalue` writes.
-private let requestAction = "action"
-private let requestValue = "value"
+private let requestAction = BridgeAXWire.Request.action.rawValue
+private let requestValue = BridgeAXWire.Request.value.rawValue
 // Device-wide accessibility setting name and requested state.
-private let requestSetting = "setting"
-private let requestEnabled = "enabled"
+private let requestSetting = BridgeAXWire.Request.setting.rawValue
+private let requestEnabled = BridgeAXWire.Request.enabled.rawValue
 // What the element at the point must still be for the write to go ahead: one node attribute key and the
 // value it has to equal. Optional, and only meaningful together.
-private let requestAssertKey = "assertKey"
-private let requestAssertValue = "assertValue"
-private let responseOk = "ok"
-private let responseEnabled = "enabled"
-private let responseTree = "tree"
-private let responseError = "error"
+private let requestAssertKey = BridgeAXWire.Request.assertKey.rawValue
+private let requestAssertValue = BridgeAXWire.Request.assertValue.rawValue
+private let responseOk = BridgeAXWire.Envelope.ok.rawValue
+private let responseEnabled = BridgeAXWire.Envelope.enabled.rawValue
+private let responseTree = BridgeAXWire.Envelope.tree.rawValue
+private let responseError = BridgeAXWire.Envelope.error.rawValue
 // A successful hit-test that found no element at the point: `{ok:true, empty:true}` — distinct from a
 // reader failure (`{ok:false, error:...}`), so the host can tell empty space from a broken reader.
-private let responseEmpty = "empty"
+private let responseEmpty = BridgeAXWire.Envelope.empty.rawValue
 // A closed-vocabulary failure kind, so the host picks a remedy structurally rather than by matching the
 // free-text `error`. Absent kind = plain reader failure; a host must treat an unknown kind the same way,
 // so adding a value here degrades an older host's precision rather than breaking it.
-private let responseErrorKind = "error_kind"
+private let responseErrorKind = BridgeAXWire.Envelope.errorKind.rawValue
 // The named process has no accessibility server: a dead pid, or a process that is not an application.
-private let errorKindApplicationUnavailable = "application_unavailable"
+private let errorKindApplicationUnavailable = BridgeAXWire.ErrorKind.applicationUnavailable.rawValue
 // The named process has one and it did not answer in time — alive but busy, suspended or wedged.
-private let errorKindApplicationNotResponding = "application_not_responding"
+private let errorKindApplicationNotResponding = BridgeAXWire.ErrorKind.applicationNotResponding.rawValue
 // The selected frontmost strategy could not name an application, for a reason that is about the strategy
 // rather than about any one application.
-private let errorKindFrontmostUnresolved = "frontmost_unresolved"
+private let errorKindFrontmostUnresolved = BridgeAXWire.ErrorKind.frontmostUnresolved.rawValue
 // The reader could not bind the private frameworks it reads through, so no request can be served. The
 // `error` names what was missing and what else about the runtime has moved.
-private let errorKindReaderUnavailable = "reader_unavailable"
+private let errorKindReaderUnavailable = BridgeAXWire.ErrorKind.readerUnavailable.rawValue
 // The request itself was malformed — an unknown verb, or a missing or wrongly-typed argument.
-private let errorKindBadRequest = "bad_request"
+private let errorKindBadRequest = BridgeAXWire.ErrorKind.badRequest.rawValue
 // A write was refused before it was attempted: the element found at the point is not the one the caller
 // named. Held apart from `bad_request` because the request was well-formed — the screen moved.
-private let errorKindAssertionFailed = "assertion_failed"
+private let errorKindAssertionFailed = BridgeAXWire.ErrorKind.assertionFailed.rawValue
 // A whole-tree read whose walk was cut short by the depth cap or the node budget: the returned tree is
 // a partial view, so the host can warn rather than pass it off as complete. Absent or `false` means the
 // walk visited every element within the bounds.
-private let responseTruncated = "truncated"
+private let responseTruncated = BridgeAXWire.Envelope.truncated.rawValue
 // The resolved foreground pid and the mechanism that resolved it. The pid also tags the owning element
 // of a hit-test result.
-private let responsePid = "pid"
-private let responseMethod = "method"
+private let responsePid = BridgeAXWire.Envelope.pid.rawValue
+private let responseMethod = BridgeAXWire.Envelope.method.rawValue
 // The automation mode this read ran under, and whether this read changed it. Reported on every describe:
 // a tree read with subtree collapsing on is a different answer from the same tree read with it off.
-private let responseAutomation = "automation"
+private let responseAutomation = BridgeAXWire.Envelope.automation.rawValue
 // Where the guest spent its time and how many round trips it took. Reported on every describe (a handful
 // of clock reads). Guest-side JSON encoding is not included — it falls into the host's residual.
-private let responsePhases = "phases"
-private let phaseTraverse = "traverse_ms"
-private let phaseMachRoundTrips = "mach_round_trips"
-private let kAutomationEnabled = "enabled"
-private let kAutomationAsserted = "asserted"
+private let responsePhases = BridgeAXWire.Envelope.phases.rawValue
+private let phaseTraverse = BridgeAXWire.Phase.traverse.rawValue
+private let phaseMachRoundTrips = BridgeAXWire.Phase.machRoundTrips.rawValue
+private let kAutomationEnabled = BridgeAXWire.Automation.enabled.rawValue
+private let kAutomationAsserted = BridgeAXWire.Automation.asserted.rawValue
 // A fullscreen modal/alert descriptor added to a describe response when one is detected in the tree.
 // Host-facing enrichment on the wire; the host does not put it in the serialized CLI output.
-private let responseModal = "modal"
+private let responseModal = BridgeAXWire.Envelope.modal.rawValue
 private let modalKind = "kind"
 private let modalKindSystem = "system"
 private let modalKindApp = "app"
@@ -147,26 +146,13 @@ private let modalLabel = "label"
 // UIKit alert controller view (matched by prefix — the concrete class varies by idiom/OS).
 private let systemAlertWindowClass = "SBAlertItemWindow"
 private let alertControllerClassPrefix = "_UIAlertController"
-private enum AccessibilityVerb: String {
-  case describe
-  case hitTest = "hittest"
-  case shutdown
-  case perform
-  case setValue = "setvalue"
-  case settingsGet = "settings-get"
-  case settingsSet = "settings-set"
-}
+private typealias AccessibilityVerb = BridgeAXWire.Verb
 
 private let actionServe = "serve"
 
-private enum AccessibilityAction: String {
-  case press
-  case scrollUp = "scroll-up"
-  case scrollDown = "scroll-down"
-  case scrollLeft = "scroll-left"
-  case scrollRight = "scroll-right"
-  case scrollToVisible = "scroll-to-visible"
+private typealias AccessibilityAction = BridgeAXWire.Action
 
+private extension BridgeAXWire.Action {
   var runtimeValue: FBAXAction {
     switch self {
     case .press: return .press
@@ -269,7 +255,7 @@ private final class AccessibilityRequest {
   // The attributes a read fetches when the request names none. Membership *and* order are part of the wire
   // contract, mirrored host-side by `AXWire.Node.defaultFetchList`.
   fileprivate func FBAXBridgeDefaultFetchList() -> [String] {
-    [axElementType, axElementBaseType, axLabel, axValue, axIdentifier, axFrame, axAutomationType, axChildren]
+    BridgeAXWire.Node.defaultFetchList
   }
 
   // Names are forwarded unfiltered — the vocabulary is far wider than the constants here. The children key

@@ -4,6 +4,17 @@ options:
   createIntermediateGroups: true
 
 targetTemplates:
+  Protocol:
+    type: library.static
+    deploymentTarget: "15.0"
+    sources:
+      - path: ../SimulatorFrameworkBridgeProtocol
+    settings:
+      base:
+        PRODUCT_MODULE_NAME: SimulatorFrameworkBridgeProtocol
+        SWIFT_VERSION: "6"
+    dependencies:
+      - sdk: Foundation.framework
   Guest:
     type: tool
     deploymentTarget: "15.0"
@@ -47,6 +58,18 @@ targetTemplates:
       - sdk: CoreData.framework
 
 targets:
+  SimulatorFrameworkBridgeProtocol-iOS:
+    templates: [Protocol]
+    platform: iOS
+    settings:
+      base:
+        SDKROOT: iphonesimulator
+  SimulatorFrameworkBridgeProtocol-tvOS:
+    templates: [Protocol]
+    platform: tvOS
+    settings:
+      base:
+        SDKROOT: appletvsimulator
   # A command-line executable spawned inside the simulator runtime by idb_companion (from the bundled
   # `Resources/SimulatorFrameworkBridge-<platform>`) to drive privacy/services state, read the
   # accessibility tree and serve the REPL socket. Mirrors the Buck targets of the same names.
@@ -66,6 +89,7 @@ targets:
         IPHONEOS_DEPLOYMENT_TARGET: "15.0"
         PRODUCT_NAME: SimulatorFrameworkBridge-iOS
     dependencies:
+      - target: SimulatorFrameworkBridgeProtocol-iOS
       - sdk: Contacts.framework
       - sdk: UserNotifications.framework
 
@@ -90,3 +114,5 @@ targets:
         SDKROOT: appletvsimulator
         TVOS_DEPLOYMENT_TARGET: "15.0"
         PRODUCT_NAME: SimulatorFrameworkBridge-tvOS
+    dependencies:
+      - target: SimulatorFrameworkBridgeProtocol-tvOS
