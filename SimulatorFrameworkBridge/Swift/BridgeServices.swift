@@ -20,7 +20,7 @@ public enum BridgeServices {
       return 0
     case .clearContacts:
       #if os(tvOS)
-      return unavailable("contacts", output: output)
+      return unavailable("The contacts service", output: output)
       #else
       return Int32(ContactsServiceStaticFuncs.handleContactsAction(action: "clear", output: output))
       #endif
@@ -78,13 +78,13 @@ public enum BridgeServices {
         bundleID = identifier
       case let .delivered(identifier):
         #if os(tvOS)
-        return unavailable("notifications delivered", output: output)
+        return unavailable("The notifications delivered action", output: output)
         #else
         return FBDeliveredNotificationsService.handleAction("delivered", bundleID: identifier, directory: nil, timeout: 30, output: output)
         #endif
       case let .clearDelivered(identifier):
         #if os(tvOS)
-        return unavailable("notifications clear-delivered", output: output)
+        return unavailable("The notifications clear-delivered action", output: output)
         #else
         return FBDeliveredNotificationsService.handleAction("clear-delivered", bundleID: identifier, directory: nil, timeout: 30, output: output)
         #endif
@@ -92,7 +92,7 @@ public enum BridgeServices {
       return Int32(NotificationSettingsServiceStaticFuncs.handleNotificationSettingsAction(action: action, bundleID: bundleID, output: output))
     case let .health(command):
       #if os(tvOS)
-      return unavailable("health", output: output)
+      return unavailable("The health service", output: output)
       #else
       let action: String
       let bundleID: String
@@ -126,8 +126,7 @@ public enum BridgeServices {
     }
   }
 
-  private static func unavailable(_ service: String, output: BridgeOutput) -> Int32 {
-    output.write(["error": "The \(service) service is not available in a tvOS guest"])
-    return 1
+  private static func unavailable(_ subject: String, output: BridgeOutput) -> Int32 {
+    Int32(output.failure("\(subject) is not available in a tvOS guest"))
   }
 }

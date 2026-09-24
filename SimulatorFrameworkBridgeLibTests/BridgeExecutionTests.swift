@@ -216,8 +216,8 @@ final class BridgeExecutionTests: XCTestCase {
       guard case let .object(value)? = result.values.first else { return XCTFail("missing timeout response") }
       XCTAssertEqual(value["completionStatus"], .string("timedOut"))
       XCTAssertEqual(value["ok"], .bool(false))
-      // BUG: the timeout is only in the values, so the RPC diagnostic is empty — flipped in the following commit.
-      XCTAssertNil(result.error, stage)
+      let timeouts = ["seed": "Health seed timed out", "set": "Health authorization write timed out", "clear": "Health clear timed out", "list": "Health list timed out"]
+      XCTAssertEqual(result.error, timeouts[stage], stage)
       runtime.completePendingCallbacks()
       XCTAssertEqual(result.values.first, .object(value))
       runtime.deferredCompletion = ""
@@ -242,8 +242,7 @@ final class BridgeExecutionTests: XCTestCase {
       BridgeServices.execute(.health(.list(bundleID: "app"))),
     ]
     XCTAssertEqual(results.map(\.exitCode), [1, 1, 1, 1])
-    // BUG: failures are only in the values, so the RPC diagnostic is empty — flipped in the following commit.
-    XCTAssertEqual(results.map(\.error), [nil, nil, nil, nil])
+    XCTAssertEqual(results.map(\.error), ["set failed", "no resolvable HK types in request", "clear failed", "fetch failed"])
   }
 
   func testDynamicStoreAdaptersPreserveBinaryPlistsWithoutWritingStdout() throws {

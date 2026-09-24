@@ -86,52 +86,58 @@ private func handleSetAction(
   if selection.isEmpty {
     let output: [String: Any] = ["action": actionName, "bundleID": bundleID, "ok": false, "error": "no resolvable HK types in request", "unresolvedTypes": unresolvedIdentifiers]
     printHealthJSON(output, output: sink)
-    return 1
+    return sink?.failure("no resolvable HK types in request") ?? 1
   }
   // Seed first: the daemon drops status writes for unseen bundle/type pairs.
   let seed = try client.seedAuthorization(forBundleIdentifier: bundleID, selection: selection)
 
   if let sink, seed.status == .timedOut {
     sink.write(["action": actionName, "bundleID": bundleID, "ok": false, "error": "Health seed timed out", "completionStatus": "timedOut"])
-    return 1
+    return sink.failure("Health seed timed out")
   }
   let write = try client.setAuthorizationForBundleIdentifier(bundleID, selection: selection, status: statusCode)
   guard let set = write.operation else {
     let output: [String: Any] = ["action": actionName, "bundleID": bundleID, "ok": false, "error": "HKAuthorizationStore declares no known setAuthorizationStatuses: spelling", "resolvedTypes": resolvedIdentifiers, "unresolvedTypes": unresolvedIdentifiers]
     printHealthJSON(output, output: sink)
-    return 1
+    return sink?.failure("HKAuthorizationStore declares no known setAuthorizationStatuses: spelling") ?? 1
   }
   if let sink, set.status == .timedOut {
     sink.write(["action": actionName, "bundleID": bundleID, "ok": false, "error": "Health authorization write timed out", "completionStatus": "timedOut"])
-    return 1
+    return sink.failure("Health authorization write timed out")
   }
   let ok = NSNumber(value: seed.success && set.success ? 1 : 0)
   let seedError = try seed.readErrorValue()
   let setError = try set.readErrorValue()
   let output: [String: Any] = ["action": actionName, "bundleID": bundleID, "ok": ok, "resolvedTypes": resolvedIdentifiers, "unresolvedTypes": unresolvedIdentifiers, "seedError": seedError, "setError": setError]
   printHealthJSON(output, output: sink)
-  return (seed.success && set.success) ? 0 : 1
+  guard seed.success && set.success else {
+    return sink?.failure((setError as? String) ?? (seedError as? String) ?? "Health \(actionName) failed") ?? 1
+  }
+  return 0
 }
 
 private func handleClearAction(client: FBHealthSettingsClient, bundleID: String, sink: BridgeOutput?) throws -> Int {
   let result = try client.clearAuthorization(forBundleIdentifier: bundleID)
   if let sink, result.status == .timedOut {
     sink.write(["action": "clear", "bundleID": bundleID, "ok": false, "error": "Health clear timed out", "completionStatus": "timedOut"])
-    return 1
+    return sink.failure("Health clear timed out")
   }
   let ok = NSNumber(value: result.success)
   let clearError = try result.readErrorValue()
 
   let output: [String: Any] = ["action": "clear", "bundleID": bundleID, "ok": ok, "error": clearError]
   printHealthJSON(output, output: sink)
-  return result.success ? 0 : 1
+  guard result.success else {
+    return sink?.failure((clearError as? String) ?? "Health clear failed") ?? 1
+  }
+  return 0
 }
 
 private func handleListAction(client: FBHealthSettingsClient, bundleID: String, sink: BridgeOutput?) throws -> Int {
   let result = try client.fetchRecords(forBundleIdentifier: bundleID)
   if let sink, result.status == .timedOut {
     sink.write(["action": "list", "bundleID": bundleID, "ok": false, "error": "Health list timed out", "completionStatus": "timedOut"])
-    return 1
+    return sink.failure("Health list timed out")
   }
   let records = try result.readRecords()
 
@@ -143,7 +149,10 @@ private func handleListAction(client: FBHealthSettingsClient, bundleID: String, 
   let fetchError = try result.readErrorValue()
   let output: [String: Any] = ["action": "list", "bundleID": bundleID, "ok": ok, "error": fetchError, "records": recordDicts]
   printHealthJSON(output, output: sink)
-  return !result.hasError ? 0 : 1
+  guard !result.hasError else {
+    return sink?.failure((fetchError as? String) ?? "Health list failed") ?? 1
+  }
+  return 0
 }
 
 // MARK: - Dispatch
