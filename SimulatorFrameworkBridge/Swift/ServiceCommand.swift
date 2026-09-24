@@ -25,6 +25,7 @@ private enum BridgeService: String {
   #if !os(tvOS)
   func contacts(_ action: String) -> Int32
   func health(_ action: String, bundleID: String?, typeIDs: [String]) -> Int32
+  func deliveredNotifications(_ action: String, bundleID: String?) -> Int32
   #endif
   func dns(_ action: String, arguments: [String]) -> Int32
   func dynamicStore(_ action: String, arguments: [String]) -> Int32
@@ -66,7 +67,18 @@ private enum BridgeService: String {
     case .dns: return services.dns(action, arguments: arguments)
     case .dynamicStore: return services.dynamicStore(action, arguments: arguments)
     case .photos: return services.photos(action)
-    case .notifications: return services.notifications(action, bundleID: arguments.first)
+    case .notifications:
+      // `list` on this service means "list the apps' settings", so the delivered notifications of one app
+      // are read and cleared with their own verbs.
+      if action == "delivered" || action == "clear-delivered" {
+        #if os(tvOS)
+        NSLog("The notifications %@ action is not available in a tvOS guest", action)
+        return 1
+        #else
+        return services.deliveredNotifications(action, bundleID: arguments.first)
+        #endif
+      }
+      return services.notifications(action, bundleID: arguments.first)
     case .privacy: return services.privacy(action, arguments: arguments)
     case .proxy: return services.proxy(action, arguments: arguments)
     case .accessibility: return services.accessibility(action, arguments: arguments)

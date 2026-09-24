@@ -99,6 +99,7 @@ private final class RecordingServices: NSObject, FBBridgeServiceHandling {
   func dynamicStore(_ action: String, arguments: [String]) -> Int32 { record("dynamic-store", action, arguments) }
   func photos(_ action: String) -> Int32 { record("photos", action, []) }
   func notifications(_ action: String, bundleID: String?) -> Int32 { record("notifications", action, [bundleID]) }
+  func deliveredNotifications(_ action: String, bundleID: String?) -> Int32 { record("deliveredNotifications", action, [bundleID]) }
   func privacy(_ action: String, arguments: [String]) -> Int32 { record("privacy", action, arguments) }
   func proxy(_ action: String, arguments: [String]) -> Int32 { record("proxy", action, arguments) }
   func accessibility(_ action: String, arguments: [String]) -> Int32 { record("accessibility", action, arguments) }
