@@ -174,4 +174,115 @@ final class DynamicStoreServiceTests: XCTestCase {
 
     XCTAssertEqual(runtime.value as? NSDictionary, ["HTTPEnable": 1] as NSDictionary)
   }
+
+  func testSnapshotsPreservePropertyListTypes() throws {
+    let value: [Any] = [Data([0, 255, 1]), Date(timeIntervalSince1970: 1_700_000_000), ["nested": [1, true, "text"]]]
+    let runtime = FBDynamicStoreTestRuntime()
+    runtime.value = value
+
+    XCTAssertEqual(runtime.run(action: "snapshot", arguments: ["dns", "ignored"], input: nil), 0)
+
+    XCTAssertTrue(runtime.output.starts(with: Data("bplist00".utf8)))
+    XCTAssertEqual(try decoded(runtime.output), ["present": true, "value": value] as NSDictionary)
+  }
+
+  func testRestoreAcceptsXMLAndNumericPresenceFlagsWithoutLosingValues() throws {
+    for present in [0, 2, -1] {
+      let runtime = FBDynamicStoreTestRuntime()
+      runtime.value = ["old"]
+      let value: [Any] = [Data([0, 255]), Date(timeIntervalSince1970: 1234), ["new"]]
+      let input = try PropertyListSerialization.data(fromPropertyList: ["present": present, "value": value], format: .xml, options: 0)
+
+      XCTAssertEqual(runtime.run(action: "restore", arguments: ["dns"], input: input), 0)
+
+      let expected: [String: Any] = present == 0 ? ["present": false] : ["present": true, "value": value]
+      XCTAssertEqual(try decoded(runtime.output), expected as NSDictionary)
+      XCTAssertTrue(runtime.output.starts(with: Data("bplist00".utf8)))
+    }
+  }
+
+  func testInvalidPresenceTypesAndNonDictionarySnapshotsDoNotMutate() throws {
+    for object: Any in [["present": "true", "value": [:]], ["present": [true]], [true], "snapshot"] {
+      let runtime = FBDynamicStoreTestRuntime()
+      runtime.value = ["original"]
+
+      XCTAssertEqual(runtime.run(action: "restore", arguments: ["dns"], input: try encoded(object)), 1)
+
+      XCTAssertEqual(runtime.value as? NSArray, ["original"] as NSArray)
+      XCTAssertEqual(storeOperations(runtime), ["read"] as NSArray)
+      XCTAssertEqual(runtime.output, Data())
+    }
+  }
+
+  func testUnavailableReadDependenciesFailWithoutOutputOrMutation() {
+    for failure in ["library", "store", "SCDynamicStoreCreate", "SCDynamicStoreCopyValue", "SCError"] {
+      let runtime = FBDynamicStoreTestRuntime()
+      runtime.libraryAvailable = failure != "library"
+      runtime.storeAvailable = failure != "store"
+      runtime.missingSymbols = [failure]
+
+      XCTAssertEqual(runtime.run(action: "snapshot", arguments: ["dns"], input: nil), 1, failure)
+
+      XCTAssertEqual(runtime.output, Data())
+      XCTAssertTrue(storeOperations(runtime).count == 0)
+    }
+  }
+
+  func testOnlyTheRequestedMutationRequiresItsSymbolAndNotificationIsOptional() throws {
+    let runtime = FBDynamicStoreTestRuntime()
+    runtime.missingSymbols = ["SCDynamicStoreSetValue", "SCDynamicStoreRemoveValue", "SCDynamicStoreNotifyValue"]
+    XCTAssertEqual(runtime.run(action: "snapshot", arguments: ["dns"], input: nil), 0)
+    XCTAssertEqual(runtime.run(action: "restore", arguments: ["dns"], input: try encoded(["present": false])), 0)
+    XCTAssertEqual(try decoded(runtime.output), ["present": false] as NSDictionary)
+
+    XCTAssertEqual(runtime.run(action: "restore", arguments: ["dns"], input: try encoded(["present": true, "value": ["new"]])), 1)
+    XCTAssertEqual(runtime.output, Data())
+    XCTAssertNil(runtime.value)
+
+    runtime.missingSymbols = ["SCDynamicStoreNotifyValue"]
+    XCTAssertEqual(runtime.run(action: "restore", arguments: ["dns"], input: try encoded(["present": true, "value": ["new"]])), 0)
+    XCTAssertEqual(try decoded(runtime.output), ["present": true, "value": ["new"]] as NSDictionary)
+    XCTAssertFalse(runtime.operations.contains("notify"))
+  }
+
+  func testFailedRemovalPreservesTheValueAndLaterRestoreCanSucceed() throws {
+    let runtime = FBDynamicStoreTestRuntime()
+    runtime.value = ["original"]
+    runtime.writeSucceeds = false
+    let input = try encoded(["present": false])
+
+    XCTAssertEqual(runtime.run(action: "restore", arguments: ["proxy"], input: input), 1)
+
+    XCTAssertEqual(runtime.value as? NSArray, ["original"] as NSArray)
+    XCTAssertEqual(runtime.output, Data())
+    XCTAssertEqual(storeOperations(runtime), ["read", "remove"] as NSArray)
+    runtime.writeSucceeds = true
+    XCTAssertEqual(runtime.run(action: "restore", arguments: ["proxy"], input: input), 0)
+    XCTAssertEqual(try decoded(runtime.output), ["present": false] as NSDictionary)
+  }
+
+  func testRestoreReturnsTheObservedReadbackRatherThanTheRequestedValue() throws {
+    let runtime = FBDynamicStoreTestRuntime()
+    runtime.readValues = [["original"], ["changed-again"]]
+
+    XCTAssertEqual(runtime.run(action: "restore", arguments: ["dns"], input: try encoded(["present": true, "value": ["requested"]])), 0)
+
+    XCTAssertEqual(runtime.value as? NSArray, ["requested"] as NSArray)
+    XCTAssertEqual(try decoded(runtime.output), ["present": true, "value": ["changed-again"]] as NSDictionary)
+    XCTAssertEqual(storeOperations(runtime), ["read", "write", "notify", "read"] as NSArray)
+  }
+
+  func testFailedInitialReadOrReadbackDoesNotEmitASnapshot() throws {
+    for reads: [Any] in [[NSNull()], [["original"], NSNull()]] {
+      let runtime = FBDynamicStoreTestRuntime()
+      runtime.readValues = reads
+      runtime.errorStatus = 1001
+
+      XCTAssertEqual(runtime.run(action: "restore", arguments: ["dns"], input: try encoded(["present": true, "value": ["requested"]])), 1)
+
+      XCTAssertEqual(runtime.output, Data())
+      let operations = reads.count == 1 ? ["read"] : ["read", "write", "notify", "read"]
+      XCTAssertEqual(storeOperations(runtime), operations as NSArray)
+    }
+  }
 }

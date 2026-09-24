@@ -15,6 +15,7 @@
 #import <SimulatorFrameworkBridgeLib/SystemConfigurationPrivate.h>
 
 static FBDynamicStoreTestRuntime *runtime;
+static NSUInteger readIndex;
 
 static SCDynStoreRef createStore(CFAllocatorRef allocator, CFStringRef name, void *callback, void *context)
 {
@@ -26,7 +27,12 @@ static CFPropertyListRef copyValue(SCDynStoreRef store, CFStringRef key)
 {
   [runtime.operations addObject:@"read"];
   [runtime.keys addObject:(__bridge NSString *)key];
-  return runtime.value ? CFBridgingRetain(runtime.value) : NULL;
+  if (runtime.readValues && readIndex >= runtime.readValues.count) {
+    [runtime.operations addObject:@"read:overrun"];
+    return NULL;
+  }
+  id value = runtime.readValues ? runtime.readValues[readIndex++] : runtime.value;
+  return value && value != NSNull.null ? CFBridgingRetain(value) : NULL;
 }
 
 static Boolean setValue(SCDynStoreRef store, CFStringRef key, CFPropertyListRef value)
@@ -60,7 +66,7 @@ static Boolean notifyValue(SCDynStoreRef store, CFStringRef key)
 
 static int lastError(void)
 {
-  return runtime.value ? 0 : runtime.errorStatus;
+  return runtime.errorStatus;
 }
 
 @implementation FBDynamicStoreTestRuntime
@@ -84,6 +90,7 @@ static int lastError(void)
 - (int)runAction:(NSString *)action arguments:(NSArray<NSString *> *)arguments input:(NSData *)input
 {
   runtime = self;
+  readIndex = 0;
   FBSystemConfigurationSetLoaderForTesting(^void *{
     [runtime.operations addObject:@"load"];
     return runtime.libraryAvailable ? (__bridge void *)runtime : NULL;
