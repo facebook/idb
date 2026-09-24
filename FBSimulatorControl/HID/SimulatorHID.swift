@@ -147,35 +147,7 @@ public final class SimulatorHID: CustomStringConvertible, @unchecked Sendable {
     await vendor.disconnect()
   }
 
-  // MARK: - Indigo Event Send Primitives
-
-  /// Sends a single-finger touch at the given point (in points), optionally tagged as originating at
-  /// a screen edge.
-  func sendTouch(
-    direction: SimulatorHIDDirection, x: Double, y: Double, edge: SimulatorHIDEdge
-  ) async throws {
-    try await transport.sendTouch(direction: direction, x: x, y: y, edge: edge)
-  }
-
-  /// Sends a two-finger touch (for multi-touch gestures) at the given points (in points).
-  func sendTwoFingerTouch(direction: SimulatorHIDDirection, finger1: CGPoint, finger2: CGPoint) async throws {
-    try await transport.sendTwoFingerTouch(direction: direction, finger1: finger1, finger2: finger2)
-  }
-
-  /// Sends a hardware button event.
-  func sendButton(direction: SimulatorHIDDirection, button: SimulatorHIDButton) async throws {
-    try await transport.sendButton(direction: direction, button: button)
-  }
-
-  /// Sends a tvOS Siri Remote focus action.
-  func sendRemoteButton(direction: SimulatorHIDDirection, button: SimulatorHIDRemoteButton) async throws {
-    try await transport.sendRemoteButton(direction: direction, button: button)
-  }
-
-  /// Sends a keyboard key event.
-  func sendKeyboard(direction: SimulatorHIDDirection, keyCode: UInt32) async throws {
-    try await transport.sendKeyboard(direction: direction, keyCode: keyCode)
-  }
+  // MARK: - Input transport
 
   /// Drains the transport so `dtuhidd` consumes a gesture before the connection is torn down. Only DTUHID
   /// has anything to drain; Indigo's client is synchronous. `send(event:logger:)` calls this per event
