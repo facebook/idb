@@ -123,6 +123,21 @@ struct SubprocessRunTests {
     #expect(new.terminationStatus == .exited(0))
   }
 
+  @Test("A file the capture creates itself is readable afterwards")
+  func fileCaptureCreatesAReadableFile() async throws {
+    let directory = FileManager.default.temporaryDirectory
+      .appendingPathComponent("SubprocessRunTests-\(UUID().uuidString)")
+    try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+    defer { try? FileManager.default.removeItem(at: directory) }
+    let path = directory.appendingPathComponent("created.txt")
+
+    // Not differential: the old engine opens with O_CREAT and no mode, so a
+    // file it creates has undefined permissions. The capture opens with 0644.
+    _ = try await Self.new("printf 'created'").run(output: .file(path), error: .closed)
+
+    #expect(try String(contentsOf: path, encoding: .utf8) == "created")
+  }
+
   // MARK: - Environment
 
   @Test("An exact environment produces the same child environment as the builder's")
