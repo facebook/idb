@@ -12,6 +12,7 @@ public enum SubprocessError: Error, Equatable {
   case unacceptableTermination(status: TerminationStatus, policy: ExitPolicy, executable: String, processIdentifier: pid_t)
   case launchFailed(executable: String, message: String)
   case outputUnavailable(path: String, message: String)
+  case timedOut(seconds: TimeInterval, executable: String, processIdentifier: pid_t)
 }
 
 extension SubprocessError: LocalizedError {
@@ -28,6 +29,8 @@ extension SubprocessError: LocalizedError {
       return "Failed to launch \(executable): \(message)"
     case let .outputUnavailable(path, message):
       return "Cannot create output for \(path): \(message)"
+    case let .timedOut(seconds, executable, processIdentifier):
+      return "Process \(processIdentifier) (\(executable)) did not terminate within \(seconds) seconds"
     }
   }
 }
@@ -40,17 +43,20 @@ extension Subprocess {
   ///
   /// Throws `SubprocessError.unacceptableTermination` when the termination
   /// does not satisfy `exitPolicy` — note that a signal never satisfies a
-  /// code-based policy.
+  /// code-based policy — and `SubprocessError.timedOut` when the process
+  /// outlives `timeout`.
   ///
-  /// Cancellation stops observation of the process but does not kill it;
-  /// scoped and escaping lifetimes are the province of `withRunning` and
-  /// `launch`. The drains are deliberately left armed rather than torn down,
-  /// so an abandoned child goes on writing to a live pipe instead of taking a
-  /// SIGPIPE it would never have seen had the caller waited.
+  /// Both cancellation and a timeout stop observation of the process without
+  /// killing it, and its exit is still reaped; scoped and escaping lifetimes
+  /// are the province of `withRunning` and `launch`. The drains are
+  /// deliberately left armed rather than torn down, so an abandoned child goes
+  /// on writing to a live pipe instead of taking a SIGPIPE it would never have
+  /// seen had the caller waited.
   public func run<Out: Sendable, Err: Sendable>(
     output: Output<Out>,
     error: Output<Err>,
     exitPolicy: ExitPolicy = .mustExitZero,
+    timeout: TimeInterval? = nil,
     logger: (any ControlCoreLogger)? = nil
   ) async throws -> Completed<Out, Err> {
     var (stdOut, captureOut) = try output.resolveHost()
@@ -63,7 +69,18 @@ extension Subprocess {
     }
 
     let running = try await startOnHost(stdOut: &stdOut, stdErr: &stdErr, logger: logger)
-    let status = try await running.terminationStatus
+    let status: TerminationStatus
+    if let timeout {
+      guard let resolved = try await running.exit.status(within: timeout) else {
+        throw SubprocessError.timedOut(
+          seconds: timeout,
+          executable: executable,
+          processIdentifier: running.processIdentifier)
+      }
+      status = resolved
+    } else {
+      status = try await running.exit.status()
+    }
     guard exitPolicy.accepts(status) else {
       throw SubprocessError.unacceptableTermination(
         status: status,
@@ -84,9 +101,10 @@ extension Subprocess {
   /// applies, made visible in the return type.
   public func run(
     exitPolicy: ExitPolicy = .mustExitZero,
+    timeout: TimeInterval? = nil,
     logger: (any ControlCoreLogger)? = nil
   ) async throws -> Completed<String, String> {
-    try await run(output: .string, error: .string, exitPolicy: exitPolicy, logger: logger)
+    try await run(output: .string, error: .string, exitPolicy: exitPolicy, timeout: timeout, logger: logger)
   }
 }
 

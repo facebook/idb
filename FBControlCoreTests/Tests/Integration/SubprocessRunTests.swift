@@ -200,6 +200,32 @@ struct SubprocessRunTests {
     #expect(new.terminationStatus == .signalled(oldSignal))
   }
 
+  // MARK: - Deadline
+
+  @Test("A process that outlives the deadline throws, and keeps running unkilled")
+  func timeoutAbandonsWithoutKilling() async throws {
+    do {
+      _ = try await Self.new("sleep 10000").run(output: .closed, error: .closed, exitPolicy: .any, timeout: 0.3)
+      Issue.record("Expected the deadline to fire")
+    } catch let SubprocessError.timedOut(seconds, _, processIdentifier) {
+      #expect(seconds == 0.3)
+      // The deadline stops observation, it does not kill: the old
+      // future-timeout contract that every adopting callsite relies on.
+      #expect(kill(processIdentifier, 0) == 0)
+      kill(processIdentifier, SIGKILL)
+    } catch {
+      Issue.record("Expected a timedOut error, got: \(error)")
+    }
+  }
+
+  @Test("A process that terminates within the deadline completes normally")
+  func completionWithinTheDeadlineIsUnaffected() async throws {
+    let result = try await Self.new("printf 'quick'").run(output: .string, error: .closed, timeout: 20)
+
+    #expect(result.standardOutput == "quick")
+    #expect(result.terminationStatus == .exited(0))
+  }
+
   // MARK: - Policy rejection
 
   @Test("An unacceptable exit code throws, exactly where the old acceptable-codes path throws")

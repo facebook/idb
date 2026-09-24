@@ -24,7 +24,6 @@ private func processIsTranslated() -> Int32 {
 
 enum ArchitectureAdapterError: Error, LocalizedError {
   case noCompatibleArchitecture(requested: [String], host: [String])
-  case timedOut(seconds: Double, waitingFor: String)
   case verificationFailed(architecture: String, binary: String)
   case extractionFailed(architecture: String, binary: String)
   case otoolFailed(binary: String)
@@ -33,8 +32,6 @@ enum ArchitectureAdapterError: Error, LocalizedError {
     switch self {
     case let .noCompatibleArchitecture(requested, host):
       return "Could not select an architecture from \(CollectionInformation.oneLineDescription(from: requested)) compatible with \(CollectionInformation.oneLineDescription(from: host))"
-    case let .timedOut(seconds, waitingFor):
-      return "Timed out after \(String(format: "%.1f", seconds))s waiting for \(waitingFor)"
     case let .verificationFailed(architecture, binary):
       return "Desired architecture \(architecture) not found in \(binary) binary"
     case let .extractionFailed(architecture, binary):
@@ -95,10 +92,8 @@ public enum ArchitectureProcessAdapter {
     _ binary: String,
     architecture: Architecture
   ) async throws {
-    let result = try await withTimeout(seconds: 20, waitingFor: "lipo -verify_arch") {
-      try await Subprocess(executable: "/usr/bin/lipo", arguments: [binary, "-verify_arch", architecture.rawValue])
-        .run(output: .closed, error: .closed, exitPolicy: .any)
-    }
+    let result = try await Subprocess(executable: "/usr/bin/lipo", arguments: [binary, "-verify_arch", architecture.rawValue])
+      .run(output: .closed, error: .closed, exitPolicy: .any, timeout: 20)
     try result.checkExitedCleanly(
       orThrow: ArchitectureAdapterError.verificationFailed(architecture: architecture.rawValue, binary: binary))
   }
@@ -108,15 +103,14 @@ public enum ArchitectureProcessAdapter {
     launchPath: String,
     outputPath: URL
   ) async throws {
-    let result = try await withTimeout(seconds: 10, waitingFor: "lipo -extract") {
-      try await Subprocess(executable: "/usr/bin/lipo", arguments: [launchPath, "-extract", architecture.rawValue, "-output", outputPath.path])
-        .run(
-          output: .closed,
-          error: .lines { line in
-            NSLog("LINE %@\n", line)
-          },
-          exitPolicy: .any)
-    }
+    let result = try await Subprocess(executable: "/usr/bin/lipo", arguments: [launchPath, "-extract", architecture.rawValue, "-output", outputPath.path])
+      .run(
+        output: .closed,
+        error: .lines { line in
+          NSLog("LINE %@\n", line)
+        },
+        exitPolicy: .any,
+        timeout: 10)
     try result.checkExitedCleanly(
       orThrow: ArchitectureAdapterError.extractionFailed(architecture: architecture.rawValue, binary: launchPath))
   }
@@ -142,37 +136,10 @@ public enum ArchitectureProcessAdapter {
   private static func getOtoolInfo(
     fromBinary binary: String
   ) async throws -> String {
-    let result = try await withTimeout(seconds: 10, waitingFor: "otool -l") {
-      try await Subprocess(executable: "/usr/bin/otool", arguments: ["-l", binary])
-        .run(output: .string, error: .closed, exitPolicy: .any)
-    }
+    let result = try await Subprocess(executable: "/usr/bin/otool", arguments: ["-l", binary])
+      .run(output: .string, error: .closed, exitPolicy: .any, timeout: 10)
     try result.checkExitedCleanly(orThrow: ArchitectureAdapterError.otoolFailed(binary: binary))
     return result.standardOutput
-  }
-
-  /// Races `operation` against a deadline. On timeout the error is thrown to the
-  /// caller and the losing task is cancelled — which stops observation of a
-  /// spawned process without killing it, matching the future-timeout behaviour
-  /// this replaces.
-  private static func withTimeout<Result: Sendable>(
-    seconds: Double,
-    waitingFor description: String,
-    _ operation: @escaping @Sendable () async throws -> Result
-  ) async throws -> Result {
-    try await withThrowingTaskGroup(of: Result.self) { group in
-      group.addTask {
-        try await operation()
-      }
-      group.addTask {
-        try await Task.sleep(for: .seconds(seconds))
-        throw ArchitectureAdapterError.timedOut(seconds: seconds, waitingFor: description)
-      }
-      guard let result = try await group.next() else {
-        preconditionFailure("The task group has two children; next() cannot be empty")
-      }
-      group.cancelAll()
-      return result
-    }
   }
 
   /// Extracts rpath from full otool output.
