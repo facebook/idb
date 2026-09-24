@@ -26,7 +26,6 @@
 #import <XCTestPrivate/XCTestManager_IDEInterface-Protocol.h>
 
 #import "FBTestConfiguration.h"
-#import "XCTestBootstrapError.h"
 
 static const NSInteger FBProtocolVersion = 36;
 static const NSInteger FBProtocolMinimumVersion = 0x8;

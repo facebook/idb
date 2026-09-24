@@ -8,6 +8,16 @@
 import FBControlCore
 import Foundation
 
+public let XCTestBootstrapErrorDomain = "com.facebook.XCTestBootstrap"
+
+public let FBTestErrorDomain = "com.facebook.FBTestError"
+
+@objc public enum XCTestBootstrapErrorCode: Int {
+  case startupFailure = 0x3
+  case lostConnection = 0x4
+  case startupTimeout = 0x5
+}
+
 @objc public final class XCTestBootstrapError: ControlCoreError {
   public required init() {
     super.init()
