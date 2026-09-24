@@ -63,6 +63,18 @@ final class ServiceCommandTests: XCTestCase {
       ])
   }
 
+  func testDeliveredNotificationsUsesItsOwnRouteAndOnlyTheBundleID() {
+    let services = RecordingServices()
+    XCTAssertEqual(FBBridgeCommand.dispatch(service: "notifications", action: "delivered", arguments: ["com.example.app", "ignored"], services: services), 23)
+    XCTAssertEqual(FBBridgeCommand.dispatch(service: "notifications", action: "delivered", arguments: [], services: services), 23)
+    XCTAssertEqual(
+      services.calls,
+      [
+        Call(service: "deliveredNotifications", action: "delivered", arguments: ["com.example.app"]),
+        Call(service: "deliveredNotifications", action: "delivered", arguments: [nil]),
+      ])
+  }
+
   func testInvalidServiceAndReplCommandsDoNotCallTheLoader() {
     let services = RecordingServices()
     XCTAssertEqual(FBBridgeCommand.dispatch(service: "unknown", action: "start", arguments: [], services: services), 1)

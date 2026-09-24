@@ -12,6 +12,8 @@
 @interface FBPhotosTestRuntime ()
 @property (nonatomic) BOOL insideTransaction;
 @property (nonatomic) BOOL allMutationsInsideTransaction;
+@property (nonatomic, readwrite) BOOL transactionRanOnWorkerThread;
+@property (nullable, nonatomic, readwrite, copy) NSString *escapedTransactionException;
 @end
 
 @interface FBPhotoProbe : NSObject
@@ -44,12 +46,32 @@
   if ([self.runtime.failure isEqualToString:@"transactionException"]) {
     [NSException raise:@"PhotosTest" format:@"transaction failed"];
   }
-  self.runtime.insideTransaction = YES;
-  @try {
-    block();
-  } @finally {
-    self.runtime.insideTransaction = NO;
-    [self.runtime.operations addObject:@"transactionEnd"];
+  NSThread *callingThread = NSThread.currentThread;
+  void (^transaction)(void) = ^{
+    self.runtime.transactionRanOnWorkerThread = NSThread.currentThread != callingThread;
+    self.runtime.insideTransaction = YES;
+    @try {
+      block();
+    } @catch (NSException *exception) {
+      if (!self.runtime.runTransactionsOnWorkerQueue) {
+        @throw;
+      }
+      // Record escapes on the worker so a regression fails an assertion instead of killing XCTest.
+      self.runtime.escapedTransactionException = exception.name;
+    } @finally {
+      self.runtime.insideTransaction = NO;
+      [self.runtime.operations addObject:@"transactionEnd"];
+    }
+  };
+  if (self.runtime.runTransactionsOnWorkerQueue) {
+    dispatch_semaphore_t completed = dispatch_semaphore_create(0);
+    dispatch_async(dispatch_get_global_queue(QOS_CLASS_DEFAULT, 0), ^{
+      transaction();
+      dispatch_semaphore_signal(completed);
+    });
+    dispatch_semaphore_wait(completed, DISPATCH_TIME_FOREVER);
+  } else {
+    transaction();
   }
 }
 

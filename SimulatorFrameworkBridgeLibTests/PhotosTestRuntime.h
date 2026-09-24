@@ -12,6 +12,9 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic) NSUInteger assetCount;
 @property (nonatomic, copy) NSString *failure;
 @property (nonatomic) BOOL saveSucceeds;
+@property (nonatomic) BOOL runTransactionsOnWorkerQueue;
+@property (nonatomic, readonly) BOOL transactionRanOnWorkerThread;
+@property (nullable, nonatomic, readonly, copy) NSString *escapedTransactionException;
 @property (nonatomic, readonly) NSMutableArray<NSString *> *operations;
 @property (nonatomic, readonly) BOOL allMutationsInsideTransaction;
 - (int)run;

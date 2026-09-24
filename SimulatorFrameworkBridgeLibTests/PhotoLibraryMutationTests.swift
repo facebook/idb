@@ -65,6 +65,27 @@ final class PhotoLibraryMutationTests: XCTestCase {
     }
   }
 
+  func testWorkerTransactionFinishesBeforeReturningItsSaveResult() {
+    for succeeds in [true, false] {
+      let runtime = FBPhotosTestRuntime()
+      runtime.runTransactionsOnWorkerQueue = true
+      runtime.saveSucceeds = succeeds
+
+      XCTAssertEqual(runtime.run(), succeeds ? 0 : 1)
+
+      XCTAssertTrue(runtime.transactionRanOnWorkerThread)
+      XCTAssertTrue(runtime.allMutationsInsideTransaction)
+      XCTAssertNil(runtime.escapedTransactionException)
+      XCTAssertEqual(
+        runtime.operations as NSArray,
+        [
+          "value:_lazyPhotoLibrary", "unwrap", "transactionBegin", "context",
+          "id:asset0", "lookup:asset0", "delete:asset0", "id:asset1", "lookup:asset1", "delete:asset1",
+          "save", "transactionEnd",
+        ] as NSArray)
+    }
+  }
+
   func testMissingObjectsAndExceptionsStopTheTransactionWithoutSaving() {
     let prefix = ["value:_lazyPhotoLibrary", "unwrap", "transactionBegin", "context"]
     for (failure, body) in [
