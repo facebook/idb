@@ -199,12 +199,21 @@ public class FileWriter: NSObject, @unchecked Sendable {
 
       // O_NONBLOCK must be set before DispatchIO snapshots the descriptor flags; see
       // FileReader.startReadingNow for why.
-      _ = fcntl(fileDescriptor, F_SETFL, fcntl(fileDescriptor, F_GETFL) | O_NONBLOCK)
+      _ = fcntl(self.fileDescriptor, F_SETFL, fcntl(self.fileDescriptor, F_GETFL) | O_NONBLOCK)
 
       let finishedConsuming = finishedConsumingMutable
+      // The descriptor belongs to the channel rather than to this writer, so its
+      // close must not be reached through the weak capture below: teardown is
+      // asynchronous and routinely outlives a writer that its owner released as
+      // soon as it ended it.
+      let fileDescriptor = self.fileDescriptor
+      let closeOnEndOfFile = self.closeOnEndOfFile
 
-      io = DispatchIO(type: .stream, fileDescriptor: fileDescriptor, queue: writeQueue) { [weak self] errorCode in
-        self?.ioChannelDidClose(withError: errorCode)
+      io = DispatchIO(type: .stream, fileDescriptor: fileDescriptor, queue: writeQueue) { [weak self] _ in
+        self?.io = nil
+        if closeOnEndOfFile {
+          close(fileDescriptor)
+        }
         // Since writing is asynchronous, wait until the io channel is fully closed.
         finishedConsuming.resolve(withResult: NSNull())
       }
@@ -213,13 +222,6 @@ public class FileWriter: NSObject, @unchecked Sendable {
       }
 
       io?.setLimit(lowWater: 1)
-    }
-
-    private func ioChannelDidClose(withError errorCode: Int32) {
-      io = nil
-      if closeOnEndOfFile {
-        close(fileDescriptor)
-      }
     }
   }
 }

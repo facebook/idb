@@ -143,12 +143,7 @@ final class FileWriterTests: XCTestCase {
     var buffer = [UInt8](repeating: 0, count: 16)
     XCTAssertEqual(read(readEnd, &buffer, buffer.count), 4)
 
-    // BUG: the write end is never closed, because the only close is reached
-    // through a weak reference to the released writer. A reader therefore
-    // never sees end-of-file and a child on the other end blocks forever —
-    // flipped in the following commit.
-    XCTAssertEqual(read(readEnd, &buffer, buffer.count), -1)
-    XCTAssertEqual(errno, EAGAIN)
+    XCTAssertEqual(read(readEnd, &buffer, buffer.count), 0)
   }
 
   func testStopThenCloseTeardownOfSocketReaderAndDuplicatedWriter() throws {
