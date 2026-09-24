@@ -45,7 +45,7 @@ static NSString *const kAXChildren = @"XC_kAXXCAttributeChildren";
 - (id)objectForKey:(id)key
 {
   self.lookups++;
-  if (self.raises) {
+  if (self.raises || (self.maximumSuccessfulLookups > 0 && self.lookups > self.maximumSuccessfulLookups)) {
     [NSException raise:NSInternalInconsistencyException format:@"geometry dictionary lookup failed"];
   }
   return [_values objectForKey:key];

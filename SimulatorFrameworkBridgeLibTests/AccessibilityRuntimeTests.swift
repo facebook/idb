@@ -1800,6 +1800,34 @@ final class AccessibilityRuntimeTests: XCTestCase {
     }
   }
 
+  func testGeometryDictionariesAreDetachedBeforeExplanationAndSerialization() throws {
+    let root = FBAXFakeElement.readable("UIApplication")
+    runtime.applicationElements[NSNumber(value: kAppPid)] = root
+    runtime.hitTestOutcome = FBAXHitTestOutcome.hit(FBAXFakeElement.readable("Overlay"), owningProcessIdentifier: 9000)
+    let centerKey = "XC_kAXXCAttributeCenterPoint"
+    for key in [kAXFrame, kAXVisiblePoint, centerKey] {
+      let value = FBAXGeometryDictionaryProbeValue.geometry()
+      value.maximumSuccessfulLookups = UInt(value.count)
+      XCTAssertGreaterThan(value.maximumSuccessfulLookups, 0)
+      root.attributes = ["XC_kAXXCAttributeIsVisible": false, key: value]
+      let hitTestsBefore = runtime.hitTestCount
+
+      let response = FBAXBridgeHandleRequest(explanationRequest())
+      let serialized = FBAXBridgeSerializeResponse(response)
+      let decoded = try XCTUnwrap(JSONSerialization.jsonObject(with: serialized) as? [String: Any])
+
+      assertEqualObjects(decoded["ok"], true)
+      let expected = ["X": 1, "Y": 2, "Width": 3, "Height": 4]
+      assertEqualObjects(axValue(axValue(decoded, "tree"), key), expected)
+      XCTAssertEqual(value.lookups, value.maximumSuccessfulLookups)
+      XCTAssertEqual(runtime.hitTestCount, hitTestsBefore + (key == centerKey ? 1 : 0))
+      if key == centerKey {
+        XCTAssertEqual(runtime.lastHitTestPoint, CGPoint(x: 1, y: 2))
+        XCTAssertNotNil(axValue(axValue(decoded, "tree"), "FBExplainedBy"))
+      }
+    }
+  }
+
   func testGeometryAccessorExceptionsAreContained() {
     let root = FBAXFakeElement.readable("UIApplication")
     runtime.applicationElements[NSNumber(value: kAppPid)] = root

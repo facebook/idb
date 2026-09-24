@@ -128,6 +128,26 @@ static void FBAXClientException(NSException *exception, NSError **error)
 
 @end
 
+// Detach runtime containers under the caller's exception guard. Geometry metadata must survive too.
+static id FBAXCopyAttributeContainers(id value)
+{
+  if ([value isKindOfClass:NSDictionary.class]) {
+    NSMutableDictionary *snapshot = [NSMutableDictionary dictionary];
+    for (id key in value) {
+      snapshot[key] = FBAXCopyAttributeContainers(value[key]);
+    }
+    return [snapshot copy];
+  }
+  if ([value isKindOfClass:NSArray.class]) {
+    NSMutableArray *snapshot = [NSMutableArray array];
+    for (id item in value) {
+      [snapshot addObject:FBAXCopyAttributeContainers(item)];
+    }
+    return [snapshot copy];
+  }
+  return value;
+}
+
 @implementation FBAXClient
 {
   id<FBAXRuntime> _runtime;
@@ -299,22 +319,26 @@ static void FBAXClientException(NSException *exception, NSError **error)
   }
 }
 
-- (NSNumber *)isValidRectangleDictionary:(id)value error:(NSError **)error
+- (FBAXOptionalValue<NSDictionary<NSString *, id> *> *)snapshotRectangleDictionary:(id)value error:(NSError **)error
 {
   @try {
     CGRect geometry = CGRectZero;
-    return @(CGRectMakeWithDictionaryRepresentation((__bridge CFDictionaryRef)value, &geometry));
+    NSDictionary *snapshot = FBAXCopyAttributeContainers(value);
+    BOOL valid = CGRectMakeWithDictionaryRepresentation((__bridge CFDictionaryRef)snapshot, &geometry);
+    return [[FBAXOptionalValue alloc] initWithValue:valid ? snapshot : nil];
   } @catch (NSException *exception) {
     FBAXClientException(exception, error);
     return nil;
   }
 }
 
-- (NSNumber *)isValidPointDictionary:(id)value error:(NSError **)error
+- (FBAXOptionalValue<NSDictionary<NSString *, id> *> *)snapshotPointDictionary:(id)value error:(NSError **)error
 {
   @try {
     CGPoint geometry = CGPointZero;
-    return @(CGPointMakeWithDictionaryRepresentation((__bridge CFDictionaryRef)value, &geometry));
+    NSDictionary *snapshot = FBAXCopyAttributeContainers(value);
+    BOOL valid = CGPointMakeWithDictionaryRepresentation((__bridge CFDictionaryRef)snapshot, &geometry);
+    return [[FBAXOptionalValue alloc] initWithValue:valid ? snapshot : nil];
   } @catch (NSException *exception) {
     FBAXClientException(exception, error);
     return nil;

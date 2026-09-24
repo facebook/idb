@@ -14,6 +14,7 @@ NS_ASSUME_NONNULL_BEGIN
 @interface FBAXGeometryDictionaryProbeValue : NSDictionary
 @property (nonatomic) BOOL raises;
 @property (nonatomic) NSUInteger lookups;
+@property (nonatomic) NSUInteger maximumSuccessfulLookups;
 + (instancetype)geometry;
 @end
 

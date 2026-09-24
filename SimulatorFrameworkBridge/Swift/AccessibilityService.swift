@@ -315,10 +315,10 @@ private final class AccessibilityRequest {
   ) throws -> Any? {
     var rect: CGRect = .zero
     if let frameValue = frameValue as? NSDictionary {
-      guard try client.isValidRectangle(frameValue).boolValue else {
+      guard let snapshot = try client.snapshotRectangle(frameValue).value else {
         return FBAXBridgeRejectedGeometry(kind: "frame", value: frameValue)
       }
-      return frameValue
+      return snapshot
     }
     let result = try client.rectangle(fromValue: frameValue)
     guard let geometry = result.value else {
@@ -342,10 +342,10 @@ private final class AccessibilityRequest {
   ) throws -> Any? {
     var point: CGPoint = .zero
     if let pointValue = pointValue as? NSDictionary {
-      guard try client.isValidPoint(pointValue).boolValue else {
+      guard let snapshot = try client.snapshotPoint(pointValue).value else {
         return FBAXBridgeRejectedGeometry(kind: "point", value: pointValue)
       }
-      return pointValue
+      return snapshot
     }
     let result = try client.point(fromValue: pointValue)
     guard let geometry = result.value else {
