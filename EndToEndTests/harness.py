@@ -971,16 +971,19 @@ class LocalPages:
 
 
 def _elements(node: Any) -> list[dict[str, Any]]:
-    """Flatten flat, nested and complete accessibility output into dictionaries."""
-    found: list[dict[str, Any]] = []
-    if isinstance(node, dict):
-        found.append(node)
-        for value in node.values():
-            found.extend(_elements(value))
-    elif isinstance(node, list):
-        for child in node:
-            found.extend(_elements(child))
-    return found
+    """Flatten flat, nested and complete accessibility output into its elements.
+
+    Only a document's `elements` and an element's `children` hold elements. Other
+    dictionaries can carry an identifier and a frame without being one, such as
+    the element that `interactable` says takes a touch aimed at this one.
+    """
+    if isinstance(node, list):
+        return [element for child in node for element in _elements(child)]
+    if not isinstance(node, dict):
+        return []
+    if "elements" in node:
+        return _elements(node["elements"])
+    return [node, *_elements(node.get("children"))]
 
 
 def _label(element: dict[str, Any]) -> str:

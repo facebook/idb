@@ -189,9 +189,7 @@ class ElementTests(unittest.TestCase):
             if element.get("identifier") == SEARCH_FIELD_ID
         ]
 
-        # BUG: the placeholder's reference to the field is counted as a second
-        # field -- flipped in the following commit.
-        self.assertEqual(len(fields), 2)
+        self.assertEqual(len(fields), 1)
 
 
 class ScreenTests(unittest.TestCase):
