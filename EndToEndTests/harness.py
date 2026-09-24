@@ -945,6 +945,78 @@ class LocalPages:
         self._thread = None
 
 
+def _elements(node: Any) -> list[dict[str, Any]]:
+    """Flatten flat, nested and complete accessibility output into dictionaries."""
+    found: list[dict[str, Any]] = []
+    if isinstance(node, dict):
+        found.append(node)
+        for value in node.values():
+            found.extend(_elements(value))
+    elif isinstance(node, list):
+        for child in node:
+            found.extend(_elements(child))
+    return found
+
+
+def _label(element: dict[str, Any]) -> str:
+    """Read the label from legacy output (AXLabel) or complete output (label)."""
+    for key in ("AXLabel", "label"):
+        value = element.get(key)
+        if isinstance(value, str) and value.strip():
+            return value.strip()
+    return ""
+
+
+def _has_area(element: dict[str, Any]) -> bool:
+    frame = element.get("frame")
+    return (
+        isinstance(frame, dict)
+        and bool(frame.get("width"))
+        and bool(frame.get("height"))
+    )
+
+
+def _screen(document: Any) -> dict[str, float] | None:
+    """The bounds of the screen everything in a document sits on.
+
+    A complete document says which screen it was read from. One that does not
+    is measured by its largest frame, which is only the screen when the tree
+    holds nothing larger: a list's background can extend well above the
+    window, and the application's own frame can be reported in pixels.
+    """
+    reported = document.get("screen") if isinstance(document, dict) else None
+    if isinstance(reported, dict) and reported.get("width") and reported.get("height"):
+        return {
+            "x": 0.0,
+            "y": 0.0,
+            "width": float(reported["width"]),
+            "height": float(reported["height"]),
+        }
+    frames = [element["frame"] for element in _elements(document) if _has_area(element)]
+    if not frames:
+        return None
+    return max(frames, key=lambda frame: frame["width"] * frame["height"])
+
+
+def _on_screen(element: dict[str, Any], screen: dict[str, float] | None) -> bool:
+    """Something a viewer can see: it has area, is not hidden, and is on the screen.
+
+    The accessibility tree holds what an app has built, not what is in front of
+    the viewer: a row scrolled out of the window, a zero-sized placeholder and a
+    hidden element are all in it. A demo is a recording of a screen, so what it
+    claims to show has to be on that screen.
+    """
+    if screen is None or not _has_area(element) or element.get("hidden") is True:
+        return False
+    frame = element["frame"]
+    return (
+        frame["x"] < screen["x"] + screen["width"]
+        and frame["y"] < screen["y"] + screen["height"]
+        and frame["x"] + frame["width"] > screen["x"]
+        and frame["y"] + frame["height"] > screen["y"]
+    )
+
+
 class IdbEndToEndTestCase(unittest.IsolatedAsyncioTestCase):
     """Run CLI tests against the shared companion and simulator."""
 
