@@ -1182,7 +1182,15 @@ ELEMENT_MOVED = Completed(
     b"the element had moved by the time the write reached it; nothing was "
     b"written. Read the tree again and retry\n",
 )
+NOT_READY = Completed(
+    1,
+    b"",
+    b"No translation object returned for simulator. This means you have likely "
+    b"specified a point onscreen that is invalid or invisible due to a fullscreen "
+    b"dialog\n",
+)
 SUCCEEDED = Completed(0, b"", b"")
+DESCRIBE_ALL = ("ui", "describe-all", "--api", "ax", "--format", "complete")
 SET_VALUE = ("ui", "set-value", "200", "822", "--value", "idb-first")
 TAP = ("ui", "tap", "TabBarItemTitle", "--match-key", "AXUniqueId")
 
@@ -1252,6 +1260,22 @@ class TransientAccessibilityAnswerTests(unittest.IsolatedAsyncioTestCase):
 
         self.assertIsInstance(outcome, Failed)
         self.assertIn("did not answer in time", str(outcome))
+        self.assertEqual(run.await_count, 1)
+
+    async def test_a_read_before_the_tree_was_ready(self) -> None:
+        outcome, run, _ = await self.attempt(DESCRIBE_ALL, [NOT_READY, SUCCEEDED])
+
+        # BUG: a read that found no translation object fails on its first
+        # attempt, though nothing ran and the next read answers. Flipped in
+        # the following commit.
+        self.assertIsInstance(outcome, Failed)
+        self.assertIn("No translation object", str(outcome))
+        self.assertEqual(run.await_count, 1)
+
+    async def test_a_tap_before_the_tree_was_ready_is_not_repeated(self) -> None:
+        outcome, run, _ = await self.attempt(TAP, [NOT_READY, SUCCEEDED])
+
+        self.assertIsInstance(outcome, Failed)
         self.assertEqual(run.await_count, 1)
 
     async def test_an_unrelated_failure_is_not_repeated(self) -> None:
