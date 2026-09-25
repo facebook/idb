@@ -14,13 +14,13 @@ public struct SimulatorHingeCommands {
     SimulatorHingeCommands(simulator: simulator)
   }
 
-  public func setAngle(_ angle: SimulatorHingeAngle) async throws {
+  public func set(_ angle: SimulatorHingeAngle) async throws {
     try await MotionCapabilities.resolve(on: simulator).require(.hingeAngle)
     try await simulator.hid.vendorDefined.send(angle.vendorEvent())
   }
 
   /// Reads a fresh measured angle. During a hinge animation this can be between its endpoints.
-  public func angle() async throws -> SimulatorHingeAngle {
+  public func current() async throws -> SimulatorHingeAngle {
     try await MotionCapabilities.resolve(on: simulator).require(.hingeAngle)
     let channel = UUID()
     // Samples older than the request are the provider replaying its last known state.

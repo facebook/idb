@@ -582,11 +582,11 @@ public final class IDBCommandExecutor {
   }
 
   public func hinge_angle() async throws -> Double {
-    try await simulatorTarget().hinge.angle().degrees
+    try await simulatorTarget().hinge.current().degrees
   }
 
   public func set_hinge_angle(_ angle: SimulatorHingeAngle) async throws {
-    try await simulatorTarget().hinge.setAngle(angle)
+    try await simulatorTarget().hinge.set(angle)
   }
 
   public func get_current_locale_identifier() async throws -> String {
