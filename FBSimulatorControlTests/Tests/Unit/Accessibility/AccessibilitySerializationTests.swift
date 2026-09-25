@@ -689,6 +689,36 @@ final class AccessibilitySerializationTests: XCTestCase {
     XCTAssertEqual(try renderedJSON(response), #"{"elements":{"AXLabel":"root"}}"#)
   }
 
+  func testDisplayIdentitySurvivesResponseCopiesAndOnlyAppearsInCompleteOutput() throws {
+    let display = try XCTUnwrap(AccessibilityDisplayInfo(uniqueID: "inner-display", scale: 3, rotation: 90))
+    let response = AccessibilityElementsResponse(
+      elements: .tree([]), screen: AccessibilityScreenInfo(width: 951, height: 669, display: display)
+    )
+    .withProvenance(backend: .ax, target: .frontmost)
+    let screen = try XCTUnwrap(documentObject(response)["screen"] as? [String: Any])
+    let encoded = try XCTUnwrap(screen["display"] as? [String: Any])
+    XCTAssertEqual(encoded["unique_id"] as? String, "inner-display")
+    XCTAssertEqual(encoded["scale"] as? Double, 3)
+    XCTAssertEqual(encoded["rotation"] as? Int, 90)
+    XCTAssertEqual(screen["width"] as? Double, 951)
+    XCTAssertEqual(screen["height"] as? Double, 669)
+    XCTAssertEqual(try renderedJSON(response), #"{"elements":[]}"#)
+    let legacy = AccessibilityElementsResponse(elements: .tree([]), screen: AccessibilityScreenInfo(width: 390, height: 844))
+    XCTAssertNil((documentObject(legacy)["screen"] as? [String: Any])?["display"])
+  }
+
+  func testDisplayMetadataRejectsInvalidGeometryAndPermitsUnknownLegacyIdentity() throws {
+    for scale in [0, -1, Double.nan, Double.infinity] {
+      XCTAssertNil(AccessibilityDisplayInfo(uniqueID: "display", scale: scale, rotation: 0))
+    }
+    XCTAssertNil(AccessibilityDisplayInfo(uniqueID: "", scale: 3, rotation: 0))
+    XCTAssertNil(AccessibilityDisplayInfo(uniqueID: "display", scale: 3, rotation: 45))
+    let legacy = try XCTUnwrap(AccessibilityDisplayInfo(uniqueID: nil, scale: 3, rotation: 270))
+    let encoded = try XCTUnwrap(JSONSerialization.jsonObject(with: JSONEncoder().encode(legacy)) as? [String: Any])
+    XCTAssertNil(encoded["unique_id"])
+    XCTAssertEqual(encoded["rotation"] as? Int, 270)
+  }
+
   // MARK: - Non-finite geometry in the complete document
 
   // The root frame is where screen bounds come from and the document encoder refuses a non-finite value outright,

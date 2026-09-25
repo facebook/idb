@@ -77,27 +77,52 @@ public extension AccessibilityFrame {
   }
 }
 
+/// The display configuration used to read display-relative accessibility coordinates.
+public struct AccessibilityDisplayInfo: Sendable, Equatable, Encodable {
+  public let uniqueID: String?
+  public let scale: Double
+  public let rotation: Int
+
+  public init?(uniqueID: String?, scale: Double, rotation: Int) {
+    guard scale.isFinite, scale > 0, [0, 90, 180, 270].contains(rotation),
+      uniqueID.map({ !$0.isEmpty }) ?? true
+    else { return nil }
+    self.uniqueID = uniqueID
+    self.scale = scale
+    self.rotation = rotation
+  }
+
+  enum CodingKeys: String, CodingKey {
+    case uniqueID = "unique_id"
+    case scale
+    case rotation
+  }
+}
+
 /// The bounds a read's frames are relative to.
 public struct AccessibilityScreenInfo: Sendable, Equatable, Encodable {
 
   public let width: Double
   public let height: Double
   public let coordinateSpace: AccessibilityCoordinateSpace
+  public let display: AccessibilityDisplayInfo?
 
   /// Nil for a non-finite bound: JSON cannot represent it, and encoding it would fail the whole read.
-  public init?(width: Double, height: Double, coordinateSpace: AccessibilityCoordinateSpace = .screen) {
+  public init?(width: Double, height: Double, coordinateSpace: AccessibilityCoordinateSpace = .screen, display: AccessibilityDisplayInfo? = nil) {
     guard width.isFinite, height.isFinite else {
       return nil
     }
     self.width = width
     self.height = height
     self.coordinateSpace = coordinateSpace
+    self.display = display
   }
 
   enum CodingKeys: String, CodingKey {
     case width
     case height
     case coordinateSpace = "coordinate_space"
+    case display
   }
 }
 
