@@ -44,7 +44,30 @@ enum SimulatorDisplayProtocol {
   /// A report with identity and activity yields displays; one that omits both from every display
   /// is a legacy provider. A report that has them on some displays but not others is malformed.
   static func snapshot(_ reply: xpc_object_t) throws -> Snapshot {
+    try snapshot(of: validated(CoreDeviceReply.decode(Report.self, from: reply)))
+  }
+
+  /// A legacy provider can still be used for interaction when it reports exactly one integrated display.
+  static func interactionDisplay(_ reply: xpc_object_t) throws -> SimulatorInteractionDisplay {
     let report = try validated(CoreDeviceReply.decode(Report.self, from: reply))
+    if case let .displays(displays) = try snapshot(of: report) {
+      return .identified(try SimulatorDisplayCommands.activeIntegratedDisplay(in: displays))
+    }
+    var integrated: [SimulatorDisplayGeometry] = []
+    for record in report.displays {
+      let validated = try validated(record)
+      guard validated.integrated else { continue }
+      guard !validated.bounds.isEmpty else { throw SimulatorCoreDeviceError.malformed("Invalid integrated display geometry") }
+      integrated.append(
+        SimulatorDisplayGeometry(bounds: validated.bounds, scale: Double(record.pointScale), rotation: record.currentOrientation))
+    }
+    guard integrated.count == 1, let geometry = integrated.first else {
+      throw SimulatorDisplayInteractionError.unsupportedCapability("unambiguous legacy integrated display selection")
+    }
+    return .legacy(geometry)
+  }
+
+  private static func snapshot(of report: Report) throws -> Snapshot {
     let legacy = report.displays.allSatisfy { $0.active == nil && $0.uniqueId == nil }
     guard legacy, !report.displays.isEmpty else {
       return .displays(try displays(in: report))

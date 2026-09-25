@@ -15,6 +15,50 @@ public enum SimulatorDisplayRotation: String, Sendable, Decodable {
   case counterclockwise = "rot270"
 }
 
+/// Interface geometry, independent of accessibility and touchscreen routing identities.
+public struct SimulatorDisplayGeometry: Equatable, Sendable {
+  public let bounds: CGRect
+  public let scale: Double
+  public let rotation: SimulatorDisplayRotation
+
+  public var pointSize: CGSize {
+    let size = CGSize(width: bounds.width / scale, height: bounds.height / scale)
+    switch rotation {
+    case .upright, .upsideDown: return size
+    case .clockwise, .counterclockwise: return CGSize(width: size.height, height: size.width)
+    }
+  }
+
+  /// Converts display-relative points to the unrotated point coordinates used by accessibility hit testing.
+  public func unrotatedPoint(from point: CGPoint) throws -> CGPoint {
+    let size = pointSize
+    guard point.x.isFinite, point.y.isFinite,
+      point.x >= 0, point.y >= 0, point.x <= size.width, point.y <= size.height
+    else { throw SimulatorDisplayInteractionError.invalidPoint }
+    let width = bounds.width / scale
+    let height = bounds.height / scale
+    switch rotation {
+    case .upright: return point
+    case .clockwise: return CGPoint(x: point.y, y: height - point.x)
+    case .upsideDown: return CGPoint(x: width - point.x, y: height - point.y)
+    case .counterclockwise: return CGPoint(x: width - point.y, y: point.x)
+    }
+  }
+}
+
+/// A legacy provider can describe its sole integrated display without identifying it.
+public enum SimulatorInteractionDisplay: Equatable, Sendable {
+  case identified(SimulatorDisplay)
+  case legacy(SimulatorDisplayGeometry)
+
+  public var geometry: SimulatorDisplayGeometry {
+    switch self {
+    case let .identified(display): display.geometry
+    case let .legacy(geometry): geometry
+    }
+  }
+}
+
 /// A current display snapshot. Activity is reported by CoreDevice independently of IO port power.
 public struct SimulatorDisplay: Equatable, Sendable {
   public let uniqueID: String
@@ -26,6 +70,10 @@ public struct SimulatorDisplay: Equatable, Sendable {
   public let bounds: CGRect
   public let scale: Double
   public let rotation: SimulatorDisplayRotation
+
+  public var geometry: SimulatorDisplayGeometry {
+    SimulatorDisplayGeometry(bounds: bounds, scale: scale, rotation: rotation)
+  }
 
   /// Pixel dimensions after applying the current interface rotation.
   public var size: CGSize {
@@ -62,6 +110,11 @@ public struct SimulatorDisplayCommands {
   /// Reads configured displays. Requires a current report with explicit per-display activity.
   public func list() async throws -> [SimulatorDisplay] {
     try await read(decode: SimulatorDisplayProtocol.displays)
+  }
+
+  /// Resolves current interface geometry. Legacy selection requires exactly one integrated display.
+  public func interactionDisplay() async throws -> SimulatorInteractionDisplay {
+    try await read(decode: SimulatorDisplayProtocol.interactionDisplay)
   }
 
   /// Lists connected touchscreens. Match `displayUniqueID` to a display snapshot before routing input.

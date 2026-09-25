@@ -31,6 +31,47 @@ private func displayReply(_ values: [xpc_object_t], current: Bool = true) -> xpc
 }
 
 final class SimulatorDisplayReadTests: XCTestCase {
+  func testLegacyGeometryRetainsInterfaceRotationWithoutInventingIdentity() throws {
+    let value = displayValue(id: "legacy", active: true, rotation: "rot90")
+    xpc_dictionary_set_value(value, "active", nil)
+    xpc_dictionary_set_value(value, "uniqueId", nil)
+    let selected = try SimulatorDisplayProtocol.interactionDisplay(displayReply([value]))
+    guard case let .legacy(geometry) = selected else { return XCTFail("Expected legacy geometry") }
+    XCTAssertEqual(geometry.pointSize, CGSize(width: 951, height: 669))
+    XCTAssertEqual(try geometry.unrotatedPoint(from: CGPoint(x: 787, y: 570)), CGPoint(x: 570, y: 164))
+    XCTAssertThrowsError(try SimulatorDisplayProtocol.interactionDisplay(displayReply([value, value])))
+    XCTAssertThrowsError(try SimulatorDisplayProtocol.interactionDisplay(displayReply([value], current: false)))
+    xpc_dictionary_set_string(value, "uniqueId", "partial")
+    XCTAssertThrowsError(try SimulatorDisplayProtocol.interactionDisplay(displayReply([value])))
+  }
+
+  func testIdentifiedGeometryUsesActiveDisplayInsteadOfPrimary() throws {
+    let selected = try SimulatorDisplayProtocol.interactionDisplay(
+      displayReply([
+        displayValue(id: "cover", active: false, primary: true),
+        displayValue(id: "inner", active: true, rotation: "rot90"),
+      ]))
+    guard case let .identified(display) = selected else { return XCTFail("Expected identified display") }
+    XCTAssertEqual(display.uniqueID, "inner")
+    XCTAssertEqual(selected.geometry.pointSize, CGSize(width: 951, height: 669))
+  }
+
+  func testInterfacePointConversionPreservesAllFourRotations() throws {
+    let cases: [(SimulatorDisplayRotation, CGPoint, CGPoint)] = [
+      (.upright, CGPoint(x: 80, y: 120), CGPoint(x: 80, y: 120)),
+      (.clockwise, CGPoint(x: 80, y: 120), CGPoint(x: 120, y: 320)),
+      (.upsideDown, CGPoint(x: 80, y: 120), CGPoint(x: 520, y: 280)),
+      (.counterclockwise, CGPoint(x: 80, y: 120), CGPoint(x: 480, y: 80)),
+    ]
+    for (rotation, point, expected) in cases {
+      let geometry = SimulatorDisplayGeometry(bounds: CGRect(x: 30, y: 40, width: 1200, height: 800), scale: 2, rotation: rotation)
+      XCTAssertEqual(try geometry.unrotatedPoint(from: point), expected)
+      for invalid in [CGPoint(x: -1, y: 0), CGPoint(x: 1000, y: 0), CGPoint(x: Double.nan, y: 0)] {
+        XCTAssertThrowsError(try geometry.unrotatedPoint(from: invalid))
+      }
+    }
+  }
+
   func testLegacyReportWithoutIdentityOrActivityDeclinesCaptureCapability() throws {
     let value = displayValue(id: "legacy", active: true)
     xpc_dictionary_set_value(value, "active", nil)
