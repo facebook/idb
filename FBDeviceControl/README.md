@@ -46,7 +46,7 @@ There are a number of function calls relevant to this type, dealing with sending
 
 It is important to stress that this type is just a "Transport" rather than a "Protocol". Each "lockdown service" may have it's own very different binary protocol for sending and receiving data. In the simple case of `com.apple.syslog_relay`, the service just repeatedly sends text over the connection. Other protocols, for instance those used by Instruments are far more complicated. There is no single Protocol that is used by all lockdown services.
 
-There is one exception to this, the ["Plist Protocol"](https://github.com/facebook/idb/blob/main/FBDeviceControl/Management/LockdownServiceConnection.swift). This is implemented in `AMDServiceConnection(Send|Receive)Message` calls. This is common across a range of services, such as the screenshot service and SpringBoard service. It writes a length header followed by a binary plist, on both the send and receive sides.
+There is one exception to this, the ["Plist Protocol"](https://github.com/facebook/idb/blob/main/FBDeviceControl/Services/LockdownServiceConnection.swift). This is implemented in `AMDServiceConnection(Send|Receive)Message` calls. This is common across a range of services, such as the screenshot service and SpringBoard service. It writes a length header followed by a binary plist, on both the send and receive sides.
 
 ### `AFC`: "Apple File Connection"
 
@@ -121,7 +121,7 @@ $ idb file ls --disk-images mounted
 
 The "Instruments Service", which is a service within the "Developer Disk Image" is a very important one with respect to iOS Device automation. Since `Instruments.app` and the `instruments` commandline offers a lot of functionality for launching and profiling Applications and iOS Devices, it is integral to tasks such as app launching and process listing on iOS Devices.
 
-The client-side implementation of this protocol is provided via `DTXConnectionServices`, with a [provisional re-implementation within `FBDeviceControl`](https://github.com/facebook/idb/blob/main/FBDeviceControl/Management/InstrumentsClient.swift). There are more details about the makeup of this protocol [within the `ios_instruments_client` project](https://github.com/troybowman/ios_instruments_client).
+The client-side implementation of this protocol is provided via `DTXConnectionServices`, with a [provisional re-implementation within `FBDeviceControl`](https://github.com/facebook/idb/blob/main/FBDeviceControl/Services/InstrumentsClient.swift). There are more details about the makeup of this protocol [within the `ios_instruments_client` project](https://github.com/troybowman/ios_instruments_client).
 
 ### Video Encoding
 
