@@ -51,6 +51,32 @@ final class HidRequestTranslationTests: XCTestCase {
     }
   }
 
+  func testButtonsKeepTheirNamesOnTheWire() throws {
+    let expected: [(Idb_HIDEvent.HIDButtonType, SimulatorHIDButton)] = [
+      (.applePay, .applePay),
+      (.home, .homeButton),
+      (.lock, .lock),
+      (.sideButton, .sideButton),
+      (.siri, .siri),
+    ]
+    for (wire, button) in expected {
+      for (wireDirection, direction) in [(Idb_HIDEvent.HIDDirection.down, SimulatorHIDDirection.down), (.up, .up)] {
+        let request = Idb_HIDEvent.with {
+          $0.press.action.button.button = wire
+          $0.press.direction = wireDirection
+        }
+        XCTAssertEqual(try HidMethodHandler.request(from: request), .input(.button(direction: direction, button: button)))
+      }
+    }
+  }
+
+  func testAnUnrecognizedButtonIsAnInvalidArgument() {
+    let request = Idb_HIDEvent.with { $0.press.action.button.button = .UNRECOGNIZED(99) }
+    XCTAssertThrowsError(try HidMethodHandler.request(from: request)) { error in
+      XCTAssertEqual((error as? RPCError)?.code, .invalidArgument)
+    }
+  }
+
   func testShakeTranslatesToShake() throws {
     let request = Idb_HIDEvent.with { $0.shake = Idb_HIDEvent.HIDShake() }
     XCTAssertEqual(try HidMethodHandler.request(from: request), .shake)
