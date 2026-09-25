@@ -85,7 +85,7 @@ public enum BridgeCommand: Codable, Equatable, Sendable {
     case let .accessibility(parameters):
       // Asserting automation mode beside a read is idempotent, so the read stays replayable.
       if case let .string(verb) = parameters[BridgeAXWire.Request.verb.key] {
-        [BridgeAXWire.Verb.describe, .hitTest, .settingsGet].contains { $0.rawValue == verb }
+        [BridgeAXWire.Verb.displays, .describe, .hitTest, .settingsGet].contains { $0.rawValue == verb }
       } else {
         false
       }

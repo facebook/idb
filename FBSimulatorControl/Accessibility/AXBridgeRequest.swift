@@ -104,6 +104,7 @@ enum AXBridgeRequest: Sendable {
   case deviceSettingWrite(String, enabled: Bool)
   /// Streamed: follows the frontmost application when `pid` is nil. A nil tunable takes the guest's default.
   case quiescence(pid: pid_t?, busyThresholdMs: Int?, quietWindowMs: Int?)
+  case displays
 
   var command: BridgeCommand {
     get throws { .accessibility(try payload.mapValues(BridgeJSONValue.init(foundationValue:))) }
@@ -158,6 +159,8 @@ enum AXBridgeRequest: Sendable {
       payload[AXWire.Request.busyThresholdMs.key] = busyThresholdMs
       payload[AXWire.Request.quietWindowMs.key] = quietWindowMs
       return payload
+    case .displays:
+      return [AXWire.Request.verb.key: AXWire.Verb.displays.rawValue]
     }
   }
 }

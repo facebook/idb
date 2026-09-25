@@ -47,7 +47,7 @@ public enum SimulatorDisplayError: Error, LocalizedError {
     case let .screensNotReported(seconds): "Simulator did not report its displays within \(seconds) seconds"
     case .noActiveIntegratedDisplay: "Simulator has no active integrated display"
     case let .ambiguousActiveDisplays(ids): "Simulator has multiple active integrated displays: \(ids.joined(separator: ", "))"
-    case .changed: "Simulator display changed during capture"
+    case .changed: "Simulator display changed during the operation"
     }
   }
 }
@@ -71,6 +71,26 @@ public struct SimulatorDisplayCommands {
     return try await simulator.coreDevice.send(
       service: SimulatorTouchscreenProtocol.service, message: SimulatorTouchscreenProtocol.request(),
       decode: SimulatorTouchscreenProtocol.touchscreens)
+  }
+
+  /// Resolves one active integrated display and its independent accessibility and input identities.
+  /// An explicit UUID must identify the active integrated display; inactive interaction is unsupported.
+  public func interactionContext(for displayUniqueID: String? = nil) async throws -> SimulatorDisplayInteractionContext {
+    try await interactionResolver(transport: AXBridgeOneshotTransport(simulator: simulator))
+      .resolve(displayUniqueID: displayUniqueID)
+  }
+
+  /// Fails if the observed active display, geometry or routing no longer matches the saved context.
+  /// This is a fresh snapshot comparison, not a record of every intervening display transition.
+  public func validate(_ context: SimulatorDisplayInteractionContext) async throws {
+    try await interactionResolver(transport: AXBridgeOneshotTransport(simulator: simulator)).validate(context)
+  }
+
+  func interactionResolver(transport: any AXBridgeTransport) -> SimulatorDisplayInteractionResolver {
+    SimulatorDisplayInteractionResolver(
+      readDisplays: { try await list() },
+      readTouchscreens: { try await touchscreens() },
+      readAccessibility: { try AXBridgeDisplayInventory.decode(await transport.send(.displays)) })
   }
 
   /// Returns nil only when the runtime lacks the feature, or the provider the fields, needed to
