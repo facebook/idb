@@ -215,7 +215,7 @@ final class BridgeServerSocketTests: XCTestCase {
     DispatchQueue.global().async {
       XCTAssertEqual(
         BridgeServer.serve(socketPath: path, idleTimeoutSeconds: 1, exitOnDisconnect: true, prepareRuntime: {}) { _ in
-          BridgeSocketResponse(data: Data(repeating: 120, count: BridgeFrame.maximumSize), shutdown: false)
+          BridgeSocketResponse.frame(data: Data(repeating: 120, count: BridgeFrame.maximumSize), shutdown: false)
         }, 0)
       finished.fulfill()
     }
@@ -312,7 +312,7 @@ final class BridgeServerSocketTests: XCTestCase {
         exitOnDisconnect: true,
         prepareRuntime: {}
       ) { _ in
-        BridgeSocketResponse(data: Data(#"{"ok":true}"#.utf8), shutdown: false)
+        BridgeSocketResponse.frame(data: Data(#"{"ok":true}"#.utf8), shutdown: false)
       }
       XCTAssertEqual(result, 0)
       finished.fulfill()
@@ -366,11 +366,89 @@ final class BridgeServerSocketTests: XCTestCase {
       XCTAssertEqual(preparations, 1)
       XCTAssertEqual(request, "probe".data(using: .utf8))
       requests += 1
-      return BridgeSocketResponse(data: Data("{\"ok\":true}".utf8), shutdown: true)
+      return BridgeSocketResponse.frame(data: Data("{\"ok\":true}".utf8), shutdown: true)
     }
     XCTAssertEqual(result, 0)
     XCTAssertEqual(preparations, 1)
     XCTAssertEqual(requests, 1)
     finishServer()
+  }
+
+  func serveStream(_ stream: BridgeResponseStream) {
+    socketPath = "/tmp/sfb-" + UUID().uuidString
+    let finished = expectation(description: "stream server exits")
+    self.finished = finished
+    let path = socketPath
+    DispatchQueue.global().async {
+      XCTAssertEqual(
+        BridgeServer.serve(socketPath: path, idleTimeoutSeconds: 5, exitOnDisconnect: true, prepareRuntime: {}) { _ in
+          .stream(stream)
+        }, 0)
+      finished.fulfill()
+    }
+  }
+
+  func testAStreamThatEndsWritesItsFramesThenCloses() throws {
+    let stream = ScriptedStream(frames: 3, untilCancelled: false)
+    serveStream(stream)
+    let client = connectClient()
+    defer { close(client) }
+    sendData(data: frame(payload: "{}"), to: client)
+    for index in 0..<3 {
+      XCTAssertEqual(readResponse(fd: client), ["index": index])
+    }
+    assertEOF(fd: client)
+    finishServer()
+    XCTAssertFalse(stream.wasCancelled)
+  }
+
+  func testAClientHangingUpCancelsTheStream() throws {
+    let stream = ScriptedStream(frames: 1, untilCancelled: true)
+    serveStream(stream)
+    let client = connectClient()
+    sendData(data: frame(payload: "{}"), to: client)
+    XCTAssertEqual(readResponse(fd: client), ["index": 0])
+    close(client)
+    finishServer()
+    XCTAssertTrue(stream.wasCancelled)
+  }
+
+  func testAClientSendingMidStreamCancelsTheStream() throws {
+    let stream = ScriptedStream(frames: 1, untilCancelled: true)
+    serveStream(stream)
+    let client = connectClient()
+    defer { close(client) }
+    sendData(data: frame(payload: "{}"), to: client)
+    XCTAssertEqual(readResponse(fd: client), ["index": 0])
+    sendData(data: frame(payload: "{}"), to: client)
+    assertEOF(fd: client)
+    finishServer()
+    XCTAssertTrue(stream.wasCancelled)
+  }
+}
+
+private final class ScriptedStream: BridgeResponseStream {
+  private let frames: Int
+  private let untilCancelled: Bool
+  private let cancelled = DispatchSemaphore(value: 0)
+  private(set) var wasCancelled = false
+
+  init(frames: Int, untilCancelled: Bool) {
+    self.frames = frames
+    self.untilCancelled = untilCancelled
+  }
+
+  func run(emit: @escaping (Data) -> Bool) {
+    for index in 0..<frames {
+      guard let data = try? JSONSerialization.data(withJSONObject: ["index": index]), emit(data) else { return }
+    }
+    if untilCancelled {
+      XCTAssertEqual(cancelled.wait(timeout: .now() + 10), .success)
+    }
+  }
+
+  func cancel() {
+    wasCancelled = true
+    cancelled.signal()
   }
 }

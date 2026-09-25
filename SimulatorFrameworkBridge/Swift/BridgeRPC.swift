@@ -47,7 +47,7 @@ public enum BridgeRPC {
 
   public static func handle(_ data: Data, execute: (BridgeCommand) -> BridgeResult = BridgeServices.execute) -> BridgeSocketResponse {
     let reply = process(data, execute: execute)
-    return BridgeSocketResponse(data: reply.data, shutdown: reply.shutdown)
+    return .frame(data: reply.data, shutdown: reply.shutdown)
   }
 
   static func run(arguments: [String]) -> Int32? {

@@ -9,13 +9,24 @@ import Darwin
 import Foundation
 import SimulatorFrameworkBridgeProtocol
 
-public struct BridgeSocketResponse {
-  public let data: Data
-  public let shutdown: Bool
+/// Frames a response goes on writing after its request, until it ends or the peer goes away.
+public protocol BridgeResponseStream: AnyObject {
+  /// Runs on the serving thread until the stream ends, writing each frame through `emit`, which answers
+  /// false once a frame could not be written. The connection closes when this returns.
+  func run(emit: @escaping (Data) -> Bool)
+  /// Asks a running stream to end. Called from another thread, once, when the peer sends anything or
+  /// disconnects; `run` must return promptly afterwards.
+  func cancel()
+}
 
-  public init(data: Data, shutdown: Bool) {
-    self.data = data
-    self.shutdown = shutdown
+public enum BridgeSocketResponse {
+  case frame(data: Data, shutdown: Bool)
+  case stream(BridgeResponseStream)
+
+  /// The one frame this response writes, or nil when it streams.
+  public var frame: (data: Data, shutdown: Bool)? {
+    guard case let .frame(data, shutdown) = self else { return nil }
+    return (data, shutdown)
   }
 }
 
@@ -162,11 +173,14 @@ public enum BridgeServer {
         guard let length = try? BridgeFrame.size(fromHeader: header),
           let request = readFully(connection, count: length)
         else { return .disconnected }
-        let response = handleRequest(request)
-        guard let responseHeader = try? BridgeFrame.header(forSize: response.data.count),
-          writeFully(connection, data: responseHeader), writeFully(connection, data: response.data)
-        else { return .disconnected }
-        return response.shutdown ? .shutdown : .next
+        switch handleRequest(request) {
+        case let .frame(data, shutdown):
+          guard writeFrame(connection, data: data) else { return .disconnected }
+          return shutdown ? .shutdown : .next
+        case let .stream(stream):
+          serveStream(stream, on: connection)
+          return .disconnected
+        }
       }
       switch step {
       case .next: continue
@@ -174,6 +188,27 @@ public enum BridgeServer {
       case .shutdown: return true
       }
     }
+  }
+
+  private static func writeFrame(_ fd: Int32, data: Data) -> Bool {
+    guard let header = try? BridgeFrame.header(forSize: data.count) else { return false }
+    return writeFully(fd, data: header) && writeFully(fd, data: data)
+  }
+
+  /// A peer has nothing to say mid-stream, so anything readable — a byte or end-of-file — ends it.
+  private static func serveStream(_ stream: BridgeResponseStream, on connection: Int32) {
+    let watcher = DispatchSource.makeReadSource(fileDescriptor: connection, queue: .global())
+    let watcherCancelled = DispatchSemaphore(value: 0)
+    watcher.setEventHandler {
+      watcher.cancel()
+      stream.cancel()
+    }
+    watcher.setCancelHandler { watcherCancelled.signal() }
+    watcher.resume()
+    stream.run { writeFrame(connection, data: $0) }
+    watcher.cancel()
+    // The descriptor must stay open until the source has let go of it.
+    watcherCancelled.wait()
   }
 
   private static func readFully(_ fd: Int32, count: Int) -> Data? {

@@ -28,11 +28,11 @@ final class BridgeExecutionTests: XCTestCase {
       }
       let cli = BridgeRPC.process(Data(try request.arguments[1].utf8), execute: execute)
       let socket = BridgeRPC.handle(try request.encoded(), execute: execute)
-      XCTAssertEqual(cli.data, socket.data)
+      XCTAssertEqual(cli.data, socket.frame?.data)
       XCTAssertEqual(try BridgeResponse.decode(cli.data, for: request).result, expected)
       XCTAssertEqual(cli.exitCode, 23)
       XCTAssertFalse(cli.shutdown)
-      XCTAssertFalse(socket.shutdown)
+      XCTAssertEqual(socket.frame?.shutdown, false)
     }
     XCTAssertEqual(received, commands.flatMap { [$0, $0] })
   }
@@ -85,7 +85,7 @@ final class BridgeExecutionTests: XCTestCase {
       let execute: (BridgeCommand) -> BridgeResult = { _ in result }
       let cli = BridgeRPC.process(try request.encoded(), execute: execute)
       let socket = BridgeRPC.handle(try request.encoded(), execute: execute)
-      XCTAssertEqual(cli.data, socket.data)
+      XCTAssertEqual(cli.data, socket.frame?.data)
       XCTAssertEqual(cli.exitCode, 1)
       XCTAssertLessThan(cli.data.count, BridgeFrame.maximumSize)
       let failure = try BridgeResponse.decode(cli.data, for: request).result
@@ -142,7 +142,7 @@ final class BridgeExecutionTests: XCTestCase {
       XCTAssertTrue(result.error?.hasPrefix("Could not decode command output:") == true)
       let cli = BridgeRPC.process(try request.encoded()) { _ in result }
       let socket = BridgeRPC.handle(try request.encoded()) { _ in result }
-      XCTAssertEqual(cli.data, socket.data)
+      XCTAssertEqual(cli.data, socket.frame?.data)
       XCTAssertEqual(try BridgeResponse.decode(cli.data, for: request).result, result)
     }
 
@@ -266,7 +266,7 @@ final class BridgeExecutionTests: XCTestCase {
         let encoded = try request.encoded()
         var response = Data()
         let printed = FBStdoutWhileRunning {
-          response = socket ? BridgeRPC.handle(encoded).data : BridgeRPC.process(encoded).data
+          response = socket ? BridgeRPC.handle(encoded).frame?.data ?? Data() : BridgeRPC.process(encoded).data
         }
         let result = try BridgeResponse.decode(response, for: request).result
         XCTAssertEqual(printed, "")
@@ -287,7 +287,7 @@ final class BridgeExecutionTests: XCTestCase {
     for socket in [false, true] {
       let request = BridgeRequest(command: .dynamicStore(.restore(key: "dns", snapshot: Data("invalid".utf8))))
       let encoded = try request.encoded()
-      let response = socket ? BridgeRPC.handle(encoded).data : BridgeRPC.process(encoded).data
+      let response = socket ? BridgeRPC.handle(encoded).frame?.data ?? Data() : BridgeRPC.process(encoded).data
       let result = try BridgeResponse.decode(response, for: request).result
       XCTAssertEqual(result.exitCode, 1)
       XCTAssertNotNil(result.error)
