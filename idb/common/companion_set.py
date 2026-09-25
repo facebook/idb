@@ -6,9 +6,11 @@
 
 
 import asyncio
+import errno
 import json
 import logging
 import os
+import tempfile
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 from datetime import datetime, timedelta
@@ -33,19 +35,70 @@ async def _open_lockfile(filename: str) -> AsyncGenerator[None, None]:
     deadline = datetime.now() + timedelta(seconds=timeout)
     lock_path = filename + ".lock"
     lock = None
+    while lock is None:
+        try:
+            lock = os.open(lock_path, os.O_CREAT | os.O_EXCL)
+        except FileExistsError:
+            if datetime.now() >= deadline:
+                raise IdbException(f"Failed to open the lockfile {lock_path}")
+            await asyncio.sleep(retry_time)
+    assert lock is not None
     try:
-        while lock is None:
-            try:
-                lock = os.open(lock_path, os.O_CREAT | os.O_EXCL)
-                yield None
-            except FileExistsError:
-                if datetime.now() >= deadline:
-                    raise IdbException(f"Failed to open the lockfile {lock_path}")
-                await asyncio.sleep(retry_time)
-    finally:
-        if lock is not None:
+        yield None
+    except BaseException:
+        try:
             os.close(lock)
-        os.unlink(lock_path)
+        except OSError:
+            pass
+        try:
+            os.unlink(lock_path)
+        except OSError:
+            pass
+        raise
+    else:
+        try:
+            os.close(lock)
+        finally:
+            os.unlink(lock_path)
+
+
+def _atomic_write(filename: str, data: bytes) -> None:
+    path = Path(filename)
+    descriptor, temporary_path = tempfile.mkstemp(
+        prefix=f".{path.name}.", suffix=".tmp", dir=path.parent
+    )
+    descriptor_open = True
+    published = False
+    try:
+        os.fchmod(descriptor, 0o600)
+        offset = 0
+        while offset < len(data):
+            written = os.write(descriptor, data[offset:])
+            if written <= 0:
+                raise OSError(errno.EIO, f"Failed to write state file {filename}")
+            offset += written
+        os.fsync(descriptor)
+        descriptor_open = False
+        os.close(descriptor)
+        os.replace(temporary_path, filename)
+        published = True
+        directory = os.open(path.parent, os.O_RDONLY)
+        try:
+            os.fsync(directory)
+        finally:
+            os.close(directory)
+    except BaseException:
+        if descriptor_open:
+            try:
+                os.close(descriptor)
+            except OSError:
+                pass
+        if not published:
+            try:
+                os.unlink(temporary_path)
+            except OSError:
+                pass
+        raise
 
 
 class CompanionSet:
@@ -58,18 +111,27 @@ class CompanionSet:
     @asynccontextmanager
     async def _use_stored_companions(self) -> AsyncGenerator[list[CompanionInfo], None]:
         async with _open_lockfile(filename=self.state_file_path):
-            # Create the state file
-            Path(self.state_file_path).touch(exist_ok=True)
             fresh_state = False
-            with open(self.state_file_path) as f:
-                try:
-                    companion_info_in = json_to_companion_info(json.load(f))
-                except json.JSONDecodeError:
-                    fresh_state = True
-                    self.logger.info(
-                        "State file is invalid or empty, creating empty companion info"
-                    )
-                    companion_info_in = []
+            try:
+                state_file = open(self.state_file_path)
+            except FileNotFoundError:
+                fresh_state = True
+                self.logger.info(
+                    "State file is invalid or empty, creating empty companion info"
+                )
+                companion_info_in = []
+            else:
+                with state_file:
+                    try:
+                        companion_info_in = json_to_companion_info(
+                            json.load(state_file)
+                        )
+                    except json.JSONDecodeError:
+                        fresh_state = True
+                        self.logger.info(
+                            "State file is invalid or empty, creating empty companion info"
+                        )
+                        companion_info_in = []
             companion_info_in = sorted(
                 companion_info_in, key=lambda companion: companion.udid
             )
@@ -88,8 +150,8 @@ class CompanionSet:
                 )
             else:
                 return
-            with open(self.state_file_path, "w") as f:
-                json.dump(json_data_companions(companion_info_out), f)
+            data = json.dumps(json_data_companions(companion_info_out)).encode("utf-8")
+            _atomic_write(self.state_file_path, data)
 
     async def get_companions(self) -> list[CompanionInfo]:
         async with self._use_stored_companions() as companions:
