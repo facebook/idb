@@ -277,8 +277,14 @@ def strict() -> bool:
     return os.environ.get(STRICT_ENV) == "1"
 
 
-def expected_implementation(*, required: bool = False) -> str | None:
-    value = os.environ.get(EXPECTED_IMPLEMENTATION_ENV)
+def expected_implementation(
+    *, required: bool = False, override: str | None = None
+) -> str | None:
+    value = (
+        override
+        if override is not None
+        else os.environ.get(EXPECTED_IMPLEMENTATION_ENV)
+    )
     if value is None:
         if required:
             raise HarnessError(
@@ -286,9 +292,12 @@ def expected_implementation(*, required: bool = False) -> str | None:
             )
         return None
     if value not in {"python", "rust"}:
-        raise HarnessError(
-            f"{EXPECTED_IMPLEMENTATION_ENV}={value!r} is not 'python' or 'rust'"
+        source = (
+            "expected implementation"
+            if override is not None
+            else EXPECTED_IMPLEMENTATION_ENV
         )
+        raise HarnessError(f"{source}={value!r} is not 'python' or 'rust'")
     return value
 
 
@@ -460,16 +469,18 @@ async def run_attested_client(
     stdin: bytes | None = None,
     *,
     env: Mapping[str, str] | None = None,
+    expected: str | None = None,
+    attestation_path: Path | None = None,
     required: bool = False,
 ) -> Completed:
     """Run one command with a fresh route attestation when configured."""
-    expected = expected_implementation(required=required)
-    if expected is None:
+    implementation = expected_implementation(required=required, override=expected)
+    if implementation is None:
         if env is None:
             return await run(argv, timeout=timeout, stdin=stdin)
         return await run(argv, timeout=timeout, stdin=stdin, env=env)
-    with tempfile.TemporaryDirectory(prefix="idb-e2e-route-") as directory:
-        attestation = Path(directory) / "selected"
+
+    async def run_at(attestation: Path) -> Completed:
         if attestation.exists():
             raise HarnessError(
                 f"stale route attestation already existed at {attestation}"
@@ -483,13 +494,18 @@ async def run_attested_client(
             env=child_environment,
         )
         try:
-            verify_route_attestation(attestation, expected)
+            verify_route_attestation(attestation, implementation)
         except NotReady as error:
             raise HarnessError(
-                f"the {expected} lane exited before completing route attestation at "
+                f"the {implementation} lane exited before completing route attestation at "
                 f"{attestation}: {error}"
             ) from None
         return completed
+
+    if attestation_path is not None:
+        return await run_at(attestation_path)
+    with tempfile.TemporaryDirectory(prefix="idb-e2e-route-") as directory:
+        return await run_at(Path(directory) / "selected")
 
 
 async def wait_for_route_attestation(

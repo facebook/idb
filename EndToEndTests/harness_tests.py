@@ -398,6 +398,43 @@ class RouteAttestationTests(unittest.IsolatedAsyncioTestCase):
         {EXPECTED_IMPLEMENTATION_ENV: "rust"},
         clear=True,
     )
+    async def test_run_attested_client_accepts_an_explicit_mixed_route_path(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            attestation = Path(directory) / "python-selected"
+
+            async def execute(
+                argv: Sequence[str],
+                timeout: float,
+                stdin: bytes | None = None,
+                env: dict[str, str] | None = None,
+            ) -> Completed:
+                self.assertEqual(argv, ["client", "disconnect"])
+                self.assertEqual(timeout, 1.0)
+                self.assertIsNone(stdin)
+                assert env is not None
+                self.assertEqual(Path(env[ROUTE_ATTESTATION_ENV]), attestation)
+                attestation.write_bytes(b"python\n")
+                return Completed(0, b"", b"")
+
+            with mock.patch.object(harness, "run", side_effect=execute):
+                completed = await run_attested_client(
+                    ["client", "disconnect"],
+                    timeout=1.0,
+                    expected="python",
+                    attestation_path=attestation,
+                    required=True,
+                )
+
+            self.assertEqual(completed, Completed(0, b"", b""))
+            self.assertEqual(attestation.read_bytes(), b"python\n")
+
+    @mock.patch.dict(
+        os.environ,
+        {EXPECTED_IMPLEMENTATION_ENV: "rust"},
+        clear=True,
+    )
     async def test_run_attested_client_rejects_the_wrong_route(self) -> None:
         async def execute(
             argv: Sequence[str],
