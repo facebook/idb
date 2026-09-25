@@ -105,6 +105,48 @@ final class SimulatorDisplayReadTests: XCTestCase {
     XCTAssertThrowsError(try SimulatorDisplayCommands.activeIntegratedDisplay(in: displays))
   }
 
+  func testActivityEvidenceSourceCanChangeWithoutChangingDisplayConfiguration() throws {
+    let value = displayValue(id: "inner", active: true, rotation: "rot90")
+    xpc_dictionary_set_string(value, "backlightState", "activeOn")
+    XCTAssertNoThrow(try SimulatorDisplayProtocol.interactionDisplay(displayReply([value])))
+    xpc_dictionary_set_value(value, "active", nil)
+    // BUG: a report with backlight evidence but no layout activity is rejected — flipped in the following commit.
+    XCTAssertThrowsError(try SimulatorDisplayProtocol.interactionDisplay(displayReply([value])))
+  }
+
+  func testCompleteBacklightEvidenceSelectsIlluminatedDisplayWithoutInventingLayoutActivity() throws {
+    for state in ["activeOn", "activeDimmed"] {
+      let cover = displayValue(id: "cover", active: false, primary: true)
+      let inner = displayValue(id: "inner", active: true)
+      for value in [cover, inner] { xpc_dictionary_set_value(value, "active", nil) }
+      xpc_dictionary_set_string(cover, "backlightState", "off")
+      xpc_dictionary_set_string(inner, "backlightState", state)
+      // BUG: complete backlight evidence is rejected for lacking layout activity — flipped in the following commit.
+      XCTAssertThrowsError(try SimulatorDisplayProtocol.displays(displayReply([cover, inner])))
+    }
+  }
+
+  func testBacklightSelectionRejectsUncertaintyAmbiguityAndPartialLayoutActivity() throws {
+    let cover = displayValue(id: "cover", active: false, primary: true)
+    let inner = displayValue(id: "inner", active: true)
+    for value in [cover, inner] { xpc_dictionary_set_value(value, "active", nil) }
+    for (first, second) in [("off", "off"), ("inactiveOn", "off"), ("unknown", "activeOn"), ("activeOn", "activeDimmed"), ("off", "futureState")] {
+      xpc_dictionary_set_string(cover, "backlightState", first)
+      xpc_dictionary_set_string(inner, "backlightState", second)
+      XCTAssertThrowsError(try SimulatorDisplayProtocol.interactionDisplay(displayReply([cover, inner])))
+    }
+    xpc_dictionary_set_string(cover, "backlightState", "off")
+    xpc_dictionary_set_string(inner, "backlightState", "activeOn")
+    xpc_dictionary_set_bool(cover, "active", false)
+    XCTAssertThrowsError(try SimulatorDisplayProtocol.displays(displayReply([cover, inner])))
+    xpc_dictionary_set_bool(inner, "active", false)
+    // BUG: layout inactivity that contradicts an illuminated backlight is accepted — flipped in the following commit.
+    XCTAssertNoThrow(try SimulatorDisplayProtocol.displays(displayReply([cover, inner])))
+    xpc_dictionary_set_bool(inner, "active", true)
+    let selected = try SimulatorDisplayCommands.activeIntegratedDisplay(in: SimulatorDisplayProtocol.displays(displayReply([cover, inner])))
+    XCTAssertEqual(selected.uniqueID, "inner")
+  }
+
   func testDisplayStringsAreBounded() {
     let long = String(repeating: "x", count: 1025)
     for key in ["uniqueId", "name"] {
