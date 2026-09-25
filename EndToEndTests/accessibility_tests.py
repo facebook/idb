@@ -219,8 +219,8 @@ def fixture_search_field_reported_twice() -> dict[str, Any]:
     """The search field reported under both its container and the table.
 
     The accessibility runtime lists the field among the children of the search
-    bar's container and of the table that holds the bar, so the guest bridge
-    reports the field, and everything inside it, in both places.
+    bar's container and of the table that holds the bar. idb reports it once,
+    under the container, so a tree holding both copies is one idb got wrong.
     """
 
     def field() -> dict[str, Any]:
@@ -352,10 +352,13 @@ class SearchFieldTests(unittest.TestCase):
             '  frame: [1] null [2] {"height": 0, "width": 0, "x": 0, "y": 0}', message
         )
 
-    def test_one_field_reported_twice_is_the_search_field(self) -> None:
-        field = _search_field(fixture_search_field_reported_twice())
+    def test_a_field_reported_twice_is_not_ready(self) -> None:
+        with self.assertRaises(NotReady) as waiting:
+            _search_field(fixture_search_field_reported_twice())
 
-        self.assertEqual(field["type"], "SearchField")
+        message = str(waiting.exception)
+        self.assertIn("found 2; 2 matching elements:", message)
+        self.assertIn("They agree on: identifier, label, type, frame", message)
 
 
 class ScreenTests(unittest.TestCase):
