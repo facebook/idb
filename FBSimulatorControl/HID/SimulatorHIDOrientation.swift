@@ -31,8 +31,8 @@ extension SimulatorHIDDeviceOrientation {
 }
 
 extension SimulatorHIDDeviceOrientation {
-  // The legacy HID API uses interface-style landscape numbers. BackBoard's physical device
-  // convention swaps those values; keep the legacy event API stable for existing clients.
+  // Purple takes interface-style landscape numbers, where BackBoard's physical device convention
+  // swaps them.
   var physicalPurpleOrientation: Self {
     switch self {
     case .landscapeLeft: return .landscapeRight

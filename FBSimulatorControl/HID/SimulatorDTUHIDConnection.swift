@@ -98,9 +98,8 @@ final class SimulatorDTUHIDConnection: Sendable {
 
   /// One attempt: look the service up, connect, and prove a daemon is behind it.
   ///
-  /// The lookup belongs to the attempt rather than preceding the loop. It fails while the job is
-  /// mid-respawn, which is exactly the state being retried out of, so hoisting it turns the most
-  /// recoverable moment into a terminal one.
+  /// The lookup belongs to the attempt rather than preceding the loop: a failed attempt cancels its
+  /// connection, and a cancelled XPC connection cannot be resumed.
   private static func connected(
     using connector: SimulatorXPCConnector, serviceName: String, clock: DTUHIDDrainClock
   ) async throws -> SimulatorDTUHIDConnection {

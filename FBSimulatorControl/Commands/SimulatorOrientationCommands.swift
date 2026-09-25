@@ -59,7 +59,7 @@ public enum SimulatorOrientationError: Error, LocalizedError, Equatable {
 public enum SimulatorOrientationConvention: Sendable {
   /// The physical device convention, the one `current()` reads back.
   case device
-  /// Interface-style landscape numbering, which the HID event API has always sent. It differs from
+  /// Interface-style landscape numbering, which `idb`'s HID stream has always carried. It differs from
   /// `device` only on a runtime without device motion, where landscape left and right are swapped.
   case interface
 }

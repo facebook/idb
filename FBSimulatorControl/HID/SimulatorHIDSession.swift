@@ -8,7 +8,7 @@
 import Foundation
 
 /// An input connection the caller owns, as opposed to the shared one `simulator.hid.connect()` vends
-/// and `Simulator.disconnect()` closes. Closing drains whatever is outstanding before disconnecting,
+/// and `simulator.hid.disconnect()` closes. Closing drains whatever is outstanding before disconnecting,
 /// so an `.onClose` send is never torn down undelivered.
 public struct SimulatorHIDSession: Sendable {
   public let hid: SimulatorHID

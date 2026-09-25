@@ -14,7 +14,8 @@ import Foundation
  The transport for GSEvents — device orientation and lock — delivered as raw mach messages to
  SpringBoard's PurpleWorkspacePort. Guest-side: `GraphicsServices._PurpleEventCallback` → backboardd.
 
- Not transport-switchable: there is no alternative path for GSEvents.
+ Not transport-switchable: there is no alternative path for lock, and orientation takes the
+ vendor-defined HID path instead only on a runtime that reports device motion.
 
  Connectionless: the port is looked up per send, so there is nothing to hold open, drain or tear down.
 

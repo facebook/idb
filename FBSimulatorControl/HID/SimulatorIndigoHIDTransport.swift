@@ -11,7 +11,7 @@ import CoreGraphics
 import Foundation
 
 /**
- The default HID transport (IndigoHIDRegistrationPort).
+ The legacy HID transport (IndigoHIDRegistrationPort), used where `dtuhidd` is absent or unreachable.
 
  Builds `IndigoMessage` payloads with `SimulatorIndigoHID` and delivers them through the runtime-only
  `SimDeviceLegacyHIDClient` (owned by `SimulatorIndigoHIDClient`). Guest-side:

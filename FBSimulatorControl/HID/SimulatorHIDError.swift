@@ -115,9 +115,11 @@ public enum SimulatorHIDError: Error, LocalizedError {
 
   /// Whether this failure could clear on its own, so connecting is worth another attempt.
   ///
-  /// The service lookup fails while the job is being torn down and respawned, which is the state a
-  /// retry exists to ride out. Absent `_4sim` symbols, or a runtime that does not vend the service,
-  /// are the opposite: properties of the toolchain or runtime that no amount of waiting changes.
+  /// A failure to connect that is not known to be permanent is retried, since the case retrying
+  /// exists for — a `dtuhidd` that aborted early in boot and whose respawn launchd is throttling —
+  /// shows up as an unanswered probe, not as a failed lookup. Absent `_4sim` symbols, or a runtime
+  /// that does not vend the service, are properties of the toolchain or runtime that no amount of
+  /// waiting changes.
   var isTransientDTUHIDFailure: Bool {
     switch self {
     case .dtuhidServiceUnavailable, .dtuhidDigitizerServiceUnavailable, .dtuhidConnectionFailed, .dtuhidUnresponsive:

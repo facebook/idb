@@ -513,8 +513,8 @@ final class SimulatorDTUHIDTransportTests: XCTestCase {
   }
 
   func testAMidRespawnLookupFailureIsRetriedRatherThanTerminal() {
-    // The lookup fails while launchd is tearing the job down to respawn it, which is the state the
-    // retry exists to ride out; treating it as terminal falls back to Indigo and costs the keyboard.
+    // A lookup or connect failure is not known to be permanent, and treating it as terminal falls
+    // back to Indigo, which costs the keyboard.
     XCTAssertTrue(
       SimulatorHIDError.dtuhidDigitizerServiceUnavailable(underlying: nil).isTransientDTUHIDFailure)
     XCTAssertTrue(SimulatorHIDError.dtuhidConnectionFailed.isTransientDTUHIDFailure)

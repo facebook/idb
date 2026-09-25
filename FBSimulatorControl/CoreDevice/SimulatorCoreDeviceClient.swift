@@ -11,8 +11,8 @@ import Foundation
 /// A simulator's CoreDevice features, reached one request at a time.
 ///
 /// Owns what every request shares: the device identifier, the installed CoreDevice version (read
-/// once), the queue the sessions run on, and how a service is connected to. Features
-/// describe their action, service, `Encodable` input and `Decodable` output, and nothing else.
+/// once), the queue the sessions run on, and how a service is connected to. Features supply only
+/// what is theirs: the action, the service, the request and how to read the reply.
 /// Memoized per `Simulator` through its command cache.
 ///
 // SAFETY: The version and capability caches are guarded by the lock; everything else is immutable.
@@ -34,8 +34,8 @@ final class SimulatorCoreDeviceClient: @unchecked Sendable {
     self.readVersion = version
   }
 
-  /// The installed CoreDevice version. A host without it fails every request the same way, so a
-  /// failure is not cached.
+  /// The installed CoreDevice version, read once. Only a successful read is kept, so a failure is
+  /// reported again on the next request rather than remembered.
   func version() throws -> CoreDeviceVersion {
     lock.lock()
     defer { lock.unlock() }

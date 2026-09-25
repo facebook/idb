@@ -16,7 +16,8 @@ import Foundation
 /// Deliberately not a probe of whether `dtuhidd` is *resident*: it is a demand-launched,
 /// pressured-exit job, so it is normally not running even on a simulator that routes all HID through
 /// it. This decides only what to *prefer*; whether `dtuhidd` can actually be reached is settled where
-/// it is observable, by `SimulatorDTUHIDConnection.connect(using:serviceName:)` looking the service up.
+/// it is observable, by `SimulatorDTUHIDConnection.connect(using:serviceName:)` round-tripping a
+/// liveness barrier, since the service lookup succeeds whether or not the daemon can run.
 enum SimulatorHIDTransportSelection {
 
   /// The first CoreSimulator version to inject `dtuhidd` into the guest. Older toolchains have no
@@ -66,8 +67,9 @@ extension Simulator {
   }
 
   /// The HID transport to prefer when a caller does not request one: DTUHID once the toolchain ships
-  /// `dtuhidd`, the legacy Indigo path otherwise. A preference, not a guarantee — `SimulatorHID`
-  /// falls back to Indigo if `dtuhidd` turns out to be unreachable.
+  /// `dtuhidd`, the legacy Indigo path otherwise. A preference, not a guarantee —
+  /// `SimulatorHIDTransport.negotiate(for:requested:)` falls back to Indigo if `dtuhidd` turns out to
+  /// be unreachable.
   var defaultHIDTransport: SimulatorHIDTransportType {
     SimulatorHIDTransportSelection.defaultTransport(
       coreSimulatorVersion: SimulatorControlFrameworkLoader.loadedCoreSimulatorVersion)

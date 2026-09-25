@@ -544,7 +544,7 @@ public final class IDBCommandExecutor {
   }
 
   public func hid(_ event: SimulatorHIDEvent) async throws {
-    // The shared HID outlives the call, and `Simulator.disconnect()` drains it when closing it.
+    // The shared HID outlives the call, and `simulator.hid.disconnect()` drains it when closing it.
     try await connectToHID().send(event: event, logger: logger, drain: .onClose)
   }
 

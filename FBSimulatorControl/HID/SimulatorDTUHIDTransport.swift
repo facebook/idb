@@ -36,12 +36,10 @@ struct DigitizerContactTracker {
 
  Drives the modern `dtuhidd` daemon's digitizer service: touches, buttons and keys cross the
  host→guest boundary as plain-XPC dictionaries, each built as an `Encodable` model (e.g.
- `IndigoDigitizerEvent`) wrapped in a `DTUHIDMessage` envelope and serialized with `XPCEncoder`,
- rather than hand-rolled `xpc_dictionary_set_*` calls.
+ `IndigoDigitizerEvent`) wrapped in a `DTUHIDMessage` envelope and serialized with `XPCEncoder`.
 
- An `actor`: the mutable contact state is actor-isolated, so the type needs no `@unchecked Sendable`.
  The connection, its liveness probe and its drain are `SimulatorDTUHIDConnection`'s; this type is the
- digitizer encoding over it.
+ digitizer encoding over it, and an actor so the contact state it tracks is isolated.
  */
 actor SimulatorDTUHIDTransport {
 
