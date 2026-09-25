@@ -6,13 +6,15 @@
 from __future__ import annotations
 
 import asyncio
+import datetime
+import hashlib
 import json
 import os
 import shlex
 import subprocess
 import time
 from pathlib import Path
-from typing import Any, Sequence
+from typing import Any, Mapping, Sequence
 
 # The container each encoding is written in. The recorder takes the container
 # from the output's extension and rejects the pair that cannot hold the
@@ -58,6 +60,9 @@ class Recording:
         self.log = directory / f"{prefix}-recorder.log"
         self.screenshots = directory / f"{prefix}-screenshots"
         self.trace = (directory / f"{prefix}-commands.jsonl").open("w")
+        # Not a `-commands.jsonl` file: the documentation reads every one of
+        # those as a trace of events.
+        self.output = (directory / f"{prefix}-idb-output.log").open("w")
         self.test = ""
         self.ready = False
         self.error: str | None = None
@@ -89,10 +94,11 @@ class Recording:
                     stderr=log,
                 )
         except OSError:
-            self.trace.close()
+            self.close_logs()
             raise
         self.annotate(self.log, "generic_text_log")
         self.annotate(Path(self.trace.name), "generic_text_log")
+        self.annotate(Path(self.output.name), "generic_text_log")
 
     async def wait_until_ready(self) -> None:
         deadline = time.monotonic() + 60
@@ -173,6 +179,38 @@ class Recording:
         text = shlex.join(argv)
         self.event("command_started", argv=list(argv))
         self.send("bar", position="bottom", content="text", text=text, fit=True)
+
+    def exec_output(
+        self, argv: Sequence[str], outcome: str, streams: Mapping[str, bytes]
+    ) -> None:
+        """Write what one idb exec was given and printed to the output log.
+
+        The trace says which commands ran; this says what each of them printed,
+        in order, so a failure can be diagnosed from everything the run saw
+        rather than only what its error message chose to include.
+        """
+        now = datetime.datetime.now(datetime.timezone.utc)
+        lines = [
+            f"==> {now.isoformat(timespec='milliseconds')} {self.test}",
+            f"$ {shlex.join(argv)}",
+            outcome,
+        ]
+        for name, data in streams.items():
+            if b"\0" in data:
+                digest = hashlib.sha256(data).hexdigest()
+                lines.append(
+                    f"--- {name}: {len(data)} bytes of binary, sha256 {digest}"
+                )
+                continue
+            lines.append(f"--- {name}: {len(data)} bytes")
+            if data:
+                lines.append(data.decode(errors="replace").rstrip("\n"))
+        self.output.write("\n".join(lines) + "\n\n")
+        self.output.flush()
+
+    def close_logs(self) -> None:
+        self.trace.close()
+        self.output.close()
 
     async def screenshot(self) -> Path | None:
         self.index += 1

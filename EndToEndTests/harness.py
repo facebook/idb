@@ -1071,7 +1071,7 @@ async def shared_recording(environment: Environment, companion: Companion) -> Re
             companion.directory.name,
             os.environ.get(ENCODING_ENV) or "auto",
         )
-        atexit.register(_recording.trace.close)
+        atexit.register(_recording.close_logs)
         atexit.register(_recording.stop)
         await _recording.wait_until_ready()
     return _recording
@@ -1650,16 +1650,19 @@ class IdbEndToEndTestCase(unittest.IsolatedAsyncioTestCase):
         repeats a command can publish only the attempt that ends it.
         """
         started = time.monotonic()
+        argv = idb_argv(self.environment, self.companion, *args)
+        given = {} if stdin is None else {"stdin": stdin}
         if self.recording is not None:
             self.recording.command(["idb", *args])
         try:
-            completed = await self.run_client(
-                idb_argv(self.environment, self.companion, *args),
-                timeout=timeout,
-                stdin=stdin,
-            )
+            completed = await self.run_client(argv, timeout=timeout, stdin=stdin)
         except BaseException as error:
             if self.recording is not None:
+                self.recording.exec_output(
+                    argv,
+                    f"raised after {time.monotonic() - started:.2f}s: {error!r}",
+                    given,
+                )
                 # A command that raised is never published — a demo whose
                 # test failed stops the documentation being generated at
                 # all — so the argv is recorded as it ran rather than
@@ -1674,6 +1677,11 @@ class IdbEndToEndTestCase(unittest.IsolatedAsyncioTestCase):
             raise
         step = published(completed)
         if self.recording is not None:
+            self.recording.exec_output(
+                argv,
+                f"exited {completed.returncode} after {time.monotonic() - started:.2f}s",
+                {**given, "stdout": completed.stdout, "stderr": completed.stderr},
+            )
             self.recording.event(
                 "command_finished",
                 returncode=completed.returncode,
@@ -2215,6 +2223,16 @@ class _OutputSpool:
             self._file.close()
 
 
+def _bounded_output(output: ProcessOutput) -> bytes:
+    """What a streaming process printed, as much of it as its capture kept."""
+    omitted = output.total_bytes - len(output.prefix) - len(output.tail)
+    if omitted < 0:
+        return output.prefix + output.tail[-omitted:]
+    if omitted == 0:
+        return output.prefix + output.tail
+    return output.prefix + f"\n[{omitted} bytes omitted]\n".encode() + output.tail
+
+
 def _raise_process_failure(message: str) -> NoReturn:
     raise HarnessError(message)
 
@@ -2723,6 +2741,14 @@ class IdbProcess:
         if self._recording is None or self._recording_finished:
             return
         self._recording_finished = True
+        self._recording.exec_output(
+            self._argv,
+            f"streamed, then exited {self.returncode}",
+            {
+                stream.value: _bounded_output(capture.snapshot())
+                for stream, capture in self._captures.items()
+            },
+        )
         self._recording.event(
             "command_finished",
             argv=self._display_argv,

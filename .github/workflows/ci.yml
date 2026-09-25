@@ -321,7 +321,19 @@ jobs:
         uses: actions/upload-artifact@v5
         with:
           name: end-to-end-diagnostics
-          path: ${{ runner.temp }}/end-to-end-diagnostics
+          path: |
+            ${{ runner.temp }}/end-to-end-diagnostics
+            !${{ runner.temp }}/end-to-end-diagnostics/*-idb-output.log
+          if-no-files-found: ignore
+          retention-days: 14
+      # Everything each idb exec printed, apart from the video so it can be
+      # fetched and grepped on its own.
+      - name: Upload idb output
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: idb-output
+          path: ${{ runner.temp }}/end-to-end-diagnostics/*-idb-output.log
           if-no-files-found: ignore
           retention-days: 14
 

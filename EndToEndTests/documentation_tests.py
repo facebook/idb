@@ -363,7 +363,7 @@ def trace(encoding: str = "auto") -> Iterator[Recording]:
             try:
                 yield recording
             finally:
-                recording.trace.close()
+                recording.close_logs()
 
 
 def events(recording: Recording) -> list[dict[str, Any]]:
@@ -540,3 +540,99 @@ class DemoTraceTests(unittest.IsolatedAsyncioTestCase):
                 "summary": "Open a URL on a simulator",
             },
         )
+
+
+class ExecOutputTests(unittest.IsolatedAsyncioTestCase):
+    """What every idb exec printed, logged beside the trace whether or not it is published."""
+
+    async def output(
+        self, *args: str, answer: Completed | BaseException, stdin: bytes | None = None
+    ) -> str:
+        with trace() as recording:
+            recording.start_test("EndToEndTests.test_demo.DemoTests.test_demo")
+            case = DemoCaseStub(recording, None)
+            with mock.patch.object(
+                harness, "run", new=mock.AsyncMock(side_effect=[answer])
+            ):
+                try:
+                    await case.idb(*args, check=False, stdin=stdin)
+                except BaseException as error:
+                    if error is not answer:
+                        raise
+            return Path(recording.output.name).read_text()
+
+    async def test_logs_the_argv_that_ran_and_everything_it_printed(self) -> None:
+        output = await self.output(
+            "ui",
+            "describe-all",
+            answer=Completed(1, b'{"elements": []}\n', b"no translation object\n"),
+        )
+
+        lines = output.splitlines()
+        self.assertRegex(
+            lines[0], r"^==> \S+ EndToEndTests\.test_demo\.DemoTests\.test_demo$"
+        )
+        self.assertEqual(
+            lines[1:],
+            [
+                "$ /tmp/idb --companion /tmp/companion.sock ui describe-all",
+                lines[2],
+                "--- stdout: 17 bytes",
+                '{"elements": []}',
+                "--- stderr: 22 bytes",
+                "no translation object",
+                "",
+            ],
+        )
+        self.assertRegex(lines[2], r"^exited 1 after \d+\.\d\ds$")
+
+    async def test_logs_what_the_command_was_given(self) -> None:
+        output = await self.output(
+            "ui", "text", answer=Completed(0, b"", b""), stdin=b"hello"
+        )
+
+        self.assertIn("--- stdin: 5 bytes\nhello\n--- stdout: 0 bytes\n", output)
+
+    async def test_names_binary_output_by_its_size_and_digest(self) -> None:
+        output = await self.output(
+            "screenshot", "-", answer=Completed(0, b"\x89PNG\0\0", b"")
+        )
+
+        self.assertIn(
+            "--- stdout: 6 bytes of binary, sha256 "
+            "4ed147525816e2611eae4f940c63ad947074621c39c285463b087c87a7143081",
+            output,
+        )
+
+    async def test_logs_a_command_that_raised(self) -> None:
+        output = await self.output(
+            "ui", "describe-all", answer=harness.HarnessError("did not finish")
+        )
+
+        self.assertRegex(
+            output.splitlines()[2],
+            r"^raised after \d+\.\d\ds: HarnessError\('did not finish'\)$",
+        )
+
+
+class BoundedOutputTests(unittest.TestCase):
+    """What a streaming process printed, as much as its capture kept."""
+
+    def output(self, data: bytes, prefix: int, tail: int) -> bytes:
+        return harness._bounded_output(
+            harness.ProcessOutput(
+                total_bytes=len(data),
+                sha256="",
+                prefix=data[:prefix],
+                tail=data[-tail:] if tail else b"",
+            )
+        )
+
+    def test_output_the_capture_kept_whole_is_whole(self) -> None:
+        self.assertEqual(self.output(b"abcdef", 4, 4), b"abcdef")
+
+    def test_output_that_exactly_fills_the_capture_is_whole(self) -> None:
+        self.assertEqual(self.output(b"abcdef", 3, 3), b"abcdef")
+
+    def test_output_longer_than_the_capture_says_how_much_is_missing(self) -> None:
+        self.assertEqual(self.output(b"abcdefgh", 2, 2), b"ab\n[4 bytes omitted]\ngh")

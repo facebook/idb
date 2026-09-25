@@ -2252,7 +2252,7 @@ class UnavailableRecordingTests(unittest.IsolatedAsyncioTestCase):
                         for line in Path(recording.trace.name).read_text().splitlines()
                     ]
                 finally:
-                    recording.trace.close()
+                    recording.close_logs()
         self.assertFalse(recording.ready)
         self.assertIn("exited with 1", recording.error)
         command = next(event for event in events if event["event"] == "command_started")
