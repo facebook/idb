@@ -324,6 +324,92 @@ final class AccessibilitySerializationTests: XCTestCase {
     XCTAssertEqual(flat.count, 4, "the default filter keeps the unlabeled container too")
   }
 
+  // MARK: - The interactable filter against the screen
+
+  private static let screen = CGRect(x: 0, y: 0, width: 402, height: 874)
+
+  private static func framed(
+    _ label: String?, _ rect: CGRect, children: [AccessibilityDocumentElement] = []
+  ) -> AccessibilityDocumentElement {
+    var element = AccessibilityDocumentElement()
+    element.label = label
+    element.frame = AccessibilityFrame(
+      x: Double(rect.minX), y: Double(rect.minY), width: Double(rect.width), height: Double(rect.height)
+    )
+    element.children = children
+    return element
+  }
+
+  // Shapes seen on real screens. A table scrolled to its top: row 1 on screen, row 14 straddling the
+  // bottom edge, row 20 below it — whose label the runtime reports in the row's own coordinates, so its
+  // frame alone would place it over the top of the screen. A keyboard padding key and an offscreen home
+  // screen icon, both zero-sized. A home screen page, zero-sized itself, holding an on-screen icon.
+  private static func screenTree() -> [AccessibilityDocumentElement] {
+    [
+      framed(
+        nil, screen,
+        children: [
+          framed(
+            "Row 1", CGRect(x: 20, y: 100, width: 362, height: 53),
+            children: [framed("Row 1 title", CGRect(x: 36, y: 116, width: 50, height: 20))]
+          ),
+          framed(
+            "Row 14", CGRect(x: 20, y: 869, width: 362, height: 53),
+            children: [framed("Row 14 title", CGRect(x: 36, y: 885, width: 55, height: 20))]
+          ),
+          framed(
+            "Row 20", CGRect(x: 20, y: 1187, width: 362, height: 53),
+            children: [framed("Row 20 title", CGRect(x: 0, y: 116, width: 57, height: 20))]
+          ),
+          framed("Padding-Left", CGRect(x: 0, y: 583, width: 0, height: 0)),
+          framed(
+            nil, .zero,
+            children: [
+              framed("Fitness", CGRect(x: 20, y: 88, width: 64, height: 64)),
+              framed("Maps", .zero),
+            ]
+          ),
+        ]
+      )
+    ]
+  }
+
+  private static func allLabels(_ elements: [AccessibilityDocumentElement]) -> Set<String> {
+    elements.reduce(into: Set<String>()) { labels, element in
+      if let label = element.label ?? nil {
+        labels.insert(label)
+      }
+      labels.formUnion(allLabels(element.children ?? []))
+    }
+  }
+
+  private static func screenFiltered() -> Set<String> {
+    allLabels(AccessibilityElementFilter.interactable.apply(to: screenTree()))
+  }
+
+  func testInteractableFilterReportsZeroSizeElements() {
+    // Pinned: zero-sized elements are reported — flipped in the following commit.
+    XCTAssertTrue(
+      Self.screenFiltered().isSuperset(of: ["Padding-Left", "Maps"]),
+      "a zero-sized key and icon are reported"
+    )
+  }
+
+  func testInteractableFilterReportsElementsOutsideTheScreen() {
+    // Pinned: elements wholly outside the screen are reported — flipped later in the stack.
+    XCTAssertTrue(
+      Self.screenFiltered().isSuperset(of: ["Row 20", "Row 20 title", "Row 14 title"]),
+      "the row below the screen, its label, and the label below the straddling row are reported"
+    )
+  }
+
+  func testInteractableFilterKeepsWhatIsOnScreen() {
+    XCTAssertTrue(
+      Self.screenFiltered().isSuperset(of: ["Row 1", "Row 1 title", "Row 14", "Fitness"]),
+      "on-screen elements are reported, including a row the screen edge clips and an icon inside a zero-sized page"
+    )
+  }
+
   // Every requested key is emitted (null when absent) and nothing else. `occluded_by` is the exception: it
   // names no field of its own but enriches `interactable`, so requesting it emits `occluderIdentityKeys`.
   func testEveryRequestedKeyIsPresentInTheSerializedElement() throws {

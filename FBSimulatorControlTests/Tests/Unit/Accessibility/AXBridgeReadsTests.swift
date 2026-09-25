@@ -1377,6 +1377,19 @@ final class AXBridgeReadsTests: XCTestCase {
     XCTAssertEqual(elements.count, 1, "the unlabeled container is filtered out, its labeled child kept")
   }
 
+  // The warning describes the tree, not the caller's view of it, so a filter must not hide it.
+  func testAMostlyUnframedTreeIsWarnedAboutUnderTheInteractableFilter() async throws {
+    let frame = CGRectCreateDictionaryRepresentation(CGRect(x: 10, y: 20, width: 100, height: 50)) as NSDictionary
+    let stale = (0..<3).map { [AXWire.Node.label.rawValue: "Stale \($0)"] as [String: Any] }
+    let framed: [String: Any] = [AXWire.Node.label.rawValue: "Framed", AXWire.Node.frame.rawValue: frame]
+    let tree: [String: Any] = [AXWire.Node.frame.rawValue: frame, AXWire.Node.children.rawValue: stale + [framed]]
+    let reader = StubAXBridgeTreeReader(read: AXTreeRead(tree: tree, pid: 99, truncated: false, modal: nil))
+    _ = try await reader.describeTree(.frontmost, options: AccessibilityRequestOptions(filter: .interactable))
+
+    let frames = try XCTUnwrap(reader.geometryWarnings.first ?? nil, "the read tallied its frames")
+    XCTAssertEqual(frames.zeroFrame, 3, "the three labeled elements with no frame are counted")
+  }
+
   private static func occlusionIdentity(label: String, frame: CGRect) -> [String: Any] {
     [
       AXWire.Node.label.rawValue: label,
