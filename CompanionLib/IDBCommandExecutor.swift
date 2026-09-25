@@ -569,7 +569,7 @@ public final class IDBCommandExecutor {
   }
 
   public func set_orientation(_ orientation: SimulatorDeviceOrientation) async throws {
-    try await simulatorTarget().orientation.setOrientation(orientation)
+    try await simulatorTarget().orientation.set(orientation)
   }
 
   public func hinge_angle() async throws -> Double {

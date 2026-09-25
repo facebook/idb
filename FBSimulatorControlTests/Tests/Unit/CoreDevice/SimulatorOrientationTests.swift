@@ -41,6 +41,27 @@ final class SimulatorOrientationTests: XCTestCase {
     }
   }
 
+  func testTheVendorBackendIgnoresTheConvention() {
+    for orientation in SimulatorHIDDeviceOrientation.allCases {
+      for convention in [SimulatorOrientationConvention.device, .interface] {
+        XCTAssertEqual(OrientationWrite(orientation, convention: convention, backend: .vendorHID), .vendorHID(orientation))
+      }
+    }
+  }
+
+  func testPurpleSwapsLandscapeOnlyForTheDeviceConvention() {
+    let device: [(SimulatorHIDDeviceOrientation, SimulatorHIDDeviceOrientation)] = [
+      (.portrait, .portrait), (.portraitUpsideDown, .portraitUpsideDown),
+      (.landscapeLeft, .landscapeRight), (.landscapeRight, .landscapeLeft),
+    ]
+    for (orientation, sent) in device {
+      XCTAssertEqual(OrientationWrite(orientation, convention: .device, backend: .purple), .purple(sent))
+    }
+    for orientation in SimulatorHIDDeviceOrientation.allCases {
+      XCTAssertEqual(OrientationWrite(orientation, convention: .interface, backend: .purple), .purple(orientation))
+    }
+  }
+
   func testMotionStatePreservesPhysicalDirectionsAndFlatStates() throws {
     let orientations: [SimulatorDeviceOrientation] = [.unknown, .portrait, .portraitUpsideDown, .landscapeLeft, .landscapeRight, .faceUp, .faceDown]
     for (value, orientation) in orientations.enumerated() {

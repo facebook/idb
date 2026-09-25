@@ -162,16 +162,9 @@ public final class SimulatorHID: CustomStringConvertible, @unchecked Sendable {
 
   // MARK: - Purple / GSEvents and vendor reports
 
-  /// Rotates through the backend the simulator's motion capabilities select: vendor HID where the
-  /// runtime reports device motion, Purple otherwise.
-  func sendOrientation(_ orientation: SimulatorHIDDeviceOrientation, legacyPurpleEncoding: Bool = true) async throws {
+  func sendOrientation(_ orientation: SimulatorHIDDeviceOrientation) async throws {
     guard let simulator else { throw WeakTargetError.simulator }
-    switch try await MotionCapabilities.resolve(on: simulator).orientationWriteBackend {
-    case .vendorHID:
-      try await simulator.hid.vendorDefined.send(orientation.vendorEvent())
-    case .purple:
-      try await purple.sendOrientation(legacyPurpleEncoding ? orientation : orientation.physicalPurpleOrientation)
-    }
+    try await simulator.orientation.set(orientation, convention: .interface)
   }
 
   /// Locks the device. Delivered as a GSEvent over Purple, not through the HID transport.

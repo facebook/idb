@@ -271,6 +271,12 @@ extension Simulator {
     commandCache.resolve { SimulatorCoreDeviceClient(simulator: self) }
   }
 
+  /// GSEvents over the PurpleWorkspacePort: rotation on a runtime without device motion. One per
+  /// simulator, so concurrent rotations queue behind one another.
+  var purpleHID: SimulatorPurpleHIDTransport {
+    commandCache.resolve { SimulatorPurpleHIDTransport(simulator: self) }
+  }
+
   public var displays: SimulatorDisplayCommands {
     SimulatorDisplayCommands.commands(with: self)
   }

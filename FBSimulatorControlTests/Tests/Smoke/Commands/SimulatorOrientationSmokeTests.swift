@@ -22,10 +22,10 @@ final class SimulatorOrientationSmokeTests: ProvidedSimulatorTestCase {
     guard (try? original.hidOrientation) != nil else {
       throw XCTSkip("Requires a restorable non-flat initial orientation")
     }
-    addTeardownBlock { try await simulator.orientation.setOrientation(original) }
+    addTeardownBlock { try await simulator.orientation.set(original) }
     let orientations: [SimulatorDeviceOrientation] = [.portrait, .landscapeLeft, .portraitUpsideDown, .landscapeRight]
     for expected in orientations {
-      try await simulator.orientation.setOrientation(expected)
+      try await simulator.orientation.set(expected)
       var actual = try await simulator.orientation.current()
       for _ in 0..<20 where actual != expected {
         try await Task.sleep(nanoseconds: 100_000_000)

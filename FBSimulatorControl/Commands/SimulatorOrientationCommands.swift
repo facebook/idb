@@ -55,6 +55,29 @@ public enum SimulatorOrientationError: Error, LocalizedError, Equatable {
   }
 }
 
+/// The landscape numbering a `SimulatorHIDDeviceOrientation` is written in.
+public enum SimulatorOrientationConvention: Sendable {
+  /// The physical device convention, the one `current()` reads back.
+  case device
+  /// Interface-style landscape numbering, which the HID event API has always sent. It differs from
+  /// `device` only on a runtime without device motion, where landscape left and right are swapped.
+  case interface
+}
+
+/// How one rotation is written, given the simulator's backend.
+enum OrientationWrite: Equatable {
+  case vendorHID(SimulatorHIDDeviceOrientation)
+  case purple(SimulatorHIDDeviceOrientation)
+
+  init(_ orientation: SimulatorHIDDeviceOrientation, convention: SimulatorOrientationConvention, backend: OrientationWriteBackend) {
+    switch (backend, convention) {
+    case (.vendorHID, _): self = .vendorHID(orientation)
+    case (.purple, .device): self = .purple(orientation.physicalPurpleOrientation)
+    case (.purple, .interface): self = .purple(orientation)
+    }
+  }
+}
+
 public struct SimulatorOrientationCommands {
   private let simulator: Simulator
 
@@ -63,9 +86,20 @@ public struct SimulatorOrientationCommands {
   }
 
   /// Sets physical device orientation using the same landscape convention as `current()`.
-  public func setOrientation(_ orientation: SimulatorDeviceOrientation) async throws {
-    let hidOrientation = try orientation.hidOrientation
-    try await simulator.hid.connect().sendOrientation(hidOrientation, legacyPurpleEncoding: false)
+  public func set(_ orientation: SimulatorDeviceOrientation) async throws {
+    try await set(orientation.hidOrientation, convention: .device)
+  }
+
+  /// Rotates through the backend the simulator's motion capabilities select: vendor HID where the
+  /// runtime reports device motion, Purple otherwise.
+  public func set(_ orientation: SimulatorHIDDeviceOrientation, convention: SimulatorOrientationConvention) async throws {
+    let backend = try await MotionCapabilities.resolve(on: simulator).orientationWriteBackend
+    switch OrientationWrite(orientation, convention: convention, backend: backend) {
+    case let .vendorHID(orientation):
+      try await simulator.hid.vendorDefined.send(orientation.vendorEvent())
+    case let .purple(orientation):
+      try await simulator.purpleHID.sendOrientation(orientation)
+    }
   }
 
   public func current() async throws -> SimulatorDeviceOrientation {
