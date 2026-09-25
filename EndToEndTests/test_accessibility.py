@@ -26,6 +26,7 @@ from typing import Any
 from .documentation import documented_demo
 from .harness import (
     _center,
+    _describe_matches,
     _elements,
     _has_area,
     _label,
@@ -219,6 +220,33 @@ def _rows_on_screen(document: Any) -> list[str]:
         )
         if _on_screen(element, screen)
     ]
+
+
+def _search_field(document: Any, value: str | None = None) -> dict[str, Any]:
+    """The fixture's search field, holding `value` if one is given.
+
+    Anything but exactly one field with a frame is not ready, and says what
+    carried the field's identifier so the extra or missing one can be told apart.
+    """
+
+    def is_search_field(element: dict[str, Any]) -> bool:
+        return element.get("identifier") == SEARCH_FIELD_ID
+
+    fields = [
+        element
+        for element in _elements(document)
+        if is_search_field(element) and _has_area(element)
+    ]
+    if len(fields) != 1:
+        raise NotReady(
+            f"Expected one search field with a frame, found {len(fields)}; "
+            + _describe_matches(document, is_search_field)
+        )
+    if value is not None and fields[0].get("value") != value:
+        raise NotReady(
+            f"Search field has value {fields[0].get('value')!r}, expected {value!r}"
+        )
+    return fields[0]
 
 
 ACCESSIBILITY_READ_TESTS = frozenset(
@@ -522,18 +550,7 @@ class AccessibilityTests(IdbEndToEndTestCase):
 
     async def wait_for_search_field(self, value: str | None = None) -> dict[str, Any]:
         async def read() -> dict[str, Any]:
-            fields = [
-                element
-                for element in _elements(await self.describe_all_complete("axbridge"))
-                if element.get("identifier") == SEARCH_FIELD_ID and _has_area(element)
-            ]
-            if len(fields) != 1:
-                raise NotReady(f"Expected one search field, found {len(fields)}")
-            if value is not None and fields[0].get("value") != value:
-                raise NotReady(
-                    f"Search field has value {fields[0].get('value')!r}, expected {value!r}"
-                )
-            return fields[0]
+            return _search_field(await self.describe_all_complete("axbridge"), value)
 
         return await wait_until(
             "The fixture's search field", UI_UPDATE_TIMEOUT_SECONDS, read

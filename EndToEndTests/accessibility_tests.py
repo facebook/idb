@@ -17,11 +17,12 @@ from __future__ import annotations
 import unittest
 from typing import Any
 
-from .harness import _describe_matches, _elements
+from .harness import _describe_matches, _elements, NotReady
 from .test_accessibility import (
     _row_positions,
     _rows_on_screen,
     _screen,
+    _search_field,
     _visible,
     GENERAL_ROW_ID,
     ROW_PREFIX,
@@ -272,6 +273,48 @@ class DescribeMatchesTests(unittest.TestCase):
                 "  [1] under Application",
                 f'  identifier: [1] "{SEARCH_FIELD_ID}"',
             ],
+        )
+
+
+class SearchFieldTests(unittest.TestCase):
+    def test_is_the_one_field_with_a_frame(self) -> None:
+        field = _search_field(fixture_search_field())
+
+        self.assertEqual(field["type"], "SearchField")
+
+    def test_more_than_one_says_how_they_differ(self) -> None:
+        document = fixture_nested_search_fields()
+        table = document["elements"][0]["children"][0]
+        table["children"].append(table["children"][0].pop("children")[0])
+
+        with self.assertRaises(NotReady) as waiting:
+            _search_field(document)
+
+        message = str(waiting.exception)
+        self.assertEqual(
+            message.splitlines()[:4],
+            [
+                "Expected one search field with a frame, found 2; 2 matching elements:",
+                "  [1] under Application > Table",
+                "  [2] under Application > Table",
+                "They differ in:",
+            ],
+        )
+        self.assertIn('  type: [1] "Other" [2] "SearchField"', message)
+
+    def test_fields_without_a_frame_are_described_but_not_counted(self) -> None:
+        document = fixture_nested_search_fields()
+        bar = document["elements"][0]["children"][0]["children"][0]
+        bar["frame"] = None
+        bar["children"][0]["frame"] = frame(0, 0, 0, 0)
+
+        with self.assertRaises(NotReady) as waiting:
+            _search_field(document)
+
+        message = str(waiting.exception)
+        self.assertIn("found 0; 2 matching elements:", message)
+        self.assertIn(
+            '  frame: [1] null [2] {"height": 0, "width": 0, "x": 0, "y": 0}', message
         )
 
 
