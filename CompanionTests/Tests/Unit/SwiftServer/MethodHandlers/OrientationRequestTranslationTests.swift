@@ -26,7 +26,7 @@ final class OrientationRequestTranslationTests: XCTestCase {
   }
 
   func testWritesPreservePhysicalDirectionNames() throws {
-    let cases: [(Idb_HIDEvent.HIDOrientationType, SimulatorDeviceOrientation)] = [
+    let cases: [(Idb_HIDEvent.HIDOrientationType, SimulatorHIDDeviceOrientation)] = [
       (.portrait, .portrait), (.portraitUpsideDown, .portraitUpsideDown),
       (.landscapeLeft, .landscapeLeft), (.landscapeRight, .landscapeRight),
     ]

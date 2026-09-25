@@ -17,7 +17,7 @@ struct OrientationMethodHandler {
   }
 
   func set(request: Idb_SetOrientationRequest) async throws -> Idb_SetOrientationResponse {
-    try await commandExecutor.set_orientation(Self.orientation(request.orientation))
+    try await commandExecutor.set_orientation(Self.orientation(request.orientation), convention: .device)
     return .init()
   }
 
@@ -35,7 +35,8 @@ struct OrientationMethodHandler {
     }
   }
 
-  static func orientation(_ value: Idb_HIDEvent.HIDOrientationType) throws -> SimulatorDeviceOrientation {
+  /// Shared with the HID stream, which carries the same orientation type in a different convention.
+  static func orientation(_ value: Idb_HIDEvent.HIDOrientationType) throws -> SimulatorHIDDeviceOrientation {
     switch value {
     case .portrait: return .portrait
     case .portraitUpsideDown: return .portraitUpsideDown

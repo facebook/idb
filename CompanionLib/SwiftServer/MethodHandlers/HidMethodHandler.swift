@@ -28,7 +28,8 @@ struct HidMethodHandler {
       case let .input(event):
         try await commandExecutor.hid(event)
       case let .orientation(orientation):
-        try await commandExecutor.set_interface_orientation(orientation)
+        // Interface numbering is what `idb`'s HID stream has always carried.
+        try await commandExecutor.set_orientation(orientation, convention: .interface)
       case .shake:
         try await commandExecutor.shake()
       case let .hinge(angle):
@@ -65,10 +66,7 @@ struct HidMethodHandler {
       return .input(.pinchAt(x: centerX, y: centerY, scale: scale, duration: duration, radius: radius))
 
     case let .orientation(orientation):
-      guard let deviceOrientation = fbSimulatorHIDDeviceOrientation(from: orientation.orientation) else {
-        throw RPCError(code: .invalidArgument, message: "Unrecognized orientation type")
-      }
-      return .orientation(deviceOrientation)
+      return .orientation(try OrientationMethodHandler.orientation(orientation.orientation))
 
     case .shake:
       return .shake
@@ -122,21 +120,6 @@ struct HidMethodHandler {
 
     case .none:
       throw RPCError(code: .invalidArgument, message: "Unrecognized press.action")
-    }
-  }
-
-  private static func fbSimulatorHIDDeviceOrientation(from request: Idb_HIDEvent.HIDOrientationType) -> SimulatorHIDDeviceOrientation? {
-    switch request {
-    case .portrait:
-      return .portrait
-    case .portraitUpsideDown:
-      return .portraitUpsideDown
-    case .landscapeLeft:
-      return .landscapeLeft
-    case .landscapeRight:
-      return .landscapeRight
-    case .UNRECOGNIZED:
-      return nil
     }
   }
 
