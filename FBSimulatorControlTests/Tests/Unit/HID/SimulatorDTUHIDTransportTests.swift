@@ -516,11 +516,11 @@ final class SimulatorDTUHIDTransportTests: XCTestCase {
   func testALookupFailureIsRetriedRatherThanTerminal() {
     // A lookup or connect failure is not known to be permanent, and treating it as terminal falls
     // back to Indigo, which costs the keyboard.
-    XCTAssertTrue(
-      SimulatorHIDError.dtuhidServiceUnavailable(name: "service", underlying: nil).isTransientDTUHIDFailure)
-    XCTAssertTrue(SimulatorHIDError.dtuhidConnectionFailed.isTransientDTUHIDFailure)
+    XCTAssertFalse(
+      SimulatorHIDError.dtuhidServiceUnavailable(name: "service", underlying: nil).isPermanentDTUHIDFailure)
+    XCTAssertFalse(SimulatorHIDError.dtuhidConnectionFailed.isPermanentDTUHIDFailure)
     // A toolchain without the `_4sim` symbols does not grow them by being asked again.
-    XCTAssertFalse(SimulatorHIDError.dtuhidXPCSymbolsUnavailable.isTransientDTUHIDFailure)
+    XCTAssertTrue(SimulatorHIDError.dtuhidXPCSymbolsUnavailable.isPermanentDTUHIDFailure)
   }
 
   func testUnresponsiveDTUHIDIsWorthFallingBackFrom() {

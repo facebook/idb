@@ -74,21 +74,21 @@ final class SimulatorXPCConnectionTests: XCTestCase {
 
   // MARK: - DTUHID mapping
 
-  func testDTUHIDKeepsItsOwnCasesSoNegotiationIsUnchanged() {
+  func testConnectionFailuresMapOntoDTUHIDErrors() {
     let lookup = SimulatorHIDError(dtuhidConnection: .lookupFailed(service: "com.example.service", underlying: Self.operational))
     guard case let .dtuhidServiceUnavailable(name, underlying) = lookup else { return XCTFail("\(lookup)") }
     XCTAssertEqual(name, "com.example.service")
     XCTAssertEqual(underlying as NSError?, Self.operational)
-    XCTAssertTrue(lookup.isTransientDTUHIDFailure)
+    XCTAssertFalse(lookup.isPermanentDTUHIDFailure)
     XCTAssertTrue(lookup.isDTUHIDUnreachable)
 
     let symbols = SimulatorHIDError(dtuhidConnection: .symbolsUnavailable)
     guard case .dtuhidXPCSymbolsUnavailable = symbols else { return XCTFail("\(symbols)") }
-    XCTAssertFalse(symbols.isTransientDTUHIDFailure)
+    XCTAssertTrue(symbols.isPermanentDTUHIDFailure)
     XCTAssertTrue(symbols.isDTUHIDUnreachable)
 
     let connection = SimulatorHIDError(dtuhidConnection: .connectionFailed)
     guard case .dtuhidConnectionFailed = connection else { return XCTFail("\(connection)") }
-    XCTAssertTrue(connection.isTransientDTUHIDFailure)
+    XCTAssertFalse(connection.isPermanentDTUHIDFailure)
   }
 }

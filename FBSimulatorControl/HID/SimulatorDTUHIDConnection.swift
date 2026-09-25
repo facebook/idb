@@ -79,8 +79,7 @@ final class SimulatorDTUHIDConnection: Sendable {
     for attempt in 1...DTUHIDTiming.livenessAttempts {
       do {
         return try await connected(using: connector, serviceName: serviceName, clock: clock)
-      } catch let error as SimulatorHIDError where !error.isTransientDTUHIDFailure {
-        // A toolchain that has no DTUHID at all will not grow one by being asked again.
+      } catch let error as SimulatorHIDError where error.isPermanentDTUHIDFailure {
         throw error
       } catch {
         lastFailure = error

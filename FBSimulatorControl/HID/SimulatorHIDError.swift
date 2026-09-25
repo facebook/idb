@@ -110,16 +110,15 @@ public enum SimulatorHIDError: Error, LocalizedError {
     }
   }
 
-  /// Whether this failure could clear on its own, so connecting is worth another attempt.
+  /// Whether this failure is a property of the toolchain, runtime or simulator that no amount of
+  /// waiting changes, so connecting is not worth another attempt.
   ///
-  /// A failure to connect that is not known to be permanent is retried, since the case retrying
-  /// exists for — a `dtuhidd` that aborted early in boot and whose respawn launchd is throttling —
-  /// shows up as an unanswered probe, not as a failed lookup. Absent `_4sim` symbols, or a runtime
-  /// that does not vend the service, are properties of the toolchain or runtime that no amount of
-  /// waiting changes.
-  var isTransientDTUHIDFailure: Bool {
+  /// Anything else is retried: the case retrying exists for — a `dtuhidd` that aborted early in boot
+  /// and whose respawn launchd is throttling — shows up as an unanswered probe, and a failure not
+  /// known to be permanent is worth riding out with it.
+  var isPermanentDTUHIDFailure: Bool {
     switch self {
-    case .dtuhidServiceUnavailable, .dtuhidConnectionFailed, .dtuhidUnresponsive:
+    case .dtuhidXPCSymbolsUnavailable, .dtuhidServiceNotVended, .dtuhidSimulatorNotBooted:
       return true
     default:
       return false
