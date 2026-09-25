@@ -215,6 +215,41 @@ def fixture_nested_search_fields() -> dict[str, Any]:
     return {"elements": [application]}
 
 
+def fixture_search_field_reported_twice() -> dict[str, Any]:
+    """The search field reported under both its container and the table.
+
+    The accessibility runtime lists the field among the children of the search
+    bar's container and of the table that holds the bar, so the guest bridge
+    reports the field, and everything inside it, in both places.
+    """
+
+    def field() -> dict[str, Any]:
+        glass = element(
+            type="Image", identifier="magnifyingglass", frame=frame(16, 138, 20, 20)
+        )
+        return element(
+            type="SearchField",
+            identifier=SEARCH_FIELD_ID,
+            label="Search",
+            value="Search",
+            frame=frame(8, 126, 386, 44),
+            children=[glass],
+        )
+
+    container = element(
+        type="_UISearchBarSearchContainerView",
+        frame=frame(0, 118, 402, 60),
+        children=[field()],
+    )
+    table = element(
+        type="Table", frame=frame(0, 0, 402, 874), children=[container, field()]
+    )
+    application = element(
+        type="Application", frame=frame(0, 0, 402, 874), children=[table]
+    )
+    return {"elements": [application]}
+
+
 def is_search_field(element: dict[str, Any]) -> bool:
     return element.get("identifier") == SEARCH_FIELD_ID
 
@@ -316,6 +351,12 @@ class SearchFieldTests(unittest.TestCase):
         self.assertIn(
             '  frame: [1] null [2] {"height": 0, "width": 0, "x": 0, "y": 0}', message
         )
+
+    def test_one_field_reported_twice_is_the_search_field(self) -> None:
+        # BUG: refuses the field because the tree reports it under both its
+        # container and the table — flipped in the following commit.
+        with self.assertRaises(NotReady):
+            _search_field(fixture_search_field_reported_twice())
 
 
 class ScreenTests(unittest.TestCase):
