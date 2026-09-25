@@ -252,6 +252,18 @@ final class SimulatorDTUHIDTransportTests: XCTestCase {
     XCTAssertEqual(sleeps, [])
   }
 
+  func testADelayOnlyEventDrainsNothing() async throws {
+    let recorder = DrainRecorder()
+    let hid = makeHID(recorder)
+
+    try await hid.send(event: .delay(0), logger: ControlCoreGlobalConfiguration.defaultLogger)
+
+    let replies = await recorder.replies
+    let sleeps = await recorder.sleeps
+    XCTAssertEqual(replies, 0)
+    XCTAssertEqual(sleeps, [])
+  }
+
   func testFirstGestureSendsBarrierAndTailsAfterReply() async throws {
     let recorder = DrainRecorder()
     let hid = makeHID(recorder)
