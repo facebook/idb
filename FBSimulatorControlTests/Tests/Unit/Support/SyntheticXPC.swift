@@ -37,30 +37,40 @@ final class SyntheticXPCServices: Sendable {
     state.withLock { $0.lookups }
   }
 
-  /// The simulator's state. Booted unless a test says otherwise.
+  /// The simulator's state. Booted unless a test says otherwise. A boot finishes while the
+  /// connector's `bootFinished` is awaited, so a test does not race the boot it starts.
   var simulatorState: TargetState {
     get { state.withLock { $0.simulator } }
     set { state.withLock { $0.simulator = newValue } }
   }
 
   var connector: SimulatorXPCConnector {
-    SimulatorXPCConnector { [self] service in
-      let (peer, simulator) = state.withLock { state in
-        state.lookups.append(service)
-        return (state.peers[service], state.simulator)
-      }
-      guard simulator == .booted else {
-        throw SimulatorXPCConnectionError.lookupFailed(
-          service: service,
-          underlying: NSError(
-            domain: Self.unsupportedService.domain, code: Self.unsupportedService.code,
-            userInfo: [NSLocalizedDescriptionKey: "Unable to lookup in current state: \(simulator.stateString.rawValue)"]))
-      }
-      guard let peer else {
-        throw SimulatorXPCConnectionError.lookupFailed(service: service, underlying: Self.unsupportedService)
-      }
-      return peer.connect()
+    SimulatorXPCConnector(
+      state: { [self] in simulatorState },
+      lookup: { [self] service in try lookup(service) },
+      bootFinished: { [self] in
+        state.withLock { state in
+          if state.simulator == .booting { state.simulator = .booted }
+        }
+      })
+  }
+
+  private func lookup(_ service: String) throws -> xpc_connection_t {
+    let (peer, simulator) = state.withLock { state in
+      state.lookups.append(service)
+      return (state.peers[service], state.simulator)
     }
+    guard simulator == .booted else {
+      throw SimulatorXPCConnectionError.lookupFailed(
+        service: service,
+        underlying: NSError(
+          domain: Self.unsupportedService.domain, code: Self.unsupportedService.code,
+          userInfo: [NSLocalizedDescriptionKey: "Unable to lookup in current state: \(simulator.stateString.rawValue)"]))
+    }
+    guard let peer else {
+      throw SimulatorXPCConnectionError.lookupFailed(service: service, underlying: Self.unsupportedService)
+    }
+    return peer.connect()
   }
 
   /// A channel to `service`, built through `connector` as production builds one.

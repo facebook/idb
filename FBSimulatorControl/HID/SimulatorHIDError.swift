@@ -6,6 +6,7 @@
  */
 
 import Darwin
+@preconcurrency import FBControlCore
 import Foundation
 
 /// The failure cases of the HID layer. They are surfaced only as messages — no consumer inspects
@@ -32,6 +33,10 @@ public enum SimulatorHIDError: Error, LocalizedError {
   /// The `dtuhidd` digitizer service could not be looked up in the simulator's bootstrap namespace.
   case dtuhidDigitizerServiceUnavailable(underlying: Error?)
   case dtuhidServiceUnavailable(name: String, underlying: Error?)
+  /// The simulator's runtime does not vend the named `dtuhidd` service at all.
+  case dtuhidServiceNotVended(name: String)
+  /// The simulator is not booted, so it vends no `dtuhidd` service.
+  case dtuhidSimulatorNotBooted(name: String, state: TargetState)
   /// The private `_4sim` XPC endpoint symbols could not be resolved (older toolchain).
   case dtuhidXPCSymbolsUnavailable
   /// The `dtuhidd` host XPC connection could not be created.
@@ -71,6 +76,10 @@ public enum SimulatorHIDError: Error, LocalizedError {
       return "\(operation) is not implemented on the DTUHID transport"
     case let .dtuhidServiceUnavailable(name, _):
       return "Could not look up the dtuhidd service (\(name))"
+    case let .dtuhidServiceNotVended(name):
+      return "The simulator's runtime does not vend the dtuhidd service (\(name))"
+    case let .dtuhidSimulatorNotBooted(name, state):
+      return "The simulator is \(state.stateString.rawValue), not booted, so the dtuhidd service (\(name)) cannot be looked up"
     case .dtuhidDigitizerServiceUnavailable:
       return "Could not look up the dtuhidd digitizer service (com.apple.coredevice.feature.remote.hid.digitizer)"
     case .dtuhidXPCSymbolsUnavailable:
@@ -93,6 +102,10 @@ public enum SimulatorHIDError: Error, LocalizedError {
     switch error {
     case .symbolsUnavailable:
       self = .dtuhidXPCSymbolsUnavailable
+    case let .notBooted(service, state):
+      self = .dtuhidSimulatorNotBooted(name: service, state: state)
+    case let .lookupFailed(service, _) where error.isServiceUnsupported:
+      self = .dtuhidServiceNotVended(name: service)
     case let .lookupFailed(service, underlying):
       self = .dtuhidServiceUnavailable(name: service, underlying: underlying)
     case .connectionFailed:
@@ -103,8 +116,8 @@ public enum SimulatorHIDError: Error, LocalizedError {
   /// Whether this failure could clear on its own, so connecting is worth another attempt.
   ///
   /// The service lookup fails while the job is being torn down and respawned, which is the state a
-  /// retry exists to ride out. Absent `_4sim` symbols are the opposite: a property of the toolchain
-  /// that no amount of waiting changes.
+  /// retry exists to ride out. Absent `_4sim` symbols, or a runtime that does not vend the service,
+  /// are the opposite: properties of the toolchain or runtime that no amount of waiting changes.
   var isTransientDTUHIDFailure: Bool {
     switch self {
     case .dtuhidServiceUnavailable, .dtuhidDigitizerServiceUnavailable, .dtuhidConnectionFailed, .dtuhidUnresponsive:
@@ -120,8 +133,8 @@ public enum SimulatorHIDError: Error, LocalizedError {
   /// to surface to the caller.
   var isDTUHIDUnreachable: Bool {
     switch self {
-    case .dtuhidXPCSymbolsUnavailable, .dtuhidServiceUnavailable, .dtuhidDigitizerServiceUnavailable, .dtuhidConnectionFailed,
-      .dtuhidUnresponsive:
+    case .dtuhidXPCSymbolsUnavailable, .dtuhidServiceUnavailable, .dtuhidServiceNotVended, .dtuhidDigitizerServiceUnavailable,
+      .dtuhidConnectionFailed, .dtuhidUnresponsive:
       return true
     default:
       return false

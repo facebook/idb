@@ -105,7 +105,7 @@ final class SimulatorDTUHIDConnection: Sendable {
     using connector: SimulatorXPCConnector, serviceName: String, clock: DTUHIDDrainClock
   ) async throws -> SimulatorDTUHIDConnection {
     let connection = SimulatorDTUHIDConnection(
-      channel: try channel(using: connector, serviceName: serviceName),
+      channel: try await channel(using: connector, serviceName: serviceName),
       serviceName: serviceName,
       clock: clock)
     do {
@@ -119,7 +119,19 @@ final class SimulatorDTUHIDConnection: Sendable {
 
   /// A channel to the requested guest HID service. Says nothing about whether `dtuhidd` is able to
   /// run — launchd vends the port for a demand-launched job either way.
-  private static func channel(using connector: SimulatorXPCConnector, serviceName: String) throws -> SimulatorXPCChannel {
+  ///
+  /// A simulator that is still booting is waited on rather than retried: nothing is vended until the
+  /// boot completes, however long that takes.
+  private static func channel(using connector: SimulatorXPCConnector, serviceName: String) async throws -> SimulatorXPCChannel {
+    do {
+      return try channel(connecting: connector, serviceName: serviceName)
+    } catch SimulatorHIDError.dtuhidSimulatorNotBooted(_, .booting) {
+      try await connector.bootFinished()
+      return try channel(connecting: connector, serviceName: serviceName)
+    }
+  }
+
+  private static func channel(connecting connector: SimulatorXPCConnector, serviceName: String) throws -> SimulatorXPCChannel {
     do {
       return SimulatorXPCChannel(
         connection: try connector.connect(serviceName),

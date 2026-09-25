@@ -64,6 +64,8 @@ extension SimulatorCoreDeviceError {
     switch error {
     case .symbolsUnavailable:
       self = .unsupported("Simulator XPC symbols")
+    case let .notBooted(service, state):
+      self = .unavailable("\(service): the simulator is \(state.stateString.rawValue), not booted")
     case let .lookupFailed(service, underlying):
       self = error.isServiceUnsupported ? .unsupported(service) : .unavailable(underlying?.localizedDescription ?? service)
     case .connectionFailed:

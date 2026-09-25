@@ -58,9 +58,7 @@ final class SimulatorXPCConnectionTests: XCTestCase {
     services.simulatorState = .booting
 
     XCTAssertThrowsError(try SimulatorCoreDevice.connect(using: services.connector, service: "com.example.service")) { error in
-      // BUG: a service the runtime does vend reads as a missing capability until the boot
-      // completes — flipped in the following commit.
-      guard case SimulatorCoreDeviceError.unsupported = error else { return XCTFail("\(error)") }
+      guard case SimulatorCoreDeviceError.unavailable = error else { return XCTFail("\(error)") }
     }
   }
 

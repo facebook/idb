@@ -436,16 +436,14 @@ final class SimulatorDTUHIDTransportTests: XCTestCase {
       XCTFail("expected the connect to fail")
     } catch let error as SimulatorHIDError {
       XCTAssertTrue(error.isDTUHIDUnreachable)
-      // BUG: an unvended service cannot appear by waiting, yet it pays the whole retry loop and
-      // reads as unresponsive — flipped in the following commit.
-      guard case .dtuhidUnresponsive(attempts: DTUHIDTiming.livenessAttempts, _) = error else {
+      guard case .dtuhidServiceNotVended(name: SimulatorDTUHIDTransport.digitizerServiceName) = error else {
         return XCTFail("unexpected error: \(error)")
       }
     }
 
-    XCTAssertEqual(services.lookups.count, DTUHIDTiming.livenessAttempts)
+    XCTAssertEqual(services.lookups.count, 1)
     let sleeps = await recorder.sleeps
-    XCTAssertEqual(sleeps.count, DTUHIDTiming.livenessAttempts - 1)
+    XCTAssertEqual(sleeps.count, 0)
   }
 
   func testConnectWhileTheSimulatorIsBooting() async throws {
@@ -454,22 +452,14 @@ final class SimulatorDTUHIDTransportTests: XCTestCase {
     services.register(SimulatorDTUHIDTransport.digitizerServiceName, respond: Self.dtuhiddResponder(.answer))
     services.simulatorState = .booting
 
-    do {
-      _ = try await SimulatorDTUHIDConnection.connect(
-        using: services.connector, serviceName: SimulatorDTUHIDTransport.digitizerServiceName, clock: recordingClock(recorder))
-      XCTFail("expected the connect to fail")
-    } catch let error as SimulatorHIDError {
-      // BUG: nothing is vended until the boot completes, so a boot that outlasts the retries costs
-      // the transport even though the service is there once it does — flipped in the following commit.
-      XCTAssertTrue(error.isDTUHIDUnreachable)
-      guard case .dtuhidUnresponsive(attempts: DTUHIDTiming.livenessAttempts, _) = error else {
-        return XCTFail("unexpected error: \(error)")
-      }
-    }
+    let connection = try await SimulatorDTUHIDConnection.connect(
+      using: services.connector, serviceName: SimulatorDTUHIDTransport.digitizerServiceName, clock: recordingClock(recorder))
+    connection.disconnect()
 
-    XCTAssertEqual(services.lookups.count, DTUHIDTiming.livenessAttempts)
+    XCTAssertEqual(services.simulatorState, .booted)
+    XCTAssertEqual(services.lookups.count, 1)
     let sleeps = await recorder.sleeps
-    XCTAssertEqual(sleeps.count, DTUHIDTiming.livenessAttempts - 1)
+    XCTAssertEqual(sleeps, [DTUHIDTiming.replyTail])
   }
 
   func testConnectToAShutDownSimulator() async throws {
@@ -483,20 +473,16 @@ final class SimulatorDTUHIDTransportTests: XCTestCase {
         using: services.connector, serviceName: SimulatorDTUHIDTransport.digitizerServiceName, clock: recordingClock(recorder))
       XCTFail("expected the connect to fail")
     } catch let error as SimulatorHIDError {
-      // BUG: a shut-down simulator is retried as though dtuhidd might answer, and reads as an
-      // unresponsive daemon to fall back from — flipped in the following commit.
-      XCTAssertTrue(error.isDTUHIDUnreachable)
-      guard case .dtuhidUnresponsive(attempts: DTUHIDTiming.livenessAttempts, _) = error else {
+      XCTAssertFalse(error.isDTUHIDUnreachable)
+      guard case .dtuhidSimulatorNotBooted(name: SimulatorDTUHIDTransport.digitizerServiceName, state: .shutdown) = error else {
         return XCTFail("unexpected error: \(error)")
       }
     }
 
-    XCTAssertEqual(services.lookups.count, DTUHIDTiming.livenessAttempts)
+    XCTAssertEqual(services.lookups.count, 0)
     let sleeps = await recorder.sleeps
-    XCTAssertEqual(sleeps.count, DTUHIDTiming.livenessAttempts - 1)
+    XCTAssertEqual(sleeps.count, 0)
   }
-
-  // MARK: - What reaches dtuhidd
 
   func testATapReachesTheServiceAsStartThenEnd() async throws {
     let peer = Self.dtuhidd(.answer)
