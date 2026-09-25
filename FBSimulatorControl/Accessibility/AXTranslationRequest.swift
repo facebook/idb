@@ -118,7 +118,7 @@ final class AXTranslationRequest {
       collector: collector
     )
     if let children = elements.children {
-      elements.children = options.filter.apply(to: children)
+      elements.children = options.filter.apply(to: children, screen: nil)
     }
     // A named element carries no screen info of its own; a marker match's bounds come from the root it
     // descended from, stamped by the backend on the way out.
@@ -148,7 +148,7 @@ final class AXTranslationRequest {
       collector: collector,
       seenPids: seenPids
     )
-    let mainAppElements = options.narrowing(walked)
+    let mainAppElements = options.narrowing(walked, screen: screenBounds)
 
     // The grid stays live: remote-content discovery reads it to skip covered points and marks its hits
     // into it.
@@ -319,7 +319,7 @@ final class AXTranslationRequest {
     // Discovered elements honour the same filter and match as the main tree. `additionalFrameCoverage`
     // is measured before narrowing: it reports what hit-testing found that the tree did not expose.
     let keptDiscovered = AccessibilityElementRetention.narrowing(
-      discoveredElements, filter: filter, match: match
+      discoveredElements, filter: filter, match: match, screen: screenBounds
     )
     var elements = mainAppElements
     if !keptDiscovered.isEmpty {

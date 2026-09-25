@@ -155,7 +155,7 @@ final class AccessibilityMatchTests: XCTestCase {
     container.interactable = .some(nil)
     container.children = [Self.element(label: "Add to Cart", role: "AXButton")]
 
-    let filtered = AccessibilityElementFilter.interactable.apply(to: [container])
+    let filtered = AccessibilityElementFilter.interactable.apply(to: [container], screen: nil)
     XCTAssertEqual(Self.labels(filtered), ["Add to Cart"], "the unlabelled container is dropped, its child hoisted")
     XCTAssertEqual(Self.labels(try Self.match("Cart").apply(to: filtered)), ["Add to Cart"])
   }

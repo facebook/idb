@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+import CoreGraphics
 import FBControlCore
 import Foundation
 
@@ -20,19 +21,26 @@ enum AccessibilityElementRetention {
   ///
   /// Shape is preserved rather than normalized: a flat read's elements carry no `children` key and must
   /// not grow one, so an element whose `children` is `nil` keeps it `nil`.
+  ///
+  /// An element `prunes` accepts is dropped with its whole subtree, nothing hoisted.
   static func retaining(
     _ elements: [AccessibilityDocumentElement],
-    where keeps: (AccessibilityDocumentElement) -> Bool
+    where keeps: (AccessibilityDocumentElement) -> Bool,
+    pruning prunes: (AccessibilityDocumentElement) -> Bool = { _ in false }
   ) -> [AccessibilityDocumentElement] {
-    elements.flatMap { retained(from: $0, where: keeps) }
+    elements.flatMap { retained(from: $0, where: keeps, pruning: prunes) }
   }
 
   /// `element` if it passes, otherwise the kept descendants that take its place.
   private static func retained(
     from element: AccessibilityDocumentElement,
-    where keeps: (AccessibilityDocumentElement) -> Bool
+    where keeps: (AccessibilityDocumentElement) -> Bool,
+    pruning prunes: (AccessibilityDocumentElement) -> Bool
   ) -> [AccessibilityDocumentElement] {
-    let keptChildren = (element.children ?? []).flatMap { retained(from: $0, where: keeps) }
+    guard !prunes(element) else {
+      return []
+    }
+    let keptChildren = (element.children ?? []).flatMap { retained(from: $0, where: keeps, pruning: prunes) }
     guard keeps(element) else {
       return keptChildren
     }
@@ -48,11 +56,27 @@ extension AccessibilityElementFilter {
 
   /// The elements this filter keeps, with their kept descendants hoisted into the place of anything
   /// dropped. `.all` is the identity, and returns the input untouched rather than rebuilding it.
-  func apply(to elements: [AccessibilityDocumentElement]) -> [AccessibilityDocumentElement] {
+  ///
+  /// `screen` is the rectangle the elements' frames are in. Nothing is judged against a nil or empty one:
+  /// a read that could not measure its screen must not report the screen as empty.
+  func apply(to elements: [AccessibilityDocumentElement], screen: CGRect?) -> [AccessibilityDocumentElement] {
     guard self != .all else {
       return elements
     }
-    return AccessibilityElementRetention.retaining(elements, where: keeps)
+    return AccessibilityElementRetention.retaining(
+      elements, where: keeps, pruning: { Self.liesOutside($0, screen: screen) }
+    )
+  }
+
+  /// Whether an element's frame lies wholly outside the screen. Its subtree goes with it, unjudged: the
+  /// runtime reports the descendants of an offscreen table row in the row's own coordinates, so their
+  /// frames would place them on screen. An empty frame is never outside: a zero-sized container can
+  /// hold on-screen elements.
+  private static func liesOutside(_ element: AccessibilityDocumentElement, screen: CGRect?) -> Bool {
+    guard let screen, !screen.isEmpty, let rect = (element.frame ?? nil)?.rect, !rect.isEmpty else {
+      return false
+    }
+    return !rect.intersects(screen)
   }
 
   /// Whether an element survives this filter.
@@ -120,17 +144,18 @@ extension AccessibilityElementRetention {
   static func narrowing(
     _ elements: [AccessibilityDocumentElement],
     filter: AccessibilityElementFilter,
-    match: AccessibilityMatch?
+    match: AccessibilityMatch?,
+    screen: CGRect?
   ) -> [AccessibilityDocumentElement] {
-    let filtered = filter.apply(to: elements)
+    let filtered = filter.apply(to: elements, screen: screen)
     return match.map { $0.apply(to: filtered) } ?? filtered
   }
 }
 
 extension AccessibilityRequestOptions {
 
-  /// The elements a describe-all read reports out of what it walked.
-  func narrowing(_ elements: [AccessibilityDocumentElement]) -> [AccessibilityDocumentElement] {
-    AccessibilityElementRetention.narrowing(elements, filter: filter, match: match)
+  /// The elements a describe-all read reports out of what it walked, whose frames are in `screen`.
+  func narrowing(_ elements: [AccessibilityDocumentElement], screen: CGRect?) -> [AccessibilityDocumentElement] {
+    AccessibilityElementRetention.narrowing(elements, filter: filter, match: match, screen: screen)
   }
 }

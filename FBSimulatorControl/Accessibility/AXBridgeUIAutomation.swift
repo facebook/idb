@@ -166,7 +166,7 @@ final class AXBridgeUIAutomation: AXBridgeTreeReader, @unchecked Sendable {
       )
       // The hit element is exempt from the filter; its descendants are not.
       if let children = formatted.children {
-        formatted.children = options.filter.apply(to: children)
+        formatted.children = options.filter.apply(to: children, screen: nil)
       }
       return AccessibilityElementsResponse(elements: .single(formatted))
         .withProvenance(backend: backend.name, target: .point(point))

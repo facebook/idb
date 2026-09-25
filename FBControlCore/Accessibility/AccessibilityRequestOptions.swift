@@ -42,8 +42,9 @@ public enum AccessibilityElementFilter: String, Sendable, CaseIterable {
   case all
   /// Elements that can be interacted with. Uses the backend's `interactable` verdict when the read serialized
   /// it (covered, disabled or zero-sized elements are dropped); otherwise falls back to a structural
-  /// heuristic: not zero-sized, and has a label, an identifier, or an actionable role. Affects only what a
-  /// describe reports — marker lookup and writes are unfiltered.
+  /// heuristic: not zero-sized, and has a label, an identifier, or an actionable role. Either way, an
+  /// element wholly outside the screen is dropped with its subtree. Affects only what a describe reports —
+  /// marker lookup and writes are unfiltered.
   case interactable
 
   /// The attributes the filter matches on; `serializationKeys` unions these in so a narrow `--key` cannot

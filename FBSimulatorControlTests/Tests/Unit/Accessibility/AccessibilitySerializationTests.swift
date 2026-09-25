@@ -298,7 +298,7 @@ final class AccessibilitySerializationTests: XCTestCase {
     let walked = AXTreeWalk.describeAllElements(
       fromTree: filterTree(), keys: [.label, .uniqueID, .role], nestedFormat: nestedFormat, pid: 7
     )
-    return filter.apply(to: walked)
+    return filter.apply(to: walked, screen: nil)
   }
 
   func testInteractableFilterDropsUnlabeledContainersFlat() {
@@ -386,7 +386,7 @@ final class AccessibilitySerializationTests: XCTestCase {
   }
 
   private static func screenFiltered() -> Set<String> {
-    allLabels(AccessibilityElementFilter.interactable.apply(to: screenTree()))
+    allLabels(AccessibilityElementFilter.interactable.apply(to: screenTree(), screen: screen))
   }
 
   func testInteractableFilterDropsZeroSizeElements() {
@@ -396,11 +396,10 @@ final class AccessibilitySerializationTests: XCTestCase {
     )
   }
 
-  func testInteractableFilterReportsElementsOutsideTheScreen() {
-    // Pinned: elements wholly outside the screen are reported — flipped later in the stack.
+  func testInteractableFilterDropsElementsOutsideTheScreen() {
     XCTAssertTrue(
-      Self.screenFiltered().isSuperset(of: ["Row 20", "Row 20 title", "Row 14 title"]),
-      "the row below the screen, its label, and the label below the straddling row are reported"
+      Self.screenFiltered().isDisjoint(with: ["Row 20", "Row 20 title", "Row 14 title"]),
+      "the row below the screen, its label, and the label below the straddling row are dropped"
     )
   }
 
@@ -1083,7 +1082,7 @@ final class AccessibilitySerializationTests: XCTestCase {
     let options = AccessibilityRequestOptions(
       filter: .all, match: AccessibilityMatch(value: "sibling", key: .label, ignoresCase: false)
     )
-    let reported = options.narrowing(walked)
+    let reported = options.narrowing(walked, screen: nil)
     let report = options.narrowingReport(walked: walked, reported: reported)
 
     XCTAssertEqual(Set(Self.labels(walked)), ["root", "leaf", "sibling"], "the walk saw every labeled node")
@@ -1101,7 +1100,7 @@ final class AccessibilitySerializationTests: XCTestCase {
     )
     let walkedMain = [Self.labeled("root")]
     let discovered = [Self.labeled("Cart"), Self.labeled("Cart"), Self.labeled("Cart")]
-    let reported = options.narrowing(walkedMain) + options.narrowing(discovered)
+    let reported = options.narrowing(walkedMain, screen: nil) + options.narrowing(discovered, screen: nil)
 
     XCTAssertEqual(Self.labels(reported), ["Cart", "Cart", "Cart"], "only the discovered matches survive the read")
     XCTAssertGreaterThan(

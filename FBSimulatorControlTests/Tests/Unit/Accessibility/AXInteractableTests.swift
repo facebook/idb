@@ -414,7 +414,7 @@ final class AXInteractableTests: XCTestCase {
 
   // The covered button is button-like by every structural measure; the backend's verdict outranks the heuristic.
   func testTheFilterKeepsOnlyElementsTheBackendReportsActionable() {
-    let kept = AccessibilityElementFilter.interactable.apply(to: Self.mixedRead())
+    let kept = AccessibilityElementFilter.interactable.apply(to: Self.mixedRead(), screen: nil)
     XCTAssertEqual(kept.compactMap { $0.label ?? nil }, ["StandBy"])
   }
 
@@ -425,12 +425,12 @@ final class AXInteractableTests: XCTestCase {
     unjudged.label = .some("Screen Time")
     unjudged.role = .some("AXButton")
     unjudged.interactable = .some(nil)
-    XCTAssertEqual(AccessibilityElementFilter.interactable.apply(to: [unjudged]).count, 1)
+    XCTAssertEqual(AccessibilityElementFilter.interactable.apply(to: [unjudged], screen: nil).count, 1)
 
     var unlabelledContainer = AccessibilityDocumentElement()
     unlabelledContainer.interactable = .some(nil)
     XCTAssertTrue(
-      AccessibilityElementFilter.interactable.apply(to: [unlabelledContainer]).isEmpty,
+      AccessibilityElementFilter.interactable.apply(to: [unlabelledContainer], screen: nil).isEmpty,
       "the fallback is the old heuristic, not keep-everything"
     )
   }

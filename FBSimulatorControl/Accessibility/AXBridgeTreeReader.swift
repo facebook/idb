@@ -175,7 +175,8 @@ extension AXBridgeTreeReader {
       // The filter and the match both run before the interactable refinement, which is per-element guest
       // work there is no reason to spend on an element about to be dropped.
       let elements = try await refiningInteractable(
-        options.narrowing(walked), screen: screen, options: options
+        options.narrowing(walked, screen: screen.map(AccessibilityCoverage.bounds(of:))), screen: screen,
+        options: options
       )
       let serializeDuration = CFAbsoluteTimeGetCurrent() - serializeStarted
       // No `additional` coverage: remote-content discovery is accessibility-only.
