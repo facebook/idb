@@ -137,6 +137,27 @@ With either `--api axbridge` (the default) or `--api ax`, timeout `diagnostics.u
 
 For `axbridge`, `diagnostics.truncated` also records a truncated tree read. If its final poll ended in a retryable read failure, `diagnostics.read_error` explains why and the values are empty. The `ax` backend propagates read failures as errors instead.
 
+## Waiting for the UI to settle
+
+`idb ui quiet` reports whether the frontmost app's UI is quiet: its main run loop is idle and it has no animations in flight. It exits successfully when quiet and with status 1 when busy.
+
+```
+idb ui quiet
+idb ui quiet 30
+idb ui quiet 0
+idb ui quiet 30 --watch
+idb ui quiet 30 --bundle-id com.apple.Preferences --json
+```
+
+With a timeout, the command waits up to that many seconds and exits successfully as soon as the UI is quiet, or with status 1 if the timeout elapses first. A timeout of `0` waits for as long as it takes. With `--watch`, the command keeps reporting events once the UI is quiet, until the timeout elapses (or, with `0`, until interrupted), then exits successfully if the last state was quiet and with status 1 otherwise. The companion streams state changes as they happen; the CLI does not poll. Each event is printed as it arrives, one JSON object per line with `--json`: `state` (with `busy`, `settling` or `quiet`, and the busy signals), `touches_completed`, `target_changed` when the frontmost app changes, `target_exited`, and `timed_out`.
+
+| Option | Description |
+| --- | --- |
+| `--watch` | Keep reporting events once the UI is quiet, until the timeout elapses. Requires a timeout |
+| `--pid PID` / `--bundle-id ID` | Watch this app instead of following the frontmost app. The command fails if it exits |
+| `--busy-threshold-ms MS` | How long a busy signal must persist before it counts, default `20` |
+| `--quiet-window-ms MS` | How long the UI must stay idle before it is quiet, default `250`. When reporting the current state it defaults to `0`, so the answer is immediate |
+
 ## Acting on elements
 
 These commands resolve a target through the accessibility system and then perform the action the platform itself would perform. They are not synthesized touches: an accessibility press activates the element directly, so it does not depend on where the element is on screen at the moment of the press.

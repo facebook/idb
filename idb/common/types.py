@@ -41,6 +41,43 @@ class AccessibilityWaitResult:
         return self.found
 
 
+class QuiescenceState(Enum):
+    BUSY = "busy"
+    SETTLING = "settling"
+    QUIET = "quiet"
+
+
+@dataclass(frozen=True)
+class QuiescenceStateChanged:
+    pid: int
+    state: QuiescenceState
+    # Names of the signals left unanswered past the busy threshold; empty unless busy.
+    busy_signals: tuple[str, ...] = ()
+
+
+@dataclass(frozen=True)
+class QuiescenceTouchesCompleted:
+    pid: int
+
+
+@dataclass(frozen=True)
+class QuiescenceTargetChanged:
+    pid: int
+
+
+@dataclass(frozen=True)
+class QuiescenceTargetExited:
+    pid: int
+
+
+QuiescenceEvent = Union[
+    QuiescenceStateChanged,
+    QuiescenceTouchesCompleted,
+    QuiescenceTargetChanged,
+    QuiescenceTargetExited,
+]
+
+
 class IdbException(Exception):
     pass
 
@@ -1109,6 +1146,19 @@ class Client(ABC):
     ) -> bool:
         """Wait for a marker; return False on timeout and propagate other failures."""
         pass
+
+    @abstractmethod
+    async def accessibility_quiescence(
+        self,
+        pid: int | None = None,
+        bundle_id: str | None = None,
+        busy_threshold_ms: int | None = None,
+        quiet_window_ms: int | None = None,
+    ) -> AsyncGenerator[QuiescenceEvent, None]:
+        """Stream quiescence events for an application, or the frontmost one when
+        neither pid nor bundle_id is given. A None tunable takes the companion's default."""
+        # pyrefly: ignore [invalid-yield]
+        yield
 
     async def accessibility_wait_result(
         self,

@@ -86,6 +86,12 @@ from idb.common.types import (
     LoggingMetadata,
     OnlyFilter,
     Permission,
+    QuiescenceEvent,
+    QuiescenceState,
+    QuiescenceStateChanged,
+    QuiescenceTargetChanged,
+    QuiescenceTargetExited,
+    QuiescenceTouchesCompleted,
     Screenshot,
     ScreenshotOptions,
     TargetDescription,
@@ -106,6 +112,8 @@ from idb.grpc.idb_grpc import CompanionServiceStub
 from idb.grpc.idb_pb2 import (
     AccessibilityActionRequest,
     AccessibilityActionResponse,
+    AccessibilityQuiescenceRequest,
+    AccessibilityQuiescenceResponse,
     AddMediaRequest,
     ANY as AnySetting,
     ApproveRequest,
@@ -222,6 +230,42 @@ COMPRESSION_MAP: dict[Compression, "Payload.Compression"] = {
     Compression.GZIP: Payload.GZIP,
     Compression.ZSTD: Payload.ZSTD,
 }
+
+
+_QUIESCENCE_STATES: dict[int, QuiescenceState] = {
+    AccessibilityQuiescenceResponse.BUSY: QuiescenceState.BUSY,
+    AccessibilityQuiescenceResponse.SETTLING: QuiescenceState.SETTLING,
+    AccessibilityQuiescenceResponse.QUIET: QuiescenceState.QUIET,
+}
+
+_QUIESCENCE_SIGNALS: dict[int, str] = {
+    AccessibilityQuiescenceResponse.RUN_LOOP_IDLE: "run_loop_idle",
+    AccessibilityQuiescenceResponse.ANIMATIONS_INACTIVE: "animations_inactive",
+}
+
+
+def _quiescence_event_from_grpc(
+    response: AccessibilityQuiescenceResponse,
+) -> QuiescenceEvent:
+    pid = response.pid
+    event = response.WhichOneof("event")
+    if event == "touches_completed":
+        return QuiescenceTouchesCompleted(pid=pid)
+    if event == "target_changed":
+        return QuiescenceTargetChanged(pid=pid)
+    if event == "target_exited":
+        return QuiescenceTargetExited(pid=pid)
+    if event != "state" or response.state.state not in _QUIESCENCE_STATES:
+        raise IdbException(f"The companion sent an unknown quiescence event {event}")
+    return QuiescenceStateChanged(
+        pid=pid,
+        state=_QUIESCENCE_STATES[response.state.state],
+        # A signal newer than this client is still reported, by its number.
+        busy_signals=tuple(
+            _QUIESCENCE_SIGNALS.get(signal, str(signal))
+            for signal in response.state.busy_signals
+        ),
+    )
 
 
 def log_and_handle_exceptions(grpc_method_name: str):  # pyre-ignore
@@ -561,6 +605,25 @@ class Client(ClientBase):
             poll_interval=poll_interval,
             backend=backend,
         )
+
+    @log_and_handle_exceptions("accessibility_quiescence")
+    async def accessibility_quiescence(
+        self,
+        pid: int | None = None,
+        bundle_id: str | None = None,
+        busy_threshold_ms: int | None = None,
+        quiet_window_ms: int | None = None,
+    ) -> AsyncGenerator[QuiescenceEvent, None]:
+        request = AccessibilityQuiescenceRequest(
+            pid=pid,
+            bundle_id=bundle_id,
+            busy_threshold_ms=busy_threshold_ms,
+            quiet_window_ms=quiet_window_ms,
+        )
+        async with self.stub.accessibility_quiescence.open() as stream:
+            await stream.send_message(request, end=True)
+            async for response in stream:
+                yield _quiescence_event_from_grpc(response)
 
     async def _accessibility_wait_result(
         self,

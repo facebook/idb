@@ -5,10 +5,13 @@
 # LICENSE file in the root directory of this source tree.
 
 
+import asyncio
 import json
 import sys
 from argparse import ArgumentParser, Namespace
-from dataclasses import asdict
+from collections.abc import AsyncIterator, Callable
+from contextlib import aclosing
+from dataclasses import asdict, dataclass
 from typing import Any
 
 from idb.cli import ClientCommand
@@ -29,6 +32,12 @@ from idb.common.types import (
     AccessibilityTarget,
     Client,
     IdbException,
+    QuiescenceEvent,
+    QuiescenceState,
+    QuiescenceStateChanged,
+    QuiescenceTargetChanged,
+    QuiescenceTargetExited,
+    QuiescenceTouchesCompleted,
 )
 
 
@@ -484,6 +493,237 @@ class AccessibilityWaitCommand(ClientCommand):
                     or "  (none)"
                 )
         raise IdbException(message)
+
+
+def _quiescence_text(event: QuiescenceEvent) -> str:
+    match event:
+        case QuiescenceStateChanged(pid=pid, state=QuiescenceState.BUSY):
+            return f"busy ({', '.join(sorted(event.busy_signals))}) (pid {pid})"
+        case QuiescenceStateChanged(pid=pid, state=state):
+            return f"{state.value} (pid {pid})"
+        case QuiescenceTouchesCompleted(pid=pid):
+            return f"touches completed (pid {pid})"
+        case QuiescenceTargetChanged(pid=pid):
+            return f"now following pid {pid}"
+        case QuiescenceTargetExited(pid=pid):
+            return f"pid {pid} exited"
+
+
+# The JSON spelling mirrors the companion's event vocabulary.
+def _quiescence_json(event: QuiescenceEvent) -> dict[str, Any]:
+    match event:
+        case QuiescenceStateChanged(pid=pid, state=QuiescenceState.BUSY):
+            return {
+                "event": "state",
+                "state": "busy",
+                "signals": sorted(event.busy_signals),
+                "pid": pid,
+            }
+        case QuiescenceStateChanged(pid=pid, state=state):
+            return {"event": "state", "state": state.value, "pid": pid}
+        case QuiescenceTouchesCompleted(pid=pid):
+            return {"event": "touches_completed", "pid": pid}
+        case QuiescenceTargetChanged(pid=pid):
+            return {"event": "target_changed", "pid": pid}
+        case QuiescenceTargetExited(pid=pid):
+            return {"event": "target_exited", "pid": pid}
+
+
+async def _quiescence_answer(
+    events: AsyncIterator[QuiescenceEvent],
+    emit: Callable[[QuiescenceEvent], None],
+    answers: set[QuiescenceState],
+) -> QuiescenceState:
+    async for event in events:
+        emit(event)
+        if isinstance(event, QuiescenceTargetExited):
+            raise IdbException(
+                f"The application with pid {event.pid} exited before it went quiet"
+            )
+        if isinstance(event, QuiescenceStateChanged) and event.state in answers:
+            return event.state
+    raise IdbException("The quiescence stream ended without reporting a state")
+
+
+# Returns the last state reported once the duration elapses; a duration of None
+# watches until interrupted.
+async def _quiescence_watch(
+    events: AsyncIterator[QuiescenceEvent],
+    emit: Callable[[QuiescenceEvent], None],
+    duration: float | None,
+) -> QuiescenceState | None:
+    last: QuiescenceState | None = None
+
+    async def consume() -> None:
+        nonlocal last
+        async for event in events:
+            emit(event)
+            if isinstance(event, QuiescenceTargetExited):
+                raise IdbException(f"The application with pid {event.pid} exited")
+            if isinstance(event, QuiescenceStateChanged):
+                last = event.state
+            elif isinstance(event, QuiescenceTargetChanged):
+                last = None
+        raise IdbException("The quiescence stream ended")
+
+    try:
+        await asyncio.wait_for(consume(), duration)
+    except asyncio.TimeoutError:
+        pass
+    return last
+
+
+def _validate_quiet_arguments(args: Namespace) -> None:
+    timeout = args.timeout
+    if timeout is not None and not 0 <= timeout < float("inf"):
+        raise IdbException(
+            f"The timeout must be a finite value of 0 or greater (got {timeout})"
+        )
+    for flag, value in (
+        ("--busy-threshold-ms", args.busy_threshold_ms),
+        ("--quiet-window-ms", args.quiet_window_ms),
+    ):
+        if value is not None and value < 0:
+            raise IdbException(f"{flag} must be 0 or greater (got {value})")
+
+
+@dataclass(frozen=True)
+class _QuietNow:
+    pass
+
+
+# A timeout of None waits for as long as it takes.
+@dataclass(frozen=True)
+class _QuietWait:
+    timeout: float | None
+
+
+# A duration of None watches until interrupted.
+@dataclass(frozen=True)
+class _QuietWatch:
+    duration: float | None
+
+
+def _quiet_wait(
+    timeout: float | None, watch: bool
+) -> _QuietNow | _QuietWait | _QuietWatch:
+    # The command line spells "no limit" as 0; that spelling ends here.
+    if timeout is None:
+        if watch:
+            raise IdbException(
+                "--watch needs a timeout: seconds to watch for, or 0 to watch "
+                "until interrupted"
+            )
+        return _QuietNow()
+    if watch:
+        return _QuietWatch(duration=timeout or None)
+    return _QuietWait(timeout=timeout or None)
+
+
+class AccessibilityQuietCommand(ClientCommand):
+    @property
+    def description(self) -> str:
+        return (
+            "Report whether an application's UI is quiet: its run loop idle and no "
+            "animations running. Without a timeout, exits 0 if quiet now and 1 if "
+            "busy. With a timeout, exits 0 as soon as it is quiet and 1 if the "
+            "timeout elapses first. A timeout of 0 waits for as long as it takes. "
+            "With --watch, keeps reporting events once the application is quiet "
+            "until the timeout elapses (or, with 0, until interrupted), then exits "
+            "0 if the last state was quiet, 1 otherwise."
+        )
+
+    @property
+    def name(self) -> str:
+        return "quiet"
+
+    def add_parser_arguments(self, parser: ArgumentParser) -> None:
+        super().add_parser_arguments(parser)
+        parser.add_argument(
+            "timeout",
+            nargs="?",
+            type=float,
+            help="Seconds to wait for the application to go quiet, or 0 to wait for "
+            "as long as it takes. Omit to report the state now.",
+        )
+        parser.add_argument(
+            "--watch",
+            action="store_true",
+            help="Keep reporting events once the application is quiet, until the "
+            "timeout elapses (or, with 0, until interrupted). Requires a timeout.",
+        )
+        target = parser.add_mutually_exclusive_group()
+        target.add_argument(
+            "--pid",
+            type=int,
+            help="Measure an application by process id, instead of following the "
+            "frontmost app",
+        )
+        target.add_argument(
+            "--bundle-id",
+            help="Measure an application by bundle id, instead of following the "
+            "frontmost app",
+        )
+        parser.add_argument(
+            "--busy-threshold-ms",
+            type=int,
+            help="Milliseconds a signal may go unanswered before the application "
+            "counts as busy (default: the companion's)",
+        )
+        parser.add_argument(
+            "--quiet-window-ms",
+            type=int,
+            help="Milliseconds every signal must stay answered before the "
+            "application counts as quiet (default: the companion's, or 0 when "
+            "reporting the state now)",
+        )
+
+    async def run_with_client(self, args: Namespace, client: Client) -> None:
+        _validate_quiet_arguments(args)
+        timeout = args.timeout
+
+        def emit(line: str, output: dict[str, Any]) -> None:
+            print(json.dumps(output, sort_keys=True) if args.json else line, flush=True)
+
+        def emit_event(event: QuiescenceEvent) -> None:
+            emit(_quiescence_text(event), _quiescence_json(event))
+
+        wait = _quiet_wait(timeout, args.watch)
+        # Reporting now, "quiet now" means idle on the first probe, not idle for a
+        # window the caller did not ask to wait for.
+        quiet_window_ms = args.quiet_window_ms
+        if isinstance(wait, _QuietNow) and quiet_window_ms is None:
+            quiet_window_ms = 0
+        events = client.accessibility_quiescence(
+            pid=args.pid,
+            bundle_id=args.bundle_id,
+            busy_threshold_ms=args.busy_threshold_ms,
+            quiet_window_ms=quiet_window_ms,
+        )
+        async with aclosing(events):
+            if isinstance(wait, _QuietNow):
+                state = await _quiescence_answer(
+                    events, emit_event, {QuiescenceState.BUSY, QuiescenceState.QUIET}
+                )
+                if state == QuiescenceState.QUIET:
+                    return
+                raise SystemExit(1)
+            if isinstance(wait, _QuietWatch):
+                last = await _quiescence_watch(events, emit_event, wait.duration)
+                if last == QuiescenceState.QUIET:
+                    return
+                raise SystemExit(1)
+            try:
+                await asyncio.wait_for(
+                    _quiescence_answer(events, emit_event, {QuiescenceState.QUIET}),
+                    wait.timeout,
+                )
+            except asyncio.TimeoutError:
+                emit(
+                    f"not quiet within {timeout}s",
+                    {"event": "timed_out", "timeout": timeout},
+                )
+                raise SystemExit(1)
 
 
 class AccessibilityScrollCommand(ClientCommand):

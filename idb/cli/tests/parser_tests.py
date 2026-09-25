@@ -5,6 +5,7 @@
 # LICENSE file in the root directory of this source tree.
 
 
+import asyncio
 import json
 import logging
 import os
@@ -49,6 +50,12 @@ from idb.common.types import (
     InstrumentsTimings,
     LoggingMetadata,
     Permission,
+    QuiescenceEvent,
+    QuiescenceState,
+    QuiescenceStateChanged,
+    QuiescenceTargetChanged,
+    QuiescenceTargetExited,
+    QuiescenceTouchesCompleted,
     Screenshot,
     ScreenshotCrop,
     ScreenshotFormat,
@@ -1553,6 +1560,193 @@ class TestParser(TestCase):
             exit_code = await cli_main(cmd_input=["ui", "wait", "missing", "--json"])
         self.assertEqual(exit_code, 1)
         self.assertEqual(output.getvalue(), "")
+
+    def _stream_quiescence(
+        self, *events: QuiescenceEvent, then_block: bool = False
+    ) -> tuple[list[dict[str, Any]], list[bool]]:
+        calls: list[dict[str, Any]] = []
+        closed: list[bool] = []
+
+        async def stream(**kwargs: Any) -> AsyncIterator[QuiescenceEvent]:
+            calls.append(kwargs)
+            try:
+                for event in events:
+                    yield event
+                if then_block:
+                    await asyncio.Event().wait()
+            finally:
+                closed.append(True)
+
+        self.client_mock.accessibility_quiescence = stream
+        return calls, closed
+
+    async def test_quiet_now_answers_with_the_first_busy_or_quiet_state(
+        self,
+    ) -> None:
+        calls, closed = self._stream_quiescence(
+            QuiescenceStateChanged(pid=42, state=QuiescenceState.SETTLING),
+            QuiescenceStateChanged(pid=42, state=QuiescenceState.QUIET),
+            QuiescenceStateChanged(
+                pid=42, state=QuiescenceState.BUSY, busy_signals=("run_loop_idle",)
+            ),
+        )
+        with redirect_stdout(StringIO()) as output:
+            exit_code = await cli_main(cmd_input=["ui", "quiet"])
+        self.assertEqual(exit_code, 0)
+        self.assertEqual(output.getvalue(), "settling (pid 42)\nquiet (pid 42)\n")
+        # Reporting now, the quiet window defaults to zero.
+        self.assertEqual(
+            calls,
+            [
+                {
+                    "pid": None,
+                    "bundle_id": None,
+                    "busy_threshold_ms": None,
+                    "quiet_window_ms": 0,
+                }
+            ],
+        )
+        self.assertEqual(closed, [True])
+
+    async def test_quiet_now_exits_1_when_busy(self) -> None:
+        calls, _ = self._stream_quiescence(
+            QuiescenceStateChanged(
+                pid=42,
+                state=QuiescenceState.BUSY,
+                busy_signals=("run_loop_idle", "animations_inactive"),
+            ),
+        )
+        with redirect_stdout(StringIO()) as output:
+            exit_code = await cli_main(
+                cmd_input=["ui", "quiet", "--pid", "42", "--quiet-window-ms", "5"]
+            )
+        self.assertEqual(exit_code, 1)
+        self.assertEqual(
+            output.getvalue(), "busy (animations_inactive, run_loop_idle) (pid 42)\n"
+        )
+        self.assertEqual(calls[0]["pid"], 42)
+        self.assertEqual(calls[0]["quiet_window_ms"], 5)
+
+    async def test_quiet_with_a_timeout_waits_for_quiet(self) -> None:
+        # A timeout of 0 waits for as long as it takes. A watch that ends quiet
+        # reports every event and answers the same way.
+        for timeout in (["30"], ["0"], ["0.01", "--watch"]):
+            with self.subTest(timeout=timeout):
+                calls, closed = self._stream_quiescence(
+                    QuiescenceStateChanged(
+                        pid=42,
+                        state=QuiescenceState.BUSY,
+                        busy_signals=("run_loop_idle",),
+                    ),
+                    QuiescenceTouchesCompleted(pid=42),
+                    QuiescenceTargetChanged(pid=43),
+                    QuiescenceStateChanged(pid=43, state=QuiescenceState.QUIET),
+                    then_block=True,
+                )
+                with redirect_stdout(StringIO()) as output:
+                    exit_code = await cli_main(
+                        cmd_input=[
+                            "ui",
+                            "quiet",
+                            *timeout,
+                            "--bundle-id",
+                            "com.example.app",
+                            "--busy-threshold-ms",
+                            "100",
+                            "--json",
+                        ]
+                    )
+                self.assertEqual(exit_code, 0)
+                self.assertEqual(
+                    [json.loads(line) for line in output.getvalue().splitlines()],
+                    [
+                        {
+                            "event": "state",
+                            "state": "busy",
+                            "signals": ["run_loop_idle"],
+                            "pid": 42,
+                        },
+                        {"event": "touches_completed", "pid": 42},
+                        {"event": "target_changed", "pid": 43},
+                        {"event": "state", "state": "quiet", "pid": 43},
+                    ],
+                )
+                self.assertEqual(
+                    calls,
+                    [
+                        {
+                            "pid": None,
+                            "bundle_id": "com.example.app",
+                            "busy_threshold_ms": 100,
+                            "quiet_window_ms": None,
+                        }
+                    ],
+                )
+                self.assertEqual(closed, [True])
+
+    async def test_quiet_exits_1_when_the_timeout_elapses(self) -> None:
+        _, closed = self._stream_quiescence(
+            QuiescenceStateChanged(pid=42, state=QuiescenceState.SETTLING),
+            then_block=True,
+        )
+        with redirect_stdout(StringIO()) as output:
+            exit_code = await cli_main(cmd_input=["ui", "quiet", "0.01"])
+        self.assertEqual(exit_code, 1)
+        self.assertEqual(
+            output.getvalue(), "settling (pid 42)\nnot quiet within 0.01s\n"
+        )
+        self.assertEqual(closed, [True])
+
+        with self.subTest("a watch keeps reporting past quiet"):
+            _, closed = self._stream_quiescence(
+                QuiescenceStateChanged(pid=42, state=QuiescenceState.QUIET),
+                QuiescenceStateChanged(
+                    pid=42, state=QuiescenceState.BUSY, busy_signals=("run_loop_idle",)
+                ),
+                then_block=True,
+            )
+            with redirect_stdout(StringIO()) as output:
+                exit_code = await cli_main(cmd_input=["ui", "quiet", "0.01", "--watch"])
+            self.assertEqual(exit_code, 1)
+            self.assertEqual(
+                output.getvalue(), "quiet (pid 42)\nbusy (run_loop_idle) (pid 42)\n"
+            )
+            self.assertEqual(closed, [True])
+
+        with self.subTest("a watch that ends after the target changes is not quiet"):
+            self._stream_quiescence(
+                QuiescenceStateChanged(pid=42, state=QuiescenceState.QUIET),
+                QuiescenceTargetChanged(pid=43),
+                then_block=True,
+            )
+            with redirect_stdout(StringIO()) as output:
+                exit_code = await cli_main(cmd_input=["ui", "quiet", "0.01", "--watch"])
+            self.assertEqual(exit_code, 1)
+            self.assertEqual(
+                output.getvalue(), "quiet (pid 42)\nnow following pid 43\n"
+            )
+
+    async def test_quiet_target_exit_is_an_error(self) -> None:
+        for arguments in [["5"], ["5", "--watch"]]:
+            with self.subTest(arguments=arguments):
+                self._stream_quiescence(QuiescenceTargetExited(pid=42))
+                with (
+                    redirect_stdout(StringIO()) as output,
+                    redirect_stderr(StringIO()) as error,
+                ):
+                    exit_code = await cli_main(cmd_input=["ui", "quiet", *arguments])
+                self.assertEqual(exit_code, 1)
+                self.assertEqual(output.getvalue(), "pid 42 exited\n")
+                self.assertIn("The application with pid 42 exited", error.getvalue())
+
+    async def test_quiet_rejects_negative_values(self) -> None:
+        for arguments in [["-1"], ["--busy-threshold-ms", "-1"], ["--watch"]]:
+            with self.subTest(arguments=arguments):
+                calls, _ = self._stream_quiescence()
+                with redirect_stderr(StringIO()):
+                    exit_code = await cli_main(cmd_input=["ui", "quiet", *arguments])
+                self.assertEqual(exit_code, 1)
+                self.assertEqual(calls, [])
 
     async def test_scroll_frontmost(self) -> None:
         # No target is not a reason to fall back: the guest addresses the
