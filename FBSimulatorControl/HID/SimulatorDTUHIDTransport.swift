@@ -21,14 +21,8 @@ enum DTUHIDTiming {
   /// Time allowed for device-open and dispatch after the barrier reply signals peer activation.
   static let replyTail = Duration.milliseconds(200)
 
-  /// Deadline for a barrier reply before taking the fallback drain.
-  static let replyTimeout = DispatchTimeInterval.seconds(2)
-
-  /// Additional wait after the barrier deadline expires.
-  static let fallbackDrain = Duration.seconds(1)
-
-  /// Deadline for the connect-time liveness reply. Longer than `replyTimeout` because this is the
-  /// send that demand-launches `dtuhidd`, so it pays for the daemon's cold start.
+  /// Deadline for the connect-time liveness reply. Generous because this is the send that
+  /// demand-launches `dtuhidd`, so it pays for the daemon's cold start.
   static let livenessTimeout = DispatchTimeInterval.seconds(4)
 
   /// Wait between liveness attempts. `dtuhidd` declares a 10s `minimum runtime`, so launchd
@@ -45,7 +39,7 @@ enum DTUHIDTiming {
   static let livenessAttempts = 5
 }
 
-/// What came back from a barrier. The reply object itself is read on the XPC queue and not carried
+/// What came back from the liveness barrier. The reply object itself is read on the XPC queue and not carried
 /// out, so the answer crosses isolation as plain values.
 private struct XPCReply: Sendable {
   /// Set when XPC answered on the peer's behalf rather than the peer answering, which means no
@@ -90,7 +84,7 @@ private func awaitXPCReply(
     }
     DispatchQueue.global(qos: .userInitiated).asyncAfter(deadline: .now() + timeout) {
       if answer.claim() {
-        continuation.resume(throwing: DTUHIDDrainTimeout.expired)
+        continuation.resume(throwing: DTUHIDLivenessFailure.timedOut)
       }
     }
   }
@@ -99,44 +93,26 @@ private func awaitXPCReply(
 /// Injectable waits for the DTUHID transport.
 struct DTUHIDDrainClock: Sendable {
   let sleep: @Sendable (Duration) async throws -> Void
-  let awaitBarrierReply: @Sendable (xpc_connection_t, xpc_object_t) async throws -> Void
-  /// Like `awaitBarrierReply`, but an XPC error reply fails instead of resolving: this one is
-  /// asking whether there is a peer at all, so XPC's own answer is the negative result.
+  /// An XPC error reply fails rather than resolving: the probe asks whether there is a peer at all,
+  /// so XPC's own answer is the negative result.
   let awaitLivenessReply: @Sendable (xpc_connection_t, xpc_object_t) async throws -> Void
 
   init(
     sleep: @escaping @Sendable (Duration) async throws -> Void,
-    awaitBarrierReply: @escaping @Sendable (xpc_connection_t, xpc_object_t) async throws -> Void,
     awaitLivenessReply: @escaping @Sendable (xpc_connection_t, xpc_object_t) async throws -> Void = { _, _ in }
   ) {
     self.sleep = sleep
-    self.awaitBarrierReply = awaitBarrierReply
     self.awaitLivenessReply = awaitLivenessReply
   }
 
   static let live = DTUHIDDrainClock(
     sleep: { try await Task.sleep(for: $0) },
-    awaitBarrierReply: { connection, message in
-      // Any reply object ends the await, including an XPC error: a dead connection is past
-      // protecting, and the tail that follows is harmless.
-      _ = try await awaitXPCReply(connection, message, timeout: DTUHIDTiming.replyTimeout)
-    },
     awaitLivenessReply: { connection, message in
-      let reply: XPCReply
-      do {
-        reply = try await awaitXPCReply(connection, message, timeout: DTUHIDTiming.livenessTimeout)
-      } catch {
-        throw DTUHIDLivenessFailure.timedOut
-      }
+      let reply = try await awaitXPCReply(connection, message, timeout: DTUHIDTiming.livenessTimeout)
       if let errorDescription = reply.errorDescription {
         throw DTUHIDLivenessFailure.peerUnavailable(errorDescription)
       }
     })
-}
-
-/// A barrier deadline expired; `flush()` takes the fallback drain.
-enum DTUHIDDrainTimeout: Error {
-  case expired
 }
 
 /// Nothing live was found behind a DTUHID connection at connect time.
@@ -205,7 +181,6 @@ actor SimulatorDTUHIDTransport {
   private let clock: DTUHIDDrainClock
   private var contact = DigitizerContactTracker()
   private var twoFingerContact = DigitizerContactTracker()
-  private var coldDrainState = ColdDrainState.pending
   // A drain claims a snapshot of the send count; later sends remain outstanding.
   private var sendGeneration = 0
   private var drainedGeneration = 0
@@ -286,13 +261,11 @@ actor SimulatorDTUHIDTransport {
   /// daemon that cannot run, and a send to one reports no error, so an unanswered probe is what
   /// separates a working transport from a black hole.
   ///
-  /// A reply also means the peer activated, which is what `performColdDrain` otherwise waits for on
-  /// the first gesture. Paying its tail here settles the cold drain and keeps that latency out of
-  /// the user's first touch.
+  /// A reply also means the peer activated. Paying the device-open tail here, before the transport
+  /// is handed out, is what lets every later drain be the short warm one.
   func confirmLiveness() async throws {
     try await clock.awaitLivenessReply(connection, barrierMessage())
     try await clock.sleep(DTUHIDTiming.replyTail)
-    coldDrainState = .done
   }
 
   init(
@@ -404,59 +377,14 @@ actor SimulatorDTUHIDTransport {
   }
 
   /// Allows time for events sent before this call to reach the guest before disconnecting.
-  /// The first drain waits for a barrier reply plus `replyTail`; later drains wait `drain`.
   /// Returns immediately when no sends are outstanding.
   func flush() async throws {
     let generation = sendGeneration
     guard generation > drainedGeneration else {
       return
     }
-    if case .done = coldDrainState {
-      try await clock.sleep(DTUHIDTiming.drain)
-    } else {
-      let coldGeneration = try await coldDrain()
-      if generation > coldGeneration {
-        try await clock.sleep(DTUHIDTiming.drain)
-      }
-    }
+    try await clock.sleep(DTUHIDTiming.drain)
     drainedGeneration = max(drainedGeneration, generation)
-  }
-
-  private enum ColdDrainState {
-    case pending
-    case running(Task<Int, Error>)
-    case done
-  }
-
-  /// Returns the last send covered by the shared drain. Waiter cancellation leaves it running.
-  private func coldDrain() async throws -> Int {
-    if case let .running(task) = coldDrainState {
-      return try await task.value
-    }
-    let generation = sendGeneration
-    let task = Task<Int, Error> {
-      do {
-        try await self.performColdDrain()
-      } catch {
-        self.coldDrainState = .pending
-        throw error
-      }
-      // Settle state before any waiter can resume on the actor.
-      self.coldDrainState = .done
-      return generation
-    }
-    coldDrainState = .running(task)
-    return try await task.value
-  }
-
-  /// The daemon replies to a barrier without decoding its inert keyboard payload.
-  private func performColdDrain() async throws {
-    do {
-      try await clock.awaitBarrierReply(connection, barrierMessage())
-    } catch is DTUHIDDrainTimeout {
-      return try await clock.sleep(DTUHIDTiming.fallbackDrain)
-    }
-    try await clock.sleep(DTUHIDTiming.replyTail)
   }
 
   /// A barrier carrying usage `0` — "no event indicated" — so the daemon answers without the guest

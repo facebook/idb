@@ -36,7 +36,7 @@ final class SimulatorVendorHIDTransportTests: XCTestCase {
         mainScreenSize: CGSize(width: 100, height: 200),
         mainScreenScale: 2.0,
         productFamily: .iPhone,
-        clock: DTUHIDDrainClock(sleep: { _ in }, awaitBarrierReply: { _, _ in }))
+        clock: DTUHIDDrainClock(sleep: { _ in }))
     }
   }
 

@@ -246,9 +246,7 @@ final class SimulatorDTUHIDTransportTests: XCTestCase {
 
     try await hid.flush()
 
-    let replies = await recorder.replies
     let sleeps = await recorder.sleeps
-    XCTAssertEqual(replies, 0)
     XCTAssertEqual(sleeps, [])
   }
 
@@ -258,40 +256,29 @@ final class SimulatorDTUHIDTransportTests: XCTestCase {
 
     try await hid.send(event: .delay(0), logger: ControlCoreGlobalConfiguration.defaultLogger)
 
-    let replies = await recorder.replies
     let sleeps = await recorder.sleeps
-    XCTAssertEqual(replies, 0)
     XCTAssertEqual(sleeps, [])
   }
 
-  func testFirstGestureSendsBarrierAndTailsAfterReply() async throws {
+  func testAGestureDrainsOnce() async throws {
     let recorder = DrainRecorder()
     let hid = makeHID(recorder)
 
     try await sendGesture(on: hid)
 
-    let replies = await recorder.replies
-    let barriers = await recorder.barriers
     let sleeps = await recorder.sleeps
-    XCTAssertEqual(replies, 1)
-    let barrier = barriers.first!
-    XCTAssertEqual(xpc_get_type(xpc_dictionary_get_value(barrier, "isBarrier")!), XPC_TYPE_BOOL)
-    XCTAssertTrue(xpc_dictionary_get_bool(barrier, "isBarrier"))
-    XCTAssertEqual(messageString(barrier, "messageType"), "IndigoKeyboardButtonEvent")
-    XCTAssertEqual(sleeps, [DTUHIDTiming.replyTail])
+    XCTAssertEqual(sleeps, [DTUHIDTiming.drain])
   }
 
-  func testLaterGesturesDrainWarm() async throws {
+  func testEachGestureDrains() async throws {
     let recorder = DrainRecorder()
     let hid = makeHID(recorder)
 
     try await sendGesture(on: hid)
     try await sendGesture(on: hid)
 
-    let replies = await recorder.replies
     let sleeps = await recorder.sleeps
-    XCTAssertEqual(replies, 1)
-    XCTAssertEqual(sleeps, [DTUHIDTiming.replyTail, DTUHIDTiming.drain])
+    XCTAssertEqual(sleeps, [DTUHIDTiming.drain, DTUHIDTiming.drain])
   }
 
   func testRedundantFlushIsANoOp() async throws {
@@ -302,36 +289,10 @@ final class SimulatorDTUHIDTransportTests: XCTestCase {
     try await hid.flush()
 
     let sleeps = await recorder.sleeps
-    XCTAssertEqual(sleeps, [DTUHIDTiming.replyTail])
+    XCTAssertEqual(sleeps, [DTUHIDTiming.drain])
   }
 
-  func testConcurrentFirstGesturesShareOneReplyAwait() async throws {
-    let recorder = DrainRecorder()
-    let hid = makeHID(recorder)
-
-    try await withThrowingTaskGroup(of: Void.self) { group in
-      group.addTask { try await self.sendGesture(on: hid) }
-      group.addTask { try await self.sendGesture(on: hid) }
-      for try await _ in group {}
-    }
-
-    let replies = await recorder.replies
-    XCTAssertEqual(replies, 1)
-  }
-
-  func testReplyTimeoutFallsBackToLongDrain() async throws {
-    let recorder = DrainRecorder()
-    let hid = makeHID(recorder, reply: .timeout)
-
-    try await sendGesture(on: hid)
-
-    let replies = await recorder.replies
-    let sleeps = await recorder.sleeps
-    XCTAssertEqual(replies, 1)
-    XCTAssertEqual(sleeps, [DTUHIDTiming.fallbackDrain])
-  }
-
-  func testDrainFailurePropagatesAndRetriesCold() async throws {
+  func testDrainFailurePropagatesAndTheNextGestureDrains() async throws {
     let recorder = DrainRecorder()
     await recorder.setFailNextSleep()
     let hid = makeHID(recorder)
@@ -345,10 +306,8 @@ final class SimulatorDTUHIDTransportTests: XCTestCase {
     }
 
     try await sendGesture(on: hid)
-    let replies = await recorder.replies
     let sleeps = await recorder.sleeps
-    XCTAssertEqual(replies, 2)
-    XCTAssertEqual(sleeps, [DTUHIDTiming.replyTail])
+    XCTAssertEqual(sleeps, [DTUHIDTiming.drain])
   }
 
   func testStreamedGesturesDrainOnceOnTheExplicitFlush() async throws {
@@ -361,36 +320,7 @@ final class SimulatorDTUHIDTransportTests: XCTestCase {
     try await hid.flush()
 
     let sleeps = await recorder.sleeps
-    XCTAssertEqual(sleeps, [DTUHIDTiming.replyTail])
-  }
-
-  func testOverlappingFlushDrainsASendAfterTheColdBarrier() async throws {
-    let recorder = DrainRecorder()
-    let gate = SleepGate()
-    let transport = makeTransport(recorder, gate: gate)
-
-    try await transport.send(
-      messageType: "IndigoKeyboardButtonEvent", payload: IndigoKeyboardButtonEvent(usageCode: 0, state: .up))
-    let firstFlush = Task { try await transport.flush() }
-    await gate.awaitEntry()
-    try await transport.send(
-      messageType: "IndigoKeyboardButtonEvent", payload: IndigoKeyboardButtonEvent(usageCode: 0, state: .up))
-
-    func flushThenRelease(_ transport: isolated SimulatorDTUHIDTransport) async throws {
-      // The release can run on this actor only once flush has suspended on the cold drain.
-      let release = Task {
-        _ = transport
-        await gate.open()
-      }
-      try await transport.flush()
-      await release.value
-    }
-    try await flushThenRelease(transport)
-    try await firstFlush.value
-    try await transport.flush()
-
-    let sleeps = await recorder.sleeps
-    XCTAssertEqual(sleeps, [DTUHIDTiming.replyTail, DTUHIDTiming.drain])
+    XCTAssertEqual(sleeps, [DTUHIDTiming.drain])
   }
 
   func testSendDuringADrainIsDrainedByTheNextFlush() async throws {
@@ -409,12 +339,12 @@ final class SimulatorDTUHIDTransportTests: XCTestCase {
     try await hid.flush()
 
     let sleeps = await recorder.sleeps
-    XCTAssertEqual(sleeps, [DTUHIDTiming.replyTail, DTUHIDTiming.drain])
+    XCTAssertEqual(sleeps, [DTUHIDTiming.drain, DTUHIDTiming.drain])
   }
 
   // MARK: - Connect-time liveness
 
-  func testLivenessProbeSettlesTheColdDrain() async throws {
+  func testLivenessProbePaysTheTailBeforeTheFirstDrain() async throws {
     let recorder = DrainRecorder()
     let transport = makeTransport(recorder)
 
@@ -423,11 +353,7 @@ final class SimulatorDTUHIDTransportTests: XCTestCase {
       messageType: "IndigoKeyboardButtonEvent", payload: IndigoKeyboardButtonEvent(usageCode: 0, state: .up))
     try await transport.flush()
 
-    // The probe paid the tail, so the first gesture takes the warm drain rather than round-tripping
-    // a second barrier.
-    let replies = await recorder.replies
     let sleeps = await recorder.sleeps
-    XCTAssertEqual(replies, 0)
     XCTAssertEqual(sleeps, [DTUHIDTiming.replyTail, DTUHIDTiming.drain])
   }
 
@@ -447,7 +373,7 @@ final class SimulatorDTUHIDTransportTests: XCTestCase {
     XCTAssertEqual(xpc_dictionary_get_uint64(payload, "usageCode"), 0)
   }
 
-  func testLivenessProbeFailureLeavesTheColdDrainOutstanding() async throws {
+  func testLivenessProbeFailurePaysNoTail() async throws {
     let recorder = DrainRecorder()
     let transport = makeTransport(recorder, liveness: .unanswered)
 
@@ -459,14 +385,8 @@ final class SimulatorDTUHIDTransportTests: XCTestCase {
       XCTFail("unexpected error: \(error)")
     }
 
-    // A failed probe must not mark the daemon as activated: the caller either reconnects or falls
-    // back, and a transport that is used anyway still owes its cold drain.
-    try await transport.send(
-      messageType: "IndigoKeyboardButtonEvent", payload: IndigoKeyboardButtonEvent(usageCode: 0, state: .up))
-    try await transport.flush()
-
-    let replies = await recorder.replies
-    XCTAssertEqual(replies, 1)
+    let sleeps = await recorder.sleeps
+    XCTAssertEqual(sleeps, [])
   }
 
   func testAMidRespawnLookupFailureIsRetriedRatherThanTerminal() {
@@ -496,10 +416,8 @@ final class SimulatorDTUHIDTransportTests: XCTestCase {
     try await sendGesture(on: hid)
     await hid.close()
 
-    let replies = await recorder.replies
     let sleeps = await recorder.sleeps
-    XCTAssertEqual(replies, 1)
-    XCTAssertEqual(sleeps, [DTUHIDTiming.replyTail])
+    XCTAssertEqual(sleeps, [DTUHIDTiming.drain])
   }
 
   func testCloseAfterCancellation() async throws {
@@ -520,7 +438,7 @@ final class SimulatorDTUHIDTransportTests: XCTestCase {
     await closing.value
 
     let sleeps = await recorder.sleeps
-    XCTAssertEqual(sleeps, [DTUHIDTiming.replyTail, DTUHIDTiming.drain])
+    XCTAssertEqual(sleeps, [DTUHIDTiming.drain, DTUHIDTiming.drain])
   }
 
   func testCloseSkipsTheDrainWhenNothingWasSent() async throws {
@@ -529,9 +447,7 @@ final class SimulatorDTUHIDTransportTests: XCTestCase {
 
     await hid.close()
 
-    let replies = await recorder.replies
     let sleeps = await recorder.sleeps
-    XCTAssertEqual(replies, 0)
     XCTAssertEqual(sleeps, [])
   }
 
@@ -539,15 +455,12 @@ final class SimulatorDTUHIDTransportTests: XCTestCase {
 
   /// A HID over a DTUHID transport whose drain waits are recorded rather than taken. The connection
   /// names no real service, so writes resolve locally and never reach a daemon.
-  private func makeHID(
-    _ recorder: DrainRecorder, reply: DrainReply = .answer, gate: SleepGate? = nil
-  ) -> SimulatorHID {
-    SimulatorHID(transport: .dtuhid(makeTransport(recorder, reply: reply, gate: gate)))
+  private func makeHID(_ recorder: DrainRecorder, gate: SleepGate? = nil) -> SimulatorHID {
+    SimulatorHID(transport: .dtuhid(makeTransport(recorder, gate: gate)))
   }
 
   private func makeTransport(
-    _ recorder: DrainRecorder, reply: DrainReply = .answer, gate: SleepGate? = nil,
-    liveness: LivenessReply = .answer
+    _ recorder: DrainRecorder, gate: SleepGate? = nil, liveness: LivenessReply = .answer
   ) -> SimulatorDTUHIDTransport {
     let connection = xpc_connection_create("com.facebook.fbsimulatorcontrol.test.dtuhid", nil)
     xpc_connection_set_event_handler(connection) { _ in }
@@ -557,7 +470,7 @@ final class SimulatorDTUHIDTransportTests: XCTestCase {
       mainScreenSize: CGSize(width: 100, height: 200),
       mainScreenScale: 2.0,
       productFamily: .iPhone,
-      clock: recordingClock(recorder, reply: reply, gate: gate, liveness: liveness))
+      clock: recordingClock(recorder, gate: gate, liveness: liveness))
     addTeardownBlock { transport.disconnect() }
     return transport
   }
@@ -568,11 +481,6 @@ final class SimulatorDTUHIDTransportTests: XCTestCase {
     try await hid.send(
       event: .keyboard(direction: .up, keyCode: 0),
       logger: ControlCoreGlobalConfiguration.defaultLogger)
-  }
-
-  private enum DrainReply {
-    case answer
-    case timeout
   }
 
   private enum LivenessReply {
@@ -586,8 +494,6 @@ final class SimulatorDTUHIDTransportTests: XCTestCase {
 
   private actor DrainRecorder {
     var sleeps: [Duration] = []
-    var replies = 0
-    var barriers: [xpc_object_t] = []
     var livenessProbes: [xpc_object_t] = []
     var failsNextSleep = false
 
@@ -605,11 +511,6 @@ final class SimulatorDTUHIDTransportTests: XCTestCase {
         throw DrainFailure.injected
       }
       sleeps.append(duration)
-    }
-
-    func reply(_ message: xpc_object_t) {
-      replies += 1
-      barriers.append(message)
     }
   }
 
@@ -648,20 +549,13 @@ final class SimulatorDTUHIDTransportTests: XCTestCase {
   }
 
   private func recordingClock(
-    _ recorder: DrainRecorder, reply: DrainReply = .answer, gate: SleepGate? = nil,
-    liveness: LivenessReply = .answer
+    _ recorder: DrainRecorder, gate: SleepGate? = nil, liveness: LivenessReply = .answer
   ) -> DTUHIDDrainClock {
     DTUHIDDrainClock(
       sleep: { duration in
         try Task.checkCancellation()
         await gate?.enter()
         try await recorder.sleep(duration)
-      },
-      awaitBarrierReply: { _, message in
-        await recorder.reply(message)
-        if reply == .timeout {
-          throw DTUHIDDrainTimeout.expired
-        }
       },
       awaitLivenessReply: { _, message in
         await recorder.probe(message)
