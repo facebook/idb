@@ -36,6 +36,8 @@ enum SimulatorXPCError: Error, Equatable, CustomStringConvertible {
   case peerUnavailable(String)
   /// Nothing answered within the request's deadline.
   case timedOut
+  /// The connection is finished, so nothing sent on it can arrive.
+  case invalidated
 
   init(errorReply reply: xpc_object_t) {
     self = .peerUnavailable(
@@ -46,6 +48,7 @@ enum SimulatorXPCError: Error, Equatable, CustomStringConvertible {
     switch self {
     case let .peerUnavailable(detail): detail
     case .timedOut: "no reply before the deadline"
+    case .invalidated: "the connection has been invalidated"
     }
   }
 }
@@ -62,7 +65,13 @@ final class SimulatorXPCChannel: Sendable {
   // SAFETY: XPC connections support concurrent sending and cancellation.
   // patternlint-disable-next-line swift-nonisolated-unsafe
   nonisolated(unsafe) private let connection: xpc_connection_t
-  private let activated = OSAllocatedUnfairLock(initialState: false)
+  private let lifecycle = OSAllocatedUnfairLock(initialState: Lifecycle.suspended)
+
+  private enum Lifecycle {
+    case suspended
+    case active
+    case invalidated
+  }
 
   /// Takes an unresumed connection, as `SimulatorXPCConnector` returns it.
   init(connection: xpc_connection_t, queue: DispatchQueue) {
@@ -74,17 +83,33 @@ final class SimulatorXPCChannel: Sendable {
   /// Installs the event handler and resumes the connection. Only the first call takes effect.
   func activate(events: @escaping @Sendable (SimulatorXPCEvent) -> Void) {
     guard
-      activated.withLock({ activated in
-        defer { activated = true }
-        return !activated
+      lifecycle.withLock({ lifecycle in
+        guard case .suspended = lifecycle else { return false }
+        lifecycle = .active
+        return true
       })
     else { return }
-    xpc_connection_set_event_handler(connection) { object in events(SimulatorXPCEvent(object)) }
+    xpc_connection_set_event_handler(connection) { [weak self] object in
+      let event = SimulatorXPCEvent(object)
+      if case .invalidated = event { self?.invalidate() }
+      events(event)
+    }
     xpc_connection_resume(connection)
   }
 
-  func send(_ message: xpc_object_t) {
+  /// Sends a message that expects no reply. XPC accepts sends on a finished connection and drops
+  /// them, so this throws `SimulatorXPCError.invalidated` once the channel knows it is finished.
+  func send(_ message: xpc_object_t) throws {
+    guard !isInvalidated else { throw SimulatorXPCError.invalidated }
     xpc_connection_send_message(connection, message)
+  }
+
+  private var isInvalidated: Bool {
+    lifecycle.withLock { if case .invalidated = $0 { true } else { false } }
+  }
+
+  private func invalidate() {
+    lifecycle.withLock { $0 = .invalidated }
   }
 
   /// Resolves once XPC has sent everything sent before this call. Says nothing about the peer
@@ -107,9 +132,11 @@ final class SimulatorXPCChannel: Sendable {
     return try await withTaskCancellationHandler {
       try await withCheckedThrowingContinuation { continuation in
         guard answer.await(continuation) else { return }
-        request(message) { reply in
-          answer.resolve(
-            xpc_get_type(reply) == XPC_TYPE_ERROR ? .failure(SimulatorXPCError(errorReply: reply)) : .success(reply))
+        request(message) { [weak self] reply in
+          guard xpc_get_type(reply) == XPC_TYPE_ERROR else { return answer.resolve(.success(reply)) }
+          // The reply can arrive ahead of the invalidation event, and the caller may send next.
+          if reply === XPC_ERROR_CONNECTION_INVALID { self?.invalidate() }
+          answer.resolve(.failure(SimulatorXPCError(errorReply: reply)))
         }
         queue.asyncAfter(deadline: .now() + timeout) { answer.resolve(.failure(SimulatorXPCError.timedOut)) }
       }
@@ -130,6 +157,7 @@ final class SimulatorXPCChannel: Sendable {
   /// activated first.
   func cancel() {
     activate { _ in }
+    invalidate()
     xpc_connection_cancel(connection)
   }
 }

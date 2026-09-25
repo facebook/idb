@@ -133,7 +133,12 @@ final class SimulatorDTUHIDConnection: Sendable {
     self.channel = channel
     self.serviceName = serviceName
     self.clock = clock
-    channel.activate { _ in }
+    channel.activate { event in
+      // XPC reconnects on the next send, so an interruption is survivable; it is logged because
+      // anything the daemon held for this connection is gone.
+      guard case .interrupted = event else { return }
+      ControlCoreGlobalConfiguration.defaultLogger.log("dtuhidd connection (\(serviceName)) was interrupted")
+    }
   }
 
   /// Round-trips a barrier to establish that a `dtuhidd` is behind the connection and has activated.
@@ -169,10 +174,15 @@ final class SimulatorDTUHIDConnection: Sendable {
   }
 
   /// Encodes `payload` and hands it to XPC before returning, marking it outstanding for `flush()`.
+  /// Throws once the connection has been invalidated.
   func write(messageType: String, payload: some Encodable) throws {
     let object = try encode(messageType: messageType, payload: payload)
+    do {
+      try channel.send(object)
+    } catch SimulatorXPCError.invalidated {
+      throw SimulatorHIDError.dtuhidConnectionInvalidated(name: serviceName)
+    }
     generations.withLock { $0.sent += 1 }
-    channel.send(object)
   }
 
   /// Resolves once XPC has sent everything written before this call. Does not wait for the daemon to

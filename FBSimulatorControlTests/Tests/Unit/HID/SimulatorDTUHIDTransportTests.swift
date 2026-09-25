@@ -403,7 +403,7 @@ final class SimulatorDTUHIDTransportTests: XCTestCase {
 
   // MARK: - A connection that has gone away
 
-  func testASendAfterTheServiceIsInvalidatedIsDroppedSilently() async throws {
+  func testASendAfterTheServiceIsInvalidatedThrows() async throws {
     let peer = Self.dtuhidd(.answer)
     let connection = makeConnection(DrainRecorder(), dtuhidd: peer)
     try await connection.confirmLiveness()
@@ -418,9 +418,11 @@ final class SimulatorDTUHIDTransportTests: XCTestCase {
       } catch SimulatorXPCError.peerUnavailable {}
     }
 
-    // BUG: the send succeeds although nothing can receive it — flipped in the following commit.
-    try await connection.send(
-      messageType: "IndigoKeyboardButtonEvent", payload: IndigoKeyboardButtonEvent(usageCode: 4, state: .down))
+    do {
+      try await connection.send(
+        messageType: "IndigoKeyboardButtonEvent", payload: IndigoKeyboardButtonEvent(usageCode: 4, state: .down))
+      XCTFail("expected the send to fail once the service is gone")
+    } catch SimulatorHIDError.dtuhidConnectionInvalidated(name: SimulatorDTUHIDTransport.digitizerServiceName) {}
     XCTAssertEqual(peer.received.count, 1)
   }
 

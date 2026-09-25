@@ -38,6 +38,9 @@ public enum SimulatorHIDError: Error, LocalizedError {
   case dtuhidConnectionFailed
   /// The connection was built, but no live `dtuhidd` answered behind it.
   case dtuhidUnresponsive(attempts: Int, underlying: Error?)
+  /// An established connection to the named service has been invalidated, so nothing sent on it
+  /// can arrive.
+  case dtuhidConnectionInvalidated(name: String)
   /// A touchscreen touch was attempted on a tvOS target, which has no touchscreen.
   case touchUnsupportedOnAppleTV
 
@@ -78,6 +81,8 @@ public enum SimulatorHIDError: Error, LocalizedError {
       let detail = underlying.map { " (\($0))" } ?? ""
       return
         "dtuhidd did not answer a liveness probe in \(attempts) attempts\(detail) — the daemon is not running and launchd is not keeping it up, so every HID event sent to it would be discarded without error"
+    case let .dtuhidConnectionInvalidated(name):
+      return "The dtuhidd connection (\(name)) has been invalidated; events sent on it would be discarded"
     case .touchUnsupportedOnAppleTV:
       return "Touch input is not supported on tvOS targets (no touchscreen)"
     }

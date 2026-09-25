@@ -76,6 +76,7 @@ extension SimulatorCoreDeviceError {
     switch error {
     case let .peerUnavailable(detail): self = .unavailable(detail)
     case .timedOut: self = .timedOut
+    case .invalidated: self = .unavailable(error.description)
     }
   }
 
