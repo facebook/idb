@@ -15,8 +15,8 @@ final class HidRequestTranslationTests: XCTestCase {
   func testHingeAnglesSurviveTheWire() throws {
     for degrees in [0.0, 90.0, 135.5, 180.0] {
       let request = Idb_HIDEvent.with { $0.hinge.angle = degrees }
-      guard case let .hinge(angle) = try HidMethodHandler.fbSimulatorHIDEvent(from: request) else {
-        return XCTFail("Expected hinge input")
+      guard case let .hinge(angle) = try HidMethodHandler.request(from: request) else {
+        return XCTFail("Expected a hinge request")
       }
       XCTAssertEqual(angle.degrees, degrees)
     }
@@ -25,7 +25,7 @@ final class HidRequestTranslationTests: XCTestCase {
   func testInvalidAnglesAreInvalidArguments() {
     for degrees in [-1, 180.001, Double.nan, .infinity, -.infinity] {
       let request = Idb_HIDEvent.with { $0.hinge.angle = degrees }
-      XCTAssertThrowsError(try HidMethodHandler.fbSimulatorHIDEvent(from: request)) { error in
+      XCTAssertThrowsError(try HidMethodHandler.request(from: request)) { error in
         XCTAssertEqual((error as? RPCError)?.code, .invalidArgument)
       }
     }
@@ -40,19 +40,19 @@ final class HidRequestTranslationTests: XCTestCase {
     ]
     for (wire, orientation) in expected {
       let request = Idb_HIDEvent.with { $0.orientation.orientation = wire }
-      XCTAssertEqual(try HidMethodHandler.fbSimulatorHIDEvent(from: request), .deviceOrientation(orientation))
+      XCTAssertEqual(try HidMethodHandler.request(from: request), .orientation(orientation))
     }
   }
 
   func testAnUnrecognizedOrientationIsAnInvalidArgument() {
     let request = Idb_HIDEvent.with { $0.orientation.orientation = .UNRECOGNIZED(99) }
-    XCTAssertThrowsError(try HidMethodHandler.fbSimulatorHIDEvent(from: request)) { error in
+    XCTAssertThrowsError(try HidMethodHandler.request(from: request)) { error in
       XCTAssertEqual((error as? RPCError)?.code, .invalidArgument)
     }
   }
 
   func testShakeTranslatesToShake() throws {
     let request = Idb_HIDEvent.with { $0.shake = Idb_HIDEvent.HIDShake() }
-    XCTAssertEqual(try HidMethodHandler.fbSimulatorHIDEvent(from: request), .shake)
+    XCTAssertEqual(try HidMethodHandler.request(from: request), .shake)
   }
 }

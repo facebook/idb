@@ -572,8 +572,21 @@ public final class IDBCommandExecutor {
     try await simulatorTarget().orientation.set(orientation)
   }
 
+  /// `orientation` is in interface numbering, which is what `idb`'s HID stream has always carried.
+  public func set_interface_orientation(_ orientation: SimulatorHIDDeviceOrientation) async throws {
+    try await simulatorTarget().orientation.set(orientation, convention: .interface)
+  }
+
+  public func shake() async throws {
+    try await simulatorTarget().hardware.shake()
+  }
+
   public func hinge_angle() async throws -> Double {
     try await simulatorTarget().hinge.angle().degrees
+  }
+
+  public func set_hinge_angle(_ angle: SimulatorHingeAngle) async throws {
+    try await simulatorTarget().hinge.setAngle(angle)
   }
 
   public func get_current_locale_identifier() async throws -> String {
