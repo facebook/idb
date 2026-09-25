@@ -39,7 +39,7 @@ final class SimulatorVendorHIDTransportTests: XCTestCase {
       return try await SimulatorDTUHIDConnection.connect(
         using: services.connector,
         serviceName: SimulatorVendorHIDTransport.serviceName,
-        clock: DTUHIDDrainClock(sleep: { _ in }))
+        clock: DTUHIDClock(sleep: { _ in }))
     }
   }
 

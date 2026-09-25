@@ -38,10 +38,10 @@ enum DTUHIDTiming {
 }
 
 /// Injectable waits for the DTUHID transport.
-struct DTUHIDDrainClock: Sendable {
+struct DTUHIDClock: Sendable {
   let sleep: @Sendable (Duration) async throws -> Void
 
-  static let live = DTUHIDDrainClock(sleep: { try await Task.sleep(for: $0) })
+  static let live = DTUHIDClock(sleep: { try await Task.sleep(for: $0) })
 }
 
 /**
@@ -57,7 +57,7 @@ final class SimulatorDTUHIDConnection: Sendable {
 
   private let channel: SimulatorXPCChannel
   let serviceName: String
-  private let clock: DTUHIDDrainClock
+  private let clock: DTUHIDClock
   // A drain claims a snapshot of the send count; later sends remain outstanding.
   private let generations = OSAllocatedUnfairLock(initialState: (sent: 0, drained: 0))
 
@@ -72,7 +72,7 @@ final class SimulatorDTUHIDConnection: Sendable {
   /// closes once the boot settles, so a backed-off retry recovers the full transport, keyboard
   /// included, where giving up would cost the keyboard for the lifetime of the boot.
   static func connect(
-    using connector: SimulatorXPCConnector, serviceName: String, clock: DTUHIDDrainClock = .live
+    using connector: SimulatorXPCConnector, serviceName: String, clock: DTUHIDClock = .live
   ) async throws -> SimulatorDTUHIDConnection {
     let logger = ControlCoreGlobalConfiguration.defaultLogger
     var lastFailure: Error?
@@ -100,7 +100,7 @@ final class SimulatorDTUHIDConnection: Sendable {
   /// The lookup belongs to the attempt rather than preceding the loop: a failed attempt cancels its
   /// connection, and a cancelled XPC connection cannot be resumed.
   private static func connected(
-    using connector: SimulatorXPCConnector, serviceName: String, clock: DTUHIDDrainClock
+    using connector: SimulatorXPCConnector, serviceName: String, clock: DTUHIDClock
   ) async throws -> SimulatorDTUHIDConnection {
     let connection = SimulatorDTUHIDConnection(
       channel: try await channel(using: connector, serviceName: serviceName),
@@ -139,7 +139,7 @@ final class SimulatorDTUHIDConnection: Sendable {
     }
   }
 
-  init(channel: SimulatorXPCChannel, serviceName: String, clock: DTUHIDDrainClock = .live) {
+  init(channel: SimulatorXPCChannel, serviceName: String, clock: DTUHIDClock = .live) {
     self.channel = channel
     self.serviceName = serviceName
     self.clock = clock

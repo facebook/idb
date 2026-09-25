@@ -36,9 +36,9 @@ enum SimulatorHIDTransport: Sendable {
   /// Indigo alone, carrying the primitives and the trackpad.
   case indigo(SimulatorIndigoHIDTransport)
   /// DTUHID alone, carrying the primitives. No trackpad is reachable.
-  case dtuhid(SimulatorDTUHIDTransport)
+  case dtuhid(SimulatorDigitizerHIDTransport)
   /// Both, mixed on one target: DTUHID carrying the primitives, Indigo carrying only the trackpad.
-  case mixed(dtuhid: SimulatorDTUHIDTransport, indigo: SimulatorIndigoHIDTransport)
+  case mixed(dtuhid: SimulatorDigitizerHIDTransport, indigo: SimulatorIndigoHIDTransport)
 
   // MARK: - Negotiation
 
@@ -75,7 +75,7 @@ enum SimulatorHIDTransport: Sendable {
     case .indigo:
       return .indigo(try SimulatorIndigoHIDTransport.indigo(for: simulator))
     case .dtuhid:
-      let dtuhid = try await SimulatorDTUHIDTransport.dtuhid(for: simulator)
+      let dtuhid = try await SimulatorDigitizerHIDTransport.connect(to: simulator)
       guard let indigo = indigoAlongsideDTUHID(for: simulator) else {
         return .dtuhid(dtuhid)
       }
@@ -110,7 +110,7 @@ enum SimulatorHIDTransport: Sendable {
   }
 
   /// The DTUHID transport in play, if any.
-  var dtuhid: SimulatorDTUHIDTransport? {
+  var dtuhid: SimulatorDigitizerHIDTransport? {
     switch self {
     case .indigo: return nil
     case let .dtuhid(dtuhid): return dtuhid
@@ -169,4 +169,4 @@ protocol SimulatorHIDPrimitives: Actor {
 }
 
 extension SimulatorIndigoHIDTransport: SimulatorHIDPrimitives {}
-extension SimulatorDTUHIDTransport: SimulatorHIDPrimitives {}
+extension SimulatorDigitizerHIDTransport: SimulatorHIDPrimitives {}

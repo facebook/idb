@@ -21,7 +21,7 @@ final class SimulatorDTUHIDTransportTests: XCTestCase {
 
     XCTAssertEqual(xpc_get_type(event), XPC_TYPE_DICTIONARY)
     XCTAssertEqual(messageString(event, "messageType"), "IndigoDigitizerEvent")
-    XCTAssertEqual(messageString(event, "featureIdentifier"), SimulatorDTUHIDTransport.digitizerServiceName)
+    XCTAssertEqual(messageString(event, "featureIdentifier"), SimulatorDigitizerHIDTransport.serviceName)
 
     // isBarrier must be an XPC bool, false.
     XCTAssertEqual(xpc_get_type(xpc_dictionary_get_value(event, "isBarrier")!), XPC_TYPE_BOOL)
@@ -156,7 +156,7 @@ final class SimulatorDTUHIDTransportTests: XCTestCase {
     let down = try encodeButton(IndigoButtonEvent(usagePage: 0x0C, usageCode: 0x40, state: .down))
     XCTAssertEqual(xpc_get_type(down), XPC_TYPE_DICTIONARY)
     XCTAssertEqual(messageString(down, "messageType"), "IndigoButtonEvent")
-    XCTAssertEqual(messageString(down, "featureIdentifier"), SimulatorDTUHIDTransport.digitizerServiceName)
+    XCTAssertEqual(messageString(down, "featureIdentifier"), SimulatorDigitizerHIDTransport.serviceName)
 
     let payload = xpc_dictionary_get_dictionary(down, "payload")!
     for key in ["usagePage", "usageCode", "state"] {
@@ -182,7 +182,7 @@ final class SimulatorDTUHIDTransportTests: XCTestCase {
 
     XCTAssertEqual(xpc_get_type(message), XPC_TYPE_DICTIONARY)
     XCTAssertEqual(messageString(message, "messageType"), "Probe")
-    XCTAssertEqual(messageString(message, "featureIdentifier"), SimulatorDTUHIDTransport.digitizerServiceName)
+    XCTAssertEqual(messageString(message, "featureIdentifier"), SimulatorDigitizerHIDTransport.serviceName)
     XCTAssertEqual(xpc_get_type(xpc_dictionary_get_value(message, "isBarrier")!), XPC_TYPE_BOOL)
     XCTAssertFalse(xpc_dictionary_get_bool(message, "isBarrier"))
     let payload = xpc_dictionary_get_dictionary(message, "payload")
@@ -196,7 +196,7 @@ final class SimulatorDTUHIDTransportTests: XCTestCase {
     let down = try encodeKeyboard(IndigoKeyboardButtonEvent(usageCode: 4, state: .down)) // 'a'
     XCTAssertEqual(xpc_get_type(down), XPC_TYPE_DICTIONARY)
     XCTAssertEqual(messageString(down, "messageType"), "IndigoKeyboardButtonEvent")
-    XCTAssertEqual(messageString(down, "featureIdentifier"), SimulatorDTUHIDTransport.digitizerServiceName)
+    XCTAssertEqual(messageString(down, "featureIdentifier"), SimulatorDigitizerHIDTransport.serviceName)
 
     let payload = xpc_dictionary_get_dictionary(down, "payload")!
     XCTAssertEqual(xpc_get_type(xpc_dictionary_get_value(payload, "usageCode")!), XPC_TYPE_UINT64)
@@ -368,13 +368,13 @@ final class SimulatorDTUHIDTransportTests: XCTestCase {
   func testConnectProbesBeforeHandingOutTheConnection() async throws {
     let recorder = DrainRecorder()
     let services = SyntheticXPCServices()
-    let peer = services.register(SimulatorDTUHIDTransport.digitizerServiceName, respond: Self.dtuhiddResponder(.answer))
+    let peer = services.register(SimulatorDigitizerHIDTransport.serviceName, respond: Self.dtuhiddResponder(.answer))
 
     let connection = try await SimulatorDTUHIDConnection.connect(
-      using: services.connector, serviceName: SimulatorDTUHIDTransport.digitizerServiceName, clock: recordingClock(recorder))
+      using: services.connector, serviceName: SimulatorDigitizerHIDTransport.serviceName, clock: recordingClock(recorder))
     defer { connection.disconnect() }
 
-    XCTAssertEqual(services.lookups, [SimulatorDTUHIDTransport.digitizerServiceName])
+    XCTAssertEqual(services.lookups, [SimulatorDigitizerHIDTransport.serviceName])
     XCTAssertEqual(peer.received.map { xpc_dictionary_get_bool($0, "isBarrier") }, [true])
     let sleeps = await recorder.sleeps
     XCTAssertEqual(sleeps, [DTUHIDTiming.replyTail])
@@ -383,11 +383,11 @@ final class SimulatorDTUHIDTransportTests: XCTestCase {
   func testConnectRetriesAnUnansweredProbeAndThenGivesUp() async throws {
     let recorder = DrainRecorder()
     let services = SyntheticXPCServices()
-    let peer = services.register(SimulatorDTUHIDTransport.digitizerServiceName, respond: Self.dtuhiddResponder(.drop))
+    let peer = services.register(SimulatorDigitizerHIDTransport.serviceName, respond: Self.dtuhiddResponder(.drop))
 
     do {
       _ = try await SimulatorDTUHIDConnection.connect(
-        using: services.connector, serviceName: SimulatorDTUHIDTransport.digitizerServiceName, clock: recordingClock(recorder))
+        using: services.connector, serviceName: SimulatorDigitizerHIDTransport.serviceName, clock: recordingClock(recorder))
       XCTFail("expected the connect to give up")
     } catch let error as SimulatorHIDError {
       guard case .dtuhidUnresponsive(attempts: DTUHIDTiming.livenessAttempts, _) = error else {
@@ -423,7 +423,7 @@ final class SimulatorDTUHIDTransportTests: XCTestCase {
       try await connection.send(
         messageType: "IndigoKeyboardButtonEvent", payload: IndigoKeyboardButtonEvent(usageCode: 4, state: .down))
       XCTFail("expected the send to fail once the service is gone")
-    } catch SimulatorHIDError.dtuhidConnectionInvalidated(name: SimulatorDTUHIDTransport.digitizerServiceName) {}
+    } catch SimulatorHIDError.dtuhidConnectionInvalidated(name: SimulatorDigitizerHIDTransport.serviceName) {}
     XCTAssertEqual(peer.received.count, 1)
   }
 
@@ -433,11 +433,11 @@ final class SimulatorDTUHIDTransportTests: XCTestCase {
 
     do {
       _ = try await SimulatorDTUHIDConnection.connect(
-        using: services.connector, serviceName: SimulatorDTUHIDTransport.digitizerServiceName, clock: recordingClock(recorder))
+        using: services.connector, serviceName: SimulatorDigitizerHIDTransport.serviceName, clock: recordingClock(recorder))
       XCTFail("expected the connect to fail")
     } catch let error as SimulatorHIDError {
       XCTAssertTrue(error.isDTUHIDUnreachable)
-      guard case .dtuhidServiceNotVended(name: SimulatorDTUHIDTransport.digitizerServiceName) = error else {
+      guard case .dtuhidServiceNotVended(name: SimulatorDigitizerHIDTransport.serviceName) = error else {
         return XCTFail("unexpected error: \(error)")
       }
     }
@@ -450,11 +450,11 @@ final class SimulatorDTUHIDTransportTests: XCTestCase {
   func testConnectWhileTheSimulatorIsBooting() async throws {
     let recorder = DrainRecorder()
     let services = SyntheticXPCServices()
-    services.register(SimulatorDTUHIDTransport.digitizerServiceName, respond: Self.dtuhiddResponder(.answer))
+    services.register(SimulatorDigitizerHIDTransport.serviceName, respond: Self.dtuhiddResponder(.answer))
     services.simulatorState = .booting
 
     let connection = try await SimulatorDTUHIDConnection.connect(
-      using: services.connector, serviceName: SimulatorDTUHIDTransport.digitizerServiceName, clock: recordingClock(recorder))
+      using: services.connector, serviceName: SimulatorDigitizerHIDTransport.serviceName, clock: recordingClock(recorder))
     connection.disconnect()
 
     XCTAssertEqual(services.simulatorState, .booted)
@@ -466,16 +466,16 @@ final class SimulatorDTUHIDTransportTests: XCTestCase {
   func testConnectToAShutDownSimulator() async throws {
     let recorder = DrainRecorder()
     let services = SyntheticXPCServices()
-    services.register(SimulatorDTUHIDTransport.digitizerServiceName, respond: Self.dtuhiddResponder(.answer))
+    services.register(SimulatorDigitizerHIDTransport.serviceName, respond: Self.dtuhiddResponder(.answer))
     services.simulatorState = .shutdown
 
     do {
       _ = try await SimulatorDTUHIDConnection.connect(
-        using: services.connector, serviceName: SimulatorDTUHIDTransport.digitizerServiceName, clock: recordingClock(recorder))
+        using: services.connector, serviceName: SimulatorDigitizerHIDTransport.serviceName, clock: recordingClock(recorder))
       XCTFail("expected the connect to fail")
     } catch let error as SimulatorHIDError {
       XCTAssertFalse(error.isDTUHIDUnreachable)
-      guard case .dtuhidSimulatorNotBooted(name: SimulatorDTUHIDTransport.digitizerServiceName, state: .shutdown) = error else {
+      guard case .dtuhidSimulatorNotBooted(name: SimulatorDigitizerHIDTransport.serviceName, state: .shutdown) = error else {
         return XCTFail("unexpected error: \(error)")
       }
     }
@@ -583,8 +583,8 @@ final class SimulatorDTUHIDTransportTests: XCTestCase {
 
   private func makeTransport(
     _ recorder: DrainRecorder, gate: SleepGate? = nil, dtuhidd: SyntheticXPCPeer? = nil, productFamily: ProductFamily = .iPhone
-  ) -> SimulatorDTUHIDTransport {
-    SimulatorDTUHIDTransport(
+  ) -> SimulatorDigitizerHIDTransport {
+    SimulatorDigitizerHIDTransport(
       connection: makeConnection(recorder, gate: gate, dtuhidd: dtuhidd),
       mainScreenSize: CGSize(width: 100, height: 200),
       mainScreenScale: 2.0,
@@ -597,7 +597,7 @@ final class SimulatorDTUHIDTransportTests: XCTestCase {
   ) -> SimulatorDTUHIDConnection {
     let peer = dtuhidd ?? Self.dtuhidd(.answer)
     let connection = SimulatorDTUHIDConnection(
-      channel: peer.channel(), serviceName: SimulatorDTUHIDTransport.digitizerServiceName, clock: recordingClock(recorder, gate: gate))
+      channel: peer.channel(), serviceName: SimulatorDigitizerHIDTransport.serviceName, clock: recordingClock(recorder, gate: gate))
     addTeardownBlock {
       connection.disconnect()
       withExtendedLifetime(peer) {}
@@ -606,7 +606,7 @@ final class SimulatorDTUHIDTransportTests: XCTestCase {
   }
 
   private static func dtuhidd(_ barrier: Barrier) -> SyntheticXPCPeer {
-    SyntheticXPCServices().register(SimulatorDTUHIDTransport.digitizerServiceName, respond: dtuhiddResponder(barrier))
+    SyntheticXPCServices().register(SimulatorDigitizerHIDTransport.serviceName, respond: dtuhiddResponder(barrier))
   }
 
   private enum Barrier {
@@ -691,8 +691,8 @@ final class SimulatorDTUHIDTransportTests: XCTestCase {
     }
   }
 
-  private func recordingClock(_ recorder: DrainRecorder, gate: SleepGate? = nil) -> DTUHIDDrainClock {
-    DTUHIDDrainClock(sleep: { duration in
+  private func recordingClock(_ recorder: DrainRecorder, gate: SleepGate? = nil) -> DTUHIDClock {
+    DTUHIDClock(sleep: { duration in
       try Task.checkCancellation()
       await gate?.enter()
       try await recorder.sleep(duration)
@@ -703,7 +703,7 @@ final class SimulatorDTUHIDTransportTests: XCTestCase {
     try XPCEncoder().encode(
       DTUHIDMessage(
         messageType: "IndigoDigitizerEvent",
-        featureIdentifier: SimulatorDTUHIDTransport.digitizerServiceName,
+        featureIdentifier: SimulatorDigitizerHIDTransport.serviceName,
         payload: event))
   }
 
@@ -711,7 +711,7 @@ final class SimulatorDTUHIDTransportTests: XCTestCase {
     try XPCEncoder().encode(
       DTUHIDMessage(
         messageType: "IndigoKeyboardButtonEvent",
-        featureIdentifier: SimulatorDTUHIDTransport.digitizerServiceName,
+        featureIdentifier: SimulatorDigitizerHIDTransport.serviceName,
         payload: event))
   }
 
@@ -719,7 +719,7 @@ final class SimulatorDTUHIDTransportTests: XCTestCase {
     try XPCEncoder().encode(
       DTUHIDMessage(
         messageType: "IndigoButtonEvent",
-        featureIdentifier: SimulatorDTUHIDTransport.digitizerServiceName,
+        featureIdentifier: SimulatorDigitizerHIDTransport.serviceName,
         payload: event))
   }
 

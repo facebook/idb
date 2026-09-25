@@ -32,7 +32,7 @@ struct DigitizerContactTracker {
 }
 
 /**
- The DTUHID transport (Xcode 27 / macOS 26 / iOS 26+).
+ The DTUHID digitizer transport (Xcode 27 / macOS 26 / iOS 26+).
 
  Drives the modern `dtuhidd` daemon's digitizer service: touches, buttons and keys cross the
  host→guest boundary as plain-XPC dictionaries, each built as an `Encodable` model (e.g.
@@ -41,9 +41,9 @@ struct DigitizerContactTracker {
  The connection, its liveness probe and its drain are `SimulatorDTUHIDConnection`'s; this type is the
  digitizer encoding over it, and an actor so the contact state it tracks is isolated.
  */
-actor SimulatorDTUHIDTransport {
+actor SimulatorDigitizerHIDTransport {
 
-  static let digitizerServiceName = "com.apple.coredevice.feature.remote.hid.digitizer"
+  static let serviceName = "com.apple.coredevice.feature.remote.hid.digitizer"
 
   private let connection: SimulatorDTUHIDConnection
   private let mainScreenSize: CGSize
@@ -55,9 +55,9 @@ actor SimulatorDTUHIDTransport {
   // MARK: - Initializers
 
   /// Connects to the simulator's DTUHID digitizer service. See `SimulatorDTUHIDConnection.connect`.
-  static func dtuhid(for simulator: Simulator) async throws -> SimulatorDTUHIDTransport {
-    SimulatorDTUHIDTransport(
-      connection: try await SimulatorDTUHIDConnection.connect(using: simulator.xpc, serviceName: digitizerServiceName),
+  static func connect(to simulator: Simulator) async throws -> SimulatorDigitizerHIDTransport {
+    SimulatorDigitizerHIDTransport(
+      connection: try await SimulatorDTUHIDConnection.connect(using: simulator.xpc, serviceName: serviceName),
       mainScreenSize: simulator.device.deviceType.mainScreenSize,
       mainScreenScale: simulator.device.deviceType.mainScreenScale,
       productFamily: simulator.productFamily)
