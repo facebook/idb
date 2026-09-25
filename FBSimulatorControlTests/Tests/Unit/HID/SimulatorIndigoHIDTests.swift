@@ -322,6 +322,17 @@ final class SimulatorIndigoHIDTests: XCTestCase {
     }
   }
 
+  // Eject rides the same arbitrary-HID path as volume. On a focused text field it toggles the software
+  // keyboard without ending editing.
+  func testEjectButtonUsage() throws {
+    let indigo = try makeIndigo()
+    let data = indigo.button(with: .down, button: .eject)
+    XCTAssertEqual(uint32(at: 0x30, in: data), 0x2711, "eventSource")
+    XCTAssertEqual(uint32(at: 0x38, in: data), 0x32, "eventTarget (digitizer)")
+    XCTAssertEqual(uint32(at: 0x3c, in: data), 0xB8, "Consumer Eject usage")
+    XCTAssertEqual(uint32(at: 0x44, in: data), 0x0C, "Consumer usage page")
+  }
+
   // The page and usage are carried independently, so the builder is not hard-wired to one page.
   func testArbitraryHIDUsageCarriesAnyPageAndUsage() throws {
     let indigo = try makeIndigo()

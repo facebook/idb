@@ -148,6 +148,7 @@ final class SimulatorDTUHIDTransportTests: XCTestCase {
     XCTAssertEqual(SimulatorHIDButton.playPause.identity.consumerUsage?.code, 0xCD)
     XCTAssertEqual(SimulatorHIDButton.volumeUp.identity.consumerUsage?.code, 0xE9)
     XCTAssertEqual(SimulatorHIDButton.volumeDown.identity.consumerUsage?.code, 0xEA)
+    XCTAssertEqual(SimulatorHIDButton.eject.identity.consumerUsage?.code, 0xB8)
     XCTAssertNil(SimulatorHIDButton.applePay.identity.consumerUsage)
   }
 

@@ -70,6 +70,8 @@ extension SimulatorHIDButton {
       return .consumerUsage(page: 0x0C, code: 0xE9) // Volume Increment
     case .volumeDown:
       return .consumerUsage(page: 0x0C, code: 0xEA) // Volume Decrement
+    case .eject:
+      return .consumerUsage(page: 0x0C, code: 0xB8) // Eject
     }
   }
 }

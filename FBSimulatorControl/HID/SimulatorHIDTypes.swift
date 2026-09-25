@@ -43,6 +43,7 @@ public enum SimulatorHIDButton: Int32, Sendable, CaseIterable {
   case playPause = 6
   case volumeUp = 7
   case volumeDown = 8
+  case eject = 9
 
   /// The canonical lower-snake-case name for this button.
   public var name: String {
@@ -55,6 +56,7 @@ public enum SimulatorHIDButton: Int32, Sendable, CaseIterable {
     case .playPause: return "play_pause"
     case .volumeUp: return "volume_up"
     case .volumeDown: return "volume_down"
+    case .eject: return "eject"
     }
   }
 }
