@@ -30,26 +30,6 @@ private func displayReply(_ values: [xpc_object_t], current: Bool = true) -> xpc
   ])
 }
 
-// SAFETY: The request session invokes every transport method and test script on its serial queue.
-// patternlint-disable-next-line unchecked-sendable
-private final class DisplayTransportStub: SimulatorCoreDeviceTransport, @unchecked Sendable {
-  let script: @Sendable (DisplayTransportStub) -> Void
-  var reply: (@Sendable (xpc_object_t) -> Void)?
-  var event: (@Sendable (xpc_object_t) -> Void)?
-  var cancellations = 0
-
-  init(script: @escaping @Sendable (DisplayTransportStub) -> Void) { self.script = script }
-
-  func start(request: xpc_object_t, event: @escaping @Sendable (xpc_object_t) -> Void, reply: @escaping @Sendable (xpc_object_t) -> Void) {
-    self.reply = reply
-    self.event = event
-    script(self)
-  }
-
-  func acknowledge(_ event: xpc_object_t, cancelling: Bool) { XCTFail("Snapshot must not acknowledge a stream") }
-  func cancel() { cancellations += 1 }
-}
-
 final class SimulatorDisplayReadTests: XCTestCase {
   func testLegacyReportWithoutIdentityOrActivityDeclinesCaptureCapability() throws {
     let value = displayValue(id: "legacy", active: true)
@@ -141,62 +121,76 @@ final class SimulatorDisplayReadTests: XCTestCase {
     }
   }
 
-  func testSnapshotCompletesOnceAndClosesTransport() async throws {
-    let queue = DispatchQueue(label: #function)
-    let transport = DisplayTransportStub { transport in
-      transport.reply?(displayReply([displayValue(id: "inner", active: true)]))
-      transport.reply?(displayReply([]))
-      transport.event?(XPC_ERROR_CONNECTION_INVALID)
-    }
-    let operation = CoreDeviceSession<[SimulatorDisplay]>(transport: transport, queue: queue)
-    let result = try await operation.read(SimulatorCoreDevice.dictionary([:]), decode: SimulatorDisplayProtocol.displays)
-    XCTAssertEqual(result.map(\.uniqueID), ["inner"])
-    XCTAssertEqual(queue.sync { transport.cancellations }, 1)
+  private func readDisplays(from services: SyntheticXPCServices, timeout: DispatchTimeInterval = .seconds(5)) async throws -> [SimulatorDisplay] {
+    let channel = try services.channel(to: SimulatorDisplayProtocol.service)
+    return try await CoreDeviceSession<[SimulatorDisplay]>(channel: channel, timeout: timeout)
+      .read(SimulatorCoreDevice.dictionary([:]), decode: SimulatorDisplayProtocol.displays)
   }
 
-  func testTimeoutAndPeerLossDoNotProduceEmptySuccess() async {
-    for peerLoss in [false, true] {
-      let queue = DispatchQueue(label: #function)
-      let transport = DisplayTransportStub { transport in
-        if peerLoss { transport.event?(XPC_ERROR_CONNECTION_INVALID) }
-      }
-      let operation = CoreDeviceSession<[SimulatorDisplay]>(transport: transport, queue: queue, timeout: .milliseconds(10))
-      do {
-        _ = try await operation.read(SimulatorCoreDevice.dictionary([:]), decode: SimulatorDisplayProtocol.displays)
-        XCTFail("Expected a failed snapshot")
-      } catch { XCTAssertTrue(error is SimulatorCoreDeviceError) }
-      XCTAssertEqual(queue.sync { transport.cancellations }, 1)
+  func testSnapshotCompletesAndClosesTheConnection() async throws {
+    let services = SyntheticXPCServices()
+    let peer = services.register(
+      SimulatorDisplayProtocol.service, respond: SyntheticXPCPeer.replying(displayReply([displayValue(id: "inner", active: true)])))
+    let result = try await readDisplays(from: services)
+    XCTAssertEqual(result.map(\.uniqueID), ["inner"])
+    XCTAssertEqual(peer.received.count, 1)
+    let closed = await peer.closed(atLeast: 1)
+    XCTAssertEqual(closed, 1)
+  }
+
+  func testTimeoutDoesNotProduceEmptySuccess() async {
+    let services = SyntheticXPCServices()
+    let peer = services.register(SimulatorDisplayProtocol.service, respond: SyntheticXPCPeer.silent)
+    do {
+      _ = try await readDisplays(from: services, timeout: .milliseconds(500))
+      XCTFail("Expected a failed snapshot")
+    } catch {
+      guard case SimulatorCoreDeviceError.timedOut = error else { return XCTFail("Unexpected error: \(error)") }
+    }
+    let closed = await peer.closed(atLeast: 1)
+    XCTAssertEqual(closed, 1)
+  }
+
+  func testPeerLossDoesNotProduceEmptySuccess() async {
+    let services = SyntheticXPCServices()
+    services.register(SimulatorDisplayProtocol.service) { $0.interrupt() }
+    do {
+      _ = try await readDisplays(from: services)
+      XCTFail("Expected a failed snapshot")
+    } catch {
+      guard case SimulatorCoreDeviceError.unavailable = error else { return XCTFail("Unexpected error: \(error)") }
     }
   }
 
   func testProviderErrorIsPropagated() async {
-    let queue = DispatchQueue(label: #function)
-    let transport = DisplayTransportStub { transport in
-      transport.reply?(
+    let services = SyntheticXPCServices()
+    let peer = services.register(
+      SimulatorDisplayProtocol.service,
+      respond: SyntheticXPCPeer.replying(
         SimulatorCoreDevice.dictionary([
           "CoreDevice.error": SimulatorCoreDevice.dictionary([
             "domain": xpc_string_create("provider"), "code": xpc_int64_create(42),
           ])
-        ]))
-    }
-    let operation = CoreDeviceSession<[SimulatorDisplay]>(transport: transport, queue: queue)
+        ])))
     do {
-      _ = try await operation.read(SimulatorCoreDevice.dictionary([:]), decode: SimulatorDisplayProtocol.displays)
+      _ = try await readDisplays(from: services)
       XCTFail("Expected provider failure")
     } catch { XCTAssertTrue(error.localizedDescription.contains("provider (42)")) }
-    XCTAssertEqual(queue.sync { transport.cancellations }, 1)
+    let closed = await peer.closed(atLeast: 1)
+    XCTAssertEqual(closed, 1)
   }
 
   func testCancellationClosesOutstandingSnapshot() async {
-    let queue = DispatchQueue(label: #function)
-    let transport = DisplayTransportStub { _ in }
-    let operation = CoreDeviceSession<[SimulatorDisplay]>(transport: transport, queue: queue)
-    let task = Task { try await operation.read(SimulatorCoreDevice.dictionary([:]), decode: SimulatorDisplayProtocol.displays) }
+    let services = SyntheticXPCServices()
+    let peer = services.register(SimulatorDisplayProtocol.service, respond: SyntheticXPCPeer.silent)
+    let task = Task { try await readDisplays(from: services) }
+    _ = await peer.received(atLeast: 1)
     task.cancel()
     do {
       _ = try await task.value
       XCTFail("Expected cancellation")
     } catch { XCTAssertTrue(error is CancellationError) }
-    XCTAssertEqual(queue.sync { transport.cancellations }, 1)
+    let closed = await peer.closed(atLeast: 1)
+    XCTAssertEqual(closed, 1)
   }
 }

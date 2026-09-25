@@ -71,6 +71,14 @@ extension SimulatorCoreDeviceError {
     }
   }
 
+  /// A request the peer did not answer.
+  init(channel error: SimulatorXPCError) {
+    switch error {
+    case let .peerUnavailable(detail): self = .unavailable(detail)
+    case .timedOut: self = .timedOut
+    }
+  }
+
   /// A reply the protocol does not describe, named by the path of the field that broke.
   init(decoding error: DecodingError) {
     let context: DecodingError.Context

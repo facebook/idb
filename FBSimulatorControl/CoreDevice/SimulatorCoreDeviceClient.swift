@@ -11,34 +11,26 @@ import Foundation
 /// A simulator's CoreDevice features, reached one request at a time.
 ///
 /// Owns what every request shares: the device identifier, the installed CoreDevice version (read
-/// once), the queue the sessions run on, and how a transport to a service is built. Features
+/// once), the queue the sessions run on, and how a service is connected to. Features
 /// describe their action, service, `Encodable` input and `Decodable` output, and nothing else.
 /// Memoized per `Simulator` through its command cache.
 ///
 // SAFETY: The version and capability caches are guarded by the lock; everything else is immutable.
 // patternlint-disable-next-line unchecked-sendable
 final class SimulatorCoreDeviceClient: @unchecked Sendable {
-  typealias TransportFactory = @Sendable (_ service: String, _ queue: DispatchQueue) throws -> any SimulatorCoreDeviceTransport
   typealias VersionSource = @Sendable () throws -> CoreDeviceVersion
 
   private let deviceID: String
   private let queue = DispatchQueue(label: "com.facebook.FBSimulatorControl.coredevice")
-  private let makeTransport: TransportFactory
+  private let connector: SimulatorXPCConnector
   private let readVersion: VersionSource
   private let lock = NSLock()
   private var cachedVersion: CoreDeviceVersion?
   private var cachedMotionCapabilities: MotionCapabilities?
 
-  convenience init(deviceID: String, connector: SimulatorXPCConnector, version: @escaping VersionSource = CoreDeviceVersion.installed) {
-    self.init(
-      deviceID: deviceID,
-      transport: { service, queue in try SimulatorCoreDeviceXPCTransport(connector: connector, service: service, queue: queue) },
-      version: version)
-  }
-
-  init(deviceID: String, transport: @escaping TransportFactory, version: @escaping VersionSource) {
+  init(deviceID: String, connector: SimulatorXPCConnector, version: @escaping VersionSource = CoreDeviceVersion.installed) {
     self.deviceID = deviceID
-    self.makeTransport = transport
+    self.connector = connector
     self.readVersion = version
   }
 
@@ -139,6 +131,6 @@ final class SimulatorCoreDeviceClient: @unchecked Sendable {
   }
 
   private func session<Response: Sendable>(for service: String) throws -> CoreDeviceSession<Response> {
-    CoreDeviceSession(transport: try makeTransport(service, queue), queue: queue)
+    CoreDeviceSession(channel: SimulatorXPCChannel(connection: try SimulatorCoreDevice.connect(using: connector, service: service), queue: queue))
   }
 }

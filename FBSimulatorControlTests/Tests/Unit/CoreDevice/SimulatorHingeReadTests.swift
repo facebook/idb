@@ -9,6 +9,7 @@
 import Foundation
 import XCTest
 @preconcurrency import XPC
+import os
 
 private func hingeEvent(channel: UUID, degrees: Double = 130, timestamp: Double = 200, valid: Bool = true, unit: String = "°") -> xpc_object_t {
   let dictionary = SimulatorCoreDevice.dictionary
@@ -47,35 +48,50 @@ private func hingeRequest(channel: UUID) throws -> xpc_object_t {
   ).encoded()
 }
 
-// SAFETY: All state, including the test script and callbacks, is accessed on the session queue.
-// patternlint-disable-next-line unchecked-sendable
-private final class HingeTransportStub: SimulatorCoreDeviceTransport, @unchecked Sendable {
-  let script: @Sendable (HingeTransportStub) -> Void
-  var event: (@Sendable (xpc_object_t) -> Void)?
-  var reply: (@Sendable (xpc_object_t) -> Void)?
-  var acknowledgements: [Bool] = []
-  var cancellations = 0
-  var completesCancellation = true
-
-  init(script: @escaping @Sendable (HingeTransportStub) -> Void) { self.script = script }
-
-  func start(request: xpc_object_t, event: @escaping @Sendable (xpc_object_t) -> Void, reply: @escaping @Sendable (xpc_object_t) -> Void) {
-    self.event = event
-    self.reply = reply
-    script(self)
-  }
-
-  func acknowledge(_ event: xpc_object_t, cancelling: Bool) {
-    acknowledgements.append(cancelling)
-    if cancelling && completesCancellation { complete() }
-  }
-
-  func complete() {
-    reply?(SimulatorCoreDevice.dictionary(["CoreDevice.output": xpc_dictionary_create(nil, nil, 0)]))
-  }
-
-  func cancel() { cancellations += 1 }
+/// What a synthetic hinge provider does once the client asks it to stop.
+private enum HingeStop {
+  /// Sends the final reply, as a provider that has stopped does.
+  case complete
+  /// Never replies.
+  case ignore
+  /// Drops the connection.
+  case interrupt
 }
+
+/// A monitormotion provider streaming `events`, pushing each once the client has acknowledged the
+/// last, as the provider paces its side channel. Every acknowledgement's cancellation flag is kept.
+private final class HingeProvider: Sendable {
+  let services = SyntheticXPCServices()
+  let peer: SyntheticXPCPeer
+  private let acknowledged = OSAllocatedUnfairLock(initialState: [Bool]())
+
+  init(events: [xpc_object_t], onStop stop: HingeStop = .complete) {
+    let acknowledged = acknowledged
+    peer = services.register(SimulatorHingeProtocol.service) { request in
+      @Sendable func push(_ index: Int) {
+        guard index < events.count else { return }
+        request.push(events[index]) { acknowledgement in
+          guard xpc_get_type(acknowledgement) == XPC_TYPE_DICTIONARY else { return }
+          let cancelling = xpc_dictionary_get_bool(acknowledgement, SimulatorCoreDevice.cancellationKey)
+          acknowledged.withLock { $0.append(cancelling) }
+          guard cancelling else { return push(index + 1) }
+          switch stop {
+          case .complete: request.reply(hingeCompletion)
+          case .ignore: break
+          case .interrupt: request.interrupt()
+          }
+        }
+      }
+      push(0)
+    }
+  }
+
+  var acknowledgements: [Bool] {
+    acknowledged.withLock { $0 }
+  }
+}
+
+private let hingeCompletion = SimulatorCoreDevice.dictionary(["CoreDevice.output": xpc_dictionary_create(nil, nil, 0)])
 
 final class SimulatorHingeReadTests: XCTestCase {
   func testRequestUsesNativeUUIDAndUnsignedDurationLowBits() throws {
@@ -135,72 +151,68 @@ final class SimulatorHingeReadTests: XCTestCase {
   /// A hinge read as `SimulatorHingeCommands` performs it: a stream that samples until a fresh
   /// angle arrives, with the clock pinned so timestamps are deterministic.
   private func readAngle(
-    _ transport: HingeTransportStub, queue: DispatchQueue, channel: UUID = UUID(), timeout: DispatchTimeInterval = .seconds(5)
+    from services: SyntheticXPCServices, channel: UUID = UUID(), timeout: DispatchTimeInterval = .seconds(5)
   ) async throws -> SimulatorHingeAngle {
     let request = try hingeRequest(channel: channel)
-    return try await CoreDeviceSession<SimulatorHingeAngle>(transport: transport, queue: queue, timeout: timeout).stream(request) { event in
+    let xpc = try services.channel(to: SimulatorHingeProtocol.service)
+    return try await CoreDeviceSession<SimulatorHingeAngle>(channel: xpc, timeout: timeout).stream(request) { event in
       try SimulatorHingeProtocol.sample(event, channel: channel, notBefore: 200, now: 200)
     }
   }
 
   func testStaleInitialSampleDoesNotCompleteRead() async throws {
     let channel = UUID()
-    let queue = DispatchQueue(label: "hinge-read-test")
-    let transport = HingeTransportStub { transport in
-      transport.event?(hingeEvent(channel: channel, degrees: 180, timestamp: 199))
-      transport.event?(hingeEvent(channel: channel, degrees: 0))
-      transport.event?(hingeEvent(channel: channel, degrees: 90))
-      transport.complete()
-    }
-    let angle = try await readAngle(transport, queue: queue, channel: channel)
+    let provider = HingeProvider(events: [
+      hingeEvent(channel: channel, degrees: 180, timestamp: 199),
+      hingeEvent(channel: channel, degrees: 0),
+      hingeEvent(channel: channel, degrees: 90),
+    ])
+    let angle = try await readAngle(from: provider.services, channel: channel)
     XCTAssertEqual(angle.degrees, 0)
-    queue.sync {
-      XCTAssertEqual(transport.acknowledgements, [false, true])
-      XCTAssertEqual(transport.cancellations, 1)
-    }
+    XCTAssertEqual(provider.acknowledgements, [false, true])
+    let closed = await provider.peer.closed(atLeast: 1)
+    XCTAssertEqual(closed, 1)
   }
 
   func testProviderMustFinishCancellationBeforeReadCompletes() async {
     let channel = UUID()
-    let queue = DispatchQueue(label: "hinge-read-test")
-    let transport = HingeTransportStub { transport in
-      transport.completesCancellation = false
-      transport.event?(hingeEvent(channel: channel))
-    }
+    let provider = HingeProvider(events: [hingeEvent(channel: channel)], onStop: .ignore)
     do {
-      _ = try await readAngle(transport, queue: queue, channel: channel, timeout: .milliseconds(10))
+      _ = try await readAngle(from: provider.services, channel: channel, timeout: .milliseconds(500))
       XCTFail("Expected timeout awaiting provider cancellation")
     } catch {
       guard case SimulatorCoreDeviceError.timedOut = error else { return XCTFail("Unexpected error: \(error)") }
     }
-    queue.sync { XCTAssertEqual(transport.cancellations, 1) }
+    XCTAssertEqual(provider.acknowledgements, [true])
+    let closed = await provider.peer.closed(atLeast: 1)
+    XCTAssertEqual(closed, 1)
   }
 
   func testPrematureCompletionIsAnError() async {
-    let queue = DispatchQueue(label: "hinge-read-test")
-    let transport = HingeTransportStub { $0.complete() }
+    let services = SyntheticXPCServices()
+    let peer = services.register(SimulatorHingeProtocol.service, respond: SyntheticXPCPeer.replying(hingeCompletion))
     do {
-      _ = try await readAngle(transport, queue: queue)
+      _ = try await readAngle(from: services)
       XCTFail("Expected missing sample error")
     } catch {
       guard case SimulatorCoreDeviceError.unavailable = error else { return XCTFail("Unexpected error: \(error)") }
     }
-    queue.sync { XCTAssertEqual(transport.cancellations, 1) }
+    let closed = await peer.closed(atLeast: 1)
+    XCTAssertEqual(closed, 1)
   }
 
   func testAProviderErrorInTheFinalReplyFails() async {
     let channel = UUID()
-    let queue = DispatchQueue(label: "hinge-read-test")
-    let transport = HingeTransportStub { transport in
-      transport.completesCancellation = false
-      transport.event?(hingeEvent(channel: channel))
-      transport.reply?(
+    let services = SyntheticXPCServices()
+    services.register(SimulatorHingeProtocol.service) { request in
+      request.push(hingeEvent(channel: channel)) { _ in }
+      request.reply(
         SimulatorCoreDevice.dictionary([
           "CoreDevice.error": SimulatorCoreDevice.dictionary(["domain": xpc_string_create("com.example"), "code": xpc_int64_create(9)])
         ]))
     }
     do {
-      _ = try await readAngle(transport, queue: queue, channel: channel)
+      _ = try await readAngle(from: services, channel: channel)
       XCTFail("Expected provider error")
     } catch {
       guard case let SimulatorCoreDeviceError.unavailable(detail) = error else { return XCTFail("Unexpected error: \(error)") }
@@ -210,46 +222,41 @@ final class SimulatorHingeReadTests: XCTestCase {
 
   func testPeerLossWhileAwaitingCancellationFails() async {
     let channel = UUID()
-    let queue = DispatchQueue(label: "hinge-read-test")
-    let transport = HingeTransportStub { transport in
-      transport.completesCancellation = false
-      transport.event?(hingeEvent(channel: channel))
-      transport.event?(XPC_ERROR_CONNECTION_INVALID)
-    }
+    let provider = HingeProvider(events: [hingeEvent(channel: channel)], onStop: .interrupt)
     do {
-      _ = try await readAngle(transport, queue: queue, channel: channel)
+      _ = try await readAngle(from: provider.services, channel: channel)
       XCTFail("Expected connection error")
     } catch {
       guard case SimulatorCoreDeviceError.unavailable = error else { return XCTFail("Unexpected error: \(error)") }
     }
-    queue.sync { XCTAssertEqual(transport.cancellations, 1) }
+    XCTAssertEqual(provider.acknowledgements, [true])
   }
 
   func testCancellationBeforeSetupDoesNotStartRequest() async {
-    let queue = DispatchQueue(label: "hinge-read-test")
-    let transport = HingeTransportStub { _ in XCTFail("Cancelled request started") }
+    let services = SyntheticXPCServices()
+    let peer = services.register(SimulatorHingeProtocol.service, respond: SyntheticXPCPeer.silent)
     let task = Task {
       withUnsafeCurrentTask { $0?.cancel() }
-      return try await readAngle(transport, queue: queue)
+      return try await readAngle(from: services)
     }
     do {
       _ = try await task.value
       XCTFail("Expected cancellation")
     } catch { XCTAssertTrue(error is CancellationError) }
-    queue.sync { XCTAssertEqual(transport.cancellations, 1) }
+    XCTAssertEqual(peer.received.count, 0)
   }
 
   func testCancellationClosesAnIdleConnection() async {
-    let started = expectation(description: "request started")
-    let queue = DispatchQueue(label: "hinge-read-test")
-    let transport = HingeTransportStub { _ in started.fulfill() }
-    let task = Task { try await readAngle(transport, queue: queue) }
-    await fulfillment(of: [started], timeout: 2)
+    let services = SyntheticXPCServices()
+    let peer = services.register(SimulatorHingeProtocol.service, respond: SyntheticXPCPeer.silent)
+    let task = Task { try await readAngle(from: services) }
+    _ = await peer.received(atLeast: 1)
     task.cancel()
     do {
       _ = try await task.value
       XCTFail("Expected cancellation")
     } catch { XCTAssertTrue(error is CancellationError) }
-    queue.sync { XCTAssertEqual(transport.cancellations, 1) }
+    let closed = await peer.closed(atLeast: 1)
+    XCTAssertEqual(closed, 1)
   }
 }

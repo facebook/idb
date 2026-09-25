@@ -46,6 +46,11 @@ final class SyntheticXPCServices: Sendable {
       return peer.connect()
     }
   }
+
+  /// A channel to `service`, built through `connector` as production builds one.
+  func channel(to service: String, queue: DispatchQueue = DispatchQueue(label: "com.facebook.FBSimulatorControlTests.synthetic-xpc.client")) throws -> SimulatorXPCChannel {
+    SimulatorXPCChannel(connection: try connector.connect(service), queue: queue)
+  }
 }
 
 /// One synthetic guest service: an anonymous XPC listener that records every message it receives, in
@@ -57,13 +62,14 @@ final class SyntheticXPCPeer: @unchecked Sendable {
   typealias Responder = @Sendable (SyntheticXPCRequest) -> Void
 
   let service: String
-  private let queue: DispatchQueue
+  fileprivate let queue: DispatchQueue
   private let listener: xpc_connection_t
   private let respond: Responder
   private var live: [xpc_connection_t] = []
   private var accepted = 0
+  private var closedByClient = 0
   private var messages: [xpc_object_t] = []
-  private var waiters: [(count: Int, continuation: CheckedContinuation<[xpc_object_t], Never>)] = []
+  private var waiters: [UUID: (ready: () -> Bool, continuation: CheckedContinuation<Void, Never>)] = [:]
 
   fileprivate init(service: String, respond: @escaping Responder) {
     self.service = service
@@ -91,6 +97,11 @@ final class SyntheticXPCPeer: @unchecked Sendable {
     queue.sync { accepted }
   }
 
+  /// How many client connections the client has cancelled, as opposed to the peer dropping them.
+  var closed: Int {
+    queue.sync { closedByClient }
+  }
+
   /// Everything received so far.
   var received: [xpc_object_t] {
     queue.sync { messages }
@@ -99,11 +110,36 @@ final class SyntheticXPCPeer: @unchecked Sendable {
   /// Resolves once at least `count` messages have been received. One-way sends resolve at the
   /// client before the peer reads them, so a test waits here rather than reading `received`.
   func received(atLeast count: Int) async -> [xpc_object_t] {
-    await withCheckedContinuation { continuation in
+    await wait { $0.messages.count >= count }
+    return received
+  }
+
+  /// Resolves once the client has cancelled at least `count` connections, which reaches the peer
+  /// after the client's call returns.
+  func closed(atLeast count: Int) async -> Int {
+    await wait { $0.closedByClient >= count }
+    return closed
+  }
+
+  /// Resolves when `ready` holds, or after a deadline so that a test fails on its assertions rather
+  /// than hanging.
+  private func wait(until ready: @escaping @Sendable (SyntheticXPCPeer) -> Bool) async {
+    await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
       queue.async { [self] in
-        guard messages.count < count else { return continuation.resume(returning: messages) }
-        waiters.append((count, continuation))
+        guard !ready(self) else { return continuation.resume() }
+        let id = UUID()
+        waiters[id] = ({ ready(self) }, continuation)
+        queue.asyncAfter(deadline: .now() + 5) { [self] in
+          waiters.removeValue(forKey: id)?.continuation.resume()
+        }
       }
+    }
+  }
+
+  private func resolveWaiters() {
+    for (id, waiter) in waiters where waiter.ready() {
+      waiters.removeValue(forKey: id)
+      waiter.continuation.resume()
     }
   }
 
@@ -111,16 +147,20 @@ final class SyntheticXPCPeer: @unchecked Sendable {
   /// `XPC_ERROR_CONNECTION_INTERRUPTED`, and their next send reaches the service again.
   func interrupt() {
     queue.sync {
-      for connection in live { xpc_connection_cancel(connection) }
-      live = []
+      for connection in live { drop(connection) }
     }
+  }
+
+  fileprivate func drop(_ connection: xpc_connection_t) {
+    dispatchPrecondition(condition: .onQueue(queue))
+    live.removeAll { $0 === connection }
+    xpc_connection_cancel(connection)
   }
 
   /// Removes the service for good. Clients see `XPC_ERROR_CONNECTION_INVALID`.
   func invalidate() {
     queue.sync {
-      for connection in live { xpc_connection_cancel(connection) }
-      live = []
+      for connection in live { drop(connection) }
       xpc_connection_cancel(listener)
     }
   }
@@ -131,12 +171,19 @@ final class SyntheticXPCPeer: @unchecked Sendable {
     accepted += 1
     xpc_connection_set_target_queue(connection, queue)
     xpc_connection_set_event_handler(connection) { [weak self] message in
-      guard let self, xpc_get_type(message) == XPC_TYPE_DICTIONARY else { return }
+      guard let self else { return }
+      guard xpc_get_type(message) == XPC_TYPE_DICTIONARY else {
+        // The peer's own cancellations are removed from `live` first, so only the client's remain.
+        if self.live.contains(where: { $0 === connection }) {
+          self.live.removeAll { $0 === connection }
+          self.closedByClient += 1
+          self.resolveWaiters()
+        }
+        return
+      }
       self.messages.append(message)
-      let ready = self.waiters.filter { $0.count <= self.messages.count }
-      self.waiters.removeAll { $0.count <= self.messages.count }
-      for waiter in ready { waiter.continuation.resume(returning: self.messages) }
-      self.respond(SyntheticXPCRequest(message: message, connection: connection, queue: self.queue))
+      self.resolveWaiters()
+      self.respond(SyntheticXPCRequest(message: message, connection: connection, peer: self))
     }
     xpc_connection_resume(connection)
   }
@@ -144,12 +191,12 @@ final class SyntheticXPCPeer: @unchecked Sendable {
 
 /// One message as a synthetic service received it, and the ways the service can answer.
 ///
-// SAFETY: Handed to responders on the peer's queue; the connection is thread-safe.
+// SAFETY: Handed to responders on the peer's queue, and its acknowledgement callbacks run there too.
 // patternlint-disable-next-line unchecked-sendable
 struct SyntheticXPCRequest: @unchecked Sendable {
   let message: xpc_object_t
   fileprivate let connection: xpc_connection_t
-  fileprivate let queue: DispatchQueue
+  fileprivate let peer: SyntheticXPCPeer
 
   /// Answers the message with a reply carrying `values`'s entries. Ignored when the sender asked for
   /// no reply.
@@ -165,7 +212,13 @@ struct SyntheticXPCRequest: @unchecked Sendable {
   /// Pushes `event` to the client over the same connection, as a provider streams, and hands its
   /// acknowledgement to `acknowledged`.
   func push(_ event: xpc_object_t, acknowledged: @escaping @Sendable (xpc_object_t) -> Void) {
-    xpc_connection_send_message_with_reply(connection, event, queue, acknowledged)
+    xpc_connection_send_message_with_reply(connection, event, peer.queue, acknowledged)
+  }
+
+  /// Drops the connection this message arrived on, as a daemon exiting mid-request does. Call from
+  /// the responder or an acknowledgement callback.
+  func interrupt() {
+    peer.drop(connection)
   }
 }
 
