@@ -204,8 +204,9 @@ jobs:
   # local files. A template that no longer matches the tarball layout, a
   # dependency pin that stopped resolving, or an install block that breaks
   # fails here, on the diff that caused it, instead of on release day. The
-  # rendered files are uploaded for review; their URLs point at this runner,
-  # so they are a build output, not something to install from.
+  # rendered files and the wheel are uploaded alongside the idb-companion
+  # artifact. The formulae's URLs point at this runner, so installing them
+  # elsewhere means downloading all three and repointing the URLs at them.
   mac-formulae:
     name: Render and install the formulae (macOS)
     runs-on: macos-26
@@ -241,6 +242,12 @@ jobs:
         with:
           name: formulae
           path: tap/
+      - name: Upload the wheel
+        uses: actions/upload-artifact@v5
+        with:
+          name: fb-idb-dist
+          path: assets/fb_idb-*-py3-none-any.whl
+          if-no-files-found: error
       - name: Mount the render as the facebook/fb tap
         run: |
           taps="$(brew --repository)/Library/Taps/facebook"
