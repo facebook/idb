@@ -117,13 +117,9 @@ enum CoreDeviceReply {
     try SimulatorCoreDevice.decode(Envelope<Output>.self, from: reply).output
   }
 
-  /// The output dictionary of a reply, for the parsers not yet expressed as `Decodable` models.
-  static func output(of reply: xpc_object_t) throws -> xpc_object_t {
+  /// Checks a reply whose output carries nothing the caller needs, such as a stream's final reply.
+  static func validate(_ reply: xpc_object_t) throws {
     _ = try SimulatorCoreDevice.decode(Envelope<CoreDeviceEmptyOutput>.self, from: reply)
-    guard let output = xpc_dictionary_get_value(reply, CodingKeys.output.rawValue), xpc_get_type(output) == XPC_TYPE_DICTIONARY else {
-      throw SimulatorCoreDeviceError.malformed("\(CodingKeys.output.rawValue): expected dictionary")
-    }
-    return output
   }
 
   private struct CoreDeviceEmptyOutput: Decodable {

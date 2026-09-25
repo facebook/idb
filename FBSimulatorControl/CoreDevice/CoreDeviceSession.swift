@@ -90,7 +90,7 @@ final class CoreDeviceSession<Response: Sendable>: @unchecked Sendable {
     dispatchPrecondition(condition: .onQueue(queue))
     guard result == nil else { return }
     do {
-      _ = try CoreDeviceReply.output(of: reply)
+      try CoreDeviceReply.validate(reply)
       guard let held else { throw SimulatorCoreDeviceError.unavailable("Stream ended without a sample") }
       finish(.success(held))
     } catch {
