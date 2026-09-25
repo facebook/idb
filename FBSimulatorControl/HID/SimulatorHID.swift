@@ -11,24 +11,14 @@ import Darwin
 import Foundation
 
 /**
- The HID abstraction layer for a Simulator.
+ Input for a Simulator: `SimulatorHIDEvent`s (touch, two-finger touch, button, remote button, keyboard,
+ trackpad, delays and composites of them), delivered through a pluggable `SimulatorHIDTransport`
+ (negotiated between `dtuhidd` and the legacy Indigo client).
 
- Touch, button, and keyboard events are delivered through a pluggable `SimulatorHIDTransport`
- (the legacy Indigo `SimDeviceLegacyHIDClient` path by default). The remaining event families are
- not transport-switchable and each has a transport of its own here:
+ Device actions — rotation, the hinge, lock, shake, the in-call status bar — are not input and are
+ commands on the `Simulator` (`orientation`, `hinge`, `hardware`, `statusBar`).
 
- 1. PurpleWorkspacePort — for GSEvent-based events: device lock, and device orientation on a
-    runtime that does not report device motion. Payloads are constructed by `SimulatorPurpleHID`
-    and sent via raw `mach_msg`. Guest-side: `GraphicsServices._PurpleEventCallback` → backboardd.
-
- 2. Darwin notifications — e.g. shake, in-call status bar — posted via the SimDevice.
-
- 3. Vendor-defined DTUHID reports — the hinge, and device orientation on a runtime that reports
-    device motion. The `vendorDefined` connection owned by `simulator.hid`.
-
- Which of 1 and 3 carries a rotation is decided by the simulator's `MotionCapabilities`.
-
- See `Indigo.h` and `GSEvent.h` for wire format documentation.
+ See `Indigo.h` for wire format documentation.
 
  Indigo-family sends are serialized by the transport, so the type is `@unchecked Sendable`.
  */
@@ -38,8 +28,6 @@ public final class SimulatorHID: CustomStringConvertible, @unchecked Sendable {
 
   /// The transport for the touch / button / keyboard primitives.
   private let transport: SimulatorHIDTransport
-
-  private weak var simulator: Simulator?
 
   /// Whether `send(event:logger:)` flushes after every event. Streaming callers can disable this
   /// and call `flush()` before releasing the HID.
@@ -52,9 +40,7 @@ public final class SimulatorHID: CustomStringConvertible, @unchecked Sendable {
   public convenience init(
     for simulator: Simulator, transport transportType: SimulatorHIDTransportType? = nil
   ) async throws {
-    self.init(
-      transport: try await Self.transport(for: simulator, requested: transportType),
-      simulator: simulator)
+    self.init(transport: try await Self.transport(for: simulator, requested: transportType))
   }
 
   /// A requested transport is never substituted — it is established or the error surfaces. With no request,
@@ -113,11 +99,8 @@ public final class SimulatorHID: CustomStringConvertible, @unchecked Sendable {
     return try? SimulatorIndigoHIDTransport.indigo(for: simulator)
   }
 
-  /// `simulator` is weak and may be absent: device actions need it and throw
-  /// `WeakTargetError.simulator` without one; the transport primitives never touch it.
-  init(transport: SimulatorHIDTransport, simulator: Simulator?) {
+  init(transport: SimulatorHIDTransport) {
     self.transport = transport
-    self.simulator = simulator
   }
 
   /// Drains pending events before disconnecting, even when the caller is cancelled.
@@ -147,13 +130,6 @@ public final class SimulatorHID: CustomStringConvertible, @unchecked Sendable {
     try await indigo.sendTrackpad(point: point, phase: phase)
   }
 
-  // MARK: - Purple / GSEvents and vendor reports
-
-  func sendOrientation(_ orientation: SimulatorHIDDeviceOrientation) async throws {
-    guard let simulator else { throw WeakTargetError.simulator }
-    try await simulator.orientation.set(orientation, convention: .interface)
-  }
-
   // MARK: - Dispatch
 
   /// Sends a (possibly composite) event, logging each sub-event, then drains once if any sub-event reached
@@ -164,8 +140,7 @@ public final class SimulatorHID: CustomStringConvertible, @unchecked Sendable {
       switch subEvent {
       case let .delay(duration):
         logger.log("Delay \(duration)s")
-      case .touch, .button, .remoteButton, .keyboard, .twoFingerTouch, .trackpad,
-        .deviceOrientation, .hinge, .lockDevice, .shake, .toggleInCallStatusBar, .composite:
+      case .touch, .button, .remoteButton, .keyboard, .twoFingerTouch, .trackpad, .composite:
         logger.log("Sending \(subEvent)")
       }
       if try await deliver(subEvent) {
@@ -200,25 +175,6 @@ public final class SimulatorHID: CustomStringConvertible, @unchecked Sendable {
       // The trackpad rides Indigo, and only DTUHID has a drain, so this wrote to the drained transport
       // only on a target that has no DTUHID transport at all.
       return transport.dtuhid == nil
-    case let .deviceOrientation(orientation):
-      try await sendOrientation(orientation)
-      return false
-    case .lockDevice:
-      guard let simulator else { throw WeakTargetError.simulator }
-      try await simulator.hardware.lock()
-      return false
-    case let .hinge(angle):
-      guard let simulator else { throw WeakTargetError.simulator }
-      try await simulator.hinge.setAngle(angle)
-      return false
-    case .shake:
-      guard let simulator else { throw WeakTargetError.simulator }
-      try await simulator.hardware.shake()
-      return false
-    case .toggleInCallStatusBar:
-      guard let simulator else { throw WeakTargetError.simulator }
-      try await simulator.statusBar.toggleInCall()
-      return false
     case let .delay(duration):
       try await Task.sleep(nanoseconds: UInt64(max(0, duration) * 1_000_000_000))
       return false

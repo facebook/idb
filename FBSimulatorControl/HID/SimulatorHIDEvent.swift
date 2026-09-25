@@ -11,9 +11,10 @@ import Foundation
 
 // MARK: - SimulatorHIDEvent
 
-/// A HID event that can be sent to a Simulator. A discriminated union of the primitive
-/// payloads (touch, button, keyboard, two-finger touch, orientation, shake, lock, in-call
-/// status bar, delay) plus a `composite` of ordered events.
+/// An input event that can be sent to a Simulator. A discriminated union of the primitive
+/// payloads (touch, button, remote button, keyboard, two-finger touch, trackpad, delay) plus a
+/// `composite` of ordered events. Device actions such as rotation, lock or shake are commands on the
+/// `Simulator`.
 public indirect enum SimulatorHIDEvent: Equatable, Hashable, Sendable {
 
   /// The per-sample step, in points, a swipe is broken into when the caller does not choose one.
@@ -26,11 +27,6 @@ public indirect enum SimulatorHIDEvent: Equatable, Hashable, Sendable {
   case twoFingerTouch(direction: SimulatorHIDDirection, finger1: CGPoint, finger2: CGPoint)
   case trackpad(phase: SimulatorTrackpadPhase, point: SimulatorTrackpadPoint)
   case delay(TimeInterval)
-  case deviceOrientation(SimulatorHIDDeviceOrientation)
-  case hinge(SimulatorHingeAngle)
-  case shake
-  case toggleInCallStatusBar
-  case lockDevice
   case composite([SimulatorHIDEvent])
 
   /// For a `.composite` event, its ordered sub-events; otherwise `nil`.
@@ -317,16 +313,6 @@ extension SimulatorHIDEvent: CustomStringConvertible {
       return "Trackpad \(phase.name) at (\(point.x),\(point.y))"
     case let .delay(duration):
       return "Delay for \(duration)"
-    case let .deviceOrientation(orientation):
-      return "Set Orientation \(orientation.name)"
-    case let .hinge(angle):
-      return "Set Hinge Angle \(angle.degrees) degrees"
-    case .shake:
-      return "Shake"
-    case .toggleInCallStatusBar:
-      return "Toggle In-Call Status Bar"
-    case .lockDevice:
-      return "Lock Device"
     case let .composite(events):
       return "Composite [\(events.map { $0.description }.joined(separator: ", "))]"
     }

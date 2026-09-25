@@ -530,7 +530,7 @@ final class SimulatorDTUHIDTransportTests: XCTestCase {
   private func makeHID(
     _ recorder: DrainRecorder, reply: DrainReply = .answer, gate: SleepGate? = nil
   ) -> SimulatorHID {
-    SimulatorHID(transport: .dtuhid(makeTransport(recorder, reply: reply, gate: gate)), simulator: nil)
+    SimulatorHID(transport: .dtuhid(makeTransport(recorder, reply: reply, gate: gate)))
   }
 
   private func makeTransport(
