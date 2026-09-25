@@ -51,6 +51,14 @@ public enum SimulatorInteractionDisplay: Equatable, Sendable {
   case identified(SimulatorDisplay)
   case legacy(SimulatorDisplayGeometry)
 
+  func hasSameConfiguration(as other: Self) -> Bool {
+    switch (self, other) {
+    case let (.identified(first), .identified(second)): first.hasSameConfiguration(as: second)
+    case let (.legacy(first), .legacy(second)): first == second
+    case (.identified, .legacy), (.legacy, .identified): false
+    }
+  }
+
   public var geometry: SimulatorDisplayGeometry {
     switch self {
     case let .identified(display): display.geometry
@@ -59,11 +67,21 @@ public enum SimulatorInteractionDisplay: Equatable, Sendable {
   }
 }
 
-/// A current display snapshot. Activity is reported by CoreDevice independently of IO port power.
+public enum SimulatorDisplayActivitySource: Equatable, Sendable {
+  case layout
+  /// Identifies an actively illuminated display when layout activity is unavailable.
+  case backlight
+}
+
+/// A current display snapshot. Activity evidence is independent of IO port power.
 public struct SimulatorDisplay: Equatable, Sendable {
   public let uniqueID: String
   public let name: String
   public let isActive: Bool
+  public let activitySource: SimulatorDisplayActivitySource
+
+  /// The provider's explicit layout activity, absent when selection used backlight evidence.
+  public var reportedActivity: Bool? { activitySource == .layout ? isActive : nil }
   public let isPrimary: Bool
   public let isIntegrated: Bool
   /// Bounds in the display's unrotated pixel coordinate space.
@@ -71,8 +89,29 @@ public struct SimulatorDisplay: Equatable, Sendable {
   public let scale: Double
   public let rotation: SimulatorDisplayRotation
 
+  init(
+    uniqueID: String, name: String, isActive: Bool, isPrimary: Bool, isIntegrated: Bool,
+    bounds: CGRect, scale: Double, rotation: SimulatorDisplayRotation,
+    activitySource: SimulatorDisplayActivitySource = .layout
+  ) {
+    self.uniqueID = uniqueID
+    self.name = name
+    self.isActive = isActive
+    self.isPrimary = isPrimary
+    self.isIntegrated = isIntegrated
+    self.bounds = bounds
+    self.scale = scale
+    self.rotation = rotation
+    self.activitySource = activitySource
+  }
+
   public var geometry: SimulatorDisplayGeometry {
     SimulatorDisplayGeometry(bounds: bounds, scale: scale, rotation: rotation)
+  }
+
+  // Layout lookup may succeed on one snapshot and require backlight evidence on the next.
+  func hasSameConfiguration(as other: Self) -> Bool {
+    uniqueID == other.uniqueID && isActive == other.isActive && isIntegrated == other.isIntegrated && geometry == other.geometry
   }
 
   /// Pixel dimensions after applying the current interface rotation.
@@ -107,7 +146,7 @@ public struct SimulatorDisplayCommands {
     SimulatorDisplayCommands(simulator: simulator)
   }
 
-  /// Reads configured displays. Requires a current report with explicit per-display activity.
+  /// Reads current displays with explicit layout activity or complete per-display backlight evidence.
   public func list() async throws -> [SimulatorDisplay] {
     try await read(decode: SimulatorDisplayProtocol.displays)
   }

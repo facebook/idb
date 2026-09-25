@@ -91,14 +91,18 @@ struct SimulatorDisplayInteractionResolver {
     let touchscreens = try await readTouchscreens()
     let accessibility = try await readAccessibility()
     let context = try Self.join(display: display, touchscreens: touchscreens, accessibility: accessibility)
-    guard try SimulatorDisplayCommands.activeIntegratedDisplay(in: await readDisplays()) == display
+    guard try SimulatorDisplayCommands.activeIntegratedDisplay(in: await readDisplays()).hasSameConfiguration(as: display)
     else { throw SimulatorDisplayError.changed }
     return context
   }
 
   /// Compares the observed identity, geometry and routing. No new display is substituted on mismatch.
   func validate(_ context: SimulatorDisplayInteractionContext) async throws {
-    guard try await resolve() == context else { throw SimulatorDisplayError.changed }
+    let current = try await resolve()
+    guard current.display.hasSameConfiguration(as: context.display),
+      current.accessibilityDisplayID == context.accessibilityDisplayID,
+      current.digitizerTarget == context.digitizerTarget
+    else { throw SimulatorDisplayError.changed }
   }
 
   static func join(

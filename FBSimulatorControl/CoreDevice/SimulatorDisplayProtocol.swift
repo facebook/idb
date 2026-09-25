@@ -21,6 +21,7 @@ enum SimulatorDisplayProtocol {
       let uniqueId: String?
       let name: String
       let active: Bool?
+      let backlightState: String?
       let primary: Bool
       let bounds: [[Double]]
       let pointScale: Int64
@@ -90,6 +91,7 @@ enum SimulatorDisplayProtocol {
   }
 
   private static func displays(in report: Report) throws -> [SimulatorDisplay] {
+    let hasLayoutActivity = report.displays.contains { $0.active != nil }
     var identifiers: Set<String> = []
     var displays: [SimulatorDisplay] = []
     for record in report.displays {
@@ -97,14 +99,36 @@ enum SimulatorDisplayProtocol {
       guard let id = record.uniqueId, !id.isEmpty, id.utf8.count <= maximumStringLength, identifiers.insert(id).inserted else {
         throw SimulatorCoreDeviceError.malformed("Duplicate or empty display identity")
       }
-      guard let active = record.active else { throw SimulatorCoreDeviceError.malformed("Display has no activity") }
+      let active = try activity(of: record, integrated: validated.integrated, hasLayoutActivity: hasLayoutActivity)
       guard !active || !validated.bounds.isEmpty else { throw SimulatorCoreDeviceError.malformed("Active display has empty bounds") }
       displays.append(
         SimulatorDisplay(
           uniqueID: id, name: record.name, isActive: active, isPrimary: record.primary, isIntegrated: validated.integrated,
-          bounds: validated.bounds, scale: Double(record.pointScale), rotation: record.currentOrientation))
+          bounds: validated.bounds, scale: Double(record.pointScale), rotation: record.currentOrientation,
+          activitySource: hasLayoutActivity ? .layout : .backlight))
     }
     return displays.sorted { $0.uniqueID < $1.uniqueID }
+  }
+
+  /// Layout activity is authoritative when the report carries it; otherwise backlight state identifies
+  /// the illuminated display.
+  private static func activity(of record: Report.Record, integrated: Bool, hasLayoutActivity: Bool) throws -> Bool {
+    if hasLayoutActivity {
+      guard let active = record.active else { throw SimulatorCoreDeviceError.malformed("Display has no activity") }
+      if !active, let state = record.backlightState, ["activeOn", "activeDimmed"].contains(state) {
+        throw SimulatorCoreDeviceError.malformed("Layout and backlight activity disagree")
+      }
+      return active
+    }
+    switch record.backlightState {
+    case "activeOn", "activeDimmed": return true
+    case "off", "inactiveOn": return false
+    case "unknown":
+      guard !integrated else { throw SimulatorDisplayInteractionError.unsupportedCapability("integrated display activity") }
+      return false
+    case nil: throw SimulatorCoreDeviceError.malformed("Display has no activity")
+    default: throw SimulatorCoreDeviceError.malformed("Unknown backlight state")
+    }
   }
 
   /// The fields every record has to satisfy, legacy or not.
