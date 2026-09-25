@@ -16,7 +16,6 @@
 #import <SimulatorFrameworkBridgeLib/AccessibilityService+Testing.h>
 #import <SimulatorFrameworkBridgeLib/AccessibilityService_Private.h>
 #import <SimulatorFrameworkBridgeLib/HealthSettingsService.h>
-#import <SimulatorFrameworkBridgeLib/ServiceDispatch.h>
 
 #import "../SimulatorFrameworkBridge/Runtime/Private/AccessibilityRuntime_Private.h"
 #import "../SimulatorFrameworkBridge/Runtime/Private/BulletinBoardPrivate.h"
@@ -255,7 +254,7 @@ NSDictionary<NSString *, id> *FBAXRuntimeInitializationProbe(FBAXRuntimeInitiali
   return @{@"preparationException" : preparationException ?: NSNull.null, @"calls" : @(calls), @"response" : response};
 }
 
-NSDictionary<NSString *, NSNumber *> *FBAXBridgeServeProbe(NSArray<NSString *> *arguments)
+NSDictionary<NSString *, NSNumber *> *FBAXBridgeServeProbe(int (^NS_NOESCAPE run)(void))
 {
   FBAXFakeRuntime *runtime = [FBAXFakeRuntime new];
   __block NSUInteger calls = 0;
@@ -265,7 +264,7 @@ NSDictionary<NSString *, NSNumber *> *FBAXBridgeServeProbe(NSArray<NSString *> *
   });
   int status;
   @try {
-    status = runBridgeCommand(arguments);
+    status = run();
   } @finally {
     FBAXBridgeSetRuntimeFactoryForTesting(nil);
   }

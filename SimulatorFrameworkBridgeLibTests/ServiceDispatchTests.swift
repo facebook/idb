@@ -6,29 +6,26 @@
  */
 
 import Foundation
-@_implementationOnly import SimulatorFrameworkBridgeLib
+@_implementationOnly import SimulatorFrameworkBridgeSupport
 import XCTest
 
 final class ServiceDispatchTests: XCTestCase {
-  private var notificationsDirectory = ""
+  private var services = FBBridgeServices()
 
   override func setUp() {
     super.setUp()
     // What the delivered reader answers depends on the store it reads, so point it at an empty
     // directory of this suite's own: these assertions are about which service a verb reaches.
-    notificationsDirectory = (NSTemporaryDirectory() as NSString)
-      .appendingPathComponent(UUID().uuidString)
-    FBDeliveredNotificationsSetDirectoryForTesting(notificationsDirectory)
     // The delivered verb reaches a real notification center on a simulator that has one, and
     // these assertions are about routing rather than about what it answers. Without a short
     // timeout, a center that does not come back spends the default 30s in a routing test.
-    FBDeliveredNotificationsSetTimeoutForTesting(0.05)
+    services = FBBridgeServices(
+      deliveredNotificationsDirectory: (NSTemporaryDirectory() as NSString).appendingPathComponent(UUID().uuidString),
+      deliveredNotificationsTimeout: 0.05)
   }
 
-  override func tearDown() {
-    FBDeliveredNotificationsSetDirectoryForTesting(nil)
-    FBDeliveredNotificationsSetTimeoutForTesting(0)
-    super.tearDown()
+  private func dispatchService(_ service: String, _ action: String, _ arguments: [String]) -> Int32 {
+    FBBridgeCommand.dispatch(service: service, action: action, arguments: arguments, services: services)
   }
 
   // MARK: - Unknown service

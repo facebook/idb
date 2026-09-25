@@ -21,7 +21,7 @@ private enum BridgeService: String {
   case repl
 }
 
-@objc public protocol FBBridgeServiceHandling: AnyObject {
+public protocol FBBridgeServiceHandling {
   #if !os(tvOS)
   func contacts(_ action: String) -> Int32
   func health(_ action: String, bundleID: String?, typeIDs: [String]) -> Int32
@@ -38,10 +38,90 @@ private enum BridgeService: String {
   func repl(_ socketPath: String?, libraryPath: String) -> Int32
 }
 
-@objc public final class FBBridgeCommand: NSObject {
+/// The services the guest command line reaches, each reporting to stdout.
+public struct FBBridgeServices: FBBridgeServiceHandling {
+  private let deliveredNotificationsDirectory: String?
+  private let deliveredNotificationsTimeout: TimeInterval
+
+  /// A nil directory and a non-positive timeout select the delivered-notifications reader's defaults.
+  public init(deliveredNotificationsDirectory: String? = nil, deliveredNotificationsTimeout: TimeInterval = 0) {
+    self.deliveredNotificationsDirectory = deliveredNotificationsDirectory
+    self.deliveredNotificationsTimeout = deliveredNotificationsTimeout
+  }
+
+  #if !os(tvOS)
+  public func contacts(_ action: String) -> Int32 {
+    Int32(FBContactsService.handleContactsAction(action: action))
+  }
+
+  public func health(_ action: String, bundleID: String?, typeIDs: [String]) -> Int32 {
+    Int32(FBHealthSettingsService.handleHealthSettingsAction(action: action, bundleID: bundleID, typeIdentifiers: typeIDs))
+  }
+
+  public func deliveredNotifications(_ action: String, bundleID: String?) -> Int32 {
+    FBDeliveredNotificationsService.handleAction(action, bundleID: bundleID, directory: deliveredNotificationsDirectory, timeout: deliveredNotificationsTimeout)
+  }
+  #endif
+
+  public func dns(_ action: String, arguments: [String]) -> Int32 {
+    Int32(FBDnsService.handleDnsAction(action: action, arguments: arguments))
+  }
+
+  public func dynamicStore(_ action: String, arguments: [String]) -> Int32 {
+    Int32(FBDynamicStoreService.handleDynamicStoreAction(action: action, arguments: arguments))
+  }
+
+  public func photos(_ action: String) -> Int32 {
+    Int32(FBPhotoLibraryService.handlePhotoLibraryAction(action: action))
+  }
+
+  public func notifications(_ action: String, bundleID: String?) -> Int32 {
+    Int32(FBNotificationSettingsService.handleNotificationSettingsAction(action: action, bundleID: bundleID))
+  }
+
+  public func privacy(_ action: String, arguments: [String]) -> Int32 {
+    FBPrivacyService.handleAction(action, arguments: arguments)
+  }
+
+  public func proxy(_ action: String, arguments: [String]) -> Int32 {
+    Int32(FBProxyService.handleProxyAction(action: action, arguments: arguments))
+  }
+
+  public func accessibility(_ action: String, arguments: [String]) -> Int32 {
+    FBAccessibilityService.handleAction(action, arguments: arguments) { data in
+      data.withUnsafeBytes { _ = fwrite($0.baseAddress, 1, $0.count, stdout) }
+      fputc(10, stdout)
+    }
+  }
+
+  public func orientation(_ action: String, arguments: [String]) -> Int32 {
+    FBOrientationService.run(action: action, arguments: arguments)
+  }
+
+  public func repl(_ socketPath: String?, libraryPath: String) -> Int32 {
+    // The socket server and injected IDB API must use libRepl's one control connection.
+    guard let handle = dlopen((libraryPath as NSString).fileSystemRepresentation, RTLD_NOW | RTLD_GLOBAL) else {
+      NSLog("Failed to load libRepl at %@: %@", libraryPath, Self.lastLoaderError())
+      return 1
+    }
+    guard let symbol = dlsym(handle, "FBReplServeSocket") else {
+      NSLog("libRepl is missing FBReplServeSocket: %@", Self.lastLoaderError())
+      return 1
+    }
+    typealias Serve = @convention(c) (NSString?, NSArray, ObjCBool) -> Int32
+    // The bridge exits when the session ends, so serve a single connection.
+    return unsafeBitCast(symbol, to: Serve.self)(socketPath as NSString?, [] as NSArray, false)
+  }
+
+  private static func lastLoaderError() -> String {
+    dlerror().map { String(cString: $0) } ?? "(null)"
+  }
+}
+
+public enum FBBridgeCommand {
   private static let serviceNames = "contacts, dns, dynamic-store, photos, notifications, health, privacy, proxy, accessibility, orientation, repl"
 
-  @objc public static func run(arguments: [String], services: FBBridgeServiceHandling) -> Int32 {
+  public static func run(arguments: [String], services: FBBridgeServiceHandling = FBBridgeServices()) -> Int32 {
     if let status = BridgeRPC.run(arguments: arguments) { return status }
     guard arguments.count >= 3 else {
       NSLog("Usage: %@ <service> <action> [args...]", arguments.first ?? "SimulatorFrameworkBridge")
@@ -52,7 +132,7 @@ private enum BridgeService: String {
     return dispatch(service: arguments[1], action: arguments[2], arguments: Array(arguments.dropFirst(3)), services: services)
   }
 
-  @objc public static func dispatch(service: String, action: String, arguments: [String], services: FBBridgeServiceHandling) -> Int32 {
+  public static func dispatch(service: String, action: String, arguments: [String], services: FBBridgeServiceHandling = FBBridgeServices()) -> Int32 {
     let selectedService = BridgeService(rawValue: service)
     switch selectedService {
     case .contacts, .health:

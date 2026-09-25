@@ -18,27 +18,9 @@ targetTemplates:
   Guest:
     type: tool
     deploymentTarget: "15.0"
-    sources:
-      # ServiceDispatch.m imports <ReplExecutor/ReplSocketServer.h> and calls
-      # FBReplServeSocket; compile the shared executor in so the binary is
-      # self-contained. ReplSocketServer.m is MRC while the bridge sources are
-      # ARC, so disable ARC for just that file.
-      - path: ../REPL/Executor/ReplSocketServer.h
-      - path: ../REPL/Executor/ReplSocketServer.m
-        compilerFlags: -fno-objc-arc
-    preBuildScripts:
-      - name: Stage ReplExecutor headers
-        # The headers live in REPL/Executor; stage them under a `ReplExecutor`
-        # directory on HEADER_SEARCH_PATHS so <ReplExecutor/ReplSocketServer.h>
-        # resolves without renaming the (Buck-synced) source tree.
-        script: |
-          set -e
-          DEST="$TARGET_TEMP_DIR/ReplExecutorHeaders/ReplExecutor"
-          mkdir -p "$DEST"
-          cp "$SRCROOT/../REPL/Executor/"*.h "$DEST/"
     settings:
       base:
-        HEADER_SEARCH_PATHS: $(inherited) $(TARGET_TEMP_DIR)/ReplExecutorHeaders $(OBJECT_FILE_DIR_normal)/$(CURRENT_ARCH)
+        HEADER_SEARCH_PATHS: $(inherited) $(OBJECT_FILE_DIR_normal)/$(CURRENT_ARCH)
         PRODUCT_MODULE_NAME: SimulatorFrameworkBridgeSupport
         SWIFT_VERSION: "6"
         SWIFT_OBJC_BRIDGING_HEADER: SimulatorFrameworkBridge-Bridging-Header.h

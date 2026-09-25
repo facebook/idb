@@ -7,9 +7,14 @@
 
 import Foundation
 
+// The open-source build compiles this file into the Support module itself.
+#if canImport(SimulatorFrameworkBridgeSupport)
+import SimulatorFrameworkBridgeSupport
+#endif
+
 @main
 struct SimulatorFrameworkBridgeMain {
   static func main() {
-    exit(autoreleasepool { runBridgeCommand(CommandLine.arguments) })
+    exit(autoreleasepool { FBBridgeCommand.run(arguments: CommandLine.arguments) })
   }
 }

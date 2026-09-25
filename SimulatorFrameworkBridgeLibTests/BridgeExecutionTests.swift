@@ -104,7 +104,7 @@ final class BridgeExecutionTests: XCTestCase {
   func testServeBindsTheAccessibilityRuntimeBeforeItsFirstClient() throws {
     let path = "/tmp/sfb-prepare-" + UUID().uuidString
     defer { unlink(path) }
-    let probe = FBAXBridgeServeProbe(["SimulatorFrameworkBridge", "serve", path, "--startup-timeout", "1"])
+    let probe = FBAXBridgeServeProbe { FBBridgeCommand.run(arguments: ["SimulatorFrameworkBridge", "serve", path, "--startup-timeout", "1"]) }
     XCTAssertEqual(probe["status"] as? Int32, 0)
     XCTAssertEqual(probe["calls"] as? Int, 1, "the runtime is bound once, before any client connects")
   }

@@ -133,7 +133,7 @@ typedef NS_ENUM(NSInteger, FBAXRuntimeInitializationMode) {
 /** Captures preparation exceptions in Objective-C before returning observations to Swift. */
 NSDictionary<NSString *, id> *FBAXRuntimeInitializationProbe(FBAXRuntimeInitializationMode mode, BOOL prepare, NSDictionary<NSString *, id> *request);
 
-/** Runs the guest entry point with a counting runtime factory installed; `calls` is how often it was asked for a runtime. */
-NSDictionary<NSString *, NSNumber *> *FBAXBridgeServeProbe(NSArray<NSString *> *arguments);
+/** Runs `run` with a counting runtime factory installed; `calls` is how often it was asked for a runtime. */
+NSDictionary<NSString *, NSNumber *> *FBAXBridgeServeProbe(int (^NS_NOESCAPE run)(void));
 
 NS_ASSUME_NONNULL_END
