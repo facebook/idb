@@ -1669,6 +1669,16 @@ class ElementWaitTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(outcome.element["frame"]["y"], 92)
         self.assertEqual(run.await_count, 4)
 
+    async def test_an_element_reported_twice_settles(self) -> None:
+        # The accessibility tree can report one element under two parents.
+        outcome, run, _ = await self.wait(
+            [read(92, 92), read(92, 92)],
+            lambda case: case.wait_for(BANNER, until=Until.SETTLED),
+        )
+
+        self.assertEqual(outcome.element["frame"]["y"], 92)
+        self.assertEqual(run.await_count, 2)
+
     async def test_an_element_that_leaves_between_reads_starts_settling_again(
         self,
     ) -> None:
