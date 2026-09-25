@@ -37,6 +37,8 @@ public enum FBAXBridgeArguments {
         }
       case "--assert-key": request["assertKey"] = value
       case "--assert-value": request["assertValue"] = value
+      case "--busy-threshold-ms": request["busyThresholdMs"] = string.intValue
+      case "--quiet-window-ms": request["quietWindowMs"] = string.intValue
       default: break
       }
     }

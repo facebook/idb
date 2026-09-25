@@ -136,6 +136,10 @@ public enum BridgeAXWire {
     case setValue = "setvalue"
     case settingsGet = "settings-get"
     case settingsSet = "settings-set"
+    /// Streams an application's quiescence as `Quiescence` events until the peer disconnects or an
+    /// explicitly named application exits. Addressed like `describe`: a pid, or the frontmost application,
+    /// which the stream follows as it changes.
+    case quiet
   }
 
   /// The fields of a request, in both spellings the guest accepts them in.
@@ -170,6 +174,12 @@ public enum BridgeAXWire {
     case enabled
     case assertKey
     case assertValue
+    /// How long a quiescence signal must go unanswered before it counts as busy. Omitted means
+    /// `Quiescence.defaultBusyThresholdMs`.
+    case busyThresholdMs
+    /// How long every quiescence signal must stay answered before the application counts as quiet.
+    /// Omitted means `Quiescence.defaultQuietWindowMs`.
+    case quietWindowMs
 
     /// The JSON object key the persistent transport sends this field under.
     public var key: String { rawValue }
@@ -196,6 +206,8 @@ public enum BridgeAXWire {
       case .enabled: "--enabled"
       case .assertKey: "--assert-key"
       case .assertValue: "--assert-value"
+      case .busyThresholdMs: "--busy-threshold-ms"
+      case .quietWindowMs: "--quiet-window-ms"
       }
     }
 
@@ -223,5 +235,49 @@ public enum BridgeAXWire {
     case scrollRight = "scroll-right"
     /// Bring the element into its scroll container's viewport.
     case scrollToVisible = "scroll-to-visible"
+  }
+
+  /// The events a `quiet` stream writes, one per frame, each an `{ok: true, event, pid, ...}` envelope. A
+  /// failure is an ordinary `{ok: false, error, error_kind}` envelope, and ends the stream.
+  public enum Quiescence {
+    /// Settled replies take about a millisecond, so a signal still unanswered after this is waiting on the
+    /// application rather than on the round trip.
+    public static let defaultBusyThresholdMs = 20
+    public static let defaultQuietWindowMs = 250
+
+    public enum Key: String, Codable, Sendable, CaseIterable {
+      case event
+      case state
+      /// The signals holding a `busy` state, as `Signal` values.
+      case signals
+    }
+
+    public enum Event: String, Codable, Sendable, CaseIterable {
+      /// The application's `State`, written first once it is known and then on every change.
+      case state
+      /// A touch sequence finished. Informational: it does not affect the state.
+      case touchesCompleted = "touches_completed"
+      /// A stream following the frontmost application moved to a new one, named by `pid`. The state starts
+      /// over for it.
+      case targetChanged = "target_changed"
+      /// The application a stream was opened for exited. The last event of that stream.
+      case targetExited = "target_exited"
+    }
+
+    public enum State: String, Codable, Sendable, CaseIterable {
+      /// At least one signal has gone unanswered for longer than the busy threshold.
+      case busy
+      /// No signal is busy, but they have not all been answered for the whole quiet window.
+      case settling
+      /// Every signal has been answered for at least the quiet window.
+      case quiet
+    }
+
+    public enum Signal: String, Codable, Sendable, CaseIterable {
+      /// The application's main run loop has gone idle.
+      case runLoopIdle = "run_loop_idle"
+      /// No animation is running in the application.
+      case animationsInactive = "animations_inactive"
+    }
   }
 }

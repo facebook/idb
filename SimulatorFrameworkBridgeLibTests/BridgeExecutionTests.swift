@@ -301,4 +301,76 @@ final class BridgeExecutionTests: XCTestCase {
       XCTAssertEqual(try PropertyListSerialization.propertyList(from: snapshot, options: [], format: nil) as? NSDictionary, ["present": false] as NSDictionary)
     }
   }
+
+  func testAStreamingCommandAnswersEveryResultAsAResponseToItsRequest() throws {
+    let request = BridgeRequest(command: .accessibility(["verb": .string("quiet")]), id: "stream")
+    let results = [BridgeResult(exitCode: 0, values: [.object(["quiet": .bool(false)])]), BridgeResult(exitCode: 1, error: "gone")]
+    let source = ScriptedResultStream(results: results)
+    var executed = 0
+    let response = BridgeRPC.handle(
+      try request.encoded(),
+      execute: { _ in
+        executed += 1
+        return BridgeResult(exitCode: 0)
+      }
+    ) { command in
+      XCTAssertEqual(command, request.command)
+      return .stream(source)
+    }
+    guard case let .stream(stream) = response else { return XCTFail("expected a stream, got \(response)") }
+    var frames: [Data] = []
+    stream.run { data in
+      frames.append(data)
+      return true
+    }
+    XCTAssertEqual(try frames.map { try BridgeResponse.decode($0, for: request).result }, results)
+    stream.cancel()
+    XCTAssertTrue(source.wasCancelled)
+    XCTAssertEqual(executed, 0)
+  }
+
+  func testAStreamStopsOnceAFrameCannotBeWritten() throws {
+    let request = BridgeRequest(command: .accessibility(["verb": .string("quiet")]))
+    let source = ScriptedResultStream(results: [BridgeResult(exitCode: 0), BridgeResult(exitCode: 0)])
+    let response = BridgeRPC.handle(try request.encoded(), stream: { _ in .stream(source) })
+    guard case let .stream(stream) = response else { return XCTFail("expected a stream, got \(response)") }
+    var writes = 0
+    stream.run { _ in
+      writes += 1
+      return false
+    }
+    XCTAssertEqual(writes, 1)
+    XCTAssertEqual(source.delivered, [false])
+  }
+
+  func testAStreamThatCannotStartAnswersWithOneFrame() throws {
+    let request = BridgeRequest(command: .accessibility(["verb": .string("quiet")]), id: "refused")
+    let refusal = BridgeResult(exitCode: 1, values: [.object(["ok": .bool(false)])])
+    let response = BridgeRPC.handle(try request.encoded(), execute: { _ in BridgeResult(exitCode: 0) }) { _ in .result(refusal) }
+    let frame = try XCTUnwrap(response.frame)
+    XCTAssertFalse(frame.shutdown)
+    XCTAssertEqual(try BridgeResponse.decode(frame.data, for: request).result, refusal)
+  }
+}
+
+private final class ScriptedResultStream: BridgeResultStream {
+  private let results: [BridgeResult]
+  private(set) var delivered: [Bool] = []
+  private(set) var wasCancelled = false
+
+  init(results: [BridgeResult]) {
+    self.results = results
+  }
+
+  func run(emit: @escaping (BridgeResult) -> Bool) {
+    for result in results {
+      let written = emit(result)
+      delivered.append(written)
+      guard written else { return }
+    }
+  }
+
+  func cancel() {
+    wasCancelled = true
+  }
 }

@@ -119,14 +119,49 @@ public enum BridgeServices {
       #endif
     case let .accessibility(parameters):
       let response = FBAccessibilityService.handleRequest(parameters.mapValues(\.foundationValue))
-      let data = FBAccessibilityService.serializeResponse(response)
-      guard let value = output.write(json: data) else { return 1 }
-      if case let .object(fields) = value, fields[BridgeAXWire.Envelope.ok.rawValue] == .bool(true) { return 0 }
-      return 1
+      return accessibility(FBAccessibilityService.serializeResponse(response), output: output)
     }
+  }
+
+  /// Commands that answer with a stream of results rather than one; nil for every other command.
+  public static func stream(_ command: BridgeCommand) -> BridgeStreamStart? {
+    guard case let .accessibility(parameters) = command, let start = FBAccessibilityService.quiescence(parameters.mapValues(\.foundationValue)) else { return nil }
+    switch start {
+    case let .stream(events):
+      return .stream(AccessibilityResultStream(events: events))
+    case let .failure(response):
+      return .result(accessibilityResult(FBAccessibilityService.serializeResponse(response)))
+    }
+  }
+
+  private static func accessibility(_ data: Data, output: BridgeOutput) -> Int32 {
+    guard let value = output.write(json: data) else { return 1 }
+    if case let .object(fields) = value, fields[BridgeAXWire.Envelope.ok.rawValue] == .bool(true) { return 0 }
+    return 1
+  }
+
+  fileprivate static func accessibilityResult(_ data: Data) -> BridgeResult {
+    let output = BridgeOutput()
+    return output.finish(status: accessibility(data, output: output))
   }
 
   private static func unavailable(_ subject: String, output: BridgeOutput) -> Int32 {
     Int32(output.failure("\(subject) is not available in a tvOS guest"))
+  }
+}
+
+private final class AccessibilityResultStream: BridgeResultStream {
+  private let events: BridgeResponseStream
+
+  init(events: BridgeResponseStream) {
+    self.events = events
+  }
+
+  func run(emit: @escaping (BridgeResult) -> Bool) {
+    events.run { emit(BridgeServices.accessibilityResult($0)) }
+  }
+
+  func cancel() {
+    events.cancel()
   }
 }

@@ -153,6 +153,7 @@ final class AXWireContractTests: XCTestCase {
       .setValue: "setvalue",
       .settingsGet: "settings-get",
       .settingsSet: "settings-set",
+      .quiet: "quiet",
     ]
     XCTAssertEqual(Set(AXWire.Verb.allCases), Set(expected.keys), "every verb must have its wire value pinned")
     for (verb, wireValue) in expected {
@@ -175,6 +176,15 @@ final class AXWireContractTests: XCTestCase {
     for (action, wireValue) in expected {
       XCTAssertEqual(action.rawValue, wireValue)
     }
+  }
+
+  // What a `quiet` stream writes. The host decodes each event as it arrives, so an event, state or signal
+  // it does not recognise would end the stream it is consuming.
+  func testQuiescenceStreamWireValues() {
+    XCTAssertEqual(AXWire.Quiescence.Key.allCases.map(\.rawValue), ["event", "state", "signals"])
+    XCTAssertEqual(AXWire.Quiescence.Event.allCases.map(\.rawValue), ["state", "touches_completed", "target_changed", "target_exited"])
+    XCTAssertEqual(AXWire.Quiescence.State.allCases.map(\.rawValue), ["busy", "settling", "quiet"])
+    XCTAssertEqual(AXWire.Quiescence.Signal.allCases.map(\.rawValue), ["run_loop_idle", "animations_inactive"])
   }
 
   // MARK: - Request fields
@@ -203,6 +213,8 @@ final class AXWireContractTests: XCTestCase {
       .enabled: ("enabled", "--enabled"),
       .assertKey: ("assertKey", "--assert-key"),
       .assertValue: ("assertValue", "--assert-value"),
+      .busyThresholdMs: ("busyThresholdMs", "--busy-threshold-ms"),
+      .quietWindowMs: ("quietWindowMs", "--quiet-window-ms"),
     ]
     XCTAssertEqual(Set(AXWire.Request.allCases), Set(expected.keys), "every request field must have its spellings pinned")
     for (field, spelling) in expected {

@@ -87,6 +87,8 @@ private let requestEnabled = BridgeAXWire.Request.enabled.rawValue
 // value it has to equal. Optional, and only meaningful together.
 private let requestAssertKey = BridgeAXWire.Request.assertKey.rawValue
 private let requestAssertValue = BridgeAXWire.Request.assertValue.rawValue
+private let requestBusyThresholdMs = BridgeAXWire.Request.busyThresholdMs.rawValue
+private let requestQuietWindowMs = BridgeAXWire.Request.quietWindowMs.rawValue
 private let responseOk = BridgeAXWire.Envelope.ok.rawValue
 private let responseEnabled = BridgeAXWire.Envelope.enabled.rawValue
 private let responseTree = BridgeAXWire.Envelope.tree.rawValue
@@ -1274,6 +1276,13 @@ private final class AccessibilityRequest {
         pid: nil
       )
     }
+    if verb == .quiet {
+      return FBAXBridgeTaggedErrorResponse(
+        message: "quiet streams its answer, so it is only served over a serve connection or the one-shot CLI",
+        kind: errorKindBadRequest,
+        pid: nil
+      )
+    }
     // Process-addressed verbs reject non-positive pids before runtime setup. Device-setting verbs carry no
     // pid, but an explicitly malformed one is still refused rather than silently ignored.
     let requestedPid = request[requestPid] as? NSNumber
@@ -1528,6 +1537,37 @@ private final class AccessibilityRequest {
     return response
   }
 
+  // MARK: - Quiescence
+
+  fileprivate func FBAXBridgeQuiescenceStart(request: [String: Any]) -> QuiescenceStart {
+    var milliseconds: [String: Int] = [:]
+    for (key, fallback) in [(requestBusyThresholdMs, BridgeAXWire.Quiescence.defaultBusyThresholdMs), (requestQuietWindowMs, BridgeAXWire.Quiescence.defaultQuietWindowMs)] {
+      let value = (request[key] as? NSNumber)?.intValue ?? fallback
+      guard value >= 0 else {
+        return .failure(FBAXBridgeTaggedErrorResponse(message: "\(key) must not be negative, got \(value)", kind: errorKindBadRequest, pid: nil))
+      }
+      milliseconds[key] = value
+    }
+    let target: QuiescenceStream.Target
+    if let requestedPid = request[requestPid] as? NSNumber {
+      guard requestedPid.int32Value > 0 else {
+        return .failure(FBAXBridgeTaggedErrorResponse(message: "pid \(requestedPid.int32Value) names no application", kind: errorKindApplicationUnavailable, pid: requestedPid))
+      }
+      target = .pid(requestedPid.int32Value)
+    } else {
+      target = .frontmost
+    }
+    let method = request[requestMethod] as? String ?? FrontmostMethod.windowServer.rawValue
+    let anchor = CGPoint(x: (request[requestX] as? NSNumber)?.doubleValue ?? 0, y: (request[requestY] as? NSNumber)?.doubleValue ?? 0)
+    return .stream(
+      QuiescenceStream(
+        target: target,
+        busyThreshold: TimeInterval(milliseconds[requestBusyThresholdMs] ?? 0) / 1000,
+        quietWindow: TimeInterval(milliseconds[requestQuietWindowMs] ?? 0) / 1000,
+        resolveFrontmost: { client in try AccessibilityRequest().FBAXBridgeResolveFrontmost(client: client, method: method, anchor: anchor) }
+      ))
+  }
+
   // MARK: - Argv front-end
 
   fileprivate func FBAXBridgeRequestFromArguments(action: String, arguments: [String]) -> [String: Any] {
@@ -1541,10 +1581,16 @@ private final class AccessibilityRequest {
   fileprivate func FBAXBridgeWireConstantsForTesting() -> [String: String] {
     [
       "node.elementType": axElementType, "node.elementBaseType": axElementBaseType, "node.label": axLabel, "node.value": axValue, "node.identifier": axIdentifier, "node.frame": axFrame, "node.automationType": axAutomationType, "node.children": axChildren, "request.verb": requestVerb, "request.pid": requestPid, "request.maxDepth": requestMaxDepth, "request.maxNodes": requestMaxNodes, "request.automationMode": requestAutomationMode, "request.attributes": requestAttributes, "request.translatorVocabulary": requestTranslatorVocabulary, "request.explainUnreachable": requestExplainUnreachable, "node.explainedBy": nodeExplainedBy, "node.isEnabled": nodeIsEnabled, "node.translatorRole": nodeTranslatorRole, "node.translatorSubrole": nodeTranslatorSubrole, "node.traits": nodeTraits, "node.elementIdentity": nodeElementIdentity, "request.x": requestX, "request.y": requestY, "request.method": requestMethod, "request.action": requestAction, "request.value": requestValue, "request.setting": requestSetting, "request.enabled": requestEnabled, "request.assertKey": requestAssertKey, "request.assertValue": requestAssertValue, "envelope.ok": responseOk, "envelope.enabled": responseEnabled, "envelope.tree": responseTree, "envelope.error": responseError, "envelope.empty": responseEmpty, "envelope.errorKind": responseErrorKind, "envelope.errorKindApplicationUnavailable": errorKindApplicationUnavailable, "envelope.errorKindApplicationNotResponding": errorKindApplicationNotResponding, "envelope.errorKindFrontmostUnresolved": errorKindFrontmostUnresolved, "envelope.errorKindReaderUnavailable": errorKindReaderUnavailable, "envelope.errorKindBadRequest": errorKindBadRequest, "envelope.errorKindAssertionFailed": errorKindAssertionFailed, "envelope.truncated": responseTruncated, "envelope.pid": responsePid, "envelope.method": responseMethod, "envelope.modal": responseModal, "envelope.automation": responseAutomation, "envelope.phases": responsePhases, "phases.traverse": phaseTraverse,
-      "phases.machRoundTrips": phaseMachRoundTrips, "automation.enabled": kAutomationEnabled, "automation.asserted": kAutomationAsserted, "modal.kind": modalKind, "modal.kindSystem": modalKindSystem, "modal.kindApp": modalKindApp, "modal.elementType": modalElementType, "modal.label": modalLabel, "modal.systemAlertWindowClass": systemAlertWindowClass, "modal.alertControllerClassPrefix": alertControllerClassPrefix, "verb.displays": AccessibilityVerb.displays.rawValue, "verb.describe": AccessibilityVerb.describe.rawValue, "verb.hittest": AccessibilityVerb.hitTest.rawValue, "verb.perform": AccessibilityVerb.perform.rawValue, "verb.setvalue": AccessibilityVerb.setValue.rawValue, "verb.settingsGet": AccessibilityVerb.settingsGet.rawValue, "verb.settingsSet": AccessibilityVerb.settingsSet.rawValue, "action.press": AccessibilityAction.press.rawValue, "action.scrollUp": AccessibilityAction.scrollUp.rawValue, "action.scrollDown": AccessibilityAction.scrollDown.rawValue, "action.scrollLeft": AccessibilityAction.scrollLeft.rawValue, "action.scrollRight": AccessibilityAction.scrollRight.rawValue, "action.scrollToVisible": AccessibilityAction.scrollToVisible.rawValue, "method.centerPoint": FrontmostMethod.centerPoint.rawValue, "method.windowServer": FrontmostMethod.windowServer.rawValue, "method.runningBoard": FrontmostMethod.runningBoard.rawValue,
+      "phases.machRoundTrips": phaseMachRoundTrips, "automation.enabled": kAutomationEnabled, "automation.asserted": kAutomationAsserted, "modal.kind": modalKind, "modal.kindSystem": modalKindSystem, "modal.kindApp": modalKindApp, "modal.elementType": modalElementType, "modal.label": modalLabel, "modal.systemAlertWindowClass": systemAlertWindowClass, "modal.alertControllerClassPrefix": alertControllerClassPrefix, "verb.displays": AccessibilityVerb.displays.rawValue, "verb.describe": AccessibilityVerb.describe.rawValue, "verb.hittest": AccessibilityVerb.hitTest.rawValue, "verb.perform": AccessibilityVerb.perform.rawValue, "verb.setvalue": AccessibilityVerb.setValue.rawValue, "verb.settingsGet": AccessibilityVerb.settingsGet.rawValue, "verb.settingsSet": AccessibilityVerb.settingsSet.rawValue, "verb.quiet": AccessibilityVerb.quiet.rawValue, "request.busyThresholdMs": requestBusyThresholdMs, "request.quietWindowMs": requestQuietWindowMs, "action.press": AccessibilityAction.press.rawValue, "action.scrollUp": AccessibilityAction.scrollUp.rawValue, "action.scrollDown": AccessibilityAction.scrollDown.rawValue, "action.scrollLeft": AccessibilityAction.scrollLeft.rawValue, "action.scrollRight": AccessibilityAction.scrollRight.rawValue, "action.scrollToVisible": AccessibilityAction.scrollToVisible.rawValue, "method.centerPoint": FrontmostMethod.centerPoint.rawValue, "method.windowServer": FrontmostMethod.windowServer.rawValue, "method.runningBoard": FrontmostMethod.runningBoard.rawValue,
     ]
   }
 
+}
+
+/// Either the stream, or the one-frame error that stands in for it when the request cannot start one.
+enum QuiescenceStart {
+  case stream(QuiescenceStream)
+  case failure([String: Any])
 }
 
 // Objective-C runtime clients convert private-framework exceptions to NSError before returning here.
@@ -1557,6 +1603,12 @@ public enum FBAccessibilityService {
     } catch {
       return [responseOk: false, responseError: "the reader raised while answering: \(error.localizedDescription)"]
     }
+  }
+
+  /// The stream `quiet` answers with, or nil for every other verb.
+  static func quiescence(_ request: [String: Any]) -> QuiescenceStart? {
+    guard request[requestVerb] as? String == AccessibilityVerb.quiet.rawValue else { return nil }
+    return AccessibilityRequest().FBAXBridgeQuiescenceStart(request: request)
   }
 
   public static func modalDescriptor(_ tree: [String: Any]) -> [String: String]? {
@@ -1587,10 +1639,27 @@ public enum FBAccessibilityService {
     return Data(StaticVars.fallback.utf8)
   }
 
-  public static func handleAction(_ action: String, arguments: [String], writeResponse: (Data) -> Void) -> Int32 {
+  public static func handleAction(_ action: String, arguments: [String], writeResponse: (Data) -> Bool) -> Int32 {
     let request = FBAXBridgeArguments.request(action: action, arguments: arguments)
+    // One event per line, until the named application exits or the process is killed.
+    if let start = quiescence(request) {
+      switch start {
+      case let .stream(stream):
+        var lostOutput = false
+        withoutActuallyEscaping(writeResponse) { writeResponse in
+          stream.run { data in
+            lostOutput = !writeResponse(data)
+            return !lostOutput
+          }
+        }
+        return stream.failed || lostOutput ? 1 : 0
+      case let .failure(response):
+        _ = writeResponse(serializeResponse(response))
+        return 1
+      }
+    }
     let response = handleRequest(request)
-    writeResponse(serializeResponse(response))
+    _ = writeResponse(serializeResponse(response))
     return (response[responseOk] as? NSNumber)?.boolValue == true ? 0 : 1
   }
 }

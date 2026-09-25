@@ -19,6 +19,20 @@ public struct BridgeRPCReply {
   public let shutdown: Bool
 }
 
+/// Results a command goes on answering with after its request, until it ends or the peer goes away.
+public protocol BridgeResultStream: AnyObject {
+  /// Runs until the stream ends, answering each result through `emit`, which answers false once it could not be delivered.
+  func run(emit: @escaping (BridgeResult) -> Bool)
+  /// Asks a running stream to end, from another thread; `run` must return promptly afterwards.
+  func cancel()
+}
+
+/// How a streaming command answers: with its stream, or with the one result that stands in for it when it cannot start.
+public enum BridgeStreamStart {
+  case stream(BridgeResultStream)
+  case result(BridgeResult)
+}
+
 public enum BridgeRPC {
   public static func process(_ data: Data, execute: (BridgeCommand) -> BridgeResult = BridgeServices.execute) -> BridgeRPCReply {
     guard (try? BridgeFrame.header(forSize: data.count)) != nil else { return failure(id: nil, message: "invalid request size") }
@@ -45,9 +59,44 @@ public enum BridgeRPC {
     return BridgeRPCReply(data: data, exitCode: 1, shutdown: false)
   }
 
-  public static func handle(_ data: Data, execute: (BridgeCommand) -> BridgeResult = BridgeServices.execute) -> BridgeSocketResponse {
+  /// Only a socket can stream, so a streaming command is answered here rather than by `process`.
+  public static func handle(
+    _ data: Data,
+    execute: (BridgeCommand) -> BridgeResult = BridgeServices.execute,
+    stream: (BridgeCommand) -> BridgeStreamStart? = BridgeServices.stream
+  ) -> BridgeSocketResponse {
+    if let request = try? BridgeRequest.decode(data), let start = stream(request.command) {
+      switch start {
+      case let .stream(results):
+        return .stream(ResponseStream(request: request, results: results))
+      case let .result(result):
+        return .frame(data: process(data) { _ in result }.data, shutdown: false)
+      }
+    }
     let reply = process(data, execute: execute)
     return .frame(data: reply.data, shutdown: reply.shutdown)
+  }
+
+  /// Every frame answers the one request, so a client validates each exactly as it would a single reply.
+  private final class ResponseStream: BridgeResponseStream {
+    private let request: BridgeRequest
+    private let results: BridgeResultStream
+
+    init(request: BridgeRequest, results: BridgeResultStream) {
+      self.request = request
+      self.results = results
+    }
+
+    func run(emit: @escaping (Data) -> Bool) {
+      results.run { [request] result in
+        guard let data = try? BridgeResponse(request: request, result: result).encoded(), (try? BridgeFrame.header(forSize: data.count)) != nil else { return false }
+        return emit(data)
+      }
+    }
+
+    func cancel() {
+      results.cancel()
+    }
   }
 
   static func run(arguments: [String]) -> Int32? {
