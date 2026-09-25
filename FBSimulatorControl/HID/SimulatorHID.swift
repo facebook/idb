@@ -29,15 +29,11 @@ public final class SimulatorHID: CustomStringConvertible, @unchecked Sendable {
   /// The transport for the touch / button / keyboard primitives.
   private let transport: SimulatorHIDTransport
 
-  /// Whether `send(event:logger:)` flushes after every event. Streaming callers can disable this
-  /// and call `flush()` before releasing the HID.
-  public var flushesAfterEachEvent = true
-
   // MARK: - Initializers
 
   /// `transport` forces a HID path; `nil` negotiates one (see `SimulatorHIDTransport.negotiate(for:requested:)`). Throws if the
   /// transport cannot be established (registration may need to occur prior to booting).
-  public convenience init(
+  convenience init(
     for simulator: Simulator, transport transportType: SimulatorHIDTransportType? = nil
   ) async throws {
     self.init(transport: try await SimulatorHIDTransport.negotiate(for: simulator, requested: transportType))
@@ -49,7 +45,7 @@ public final class SimulatorHID: CustomStringConvertible, @unchecked Sendable {
 
   /// Drains pending events before disconnecting, even when the caller is cancelled.
   /// Drain errors do not prevent disconnection.
-  public func close() async {
+  func close() async {
     let drain = Task { try await flush() }
     try? await drain.value
     transport.disconnect()
@@ -58,16 +54,18 @@ public final class SimulatorHID: CustomStringConvertible, @unchecked Sendable {
   // MARK: - Input transport
 
   /// Drains the transport so `dtuhidd` consumes a gesture before the connection is torn down.
-  /// `send(event:logger:)` calls this per event unless `flushesAfterEachEvent` is `false`.
-  public func flush() async throws {
+  func flush() async throws {
     try await transport.flush()
   }
 
   // MARK: - Dispatch
 
-  /// Sends a (possibly composite) event, logging each sub-event, then drains once — so a tap or typed
-  /// string settles once, not per primitive. The transport skips the drain when nothing reached it.
-  public func send(event: SimulatorHIDEvent, logger: ControlCoreLogger) async throws {
+  /// Sends a (possibly composite) event, logging each sub-event. With `.perEvent` it then drains once —
+  /// so a tap or typed string settles once, not per primitive. The transport skips the drain when
+  /// nothing reached it.
+  public func send(
+    event: SimulatorHIDEvent, logger: ControlCoreLogger, drain: SimulatorHIDDrain = .perEvent
+  ) async throws {
     for subEvent in event.subEvents ?? [event] {
       switch subEvent {
       case let .delay(duration):
@@ -77,7 +75,7 @@ public final class SimulatorHID: CustomStringConvertible, @unchecked Sendable {
       }
       try await deliver(subEvent)
     }
-    if flushesAfterEachEvent {
+    if case .perEvent = drain {
       try await flush()
     }
   }
@@ -109,4 +107,13 @@ public final class SimulatorHID: CustomStringConvertible, @unchecked Sendable {
   public var description: String {
     "SimulatorKit HID"
   }
+}
+
+/// When `SimulatorHID.send(event:logger:drain:)` waits for `dtuhidd` to consume what it sent.
+public enum SimulatorHIDDrain: Sendable {
+  /// Before returning, so the guest has acted on the event by the time the caller observes it.
+  case perEvent
+  /// Only when the HID is closed, which always drains. For a stream of events the caller does not
+  /// observe between, where a per-event drain is pure latency.
+  case onClose
 }

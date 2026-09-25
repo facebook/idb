@@ -544,8 +544,8 @@ public final class IDBCommandExecutor {
   }
 
   public func hid(_ event: SimulatorHIDEvent) async throws {
-    let hid = try await connectToHID()
-    try await event.send(on: hid)
+    // The shared HID outlives the call, and `Simulator.disconnect()` drains it when closing it.
+    try await connectToHID().send(event: event, logger: logger, drain: .onClose)
   }
 
   public func set_hardware_keyboard_enabled(_ enabled: Bool) async throws {

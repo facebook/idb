@@ -309,13 +309,12 @@ final class SimulatorDTUHIDTransportTests: XCTestCase {
     XCTAssertEqual(sleeps, [DTUHIDTiming.drain])
   }
 
-  func testStreamedGesturesDrainOnceOnTheExplicitFlush() async throws {
+  func testOnCloseGesturesDrainOnceOnTheExplicitFlush() async throws {
     let recorder = DrainRecorder()
     let hid = makeHID(recorder)
-    hid.flushesAfterEachEvent = false
 
-    try await sendGesture(on: hid)
-    try await sendGesture(on: hid)
+    try await sendGesture(on: hid, drain: .onClose)
+    try await sendGesture(on: hid, drain: .onClose)
     try await hid.flush()
 
     let sleeps = await recorder.sleeps
@@ -326,12 +325,11 @@ final class SimulatorDTUHIDTransportTests: XCTestCase {
     let recorder = DrainRecorder()
     let gate = SleepGate()
     let hid = makeHID(recorder, gate: gate)
-    hid.flushesAfterEachEvent = false
 
-    try await sendGesture(on: hid)
+    try await sendGesture(on: hid, drain: .onClose)
     let inFlight = Task { try await hid.flush() }
     await gate.awaitEntry()
-    try await sendGesture(on: hid)
+    try await sendGesture(on: hid, drain: .onClose)
     await gate.open()
     try await inFlight.value
 
@@ -410,9 +408,8 @@ final class SimulatorDTUHIDTransportTests: XCTestCase {
   func testCloseWithUndrainedSend() async throws {
     let recorder = DrainRecorder()
     let hid = makeHID(recorder)
-    hid.flushesAfterEachEvent = false
 
-    try await sendGesture(on: hid)
+    try await sendGesture(on: hid, drain: .onClose)
     await hid.close()
 
     let sleeps = await recorder.sleeps
@@ -423,8 +420,7 @@ final class SimulatorDTUHIDTransportTests: XCTestCase {
     let recorder = DrainRecorder()
     let hid = makeHID(recorder)
     try await sendGesture(on: hid)
-    hid.flushesAfterEachEvent = false
-    try await sendGesture(on: hid)
+    try await sendGesture(on: hid, drain: .onClose)
 
     let gate = SleepGate()
     let closing = Task {
@@ -482,10 +478,11 @@ final class SimulatorDTUHIDTransportTests: XCTestCase {
 
   /// One inert keypress. Usage `0` is "no event indicated", so a guest would ignore it even if one
   /// were listening.
-  private func sendGesture(on hid: SimulatorHID) async throws {
+  private func sendGesture(on hid: SimulatorHID, drain: SimulatorHIDDrain = .perEvent) async throws {
     try await hid.send(
       event: .keyboard(direction: .up, keyCode: 0),
-      logger: ControlCoreGlobalConfiguration.defaultLogger)
+      logger: ControlCoreGlobalConfiguration.defaultLogger,
+      drain: drain)
   }
 
   private enum LivenessReply {

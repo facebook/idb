@@ -39,16 +39,6 @@ public indirect enum SimulatorHIDEvent: Equatable, Hashable, Sendable {
 
 }
 
-// MARK: - Dispatch
-
-public extension SimulatorHIDEvent {
-
-  /// Sends without draining afterwards. Prefer `SimulatorHID.send(event:logger:)`, which drains once per gesture.
-  func send(on hid: SimulatorHID) async throws {
-    try await hid.deliver(self)
-  }
-}
-
 // MARK: - Factories
 
 public extension SimulatorHIDEvent {
