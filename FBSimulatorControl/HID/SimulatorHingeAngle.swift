@@ -6,7 +6,6 @@
  */
 
 import Foundation
-import IOKit
 
 /// A simulator hinge angle in degrees: 0 is closed and 180 is flat.
 public struct SimulatorHingeAngle: Equatable, Hashable, Sendable {
@@ -20,27 +19,16 @@ public struct SimulatorHingeAngle: Equatable, Hashable, Sendable {
   }
 
   func vendorEvent() throws -> IndigoVendorDefinedEvent {
-    let payload: [String: Any] = [
-      "provider": "com.apple.Virtualization.VirtualMachines",
-      "source": "hinge-slider-control",
-      "type": "range",
-      "value": degrees,
-    ]
-    guard let serialized = IOCFSerialize(payload as CFDictionary, 1) else {
-      throw HingeError.serializationFailed
-    }
-    return IndigoVendorDefinedEvent(usagePage: 0xff61, usage: 0x5b, version: 0, data: serialized as Data)
+    try .virtualMachineControl(source: "hinge-slider-control", type: "range", value: degrees)
   }
 }
 
 private enum HingeError: Error, LocalizedError {
   case invalidAngle
-  case serializationFailed
 
   var errorDescription: String? {
     switch self {
     case .invalidAngle: "Hinge angle must be finite and between 0 and 180 degrees"
-    case .serializationFailed: "Could not serialize the simulator hinge input"
     }
   }
 }

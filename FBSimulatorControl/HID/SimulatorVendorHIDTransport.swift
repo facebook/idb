@@ -7,6 +7,7 @@
 
 @preconcurrency import FBControlCore
 import Foundation
+import IOKit
 
 /// The transport for vendor-defined HID reports: the hinge slider and the orientation picker of a
 /// simulator whose runtime reports device motion. `dtuhidd` serves them on a service of their own,
@@ -47,5 +48,22 @@ actor SimulatorVendorHIDTransport {
   /// Tears down the connection, if one was ever established.
   func disconnect() async {
     (try? await connection.reset()?.value)?.disconnect()
+  }
+}
+
+extension IndigoVendorDefinedEvent {
+  /// A report from one of the controls the guest's virtual-machine provider exposes, such as the
+  /// hinge slider or the orientation picker.
+  static func virtualMachineControl(source: String, type: String, value: Any) throws -> Self {
+    let payload: [String: Any] = [
+      "provider": "com.apple.Virtualization.VirtualMachines",
+      "source": source,
+      "type": type,
+      "value": value,
+    ]
+    guard let serialized = IOCFSerialize(payload as CFDictionary, 1) else {
+      throw SimulatorHIDError.vendorReportUnserializable(source: source)
+    }
+    return IndigoVendorDefinedEvent(usagePage: 0xff61, usage: 0x5b, version: 0, data: serialized as Data)
   }
 }
