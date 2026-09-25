@@ -178,6 +178,12 @@ final class AccessibilityRuntimeTests: XCTestCase {
     XCTAssertEqual(FBAXHitTestOutcome(forHitTestError: FBAXError.serverNotFound.rawValue, hasElement: false)?.status, FBAXHitTestStatus.applicationUnavailable, "server-not-found classifies as application-unavailable, not empty")
     XCTAssertEqual(FBAXHitTestOutcome(forHitTestError: FBAXError.invalidUIElement.rawValue, hasElement: false)?.status, FBAXHitTestStatus.empty, "a genuinely empty point")
     XCTAssertEqual(FBAXHitTestOutcome(forHitTestError: FBAXError.ipcTimeout.rawValue, hasElement: false)?.status, FBAXHitTestStatus.applicationNotResponding, "an IPC timeout classifies as application-not-responding, not empty or unavailable")
+    // BUG: an AX code the classifier doesn't name reads as an empty point, so a hit-test that went wrong
+    // looks like blank space. Flipped in the following commit.
+    for code in [FBAXError.failure.rawValue, -25204, -1] {
+      let outcome = FBAXHitTestOutcome(forHitTestError: code, hasElement: false)
+      XCTAssertEqual(outcome?.status, FBAXHitTestStatus.empty, "AX code \(code)")
+    }
   }
 
   func testHitOnASeededPointAnswersWithTheElementAndItsOwningPid() {
