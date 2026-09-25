@@ -27,7 +27,6 @@ from .documentation import documented_demo
 from .harness import (
     _center,
     _describe_matches,
-    _distinct,
     _elements,
     _has_area,
     _label,
@@ -228,22 +227,19 @@ def _rows_on_screen(document: Any) -> list[str]:
 def _search_field(document: Any, value: str | None = None) -> dict[str, Any]:
     """The fixture's search field, holding `value` if one is given.
 
-    The tree can report the field under both the search bar's container and
-    the table, and those copies are one field. Anything but exactly one field
-    with a frame is not ready, and says what carried the field's identifier so
-    the extra or missing one can be told apart.
+    Anything but exactly one field with a frame is not ready, and says what
+    carried the field's identifier so the extra or missing one can be told
+    apart.
     """
 
     def is_search_field(element: dict[str, Any]) -> bool:
         return element.get("identifier") == SEARCH_FIELD_ID
 
-    fields = _distinct(
-        [
-            element
-            for element in _elements(document)
-            if is_search_field(element) and _has_area(element)
-        ]
-    )
+    fields = [
+        element
+        for element in _elements(document)
+        if is_search_field(element) and _has_area(element)
+    ]
     if len(fields) != 1:
         raise NotReady(
             f"Expected one search field with a frame, found {len(fields)}; "
