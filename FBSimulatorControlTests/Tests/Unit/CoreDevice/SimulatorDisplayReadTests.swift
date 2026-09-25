@@ -56,6 +56,24 @@ final class SimulatorDisplayReadTests: XCTestCase {
     XCTAssertEqual(selected.geometry.pointSize, CGSize(width: 951, height: 669))
   }
 
+  func testOnlySeveralIntegratedDisplaysSelectOneByName() throws {
+    let sole = try SimulatorDisplayProtocol.interactionTarget(displayReply([displayValue(id: "lcd", active: true)]))
+    guard case let .sole(.identified(lcd)) = sole else { return XCTFail("Expected the sole identified display") }
+    XCTAssertEqual(lcd.uniqueID, "lcd")
+
+    let selected = try SimulatorDisplayProtocol.interactionTarget(
+      displayReply([displayValue(id: "cover", active: false), displayValue(id: "inner", active: true)]))
+    guard case let .selected(inner) = selected else { return XCTFail("Expected a selected display") }
+    XCTAssertEqual(inner.uniqueID, "inner")
+
+    let legacy = displayValue(id: "legacy", active: true)
+    xpc_dictionary_set_value(legacy, "active", nil)
+    xpc_dictionary_set_value(legacy, "uniqueId", nil)
+    guard case .sole(.legacy) = try SimulatorDisplayProtocol.interactionTarget(displayReply([legacy])) else {
+      return XCTFail("Expected the sole legacy display")
+    }
+  }
+
   func testInterfacePointConversionPreservesAllFourRotations() throws {
     let cases: [(SimulatorDisplayRotation, CGPoint, CGPoint)] = [
       (.upright, CGPoint(x: 80, y: 120), CGPoint(x: 80, y: 120)),

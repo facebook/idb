@@ -50,10 +50,21 @@ enum SimulatorDisplayProtocol {
 
   /// A legacy provider can still be used for interaction when it reports exactly one integrated display.
   static func interactionDisplay(_ reply: xpc_object_t) throws -> SimulatorInteractionDisplay {
+    try interactionTarget(reply).display
+  }
+
+  /// The active integrated display, and whether it is the only one. A legacy provider has to report
+  /// exactly one integrated display.
+  static func interactionTarget(_ reply: xpc_object_t) throws -> SimulatorDisplayTarget {
     let report = try validated(CoreDeviceReply.decode(Report.self, from: reply))
-    if case let .displays(displays) = try snapshot(of: report) {
-      return .identified(try SimulatorDisplayCommands.activeIntegratedDisplay(in: displays))
+    guard case let .displays(displays) = try snapshot(of: report) else {
+      return .sole(.legacy(try legacyIntegratedGeometry(in: report)))
     }
+    let display = try SimulatorDisplayCommands.activeIntegratedDisplay(in: displays)
+    return displays.filter(\.isIntegrated).count > 1 ? .selected(display) : .sole(.identified(display))
+  }
+
+  private static func legacyIntegratedGeometry(in report: Report) throws -> SimulatorDisplayGeometry {
     var integrated: [SimulatorDisplayGeometry] = []
     for record in report.displays {
       let validated = try validated(record)
@@ -65,7 +76,7 @@ enum SimulatorDisplayProtocol {
     guard integrated.count == 1, let geometry = integrated.first else {
       throw SimulatorDisplayInteractionError.unsupportedCapability("unambiguous legacy integrated display selection")
     }
-    return .legacy(geometry)
+    return geometry
   }
 
   private static func snapshot(of report: Report) throws -> Snapshot {

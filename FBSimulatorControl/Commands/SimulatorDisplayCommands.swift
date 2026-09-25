@@ -139,11 +139,20 @@ public enum SimulatorDisplayError: Error, LocalizedError {
   }
 }
 
-public struct SimulatorDisplayCommands {
-  private let simulator: Simulator
+/// Memoized per `Simulator` through its command cache, so display identities learned by one
+/// interaction route the next.
+// SAFETY: `identities` is lock-guarded and the weak simulator reference is only ever read.
+// patternlint-disable-next-line unchecked-sendable
+public final class SimulatorDisplayCommands: DisplayCommands, @unchecked Sendable {
+  private weak var simulator: Simulator?
+  let identities = DisplayIdentityCache()
 
-  public static func commands(with simulator: Simulator) -> SimulatorDisplayCommands {
+  public class func commands(with simulator: Simulator) -> SimulatorDisplayCommands {
     SimulatorDisplayCommands(simulator: simulator)
+  }
+
+  private init(simulator: Simulator) {
+    self.simulator = simulator
   }
 
   /// Reads current displays with explicit layout activity or complete per-display backlight evidence.
@@ -156,9 +165,15 @@ public struct SimulatorDisplayCommands {
     try await read(decode: SimulatorDisplayProtocol.interactionDisplay)
   }
 
+  /// Resolves the active integrated display and whether interactions have to name it.
+  func interactionTarget() async throws -> SimulatorDisplayTarget {
+    try await read(decode: SimulatorDisplayProtocol.interactionTarget)
+  }
+
   /// Lists connected touchscreens. Match `displayUniqueID` to a display snapshot before routing input.
   public func touchscreens() async throws -> [SimulatorTouchscreen] {
     // Universal HID can advertise a virtual digitizer even when the target has no touch display.
+    let simulator = try target()
     guard simulator.productFamily.hasTouchscreen else { return [] }
     return try await simulator.coreDevice.send(
       service: SimulatorTouchscreenProtocol.service, message: SimulatorTouchscreenProtocol.request(),
@@ -168,27 +183,27 @@ public struct SimulatorDisplayCommands {
   /// Resolves one active integrated display and its independent accessibility and input identities.
   /// An explicit UUID must identify the active integrated display; inactive interaction is unsupported.
   public func interactionContext(for displayUniqueID: String? = nil) async throws -> SimulatorDisplayInteractionContext {
-    try await interactionResolver(transport: AXBridgeOneshotTransport(simulator: simulator))
+    try await interactionResolver(transport: AXBridgeOneshotTransport(simulator: target()))
       .resolve(displayUniqueID: displayUniqueID)
   }
 
   /// Fails if the observed active display, geometry or routing no longer matches the saved context.
   /// This is a fresh snapshot comparison, not a record of every intervening display transition.
   public func validate(_ context: SimulatorDisplayInteractionContext) async throws {
-    try await interactionResolver(transport: AXBridgeOneshotTransport(simulator: simulator)).validate(context)
+    try await interactionResolver(transport: AXBridgeOneshotTransport(simulator: target())).validate(context)
   }
 
   func interactionResolver(transport: any AXBridgeTransport) -> SimulatorDisplayInteractionResolver {
     SimulatorDisplayInteractionResolver(
-      readDisplays: { try await list() },
-      readTouchscreens: { try await touchscreens() },
+      readDisplays: { try await self.list() },
+      readTouchscreens: { try await self.touchscreens() },
       readAccessibility: { try AXBridgeDisplayInventory.decode(await transport.send(.displays)) })
   }
 
   /// Returns nil only when the runtime lacks the feature, or the provider the fields, needed to
   /// select a display.
   func activeIntegratedDisplayIfSupported() async throws -> SimulatorDisplay? {
-    let snapshot = try await simulator.coreDevice.performIfSupported(
+    let snapshot = try await target().coreDevice.performIfSupported(
       action: SimulatorDisplayProtocol.action, service: SimulatorDisplayProtocol.service, input: CoreDeviceEmptyInput(),
       decode: SimulatorDisplayProtocol.snapshot)
     switch snapshot {
@@ -197,8 +212,13 @@ public struct SimulatorDisplayCommands {
     }
   }
 
+  private func target() throws -> Simulator {
+    guard let simulator else { throw WeakTargetError.simulator }
+    return simulator
+  }
+
   private func read<Response: Sendable>(decode: @escaping @Sendable (xpc_object_t) throws -> Response) async throws -> Response {
-    try await simulator.coreDevice.perform(
+    try await target().coreDevice.perform(
       action: SimulatorDisplayProtocol.action, service: SimulatorDisplayProtocol.service, input: CoreDeviceEmptyInput(), decode: decode)
   }
 

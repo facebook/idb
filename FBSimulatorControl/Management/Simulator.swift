@@ -283,7 +283,7 @@ extension Simulator {
   }
 
   public var displays: SimulatorDisplayCommands {
-    SimulatorDisplayCommands.commands(with: self)
+    commandCache.resolve { SimulatorDisplayCommands.commands(with: self) }
   }
 
   public var orientation: SimulatorOrientationCommands {
