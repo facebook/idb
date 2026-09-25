@@ -15,11 +15,10 @@ struct MotionCapabilities: Decodable, Equatable, Sendable {
   static let action = "com.apple.coredevice.action.querymotioncapabilities"
 
   /// What a runtime without the motion feature advertises: nothing.
-  static let none = MotionCapabilities(hingeAngle: nil, deviceMotionState: nil, spatialOrientation: nil)
+  static let none = MotionCapabilities(hingeAngle: nil, deviceMotionState: nil)
 
   let hingeAngle: Bool?
   let deviceMotionState: Bool?
-  let spatialOrientation: Bool?
 
   /// The capabilities the simulator advertises. A runtime, CoreDevice installation or toolchain
   /// that cannot answer the query at all advertises `none`; an operational failure is an error.
@@ -71,7 +70,7 @@ enum OrientationReadBackend: Equatable, Sendable {
   case legacyService
 }
 
-enum SimulatorMotionCapability: String {
+enum SimulatorMotionCapability {
   case hingeAngle
   case deviceMotionState
 

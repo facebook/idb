@@ -12,7 +12,7 @@ import XCTest
 final class SimulatorMotionBackendTests: XCTestCase {
 
   private func capabilities(deviceMotionState: Bool?, hingeAngle: Bool? = nil) -> MotionCapabilities {
-    MotionCapabilities(hingeAngle: hingeAngle, deviceMotionState: deviceMotionState, spatialOrientation: nil)
+    MotionCapabilities(hingeAngle: hingeAngle, deviceMotionState: deviceMotionState)
   }
 
   func testAdvertisedDeviceMotionSelectsTheVendorAndGuestBackends() {

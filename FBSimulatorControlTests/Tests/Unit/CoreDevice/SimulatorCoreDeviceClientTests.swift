@@ -140,7 +140,7 @@ final class SimulatorCoreDeviceClientTests: XCTestCase {
     recorder.reply = Self.advertised
     for _ in 0..<3 {
       let capabilities = try await recorder.client.motionCapabilities()
-      XCTAssertEqual(capabilities, MotionCapabilities(hingeAngle: true, deviceMotionState: true, spatialOrientation: nil))
+      XCTAssertEqual(capabilities, MotionCapabilities(hingeAngle: true, deviceMotionState: true))
     }
     XCTAssertEqual(peer.connections, 1)
     let request = try XCTUnwrap(peer.received.first)

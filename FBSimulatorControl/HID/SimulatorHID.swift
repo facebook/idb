@@ -19,10 +19,8 @@ import Foundation
  commands on the `Simulator` (`orientation`, `hinge`, `hardware`, `statusBar`).
 
  See `Indigo.h` for wire format documentation.
-
- Indigo-family sends are serialized by the transport, so the type is `@unchecked Sendable`.
  */
-public final class SimulatorHID: CustomStringConvertible, @unchecked Sendable {
+public final class SimulatorHID: CustomStringConvertible, Sendable {
 
   // MARK: - Properties
 

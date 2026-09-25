@@ -39,7 +39,7 @@ struct SimulatorHIDTransportSelectionTests {
   @Test("Only a failure to reach dtuhidd is worth falling back to Indigo for")
   func isDTUHIDUnreachable() {
     #expect(SimulatorHIDError.dtuhidXPCSymbolsUnavailable.isDTUHIDUnreachable)
-    #expect(SimulatorHIDError.dtuhidDigitizerServiceUnavailable(underlying: nil).isDTUHIDUnreachable)
+    #expect(SimulatorHIDError.dtuhidServiceUnavailable(name: "service", underlying: nil).isDTUHIDUnreachable)
     #expect(SimulatorHIDError.dtuhidConnectionFailed.isDTUHIDUnreachable)
   }
 
