@@ -132,10 +132,9 @@ public final class SimulatorHID: CustomStringConvertible, @unchecked Sendable {
 
   // MARK: - Dispatch
 
-  /// Sends a (possibly composite) event, logging each sub-event, then drains once if any sub-event reached
-  /// the HID transport — so a tap or typed string settles once, not per primitive.
+  /// Sends a (possibly composite) event, logging each sub-event, then drains once — so a tap or typed
+  /// string settles once, not per primitive. The transport skips the drain when nothing reached it.
   public func send(event: SimulatorHIDEvent, logger: ControlCoreLogger) async throws {
-    var wroteToTransport = false
     for subEvent in event.subEvents ?? [event] {
       switch subEvent {
       case let .delay(duration):
@@ -143,47 +142,34 @@ public final class SimulatorHID: CustomStringConvertible, @unchecked Sendable {
       case .touch, .button, .remoteButton, .keyboard, .twoFingerTouch, .trackpad, .composite:
         logger.log("Sending \(subEvent)")
       }
-      if try await deliver(subEvent) {
-        wroteToTransport = true
-      }
+      try await deliver(subEvent)
     }
-    if wroteToTransport, flushesAfterEachEvent {
+    if flushesAfterEachEvent {
       try await flush()
     }
   }
 
-  /// Routes one event to its transport; returns whether it went to the HID transport (which decides the drain).
-  func deliver(_ event: SimulatorHIDEvent) async throws -> Bool {
+  /// Routes one event to its transport.
+  func deliver(_ event: SimulatorHIDEvent) async throws {
     switch event {
     case let .touch(direction, x, y, edge):
       try await transport.sendTouch(direction: direction, x: x, y: y, edge: edge)
-      return true
     case let .button(direction, button):
       try await transport.sendButton(direction: direction, button: button)
-      return true
     case let .remoteButton(direction, button):
       try await transport.sendRemoteButton(direction: direction, button: button)
-      return true
     case let .keyboard(direction, keyCode):
       try await transport.sendKeyboard(direction: direction, keyCode: keyCode)
-      return true
     case let .twoFingerTouch(direction, finger1, finger2):
       try await transport.sendTwoFingerTouch(direction: direction, finger1: finger1, finger2: finger2)
-      return true
     case let .trackpad(phase, point):
       try await sendTrackpad(point: point, phase: phase)
-      // The trackpad rides Indigo, and only DTUHID has a drain, so this wrote to the drained transport
-      // only on a target that has no DTUHID transport at all.
-      return transport.dtuhid == nil
     case let .delay(duration):
       try await Task.sleep(nanoseconds: UInt64(max(0, duration) * 1_000_000_000))
-      return false
     case let .composite(events):
-      var wrote = false
-      for event in events where try await deliver(event) {
-        wrote = true
+      for event in events {
+        try await deliver(event)
       }
-      return wrote
     }
   }
 

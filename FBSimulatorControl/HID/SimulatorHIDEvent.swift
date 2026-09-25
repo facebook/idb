@@ -45,7 +45,7 @@ public extension SimulatorHIDEvent {
 
   /// Sends without draining afterwards. Prefer `SimulatorHID.send(event:logger:)`, which drains once per gesture.
   func send(on hid: SimulatorHID) async throws {
-    _ = try await hid.deliver(self)
+    try await hid.deliver(self)
   }
 }
 
