@@ -59,7 +59,7 @@ actor SimulatorDTUHIDTransport {
   /// Connects to the simulator's DTUHID digitizer service. See `SimulatorDTUHIDConnection.connect`.
   static func dtuhid(for simulator: Simulator) async throws -> SimulatorDTUHIDTransport {
     SimulatorDTUHIDTransport(
-      connection: try await SimulatorDTUHIDConnection.connect(to: simulator, serviceName: digitizerServiceName),
+      connection: try await SimulatorDTUHIDConnection.connect(using: simulator.xpc, serviceName: digitizerServiceName),
       mainScreenSize: simulator.device.deviceType.mainScreenSize,
       mainScreenScale: simulator.device.deviceType.mainScreenScale,
       productFamily: simulator.productFamily)

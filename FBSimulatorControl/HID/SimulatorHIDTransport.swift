@@ -45,7 +45,7 @@ enum SimulatorHIDTransport: Sendable {
   /// A requested transport is never substituted — it is established or the error surfaces. With no request,
   /// `defaultHIDTransport` is tried and only an `isDTUHIDUnreachable` failure falls back to Indigo; a fault
   /// in an established transport is a real error. Reachability is settled where it is observable, by
-  /// `SimulatorDTUHIDConnection.connect(to:serviceName:)` round-tripping a barrier past its retries: `dtuhidd` is
+  /// `SimulatorDTUHIDConnection.connect(using:serviceName:)` round-tripping a barrier past its retries: `dtuhidd` is
   /// demand-launched, so neither the toolchain version nor the service lookup can tell whether one is
   /// there. Falling back costs the keyboard, which the guest has already handed to `dtuhidd`, so it is
   /// reached only after that probe has given the daemon every chance to come up.

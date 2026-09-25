@@ -30,7 +30,7 @@ actor SimulatorVendorHIDTransport {
   init(simulator: Simulator?) {
     self.init { [weak simulator] in
       guard let simulator else { throw WeakTargetError.simulator }
-      return try await SimulatorDTUHIDConnection.connect(to: simulator, serviceName: Self.serviceName)
+      return try await SimulatorDTUHIDConnection.connect(using: simulator.xpc, serviceName: Self.serviceName)
     }
   }
 

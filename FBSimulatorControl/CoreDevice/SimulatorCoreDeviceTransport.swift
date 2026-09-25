@@ -24,9 +24,9 @@ final class SimulatorCoreDeviceXPCTransport: SimulatorCoreDeviceTransport, @unch
   private let queue: DispatchQueue
   private var started = false
 
-  init(simulator: Simulator, service: String, queue: DispatchQueue) throws {
+  init(connector: SimulatorXPCConnector, service: String, queue: DispatchQueue) throws {
     self.queue = queue
-    connection = try SimulatorCoreDevice.connect(simulator: simulator, service: service)
+    connection = try SimulatorCoreDevice.connect(using: connector, service: service)
     xpc_connection_set_target_queue(connection, queue)
   }
 

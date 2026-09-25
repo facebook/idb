@@ -28,6 +28,28 @@ enum SimulatorXPCConnectionError: Error, Equatable {
   }
 }
 
+/// Where a guest service name becomes a host connection to it. Every XPC connection into a simulator,
+/// CoreDevice and DTUHID alike, is built here, so it is the one place a test substitutes its own
+/// peers. The connection is returned unresumed.
+struct SimulatorXPCConnector: Sendable {
+  let connect: @Sendable (_ service: String) throws -> xpc_connection_t
+}
+
+extension SimulatorXPCConnector {
+  /// Looks services up in `simulator`'s bootstrap namespace. Holds the `SimDevice` rather than the
+  /// `Simulator`, whose command cache keeps this connector's owners.
+  static func simulator(_ simulator: Simulator) -> SimulatorXPCConnector {
+    let device = simulator.device
+    return SimulatorXPCConnector { service in
+      try SimulatorXPCConnection.connect(service: service) { service in
+        var error: NSError?
+        let port = device.lookup(service, error: &error)
+        return (port, error)
+      }
+    }
+  }
+}
+
 /// Builds the host side of an XPC connection to a service inside a booted simulator.
 ///
 /// Both CoreDevice features and `dtuhidd` are reached this way: the service's Mach port is looked up
@@ -42,14 +64,6 @@ enum SimulatorXPCConnection {
   private typealias EndpointFromPort = @convention(c) (mach_port_t, UInt64, UInt64) -> Unmanaged<AnyObject>?
   private typealias ConnectionFromEndpoint = @convention(c) (xpc_object_t) -> Unmanaged<AnyObject>?
   private typealias EnableSim2Host = @convention(c) (xpc_connection_t) -> Void
-
-  static func connect(simulator: Simulator, service: String) throws -> xpc_connection_t {
-    try connect(service: service) { service in
-      var error: NSError?
-      let port = simulator.device.lookup(service, error: &error)
-      return (port, error)
-    }
-  }
 
   static func connect(service: String, lookup: ServiceLookup) throws -> xpc_connection_t {
     guard let handle = dlopen(nil, RTLD_NOW) else { throw SimulatorXPCConnectionError.symbolsUnavailable }

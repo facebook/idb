@@ -161,12 +161,12 @@ final class SimulatorDTUHIDConnection: Sendable {
   /// still yields a port and every send is then silently discarded. The window is seconds wide and
   /// closes once the boot settles, so a backed-off retry recovers the full transport, keyboard
   /// included, where giving up would cost the keyboard for the lifetime of the boot.
-  static func connect(to simulator: Simulator, serviceName: String) async throws -> SimulatorDTUHIDConnection {
+  static func connect(using connector: SimulatorXPCConnector, serviceName: String) async throws -> SimulatorDTUHIDConnection {
     let logger = ControlCoreGlobalConfiguration.defaultLogger
     var lastFailure: Error?
     for attempt in 1...DTUHIDTiming.livenessAttempts {
       do {
-        return try await connected(to: simulator, serviceName: serviceName)
+        return try await connected(using: connector, serviceName: serviceName)
       } catch let error as SimulatorHIDError where !error.isTransientDTUHIDFailure {
         // A toolchain that has no DTUHID at all will not grow one by being asked again.
         throw error
@@ -189,9 +189,9 @@ final class SimulatorDTUHIDConnection: Sendable {
   /// The lookup belongs to the attempt rather than preceding the loop. It fails while the job is
   /// mid-respawn, which is exactly the state being retried out of, so hoisting it turns the most
   /// recoverable moment into a terminal one.
-  private static func connected(to simulator: Simulator, serviceName: String) async throws -> SimulatorDTUHIDConnection {
+  private static func connected(using connector: SimulatorXPCConnector, serviceName: String) async throws -> SimulatorDTUHIDConnection {
     let connection = SimulatorDTUHIDConnection(
-      connection: try xpcConnection(for: simulator, serviceName: serviceName),
+      connection: try xpcConnection(using: connector, serviceName: serviceName),
       serviceName: serviceName)
     do {
       try await connection.confirmLiveness()
@@ -204,10 +204,10 @@ final class SimulatorDTUHIDConnection: Sendable {
 
   /// A resumed host XPC connection to the requested guest HID service. Says nothing about whether
   /// `dtuhidd` is able to run — launchd vends the port for a demand-launched job either way.
-  private static func xpcConnection(for simulator: Simulator, serviceName: String) throws -> xpc_connection_t {
+  private static func xpcConnection(using connector: SimulatorXPCConnector, serviceName: String) throws -> xpc_connection_t {
     let connection: xpc_connection_t
     do {
-      connection = try SimulatorXPCConnection.connect(simulator: simulator, service: serviceName)
+      connection = try connector.connect(serviceName)
     } catch let error as SimulatorXPCConnectionError {
       throw SimulatorHIDError(dtuhidConnection: error)
     }

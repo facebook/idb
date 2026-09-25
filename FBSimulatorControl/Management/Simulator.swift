@@ -268,7 +268,12 @@ extension Simulator {
   /// The simulator's CoreDevice features. One client per simulator, so the installed CoreDevice
   /// version is read once.
   var coreDevice: SimulatorCoreDeviceClient {
-    commandCache.resolve { SimulatorCoreDeviceClient(simulator: self) }
+    commandCache.resolve { SimulatorCoreDeviceClient(deviceID: udid, connector: xpc) }
+  }
+
+  /// Host connections to the simulator's guest services.
+  var xpc: SimulatorXPCConnector {
+    .simulator(self)
   }
 
   /// GSEvents over the PurpleWorkspacePort: lock, and rotation on a runtime without device motion. One

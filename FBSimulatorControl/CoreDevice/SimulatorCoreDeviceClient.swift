@@ -29,11 +29,11 @@ final class SimulatorCoreDeviceClient: @unchecked Sendable {
   private var cachedVersion: CoreDeviceVersion?
   private var cachedMotionCapabilities: MotionCapabilities?
 
-  convenience init(simulator: Simulator) {
+  convenience init(deviceID: String, connector: SimulatorXPCConnector, version: @escaping VersionSource = CoreDeviceVersion.installed) {
     self.init(
-      deviceID: simulator.udid,
-      transport: { service, queue in try SimulatorCoreDeviceXPCTransport(simulator: simulator, service: service, queue: queue) },
-      version: CoreDeviceVersion.installed)
+      deviceID: deviceID,
+      transport: { service, queue in try SimulatorCoreDeviceXPCTransport(connector: connector, service: service, queue: queue) },
+      version: version)
   }
 
   init(deviceID: String, transport: @escaping TransportFactory, version: @escaping VersionSource) {

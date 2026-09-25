@@ -48,9 +48,9 @@ enum SimulatorCoreDevice {
     }
   }
 
-  static func connect(simulator: Simulator, service: String) throws -> xpc_connection_t {
+  static func connect(using connector: SimulatorXPCConnector, service: String) throws -> xpc_connection_t {
     do {
-      return try SimulatorXPCConnection.connect(simulator: simulator, service: service)
+      return try connector.connect(service)
     } catch let error as SimulatorXPCConnectionError {
       throw SimulatorCoreDeviceError(connection: error)
     }
