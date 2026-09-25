@@ -72,6 +72,7 @@ private let nodeElementIdentity = BridgeAXWire.Node.elementIdentity.rawValue
 // Present only on a node where at least one attribute failed to read, mapping the attribute's key to the
 // reason.
 private let nodeAttributeReadFailures = BridgeAXWire.Node.attributeReadFailures.rawValue
+private let requestDisplayID = "displayID"
 private let requestX = BridgeAXWire.Request.x.rawValue
 private let requestY = BridgeAXWire.Request.y.rawValue
 // Selects how a fused frontmost read (a `describe` with no pid) resolves the foreground app. Optional;
@@ -701,6 +702,16 @@ private final class AccessibilityRequest {
 
   // MARK: - Frontmost resolution
 
+  fileprivate func FBAXBridgeHitTest(
+    client: FBAXClient,
+    at point: CGPoint,
+    processIdentifier pid: pid_t,
+    displayID: UInt32?
+  ) throws -> FBAXElementHit {
+    guard let displayID else { return try client.hitTest(at: point, processIdentifier: pid) }
+    return try client.hitTest(at: point, processIdentifier: pid, displayIdentifier: displayID)
+  }
+
   // Resolves the frontmost application positionally: a system-wide hit-test at the caller's screen anchor
   // reads whichever element owns that point, and its owning pid is the frontmost app.
   //
@@ -708,10 +719,11 @@ private final class AccessibilityRequest {
   // screen, but a centred element owned by another process (e.g. a system modal) answers that process.
   fileprivate func FBAXBridgeCenterPointFrontmost(
     client: FBAXClient,
-    anchor: CGPoint
+    anchor: CGPoint,
+    displayID: UInt32?
   ) throws -> FBAXFrontmostOutcome {
     FBAXBridgeCountRoundTrip()
-    let outcome = try client.hitTest(at: anchor, processIdentifier: 0)
+    let outcome = try FBAXBridgeHitTest(client: client, at: anchor, processIdentifier: 0, displayID: displayID)
     switch outcome.status {
     case FBAXHitTestStatus.hit:
       return FBAXFrontmostOutcome.resolved(outcome.owningProcessIdentifier)
@@ -734,14 +746,17 @@ private final class AccessibilityRequest {
   fileprivate func FBAXBridgeResolveFrontmost(
     client: FBAXClient,
     method: String,
-    anchor: CGPoint
+    anchor: CGPoint,
+    displayID: UInt32?
   ) throws -> FBAXFrontmostOutcome {
     switch FrontmostMethod(rawValue: method) {
     case .centerPoint:
-      return try FBAXBridgeCenterPointFrontmost(client: client, anchor: anchor)
+      return try FBAXBridgeCenterPointFrontmost(client: client, anchor: anchor, displayID: displayID)
     case .windowServer:
-      return try client.windowServerFrontmost()
+      guard let displayID else { return try client.windowServerFrontmost() }
+      return try client.windowServerFrontmost(onDisplay: displayID)
     case .runningBoard:
+      guard displayID == nil else { return FBAXFrontmostOutcome.unresolved("RunningBoard does not support display-specific frontmost lookup") }
       return try client.runningBoardFrontmost()
     case nil:
       return FBAXFrontmostOutcome.unresolved("unsupported frontmost method: \(method)")
@@ -887,7 +902,8 @@ private final class AccessibilityRequest {
   // display-wide, so the host learns the owning app without a separate frontmost query.
   fileprivate func FBAXBridgeHitTest(
     client: FBAXClient,
-    request: [String: Any]
+    request: [String: Any],
+    displayID: UInt32?
   ) throws -> [String: Any] {
     let xNumber = request[requestX] as? NSNumber
     let yNumber = request[requestY] as? NSNumber
@@ -902,7 +918,7 @@ private final class AccessibilityRequest {
 
     FBAXBridgeCountRoundTrip()
 
-    let outcome = try client.hitTest(at: CGPoint(x: xNumber?.doubleValue ?? 0.0, y: yNumber?.doubleValue ?? 0.0), processIdentifier: pidNumber?.int32Value ?? 0)
+    let outcome = try FBAXBridgeHitTest(client: client, at: CGPoint(x: xNumber?.doubleValue ?? 0.0, y: yNumber?.doubleValue ?? 0.0), processIdentifier: pidNumber?.int32Value ?? 0, displayID: displayID)
     switch outcome.status {
     case FBAXHitTestStatus.hit:
       break
@@ -1014,6 +1030,7 @@ private final class AccessibilityRequest {
   fileprivate func FBAXBridgeResolveWriteTarget(
     client: FBAXClient,
     request: [String: Any],
+    displayID: UInt32?,
     element: inout FBAXElement?,
     pid: inout pid_t
   ) throws -> FBAXWriteOutcome? {
@@ -1024,7 +1041,7 @@ private final class AccessibilityRequest {
 
     let pidNumber = request[requestPid] as? NSNumber
     FBAXBridgeCountRoundTrip()
-    let hit = try client.hitTest(at: CGPoint(x: xNumber?.doubleValue ?? 0.0, y: yNumber?.doubleValue ?? 0.0), processIdentifier: pidNumber?.int32Value ?? 0)
+    let hit = try FBAXBridgeHitTest(client: client, at: CGPoint(x: xNumber?.doubleValue ?? 0.0, y: yNumber?.doubleValue ?? 0.0), processIdentifier: pidNumber?.int32Value ?? 0, displayID: displayID)
     switch hit.status {
     case FBAXHitTestStatus.hit:
       break
@@ -1115,7 +1132,8 @@ private final class AccessibilityRequest {
   // `+[FBAXWriteOutcome outcomeForWriteError:]`.
   fileprivate func FBAXBridgePerform(
     client: FBAXClient,
-    request: [String: Any]
+    request: [String: Any],
+    displayID: UInt32?
   ) throws -> [String: Any] {
     let requestedAction = request[requestAction]
     let name = requestedAction as? String
@@ -1136,6 +1154,7 @@ private final class AccessibilityRequest {
     var outcome = try FBAXBridgeResolveWriteTarget(
       client: client,
       request: request,
+      displayID: displayID,
       element: &element,
       pid: &pid
     )
@@ -1156,7 +1175,8 @@ private final class AccessibilityRequest {
   // `perform` — the runtime's own answer is the only judgement.
   fileprivate func FBAXBridgeSetValue(
     client: FBAXClient,
-    request: [String: Any]
+    request: [String: Any],
+    displayID: UInt32?
   ) throws -> [String: Any] {
     guard let requestedValue = request[requestValue] as? String else {
       return FBAXBridgeTaggedErrorResponse(
@@ -1175,6 +1195,7 @@ private final class AccessibilityRequest {
     var outcome = try FBAXBridgeResolveWriteTarget(
       client: client,
       request: request,
+      displayID: displayID,
       element: &element,
       pid: &pid
     )
@@ -1294,6 +1315,17 @@ private final class AccessibilityRequest {
       )
     }
 
+    var displayID: UInt32?
+    if let requestedDisplay = request[requestDisplayID] {
+      guard let number = requestedDisplay as? NSNumber,
+        CFGetTypeID(number) != CFBooleanGetTypeID(),
+        let requested = UInt32(exactly: number.doubleValue), requested > 0
+      else {
+        return FBAXBridgeTaggedErrorResponse(message: "displayID must be a positive 32-bit integer", kind: errorKindBadRequest, pid: nil)
+      }
+      displayID = requested
+    }
+
     let client: FBAXClient
     do {
       client = try FBAXClientProvider.client()
@@ -1311,6 +1343,7 @@ private final class AccessibilityRequest {
       case .available:
         return [
           responseOk: true,
+          "displayScopedInteractions": true,
           "displays": outcome.displays.map { display -> [String: Any] in
             ["uniqueID": display.uniqueID, "displayID": display.displayID]
           },
@@ -1339,15 +1372,15 @@ private final class AccessibilityRequest {
     // `hittest` is self-contained: with a pid it hit-tests that app; with no pid it hit-tests display-wide
     // — the app owning the point, resolved in-guest, with no frontmost pid query.
     if verb == .hitTest {
-      return try FBAXBridgeHitTest(client: client, request: request)
+      return try FBAXBridgeHitTest(client: client, request: request, displayID: displayID)
     }
     // Writes are point-addressed: a one-shot guest exits between requests, so an element handle cannot
     // survive one.
     if verb == .perform {
-      return try FBAXBridgePerform(client: client, request: request)
+      return try FBAXBridgePerform(client: client, request: request, displayID: displayID)
     }
     if verb == .setValue {
-      return try FBAXBridgeSetValue(client: client, request: request)
+      return try FBAXBridgeSetValue(client: client, request: request, displayID: displayID)
     }
     // `describe`: an explicit `pid` names the app directly; with no pid it is a fused frontmost read — the
     // guest resolves the frontmost app in-guest (via the selected method, anchored at `x`/`y`) and reads
@@ -1392,7 +1425,8 @@ private final class AccessibilityRequest {
       let frontmost = try FBAXBridgeResolveFrontmost(
         client: client,
         method: frontmostMethod,
-        anchor: frontmostAnchor
+        anchor: frontmostAnchor,
+        displayID: displayID
       )
       switch frontmost.status {
       case FBAXFrontmostStatus.resolved:
@@ -1564,7 +1598,7 @@ private final class AccessibilityRequest {
         target: target,
         busyThreshold: TimeInterval(milliseconds[requestBusyThresholdMs] ?? 0) / 1000,
         quietWindow: TimeInterval(milliseconds[requestQuietWindowMs] ?? 0) / 1000,
-        resolveFrontmost: { client in try AccessibilityRequest().FBAXBridgeResolveFrontmost(client: client, method: method, anchor: anchor) }
+        resolveFrontmost: { client in try AccessibilityRequest().FBAXBridgeResolveFrontmost(client: client, method: method, anchor: anchor, displayID: nil) }
       ))
   }
 
@@ -1580,7 +1614,8 @@ private final class AccessibilityRequest {
 
   fileprivate func FBAXBridgeWireConstantsForTesting() -> [String: String] {
     [
-      "node.elementType": axElementType, "node.elementBaseType": axElementBaseType, "node.label": axLabel, "node.value": axValue, "node.identifier": axIdentifier, "node.frame": axFrame, "node.automationType": axAutomationType, "node.children": axChildren, "request.verb": requestVerb, "request.pid": requestPid, "request.maxDepth": requestMaxDepth, "request.maxNodes": requestMaxNodes, "request.automationMode": requestAutomationMode, "request.attributes": requestAttributes, "request.translatorVocabulary": requestTranslatorVocabulary, "request.explainUnreachable": requestExplainUnreachable, "node.explainedBy": nodeExplainedBy, "node.isEnabled": nodeIsEnabled, "node.translatorRole": nodeTranslatorRole, "node.translatorSubrole": nodeTranslatorSubrole, "node.traits": nodeTraits, "node.elementIdentity": nodeElementIdentity, "request.x": requestX, "request.y": requestY, "request.method": requestMethod, "request.action": requestAction, "request.value": requestValue, "request.setting": requestSetting, "request.enabled": requestEnabled, "request.assertKey": requestAssertKey, "request.assertValue": requestAssertValue, "envelope.ok": responseOk, "envelope.enabled": responseEnabled, "envelope.tree": responseTree, "envelope.error": responseError, "envelope.empty": responseEmpty, "envelope.errorKind": responseErrorKind, "envelope.errorKindApplicationUnavailable": errorKindApplicationUnavailable, "envelope.errorKindApplicationNotResponding": errorKindApplicationNotResponding, "envelope.errorKindFrontmostUnresolved": errorKindFrontmostUnresolved, "envelope.errorKindReaderUnavailable": errorKindReaderUnavailable, "envelope.errorKindBadRequest": errorKindBadRequest, "envelope.errorKindAssertionFailed": errorKindAssertionFailed, "envelope.truncated": responseTruncated, "envelope.pid": responsePid, "envelope.method": responseMethod, "envelope.modal": responseModal, "envelope.automation": responseAutomation, "envelope.phases": responsePhases, "phases.traverse": phaseTraverse,
+      "node.elementType": axElementType, "node.elementBaseType": axElementBaseType, "node.label": axLabel, "node.value": axValue, "node.identifier": axIdentifier, "node.frame": axFrame, "node.automationType": axAutomationType, "node.children": axChildren, "request.verb": requestVerb, "request.pid": requestPid, "request.maxDepth": requestMaxDepth, "request.maxNodes": requestMaxNodes, "request.automationMode": requestAutomationMode, "request.attributes": requestAttributes, "request.translatorVocabulary": requestTranslatorVocabulary, "request.explainUnreachable": requestExplainUnreachable, "node.explainedBy": nodeExplainedBy, "node.isEnabled": nodeIsEnabled, "node.translatorRole": nodeTranslatorRole, "node.translatorSubrole": nodeTranslatorSubrole, "node.traits": nodeTraits, "node.elementIdentity": nodeElementIdentity, "request.displayID": requestDisplayID, "request.x": requestX, "request.y": requestY, "request.method": requestMethod, "request.action": requestAction, "request.value": requestValue, "request.setting": requestSetting, "request.enabled": requestEnabled, "request.assertKey": requestAssertKey, "request.assertValue": requestAssertValue, "envelope.ok": responseOk, "envelope.enabled": responseEnabled, "envelope.tree": responseTree, "envelope.error": responseError, "envelope.empty": responseEmpty, "envelope.errorKind": responseErrorKind, "envelope.errorKindApplicationUnavailable": errorKindApplicationUnavailable, "envelope.errorKindApplicationNotResponding": errorKindApplicationNotResponding, "envelope.errorKindFrontmostUnresolved": errorKindFrontmostUnresolved, "envelope.errorKindReaderUnavailable": errorKindReaderUnavailable, "envelope.errorKindBadRequest": errorKindBadRequest, "envelope.errorKindAssertionFailed": errorKindAssertionFailed, "envelope.truncated": responseTruncated, "envelope.pid": responsePid, "envelope.method": responseMethod, "envelope.modal": responseModal, "envelope.automation": responseAutomation, "envelope.phases": responsePhases,
+      "phases.traverse": phaseTraverse,
       "phases.machRoundTrips": phaseMachRoundTrips, "automation.enabled": kAutomationEnabled, "automation.asserted": kAutomationAsserted, "modal.kind": modalKind, "modal.kindSystem": modalKindSystem, "modal.kindApp": modalKindApp, "modal.elementType": modalElementType, "modal.label": modalLabel, "modal.systemAlertWindowClass": systemAlertWindowClass, "modal.alertControllerClassPrefix": alertControllerClassPrefix, "verb.displays": AccessibilityVerb.displays.rawValue, "verb.describe": AccessibilityVerb.describe.rawValue, "verb.hittest": AccessibilityVerb.hitTest.rawValue, "verb.perform": AccessibilityVerb.perform.rawValue, "verb.setvalue": AccessibilityVerb.setValue.rawValue, "verb.settingsGet": AccessibilityVerb.settingsGet.rawValue, "verb.settingsSet": AccessibilityVerb.settingsSet.rawValue, "verb.quiet": AccessibilityVerb.quiet.rawValue, "request.busyThresholdMs": requestBusyThresholdMs, "request.quietWindowMs": requestQuietWindowMs, "action.press": AccessibilityAction.press.rawValue, "action.scrollUp": AccessibilityAction.scrollUp.rawValue, "action.scrollDown": AccessibilityAction.scrollDown.rawValue, "action.scrollLeft": AccessibilityAction.scrollLeft.rawValue, "action.scrollRight": AccessibilityAction.scrollRight.rawValue, "action.scrollToVisible": AccessibilityAction.scrollToVisible.rawValue, "method.centerPoint": FrontmostMethod.centerPoint.rawValue, "method.windowServer": FrontmostMethod.windowServer.rawValue, "method.runningBoard": FrontmostMethod.runningBoard.rawValue,
     ]
   }

@@ -18,6 +18,8 @@
 
 #import <Foundation/Foundation.h>
 
+typedef const struct CF_BRIDGED_TYPE(id) __AXUIElement *AXUIElementRef;
+
 /** Native activation, including remote elements and a touch at the element's visible point. */
 @interface AXElement : NSObject
 /** Retains the borrowed reference through its AXUIElement wrapper. */

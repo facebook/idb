@@ -80,9 +80,11 @@ NS_ASSUME_NONNULL_BEGIN
 - (nullable FBAXOptionalValue<FBAXElement *> *)applicationElementForProcessIdentifier:(pid_t)pid error:(NSError **)error;
 - (nullable FBAXElementRead *)readAttributes:(NSArray<NSString *> *)attributes ofElement:(FBAXElement *)element error:(NSError **)error;
 - (nullable FBAXElementHit *)hitTestAtPoint:(CGPoint)point processIdentifier:(pid_t)pid error:(NSError **)error;
+- (nullable FBAXElementHit *)hitTestAtPoint:(CGPoint)point processIdentifier:(pid_t)pid displayIdentifier:(uint32_t)displayID error:(NSError **)error;
 - (nullable FBAXWriteOutcome *)performAction:(FBAXAction)action onElement:(FBAXElement *)element error:(NSError **)error;
 - (nullable FBAXWriteOutcome *)setValue:(id)value onElement:(FBAXElement *)element error:(NSError **)error;
 - (nullable FBAXFrontmostOutcome *)windowServerFrontmostWithError:(NSError **)error;
+- (nullable FBAXFrontmostOutcome *)windowServerFrontmostOnDisplay:(uint32_t)displayID error:(NSError **)error;
 - (nullable FBAXFrontmostOutcome *)runningBoardFrontmostWithError:(NSError **)error;
 - (nullable NSNumber *)automationModeEnabledWithError:(NSError **)error;
 - (nullable NSNumber *)setAutomationModeEnabled:(BOOL)enabled error:(NSError **)error;

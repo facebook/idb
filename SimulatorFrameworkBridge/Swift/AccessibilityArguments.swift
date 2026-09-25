@@ -16,6 +16,8 @@ public enum FBAXBridgeArguments {
       let string = value as NSString
       switch arguments[index] {
       case "--pid": request["pid"] = string.intValue
+      case "--display-id":
+        if let displayID = UInt32(value), displayID > 0 { request["displayID"] = displayID } else { request["displayID"] = value }
       case "--max-depth": request["maxDepth"] = string.intValue
       case "--max-nodes": request["maxNodes"] = string.intValue
       case "--automation-mode": request["automationMode"] = string.boolValue

@@ -232,6 +232,8 @@ NSDictionary<NSString *, id> *FBAXGeometryDictionaryProbe(BOOL rectangle, BOOL r
 /** The point of the most recent hit-test, and the pid it was scoped to (0 for display-wide). */
 @property (nonatomic, readonly) CGPoint lastHitTestPoint;
 @property (nonatomic, readonly) pid_t lastHitTestProcessIdentifier;
+@property (nullable, nonatomic, readonly) NSNumber *lastHitTestDisplayIdentifier;
+@property (nullable, nonatomic, readonly) NSNumber *lastFrontmostDisplayIdentifier;
 /**
  * What the most recent write was asked to do.
  *

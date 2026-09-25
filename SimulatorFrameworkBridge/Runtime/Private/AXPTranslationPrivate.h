@@ -19,6 +19,8 @@
 #import <CoreGraphics/CoreGraphics.h>
 #import <Foundation/Foundation.h>
 
+#import "AXRuntimePrivate.h"
+
 NS_ASSUME_NONNULL_BEGIN
 
 /** The framework's path inside the booted runtime root, for dlopen. */
@@ -111,6 +113,12 @@ typedef id _Nullable (^AXPTranslationBridgeCallback)(id request);
  */
 - (nullable AXPTranslationObject *)frontmostApplicationWithDisplayId:(unsigned int)displayId
                                                  bridgeDelegateToken:(NSString *)token;
+
+/** Resolves an unrotated display-relative point on the specified accessibility display. */
+- (nullable AXPTranslationObject *)objectAtPoint:(CGPoint)point displayId:(unsigned int)displayID bridgeDelegateToken:(NSString *)token;
+
+/** Returns a **+1 owned** reference, independent of the translation object's lifetime. */
+- (AXUIElementRef _Nullable)createPlatformElementFromTranslationObject:(AXPTranslationObject *)object CF_RETURNS_RETAINED;
 
 /** Resolves one translator request against the local AX server. This is what a bridge callback calls. */
 - (nullable AXPTranslatorResponse *)processTranslatorRequest:(AXPTranslatorRequest *)request;

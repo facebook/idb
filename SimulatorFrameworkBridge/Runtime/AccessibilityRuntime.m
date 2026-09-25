@@ -433,6 +433,8 @@ static const FBAXBoundSelector kFBAXBoundSelectors[] = {
   // AccessibilityPlatformTranslation
   {"AXPTranslator", "sharediOSInstance", YES, "@@:"},
   {"AXPTranslator", "frontmostApplicationWithDisplayId:bridgeDelegateToken:", NO, "@@:I@"},
+  {"AXPTranslator", "objectAtPoint:displayId:bridgeDelegateToken:", NO, "@@:{CGPoint=dd}I@"},
+  {"AXPTranslator_iOS", "createPlatformElementFromTranslationObject:", NO, "^{__AXUIElement=}@:@"},
   {"AXPTranslator", "processTranslatorRequest:", NO, "@@:@"},
   {"AXPTranslator", "setBridgeTokenDelegate:", NO, "v@:@"},
   // Declared by the concrete iOS subclass `sharediOSInstance` vends, not by `AXPTranslator` itself.
@@ -569,7 +571,7 @@ static BOOL FBAXActionIdentifierForAction(FBAXAction action, uint32_t *identifie
 @interface FBAXElementRef : NSObject
 
 /** Takes ownership of an already-retained (+1) reference — what the AX runtime's Create and Copy give. */
-- (instancetype)initWithOwnedElement:(void *)element NS_DESIGNATED_INITIALIZER;
+- (instancetype)initWithOwnedElement:(const void *)element NS_DESIGNATED_INITIALIZER;
 
 /**
  * Takes a reference of its own on a borrowed one. `-[XCAccessibilityElement AXUIElement]` returns a
@@ -597,14 +599,14 @@ static BOOL FBAXActionIdentifierForAction(FBAXAction action, uint32_t *identifie
   void *_element;
 }
 
-- (instancetype)initWithOwnedElement:(void *)element
+- (instancetype)initWithOwnedElement:(const void *)element
 {
   NSParameterAssert(element);
   self = [super init];
   if (!self) {
     return nil;
   }
-  _element = element;
+  _element = (void *)element;
   return self;
 }
 
@@ -952,7 +954,7 @@ void FBAXBridgeRunOffMainQueue(dispatch_block_t block)
 // The window-server frontmost query itself, which must already be off the main queue — see
 // `FBAXBridgeRunOffMainQueue`. Asks the wired iOS translator for `frontmostApplicationWithDisplayId:0`
 // and reads the owning pid of the returned application object.
-static FBAXFrontmostOutcome *FBAXBridgeWindowServerFrontmostOffMain(void)
+static FBAXFrontmostOutcome *FBAXBridgeWindowServerFrontmostOffMain(uint32_t displayID)
 {
   NSString *setupError = nil;
   AXPTranslator *translator = FBAXBridgeWindowServerTranslator(&setupError);
@@ -962,7 +964,7 @@ static FBAXFrontmostOutcome *FBAXBridgeWindowServerFrontmostOffMain(void)
   if (![translator respondsToSelector:@selector(frontmostApplicationWithDisplayId:bridgeDelegateToken:)]) {
     return [FBAXFrontmostOutcome unresolved:@"AXPTranslator does not respond to frontmostApplicationWithDisplayId:"];
   }
-  AXPTranslationObject *application = [translator frontmostApplicationWithDisplayId:0 bridgeDelegateToken:@"axbridge"];
+  AXPTranslationObject *application = [translator frontmostApplicationWithDisplayId:displayID bridgeDelegateToken:@"axbridge"];
   if (!application || ![application respondsToSelector:@selector(pid)]) {
     return [FBAXFrontmostOutcome unresolved:@"window-server frontmost returned no application object"];
   }
@@ -1416,6 +1418,46 @@ static NSError *FBAXSnapshotFailure(NSInteger code, NSString *description)
 // Every raw AXUIElementRef in the product is acquired inside this method and owned by an `FBAXElementRef`
 // from the moment it is, and the hit is handed back already wrapped as an opaque element handle — so
 // nothing outside can outlive or over-release either, and nothing inside has to remember to.
+- (FBAXHitTestOutcome *)hitTestAtPoint:(CGPoint)point processIdentifier:(pid_t)pid displayIdentifier:(uint32_t)displayID
+{
+  __block FBAXHitTestOutcome *outcome = nil;
+  FBAXBridgeRunOffMainQueue(^{
+    NSString *setupError = nil;
+    AXPTranslator *translator = FBAXBridgeWindowServerTranslator(&setupError);
+    if (!translator || ![translator respondsToSelector:@selector(objectAtPoint:displayId:bridgeDelegateToken:)]
+        || ![translator respondsToSelector:@selector(createPlatformElementFromTranslationObject:)]) {
+      outcome = [FBAXHitTestOutcome failed:setupError ?: @"Display-specific accessibility hit testing is unavailable"];
+      return;
+    }
+    AXPTranslationObject *translation = [translator objectAtPoint:point displayId:displayID bridgeDelegateToken:@"axbridge"];
+    if (!translation) {
+      outcome = [FBAXHitTestOutcome empty];
+      return;
+    }
+    pid_t owningPid = translation.pid;
+    if (owningPid <= 0) {
+      outcome = [FBAXHitTestOutcome failed:@"Display hit test returned no owning process"];
+      return;
+    }
+    if (pid > 0 && owningPid != pid) {
+      outcome = [FBAXHitTestOutcome empty];
+      return;
+    }
+    AXUIElementRef raw = [translator createPlatformElementFromTranslationObject:translation];
+    FBAXElementRef *owned = raw ? [[FBAXElementRef alloc] initWithOwnedElement:raw] : nil;
+    if (!owned) {
+      outcome = [FBAXHitTestOutcome failed:@"Could not create the display hit element"];
+      return;
+    }
+    id element = [owned objectFromElement:^id (void *reference) {
+      return [self->_elementClass elementWithAXUIElement:reference];
+    }];
+    outcome = element ? [FBAXHitTestOutcome hit:element owningProcessIdentifier:owningPid]
+    : [FBAXHitTestOutcome failed:@"Could not wrap the display hit element"];
+  });
+  return outcome ?: [FBAXHitTestOutcome failed:@"Display hit testing did not return an outcome"];
+}
+
 - (FBAXHitTestOutcome *)hitTestAtPoint:(CGPoint)point processIdentifier:(pid_t)pid
 {
   // The seed is owned either way so both branches release alike; every raw use below goes through
@@ -1530,9 +1572,14 @@ static NSError *FBAXSnapshotFailure(NSInteger code, NSString *description)
 // round-trip.
 - (FBAXFrontmostOutcome *)windowServerFrontmost
 {
+  return [self windowServerFrontmostOnDisplay:0];
+}
+
+- (FBAXFrontmostOutcome *)windowServerFrontmostOnDisplay:(uint32_t)displayID
+{
   __block FBAXFrontmostOutcome *outcome = nil;
   FBAXBridgeRunOffMainQueue(^{
-    outcome = FBAXBridgeWindowServerFrontmostOffMain();
+    outcome = FBAXBridgeWindowServerFrontmostOffMain(displayID);
   });
   return outcome ?: [FBAXFrontmostOutcome unresolved:@"window-server frontmost resolution failed"];
 }

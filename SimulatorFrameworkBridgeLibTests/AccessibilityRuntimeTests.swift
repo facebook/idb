@@ -188,8 +188,37 @@ final class AccessibilityRuntimeTests: XCTestCase {
     assertEqualObjects(axValue(response, "pid"), NSNumber(value: kAppPid))
     assertEqualObjects(axValue(axValue(response, "tree"), kAXElementType), "XCUIElementTypeButton")
     XCTAssertEqual(runtime.lastHitTestProcessIdentifier, kAppPid, "an explicit pid must scope the hit-test")
+    XCTAssertNil(runtime.lastHitTestDisplayIdentifier, "no displayID must use the unscoped hit-test")
     XCTAssertEqual(runtime.lastHitTestPoint.x, 10)
     XCTAssertEqual(runtime.lastHitTestPoint.y, 20)
+  }
+
+  func testDisplayHitTestAndWriteForwardIndependentDisplayIdentity() {
+    runtime.hitTestOutcome = FBAXHitTestOutcome.hit(FBAXFakeElement.readable("XCUIElementTypeButton"), owningProcessIdentifier: kAppPid)
+    for verb in ["hittest", "perform"] {
+      let response = FBAccessibilityService.handleRequest([
+        "verb": verb, "action": "press", "pid": kAppPid, "x": 80, "y": 120, "displayID": 42,
+      ])
+      assertEqualObjects(axValue(response, "ok"), NSNumber(value: true))
+      XCTAssertEqual(runtime.lastHitTestDisplayIdentifier, NSNumber(value: 42))
+      XCTAssertEqual(runtime.lastHitTestPoint, CGPoint(x: 80, y: 120))
+      XCTAssertEqual(runtime.lastHitTestProcessIdentifier, kAppPid)
+    }
+  }
+
+  func testMalformedDisplayIdentityNeverReachesHitTesting() {
+    for value: Any in [0, -1, 1.5, 4_294_967_296, true, "3", NSNull()] {
+      let response = FBAccessibilityService.handleRequest(["verb": "hittest", "x": 1, "y": 2, "displayID": value])
+      assertEqualObjects(axValue(response, "error_kind"), "bad_request")
+    }
+    XCTAssertEqual(runtime.hitTestCount, 0)
+  }
+
+  func testDisplayHitTestExceptionsRemainInsideRuntimeBoundary() {
+    runtime.raiseOnOperation = "hitTest"
+    let response = FBAccessibilityService.handleRequest(["verb": "hittest", "x": 1, "y": 2, "displayID": 42])
+    assertEqualObjects(axValue(response, "ok"), NSNumber(value: false))
+    XCTAssertNotNil(axValue(response, "error"))
   }
 
   func testHitWithNoPidIsDisplayWideAndReportsTheOwningPid() {
@@ -272,6 +301,17 @@ final class AccessibilityRuntimeTests: XCTestCase {
 
   // MARK: - The default frontmost method
 
+  func testFrontmostReadForwardsDisplayAndRejectsUnscopedRunningBoard() {
+    runtime.windowServerOutcome = FBAXFrontmostOutcome.resolved(kAppPid)
+    runtime.applicationElements[NSNumber(value: kAppPid)] = FBAXFakeElement.readable("UIApplication")
+    let response = FBAccessibilityService.handleRequest(["verb": "describe", "x": 10, "y": 20, "displayID": 42])
+    assertEqualObjects(axValue(response, "ok"), NSNumber(value: true))
+    XCTAssertEqual(runtime.lastFrontmostDisplayIdentifier, NSNumber(value: 42))
+    let unsupported = FBAccessibilityService.handleRequest(["verb": "describe", "x": 10, "y": 20, "displayID": 42, "method": "runningboard"])
+    assertEqualObjects(axValue(unsupported, "ok"), NSNumber(value: false))
+    XCTAssertEqual(runtime.runningBoardCount, 0)
+  }
+
   func testAFrontmostReadWithNoMethodAsksTheWindowServer() {
     runtime.hitTestOutcome = FBAXHitTestOutcome.empty()
     runtime.windowServerOutcome = FBAXFrontmostOutcome.resolved(kAppPid)
@@ -282,6 +322,7 @@ final class AccessibilityRuntimeTests: XCTestCase {
     assertEqualObjects(axValue(response, "pid"), NSNumber(value: kAppPid))
     assertEqualObjects(axValue(response, "method"), "window-server", "the response names the resolver that ran")
     XCTAssertEqual(runtime.windowServerCount, 1)
+    XCTAssertNil(runtime.lastFrontmostDisplayIdentifier, "no displayID must use the unscoped window-server lookup")
     XCTAssertEqual(runtime.hitTestCount, 0, "the anchor is not consulted for the authoritative frontmost")
   }
 

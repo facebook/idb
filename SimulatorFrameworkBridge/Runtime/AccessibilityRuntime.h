@@ -455,6 +455,9 @@ typedef void (^FBAXQuiescenceHandler)(FBAXQuiescenceReport report, pid_t pid);
  */
 - (FBAXHitTestOutcome *)hitTestAtPoint:(CGPoint)point processIdentifier:(pid_t)pid;
 
+/** Resolves unrotated points on one discovered accessibility display; a mismatched pid is empty. */
+- (FBAXHitTestOutcome *)hitTestAtPoint:(CGPoint)point processIdentifier:(pid_t)pid displayIdentifier:(uint32_t)displayID;
+
 /**
  * Performs a semantic action on an element handle, in one round trip. Whether the element advertises the
  * action is not checked: the runtime reports an unadvertised action as a success.
@@ -466,6 +469,7 @@ typedef void (^FBAXQuiescenceHandler)(FBAXQuiescenceReport report, pid_t pid);
 
 /** The frontmost application according to the window server, via the in-guest AXPTranslator. */
 - (FBAXFrontmostOutcome *)windowServerFrontmost;
+- (FBAXFrontmostOutcome *)windowServerFrontmostOnDisplay:(uint32_t)displayID;
 
 /** The frontmost application according to RunningBoard's on-screen visibility endowment. */
 - (FBAXFrontmostOutcome *)runningBoardFrontmost;

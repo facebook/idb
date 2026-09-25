@@ -255,6 +255,26 @@ static id FBAXCopyAttributeContainers(id value)
   }
 }
 
+- (FBAXElementHit *)hitTestAtPoint:(CGPoint)point processIdentifier:(pid_t)pid displayIdentifier:(uint32_t)displayID error:(NSError **)error
+{
+  @try {
+    return [[FBAXElementHit alloc] initWithOutcome:[_runtime hitTestAtPoint:point processIdentifier:pid displayIdentifier:displayID]];
+  } @catch (NSException *exception) {
+    FBAXClientException(exception, error);
+    return nil;
+  }
+}
+
+- (FBAXFrontmostOutcome *)windowServerFrontmostOnDisplay:(uint32_t)displayID error:(NSError **)error
+{
+  @try {
+    return [_runtime windowServerFrontmostOnDisplay:displayID];
+  } @catch (NSException *exception) {
+    FBAXClientException(exception, error);
+    return nil;
+  }
+}
+
 - (FBAXWriteOutcome *)performAction:(FBAXAction)action onElement:(FBAXElement *)element error:(NSError **)error
 {
   @try {

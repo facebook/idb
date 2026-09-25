@@ -531,7 +531,22 @@ static NSDictionary *FBAXFakeSnapshotNode(FBAXFakeElement *element,
   _hitTestCount++;
   _lastHitTestPoint = point;
   _lastHitTestProcessIdentifier = pid;
+  _lastHitTestDisplayIdentifier = nil;
   return self.hitTestOutcome;
+}
+
+- (FBAXHitTestOutcome *)hitTestAtPoint:(CGPoint)point processIdentifier:(pid_t)pid displayIdentifier:(uint32_t)displayID
+{
+  FBAXHitTestOutcome *outcome = [self hitTestAtPoint:point processIdentifier:pid];
+  _lastHitTestDisplayIdentifier = @(displayID);
+  return outcome;
+}
+
+- (FBAXFrontmostOutcome *)windowServerFrontmostOnDisplay:(uint32_t)displayID
+{
+  FBAXFrontmostOutcome *outcome = [self windowServerFrontmost];
+  _lastFrontmostDisplayIdentifier = @(displayID);
+  return outcome;
 }
 
 - (FBAXWriteOutcome *)performAction:(FBAXAction)action onElement:(id)element
@@ -556,6 +571,7 @@ static NSDictionary *FBAXFakeSnapshotNode(FBAXFakeElement *element,
 {
   [self recordOperation:@"windowServerFrontmost"];
   _windowServerCount++;
+  _lastFrontmostDisplayIdentifier = nil;
   return self.windowServerOutcome;
 }
 

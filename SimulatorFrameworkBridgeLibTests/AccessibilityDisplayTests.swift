@@ -30,6 +30,7 @@ final class AccessibilityDisplayTests: XCTestCase {
       response as NSDictionary,
       [
         "ok": true,
+        "displayScopedInteractions": true,
         "displays": [["uniqueID": "outer", "displayID": 42], ["uniqueID": "continuous-inner", "displayID": 71]],
       ])
     XCTAssertEqual(runtime.operations as NSArray, ["displayInventory"])
@@ -53,7 +54,7 @@ final class AccessibilityDisplayTests: XCTestCase {
         "ok": false, "error": "Duplicate identity", "error_kind": "reader_unavailable",
       ])
     runtime.displayInventoryOutcome = .available([])
-    XCTAssertEqual(FBAccessibilityService.handleRequest(["verb": "displays"]) as NSDictionary, ["ok": true, "displays": []])
+    XCTAssertEqual(FBAccessibilityService.handleRequest(["verb": "displays"]) as NSDictionary, ["ok": true, "displayScopedInteractions": true, "displays": []])
   }
 
   func testDisplayInventoryExceptionIsContainedAndNextReadRecovers() {
