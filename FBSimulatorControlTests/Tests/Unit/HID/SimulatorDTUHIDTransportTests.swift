@@ -401,6 +401,29 @@ final class SimulatorDTUHIDTransportTests: XCTestCase {
     XCTAssertEqual(sleeps, Array(repeating: DTUHIDTiming.livenessRetryBackoff, count: DTUHIDTiming.livenessAttempts - 1))
   }
 
+  // MARK: - A connection that has gone away
+
+  func testASendAfterTheServiceIsInvalidatedIsDroppedSilently() async throws {
+    let peer = Self.dtuhidd(.answer)
+    let connection = makeConnection(DrainRecorder(), dtuhidd: peer)
+    try await connection.confirmLiveness()
+
+    peer.invalidate()
+    // The first probe only finds its connection dropped; the reconnect it leaves behind is what
+    // finds the service gone.
+    for _ in 0..<2 {
+      do {
+        try await connection.confirmLiveness()
+        XCTFail("expected the probe to fail once the service is gone")
+      } catch SimulatorXPCError.peerUnavailable {}
+    }
+
+    // BUG: the send succeeds although nothing can receive it — flipped in the following commit.
+    try await connection.send(
+      messageType: "IndigoKeyboardButtonEvent", payload: IndigoKeyboardButtonEvent(usageCode: 4, state: .down))
+    XCTAssertEqual(peer.received.count, 1)
+  }
+
   // MARK: - What reaches dtuhidd
 
   func testATapReachesTheServiceAsStartThenEnd() async throws {
