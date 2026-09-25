@@ -47,6 +47,7 @@ from .harness import (
     SuiteCapability,
     UI_UPDATE_TIMEOUT_SECONDS,
     UiWait,
+    Until,
     wait_until,
 )
 
@@ -56,6 +57,7 @@ ROW_PREFIX = "com.facebook.idb.replhost.row."
 GENERAL_ROW_ID = f"{ROW_PREFIX}general"
 GENERAL_ROW = Query(GENERAL_ROW_ID)
 SEARCH_FIELD_ID = "com.facebook.idb.replhost.search"
+SEARCH_FIELD = Query(SEARCH_FIELD_ID)
 # Views that carry the rows' identifier prefix without being rows.
 ROW_CONTAINER_TYPES = frozenset({"CollectionView", "Table", "ScrollView", "List"})
 # A tap idb refused does nothing at all, so a wait long enough to catch a
@@ -553,16 +555,18 @@ class AccessibilityTests(IdbEndToEndTestCase):
         )
         self.assertEqual(rejected.stdout, b"")
 
-    async def wait_for_search_field(self, value: str | None = None) -> dict[str, Any]:
-        async def read() -> dict[str, Any]:
-            return _search_field(await self.describe_all_complete("axbridge"), value)
+    async def wait_for_search_value(self, value: str) -> None:
+        async def read() -> None:
+            _search_field(await self.describe_all_complete("axbridge"), value)
 
-        return await wait_until(
-            "The fixture's search field", UI_UPDATE_TIMEOUT_SECONDS, read
+        await wait_until(
+            f"The fixture's search field holding {value!r}",
+            UI_UPDATE_TIMEOUT_SECONDS,
+            read,
         )
 
     async def test_ui_set_value_updates_the_search_field(self) -> None:
-        field = await self.wait_for_search_field()
+        field = (await self.wait_for(SEARCH_FIELD, until=Until.SETTLED)).element
         x, y = _center(field)
 
         completed = await self.idb(
@@ -570,13 +574,13 @@ class AccessibilityTests(IdbEndToEndTestCase):
         )
 
         self.assertEqual(completed.stdout, b"")
-        await self.wait_for_search_field("idb-first")
+        await self.wait_for_search_value("idb-first")
         # The first write can give the field the keyboard, so the second is
         # written at wherever the field is once that has settled.
-        field = await self.wait_for_search_field()
+        field = (await self.wait_for(SEARCH_FIELD, until=Until.SETTLED)).element
         x, y = _center(field)
         await self.idb("ui", "set-value", str(x), str(y), "--value", "idb-second")
-        await self.wait_for_search_field("idb-second")
+        await self.wait_for_search_value("idb-second")
 
     async def test_ui_tap_opens_general_by_point(self) -> None:
         general = (await self.wait_for(GENERAL_ROW, lookup=UiWait())).element
