@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+@preconcurrency import FBControlCore
 @testable import FBSimulatorControl
 import Foundation
 @preconcurrency import XPC
@@ -15,11 +16,13 @@ import os
 /// barriers order sends, and a peer going away arrives as the XPC error event it would in a guest.
 ///
 /// A service nobody registered fails its lookup as CoreSimulator reports a service the runtime does
-/// not vend.
+/// not vend. Until the simulator is booted every lookup fails, registered or not, with the same
+/// `SimError` 405, as CoreSimulator's do.
 final class SyntheticXPCServices: Sendable {
   static let unsupportedService = NSError(domain: "com.apple.CoreSimulator.SimError", code: 405)
 
-  private let state = OSAllocatedUnfairLock(initialState: (peers: [String: SyntheticXPCPeer](), lookups: [String]()))
+  private let state = OSAllocatedUnfairLock(
+    initialState: (peers: [String: SyntheticXPCPeer](), lookups: [String](), simulator: TargetState.booted))
 
   /// Registers `service`, answered by `respond`.
   @discardableResult
@@ -34,11 +37,24 @@ final class SyntheticXPCServices: Sendable {
     state.withLock { $0.lookups }
   }
 
+  /// The simulator's state. Booted unless a test says otherwise.
+  var simulatorState: TargetState {
+    get { state.withLock { $0.simulator } }
+    set { state.withLock { $0.simulator = newValue } }
+  }
+
   var connector: SimulatorXPCConnector {
     SimulatorXPCConnector { [self] service in
-      let peer = state.withLock { state in
+      let (peer, simulator) = state.withLock { state in
         state.lookups.append(service)
-        return state.peers[service]
+        return (state.peers[service], state.simulator)
+      }
+      guard simulator == .booted else {
+        throw SimulatorXPCConnectionError.lookupFailed(
+          service: service,
+          underlying: NSError(
+            domain: Self.unsupportedService.domain, code: Self.unsupportedService.code,
+            userInfo: [NSLocalizedDescriptionKey: "Unable to lookup in current state: \(simulator.stateString.rawValue)"]))
       }
       guard let peer else {
         throw SimulatorXPCConnectionError.lookupFailed(service: service, underlying: Self.unsupportedService)

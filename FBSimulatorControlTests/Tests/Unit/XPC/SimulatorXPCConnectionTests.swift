@@ -52,6 +52,18 @@ final class SimulatorXPCConnectionTests: XCTestCase {
     }
   }
 
+  func testCoreDeviceOnASimulatorThatIsStillBooting() {
+    let services = SyntheticXPCServices()
+    services.register("com.example.service", respond: SyntheticXPCPeer.silent)
+    services.simulatorState = .booting
+
+    XCTAssertThrowsError(try SimulatorCoreDevice.connect(using: services.connector, service: "com.example.service")) { error in
+      // BUG: a service the runtime does vend reads as a missing capability until the boot
+      // completes — flipped in the following commit.
+      guard case SimulatorCoreDeviceError.unsupported = error else { return XCTFail("\(error)") }
+    }
+  }
+
   func testCoreDeviceTreatsOtherConnectionFailuresAsUnavailable() {
     for error: SimulatorXPCConnectionError in [
       .lookupFailed(service: "com.example.service", underlying: Self.operational),
