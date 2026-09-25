@@ -101,32 +101,14 @@ final class SimulatorDTUHIDTransportTests: XCTestCase {
   // MARK: - Unimplemented primitives throw
 
   func testUnimplementedPrimitivesThrow() async {
-    let connection = xpc_connection_create("com.facebook.fbsimulatorcontrol.test.dtuhid", nil)
-    xpc_connection_set_event_handler(connection) { _ in }
-    xpc_connection_resume(connection)
-    let transport = SimulatorDTUHIDTransport(
-      connection: SimulatorDTUHIDConnection(
-        connection: connection, serviceName: SimulatorDTUHIDTransport.digitizerServiceName),
-      mainScreenSize: CGSize(width: 100, height: 200),
-      mainScreenScale: 2.0,
-      productFamily: .iPhone)
-    defer { transport.disconnect() }
+    let transport = makeTransport(DrainRecorder())
 
     // Apple Pay has no single HID usage (it is a double side-button press), so it stays unimplemented.
     await assertThrowsNotImplemented { try await transport.sendButton(direction: .down, button: .applePay) }
   }
 
   func testTouchOnAppleTVThrows() async {
-    let connection = xpc_connection_create("com.facebook.fbsimulatorcontrol.test.dtuhid", nil)
-    xpc_connection_set_event_handler(connection) { _ in }
-    xpc_connection_resume(connection)
-    let transport = SimulatorDTUHIDTransport(
-      connection: SimulatorDTUHIDConnection(
-        connection: connection, serviceName: SimulatorDTUHIDTransport.digitizerServiceName),
-      mainScreenSize: CGSize(width: 100, height: 200),
-      mainScreenScale: 2.0,
-      productFamily: .appleTV)
-    defer { transport.disconnect() }
+    let transport = makeTransport(DrainRecorder(), productFamily: .appleTV)
 
     await assertThrowsTouchUnsupported {
       try await transport.sendTouch(direction: .down, x: 10, y: 20, edge: .none)
@@ -184,7 +166,7 @@ final class SimulatorDTUHIDTransportTests: XCTestCase {
     XCTAssertEqual(xpc_dictionary_get_uint64(payload, "state"), 1) // down
   }
 
-  // MARK: - Send pipeline (envelope shape, no connection needed)
+  // MARK: - Send pipeline (envelope shape)
 
   /// The connection's `encode` wraps any `Encodable` payload in the shared `DTUHIDMessage` envelope —
   /// `messageType` discriminator, `isBarrier` bool, the digitizer `featureIdentifier`, and the typed
@@ -193,12 +175,7 @@ final class SimulatorDTUHIDTransportTests: XCTestCase {
     struct Probe: Encodable {
       let value: UInt64
     }
-    let connection = xpc_connection_create("com.facebook.fbsimulatorcontrol.test.dtuhid", nil)
-    xpc_connection_set_event_handler(connection) { _ in }
-    xpc_connection_resume(connection)
-    let dtuhid = SimulatorDTUHIDConnection(
-      connection: connection, serviceName: SimulatorDTUHIDTransport.digitizerServiceName)
-    defer { dtuhid.disconnect() }
+    let dtuhid = makeConnection(DrainRecorder())
 
     let message = try dtuhid.encode(messageType: "Probe", payload: Probe(value: 7))
 
@@ -237,7 +214,7 @@ final class SimulatorDTUHIDTransportTests: XCTestCase {
     XCTAssertEqual(HIDButtonState.up.rawValue, 2)
   }
 
-  // MARK: - Drain (driven through SimulatorHID, injected clock, no daemon)
+  // MARK: - Drain (driven through SimulatorHID, injected clock, synthetic dtuhidd)
 
   func testFlushWithoutAGestureIsANoOp() async throws {
     let recorder = DrainRecorder()
@@ -355,14 +332,14 @@ final class SimulatorDTUHIDTransportTests: XCTestCase {
   }
 
   func testLivenessProbeCarriesAnInertBarrier() async throws {
-    let recorder = DrainRecorder()
-    let connection = makeConnection(recorder)
+    let peer = Self.dtuhidd(.answer)
+    let connection = makeConnection(DrainRecorder(), dtuhidd: peer)
 
     try await connection.confirmLiveness()
 
-    let probes = await recorder.livenessProbes
-    XCTAssertEqual(probes.count, 1)
-    let probe = try XCTUnwrap(probes.first)
+    let received = peer.received
+    XCTAssertEqual(received.count, 1)
+    let probe = try XCTUnwrap(received.first)
     XCTAssertTrue(xpc_dictionary_get_bool(probe, "isBarrier"))
     XCTAssertEqual(messageString(probe, "messageType"), "IndigoKeyboardButtonEvent")
     // Usage 0 is "no event indicated", so a guest that is listening still sees no keypress.
@@ -372,18 +349,86 @@ final class SimulatorDTUHIDTransportTests: XCTestCase {
 
   func testLivenessProbeFailurePaysNoTail() async throws {
     let recorder = DrainRecorder()
-    let connection = makeConnection(recorder, liveness: .unanswered)
+    let peer = Self.dtuhidd(.drop)
+    let connection = makeConnection(recorder, dtuhidd: peer)
 
     do {
       try await connection.confirmLiveness()
       XCTFail("expected the probe to fail")
-    } catch is DTUHIDLivenessFailure {
+    } catch SimulatorXPCError.peerUnavailable {
     } catch {
       XCTFail("unexpected error: \(error)")
     }
 
     let sleeps = await recorder.sleeps
     XCTAssertEqual(sleeps, [])
+  }
+
+  func testConnectProbesBeforeHandingOutTheConnection() async throws {
+    let recorder = DrainRecorder()
+    let services = SyntheticXPCServices()
+    let peer = services.register(SimulatorDTUHIDTransport.digitizerServiceName, respond: Self.dtuhiddResponder(.answer))
+
+    let connection = try await SimulatorDTUHIDConnection.connect(
+      using: services.connector, serviceName: SimulatorDTUHIDTransport.digitizerServiceName, clock: recordingClock(recorder))
+    defer { connection.disconnect() }
+
+    XCTAssertEqual(services.lookups, [SimulatorDTUHIDTransport.digitizerServiceName])
+    XCTAssertEqual(peer.received.map { xpc_dictionary_get_bool($0, "isBarrier") }, [true])
+    let sleeps = await recorder.sleeps
+    XCTAssertEqual(sleeps, [DTUHIDTiming.replyTail])
+  }
+
+  func testConnectRetriesAnUnansweredProbeAndThenGivesUp() async throws {
+    let recorder = DrainRecorder()
+    let services = SyntheticXPCServices()
+    let peer = services.register(SimulatorDTUHIDTransport.digitizerServiceName, respond: Self.dtuhiddResponder(.drop))
+
+    do {
+      _ = try await SimulatorDTUHIDConnection.connect(
+        using: services.connector, serviceName: SimulatorDTUHIDTransport.digitizerServiceName, clock: recordingClock(recorder))
+      XCTFail("expected the connect to give up")
+    } catch let error as SimulatorHIDError {
+      guard case .dtuhidUnresponsive(attempts: DTUHIDTiming.livenessAttempts, _) = error else {
+        return XCTFail("unexpected error: \(error)")
+      }
+      XCTAssertTrue(error.isDTUHIDUnreachable)
+    }
+
+    XCTAssertEqual(services.lookups.count, DTUHIDTiming.livenessAttempts)
+    XCTAssertEqual(peer.connections, DTUHIDTiming.livenessAttempts)
+    let sleeps = await recorder.sleeps
+    XCTAssertEqual(sleeps, Array(repeating: DTUHIDTiming.livenessRetryBackoff, count: DTUHIDTiming.livenessAttempts - 1))
+  }
+
+  // MARK: - What reaches dtuhidd
+
+  func testATapReachesTheServiceAsStartThenEnd() async throws {
+    let peer = Self.dtuhidd(.answer)
+    let transport = makeTransport(DrainRecorder(), dtuhidd: peer)
+
+    try await transport.sendTouch(direction: .down, x: 25, y: 50, edge: .none)
+    try await transport.sendTouch(direction: .up, x: 25, y: 50, edge: .none)
+
+    let received = await peer.received(atLeast: 2)
+    XCTAssertEqual(received.map { messageString($0, "messageType") }, ["IndigoDigitizerEvent", "IndigoDigitizerEvent"])
+    XCTAssertEqual(
+      received.map { xpc_dictionary_get_uint64(xpc_dictionary_get_dictionary($0, "payload")!, "eventType") },
+      [DigitizerEventType.start.rawValue, DigitizerEventType.end.rawValue])
+    let pointOne = try XCTUnwrap(xpc_dictionary_get_dictionary(xpc_dictionary_get_dictionary(received[0], "payload")!, "pointOne"))
+    XCTAssertEqual(xpc_dictionary_get_double(pointOne, "x"), 0.5, accuracy: 1e-9)
+    XCTAssertEqual(xpc_dictionary_get_double(pointOne, "y"), 0.5, accuracy: 1e-9)
+  }
+
+  func testDisconnectClosesTheConnection() async throws {
+    let peer = Self.dtuhidd(.answer)
+    let connection = makeConnection(DrainRecorder(), dtuhidd: peer)
+    try await connection.confirmLiveness()
+
+    connection.disconnect()
+
+    let closed = await peer.closed(atLeast: 1)
+    XCTAssertEqual(closed, 1)
   }
 
   func testAMidRespawnLookupFailureIsRetriedRatherThanTerminal() {
@@ -448,32 +493,56 @@ final class SimulatorDTUHIDTransportTests: XCTestCase {
 
   // MARK: - Helpers
 
-  /// A HID over a DTUHID transport whose drain waits are recorded rather than taken. The connection
-  /// names no real service, so writes resolve locally and never reach a daemon.
+  /// A HID over a DTUHID transport whose drain waits are recorded rather than taken, talking to a
+  /// synthetic `dtuhidd` that answers barriers.
   private func makeHID(_ recorder: DrainRecorder, gate: SleepGate? = nil) -> SimulatorHID {
     SimulatorHID(transport: .dtuhid(makeTransport(recorder, gate: gate)))
   }
 
-  private func makeTransport(_ recorder: DrainRecorder, gate: SleepGate? = nil) -> SimulatorDTUHIDTransport {
+  private func makeTransport(
+    _ recorder: DrainRecorder, gate: SleepGate? = nil, dtuhidd: SyntheticXPCPeer? = nil, productFamily: ProductFamily = .iPhone
+  ) -> SimulatorDTUHIDTransport {
     SimulatorDTUHIDTransport(
-      connection: makeConnection(recorder, gate: gate),
+      connection: makeConnection(recorder, gate: gate, dtuhidd: dtuhidd),
       mainScreenSize: CGSize(width: 100, height: 200),
       mainScreenScale: 2.0,
-      productFamily: .iPhone)
+      productFamily: productFamily)
   }
 
+  /// A connection to `dtuhidd`, or to a fresh synthetic `dtuhidd` that answers barriers.
   private func makeConnection(
-    _ recorder: DrainRecorder, gate: SleepGate? = nil, liveness: LivenessReply = .answer
+    _ recorder: DrainRecorder, gate: SleepGate? = nil, dtuhidd: SyntheticXPCPeer? = nil
   ) -> SimulatorDTUHIDConnection {
-    let xpc = xpc_connection_create("com.facebook.fbsimulatorcontrol.test.dtuhid", nil)
-    xpc_connection_set_event_handler(xpc) { _ in }
-    xpc_connection_resume(xpc)
+    let peer = dtuhidd ?? Self.dtuhidd(.answer)
     let connection = SimulatorDTUHIDConnection(
-      connection: xpc,
-      serviceName: SimulatorDTUHIDTransport.digitizerServiceName,
-      clock: recordingClock(recorder, gate: gate, liveness: liveness))
-    addTeardownBlock { connection.disconnect() }
+      channel: peer.channel(), serviceName: SimulatorDTUHIDTransport.digitizerServiceName, clock: recordingClock(recorder, gate: gate))
+    addTeardownBlock {
+      connection.disconnect()
+      withExtendedLifetime(peer) {}
+    }
     return connection
+  }
+
+  private static func dtuhidd(_ barrier: Barrier) -> SyntheticXPCPeer {
+    SyntheticXPCServices().register(SimulatorDTUHIDTransport.digitizerServiceName, respond: dtuhiddResponder(barrier))
+  }
+
+  private enum Barrier {
+    /// Replies, as a running `dtuhidd` does.
+    case answer
+    /// Drops the connection, as a daemon that aborts on launch does.
+    case drop
+  }
+
+  /// A synthetic `dtuhidd`: events are one-way, and a barrier is answered or not.
+  private static func dtuhiddResponder(_ barrier: Barrier) -> SyntheticXPCPeer.Responder {
+    { request in
+      guard xpc_dictionary_get_bool(request.message, "isBarrier") else { return }
+      switch barrier {
+      case .answer: request.reply(xpc_dictionary_create(nil, nil, 0))
+      case .drop: request.interrupt()
+      }
+    }
   }
 
   /// One inert keypress. Usage `0` is "no event indicated", so a guest would ignore it even if one
@@ -485,23 +554,13 @@ final class SimulatorDTUHIDTransportTests: XCTestCase {
       drain: drain)
   }
 
-  private enum LivenessReply {
-    case answer
-    case unanswered
-  }
-
   private enum DrainFailure: Error {
     case injected
   }
 
   private actor DrainRecorder {
     var sleeps: [Duration] = []
-    var livenessProbes: [xpc_object_t] = []
     var failsNextSleep = false
-
-    func probe(_ message: xpc_object_t) {
-      livenessProbes.append(message)
-    }
 
     func setFailNextSleep() {
       failsNextSleep = true
@@ -550,21 +609,12 @@ final class SimulatorDTUHIDTransportTests: XCTestCase {
     }
   }
 
-  private func recordingClock(
-    _ recorder: DrainRecorder, gate: SleepGate? = nil, liveness: LivenessReply = .answer
-  ) -> DTUHIDDrainClock {
-    DTUHIDDrainClock(
-      sleep: { duration in
-        try Task.checkCancellation()
-        await gate?.enter()
-        try await recorder.sleep(duration)
-      },
-      awaitLivenessReply: { _, message in
-        await recorder.probe(message)
-        if liveness == .unanswered {
-          throw DTUHIDLivenessFailure.timedOut
-        }
-      })
+  private func recordingClock(_ recorder: DrainRecorder, gate: SleepGate? = nil) -> DTUHIDDrainClock {
+    DTUHIDDrainClock(sleep: { duration in
+      try Task.checkCancellation()
+      await gate?.enter()
+      try await recorder.sleep(duration)
+    })
   }
 
   private func encodeDigitizer(_ event: IndigoDigitizerEvent) throws -> xpc_object_t {

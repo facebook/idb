@@ -10,8 +10,8 @@ import CoreGraphics
 import XCTest
 import XPC
 
-/// The vendor-defined transport connects once and keeps the connection. The connection names no
-/// real service, so writes resolve locally and never reach a daemon.
+/// The vendor-defined transport connects once and keeps the connection, here to a synthetic vendor
+/// service that answers the liveness barrier.
 final class SimulatorVendorHIDTransportTests: XCTestCase {
 
   private enum ConnectFailure: Error {
@@ -19,19 +19,25 @@ final class SimulatorVendorHIDTransportTests: XCTestCase {
   }
 
   private actor Connections {
+    let services = SyntheticXPCServices()
+    let peer: SyntheticXPCPeer
     var attempts = 0
     var failNext = false
 
+    init() {
+      peer = services.register(SimulatorVendorHIDTransport.serviceName) { request in
+        guard xpc_dictionary_get_bool(request.message, "isBarrier") else { return }
+        request.reply(xpc_dictionary_create(nil, nil, 0))
+      }
+    }
+
     func fail(_ fail: Bool) { failNext = fail }
 
-    func connect() throws -> SimulatorDTUHIDConnection {
+    func connect() async throws -> SimulatorDTUHIDConnection {
       attempts += 1
       if failNext { throw ConnectFailure.injected }
-      let connection = xpc_connection_create("com.facebook.fbsimulatorcontrol.test.vendor", nil)
-      xpc_connection_set_event_handler(connection) { _ in }
-      xpc_connection_resume(connection)
-      return SimulatorDTUHIDConnection(
-        connection: connection,
+      return try await SimulatorDTUHIDConnection.connect(
+        using: services.connector,
         serviceName: SimulatorVendorHIDTransport.serviceName,
         clock: DTUHIDDrainClock(sleep: { _ in }))
     }
@@ -49,6 +55,13 @@ final class SimulatorVendorHIDTransportTests: XCTestCase {
     }
     let attempts = await connections.attempts
     XCTAssertEqual(attempts, 1)
+    let peer = await connections.peer
+    XCTAssertEqual(peer.connections, 1)
+    let received = await peer.received(atLeast: 4)
+    XCTAssertEqual(received.map { xpc_dictionary_get_bool($0, "isBarrier") }, [true, false, false, false])
+    XCTAssertEqual(
+      received.map { xpc_dictionary_get_string($0, "messageType").map { String(cString: $0) } },
+      ["IndigoKeyboardButtonEvent"] + Array(repeating: "IndigoVendorDefinedEvent", count: 3))
     await vendor.disconnect()
   }
 

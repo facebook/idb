@@ -92,6 +92,11 @@ final class SyntheticXPCPeer: @unchecked Sendable {
     xpc_connection_create_from_endpoint(xpc_endpoint_create(listener))
   }
 
+  /// A channel straight to this service, for a test that is not exercising the lookup.
+  func channel(queue: DispatchQueue = DispatchQueue(label: "com.facebook.FBSimulatorControlTests.synthetic-xpc.client")) -> SimulatorXPCChannel {
+    SimulatorXPCChannel(connection: connect(), queue: queue)
+  }
+
   /// How many client connections have reached the service.
   var connections: Int {
     queue.sync { accepted }

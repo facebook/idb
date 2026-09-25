@@ -5,8 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-@preconcurrency import CoreSimulator
-import Darwin
 @preconcurrency import FBControlCore
 import Foundation
 import XPC
@@ -39,97 +37,11 @@ enum DTUHIDTiming {
   static let livenessAttempts = 5
 }
 
-/// What came back from the liveness barrier. The reply object itself is read on the XPC queue and not carried
-/// out, so the answer crosses isolation as plain values.
-private struct XPCReply: Sendable {
-  /// Set when XPC answered on the peer's behalf rather than the peer answering, which means no
-  /// daemon took the message.
-  let errorDescription: String?
-}
-
-/// Sends `message` and resolves with whichever comes first, the XPC reply or `timeout`.
-private func awaitXPCReply(
-  _ connection: xpc_connection_t,
-  _ message: xpc_object_t,
-  timeout: DispatchTimeInterval
-) async throws -> XPCReply {
-  try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<XPCReply, Error>) in
-    // SAFETY: The lock serializes the reply and timeout callbacks.
-    // patternlint-disable-next-line unchecked-sendable
-    final class FirstAnswer: @unchecked Sendable {
-      private let lock = NSLock()
-      private var pending = true
-
-      /// True for exactly one caller, which owns resuming the continuation.
-      func claim() -> Bool {
-        lock.withLock {
-          defer { pending = false }
-          return pending
-        }
-      }
-    }
-    let answer = FirstAnswer()
-    xpc_connection_send_message_with_reply(
-      connection, message, DispatchQueue.global(qos: .userInitiated)
-    ) { reply in
-      var errorDescription: String?
-      if xpc_get_type(reply) == XPC_TYPE_ERROR {
-        errorDescription =
-          xpc_dictionary_get_string(reply, XPC_ERROR_KEY_DESCRIPTION)
-          .map { String(cString: $0) } ?? "unknown XPC error"
-      }
-      if answer.claim() {
-        continuation.resume(returning: XPCReply(errorDescription: errorDescription))
-      }
-    }
-    DispatchQueue.global(qos: .userInitiated).asyncAfter(deadline: .now() + timeout) {
-      if answer.claim() {
-        continuation.resume(throwing: DTUHIDLivenessFailure.timedOut)
-      }
-    }
-  }
-}
-
 /// Injectable waits for the DTUHID transport.
 struct DTUHIDDrainClock: Sendable {
   let sleep: @Sendable (Duration) async throws -> Void
-  /// An XPC error reply fails rather than resolving: the probe asks whether there is a peer at all,
-  /// so XPC's own answer is the negative result.
-  let awaitLivenessReply: @Sendable (xpc_connection_t, xpc_object_t) async throws -> Void
 
-  init(
-    sleep: @escaping @Sendable (Duration) async throws -> Void,
-    awaitLivenessReply: @escaping @Sendable (xpc_connection_t, xpc_object_t) async throws -> Void = { _, _ in }
-  ) {
-    self.sleep = sleep
-    self.awaitLivenessReply = awaitLivenessReply
-  }
-
-  static let live = DTUHIDDrainClock(
-    sleep: { try await Task.sleep(for: $0) },
-    awaitLivenessReply: { connection, message in
-      let reply = try await awaitXPCReply(connection, message, timeout: DTUHIDTiming.livenessTimeout)
-      if let errorDescription = reply.errorDescription {
-        throw DTUHIDLivenessFailure.peerUnavailable(errorDescription)
-      }
-    })
-}
-
-/// Nothing live was found behind a DTUHID connection at connect time.
-enum DTUHIDLivenessFailure: Error, CustomStringConvertible {
-  /// The probe went unanswered. `dtuhidd` is throttled, crash-looping, or wedged.
-  case timedOut
-  /// XPC replied on the peer's behalf, so the daemon is not running and could not be launched.
-  case peerUnavailable(String)
-
-  var description: String {
-    switch self {
-    case .timedOut:
-      return "no reply within \(DTUHIDTiming.livenessTimeout)"
-    case let .peerUnavailable(detail):
-      return detail
-    }
-  }
+  static let live = DTUHIDDrainClock(sleep: { try await Task.sleep(for: $0) })
 }
 
 /**
@@ -143,9 +55,7 @@ enum DTUHIDLivenessFailure: Error, CustomStringConvertible {
  */
 final class SimulatorDTUHIDConnection: Sendable {
 
-  // SAFETY: XPC connections support concurrent sending and cancellation.
-  // patternlint-disable-next-line swift-nonisolated-unsafe
-  nonisolated(unsafe) private let connection: xpc_connection_t
+  private let channel: SimulatorXPCChannel
   let serviceName: String
   private let clock: DTUHIDDrainClock
   // A drain claims a snapshot of the send count; later sends remain outstanding.
@@ -161,12 +71,14 @@ final class SimulatorDTUHIDConnection: Sendable {
   /// still yields a port and every send is then silently discarded. The window is seconds wide and
   /// closes once the boot settles, so a backed-off retry recovers the full transport, keyboard
   /// included, where giving up would cost the keyboard for the lifetime of the boot.
-  static func connect(using connector: SimulatorXPCConnector, serviceName: String) async throws -> SimulatorDTUHIDConnection {
+  static func connect(
+    using connector: SimulatorXPCConnector, serviceName: String, clock: DTUHIDDrainClock = .live
+  ) async throws -> SimulatorDTUHIDConnection {
     let logger = ControlCoreGlobalConfiguration.defaultLogger
     var lastFailure: Error?
     for attempt in 1...DTUHIDTiming.livenessAttempts {
       do {
-        return try await connected(using: connector, serviceName: serviceName)
+        return try await connected(using: connector, serviceName: serviceName, clock: clock)
       } catch let error as SimulatorHIDError where !error.isTransientDTUHIDFailure {
         // A toolchain that has no DTUHID at all will not grow one by being asked again.
         throw error
@@ -177,7 +89,7 @@ final class SimulatorDTUHIDConnection: Sendable {
         guard attempt < DTUHIDTiming.livenessAttempts else {
           break
         }
-        try await Task.sleep(for: DTUHIDTiming.livenessRetryBackoff)
+        try await clock.sleep(DTUHIDTiming.livenessRetryBackoff)
       }
     }
     throw SimulatorHIDError.dtuhidUnresponsive(
@@ -189,10 +101,13 @@ final class SimulatorDTUHIDConnection: Sendable {
   /// The lookup belongs to the attempt rather than preceding the loop. It fails while the job is
   /// mid-respawn, which is exactly the state being retried out of, so hoisting it turns the most
   /// recoverable moment into a terminal one.
-  private static func connected(using connector: SimulatorXPCConnector, serviceName: String) async throws -> SimulatorDTUHIDConnection {
+  private static func connected(
+    using connector: SimulatorXPCConnector, serviceName: String, clock: DTUHIDDrainClock
+  ) async throws -> SimulatorDTUHIDConnection {
     let connection = SimulatorDTUHIDConnection(
-      connection: try xpcConnection(using: connector, serviceName: serviceName),
-      serviceName: serviceName)
+      channel: try channel(using: connector, serviceName: serviceName),
+      serviceName: serviceName,
+      clock: clock)
     do {
       try await connection.confirmLiveness()
     } catch {
@@ -202,24 +117,23 @@ final class SimulatorDTUHIDConnection: Sendable {
     return connection
   }
 
-  /// A resumed host XPC connection to the requested guest HID service. Says nothing about whether
-  /// `dtuhidd` is able to run — launchd vends the port for a demand-launched job either way.
-  private static func xpcConnection(using connector: SimulatorXPCConnector, serviceName: String) throws -> xpc_connection_t {
-    let connection: xpc_connection_t
+  /// A channel to the requested guest HID service. Says nothing about whether `dtuhidd` is able to
+  /// run — launchd vends the port for a demand-launched job either way.
+  private static func channel(using connector: SimulatorXPCConnector, serviceName: String) throws -> SimulatorXPCChannel {
     do {
-      connection = try connector.connect(serviceName)
+      return SimulatorXPCChannel(
+        connection: try connector.connect(serviceName),
+        queue: DispatchQueue(label: "com.facebook.FBSimulatorControl.dtuhid"))
     } catch let error as SimulatorXPCConnectionError {
       throw SimulatorHIDError(dtuhidConnection: error)
     }
-    xpc_connection_set_event_handler(connection) { _ in }
-    xpc_connection_resume(connection)
-    return connection
   }
 
-  init(connection: xpc_connection_t, serviceName: String, clock: DTUHIDDrainClock = .live) {
-    self.connection = connection
+  init(channel: SimulatorXPCChannel, serviceName: String, clock: DTUHIDDrainClock = .live) {
+    self.channel = channel
     self.serviceName = serviceName
     self.clock = clock
+    channel.activate { _ in }
   }
 
   /// Round-trips a barrier to establish that a `dtuhidd` is behind the connection and has activated.
@@ -230,13 +144,16 @@ final class SimulatorDTUHIDConnection: Sendable {
   ///
   /// A reply also means the peer activated. Paying the device-open tail here, before the connection
   /// is handed out, is what lets every later drain be the short warm one.
+  ///
+  /// An XPC error reply fails rather than resolving: the probe asks whether there is a peer at all,
+  /// so XPC's own answer is the negative result.
   func confirmLiveness() async throws {
-    try await clock.awaitLivenessReply(connection, barrierMessage())
+    _ = try await channel.request(barrierMessage(), timeout: DTUHIDTiming.livenessTimeout)
     try await clock.sleep(DTUHIDTiming.replyTail)
   }
 
   func disconnect() {
-    xpc_connection_cancel(connection)
+    channel.cancel()
   }
 
   // MARK: - Sending
@@ -255,17 +172,13 @@ final class SimulatorDTUHIDConnection: Sendable {
   func write(messageType: String, payload: some Encodable) throws {
     let object = try encode(messageType: messageType, payload: payload)
     generations.withLock { $0.sent += 1 }
-    xpc_connection_send_message(connection, object)
+    channel.send(object)
   }
 
   /// Resolves once XPC has sent everything written before this call. Does not wait for the daemon to
   /// consume it — that is `flush()`'s job, run once per gesture rather than per primitive.
   func awaitSendBarrier() async {
-    await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
-      xpc_connection_send_barrier(connection) {
-        continuation.resume()
-      }
-    }
+    await channel.sendBarrier()
   }
 
   /// `write` then `awaitSendBarrier`, for a sender with no order-dependent state to guard.
