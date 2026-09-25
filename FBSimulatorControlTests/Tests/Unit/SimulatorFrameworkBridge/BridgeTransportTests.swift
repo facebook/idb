@@ -53,6 +53,20 @@ final class BridgeTransportTests: XCTestCase {
     XCTAssertEqual(errno, EAGAIN, "a second mutation must never reach the peer")
   }
 
+  func testAnOversizedFrameIsAGuestFailure() throws {
+    var descriptors: [Int32] = [-1, -1]
+    XCTAssertEqual(socketpair(AF_UNIX, SOCK_STREAM, 0, &descriptors), 0)
+    defer { descriptors.forEach { close($0) } }
+    let header: [UInt8] = [0xFF, 0xFF, 0xFF, 0xFF]
+    XCTAssertEqual(send(descriptors[1], header, header.count, 0), header.count)
+
+    XCTAssertThrowsError(try SimulatorFrameworkBridgeConnection.readFrame(descriptors[0], guest: nil)) {
+      guard case AXBridgeError.guestFailure = $0 else {
+        return XCTFail("expected a guest failure, got \($0)")
+      }
+    }
+  }
+
   private func validationSocketPair() throws -> (SimulatorFrameworkBridgeConnection, Int32) {
     var descriptors: [Int32] = [-1, -1]
     guard socketpair(AF_UNIX, SOCK_STREAM, 0, &descriptors) == 0 else {

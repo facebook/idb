@@ -9,6 +9,7 @@ import Darwin
 import FBControlCore
 @testable import FBSimulatorControl
 import Foundation
+import SimulatorIPC
 import XCTest
 import os
 
@@ -134,7 +135,7 @@ final class AXBridgeSocketTests: XCTestCase {
     } catch {
       let message = error.localizedDescription
       XCTAssertTrue(message.contains("sockaddr_un limit"), message)
-      XCTAssertTrue(message.contains("\(SimulatorFrameworkBridgeConnection.sunPathCapacity)"), message)
+      XCTAssertTrue(message.contains("\(IPCSocket.pathCapacity)"), message)
       XCTAssertFalse(message.contains("timed out connecting"), message)
     }
   }
@@ -362,7 +363,7 @@ final class AXBridgeSocketTests: XCTestCase {
   }
 
   func testTheSunPathCapacityMatchesThePlatform() {
-    XCTAssertEqual(SimulatorFrameworkBridgeConnection.sunPathCapacity, 104)
+    XCTAssertEqual(IPCSocket.pathCapacity, 104)
   }
 
   // Nobody else can reach an exclusive guest's socket, so once its client goes there is no next one to wait for.
@@ -408,7 +409,7 @@ final class AXBridgeSocketTests: XCTestCase {
   func testASimulatorSocketPathFitsInSunPath() {
     let path = SimulatorFrameworkBridgeSocket.path(forSimulator: "AE4DEFD9-F94B-4543-84F1-849D4B5C4351")
     XCTAssertLessThan(
-      path.utf8.count, SimulatorFrameworkBridgeConnection.sunPathCapacity, "\(path) is \(path.utf8.count) bytes")
+      path.utf8.count, IPCSocket.pathCapacity, "\(path) is \(path.utf8.count) bytes")
   }
 
   // MARK: - Which guest a target gets

@@ -8,6 +8,7 @@
 import Darwin
 import Foundation
 import SimulatorFrameworkBridgeProtocol
+@_implementationOnly import SimulatorIPC
 
 #if canImport(SimulatorFrameworkBridgeRuntime)
 @_implementationOnly import SimulatorFrameworkBridgeRuntime
@@ -35,7 +36,7 @@ public enum BridgeStreamStart {
 
 public enum BridgeRPC {
   public static func process(_ data: Data, execute: (BridgeCommand) -> BridgeResult = BridgeServices.execute) -> BridgeRPCReply {
-    guard (try? BridgeFrame.header(forSize: data.count)) != nil else { return failure(id: nil, message: "invalid request size") }
+    guard (try? IPCFrame.header(forSize: data.count)) != nil else { return failure(id: nil, message: "invalid request size") }
     let request: BridgeRequest
     do {
       request = try BridgeRequest.decode(data)
@@ -45,7 +46,7 @@ public enum BridgeRPC {
     let result = execute(request.command)
     do {
       let bytes = try BridgeResponse(request: request, result: result).encoded()
-      _ = try BridgeFrame.header(forSize: bytes.count)
+      _ = try IPCFrame.header(forSize: bytes.count)
       return BridgeRPCReply(data: bytes, exitCode: result.exitCode, shutdown: request.command == .shutdown && result.exitCode == 0)
     } catch {
       return failure(id: request.id, message: "response serialization failed or exceeded the frame limit")
@@ -55,7 +56,7 @@ public enum BridgeRPC {
   private static func failure(id: String?, message: String) -> BridgeRPCReply {
     let response = BridgeResponse(id: id, result: BridgeResult(exitCode: 1, error: message))
     let encoded = try? response.encoded()
-    let data = encoded.flatMap { $0.count <= BridgeFrame.maximumSize ? $0 : nil } ?? Data(#"{"version":1,"result":{"exitCode":1,"values":[]}}"#.utf8)
+    let data = encoded.flatMap { $0.count <= IPCFrame.maximumSize ? $0 : nil } ?? Data(#"{"version":1,"result":{"exitCode":1,"values":[]}}"#.utf8)
     return BridgeRPCReply(data: data, exitCode: 1, shutdown: false)
   }
 
@@ -89,7 +90,7 @@ public enum BridgeRPC {
 
     func run(emit: @escaping (Data) -> Bool) {
       results.run { [request] result in
-        guard let data = try? BridgeResponse(request: request, result: result).encoded(), (try? BridgeFrame.header(forSize: data.count)) != nil else { return false }
+        guard let data = try? BridgeResponse(request: request, result: result).encoded(), (try? IPCFrame.header(forSize: data.count)) != nil else { return false }
         return emit(data)
       }
     }

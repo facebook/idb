@@ -9,6 +9,7 @@ import Darwin
 @preconcurrency import FBControlCore
 import Foundation
 import SimulatorFrameworkBridgeProtocol
+import SimulatorIPC
 
 // SAFETY: the subprocess handle is retained for diagnostics and only queried through thread-safe futures.
 enum BridgeGuestOwnership: @unchecked Sendable {
@@ -42,7 +43,6 @@ final class SimulatorFrameworkBridgeConnection: BridgeConnection, @unchecked Sen
 
   /// The per-`recv` silence deadline, rather than a deadline for the whole response.
   static let receiveTimeoutSeconds = 30
-  static let sunPathCapacity = MemoryLayout.size(ofValue: sockaddr_un().sun_path)
 
   var mayBeHeldBetweenRoundTrips: Bool {
     ownership.isPrivate
@@ -110,8 +110,8 @@ final class SimulatorFrameworkBridgeConnection: BridgeConnection, @unchecked Sen
     scope: BridgeServiceScope = .exclusive,
     attempt: @escaping @Sendable (String) -> Int32? = attemptConnection
   ) async throws -> Int32 {
-    guard path.utf8.count < sunPathCapacity else {
-      throw AXBridgeError.socketPathTooLong(path: path, limit: sunPathCapacity)
+    guard path.utf8.count < IPCSocket.pathCapacity else {
+      throw AXBridgeError.socketPathTooLong(path: path, limit: IPCSocket.pathCapacity)
     }
     return try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Int32, Error>) in
       DispatchQueue.global().async {
@@ -146,57 +146,36 @@ final class SimulatorFrameworkBridgeConnection: BridgeConnection, @unchecked Sen
 
   /// One connect attempt, carrying the socket options a serving connection needs when it lands.
   private static func attemptConnection(toPath path: String) -> Int32? {
-    let fileDescriptor = socket(AF_UNIX, SOCK_STREAM, 0)
-    guard fileDescriptor >= 0 else {
-      return nil
-    }
-    guard connectSocket(fileDescriptor, toPath: path) else {
-      close(fileDescriptor)
-      return nil
-    }
-    var noSigPipe: Int32 = 1
-    setsockopt(fileDescriptor, SOL_SOCKET, SO_NOSIGPIPE, &noSigPipe, socklen_t(MemoryLayout<Int32>.size))
-    var readTimeout = timeval(tv_sec: receiveTimeoutSeconds, tv_usec: 0)
-    setsockopt(fileDescriptor, SOL_SOCKET, SO_RCVTIMEO, &readTimeout, socklen_t(MemoryLayout<timeval>.size))
-    setsockopt(fileDescriptor, SOL_SOCKET, SO_SNDTIMEO, &readTimeout, socklen_t(MemoryLayout<timeval>.size))
-    return fileDescriptor
-  }
-
-  private static func connectSocket(_ fileDescriptor: Int32, toPath path: String) -> Bool {
-    var address = sockaddr_un()
-    address.sun_family = sa_family_t(AF_UNIX)
-    let capacity = MemoryLayout.size(ofValue: address.sun_path)
-    let copied = path.withCString { source -> Bool in
-      let length = strlen(source)
-      guard length < capacity else { return false }
-      withUnsafeMutablePointer(to: &address.sun_path) { pointer in
-        pointer.withMemoryRebound(to: CChar.self, capacity: capacity) { destination in
-          _ = memcpy(destination, source, length + 1)
-        }
-      }
-      return true
-    }
-    guard copied else { return false }
-    let result = withUnsafePointer(to: &address) {
-      $0.withMemoryRebound(to: sockaddr.self, capacity: 1) {
-        Darwin.connect(fileDescriptor, $0, socklen_t(MemoryLayout<sockaddr_un>.size))
-      }
-    }
-    return result == 0
+    (try? IPCSocket.connect(path: path, timeoutSeconds: receiveTimeoutSeconds)) ?? nil
   }
 
   static func writeFrame(_ fileDescriptor: Int32, _ payload: Data) throws {
-    try writeAll(fileDescriptor, BridgeFrame.header(forSize: payload.count))
-    try writeAll(fileDescriptor, payload)
+    do {
+      try IPCSocket.writeFrame(fileDescriptor, payload)
+    } catch IPCError.closed {
+      throw AXBridgeError.guestFailure("socket write returned 0")
+    } catch let IPCError.failed(_, code) {
+      throw AXBridgeError.guestFailure("socket write failed: \(String(cString: strerror(code)))")
+    } catch {
+      throw AXBridgeError.guestFailure("socket write failed: \(error)")
+    }
   }
 
   static func readFrame(
     _ fileDescriptor: Int32,
     guest: FBSubprocess<AnyObject, AnyObject, AnyObject>?
   ) throws -> Data {
-    let header = try readAll(fileDescriptor, count: 4, guest: guest)
-    let length = try BridgeFrame.size(fromHeader: header)
-    return try readAll(fileDescriptor, count: length, guest: guest)
+    do {
+      return try IPCSocket.readFrame(fileDescriptor)
+    } catch IPCError.closed {
+      throw AXBridgeError.guestFailure(SimulatorFrameworkBridgeConnection.socketClosedMessage(process: guest))
+    } catch IPCError.timedOut {
+      throw AXBridgeError.guestFailure("serve read timed out after \(receiveTimeoutSeconds)s with no data")
+    } catch let IPCError.failed(_, code) {
+      throw AXBridgeError.guestFailure("socket read failed: \(String(cString: strerror(code)))")
+    } catch {
+      throw AXBridgeError.guestFailure("socket read failed: \(error)")
+    }
   }
 
   /// A frame, or `nil` when the peer closed the connection at a frame boundary: the end of a stream
@@ -216,24 +195,6 @@ final class SimulatorFrameworkBridgeConnection: BridgeConnection, @unchecked Sen
       }
       if errno != EINTR {
         throw AXBridgeError.guestFailure("socket read failed: \(String(cString: strerror(errno)))")
-      }
-    }
-  }
-
-  private static func writeAll(_ fileDescriptor: Int32, _ data: Data) throws {
-    try data.withUnsafeBytes { raw in
-      guard let base = raw.baseAddress else { return }
-      var offset = 0
-      while offset < raw.count {
-        let written = send(fileDescriptor, base + offset, raw.count - offset, 0)
-        if written < 0 {
-          if errno == EINTR { continue }
-          throw AXBridgeError.guestFailure("socket write failed: \(String(cString: strerror(errno)))")
-        }
-        if written == 0 {
-          throw AXBridgeError.guestFailure("socket write returned 0")
-        }
-        offset += written
       }
     }
   }
@@ -286,32 +247,5 @@ final class SimulatorFrameworkBridgeConnection: BridgeConnection, @unchecked Sen
       return (signal: Int(status), exitCode: nil)
     }
     return (signal: nil, exitCode: Int((waitpidStatus >> 8) & 0xff))
-  }
-
-  private static func readAll(
-    _ fileDescriptor: Int32,
-    count: Int,
-    guest: FBSubprocess<AnyObject, AnyObject, AnyObject>?
-  ) throws -> Data {
-    var buffer = Data(count: count)
-    try buffer.withUnsafeMutableBytes { raw in
-      guard let base = raw.baseAddress else { return }
-      var offset = 0
-      while offset < count {
-        let received = recv(fileDescriptor, base + offset, count - offset, 0)
-        if received < 0 {
-          if errno == EINTR { continue }
-          if errno == EAGAIN || errno == EWOULDBLOCK {
-            throw AXBridgeError.guestFailure("serve read timed out after \(receiveTimeoutSeconds)s with no data")
-          }
-          throw AXBridgeError.guestFailure("socket read failed: \(String(cString: strerror(errno)))")
-        }
-        if received == 0 {
-          throw AXBridgeError.guestFailure(SimulatorFrameworkBridgeConnection.socketClosedMessage(process: guest))
-        }
-        offset += received
-      }
-    }
-    return buffer
   }
 }

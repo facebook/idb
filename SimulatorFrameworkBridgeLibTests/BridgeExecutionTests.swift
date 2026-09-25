@@ -8,6 +8,7 @@
 import Foundation
 @_implementationOnly import SimulatorFrameworkBridgeProtocol
 @_implementationOnly import SimulatorFrameworkBridgeSupport
+@_implementationOnly import SimulatorIPC
 import XCTest
 
 final class BridgeExecutionTests: XCTestCase {
@@ -77,7 +78,7 @@ final class BridgeExecutionTests: XCTestCase {
   func testOversizedAndInvalidOutputBecomesAMatchingFailureInBothAdapters() throws {
     let request = BridgeRequest(command: .dns(.list), id: "bounded")
     let results = [
-      BridgeResult(exitCode: 0, values: [.string(String(repeating: "x", count: BridgeFrame.maximumSize))]),
+      BridgeResult(exitCode: 0, values: [.string(String(repeating: "x", count: IPCFrame.maximumSize))]),
       BridgeResult(exitCode: 0, values: [.number(.infinity)]),
       BridgeResult(exitCode: 0, propertyList: try PropertyListSerialization.data(fromPropertyList: ["value": Data(repeating: 0, count: 13 * 1024 * 1024)], format: .binary, options: 0)),
     ]
@@ -87,7 +88,7 @@ final class BridgeExecutionTests: XCTestCase {
       let socket = BridgeRPC.handle(try request.encoded(), execute: execute)
       XCTAssertEqual(cli.data, socket.frame?.data)
       XCTAssertEqual(cli.exitCode, 1)
-      XCTAssertLessThan(cli.data.count, BridgeFrame.maximumSize)
+      XCTAssertLessThan(cli.data.count, IPCFrame.maximumSize)
       let failure = try BridgeResponse.decode(cli.data, for: request).result
       XCTAssertEqual(failure.exitCode, 1)
       XCTAssertNil(failure.propertyList)

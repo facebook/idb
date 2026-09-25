@@ -7,7 +7,7 @@
 
 import Darwin
 import Foundation
-import SimulatorFrameworkBridgeProtocol
+@_implementationOnly import SimulatorIPC
 
 /// Frames a response goes on writing after its request, until it ends or the peer goes away.
 public protocol BridgeResponseStream: AnyObject {
@@ -63,49 +63,16 @@ public enum BridgeServer {
     prepareRuntime: () -> Void,
     handleRequest: (Data) -> BridgeSocketResponse
   ) -> Int32 {
-    let pathString = socketPath as NSString
-    return withExtendedLifetime(pathString) {
-      let path = pathString.fileSystemRepresentation
-      let listenFD = socket(AF_UNIX, SOCK_STREAM, 0)
-      guard listenFD >= 0 else {
-        NSLog("[BridgeServer] socket() failed: %@", String(cString: strerror(errno)))
-        return 1
-      }
-      defer { close(listenFD) }
-
-      var address = sockaddr_un()
-      address.sun_family = sa_family_t(AF_UNIX)
-      let pathLength = strlen(path)
-      guard pathLength < MemoryLayout.size(ofValue: address.sun_path) else {
-        NSLog("[BridgeServer] socket path too long: %@", socketPath)
-        return 1
-      }
-      withUnsafeMutableBytes(of: &address.sun_path) {
-        $0.copyBytes(from: UnsafeRawBufferPointer(start: path, count: pathLength + 1))
-      }
-      // Keep the inode stable: unlinking a lock file lets another starter lock a different inode.
-      let lockFD = open(socketPath + ".lock", O_CREAT | O_RDWR | O_NOFOLLOW, mode_t(0o600))
-      guard lockFD >= 0 else { return 1 }
-      defer { close(lockFD) }
-      guard flock(lockFD, LOCK_EX | LOCK_NB) == 0 else {
-        return errno == EWOULDBLOCK ? 0 : 1
-      }
-      unlink(path)
-      let bound = withUnsafePointer(to: &address) {
-        $0.withMemoryRebound(to: sockaddr.self, capacity: 1) {
-          bind(listenFD, $0, socklen_t(MemoryLayout<sockaddr_un>.size))
-        }
-      }
-      guard bound == 0 else {
-        NSLog("[BridgeServer] bind(%@) failed: %@", socketPath, String(cString: strerror(errno)))
-        return 1
-      }
-      guard listen(listenFD, serveBacklog) == 0 else {
-        NSLog("[BridgeServer] listen() failed: %@", String(cString: strerror(errno)))
-        return 1
-      }
-      defer { unlink(path) }
-
+    let server: IPCListener
+    do {
+      guard let bound = try IPCListener.bind(path: socketPath, backlog: serveBacklog) else { return 0 }
+      server = bound
+    } catch {
+      NSLog("[BridgeServer] could not serve on %@: %@", socketPath, String(describing: error))
+      return 1
+    }
+    let listenFD = server.fileDescriptor
+    return withExtendedLifetime(server) {
       prepareRuntime()
       var initialClientDeadline = initialClientTimeoutSeconds.map {
         ProcessInfo.processInfo.systemUptime + Double(max(1, $0))
@@ -164,18 +131,13 @@ public enum BridgeServer {
     idleTimeoutSeconds: Int32,
     handleRequest: (Data) -> BridgeSocketResponse
   ) -> Bool {
-    var timeout = timeval(tv_sec: Int(idleTimeoutSeconds), tv_usec: 0)
-    setsockopt(connection, SOL_SOCKET, SO_RCVTIMEO, &timeout, socklen_t(MemoryLayout<timeval>.size))
-    setsockopt(connection, SOL_SOCKET, SO_SNDTIMEO, &timeout, socklen_t(MemoryLayout<timeval>.size))
+    IPCSocket.setTimeout(connection, seconds: Int(idleTimeoutSeconds))
     while true {
       let step: ConnectionStep = autoreleasepool {
-        guard let header = readFully(connection, count: 4) else { return .disconnected }
-        guard let length = try? BridgeFrame.size(fromHeader: header),
-          let request = readFully(connection, count: length)
-        else { return .disconnected }
+        guard let request = try? IPCSocket.readFrame(connection) else { return .disconnected }
         switch handleRequest(request) {
         case let .frame(data, shutdown):
-          guard writeFrame(connection, data: data) else { return .disconnected }
+          guard (try? IPCSocket.writeFrame(connection, data)) != nil else { return .disconnected }
           return shutdown ? .shutdown : .next
         case let .stream(stream):
           serveStream(stream, on: connection)
@@ -190,11 +152,6 @@ public enum BridgeServer {
     }
   }
 
-  private static func writeFrame(_ fd: Int32, data: Data) -> Bool {
-    guard let header = try? BridgeFrame.header(forSize: data.count) else { return false }
-    return writeFully(fd, data: header) && writeFully(fd, data: data)
-  }
-
   /// A peer has nothing to say mid-stream, so anything readable — a byte or end-of-file — ends it.
   private static func serveStream(_ stream: BridgeResponseStream, on connection: Int32) {
     let watcher = DispatchSource.makeReadSource(fileDescriptor: connection, queue: .global())
@@ -205,40 +162,9 @@ public enum BridgeServer {
     }
     watcher.setCancelHandler { watcherCancelled.signal() }
     watcher.resume()
-    stream.run { writeFrame(connection, data: $0) }
+    stream.run { (try? IPCSocket.writeFrame(connection, $0)) != nil }
     watcher.cancel()
     // The descriptor must stay open until the source has let go of it.
     watcherCancelled.wait()
-  }
-
-  private static func readFully(_ fd: Int32, count: Int) -> Data? {
-    var data = Data(count: count)
-    let complete = data.withUnsafeMutableBytes { buffer -> Bool in
-      guard let base = buffer.baseAddress else { return false }
-      var offset = 0
-      while offset < count {
-        let received = recv(fd, base.advanced(by: offset), count - offset, 0)
-        if received < 0, errno == EINTR { continue }
-        guard received > 0 else { return false }
-        offset += received
-      }
-      return true
-    }
-    return complete ? data : nil
-  }
-
-  private static func writeFully(_ fd: Int32, data: Data) -> Bool {
-    if data.isEmpty { return true }
-    return data.withUnsafeBytes { buffer in
-      guard let base = buffer.baseAddress else { return false }
-      var offset = 0
-      while offset < buffer.count {
-        let written = send(fd, base.advanced(by: offset), buffer.count - offset, MSG_NOSIGNAL)
-        if written < 0, errno == EINTR { continue }
-        guard written > 0 else { return false }
-        offset += written
-      }
-      return true
-    }
   }
 }

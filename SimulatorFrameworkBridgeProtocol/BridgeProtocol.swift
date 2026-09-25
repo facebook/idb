@@ -11,7 +11,6 @@ public enum BridgeProtocolError: Error, Equatable {
   case invalidJSONValue
   case unsupportedVersion(Int)
   case mismatchedResponse
-  case invalidFrameSize(Int)
 }
 
 public struct BridgeRequest: Codable, Equatable, Sendable {
@@ -101,22 +100,5 @@ public struct BridgeResponse: Codable, Equatable, Sendable {
     guard response.version == BridgeRequest.currentVersion else { throw BridgeProtocolError.unsupportedVersion(response.version) }
     guard response.id == request.id else { throw BridgeProtocolError.mismatchedResponse }
     return response
-  }
-}
-
-public enum BridgeFrame {
-  public static let maximumSize = 16 * 1024 * 1024
-
-  public static func header(forSize size: Int) throws -> Data {
-    guard size > 0, size <= maximumSize else { throw BridgeProtocolError.invalidFrameSize(size) }
-    var length = UInt32(size).bigEndian
-    return withUnsafeBytes(of: &length) { Data($0) }
-  }
-
-  public static func size(fromHeader header: Data) throws -> Int {
-    guard header.count == 4 else { throw BridgeProtocolError.invalidFrameSize(header.count) }
-    let size = header.reduce(0) { ($0 << 8) | Int($1) }
-    guard size > 0, size <= maximumSize else { throw BridgeProtocolError.invalidFrameSize(size) }
-    return size
   }
 }

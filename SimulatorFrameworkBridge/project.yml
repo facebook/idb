@@ -15,6 +15,17 @@ targetTemplates:
         SWIFT_VERSION: "6"
     dependencies:
       - sdk: Foundation.framework
+  IPC:
+    type: library.static
+    deploymentTarget: "15.0"
+    sources:
+      - path: ../SimulatorIPC
+    settings:
+      base:
+        PRODUCT_MODULE_NAME: SimulatorIPC
+        SWIFT_VERSION: "6"
+    dependencies:
+      - sdk: Foundation.framework
   Guest:
     type: tool
     deploymentTarget: "15.0"
@@ -52,6 +63,18 @@ targets:
     settings:
       base:
         SDKROOT: appletvsimulator
+  SimulatorIPC-iOS:
+    templates: [IPC]
+    platform: iOS
+    settings:
+      base:
+        SDKROOT: iphonesimulator
+  SimulatorIPC-tvOS:
+    templates: [IPC]
+    platform: tvOS
+    settings:
+      base:
+        SDKROOT: appletvsimulator
   # A command-line executable spawned inside the simulator runtime by idb_companion (from the bundled
   # `Resources/SimulatorFrameworkBridge-<platform>`) to drive privacy/services state, read the
   # accessibility tree and serve the REPL socket. Mirrors the Buck targets of the same names.
@@ -72,6 +95,7 @@ targets:
         PRODUCT_NAME: SimulatorFrameworkBridge-iOS
     dependencies:
       - target: SimulatorFrameworkBridgeProtocol-iOS
+      - target: SimulatorIPC-iOS
       - sdk: Contacts.framework
       - sdk: UserNotifications.framework
 
@@ -92,3 +116,4 @@ targets:
         PRODUCT_NAME: SimulatorFrameworkBridge-tvOS
     dependencies:
       - target: SimulatorFrameworkBridgeProtocol-tvOS
+      - target: SimulatorIPC-tvOS

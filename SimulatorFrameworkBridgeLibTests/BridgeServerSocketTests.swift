@@ -9,6 +9,7 @@ import Darwin
 import Foundation
 @_implementationOnly import SimulatorFrameworkBridgeProtocol
 @_implementationOnly import SimulatorFrameworkBridgeSupport
+@_implementationOnly import SimulatorIPC
 import XCTest
 
 final class BridgeServerSocketTests: XCTestCase {
@@ -102,7 +103,7 @@ final class BridgeServerSocketTests: XCTestCase {
 
   func frame(command: BridgeCommand) throws -> Data {
     let bytes = try BridgeRequest(command: command).encoded()
-    var frame = try BridgeFrame.header(forSize: bytes.count)
+    var frame = try IPCFrame.header(forSize: bytes.count)
     frame.append(bytes)
     return frame
   }
@@ -197,7 +198,7 @@ final class BridgeServerSocketTests: XCTestCase {
     for command in commands {
       let request = BridgeRequest(command: command)
       let bytes = try request.encoded()
-      sendData(data: try BridgeFrame.header(forSize: bytes.count), to: client)
+      sendData(data: try IPCFrame.header(forSize: bytes.count), to: client)
       sendData(data: bytes, to: client)
       let object = try XCTUnwrap(readResponse(fd: client))
       let response = try BridgeResponse.decode(JSONSerialization.data(withJSONObject: object), for: request)
@@ -215,7 +216,7 @@ final class BridgeServerSocketTests: XCTestCase {
     DispatchQueue.global().async {
       XCTAssertEqual(
         BridgeServer.serve(socketPath: path, idleTimeoutSeconds: 1, exitOnDisconnect: true, prepareRuntime: {}) { _ in
-          BridgeSocketResponse.frame(data: Data(repeating: 120, count: BridgeFrame.maximumSize), shutdown: false)
+          BridgeSocketResponse.frame(data: Data(repeating: 120, count: IPCFrame.maximumSize), shutdown: false)
         }, 0)
       finished.fulfill()
     }

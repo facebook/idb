@@ -23,6 +23,8 @@ targets:
         embed: false
       - framework: ../Build/Products/Release/libSimulatorFrameworkBridgeProtocol.a
         embed: false
+      - framework: ../Build/Products/Release/libSimulatorIPC.a
+        embed: false
       - framework: ../Build/Products/Release/libSimulatorXCTest.a
         embed: false
       - framework: ../Build/Products/Release/XCTestBootstrap.framework
@@ -40,6 +42,8 @@ targets:
       - framework: ../Build/Products/Release/libFBSimulatorControl.a
         embed: false
       - framework: ../Build/Products/Release/libSimulatorFrameworkBridgeProtocol.a
+        embed: false
+      - framework: ../Build/Products/Release/libSimulatorIPC.a
         embed: false
       - framework: ../Build/Products/Release/libSimulatorVideo.a
         embed: false

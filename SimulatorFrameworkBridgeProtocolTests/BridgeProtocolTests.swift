@@ -33,7 +33,6 @@ final class BridgeProtocolTests: XCTestCase {
       XCTAssertEqual(arguments[0], "rpc")
       let data = Data(arguments[1].utf8)
       XCTAssertEqual(try BridgeRequest.decode(data), request)
-      XCTAssertEqual(try BridgeFrame.size(fromHeader: BridgeFrame.header(forSize: data.count)), data.count)
       XCTAssertEqual(try request.encoded(), data)
     }
   }
@@ -188,19 +187,6 @@ final class BridgeProtocolTests: XCTestCase {
       XCTAssertThrowsError(try BridgeResponse.decode(Data(text.utf8), for: request)) {
         XCTAssertEqual($0 as? BridgeProtocolError, .mismatchedResponse)
       }
-    }
-  }
-
-  func testFrameBoundsAreIdenticalInBothDirections() throws {
-    XCTAssertEqual(try BridgeFrame.header(forSize: 258), Data([0, 0, 1, 2]))
-    for size in [1, BridgeFrame.maximumSize] {
-      XCTAssertEqual(try BridgeFrame.size(fromHeader: BridgeFrame.header(forSize: size)), size)
-    }
-    for size in [0, -1, BridgeFrame.maximumSize + 1] {
-      XCTAssertThrowsError(try BridgeFrame.header(forSize: size))
-    }
-    for header in [Data(), Data([0, 0, 0]), Data([0, 0, 0, 0]), Data([1, 0, 0, 1]), Data([255, 255, 255, 255])] {
-      XCTAssertThrowsError(try BridgeFrame.size(fromHeader: header))
     }
   }
 }

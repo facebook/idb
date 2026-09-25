@@ -8,6 +8,7 @@
 import Darwin
 import Foundation
 import SimulatorFrameworkBridgeProtocol
+import SimulatorIPC
 
 /// Where a persistent bridge's socket lives, and how to recognise one.
 ///
@@ -46,17 +47,8 @@ enum SimulatorFrameworkBridgeSocket {
   /// `/tmp` fallback another user could pre-create `idb-ax` with a permissive mode. Failing to set it
   /// fails closed.
   static func prepareDirectory(_ path: String = directory) throws {
-    let manager = FileManager.default
-    try manager.createDirectory(
-      atPath: path,
-      withIntermediateDirectories: true,
-      attributes: [.posixPermissions: ownerOnlyPermissions]
-    )
-    try manager.setAttributes([.posixPermissions: ownerOnlyPermissions], ofItemAtPath: path)
+    try IPCSocket.prepareDirectory(path)
   }
-
-  /// `rwx` for the owner and nothing for anyone else.
-  static let ownerOnlyPermissions = 0o700
 
   static func path(forConnection identifier: String) -> String {
     "\(directory)/\(identifier)\(suffix)"
