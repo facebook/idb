@@ -6,7 +6,7 @@
  */
 
 import Foundation
-@_implementationOnly import SimulatorFrameworkBridgeLib
+@_implementationOnly import SimulatorFrameworkBridgeSupport
 import XCTest
 
 final class DnsServiceTests: XCTestCase {
@@ -14,7 +14,7 @@ final class DnsServiceTests: XCTestCase {
   // MARK: - buildDnsDict
 
   func testBuildDnsDictMultipleServers() {
-    let dict = buildDnsDict(["8.8.8.8", "8.8.4.4", "1.1.1.1"])
+    let dict = FBDnsService.buildDnsDict(servers: ["8.8.8.8", "8.8.4.4", "1.1.1.1"])
 
     let servers = dict["ServerAddresses"] as? [String]
     XCTAssertEqual(servers?.count ?? 0, 3)
@@ -31,15 +31,15 @@ final class DnsServiceTests: XCTestCase {
   // tests can only pin the store-unavailable path. Everything above this point is pure and is
   // covered for real.
   func testHandleDnsActionListReturnsFailureWithoutADynamicStore() {
-    let result = handleDnsAction("list", [])
+    let result = FBDnsService.handleDnsAction(action: "list", arguments: [])
     XCTAssertEqual(result, 1)
   }
 
   func testHandleDnsActionSetMissingArgsReturnsFailure() {
-    XCTAssertEqual(handleDnsAction("set", []), 1)
+    XCTAssertEqual(FBDnsService.handleDnsAction(action: "set", arguments: []), 1)
   }
 
   func testHandleDnsActionUnknownActionReturnsFailure() {
-    XCTAssertEqual(handleDnsAction("unknown", []), 1)
+    XCTAssertEqual(FBDnsService.handleDnsAction(action: "unknown", arguments: []), 1)
   }
 }

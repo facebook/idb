@@ -10,8 +10,6 @@
 #import <stdio.h>
 #import <unistd.h>
 
-#import <SimulatorFrameworkBridgeLib/DnsService.h>
-#import <SimulatorFrameworkBridgeLib/ProxyService.h>
 #import <SimulatorFrameworkBridgeRuntime/SystemConfigurationLoader.h>
 
 #import "../SimulatorFrameworkBridge/Runtime/Private/SystemConfigurationPrivate.h"
@@ -108,7 +106,7 @@ static Boolean notifyValue(SCDynStoreRef store, CFStringRef key)
   runtime = nil;
 }
 
-- (int)runService:(NSString *)service action:(NSString *)action arguments:(NSArray<NSString *> *)arguments
+- (NSInteger)runService:(NSInteger (^NS_NOESCAPE)(void))service
 {
   [self install];
   fflush(stdout);
@@ -118,7 +116,7 @@ static Boolean notifyValue(SCDynStoreRef store, CFStringRef key)
   int redirected = dup2(fileno(capture), STDOUT_FILENO);
   NSAssert(redirected >= 0, @"Cannot redirect service output");
   @try {
-    return [service isEqualToString:@"dns"] ? handleDnsAction(action, arguments) : handleProxyAction(action, arguments);
+    return service();
   } @finally {
     fflush(stdout);
     dup2(saved, STDOUT_FILENO);

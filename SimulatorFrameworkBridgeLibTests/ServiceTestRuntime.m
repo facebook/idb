@@ -12,10 +12,7 @@
 #import <stdio.h>
 #import <unistd.h>
 
-#import <SimulatorFrameworkBridgeLib/AccessibilityService.h>
-#import <SimulatorFrameworkBridgeLib/AccessibilityService+Testing.h>
-#import <SimulatorFrameworkBridgeLib/AccessibilityService_Private.h>
-#import <SimulatorFrameworkBridgeLib/HealthSettingsService.h>
+#import <SimulatorFrameworkBridgeRuntime/AccessibilityClientProvider.h>
 
 #import "../SimulatorFrameworkBridge/Runtime/Private/AccessibilityRuntime_Private.h"
 #import "../SimulatorFrameworkBridge/Runtime/Private/BulletinBoardPrivate.h"
@@ -66,10 +63,10 @@ BOOL FBHealthRuntimeDeclaresSelector(NSString *selectorName)
   return cls != Nil && [cls instancesRespondToSelector:NSSelectorFromString(selectorName)];
 }
 
-NSException *FBHealthApproveException(NSArray<NSString *> *types)
+NSException *FBExceptionRaisedBy(void (^NS_NOESCAPE block)(void))
 {
   @try {
-    handleHealthSettingsAction(@"approve", @"com.example.test", types);
+    block();
     return nil;
   } @catch (NSException *exception) {
     return exception;
@@ -102,7 +99,7 @@ BOOL FBNotificationShowsInLockScreen(id sectionInfo)
   return [(BBSectionInfo *)sectionInfo showsInLockScreen];
 }
 
-NSString *FBStdoutWhileRunning(void (^block)(void))
+NSString *FBStdoutWhileRunning(void (^NS_NOESCAPE block)(void))
 {
   NSPipe *pipe = [NSPipe pipe];
   // Drained on another queue for as long as the block runs, rather than after it returns: a
@@ -186,39 +183,12 @@ void FBNotificationSetPresentation(id sectionInfo, NSUInteger alert, NSUInteger 
   section.notificationCenterSetting = center;
 }
 
-NSDictionary<NSString *, id> *FBNotificationRunCommand(NSString *action, NSString *bundleID, id gateway)
-{
-  fflush(stdout);
-  FILE *capture = tmpfile();
-  int saved = dup(STDOUT_FILENO);
-  NSCAssert(capture && saved >= 0, @"Cannot capture notification output");
-  int redirected = dup2(fileno(capture), STDOUT_FILENO);
-  NSCAssert(redirected >= 0, @"Cannot redirect notification output");
-  int status;
-  @try {
-    status = handleNotificationSettingsActionWithGateway(action, bundleID, gateway);
-  } @finally {
-    fflush(stdout);
-    dup2(saved, STDOUT_FILENO);
-    close(saved);
-  }
-  rewind(capture);
-  NSMutableData *data = [NSMutableData data];
-  unsigned char buffer[1024];
-  size_t count;
-  while ((count = fread(buffer, 1, sizeof(buffer), capture)) > 0) {
-    [data appendBytes:buffer length:count];
-  }
-  fclose(capture);
-  return @{@"status" : @(status), @"output" : [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding]};
-}
-
-NSDictionary<NSString *, id> *FBAXRuntimeInitializationProbe(FBAXRuntimeInitializationMode mode, BOOL prepare, NSDictionary<NSString *, id> *request)
+NSDictionary<NSString *, id> *FBAXRuntimeInitializationProbe(FBAXRuntimeInitializationMode mode, BOOL prepare, NSDictionary<NSString *, id> *(^NS_NOESCAPE handleRequest)(void))
 {
   FBAXFakeRuntime *runtime = [FBAXFakeRuntime new];
   runtime.deviceSettings[@(FBAXDeviceSettingReduceMotion)] = @YES;
   __block NSUInteger calls = 0;
-  FBAXBridgeSetRuntimeFactoryForTesting(^id<FBAXRuntime>(NSString **error) {
+  [FBAXClientProvider setRuntimeFactoryForTesting:^id<FBAXRuntime>(NSString **error) {
     calls++;
     switch (mode) {
       case FBAXRuntimeInitializationModeSuccess:
@@ -236,20 +206,20 @@ NSDictionary<NSString *, id> *FBAXRuntimeInitializationProbe(FBAXRuntimeInitiali
                                        reason:mode == FBAXRuntimeInitializationModeExceptionWithReason ? @"initialization failed" : nil
                                      userInfo:nil];
     }
-  });
+  }];
   NSString *preparationException = nil;
   NSDictionary *response = nil;
   @try {
     if (prepare) {
       @try {
-        FBAXBridgePrepareRuntime();
+        [FBAXClientProvider prepare];
       } @catch (NSException *exception) {
         preparationException = exception.reason ?: exception.name;
       }
     }
-    response = FBAXBridgeHandleRequest(request);
+    response = handleRequest();
   } @finally {
-    FBAXBridgeSetRuntimeFactoryForTesting(nil);
+    [FBAXClientProvider setRuntimeFactoryForTesting:nil];
   }
   return @{@"preparationException" : preparationException ?: NSNull.null, @"calls" : @(calls), @"response" : response};
 }
@@ -258,15 +228,15 @@ NSDictionary<NSString *, NSNumber *> *FBAXBridgeServeProbe(int (^NS_NOESCAPE run
 {
   FBAXFakeRuntime *runtime = [FBAXFakeRuntime new];
   __block NSUInteger calls = 0;
-  FBAXBridgeSetRuntimeFactoryForTesting(^id<FBAXRuntime>(NSString **error) {
+  [FBAXClientProvider setRuntimeFactoryForTesting:^id<FBAXRuntime>(NSString **error) {
     calls++;
     return runtime;
-  });
+  }];
   int status;
   @try {
     status = run();
   } @finally {
-    FBAXBridgeSetRuntimeFactoryForTesting(nil);
+    [FBAXClientProvider setRuntimeFactoryForTesting:nil];
   }
   return @{@"status" : @(status), @"calls" : @(calls)};
 }

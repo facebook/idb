@@ -11,7 +11,20 @@
 
 #if !TARGET_OS_TV
 
+ #import <UserNotifications/UserNotifications.h>
+
 NS_ASSUME_NONNULL_BEGIN
+
+/** The part of `UNUserNotificationCenter` a read uses; the real center satisfies it as-is. */
+@protocol FBDeliveredNotificationsCenter <NSObject>
+- (void)getDeliveredNotificationsWithCompletionHandler:(void (^)(NSArray<UNNotification *> *notifications))completionHandler;
+@end
+
+/** The part of `UNUserNotificationServiceConnection` a clear uses; the real connection satisfies it as-is. */
+@protocol FBDeliveredNotificationsRemover <NSObject>
+- (void)removeAllDeliveredNotificationsForBundleIdentifier:(NSString *)bundleIdentifier
+                                         completionHandler:(void (^)(BOOL success))completionHandler;
+@end
 
 typedef NS_ENUM(NSInteger, FBDeliveredNotificationsReadStatus) {
   FBDeliveredNotificationsReadStatusReceived,

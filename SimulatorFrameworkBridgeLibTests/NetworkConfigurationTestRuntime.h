@@ -22,8 +22,8 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, readonly, copy) NSString *output;
 - (void)install;
 - (void)uninstall;
-- (int)runService:(NSString *)service action:(NSString *)action arguments:(NSArray<NSString *> *)arguments
-  NS_SWIFT_NAME(run(service:action:arguments:));
+/** Runs `service` against the installed store with stdout captured into `output`. */
+- (NSInteger)runService:(NSInteger (^NS_NOESCAPE)(void))service NS_SWIFT_NAME(run(_:));
 @end
 
 NS_ASSUME_NONNULL_END

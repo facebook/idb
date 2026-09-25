@@ -6,7 +6,7 @@
  */
 
 import Foundation
-@_implementationOnly import SimulatorFrameworkBridgeLib
+@_implementationOnly import SimulatorFrameworkBridgeSupport
 import XCTest
 
 final class AccessibilityWireTests: XCTestCase {
@@ -20,7 +20,7 @@ final class AccessibilityWireTests: XCTestCase {
       "string": "infinity",
       "null": NSNull(),
     ]
-    let encoded = FBAXBridgeSerializeResponse(response)
+    let encoded = FBAccessibilityService.serializeResponse(response)
     let decoded = try XCTUnwrap(JSONSerialization.jsonObject(with: encoded) as? [String: Any])
     XCTAssertEqual(
       decoded as NSDictionary,
@@ -40,6 +40,6 @@ final class AccessibilityWireTests: XCTestCase {
 
   func testUnsupportedNestedValuesKeepTheSerializationFallback() {
     let response: [String: Any] = ["ok": true, "values": [["date": Date()]]]
-    XCTAssertEqual(FBAXBridgeSerializeResponse(response), Data(#"{"ok":false,"error":"response serialization failed"}"#.utf8))
+    XCTAssertEqual(FBAccessibilityService.serializeResponse(response), Data(#"{"ok":false,"error":"response serialization failed"}"#.utf8))
   }
 }

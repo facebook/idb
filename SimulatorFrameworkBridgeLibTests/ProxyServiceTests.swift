@@ -6,29 +6,29 @@
  */
 
 import Foundation
-@_implementationOnly import SimulatorFrameworkBridgeLib
+@_implementationOnly import SimulatorFrameworkBridgeSupport
 import XCTest
 
 final class ProxyServiceTests: XCTestCase {
 
   func testUnknownActionReturnsFailure() {
-    XCTAssertEqual(handleProxyAction("unknown", []), 1)
-    XCTAssertEqual(handleProxyAction("", []), 1)
-    XCTAssertEqual(handleProxyAction("remove", []), 1)
+    XCTAssertEqual(FBProxyService.handleProxyAction(action: "unknown", arguments: []), 1)
+    XCTAssertEqual(FBProxyService.handleProxyAction(action: "", arguments: []), 1)
+    XCTAssertEqual(FBProxyService.handleProxyAction(action: "remove", arguments: []), 1)
   }
 
   func testSetWithNoArgsReturnsFailure() {
-    XCTAssertEqual(handleProxyAction("set", []), 1)
+    XCTAssertEqual(FBProxyService.handleProxyAction(action: "set", arguments: []), 1)
   }
 
   func testSetWithOneArgReturnsFailure() {
-    XCTAssertEqual(handleProxyAction("set", ["127.0.0.1"]), 1)
+    XCTAssertEqual(FBProxyService.handleProxyAction(action: "set", arguments: ["127.0.0.1"]), 1)
   }
 
   // MARK: - buildHTTPProxyDict
 
   func testBuildHTTPProxyDictContainsHTTPKeys() {
-    let dict = buildHTTPProxyDict("10.0.0.1", 8080)
+    let dict = FBProxyService.buildHTTPProxyDict(host: "10.0.0.1", port: 8080)
     XCTAssertNotNil(dict)
 
     XCTAssertEqual(dict["HTTPProxy"] as? String, "10.0.0.1")
@@ -37,7 +37,7 @@ final class ProxyServiceTests: XCTestCase {
   }
 
   func testBuildHTTPProxyDictContainsHTTPSKeys() {
-    let dict = buildHTTPProxyDict("proxy.example.com", 3128)
+    let dict = FBProxyService.buildHTTPProxyDict(host: "proxy.example.com", port: 3128)
 
     XCTAssertEqual(dict["HTTPSProxy"] as? String, "proxy.example.com")
     XCTAssertEqual(dict["HTTPSPort"] as? NSNumber, 3128)
@@ -45,7 +45,7 @@ final class ProxyServiceTests: XCTestCase {
   }
 
   func testBuildHTTPProxyDictContainsFTPPassiveAndExceptions() {
-    let dict = buildHTTPProxyDict("127.0.0.1", 8080)
+    let dict = FBProxyService.buildHTTPProxyDict(host: "127.0.0.1", port: 8080)
 
     XCTAssertEqual(dict["FTPPassive"] as? NSNumber, 1)
     let exceptions = dict["ExceptionsList"] as? [String]
@@ -57,7 +57,7 @@ final class ProxyServiceTests: XCTestCase {
   // MARK: - buildSOCKSProxyDict
 
   func testBuildSOCKSProxyDictContainsSOCKSKeys() {
-    let dict = buildSOCKSProxyDict("10.0.0.1", 1080)
+    let dict = FBProxyService.buildSOCKSProxyDict(host: "10.0.0.1", port: 1080)
     XCTAssertNotNil(dict)
 
     XCTAssertEqual(dict["SOCKSProxy"] as? String, "10.0.0.1")
@@ -66,7 +66,7 @@ final class ProxyServiceTests: XCTestCase {
   }
 
   func testBuildSOCKSProxyDictDoesNotContainHTTPKeys() {
-    let dict = buildSOCKSProxyDict("10.0.0.1", 1080)
+    let dict = FBProxyService.buildSOCKSProxyDict(host: "10.0.0.1", port: 1080)
 
     XCTAssertNil(dict["HTTPProxy"])
     XCTAssertNil(dict["HTTPPort"])
@@ -77,7 +77,7 @@ final class ProxyServiceTests: XCTestCase {
   }
 
   func testBuildSOCKSProxyDictContainsFTPPassiveAndExceptions() {
-    let dict = buildSOCKSProxyDict("10.0.0.1", 1080)
+    let dict = FBProxyService.buildSOCKSProxyDict(host: "10.0.0.1", port: 1080)
 
     XCTAssertEqual(dict["FTPPassive"] as? NSNumber, 1)
     let exceptions = dict["ExceptionsList"] as? [String]
@@ -89,7 +89,7 @@ final class ProxyServiceTests: XCTestCase {
   // MARK: - buildEmptyProxyDict
 
   func testBuildEmptyProxyDictContainsOnlyFTPPassive() {
-    let dict = buildEmptyProxyDict()
+    let dict = FBProxyService.buildEmptyProxyDict()
     XCTAssertNotNil(dict)
 
     XCTAssertEqual(dict.count, 1)
@@ -101,7 +101,7 @@ final class ProxyServiceTests: XCTestCase {
   // See the note in DnsServiceTests: a sandboxed XCTest host cannot create an SCDynamicStore,
   // so `list` reports failure here where the `simctl spawn`'d bridge would succeed.
   func testHandleProxyActionListReturnsFailureWithoutADynamicStore() {
-    let result = handleProxyAction("list", [])
+    let result = FBProxyService.handleProxyAction(action: "list", arguments: [])
     XCTAssertEqual(result, 1)
   }
 }

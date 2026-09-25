@@ -6,6 +6,7 @@
  */
 
 import Foundation
+@_implementationOnly import SimulatorFrameworkBridgeSupport
 import XCTest
 
 final class NotificationExceptionTests: XCTestCase {
@@ -14,7 +15,10 @@ final class NotificationExceptionTests: XCTestCase {
       "lookup", "write", "list", "allowsNotifications", "authorizationStatus",
       "setAllowsNotifications", "setAuthorizationStatus", "setAlertType", "setLockScreenSetting", "setNotificationCenterSetting",
     ] {
-      XCTAssertEqual(FBNotificationCommandExceptionResult(operation) as NSDictionary, ["status": 1] as NSDictionary)
+      XCTAssertEqual(
+        FBNotificationCommandExceptionResult(operation) {
+          Int32(FBNotificationSettingsService.handleNotificationSettingsActionWithGateway(action: $0, bundleID: $1, gateway: $2))
+        } as NSDictionary, ["status": 1] as NSDictionary)
     }
   }
 }

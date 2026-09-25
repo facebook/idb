@@ -10,8 +10,7 @@
 #import <stdio.h>
 #import <unistd.h>
 
-#import <SimulatorFrameworkBridgeLib/HealthSettingsService.h>
-#import <SimulatorFrameworkBridgeLib/HealthSettingsService+Testing.h>
+#import <SimulatorFrameworkBridgeRuntime/HealthSettingsClient.h>
 
 @interface FBHealthTestRuntime ()
 @property (nonatomic, strong) NSMutableArray<void (^)(void)> *pendingCallbacks;
@@ -264,7 +263,7 @@ static void completeBoolean(NSString *stage, BOOL ok, NSString *message, void (^
   currentRuntime = nil;
 }
 
-- (NSDictionary<NSString *, id> *)runAction:(NSString *)action bundleID:(NSString *)bundleID types:(NSArray<NSString *> *)types
+- (NSDictionary<NSString *, id> *)runService:(NSInteger (^NS_NOESCAPE)(void))service
 {
   [self install];
   fflush(stdout);
@@ -273,10 +272,10 @@ static void completeBoolean(NSString *stage, BOOL ok, NSString *message, void (^
   NSCAssert(capture && saved >= 0, @"Cannot capture Health output");
   int redirected = dup2(fileno(capture), STDOUT_FILENO);
   NSCAssert(redirected >= 0, @"Cannot redirect Health output");
-  int status = -1;
+  NSInteger status = -1;
   NSString *raisedException = nil;
   @try {
-    status = handleHealthSettingsAction(action, bundleID, types);
+    status = service();
   } @catch (NSException *exception) {
     raisedException = exception.name;
   } @finally {

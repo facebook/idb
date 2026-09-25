@@ -6,7 +6,8 @@
  */
 
 import Foundation
-@_implementationOnly import SimulatorFrameworkBridgeLib
+@_implementationOnly import SimulatorFrameworkBridgeRuntime
+@_implementationOnly import SimulatorFrameworkBridgeSupport
 import XCTest
 
 final class AccessibilityInitializationTests: XCTestCase {
@@ -14,12 +15,12 @@ final class AccessibilityInitializationTests: XCTestCase {
 
   override func setUp() {
     super.setUp()
-    FBAXBridgeSetRuntimeForTesting(nil)
+    FBAXClientProvider.setRuntimeForTesting(nil)
   }
 
   func testSuccessfulPreparationAndRequest() {
     XCTAssertEqual(
-      FBAXRuntimeInitializationProbe(.success, true, request) as NSDictionary,
+      FBAXRuntimeInitializationProbe(.success, true) { FBAccessibilityService.handleRequest(request) } as NSDictionary,
       [
         "preparationException": NSNull(), "calls": 2,
         "response": ["ok": true, "enabled": true],
@@ -28,7 +29,7 @@ final class AccessibilityInitializationTests: XCTestCase {
 
   func testInitializationFailurePreservesTheSetupMessage() {
     XCTAssertEqual(
-      FBAXRuntimeInitializationProbe(.failureWithMessage, true, request) as NSDictionary,
+      FBAXRuntimeInitializationProbe(.failureWithMessage, true) { FBAccessibilityService.handleRequest(request) } as NSDictionary,
       [
         "preparationException": NSNull(), "calls": 2,
         "response": ["ok": false, "error": "missing test framework", "error_kind": "reader_unavailable"],
@@ -37,7 +38,7 @@ final class AccessibilityInitializationTests: XCTestCase {
 
   func testInitializationFailureWithoutDetailsUsesTheFallback() {
     XCTAssertEqual(
-      FBAXRuntimeInitializationProbe(.failureWithoutMessage, true, request) as NSDictionary,
+      FBAXRuntimeInitializationProbe(.failureWithoutMessage, true) { FBAccessibilityService.handleRequest(request) } as NSDictionary,
       [
         "preparationException": NSNull(), "calls": 2,
         "response": ["ok": false, "error": "accessibility setup failed", "error_kind": "reader_unavailable"],
@@ -46,7 +47,7 @@ final class AccessibilityInitializationTests: XCTestCase {
 
   func testInitializationExceptionWithReason() {
     XCTAssertEqual(
-      FBAXRuntimeInitializationProbe(.exceptionWithReason, true, request) as NSDictionary,
+      FBAXRuntimeInitializationProbe(.exceptionWithReason, true) { FBAccessibilityService.handleRequest(request) } as NSDictionary,
       [
         "preparationException": NSNull(), "calls": 2,
         "response": ["ok": false, "error": "accessibility initialization raised: initialization failed", "error_kind": "reader_unavailable"],
@@ -55,7 +56,7 @@ final class AccessibilityInitializationTests: XCTestCase {
 
   func testInitializationExceptionWithoutReason() {
     XCTAssertEqual(
-      FBAXRuntimeInitializationProbe(.exceptionWithoutReason, true, request) as NSDictionary,
+      FBAXRuntimeInitializationProbe(.exceptionWithoutReason, true) { FBAccessibilityService.handleRequest(request) } as NSDictionary,
       [
         "preparationException": NSNull(), "calls": 2,
         "response": ["ok": false, "error": "accessibility initialization raised: NSInternalInconsistencyException", "error_kind": "reader_unavailable"],
@@ -64,7 +65,7 @@ final class AccessibilityInitializationTests: XCTestCase {
 
   func testInvalidPidDoesNotInitializeTheRuntime() {
     XCTAssertEqual(
-      FBAXRuntimeInitializationProbe(.exceptionWithReason, false, ["verb": "describe", "pid": 0]) as NSDictionary,
+      FBAXRuntimeInitializationProbe(.exceptionWithReason, false) { FBAccessibilityService.handleRequest(["verb": "describe", "pid": 0]) } as NSDictionary,
       [
         "preparationException": NSNull(), "calls": 0,
         "response": ["ok": false, "error": "pid 0 names no application", "error_kind": "application_unavailable", "pid": 0],

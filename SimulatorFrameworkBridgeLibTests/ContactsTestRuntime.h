@@ -19,7 +19,8 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, readonly) NSUInteger fetchKeyCount;
 @property (nonatomic, readonly) BOOL savedExpectedRequest;
 @property (nonatomic, readonly) NSMutableArray<CNMutableContact *> *deletedContacts;
-- (int)run;
+- (NSInteger)runClear:(NSInteger (^NS_NOESCAPE)(CNContactStore *store, CNSaveRequest *(^makeSaveRequest)(void)))clear
+  NS_SWIFT_NAME(run(clear:));
 @end
 
 NS_ASSUME_NONNULL_END

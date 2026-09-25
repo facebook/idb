@@ -7,8 +7,6 @@
 
 #import "ContactsTestRuntime.h"
 
-#import <SimulatorFrameworkBridgeLib/ContactsService+Testing.h>
-
 @interface FBContactsTestRuntime ()
 @property (nonatomic) NSUInteger fetches;
 @property (nonatomic) NSUInteger requestCreations;
@@ -71,11 +69,11 @@
   return self;
 }
 
-- (int)run
+- (NSInteger)runClear:(NSInteger (^NS_NOESCAPE)(CNContactStore *store, CNSaveRequest *(^makeSaveRequest)(void)))clear
 {
   FBFakeContactStore *store = [FBFakeContactStore new];
   store.runtime = self;
-  return FBContactsClearWithStore(store, ^{
+  return clear(store, ^{
     self.requestCreations++;
     FBFakeContactSaveRequest *request = [FBFakeContactSaveRequest new];
     request.runtime = self;

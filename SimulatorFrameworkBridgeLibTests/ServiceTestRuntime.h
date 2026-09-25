@@ -8,8 +8,7 @@
 #import <Foundation/Foundation.h>
 #import <UserNotifications/UserNotifications.h>
 
-#import <SimulatorFrameworkBridgeLib/DeliveredNotificationsService.h>
-#import <SimulatorFrameworkBridgeLib/DeliveredNotificationsService+Testing.h>
+#import <SimulatorFrameworkBridgeRuntime/DeliveredNotificationsClient.h>
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -48,7 +47,6 @@ NS_ASSUME_NONNULL_BEGIN
 
 NSDictionary<NSString *, id> *FBNotificationSectionSnapshot(id sectionInfo);
 void FBNotificationSetPresentation(id sectionInfo, NSUInteger alert, NSUInteger lockScreen, NSUInteger center);
-NSDictionary<NSString *, id> *FBNotificationRunCommand(NSString *_Nullable action, NSString *_Nullable bundleID, id gateway);
 
 BOOL FBNotificationAllowsNotifications(id _Nullable sectionInfo);
 NSInteger FBNotificationAuthorizationStatus(id _Nullable sectionInfo);
@@ -63,15 +61,15 @@ BOOL FBNotificationShowsInLockScreen(id _Nullable sectionInfo);
  * block raises: left on the pipe, stdout would stay there for the rest of the process with
  * nothing draining it, and one raising test would take the run down rather than fail on its own.
  */
-NSString *FBStdoutWhileRunning(void (^block)(void));
+NSString *FBStdoutWhileRunning(void (^NS_NOESCAPE block)(void));
 
 /** The single JSON object in an answer that printed one record. */
 NSDictionary<NSString *, id> *_Nullable FBParsedJSONLine(NSString *output);
 
-int handleNotificationSettingsActionWithGateway(NSString *_Nullable action, NSString *_Nullable bundleID, id gateway);
 Class _Nullable FBHealthAuthorizationStoreClass(void);
 BOOL FBHealthRuntimeDeclaresSelector(NSString *selectorName);
-NSException *_Nullable FBHealthApproveException(NSArray<NSString *> *types);
+/** Runs `block` in Objective-C, where an exception it raises can be caught. */
+NSException *_Nullable FBExceptionRaisedBy(void (^NS_NOESCAPE block)(void));
 
 /** Exercises the runtime queue from Objective-C so no exception unwinds through Swift. */
 NSDictionary<NSString *, NSNumber *> *FBAXRuntimeQueueProbe(BOOL raise);
@@ -131,7 +129,11 @@ typedef NS_ENUM(NSInteger, FBAXRuntimeInitializationMode) {
 };
 
 /** Captures preparation exceptions in Objective-C before returning observations to Swift. */
-NSDictionary<NSString *, id> *FBAXRuntimeInitializationProbe(FBAXRuntimeInitializationMode mode, BOOL prepare, NSDictionary<NSString *, id> *request);
+NSDictionary<NSString *, id> *FBAXRuntimeInitializationProbe(
+  FBAXRuntimeInitializationMode mode,
+  BOOL prepare,
+  NSDictionary<NSString *, id> *(^NS_NOESCAPE handleRequest)(void)
+);
 
 /** Runs `run` with a counting runtime factory installed; `calls` is how often it was asked for a runtime. */
 NSDictionary<NSString *, NSNumber *> *FBAXBridgeServeProbe(int (^NS_NOESCAPE run)(void));

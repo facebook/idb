@@ -6,12 +6,13 @@
  */
 
 import Foundation
-@_implementationOnly import SimulatorFrameworkBridgeLib
+@_implementationOnly import SimulatorFrameworkBridgeRuntime
+@_implementationOnly import SimulatorFrameworkBridgeSupport
 import XCTest
 
 final class AccessibilityDisplayTests: XCTestCase {
   override func tearDown() {
-    FBAXBridgeSetRuntimeForTesting(nil)
+    FBAXClientProvider.setRuntimeForTesting(nil)
     super.tearDown()
   }
 
@@ -21,10 +22,10 @@ final class AccessibilityDisplayTests: XCTestCase {
       FBAXDisplayIdentity(uniqueID: "outer", displayID: 42),
       FBAXDisplayIdentity(uniqueID: "continuous-inner", displayID: 71),
     ])
-    FBAXBridgeSetRuntimeForTesting(runtime)
-    let request = FBAXBridgeRequestFromArguments("displays", [])
+    FBAXClientProvider.setRuntimeForTesting(runtime)
+    let request = FBAXBridgeArguments.request(action: "displays", arguments: [])
     XCTAssertEqual(request as NSDictionary, ["verb": "displays"])
-    let response = FBAXBridgeHandleRequest(request)
+    let response = FBAccessibilityService.handleRequest(request)
     XCTAssertEqual(
       response as NSDictionary,
       [
@@ -38,34 +39,34 @@ final class AccessibilityDisplayTests: XCTestCase {
 
   func testUnsupportedInventoryIsDistinctFromEmptyInventoryAndReaderFailure() {
     let runtime = FBAXFakeRuntime()
-    FBAXBridgeSetRuntimeForTesting(runtime)
+    FBAXClientProvider.setRuntimeForTesting(runtime)
     runtime.displayInventoryOutcome = .unavailable("No display manager")
     XCTAssertEqual(
-      FBAXBridgeHandleRequest(["verb": "displays"]) as NSDictionary,
+      FBAccessibilityService.handleRequest(["verb": "displays"]) as NSDictionary,
       [
         "ok": false, "error": "No display manager", "error_kind": "capability_unavailable",
       ])
     runtime.displayInventoryOutcome = .failed("Duplicate identity")
     XCTAssertEqual(
-      FBAXBridgeHandleRequest(["verb": "displays"]) as NSDictionary,
+      FBAccessibilityService.handleRequest(["verb": "displays"]) as NSDictionary,
       [
         "ok": false, "error": "Duplicate identity", "error_kind": "reader_unavailable",
       ])
     runtime.displayInventoryOutcome = .available([])
-    XCTAssertEqual(FBAXBridgeHandleRequest(["verb": "displays"]) as NSDictionary, ["ok": true, "displays": []])
+    XCTAssertEqual(FBAccessibilityService.handleRequest(["verb": "displays"]) as NSDictionary, ["ok": true, "displays": []])
   }
 
   func testDisplayInventoryExceptionIsContainedAndNextReadRecovers() {
     let runtime = FBAXFakeRuntime()
-    FBAXBridgeSetRuntimeForTesting(runtime)
+    FBAXClientProvider.setRuntimeForTesting(runtime)
     runtime.raiseOnOperation = "displayInventory"
     XCTAssertEqual(
-      FBAXBridgeHandleRequest(["verb": "displays"]) as NSDictionary,
+      FBAccessibilityService.handleRequest(["verb": "displays"]) as NSDictionary,
       [
         "ok": false, "error": "the reader raised while answering: injected displayInventory", "error_kind": "reader_unavailable",
       ])
     runtime.raiseOnOperation = nil
-    XCTAssertEqual(FBAXBridgeHandleRequest(["verb": "displays"])["ok"] as? Bool, true)
+    XCTAssertEqual(FBAccessibilityService.handleRequest(["verb": "displays"])["ok"] as? Bool, true)
     XCTAssertEqual(runtime.operations as NSArray, ["displayInventory", "displayInventory"])
   }
 

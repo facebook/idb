@@ -6,7 +6,7 @@
  */
 
 import Foundation
-@_implementationOnly import SimulatorFrameworkBridgeLib
+@_implementationOnly import SimulatorFrameworkBridgeSupport
 import XCTest
 
 final class DynamicStoreServiceTests: XCTestCase {
@@ -32,10 +32,10 @@ final class DynamicStoreServiceTests: XCTestCase {
   // MARK: - Keys
 
   func testTheAliasesNameTheTwoGlobalKeysAndAKeyIsTakenAsGiven() {
-    XCTAssertEqual(dynamicStoreKeyForName("dns"), dnsKey)
-    XCTAssertEqual(dynamicStoreKeyForName("proxy"), proxyKey)
-    XCTAssertEqual(dynamicStoreKeyForName("Setup:/Network/Service/A"), "Setup:/Network/Service/A")
-    XCTAssertNil(dynamicStoreKeyForName("something"))
+    XCTAssertEqual(FBDynamicStoreService.key(forName: "dns"), dnsKey)
+    XCTAssertEqual(FBDynamicStoreService.key(forName: "proxy"), proxyKey)
+    XCTAssertEqual(FBDynamicStoreService.key(forName: "Setup:/Network/Service/A"), "Setup:/Network/Service/A")
+    XCTAssertNil(FBDynamicStoreService.key(forName: "something"))
   }
 
   // MARK: - Snapshot

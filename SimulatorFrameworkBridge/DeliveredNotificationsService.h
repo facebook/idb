@@ -6,7 +6,12 @@
  */
 
 #import <Foundation/Foundation.h>
-#import <UserNotifications/UserNotifications.h>
+
+#if __has_include(<SimulatorFrameworkBridgeRuntime/DeliveredNotificationsClient.h>)
+ #import <SimulatorFrameworkBridgeRuntime/DeliveredNotificationsClient.h>
+#else
+ #import "Runtime/DeliveredNotificationsClient.h"
+#endif
 
 /**
  * Reads the notifications an app has had delivered to it, without touching the UI.
@@ -22,18 +27,6 @@
 int handleDeliveredNotificationsAction(NSString *action, NSString *bundleID);
 
 /**
- * The part of `UNUserNotificationCenter` this service uses.
- *
- * Declared so the reading and formatting can be tested without a notification daemon; the
- * real center satisfies it as-is.
- */
-@protocol FBDeliveredNotificationsCenter <NSObject>
-
-- (void)getDeliveredNotificationsWithCompletionHandler:(void (^)(NSArray<UNNotification *> *notifications))completionHandler;
-
-@end
-
-/**
  * `handleDeliveredNotificationsAction` against a center the caller supplies.
  *
  * The seam a test drives: the entry point above builds a center scoped to the bundle under
@@ -46,19 +39,6 @@ int handleDeliveredNotificationsActionWithCenter(
   NSString *bundleID,
   id<FBDeliveredNotificationsCenter> center
 );
-
-/**
- * The part of `UNUserNotificationServiceConnection` the clear uses.
- *
- * Declared so the clear can be tested without a notification daemon; the real connection
- * satisfies it as-is.
- */
-@protocol FBDeliveredNotificationsRemover <NSObject>
-
-- (void)removeAllDeliveredNotificationsForBundleIdentifier:(NSString *)bundleIdentifier
-                                         completionHandler:(void (^)(BOOL success))completionHandler;
-
-@end
 
 /**
  * The `clear-delivered` action against a remover the caller supplies, or none.

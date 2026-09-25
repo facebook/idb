@@ -10,7 +10,6 @@
 #import <stdio.h>
 #import <unistd.h>
 
-#import <SimulatorFrameworkBridgeLib/DynamicStoreService.h>
 #import <SimulatorFrameworkBridgeRuntime/SystemConfigurationLoader.h>
 
 #import "../SimulatorFrameworkBridge/Runtime/Private/SystemConfigurationPrivate.h"
@@ -129,7 +128,7 @@ static int lastError(void)
   runtime = nil;
 }
 
-- (int)runAction:(NSString *)action arguments:(NSArray<NSString *> *)arguments input:(NSData *)input
+- (NSInteger)runWithInput:(NSData *)input service:(NSInteger (^NS_NOESCAPE)(void))service
 {
   [self install];
   // The service reads the snapshot to restore from stdin and writes its own to stdout, so both
@@ -148,7 +147,7 @@ static int lastError(void)
   NSAssert(dup2(fileno(capture), STDOUT_FILENO) >= 0, @"Cannot redirect service output");
   NSAssert(dup2(fileno(feed), STDIN_FILENO) >= 0, @"Cannot feed service input");
   @try {
-    return handleDynamicStoreAction(action, arguments);
+    return service();
   } @finally {
     fflush(stdout);
     dup2(savedOut, STDOUT_FILENO);

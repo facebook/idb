@@ -7,7 +7,8 @@
 
 import Darwin
 import Foundation
-@_implementationOnly import SimulatorFrameworkBridgeLib
+@_implementationOnly import SimulatorFrameworkBridgeRuntime
+@_implementationOnly import SimulatorFrameworkBridgeSupport
 import XCTest
 
 private let kAXElementType = "XC_kAXXCAttributeElementType"
@@ -28,7 +29,7 @@ private func FBAXTestsErrorWithCode(_ code: Int32) -> NSError {
 }
 
 /**
- * Drives `FBAXBridgeHandleRequest` against a fake `FBAXRuntime`, reaching outcomes a real simulator only
+ * Drives `FBAccessibilityService.handleRequest` against a fake `FBAXRuntime`, reaching outcomes a real simulator only
  * produces against a dead, mid-launch or SIGSTOP-ed application.
  */
 final class AccessibilityRuntimeTests: XCTestCase {
@@ -37,12 +38,12 @@ final class AccessibilityRuntimeTests: XCTestCase {
   override func setUp() {
     super.setUp()
     runtime = FBAXFakeRuntime()
-    FBAXBridgeSetRuntimeForTesting(runtime)
+    FBAXClientProvider.setRuntimeForTesting(runtime)
   }
 
   override func tearDown() {
     // The substitution is process-wide, so leaving it set would leak into every other test in the bundle.
-    FBAXBridgeSetRuntimeForTesting(nil)
+    FBAXClientProvider.setRuntimeForTesting(nil)
     runtime = nil
     super.tearDown()
   }
@@ -182,7 +183,7 @@ final class AccessibilityRuntimeTests: XCTestCase {
   func testHitOnASeededPointAnswersWithTheElementAndItsOwningPid() {
     runtime.hitTestOutcome = FBAXHitTestOutcome.hit(FBAXFakeElement.readable("XCUIElementTypeButton"), owningProcessIdentifier: kAppPid)
 
-    let response = FBAXBridgeHandleRequest(["verb": "hittest", "pid": NSNumber(value: kAppPid), "x": NSNumber(value: 10), "y": NSNumber(value: 20)])
+    let response = FBAccessibilityService.handleRequest(["verb": "hittest", "pid": NSNumber(value: kAppPid), "x": NSNumber(value: 10), "y": NSNumber(value: 20)])
     assertEqualObjects(axValue(response, "ok"), NSNumber(value: true))
     assertEqualObjects(axValue(response, "pid"), NSNumber(value: kAppPid))
     assertEqualObjects(axValue(axValue(response, "tree"), kAXElementType), "XCUIElementTypeButton")
@@ -194,7 +195,7 @@ final class AccessibilityRuntimeTests: XCTestCase {
   func testHitWithNoPidIsDisplayWideAndReportsTheOwningPid() {
     runtime.hitTestOutcome = FBAXHitTestOutcome.hit(FBAXFakeElement.readable("XCUIElementTypeCell"), owningProcessIdentifier: 99)
 
-    let response = FBAXBridgeHandleRequest(["verb": "hittest", "x": NSNumber(value: 1), "y": NSNumber(value: 2)])
+    let response = FBAccessibilityService.handleRequest(["verb": "hittest", "x": NSNumber(value: 1), "y": NSNumber(value: 2)])
     assertEqualObjects(axValue(response, "ok"), NSNumber(value: true))
     assertEqualObjects(axValue(response, "pid"), NSNumber(value: 99), "the owning pid must come from the outcome")
     XCTAssertEqual(runtime.lastHitTestProcessIdentifier, 0, "no pid means a display-wide hit-test")
@@ -203,7 +204,7 @@ final class AccessibilityRuntimeTests: XCTestCase {
   func testEmptyPointIsASuccessfulEmptyResult() {
     runtime.hitTestOutcome = FBAXHitTestOutcome.empty()
 
-    let response = FBAXBridgeHandleRequest(["verb": "hittest", "x": NSNumber(value: 1), "y": NSNumber(value: 2)])
+    let response = FBAccessibilityService.handleRequest(["verb": "hittest", "x": NSNumber(value: 1), "y": NSNumber(value: 2)])
     assertEqualObjects(axValue(response, "ok"), NSNumber(value: true))
     assertEqualObjects(axValue(response, "empty"), NSNumber(value: true))
     XCTAssertNil(axValue(response, "tree"))
@@ -213,14 +214,14 @@ final class AccessibilityRuntimeTests: XCTestCase {
   func testUnavailableApplicationIsTaggedAndNamesThePidWhenSeeded() {
     runtime.hitTestOutcome = FBAXHitTestOutcome.applicationUnavailable()
 
-    let seeded = FBAXBridgeHandleRequest(["verb": "hittest", "pid": NSNumber(value: kAppPid), "x": NSNumber(value: 1), "y": NSNumber(value: 2)])
+    let seeded = FBAccessibilityService.handleRequest(["verb": "hittest", "pid": NSNumber(value: kAppPid), "x": NSNumber(value: 1), "y": NSNumber(value: 2)])
     assertEqualObjects(axValue(seeded, "ok"), NSNumber(value: false))
     assertEqualObjects(axValue(seeded, "error_kind"), "application_unavailable")
     assertEqualObjects(axValue(seeded, "error"), "pid 4321 has no accessibility server to hit-test")
 
     assertEqualObjects(axValue(seeded, "pid"), NSNumber(value: kAppPid), "a tagged failure names the process it is about")
 
-    let systemWide = FBAXBridgeHandleRequest(["verb": "hittest", "x": NSNumber(value: 1), "y": NSNumber(value: 2)])
+    let systemWide = FBAccessibilityService.handleRequest(["verb": "hittest", "x": NSNumber(value: 1), "y": NSNumber(value: 2)])
     assertEqualObjects(axValue(systemWide, "error_kind"), "application_unavailable")
     assertEqualObjects(axValue(systemWide, "error"), "no accessibility server answered the system-wide hit-test")
     XCTAssertNil(axValue(systemWide, "pid"), "a display-wide hit-test nothing answered has no process to name")
@@ -229,13 +230,13 @@ final class AccessibilityRuntimeTests: XCTestCase {
   func testNotRespondingAndUnavailableProduceDistinctErrorKinds() {
     runtime.hitTestOutcome = FBAXHitTestOutcome.applicationNotResponding()
 
-    let seeded = FBAXBridgeHandleRequest(["verb": "hittest", "pid": NSNumber(value: kAppPid), "x": NSNumber(value: 1), "y": NSNumber(value: 2)])
+    let seeded = FBAccessibilityService.handleRequest(["verb": "hittest", "pid": NSNumber(value: kAppPid), "x": NSNumber(value: 1), "y": NSNumber(value: 2)])
     assertEqualObjects(axValue(seeded, "ok"), NSNumber(value: false))
     assertEqualObjects(axValue(seeded, "error_kind"), "application_not_responding")
     assertEqualObjects(axValue(seeded, "error"), "pid 4321 did not answer the hit-test in time")
     assertEqualObjects(axValue(seeded, "pid"), NSNumber(value: kAppPid))
 
-    let systemWide = FBAXBridgeHandleRequest(["verb": "hittest", "x": NSNumber(value: 1), "y": NSNumber(value: 2)])
+    let systemWide = FBAccessibilityService.handleRequest(["verb": "hittest", "x": NSNumber(value: 1), "y": NSNumber(value: 2)])
     assertEqualObjects(axValue(systemWide, "error_kind"), "application_not_responding")
     assertEqualObjects(axValue(systemWide, "error"), "the application at the hit-test point did not answer in time")
     XCTAssertNil(axValue(systemWide, "empty"), "empty must not be set on a not-responding response")
@@ -244,7 +245,7 @@ final class AccessibilityRuntimeTests: XCTestCase {
   func testFailedHitTestIsAnOpaqueFailureCarryingTheReason() {
     runtime.hitTestOutcome = FBAXHitTestOutcome.failed("AXUIElementCreateSystemWide returned NULL")
 
-    let response = FBAXBridgeHandleRequest(["verb": "hittest", "x": NSNumber(value: 1), "y": NSNumber(value: 2)])
+    let response = FBAccessibilityService.handleRequest(["verb": "hittest", "x": NSNumber(value: 1), "y": NSNumber(value: 2)])
     assertEqualObjects(axValue(response, "ok"), NSNumber(value: false))
     assertEqualObjects(axValue(response, "error"), "AXUIElementCreateSystemWide returned NULL")
     XCTAssertNil(axValue(response, "error_kind"), "a reader failure must not be tagged as an unavailable application")
@@ -252,18 +253,18 @@ final class AccessibilityRuntimeTests: XCTestCase {
 
   func testHitElementThatCannotBeReadIsReportedFromTheReadOutcome() {
     runtime.hitTestOutcome = FBAXHitTestOutcome.hit(FBAXFakeElement.applicationUnavailable(), owningProcessIdentifier: kAppPid)
-    let unavailable = FBAXBridgeHandleRequest(["verb": "hittest", "x": NSNumber(value: 1), "y": NSNumber(value: 2)])
+    let unavailable = FBAccessibilityService.handleRequest(["verb": "hittest", "x": NSNumber(value: 1), "y": NSNumber(value: 2)])
     assertEqualObjects(axValue(unavailable, "error_kind"), "application_unavailable")
     assertEqualObjects(axValue(unavailable, "error"), "pid 4321 has no accessibility server")
     assertEqualObjects(axValue(unavailable, "pid"), NSNumber(value: kAppPid), "the pid the hit-test attributed it to is still named")
 
     runtime.hitTestOutcome = FBAXHitTestOutcome.hit(FBAXFakeElement.applicationNotResponding(), owningProcessIdentifier: kAppPid)
-    let notResponding = FBAXBridgeHandleRequest(["verb": "hittest", "x": NSNumber(value: 1), "y": NSNumber(value: 2)])
+    let notResponding = FBAccessibilityService.handleRequest(["verb": "hittest", "x": NSNumber(value: 1), "y": NSNumber(value: 2)])
     assertEqualObjects(axValue(notResponding, "error_kind"), "application_not_responding")
     assertEqualObjects(axValue(notResponding, "error"), "pid 4321 did not answer the read of the hit element in time")
 
     runtime.hitTestOutcome = FBAXHitTestOutcome.hit(FBAXFakeElement.failed(FBAXTestsErrorWithCode(FBAXError.invalidUIElement.rawValue)), owningProcessIdentifier: kAppPid)
-    let failed = FBAXBridgeHandleRequest(["verb": "hittest", "x": NSNumber(value: 1), "y": NSNumber(value: 2)])
+    let failed = FBAccessibilityService.handleRequest(["verb": "hittest", "x": NSNumber(value: 1), "y": NSNumber(value: 2)])
     assertEqualObjects(axValue(failed, "ok"), NSNumber(value: false))
     assertEqualObjects(axValue(failed, "error"), "failed to read the hit element")
     XCTAssertNil(axValue(failed, "error_kind"))
@@ -276,7 +277,7 @@ final class AccessibilityRuntimeTests: XCTestCase {
     runtime.windowServerOutcome = FBAXFrontmostOutcome.resolved(kAppPid)
     runtime.applicationElements[NSNumber(value: kAppPid)] = FBAXFakeElement.readable("UIApplication")
 
-    let response = FBAXBridgeHandleRequest(["verb": "describe", "x": NSNumber(value: 201), "y": NSNumber(value: 437)])
+    let response = FBAccessibilityService.handleRequest(["verb": "describe", "x": NSNumber(value: 201), "y": NSNumber(value: 437)])
     assertEqualObjects(axValue(response, "ok"), NSNumber(value: true))
     assertEqualObjects(axValue(response, "pid"), NSNumber(value: kAppPid))
     assertEqualObjects(axValue(response, "method"), "window-server", "the response names the resolver that ran")
@@ -290,13 +291,13 @@ final class AccessibilityRuntimeTests: XCTestCase {
     runtime.applicationElements[NSNumber(value: kAppPid)] = FBAXFakeElement.readable("UIApplication")
     runtime.readRaiseReason = "the runtime went away mid-read"
 
-    let raised = FBAXBridgeHandleRequest(["verb": "describe", "pid": NSNumber(value: kAppPid)])
+    let raised = FBAccessibilityService.handleRequest(["verb": "describe", "pid": NSNumber(value: kAppPid)])
     assertEqualObjects(axValue(raised, "ok"), NSNumber(value: false))
     XCTAssertTrue(((axValue(raised, "error") as? String)?.contains("the runtime went away mid-read") == true), "the response must carry what was raised: \(String(describing: axValue(raised, "error")))")
 
     // The point of answering rather than aborting: the next request is still served.
     runtime.readRaiseReason = nil
-    let after = FBAXBridgeHandleRequest(["verb": "describe", "pid": NSNumber(value: kAppPid)])
+    let after = FBAccessibilityService.handleRequest(["verb": "describe", "pid": NSNumber(value: kAppPid)])
     assertEqualObjects(axValue(after, "ok"), NSNumber(value: true), "the reader must still answer after a raise: \(String(describing: after))")
   }
 
@@ -304,12 +305,12 @@ final class AccessibilityRuntimeTests: XCTestCase {
 
   // Arguments are rejected after the runtime is reached, hence the fake.
   func testMalformedArgumentsAreReportedAsABadRequest() {
-    let hitTest = FBAXBridgeHandleRequest(["verb": "hittest", "x": "left", "y": NSNumber(value: 2)])
+    let hitTest = FBAccessibilityService.handleRequest(["verb": "hittest", "x": "left", "y": NSNumber(value: 2)])
     assertEqualObjects(axValue(hitTest, "error"), "hittest requires numeric x and y")
     assertEqualObjects(axValue(hitTest, "error_kind"), "bad_request")
     XCTAssertEqual(runtime.hitTestCount, 0, "a rejected request must not reach the runtime")
 
-    let describe = FBAXBridgeHandleRequest(["verb": "describe"])
+    let describe = FBAccessibilityService.handleRequest(["verb": "describe"])
     assertEqualObjects(axValue(describe, "error"), "describe requires either a numeric pid or the frontmost anchor (x, y)")
     assertEqualObjects(axValue(describe, "error_kind"), "bad_request")
   }
@@ -337,7 +338,7 @@ final class AccessibilityRuntimeTests: XCTestCase {
       [FBAXTestsNode(["XC_kAXXCAttributeLabel": "a"], []), FBAXTestsNode(["XC_kAXXCAttributeLabel": "b"], [])]
     )
 
-    let response = FBAXBridgeHandleRequest(FBAXTestsSnapshotRequest([:]))
+    let response = FBAccessibilityService.handleRequest(FBAXTestsSnapshotRequest([:]))
     assertEqualObjects(axValue(response, "ok"), NSNumber(value: true), "the single fetch must answer: \(String(describing: response))")
     XCTAssertEqual(runtime.snapshotCount, 1, "a three-node tree must cost exactly one fetch")
     assertEqualObjects(axValue(axValue(response, "phases"), "mach_round_trips"), NSNumber(value: 1))
@@ -348,7 +349,7 @@ final class AccessibilityRuntimeTests: XCTestCase {
     runtime.applicationElements[NSNumber(value: kAppPid)] =
       FBAXTestsNode(["XC_kAXXCAttributeLabel": "Cancel", "XC_kAXXCAttributeIdentifier": "cancel-button"], [])
 
-    let tree = axValue(FBAXBridgeHandleRequest(FBAXTestsSnapshotRequest([:])), "tree")
+    let tree = axValue(FBAccessibilityService.handleRequest(FBAXTestsSnapshotRequest([:])), "tree")
     assertEqualObjects(axValue(tree, "XC_kAXXCAttributeLabel"), "Cancel")
     assertEqualObjects(axValue(tree, "XC_kAXXCAttributeIdentifier"), "cancel-button")
     XCTAssertTrue(((runtime.lastSnapshotAttributeNames as NSArray?)?.contains("XC_kAXXCAttributeLabel") == true), "the fetch must ask for the names the request resolved to, got: \(String(describing: runtime.lastSnapshotAttributeNames))")
@@ -363,7 +364,7 @@ final class AccessibilityRuntimeTests: XCTestCase {
     )
     runtime.applicationElements[NSNumber(value: kAppPid)] = root
 
-    let tree = axValue(FBAXBridgeHandleRequest(FBAXTestsSnapshotRequest([:])), "tree")
+    let tree = axValue(FBAccessibilityService.handleRequest(FBAXTestsSnapshotRequest([:])), "tree")
     let children = axValue(tree, "XC_kAXXCAttributeChildren")
     XCTAssertEqual(axCount(children), 1, "children must come from the nesting: \(String(describing: children))")
     assertEqualObjects(axValue((children as? NSArray)?.firstObject, "XC_kAXXCAttributeLabel"), "child")
@@ -400,7 +401,7 @@ final class AccessibilityRuntimeTests: XCTestCase {
   func testTheSingleFetchReadContinuesAcrossAProcessBoundary() {
     runtime.applicationElements[NSNumber(value: kAppPid)] = FBAXTestsTreeWithProcessBoundary()
 
-    let response = FBAXBridgeHandleRequest(FBAXTestsSnapshotRequest([:]))
+    let response = FBAccessibilityService.handleRequest(FBAXTestsSnapshotRequest([:]))
     assertEqualObjects(axValue(response, "ok"), NSNumber(value: true), "the read must answer: \(String(describing: response))")
     let boundary = FBAXTestsBoundaryNode(response)
     let hosted = axValue(boundary, "XC_kAXXCAttributeChildren")
@@ -414,8 +415,8 @@ final class AccessibilityRuntimeTests: XCTestCase {
   func testBothTraversalsAnswerTheSameDocumentAcrossAProcessBoundary() {
     runtime.applicationElements[NSNumber(value: kAppPid)] = FBAXTestsTreeWithProcessBoundary()
 
-    let walked = FBAXBridgeHandleRequest(["verb": "describe", "pid": NSNumber(value: kAppPid)])
-    let fetched = FBAXBridgeHandleRequest(FBAXTestsSnapshotRequest([:]))
+    let walked = FBAccessibilityService.handleRequest(["verb": "describe", "pid": NSNumber(value: kAppPid)])
+    let fetched = FBAccessibilityService.handleRequest(FBAXTestsSnapshotRequest([:]))
     assertEqualObjects(axValue(walked, "ok"), NSNumber(value: true))
     assertEqualObjects(axValue(fetched, "ok"), NSNumber(value: true))
     assertEqualObjects(axValue(walked, "tree"), axValue(fetched, "tree"))
@@ -429,7 +430,7 @@ final class AccessibilityRuntimeTests: XCTestCase {
     link.children = [innermost]
     runtime.applicationElements[NSNumber(value: kAppPid)] = root
 
-    let response = FBAXBridgeHandleRequest(FBAXTestsSnapshotRequest([:]))
+    let response = FBAccessibilityService.handleRequest(FBAXTestsSnapshotRequest([:]))
     assertEqualObjects(axValue(response, "ok"), NSNumber(value: true), "the read must answer: \(String(describing: response))")
     XCTAssertEqual(runtime.snapshotCount, 3, "each boundary costs its own continuation")
     let rendered = String(describing: axValue(response, "tree"))
@@ -440,7 +441,7 @@ final class AccessibilityRuntimeTests: XCTestCase {
     runtime.applicationElements[NSNumber(value: kAppPid)] = FBAXTestsTreeWithProcessBoundary()
     runtime.snapshotContinuationError = NSError(domain: "FBAXTests", code: 1, userInfo: [NSLocalizedDescriptionKey: "the owner is not serving"])
 
-    let response = FBAXBridgeHandleRequest(FBAXTestsSnapshotRequest([:]))
+    let response = FBAccessibilityService.handleRequest(FBAXTestsSnapshotRequest([:]))
     assertEqualObjects(axValue(response, "ok"), NSNumber(value: true), "a failed continuation must not fail the read: \(String(describing: response))")
     let boundary = FBAXTestsBoundaryNode(response)
     assertEqualObjects(axValue(boundary, "XC_kAXXCAttributeLabel"), "remote element")
@@ -452,7 +453,7 @@ final class AccessibilityRuntimeTests: XCTestCase {
   func testAProcessBoundaryAtTheDepthBoundReportsTruncationWithoutFetching() {
     runtime.applicationElements[NSNumber(value: kAppPid)] = FBAXTestsTreeWithProcessBoundary()
 
-    let response = FBAXBridgeHandleRequest(FBAXTestsSnapshotRequest(["maxDepth": NSNumber(value: 2)]))
+    let response = FBAccessibilityService.handleRequest(FBAXTestsSnapshotRequest(["maxDepth": NSNumber(value: 2)]))
     assertEqualObjects(axValue(response, "ok"), NSNumber(value: true))
     assertEqualObjects(axValue(response, "truncated"), NSNumber(value: true), "the hosted subtree is beyond the bound")
     XCTAssertEqual(runtime.snapshotCount, 1, "nothing below the bound is worth a fetch")
@@ -461,7 +462,7 @@ final class AccessibilityRuntimeTests: XCTestCase {
   func testTheNodeBudgetHoldsAcrossAProcessBoundary() {
     runtime.applicationElements[NSNumber(value: kAppPid)] = FBAXTestsTreeWithProcessBoundary()
 
-    let response = FBAXBridgeHandleRequest(FBAXTestsSnapshotRequest(["maxNodes": NSNumber(value: 3)]))
+    let response = FBAccessibilityService.handleRequest(FBAXTestsSnapshotRequest(["maxNodes": NSNumber(value: 3)]))
     assertEqualObjects(axValue(response, "ok"), NSNumber(value: true))
     assertEqualObjects(axValue(response, "truncated"), NSNumber(value: true), "the hosted subtree must not fit in three nodes")
     let boundary = FBAXTestsBoundaryNode(response)
@@ -475,7 +476,7 @@ final class AccessibilityRuntimeTests: XCTestCase {
       [FBAXTestsNode(["XC_kAXXCAttributeLabel": "deep"], [])]
     )
 
-    let response = FBAXBridgeHandleRequest(FBAXTestsSnapshotRequest(["maxDepth": NSNumber(value: 0)]))
+    let response = FBAccessibilityService.handleRequest(FBAXTestsSnapshotRequest(["maxDepth": NSNumber(value: 0)]))
     assertEqualObjects(axValue(response, "truncated"), NSNumber(value: true), "a tree cut at the depth bound reports truncation")
     XCTAssertNil(axValue(axValue(response, "tree"), "XC_kAXXCAttributeChildren"), "nothing below the bound is reported")
   }
@@ -487,7 +488,7 @@ final class AccessibilityRuntimeTests: XCTestCase {
     )
 
     // Two nodes of budget for a three-node tree: the root and one child fit, the second does not.
-    let response = FBAXBridgeHandleRequest(FBAXTestsSnapshotRequest(["maxNodes": NSNumber(value: 2)]))
+    let response = FBAccessibilityService.handleRequest(FBAXTestsSnapshotRequest(["maxNodes": NSNumber(value: 2)]))
     assertEqualObjects(axValue(response, "truncated"), NSNumber(value: true))
     XCTAssertEqual(axCount(axValue(axValue(response, "tree"), "XC_kAXXCAttributeChildren")), 1)
   }
@@ -496,7 +497,7 @@ final class AccessibilityRuntimeTests: XCTestCase {
     runtime.applicationElements[NSNumber(value: kAppPid)] = FBAXTestsNode(["XC_kAXXCAttributeLabel": "root"], [])
     runtime.snapshotError = NSError(domain: "FBAXBridgeSnapshot", code: 1, userInfo: [NSLocalizedDescriptionKey: "no userTestingSnapshotForElement:"])
 
-    let response = FBAXBridgeHandleRequest(FBAXTestsSnapshotRequest([:]))
+    let response = FBAccessibilityService.handleRequest(FBAXTestsSnapshotRequest([:]))
     assertEqualObjects(axValue(response, "ok"), NSNumber(value: false))
     XCTAssertTrue(((axValue(response, "error") as? String)?.contains("no userTestingSnapshotForElement:") == true), "the response must carry why the fetch could not be performed: \(String(describing: axValue(response, "error")))")
   }
@@ -506,7 +507,7 @@ final class AccessibilityRuntimeTests: XCTestCase {
     runtime.applicationElements[NSNumber(value: kAppPid)] = FBAXTestsNode(["XC_kAXXCAttributeLabel": "root"], [])
     runtime.snapshotAnswersNothing = true
 
-    let response = FBAXBridgeHandleRequest(FBAXTestsSnapshotRequest([:]))
+    let response = FBAccessibilityService.handleRequest(FBAXTestsSnapshotRequest([:]))
     assertEqualObjects(axValue(response, "ok"), NSNumber(value: false))
     XCTAssertNil(axValue(response, "tree"))
   }
@@ -516,7 +517,7 @@ final class AccessibilityRuntimeTests: XCTestCase {
     for root in ["bad root", NSNull(), NSNumber(value: 1), [] as [Any]] as [Any] {
       // The fake indexes responses across requests as well as continuations.
       runtime.snapshotResults = Array(repeating: root, count: Int(runtime.snapshotCount) + 1)
-      let response = FBAXBridgeHandleRequest(FBAXTestsSnapshotRequest([:]))
+      let response = FBAccessibilityService.handleRequest(FBAXTestsSnapshotRequest([:]))
       assertEqualObjects(response, ["ok": false, "error": "the single-fetch read returned a shape with no root node"])
     }
     XCTAssertEqual(runtime.snapshotOwnerElements.count, 0)
@@ -535,7 +536,7 @@ final class AccessibilityRuntimeTests: XCTestCase {
     ]
     runtime.snapshotNameMappings = [[7: kAXLabel]]
 
-    let response = FBAXBridgeHandleRequest(FBAXTestsSnapshotRequest(["maxNodes": 2]))
+    let response = FBAccessibilityService.handleRequest(FBAXTestsSnapshotRequest(["maxNodes": 2]))
     assertEqualObjects(axValue(response, "tree"), [kAXChildren: [[kAXLabel: "child", kAXChildren: []]]])
     assertEqualObjects(axValue(response, "truncated"), false)
   }
@@ -549,7 +550,7 @@ final class AccessibilityRuntimeTests: XCTestCase {
       ]
     ]
 
-    let response = FBAXBridgeHandleRequest(FBAXTestsSnapshotRequest([:]))
+    let response = FBAccessibilityService.handleRequest(FBAXTestsSnapshotRequest([:]))
     assertEqualObjects(axValue(response, "tree"), [kAXChildren: []])
     assertEqualObjects(axValue(response, "truncated"), false)
   }
@@ -578,7 +579,7 @@ final class AccessibilityRuntimeTests: XCTestCase {
     ]
     runtime.snapshotNameMappings = [[7: kAXLabel], [7: "XC_kAXXCAttributeIdentifier", 42: kAXLabel]]
 
-    let response = FBAXBridgeHandleRequest(FBAXTestsSnapshotRequest([:]))
+    let response = FBAccessibilityService.handleRequest(FBAXTestsSnapshotRequest([:]))
     assertEqualObjects(
       axValue(response, "tree"),
       [
@@ -597,7 +598,7 @@ final class AccessibilityRuntimeTests: XCTestCase {
     runtime.applicationElements[NSNumber(value: kAppPid)] = FBAXTestsNode([:], [])
     runtime.snapshotResults = [["UIAccessibilitySnapshotKeyAttributes": [7: "unmapped"]]]
 
-    let response = FBAXBridgeHandleRequest(FBAXTestsSnapshotRequest([:]))
+    let response = FBAccessibilityService.handleRequest(FBAXTestsSnapshotRequest([:]))
     assertEqualObjects(axValue(response, "tree"), [kAXChildren: []])
     assertEqualObjects(axValue(response, "ok"), true)
   }
@@ -606,7 +607,7 @@ final class AccessibilityRuntimeTests: XCTestCase {
     runtime.applicationElements[NSNumber(value: kAppPid)] = FBAXTestsTreeWithProcessBoundary()
     runtime.snapshotContinuationAnswersNothing = true
 
-    let response = FBAXBridgeHandleRequest(FBAXTestsSnapshotRequest([:]))
+    let response = FBAccessibilityService.handleRequest(FBAXTestsSnapshotRequest([:]))
     assertEqualObjects(FBAXTestsBoundaryNode(response), [kAXLabel: "remote element", kAXChildren: []])
     assertEqualObjects(axValue(response, "ok"), true)
     assertEqualObjects(axValue(response, "truncated"), false)
@@ -623,7 +624,7 @@ final class AccessibilityRuntimeTests: XCTestCase {
     }
     runtime.applicationElements[NSNumber(value: kAppPid)] = subtree
 
-    let response = FBAXBridgeHandleRequest(FBAXTestsSnapshotRequest([:]))
+    let response = FBAccessibilityService.handleRequest(FBAXTestsSnapshotRequest([:]))
     XCTAssertEqual(runtime.snapshotCount, 65, "one initial fetch plus 64 continuations")
     assertEqualObjects(axValue(response, "truncated"), true)
     var node = axValue(response, "tree")
@@ -644,7 +645,7 @@ final class AccessibilityRuntimeTests: XCTestCase {
     }
     runtime.applicationElements[NSNumber(value: kAppPid)] = root
 
-    let response = FBAXBridgeHandleRequest(FBAXTestsSnapshotRequest(["maxNodes": 2]))
+    let response = FBAccessibilityService.handleRequest(FBAXTestsSnapshotRequest(["maxNodes": 2]))
     assertEqualObjects(axValue(response, "truncated"), true)
     assertEqualObjects(runtime.snapshotOwnerElements, [root])
     assertEqualObjects(runtime.operations, ["automationRead", "applicationElement", "snapshot", "snapshotOwner"])
@@ -654,7 +655,7 @@ final class AccessibilityRuntimeTests: XCTestCase {
     let root = FBAXTestsNode([:], [FBAXTestsNode([:], [])])
     runtime.applicationElements[NSNumber(value: kAppPid)] = root
 
-    let response = FBAXBridgeHandleRequest(FBAXTestsSnapshotRequest([:]))
+    let response = FBAccessibilityService.handleRequest(FBAXTestsSnapshotRequest([:]))
     assertEqualObjects(axValue(response, "ok"), true)
     assertEqualObjects(runtime.snapshotOwnerElements, [root])
   }
@@ -666,11 +667,11 @@ final class AccessibilityRuntimeTests: XCTestCase {
     root.owningProcessIdentifier = kAppPid
     runtime.applicationElements[NSNumber(value: kAppPid)] = root
 
-    let response = FBAXBridgeHandleRequest(FBAXTestsSnapshotRequest([:]))
+    let response = FBAccessibilityService.handleRequest(FBAXTestsSnapshotRequest([:]))
     assertEqualObjects(response, ["ok": false, "error": "the reader raised while answering: descendant ownership failed"])
     assertEqualObjects(runtime.snapshotOwnerElements, [root, bad])
     bad.snapshotOwnerRaiseReason = nil
-    assertEqualObjects(axValue(FBAXBridgeHandleRequest(FBAXTestsSnapshotRequest([:])), "ok"), true)
+    assertEqualObjects(axValue(FBAccessibilityService.handleRequest(FBAXTestsSnapshotRequest([:])), "ok"), true)
   }
 
   // A snapshot answers frames as `AXValue`, not the `NSValue` the per-node walk answers with.
@@ -678,7 +679,7 @@ final class AccessibilityRuntimeTests: XCTestCase {
     runtime.applicationElements[NSNumber(value: kAppPid)] =
       FBAXTestsNode([kAXFrame: FBAXFakeRectValue.withRect(CGRect(x: 16, y: 293, width: 370, height: 52))], [])
 
-    let frame = axValue(axValue(FBAXBridgeHandleRequest(FBAXTestsSnapshotRequest([:])), "tree"), kAXFrame)
+    let frame = axValue(axValue(FBAccessibilityService.handleRequest(FBAXTestsSnapshotRequest([:])), "tree"), kAXFrame)
     assertEqualObjects(axValue(frame, "X"), NSNumber(value: 16))
     assertEqualObjects(axValue(frame, "Y"), NSNumber(value: 293))
     assertEqualObjects(axValue(frame, "Width"), NSNumber(value: 370))
@@ -696,7 +697,7 @@ final class AccessibilityRuntimeTests: XCTestCase {
     )
 
     let tree = axValue(
-      FBAXBridgeHandleRequest(
+      FBAccessibilityService.handleRequest(
         FBAXTestsSnapshotRequest(["attributes": [kAXFrame, kAXVisiblePoint]])
       ), "tree")
     assertEqualObjects(axValue(axValue(tree, kAXVisiblePoint), "X"), NSNumber(value: 201))
@@ -707,7 +708,7 @@ final class AccessibilityRuntimeTests: XCTestCase {
   func testAnUnrecognisedFrameValueIsEmittedAsNull() {
     runtime.applicationElements[NSNumber(value: kAppPid)] = FBAXTestsNode([kAXFrame: "not a frame"], [])
 
-    let frame = axValue(axValue(FBAXBridgeHandleRequest(FBAXTestsSnapshotRequest([:])), "tree"), kAXFrame)
+    let frame = axValue(axValue(FBAccessibilityService.handleRequest(FBAXTestsSnapshotRequest([:])), "tree"), kAXFrame)
     assertEqualObjects(frame, NSNull())
   }
 
@@ -716,7 +717,7 @@ final class AccessibilityRuntimeTests: XCTestCase {
 
     let point = axValue(
       axValue(
-        FBAXBridgeHandleRequest(
+        FBAccessibilityService.handleRequest(
           FBAXTestsSnapshotRequest(
             ["attributes": [kAXVisiblePoint]]
           )
@@ -826,7 +827,7 @@ final class AccessibilityRuntimeTests: XCTestCase {
     root.children = [leaf]
     runtime.applicationElements[NSNumber(value: kAppPid)] = root
 
-    let response = FBAXBridgeHandleRequest(["verb": "describe", "pid": NSNumber(value: kAppPid)])
+    let response = FBAccessibilityService.handleRequest(["verb": "describe", "pid": NSNumber(value: kAppPid)])
     let phases = axValue(response, "phases")
 
     XCTAssertNotNil(phases, "phases must be present on every describe response")
@@ -842,7 +843,7 @@ final class AccessibilityRuntimeTests: XCTestCase {
     runtime.applicationElements[NSNumber(value: kAppPid)] = FBAXFakeElement.readable("UIApplication")
     runtime.automationMode = false
 
-    let response = FBAXBridgeHandleRequest(["verb": "describe", "pid": NSNumber(value: kAppPid)])
+    let response = FBAccessibilityService.handleRequest(["verb": "describe", "pid": NSNumber(value: kAppPid)])
 
     assertEqualObjects(runtime.automationModeWrites, [], "an absent field must not write")
     assertEqualObjects(axValue(axValue(response, "automation"), "enabled"), NSNumber(value: false), "the state is still reported")
@@ -854,7 +855,7 @@ final class AccessibilityRuntimeTests: XCTestCase {
     runtime.automationMode = false
 
     let response =
-      FBAXBridgeHandleRequest(["verb": "describe", "pid": NSNumber(value: kAppPid), "automationMode": NSNumber(value: true)])
+      FBAccessibilityService.handleRequest(["verb": "describe", "pid": NSNumber(value: kAppPid), "automationMode": NSNumber(value: true)])
 
     assertEqualObjects(runtime.automationModeWrites, [NSNumber(value: true)])
     assertEqualObjects(axValue(axValue(response, "automation"), "enabled"), NSNumber(value: true))
@@ -866,7 +867,7 @@ final class AccessibilityRuntimeTests: XCTestCase {
     runtime.automationMode = true
 
     let response =
-      FBAXBridgeHandleRequest(["verb": "describe", "pid": NSNumber(value: kAppPid), "automationMode": NSNumber(value: true)])
+      FBAccessibilityService.handleRequest(["verb": "describe", "pid": NSNumber(value: kAppPid), "automationMode": NSNumber(value: true)])
 
     assertEqualObjects(runtime.automationModeWrites, [], "nothing to change, so nothing is written")
     assertEqualObjects(axValue(axValue(response, "automation"), "enabled"), NSNumber(value: true))
@@ -878,7 +879,7 @@ final class AccessibilityRuntimeTests: XCTestCase {
     runtime.automationMode = true
 
     let response =
-      FBAXBridgeHandleRequest(["verb": "describe", "pid": NSNumber(value: kAppPid), "automationMode": NSNumber(value: false)])
+      FBAccessibilityService.handleRequest(["verb": "describe", "pid": NSNumber(value: kAppPid), "automationMode": NSNumber(value: false)])
 
     assertEqualObjects(runtime.automationModeWrites, [NSNumber(value: false)])
     assertEqualObjects(axValue(axValue(response, "automation"), "enabled"), NSNumber(value: false))
@@ -892,7 +893,7 @@ final class AccessibilityRuntimeTests: XCTestCase {
     runtime.automationModeWriteFails = true
 
     let response =
-      FBAXBridgeHandleRequest(["verb": "describe", "pid": NSNumber(value: kAppPid), "automationMode": NSNumber(value: true)])
+      FBAccessibilityService.handleRequest(["verb": "describe", "pid": NSNumber(value: kAppPid), "automationMode": NSNumber(value: true)])
 
     assertEqualObjects(runtime.automationModeWrites, [NSNumber(value: true)], "the write was attempted")
     assertEqualObjects(axValue(axValue(response, "automation"), "enabled"), NSNumber(value: false), "enabled reads back NO after the failed write")
@@ -905,7 +906,7 @@ final class AccessibilityRuntimeTests: XCTestCase {
     runtime.automationMode = false
     runtime.windowServerOutcome = FBAXFrontmostOutcome.unresolved("window-server frontmost returned no application object")
 
-    let response = FBAXBridgeHandleRequest([
+    let response = FBAccessibilityService.handleRequest([
       "verb": "describe",
       "x": NSNumber(value: 207),
       "y": NSNumber(value: 448),
@@ -931,7 +932,7 @@ final class AccessibilityRuntimeTests: XCTestCase {
     for (name, setting) in settings {
       runtime.deviceSettings[setting] = NSNumber(value: true)
 
-      let response = FBAXBridgeHandleRequest(["verb": "settings-get", "setting": name])
+      let response = FBAccessibilityService.handleRequest(["verb": "settings-get", "setting": name])
 
       assertEqualObjects(axValue(response, "ok"), NSNumber(value: true), "\(String(describing: name))")
       assertEqualObjects(axValue(response, "enabled"), NSNumber(value: true), "\(String(describing: name))")
@@ -941,7 +942,7 @@ final class AccessibilityRuntimeTests: XCTestCase {
   func testDeviceSettingWriteReturnsReadBackState() {
     runtime.deviceSettings[NSNumber(value: FBAXDeviceSetting.reduceMotion.rawValue)] = NSNumber(value: false)
 
-    let response = FBAXBridgeHandleRequest(
+    let response = FBAccessibilityService.handleRequest(
       [
         "verb": "settings-set",
         "setting": "reduce-motion",
@@ -954,7 +955,7 @@ final class AccessibilityRuntimeTests: XCTestCase {
   }
 
   func testUnavailableDeviceSettingIsANamedFailure() {
-    let response = FBAXBridgeHandleRequest(
+    let response = FBAccessibilityService.handleRequest(
       [
         "verb": "settings-get",
         "setting": "voiceover",
@@ -967,7 +968,7 @@ final class AccessibilityRuntimeTests: XCTestCase {
   }
 
   func testUnavailableDeviceSettingWriteDoesNotReachRuntime() {
-    let response = FBAXBridgeHandleRequest(
+    let response = FBAccessibilityService.handleRequest(
       [
         "verb": "settings-set",
         "setting": "voiceover",
@@ -981,13 +982,13 @@ final class AccessibilityRuntimeTests: XCTestCase {
   }
 
   func testMalformedDeviceSettingRequestsAreRefused() {
-    let unknown = FBAXBridgeHandleRequest(
+    let unknown = FBAccessibilityService.handleRequest(
       [
         "verb": "settings-get",
         "setting": "future-setting",
       ]
     )
-    let missingValue = FBAXBridgeHandleRequest(
+    let missingValue = FBAccessibilityService.handleRequest(
       [
         "verb": "settings-set",
         "setting": "reduce-motion",
@@ -1028,7 +1029,7 @@ final class AccessibilityRuntimeTests: XCTestCase {
     for name in actions.keys {
       self.seedHitElement(withAttributes: [:])
       let response =
-        FBAXBridgeHandleRequest(["verb": "perform", "x": NSNumber(value: 10), "y": NSNumber(value: 20), "action": name])
+        FBAccessibilityService.handleRequest(["verb": "perform", "x": NSNumber(value: 10), "y": NSNumber(value: 20), "action": name])
       assertEqualObjects(axValue(response, "ok"), NSNumber(value: true), "\(String(describing: name))")
       assertEqualObjects(axValue(response, "pid"), NSNumber(value: kAppPid), "\(String(describing: name))")
       performed += 1
@@ -1041,11 +1042,11 @@ final class AccessibilityRuntimeTests: XCTestCase {
     self.seedHitElement(withAttributes: [:])
     for action in ["pres", "AXPress", "", NSNumber(value: 123), NSNull()] as [Any] {
       let response =
-        FBAXBridgeHandleRequest(["verb": "perform", "x": NSNumber(value: 1), "y": NSNumber(value: 2), "action": action])
+        FBAccessibilityService.handleRequest(["verb": "perform", "x": NSNumber(value: 1), "y": NSNumber(value: 2), "action": action])
       assertEqualObjects(axValue(response, "ok"), NSNumber(value: false), "\(String(describing: action))")
       XCTAssertTrue(((axValue(response, "error") as? String)?.hasPrefix("unsupported action:") == true), "\(String(describing: axValue(response, "error")))")
     }
-    assertEqualObjects(axValue(FBAXBridgeHandleRequest(["verb": "perform", "x": NSNumber(value: 1), "y": NSNumber(value: 2)]), "error"), "unsupported action: (nil)")
+    assertEqualObjects(axValue(FBAccessibilityService.handleRequest(["verb": "perform", "x": NSNumber(value: 1), "y": NSNumber(value: 2)]), "error"), "unsupported action: (nil)")
     XCTAssertEqual(runtime.hitTestCount, 0, "a request that cannot be understood must not reach the application")
     XCTAssertEqual(runtime.performCount, 0)
   }
@@ -1060,7 +1061,7 @@ final class AccessibilityRuntimeTests: XCTestCase {
       ["verb": "setvalue", "value": "hello", "x": NSNumber(value: 1), "y": NSNull()],
     ]
     for request in requests {
-      let response = FBAXBridgeHandleRequest(request)
+      let response = FBAccessibilityService.handleRequest(request)
       assertEqualObjects(axValue(response, "ok"), NSNumber(value: false), "\(String(describing: request))")
       assertEqualObjects(axValue(response, "error"), "a write requires numeric x and y", "\(String(describing: request))")
     }
@@ -1074,7 +1075,7 @@ final class AccessibilityRuntimeTests: XCTestCase {
       ["verb": "setvalue", "x": NSNumber(value: 1), "y": NSNumber(value: 2), "value": "hello"],
     ]
     for request in requests {
-      let response = FBAXBridgeHandleRequest(request)
+      let response = FBAccessibilityService.handleRequest(request)
       assertEqualObjects(axValue(response, "ok"), NSNumber(value: true), "\(String(describing: axValue(request, "verb")))")
       assertEqualObjects(axValue(response, "empty"), NSNumber(value: true), "\(String(describing: axValue(request, "verb")))")
       XCTAssertNil(axValue(response, "error"), "\(String(describing: axValue(request, "verb")))")
@@ -1085,14 +1086,14 @@ final class AccessibilityRuntimeTests: XCTestCase {
 
   func testAWriteToAnUnavailableApplicationIsTaggedAndNamesThePidWhenKnown() {
     runtime.hitTestOutcome = FBAXHitTestOutcome.applicationUnavailable()
-    let unhit = FBAXBridgeHandleRequest(FBAXTestsPress())
+    let unhit = FBAccessibilityService.handleRequest(FBAXTestsPress())
     assertEqualObjects(axValue(unhit, "ok"), NSNumber(value: false))
     assertEqualObjects(axValue(unhit, "error_kind"), "application_unavailable")
     assertEqualObjects(axValue(unhit, "error"), "no accessibility server answered the write")
 
     self.seedHitElement(withAttributes: [:])
     runtime.writeOutcome = FBAXWriteOutcome.applicationUnavailable()
-    let died = FBAXBridgeHandleRequest(FBAXTestsPress())
+    let died = FBAccessibilityService.handleRequest(FBAXTestsPress())
     assertEqualObjects(axValue(died, "error_kind"), "application_unavailable")
     assertEqualObjects(axValue(died, "error"), "pid 4321 has no accessibility server to accept the write")
   }
@@ -1101,7 +1102,7 @@ final class AccessibilityRuntimeTests: XCTestCase {
   func testAnActionIsPerformedWhateverTheElementAdvertises() {
     for advertised in [["AXScrollToVisible"], [], NSNull()] as [Any] {
       self.seedHitElement(withAttributes: ["XC_kAXXCAttributeUserTestingActions": advertised])
-      assertEqualObjects(axValue(FBAXBridgeHandleRequest(FBAXTestsPress()), "ok"), NSNumber(value: true), "\(String(describing: advertised))")
+      assertEqualObjects(axValue(FBAccessibilityService.handleRequest(FBAXTestsPress()), "ok"), NSNumber(value: true), "\(String(describing: advertised))")
     }
     XCTAssertEqual(runtime.performCount, 3)
   }
@@ -1125,14 +1126,14 @@ final class AccessibilityRuntimeTests: XCTestCase {
           "assertKey": kAXLabel, "assertValue": equivalent,
         ]
 
-        let rejected = FBAXBridgeHandleRequest(request)
+        let rejected = FBAccessibilityService.handleRequest(request)
         assertEqualObjects(axValue(rejected, "ok"), false)
         assertEqualObjects(axValue(rejected, "error_kind"), "assertion_failed")
         XCTAssertEqual(runtime.performCount, performedBefore)
         XCTAssertEqual(runtime.setValueCount, setBefore)
 
         request["assertValue"] = actual
-        assertEqualObjects(axValue(FBAXBridgeHandleRequest(request), "ok"), true)
+        assertEqualObjects(axValue(FBAccessibilityService.handleRequest(request), "ok"), true)
         XCTAssertEqual(runtime.performCount, performedBefore + (verb == "perform" ? 1 : 0))
         XCTAssertEqual(runtime.setValueCount, setBefore + (verb == "setvalue" ? 1 : 0))
       }
@@ -1142,7 +1143,7 @@ final class AccessibilityRuntimeTests: XCTestCase {
   func testAnAssertionThatDoesNotMatchRefusesTheWrite() {
     self.seedHitElement(withAttributes: [kAXLabel: "Wi-Fi"])
 
-    let response = FBAXBridgeHandleRequest(
+    let response = FBAccessibilityService.handleRequest(
       [
         "verb": "perform",
         "x": NSNumber(value: 200),
@@ -1161,7 +1162,7 @@ final class AccessibilityRuntimeTests: XCTestCase {
   func testAnAssertionThatMatchesAllowsTheWrite() {
     self.seedHitElement(withAttributes: [kAXLabel: "General"])
 
-    let pressed = FBAXBridgeHandleRequest(
+    let pressed = FBAccessibilityService.handleRequest(
       [
         "verb": "perform",
         "x": NSNumber(value: 1),
@@ -1174,7 +1175,7 @@ final class AccessibilityRuntimeTests: XCTestCase {
     assertEqualObjects(axValue(pressed, "ok"), NSNumber(value: true))
     XCTAssertEqual(runtime.performCount, 1)
 
-    let written = FBAXBridgeHandleRequest(
+    let written = FBAccessibilityService.handleRequest(
       [
         "verb": "setvalue",
         "x": NSNumber(value: 1),
@@ -1193,7 +1194,7 @@ final class AccessibilityRuntimeTests: XCTestCase {
     for partial in [["assertKey": kAXLabel], ["assertValue": "General"]] {
       var request: [String: Any] = FBAXTestsPress()
       request.merge(partial) { _, new in new }
-      let response = FBAXBridgeHandleRequest(request)
+      let response = FBAccessibilityService.handleRequest(request)
       assertEqualObjects(axValue(response, "ok"), NSNumber(value: false), "\(String(describing: partial))")
       assertEqualObjects(axValue(response, "error"), "assertKey and assertValue are only meaningful together")
     }
@@ -1206,7 +1207,7 @@ final class AccessibilityRuntimeTests: XCTestCase {
     request["assertKey"] = "XC_kAXXCAttributeTraits"
     request["assertValue"] = "button"
 
-    let response = FBAXBridgeHandleRequest(request)
+    let response = FBAccessibilityService.handleRequest(request)
     assertEqualObjects(axValue(response, "ok"), NSNumber(value: false))
     assertEqualObjects(axValue(response, "error"), "XC_kAXXCAttributeTraits is not an attribute a write can assert on")
     XCTAssertEqual(runtime.hitTestCount, 0)
@@ -1216,7 +1217,7 @@ final class AccessibilityRuntimeTests: XCTestCase {
     let element = self.seedHitElement(withAttributes: [kAXLabel: "Name"])
 
     let response =
-      FBAXBridgeHandleRequest(["verb": "setvalue", "x": NSNumber(value: 30), "y": NSNumber(value: 40), "value": "hello"])
+      FBAccessibilityService.handleRequest(["verb": "setvalue", "x": NSNumber(value: 30), "y": NSNumber(value: 40), "value": "hello"])
     assertEqualObjects(axValue(response, "ok"), NSNumber(value: true))
     assertEqualObjects(axValue(response, "pid"), NSNumber(value: kAppPid))
     XCTAssertEqual(runtime.setValueCount, 1)
@@ -1230,7 +1231,7 @@ final class AccessibilityRuntimeTests: XCTestCase {
     self.seedHitElement(withAttributes: [kAXValue: "hello"])
     runtime.writeOutcome = FBAXWriteOutcome.applicationNotResponding()
 
-    let response = FBAXBridgeHandleRequest(["verb": "setvalue", "x": 30, "y": 40, "value": "hello"])
+    let response = FBAccessibilityService.handleRequest(["verb": "setvalue", "x": 30, "y": 40, "value": "hello"])
 
     assertEqualObjects(response, ["ok": true, "pid": kAppPid])
     XCTAssertEqual(runtime.setValueCount, 1)
@@ -1245,7 +1246,7 @@ final class AccessibilityRuntimeTests: XCTestCase {
       runtime.operations.removeAllObjects()
       let writesBefore = runtime.setValueCount
 
-      let response = FBAXBridgeHandleRequest(["verb": "setvalue", "x": 30, "y": 40, "value": "hello"])
+      let response = FBAccessibilityService.handleRequest(["verb": "setvalue", "x": 30, "y": 40, "value": "hello"])
 
       assertEqualObjects(response, ["ok": true, "pid": kAppPid])
       XCTAssertEqual(runtime.setValueCount, writesBefore + 1)
@@ -1268,7 +1269,7 @@ final class AccessibilityRuntimeTests: XCTestCase {
       runtime.operations.removeAllObjects()
       let writesBefore = runtime.setValueCount
 
-      let response = FBAXBridgeHandleRequest(["verb": "setvalue", "x": 30, "y": 40, "value": requested])
+      let response = FBAccessibilityService.handleRequest(["verb": "setvalue", "x": 30, "y": 40, "value": requested])
 
       assertEqualObjects(axValue(response, "error_kind"), "application_not_responding")
       assertEqualObjects(axValue(response, "pid"), kAppPid)
@@ -1292,7 +1293,7 @@ final class AccessibilityRuntimeTests: XCTestCase {
       runtime.operations.removeAllObjects()
       let writesBefore = runtime.setValueCount
 
-      let response = FBAXBridgeHandleRequest(["verb": "setvalue", "x": 30, "y": 40, "value": "hello"])
+      let response = FBAccessibilityService.handleRequest(["verb": "setvalue", "x": 30, "y": 40, "value": "hello"])
 
       assertEqualObjects(axValue(response, "error_kind"), "application_not_responding")
       assertEqualObjects(axValue(response, "pid"), kAppPid)
@@ -1306,7 +1307,7 @@ final class AccessibilityRuntimeTests: XCTestCase {
     self.seedHitElement(withAttributes: [kAXValue: "hello"])
     runtime.writeOutcome = FBAXWriteOutcome.applicationUnavailable()
 
-    let response = FBAXBridgeHandleRequest(["verb": "setvalue", "x": 30, "y": 40, "value": "hello"])
+    let response = FBAccessibilityService.handleRequest(["verb": "setvalue", "x": 30, "y": 40, "value": "hello"])
 
     assertEqualObjects(axValue(response, "error_kind"), "application_unavailable")
     XCTAssertEqual(runtime.setValueCount, 1)
@@ -1316,11 +1317,11 @@ final class AccessibilityRuntimeTests: XCTestCase {
   func testSetValueRequiresAStringValue() {
     self.seedHitElement(withAttributes: [:])
     for value in [NSNumber(value: 123), ["hello"], ["a": NSNumber(value: 1)], NSNull()] as [Any] {
-      let response = FBAXBridgeHandleRequest(["verb": "setvalue", "x": NSNumber(value: 1), "y": NSNumber(value: 2), "value": value])
+      let response = FBAccessibilityService.handleRequest(["verb": "setvalue", "x": NSNumber(value: 1), "y": NSNumber(value: 2), "value": value])
       assertEqualObjects(axValue(response, "ok"), NSNumber(value: false), "\(String(describing: type(of: value)))")
       assertEqualObjects(axValue(response, "error"), "setvalue requires a string value", "\(String(describing: type(of: value)))")
     }
-    assertEqualObjects(axValue(FBAXBridgeHandleRequest(["verb": "setvalue", "x": NSNumber(value: 1), "y": NSNumber(value: 2)]), "error"), "setvalue requires a string value")
+    assertEqualObjects(axValue(FBAccessibilityService.handleRequest(["verb": "setvalue", "x": NSNumber(value: 1), "y": NSNumber(value: 2)]), "error"), "setvalue requires a string value")
     XCTAssertEqual(runtime.hitTestCount, 0)
     XCTAssertEqual(runtime.setValueCount, 0)
   }
@@ -1329,7 +1330,7 @@ final class AccessibilityRuntimeTests: XCTestCase {
     self.seedHitElement(withAttributes: [:])
     runtime.writeOutcome = FBAXWriteOutcome.failed("the application did not answer the write in time")
 
-    let response = FBAXBridgeHandleRequest(FBAXTestsPress())
+    let response = FBAccessibilityService.handleRequest(FBAXTestsPress())
     assertEqualObjects(axValue(response, "ok"), NSNumber(value: false))
     assertEqualObjects(axValue(response, "error"), "the application did not answer the write in time")
     XCTAssertNil(axValue(response, "error_kind"))
@@ -1340,10 +1341,10 @@ final class AccessibilityRuntimeTests: XCTestCase {
     var request: [String: Any] = FBAXTestsPress()
     request["pid"] = NSNumber(value: kAppPid)
 
-    assertEqualObjects(axValue(FBAXBridgeHandleRequest(request), "ok"), NSNumber(value: true))
+    assertEqualObjects(axValue(FBAccessibilityService.handleRequest(request), "ok"), NSNumber(value: true))
     XCTAssertEqual(runtime.lastHitTestProcessIdentifier, kAppPid)
 
-    assertEqualObjects(axValue(FBAXBridgeHandleRequest(FBAXTestsPress()), "ok"), NSNumber(value: true))
+    assertEqualObjects(axValue(FBAccessibilityService.handleRequest(FBAXTestsPress()), "ok"), NSNumber(value: true))
     XCTAssertEqual(runtime.lastHitTestProcessIdentifier, 0, "no pid means a display-wide hit-test")
   }
 
@@ -1355,7 +1356,7 @@ final class AccessibilityRuntimeTests: XCTestCase {
     root.attributes = [kAXElementType: "UIApplication", kAXVisiblePoint: point]
     runtime.applicationElements[NSNumber(value: kAppPid)] = root
 
-    let emitted = axValue(axValue(FBAXBridgeHandleRequest(["verb": "describe", "pid": NSNumber(value: kAppPid)]), "tree"), kAXVisiblePoint)
+    let emitted = axValue(axValue(FBAccessibilityService.handleRequest(["verb": "describe", "pid": NSNumber(value: kAppPid)]), "tree"), kAXVisiblePoint)
     XCTAssertTrue((emitted is NSDictionary), "a point stays structured, got \(String(describing: type(of: emitted)))")
     assertEqualObjects(axValue(emitted, "X"), NSNumber(value: 201))
     assertEqualObjects(axValue(emitted, "Y"), NSNumber(value: 789.5))
@@ -1369,7 +1370,7 @@ final class AccessibilityRuntimeTests: XCTestCase {
     ]
     runtime.applicationElements[NSNumber(value: kAppPid)] = root
 
-    let emitted = axValue(axValue(FBAXBridgeHandleRequest(["verb": "describe", "pid": NSNumber(value: kAppPid)]), "tree"), kAXFrame)
+    let emitted = axValue(axValue(FBAccessibilityService.handleRequest(["verb": "describe", "pid": NSNumber(value: kAppPid)]), "tree"), kAXFrame)
     XCTAssertTrue((emitted is NSDictionary), "the frame stays structured, got \(String(describing: type(of: emitted)))")
     assertEqualObjects(axValue(emitted, "Width"), NSNumber(value: 402))
   }
@@ -1382,7 +1383,7 @@ final class AccessibilityRuntimeTests: XCTestCase {
     root.attributes = [kAXElementType: "UIApplication", kAXLabel: failure]
     runtime.applicationElements[NSNumber(value: kAppPid)] = root
 
-    let tree = axValue(FBAXBridgeHandleRequest(["verb": "describe", "pid": NSNumber(value: kAppPid)]), "tree")
+    let tree = axValue(FBAccessibilityService.handleRequest(["verb": "describe", "pid": NSNumber(value: kAppPid)]), "tree")
     assertEqualObjects(axValue(tree, kAXLabel), NSNull(), "a failure is not the attribute's value")
     assertEqualObjects(axValue(axValue(tree, "FBAttributeReadFailures"), kAXLabel), "kAXErrorCannotComplete", "the failed key is named with its reason rather than silently reading as no value")
   }
@@ -1395,7 +1396,7 @@ final class AccessibilityRuntimeTests: XCTestCase {
     runtime.applicationElements[NSNumber(value: kAppPid)] = root
     runtime.translatorAttributeValues = [NSNumber(value: FBAXPAttribute.attributeLabel.rawValue): "Settings"]
 
-    let response = FBAXBridgeHandleRequest(
+    let response = FBAccessibilityService.handleRequest(
       [
         "verb": "describe",
         "pid": NSNumber(value: kAppPid),
@@ -1416,7 +1417,7 @@ final class AccessibilityRuntimeTests: XCTestCase {
       NSNumber(value: FBAXPAttribute.attributeChildren.rawValue): [FBAXFakeElement.readable("UIView"), FBAXFakeElement.readable("UIView")],
     ]
 
-    _ = FBAXBridgeHandleRequest(
+    _ = FBAccessibilityService.handleRequest(
       [
         "verb": "describe",
         "pid": NSNumber(value: kAppPid),
@@ -1435,7 +1436,7 @@ final class AccessibilityRuntimeTests: XCTestCase {
     runtime.translatorAttributeValues = [NSNumber(value: FBAXPAttribute.attributeLabel.rawValue): "General", NSNumber(value: FBAXPAttribute.attributeIsEnabled.rawValue): NSNumber(value: false)]
 
     let response =
-      FBAXBridgeHandleRequest(["verb": "describe", "pid": NSNumber(value: kAppPid), "translatorVocabulary": NSNumber(value: true)])
+      FBAccessibilityService.handleRequest(["verb": "describe", "pid": NSNumber(value: kAppPid), "translatorVocabulary": NSNumber(value: true)])
 
     assertEqualObjects(axValue(response, "ok"), NSNumber(value: true))
     assertEqualObjects(axValue(axValue(response, "tree"), kNodeIsEnabled), NSNumber(value: false), "the fetched enabled answer must reach the wire")
@@ -1446,7 +1447,7 @@ final class AccessibilityRuntimeTests: XCTestCase {
     runtime.translatorAttributeValues = [NSNumber(value: FBAXPAttribute.attributeRole.rawValue): NSNumber(value: 9)]
 
     let tree =
-      axValue(FBAXBridgeHandleRequest(["verb": "describe", "pid": NSNumber(value: kAppPid), "translatorVocabulary": NSNumber(value: true)]), "tree")
+      axValue(FBAccessibilityService.handleRequest(["verb": "describe", "pid": NSNumber(value: kAppPid), "translatorVocabulary": NSNumber(value: true)]), "tree")
 
     assertEqualObjects(axValue(tree, kNodeTranslatorRole), NSNumber(value: 9))
     XCTAssertNil(axValue(tree, kAXElementType), "the translator role must not be emitted under the elementType key")
@@ -1460,7 +1461,7 @@ final class AccessibilityRuntimeTests: XCTestCase {
     ]
 
     let tree =
-      axValue(FBAXBridgeHandleRequest(["verb": "describe", "pid": NSNumber(value: kAppPid), "translatorVocabulary": NSNumber(value: true)]), "tree")
+      axValue(FBAccessibilityService.handleRequest(["verb": "describe", "pid": NSNumber(value: kAppPid), "translatorVocabulary": NSNumber(value: true)]), "tree")
 
     assertEqualObjects(axValue(axValue(tree, "XC_kAXXCAttributeVisiblePoint"), "X"), NSNumber(value: 201))
     assertEqualObjects(axValue(axValue(tree, "XC_kAXXCAttributeVisiblePoint"), "Y"), NSNumber(value: 311))
@@ -1471,7 +1472,7 @@ final class AccessibilityRuntimeTests: XCTestCase {
     runtime.translatorAttributeValues = [NSNumber(value: FBAXPAttribute.attributeTraits.rawValue): NSNumber(value: 1 << 6)]
 
     let tree =
-      axValue(FBAXBridgeHandleRequest(["verb": "describe", "pid": NSNumber(value: kAppPid), "translatorVocabulary": NSNumber(value: true)]), "tree")
+      axValue(FBAccessibilityService.handleRequest(["verb": "describe", "pid": NSNumber(value: kAppPid), "translatorVocabulary": NSNumber(value: true)]), "tree")
 
     assertEqualObjects(axValue(tree, "FBTraits"), NSNumber(value: 1 << 6))
   }
@@ -1481,7 +1482,7 @@ final class AccessibilityRuntimeTests: XCTestCase {
     runtime.translatorAttributeValues = [NSNumber(value: FBAXPAttribute.attributeMemoryAddress.rawValue): NSNumber(value: 0x600001234560)]
 
     let tree =
-      axValue(FBAXBridgeHandleRequest(["verb": "describe", "pid": NSNumber(value: kAppPid), "translatorVocabulary": NSNumber(value: true)]), "tree")
+      axValue(FBAccessibilityService.handleRequest(["verb": "describe", "pid": NSNumber(value: kAppPid), "translatorVocabulary": NSNumber(value: true)]), "tree")
 
     assertEqualObjects(axValue(tree, "FBElementIdentity"), NSNumber(value: 0x600001234560))
   }
@@ -1491,7 +1492,7 @@ final class AccessibilityRuntimeTests: XCTestCase {
     runtime.translatorAttributeValues = nil
 
     let response =
-      FBAXBridgeHandleRequest(["verb": "describe", "pid": NSNumber(value: kAppPid), "translatorVocabulary": NSNumber(value: true)])
+      FBAccessibilityService.handleRequest(["verb": "describe", "pid": NSNumber(value: kAppPid), "translatorVocabulary": NSNumber(value: true)])
 
     assertEqualObjects(axValue(response, "ok"), NSNumber(value: false))
     XCTAssertNil(axValue(response, "tree"), "a read that could not be performed must not answer with a tree")
@@ -1504,7 +1505,7 @@ final class AccessibilityRuntimeTests: XCTestCase {
     runtime.translatorAttributeValues = [NSNumber(value: FBAXPAttribute.attributeRole.rawValue): NSNumber(value: 1), NSNumber(value: FBAXPAttribute.attributeIsEnabled.rawValue): NSNumber(value: true)]
 
     let response =
-      FBAXBridgeHandleRequest(["verb": "describe", "pid": NSNumber(value: kAppPid), "translatorVocabulary": NSNumber(value: true)])
+      FBAccessibilityService.handleRequest(["verb": "describe", "pid": NSNumber(value: kAppPid), "translatorVocabulary": NSNumber(value: true)])
 
     assertEqualObjects(axValue(response, "ok"), NSNumber(value: false))
     assertEqualObjects(axValue(response, "error_kind"), "application_unavailable")
@@ -1517,7 +1518,7 @@ final class AccessibilityRuntimeTests: XCTestCase {
     runtime.translatorAttributeValues = [NSNumber(value: FBAXPAttribute.attributeLabel.rawValue): "SampleApp"]
 
     let response =
-      FBAXBridgeHandleRequest(["verb": "describe", "x": NSNumber(value: 201), "y": NSNumber(value: 437), "translatorVocabulary": NSNumber(value: true)])
+      FBAccessibilityService.handleRequest(["verb": "describe", "x": NSNumber(value: 201), "y": NSNumber(value: 437), "translatorVocabulary": NSNumber(value: true)])
 
     assertEqualObjects(axValue(response, "ok"), NSNumber(value: true))
     assertEqualObjects(axValue(response, "pid"), NSNumber(value: kAppPid))
@@ -1536,7 +1537,7 @@ final class AccessibilityRuntimeTests: XCTestCase {
     runtime.applicationElements[NSNumber(value: kAppPid)] = root
     runtime.translatorResponses = [[33: "root"], [8: [child]], [33: "child"], [:]]
 
-    let response = FBAXBridgeHandleRequest(translatorRequest())
+    let response = FBAccessibilityService.handleRequest(translatorRequest())
 
     assertEqualObjects(axValue(response, "tree"), [kAXLabel: "root", kAXChildren: [[kAXLabel: "child", kAXChildren: []]]])
     let requests = runtime.translatorRequests.compactMap { $0 as? [String: Any] }
@@ -1552,7 +1553,7 @@ final class AccessibilityRuntimeTests: XCTestCase {
     runtime.applicationElements[NSNumber(value: kAppPid)] = root
     runtime.translatorResponses = [[:], [8: [FBAXFakeElement.readable("child")]]]
 
-    let response = FBAXBridgeHandleRequest(translatorRequest(["maxDepth": 0]))
+    let response = FBAccessibilityService.handleRequest(translatorRequest(["maxDepth": 0]))
 
     assertEqualObjects(axValue(response, "tree"), [kAXChildren: []])
     assertEqualObjects(axValue(response, "truncated"), true)
@@ -1567,7 +1568,7 @@ final class AccessibilityRuntimeTests: XCTestCase {
     runtime.applicationElements[NSNumber(value: kAppPid)] = root
     runtime.translatorResponses = [[:], [8: [failed, sibling]], NSNull(), [33: "sibling"], [:]]
 
-    let response = FBAXBridgeHandleRequest(translatorRequest())
+    let response = FBAccessibilityService.handleRequest(translatorRequest())
 
     assertEqualObjects(axValue(response, "tree"), [kAXChildren: [[kAXLabel: "sibling", kAXChildren: []]]])
     assertEqualObjects(axValue(response, "truncated"), false)
@@ -1578,7 +1579,7 @@ final class AccessibilityRuntimeTests: XCTestCase {
     runtime.applicationElements[NSNumber(value: kAppPid)] = FBAXFakeElement.readable("UIApplication")
     runtime.translatorResponses = [[:], NSNull()]
 
-    let response = FBAXBridgeHandleRequest(translatorRequest())
+    let response = FBAccessibilityService.handleRequest(translatorRequest())
 
     assertEqualObjects(axValue(response, "ok"), true)
     assertEqualObjects(axValue(response, "tree"), [kAXChildren: []])
@@ -1590,12 +1591,12 @@ final class AccessibilityRuntimeTests: XCTestCase {
     runtime.translatorAttributeValues = [:]
     runtime.translatorRaiseAtRead = 2
 
-    let response = FBAXBridgeHandleRequest(translatorRequest())
+    let response = FBAccessibilityService.handleRequest(translatorRequest())
 
     assertEqualObjects(response, ["ok": false, "error": "the reader raised while answering: translator read 2 failed"])
     XCTAssertEqual(runtime.translatorReadCount, 2)
     runtime.translatorRaiseAtRead = 0
-    assertEqualObjects(axValue(FBAXBridgeHandleRequest(translatorRequest()), "ok"), true)
+    assertEqualObjects(axValue(FBAccessibilityService.handleRequest(translatorRequest()), "ok"), true)
   }
 
   func testTranslatorChildExceptionsAbortBeforeTheNextSibling() {
@@ -1604,7 +1605,7 @@ final class AccessibilityRuntimeTests: XCTestCase {
     runtime.translatorResponses = [[:], [8: [FBAXFakeElement.readable("bad"), FBAXFakeElement.readable("sibling")]]]
     runtime.translatorRaiseAtRead = 3
 
-    let response = FBAXBridgeHandleRequest(translatorRequest())
+    let response = FBAccessibilityService.handleRequest(translatorRequest())
 
     assertEqualObjects(response, ["ok": false, "error": "the reader raised while answering: translator read 3 failed"])
     XCTAssertEqual(runtime.translatorReadCount, 3)
@@ -1614,7 +1615,7 @@ final class AccessibilityRuntimeTests: XCTestCase {
     runtime.applicationElements[NSNumber(value: kAppPid)] = FBAXFakeElement.readable("UIApplication")
     runtime.translatorResponses = [[:], [8: [FBAXFakeElement.readable("bad"), FBAXFakeElement.readable("sibling")]], NSNull()]
 
-    let response = FBAXBridgeHandleRequest(translatorRequest(["maxNodes": 2]))
+    let response = FBAccessibilityService.handleRequest(translatorRequest(["maxNodes": 2]))
 
     assertEqualObjects(axValue(response, "tree"), [kAXChildren: []])
     assertEqualObjects(axValue(response, "truncated"), true)
@@ -1639,7 +1640,7 @@ final class AccessibilityRuntimeTests: XCTestCase {
     let overlay = FBAXFakeElement.readable("Overlay")
     runtime.hitTestOutcome = FBAXHitTestOutcome.hit(overlay, owningProcessIdentifier: 9000)
 
-    let response = FBAXBridgeHandleRequest(explanationRequest())
+    let response = FBAccessibilityService.handleRequest(explanationRequest())
 
     let explanation = axValue(axValue(response, "tree"), "FBExplainedBy")
     assertEqualObjects(explanation, [kAXElementType: "Overlay", kAXLabel: "Overlay", kAXChildren: ([] as NSArray).description])
@@ -1654,7 +1655,7 @@ final class AccessibilityRuntimeTests: XCTestCase {
     _ = unreachableRoot()
     runtime.hitTestOutcome = FBAXHitTestOutcome.applicationNotResponding()
 
-    let response = FBAXBridgeHandleRequest(explanationRequest())
+    let response = FBAccessibilityService.handleRequest(explanationRequest())
 
     assertEqualObjects(axValue(response, "ok"), true)
     XCTAssertNil(axValue(axValue(response, "tree"), "FBExplainedBy"))
@@ -1665,7 +1666,7 @@ final class AccessibilityRuntimeTests: XCTestCase {
     _ = unreachableRoot()
     runtime.hitTestOutcome = FBAXHitTestOutcome.hit(FBAXFakeElement.applicationUnavailable(), owningProcessIdentifier: 9000)
 
-    let response = FBAXBridgeHandleRequest(explanationRequest())
+    let response = FBAccessibilityService.handleRequest(explanationRequest())
 
     assertEqualObjects(axValue(response, "ok"), true)
     XCTAssertNil(axValue(axValue(response, "tree"), "FBExplainedBy"))
@@ -1678,9 +1679,9 @@ final class AccessibilityRuntimeTests: XCTestCase {
     overlay.readRaiseReason = "explanation failed"
     runtime.hitTestOutcome = FBAXHitTestOutcome.hit(overlay, owningProcessIdentifier: 9000)
 
-    assertEqualObjects(FBAXBridgeHandleRequest(explanationRequest()), ["ok": false, "error": "the reader raised while answering: explanation failed"])
+    assertEqualObjects(FBAccessibilityService.handleRequest(explanationRequest()), ["ok": false, "error": "the reader raised while answering: explanation failed"])
     overlay.readRaiseReason = nil
-    assertEqualObjects(axValue(FBAXBridgeHandleRequest(explanationRequest()), "ok"), true)
+    assertEqualObjects(axValue(FBAccessibilityService.handleRequest(explanationRequest()), "ok"), true)
   }
 
   func testVisibilityExceptionAbortsBeforeHitTestingAndNextRequestRecovers() {
@@ -1689,11 +1690,11 @@ final class AccessibilityRuntimeTests: XCTestCase {
     let root = unreachableRoot(visibility)
     runtime.hitTestOutcome = FBAXHitTestOutcome.hit(FBAXFakeElement.readable("Overlay"), owningProcessIdentifier: 9000)
 
-    assertEqualObjects(FBAXBridgeHandleRequest(explanationRequest()), ["ok": false, "error": "the reader raised while answering: visibility failed"])
+    assertEqualObjects(FBAccessibilityService.handleRequest(explanationRequest()), ["ok": false, "error": "the reader raised while answering: visibility failed"])
     XCTAssertEqual(runtime.hitTestCount, 0)
 
     root.attributes = ["XC_kAXXCAttributeIsVisible": false, "XC_kAXXCAttributeCenterPoint": ["X": 12, "Y": 34]]
-    assertEqualObjects(axValue(FBAXBridgeHandleRequest(explanationRequest()), "ok"), true)
+    assertEqualObjects(axValue(FBAccessibilityService.handleRequest(explanationRequest()), "ok"), true)
     XCTAssertEqual(runtime.hitTestCount, 1)
   }
 
@@ -1706,18 +1707,18 @@ final class AccessibilityRuntimeTests: XCTestCase {
     root.attributes = ["XC_kAXXCAttributeIsVisible": visibility, "XC_kAXXCAttributeCenterPoint": centre]
     runtime.hitTestOutcome = FBAXHitTestOutcome.hit(FBAXFakeElement.readable("Overlay"), owningProcessIdentifier: 9000)
 
-    assertEqualObjects(FBAXBridgeHandleRequest(explanationRequest()), ["ok": false, "error": "the reader raised while answering: geometry coordinate failed"])
+    assertEqualObjects(FBAccessibilityService.handleRequest(explanationRequest()), ["ok": false, "error": "the reader raised while answering: geometry coordinate failed"])
     XCTAssertEqual(runtime.hitTestCount, 0)
 
     root.attributes = ["XC_kAXXCAttributeIsVisible": false, "XC_kAXXCAttributeCenterPoint": ["X": 12, "Y": 34]]
-    assertEqualObjects(axValue(FBAXBridgeHandleRequest(explanationRequest()), "ok"), true)
+    assertEqualObjects(axValue(FBAccessibilityService.handleRequest(explanationRequest()), "ok"), true)
     XCTAssertEqual(runtime.hitTestCount, 1)
   }
 
   func testReachableAndUnclassifiedNodesDoNotRequestExplanations() {
     for visible in [true, "unknown", NSNull()] as [Any] {
       _ = unreachableRoot(visible)
-      assertEqualObjects(axValue(FBAXBridgeHandleRequest(explanationRequest()), "ok"), true)
+      assertEqualObjects(axValue(FBAccessibilityService.handleRequest(explanationRequest()), "ok"), true)
     }
     XCTAssertEqual(runtime.hitTestCount, 0)
   }
@@ -1735,7 +1736,7 @@ final class AccessibilityRuntimeTests: XCTestCase {
     ]
     for (key, value) in values {
       root.attributes = [key: value]
-      let response = FBAXBridgeHandleRequest(["verb": "describe", "pid": kAppPid])
+      let response = FBAccessibilityService.handleRequest(["verb": "describe", "pid": kAppPid])
       assertEqualObjects(axValue(response, "ok"), true)
       assertEqualObjects(axValue(axValue(response, "tree"), key), NSNull())
     }
@@ -1748,7 +1749,7 @@ final class AccessibilityRuntimeTests: XCTestCase {
     root.attributes = [kAXFrame: frame, kAXVisiblePoint: point]
     runtime.applicationElements[NSNumber(value: kAppPid)] = root
 
-    let tree = axValue(FBAXBridgeHandleRequest(["verb": "describe", "pid": kAppPid]), "tree")
+    let tree = axValue(FBAccessibilityService.handleRequest(["verb": "describe", "pid": kAppPid]), "tree")
 
     assertEqualObjects(axValue(tree, kAXFrame), frame)
     assertEqualObjects(axValue(tree, kAXVisiblePoint), point)
@@ -1761,11 +1762,11 @@ final class AccessibilityRuntimeTests: XCTestCase {
     runtime.applicationElements[NSNumber(value: kAppPid)] = root
     let request: [String: Any] = ["verb": "describe", "pid": kAppPid]
 
-    assertEqualObjects(axValue(axValue(FBAXBridgeHandleRequest(request), "tree"), "XC_kAXXCAttributeValue"), "opaque accessibility value")
+    assertEqualObjects(axValue(axValue(FBAccessibilityService.handleRequest(request), "tree"), "XC_kAXXCAttributeValue"), "opaque accessibility value")
     value.raiseReason = "description failed"
-    assertEqualObjects(FBAXBridgeHandleRequest(request), ["ok": false, "error": "the reader raised while answering: description failed"])
+    assertEqualObjects(FBAccessibilityService.handleRequest(request), ["ok": false, "error": "the reader raised while answering: description failed"])
     value.raiseReason = nil
-    assertEqualObjects(axValue(FBAXBridgeHandleRequest(request), "ok"), true)
+    assertEqualObjects(axValue(FBAccessibilityService.handleRequest(request), "ok"), true)
   }
 
   func testCoreGraphicsDictionaryExceptionsAreObservableInsideObjectiveC() {
@@ -1792,11 +1793,11 @@ final class AccessibilityRuntimeTests: XCTestCase {
       root.attributes = [key: value]
       let request: [String: Any] = ["verb": "describe", "pid": kAppPid, "attributes": [key]]
       assertEqualObjects(
-        FBAXBridgeHandleRequest(request),
+        FBAccessibilityService.handleRequest(request),
         ["ok": false, "error": "the reader raised while answering: geometry dictionary lookup failed"])
       XCTAssertGreaterThan(value.lookups, 0)
       root.attributes = [key: ["X": 1, "Y": 2, "Width": 3, "Height": 4]]
-      assertEqualObjects(axValue(FBAXBridgeHandleRequest(request), "ok"), true)
+      assertEqualObjects(axValue(FBAccessibilityService.handleRequest(request), "ok"), true)
     }
   }
 
@@ -1812,8 +1813,8 @@ final class AccessibilityRuntimeTests: XCTestCase {
       root.attributes = ["XC_kAXXCAttributeIsVisible": false, key: value]
       let hitTestsBefore = runtime.hitTestCount
 
-      let response = FBAXBridgeHandleRequest(explanationRequest())
-      let serialized = FBAXBridgeSerializeResponse(response)
+      let response = FBAccessibilityService.handleRequest(explanationRequest())
+      let serialized = FBAccessibilityService.serializeResponse(response)
       let decoded = try XCTUnwrap(JSONSerialization.jsonObject(with: serialized) as? [String: Any])
 
       assertEqualObjects(decoded["ok"], true)
@@ -1836,19 +1837,19 @@ final class AccessibilityRuntimeTests: XCTestCase {
     attributes.raises = true
     let request: [String: Any] = ["verb": "describe", "pid": kAppPid]
 
-    assertEqualObjects(FBAXBridgeHandleRequest(request), ["ok": false, "error": "the reader raised while answering: geometry dictionary lookup failed"])
+    assertEqualObjects(FBAccessibilityService.handleRequest(request), ["ok": false, "error": "the reader raised while answering: geometry dictionary lookup failed"])
 
     attributes.raises = false
     attributes.lookups = 0
     attributes.maximumSuccessfulLookups = UInt(attributes.count)
-    let response = FBAXBridgeHandleRequest(request)
-    let decoded = try XCTUnwrap(JSONSerialization.jsonObject(with: FBAXBridgeSerializeResponse(response)) as? [String: Any])
+    let response = FBAccessibilityService.handleRequest(request)
+    let decoded = try XCTUnwrap(JSONSerialization.jsonObject(with: FBAccessibilityService.serializeResponse(response)) as? [String: Any])
     assertEqualObjects(decoded["ok"], true)
     assertEqualObjects(axValue(decoded["tree"], kAXElementType), "UIApplication")
     assertEqualObjects(axValue(decoded["tree"], kAXLabel), "label")
     XCTAssertEqual(attributes.lookups, attributes.maximumSuccessfulLookups)
     runtime.attributeRead = nil
-    assertEqualObjects(axValue(FBAXBridgeHandleRequest(request), "ok"), true)
+    assertEqualObjects(axValue(FBAccessibilityService.handleRequest(request), "ok"), true)
   }
 
   func testGeometryAccessorExceptionsAreContained() {
@@ -1856,7 +1857,7 @@ final class AccessibilityRuntimeTests: XCTestCase {
     runtime.applicationElements[NSNumber(value: kAppPid)] = root
     for access in ["type", "value"] {
       root.attributes = [kAXFrame: FBAXFakeGeometryValue.throwing(onAccess: access)]
-      let response = FBAXBridgeHandleRequest(["verb": "describe", "pid": kAppPid])
+      let response = FBAccessibilityService.handleRequest(["verb": "describe", "pid": kAppPid])
       assertEqualObjects(response, ["ok": false, "error": "the reader raised while answering: geometry \(access) failed"])
     }
   }
@@ -1866,7 +1867,7 @@ final class AccessibilityRuntimeTests: XCTestCase {
     root.children = [FBAXFakeElement.failed(nil), FBAXFakeElement.readable("sibling")]
     runtime.applicationElements[NSNumber(value: kAppPid)] = root
 
-    let response = FBAXBridgeHandleRequest(["verb": "describe", "pid": kAppPid, "maxNodes": 1])
+    let response = FBAccessibilityService.handleRequest(["verb": "describe", "pid": kAppPid, "maxNodes": 1])
 
     assertEqualObjects(axValue(axValue(response, "tree"), kAXChildren), [])
     assertEqualObjects(axValue(response, "truncated"), true)
@@ -1878,15 +1879,15 @@ final class AccessibilityRuntimeTests: XCTestCase {
     runtime.deviceSettingReadOutcome = FBAXDeviceSettingOutcome.failed("read failed")
     runtime.deviceSettingWriteOutcome = FBAXDeviceSettingOutcome.failed("write failed")
 
-    assertEqualObjects(FBAXBridgeHandleRequest(["verb": "settings-get", "setting": "reduce-motion"]), ["ok": false, "error": "read failed", "error_kind": "reader_unavailable"])
-    assertEqualObjects(FBAXBridgeHandleRequest(["verb": "settings-set", "setting": "reduce-motion", "enabled": true]), ["ok": false, "error": "write failed", "error_kind": "reader_unavailable"])
+    assertEqualObjects(FBAccessibilityService.handleRequest(["verb": "settings-get", "setting": "reduce-motion"]), ["ok": false, "error": "read failed", "error_kind": "reader_unavailable"])
+    assertEqualObjects(FBAccessibilityService.handleRequest(["verb": "settings-set", "setting": "reduce-motion", "enabled": true]), ["ok": false, "error": "write failed", "error_kind": "reader_unavailable"])
   }
 
   func testDeviceSettingWriteReportsADifferentAuthoritativeState() {
     runtime.deviceSettings[NSNumber(value: FBAXDeviceSetting.reduceMotion.rawValue)] = false
     runtime.deviceSettingWriteOutcome = FBAXDeviceSettingOutcome.resolved(false)
 
-    let response = FBAXBridgeHandleRequest(["verb": "settings-set", "setting": "reduce-motion", "enabled": true])
+    let response = FBAccessibilityService.handleRequest(["verb": "settings-set", "setting": "reduce-motion", "enabled": true])
 
     assertEqualObjects(response, ["ok": true, "enabled": false])
     assertEqualObjects(runtime.deviceSettingWrites, [["setting": FBAXDeviceSetting.reduceMotion.rawValue, "enabled": true]])
@@ -1896,7 +1897,7 @@ final class AccessibilityRuntimeTests: XCTestCase {
     self.seedHitElement(withAttributes: [:])
     runtime.writeOutcome = FBAXWriteOutcome.applicationNotResponding()
     for request in [FBAXTestsPress(), ["verb": "setvalue", "x": 1, "y": 2, "value": "text"]] {
-      assertEqualObjects(FBAXBridgeHandleRequest(request), ["ok": false, "error": "pid 4321 did not answer the write in time", "error_kind": "application_not_responding", "pid": kAppPid])
+      assertEqualObjects(FBAccessibilityService.handleRequest(request), ["ok": false, "error": "pid 4321 did not answer the write in time", "error_kind": "application_not_responding", "pid": kAppPid])
     }
     XCTAssertEqual(runtime.performCount, 1)
     XCTAssertEqual(runtime.setValueCount, 1)
@@ -1909,7 +1910,7 @@ final class AccessibilityRuntimeTests: XCTestCase {
     let root = FBAXFakeElement.readable("UIApplication")
     runtime.applicationElements[NSNumber(value: kAppPid)] = root
 
-    _ = FBAXBridgeHandleRequest(
+    _ = FBAccessibilityService.handleRequest(
       [
         "verb": "describe",
         "pid": NSNumber(value: kAppPid),
@@ -1922,7 +1923,7 @@ final class AccessibilityRuntimeTests: XCTestCase {
   func testARequestNamingNoAttributesIsReadWithTheDefaultList() {
     runtime.applicationElements[NSNumber(value: kAppPid)] = FBAXFakeElement.readable("UIApplication")
 
-    FBAXBridgeHandleRequest(["verb": "describe", "pid": NSNumber(value: kAppPid)])
+    FBAccessibilityService.handleRequest(["verb": "describe", "pid": NSNumber(value: kAppPid)])
     assertEqualObjects(
       runtime.lastReadAttributes,
       ([
@@ -1938,7 +1939,7 @@ final class AccessibilityRuntimeTests: XCTestCase {
     runtime.applicationElements[NSNumber(value: kAppPid)] = root
 
     let response =
-      FBAXBridgeHandleRequest(["verb": "describe", "pid": NSNumber(value: kAppPid), "attributes": [kAXLabel]])
+      FBAccessibilityService.handleRequest(["verb": "describe", "pid": NSNumber(value: kAppPid), "attributes": [kAXLabel]])
     XCTAssertTrue(((runtime.lastReadAttributes as NSArray?)?.contains(kAXChildren) == true), "children is always read")
     assertEqualObjects(axValue(axValue(axValue(axValue(response, "tree"), kAXChildren), 0), kAXElementType), "XCUIElementTypeWindow")
   }
@@ -1948,11 +1949,11 @@ final class AccessibilityRuntimeTests: XCTestCase {
     let defaultCount = 8
 
     for malformed in ["XC_kAXXCAttributeLabel", [], [NSNumber(value: 123)], ["a": NSNumber(value: 1)]] as [Any] {
-      FBAXBridgeHandleRequest(["verb": "describe", "pid": NSNumber(value: kAppPid), "attributes": malformed])
+      FBAccessibilityService.handleRequest(["verb": "describe", "pid": NSNumber(value: kAppPid), "attributes": malformed])
       XCTAssertEqual((runtime.lastReadAttributes?.count ?? 0), defaultCount, "a \(String(describing: type(of: malformed))) list falls back")
     }
 
-    _ = FBAXBridgeHandleRequest(
+    _ = FBAccessibilityService.handleRequest(
       [
         "verb": "describe",
         "pid": NSNumber(value: kAppPid),
@@ -1965,7 +1966,7 @@ final class AccessibilityRuntimeTests: XCTestCase {
   func testAWriteCanAssertOnlyOnAnAttributeItNames() {
     runtime.hitTestOutcome = FBAXHitTestOutcome.hit(FBAXFakeElement.readable("XCUIElementTypeButton"), owningProcessIdentifier: kAppPid)
 
-    let unnamed = FBAXBridgeHandleRequest(
+    let unnamed = FBAccessibilityService.handleRequest(
       [
         "verb": "perform", "x": NSNumber(value: 10), "y": NSNumber(value: 20), "action": "press",
         "assertKey": kAXVisiblePoint, "assertValue": "anything",
@@ -1974,7 +1975,7 @@ final class AccessibilityRuntimeTests: XCTestCase {
     assertEqualObjects(axValue(unnamed, "ok"), NSNumber(value: false), "an unfetched key is not assertable")
     assertEqualObjects(axValue(unnamed, "error_kind"), "bad_request")
 
-    let named = FBAXBridgeHandleRequest(
+    let named = FBAccessibilityService.handleRequest(
       [
         "verb": "perform", "x": NSNumber(value: 10), "y": NSNumber(value: 20), "action": "press",
         "attributes": [kAXVisiblePoint],
@@ -1991,7 +1992,7 @@ final class AccessibilityRuntimeTests: XCTestCase {
     root.children = [FBAXFakeElement.readable("XCUIElementTypeWindow")]
     runtime.applicationElements[NSNumber(value: kAppPid)] = root
 
-    let response = FBAXBridgeHandleRequest(["verb": "describe", "pid": NSNumber(value: kAppPid), "maxDepth": NSNumber(value: 5)])
+    let response = FBAccessibilityService.handleRequest(["verb": "describe", "pid": NSNumber(value: kAppPid), "maxDepth": NSNumber(value: 5)])
     assertEqualObjects(axValue(response, "ok"), NSNumber(value: true))
     assertEqualObjects(axValue(response, "pid"), NSNumber(value: kAppPid))
     assertEqualObjects(axValue(response, "truncated"), NSNumber(value: false))
@@ -2000,7 +2001,7 @@ final class AccessibilityRuntimeTests: XCTestCase {
   }
 
   func testDescribeWithNoApplicationElementIsAFailureNamingThePid() {
-    let response = FBAXBridgeHandleRequest(["verb": "describe", "pid": NSNumber(value: kAppPid)])
+    let response = FBAccessibilityService.handleRequest(["verb": "describe", "pid": NSNumber(value: kAppPid)])
     assertEqualObjects(axValue(response, "ok"), NSNumber(value: false))
     assertEqualObjects(axValue(response, "error"), "no application element for pid 4321")
   }
@@ -2008,7 +2009,7 @@ final class AccessibilityRuntimeTests: XCTestCase {
   func testDescribeOfAnUnreadableRootIsTaggedUnavailable() {
     runtime.applicationElements[NSNumber(value: kAppPid)] = FBAXFakeElement.applicationUnavailable()
 
-    let response = FBAXBridgeHandleRequest(["verb": "describe", "pid": NSNumber(value: kAppPid)])
+    let response = FBAccessibilityService.handleRequest(["verb": "describe", "pid": NSNumber(value: kAppPid)])
     assertEqualObjects(axValue(response, "ok"), NSNumber(value: false))
     assertEqualObjects(axValue(response, "error_kind"), "application_unavailable")
     assertEqualObjects(axValue(response, "error"), "pid 4321 has no accessibility server")
@@ -2018,7 +2019,7 @@ final class AccessibilityRuntimeTests: XCTestCase {
   func testDescribeOfARootThatDidNotAnswerIsTaggedNotResponding() {
     runtime.applicationElements[NSNumber(value: kAppPid)] = FBAXFakeElement.applicationNotResponding()
 
-    let response = FBAXBridgeHandleRequest(["verb": "describe", "pid": NSNumber(value: kAppPid)])
+    let response = FBAccessibilityService.handleRequest(["verb": "describe", "pid": NSNumber(value: kAppPid)])
     assertEqualObjects(axValue(response, "ok"), NSNumber(value: false))
     assertEqualObjects(axValue(response, "error_kind"), "application_not_responding")
     assertEqualObjects(axValue(response, "error"), "pid 4321 did not answer the read of its element tree in time")
@@ -2027,13 +2028,13 @@ final class AccessibilityRuntimeTests: XCTestCase {
 
   func testDescribeOfAFailedRootQuotesTheRuntimeOrSaysItReportedNothing() {
     runtime.applicationElements[NSNumber(value: kAppPid)] = FBAXFakeElement.failed(FBAXTestsErrorWithCode(FBAXError.invalidUIElement.rawValue))
-    let quoted = FBAXBridgeHandleRequest(["verb": "describe", "pid": NSNumber(value: kAppPid)])
+    let quoted = FBAccessibilityService.handleRequest(["verb": "describe", "pid": NSNumber(value: kAppPid)])
     assertEqualObjects(axValue(quoted, "ok"), NSNumber(value: false))
     XCTAssertNil(axValue(quoted, "error_kind"))
     assertEqualObjects(axValue(quoted, "error"), "failed to read the element tree for pid 4321: runtime said no")
 
     runtime.applicationElements[NSNumber(value: kAppPid)] = FBAXFakeElement.failed(nil)
-    let silent = FBAXBridgeHandleRequest(["verb": "describe", "pid": NSNumber(value: kAppPid)])
+    let silent = FBAccessibilityService.handleRequest(["verb": "describe", "pid": NSNumber(value: kAppPid)])
     assertEqualObjects(axValue(silent, "error"), "failed to read the element tree for pid 4321: the accessibility runtime reported no error")
   }
 
@@ -2047,7 +2048,7 @@ final class AccessibilityRuntimeTests: XCTestCase {
     ]
     runtime.applicationElements[NSNumber(value: kAppPid)] = root
 
-    let response = FBAXBridgeHandleRequest(["verb": "describe", "pid": NSNumber(value: kAppPid), "maxDepth": NSNumber(value: 5)])
+    let response = FBAccessibilityService.handleRequest(["verb": "describe", "pid": NSNumber(value: kAppPid), "maxDepth": NSNumber(value: 5)])
     assertEqualObjects(axValue(response, "ok"), NSNumber(value: true), "an unreadable child must not fail the whole read")
     let children = axValue(axValue(response, "tree"), kAXChildren)
     XCTAssertEqual(axCount(children), 2, "only the readable children survive")
@@ -2063,11 +2064,11 @@ final class AccessibilityRuntimeTests: XCTestCase {
     root.children = [child]
     runtime.applicationElements[NSNumber(value: kAppPid)] = root
 
-    let cut = FBAXBridgeHandleRequest(["verb": "describe", "pid": NSNumber(value: kAppPid), "maxDepth": NSNumber(value: 1)])
+    let cut = FBAccessibilityService.handleRequest(["verb": "describe", "pid": NSNumber(value: kAppPid), "maxDepth": NSNumber(value: 1)])
     assertEqualObjects(axValue(cut, "truncated"), NSNumber(value: true))
     XCTAssertEqual(axCount(axValue(axValue(axValue(axValue(cut, "tree"), kAXChildren), 0), kAXChildren)), 0, "descent stopped at the cap")
 
-    let whole = FBAXBridgeHandleRequest(["verb": "describe", "pid": NSNumber(value: kAppPid), "maxDepth": NSNumber(value: 5)])
+    let whole = FBAccessibilityService.handleRequest(["verb": "describe", "pid": NSNumber(value: kAppPid), "maxDepth": NSNumber(value: 5)])
     assertEqualObjects(axValue(whole, "truncated"), NSNumber(value: false))
     XCTAssertEqual(axCount(axValue(axValue(axValue(axValue(whole, "tree"), kAXChildren), 0), kAXChildren)), 1)
   }
@@ -2082,7 +2083,7 @@ final class AccessibilityRuntimeTests: XCTestCase {
     runtime.applicationElements[NSNumber(value: kAppPid)] = root
 
     let response =
-      FBAXBridgeHandleRequest(["verb": "describe", "pid": NSNumber(value: kAppPid), "maxDepth": NSNumber(value: 5), "maxNodes": NSNumber(value: 2)])
+      FBAccessibilityService.handleRequest(["verb": "describe", "pid": NSNumber(value: kAppPid), "maxDepth": NSNumber(value: 5), "maxNodes": NSNumber(value: 2)])
     assertEqualObjects(axValue(response, "ok"), NSNumber(value: true))
     assertEqualObjects(axValue(response, "truncated"), NSNumber(value: true))
     XCTAssertEqual(axCount(axValue(axValue(response, "tree"), kAXChildren)), 2, "the walk stopped when the budget ran out")
@@ -2094,7 +2095,7 @@ final class AccessibilityRuntimeTests: XCTestCase {
     runtime.hitTestOutcome = FBAXHitTestOutcome.hit(FBAXFakeElement.readable("leaf"), owningProcessIdentifier: kAppPid)
     runtime.applicationElements[NSNumber(value: kAppPid)] = FBAXFakeElement.readable("UIApplication")
 
-    let response = FBAXBridgeHandleRequest(
+    let response = FBAccessibilityService.handleRequest(
       ["verb": "describe", "x": NSNumber(value: 201), "y": NSNumber(value: 437), "method": "center-point"]
     )
     assertEqualObjects(axValue(response, "ok"), NSNumber(value: true))
@@ -2111,14 +2112,14 @@ final class AccessibilityRuntimeTests: XCTestCase {
     runtime.runningBoardOutcome = FBAXFrontmostOutcome.resolved(kAppPid)
 
     let windowServer =
-      FBAXBridgeHandleRequest(["verb": "describe", "x": NSNumber(value: 1), "y": NSNumber(value: 2), "method": "window-server"])
+      FBAccessibilityService.handleRequest(["verb": "describe", "x": NSNumber(value: 1), "y": NSNumber(value: 2), "method": "window-server"])
     assertEqualObjects(axValue(windowServer, "method"), "window-server")
     XCTAssertEqual(runtime.windowServerCount, 1)
     XCTAssertEqual(runtime.runningBoardCount, 0)
     XCTAssertEqual(runtime.hitTestCount, 0)
 
     let runningBoard =
-      FBAXBridgeHandleRequest(["verb": "describe", "x": NSNumber(value: 1), "y": NSNumber(value: 2), "method": "runningboard"])
+      FBAccessibilityService.handleRequest(["verb": "describe", "x": NSNumber(value: 1), "y": NSNumber(value: 2), "method": "runningboard"])
     assertEqualObjects(axValue(runningBoard, "method"), "runningboard")
     XCTAssertEqual(runtime.runningBoardCount, 1)
     XCTAssertEqual(runtime.windowServerCount, 1, "the window-server resolver must not run again")
@@ -2130,7 +2131,7 @@ final class AccessibilityRuntimeTests: XCTestCase {
     runtime.applicationElements[NSNumber(value: kAppPid)] = FBAXFakeElement.readable("UIApplication")
 
     let response =
-      FBAXBridgeHandleRequest(["verb": "describe", "x": NSNumber(value: 1), "y": NSNumber(value: 2), "method": "window-server"])
+      FBAccessibilityService.handleRequest(["verb": "describe", "x": NSNumber(value: 1), "y": NSNumber(value: 2), "method": "window-server"])
     assertEqualObjects(axValue(response, "ok"), NSNumber(value: false))
     assertEqualObjects(axValue(response, "error"), "the window server did not answer")
     // A strategy that could not answer is about the strategy, not about any one application — so it is its
@@ -2142,7 +2143,7 @@ final class AccessibilityRuntimeTests: XCTestCase {
 
   func testCenterPointCarriesEachNonResolvingOutcomeThroughAsItsOwnKind() {
     runtime.hitTestOutcome = FBAXHitTestOutcome.empty()
-    let empty = FBAXBridgeHandleRequest(
+    let empty = FBAccessibilityService.handleRequest(
       ["verb": "describe", "x": NSNumber(value: 9999), "y": NSNumber(value: 9999), "method": "center-point"]
     )
     assertEqualObjects(axValue(empty, "ok"), NSNumber(value: false))
@@ -2150,7 +2151,7 @@ final class AccessibilityRuntimeTests: XCTestCase {
     assertEqualObjects(axValue(empty, "error_kind"), "frontmost_unresolved")
 
     runtime.hitTestOutcome = FBAXHitTestOutcome.applicationUnavailable()
-    let unavailable = FBAXBridgeHandleRequest(
+    let unavailable = FBAccessibilityService.handleRequest(
       ["verb": "describe", "x": NSNumber(value: 5), "y": NSNumber(value: 6), "method": "center-point"]
     )
     assertEqualObjects(axValue(unavailable, "error"), "no accessibility server answered the system-wide hit-test at (5.0, 6.0)")
@@ -2158,7 +2159,7 @@ final class AccessibilityRuntimeTests: XCTestCase {
     XCTAssertNil(axValue(unavailable, "pid"), "a frontmost query that resolved nothing has no process to name")
 
     runtime.hitTestOutcome = FBAXHitTestOutcome.applicationNotResponding()
-    let notResponding = FBAXBridgeHandleRequest(
+    let notResponding = FBAccessibilityService.handleRequest(
       ["verb": "describe", "x": NSNumber(value: 5), "y": NSNumber(value: 6), "method": "center-point"]
     )
     assertEqualObjects(axValue(notResponding, "error"), "the application at (5.0, 6.0) did not answer the system-wide hit-test in time")
@@ -2167,7 +2168,7 @@ final class AccessibilityRuntimeTests: XCTestCase {
 
   func testAnUnsupportedFrontmostMethodConsultsNoResolver() {
     let response =
-      FBAXBridgeHandleRequest(["verb": "describe", "x": NSNumber(value: 1), "y": NSNumber(value: 2), "method": "not-a-method"])
+      FBAccessibilityService.handleRequest(["verb": "describe", "x": NSNumber(value: 1), "y": NSNumber(value: 2), "method": "not-a-method"])
     assertEqualObjects(axValue(response, "ok"), NSNumber(value: false))
     assertEqualObjects(axValue(response, "error"), "unsupported frontmost method: not-a-method")
     assertEqualObjects(axValue(response, "error_kind"), "frontmost_unresolved")
@@ -2182,7 +2183,7 @@ final class AccessibilityRuntimeTests: XCTestCase {
 
     runtime.windowServerOutcome = FBAXFrontmostOutcome.resolved(kAppPid)
 
-    let response = FBAXBridgeHandleRequest(["verb": "describe", "x": NSNumber(value: 1), "y": NSNumber(value: 2), "method": NSNumber(value: 7)])
+    let response = FBAccessibilityService.handleRequest(["verb": "describe", "x": NSNumber(value: 1), "y": NSNumber(value: 2), "method": NSNumber(value: 7)])
     assertEqualObjects(axValue(response, "method"), "window-server")
     XCTAssertEqual(runtime.windowServerCount, 1)
   }
@@ -2198,7 +2199,7 @@ final class AccessibilityRuntimeTests: XCTestCase {
     for (value, enabled) in flagCoercionCases {
       let before = runtime.snapshotCount
 
-      let response = FBAXBridgeHandleRequest(["verb": "describe", "pid": kAppPid, "snapshotTree": value])
+      let response = FBAccessibilityService.handleRequest(["verb": "describe", "pid": kAppPid, "snapshotTree": value])
 
       assertEqualObjects(response["ok"], true)
       assertEqualObjects(axValue(response["tree"], kAXLabel), "root")
@@ -2212,7 +2213,7 @@ final class AccessibilityRuntimeTests: XCTestCase {
     for (value, enabled) in flagCoercionCases {
       let before = runtime.translatorReadCount
 
-      let response = FBAXBridgeHandleRequest(["verb": "describe", "pid": kAppPid, "translatorVocabulary": value])
+      let response = FBAccessibilityService.handleRequest(["verb": "describe", "pid": kAppPid, "translatorVocabulary": value])
 
       assertEqualObjects(response["ok"], true)
       assertEqualObjects(axValue(response["tree"], kAXLabel), enabled ? "translated" : "original")
@@ -2226,7 +2227,7 @@ final class AccessibilityRuntimeTests: XCTestCase {
     for (value, enabled) in flagCoercionCases {
       let before = runtime.hitTestCount
 
-      let response = FBAXBridgeHandleRequest(["verb": "describe", "pid": kAppPid, "explainUnreachable": value])
+      let response = FBAccessibilityService.handleRequest(["verb": "describe", "pid": kAppPid, "explainUnreachable": value])
 
       assertEqualObjects(response["ok"], true)
       XCTAssertEqual(axValue(response["tree"], "FBExplainedBy") != nil, enabled)
@@ -2238,14 +2239,14 @@ final class AccessibilityRuntimeTests: XCTestCase {
     runtime.applicationElements[NSNumber(value: kAppPid)] = FBAXFakeElement.readable("root")
     for flag in ["snapshotTree", "translatorVocabulary", "explainUnreachable"] {
       for value in [NSNull(), [], [:]] as [Any] {
-        let response = FBAXBridgeHandleRequest(["verb": "describe", "pid": kAppPid, flag: value])
+        let response = FBAccessibilityService.handleRequest(["verb": "describe", "pid": kAppPid, flag: value])
 
         assertEqualObjects(response["ok"], false)
         XCTAssertNil(response["error_kind"])
         XCTAssertNil(response["tree"])
         XCTAssertTrue((response["error"] as? String)?.hasPrefix("the reader raised while answering:") == true)
         XCTAssertTrue((response["error"] as? String)?.contains("boolValue") == true)
-        assertEqualObjects(FBAXBridgeHandleRequest(["verb": "describe", "pid": kAppPid])["ok"], true)
+        assertEqualObjects(FBAccessibilityService.handleRequest(["verb": "describe", "pid": kAppPid])["ok"], true)
       }
     }
     XCTAssertEqual(runtime.snapshotCount, 0)
@@ -2256,7 +2257,7 @@ final class AccessibilityRuntimeTests: XCTestCase {
   func testSnapshotSelectionDoesNotInterpretUnusedTraversalFlags() {
     runtime.applicationElements[NSNumber(value: kAppPid)] = FBAXFakeElement.readable("root")
 
-    let response = FBAXBridgeHandleRequest(["verb": "describe", "pid": kAppPid, "snapshotTree": "YES", "translatorVocabulary": NSNull(), "explainUnreachable": NSNull()])
+    let response = FBAccessibilityService.handleRequest(["verb": "describe", "pid": kAppPid, "snapshotTree": "YES", "translatorVocabulary": NSNull(), "explainUnreachable": NSNull()])
 
     assertEqualObjects(response["ok"], true)
     assertEqualObjects(axValue(response["tree"], kAXLabel), "root")
@@ -2268,7 +2269,7 @@ final class AccessibilityRuntimeTests: XCTestCase {
   func testUnsupportedVerbPreservesFoundationValueDescriptions() {
     let cases: [(Any, String)] = [(123, "123"), (NSNull(), "<null>"), (["describe"], "(\n    describe\n)"), (["a": 1], "{\n    a = 1;\n}")]
     for (value, description) in cases {
-      let response = FBAXBridgeHandleRequest(["verb": value])
+      let response = FBAccessibilityService.handleRequest(["verb": value])
 
       assertEqualObjects(response, ["ok": false, "error_kind": "bad_request", "error": "unsupported verb: \(description)"])
     }
@@ -2278,7 +2279,7 @@ final class AccessibilityRuntimeTests: XCTestCase {
   func testUnsupportedActionPreservesFoundationValueDescriptions() {
     let cases: [(Any, String)] = [(123, "123"), (NSNull(), "<null>"), (["press"], "(\n    press\n)"), (["a": 1], "{\n    a = 1;\n}")]
     for (value, description) in cases {
-      let response = FBAXBridgeHandleRequest(["verb": "perform", "action": value, "x": 1, "y": 2])
+      let response = FBAccessibilityService.handleRequest(["verb": "perform", "action": value, "x": 1, "y": 2])
 
       assertEqualObjects(response, ["ok": false, "error_kind": "bad_request", "error": "unsupported action: \(description)"])
     }

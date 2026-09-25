@@ -6,7 +6,7 @@
  */
 
 import Foundation
-@_implementationOnly import SimulatorFrameworkBridgeLib
+@_implementationOnly import SimulatorFrameworkBridgeSupport
 import UserNotifications
 import XCTest
 
@@ -15,6 +15,7 @@ import XCTest
 final class DeliveredNotificationsServiceTests: XCTestCase {
   private var notificationsDirectory = ""
   private var storeDirectory = ""
+  private var timeout: TimeInterval = 0
 
   /// The mapping from bundle identifier to store directory, as BulletinBoard writes it.
   private var libraryPath: String {
@@ -35,14 +36,24 @@ final class DeliveredNotificationsServiceTests: XCTestCase {
         withIntermediateDirectories: true
       )
     )
-    FBDeliveredNotificationsSetDirectoryForTesting(notificationsDirectory)
   }
 
   override func tearDown() {
-    FBDeliveredNotificationsSetDirectoryForTesting(nil)
-    FBDeliveredNotificationsSetTimeoutForTesting(0)
     try? FileManager.default.removeItem(atPath: notificationsDirectory)
     super.tearDown()
+  }
+
+  private func handleDeliveredNotificationsAction(_ action: String?, _ bundleID: String?) -> Int32 {
+    FBDeliveredNotificationsService.handleAction(action, bundleID: bundleID, directory: notificationsDirectory, timeout: timeout)
+  }
+
+  private func handleDeliveredNotificationsActionWithCenter(_ action: String?, _ bundleID: String?, _ center: Any?) -> Int32 {
+    FBDeliveredNotificationsService.handleActionWithCenter(
+      action, bundleID: bundleID, center: center, directory: notificationsDirectory, timeout: timeout)
+  }
+
+  private func clearDeliveredNotificationsWithRemover(_ bundleID: String?, _ remover: Any?) -> Int32 {
+    FBDeliveredNotificationsService.clear(bundleID: bundleID, remover: remover, directory: notificationsDirectory, timeout: timeout)
   }
 
   private func writeArchive(of root: Any, toPath path: String) {
@@ -137,7 +148,7 @@ final class DeliveredNotificationsServiceTests: XCTestCase {
   func testNilCenterFallsBackToStoreAfterTimeout() {
     let bundleID = "com.example.test.nilcenter"
     writeStore(forBundleID: bundleID, records: [["AppNotificationIdentifier": "stored"]])
-    FBDeliveredNotificationsSetTimeoutForTesting(0.001)
+    timeout = 0.001
     var result: Int32 = -1
     let output = FBStdoutWhileRunning {
       result = handleDeliveredNotificationsActionWithCenter("delivered", bundleID, nil)
@@ -293,7 +304,7 @@ final class DeliveredNotificationsServiceTests: XCTestCase {
   func testClearDeliveredClearsTheStoreWhenTheDaemonDoesNotAnswer() {
     let bundleID = "com.example.test.clear.silent"
     writeStore(forBundleID: bundleID, records: [["AppNotificationIdentifier": "identifier-1"]])
-    FBDeliveredNotificationsSetTimeoutForTesting(0.1)
+    timeout = 0.1
 
     XCTAssertEqual(clearDeliveredNotificationsWithRemover(bundleID, FBSilentDeliveredNotificationsRemover()), 0)
 
@@ -705,7 +716,7 @@ final class DeliveredNotificationsServiceTests: XCTestCase {
     // the others here already answer from disk for rather than failing on.
     let bundleID = "com.example.test.silent"
     writeStore(forBundleID: bundleID, records: [["AppNotificationIdentifier": "identifier-silent"]])
-    FBDeliveredNotificationsSetTimeoutForTesting(0.05)
+    timeout = 0.05
     var result: Int32 = -1
 
     let output = FBStdoutWhileRunning {

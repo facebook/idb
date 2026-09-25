@@ -9,6 +9,9 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
+/** Resolves HealthKit classes through `lookup` instead of the runtime, or restores the runtime with nil. */
+void FBHealthSetClassLookupForTesting(Class _Nullable (^_Nullable lookup)(NSString *name));
+
 typedef NS_ENUM(NSUInteger, FBHealthCompletionStatus) {
   FBHealthCompletionStatusCompleted,
   FBHealthCompletionStatusTimedOut,

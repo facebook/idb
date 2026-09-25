@@ -6,18 +6,14 @@
  */
 
 import Foundation
-@_implementationOnly import SimulatorFrameworkBridgeLib
+@_implementationOnly import SimulatorFrameworkBridgeSupport
 import XCTest
 
 final class PhotoLibraryServiceTests: XCTestCase {
 
-  func testNilActionReturnsFailure() {
-    XCTAssertEqual(handlePhotoLibraryAction(nil), 1)
-  }
-
   func testUnknownActionReturnsFailure() {
-    XCTAssertEqual(handlePhotoLibraryAction("delete"), 1)
-    XCTAssertEqual(handlePhotoLibraryAction(""), 1)
-    XCTAssertEqual(handlePhotoLibraryAction("add"), 1)
+    XCTAssertEqual(FBPhotoLibraryService.handlePhotoLibraryAction(action: "delete"), 1)
+    XCTAssertEqual(FBPhotoLibraryService.handlePhotoLibraryAction(action: ""), 1)
+    XCTAssertEqual(FBPhotoLibraryService.handlePhotoLibraryAction(action: "add"), 1)
   }
 }

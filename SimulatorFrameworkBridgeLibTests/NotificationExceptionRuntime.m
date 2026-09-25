@@ -7,8 +7,6 @@
 
 #import "NotificationExceptionRuntime.h"
 
-#import "ServiceTestRuntime.h"
-
 @interface FBNotificationFailureProbe : NSObject
 @property (nonatomic, copy) NSString *operation;
 @end
@@ -62,7 +60,7 @@
 
 @end
 
-NSDictionary<NSString *, id> *FBNotificationCommandExceptionResult(NSString *operation)
+NSDictionary<NSString *, id> *FBNotificationCommandExceptionResult(NSString *operation, int (^NS_NOESCAPE run)(NSString *action, NSString *bundleID, id gateway))
 {
   FBNotificationFailureProbe *gateway = [FBNotificationFailureProbe new];
   gateway.operation = operation;
@@ -73,7 +71,7 @@ NSDictionary<NSString *, id> *FBNotificationCommandExceptionResult(NSString *ope
     bundleID = nil;
   }
   @try {
-    return @{@"status" : @(handleNotificationSettingsActionWithGateway(action, bundleID, gateway))};
+    return @{@"status" : @(run(action, bundleID, gateway))};
   } @catch (NSException *exception) {
     return @{@"exception" : exception.name};
   }

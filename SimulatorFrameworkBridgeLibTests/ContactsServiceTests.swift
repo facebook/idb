@@ -6,14 +6,14 @@
  */
 
 import Foundation
-@_implementationOnly import SimulatorFrameworkBridgeLib
+@_implementationOnly import SimulatorFrameworkBridgeSupport
 import XCTest
 
 final class ContactsServiceTests: XCTestCase {
 
   func testUnknownActionReturnsFailure() {
-    XCTAssertEqual(handleContactsAction("delete"), 1)
-    XCTAssertEqual(handleContactsAction(""), 1)
-    XCTAssertEqual(handleContactsAction("add"), 1)
+    XCTAssertEqual(FBContactsService.handleContactsAction(action: "delete"), 1)
+    XCTAssertEqual(FBContactsService.handleContactsAction(action: ""), 1)
+    XCTAssertEqual(FBContactsService.handleContactsAction(action: "add"), 1)
   }
 }

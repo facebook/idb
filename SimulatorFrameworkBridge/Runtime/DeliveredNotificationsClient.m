@@ -12,15 +12,6 @@
 #if !TARGET_OS_TV
  #import "UserNotificationsPrivate.h"
 
-@protocol FBNotificationCenterReading <NSObject>
-- (void)getDeliveredNotificationsWithCompletionHandler:(void (^)(NSArray<UNNotification *> *notifications))completionHandler;
-@end
-
-@protocol FBNotificationServiceConnectionRemoving <NSObject>
-- (void)removeAllDeliveredNotificationsForBundleIdentifier:(NSString *)bundleIdentifier
-                                         completionHandler:(void (^)(BOOL success))completionHandler;
-@end
-
 static id CenterForBundleID(NSString *bundleID)
 {
   Class centerClass = NSClassFromString(@"UNUserNotificationCenter");
@@ -114,7 +105,7 @@ static id DaemonConnection(void)
 
 @implementation FBDeliveredNotificationsClient
 {
-  id<FBNotificationCenterReading> _center;
+  id<FBDeliveredNotificationsCenter> _center;
 }
 
 + (instancetype)liveClientForBundleID:(NSString *)bundleID
@@ -179,7 +170,7 @@ static id DaemonConnection(void)
 
 @implementation FBDeliveredNotificationsRemovalClient
 {
-  id<FBNotificationServiceConnectionRemoving> _remover;
+  id<FBDeliveredNotificationsRemover> _remover;
 }
 
 + (instancetype)liveClient

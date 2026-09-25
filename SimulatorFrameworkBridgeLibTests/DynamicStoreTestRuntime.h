@@ -25,8 +25,8 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, readonly, copy) NSData *output;
 - (void)install;
 - (void)uninstall;
-- (int)runAction:(NSString *)action arguments:(NSArray<NSString *> *)arguments input:(nullable NSData *)input
-  NS_SWIFT_NAME(run(action:arguments:input:));
+/** Runs `service` with stdin fed from `input` and stdout captured into `output`. */
+- (NSInteger)runWithInput:(nullable NSData *)input service:(NSInteger (^NS_NOESCAPE)(void))service NS_SWIFT_NAME(run(input:service:));
 @end
 
 NS_ASSUME_NONNULL_END

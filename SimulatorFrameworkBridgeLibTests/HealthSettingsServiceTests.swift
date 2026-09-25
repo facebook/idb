@@ -6,7 +6,7 @@
  */
 
 import Foundation
-@_implementationOnly import SimulatorFrameworkBridgeLib
+@_implementationOnly import SimulatorFrameworkBridgeSupport
 import XCTest
 
 private let legacyAuthorizationSelector = "setAuthorizationStatuses:authorizationModes:forBundleIdentifier:options:completion:"
@@ -18,11 +18,11 @@ final class HealthSettingsServiceTests: XCTestCase {
   // and healthd. `com.example.test` is not an installed app, which is why the read verbs report
   // failure rather than returning records.
   func testListReportsFailureForAnUnknownBundleIdentifier() {
-    XCTAssertEqual(handleHealthSettingsAction("list", "com.example.test", []), 1)
+    XCTAssertEqual(FBHealthSettingsService.handleHealthSettingsAction(action: "list", bundleID: "com.example.test", typeIdentifiers: []), 1)
   }
 
   func testClearReportsFailureForAnUnknownBundleIdentifier() {
-    XCTAssertEqual(handleHealthSettingsAction("clear", "com.example.test", []), 1)
+    XCTAssertEqual(FBHealthSettingsService.handleHealthSettingsAction(action: "clear", bundleID: "com.example.test", typeIdentifiers: []), 1)
   }
 
   // MARK: - The drifted authorization selector
@@ -30,11 +30,17 @@ final class HealthSettingsServiceTests: XCTestCase {
   // `approve` and `revoke` answer with an exit code on every runtime, whichever spelling of
   // `setAuthorizationStatuses:…` it declares.
   func testApproveAnswersWithAStatusOnAnyRuntime() {
-    XCTAssertNil(FBHealthApproveException(["HKQuantityTypeIdentifierStepCount"]))
+    XCTAssertNil(
+      FBExceptionRaisedBy {
+        _ = FBHealthSettingsService.handleHealthSettingsAction(action: "approve", bundleID: "com.example.test", typeIdentifiers: ["HKQuantityTypeIdentifierStepCount"])
+      })
   }
 
   func testApproveWithDefaultTypesAnswersWithAStatusOnAnyRuntime() {
-    XCTAssertNil(FBHealthApproveException([]))
+    XCTAssertNil(
+      FBExceptionRaisedBy {
+        _ = FBHealthSettingsService.handleHealthSettingsAction(action: "approve", bundleID: "com.example.test", typeIdentifiers: [])
+      })
   }
 
   // Exactly one of the two spellings is present on any runtime, so the service's
@@ -61,6 +67,6 @@ final class HealthSettingsServiceTests: XCTestCase {
   }
 
   func testUnknownActionReturnsFailure() {
-    XCTAssertEqual(handleHealthSettingsAction("unknown", "com.example.test", []), 1)
+    XCTAssertEqual(FBHealthSettingsService.handleHealthSettingsAction(action: "unknown", bundleID: "com.example.test", typeIdentifiers: []), 1)
   }
 }

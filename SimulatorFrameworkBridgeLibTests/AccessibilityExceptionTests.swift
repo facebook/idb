@@ -6,12 +6,13 @@
  */
 
 import Foundation
-@_implementationOnly import SimulatorFrameworkBridgeLib
+@_implementationOnly import SimulatorFrameworkBridgeRuntime
+@_implementationOnly import SimulatorFrameworkBridgeSupport
 import XCTest
 
 final class AccessibilityExceptionTests: XCTestCase {
   override func tearDown() {
-    FBAXBridgeSetRuntimeForTesting(nil)
+    FBAXClientProvider.setRuntimeForTesting(nil)
     super.tearDown()
   }
 
@@ -42,14 +43,14 @@ final class AccessibilityExceptionTests: XCTestCase {
     ]
     for (operation, request) in cases {
       let runtime = seededRuntime()
-      FBAXBridgeSetRuntimeForTesting(runtime)
+      FBAXClientProvider.setRuntimeForTesting(runtime)
       runtime.raiseOnOperation = operation
 
-      XCTAssertEqual(FBAXBridgeHandleRequest(request) as NSDictionary, exceptionResponse("injected \(operation)"), operation)
+      XCTAssertEqual(FBAccessibilityService.handleRequest(request) as NSDictionary, exceptionResponse("injected \(operation)"), operation)
       XCTAssertEqual(runtime.operations.lastObject as? String, operation)
 
       runtime.raiseOnOperation = nil
-      XCTAssertEqual(FBAXBridgeHandleRequest(request)["ok"] as? NSNumber, true, operation)
+      XCTAssertEqual(FBAccessibilityService.handleRequest(request)["ok"] as? NSNumber, true, operation)
     }
   }
 
@@ -58,14 +59,14 @@ final class AccessibilityExceptionTests: XCTestCase {
     let root = runtime.applicationElements[4321] as? FBAXFakeElement
     let child = root?.children.first
     child?.readRaiseReason = "child disappeared"
-    FBAXBridgeSetRuntimeForTesting(runtime)
+    FBAXClientProvider.setRuntimeForTesting(runtime)
     let request: [String: Any] = ["verb": "describe", "pid": 4321]
 
-    XCTAssertEqual(FBAXBridgeHandleRequest(request) as NSDictionary, exceptionResponse("child disappeared"))
+    XCTAssertEqual(FBAccessibilityService.handleRequest(request) as NSDictionary, exceptionResponse("child disappeared"))
     XCTAssertEqual(runtime.operations.lastObject as? String, "readAttributes")
 
     child?.readRaiseReason = nil
-    let response = FBAXBridgeHandleRequest(request)
+    let response = FBAccessibilityService.handleRequest(request)
     XCTAssertEqual(response["ok"] as? NSNumber, true)
     let tree = response["tree"] as? [String: Any]
     let children = tree?["XC_kAXXCAttributeChildren"] as? [[String: Any]]
@@ -76,13 +77,13 @@ final class AccessibilityExceptionTests: XCTestCase {
     for verb in ["perform", "setvalue"] {
       let runtime = seededRuntime()
       runtime.raiseOnOperation = "readAttributes"
-      FBAXBridgeSetRuntimeForTesting(runtime)
+      FBAXClientProvider.setRuntimeForTesting(runtime)
       let request: [String: Any] = [
         "verb": verb, "x": 1, "y": 2, "action": "press", "value": "changed",
         "assertKey": "XC_kAXXCAttributeLabel", "assertValue": "root",
       ]
 
-      XCTAssertEqual(FBAXBridgeHandleRequest(request) as NSDictionary, exceptionResponse("injected readAttributes"))
+      XCTAssertEqual(FBAccessibilityService.handleRequest(request) as NSDictionary, exceptionResponse("injected readAttributes"))
       XCTAssertEqual(runtime.hitTestCount, 1)
       XCTAssertEqual(runtime.performCount, 0)
       XCTAssertEqual(runtime.setValueCount, 0)

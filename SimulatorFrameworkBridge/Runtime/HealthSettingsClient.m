@@ -11,8 +11,6 @@
 
 #import "Private/HealthKitPrivate.h"
 
-void FBHealthSetClassLookupForTesting(Class (^lookup)(NSString *));
-
 static Class (^healthClassLookup)(NSString *);
 
 void FBHealthSetClassLookupForTesting(Class (^lookup)(NSString *))

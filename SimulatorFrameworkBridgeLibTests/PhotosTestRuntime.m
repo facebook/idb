@@ -7,8 +7,6 @@
 
 #import "PhotosTestRuntime.h"
 
-#import <SimulatorFrameworkBridgeLib/PhotoLibraryService+Testing.h>
-
 @interface FBPhotosTestRuntime ()
 @property (nonatomic) BOOL insideTransaction;
 @property (nonatomic) BOOL allMutationsInsideTransaction;
@@ -146,7 +144,7 @@
   return self;
 }
 
-- (int)run
+- (NSInteger)runClear:(NSInteger (^NS_NOESCAPE)(FBPhotoLibraryClient *client))clear
 {
   FBPhotoProbe *library = [FBPhotoProbe new];
   library.runtime = self;
@@ -157,13 +155,15 @@
     asset.index = index;
     [assets addObject:asset];
   }
-  return FBPhotoLibraryClearWithLibrary((PHPhotoLibrary *)library, (PHFetchResult<PHAsset *> *)assets);
+  FBPhotoLibraryClient *client = [FBPhotoLibraryClient makeWithPhotoLibrary:(PHPhotoLibrary *)library
+                                                                     assets:(PHFetchResult<PHAsset *> *)assets];
+  return client ? clear(client) : 1;
 }
 
-- (NSDictionary<NSString *, id> *)runCatchingException
+- (NSDictionary<NSString *, id> *)runCatchingExceptionClear:(NSInteger (^NS_NOESCAPE)(FBPhotoLibraryClient *client))clear
 {
   @try {
-    return @{@"status" : @([self run])};
+    return @{@"status" : @([self runClear:clear])};
   } @catch (NSException *exception) {
     return @{@"exception" : exception.name};
   }

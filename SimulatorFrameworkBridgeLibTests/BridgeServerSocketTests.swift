@@ -7,7 +7,6 @@
 
 import Darwin
 import Foundation
-@_implementationOnly import SimulatorFrameworkBridgeLib
 @_implementationOnly import SimulatorFrameworkBridgeProtocol
 @_implementationOnly import SimulatorFrameworkBridgeSupport
 import XCTest

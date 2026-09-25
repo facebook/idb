@@ -102,7 +102,7 @@ NSDictionary<NSString *, id> *FBAXGeometryDictionaryProbe(BOOL rectangle, BOOL r
 @end
 
 /**
- * A fake `FBAXRuntime`, wired into the service by `FBAXBridgeSetRuntimeForTesting`.
+ * A fake `FBAXRuntime`, wired into the service by `+[FBAXClientProvider setRuntimeForTesting:]`.
  *
  * Reaches the outcomes the live runtime only produces against a broken, dead or unresponsive
  * application — which on a real simulator need an app to be killed, SIGSTOP-ed or hit mid-launch — with
