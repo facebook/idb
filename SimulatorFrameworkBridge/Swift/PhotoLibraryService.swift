@@ -24,9 +24,8 @@ private func clearPhotoLibrary(client: FBPhotoLibraryClient, output: BridgeOutpu
   }
 }
 
-@objc public final class FBPhotoLibraryService: NSObject {
+public enum FBPhotoLibraryService {
 
-  @objc(handlePhotoLibraryAction:)
   public static func handlePhotoLibraryAction(action: String) -> Int {
     handlePhotoLibraryAction(action: action, output: nil)
   }
@@ -45,7 +44,6 @@ private func clearPhotoLibrary(client: FBPhotoLibraryClient, output: BridgeOutpu
     }
   }
 
-  @objc(clearWithClient:)
   public static func clear(client: Any) -> Int {
     guard let client = client as? FBPhotoLibraryClient else {
       return 1

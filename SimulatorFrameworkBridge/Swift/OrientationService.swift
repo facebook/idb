@@ -11,8 +11,8 @@ import Foundation
 @_implementationOnly import SimulatorFrameworkBridgeRuntime
 #endif
 
-@objc public final class FBOrientationService: NSObject {
-  @objc public static func run(action: String, arguments: [String]) -> Int32 {
+public enum FBOrientationService {
+  public static func run(action: String, arguments: [String]) -> Int32 {
     guard action == "get", arguments.isEmpty else {
       NSLog("Usage: orientation get")
       return 1

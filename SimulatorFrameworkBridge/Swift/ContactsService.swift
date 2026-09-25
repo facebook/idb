@@ -50,13 +50,11 @@ private func FBContactsClearWithStore(contactStore: CNContactStore, makeSaveRequ
   return 0
 }
 
-@objc public final class FBContactsService: NSObject {
-  @objc(clearWithStore:makeSaveRequest:)
+public enum FBContactsService {
   public static func clear(with store: CNContactStore, makeSaveRequest: () -> CNSaveRequest) -> Int {
     FBContactsClearWithStore(contactStore: store, makeSaveRequest: makeSaveRequest)
   }
 
-  @objc(handleContactsAction:)
   public static func handleContactsAction(action: String) -> Int {
     handleContactsAction(action: action, output: nil)
   }

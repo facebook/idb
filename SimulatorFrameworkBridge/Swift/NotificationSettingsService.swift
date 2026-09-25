@@ -48,8 +48,7 @@ private func printSectionJSON(bundleID: String, section: FBNotificationSection, 
   return true
 }
 
-@objc public final class FBNotificationSettingsService: NSObject {
-  @objc(handleNotificationSettingsAction:bundleID:)
+public enum FBNotificationSettingsService {
   public static func handleNotificationSettingsAction(action: String?, bundleID: String?) -> Int {
     handleNotificationSettingsAction(action: action, bundleID: bundleID, output: nil)
   }
@@ -61,7 +60,6 @@ private func printSectionJSON(bundleID: String, section: FBNotificationSection, 
     return handleNotificationSettingsActionWithClient(action: action, bundleID: bundleID, client: client, output: output)
   }
 
-  @objc(handleNotificationSettingsActionWithGateway:bundleID:gateway:)
   public static func handleNotificationSettingsActionWithGateway(action: String?, bundleID: String?, gateway: Any) -> Int {
     handleNotificationSettingsActionWithClient(action: action, bundleID: bundleID, client: FBNotificationSettingsClient(gateway: gateway), output: nil)
   }

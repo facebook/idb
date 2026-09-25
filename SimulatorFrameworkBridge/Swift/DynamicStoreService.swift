@@ -11,13 +11,13 @@ import Foundation
 @_implementationOnly import SimulatorFrameworkBridgeRuntime
 #endif
 
-@objc public final class FBDynamicStoreService: NSObject {
+public enum FBDynamicStoreService {
   private enum Action: String {
     case snapshot
     case restore
   }
 
-  @objc public static func key(forName name: String) -> String? {
+  public static func key(forName name: String) -> String? {
     switch name {
     case "dns": return "State:/Network/Global/DNS"
     case "proxy": return "State:/Network/Global/Proxies"
@@ -25,7 +25,6 @@ import Foundation
     }
   }
 
-  @objc(handleDynamicStoreAction:arguments:)
   public static func handleDynamicStoreAction(action: String, arguments: [String]) -> Int {
     handleDynamicStoreAction(action: action, arguments: arguments, input: { FileHandle.standardInput.readDataToEndOfFile() }, output: nil)
   }

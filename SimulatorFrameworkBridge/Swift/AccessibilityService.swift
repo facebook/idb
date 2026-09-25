@@ -1539,9 +1539,9 @@ private final class AccessibilityRequest {
 
 // Objective-C runtime clients convert private-framework exceptions to NSError before returning here.
 // Answer those errors on the shared dispatcher path so the serve connection can handle later requests.
-@objc public final class FBAccessibilityService: NSObject {
+public enum FBAccessibilityService {
 
-  @objc public static func handleRequest(_ request: [String: Any]) -> [String: Any] {
+  public static func handleRequest(_ request: [String: Any]) -> [String: Any] {
     do {
       return try AccessibilityRequest().FBAXBridgeDispatchRequest(request: request)
     } catch {
@@ -1549,15 +1549,15 @@ private final class AccessibilityRequest {
     }
   }
 
-  @objc public static func modalDescriptor(_ tree: [String: Any]) -> [String: String]? {
+  public static func modalDescriptor(_ tree: [String: Any]) -> [String: String]? {
     AccessibilityRequest().FBAXBridgeModalDescriptor(tree: tree)
   }
 
-  @objc public static func wireConstantsForTesting() -> [String: String] {
+  public static func wireConstantsForTesting() -> [String: String] {
     AccessibilityRequest().FBAXBridgeWireConstantsForTesting()
   }
 
-  @objc public static func serializeResponse(_ response: [String: Any]) -> Data {
+  public static func serializeResponse(_ response: [String: Any]) -> Data {
     struct StaticVars {
       static let fallback = "{\"ok\":false,\"error\":\"response serialization failed\"}"
     }
@@ -1577,7 +1577,7 @@ private final class AccessibilityRequest {
     return Data(StaticVars.fallback.utf8)
   }
 
-  @objc public static func handleAction(_ action: String, arguments: [String], writeResponse: (Data) -> Void) -> Int32 {
+  public static func handleAction(_ action: String, arguments: [String], writeResponse: (Data) -> Void) -> Int32 {
     let request = FBAXBridgeArguments.request(action: action, arguments: arguments)
     let response = handleRequest(request)
     writeResponse(serializeResponse(response))

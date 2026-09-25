@@ -11,7 +11,7 @@ import Foundation
 @_implementationOnly import SimulatorFrameworkBridgeRuntime
 #endif
 
-@objc public final class FBPrivacyService: NSObject {
+public enum FBPrivacyService {
   private static let services = [
     "camera": "kTCCServiceCamera",
     "microphone": "kTCCServiceMicrophone",
@@ -19,7 +19,7 @@ import Foundation
     "contacts": "kTCCServiceAddressBook",
   ]
 
-  @objc public static func handleAction(_ action: String, arguments: [String]) -> Int32 {
+  public static func handleAction(_ action: String, arguments: [String]) -> Int32 {
     execute(action: action, arguments: arguments) { bundleID, services, approved in
       let outcome = FBPrivacyBinding.updateBundleID(bundleID, services: services, approved: approved)
       switch outcome.status {

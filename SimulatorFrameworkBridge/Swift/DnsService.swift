@@ -11,14 +11,12 @@ import Foundation
 @_implementationOnly import SimulatorFrameworkBridgeRuntime
 #endif
 
-@objc public final class FBDnsService: NSObject {
+public enum FBDnsService {
 
-  @objc(buildDnsDict:)
   public static func buildDnsDict(servers: [String]) -> [String: Any] {
     ["ServerAddresses": servers]
   }
 
-  @objc(handleDnsAction:arguments:)
   public static func handleDnsAction(action: String, arguments: [String]) -> Int {
     handleDnsAction(action: action, arguments: arguments, output: nil)
   }

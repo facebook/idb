@@ -334,7 +334,7 @@ private struct DeliveredNotificationStore {
   }
 }
 
-@objc public final class FBDeliveredNotificationsService: NSObject {
+public enum FBDeliveredNotificationsService {
   /// Used whenever a caller passes a non-positive timeout.
   static let defaultTimeout: TimeInterval = 30
 
@@ -346,7 +346,7 @@ private struct DeliveredNotificationStore {
     return DeliveredNotificationStore(directory: directory)
   }
 
-  @objc public static func handleAction(_ action: String?, bundleID: String?, directory: String?, timeout: TimeInterval) -> Int32 {
+  public static func handleAction(_ action: String?, bundleID: String?, directory: String?, timeout: TimeInterval) -> Int32 {
     handleAction(action, bundleID: bundleID, directory: directory, timeout: timeout, output: nil)
   }
 
@@ -369,7 +369,7 @@ private struct DeliveredNotificationStore {
     return handle(client: client, bundleID: bundleID, directory: directory, timeout: timeout, output: output)
   }
 
-  @objc public static func handleActionWithCenter(_ action: String?, bundleID: String?, center: Any?, directory: String?, timeout: TimeInterval) -> Int32 {
+  public static func handleActionWithCenter(_ action: String?, bundleID: String?, center: Any?, directory: String?, timeout: TimeInterval) -> Int32 {
     guard action == "delivered" else {
       NSLog("[DeliveredNotifications] Unknown action: %@. Use delivered.", action ?? "(null)")
       return 1
@@ -377,7 +377,7 @@ private struct DeliveredNotificationStore {
     return handle(client: FBDeliveredNotificationsClient(center: center), bundleID: bundleID ?? "", directory: directory, timeout: timeout, output: nil)
   }
 
-  @objc public static func clear(bundleID: String?, remover: Any?, directory: String?, timeout: TimeInterval) -> Int32 {
+  public static func clear(bundleID: String?, remover: Any?, directory: String?, timeout: TimeInterval) -> Int32 {
     clear(client: remover.map { FBDeliveredNotificationsRemovalClient(remover: $0) }, bundleID: bundleID ?? "", directory: directory, timeout: timeout, output: nil)
   }
 

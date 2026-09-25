@@ -79,18 +79,12 @@ targets:
     templates: [Guest]
     platform: tvOS
     sources:
-      # Contacts and HealthKit are absent from the tvOS SDK, and UserNotifications has no
-      # delivered-notification API there, so the three services built on them are not compiled here.
-      # Unavailable actions are refused before their service is invoked.
       - path: .
         excludes:
           - "**/*.entitlements"
           - "**/*.xcodeproj"
           - "project.yml"
           - "Build"
-          - "ContactsService.m"
-          - "DeliveredNotificationsService.m"
-          - "HealthSettingsService.m"
     settings:
       base:
         SDKROOT: appletvsimulator

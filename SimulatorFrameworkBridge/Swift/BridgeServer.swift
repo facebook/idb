@@ -9,26 +9,25 @@ import Darwin
 import Foundation
 import SimulatorFrameworkBridgeProtocol
 
-@objc public final class BridgeSocketResponse: NSObject {
-  @objc public let data: Data
-  @objc public let shutdown: Bool
+public struct BridgeSocketResponse {
+  public let data: Data
+  public let shutdown: Bool
 
-  @objc public init(data: Data, shutdown: Bool) {
+  public init(data: Data, shutdown: Bool) {
     self.data = data
     self.shutdown = shutdown
-    super.init()
   }
 }
 
-@objc public final class BridgeServer: NSObject {
-  @objc public static let defaultIdleTimeoutSeconds: Int32 = 300
-  @objc public static let serveBacklog: Int32 = 16
+public enum BridgeServer {
+  public static let defaultIdleTimeoutSeconds: Int32 = 300
+  public static let serveBacklog: Int32 = 16
   public static func pollTimeoutMilliseconds(seconds: Int32) -> Int32 {
     Int32(clamping: Int64(max(1, seconds)) * 1000)
   }
 
   /// Runs synchronously; runtime preparation and request handling stay on the caller's thread.
-  @objc public static func serve(
+  public static func serve(
     socketPath: String,
     idleTimeoutSeconds: Int32,
     exitOnDisconnect: Bool,

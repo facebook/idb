@@ -32,24 +32,20 @@ private enum ProxyConfiguration {
   }
 }
 
-@objc public final class FBProxyService: NSObject {
+public enum FBProxyService {
 
-  @objc(buildHTTPProxyDict:port:)
   public static func buildHTTPProxyDict(host: String, port: Int32) -> [String: Any] {
     ProxyConfiguration.http(host: host, port: port).dictionary
   }
 
-  @objc(buildSOCKSProxyDict:port:)
   public static func buildSOCKSProxyDict(host: String, port: Int32) -> [String: Any] {
     ProxyConfiguration.socks(host: host, port: port).dictionary
   }
 
-  @objc(buildEmptyProxyDict)
   public static func buildEmptyProxyDict() -> [String: Any] {
     ProxyConfiguration.cleared.dictionary
   }
 
-  @objc(handleProxyAction:arguments:)
   public static func handleProxyAction(action: String, arguments: [String]) -> Int {
     handleProxyAction(action: action, arguments: arguments, output: nil)
   }

@@ -7,9 +7,8 @@
 
 import Foundation
 
-@objc
-public final class FBAXBridgeArguments: NSObject {
-  @objc public static func request(action: String, arguments: [String]) -> [String: Any] {
+public enum FBAXBridgeArguments {
+  public static func request(action: String, arguments: [String]) -> [String: Any] {
     var request: [String: Any] = ["verb": action]
     // The CLI consumes pairs, ignores unknown/dangling flags, and lets the last duplicate win.
     for index in stride(from: 0, to: max(0, arguments.count - 1), by: 2) {
