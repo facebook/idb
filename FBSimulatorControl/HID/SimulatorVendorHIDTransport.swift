@@ -24,8 +24,7 @@ actor SimulatorVendorHIDTransport {
 
   static let serviceName = "com.apple.coredevice.feature.remote.hid.vendordefined"
 
-  private let connect: Connect
-  private var connecting: Task<SimulatorDTUHIDConnection, Error>?
+  private let connection: SimulatorSharedConnection<SimulatorDTUHIDConnection>
 
   init(simulator: Simulator?) {
     self.init { [weak simulator] in
@@ -35,35 +34,18 @@ actor SimulatorVendorHIDTransport {
   }
 
   init(connect: @escaping Connect) {
-    self.connect = connect
+    connection = SimulatorSharedConnection(connect)
   }
 
   /// Sends one report and drains it, so the guest has acted on it when this returns.
   func send(_ event: IndigoVendorDefinedEvent) async throws {
-    let connection = try await established()
+    let connection = try await self.connection.connection()
     try await connection.send(messageType: "IndigoVendorDefinedEvent", payload: event)
     try await connection.flush()
   }
 
   /// Tears down the connection, if one was ever established.
   func disconnect() async {
-    guard let connecting else { return }
-    self.connecting = nil
-    (try? await connecting.value)?.disconnect()
-  }
-
-  /// Concurrent first sends share one connection attempt rather than racing to open two.
-  private func established() async throws -> SimulatorDTUHIDConnection {
-    if let connecting {
-      return try await connecting.value
-    }
-    let attempt = Task { try await connect() }
-    connecting = attempt
-    do {
-      return try await attempt.value
-    } catch {
-      if connecting == attempt { connecting = nil }
-      throw error
-    }
+    (try? await connection.reset()?.value)?.disconnect()
   }
 }

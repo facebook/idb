@@ -12,8 +12,7 @@ import Foundation
 /// when the simulator changes state.
 public actor SimulatorHIDCommands {
 
-  private weak var simulator: Simulator?
-  private var connection: Task<SimulatorHID, Error>?
+  private let input: SimulatorSharedConnection<SimulatorHID>
   /// The hinge, and rotation on a runtime that reports device motion.
   let vendorDefined: SimulatorVendorHIDTransport
 
@@ -22,39 +21,24 @@ public actor SimulatorHIDCommands {
   }
 
   init(simulator: Simulator?, vendorDefined: SimulatorVendorHIDTransport? = nil) {
-    self.simulator = simulator
+    input = SimulatorSharedConnection { [weak simulator] in
+      guard let simulator else { throw WeakTargetError.simulator }
+      return try await SimulatorHID(for: simulator)
+    }
     self.vendorDefined = vendorDefined ?? SimulatorVendorHIDTransport(simulator: simulator)
   }
 
-  /// The connected HID, connecting on first use. Callers that arrive while a connection is being
-  /// made share that attempt rather than starting their own.
+  /// The connected HID, connecting on first use and shared with every other caller.
   public func connect() async throws -> SimulatorHID {
-    if let connection {
-      return try await connection.value
-    }
-    guard let simulator else {
-      throw WeakTargetError.simulator
-    }
-    let connection = Task { try await SimulatorHID(for: simulator) }
-    self.connection = connection
-    do {
-      return try await connection.value
-    } catch {
-      // The actor may have been re-entered during the await, so only forget the attempt that failed.
-      if self.connection == connection {
-        self.connection = nil
-      }
-      throw error
-    }
+    try await input.connection()
   }
 
   /// Closes the connections, flushing what the input connection still has queued, so the next
   /// `connect()` or vendor-defined send starts afresh.
   public func disconnect() async {
-    let connection = self.connection
-    self.connection = nil
+    let closing = await input.reset()
     await vendorDefined.disconnect()
-    if let hid = try? await connection?.value {
+    if let hid = try? await closing?.value {
       await hid.close()
     }
   }
