@@ -45,4 +45,21 @@ Note: The idb client requires python 3.10 or greater to be installed.
 
 Note: Instructions on how to install pip can be found [here](https://pip.pypa.io/en/stable/installation/)
 
+### Installing a specific build
+
+Besides the stable formula, any idb release, and the CI build of any commit whose CI run passed, can be installed through Homebrew with [`homebrew.py`](https://github.com/facebook/idb/blob/main/homebrew.py) at the root of the repository. It needs only the Python that ships with macOS:
+
+```
+git clone https://github.com/facebook/idb.git && cd idb
+./homebrew.py builds                 # releases and recent CI builds of main
+./homebrew.py install v1.6.2         # a release
+./homebrew.py install 1a2b3c4        # the CI build of a commit (or a branch)
+./homebrew.py install pr:123         # the CI build of a pull request
+./homebrew.py status                 # what is installed, and which build it is
+./homebrew.py uninstall --restore    # back to facebook/fb/idb
+./homebrew.py                        # pick a build interactively
+```
+
+Builds are installed from a separate local tap, `idb-local/builds`, and replace an installed `facebook/fb/idb` after asking. CI builds carry version `0.0.0`; `status` shows the commit and CI run they came from. Downloading a CI build needs a GitHub token, even though the repository is public: set `GITHUB_TOKEN`, or log in with the [GitHub CLI](https://cli.github.com) (`gh auth login`). A CI build can be installed until its run's artifacts expire.
+
 Make sure both parts of idb are installed successfully and then you're good to go! Head over to the [guided tour](guided-tour.mdx) to try idb out.

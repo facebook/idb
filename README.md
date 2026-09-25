@@ -30,6 +30,8 @@ brew install facebook/fb/idb
 ```
 Note: Instructions on how to install brew can be found [here](https://brew.sh)
 
+To install a specific release, or the CI build of any commit or pull request, run `./homebrew.py` from a checkout; see [Installing a specific build](https://www.fbidb.io/docs/idb/installation#installing-a-specific-build).
+
 ### `idb` client
 
 A cli tool and python client is provided to interact with `idb`.
