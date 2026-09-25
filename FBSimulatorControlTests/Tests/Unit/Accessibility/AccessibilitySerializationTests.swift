@@ -199,16 +199,18 @@ final class AccessibilitySerializationTests: XCTestCase {
   }
 
   // The same shape as `filterTree`, but with an unlabeled root — an element `.interactable` would drop
-  // were it not the one the caller named, which is what makes the target exemption observable.
+  // were it not the one the caller named, which is what makes the target exemption observable. The
+  // labeled elements are framed: `.interactable` drops a zero-sized element.
   private static func unlabeledTargetTree() -> [String: Any] {
-    [
+    let frame = CGRectCreateDictionaryRepresentation(CGRect(x: 10, y: 20, width: 100, height: 50)) as NSDictionary
+    return [
       AXWire.Node.children.rawValue: [
         [
           AXWire.Node.children.rawValue: [
-            [AXWire.Node.label.rawValue: "leaf"] as [String: Any]
+            [AXWire.Node.label.rawValue: "leaf", AXWire.Node.frame.rawValue: frame] as [String: Any]
           ]
         ] as [String: Any],
-        [AXWire.Node.label.rawValue: "sibling"] as [String: Any],
+        [AXWire.Node.label.rawValue: "sibling", AXWire.Node.frame.rawValue: frame] as [String: Any],
       ]
     ]
   }
@@ -387,11 +389,10 @@ final class AccessibilitySerializationTests: XCTestCase {
     allLabels(AccessibilityElementFilter.interactable.apply(to: screenTree()))
   }
 
-  func testInteractableFilterReportsZeroSizeElements() {
-    // Pinned: zero-sized elements are reported — flipped in the following commit.
+  func testInteractableFilterDropsZeroSizeElements() {
     XCTAssertTrue(
-      Self.screenFiltered().isSuperset(of: ["Padding-Left", "Maps"]),
-      "a zero-sized key and icon are reported"
+      Self.screenFiltered().isDisjoint(with: ["Padding-Left", "Maps"]),
+      "a zero-sized key and icon are dropped"
     )
   }
 

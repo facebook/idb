@@ -1366,7 +1366,11 @@ final class AXBridgeReadsTests: XCTestCase {
     // The unlabeled root of this tree is dropped by `.interactable`, leaving only the labeled child.
     let tree: [String: Any] = [
       AXWire.Node.children.rawValue: [
-        [AXWire.Node.label.rawValue: "General Settings", AXWire.Node.children.rawValue: [[String: Any]]()] as [String: Any]
+        [
+          AXWire.Node.label.rawValue: "General Settings",
+          AXWire.Node.frame.rawValue: CGRectCreateDictionaryRepresentation(CGRect(x: 10, y: 20, width: 100, height: 50)) as NSDictionary,
+          AXWire.Node.children.rawValue: [[String: Any]](),
+        ] as [String: Any]
       ]
     ]
     let reader = StubAXBridgeTreeReader(read: AXTreeRead(tree: tree, pid: 99, truncated: false, modal: nil))

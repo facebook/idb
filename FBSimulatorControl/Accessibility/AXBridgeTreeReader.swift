@@ -187,8 +187,9 @@ extension AXBridgeTreeReader {
             nested: plan.nestedFormat
           )
         } : nil
-      // Judged on the reported elements — what the caller's `--filter` shows them.
-      await warnIfMostElementsUnframed(AccessibilityFrameSummary(elements: elements))
+      // Judged on the walked elements: the warning is about the tree, and `--filter interactable` drops
+      // the zero-framed elements it counts.
+      await warnIfMostElementsUnframed(AccessibilityFrameSummary(elements: walked))
       return AccessibilityElementsResponse(
         elements: .tree(elements),
         profilingData: plan.enableProfiling

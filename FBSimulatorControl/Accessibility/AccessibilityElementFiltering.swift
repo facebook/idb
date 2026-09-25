@@ -59,7 +59,8 @@ extension AccessibilityElementFilter {
   ///
   /// `.interactable` asks the backend's own verdict, so a covered, disabled or zero-sized element is
   /// dropped however button-like it looks. The structural heuristic — a label, an identifier, or an
-  /// actionable role — applies only when the backend returned no verdict.
+  /// actionable role on an element that is not zero-sized — applies only when the backend returned no
+  /// verdict.
   ///
   /// An attribute the read did not serialize cannot be matched on, which is why requesting a filter
   /// widens the serialized key set (`AccessibilityRequestOptions.serializationKeys`).
@@ -73,6 +74,11 @@ extension AccessibilityElementFilter {
           return false
         }
         return true
+      }
+      // A zero-sized element cannot be touched. Its children are judged on their own frames: a
+      // zero-sized container can hold on-screen elements.
+      if let rect = (element.frame ?? nil)?.rect, rect.isEmpty {
+        return false
       }
       if let label = element.label ?? nil, !label.isEmpty {
         return true
