@@ -5,6 +5,9 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+#import "../SimulatorFrameworkBridge/Runtime/Private/AXPAttributes.h"
+#import "../SimulatorFrameworkBridge/Runtime/Private/AXRuntimePrivate.h"
+#import "../SimulatorFrameworkBridge/Runtime/Private/XCTAutomationSupportPrivate.h"
 #import "ContactsTestRuntime.h"
 #import "DynamicStoreTestRuntime.h"
 #import "FBAXFakeRuntime.h"

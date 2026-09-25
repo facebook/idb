@@ -9,8 +9,8 @@
 
 #import <dlfcn.h>
 
+#import "Private/SystemConfigurationPrivate.h"
 #import "SystemConfigurationLoader.h"
-#import "SystemConfigurationPrivate.h"
 
 @implementation FBNetworkConfigurationRead
 - (instancetype)initWithConfiguration:(id)configuration

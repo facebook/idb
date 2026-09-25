@@ -7,7 +7,7 @@
 
 #import "PhotoLibraryClient.h"
 
-#import "PhotosPrivate.h"
+#import "Private/PhotosPrivate.h"
 
 static PLPhotoLibrary *getPLPhotoLibrary(PHPhotoLibrary *photoLibrary)
 {

@@ -9,7 +9,7 @@
 
 #import <dlfcn.h>
 
-#import "HealthKitPrivate.h"
+#import "Private/HealthKitPrivate.h"
 
 void FBHealthSetClassLookupForTesting(Class (^lookup)(NSString *));
 

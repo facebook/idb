@@ -7,7 +7,11 @@
 
 #import <Foundation/Foundation.h>
 
-#import "AccessibilityRuntime.h"
+#if __has_include(<SimulatorFrameworkBridgeRuntime/AccessibilityRuntime.h>)
+ #import <SimulatorFrameworkBridgeRuntime/AccessibilityRuntime.h>
+#else
+ #import "Runtime/AccessibilityRuntime.h"
+#endif
 
 NS_ASSUME_NONNULL_BEGIN
 

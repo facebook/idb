@@ -68,7 +68,7 @@ NS_ASSUME_NONNULL_BEGIN
  */
 - (void)setAuthorizationStatuses:(NSDictionary<HKObjectType *, NSNumber *> *)statuses
               authorizationModes:(NSDictionary<HKObjectType *, NSNumber *> *)modes
-                       modeInfos:(NSDictionary *)modeInfos
+                       modeInfos:(NSDictionary<HKObjectType *, id> *)modeInfos
              forBundleIdentifier:(NSString *)bundleID
                          options:(NSUInteger)options
                       completion:(void (^)(BOOL success, NSError *_Nullable error))completion;

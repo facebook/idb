@@ -12,14 +12,14 @@
 #import <stdio.h>
 #import <unistd.h>
 
-#import <SimulatorFrameworkBridgeLib/AccessibilityRuntime_Private.h>
 #import <SimulatorFrameworkBridgeLib/AccessibilityService.h>
 #import <SimulatorFrameworkBridgeLib/AccessibilityService+Testing.h>
 #import <SimulatorFrameworkBridgeLib/AccessibilityService_Private.h>
-#import <SimulatorFrameworkBridgeLib/BulletinBoardPrivate.h>
 #import <SimulatorFrameworkBridgeLib/HealthSettingsService.h>
 #import <SimulatorFrameworkBridgeLib/ServiceDispatch.h>
 
+#import "../SimulatorFrameworkBridge/Runtime/Private/AccessibilityRuntime_Private.h"
+#import "../SimulatorFrameworkBridge/Runtime/Private/BulletinBoardPrivate.h"
 #import "FBAXFakeRuntime.h"
 
 @interface FakeNotificationSettingsGateway ()

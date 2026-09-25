@@ -7,7 +7,7 @@
 
 #import "AccessibilityClient.h"
 
-#import "AXPAttributes.h"
+#import "Private/AXPAttributes.h"
 #import "Private/AccessibilityElement_Private.h"
 
 static void FBAXClientException(NSException *exception, NSError **error)

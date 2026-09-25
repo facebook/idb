@@ -12,8 +12,9 @@
 
 #import <SimulatorFrameworkBridgeLib/DnsService.h>
 #import <SimulatorFrameworkBridgeLib/ProxyService.h>
-#import <SimulatorFrameworkBridgeLib/SystemConfigurationLoader.h>
-#import <SimulatorFrameworkBridgeLib/SystemConfigurationPrivate.h>
+#import <SimulatorFrameworkBridgeRuntime/SystemConfigurationLoader.h>
+
+#import "../SimulatorFrameworkBridge/Runtime/Private/SystemConfigurationPrivate.h"
 
 static FBNetworkConfigurationTestRuntime *runtime;
 

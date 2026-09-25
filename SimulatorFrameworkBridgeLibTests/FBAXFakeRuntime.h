@@ -7,7 +7,7 @@
 
 #import <Foundation/Foundation.h>
 
-#import <SimulatorFrameworkBridgeLib/AccessibilityRuntime.h>
+#import <SimulatorFrameworkBridgeRuntime/AccessibilityRuntime.h>
 
 NS_ASSUME_NONNULL_BEGIN
 

@@ -9,7 +9,7 @@
 
 #import <dlfcn.h>
 
-#import "KeyedArchivePrivate.h"
+#import "Private/KeyedArchivePrivate.h"
 
 @implementation FBKeyedArchiveReference
 + (NSNumber *)indexOfObject:(id)object

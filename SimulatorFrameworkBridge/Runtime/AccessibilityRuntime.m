@@ -10,13 +10,13 @@
 #import <dlfcn.h>
 #import <objc/runtime.h>
 
-#import "AXPAttributes.h"
-#import "AXPTranslationPrivate.h"
-#import "AXRuntimePrivate.h"
-#import "AccessibilityRuntime_Private.h"
-#import "AccessibilityUtilitiesPrivate.h"
-#import "RunningBoardServicesPrivate.h"
-#import "XCTAutomationSupportPrivate.h"
+#import "Private/AXPAttributes.h"
+#import "Private/AXPTranslationPrivate.h"
+#import "Private/AXRuntimePrivate.h"
+#import "Private/AccessibilityRuntime_Private.h"
+#import "Private/AccessibilityUtilitiesPrivate.h"
+#import "Private/RunningBoardServicesPrivate.h"
+#import "Private/XCTAutomationSupportPrivate.h"
 
 #pragma mark - Outcomes
 

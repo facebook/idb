@@ -9,7 +9,7 @@
 
 #import <dlfcn.h>
 
-#import "BulletinBoardPrivate.h"
+#import "Private/BulletinBoardPrivate.h"
 
 @protocol NotificationSettingsGateway <NSObject>
 - (BBSectionInfo *)sectionInfoForSectionID:(NSString *)sectionID;

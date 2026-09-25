@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#import "../AccessibilityRuntime.h"
+#import "AccessibilityRuntime.h"
 #import "AccessibilitySnapshotClient.h"
 
 NS_ASSUME_NONNULL_BEGIN
