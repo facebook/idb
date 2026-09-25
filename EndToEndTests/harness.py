@@ -1153,6 +1153,63 @@ def _elements(node: Any) -> list[dict[str, Any]]:
     return [node, *_elements(node.get("children"))]
 
 
+def _placed(
+    node: Any, ancestors: tuple[dict[str, Any], ...] = ()
+) -> list[tuple[dict[str, Any], tuple[dict[str, Any], ...]]]:
+    """Every element of accessibility output, with the elements it sits inside."""
+    if isinstance(node, list):
+        return [placed for child in node for placed in _placed(child, ancestors)]
+    if not isinstance(node, dict):
+        return []
+    if "elements" in node:
+        return _placed(node["elements"], ancestors)
+    return [(node, ancestors), *_placed(node.get("children"), (*ancestors, node))]
+
+
+def _describe_matches(document: Any, matches: Callable[[dict[str, Any]], bool]) -> str:
+    """Every element of `document` that `matches` accepts, and how they differ.
+
+    Elements that share an identifier can be a control and a container around
+    it, or one element the tree reports twice. Where each sits, and every field
+    the matches report differently, are what tell those apart.
+    """
+    found = [placed for placed in _placed(document) if matches(placed[0])]
+    lines = [f"{len(found)} matching element{'' if len(found) == 1 else 's'}:"]
+    for index, (element, ancestors) in enumerate(found, 1):
+        path = " > ".join(str(ancestor.get("type")) for ancestor in ancestors)
+        line = f"  [{index}] under {path or 'the root'}"
+        for other, (container, _) in enumerate(found, 1):
+            if ancestors and container is ancestors[-1]:
+                line += f", a child of [{other}]"
+            elif any(container is ancestor for ancestor in ancestors):
+                line += f", inside [{other}]"
+        lines.append(line)
+    fields = [
+        {key: value for key, value in element.items() if key != "children"}
+        for element, _ in found
+    ]
+    keys = list(dict.fromkeys(key for own in fields for key in own))
+    differing = [
+        key
+        for key in keys
+        if len({json.dumps(own.get(key), sort_keys=True) for own in fields}) > 1
+    ]
+    if len(found) == 1:
+        differing = keys
+    elif differing:
+        lines.append("They differ in:")
+    for key in differing:
+        values = " ".join(
+            f"[{index}] {json.dumps(own.get(key), sort_keys=True)}"
+            for index, own in enumerate(fields, 1)
+        )
+        lines.append(f"  {key}: {values}")
+    agreeing = [key for key in keys if key not in differing]
+    if agreeing:
+        lines.append(f"They agree on: {', '.join(agreeing)}")
+    return "\n".join(lines)
+
+
 def _label(element: dict[str, Any]) -> str:
     """Read the label from legacy output (AXLabel) or complete output (label)."""
     for key in ("AXLabel", "label"):

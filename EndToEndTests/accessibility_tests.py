@@ -17,7 +17,7 @@ from __future__ import annotations
 import unittest
 from typing import Any
 
-from .harness import _elements
+from .harness import _describe_matches, _elements
 from .test_accessibility import (
     _row_positions,
     _rows_on_screen,
@@ -190,6 +190,89 @@ class ElementTests(unittest.TestCase):
         ]
 
         self.assertEqual(len(fields), 1)
+
+
+def fixture_nested_search_fields() -> dict[str, Any]:
+    """Two elements carrying the search field's identifier, one inside the other."""
+    field = element(
+        type="SearchField",
+        identifier=SEARCH_FIELD_ID,
+        label="Search",
+        value="",
+        frame=frame(16, 176, 370, 36),
+    )
+    bar = element(
+        type="Other",
+        identifier=SEARCH_FIELD_ID,
+        frame=frame(0, 168, 402, 52),
+        children=[field],
+    )
+    table = element(type="Table", frame=frame(0, 0, 402, 874), children=[bar])
+    application = element(
+        type="Application", frame=frame(0, 0, 402, 874), children=[table]
+    )
+    return {"elements": [application]}
+
+
+def is_search_field(element: dict[str, Any]) -> bool:
+    return element.get("identifier") == SEARCH_FIELD_ID
+
+
+class DescribeMatchesTests(unittest.TestCase):
+    def test_places_each_match_and_what_it_sits_inside(self) -> None:
+        lines = _describe_matches(
+            fixture_nested_search_fields(), is_search_field
+        ).splitlines()
+
+        self.assertEqual(
+            lines[:3],
+            [
+                "2 matching elements:",
+                "  [1] under Application > Table",
+                "  [2] under Application > Table > Other, a child of [1]",
+            ],
+        )
+
+    def test_names_every_field_the_matches_report_differently(self) -> None:
+        description = _describe_matches(fixture_nested_search_fields(), is_search_field)
+
+        self.assertIn('  type: [1] "Other" [2] "SearchField"', description)
+        self.assertIn(
+            '  frame: [1] {"height": 52, "width": 402, "x": 0, "y": 168}'
+            ' [2] {"height": 36, "width": 370, "x": 16, "y": 176}',
+            description,
+        )
+        self.assertIn('  label: [1] null [2] "Search"', description)
+
+    def test_lists_the_fields_the_matches_share_without_their_values(self) -> None:
+        description = _describe_matches(fixture_nested_search_fields(), is_search_field)
+
+        self.assertTrue(description.endswith("They agree on: identifier, hidden"))
+
+    def test_a_match_that_is_not_inside_another_is_only_placed(self) -> None:
+        document = fixture_nested_search_fields()
+        table = document["elements"][0]["children"][0]
+        bar = table["children"][0]
+        table["children"].append(bar.pop("children")[0])
+
+        lines = _describe_matches(document, is_search_field).splitlines()
+
+        self.assertEqual(
+            lines[1:3],
+            ["  [1] under Application > Table", "  [2] under Application > Table"],
+        )
+
+    def test_a_single_match_is_described_in_full(self) -> None:
+        description = _describe_matches(fixture_search_field(), is_search_field)
+
+        self.assertEqual(
+            description.splitlines()[:3],
+            [
+                "1 matching element:",
+                "  [1] under Application",
+                f'  identifier: [1] "{SEARCH_FIELD_ID}"',
+            ],
+        )
 
 
 class ScreenTests(unittest.TestCase):
