@@ -1710,6 +1710,33 @@ class ElementWaitTests(unittest.IsolatedAsyncioTestCase):
         self.assertIn("still moving", str(outcome))
         self.assertEqual(run.await_count, 3)
 
+    async def test_a_single_match_off_screen_names_only_its_frame(self) -> None:
+        outcome, _, _ = await self.wait(
+            [read(900)] * 3,
+            lambda case: case.wait_for(BANNER, until=Until.ON_SCREEN),
+            deadline=DeadlineAfter(2),
+        )
+
+        self.assertIsInstance(outcome, Failed)
+        self.assertIn("'y': 900", str(outcome))
+        self.assertNotIn("matching element", str(outcome))
+
+    async def test_several_matches_off_screen_are_told_apart(self) -> None:
+        outcome, _, _ = await self.wait(
+            [read(900, 1000)] * 3,
+            lambda case: case.wait_for(BANNER, until=Until.ON_SCREEN),
+            deadline=DeadlineAfter(2),
+        )
+
+        self.assertIsInstance(outcome, Failed)
+        self.assertIn("not wholly on the screen", str(outcome))
+        self.assertIn("2 matching elements:", str(outcome))
+        self.assertIn(
+            '  frame: [1] {"height": 88.0, "width": 384.0, "x": 9.0, "y": 900}'
+            ' [2] {"height": 88.0, "width": 384.0, "x": 9.0, "y": 1000}',
+            str(outcome),
+        )
+
     async def test_only_the_read_that_ends_the_wait_is_published(self) -> None:
         _, _, recording = await self.wait(
             [read(-66), read(92), read(92)],

@@ -1453,10 +1453,17 @@ class ElementWait:
         if not exact:
             self._agreeing = 0
             raise NoExactMatch(f"{self.query} is not among the elements reported")
+        # Which of several matches the wait follows is what goes wrong when
+        # the query is ambiguous, so each message names them all.
+        described = (
+            f"; {_describe_matches(document, self.query.matches)}"
+            if len(exact) > 1
+            else ""
+        )
         matches = [element for element in exact if _has_area(element)]
         if not matches:
             self._agreeing = 0
-            raise NotReady(f"{self.query} is not reported with a frame")
+            raise NotReady(f"{self.query} is not reported with a frame{described}")
         if self.until is Until.PRESENT:
             return Found(matches[0], document)
         screen = _screen(document)
@@ -1467,7 +1474,7 @@ class ElementWait:
             self._agreeing = 0
             raise NotReady(
                 f"{self.query} is at {matches[0]['frame']}, not wholly on the "
-                f"screen {screen}"
+                f"screen {screen}{described}"
             )
         element = on_screen[0]
         if self.until is Until.ON_SCREEN:
@@ -1478,7 +1485,9 @@ class ElementWait:
             self._frame = element["frame"]
             self._agreeing = 1
         if self._agreeing < SETTLED_READS:
-            raise NotReady(f"{self.query} is still moving, now at {self._frame}")
+            raise NotReady(
+                f"{self.query} is still moving, now at {self._frame}{described}"
+            )
         return Found(element, document)
 
 
