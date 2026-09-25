@@ -140,8 +140,11 @@
   if (axError == FBAXErrorIPCTimeout) {
     return [self applicationNotResponding];
   }
-  if (axError != FBAXErrorSuccess || !hasElement) {
+  if (axError == FBAXErrorInvalidUIElement || (axError == FBAXErrorSuccess && !hasElement)) {
     return [self empty];
+  }
+  if (axError != FBAXErrorSuccess) {
+    return [self failed:[NSString stringWithFormat:@"the hit-test failed with AX error %d", axError]];
   }
   return nil;
 }
