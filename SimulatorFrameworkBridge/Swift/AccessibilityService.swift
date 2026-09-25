@@ -237,6 +237,10 @@ private struct TraversalContext {
   var remainingBoundaryFetches = 64
   var truncated = false
   var roundTrips: Int64 = 0
+  // UIKit lists some elements under more than one parent (a table header's search field sits under its
+  // container and again directly under the table), in both the per-element and the snapshot walk. The first
+  // parent reached depth-first is the view parent.
+  var emitted: Set<NSObject> = []
 }
 
 private final class AccessibilityRequest {
@@ -495,6 +499,9 @@ private final class AccessibilityRequest {
     let childElements = try outcome.children()
     if depth < maxDepth {
       for child in childElements {
+        if !traversal.emitted.insert(child).inserted {
+          continue
+        }
         if traversal.remainingNodes <= 0 {
           traversal.truncated = true
           break
@@ -855,6 +862,9 @@ private final class AccessibilityRequest {
 
     var children: [Any] = []
     for child in nesting {
+      if !traversal.emitted.insert(child).inserted {
+        continue
+      }
       let built = try FBAXBridgeNodeFromSnapshot(
         client: client,
         snapshotNode: child,

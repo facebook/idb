@@ -28,6 +28,21 @@ static void FBAXClientException(NSException *exception, NSError **error)
   return self;
 }
 
+// Every read decodes fresh runtime elements, so identity is the runtime's equality (element ID), not the
+// wrapper's pointer.
+- (BOOL)isEqual:(id)object
+{
+  if (![object isKindOfClass:FBAXElement.class]) {
+    return NO;
+  }
+  return [self.value isEqual:((FBAXElement *)object).value];
+}
+
+- (NSUInteger)hash
+{
+  return [self.value hash];
+}
+
 @end
 
 @interface FBAXOptionalValue ()

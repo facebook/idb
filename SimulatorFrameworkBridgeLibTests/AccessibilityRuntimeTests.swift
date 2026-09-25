@@ -386,10 +386,8 @@ final class AccessibilityRuntimeTests: XCTestCase {
     let children = axValue(axValue(response, "tree"), kAXChildren)
     assertEqualObjects(axValue(axValue(axValue(axValue(children, 0), kAXChildren), 0), kAXLabel), "UISearchBarTextField")
     XCTAssertEqual(axCount(children), 2)
-    // BUG: the second nesting is emitted again and spends the node budget that the last sibling needed — flipped
-    // in the following commit.
-    assertEqualObjects(axValue(axValue(children, 1), kAXLabel), "UISearchBarTextField")
-    assertEqualObjects(axValue(response, "truncated"), NSNumber(value: true))
+    assertEqualObjects(axValue(axValue(children, 1), kAXLabel), "Cell", "the second nesting is skipped without spending the budget")
+    assertEqualObjects(axValue(response, "truncated"), NSNumber(value: false))
   }
 
   // The pid of the process drawing a hosted subtree in the boundary tests below. Distinct from `kAppPid`
@@ -2093,11 +2091,9 @@ final class AccessibilityRuntimeTests: XCTestCase {
     assertEqualObjects(axValue(response, "ok"), NSNumber(value: true))
     let children = axValue(axValue(response, "tree"), kAXChildren)
     assertEqualObjects(axValue(axValue(axValue(axValue(children, 0), kAXChildren), 0), kAXLabel), "UISearchBarTextField")
-    // BUG: the second listing is emitted again, with its subtree, and spends the node budget that the
-    // last sibling needed — flipped in the following commit.
     XCTAssertEqual(axCount(children), 2)
-    assertEqualObjects(axValue(axValue(children, 1), kAXLabel), "UISearchBarTextField")
-    assertEqualObjects(axValue(response, "truncated"), NSNumber(value: true))
+    assertEqualObjects(axValue(axValue(children, 1), kAXLabel), "Cell", "the second listing is skipped without spending the budget")
+    assertEqualObjects(axValue(response, "truncated"), NSNumber(value: false))
   }
 
   func testDepthCapMarksTheReadTruncated() {

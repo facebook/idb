@@ -78,6 +78,25 @@ static void FBAXSnapshotException(NSException *exception, NSError **error)
   return self.isValid ? ((NSDictionary *)self.value)[kSnapshotElement] : nil;
 }
 
+// Identity is the runtime's equality of the node's element, so one element nested under two parents is one node.
+- (BOOL)isEqual:(id)object
+{
+  if (![object isKindOfClass:FBAXSnapshotNode.class]) {
+    return NO;
+  }
+  id element = self.element;
+  if (!element) {
+    return self == object;
+  }
+  return [element isEqual:((FBAXSnapshotNode *)object).element];
+}
+
+- (NSUInteger)hash
+{
+  id element = self.element;
+  return element ? [element hash] : [super hash];
+}
+
 - (NSNumber *)validWithError:(NSError **)error
 {
   @try {
