@@ -1166,6 +1166,25 @@ def _placed(
     return [(node, ancestors), *_placed(node.get("children"), (*ancestors, node))]
 
 
+def _distinct(elements: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """`elements` without any second report of one of them.
+
+    The accessibility runtime can list an element among the children of both
+    its container and an ancestor of that container, so the tree reports it,
+    and everything inside it, twice. The copies agree on every field, their
+    children included; elements that differ in anything are different
+    elements.
+    """
+    seen: set[str] = set()
+    distinct = []
+    for element in elements:
+        reported = json.dumps(element, sort_keys=True)
+        if reported not in seen:
+            seen.add(reported)
+            distinct.append(element)
+    return distinct
+
+
 def _describe_matches(document: Any, matches: Callable[[dict[str, Any]], bool]) -> str:
     """Every element of `document` that `matches` accepts, and how they differ.
 

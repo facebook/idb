@@ -353,10 +353,9 @@ class SearchFieldTests(unittest.TestCase):
         )
 
     def test_one_field_reported_twice_is_the_search_field(self) -> None:
-        # BUG: refuses the field because the tree reports it under both its
-        # container and the table — flipped in the following commit.
-        with self.assertRaises(NotReady):
-            _search_field(fixture_search_field_reported_twice())
+        field = _search_field(fixture_search_field_reported_twice())
+
+        self.assertEqual(field["type"], "SearchField")
 
 
 class ScreenTests(unittest.TestCase):
