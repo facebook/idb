@@ -20,9 +20,8 @@ final class CoreDeviceSession<Response: Sendable>: @unchecked Sendable {
   private let channel: SimulatorXPCChannel
   private let queue: DispatchQueue
   private let timeout: DispatchTimeInterval
-  private var continuation: CheckedContinuation<Response, Error>?
-  private var result: Result<Response, Error>?
   private var held: Response?
+  private var finished = false
 
   init(channel: SimulatorXPCChannel, timeout: DispatchTimeInterval = .seconds(5)) {
     self.channel = channel
@@ -48,31 +47,22 @@ final class CoreDeviceSession<Response: Sendable>: @unchecked Sendable {
   /// returned when the provider's final reply confirms it has. A final reply before any value is an
   /// error, as is a reply carrying a provider error.
   func stream(_ request: xpc_object_t, sample: @escaping @Sendable (xpc_object_t) throws -> Response?) async throws -> Response {
-    try await withTaskCancellationHandler {
-      try await withCheckedThrowingContinuation { continuation in
-        queue.async { [self] in
-          if let result = self.result {
-            continuation.resume(with: result)
-            return
-          }
-          self.continuation = continuation
-          self.channel.activate { [weak self] event in self?.handleStreamEvent(event, sample: sample) }
-          self.channel.request(request) { [weak self] reply in self?.handleStreamReply(reply) }
-          self.queue.asyncAfter(deadline: .now() + self.timeout) { [weak self] in
-            self?.finish(.failure(SimulatorCoreDeviceError.timedOut))
-          }
-        }
+    defer { channel.cancel() }
+    do {
+      return try await channel.firstAnswer(timeout: timeout) { answer in
+        channel.activate { [weak self] event in self?.handleStreamEvent(event, sample: sample, answer: answer) }
+        channel.request(request) { [weak self] reply in self?.handleStreamReply(reply, answer: answer) }
       }
-    } onCancel: {
-      self.queue.async { self.finish(.failure(CancellationError())) }
+    } catch let error as SimulatorXPCError {
+      throw SimulatorCoreDeviceError(channel: error)
     }
   }
 
-  private func handleStreamEvent(_ event: SimulatorXPCEvent, sample: (xpc_object_t) throws -> Response?) {
+  private func handleStreamEvent(_ event: SimulatorXPCEvent, sample: (xpc_object_t) throws -> Response?, answer: FirstAnswer<Response>) {
     dispatchPrecondition(condition: .onQueue(queue))
-    guard result == nil else { return }
+    guard !finished else { return }
     guard case let .message(event) = event else {
-      finish(.failure(SimulatorCoreDeviceError.unavailable("Connection closed before the stream completed")))
+      finish(.failure(SimulatorCoreDeviceError.unavailable("Connection closed before the stream completed")), answer)
       return
     }
     do {
@@ -82,28 +72,26 @@ final class CoreDeviceSession<Response: Sendable>: @unchecked Sendable {
       let cancelling = held != nil
       channel.reply(to: event) { xpc_dictionary_set_bool($0, SimulatorCoreDevice.cancellationKey, cancelling) }
     } catch {
-      finish(.failure(error))
+      finish(.failure(error), answer)
     }
   }
 
-  private func handleStreamReply(_ reply: xpc_object_t) {
+  private func handleStreamReply(_ reply: Result<xpc_object_t, SimulatorXPCError>, answer: FirstAnswer<Response>) {
     dispatchPrecondition(condition: .onQueue(queue))
-    guard result == nil else { return }
-    do {
-      try CoreDeviceReply.validate(reply)
-      guard let held else { throw SimulatorCoreDeviceError.unavailable("Stream ended without a sample") }
-      finish(.success(held))
-    } catch {
-      finish(.failure(error))
-    }
+    guard !finished else { return }
+    finish(
+      Result {
+        try CoreDeviceReply.validate(reply.get())
+        guard let held else { throw SimulatorCoreDeviceError.unavailable("Stream ended without a sample") }
+        return held
+      }, answer)
   }
 
-  private func finish(_ result: Result<Response, Error>) {
+  /// Stops acknowledging events once the stream has its result. The deadline and cancellation
+  /// resolve `answer` without coming through here; `stream` cancels the channel either way.
+  private func finish(_ result: Result<Response, Error>, _ answer: FirstAnswer<Response>) {
     dispatchPrecondition(condition: .onQueue(queue))
-    guard self.result == nil else { return }
-    self.result = result
-    channel.cancel()
-    continuation?.resume(with: result)
-    continuation = nil
+    finished = true
+    answer.resolve(result)
   }
 }

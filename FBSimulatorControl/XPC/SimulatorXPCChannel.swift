@@ -120,24 +120,34 @@ final class SimulatorXPCChannel: Sendable {
     }
   }
 
-  /// Sends `message` and hands its reply, or the XPC error standing in for one, to `reply` on `queue`.
-  func request(_ message: xpc_object_t, reply: @escaping @Sendable (xpc_object_t) -> Void) {
-    xpc_connection_send_message_with_reply(connection, message, queue, reply)
+  /// Sends `message` and hands its reply to `reply` on `queue`, or the `SimulatorXPCError` XPC
+  /// answered with instead of the peer.
+  func request(_ message: xpc_object_t, reply: @escaping @Sendable (sending Result<xpc_object_t, SimulatorXPCError>) -> Void) {
+    xpc_connection_send_message_with_reply(connection, message, queue) { [weak self] object in
+      guard xpc_get_type(object) == XPC_TYPE_ERROR else { return reply(.success(object)) }
+      // The reply can arrive ahead of the invalidation event, and the caller may send next.
+      if object === XPC_ERROR_CONNECTION_INVALID { self?.invalidate() }
+      reply(.failure(SimulatorXPCError(errorReply: object)))
+    }
   }
 
   /// Sends `message` and resolves with its reply. Throws `SimulatorXPCError` when XPC answers
   /// instead of the peer or `timeout` passes first, and `CancellationError` when the task is cancelled.
   func request(_ message: xpc_object_t, timeout: DispatchTimeInterval) async throws -> xpc_object_t {
-    let answer = FirstAnswer()
+    try await firstAnswer(timeout: timeout) { answer in
+      request(message) { answer.resolve($0.mapError { $0 }) }
+    }
+  }
+
+  /// Resolves with whatever `start` resolves its answer with, unless `timeout` passes first, which
+  /// throws `SimulatorXPCError.timedOut`, or the task is cancelled first, which throws
+  /// `CancellationError`. `start` does not run for a task that is already cancelled.
+  func firstAnswer<Value: Sendable>(timeout: DispatchTimeInterval, _ start: (FirstAnswer<Value>) -> Void) async throws -> Value {
+    let answer = FirstAnswer<Value>()
     return try await withTaskCancellationHandler {
       try await withCheckedThrowingContinuation { continuation in
         guard answer.await(continuation) else { return }
-        request(message) { [weak self] reply in
-          guard xpc_get_type(reply) == XPC_TYPE_ERROR else { return answer.resolve(.success(reply)) }
-          // The reply can arrive ahead of the invalidation event, and the caller may send next.
-          if reply === XPC_ERROR_CONNECTION_INVALID { self?.invalidate() }
-          answer.resolve(.failure(SimulatorXPCError(errorReply: reply)))
-        }
+        start(answer)
         queue.asyncAfter(deadline: .now() + timeout) { answer.resolve(.failure(SimulatorXPCError.timedOut)) }
       }
     } onCancel: {
@@ -162,11 +172,11 @@ final class SimulatorXPCChannel: Sendable {
   }
 }
 
-/// Whichever of a reply, a deadline or a cancellation comes first resumes the request; the rest are
+/// Whichever of an answer, a deadline or a cancellation comes first resumes the request; the rest are
 /// dropped. Only a cancellation can come before the continuation exists, so that is all that is kept.
-private final class FirstAnswer: Sendable {
+final class FirstAnswer<Value: Sendable>: Sendable {
   private enum State {
-    case pending(CheckedContinuation<xpc_object_t, Error>?)
+    case pending(CheckedContinuation<Value, Error>?)
     case cancelledEarly
     case answered
   }
@@ -178,7 +188,7 @@ private final class FirstAnswer: Sendable {
 
   /// Holds `continuation` for the answer. False when the request was already cancelled, in which
   /// case it has been resumed and there is nothing to send.
-  func await(_ continuation: CheckedContinuation<xpc_object_t, Error>) -> Bool {
+  fileprivate func await(_ continuation: CheckedContinuation<Value, Error>) -> Bool {
     let cancelled = lock.withLock {
       guard case .cancelledEarly = state else {
         state = .pending(continuation)
@@ -192,8 +202,8 @@ private final class FirstAnswer: Sendable {
     return false
   }
 
-  func resolve(_ result: sending Result<xpc_object_t, Error>) {
-    let continuation: CheckedContinuation<xpc_object_t, Error>? = lock.withLock {
+  func resolve(_ result: sending Result<Value, Error>) {
+    let continuation: CheckedContinuation<Value, Error>? = lock.withLock {
       guard case let .pending(continuation) = state else { return nil }
       state = continuation == nil ? .cancelledEarly : .answered
       return continuation

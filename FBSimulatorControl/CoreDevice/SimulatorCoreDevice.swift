@@ -34,13 +34,8 @@ enum SimulatorCoreDeviceError: Error, LocalizedError {
 enum SimulatorCoreDevice {
   static let cancellationKey = "CoreDevice.XPCMessageKey.cancellationRequested"
 
-  /// Decodes a reply object. An XPC error object means the peer went away before answering; a
-  /// decoding failure means the peer answered with something the protocol does not describe.
+  /// Decodes a reply object; a failure means the peer answered with something the protocol does not describe.
   static func decode<T: Decodable>(_ type: T.Type, from object: xpc_object_t) throws -> T {
-    if xpc_get_type(object) == XPC_TYPE_ERROR {
-      let description = xpc_dictionary_get_string(object, XPC_ERROR_KEY_DESCRIPTION).map { String(cString: $0) }
-      throw SimulatorCoreDeviceError.unavailable(description ?? "Connection closed before reply")
-    }
     do {
       return try XPCDecoder().decode(type, from: object)
     } catch let error as DecodingError {
