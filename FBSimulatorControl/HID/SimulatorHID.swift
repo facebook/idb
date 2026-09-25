@@ -38,10 +38,6 @@ public final class SimulatorHID: CustomStringConvertible, @unchecked Sendable {
 
   /// The transport for the touch / button / keyboard primitives.
   private let transport: SimulatorHIDTransport
-  /// The transport for GSEvents (lock, and orientation on runtimes without device motion).
-  private let purple: SimulatorPurpleHIDTransport
-  /// The transport for the Darwin-notification inputs (shake, in-call status bar).
-  private let notification: SimulatorDarwinNotificationTransport
 
   private weak var simulator: Simulator?
 
@@ -58,8 +54,6 @@ public final class SimulatorHID: CustomStringConvertible, @unchecked Sendable {
   ) async throws {
     self.init(
       transport: try await Self.transport(for: simulator, requested: transportType),
-      purple: SimulatorPurpleHIDTransport(simulator: simulator),
-      notification: SimulatorDarwinNotificationTransport(simulator: simulator),
       simulator: simulator)
   }
 
@@ -119,17 +113,10 @@ public final class SimulatorHID: CustomStringConvertible, @unchecked Sendable {
     return try? SimulatorIndigoHIDTransport.indigo(for: simulator)
   }
 
-  /// `simulator` is weak and may be absent: the Purple, Darwin and vendor paths need it and throw
+  /// `simulator` is weak and may be absent: device actions need it and throw
   /// `WeakTargetError.simulator` without one; the transport primitives never touch it.
-  init(
-    transport: SimulatorHIDTransport,
-    purple: SimulatorPurpleHIDTransport,
-    notification: SimulatorDarwinNotificationTransport,
-    simulator: Simulator?
-  ) {
+  init(transport: SimulatorHIDTransport, simulator: Simulator?) {
     self.transport = transport
-    self.purple = purple
-    self.notification = notification
     self.simulator = simulator
   }
 
@@ -165,23 +152,6 @@ public final class SimulatorHID: CustomStringConvertible, @unchecked Sendable {
   func sendOrientation(_ orientation: SimulatorHIDDeviceOrientation) async throws {
     guard let simulator else { throw WeakTargetError.simulator }
     try await simulator.orientation.set(orientation, convention: .interface)
-  }
-
-  /// Locks the device. Delivered as a GSEvent over Purple, not through the HID transport.
-  func sendLockDevice() async throws {
-    try await purple.sendLockDevice()
-  }
-
-  // MARK: - Darwin Notifications
-
-  /// Shakes the device. Posted as a Darwin notification, not through the HID transport.
-  func sendShake() async throws {
-    try await notification.sendShake()
-  }
-
-  /// Toggles the in-call status bar. Posted as a Darwin notification, not through the HID transport.
-  func sendToggleInCallStatusBar() async throws {
-    try await notification.sendToggleInCallStatusBar()
   }
 
   // MARK: - Dispatch
@@ -234,17 +204,20 @@ public final class SimulatorHID: CustomStringConvertible, @unchecked Sendable {
       try await sendOrientation(orientation)
       return false
     case .lockDevice:
-      try await sendLockDevice()
+      guard let simulator else { throw WeakTargetError.simulator }
+      try await simulator.hardware.lock()
       return false
     case let .hinge(angle):
       guard let simulator else { throw WeakTargetError.simulator }
       try await simulator.hinge.setAngle(angle)
       return false
     case .shake:
-      try await sendShake()
+      guard let simulator else { throw WeakTargetError.simulator }
+      try await simulator.hardware.shake()
       return false
     case .toggleInCallStatusBar:
-      try await sendToggleInCallStatusBar()
+      guard let simulator else { throw WeakTargetError.simulator }
+      try await simulator.statusBar.toggleInCall()
       return false
     case let .delay(duration):
       try await Task.sleep(nanoseconds: UInt64(max(0, duration) * 1_000_000_000))

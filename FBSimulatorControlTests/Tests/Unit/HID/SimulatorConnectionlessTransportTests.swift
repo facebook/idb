@@ -10,10 +10,9 @@ import FBControlCore
 import Foundation
 import XCTest
 
-/// The two connectionless transports — Purple for GSEvents, Darwin notifications for shake and the
-/// in-call status bar — hold their target weakly and reach it on every send, since neither keeps a
-/// connection open. That makes "the target is gone" a real state each has to handle, and it is the one
-/// part of either that can be exercised without a live simulator.
+/// The connectionless Purple transport holds its target weakly and reaches it on every send, since it
+/// keeps no connection open. That makes "the target is gone" a real state it has to handle, and it is
+/// the one part of it that can be exercised without a live simulator.
 final class SimulatorConnectionlessTransportTests: XCTestCase {
 
   private func assertDeallocatedTarget(
@@ -38,17 +37,9 @@ final class SimulatorConnectionlessTransportTests: XCTestCase {
     await assertDeallocatedTarget("lock") { try await purple.sendLockDevice() }
   }
 
-  func testDarwinNotificationTransportReportsADeallocatedTarget() async {
-    let notification = SimulatorDarwinNotificationTransport(simulator: nil)
-
-    await assertDeallocatedTarget("shake") { try await notification.sendShake() }
-    await assertDeallocatedTarget("in-call status bar") { try await notification.sendToggleInCallStatusBar() }
-  }
-
   // The failure has to survive the hop back from the private queue; concurrent sends each get their own.
   func testDeallocatedTargetSurvivesConcurrentSends() async {
     let purple = SimulatorPurpleHIDTransport(simulator: nil)
-    let notification = SimulatorDarwinNotificationTransport(simulator: nil)
 
     await withTaskGroup(of: Bool.self) { group in
       for _ in 0..<8 {
@@ -62,22 +53,12 @@ final class SimulatorConnectionlessTransportTests: XCTestCase {
             return false
           }
         }
-        group.addTask {
-          do {
-            try await notification.sendShake()
-            return false
-          } catch WeakTargetError.deallocated {
-            return true
-          } catch {
-            return false
-          }
-        }
       }
       var reported = 0
       for await ok in group where ok {
         reported += 1
       }
-      XCTAssertEqual(reported, 16, "every concurrent send gets its own failure back")
+      XCTAssertEqual(reported, 8, "every concurrent send gets its own failure back")
     }
   }
 }

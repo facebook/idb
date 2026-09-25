@@ -23,9 +23,8 @@ public enum SimulatorHIDTransportType: Equatable, Sendable {
 /// A closed enum rather than a protocol so each capability lives only on the transport that has it
 /// (`flush` on DTUHID, `sendTrackpad` on Indigo) and callers switch for the rest.
 ///
-/// Device orientation, the hinge, lock, shake and the in-call status bar are not carried here at all.
-/// They are not transport-switchable and go out over Purple mach messages, Darwin notifications and
-/// the vendor-defined DTUHID transport, which `SimulatorHID` holds beside this one.
+/// Device orientation, the hinge, lock, shake and the in-call status bar are not carried here at all:
+/// they are commands on the `Simulator` (`orientation`, `hinge`, `hardware`, `statusBar`).
 ///
 /// A target can need both at once, which is `mixed`. `dtuhidd` exposes no trackpad, so an Apple TV
 /// driven over DTUHID still reaches its Siri Remote trackpad over Indigo. Mixing is otherwise unsafe —

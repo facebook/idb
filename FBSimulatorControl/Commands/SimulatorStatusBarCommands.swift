@@ -93,4 +93,13 @@ public struct SimulatorStatusBarCommands {
       try simulator.device.overrideStatusBarBatteryState(state, batteryLevel: level, showNotCharging: notCharging)
     }
   }
+
+  // MARK: - In-call
+
+  private static let inCallNotification = "com.apple.iphonesimulator.toggleincallstatusbar"
+
+  /// Shows the in-call status bar if hidden, hides it if shown.
+  public func toggleInCall() async throws {
+    try simulator.device.postDarwinNotification(Self.inCallNotification)
+  }
 }
