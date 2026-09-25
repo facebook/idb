@@ -2509,6 +2509,12 @@ private final class StubAXBridgeTreeReader: AXBridgeTreeReader, @unchecked Senda
   func drag(
     from source: AccessibilityElementQuery, to destination: AccessibilityElementQuery, options: DragOptions
   ) async throws {}
+
+  func quiescence(
+    _ query: AccessibilityElementQuery, parameters: QuiescenceParameters
+  ) async throws -> AsyncThrowingStream<QuiescenceEvent, Error> {
+    AsyncThrowingStream { $0.finish() }
+  }
 }
 
 /// The composition of the key vocabulary's derived sets.

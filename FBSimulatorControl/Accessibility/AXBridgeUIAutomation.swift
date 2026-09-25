@@ -212,6 +212,45 @@ final class AXBridgeUIAutomation: AXBridgeTreeReader, @unchecked Sendable {
     }
   }
 
+  // MARK: - Quiescence
+
+  /// Needs a transport that holds its connection open: the guest streams events down it until one side
+  /// hangs up.
+  func quiescence(
+    _ query: AccessibilityElementQuery,
+    parameters: QuiescenceParameters
+  ) async throws -> AsyncThrowingStream<QuiescenceEvent, Error> {
+    let pid: pid_t?
+    switch query {
+    case let .application(requested):
+      pid = requested
+    case .frontmost:
+      pid = nil
+    case .point, .marker:
+      throw UIAutomationError.operationUnsupported(backend: backend, operation: "Quiescence of a point or marker")
+    }
+    guard let transport = transport as? any AXBridgeStreamingTransport else {
+      throw UIAutomationError.operationUnsupported(backend: backend, operation: "Quiescence")
+    }
+    let frames = try await transport.stream(
+      .quiescence(pid: pid, busyThresholdMs: parameters.busyThresholdMs, quietWindowMs: parameters.quietWindowMs))
+    return AsyncThrowingStream { continuation in
+      let task = Task {
+        do {
+          try await translatingBackendErrors {
+            for try await frame in frames {
+              continuation.yield(try QuiescenceEvent(axBridgeFrame: frame, pid: pid))
+            }
+          }
+          continuation.finish()
+        } catch {
+          continuation.finish(throwing: error)
+        }
+      }
+      continuation.onTermination = { _ in task.cancel() }
+    }
+  }
+
   // MARK: - Writes
 
   func tap(

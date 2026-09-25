@@ -102,6 +102,13 @@ private final class RecordingUIAutomation: UIAutomation, @unchecked Sendable {
     }
     return applicationFrame
   }
+
+  func quiescence(
+    _ query: AccessibilityElementQuery,
+    parameters: QuiescenceParameters
+  ) async throws -> AsyncThrowingStream<QuiescenceEvent, Error> {
+    throw NotUnderTest()
+  }
 }
 
 /// A scroll bubbles from the element it names up to that element's scrollable container, so what an

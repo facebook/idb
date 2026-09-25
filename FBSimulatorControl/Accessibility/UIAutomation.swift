@@ -224,6 +224,16 @@ public protocol UIAutomation: Sendable {
     to destination: AccessibilityElementQuery,
     options: DragOptions
   ) async throws
+
+  /// Streams the quiescence of an application: `.application` names one by pid, and `.frontmost`
+  /// follows whichever application is frontmost. `.point`/`.marker` name no application.
+  ///
+  /// Runs until the consumer stops iterating, the named application exits, or the stream fails. A
+  /// backend that cannot measure quiescence throws `UIAutomationError.operationUnsupported`.
+  func quiescence(
+    _ query: AccessibilityElementQuery,
+    parameters: QuiescenceParameters
+  ) async throws -> AsyncThrowingStream<QuiescenceEvent, Error>
 }
 
 public extension UIAutomation {

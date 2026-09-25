@@ -175,4 +175,12 @@ final class AccessibilityUIAutomation: UIAutomation, @unchecked Sendable {
       return CGPoint(x: frame.midX, y: frame.midY)
     }
   }
+
+  /// CoreSimulator's accessibility translation has no channel for the runtime's idle notifications.
+  func quiescence(
+    _ query: AccessibilityElementQuery,
+    parameters: QuiescenceParameters
+  ) async throws -> AsyncThrowingStream<QuiescenceEvent, Error> {
+    throw UIAutomationError.operationUnsupported(backend: .accessibility, operation: "Quiescence")
+  }
 }
