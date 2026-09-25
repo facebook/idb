@@ -21,8 +21,9 @@ public enum SimulatorHIDTransportType: Equatable, Sendable {
 /// two-finger touch, button and keyboard — and, where a target needs both, the Indigo transport
 /// running alongside it.
 ///
-/// A closed enum rather than a protocol so each capability lives only on the transport that has it
-/// (`flush` on DTUHID, `sendTrackpad` on Indigo).
+/// An enum over the concrete transports rather than an existential, so each capability lives only on
+/// the transport that has it (`flush` on DTUHID, `sendTrackpad` on Indigo). What both carry is
+/// `SimulatorHIDPrimitives`, reached through `primitives`.
 ///
 /// Device orientation, the hinge, lock, shake and the in-call status bar are not carried here at all:
 /// they are commands on the `Simulator` (`orientation`, `hinge`, `hardware`, `statusBar`).
@@ -130,49 +131,11 @@ enum SimulatorHIDTransport: Sendable {
     }
   }
 
-  /// Sends a single-finger touch at the given point (in points). `edge` tags the contact as
-  /// originating at a screen edge, which is how the guest recognises a system edge gesture.
-  func sendTouch(
-    direction: SimulatorHIDDirection, x: Double, y: Double, edge: SimulatorHIDEdge
-  ) async throws {
+  /// The transport carrying the primitives: DTUHID wherever it is in play.
+  var primitives: any SimulatorHIDPrimitives {
     switch self {
-    case let .indigo(indigo): try await indigo.sendTouch(direction: direction, x: x, y: y, edge: edge)
-    case let .dtuhid(dtuhid), let .mixed(dtuhid, _): try await dtuhid.sendTouch(direction: direction, x: x, y: y, edge: edge)
-    }
-  }
-
-  /// Sends a two-finger touch (for multi-touch gestures) at the given points (in points).
-  func sendTwoFingerTouch(direction: SimulatorHIDDirection, finger1: CGPoint, finger2: CGPoint) async throws {
-    switch self {
-    case let .indigo(indigo):
-      try await indigo.sendTwoFingerTouch(direction: direction, finger1: finger1, finger2: finger2)
-    case let .dtuhid(dtuhid), let .mixed(dtuhid, _):
-      try await dtuhid.sendTwoFingerTouch(direction: direction, finger1: finger1, finger2: finger2)
-    }
-  }
-
-  /// Sends a hardware button event.
-  func sendButton(direction: SimulatorHIDDirection, button: SimulatorHIDButton) async throws {
-    switch self {
-    case let .indigo(indigo): try await indigo.sendButton(direction: direction, button: button)
-    case let .dtuhid(dtuhid), let .mixed(dtuhid, _): try await dtuhid.sendButton(direction: direction, button: button)
-    }
-  }
-
-  /// Sends a keyboard key event.
-  func sendKeyboard(direction: SimulatorHIDDirection, keyCode: UInt32) async throws {
-    switch self {
-    case let .indigo(indigo): try await indigo.sendKeyboard(direction: direction, keyCode: keyCode)
-    case let .dtuhid(dtuhid), let .mixed(dtuhid, _): try await dtuhid.sendKeyboard(direction: direction, keyCode: keyCode)
-    }
-  }
-
-  /// Sends a tvOS Siri Remote focus action.
-  func sendRemoteButton(direction: SimulatorHIDDirection, button: SimulatorHIDRemoteButton) async throws {
-    switch self {
-    case let .indigo(indigo): try await indigo.sendRemoteButton(direction: direction, button: button)
-    case let .dtuhid(dtuhid), let .mixed(dtuhid, _):
-      try await dtuhid.sendRemoteButton(direction: direction, button: button)
+    case let .indigo(indigo): return indigo
+    case let .dtuhid(dtuhid), let .mixed(dtuhid, _): return dtuhid
     }
   }
 
@@ -191,3 +154,19 @@ enum SimulatorHIDTransport: Sendable {
     try await indigo.sendTrackpad(point: point, phase: phase)
   }
 }
+
+/// The Indigo-family HID primitives, which both transports carry.
+protocol SimulatorHIDPrimitives: Actor {
+  /// Sends a single-finger touch at the given point (in points). `edge` tags the contact as
+  /// originating at a screen edge, which is how the guest recognises a system edge gesture.
+  func sendTouch(direction: SimulatorHIDDirection, x: Double, y: Double, edge: SimulatorHIDEdge) async throws
+  /// Sends a two-finger touch (for multi-touch gestures) at the given points (in points).
+  func sendTwoFingerTouch(direction: SimulatorHIDDirection, finger1: CGPoint, finger2: CGPoint) async throws
+  func sendButton(direction: SimulatorHIDDirection, button: SimulatorHIDButton) async throws
+  func sendKeyboard(direction: SimulatorHIDDirection, keyCode: UInt32) async throws
+  /// Sends a tvOS Siri Remote focus action.
+  func sendRemoteButton(direction: SimulatorHIDDirection, button: SimulatorHIDRemoteButton) async throws
+}
+
+extension SimulatorIndigoHIDTransport: SimulatorHIDPrimitives {}
+extension SimulatorDTUHIDTransport: SimulatorHIDPrimitives {}
