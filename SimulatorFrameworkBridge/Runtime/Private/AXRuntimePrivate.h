@@ -66,7 +66,7 @@ typedef NS_ENUM(int32_t, FBAXError) {
  * `FBAXAttributeIdentifierValue` are both 0x7d6 and have nothing to do with each other, so the two are
  * named apart here to stop one being passed where the other belongs.
  *
- * Only the actions the writer performs are listed.
+ * Only the actions the writer and the quiescence monitor perform are listed.
  */
 typedef NS_ENUM(uint32_t, FBAXActionIdentifier) {
   /** AXPActionScrollToVisible: bring the element into its scroll container's viewport. */
@@ -81,6 +81,34 @@ typedef NS_ENUM(uint32_t, FBAXActionIdentifier) {
   FBAXActionIdentifierScrollRightByPage = 0x7d9,
   /** AXPActionPress: activate the element, the semantic equivalent of a tap on it. */
   FBAXActionIdentifierPress = 0x7da,
+  /**
+   * kAXBeginMonitoringIdleRunLoopAction: the application answers with `FBAXNotificationUserTesting`
+   * (event "RunLoopIsIdle") once its main run loop next goes idle. Only answered in automation mode.
+   */
+  FBAXActionIdentifierBeginMonitoringIdleRunLoop = 0x7fa,
+  /**
+   * kAXDetectAnimationsNonActiveAction: the application answers with `FBAXNotificationUserTesting`
+   * (event "AnimationsNonActive") once no animation is running. Only answered in automation mode.
+   */
+  FBAXActionIdentifierDetectAnimationsNonActive = 0x7fb,
+};
+
+/**
+ * The AX runtime's notification numbers an observer registers for, as observed on a booted simulator
+ * runtime. Only the notifications the quiescence monitor observes are listed.
+ */
+typedef NS_ENUM(uint32_t, FBAXNotification) {
+  /**
+   * kAXApplicationSuspendedStatusChanged: posted by SpringBoard when an application is resumed or
+   * suspended, with `info = {pid, "suspended-status"}` naming the application rather than the poster.
+   */
+  FBAXNotificationApplicationSuspendedStatusChanged = 1021,
+  /**
+   * kAXUserTestingNotification: an application's answer to a monitoring action, with
+   * `info = {event = RunLoopIsIdle | AnimationsNonActive}`. Touches finishing also post it, unrequested,
+   * as `TouchEventsCompleted`.
+   */
+  FBAXNotificationUserTesting = 4002,
 };
 
 /**
@@ -168,3 +196,45 @@ typedef int32_t (*FBAXPerformActionFn)(void *element, uint32_t action);
  * the value after the call returns.
  */
 typedef int32_t (*FBAXSetAttributeValueFn)(void *element, uint32_t attribute, const void *value);
+
+/**
+ * AXUIElementPerformActionWithValue(element, action, value) — as `AXUIElementPerformAction`, carrying a
+ * value. The monitoring actions are only accepted through this entry point, with a NULL value.
+ *
+ * **Borrows** the element and the value, and transfers no ownership of either.
+ */
+typedef int32_t (*FBAXPerformActionWithValueFn)(void *element, uint32_t action, const void *value);
+
+/**
+ * An observer's callback. `element` is the poster (the application for `FBAXNotificationUserTesting`,
+ * SpringBoard for `FBAXNotificationApplicationSuspendedStatusChanged`) and `info` is a CFDictionary or NULL.
+ *
+ * **Borrows** everything it is passed, for the duration of the call only.
+ */
+typedef void (*FBAXObserverCallback)(void *observer, void *element, uint32_t notification, const void *info, void *refcon);
+
+/**
+ * AXObserverCreate(pid, callback, &observer). Only an observer for **pid 0** can register on the
+ * system-wide element, and only the system-wide element delivers `FBAXNotificationUserTesting` — an
+ * observer for the application's own pid registers and never hears anything.
+ *
+ * On FBAXErrorSuccess the out-parameter is **+1 retained** and owned by the caller. Releasing it drops
+ * every registration made on it.
+ */
+typedef int32_t (*FBAXObserverCreateFn)(pid_t pid, FBAXObserverCallback callback, void **observer);
+
+/**
+ * AXObserverAddNotification(observer, element, notification, refcon). `refcon` is handed back to the
+ * callback verbatim and is not retained.
+ *
+ * **Borrows** the observer and the element.
+ */
+typedef int32_t (*FBAXObserverAddNotificationFn)(void *observer, void *element, uint32_t notification, void *refcon);
+
+/**
+ * AXObserverGetRunLoopSource(observer) — the source that delivers the observer's callbacks on whichever
+ * run loop it is added to.
+ *
+ * **Borrowed**: the source lives as long as the observer and must not be released.
+ */
+typedef CFRunLoopSourceRef (*FBAXObserverGetRunLoopSourceFn)(void *observer);

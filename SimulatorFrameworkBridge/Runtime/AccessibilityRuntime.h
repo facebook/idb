@@ -319,6 +319,58 @@ typedef NS_ENUM(NSUInteger, FBAXDisplayInventoryStatus) {
 + (instancetype)new NS_UNAVAILABLE;
 @end
 
+#pragma mark - Quiescence
+
+/** A condition an application can be asked to report once it holds. */
+typedef NS_ENUM(NSUInteger, FBAXQuiescenceSignal) {
+  /** The application's main run loop has gone idle. */
+  FBAXQuiescenceSignalRunLoopIdle,
+  /** No animation is running in the application. */
+  FBAXQuiescenceSignalAnimationsInactive,
+};
+
+/** Something a quiescence monitor heard. */
+typedef NS_ENUM(NSUInteger, FBAXQuiescenceReport) {
+  /** An answer to a `RunLoopIdle` request. */
+  FBAXQuiescenceReportRunLoopIdle,
+  /** An answer to an `AnimationsInactive` request. */
+  FBAXQuiescenceReportAnimationsInactive,
+  /** A touch sequence finished. Unrequested, and posted by any application that handled one. */
+  FBAXQuiescenceReportTouchesCompleted,
+  /** An application was resumed or suspended, so which application is frontmost may have changed. */
+  FBAXQuiescenceReportApplicationStateChanged,
+};
+
+/**
+ * Classifies an observer notification into the report it means. NO for a notification or event that
+ * reports nothing a monitor distinguishes (for instance a `ViewDidAppear` user-testing event).
+ */
+extern BOOL FBAXQuiescenceReportForNotification(uint32_t notification, id _Nullable info, FBAXQuiescenceReport *report);
+
+/**
+ * `pid` is the application the report is about: the poster for an answer or a touch, and the application
+ * named in the notification for a state change. 0 when the runtime could not say.
+ */
+typedef void (^FBAXQuiescenceHandler)(FBAXQuiescenceReport report, pid_t pid);
+
+/**
+ * A live registration for quiescence reports. Reports arrive on the run loop of the thread that created
+ * it, which must keep running for any to arrive, and that thread is the only one that may use it.
+ */
+@protocol FBAXQuiescenceMonitor <NSObject>
+
+/**
+ * Asks an application element for one report of `signal`. Returns as soon as the request is delivered;
+ * the answer arrives later through the handler, and only once the condition holds. An application only
+ * answers while the device is in automation mode, and accepts the request without answering otherwise.
+ */
+- (FBAXWriteOutcome *)requestSignal:(FBAXQuiescenceSignal)signal fromApplication:(id)element;
+
+/** Stops delivery. Idempotent; the handler is never called afterwards. */
+- (void)invalidate;
+
+@end
+
 #pragma mark - The runtime
 
 /**
@@ -459,6 +511,13 @@ typedef NS_ENUM(NSUInteger, FBAXDisplayInventoryStatus) {
 
 /** Writes a device-wide setting and returns its authoritative read-back outcome. */
 - (FBAXDeviceSettingOutcome *)setEnabled:(BOOL)enabled forDeviceSetting:(FBAXDeviceSetting)setting;
+
+/**
+ * Starts observing the device for quiescence reports, delivered on the calling thread's run loop. Leaves
+ * automation mode as it is. Nil when this runtime cannot observe, with `*error` saying why.
+ */
+- (nullable id<FBAXQuiescenceMonitor>)quiescenceMonitorWithHandler:(FBAXQuiescenceHandler)handler
+                                                             error:(NSString *_Nullable *_Nullable)error;
 
 @end
 

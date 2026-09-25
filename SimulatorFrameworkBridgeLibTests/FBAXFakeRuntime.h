@@ -101,6 +101,20 @@ NSDictionary<NSString *, id> *FBAXGeometryDictionaryProbe(BOOL rectangle, BOOL r
 + (instancetype)throwingOnAccess:(NSString *)access;
 @end
 
+/** A quiescence monitor whose reports a test delivers by hand. */
+@interface FBAXFakeQuiescenceMonitor : NSObject <FBAXQuiescenceMonitor>
+
+/** Every request as `{signal, element}`, in order. */
+@property (nonatomic, readonly, strong) NSMutableArray<NSDictionary<NSString *, id> *> *requests;
+/** What `-requestSignal:fromApplication:` answers with. */
+@property (nonatomic, strong) FBAXWriteOutcome *requestOutcome;
+@property (nonatomic, readonly, getter = isInvalidated) BOOL invalidated;
+
+/** Calls the handler as the live monitor would on hearing `report`. Dropped once invalidated. */
+- (void)deliver:(FBAXQuiescenceReport)report pid:(pid_t)pid;
+
+@end
+
 /**
  * A fake `FBAXRuntime`, wired into the service by `+[FBAXClientProvider setRuntimeForTesting:]`.
  *
@@ -188,6 +202,11 @@ NSDictionary<NSString *, id> *FBAXGeometryDictionaryProbe(BOOL rectangle, BOOL r
 
 /** How many translator reads have been made — one request per node is the point of the batched form. */
 @property (nonatomic, readonly) NSUInteger translatorReadCount;
+/** When set, `-quiescenceMonitorWithHandler:error:` fails with this reason. */
+@property (nullable, nonatomic, copy) NSString *quiescenceMonitorError;
+/** Every monitor started, in order. */
+@property (nonatomic, readonly, strong) NSMutableArray<FBAXFakeQuiescenceMonitor *> *quiescenceMonitors;
+
 /** What both write methods answer with. */
 @property (nonatomic, strong) FBAXWriteOutcome *writeOutcome;
 

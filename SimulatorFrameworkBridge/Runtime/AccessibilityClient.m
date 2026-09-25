@@ -154,6 +154,45 @@ static id FBAXCopyAttributeContainers(id value)
   return value;
 }
 
+@interface FBAXQuiescenceMonitorClient ()
+- (instancetype)initWithMonitor:(id<FBAXQuiescenceMonitor>)monitor;
+@end
+
+@implementation FBAXQuiescenceMonitorClient
+{
+  id<FBAXQuiescenceMonitor> _monitor;
+}
+
+- (instancetype)initWithMonitor:(id<FBAXQuiescenceMonitor>)monitor
+{
+  self = [super init];
+  if (self) {
+    _monitor = monitor;
+  }
+  return self;
+}
+
+- (FBAXWriteOutcome *)requestSignal:(FBAXQuiescenceSignal)signal fromApplication:(FBAXElement *)element error:(NSError **)error
+{
+  @try {
+    return [_monitor requestSignal:signal fromApplication:element.value];
+  } @catch (NSException *exception) {
+    FBAXClientException(exception, error);
+    return nil;
+  }
+}
+
+- (void)invalidate
+{
+  @try {
+    [_monitor invalidate];
+  } @catch (NSException *exception) {
+    FBAXClientException(exception, NULL);
+  }
+}
+
+@end
+
 @implementation FBAXClient
 {
   id<FBAXRuntime> _runtime;
@@ -235,6 +274,24 @@ static id FBAXCopyAttributeContainers(id value)
 {
   @try {
     return [_runtime runningBoardFrontmost];
+  } @catch (NSException *exception) {
+    FBAXClientException(exception, error);
+    return nil;
+  }
+}
+
+- (FBAXQuiescenceMonitorClient *)quiescenceMonitorWithHandler:(FBAXQuiescenceHandler)handler error:(NSError **)error
+{
+  @try {
+    NSString *failure = nil;
+    id<FBAXQuiescenceMonitor> monitor = [_runtime quiescenceMonitorWithHandler:handler error:&failure];
+    if (!monitor) {
+      if (error) {
+        *error = [NSError errorWithDomain:@"FBAXQuiescence" code:1 userInfo:@{NSLocalizedDescriptionKey : failure ?: @"the runtime could not start a quiescence monitor"}];
+      }
+      return nil;
+    }
+    return [[FBAXQuiescenceMonitorClient alloc] initWithMonitor:monitor];
   } @catch (NSException *exception) {
     FBAXClientException(exception, error);
     return nil;

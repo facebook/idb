@@ -249,6 +249,43 @@ NSDictionary<NSString *, id> *FBAXGeometryDictionaryProbe(BOOL rectangle, BOOL r
 
 @end
 
+@implementation FBAXFakeQuiescenceMonitor
+{
+  FBAXQuiescenceHandler _handler;
+}
+
+- (instancetype)initWithHandler:(FBAXQuiescenceHandler)handler
+{
+  self = [super init];
+  if (self) {
+    _handler = [handler copy];
+    _requests = [NSMutableArray array];
+    _requestOutcome = [FBAXWriteOutcome written];
+  }
+  return self;
+}
+
+- (FBAXWriteOutcome *)requestSignal:(FBAXQuiescenceSignal)signal fromApplication:(id)element
+{
+  [self.requests addObject:@{@"signal" : @(signal), @"element" : element}];
+  return self.requestOutcome;
+}
+
+- (void)invalidate
+{
+  _invalidated = YES;
+  _handler = nil;
+}
+
+- (void)deliver:(FBAXQuiescenceReport)report pid:(pid_t)pid
+{
+  if (_handler) {
+    _handler(report, pid);
+  }
+}
+
+@end
+
 @implementation FBAXFakeRuntime
 {
   NSUInteger _translatorReadCount;
@@ -271,6 +308,7 @@ NSDictionary<NSString *, id> *FBAXGeometryDictionaryProbe(BOOL rectangle, BOOL r
   _snapshotOwnerElements = [NSMutableArray array];
   _applicationElements = [NSMutableDictionary dictionary];
   _automationModeWrites = [NSMutableArray array];
+  _quiescenceMonitors = [NSMutableArray array];
   _deviceSettings = [NSMutableDictionary dictionary];
   _deviceSettingWrites = [NSMutableArray array];
   _displayInventoryOutcome = [FBAXDisplayInventoryOutcome available:@[]];
@@ -563,6 +601,23 @@ static NSDictionary *FBAXFakeSnapshotNode(FBAXFakeElement *element,
   // Read back, exactly as the live runtime does: what a caller learns is the state afterwards, not that
   // the write was attempted.
   return self.automationMode;
+}
+
+#pragma mark Quiescence
+
+- (nullable id<FBAXQuiescenceMonitor>)quiescenceMonitorWithHandler:(FBAXQuiescenceHandler)handler
+                                                             error:(NSString *_Nullable *_Nullable)error
+{
+  [self recordOperation:@"quiescenceMonitor"];
+  if (self.quiescenceMonitorError) {
+    if (error) {
+      *error = self.quiescenceMonitorError;
+    }
+    return nil;
+  }
+  FBAXFakeQuiescenceMonitor *monitor = [[FBAXFakeQuiescenceMonitor alloc] initWithHandler:handler];
+  [self.quiescenceMonitors addObject:monitor];
+  return monitor;
 }
 
 - (FBAXDeviceSettingOutcome *)enabledStateForDeviceSetting:(FBAXDeviceSetting)setting

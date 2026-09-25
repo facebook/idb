@@ -525,6 +525,12 @@ typedef struct {
   // Proves a snapshot element is an AXUIElementRef before it reaches the C entry points, which do not
   // check. Optional: without it boundary continuation stays off.
   CFTypeID (*elementTypeID)(void);
+  // The quiescence monitor's entry points. Optional as a group: a runtime without them cannot monitor,
+  // and every other interaction is unaffected.
+  FBAXPerformActionWithValueFn performActionWithValue;               // borrows
+  FBAXObserverCreateFn observerCreate;                               // out-parameter is +1
+  FBAXObserverAddNotificationFn observerAddNotification;             // borrows
+  FBAXObserverGetRunLoopSourceFn observerGetRunLoopSource;           // returns borrowed
 } FBAXRuntimeFunctions;
 
 // The one place an `FBAXAction` becomes the number the C ABI takes. `-Wswitch-default` forces the
@@ -624,6 +630,193 @@ static BOOL FBAXActionIdentifierForAction(FBAXAction action, uint32_t *identifie
 {
   NS_VALID_UNTIL_END_OF_SCOPE FBAXElementRef *alive = self;
   return body(alive->_element);
+}
+
+@end
+
+// A retained reference on the AXUIElementRef behind a handle, for the duration of a call that needs the
+// raw pointer (see `+retainingBorrowedElement:`).
+static FBAXElementRef *_Nullable FBAXReferenceForElement(id element)
+{
+  // Handles are opaque above the seam, so a non-handle is a named failure rather than an unrecognised selector.
+  if (![element respondsToSelector:@selector(AXUIElement)]) {
+    return nil;
+  }
+  void *raw = [(XCAccessibilityElement *)element AXUIElement];
+  if (!raw) {
+    return nil;
+  }
+  return [FBAXElementRef retainingBorrowedElement:raw];
+}
+
+#pragma mark - Quiescence
+
+BOOL FBAXQuiescenceReportForNotification(uint32_t notification, id _Nullable info, FBAXQuiescenceReport *report)
+{
+  switch (notification) {
+    case FBAXNotificationApplicationSuspendedStatusChanged:
+      *report = FBAXQuiescenceReportApplicationStateChanged;
+      return YES;
+    case FBAXNotificationUserTesting: {
+      id event = [info isKindOfClass:NSDictionary.class] ? ((NSDictionary *)info)[@"event"] : nil;
+      if ([event isEqual:@"RunLoopIsIdle"]) {
+        *report = FBAXQuiescenceReportRunLoopIdle;
+        return YES;
+      }
+      if ([event isEqual:@"AnimationsNonActive"]) {
+        *report = FBAXQuiescenceReportAnimationsInactive;
+        return YES;
+      }
+      if ([event isEqual:@"TouchEventsCompleted"]) {
+        *report = FBAXQuiescenceReportTouchesCompleted;
+        return YES;
+      }
+      return NO;
+    }
+    default:
+      return NO;
+  }
+}
+
+@interface FBAXLiveQuiescenceMonitor : NSObject <FBAXQuiescenceMonitor>
+@end
+
+@implementation FBAXLiveQuiescenceMonitor
+{
+  FBAXRuntimeFunctions _functions;
+  FBAXQuiescenceHandler _handler;
+  // The observer, owned. Its run-loop source is borrowed from it, so the observer outlives the source's
+  // removal from `_runLoop`.
+  id _observer;
+  CFRunLoopSourceRef _source;
+  CFRunLoopRef _runLoop;
+  // Held for as long as the registrations made on it, which the runtime does not promise to retain.
+  FBAXElementRef *_systemWide;
+}
+
+// The observer's callback. `refcon` is the monitor, unretained: the source is removed from the run loop
+// before the monitor goes, and delivery happens only on that run loop, so the callback cannot outlive it.
+static void FBAXQuiescenceObserverCallback(void *observer, void *element, uint32_t notification, const void *info, void *refcon)
+{
+  FBAXLiveQuiescenceMonitor *monitor = (__bridge FBAXLiveQuiescenceMonitor *)refcon;
+  [monitor deliverNotification:notification element:element info:(__bridge id)info];
+}
+
+- (nullable instancetype)initWithFunctions:(FBAXRuntimeFunctions)functions
+                                   handler:(FBAXQuiescenceHandler)handler
+                                     error:(NSString *_Nullable *_Nullable)error
+{
+  self = [super init];
+  if (!self) {
+    return nil;
+  }
+  _functions = functions;
+  _handler = [handler copy];
+
+  void *systemWide = _functions.createSystemWide();
+  if (!systemWide) {
+    if (error) {
+      *error = @"AXUIElementCreateSystemWide returned NULL";
+    }
+    return nil;
+  }
+  _systemWide = [[FBAXElementRef alloc] initWithOwnedElement:systemWide];
+
+  void *observer = NULL;
+  int32_t createError = _functions.observerCreate(0, FBAXQuiescenceObserverCallback, &observer);
+  if (createError != FBAXErrorSuccess || !observer) {
+    if (error) {
+      *error = [NSString stringWithFormat:@"AXObserverCreate failed (%d)", createError];
+    }
+    return nil;
+  }
+  _observer = CFBridgingRelease(observer);
+
+  for (NSNumber *notification in @[@(FBAXNotificationUserTesting), @(FBAXNotificationApplicationSuspendedStatusChanged)]) {
+    int32_t addError = [_systemWide axErrorFromElement:^int32_t (void *element) {
+      return self->_functions.observerAddNotification((__bridge void *)self->_observer, element, notification.unsignedIntValue, (__bridge void *)self);
+    }];
+    if (addError != FBAXErrorSuccess) {
+      if (error) {
+        *error = [NSString stringWithFormat:@"AXObserverAddNotification(%@) failed (%d)", notification, addError];
+      }
+      return nil;
+    }
+  }
+
+  _source = _functions.observerGetRunLoopSource((__bridge void *)_observer);
+  if (!_source) {
+    if (error) {
+      *error = @"AXObserverGetRunLoopSource returned NULL";
+    }
+    return nil;
+  }
+  _runLoop = (CFRunLoopRef)CFRetain(CFRunLoopGetCurrent());
+  CFRunLoopAddSource(_runLoop, _source, kCFRunLoopDefaultMode);
+  return self;
+}
+
+- (void)dealloc
+{
+  [self invalidate];
+}
+
+- (void)deliverNotification:(uint32_t)notification element:(void *)element info:(nullable id)info
+{
+  // A strong local, so a handler that invalidates this client does not release itself mid-call.
+  FBAXQuiescenceHandler handler = _handler;
+  FBAXQuiescenceReport report;
+  if (!handler || !FBAXQuiescenceReportForNotification(notification, info, &report)) {
+    return;
+  }
+  pid_t pid = 0;
+  if (report == FBAXQuiescenceReportApplicationStateChanged) {
+    id named = [info isKindOfClass:NSDictionary.class] ? ((NSDictionary *)info)[@"pid"] : nil;
+    pid = [named isKindOfClass:NSNumber.class] ? [named intValue] : 0;
+  } else if (!element || _functions.getPid(element, &pid) != FBAXErrorSuccess) {
+    pid = 0;
+  }
+  handler(report, pid);
+}
+
+- (FBAXWriteOutcome *)requestSignal:(FBAXQuiescenceSignal)signal fromApplication:(id)element
+{
+  if (!_observer) {
+    return [FBAXWriteOutcome failed:@"the quiescence monitor has been invalidated"];
+  }
+  uint32_t action = 0;
+  switch (signal) {
+    case FBAXQuiescenceSignalRunLoopIdle:
+      action = FBAXActionIdentifierBeginMonitoringIdleRunLoop;
+      break;
+    case FBAXQuiescenceSignalAnimationsInactive:
+      action = FBAXActionIdentifierDetectAnimationsNonActive;
+      break;
+    default:
+      return [FBAXWriteOutcome failed:[NSString stringWithFormat:@"no AX runtime identifier for quiescence signal %lu", (unsigned long)signal]];
+  }
+  FBAXElementRef *reference = FBAXReferenceForElement(element);
+  if (!reference) {
+    return [FBAXWriteOutcome failed:@"the element has no AXUIElement to monitor"];
+  }
+  int32_t axError = [reference axErrorFromElement:^int32_t (void *raw) {
+    return self->_functions.performActionWithValue(raw, action, NULL);
+  }];
+  return [FBAXWriteOutcome outcomeForWriteError:axError];
+}
+
+- (void)invalidate
+{
+  _handler = nil;
+  if (_runLoop && _source) {
+    CFRunLoopRemoveSource(_runLoop, _source, kCFRunLoopDefaultMode);
+  }
+  if (_runLoop) {
+    CFRelease(_runLoop);
+  }
+  _runLoop = NULL;
+  _source = NULL;
+  _observer = nil;
 }
 
 @end
@@ -848,6 +1041,10 @@ static NSString *const kFrontboardVisibilityEndowment = @"com.apple.frontboard.v
   _functions.defaultSnapshotParameters = dlsym(RTLD_DEFAULT, "XCTDefaultSnapshotParameters");
   _functions.attributeNumbersForNames = dlsym(RTLD_DEFAULT, "XCAXAccessibilityAttributesForStringAttributes");
   _functions.elementTypeID = dlsym(RTLD_DEFAULT, "AXUIElementGetTypeID");
+  _functions.performActionWithValue = dlsym(RTLD_DEFAULT, "AXUIElementPerformActionWithValue");
+  _functions.observerCreate = dlsym(RTLD_DEFAULT, "AXObserverCreate");
+  _functions.observerAddNotification = dlsym(RTLD_DEFAULT, "AXObserverAddNotification");
+  _functions.observerGetRunLoopSource = dlsym(RTLD_DEFAULT, "AXObserverGetRunLoopSource");
   if (!_functions.createSystemWide || !_functions.copyElementAtPosition || !_functions.getPid
       || !_functions.performAction || !_functions.setAttributeValue || !_functions.setMessagingTimeout) {
     if (error) {
@@ -1044,21 +1241,26 @@ static NSString *const kFrontboardVisibilityEndowment = @"com.apple.frontboard.v
   return [self enabledStateForDeviceSetting:setting];
 }
 
+#pragma mark Quiescence
+
+- (nullable id<FBAXQuiescenceMonitor>)quiescenceMonitorWithHandler:(FBAXQuiescenceHandler)handler
+                                                             error:(NSString *_Nullable *_Nullable)error
+{
+  if (!_functions.performActionWithValue || !_functions.observerCreate || !_functions.observerAddNotification
+      || !_functions.observerGetRunLoopSource) {
+    if (error) {
+      *error = @"AXObserverCreate/AddNotification/GetRunLoopSource/AXUIElementPerformActionWithValue unavailable";
+    }
+    return nil;
+  }
+  return [[FBAXLiveQuiescenceMonitor alloc] initWithFunctions:_functions handler:handler error:error];
+}
+
 #pragma mark Element references
 
-// A retained reference on the AXUIElementRef behind a handle, for the duration of a call that needs the
-// raw pointer (see `+retainingBorrowedElement:`).
 - (nullable FBAXElementRef *)referenceForElement:(id)element
 {
-  // Handles are opaque above the seam, so a non-handle is a named failure rather than an unrecognised selector.
-  if (![element respondsToSelector:@selector(AXUIElement)]) {
-    return nil;
-  }
-  void *raw = [(XCAccessibilityElement *)element AXUIElement];
-  if (!raw) {
-    return nil;
-  }
-  return [FBAXElementRef retainingBorrowedElement:raw];
+  return FBAXReferenceForElement(element);
 }
 
 #pragma mark FBAXRuntime

@@ -60,6 +60,14 @@ NS_ASSUME_NONNULL_BEGIN
 + (instancetype)new NS_UNAVAILABLE;
 @end
 
+/** An `FBAXQuiescenceMonitor` whose requests take wrapped elements and contain private exceptions. */
+@interface FBAXQuiescenceMonitorClient : NSObject
+- (nullable FBAXWriteOutcome *)requestSignal:(FBAXQuiescenceSignal)signal fromApplication:(FBAXElement *)element error:(NSError **)error;
+- (void)invalidate;
+- (instancetype)init NS_UNAVAILABLE;
++ (instancetype)new NS_UNAVAILABLE;
+@end
+
 /** Each interaction contains private exceptions before returning to Swift orchestration. */
 @interface FBAXClient : NSObject
 @property (nonatomic, readonly) FBAXSnapshotClient *snapshots;
@@ -82,6 +90,8 @@ NS_ASSUME_NONNULL_BEGIN
 - (nullable FBAXDeviceSettingOutcome *)setEnabled:(BOOL)enabled forDeviceSetting:(FBAXDeviceSetting)setting error:(NSError **)error;
 - (nullable FBAXTranslatorRead *)translatorAttributesOfElement:(FBAXElement *)element error:(NSError **)error;
 - (nullable NSArray<FBAXElement *> *)translatorChildrenOfElement:(FBAXElement *)element error:(NSError **)error;
+/** Nil when the runtime cannot observe or raised, with `*error` saying which. */
+- (nullable FBAXQuiescenceMonitorClient *)quiescenceMonitorWithHandler:(FBAXQuiescenceHandler)handler error:(NSError **)error;
 
 /** Opaque inputs prevent Swift from enumerating a dictionary before entering the exception guard. */
 - (nullable FBAXOptionalValue<NSDictionary<NSString *, id> *> *)snapshotRectangleDictionary:(id)value error:(NSError **)error NS_SWIFT_NAME(snapshotRectangle(_:));
