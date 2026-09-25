@@ -28,6 +28,8 @@ service CompanionService {
       returns (AccessibilityInfoResponse) {}
   rpc accessibility_action(AccessibilityActionRequest)
       returns (AccessibilityActionResponse) {}
+  rpc accessibility_quiescence(AccessibilityQuiescenceRequest)
+      returns (stream AccessibilityQuiescenceResponse) {}
   rpc focus(FocusRequest) returns (FocusResponse) {}
   rpc get_orientation(GetOrientationRequest) returns (GetOrientationResponse) {}
   rpc set_orientation(SetOrientationRequest) returns (SetOrientationResponse) {}
@@ -518,6 +520,63 @@ message AccessibilityActionResponse {
     repeated string unmatched_values = 1;
     bool truncated = 2;
     string read_error = 3;
+  }
+}
+
+// Streams an application's quiescence until the client cancels or the
+// application exits. Simulator targets on the AXBRIDGE backend only.
+message AccessibilityQuiescenceRequest {
+  // No target follows the frontmost application.
+  oneof target {
+    uint64 pid = 1;
+    string bundle_id = 2;
+  }
+  // Each tunable is in its own oneof for presence, since zero is a meaningful
+  // value: unset takes the companion's default.
+  oneof busy_threshold {
+    // How long a signal may go unanswered before the application is busy.
+    uint32 busy_threshold_ms = 3;
+  }
+  oneof quiet_window {
+    // How long every signal must stay answered before the application is
+    // quiet.
+    uint32 quiet_window_ms = 4;
+  }
+}
+
+message AccessibilityQuiescenceResponse {
+  enum State {
+    STATE_UNSPECIFIED = 0;
+    BUSY = 1;
+    SETTLING = 2;
+    QUIET = 3;
+  }
+  enum Signal {
+    SIGNAL_UNSPECIFIED = 0;
+    RUN_LOOP_IDLE = 1;
+    ANIMATIONS_INACTIVE = 2;
+  }
+  // Sent once the state is known and then on every change.
+  message StateChanged {
+    State state = 1;
+    // The signals that have gone unanswered; set only when BUSY.
+    repeated Signal busy_signals = 2;
+  }
+  // A touch sequence finished. Informational: it does not change the state.
+  message TouchesCompleted {}
+  // A stream following the frontmost application moved to pid. Its state
+  // starts over.
+  message TargetChanged {}
+  // The application exited. The last response of the stream.
+  message TargetExited {}
+
+  // The application the event is about.
+  uint64 pid = 1;
+  oneof event {
+    StateChanged state = 2;
+    TouchesCompleted touches_completed = 3;
+    TargetChanged target_changed = 4;
+    TargetExited target_exited = 5;
   }
 }
 

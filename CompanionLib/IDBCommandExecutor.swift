@@ -214,6 +214,21 @@ public final class IDBCommandExecutor {
     try await simulator.uiAutomation(backend: backend).wait(query, timeout: timeout, pollInterval: pollInterval)
   }
 
+  public func accessibility_quiescence(
+    query: AccessibilityElementQuery,
+    parameters: QuiescenceParameters,
+    backend: UIAutomationBackend
+  ) async throws -> AsyncThrowingStream<QuiescenceEvent, Error> {
+    guard let simulator = target as? Simulator else {
+      throw IDBCommandError.simulatorOnlyOperation(operation: "stream accessibility quiescence", targetDescription: String(describing: target))
+    }
+    return try await simulator.uiAutomation(backend: backend).quiescence(query, parameters: parameters)
+  }
+
+  public func process_id(forBundleID bundleID: String) async throws -> pid_t {
+    try await target.application.processID(forBundleID: bundleID)
+  }
+
   public func accessibility_scroll(
     query: AccessibilityElementQuery,
     backend: UIAutomationBackend = .accessibility,

@@ -304,7 +304,8 @@ struct CompanionTelemetryTests {
   /// silently moved one would otherwise reach Scuba with nothing failing in between.
   private static let expectedMethodNames: Set<String> = [
     "connect", "debugserver", "dap", "describe", "install", "instruments_run", "log",
-    "xctrace_record", "accessibility_info", "accessibility_action", "focus", "hid", "open_url",
+    "xctrace_record", "accessibility_info", "accessibility_action", "accessibility_quiescence",
+    "focus", "hid", "open_url",
     "set_location", "send_notification", "delivered_notifications", "clear_delivered_notifications",
     "simulate_memory_warning", "approve", "revoke", "clear_keychain", "contacts_update",
     "contacts_clear", "photos_clear", "setting", "get_setting", "list_settings", "launch",
