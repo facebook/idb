@@ -75,6 +75,31 @@ final class SimulatorFrameworkBridgeConnection: BridgeConnection, @unchecked Sen
     }
   }
 
+  /// Sends `request` and yields the result of every response frame until the guest closes the connection.
+  ///
+  /// A stream may stay silent for as long as nothing happens, so the per-`recv` deadline is lifted.
+  /// Ending the iteration shuts the socket down, which is how the guest learns to stop.
+  func stream(_ request: BridgeRequest) -> AsyncThrowingStream<BridgeResult, Error> {
+    AsyncThrowingStream { continuation in
+      continuation.onTermination = { [self] _ in
+        shutdown(fileDescriptor, SHUT_RDWR)
+      }
+      queue.async { [self] in
+        do {
+          var noDeadline = timeval()
+          setsockopt(fileDescriptor, SOL_SOCKET, SO_RCVTIMEO, &noDeadline, socklen_t(MemoryLayout<timeval>.size))
+          try SimulatorFrameworkBridgeConnection.writeFrame(fileDescriptor, request.encoded())
+          while let frame = try SimulatorFrameworkBridgeConnection.readFrameUnlessClosed(fileDescriptor, guest: ownership.process) {
+            continuation.yield(try BridgeResponse.decode(frame, for: request).result)
+          }
+          continuation.finish()
+        } catch {
+          continuation.finish(throwing: error)
+        }
+      }
+    }
+  }
+
   /// Connects until the deadline or guest failure. A shared lock loser may exit before its winner binds.
   ///
   /// `guest` is the process expected to bind `path`, passed only when this host spawned it.
@@ -172,6 +197,27 @@ final class SimulatorFrameworkBridgeConnection: BridgeConnection, @unchecked Sen
     let header = try readAll(fileDescriptor, count: 4, guest: guest)
     let length = try BridgeFrame.size(fromHeader: header)
     return try readAll(fileDescriptor, count: length, guest: guest)
+  }
+
+  /// A frame, or `nil` when the peer closed the connection at a frame boundary: the end of a stream
+  /// rather than a truncated response.
+  static func readFrameUnlessClosed(
+    _ fileDescriptor: Int32,
+    guest: FBSubprocess<AnyObject, AnyObject, AnyObject>?
+  ) throws -> Data? {
+    var byte: UInt8 = 0
+    while true {
+      let peeked = recv(fileDescriptor, &byte, 1, MSG_PEEK)
+      if peeked == 0 {
+        return nil
+      }
+      if peeked > 0 {
+        return try readFrame(fileDescriptor, guest: guest)
+      }
+      if errno != EINTR {
+        throw AXBridgeError.guestFailure("socket read failed: \(String(cString: strerror(errno)))")
+      }
+    }
   }
 
   private static func writeAll(_ fileDescriptor: Int32, _ data: Data) throws {

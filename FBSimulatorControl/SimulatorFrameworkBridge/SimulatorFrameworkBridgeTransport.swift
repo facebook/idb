@@ -14,6 +14,11 @@ protocol AXBridgeTransport {
   func send(_ request: AXBridgeRequest) async throws -> Data
 }
 
+/// A transport that can hold a connection open for a response streamed in many frames.
+protocol AXBridgeStreamingTransport: AXBridgeTransport {
+  func stream(_ request: AXBridgeRequest) async throws -> AsyncThrowingStream<Data, Error>
+}
+
 enum BridgeServiceScope: Sendable, Hashable {
   case shared
   case exclusive
@@ -25,17 +30,25 @@ protocol BridgeConnection: Sendable {
 }
 
 /// Owns the lifecycle of a shared or exclusive SimulatorFrameworkBridge guest.
-actor SimulatorFrameworkBridgePersistentTransport: AXBridgeTransport {
+actor SimulatorFrameworkBridgePersistentTransport: AXBridgeStreamingTransport {
   private let establishConnection: @Sendable () async throws -> any BridgeConnection
+  private let establishStreamConnection: @Sendable () async throws -> SimulatorFrameworkBridgeConnection
   private var connectionTask: Task<any BridgeConnection, Error>?
   private var connectionGeneration = UUID()
 
   init(simulator: Simulator, scope: BridgeServiceScope) {
     establishConnection = { [weak simulator] in try await Self.establish(simulator: simulator, scope: scope) }
+    // Each stream gets a guest of its own, whatever this transport's scope: a guest serves one connection
+    // at a time, and a stream holds its connection until the consumer stops.
+    establishStreamConnection = { [weak simulator] in try await Self.establish(simulator: simulator, scope: .exclusive) }
   }
 
-  init(establish: @escaping @Sendable () async throws -> any BridgeConnection) {
+  init(
+    establish: @escaping @Sendable () async throws -> any BridgeConnection,
+    establishStream: @escaping @Sendable () async throws -> SimulatorFrameworkBridgeConnection = { throw AXBridgeError.bridgeUnavailable }
+  ) {
     establishConnection = establish
+    establishStreamConnection = establishStream
   }
 
   func send(_ request: AXBridgeRequest) async throws -> Data {
@@ -48,6 +61,23 @@ actor SimulatorFrameworkBridgePersistentTransport: AXBridgeTransport {
     } catch {
       guard request.command.mayRetry else { throw error }
       return try await roundTrip(request)
+    }
+  }
+
+  func stream(_ request: AXBridgeRequest) async throws -> AsyncThrowingStream<Data, Error> {
+    let results = try await establishStreamConnection().stream(BridgeRequest(command: request.command))
+    return AsyncThrowingStream { continuation in
+      let task = Task {
+        do {
+          for try await result in results {
+            continuation.yield(try result.accessibilityData())
+          }
+          continuation.finish()
+        } catch {
+          continuation.finish(throwing: error)
+        }
+      }
+      continuation.onTermination = { _ in task.cancel() }
     }
   }
 
