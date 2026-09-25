@@ -370,6 +370,28 @@ final class AccessibilityRuntimeTests: XCTestCase {
     assertEqualObjects(axValue((children as? NSArray)?.firstObject, "XC_kAXXCAttributeLabel"), "child")
   }
 
+  // The app's own serialization nests a table header's search field both under its container and directly
+  // under the table.
+  func testSnapshotElementNestedUnderTwoParentsIsReportedUnderTheFirstOnly() {
+    let field = FBAXFakeElement.readable("UISearchBarTextField")
+    field.children = [FBAXFakeElement.readable("UIImageView")]
+    let container = FBAXFakeElement.readable("_UISearchBarSearchContainerView")
+    container.children = [field]
+    let table = FBAXFakeElement.readable("UITableView")
+    table.children = [container, field, FBAXFakeElement.readable("Cell")]
+    runtime.applicationElements[NSNumber(value: kAppPid)] = table
+
+    let response = FBAccessibilityService.handleRequest(FBAXTestsSnapshotRequest(["maxDepth": NSNumber(value: 5), "maxNodes": NSNumber(value: 5)]))
+    assertEqualObjects(axValue(response, "ok"), NSNumber(value: true))
+    let children = axValue(axValue(response, "tree"), kAXChildren)
+    assertEqualObjects(axValue(axValue(axValue(axValue(children, 0), kAXChildren), 0), kAXLabel), "UISearchBarTextField")
+    XCTAssertEqual(axCount(children), 2)
+    // BUG: the second nesting is emitted again and spends the node budget that the last sibling needed — flipped
+    // in the following commit.
+    assertEqualObjects(axValue(axValue(children, 1), kAXLabel), "UISearchBarTextField")
+    assertEqualObjects(axValue(response, "truncated"), NSNumber(value: true))
+  }
+
   // The pid of the process drawing a hosted subtree in the boundary tests below. Distinct from `kAppPid`
   // is all that matters: the boundary predicate is ownership changing, not any particular value.
   private var kRemotePid: pid_t { 8765 }
@@ -2055,6 +2077,27 @@ final class AccessibilityRuntimeTests: XCTestCase {
     assertEqualObjects(axValue(axValue(children, 0), kAXLabel), "first")
     assertEqualObjects(axValue(axValue(children, 1), kAXLabel), "last", "a later sibling must survive an earlier failure")
     assertEqualObjects(axValue(response, "truncated"), NSNumber(value: false), "a dropped child is not truncation")
+  }
+
+  // UIKit lists a table header's search field both under its container and directly under the table.
+  func testAnElementListedUnderTwoParentsIsReportedUnderTheFirstOnly() {
+    let field = FBAXFakeElement.readable("UISearchBarTextField")
+    field.children = [FBAXFakeElement.readable("UIImageView")]
+    let container = FBAXFakeElement.readable("_UISearchBarSearchContainerView")
+    container.children = [field]
+    let table = FBAXFakeElement.readable("UITableView")
+    table.children = [container, field, FBAXFakeElement.readable("Cell")]
+    runtime.applicationElements[NSNumber(value: kAppPid)] = table
+
+    let response = FBAccessibilityService.handleRequest(["verb": "describe", "pid": NSNumber(value: kAppPid), "maxDepth": NSNumber(value: 5), "maxNodes": NSNumber(value: 5)])
+    assertEqualObjects(axValue(response, "ok"), NSNumber(value: true))
+    let children = axValue(axValue(response, "tree"), kAXChildren)
+    assertEqualObjects(axValue(axValue(axValue(axValue(children, 0), kAXChildren), 0), kAXLabel), "UISearchBarTextField")
+    // BUG: the second listing is emitted again, with its subtree, and spends the node budget that the
+    // last sibling needed — flipped in the following commit.
+    XCTAssertEqual(axCount(children), 2)
+    assertEqualObjects(axValue(axValue(children, 1), kAXLabel), "UISearchBarTextField")
+    assertEqualObjects(axValue(response, "truncated"), NSNumber(value: true))
   }
 
   func testDepthCapMarksTheReadTruncated() {
