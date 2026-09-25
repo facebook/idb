@@ -6,6 +6,7 @@
  */
 
 import CoreGraphics
+@preconcurrency import FBControlCore
 import Foundation
 
 /// Selects which transport a `SimulatorHID` uses for the touch / button / keyboard primitives.
@@ -21,7 +22,7 @@ public enum SimulatorHIDTransportType: Equatable, Sendable {
 /// running alongside it.
 ///
 /// A closed enum rather than a protocol so each capability lives only on the transport that has it
-/// (`flush` on DTUHID, `sendTrackpad` on Indigo) and callers switch for the rest.
+/// (`flush` on DTUHID, `sendTrackpad` on Indigo).
 ///
 /// Device orientation, the hinge, lock, shake and the in-call status bar are not carried here at all:
 /// they are commands on the `Simulator` (`orientation`, `hinge`, `hardware`, `statusBar`).
@@ -37,6 +38,66 @@ enum SimulatorHIDTransport: Sendable {
   case dtuhid(SimulatorDTUHIDTransport)
   /// Both, mixed on one target: DTUHID carrying the primitives, Indigo carrying only the trackpad.
   case mixed(dtuhid: SimulatorDTUHIDTransport, indigo: SimulatorIndigoHIDTransport)
+
+  // MARK: - Negotiation
+
+  /// A requested transport is never substituted — it is established or the error surfaces. With no request,
+  /// `defaultHIDTransport` is tried and only an `isDTUHIDUnreachable` failure falls back to Indigo; a fault
+  /// in an established transport is a real error. Reachability is settled where it is observable, by
+  /// `SimulatorDTUHIDTransport.dtuhid(for:)` round-tripping a barrier past its retries: `dtuhidd` is
+  /// demand-launched, so neither the toolchain version nor the service lookup can tell whether one is
+  /// there. Falling back costs the keyboard, which the guest has already handed to `dtuhidd`, so it is
+  /// reached only after that probe has given the daemon every chance to come up.
+  static func negotiate(
+    for simulator: Simulator, requested: SimulatorHIDTransportType?
+  ) async throws -> SimulatorHIDTransport {
+    if let requested {
+      return try await establish(requested, for: simulator)
+    }
+    let logger = ControlCoreGlobalConfiguration.defaultLogger
+    let preferred = simulator.defaultHIDTransport
+    do {
+      let transport = try await establish(preferred, for: simulator)
+      logger.log("Negotiated the \(preferred) HID transport")
+      return transport
+    } catch let error as SimulatorHIDError where error.isDTUHIDUnreachable {
+      logger.log(
+        "dtuhidd is unreachable (\(error.localizedDescription)), falling back to the legacy Indigo HID transport")
+      return .indigo(try SimulatorIndigoHIDTransport.indigo(for: simulator))
+    }
+  }
+
+  private static func establish(
+    _ type: SimulatorHIDTransportType, for simulator: Simulator
+  ) async throws -> SimulatorHIDTransport {
+    switch type {
+    case .indigo:
+      return .indigo(try SimulatorIndigoHIDTransport.indigo(for: simulator))
+    case .dtuhid:
+      let dtuhid = try await SimulatorDTUHIDTransport.dtuhid(for: simulator)
+      guard let indigo = indigoAlongsideDTUHID(for: simulator) else {
+        return .dtuhid(dtuhid)
+      }
+      return .mixed(dtuhid: dtuhid, indigo: indigo)
+    }
+  }
+
+  /// The Indigo transport to run alongside DTUHID, for a target that needs both.
+  ///
+  /// Only Apple TV does. It is the only family with a trackpad, which `dtuhidd` does not expose, and the
+  /// only one where a second client is safe: Indigo and DTUHID both claim `mainTouchscreen` and
+  /// whichever sends first on a boot keeps it, and tvOS has none for them to contend over.
+  ///
+  /// Absent rather than fatal when it cannot be registered, since it carries the trackpad alone — a
+  /// failure should cost a pan, not every other input on the target.
+  private static func indigoAlongsideDTUHID(for simulator: Simulator) -> SimulatorIndigoHIDTransport? {
+    guard simulator.productFamily == .appleTV else {
+      return nil
+    }
+    return try? SimulatorIndigoHIDTransport.indigo(for: simulator)
+  }
+
+  // MARK: - Capabilities
 
   /// The Indigo transport in play, if any.
   var indigo: SimulatorIndigoHIDTransport? {
@@ -113,5 +174,20 @@ enum SimulatorHIDTransport: Sendable {
     case let .dtuhid(dtuhid), let .mixed(dtuhid, _):
       try await dtuhid.sendRemoteButton(direction: direction, button: button)
     }
+  }
+
+  /// Only DTUHID has anything to drain; Indigo's client is synchronous.
+  func flush() async throws {
+    try await dtuhid?.flush()
+  }
+
+  /// Indigo only: the tvOS trackpad rides a dedicated Indigo service that `dtuhidd` does not expose (its
+  /// digitizer targets are displays and its scroll targets rotary devices).
+  func sendTrackpad(point: SimulatorTrackpadPoint, phase: SimulatorTrackpadPhase) async throws {
+    guard let indigo else {
+      throw SimulatorHIDError.notImplementedOnDTUHIDTransport(
+        operation: "trackpad pan — the tvOS Siri Remote trackpad is not exposed by dtuhidd")
+    }
+    try await indigo.sendTrackpad(point: point, phase: phase)
   }
 }
