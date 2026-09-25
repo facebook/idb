@@ -16,7 +16,7 @@ import Foundation
 /// Deliberately not a probe of whether `dtuhidd` is *resident*: it is a demand-launched,
 /// pressured-exit job, so it is normally not running even on a simulator that routes all HID through
 /// it. This decides only what to *prefer*; whether `dtuhidd` can actually be reached is settled where
-/// it is observable, by `SimulatorDTUHIDTransport.dtuhid(for:)` looking the service up.
+/// it is observable, by `SimulatorDTUHIDConnection.connect(to:serviceName:)` looking the service up.
 enum SimulatorHIDTransportSelection {
 
   /// The first CoreSimulator version to inject `dtuhidd` into the guest. Older toolchains have no

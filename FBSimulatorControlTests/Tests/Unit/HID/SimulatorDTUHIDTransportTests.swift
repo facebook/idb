@@ -105,7 +105,8 @@ final class SimulatorDTUHIDTransportTests: XCTestCase {
     xpc_connection_set_event_handler(connection) { _ in }
     xpc_connection_resume(connection)
     let transport = SimulatorDTUHIDTransport(
-      connection: connection,
+      connection: SimulatorDTUHIDConnection(
+        connection: connection, serviceName: SimulatorDTUHIDTransport.digitizerServiceName),
       mainScreenSize: CGSize(width: 100, height: 200),
       mainScreenScale: 2.0,
       productFamily: .iPhone)
@@ -120,7 +121,8 @@ final class SimulatorDTUHIDTransportTests: XCTestCase {
     xpc_connection_set_event_handler(connection) { _ in }
     xpc_connection_resume(connection)
     let transport = SimulatorDTUHIDTransport(
-      connection: connection,
+      connection: SimulatorDTUHIDConnection(
+        connection: connection, serviceName: SimulatorDTUHIDTransport.digitizerServiceName),
       mainScreenSize: CGSize(width: 100, height: 200),
       mainScreenScale: 2.0,
       productFamily: .appleTV)
@@ -184,7 +186,7 @@ final class SimulatorDTUHIDTransportTests: XCTestCase {
 
   // MARK: - Send pipeline (envelope shape, no connection needed)
 
-  /// The transport's `encode` wraps any `Encodable` payload in the shared `DTUHIDMessage` envelope —
+  /// The connection's `encode` wraps any `Encodable` payload in the shared `DTUHIDMessage` envelope —
   /// `messageType` discriminator, `isBarrier` bool, the digitizer `featureIdentifier`, and the typed
   /// `payload`. Every capability rides this shape, so it is pinned here independent of any one model.
   func testEncodeWrapsPayloadInEnvelope() throws {
@@ -194,14 +196,11 @@ final class SimulatorDTUHIDTransportTests: XCTestCase {
     let connection = xpc_connection_create("com.facebook.fbsimulatorcontrol.test.dtuhid", nil)
     xpc_connection_set_event_handler(connection) { _ in }
     xpc_connection_resume(connection)
-    let transport = SimulatorDTUHIDTransport(
-      connection: connection,
-      mainScreenSize: CGSize(width: 100, height: 200),
-      mainScreenScale: 2.0,
-      productFamily: .iPhone)
-    defer { transport.disconnect() }
+    let dtuhid = SimulatorDTUHIDConnection(
+      connection: connection, serviceName: SimulatorDTUHIDTransport.digitizerServiceName)
+    defer { dtuhid.disconnect() }
 
-    let message = try transport.encode(messageType: "Probe", payload: Probe(value: 7))
+    let message = try dtuhid.encode(messageType: "Probe", payload: Probe(value: 7))
 
     XCTAssertEqual(xpc_get_type(message), XPC_TYPE_DICTIONARY)
     XCTAssertEqual(messageString(message, "messageType"), "Probe")
@@ -346,12 +345,12 @@ final class SimulatorDTUHIDTransportTests: XCTestCase {
 
   func testLivenessProbePaysTheTailBeforeTheFirstDrain() async throws {
     let recorder = DrainRecorder()
-    let transport = makeTransport(recorder)
+    let connection = makeConnection(recorder)
 
-    try await transport.confirmLiveness()
-    try await transport.send(
+    try await connection.confirmLiveness()
+    try await connection.send(
       messageType: "IndigoKeyboardButtonEvent", payload: IndigoKeyboardButtonEvent(usageCode: 0, state: .up))
-    try await transport.flush()
+    try await connection.flush()
 
     let sleeps = await recorder.sleeps
     XCTAssertEqual(sleeps, [DTUHIDTiming.replyTail, DTUHIDTiming.drain])
@@ -359,9 +358,9 @@ final class SimulatorDTUHIDTransportTests: XCTestCase {
 
   func testLivenessProbeCarriesAnInertBarrier() async throws {
     let recorder = DrainRecorder()
-    let transport = makeTransport(recorder)
+    let connection = makeConnection(recorder)
 
-    try await transport.confirmLiveness()
+    try await connection.confirmLiveness()
 
     let probes = await recorder.livenessProbes
     XCTAssertEqual(probes.count, 1)
@@ -375,10 +374,10 @@ final class SimulatorDTUHIDTransportTests: XCTestCase {
 
   func testLivenessProbeFailurePaysNoTail() async throws {
     let recorder = DrainRecorder()
-    let transport = makeTransport(recorder, liveness: .unanswered)
+    let connection = makeConnection(recorder, liveness: .unanswered)
 
     do {
-      try await transport.confirmLiveness()
+      try await connection.confirmLiveness()
       XCTFail("expected the probe to fail")
     } catch is DTUHIDLivenessFailure {
     } catch {
@@ -459,20 +458,26 @@ final class SimulatorDTUHIDTransportTests: XCTestCase {
     SimulatorHID(transport: .dtuhid(makeTransport(recorder, gate: gate)))
   }
 
-  private func makeTransport(
-    _ recorder: DrainRecorder, gate: SleepGate? = nil, liveness: LivenessReply = .answer
-  ) -> SimulatorDTUHIDTransport {
-    let connection = xpc_connection_create("com.facebook.fbsimulatorcontrol.test.dtuhid", nil)
-    xpc_connection_set_event_handler(connection) { _ in }
-    xpc_connection_resume(connection)
-    let transport = SimulatorDTUHIDTransport(
-      connection: connection,
+  private func makeTransport(_ recorder: DrainRecorder, gate: SleepGate? = nil) -> SimulatorDTUHIDTransport {
+    SimulatorDTUHIDTransport(
+      connection: makeConnection(recorder, gate: gate),
       mainScreenSize: CGSize(width: 100, height: 200),
       mainScreenScale: 2.0,
-      productFamily: .iPhone,
+      productFamily: .iPhone)
+  }
+
+  private func makeConnection(
+    _ recorder: DrainRecorder, gate: SleepGate? = nil, liveness: LivenessReply = .answer
+  ) -> SimulatorDTUHIDConnection {
+    let xpc = xpc_connection_create("com.facebook.fbsimulatorcontrol.test.dtuhid", nil)
+    xpc_connection_set_event_handler(xpc) { _ in }
+    xpc_connection_resume(xpc)
+    let connection = SimulatorDTUHIDConnection(
+      connection: xpc,
+      serviceName: SimulatorDTUHIDTransport.digitizerServiceName,
       clock: recordingClock(recorder, gate: gate, liveness: liveness))
-    addTeardownBlock { transport.disconnect() }
-    return transport
+    addTeardownBlock { connection.disconnect() }
+    return connection
   }
 
   /// One inert keypress. Usage `0` is "no event indicated", so a guest would ignore it even if one

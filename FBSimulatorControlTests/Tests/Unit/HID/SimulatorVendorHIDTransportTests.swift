@@ -24,18 +24,15 @@ final class SimulatorVendorHIDTransportTests: XCTestCase {
 
     func fail(_ fail: Bool) { failNext = fail }
 
-    func connect() throws -> SimulatorDTUHIDTransport {
+    func connect() throws -> SimulatorDTUHIDConnection {
       attempts += 1
       if failNext { throw ConnectFailure.injected }
       let connection = xpc_connection_create("com.facebook.fbsimulatorcontrol.test.vendor", nil)
       xpc_connection_set_event_handler(connection) { _ in }
       xpc_connection_resume(connection)
-      return SimulatorDTUHIDTransport(
+      return SimulatorDTUHIDConnection(
         connection: connection,
-        serviceName: SimulatorDTUHIDTransport.vendorDefinedServiceName,
-        mainScreenSize: CGSize(width: 100, height: 200),
-        mainScreenScale: 2.0,
-        productFamily: .iPhone,
+        serviceName: SimulatorVendorHIDTransport.serviceName,
         clock: DTUHIDDrainClock(sleep: { _ in }))
     }
   }

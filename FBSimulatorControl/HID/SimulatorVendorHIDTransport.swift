@@ -20,15 +20,17 @@ import Foundation
 /// One per simulator, owned by `simulator.hid` and dropped with its input connection when the
 /// simulator changes state, since a connection made before a reboot is dead.
 actor SimulatorVendorHIDTransport {
-  typealias Connect = @Sendable () async throws -> SimulatorDTUHIDTransport
+  typealias Connect = @Sendable () async throws -> SimulatorDTUHIDConnection
+
+  static let serviceName = "com.apple.coredevice.feature.remote.hid.vendordefined"
 
   private let connect: Connect
-  private var connecting: Task<SimulatorDTUHIDTransport, Error>?
+  private var connecting: Task<SimulatorDTUHIDConnection, Error>?
 
   init(simulator: Simulator?) {
     self.init { [weak simulator] in
       guard let simulator else { throw WeakTargetError.simulator }
-      return try await SimulatorDTUHIDTransport.dtuhid(for: simulator, serviceName: SimulatorDTUHIDTransport.vendorDefinedServiceName)
+      return try await SimulatorDTUHIDConnection.connect(to: simulator, serviceName: Self.serviceName)
     }
   }
 
@@ -38,9 +40,9 @@ actor SimulatorVendorHIDTransport {
 
   /// Sends one report and drains it, so the guest has acted on it when this returns.
   func send(_ event: IndigoVendorDefinedEvent) async throws {
-    let transport = try await established()
-    try await transport.send(messageType: "IndigoVendorDefinedEvent", payload: event)
-    try await transport.flush()
+    let connection = try await established()
+    try await connection.send(messageType: "IndigoVendorDefinedEvent", payload: event)
+    try await connection.flush()
   }
 
   /// Tears down the connection, if one was ever established.
@@ -51,7 +53,7 @@ actor SimulatorVendorHIDTransport {
   }
 
   /// Concurrent first sends share one connection attempt rather than racing to open two.
-  private func established() async throws -> SimulatorDTUHIDTransport {
+  private func established() async throws -> SimulatorDTUHIDConnection {
     if let connecting {
       return try await connecting.value
     }

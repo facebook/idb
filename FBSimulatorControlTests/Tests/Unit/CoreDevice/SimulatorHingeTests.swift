@@ -63,7 +63,7 @@ final class SimulatorHingeTests: XCTestCase {
       let message = try XPCEncoder().encode(
         DTUHIDMessage(
           messageType: "IndigoVendorDefinedEvent",
-          featureIdentifier: SimulatorDTUHIDTransport.vendorDefinedServiceName,
+          featureIdentifier: SimulatorVendorHIDTransport.serviceName,
           payload: event))
       XCTAssertEqual(
         String(cString: xpc_dictionary_get_string(message, "featureIdentifier")!),
