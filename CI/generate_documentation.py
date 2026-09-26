@@ -609,8 +609,18 @@ def recording_beside(trace: Path) -> tuple[Path, Path] | None:
     return None
 
 
-def read_recording(trace: Path) -> Recording | None:
+def read_recording(trace: Path, events: Sequence[dict[str, Any]]) -> Recording | None:
     """The recording beside a trace, when clips the website can play come out of it."""
+    # The harness stops a recorder that is too slow to produce its first frame,
+    # and whatever the recorder finalises then began after the tests it was
+    # meant to show.
+    for event in events:
+        if event["event"] == "recording_unavailable":
+            print(
+                f"{trace.name} gave up on its recording: {event.get('reason')}",
+                file=sys.stderr,
+            )
+            return None
     beside = recording_beside(trace)
     if beside is None:
         print(f"No recording beside {trace.name}", file=sys.stderr)
@@ -873,7 +883,7 @@ def main(argv: Sequence[str] | None = None) -> int:
 
     try:
         trace, events = select_trace(arguments.artifacts_dir)
-        recording = read_recording(trace)
+        recording = read_recording(trace, events)
         demos = read_demos(
             events,
             origin_of(events, recording),

@@ -884,11 +884,12 @@ class RecordingTests(unittest.TestCase):
         events = gave_up + trace_events()[1:]
         described = report(duration=1.78, startedAt=ORIGIN + 0.5)
         with artifacts({PREFIX: events}, video=described) as (source, output):
-            reasons = refused(source, output)
+            said = warnings(source, output)
+            published = manifest(output)
 
-        # BUG: cuts clips out of a recording the harness gave up on, and fails
-        # the run when none fit -- flipped in the following commit.
-        self.assertIn(f"No demo could be cut out of {PREFIX}.mp4", reasons)
+        self.assertIsNone(published["demos"][0]["video"])
+        self.assertEqual(len(published["demos"]), 1)
+        self.assertIn("gave up on its recording", said)
 
     def test_says_which_encoding_it_would_not_publish(self) -> None:
         described = report(encoding="mjpeg", duration=1.0)
