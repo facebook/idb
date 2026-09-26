@@ -860,6 +860,36 @@ class RecordingTests(unittest.TestCase):
         self.assertIsNone(published["demos"][0]["video"])
         self.assertIn("does not describe a recording", said)
 
+    def test_documents_the_transcript_when_the_harness_gave_up_on_the_recording(
+        self,
+    ) -> None:
+        # The harness stops a recorder that is slow to produce frames, and the
+        # recorder then finalises what little it captured after the tests began.
+        gave_up = [
+            {
+                "time": ORIGIN,
+                "event": "recording_unavailable",
+                "test": "",
+                "reason": "Recorder did not produce frames within 60 seconds",
+            },
+            {
+                "time": ORIGIN + 0.5,
+                "event": "recording_finished",
+                "test": "",
+                "status": "recorded",
+                "returncode": 0,
+                "error": "Recorder did not produce frames within 60 seconds",
+            },
+        ]
+        events = gave_up + trace_events()[1:]
+        described = report(duration=1.78, startedAt=ORIGIN + 0.5)
+        with artifacts({PREFIX: events}, video=described) as (source, output):
+            reasons = refused(source, output)
+
+        # BUG: cuts clips out of a recording the harness gave up on, and fails
+        # the run when none fit -- flipped in the following commit.
+        self.assertIn(f"No demo could be cut out of {PREFIX}.mp4", reasons)
+
     def test_says_which_encoding_it_would_not_publish(self) -> None:
         described = report(encoding="mjpeg", duration=1.0)
         with artifacts(video=described, container=".mov") as (source, output):
