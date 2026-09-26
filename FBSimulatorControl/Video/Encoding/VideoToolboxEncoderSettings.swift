@@ -14,8 +14,11 @@ public enum VideoEncodeSink: Sendable {
   /// A consumer displays frames as they arrive: low-latency rate control, no frame reordering and no
   /// encoder delay, so a frame is out within the frame interval.
   case live
-  /// Frames are muxed to a file: the standard encoder, free to reorder (B-frames) and look ahead,
-  /// which is quality-per-bit a viewer of the finished file gets for nothing.
+  /// Frames are muxed to a file: the standard encoder's rate control, which is quality-per-bit a
+  /// viewer of the finished file gets for nothing. Frames are not reordered, because the file is a
+  /// fragmented movie: a reordered frame can need a negative composition offset, which a version-0
+  /// `trun` box cannot hold, and `AVAssetWriter` fails the whole recording at the first fragment
+  /// that needs one.
   case file
 }
 
@@ -122,12 +125,12 @@ struct VideoToolboxEncoderSettings {
     switch format {
     case let .compressedVideo(codec, _):
       // Frame reordering and encoder delay are H.264/HEVC concepts; a JPEG session ignores the keys.
+      properties[kVTCompressionPropertyKey_AllowFrameReordering as String] = false
       switch sink {
       case .live:
-        properties[kVTCompressionPropertyKey_AllowFrameReordering as String] = false
         properties[kVTCompressionPropertyKey_MaxFrameDelayCount as String] = 0
       case .file:
-        properties[kVTCompressionPropertyKey_AllowFrameReordering as String] = true
+        break
       }
       properties.merge(rateControlProperties(outputWidth: outputWidth, outputHeight: outputHeight)) { _, resolved in resolved }
       properties.merge(VideoColorDescription.sRGB.compressionProperties) { _, color in color }

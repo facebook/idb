@@ -98,11 +98,11 @@ final class VideoToolboxEncoderSettingsTests: XCTestCase {
     XCTAssertNil(props[kVTCompressionPropertyKey_MaxKeyFrameInterval as String])
   }
 
-  func testFileSinkUsesTheStandardEncoderWithReordering() {
+  func testFileSinkUsesTheStandardEncoderWithoutReordering() {
     let fileSettings = settings(h264, framesPerSecond: 30, sink: .file)
     let props = retinaProperties(fileSettings)
     XCTAssertEqual(props[kVTCompressionPropertyKey_RealTime as String] as? NSNumber, true)
-    XCTAssertEqual(props[kVTCompressionPropertyKey_AllowFrameReordering as String] as? NSNumber, true)
+    XCTAssertEqual(props[kVTCompressionPropertyKey_AllowFrameReordering as String] as? NSNumber, false)
     XCTAssertNil(props[kVTCompressionPropertyKey_MaxFrameDelayCount as String])
 
     let specification = fileSettings.encoderSpecification
