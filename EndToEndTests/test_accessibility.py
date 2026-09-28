@@ -11,9 +11,7 @@ request. Tests read and drive the fixed screen ReplHost shows when launched
 with `--accessibility-fixture`, whose elements carry known identifiers and
 change only when a test acts on them. Tap and scroll tests verify navigation
 and movement through axbridge. Safari is read as well, for the web content
-another process is showing, which ax cannot reach. A notification delivered
-to an app that is not running is followed through idb's notification
-commands, from delivery until it is cleared.
+another process is showing, which ax cannot reach.
 """
 
 from __future__ import annotations
@@ -71,23 +69,6 @@ AXBRIDGE_BACKEND = "axbridge-exclusive"
 MINIMUM_CONTROL_WIDTH = 100
 
 DESCRIBE_ALL_ARGS = ("ui", "describe-all", "--nested")
-
-NEWS_BUNDLE_ID = "com.apple.news"
-NOTIFICATION_TITLE = "Breaking"
-NOTIFICATION_PAYLOAD = json.dumps(
-    {
-        "aps": {
-            "alert": {
-                "title": NOTIFICATION_TITLE,
-                "body": "idb delivered this without the app running.",
-            }
-        }
-    }
-)
-NOTIFICATION_STORE_TIMEOUT_SECONDS = 300.0
-# A list can take over 30s, when the system doesn't answer idb and it reads
-# the store instead, so a wait for the list to change allows for a few.
-NOTIFICATION_LIST_TIMEOUT_SECONDS = 120.0
 
 # Enough of a matched element to say what it is and where it sits, rather
 # than every attribute a read would otherwise carry on every match.
@@ -169,6 +150,17 @@ def _labelled_controls(document: Any) -> list[dict[str, Any]]:
 def _identifier(element: dict[str, Any]) -> str | None:
     """Read the identifier from legacy output (AXUniqueId) or complete output."""
     return element.get("AXUniqueId") or element.get("identifier")
+
+
+def _placed(element: dict[str, Any], screen: dict[str, float] | None) -> str:
+    frame = element["frame"]
+    where = (
+        f"{frame['width']:.0f}×{frame['height']:.0f} points at "
+        f"({frame['x']:.0f}, {frame['y']:.0f})"
+    )
+    if screen is None:
+        return where
+    return f"{where} on a {screen['width']:.0f}×{screen['height']:.0f} screen"
 
 
 def _labels(document: Any) -> set[str]:
@@ -276,22 +268,16 @@ INTERACTION_TESTS = frozenset(
         "test_ui_tap_opens_general_by_point",
         "test_ui_wait_returns_after_general_opens",
         "test_ui_wait_times_out_and_rejects_an_invalid_poll_interval",
-        "test_a_delivered_notification_is_held_until_it_is_cleared",
-        "test_web_content_is_readable_from_inside_the_simulator",
     }
 )
-# The tests that read and drive the fixture, which the others have no use for.
-FIXTURE_TESTS = ACCESSIBILITY_READ_TESTS | {
-    "test_ui_scroll_moves_rows_down_and_up",
-    "test_ui_set_value_updates_the_search_field",
-    "test_ui_opens_general_by_identifier_and_confirms_it",
-    "test_ui_tap_opens_general_by_point",
-    "test_ui_wait_returns_after_general_opens",
-    "test_ui_wait_times_out_and_rejects_an_invalid_poll_interval",
-}
 ACCESSIBILITY_TEST_CAPABILITIES = {
     **{name: SuiteCapability.ACCESSIBILITY_READ for name in ACCESSIBILITY_READ_TESTS},
     **{name: SuiteCapability.ACCESSIBILITY_INTERACTION for name in INTERACTION_TESTS},
+}
+WEB_CONTENT_TEST_CAPABILITIES = {
+    "test_web_content_is_readable_from_inside_the_simulator": (
+        SuiteCapability.ACCESSIBILITY_INTERACTION
+    ),
 }
 
 
@@ -300,8 +286,14 @@ def load_tests(
     tests: unittest.TestSuite,
     pattern: str | None,
 ) -> unittest.TestSuite:
-    return select_tests_for_capability(
-        loader, tests, AccessibilityTests, ACCESSIBILITY_TEST_CAPABILITIES
+    return unittest.TestSuite(
+        select_tests_for_capability(
+            loader, loader.loadTestsFromTestCase(test_case), test_case, requirements
+        )
+        for test_case, requirements in (
+            (AccessibilityTests, ACCESSIBILITY_TEST_CAPABILITIES),
+            (WebContentTests, WEB_CONTENT_TEST_CAPABILITIES),
+        )
     )
 
 
@@ -314,8 +306,6 @@ class AccessibilityTests(IdbEndToEndTestCase):
         await self.setup_deny_permission_prompts()
         for bundle_id in (SAFARI_BUNDLE_ID, FIXTURE_APP_BUNDLE_ID):
             await self.setup_terminate_quietly(bundle_id)
-        if self._testMethodName not in FIXTURE_TESTS:
-            return
         await self.setup_install_fixture_app()
         await self.setup_idb("launch", FIXTURE_APP_BUNDLE_ID, FIXTURE_LAUNCH_ARGUMENT)
         self.control = await self.wait_for_control()
@@ -654,17 +644,6 @@ class AccessibilityTests(IdbEndToEndTestCase):
         self.assertEqual(document["backend"], AXBRIDGE_BACKEND)
         return document
 
-    @staticmethod
-    def _placed(element: dict[str, Any], screen: dict[str, float] | None) -> str:
-        frame = element["frame"]
-        where = (
-            f"{frame['width']:.0f}×{frame['height']:.0f} points at "
-            f"({frame['x']:.0f}, {frame['y']:.0f})"
-        )
-        if screen is None:
-            return where
-        return f"{where} on a {screen['width']:.0f}×{screen['height']:.0f} screen"
-
     @documented_demo(
         slug="open-a-page-by-id",
         title="Open a page by accessibility identifier",
@@ -688,7 +667,7 @@ class AccessibilityTests(IdbEndToEndTestCase):
         self.note(
             f"The row is a {rows[0].get('type')} labelled {title!r}, with "
             f"accessibility identifier {GENERAL_ROW_ID}. It is "
-            f"{self._placed(rows[0], _screen(before))}.",
+            f"{_placed(rows[0], _screen(before))}.",
             GENERAL_ROW_ID,
             title,
         )
@@ -759,7 +738,7 @@ class AccessibilityTests(IdbEndToEndTestCase):
         )
         self.note(
             f"The navigation bar labelled {title!r} confirms that the expected "
-            f"page opened. It is {self._placed(opened[0], _screen(after))}.",
+            f"page opened. It is {_placed(opened[0], _screen(after))}.",
             "NavigationBar",
             title,
         )
@@ -848,141 +827,16 @@ class AccessibilityTests(IdbEndToEndTestCase):
             f"{abs(furthest):.0f} points."
         )
 
-    @staticmethod
-    def _retained(text: str) -> list[tuple[str, str]]:
-        """The identifier and title of each notification the system still holds."""
-        held = []
-        for line in text.splitlines():
-            fields = [field.strip().strip('"') for field in line.split("|")]
-            if len(fields) >= 3:
-                held.append((fields[1], fields[2]))
-        return held
 
-    @documented_demo(
-        slug="deliver-a-notification-and-watch-it-clear",
-        title="Test notification delivery without handling a permission prompt",
-        summary=(
-            "Prepare a simulator for notification testing without launching "
-            "the app or automating its permission prompt. Grant notification "
-            "permission directly, deliver a push while the app is not running, "
-            "and confirm that the system holds it for the app. Then clear the "
-            "app's delivered notifications and verify that the system no "
-            "longer holds any."
-        ),
-    )
-    async def test_a_delivered_notification_is_held_until_it_is_cleared(self) -> None:
-        self.addAsyncCleanup(self.setup_terminate_quietly, NEWS_BUNDLE_ID)
-        await self.setup_terminate_quietly(NEWS_BUNDLE_ID)
-        # The first push a simulator receives after it is erased waits on the
-        # system building its notification store, for minutes at worst. This
-        # one is sent before the permission is granted, so the system refuses
-        # it and stores nothing, and the demo's own push is quick.
-        await self.setup_idb(
-            "send-notification",
-            NEWS_BUNDLE_ID,
-            NOTIFICATION_PAYLOAD,
-            check=False,
-            timeout=NOTIFICATION_STORE_TIMEOUT_SECONDS,
-        )
+class WebContentTests(IdbEndToEndTestCase):
+    capabilities = WEB_CONTENT_TEST_CAPABILITIES
 
-        await self.idb(
-            "approve",
-            NEWS_BUNDLE_ID,
-            "notification",
-            step="Grant notification permission without showing a prompt",
-        )
-        self.note(
-            f"Notification permission is already granted to {NEWS_BUNDLE_ID}, "
-            "so the test can deliver a notification without waiting for the "
-            "app to request access.",
-            NEWS_BUNDLE_ID,
-        )
-
-        before = await self.idb(
-            "notification",
-            "list",
-            NEWS_BUNDLE_ID,
-            step="List notifications before delivery",
-        )
-        held = {identifier for identifier, _ in self._retained(before.text)}
-        self.note(
-            "No delivered notifications are currently stored for this app."
-            if not held
-            else (
-                f"The system already holds {len(held)} delivered notifications "
-                "for this app; the test records them so it can identify the new one."
-            )
-        )
-
-        await self.idb(
-            "send-notification",
-            NEWS_BUNDLE_ID,
-            NOTIFICATION_PAYLOAD,
-            step="Deliver a notification while the app is not running",
-        )
-
-        def new_entries(text: str) -> list[str]:
-            return [
-                identifier
-                for identifier, title in self._retained(text)
-                if title == NOTIFICATION_TITLE and identifier not in held
-            ]
-
-        async def stored() -> None:
-            completed = await self.setup_idb("notification", "list", NEWS_BUNDLE_ID)
-            if not new_entries(completed.text):
-                raise NotReady(f"{NOTIFICATION_TITLE!r} is not held yet")
-
-        await wait_until(
-            f"The system did not hold {NOTIFICATION_TITLE!r}",
-            NOTIFICATION_LIST_TIMEOUT_SECONDS,
-            stored,
-        )
-
-        after = await self.idb(
-            "notification",
-            "list",
-            NEWS_BUNDLE_ID,
-            step="List notifications after delivery",
-        )
-        delivered = new_entries(after.text)
-        self.assertEqual(len(delivered), 1, f"expected one new {NOTIFICATION_TITLE!r}")
-        self.note(
-            f"The delivered-notification list now contains a new entry titled "
-            f"{NOTIFICATION_TITLE!r}, although {NEWS_BUNDLE_ID} never ran to "
-            "receive it.",
-            NOTIFICATION_TITLE,
-        )
-
-        await self.idb(
-            "notification",
-            "clear",
-            NEWS_BUNDLE_ID,
-            step="Clear the app's delivered notifications",
-        )
-
-        async def released() -> None:
-            completed = await self.setup_idb("notification", "list", NEWS_BUNDLE_ID)
-            if self._retained(completed.text):
-                raise NotReady("the system still holds notifications for the app")
-
-        await wait_until(
-            f"The system did not release the notifications for {NEWS_BUNDLE_ID}",
-            NOTIFICATION_LIST_TIMEOUT_SECONDS,
-            released,
-        )
-
-        cleared = await self.idb(
-            "notification",
-            "list",
-            NEWS_BUNDLE_ID,
-            step="List notifications after clearing them",
-        )
-        self.assertEqual(self._retained(cleared.text), [])
-        self.note(
-            "The delivered-notification list is empty, confirming that clearing "
-            "withdrew the new entry along with any the system held before."
-        )
+    async def asyncSetUp(self) -> None:
+        await super().asyncSetUp()
+        await self.setup_deny_permission_prompts()
+        await self.setup_terminate_quietly(FIXTURE_APP_BUNDLE_ID)
+        self.addAsyncCleanup(self.setup_terminate_quietly, SAFARI_BUNDLE_ID)
+        await self.setup_terminate_quietly(SAFARI_BUNDLE_ID)
 
     async def wait_for_tappable_address_bar(self) -> None:
         """Wait for the address bar to be drawn, before it is tapped.
@@ -1059,8 +913,6 @@ class AccessibilityTests(IdbEndToEndTestCase):
         ),
     )
     async def test_web_content_is_readable_from_inside_the_simulator(self) -> None:
-        self.addAsyncCleanup(self.setup_terminate_quietly, SAFARI_BUNDLE_ID)
-        await self.setup_terminate_quietly(SAFARI_BUNDLE_ID)
         origin = await self.setup_web_origin(
             LIVE_ORIGIN, STAND_IN_PAGES, self.safari_shows_first_page
         )
@@ -1093,7 +945,7 @@ class AccessibilityTests(IdbEndToEndTestCase):
         self.note(
             f"idb walked {first['narrowing']['walked']} elements to find the "
             f"heading, and they belong to the page rather than to Safari's "
-            f"chrome. The heading is {self._placed(headings[0], _screen(first))}, "
+            f"chrome. The heading is {_placed(headings[0], _screen(first))}, "
             f"far below the visible part of the page, and no scrolling was "
             f"needed to read it.",
             FIRST_PAGE_HEADING,
@@ -1190,7 +1042,7 @@ class AccessibilityTests(IdbEndToEndTestCase):
         self.note(
             f"The page that loaded names {SECOND_PAGE_LABEL} in {len(named)} "
             f"places, which confirms that the typed address opened. The smallest "
-            f"is {self._placed(smallest, _screen(second))}: a label drawn inside "
+            f"is {_placed(smallest, _screen(second))}: a label drawn inside "
             f"one of the page's diagrams, which the accessibility tree reports "
             f"as an ordinary element.",
             SECOND_PAGE_LABEL,

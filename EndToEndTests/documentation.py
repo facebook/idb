@@ -50,11 +50,11 @@ DOCUMENTED_DEMOS: Mapping[str, str] = {
         ".test_ui_scroll_moves_rows_down_and_up"
     ),
     "deliver-a-notification-and-watch-it-clear": (
-        "EndToEndTests.test_accessibility.AccessibilityTests"
+        "EndToEndTests.test_services.NotificationTests"
         ".test_a_delivered_notification_is_held_until_it_is_cleared"
     ),
     "read-a-web-page-in-safari": (
-        "EndToEndTests.test_accessibility.AccessibilityTests"
+        "EndToEndTests.test_accessibility.WebContentTests"
         ".test_web_content_is_readable_from_inside_the_simulator"
     ),
 }
