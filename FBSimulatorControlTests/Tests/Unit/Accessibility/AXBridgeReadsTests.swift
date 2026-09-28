@@ -292,6 +292,23 @@ final class AXBridgeReadsTests: XCTestCase {
     }
   }
 
+  // The traits bitmask comes back in the same round trip as the rest of the node, so a read that reports
+  // `traits` fetches it.
+  func testAReadReportingTraitsFetchesTheTraitsBitmask() {
+    let fetched = AXWire.Node.fetchList(for: AXKeys.defaultSet) ?? AXWire.Node.defaultFetchList
+    // BUG: nothing fetches the bitmask, so every element reports null traits — flipped in the following commit.
+    XCTAssertFalse(fetched.contains("XC_kAXXCAttributeTraits"))
+  }
+
+  // Decoding the bitmask costs the application time per node, so a read that does not report `traits` must not
+  // pay for it, with or without the reachability attributes.
+  func testAReadNotReportingTraitsDoesNotFetchTheBitmask() {
+    for keys: Set<AXKeys> in [[.label, .frame], [.label, .frame, .interactable]] {
+      let fetched = AXWire.Node.fetchList(for: keys) ?? AXWire.Node.defaultFetchList
+      XCTAssertFalse(fetched.contains("XC_kAXXCAttributeTraits"), "\(keys.map(\.rawValue).sorted())")
+    }
+  }
+
   // MARK: - Where the accessibility-server remediation is offered
 
   private static let axBridge = UIAutomationBackend.axBridge(persistence: .oneShot, frontmostMethod: .centerPoint, automationMode: true)

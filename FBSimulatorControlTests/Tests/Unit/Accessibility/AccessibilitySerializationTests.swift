@@ -704,6 +704,15 @@ final class AccessibilitySerializationTests: XCTestCase {
     XCTAssertEqual(element[AXKeys.type.rawValue] as? String, "Button")
   }
 
+  // Bits 18 and 21 are `TextEntry` and `IsEditing`: a focused text field, which is what a caller finds focus by.
+  func testTraitsRenderAsTheNamesTheBitmaskCarries() throws {
+    var tree = Self.sampleTree()
+    tree["XC_kAXXCAttributeTraits"] = NSNumber(value: UInt64(1 << 18 | 1 << 21))
+    let element = try renderedElement(keys: [.traits], tree: tree)
+    // BUG: the element reports null traits despite carrying the bitmask — flipped in the following commit.
+    XCTAssertTrue(element[AXKeys.traits.rawValue] is NSNull)
+  }
+
   // The child carries a string automationType, where role and type genuinely diverge.
   func testRawRoleAndNormalizedTypeDivergeOnTheChild() throws {
     let elements = AXTreeWalk.describeAllElements(

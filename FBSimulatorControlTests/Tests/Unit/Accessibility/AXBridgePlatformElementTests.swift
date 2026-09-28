@@ -240,6 +240,16 @@ final class AXBridgePlatformElementTests: XCTestCase {
     XCTAssertNil(xctest.axIsEnabled(), "a read carrying no enabled answer must stay unknown")
   }
 
+  // Bits 18 and 21 are `TextEntry` and `IsEditing`: a focused text field.
+  func testTraitsAreDecodedFromTheBitmaskEitherVocabularyCarries() {
+    let bitmask = NSNumber(value: UInt64(1 << 18 | 1 << 21))
+    for key in ["XC_kAXXCAttributeTraits", AXWire.Node.traits.rawValue] {
+      let element = AXBridgePlatformElement(attributes: [key: bitmask], children: [], pid: 0)
+      // BUG: the bitmask is dropped and traits report null — flipped in the following commit.
+      XCTAssertNil(element.axTraits(), key)
+    }
+  }
+
   func testAbsentAttributesUseSafeDefaults() {
     let element = AXBridgePlatformElement(attributes: [:], children: [], pid: 0)
 
