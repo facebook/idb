@@ -127,7 +127,7 @@ enum SimulatorDisplayProtocol {
     if hasLayoutActivity {
       guard let active = record.active else { throw SimulatorCoreDeviceError.malformed("Display has no activity") }
       if !active, let state = record.backlightState, ["activeOn", "activeDimmed"].contains(state) {
-        throw SimulatorCoreDeviceError.malformed("Layout and backlight activity disagree")
+        throw SimulatorDisplayError.transitioning
       }
       return active
     }

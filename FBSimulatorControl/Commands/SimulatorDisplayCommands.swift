@@ -128,6 +128,8 @@ public enum SimulatorDisplayError: Error, LocalizedError {
   case noActiveIntegratedDisplay
   case ambiguousActiveDisplays([String])
   case changed
+  /// Layout has moved to another display whose backlight has not caught up, as after a hinge change.
+  case transitioning
   case screensNotReported(within: TimeInterval)
 
   public var errorDescription: String? {
@@ -136,6 +138,7 @@ public enum SimulatorDisplayError: Error, LocalizedError {
     case .noActiveIntegratedDisplay: "Simulator has no active integrated display"
     case let .ambiguousActiveDisplays(ids): "Simulator has multiple active integrated displays: \(ids.joined(separator: ", "))"
     case .changed: "Simulator display changed during the operation"
+    case .transitioning: "Invalid simulator CoreDevice response: Layout and backlight activity disagree"
     }
   }
 }

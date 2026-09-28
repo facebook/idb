@@ -201,7 +201,10 @@ final class SimulatorDisplayReadTests: XCTestCase {
     xpc_dictionary_set_bool(cover, "active", false)
     XCTAssertThrowsError(try SimulatorDisplayProtocol.displays(displayReply([cover, inner])))
     xpc_dictionary_set_bool(inner, "active", false)
-    XCTAssertThrowsError(try SimulatorDisplayProtocol.displays(displayReply([cover, inner])))
+    XCTAssertThrowsError(try SimulatorDisplayProtocol.displays(displayReply([cover, inner]))) { error in
+      guard case SimulatorDisplayError.transitioning = error else { return XCTFail("\(error)") }
+      XCTAssertEqual(error.localizedDescription, "Invalid simulator CoreDevice response: Layout and backlight activity disagree")
+    }
     xpc_dictionary_set_bool(inner, "active", true)
     let selected = try SimulatorDisplayCommands.activeIntegratedDisplay(in: SimulatorDisplayProtocol.displays(displayReply([cover, inner])))
     XCTAssertEqual(selected.activitySource, .layout)
