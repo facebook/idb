@@ -8,8 +8,8 @@
 @testable import FBSimulatorControl
 import Foundation
 
-/// Test double for the display reads. Only `interactionTarget()` is modelled, so routing built on it
-/// runs the real logic. Each read takes the next scripted result; the last one repeats.
+/// Test double for the display reads, so routing built on them runs the real logic. Each display read
+/// takes the next scripted result; the last one repeats.
 // SAFETY: The script and read count are guarded by the lock.
 // patternlint-disable-next-line unchecked-sendable
 final class DisplayCommandsDouble: DisplayCommands, @unchecked Sendable {
@@ -17,20 +17,36 @@ final class DisplayCommandsDouble: DisplayCommands, @unchecked Sendable {
   private let lock = NSLock()
   private var results: [Result<SimulatorDisplayTarget, any Error>]
   private var readCount = 0
+  private var touchscreenReadCount = 0
+  private let touchscreenResult: [SimulatorTouchscreen]
 
-  init(_ results: [Result<SimulatorDisplayTarget, any Error>]) {
+  init(_ results: [Result<SimulatorDisplayTarget, any Error>], touchscreens: [SimulatorTouchscreen] = []) {
     precondition(!results.isEmpty)
     self.results = results
+    self.touchscreenResult = touchscreens
   }
 
-  convenience init(_ targets: SimulatorDisplayTarget...) {
-    self.init(targets.map { .success($0) })
+  convenience init(_ targets: SimulatorDisplayTarget..., touchscreens: [SimulatorTouchscreen] = []) {
+    self.init(targets.map { .success($0) }, touchscreens: touchscreens)
   }
 
   var reads: Int {
     lock.lock()
     defer { lock.unlock() }
     return readCount
+  }
+
+  var touchscreenReads: Int {
+    lock.lock()
+    defer { lock.unlock() }
+    return touchscreenReadCount
+  }
+
+  func touchscreens() async throws -> [SimulatorTouchscreen] {
+    lock.lock()
+    defer { lock.unlock() }
+    touchscreenReadCount += 1
+    return touchscreenResult
   }
 
   func interactionTarget() async throws -> SimulatorDisplayTarget {

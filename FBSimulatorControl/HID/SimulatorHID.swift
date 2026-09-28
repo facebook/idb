@@ -79,10 +79,10 @@ public final class SimulatorHID: CustomStringConvertible, Sendable {
   }
 
   /// Routes one event to its transport.
-  func deliver(_ event: SimulatorHIDEvent) async throws {
+  func deliver(_ event: SimulatorHIDEvent, display: SimulatorHIDDisplay? = nil) async throws {
     switch event {
     case let .touch(direction, x, y, edge):
-      try await transport.primitives.sendTouch(direction: direction, x: x, y: y, edge: edge)
+      try await transport.primitives.sendTouch(direction: direction, x: x, y: y, edge: edge, display: display)
     case let .button(direction, button):
       try await transport.primitives.sendButton(direction: direction, button: button)
     case let .remoteButton(direction, button):
@@ -90,14 +90,14 @@ public final class SimulatorHID: CustomStringConvertible, Sendable {
     case let .keyboard(direction, keyCode):
       try await transport.primitives.sendKeyboard(direction: direction, keyCode: keyCode)
     case let .twoFingerTouch(direction, finger1, finger2):
-      try await transport.primitives.sendTwoFingerTouch(direction: direction, finger1: finger1, finger2: finger2)
+      try await transport.primitives.sendTwoFingerTouch(direction: direction, finger1: finger1, finger2: finger2, display: display)
     case let .trackpad(phase, point):
       try await transport.sendTrackpad(point: point, phase: phase)
     case let .delay(duration):
       try await Task.sleep(nanoseconds: UInt64(max(0, duration) * 1_000_000_000))
     case let .composite(events):
       for event in events {
-        try await deliver(event)
+        try await deliver(event, display: display)
       }
     }
   }

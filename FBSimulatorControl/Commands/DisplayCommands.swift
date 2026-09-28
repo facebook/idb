@@ -13,6 +13,8 @@ protocol DisplayCommands: AnyObject, Sendable {
 
   func interactionTarget() async throws -> SimulatorDisplayTarget
 
+  func touchscreens() async throws -> [SimulatorTouchscreen]
+
   /// Identities already learned for display UUIDs, so a routed read does not ask again.
   var identities: DisplayIdentityCache { get }
 }
@@ -49,6 +51,7 @@ final class DisplayIdentityCache: @unchecked Sendable {
   private let lock = NSLock()
   private var accessibility: [String: UInt32] = [:]
   private var verified: AXBridgeDisplayCapabilities = []
+  private var digitizers: [String: UInt32] = [:]
 
   /// Only an identity from an inventory that was checked for `capabilities` counts.
   func accessibilityID(for uniqueID: String, requiring capabilities: AXBridgeDisplayCapabilities = []) -> UInt32? {
@@ -63,6 +66,21 @@ final class DisplayIdentityCache: @unchecked Sendable {
     defer { lock.unlock() }
     accessibility = Dictionary(inventory.map { ($0.uniqueID, $0.displayID) }, uniquingKeysWith: { first, _ in first })
     verified = capabilities
+  }
+
+  func digitizerTarget(for uniqueID: String) -> UInt32? {
+    lock.lock()
+    defer { lock.unlock() }
+    return digitizers[uniqueID]
+  }
+
+  /// Keeps only displays reached by exactly one digitizer.
+  func remember(_ touchscreens: [SimulatorTouchscreen]) {
+    let targets = Dictionary(grouping: touchscreens.filter { $0.digitizerTarget > 0 }, by: \.displayUniqueID)
+      .compactMapValues { $0.count == 1 ? $0[0].digitizerTarget : nil }
+    lock.lock()
+    defer { lock.unlock() }
+    digitizers = targets
   }
 }
 
@@ -94,6 +112,31 @@ extension DisplayCommands {
     try await validate(target.display)
     identities.remember(inventory, verified: capabilities)
     return AXTranslationDisplay(display: target.display, accessibilityID: match.displayID)
+  }
+
+  /// The active display and the digitizer that reaches it, or nil when the runtime cannot report displays.
+  /// Only a simulator with several integrated displays reads its touchscreens, and only for a display it has not seen.
+  func hidDisplay() async throws -> SimulatorHIDDisplay? {
+    let target: SimulatorDisplayTarget
+    do {
+      target = try await interactionTarget()
+    } catch SimulatorCoreDeviceError.unsupported {
+      return nil
+    }
+    guard case let .selected(display) = target else {
+      return .sole(target.display)
+    }
+    if let digitizerTarget = identities.digitizerTarget(for: display.uniqueID) {
+      return .selected(display, target: digitizerTarget)
+    }
+    let touchscreens = try await touchscreens()
+    let matches = touchscreens.filter { $0.displayUniqueID == display.uniqueID }
+    guard matches.count == 1, let touchscreen = matches.first, touchscreen.digitizerTarget > 0 else {
+      throw SimulatorDisplayInteractionError.unsupportedCapability("a unique touchscreen target for display \(display.uniqueID)")
+    }
+    try await validate(target.display)
+    identities.remember(touchscreens)
+    return .selected(display, target: touchscreen.digitizerTarget)
   }
 
   /// Fails if the active display, or its geometry, differs from the snapshot.

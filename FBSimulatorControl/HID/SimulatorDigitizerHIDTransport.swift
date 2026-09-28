@@ -86,30 +86,34 @@ actor SimulatorDigitizerHIDTransport {
   }
 
   func sendTouch(
-    direction: SimulatorHIDDirection, x: Double, y: Double, edge: SimulatorHIDEdge
+    direction: SimulatorHIDDirection, x: Double, y: Double, edge: SimulatorHIDEdge, display: SimulatorHIDDisplay? = nil
   ) async throws {
     guard productFamily.hasTouchscreen else {
       throw SimulatorHIDError.touchUnsupportedOnAppleTV
     }
-    let ratio = SimulatorIndigoHID.screenRatio(
-      from: CGPoint(x: x, y: y), screenSize: mainScreenSize, screenScale: mainScreenScale)
+    let ratio =
+      try display?.normalizedPoint(CGPoint(x: x, y: y))
+      ?? SimulatorIndigoHID.screenRatio(
+        from: CGPoint(x: x, y: y), screenSize: mainScreenSize, screenScale: mainScreenScale)
     let event = IndigoDigitizerEvent(
       pointOne: DigitizerPoint(x: Double(ratio.x), y: Double(ratio.y)),
       eventType: contact.eventType(for: direction),
-      edge: UInt64(edge.rawValue))
+      edge: UInt64((display?.unrotatedEdge(edge) ?? edge).rawValue),
+      target: display?.digitizerTarget ?? 0)
     try await send(messageType: "IndigoDigitizerEvent", payload: event)
   }
 
-  func sendTwoFingerTouch(direction: SimulatorHIDDirection, finger1: CGPoint, finger2: CGPoint) async throws {
+  func sendTwoFingerTouch(direction: SimulatorHIDDirection, finger1: CGPoint, finger2: CGPoint, display: SimulatorHIDDisplay? = nil) async throws {
     guard productFamily.hasTouchscreen else {
       throw SimulatorHIDError.touchUnsupportedOnAppleTV
     }
-    let r1 = SimulatorIndigoHID.screenRatio(from: finger1, screenSize: mainScreenSize, screenScale: mainScreenScale)
-    let r2 = SimulatorIndigoHID.screenRatio(from: finger2, screenSize: mainScreenSize, screenScale: mainScreenScale)
+    let r1 = try display?.normalizedPoint(finger1) ?? SimulatorIndigoHID.screenRatio(from: finger1, screenSize: mainScreenSize, screenScale: mainScreenScale)
+    let r2 = try display?.normalizedPoint(finger2) ?? SimulatorIndigoHID.screenRatio(from: finger2, screenSize: mainScreenSize, screenScale: mainScreenScale)
     let event = IndigoDigitizerEvent(
       pointOne: DigitizerPoint(x: Double(r1.x), y: Double(r1.y)),
       pointTwo: DigitizerPoint(x: Double(r2.x), y: Double(r2.y)),
-      eventType: twoFingerContact.eventType(for: direction))
+      eventType: twoFingerContact.eventType(for: direction),
+      target: display?.digitizerTarget ?? 0)
     try await send(messageType: "IndigoDigitizerEvent", payload: event)
   }
 

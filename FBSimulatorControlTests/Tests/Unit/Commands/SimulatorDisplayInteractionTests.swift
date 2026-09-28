@@ -25,6 +25,92 @@ final class SimulatorDisplayInteractionTests: XCTestCase {
       accessibility: [SimulatorAccessibilityDisplay(uniqueID: display.uniqueID, displayID: 82)])
   }
 
+  func testHIDBindingNeedsOnlyTheMatchingTouchscreenIdentity() async throws {
+    let selected = display()
+    let displays = DisplayCommandsDouble(
+      .selected(selected),
+      touchscreens: [
+        SimulatorTouchscreen(displayUniqueID: "cover", digitizerTarget: 29),
+        SimulatorTouchscreen(displayUniqueID: "inner", digitizerTarget: 82),
+      ])
+    let resolved = try await displays.hidDisplay()
+    let binding = try XCTUnwrap(resolved)
+    XCTAssertEqual(binding.digitizerTarget, 82)
+    XCTAssertEqual(binding.geometry, selected.geometry)
+    let cached = try await displays.hidDisplay()
+    XCTAssertEqual(cached, binding)
+    XCTAssertEqual(displays.touchscreenReads, 1)
+
+    let sole = DisplayCommandsDouble(.sole(.identified(selected)), .sole(.legacy(selected.geometry)))
+    let firstSole = try await sole.hidDisplay()
+    let secondSole = try await sole.hidDisplay()
+    let identified = try XCTUnwrap(firstSole)
+    let legacy = try XCTUnwrap(secondSole)
+    XCTAssertEqual(identified.digitizerTarget, 0)
+    XCTAssertEqual(legacy.digitizerTarget, 0)
+    XCTAssertEqual(sole.touchscreenReads, 0)
+    XCTAssertFalse(binding.hasSameConfiguration(as: identified))
+    XCTAssertFalse(identified.hasSameConfiguration(as: legacy))
+  }
+
+  func testHIDBindingRejectsAmbiguousAndMissingTargets() async {
+    let selected = display()
+    let target = SimulatorTouchscreen(displayUniqueID: "inner", digitizerTarget: 82)
+    for targets in [[], [target, target], [SimulatorTouchscreen(displayUniqueID: "cover", digitizerTarget: 82)]] {
+      do {
+        _ = try await DisplayCommandsDouble(.selected(selected), touchscreens: targets).hidDisplay()
+        XCTFail("Expected a unique target requirement")
+      } catch {
+        guard case SimulatorDisplayInteractionError.unsupportedCapability = error else {
+          return XCTFail("Unexpected mapping error: \(error)")
+        }
+      }
+    }
+  }
+
+  func testHIDBindingIsNotCachedWhenTheDisplayChangesDuringLookup() async {
+    let displays = DisplayCommandsDouble(
+      .selected(display()), .selected(display(id: "cover")),
+      touchscreens: [SimulatorTouchscreen(displayUniqueID: "inner", digitizerTarget: 82)])
+    do {
+      _ = try await displays.hidDisplay()
+      XCTFail("Expected a display change")
+    } catch {
+      guard case SimulatorDisplayError.changed = error else { return XCTFail("Unexpected error: \(error)") }
+    }
+    XCTAssertNil(displays.identities.digitizerTarget(for: "inner"))
+  }
+
+  func testHIDBindingIsAbsentWithoutDisplayReports() async throws {
+    let displays = DisplayCommandsDouble([.failure(SimulatorCoreDeviceError.unsupported("displayinfo"))])
+    let binding = try await displays.hidDisplay()
+    XCTAssertNil(binding)
+  }
+
+  func testHIDGeometryRotatesPointsAndEdgesTogether() throws {
+    let cases: [(SimulatorDisplayRotation, CGPoint, SimulatorHIDEdge)] = [
+      (.upright, CGPoint(x: 0.2, y: 0.3), .top),
+      (.clockwise, CGPoint(x: 0.3, y: 0.8), .left),
+      (.upsideDown, CGPoint(x: 0.8, y: 0.7), .bottom),
+      (.counterclockwise, CGPoint(x: 0.7, y: 0.2), .right),
+    ]
+    for (rotation, expected, edge) in cases {
+      let selected = display(rotation: rotation, scale: 3)
+      for binding in [SimulatorHIDDisplay.selected(selected, target: 82), .sole(.legacy(selected.geometry))] {
+        let size = binding.geometry.pointSize
+        let point = try binding.normalizedPoint(CGPoint(x: size.width * 0.2, y: size.height * 0.3))
+        XCTAssertEqual(point.x, expected.x, accuracy: 0.000001)
+        XCTAssertEqual(point.y, expected.y, accuracy: 0.000001)
+        XCTAssertEqual(binding.unrotatedEdge(.top), edge)
+        XCTAssertEqual(binding.unrotatedEdge(.none), .none)
+        XCTAssertThrowsError(try binding.normalizedPoint(CGPoint(x: size.width + 1, y: 0)))
+      }
+    }
+    let first = SimulatorHIDDisplay.selected(display(), target: 82)
+    XCTAssertFalse(first.hasSameConfiguration(as: .selected(display(), target: 29)))
+    XCTAssertFalse(first.hasSameConfiguration(as: .selected(display(rotation: .clockwise), target: 82)))
+  }
+
   func testJoinUsesUUIDAcrossIndependentNumericNamespaces() throws {
     let result = try SimulatorDisplayInteractionResolver.join(
       display: display(),

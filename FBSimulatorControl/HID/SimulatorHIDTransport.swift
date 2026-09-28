@@ -159,9 +159,9 @@ enum SimulatorHIDTransport: Sendable {
 protocol SimulatorHIDPrimitives: Actor {
   /// Sends a single-finger touch at the given point (in points). `edge` tags the contact as
   /// originating at a screen edge, which is how the guest recognises a system edge gesture.
-  func sendTouch(direction: SimulatorHIDDirection, x: Double, y: Double, edge: SimulatorHIDEdge) async throws
+  func sendTouch(direction: SimulatorHIDDirection, x: Double, y: Double, edge: SimulatorHIDEdge, display: SimulatorHIDDisplay?) async throws
   /// Sends a two-finger touch (for multi-touch gestures) at the given points (in points).
-  func sendTwoFingerTouch(direction: SimulatorHIDDirection, finger1: CGPoint, finger2: CGPoint) async throws
+  func sendTwoFingerTouch(direction: SimulatorHIDDirection, finger1: CGPoint, finger2: CGPoint, display: SimulatorHIDDisplay?) async throws
   func sendButton(direction: SimulatorHIDDirection, button: SimulatorHIDButton) async throws
   func sendKeyboard(direction: SimulatorHIDDirection, keyCode: UInt32) async throws
   /// Sends a tvOS Siri Remote focus action.

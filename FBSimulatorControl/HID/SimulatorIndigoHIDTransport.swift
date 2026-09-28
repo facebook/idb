@@ -74,23 +74,38 @@ actor SimulatorIndigoHIDTransport {
   }
 
   func sendTouch(
-    direction: SimulatorHIDDirection, x: Double, y: Double, edge: SimulatorHIDEdge
+    direction: SimulatorHIDDirection, x: Double, y: Double, edge: SimulatorHIDEdge, display: SimulatorHIDDisplay? = nil
   ) async throws {
     guard productFamily.hasTouchscreen else {
       throw SimulatorHIDError.touchUnsupportedOnAppleTV
     }
+    try requireUnnamedDisplay(display)
+    let point = try display?.geometry.unrotatedPoint(from: CGPoint(x: x, y: y)) ?? CGPoint(x: x, y: y)
     try await indigoClient.send(
       indigo.touchScreenSize(
-        mainScreenSize, screenScale: mainScreenScale, direction: direction, x: x, y: y, edge: edge))
+        display?.geometry.bounds.size ?? mainScreenSize,
+        screenScale: display.map { Float($0.geometry.scale) } ?? mainScreenScale,
+        direction: direction, x: point.x, y: point.y, edge: display?.unrotatedEdge(edge) ?? edge))
   }
 
-  func sendTwoFingerTouch(direction: SimulatorHIDDirection, finger1: CGPoint, finger2: CGPoint) async throws {
+  func sendTwoFingerTouch(direction: SimulatorHIDDirection, finger1: CGPoint, finger2: CGPoint, display: SimulatorHIDDisplay? = nil) async throws {
     guard productFamily.hasTouchscreen else {
       throw SimulatorHIDError.touchUnsupportedOnAppleTV
     }
+    try requireUnnamedDisplay(display)
+    let first = try display?.geometry.unrotatedPoint(from: finger1) ?? finger1
+    let second = try display?.geometry.unrotatedPoint(from: finger2) ?? finger2
     try await indigoClient.send(
       indigo.twoFingerTouchScreenSize(
-        mainScreenSize, screenScale: mainScreenScale, direction: direction, finger1: finger1, finger2: finger2))
+        display?.geometry.bounds.size ?? mainScreenSize,
+        screenScale: display.map { Float($0.geometry.scale) } ?? mainScreenScale,
+        direction: direction, finger1: first, finger2: second))
+  }
+
+  private func requireUnnamedDisplay(_ display: SimulatorHIDDisplay?) throws {
+    if case .selected = display {
+      throw SimulatorDisplayInteractionError.unsupportedCapability("explicit display routing over Indigo")
+    }
   }
 
   func sendButton(direction: SimulatorHIDDirection, button: SimulatorHIDButton) async throws {
