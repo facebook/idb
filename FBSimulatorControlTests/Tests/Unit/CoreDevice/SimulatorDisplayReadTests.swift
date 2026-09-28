@@ -121,22 +121,22 @@ final class SimulatorDisplayReadTests: XCTestCase {
       return XCTFail("An empty current report is not a legacy provider")
     }
     XCTAssertThrowsError(try SimulatorDisplayCommands.activeIntegratedDisplay(in: displays))
-    XCTAssertThrowsError(try SimulatorDisplayProtocol.captureDisplay(displayReply([])))
   }
 
   /// The shape tvOS reports: its only display is an external TVOut with backlight state but no layout activity.
-  func testCaptureFromReportWithOnlyAnExternalDisplay() {
+  func testReportWithOnlyAnExternalDisplayHasNoActiveIntegratedDisplay() throws {
     for state in ["off", "unknown"] {
       let tvOut = displayValue(id: "TVOut", active: false, primary: true)
       xpc_dictionary_set_value(tvOut, "active", nil)
       xpc_dictionary_set_string(tvOut, "backlightState", state)
       xpc_dictionary_set_value(tvOut, "type", SimulatorCoreDevice.dictionary(["external": SimulatorCoreDevice.dictionary([:])]))
-      XCTAssertNil(try SimulatorDisplayProtocol.captureDisplay(displayReply([tvOut])), state)
+      let displays = try SimulatorDisplayProtocol.displays(displayReply([tvOut]))
+      XCTAssertThrowsError(try SimulatorDisplayCommands.activeIntegratedDisplay(in: displays), state)
     }
   }
 
   /// Reports that cannot select exactly one active integrated display, for any reason in their display records.
-  func testCaptureFromReportThatCannotSelectADisplay() {
+  func testReportThatCannotSelectADisplay() {
     let identityOnly = displayValue(id: "lcd", active: true)
     xpc_dictionary_set_value(identityOnly, "active", nil)
     let partialLayout = displayValue(id: "inner", active: true)
@@ -155,7 +155,7 @@ final class SimulatorDisplayReadTests: XCTestCase {
       "invalid record": [unscaled],
     ]
     for (shape, values) in reports {
-      XCTAssertNil(try SimulatorDisplayProtocol.captureDisplay(displayReply(values)), shape)
+      XCTAssertThrowsError(try SimulatorDisplayCommands.activeIntegratedDisplay(in: SimulatorDisplayProtocol.displays(displayReply(values))), shape)
       XCTAssertThrowsError(try SimulatorDisplayProtocol.interactionTarget(displayReply(values)), shape)
     }
   }

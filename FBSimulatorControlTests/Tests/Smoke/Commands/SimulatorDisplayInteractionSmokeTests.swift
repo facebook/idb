@@ -15,11 +15,11 @@ final class SimulatorDisplayInteractionSmokeTests: ProvidedSimulatorTestCase {
     let simulator = self.simulator!
     guard simulator.productFamily.hasTouchscreen else { throw XCTSkip("Requires a touchscreen simulator") }
     let commands = SimulatorDisplayCommands.commands(with: simulator)
-    guard try await commands.activeIntegratedDisplayIfSupported() != nil else {
-      throw XCTSkip("Provider does not expose active display identities")
-    }
     let context: SimulatorDisplayInteractionContext
     do {
+      if case .sole(.legacy) = try await commands.interactionTarget() {
+        throw XCTSkip("Provider does not expose active display identities")
+      }
       context = try await commands.interactionContext()
     } catch SimulatorCoreDeviceError.unsupported(let reason) {
       throw XCTSkip(reason)

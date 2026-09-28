@@ -45,7 +45,7 @@ public final class SimulatorScreenshotCommands: ScreenshotCommands {
       throw WeakTargetError.simulator
     }
     return try await Self.capture(
-      activeDisplay: { try await simulator.displays.activeIntegratedDisplayIfSupported() },
+      activeDisplay: { try await simulator.displays.activeIntegratedDisplay() },
       display: { try await self.takeActiveDisplay($0, configuration: configuration, simulator: simulator) },
       mainScreen: { try await self.takeMainScreen(configuration: configuration, simulator: simulator) },
       logger: simulator.logger)
@@ -54,15 +54,13 @@ public final class SimulatorScreenshotCommands: ScreenshotCommands {
   /// The active display improves on the main screen but is never required: whatever stops it being
   /// selected or captured, the screenshot captures the main screen instead.
   static func capture<Result>(
-    activeDisplay: () async throws -> SimulatorDisplay?,
+    activeDisplay: () async throws -> SimulatorDisplay,
     display: (SimulatorDisplay) async throws -> Result,
     mainScreen: () async throws -> Result,
     logger: any ControlCoreLogger
   ) async throws -> Result {
     do {
-      if let active = try await activeDisplay() {
-        return try await display(active)
-      }
+      return try await display(activeDisplay())
     } catch let error as CancellationError {
       throw error
     } catch {

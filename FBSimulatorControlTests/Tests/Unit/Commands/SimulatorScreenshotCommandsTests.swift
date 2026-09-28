@@ -15,7 +15,7 @@ private let inner = SimulatorDisplay(
 private struct Failure: Error {}
 
 private func capture(
-  activeDisplay: () async throws -> SimulatorDisplay? = { inner },
+  activeDisplay: () async throws -> SimulatorDisplay = { inner },
   display: (SimulatorDisplay) async throws -> String = { "display \($0.uniqueID)" },
   mainScreen: () async throws -> String = { "main screen" },
   logger: CapturingLogger = CapturingLogger()
@@ -27,11 +27,6 @@ final class SimulatorScreenshotCommandsTests: XCTestCase {
   func testActiveDisplayIsCaptured() async throws {
     let captured = try await capture()
     XCTAssertEqual(captured, "display inner")
-  }
-
-  func testMainScreenIsCapturedWithoutAnActiveDisplay() async throws {
-    let captured = try await capture(activeDisplay: { nil })
-    XCTAssertEqual(captured, "main screen")
   }
 
   func testActiveDisplayFailures() async throws {
@@ -52,7 +47,7 @@ final class SimulatorScreenshotCommandsTests: XCTestCase {
 
   func testMainScreenFailureFailsTheScreenshot() async {
     do {
-      _ = try await capture(activeDisplay: { nil }, mainScreen: { throw Failure() })
+      _ = try await capture(activeDisplay: { throw Failure() }, mainScreen: { throw Failure() })
       XCTFail("Expected the main screen failure")
     } catch { XCTAssertTrue(error is Failure) }
   }

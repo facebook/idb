@@ -193,13 +193,6 @@ public final class SimulatorDisplayCommands: DisplayCommands, @unchecked Sendabl
     try await validate(context, transport: AXBridgeOneshotTransport(simulator: target()))
   }
 
-  /// Returns nil when the runtime lacks the feature, or its report cannot select a display.
-  func activeIntegratedDisplayIfSupported() async throws -> SimulatorDisplay? {
-    try await target().coreDevice.performIfSupported(
-      action: SimulatorDisplayProtocol.action, service: SimulatorDisplayProtocol.service, input: CoreDeviceEmptyInput(),
-      decode: SimulatorDisplayProtocol.captureDisplay) ?? nil
-  }
-
   private func target() throws -> Simulator {
     guard let simulator else { throw WeakTargetError.simulator }
     return simulator
