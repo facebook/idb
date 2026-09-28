@@ -50,6 +50,35 @@ final class FBSubprocessTests: XCTestCase {
     XCTAssertThrowsError(try future.`await`())
   }
 
+  func testUnacceptableExitCodeErrorIncludesStdErrCapturedForErrorMessage() throws {
+    let future = FBProcessBuilder<NSNull, NSData, NSData>
+      .withLaunchPath("/bin/sh", arguments: ["-c", "echo 'no space left on device' >&2; exit 3"])
+      .withStdErr(toLoggerAndErrorMessage: ControlCoreLoggerDouble())
+      .runUntilCompletion(withAcceptableExitCodes: [0])
+
+    XCTAssertThrowsError(try future.`await`()) { error in
+      let description = (error as NSError).localizedDescription
+      XCTAssertTrue(description.contains("Exit Code 3"), description)
+      // BUG: the captured stderr is dropped from the error — flipped in the following commit.
+      XCTAssertFalse(description.contains("no space left on device"), description)
+    }
+  }
+
+  func testUnacceptableExitCodeErrorIncludesStdErrThatIsNotValidUTF8() throws {
+    // `\351` is a Latin-1 é, which is not valid UTF-8.
+    let future = FBProcessBuilder<NSNull, NSData, NSData>
+      .withLaunchPath("/bin/sh", arguments: ["-c", "printf 'caf\\351: no space left on device' >&2; exit 3"])
+      .withStdErr(toLoggerAndErrorMessage: ControlCoreLoggerDouble())
+      .runUntilCompletion(withAcceptableExitCodes: [0])
+
+    XCTAssertThrowsError(try future.`await`()) { error in
+      let description = (error as NSError).localizedDescription
+      XCTAssertTrue(description.contains("Exit Code 3"), description)
+      // BUG: the captured stderr is dropped from the error — flipped in the following commit.
+      XCTAssertFalse(description.contains("no space left on device"), description)
+    }
+  }
+
   func testEnvironment() throws {
     let environment: [String: String] = [
       "FOO0": "BAR0",
