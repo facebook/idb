@@ -1857,6 +1857,105 @@ class ElementWaitTests(unittest.IsolatedAsyncioTestCase):
         )
 
 
+def screen(*elements: tuple[str, str, float]) -> Completed:
+    """A flat `ui describe-all` answer of (role, label, y) elements."""
+    return Completed(
+        0,
+        json.dumps(
+            [
+                {
+                    "role": role,
+                    "AXLabel": label,
+                    "frame": {"x": 63, "y": y, "width": 288, "height": 48},
+                }
+                for role, label, y in elements
+            ]
+        ).encode(),
+        b"",
+    )
+
+
+FIXTURE_SCREEN = screen(("AXButton", "General", 120))
+CAMERA_PROMPT = screen(
+    ("AXStaticText", "“ReplHost” would like to access the Camera.", 265),
+    ("AXButton", "Don’t Allow", 582),
+    ("AXButton", "Allow", 630),
+)
+PHOTOS_PROMPT = screen(
+    (
+        "AXStaticText",
+        "“WATestsHost” would like full access to your Photo Library.",
+        265,
+    ),
+    ("AXButton", "Limit Access…", 534),
+    ("AXButton", "Allow Full Access", 582),
+    ("AXButton", "Don’t Allow", 630),
+)
+
+
+class PromptCaseStub(CommandTestCaseStub):
+    setup_idb = IdbEndToEndTestCase.setup_idb
+    setup_deny_permission_prompts = IdbEndToEndTestCase.setup_deny_permission_prompts
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.environment.setup_idb_bin = Path("/tmp/setup-idb")
+
+
+class PermissionPromptTests(unittest.IsolatedAsyncioTestCase):
+    async def deny(
+        self, answers: Sequence[Completed]
+    ) -> tuple[list[list[str]], mock.Mock]:
+        case = PromptCaseStub()
+        recording = mock.Mock(spec=Recording)
+        case.recording = recording
+        run = mock.AsyncMock(side_effect=answers)
+        with (
+            mock.patch.object(harness, "run", new=run),
+            mock.patch.object(harness, "POLL_INTERVAL_SECONDS", new=0),
+        ):
+            await case.setup_deny_permission_prompts()
+        commands = [
+            call.args[0][call.args[0].index("ui") :] for call in run.await_args_list
+        ]
+        return commands, recording
+
+    async def test_a_screen_without_a_prompt_is_left_alone(self) -> None:
+        commands, recording = await self.deny([FIXTURE_SCREEN])
+
+        self.assertEqual(commands, [["ui", "describe-all", "--json"]])
+        recording.event.assert_not_called()
+
+    async def test_a_prompt_is_denied_until_it_is_gone(self) -> None:
+        commands, recording = await self.deny(
+            [CAMERA_PROMPT, Completed(0, b"", b""), FIXTURE_SCREEN]
+        )
+
+        self.assertEqual(
+            commands,
+            [
+                ["ui", "describe-all", "--json"],
+                ["ui", "tap", "207", "606"],
+                ["ui", "describe-all", "--json"],
+            ],
+        )
+        recording.event.assert_called_once_with(
+            "permission_prompt_denied",
+            labels=[
+                "“ReplHost” would like to access the Camera.",
+                "Don’t Allow",
+                "Allow",
+            ],
+        )
+
+    async def test_a_photos_prompt_is_denied_not_given_full_access(self) -> None:
+        commands, _ = await self.deny(
+            [PHOTOS_PROMPT, Completed(0, b"", b""), FIXTURE_SCREEN]
+        )
+
+        self.assertEqual(commands[1], ["ui", "tap", "207", "654"])
+
+
 class CompanionLifecycleTests(unittest.TestCase):
     def test_prepared_companion_log_is_uploader_readable_without_truncation(
         self,

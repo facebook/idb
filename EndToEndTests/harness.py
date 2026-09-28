@@ -89,6 +89,10 @@ UNANSWERED = re.compile(
 )
 NOTHING_WRITTEN_MARKER = "nothing was written. Read the tree again and retry"
 ELEMENT_NOT_FOUND_MARKER = "found no element whose"
+# SpringBoard's permission prompts vary their buttons by service and by app --
+# Photos offers "Limit Access…" and "Allow Full Access" where camera offers a
+# plain "Allow" -- but every shape offers this one.
+PERMISSION_PROMPT_DENY_LABELS = frozenset({"Don’t Allow", "Don't Allow"})
 UI_UPDATE_TIMEOUT_SECONDS = 30.0
 # The least a wait gives one read, so one begun as the wait's time runs out can
 # still answer.
@@ -1295,6 +1299,17 @@ def _center(element: dict[str, Any]) -> tuple[int, int]:
     )
 
 
+def _permission_prompt_deny_button(document: Any) -> dict[str, Any] | None:
+    for element in _elements(document):
+        if (
+            element.get("role") == "AXButton"
+            and _label(element) in PERMISSION_PROMPT_DENY_LABELS
+            and _has_area(element)
+        ):
+            return element
+    return None
+
+
 class MatchKey(enum.Enum):
     """An accessibility key a query matches, and the field a complete read reports it in."""
 
@@ -1760,6 +1775,41 @@ class IdbEndToEndTestCase(unittest.IsolatedAsyncioTestCase):
     async def setup_uninstall_quietly(self, bundle_id: str) -> None:
         await self.setup_terminate_quietly(bundle_id)
         await self.setup_idb("uninstall", bundle_id, check=False)
+
+    async def setup_deny_permission_prompts(self) -> None:
+        """Deny every permission prompt on screen, so none covers what a test reads.
+
+        SpringBoard holds a prompt above every app until it is answered, across
+        relaunches and uninstalls, so one left by an earlier test -- or by
+        anything else that used the simulator before -- covers everything a
+        later test reads. Denying grants nothing.
+        """
+        args = ("ui", "describe-all", "--json")
+
+        async def deny() -> None:
+            completed = await self.setup_idb(*args, check=False)
+            if completed.returncode != 0:
+                if worth_repeating(args, completed):
+                    raise NotReady(completed.error_text.strip())
+                self.fail_or_skip_for("setup: " + " ".join(args), completed)
+            document = json.loads(completed.text)
+            button = _permission_prompt_deny_button(document)
+            if button is None:
+                return
+            labels = [_label(element) for element in _elements(document)]
+            labels = [label for label in labels if label]
+            if self.recording is not None:
+                self.recording.event("permission_prompt_denied", labels=labels)
+            x, y = _center(button)
+            await self.setup_idb("ui", "tap", str(x), str(y))
+            raise NotReady(f"a permission prompt showed {labels}")
+
+        try:
+            await wait_until(
+                "A permission prompt was not dismissed", UI_UPDATE_TIMEOUT_SECONDS, deny
+            )
+        except HarnessError as error:
+            self.fail(str(error))
 
     async def setup_web_origin(
         self,
