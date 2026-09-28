@@ -211,7 +211,7 @@ final class SimulatorIndigoHIDTests: XCTestCase {
     for (button, source) in expected {
       let data = indigo.button(with: .down, button: button)
       // IndigoButton.eventSource at 0x30.
-      XCTAssertEqual(uint32(at: 0x30, in: data), source, "eventSource for button rawValue \(button.rawValue)")
+      XCTAssertEqual(uint32(at: 0x30, in: data), source, "eventSource for \(button.name)")
     }
   }
 
