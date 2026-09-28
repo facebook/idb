@@ -3,7 +3,7 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-"""Verify guest service commands against the simulator's backing stores.
+"""Read and write the simulator's backing stores through guest services.
 
 A notification delivered to an app that is not running is followed through
 idb's notification commands, from delivery until it is cleared.
@@ -345,6 +345,10 @@ class ServiceTests(IdbEndToEndTestCase):
         )
 
 
+def _notifications(count: int) -> str:
+    return f"{count} delivered notification{'' if count == 1 else 's'}"
+
+
 class NotificationTests(IdbEndToEndTestCase):
     @staticmethod
     def _retained(text: str) -> list[tuple[str, str]]:
@@ -357,15 +361,14 @@ class NotificationTests(IdbEndToEndTestCase):
         return held
 
     @documented_demo(
-        slug="deliver-a-notification-and-watch-it-clear",
-        title="Test notification delivery without handling a permission prompt",
+        slug="send-and-clear-a-notification",
+        title="Send a push notification without a permission prompt or a running app",
         summary=(
-            "Prepare a simulator for notification testing without launching "
-            "the app or automating its permission prompt. Grant notification "
-            "permission directly, deliver a push while the app is not running, "
-            "and confirm that the system holds it for the app. Then clear the "
-            "app's delivered notifications and verify that the system no "
-            "longer holds any."
+            "Grant an app notification permission directly, so there is no "
+            "system prompt to automate, then deliver a push notification to it "
+            "while it isn't running and see the system hold it for the app. "
+            "Clear the app's delivered notifications afterwards to leave the "
+            "simulator clean for whatever runs next."
         ),
     )
     async def test_send_notification_delivers_to_an_app_that_is_not_running(
@@ -392,9 +395,8 @@ class NotificationTests(IdbEndToEndTestCase):
             step="Grant notification permission without showing a prompt",
         )
         self.note(
-            f"Notification permission is already granted to {NEWS_BUNDLE_ID}, "
-            "so the test can deliver a notification without waiting for the "
-            "app to request access.",
+            f"{NEWS_BUNDLE_ID} can now receive notifications. idb granted the "
+            "permission directly, so no prompt appeared.",
             NEWS_BUNDLE_ID,
         )
 
@@ -406,11 +408,11 @@ class NotificationTests(IdbEndToEndTestCase):
         )
         held = {identifier for identifier, _ in self._retained(before.text)}
         self.note(
-            "No delivered notifications are currently stored for this app."
+            "The app has no delivered notifications."
             if not held
             else (
-                f"The system already holds {len(held)} delivered notifications "
-                "for this app; the test records them so it can identify the new one."
+                f"The app already has {_notifications(len(held))}, so the new "
+                "one can be told apart."
             )
         )
 
@@ -480,6 +482,6 @@ class NotificationTests(IdbEndToEndTestCase):
         )
         self.assertEqual(self._retained(cleared.text), [])
         self.note(
-            "The delivered-notification list is empty, confirming that clearing "
-            "withdrew the new entry along with any the system held before."
+            "The app has no delivered notifications: clearing removed the new one"
+            + (f" and the {_notifications(len(held))} there before." if held else ".")
         )

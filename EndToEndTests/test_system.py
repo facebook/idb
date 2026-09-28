@@ -3,7 +3,7 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-"""Check URL handling and whether a pre-approval removes the system prompt."""
+"""Open URLs, and approve and revoke the permissions apps ask for."""
 
 from __future__ import annotations
 
@@ -52,7 +52,7 @@ PERMISSION_TEST_CAPABILITIES = {
 
 class OpenUrlTests(IdbEndToEndTestCase):
     async def test_opening_a_url_launches_the_app_that_handles_it(self) -> None:
-        # Start with Safari stopped so the test can detect the URL launching it.
+        # Safari starts stopped, so its launch can only come from the URL.
         await self.setup_terminate_quietly(SAFARI_BUNDLE_ID)
         await self.wait_for_app(SAFARI_BUNDLE_ID, AppState.STOPPED)
         self.addAsyncCleanup(self.setup_terminate_quietly, SAFARI_BUNDLE_ID)
@@ -71,7 +71,7 @@ class PermissionTests(IdbEndToEndTestCase):
         TCC authorization is scoped to the requesting client, so the approval is
         only observable from inside the app. Asking for it is what makes the
         difference visible -- unapproved, the request reaches the user as a
-        system prompt; pre-approved, it is answered without one.
+        system prompt; approved, it is answered without one.
         """
         await self.setup_deny_permission_prompts()
         bundle_id = await self.install_fixture_app()
@@ -154,7 +154,6 @@ class PermissionTests(IdbEndToEndTestCase):
 
     async def test_revoke_removes_only_the_requested_permission(self) -> None:
         bundle_id = await self.install_fixture_app()
-        # Uninstall cleanup should remove permissions from previous runs.
         self.assertEqual(
             self.permission_records(bundle_id),
             {},
@@ -173,7 +172,7 @@ class PermissionTests(IdbEndToEndTestCase):
         self.assertEqual(
             self.permission_records(bundle_id),
             {CONTACTS_SERVICE: TCC_ALLOWED},
-            "revoking photos should leave contacts permission unchanged",
+            "revoking photos changed the contacts permission",
         )
 
     def permission_records(self, bundle_id: str) -> dict[str, int]:

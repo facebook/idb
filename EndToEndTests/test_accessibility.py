@@ -7,11 +7,11 @@
 
 `--api ax` reads from macOS; `--api axbridge` runs SimulatorFrameworkBridge
 inside the simulator. Complete output identifies which backend served the
-request. Tests read and drive the fixed screen ReplHost shows when launched
-with `--accessibility-fixture`, whose elements carry known identifiers and
-change only when a test acts on them. Tap and scroll tests verify navigation
-and movement through axbridge. Safari is read as well, for the web content
-another process is showing, which ax cannot reach.
+request. ReplHost, launched with `--accessibility-fixture`, shows a fixed
+screen whose elements carry known identifiers and change only when something
+acts on them; taps and scrolls are read back through axbridge. Safari is read
+as well, for the web content another process is showing, which ax cannot
+reach.
 """
 
 from __future__ import annotations
@@ -320,7 +320,7 @@ class AccessibilityTests(IdbEndToEndTestCase):
         self.assertIsInstance(
             document,
             dict,
-            "--format complete should report a document, not an element array",
+            "--format complete reported an element array, not a document",
         )
         return document
 
@@ -368,7 +368,7 @@ class AccessibilityTests(IdbEndToEndTestCase):
         self.assertEqual(axbridge["backend"], AXBRIDGE_BACKEND)
         for name, document in ((AX_BACKEND, ax), (AXBRIDGE_BACKEND, axbridge)):
             controls = _labelled_controls(document)
-            self.assertTrue(controls, f"{name} should see the fixture's rows")
+            self.assertTrue(controls, f"{name} saw none of the fixture's rows")
         shared = _labels(ax) & _labels(axbridge)
         self.assertTrue(
             shared,
@@ -425,7 +425,7 @@ class AccessibilityTests(IdbEndToEndTestCase):
             _label(row) for row in _rows(everything) if row["identifier"] not in visible
         }
         self.assertTrue(
-            offscreen_labels, "the fixture should hold rows below the screen"
+            offscreen_labels, "describe-all reported no rows below the screen"
         )
         self.assertEqual(sorted(_row_positions(interactable)), sorted(visible))
         # An offscreen row's label reports a frame in the row's own coordinates,
@@ -442,11 +442,11 @@ class AccessibilityTests(IdbEndToEndTestCase):
 
         self.assertTrue(
             await self.idb_json("ui", "describe-point", str(x), str(y)),
-            "describe-point should report the element under the point",
+            "describe-point reported nothing under the point",
         )
         self.assertTrue(
             await self.idb_json("ui", "describe", marker),
-            f"describe {marker!r} should report the element",
+            f"describe {marker!r} reported nothing",
         )
         document = await self.idb_json(
             "ui", "describe", marker, "--api", "axbridge", "--format", "complete"
@@ -454,7 +454,7 @@ class AccessibilityTests(IdbEndToEndTestCase):
         self.assertEqual(document["backend"], AXBRIDGE_BACKEND)
         self.assertTrue(
             _elements(document["elements"]),
-            f"{AXBRIDGE_BACKEND} should resolve the marker {marker!r}",
+            f"{AXBRIDGE_BACKEND} did not resolve the marker {marker!r}",
         )
 
         axbridge_point = await self.idb_json(
@@ -636,13 +636,14 @@ class AccessibilityTests(IdbEndToEndTestCase):
         return document
 
     @documented_demo(
-        slug="open-a-page-by-id",
-        title="Open a page by accessibility identifier",
+        slug="tap-by-accessibility-id",
+        title="Tap an element by its accessibility identifier",
         summary=(
-            "Use an accessibility identifier to find and tap the General row "
-            "of a list without calculating screen coordinates. Then wait for "
-            "the General page and read its navigation bar to verify that the "
-            "tap opened the expected destination."
+            "Tap a list's General row by naming its accessibility identifier. "
+            "idb finds the element in the accessibility tree and activates it "
+            "directly, so there are no screen coordinates to calculate, and "
+            "the tap still lands if the layout, device size or scroll position "
+            "changes. The General page opens."
         ),
     )
     async def test_ui_tap_by_identifier_opens_general(self) -> None:
@@ -682,11 +683,9 @@ class AccessibilityTests(IdbEndToEndTestCase):
                 "axbridge",
                 "--timeout",
                 str(UI_UPDATE_TIMEOUT_SECONDS),
-                step="Wait until the General row is available",
             ),
             {"found": True},
         )
-        self.note("The row is available, so idb can address it by identifier.", "found")
 
         await self.idb(
             "ui",
@@ -696,9 +695,11 @@ class AccessibilityTests(IdbEndToEndTestCase):
             "AXUniqueId",
             step="Tap the General row by accessibility identifier",
         )
+        x, y = _center(rows[0])
         self.note(
-            "idb tapped the row by identifier; the test did not calculate a "
-            "screen coordinate."
+            f"idb resolved {GENERAL_ROW_ID} to the row's centre, ({x}, {y}), "
+            "and pressed it.",
+            GENERAL_ROW_ID,
         )
 
         self.assertEqual(
@@ -712,14 +713,12 @@ class AccessibilityTests(IdbEndToEndTestCase):
                 "axbridge",
                 "--timeout",
                 str(UI_UPDATE_TIMEOUT_SECONDS),
-                step="Wait for the General page to open",
             ),
             {"found": True},
         )
-        self.note("The General page's navigation bar is now present.", "found")
 
         after = await self.describe_by_id(
-            title, step="Verify that the General page opened"
+            title, step="Read the navigation bar of the page that opened"
         )
         opened = _visible(after, title, "NavigationBar")
         self.assertEqual(
@@ -728,8 +727,8 @@ class AccessibilityTests(IdbEndToEndTestCase):
             f"No navigation bar named {title!r} is on screen after the tap",
         )
         self.note(
-            f"The navigation bar labelled {title!r} confirms that the expected "
-            f"page opened. It is {_placed(opened[0], _screen(after))}.",
+            f"The navigation bar reads {title!r}. It is "
+            f"{_placed(opened[0], _screen(after))}.",
             "NavigationBar",
             title,
         )
@@ -756,15 +755,16 @@ class AccessibilityTests(IdbEndToEndTestCase):
         )
 
     @documented_demo(
-        slug="scroll-a-list",
-        title="Scroll a list and verify the result",
+        slug="scroll-by-element",
+        title="Scroll a list from an element, without pixel math",
         summary=(
-            "Scroll a list down from its General row and use the "
-            "accessibility tree to measure how far the rows moved. Pick a "
-            "visible row as the starting point for the reverse gesture, scroll "
-            "back up, and measure again. This verifies the effect of each "
-            "gesture instead of treating a successful command as proof that "
-            "the list moved."
+            "Scroll a list down by naming its General row's accessibility "
+            "identifier, then back up from a row that scrolled into view. idb "
+            "performs the platform's page-scroll action on the list that "
+            "contains the element, so there are no swipe coordinates, "
+            "velocities or inertial deceleration to account for. Reading the "
+            "accessibility tree before and after each scroll shows how far "
+            "every row moved."
         ),
     )
     async def test_ui_scroll_moves_rows_down_and_up(self) -> None:
@@ -790,8 +790,8 @@ class AccessibilityTests(IdbEndToEndTestCase):
         # can begin.
         row_after_scroll = on_screen[len(on_screen) // 2]
         self.note(
-            f"{on_screen[0]} is now the top visible row. {row_after_scroll} is "
-            "near the middle and can be used to start the reverse scroll.",
+            f"{on_screen[0]} is now the top row on screen. The scroll back up "
+            f"starts from {row_after_scroll}, near the middle of the screen.",
             row_after_scroll,
         )
         await self.idb(
@@ -801,7 +801,7 @@ class AccessibilityTests(IdbEndToEndTestCase):
             row_after_scroll,
             "--match-key",
             "AXUniqueId",
-            step="Scroll back up from a visible row",
+            step=f"Scroll back up from {row_after_scroll}",
         )
         after_up, _ = await self.wait_for_scroll(after_down, "up")
         self.note(self._movement(after_down, after_up, "down"), row_after_scroll)
@@ -811,11 +811,15 @@ class AccessibilityTests(IdbEndToEndTestCase):
         before: dict[str, float], after: dict[str, float], direction: str
     ) -> str:
         """What the rows did, read from where they were and where they are."""
-        moved = _row_movement(before, after)
-        furthest = max(moved.values(), key=abs, default=0.0)
+        distances = [abs(delta) for delta in _row_movement(before, after).values()]
+        if not distances:
+            return "No row is in both readings."
+        shortest, longest = min(distances), max(distances)
+        if longest - shortest <= 1:
+            return f"All {len(distances)} rows moved {direction} {longest:.0f} points."
         return (
-            f"{len(moved)} rows moved {direction} by as much as "
-            f"{abs(furthest):.0f} points."
+            f"{len(distances)} rows moved {direction} between {shortest:.0f} "
+            f"and {longest:.0f} points."
         )
 
 
@@ -830,12 +834,7 @@ class WebContentTests(IdbEndToEndTestCase):
         await self.setup_terminate_quietly(SAFARI_BUNDLE_ID)
 
     async def wait_for_tappable_address_bar(self) -> None:
-        """Wait for the address bar to be drawn, before it is tapped.
-
-        Safari settles its chrome for a second or two after a page arrives,
-        and a marker tap resolves through ax, so the wait has to look at
-        what the tap will rather than through axbridge.
-        """
+        """Wait for Safari to draw the address bar, which it settles for a second or two after a page arrives."""
         await self.setup_idb(
             "ui",
             "wait",
@@ -891,16 +890,14 @@ class WebContentTests(IdbEndToEndTestCase):
         )
 
     @documented_demo(
-        slug="read-a-web-page-in-safari",
-        title="Read a web page's content from inside the simulator",
+        slug="read-web-content-in-safari",
+        title="Read and navigate web content in Safari, including off-screen elements",
         summary=(
-            "Use the accessibility backend that runs inside the simulator to "
-            "read a web page's own content rather than Safari's chrome. Find a "
-            "single heading among the hundreds of elements the page builds, "
-            "without scrolling to bring it on screen. Then navigate to a second "
-            "page by typing into Safari's address bar and submitting it with a "
-            "key press, and verify what loaded by finding a label drawn inside "
-            "one of that page's diagrams."
+            "Read a web page's own elements, not just Safari's toolbar, and "
+            "find a heading several screens below the visible area without "
+            "scrolling to it. Then type a new address into Safari's address "
+            "bar, submit it with a key press, and find a label drawn inside "
+            "one of the new page's diagrams."
         ),
     )
     async def test_ui_describe_all_reads_a_web_page_in_safari(self) -> None:
@@ -912,7 +909,6 @@ class WebContentTests(IdbEndToEndTestCase):
 
         await self.idb("open", first_page, step="Open idb's documentation in Safari")
         await self.wait_for_web_label(FIRST_PAGE_HEADING)
-        self.note("Safari has loaded the page and its content is now readable.")
 
         first = await self.idb_json(
             "ui",
@@ -933,12 +929,14 @@ class WebContentTests(IdbEndToEndTestCase):
             if _label(element) == FIRST_PAGE_HEADING and _has_area(element)
         ]
         self.assertTrue(headings, f"no {FIRST_PAGE_HEADING!r} heading was reported")
+        screen = _screen(first)
+        assert screen is not None
+        heading_y = headings[0]["frame"]["y"]
         self.note(
-            f"idb walked {first['narrowing']['walked']} elements to find the "
-            f"heading, and they belong to the page rather than to Safari's "
-            f"chrome. The heading is {_placed(headings[0], _screen(first))}, "
-            f"far below the visible part of the page, and no scrolling was "
-            f"needed to read it.",
+            f"idb searched {first['narrowing']['walked']} elements of the page "
+            f"and found the heading at y={heading_y:.0f}, about "
+            f"{round(heading_y / screen['height'])} screens down the page. "
+            "Nothing was scrolled.",
             FIRST_PAGE_HEADING,
             str(first["narrowing"]["walked"]),
         )
@@ -954,8 +952,9 @@ class WebContentTests(IdbEndToEndTestCase):
         )
         await self.wait_for_address_bar()
         self.note(
-            "The address bar belongs to Safari rather than to the web page, so "
-            "idb can address it by its accessibility identifier."
+            f"Safari's address bar has accessibility identifier "
+            f"{SAFARI_ADDRESS_BAR_ID}, so idb taps it like any native control.",
+            SAFARI_ADDRESS_BAR_ID,
         )
 
         await self.idb(
@@ -993,8 +992,7 @@ class WebContentTests(IdbEndToEndTestCase):
         ]
         self.assertEqual([field.get("value") for field in fields], [second_page])
         self.note(
-            f"The address bar holds {second_page!r}, character for character, "
-            f"so every keystroke arrived.",
+            f"The address bar reads {second_page!r}, exactly what was typed.",
             second_page,
         )
 
@@ -1016,7 +1014,7 @@ class WebContentTests(IdbEndToEndTestCase):
             "--match",
             SECOND_PAGE_LABEL,
             *LABEL_AND_FRAME_KEYS,
-            step="Verify that the second page loaded",
+            step=f"Find {SECOND_PAGE_LABEL} on the page that loaded",
         )
         named = [
             element
@@ -1031,10 +1029,8 @@ class WebContentTests(IdbEndToEndTestCase):
             key=lambda element: element["frame"]["width"] * element["frame"]["height"],
         )
         self.note(
-            f"The page that loaded names {SECOND_PAGE_LABEL} in {len(named)} "
-            f"places, which confirms that the typed address opened. The smallest "
-            f"is {_placed(smallest, _screen(second))}: a label drawn inside "
-            f"one of the page's diagrams, which the accessibility tree reports "
-            f"as an ordinary element.",
+            f"The page mentions {SECOND_PAGE_LABEL} in {len(named)} places. The "
+            f"smallest is {_placed(smallest, _screen(second))}: text inside a "
+            "diagram, readable like any other element.",
             SECOND_PAGE_LABEL,
         )

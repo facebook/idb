@@ -17,7 +17,7 @@ const {generate} = require('./generate-demos');
 
 const SLUG = 'open-a-url';
 const TEST = 'EndToEndTests.test_system.OpenUrlTests.test_opening_a_url';
-const OTHER_SLUG = 'scroll-a-list';
+const OTHER_SLUG = 'scroll-by-element';
 const OTHER_TEST = 'EndToEndTests.test_accessibility.AccessibilityTests.test_scroll';
 
 // Each demo names its own clip, so the media a run holds is one file per demo
@@ -153,7 +153,7 @@ test('gives each demo a clip of its own to play', () => {
     published.demos.map((demo) => [demo.video.source, demo.video.duration]),
     [
       ['/demos/media/open-a-url.mp4', 7.0],
-      ['/demos/media/scroll-a-list.mp4', 12.5],
+      ['/demos/media/scroll-by-element.mp4', 12.5],
     ]
   );
 });
@@ -169,14 +169,14 @@ test("serves each demo's clip and poster as static files", () => {
       'open-a-url.cast',
       'open-a-url.mp4',
       'open-a-url.png',
-      'scroll-a-list.cast',
-      'scroll-a-list.mp4',
-      'scroll-a-list.png',
+      'scroll-by-element.cast',
+      'scroll-by-element.mp4',
+      'scroll-by-element.png',
     ]
   );
   assert.strictEqual(
-    read(websiteDir, 'static', 'demos', 'media', 'scroll-a-list.mp4'),
-    'a clip of scroll-a-list'
+    read(websiteDir, 'static', 'demos', 'media', 'scroll-by-element.mp4'),
+    'a clip of scroll-by-element'
   );
 });
 
@@ -201,7 +201,7 @@ test('publishes the transcript of a demo whose clip could not be cut', () => {
 
   assert.strictEqual(published.demos[0].video, null);
   assert.strictEqual(published.demos[0].poster, '/demos/media/open-a-url.png');
-  assert.strictEqual(published.demos[1].video.source, '/demos/media/scroll-a-list.mp4');
+  assert.strictEqual(published.demos[1].video.source, '/demos/media/scroll-by-element.mp4');
   assert.ok(
     !fs.existsSync(path.join(websiteDir, 'static', 'demos', 'media', 'open-a-url.mp4'))
   );
@@ -227,7 +227,7 @@ test('forgets the media an earlier run published', () => {
   // and no poster leaves behind is the sessions and nothing else.
   assert.deepStrictEqual(
     fs.readdirSync(path.join(websiteDir, 'static', 'demos', 'media')).sort(),
-    ['open-a-url.cast', 'scroll-a-list.cast']
+    ['open-a-url.cast', 'scroll-by-element.cast']
   );
 });
 
@@ -315,7 +315,7 @@ test('plays a terminal session beside each demo', () => {
 
   assert.deepStrictEqual(
     published.demos.map((demo) => demo.terminal.source),
-    ['/demos/media/open-a-url.cast', '/demos/media/scroll-a-list.cast']
+    ['/demos/media/open-a-url.cast', '/demos/media/scroll-by-element.cast']
   );
   assert.strictEqual(published.demos[0].terminal.type, 'application/x-asciicast');
 });

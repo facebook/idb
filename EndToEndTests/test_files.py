@@ -30,13 +30,13 @@ class FileTests(IdbEndToEndTestCase):
         source.write_bytes(CONTENTS)
 
         await self.idb("file", "mkdir", remote, "--application")
-        self.assertTrue(on_disk.is_dir(), f"mkdir should have created {on_disk}")
+        self.assertTrue(on_disk.is_dir(), f"mkdir did not create {on_disk}")
 
         await self.idb("file", "push", str(source), remote, "--application")
         self.assertEqual(
             (on_disk / FILE_NAME).read_bytes(),
             CONTENTS,
-            "push should have written the file into the app's container",
+            "push did not write the file into the app's container",
         )
 
         listed = await self.idb_json("file", "ls", remote, "--application")
@@ -58,7 +58,7 @@ class FileTests(IdbEndToEndTestCase):
         )
 
         await self.idb("file", "rm", remote, "--application")
-        self.assertFalse(on_disk.exists(), f"rm should have removed {on_disk}")
+        self.assertFalse(on_disk.exists(), f"rm did not remove {on_disk}")
         remaining = await self.idb_json(
             "file", "ls", f"{bundle_id}/Documents", "--application"
         )

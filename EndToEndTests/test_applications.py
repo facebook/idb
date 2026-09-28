@@ -83,7 +83,7 @@ class LaunchOutputTests(IdbEndToEndTestCase):
             await self.idb("ui", "button", "HOME", check=False)
             self.assertIsNone(
                 launch.returncode,
-                "launch --wait-for should stay attached while the app runs",
+                "launch --wait-for exited while the app was still running",
             )
             self.assertEqual(
                 (await self.installed_apps())[self.bundle_id]["process_state"],

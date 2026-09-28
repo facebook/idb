@@ -16,10 +16,8 @@ class TargetTests(IdbEndToEndTestCase):
 
         self.assertEqual(description["udid"], self.udid)
         self.assertEqual(description["target_type"], "simulator")
-        self.assertTrue(
-            description["os_version"], "describe should report an OS version"
-        )
-        self.assertTrue(description["name"], "describe should report the device name")
+        self.assertTrue(description["os_version"], "describe reported no OS version")
+        self.assertTrue(description["name"], "describe reported no device name")
 
         dimensions = description["screen_dimensions"]
         self.assertIsNotNone(dimensions, "a booted simulator has a screen")

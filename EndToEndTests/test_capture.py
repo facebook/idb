@@ -40,8 +40,8 @@ class CaptureTests(IdbEndToEndTestCase):
 
             self.assertTrue(
                 (await log.read_some(LOG_TIMEOUT_SECONDS)).strip(),
-                "log should have streamed the target's own output",
+                "log streamed none of the target's own output",
             )
             self.assertIsNone(
-                log.returncode, "log should still be streaming when it is read"
+                log.returncode, "log stopped streaming before it was read"
             )
