@@ -1206,6 +1206,24 @@ final class AccessibilityRuntimeTests: XCTestCase {
     XCTAssertEqual(runtime.performCount, 0)
   }
 
+  func testAnAssertionThatCannotBeReadIsReportedAgainstTheHitPid() {
+    var request: [String: Any] = FBAXTestsPress()
+    request["assertKey"] = kAXLabel
+    request["assertValue"] = "General"
+
+    runtime.hitTestOutcome = FBAXHitTestOutcome.hit(FBAXFakeElement.applicationNotResponding(), owningProcessIdentifier: kAppPid)
+    let unanswered = FBAccessibilityService.handleRequest(request)
+    // BUG: the hit-test already named pid 4321, but the failure drops it — flipped in the following commit
+    assertEqualObjects(axValue(unanswered, "error"), "the application did not answer the write in time")
+    XCTAssertNil(axValue(unanswered, "pid"))
+
+    runtime.hitTestOutcome = FBAXHitTestOutcome.hit(FBAXFakeElement.applicationUnavailable(), owningProcessIdentifier: kAppPid)
+    let unavailable = FBAccessibilityService.handleRequest(request)
+    // BUG: the hit-test already named pid 4321, but the failure drops it — flipped in the following commit
+    assertEqualObjects(axValue(unavailable, "error"), "no accessibility server answered the write")
+    XCTAssertNil(axValue(unavailable, "pid"))
+  }
+
   // No element populates `XC_kAXXCAttributeUserTestingActions`, so there is no pre-check on it.
   func testAnActionIsPerformedWhateverTheElementAdvertises() {
     for advertised in [["AXScrollToVisible"], [], NSNull()] as [Any] {
