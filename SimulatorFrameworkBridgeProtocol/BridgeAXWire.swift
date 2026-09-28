@@ -89,6 +89,7 @@ public enum BridgeAXWire {
     case modal
     case automation
     case phases
+    case effect
   }
 
   /// Keys of the envelope's `phases` object — what the guest measured of its own work. The host's own
@@ -124,6 +125,15 @@ public enum BridgeAXWire {
     /// A write was refused before it was attempted: the element found at the point is not the one the
     /// caller named. Distinct from `badRequest` because the request was well-formed — the screen moved.
     case assertionFailed = "assertion_failed"
+  }
+
+  /// What a failed write did to the application, as the guest's `effect` reports it. Absent means
+  /// `unknown`: that is all an older guest could have said.
+  public enum Effect: String, Codable, Sendable, CaseIterable {
+    /// Nothing was sent: the write failed while finding or checking its target.
+    case none
+    /// The write was sent and the runtime did not confirm it, so it may or may not have landed.
+    case unknown
   }
 
   /// The guest verbs — the one-shot CLI subcommand and the persistent-transport `verb` value share this

@@ -101,6 +101,10 @@ private let responseEmpty = BridgeAXWire.Envelope.empty.rawValue
 // free-text `error`. Absent kind = plain reader failure; a host must treat an unknown kind the same way,
 // so adding a value here degrades an older host's precision rather than breaking it.
 private let responseErrorKind = BridgeAXWire.Envelope.errorKind.rawValue
+// On a failed write, whether anything was sent to the application.
+private let responseEffect = BridgeAXWire.Envelope.effect.rawValue
+private let effectNone = BridgeAXWire.Effect.none.rawValue
+private let effectUnknown = BridgeAXWire.Effect.unknown.rawValue
 // The named process has no accessibility server: a dead pid, or a process that is not an application.
 private let errorKindApplicationUnavailable = BridgeAXWire.ErrorKind.applicationUnavailable.rawValue
 // The named process has one and it did not answer in time — alive but busy, suspended or wedged.
@@ -1101,7 +1105,15 @@ private final class AccessibilityRequest {
 
   // The envelope a write outcome is reported in. Total over the status, so every way a write can end has one
   // answer decided in one place rather than per verb.
-  fileprivate func FBAXBridgeWriteResponse(outcome: FBAXWriteOutcome, pid: pid_t) -> [String: Any] {
+  fileprivate func FBAXBridgeWriteResponse(outcome: FBAXWriteOutcome, pid: pid_t, sent: Bool) -> [String: Any] {
+    var response = FBAXBridgeWriteOutcomeResponse(outcome: outcome, pid: pid)
+    if response[responseOk] as? Bool == false {
+      response[responseEffect] = sent ? effectUnknown : effectNone
+    }
+    return response
+  }
+
+  fileprivate func FBAXBridgeWriteOutcomeResponse(outcome: FBAXWriteOutcome, pid: pid_t) -> [String: Any] {
     switch outcome.status {
     case FBAXWriteStatus.written:
       return [responseOk: true, responsePid: pid as NSNumber]
@@ -1151,6 +1163,7 @@ private final class AccessibilityRequest {
 
     var element: FBAXElement?
     var pid: pid_t = 0
+    var sent = false
     var outcome = try FBAXBridgeResolveWriteTarget(
       client: client,
       request: request,
@@ -1161,6 +1174,7 @@ private final class AccessibilityRequest {
     if outcome == nil, let element {
       FBAXBridgeCountRoundTrip()
       NSLog("%@", "[AccessibilityService] perform \(name) on pid \(pid): sending action once")
+      sent = true
       let written = try client.perform(action, on: element)
       outcome = written
       NSLog("%@", "[AccessibilityService] perform \(name) on pid \(pid): status \(written.status.rawValue)")
@@ -1168,7 +1182,7 @@ private final class AccessibilityRequest {
     guard let outcome else {
       throw FBAXBridgeInvariantError(description: "the write resolved no target or outcome")
     }
-    return FBAXBridgeWriteResponse(outcome: outcome, pid: pid)
+    return FBAXBridgeWriteResponse(outcome: outcome, pid: pid, sent: sent)
   }
 
   // Answers `setvalue`. Nothing an element reports says whether its value is writable, so — as with a
@@ -1192,6 +1206,7 @@ private final class AccessibilityRequest {
 
     var element: FBAXElement?
     var pid: pid_t = 0
+    var sent = false
     var outcome = try FBAXBridgeResolveWriteTarget(
       client: client,
       request: request,
@@ -1202,6 +1217,7 @@ private final class AccessibilityRequest {
     if outcome == nil, let element {
       FBAXBridgeCountRoundTrip()
       NSLog("%@", "[AccessibilityService] setvalue on pid \(pid): sending write once")
+      sent = true
       let written = try client.setValue(requestedValue, on: element)
       outcome = written
       NSLog("%@", "[AccessibilityService] setvalue on pid \(pid): status \(written.status.rawValue)")
@@ -1234,7 +1250,7 @@ private final class AccessibilityRequest {
     guard let outcome else {
       throw FBAXBridgeInvariantError(description: "the write resolved no target or outcome")
     }
-    return FBAXBridgeWriteResponse(outcome: outcome, pid: pid)
+    return FBAXBridgeWriteResponse(outcome: outcome, pid: pid, sent: sent)
   }
 
   fileprivate func FBAXBridgeDeviceSetting(
