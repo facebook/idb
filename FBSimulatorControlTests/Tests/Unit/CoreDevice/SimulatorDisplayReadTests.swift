@@ -135,6 +135,32 @@ final class SimulatorDisplayReadTests: XCTestCase {
     }
   }
 
+  /// Reports that cannot select exactly one active integrated display, for any reason in their display records.
+  func testCaptureFromReportThatCannotSelectADisplay() {
+    let identityOnly = displayValue(id: "lcd", active: true)
+    xpc_dictionary_set_value(identityOnly, "active", nil)
+    let partialLayout = displayValue(id: "inner", active: true)
+    xpc_dictionary_set_value(partialLayout, "active", nil)
+    let unknownBacklight = displayValue(id: "lcd", active: true)
+    xpc_dictionary_set_value(unknownBacklight, "active", nil)
+    xpc_dictionary_set_string(unknownBacklight, "backlightState", "unknown")
+    let unscaled = displayValue(id: "lcd", active: true)
+    xpc_dictionary_set_int64(unscaled, "pointScale", 0)
+    let reports: [String: [xpc_object_t]] = [
+      "no activity evidence": [identityOnly],
+      "partial layout activity": [displayValue(id: "cover", active: false, primary: true), partialLayout],
+      "unknown integrated backlight": [unknownBacklight],
+      "no active display": [displayValue(id: "lcd", active: false)],
+      "several active displays": [displayValue(id: "cover", active: true), displayValue(id: "inner", active: true)],
+      "invalid record": [unscaled],
+    ]
+    for (shape, values) in reports {
+      // BUG: fails instead of capturing the main screen -- flipped in the following commit.
+      XCTAssertThrowsError(try SimulatorDisplayProtocol.captureDisplay(displayReply(values)), shape)
+      XCTAssertThrowsError(try SimulatorDisplayProtocol.interactionTarget(displayReply(values)), shape)
+    }
+  }
+
   func testActivityEvidenceSourceCanChangeWithoutChangingDisplayConfiguration() throws {
     let value = displayValue(id: "inner", active: true, rotation: "rot90")
     xpc_dictionary_set_string(value, "backlightState", "activeOn")
