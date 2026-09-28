@@ -188,6 +188,10 @@ class HIDButtonType(Enum):
     LOCK = 3
     SIDE_BUTTON = 4
     SIRI = 5
+    PLAY_PAUSE = 6
+    VOLUME_UP = 7
+    VOLUME_DOWN = 8
+    EJECT = 9
 
 
 ConnectionDestination = Union[str, Address]

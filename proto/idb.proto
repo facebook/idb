@@ -686,6 +686,10 @@ message HIDEvent {
     LOCK = 2;
     SIDE_BUTTON = 3;
     SIRI = 4;
+    PLAY_PAUSE = 5;
+    VOLUME_UP = 6;
+    VOLUME_DOWN = 7;
+    EJECT = 8;
   }
 
   message HIDButton {

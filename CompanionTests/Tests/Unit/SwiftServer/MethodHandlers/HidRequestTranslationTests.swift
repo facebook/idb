@@ -58,6 +58,10 @@ final class HidRequestTranslationTests: XCTestCase {
       (.lock, .lock),
       (.sideButton, .sideButton),
       (.siri, .siri),
+      (.playPause, .playPause),
+      (.volumeUp, .volumeUp),
+      (.volumeDown, .volumeDown),
+      (.eject, .eject),
     ]
     for (wire, button) in expected {
       for (wireDirection, direction) in [(Idb_HIDEvent.HIDDirection.down, SimulatorHIDDirection.down), (.up, .up)] {

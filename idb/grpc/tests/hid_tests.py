@@ -76,6 +76,17 @@ class HidTests(TestCase):
                     press=GrpcHIDPress(action=expected, direction=GrpcHIDEvent.UP)
                 ),
             )
+        for button in HIDButtonType:
+            with self.subTest(button=button):
+                grpc = event_to_grpc(
+                    HIDPress(
+                        action=HIDButton(button=button), direction=HIDDirection.DOWN
+                    )
+                )
+                self.assertEqual(
+                    GrpcHIDEvent.HIDButtonType.Name(grpc.press.action.button.button),
+                    button.name,
+                )
 
     def test_swipe(self) -> None:
         deltas = [None, 5]

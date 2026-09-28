@@ -282,13 +282,15 @@ idb ui pinch 201 437 0.5 --duration 1.0 --radius 150
 
 ### `idb ui button BUTTON`
 
-Presses a hardware button: one of `APPLE_PAY`, `HOME`, `LOCK`, `SIDE_BUTTON` or `SIRI`.
+Presses a hardware button: one of `APPLE_PAY`, `HOME`, `LOCK`, `SIDE_BUTTON`, `SIRI`, `PLAY_PAUSE`, `VOLUME_UP`, `VOLUME_DOWN` or `EJECT`. `EJECT` on a focused text field hides or re-shows the software keyboard without ending editing.
 
 ```
 # Send the target to the lock screen
 idb ui button LOCK
 # Hold the side button
 idb ui button SIDE_BUTTON --duration 2
+# Toggle the software keyboard
+idb ui button EJECT
 ```
 
 ### `idb ui remote ACTION`

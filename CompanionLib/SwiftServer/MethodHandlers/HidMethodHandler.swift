@@ -135,6 +135,14 @@ struct HidMethodHandler {
       return .sideButton
     case .siri:
       return .siri
+    case .playPause:
+      return .playPause
+    case .volumeUp:
+      return .volumeUp
+    case .volumeDown:
+      return .volumeDown
+    case .eject:
+      return .eject
     case .UNRECOGNIZED:
       return nil
     }
