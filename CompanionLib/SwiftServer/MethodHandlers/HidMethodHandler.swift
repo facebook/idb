@@ -23,20 +23,41 @@ struct HidMethodHandler {
   let commandExecutor: IDBCommandExecutor
 
   func handle(requestStream: RequestStreamReader<Idb_HIDEvent>, context: ServerContext) async throws -> Idb_HIDResponse {
-    for try await message in requestStream {
-      switch try Self.request(from: message) {
-      case let .input(event):
-        try await commandExecutor.hid(event)
-      case let .orientation(orientation):
-        // Interface numbering is what `idb`'s HID stream has always carried.
-        try await commandExecutor.set_orientation(orientation, convention: .interface)
-      case .shake:
-        try await commandExecutor.shake()
-      case let .hinge(angle):
-        try await commandExecutor.set_hinge_angle(angle)
-      }
+    try await Self.run(cancellation: context.cancellation) {
+      try await commandExecutor.hid(
+        events: requestStream.compactMap { message -> SimulatorHIDEvent? in
+          switch try Self.request(from: message) {
+          case let .input(event):
+            return event
+          case let .orientation(orientation):
+            // Interface numbering is what `idb`'s HID stream has always carried.
+            try await commandExecutor.set_orientation(orientation, convention: .interface)
+          case .shake:
+            try await commandExecutor.shake()
+          case let .hinge(angle):
+            try await commandExecutor.set_hinge_angle(angle)
+          }
+          return nil
+        })
     }
     return .init()
+  }
+
+  static func run(cancellation: ServerContext.RPCCancellationHandle, operation: @escaping @Sendable () async throws -> Void) async throws {
+    try await withThrowingTaskGroup(of: Void.self) { group in
+      group.addTask {
+        guard !cancellation.isCancelled else { throw CancellationError() }
+        try await operation()
+      }
+      // gRPC signals disconnect separately from Swift task cancellation. Joining both children
+      // ensures the HID operation releases its contacts and lease before the handler returns.
+      group.addTask {
+        try await cancellation.cancelled
+        throw CancellationError()
+      }
+      defer { group.cancelAll() }
+      try await group.next()
+    }
   }
 
   static func request(from request: Idb_HIDEvent) throws -> Request {

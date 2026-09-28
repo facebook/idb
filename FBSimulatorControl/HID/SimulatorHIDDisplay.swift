@@ -21,6 +21,13 @@ enum SimulatorHIDDisplay: Equatable, Sendable {
     }
   }
 
+  var interactionDisplay: SimulatorInteractionDisplay {
+    switch self {
+    case let .sole(display): display
+    case let .selected(display, _): .identified(display)
+    }
+  }
+
   var digitizerTarget: UInt64 {
     switch self {
     case .sole: 0

@@ -563,6 +563,11 @@ public final class IDBCommandExecutor {
     try await connectToHID().send(event: event, logger: logger, drain: .onClose)
   }
 
+  public func hid<S: AsyncSequence>(events: S) async throws where S.Element == SimulatorHIDEvent {
+    let hid = try await connectToHID()
+    try await hid.send(events: events, logger: logger)
+  }
+
   public func set_hardware_keyboard_enabled(_ enabled: Bool) async throws {
     try await simulatorTarget().preferences.apply(.hardwareKeyboard(enabled))
   }

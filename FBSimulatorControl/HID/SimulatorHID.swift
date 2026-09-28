@@ -26,6 +26,8 @@ public final class SimulatorHID: CustomStringConvertible, Sendable {
 
   /// The transport for the touch / button / keyboard primitives.
   private let transport: SimulatorHIDTransport
+  private let operationLease: SimulatorHIDOperationLease
+  private let displays: (any DisplayCommands)?
 
   // MARK: - Initializers
 
@@ -34,19 +36,33 @@ public final class SimulatorHID: CustomStringConvertible, Sendable {
   convenience init(
     for simulator: Simulator, transport transportType: SimulatorHIDTransportType? = nil
   ) async throws {
-    self.init(transport: try await SimulatorHIDTransport.negotiate(for: simulator, requested: transportType))
+    self.init(
+      transport: try await SimulatorHIDTransport.negotiate(for: simulator, requested: transportType),
+      operationLease: simulator.commandCache.resolve { SimulatorHIDOperationLease() },
+      displays: simulator.displays)
   }
 
-  init(transport: SimulatorHIDTransport) {
+  /// Instances sharing `operationLease` never interleave operations.
+  init(
+    transport: SimulatorHIDTransport,
+    operationLease: SimulatorHIDOperationLease = SimulatorHIDOperationLease(),
+    displays: (any DisplayCommands)? = nil
+  ) {
     self.transport = transport
+    self.operationLease = operationLease
+    self.displays = displays
   }
 
   /// Drains pending events before disconnecting, even when the caller is cancelled.
   /// Drain errors do not prevent disconnection.
   func close() async {
-    let drain = Task { try await flush() }
-    try? await drain.value
-    transport.disconnect()
+    let close = Task {
+      try? await operationLease.withLease {
+        try? await flush()
+        transport.disconnect()
+      }
+    }
+    await close.value
   }
 
   // MARK: - Input transport
@@ -58,23 +74,46 @@ public final class SimulatorHID: CustomStringConvertible, Sendable {
 
   // MARK: - Dispatch
 
-  /// Sends a (possibly composite) event, logging each sub-event. With `.perEvent` it then drains once —
+  /// Sends one complete gesture using a single display binding. With `.perEvent` it then drains once —
   /// so a tap or typed string settles once, not per primitive. The transport skips the drain when
   /// nothing reached it.
   public func send(
     event: SimulatorHIDEvent, logger: ControlCoreLogger, drain: SimulatorHIDDrain = .perEvent
   ) async throws {
-    for subEvent in event.subEvents ?? [event] {
-      switch subEvent {
-      case let .delay(duration):
-        logger.log("Delay \(duration)s")
-      case .touch, .button, .remoteButton, .keyboard, .twoFingerTouch, .trackpad, .composite:
-        logger.log("Sending \(subEvent)")
-      }
-      try await deliver(subEvent)
+    let events = AsyncStream<SimulatorHIDEvent> { continuation in
+      continuation.yield(event)
+      continuation.finish()
     }
-    if case .perEvent = drain {
-      try await flush()
+    try await send(events: events, logger: logger, flushing: drain == .perEvent)
+  }
+
+  /// Sends a stream as one operation. Touch coordinates use the display resolved at the first touch.
+  /// An observed display change fails the operation; cancellation releases contacts on the original display.
+  public func send<S: AsyncSequence>(events: S, logger: ControlCoreLogger) async throws where S.Element == SimulatorHIDEvent {
+    try await send(events: events, logger: logger, flushing: true)
+  }
+
+  private func send<S: AsyncSequence>(events: S, logger: ControlCoreLogger, flushing: Bool) async throws where S.Element == SimulatorHIDEvent {
+    try await operationLease.withLease {
+      var operation = SimulatorHIDOperation(
+        displays: displays,
+        deliver: { [self] event, display in
+          if case let .delay(duration) = event {
+            logger.log("Delay \(duration)s")
+          } else {
+            logger.log("Sending \(event)")
+          }
+          try await deliver(event, display: display)
+        },
+        flush: { [self] in try await flush() },
+        reportCleanupError: { logger.log("HID cleanup failed: \($0)") })
+      do {
+        for try await event in events { try await operation.send(event) }
+        try await operation.finish(flushing: flushing)
+      } catch {
+        await operation.cleanup()
+        throw error
+      }
     }
   }
 
