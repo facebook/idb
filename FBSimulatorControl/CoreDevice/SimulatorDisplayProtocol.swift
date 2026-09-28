@@ -15,7 +15,8 @@ enum SimulatorDisplayProtocol {
   static let action = "com.apple.coredevice.action.displayinfo"
 
   /// The output as the provider sends it. Activity and stable identity are optional only because
-  /// older providers omit both from every display; see `snapshot`.
+  /// older providers omit activity from every display, and some of those omit identity too; see
+  /// `snapshot`.
   struct Report: Decodable {
     struct Record: Decodable {
       let uniqueId: String?
@@ -42,8 +43,9 @@ enum SimulatorDisplayProtocol {
   private static let maximumDisplays = 32
   private static let maximumStringLength = 1024
 
-  /// A report with identity and activity yields displays; one that omits both from every display
-  /// is a legacy provider. A report that has them on some displays but not others is malformed.
+  /// A report with activity yields displays; one that carries no activity evidence on any display is
+  /// a legacy provider, whether or not it sends identity (Xcode 27.0 sends identity without
+  /// activity). A report with activity on some displays but not others is malformed.
   static func snapshot(_ reply: xpc_object_t) throws -> Snapshot {
     try snapshot(of: validated(CoreDeviceReply.decode(Report.self, from: reply)))
   }
@@ -80,7 +82,7 @@ enum SimulatorDisplayProtocol {
   }
 
   private static func snapshot(of report: Report) throws -> Snapshot {
-    let legacy = report.displays.allSatisfy { $0.active == nil && $0.uniqueId == nil }
+    let legacy = report.displays.allSatisfy { $0.active == nil && $0.backlightState == nil }
     guard legacy, !report.displays.isEmpty else {
       return .displays(try displays(in: report))
     }

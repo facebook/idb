@@ -41,8 +41,17 @@ final class SimulatorDisplayReadTests: XCTestCase {
     XCTAssertEqual(try geometry.unrotatedPoint(from: CGPoint(x: 787, y: 570)), CGPoint(x: 570, y: 164))
     XCTAssertThrowsError(try SimulatorDisplayProtocol.interactionDisplay(displayReply([value, value])))
     XCTAssertThrowsError(try SimulatorDisplayProtocol.interactionDisplay(displayReply([value], current: false)))
-    xpc_dictionary_set_string(value, "uniqueId", "partial")
-    XCTAssertThrowsError(try SimulatorDisplayProtocol.interactionDisplay(displayReply([value])))
+  }
+
+  /// Xcode 27.0 identifies its sole LCD but reports neither layout activity nor backlight state.
+  func testIdentityWithoutActivityIsALegacyProvider() throws {
+    let lcd = displayValue(id: "529D03D7-B58D-4DAA-88ED-807969A20EBC", active: true)
+    xpc_dictionary_set_value(lcd, "active", nil)
+    XCTAssertEqual(try SimulatorDisplayProtocol.snapshot(displayReply([lcd])), .legacyProvider)
+    guard case .sole(.legacy) = try SimulatorDisplayProtocol.interactionTarget(displayReply([lcd])) else {
+      return XCTFail("Expected the sole legacy display")
+    }
+    XCTAssertThrowsError(try SimulatorDisplayProtocol.interactionDisplay(displayReply([lcd, lcd])))
   }
 
   func testIdentifiedGeometryUsesActiveDisplayInsteadOfPrimary() throws {
@@ -106,7 +115,8 @@ final class SimulatorDisplayReadTests: XCTestCase {
     XCTAssertThrowsError(try SimulatorDisplayProtocol.snapshot(displayReply([SimulatorCoreDevice.dictionary([:])])))
     let partial = displayValue(id: "inner", active: true)
     xpc_dictionary_set_value(partial, "active", nil)
-    XCTAssertThrowsError(try SimulatorDisplayProtocol.snapshot(displayReply([partial])))
+    XCTAssertThrowsError(
+      try SimulatorDisplayProtocol.snapshot(displayReply([displayValue(id: "cover", active: false), partial])))
     let malformed = displayValue(id: "inner", active: true)
     xpc_dictionary_set_string(malformed, "active", "true")
     XCTAssertThrowsError(try SimulatorDisplayProtocol.snapshot(displayReply([malformed])))
@@ -146,8 +156,10 @@ final class SimulatorDisplayReadTests: XCTestCase {
     xpc_dictionary_set_string(unknownBacklight, "backlightState", "unknown")
     let unscaled = displayValue(id: "lcd", active: true)
     xpc_dictionary_set_int64(unscaled, "pointScale", 0)
+    // Without activity evidence the listing cannot say which display is active; interaction still
+    // resolves the sole integrated display (testIdentityWithoutActivityIsALegacyProvider).
+    XCTAssertThrowsError(try SimulatorDisplayProtocol.displays(displayReply([identityOnly])))
     let reports: [String: [xpc_object_t]] = [
-      "no activity evidence": [identityOnly],
       "partial layout activity": [displayValue(id: "cover", active: false, primary: true), partialLayout],
       "unknown integrated backlight": [unknownBacklight],
       "no active display": [displayValue(id: "lcd", active: false)],
