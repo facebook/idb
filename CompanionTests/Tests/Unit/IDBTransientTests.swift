@@ -11,6 +11,7 @@ import CompanionUtilities
 import FBSimulatorControl
 import GRPCCore
 import GRPCNIOTransportCore
+import GRPCProtobuf
 import IDBGRPCSwift
 import Testing
 
@@ -335,6 +336,43 @@ struct IDBTransientTests {
     let mapped = ErrorMapping.rpcError(from: thrown)
     #expect(mapped.message.hasPrefix("The socket closed"))
     #expect(mapped.message.contains("/tmp/axbridge.sock"))
+  }
+
+  @Test
+  func errorMappingCarriesTheRetryVerdictOfAUIAutomationFailure() throws {
+    let thrown = UIAutomationError.writeUnconfirmed(
+      backend: .accessibility, idempotent: false, underlying: AXBridgeError.applicationNotResponding(pid: 4321))
+    let mapped = ErrorMapping.rpcError(from: thrown)
+    #expect(mapped.code == .internalError)
+    #expect(mapped.message == thrown.localizedDescription)
+    let status = try #require(try mapped.unpackGoogleRPCStatus())
+    #expect(status.code == .internalError)
+    #expect(status.message == thrown.localizedDescription)
+    #expect(
+      status.details == [
+        .errorInfo(
+          reason: "UI_AUTOMATION_FAILURE", domain: "idb",
+          metadata: ["retry": "unsafe", "retry_reason": "outcome_unknown"])
+      ])
+  }
+
+  @Test
+  func errorMappingCarriesTheRetryVerdictOfABridgeFailure() throws {
+    let mapped = ErrorMapping.rpcError(from: AXBridgeError.applicationNotResponding(pid: 4321))
+    #expect(mapped.code == .internalError)
+    let status = try #require(try mapped.unpackGoogleRPCStatus())
+    #expect(
+      status.details == [
+        .errorInfo(
+          reason: "UI_AUTOMATION_FAILURE", domain: "idb",
+          metadata: ["retry": "safe", "retry_reason": "nothing_written"])
+      ])
+  }
+
+  @Test
+  func errorMappingLeavesOtherFailuresWithoutARetryVerdict() throws {
+    let mapped = ErrorMapping.rpcError(from: NSError(domain: "com.example", code: 7))
+    #expect(try mapped.unpackGoogleRPCStatus() == nil)
   }
 
   // MARK: - StreamReadError Tests
