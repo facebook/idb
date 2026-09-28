@@ -121,6 +121,21 @@ final class SimulatorDisplayReadTests: XCTestCase {
       return XCTFail("An empty current report is not a legacy provider")
     }
     XCTAssertThrowsError(try SimulatorDisplayCommands.activeIntegratedDisplay(in: displays))
+    XCTAssertThrowsError(try SimulatorDisplayProtocol.captureDisplay(displayReply([])))
+  }
+
+  /// The shape tvOS reports: its only display is an external TVOut with backlight state but no layout activity.
+  func testCaptureFromReportWithOnlyAnExternalDisplay() {
+    for state in ["off", "unknown"] {
+      let tvOut = displayValue(id: "TVOut", active: false, primary: true)
+      xpc_dictionary_set_value(tvOut, "active", nil)
+      xpc_dictionary_set_string(tvOut, "backlightState", state)
+      xpc_dictionary_set_value(tvOut, "type", SimulatorCoreDevice.dictionary(["external": SimulatorCoreDevice.dictionary([:])]))
+      // BUG: throws instead of returning nil to capture the main screen -- flipped in the following commit.
+      XCTAssertThrowsError(try SimulatorDisplayProtocol.captureDisplay(displayReply([tvOut])), state) { error in
+        guard case SimulatorDisplayError.noActiveIntegratedDisplay = error else { return XCTFail("Unexpected error: \(error)") }
+      }
+    }
   }
 
   func testActivityEvidenceSourceCanChangeWithoutChangingDisplayConfiguration() throws {
