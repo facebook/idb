@@ -89,6 +89,25 @@ final class IPCSocketTests: XCTestCase {
     XCTAssertThrowsError(try IPCListener.bind(path: path, backlog: 1))
   }
 
+  func testAPrivateDirectoryIsCreatedTightenedAndRefusedWhenNotOwnedOrLinked() throws {
+    let owned = "\(directory)/owned"
+    try IPCSocket.requirePrivateDirectory(owned, creating: true)
+    chmod(owned, 0o777)
+    XCTAssertThrowsError(try IPCSocket.requirePrivateDirectory(owned, creating: false)) {
+      XCTAssertEqual($0 as? IPCError, .sharedDirectory(path: owned))
+    }
+    try IPCSocket.requirePrivateDirectory(owned, creating: true)
+    let attributes = try FileManager.default.attributesOfItem(atPath: owned)
+    XCTAssertEqual(attributes[.posixPermissions] as? Int, IPCSocket.ownerOnlyPermissions)
+
+    let linked = "\(directory)/linked"
+    XCTAssertEqual(symlink(owned, linked), 0)
+    XCTAssertThrowsError(try IPCSocket.requirePrivateDirectory(linked, creating: true)) {
+      XCTAssertEqual($0 as? IPCError, .sharedDirectory(path: linked))
+    }
+    XCTAssertNoThrow(try IPCSocket.requirePrivateDirectory("\(directory)/absent", creating: false))
+  }
+
   func testPreparedDirectoriesAreOwnerOnly() throws {
     let loose = "\(directory)/loose"
     XCTAssertEqual(mkdir(loose, 0o777), 0)

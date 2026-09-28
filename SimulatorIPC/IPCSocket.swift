@@ -57,6 +57,24 @@ public enum IPCSocket {
     try manager.setAttributes([.posixPermissions: ownerOnlyPermissions], ofItemAtPath: path)
   }
 
+  public static func requirePrivateDirectory(_ directory: String, creating: Bool) throws {
+    if creating, mkdir(directory, mode_t(ownerOnlyPermissions)) != 0, errno != EEXIST {
+      throw POSIXError(POSIXErrorCode(rawValue: errno) ?? .EIO)
+    }
+    var status = stat()
+    guard lstat(directory, &status) == 0 else {
+      if errno == ENOENT, !creating { return }
+      throw POSIXError(POSIXErrorCode(rawValue: errno) ?? .EIO)
+    }
+    guard status.st_mode & S_IFMT == S_IFDIR, status.st_uid == getuid() else {
+      throw IPCError.sharedDirectory(path: directory)
+    }
+    if status.st_mode & 0o077 != 0 {
+      guard creating, chmod(directory, mode_t(ownerOnlyPermissions)) == 0 else {
+        throw IPCError.sharedDirectory(path: directory)
+      }
+    }
+  }
   static func address(path: String) throws -> sockaddr_un {
     var address = sockaddr_un()
     address.sun_family = sa_family_t(AF_UNIX)

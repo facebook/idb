@@ -4,6 +4,35 @@ options:
   createIntermediateGroups: true
 
 targets:
+  SimulatorIPC-iOS:
+    type: library.static
+    platform: iOS
+    deploymentTarget: "15.0"
+    sources:
+      - path: ../../SimulatorIPC
+    settings:
+      base:
+        SDKROOT: iphonesimulator
+        PRODUCT_MODULE_NAME: SimulatorIPC
+        SWIFT_VERSION: "6.0"
+    dependencies:
+      - sdk: Foundation.framework
+
+  ShimulatorProtocol-iOS:
+    type: library.static
+    platform: iOS
+    deploymentTarget: "15.0"
+    sources:
+      - path: Protocol
+    settings:
+      base:
+        SDKROOT: iphonesimulator
+        PRODUCT_MODULE_NAME: ShimulatorProtocol
+        SWIFT_VERSION: "6.0"
+    dependencies:
+      - target: SimulatorIPC-iOS
+      - sdk: Foundation.framework
+
   Shimulator-iOS:
     type: library.dynamic
     platform: iOS

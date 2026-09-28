@@ -13,6 +13,7 @@ public enum IPCError: Error, Equatable {
   case closed
   case timedOut
   case failed(operation: String, errno: Int32)
+  case sharedDirectory(path: String)
 }
 
 extension IPCError: CustomStringConvertible {
@@ -28,6 +29,8 @@ extension IPCError: CustomStringConvertible {
       "socket timed out"
     case let .failed(operation, code):
       "\(operation) failed: \(String(cString: strerror(code)))"
+    case let .sharedDirectory(path):
+      "\(path) is not private to this user"
     }
   }
 }
