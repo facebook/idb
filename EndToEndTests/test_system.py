@@ -41,7 +41,7 @@ DENY_BUTTON = "Don’t Allow"
 PROMPT_TIMEOUT_SECONDS = 60.0
 
 PERMISSION_TEST_CAPABILITIES = {
-    "test_pre_approval_removes_the_system_prompt": (
+    "test_approve_removes_the_system_prompt": (
         SuiteCapability.ACCESSIBILITY_INTERACTION
     ),
     "test_revoke_removes_only_the_requested_permission": (
@@ -65,7 +65,7 @@ class OpenUrlTests(IdbEndToEndTestCase):
 class PermissionTests(IdbEndToEndTestCase):
     capabilities = PERMISSION_TEST_CAPABILITIES
 
-    async def test_pre_approval_removes_the_system_prompt(self) -> None:
+    async def test_approve_removes_the_system_prompt(self) -> None:
         """What approving a service buys: the app stops having to ask for it.
 
         TCC authorization is scoped to the requesting client, so the approval is

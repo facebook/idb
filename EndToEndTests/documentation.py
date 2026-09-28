@@ -43,7 +43,7 @@ DEMO_ATTRIBUTE = "__idb_documented_demo__"
 DOCUMENTED_DEMOS: Mapping[str, str] = {
     "open-a-page-by-id": (
         "EndToEndTests.test_accessibility.AccessibilityTests"
-        ".test_ui_opens_general_by_identifier_and_confirms_it"
+        ".test_ui_tap_by_identifier_opens_general"
     ),
     "scroll-a-list": (
         "EndToEndTests.test_accessibility.AccessibilityTests"
@@ -51,11 +51,11 @@ DOCUMENTED_DEMOS: Mapping[str, str] = {
     ),
     "deliver-a-notification-and-watch-it-clear": (
         "EndToEndTests.test_services.NotificationTests"
-        ".test_a_delivered_notification_is_held_until_it_is_cleared"
+        ".test_send_notification_delivers_to_an_app_that_is_not_running"
     ),
     "read-a-web-page-in-safari": (
         "EndToEndTests.test_accessibility.WebContentTests"
-        ".test_web_content_is_readable_from_inside_the_simulator"
+        ".test_ui_describe_all_reads_a_web_page_in_safari"
     ),
 }
 

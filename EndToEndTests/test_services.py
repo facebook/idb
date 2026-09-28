@@ -39,7 +39,7 @@ NOTIFICATION_LIST_TIMEOUT_SECONDS = 120.0
 
 
 class ServiceTests(IdbEndToEndTestCase):
-    async def test_health_list_for_installed_application(self) -> None:
+    async def test_guest_health_list_reports_no_records_for_a_new_app(self) -> None:
         bundle_id = await self.install_fixture_app()
         listed = json.loads((await self.guest("health", "list", bundle_id)).stdout)
         self.assertEqual(
@@ -54,7 +54,7 @@ class ServiceTests(IdbEndToEndTestCase):
         )
         self.assertIs(type(listed["ok"]), int)
 
-    async def test_rpc_modes_share_service_reads_on_one_connection(self) -> None:
+    async def test_guest_rpc_answers_reads_as_the_verbs_do(self) -> None:
         bundle_id = await self.install_fixture_app()
         cases = [
             (
@@ -84,7 +84,7 @@ class ServiceTests(IdbEndToEndTestCase):
                                 json.dumps([expected], sort_keys=True),
                             )
 
-    async def test_rpc_modes_mutate_network_and_notification_state(self) -> None:
+    async def test_guest_rpc_writes_network_and_notification_state(self) -> None:
         for service in ("dns", "proxy"):
             snapshot = await self.store_data("snapshot", service)
             self.addAsyncCleanup(self.restore_network, service, snapshot)
@@ -150,7 +150,7 @@ class ServiceTests(IdbEndToEndTestCase):
                         )
                         await self.assert_notifications(bundle_id, enabled, status)
 
-    async def test_rpc_modes_restore_lossless_dynamic_store_snapshots(self) -> None:
+    async def test_guest_rpc_restores_dynamic_store_snapshots_losslessly(self) -> None:
         key = f"State:/idb-tests/{uuid.uuid4()}"
         original = await self.store_data("snapshot", key)
         self.addAsyncCleanup(self.restore_network, key, original)
@@ -232,7 +232,7 @@ class ServiceTests(IdbEndToEndTestCase):
         )
         self.assertEqual(json.loads((await self.guest(service, "list")).text), expected)
 
-    async def test_proxy_set_replaces_the_previous_type_and_clear_disables_it(
+    async def test_guest_proxy_set_replaces_the_previous_type(
         self,
     ) -> None:
         snapshot = await self.store_data("snapshot", "proxy")
@@ -267,7 +267,9 @@ class ServiceTests(IdbEndToEndTestCase):
         await self.guest("proxy", "clear")
         await self.assert_network("proxy", {"FTPPassive": 1})
 
-    async def test_idb_notification_permissions_update_guest_settings(self) -> None:
+    async def test_approve_and_revoke_notification_update_the_app_settings(
+        self,
+    ) -> None:
         bundle_id = await self.install_fixture_app()
         self.addAsyncCleanup(self.idb, "revoke", bundle_id, "notification")
 
@@ -279,7 +281,7 @@ class ServiceTests(IdbEndToEndTestCase):
         self.assertEqual(revoked.stdout, b"")
         await self.assert_notifications(bundle_id, False, 0)
 
-    async def test_guest_accessibility_setting_write_reads_back(self) -> None:
+    async def test_guest_accessibility_settings_set_reads_back(self) -> None:
         arguments = ("--setting", "reduce-motion")
         before = json.loads(
             (await self.guest("accessibility", "settings-get", *arguments)).text
@@ -366,7 +368,9 @@ class NotificationTests(IdbEndToEndTestCase):
             "longer holds any."
         ),
     )
-    async def test_a_delivered_notification_is_held_until_it_is_cleared(self) -> None:
+    async def test_send_notification_delivers_to_an_app_that_is_not_running(
+        self,
+    ) -> None:
         self.addAsyncCleanup(self.setup_terminate_quietly, NEWS_BUNDLE_ID)
         await self.setup_terminate_quietly(NEWS_BUNDLE_ID)
         # The first push a simulator receives after it is erased waits on the

@@ -255,7 +255,8 @@ def _search_field(document: Any, value: str | None = None) -> dict[str, Any]:
 
 ACCESSIBILITY_READ_TESTS = frozenset(
     {
-        "test_ui_describe_all_reads_both_backends_and_honours_its_options",
+        "test_ui_describe_all_reads_the_fixture_through_both_backends",
+        "test_ui_describe_all_reports_what_its_options_ask_for",
         "test_ui_describe_all_filtered_to_interactable_reports_only_visible_rows",
         "test_ui_describe_resolves_a_point_and_a_marker",
     }
@@ -264,10 +265,12 @@ INTERACTION_TESTS = frozenset(
     {
         "test_ui_scroll_moves_rows_down_and_up",
         "test_ui_set_value_updates_the_search_field",
-        "test_ui_opens_general_by_identifier_and_confirms_it",
-        "test_ui_tap_opens_general_by_point",
-        "test_ui_wait_returns_after_general_opens",
-        "test_ui_wait_times_out_and_rejects_an_invalid_poll_interval",
+        "test_ui_tap_by_identifier_opens_general",
+        "test_ui_tap_by_point_opens_general",
+        "test_ui_tap_refuses_a_mismatched_expected_value",
+        "test_ui_wait_blocks_until_the_element_appears",
+        "test_ui_wait_rejects_a_zero_poll_interval",
+        "test_ui_wait_times_out_on_a_missing_element",
     }
 )
 ACCESSIBILITY_TEST_CAPABILITIES = {
@@ -275,7 +278,7 @@ ACCESSIBILITY_TEST_CAPABILITIES = {
     **{name: SuiteCapability.ACCESSIBILITY_INTERACTION for name in INTERACTION_TESTS},
 }
 WEB_CONTENT_TEST_CAPABILITIES = {
-    "test_web_content_is_readable_from_inside_the_simulator": (
+    "test_ui_describe_all_reads_a_web_page_in_safari": (
         SuiteCapability.ACCESSIBILITY_INTERACTION
     ),
 }
@@ -355,7 +358,7 @@ class AccessibilityTests(IdbEndToEndTestCase):
             "No General row", ACCESSIBILITY_READY_TIMEOUT_SECONDS, read
         )
 
-    async def test_ui_describe_all_reads_both_backends_and_honours_its_options(
+    async def test_ui_describe_all_reads_the_fixture_through_both_backends(
         self,
     ) -> None:
         ax = await self.describe_all_complete("ax")
@@ -374,6 +377,7 @@ class AccessibilityTests(IdbEndToEndTestCase):
             f"{AXBRIDGE_BACKEND} saw {sorted(_labels(axbridge))}",
         )
 
+    async def test_ui_describe_all_reports_what_its_options_ask_for(self) -> None:
         selected = await self.idb_json(
             "ui",
             "describe-all",
@@ -477,7 +481,7 @@ class AccessibilityTests(IdbEndToEndTestCase):
             expected_error="found no element whose",
         )
 
-    async def test_ui_wait_returns_after_general_opens(self) -> None:
+    async def test_ui_wait_blocks_until_the_element_appears(self) -> None:
         title = _label(self.control)
         before = _elements(await self.describe_all_complete("axbridge"))
         self.assertNotIn(title, [element.get("identifier") for element in before])
@@ -499,7 +503,7 @@ class AccessibilityTests(IdbEndToEndTestCase):
             self.assertEqual(json.loads(result), {"found": True})
             self.assertEqual(await waiting.wait_for_exit(10), 0)
 
-    async def test_ui_wait_times_out_and_rejects_an_invalid_poll_interval(self) -> None:
+    async def test_ui_wait_times_out_on_a_missing_element(self) -> None:
         for backend in ("axbridge", "ax"):
             with self.subTest(backend=backend):
                 completed = await self.idb_expect_failure(
@@ -536,6 +540,7 @@ class AccessibilityTests(IdbEndToEndTestCase):
                     "idb-e2e-no-such-element", diagnostics["unmatched_values"]
                 )
 
+    async def test_ui_wait_rejects_a_zero_poll_interval(self) -> None:
         rejected = await self.idb_expect_failure(
             "ui",
             "wait",
@@ -574,7 +579,7 @@ class AccessibilityTests(IdbEndToEndTestCase):
         await self.idb("ui", "set-value", str(x), str(y), "--value", "idb-second")
         await self.wait_for_search_value("idb-second")
 
-    async def test_ui_tap_opens_general_by_point(self) -> None:
+    async def test_ui_tap_refuses_a_mismatched_expected_value(self) -> None:
         title = _label(self.control)
 
         await self.idb_expect_failure(
@@ -603,6 +608,8 @@ class AccessibilityTests(IdbEndToEndTestCase):
             "The rejected tap opened General",
         )
 
+    async def test_ui_tap_by_point_opens_general(self) -> None:
+        title = _label(self.control)
         await self.tap_when_settled(GENERAL_ROW, "--api", "ax")
         await self.wait_for(Query(title, element_type="NavigationBar"), lookup=UiWait())
 
@@ -638,7 +645,7 @@ class AccessibilityTests(IdbEndToEndTestCase):
             "tap opened the expected destination."
         ),
     )
-    async def test_ui_opens_general_by_identifier_and_confirms_it(self) -> None:
+    async def test_ui_tap_by_identifier_opens_general(self) -> None:
         before = await self.describe_by_id(
             GENERAL_ROW_ID, step="Find the General row by accessibility identifier"
         )
@@ -896,7 +903,7 @@ class WebContentTests(IdbEndToEndTestCase):
             "one of that page's diagrams."
         ),
     )
-    async def test_web_content_is_readable_from_inside_the_simulator(self) -> None:
+    async def test_ui_describe_all_reads_a_web_page_in_safari(self) -> None:
         origin = await self.setup_web_origin(
             LIVE_ORIGIN, STAND_IN_PAGES, self.safari_shows_first_page
         )

@@ -954,21 +954,11 @@ class SuiteCapabilityTests(unittest.TestCase):
         "test_process_liveness": SuiteCapability.COMPANION_PROCESS,
         "test_publishes_artifact": SuiteCapability.ARTIFACT_PUBLICATION,
         "test_streams_output": SuiteCapability.LONG_LIVED_STREAM,
-        "test_ui_describe_all_reads_both_backends_and_honours_its_options": (
-            SuiteCapability.ACCESSIBILITY_READ
-        ),
-        "test_ui_describe_resolves_a_point_and_a_marker": (
-            SuiteCapability.ACCESSIBILITY_READ
-        ),
-        "test_ui_scroll_moves_rows_down_and_up": (
-            SuiteCapability.ACCESSIBILITY_INTERACTION
-        ),
-        "test_ui_tap_opens_general_by_point": (
-            SuiteCapability.ACCESSIBILITY_INTERACTION
-        ),
-        "test_ui_wait_returns_after_general_opens": (
-            SuiteCapability.ACCESSIBILITY_INTERACTION
-        ),
+        "test_reads_accessibility": SuiteCapability.ACCESSIBILITY_READ,
+        "test_reads_accessibility_at_a_point": SuiteCapability.ACCESSIBILITY_READ,
+        "test_scrolls": SuiteCapability.ACCESSIBILITY_INTERACTION,
+        "test_taps": SuiteCapability.ACCESSIBILITY_INTERACTION,
+        "test_waits": SuiteCapability.ACCESSIBILITY_INTERACTION,
     }
     ALL_TESTS = sorted(REQUIREMENTS)
 
