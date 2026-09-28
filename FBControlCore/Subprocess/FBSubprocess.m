@@ -108,7 +108,7 @@ static BOOL AddInputFileActions(posix_spawn_file_actions_t *fileActions, FBProce
            resolveFromFuture:self.exitCode]
           onQueue:self.queue
           fmap:^(NSNumber *exitCode) {
-            return [[FBSubprocess confirmExitCode:exitCode.intValue isAcceptable:acceptableExitCodes] mapReplace:exitCode];
+            return [[FBSubprocess confirmExitCode:exitCode.intValue isAcceptable:acceptableExitCodes stdErr:self.stdErr] mapReplace:exitCode];
           }];
 }
 
@@ -158,7 +158,7 @@ static BOOL AddInputFileActions(posix_spawn_file_actions_t *fileActions, FBProce
 
 #pragma mark Private
 
-+ (FBFuture<NSNull *> *)confirmExitCode:(int)exitCode isAcceptable:(NSSet<NSNumber *> *)acceptableExitCodes
++ (FBFuture<NSNull *> *)confirmExitCode:(int)exitCode isAcceptable:(NSSet<NSNumber *> *)acceptableExitCodes stdErr:(nullable id)stdErr
 {
   if (acceptableExitCodes == nil) {
     return FBFuture.empty;
@@ -166,9 +166,34 @@ static BOOL AddInputFileActions(posix_spawn_file_actions_t *fileActions, FBProce
   if ([acceptableExitCodes containsObject:@(exitCode)]) {
     return FBFuture.empty;
   }
+  NSString *description = [NSString stringWithFormat:@"Exit Code %d is not acceptable %@", exitCode, [CollectionInformation oneLineDescriptionFromArray:acceptableExitCodes.allObjects]];
+  NSString *capturedStdErr = [self capturedErrorMessage:stdErr];
+  if (capturedStdErr.length > 0) {
+    description = [NSString stringWithFormat:@"%@: %@", description, capturedStdErr];
+  }
   return (FBFuture *)[[ControlCoreError
-                       describe:[NSString stringWithFormat:@"Exit Code %d is not acceptable %@", exitCode, [CollectionInformation oneLineDescriptionFromArray:acceptableExitCodes.allObjects]]]
+                       describe:description]
                       failFuture];
+}
+
+// Only output captured by the `...ToLoggerAndErrorMessage:` builder options is appended; it is bounded to `FBProcessOutputErrorMessageLength`, whereas other in-memory output is the caller's to read and may be arbitrarily large.
++ (nullable NSString *)capturedErrorMessage:(nullable id)output
+{
+  if (![output conformsToProtocol:@protocol(AccumulatingBuffer)]) {
+    return nil;
+  }
+  NSData *data = [(id<AccumulatingBuffer>)output data];
+  // Lossy, because a strict decode returns nil for any byte that is not UTF-8, dropping the whole message.
+  NSString *string = nil;
+  [NSString stringEncodingForData:data
+                  encodingOptions:@{
+     NSStringEncodingDetectionSuggestedEncodingsKey : @[@(NSUTF8StringEncoding)],
+     NSStringEncodingDetectionUseOnlySuggestedEncodingsKey : @YES,
+     NSStringEncodingDetectionAllowLossyKey : @YES,
+   }
+                  convertedString:&string
+              usedLossyConversion:NULL];
+  return [string stringByTrimmingCharactersInSet:NSCharacterSet.whitespaceAndNewlineCharacterSet];
 }
 
 + (FBSubprocess *)processWithConfiguration:(ProcessSpawnConfiguration *)configuration attachment:(FBProcessIOAttachment *)attachment queue:(dispatch_queue_t)queue logger:(id<ControlCoreLogger>)logger error:(NSError **)error

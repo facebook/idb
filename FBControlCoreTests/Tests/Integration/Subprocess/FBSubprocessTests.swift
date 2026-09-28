@@ -59,8 +59,7 @@ final class FBSubprocessTests: XCTestCase {
     XCTAssertThrowsError(try future.`await`()) { error in
       let description = (error as NSError).localizedDescription
       XCTAssertTrue(description.contains("Exit Code 3"), description)
-      // BUG: the captured stderr is dropped from the error — flipped in the following commit.
-      XCTAssertFalse(description.contains("no space left on device"), description)
+      XCTAssertTrue(description.contains("no space left on device"), description)
     }
   }
 
@@ -74,8 +73,7 @@ final class FBSubprocessTests: XCTestCase {
     XCTAssertThrowsError(try future.`await`()) { error in
       let description = (error as NSError).localizedDescription
       XCTAssertTrue(description.contains("Exit Code 3"), description)
-      // BUG: the captured stderr is dropped from the error — flipped in the following commit.
-      XCTAssertFalse(description.contains("no space left on device"), description)
+      XCTAssertTrue(description.contains("no space left on device"), description)
     }
   }
 
