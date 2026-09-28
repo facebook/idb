@@ -51,8 +51,7 @@ final class SimulatorHIDOperationTests: XCTestCase {
       try await operation.send(.touch(direction: .up, x: 20, y: 30))
       XCTFail("expected the gesture to fail")
     } catch {
-      // BUG: surfaces the transitional read rather than the display change it signals — flipped in the following commit.
-      guard case SimulatorDisplayError.transitioning = error else { return XCTFail("unexpected error: \(error)") }
+      guard case SimulatorDisplayError.changed = error else { return XCTFail("unexpected error: \(error)") }
       await operation.cleanup()
     }
   }

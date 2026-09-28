@@ -78,6 +78,8 @@ final class SimulatorHIDDisplayObservation: @unchecked Sendable {
     switch result {
     case let .success(current):
       error = current.map { display.hasSameConfiguration(as: $0) } == true ? nil : SimulatorDisplayError.changed
+    // Mid-gesture, a transition means the display is changing; the gesture must not wait for it to settle.
+    case .failure(SimulatorDisplayError.transitioning): error = SimulatorDisplayError.changed
     case let .failure(cause): error = cause
     }
     lock.lock()

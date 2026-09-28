@@ -14,6 +14,7 @@ import Foundation
 // patternlint-disable-next-line unchecked-sendable
 final class DisplayCommandsDouble: DisplayCommands, @unchecked Sendable {
   let identities = DisplayIdentityCache()
+  let transitionSettling = DisplayTransitionSettling(timeout: .milliseconds(50), interval: .milliseconds(5))
   private let lock = NSLock()
   private var results: [Result<SimulatorDisplayTarget, any Error>]
   private var readCount = 0

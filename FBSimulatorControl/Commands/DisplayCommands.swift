@@ -17,6 +17,17 @@ protocol DisplayCommands: AnyObject, Sendable {
 
   /// Identities already learned for display UUIDs, so a routed read does not ask again.
   var identities: DisplayIdentityCache { get }
+
+  var transitionSettling: DisplayTransitionSettling { get }
+}
+
+/// How long one-shot resolution keeps reading while a display transition settles, and how often.
+struct DisplayTransitionSettling: Sendable {
+  let timeout: Duration
+  let interval: Duration
+
+  /// Live hinge changes have been seen to settle within about 4 seconds on a heavily loaded host.
+  static let standard = DisplayTransitionSettling(timeout: .seconds(5), interval: .milliseconds(100))
 }
 
 /// The display an interaction targets, and whether routing has to name it.
@@ -86,6 +97,22 @@ final class DisplayIdentityCache: @unchecked Sendable {
 
 extension DisplayCommands {
 
+  var transitionSettling: DisplayTransitionSettling { .standard }
+
+  /// The interaction target once any display transition has settled. A hinge change moves layout to the
+  /// new display before its backlight follows, and one-shot resolution waits that out rather than failing.
+  func settledInteractionTarget() async throws -> SimulatorDisplayTarget {
+    let settling = transitionSettling
+    let deadline = ContinuousClock.now + settling.timeout
+    while true {
+      do {
+        return try await interactionTarget()
+      } catch SimulatorDisplayError.transitioning where ContinuousClock.now < deadline {
+        try await Task.sleep(for: settling.interval)
+      }
+    }
+  }
+
   /// The active display and its accessibility identity, or nil when the runtime cannot report displays.
   /// Only a simulator with several integrated displays asks the guest, and only for a display it has not seen.
   /// `capabilities` are required of the guest only when it has to be told which display to use.
@@ -94,7 +121,7 @@ extension DisplayCommands {
   ) async throws -> AXTranslationDisplay? {
     let target: SimulatorDisplayTarget
     do {
-      target = try await interactionTarget()
+      target = try await settledInteractionTarget()
     } catch SimulatorCoreDeviceError.unsupported {
       return nil
     }
@@ -119,7 +146,7 @@ extension DisplayCommands {
   func hidDisplay() async throws -> SimulatorHIDDisplay? {
     let target: SimulatorDisplayTarget
     do {
-      target = try await interactionTarget()
+      target = try await settledInteractionTarget()
     } catch SimulatorCoreDeviceError.unsupported {
       return nil
     }
@@ -141,6 +168,6 @@ extension DisplayCommands {
 
   /// Fails if the active display, or its geometry, differs from the snapshot.
   func validate(_ display: SimulatorInteractionDisplay) async throws {
-    guard try await interactionTarget().display.hasSameConfiguration(as: display) else { throw SimulatorDisplayError.changed }
+    guard try await settledInteractionTarget().display.hasSameConfiguration(as: display) else { throw SimulatorDisplayError.changed }
   }
 }

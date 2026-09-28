@@ -115,18 +115,16 @@ final class DisplayCommandsTests: XCTestCase {
     let accessibilityID = await outcome { try await accessibility.accessibilityDisplay(transport: transport)?.accessibilityID }
     let digitizerTarget = await outcome { try await hid.hidDisplay()?.digitizerTarget }
     let contextTarget = await outcome { try await context.interactionContext(for: nil, transport: transport).digitizerTarget }
-    // BUG: each lookup fails on the transitional report instead of reading again — flipped in the following commit.
-    assertTransitioning(accessibilityID)
-    assertTransitioning(digitizerTarget)
-    assertTransitioning(contextTarget)
-    XCTAssertEqual([accessibility.reads, hid.reads, context.reads], [1, 1, 1])
+    XCTAssertEqual(try accessibilityID.get(), 3)
+    XCTAssertEqual(try digitizerTarget.get(), 29)
+    XCTAssertEqual(try contextTarget.get(), 29)
+    XCTAssertEqual([accessibility.reads, hid.reads, context.reads], [3, 3, 3])
   }
 
   func testLookupFailsWhenADisplayTransitionDoesNotSettle() async {
     let displays = DisplayCommandsDouble([transition])
     assertTransitioning(await outcome { try await displays.hidDisplay() })
-    // BUG: gives up on the first transitional report — flipped in the following commit.
-    XCTAssertEqual(displays.reads, 1)
+    XCTAssertGreaterThan(displays.reads, 1)
   }
 
   private let transition = Result<SimulatorDisplayTarget, any Error>.failure(SimulatorDisplayError.transitioning)
