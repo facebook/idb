@@ -58,6 +58,9 @@ ROW_CONTAINER_TYPES = frozenset({"CollectionView", "Table", "ScrollView", "List"
 # A tap idb refused does nothing at all, so a wait long enough to catch a
 # screen that did change is short.
 NOTHING_OPENS_TIMEOUT_SECONDS = 2.0
+# Long enough for a `ui wait` to read the screen before General opens, so its
+# answer shows that it waited rather than that it started late.
+WAIT_BLOCKS_SECONDS = 2.0
 MINIMUM_SCROLL_DISTANCE = 20.0
 
 # The companion uses an exclusive simulator process for --api axbridge.
@@ -485,15 +488,12 @@ class AccessibilityTests(IdbEndToEndTestCase):
         )
 
     async def test_ui_wait_returns_after_general_opens(self) -> None:
-        general = (await self.wait_for(GENERAL_ROW, lookup=UiWait())).element
-        title = _label(general)
-        self.assertTrue(title, "The General row has no label")
+        title = _label(self.control)
         before = _elements(await self.describe_all_complete("axbridge"))
         self.assertNotIn(title, [element.get("identifier") for element in before])
-        marker = _label(self.control)
         for api in ("ax", "axbridge"):
             self.assertEqual(
-                await self.idb_json("ui", "wait", marker, "--api", api),
+                await self.idb_json("ui", "wait", title, "--api", api),
                 {"found": True},
                 api,
             )
@@ -508,7 +508,7 @@ class AccessibilityTests(IdbEndToEndTestCase):
             str(UI_UPDATE_TIMEOUT_SECONDS),
             "--json",
         ) as waiting:
-            await asyncio.sleep(2)
+            await asyncio.sleep(WAIT_BLOCKS_SECONDS)
             self.assertIsNone(waiting.returncode, "wait finished before General opened")
             await self.idb("ui", "tap", GENERAL_ROW_ID, "--match-key", "AXUniqueId")
             result = await waiting.read_some(UI_UPDATE_TIMEOUT_SECONDS)
@@ -601,9 +601,7 @@ class AccessibilityTests(IdbEndToEndTestCase):
         await self.wait_for_search_value("idb-second")
 
     async def test_ui_tap_opens_general_by_point(self) -> None:
-        general = (await self.wait_for(GENERAL_ROW, lookup=UiWait())).element
-        title = _label(general)
-        self.assertTrue(title, "The General row has no label")
+        title = _label(self.control)
 
         await self.idb_expect_failure(
             "ui",
@@ -631,9 +629,7 @@ class AccessibilityTests(IdbEndToEndTestCase):
             "The rejected tap opened General",
         )
 
-        general = (await self.wait_for(GENERAL_ROW, lookup=UiWait())).element
-        x, y = _center(general)
-        await self.idb("ui", "tap", str(x), str(y), "--api", "ax")
+        await self.tap_when_settled(GENERAL_ROW, "--api", "ax")
         await self.wait_for(Query(title, element_type="NavigationBar"), lookup=UiWait())
 
     async def describe_by_id(self, identifier: str, *, step: str) -> dict[str, Any]:
@@ -680,8 +676,6 @@ class AccessibilityTests(IdbEndToEndTestCase):
         ),
     )
     async def test_ui_opens_general_by_identifier_and_confirms_it(self) -> None:
-        await self.wait_for(GENERAL_ROW, lookup=UiWait())
-
         before = await self.describe_by_id(
             GENERAL_ROW_ID, step="Find the General row by accessibility identifier"
         )
@@ -804,7 +798,6 @@ class AccessibilityTests(IdbEndToEndTestCase):
         ),
     )
     async def test_ui_scroll_moves_rows_down_and_up(self) -> None:
-        await self.wait_for(GENERAL_ROW, lookup=UiWait())
         before = _row_positions(await self.describe_all_complete("axbridge"))
         self.assertIn(GENERAL_ROW_ID, before)
 
