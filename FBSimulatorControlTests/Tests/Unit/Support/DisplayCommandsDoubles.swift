@@ -56,3 +56,22 @@ final class DisplayCommandsDouble: DisplayCommands, @unchecked Sendable {
     return try (results.count > 1 ? results.removeFirst() : results[0]).get()
   }
 }
+
+/// Answers every request with the scripted accessibility display inventory.
+actor InventoryTransport: AXBridgeTransport {
+  private let inventory: [SimulatorAccessibilityDisplay]
+  private let scopedInteractions: Bool
+  private(set) var sends = 0
+
+  init(_ inventory: [SimulatorAccessibilityDisplay], scopedInteractions: Bool = false) {
+    self.inventory = inventory
+    self.scopedInteractions = scopedInteractions
+  }
+
+  func send(_ request: AXBridgeRequest) async throws -> Data {
+    sends += 1
+    let displays = inventory.map { ["uniqueID": $0.uniqueID, "displayID": $0.displayID] as [String: Any] }
+    return try JSONSerialization.data(
+      withJSONObject: ["ok": true, "displayScopedInteractions": scopedInteractions, "displays": displays])
+  }
+}

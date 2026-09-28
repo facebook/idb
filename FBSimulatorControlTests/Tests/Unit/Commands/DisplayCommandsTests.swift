@@ -9,24 +9,6 @@
 import Foundation
 import XCTest
 
-private actor InventoryTransport: AXBridgeTransport {
-  private let inventory: [SimulatorAccessibilityDisplay]
-  private let scopedInteractions: Bool
-  private(set) var sends = 0
-
-  init(_ inventory: [SimulatorAccessibilityDisplay], scopedInteractions: Bool = false) {
-    self.inventory = inventory
-    self.scopedInteractions = scopedInteractions
-  }
-
-  func send(_ request: AXBridgeRequest) async throws -> Data {
-    sends += 1
-    let displays = inventory.map { ["uniqueID": $0.uniqueID, "displayID": $0.displayID] as [String: Any] }
-    return try JSONSerialization.data(
-      withJSONObject: ["ok": true, "displayScopedInteractions": scopedInteractions, "displays": displays])
-  }
-}
-
 final class DisplayCommandsTests: XCTestCase {
   private func display(_ id: String, width: Double = 1200) -> SimulatorDisplay {
     SimulatorDisplay(

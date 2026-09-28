@@ -184,21 +184,13 @@ public final class SimulatorDisplayCommands: DisplayCommands, @unchecked Sendabl
   /// Resolves one active integrated display and its independent accessibility and input identities.
   /// An explicit UUID must identify the active integrated display; inactive interaction is unsupported.
   public func interactionContext(for displayUniqueID: String? = nil) async throws -> SimulatorDisplayInteractionContext {
-    try await interactionResolver(transport: AXBridgeOneshotTransport(simulator: target()))
-      .resolve(displayUniqueID: displayUniqueID)
+    try await interactionContext(for: displayUniqueID, transport: AXBridgeOneshotTransport(simulator: target()))
   }
 
   /// Fails if the observed active display, geometry or routing no longer matches the saved context.
   /// This is a fresh snapshot comparison, not a record of every intervening display transition.
   public func validate(_ context: SimulatorDisplayInteractionContext) async throws {
-    try await interactionResolver(transport: AXBridgeOneshotTransport(simulator: target())).validate(context)
-  }
-
-  func interactionResolver(transport: any AXBridgeTransport) -> SimulatorDisplayInteractionResolver {
-    SimulatorDisplayInteractionResolver(
-      readDisplays: { try await self.list() },
-      readTouchscreens: { try await self.touchscreens() },
-      readAccessibility: { try AXBridgeDisplayInventory.decode(await transport.send(.displays)) })
+    try await validate(context, transport: AXBridgeOneshotTransport(simulator: target()))
   }
 
   /// Returns nil only when the runtime lacks the feature, or the provider the fields, needed to

@@ -18,8 +18,10 @@ final class SimulatorDisplayInteractionTests: XCTestCase {
       bounds: CGRect(x: 50, y: 60, width: 1200, height: 800), scale: scale, rotation: rotation)
   }
 
+  private let accessibility = [SimulatorAccessibilityDisplay(uniqueID: "inner", displayID: 82)]
+
   private func context(_ display: SimulatorDisplay) throws -> SimulatorDisplayInteractionContext {
-    try SimulatorDisplayInteractionResolver.join(
+    try SimulatorDisplayInteractionContext.join(
       display: display,
       touchscreens: [SimulatorTouchscreen(displayUniqueID: display.uniqueID, digitizerTarget: 29)],
       accessibility: [SimulatorAccessibilityDisplay(uniqueID: display.uniqueID, displayID: 82)])
@@ -112,7 +114,7 @@ final class SimulatorDisplayInteractionTests: XCTestCase {
   }
 
   func testJoinUsesUUIDAcrossIndependentNumericNamespaces() throws {
-    let result = try SimulatorDisplayInteractionResolver.join(
+    let result = try SimulatorDisplayInteractionContext.join(
       display: display(),
       touchscreens: [
         SimulatorTouchscreen(displayUniqueID: "cover", digitizerTarget: 82),
@@ -131,10 +133,10 @@ final class SimulatorDisplayInteractionTests: XCTestCase {
     let touchscreen = SimulatorTouchscreen(displayUniqueID: "inner", digitizerTarget: 29)
     let axDisplay = SimulatorAccessibilityDisplay(uniqueID: "inner", displayID: 82)
     for touchscreens in [[], [touchscreen, touchscreen]] {
-      XCTAssertThrowsError(try SimulatorDisplayInteractionResolver.join(display: display(), touchscreens: touchscreens, accessibility: [axDisplay]))
+      XCTAssertThrowsError(try SimulatorDisplayInteractionContext.join(display: display(), touchscreens: touchscreens, accessibility: [axDisplay]))
     }
     for accessibility in [[], [axDisplay, axDisplay]] {
-      XCTAssertThrowsError(try SimulatorDisplayInteractionResolver.join(display: display(), touchscreens: [touchscreen], accessibility: accessibility))
+      XCTAssertThrowsError(try SimulatorDisplayInteractionContext.join(display: display(), touchscreens: [touchscreen], accessibility: accessibility))
     }
   }
 
@@ -199,63 +201,55 @@ final class SimulatorDisplayInteractionTests: XCTestCase {
   }
 
   func testResolutionChecksActivityAgainAfterAcquiringMappings() async throws {
-    let original = display()
-    let changed = display(id: "cover")
-    let reads = DisplayReadSequence([[original], [changed]])
-    let resolver = SimulatorDisplayInteractionResolver(
-      readDisplays: { await reads.next() },
-      readTouchscreens: { [SimulatorTouchscreen(displayUniqueID: "inner", digitizerTarget: 29)] },
-      readAccessibility: { [SimulatorAccessibilityDisplay(uniqueID: "inner", displayID: 82)] })
+    let displays = DisplayCommandsDouble(
+      .selected(display()), .selected(display(id: "cover")),
+      touchscreens: [SimulatorTouchscreen(displayUniqueID: "inner", digitizerTarget: 29)])
     do {
-      _ = try await resolver.resolve()
+      _ = try await displays.interactionContext(for: nil, transport: InventoryTransport(accessibility))
       XCTFail("Expected a transition error")
     } catch { guard case SimulatorDisplayError.changed = error else { return XCTFail("\(error)") } }
   }
 
   func testExplicitInactiveSelectionDoesNotQueryRoutingProviders() async throws {
-    let original = display()
-    let resolver = SimulatorDisplayInteractionResolver(
-      readDisplays: { [original] },
-      readTouchscreens: {
-        XCTFail("Inactive display must fail before routing discovery")
-        return []
-      },
-      readAccessibility: {
-        XCTFail("Inactive display must fail before AX discovery")
-        return []
-      })
+    let displays = DisplayCommandsDouble(.selected(display()))
+    let transport = InventoryTransport(accessibility)
     do {
-      _ = try await resolver.resolve(displayUniqueID: "cover")
+      _ = try await displays.interactionContext(for: "cover", transport: transport)
       XCTFail("Expected inactive selection failure")
     } catch { guard case SimulatorDisplayInteractionError.inactiveDisplay("cover") = error else { return XCTFail("\(error)") } }
+    let sends = await transport.sends
+    XCTAssertEqual(displays.touchscreenReads, 0)
+    XCTAssertEqual(sends, 0)
+  }
+
+  func testSoleDisplayContextCarriesBothIdentities() async throws {
+    let displays = DisplayCommandsDouble(
+      .sole(.identified(display())), touchscreens: [SimulatorTouchscreen(displayUniqueID: "inner", digitizerTarget: 29)])
+    let resolved = try await displays.interactionContext(for: nil, transport: InventoryTransport(accessibility))
+    XCTAssertEqual(resolved, try context(display()))
+    let legacy = DisplayCommandsDouble(.sole(.legacy(display().geometry)))
+    do {
+      _ = try await legacy.interactionContext(for: nil, transport: InventoryTransport(accessibility))
+      XCTFail("Expected missing display identities")
+    } catch { guard case SimulatorDisplayInteractionError.unsupportedCapability = error else { return XCTFail("\(error)") } }
   }
 
   func testValidationRejectsGeometryOrRoutingChanges() async throws {
     let saved = try context(display())
     let changedDisplays = [display(rotation: .clockwise), display(scale: 3), display()]
     for (index, updated) in changedDisplays.enumerated() {
-      let resolver = SimulatorDisplayInteractionResolver(
-        readDisplays: { [updated] },
-        readTouchscreens: { [SimulatorTouchscreen(displayUniqueID: "inner", digitizerTarget: index == 2 ? 30 : 29)] },
-        readAccessibility: { [SimulatorAccessibilityDisplay(uniqueID: "inner", displayID: 82)] })
+      let displays = DisplayCommandsDouble(
+        .selected(updated),
+        touchscreens: [SimulatorTouchscreen(displayUniqueID: "inner", digitizerTarget: index == 2 ? 30 : 29)])
       do {
-        try await resolver.validate(saved)
+        try await displays.validate(saved, transport: InventoryTransport(accessibility))
         XCTFail("Expected stale context failure")
       } catch { guard case SimulatorDisplayError.changed = error else { return XCTFail("\(error)") } }
     }
-    let unchanged = display()
-    let resolver = SimulatorDisplayInteractionResolver(
-      readDisplays: { [unchanged] },
-      readTouchscreens: { [SimulatorTouchscreen(displayUniqueID: "inner", digitizerTarget: 29)] },
-      readAccessibility: { [SimulatorAccessibilityDisplay(uniqueID: "inner", displayID: 82)] })
-    let resolved = try await resolver.resolve(displayUniqueID: "inner")
+    let displays = DisplayCommandsDouble(
+      .selected(display()), touchscreens: [SimulatorTouchscreen(displayUniqueID: "inner", digitizerTarget: 29)])
+    let resolved = try await displays.interactionContext(for: "inner", transport: InventoryTransport(accessibility))
     XCTAssertEqual(resolved, saved)
-    try await resolver.validate(saved)
+    try await displays.validate(saved, transport: InventoryTransport(accessibility))
   }
-}
-
-private actor DisplayReadSequence {
-  var values: [[SimulatorDisplay]]
-  init(_ values: [[SimulatorDisplay]]) { self.values = values }
-  func next() -> [SimulatorDisplay] { values.removeFirst() }
 }
