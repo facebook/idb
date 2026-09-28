@@ -13,6 +13,11 @@ import XCTest
 private let DeviceSetEnvKey = "FBSIMULATORCONTROL_DEVICE_SET"
 private let DeviceSetEnvDefault = "default"
 
+// A new simulator is not usable until its first boot has run data migration, which takes around
+// five minutes on a hosted CI runner. Bounded below the test's execution allowance so a slow
+// boot fails with the poll's own error rather than being killed.
+private let UsableTimeout: TimeInterval = 540
+
 private let LaunchTypeEnvKey = "FBSIMULATORCONTROL_LAUNCH_TYPE"
 private let LaunchTypeSimulatorApp = "simulator_app"
 
@@ -105,7 +110,7 @@ final class SimulatorBootTestCase: XCTestCase {
     let simulator = try await bootedSimulator()
     XCTAssertEqual(simulator.state, .booted)
 
-    try await simulator.lifecycle.resolveUsable(deadline: PollDeadline(timeout: 300, waitingFor: "the simulator to become usable"))
+    try await simulator.lifecycle.resolveUsable(deadline: PollDeadline(timeout: UsableTimeout, waitingFor: "the simulator to become usable"))
     XCTAssertEqual(simulator.device.bootStatus()?.isTerminalStatus, true)
 
     try await shutdownAndDelete(simulator)
