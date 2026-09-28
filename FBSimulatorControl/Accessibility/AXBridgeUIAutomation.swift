@@ -286,12 +286,25 @@ final class AXBridgeUIAutomation: AXBridgeTreeReader, @unchecked Sendable {
     case .point, .marker:
       throw UIAutomationError.operationUnsupported(backend: backend, operation: "Quiescence of a point or marker")
     }
+    guard transport is any AXBridgeStreamingTransport else {
+      throw UIAutomationError.operationUnsupported(backend: backend, operation: "Quiescence")
+    }
+    if pid == nil, case let .unresolved(displays) = routing {
+      return try await frontmostQuiescence(displays: displays, parameters: parameters)
+    }
+    return forwarding(try await quiescenceFrames(pid: pid, displayID: nil, parameters: parameters), pid: pid)
+  }
+
+  private func quiescenceFrames(pid: pid_t?, displayID: UInt32?, parameters: QuiescenceParameters) async throws -> AsyncThrowingStream<Data, Error> {
     guard let transport = transport as? any AXBridgeStreamingTransport else {
       throw UIAutomationError.operationUnsupported(backend: backend, operation: "Quiescence")
     }
-    let frames = try await transport.stream(
-      .quiescence(pid: pid, busyThresholdMs: parameters.busyThresholdMs, quietWindowMs: parameters.quietWindowMs))
-    return AsyncThrowingStream { continuation in
+    return try await transport.stream(
+      .quiescence(pid: pid, busyThresholdMs: parameters.busyThresholdMs, quietWindowMs: parameters.quietWindowMs, displayID: displayID))
+  }
+
+  private func forwarding(_ frames: AsyncThrowingStream<Data, Error>, pid: pid_t?) -> AsyncThrowingStream<QuiescenceEvent, Error> {
+    AsyncThrowingStream { continuation in
       let task = Task {
         do {
           try await translatingBackendErrors {
@@ -305,6 +318,107 @@ final class AXBridgeUIAutomation: AXBridgeTreeReader, @unchecked Sendable {
         }
       }
       continuation.onTermination = { _ in task.cancel() }
+    }
+  }
+
+  /// The guest follows the frontmost application of the one display it is named, so when the device
+  /// switches to another display the stream is reopened there. The consumer sees one stream, with
+  /// `targetChanged` when the switch lands on another application.
+  private func frontmostQuiescence(
+    displays: any DisplayCommands,
+    parameters: QuiescenceParameters
+  ) async throws -> AsyncThrowingStream<QuiescenceEvent, Error> {
+    let display = try await displays.accessibilityDisplay(transport: transport, requiring: Self.quiescenceCapabilities)
+    guard let display, display.accessibilityID != nil, case let .identified(selected) = display.display else {
+      return forwarding(try await quiescenceFrames(pid: nil, displayID: nil, parameters: parameters), pid: nil)
+    }
+    let first = try await quiescenceFrames(pid: nil, displayID: display.accessibilityID, parameters: parameters)
+    return AsyncThrowingStream { continuation in
+      let task = Task {
+        do {
+          try await translatingBackendErrors {
+            var frames = first
+            var followed = selected.uniqueID
+            var lastPid: pid_t?
+            var reopened = false
+            while true {
+              var moved: (uniqueID: String, displayID: UInt32)?
+              for try await step in following(frames, from: followed, displays: displays) {
+                switch step {
+                case let .frame(frame):
+                  let event = try QuiescenceEvent(axBridgeFrame: frame, pid: nil)
+                  if reopened, let lastPid, event.pid != lastPid, event.reportsLiveTarget {
+                    continuation.yield(.targetChanged(pid: event.pid))
+                  }
+                  reopened = false
+                  lastPid = event.pid
+                  continuation.yield(event)
+                case let .moved(uniqueID, displayID):
+                  moved = (uniqueID, displayID)
+                }
+                if moved != nil { break }
+              }
+              guard let moved else { break }
+              frames = try await quiescenceFrames(pid: nil, displayID: moved.displayID, parameters: parameters)
+              followed = moved.uniqueID
+              reopened = true
+            }
+          }
+          continuation.finish()
+        } catch {
+          continuation.finish(throwing: error)
+        }
+      }
+      continuation.onTermination = { _ in task.cancel() }
+    }
+  }
+
+  private static let quiescenceCapabilities: AXBridgeDisplayCapabilities = [.scopedInteractions, .scopedTrees, .scopedQuiescence]
+  private static let displayPollInterval: UInt64 = 250_000_000
+
+  private enum FollowStep: Sendable {
+    case frame(Data)
+    case moved(uniqueID: String, displayID: UInt32)
+  }
+
+  /// Relays `frames` until they end, or until another display becomes active and resolves. A display read
+  /// that fails, as one does mid-transition, leaves the stream where it is until a later read succeeds.
+  private func following(
+    _ frames: AsyncThrowingStream<Data, Error>,
+    from uniqueID: String,
+    displays: any DisplayCommands
+  ) -> AsyncThrowingStream<FollowStep, Error> {
+    AsyncThrowingStream { continuation in
+      let relay = Task {
+        do {
+          for try await frame in frames {
+            continuation.yield(.frame(frame))
+          }
+          continuation.finish()
+        } catch {
+          continuation.finish(throwing: error)
+        }
+      }
+      let poll = Task {
+        while true {
+          do {
+            try await Task.sleep(nanoseconds: Self.displayPollInterval)
+          } catch {
+            return
+          }
+          guard case let .selected(next)? = try? await displays.interactionTarget(), next.uniqueID != uniqueID,
+            let resolved = try? await displays.accessibilityDisplay(transport: self.transport, requiring: Self.quiescenceCapabilities),
+            case let .identified(display) = resolved.display, display.uniqueID != uniqueID,
+            let displayID = resolved.accessibilityID
+          else { continue }
+          continuation.yield(.moved(uniqueID: display.uniqueID, displayID: displayID))
+          return
+        }
+      }
+      continuation.onTermination = { _ in
+        relay.cancel()
+        poll.cancel()
+      }
     }
   }
 

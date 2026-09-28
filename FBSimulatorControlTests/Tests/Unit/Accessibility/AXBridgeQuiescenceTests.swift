@@ -244,6 +244,135 @@ final class AXBridgeQuiescenceTests: XCTestCase {
     }
   }
 
+  // MARK: - Following the active display
+
+  private func automation(_ transport: FollowingTransport, displays: DisplayCommandsDouble) -> AXBridgeUIAutomation {
+    AXBridgeUIAutomation(
+      simulator: SimulatorTestSupport.testableSimulator(withDevice: AXBridgeQuiescenceDevice()),
+      transport: transport,
+      persistence: .exclusive,
+      displays: displays)
+  }
+
+  private static func display(_ uniqueID: String, rotation: SimulatorDisplayRotation = .upright) -> SimulatorDisplayTarget {
+    .selected(
+      SimulatorDisplay(
+        uniqueID: uniqueID, name: uniqueID, isActive: true, isPrimary: false, isIntegrated: true,
+        bounds: CGRect(x: 0, y: 0, width: 1200, height: 800), scale: 2, rotation: rotation))
+  }
+
+  private static let inventory = [
+    SimulatorAccessibilityDisplay(uniqueID: "inner", displayID: 82),
+    SimulatorAccessibilityDisplay(uniqueID: "cover", displayID: 83),
+  ]
+
+  private func events(_ stream: AsyncThrowingStream<QuiescenceEvent, Error>, count: Int) async throws -> [QuiescenceEvent] {
+    var events: [QuiescenceEvent] = []
+    for try await event in stream {
+      events.append(event)
+      if events.count == count { break }
+    }
+    return events
+  }
+
+  func testFollowingTheFrontmostNamesTheActiveDisplay() async throws {
+    let transport = FollowingTransport(inventory: Self.inventory, streams: [[Self.state("quiet")]])
+    let stream = try await automation(transport, displays: DisplayCommandsDouble(Self.display("inner")))
+      .quiescence(.frontmost, parameters: QuiescenceParameters())
+    let events = try await events(stream, count: 1)
+    XCTAssertEqual(events, [.state(.quiet, pid: 42)])
+    let requests = await transport.streamRequests
+    XCTAssertEqual(requests.map { $0.payload["displayID"] as? UInt32 }, [82])
+  }
+
+  func testASwitchToAnotherDisplayReopensTheStreamThereAndReportsTheNewTarget() async throws {
+    let transport = FollowingTransport(inventory: Self.inventory, streams: [[Self.state("quiet")], [Self.state("busy", pid: 43, signals: ["run_loop_idle"])]])
+    let displays = DisplayCommandsDouble(Self.display("inner"), Self.display("inner"), Self.display("cover"))
+    let stream = try await automation(transport, displays: displays).quiescence(.frontmost, parameters: QuiescenceParameters())
+    let events = try await events(stream, count: 3)
+    XCTAssertEqual(events, [.state(.quiet, pid: 42), .targetChanged(pid: 43), .state(.busy([.runLoopIdle]), pid: 43)])
+    let requests = await transport.streamRequests
+    XCTAssertEqual(requests.map { $0.payload["displayID"] as? UInt32 }, [82, 83])
+    try await transport.waitUntilTerminated(streams: 1)
+  }
+
+  func testASwitchThatKeepsTheSameApplicationDoesNotReportATargetChange() async throws {
+    let transport = FollowingTransport(inventory: Self.inventory, streams: [[Self.state("quiet")], [Self.state("settling")]])
+    let displays = DisplayCommandsDouble(Self.display("inner"), Self.display("inner"), Self.display("cover"))
+    let stream = try await automation(transport, displays: displays).quiescence(.frontmost, parameters: QuiescenceParameters())
+    let events = try await events(stream, count: 2)
+    XCTAssertEqual(events, [.state(.quiet, pid: 42), .state(.settling, pid: 42)])
+  }
+
+  // The new display's application is reported as it arrives, not announced as a target it already left.
+  func testASwitchThatOpensOnAnExitedApplicationDoesNotAnnounceIt() async throws {
+    let transport = FollowingTransport(
+      inventory: Self.inventory, streams: [[Self.state("quiet")], [Self.frame(["ok": true, "event": "target_exited", "pid": 43])]])
+    let displays = DisplayCommandsDouble(Self.display("inner"), Self.display("inner"), Self.display("cover"))
+    let stream = try await automation(transport, displays: displays).quiescence(.frontmost, parameters: QuiescenceParameters())
+    let events = try await events(stream, count: 2)
+    XCTAssertEqual(events, [.state(.quiet, pid: 42), .targetExited(pid: 43)])
+  }
+
+  // A switch the confirming read does not bear out as another named display leaves the stream scoped
+  // where it is rather than reopening it unscoped.
+  func testASwitchWithoutAnAccessibilityIdentityKeepsTheStreamWhereItIs() async throws {
+    let transport = FollowingTransport(inventory: Self.inventory, streams: [[Self.state("quiet")]])
+    guard case let .selected(cover) = Self.display("cover") else { return XCTFail("expected a selected display") }
+    let displays = DisplayCommandsDouble(Self.display("inner"), Self.display("inner"), Self.display("cover"), .sole(.identified(cover)))
+    let stream = try await automation(transport, displays: displays).quiescence(.frontmost, parameters: QuiescenceParameters())
+    let consumer = Task { for try await _ in stream {} }
+    while displays.reads < 5 {
+      try await Task.sleep(nanoseconds: 10_000_000)
+    }
+    consumer.cancel()
+    _ = await consumer.result
+    let requests = await transport.streamRequests
+    XCTAssertEqual(requests.map { $0.payload["displayID"] as? UInt32 }, [82])
+  }
+
+  // A read mid-transition can fail, and a rotation changes only the geometry; neither moves the stream.
+  func testAFailedReadOrARotationKeepsTheStreamWhereItIs() async throws {
+    let transport = FollowingTransport(inventory: Self.inventory, streams: [[Self.state("quiet")]])
+    let displays = DisplayCommandsDouble([
+      .success(Self.display("inner")), .success(Self.display("inner")), .failure(SimulatorDisplayError.changed),
+      .success(Self.display("inner", rotation: .clockwise)),
+    ])
+    let stream = try await automation(transport, displays: displays).quiescence(.frontmost, parameters: QuiescenceParameters())
+    let consumer = Task { for try await _ in stream {} }
+    while displays.reads < 5 {
+      try await Task.sleep(nanoseconds: 10_000_000)
+    }
+    consumer.cancel()
+    _ = await consumer.result
+    let requests = await transport.streamRequests
+    XCTAssertEqual(requests.count, 1)
+  }
+
+  func testAGuestThatCannotScopeQuiescenceIsRefusedOnSeveralDisplays() async throws {
+    let transport = FollowingTransport(inventory: Self.inventory, streams: [], scopedQuiescence: false)
+    do {
+      _ = try await automation(transport, displays: DisplayCommandsDouble(Self.display("inner")))
+        .quiescence(.frontmost, parameters: QuiescenceParameters())
+      XCTFail("expected a failure")
+    } catch SimulatorDisplayInteractionError.unsupportedCapability {}
+    let requests = await transport.streamRequests
+    XCTAssertTrue(requests.isEmpty)
+  }
+
+  func testANamedApplicationOrASoleDisplayIsNotRouted() async throws {
+    let sole = SimulatorDisplayTarget.sole(.legacy(SimulatorDisplayGeometry(bounds: CGRect(x: 0, y: 0, width: 400, height: 800), scale: 2, rotation: .upright)))
+    for (query, target) in [(AccessibilityElementQuery.application(pid: 7), Self.display("inner")), (.frontmost, sole)] {
+      let transport = FollowingTransport(inventory: Self.inventory, streams: [[]], scopedQuiescence: false, holdsOpen: false)
+      let displays = DisplayCommandsDouble(target)
+      _ = try await events(automation(transport, displays: displays).quiescence(query, parameters: QuiescenceParameters()))
+      let requests = await transport.streamRequests
+      XCTAssertEqual(requests.count, 1)
+      XCTAssertNil(requests.first?.payload["displayID"], "\(query)")
+      XCTAssertEqual(displays.reads, query == .frontmost ? 1 : 0)
+    }
+  }
+
   func testWaitingOnAStreamThatEndsSilentlyFails() async throws {
     let transport = StubAXBridgeStreamingTransport(frames: [Self.state("settling")])
     do {
@@ -309,6 +438,59 @@ private actor StubAXBridgeStreamingTransport: AXBridgeStreamingTransport {
   func waitUntilTerminated() async throws {
     let deadline = Date(timeIntervalSinceNow: 5)
     while !terminated {
+      guard deadline.timeIntervalSinceNow > 0 else {
+        throw AXBridgeError.guestFailure("the stream was never closed")
+      }
+      try await Task.sleep(nanoseconds: 1_000_000)
+    }
+  }
+}
+
+/// Answers inventory requests with every display capability but, unless it is told otherwise, quiescence,
+/// and opens each stream with the next scripted frames.
+private actor FollowingTransport: AXBridgeStreamingTransport {
+  private let inventory: [SimulatorAccessibilityDisplay]
+  private var streams: [[Data]]
+  private let scopedQuiescence: Bool
+  private let holdsOpen: Bool
+  private(set) var streamRequests: [AXBridgeRequest] = []
+  private var terminated = 0
+
+  init(inventory: [SimulatorAccessibilityDisplay], streams: [[Data]], scopedQuiescence: Bool = true, holdsOpen: Bool = true) {
+    self.inventory = inventory
+    self.streams = streams
+    self.scopedQuiescence = scopedQuiescence
+    self.holdsOpen = holdsOpen
+  }
+
+  func send(_ request: AXBridgeRequest) async throws -> Data {
+    let displays = inventory.map { ["uniqueID": $0.uniqueID, "displayID": $0.displayID] as [String: Any] }
+    return try JSONSerialization.data(withJSONObject: [
+      "ok": true, "displayScopedInteractions": true, "displayScopedTrees": true, "displayScopedQuiescence": scopedQuiescence,
+      "displays": displays,
+    ])
+  }
+
+  func stream(_ request: AXBridgeRequest) async throws -> AsyncThrowingStream<Data, Error> {
+    streamRequests.append(request)
+    let (stream, continuation) = AsyncThrowingStream<Data, Error>.makeStream()
+    continuation.onTermination = { _ in Task { await self.terminate() } }
+    for frame in streams.isEmpty ? [] : streams.removeFirst() {
+      continuation.yield(frame)
+    }
+    if !holdsOpen {
+      continuation.finish()
+    }
+    return stream
+  }
+
+  private func terminate() {
+    terminated += 1
+  }
+
+  func waitUntilTerminated(streams count: Int) async throws {
+    let deadline = Date(timeIntervalSinceNow: 5)
+    while terminated < count {
       guard deadline.timeIntervalSinceNow > 0 else {
         throw AXBridgeError.guestFailure("the stream was never closed")
       }

@@ -46,6 +46,23 @@ extension QuiescenceEvent {
   }
 }
 
+extension QuiescenceEvent {
+  var pid: pid_t {
+    switch self {
+    case let .state(_, pid), let .touchesCompleted(pid), let .targetChanged(pid), let .targetExited(pid): pid
+    }
+  }
+
+  /// Whether the event comes from an application still being followed, rather than announcing a new target
+  /// or the end of one.
+  var reportsLiveTarget: Bool {
+    switch self {
+    case .state, .touchesCompleted: true
+    case .targetChanged, .targetExited: false
+    }
+  }
+}
+
 extension QuiescenceSignal {
   init(_ signal: AXWire.Quiescence.Signal) {
     switch signal {

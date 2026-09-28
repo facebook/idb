@@ -106,8 +106,8 @@ enum AXBridgeRequest: Sendable {
   case write(AXBridgeWriteRequest)
   case deviceSettingRead(String)
   case deviceSettingWrite(String, enabled: Bool)
-  /// Streamed: follows the frontmost application when `pid` is nil. A nil tunable takes the guest's default.
-  case quiescence(pid: pid_t?, busyThresholdMs: Int?, quietWindowMs: Int?)
+  /// Streamed: follows the frontmost application on `displayID` when `pid` is nil. A nil tunable takes the guest's default.
+  case quiescence(pid: pid_t?, busyThresholdMs: Int?, quietWindowMs: Int?, displayID: UInt32? = nil)
   case displays
 
   var command: BridgeCommand {
@@ -166,11 +166,12 @@ enum AXBridgeRequest: Sendable {
         AXWire.Request.setting.key: setting,
         AXWire.Request.enabled.key: enabled,
       ]
-    case let .quiescence(pid, busyThresholdMs, quietWindowMs):
+    case let .quiescence(pid, busyThresholdMs, quietWindowMs, displayID):
       var payload: [String: Any] = [AXWire.Request.verb.key: AXWire.Verb.quiet.rawValue]
       payload[AXWire.Request.pid.key] = pid.map { Int($0) }
       payload[AXWire.Request.busyThresholdMs.key] = busyThresholdMs
       payload[AXWire.Request.quietWindowMs.key] = quietWindowMs
+      payload[AXWire.Request.displayID.key] = displayID
       return payload
     case .displays:
       return [AXWire.Request.verb.key: AXWire.Verb.displays.rawValue]

@@ -63,6 +63,7 @@ struct AXBridgeDisplayCapabilities: OptionSet, Sendable {
 
   static let scopedInteractions = AXBridgeDisplayCapabilities(rawValue: 1 << 0)
   static let scopedTrees = AXBridgeDisplayCapabilities(rawValue: 1 << 1)
+  static let scopedQuiescence = AXBridgeDisplayCapabilities(rawValue: 1 << 2)
 }
 
 enum AXBridgeDisplayInventory {
@@ -78,6 +79,9 @@ enum AXBridgeDisplayInventory {
     }
     if capabilities.contains(.scopedTrees), response["displayScopedTrees"] as? Bool != true {
       throw SimulatorDisplayInteractionError.unsupportedCapability("display-scoped accessibility trees in this guest")
+    }
+    if capabilities.contains(.scopedQuiescence), response["displayScopedQuiescence"] as? Bool != true {
+      throw SimulatorDisplayInteractionError.unsupportedCapability("display-scoped quiescence in this guest")
     }
     struct Envelope: Decodable {
       let displays: [SimulatorAccessibilityDisplay]
