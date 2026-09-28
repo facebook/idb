@@ -34,6 +34,9 @@ public enum SimulatorHIDDirection: Int32, Sendable, CaseIterable {
 }
 
 /// A hardware button press.
+///
+/// Each case is the raw press of a physical button, delivered as input; what the guest does with it
+/// depends on its state. To lock the device regardless, use `SimulatorHardwareCommands.lock()`.
 public enum SimulatorHIDButton: Int32, Sendable, CaseIterable {
   case applePay = 1
   case homeButton = 2

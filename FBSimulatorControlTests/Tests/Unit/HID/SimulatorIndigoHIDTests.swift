@@ -271,8 +271,7 @@ final class SimulatorIndigoHIDTests: XCTestCase {
 
   // The arbitrary-HID builder names a usage rather than a button: the source is
   // ButtonEventSourceHIDArbitrary (0x2711, one above the keyboard source), the usage lands in
-  // IndigoButton.keyCode (0x3c) and its page in IndigoButton.usagePage (0x44), and the target is the
-  // same hardware-button service a sourced button uses.
+  // IndigoButton.keyCode (0x3c) and its page in IndigoButton.usagePage (0x44).
   func testArbitraryHIDUsageFields() throws {
     let indigo = try makeIndigo()
     let down = indigo.hidArbitrary(page: 0x0C, usage: 0xCD, direction: .down)

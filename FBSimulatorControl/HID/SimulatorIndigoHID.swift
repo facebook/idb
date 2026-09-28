@@ -99,7 +99,7 @@ final class SimulatorIndigoHID {
     }
   }
 
-  /// A message carrying an arbitrary HID usage, addressed to the hardware-button service.
+  /// A message carrying an arbitrary HID usage, addressed to the digitizer service.
   ///
   /// The counterpart to `button(with:button:)` for anything the legacy builder has no dedicated
   /// `ButtonEventSource` for: rather than naming a button, it names a usage — the code in

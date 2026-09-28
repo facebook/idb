@@ -13,9 +13,10 @@ internal import SimulatorApp
 ///
 /// A sum type rather than two independent optionals because "neither" is not a real state — every
 /// button reaches the guest somehow — and a pair of optionals would leave the transports handling a
-/// case that cannot occur. Apple Pay has only a legacy source (it is a double side-button press, not a
-/// single HID usage); the Consumer-page buttons the legacy builder has no dedicated source for have
-/// only a usage; the rest have both.
+/// case that cannot occur. Apple Pay has only a legacy source: no HID usage is known to reproduce it,
+/// and two side-button presses over DTUHID lock and wake the device rather than bringing up Wallet.
+/// The Consumer-page buttons the legacy builder has no dedicated source for have only a usage; the
+/// rest have both.
 enum SimulatorHIDButtonIdentity {
 
   /// Only a legacy Indigo `ButtonEventSource`.
@@ -53,14 +54,14 @@ extension SimulatorHIDButton {
   var identity: SimulatorHIDButtonIdentity {
     switch self {
     case .applePay:
-      // A double press of the side button, so there is no single HID usage for it.
       return .indigoSource(Int32(ButtonEventSourceApplePay))
     case .homeButton:
       return .indigoSourceAndConsumerUsage(source: Int32(ButtonEventSourceHomeButton), page: 0x0C, code: 0x40) // Menu
     case .lock:
       return .indigoSourceAndConsumerUsage(source: Int32(ButtonEventSourceLock), page: 0x0C, code: 0x30) // Power
     case .sideButton:
-      // The side button is the power/lock button, so it shares the Power usage.
+      // The same physical button as `.lock`, so it shares the Power usage; the two differ only in
+      // their legacy source.
       return .indigoSourceAndConsumerUsage(source: Int32(ButtonEventSourceSideButton), page: 0x0C, code: 0x30)
     case .siri:
       return .indigoSourceAndConsumerUsage(source: Int32(ButtonEventSourceSiri), page: 0x0C, code: 0xCF) // Voice Command
