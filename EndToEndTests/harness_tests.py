@@ -134,6 +134,7 @@ class HarnessCaseStub:
         self._result = unittest.TestResult()
 
     _stop_suite = IdbEndToEndTestCase._stop_suite
+    wait_or_fail = IdbEndToEndTestCase.wait_or_fail
 
     def fail(self, message: str) -> NoReturn:
         raise Failed(message)
@@ -1087,6 +1088,65 @@ class SuiteCapabilityTests(unittest.TestCase):
                 self.assertRaisesRegex(HarnessError, "not one of"),
             ):
                 suite_capability()
+
+
+class CapabilityCheckTests(unittest.TestCase):
+    class Suite(IdbEndToEndTestCase):
+        capabilities = {"case_reads": SuiteCapability.ACCESSIBILITY_READ}
+
+        async def case_reads(self) -> None:
+            pass
+
+        async def case_unowned(self) -> None:
+            pass
+
+    class Unrestricted(IdbEndToEndTestCase):
+        async def case_any(self) -> None:
+            pass
+
+    @staticmethod
+    def at(capability: SuiteCapability) -> mock._patch_dict:
+        return mock.patch.dict(os.environ, {SUITE_CAPABILITY_ENV: capability.value})
+
+    def test_a_test_the_suite_supports_runs(self) -> None:
+        with self.at(SuiteCapability.ACCESSIBILITY_READ):
+            self.Suite("case_reads").skip_without_capability()
+
+    def test_a_test_the_suite_does_not_support_is_skipped(self) -> None:
+        with (
+            self.at(SuiteCapability.COMPANION_PROCESS),
+            self.assertRaisesRegex(
+                unittest.SkipTest, "case_reads requires accessibility-read capability"
+            ),
+        ):
+            self.Suite("case_reads").skip_without_capability()
+
+    def test_a_test_missing_from_its_classs_table_is_an_error(self) -> None:
+        with self.assertRaisesRegex(
+            HarnessError, "No suite capability owns Suite.case_unowned"
+        ):
+            self.Suite("case_unowned").skip_without_capability()
+
+    def test_a_class_without_a_table_runs_at_any_capability(self) -> None:
+        with self.at(SuiteCapability.COMPANION_PROCESS):
+            self.Unrestricted("case_any").skip_without_capability()
+
+
+class WaitOrFailTests(unittest.IsolatedAsyncioTestCase):
+    async def test_a_wait_that_ends_returns_what_the_poll_returned(self) -> None:
+        async def ready() -> str:
+            return "found"
+
+        self.assertEqual(
+            await HarnessCaseStub().wait_or_fail("Nothing", 1.0, ready), "found"
+        )
+
+    async def test_a_wait_that_runs_out_fails_the_test(self) -> None:
+        async def never() -> None:
+            raise NotReady("still waiting")
+
+        with self.assertRaisesRegex(Failed, "Nothing within 0s: still waiting"):
+            await HarnessCaseStub().wait_or_fail("Nothing", 0.0, never)
 
 
 class SharedCompanionReadinessTests(unittest.IsolatedAsyncioTestCase):

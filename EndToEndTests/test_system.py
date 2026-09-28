@@ -10,16 +10,14 @@ from __future__ import annotations
 import sqlite3
 from contextlib import closing
 from pathlib import Path
-from typing import Any, Awaitable, Callable
+from typing import Any
 
 from .harness import (
     AppState,
     HarnessError,
     IdbEndToEndTestCase,
     NotReady,
-    suite_supports,
     SuiteCapability,
-    wait_until,
 )
 
 # Only Safari launch is checked; page loading does not need to succeed.
@@ -55,9 +53,9 @@ PERMISSION_TEST_CAPABILITIES = {
 class OpenUrlTests(IdbEndToEndTestCase):
     async def test_opening_a_url_launches_the_app_that_handles_it(self) -> None:
         # Start with Safari stopped so the test can detect the URL launching it.
-        await self.terminate_quietly(SAFARI_BUNDLE_ID)
+        await self.setup_terminate_quietly(SAFARI_BUNDLE_ID)
         await self.wait_for_app(SAFARI_BUNDLE_ID, AppState.STOPPED)
-        self.addAsyncCleanup(self.terminate_quietly, SAFARI_BUNDLE_ID)
+        self.addAsyncCleanup(self.setup_terminate_quietly, SAFARI_BUNDLE_ID)
 
         await self.idb("open", URL)
 
@@ -65,17 +63,7 @@ class OpenUrlTests(IdbEndToEndTestCase):
 
 
 class PermissionTests(IdbEndToEndTestCase):
-    async def asyncSetUp(self) -> None:
-        required = PERMISSION_TEST_CAPABILITIES.get(self._testMethodName)
-        if required is None:
-            raise HarnessError(
-                f"No suite capability owns {type(self).__name__}.{self._testMethodName}"
-            )
-        if not suite_supports(required):
-            self.skipTest(
-                f"{self._testMethodName} requires {required.value} capability"
-            )
-        await super().asyncSetUp()
+    capabilities = PERMISSION_TEST_CAPABILITIES
 
     async def test_pre_approval_removes_the_system_prompt(self) -> None:
         """What approving a service buys: the app stops having to ask for it.
@@ -144,7 +132,11 @@ class PermissionTests(IdbEndToEndTestCase):
             if DENY_BUTTON not in labels:
                 raise NotReady(f"the buttons on screen are {labels}")
 
-        await self.wait_or_fail(f"requesting {service} raised no system prompt", check)
+        await self.wait_or_fail(
+            f"requesting {service} raised no system prompt",
+            PROMPT_TIMEOUT_SECONDS,
+            check,
+        )
         self.recording.event("system_prompt", service=service)
 
     async def wait_for_marker(self, marker: str) -> None:
@@ -155,16 +147,10 @@ class PermissionTests(IdbEndToEndTestCase):
             if marker not in identifiers:
                 raise NotReady(f"the app reports {[i for i in identifiers if i]}")
 
-        await self.wait_or_fail(f"{marker} did not appear", check)
+        await self.wait_or_fail(
+            f"{marker} did not appear", PROMPT_TIMEOUT_SECONDS, check
+        )
         self.recording.event("app_marker", marker=marker)
-
-    async def wait_or_fail(
-        self, what: str, poll: Callable[[], Awaitable[None]]
-    ) -> None:
-        try:
-            await wait_until(what, PROMPT_TIMEOUT_SECONDS, poll)
-        except HarnessError as error:
-            self.fail(str(error))
 
     async def test_revoke_removes_only_the_requested_permission(self) -> None:
         bundle_id = await self.install_fixture_app()

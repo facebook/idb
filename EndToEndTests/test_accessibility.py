@@ -35,12 +35,10 @@ from .harness import (
     ACCESSIBILITY_NOT_READY_MARKER,
     ACCESSIBILITY_READY_TIMEOUT_SECONDS,
     FIXTURE_APP_BUNDLE_ID,
-    HarnessError,
     IdbEndToEndTestCase,
     NotReady,
     Query,
     select_tests_for_capability,
-    suite_supports,
     SuiteCapability,
     UI_UPDATE_TIMEOUT_SECONDS,
     UiWait,
@@ -300,26 +298,15 @@ def load_tests(
     pattern: str | None,
 ) -> unittest.TestSuite:
     return select_tests_for_capability(
-        loader,
-        tests,
-        AccessibilityTests,
-        ACCESSIBILITY_TEST_CAPABILITIES,
+        loader, tests, AccessibilityTests, ACCESSIBILITY_TEST_CAPABILITIES
     )
 
 
 class AccessibilityTests(IdbEndToEndTestCase):
+    capabilities = ACCESSIBILITY_TEST_CAPABILITIES
     control: dict[str, Any]
 
     async def asyncSetUp(self) -> None:
-        required = ACCESSIBILITY_TEST_CAPABILITIES.get(self._testMethodName)
-        if required is None:
-            raise HarnessError(
-                f"No suite capability owns {type(self).__name__}.{self._testMethodName}"
-            )
-        if not suite_supports(required):
-            self.skipTest(
-                f"{self._testMethodName} requires {required.value} capability"
-            )
         await super().asyncSetUp()
         await self.setup_deny_permission_prompts()
         for bundle_id in (SAFARI_BUNDLE_ID, FIXTURE_APP_BUNDLE_ID):
@@ -371,12 +358,9 @@ class AccessibilityTests(IdbEndToEndTestCase):
                 )
             return controls[0]
 
-        try:
-            return await wait_until(
-                "No General row", ACCESSIBILITY_READY_TIMEOUT_SECONDS, read
-            )
-        except HarnessError as error:
-            self.fail(str(error))
+        return await self.wait_or_fail(
+            "No General row", ACCESSIBILITY_READY_TIMEOUT_SECONDS, read
+        )
 
     async def test_ui_describe_all_reads_both_backends_and_honours_its_options(
         self,

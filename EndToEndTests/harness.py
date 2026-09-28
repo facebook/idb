@@ -1494,6 +1494,9 @@ class IdbEndToEndTestCase(unittest.IsolatedAsyncioTestCase):
     companion: Companion
     recording: Recording | None = None
     requires_route_attestation = False
+    # The capability each test needs, when a class's tests need more than the
+    # rest of the suite. Every test in such a class must have an entry.
+    capabilities: Mapping[str, SuiteCapability] | None = None
     route_attestation_timeout_seconds = ROUTE_ATTESTATION_TIMEOUT_SECONDS
     resolve_process_executable = False
 
@@ -1536,6 +1539,7 @@ class IdbEndToEndTestCase(unittest.IsolatedAsyncioTestCase):
         }
 
     async def asyncSetUp(self) -> None:
+        self.skip_without_capability()
         await super().asyncSetUp()
         self.environment = await shared_environment()
         self.companion = await shared_companion()
@@ -1543,6 +1547,28 @@ class IdbEndToEndTestCase(unittest.IsolatedAsyncioTestCase):
         self.recording.start_test(test_identity(self.id()))
         self.start_demo()
         self.check_companion()
+
+    def skip_without_capability(self) -> None:
+        if self.capabilities is None:
+            return
+        required = self.capabilities.get(self._testMethodName)
+        if required is None:
+            raise HarnessError(
+                f"No suite capability owns {type(self).__name__}.{self._testMethodName}"
+            )
+        if not suite_supports(required):
+            self.skipTest(
+                f"{self._testMethodName} requires {required.value} capability"
+            )
+
+    async def wait_or_fail(
+        self, what: str, timeout: float, poll: Callable[[], Awaitable[T]]
+    ) -> T:
+        """`wait_until`, reporting a wait that runs out as this test's failure."""
+        try:
+            return await wait_until(what, timeout, poll)
+        except HarnessError as error:
+            self.fail(str(error))
 
     def start_demo(self) -> None:
         demo = demo_for(self)
@@ -1804,12 +1830,9 @@ class IdbEndToEndTestCase(unittest.IsolatedAsyncioTestCase):
             await self.setup_idb("ui", "tap", str(x), str(y))
             raise NotReady(f"a permission prompt showed {labels}")
 
-        try:
-            await wait_until(
-                "A permission prompt was not dismissed", UI_UPDATE_TIMEOUT_SECONDS, deny
-            )
-        except HarnessError as error:
-            self.fail(str(error))
+        await self.wait_or_fail(
+            "A permission prompt was not dismissed", UI_UPDATE_TIMEOUT_SECONDS, deny
+        )
 
     async def setup_web_origin(
         self,
@@ -2012,12 +2035,9 @@ class IdbEndToEndTestCase(unittest.IsolatedAsyncioTestCase):
             assert outcome is not None
             return outcome
 
-        try:
-            return await wait_until(
-                f"{query} was not {until.value}", max(deadline.remaining, 0.0), read
-            )
-        except HarnessError as error:
-            self.fail(str(error))
+        return await self.wait_or_fail(
+            f"{query} was not {until.value}", max(deadline.remaining, 0.0), read
+        )
 
     async def wait_for_app(
         self,
@@ -2039,12 +2059,9 @@ class IdbEndToEndTestCase(unittest.IsolatedAsyncioTestCase):
             if reported is not state:
                 raise NotReady(f"simctl reports it {reported.value}")
 
-        try:
-            await wait_until(
-                f"{bundle_id} did not become {state.value}", timeout, check
-            )
-        except HarnessError as error:
-            self.fail(str(error))
+        await self.wait_or_fail(
+            f"{bundle_id} did not become {state.value}", timeout, check
+        )
 
     async def tap_when_settled(
         self, query: Query, *tap_args: str, step: str | None = None

@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import json
 
-from .harness import HarnessError, IdbEndToEndTestCase, NotReady, wait_until
+from .harness import IdbEndToEndTestCase, NotReady
 
 PID_REPORT_TIMEOUT_SECONDS = 120.0
 
@@ -99,11 +99,8 @@ class LaunchOutputTests(IdbEndToEndTestCase):
             if app["process_state"] == "Running":
                 raise NotReady("list-apps still reports it running")
 
-        try:
-            await wait_until(
-                "App still running after launch --wait-for exited",
-                APP_STOP_TIMEOUT_SECONDS,
-                stopped,
-            )
-        except HarnessError as error:
-            self.fail(str(error))
+        await self.wait_or_fail(
+            "App still running after launch --wait-for exited",
+            APP_STOP_TIMEOUT_SECONDS,
+            stopped,
+        )
