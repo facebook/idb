@@ -1157,12 +1157,59 @@ final class AccessibilityRuntimeTests: XCTestCase {
     assertEqualObjects(axValue(unhit, "ok"), NSNumber(value: false))
     assertEqualObjects(axValue(unhit, "error_kind"), "application_unavailable")
     assertEqualObjects(axValue(unhit, "error"), "no accessibility server answered the write")
+    // BUG: nothing says the write was never sent — flipped in the following commit
+    XCTAssertNil(axValue(unhit, "effect"))
 
     self.seedHitElement(withAttributes: [:])
     runtime.writeOutcome = FBAXWriteOutcome.applicationUnavailable()
     let died = FBAccessibilityService.handleRequest(FBAXTestsPress())
     assertEqualObjects(axValue(died, "error_kind"), "application_unavailable")
     assertEqualObjects(axValue(died, "error"), "pid 4321 has no accessibility server to accept the write")
+    // Absent reads as unknown, which is right for a sent write; the following commit says so explicitly
+    XCTAssertNil(axValue(died, "effect"))
+  }
+
+  func testAFailedHitTestBeforeAWriteSendsNothing() {
+    runtime.hitTestOutcome = FBAXHitTestOutcome.failed("the hit-test failed with AX error -25200")
+    for request in [FBAXTestsPress(), ["verb": "setvalue", "x": NSNumber(value: 1), "y": NSNumber(value: 2), "value": "hello"]] {
+      let response = FBAccessibilityService.handleRequest(request)
+      assertEqualObjects(axValue(response, "ok"), NSNumber(value: false), "\(String(describing: axValue(request, "verb")))")
+      assertEqualObjects(axValue(response, "error"), "the hit-test failed with AX error -25200")
+      // BUG: nothing says the write was never sent, so the host cannot tell this from a failed write — flipped in the following commit
+      XCTAssertNil(axValue(response, "effect"))
+    }
+    XCTAssertEqual(runtime.performCount, 0)
+    XCTAssertEqual(runtime.setValueCount, 0)
+  }
+
+  func testAnUnansweredHitTestBeforeAWriteSendsNothing() {
+    runtime.hitTestOutcome = FBAXHitTestOutcome.applicationNotResponding()
+    let response = FBAccessibilityService.handleRequest(FBAXTestsPress())
+    assertEqualObjects(axValue(response, "error_kind"), "application_not_responding")
+    assertEqualObjects(axValue(response, "error"), "the application did not answer the write in time")
+    // BUG: nothing says the write was never sent, so this reads as a write whose outcome is unknown — flipped in the following commit
+    XCTAssertNil(axValue(response, "effect"))
+    XCTAssertEqual(runtime.performCount, 0)
+  }
+
+  func testAnAssertionThatCannotBeReadSendsNothing() {
+    var request: [String: Any] = FBAXTestsPress()
+    request["assertKey"] = kAXLabel
+    request["assertValue"] = "General"
+
+    runtime.hitTestOutcome = FBAXHitTestOutcome.hit(FBAXFakeElement.applicationNotResponding(), owningProcessIdentifier: kAppPid)
+    let unanswered = FBAccessibilityService.handleRequest(request)
+    assertEqualObjects(axValue(unanswered, "error_kind"), "application_not_responding")
+    assertEqualObjects(axValue(unanswered, "error"), "the application did not answer the write in time")
+    // BUG: nothing says the write was never sent — flipped in the following commit
+    XCTAssertNil(axValue(unanswered, "effect"))
+
+    runtime.hitTestOutcome = FBAXHitTestOutcome.hit(FBAXFakeElement.failed(nil), owningProcessIdentifier: kAppPid)
+    let failed = FBAccessibilityService.handleRequest(request)
+    assertEqualObjects(axValue(failed, "error"), "could not read XC_kAXXCAttributeLabel to check the assertion")
+    // BUG: nothing says the write was never sent — flipped in the following commit
+    XCTAssertNil(axValue(failed, "effect"))
+    XCTAssertEqual(runtime.performCount, 0)
   }
 
   // No element populates `XC_kAXXCAttributeUserTestingActions`, so there is no pre-check on it.
@@ -1223,6 +1270,8 @@ final class AccessibilityRuntimeTests: XCTestCase {
     assertEqualObjects(axValue(response, "ok"), NSNumber(value: false))
     assertEqualObjects(axValue(response, "error_kind"), "assertion_failed")
     assertEqualObjects(axValue(response, "error"), "the element at (200.0, 711.0) has XC_kAXXCAttributeLabel Wi-Fi, expected General")
+    // BUG: nothing says the write was never sent — flipped in the following commit
+    XCTAssertNil(axValue(response, "effect"))
     XCTAssertEqual(runtime.performCount, 0, "a write must not land on an element that is not the one named")
   }
 
@@ -1342,6 +1391,8 @@ final class AccessibilityRuntimeTests: XCTestCase {
       assertEqualObjects(axValue(response, "pid"), kAppPid)
       XCTAssertEqual(runtime.setValueCount, writesBefore + 1)
       assertEqualObjects(runtime.operations, ["hitTest", "setValue", "readAttributes", "readAttributes"])
+      // Absent reads as unknown, which is right for a sent write; the following commit says so explicitly
+      XCTAssertNil(axValue(response, "effect"))
     }
   }
 
@@ -1401,6 +1452,8 @@ final class AccessibilityRuntimeTests: XCTestCase {
     assertEqualObjects(axValue(response, "ok"), NSNumber(value: false))
     assertEqualObjects(axValue(response, "error"), "the application did not answer the write in time")
     XCTAssertNil(axValue(response, "error_kind"))
+    // Absent reads as unknown, which is right for a sent write; the following commit says so explicitly
+    XCTAssertNil(axValue(response, "effect"))
   }
 
   func testAWriteWithAnExplicitPidScopesTheHitTest() {
