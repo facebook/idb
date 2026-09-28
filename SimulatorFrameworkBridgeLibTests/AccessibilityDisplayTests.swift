@@ -30,7 +30,7 @@ final class AccessibilityDisplayTests: XCTestCase {
       response as NSDictionary,
       [
         "ok": true,
-        "displayScopedInteractions": true, "displayScopedTrees": true,
+        "displayScopedInteractions": true, "displayScopedTrees": true, "displayScopedQuiescence": true,
         "displays": [["uniqueID": "outer", "displayID": 42], ["uniqueID": "continuous-inner", "displayID": 71]],
       ])
     XCTAssertEqual(runtime.operations as NSArray, ["displayInventory"])
@@ -54,7 +54,7 @@ final class AccessibilityDisplayTests: XCTestCase {
         "ok": false, "error": "Duplicate identity", "error_kind": "reader_unavailable",
       ])
     runtime.displayInventoryOutcome = .available([])
-    XCTAssertEqual(FBAccessibilityService.handleRequest(["verb": "displays"]) as NSDictionary, ["ok": true, "displayScopedInteractions": true, "displayScopedTrees": true, "displays": []])
+    XCTAssertEqual(FBAccessibilityService.handleRequest(["verb": "displays"]) as NSDictionary, ["ok": true, "displayScopedInteractions": true, "displayScopedTrees": true, "displayScopedQuiescence": true, "displays": []])
   }
 
   private func window(_ label: String, displayID: Any?) -> FBAXFakeElement {

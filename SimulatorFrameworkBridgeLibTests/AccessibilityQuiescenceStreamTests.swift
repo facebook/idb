@@ -147,6 +147,28 @@ extension BridgeServerSocketTests {
     XCTAssertEqual(readEvent(fd: client), state("quiet", pid: second))
   }
 
+  func testFollowingTheFrontmostApplicationOnANamedDisplayAsksThatDisplay() throws {
+    let (first, second) = (getpid(), getppid())
+    let runtime = runtimeWithApplications([first, second])
+    runtime.windowServerOutcome = .resolved(first)
+    let client = try openQuietStream(runtime, ["displayID": .integer(42), "busyThresholdMs": .integer(5000), "quietWindowMs": .integer(0)])
+    defer { closeQuietStream(client) }
+
+    let monitor = try monitor(of: runtime, requests: 2)
+    XCTAssertEqual(runtime.lastFrontmostDisplayIdentifier, NSNumber(value: 42))
+
+    runtime.windowServerOutcome = .resolved(second)
+    monitor.deliver(.applicationStateChanged, pid: second)
+    XCTAssertEqual(readEvent(fd: client), ["ok": true, "event": "target_changed", "pid": second])
+    XCTAssertEqual(runtime.lastFrontmostDisplayIdentifier, NSNumber(value: 42), "retargeting stays on the named display")
+  }
+
+  func testAMalformedDisplayIsRefusedWithoutStreaming() throws {
+    let client = try openQuietStream(runtimeWithApplications([]), ["displayID": .integer(0)])
+    defer { closeQuietStream(client) }
+    XCTAssertEqual(readEvent(fd: client), ["ok": false, "error": "displayID must be a positive 32-bit integer", "error_kind": "bad_request"])
+  }
+
   func testANamedApplicationThatHasExitedEndsTheStream() throws {
     let pid = Self.exitedPid
     let client = try openQuietStream(runtimeWithApplications([]), ["pid": .integer(Int64(pid))])

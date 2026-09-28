@@ -199,6 +199,29 @@ private enum FrontmostMethod: String {
   case runningBoard = "runningboard"
 }
 
+private enum RequestedDisplay {
+  case unscoped
+  case display(UInt32)
+  case invalid
+
+  static let invalidMessage = "displayID must be a positive 32-bit integer"
+
+  init(_ request: [String: Any]) {
+    guard let requested = request[requestDisplayID] else {
+      self = .unscoped
+      return
+    }
+    guard let number = requested as? NSNumber,
+      CFGetTypeID(number) != CFBooleanGetTypeID(),
+      let displayID = UInt32(exactly: number.doubleValue), displayID > 0
+    else {
+      self = .invalid
+      return
+    }
+    self = .display(displayID)
+  }
+}
+
 // A depth cap and a total-node budget guard against pathological trees. A request carries the
 // caller's own bounds (the host sets them so every backend truncates alike); these apply only when it
 // does not — e.g. the one-shot front-end invoked by hand.
@@ -1383,15 +1406,14 @@ private final class AccessibilityRequest {
       )
     }
 
-    var displayID: UInt32?
-    if let requestedDisplay = request[requestDisplayID] {
-      guard let number = requestedDisplay as? NSNumber,
-        CFGetTypeID(number) != CFBooleanGetTypeID(),
-        let requested = UInt32(exactly: number.doubleValue), requested > 0
-      else {
-        return FBAXBridgeTaggedErrorResponse(message: "displayID must be a positive 32-bit integer", kind: errorKindBadRequest, pid: nil)
-      }
+    let displayID: UInt32?
+    switch RequestedDisplay(request) {
+    case .unscoped:
+      displayID = nil
+    case let .display(requested):
       displayID = requested
+    case .invalid:
+      return FBAXBridgeTaggedErrorResponse(message: RequestedDisplay.invalidMessage, kind: errorKindBadRequest, pid: nil)
     }
 
     let client: FBAXClient
@@ -1413,6 +1435,7 @@ private final class AccessibilityRequest {
           responseOk: true,
           "displayScopedInteractions": true,
           "displayScopedTrees": true,
+          "displayScopedQuiescence": true,
           "displays": outcome.displays.map { display -> [String: Any] in
             ["uniqueID": display.uniqueID, "displayID": display.displayID]
           },
@@ -1668,6 +1691,15 @@ private final class AccessibilityRequest {
     } else {
       target = .frontmost
     }
+    let displayID: UInt32?
+    switch RequestedDisplay(request) {
+    case .unscoped:
+      displayID = nil
+    case let .display(requested):
+      displayID = requested
+    case .invalid:
+      return .failure(FBAXBridgeTaggedErrorResponse(message: RequestedDisplay.invalidMessage, kind: errorKindBadRequest, pid: nil))
+    }
     let method = request[requestMethod] as? String ?? FrontmostMethod.windowServer.rawValue
     let anchor = CGPoint(x: (request[requestX] as? NSNumber)?.doubleValue ?? 0, y: (request[requestY] as? NSNumber)?.doubleValue ?? 0)
     return .stream(
@@ -1675,7 +1707,7 @@ private final class AccessibilityRequest {
         target: target,
         busyThreshold: TimeInterval(milliseconds[requestBusyThresholdMs] ?? 0) / 1000,
         quietWindow: TimeInterval(milliseconds[requestQuietWindowMs] ?? 0) / 1000,
-        resolveFrontmost: { client in try AccessibilityRequest().FBAXBridgeResolveFrontmost(client: client, method: method, anchor: anchor, displayID: nil) }
+        resolveFrontmost: { client in try AccessibilityRequest().FBAXBridgeResolveFrontmost(client: client, method: method, anchor: anchor, displayID: displayID) }
       ))
   }
 
