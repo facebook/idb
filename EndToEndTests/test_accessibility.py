@@ -313,6 +313,7 @@ class AccessibilityTests(IdbEndToEndTestCase):
                 f"{self._testMethodName} requires {required.value} capability"
             )
         await super().asyncSetUp()
+        await self.setup_deny_permission_prompts()
         for bundle_id in (SAFARI_BUNDLE_ID, FIXTURE_APP_BUNDLE_ID):
             await self.setup_terminate_quietly(bundle_id)
         if self._testMethodName not in FIXTURE_TESTS:

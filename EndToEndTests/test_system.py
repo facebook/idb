@@ -85,7 +85,10 @@ class PermissionTests(IdbEndToEndTestCase):
         difference visible -- unapproved, the request reaches the user as a
         system prompt; pre-approved, it is answered without one.
         """
+        await self.setup_deny_permission_prompts()
         bundle_id = await self.install_fixture_app()
+        # A prompt left up by a failure here would cover every later test.
+        self.addAsyncCleanup(self.setup_deny_permission_prompts)
 
         for service in PRIVACY_SERVICES:
             await self.relaunch(bundle_id)
