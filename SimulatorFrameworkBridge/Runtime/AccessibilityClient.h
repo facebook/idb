@@ -28,6 +28,7 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nullable, nonatomic, readonly) FBAXElement *element;
 @property (nonatomic, readonly) pid_t owningProcessIdentifier;
 @property (nullable, nonatomic, readonly, copy) NSString *failureReason;
+@property (nullable, nonatomic, readonly) NSNumber *axError;
 - (instancetype)init NS_UNAVAILABLE;
 + (instancetype)new NS_UNAVAILABLE;
 @end
@@ -37,6 +38,7 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, readonly) FBAXReadStatus status;
 @property (nullable, nonatomic, readonly, copy) NSDictionary<NSString *, id> *attributes;
 @property (nullable, nonatomic, readonly) NSError *error;
+@property (nullable, nonatomic, readonly) NSNumber *axError;
 - (nullable NSArray<FBAXElement *> *)childrenWithError:(NSError **)error;
 - (instancetype)init NS_UNAVAILABLE;
 + (instancetype)new NS_UNAVAILABLE;

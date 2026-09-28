@@ -277,13 +277,20 @@ final class AccessibilityRuntimeTests: XCTestCase {
     XCTAssertNil(axValue(systemWide, "empty"), "empty must not be set on a not-responding response")
   }
 
-  func testFailedHitTestIsAnOpaqueFailureCarryingTheReason() {
+  func testFailedHitTestIsARuntimeFailureCarryingTheReason() {
     runtime.hitTestOutcome = FBAXHitTestOutcome.failed("AXUIElementCreateSystemWide returned NULL")
 
     let response = FBAccessibilityService.handleRequest(["verb": "hittest", "x": NSNumber(value: 1), "y": NSNumber(value: 2)])
     assertEqualObjects(axValue(response, "ok"), NSNumber(value: false))
     assertEqualObjects(axValue(response, "error"), "AXUIElementCreateSystemWide returned NULL")
-    XCTAssertNil(axValue(response, "error_kind"), "a reader failure must not be tagged as an unavailable application")
+    assertEqualObjects(axValue(response, "error_kind"), "runtime_failed", "a reader failure must not be tagged as an unavailable application")
+    XCTAssertNil(axValue(response, "ax_error"))
+
+    runtime.hitTestOutcome = FBAXHitTestOutcome.failed(withAXError: -25200)
+    let coded = FBAccessibilityService.handleRequest(["verb": "hittest", "x": NSNumber(value: 1), "y": NSNumber(value: 2)])
+    assertEqualObjects(axValue(coded, "error"), "the hit-test failed with AX error -25200")
+    assertEqualObjects(axValue(coded, "error_kind"), "runtime_failed")
+    assertEqualObjects(axValue(coded, "ax_error"), NSNumber(value: -25200))
   }
 
   func testHitElementThatCannotBeReadIsReportedFromTheReadOutcome() {
@@ -302,7 +309,9 @@ final class AccessibilityRuntimeTests: XCTestCase {
     let failed = FBAccessibilityService.handleRequest(["verb": "hittest", "x": NSNumber(value: 1), "y": NSNumber(value: 2)])
     assertEqualObjects(axValue(failed, "ok"), NSNumber(value: false))
     assertEqualObjects(axValue(failed, "error"), "failed to read the hit element")
-    XCTAssertNil(axValue(failed, "error_kind"))
+    assertEqualObjects(axValue(failed, "error_kind"), "runtime_failed")
+    assertEqualObjects(axValue(failed, "ax_error"), NSNumber(value: FBAXError.invalidUIElement.rawValue))
+    assertEqualObjects(axValue(failed, "pid"), NSNumber(value: kAppPid))
   }
 
   // MARK: - The default frontmost method
@@ -1168,11 +1177,13 @@ final class AccessibilityRuntimeTests: XCTestCase {
   }
 
   func testAFailedHitTestBeforeAWriteSendsNothing() {
-    runtime.hitTestOutcome = FBAXHitTestOutcome.failed("the hit-test failed with AX error -25200")
+    runtime.hitTestOutcome = FBAXHitTestOutcome.failed(withAXError: -25200)
     for request in [FBAXTestsPress(), ["verb": "setvalue", "x": NSNumber(value: 1), "y": NSNumber(value: 2), "value": "hello"]] {
       let response = FBAccessibilityService.handleRequest(request)
       assertEqualObjects(axValue(response, "ok"), NSNumber(value: false), "\(String(describing: axValue(request, "verb")))")
       assertEqualObjects(axValue(response, "error"), "the hit-test failed with AX error -25200")
+      assertEqualObjects(axValue(response, "error_kind"), "runtime_failed")
+      assertEqualObjects(axValue(response, "ax_error"), NSNumber(value: -25200))
       assertEqualObjects(axValue(response, "effect"), "none")
     }
     XCTAssertEqual(runtime.performCount, 0)
@@ -1199,9 +1210,11 @@ final class AccessibilityRuntimeTests: XCTestCase {
     assertEqualObjects(axValue(unanswered, "error"), "pid 4321 did not answer the write in time")
     assertEqualObjects(axValue(unanswered, "effect"), "none")
 
-    runtime.hitTestOutcome = FBAXHitTestOutcome.hit(FBAXFakeElement.failed(nil), owningProcessIdentifier: kAppPid)
+    runtime.hitTestOutcome = FBAXHitTestOutcome.hit(FBAXFakeElement.failed(FBAXTestsErrorWithCode(FBAXError.failure.rawValue)), owningProcessIdentifier: kAppPid)
     let failed = FBAccessibilityService.handleRequest(request)
     assertEqualObjects(axValue(failed, "error"), "could not read XC_kAXXCAttributeLabel to check the assertion")
+    assertEqualObjects(axValue(failed, "error_kind"), "runtime_failed")
+    assertEqualObjects(axValue(failed, "ax_error"), NSNumber(value: FBAXError.failure.rawValue))
     assertEqualObjects(axValue(failed, "effect"), "none")
     XCTAssertEqual(runtime.performCount, 0)
   }
@@ -1452,14 +1465,21 @@ final class AccessibilityRuntimeTests: XCTestCase {
     XCTAssertEqual(runtime.setValueCount, 0)
   }
 
-  func testAFailedWriteIsAnOpaqueFailureCarryingTheRuntimeReason() {
+  func testAFailedWriteIsARuntimeFailureCarryingTheRuntimeReason() {
     self.seedHitElement(withAttributes: [:])
-    runtime.writeOutcome = FBAXWriteOutcome.failed("the application did not answer the write in time")
+    runtime.writeOutcome = FBAXWriteOutcome.failed(withAXError: -25205)
+    let coded = FBAccessibilityService.handleRequest(FBAXTestsPress())
+    assertEqualObjects(axValue(coded, "error"), "the accessibility runtime rejected the write (-25205)")
+    assertEqualObjects(axValue(coded, "error_kind"), "runtime_failed")
+    assertEqualObjects(axValue(coded, "ax_error"), NSNumber(value: -25205))
+    assertEqualObjects(axValue(coded, "pid"), NSNumber(value: kAppPid))
 
+    runtime.writeOutcome = FBAXWriteOutcome.failed("the application did not answer the write in time")
     let response = FBAccessibilityService.handleRequest(FBAXTestsPress())
     assertEqualObjects(axValue(response, "ok"), NSNumber(value: false))
     assertEqualObjects(axValue(response, "error"), "the application did not answer the write in time")
-    XCTAssertNil(axValue(response, "error_kind"))
+    assertEqualObjects(axValue(response, "error_kind"), "runtime_failed")
+    XCTAssertNil(axValue(response, "ax_error"))
     assertEqualObjects(axValue(response, "effect"), "unknown")
   }
 
@@ -2157,12 +2177,16 @@ final class AccessibilityRuntimeTests: XCTestCase {
     runtime.applicationElements[NSNumber(value: kAppPid)] = FBAXFakeElement.failed(FBAXTestsErrorWithCode(FBAXError.invalidUIElement.rawValue))
     let quoted = FBAccessibilityService.handleRequest(["verb": "describe", "pid": NSNumber(value: kAppPid)])
     assertEqualObjects(axValue(quoted, "ok"), NSNumber(value: false))
-    XCTAssertNil(axValue(quoted, "error_kind"))
+    assertEqualObjects(axValue(quoted, "error_kind"), "runtime_failed")
+    assertEqualObjects(axValue(quoted, "ax_error"), NSNumber(value: FBAXError.invalidUIElement.rawValue))
+    assertEqualObjects(axValue(quoted, "pid"), NSNumber(value: kAppPid))
     assertEqualObjects(axValue(quoted, "error"), "failed to read the element tree for pid 4321: runtime said no")
 
     runtime.applicationElements[NSNumber(value: kAppPid)] = FBAXFakeElement.failed(nil)
     let silent = FBAccessibilityService.handleRequest(["verb": "describe", "pid": NSNumber(value: kAppPid)])
     assertEqualObjects(axValue(silent, "error"), "failed to read the element tree for pid 4321: the accessibility runtime reported no error")
+    assertEqualObjects(axValue(silent, "error_kind"), "runtime_failed")
+    XCTAssertNil(axValue(silent, "ax_error"))
   }
 
   func testAnUnreadableChildIsDroppedWithoutFailingTheRead() {

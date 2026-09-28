@@ -90,6 +90,7 @@ public enum BridgeAXWire {
     case automation
     case phases
     case effect
+    case axError = "ax_error"
   }
 
   /// Keys of the envelope's `phases` object — what the guest measured of its own work. The host's own
@@ -125,6 +126,9 @@ public enum BridgeAXWire {
     /// A write was refused before it was attempted: the element found at the point is not the one the
     /// caller named. Distinct from `badRequest` because the request was well-formed — the screen moved.
     case assertionFailed = "assertion_failed"
+    /// The accessibility runtime reported an error that none of the other kinds name. The envelope's
+    /// `ax_error` carries the AXError when the runtime gave one.
+    case runtimeFailed = "runtime_failed"
   }
 
   /// What a failed write did to the application, as the guest's `effect` reports it. Absent means

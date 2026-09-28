@@ -120,6 +120,9 @@ private let errorKindBadRequest = BridgeAXWire.ErrorKind.badRequest.rawValue
 // A write was refused before it was attempted: the element found at the point is not the one the caller
 // named. Held apart from `bad_request` because the request was well-formed — the screen moved.
 private let errorKindAssertionFailed = BridgeAXWire.ErrorKind.assertionFailed.rawValue
+// The runtime reported an error none of the kinds above name, with its AXError in `ax_error` when it gave one.
+private let errorKindRuntimeFailed = BridgeAXWire.ErrorKind.runtimeFailed.rawValue
+private let responseAXError = BridgeAXWire.Envelope.axError.rawValue
 // A whole-tree read whose walk was cut short by the depth cap or the node budget: the returned tree is
 // a partial view, so the host can warn rather than pass it off as complete. Absent or `false` means the
 // walk visited every element within the bounds.
@@ -198,6 +201,7 @@ private let defaultNodeBudget = 5000
 private enum AccessibilityFailure {
   case plain(message: String)
   case tagged(message: String, kind: String, pid: NSNumber?)
+  case runtime(message: String, axError: NSNumber?, pid: NSNumber?)
 
   var dictionary: [String: Any] {
     switch self {
@@ -207,6 +211,12 @@ private enum AccessibilityFailure {
       var response: [String: Any] = [responseOk: false, responseError: message, responseErrorKind: kind]
       if let pid {
         response[responsePid] = pid
+      }
+      return response
+    case let .runtime(message, axError, pid):
+      var response = AccessibilityFailure.tagged(message: message, kind: errorKindRuntimeFailed, pid: pid).dictionary
+      if let axError {
+        response[responseAXError] = axError
       }
       return response
     }
@@ -784,12 +794,21 @@ private final class AccessibilityRequest {
     AccessibilityFailure.tagged(message: message, kind: kind, pid: pid).dictionary
   }
 
+  fileprivate func FBAXBridgeRuntimeFailureResponse(
+    message: String,
+    axError: NSNumber?,
+    pid: NSNumber?
+  ) -> [String: Any] {
+    AccessibilityFailure.runtime(message: message, axError: axError, pid: pid).dictionary
+  }
+
   // The response a failed read answers with, or nil when it succeeded. Only the XCTest read produces these
   // statuses, which is why the translator path spends a round trip to obtain one.
   fileprivate func FBAXBridgeReadFailureResponse(
     client: FBAXClient,
     status: FBAXReadStatus,
     readError: Error?,
+    axError: NSNumber?,
     pid: pid_t
   ) throws -> [String: Any]? {
     switch status {
@@ -811,7 +830,11 @@ private final class AccessibilityRequest {
       fallthrough
     @unknown default:
       let description = try client.localizedDescription(ofError: readError)
-      return FBAXBridgeErrorResponse(message: "failed to read the element tree for pid \(pid): \(description.value ?? "the accessibility runtime reported no error")")
+      return FBAXBridgeRuntimeFailureResponse(
+        message: "failed to read the element tree for pid \(pid): \(description.value ?? "the accessibility runtime reported no error")",
+        axError: axError,
+        pid: pid as NSNumber
+      )
     }
   }
 
@@ -943,7 +966,7 @@ private final class AccessibilityRequest {
     case FBAXHitTestStatus.failed:
       fallthrough
     @unknown default:
-      return FBAXBridgeErrorResponse(message: outcome.failureReason ?? "the hit-test failed")
+      return FBAXBridgeRuntimeFailureResponse(message: outcome.failureReason ?? "the hit-test failed", axError: outcome.axError, pid: pidNumber)
     }
 
     traversal.remainingNodes = 1
@@ -979,7 +1002,7 @@ private final class AccessibilityRequest {
     case FBAXReadStatus.failed:
       fallthrough
     @unknown default:
-      return FBAXBridgeErrorResponse(message: "failed to read the hit element")
+      return FBAXBridgeRuntimeFailureResponse(message: "failed to read the hit element", axError: read.axError, pid: outcome.owningProcessIdentifier as NSNumber)
     }
     let node = read.attributes
     guard let node else {
@@ -1058,7 +1081,7 @@ private final class AccessibilityRequest {
     case FBAXHitTestStatus.failed:
       fallthrough
     @unknown default:
-      return FBAXWriteOutcome.failed(hit.failureReason ?? "the hit-test failed")
+      return FBAXWriteOutcome.failed(hit.failureReason ?? "the hit-test failed", axError: hit.axError)
     }
     let hitElement = hit.element
     guard let hitElement else {
@@ -1081,7 +1104,7 @@ private final class AccessibilityRequest {
       case FBAXReadStatus.failed:
         fallthrough
       @unknown default:
-        return FBAXWriteOutcome.failed("could not read \(assertKey) to check the assertion")
+        return FBAXWriteOutcome.failed("could not read \(assertKey) to check the assertion", axError: read.axError)
       }
       let actual = try FBAXBridgeJSONSafeValue(
         client: client,
@@ -1136,7 +1159,7 @@ private final class AccessibilityRequest {
     case FBAXWriteStatus.failed:
       fallthrough
     @unknown default:
-      return FBAXBridgeErrorResponse(message: outcome.failureReason ?? "the write failed")
+      return FBAXBridgeRuntimeFailureResponse(message: outcome.failureReason ?? "the write failed", axError: outcome.axError, pid: pid > 0 ? pid as NSNumber : nil)
     }
   }
 
@@ -1523,6 +1546,7 @@ private final class AccessibilityRequest {
         client: client,
         status: availability.status,
         readError: availability.error,
+        axError: availability.axError,
         pid: pid
       )
       if let unavailable {
@@ -1550,6 +1574,7 @@ private final class AccessibilityRequest {
         client: client,
         status: read.status,
         readError: read.error,
+        axError: read.axError,
         pid: pid
       )
       if let failure {

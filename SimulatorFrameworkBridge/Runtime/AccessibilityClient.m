@@ -74,6 +74,7 @@ static void FBAXClientException(NSException *exception, NSError **error)
     _element = outcome.element ? [[FBAXElement alloc] initWithValue:outcome.element] : nil;
     _owningProcessIdentifier = outcome.owningProcessIdentifier;
     _failureReason = [outcome.failureReason copy];
+    _axError = outcome.axError;
   }
   return self;
 }
@@ -98,6 +99,7 @@ static void FBAXClientException(NSException *exception, NSError **error)
       _attributes = [attributes copy];
     }
     _error = outcome.error;
+    _axError = outcome.axError;
   }
   return self;
 }

@@ -124,6 +124,7 @@ final class AXWireContractTests: XCTestCase {
       .readerUnavailable: "reader_unavailable",
       .badRequest: "bad_request",
       .assertionFailed: "assertion_failed",
+      .runtimeFailed: "runtime_failed",
     ]
     XCTAssertEqual(Set(AXWire.ErrorKind.allCases), Set(expected.keys), "every failure kind must have its wire value pinned")
     for (kind, wireValue) in expected {

@@ -20,6 +20,14 @@
 
 #pragma mark - Outcomes
 
+@interface FBAXHitTestOutcome ()
+@property (nullable, nonatomic, readwrite) NSNumber *axError;
+@end
+
+@interface FBAXWriteOutcome ()
+@property (nullable, nonatomic, readwrite) NSNumber *axError;
+@end
+
 @implementation FBAXReadOutcome
 
 - (instancetype)initWithStatus:(FBAXReadStatus)status
@@ -54,6 +62,12 @@
 + (instancetype)failed:(nullable NSError *)error
 {
   return [[self alloc] initWithStatus:FBAXReadStatusFailed attributes:nil error:error];
+}
+
+- (nullable NSNumber *)axError
+{
+  NSNumber *code = self.error.userInfo[FBAXAccessibilityErrorKey];
+  return [code isKindOfClass:NSNumber.class] ? code : nil;
 }
 
 + (instancetype)failureForAttributeError:(nullable NSError *)error
@@ -132,6 +146,13 @@
                         failureReason:failureReason];
 }
 
++ (instancetype)failedWithAXError:(int32_t)axError
+{
+  FBAXHitTestOutcome *outcome = [self failed:[NSString stringWithFormat:@"the hit-test failed with AX error %d", axError]];
+  outcome.axError = @(axError);
+  return outcome;
+}
+
 + (nullable instancetype)outcomeForHitTestError:(int32_t)axError hasElement:(BOOL)hasElement
 {
   if (axError == FBAXErrorServerNotFound) {
@@ -144,7 +165,7 @@
     return [self empty];
   }
   if (axError != FBAXErrorSuccess) {
-    return [self failed:[NSString stringWithFormat:@"the hit-test failed with AX error %d", axError]];
+    return [self failedWithAXError:axError];
   }
   return nil;
 }
@@ -194,6 +215,18 @@
   return [[self alloc] initWithStatus:FBAXWriteStatusFailed failureReason:failureReason];
 }
 
++ (instancetype)failed:(NSString *)failureReason axError:(nullable NSNumber *)axError
+{
+  FBAXWriteOutcome *outcome = [self failed:failureReason];
+  outcome.axError = axError;
+  return outcome;
+}
+
++ (instancetype)failedWithAXError:(int32_t)axError
+{
+  return [self failed:[NSString stringWithFormat:@"the accessibility runtime rejected the write (%d)", axError] axError:@(axError)];
+}
+
 + (instancetype)outcomeForWriteError:(int32_t)axError
 {
   if (axError == FBAXErrorSuccess) {
@@ -205,7 +238,7 @@
   if (axError == FBAXErrorIPCTimeout) {
     return [self applicationNotResponding];
   }
-  return [self failed:[NSString stringWithFormat:@"the accessibility runtime rejected the write (%d)", axError]];
+  return [self failedWithAXError:axError];
 }
 
 + (instancetype)outcomeForPressError:(int32_t)axError fallback:(FBAXWriteOutcome *(^)(void))fallback

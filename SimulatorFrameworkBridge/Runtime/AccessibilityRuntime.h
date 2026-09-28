@@ -45,6 +45,8 @@ typedef NS_ENUM(NSUInteger, FBAXReadStatus) {
 @property (nullable, nonatomic, readonly, copy) NSDictionary<NSString *, id> *attributes;
 /** Why the read failed. Only meaningful when `Failed`, and nil when the runtime reported no error. */
 @property (nullable, nonatomic, readonly) NSError *error;
+/** The AXError `error` carries, when it carries one. */
+@property (nullable, nonatomic, readonly) NSNumber *axError;
 
 + (instancetype)read:(NSDictionary<NSString *, id> *)attributes;
 + (instancetype)applicationUnavailable;
@@ -94,12 +96,15 @@ typedef NS_ENUM(NSUInteger, FBAXHitTestStatus) {
 @property (nonatomic, readonly) pid_t owningProcessIdentifier;
 /** A diagnostic for the caller. Non-nil iff `Failed`. */
 @property (nullable, nonatomic, readonly, copy) NSString *failureReason;
+/** The AXError the runtime failed with, when `Failed` came from one. */
+@property (nullable, nonatomic, readonly) NSNumber *axError;
 
 + (instancetype)hit:(id)element owningProcessIdentifier:(pid_t)pid;
 + (instancetype)empty;
 + (instancetype)applicationUnavailable;
 + (instancetype)applicationNotResponding;
 + (instancetype)failed:(NSString *)failureReason;
++ (instancetype)failedWithAXError:(int32_t)axError;
 
 /**
  * Classifies the AXError from `AXUIElementCopyElementAtPosition`, given whether it also produced an
@@ -155,6 +160,8 @@ typedef NS_ENUM(NSUInteger, FBAXWriteStatus) {
 @property (nonatomic, readonly) FBAXWriteStatus status;
 /** A diagnostic for the caller. Non-nil iff `AssertionFailed` or `Failed`. */
 @property (nullable, nonatomic, readonly, copy) NSString *failureReason;
+/** The AXError the runtime failed with, when `Failed` came from one. */
+@property (nullable, nonatomic, readonly) NSNumber *axError;
 
 + (instancetype)written;
 + (instancetype)empty;
@@ -162,6 +169,8 @@ typedef NS_ENUM(NSUInteger, FBAXWriteStatus) {
 + (instancetype)applicationUnavailable;
 + (instancetype)applicationNotResponding;
 + (instancetype)failed:(NSString *)failureReason;
++ (instancetype)failed:(NSString *)failureReason axError:(nullable NSNumber *)axError;
++ (instancetype)failedWithAXError:(int32_t)axError;
 
 /**
  * Classifies the AXError from `AXUIElementPerformAction` or `AXUIElementSetAttributeValue`, including
