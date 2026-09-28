@@ -91,6 +91,7 @@ public enum BridgeAXWire {
     case phases
     case effect
     case axError = "ax_error"
+    case timeoutSeconds = "timeout_seconds"
   }
 
   /// Keys of the envelope's `phases` object — what the guest measured of its own work. The host's own

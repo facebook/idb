@@ -109,6 +109,8 @@ private let effectUnknown = BridgeAXWire.Effect.unknown.rawValue
 private let errorKindApplicationUnavailable = BridgeAXWire.ErrorKind.applicationUnavailable.rawValue
 // The named process has one and it did not answer in time — alive but busy, suspended or wedged.
 private let errorKindApplicationNotResponding = BridgeAXWire.ErrorKind.applicationNotResponding.rawValue
+// How long it was given, in seconds, sent with every `application_not_responding` failure.
+private let responseTimeoutSeconds = BridgeAXWire.Envelope.timeoutSeconds.rawValue
 // The selected frontmost strategy could not name an application, for a reason that is about the strategy
 // rather than about any one application.
 private let errorKindFrontmostUnresolved = BridgeAXWire.ErrorKind.frontmostUnresolved.rawValue
@@ -202,6 +204,7 @@ private enum AccessibilityFailure {
   case plain(message: String)
   case tagged(message: String, kind: String, pid: NSNumber?)
   case runtime(message: String, axError: NSNumber?, pid: NSNumber?)
+  case notResponding(message: String, pid: NSNumber?)
 
   var dictionary: [String: Any] {
     switch self {
@@ -218,6 +221,10 @@ private enum AccessibilityFailure {
       if let axError {
         response[responseAXError] = axError
       }
+      return response
+    case let .notResponding(message, pid):
+      var response = AccessibilityFailure.tagged(message: message, kind: errorKindApplicationNotResponding, pid: pid).dictionary
+      response[responseTimeoutSeconds] = NSNumber(value: FBAXMessagingTimeoutSeconds)
       return response
     }
   }
@@ -802,6 +809,10 @@ private final class AccessibilityRequest {
     AccessibilityFailure.runtime(message: message, axError: axError, pid: pid).dictionary
   }
 
+  fileprivate func FBAXBridgeNotRespondingResponse(message: String, pid: NSNumber?) -> [String: Any] {
+    AccessibilityFailure.notResponding(message: message, pid: pid).dictionary
+  }
+
   // The response a failed read answers with, or nil when it succeeded. Only the XCTest read produces these
   // statuses, which is why the translator path spends a round trip to obtain one.
   fileprivate func FBAXBridgeReadFailureResponse(
@@ -821,9 +832,8 @@ private final class AccessibilityRequest {
         pid: pid as NSNumber
       )
     case FBAXReadStatus.applicationNotResponding:
-      return FBAXBridgeTaggedErrorResponse(
+      return FBAXBridgeNotRespondingResponse(
         message: "pid \(pid) did not answer the read of its element tree in time",
-        kind: errorKindApplicationNotResponding,
         pid: pid as NSNumber
       )
     case FBAXReadStatus.failed:
@@ -956,9 +966,8 @@ private final class AccessibilityRequest {
         pid: pidNumber
       )
     case FBAXHitTestStatus.applicationNotResponding:
-      return FBAXBridgeTaggedErrorResponse(
+      return FBAXBridgeNotRespondingResponse(
         message: pidNumber != nil ? "pid \((pidNumber?.int32Value ?? 0)) did not answer the hit-test in time" : "the application at the hit-test point did not answer in time",
-        kind: errorKindApplicationNotResponding,
         pid: pidNumber
       )
     case FBAXHitTestStatus.empty:
@@ -994,9 +1003,8 @@ private final class AccessibilityRequest {
         pid: outcome.owningProcessIdentifier as NSNumber
       )
     case FBAXReadStatus.applicationNotResponding:
-      return FBAXBridgeTaggedErrorResponse(
+      return FBAXBridgeNotRespondingResponse(
         message: "pid \(outcome.owningProcessIdentifier) did not answer the read of the hit element in time",
-        kind: errorKindApplicationNotResponding,
         pid: outcome.owningProcessIdentifier as NSNumber
       )
     case FBAXReadStatus.failed:
@@ -1151,9 +1159,8 @@ private final class AccessibilityRequest {
         pid: pid > 0 ? pid as NSNumber : nil
       )
     case FBAXWriteStatus.applicationNotResponding:
-      return FBAXBridgeTaggedErrorResponse(
+      return FBAXBridgeNotRespondingResponse(
         message: pid > 0 ? "pid \(pid) did not answer the write in time" : "the application did not answer the write in time",
-        kind: errorKindApplicationNotResponding,
         pid: pid > 0 ? pid as NSNumber : nil
       )
     case FBAXWriteStatus.failed:
@@ -1477,9 +1484,8 @@ private final class AccessibilityRequest {
           pid: nil
         )
       case FBAXFrontmostStatus.applicationNotResponding:
-        return FBAXBridgeTaggedErrorResponse(
+        return FBAXBridgeNotRespondingResponse(
           message: frontmost.failureReason ?? "the frontmost application did not answer in time",
-          kind: errorKindApplicationNotResponding,
           pid: nil
         )
       case FBAXFrontmostStatus.unresolved:
@@ -1511,9 +1517,8 @@ private final class AccessibilityRequest {
       let snapshot = try client.snapshots.read(root, attributeNames: names)
       guard let snapshotRoot = snapshot.root else {
         let description = try client.localizedDescription(ofError: snapshot.error)
-        return FBAXBridgeTaggedErrorResponse(
+        return FBAXBridgeNotRespondingResponse(
           message: (description.value as String?) ?? "the single-fetch read returned no tree",
-          kind: errorKindApplicationNotResponding,
           pid: pid as NSNumber
         )
       }

@@ -377,6 +377,8 @@
 #pragma mark - Bound signatures
 
 // Contract and rationale are on the declaration in AccessibilityRuntime.h.
+const float FBAXMessagingTimeoutSeconds = 5.0f;
+
 NSString *FBAXTypesOnly(const char *encoding)
 {
   NSMutableString *types = [NSMutableString string];
@@ -1103,7 +1105,7 @@ static NSString *const kFrontboardVisibilityEndowment = @"com.apple.frontboard.v
   }
   FBAXElementRef *reference = [[FBAXElementRef alloc] initWithOwnedElement:system];
   int32_t timeoutError = [reference axErrorFromElement:^int32_t (void *element) {
-    return self->_functions.setMessagingTimeout(element, 5.0f);
+    return self->_functions.setMessagingTimeout(element, FBAXMessagingTimeoutSeconds);
   }];
   if (timeoutError != FBAXErrorSuccess) {
     if (error) {

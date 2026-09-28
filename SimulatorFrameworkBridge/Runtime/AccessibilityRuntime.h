@@ -18,6 +18,12 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
+/**
+ * How long the live runtime waits for an application to reply to any one accessibility message before
+ * reporting it as not responding. Set once for this process, so it bounds reads, hit-tests and writes alike.
+ */
+extern const float FBAXMessagingTimeoutSeconds;
+
 #pragma mark - Reads
 
 /** How a read of an element's attributes turned out. */
