@@ -51,6 +51,8 @@ enum SimulatorDisplayProtocol {
   /// The display a screenshot captures, or nil when it should capture the main screen instead.
   static func captureDisplay(_ reply: xpc_object_t) throws -> SimulatorDisplay? {
     switch try snapshot(reply) {
+    // A target without a built-in screen, such as tvOS with only its TVOut, has no display to select.
+    case let .displays(displays) where !displays.isEmpty && !displays.contains(where: \.isIntegrated): return nil
     case let .displays(displays): return try SimulatorDisplayCommands.activeIntegratedDisplay(in: displays)
     case .legacyProvider: return nil
     }

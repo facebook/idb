@@ -131,10 +131,7 @@ final class SimulatorDisplayReadTests: XCTestCase {
       xpc_dictionary_set_value(tvOut, "active", nil)
       xpc_dictionary_set_string(tvOut, "backlightState", state)
       xpc_dictionary_set_value(tvOut, "type", SimulatorCoreDevice.dictionary(["external": SimulatorCoreDevice.dictionary([:])]))
-      // BUG: throws instead of returning nil to capture the main screen -- flipped in the following commit.
-      XCTAssertThrowsError(try SimulatorDisplayProtocol.captureDisplay(displayReply([tvOut])), state) { error in
-        guard case SimulatorDisplayError.noActiveIntegratedDisplay = error else { return XCTFail("Unexpected error: \(error)") }
-      }
+      XCTAssertNil(try SimulatorDisplayProtocol.captureDisplay(displayReply([tvOut])), state)
     }
   }
 
