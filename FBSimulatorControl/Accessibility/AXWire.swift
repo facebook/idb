@@ -11,16 +11,21 @@ import SimulatorFrameworkBridgeProtocol
 typealias AXWire = BridgeAXWire
 
 extension BridgeAXWire.Node {
-  /// The attribute list a read must request to serialize `keys`, or nil when the default list already
-  /// carries everything needed.
+  /// The attribute list a read must request to serialize `keys`, or nil when that is exactly the default
+  /// list. The traits bitmask is decoded per node inside the application, so it is dropped from the list
+  /// when `keys` does not report `traits`.
   ///
   /// Nil rather than "the default list" so the caller can omit the request field entirely, keeping a
   /// default read byte-identical to one from a host that predates the field.
   static func fetchList(for keys: Set<AXKeys>) -> [String]? {
-    guard keys.contains(.interactable) || keys.contains(.occludedBy) else {
-      return nil
+    var list = defaultFetchList
+    if !keys.contains(.traits) {
+      list.removeAll { $0 == xcTraits.rawValue }
     }
-    return defaultFetchList + interactableAttributes.map(\.rawValue)
+    if keys.contains(.interactable) || keys.contains(.occludedBy) {
+      list += interactableAttributes.map(\.rawValue)
+    }
+    return list == defaultFetchList ? nil : list
   }
 
   /// The node a marker's searched key reads, for the keys a write can assert on — or nil when this

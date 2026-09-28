@@ -1352,12 +1352,12 @@ final class AccessibilityRuntimeTests: XCTestCase {
   func testAnAssertionOnAnAttributeTheReaderDoesNotFetchIsRejected() {
     self.seedHitElement(withAttributes: [kAXLabel: "General"])
     var request: [String: Any] = FBAXTestsPress()
-    request["assertKey"] = "XC_kAXXCAttributeTraits"
-    request["assertValue"] = "button"
+    request["assertKey"] = "XC_kAXXCAttributeIsVisible"
+    request["assertValue"] = "1"
 
     let response = FBAccessibilityService.handleRequest(request)
     assertEqualObjects(axValue(response, "ok"), NSNumber(value: false))
-    assertEqualObjects(axValue(response, "error"), "XC_kAXXCAttributeTraits is not an attribute a write can assert on")
+    assertEqualObjects(axValue(response, "error"), "XC_kAXXCAttributeIsVisible is not an attribute a write can assert on")
     XCTAssertEqual(runtime.hitTestCount, 0)
   }
 
@@ -2087,7 +2087,7 @@ final class AccessibilityRuntimeTests: XCTestCase {
       ([
         "XC_kAXXCAttributeElementType", "XC_kAXXCAttributeElementBaseType", kAXLabel,
         "XC_kAXXCAttributeValue", "XC_kAXXCAttributeIdentifier", kAXFrame,
-        "XC_kAXXCAttributeAutomationType", kAXChildren,
+        "XC_kAXXCAttributeAutomationType", "XC_kAXXCAttributeTraits", kAXChildren,
       ]))
   }
 
@@ -2104,7 +2104,7 @@ final class AccessibilityRuntimeTests: XCTestCase {
 
   func testAMalformedAttributeListFallsBackToTheDefault() {
     runtime.applicationElements[NSNumber(value: kAppPid)] = FBAXFakeElement.readable("UIApplication")
-    let defaultCount = 8
+    let defaultCount = 9
 
     for malformed in ["XC_kAXXCAttributeLabel", [], [NSNumber(value: 123)], ["a": NSNumber(value: 1)]] as [Any] {
       FBAccessibilityService.handleRequest(["verb": "describe", "pid": NSNumber(value: kAppPid), "attributes": malformed])

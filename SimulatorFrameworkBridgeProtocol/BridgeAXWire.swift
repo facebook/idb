@@ -20,6 +20,9 @@ public enum BridgeAXWire {
     case identifier = "XC_kAXXCAttributeIdentifier"
     case frame = "XC_kAXXCAttributeFrame"
     case automationType = "XC_kAXXCAttributeAutomationType"
+    /// The `UIAccessibilityTraits` bitmask, as XCTest's vocabulary answers it. The same number as the
+    /// translator's `traits`.
+    case xcTraits = "XC_kAXXCAttributeTraits"
     case children = "XC_kAXXCAttributeChildren"
     case windowDisplayID = "XC_kAXXCAttributeWindowDisplayId"
     /// Whether the accessibility server believes a touch reaches this element at all. The primitive
@@ -54,7 +57,7 @@ public enum BridgeAXWire {
     /// `AXRoleVocabulary.name(forTranslatorSubrole:)` maps the identified integers.
     case translatorSubrole = "FBTranslatorSubrole"
     /// The `UIAccessibilityTraits` bitmask, as the translator answers it. Carried raw: the trait
-    /// constants live in a macOS-only header the guest cannot import, and nothing decodes it yet.
+    /// constants live in a macOS-only header the guest cannot import, so the host decodes it.
     case traits = "FBTraits"
     /// A per-element identity from the translator, stable while the element lives — so two reads can be
     /// compared element by element. The `XC_kAXXCAttribute*` namespace has no counterpart.
@@ -67,7 +70,7 @@ public enum BridgeAXWire {
     /// A read may name a different list through `Request.attributes`; both sides fall back to this
     /// when it does not.
     public static let defaultFetchList: [String] = [
-      elementType, elementBaseType, label, value, identifier, frame, automationType, children,
+      elementType, elementBaseType, label, value, identifier, frame, automationType, xcTraits, children,
     ].map(\.rawValue)
 
     /// The attributes `AXKeys.interactable` is derived from. Fetched only when that key is requested.

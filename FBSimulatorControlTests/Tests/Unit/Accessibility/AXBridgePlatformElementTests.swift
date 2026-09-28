@@ -245,8 +245,7 @@ final class AXBridgePlatformElementTests: XCTestCase {
     let bitmask = NSNumber(value: UInt64(1 << 18 | 1 << 21))
     for key in ["XC_kAXXCAttributeTraits", AXWire.Node.traits.rawValue] {
       let element = AXBridgePlatformElement(attributes: [key: bitmask], children: [], pid: 0)
-      // BUG: the bitmask is dropped and traits report null — flipped in the following commit.
-      XCTAssertNil(element.axTraits(), key)
+      XCTAssertEqual(element.axTraits().map(Set.init), ["TextEntry", "IsEditing"], key)
     }
   }
 

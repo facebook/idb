@@ -33,6 +33,7 @@ final class AXWireContractTests: XCTestCase {
     XCTAssertEqual(AXWire.Node.identifier.rawValue, "XC_kAXXCAttributeIdentifier")
     XCTAssertEqual(AXWire.Node.frame.rawValue, "XC_kAXXCAttributeFrame")
     XCTAssertEqual(AXWire.Node.automationType.rawValue, "XC_kAXXCAttributeAutomationType")
+    XCTAssertEqual(AXWire.Node.xcTraits.rawValue, "XC_kAXXCAttributeTraits")
     XCTAssertEqual(AXWire.Node.children.rawValue, "XC_kAXXCAttributeChildren")
   }
 
@@ -51,6 +52,7 @@ final class AXWireContractTests: XCTestCase {
         "XC_kAXXCAttributeIdentifier",
         "XC_kAXXCAttributeFrame",
         "XC_kAXXCAttributeAutomationType",
+        "XC_kAXXCAttributeTraits",
         "XC_kAXXCAttributeChildren",
       ]
     )

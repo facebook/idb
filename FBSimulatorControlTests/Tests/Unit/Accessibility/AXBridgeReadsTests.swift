@@ -296,8 +296,7 @@ final class AXBridgeReadsTests: XCTestCase {
   // `traits` fetches it.
   func testAReadReportingTraitsFetchesTheTraitsBitmask() {
     let fetched = AXWire.Node.fetchList(for: AXKeys.defaultSet) ?? AXWire.Node.defaultFetchList
-    // BUG: nothing fetches the bitmask, so every element reports null traits — flipped in the following commit.
-    XCTAssertFalse(fetched.contains("XC_kAXXCAttributeTraits"))
+    XCTAssertTrue(fetched.contains("XC_kAXXCAttributeTraits"))
   }
 
   // Decoding the bitmask costs the application time per node, so a read that does not report `traits` must not

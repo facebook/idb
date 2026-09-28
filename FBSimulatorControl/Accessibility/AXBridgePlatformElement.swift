@@ -100,7 +100,13 @@ final class AXBridgePlatformElement: AXPlatformElement {
   }
   func axCustomActionNames() -> [String] { [] }
   func axActionNames() -> [String] { [] }
-  func axTraits() -> [String]? { nil }
+  func axTraits() -> [String]? {
+    let bitmask = attributes[AXWire.Node.xcTraits.rawValue] ?? attributes[AXWire.Node.traits.rawValue]
+    guard let bitmask = bitmask as? NSNumber else {
+      return nil
+    }
+    return Array(AXExtractTraits(bitmask.uint64Value))
+  }
   func axChildren() -> [AXPlatformElement] { childElements }
 
   var axTranslationPid: pid_t { pid }

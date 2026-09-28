@@ -709,8 +709,7 @@ final class AccessibilitySerializationTests: XCTestCase {
     var tree = Self.sampleTree()
     tree["XC_kAXXCAttributeTraits"] = NSNumber(value: UInt64(1 << 18 | 1 << 21))
     let element = try renderedElement(keys: [.traits], tree: tree)
-    // BUG: the element reports null traits despite carrying the bitmask — flipped in the following commit.
-    XCTAssertTrue(element[AXKeys.traits.rawValue] is NSNull)
+    XCTAssertEqual((element[AXKeys.traits.rawValue] as? [String]).map(Set.init), ["TextEntry", "IsEditing"])
   }
 
   // The child carries a string automationType, where role and type genuinely diverge.
