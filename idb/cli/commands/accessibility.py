@@ -199,8 +199,9 @@ def _add_filter_arg(parser: ArgumentParser) -> None:
         help=(
             "Which elements the read reports: all of them (the default), or "
             "only the interactable ones — those the companion reports as "
-            "actionable, or that carry a label, an identifier or an "
-            "actionable role."
+            "actionable, or that have a size and carry a label, an "
+            "identifier or an actionable role. Either way, an element wholly "
+            "outside the screen is left out with everything beneath it."
         ),
     )
 

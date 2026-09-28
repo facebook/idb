@@ -46,6 +46,7 @@ class HelpCommandTest(TestCase):
         self.assertEqual(exit_code, 0)
         self.assertIn("idb ui tap <marker> --match-key AXUniqueId", output)
         self.assertIn("describe-all --json", output)
+        self.assertIn("describe-all --json --filter interactable", output)
         self.assertIn("--reason", output)
         self.assertIn("CODING_AGENT_METADATA", output)
         self.assertIn("AI_AGENT", output)

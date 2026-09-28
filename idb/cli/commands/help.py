@@ -18,7 +18,8 @@ idb agent guide
 This guide is for coding agents and automation driving iOS simulators and devices through idb. The CLI is the source of truth for its own commands: `idb <command> --help` describes every flag; this guide describes the workflow expectations that make automated sessions reliable.
 
 Read before acting
-- Prefer reading the accessibility tree over screenshots: `idb ui describe-all --json` returns every element on screen.
+- Prefer reading the accessibility tree over screenshots: `idb ui describe-all --json` returns every element in the tree, including layout containers and rows scrolled off screen.
+- To find what you can act on, add `--filter interactable`: `idb ui describe-all --json --filter interactable` reports only on-screen elements that are actionable or carry a label or identifier, and leaves out zero-sized and offscreen ones.
 - `--format nested` preserves the element hierarchy; `--format complete` returns a consolidated document that also names the backend that served the read.
 - Narrow reads: `idb ui describe <marker>` describes one element by its accessibility identity; `idb ui describe-point <x> <y>` by position.
 
