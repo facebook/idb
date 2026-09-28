@@ -34,12 +34,10 @@ from .harness import (
     _screen,
     ACCESSIBILITY_NOT_READY_MARKER,
     ACCESSIBILITY_READY_TIMEOUT_SECONDS,
-    Deadline,
     FIXTURE_APP_BUNDLE_ID,
     HarnessError,
     IdbEndToEndTestCase,
     NotReady,
-    POLL_INTERVAL_SECONDS,
     Query,
     select_tests_for_capability,
     suite_supports,
@@ -71,7 +69,6 @@ AXBRIDGE_BACKEND = "axbridge-exclusive"
 # Exclude narrow elements such as keyboard keys and status-bar icons.
 MINIMUM_CONTROL_WIDTH = 100
 
-CONTROL_DISCOVERY_TIMEOUT_SECONDS = ACCESSIBILITY_READY_TIMEOUT_SECONDS
 DESCRIBE_ALL_ARGS = ("ui", "describe-all", "--nested")
 
 NEWS_BUNDLE_ID = "com.apple.news"
@@ -212,6 +209,17 @@ def _row_positions(document: Any) -> dict[str, float]:
     return {element["identifier"]: element["frame"]["y"] for element in _rows(document)}
 
 
+def _row_movement(
+    before: dict[str, float], after: dict[str, float]
+) -> dict[str, float]:
+    """How far each row in both readings moved; negative is up the screen."""
+    return {
+        identifier: after[identifier] - y
+        for identifier, y in before.items()
+        if identifier in after
+    }
+
+
 def _rows_on_screen(document: Any) -> list[str]:
     """The rows a viewer can see, from the top of the screen down."""
     screen = _screen(document)
@@ -322,9 +330,6 @@ class AccessibilityTests(IdbEndToEndTestCase):
         await self.setup_idb("launch", FIXTURE_APP_BUNDLE_ID, FIXTURE_LAUNCH_ARGUMENT)
         self.control = await self.wait_for_control()
 
-    async def describe_all(self, *extra: str) -> Any:
-        return await self.idb_json(*DESCRIBE_ALL_ARGS, *extra)
-
     async def describe_all_complete(self, api: str) -> dict[str, Any]:
         document = await self.idb_json(
             "ui", "describe-all", "--api", api, "--format", "complete"
@@ -368,7 +373,7 @@ class AccessibilityTests(IdbEndToEndTestCase):
 
         try:
             return await wait_until(
-                "No General row", CONTROL_DISCOVERY_TIMEOUT_SECONDS, read
+                "No General row", ACCESSIBILITY_READY_TIMEOUT_SECONDS, read
             )
         except HarnessError as error:
             self.fail(str(error))
@@ -789,20 +794,12 @@ class AccessibilityTests(IdbEndToEndTestCase):
         async def read() -> tuple[dict[str, float], dict[str, Any]]:
             snapshot = await self.describe_all_complete("axbridge")
             after = _row_positions(snapshot)
-            movement = {
-                identifier: after[identifier] - y
-                for identifier, y in before.items()
-                if identifier in after
-            }
-            if direction == "down":
-                moved = any(
-                    delta < -MINIMUM_SCROLL_DISTANCE for delta in movement.values()
-                )
-            else:
-                moved = any(
-                    delta > MINIMUM_SCROLL_DISTANCE for delta in movement.values()
-                )
-            if not moved:
+            movement = _row_movement(before, after)
+            # Scrolling down moves the rows up the screen.
+            sign = -1 if direction == "down" else 1
+            if not any(
+                sign * delta > MINIMUM_SCROLL_DISTANCE for delta in movement.values()
+            ):
                 raise NotReady(f"Row movement after scrolling {direction}: {movement}")
             return after, snapshot
 
@@ -867,11 +864,7 @@ class AccessibilityTests(IdbEndToEndTestCase):
         before: dict[str, float], after: dict[str, float], direction: str
     ) -> str:
         """What the rows did, read from where they were and where they are."""
-        moved = {
-            identifier: after[identifier] - y
-            for identifier, y in before.items()
-            if identifier in after
-        }
+        moved = _row_movement(before, after)
         furthest = max(moved.values(), key=abs, default=0.0)
         return (
             f"{len(moved)} rows moved {direction} by as much as "

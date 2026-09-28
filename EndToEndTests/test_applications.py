@@ -8,18 +8,12 @@
 from __future__ import annotations
 
 import json
-from typing import Any
 
 from .harness import HarnessError, IdbEndToEndTestCase, NotReady, wait_until
 
 PID_REPORT_TIMEOUT_SECONDS = 120.0
 
 APP_STOP_TIMEOUT_SECONDS = 60.0
-
-
-def _leading_json_object(data: bytes) -> tuple[Any, int]:
-    """Decode the first JSON value and return its end offset in the decoded text."""
-    return json.JSONDecoder().raw_decode(data.decode(errors="replace"))
 
 
 class ApplicationLifecycleTests(IdbEndToEndTestCase):
@@ -51,13 +45,10 @@ class ApplicationLifecycleTests(IdbEndToEndTestCase):
         self.assertNotIn(bundle_id, installed, "simctl still sees the uninstalled app")
 
     async def test_launching_an_unknown_bundle_fails(self) -> None:
-        completed = await self.idb_expect_failure(
+        await self.idb_expect_failure(
             "launch",
             "com.example.idb.not-installed",
             expected_error="isn't installed",
-        )
-        self.assertTrue(
-            completed.error_text.strip(), "a failed launch should explain itself"
         )
 
 
@@ -71,7 +62,9 @@ class LaunchOutputTests(IdbEndToEndTestCase):
     async def test_launch_wait_for_reports_pid_on_stdout(self) -> None:
         async with self.idb_process("launch", "--wait-for", self.bundle_id) as launch:
             chunk = await launch.read_some(PID_REPORT_TIMEOUT_SECONDS)
-            report, consumed = _leading_json_object(chunk)
+            report, consumed = json.JSONDecoder().raw_decode(
+                chunk.decode(errors="replace")
+            )
             self.assertIsInstance(report, dict)
             pid = report["pid"]
             self.assertGreater(pid, 0)
