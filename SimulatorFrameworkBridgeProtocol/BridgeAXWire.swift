@@ -164,6 +164,7 @@ public enum BridgeAXWire {
   public enum Request: String, Codable, Sendable, CaseIterable {
     case verb
     case pid
+    case displayID
     case maxDepth
     case maxNodes
     /// Whether this read wants the device in accessibility automation mode. Tri-state: omitted means
@@ -205,6 +206,7 @@ public enum BridgeAXWire {
       switch self {
       case .verb: nil
       case .pid: "--pid"
+      case .displayID: "--display-id"
       case .maxDepth: "--max-depth"
       case .maxNodes: "--max-nodes"
       case .automationMode: "--automation-mode"

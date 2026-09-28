@@ -365,7 +365,7 @@ extension Simulator {
         }
       return AXBridgeUIAutomation(
         simulator: self, transport: transport, persistence: persistence, frontmostMethod: frontmostMethod,
-        automationMode: automationMode
+        automationMode: automationMode, displays: displays
       )
     }
   }

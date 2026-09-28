@@ -33,6 +33,7 @@ struct AXBridgeWriteRequest: Sendable, Equatable {
   let y: Double
   let pid: pid_t?
   let assertion: AXBridgeWriteAssertion?
+  var displayID: UInt32?
 
   var verb: AXWire.Verb {
     switch kind {
@@ -49,6 +50,9 @@ struct AXBridgeWriteRequest: Sendable, Equatable {
     ]
     if let pid {
       payload[AXWire.Request.pid.key] = Int(pid)
+    }
+    if let displayID {
+      payload[AXWire.Request.displayID.key] = displayID
     }
     switch kind {
     case let .perform(action):
@@ -97,8 +101,8 @@ struct AXBridgeReadRequest: Sendable, Equatable {
 
 enum AXBridgeRequest: Sendable {
   case read(pid: pid_t, options: AXBridgeReadRequest)
-  case readFrontmost(x: Double, y: Double, method: AXBridgeFrontmostMethod, options: AXBridgeReadRequest)
-  case hitTest(x: Double, y: Double, attributes: [String]?)
+  case readFrontmost(x: Double, y: Double, method: AXBridgeFrontmostMethod, options: AXBridgeReadRequest, displayID: UInt32? = nil)
+  case hitTest(x: Double, y: Double, attributes: [String]?, displayID: UInt32? = nil)
   case write(AXBridgeWriteRequest)
   case deviceSettingRead(String)
   case deviceSettingWrite(String, enabled: Bool)
@@ -123,19 +127,26 @@ enum AXBridgeRequest: Sendable {
         AXWire.Request.verb.key: AXWire.Verb.describe.rawValue,
         AXWire.Request.pid.key: Int(pid),
       ])
-    case let .readFrontmost(x, y, method, options):
-      return options.appendingPayload(to: [
+    case let .readFrontmost(x, y, method, options, displayID):
+      var payload: [String: Any] = [
         AXWire.Request.verb.key: AXWire.Verb.describe.rawValue,
         AXWire.Request.x.key: x,
         AXWire.Request.y.key: y,
         AXWire.Request.method.key: method.rawValue,
-      ])
-    case let .hitTest(x, y, attributes):
+      ]
+      if let displayID {
+        payload[AXWire.Request.displayID.key] = displayID
+      }
+      return options.appendingPayload(to: payload)
+    case let .hitTest(x, y, attributes, displayID):
       var payload: [String: Any] = [
         AXWire.Request.verb.key: AXWire.Verb.hitTest.rawValue,
         AXWire.Request.x.key: x,
         AXWire.Request.y.key: y,
       ]
+      if let displayID {
+        payload[AXWire.Request.displayID.key] = displayID
+      }
       if let attributes, !attributes.isEmpty {
         payload[AXWire.Request.attributes.key] = attributes
       }

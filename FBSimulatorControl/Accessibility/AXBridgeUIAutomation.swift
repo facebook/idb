@@ -27,6 +27,7 @@ final class AXBridgeUIAutomation: AXBridgeTreeReader, @unchecked Sendable {
   let requestedAutomationMode: Bool?
 
   private let simulator: Simulator
+  private let routing: DisplayRouting
 
   /// How this reader reaches the guest.
   let transport: any AXBridgeTransport
@@ -44,13 +45,57 @@ final class AXBridgeUIAutomation: AXBridgeTreeReader, @unchecked Sendable {
     transport: any AXBridgeTransport,
     persistence: AXBridgePersistence,
     frontmostMethod: AXBridgeFrontmostMethod = .windowServer,
-    automationMode: Bool? = true
+    automationMode: Bool? = true,
+    displays: (any DisplayCommands)? = nil
   ) {
+    self.routing = displays.map(DisplayRouting.unresolved) ?? .unrouted
     self.simulator = simulator
     self.transport = transport
     self.persistence = persistence
     self.frontmostMethod = frontmostMethod
     self.requestedAutomationMode = automationMode
+  }
+
+  private init(scoping reader: AXBridgeUIAutomation, routing: DisplayRouting) {
+    self.simulator = reader.simulator
+    self.transport = reader.transport
+    self.persistence = reader.persistence
+    self.frontmostMethod = reader.frontmostMethod
+    self.requestedAutomationMode = reader.requestedAutomationMode
+    self.routing = routing
+  }
+
+  /// Whether operations route to a display, and the display they are bound to once resolved.
+  private enum DisplayRouting {
+    case unrouted
+    case unresolved(any DisplayCommands)
+    /// A nil display means the runtime cannot report displays, so nothing is routed.
+    case resolved(AXTranslationDisplay?, any DisplayCommands)
+  }
+
+  private var display: AXTranslationDisplay? {
+    guard case let .resolved(display, _) = routing else { return nil }
+    return display
+  }
+
+  private var needsDisplay: Bool {
+    guard case .unresolved = routing else { return false }
+    return true
+  }
+
+  /// Binds one operation to the active display, failing if the display changes before it completes.
+  private func withDisplay<T>(_ body: (AXBridgeUIAutomation) async throws -> T) async throws -> T {
+    guard case let .unresolved(displays) = routing else { return try await body(self) }
+    let display = try await displays.accessibilityDisplay(transport: transport, requiring: .scopedInteractions)
+    let scoped = AXBridgeUIAutomation(scoping: self, routing: .resolved(display, displays))
+    let result = try await body(scoped)
+    try await scoped.validateCurrentDisplay()
+    return result
+  }
+
+  private func validateCurrentDisplay() async throws {
+    guard case let .resolved(display?, displays) = routing else { return }
+    try await displays.validate(display.display)
   }
 
   // MARK: - Reads
@@ -59,7 +104,7 @@ final class AXBridgeUIAutomation: AXBridgeTreeReader, @unchecked Sendable {
     _ query: AccessibilityElementQuery,
     options: AccessibilityRequestOptions
   ) async throws -> AccessibilityElementsResponse {
-    try await describeTree(query, options: options)
+    try await withDisplay { try await $0.describeTree(query, options: options) }
   }
 
   nonisolated var backend: UIAutomationBackend {
@@ -110,7 +155,12 @@ final class AXBridgeUIAutomation: AXBridgeTreeReader, @unchecked Sendable {
     explainUnreachable: Bool,
     traversal: AXTraversal
   ) async throws -> AXTreeRead {
-    try await translatingBackendErrors {
+    if needsDisplay {
+      return try await withDisplay {
+        try await $0.readRawTree(for: query, attributes: attributes, explainUnreachable: explainUnreachable, traversal: traversal)
+      }
+    }
+    return try await translatingBackendErrors {
       if case let .application(pid) = query {
         let options = AXBridgeReadRequest(
           maxDepth: AXReadLimits.maxReadDepth,
@@ -124,10 +174,11 @@ final class AXBridgeUIAutomation: AXBridgeTreeReader, @unchecked Sendable {
         let response = try await transport.send(.read(pid: pid, options: options))
         let returned = CFAbsoluteTimeGetCurrent()
         var read = try AXTreeRead(wholeTreeResponse: response, pid: pid)
+        read.screen = display?.screen
         read.timings = Self.timings(response: response, sent: sent, returned: returned, read: read)
         return read
       }
-      let anchor = frontmostAnchor()
+      let anchor = try frontmostAnchor()
       let options = AXBridgeReadRequest(
         maxDepth: AXReadLimits.maxReadDepth,
         maxNodes: AXReadLimits.maxReadNodes,
@@ -138,10 +189,11 @@ final class AXBridgeUIAutomation: AXBridgeTreeReader, @unchecked Sendable {
       )
       let sent = CFAbsoluteTimeGetCurrent()
       let response = try await transport.send(
-        .readFrontmost(x: anchor.x, y: anchor.y, method: frontmostMethod, options: options)
+        .readFrontmost(x: anchor.x, y: anchor.y, method: frontmostMethod, options: options, displayID: display?.accessibilityID)
       )
       let returned = CFAbsoluteTimeGetCurrent()
       var read = try AXTreeRead(frontmostResponse: response, method: frontmostMethod)
+      read.screen = display?.screen
       read.timings = Self.timings(response: response, sent: sent, returned: returned, read: read)
       return read
     }
@@ -151,11 +203,16 @@ final class AXBridgeUIAutomation: AXBridgeTreeReader, @unchecked Sendable {
     at point: CGPoint,
     options: AccessibilityRequestOptions
   ) async throws -> AccessibilityElementsResponse? {
-    try await translatingBackendErrors {
+    if needsDisplay {
+      return try await withDisplay { try await $0.hitTest(at: point, options: options) }
+    }
+    let lookupPoint = try display?.display.geometry.unrotatedPoint(from: point) ?? point
+    return try await translatingBackendErrors {
       let response = try await transport.send(
         .hitTest(
-          x: Double(point.x), y: Double(point.y),
-          attributes: AXWire.Node.fetchList(for: options.serializationKeys))
+          x: Double(lookupPoint.x), y: Double(lookupPoint.y),
+          attributes: AXWire.Node.fetchList(for: options.serializationKeys),
+          displayID: display?.accessibilityID)
       )
       guard let hit = try AXTreeRead(hitTestResponse: response) else {
         return nil
@@ -169,7 +226,7 @@ final class AXBridgeUIAutomation: AXBridgeTreeReader, @unchecked Sendable {
         formatted.children = options.filter.apply(to: children, screen: nil)
       }
       return AccessibilityElementsResponse(elements: .single(formatted))
-        .withProvenance(backend: backend.name, target: .point(point))
+        .withProvenance(backend: backend.name, target: .point(point), screen: display?.screen)
     }
   }
 
@@ -257,6 +314,9 @@ final class AXBridgeUIAutomation: AXBridgeTreeReader, @unchecked Sendable {
     _ query: AccessibilityElementQuery,
     options: TapOptions
   ) async throws {
+    if needsDisplay {
+      return try await withDisplay { try await $0.tap(query, options: options) }
+    }
     // The AX runtime's press is instantaneous with nowhere to put a hold; reject `duration` rather
     // than silently downgrading a long-press to a tap.
     guard options.duration == nil else {
@@ -266,10 +326,16 @@ final class AXBridgeUIAutomation: AXBridgeTreeReader, @unchecked Sendable {
   }
 
   func setValue(_ value: String, for query: AccessibilityElementQuery) async throws {
+    if needsDisplay {
+      return try await withDisplay { try await $0.setValue(value, for: query) }
+    }
     try await resolveAndWrite(.setValue(value), for: query, operation: "Setting a value", callerAssertion: nil)
   }
 
   func scroll(_ query: AccessibilityElementQuery, direction: AccessibilityScrollDirection) async throws {
+    if needsDisplay {
+      return try await withDisplay { try await $0.scroll(query, direction: direction) }
+    }
     let scrolled = try await scrollTarget(for: query, backend: backend)
     try await resolveAndWrite(.perform(Self.action(for: direction)), for: scrolled, operation: "Scroll", callerAssertion: nil)
   }
@@ -281,8 +347,12 @@ final class AXBridgeUIAutomation: AXBridgeTreeReader, @unchecked Sendable {
     to destination: AccessibilityElementQuery,
     options: DragOptions
   ) async throws {
+    if needsDisplay {
+      return try await withDisplay { try await $0.drag(from: source, to: destination, options: options) }
+    }
     let start = try await resolveWriteTarget(for: source, operation: DragEndpoint.operation, callerAssertion: nil).point
     let end = try await resolveWriteTarget(for: destination, operation: DragEndpoint.operation, callerAssertion: nil).point
+    try await validateCurrentDisplay()
     try await simulator.sendHIDGesture(
       .drag(
         Double(start.x), yStart: Double(start.y), xEnd: Double(end.x), yEnd: Double(end.y),
@@ -345,15 +415,18 @@ final class AXBridgeUIAutomation: AXBridgeTreeReader, @unchecked Sendable {
     to target: AXWriteTarget,
     query: AccessibilityElementQuery
   ) async throws {
+    let point = try display?.display.geometry.unrotatedPoint(from: target.point) ?? target.point
+    try await validateCurrentDisplay()
     try await translatingWriteErrors(query) {
       let response = try await transport.send(
         .write(
           AXBridgeWriteRequest(
             kind: kind,
-            x: Double(target.point.x),
-            y: Double(target.point.y),
+            x: Double(point.x),
+            y: Double(point.y),
             pid: target.pid,
-            assertion: target.assertion
+            assertion: target.assertion,
+            displayID: display?.accessibilityID
           )
         )
       )
@@ -377,13 +450,18 @@ final class AXBridgeUIAutomation: AXBridgeTreeReader, @unchecked Sendable {
   }
 
   func frame(_ query: AccessibilityElementQuery) async throws -> CGRect {
-    try await frameFromTree(query)
+    try await withDisplay { try await $0.frameFromTree(query) }
   }
 
   // MARK: - Frontmost anchor
 
   /// The screen-centre anchor, in points, for the in-guest frontmost hit-test.
-  private func frontmostAnchor() -> (x: Double, y: Double) {
+  private func frontmostAnchor() throws -> (x: Double, y: Double) {
+    if let display {
+      let point = try display.display.geometry.unrotatedPoint(
+        from: CGPoint(x: display.bounds.midX, y: display.bounds.midY))
+      return (Double(point.x), Double(point.y))
+    }
     let info = simulator.screenInfo
     return Self.anchorPoint(
       widthPixels: info?.widthPixels ?? 828, heightPixels: info?.heightPixels ?? 1792, scale: info?.scale ?? 2

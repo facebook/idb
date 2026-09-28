@@ -140,7 +140,7 @@ extension AXBridgeTreeReader {
         .withProvenance(
           backend: backend.name,
           target: query.targetDescriptor,
-          screen: AXTreeWalk.screenInfo(fromTree: read.tree),
+          screen: read.screen ?? AXTreeWalk.screenInfo(fromTree: read.tree),
           truncated: read.truncated
         )
     case .frontmost, .application:
@@ -171,7 +171,7 @@ extension AXBridgeTreeReader {
       let walked = AXTreeWalk.describeAllElements(
         fromTree: read.tree, keys: plan.serializationKeys, nestedFormat: plan.nestedFormat, pid: read.pid
       )
-      let screen = AXTreeWalk.screenInfo(fromTree: read.tree)
+      let screen = read.screen ?? AXTreeWalk.screenInfo(fromTree: read.tree)
       // The filter and the match both run before the interactable refinement, which is per-element guest
       // work there is no reason to spend on an element about to be dropped.
       let elements = try await refiningInteractable(

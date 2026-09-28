@@ -198,6 +198,7 @@ final class AXWireContractTests: XCTestCase {
     let expected: [AXWire.Request: (key: String, flag: String?)] = [
       .verb: ("verb", nil),
       .pid: ("pid", "--pid"),
+      .displayID: ("displayID", "--display-id"),
       .maxDepth: ("maxDepth", "--max-depth"),
       .maxNodes: ("maxNodes", "--max-nodes"),
       .automationMode: ("automationMode", "--automation-mode"),
@@ -253,6 +254,21 @@ final class AXWireContractTests: XCTestCase {
         "action": "press", "assertKey": "XC_kAXXCAttributeLabel", "assertValue": "General",
       ] as NSDictionary
     )
+  }
+
+  func testDisplayRoutingIsIdenticalForBothTransports() throws {
+    let options = AXBridgeReadRequest(
+      maxDepth: 10, maxNodes: 100, attributes: nil, explainUnreachable: false,
+      traversal: .viewHierarchy, automationMode: nil)
+    let requests: [AXBridgeRequest] = [
+      .hitTest(x: 10, y: 20, attributes: nil, displayID: 82),
+      .readFrontmost(x: 10, y: 20, method: .windowServer, options: options, displayID: 82),
+      .write(AXBridgeWriteRequest(kind: .perform(.press), x: 10, y: 20, pid: nil, assertion: nil, displayID: 82)),
+    ]
+    for request in requests {
+      XCTAssertEqual(request.payload["displayID"] as? UInt32, 82)
+      XCTAssertEqual(try decodedBridgeAXArguments(request)["displayID"] as? Int, 82)
+    }
   }
 
   func testASetValueRendersItsValueRatherThanAnAction() throws {

@@ -22,6 +22,7 @@ struct AXTreeRead: @unchecked Sendable {
   let pid: pid_t
   let truncated: Bool
   let modal: AccessibilityModalInfo?
+  var screen: AccessibilityScreenInfo?
   /// The device's accessibility automation mode as the guest saw it. Nil from a guest predating the
   /// field, which is why it is optional rather than defaulted — "an older guest did not say" and "the
   /// device was not in automation mode" are different facts and must not collapse.

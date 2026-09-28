@@ -48,17 +48,21 @@ struct AXTranslationDisplay: Equatable, Sendable {
 final class DisplayIdentityCache: @unchecked Sendable {
   private let lock = NSLock()
   private var accessibility: [String: UInt32] = [:]
+  private var verified: AXBridgeDisplayCapabilities = []
 
-  func accessibilityID(for uniqueID: String) -> UInt32? {
+  /// Only an identity from an inventory that was checked for `capabilities` counts.
+  func accessibilityID(for uniqueID: String, requiring capabilities: AXBridgeDisplayCapabilities = []) -> UInt32? {
     lock.lock()
     defer { lock.unlock() }
+    guard verified.isSuperset(of: capabilities) else { return nil }
     return accessibility[uniqueID]
   }
 
-  func remember(_ inventory: [SimulatorAccessibilityDisplay]) {
+  func remember(_ inventory: [SimulatorAccessibilityDisplay], verified capabilities: AXBridgeDisplayCapabilities = []) {
     lock.lock()
     defer { lock.unlock() }
     accessibility = Dictionary(inventory.map { ($0.uniqueID, $0.displayID) }, uniquingKeysWith: { first, _ in first })
+    verified = capabilities
   }
 }
 
@@ -66,7 +70,10 @@ extension DisplayCommands {
 
   /// The active display and its accessibility identity, or nil when the runtime cannot report displays.
   /// Only a simulator with several integrated displays asks the guest, and only for a display it has not seen.
-  func accessibilityDisplay(transport: any AXBridgeTransport) async throws -> AXTranslationDisplay? {
+  /// `capabilities` are required of the guest only when it has to be told which display to use.
+  func accessibilityDisplay(
+    transport: any AXBridgeTransport, requiring capabilities: AXBridgeDisplayCapabilities = []
+  ) async throws -> AXTranslationDisplay? {
     let target: SimulatorDisplayTarget
     do {
       target = try await interactionTarget()
@@ -76,16 +83,16 @@ extension DisplayCommands {
     guard case let .selected(display) = target else {
       return AXTranslationDisplay(display: target.display, accessibilityID: nil)
     }
-    if let accessibilityID = identities.accessibilityID(for: display.uniqueID) {
+    if let accessibilityID = identities.accessibilityID(for: display.uniqueID, requiring: capabilities) {
       return AXTranslationDisplay(display: target.display, accessibilityID: accessibilityID)
     }
-    let inventory = try AXBridgeDisplayInventory.decode(await transport.send(.displays))
+    let inventory = try AXBridgeDisplayInventory.decode(await transport.send(.displays), requiring: capabilities)
     let matches = inventory.filter { $0.uniqueID == display.uniqueID }
     guard matches.count == 1, let match = matches.first else {
       throw SimulatorDisplayInteractionError.missingMapping(display.uniqueID)
     }
     try await validate(target.display)
-    identities.remember(inventory)
+    identities.remember(inventory, verified: capabilities)
     return AXTranslationDisplay(display: target.display, accessibilityID: match.displayID)
   }
 

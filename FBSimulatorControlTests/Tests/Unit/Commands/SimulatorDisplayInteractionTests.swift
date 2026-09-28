@@ -99,6 +99,16 @@ final class SimulatorDisplayInteractionTests: XCTestCase {
     XCTAssertTrue(AXBridgeRequest.displays.mayRetry)
   }
 
+  func testScopedInteractionsRequireGuestAdvertisement() throws {
+    let oldGuest = Data(#"{"ok":true,"displays":[{"uniqueID":"inner","displayID":82}]}"#.utf8)
+    XCTAssertEqual(try AXBridgeDisplayInventory.decode(oldGuest).count, 1)
+    XCTAssertThrowsError(try AXBridgeDisplayInventory.decode(oldGuest, requiring: .scopedInteractions)) {
+      guard case SimulatorDisplayInteractionError.unsupportedCapability = $0 else { return XCTFail("\($0)") }
+    }
+    let currentGuest = Data(#"{"ok":true,"displayScopedInteractions":true,"displays":[{"uniqueID":"inner","displayID":82}]}"#.utf8)
+    XCTAssertEqual(try AXBridgeDisplayInventory.decode(currentGuest, requiring: .scopedInteractions).count, 1)
+  }
+
   func testResolutionChecksActivityAgainAfterAcquiringMappings() async throws {
     let original = display()
     let changed = display(id: "cover")

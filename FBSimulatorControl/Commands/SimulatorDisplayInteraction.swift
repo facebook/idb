@@ -57,14 +57,24 @@ struct SimulatorAccessibilityDisplay: Decodable, Equatable, Sendable {
   let displayID: UInt32
 }
 
+/// What the guest advertises it can scope to a named display, beyond reporting its displays.
+struct AXBridgeDisplayCapabilities: OptionSet, Sendable {
+  let rawValue: Int
+
+  static let scopedInteractions = AXBridgeDisplayCapabilities(rawValue: 1 << 0)
+}
+
 enum AXBridgeDisplayInventory {
-  static func decode(_ data: Data) throws -> [SimulatorAccessibilityDisplay] {
+  static func decode(_ data: Data, requiring capabilities: AXBridgeDisplayCapabilities = []) throws -> [SimulatorAccessibilityDisplay] {
     if let response = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
       response["ok"] as? Bool == false, response["error_kind"] as? String == "capability_unavailable"
     {
       throw SimulatorDisplayInteractionError.unsupportedCapability("accessibility display discovery")
     }
-    _ = try AXBridgeResponse.validated(data, context: "display inventory")
+    let response = try AXBridgeResponse.validated(data, context: "display inventory")
+    if capabilities.contains(.scopedInteractions), response["displayScopedInteractions"] as? Bool != true {
+      throw SimulatorDisplayInteractionError.unsupportedCapability("display-scoped accessibility interactions in this guest")
+    }
     struct Envelope: Decodable {
       let displays: [SimulatorAccessibilityDisplay]
     }

@@ -630,6 +630,133 @@ final class AXBridgeReadsTests: XCTestCase {
     )
   }
 
+  /// A legacy provider's sole display, or the inner of two displays with its accessibility identity
+  /// already known. `changing` reports a rotated display on every read after the first.
+  private func displays(legacy: Bool = false, changing: Bool = false) -> DisplayCommandsDouble {
+    func target(_ rotation: SimulatorDisplayRotation) -> SimulatorDisplayTarget {
+      let geometry = SimulatorDisplayGeometry(bounds: CGRect(x: 0, y: 0, width: 1200, height: 800), scale: 2, rotation: rotation)
+      guard !legacy else { return .sole(.legacy(geometry)) }
+      return .selected(
+        SimulatorDisplay(
+          uniqueID: "inner", name: "Inner", isActive: true, isPrimary: false, isIntegrated: true,
+          bounds: geometry.bounds, scale: geometry.scale, rotation: geometry.rotation))
+    }
+    let displays = changing ? DisplayCommandsDouble(target(.clockwise), target(.upright)) : DisplayCommandsDouble(target(.clockwise))
+    displays.identities.remember([SimulatorAccessibilityDisplay(uniqueID: "inner", displayID: 82)], verified: .scopedInteractions)
+    return displays
+  }
+
+  func testDisplayScopedPointReadKeepsInterfaceCoordinatesAndMetadata() async throws {
+    for legacy in [false, true] {
+      let transport = try StubAXBridgeWaitTransport(responses: [
+        envelope([
+          "ok": true, "pid": 42, "tree": [AXWire.Node.label.rawValue: "target"],
+        ])
+      ])
+      let reader = AXBridgeUIAutomation(
+        simulator: SimulatorTestSupport.testableSimulator(withDevice: AXBridgeWaitDevice()),
+        transport: transport, persistence: .exclusive, displays: displays(legacy: legacy))
+      let response = try await reader.describe(.point(CGPoint(x: 80, y: 180)), options: AccessibilityRequestOptions())
+      let requests = await transport.requests
+      XCTAssertEqual(requests.count, 1)
+      XCTAssertEqual(requests[0].payload["x"] as? Double, 180)
+      XCTAssertEqual(requests[0].payload["y"] as? Double, 320)
+      XCTAssertEqual(requests[0].payload["displayID"] as? UInt32, legacy ? nil : 82)
+      XCTAssertEqual(response.screen?.width, 400)
+      XCTAssertEqual(response.screen?.height, 600)
+      XCTAssertEqual(response.screen?.display?.uniqueID, legacy ? nil : "inner")
+      XCTAssertEqual(response.screen?.display?.rotation, 90)
+    }
+  }
+
+  func testMarkerWritePinsDisplayAcrossLookupAndWrite() async throws {
+    let displays = displays()
+    let transport = try StubAXBridgeWaitTransport(responses: [
+      envelope([
+        "ok": true, "pid": 42,
+        "tree": [
+          AXWire.Node.label.rawValue: "target",
+          AXWire.Node.frame.rawValue: CGRectCreateDictionaryRepresentation(CGRect(x: 60, y: 160, width: 40, height: 40)) as NSDictionary,
+        ],
+      ]),
+      envelope(["ok": true]),
+    ])
+    let reader = AXBridgeUIAutomation(
+      simulator: SimulatorTestSupport.testableSimulator(withDevice: AXBridgeWaitDevice()),
+      transport: transport, persistence: .exclusive, displays: displays)
+    try await reader.tap(.marker(value: "target", key: .label, depth: 10), options: TapOptions())
+    // One resolution, then a check before the write and another after the operation.
+    XCTAssertEqual(displays.reads, 3)
+    let requests = await transport.requests
+    XCTAssertEqual(requests.count, 2)
+    XCTAssertEqual(requests[0].payload["displayID"] as? UInt32, 82)
+    XCTAssertEqual(requests[1].payload["displayID"] as? UInt32, 82)
+    XCTAssertEqual(requests[1].payload["x"] as? Double, 180)
+    XCTAssertEqual(requests[1].payload["y"] as? Double, 320)
+    XCTAssertEqual(requests[1].payload["assertValue"] as? String, "target")
+    XCTAssertEqual(requests[1].payload["pid"] as? Int, 42)
+  }
+
+  func testTreeScreenUsesPinnedGeometryWithoutRewritingElementFrames() async throws {
+    for query in [AccessibilityElementQuery.frontmost, .marker(value: "target", key: .label, depth: 10)] {
+      let transport = try StubAXBridgeWaitTransport(responses: [
+        envelope([
+          "ok": true, "pid": 42,
+          "tree": [
+            AXWire.Node.label.rawValue: "target",
+            AXWire.Node.frame.rawValue: CGRectCreateDictionaryRepresentation(CGRect(x: 0, y: 0, width: 600, height: 400)) as NSDictionary,
+          ],
+        ])
+      ])
+      let reader = AXBridgeUIAutomation(
+        simulator: SimulatorTestSupport.testableSimulator(withDevice: AXBridgeWaitDevice()),
+        transport: transport, persistence: .exclusive, displays: displays())
+      let response = try await reader.describe(query, options: AccessibilityRequestOptions(keys: [.frameDict]))
+      XCTAssertEqual(response.screen?.width, 400)
+      XCTAssertEqual(response.screen?.height, 600)
+      XCTAssertEqual(response.screen?.display?.uniqueID, "inner")
+      let frame = try XCTUnwrap(response.elements.elements.first?.frame ?? nil)
+      XCTAssertEqual(frame.width, 600)
+      XCTAssertEqual(frame.height, 400)
+    }
+  }
+
+  func testDisplayChangeBeforeWriteSendsNoAction() async throws {
+    let transport = StubAXBridgeWaitTransport(responses: [])
+    let reader = AXBridgeUIAutomation(
+      simulator: SimulatorTestSupport.testableSimulator(withDevice: AXBridgeWaitDevice()),
+      transport: transport, persistence: .exclusive, displays: displays(changing: true))
+    do {
+      try await reader.tap(.point(CGPoint(x: 80, y: 180)), options: TapOptions())
+      XCTFail("Expected display change")
+    } catch { guard case SimulatorDisplayError.changed = error else { return XCTFail("\(error)") } }
+    let count = await transport.readCount
+    XCTAssertEqual(count, 0)
+  }
+
+  func testDisplayChangeBeforeDragSendsNoGesture() async throws {
+    let reader = AXBridgeUIAutomation(
+      simulator: SimulatorTestSupport.testableSimulator(withDevice: AXBridgeWaitDevice()),
+      transport: StubAXBridgeWaitTransport(responses: []), persistence: .exclusive, displays: displays(changing: true))
+    do {
+      try await reader.drag(from: .point(CGPoint(x: 80, y: 180)), to: .point(CGPoint(x: 120, y: 220)), options: DragOptions())
+      XCTFail("Expected display change")
+    } catch { guard case SimulatorDisplayError.changed = error else { return XCTFail("\(error)") } }
+  }
+
+  func testDisplayChangeDuringReadDiscardsResult() async throws {
+    let transport = try StubAXBridgeWaitTransport(responses: [waitMatchingEnvelope()])
+    let reader = AXBridgeUIAutomation(
+      simulator: SimulatorTestSupport.testableSimulator(withDevice: AXBridgeWaitDevice()),
+      transport: transport, persistence: .exclusive, displays: displays(changing: true))
+    do {
+      _ = try await reader.describe(.frontmost, options: AccessibilityRequestOptions())
+      XCTFail("Expected display change")
+    } catch { guard case SimulatorDisplayError.changed = error else { return XCTFail("\(error)") } }
+    let count = await transport.readCount
+    XCTAssertEqual(count, 1)
+  }
+
   private func nativeWaitReader(responses: [Data]) -> (AXBridgeUIAutomation, StubAXBridgeWaitTransport) {
     let transport = StubAXBridgeWaitTransport(responses: responses)
     let reader = AXBridgeUIAutomation(
@@ -2560,6 +2687,7 @@ private actor StubAXBridgeWaitTransport: AXBridgeTransport {
   private var responses: [Data]
   private(set) var readCount = 0
   private(set) var writeCount = 0
+  private(set) var requests: [AXBridgeRequest] = []
 
   init(responses: [Data]) {
     self.responses = responses
@@ -2571,6 +2699,7 @@ private actor StubAXBridgeWaitTransport: AXBridgeTransport {
     } else {
       readCount += 1
     }
+    requests.append(request)
     guard !responses.isEmpty else {
       throw AXBridgeError.bridgeUnavailable
     }

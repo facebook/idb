@@ -11,16 +11,19 @@ import XCTest
 
 private actor InventoryTransport: AXBridgeTransport {
   private let inventory: [SimulatorAccessibilityDisplay]
+  private let scopedInteractions: Bool
   private(set) var sends = 0
 
-  init(_ inventory: [SimulatorAccessibilityDisplay]) {
+  init(_ inventory: [SimulatorAccessibilityDisplay], scopedInteractions: Bool = false) {
     self.inventory = inventory
+    self.scopedInteractions = scopedInteractions
   }
 
   func send(_ request: AXBridgeRequest) async throws -> Data {
     sends += 1
     let displays = inventory.map { ["uniqueID": $0.uniqueID, "displayID": $0.displayID] as [String: Any] }
-    return try JSONSerialization.data(withJSONObject: ["ok": true, "displays": displays])
+    return try JSONSerialization.data(
+      withJSONObject: ["ok": true, "displayScopedInteractions": scopedInteractions, "displays": displays])
   }
 }
 
@@ -92,6 +95,32 @@ final class DisplayCommandsTests: XCTestCase {
     let displays = DisplayCommandsDouble([.failure(SimulatorCoreDeviceError.unsupported("displayinfo"))])
     let resolved = try await displays.accessibilityDisplay(transport: InventoryTransport(inventory))
     XCTAssertNil(resolved)
+  }
+
+  func testRequiredCapabilityIsCheckedOnlyWhenTheDisplayMustBeNamed() async throws {
+    let sole = DisplayCommandsDouble(.sole(.identified(display("lcd"))))
+    let soleTransport = InventoryTransport(inventory)
+    _ = try await sole.accessibilityDisplay(transport: soleTransport, requiring: .scopedInteractions)
+    let soleSends = await soleTransport.sends
+    XCTAssertEqual(soleSends, 0)
+
+    let selected = DisplayCommandsDouble(.selected(display("inner")))
+    selected.identities.remember(inventory)
+    let oldGuest = InventoryTransport(inventory)
+    do {
+      _ = try await selected.accessibilityDisplay(transport: oldGuest, requiring: .scopedInteractions)
+      XCTFail("Expected the guest to lack scoped interactions")
+    } catch SimulatorDisplayInteractionError.unsupportedCapability {}
+    let oldGuestSends = await oldGuest.sends
+    XCTAssertEqual(oldGuestSends, 1)
+
+    let currentGuest = InventoryTransport(inventory, scopedInteractions: true)
+    for _ in 0..<2 {
+      let resolved = try await selected.accessibilityDisplay(transport: currentGuest, requiring: .scopedInteractions)
+      XCTAssertEqual(resolved?.accessibilityID, 3)
+    }
+    let currentGuestSends = await currentGuest.sends
+    XCTAssertEqual(currentGuestSends, 1)
   }
 
   func testValidateComparesConfiguration() async throws {
