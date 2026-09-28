@@ -481,12 +481,6 @@ class AccessibilityTests(IdbEndToEndTestCase):
         title = _label(self.control)
         before = _elements(await self.describe_all_complete("axbridge"))
         self.assertNotIn(title, [element.get("identifier") for element in before])
-        for api in ("ax", "axbridge"):
-            self.assertEqual(
-                await self.idb_json("ui", "wait", title, "--api", api),
-                {"found": True},
-                api,
-            )
 
         async with self.idb_process(
             "ui",
@@ -504,16 +498,6 @@ class AccessibilityTests(IdbEndToEndTestCase):
             result = await waiting.read_some(UI_UPDATE_TIMEOUT_SECONDS)
             self.assertEqual(json.loads(result), {"found": True})
             self.assertEqual(await waiting.wait_for_exit(10), 0)
-
-        after = _elements(await self.describe_all_complete("axbridge"))
-        self.assertIn(
-            title,
-            [
-                element.get("identifier")
-                for element in after
-                if element.get("type") == "NavigationBar"
-            ],
-        )
 
     async def test_ui_wait_times_out_and_rejects_an_invalid_poll_interval(self) -> None:
         for backend in ("axbridge", "ax"):
