@@ -3,7 +3,7 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-"""Verify guest service commands against the leased simulator's backing stores.
+"""Verify guest service commands against the simulator's backing stores.
 
 A notification delivered to an app that is not running is followed through
 idb's notification commands, from delivery until it is cleared.
@@ -38,7 +38,7 @@ NOTIFICATION_STORE_TIMEOUT_SECONDS = 300.0
 NOTIFICATION_LIST_TIMEOUT_SECONDS = 120.0
 
 
-class ServiceMutationTests(IdbEndToEndTestCase):
+class ServiceTests(IdbEndToEndTestCase):
     async def test_health_list_for_installed_application(self) -> None:
         bundle_id = await self.install_fixture_app()
         listed = json.loads((await self.guest("health", "list", bundle_id)).stdout)
@@ -53,16 +53,14 @@ class ServiceMutationTests(IdbEndToEndTestCase):
             },
         )
         self.assertIs(type(listed["ok"]), int)
-        command = {"health": {"_0": {"list": {"bundleID": bundle_id}}}}
-        for persistent in (False, True):
-            with self.subTest(persistent=persistent):
-                async with GuestRPC(self, persistent=persistent) as rpc:
-                    values = await rpc.send(command)
-                    self.assertEqual(values, [listed])
-                    self.assertIs(type(values[0]["ok"]), int)
 
     async def test_rpc_modes_share_service_reads_on_one_connection(self) -> None:
+        bundle_id = await self.install_fixture_app()
         cases = [
+            (
+                {"health": {"_0": {"list": {"bundleID": bundle_id}}}},
+                ("health", "list", bundle_id),
+            ),
             ({"dns": {"_0": {"list": {}}}}, ("dns", "list")),
             ({"proxy": {"_0": {"list": {}}}}, ("proxy", "list")),
             (
@@ -80,7 +78,11 @@ class ServiceMutationTests(IdbEndToEndTestCase):
                     for command, arguments in cases:
                         with self.subTest(command=command):
                             expected = json.loads((await self.guest(*arguments)).stdout)
-                            self.assertEqual(await rpc.send(command), [expected])
+                            # Compared as JSON, where `1` and `true` differ.
+                            self.assertEqual(
+                                json.dumps(await rpc.send(command), sort_keys=True),
+                                json.dumps([expected], sort_keys=True),
+                            )
 
     async def test_rpc_modes_mutate_network_and_notification_state(self) -> None:
         for service in ("dns", "proxy"):
@@ -230,18 +232,6 @@ class ServiceMutationTests(IdbEndToEndTestCase):
         )
         self.assertEqual(json.loads((await self.guest(service, "list")).text), expected)
 
-    async def test_dns_set_and_clear_update_the_dynamic_store(self) -> None:
-        snapshot = await self.store_data("snapshot", "dns")
-        self.addAsyncCleanup(self.restore_network, "dns", snapshot)
-
-        await self.guest("dns", "set", "192.0.2.1", "192.0.2.2")
-
-        await self.assert_network(
-            "dns", {"ServerAddresses": ["192.0.2.1", "192.0.2.2"]}
-        )
-        await self.guest("dns", "clear")
-        await self.assert_network("dns", {})
-
     async def test_proxy_set_replaces_the_previous_type_and_clear_disables_it(
         self,
     ) -> None:
@@ -276,16 +266,6 @@ class ServiceMutationTests(IdbEndToEndTestCase):
         )
         await self.guest("proxy", "clear")
         await self.assert_network("proxy", {"FTPPassive": 1})
-
-    async def test_notification_approval_and_revocation_persist(self) -> None:
-        bundle_id = await self.install_fixture_app()
-        self.addAsyncCleanup(self.guest, "notifications", "revoke", bundle_id)
-
-        await self.guest("notifications", "approve", bundle_id)
-
-        await self.assert_notifications(bundle_id, True, 2)
-        await self.guest("notifications", "revoke", bundle_id)
-        await self.assert_notifications(bundle_id, False, 0)
 
     async def test_idb_notification_permissions_update_guest_settings(self) -> None:
         bundle_id = await self.install_fixture_app()
