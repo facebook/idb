@@ -1443,6 +1443,34 @@ static NSError *FBAXSnapshotFailure(NSInteger code, NSString *description)
 
 - (FBAXReadOutcome *)readAttributes:(NSArray<NSString *> *)attributes ofElement:(id)element
 {
+  if (![element respondsToSelector:@selector(AXUIElement)]) {
+    // Semantic children are translation objects; XCTest attributes require a platform element.
+    __block id platformElement = nil;
+    FBAXBridgeRunOffMainQueue(^{
+      Class translationClass = objc_lookUpClass("AXPTranslationObject");
+      if (!translationClass || ![element isKindOfClass:translationClass]) {
+        return;
+      }
+      NSString *setupError = nil;
+      AXPTranslator *translator = FBAXBridgeWindowServerTranslator(&setupError);
+      if (![translator respondsToSelector:@selector(createPlatformElementFromTranslationObject:)]) {
+        return;
+      }
+      AXUIElementRef raw = [translator createPlatformElementFromTranslationObject:element];
+      FBAXElementRef *owned = raw ? [[FBAXElementRef alloc] initWithOwnedElement:raw] : nil;
+      platformElement = [owned objectFromElement:^id (void *reference) {
+        return [self->_elementClass elementWithAXUIElement:reference];
+      }];
+    });
+    if (!platformElement) {
+      return [FBAXReadOutcome failureForAttributeError:[NSError errorWithDomain:@"FBAXRuntime"
+                                                                           code:1
+                                                                       userInfo:@{
+                                                          NSLocalizedDescriptionKey : @"Could not convert a semantic accessibility element for attribute reading",
+                                                        }]];
+    }
+    element = platformElement;
+  }
   NSError *error = nil;
   NSDictionary<NSString *, id> *read = [_framework attributesForElement:element
                                                              attributes:attributes

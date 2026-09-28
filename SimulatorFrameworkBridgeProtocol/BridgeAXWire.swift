@@ -21,6 +21,7 @@ public enum BridgeAXWire {
     case frame = "XC_kAXXCAttributeFrame"
     case automationType = "XC_kAXXCAttributeAutomationType"
     case children = "XC_kAXXCAttributeChildren"
+    case windowDisplayID = "XC_kAXXCAttributeWindowDisplayId"
     /// Whether the accessibility server believes a touch reaches this element at all. The primitive
     /// XCUITest's `isHittable` is built on — *not* "is on screen": a full-screen container that passes
     /// touches through to its children reports `false`.

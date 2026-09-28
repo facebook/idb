@@ -23,6 +23,11 @@ private let axIdentifier = BridgeAXWire.Node.identifier.rawValue
 private let axFrame = BridgeAXWire.Node.frame.rawValue
 private let axAutomationType = BridgeAXWire.Node.automationType.rawValue
 private let axChildren = BridgeAXWire.Node.children.rawValue
+private let axWindowDisplayID = BridgeAXWire.Node.windowDisplayID.rawValue
+
+private enum AXDisplayScopeError: Error {
+  case missingWindowIdentity
+}
 // Both answered as CGPoint. `VisiblePoint` reads `(-1, -1)` when the server believes no touch reaches the
 // element; carried verbatim, sentinel included — deciding what unreachable means is the host's job.
 private let axVisiblePoint = BridgeAXWire.Node.visiblePoint.rawValue
@@ -287,23 +292,33 @@ private final class AccessibilityRequest {
   // Hazard: the framework drops any name it has no number for, then fails the whole read on the count
   // mismatch — one unknown key costs every attribute for that node, not just itself.
   fileprivate func FBAXBridgeFetchListForRequest(request: [String: Any]) -> [String] {
-    let requested = request[requestAttributes]
-    guard let requested = requested as? [Any] else {
-      return FBAXBridgeDefaultFetchList()
-    }
-    var attributes: [String] = []
-    for name in requested {
-      if let name = name as? String {
-        attributes.append(name)
-      }
-    }
-    if attributes.isEmpty {
-      return FBAXBridgeDefaultFetchList()
-    }
-    if !attributes.contains(axChildren) {
-      attributes.append(axChildren)
+    var attributes = (request[requestAttributes] as? [Any])?.compactMap { $0 as? String } ?? []
+    if attributes.isEmpty { attributes = FBAXBridgeDefaultFetchList() }
+    if !attributes.contains(axChildren) { attributes.append(axChildren) }
+    if request[requestDisplayID] != nil, !attributes.contains(axWindowDisplayID) {
+      attributes.append(axWindowDisplayID)
     }
     return attributes
+  }
+
+  private func treeOnDisplay(_ tree: [String: Any], displayID: UInt32, isRoot: Bool = true) throws -> [String: Any]? {
+    let number = tree[axWindowDisplayID] as? NSNumber
+    let identity = number.flatMap { value -> UInt32? in
+      guard CFGetTypeID(value) != CFBooleanGetTypeID() else { return nil }
+      return UInt32(exactly: value.doubleValue)
+    }
+    if let identity, identity > 0 {
+      guard identity == displayID else { return nil }
+    } else if !isRoot {
+      throw AXDisplayScopeError.missingWindowIdentity
+    }
+    var scoped = tree
+    if let children = tree[axChildren] as? [[String: Any]] {
+      let selected = try children.compactMap { try treeOnDisplay($0, displayID: displayID, isRoot: false) }
+      scoped[axChildren] = selected
+    }
+    if isRoot, identity == nil || identity == 0, (scoped[axChildren] as? [Any])?.isEmpty != false { return nil }
+    return scoped
   }
 
   // Counted rather than inferred from node count, which would undercount by up to 2x (the translator walk
@@ -570,6 +585,7 @@ private final class AccessibilityRequest {
   fileprivate func FBAXBridgeBuildTranslatorNode(
     client: FBAXClient,
     element: FBAXElement,
+    displayID: UInt32?,
     depth: Int,
     maxDepth: Int
   ) throws -> [String: Any]? {
@@ -587,6 +603,11 @@ private final class AccessibilityRequest {
       return nil
     }
     var node = [String: Any]()
+    if displayID != nil {
+      FBAXBridgeCountRoundTrip()
+      let identity = try client.readAttributes([axWindowDisplayID], of: element)
+      node[axWindowDisplayID] = identity.attributes?[axWindowDisplayID]
+    }
     if values.label != nil {
       node[axLabel] = values.label
     }
@@ -646,6 +667,7 @@ private final class AccessibilityRequest {
         let built = try FBAXBridgeBuildTranslatorNode(
           client: client,
           element: child,
+          displayID: displayID,
           depth: depth + 1,
           maxDepth: maxDepth
         )
@@ -1390,6 +1412,7 @@ private final class AccessibilityRequest {
         return [
           responseOk: true,
           "displayScopedInteractions": true,
+          "displayScopedTrees": true,
           "displays": outcome.displays.map { display -> [String: Any] in
             ["uniqueID": display.uniqueID, "displayID": display.displayID]
           },
@@ -1560,6 +1583,7 @@ private final class AccessibilityRequest {
       tree = try FBAXBridgeBuildTranslatorNode(
         client: client,
         element: root,
+        displayID: displayID,
         depth: 0,
         maxDepth: maxDepth
       )
@@ -1595,8 +1619,15 @@ private final class AccessibilityRequest {
 
     // Always report the pid read, so the host tags elements with it — for a fused frontmost read the host
     // does not know the pid until now. `method` rides along when the pid was resolved in-guest.
-    guard let tree else {
+    guard var tree else {
       throw FBAXBridgeInvariantError(description: "the tree read reported success but returned no attributes")
+    }
+    if let displayID {
+      guard let scoped = try treeOnDisplay(tree, displayID: displayID) else {
+        return FBAXBridgeTaggedErrorResponse(
+          message: "Application has no window on the requested display", kind: errorKindApplicationUnavailable, pid: pid as NSNumber)
+      }
+      tree = scoped
     }
     var response = AccessibilityDescriptionResponse(
       tree: tree,
@@ -1660,7 +1691,8 @@ private final class AccessibilityRequest {
 
   fileprivate func FBAXBridgeWireConstantsForTesting() -> [String: String] {
     [
-      "node.elementType": axElementType, "node.elementBaseType": axElementBaseType, "node.label": axLabel, "node.value": axValue, "node.identifier": axIdentifier, "node.frame": axFrame, "node.automationType": axAutomationType, "node.children": axChildren, "request.verb": requestVerb, "request.pid": requestPid, "request.maxDepth": requestMaxDepth, "request.maxNodes": requestMaxNodes, "request.automationMode": requestAutomationMode, "request.attributes": requestAttributes, "request.translatorVocabulary": requestTranslatorVocabulary, "request.explainUnreachable": requestExplainUnreachable, "node.explainedBy": nodeExplainedBy, "node.isEnabled": nodeIsEnabled, "node.translatorRole": nodeTranslatorRole, "node.translatorSubrole": nodeTranslatorSubrole, "node.traits": nodeTraits, "node.elementIdentity": nodeElementIdentity, "request.displayID": requestDisplayID, "request.x": requestX, "request.y": requestY, "request.method": requestMethod, "request.action": requestAction, "request.value": requestValue, "request.setting": requestSetting, "request.enabled": requestEnabled, "request.assertKey": requestAssertKey, "request.assertValue": requestAssertValue, "envelope.ok": responseOk, "envelope.enabled": responseEnabled, "envelope.tree": responseTree, "envelope.error": responseError, "envelope.empty": responseEmpty, "envelope.errorKind": responseErrorKind, "envelope.errorKindApplicationUnavailable": errorKindApplicationUnavailable, "envelope.errorKindApplicationNotResponding": errorKindApplicationNotResponding, "envelope.errorKindFrontmostUnresolved": errorKindFrontmostUnresolved, "envelope.errorKindReaderUnavailable": errorKindReaderUnavailable, "envelope.errorKindBadRequest": errorKindBadRequest, "envelope.errorKindAssertionFailed": errorKindAssertionFailed, "envelope.truncated": responseTruncated, "envelope.pid": responsePid, "envelope.method": responseMethod, "envelope.modal": responseModal, "envelope.automation": responseAutomation, "envelope.phases": responsePhases,
+      "node.elementType": axElementType, "node.elementBaseType": axElementBaseType, "node.label": axLabel, "node.value": axValue, "node.identifier": axIdentifier, "node.frame": axFrame, "node.automationType": axAutomationType, "node.children": axChildren, "node.windowDisplayID": axWindowDisplayID, "request.verb": requestVerb, "request.pid": requestPid, "request.maxDepth": requestMaxDepth, "request.maxNodes": requestMaxNodes, "request.automationMode": requestAutomationMode, "request.attributes": requestAttributes, "request.translatorVocabulary": requestTranslatorVocabulary, "request.explainUnreachable": requestExplainUnreachable, "node.explainedBy": nodeExplainedBy, "node.isEnabled": nodeIsEnabled, "node.translatorRole": nodeTranslatorRole, "node.translatorSubrole": nodeTranslatorSubrole, "node.traits": nodeTraits, "node.elementIdentity": nodeElementIdentity, "request.displayID": requestDisplayID, "request.x": requestX, "request.y": requestY, "request.method": requestMethod, "request.action": requestAction, "request.value": requestValue, "request.setting": requestSetting, "request.enabled": requestEnabled, "request.assertKey": requestAssertKey, "request.assertValue": requestAssertValue, "envelope.ok": responseOk, "envelope.enabled": responseEnabled, "envelope.tree": responseTree, "envelope.error": responseError, "envelope.empty": responseEmpty, "envelope.errorKind": responseErrorKind, "envelope.errorKindApplicationUnavailable": errorKindApplicationUnavailable, "envelope.errorKindApplicationNotResponding": errorKindApplicationNotResponding, "envelope.errorKindFrontmostUnresolved": errorKindFrontmostUnresolved, "envelope.errorKindReaderUnavailable": errorKindReaderUnavailable, "envelope.errorKindBadRequest": errorKindBadRequest, "envelope.errorKindAssertionFailed": errorKindAssertionFailed, "envelope.truncated": responseTruncated, "envelope.pid": responsePid, "envelope.method": responseMethod, "envelope.modal": responseModal, "envelope.automation": responseAutomation,
+      "envelope.phases": responsePhases,
       "phases.traverse": phaseTraverse,
       "phases.machRoundTrips": phaseMachRoundTrips, "automation.enabled": kAutomationEnabled, "automation.asserted": kAutomationAsserted, "modal.kind": modalKind, "modal.kindSystem": modalKindSystem, "modal.kindApp": modalKindApp, "modal.elementType": modalElementType, "modal.label": modalLabel, "modal.systemAlertWindowClass": systemAlertWindowClass, "modal.alertControllerClassPrefix": alertControllerClassPrefix, "verb.displays": AccessibilityVerb.displays.rawValue, "verb.describe": AccessibilityVerb.describe.rawValue, "verb.hittest": AccessibilityVerb.hitTest.rawValue, "verb.perform": AccessibilityVerb.perform.rawValue, "verb.setvalue": AccessibilityVerb.setValue.rawValue, "verb.settingsGet": AccessibilityVerb.settingsGet.rawValue, "verb.settingsSet": AccessibilityVerb.settingsSet.rawValue, "verb.quiet": AccessibilityVerb.quiet.rawValue, "request.busyThresholdMs": requestBusyThresholdMs, "request.quietWindowMs": requestQuietWindowMs, "action.press": AccessibilityAction.press.rawValue, "action.scrollUp": AccessibilityAction.scrollUp.rawValue, "action.scrollDown": AccessibilityAction.scrollDown.rawValue, "action.scrollLeft": AccessibilityAction.scrollLeft.rawValue, "action.scrollRight": AccessibilityAction.scrollRight.rawValue, "action.scrollToVisible": AccessibilityAction.scrollToVisible.rawValue, "method.centerPoint": FrontmostMethod.centerPoint.rawValue, "method.windowServer": FrontmostMethod.windowServer.rawValue, "method.runningBoard": FrontmostMethod.runningBoard.rawValue,
     ]
@@ -1681,6 +1713,8 @@ public enum FBAccessibilityService {
   public static func handleRequest(_ request: [String: Any]) -> [String: Any] {
     do {
       return try AccessibilityRequest().FBAXBridgeDispatchRequest(request: request)
+    } catch AXDisplayScopeError.missingWindowIdentity {
+      return [responseOk: false, responseError: "Cannot scope accessibility: a window has no valid display identity", responseErrorKind: "capability_unavailable"]
     } catch {
       return [responseOk: false, responseError: "the reader raised while answering: \(error.localizedDescription)"]
     }

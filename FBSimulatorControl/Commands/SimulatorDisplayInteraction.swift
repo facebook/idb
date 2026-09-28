@@ -62,6 +62,7 @@ struct AXBridgeDisplayCapabilities: OptionSet, Sendable {
   let rawValue: Int
 
   static let scopedInteractions = AXBridgeDisplayCapabilities(rawValue: 1 << 0)
+  static let scopedTrees = AXBridgeDisplayCapabilities(rawValue: 1 << 1)
 }
 
 enum AXBridgeDisplayInventory {
@@ -74,6 +75,9 @@ enum AXBridgeDisplayInventory {
     let response = try AXBridgeResponse.validated(data, context: "display inventory")
     if capabilities.contains(.scopedInteractions), response["displayScopedInteractions"] as? Bool != true {
       throw SimulatorDisplayInteractionError.unsupportedCapability("display-scoped accessibility interactions in this guest")
+    }
+    if capabilities.contains(.scopedTrees), response["displayScopedTrees"] as? Bool != true {
+      throw SimulatorDisplayInteractionError.unsupportedCapability("display-scoped accessibility trees in this guest")
     }
     struct Envelope: Decodable {
       let displays: [SimulatorAccessibilityDisplay]

@@ -100,7 +100,7 @@ struct AXBridgeReadRequest: Sendable, Equatable {
 }
 
 enum AXBridgeRequest: Sendable {
-  case read(pid: pid_t, options: AXBridgeReadRequest)
+  case read(pid: pid_t, options: AXBridgeReadRequest, displayID: UInt32? = nil)
   case readFrontmost(x: Double, y: Double, method: AXBridgeFrontmostMethod, options: AXBridgeReadRequest, displayID: UInt32? = nil)
   case hitTest(x: Double, y: Double, attributes: [String]?, displayID: UInt32? = nil)
   case write(AXBridgeWriteRequest)
@@ -122,11 +122,13 @@ enum AXBridgeRequest: Sendable {
 
   var payload: [String: Any] {
     switch self {
-    case let .read(pid, options):
-      return options.appendingPayload(to: [
+    case let .read(pid, options, displayID):
+      var payload: [String: Any] = [
         AXWire.Request.verb.key: AXWire.Verb.describe.rawValue,
         AXWire.Request.pid.key: Int(pid),
-      ])
+      ]
+      if let displayID { payload[AXWire.Request.displayID.key] = displayID }
+      return options.appendingPayload(to: payload)
     case let .readFrontmost(x, y, method, options, displayID):
       var payload: [String: Any] = [
         AXWire.Request.verb.key: AXWire.Verb.describe.rawValue,

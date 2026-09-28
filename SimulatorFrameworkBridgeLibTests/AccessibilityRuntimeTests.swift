@@ -321,7 +321,11 @@ final class AccessibilityRuntimeTests: XCTestCase {
 
   func testFrontmostReadForwardsDisplayAndRejectsUnscopedRunningBoard() {
     runtime.windowServerOutcome = FBAXFrontmostOutcome.resolved(kAppPid)
-    runtime.applicationElements[NSNumber(value: kAppPid)] = FBAXFakeElement.readable("UIApplication")
+    let root = FBAXFakeElement.readable("UIApplication")
+    let window = FBAXFakeElement.readable("UIWindow")
+    window.attributes["XC_kAXXCAttributeWindowDisplayId"] = 42
+    root.children = [window]
+    runtime.applicationElements[NSNumber(value: kAppPid)] = root
     let response = FBAccessibilityService.handleRequest(["verb": "describe", "x": 10, "y": 20, "displayID": 42])
     assertEqualObjects(axValue(response, "ok"), NSNumber(value: true))
     XCTAssertEqual(runtime.lastFrontmostDisplayIdentifier, NSNumber(value: 42))

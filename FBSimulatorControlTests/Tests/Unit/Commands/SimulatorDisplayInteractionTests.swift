@@ -107,6 +107,9 @@ final class SimulatorDisplayInteractionTests: XCTestCase {
     }
     let currentGuest = Data(#"{"ok":true,"displayScopedInteractions":true,"displays":[{"uniqueID":"inner","displayID":82}]}"#.utf8)
     XCTAssertEqual(try AXBridgeDisplayInventory.decode(currentGuest, requiring: .scopedInteractions).count, 1)
+    XCTAssertThrowsError(try AXBridgeDisplayInventory.decode(currentGuest, requiring: .scopedTrees))
+    let scopedGuest = Data(#"{"ok":true,"displayScopedTrees":true,"displays":[{"uniqueID":"inner","displayID":82}]}"#.utf8)
+    XCTAssertEqual(try AXBridgeDisplayInventory.decode(scopedGuest, requiring: .scopedTrees).count, 1)
   }
 
   func testResolutionChecksActivityAgainAfterAcquiringMappings() async throws {

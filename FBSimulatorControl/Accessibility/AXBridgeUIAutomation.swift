@@ -86,7 +86,7 @@ final class AXBridgeUIAutomation: AXBridgeTreeReader, @unchecked Sendable {
   /// Binds one operation to the active display, failing if the display changes before it completes.
   private func withDisplay<T>(_ body: (AXBridgeUIAutomation) async throws -> T) async throws -> T {
     guard case let .unresolved(displays) = routing else { return try await body(self) }
-    let display = try await displays.accessibilityDisplay(transport: transport, requiring: .scopedInteractions)
+    let display = try await displays.accessibilityDisplay(transport: transport, requiring: [.scopedInteractions, .scopedTrees])
     let scoped = AXBridgeUIAutomation(scoping: self, routing: .resolved(display, displays))
     let result = try await body(scoped)
     try await scoped.validateCurrentDisplay()
@@ -171,7 +171,7 @@ final class AXBridgeUIAutomation: AXBridgeTreeReader, @unchecked Sendable {
           automationMode: requestedAutomationMode
         )
         let sent = CFAbsoluteTimeGetCurrent()
-        let response = try await transport.send(.read(pid: pid, options: options))
+        let response = try await transport.send(.read(pid: pid, options: options, displayID: display?.accessibilityID))
         let returned = CFAbsoluteTimeGetCurrent()
         var read = try AXTreeRead(wholeTreeResponse: response, pid: pid)
         read.screen = display?.screen

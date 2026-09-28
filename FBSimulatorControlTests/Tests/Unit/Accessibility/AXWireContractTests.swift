@@ -261,6 +261,7 @@ final class AXWireContractTests: XCTestCase {
       maxDepth: 10, maxNodes: 100, attributes: nil, explainUnreachable: false,
       traversal: .viewHierarchy, automationMode: nil)
     let requests: [AXBridgeRequest] = [
+      .read(pid: 42, options: options, displayID: 82),
       .hitTest(x: 10, y: 20, attributes: nil, displayID: 82),
       .readFrontmost(x: 10, y: 20, method: .windowServer, options: options, displayID: 82),
       .write(AXBridgeWriteRequest(kind: .perform(.press), x: 10, y: 20, pid: nil, assertion: nil, displayID: 82)),

@@ -30,7 +30,7 @@ final class AccessibilityDisplayTests: XCTestCase {
       response as NSDictionary,
       [
         "ok": true,
-        "displayScopedInteractions": true,
+        "displayScopedInteractions": true, "displayScopedTrees": true,
         "displays": [["uniqueID": "outer", "displayID": 42], ["uniqueID": "continuous-inner", "displayID": 71]],
       ])
     XCTAssertEqual(runtime.operations as NSArray, ["displayInventory"])
@@ -54,7 +54,112 @@ final class AccessibilityDisplayTests: XCTestCase {
         "ok": false, "error": "Duplicate identity", "error_kind": "reader_unavailable",
       ])
     runtime.displayInventoryOutcome = .available([])
-    XCTAssertEqual(FBAccessibilityService.handleRequest(["verb": "displays"]) as NSDictionary, ["ok": true, "displayScopedInteractions": true, "displays": []])
+    XCTAssertEqual(FBAccessibilityService.handleRequest(["verb": "displays"]) as NSDictionary, ["ok": true, "displayScopedInteractions": true, "displayScopedTrees": true, "displays": []])
+  }
+
+  private func window(_ label: String, displayID: Any?) -> FBAXFakeElement {
+    let element = FBAXFakeElement.readable("UIWindow")
+    var attributes: [String: Any] = [
+      "XC_kAXXCAttributeElementType": "UIWindow",
+      "XC_kAXXCAttributeLabel": label,
+      "XC_kAXXCAttributeFrame": ["X": 0, "Y": 0, "Width": 400, "Height": 600],
+    ]
+    attributes["XC_kAXXCAttributeWindowDisplayId"] = displayID
+    element.attributes = attributes
+    return element
+  }
+
+  func testSameProcessWindowsAreFilteredByDisplayDespiteOverlappingFrames() throws {
+    for snapshot in [false, true] {
+      let runtime = FBAXFakeRuntime()
+      let root = FBAXFakeElement.readable("UIApplication")
+      root.children = [window("cover", displayID: 42), window("inner", displayID: 71)]
+      runtime.applicationElements[123] = root
+      FBAXClientProvider.setRuntimeForTesting(runtime)
+      let response = FBAccessibilityService.handleRequest([
+        "verb": "describe", "pid": 123, "displayID": 71, "snapshotTree": snapshot,
+      ])
+      XCTAssertEqual(response["ok"] as? Bool, true, "\(response)")
+      let tree = try XCTUnwrap(response["tree"] as? [String: Any])
+      let children = try XCTUnwrap(tree["XC_kAXXCAttributeChildren"] as? [[String: Any]])
+      XCTAssertEqual(children.count, 1)
+      XCTAssertEqual(children.first?["XC_kAXXCAttributeLabel"] as? String, "inner")
+      XCTAssertEqual((children.first?["XC_kAXXCAttributeFrame"] as? [String: Int])?["Width"], 400)
+    }
+  }
+
+  func testSemanticTreeUsesWindowIdentityFromTheSameElement() throws {
+    let runtime = FBAXFakeRuntime()
+    let root = FBAXFakeElement.readable("UIApplication")
+    let cover = window("cover", displayID: 42)
+    let inner = window("inner", displayID: 71)
+    runtime.applicationElements[123] = root
+    runtime.translatorResponses = [
+      [33: "root"], [8: [cover, inner]],
+      [33: "cover"], [:], [33: "inner"], [:],
+    ]
+    FBAXClientProvider.setRuntimeForTesting(runtime)
+    let response = FBAccessibilityService.handleRequest([
+      "verb": "describe", "pid": 123, "displayID": 71, "translatorVocabulary": true,
+    ])
+    XCTAssertEqual(response["ok"] as? Bool, true, "\(response)")
+    let tree = try XCTUnwrap(response["tree"] as? [String: Any])
+    let children = try XCTUnwrap(tree["XC_kAXXCAttributeChildren"] as? [[String: Any]])
+    XCTAssertEqual(children.count, 1)
+    XCTAssertEqual(children.first?["XC_kAXXCAttributeLabel"] as? String, "inner")
+    XCTAssertEqual(children.first?["XC_kAXXCAttributeWindowDisplayId"] as? Int, 71)
+    XCTAssertEqual(runtime.lastReadAttributes, ["XC_kAXXCAttributeWindowDisplayId"])
+  }
+
+  func testUnknownWindowMembershipDoesNotBecomeSelectedDisplay() {
+    for identity in [nil, 0, true, -1, 1.5, "71"] as [Any?] {
+      let runtime = FBAXFakeRuntime()
+      let root = FBAXFakeElement.readable("UIApplication")
+      root.children = [window("unknown", displayID: identity)]
+      runtime.applicationElements[123] = root
+      FBAXClientProvider.setRuntimeForTesting(runtime)
+      let response = FBAccessibilityService.handleRequest(["verb": "describe", "pid": 123, "displayID": 71])
+      XCTAssertEqual(response["ok"] as? Bool, false, "\(response)")
+      XCTAssertTrue((response["error"] as? String)?.contains("display identity") == true)
+      XCTAssertEqual(response["error_kind"] as? String, "capability_unavailable")
+    }
+  }
+
+  func testExplicitlyDifferentDescendantIsExcluded() throws {
+    let runtime = FBAXFakeRuntime()
+    let root = FBAXFakeElement.readable("UIApplication")
+    let selected = window("selected", displayID: 71)
+    selected.children = [window("remote-other-display", displayID: 42)]
+    root.children = [selected]
+    runtime.applicationElements[123] = root
+    FBAXClientProvider.setRuntimeForTesting(runtime)
+    let response = FBAccessibilityService.handleRequest(["verb": "describe", "pid": 123, "displayID": 71])
+    let tree = try XCTUnwrap(response["tree"] as? [String: Any])
+    let children = try XCTUnwrap(tree["XC_kAXXCAttributeChildren"] as? [[String: Any]])
+    XCTAssertEqual((children.first?["XC_kAXXCAttributeChildren"] as? [Any])?.count, 0)
+  }
+
+  func testApplicationWithNoSelectedWindowDoesNotReturnAnotherDisplaysFrame() {
+    let runtime = FBAXFakeRuntime()
+    let root = FBAXFakeElement.readable("UIApplication")
+    root.children = [window("other-display", displayID: 42)]
+    runtime.applicationElements[123] = root
+    FBAXClientProvider.setRuntimeForTesting(runtime)
+    let response = FBAccessibilityService.handleRequest(["verb": "describe", "pid": 123, "displayID": 71])
+    XCTAssertEqual(response["ok"] as? Bool, false)
+    XCTAssertEqual(response["error_kind"] as? String, "application_unavailable")
+    XCTAssertNil(response["tree"])
+  }
+
+  func testUnscopedReadPreservesAllWindows() throws {
+    let runtime = FBAXFakeRuntime()
+    let root = FBAXFakeElement.readable("UIApplication")
+    root.children = [window("cover", displayID: 42), window("inner", displayID: 71)]
+    runtime.applicationElements[123] = root
+    FBAXClientProvider.setRuntimeForTesting(runtime)
+    let response = FBAccessibilityService.handleRequest(["verb": "describe", "pid": 123])
+    let tree = try XCTUnwrap(response["tree"] as? [String: Any])
+    XCTAssertEqual((tree["XC_kAXXCAttributeChildren"] as? [Any])?.count, 2)
   }
 
   func testDisplayInventoryExceptionIsContainedAndNextReadRecovers() {

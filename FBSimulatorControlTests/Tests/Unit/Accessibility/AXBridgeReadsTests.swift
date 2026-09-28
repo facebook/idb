@@ -642,7 +642,7 @@ final class AXBridgeReadsTests: XCTestCase {
           bounds: geometry.bounds, scale: geometry.scale, rotation: geometry.rotation))
     }
     let displays = changing ? DisplayCommandsDouble(target(.clockwise), target(.upright)) : DisplayCommandsDouble(target(.clockwise))
-    displays.identities.remember([SimulatorAccessibilityDisplay(uniqueID: "inner", displayID: 82)], verified: .scopedInteractions)
+    displays.identities.remember([SimulatorAccessibilityDisplay(uniqueID: "inner", displayID: 82)], verified: [.scopedInteractions, .scopedTrees])
     return displays
   }
 
