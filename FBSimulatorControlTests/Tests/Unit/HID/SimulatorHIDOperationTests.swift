@@ -41,6 +41,22 @@ final class SimulatorHIDOperationTests: XCTestCase {
     XCTAssertEqual(events.compactMap(\.1), [display(), display()])
   }
 
+  func testDisplayTransitionObservedMidGestureFailsAsAChangedDisplay() async throws {
+    let recorder = Recorder()
+    let observation = SimulatorHIDDisplayObservation()
+    var operation = makeOperation(recorder, observation: observation)
+    try await operation.send(.touch(direction: .down, x: 20, y: 30))
+    observation.record(.failure(SimulatorDisplayError.transitioning), matching: display())
+    do {
+      try await operation.send(.touch(direction: .up, x: 20, y: 30))
+      XCTFail("expected the gesture to fail")
+    } catch {
+      // BUG: surfaces the transitional read rather than the display change it signals — flipped in the following commit.
+      guard case SimulatorDisplayError.transitioning = error else { return XCTFail("unexpected error: \(error)") }
+      await operation.cleanup()
+    }
+  }
+
   func testInvalidMoveReleasesAtLastValidPoint() async throws {
     let recorder = Recorder()
     var operation = makeOperation(recorder)

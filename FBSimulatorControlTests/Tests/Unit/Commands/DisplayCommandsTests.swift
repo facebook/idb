@@ -105,6 +105,42 @@ final class DisplayCommandsTests: XCTestCase {
     XCTAssertEqual(currentGuestSends, 1)
   }
 
+  func testLookupDuringADisplayTransitionSettlesOnTheNextReport() async throws {
+    let settled = Result<SimulatorDisplayTarget, any Error>.success(.selected(display("inner")))
+    let touchscreens = [SimulatorTouchscreen(displayUniqueID: "inner", digitizerTarget: 29)]
+    let accessibility = DisplayCommandsDouble([transition, settled])
+    let hid = DisplayCommandsDouble([transition, settled], touchscreens: touchscreens)
+    let context = DisplayCommandsDouble([transition, settled], touchscreens: touchscreens)
+    let transport = InventoryTransport(inventory)
+    let accessibilityID = await outcome { try await accessibility.accessibilityDisplay(transport: transport)?.accessibilityID }
+    let digitizerTarget = await outcome { try await hid.hidDisplay()?.digitizerTarget }
+    let contextTarget = await outcome { try await context.interactionContext(for: nil, transport: transport).digitizerTarget }
+    // BUG: each lookup fails on the transitional report instead of reading again — flipped in the following commit.
+    assertTransitioning(accessibilityID)
+    assertTransitioning(digitizerTarget)
+    assertTransitioning(contextTarget)
+    XCTAssertEqual([accessibility.reads, hid.reads, context.reads], [1, 1, 1])
+  }
+
+  func testLookupFailsWhenADisplayTransitionDoesNotSettle() async {
+    let displays = DisplayCommandsDouble([transition])
+    assertTransitioning(await outcome { try await displays.hidDisplay() })
+    // BUG: gives up on the first transitional report — flipped in the following commit.
+    XCTAssertEqual(displays.reads, 1)
+  }
+
+  private let transition = Result<SimulatorDisplayTarget, any Error>.failure(SimulatorDisplayError.transitioning)
+
+  private func outcome<T>(_ body: () async throws -> T) async -> Result<T, any Error> {
+    do { return .success(try await body()) } catch { return .failure(error) }
+  }
+
+  private func assertTransitioning<T>(_ result: Result<T, any Error>, file: StaticString = #filePath, line: UInt = #line) {
+    guard case let .failure(error) = result, case SimulatorDisplayError.transitioning = error else {
+      return XCTFail("\(result)", file: file, line: line)
+    }
+  }
+
   func testValidateComparesConfiguration() async throws {
     let displays = DisplayCommandsDouble(.selected(display("inner")))
     try await displays.validate(.identified(display("inner")))
