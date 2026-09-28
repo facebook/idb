@@ -1196,7 +1196,7 @@ final class AccessibilityRuntimeTests: XCTestCase {
     runtime.hitTestOutcome = FBAXHitTestOutcome.hit(FBAXFakeElement.applicationNotResponding(), owningProcessIdentifier: kAppPid)
     let unanswered = FBAccessibilityService.handleRequest(request)
     assertEqualObjects(axValue(unanswered, "error_kind"), "application_not_responding")
-    assertEqualObjects(axValue(unanswered, "error"), "the application did not answer the write in time")
+    assertEqualObjects(axValue(unanswered, "error"), "pid 4321 did not answer the write in time")
     assertEqualObjects(axValue(unanswered, "effect"), "none")
 
     runtime.hitTestOutcome = FBAXHitTestOutcome.hit(FBAXFakeElement.failed(nil), owningProcessIdentifier: kAppPid)
@@ -1213,15 +1213,13 @@ final class AccessibilityRuntimeTests: XCTestCase {
 
     runtime.hitTestOutcome = FBAXHitTestOutcome.hit(FBAXFakeElement.applicationNotResponding(), owningProcessIdentifier: kAppPid)
     let unanswered = FBAccessibilityService.handleRequest(request)
-    // BUG: the hit-test already named pid 4321, but the failure drops it — flipped in the following commit
-    assertEqualObjects(axValue(unanswered, "error"), "the application did not answer the write in time")
-    XCTAssertNil(axValue(unanswered, "pid"))
+    assertEqualObjects(axValue(unanswered, "error"), "pid 4321 did not answer the write in time")
+    assertEqualObjects(axValue(unanswered, "pid"), kAppPid)
 
     runtime.hitTestOutcome = FBAXHitTestOutcome.hit(FBAXFakeElement.applicationUnavailable(), owningProcessIdentifier: kAppPid)
     let unavailable = FBAccessibilityService.handleRequest(request)
-    // BUG: the hit-test already named pid 4321, but the failure drops it — flipped in the following commit
-    assertEqualObjects(axValue(unavailable, "error"), "no accessibility server answered the write")
-    XCTAssertNil(axValue(unavailable, "pid"))
+    assertEqualObjects(axValue(unavailable, "error"), "pid 4321 has no accessibility server to accept the write")
+    assertEqualObjects(axValue(unavailable, "pid"), kAppPid)
   }
 
   // No element populates `XC_kAXXCAttributeUserTestingActions`, so there is no pre-check on it.

@@ -1064,6 +1064,7 @@ private final class AccessibilityRequest {
     guard let hitElement else {
       return FBAXWriteOutcome.failed("the hit-test reported an element but returned none")
     }
+    pid = hit.owningProcessIdentifier
 
     if let assertKey {
       FBAXBridgeCountRoundTrip()
@@ -1099,7 +1100,6 @@ private final class AccessibilityRequest {
     }
 
     element = hitElement
-    pid = hit.owningProcessIdentifier
     return nil
   }
 
