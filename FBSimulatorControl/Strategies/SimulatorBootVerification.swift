@@ -21,8 +21,8 @@ private let bootVerificationStallInterval: TimeInterval = 1.5
 ///
 /// Public: consumers outside this module wait on simulators they booted for the state only.
 public func verifySimulatorIsBooted(_ simulator: Simulator, deadline: PollDeadline? = nil) async throws {
-  // Taken before the first wait, so the two phases share one bound rather than getting one each.
-  let expiry = deadline.map { (deadline: $0, time: DispatchTime.now() + $0.timeout) }
+  // Started before the first wait, so the two phases share one bound rather than getting one each.
+  let checkExpiry = deadline?.start()
   try await TargetResolveState(simulator, .booted, deadline: deadline)
 
   var lastBootInfo: SimDeviceBootInfo?
@@ -45,9 +45,7 @@ public func verifySimulatorIsBooted(_ simulator: Simulator, deadline: PollDeadli
         return
       }
     }
-    if let expiry, DispatchTime.now() >= expiry.time {
-      throw PollTimeoutError(deadline: expiry.deadline)
-    }
+    try checkExpiry?()
     try await Task.sleep(nanoseconds: UInt64(bootVerificationPollInterval * Double(NSEC_PER_SEC)))
   }
 }

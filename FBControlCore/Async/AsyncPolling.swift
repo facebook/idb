@@ -36,6 +36,20 @@ public struct PollTimeoutError: Error, LocalizedError {
   }
 }
 
+public extension PollDeadline {
+
+  /// Starts the clock, returning the check a polling loop makes after each unsatisfied attempt.
+  /// Throws `PollTimeoutError` once the deadline has passed.
+  func start() -> () throws -> Void {
+    let expiry = DispatchTime.now() + timeout
+    return {
+      if DispatchTime.now() >= expiry {
+        throw PollTimeoutError(deadline: self)
+      }
+    }
+  }
+}
+
 /// Async equivalent of `FBFuture.onQueue(_:resolveWhen:)`: evaluates `condition` on `queue` every `interval`
 /// until it returns true. `deadline` is checked only after an unsatisfied poll, so a timeout surfaces up to
 /// `interval` late; `nil` polls forever. Throws `PollTimeoutError` on deadline, `CancellationError` if cancelled.
@@ -45,7 +59,7 @@ public func pollUntilTrue(
   deadline: PollDeadline? = nil,
   condition: @escaping @Sendable () -> Bool
 ) async throws {
-  let expiry = deadline.map { (deadline: $0, time: DispatchTime.now() + $0.timeout) }
+  let checkExpiry = deadline?.start()
   while true {
     try Task.checkCancellation()
     let satisfied = await withCheckedContinuation { (continuation: CheckedContinuation<Bool, Never>) in
@@ -56,9 +70,7 @@ public func pollUntilTrue(
     if satisfied {
       return
     }
-    if let expiry, DispatchTime.now() >= expiry.time {
-      throw PollTimeoutError(deadline: expiry.deadline)
-    }
+    try checkExpiry?()
     try await Task.sleep(nanoseconds: nanoseconds(from: interval))
   }
 }
