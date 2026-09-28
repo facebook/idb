@@ -630,6 +630,69 @@ final class AXBridgeReadsTests: XCTestCase {
     }
   }
 
+  func testEveryRetryVerdictAndReasonHasItsWireValue() {
+    let expected: [(UIAutomationRetry, String, String)] = [
+      (.nothingWritten, "safe", "nothing_written"),
+      (.idempotent, "safe", "idempotent"),
+      (.rereadFirst, "safe_after_reread", "nothing_written"),
+      (.outcomeUnknown, "unsafe", "outcome_unknown"),
+      (.willNotChange, "unsafe", "will_not_change"),
+    ]
+    for (retry, verdict, reason) in expected {
+      XCTAssertEqual(retry.verdict.rawValue, verdict, "\(retry)")
+      XCTAssertEqual(retry.reason.rawValue, reason, "\(retry)")
+    }
+  }
+
+  func testEachUIAutomationFailureSaysWhetherItIsSafeToRetry() {
+    let backend = UIAutomationBackend.axBridge(persistence: .shared, frontmostMethod: .centerPoint, automationMode: true)
+    let cases: [(UIAutomationError, UIAutomationRetry)] = [
+      (.elementNotFound(backend: backend, key: "label", value: "General"), .nothingWritten),
+      (.elementNotOnScreen(backend: backend, key: "label", value: "General"), .nothingWritten),
+      (.frameUnavailable(backend: backend, query: .frontmost), .nothingWritten),
+      (.noElementAtPoint(backend: backend, x: 1, y: 2), .nothingWritten),
+      (.timedOut(backend: backend, key: "label", value: "General", timeout: 5), .nothingWritten),
+      (.applicationUnavailable(backend: backend, pid: 42), .nothingWritten),
+      (.applicationNotResponding(backend: backend, pid: 42), .nothingWritten),
+      (.valueMismatch(backend: backend, key: "label", expected: "General", actual: "Wi-Fi"), .rereadFirst),
+      (.elementMoved(backend: backend, key: "label", value: "General"), .rereadFirst),
+      (.writeUnconfirmed(backend: backend, idempotent: false, underlying: AXBridgeError.guestFailure("x")), .outcomeUnknown),
+      (.writeUnconfirmed(backend: backend, idempotent: true, underlying: AXBridgeError.guestFailure("x")), .idempotent),
+      (.markerRequired(backend: backend, operation: "Wait"), .willNotChange),
+      (.pointOrMarkerRequired(backend: backend, operation: "A tap"), .willNotChange),
+      (.invalidPollInterval(backend: backend, pollInterval: -1), .willNotChange),
+      (.operationUnsupported(backend: backend, operation: "Quiescence"), .willNotChange),
+      (.traversalCannotAnswer(backend: backend, traversal: "single-fetch", keys: ["interactable"]), .willNotChange),
+    ]
+    for (error, retry) in cases {
+      XCTAssertEqual(error.retry, retry, "\(error)")
+      XCTAssertEqual(UIAutomationRetry(for: error), retry)
+    }
+  }
+
+  // A marker wait polls through exactly the bridge failures that are safe to send again as they were.
+  func testEachBridgeFailureSaysWhetherItIsSafeToRetry() {
+    let cases: [(AXBridgeError, UIAutomationRetry)] = [
+      (.frontmostUnresolved(method: .centerPoint, reason: "found no element"), .nothingWritten),
+      (.guestFailure("something transient"), .nothingWritten),
+      (.applicationUnavailable(pid: 42), .nothingWritten),
+      (.applicationNotResponding(pid: 42), .nothingWritten),
+      (.assertionFailed("moved"), .rereadFirst),
+      (.bridgeUnavailable, .willNotChange),
+      (.readerUnavailable("XCTAccessibilityFramework unavailable"), .willNotChange),
+      (.socketPathTooLong(path: "/x", limit: 104), .willNotChange),
+      (.guestDiedBeforeBinding(pid: 4242, signal: 6, exitCode: nil, path: "/x/y.sock"), .willNotChange),
+    ]
+    for (error, retry) in cases {
+      XCTAssertEqual(error.retry, retry, "\(error)")
+      XCTAssertEqual(error.isTransientDuringMarkerWait, retry.verdict == .safe, "\(error)")
+    }
+  }
+
+  func testAnErrorFromOutsideUIAutomationHasNoVerdict() {
+    XCTAssertNil(UIAutomationRetry(for: CancellationError()))
+  }
+
   // Neither of these changes by being asked again, so both end the wait with what they already know
   // rather than being replaced by a timeout once the deadline passes.
   func testAWaitEndsAtOnceOnAFailureThatCannotResolveItself() {
@@ -822,12 +885,132 @@ final class AXBridgeReadsTests: XCTestCase {
     do {
       try await reader.tap(.marker(value: "General", key: .label, depth: 10), options: TapOptions())
       XCTFail("a timed-out press has an unknown outcome")
-    } catch UIAutomationError.applicationNotResponding {
+    } catch let UIAutomationError.writeUnconfirmed(_, idempotent, underlying) {
+      XCTAssertFalse(idempotent)
+      guard case UIAutomationError.applicationNotResponding? = underlying as? UIAutomationError else {
+        return XCTFail("expected the unanswered write underneath, got \(underlying)")
+      }
     }
     let reads = await transport.readCount
     let writes = await transport.writeCount
     XCTAssertEqual(reads, 1)
     XCTAssertEqual(writes, 1)
+  }
+
+  private func writeFailure(
+    _ write: (AXBridgeUIAutomation) async throws -> Void,
+    guestResponse: [String: Any]
+  ) async throws -> any Error {
+    let (reader, _) = try nativeWaitReader(responses: [tapMatchingEnvelope(), envelope(guestResponse)])
+    do {
+      try await write(reader)
+    } catch {
+      return error
+    }
+    XCTFail("the write must fail")
+    return CancellationError()
+  }
+
+  private let markerTap: (AXBridgeUIAutomation) async throws -> Void = {
+    try await $0.tap(.marker(value: "General", key: .label, depth: 10), options: TapOptions())
+  }
+
+  private let markerSetValue: (AXBridgeUIAutomation) async throws -> Void = {
+    try await $0.setValue("hello", for: .marker(value: "General", key: .label, depth: 10))
+  }
+
+  func testAWriteTheGuestNeverSentKeepsItsErrorAndIsSafeToRetry() async throws {
+    for write in [markerTap, markerSetValue] {
+      let error = try await writeFailure(
+        write,
+        guestResponse: [
+          "ok": false, "error": "pid 42 did not answer the write in time", "error_kind": "application_not_responding",
+          "pid": 42, "effect": "none",
+        ])
+      guard case UIAutomationError.applicationNotResponding? = error as? UIAutomationError else {
+        return XCTFail("expected applicationNotResponding, got \(error)")
+      }
+      XCTAssertEqual(UIAutomationRetry(for: error), .nothingWritten)
+    }
+  }
+
+  func testAWriteThatCouldNotReachTheGuestKeepsItsError() async throws {
+    for write in [markerTap, markerSetValue] {
+      // The stub has no response for the write, so sending it fails as a missing guest binary would.
+      let (reader, _) = try nativeWaitReader(responses: [tapMatchingEnvelope()])
+      do {
+        try await write(reader)
+        XCTFail("the write must fail")
+      } catch {
+        guard case AXBridgeError.bridgeUnavailable? = error as? AXBridgeError else {
+          return XCTFail("expected bridgeUnavailable, got \(error)")
+        }
+        XCTAssertEqual(UIAutomationRetry(for: error), .willNotChange)
+      }
+    }
+  }
+
+  func testAOneshotPointWriteWithNoGuestBinaryKeepsItsError() async throws {
+    let transport = AXBridgeOneshotTransport(
+      transport: SimulatorFrameworkBridgeOneshotTransport(launch: { _ in throw SimulatorFrameworkBridgeError.binaryMissing }))
+    let reader = AXBridgeUIAutomation(
+      simulator: SimulatorTestSupport.testableSimulator(withDevice: AXBridgeWaitDevice()),
+      transport: transport,
+      persistence: .exclusive
+    )
+    let point = AccessibilityElementQuery.point(CGPoint(x: 80, y: 180))
+    let writes: [(AXBridgeUIAutomation) async throws -> Void] = [
+      { try await $0.tap(point, options: TapOptions()) },
+      { try await $0.setValue("hello", for: point) },
+    ]
+    for write in writes {
+      do {
+        try await write(reader)
+        XCTFail("the write must fail")
+      } catch {
+        guard case AXBridgeError.bridgeUnavailable? = error as? AXBridgeError else {
+          return XCTFail("expected bridgeUnavailable, got \(error)")
+        }
+        XCTAssertEqual(UIAutomationRetry(for: error), .willNotChange)
+      }
+    }
+  }
+
+  func testASentPressThatWasNotConfirmedIsUnsafeToRetryWithItsMessageUnchanged() async throws {
+    let error = try await writeFailure(
+      markerTap,
+      guestResponse: [
+        "ok": false, "error": "pid 42 did not answer the write in time", "error_kind": "application_not_responding",
+        "pid": 42, "effect": "unknown",
+      ])
+    let retry = try XCTUnwrap(UIAutomationRetry(for: error))
+    XCTAssertEqual(retry, .outcomeUnknown)
+    XCTAssertEqual(retry.verdict, .unsafe)
+    XCTAssertEqual(
+      error.localizedDescription,
+      "The axbridge backend requested accessibility from the application with pid 42, which did not answer in time"
+    )
+  }
+
+  func testASentValueThatWasNotConfirmedIsSafeToRetryBecauseItIsIdempotent() async throws {
+    let error = try await writeFailure(
+      markerSetValue,
+      guestResponse: [
+        "ok": false, "error": "the accessibility runtime rejected the write (-25200)", "error_kind": "runtime_failed",
+        "ax_error": -25200, "pid": 42, "effect": "unknown",
+      ])
+    XCTAssertEqual(UIAutomationRetry(for: error), .idempotent)
+    XCTAssertEqual(error.localizedDescription, "The axbridge guest reader failed: the accessibility runtime rejected the write (-25200)")
+  }
+
+  // An older guest sends no `effect`; that can only mean it may have sent the write.
+  func testAWriteFailureWithNoEffectIsTreatedAsPossiblySent() async throws {
+    let error = try await writeFailure(
+      markerTap,
+      guestResponse: [
+        "ok": false, "error": "pid 42 did not answer the write in time", "error_kind": "application_not_responding", "pid": 42,
+      ])
+    XCTAssertEqual(UIAutomationRetry(for: error), .outcomeUnknown)
   }
 
   func testMarkerTapBoundsTargetReadAttempts() async throws {

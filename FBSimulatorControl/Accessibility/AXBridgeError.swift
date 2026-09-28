@@ -105,13 +105,7 @@ extension AXBridgeError {
   /// every poll, and swallowing it spends the caller's whole timeout only to report a timeout, hiding
   /// the diagnosis the failure already carried.
   var isTransientDuringMarkerWait: Bool {
-    switch self {
-    case .frontmostUnresolved, .guestFailure, .applicationUnavailable, .applicationNotResponding:
-      return true
-    // None of these change between polls: the reader cannot bind, the path is too long, the guest cannot
-    // start, and a poll never writes.
-    case .bridgeUnavailable, .readerUnavailable, .assertionFailed, .socketPathTooLong, .guestDiedBeforeBinding:
-      return false
-    }
+    retry.verdict == .safe
   }
+
 }

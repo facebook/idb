@@ -257,7 +257,7 @@ final class AXBridgeUIAutomation: AXBridgeTreeReader, @unchecked Sendable {
           return AccessibilitySearchResult(match: nil, diagnostics: AccessibilitySearchDiagnostics(readError: error.localizedDescription))
         case .elementNotFound, .elementNotOnScreen, .frameUnavailable, .noElementAtPoint,
           .timedOut, .markerRequired, .pointOrMarkerRequired, .invalidPollInterval,
-          .operationUnsupported, .valueMismatch, .elementMoved, .traversalCannotAnswer:
+          .operationUnsupported, .valueMismatch, .elementMoved, .writeUnconfirmed, .traversalCannotAnswer:
           throw error
         }
       } catch let error as AXBridgeError {
@@ -524,6 +524,9 @@ final class AXBridgeUIAutomation: AXBridgeTreeReader, @unchecked Sendable {
   }
 
   /// A write that landed on nothing is an error, not a success; see `emptyWriteTargetError`.
+  ///
+  /// Any failure once the request is on its way is `writeUnconfirmed`, unless the guest reports that it
+  /// sent nothing to the application.
   private func write(
     _ kind: AXBridgeWriteRequest.Kind,
     to target: AXWriteTarget,
@@ -531,30 +534,44 @@ final class AXBridgeUIAutomation: AXBridgeTreeReader, @unchecked Sendable {
   ) async throws {
     let point = try display?.display.geometry.unrotatedPoint(from: target.point) ?? target.point
     try await validateCurrentDisplay()
-    try await translatingWriteErrors(query) {
-      let response = try await transport.send(
-        .write(
-          AXBridgeWriteRequest(
-            kind: kind,
-            x: Double(point.x),
-            y: Double(point.y),
-            pid: target.pid,
-            assertion: target.assertion,
-            displayID: display?.accessibilityID
-          )
-        )
-      )
-      guard try AXTreeRead.writeLanded(fromResponse: response) else {
-        throw self.emptyWriteTargetError(for: query, at: target.point)
+    let request = AXBridgeWriteRequest(
+      kind: kind,
+      x: Double(point.x),
+      y: Double(point.y),
+      pid: target.pid,
+      assertion: target.assertion,
+      displayID: display?.accessibilityID
+    )
+    let response: Data
+    do {
+      response = try await transport.send(.write(request))
+    } catch let error as AXBridgeError where error.retry == .willNotChange {
+      // No guest could be reached, so the write never left the host.
+      throw error
+    } catch {
+      throw UIAutomationError.writeUnconfirmed(backend: backend, idempotent: request.isIdempotent, underlying: error)
+    }
+    let landed: Bool
+    do {
+      landed = try await translatingWriteErrors(query) {
+        try AXTreeRead.writeLanded(fromResponse: response)
       }
+    } catch {
+      guard !AXTreeRead.writeSentNothing(fromResponse: response) else {
+        throw error
+      }
+      throw UIAutomationError.writeUnconfirmed(backend: backend, idempotent: request.isIdempotent, underlying: error)
+    }
+    guard landed else {
+      throw emptyWriteTargetError(for: query, at: target.point)
     }
   }
 
   /// Adds the refused-assertion case, which only a write can meet, to the shared backend-error
   /// translation; the guest cannot know which marker sent the write.
-  private func translatingWriteErrors(_ query: AccessibilityElementQuery, _ body: () async throws -> Void) async throws {
+  private func translatingWriteErrors<T>(_ query: AccessibilityElementQuery, _ body: () async throws -> T) async throws -> T {
     do {
-      try await translatingBackendErrors(body)
+      return try await translatingBackendErrors(body)
     } catch let AXBridgeError.assertionFailed(message) {
       guard case let .marker(value, key, _, _) = query else {
         throw AXBridgeError.assertionFailed(message)

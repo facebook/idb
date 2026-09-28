@@ -8,6 +8,7 @@
 @testable import CompanionLib
 import CompanionUtilities
 @preconcurrency import FBControlCore
+import FBSimulatorControl
 import GRPCCore
 import GRPCNIOTransportCore
 import IDBGRPCSwift
@@ -323,6 +324,17 @@ struct IDBTransientTests {
     #expect(mapped.code == .internalError)
     #expect(mapped.message.hasPrefix("Application com.example.app isn't installed"))
     #expect(mapped.message.contains("bundle"))
+  }
+
+  @Test
+  func errorMappingUnwrapsALegacyNSErrorBeneathAnUnconfirmedWrite() {
+    let underlying = NSError(
+      domain: "com.example", code: 7,
+      userInfo: [NSLocalizedDescriptionKey: "The socket closed", "socket": "/tmp/axbridge.sock"])
+    let thrown = UIAutomationError.writeUnconfirmed(backend: .accessibility, idempotent: false, underlying: underlying)
+    let mapped = ErrorMapping.rpcError(from: thrown)
+    #expect(mapped.message.hasPrefix("The socket closed"))
+    #expect(mapped.message.contains("/tmp/axbridge.sock"))
   }
 
   // MARK: - StreamReadError Tests

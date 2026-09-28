@@ -35,6 +35,14 @@ struct AXBridgeWriteRequest: Sendable, Equatable {
   let assertion: AXBridgeWriteAssertion?
   var displayID: UInt32?
 
+  /// Whether sending this write twice leaves the same state as sending it once.
+  var isIdempotent: Bool {
+    switch kind {
+    case .perform: false
+    case .setValue: true
+    }
+  }
+
   var verb: AXWire.Verb {
     switch kind {
     case .perform: .perform

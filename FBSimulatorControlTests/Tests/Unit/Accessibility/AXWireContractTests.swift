@@ -135,6 +135,14 @@ final class AXWireContractTests: XCTestCase {
     }
   }
 
+  func testWriteEffectWireValues() {
+    let expected: [AXWire.Effect: String] = [.none: "none", .unknown: "unknown"]
+    XCTAssertEqual(Set(AXWire.Effect.allCases), Set(expected.keys), "every effect must have a pinned wire value")
+    for (effect, wireValue) in expected {
+      XCTAssertEqual(effect.rawValue, wireValue)
+    }
+  }
+
   // A kind this host has never heard of has to parse as "no kind" — an opaque reader failure — rather
   // than as anything the host would act on. A newer guest can then emit kinds an older host does not
   // know, degrading precision instead of breaking parsing.

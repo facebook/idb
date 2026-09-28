@@ -61,6 +61,10 @@ public enum UIAutomationError: LocalizedError, CustomStringConvertible, Sendable
   /// `elementNotFound`, which is a marker that matched nothing at all: this one matched, and then the
   /// screen moved out from under it.
   case elementMoved(backend: UIAutomationBackend, key: String, value: String)
+  /// A write was sent to the application and failed without confirming whether it landed. The message
+  /// is `underlying`'s own. `idempotent` says whether sending the same write again converges on the same
+  /// state, as setting a value does, or may repeat it, as a press may.
+  case writeUnconfirmed(backend: UIAutomationBackend, idempotent: Bool, underlying: any Error)
 
   /// The caller explicitly named a traversal that cannot answer keys they also asked for. Refused up
   /// front rather than attempted: the read would time out in the guest, not fail cleanly.
@@ -96,6 +100,8 @@ public enum UIAutomationError: LocalizedError, CustomStringConvertible, Sendable
       return "\(backend.displayName) expected \(key) to equal \"\(expected)\" before tapping, but it was \"\(actual)\""
     case let .elementMoved(backend, key, value):
       return "\(backend.displayName) resolved \(key) containing \"\(value)\" and the element had moved by the time the write reached it; nothing was written. Read the tree again and retry"
+    case let .writeUnconfirmed(_, _, underlying):
+      return underlying.localizedDescription
     case let .traversalCannotAnswer(_, traversal, keys):
       return "the \(traversal) traversal cannot answer \(keys.joined(separator: ", ")); drop --traversal to let the backend choose, or name view-hierarchy"
     }

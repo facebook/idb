@@ -151,6 +151,18 @@ extension AXTreeRead {
     return (response[AXWire.Envelope.empty.rawValue] as? Bool) != true
   }
 
+  /// Whether a failed write's response says nothing reached the application. A refused assertion never
+  /// sends; otherwise an absent `effect` means the write may have been sent.
+  static func writeSentNothing(fromResponse data: Data) -> Bool {
+    guard let response = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any] else {
+      return false
+    }
+    if response[AXWire.Envelope.errorKind.rawValue] as? String == AXWire.ErrorKind.assertionFailed.rawValue {
+      return true
+    }
+    return response[AXWire.Envelope.effect.rawValue] as? String == AXWire.Effect.none.rawValue
+  }
+
   /// Decodes the optional `modal` descriptor the guest adds to a describe response into a typed value,
   /// or nil when no modal is present. Host-facing enrichment — never emitted in the serialized output.
   static func modal(fromResponse response: [String: Any]) -> AccessibilityModalInfo? {
