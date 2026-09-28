@@ -10,6 +10,27 @@ import CoreSimulator
 import FBControlCore
 import Foundation
 
+extension AXTranslationDisplay {
+  var screen: AccessibilityScreenInfo? {
+    let geometry = display.geometry
+    let uniqueID: String? =
+      switch display {
+      case let .identified(value): value.uniqueID
+      case .legacy: nil
+      }
+    let rotation: Int =
+      switch geometry.rotation {
+      case .upright: 0
+      case .clockwise: 90
+      case .upsideDown: 180
+      case .counterclockwise: 270
+      }
+    return AccessibilityScreenInfo(
+      width: bounds.width, height: bounds.height,
+      display: AccessibilityDisplayInfo(uniqueID: uniqueID, scale: geometry.scale, rotation: rotation))
+  }
+}
+
 /// Reference-typed accumulator for the process ids seen during a serialization
 /// traversal. Populated as the main tree is serialized and shared with the
 /// remote-content phase so processes already present in the main tree are
@@ -42,6 +63,7 @@ final class AXTranslationRequest {
   private static let defaultRequestTimeoutSeconds: TimeInterval = 5.0
 
   let kind: Kind
+  let display: AXTranslationDisplay?
   let token: String
   var device: SimDevice?
   /// Owned from construction: the dispatcher records acquisition timings before the caller reaches
@@ -55,8 +77,9 @@ final class AXTranslationRequest {
   /// no "wait forever" mode — a stalled XPC service never hangs the caller.
   var requestTimeoutSeconds: TimeInterval
 
-  init(kind: Kind) {
+  init(kind: Kind, display: AXTranslationDisplay? = nil) {
     self.kind = kind
+    self.display = display
     self.token = UUID().uuidString
     self.requestTimeoutSeconds = Self.defaultRequestTimeoutSeconds
     self.collector = AccessibilityProfilingCollector()
@@ -67,18 +90,18 @@ final class AXTranslationRequest {
   ///
   /// The collector carries over so the profile spans the failed attempt the caller also waited through.
   func cloneWithNewToken() -> AXTranslationRequest {
-    let clone = AXTranslationRequest(kind: kind)
+    let clone = AXTranslationRequest(kind: kind, display: display)
     clone.collector = collector
     return clone
   }
 
   /// Resolves the root translation object for this request's kind.
-  func perform(withTranslator translator: AXPTranslator) -> AXPTranslationObject? {
+  func perform(withTranslator translator: AXPTranslator) throws -> AXPTranslationObject? {
     switch kind {
     case .frontmostApplication:
-      return translator.frontmostApplication(withDisplayId: 0, bridgeDelegateToken: token)
+      return translator.frontmostApplication(withDisplayId: display?.accessibilityID ?? 0, bridgeDelegateToken: token)
     case .point(let point):
-      return translator.object(at: point, displayId: 0, bridgeDelegateToken: token)
+      return try translation(at: point, translator: translator)
     case .applicationForPid(let pid):
       return translator.translationApplicationObject(forPid: pid)
     }
@@ -99,7 +122,7 @@ final class AXTranslationRequest {
     case .point:
       return runNamedElement(element, options: options)
     case .frontmostApplication, .applicationForPid:
-      return runFrontmostApplication(element, options: options)
+      return try runFrontmostApplication(element, options: options)
     }
   }
 
@@ -120,22 +143,21 @@ final class AXTranslationRequest {
     if let children = elements.children {
       elements.children = options.filter.apply(to: children, screen: nil)
     }
-    // A named element carries no screen info of its own; a marker match's bounds come from the root it
-    // descended from, stamped by the backend on the way out.
+    // Without a display snapshot, marker callers can recover legacy bounds from the root.
     return buildResponse(
-      elements: .single(elements), walkStart: walkStart, coverage: nil, screen: nil,
+      elements: .single(elements), walkStart: walkStart, coverage: nil, screen: display?.screen,
       reportProfile: options.enableProfiling
     )
   }
 
   // MARK: - Frontmost Application
 
-  private func runFrontmostApplication(_ element: AXPlatformElement, options: AccessibilityRequestOptions) -> AccessibilityElementsResponse {
+  private func runFrontmostApplication(_ element: AXPlatformElement, options: AccessibilityRequestOptions) throws -> AccessibilityElementsResponse {
     // Marked before the screen-bounds fetch so that fetch is inside the measured walk.
     let walkStart = CFAbsoluteTimeGetCurrent()
     collector.markWalkStart()
 
-    let screenBounds = element.axFrame()
+    let screenBounds = display?.bounds ?? element.axFrame()
     let seenPids = SeenPIDs()
 
     let keys = Self.serializerKeys(options)
@@ -165,14 +187,14 @@ final class AXTranslationRequest {
             reported: mainAppElements, walked: walked, screenBounds: screenBounds,
             nested: options.nestedFormat
           ) : nil,
-        screen: Self.screenInfo(fromBounds: screenBounds),
+        screen: display?.screen ?? Self.screenInfo(fromBounds: screenBounds),
         reportProfile: options.enableProfiling,
         narrowing: options.narrowingReport(walked: walked, reported: mainAppElements)
       )
     }
 
     let frontmostPid = element.axTranslationPid
-    return processRemoteContent(
+    return try processRemoteContent(
       mainAppElements: mainAppElements,
       nestedFormat: options.nestedFormat,
       filter: options.filter,
@@ -201,7 +223,7 @@ final class AXTranslationRequest {
     keys: Set<AXKeys>,
     remoteOptions: AccessibilityRemoteContentOptions,
     translator: AXPTranslator
-  ) -> [AccessibilityDocumentElement] {
+  ) throws -> [AccessibilityDocumentElement] {
     var discoveredElements: [AccessibilityDocumentElement] = []
     var discoveredFrames = Set<String>()
 
@@ -231,7 +253,14 @@ final class AXTranslationRequest {
 
         pointCount += 1
 
-        guard let hitTranslation = translator.object(at: point, displayId: 0, bridgeDelegateToken: token) else {
+        // A caller's region can reach past the routed display, where no point translates.
+        let translated: AXPTranslationObject?
+        do {
+          translated = try translation(at: point, translator: translator)
+        } catch SimulatorDisplayInteractionError.invalidPoint {
+          translated = nil
+        }
+        guard let hitTranslation = translated else {
           x += stepSize
           continue
         }
@@ -295,10 +324,10 @@ final class AXTranslationRequest {
     keys: Set<AXKeys>,
     remoteOptions: AccessibilityRemoteContentOptions,
     translator: AXPTranslator
-  ) -> AccessibilityElementsResponse {
+  ) throws -> AccessibilityElementsResponse {
     let coverageBefore = coverageGrid?.coverageRatio() ?? 0
 
-    let discoveredElements = discoverRemoteElements(
+    let discoveredElements = try discoverRemoteElements(
       screenBounds: screenBounds,
       frontmostPid: frontmostPid,
       seenPids: seenPids,
@@ -339,13 +368,18 @@ final class AXTranslationRequest {
           reported: mainAppElements, walked: walkedElements, screenBounds: screenBounds,
           nested: nestedFormat, additional: additionalFrameCoverage
         ) : nil,
-      screen: Self.screenInfo(fromBounds: screenBounds),
+      screen: display?.screen ?? Self.screenInfo(fromBounds: screenBounds),
       reportProfile: reportProfile,
       // Discovered elements count as walked too, or a read could report more matched than walked.
       narrowing: AccessibilityNarrowing(
         filter: filter, match: match,
         walked: walkedElements, discovered: discoveredElements, reported: elements)
     )
+  }
+
+  private func translation(at point: CGPoint, translator: AXPTranslator) throws -> AXPTranslationObject? {
+    let unrotated = try display?.display.geometry.unrotatedPoint(from: point) ?? point
+    return translator.object(at: unrotated, displayId: display?.accessibilityID ?? 0, bridgeDelegateToken: token)
   }
 
   // MARK: - Helpers

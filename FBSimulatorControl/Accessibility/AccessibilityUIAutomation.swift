@@ -35,6 +35,7 @@ final class AccessibilityUIAutomation: UIAutomation, @unchecked Sendable {
       defer { element.close() }
       let response = try await element.serialize(with: options)
         .withProvenance(backend: UIAutomationBackend.accessibility.name, target: query.targetDescriptor)
+      if response.screen?.display != nil { return response }
       // A point or marker resolves one element and is then serialized through the frontmost path, which
       // reads screen bounds off whatever element it is handed. For those queries that element is the
       // match rather than the application root, so the bounds it reports describe the match — they have

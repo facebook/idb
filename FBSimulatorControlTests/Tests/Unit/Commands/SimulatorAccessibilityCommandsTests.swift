@@ -478,7 +478,8 @@ final class SimulatorAccessibilityCommandsTests: XCTestCase {
   /// on the simulator will return it.
   private func setUp(
     withRootElement rootElement: AXPMacPlatformElementDouble,
-    launchCtl: (any LaunchCtlCommands)? = nil
+    launchCtl: (any LaunchCtlCommands)? = nil,
+    displays: any DisplayCommands = DisplayCommandsDouble([.failure(SimulatorCoreDeviceError.unsupported("displayinfo"))])
   ) throws {
     fixture = AccessibilityTestFixture.bootedSimulator()
     fixture!.rootElement = rootElement
@@ -486,7 +487,7 @@ final class SimulatorAccessibilityCommandsTests: XCTestCase {
 
     let sim = SimulatorTestSupport.testableSimulator(withDevice: fixture!.device)
     let dispatcher = Simulator.createAccessibilityTranslationDispatcher(withTranslator: fixture!.translator)
-    let commands = SimulatorAccessibilityCommands(simulator: sim, translationDispatcher: dispatcher, launchCtl: launchCtl)
+    let commands = SimulatorAccessibilityCommands(simulator: sim, translationDispatcher: dispatcher, launchCtl: launchCtl, displays: displays)
     sim.commandCache.register(commands, as: SimulatorAccessibilityCommands.self)
 
     simulator = sim
@@ -645,6 +646,81 @@ final class SimulatorAccessibilityCommandsTests: XCTestCase {
       okButton.accessedProperties.contains("accessibilityActionNames"),
       "Tap operation should access action names"
     )
+  }
+
+  func testDisplayBoundPointReadRoutesAndRotatesWithoutChangingReturnedFrame() async throws {
+    let frame = CGRect(x: 60, y: 100, width: 40, height: 40)
+    let button = AccessibilityTestElementBuilder.button(withLabel: "Target", identifier: "target", frame: frame)
+    let display = SimulatorDisplay(
+      uniqueID: "selected-display", name: "Selected", isActive: true, isPrimary: false, isIntegrated: true,
+      bounds: CGRect(x: 0, y: 0, width: 1200, height: 800), scale: 2, rotation: .clockwise)
+    let displays = DisplayCommandsDouble(.selected(display))
+    displays.identities.remember([SimulatorAccessibilityDisplay(uniqueID: "selected-display", displayID: 42)])
+    try setUp(withRootElement: button, displays: displays)
+    let automation = try simulator.uiAutomation(backend: .accessibility)
+    let response = try await automation.describe(.point(CGPoint(x: 80, y: 120)), options: AccessibilityRequestOptions())
+    XCTAssertEqual(displays.reads, 1)
+    XCTAssertTrue(
+      fixture!.translator.methodCalls.compactMap { $0 as? String }.contains {
+        $0.hasPrefix("objectAtPoint:{120.0,320.0} displayId:42 ")
+      })
+    XCTAssertEqual(response.screen?.width, 400)
+    XCTAssertEqual(response.screen?.height, 600)
+    XCTAssertEqual(response.screen?.display?.uniqueID, "selected-display")
+    XCTAssertEqual(response.screen?.display?.rotation, 90)
+    guard case let .single(element) = response.elements else { return XCTFail("Expected point element") }
+    XCTAssertEqual((element.frame ?? nil)?.rect, frame)
+  }
+
+  func testDisplayGeometryOverridesRootBoundsForFrontmostAndMarkerReads() async throws {
+    let legacy = SimulatorInteractionDisplay.legacy(
+      SimulatorDisplayGeometry(bounds: CGRect(x: 0, y: 0, width: 2007, height: 2853), scale: 3, rotation: .clockwise))
+    let context = AXTranslationDisplay(display: legacy, accessibilityID: nil)
+    try setUp(withRootElement: defaultElementTree, displays: DisplayCommandsDouble(.sole(legacy)))
+    let automation = try simulator.uiAutomation(backend: .accessibility)
+    for query: AccessibilityElementQuery in [.frontmost, .marker(value: "OK", key: .label, depth: 10)] {
+      let response = try await automation.describe(query, options: AccessibilityRequestOptions())
+      XCTAssertEqual(response.screen?.width, 951)
+      XCTAssertEqual(response.screen?.height, 669)
+      XCTAssertEqual(response.screen?.display?.rotation, 90)
+      XCTAssertNil(response.screen?.display?.uniqueID)
+    }
+    XCTAssertEqual(AXTranslationRequest(kind: .frontmostApplication, display: context).cloneWithNewToken().display, context)
+  }
+
+  func testDisplayBoundPointRejectsOutOfBoundsBeforeTranslatorLookup() async throws {
+    let legacy = SimulatorInteractionDisplay.legacy(
+      SimulatorDisplayGeometry(bounds: CGRect(x: 0, y: 0, width: 1200, height: 800), scale: 2, rotation: .clockwise))
+    try setUp(withRootElement: defaultElementTree, displays: DisplayCommandsDouble(.sole(legacy)))
+    do {
+      _ = try await simulator.accessibility.resolveElement(for: .point(CGPoint(x: 401, y: 120)))
+      XCTFail("Expected invalid display point")
+    } catch SimulatorDisplayInteractionError.invalidPoint {}
+    XCTAssertFalse(fixture!.translator.methodCalls.compactMap { $0 as? String }.contains { $0.hasPrefix("objectAtPoint:") })
+  }
+
+  func testRemoteContentRegionBeyondTheDisplaySkipsUntranslatablePoints() async throws {
+    let appElement = AccessibilityTestElementBuilder.application(
+      withLabel: "App", frame: NSRect(x: 0, y: 0, width: 600, height: 400), children: [])
+    let remoteElement = AccessibilityTestElementBuilder.button(
+      withLabel: "Remote", identifier: "remote", frame: NSRect(x: 0, y: 200, width: 600, height: 100))
+    let legacy = SimulatorInteractionDisplay.legacy(
+      SimulatorDisplayGeometry(bounds: CGRect(x: 0, y: 0, width: 1200, height: 800), scale: 2, rotation: .upright))
+    try setUp(withRootElement: appElement, displays: DisplayCommandsDouble(.sole(legacy)))
+    let remoteTranslation = AXPTranslationObjectDouble()
+    remoteTranslation.pid = 99999
+    fixture!.translator.objectAtPointResult = remoteTranslation
+    fixture!.translator.macPlatformElementResultsByPid = [99999: remoteElement]
+
+    let element = try await simulator.accessibility.resolveElement(for: .frontmost)
+    var options = AccessibilityRequestOptions()
+    options.remoteContentOptions = AccessibilityRemoteContentOptions(
+      gridStepSize: 100, region: CGRect(x: 0, y: 0, width: 1000, height: 1000))
+    let response = try await element.serialize(with: options)
+    element.close()
+
+    let labels = (response.legacyElementsObject() as? [Any] ?? []).compactMap { ($0 as? [String: Any])?["AXLabel"] as? String }
+    XCTAssertTrue(labels.contains("Remote"))
   }
 
   func testAccessibilityElementAtPointReturnsElement() async throws {

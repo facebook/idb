@@ -52,15 +52,18 @@ final class SimulatorAccessibilityCommands: AccessibilityOperations {
 
   private let translationDispatcher: AXTranslationDispatcher?
   private let launchCtl: (any LaunchCtlCommands)?
+  private let displays: (any DisplayCommands)?
 
   init(
     simulator: Simulator,
     translationDispatcher: AXTranslationDispatcher? = nil,
-    launchCtl: (any LaunchCtlCommands)? = nil
+    launchCtl: (any LaunchCtlCommands)? = nil,
+    displays: (any DisplayCommands)? = nil
   ) {
     self.simulator = simulator
     self.translationDispatcher = translationDispatcher
     self.launchCtl = launchCtl
+    self.displays = displays
   }
 
   class func commands(with target: Simulator) -> Self {
@@ -77,25 +80,31 @@ final class SimulatorAccessibilityCommands: AccessibilityOperations {
     launchCtl ?? simulator.launchCtl
   }
 
+  private func readDisplay() async throws -> AXTranslationDisplay? {
+    guard let simulator else { throw WeakTargetError.simulator }
+    return try await (displays ?? simulator.displays).accessibilityDisplay(transport: simulator.frameworkBridgeTransport(scope: .exclusive))
+  }
+
   // MARK: - AccessibilityOperations
 
   func resolveElement(for query: AccessibilityElementQuery) async throws -> AccessibilityElement {
     try validateAccessibility()
+    let display = try await readDisplay()
     switch query {
     case let .point(point):
-      let request = AXTranslationRequest(kind: .point(point))
+      let request = AXTranslationRequest(kind: .point(point), display: display)
       return try await accessibilityElement(request: request, remediationPermitted: false)
     case .frontmost:
-      let request = AXTranslationRequest(kind: .frontmostApplication)
+      let request = AXTranslationRequest(kind: .frontmostApplication, display: display)
       return try await accessibilityElement(request: request, remediationPermitted: true)
     case let .marker(value, key, depth, ignoresCase):
-      let request = AXTranslationRequest(kind: .frontmostApplication)
+      let request = AXTranslationRequest(kind: .frontmostApplication, display: display)
       let root = try await accessibilityElement(request: request, remediationPermitted: true)
       return try await root.findElement(withValue: value, forKey: key, depth: depth, ignoresCase: ignoresCase)
     case let .application(pid):
       // An explicit pid target: read that application directly, no SpringBoard stale-hierarchy
       // remediation (that is only meaningful for the frontmost read).
-      let request = AXTranslationRequest(kind: .applicationForPid(pid))
+      let request = AXTranslationRequest(kind: .applicationForPid(pid), display: display)
       return try await accessibilityElement(request: request, remediationPermitted: false)
     }
   }

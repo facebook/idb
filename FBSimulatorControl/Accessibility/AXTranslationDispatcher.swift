@@ -104,7 +104,7 @@ final class AXTranslationDispatcher: NSObject, AXPTranslationTokenDelegateHelper
       return try await performSerialized { () throws -> AXWritableElement in
         let collector = request.collector
         let translationStart = CFAbsoluteTimeGetCurrent()
-        guard let translator, let translation = request.perform(withTranslator: translator) else {
+        guard let translator, let translation = try request.perform(withTranslator: translator) else {
           throw AccessibilityError.noTranslationObject
         }
         collector.translationDuration = CFAbsoluteTimeGetCurrent() - translationStart
