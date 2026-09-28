@@ -54,6 +54,15 @@ public struct SimulatorLifecycleCommands: LifecycleCommands, Sendable {
     try await CoreSimulatorNotifier.resolveLeavesState(state, for: simulator.device)
   }
 
+  /// Waits until the Simulator is usable: it reports itself `.booted` while still coming up, so
+  /// the two are not the same moment. This is the wait `SimulatorBootOptions.verifyUsable`
+  /// performs during `boot`, available on its own for a caller that took the state first.
+  ///
+  /// - Parameter deadline: How long to wait for. Waits indefinitely when `nil`.
+  public func resolveUsable(deadline: PollDeadline? = nil) async throws {
+    try await verifySimulatorIsBooted(simulator, deadline: deadline)
+  }
+
   public func focus() async throws {
     // The Simulator host app (Simulator.app, or DeviceHub.app on Xcode 27+) only displays
     // simulators in the default device set, so 'focus' is unsupported for a custom device set.

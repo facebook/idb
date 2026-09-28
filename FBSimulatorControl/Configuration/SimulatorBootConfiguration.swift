@@ -24,7 +24,10 @@ public struct SimulatorBootOptions: OptionSet, Hashable, Sendable {
   public static let tieToProcessLifecycle = SimulatorBootOptions(rawValue: 1 << 1)
 
   /// Requires that the Simulator is 'Usable' before the boot API completes. A Simulator can report
-  /// itself 'Booted' very quickly while not yet being usable.
+  /// itself 'Booted' very quickly while not yet being usable. Booting without this returns as soon
+  /// as the Simulator reports `.booted`; `SimulatorLifecycleCommands.resolveUsable(deadline:)`
+  /// performs the same wait afterwards, for a caller that wants the state first and the usability
+  /// later.
   public static let verifyUsable = SimulatorBootOptions(rawValue: 1 << 3)
 }
 

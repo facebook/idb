@@ -101,19 +101,16 @@ class ProvidedSimulatorTestCase: XCTestCase {
     return booted[0]
   }
 
-  /// Blocks until the simulator has finished booting, which is what boot verification waits on —
-  /// `resolveState(.booted)` is not it, since `booted` is reported while the boot is still in
-  /// progress. Booting applies that check to a simulator it has just booted itself; it applies just
-  /// as well to one handed over by somebody else.
+  /// Blocks until the simulator is usable. `resolveState(.booted)` is not that: `booted` is
+  /// reported while the boot is still in progress, whoever booted it.
   ///
   /// Bounded, so a harness that never finishes booting the simulator it promised is reported as
   /// that, rather than as a test hanging until its execution time allowance kills it.
   private static func waitUntilBootCompleted(_ simulator: Simulator) async throws {
-    try await verifySimulatorIsBooted(
-      simulator,
+    try await simulator.lifecycle.resolveUsable(
       deadline: PollDeadline(
         timeout: bootCompletionTimeout,
-        waitingFor: "the provided simulator \(simulator.udid) to finish booting"))
+        waitingFor: "the provided simulator \(simulator.udid) to become usable"))
   }
 
   /// Some harnesses lease simulators whose host does not run `SimLaunchHostService`, so any
