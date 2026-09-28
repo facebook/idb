@@ -196,13 +196,9 @@ public final class SimulatorDisplayCommands: DisplayCommands, @unchecked Sendabl
   /// Returns nil only when the runtime lacks the feature, or the provider the fields, needed to
   /// select a display.
   func activeIntegratedDisplayIfSupported() async throws -> SimulatorDisplay? {
-    let snapshot = try await target().coreDevice.performIfSupported(
+    try await target().coreDevice.performIfSupported(
       action: SimulatorDisplayProtocol.action, service: SimulatorDisplayProtocol.service, input: CoreDeviceEmptyInput(),
-      decode: SimulatorDisplayProtocol.snapshot)
-    switch snapshot {
-    case let .displays(displays): return try Self.activeIntegratedDisplay(in: displays)
-    case .legacyProvider, nil: return nil
-    }
+      decode: SimulatorDisplayProtocol.captureDisplay) ?? nil
   }
 
   private func target() throws -> Simulator {

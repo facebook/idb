@@ -48,6 +48,14 @@ enum SimulatorDisplayProtocol {
     try snapshot(of: validated(CoreDeviceReply.decode(Report.self, from: reply)))
   }
 
+  /// The display a screenshot captures, or nil when it should capture the main screen instead.
+  static func captureDisplay(_ reply: xpc_object_t) throws -> SimulatorDisplay? {
+    switch try snapshot(reply) {
+    case let .displays(displays): return try SimulatorDisplayCommands.activeIntegratedDisplay(in: displays)
+    case .legacyProvider: return nil
+    }
+  }
+
   /// A legacy provider can still be used for interaction when it reports exactly one integrated display.
   static func interactionDisplay(_ reply: xpc_object_t) throws -> SimulatorInteractionDisplay {
     try interactionTarget(reply).display
