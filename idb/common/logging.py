@@ -5,6 +5,7 @@
 # LICENSE file in the root directory of this source tree.
 
 
+import asyncio
 import functools
 import inspect
 import logging
@@ -20,6 +21,10 @@ from idb.utils.typing import none_throws
 
 
 logger: logging.Logger = logging.getLogger("idb")
+
+# A cancelled asyncio task raises asyncio.CancelledError, which is not related
+# to concurrent.futures.CancelledError and does not subclass Exception.
+_CANCELLATIONS = (asyncio.CancelledError, CancelledError)
 
 
 def _monotonic() -> float:
@@ -60,7 +65,14 @@ class log_call(AsyncContextManager[None]):
     ) -> bool:
         name = none_throws(self.name)
         duration = int((_monotonic() - none_throws(self.start)) * 1000)
-        if exception:
+        if isinstance(exception, _CANCELLATIONS):
+            logger.debug(f"{name} cancelled")
+            await plugin.after_invocation(
+                name=name,
+                duration=duration,
+                metadata={**self.metadata, "cancelled": True},
+            )
+        elif exception:
             logger.debug(f"{name} failed")
             await plugin.failed_invocation(
                 name=name,
@@ -97,7 +109,7 @@ class log_call(AsyncContextManager[None]):
                     metadata=_metadata,
                 )
                 return value
-            except CancelledError as ex:
+            except _CANCELLATIONS as ex:
                 logger.debug(f"{_name} cancelled")
                 _metadata["cancelled"] = True
                 await plugin.after_invocation(
@@ -130,7 +142,7 @@ class log_call(AsyncContextManager[None]):
                     duration=int((_monotonic() - start) * 1000),
                     metadata=_metadata,
                 )
-            except CancelledError as ex:
+            except _CANCELLATIONS as ex:
                 logger.debug(f"{_name} cancelled")
                 _metadata["cancelled"] = True
                 await plugin.after_invocation(

@@ -245,9 +245,8 @@ class LogCallTaskCancellationTest(TestCase):
             await self._cancel_once_blocked(asyncio.ensure_future(install()), blocked)
         self.assertEqual(len(telemetry.started), 1)
         self.assertEqual(len(telemetry.failed), 0)
-        # BUG: an asyncio cancel is not a concurrent.futures.CancelledError, so
-        # no terminal event is emitted — flipped in the following commit.
-        self.assertEqual(len(telemetry.succeeded), 0)
+        self.assertEqual(len(telemetry.succeeded), 1)
+        self.assertEqual(telemetry.succeeded[0].get("cancelled"), True)
 
     async def test_cancelled_generator_task_emits_terminal_event(self) -> None:
         telemetry = _TelemetryPlugin(updates_per_call=[])
@@ -267,9 +266,8 @@ class LogCallTaskCancellationTest(TestCase):
             await self._cancel_once_blocked(asyncio.ensure_future(consume()), blocked)
         self.assertEqual(len(telemetry.started), 1)
         self.assertEqual(len(telemetry.failed), 0)
-        # BUG: an asyncio cancel is not a concurrent.futures.CancelledError, so
-        # no terminal event is emitted — flipped in the following commit.
-        self.assertEqual(len(telemetry.succeeded), 0)
+        self.assertEqual(len(telemetry.succeeded), 1)
+        self.assertEqual(telemetry.succeeded[0].get("cancelled"), True)
 
     async def test_cancelled_context_manager_emits_cancelled_event(self) -> None:
         telemetry = _TelemetryPlugin(updates_per_call=[])
@@ -283,7 +281,6 @@ class LogCallTaskCancellationTest(TestCase):
         with mock.patch.object(plugin, "PLUGINS", [telemetry]):
             await self._cancel_once_blocked(asyncio.ensure_future(install()), blocked)
         self.assertEqual(len(telemetry.started), 1)
-        # BUG: the cancel is reported as a failure rather than a cancelled
-        # invocation — flipped in the following commit.
-        self.assertEqual(len(telemetry.failed), 1)
-        self.assertEqual(len(telemetry.succeeded), 0)
+        self.assertEqual(len(telemetry.failed), 0)
+        self.assertEqual(len(telemetry.succeeded), 1)
+        self.assertEqual(telemetry.succeeded[0].get("cancelled"), True)
