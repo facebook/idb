@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+@preconcurrency import CoreSimulator
 import FBControlCore
 @testable import FBSimulatorControl
 import XCTest
@@ -18,6 +19,9 @@ private let LaunchTypeSimulatorApp = "simulator_app"
 /// The Boot suite: the one place that creates and boots a simulator of its own, because that
 /// lifecycle is what it covers. Everything else needing a booted simulator takes one from its
 /// environment instead — see `ProvidedSimulatorTestCase`.
+///
+/// Booting has two completion criteria and a test for each: returning once the simulator reports
+/// `.booted`, and returning once it is usable.
 final class SimulatorBootTestCase: XCTestCase {
 
   private var control: SimulatorControlBootstrap!
@@ -25,7 +29,6 @@ final class SimulatorBootTestCase: XCTestCase {
   private var expectedConfiguration: SimulatorConfiguration!
   private var ownedSimulator: Simulator?
   private var ownedDeviceSetPath: String?
-  private var bootConfiguration: SimulatorBootConfiguration!
 
   override class func setUp() {
     super.setUp()
@@ -58,7 +61,6 @@ final class SimulatorBootTestCase: XCTestCase {
     let snapshot = CoreSimulatorRuntimeIndex(deviceTypes: deviceTypes, runtimes: runtimes)
     let (deviceType, runtime) = try snapshot.resolve(creationRequest)
     expectedConfiguration = SimulatorConfiguration.configuration(deviceType: deviceType, runtime: runtime)
-    bootConfiguration = SimulatorBootConfiguration(options: Self.bootOptions, environment: [:])
     let noLogger: (any ControlCoreLogger)? = nil
     ownedDeviceSetPath = Self.deviceSetPath
     control = try SimulatorControlBootstrap.withConfiguration(
@@ -84,8 +86,7 @@ final class SimulatorBootTestCase: XCTestCase {
   }
 
   func testBootShutdownLifecycle() async throws {
-    let simulator = try await control.set.createSimulator(with: creationRequest)
-    ownedSimulator = simulator
+    let simulator = try await bootedSimulator()
     XCTAssertEqual(simulator.configuration.deviceTypeIdentifier, expectedConfiguration.deviceTypeIdentifier)
     XCTAssertEqual(simulator.configuration.runtimeIdentifier, expectedConfiguration.runtimeIdentifier)
     XCTAssertEqual(simulator.configuration.os.versionString, expectedConfiguration.os.versionString)
@@ -93,11 +94,45 @@ final class SimulatorBootTestCase: XCTestCase {
     XCTAssertEqual(simulator.configuration.runtimeIdentifier, simulator.device.runtime.identifier)
     // CoreSimulator can choose another installed build for the same runtime identifier.
     XCTAssertEqual(simulator.configuration.runtimeBuildVersion, simulator.device.runtime.buildVersionString)
-    try await simulator.lifecycle.boot(bootConfiguration)
     XCTAssertEqual(simulator.state, .booted)
 
+    try await shutdownAndDelete(simulator)
+  }
+
+  /// Booting without `.verifyUsable` returns on the state alone, so the simulator may still be
+  /// coming up; `resolveUsable` is how a caller that wanted the state first waits for the rest.
+  func testStateBootReturnsBeforeUsableAndResolvesAfterwards() async throws {
+    let simulator = try await bootedSimulator()
+    XCTAssertEqual(simulator.state, .booted)
+
+    try await simulator.lifecycle.resolveUsable(deadline: PollDeadline(timeout: 300, waitingFor: "the simulator to become usable"))
+    XCTAssertEqual(simulator.device.bootStatus()?.isTerminalStatus, true)
+
+    try await shutdownAndDelete(simulator)
+  }
+
+  /// Booting with `.verifyUsable` does that waiting itself, so the simulator is usable by the time
+  /// the call returns.
+  func testUsableBootReturnsOnlyOnceTheSimulatorIsUsable() async throws {
+    let simulator = try await bootedSimulator(adding: .verifyUsable)
+    XCTAssertEqual(simulator.state, .booted)
+    XCTAssertEqual(simulator.device.bootStatus()?.isTerminalStatus, true)
+
+    try await shutdownAndDelete(simulator)
+  }
+
+  private func bootedSimulator(adding options: SimulatorBootOptions = []) async throws -> Simulator {
+    let simulator = try await control.set.createSimulator(with: creationRequest)
+    ownedSimulator = simulator
+    try await simulator.lifecycle.boot(SimulatorBootConfiguration(options: Self.bootOptions.union(options), environment: [:]))
+    return simulator
+  }
+
+  private func shutdownAndDelete(_ simulator: Simulator) async throws {
     try await simulator.power.shutdown()
     XCTAssertEqual(simulator.state, .shutdown)
+    try await control.set.delete(simulator)
+    ownedSimulator = nil
   }
 
   private static var bootOptions: SimulatorBootOptions {
