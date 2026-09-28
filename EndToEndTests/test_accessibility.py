@@ -255,6 +255,7 @@ def _search_field(document: Any, value: str | None = None) -> dict[str, Any]:
 ACCESSIBILITY_READ_TESTS = frozenset(
     {
         "test_ui_describe_all_reads_both_backends_and_honours_its_options",
+        "test_ui_describe_all_filtered_to_interactable_reports_only_visible_rows",
         "test_ui_describe_resolves_a_point_and_a_marker",
     }
 )
@@ -416,6 +417,37 @@ class AccessibilityTests(IdbEndToEndTestCase):
         self.assertGreater(selected["profile"]["total_duration_ms"], 0)
         self.assertEqual(selected["frames"]["total"], len(elements))
         self.assertGreater(selected["coverage"]["frame"], 0)
+
+    async def test_ui_describe_all_filtered_to_interactable_reports_only_visible_rows(
+        self,
+    ) -> None:
+        everything = await self.describe_all_complete("axbridge")
+        interactable = await self.idb_json(
+            "ui",
+            "describe-all",
+            "--api",
+            "axbridge",
+            "--format",
+            "complete",
+            "--filter",
+            "interactable",
+        )
+
+        visible = _rows_on_screen(everything)
+        offscreen_labels = {
+            _label(row) for row in _rows(everything) if row["identifier"] not in visible
+        }
+        self.assertTrue(
+            offscreen_labels, "the fixture should hold rows below the screen"
+        )
+        self.assertEqual(sorted(_row_positions(interactable)), sorted(visible))
+        # An offscreen row's label reports a frame in the row's own coordinates,
+        # which can place it on screen, so it is matched by name.
+        self.assertFalse(
+            offscreen_labels & {_label(element) for element in _elements(interactable)},
+            "--filter interactable reported the label of a row below the screen",
+        )
+        _search_field(interactable)
 
     async def test_ui_describe_resolves_a_point_and_a_marker(self) -> None:
         marker = _label(self.control)
