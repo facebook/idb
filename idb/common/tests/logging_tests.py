@@ -4,7 +4,7 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-
+import asyncio
 from collections.abc import AsyncIterator
 from concurrent.futures import CancelledError
 from types import ModuleType
@@ -218,3 +218,72 @@ class LogCallCancellationTest(TestCase):
         self.assertEqual(len(telemetry.failed), 0)
         self.assertEqual(len(telemetry.succeeded), 1)
         self.assertEqual(telemetry.succeeded[0].get("cancelled"), True)
+
+
+class LogCallTaskCancellationTest(TestCase):
+    """Cancelling the asyncio task running an invocation, as a caller's
+    deadline or a dropped gRPC stream does."""
+
+    async def _cancel_once_blocked(
+        self, run: "asyncio.Future[None]", blocked: asyncio.Event
+    ) -> None:
+        await blocked.wait()
+        run.cancel()
+        with self.assertRaises(asyncio.CancelledError):
+            await run
+
+    async def test_cancelled_task_emits_terminal_event(self) -> None:
+        telemetry = _TelemetryPlugin(updates_per_call=[])
+        blocked = asyncio.Event()
+
+        @log_call(name="install")
+        async def install() -> None:
+            blocked.set()
+            await asyncio.Event().wait()
+
+        with mock.patch.object(plugin, "PLUGINS", [telemetry]):
+            await self._cancel_once_blocked(asyncio.ensure_future(install()), blocked)
+        self.assertEqual(len(telemetry.started), 1)
+        self.assertEqual(len(telemetry.failed), 0)
+        # BUG: an asyncio cancel is not a concurrent.futures.CancelledError, so
+        # no terminal event is emitted — flipped in the following commit.
+        self.assertEqual(len(telemetry.succeeded), 0)
+
+    async def test_cancelled_generator_task_emits_terminal_event(self) -> None:
+        telemetry = _TelemetryPlugin(updates_per_call=[])
+        blocked = asyncio.Event()
+
+        @log_call(name="tail")
+        async def tail() -> AsyncIterator[int]:
+            yield 1
+            blocked.set()
+            await asyncio.Event().wait()
+
+        async def consume() -> None:
+            async for _ in tail():
+                pass
+
+        with mock.patch.object(plugin, "PLUGINS", [telemetry]):
+            await self._cancel_once_blocked(asyncio.ensure_future(consume()), blocked)
+        self.assertEqual(len(telemetry.started), 1)
+        self.assertEqual(len(telemetry.failed), 0)
+        # BUG: an asyncio cancel is not a concurrent.futures.CancelledError, so
+        # no terminal event is emitted — flipped in the following commit.
+        self.assertEqual(len(telemetry.succeeded), 0)
+
+    async def test_cancelled_context_manager_emits_cancelled_event(self) -> None:
+        telemetry = _TelemetryPlugin(updates_per_call=[])
+        blocked = asyncio.Event()
+
+        async def install() -> None:
+            async with log_call(name="install"):
+                blocked.set()
+                await asyncio.Event().wait()
+
+        with mock.patch.object(plugin, "PLUGINS", [telemetry]):
+            await self._cancel_once_blocked(asyncio.ensure_future(install()), blocked)
+        self.assertEqual(len(telemetry.started), 1)
+        # BUG: the cancel is reported as a failure rather than a cancelled
+        # invocation — flipped in the following commit.
+        self.assertEqual(len(telemetry.failed), 1)
+        self.assertEqual(len(telemetry.succeeded), 0)
