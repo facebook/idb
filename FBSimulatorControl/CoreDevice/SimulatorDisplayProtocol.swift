@@ -48,14 +48,20 @@ enum SimulatorDisplayProtocol {
     try snapshot(of: validated(CoreDeviceReply.decode(Report.self, from: reply)))
   }
 
-  /// The display a screenshot captures, or nil when it should capture the main screen instead.
+  /// The display a screenshot captures, or nil when it should capture the main screen instead because
+  /// the displays reported cannot select exactly one active integrated display. A reply that is not a
+  /// current report, or one without displays, still fails.
   static func captureDisplay(_ reply: xpc_object_t) throws -> SimulatorDisplay? {
-    switch try snapshot(reply) {
-    // A target without a built-in screen, such as tvOS with only its TVOut, has no display to select.
-    case let .displays(displays) where !displays.isEmpty && !displays.contains(where: \.isIntegrated): return nil
-    case let .displays(displays): return try SimulatorDisplayCommands.activeIntegratedDisplay(in: displays)
-    case .legacyProvider: return nil
-    }
+    let report = try validated(CoreDeviceReply.decode(Report.self, from: reply))
+    guard !report.displays.isEmpty else { throw SimulatorDisplayError.noActiveIntegratedDisplay }
+    // Selection is a pure function of the decoded records, so it can only fail on what they say, and the
+    // main screen does not depend on them.
+    return try? selectedDisplay(in: report)
+  }
+
+  private static func selectedDisplay(in report: Report) throws -> SimulatorDisplay? {
+    guard case let .displays(displays) = try snapshot(of: report) else { return nil }
+    return try SimulatorDisplayCommands.activeIntegratedDisplay(in: displays)
   }
 
   /// A legacy provider can still be used for interaction when it reports exactly one integrated display.

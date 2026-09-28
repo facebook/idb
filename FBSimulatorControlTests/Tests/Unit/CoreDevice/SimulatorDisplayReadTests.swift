@@ -155,8 +155,7 @@ final class SimulatorDisplayReadTests: XCTestCase {
       "invalid record": [unscaled],
     ]
     for (shape, values) in reports {
-      // BUG: fails instead of capturing the main screen -- flipped in the following commit.
-      XCTAssertThrowsError(try SimulatorDisplayProtocol.captureDisplay(displayReply(values)), shape)
+      XCTAssertNil(try SimulatorDisplayProtocol.captureDisplay(displayReply(values)), shape)
       XCTAssertThrowsError(try SimulatorDisplayProtocol.interactionTarget(displayReply(values)), shape)
     }
   }
