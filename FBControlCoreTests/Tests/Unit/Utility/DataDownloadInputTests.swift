@@ -59,7 +59,9 @@ final class DataDownloadInputTests: XCTestCase {
     return data as Data
   }
 
-  private func downloadAndExtract() async throws -> String {
+  private func downloadAndExtract(
+    onEvent: (@Sendable (DataDownloadEvent) -> Void)? = nil
+  ) async throws -> String {
     let destination = (tempDirectory as NSString).appendingPathComponent(UUID().uuidString)
     try FileManager.default.createDirectory(
       atPath: destination, withIntermediateDirectories: true)
@@ -70,7 +72,8 @@ final class DataDownloadInputTests: XCTestCase {
     let download = DataDownloadInput.dataDownload(
       withURL: url,
       configuration: configuration,
-      logger: logger)
+      logger: logger,
+      onEvent: onEvent)
     let extraction = FBArchiveOperations.extractArchive(
       fromStream: download.input,
       toPath: destination,
@@ -105,6 +108,41 @@ final class DataDownloadInputTests: XCTestCase {
         contentsOfFile: (destination as NSString).appendingPathComponent("payload.txt"),
         encoding: .utf8),
       Self.payloadContents)
+  }
+
+  func testDownload_WhenResponseIsOK_ReportsTheResponseThenEveryByte() async throws {
+    let archive = try makeArchiveData(padding: 256 * 1024)
+    StubURLProtocol.behaviour = .respond(statusCode: 200, body: archive)
+    let recorder = DownloadEventRecorder()
+
+    _ = try await downloadAndExtract(onEvent: recorder.record)
+
+    let events = recorder.events
+    guard case .response(let expectedContentLength)? = events.first else {
+      XCTFail("Expected the response first, got: \(events)")
+      return
+    }
+    XCTAssertEqual(expectedContentLength, Int64(archive.count))
+    let chunks = events.dropFirst().map { event -> Int in
+      guard case .data(let byteCount) = event else {
+        XCTFail("Expected only data after the response, got: \(event)")
+        return 0
+      }
+      return byteCount
+    }
+    XCTAssertEqual(chunks.reduce(0, +), archive.count)
+  }
+
+  func testDownload_WhenResponseIsNotFound_ReportsNoEvents() async throws {
+    StubURLProtocol.behaviour = .respond(statusCode: 404, body: Data("not found".utf8))
+    let recorder = DownloadEventRecorder()
+
+    do {
+      _ = try await downloadAndExtract(onEvent: recorder.record)
+      XCTFail("Expected the download to fail")
+    } catch {
+      XCTAssertEqual(recorder.events.count, 0, "Got: \(recorder.events)")
+    }
   }
 
   // MARK: - HTTP errors
@@ -162,71 +200,18 @@ final class DataDownloadInputTests: XCTestCase {
 
 // MARK: - Doubles
 
-/// `behaviour` is static because `URLSession` instantiates the protocol itself.
-private final class StubURLProtocol: URLProtocol {
+// SAFETY: every access holds `lock`.
+// patternlint-disable-next-line unchecked-sendable
+private final class DownloadEventRecorder: @unchecked Sendable {
+  private let lock = NSLock()
+  private var recorded: [DataDownloadEvent] = []
 
-  enum Behaviour {
-    case none
-    case respond(statusCode: Int, body: Data)
-    case truncate(statusCode: Int, body: Data, bytesBeforeFailure: Int)
+  var events: [DataDownloadEvent] {
+    lock.withLock { recorded }
   }
 
-  // SAFETY: set by the test before the request starts and cleared in tearDown,
-  // read on the session's delegate queue in between; the two never overlap.
-  // patternlint-disable-next-line swift-nonisolated-unsafe
-  nonisolated(unsafe) static var behaviour: Behaviour = .none
-
-  override class func canInit(with request: URLRequest) -> Bool {
-    return true
-  }
-
-  override class func canonicalRequest(for request: URLRequest) -> URLRequest {
-    return request
-  }
-
-  /// The download starts on construction but the consuming process attaches its pipe
-  /// only once extraction starts; delivering immediately races that attachment.
-  private static let step = DispatchTimeInterval.milliseconds(200)
-
-  override func startLoading() {
-    guard let url = request.url else { return }
-    switch Self.behaviour {
-    case .none:
-      client?.urlProtocol(self, didFailWithError: URLError(.unsupportedURL))
-    case let .respond(statusCode, body):
-      after(Self.step) {
-        self.send(response: self.makeResponse(url: url, statusCode: statusCode, length: body.count))
-        self.client?.urlProtocol(self, didLoad: body)
-        self.client?.urlProtocolDidFinishLoading(self)
-      }
-    case let .truncate(statusCode, body, bytesBeforeFailure):
-      after(Self.step) {
-        self.send(response: self.makeResponse(url: url, statusCode: statusCode, length: body.count))
-        self.client?.urlProtocol(self, didLoad: body.prefix(bytesBeforeFailure))
-        self.after(Self.step) {
-          self.client?.urlProtocol(self, didFailWithError: URLError(.networkConnectionLost))
-        }
-      }
-    }
-  }
-
-  private func after(_ interval: DispatchTimeInterval, _ work: @escaping () -> Void) {
-    DispatchQueue.global(qos: .userInitiated).asyncAfter(deadline: .now() + interval, execute: work)
-  }
-
-  override func stopLoading() {}
-
-  private func makeResponse(url: URL, statusCode: Int, length: Int) -> HTTPURLResponse {
-    // swiftlint:disable:next force_unwrapping
-    return HTTPURLResponse(
-      url: url,
-      statusCode: statusCode,
-      httpVersion: "HTTP/1.1",
-      headerFields: ["Content-Length": String(length)])!
-  }
-
-  private func send(response: HTTPURLResponse) {
-    client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
+  @Sendable func record(_ event: DataDownloadEvent) {
+    lock.withLock { recorded.append(event) }
   }
 }
 

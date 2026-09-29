@@ -7,6 +7,18 @@
 
 import Foundation
 
+/// What a download reports about its own progress, as distinct from the bytes it
+/// is delivering.
+public enum DataDownloadEvent: Sendable {
+
+  /// The server accepted the request. A length of zero or less means it did not
+  /// say how much to expect.
+  case response(expectedContentLength: Int64)
+
+  /// A chunk of this many bytes arrived.
+  case data(byteCount: Int)
+}
+
 public final class DataDownloadInput: NSObject, @unchecked Sendable {
 
   public let input: FBProcessInput<AnyObject>
@@ -18,6 +30,7 @@ public final class DataDownloadInput: NSObject, @unchecked Sendable {
   }
 
   private let completedFuture: FBMutableFuture<NSNull>
+  private let onEvent: (@Sendable (DataDownloadEvent) -> Void)?
   private let logger: ControlCoreLogger
 
   public static func dataDownload(withURL url: URL, logger: ControlCoreLogger) -> DataDownloadInput {
@@ -26,14 +39,24 @@ public final class DataDownloadInput: NSObject, @unchecked Sendable {
 
   /// Downloads over a caller-supplied session configuration, so that timeouts,
   /// caching policy and protocol handling are the caller's to decide.
-  public static func dataDownload(withURL url: URL, configuration: URLSessionConfiguration, logger: ControlCoreLogger) -> DataDownloadInput {
-    let download = DataDownloadInput(logger: logger)
+  ///
+  /// `onEvent` reports how many bytes have arrived, while the bytes themselves
+  /// still go only to `input`, so a caller can show progress without getting
+  /// between the download and whatever is consuming it.
+  public static func dataDownload(
+    withURL url: URL,
+    configuration: URLSessionConfiguration,
+    logger: ControlCoreLogger,
+    onEvent: (@Sendable (DataDownloadEvent) -> Void)? = nil
+  ) -> DataDownloadInput {
+    let download = DataDownloadInput(logger: logger, onEvent: onEvent)
     download.startDownload(from: url, configuration: configuration)
     return download
   }
 
-  private init(logger: ControlCoreLogger) {
+  private init(logger: ControlCoreLogger, onEvent: (@Sendable (DataDownloadEvent) -> Void)?) {
     self.logger = logger
+    self.onEvent = onEvent
     self.completedFuture = FBMutableFuture<NSNull>()
     let rawInput = FBProcessInput<NSObject>.fromConsumer()
     self.input = rawInput.retyped(FBProcessInput<AnyObject>.self)
@@ -44,6 +67,10 @@ public final class DataDownloadInput: NSObject, @unchecked Sendable {
   private func startDownload(from url: URL, configuration: URLSessionConfiguration) {
     let delegateQueue = OperationQueue()
     delegateQueue.name = "FBControlCore.DataDownloadInput.urlSessionDelegate"
+    // Callers read the events as an ordered sequence: the response before any
+    // chunk, and chunks in arrival order. An `OperationQueue` is concurrent
+    // unless told otherwise.
+    delegateQueue.maxConcurrentOperationCount = 1
     let session = URLSession(configuration: configuration, delegate: self, delegateQueue: delegateQueue)
     session.dataTask(with: url).resume()
   }
@@ -69,11 +96,13 @@ extension DataDownloadInput: URLSessionDataDelegate {
       completionHandler(.cancel)
       return
     }
+    onEvent?(.response(expectedContentLength: httpResponse.expectedContentLength))
     completionHandler(.allow)
   }
 
   public func urlSession(_ session: URLSession, dataTask: URLSessionDataTask, didReceive data: Data) {
     (input.contents as? DataConsumer)?.consumeData(data)
+    onEvent?(.data(byteCount: data.count))
   }
 
   public func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
