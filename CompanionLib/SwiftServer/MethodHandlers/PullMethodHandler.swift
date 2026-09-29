@@ -11,6 +11,15 @@ import Foundation
 import GRPCCore
 import IDBGRPCSwift
 
+/// Seam over the `IDBCommandExecutor` calls this handler drives, so it can be tested against a double.
+protocol FilePulling: Sendable {
+  var temporaryDirectory: TemporaryDirectory { get }
+
+  func pull_file_path(_ path: String, destination_path destinationPath: String, containerType: String?) async throws -> String
+}
+
+extension IDBCommandExecutor: FilePulling {}
+
 struct PullMethodHandler {
 
   let target: any Target
@@ -32,15 +41,26 @@ struct PullMethodHandler {
   }
 
   func handle(request: Idb_PullRequest, responseStream: RPCWriter<Idb_PullResponse>, context: ServerContext) async throws {
+    try await Self.pull(request, using: commandExecutor, logger: target.logger, cancellation: context.cancellation) { try await responseStream.send($0) }
+  }
+
+  static func pull(
+    _ request: Idb_PullRequest,
+    using commandExecutor: any FilePulling,
+    logger: any ControlCoreLogger,
+    cancellation: ServerContext.RPCCancellationHandle,
+    send: @escaping @Sendable (Idb_PullResponse) async throws -> Void
+  ) async throws {
     if request.dstPath.isEmpty {
-      try await sendRawData(request: request, responseStream: responseStream)
+      try await sendRawData(request: request, using: commandExecutor, logger: logger, send: send)
     } else {
-      try await sendFilePath(request: request, responseStream: responseStream)
+      try await sendFilePath(request: request, using: commandExecutor, logger: logger, send: send)
     }
   }
 
-  private func sendRawData(request: Idb_PullRequest, responseStream: RPCWriter<Idb_PullResponse>) async throws {
-    let logger = target.logger
+  private static func sendRawData(
+    request: Idb_PullRequest, using commandExecutor: any FilePulling, logger: any ControlCoreLogger, send: (Idb_PullResponse) async throws -> Void
+  ) async throws {
     let path = request.srcPath as NSString
     let fileContainer = FileContainerValueTransformer.rawFileContainer(from: request.container)
     let url = commandExecutor.temporaryDirectory.temporaryDirectory()
@@ -58,7 +78,7 @@ struct PullMethodHandler {
       try await FileDrainWriter.performDrain(task: archive) { data in
         totalBytes += data.count
         let response = Idb_PullResponse.with { $0.payload.data = data }
-        try await responseStream.send(response)
+        try await send(response)
       }
     } catch {
       logger.info().log("pull failed after streaming \(Self.formatBytes(totalBytes))")
@@ -67,7 +87,9 @@ struct PullMethodHandler {
     logger.info().log("pull streamed \(Self.formatBytes(totalBytes))")
   }
 
-  private func sendFilePath(request: Idb_PullRequest, responseStream: RPCWriter<Idb_PullResponse>) async throws {
+  private static func sendFilePath(
+    request: Idb_PullRequest, using commandExecutor: any FilePulling, logger: any ControlCoreLogger, send: (Idb_PullResponse) async throws -> Void
+  ) async throws {
     let fileContainer = FileContainerValueTransformer.rawFileContainer(from: request.container)
 
     let filePath = try await commandExecutor.pull_file_path(
@@ -77,9 +99,9 @@ struct PullMethodHandler {
     let response = Idb_PullResponse.with {
       $0.payload = .with { $0.source = .filePath(filePath) }
     }
-    try await responseStream.send(response)
+    try await send(response)
     if let byteCount = (try? FileManager.default.attributesOfItem(atPath: filePath)[.size] as? NSNumber)?.intValue {
-      target.logger.info().log("pull saved \(Self.formatBytes(byteCount)) to \(request.dstPath)")
+      logger.info().log("pull saved \(Self.formatBytes(byteCount)) to \(request.dstPath)")
     }
   }
 }
