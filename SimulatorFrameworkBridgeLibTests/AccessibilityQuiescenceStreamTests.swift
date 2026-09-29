@@ -112,6 +112,22 @@ extension BridgeServerSocketTests {
     XCTAssertEqual(readEvent(fd: client), state("quiet", pid: pid))
   }
 
+  // Every client's monitor hears every answer, so a second answer here stands in for another client's.
+  func testAnAnswerToAnotherClientsRequestIsNotReArmed() throws {
+    let pid = getpid()
+    let runtime = runtimeWithApplications([pid])
+    let client = try openQuietStream(runtime, ["pid": .integer(Int64(pid)), "busyThresholdMs": .integer(5000), "quietWindowMs": .integer(0)])
+    defer { closeQuietStream(client) }
+
+    let monitor = try monitor(of: runtime, requests: 2)
+    monitor.deliver(.runLoopIdle, pid: pid)
+    monitor.deliver(.runLoopIdle, pid: pid)
+    _ = try self.monitor(of: runtime, requests: 3)
+    usleep(200_000)
+    // BUG: each answer re-arms the signal, so clients multiply one another's requests — flipped in the following commit.
+    XCTAssertEqual(monitor.requests.count, 4)
+  }
+
   func testTheDefaultWindowSettlesBeforeGoingQuiet() throws {
     let pid = getpid()
     let runtime = runtimeWithApplications([pid])
