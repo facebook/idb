@@ -58,6 +58,7 @@ STRICT_ENV = "IDB_E2E_STRICT"
 ARTIFACTS_ENV = "IDB_E2E_ARTIFACTS_DIR"
 ROUTE_ATTESTATION_ENV = "IDB_E2E_ROUTER_ATTESTATION"
 EXPECTED_IMPLEMENTATION_ENV = "IDB_E2E_EXPECTED_IMPLEMENTATION"
+CLAIM_KIND_ENV = "IDB_E2E_CLAIM_KIND"
 
 T = TypeVar("T")
 
@@ -502,7 +503,8 @@ async def run_attested_client(
         except NotReady as error:
             raise HarnessError(
                 f"the {implementation} lane exited before completing route attestation at "
-                f"{attestation}: {error}"
+                f"{attestation}: {error}; client return code {completed.returncode}; "
+                f"stderr: {completed.error_text or '<empty>'}"
             ) from None
         return completed
 
@@ -712,6 +714,7 @@ class Environment:
         setup_idb_bin: Path,
         companion_path: Path,
         recorder_path: Path,
+        protected_package: tempfile.TemporaryDirectory[str] | None = None,
     ) -> None:
         self.udid = udid
         self.device_set_path = device_set_path
@@ -720,6 +723,7 @@ class Environment:
         self.setup_idb_bin = setup_idb_bin
         self.companion_path = companion_path
         self.recorder_path = recorder_path
+        self._protected_package = protected_package
         self.simctl = Simctl(udid, device_set_path)
 
     @property
@@ -733,6 +737,9 @@ class Environment:
     @classmethod
     async def resolve(cls) -> "Environment":
         idb_bin = _binary_from_environment(IDB_BIN_ENV)
+        protected_package = None
+        if os.environ.get(CLAIM_KIND_ENV) == "synthetic_installed":
+            idb_bin, protected_package = _protect_synthetic_package(idb_bin)
         idb_args = shlex.split(os.environ.get(IDB_ARGS_ENV, ""))
         setup_idb_bin = _optional_binary_from_environment(IDB_SETUP_BIN_ENV, idb_bin)
         companion_path = _binary_from_environment(IDB_E2E_COMPANION_PATH_ENV)
@@ -764,6 +771,7 @@ class Environment:
             setup_idb_bin,
             companion_path,
             recorder_path,
+            protected_package,
         )
 
 
@@ -781,6 +789,36 @@ def _optional_binary_from_environment(name: str, default: Path) -> Path:
 
 def _binary_from_environment(name: str) -> Path:
     return _executable(Path(_required(name, "a binary this suite drives")), name)
+
+
+def _protect_synthetic_package(
+    idb_bin: Path,
+) -> tuple[Path, tempfile.TemporaryDirectory[str]]:
+    temporary = tempfile.TemporaryDirectory(
+        prefix="idb-e2e-package-", dir=Path("/tmp").resolve()
+    )
+    package = Path(temporary.name) / "bin"
+    package.mkdir()
+    try:
+        for source in idb_bin.parent.iterdir():
+            if source.is_file():
+                shutil.copy2(source, package / source.name)
+        for name in (
+            "idb",
+            "idb-python",
+            "idb-router-engine",
+            "idb-router-guard",
+            "idb-rust",
+        ):
+            child = package / name
+            if not child.is_file():
+                raise HarnessError(f"the synthetic package has no {name} executable")
+            child.chmod(0o555)
+        package.chmod(0o555)
+    except BaseException:
+        temporary.cleanup()
+        raise
+    return package / idb_bin.name, temporary
 
 
 def on_disk_path(path: Path) -> Path:
