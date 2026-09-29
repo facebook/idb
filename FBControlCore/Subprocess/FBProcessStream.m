@@ -945,6 +945,9 @@ static NSTimeInterval const ProcessDetachDrainTimeout = 4;
 @interface FBProcessInput_Consumer : FBProcessInput <DataConsumer>
 
 @property (nullable, nonatomic, readwrite, strong) id<DataConsumer> writer;
+// What is consumed before the pipe exists, delivered once it is attached. Guarded by @synchronized(self), as is `writer`.
+@property (nullable, nonatomic, readwrite, strong) NSMutableData *pendingData;
+@property (nonatomic, readwrite, assign) BOOL pendingEndOfFile;
 
 @end
 
@@ -1102,7 +1105,17 @@ static NSTimeInterval const ProcessDetachDrainTimeout = 4;
                                     describe:[NSString stringWithFormat:@"Failed to create a writer for pipe %@", error]]
                                    failFuture];
              }
-             self.writer = writer;
+             @synchronized(self) {
+               self.writer = writer;
+               NSData *pendingData = self.pendingData;
+               if (pendingData) {
+                 [writer consumeData:pendingData];
+                 self.pendingData = nil;
+               }
+               if (self.pendingEndOfFile) {
+                 [writer consumeEndOfFile];
+               }
+             }
              return [FBFuture futureWithResult:attachment];
            }]
           named:[NSString stringWithFormat:@"Attach %@ to pipe", self.description]];
@@ -1114,7 +1127,9 @@ static NSTimeInterval const ProcessDetachDrainTimeout = 4;
             detach]
            onQueue:self.workQueue
            notifyOfCompletion:^(id _) {
-             self.writer = nil;
+             @synchronized(self) {
+               self.writer = nil;
+             }
            }]
           named:[NSString stringWithFormat:@"Detach %@", self.description]];
 }
@@ -1123,12 +1138,27 @@ static NSTimeInterval const ProcessDetachDrainTimeout = 4;
 
 - (void)consumeData:(NSData *)data
 {
-  [self.writer consumeData:data];
+  @synchronized(self) {
+    if (self.writer) {
+      [self.writer consumeData:data];
+      return;
+    }
+    if (!self.pendingData) {
+      self.pendingData = [NSMutableData data];
+    }
+    [self.pendingData appendData:data];
+  }
 }
 
 - (void)consumeEndOfFile
 {
-  [self.writer consumeEndOfFile];
+  @synchronized(self) {
+    if (self.writer) {
+      [self.writer consumeEndOfFile];
+      return;
+    }
+    self.pendingEndOfFile = YES;
+  }
 }
 
 #pragma mark NSObject

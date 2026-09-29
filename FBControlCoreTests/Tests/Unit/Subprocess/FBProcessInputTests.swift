@@ -25,8 +25,6 @@ final class FBProcessInputTests: XCTestCase {
     consumer.consumeEndOfFile()
     _ = try await bridgeFBFuture(process.exited(withCodes: [0]))
 
-    // BUG: bytes written before the process attaches its stdin are dropped.
-    // Flipped in the following commit.
-    XCTAssertEqual(process.stdOut as? String, " late")
+    XCTAssertEqual(process.stdOut as? String, "early late")
   }
 }
