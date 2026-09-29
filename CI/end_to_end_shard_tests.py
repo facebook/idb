@@ -38,11 +38,7 @@ class EndToEndShardTest(unittest.TestCase):
     def test_a_named_shard_runs_its_modules(self) -> None:
         self.assertEqual(
             modules("ui", self.directory),
-            [
-                "EndToEndTests.test_accessibility",
-                "EndToEndTests.test_demos",
-                "EndToEndTests.test_services",
-            ],
+            ["EndToEndTests.test_accessibility", "EndToEndTests.test_services"],
         )
 
     def test_the_remainder_runs_every_test_module_no_shard_names(self) -> None:
@@ -51,10 +47,10 @@ class EndToEndShardTest(unittest.TestCase):
             ["EndToEndTests.test_files", "EndToEndTests.test_targets"],
         )
 
-    def test_every_documented_demo_runs_in_the_ui_shard(self) -> None:
+    def test_every_documented_demo_runs_in_the_demos_shard(self) -> None:
         for slug, identity in DOCUMENTED_DEMOS.items():
             with self.subTest(slug):
-                self.assertIn(identity.split(".")[1], SHARDS["ui"])
+                self.assertIn(identity.split(".")[1], SHARDS["demos"])
 
     def test_prints_the_modules_for_unittest(self) -> None:
         printed = io.StringIO()

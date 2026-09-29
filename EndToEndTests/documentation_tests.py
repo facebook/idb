@@ -181,6 +181,22 @@ class PublishedInventoryTests(unittest.TestCase):
 
         self.assertEqual(declared, dict(documentation.DOCUMENTED_DEMOS))
 
+    def test_the_demos_module_holds_only_documented_demos(self) -> None:
+        # The site publishes when the demos shard passes, so a targeted test
+        # in test_demos would gate publishing without appearing on the site.
+        demos = importlib.import_module(".test_demos", __package__)
+        loader = unittest.TestLoader()
+        tests = {
+            test_identity(f"{case.__module__}.{case.__qualname__}.{name}")
+            for case in vars(demos).values()
+            if isinstance(case, type)
+            and issubclass(case, unittest.TestCase)
+            and case.__module__ == demos.__name__
+            for name in loader.getTestCaseNames(case)
+        }
+
+        self.assertEqual(tests, set(documentation.DOCUMENTED_DEMOS.values()))
+
     def decorated_modules(self) -> list[types.ModuleType]:
         """Every module the table names, which any target running this must have.
 

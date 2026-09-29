@@ -281,7 +281,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        shard: [ui, system, apps]
+        shard: [demos, ui, system, apps]
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-python@v6
@@ -322,12 +322,12 @@ jobs:
       # Only a run in which every documented demo passed produces this, so the
       # artifact's existence is what lets the site publish them. The recorder
       # that captured the run is also what cuts each demo's clip out of it.
-      # Every demo is in the `ui` shard.
+      # Every demo is in the `demos` shard, and nothing else is.
       - name: Document the demos this run performed
-        if: matrix.shard == 'ui'
+        if: matrix.shard == 'demos'
         run: python3 -m CI.generate_documentation --artifacts-dir "$RUNNER_TEMP/end-to-end-diagnostics" --output "$RUNNER_TEMP/documentation" --recorder "$RUNNER_TEMP/artifacts/Distribution/sim-video"
       - name: Upload the demo documentation
-        if: matrix.shard == 'ui'
+        if: matrix.shard == 'demos'
         uses: actions/upload-artifact@v5
         with:
           name: documentation

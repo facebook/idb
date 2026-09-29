@@ -15,11 +15,13 @@ import argparse
 from collections.abc import Mapping, Sequence
 from pathlib import Path
 
-# `ui` holds every documented demo, so it is the one shard whose run can
-# document them. `system` keeps the prompt-raising permission tests away from
-# the others' simulator.
+# `demos` holds every documented demo and nothing else, so it is the one
+# shard whose run documents them, and the site depends on no other test.
+# `system` keeps the prompt-raising permission tests away from the others'
+# simulator.
 SHARDS: Mapping[str, tuple[str, ...]] = {
-    "ui": ("test_accessibility", "test_demos", "test_services"),
+    "demos": ("test_demos",),
+    "ui": ("test_accessibility", "test_services"),
     "system": ("test_system",),
 }
 REMAINDER = "apps"
