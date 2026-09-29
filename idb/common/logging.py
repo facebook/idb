@@ -10,8 +10,8 @@ import functools
 import inspect
 import logging
 import time
+from asyncio import CancelledError
 from collections.abc import Sequence
-from concurrent.futures import CancelledError
 from types import TracebackType
 from typing import Any, AsyncContextManager
 

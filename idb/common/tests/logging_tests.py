@@ -6,7 +6,6 @@
 
 import asyncio
 from collections.abc import AsyncIterator
-from concurrent.futures import CancelledError
 from types import ModuleType
 from unittest import mock
 
@@ -189,31 +188,61 @@ class LogCallCancellationTest(TestCase):
 
     async def test_cancelled_invocation_emits_terminal_success_event(self) -> None:
         telemetry = _TelemetryPlugin(updates_per_call=[])
+        started = asyncio.Event()
 
         @log_call(name="record")
         async def record() -> None:
-            raise CancelledError()
+            started.set()
+            await asyncio.Event().wait()
 
         with mock.patch.object(plugin, "PLUGINS", [telemetry]):
-            with self.assertRaises(CancelledError):
-                await record()
+            task = asyncio.create_task(record())
+            await started.wait()
+            task.cancel()
+            with self.assertRaises(asyncio.CancelledError):
+                await task
         self.assertEqual(len(telemetry.started), 1)
         self.assertEqual(len(telemetry.failed), 0)
         self.assertEqual(len(telemetry.succeeded), 1)
         self.assertEqual(telemetry.succeeded[0].get("cancelled"), True)
 
+        context_telemetry = _TelemetryPlugin(updates_per_call=[])
+        context_started = asyncio.Event()
+
+        async def context_record() -> None:
+            async with log_call(name="record"):
+                context_started.set()
+                await asyncio.Event().wait()
+
+        with mock.patch.object(plugin, "PLUGINS", [context_telemetry]):
+            context_task = asyncio.create_task(context_record())
+            await context_started.wait()
+            context_task.cancel()
+            with self.assertRaises(asyncio.CancelledError):
+                await context_task
+        self.assertEqual(len(context_telemetry.started), 1)
+        self.assertEqual(len(context_telemetry.failed), 0)
+        self.assertEqual(len(context_telemetry.succeeded), 1)
+        self.assertEqual(context_telemetry.succeeded[0].get("cancelled"), True)
+
     async def test_cancelled_generator_emits_terminal_success_event(self) -> None:
         telemetry = _TelemetryPlugin(updates_per_call=[])
+        waiting = asyncio.Event()
 
         @log_call(name="stream")
         async def stream() -> AsyncIterator[int]:
             yield 1
-            raise CancelledError()
+            waiting.set()
+            await asyncio.Event().wait()
 
         with mock.patch.object(plugin, "PLUGINS", [telemetry]):
-            with self.assertRaises(CancelledError):
-                async for _ in stream():
-                    pass
+            values = stream()
+            self.assertEqual(await anext(values), 1)
+            task = asyncio.create_task(anext(values))
+            await waiting.wait()
+            task.cancel()
+            with self.assertRaises(asyncio.CancelledError):
+                await task
         self.assertEqual(len(telemetry.started), 1)
         self.assertEqual(len(telemetry.failed), 0)
         self.assertEqual(len(telemetry.succeeded), 1)
