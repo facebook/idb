@@ -44,6 +44,7 @@ struct PullMethodHandler {
     try await Self.pull(request, using: commandExecutor, logger: target.logger, cancellation: context.cancellation) { try await responseStream.send($0) }
   }
 
+  /// Stops when `cancellation` reports the RPC cancelled, as it does when the client goes away.
   static func pull(
     _ request: Idb_PullRequest,
     using commandExecutor: any FilePulling,
@@ -51,10 +52,12 @@ struct PullMethodHandler {
     cancellation: ServerContext.RPCCancellationHandle,
     send: @escaping @Sendable (Idb_PullResponse) async throws -> Void
   ) async throws {
-    if request.dstPath.isEmpty {
-      try await sendRawData(request: request, using: commandExecutor, logger: logger, send: send)
-    } else {
-      try await sendFilePath(request: request, using: commandExecutor, logger: logger, send: send)
+    try await withRPCCancellation(cancellation) {
+      if request.dstPath.isEmpty {
+        try await sendRawData(request: request, using: commandExecutor, logger: logger, send: send)
+      } else {
+        try await sendFilePath(request: request, using: commandExecutor, logger: logger, send: send)
+      }
     }
   }
 

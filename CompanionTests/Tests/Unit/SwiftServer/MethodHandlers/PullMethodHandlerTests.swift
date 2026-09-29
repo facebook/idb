@@ -78,10 +78,10 @@ final class PullMethodHandlerTests: XCTestCase {
     }
     await fulfillment(of: [started], timeout: 5)
     cancellation.cancel()
-    // BUG: the pull outlives the RPC — flipped in the following commit.
-    let result = await XCTWaiter().fulfillment(of: [stopped], timeout: 1)
-    XCTAssertEqual(result, .timedOut)
-    call.cancel()
-    _ = await call.result
+    await fulfillment(of: [stopped], timeout: 1)
+    do {
+      try await call.value
+      XCTFail("the call outlived its cancellation")
+    } catch is CancellationError {}
   }
 }
