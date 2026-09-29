@@ -818,8 +818,8 @@ static NSTimeInterval const ProcessDetachDrainTimeout = 4;
                                    failFuture];
              }
 
-             fileDescriptor = open(self.filePath.UTF8String, O_WRONLY | O_CREAT);
-             if (!fileDescriptor) {
+             fileDescriptor = open(self.filePath.UTF8String, O_WRONLY | O_CREAT | O_TRUNC, 0644);
+             if (fileDescriptor < 0) {
                return (FBFuture *)[[ControlCoreError
                                     describe:[NSString stringWithFormat:@"Cannot create file descriptor for %@: %s", self.filePath, strerror(errno)]]
                                    failFuture];

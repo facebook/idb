@@ -401,16 +401,14 @@ final class FBSubprocessTests: XCTestCase {
 
     try runEcho("FOO", toStdOutPath: path)
 
-    // BUG: the file is not truncated, so the tail of its old content survives.
-    XCTAssertEqual(try String(contentsOfFile: path, encoding: .utf8), "FOO\nTING CONTENT")
+    XCTAssertEqual(try String(contentsOfFile: path, encoding: .utf8), "FOO\n")
   }
 
   func testStdOutPathInAMissingDirectoryFails() {
     let path = (NSTemporaryDirectory() as NSString).appendingPathComponent("\(UUID().uuidString)/missing/out")
 
     XCTAssertThrowsError(try runEcho("FOO", toStdOutPath: path)) { error in
-      // BUG: the failed open goes unnoticed until its -1 descriptor is handed to the process.
-      XCTAssertTrue(error.localizedDescription.contains("Failed to dup input -1"), error.localizedDescription)
+      XCTAssertTrue(error.localizedDescription.contains("Cannot create file descriptor"), error.localizedDescription)
     }
   }
 
