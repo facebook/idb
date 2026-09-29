@@ -9,10 +9,10 @@
 import GRPCCore
 import XCTest
 
-final class HidMethodHandlerTests: XCTestCase {
+final class RPCCancellationTests: XCTestCase {
   func testCompletedOperationDoesNotWaitForDisconnect() async throws {
     let cancellation = ServerContext.RPCCancellationHandle()
-    try await HidMethodHandler.run(cancellation: cancellation) {}
+    try await withRPCCancellation(cancellation) {}
     XCTAssertFalse(cancellation.isCancelled)
   }
 
@@ -20,8 +20,8 @@ final class HidMethodHandlerTests: XCTestCase {
     let cancellation = ServerContext.RPCCancellationHandle()
     cancellation.cancel()
     do {
-      try await HidMethodHandler.run(cancellation: cancellation) {
-        XCTFail("Cancelled RPC must not begin HID delivery")
+      try await withRPCCancellation(cancellation) {
+        XCTFail("Cancelled RPC must not begin the operation")
       }
       XCTFail("Expected cancellation")
     } catch is CancellationError {
@@ -34,7 +34,7 @@ final class HidMethodHandlerTests: XCTestCase {
     let cancellation = ServerContext.RPCCancellationHandle()
     let (started, continuation) = AsyncStream<Void>.makeStream()
     let cleanup = CleanupState()
-    async let result: Void = HidMethodHandler.run(cancellation: cancellation) {
+    async let result: Void = withRPCCancellation(cancellation) {
       continuation.yield(())
       do {
         try await Task.sleep(nanoseconds: 30_000_000_000)
