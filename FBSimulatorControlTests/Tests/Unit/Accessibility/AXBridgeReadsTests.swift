@@ -878,6 +878,23 @@ final class AXBridgeReadsTests: XCTestCase {
     XCTAssertEqual(writes, 1)
   }
 
+  // Frontmost resolution can name an app that has since exited, such as one that is being relaunched.
+  func testMarkerTapRereadsAFrontmostAppThatHasExited() async throws {
+    let (reader, transport) = try nativeWaitReader(responses: [
+      waitErrorEnvelope("application_unavailable"), tapMatchingEnvelope(), envelope(["ok": true, "pid": 42]),
+    ])
+    // BUG: the tap fails without resolving the frontmost app again. Flipped in the following commit.
+    do {
+      try await reader.tap(.marker(value: "General", key: .label, depth: 10), options: TapOptions())
+      XCTFail("the tap fails on the exited app")
+    } catch UIAutomationError.applicationUnavailable {
+    }
+    let reads = await transport.readCount
+    let writes = await transport.writeCount
+    XCTAssertEqual(reads, 1)
+    XCTAssertEqual(writes, 0)
+  }
+
   func testMarkerTapDoesNotRepeatATimedOutWrite() async throws {
     let (reader, transport) = try nativeWaitReader(responses: [
       tapMatchingEnvelope(), waitErrorEnvelope("application_not_responding"), envelope(["ok": true, "pid": 42]),
