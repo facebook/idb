@@ -6,11 +6,13 @@ TCC daemon. Requests are validated before any changes. Repeated service names
 are applied once. A failed operation exits nonzero with the service and bundle
 identifier; earlier operations in the batch may already have succeeded.
 
-The runtime binds `TCCAccessSetForBundleIdWithOptions` and
-`TCCAccessResetForBundleIdWithOptions` from
-`/System/Library/PrivateFrameworks/TCC.framework/TCC`. Both return a Boolean
-answer from the daemon and borrow their CF arguments for the call. The service
-names are `kTCCServiceCamera`, `kTCCServiceMicrophone`, `kTCCServicePhotos` and
+The runtime binds the entry point needed for each operation from
+`/System/Library/PrivateFrameworks/TCC.framework/TCC`: approval uses
+`TCCAccessSetForBundleIdWithOptions`, while revoke uses
+`TCCAccessResetForBundleIdWithOptions`. A runtime can support one operation
+without exporting the other. Both return a Boolean answer from the daemon and
+borrow their CF arguments for the call. The service names are
+`kTCCServiceCamera`, `kTCCServiceMicrophone`, `kTCCServicePhotos` and
 `kTCCServiceAddressBook`.
 
 Approval passes `auth_value: 2`, TCC's "allowed". Passing it explicitly is what

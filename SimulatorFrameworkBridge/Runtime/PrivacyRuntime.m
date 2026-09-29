@@ -53,15 +53,20 @@
 + (FBPrivacyOutcome *)updateBundleID:(NSString *)bundleID services:(NSArray<NSString *> *)services approved:(BOOL)approved resolver:(FBPrivacySymbolResolver)resolver
 {
   @try {
-    FBTCCAccessSetForBundleIdWithOptions setAccess = resolver("TCCAccessSetForBundleIdWithOptions");
-    FBTCCAccessResetForBundleIdWithOptions resetAccess = resolver("TCCAccessResetForBundleIdWithOptions");
+    FBTCCAccessSetForBundleIdWithOptions setAccess = NULL;
+    FBTCCAccessResetForBundleIdWithOptions resetAccess = NULL;
+    if (approved) {
+      setAccess = resolver("TCCAccessSetForBundleIdWithOptions");
+      if (!setAccess) {
+        return [FBPrivacyOutcome unavailable:@"TCCAccessSetForBundleIdWithOptions unavailable"];
+      }
+    } else {
+      resetAccess = resolver("TCCAccessResetForBundleIdWithOptions");
+      if (!resetAccess) {
+        return [FBPrivacyOutcome unavailable:@"TCCAccessResetForBundleIdWithOptions unavailable"];
+      }
+    }
     FBTCCNoKillSymbol noKill = resolver("kTCCSetNoKill");
-    if (!setAccess) {
-      return [FBPrivacyOutcome unavailable:@"TCCAccessSetForBundleIdWithOptions unavailable"];
-    }
-    if (!resetAccess) {
-      return [FBPrivacyOutcome unavailable:@"TCCAccessResetForBundleIdWithOptions unavailable"];
-    }
     if (!noKill || !*noKill) {
       return [FBPrivacyOutcome unavailable:@"kTCCSetNoKill unavailable"];
     }
@@ -70,9 +75,12 @@
     NSDictionary *options = approved ? @{@"auth_value" : @2, (__bridge NSString *)*noKill : @YES}
     : @{(__bridge NSString *)*noKill : @YES};
     for (NSString *service in services) {
-      Boolean accepted = approved
-      ? setAccess((__bridge CFStringRef)service, (__bridge CFStringRef)bundleID, true, (__bridge CFDictionaryRef)options)
-      : resetAccess((__bridge CFStringRef)service, (__bridge CFStringRef)bundleID, (__bridge CFDictionaryRef)options);
+      Boolean accepted;
+      if (approved) {
+        accepted = setAccess((__bridge CFStringRef)service, (__bridge CFStringRef)bundleID, true, (__bridge CFDictionaryRef)options);
+      } else {
+        accepted = resetAccess((__bridge CFStringRef)service, (__bridge CFStringRef)bundleID, (__bridge CFDictionaryRef)options);
+      }
       if (!accepted) {
         return [FBPrivacyOutcome failed:[NSString stringWithFormat:@"TCC %@ failed for %@ (%@); earlier services may already have changed", approved ? @"approval" : @"reset", bundleID, service]];
       }

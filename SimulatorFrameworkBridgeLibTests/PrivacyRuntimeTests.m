@@ -98,24 +98,59 @@ static void *privacySymbol(const char *name)
   XCTAssertEqualObjects(privacyCalls[0][@"options"], (@{@"TestNoKill" : @YES}));
 }
 
-- (void)testMissingSymbolsFailBeforeAnyMutation
+- (void)testApprovalDoesNotRequireResetSymbol
 {
-  for (NSString *missing in @[@"TCCAccessSetForBundleIdWithOptions", @"TCCAccessResetForBundleIdWithOptions", @"kTCCSetNoKill"]) {
-    for (NSNumber *approved in @[@YES, @NO]) {
-      FBPrivacyOutcome *result = [FBPrivacyBinding updateBundleID:@"app"
-                                                         services:@[@"kTCCServiceCamera"]
-                                                         approved:approved.boolValue
-                                                         resolver:^void *(const char *name) {
-                                                           return [missing isEqualToString:@(name)] ? NULL : privacySymbol(name);
-                                                         }];
-      XCTAssertEqual(result.status, FBPrivacyStatusUnavailable);
-      XCTAssertTrue([result.failureReason containsString:missing]);
-      XCTAssertEqual(privacyCalls.count, 0u);
-    }
+  FBPrivacyOutcome *result = [FBPrivacyBinding updateBundleID:@"app"
+                                                     services:@[@"kTCCServiceCamera"]
+                                                     approved:YES
+                                                     resolver:^void *(const char *name) {
+                                                       return strcmp(name, "TCCAccessResetForBundleIdWithOptions") == 0 ? NULL : privacySymbol(name);
+                                                     }];
+  XCTAssertEqual(result.status, FBPrivacyStatusCompleted);
+  XCTAssertEqual(privacyCalls.count, 1u);
+  XCTAssertEqualObjects(privacyCalls[0][@"operation"], @"set");
+}
+
+- (void)testRevokeDoesNotRequireSetSymbol
+{
+  FBPrivacyOutcome *result = [FBPrivacyBinding updateBundleID:@"app"
+                                                     services:@[@"kTCCServiceCamera"]
+                                                     approved:NO
+                                                     resolver:^void *(const char *name) {
+                                                       return strcmp(name, "TCCAccessSetForBundleIdWithOptions") == 0 ? NULL : privacySymbol(name);
+                                                     }];
+  XCTAssertEqual(result.status, FBPrivacyStatusCompleted);
+  XCTAssertEqual(privacyCalls.count, 1u);
+  XCTAssertEqualObjects(privacyCalls[0][@"operation"], @"reset");
+}
+
+- (void)testMissingOperationSymbolFailsBeforeAnyMutation
+{
+  for (NSNumber *approved in @[@YES, @NO]) {
+    NSString *missing = approved.boolValue
+    ? @"TCCAccessSetForBundleIdWithOptions"
+    : @"TCCAccessResetForBundleIdWithOptions";
+    FBPrivacyOutcome *result = [FBPrivacyBinding updateBundleID:@"app"
+                                                       services:@[@"kTCCServiceCamera"]
+                                                       approved:approved.boolValue
+                                                       resolver:^void *(const char *name) {
+                                                         return [missing isEqualToString:@(name)] ? NULL : privacySymbol(name);
+                                                       }];
+    XCTAssertEqual(result.status, FBPrivacyStatusUnavailable);
+    XCTAssertTrue([result.failureReason containsString:missing]);
+    XCTAssertEqual(privacyCalls.count, 0u);
   }
+}
+
+- (void)testMissingNoKillFailsBeforeAnyMutation
+{
   testNoKill = NULL;
-  XCTAssertEqual([self update:YES services:@[@"kTCCServicePhotos"]].status, FBPrivacyStatusUnavailable);
-  XCTAssertEqual(privacyCalls.count, 0u);
+  for (NSNumber *approved in @[@YES, @NO]) {
+    FBPrivacyOutcome *result = [self update:approved.boolValue services:@[@"kTCCServicePhotos"]];
+    XCTAssertEqual(result.status, FBPrivacyStatusUnavailable);
+    XCTAssertTrue([result.failureReason containsString:@"kTCCSetNoKill"]);
+    XCTAssertEqual(privacyCalls.count, 0u);
+  }
 }
 
 - (void)testDaemonFailureStopsTheBatchAndIdentifiesTheService
