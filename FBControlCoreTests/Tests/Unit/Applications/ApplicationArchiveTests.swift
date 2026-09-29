@@ -288,21 +288,53 @@ final class ApplicationArchiveTests: XCTestCase {
     try makeGzippedTar(of: root).write(to: URL(fileURLWithPath: archive))
 
     try await assertResolveThrows(.localPath(archive)) { error in
-      guard case .noApplicationInIPA? = error as? BundleDescriptorError else {
-        XCTFail("Expected bundle discovery to fail, got: \(error)")
+      guard case .noInstallableBundle(_, let underlying)? = error as? InstallError,
+        case .noApplicationInIPA? = underlying as? BundleDescriptorError
+      else {
+        XCTFail("Expected no application to be found, got: \(error)")
         return
       }
     }
     XCTAssertEqual(leftBehind, [])
   }
 
-  func testResolve_WhenTheArchiveIsCorrupt_FailsWithTheExtractorsError() async throws {
+  func testResolve_WhenTheArchiveHoldsTwoApps_FailsRatherThanPicking() async throws {
+    let root = path("two-app-staging")
+    let payload = (root as NSString).appendingPathComponent("Payload")
+    try FileManager.default.createDirectory(atPath: payload, withIntermediateDirectories: true)
+    for name in ["First", "Second"] {
+      let app = try makeAppBundle("\(name).app", identifier: "com.example.\(name.lowercased())")
+      try FileManager.default.moveItem(
+        atPath: app, toPath: (payload as NSString).appendingPathComponent("\(name).app"))
+    }
+    let archive = path("two.ipa")
+    try makeGzippedTar(of: root).write(to: URL(fileURLWithPath: archive))
+
+    try await assertResolveThrows(.localPath(archive)) { error in
+      guard case .noInstallableBundle(_, let underlying)? = error as? InstallError,
+        case .multipleApplicationsInIPA(let count, _)? = underlying as? BundleDescriptorError
+      else {
+        XCTFail("Expected an ambiguous archive to be rejected, got: \(error)")
+        return
+      }
+      XCTAssertEqual(count, 2)
+    }
+  }
+
+  func testResolve_WhenTheArchiveIsCorrupt_FailsAsAnExtractionFailure() async throws {
     let archive = path("corrupt.ipa")
     try Data("not an archive".utf8).write(to: URL(fileURLWithPath: archive))
 
     try await assertResolveThrows(.localPath(archive)) { error in
+      guard case .extractionFailed(let underlying)? = error as? InstallError else {
+        XCTFail("Expected an extraction failure, got: \(error)")
+        return
+      }
       XCTAssertTrue(
-        (error as NSError).localizedDescription.contains("is not acceptable"), "Got: \(error)")
+        (underlying as NSError).localizedDescription.contains("is not acceptable"), "Got: \(underlying)")
+      XCTAssertTrue(
+        (error as NSError).localizedDescription.contains("is not acceptable"),
+        "The extractor's reason survives the ObjC boundary")
     }
   }
 }

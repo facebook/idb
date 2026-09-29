@@ -7,8 +7,13 @@
 
 import Foundation
 
-/// Failures fetching an application archive.
-enum InstallError: Error, CustomStringConvertible {
+/// Everything that can go wrong between being told where an application is and
+/// having a bundle to install.
+///
+/// A caller deciding what to do about a failure -- retry the fetch, report a bad
+/// URL, tell the user their archive is empty -- matches on a case rather than on
+/// the text of a message.
+public enum InstallError: Error, CustomStringConvertible {
 
   case httpStatus(url: URL?, statusCode: Int)
 
@@ -17,6 +22,12 @@ enum InstallError: Error, CustomStringConvertible {
 
   /// The response was not HTTP at all, so there is no status to report.
   case notAnHTTPResponse(url: URL)
+
+  /// The extractor rejected the archive, or failed part way through it.
+  case extractionFailed(underlying: Error)
+
+  /// The archive was unpacked, and did not hold exactly one loadable application.
+  case noInstallableBundle(inDirectory: String, underlying: Error)
 
   public var description: String {
     switch self {
@@ -28,6 +39,10 @@ enum InstallError: Error, CustomStringConvertible {
       return "Download\(target) did not complete: \(underlying)"
     case .notAnHTTPResponse(let url):
       return "Download of \(url.absoluteString) got a non-HTTP response"
+    case .extractionFailed(let underlying):
+      return "Could not extract the archive: \(underlying.localizedDescription)"
+    case .noInstallableBundle(let directory, let underlying):
+      return "No installable application in \(directory): \(underlying)"
     }
   }
 }

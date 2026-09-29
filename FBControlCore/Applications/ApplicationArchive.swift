@@ -73,7 +73,12 @@ public enum ApplicationArchive {
       try await extract(
         source, to: extractDirectory.path, options: options, totalStart: totalStart,
         downloadConfiguration: downloadConfiguration, logger: logger, onProgress: onProgress)
-      let bundle = try BundleDescriptor.findAppPath(fromDirectory: extractDirectory, logger: logger)
+      let bundle: BundleDescriptor
+      do {
+        bundle = try BundleDescriptor.findAppPath(fromDirectory: extractDirectory, logger: logger)
+      } catch {
+        throw InstallError.noInstallableBundle(inDirectory: extractDirectory.path, underlying: error)
+      }
       return try await perform(bundle)
     }
   }
@@ -168,7 +173,17 @@ public enum ApplicationArchive {
   ) async throws {
     let stageStart = Date()
     onProgress(.extractStarted(timing: .measure(stageStart: stageStart, totalStart: totalStart), destinationPath: extractPath))
-    try await operation()
+    do {
+      try await operation()
+    } catch let error as InstallError {
+      // Already classified: the transfer is awaited inside this stage, and a
+      // dropped connection is not a corrupt archive.
+      throw error
+    } catch {
+      // The extractor is shared with callers that are not installing anything, so
+      // it reports failures unclassified; this is the boundary that knows better.
+      throw InstallError.extractionFailed(underlying: error)
+    }
     onProgress(.extractCompleted(timing: .measure(stageStart: stageStart, totalStart: totalStart), destinationPath: extractPath))
   }
 }
