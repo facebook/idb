@@ -51,23 +51,26 @@ struct XCTestRunMethodHandler {
       reportingTerminated: { _ = try await reporter.awaitReportingTerminated() })
   }
 
-  /// Awaits the run `start` begins, then its reporting.
+  /// Awaits the run `start` begins, then its reporting, unless `cancellation` reports the RPC cancelled, as
+  /// it does when the client goes away, which cancels the run.
   static func run(
     cancellation: ServerContext.RPCCancellationHandle,
     start: @escaping @Sendable () async throws -> any XCTestRunCompletion,
     reportingTerminated: @escaping @Sendable () async throws -> Void
   ) async throws {
-    let operation = try await start()
-    do {
-      try await operation.awaitCompletion()
-    } catch let error as NSError {
-      // We should ignore errors that came from test binary. Like when exception is throwed or binary crashed.
-      if error.domain != FBTestErrorDomain {
-        throw error
+    try await withRPCCancellation(cancellation) {
+      let operation = try await start()
+      do {
+        try await operation.awaitCompletion()
+      } catch let error as NSError {
+        // We should ignore errors that came from test binary. Like when exception is throwed or binary crashed.
+        if error.domain != FBTestErrorDomain {
+          throw error
+        }
       }
-    }
 
-    try await reportingTerminated()
+      try await reportingTerminated()
+    }
   }
 
   func transform(value request: Idb_XctestRunRequest) -> XCTestRunRequest? {
