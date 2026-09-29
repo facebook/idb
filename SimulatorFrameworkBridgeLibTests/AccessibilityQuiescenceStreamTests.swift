@@ -124,8 +124,7 @@ extension BridgeServerSocketTests {
     monitor.deliver(.runLoopIdle, pid: pid)
     _ = try self.monitor(of: runtime, requests: 3)
     usleep(200_000)
-    // BUG: each answer re-arms the signal, so clients multiply one another's requests — flipped in the following commit.
-    XCTAssertEqual(monitor.requests.count, 4)
+    XCTAssertEqual(monitor.requests.count, 3)
   }
 
   func testTheDefaultWindowSettlesBeforeGoingQuiet() throws {

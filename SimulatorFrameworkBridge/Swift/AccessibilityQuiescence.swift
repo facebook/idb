@@ -52,14 +52,16 @@ public struct QuiescenceTracker: Sendable {
     signals[signal]?.requestedAt = time
   }
 
-  /// An answer to a request this tracker did not see made is ignored: another client asked for it.
-  public mutating func answered(_ signal: BridgeAXWire.Quiescence.Signal, at time: TimeInterval) {
-    guard var times = signals[signal], let requestedAt = times.requestedAt else { return }
+  /// An answer to a request this tracker did not see made is ignored, and false: another client asked for it.
+  @discardableResult
+  public mutating func answered(_ signal: BridgeAXWire.Quiescence.Signal, at time: TimeInterval) -> Bool {
+    guard var times = signals[signal], let requestedAt = times.requestedAt else { return false }
     if times.calmSince == nil || time - requestedAt >= busyThreshold {
       times.calmSince = time
     }
     times.requestedAt = nil
     signals[signal] = times
+    return true
   }
 
   /// Nil until every signal has either been answered or gone unanswered long enough to count as busy.
@@ -250,7 +252,8 @@ final class QuiescenceStream: BridgeResponseStream {
     case .runLoopIdle, .animationsInactive:
       guard pid == self.pid else { return }
       let signal: Wire.Signal = report == .runLoopIdle ? .runLoopIdle : .animationsInactive
-      tracker.answered(signal, at: Self.now)
+      // Every client's monitor hears every answer, so re-arming on another's would multiply the requests.
+      guard tracker.answered(signal, at: Self.now) else { return }
       evaluate()
       let generation = generation
       let rearm = Timer(timeInterval: Self.rearmDelay, repeats: false) { [weak self] _ in
