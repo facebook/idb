@@ -384,6 +384,36 @@ final class FBSubprocessTests: XCTestCase {
     XCTAssertEqual(expected, try XCTUnwrap(process.stdOut) as Data)
   }
 
+  private func runEcho(_ text: String, toStdOutPath path: String) throws {
+    try FBProcessBuilder<NSNull, NSData, NSData>
+      .withLaunchPath("/bin/echo", arguments: [text])
+      .withStdOutPath(path)
+      .withStdErrToDevNull()
+      .runUntilCompletion(withAcceptableExitCodes: [0])
+      .mapReplace(NSNull())
+      .`await`(withTimeout: 5)
+  }
+
+  func testStdOutPathReplacesAnExistingFile() throws {
+    let path = (NSTemporaryDirectory() as NSString).appendingPathComponent(UUID().uuidString)
+    defer { try? FileManager.default.removeItem(atPath: path) }
+    try "EXISTING CONTENT".write(toFile: path, atomically: true, encoding: .utf8)
+
+    try runEcho("FOO", toStdOutPath: path)
+
+    // BUG: the file is not truncated, so the tail of its old content survives.
+    XCTAssertEqual(try String(contentsOfFile: path, encoding: .utf8), "FOO\nTING CONTENT")
+  }
+
+  func testStdOutPathInAMissingDirectoryFails() {
+    let path = (NSTemporaryDirectory() as NSString).appendingPathComponent("\(UUID().uuidString)/missing/out")
+
+    XCTAssertThrowsError(try runEcho("FOO", toStdOutPath: path)) { error in
+      // BUG: the failed open goes unnoticed until its -1 descriptor is handed to the process.
+      XCTAssertTrue(error.localizedDescription.contains("Failed to dup input -1"), error.localizedDescription)
+    }
+  }
+
   func testSendingSIGKILL() throws {
     let process = try startSynchronously(
       FBProcessBuilder<NSNull, NSData, NSData>.withLaunchPath("/bin/sleep", arguments: ["1000000"])
