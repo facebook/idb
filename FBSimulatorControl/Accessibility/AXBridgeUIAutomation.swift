@@ -509,6 +509,12 @@ final class AXBridgeUIAutomation: AXBridgeTreeReader, @unchecked Sendable {
       try Task.checkCancellation()
       _ = simulator.logger.log("axbridge \(operation): target read timed out; retrying once before sending the write")
       return try await writeTarget(for: query, operation: operation, callerAssertion: callerAssertion)
+    } catch UIAutomationError.applicationUnavailable {
+      // A write query names no pid, so the app came from frontmost resolution, which can name one that
+      // has exited, such as mid-relaunch. Resolving again finds the app now on screen.
+      try Task.checkCancellation()
+      _ = simulator.logger.log("axbridge \(operation): the frontmost app was unavailable; resolving it again before sending the write")
+      return try await writeTarget(for: query, operation: operation, callerAssertion: callerAssertion)
     }
   }
 

@@ -883,16 +883,11 @@ final class AXBridgeReadsTests: XCTestCase {
     let (reader, transport) = try nativeWaitReader(responses: [
       waitErrorEnvelope("application_unavailable"), tapMatchingEnvelope(), envelope(["ok": true, "pid": 42]),
     ])
-    // BUG: the tap fails without resolving the frontmost app again. Flipped in the following commit.
-    do {
-      try await reader.tap(.marker(value: "General", key: .label, depth: 10), options: TapOptions())
-      XCTFail("the tap fails on the exited app")
-    } catch UIAutomationError.applicationUnavailable {
-    }
+    try await reader.tap(.marker(value: "General", key: .label, depth: 10), options: TapOptions())
     let reads = await transport.readCount
     let writes = await transport.writeCount
-    XCTAssertEqual(reads, 1)
-    XCTAssertEqual(writes, 0)
+    XCTAssertEqual(reads, 2)
+    XCTAssertEqual(writes, 1)
   }
 
   func testMarkerTapDoesNotRepeatATimedOutWrite() async throws {
