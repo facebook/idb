@@ -13,6 +13,13 @@ import GRPCCore
 import IDBGRPCSwift
 import XCTestBootstrap
 
+/// Seam over a started test run, so the handler can be tested against a double.
+protocol XCTestRunCompletion {
+  func awaitCompletion() async throws
+}
+
+extension IDBTestOperation: XCTestRunCompletion {}
+
 struct XCTestRunMethodHandler {
 
   let target: any Target
@@ -22,18 +29,35 @@ struct XCTestRunMethodHandler {
   let logger: IDBLogger
 
   func handle(request: Idb_XctestRunRequest, responseStream: RPCWriter<Idb_XctestRunResponse>, context: ServerContext) async throws {
-    guard let request = transform(value: request) else {
+    guard let transformed = transform(value: request) else {
       throw RPCError(code: .invalidArgument, message: "failed to create XCTestRunRequest")
     }
 
     let reporter = IDBXCTestReporter(responseStream: responseStream, queue: target.workQueue, logger: logger)
+    // The request is not mutated once built, but is not Sendable; rebind as nonisolated(unsafe) so the
+    // run can capture it.
+    nonisolated(unsafe) let request = transformed
 
-    let operation = try await commandExecutor.xctest_run(
-      request,
-      reporter: reporter,
-      logger: FBControlCoreLoggerFactory.logger(to: reporter))
-    reporter.configuration = .init(legacy: operation.reporterConfiguration)
+    try await Self.run(
+      cancellation: context.cancellation,
+      start: { [commandExecutor] in
+        let operation = try await commandExecutor.xctest_run(
+          request,
+          reporter: reporter,
+          logger: FBControlCoreLoggerFactory.logger(to: reporter))
+        reporter.configuration = .init(legacy: operation.reporterConfiguration)
+        return operation
+      },
+      reportingTerminated: { _ = try await reporter.awaitReportingTerminated() })
+  }
 
+  /// Awaits the run `start` begins, then its reporting.
+  static func run(
+    cancellation: ServerContext.RPCCancellationHandle,
+    start: @escaping @Sendable () async throws -> any XCTestRunCompletion,
+    reportingTerminated: @escaping @Sendable () async throws -> Void
+  ) async throws {
+    let operation = try await start()
     do {
       try await operation.awaitCompletion()
     } catch let error as NSError {
@@ -43,7 +67,7 @@ struct XCTestRunMethodHandler {
       }
     }
 
-    _ = try await reporter.awaitReportingTerminated()
+    try await reportingTerminated()
   }
 
   func transform(value request: Idb_XctestRunRequest) -> XCTestRunRequest? {
