@@ -7,9 +7,24 @@
 
 from __future__ import annotations
 
+import contextlib
+import functools
+import http.server
 import json
+import shutil
+import threading
+from collections.abc import Iterator
+from pathlib import Path
+from typing import Any
 
-from .harness import IdbEndToEndTestCase, NotReady
+from .harness import (
+    FIXTURE_APP_BUNDLE_ID,
+    HarnessError,
+    IdbEndToEndTestCase,
+    INSTALL_TIMEOUT_SECONDS,
+    NotReady,
+    wait_until,
+)
 
 PID_REPORT_TIMEOUT_SECONDS = 120.0
 
@@ -50,6 +65,67 @@ class ApplicationLifecycleTests(IdbEndToEndTestCase):
             "com.example.idb.not-installed",
             expected_error="isn't installed",
         )
+
+
+@contextlib.contextmanager
+def _serving(directory: Path) -> Iterator[str]:
+    """Serve a directory over loopback HTTP, yielding its base URL."""
+    handler = functools.partial(
+        http.server.SimpleHTTPRequestHandler, directory=str(directory)
+    )
+    server = http.server.ThreadingHTTPServer(("127.0.0.1", 0), handler)
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    try:
+        host, port = server.server_address[:2]
+        yield f"http://{host}:{port}"
+    finally:
+        server.shutdown()
+        server.server_close()
+        thread.join()
+
+
+class ArchiveInstallTests(IdbEndToEndTestCase):
+    def make_fixture_ipa(self, directory: Path) -> Path:
+        staging = self.make_temporary_directory()
+        fixture = self.environment.fixture_app
+        shutil.copytree(fixture, staging / "Payload" / fixture.name, symlinks=True)
+        archive = shutil.make_archive(
+            str(staging / "fixture"), "zip", staging, "Payload"
+        )
+        return Path(shutil.move(archive, directory / "fixture.ipa"))
+
+    async def test_installing_an_ipa(self) -> None:
+        ipa = self.make_fixture_ipa(self.make_temporary_directory())
+        self.addAsyncCleanup(self.uninstall_quietly, FIXTURE_APP_BUNDLE_ID)
+
+        await self.idb("install", str(ipa), timeout=INSTALL_TIMEOUT_SECONDS)
+
+        self.assertIn(FIXTURE_APP_BUNDLE_ID, await self.simctl.installed_bundle_ids())
+
+    async def test_installing_an_ipa_from_a_url(self) -> None:
+        served = self.make_temporary_directory()
+        self.make_fixture_ipa(served)
+        self.addAsyncCleanup(self.uninstall_quietly, FIXTURE_APP_BUNDLE_ID)
+
+        with _serving(served) as base:
+            await self.idb(
+                "install", f"{base}/fixture.ipa", timeout=INSTALL_TIMEOUT_SECONDS
+            )
+
+        self.assertIn(FIXTURE_APP_BUNDLE_ID, await self.simctl.installed_bundle_ids())
+
+    async def test_installing_from_a_missing_url_reports_the_http_status(self) -> None:
+        with _serving(self.make_temporary_directory()) as base:
+            # BUG: the download's failure is never awaited, so the 404 reaches
+            # the extractor as an empty archive — flipped in the following
+            # commit.
+            await self.idb_expect_failure(
+                "install",
+                f"{base}/missing.ipa",
+                expected_error="No app bundle could be extracted",
+                timeout=INSTALL_TIMEOUT_SECONDS,
+            )
 
 
 class LaunchOutputTests(IdbEndToEndTestCase):
