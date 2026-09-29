@@ -2336,6 +2336,65 @@ final class AXBridgeReadsTests: XCTestCase {
     XCTAssertEqual(target.assertion, AXBridgeWriteAssertion(key: .label, value: "General Settings"))
   }
 
+  private static let suggestionRect = CGRect(x: 16, y: 200, width: 358, height: 44)
+
+  private static func reader(children: [[String: Any]]) -> StubAXBridgeTreeReader {
+    let tree: [String: Any] = [
+      AXWire.Node.label.rawValue: "root",
+      AXWire.Node.frame.rawValue: CGRectCreateDictionaryRepresentation(rootRect) as NSDictionary,
+      AXWire.Node.children.rawValue: children,
+    ]
+    return StubAXBridgeTreeReader(read: AXTreeRead(tree: tree, pid: 99, truncated: false, modal: nil))
+  }
+
+  private static func leaf(_ key: AXWire.Node, _ value: String, _ rect: CGRect?) -> [String: Any] {
+    var node: [String: Any] = [key.rawValue: value, AXWire.Node.children.rawValue: [[String: Any]]()]
+    if let rect {
+      node[AXWire.Node.frame.rawValue] = CGRectCreateDictionaryRepresentation(rect) as NSDictionary
+    }
+    return node
+  }
+
+  // Safari's address field is identified exactly `URL`, and while it is being typed into, a suggestion
+  // identified `SearchSuggestion?destination=URL` comes before it in the tree.
+  private static let addressBarChildren = [
+    leaf(.identifier, "SearchSuggestion?destination=URL", suggestionRect),
+    leaf(.identifier, "URL", childRect),
+  ]
+
+  func testAMarkerDescribesTheFirstElementContainingItOverOneEqualToIt() async throws {
+    let response = try await Self.reader(children: Self.addressBarChildren).describeTree(
+      .marker(value: "URL", key: .uniqueID, depth: 10), options: AccessibilityRequestOptions()
+    )
+    guard case let .single(element) = response.elements else {
+      return XCTFail("a marker read must answer with one element, got \(response.elements)")
+    }
+    // BUG: the suggestion is described, not the element identified exactly `URL`. Flipped in the following commit.
+    XCTAssertEqual(element.searchableValue(for: .uniqueID), "SearchSuggestion?destination=URL")
+  }
+
+  func testAMarkerWriteTargetsTheFirstElementContainingItOverOneEqualToIt() async throws {
+    let target = try await Self.reader(children: Self.addressBarChildren).writeTarget(
+      for: .marker(value: "URL", key: .uniqueID, depth: 10), operation: "A tap"
+    )
+    // BUG: the suggestion is tapped, not the element identified exactly `URL`. Flipped in the following commit.
+    XCTAssertEqual(target.point, CGPoint(x: Self.suggestionRect.midX, y: Self.suggestionRect.midY))
+    XCTAssertEqual(target.assertion, AXBridgeWriteAssertion(key: .identifier, value: "SearchSuggestion?destination=URL"))
+  }
+
+  // The first match has no frame to tap, so the write goes to the next match that has one.
+  func testAMarkerWriteAssertsTheFirstMatchButTargetsTheFirstMatchWithAFrame() async throws {
+    let reader = Self.reader(children: [
+      Self.leaf(.label, "General Settings", nil),
+      Self.leaf(.label, "General Sounds", Self.childRect),
+    ])
+    let target = try await reader.writeTarget(for: Self.marker, operation: "A tap")
+    XCTAssertEqual(target.point, CGPoint(x: Self.childRect.midX, y: Self.childRect.midY))
+    // BUG: the assertion is taken from the element with no frame, so the guest refuses the write to the
+    // other one. Flipped in the following commit.
+    XCTAssertEqual(target.assertion, AXBridgeWriteAssertion(key: .label, value: "General Settings"))
+  }
+
   // Only the attributes this wire carries can be asserted on; a marker searched on a host-side
   // derivation still writes, unasserted, rather than not at all.
   func testAMarkerOnANonAssertableKeyStillResolvesWithoutAnAssertion() async throws {
