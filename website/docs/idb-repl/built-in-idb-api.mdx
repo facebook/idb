@@ -29,7 +29,7 @@ These commands drive the connected simulator directly, so they work in the `app`
 | `IDB.ui.tap(marker: String)` | Tap the frontmost app's accessibility element whose label contains `marker`. |
 | `IDB.ui.swipe(from: CGPoint, to: CGPoint, duration: Double = 0, delta: Double = 0)` | Swipe between two points. `duration` in seconds; `delta` is point spacing between intermediate touches (0 = a sensible default). |
 | `IDB.ui.pinch(at center: CGPoint, scale: Double, duration: Double = 0.5, radius: Double = 100)` | Pinch centred at a point. A `scale` below 1 pinches in, above 1 pinches out. |
-| `IDB.ui.button(_ name: String)` | Press a hardware button: `"home"`, `"lock"`, `"side_button"`, `"siri"`, or `"apple_pay"`. |
+| `IDB.ui.button(_ name: String)` | Press a hardware button: `"home"`, `"lock"`, `"side_button"`, `"siri"`, `"apple_pay"`, `"play_pause"`, `"volume_up"`, `"volume_down"`, or `"eject"`. |
 | `IDB.ui.text(_ string: String)` | Type `string` on the hardware keyboard. |
 | `IDB.ui.touchDown(_ point:)` / `touchMove(_ point:)` / `touchUp(_ point:)` | Low-level touch primitives. A `touchDown` → `touchMove`(s) → `touchUp` sequence forms a held drag. |
 | `IDB.ui.describeAll() -> IDB.AXElement?` | The frontmost app's full accessibility hierarchy as a tree, or `nil` if it could not be retrieved. |
