@@ -180,6 +180,9 @@ struct Clip: AsyncParsableCommand {
         AVVideoAverageBitRateKey: dimensions.bitRate,
         AVVideoMaxKeyFrameIntervalDurationKey: 1.0,
         AVVideoProfileLevelKey: AVVideoProfileLevelH264HighAutoLevel,
+        // A clip is written whole into an unfragmented file, so B-frames are safe here, unlike in the
+        // fragmented recording it is cut from.
+        AVVideoAllowFrameReorderingKey: true,
       ],
     ]
   }
