@@ -15,8 +15,7 @@ final class SimulatorLifecycleErrorTests: XCTestCase {
   func testOpenURLFailedWithAReasonGivesTheReason() {
     let underlying = NSError(domain: NSPOSIXErrorDomain, code: 60, userInfo: [NSLocalizedDescriptionKey: "Operation timed out"])
     let error = SimulatorLifecycleError.openURLFailed(url: url, simulatorDescription: "iPhone 16", underlying: underlying)
-    // BUG: the reason is left out, so the caller cannot tell a timeout from a refusal. Flipped in the following commit.
-    XCTAssertEqual(error.errorDescription, "Failed to open URL https://fbidb.io/docs/idb on simulator iPhone 16")
+    XCTAssertEqual(error.errorDescription, "Failed to open URL https://fbidb.io/docs/idb on simulator iPhone 16: \(underlying)")
   }
 
   func testOpenURLFailedWithoutAReasonOmitsIt() {

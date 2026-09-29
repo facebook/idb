@@ -28,8 +28,11 @@ extension SimulatorLifecycleError: LocalizedError {
       return "More than one SimulatorApp \(runningApplications) running, focus is ambiguous"
     case let .focusFailed(applicationDescription):
       return "Failed to focus \(applicationDescription)"
-    case let .openURLFailed(url, simulatorDescription, _):
-      return "Failed to open URL \(url) on simulator \(simulatorDescription)"
+    case let .openURLFailed(url, simulatorDescription, underlying):
+      guard let underlying else {
+        return "Failed to open URL \(url) on simulator \(simulatorDescription)"
+      }
+      return "Failed to open URL \(url) on simulator \(simulatorDescription): \(underlying)"
     }
   }
 }
