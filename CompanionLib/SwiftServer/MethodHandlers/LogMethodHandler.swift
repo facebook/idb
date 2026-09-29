@@ -26,9 +26,19 @@ struct LogMethodHandler: @unchecked Sendable {
     }
   }
 
-  /// Forwards the log `start` begins until the log ends or a write fails.
+  /// Forwards the log `start` begins until the log ends, a write fails, or `cancellation` reports the RPC
+  /// cancelled, as it does when the client goes away. Only a write would otherwise notice the client is gone.
   static func tail(
     cancellation: ServerContext.RPCCancellationHandle,
+    send: @escaping @Sendable (Idb_LogResponse) throws -> Void,
+    start: @escaping @Sendable (any DataConsumer) async throws -> any LogOperation
+  ) async throws {
+    try await withRPCCancellation(cancellation) {
+      try await forward(send: send, start: start)
+    }
+  }
+
+  private static func forward(
     send: @escaping @Sendable (Idb_LogResponse) throws -> Void,
     start: (any DataConsumer) async throws -> any LogOperation
   ) async throws {
