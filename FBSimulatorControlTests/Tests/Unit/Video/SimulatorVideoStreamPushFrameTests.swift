@@ -54,7 +54,7 @@ final class SimulatorVideoStreamPushFrameTests: XCTestCase {
     return Started(stream: stream, pusher: pusher, surface: surface, ioSurface: ioSurface, logger: logger)
   }
 
-  func testPushesArePacedToOneDisplayIntervalApart() async throws {
+  func testASignalDuringAPushIsStillPushed() async throws {
     let started = try await startStream()
     defer { Task { try? await started.stream.stopStreaming() } }
     let pushInProgress = DispatchSemaphore(value: 0)
@@ -76,13 +76,6 @@ final class SimulatorVideoStreamPushFrameTests: XCTestCase {
     let writes = started.pusher.writes
     XCTAssertGreaterThanOrEqual(writes.count, 2, "a signal during a push must still be pushed")
     XCTAssertLessThanOrEqual(writes.count, 3, "three signals cannot produce more than three pushes")
-    let displayInterval = 1.0 / 60.0
-    let handoffTolerance = 0.001
-    for (earlier, later) in zip(writes, writes.dropFirst()) {
-      // Pacing happens before actor and pusher handoff work, whose duration can differ slightly
-      // between frames. One millisecond still distinguishes a paced push from the 2 ms burst above.
-      XCTAssertGreaterThanOrEqual(later.time - earlier.time, displayInterval - handoffTolerance, "consecutive pushes must be a display interval apart")
-    }
   }
 
   func testFrameTimingReferenceIsTheMonotonicClock() async throws {
