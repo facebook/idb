@@ -3,11 +3,7 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-"""Read and write the simulator's backing stores through guest services.
-
-A notification delivered to an app that is not running is followed through
-idb's notification commands, from delivery until it is cleared.
-"""
+"""Read and write the simulator's backing stores through guest services."""
 
 from __future__ import annotations
 
@@ -17,7 +13,6 @@ import plistlib
 import uuid
 from typing import Any
 
-from .documentation import documented_demo
 from .harness import GuestRPC, IdbEndToEndTestCase, NotReady, run, wait_until
 
 NEWS_BUNDLE_ID = "com.apple.news"
@@ -36,6 +31,16 @@ NOTIFICATION_STORE_TIMEOUT_SECONDS = 300.0
 # A list can take over 30s, when the system doesn't answer idb and it reads
 # the store instead, so a wait for the list to change allows for a few.
 NOTIFICATION_LIST_TIMEOUT_SECONDS = 120.0
+
+
+def _retained_notifications(text: str) -> list[tuple[str, str]]:
+    """The identifier and title of each notification the system still holds."""
+    held = []
+    for line in text.splitlines():
+        fields = [field.strip().strip('"') for field in line.split("|")]
+        if len(fields) >= 3:
+            held.append((fields[1], fields[2]))
+    return held
 
 
 class ServiceTests(IdbEndToEndTestCase):
@@ -342,146 +347,4 @@ class ServiceTests(IdbEndToEndTestCase):
 
         self.assertEqual(
             await wait_until("notification settings", 30.0, check), expected
-        )
-
-
-def _notifications(count: int) -> str:
-    return f"{count} delivered notification{'' if count == 1 else 's'}"
-
-
-class NotificationTests(IdbEndToEndTestCase):
-    @staticmethod
-    def _retained(text: str) -> list[tuple[str, str]]:
-        """The identifier and title of each notification the system still holds."""
-        held = []
-        for line in text.splitlines():
-            fields = [field.strip().strip('"') for field in line.split("|")]
-            if len(fields) >= 3:
-                held.append((fields[1], fields[2]))
-        return held
-
-    @documented_demo(
-        slug="send-and-clear-a-notification",
-        title="Send a push notification without a permission prompt or a running app",
-        summary=(
-            "Grant an app notification permission directly, so there is no "
-            "system prompt to automate, then deliver a push notification to it "
-            "while it isn't running and see the system hold it for the app. "
-            "Clear the app's delivered notifications afterwards to leave the "
-            "simulator clean for whatever runs next."
-        ),
-    )
-    async def test_send_notification_delivers_to_an_app_that_is_not_running(
-        self,
-    ) -> None:
-        self.addAsyncCleanup(self.setup_terminate_quietly, NEWS_BUNDLE_ID)
-        await self.setup_terminate_quietly(NEWS_BUNDLE_ID)
-        # The first push a simulator receives after it is erased waits on the
-        # system building its notification store, for minutes at worst. This
-        # one is sent before the permission is granted, so the system refuses
-        # it and stores nothing, and the demo's own push is quick.
-        await self.setup_idb(
-            "send-notification",
-            NEWS_BUNDLE_ID,
-            NOTIFICATION_PAYLOAD,
-            check=False,
-            timeout=NOTIFICATION_STORE_TIMEOUT_SECONDS,
-        )
-
-        await self.idb(
-            "approve",
-            NEWS_BUNDLE_ID,
-            "notification",
-            step="Grant notification permission without showing a prompt",
-        )
-        self.note(
-            f"{NEWS_BUNDLE_ID} can now receive notifications. idb granted the "
-            "permission directly, so no prompt appeared.",
-            NEWS_BUNDLE_ID,
-        )
-
-        before = await self.idb(
-            "notification",
-            "list",
-            NEWS_BUNDLE_ID,
-            step="List notifications before delivery",
-        )
-        held = {identifier for identifier, _ in self._retained(before.text)}
-        self.note(
-            "The app has no delivered notifications."
-            if not held
-            else (
-                f"The app already has {_notifications(len(held))}, so the new "
-                "one can be told apart."
-            )
-        )
-
-        await self.idb(
-            "send-notification",
-            NEWS_BUNDLE_ID,
-            NOTIFICATION_PAYLOAD,
-            step="Deliver a notification while the app is not running",
-        )
-
-        def new_entries(text: str) -> list[str]:
-            return [
-                identifier
-                for identifier, title in self._retained(text)
-                if title == NOTIFICATION_TITLE and identifier not in held
-            ]
-
-        async def stored() -> None:
-            completed = await self.setup_idb("notification", "list", NEWS_BUNDLE_ID)
-            if not new_entries(completed.text):
-                raise NotReady(f"{NOTIFICATION_TITLE!r} is not held yet")
-
-        await wait_until(
-            f"The system did not hold {NOTIFICATION_TITLE!r}",
-            NOTIFICATION_LIST_TIMEOUT_SECONDS,
-            stored,
-        )
-
-        after = await self.idb(
-            "notification",
-            "list",
-            NEWS_BUNDLE_ID,
-            step="List notifications after delivery",
-        )
-        delivered = new_entries(after.text)
-        self.assertEqual(len(delivered), 1, f"expected one new {NOTIFICATION_TITLE!r}")
-        self.note(
-            f"The delivered-notification list now contains a new entry titled "
-            f"{NOTIFICATION_TITLE!r}, although {NEWS_BUNDLE_ID} never ran to "
-            "receive it.",
-            NOTIFICATION_TITLE,
-        )
-
-        await self.idb(
-            "notification",
-            "clear",
-            NEWS_BUNDLE_ID,
-            step="Clear the app's delivered notifications",
-        )
-
-        async def released() -> None:
-            completed = await self.setup_idb("notification", "list", NEWS_BUNDLE_ID)
-            if self._retained(completed.text):
-                raise NotReady("the system still holds notifications for the app")
-
-        await wait_until(
-            f"The system did not release the notifications for {NEWS_BUNDLE_ID}",
-            NOTIFICATION_LIST_TIMEOUT_SECONDS,
-            released,
-        )
-
-        cleared = await self.idb(
-            "notification",
-            "list",
-            NEWS_BUNDLE_ID,
-            step="List notifications after clearing them",
-        )
-        self.assertEqual(self._retained(cleared.text), [])
-        self.note(
-            "The app has no delivered notifications: clearing removed the new one"
-            + (f" and the {_notifications(len(held))} there before." if held else ".")
         )

@@ -19,7 +19,7 @@ from pathlib import Path
 # document them. `system` keeps the prompt-raising permission tests away from
 # the others' simulator.
 SHARDS: Mapping[str, tuple[str, ...]] = {
-    "ui": ("test_accessibility", "test_services"),
+    "ui": ("test_accessibility", "test_demos", "test_services"),
     "system": ("test_system",),
 }
 REMAINDER = "apps"
