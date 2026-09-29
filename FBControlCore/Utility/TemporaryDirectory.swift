@@ -104,8 +104,10 @@ public struct TemporaryDirectory: Equatable {
     _ body: (URL) async throws -> T
   ) async throws -> T {
     try await withTemporaryDirectory { tempDir in
-      _ = try await bridgeFBFuture(
-        FBArchiveOperations.extractArchive(fromStream: input, toPath: tempDir.path, overrideModificationTime: overrideMTime, logger: logger, compression: compression))
+      try await ArchiveExtractors.default.extract(
+        .stream(input), to: tempDir.path,
+        options: ArchiveExtractOptions(overrideModificationTime: overrideMTime, compression: compression),
+        logger: logger)
       return try await body(tempDir)
     }
   }
@@ -123,8 +125,10 @@ public struct TemporaryDirectory: Equatable {
     _ body: (URL) async throws -> T
   ) async throws -> T {
     try await withTemporaryDirectory { tempDir in
-      _ = try await bridgeFBFuture(
-        FBArchiveOperations.extractArchive(atPath: filePath, toPath: tempDir.path, overrideModificationTime: overrideMTime, logger: logger))
+      try await ArchiveExtractors.default.extract(
+        .filePath(filePath), to: tempDir.path,
+        options: ArchiveExtractOptions(overrideModificationTime: overrideMTime),
+        logger: logger)
       return try await body(tempDir)
     }
   }

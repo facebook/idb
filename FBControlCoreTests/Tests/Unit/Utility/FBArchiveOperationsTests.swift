@@ -299,31 +299,31 @@ final class FBArchiveOperationsTests: XCTestCase {
 
   private func extractFromFile(
     _ archive: String, overrideModificationTime: Bool = false
-  ) throws -> String {
+  ) async throws -> String {
     let destination = try makeExtractionDirectory()
-    let future = FBArchiveOperations.extractArchive(
-      atPath: archive,
-      toPath: destination,
-      overrideModificationTime: overrideModificationTime,
+    try await ArchiveExtractors.default.extract(
+      .filePath(archive),
+      to: destination,
+      options: ArchiveExtractOptions(overrideModificationTime: overrideModificationTime),
       logger: logger)
-    return try future.`await`() as String
+    return destination
   }
 
   private func extractFromStream(
     _ archive: String, overrideModificationTime: Bool = false
-  ) throws -> String {
+  ) async throws -> String {
     let destination = try makeExtractionDirectory()
     let data = try Data(contentsOf: URL(fileURLWithPath: archive))
     let input = FBProcessInput<NSData>(from: data).retyped(FBProcessInput<AnyObject>.self)
     // Production passes GZIP for every container -- the flag only selects between
     // gzip and zstd, and bsdtar sniffs the real format regardless.
-    let future = FBArchiveOperations.extractArchive(
-      fromStream: input,
-      toPath: destination,
-      overrideModificationTime: overrideModificationTime,
-      logger: logger,
-      compression: .GZIP)
-    return try future.`await`() as String
+    try await ArchiveExtractors.default.extract(
+      .stream(input),
+      to: destination,
+      options: ArchiveExtractOptions(
+        overrideModificationTime: overrideModificationTime, compression: .GZIP),
+      logger: logger)
+    return destination
   }
 
   private func posixPermissions(atPath path: String) throws -> Int {
@@ -346,10 +346,10 @@ final class FBArchiveOperationsTests: XCTestCase {
 
   // MARK: - Extraction from a file path
 
-  func testExtractArchiveAtPath_GzippedTar_RestoresContentsPermissionsAndSymlinks() throws {
+  func testExtractArchiveAtPath_GzippedTar_RestoresContentsPermissionsAndSymlinks() async throws {
     let archive = try makeArchive(from: try makePayloadFixture(), format: .gzippedTar)
 
-    let root = try extractFromFile(archive)
+    let root = try await extractFromFile(archive)
 
     try assertPayloadContents(extractedTo: root)
     XCTAssertEqual(
@@ -362,10 +362,10 @@ final class FBArchiveOperationsTests: XCTestCase {
       try FileManager.default.destinationOfSymbolicLink(atPath: link), Self.symlinkDestination)
   }
 
-  func testExtractArchiveAtPath_Zip_RestoresContentsPermissionsAndSymlinks() throws {
+  func testExtractArchiveAtPath_Zip_RestoresContentsPermissionsAndSymlinks() async throws {
     let archive = try makeArchive(from: try makePayloadFixture(), format: .zip)
 
-    let root = try extractFromFile(archive)
+    let root = try await extractFromFile(archive)
 
     try assertPayloadContents(extractedTo: root)
     XCTAssertEqual(
@@ -380,10 +380,10 @@ final class FBArchiveOperationsTests: XCTestCase {
 
   // MARK: - Extraction from a stream
 
-  func testExtractArchiveFromStream_GzippedTar_RestoresContentsPermissionsAndSymlinks() throws {
+  func testExtractArchiveFromStream_GzippedTar_RestoresContentsPermissionsAndSymlinks() async throws {
     let archive = try makeArchive(from: try makePayloadFixture(), format: .gzippedTar)
 
-    let root = try extractFromStream(archive)
+    let root = try await extractFromStream(archive)
 
     try assertPayloadContents(extractedTo: root)
     XCTAssertEqual(
@@ -401,10 +401,10 @@ final class FBArchiveOperationsTests: XCTestCase {
   // archive, which a sequential reader never reaches. This is the `.url` and
   // `.data` install path, and it strips the executable bit from every binary in a
   // real IPA. Asserted as-is here; flipped later in the stack.
-  func testExtractArchiveFromStream_Zip_LosesPermissionsAndSymlinks() throws {
+  func testExtractArchiveFromStream_Zip_LosesPermissionsAndSymlinks() async throws {
     let archive = try makeArchive(from: try makePayloadFixture(), format: .zip)
 
-    let root = try extractFromStream(archive)
+    let root = try await extractFromStream(archive)
 
     try assertPayloadContents(extractedTo: root)
     XCTAssertNotEqual(
@@ -423,14 +423,14 @@ final class FBArchiveOperationsTests: XCTestCase {
 
   // MARK: - Modification time
 
-  func testExtractArchiveAtPath_PreservesModificationTimeByDefault() throws {
+  func testExtractArchiveAtPath_PreservesModificationTimeByDefault() async throws {
     let source = try makePayloadFixture()
     let archivedDate = Date(timeIntervalSince1970: 1_000_000_000)
     let plist = (source as NSString).appendingPathComponent("Payload/Sample.app/Info.plist")
     try FileManager.default.setAttributes([.modificationDate: archivedDate], ofItemAtPath: plist)
     let archive = try makeArchive(from: source, format: .gzippedTar)
 
-    let root = try extractFromFile(archive, overrideModificationTime: false)
+    let root = try await extractFromFile(archive, overrideModificationTime: false)
 
     let extracted = (root as NSString).appendingPathComponent("Payload/Sample.app/Info.plist")
     let attributes = try FileManager.default.attributesOfItem(atPath: extracted)
@@ -439,14 +439,14 @@ final class FBArchiveOperationsTests: XCTestCase {
       extractedDate.timeIntervalSince1970, archivedDate.timeIntervalSince1970, accuracy: 2)
   }
 
-  func testExtractArchiveAtPath_OverrideModificationTime_RewritesItToNow() throws {
+  func testExtractArchiveAtPath_OverrideModificationTime_RewritesItToNow() async throws {
     let source = try makePayloadFixture()
     let archivedDate = Date(timeIntervalSince1970: 1_000_000_000)
     let plist = (source as NSString).appendingPathComponent("Payload/Sample.app/Info.plist")
     try FileManager.default.setAttributes([.modificationDate: archivedDate], ofItemAtPath: plist)
     let archive = try makeArchive(from: source, format: .gzippedTar)
 
-    let root = try extractFromFile(archive, overrideModificationTime: true)
+    let root = try await extractFromFile(archive, overrideModificationTime: true)
 
     let extracted = (root as NSString).appendingPathComponent("Payload/Sample.app/Info.plist")
     let attributes = try FileManager.default.attributesOfItem(atPath: extracted)
@@ -458,16 +458,28 @@ final class FBArchiveOperationsTests: XCTestCase {
 
   // MARK: - Failure
 
-  func testExtractArchiveAtPath_WhenArchiveIsCorrupt_Fails() throws {
+  func testExtractArchiveAtPath_WhenArchiveIsCorrupt_Fails() async throws {
     let archive = (tempDirectory as NSString).appendingPathComponent("corrupt.tar.gz")
     try Data("not an archive at all".utf8).write(to: URL(fileURLWithPath: archive))
 
-    XCTAssertThrowsError(try extractFromFile(archive))
+    do {
+      _ = try await extractFromFile(archive)
+      XCTFail("Expected the extraction to fail")
+    } catch {
+      XCTAssertTrue(
+        (error as NSError).localizedDescription.contains("is not acceptable"), "Got: \(error)")
+    }
   }
 
-  func testExtractArchiveAtPath_WhenArchiveIsMissing_Fails() throws {
+  func testExtractArchiveAtPath_WhenArchiveIsMissing_Fails() async throws {
     let archive = (tempDirectory as NSString).appendingPathComponent("absent.tar.gz")
 
-    XCTAssertThrowsError(try extractFromFile(archive))
+    do {
+      _ = try await extractFromFile(archive)
+      XCTFail("Expected the extraction to fail")
+    } catch {
+      XCTAssertTrue(
+        (error as NSError).localizedDescription.contains("is not acceptable"), "Got: \(error)")
+    }
   }
 }

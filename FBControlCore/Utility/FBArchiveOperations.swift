@@ -10,7 +10,7 @@ import Foundation
 public let BSDTarPath = "/usr/bin/bsdtar"
 
 /// The compression types available.
-public enum FBCompressionFormat: UInt {
+public enum FBCompressionFormat: UInt, Sendable {
   case GZIP = 1
   case ZSTD = 2
 }
