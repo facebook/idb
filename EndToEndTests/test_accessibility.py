@@ -33,6 +33,7 @@ from .harness import (
     ACCESSIBILITY_READY_TIMEOUT_SECONDS,
     FIXTURE_APP_BUNDLE_ID,
     IdbEndToEndTestCase,
+    LocalPages,
     NotReady,
     Query,
     select_tests_for_capability,
@@ -251,7 +252,9 @@ ACCESSIBILITY_READ_TESTS = frozenset(
 )
 INTERACTION_TESTS = frozenset(
     {
+        "test_ui_scroll_moves_rows_down_and_up",
         "test_ui_set_value_updates_the_search_field",
+        "test_ui_tap_by_identifier_opens_general",
         "test_ui_tap_by_point_opens_general",
         "test_ui_tap_refuses_a_mismatched_expected_value",
         "test_ui_wait_blocks_until_the_element_appears",
@@ -263,6 +266,11 @@ ACCESSIBILITY_TEST_CAPABILITIES = {
     **{name: SuiteCapability.ACCESSIBILITY_READ for name in ACCESSIBILITY_READ_TESTS},
     **{name: SuiteCapability.ACCESSIBILITY_INTERACTION for name in INTERACTION_TESTS},
 }
+WEB_CONTENT_TEST_CAPABILITIES = {
+    "test_ui_describe_all_reads_an_offscreen_web_element": (
+        SuiteCapability.ACCESSIBILITY_INTERACTION
+    ),
+}
 
 
 def load_tests(
@@ -270,11 +278,14 @@ def load_tests(
     tests: unittest.TestSuite,
     pattern: str | None,
 ) -> unittest.TestSuite:
-    return select_tests_for_capability(
-        loader,
-        loader.loadTestsFromTestCase(AccessibilityTests),
-        AccessibilityTests,
-        ACCESSIBILITY_TEST_CAPABILITIES,
+    return unittest.TestSuite(
+        select_tests_for_capability(
+            loader, loader.loadTestsFromTestCase(test_case), test_case, requirements
+        )
+        for test_case, requirements in (
+            (AccessibilityTests, ACCESSIBILITY_TEST_CAPABILITIES),
+            (WebContentTests, WEB_CONTENT_TEST_CAPABILITIES),
+        )
     )
 
 
@@ -615,6 +626,27 @@ class AccessibilityTests(AccessibilityFixtureTestCase):
         await self.tap_when_settled(GENERAL_ROW, "--api", "ax")
         await self.wait_for(Query(title, element_type="NavigationBar"), lookup=UiWait())
 
+    async def test_ui_tap_by_identifier_opens_general(self) -> None:
+        title = _label(self.control)
+        await self.idb("ui", "tap", GENERAL_ROW_ID, "--match-key", "AXUniqueId")
+        await self.wait_for(Query(title, element_type="NavigationBar"), lookup=UiWait())
+
+    async def test_ui_scroll_moves_rows_down_and_up(self) -> None:
+        before = _row_positions(await self.describe_all_complete("axbridge"))
+
+        await self.idb(
+            "ui", "scroll", "down", GENERAL_ROW_ID, "--match-key", "AXUniqueId"
+        )
+        after_down, scrolled = await self.wait_for_scroll(before, "down")
+
+        on_screen = _rows_on_screen(scrolled)
+        self.assertTrue(on_screen, "No row is on screen after scrolling down")
+        # A row at an edge can sit half under the bar the list scrolls
+        # beneath, which is not where a scroll can begin.
+        row = on_screen[len(on_screen) // 2]
+        await self.idb("ui", "scroll", "up", row, "--match-key", "AXUniqueId")
+        await self.wait_for_scroll(after_down, "up")
+
 
 class SafariTestCase(IdbEndToEndTestCase):
     async def asyncSetUp(self) -> None:
@@ -678,4 +710,41 @@ class SafariTestCase(IdbEndToEndTestCase):
             "axbridge",
             "--timeout",
             str(UI_UPDATE_TIMEOUT_SECONDS),
+        )
+
+
+class WebContentTests(SafariTestCase):
+    capabilities = WEB_CONTENT_TEST_CAPABILITIES
+
+    async def test_ui_describe_all_reads_an_offscreen_web_element(self) -> None:
+        pages = LocalPages({FIRST_PAGE_PATH: STAND_IN_PAGES[FIRST_PAGE_PATH]})
+        origin = pages.start()
+        self.addCleanup(pages.stop)
+        await self.idb("open", origin + FIRST_PAGE_PATH)
+        await self.wait_for_web_label(FIRST_PAGE_HEADING)
+
+        document = await self.idb_json(
+            "ui",
+            "describe-all",
+            "--api",
+            "axbridge",
+            "--format",
+            "complete",
+            "--match",
+            FIRST_PAGE_MATCH,
+            *LABEL_AND_FRAME_KEYS,
+        )
+
+        headings = [
+            element
+            for element in _elements(document["elements"])
+            if _label(element) == FIRST_PAGE_HEADING and _has_area(element)
+        ]
+        self.assertTrue(headings, f"no {FIRST_PAGE_HEADING!r} heading was reported")
+        screen = _screen(document)
+        assert screen is not None
+        self.assertGreater(
+            headings[0]["frame"]["y"],
+            screen["height"],
+            "the heading is on screen, so this read shows nothing below it",
         )

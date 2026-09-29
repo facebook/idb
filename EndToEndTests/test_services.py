@@ -286,6 +286,45 @@ class ServiceTests(IdbEndToEndTestCase):
         self.assertEqual(revoked.stdout, b"")
         await self.assert_notifications(bundle_id, False, 0)
 
+    async def test_send_notification_is_held_for_an_app_that_is_not_running(
+        self,
+    ) -> None:
+        self.addAsyncCleanup(self.setup_terminate_quietly, NEWS_BUNDLE_ID)
+        self.addAsyncCleanup(
+            self.setup_idb, "notification", "clear", NEWS_BUNDLE_ID, check=False
+        )
+        await self.setup_terminate_quietly(NEWS_BUNDLE_ID)
+        # The first push after an erase waits, for minutes at worst, on the
+        # system building its notification store. Sent before the permission
+        # is granted, this one is refused and stores nothing.
+        await self.setup_idb(
+            "send-notification",
+            NEWS_BUNDLE_ID,
+            NOTIFICATION_PAYLOAD,
+            check=False,
+            timeout=NOTIFICATION_STORE_TIMEOUT_SECONDS,
+        )
+        await self.setup_idb("approve", NEWS_BUNDLE_ID, "notification")
+        listed = await self.setup_idb("notification", "list", NEWS_BUNDLE_ID)
+        before = {identifier for identifier, _ in _retained_notifications(listed.text)}
+
+        await self.idb("send-notification", NEWS_BUNDLE_ID, NOTIFICATION_PAYLOAD)
+
+        async def held() -> None:
+            completed = await self.idb("notification", "list", NEWS_BUNDLE_ID)
+            if not [
+                identifier
+                for identifier, title in _retained_notifications(completed.text)
+                if title == NOTIFICATION_TITLE and identifier not in before
+            ]:
+                raise NotReady(f"{NOTIFICATION_TITLE!r} is not held yet")
+
+        await self.wait_or_fail(
+            f"The system did not hold {NOTIFICATION_TITLE!r} for {NEWS_BUNDLE_ID}",
+            NOTIFICATION_LIST_TIMEOUT_SECONDS,
+            held,
+        )
+
     async def test_guest_accessibility_settings_set_reads_back(self) -> None:
         arguments = ("--setting", "reduce-motion")
         before = json.loads(

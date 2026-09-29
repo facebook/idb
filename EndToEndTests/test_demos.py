@@ -7,7 +7,9 @@
 
 Each test here is a documented demo (see `documentation.py`): the commands it
 names with `step=` are the demo's published transcript, and its notes say what
-the output shows.
+the output shows. A demo may tell a story across several commands; nothing
+relies on one for coverage, since each behaviour it shows is also checked by a
+targeted test beside the other tests of its command.
 """
 
 from __future__ import annotations
