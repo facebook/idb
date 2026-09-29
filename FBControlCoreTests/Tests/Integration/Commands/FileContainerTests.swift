@@ -169,6 +169,13 @@ final class FileContainerTests: XCTestCase {
     XCTAssertEqual(expectedFiles, Set(actualFiles))
   }
 
+  func testBasePathPushFileToMissingDirectory() async throws {
+    let container = try setUpBasePathContainer()
+    // BUG: the destination directory is not created, so the push fails — flipped in the following commit
+    let result: Void? = try? await container.copy(fromHost: TestFixtures.photo0Path, toContainer: "new/nested")
+    XCTAssertNil(result)
+  }
+
   func testBasePathMoveFile() async throws {
     let container = try setUpBasePathContainer()
     try await container.move(from: "file.txt", to: "dir/file.txt")
@@ -310,6 +317,13 @@ final class FileContainerTests: XCTestCase {
     ]
     actualFiles = try await container.contents(ofDirectory: "bar/dir/Resources")
     XCTAssertEqual(expectedFiles, Set(actualFiles))
+  }
+
+  func testMappedPathPushFileToMissingDirectory() async throws {
+    let container = try setUpMappedPathContainer()
+    // BUG: the destination directory is not created, so the push fails — flipped in the following commit
+    let result: Void? = try? await container.copy(fromHost: TestFixtures.photo0Path, toContainer: "bar/new/nested")
+    XCTAssertNil(result)
   }
 
   func testMappedPathPushToRootFails() async throws {
