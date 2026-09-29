@@ -127,6 +127,23 @@ extension BridgeServerSocketTests {
     XCTAssertEqual(monitor.requests.count, 3)
   }
 
+  // Automation mode goes off when another accessibility client exits, and applications drop the requests
+  // they are sent while it is off. The heartbeat is a second, so one has run by the time this looks.
+  func testAutomationModeTurnedOffMidStreamIsTurnedBackOnAndTheUnansweredSignalsAskedAgain() throws {
+    let pid = getpid()
+    let runtime = runtimeWithApplications([pid])
+    let client = try openQuietStream(runtime, ["pid": .integer(Int64(pid)), "busyThresholdMs": .integer(5000), "quietWindowMs": .integer(0)])
+    defer { closeQuietStream(client) }
+
+    let monitor = try monitor(of: runtime, requests: 2)
+    runtime.automationMode = false
+    usleep(1_500_000)
+    // BUG: the stream never notices automation mode going off, so its requests go unanswered and it stays busy
+    // — flipped in the following commit.
+    XCTAssertEqual(runtime.automationModeWrites, [])
+    XCTAssertEqual(monitor.requests.count, 2)
+  }
+
   func testTheDefaultWindowSettlesBeforeGoingQuiet() throws {
     let pid = getpid()
     let runtime = runtimeWithApplications([pid])
