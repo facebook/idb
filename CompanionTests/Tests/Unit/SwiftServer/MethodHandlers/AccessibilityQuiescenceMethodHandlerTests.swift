@@ -152,4 +152,26 @@ final class AccessibilityQuiescenceMethodHandlerTests: XCTestCase {
     await fulfillment(of: [closed], timeout: 5)
     _ = await call.result
   }
+
+  // gRPC reports a client going away through the RPC's cancellation handle, not by cancelling the
+  // handler's task.
+  func testAClientGoingAwayClosesTheStream() async throws {
+    let forwarded = expectation(description: "the first event is forwarded")
+    let closed = expectation(description: "the stream is closed")
+    // BUG: the handler ignores the RPC's cancellation, so the stream, and the guest measuring it, stays
+    // open until a write fails — flipped in the following commit.
+    closed.isInverted = true
+    let executor = ScriptedQuiescenceExecutor(events: [.state(.settling, pid: 42)], holdsOpen: true) { closed.fulfill() }
+    let cancellation = ServerContext.RPCCancellationHandle()
+    let call = Task {
+      try await AccessibilityQuiescenceMethodHandler.stream(Idb_AccessibilityQuiescenceRequest(), using: executor, cancellation: cancellation) { _ in
+        forwarded.fulfill()
+      }
+    }
+    await fulfillment(of: [forwarded], timeout: 5)
+    cancellation.cancel()
+    await fulfillment(of: [closed], timeout: 1)
+    call.cancel()
+    _ = await call.result
+  }
 }
