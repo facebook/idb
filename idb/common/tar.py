@@ -6,6 +6,7 @@
 
 
 import asyncio
+import contextlib
 import os
 import sys
 import tempfile
@@ -115,8 +116,22 @@ class GzipArchive(TarArchiveProcess):
             stdout=asyncio.subprocess.PIPE,
         )
         os.close(pipe_read)
-        yield process_compressor
-        await asyncio.gather(process_tar.wait(), process_compressor.wait())
+        processes = (process_tar, process_compressor)
+        try:
+            yield process_compressor
+        except BaseException:
+            # A caller that stops reading leaves both blocked on full pipes.
+            for process in processes:
+                with contextlib.suppress(ProcessLookupError):
+                    process.kill()
+            raise
+        finally:
+            await asyncio.gather(*(process.wait() for process in processes))
+        # The compressor exits cleanly on whatever tar managed to write.
+        if process_tar.returncode != 0:
+            raise TarException(
+                f"Failed to create tar file, tar exited with {process_tar.returncode}"
+            )
 
 
 class ZstdArchive(TarArchiveProcess):

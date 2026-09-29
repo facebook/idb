@@ -12,7 +12,7 @@ from collections.abc import AsyncGenerator
 from typing import Any, cast
 from unittest import mock
 
-from idb.common.tar import _create_untar_command, generate_tar
+from idb.common.tar import _create_untar_command, generate_tar, TarException
 from idb.common.types import Compression
 from idb.utils.testing import TestCase
 
@@ -47,12 +47,8 @@ class GenerateTarTests(TestCase):
     async def test_a_path_tar_cannot_read(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             missing = os.path.join(directory, "Missing.app")
-            # BUG: tar's exit status is never checked, so this streams an empty
-            # archive instead of raising TarException -- flipped in the following commit
-            chunks = [
-                chunk async for chunk in generate_tar([missing], Compression.GZIP)
-            ]
-            self.assertNotEqual(chunks, [])
+            with self.assertRaises(TarException):
+                [chunk async for chunk in generate_tar([missing], Compression.GZIP)]
 
     async def test_closing_the_stream_early(self) -> None:
         processes = []
@@ -78,11 +74,9 @@ class GenerateTarTests(TestCase):
                 await anext(stream)
                 await stream.aclose()
             try:
-                # BUG: tar and the compressor are left running -- flipped in the
-                # following commit
                 self.assertEqual(
                     [process.returncode is None for process in processes],
-                    [True, True],
+                    [False, False],
                 )
             finally:
                 for process in processes:
