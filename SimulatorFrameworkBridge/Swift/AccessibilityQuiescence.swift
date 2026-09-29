@@ -64,6 +64,11 @@ public struct QuiescenceTracker: Sendable {
     return true
   }
 
+  /// The signals asked for at or before `time` and not yet answered.
+  public func unanswered(since time: TimeInterval) -> [BridgeAXWire.Quiescence.Signal] {
+    BridgeAXWire.Quiescence.Signal.allCases.filter { signals[$0]?.requestedAt.map { $0 <= time } ?? false }
+  }
+
   /// Nil until every signal has either been answered or gone unanswered long enough to count as busy.
   public func state(at now: TimeInterval) -> State? {
     let busy = Set(signals.filter { isBusy($0.value, at: now) }.keys)
@@ -212,11 +217,13 @@ final class QuiescenceStream: BridgeResponseStream {
     }
   }
 
-  private func request(_ signal: Wire.Signal) throws {
+  /// A resend asks again for a signal already asked for, keeping how long it has gone unanswered.
+  private func request(_ signal: Wire.Signal, resend: Bool = false) throws {
     guard let monitor, let application, !isCancelled else { return }
     let outcome = try monitor.request(signal == .runLoopIdle ? .runLoopIdle : .animationsInactive, fromApplication: application)
     switch outcome.status {
     case .written, .applicationNotResponding:
+      guard !resend else { return }
       // An application too busy to take the request is busy, which is what the request would have shown.
       tracker.requested(signal, at: Self.now)
       evaluate()
@@ -274,9 +281,27 @@ final class QuiescenceStream: BridgeResponseStream {
       case .frontmost:
         try retarget()
       }
+      try recoverDroppedRequests()
       if application == nil {
         try arm(pid)
       }
+    }
+  }
+
+  /// Automation mode goes off for the whole simulator when another accessibility client exits, and
+  /// applications drop the requests they are sent while it is off. Any client may turn it back on first,
+  /// so a request left unanswered for a heartbeat is asked again whether or not this stream saw it off.
+  private func recoverDroppedRequests() throws {
+    guard let client else { return }
+    var askedBefore = Self.now - Self.heartbeatInterval
+    if try !client.automationModeEnabled().boolValue {
+      guard try client.setAutomationModeEnabled(true).boolValue else {
+        return fail("accessibility automation mode went off and could not be enabled again, so no application answers quiescence requests", kind: .readerUnavailable)
+      }
+      askedBefore = Self.now
+    }
+    for signal in tracker.unanswered(since: askedBefore) {
+      try request(signal, resend: true)
     }
   }
 
