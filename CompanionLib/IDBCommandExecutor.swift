@@ -26,7 +26,6 @@ public enum IDBCommandError: Error {
   case noDebugServer
   case debugServerAlreadyRunning
   case notPersistedApplication(bundleID: String, suitable: [String])
-  case noAppBundleExtracted
   case userDevelopmentSigningRequired(applicationDescription: String)
 }
 
@@ -57,8 +56,6 @@ extension IDBCommandError: LocalizedError {
       return "Debug server is already running"
     case let .notPersistedApplication(bundleID, suitable):
       return "\(bundleID) not persisted application and is therefore not debuggable. Suitable applications: \(CollectionInformation.oneLineDescription(from: suitable))"
-    case .noAppBundleExtracted:
-      return "No app bundle could be extracted"
     case let .userDevelopmentSigningRequired(applicationDescription):
       return "Requested debuggable install of \(applicationDescription) but User Development signing is required"
     }
@@ -111,20 +108,15 @@ public final class IDBCommandExecutor {
   }
 
   public func install_app_file_path(_ filePath: String, make_debuggable makeDebuggable: Bool, override_modification_time overrideModificationTime: Bool) async throws -> InstalledArtifact {
-    if BundleDescriptor.isApplication(atPath: filePath) {
-      let bundleDescriptor = try BundleDescriptor.bundle(fromPath: filePath)
-      return try await installAppBundle(bundleDescriptor, makeDebuggable: makeDebuggable)
-    } else {
-      return try await temporaryDirectory.withArchiveExtracted(fromFile: filePath, overrideModificationTime: overrideModificationTime) { extractPath in
-        return try await installExtractedApp(extractPath, makeDebuggable: makeDebuggable)
-      }
-    }
+    return try await installApp(from: .localPath(filePath), makeDebuggable: makeDebuggable, options: InstallOptions(overrideModificationTime: overrideModificationTime))
   }
 
   public func install_app_stream(_ input: FBProcessInput<AnyObject>, compression: FBCompressionFormat, make_debuggable makeDebuggable: Bool, override_modification_time overrideModificationTime: Bool) async throws -> InstalledArtifact {
-    return try await temporaryDirectory.withArchiveExtracted(fromStream: input, compression: compression, overrideModificationTime: overrideModificationTime) { extractPath in
-      return try await installExtractedApp(extractPath, makeDebuggable: makeDebuggable)
-    }
+    return try await installApp(from: .processInput(input), makeDebuggable: makeDebuggable, options: InstallOptions(overrideModificationTime: overrideModificationTime, compression: compression))
+  }
+
+  public func install_app_url(_ url: URL, compression: FBCompressionFormat, make_debuggable makeDebuggable: Bool, override_modification_time overrideModificationTime: Bool) async throws -> InstalledArtifact {
+    return try await installApp(from: .remoteURL(url), makeDebuggable: makeDebuggable, options: InstallOptions(overrideModificationTime: overrideModificationTime, compression: compression))
   }
 
   public func install_xctest_app_file_path(_ filePath: String, skipSigningBundles: Bool) async throws -> InstalledArtifact {
@@ -861,11 +853,10 @@ public final class IDBCommandExecutor {
     return try await simulator.hid.connect()
   }
 
-  private func installExtractedApp(_ extractPath: URL, makeDebuggable: Bool) async throws -> InstalledArtifact {
-    guard let bundleDescriptor = try? BundleDescriptor.findAppPath(fromDirectory: extractPath, logger: target.logger) else {
-      throw IDBCommandError.noAppBundleExtracted
+  private func installApp(from source: InstallSource, makeDebuggable: Bool, options: InstallOptions) async throws -> InstalledArtifact {
+    return try await ApplicationArchive.withResolvedBundle(from: source, options: options, temporaryDirectory: temporaryDirectory, logger: target.logger) { bundle in
+      try await installAppBundle(bundle, makeDebuggable: makeDebuggable)
     }
-    return try await installAppBundle(bundleDescriptor, makeDebuggable: makeDebuggable)
   }
 
   private func installAppBundle(_ appBundle: BundleDescriptor, makeDebuggable: Bool) async throws -> InstalledArtifact {

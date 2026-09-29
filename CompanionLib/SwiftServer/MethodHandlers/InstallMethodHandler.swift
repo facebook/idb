@@ -163,6 +163,9 @@ struct InstallMethodHandler: @unchecked Sendable {
       guard let url = URL(string: urlString) else {
         throw RPCError(code: .invalidArgument, message: "Invalid url source")
       }
+      if destination == .app {
+        return try await commandExecutor.install_app_url(url, compression: compression, make_debuggable: makeDebuggable, override_modification_time: overrideModificationTime)
+      }
       let download = DataDownloadInput.dataDownload(withURL: url, logger: targetLogger)
       let input = download.input
 

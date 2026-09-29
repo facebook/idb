@@ -117,13 +117,10 @@ class ArchiveInstallTests(IdbEndToEndTestCase):
 
     async def test_installing_from_a_missing_url_reports_the_http_status(self) -> None:
         with _serving(self.make_temporary_directory()) as base:
-            # BUG: the download's failure is never awaited, so the 404 reaches
-            # the extractor as an empty archive — flipped in the following
-            # commit.
             await self.idb_expect_failure(
                 "install",
                 f"{base}/missing.ipa",
-                expected_error="No app bundle could be extracted",
+                expected_error="HTTP status 404",
                 timeout=INSTALL_TIMEOUT_SECONDS,
             )
 
