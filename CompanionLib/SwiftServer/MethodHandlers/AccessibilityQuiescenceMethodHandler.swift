@@ -30,7 +30,7 @@ struct AccessibilityQuiescenceMethodHandler {
   let commandExecutor: IDBCommandExecutor
 
   func handle(request: Idb_AccessibilityQuiescenceRequest, responseStream: RPCWriter<Idb_AccessibilityQuiescenceResponse>, context: ServerContext) async throws {
-    try await Self.stream(request, using: commandExecutor) { try await responseStream.send($0) }
+    try await Self.stream(request, using: commandExecutor, cancellation: context.cancellation) { try await responseStream.send($0) }
   }
 
   /// Forwards every event until the stream ends. A client cancelling the call cancels this task, which
@@ -38,6 +38,7 @@ struct AccessibilityQuiescenceMethodHandler {
   static func stream(
     _ request: Idb_AccessibilityQuiescenceRequest,
     using commandExecutor: any AccessibilityQuiescenceStreaming,
+    cancellation: ServerContext.RPCCancellationHandle,
     send: (Idb_AccessibilityQuiescenceResponse) async throws -> Void
   ) async throws {
     let query: AccessibilityElementQuery

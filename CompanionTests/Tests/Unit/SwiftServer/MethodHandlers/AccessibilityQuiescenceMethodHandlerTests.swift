@@ -55,7 +55,7 @@ final class AccessibilityQuiescenceMethodHandlerTests: XCTestCase {
 
   private func stream(_ request: Idb_AccessibilityQuiescenceRequest, using executor: ScriptedQuiescenceExecutor) async throws -> [Idb_AccessibilityQuiescenceResponse] {
     var responses: [Idb_AccessibilityQuiescenceResponse] = []
-    try await AccessibilityQuiescenceMethodHandler.stream(request, using: executor) { responses.append($0) }
+    try await AccessibilityQuiescenceMethodHandler.stream(request, using: executor, cancellation: ServerContext.RPCCancellationHandle()) { responses.append($0) }
     return responses
   }
 
@@ -143,7 +143,9 @@ final class AccessibilityQuiescenceMethodHandlerTests: XCTestCase {
     let closed = expectation(description: "the stream is closed")
     let executor = ScriptedQuiescenceExecutor(events: [.state(.settling, pid: 42)], holdsOpen: true) { closed.fulfill() }
     let call = Task {
-      try await AccessibilityQuiescenceMethodHandler.stream(Idb_AccessibilityQuiescenceRequest(), using: executor) { _ in forwarded.fulfill() }
+      try await AccessibilityQuiescenceMethodHandler.stream(
+        Idb_AccessibilityQuiescenceRequest(), using: executor, cancellation: ServerContext.RPCCancellationHandle()
+      ) { _ in forwarded.fulfill() }
     }
     await fulfillment(of: [forwarded], timeout: 5)
     call.cancel()
