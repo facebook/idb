@@ -7,7 +7,10 @@
 import asyncio
 import contextlib
 import os
+import subprocess
+import sys
 import tempfile
+import unittest
 from collections.abc import AsyncGenerator
 from typing import Any, cast
 from unittest import mock
@@ -83,3 +86,22 @@ class GenerateTarTests(TestCase):
                     with contextlib.suppress(ProcessLookupError):
                         process.kill()
                     await process.wait()
+
+
+class ZstdArchiveTests(TestCase):
+    @unittest.skipUnless(sys.platform == "darwin", "the padding comes from bsdtar")
+    async def test_generates_a_stream_zstd_can_decompress(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = os.path.join(directory, "App.app")
+            os.mkdir(bundle)
+            with open(os.path.join(bundle, "Info.plist"), "wb") as file:
+                file.write(b"plist bytes")
+            stream = b"".join(
+                [chunk async for chunk in generate_tar([bundle], Compression.ZSTD)]
+            )
+        decompressed = subprocess.run(
+            ["zstd", "-dc"], input=stream, capture_output=True, check=False
+        )
+        # BUG: bsdtar pads the compressor's output with zeros to its block size, which zstd
+        # rejects as an unknown frame — flipped in the following commit.
+        self.assertNotEqual(decompressed.returncode, 0, decompressed.stderr)
