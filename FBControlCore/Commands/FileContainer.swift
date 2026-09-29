@@ -316,9 +316,12 @@ public enum FileContainer {
       try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
         queue.async {
           do {
-            var destination = try rootFile.file(byAppendingPathComponent: destinationPath)
+            let directory = try rootFile.file(byAppendingPathComponent: destinationPath)
+            if !directory.fileExists().exists {
+              try directory.createDirectory()
+            }
             // Attempt to delete first to overwrite.
-            destination = try destination.file(byAppendingPathComponent: (sourcePath as NSString).lastPathComponent)
+            let destination = try directory.file(byAppendingPathComponent: (sourcePath as NSString).lastPathComponent)
             try? destination.removeItem()
             do {
               try destination.populate(withContentsOfHostPath: sourcePath)
