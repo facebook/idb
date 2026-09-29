@@ -1,7 +1,8 @@
 name: facebook/idb/build_and_deploy
 # Deployment follows CI rather than the push that started it, so the site is
-# only ever published from a commit whose end-to-end run passed. That run is
-# also where the demos on the site come from.
+# only ever published from a commit whose demos passed and whose site built
+# from them, whatever else in that run failed. That run is also where the
+# demos on the site come from.
 on:
   workflow_run:
     workflows:
@@ -14,7 +15,43 @@ concurrency:
   group: deploy-website
   cancel-in-progress: false
 jobs:
+  # CI's own conclusion also counts shards and jobs the site does not depend
+  # on, so this reads the conclusion of the one job that does. A run with no
+  # job of that name fails here rather than quietly never deploying again
+  # after a rename in ci.yml.
+  demos-built:
+    if: >-
+      github.event.workflow_run.event == 'push'
+      && github.event.workflow_run.repository.full_name == github.repository
+      && github.event.workflow_run.head_repository.full_name == github.repository
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+    outputs:
+      built: ${{ steps.conclusion.outputs.built }}
+    steps:
+    - name: Read whether the triggering run built the site from its demos
+      id: conclusion
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        RUN_ID: ${{ github.event.workflow_run.id }}
+        JOB_NAME: Build the website from the end-to-end run
+      run: |
+        set -o pipefail
+        conclusions="$(gh api --paginate "repos/$GITHUB_REPOSITORY/actions/runs/$RUN_ID/jobs?filter=latest&per_page=100" \
+          | jq -r --arg name "$JOB_NAME" '.jobs[] | select(.name == $name) | .conclusion')"
+        if [ -z "$conclusions" ]; then
+          echo "::error::CI run $RUN_ID has no job named '$JOB_NAME'"
+          exit 1
+        fi
+        echo "'$JOB_NAME' concluded: $conclusions"
+        if [ "$conclusions" = success ]; then
+          echo "built=true" >> "$GITHUB_OUTPUT"
+        else
+          echo "built=false" >> "$GITHUB_OUTPUT"
+        fi
   deploy-website:
+    needs: demos-built
     # A workflow_run fires for every CI run that completed, including one a
     # pull request from a fork started, and the branch filter above matches
     # that run's head branch — which a fork is free to call main. Deploying
@@ -27,12 +64,12 @@ jobs:
     # There is deliberately no workflow_dispatch here. A manual trigger would
     # have to name a CI run to deploy and then re-derive all of that from the
     # API, duplicating the gates in shell against attacker-chosen input; the
-    # recovery it would provide — deploying a CI run that already succeeded —
+    # recovery it would provide — deploying a CI run whose demos already built
     # is already available by re-running this workflow's own run from the
     # Actions UI, which replays the original event payload through these same
     # conditions.
     if: >-
-      github.event.workflow_run.conclusion == 'success'
+      needs.demos-built.outputs.built == 'true'
       && github.event.workflow_run.event == 'push'
       && github.event.workflow_run.repository.full_name == github.repository
       && github.event.workflow_run.head_repository.full_name == github.repository

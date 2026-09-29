@@ -378,10 +378,14 @@ jobs:
 
   # The same site built from the demos the end-to-end run documented, so a
   # manifest the website cannot render fails here rather than on deployment.
+  # This job's conclusion is what deployment checks. It runs even when another
+  # shard failed: the `documentation` artifact only exists when every demo
+  # passed, so downloading it is the gate on the demos.
   website-demos:
     name: Build the website from the end-to-end run
     runs-on: ubuntu-latest
     needs: mac-end-to-end
+    if: ${{ !cancelled() && needs.mac-end-to-end.result != 'skipped' }}
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v5
