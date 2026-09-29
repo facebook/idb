@@ -33,8 +33,8 @@ struct AccessibilityQuiescenceMethodHandler {
     try await Self.stream(request, using: commandExecutor, cancellation: context.cancellation) { try await responseStream.send($0) }
   }
 
-  /// Forwards every event until the stream ends. A client cancelling the call cancels this task, which
-  /// closes the stream and the guest measuring it.
+  /// Forwards every event until the stream ends, the task is cancelled, or `cancellation` reports the RPC
+  /// cancelled, as it does when the client goes away. Each closes the stream and the guest measuring it.
   static func stream(
     _ request: Idb_AccessibilityQuiescenceRequest,
     using commandExecutor: any AccessibilityQuiescenceStreaming,
@@ -56,8 +56,37 @@ struct AccessibilityQuiescenceMethodHandler {
     // The companion owns its simulator for its whole run, so it holds its own bridge, as reads do.
     let events = try await commandExecutor.accessibility_quiescence(
       query: query, parameters: parameters(from: request), backend: UIAutomationBackend(resolvedName: .axBridgeExclusive))
-    for try await event in events {
+    for try await event in Self.events(events, until: cancellation) {
       try await send(response(for: event))
+    }
+  }
+
+  /// gRPC signals a client going away through `cancellation` rather than by cancelling the handler's task,
+  /// so without this a stream that writes only on a change runs until its next write fails.
+  private static func events(
+    _ events: AsyncThrowingStream<QuiescenceEvent, Error>,
+    until cancellation: ServerContext.RPCCancellationHandle
+  ) -> AsyncThrowingStream<QuiescenceEvent, Error> {
+    AsyncThrowingStream { continuation in
+      let relay = Task {
+        do {
+          for try await event in events {
+            continuation.yield(event)
+          }
+          continuation.finish()
+        } catch {
+          continuation.finish(throwing: error)
+        }
+      }
+      let watch = Task {
+        try? await cancellation.cancelled
+        guard cancellation.isCancelled else { return }
+        continuation.finish(throwing: CancellationError())
+      }
+      continuation.onTermination = { _ in
+        relay.cancel()
+        watch.cancel()
+      }
     }
   }
 

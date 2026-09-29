@@ -137,7 +137,7 @@ final class AccessibilityQuiescenceMethodHandlerTests: XCTestCase {
       ])
   }
 
-  // A client cancelling the call cancels the handler's task, which must close the stream behind it.
+  // Cancelling the handler's task must close the stream behind it.
   func testCancellingTheCallClosesTheStream() async throws {
     let forwarded = expectation(description: "the first event is forwarded")
     let closed = expectation(description: "the stream is closed")
@@ -158,9 +158,6 @@ final class AccessibilityQuiescenceMethodHandlerTests: XCTestCase {
   func testAClientGoingAwayClosesTheStream() async throws {
     let forwarded = expectation(description: "the first event is forwarded")
     let closed = expectation(description: "the stream is closed")
-    // BUG: the handler ignores the RPC's cancellation, so the stream, and the guest measuring it, stays
-    // open until a write fails — flipped in the following commit.
-    closed.isInverted = true
     let executor = ScriptedQuiescenceExecutor(events: [.state(.settling, pid: 42)], holdsOpen: true) { closed.fulfill() }
     let cancellation = ServerContext.RPCCancellationHandle()
     let call = Task {
@@ -171,7 +168,9 @@ final class AccessibilityQuiescenceMethodHandlerTests: XCTestCase {
     await fulfillment(of: [forwarded], timeout: 5)
     cancellation.cancel()
     await fulfillment(of: [closed], timeout: 1)
-    call.cancel()
-    _ = await call.result
+    do {
+      try await call.value
+      XCTFail("the call outlived its cancellation")
+    } catch is CancellationError {}
   }
 }
