@@ -29,7 +29,6 @@ class BinaryChunkTests(TestCase):
                 compression=None,
                 logger=logging.getLogger(__name__),
             )
-            # BUG: the .ipa is opened read-write, so a read-only .ipa (such as a
-            # build output) cannot be streamed — flipped in the following commit.
-            with self.assertRaises(PermissionError):
-                [request async for request in chunks]
+            self.assertEqual(
+                [request.payload.data async for request in chunks], [b"ipa bytes"]
+            )

@@ -31,7 +31,7 @@ async def _generate_ipa_chunks(
     ipa_path: str, logger: Logger
 ) -> AsyncIterator[InstallRequest]:
     logger.debug(f"Generating Chunks for .ipa {ipa_path}")
-    async with aiofiles.open(ipa_path, "r+b") as file:
+    async with aiofiles.open(ipa_path, "rb") as file:
         while True:
             chunk = await file.read(CHUNK_SIZE)
             if not chunk:
