@@ -29,9 +29,9 @@ public enum SimulatorHIDTransportType: Equatable, Sendable {
 /// they are commands on the `Simulator` (`orientation`, `hinge`, `hardware`, `statusBar`).
 ///
 /// A target can need both at once, which is `mixed`. `dtuhidd` exposes no trackpad, so an Apple TV
-/// driven over DTUHID still reaches its Siri Remote trackpad over Indigo. Mixing is otherwise unsafe —
-/// both claim `mainTouchscreen` and whichever sends first on a boot keeps it — so the case exists for
-/// the one family with no touchscreen to contend over.
+/// driven over DTUHID still reaches its Siri Remote trackpad over Indigo. Mixing is otherwise pointless:
+/// on a toolchain that ships `dtuhidd` the guest does not reliably deliver Indigo touch, button or
+/// keyboard input, so the trackpad is all Indigo can be relied on for there.
 enum SimulatorHIDTransport: Sendable {
   /// Indigo alone, carrying the primitives and the trackpad.
   case indigo(SimulatorIndigoHIDTransport)
@@ -47,8 +47,9 @@ enum SimulatorHIDTransport: Sendable {
   /// in an established transport is a real error. Reachability is settled where it is observable, by
   /// `SimulatorDTUHIDConnection.connect(using:serviceName:)` round-tripping a barrier past its retries: `dtuhidd` is
   /// demand-launched, so neither the toolchain version nor the service lookup can tell whether one is
-  /// there. Falling back costs the keyboard, which the guest has already handed to `dtuhidd`, so it is
-  /// reached only after that probe has given the daemon every chance to come up.
+  /// there. Falling back leaves only the tvOS trackpad working, since the same toolchains drop Indigo
+  /// touch, button and keyboard input, so it is reached only after that probe has given the daemon every
+  /// chance to come up.
   static func negotiate(
     for simulator: Simulator, requested: SimulatorHIDTransportType?
   ) async throws -> SimulatorHIDTransport {
@@ -85,9 +86,9 @@ enum SimulatorHIDTransport: Sendable {
 
   /// The Indigo transport to run alongside DTUHID, for a target that needs both.
   ///
-  /// Only Apple TV does. It is the only family with a trackpad, which `dtuhidd` does not expose, and the
-  /// only one where a second client is safe: Indigo and DTUHID both claim `mainTouchscreen` and
-  /// whichever sends first on a boot keeps it, and tvOS has none for them to contend over.
+  /// Only Apple TV does. It is the only family with a trackpad, which `dtuhidd` does not expose and the
+  /// guest still honours over Indigo; every other Indigo input is unreliable on toolchains that ship
+  /// `dtuhidd`.
   ///
   /// Absent rather than fatal when it cannot be registered, since it carries the trackpad alone — a
   /// failure should cost a pan, not every other input on the target.
