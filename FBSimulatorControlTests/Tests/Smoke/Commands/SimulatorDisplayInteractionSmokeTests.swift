@@ -17,7 +17,7 @@ final class SimulatorDisplayInteractionSmokeTests: ProvidedSimulatorTestCase {
     let commands = SimulatorDisplayCommands.commands(with: simulator)
     let context: SimulatorDisplayInteractionContext
     do {
-      if case .sole(.legacy) = try await commands.interactionTarget() {
+      if case .target(.sole(.legacy)) = try await commands.currentDisplay() {
         throw XCTSkip("Provider does not expose active display identities")
       }
       context = try await commands.interactionContext()

@@ -44,8 +44,22 @@ private func displays(_ values: [xpc_object_t]) throws -> [SimulatorDisplay] {
   return displays
 }
 
-private func target(_ values: [xpc_object_t], current: Bool = true) throws -> SimulatorDisplayTarget {
-  try SimulatorDisplayCommands.interactionTarget(in: report(values, current: current))
+private func resolution(_ values: [xpc_object_t]) -> SimulatorDisplayResolution {
+  SimulatorDisplayResolution(report(values))
+}
+
+private struct Untargeted: Error {
+  let resolution: SimulatorDisplayResolution
+}
+
+private func target(_ values: [xpc_object_t]) throws -> SimulatorDisplayTarget {
+  let resolution = resolution(values)
+  guard case let .target(target) = resolution else { throw Untargeted(resolution: resolution) }
+  return target
+}
+
+private func assertFallback(_ resolution: SimulatorDisplayResolution, _ message: String = "", file: StaticString = #filePath, line: UInt = #line) {
+  guard case .fallback = resolution else { return XCTFail("Expected a fallback, got \(resolution) \(message)", file: file, line: line) }
 }
 
 private func assertFailed(_ report: SimulatorDisplayReport, _ message: String = "", file: StaticString = #filePath, line: UInt = #line) {
@@ -64,7 +78,7 @@ final class SimulatorDisplayReadTests: XCTestCase {
     guard case let .legacy(geometry) = try target([value]).display else { return XCTFail("Expected legacy geometry") }
     XCTAssertEqual(geometry.pointSize, CGSize(width: 951, height: 669))
     XCTAssertEqual(try geometry.unrotatedPoint(from: CGPoint(x: 787, y: 570)), CGPoint(x: 570, y: 164))
-    XCTAssertThrowsError(try target([value, value]))
+    XCTAssertEqual(resolution([value, value]), .fallback(.legacyIntegratedDisplays(count: 2)))
     XCTAssertEqual(report([value], current: false), .failed(.malformed("Report is not current")))
   }
 
@@ -76,7 +90,7 @@ final class SimulatorDisplayReadTests: XCTestCase {
     guard case .sole(.legacy) = try target([lcd]) else {
       return XCTFail("Expected the sole legacy display")
     }
-    XCTAssertThrowsError(try target([lcd, lcd]))
+    XCTAssertEqual(resolution([lcd, lcd]), .fallback(.legacyIntegratedDisplays(count: 2)))
   }
 
   /// Xcode 27.1 driving an iOS 26 runtime identifies no display and reports every backlight, the LCD's
@@ -230,7 +244,7 @@ final class SimulatorDisplayReadTests: XCTestCase {
     ]
     for (shape, values) in reports {
       XCTAssertThrowsError(try SimulatorDisplayCommands.activeIntegratedDisplay(in: displays(values)), shape)
-      XCTAssertThrowsError(try target(values), shape)
+      assertFallback(resolution(values), shape)
     }
   }
 
@@ -267,7 +281,7 @@ final class SimulatorDisplayReadTests: XCTestCase {
     for (first, second) in [("off", "off"), ("inactiveOn", "off"), ("unknown", "activeOn"), ("activeOn", "activeDimmed"), ("off", "futureState")] {
       xpc_dictionary_set_string(cover, "backlightState", first)
       xpc_dictionary_set_string(inner, "backlightState", second)
-      XCTAssertThrowsError(try target([cover, inner]))
+      assertFallback(resolution([cover, inner]), "\(first), \(second)")
     }
     xpc_dictionary_set_string(cover, "backlightState", "off")
     xpc_dictionary_set_string(inner, "backlightState", "activeOn")
@@ -275,10 +289,9 @@ final class SimulatorDisplayReadTests: XCTestCase {
     assertFailed(report([cover, inner]))
     xpc_dictionary_set_bool(inner, "active", false)
     XCTAssertEqual(report([cover, inner]), .transitioning)
-    XCTAssertThrowsError(try target([cover, inner])) { error in
-      guard case SimulatorDisplayError.transitioning = error else { return XCTFail("\(error)") }
-      XCTAssertEqual(error.localizedDescription, "Invalid simulator CoreDevice response: Layout and backlight activity disagree")
-    }
+    XCTAssertEqual(resolution([cover, inner]), .unsettled)
+    XCTAssertEqual(
+      SimulatorDisplayError.transitioning.localizedDescription, "Invalid simulator CoreDevice response: Layout and backlight activity disagree")
     xpc_dictionary_set_bool(inner, "active", true)
     let selected = try SimulatorDisplayCommands.activeIntegratedDisplay(in: displays([cover, inner]))
     XCTAssertEqual(selected.activitySource, .layout)

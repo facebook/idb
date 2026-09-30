@@ -479,7 +479,7 @@ final class SimulatorAccessibilityCommandsTests: XCTestCase {
   private func setUp(
     withRootElement rootElement: AXPMacPlatformElementDouble,
     launchCtl: (any LaunchCtlCommands)? = nil,
-    displays: any DisplayCommands = DisplayCommandsDouble([.failure(SimulatorCoreDeviceError.unsupported("displayinfo"))])
+    displays: any DisplayCommands = DisplayCommandsDouble([.success(.failed(.unsupported("displayinfo")))])
   ) throws {
     fixture = AccessibilityTestFixture.bootedSimulator()
     fixture!.rootElement = rootElement

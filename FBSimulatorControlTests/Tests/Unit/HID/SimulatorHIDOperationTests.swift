@@ -25,7 +25,7 @@ final class SimulatorHIDOperationTests: XCTestCase {
   func testFallbackDeliversEventsWithoutADisplay() async throws {
     let recorder = Recorder()
     var operation = SimulatorHIDOperation(
-      displays: DisplayCommandsDouble([.failure(SimulatorCoreDeviceError.unsupported("displayinfo"))]),
+      displays: DisplayCommandsDouble([.success(.failed(.unsupported("displayinfo")))]),
       deliver: { event, display in await recorder.record(event, display: display) },
       flush: {},
       reportCleanupError: { XCTFail("cleanup failed: \($0)") })
@@ -250,13 +250,13 @@ final class SimulatorHIDOperationTests: XCTestCase {
       blocking = (reads, gate, entered)
     }
 
-    func interactionTarget() async throws -> SimulatorDisplayTarget {
+    func report() async throws -> SimulatorDisplayReport {
       reads += 1
       if let blocking, reads > blocking.after {
         await blocking.entered?.open()
         await blocking.gate.wait()
       }
-      return .selected(currentDisplay)
+      return .reporting(.selected(currentDisplay))
     }
 
     func touchscreens() -> [SimulatorTouchscreen] {

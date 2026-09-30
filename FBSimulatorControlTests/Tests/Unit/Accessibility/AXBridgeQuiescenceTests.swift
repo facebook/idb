@@ -335,8 +335,8 @@ final class AXBridgeQuiescenceTests: XCTestCase {
   func testAFailedReadOrARotationKeepsTheStreamWhereItIs() async throws {
     let transport = FollowingTransport(inventory: Self.inventory, streams: [[Self.state("quiet")]])
     let displays = DisplayCommandsDouble([
-      .success(Self.display("inner")), .success(Self.display("inner")), .failure(SimulatorDisplayError.changed),
-      .success(Self.display("inner", rotation: .clockwise)),
+      .success(.reporting(Self.display("inner"))), .success(.reporting(Self.display("inner"))), .failure(SimulatorDisplayError.changed),
+      .success(.reporting(Self.display("inner", rotation: .clockwise))),
     ])
     let stream = try await automation(transport, displays: displays).quiescence(.frontmost, parameters: QuiescenceParameters())
     let consumer = Task { for try await _ in stream {} }

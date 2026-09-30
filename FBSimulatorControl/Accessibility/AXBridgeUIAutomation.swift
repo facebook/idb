@@ -88,6 +88,8 @@ final class AXBridgeUIAutomation: AXBridgeTreeReader, @unchecked Sendable {
     guard case let .unresolved(displays) = routing else { return try await body(self) }
     let display: AXTranslationDisplay?
     switch try await displays.resolveDisplay() {
+    case .unsettled:
+      throw SimulatorDisplayError.transitioning
     case .fallback:
       display = nil
     case let .target(.sole(sole)):
@@ -338,8 +340,14 @@ final class AXBridgeUIAutomation: AXBridgeTreeReader, @unchecked Sendable {
     displays: any DisplayCommands,
     parameters: QuiescenceParameters
   ) async throws -> AsyncThrowingStream<QuiescenceEvent, Error> {
-    guard case let .target(.selected(selected)) = try await displays.resolveDisplay() else {
+    let selected: SimulatorDisplay
+    switch try await displays.resolveDisplay() {
+    case .unsettled:
+      throw SimulatorDisplayError.transitioning
+    case .fallback, .target(.sole):
       return forwarding(try await quiescenceFrames(pid: nil, displayID: nil, parameters: parameters), pid: nil)
+    case let .target(.selected(display)):
+      selected = display
     }
     let displayID = try await displays.accessibilityID(for: selected, transport: transport, requiring: Self.quiescenceCapabilities)
     let first = try await quiescenceFrames(pid: nil, displayID: displayID, parameters: parameters)

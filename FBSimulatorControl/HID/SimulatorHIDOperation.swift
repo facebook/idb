@@ -184,8 +184,13 @@ struct SimulatorHIDOperation {
             do {
               let current = try await displays.currentDisplay()
               if Task.isCancelled { return }
-              guard case let .target(target) = current, target.display.hasSameConfiguration(as: display.interactionDisplay) else {
+              switch current {
+              case .unsettled:
+                throw SimulatorDisplayError.transitioning
+              case .fallback:
                 throw SimulatorDisplayError.changed
+              case let .target(target):
+                guard target.display.hasSameConfiguration(as: display.interactionDisplay) else { throw SimulatorDisplayError.changed }
               }
               try observation.check()
               try await Task.sleep(nanoseconds: 50_000_000)
@@ -204,6 +209,7 @@ struct SimulatorHIDOperation {
   private static func route(_ displays: (any DisplayCommands)?) async throws -> SimulatorHIDDisplay? {
     guard let displays else { return nil }
     switch try await displays.resolveDisplay() {
+    case .unsettled: throw SimulatorDisplayError.transitioning
     case .fallback: return nil
     case let .target(.sole(display)): return .sole(display)
     case let .target(.selected(display)): return .selected(display, target: try await displays.digitizerTarget(for: display))

@@ -71,38 +71,45 @@ final class DisplayCommandsTests: XCTestCase {
   }
 
   func testRuntimeWithoutDisplayReportsFallsBack() async throws {
-    let displays = DisplayCommandsDouble([.failure(SimulatorCoreDeviceError.unsupported("displayinfo"))])
+    let displays = DisplayCommandsDouble([.success(.failed(.unsupported("displayinfo")))])
     let resolved = try await displays.resolveDisplay()
     XCTAssertEqual(resolved, .fallback(.unreported("displayinfo")))
   }
 
   func testRuntimeThatCannotSayWhichDisplayIsTargetedFallsBack() async throws {
-    let undetermined: [any Error] = [
-      SimulatorCoreDeviceError.unavailable("displayinfo"),
-      SimulatorCoreDeviceError.timedOut,
-      SimulatorCoreDeviceError.malformed("Unknown backlight state"),
-      SimulatorDisplayInteractionError.unsupportedCapability("integrated display activity"),
-      SimulatorDisplayInteractionError.unsupportedCapability("unambiguous legacy integrated display selection"),
-      SimulatorDisplayError.noActiveIntegratedDisplay,
-      SimulatorDisplayError.ambiguousActiveDisplays(["cover", "inner"]),
+    let geometry = SimulatorDisplayGeometry(bounds: CGRect(x: 0, y: 0, width: 1200, height: 800), scale: 2, rotation: .upright)
+    let cover = display("cover")
+    let inactive = SimulatorDisplay(
+      uniqueID: "inner", name: "inner", activity: .inactive, isPrimary: false, isIntegrated: true, bounds: cover.bounds, scale: 2,
+      rotation: .upright)
+    let unknown = SimulatorDisplay(
+      uniqueID: "lcd", name: "lcd", activity: .unknown, isPrimary: false, isIntegrated: true, bounds: cover.bounds, scale: 2,
+      rotation: .upright)
+    let cases: [(SimulatorDisplayReport, SimulatorDisplayFallback)] = [
+      (.failed(.unavailable("displayinfo")), .unreadable(.unavailable("displayinfo"))),
+      (.failed(.timedOut), .unreadable(.timedOut)),
+      (.failed(.malformed("Unknown backlight state")), .unreadable(.malformed("Unknown backlight state"))),
+      (.displays([unknown]), .unknownActivity),
+      (.legacy(integrated: []), .legacyIntegratedDisplays(count: 0)),
+      (.legacy(integrated: [geometry, geometry]), .legacyIntegratedDisplays(count: 2)),
+      (
+        .displays([
+          inactive,
+          SimulatorDisplay(
+            uniqueID: "cover", name: "cover", activity: .inactive, isPrimary: false, isIntegrated: true, bounds: cover.bounds, scale: 2,
+            rotation: .upright),
+        ]), .noActiveIntegratedDisplay
+      ),
+      (.displays([cover, display("inner")]), .ambiguousActiveDisplays(["cover", "inner"])),
     ]
-    let fallbacks: [SimulatorDisplayResolution] = [
-      .fallback(.undetermined(SimulatorCoreDeviceError.unavailable("displayinfo").localizedDescription)),
-      .fallback(.undetermined(SimulatorCoreDeviceError.timedOut.localizedDescription)),
-      .fallback(.undetermined(SimulatorCoreDeviceError.malformed("Unknown backlight state").localizedDescription)),
-      .fallback(.undetermined("integrated display activity")),
-      .fallback(.undetermined("unambiguous legacy integrated display selection")),
-      .fallback(.undetermined(SimulatorDisplayError.noActiveIntegratedDisplay.localizedDescription)),
-      .fallback(.undetermined(SimulatorDisplayError.ambiguousActiveDisplays(["cover", "inner"]).localizedDescription)),
-    ]
-    for (error, fallback) in zip(undetermined, fallbacks) {
-      let resolved = try await DisplayCommandsDouble([.failure(error)]).resolveDisplay()
-      XCTAssertEqual(resolved, fallback)
+    for (report, fallback) in cases {
+      let resolved = try await DisplayCommandsDouble([.success(report)]).resolveDisplay()
+      XCTAssertEqual(resolved, .fallback(fallback))
     }
   }
 
   func testFallbackIsAChangeFromAReportedDisplay() async throws {
-    let displays = DisplayCommandsDouble([.failure(SimulatorCoreDeviceError.unsupported("displayinfo"))])
+    let displays = DisplayCommandsDouble([.success(.failed(.unsupported("displayinfo")))])
     do {
       try await displays.validate(.identified(display("lcd")))
       XCTFail("Expected a display change")
@@ -130,7 +137,7 @@ final class DisplayCommandsTests: XCTestCase {
   }
 
   func testLookupDuringADisplayTransitionSettlesOnTheNextReport() async throws {
-    let settled = Result<SimulatorDisplayTarget, any Error>.success(.selected(display("inner")))
+    let settled = Result<SimulatorDisplayReport, any Error>.success(.reporting(.selected(display("inner"))))
     let touchscreens = [SimulatorTouchscreen(displayUniqueID: "inner", digitizerTarget: 29)]
     let accessibility = DisplayCommandsDouble([transition, settled])
     let hid = DisplayCommandsDouble([transition, settled], touchscreens: touchscreens)
@@ -145,10 +152,14 @@ final class DisplayCommandsTests: XCTestCase {
     XCTAssertEqual([accessibility.reads, hid.reads, context.reads], [3, 3, 3])
   }
 
-  func testLookupFailsWhenADisplayTransitionDoesNotSettle() async {
+  func testLookupFailsWhenADisplayTransitionDoesNotSettle() async throws {
     let displays = DisplayCommandsDouble([transition])
-    assertTransitioning(await outcome { try await displays.resolveDisplay() })
+    let resolved = try await displays.resolveDisplay()
+    XCTAssertEqual(resolved, .unsettled)
     XCTAssertGreaterThan(displays.reads, 1)
+    let hid = DisplayCommandsDouble([transition], touchscreens: [SimulatorTouchscreen(displayUniqueID: "inner", digitizerTarget: 29)])
+    assertTransitioning(await outcome { try await hid.digitizerTarget(for: display("inner")) })
+    assertTransitioning(await outcome { try await displays.interactionContext(for: nil, transport: InventoryTransport(inventory)) })
   }
 
   private func selected(_ displays: DisplayCommandsDouble) async throws -> SimulatorDisplay {
@@ -158,7 +169,7 @@ final class DisplayCommandsTests: XCTestCase {
     return display
   }
 
-  private let transition = Result<SimulatorDisplayTarget, any Error>.failure(SimulatorDisplayError.transitioning)
+  private let transition = Result<SimulatorDisplayReport, any Error>.success(.transitioning)
 
   private func outcome<T>(_ body: () async throws -> T) async -> Result<T, any Error> {
     do { return .success(try await body()) } catch { return .failure(error) }

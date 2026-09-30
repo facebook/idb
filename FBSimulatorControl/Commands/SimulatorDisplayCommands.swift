@@ -167,6 +167,7 @@ public final class SimulatorDisplayCommands: DisplayCommands, @unchecked Sendabl
     self.simulator = simulator
   }
 
+  /// Only cancellation and a released simulator throw; every CoreDevice failure is reported.
   func report() async throws -> SimulatorDisplayReport {
     do {
       return try await target().coreDevice.perform(
@@ -175,11 +176,6 @@ public final class SimulatorDisplayCommands: DisplayCommands, @unchecked Sendabl
     } catch let error as SimulatorCoreDeviceError {
       return .failed(error)
     }
-  }
-
-  /// Resolves the integrated display interactions target and whether they have to name it.
-  func interactionTarget() async throws -> SimulatorDisplayTarget {
-    try Self.interactionTarget(in: await report())
   }
 
   /// Lists connected touchscreens. Match `displayUniqueID` to a display snapshot before routing input.
@@ -215,31 +211,6 @@ public final class SimulatorDisplayCommands: DisplayCommands, @unchecked Sendabl
     case .legacy: throw SimulatorDisplayInteractionError.unsupportedCapability("display activity")
     case .transitioning: throw SimulatorDisplayError.transitioning
     case let .failed(error): throw error
-    }
-  }
-
-  /// The sole integrated display, active or not, or the active one of several. A legacy report has to
-  /// have exactly one integrated display.
-  static func interactionTarget(in report: SimulatorDisplayReport) throws -> SimulatorDisplayTarget {
-    switch report {
-    case let .legacy(integrated):
-      guard integrated.count == 1, let geometry = integrated.first else {
-        throw SimulatorDisplayInteractionError.unsupportedCapability("unambiguous legacy integrated display selection")
-      }
-      return .sole(.legacy(geometry))
-    case let .displays(displays):
-      let integrated = displays.filter(\.isIntegrated)
-      guard !integrated.contains(where: { $0.activity == .unknown }) else {
-        throw SimulatorDisplayInteractionError.unsupportedCapability("integrated display activity")
-      }
-      if integrated.count == 1, let display = integrated.first {
-        return .sole(.identified(display))
-      }
-      return .selected(try activeIntegratedDisplay(in: displays))
-    case .transitioning:
-      throw SimulatorDisplayError.transitioning
-    case let .failed(error):
-      throw error
     }
   }
 

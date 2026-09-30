@@ -11,7 +11,7 @@ import Foundation
 /// routing built on these reads is shared by every conformance.
 protocol DisplayCommands: AnyObject, Sendable {
 
-  func interactionTarget() async throws -> SimulatorDisplayTarget
+  func report() async throws -> SimulatorDisplayReport
 
   func touchscreens() async throws -> [SimulatorTouchscreen]
 
@@ -51,15 +51,60 @@ enum SimulatorDisplayResolution: Equatable, Sendable {
   /// display without naming one, as they did before runtimes reported displays.
   case fallback(SimulatorDisplayFallback)
   case target(SimulatorDisplayTarget)
+  /// Layout has moved to a display whose backlight has not caught up, as after a hinge change.
+  case unsettled
+
+  /// The sole integrated display, active or not, or the active one of several.
+  init(_ report: SimulatorDisplayReport) {
+    switch report {
+    case let .legacy(integrated):
+      guard integrated.count == 1, let geometry = integrated.first else {
+        self = .fallback(.legacyIntegratedDisplays(count: integrated.count))
+        return
+      }
+      self = .target(.sole(.legacy(geometry)))
+    case let .displays(displays):
+      let integrated = displays.filter(\.isIntegrated)
+      if integrated.contains(where: { $0.activity == .unknown }) {
+        self = .fallback(.unknownActivity)
+        return
+      }
+      if integrated.count == 1, let display = integrated.first {
+        self = .target(.sole(.identified(display)))
+        return
+      }
+      let active = integrated.filter(\.isActive)
+      guard let display = active.first else {
+        self = .fallback(.noActiveIntegratedDisplay)
+        return
+      }
+      guard active.count == 1 else {
+        self = .fallback(.ambiguousActiveDisplays(active.map(\.uniqueID)))
+        return
+      }
+      self = .target(.selected(display))
+    case .transitioning:
+      self = .unsettled
+    case let .failed(.unsupported(detail)):
+      self = .fallback(.unreported(detail))
+    case let .failed(error):
+      self = .fallback(.unreadable(error))
+    }
+  }
 }
 
 /// Why interactions fell back to the main display.
 enum SimulatorDisplayFallback: Equatable, Sendable {
   /// The runtime does not report displays.
   case unreported(String)
-  /// The runtime reports displays, but the report cannot select one: it failed, or it does not say which
-  /// integrated display is active.
-  case undetermined(String)
+  /// The display read failed.
+  case unreadable(SimulatorCoreDeviceError)
+  /// A runtime without display activity reports other than one integrated display.
+  case legacyIntegratedDisplays(count: Int)
+  /// The runtime reports an integrated display's backlight as `unknown`.
+  case unknownActivity
+  case noActiveIntegratedDisplay
+  case ambiguousActiveDisplays([String])
 }
 
 /// A display snapshot and the accessibility identity that routes to it.
@@ -117,35 +162,21 @@ extension DisplayCommands {
   var transitionSettling: DisplayTransitionSettling { .standard }
 
   /// The display interactions target once any display transition has settled. A hinge change moves layout to
-  /// the new display before its backlight follows, and one-shot resolution waits that out rather than failing.
+  /// the new display before its backlight follows, and one-shot resolution waits that out. `.unsettled` only
+  /// when the transition outlasts `transitionSettling`.
   func resolveDisplay() async throws -> SimulatorDisplayResolution {
     let settling = transitionSettling
     let deadline = ContinuousClock.now + settling.timeout
     while true {
-      do {
-        return try await currentDisplay()
-      } catch SimulatorDisplayError.transitioning where ContinuousClock.now < deadline {
-        try await Task.sleep(for: settling.interval)
-      }
+      let resolution = try await currentDisplay()
+      guard resolution == .unsettled, ContinuousClock.now < deadline else { return resolution }
+      try await Task.sleep(for: settling.interval)
     }
   }
 
-  /// One read of the display interactions target, failing rather than waiting while a transition settles.
+  /// One read of the display interactions target, without waiting for a transition to settle.
   func currentDisplay() async throws -> SimulatorDisplayResolution {
-    do {
-      return .target(try await interactionTarget())
-    } catch let SimulatorCoreDeviceError.unsupported(detail) {
-      return .fallback(.unreported(detail))
-    } catch let error as SimulatorCoreDeviceError {
-      return .fallback(.undetermined(error.localizedDescription))
-    } catch let SimulatorDisplayInteractionError.unsupportedCapability(detail) {
-      return .fallback(.undetermined(detail))
-    } catch let error as SimulatorDisplayError {
-      switch error {
-      case .noActiveIntegratedDisplay, .ambiguousActiveDisplays: return .fallback(.undetermined(error.localizedDescription))
-      case .changed, .transitioning, .screensNotReported: throw error
-      }
-    }
+    SimulatorDisplayResolution(try await report())
   }
 
   /// The accessibility identity of a display that has to be named. The guest is asked only for a display it
@@ -184,8 +215,13 @@ extension DisplayCommands {
 
   /// Fails if the active display, or its geometry, differs from the snapshot.
   func validate(_ display: SimulatorInteractionDisplay) async throws {
-    guard case let .target(target) = try await resolveDisplay(), target.display.hasSameConfiguration(as: display) else {
+    switch try await resolveDisplay() {
+    case let .target(target):
+      guard target.display.hasSameConfiguration(as: display) else { throw SimulatorDisplayError.changed }
+    case .fallback:
       throw SimulatorDisplayError.changed
+    case .unsettled:
+      throw SimulatorDisplayError.transitioning
     }
   }
 }

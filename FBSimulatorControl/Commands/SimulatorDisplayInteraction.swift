@@ -118,8 +118,14 @@ extension DisplayCommands {
   /// Resolves the active integrated display and both of its identities from fresh inventories, even for a sole
   /// display that routing reaches without naming it. An explicit UUID must identify the active display.
   func interactionContext(for displayUniqueID: String?, transport: any AXBridgeTransport) async throws -> SimulatorDisplayInteractionContext {
-    guard case let .target(target) = try await resolveDisplay(), case let .identified(display) = target.display else {
+    let display: SimulatorDisplay
+    switch try await resolveDisplay() {
+    case .unsettled:
+      throw SimulatorDisplayError.transitioning
+    case .fallback, .target(.sole(.legacy)):
       throw SimulatorDisplayInteractionError.unsupportedCapability("display identities")
+    case let .target(.sole(.identified(identified))), let .target(.selected(identified)):
+      display = identified
     }
     if let displayUniqueID, displayUniqueID != display.uniqueID {
       throw SimulatorDisplayInteractionError.inactiveDisplay(displayUniqueID)

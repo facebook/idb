@@ -16,19 +16,19 @@ final class DisplayCommandsDouble: DisplayCommands, @unchecked Sendable {
   let identities = DisplayIdentityCache()
   let transitionSettling = DisplayTransitionSettling(timeout: .milliseconds(50), interval: .milliseconds(5))
   private let lock = NSLock()
-  private var results: [Result<SimulatorDisplayTarget, any Error>]
+  private var results: [Result<SimulatorDisplayReport, any Error>]
   private var readCount = 0
   private var touchscreenReadCount = 0
   private let touchscreenResult: [SimulatorTouchscreen]
 
-  init(_ results: [Result<SimulatorDisplayTarget, any Error>], touchscreens: [SimulatorTouchscreen] = []) {
+  init(_ results: [Result<SimulatorDisplayReport, any Error>], touchscreens: [SimulatorTouchscreen] = []) {
     precondition(!results.isEmpty)
     self.results = results
     self.touchscreenResult = touchscreens
   }
 
   convenience init(_ targets: SimulatorDisplayTarget..., touchscreens: [SimulatorTouchscreen] = []) {
-    self.init(targets.map { .success($0) }, touchscreens: touchscreens)
+    self.init(targets.map { .success(.reporting($0)) }, touchscreens: touchscreens)
   }
 
   var reads: Int {
@@ -50,11 +50,28 @@ final class DisplayCommandsDouble: DisplayCommands, @unchecked Sendable {
     return touchscreenResult
   }
 
-  func interactionTarget() async throws -> SimulatorDisplayTarget {
+  func report() async throws -> SimulatorDisplayReport {
     lock.lock()
     defer { lock.unlock() }
     readCount += 1
     return try (results.count > 1 ? results.removeFirst() : results[0]).get()
+  }
+}
+
+extension SimulatorDisplayReport {
+  /// A report that resolves to `target`. A selected display is reported beside an inactive integrated one.
+  static func reporting(_ target: SimulatorDisplayTarget) -> Self {
+    switch target {
+    case let .sole(.identified(display)):
+      return .displays([display])
+    case let .sole(.legacy(geometry)):
+      return .legacy(integrated: [geometry])
+    case let .selected(display):
+      let inactive = SimulatorDisplay(
+        uniqueID: "\(display.uniqueID)-inactive", name: display.name, activity: .inactive, isPrimary: false, isIntegrated: true,
+        bounds: display.bounds, scale: display.scale, rotation: display.rotation, activitySource: display.activitySource)
+      return .displays([display, inactive])
+    }
   }
 }
 
