@@ -107,6 +107,20 @@ final class SimulatorDisplayReadTests: XCTestCase {
     }
   }
 
+  /// A locked iPhone reports its only integrated display as inactive, by layout activity or by backlight.
+  func testSoleIntegratedDisplayIsTargetedWhileInactive() throws {
+    let layout = displayValue(id: "lcd", active: false)
+    let backlight = displayValue(id: "lcd", active: false)
+    xpc_dictionary_set_value(backlight, "active", nil)
+    xpc_dictionary_set_string(backlight, "backlightState", "off")
+    for value in [layout, backlight] {
+      // BUG: throws instead of resolving the sole display — flipped in the following commit.
+      XCTAssertThrowsError(try SimulatorDisplayProtocol.interactionTarget(displayReply([value]))) { error in
+        guard case SimulatorDisplayError.noActiveIntegratedDisplay = error else { return XCTFail("\(error)") }
+      }
+    }
+  }
+
   func testInterfacePointConversionPreservesAllFourRotations() throws {
     let cases: [(SimulatorDisplayRotation, CGPoint, CGPoint)] = [
       (.upright, CGPoint(x: 80, y: 120), CGPoint(x: 80, y: 120)),
@@ -190,6 +204,7 @@ final class SimulatorDisplayReadTests: XCTestCase {
     }
     let reports: [String: [xpc_object_t]] = [
       "partial layout activity": [displayValue(id: "cover", active: false, primary: true), partialLayout],
+      // BUG: a sole inactive display is its own interaction target — flipped in the following commit.
       "no active display": [displayValue(id: "lcd", active: false)],
       "several active displays": [displayValue(id: "cover", active: true), displayValue(id: "inner", active: true)],
       "invalid record": [unscaled],
