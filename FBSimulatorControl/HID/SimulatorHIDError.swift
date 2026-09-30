@@ -128,18 +128,4 @@ public enum SimulatorHIDError: Error, LocalizedError {
       return false
     }
   }
-
-  /// Whether this failure means `dtuhidd` could not be reached on this host at all, as opposed to a
-  /// fault in a transport that was successfully established. Only these are worth negotiating
-  /// around by falling back to the legacy Indigo transport; anything else is a real error that has
-  /// to surface to the caller.
-  var isDTUHIDUnreachable: Bool {
-    switch self {
-    case .dtuhidXPCSymbolsUnavailable, .dtuhidServiceUnavailable, .dtuhidServiceNotVended,
-      .dtuhidConnectionFailed, .dtuhidUnresponsive:
-      return true
-    default:
-      return false
-    }
-  }
 }

@@ -80,12 +80,10 @@ final class SimulatorXPCConnectionTests: XCTestCase {
     XCTAssertEqual(name, "com.example.service")
     XCTAssertEqual(underlying as NSError?, Self.operational)
     XCTAssertFalse(lookup.isPermanentDTUHIDFailure)
-    XCTAssertTrue(lookup.isDTUHIDUnreachable)
 
     let symbols = SimulatorHIDError(dtuhidConnection: .symbolsUnavailable)
     guard case .dtuhidXPCSymbolsUnavailable = symbols else { return XCTFail("\(symbols)") }
     XCTAssertTrue(symbols.isPermanentDTUHIDFailure)
-    XCTAssertTrue(symbols.isDTUHIDUnreachable)
 
     let connection = SimulatorHIDError(dtuhidConnection: .connectionFailed)
     guard case .dtuhidConnectionFailed = connection else { return XCTFail("\(connection)") }

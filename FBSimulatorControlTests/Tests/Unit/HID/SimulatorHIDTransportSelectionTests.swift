@@ -34,23 +34,6 @@ struct SimulatorHIDTransportSelectionTests {
     #expect(!SimulatorHIDTransportSelection.shipsDTUHID(coreSimulatorVersion: "999.9"))
   }
 
-  // MARK: - DTUHID reachability
-
-  @Test("Only a failure to reach dtuhidd is worth falling back to Indigo for")
-  func isDTUHIDUnreachable() {
-    #expect(SimulatorHIDError.dtuhidXPCSymbolsUnavailable.isDTUHIDUnreachable)
-    #expect(SimulatorHIDError.dtuhidServiceUnavailable(name: "service", underlying: nil).isDTUHIDUnreachable)
-    #expect(SimulatorHIDError.dtuhidConnectionFailed.isDTUHIDUnreachable)
-  }
-
-  @Test("A fault in an established transport is not a reachability failure")
-  func isDTUHIDUnreachableRejectsOtherFailures() {
-    #expect(!SimulatorHIDError.clientDisposed.isDTUHIDUnreachable)
-    #expect(!SimulatorHIDError.simulatorKitUnavailable.isDTUHIDUnreachable)
-    #expect(!SimulatorHIDError.notImplementedOnDTUHIDTransport(operation: "trackpad pan").isDTUHIDUnreachable)
-    #expect(!SimulatorHIDError.touchUnsupportedOnAppleTV.isDTUHIDUnreachable)
-  }
-
   // MARK: - Legacy input suppression
 
   @Test("A toolchain without dtuhidd never suppresses legacy input")

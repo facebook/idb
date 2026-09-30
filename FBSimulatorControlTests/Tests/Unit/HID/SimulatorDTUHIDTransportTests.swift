@@ -393,7 +393,6 @@ final class SimulatorDTUHIDTransportTests: XCTestCase {
       guard case .dtuhidUnresponsive(attempts: DTUHIDTiming.livenessAttempts, _) = error else {
         return XCTFail("unexpected error: \(error)")
       }
-      XCTAssertTrue(error.isDTUHIDUnreachable)
     }
 
     XCTAssertEqual(services.lookups.count, DTUHIDTiming.livenessAttempts)
@@ -436,7 +435,6 @@ final class SimulatorDTUHIDTransportTests: XCTestCase {
         using: services.connector, serviceName: SimulatorDigitizerHIDTransport.serviceName, clock: recordingClock(recorder))
       XCTFail("expected the connect to fail")
     } catch let error as SimulatorHIDError {
-      XCTAssertTrue(error.isDTUHIDUnreachable)
       guard case .dtuhidServiceNotVended(name: SimulatorDigitizerHIDTransport.serviceName) = error else {
         return XCTFail("unexpected error: \(error)")
       }
@@ -474,7 +472,6 @@ final class SimulatorDTUHIDTransportTests: XCTestCase {
         using: services.connector, serviceName: SimulatorDigitizerHIDTransport.serviceName, clock: recordingClock(recorder))
       XCTFail("expected the connect to fail")
     } catch let error as SimulatorHIDError {
-      XCTAssertFalse(error.isDTUHIDUnreachable)
       guard case .dtuhidSimulatorNotBooted(name: SimulatorDigitizerHIDTransport.serviceName, state: .shutdown) = error else {
         return XCTFail("unexpected error: \(error)")
       }
@@ -521,13 +518,6 @@ final class SimulatorDTUHIDTransportTests: XCTestCase {
     XCTAssertFalse(SimulatorHIDError.dtuhidConnectionFailed.isPermanentDTUHIDFailure)
     // A toolchain without the `_4sim` symbols does not grow them by being asked again.
     XCTAssertTrue(SimulatorHIDError.dtuhidXPCSymbolsUnavailable.isPermanentDTUHIDFailure)
-  }
-
-  func testUnresponsiveDTUHIDIsWorthFallingBackFrom() {
-    // `SimulatorHID` negotiates around exactly the `isDTUHIDUnreachable` cases, so an unanswered
-    // probe has to be one of them or a wedged daemon costs every input rather than the keyboard.
-    XCTAssertTrue(
-      SimulatorHIDError.dtuhidUnresponsive(attempts: 3, underlying: nil).isDTUHIDUnreachable)
   }
 
   // MARK: - Teardown
