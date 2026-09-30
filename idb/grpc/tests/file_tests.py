@@ -82,11 +82,17 @@ class PushTests(TestCase):
     async def _push_to_a_zstd_companion(
         self, compression: Compression | None
     ) -> tuple[ScriptedStream[PushResponse], list[Compression]]:
+        return await self._push(
+            compression, supported=frozenset({Compression.GZIP, Compression.ZSTD})
+        )
+
+    async def _push(
+        self, compression: Compression | None, supported: frozenset[Compression]
+    ) -> tuple[ScriptedStream[PushResponse], list[Compression]]:
         stream = ScriptedStream(PushResponse())
         client, _ = make_client("push", stream, is_local=False)
         client.companion = dataclasses.replace(
-            client.companion,
-            supported_compressions=frozenset({Compression.GZIP, Compression.ZSTD}),
+            client.companion, supported_compressions=supported
         )
         tarred_with: list[Compression] = []
 
@@ -123,7 +129,17 @@ class PushTests(TestCase):
             [Payload(compression=Payload.GZIP), Payload(data=b"tar")],
         )
 
-    async def test_no_requested_compression_to_a_zstd_companion(self) -> None:
-        (stream, tarred_with) = await self._push_to_a_zstd_companion(None)
+    async def test_no_requested_compression_to_a_gzip_companion(self) -> None:
+        (stream, tarred_with) = await self._push(
+            None, supported=frozenset({Compression.GZIP})
+        )
         self.assertEqual(tarred_with, [Compression.GZIP])
         self.assertEqual(self._payloads(stream), [Payload(data=b"tar")])
+
+    async def test_no_requested_compression_to_a_zstd_companion(self) -> None:
+        (stream, tarred_with) = await self._push_to_a_zstd_companion(None)
+        self.assertEqual(tarred_with, [Compression.ZSTD])
+        self.assertEqual(
+            self._payloads(stream),
+            [Payload(compression=Payload.ZSTD), Payload(data=b"tar")],
+        )

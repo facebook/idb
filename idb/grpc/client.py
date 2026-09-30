@@ -1112,7 +1112,12 @@ class Client(ClientBase):
                 await stream.end()
                 await stream.recv_message()
             else:
+                compression = select_stream_compression(
+                    requested=compression,
+                    supported=self.companion.supported_compressions,
+                )
                 if compression is not None:
+                    self.logger.debug(f"Pushing with {compression.name} compression")
                     await stream.send_message(
                         PushRequest(
                             payload=Payload(compression=COMPRESSION_MAP[compression])
