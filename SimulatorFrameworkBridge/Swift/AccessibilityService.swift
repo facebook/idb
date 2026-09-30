@@ -116,6 +116,7 @@ private let errorKindApplicationUnavailable = BridgeAXWire.ErrorKind.application
 private let errorKindApplicationNotResponding = BridgeAXWire.ErrorKind.applicationNotResponding.rawValue
 // How long it was given, in seconds, sent with every `application_not_responding` failure.
 private let responseTimeoutSeconds = BridgeAXWire.Envelope.timeoutSeconds.rawValue
+private let responseOutstanding = BridgeAXWire.Envelope.outstanding.rawValue
 // The selected frontmost strategy could not name an application, for a reason that is about the strategy
 // rather than about any one application.
 private let errorKindFrontmostUnresolved = BridgeAXWire.ErrorKind.frontmostUnresolved.rawValue
@@ -233,6 +234,7 @@ private enum AccessibilityFailure {
   case tagged(message: String, kind: String, pid: NSNumber?)
   case runtime(message: String, axError: NSNumber?, pid: NSNumber?)
   case notResponding(message: String, pid: NSNumber?)
+  case outstanding(pid: pid_t)
 
   var dictionary: [String: Any] {
     switch self {
@@ -253,6 +255,13 @@ private enum AccessibilityFailure {
     case let .notResponding(message, pid):
       var response = AccessibilityFailure.tagged(message: message, kind: errorKindApplicationNotResponding, pid: pid).dictionary
       response[responseTimeoutSeconds] = NSNumber(value: FBAXMessagingTimeoutSeconds)
+      return response
+    case let .outstanding(pid):
+      var response = AccessibilityFailure.notResponding(
+        message: "pid \(pid) is still working on an earlier read that did not answer in time; nothing larger was sent to it",
+        pid: pid as NSNumber
+      ).dictionary
+      response[responseOutstanding] = true
       return response
     }
   }
@@ -1572,6 +1581,17 @@ private final class AccessibilityRequest {
     guard let root else {
       return FBAXBridgeErrorResponse(message: "no application element for pid \(pid)")
     }
+    // A tree read the application did not answer is still running there, and another sent now would queue
+    // behind it: every caller that retries on a timeout adds a whole serialization to a main thread already
+    // behind. One attribute read, which queues behind the same work, asks whether it has finished; its own
+    // timeout bounds the wait. Only when it has does the application get another tree to build.
+    if FBAXClientProvider.hasUnansweredRead(forProcessIdentifier: pid) {
+      let probe = try client.readAttributes([axElementType], of: root)
+      if probe.status == FBAXReadStatus.applicationNotResponding {
+        return AccessibilityFailure.outstanding(pid: pid).dictionary
+      }
+      FBAXClientProvider.setHasUnansweredRead(false, forProcessIdentifier: pid)
+    }
 
     let maxDepth = (request[requestMaxDepth] as? NSNumber).map { Int($0.int32Value) } ?? defaultMaxDepth
     let nodeBudget = (request[requestMaxNodes] as? NSNumber).map { Int($0.int32Value) } ?? defaultNodeBudget
@@ -1583,6 +1603,9 @@ private final class AccessibilityRequest {
       let names = FBAXBridgeFetchListForRequest(request: request)
       let snapshot = try client.snapshots.read(root, attributeNames: names)
       guard let snapshotRoot = snapshot.root else {
+        // The snapshot reports no reason a timeout can be told apart by, so any failure counts as one: a
+        // wrong guess costs the next read one attribute probe.
+        FBAXClientProvider.setHasUnansweredRead(true, forProcessIdentifier: pid)
         let description = try client.localizedDescription(ofError: snapshot.error)
         return FBAXBridgeNotRespondingResponse(
           message: (description.value as String?) ?? "the single-fetch read returned no tree",
@@ -1614,6 +1637,9 @@ private final class AccessibilityRequest {
       // answers against it with synthesized defaults rather than failing — so without this check the read
       // would report a healthy tree for a dead process. One extra round trip, on the opt-in path only.
       let availability = try client.readAttributes([axElementType], of: root)
+      if availability.status == FBAXReadStatus.applicationNotResponding {
+        FBAXClientProvider.setHasUnansweredRead(true, forProcessIdentifier: pid)
+      }
       let unavailable = try FBAXBridgeReadFailureResponse(
         client: client,
         status: availability.status,
@@ -1643,6 +1669,9 @@ private final class AccessibilityRequest {
         depth: 0,
         maxDepth: maxDepth
       )
+      if read.status == FBAXReadStatus.applicationNotResponding {
+        FBAXClientProvider.setHasUnansweredRead(true, forProcessIdentifier: pid)
+      }
       let failure = try FBAXBridgeReadFailureResponse(
         client: client,
         status: read.status,

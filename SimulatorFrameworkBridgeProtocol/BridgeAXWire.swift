@@ -96,6 +96,9 @@ public enum BridgeAXWire {
     case effect
     case axError = "ax_error"
     case timeoutSeconds = "timeout_seconds"
+    /// On an `application_not_responding` failure: the application is still working on an earlier read
+    /// that did not answer in time, so this one was refused without asking it anything larger.
+    case outstanding
   }
 
   /// Keys of the envelope's `phases` object — what the guest measured of its own work. The host's own

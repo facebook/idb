@@ -9,6 +9,7 @@
 
 static id<FBAXRuntime> gInjectedRuntime = nil;
 static FBAXRuntimeFactory gInjectedRuntimeFactory = nil;
+static NSMutableIndexSet *gUnansweredProcessIdentifiers = nil;
 
 static id<FBAXRuntime> _Nullable FBAXBridgeCreateRuntime(FBAXRuntimeFactory factory, NSString *_Nullable *_Nullable error)
 {
@@ -72,9 +73,30 @@ static id<FBAXRuntime> _Nullable FBAXBridgeSharedRuntime(NSString *_Nullable *_N
   return [[FBAXClient alloc] initWithRuntime:runtime];
 }
 
++ (BOOL)hasUnansweredReadForProcessIdentifier:(pid_t)processIdentifier
+{
+  return processIdentifier > 0 && [gUnansweredProcessIdentifiers containsIndex:(NSUInteger)processIdentifier];
+}
+
++ (void)setHasUnansweredRead:(BOOL)unanswered forProcessIdentifier:(pid_t)processIdentifier
+{
+  if (processIdentifier <= 0) {
+    return;
+  }
+  if (!unanswered) {
+    [gUnansweredProcessIdentifiers removeIndex:(NSUInteger)processIdentifier];
+    return;
+  }
+  if (!gUnansweredProcessIdentifiers) {
+    gUnansweredProcessIdentifiers = [NSMutableIndexSet indexSet];
+  }
+  [gUnansweredProcessIdentifiers addIndex:(NSUInteger)processIdentifier];
+}
+
 + (void)setRuntimeForTesting:(id<FBAXRuntime>)runtime
 {
   gInjectedRuntime = runtime;
+  gUnansweredProcessIdentifiers = nil;
 }
 
 + (void)setRuntimeFactoryForTesting:(FBAXRuntimeFactory)factory

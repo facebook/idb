@@ -812,7 +812,7 @@ final class AccessibilityRuntimeTests: XCTestCase {
 
   // An application that did not answer a snapshot in time is still serializing that tree, so another
   // snapshot sent to it waits behind that work, and the work piles up for as long as reads keep coming.
-  func testASnapshotSentWhileTheApplicationIsStillBusyWithTheLastOneIsSent() {
+  func testASnapshotSentWhileTheApplicationIsStillBusyWithTheLastOneIsNotSent() {
     let root = FBAXTestsNode(["XC_kAXXCAttributeLabel": "root"], [])
     root.readStatus = .applicationNotResponding
     runtime.applicationElements[NSNumber(value: kAppPid)] = root
@@ -823,10 +823,11 @@ final class AccessibilityRuntimeTests: XCTestCase {
     let second = FBAccessibilityService.handleRequest(FBAXTestsSnapshotRequest([:]))
     assertEqualObjects(axValue(second, "error_kind"), "application_not_responding")
     assertEqualObjects(axValue(second, "pid"), NSNumber(value: kAppPid))
-    // BUG: the second read sends the application another snapshot — flipped in the following commit.
-    XCTAssertEqual(runtime.snapshotCount, 2)
-    XCTAssertNil(axValue(second, "outstanding"))
-    assertEqualObjects(axValue(second, "error"), "runtime said no")
+    XCTAssertEqual(runtime.snapshotCount, 1)
+    assertEqualObjects(axValue(second, "outstanding"), NSNumber(value: true))
+    assertEqualObjects(
+      axValue(second, "error"),
+      "pid \(kAppPid) is still working on an earlier read that did not answer in time; nothing larger was sent to it")
   }
 
   func testASnapshotSentOnceTheApplicationHasCaughtUpIsSent() {
