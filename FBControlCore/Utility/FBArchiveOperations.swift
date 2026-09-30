@@ -29,6 +29,11 @@ public enum ArchiveOperationsError: Error, LocalizedError {
 /// Operations on zip/tar archives.
 public enum FBArchiveOperations {
 
+  /// A tar made by macOS `tar` carries an AppleDouble entry per file (e.g. for the
+  /// `com.apple.provenance` xattr). Restoring them roughly triples extraction time and nothing
+  /// in an app bundle's signature depends on them.
+  private static let NoMacMetadataFlag = "--no-mac-metadata"
+
   /// Builds a command to extract from a file on disk.
   public static func commandToExtractArchive(
     atPath path: String,
@@ -37,7 +42,7 @@ public enum FBArchiveOperations {
     debugLogging: Bool
   ) -> [String] {
     let flags = flagStringForExtraction(overrideModificationTime: overrideMTime, debugLogging: debugLogging)
-    return [flags, "-C", extractPath, "-f", path]
+    return [flags, NoMacMetadataFlag, "-C", extractPath, "-f", path]
   }
 
   /// Extracts a tar or zip file archive to a directory. The file can be an uncompressed tar, a
@@ -72,10 +77,10 @@ public enum FBArchiveOperations {
   ) -> [String] {
     switch compression {
     case .ZSTD:
-      return ["--use-compress-program", "pzstd -d", overrideMTime ? "-xpm" : "-xp", "-C", extractPath, "-f", "-"]
+      return ["--use-compress-program", "pzstd -d", overrideMTime ? "-xpm" : "-xp", NoMacMetadataFlag, "-C", extractPath, "-f", "-"]
     case .GZIP:
       let flags = flagStringForExtraction(overrideModificationTime: overrideMTime, debugLogging: debugLogging)
-      return [flags, "-C", extractPath, "-f", "-"]
+      return [flags, NoMacMetadataFlag, "-C", extractPath, "-f", "-"]
     }
   }
 

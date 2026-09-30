@@ -37,12 +37,7 @@ final class FBArchiveOperationsTests: XCTestCase {
       overrideModificationTime: false,
       debugLogging: false)
 
-    XCTAssertEqual(command.count, 5)
-    XCTAssertEqual(command[0], "-zxp", "Flags should be -zxp without m or v")
-    XCTAssertEqual(command[1], "-C")
-    XCTAssertEqual(command[2], "/tmp/output")
-    XCTAssertEqual(command[3], "-f")
-    XCTAssertEqual(command[4], "/tmp/archive.tar.gz")
+    XCTAssertEqual(command, ["-zxp", "--no-mac-metadata", "-C", "/tmp/output", "-f", "/tmp/archive.tar.gz"])
   }
 
   func testCommandToExtractArchive_WithOverrideMTime_NoDebug() {
@@ -85,8 +80,8 @@ final class FBArchiveOperationsTests: XCTestCase {
       overrideModificationTime: false,
       debugLogging: false)
 
-    XCTAssertEqual(command[2], extractPath, "Extract path should be preserved exactly")
-    XCTAssertEqual(command[4], archivePath, "Archive path should be preserved exactly")
+    XCTAssertEqual(command[3], extractPath, "Extract path should be preserved exactly")
+    XCTAssertEqual(command[5], archivePath, "Archive path should be preserved exactly")
   }
 
   // MARK: - commandToExtractFromStdIn with GZIP
@@ -98,7 +93,7 @@ final class FBArchiveOperationsTests: XCTestCase {
       compression: .GZIP,
       debugLogging: false)
 
-    XCTAssertEqual(command, ["-zxp", "-C", "/tmp/output", "-f", "-"])
+    XCTAssertEqual(command, ["-zxp", "--no-mac-metadata", "-C", "/tmp/output", "-f", "-"])
   }
 
   func testCommandToExtractFromStdIn_GZIPCompression_WithOverrideMTime() {
@@ -109,7 +104,7 @@ final class FBArchiveOperationsTests: XCTestCase {
       debugLogging: false)
 
     XCTAssertEqual(command[0], "-zxpm", "GZIP with overrideMTime should include m flag")
-    XCTAssertEqual(command[4], "-", "Last element should be stdin marker '-'")
+    XCTAssertEqual(command.last, "-", "Last element should be stdin marker '-'")
   }
 
   // MARK: - commandToExtractFromStdIn with ZSTD
@@ -121,7 +116,7 @@ final class FBArchiveOperationsTests: XCTestCase {
       compression: .ZSTD,
       debugLogging: false)
 
-    XCTAssertEqual(command, ["--use-compress-program", "pzstd -d", "-xp", "-C", "/tmp/output", "-f", "-"])
+    XCTAssertEqual(command, ["--use-compress-program", "pzstd -d", "-xp", "--no-mac-metadata", "-C", "/tmp/output", "-f", "-"])
   }
 
   func testCommandToExtractFromStdIn_ZSTDCompression_WithOverrideMTime() {
@@ -131,7 +126,7 @@ final class FBArchiveOperationsTests: XCTestCase {
       compression: .ZSTD,
       debugLogging: false)
 
-    XCTAssertEqual(command, ["--use-compress-program", "pzstd -d", "-xpm", "-C", "/tmp/output", "-f", "-"])
+    XCTAssertEqual(command, ["--use-compress-program", "pzstd -d", "-xpm", "--no-mac-metadata", "-C", "/tmp/output", "-f", "-"])
   }
 
   func testCommandToExtractFromStdIn_ZSTDCompression_IgnoresDebugLogging() {
