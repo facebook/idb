@@ -7,6 +7,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import contextlib
 import functools
 import http.server
@@ -29,6 +30,8 @@ from .harness import (
 PID_REPORT_TIMEOUT_SECONDS = 120.0
 
 INSTALL_LOG_TIMEOUT_SECONDS = 10.0
+
+CANCEL_GRACE_SECONDS = 2.0
 
 APP_STOP_TIMEOUT_SECONDS = 60.0
 
@@ -72,9 +75,16 @@ class ApplicationLifecycleTests(IdbEndToEndTestCase):
 @contextlib.contextmanager
 def _serving(directory: Path) -> Iterator[str]:
     """Serve a directory over loopback HTTP, yielding its base URL."""
-    handler = functools.partial(
-        http.server.SimpleHTTPRequestHandler, directory=str(directory)
-    )
+    with _serving_with(
+        functools.partial(
+            http.server.SimpleHTTPRequestHandler, directory=str(directory)
+        )
+    ) as base:
+        yield base
+
+
+@contextlib.contextmanager
+def _serving_with(handler: Any) -> Iterator[str]:
     server = http.server.ThreadingHTTPServer(("127.0.0.1", 0), handler)
     thread = threading.Thread(target=server.serve_forever, daemon=True)
     thread.start()
@@ -85,6 +95,29 @@ def _serving(directory: Path) -> Iterator[str]:
         server.shutdown()
         server.server_close()
         thread.join()
+
+
+class _StalledDownload:
+    """Answers with the start of a zip, then sends nothing more until released."""
+
+    def __init__(self) -> None:
+        self.requested = threading.Event()
+        self.released = threading.Event()
+
+    def handler(self, *args: Any) -> http.server.BaseHTTPRequestHandler:
+        stalled = self
+
+        class Handler(http.server.BaseHTTPRequestHandler):
+            def do_GET(self) -> None:
+                self.send_response(200)
+                self.send_header("Content-Length", str(1 << 30))
+                self.end_headers()
+                self.wfile.write(b"PK\x03\x04" + bytes(64 * 1024))
+                self.wfile.flush()
+                stalled.requested.set()
+                stalled.released.wait(INSTALL_TIMEOUT_SECONDS)
+
+        return Handler(*args)
 
 
 class ArchiveInstallTests(IdbEndToEndTestCase):
@@ -187,6 +220,28 @@ class ArchiveInstallTests(IdbEndToEndTestCase):
         self.assertEqual(columns["failure_stage"], "download")
         self.assertEqual(columns["failure_kind"], "http_status")
         self.assertNotIn("install_ms", columns)
+
+    async def test_stopping_the_client_mid_download_reports_the_cancel(self) -> None:
+        stalled = _StalledDownload()
+        self.addCleanup(stalled.released.set)
+        with _serving_with(stalled.handler) as base:
+            async with self.idb_process("install", f"{base}/stalled.ipa"):
+                await asyncio.to_thread(stalled.requested.wait, INSTALL_TIMEOUT_SECONDS)
+            await asyncio.sleep(CANCEL_GRACE_SECONDS)
+            # BUG: the install outlives its client, waiting on a download nobody
+            # wants until the server drops the connection.
+            self.assertEqual(
+                self.install_completion_lines()[self.earlier_installs :], []
+            )
+            stalled.released.set()
+            columns = await self.install_columns()
+
+        self.assertEqual(columns["payload_kind"], "url")
+        self.assertEqual(columns["failure_stage"], "download")
+        self.assertEqual(columns["failure_kind"], "transfer_failed")
+        # BUG: nothing says the install was cancelled, so it reads as a failed
+        # transfer; flipped in the following commit.
+        self.assertNotIn("cancel_source", columns)
 
 
 class LaunchOutputTests(IdbEndToEndTestCase):

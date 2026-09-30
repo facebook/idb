@@ -109,6 +109,18 @@ private struct Refused: Error {}
     #expect(columns(of: telemetry) == ["failure_kind=Refused", "payload_kind=file_path"])
   }
 
+  @Test func aFailureOnceTheCallIsCancelledReportsNoCancelSource() async {
+    let telemetry = InstallTelemetry(payloadKind: .url)
+    telemetry.observe(.downloadStarted(timing: timing(seconds: 0), url: url))
+    await Task {
+      withUnsafeCurrentTask { $0?.cancel() }
+      telemetry.failed(InstallError.transferFailed(url: url, underlying: URLError(.networkConnectionLost)))
+    }.value
+
+    // BUG: a cancelled install reads as an ordinary failure; flipped in the following commit.
+    #expect(columns(of: telemetry) == ["failure_kind=transfer_failed", "failure_stage=download", "payload_kind=url"])
+  }
+
   @Test(arguments: [
     (InstallError.httpStatus(url: url, statusCode: 500), "http_status"),
     (InstallError.transferFailed(url: url, underlying: Refused()), "transfer_failed"),
