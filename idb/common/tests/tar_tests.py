@@ -100,3 +100,22 @@ class ZstdArchiveTests(TestCase):
             ["zstd", "-dc"], input=stream, capture_output=True, check=False
         )
         self.assertEqual(decompressed.returncode, 0, decompressed.stderr)
+
+
+class GzipArchiveTests(TestCase):
+    async def test_generates_a_stream_tar_can_extract(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = os.path.join(directory, "App.app")
+            os.mkdir(bundle)
+            with open(os.path.join(bundle, "Info.plist"), "wb") as file:
+                file.write(b"plist bytes")
+            stream = b"".join(
+                [chunk async for chunk in generate_tar([bundle], Compression.GZIP)]
+            )
+            extracted = os.path.join(directory, "extracted")
+            os.mkdir(extracted)
+            subprocess.run(
+                ["tar", "-C", extracted, "-xzf", "-"], input=stream, check=True
+            )
+            with open(os.path.join(extracted, "App.app", "Info.plist"), "rb") as file:
+                self.assertEqual(file.read(), b"plist bytes")
