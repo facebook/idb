@@ -117,11 +117,8 @@ class ArchiveInstallTests(IdbEndToEndTestCase):
             / FIXTURE_APP_BUNDLE_ID
             / self.environment.fixture_app.name
         )
-        # BUG: the app is persisted as a symlink into the directory the archive
-        # was extracted to, which is deleted once the install finishes.
-        # Flipped in the following commit.
-        self.assertTrue(persisted.is_symlink())
-        self.assertFalse((persisted / "Info.plist").exists())
+        self.assertFalse(persisted.is_symlink())
+        self.assertTrue((persisted / "Info.plist").exists())
 
     async def test_installing_an_ipa_from_a_url(self) -> None:
         served = self.make_temporary_directory()

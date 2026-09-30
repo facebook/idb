@@ -66,7 +66,7 @@ public enum ApplicationArchive {
     onProgress: @escaping @Sendable (InstallProgressEvent) -> Void = { _ in },
     perform: (BundleDescriptor) async throws -> T
   ) async throws -> T {
-    if case .localPath(let path) = source, BundleDescriptor.isApplication(atPath: path) {
+    if case .localPath(let path) = source, !unpacks(source) {
       return try await perform(try BundleDescriptor.bundle(fromPath: path))
     }
     return try await temporaryDirectory.withTemporaryDirectory { extractDirectory in
@@ -82,6 +82,16 @@ public enum ApplicationArchive {
       }
       return try await perform(bundle)
     }
+  }
+
+  /// Whether resolving `source` unpacks it. An unpacked bundle belongs to
+  /// `withResolvedBundle`, which removes it afterwards, so `perform` may move it
+  /// away; any other bundle is the caller's own, and must be left where it is.
+  public static func unpacks(_ source: InstallSource) -> Bool {
+    guard case .localPath(let path) = source else {
+      return true
+    }
+    return !BundleDescriptor.isApplication(atPath: path)
   }
 
   // MARK: - Stages

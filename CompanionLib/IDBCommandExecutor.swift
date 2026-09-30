@@ -855,11 +855,11 @@ public final class IDBCommandExecutor {
 
   private func installApp(from source: InstallSource, makeDebuggable: Bool, options: InstallOptions) async throws -> InstalledArtifact {
     return try await ApplicationArchive.withResolvedBundle(from: source, options: options, temporaryDirectory: temporaryDirectory, logger: target.logger) { bundle in
-      try await installAppBundle(bundle, makeDebuggable: makeDebuggable)
+      try await installAppBundle(bundle, makeDebuggable: makeDebuggable, persistByMoving: ApplicationArchive.unpacks(source))
     }
   }
 
-  private func installAppBundle(_ appBundle: BundleDescriptor, makeDebuggable: Bool) async throws -> InstalledArtifact {
+  private func installAppBundle(_ appBundle: BundleDescriptor, makeDebuggable: Bool, persistByMoving: Bool) async throws -> InstalledArtifact {
     let userDevelopmentAppIsRequired = target is Device
     try storageManager.application.checkArchitecture(appBundle)
     let installedApp = try await target.application.install(atPath: appBundle.path)
@@ -867,7 +867,7 @@ public final class IDBCommandExecutor {
     // as installed apps are referenced from xctestrun files and expanded by idb
     // by using its own application storage. Fix this by replacing xctestrun
     // placeholders by app bundle paths instead
-    _ = try await storageManager.application.saveBundle(appBundle)
+    _ = try await storageManager.application.saveBundle(appBundle, usingSymlink: !persistByMoving, skipSigningBundles: false)
     if makeDebuggable && installedApp.installType != .userDevelopment && userDevelopmentAppIsRequired {
       throw IDBCommandError.userDevelopmentSigningRequired(applicationDescription: String(describing: installedApp))
     }
