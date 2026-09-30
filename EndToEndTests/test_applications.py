@@ -28,6 +28,8 @@ from .harness import (
 
 PID_REPORT_TIMEOUT_SECONDS = 120.0
 
+INSTALL_LOG_TIMEOUT_SECONDS = 10.0
+
 APP_STOP_TIMEOUT_SECONDS = 60.0
 
 
@@ -95,6 +97,34 @@ class ArchiveInstallTests(IdbEndToEndTestCase):
         )
         return Path(shutil.move(archive, directory / "fixture.ipa"))
 
+    async def asyncSetUp(self) -> None:
+        await super().asyncSetUp()
+        # The companion outlives each test, so earlier tests' installs are in its log.
+        self.earlier_installs = len(self.install_completion_lines())
+
+    def install_completion_lines(self) -> list[str]:
+        log = self.companion.log_path.read_text(errors="replace")
+        return [line for line in log.splitlines() if "payload_kind=" in line]
+
+    async def install_columns(self) -> dict[str, str]:
+        """Return the columns on this test's install completion line."""
+
+        async def poll() -> dict[str, str]:
+            lines = self.install_completion_lines()[self.earlier_installs :]
+            if not lines:
+                raise NotReady("no install completion line in the companion log")
+            columns = lines[0].rsplit("{", 1)[1].rstrip().rstrip("}")
+            return dict(column.split("=", 1) for column in columns.split(", "))
+
+        return await wait_until(
+            "the install completion line", INSTALL_LOG_TIMEOUT_SECONDS, poll
+        )
+
+    def assert_timed(self, columns: dict[str, str], *keys: str) -> None:
+        for key in keys:
+            self.assertIn(key, columns)
+            self.assertGreaterEqual(int(columns[key]), 0)
+
     async def test_installing_an_ipa(self) -> None:
         ipa = self.make_fixture_ipa(self.make_temporary_directory())
         self.addAsyncCleanup(self.uninstall_quietly, FIXTURE_APP_BUNDLE_ID)
@@ -102,6 +132,12 @@ class ArchiveInstallTests(IdbEndToEndTestCase):
         await self.idb("install", str(ipa), timeout=INSTALL_TIMEOUT_SECONDS)
 
         self.assertIn(FIXTURE_APP_BUNDLE_ID, await self.simctl.installed_bundle_ids())
+        # The companion shares the client's host, so it is handed the path, not the bytes.
+        columns = await self.install_columns()
+        self.assertEqual(columns["payload_kind"], "file_path")
+        self.assert_timed(columns, "extract_ms", "install_ms")
+        self.assertNotIn("receive_ms", columns)
+        self.assertNotIn("failure_stage", columns)
 
     async def test_installing_an_ipa_keeps_the_app_for_debugging(self) -> None:
         ipa = self.make_fixture_ipa(self.make_temporary_directory())
@@ -131,6 +167,11 @@ class ArchiveInstallTests(IdbEndToEndTestCase):
             )
 
         self.assertIn(FIXTURE_APP_BUNDLE_ID, await self.simctl.installed_bundle_ids())
+        columns = await self.install_columns()
+        self.assertEqual(columns["payload_kind"], "url")
+        self.assertEqual(int(columns["size"]), (served / "fixture.ipa").stat().st_size)
+        self.assert_timed(columns, "receive_ms", "extract_ms", "install_ms")
+        self.assertNotIn("failure_stage", columns)
 
     async def test_installing_from_a_missing_url_reports_the_http_status(self) -> None:
         with _serving(self.make_temporary_directory()) as base:
@@ -140,6 +181,12 @@ class ArchiveInstallTests(IdbEndToEndTestCase):
                 expected_error="HTTP status 404",
                 timeout=INSTALL_TIMEOUT_SECONDS,
             )
+
+        columns = await self.install_columns()
+        self.assertEqual(columns["payload_kind"], "url")
+        self.assertEqual(columns["failure_stage"], "download")
+        self.assertEqual(columns["failure_kind"], "http_status")
+        self.assertNotIn("install_ms", columns)
 
 
 class LaunchOutputTests(IdbEndToEndTestCase):

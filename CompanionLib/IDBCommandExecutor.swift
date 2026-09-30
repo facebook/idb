@@ -107,16 +107,16 @@ public final class IDBCommandExecutor {
     return listing
   }
 
-  public func install_app_file_path(_ filePath: String, make_debuggable makeDebuggable: Bool, override_modification_time overrideModificationTime: Bool) async throws -> InstalledArtifact {
-    return try await installApp(from: .localPath(filePath), makeDebuggable: makeDebuggable, options: InstallOptions(overrideModificationTime: overrideModificationTime))
+  public func install_app_file_path(_ filePath: String, make_debuggable makeDebuggable: Bool, override_modification_time overrideModificationTime: Bool, on_progress onProgress: @escaping @Sendable (InstallProgressEvent) -> Void = { _ in }) async throws -> InstalledArtifact {
+    return try await installApp(from: .localPath(filePath), makeDebuggable: makeDebuggable, options: InstallOptions(overrideModificationTime: overrideModificationTime), onProgress: onProgress)
   }
 
-  public func install_app_stream(_ input: FBProcessInput<AnyObject>, compression: FBCompressionFormat, make_debuggable makeDebuggable: Bool, override_modification_time overrideModificationTime: Bool) async throws -> InstalledArtifact {
-    return try await installApp(from: .processInput(input), makeDebuggable: makeDebuggable, options: InstallOptions(overrideModificationTime: overrideModificationTime, compression: compression))
+  public func install_app_stream(_ input: FBProcessInput<AnyObject>, compression: FBCompressionFormat, make_debuggable makeDebuggable: Bool, override_modification_time overrideModificationTime: Bool, on_progress onProgress: @escaping @Sendable (InstallProgressEvent) -> Void = { _ in }) async throws -> InstalledArtifact {
+    return try await installApp(from: .processInput(input), makeDebuggable: makeDebuggable, options: InstallOptions(overrideModificationTime: overrideModificationTime, compression: compression), onProgress: onProgress)
   }
 
-  public func install_app_url(_ url: URL, compression: FBCompressionFormat, make_debuggable makeDebuggable: Bool, override_modification_time overrideModificationTime: Bool) async throws -> InstalledArtifact {
-    return try await installApp(from: .remoteURL(url), makeDebuggable: makeDebuggable, options: InstallOptions(overrideModificationTime: overrideModificationTime, compression: compression))
+  public func install_app_url(_ url: URL, compression: FBCompressionFormat, make_debuggable makeDebuggable: Bool, override_modification_time overrideModificationTime: Bool, on_progress onProgress: @escaping @Sendable (InstallProgressEvent) -> Void = { _ in }) async throws -> InstalledArtifact {
+    return try await installApp(from: .remoteURL(url), makeDebuggable: makeDebuggable, options: InstallOptions(overrideModificationTime: overrideModificationTime, compression: compression), onProgress: onProgress)
   }
 
   public func install_xctest_app_file_path(_ filePath: String, skipSigningBundles: Bool) async throws -> InstalledArtifact {
@@ -853,9 +853,14 @@ public final class IDBCommandExecutor {
     return try await simulator.hid.connect()
   }
 
-  private func installApp(from source: InstallSource, makeDebuggable: Bool, options: InstallOptions) async throws -> InstalledArtifact {
-    return try await ApplicationArchive.withResolvedBundle(from: source, options: options, temporaryDirectory: temporaryDirectory, logger: target.logger) { bundle in
-      try await installAppBundle(bundle, makeDebuggable: makeDebuggable, persistByMoving: ApplicationArchive.unpacks(source))
+  private func installApp(from source: InstallSource, makeDebuggable: Bool, options: InstallOptions, onProgress: @escaping @Sendable (InstallProgressEvent) -> Void) async throws -> InstalledArtifact {
+    let totalStart = Date()
+    return try await ApplicationArchive.withResolvedBundle(from: source, options: options, totalStart: totalStart, temporaryDirectory: temporaryDirectory, logger: target.logger, onProgress: onProgress) { bundle in
+      let installStart = Date()
+      onProgress(.installStarted(timing: .measure(stageStart: installStart, totalStart: totalStart), appPath: bundle.path))
+      let artifact = try await installAppBundle(bundle, makeDebuggable: makeDebuggable, persistByMoving: ApplicationArchive.unpacks(source))
+      onProgress(.installCompleted(timing: .measure(stageStart: installStart, totalStart: totalStart), appPath: bundle.path, bundleId: bundle.identifier))
+      return artifact
     }
   }
 

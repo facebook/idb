@@ -99,16 +99,41 @@ struct InstallMethodHandler: @unchecked Sendable {
       payload = try extractPayloadFromRequest()
     }
 
-    return try await installData(
-      from: payload.source,
-      to: destination,
-      requestStream: requestStream,
-      name: name,
-      makeDebuggable: makeDebuggable,
-      linkToBundle: linkToBundle,
-      compression: compression,
-      overrideModificationTime: overrideModificationTime,
-      skipSigningBundles: skipSigningBundles)
+    let telemetry = InstallTelemetry(payloadKind: try payloadKind(of: payload.source))
+    defer {
+      if let call = CallTelemetry.current {
+        telemetry.record(into: call)
+      }
+    }
+    do {
+      return try await installData(
+        from: payload.source,
+        to: destination,
+        requestStream: requestStream,
+        name: name,
+        makeDebuggable: makeDebuggable,
+        linkToBundle: linkToBundle,
+        compression: compression,
+        overrideModificationTime: overrideModificationTime,
+        skipSigningBundles: skipSigningBundles,
+        telemetry: telemetry)
+    } catch {
+      telemetry.failed(error)
+      throw error
+    }
+  }
+
+  private func payloadKind(of source: Idb_Payload.OneOf_Source?) throws -> InstallPayloadKind {
+    switch source {
+    case .data:
+      return .data
+    case .url:
+      return .url
+    case .filePath:
+      return .filePath
+    default:
+      throw RPCError(code: .invalidArgument, message: "Incorrect payload source")
+    }
   }
 
   private func installData(
@@ -120,13 +145,14 @@ struct InstallMethodHandler: @unchecked Sendable {
     linkToBundle: DsymInstallLinkToBundle?,
     compression: FBCompressionFormat,
     overrideModificationTime: Bool,
-    skipSigningBundles: Bool
+    skipSigningBundles: Bool,
+    telemetry: InstallTelemetry
   ) async throws -> InstalledArtifact {
 
     func installSource(dataStream: FBProcessInput<AnyObject>, skipSigningBundles: Bool) async throws -> InstalledArtifact {
       switch destination {
       case .app:
-        return try await commandExecutor.install_app_stream(dataStream, compression: compression, make_debuggable: makeDebuggable, override_modification_time: overrideModificationTime)
+        return try await commandExecutor.install_app_stream(dataStream, compression: compression, make_debuggable: makeDebuggable, override_modification_time: overrideModificationTime, on_progress: telemetry.observe)
       case .xctest:
         return try await commandExecutor.install_xctest_app_stream(dataStream, skipSigningBundles: skipSigningBundles)
       case .dsym:
@@ -147,12 +173,13 @@ struct InstallMethodHandler: @unchecked Sendable {
           initial: data,
           requestStream: requestStream,
           makeDebuggable: makeDebuggable,
-          overrideModificationTime: overrideModificationTime)
+          overrideModificationTime: overrideModificationTime,
+          telemetry: telemetry)
       }
 
       let input = FBProcessInput<OutputStream>.fromStream()
       let output = input.contents
-      async let writePayload: Void = writePayload(initial: data, requestStream: requestStream, output: output)
+      async let writePayload: Void = writePayload(initial: data, requestStream: requestStream, output: output, telemetry: telemetry)
       let artifact = try await installSource(
         dataStream: input.retyped(FBProcessInput<AnyObject>.self),
         skipSigningBundles: skipSigningBundles)
@@ -164,7 +191,7 @@ struct InstallMethodHandler: @unchecked Sendable {
         throw RPCError(code: .invalidArgument, message: "Invalid url source")
       }
       if destination == .app {
-        return try await commandExecutor.install_app_url(url, compression: compression, make_debuggable: makeDebuggable, override_modification_time: overrideModificationTime)
+        return try await commandExecutor.install_app_url(url, compression: compression, make_debuggable: makeDebuggable, override_modification_time: overrideModificationTime, on_progress: telemetry.observe)
       }
       let download = DataDownloadInput.dataDownload(withURL: url, logger: targetLogger)
       let input = download.input
@@ -174,7 +201,7 @@ struct InstallMethodHandler: @unchecked Sendable {
     case let .filePath(filePath):
       switch destination {
       case .app:
-        return try await commandExecutor.install_app_file_path(filePath, make_debuggable: makeDebuggable, override_modification_time: overrideModificationTime)
+        return try await commandExecutor.install_app_file_path(filePath, make_debuggable: makeDebuggable, override_modification_time: overrideModificationTime, on_progress: telemetry.observe)
       case .xctest:
         return try await commandExecutor.install_xctest_app_file_path(filePath, skipSigningBundles: skipSigningBundles)
       case .dsym:
@@ -200,7 +227,8 @@ struct InstallMethodHandler: @unchecked Sendable {
     initial: Data,
     requestStream: RequestStreamReader<Idb_InstallRequest>,
     makeDebuggable: Bool,
-    overrideModificationTime: Bool
+    overrideModificationTime: Bool,
+    telemetry: InstallTelemetry
   ) async throws -> InstalledArtifact {
     let archiveURL = FileManager.default.temporaryDirectory
       .appendingPathComponent(UUID().uuidString)
@@ -211,41 +239,51 @@ struct InstallMethodHandler: @unchecked Sendable {
     defer { try? FileManager.default.removeItem(at: archiveURL) }
 
     let file = try FileHandle(forWritingTo: archiveURL)
+    var receive = telemetry.startReceiving()
     do {
       try file.write(contentsOf: initial)
+      receive.count(initial)
       for try await request in requestStream {
         guard let data = request.extractDataFrame() else {
           continue
         }
         try file.write(contentsOf: data)
+        receive.count(data)
       }
       try file.close()
     } catch {
       try? file.close()
       throw error
     }
+    receive.finish()
 
     return try await commandExecutor.install_app_file_path(
       archiveURL.path,
       make_debuggable: makeDebuggable,
-      override_modification_time: overrideModificationTime)
+      override_modification_time: overrideModificationTime,
+      on_progress: telemetry.observe)
   }
 
   private func writePayload(
     initial: Data,
     requestStream: RequestStreamReader<Idb_InstallRequest>,
-    output: OutputStream
+    output: OutputStream,
+    telemetry: InstallTelemetry
   ) async throws {
     output.open()
     defer { output.close() }
 
+    var receive = telemetry.startReceiving()
     try write(initial, to: output)
+    receive.count(initial)
     for try await request in requestStream {
       guard let data = request.extractDataFrame() else {
         continue
       }
       try write(data, to: output)
+      receive.count(data)
     }
+    receive.finish()
   }
 
   private func write(_ data: Data, to output: OutputStream) throws {
