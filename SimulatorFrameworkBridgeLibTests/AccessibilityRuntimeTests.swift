@@ -808,6 +808,53 @@ final class AccessibilityRuntimeTests: XCTestCase {
     assertEqualObjects(point, NSNull())
   }
 
+  // MARK: - A snapshot the application did not answer
+
+  // An application that did not answer a snapshot in time is still serializing that tree, so another
+  // snapshot sent to it waits behind that work, and the work piles up for as long as reads keep coming.
+  func testASnapshotSentWhileTheApplicationIsStillBusyWithTheLastOneIsSent() {
+    let root = FBAXTestsNode(["XC_kAXXCAttributeLabel": "root"], [])
+    root.readStatus = .applicationNotResponding
+    runtime.applicationElements[NSNumber(value: kAppPid)] = root
+    runtime.snapshotError = FBAXTestsErrorWithCode(FBAXError.ipcTimeout.rawValue)
+
+    let first = FBAccessibilityService.handleRequest(FBAXTestsSnapshotRequest([:]))
+    assertEqualObjects(axValue(first, "error_kind"), "application_not_responding")
+    let second = FBAccessibilityService.handleRequest(FBAXTestsSnapshotRequest([:]))
+    assertEqualObjects(axValue(second, "error_kind"), "application_not_responding")
+    assertEqualObjects(axValue(second, "pid"), NSNumber(value: kAppPid))
+    // BUG: the second read sends the application another snapshot — flipped in the following commit.
+    XCTAssertEqual(runtime.snapshotCount, 2)
+    XCTAssertNil(axValue(second, "outstanding"))
+    assertEqualObjects(axValue(second, "error"), "runtime said no")
+  }
+
+  func testASnapshotSentOnceTheApplicationHasCaughtUpIsSent() {
+    runtime.applicationElements[NSNumber(value: kAppPid)] = FBAXTestsNode(["XC_kAXXCAttributeLabel": "root"], [])
+    runtime.snapshotError = FBAXTestsErrorWithCode(FBAXError.ipcTimeout.rawValue)
+    _ = FBAccessibilityService.handleRequest(FBAXTestsSnapshotRequest([:]))
+    runtime.snapshotError = nil
+
+    let response = FBAccessibilityService.handleRequest(FBAXTestsSnapshotRequest([:]))
+    assertEqualObjects(axValue(response, "ok"), NSNumber(value: true), "the read must answer: \(String(describing: response))")
+    XCTAssertEqual(runtime.snapshotCount, 2)
+  }
+
+  func testASnapshotOfAnotherApplicationIsSentWhileOneIsStillBusy() {
+    let busy = FBAXTestsNode(["XC_kAXXCAttributeLabel": "busy"], [])
+    busy.readStatus = .applicationNotResponding
+    runtime.applicationElements[NSNumber(value: kAppPid)] = busy
+    runtime.applicationElements[NSNumber(value: kAppPid + 1)] = FBAXTestsNode(["XC_kAXXCAttributeLabel": "other"], [])
+    runtime.snapshotError = FBAXTestsErrorWithCode(FBAXError.ipcTimeout.rawValue)
+    _ = FBAccessibilityService.handleRequest(FBAXTestsSnapshotRequest([:]))
+    runtime.snapshotError = nil
+
+    let response = FBAccessibilityService.handleRequest(FBAXTestsSnapshotRequest(["pid": NSNumber(value: kAppPid + 1)]))
+    assertEqualObjects(axValue(response, "ok"), NSNumber(value: true), "the read must answer: \(String(describing: response))")
+    assertEqualObjects(axValue(axValue(response, "tree"), "XC_kAXXCAttributeLabel"), "other")
+    XCTAssertEqual(runtime.snapshotCount, 2)
+  }
+
   // MARK: - Write outcomes
 
   func testWriteErrorClassification() {
