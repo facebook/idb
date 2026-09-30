@@ -98,8 +98,7 @@ enum SimulatorDisplayProtocol {
       displays.append(
         SimulatorDisplay(
           uniqueID: id, name: record.name, activity: activity, isPrimary: record.primary, isIntegrated: validated.integrated,
-          bounds: validated.bounds, scale: Double(record.pointScale), rotation: record.currentOrientation,
-          activitySource: hasLayoutActivity ? .layout : .backlight))
+          bounds: validated.bounds, scale: Double(record.pointScale), rotation: record.currentOrientation))
     }
     return .displays(displays.sorted { $0.uniqueID < $1.uniqueID })
   }

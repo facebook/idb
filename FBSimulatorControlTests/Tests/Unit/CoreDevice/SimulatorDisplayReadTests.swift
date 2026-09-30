@@ -256,19 +256,18 @@ final class SimulatorDisplayReadTests: XCTestCase {
     }
   }
 
-  func testActivityEvidenceSourceCanChangeWithoutChangingDisplayConfiguration() throws {
+  func testActivityEvidenceSourceCanChangeWithoutChangingTheDisplay() throws {
     let value = displayValue(id: "inner", active: true, rotation: "rot90")
     xpc_dictionary_set_string(value, "backlightState", "activeOn")
     let layout = try target([value]).display
     xpc_dictionary_set_value(value, "active", nil)
     let backlight = try target([value]).display
-    XCTAssertNotEqual(layout, backlight)
-    XCTAssertTrue(layout.hasSameConfiguration(as: backlight))
+    XCTAssertEqual(layout, backlight)
     xpc_dictionary_set_string(value, "currentOrientation", "rot180")
     XCTAssertFalse(layout.hasSameConfiguration(as: try target([value]).display))
   }
 
-  func testCompleteBacklightEvidenceSelectsIlluminatedDisplayWithoutInventingLayoutActivity() throws {
+  func testCompleteBacklightEvidenceSelectsIlluminatedDisplay() throws {
     for state in ["activeOn", "activeDimmed"] {
       let cover = displayValue(id: "cover", active: false, primary: true)
       let inner = displayValue(id: "inner", active: true)
@@ -277,8 +276,6 @@ final class SimulatorDisplayReadTests: XCTestCase {
       xpc_dictionary_set_string(inner, "backlightState", state)
       let selected = try selected([cover, inner])
       XCTAssertEqual(selected.uniqueID, "inner")
-      XCTAssertEqual(selected.activitySource, .backlight)
-      XCTAssertNil(selected.reportedActivity)
     }
   }
 
@@ -301,9 +298,7 @@ final class SimulatorDisplayReadTests: XCTestCase {
     XCTAssertEqual(
       SimulatorDisplayError.transitioning.localizedDescription, "Invalid simulator CoreDevice response: Layout and backlight activity disagree")
     xpc_dictionary_set_bool(inner, "active", true)
-    let selected = try selected([cover, inner])
-    XCTAssertEqual(selected.activitySource, .layout)
-    XCTAssertEqual(selected.reportedActivity, true)
+    XCTAssertEqual(try selected([cover, inner]).uniqueID, "inner")
   }
 
   func testDisplayStringsAreBounded() {

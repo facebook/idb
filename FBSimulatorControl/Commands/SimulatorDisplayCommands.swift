@@ -74,23 +74,13 @@ public enum SimulatorDisplayActivity: Equatable, Sendable {
   case unknown
 }
 
-public enum SimulatorDisplayActivitySource: Equatable, Sendable {
-  case layout
-  /// Identifies an actively illuminated display when layout activity is unavailable.
-  case backlight
-}
-
 /// A current display snapshot. Activity evidence is independent of IO port power.
 public struct SimulatorDisplay: Equatable, Sendable {
   public let uniqueID: String
   public let name: String
   public let activity: SimulatorDisplayActivity
-  public let activitySource: SimulatorDisplayActivitySource
 
   public var isActive: Bool { activity == .active }
-
-  /// The provider's explicit layout activity, absent when selection used backlight evidence.
-  public var reportedActivity: Bool? { activitySource == .layout ? isActive : nil }
   public let isPrimary: Bool
   public let isIntegrated: Bool
   /// Bounds in the display's unrotated pixel coordinate space.
@@ -100,8 +90,7 @@ public struct SimulatorDisplay: Equatable, Sendable {
 
   init(
     uniqueID: String, name: String, activity: SimulatorDisplayActivity, isPrimary: Bool, isIntegrated: Bool,
-    bounds: CGRect, scale: Double, rotation: SimulatorDisplayRotation,
-    activitySource: SimulatorDisplayActivitySource = .layout
+    bounds: CGRect, scale: Double, rotation: SimulatorDisplayRotation
   ) {
     self.uniqueID = uniqueID
     self.name = name
@@ -111,14 +100,12 @@ public struct SimulatorDisplay: Equatable, Sendable {
     self.bounds = bounds
     self.scale = scale
     self.rotation = rotation
-    self.activitySource = activitySource
   }
 
   public var geometry: SimulatorDisplayGeometry {
     SimulatorDisplayGeometry(bounds: bounds, scale: scale, rotation: rotation)
   }
 
-  // Layout lookup may succeed on one snapshot and require backlight evidence on the next.
   func hasSameConfiguration(as other: Self) -> Bool {
     uniqueID == other.uniqueID && activity == other.activity && isIntegrated == other.isIntegrated && geometry == other.geometry
   }

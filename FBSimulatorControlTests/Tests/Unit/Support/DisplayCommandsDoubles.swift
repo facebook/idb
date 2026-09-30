@@ -69,7 +69,7 @@ extension SimulatorDisplayReport {
     case let .selected(display):
       let inactive = SimulatorDisplay(
         uniqueID: "\(display.uniqueID)-inactive", name: display.name, activity: .inactive, isPrimary: false, isIntegrated: true,
-        bounds: display.bounds, scale: display.scale, rotation: display.rotation, activitySource: display.activitySource)
+        bounds: display.bounds, scale: display.scale, rotation: display.rotation)
       return .displays([display, inactive])
     }
   }
