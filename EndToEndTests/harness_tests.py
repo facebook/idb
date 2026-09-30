@@ -66,6 +66,7 @@ from .harness import (
     select_tests_for_capability,
     shared_companion,
     Simctl,
+    stop_push_service,
     STRICT_ENV,
     suite_capability,
     SUITE_CAPABILITY_ENV,
@@ -2916,6 +2917,56 @@ class HostLoadTests(unittest.TestCase):
         self.assertIn(b"sample 2\n", recorded)
         self.assertEqual(len(logs.records), 1)
         self.assertIn("Could not record host load", logs.output[0])
+
+
+class StopPushServiceTests(unittest.IsolatedAsyncioTestCase):
+    def setUp(self) -> None:
+        self.simctl = Simctl("UDID", Path("/devices"))
+
+    async def test_boots_out_apsd_inside_the_simulator(self) -> None:
+        execute = mock.AsyncMock(return_value=Completed(0, b"", b""))
+
+        with mock.patch.object(harness, "run", new=execute):
+            await stop_push_service(self.simctl)
+
+        execute.assert_awaited_once_with(
+            [
+                "xcrun",
+                "simctl",
+                "--set",
+                "/devices",
+                "spawn",
+                "UDID",
+                "launchctl",
+                "bootout",
+                "system/com.apple.apsd",
+            ],
+            timeout=30.0,
+        )
+
+    async def test_a_failed_bootout_is_a_warning(self) -> None:
+        execute = mock.AsyncMock(return_value=Completed(3, b"", b"No such process"))
+
+        with (
+            mock.patch.object(harness, "run", new=execute),
+            self.assertLogs(harness._LOGGER, "WARNING") as logs,
+        ):
+            await stop_push_service(self.simctl)
+
+        self.assertEqual(len(logs.records), 1)
+        self.assertIn("(rc=3): No such process", logs.output[0])
+
+    async def test_a_hung_bootout_is_a_warning(self) -> None:
+        execute = mock.AsyncMock(side_effect=CommandTimedOut("launchctl hung"))
+
+        with (
+            mock.patch.object(harness, "run", new=execute),
+            self.assertLogs(harness._LOGGER, "WARNING") as logs,
+        ):
+            await stop_push_service(self.simctl)
+
+        self.assertEqual(len(logs.records), 1)
+        self.assertIn("launchctl hung", logs.output[0])
 
 
 if __name__ == "__main__":

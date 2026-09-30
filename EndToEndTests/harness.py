@@ -977,6 +977,35 @@ class HostLoad:
         self._thread.join(timeout=HOST_LOAD_SAMPLE_TIMEOUT_SECONDS)
 
 
+# Without a push certificate, as on a CI host, apsd reconnects to Apple's push
+# service without backing off: a third of the simulator's log and a steady share
+# of a core for the whole run. Pushes sent through simctl do not go through it.
+PUSH_SERVICE_TARGET = "system/com.apple.apsd"
+PUSH_SERVICE_STOP_TIMEOUT_SECONDS = 30.0
+
+
+async def stop_push_service(simctl: Simctl) -> None:
+    """Stop apsd in the simulator, carrying on with a warning if it can't be."""
+    try:
+        completed = await simctl.run(
+            "spawn",
+            simctl.udid,
+            "launchctl",
+            "bootout",
+            PUSH_SERVICE_TARGET,
+            timeout=PUSH_SERVICE_STOP_TIMEOUT_SECONDS,
+        )
+    except HarnessError as error:
+        _LOGGER.warning("Could not stop apsd in the simulator: %s", error)
+        return
+    if completed.returncode != 0:
+        _LOGGER.warning(
+            "Could not stop apsd in the simulator (rc=%d): %s",
+            completed.returncode,
+            completed.error_text,
+        )
+
+
 class Companion:
     """Share a companion across tests.
 
@@ -1180,6 +1209,7 @@ async def shared_environment() -> Environment:
             _acquisition_failure = error
             raise
         _start_host_load()
+        await stop_push_service(_environment.simctl)
     return _environment
 
 
