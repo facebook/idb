@@ -31,6 +31,12 @@ def _has_executable(exe: str) -> bool:
 READ_CHUNK_SIZE: int = 1024 * 1024 * 4  # 4Mb, the default max read for gRPC
 
 
+def _tar_environment() -> dict[str, str]:
+    # Otherwise macOS tar adds an AppleDouble entry for every file's extended attributes, which
+    # takes several times longer than archiving the files themselves, and bundles don't need them.
+    return {**os.environ, "COPYFILE_DISABLE": "1"}
+
+
 async def is_gnu_tar() -> bool:
     proc = await asyncio.create_subprocess_shell(
         "tar --version | grep GNU",
@@ -97,7 +103,7 @@ class TarArchiveProcess:
         pipe_read, pipe_write = os.pipe()
         try:
             process_tar = await asyncio.create_subprocess_exec(
-                *command, stderr=sys.stderr, stdout=pipe_write
+                *command, stderr=sys.stderr, stdout=pipe_write, env=_tar_environment()
             )
         except BaseException:
             os.close(pipe_read)
