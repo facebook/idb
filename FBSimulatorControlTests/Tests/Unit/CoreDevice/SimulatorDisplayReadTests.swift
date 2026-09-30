@@ -54,6 +54,31 @@ final class SimulatorDisplayReadTests: XCTestCase {
     XCTAssertThrowsError(try SimulatorDisplayProtocol.interactionDisplay(displayReply([lcd, lcd])))
   }
 
+  /// Xcode 27.1 driving an iOS 26 runtime identifies no display and reports every backlight, the LCD's
+  /// included, as `unknown`.
+  func testUnknownBacklightOnEveryDisplayWithoutIdentity() throws {
+    let lcd = displayValue(id: "LCD", active: true, primary: true)
+    let externals = ["TVOut", "Wireless"].map { displayValue(id: $0, active: false) }
+    let zero = SimulatorCoreDevice.array([xpc_double_create(0), xpc_double_create(0)])
+    for value in externals {
+      xpc_dictionary_set_value(value, "type", SimulatorCoreDevice.dictionary(["external": SimulatorCoreDevice.dictionary([:])]))
+      xpc_dictionary_set_value(value, "bounds", SimulatorCoreDevice.array([zero, zero]))
+    }
+    for value in [lcd] + externals {
+      xpc_dictionary_set_value(value, "active", nil)
+      xpc_dictionary_set_value(value, "uniqueId", nil)
+      xpc_dictionary_set_string(value, "backlightState", "unknown")
+    }
+    let reply = displayReply([lcd] + externals)
+    // BUG: `unknown` counts as activity evidence, so the report takes the strict read and fails on the
+    // missing identity instead of resolving the sole integrated display — flipped in the following commit.
+    XCTAssertThrowsError(try SimulatorDisplayProtocol.snapshot(reply))
+    XCTAssertThrowsError(try SimulatorDisplayProtocol.interactionTarget(reply)) { error in
+      XCTAssertEqual(error.localizedDescription, "Invalid simulator CoreDevice response: Duplicate or empty display identity")
+    }
+    XCTAssertThrowsError(try SimulatorDisplayProtocol.displays(reply))
+  }
+
   func testIdentifiedGeometryUsesActiveDisplayInsteadOfPrimary() throws {
     let selected = try SimulatorDisplayProtocol.interactionDisplay(
       displayReply([
