@@ -148,8 +148,21 @@ final class SimulatorDisplayInteractionTests: XCTestCase {
     let context = try context(display(scale: 3))
     XCTAssertEqual(context.pointSize, CGSize(width: 400, height: 800.0 / 3))
     for point in [CGPoint(x: -1, y: 0), CGPoint(x: 401, y: 0), CGPoint(x: 0, y: 300), CGPoint(x: Double.nan, y: 0), CGPoint(x: 0, y: Double.infinity)] {
-      XCTAssertThrowsError(try context.digitizerPoint(from: point))
+      XCTAssertThrowsError(try context.digitizerPoint(from: point)) {
+        guard case let SimulatorDisplayInteractionError.invalidPoint(rejected, bounds) = $0 else { return XCTFail("\($0)") }
+        XCTAssertEqual(String(describing: rejected), String(describing: point))
+        XCTAssertEqual(bounds, context.pointSize)
+      }
     }
+    XCTAssertEqual(
+      SimulatorDisplayInteractionError.invalidPoint(CGPoint(x: 401, y: 0), bounds: CGSize(width: 400, height: 300)).localizedDescription,
+      "Touch point (401.0, 0.0) is outside the display's point bounds (400.0 x 300.0)")
+    XCTAssertEqual(
+      SimulatorDisplayInteractionError.invalidPoint(CGPoint(x: Double.nan, y: 0), bounds: CGSize(width: 400, height: 300)).localizedDescription,
+      "Touch point (nan, 0.0) is not a real position (x is NaN) within the display's point bounds (400.0 x 300.0)")
+    XCTAssertEqual(
+      SimulatorDisplayInteractionError.invalidPoint(CGPoint(x: 0, y: -Double.infinity), bounds: CGSize(width: 400, height: 300)).localizedDescription,
+      "Touch point (0.0, -inf) is not a real position (y is infinite) within the display's point bounds (400.0 x 300.0)")
   }
 
   func testInventoryRejectsInvalidIDsAndPreservesUnsupportedFailure() throws {

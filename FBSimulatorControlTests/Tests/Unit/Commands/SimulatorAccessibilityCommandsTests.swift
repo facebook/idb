@@ -695,7 +695,10 @@ final class SimulatorAccessibilityCommandsTests: XCTestCase {
     do {
       _ = try await simulator.accessibility.resolveElement(for: .point(CGPoint(x: 401, y: 120)))
       XCTFail("Expected invalid display point")
-    } catch SimulatorDisplayInteractionError.invalidPoint {}
+    } catch let SimulatorDisplayInteractionError.invalidPoint(point, bounds) {
+      XCTAssertEqual(point, CGPoint(x: 401, y: 120))
+      XCTAssertEqual(bounds, CGSize(width: 400, height: 600))
+    }
     XCTAssertFalse(fixture!.translator.methodCalls.compactMap { $0 as? String }.contains { $0.hasPrefix("objectAtPoint:") })
   }
 

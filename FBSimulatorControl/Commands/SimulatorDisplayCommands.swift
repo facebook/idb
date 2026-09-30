@@ -34,7 +34,7 @@ public struct SimulatorDisplayGeometry: Equatable, Sendable {
     let size = pointSize
     guard point.x.isFinite, point.y.isFinite,
       point.x >= 0, point.y >= 0, point.x <= size.width, point.y <= size.height
-    else { throw SimulatorDisplayInteractionError.invalidPoint }
+    else { throw SimulatorDisplayInteractionError.invalidPoint(point, bounds: size) }
     let width = bounds.width / scale
     let height = bounds.height / scale
     switch rotation {

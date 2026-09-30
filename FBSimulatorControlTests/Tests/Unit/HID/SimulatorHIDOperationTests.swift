@@ -78,7 +78,10 @@ final class SimulatorHIDOperationTests: XCTestCase {
       try await operation.send(.touch(direction: .down, x: -1, y: 30))
       XCTFail("expected invalid coordinates")
     } catch {
-      guard case SimulatorDisplayInteractionError.invalidPoint = error else { return XCTFail("unexpected error: \(error)") }
+      guard case let SimulatorDisplayInteractionError.invalidPoint(point, bounds) = error else { return XCTFail("unexpected error: \(error)") }
+      XCTAssertEqual(point, CGPoint(x: -1, y: 30))
+      XCTAssertEqual(bounds, CGSize(width: 200, height: 300))
+      XCTAssertEqual(error.localizedDescription, "Touch point (-1.0, 30.0) is outside the display's point bounds (200.0 x 300.0)")
       await operation.cleanup()
     }
     let events = await recorder.events

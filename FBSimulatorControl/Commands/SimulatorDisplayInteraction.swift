@@ -11,15 +11,24 @@ public enum SimulatorDisplayInteractionError: Error, LocalizedError {
   case unsupportedCapability(String)
   case inactiveDisplay(String)
   case missingMapping(String)
-  case invalidPoint
+  case invalidPoint(CGPoint, bounds: CGSize)
 
   public var errorDescription: String? {
     switch self {
     case let .unsupportedCapability(capability): "Simulator does not support \(capability)"
     case let .inactiveDisplay(id): "Display \(id) is not the active integrated display"
     case let .missingMapping(id): "Display \(id) has no unique accessibility and touchscreen mapping"
-    case .invalidPoint: "Touch coordinates must be finite and within the display's point bounds"
+    case let .invalidPoint(point, bounds):
+      "Touch point (\(point.x), \(point.y)) \(Self.invalidity(of: point)) the display's point bounds (\(bounds.width) x \(bounds.height))"
     }
+  }
+
+  private static func invalidity(of point: CGPoint) -> String {
+    let nonFinite = [("x", point.x), ("y", point.y)].compactMap { axis, value in
+      value.isNaN ? "\(axis) is NaN" : value.isInfinite ? "\(axis) is infinite" : nil
+    }
+    if nonFinite.isEmpty { return "is outside" }
+    return "is not a real position (\(nonFinite.joined(separator: ", "))) within"
   }
 }
 
@@ -40,7 +49,7 @@ public struct SimulatorDisplayInteractionContext: Equatable, Sendable {
     let size = pointSize
     guard point.x.isFinite, point.y.isFinite,
       point.x >= 0, point.y >= 0, point.x <= size.width, point.y <= size.height
-    else { throw SimulatorDisplayInteractionError.invalidPoint }
+    else { throw SimulatorDisplayInteractionError.invalidPoint(point, bounds: size) }
     let x = point.x / size.width
     let y = point.y / size.height
     switch display.rotation {
