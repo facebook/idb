@@ -114,10 +114,11 @@ final class SimulatorDisplayReadTests: XCTestCase {
     xpc_dictionary_set_value(backlight, "active", nil)
     xpc_dictionary_set_string(backlight, "backlightState", "off")
     for value in [layout, backlight] {
-      // BUG: throws instead of resolving the sole display — flipped in the following commit.
-      XCTAssertThrowsError(try SimulatorDisplayProtocol.interactionTarget(displayReply([value]))) { error in
-        guard case SimulatorDisplayError.noActiveIntegratedDisplay = error else { return XCTFail("\(error)") }
+      guard case let .sole(.identified(lcd)) = try SimulatorDisplayProtocol.interactionTarget(displayReply([value])) else {
+        return XCTFail("Expected the sole display")
       }
+      XCTAssertEqual(lcd.uniqueID, "lcd")
+      XCTAssertFalse(lcd.isActive)
     }
   }
 
@@ -204,8 +205,7 @@ final class SimulatorDisplayReadTests: XCTestCase {
     }
     let reports: [String: [xpc_object_t]] = [
       "partial layout activity": [displayValue(id: "cover", active: false, primary: true), partialLayout],
-      // BUG: a sole inactive display is its own interaction target — flipped in the following commit.
-      "no active display": [displayValue(id: "lcd", active: false)],
+      "no active display": [displayValue(id: "cover", active: false), displayValue(id: "inner", active: false)],
       "several active displays": [displayValue(id: "cover", active: true), displayValue(id: "inner", active: true)],
       "invalid record": [unscaled],
     ]

@@ -169,7 +169,7 @@ public final class SimulatorDisplayCommands: DisplayCommands, @unchecked Sendabl
     try await read(decode: SimulatorDisplayProtocol.interactionDisplay)
   }
 
-  /// Resolves the active integrated display and whether interactions have to name it.
+  /// Resolves the integrated display interactions target and whether they have to name it.
   func interactionTarget() async throws -> SimulatorDisplayTarget {
     try await read(decode: SimulatorDisplayProtocol.interactionTarget)
   }

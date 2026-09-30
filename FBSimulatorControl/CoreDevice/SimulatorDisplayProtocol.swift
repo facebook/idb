@@ -57,15 +57,18 @@ enum SimulatorDisplayProtocol {
     try interactionTarget(reply).display
   }
 
-  /// The active integrated display, and whether it is the only one. A legacy provider has to report
-  /// exactly one integrated display.
+  /// The sole integrated display, active or not, or the active one of several. A legacy provider has to
+  /// report exactly one integrated display.
   static func interactionTarget(_ reply: xpc_object_t) throws -> SimulatorDisplayTarget {
     let report = try validated(CoreDeviceReply.decode(Report.self, from: reply))
     guard case let .displays(displays) = try snapshot(of: report) else {
       return .sole(.legacy(try legacyIntegratedGeometry(in: report)))
     }
-    let display = try SimulatorDisplayCommands.activeIntegratedDisplay(in: displays)
-    return displays.filter(\.isIntegrated).count > 1 ? .selected(display) : .sole(.identified(display))
+    let integrated = displays.filter(\.isIntegrated)
+    if integrated.count == 1, let display = integrated.first {
+      return .sole(.identified(display))
+    }
+    return .selected(try SimulatorDisplayCommands.activeIntegratedDisplay(in: displays))
   }
 
   private static func legacyIntegratedGeometry(in report: Report) throws -> SimulatorDisplayGeometry {
