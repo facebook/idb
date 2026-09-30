@@ -73,7 +73,7 @@ final class DisplayCommandsTests: XCTestCase {
   func testRuntimeWithoutDisplayReportsFallsBack() async throws {
     let displays = DisplayCommandsDouble([.success(.failed(.unsupported("displayinfo")))])
     let resolved = try await displays.resolveDisplay()
-    XCTAssertEqual(resolved, .fallback(.unreported("displayinfo")))
+    XCTAssertEqual(resolved, .fallback(.unreadable(.unsupported("displayinfo"))))
   }
 
   func testRuntimeThatCannotSayWhichDisplayIsTargetedFallsBack() async throws {

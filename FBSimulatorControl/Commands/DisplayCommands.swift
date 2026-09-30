@@ -85,8 +85,6 @@ enum SimulatorDisplayResolution: Equatable, Sendable {
       self = .target(.selected(display))
     case .transitioning:
       self = .transitioning
-    case let .failed(.unsupported(detail)):
-      self = .fallback(.unreported(detail))
     case let .failed(error):
       self = .fallback(.unreadable(error))
     }
@@ -95,9 +93,7 @@ enum SimulatorDisplayResolution: Equatable, Sendable {
 
 /// Why interactions fell back to the main display.
 enum SimulatorDisplayFallback: Equatable, Sendable {
-  /// The runtime does not report displays.
-  case unreported(String)
-  /// The display read failed.
+  /// The display read failed, including on runtimes that do not report displays.
   case unreadable(SimulatorCoreDeviceError)
   /// A runtime without display activity reports other than one integrated display.
   case legacyIntegratedDisplays(count: Int)
