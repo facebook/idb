@@ -254,9 +254,7 @@ final class ApplicationArchiveTests: XCTestCase {
         atPath: (bundle.path as NSString).appendingPathComponent("Link.plist"))[.type] as? FileAttributeType
     }
 
-    // BUG: the symlink is extracted as a regular file holding its target's
-    // path. Flipped in the following commit.
-    XCTAssertEqual(linkType, .typeRegular)
+    XCTAssertEqual(linkType, .typeSymbolicLink)
   }
 
   /// A zip laid out like an `.ipa` whose app holds `Link.plist -> Info.plist`.
