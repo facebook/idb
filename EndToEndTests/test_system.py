@@ -84,7 +84,7 @@ class PermissionTests(IdbEndToEndTestCase):
             await self.wait_for_system_prompt(service)
             await self.deny_system_prompt()
 
-        await self.idb("approve", bundle_id, *PRIVACY_SERVICES)
+        await self.approve(bundle_id, *PRIVACY_SERVICES)
 
         for service in PRIVACY_SERVICES:
             await self.relaunch(bundle_id)
@@ -95,6 +95,16 @@ class PermissionTests(IdbEndToEndTestCase):
                 await self.system_prompt_showing(),
                 f"{service} was approved beforehand, so the app must not ask for it",
             )
+
+    async def approve(self, bundle_id: str, *services: str) -> None:
+        """Approve the services, and revoke them again when the test ends.
+
+        Uninstalling does not reliably take the grants away: tccd drops them
+        seconds later, and not at all if the app has been reinstalled by then,
+        so the next test's fresh install would inherit them.
+        """
+        self.addAsyncCleanup(self.idb, "revoke", bundle_id, *services, check=False)
+        await self.idb("approve", bundle_id, *services)
 
     async def relaunch(self, bundle_id: str) -> None:
         await self.idb("terminate", bundle_id, check=False)
@@ -160,7 +170,7 @@ class PermissionTests(IdbEndToEndTestCase):
             "a freshly installed app has been granted nothing",
         )
 
-        await self.idb("approve", bundle_id, "photos", "contacts")
+        await self.approve(bundle_id, "photos", "contacts")
 
         self.assertEqual(
             self.permission_records(bundle_id),
