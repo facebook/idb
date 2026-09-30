@@ -47,7 +47,7 @@ final class SimulatorScreenshotCommandsTests: XCTestCase {
       (.target(.sole(.identified(lcd))), "main screen"),
       (.target(.sole(.legacy(inner.geometry))), "main screen"),
       (.fallback(.noActiveIntegratedDisplay), "main screen"),
-      (.unsettled, "main screen"),
+      (.transitioning, "main screen"),
     ]
     for (resolution, expected) in resolutions {
       let captured = try await capture(resolveDisplay: { resolution })

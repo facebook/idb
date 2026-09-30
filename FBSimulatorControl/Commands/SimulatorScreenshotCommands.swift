@@ -80,7 +80,7 @@ public final class SimulatorScreenshotCommands: ScreenshotCommands {
       return display
     case let .target(.sole(.identified(display))):
       return display.isActive ? display : nil
-    case .target(.sole(.legacy)), .fallback, .unsettled:
+    case .target(.sole(.legacy)), .fallback, .transitioning:
       return nil
     }
   }

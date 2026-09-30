@@ -185,7 +185,7 @@ struct SimulatorHIDOperation {
               let current = try await displays.currentDisplay()
               if Task.isCancelled { return }
               switch current {
-              case .unsettled:
+              case .transitioning:
                 throw SimulatorDisplayError.transitioning
               case .fallback:
                 throw SimulatorDisplayError.changed
@@ -209,7 +209,7 @@ struct SimulatorHIDOperation {
   private static func route(_ displays: (any DisplayCommands)?) async throws -> SimulatorHIDDisplay? {
     guard let displays else { return nil }
     switch try await displays.resolveDisplay() {
-    case .unsettled: throw SimulatorDisplayError.transitioning
+    case .transitioning: throw SimulatorDisplayError.transitioning
     case .fallback: return nil
     case let .target(.sole(display)): return .sole(display)
     case let .target(.selected(display)): return .selected(display, target: try await displays.digitizerTarget(for: display))

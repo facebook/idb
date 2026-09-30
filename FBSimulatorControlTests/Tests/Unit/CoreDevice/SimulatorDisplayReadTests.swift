@@ -297,7 +297,7 @@ final class SimulatorDisplayReadTests: XCTestCase {
     assertFailed(report([cover, inner]))
     xpc_dictionary_set_bool(inner, "active", false)
     XCTAssertEqual(report([cover, inner]), .transitioning)
-    XCTAssertEqual(resolution([cover, inner]), .unsettled)
+    XCTAssertEqual(resolution([cover, inner]), .transitioning)
     XCTAssertEqual(
       SimulatorDisplayError.transitioning.localizedDescription, "Invalid simulator CoreDevice response: Layout and backlight activity disagree")
     xpc_dictionary_set_bool(inner, "active", true)

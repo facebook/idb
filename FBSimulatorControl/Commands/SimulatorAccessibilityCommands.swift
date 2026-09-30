@@ -85,7 +85,7 @@ final class SimulatorAccessibilityCommands: AccessibilityOperations {
     guard let simulator else { throw WeakTargetError.simulator }
     let displays = displays ?? simulator.displays
     switch try await displays.resolveDisplay() {
-    case .unsettled:
+    case .transitioning:
       throw SimulatorDisplayError.transitioning
     case .fallback:
       return nil

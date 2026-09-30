@@ -120,7 +120,7 @@ extension DisplayCommands {
   func interactionContext(for displayUniqueID: String?, transport: any AXBridgeTransport) async throws -> SimulatorDisplayInteractionContext {
     let display: SimulatorDisplay
     switch try await resolveDisplay() {
-    case .unsettled:
+    case .transitioning:
       throw SimulatorDisplayError.transitioning
     case .fallback, .target(.sole(.legacy)):
       throw SimulatorDisplayInteractionError.unsupportedCapability("display identities")

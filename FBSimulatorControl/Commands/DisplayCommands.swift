@@ -52,7 +52,7 @@ enum SimulatorDisplayResolution: Equatable, Sendable {
   case fallback(SimulatorDisplayFallback)
   case target(SimulatorDisplayTarget)
   /// Layout has moved to a display whose backlight has not caught up, as after a hinge change.
-  case unsettled
+  case transitioning
 
   /// The sole integrated display, active or not, or the active one of several.
   init(_ report: SimulatorDisplayReport) {
@@ -84,7 +84,7 @@ enum SimulatorDisplayResolution: Equatable, Sendable {
       }
       self = .target(.selected(display))
     case .transitioning:
-      self = .unsettled
+      self = .transitioning
     case let .failed(.unsupported(detail)):
       self = .fallback(.unreported(detail))
     case let .failed(error):
@@ -162,14 +162,14 @@ extension DisplayCommands {
   var transitionSettling: DisplayTransitionSettling { .standard }
 
   /// The display interactions target once any display transition has settled. A hinge change moves layout to
-  /// the new display before its backlight follows, and one-shot resolution waits that out. `.unsettled` only
+  /// the new display before its backlight follows, and one-shot resolution waits that out. `.transitioning` only
   /// when the transition outlasts `transitionSettling`.
   func resolveDisplay() async throws -> SimulatorDisplayResolution {
     let settling = transitionSettling
     let deadline = ContinuousClock.now + settling.timeout
     while true {
       let resolution = try await currentDisplay()
-      guard resolution == .unsettled, ContinuousClock.now < deadline else { return resolution }
+      guard resolution == .transitioning, ContinuousClock.now < deadline else { return resolution }
       try await Task.sleep(for: settling.interval)
     }
   }
@@ -220,7 +220,7 @@ extension DisplayCommands {
       guard target.display.hasSameConfiguration(as: display) else { throw SimulatorDisplayError.changed }
     case .fallback:
       throw SimulatorDisplayError.changed
-    case .unsettled:
+    case .transitioning:
       throw SimulatorDisplayError.transitioning
     }
   }

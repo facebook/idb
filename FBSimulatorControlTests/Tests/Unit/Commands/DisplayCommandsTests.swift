@@ -155,7 +155,7 @@ final class DisplayCommandsTests: XCTestCase {
   func testLookupFailsWhenADisplayTransitionDoesNotSettle() async throws {
     let displays = DisplayCommandsDouble([transition])
     let resolved = try await displays.resolveDisplay()
-    XCTAssertEqual(resolved, .unsettled)
+    XCTAssertEqual(resolved, .transitioning)
     XCTAssertGreaterThan(displays.reads, 1)
     let hid = DisplayCommandsDouble([transition], touchscreens: [SimulatorTouchscreen(displayUniqueID: "inner", digitizerTarget: 29)])
     assertTransitioning(await outcome { try await hid.digitizerTarget(for: display("inner")) })
