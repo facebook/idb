@@ -53,19 +53,30 @@ enum SimulatorHIDTransport: Sendable {
   static func negotiate(
     for simulator: Simulator, requested: SimulatorHIDTransportType?
   ) async throws -> SimulatorHIDTransport {
+    try await negotiate(requested: requested, preferred: simulator.defaultHIDTransport) {
+      try await establish($0, for: simulator)
+    }
+  }
+
+  /// The policy of `negotiate(for:requested:)`, apart from the `Simulator` the transports are
+  /// established against.
+  static func negotiate<Transport>(
+    requested: SimulatorHIDTransportType?,
+    preferred: SimulatorHIDTransportType,
+    establish: (SimulatorHIDTransportType) async throws -> Transport
+  ) async throws -> Transport {
     if let requested {
-      return try await establish(requested, for: simulator)
+      return try await establish(requested)
     }
     let logger = ControlCoreGlobalConfiguration.defaultLogger
-    let preferred = simulator.defaultHIDTransport
     do {
-      let transport = try await establish(preferred, for: simulator)
+      let transport = try await establish(preferred)
       logger.log("Negotiated the \(preferred) HID transport")
       return transport
     } catch let error as SimulatorHIDError where error.isDTUHIDUnreachable {
       logger.log(
         "dtuhidd is unreachable (\(error.localizedDescription)), falling back to the legacy Indigo HID transport")
-      return .indigo(try SimulatorIndigoHIDTransport.indigo(for: simulator))
+      return try await establish(.indigo)
     }
   }
 
