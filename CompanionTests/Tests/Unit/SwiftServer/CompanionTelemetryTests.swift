@@ -122,7 +122,81 @@ struct CompanionTelemetryTests {
     #expect((subject.eventType) == (.success))
     #expect((subject.duration) != nil)
     #expect((subject.size) == nil)
+    #expect((subject.ints) == ([:]))
+    #expect((subject.normals) == ([:]))
     #expect((subject.arguments) == (["bundleID=com.example.app", "verbose=true"]))
+  }
+
+  @Test
+  func columnsAHandlerSetsReachItsSuccessSubject() async throws {
+    let (telemetry, recorder) = makeTelemetry()
+    try await telemetry.clientStreaming("install") {
+      CallTelemetry.current?.setSize(4096)
+      CallTelemetry.current?.setInt(12, forKey: "install_ms")
+      CallTelemetry.current?.setNormal("url", forKey: "payload_kind")
+    }
+    #expect((recorder.subjects.count) == (1))
+    let subject = recorder.subjects[0]
+    #expect((subject.eventType) == (.success))
+    #expect((subject.size) == (NSNumber(value: 4096)))
+    #expect((subject.ints) == (["install_ms": 12]))
+    #expect((subject.normals) == (["payload_kind": "url"]))
+  }
+
+  @Test
+  func columnsSetBeforeAFailureReachTheFailureSubject() async {
+    let (telemetry, recorder) = makeTelemetry()
+    do {
+      try await telemetry.clientStreaming("install") { () async throws -> Void in
+        CallTelemetry.current?.setSize(10)
+        CallTelemetry.current?.setNormal("extract", forKey: "failure_stage")
+        throw TelemetryTestError()
+      }
+      Issue.record("clientStreaming should rethrow the body's error")
+    } catch {
+      #expect((error is TelemetryTestError))
+    }
+    #expect((recorder.subjects.count) == (1))
+    let subject = recorder.subjects[0]
+    #expect((subject.eventType) == (.failure))
+    #expect((subject.size) == (NSNumber(value: 10)))
+    #expect((subject.normals) == (["failure_stage": "extract"]))
+  }
+
+  @Test
+  func columnsSetFromAChildTaskReachTheSubject() async throws {
+    let (telemetry, recorder) = makeTelemetry()
+    try await telemetry.clientStreaming("install") {
+      async let child: Void = CallTelemetry.current?.setInt(7, forKey: "receive_ms") ?? ()
+      await child
+    }
+    #expect((recorder.subjects[0].ints) == (["receive_ms": 7]))
+  }
+
+  @Test
+  func settingAColumnAgainReplacesItsValue() async throws {
+    let (telemetry, recorder) = makeTelemetry()
+    try await telemetry.clientStreaming("install") {
+      CallTelemetry.current?.setSize(1)
+      CallTelemetry.current?.setSize(2)
+      CallTelemetry.current?.setInt(1, forKey: "extract_ms")
+      CallTelemetry.current?.setInt(2, forKey: "extract_ms")
+    }
+    let subject = recorder.subjects[0]
+    #expect((subject.size) == (NSNumber(value: 2)))
+    #expect((subject.ints) == (["extract_ms": 2]))
+  }
+
+  @Test
+  func eachCallGetsItsOwnColumns() async throws {
+    let (telemetry, recorder) = makeTelemetry()
+    try await telemetry.clientStreaming("install") {
+      CallTelemetry.current?.setInt(1, forKey: "install_ms")
+    }
+    try await telemetry.clientStreaming("push") {}
+    #expect((recorder.subjects.count) == (2))
+    #expect((recorder.subjects[1].ints) == ([:]))
+    #expect(CallTelemetry.current == nil)
   }
 
   @Test
@@ -256,6 +330,54 @@ struct CompanionTelemetryTests {
     #expect((recorder.messages.count) == (2))
     #expect((recorder.messages[1].hasPrefix("ls succeeded in ")) == (true))
     #expect((recorder.messages[1].contains(" (")) == (false))
+  }
+
+  @Test
+  func columnsAreAppendedToTheSuccessLine() async throws {
+    let recorder = RecordingLogger()
+    let telemetry = CompanionTelemetry(
+      logger: IDBLogger(loggers: [recorder]),
+      reporter: RecordingEventReporter())
+    let request = FetchRequest(bundleID: "com.example.app", verbose: true)
+    try await telemetry.unaryCall("ls", request: request, summarize: { _ in "5 entries" }) {
+      CallTelemetry.current?.setNormal("url", forKey: "payload_kind")
+      CallTelemetry.current?.setInt(12, forKey: "install_ms")
+      CallTelemetry.current?.setSize(4096)
+      return "ok"
+    }
+    #expect((recorder.messages.count) == (2))
+    #expect((recorder.messages[1].hasPrefix("ls succeeded in ")) == (true))
+    #expect(
+      (recorder.messages[1].hasSuffix(" (5 entries) {size=4096, install_ms=12, payload_kind=url}")) == (true))
+  }
+
+  @Test
+  func anIntAndANormalSharingAKeyAreBothAppended() async throws {
+    let recorder = RecordingLogger()
+    let telemetry = CompanionTelemetry(
+      logger: IDBLogger(loggers: [recorder]),
+      reporter: RecordingEventReporter())
+    try await telemetry.unaryCall("ls", request: FetchRequest(bundleID: "com.example.app", verbose: true)) {
+      CallTelemetry.current?.setNormal("url", forKey: "payload")
+      CallTelemetry.current?.setInt(12, forKey: "payload")
+      return "ok"
+    }
+    #expect((recorder.messages[1].hasSuffix(" {payload=12, payload=url}")) == (true))
+  }
+
+  @Test
+  func columnsAreAppendedToTheFailureLine() async {
+    let recorder = RecordingLogger()
+    let telemetry = CompanionTelemetry(
+      logger: IDBLogger(loggers: [recorder]),
+      reporter: RecordingEventReporter())
+    try? await telemetry.clientStreaming("install") { () async throws -> Void in
+      CallTelemetry.current?.setNormal("download", forKey: "failure_stage")
+      throw TelemetryTestError()
+    }
+    #expect((recorder.messages.count) == (2))
+    #expect((recorder.messages[1].hasPrefix("install failed after ")) == (true))
+    #expect((recorder.messages[1].hasSuffix(": request exploded {failure_stage=download}")) == (true))
   }
 
   @Test

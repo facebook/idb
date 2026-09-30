@@ -13,10 +13,11 @@ import Foundation
 /// `<method> called with: [<args>]` and `<method> succeeded in <duration>` / `<method> failed after
 /// <duration>: <message>`, all at info so a failing call stays visible under `-log-level info`, and reports
 /// one success or failure `EventReporterSubject` per call. Unary calls may pass `summarize` to append a
-/// result summary to the success line (e.g. `ls succeeded in 12ms (5 entries)`). Arguments are rendered
+/// result summary to the success line (e.g. `ls succeeded in 12ms (5 entries)`). Columns a handler set
+/// through `CallTelemetry` end either completion line (e.g. `install succeeded in 2.10s {size=4096}`). Arguments are rendered
 /// from the request via `Mirror`, each value middle-truncated to 100 characters (container GUIDs and temp
-/// paths differ at the tail); empty protobuf `unknownFields` are omitted. `size` is always nil; no request
-/// type reports bytes transferred.
+/// paths differ at the tail); empty protobuf `unknownFields` are omitted. A handler adds `size`, ints and
+/// normals to its call's subject through `CallTelemetry.current`.
 struct CompanionTelemetry {
 
   let logger: IDBLogger
@@ -75,32 +76,44 @@ struct CompanionTelemetry {
     // Monotonic on purpose: a wall clock can step backwards (NTP) across the
     // await, producing negative durations.
     let start = DispatchTime.now()
+    let call = CallTelemetry()
     logger.info().log("\(method) called with: \(oneLineDescription(arguments))")
     do {
-      let result = try await body()
+      let result = try await CallTelemetry.$current.withValue(call) {
+        try await body()
+      }
       let duration = Self.secondsSince(start)
       let summary = summarize.map { " (\($0(result)))" } ?? ""
-      logger.info().log("\(method) succeeded in \(Self.formatDuration(duration))\(summary)")
+      logger.info().log("\(method) succeeded in \(Self.formatDuration(duration))\(summary)\(Self.columnSuffix(call))")
       reporter.report(
         EventReporterSubject(
           forSuccessfulCall: method,
           duration: duration,
-          size: nil,
-          arguments: arguments))
+          size: call.size,
+          arguments: arguments,
+          normals: call.normals,
+          ints: call.ints))
       return result
     } catch {
       let duration = Self.secondsSince(start)
       let message = (error as NSError).localizedDescription
-      logger.info().log("\(method) failed after \(Self.formatDuration(duration)): \(message)")
+      logger.info().log("\(method) failed after \(Self.formatDuration(duration)): \(message)\(Self.columnSuffix(call))")
       reporter.report(
         EventReporterSubject(
           forFailingCall: method,
           duration: duration,
           message: message,
-          size: nil,
-          arguments: arguments))
+          size: call.size,
+          arguments: arguments,
+          normals: call.normals,
+          ints: call.ints))
       throw error
     }
+  }
+
+  private static func columnSuffix(_ call: CallTelemetry) -> String {
+    let columns = call.columnDescriptions
+    return columns.isEmpty ? "" : " {" + columns.joined(separator: ", ") + "}"
   }
 
   private static func secondsSince(_ start: DispatchTime) -> TimeInterval {
