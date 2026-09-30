@@ -25,6 +25,7 @@ struct ConnectMethodHandler {
       $0.companion = .with {
         $0.udid = target.udid
         $0.isLocal = isLocal
+        $0.supportedCompressions = supportedStreamCompressions()
 
         do {
           $0.metadata = try JSONSerialization.data(withJSONObject: reporter.metadata, options: [])
@@ -32,6 +33,17 @@ struct ConnectMethodHandler {
           logger.error().log("Error while serializing metadata \(error.localizedDescription)")
         }
       }
+    }
+  }
+}
+
+func supportedStreamCompressions() -> [Idb_Payload.Compression] {
+  FBArchiveOperations.streamCompressions(searchPath: ProcessInfo.processInfo.environment["PATH"]).map { format in
+    switch format {
+    case .GZIP:
+      return .gzip
+    case .ZSTD:
+      return .zstd
     }
   }
 }

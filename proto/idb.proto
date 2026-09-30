@@ -146,6 +146,9 @@ message CompanionInfo {
   string udid = 1;
   bool is_local = 4;
   bytes metadata = 6;
+  // The compressions the companion can extract an app stream from. Companions
+  // that predate this field leave it empty, and only extract GZIP.
+  repeated Payload.Compression supported_compressions = 7;
 }
 
 enum Setting {

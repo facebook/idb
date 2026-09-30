@@ -34,6 +34,8 @@ public enum FBArchiveOperations {
   /// in an app bundle's signature depends on them.
   private static let NoMacMetadataFlag = "--no-mac-metadata"
 
+  private static let ZstdDecompressor = "pzstd"
+
   /// Builds a command to extract from a file on disk.
   public static func commandToExtractArchive(
     atPath path: String,
@@ -68,6 +70,16 @@ public enum FBArchiveOperations {
       .retyped()
   }
 
+  /// The compressions a stream can be extracted from, given the `PATH` that subprocesses inherit.
+  /// macOS does not ship the zstd decompressor that `commandToExtractFromStdIn` runs.
+  public static func streamCompressions(searchPath: String?) -> [FBCompressionFormat] {
+    let directories = searchPath?.split(separator: ":") ?? []
+    let hasZstd = directories.contains { directory in
+      FileManager.default.isExecutableFile(atPath: "\(directory)/\(ZstdDecompressor)")
+    }
+    return hasZstd ? [.GZIP, .ZSTD] : [.GZIP]
+  }
+
   /// Builds a command to extract via stdin.
   public static func commandToExtractFromStdIn(
     withExtractPath extractPath: String,
@@ -77,7 +89,7 @@ public enum FBArchiveOperations {
   ) -> [String] {
     switch compression {
     case .ZSTD:
-      return ["--use-compress-program", "pzstd -d", overrideMTime ? "-xpm" : "-xp", NoMacMetadataFlag, "-C", extractPath, "-f", "-"]
+      return ["--use-compress-program", "\(ZstdDecompressor) -d", overrideMTime ? "-xpm" : "-xp", NoMacMetadataFlag, "-C", extractPath, "-f", "-"]
     case .GZIP:
       let flags = flagStringForExtraction(overrideModificationTime: overrideMTime, debugLogging: debugLogging)
       return [flags, NoMacMetadataFlag, "-C", extractPath, "-f", "-"]

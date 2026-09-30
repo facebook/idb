@@ -147,6 +147,26 @@ final class FBArchiveOperationsTests: XCTestCase {
       "ZSTD compression should produce the same command regardless of debugLogging")
   }
 
+  // MARK: - streamCompressions
+
+  func testStreamCompressions_WithPzstdOnPath_IncludesZSTD() throws {
+    let pzstd = (tempDirectory as NSString).appendingPathComponent("pzstd")
+    FileManager.default.createFile(atPath: pzstd, contents: Data(), attributes: [.posixPermissions: 0o755])
+
+    XCTAssertEqual(FBArchiveOperations.streamCompressions(searchPath: "/nonexistent:\(tempDirectory!)"), [.GZIP, .ZSTD])
+  }
+
+  func testStreamCompressions_WithNonExecutablePzstd_IsGZIPOnly() throws {
+    let pzstd = (tempDirectory as NSString).appendingPathComponent("pzstd")
+    FileManager.default.createFile(atPath: pzstd, contents: Data(), attributes: [.posixPermissions: 0o644])
+
+    XCTAssertEqual(FBArchiveOperations.streamCompressions(searchPath: tempDirectory), [.GZIP])
+  }
+
+  func testStreamCompressions_WithoutPath_IsGZIPOnly() {
+    XCTAssertEqual(FBArchiveOperations.streamCompressions(searchPath: nil), [.GZIP])
+  }
+
   // MARK: - createGzippedTarForPath with Non-Existent Path
 
   func testCreateGzippedTarDataForPath_WhenPathDoesNotExist_ReturnsError() {
