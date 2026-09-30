@@ -239,9 +239,7 @@ class ArchiveInstallTests(IdbEndToEndTestCase):
         self.assertEqual(columns["payload_kind"], "url")
         self.assertEqual(columns["failure_stage"], "download")
         self.assertEqual(columns["failure_kind"], "transfer_failed")
-        # BUG: nothing says the install was cancelled, so it reads as a failed
-        # transfer; flipped in the following commit.
-        self.assertNotIn("cancel_source", columns)
+        self.assertEqual(columns["cancel_source"], "client")
 
 
 class LaunchOutputTests(IdbEndToEndTestCase):

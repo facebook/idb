@@ -19,7 +19,7 @@ struct InstallMethodHandler: @unchecked Sendable {
   func handle(requestStream: RequestStreamReader<Idb_InstallRequest>, responseStream: RPCWriter<Idb_InstallResponse>, context: ServerContext) async throws {
 
     let artifact = try await Self.mapSimulatorInstallErrors {
-      try await install(requestStream: requestStream, responseStream: responseStream)
+      try await install(requestStream: requestStream, responseStream: responseStream, context: context)
     }
 
     let response = Idb_InstallResponse.with {
@@ -45,7 +45,7 @@ struct InstallMethodHandler: @unchecked Sendable {
     }
   }
 
-  private func install(requestStream: RequestStreamReader<Idb_InstallRequest>, responseStream: RPCWriter<Idb_InstallResponse>) async throws -> InstalledArtifact {
+  private func install(requestStream: RequestStreamReader<Idb_InstallRequest>, responseStream: RPCWriter<Idb_InstallResponse>, context: ServerContext) async throws -> InstalledArtifact {
 
     func extractPayloadFromRequest() throws -> Idb_Payload {
       guard let payload = request.extractPayload() else {
@@ -118,7 +118,7 @@ struct InstallMethodHandler: @unchecked Sendable {
         skipSigningBundles: skipSigningBundles,
         telemetry: telemetry)
     } catch {
-      telemetry.failed(error)
+      telemetry.failed(error, rpcCancelled: context.cancellation.isCancelled)
       throw error
     }
   }

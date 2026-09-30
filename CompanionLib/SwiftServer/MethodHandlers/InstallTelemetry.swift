@@ -34,7 +34,7 @@ final class InstallTelemetry: @unchecked Sendable {
   private var receiving = false
   private var stagesInFlight: Set<InstallStage> = []
   private var stageMs: [InstallStage: Int64] = [:]
-  private var failure: (stage: String?, kind: String)?
+  private var failure: (stage: String?, kind: String, cancelled: Bool)?
 
   init(payloadKind: InstallPayloadKind) {
     self.payloadKind = payloadKind
@@ -81,12 +81,17 @@ final class InstallTelemetry: @unchecked Sendable {
   /// Download and extraction overlap, and a failed download also fails the extraction reading it, so
   /// the failure belongs to the earliest stage still running. A streamed payload that fails before any
   /// stage starts failed while being received.
-  func failed(_ error: Error) {
+  ///
+  /// A failure once the RPC or the call's task is cancelled was brought on by the client going away,
+  /// whatever error it surfaced as. gRPC marks the RPC cancelled without cancelling the task, so
+  /// callers pass what the RPC's cancellation handle says.
+  func failed(_ error: Error, rpcCancelled: Bool = false) {
+    let cancelled = rpcCancelled || Task.isCancelled
     lock.withLock {
       let stage =
         [InstallStage.download, .extract, .install].first(where: stagesInFlight.contains)?.rawValue
         ?? (receiving ? "receive" : nil)
-      failure = (stage, Self.kind(of: error))
+      failure = (stage, Self.kind(of: error), cancelled)
     }
   }
 
@@ -110,6 +115,9 @@ final class InstallTelemetry: @unchecked Sendable {
           call.setNormal(stage, forKey: "failure_stage")
         }
         call.setNormal(failure.kind, forKey: "failure_kind")
+        if failure.cancelled {
+          call.setNormal("client", forKey: "cancel_source")
+        }
       }
     }
   }

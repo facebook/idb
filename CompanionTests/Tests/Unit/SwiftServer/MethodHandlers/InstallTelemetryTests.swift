@@ -109,7 +109,7 @@ private struct Refused: Error {}
     #expect(columns(of: telemetry) == ["failure_kind=Refused", "payload_kind=file_path"])
   }
 
-  @Test func aFailureOnceTheCallIsCancelledReportsNoCancelSource() async {
+  @Test func aFailureOnceTheCallIsCancelledReportsTheClientAsItsCancelSource() async {
     let telemetry = InstallTelemetry(payloadKind: .url)
     telemetry.observe(.downloadStarted(timing: timing(seconds: 0), url: url))
     await Task {
@@ -117,8 +117,18 @@ private struct Refused: Error {}
       telemetry.failed(InstallError.transferFailed(url: url, underlying: URLError(.networkConnectionLost)))
     }.value
 
-    // BUG: a cancelled install reads as an ordinary failure; flipped in the following commit.
-    #expect(columns(of: telemetry) == ["failure_kind=transfer_failed", "failure_stage=download", "payload_kind=url"])
+    #expect(
+      columns(of: telemetry) == ["cancel_source=client", "failure_kind=transfer_failed", "failure_stage=download", "payload_kind=url"])
+  }
+
+  @Test func aFailureOnceTheRPCIsCancelledReportsTheClientAsItsCancelSource() {
+    let telemetry = InstallTelemetry(payloadKind: .url)
+    telemetry.observe(.downloadStarted(timing: timing(seconds: 0), url: url))
+    telemetry.failed(InstallError.transferFailed(url: url, underlying: URLError(.networkConnectionLost)), rpcCancelled: true)
+
+    let call = CallTelemetry()
+    telemetry.record(into: call)
+    #expect(call.normals["cancel_source"] == "client")
   }
 
   @Test(arguments: [
