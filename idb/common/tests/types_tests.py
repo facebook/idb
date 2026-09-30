@@ -14,7 +14,13 @@ from contextlib import contextmanager
 from types import ModuleType
 from unittest import mock
 
-from idb.common.types import TargetType
+from idb.common.types import (
+    CompanionInfo,
+    Compression,
+    TargetDescription,
+    TargetType,
+    TCPAddress,
+)
 from idb.utils.testing import TestCase
 
 
@@ -61,3 +67,25 @@ class TargetTypeTests(TestCase):
             [str(member) for member in module.TargetType],
             ["device", "simulator", "mac"],
         )
+
+
+class TargetDescriptionTests(TestCase):
+    def test_as_json_includes_the_companion(self) -> None:
+        description = TargetDescription(
+            udid="udid",
+            name="iPhone",
+            target_type=TargetType.SIMULATOR,
+            state="Booted",
+            os_version="iOS 18.0",
+            architecture="arm64",
+            companion_info=CompanionInfo(
+                udid="udid",
+                is_local=True,
+                pid=None,
+                address=TCPAddress(host="localhost", port=10882),
+                supported_compressions=frozenset([Compression.ZSTD, Compression.GZIP]),
+            ),
+            screen_dimensions=None,
+        )
+        companion = json.loads(description.as_json)["companion_info"]
+        self.assertEqual(companion["supported_compressions"], ["GZIP", "ZSTD"])

@@ -204,6 +204,7 @@ class CompanionInfo:
     pid: int | None
     address: Address
     metadata: LoggingMetadata = field(default_factory=dict)
+    supported_compressions: "frozenset[Compression]" = frozenset()
 
 
 @dataclass(frozen=True)
@@ -372,6 +373,15 @@ class Screenshot(bytes):
 DeviceDetails = Mapping[str, Union[int, str]]
 
 
+def _json_default(value: object) -> object:
+    # asdict leaves sets and plain enums in place, and json encodes neither.
+    if isinstance(value, frozenset):
+        return sorted(value, key=str)
+    if isinstance(value, Enum):
+        return value.name
+    raise TypeError(f"Object of type {type(value).__name__} is not JSON serializable")
+
+
 @dataclass(frozen=True)
 class TargetDescription:
     udid: str
@@ -390,7 +400,7 @@ class TargetDescription:
 
     @property
     def as_json(self) -> str:
-        return json.dumps(asdict(self))
+        return json.dumps(asdict(self), default=_json_default)
 
 
 @dataclass(frozen=True)

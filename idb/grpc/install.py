@@ -106,6 +106,20 @@ async def generate_io_chunks(
     logger.debug("Finished generating io chunks")
 
 
+def select_stream_compression(
+    requested: Compression | None, supported: frozenset[Compression]
+) -> Compression | None:
+    # Without zstd, leave the compression unset so the request carries no compression frame and the
+    # companion applies its gzip default, as it did before companions advertised compressions.
+    if (
+        requested is None
+        and Compression.ZSTD in supported
+        and tar.has_zstd_compressor()
+    ):
+        return Compression.ZSTD
+    return requested
+
+
 def generate_binary_chunks(
     path: str,
     destination: Destination,

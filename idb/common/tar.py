@@ -169,6 +169,10 @@ class ZstdArchive(TarArchiveProcess):
         )
 
 
+def has_zstd_compressor() -> bool:
+    return any(_has_executable(exe) for exe in ZstdArchive.ZSTD_EXECUTABLES)
+
+
 def _create_untar_command(
     output_path: str, gnu_tar: bool, verbose: bool = False
 ) -> list[str]:

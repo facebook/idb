@@ -8,10 +8,16 @@
 import unittest
 from unittest.mock import AsyncMock, MagicMock
 
-from idb.common.types import CompanionInfo, TargetDescription, TargetType, TCPAddress
+from idb.common.types import (
+    CompanionInfo,
+    Compression,
+    TargetDescription,
+    TargetType,
+    TCPAddress,
+)
 from idb.grpc.client import Client
-from idb.grpc.idb_pb2 import FocusRequest
-from idb.grpc.target import merge_connected_targets
+from idb.grpc.idb_pb2 import CompanionInfo as GrpcCompanionInfo, FocusRequest, Payload
+from idb.grpc.target import companion_to_py, merge_connected_targets
 from idb.utils.testing import TestCase
 
 
@@ -138,6 +144,27 @@ class TargetTests(unittest.TestCase):
                 ),
             ],
         )
+
+
+class CompanionToPyTests(unittest.TestCase):
+    def test_maps_supported_compressions(self) -> None:
+        companion = companion_to_py(
+            companion=GrpcCompanionInfo(
+                udid="a", supported_compressions=[Payload.GZIP, Payload.ZSTD]
+            ),
+            address=TCPAddress(host="localhost", port=1),
+        )
+        self.assertEqual(
+            companion.supported_compressions,
+            frozenset({Compression.GZIP, Compression.ZSTD}),
+        )
+
+    def test_omits_unknown_compressions(self) -> None:
+        companion = companion_to_py(
+            companion=GrpcCompanionInfo(udid="a", supported_compressions=[99]),
+            address=TCPAddress(host="localhost", port=1),
+        )
+        self.assertEqual(companion.supported_compressions, frozenset())
 
 
 class FocusTests(TestCase):

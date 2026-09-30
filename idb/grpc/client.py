@@ -172,6 +172,7 @@ from idb.grpc.install import (
     generate_binary_chunks,
     generate_io_chunks,
     generate_requests,
+    select_stream_compression,
 )
 from idb.grpc.instruments import (
     instruments_drain_until_running,
@@ -477,6 +478,13 @@ class Client(ClientBase):
                     else:
                         self.logger.debug(
                             f"Companion is remote, generating binary chunks for {file_path}"
+                        )
+                        compression = select_stream_compression(
+                            requested=compression,
+                            supported=self.companion.supported_compressions,
+                        )
+                        self.logger.debug(
+                            f"Streaming {file_path} with {(compression or Compression.GZIP).name} compression"
                         )
                         # chunk file from file_path
                         generator = generate_binary_chunks(
@@ -921,6 +929,7 @@ class Client(ClientBase):
                 udid=target.udid,
                 is_local=self.is_local,
                 pid=None,
+                supported_compressions=self.companion.supported_compressions,
             ),
             # Extract the companion metadata from the response.
             metadata=response.companion.metadata,

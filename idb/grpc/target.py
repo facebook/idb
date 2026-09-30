@@ -10,9 +10,16 @@ from collections.abc import Sequence
 from typing import List
 
 from idb.common.format import target_type_from_string
-from idb.common.types import Address, CompanionInfo, ScreenDimensions, TargetDescription
+from idb.common.types import (
+    Address,
+    CompanionInfo,
+    Compression,
+    ScreenDimensions,
+    TargetDescription,
+)
 from idb.grpc.idb_pb2 import (
     CompanionInfo as GrpcCompanionInfo,
+    Payload,
     ScreenDimensions as GrpcScreenDimensions,
     TargetDescription as GrpcTargetDescription,
 )
@@ -42,6 +49,13 @@ def target_to_py(
     )
 
 
+# A compression newer than this client is left out, as the client cannot produce it.
+_COMPRESSIONS: dict[int, Compression] = {
+    Payload.GZIP: Compression.GZIP,
+    Payload.ZSTD: Compression.ZSTD,
+}
+
+
 def companion_to_py(companion: GrpcCompanionInfo, address: Address) -> CompanionInfo:
     metadata = companion.metadata
     return CompanionInfo(
@@ -50,6 +64,11 @@ def companion_to_py(companion: GrpcCompanionInfo, address: Address) -> Companion
         is_local=companion.is_local,
         pid=None,
         metadata=(json.loads(metadata.decode()) if len(metadata) else {}),
+        supported_compressions=frozenset(
+            _COMPRESSIONS[compression]
+            for compression in companion.supported_compressions
+            if compression in _COMPRESSIONS
+        ),
     )
 
 
