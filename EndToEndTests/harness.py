@@ -162,6 +162,10 @@ class HarnessError(Exception):
     """Test setup or a harness operation failed."""
 
 
+class CommandTimedOut(HarnessError):
+    """A command did not finish within its timeout and was killed."""
+
+
 class CompanionDied(HarnessError):
     """The shared companion exited; stop the remaining tests."""
 
@@ -460,7 +464,7 @@ async def run(
             await _terminate_run_process_reliably(process, communication, argv)
             raise
         if timed_out:
-            raise HarnessError(
+            raise CommandTimedOut(
                 f"{' '.join(argv)} did not finish within {timeout:.0f}s"
             ) from None
         stdout.seek(0)

@@ -36,6 +36,7 @@ from .harness import (
     AppState,
     attested_process,
     client_argv,
+    CommandTimedOut,
     Companion,
     CompanionDied,
     Completed,
@@ -2745,7 +2746,7 @@ class SubprocessTimeoutTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(leaked, [])
 
     async def test_reports_timeout_for_a_running_process(self) -> None:
-        with self.assertRaisesRegex(HarnessError, "did not finish within"):
+        with self.assertRaisesRegex(CommandTimedOut, "did not finish within"):
             await harness.run(
                 [sys.executable, "-c", "import time; time.sleep(30)"], timeout=0.5
             )
@@ -2803,7 +2804,7 @@ class SubprocessTimeoutTests(unittest.IsolatedAsyncioTestCase):
                 asyncio, "create_subprocess_exec", side_effect=create_ready_process
             )
         )
-        with self.assertRaisesRegex(HarnessError, "did not finish within"):
+        with self.assertRaisesRegex(CommandTimedOut, "did not finish within"):
             await asyncio.wait_for(
                 harness.run([sys.executable, "-c", parent], timeout=0.5), timeout=12
             )
