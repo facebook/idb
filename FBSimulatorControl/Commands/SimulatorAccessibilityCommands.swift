@@ -90,10 +90,10 @@ final class SimulatorAccessibilityCommands: AccessibilityOperations {
     case .fallback:
       return nil
     case let .target(.sole(display)):
-      return AXTranslationDisplay(display: display, accessibilityID: nil)
+      return .sole(display)
     case let .target(.selected(display)):
       let accessibilityID = try await displays.accessibilityID(for: display, transport: simulator.frameworkBridgeTransport(scope: .exclusive))
-      return AXTranslationDisplay(display: .identified(display), accessibilityID: accessibilityID)
+      return .selected(display, accessibilityID: accessibilityID)
     }
   }
 

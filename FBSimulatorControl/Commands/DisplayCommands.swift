@@ -104,12 +104,29 @@ enum SimulatorDisplayFallback: Equatable, Sendable {
 }
 
 /// A display snapshot and the accessibility identity that routes to it.
-struct AXTranslationDisplay: Equatable, Sendable {
-  let display: SimulatorInteractionDisplay
-  /// Nil for the only integrated display, which accessibility reaches without naming it.
-  let accessibilityID: UInt32?
+enum AXTranslationDisplay: Equatable, Sendable {
+  /// The only integrated display, which accessibility reaches without naming it.
+  case sole(SimulatorInteractionDisplay)
+  /// The active one of several integrated displays, and the accessibility identity that reaches it.
+  case selected(SimulatorDisplay, accessibilityID: UInt32)
 
-  var bounds: CGRect { CGRect(origin: .zero, size: display.geometry.pointSize) }
+  var interactionDisplay: SimulatorInteractionDisplay {
+    switch self {
+    case let .sole(display): display
+    case let .selected(display, _): .identified(display)
+    }
+  }
+
+  var accessibilityID: UInt32? {
+    switch self {
+    case .sole: nil
+    case let .selected(_, accessibilityID): accessibilityID
+    }
+  }
+
+  var geometry: SimulatorDisplayGeometry { interactionDisplay.geometry }
+
+  var bounds: CGRect { CGRect(origin: .zero, size: geometry.pointSize) }
 }
 
 /// Numeric identities keyed by display UUID. The guest assigns them per display, so one is looked up

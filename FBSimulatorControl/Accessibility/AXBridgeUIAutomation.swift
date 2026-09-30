@@ -93,11 +93,11 @@ final class AXBridgeUIAutomation: AXBridgeTreeReader, @unchecked Sendable {
     case .fallback:
       display = nil
     case let .target(.sole(sole)):
-      display = AXTranslationDisplay(display: sole, accessibilityID: nil)
+      display = .sole(sole)
     case let .target(.selected(selected)):
       let accessibilityID = try await displays.accessibilityID(
         for: selected, transport: transport, requiring: [.scopedInteractions, .scopedTrees])
-      display = AXTranslationDisplay(display: .identified(selected), accessibilityID: accessibilityID)
+      display = .selected(selected, accessibilityID: accessibilityID)
     }
     let scoped = AXBridgeUIAutomation(scoping: self, routing: .resolved(display, displays))
     let result = try await body(scoped)
@@ -107,7 +107,7 @@ final class AXBridgeUIAutomation: AXBridgeTreeReader, @unchecked Sendable {
 
   private func validateCurrentDisplay() async throws {
     guard case let .resolved(display?, displays) = routing else { return }
-    try await displays.validate(display.display)
+    try await displays.validate(display.interactionDisplay)
   }
 
   // MARK: - Reads
@@ -218,7 +218,7 @@ final class AXBridgeUIAutomation: AXBridgeTreeReader, @unchecked Sendable {
     if needsDisplay {
       return try await withDisplay { try await $0.hitTest(at: point, options: options) }
     }
-    let lookupPoint = try display?.display.geometry.unrotatedPoint(from: point) ?? point
+    let lookupPoint = try display?.geometry.unrotatedPoint(from: point) ?? point
     return try await translatingBackendErrors {
       let response = try await transport.send(
         .hitTest(
@@ -555,7 +555,7 @@ final class AXBridgeUIAutomation: AXBridgeTreeReader, @unchecked Sendable {
     to target: AXWriteTarget,
     query: AccessibilityElementQuery
   ) async throws {
-    let point = try display?.display.geometry.unrotatedPoint(from: target.point) ?? target.point
+    let point = try display?.geometry.unrotatedPoint(from: target.point) ?? target.point
     try await validateCurrentDisplay()
     let request = AXBridgeWriteRequest(
       kind: kind,
@@ -612,7 +612,7 @@ final class AXBridgeUIAutomation: AXBridgeTreeReader, @unchecked Sendable {
   /// The screen-centre anchor, in points, for the in-guest frontmost hit-test.
   private func frontmostAnchor() throws -> (x: Double, y: Double) {
     if let display {
-      let point = try display.display.geometry.unrotatedPoint(
+      let point = try display.geometry.unrotatedPoint(
         from: CGPoint(x: display.bounds.midX, y: display.bounds.midY))
       return (Double(point.x), Double(point.y))
     }

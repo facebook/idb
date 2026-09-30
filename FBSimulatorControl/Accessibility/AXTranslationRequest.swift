@@ -12,9 +12,8 @@ import Foundation
 
 extension AXTranslationDisplay {
   var screen: AccessibilityScreenInfo? {
-    let geometry = display.geometry
     let uniqueID: String? =
-      switch display {
+      switch interactionDisplay {
       case let .identified(value): value.uniqueID
       case .legacy: nil
       }
@@ -378,7 +377,7 @@ final class AXTranslationRequest {
   }
 
   private func translation(at point: CGPoint, translator: AXPTranslator) throws -> AXPTranslationObject? {
-    let unrotated = try display?.display.geometry.unrotatedPoint(from: point) ?? point
+    let unrotated = try display?.geometry.unrotatedPoint(from: point) ?? point
     return translator.object(at: unrotated, displayId: display?.accessibilityID ?? 0, bridgeDelegateToken: token)
   }
 
