@@ -9,6 +9,7 @@ import asyncio
 import json
 import logging
 import os
+import sys
 import tempfile
 from argparse import ArgumentParser, Namespace
 from collections.abc import AsyncIterator
@@ -317,6 +318,25 @@ class TestParser(TestCase):
         self.assertEqual(output.getvalue(), "")
         self.client_mock.install.assert_called_once_with(
             bundle=app_path,
+            make_debuggable=None,
+            compression=None,
+            override_modification_time=None,
+        )
+
+    async def test_install_from_stdin(self) -> None:
+        self.client_mock.install = MagicMock(
+            return_value=AsyncGeneratorMock(
+                (
+                    InstalledArtifact(
+                        name="com.example.app", uuid="app-uuid", progress=None
+                    ),
+                )
+            )
+        )
+        with redirect_stdout(StringIO()):
+            self.assertEqual(await cli_main(cmd_input=["install", "-"]), 0)
+        self.client_mock.install.assert_called_once_with(
+            bundle=sys.stdin.buffer,
             make_debuggable=None,
             compression=None,
             override_modification_time=None,

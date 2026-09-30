@@ -6,6 +6,7 @@
 
 
 import json
+import sys
 from argparse import ArgumentParser, Namespace
 from typing import Optional
 
@@ -55,7 +56,7 @@ class AppInstallCommand(ClientCommand):
             Compression[args.compression] if args.compression is not None else None
         )
         async for info in client.install(
-            bundle=args.bundle_path,
+            bundle=sys.stdin.buffer if args.bundle_path == "-" else args.bundle_path,
             make_debuggable=args.make_debuggable,
             compression=compression,
             override_modification_time=args.override_mtime,
