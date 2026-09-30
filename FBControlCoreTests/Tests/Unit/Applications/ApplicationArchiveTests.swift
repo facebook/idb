@@ -237,6 +237,50 @@ final class ApplicationArchiveTests: XCTestCase {
     }
   }
 
+  /// A zip records symlinks only in its central directory, at the end of the
+  /// archive, which an extractor reading the transfer as it arrives never sees.
+  func testResolve_WhenGivenAZipURL_RestoresItsSymlinks() async throws {
+    StubURLProtocol.behaviour = .respond(statusCode: 200, body: try makeZippedPayloadWithSymlink())
+    let configuration = URLSessionConfiguration.ephemeral
+    configuration.protocolClasses = [StubURLProtocol.self]
+
+    let linkType = try await ApplicationArchive.withResolvedBundle(
+      from: .remoteURL(Self.stubbedURL),
+      downloadConfiguration: configuration,
+      temporaryDirectory: temporaryDirectory,
+      logger: logger
+    ) { bundle in
+      try FileManager.default.attributesOfItem(
+        atPath: (bundle.path as NSString).appendingPathComponent("Link.plist"))[.type] as? FileAttributeType
+    }
+
+    // BUG: the symlink is extracted as a regular file holding its target's
+    // path. Flipped in the following commit.
+    XCTAssertEqual(linkType, .typeRegular)
+  }
+
+  /// A zip laid out like an `.ipa` whose app holds `Link.plist -> Info.plist`.
+  private func makeZippedPayloadWithSymlink() throws -> Data {
+    let root = path("zip-staging-\(UUID().uuidString)")
+    let payload = (root as NSString).appendingPathComponent("Payload")
+    try FileManager.default.createDirectory(atPath: payload, withIntermediateDirectories: true)
+    let app = try makeAppBundle("Sample.app", identifier: "com.example.sample")
+    let staged = (payload as NSString).appendingPathComponent("Sample.app")
+    try FileManager.default.moveItem(atPath: app, toPath: staged)
+    try FileManager.default.createSymbolicLink(
+      atPath: (staged as NSString).appendingPathComponent("Link.plist"),
+      withDestinationPath: "Info.plist")
+    let archive = path("symlink-\(UUID().uuidString).ipa")
+    let zip = Process()
+    zip.executableURL = URL(fileURLWithPath: "/usr/bin/zip")
+    zip.currentDirectoryURL = URL(fileURLWithPath: root)
+    zip.arguments = ["-qry", archive, "Payload"]
+    try zip.run()
+    zip.waitUntilExit()
+    XCTAssertEqual(zip.terminationStatus, 0)
+    return try Data(contentsOf: URL(fileURLWithPath: archive))
+  }
+
   // MARK: - Temporary directory
 
   func testResolve_WhenDone_RemovesWhatItUnpacked() async throws {
