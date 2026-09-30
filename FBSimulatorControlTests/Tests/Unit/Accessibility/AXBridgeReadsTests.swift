@@ -717,7 +717,7 @@ final class AXBridgeReadsTests: XCTestCase {
       guard !legacy else { return .sole(.legacy(geometry)) }
       return .selected(
         SimulatorDisplay(
-          uniqueID: "inner", name: "Inner", isActive: true, isPrimary: false, isIntegrated: true,
+          uniqueID: "inner", name: "Inner", activity: .active, isPrimary: false, isIntegrated: true,
           bounds: geometry.bounds, scale: geometry.scale, rotation: geometry.rotation))
     }
     let displays = changing ? DisplayCommandsDouble(target(.clockwise), target(.upright)) : DisplayCommandsDouble(target(.clockwise))

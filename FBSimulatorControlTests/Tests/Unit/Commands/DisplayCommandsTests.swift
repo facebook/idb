@@ -12,7 +12,7 @@ import XCTest
 final class DisplayCommandsTests: XCTestCase {
   private func display(_ id: String, width: Double = 1200) -> SimulatorDisplay {
     SimulatorDisplay(
-      uniqueID: id, name: id, isActive: true, isPrimary: false, isIntegrated: true,
+      uniqueID: id, name: id, activity: .active, isPrimary: false, isIntegrated: true,
       bounds: CGRect(x: 0, y: 0, width: width, height: 800), scale: 2, rotation: .upright)
   }
 

@@ -30,28 +30,53 @@ private func displayReply(_ values: [xpc_object_t], current: Bool = true) -> xpc
   ])
 }
 
+private func report(_ values: [xpc_object_t], current: Bool = true) -> SimulatorDisplayReport {
+  SimulatorDisplayProtocol.report(displayReply(values, current: current))
+}
+
+private struct NotIdentifiedDisplays: Error {
+  let report: SimulatorDisplayReport
+}
+
+private func displays(_ values: [xpc_object_t]) throws -> [SimulatorDisplay] {
+  let report = report(values)
+  guard case let .displays(displays) = report else { throw NotIdentifiedDisplays(report: report) }
+  return displays
+}
+
+private func target(_ values: [xpc_object_t], current: Bool = true) throws -> SimulatorDisplayTarget {
+  try SimulatorDisplayCommands.interactionTarget(in: report(values, current: current))
+}
+
+private func assertFailed(_ report: SimulatorDisplayReport, _ message: String = "", file: StaticString = #filePath, line: UInt = #line) {
+  guard case .failed = report else { return XCTFail("Expected a failed read, got \(report) \(message)", file: file, line: line) }
+}
+
+private func assertLegacy(_ report: SimulatorDisplayReport, file: StaticString = #filePath, line: UInt = #line) {
+  guard case .legacy = report else { return XCTFail("Expected a legacy report, got \(report)", file: file, line: line) }
+}
+
 final class SimulatorDisplayReadTests: XCTestCase {
   func testLegacyGeometryRetainsInterfaceRotationWithoutInventingIdentity() throws {
     let value = displayValue(id: "legacy", active: true, rotation: "rot90")
     xpc_dictionary_set_value(value, "active", nil)
     xpc_dictionary_set_value(value, "uniqueId", nil)
-    let selected = try SimulatorDisplayProtocol.interactionDisplay(displayReply([value]))
-    guard case let .legacy(geometry) = selected else { return XCTFail("Expected legacy geometry") }
+    guard case let .legacy(geometry) = try target([value]).display else { return XCTFail("Expected legacy geometry") }
     XCTAssertEqual(geometry.pointSize, CGSize(width: 951, height: 669))
     XCTAssertEqual(try geometry.unrotatedPoint(from: CGPoint(x: 787, y: 570)), CGPoint(x: 570, y: 164))
-    XCTAssertThrowsError(try SimulatorDisplayProtocol.interactionDisplay(displayReply([value, value])))
-    XCTAssertThrowsError(try SimulatorDisplayProtocol.interactionDisplay(displayReply([value], current: false)))
+    XCTAssertThrowsError(try target([value, value]))
+    XCTAssertEqual(report([value], current: false), .failed(.malformed("Report is not current")))
   }
 
   /// Xcode 27.0 identifies its sole LCD but reports neither layout activity nor backlight state.
   func testIdentityWithoutActivityIsALegacyProvider() throws {
     let lcd = displayValue(id: "529D03D7-B58D-4DAA-88ED-807969A20EBC", active: true)
     xpc_dictionary_set_value(lcd, "active", nil)
-    XCTAssertEqual(try SimulatorDisplayProtocol.snapshot(displayReply([lcd])), .legacyProvider)
-    guard case .sole(.legacy) = try SimulatorDisplayProtocol.interactionTarget(displayReply([lcd])) else {
+    assertLegacy(report([lcd]))
+    guard case .sole(.legacy) = try target([lcd]) else {
       return XCTFail("Expected the sole legacy display")
     }
-    XCTAssertThrowsError(try SimulatorDisplayProtocol.interactionDisplay(displayReply([lcd, lcd])))
+    XCTAssertThrowsError(try target([lcd, lcd]))
   }
 
   /// Xcode 27.1 driving an iOS 26 runtime identifies no display and reports every backlight, the LCD's
@@ -69,40 +94,37 @@ final class SimulatorDisplayReadTests: XCTestCase {
       xpc_dictionary_set_value(value, "uniqueId", nil)
       xpc_dictionary_set_string(value, "backlightState", "unknown")
     }
-    let reply = displayReply([lcd] + externals)
-    XCTAssertEqual(try SimulatorDisplayProtocol.snapshot(reply), .legacyProvider)
-    guard case let .sole(.legacy(geometry)) = try SimulatorDisplayProtocol.interactionTarget(reply) else {
+    guard case let .legacy(integrated) = report([lcd] + externals) else { return XCTFail("Expected a legacy report") }
+    XCTAssertEqual(integrated.count, 1)
+    guard case let .sole(.legacy(geometry)) = try target([lcd] + externals) else {
       return XCTFail("Expected the sole legacy display")
     }
     XCTAssertEqual(geometry.pointSize, CGSize(width: 669, height: 951))
-    XCTAssertThrowsError(try SimulatorDisplayProtocol.displays(reply))
   }
 
   func testIdentifiedGeometryUsesActiveDisplayInsteadOfPrimary() throws {
-    let selected = try SimulatorDisplayProtocol.interactionDisplay(
-      displayReply([
-        displayValue(id: "cover", active: false, primary: true),
-        displayValue(id: "inner", active: true, rotation: "rot90"),
-      ]))
+    let selected = try target([
+      displayValue(id: "cover", active: false, primary: true),
+      displayValue(id: "inner", active: true, rotation: "rot90"),
+    ]).display
     guard case let .identified(display) = selected else { return XCTFail("Expected identified display") }
     XCTAssertEqual(display.uniqueID, "inner")
     XCTAssertEqual(selected.geometry.pointSize, CGSize(width: 951, height: 669))
   }
 
   func testOnlySeveralIntegratedDisplaysSelectOneByName() throws {
-    let sole = try SimulatorDisplayProtocol.interactionTarget(displayReply([displayValue(id: "lcd", active: true)]))
+    let sole = try target([displayValue(id: "lcd", active: true)])
     guard case let .sole(.identified(lcd)) = sole else { return XCTFail("Expected the sole identified display") }
     XCTAssertEqual(lcd.uniqueID, "lcd")
 
-    let selected = try SimulatorDisplayProtocol.interactionTarget(
-      displayReply([displayValue(id: "cover", active: false), displayValue(id: "inner", active: true)]))
+    let selected = try target([displayValue(id: "cover", active: false), displayValue(id: "inner", active: true)])
     guard case let .selected(inner) = selected else { return XCTFail("Expected a selected display") }
     XCTAssertEqual(inner.uniqueID, "inner")
 
     let legacy = displayValue(id: "legacy", active: true)
     xpc_dictionary_set_value(legacy, "active", nil)
     xpc_dictionary_set_value(legacy, "uniqueId", nil)
-    guard case .sole(.legacy) = try SimulatorDisplayProtocol.interactionTarget(displayReply([legacy])) else {
+    guard case .sole(.legacy) = try target([legacy]) else {
       return XCTFail("Expected the sole legacy display")
     }
   }
@@ -114,7 +136,7 @@ final class SimulatorDisplayReadTests: XCTestCase {
     xpc_dictionary_set_value(backlight, "active", nil)
     xpc_dictionary_set_string(backlight, "backlightState", "off")
     for value in [layout, backlight] {
-      guard case let .sole(.identified(lcd)) = try SimulatorDisplayProtocol.interactionTarget(displayReply([value])) else {
+      guard case let .sole(.identified(lcd)) = try target([value]) else {
         return XCTFail("Expected the sole display")
       }
       XCTAssertEqual(lcd.uniqueID, "lcd")
@@ -142,31 +164,29 @@ final class SimulatorDisplayReadTests: XCTestCase {
     let value = displayValue(id: "legacy", active: true)
     xpc_dictionary_set_value(value, "active", nil)
     xpc_dictionary_set_value(value, "uniqueId", nil)
-    XCTAssertEqual(try SimulatorDisplayProtocol.snapshot(displayReply([value])), .legacyProvider)
-    XCTAssertThrowsError(try SimulatorDisplayProtocol.displays(displayReply([value])))
-    XCTAssertThrowsError(try SimulatorDisplayProtocol.snapshot(displayReply([value], current: false)))
+    assertLegacy(report([value]))
+    assertFailed(report([value], current: false))
     // A legacy record is still held to the rest of the shape.
     xpc_dictionary_set_int64(value, "pointScale", 0)
-    XCTAssertThrowsError(try SimulatorDisplayProtocol.snapshot(displayReply([value])))
+    assertFailed(report([value]))
   }
 
   func testPartialOrMalformedCaptureCapabilityDoesNotFallBack() {
-    XCTAssertThrowsError(try SimulatorDisplayProtocol.snapshot(displayReply([SimulatorCoreDevice.dictionary([:])])))
+    assertFailed(report([SimulatorCoreDevice.dictionary([:])]))
     let partial = displayValue(id: "inner", active: true)
     xpc_dictionary_set_value(partial, "active", nil)
-    XCTAssertThrowsError(
-      try SimulatorDisplayProtocol.snapshot(displayReply([displayValue(id: "cover", active: false), partial])))
+    assertFailed(report([displayValue(id: "cover", active: false), partial]))
     let malformed = displayValue(id: "inner", active: true)
     xpc_dictionary_set_string(malformed, "active", "true")
-    XCTAssertThrowsError(try SimulatorDisplayProtocol.snapshot(displayReply([malformed])))
+    assertFailed(report([malformed]))
     let legacy = displayValue(id: "legacy", active: true)
     xpc_dictionary_set_value(legacy, "active", nil)
     xpc_dictionary_set_value(legacy, "uniqueId", nil)
-    XCTAssertThrowsError(try SimulatorDisplayProtocol.snapshot(displayReply([displayValue(id: "inner", active: true), legacy])))
+    assertFailed(report([displayValue(id: "inner", active: true), legacy]))
   }
 
   func testEmptyCurrentReportDoesNotFallBack() throws {
-    guard case let .displays(displays) = try SimulatorDisplayProtocol.snapshot(displayReply([])) else {
+    guard case let .displays(displays) = report([]) else {
       return XCTFail("An empty current report is not a legacy provider")
     }
     XCTAssertThrowsError(try SimulatorDisplayCommands.activeIntegratedDisplay(in: displays))
@@ -179,8 +199,7 @@ final class SimulatorDisplayReadTests: XCTestCase {
       xpc_dictionary_set_value(tvOut, "active", nil)
       xpc_dictionary_set_string(tvOut, "backlightState", state)
       xpc_dictionary_set_value(tvOut, "type", SimulatorCoreDevice.dictionary(["external": SimulatorCoreDevice.dictionary([:])]))
-      let displays = try SimulatorDisplayProtocol.displays(displayReply([tvOut]))
-      XCTAssertThrowsError(try SimulatorDisplayCommands.activeIntegratedDisplay(in: displays), state)
+      XCTAssertThrowsError(try SimulatorDisplayCommands.activeIntegratedDisplay(in: displays([tvOut])), state)
     }
   }
 
@@ -198,8 +217,8 @@ final class SimulatorDisplayReadTests: XCTestCase {
     // Without activity evidence the listing cannot say which display is active; interaction still
     // resolves the sole integrated display (testIdentityWithoutActivityIsALegacyProvider).
     for values in [[identityOnly], [unknownBacklight]] {
-      XCTAssertThrowsError(try SimulatorDisplayCommands.activeIntegratedDisplay(in: SimulatorDisplayProtocol.displays(displayReply(values))))
-      guard case .sole(.legacy) = try? SimulatorDisplayProtocol.interactionTarget(displayReply(values)) else {
+      assertLegacy(report(values))
+      guard case .sole(.legacy) = try? target(values) else {
         return XCTFail("Expected the sole legacy display")
       }
     }
@@ -210,21 +229,21 @@ final class SimulatorDisplayReadTests: XCTestCase {
       "invalid record": [unscaled],
     ]
     for (shape, values) in reports {
-      XCTAssertThrowsError(try SimulatorDisplayCommands.activeIntegratedDisplay(in: SimulatorDisplayProtocol.displays(displayReply(values))), shape)
-      XCTAssertThrowsError(try SimulatorDisplayProtocol.interactionTarget(displayReply(values)), shape)
+      XCTAssertThrowsError(try SimulatorDisplayCommands.activeIntegratedDisplay(in: displays(values)), shape)
+      XCTAssertThrowsError(try target(values), shape)
     }
   }
 
   func testActivityEvidenceSourceCanChangeWithoutChangingDisplayConfiguration() throws {
     let value = displayValue(id: "inner", active: true, rotation: "rot90")
     xpc_dictionary_set_string(value, "backlightState", "activeOn")
-    let layout = try SimulatorDisplayProtocol.interactionDisplay(displayReply([value]))
+    let layout = try target([value]).display
     xpc_dictionary_set_value(value, "active", nil)
-    let backlight = try SimulatorDisplayProtocol.interactionDisplay(displayReply([value]))
+    let backlight = try target([value]).display
     XCTAssertNotEqual(layout, backlight)
     XCTAssertTrue(layout.hasSameConfiguration(as: backlight))
     xpc_dictionary_set_string(value, "currentOrientation", "rot180")
-    XCTAssertFalse(layout.hasSameConfiguration(as: try SimulatorDisplayProtocol.interactionDisplay(displayReply([value]))))
+    XCTAssertFalse(layout.hasSameConfiguration(as: try target([value]).display))
   }
 
   func testCompleteBacklightEvidenceSelectsIlluminatedDisplayWithoutInventingLayoutActivity() throws {
@@ -234,8 +253,7 @@ final class SimulatorDisplayReadTests: XCTestCase {
       for value in [cover, inner] { xpc_dictionary_set_value(value, "active", nil) }
       xpc_dictionary_set_string(cover, "backlightState", "off")
       xpc_dictionary_set_string(inner, "backlightState", state)
-      let displays = try SimulatorDisplayProtocol.displays(displayReply([cover, inner]))
-      let selected = try SimulatorDisplayCommands.activeIntegratedDisplay(in: displays)
+      let selected = try SimulatorDisplayCommands.activeIntegratedDisplay(in: displays([cover, inner]))
       XCTAssertEqual(selected.uniqueID, "inner")
       XCTAssertEqual(selected.activitySource, .backlight)
       XCTAssertNil(selected.reportedActivity)
@@ -249,19 +267,20 @@ final class SimulatorDisplayReadTests: XCTestCase {
     for (first, second) in [("off", "off"), ("inactiveOn", "off"), ("unknown", "activeOn"), ("activeOn", "activeDimmed"), ("off", "futureState")] {
       xpc_dictionary_set_string(cover, "backlightState", first)
       xpc_dictionary_set_string(inner, "backlightState", second)
-      XCTAssertThrowsError(try SimulatorDisplayProtocol.interactionDisplay(displayReply([cover, inner])))
+      XCTAssertThrowsError(try target([cover, inner]))
     }
     xpc_dictionary_set_string(cover, "backlightState", "off")
     xpc_dictionary_set_string(inner, "backlightState", "activeOn")
     xpc_dictionary_set_bool(cover, "active", false)
-    XCTAssertThrowsError(try SimulatorDisplayProtocol.displays(displayReply([cover, inner])))
+    assertFailed(report([cover, inner]))
     xpc_dictionary_set_bool(inner, "active", false)
-    XCTAssertThrowsError(try SimulatorDisplayProtocol.displays(displayReply([cover, inner]))) { error in
+    XCTAssertEqual(report([cover, inner]), .transitioning)
+    XCTAssertThrowsError(try target([cover, inner])) { error in
       guard case SimulatorDisplayError.transitioning = error else { return XCTFail("\(error)") }
       XCTAssertEqual(error.localizedDescription, "Invalid simulator CoreDevice response: Layout and backlight activity disagree")
     }
     xpc_dictionary_set_bool(inner, "active", true)
-    let selected = try SimulatorDisplayCommands.activeIntegratedDisplay(in: SimulatorDisplayProtocol.displays(displayReply([cover, inner])))
+    let selected = try SimulatorDisplayCommands.activeIntegratedDisplay(in: displays([cover, inner]))
     XCTAssertEqual(selected.activitySource, .layout)
     XCTAssertEqual(selected.reportedActivity, true)
   }
@@ -271,18 +290,17 @@ final class SimulatorDisplayReadTests: XCTestCase {
     for key in ["uniqueId", "name"] {
       let value = displayValue(id: "inner", active: true)
       xpc_dictionary_set_string(value, key, long)
-      XCTAssertThrowsError(try SimulatorDisplayProtocol.displays(displayReply([value])), key)
+      assertFailed(report([value]), key)
     }
-    XCTAssertThrowsError(try SimulatorDisplayProtocol.displays(displayReply([displayValue(id: "", active: true)])))
+    assertFailed(report([displayValue(id: "", active: true)]))
   }
 
   func testExplicitActivitySelectsInnerDespiteNonemptyPrimaryBounds() throws {
-    let displays = try SimulatorDisplayProtocol.displays(
-      displayReply([
+    let selected = try SimulatorDisplayCommands.activeIntegratedDisplay(
+      in: displays([
         displayValue(id: "cover", active: false, primary: true),
         displayValue(id: "inner", active: true, rotation: "rot90"),
       ]))
-    let selected = try SimulatorDisplayCommands.activeIntegratedDisplay(in: displays)
     XCTAssertEqual(selected.uniqueID, "inner")
     XCTAssertEqual(selected.size, CGSize(width: 2853, height: 2007))
     XCTAssertEqual(selected.scale, 3)
@@ -290,24 +308,23 @@ final class SimulatorDisplayReadTests: XCTestCase {
 
   func testActivityCannotBeInferredFromMissingFieldOrStaleReport() {
     let value = displayValue(id: "cover", active: true, primary: true)
-    XCTAssertThrowsError(try SimulatorDisplayProtocol.displays(displayReply([value], current: false)))
+    assertFailed(report([value], current: false))
     xpc_dictionary_set_value(value, "active", nil)
-    XCTAssertThrowsError(try SimulatorDisplayProtocol.displays(displayReply([value])))
+    XCTAssertThrowsError(try displays([value]))
   }
 
   func testAmbiguousAndMissingActiveIntegratedDisplaysFail() throws {
     let values = [displayValue(id: "cover", active: true), displayValue(id: "inner", active: true)]
-    let displays = try SimulatorDisplayProtocol.displays(displayReply(values))
-    XCTAssertThrowsError(try SimulatorDisplayCommands.activeIntegratedDisplay(in: displays))
+    XCTAssertThrowsError(try SimulatorDisplayCommands.activeIntegratedDisplay(in: displays(values)))
     XCTAssertThrowsError(try SimulatorDisplayCommands.activeIntegratedDisplay(in: []))
-    XCTAssertThrowsError(try SimulatorDisplayProtocol.displays(displayReply([values[0], values[0]])))
+    assertFailed(report([values[0], values[0]]))
   }
 
   func testRotationAndScaleMustBeRecognized() {
-    XCTAssertThrowsError(try SimulatorDisplayProtocol.displays(displayReply([displayValue(id: "inner", active: true, rotation: "unknown")])))
+    assertFailed(report([displayValue(id: "inner", active: true, rotation: "unknown")]))
     let value = displayValue(id: "inner", active: true)
     xpc_dictionary_set_int64(value, "pointScale", 0)
-    XCTAssertThrowsError(try SimulatorDisplayProtocol.displays(displayReply([value])))
+    assertFailed(report([value]))
   }
 
   func testActiveBoundsMustBeNonemptyAndFinite() {
@@ -319,21 +336,21 @@ final class SimulatorDisplayReadTests: XCTestCase {
           SimulatorCoreDevice.array([xpc_double_create(0), xpc_double_create(0)]),
           SimulatorCoreDevice.array([xpc_double_create(width), xpc_double_create(2007)]),
         ]))
-      XCTAssertThrowsError(try SimulatorDisplayProtocol.displays(displayReply([value])))
+      assertFailed(report([value]))
     }
   }
 
-  private func readDisplays(from services: SyntheticXPCServices, timeout: DispatchTimeInterval = .seconds(5)) async throws -> [SimulatorDisplay] {
+  private func readDisplays(from services: SyntheticXPCServices, timeout: DispatchTimeInterval = .seconds(5)) async throws -> SimulatorDisplayReport {
     let channel = try services.channel(to: SimulatorDisplayProtocol.service)
-    return try await CoreDeviceSession<[SimulatorDisplay]>(channel: channel, timeout: timeout)
-      .read(SimulatorCoreDevice.dictionary([:]), decode: SimulatorDisplayProtocol.displays)
+    return try await CoreDeviceSession<SimulatorDisplayReport>(channel: channel, timeout: timeout)
+      .read(SimulatorCoreDevice.dictionary([:]), decode: SimulatorDisplayProtocol.report)
   }
 
   func testSnapshotCompletesAndClosesTheConnection() async throws {
     let services = SyntheticXPCServices()
     let peer = services.register(
       SimulatorDisplayProtocol.service, respond: SyntheticXPCPeer.replying(displayReply([displayValue(id: "inner", active: true)])))
-    let result = try await readDisplays(from: services)
+    guard case let .displays(result) = try await readDisplays(from: services) else { return XCTFail("Expected displays") }
     XCTAssertEqual(result.map(\.uniqueID), ["inner"])
     XCTAssertEqual(peer.received.count, 1)
     let closed = await peer.closed(atLeast: 1)
@@ -364,7 +381,7 @@ final class SimulatorDisplayReadTests: XCTestCase {
     }
   }
 
-  func testProviderErrorIsPropagated() async {
+  func testProviderErrorIsPropagated() async throws {
     let services = SyntheticXPCServices()
     let peer = services.register(
       SimulatorDisplayProtocol.service,
@@ -374,10 +391,8 @@ final class SimulatorDisplayReadTests: XCTestCase {
             "domain": xpc_string_create("provider"), "code": xpc_int64_create(42),
           ])
         ])))
-    do {
-      _ = try await readDisplays(from: services)
-      XCTFail("Expected provider failure")
-    } catch { XCTAssertTrue(error.localizedDescription.contains("provider (42)")) }
+    let result = try await readDisplays(from: services)
+    XCTAssertEqual(result, .failed(.unavailable("provider (42)")))
     let closed = await peer.closed(atLeast: 1)
     XCTAssertEqual(closed, 1)
   }

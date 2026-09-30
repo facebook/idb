@@ -14,7 +14,7 @@ final class SimulatorDisplayInteractionTests: XCTestCase {
     id: String = "inner", active: Bool = true, rotation: SimulatorDisplayRotation = .upright, scale: Double = 2
   ) -> SimulatorDisplay {
     SimulatorDisplay(
-      uniqueID: id, name: id, isActive: active, isPrimary: false, isIntegrated: true,
+      uniqueID: id, name: id, activity: active ? .active : .inactive, isPrimary: false, isIntegrated: true,
       bounds: CGRect(x: 50, y: 60, width: 1200, height: 800), scale: scale, rotation: rotation)
   }
 

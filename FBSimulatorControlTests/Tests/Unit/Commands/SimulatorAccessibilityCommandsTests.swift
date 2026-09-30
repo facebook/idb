@@ -652,7 +652,7 @@ final class SimulatorAccessibilityCommandsTests: XCTestCase {
     let frame = CGRect(x: 60, y: 100, width: 40, height: 40)
     let button = AccessibilityTestElementBuilder.button(withLabel: "Target", identifier: "target", frame: frame)
     let display = SimulatorDisplay(
-      uniqueID: "selected-display", name: "Selected", isActive: true, isPrimary: false, isIntegrated: true,
+      uniqueID: "selected-display", name: "Selected", activity: .active, isPrimary: false, isIntegrated: true,
       bounds: CGRect(x: 0, y: 0, width: 1200, height: 800), scale: 2, rotation: .clockwise)
     let displays = DisplayCommandsDouble(.selected(display))
     displays.identities.remember([SimulatorAccessibilityDisplay(uniqueID: "selected-display", displayID: 42)])

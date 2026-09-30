@@ -257,7 +257,7 @@ final class AXBridgeQuiescenceTests: XCTestCase {
   private static func display(_ uniqueID: String, rotation: SimulatorDisplayRotation = .upright) -> SimulatorDisplayTarget {
     .selected(
       SimulatorDisplay(
-        uniqueID: uniqueID, name: uniqueID, isActive: true, isPrimary: false, isIntegrated: true,
+        uniqueID: uniqueID, name: uniqueID, activity: .active, isPrimary: false, isIntegrated: true,
         bounds: CGRect(x: 0, y: 0, width: 1200, height: 800), scale: 2, rotation: rotation))
   }
 

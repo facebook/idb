@@ -7,7 +7,6 @@
 
 import FBControlCore
 import Foundation
-import XPC
 
 public enum SimulatorDisplayRotation: String, Sendable, Decodable {
   case upright = "rot0"
@@ -68,6 +67,13 @@ public enum SimulatorInteractionDisplay: Equatable, Sendable {
   }
 }
 
+public enum SimulatorDisplayActivity: Equatable, Sendable {
+  case active
+  case inactive
+  /// The runtime reports a backlight state of `unknown`.
+  case unknown
+}
+
 public enum SimulatorDisplayActivitySource: Equatable, Sendable {
   case layout
   /// Identifies an actively illuminated display when layout activity is unavailable.
@@ -78,8 +84,10 @@ public enum SimulatorDisplayActivitySource: Equatable, Sendable {
 public struct SimulatorDisplay: Equatable, Sendable {
   public let uniqueID: String
   public let name: String
-  public let isActive: Bool
+  public let activity: SimulatorDisplayActivity
   public let activitySource: SimulatorDisplayActivitySource
+
+  public var isActive: Bool { activity == .active }
 
   /// The provider's explicit layout activity, absent when selection used backlight evidence.
   public var reportedActivity: Bool? { activitySource == .layout ? isActive : nil }
@@ -91,13 +99,13 @@ public struct SimulatorDisplay: Equatable, Sendable {
   public let rotation: SimulatorDisplayRotation
 
   init(
-    uniqueID: String, name: String, isActive: Bool, isPrimary: Bool, isIntegrated: Bool,
+    uniqueID: String, name: String, activity: SimulatorDisplayActivity, isPrimary: Bool, isIntegrated: Bool,
     bounds: CGRect, scale: Double, rotation: SimulatorDisplayRotation,
     activitySource: SimulatorDisplayActivitySource = .layout
   ) {
     self.uniqueID = uniqueID
     self.name = name
-    self.isActive = isActive
+    self.activity = activity
     self.isPrimary = isPrimary
     self.isIntegrated = isIntegrated
     self.bounds = bounds
@@ -112,7 +120,7 @@ public struct SimulatorDisplay: Equatable, Sendable {
 
   // Layout lookup may succeed on one snapshot and require backlight evidence on the next.
   func hasSameConfiguration(as other: Self) -> Bool {
-    uniqueID == other.uniqueID && isActive == other.isActive && isIntegrated == other.isIntegrated && geometry == other.geometry
+    uniqueID == other.uniqueID && activity == other.activity && isIntegrated == other.isIntegrated && geometry == other.geometry
   }
 
   /// Pixel dimensions after applying the current interface rotation.
@@ -122,6 +130,18 @@ public struct SimulatorDisplay: Equatable, Sendable {
     case .clockwise, .counterclockwise: CGSize(width: bounds.height, height: bounds.width)
     }
   }
+}
+
+/// What one `displayinfo` read says about the simulator's displays, before anything is selected from it.
+enum SimulatorDisplayReport: Equatable, Sendable {
+  /// Every display, identified, with its activity.
+  case displays([SimulatorDisplay])
+  /// A runtime that reports no display activity. The geometry of each integrated display, which may not be
+  /// identified.
+  case legacy(integrated: [SimulatorDisplayGeometry])
+  /// Layout has moved to a display whose backlight has not caught up, as after a hinge change.
+  case transitioning
+  case failed(SimulatorCoreDeviceError)
 }
 
 public enum SimulatorDisplayError: Error, LocalizedError {
@@ -159,19 +179,24 @@ public final class SimulatorDisplayCommands: DisplayCommands, @unchecked Sendabl
     self.simulator = simulator
   }
 
-  /// Reads current displays with explicit layout activity or complete per-display backlight evidence.
-  public func list() async throws -> [SimulatorDisplay] {
-    try await read(decode: SimulatorDisplayProtocol.displays)
+  func report() async throws -> SimulatorDisplayReport {
+    do {
+      return try await target().coreDevice.perform(
+        action: SimulatorDisplayProtocol.action, service: SimulatorDisplayProtocol.service, input: CoreDeviceEmptyInput(),
+        decode: SimulatorDisplayProtocol.report)
+    } catch let error as SimulatorCoreDeviceError {
+      return .failed(error)
+    }
   }
 
   /// Resolves current interface geometry. Legacy selection requires exactly one integrated display.
   public func interactionDisplay() async throws -> SimulatorInteractionDisplay {
-    try await read(decode: SimulatorDisplayProtocol.interactionDisplay)
+    try await interactionTarget().display
   }
 
   /// Resolves the integrated display interactions target and whether they have to name it.
   func interactionTarget() async throws -> SimulatorDisplayTarget {
-    try await read(decode: SimulatorDisplayProtocol.interactionTarget)
+    try Self.interactionTarget(in: await report())
   }
 
   /// Lists connected touchscreens. Match `displayUniqueID` to a display snapshot before routing input.
@@ -201,16 +226,44 @@ public final class SimulatorDisplayCommands: DisplayCommands, @unchecked Sendabl
     return simulator
   }
 
-  private func read<Response: Sendable>(decode: @escaping @Sendable (xpc_object_t) throws -> Response) async throws -> Response {
-    try await target().coreDevice.perform(
-      action: SimulatorDisplayProtocol.action, service: SimulatorDisplayProtocol.service, input: CoreDeviceEmptyInput(), decode: decode)
+  public func activeIntegratedDisplay() async throws -> SimulatorDisplay {
+    switch try await report() {
+    case let .displays(displays): return try Self.activeIntegratedDisplay(in: displays)
+    case .legacy: throw SimulatorDisplayInteractionError.unsupportedCapability("display activity")
+    case .transitioning: throw SimulatorDisplayError.transitioning
+    case let .failed(error): throw error
+    }
   }
 
-  public func activeIntegratedDisplay() async throws -> SimulatorDisplay {
-    try Self.activeIntegratedDisplay(in: await list())
+  /// The sole integrated display, active or not, or the active one of several. A legacy report has to
+  /// have exactly one integrated display.
+  static func interactionTarget(in report: SimulatorDisplayReport) throws -> SimulatorDisplayTarget {
+    switch report {
+    case let .legacy(integrated):
+      guard integrated.count == 1, let geometry = integrated.first else {
+        throw SimulatorDisplayInteractionError.unsupportedCapability("unambiguous legacy integrated display selection")
+      }
+      return .sole(.legacy(geometry))
+    case let .displays(displays):
+      let integrated = displays.filter(\.isIntegrated)
+      guard !integrated.contains(where: { $0.activity == .unknown }) else {
+        throw SimulatorDisplayInteractionError.unsupportedCapability("integrated display activity")
+      }
+      if integrated.count == 1, let display = integrated.first {
+        return .sole(.identified(display))
+      }
+      return .selected(try activeIntegratedDisplay(in: displays))
+    case .transitioning:
+      throw SimulatorDisplayError.transitioning
+    case let .failed(error):
+      throw error
+    }
   }
 
   static func activeIntegratedDisplay(in displays: [SimulatorDisplay]) throws -> SimulatorDisplay {
+    guard !displays.contains(where: { $0.isIntegrated && $0.activity == .unknown }) else {
+      throw SimulatorDisplayInteractionError.unsupportedCapability("integrated display activity")
+    }
     let active = displays.filter { $0.isActive && $0.isIntegrated }
     guard let display = active.first else { throw SimulatorDisplayError.noActiveIntegratedDisplay }
     guard active.count == 1 else { throw SimulatorDisplayError.ambiguousActiveDisplays(active.map(\.uniqueID)) }

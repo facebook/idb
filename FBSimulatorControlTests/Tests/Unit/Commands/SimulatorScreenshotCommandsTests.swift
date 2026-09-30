@@ -9,7 +9,7 @@
 import XCTest
 
 private let inner = SimulatorDisplay(
-  uniqueID: "inner", name: "inner", isActive: true, isPrimary: false, isIntegrated: true,
+  uniqueID: "inner", name: "inner", activity: .active, isPrimary: false, isIntegrated: true,
   bounds: CGRect(x: 0, y: 0, width: 1206, height: 2622), scale: 3, rotation: .upright)
 
 private struct Failure: Error {}

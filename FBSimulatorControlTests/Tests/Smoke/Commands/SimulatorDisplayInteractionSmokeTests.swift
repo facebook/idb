@@ -33,7 +33,8 @@ final class SimulatorDisplayInteractionSmokeTests: ProvidedSimulatorTestCase {
     let center = try context.digitizerPoint(from: CGPoint(x: context.pointSize.width / 2, y: context.pointSize.height / 2))
     XCTAssertEqual(center, CGPoint(x: 0.5, y: 0.5))
     try await commands.validate(context)
-    for display in try await commands.list() where display.isIntegrated && !display.isActive {
+    guard case let .displays(displays) = try await commands.report() else { return XCTFail("Expected identified displays") }
+    for display in displays where display.isIntegrated && !display.isActive {
       do {
         _ = try await commands.interactionContext(for: display.uniqueID)
         XCTFail("Inactive display selection must fail")

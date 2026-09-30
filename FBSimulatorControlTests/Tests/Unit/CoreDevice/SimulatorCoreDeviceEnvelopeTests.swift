@@ -106,13 +106,7 @@ final class SimulatorCoreDeviceEnvelopeTests: XCTestCase {
 
   func testEveryReplyParserSurfacesTheProviderErrorAsUnavailable() throws {
     let reply = errorReply()
-    XCTAssertThrowsError(try SimulatorDisplayProtocol.displays(reply)) { error in
-      guard case let SimulatorCoreDeviceError.unavailable(detail) = error else { return XCTFail("Display: \(error)") }
-      XCTAssertEqual(detail, "com.example.provider (7)")
-    }
-    XCTAssertThrowsError(try SimulatorDisplayProtocol.snapshot(reply)) { error in
-      guard case SimulatorCoreDeviceError.unavailable = error else { return XCTFail("Snapshot: \(error)") }
-    }
+    XCTAssertEqual(SimulatorDisplayProtocol.report(reply), .failed(.unavailable("com.example.provider (7)")))
     XCTAssertThrowsError(try SimulatorMotionCapability.hingeAngle.requireSupported(in: reply)) { error in
       guard case let SimulatorCoreDeviceError.unavailable(detail) = error else { return XCTFail("Capability: \(error)") }
       XCTAssertEqual(detail, "com.example.provider (7)")
@@ -130,7 +124,7 @@ final class SimulatorCoreDeviceEnvelopeTests: XCTestCase {
       SimulatorCoreDevice.dictionary(["CoreDevice.error": xpc_string_create("boom")]),
     ]
     for reply in malformed {
-      XCTAssertThrowsError(try SimulatorDisplayProtocol.displays(reply))
+      guard case .failed = SimulatorDisplayProtocol.report(reply) else { return XCTFail("Display report: \(reply)") }
       XCTAssertThrowsError(try SimulatorMotionCapability.hingeAngle.requireSupported(in: reply))
       XCTAssertThrowsError(try CoreDeviceReply.validate(reply))
     }
@@ -150,7 +144,7 @@ final class SimulatorCoreDeviceEnvelopeTests: XCTestCase {
   func testARepliedOutputThatIsNotADictionaryIsRejected() {
     for output: xpc_object_t in [xpc_null_create(), xpc_string_create("ok"), xpc_array_create(nil, 0)] {
       let reply = SimulatorCoreDevice.dictionary(["CoreDevice.output": output])
-      XCTAssertThrowsError(try SimulatorDisplayProtocol.displays(reply))
+      guard case .failed = SimulatorDisplayProtocol.report(reply) else { return XCTFail("Display report: \(reply)") }
       XCTAssertThrowsError(try SimulatorMotionCapability.hingeAngle.requireSupported(in: reply))
       XCTAssertThrowsError(try CoreDeviceReply.validate(reply))
     }

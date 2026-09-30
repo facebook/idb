@@ -11,7 +11,7 @@ import XPC
 
 /// How a CoreDevice feature fails. Callers switch on `unsupported` to choose a fallback; the other
 /// three are operational and surface as they are.
-enum SimulatorCoreDeviceError: Error, LocalizedError {
+enum SimulatorCoreDeviceError: Error, LocalizedError, Equatable {
   /// The runtime does not vend the feature, field or capability named.
   case unsupported(String)
   /// The service exists but could not be reached or answered with an error.

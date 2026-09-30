@@ -232,7 +232,7 @@ final class SimulatorHIDOperationTests: XCTestCase {
 
   private static func makeScreen(_ identity: String = "inner", rotation: SimulatorDisplayRotation = .upright) -> SimulatorDisplay {
     SimulatorDisplay(
-      uniqueID: identity, name: identity, isActive: true, isPrimary: true, isIntegrated: true,
+      uniqueID: identity, name: identity, activity: .active, isPrimary: true, isIntegrated: true,
       bounds: CGRect(x: 0, y: 0, width: 600, height: 900), scale: 3, rotation: rotation)
   }
 

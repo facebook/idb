@@ -170,7 +170,7 @@ final class SurfaceImageGeneratorTests: XCTestCase {
     let original = try pixels(of: render(ScreenshotConfiguration(), generator: generator).image)
     for rotation: SimulatorDisplayRotation in [.upright, .clockwise, .upsideDown, .counterclockwise] {
       let display = SimulatorDisplay(
-        uniqueID: "inner", name: "inner", isActive: true, isPrimary: false, isIntegrated: true,
+        uniqueID: "inner", name: "inner", activity: .active, isPrimary: false, isIntegrated: true,
         bounds: CGRect(origin: .zero, size: surfaceSize), scale: 2, rotation: rotation)
       let full = try XCTUnwrap(generator.image(configuration: ScreenshotConfiguration(), screenScale: 2, display: display))
       XCTAssertEqual(full.sourceSize, display.size)
@@ -205,7 +205,7 @@ final class SurfaceImageGeneratorTests: XCTestCase {
 
   func testDisplayGeometryChangeRejectsCapture() throws {
     let display = SimulatorDisplay(
-      uniqueID: "inner", name: "inner", isActive: true, isPrimary: false, isIntegrated: true,
+      uniqueID: "inner", name: "inner", activity: .active, isPrimary: false, isIntegrated: true,
       bounds: CGRect(x: 0, y: 0, width: 32, height: 64), scale: 2, rotation: .clockwise)
     XCTAssertThrowsError(try generator().image(configuration: ScreenshotConfiguration(), screenScale: 2, display: display))
   }
