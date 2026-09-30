@@ -272,10 +272,11 @@ jobs:
         run: brew test facebook/fb/idb-companion facebook/fb/idb-cli facebook/fb/idb
 
   # Each shard gets its own runner and simulator; `CI.end_to_end_shard` says
-  # which modules it runs.
+  # which modules it runs. A larger runner, because on the standard 3-core, 7 GB
+  # VM the simulator stalls for tens of seconds at a time and outlasts test waits.
   mac-end-to-end:
     name: End-to-end ${{ matrix.shard }} (idb through idb_companion, macOS)
-    runs-on: macos-26
+    runs-on: macos-26-xlarge
     needs: mac-companion
     timeout-minutes: 45
     strategy:
