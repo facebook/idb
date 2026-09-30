@@ -189,11 +189,6 @@ public final class SimulatorDisplayCommands: DisplayCommands, @unchecked Sendabl
     }
   }
 
-  /// Resolves current interface geometry. Legacy selection requires exactly one integrated display.
-  public func interactionDisplay() async throws -> SimulatorInteractionDisplay {
-    try await interactionTarget().display
-  }
-
   /// Resolves the integrated display interactions target and whether they have to name it.
   func interactionTarget() async throws -> SimulatorDisplayTarget {
     try Self.interactionTarget(in: await report())
