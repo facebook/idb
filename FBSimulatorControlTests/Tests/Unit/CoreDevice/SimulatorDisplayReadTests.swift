@@ -70,12 +70,11 @@ final class SimulatorDisplayReadTests: XCTestCase {
       xpc_dictionary_set_string(value, "backlightState", "unknown")
     }
     let reply = displayReply([lcd] + externals)
-    // BUG: `unknown` counts as activity evidence, so the report takes the strict read and fails on the
-    // missing identity instead of resolving the sole integrated display — flipped in the following commit.
-    XCTAssertThrowsError(try SimulatorDisplayProtocol.snapshot(reply))
-    XCTAssertThrowsError(try SimulatorDisplayProtocol.interactionTarget(reply)) { error in
-      XCTAssertEqual(error.localizedDescription, "Invalid simulator CoreDevice response: Duplicate or empty display identity")
+    XCTAssertEqual(try SimulatorDisplayProtocol.snapshot(reply), .legacyProvider)
+    guard case let .sole(.legacy(geometry)) = try SimulatorDisplayProtocol.interactionTarget(reply) else {
+      return XCTFail("Expected the sole legacy display")
     }
+    XCTAssertEqual(geometry.pointSize, CGSize(width: 669, height: 951))
     XCTAssertThrowsError(try SimulatorDisplayProtocol.displays(reply))
   }
 
@@ -183,10 +182,14 @@ final class SimulatorDisplayReadTests: XCTestCase {
     xpc_dictionary_set_int64(unscaled, "pointScale", 0)
     // Without activity evidence the listing cannot say which display is active; interaction still
     // resolves the sole integrated display (testIdentityWithoutActivityIsALegacyProvider).
-    XCTAssertThrowsError(try SimulatorDisplayProtocol.displays(displayReply([identityOnly])))
+    for values in [[identityOnly], [unknownBacklight]] {
+      XCTAssertThrowsError(try SimulatorDisplayCommands.activeIntegratedDisplay(in: SimulatorDisplayProtocol.displays(displayReply(values))))
+      guard case .sole(.legacy) = try? SimulatorDisplayProtocol.interactionTarget(displayReply(values)) else {
+        return XCTFail("Expected the sole legacy display")
+      }
+    }
     let reports: [String: [xpc_object_t]] = [
       "partial layout activity": [displayValue(id: "cover", active: false, primary: true), partialLayout],
-      "unknown integrated backlight": [unknownBacklight],
       "no active display": [displayValue(id: "lcd", active: false)],
       "several active displays": [displayValue(id: "cover", active: true), displayValue(id: "inner", active: true)],
       "invalid record": [unscaled],
