@@ -887,6 +887,96 @@ def _prepare_artifact_file(path: Path) -> None:
     path.chmod(0o644)
 
 
+HOST_LOAD_FILE_NAME = "host-load.txt"
+HOST_LOAD_INTERVAL_SECONDS = 5.0
+HOST_LOAD_SAMPLE_TIMEOUT_SECONDS = 30.0
+# Two samples a second apart, because top's first sample has no per-process CPU.
+HOST_LOAD_ARGV = (
+    "top",
+    "-l",
+    "2",
+    "-s",
+    "1",
+    "-o",
+    "cpu",
+    "-n",
+    "15",
+    "-stats",
+    "pid,command,cpu,mem",
+)
+
+
+def last_top_sample(output: bytes) -> bytes:
+    start = output.rfind(b"Processes:")
+    return output if start < 0 else output[start:]
+
+
+def sample_top() -> bytes:
+    try:
+        completed = subprocess.run(
+            HOST_LOAD_ARGV,
+            capture_output=True,
+            stdin=subprocess.DEVNULL,
+            timeout=HOST_LOAD_SAMPLE_TIMEOUT_SECONDS,
+        )
+    except subprocess.TimeoutExpired:
+        return f"top did not finish within {HOST_LOAD_SAMPLE_TIMEOUT_SECONDS:.0f}s\n".encode()
+    except OSError as error:
+        return f"top could not run: {error}\n".encode()
+    if completed.returncode != 0:
+        return (
+            f"top failed (rc={completed.returncode}): ".encode()
+            + completed.stderr
+            + b"\n"
+        )
+    return last_top_sample(completed.stdout)
+
+
+class HostLoad:
+    """Record the host's CPU, memory and busiest processes throughout the run.
+
+    A simulator that stalls otherwise looks the same as a host that has run out
+    of CPU or memory. Sampled from a thread, because each test replaces the
+    event loop.
+    """
+
+    def __init__(
+        self,
+        path: Path,
+        sample: Callable[[], bytes] = sample_top,
+        interval: float = HOST_LOAD_INTERVAL_SECONDS,
+    ) -> None:
+        _prepare_artifact_file(path)
+        self.path = path
+        self._sample = sample
+        self._interval = interval
+        self._stopping = threading.Event()
+        self._thread = threading.Thread(target=self._run, name="host-load", daemon=True)
+        self._thread.start()
+
+    def _run(self) -> None:
+        warned = False
+        while True:
+            taken = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+            sample = self._sample()
+            try:
+                with self.path.open("ab") as log:
+                    log.write(f"=== {taken}\n".encode() + sample)
+            except OSError as error:
+                # A write can fail transiently, e.g. on a full disk; keep sampling.
+                if not warned:
+                    _LOGGER.warning(
+                        "Could not record host load to %s: %s", self.path, error
+                    )
+                    warned = True
+            if self._stopping.wait(self._interval):
+                return
+
+    def stop(self) -> None:
+        self._stopping.set()
+        self._thread.join(timeout=HOST_LOAD_SAMPLE_TIMEOUT_SECONDS)
+
+
 class Companion:
     """Share a companion across tests.
 
@@ -1074,6 +1164,7 @@ async def wait_for_accessibility(
 _environment: Environment | None = None
 _companion: Companion | None = None
 _recording: Recording | None = None
+_host_load: HostLoad | None = None
 _acquisition_failure: BaseException | None = None
 
 
@@ -1088,7 +1179,17 @@ async def shared_environment() -> Environment:
         except BaseException as error:
             _acquisition_failure = error
             raise
+        _start_host_load()
     return _environment
+
+
+def _start_host_load() -> None:
+    global _host_load
+    artifacts = artifact_directory()
+    if _host_load is not None or artifacts is None:
+        return
+    _host_load = HostLoad(artifacts / HOST_LOAD_FILE_NAME)
+    atexit.register(_host_load.stop)
 
 
 async def shared_companion() -> Companion:

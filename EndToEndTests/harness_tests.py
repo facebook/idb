@@ -17,10 +17,13 @@ import hashlib
 import io
 import json
 import os
+import re
 import shutil
 import signal
+import subprocess
 import sys
 import tempfile
+import time
 import unittest
 from pathlib import Path
 from types import SimpleNamespace
@@ -44,10 +47,12 @@ from .harness import (
     expected_implementation,
     EXPECTED_IMPLEMENTATION_ENV,
     HarnessError,
+    HostLoad,
     IDB_SETUP_BIN_ENV,
     IdbEndToEndTestCase,
     IdbProcess,
     IdbProcessConfig,
+    last_top_sample,
     MatchKey,
     NotReady,
     ProcessStream,
@@ -57,6 +62,7 @@ from .harness import (
     run_attested_client,
     run_with_registered_cleanup,
     running_bundle_ids_from_listing,
+    sample_top,
     select_tests_for_capability,
     shared_companion,
     Simctl,
@@ -2833,6 +2839,83 @@ class SubprocessTimeoutTests(unittest.IsolatedAsyncioTestCase):
             )
         self.assertTrue(ready.is_file(), "Descendant must be spawned before timeout")
         await asyncio.wait_for(wait_for_file(exited), timeout=10)
+
+
+class HostLoadTests(unittest.TestCase):
+    def test_keeps_the_second_of_tops_two_samples(self) -> None:
+        output = b"Processes: 1 total\nfirst\nProcesses: 2 total\nsecond\n"
+
+        self.assertEqual(last_top_sample(output), b"Processes: 2 total\nsecond\n")
+
+    def test_output_without_a_sample_is_kept_whole(self) -> None:
+        self.assertEqual(last_top_sample(b"unexpected\n"), b"unexpected\n")
+
+    def test_a_hung_top_is_recorded(self) -> None:
+        hung = subprocess.TimeoutExpired(["top"], 30.0)
+
+        with mock.patch.object(harness.subprocess, "run", side_effect=hung):
+            self.assertEqual(sample_top(), b"top did not finish within 30s\n")
+
+    def test_a_failing_top_is_recorded(self) -> None:
+        failed = subprocess.CompletedProcess(["top"], 1, b"", b"boom")
+
+        with mock.patch.object(harness.subprocess, "run", return_value=failed):
+            self.assertEqual(sample_top(), b"top failed (rc=1): boom\n")
+
+    def test_records_timestamped_samples_until_stopped(self) -> None:
+        path = Path(tempfile.mkdtemp()) / "host-load.txt"
+        self.addCleanup(shutil.rmtree, path.parent)
+        taken = iter(range(1000))
+
+        host_load = HostLoad(
+            path, sample=lambda: f"sample {next(taken)}\n".encode(), interval=0.01
+        )
+        deadline = time.monotonic() + 10
+        while path.read_bytes().count(b"=== ") < 2 and time.monotonic() < deadline:
+            time.sleep(0.01)
+        host_load.stop()
+        recorded = path.read_bytes()
+        time.sleep(0.05)
+
+        self.assertEqual(path.read_bytes(), recorded)
+        lines = recorded.decode().splitlines()
+        self.assertGreaterEqual(len(lines), 4)
+        for index, line in enumerate(lines):
+            if index % 2 == 0:
+                self.assertRegex(line, r"^=== \d{4}-\d\d-\d\dT\d\d:\d\d:\d\dZ$")
+            else:
+                self.assertEqual(line, f"sample {index // 2}")
+
+    def test_keeps_sampling_after_a_write_fails(self) -> None:
+        path = Path(tempfile.mkdtemp()) / "host-load.txt"
+        self.addCleanup(shutil.rmtree, path.parent)
+        taken = iter(range(1000))
+
+        def sample() -> bytes:
+            index = next(taken)
+            if index == 0:
+                path.unlink()
+                path.mkdir()
+            elif index == 1:
+                path.rmdir()
+            return f"sample {index}\n".encode()
+
+        with self.assertLogs(harness._LOGGER, "WARNING") as logs:
+            host_load = HostLoad(path, sample=sample, interval=0.01)
+            deadline = time.monotonic() + 10
+            while (
+                not (path.is_file() and b"sample 2" in path.read_bytes())
+                and time.monotonic() < deadline
+            ):
+                time.sleep(0.01)
+            host_load.stop()
+
+        recorded = path.read_bytes()
+        self.assertNotIn(b"sample 0", recorded)
+        self.assertIn(b"sample 1\n", recorded)
+        self.assertIn(b"sample 2\n", recorded)
+        self.assertEqual(len(logs.records), 1)
+        self.assertIn("Could not record host load", logs.output[0])
 
 
 if __name__ == "__main__":
