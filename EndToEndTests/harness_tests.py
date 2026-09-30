@@ -2174,10 +2174,7 @@ class InstalledBundleIdsTests(unittest.IsolatedAsyncioTestCase):
             await self.bundle_ids(Completed(0, LISTAPPS_PLIST, b""), hung)
 
         self.assertEqual(str(raised.exception), str(hung))
-        # BUG: raised as the CommandTimedOut a hung simctl raises, so a caller
-        # that polls again after a hung simctl polls again after this too --
-        # flipped in the following commit.
-        self.assertIsInstance(raised.exception, CommandTimedOut)
+        self.assertNotIsInstance(raised.exception, CommandTimedOut)
 
 
 class RunningBundleIdsTests(unittest.TestCase):
@@ -2339,13 +2336,9 @@ class AppWaitTests(unittest.IsolatedAsyncioTestCase):
         timed_out = "xcrun simctl spawn UDID launchctl list did not finish within 60s"
         case = AppCaseStub(running=[CommandTimedOut(timed_out), {"com.example.app"}])
 
-        # BUG: one hung simctl ends the wait, though the wait has time left to
-        # poll again -- flipped in the following commit.
-        with self.assertRaises(Failed) as failed:
-            await case.wait_for_app("com.example.app", AppState.RUNNING)
+        await case.wait_for_app("com.example.app", AppState.RUNNING)
 
-        self.assertEqual(str(failed.exception), timed_out)
-        self.assertEqual(case.simctl.running_bundle_ids.await_count, 1)
+        self.assertEqual(case.simctl.running_bundle_ids.await_count, 2)
 
 
 class EnvironmentSelectionTests(unittest.IsolatedAsyncioTestCase):

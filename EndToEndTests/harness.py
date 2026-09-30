@@ -122,6 +122,9 @@ DEFAULT_COMMAND_TIMEOUT_SECONDS = 120.0
 INSTALL_TIMEOUT_SECONDS = 300.0
 ROUTE_ATTESTATION_TIMEOUT_SECONDS = 10.0
 APP_STATE_TIMEOUT_SECONDS = 60.0
+# Well above what a healthy simctl read takes, and short enough to leave an
+# app-state wait time to try again after one that hangs.
+SIMCTL_POLL_TIMEOUT_SECONDS = 20.0
 PROCESS_GROUP_GRACE_SECONDS = 2.0
 
 
@@ -636,18 +639,22 @@ class Simctl:
             return None
         return _device_states(json.loads(completed.stdout)).get(self.udid)
 
-    async def installed_bundle_ids(self) -> set[str]:
-        completed = await self.run("listapps", self.udid)
+    async def installed_bundle_ids(self, timeout: float = 60.0) -> set[str]:
+        completed = await self.run("listapps", self.udid, timeout=timeout)
         if completed.returncode != 0:
             raise HarnessError(
                 f"simctl listapps failed (rc={completed.returncode}): {completed.error_text}"
             )
         # listapps writes an old-style plist, which json cannot read.
-        converted = await run(
-            ["plutil", "-convert", "json", "-o", "-", "-"],
-            timeout=60.0,
-            stdin=completed.stdout,
-        )
+        try:
+            converted = await run(
+                ["plutil", "-convert", "json", "-o", "-", "-"],
+                timeout=60.0,
+                stdin=completed.stdout,
+            )
+        except CommandTimedOut as timed_out:
+            # Only a hung simctl is worth another poll, so a hung plutil must not read as one.
+            raise HarnessError(str(timed_out)) from None
         if converted.returncode != 0:
             raise HarnessError(
                 f"simctl listapps output could not be converted to JSON "
@@ -655,8 +662,10 @@ class Simctl:
             )
         return set(json.loads(converted.stdout).keys())
 
-    async def running_bundle_ids(self) -> set[str]:
-        completed = await self.run("spawn", self.udid, "launchctl", "list")
+    async def running_bundle_ids(self, timeout: float = 60.0) -> set[str]:
+        completed = await self.run(
+            "spawn", self.udid, "launchctl", "list", timeout=timeout
+        )
         if completed.returncode != 0:
             raise HarnessError(
                 f"simctl could not list the simulator's services "
@@ -2097,7 +2106,13 @@ class IdbEndToEndTestCase(unittest.IsolatedAsyncioTestCase):
             listed, unlisted = AppState.INSTALLED, AppState.ABSENT
 
         async def check() -> None:
-            reported = listed if bundle_id in await listing() else unlisted
+            try:
+                bundle_ids = await listing(timeout=SIMCTL_POLL_TIMEOUT_SECONDS)
+            except CommandTimedOut as timed_out:
+                # simctl can hang on the host without reaching the simulator,
+                # and a fresh simctl is not stuck behind it.
+                raise NotReady(str(timed_out)) from None
+            reported = listed if bundle_id in bundle_ids else unlisted
             if reported is not state:
                 raise NotReady(f"simctl reports it {reported.value}")
 
