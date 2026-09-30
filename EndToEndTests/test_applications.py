@@ -103,6 +103,26 @@ class ArchiveInstallTests(IdbEndToEndTestCase):
 
         self.assertIn(FIXTURE_APP_BUNDLE_ID, await self.simctl.installed_bundle_ids())
 
+    async def test_installing_an_ipa_keeps_the_app_for_debugging(self) -> None:
+        ipa = self.make_fixture_ipa(self.make_temporary_directory())
+        self.addAsyncCleanup(self.uninstall_quietly, FIXTURE_APP_BUNDLE_ID)
+
+        await self.idb("install", str(ipa), timeout=INSTALL_TIMEOUT_SECONDS)
+
+        # `debugserver start` and xctestrun placeholders resolve installed apps from here.
+        persisted = (
+            self.simctl.device_set_path
+            / self.simctl.udid
+            / "data/fbsimulatorcontrol/idb-applications"
+            / FIXTURE_APP_BUNDLE_ID
+            / self.environment.fixture_app.name
+        )
+        # BUG: the app is persisted as a symlink into the directory the archive
+        # was extracted to, which is deleted once the install finishes.
+        # Flipped in the following commit.
+        self.assertTrue(persisted.is_symlink())
+        self.assertFalse((persisted / "Info.plist").exists())
+
     async def test_installing_an_ipa_from_a_url(self) -> None:
         served = self.make_temporary_directory()
         self.make_fixture_ipa(served)
