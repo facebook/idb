@@ -67,9 +67,8 @@ extension Simulator {
   }
 
   /// The HID transport to prefer when a caller does not request one: DTUHID once the toolchain ships
-  /// `dtuhidd`, the legacy Indigo path otherwise. A preference, not a guarantee —
-  /// `SimulatorHIDTransport.negotiate(for:requested:)` falls back to Indigo if `dtuhidd` turns out to
-  /// be unreachable.
+  /// `dtuhidd`, the legacy Indigo path otherwise. `SimulatorHIDTransport.negotiate(for:requested:)`
+  /// reports an unreachable `dtuhidd` rather than falling back to Indigo.
   var defaultHIDTransport: SimulatorHIDTransportType {
     SimulatorHIDTransportSelection.defaultTransport(
       coreSimulatorVersion: SimulatorControlFrameworkLoader.loadedCoreSimulatorVersion)

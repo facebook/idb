@@ -66,13 +66,16 @@ struct SimulatorHIDTransportNegotiationTests {
     #expect(establisher.attempts == [.dtuhid])
   }
 
-  @Test("With no request, an unreachable dtuhidd")
+  @Test("With no request, an unreachable dtuhidd surfaces rather than falling back to Indigo")
   func unreachableDTUHID() async throws {
     let establisher = Establisher(reachable: [.indigo])
-    // BUG: falls back to Indigo, whose touch, button and keyboard input the guest drops on every
-    // toolchain that prefers DTUHID — flipped in the following commit.
-    let transport = try await SimulatorHIDTransport.negotiate(requested: nil, preferred: .dtuhid, establish: establisher.establish)
-    #expect(transport == .indigo)
-    #expect(establisher.attempts == [.dtuhid, .indigo])
+    let error = await #expect(throws: SimulatorHIDError.self) {
+      try await SimulatorHIDTransport.negotiate(requested: nil, preferred: .dtuhid, establish: establisher.establish)
+    }
+    guard case .dtuhidConnectionFailed = error else {
+      Issue.record("Unexpected error \(String(describing: error))")
+      return
+    }
+    #expect(establisher.attempts == [.dtuhid])
   }
 }

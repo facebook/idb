@@ -42,14 +42,13 @@ enum SimulatorHIDTransport: Sendable {
 
   // MARK: - Negotiation
 
-  /// A requested transport is never substituted — it is established or the error surfaces. With no request,
-  /// `defaultHIDTransport` is tried and only an `isDTUHIDUnreachable` failure falls back to Indigo; a fault
-  /// in an established transport is a real error. Reachability is settled where it is observable, by
-  /// `SimulatorDTUHIDConnection.connect(using:serviceName:)` round-tripping a barrier past its retries: `dtuhidd` is
-  /// demand-launched, so neither the toolchain version nor the service lookup can tell whether one is
-  /// there. Falling back leaves only the tvOS trackpad working, since the same toolchains drop Indigo
-  /// touch, button and keyboard input, so it is reached only after that probe has given the daemon every
-  /// chance to come up.
+  /// A requested transport is never substituted — it is established or the error surfaces. With no
+  /// request, `defaultHIDTransport` is established, and its errors surface the same way. There is no
+  /// fallback: the default is DTUHID exactly on the toolchains whose guest does not reliably deliver
+  /// Indigo touch, button or keyboard input, so an unreachable `dtuhidd` is reported rather than traded
+  /// for a transport that silently loses input. Reachability is settled where it is observable, by
+  /// `SimulatorDTUHIDConnection.connect(using:serviceName:)` round-tripping a barrier past its retries,
+  /// since `dtuhidd` is demand-launched.
   static func negotiate(
     for simulator: Simulator, requested: SimulatorHIDTransportType?
   ) async throws -> SimulatorHIDTransport {
@@ -68,16 +67,9 @@ enum SimulatorHIDTransport: Sendable {
     if let requested {
       return try await establish(requested)
     }
-    let logger = ControlCoreGlobalConfiguration.defaultLogger
-    do {
-      let transport = try await establish(preferred)
-      logger.log("Negotiated the \(preferred) HID transport")
-      return transport
-    } catch let error as SimulatorHIDError where error.isDTUHIDUnreachable {
-      logger.log(
-        "dtuhidd is unreachable (\(error.localizedDescription)), falling back to the legacy Indigo HID transport")
-      return try await establish(.indigo)
-    }
+    let transport = try await establish(preferred)
+    ControlCoreGlobalConfiguration.defaultLogger.log("Negotiated the \(preferred) HID transport")
+    return transport
   }
 
   private static func establish(
