@@ -2126,19 +2126,25 @@ class DeadCompanionStopsTheSuiteTests(unittest.TestCase):
         self.assertTrue(result.shouldStop)
 
 
-def reading(listapps: Completed, plutil: Completed) -> Run:
-    """Return canned listapps and plutil responses."""
+def reading(listapps: Completed, plutil: Completed | Exception) -> Run:
+    """Return canned listapps and plutil responses, raising a plutil exception."""
 
     async def run(
         argv: Sequence[str], timeout: float, stdin: bytes | None = None
     ) -> Completed:
-        return plutil if argv[0] == "plutil" else listapps
+        if argv[0] != "plutil":
+            return listapps
+        if isinstance(plutil, Exception):
+            raise plutil
+        return plutil
 
     return run
 
 
 class InstalledBundleIdsTests(unittest.IsolatedAsyncioTestCase):
-    async def bundle_ids(self, listapps: Completed, plutil: Completed) -> set[str]:
+    async def bundle_ids(
+        self, listapps: Completed, plutil: Completed | Exception
+    ) -> set[str]:
         with mock.patch.object(harness, "run", reading(listapps, plutil)):
             return await Simctl("UDID", Path("/device-set")).installed_bundle_ids()
 
@@ -2160,6 +2166,18 @@ class InstalledBundleIdsTests(unittest.IsolatedAsyncioTestCase):
             await self.bundle_ids(Completed(0, LISTAPPS_PLIST, b""), FAILED)
 
         self.assertIn("could not be converted to JSON", str(raised.exception))
+
+    async def test_a_hung_plutil_is_an_error(self) -> None:
+        hung = CommandTimedOut("plutil -convert json -o - - did not finish within 60s")
+
+        with self.assertRaises(HarnessError) as raised:
+            await self.bundle_ids(Completed(0, LISTAPPS_PLIST, b""), hung)
+
+        self.assertEqual(str(raised.exception), str(hung))
+        # BUG: raised as the CommandTimedOut a hung simctl raises, so a caller
+        # that polls again after a hung simctl polls again after this too --
+        # flipped in the following commit.
+        self.assertIsInstance(raised.exception, CommandTimedOut)
 
 
 class RunningBundleIdsTests(unittest.TestCase):
@@ -2316,6 +2334,18 @@ class AppWaitTests(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual(str(failed.exception), "simctl listapps failed (rc=1): boom")
         self.assertEqual(case.simctl.installed_bundle_ids.await_count, 1)
+
+    async def test_a_simctl_poll_that_timed_out(self) -> None:
+        timed_out = "xcrun simctl spawn UDID launchctl list did not finish within 60s"
+        case = AppCaseStub(running=[CommandTimedOut(timed_out), {"com.example.app"}])
+
+        # BUG: one hung simctl ends the wait, though the wait has time left to
+        # poll again -- flipped in the following commit.
+        with self.assertRaises(Failed) as failed:
+            await case.wait_for_app("com.example.app", AppState.RUNNING)
+
+        self.assertEqual(str(failed.exception), timed_out)
+        self.assertEqual(case.simctl.running_bundle_ids.await_count, 1)
 
 
 class EnvironmentSelectionTests(unittest.IsolatedAsyncioTestCase):
