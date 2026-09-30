@@ -247,6 +247,16 @@ static id FBAXCopyAttributeContainers(id value)
   }
 }
 
+- (NSNumber *)owningProcessIdentifierOfElement:(FBAXElement *)element error:(NSError **)error
+{
+  @try {
+    return @([_runtime owningProcessIdentifierOfElement:element.value]);
+  } @catch (NSException *exception) {
+    FBAXClientException(exception, error);
+    return nil;
+  }
+}
+
 - (FBAXElementHit *)hitTestAtPoint:(CGPoint)point processIdentifier:(pid_t)pid error:(NSError **)error
 {
   @try {

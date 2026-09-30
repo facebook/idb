@@ -446,6 +446,11 @@ static NSDictionary *FBAXFakeSnapshotNode(FBAXFakeElement *element,
   return fake.owningProcessIdentifier;
 }
 
+- (pid_t)owningProcessIdentifierOfElement:(id)element
+{
+  return [element isKindOfClass:FBAXFakeElement.class] ? ((FBAXFakeElement *)element).owningProcessIdentifier : 0;
+}
+
 - (nullable id)snapshotOfSnapshotElement:(id)element
                           attributeNames:(NSArray<NSString *> *)names
                            namesByNumber:(NSDictionary<NSNumber *, NSString *> *_Nullable *_Nonnull)namesByNumber

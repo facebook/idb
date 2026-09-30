@@ -281,6 +281,11 @@ private struct AccessibilityDescriptionResponse {
 
 private struct TraversalContext {
   var remainingNodes = 0
+  // The process the read is for. 0 when the read names none.
+  var processIdentifier: pid_t = 0
+  // Other processes that draw part of the tree and did not answer in time. A read sent to one queues
+  // behind the one it missed, so the walk skips their elements.
+  var unansweredProcesses: Set<pid_t> = []
   // How many boundary continuations one read may fetch. Depth and node budget already bound the recursion
   // — a continuation replaces a node at its own depth and never re-triggers on its own root, so every
   // further boundary sits at least one level deeper — but each continuation is fetched before the node it
@@ -505,8 +510,11 @@ private final class AccessibilityRequest {
   // One mach round-trip per node: read the element's attributes, coerce them to JSON, then recurse into
   // its children (replacing the child `XCAccessibilityElement`s with their read dictionaries in place).
   //
-  // The outcome describes only *this* element. A child that fails to read is dropped from the tree rather
-  // than failing the whole read, so a child's outcome never becomes the caller's.
+  // A child that fails to read is dropped from the tree rather than failing the whole read, except one
+  // that did not answer in time: its process is still working on that read, so every later read sent to
+  // it would queue behind that work and time out in turn. When that process is the one the read is for,
+  // or cannot be told apart from it, the child's outcome becomes the whole walk's. Another process drawing
+  // part of the tree is only skipped for the rest of the walk.
   fileprivate func FBAXBridgeBuildNode(
     client: FBAXClient,
     element: FBAXElement,
@@ -521,7 +529,12 @@ private final class AccessibilityRequest {
     case FBAXReadStatus.applicationUnavailable:
       return FBAXReadOutcome.applicationUnavailable()
     case FBAXReadStatus.applicationNotResponding:
-      return FBAXReadOutcome.applicationNotResponding()
+      let owner = depth > 0 ? try client.owningProcessIdentifier(of: element).int32Value : 0
+      guard owner != 0, traversal.processIdentifier != 0, owner != traversal.processIdentifier else {
+        return FBAXReadOutcome.applicationNotResponding()
+      }
+      traversal.unansweredProcesses.insert(owner)
+      return FBAXReadOutcome.failed(outcome.error)
     case FBAXReadStatus.read:
       break
     case FBAXReadStatus.failed:
@@ -564,6 +577,11 @@ private final class AccessibilityRequest {
         if !traversal.emitted.insert(child).inserted {
           continue
         }
+        if !traversal.unansweredProcesses.isEmpty,
+          try traversal.unansweredProcesses.contains(client.owningProcessIdentifier(of: child).int32Value)
+        {
+          continue
+        }
         if traversal.remainingNodes <= 0 {
           traversal.truncated = true
           break
@@ -577,6 +595,9 @@ private final class AccessibilityRequest {
           depth: depth + 1,
           maxDepth: maxDepth
         )
+        if childOutcome.status == FBAXReadStatus.applicationNotResponding {
+          return childOutcome
+        }
         if childOutcome.status == FBAXReadStatus.read, let attributes = childOutcome.attributes {
           children.append(attributes)
         }
@@ -1556,7 +1577,7 @@ private final class AccessibilityRequest {
     let nodeBudget = (request[requestMaxNodes] as? NSNumber).map { Int($0.int32Value) } ?? defaultNodeBudget
 
     var tree: [String: Any]?
-    traversal = TraversalContext(remainingNodes: nodeBudget)
+    traversal = TraversalContext(remainingNodes: nodeBudget, processIdentifier: pid)
     let traverseStarted = CFAbsoluteTimeGetCurrent()
     if try FBAXWireValue.boolean(from: request[requestSnapshotTree]).boolValue == true {
       let names = FBAXBridgeFetchListForRequest(request: request)

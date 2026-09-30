@@ -923,17 +923,18 @@ final class AccessibilityRuntimeTests: XCTestCase {
 
   // An application that did not answer in time is still working on the read it missed, so a read sent to
   // it afterwards waits behind that work.
-  func testAWalkThatMeetsAChildThatDidNotAnswerReadsItsSibling() {
+  func testAWalkThatMeetsAChildThatDidNotAnswerStopsBeforeItsSibling() {
     let root = FBAXFakeElement.readable("UIApplication")
     root.children = [FBAXFakeElement.applicationNotResponding(), FBAXFakeElement.readable("UIButton")]
     runtime.applicationElements[NSNumber(value: kAppPid)] = root
 
     let response = FBAccessibilityService.handleRequest(["verb": "describe", "pid": NSNumber(value: kAppPid)])
 
-    // BUG: the walk carries on past the child and reads its sibling — flipped in the following commit.
-    assertEqualObjects(axValue(response, "ok"), NSNumber(value: true))
-    assertEqualObjects(axValue(axValue(response, "tree"), kAXChildren), [[kAXElementType: "UIButton", kAXLabel: "UIButton", kAXChildren: []]])
-    assertEqualObjects(runtime.operations, ["automationRead", "applicationElement", "readAttributes", "readAttributes", "readAttributes"])
+    assertEqualObjects(axValue(response, "ok"), NSNumber(value: false))
+    assertEqualObjects(axValue(response, "error_kind"), "application_not_responding")
+    assertEqualObjects(axValue(response, "pid"), NSNumber(value: kAppPid))
+    assertEqualObjects(axValue(response, "error"), "pid \(kAppPid) did not answer the read of its element tree in time")
+    assertEqualObjects(runtime.operations, ["automationRead", "applicationElement", "readAttributes", "readAttributes"])
   }
 
   // The walk crosses into processes that draw part of the tree. One of those not answering says nothing
@@ -954,7 +955,7 @@ final class AccessibilityRuntimeTests: XCTestCase {
     assertEqualObjects(axValue(axValue(response, "tree"), kAXChildren), [[kAXElementType: "UIButton", kAXLabel: "UIButton", kAXChildren: []]])
   }
 
-  func testAWalkThatMeetsAnotherProcessThatDidNotAnswerAsksThatProcessAgain() {
+  func testAWalkThatMeetsAnotherProcessThatDidNotAnswerDoesNotAskThatProcessAgain() {
     let stalled = FBAXFakeElement.applicationNotResponding()
     stalled.owningProcessIdentifier = kRemotePid
     let sibling = FBAXFakeElement.readable("UIWebView")
@@ -967,10 +968,8 @@ final class AccessibilityRuntimeTests: XCTestCase {
     let response = FBAccessibilityService.handleRequest(["verb": "describe", "pid": NSNumber(value: kAppPid)])
 
     assertEqualObjects(axValue(response, "ok"), NSNumber(value: true))
-    // BUG: the walk sends the stalled process another read, which queues behind the one it missed — flipped
-    // in the following commit.
-    assertEqualObjects(axValue(axValue(response, "tree"), kAXChildren), [[kAXElementType: "UIWebView", kAXLabel: "UIWebView", kAXChildren: []]])
-    assertEqualObjects(runtime.operations, ["automationRead", "applicationElement", "readAttributes", "readAttributes", "readAttributes"])
+    assertEqualObjects(axValue(axValue(response, "tree"), kAXChildren), [])
+    assertEqualObjects(runtime.operations, ["automationRead", "applicationElement", "readAttributes", "readAttributes"])
   }
 
   // MARK: - Automation mode on the describe path

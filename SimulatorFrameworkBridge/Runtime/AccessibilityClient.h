@@ -81,6 +81,8 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (nullable FBAXOptionalValue<FBAXElement *> *)applicationElementForProcessIdentifier:(pid_t)pid error:(NSError **)error;
 - (nullable FBAXElementRead *)readAttributes:(NSArray<NSString *> *)attributes ofElement:(FBAXElement *)element error:(NSError **)error;
+/** Zero means the runtime could not attribute the element. */
+- (nullable NSNumber *)owningProcessIdentifierOfElement:(FBAXElement *)element error:(NSError **)error;
 - (nullable FBAXElementHit *)hitTestAtPoint:(CGPoint)point processIdentifier:(pid_t)pid error:(NSError **)error;
 - (nullable FBAXElementHit *)hitTestAtPoint:(CGPoint)point processIdentifier:(pid_t)pid displayIdentifier:(uint32_t)displayID error:(NSError **)error;
 - (nullable FBAXWriteOutcome *)performAction:(FBAXAction)action onElement:(FBAXElement *)element error:(NSError **)error;

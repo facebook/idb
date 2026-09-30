@@ -410,6 +410,12 @@ typedef void (^FBAXQuiescenceHandler)(FBAXQuiescenceReport report, pid_t pid);
 - (FBAXReadOutcome *)readAttributes:(NSArray<NSString *> *)attributes ofElement:(id)element;
 
 /**
+ * The process that draws an element handle, answered locally without messaging it. A walk crosses into
+ * other processes wherever they draw part of the tree. 0 means unknown, never a process.
+ */
+- (pid_t)owningProcessIdentifierOfElement:(id)element;
+
+/**
  * A whole bounded subtree in one round trip, via the call XCUITest walks hierarchies with. Nil means the
  * read could not be performed (including a runtime without the selector; `*error` says which).
  *

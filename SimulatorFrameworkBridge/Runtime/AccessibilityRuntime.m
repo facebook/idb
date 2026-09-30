@@ -1401,6 +1401,15 @@ static NSError *FBAXSnapshotFailure(NSInteger code, NSString *description)
   return pid;
 }
 
+- (pid_t)owningProcessIdentifierOfElement:(id)element
+{
+  // A translation object carries no platform element to ask.
+  if (![element respondsToSelector:@selector(AXUIElement)]) {
+    return 0;
+  }
+  return [self owningProcessIdentifierForSnapshotElement:(__bridge id)[element AXUIElement]];
+}
+
 - (nullable id)snapshotOfSnapshotElement:(id)element
                           attributeNames:(NSArray<NSString *> *)names
                            namesByNumber:(NSDictionary<NSNumber *, NSString *> *_Nullable *_Nonnull)namesByNumber
