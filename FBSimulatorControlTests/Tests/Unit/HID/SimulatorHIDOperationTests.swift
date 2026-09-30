@@ -22,6 +22,20 @@ final class SimulatorHIDOperationTests: XCTestCase {
     XCTAssertEqual(flushes, 1)
   }
 
+  func testFallbackDeliversEventsWithoutADisplay() async throws {
+    let recorder = Recorder()
+    var operation = SimulatorHIDOperation(
+      displays: DisplayCommandsDouble([.failure(SimulatorCoreDeviceError.unsupported("displayinfo"))]),
+      deliver: { event, display in await recorder.record(event, display: display) },
+      flush: {},
+      reportCleanupError: { XCTFail("cleanup failed: \($0)") })
+    try await operation.send(.tapAt(x: 20, y: 30))
+    try await operation.finish(flushing: false)
+    let events = await recorder.events
+    XCTAssertEqual(events.map(\.0), [.touch(direction: .down, x: 20, y: 30), .touch(direction: .up, x: 20, y: 30)])
+    XCTAssertEqual(events.compactMap(\.1), [])
+  }
+
   func testDisplayTransitionReleasesOnOriginalTargetWithoutSendingToNewTarget() async throws {
     let recorder = Recorder()
     let observation = SimulatorHIDDisplayObservation()

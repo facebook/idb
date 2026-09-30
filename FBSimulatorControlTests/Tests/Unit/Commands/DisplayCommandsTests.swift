@@ -21,36 +21,33 @@ final class DisplayCommandsTests: XCTestCase {
     SimulatorAccessibilityDisplay(uniqueID: "inner", displayID: 3),
   ]
 
-  func testSoleDisplayIsReachedUnscopedWithoutAskingTheGuest() async throws {
+  func testSoleDisplayResolvesWithoutNamingIt() async throws {
     let displays = DisplayCommandsDouble(.sole(.identified(display("lcd"))))
-    let transport = InventoryTransport(inventory)
-    let resolved = try await displays.accessibilityDisplay(transport: transport)
-    XCTAssertEqual(resolved, AXTranslationDisplay(display: .identified(display("lcd")), accessibilityID: nil))
+    let resolved = try await displays.resolveDisplay()
+    XCTAssertEqual(resolved, .target(.sole(.identified(display("lcd")))))
     XCTAssertEqual(displays.reads, 1)
-    let sends = await transport.sends
-    XCTAssertEqual(sends, 0)
   }
 
   func testSelectedDisplayIdentityIsLookedUpOnceAndConfirmed() async throws {
     let displays = DisplayCommandsDouble(.selected(display("inner")))
     let transport = InventoryTransport(inventory)
-    let first = try await displays.accessibilityDisplay(transport: transport)
-    XCTAssertEqual(first?.accessibilityID, 3)
-    XCTAssertEqual(displays.reads, 2)
-    let second = try await displays.accessibilityDisplay(transport: transport)
+    let first = try await displays.accessibilityID(for: display("inner"), transport: transport)
+    XCTAssertEqual(first, 3)
+    XCTAssertEqual(displays.reads, 1)
+    let second = try await displays.accessibilityID(for: display("inner"), transport: transport)
     XCTAssertEqual(second, first)
-    XCTAssertEqual(displays.reads, 3)
+    XCTAssertEqual(displays.reads, 1)
     let sends = await transport.sends
     XCTAssertEqual(sends, 1)
   }
 
   func testNewlySelectedDisplayRefreshesTheCache() async throws {
-    let displays = DisplayCommandsDouble(.selected(display("inner")), .selected(display("inner")), .selected(display("cover")))
+    let displays = DisplayCommandsDouble(.selected(display("inner")), .selected(display("cover")))
     let transport = InventoryTransport(inventory)
-    let inner = try await displays.accessibilityDisplay(transport: transport)
-    let cover = try await displays.accessibilityDisplay(transport: transport)
-    XCTAssertEqual(inner?.accessibilityID, 3)
-    XCTAssertEqual(cover?.accessibilityID, 2)
+    let inner = try await displays.accessibilityID(for: display("inner"), transport: transport)
+    let cover = try await displays.accessibilityID(for: display("cover"), transport: transport)
+    XCTAssertEqual(inner, 3)
+    XCTAssertEqual(cover, 2)
     let sends = await transport.sends
     XCTAssertEqual(sends, 1)
   }
@@ -58,39 +55,41 @@ final class DisplayCommandsTests: XCTestCase {
   func testUnlistedDisplayHasNoMapping() async throws {
     let displays = DisplayCommandsDouble(.selected(display("rear")))
     do {
-      _ = try await displays.accessibilityDisplay(transport: InventoryTransport(inventory))
+      _ = try await displays.accessibilityID(for: display("rear"), transport: InventoryTransport(inventory))
       XCTFail("Expected a missing mapping")
     } catch SimulatorDisplayInteractionError.missingMapping("rear") {}
     XCTAssertNil(displays.identities.accessibilityID(for: "inner"))
   }
 
   func testDisplayChangeDuringLookupFails() async throws {
-    let displays = DisplayCommandsDouble(.selected(display("inner")), .selected(display("cover")))
+    let displays = DisplayCommandsDouble(.selected(display("cover")))
     do {
-      _ = try await displays.accessibilityDisplay(transport: InventoryTransport(inventory))
+      _ = try await displays.accessibilityID(for: display("inner"), transport: InventoryTransport(inventory))
       XCTFail("Expected a display change")
     } catch SimulatorDisplayError.changed {}
     XCTAssertNil(displays.identities.accessibilityID(for: "inner"))
   }
 
-  func testRuntimeWithoutDisplayReportsRoutesNothing() async throws {
+  func testRuntimeWithoutDisplayReportsFallsBack() async throws {
     let displays = DisplayCommandsDouble([.failure(SimulatorCoreDeviceError.unsupported("displayinfo"))])
-    let resolved = try await displays.accessibilityDisplay(transport: InventoryTransport(inventory))
-    XCTAssertNil(resolved)
+    let resolved = try await displays.resolveDisplay()
+    XCTAssertEqual(resolved, .fallback(.unreported("displayinfo")))
   }
 
-  func testRequiredCapabilityIsCheckedOnlyWhenTheDisplayMustBeNamed() async throws {
-    let sole = DisplayCommandsDouble(.sole(.identified(display("lcd"))))
-    let soleTransport = InventoryTransport(inventory)
-    _ = try await sole.accessibilityDisplay(transport: soleTransport, requiring: .scopedInteractions)
-    let soleSends = await soleTransport.sends
-    XCTAssertEqual(soleSends, 0)
+  func testFallbackIsAChangeFromAReportedDisplay() async throws {
+    let displays = DisplayCommandsDouble([.failure(SimulatorCoreDeviceError.unsupported("displayinfo"))])
+    do {
+      try await displays.validate(.identified(display("lcd")))
+      XCTFail("Expected a display change")
+    } catch SimulatorDisplayError.changed {}
+  }
 
+  func testRequiredCapabilityIsCheckedOfTheGuest() async throws {
     let selected = DisplayCommandsDouble(.selected(display("inner")))
     selected.identities.remember(inventory)
     let oldGuest = InventoryTransport(inventory)
     do {
-      _ = try await selected.accessibilityDisplay(transport: oldGuest, requiring: .scopedInteractions)
+      _ = try await selected.accessibilityID(for: display("inner"), transport: oldGuest, requiring: .scopedInteractions)
       XCTFail("Expected the guest to lack scoped interactions")
     } catch SimulatorDisplayInteractionError.unsupportedCapability {}
     let oldGuestSends = await oldGuest.sends
@@ -98,8 +97,8 @@ final class DisplayCommandsTests: XCTestCase {
 
     let currentGuest = InventoryTransport(inventory, scopedInteractions: true)
     for _ in 0..<2 {
-      let resolved = try await selected.accessibilityDisplay(transport: currentGuest, requiring: .scopedInteractions)
-      XCTAssertEqual(resolved?.accessibilityID, 3)
+      let resolved = try await selected.accessibilityID(for: display("inner"), transport: currentGuest, requiring: .scopedInteractions)
+      XCTAssertEqual(resolved, 3)
     }
     let currentGuestSends = await currentGuest.sends
     XCTAssertEqual(currentGuestSends, 1)
@@ -112,8 +111,8 @@ final class DisplayCommandsTests: XCTestCase {
     let hid = DisplayCommandsDouble([transition, settled], touchscreens: touchscreens)
     let context = DisplayCommandsDouble([transition, settled], touchscreens: touchscreens)
     let transport = InventoryTransport(inventory)
-    let accessibilityID = await outcome { try await accessibility.accessibilityDisplay(transport: transport)?.accessibilityID }
-    let digitizerTarget = await outcome { try await hid.hidDisplay()?.digitizerTarget }
+    let accessibilityID = await outcome { try await accessibility.accessibilityID(for: selected(accessibility), transport: transport) }
+    let digitizerTarget = await outcome { try await hid.digitizerTarget(for: selected(hid)) }
     let contextTarget = await outcome { try await context.interactionContext(for: nil, transport: transport).digitizerTarget }
     XCTAssertEqual(try accessibilityID.get(), 3)
     XCTAssertEqual(try digitizerTarget.get(), 29)
@@ -123,8 +122,15 @@ final class DisplayCommandsTests: XCTestCase {
 
   func testLookupFailsWhenADisplayTransitionDoesNotSettle() async {
     let displays = DisplayCommandsDouble([transition])
-    assertTransitioning(await outcome { try await displays.hidDisplay() })
+    assertTransitioning(await outcome { try await displays.resolveDisplay() })
     XCTAssertGreaterThan(displays.reads, 1)
+  }
+
+  private func selected(_ displays: DisplayCommandsDouble) async throws -> SimulatorDisplay {
+    guard case let .target(.selected(display)) = try await displays.resolveDisplay() else {
+      throw SimulatorDisplayInteractionError.unsupportedCapability("a selected display")
+    }
+    return display
   }
 
   private let transition = Result<SimulatorDisplayTarget, any Error>.failure(SimulatorDisplayError.transitioning)

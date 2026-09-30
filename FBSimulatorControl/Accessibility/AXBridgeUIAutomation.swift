@@ -69,7 +69,7 @@ final class AXBridgeUIAutomation: AXBridgeTreeReader, @unchecked Sendable {
   private enum DisplayRouting {
     case unrouted
     case unresolved(any DisplayCommands)
-    /// A nil display means the runtime cannot report displays, so nothing is routed.
+    /// A nil display means interactions fall back to the main display, so nothing is routed.
     case resolved(AXTranslationDisplay?, any DisplayCommands)
   }
 
@@ -86,7 +86,17 @@ final class AXBridgeUIAutomation: AXBridgeTreeReader, @unchecked Sendable {
   /// Binds one operation to the active display, failing if the display changes before it completes.
   private func withDisplay<T>(_ body: (AXBridgeUIAutomation) async throws -> T) async throws -> T {
     guard case let .unresolved(displays) = routing else { return try await body(self) }
-    let display = try await displays.accessibilityDisplay(transport: transport, requiring: [.scopedInteractions, .scopedTrees])
+    let display: AXTranslationDisplay?
+    switch try await displays.resolveDisplay() {
+    case .fallback:
+      display = nil
+    case let .target(.sole(sole)):
+      display = AXTranslationDisplay(display: sole, accessibilityID: nil)
+    case let .target(.selected(selected)):
+      let accessibilityID = try await displays.accessibilityID(
+        for: selected, transport: transport, requiring: [.scopedInteractions, .scopedTrees])
+      display = AXTranslationDisplay(display: .identified(selected), accessibilityID: accessibilityID)
+    }
     let scoped = AXBridgeUIAutomation(scoping: self, routing: .resolved(display, displays))
     let result = try await body(scoped)
     try await scoped.validateCurrentDisplay()
@@ -328,11 +338,11 @@ final class AXBridgeUIAutomation: AXBridgeTreeReader, @unchecked Sendable {
     displays: any DisplayCommands,
     parameters: QuiescenceParameters
   ) async throws -> AsyncThrowingStream<QuiescenceEvent, Error> {
-    let display = try await displays.accessibilityDisplay(transport: transport, requiring: Self.quiescenceCapabilities)
-    guard let display, display.accessibilityID != nil, case let .identified(selected) = display.display else {
+    guard case let .target(.selected(selected)) = try await displays.resolveDisplay() else {
       return forwarding(try await quiescenceFrames(pid: nil, displayID: nil, parameters: parameters), pid: nil)
     }
-    let first = try await quiescenceFrames(pid: nil, displayID: display.accessibilityID, parameters: parameters)
+    let displayID = try await displays.accessibilityID(for: selected, transport: transport, requiring: Self.quiescenceCapabilities)
+    let first = try await quiescenceFrames(pid: nil, displayID: displayID, parameters: parameters)
     return AsyncThrowingStream { continuation in
       let task = Task {
         do {
@@ -406,12 +416,11 @@ final class AXBridgeUIAutomation: AXBridgeTreeReader, @unchecked Sendable {
           } catch {
             return
           }
-          guard case let .selected(next)? = try? await displays.interactionTarget(), next.uniqueID != uniqueID,
-            let resolved = try? await displays.accessibilityDisplay(transport: self.transport, requiring: Self.quiescenceCapabilities),
-            case let .identified(display) = resolved.display, display.uniqueID != uniqueID,
-            let displayID = resolved.accessibilityID
+          guard case let .target(.selected(next))? = try? await displays.currentDisplay(), next.uniqueID != uniqueID,
+            let displayID = try? await displays.accessibilityID(for: next, transport: self.transport, requiring: Self.quiescenceCapabilities),
+            (try? await displays.currentDisplay()) == .target(.selected(next))
           else { continue }
-          continuation.yield(.moved(uniqueID: display.uniqueID, displayID: displayID))
+          continuation.yield(.moved(uniqueID: next.uniqueID, displayID: displayID))
           return
         }
       }

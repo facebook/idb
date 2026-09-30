@@ -163,7 +163,7 @@ struct SimulatorHIDOperation {
     }
     try Task.checkCancellation()
     if let display {
-      observation.record(.success(try await displays?.hidDisplay()), matching: display)
+      observation.record(.success(try await Self.route(displays)), matching: display)
     }
     await stopObserving()
     try Task.checkCancellation()
@@ -172,7 +172,7 @@ struct SimulatorHIDOperation {
 
   private mutating func bindOrValidateDisplay() async throws {
     if !resolvedDisplay {
-      display = try await displays?.hidDisplay()
+      display = try await Self.route(displays)
       try Task.checkCancellation()
       resolvedDisplay = true
       if let display, let displays {
@@ -182,9 +182,9 @@ struct SimulatorHIDOperation {
         observationTask = Task {
           while !Task.isCancelled {
             do {
-              let current = try await displays.interactionTarget().display
+              let current = try await displays.currentDisplay()
               if Task.isCancelled { return }
-              guard current.hasSameConfiguration(as: display.interactionDisplay) else {
+              guard case let .target(target) = current, target.display.hasSameConfiguration(as: display.interactionDisplay) else {
                 throw SimulatorDisplayError.changed
               }
               try observation.check()
@@ -198,6 +198,16 @@ struct SimulatorHIDOperation {
       }
     }
     try observation.check()
+  }
+
+  /// Nil when interactions fall back to the main display, which input reaches without a digitizer target.
+  private static func route(_ displays: (any DisplayCommands)?) async throws -> SimulatorHIDDisplay? {
+    guard let displays else { return nil }
+    switch try await displays.resolveDisplay() {
+    case .fallback: return nil
+    case let .target(.sole(display)): return .sole(display)
+    case let .target(.selected(display)): return .selected(display, target: try await displays.digitizerTarget(for: display))
+    }
   }
 
   private func stopObserving() async {

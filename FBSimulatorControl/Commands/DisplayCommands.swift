@@ -45,6 +45,20 @@ enum SimulatorDisplayTarget: Equatable, Sendable {
   }
 }
 
+/// Whether interactions route to a display the runtime reported, or fall back to the main display.
+enum SimulatorDisplayResolution: Equatable, Sendable {
+  /// The runtime cannot say which display interactions target. Accessibility and input reach the main
+  /// display without naming one, as they did before runtimes reported displays.
+  case fallback(SimulatorDisplayFallback)
+  case target(SimulatorDisplayTarget)
+}
+
+/// Why interactions fell back to the main display.
+enum SimulatorDisplayFallback: Equatable, Sendable {
+  /// The runtime does not report displays.
+  case unreported(String)
+}
+
 /// A display snapshot and the accessibility identity that routes to it.
 struct AXTranslationDisplay: Equatable, Sendable {
   let display: SimulatorInteractionDisplay
@@ -99,75 +113,67 @@ extension DisplayCommands {
 
   var transitionSettling: DisplayTransitionSettling { .standard }
 
-  /// The interaction target once any display transition has settled. A hinge change moves layout to the
-  /// new display before its backlight follows, and one-shot resolution waits that out rather than failing.
-  func settledInteractionTarget() async throws -> SimulatorDisplayTarget {
+  /// The display interactions target once any display transition has settled. A hinge change moves layout to
+  /// the new display before its backlight follows, and one-shot resolution waits that out rather than failing.
+  func resolveDisplay() async throws -> SimulatorDisplayResolution {
     let settling = transitionSettling
     let deadline = ContinuousClock.now + settling.timeout
     while true {
       do {
-        return try await interactionTarget()
+        return try await currentDisplay()
       } catch SimulatorDisplayError.transitioning where ContinuousClock.now < deadline {
         try await Task.sleep(for: settling.interval)
       }
     }
   }
 
-  /// The active display and its accessibility identity, or nil when the runtime cannot report displays.
-  /// Only a simulator with several integrated displays asks the guest, and only for a display it has not seen.
-  /// `capabilities` are required of the guest only when it has to be told which display to use.
-  func accessibilityDisplay(
-    transport: any AXBridgeTransport, requiring capabilities: AXBridgeDisplayCapabilities = []
-  ) async throws -> AXTranslationDisplay? {
-    let target: SimulatorDisplayTarget
+  /// One read of the display interactions target, failing rather than waiting while a transition settles.
+  func currentDisplay() async throws -> SimulatorDisplayResolution {
     do {
-      target = try await settledInteractionTarget()
-    } catch SimulatorCoreDeviceError.unsupported {
-      return nil
+      return .target(try await interactionTarget())
+    } catch let SimulatorCoreDeviceError.unsupported(detail) {
+      return .fallback(.unreported(detail))
     }
-    guard case let .selected(display) = target else {
-      return AXTranslationDisplay(display: target.display, accessibilityID: nil)
-    }
+  }
+
+  /// The accessibility identity of a display that has to be named. The guest is asked only for a display it
+  /// has not seen, and only then are `capabilities` required of it.
+  func accessibilityID(
+    for display: SimulatorDisplay, transport: any AXBridgeTransport, requiring capabilities: AXBridgeDisplayCapabilities = []
+  ) async throws -> UInt32 {
     if let accessibilityID = identities.accessibilityID(for: display.uniqueID, requiring: capabilities) {
-      return AXTranslationDisplay(display: target.display, accessibilityID: accessibilityID)
+      return accessibilityID
     }
     let inventory = try AXBridgeDisplayInventory.decode(await transport.send(.displays), requiring: capabilities)
     let matches = inventory.filter { $0.uniqueID == display.uniqueID }
     guard matches.count == 1, let match = matches.first else {
       throw SimulatorDisplayInteractionError.missingMapping(display.uniqueID)
     }
-    try await validate(target.display)
+    try await validate(.identified(display))
     identities.remember(inventory, verified: capabilities)
-    return AXTranslationDisplay(display: target.display, accessibilityID: match.displayID)
+    return match.displayID
   }
 
-  /// The active display and the digitizer that reaches it, or nil when the runtime cannot report displays.
-  /// Only a simulator with several integrated displays reads its touchscreens, and only for a display it has not seen.
-  func hidDisplay() async throws -> SimulatorHIDDisplay? {
-    let target: SimulatorDisplayTarget
-    do {
-      target = try await settledInteractionTarget()
-    } catch SimulatorCoreDeviceError.unsupported {
-      return nil
-    }
-    guard case let .selected(display) = target else {
-      return .sole(target.display)
-    }
+  /// The digitizer that reaches a display that has to be named. Touchscreens are read only for a display not
+  /// seen before.
+  func digitizerTarget(for display: SimulatorDisplay) async throws -> UInt32 {
     if let digitizerTarget = identities.digitizerTarget(for: display.uniqueID) {
-      return .selected(display, target: digitizerTarget)
+      return digitizerTarget
     }
     let touchscreens = try await touchscreens()
     let matches = touchscreens.filter { $0.displayUniqueID == display.uniqueID }
     guard matches.count == 1, let touchscreen = matches.first, touchscreen.digitizerTarget > 0 else {
       throw SimulatorDisplayInteractionError.unsupportedCapability("a unique touchscreen target for display \(display.uniqueID)")
     }
-    try await validate(target.display)
+    try await validate(.identified(display))
     identities.remember(touchscreens)
-    return .selected(display, target: touchscreen.digitizerTarget)
+    return touchscreen.digitizerTarget
   }
 
   /// Fails if the active display, or its geometry, differs from the snapshot.
   func validate(_ display: SimulatorInteractionDisplay) async throws {
-    guard try await settledInteractionTarget().display.hasSameConfiguration(as: display) else { throw SimulatorDisplayError.changed }
+    guard case let .target(target) = try await resolveDisplay(), target.display.hasSameConfiguration(as: display) else {
+      throw SimulatorDisplayError.changed
+    }
   }
 }

@@ -35,22 +35,19 @@ final class SimulatorDisplayInteractionTests: XCTestCase {
         SimulatorTouchscreen(displayUniqueID: "cover", digitizerTarget: 29),
         SimulatorTouchscreen(displayUniqueID: "inner", digitizerTarget: 82),
       ])
-    let resolved = try await displays.hidDisplay()
-    let binding = try XCTUnwrap(resolved)
-    XCTAssertEqual(binding.digitizerTarget, 82)
-    XCTAssertEqual(binding.geometry, selected.geometry)
-    let cached = try await displays.hidDisplay()
-    XCTAssertEqual(cached, binding)
+    let target = try await displays.digitizerTarget(for: selected)
+    XCTAssertEqual(target, 82)
+    let cached = try await displays.digitizerTarget(for: selected)
+    XCTAssertEqual(cached, target)
     XCTAssertEqual(displays.touchscreenReads, 1)
 
-    let sole = DisplayCommandsDouble(.sole(.identified(selected)), .sole(.legacy(selected.geometry)))
-    let firstSole = try await sole.hidDisplay()
-    let secondSole = try await sole.hidDisplay()
-    let identified = try XCTUnwrap(firstSole)
-    let legacy = try XCTUnwrap(secondSole)
+    let binding = SimulatorHIDDisplay.selected(selected, target: target)
+    let identified = SimulatorHIDDisplay.sole(.identified(selected))
+    let legacy = SimulatorHIDDisplay.sole(.legacy(selected.geometry))
+    XCTAssertEqual(binding.digitizerTarget, 82)
+    XCTAssertEqual(binding.geometry, selected.geometry)
     XCTAssertEqual(identified.digitizerTarget, 0)
     XCTAssertEqual(legacy.digitizerTarget, 0)
-    XCTAssertEqual(sole.touchscreenReads, 0)
     XCTAssertFalse(binding.hasSameConfiguration(as: identified))
     XCTAssertFalse(identified.hasSameConfiguration(as: legacy))
   }
@@ -60,7 +57,7 @@ final class SimulatorDisplayInteractionTests: XCTestCase {
     let target = SimulatorTouchscreen(displayUniqueID: "inner", digitizerTarget: 82)
     for targets in [[], [target, target], [SimulatorTouchscreen(displayUniqueID: "cover", digitizerTarget: 82)]] {
       do {
-        _ = try await DisplayCommandsDouble(.selected(selected), touchscreens: targets).hidDisplay()
+        _ = try await DisplayCommandsDouble(.selected(selected), touchscreens: targets).digitizerTarget(for: selected)
         XCTFail("Expected a unique target requirement")
       } catch {
         guard case SimulatorDisplayInteractionError.unsupportedCapability = error else {
@@ -72,21 +69,15 @@ final class SimulatorDisplayInteractionTests: XCTestCase {
 
   func testHIDBindingIsNotCachedWhenTheDisplayChangesDuringLookup() async {
     let displays = DisplayCommandsDouble(
-      .selected(display()), .selected(display(id: "cover")),
+      .selected(display(id: "cover")),
       touchscreens: [SimulatorTouchscreen(displayUniqueID: "inner", digitizerTarget: 82)])
     do {
-      _ = try await displays.hidDisplay()
+      _ = try await displays.digitizerTarget(for: display())
       XCTFail("Expected a display change")
     } catch {
       guard case SimulatorDisplayError.changed = error else { return XCTFail("Unexpected error: \(error)") }
     }
     XCTAssertNil(displays.identities.digitizerTarget(for: "inner"))
-  }
-
-  func testHIDBindingIsAbsentWithoutDisplayReports() async throws {
-    let displays = DisplayCommandsDouble([.failure(SimulatorCoreDeviceError.unsupported("displayinfo"))])
-    let binding = try await displays.hidDisplay()
-    XCTAssertNil(binding)
   }
 
   func testHIDGeometryRotatesPointsAndEdgesTogether() throws {

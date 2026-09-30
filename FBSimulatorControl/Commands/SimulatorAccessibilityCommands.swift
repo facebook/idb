@@ -80,9 +80,19 @@ final class SimulatorAccessibilityCommands: AccessibilityOperations {
     launchCtl ?? simulator.launchCtl
   }
 
+  /// Nil when reads fall back to the main display, which accessibility reaches without naming it.
   private func readDisplay() async throws -> AXTranslationDisplay? {
     guard let simulator else { throw WeakTargetError.simulator }
-    return try await (displays ?? simulator.displays).accessibilityDisplay(transport: simulator.frameworkBridgeTransport(scope: .exclusive))
+    let displays = displays ?? simulator.displays
+    switch try await displays.resolveDisplay() {
+    case .fallback:
+      return nil
+    case let .target(.sole(display)):
+      return AXTranslationDisplay(display: display, accessibilityID: nil)
+    case let .target(.selected(display)):
+      let accessibilityID = try await displays.accessibilityID(for: display, transport: simulator.frameworkBridgeTransport(scope: .exclusive))
+      return AXTranslationDisplay(display: .identified(display), accessibilityID: accessibilityID)
+    }
   }
 
   // MARK: - AccessibilityOperations
