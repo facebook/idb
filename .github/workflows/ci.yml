@@ -28,6 +28,11 @@ jobs:
           - macos-26
     steps:
       - uses: actions/checkout@v5
+      # The runner image leaves Spotlight on. Nothing here searches with it,
+      # and its indexer competes for CPU with everything the job writes.
+      - name: Turn off Spotlight indexing
+        if: runner.os == 'macOS'
+        run: sudo mdutil -a -i off || true
       - uses: actions/setup-python@v6
         with:
           python-version: '3.12'
@@ -77,6 +82,10 @@ jobs:
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@v5
+      # The runner image leaves Spotlight on. Nothing here searches with it,
+      # and its indexer competes for CPU with everything the job writes.
+      - name: Turn off Spotlight indexing
+        run: sudo mdutil -a -i off || true
       - name: Install tools
         run: brew install xcodegen xcbeautify
       - name: Build frameworks
@@ -115,6 +124,10 @@ jobs:
           - FBDeviceControl
     steps:
       - uses: actions/checkout@v5
+      # The runner image leaves Spotlight on. Nothing here searches with it,
+      # and its indexer competes for CPU with everything the job writes.
+      - name: Turn off Spotlight indexing
+        run: sudo mdutil -a -i off || true
       - name: Install tools
         run: brew install xcodegen xcbeautify
       # The smoke suite takes a booted simulator from its environment and does
@@ -155,6 +168,10 @@ jobs:
     timeout-minutes: 90
     steps:
       - uses: actions/checkout@v5
+      # The runner image leaves Spotlight on. Nothing here searches with it,
+      # and its indexer competes for CPU with everything the job writes.
+      - name: Turn off Spotlight indexing
+        run: sudo mdutil -a -i off || true
       - name: Install tools
         run: brew install xcodegen protobuf xcbeautify
       # build.sh compiles both protoc plugins from source on first run;
@@ -217,6 +234,10 @@ jobs:
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v5
+      # The runner image leaves Spotlight on. Nothing here searches with it,
+      # and its indexer competes for CPU with everything the job writes.
+      - name: Turn off Spotlight indexing
+        run: sudo mdutil -a -i off || true
       - uses: actions/setup-python@v6
         with:
           python-version: '3.12'
