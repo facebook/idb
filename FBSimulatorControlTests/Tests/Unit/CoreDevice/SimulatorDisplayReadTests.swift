@@ -296,7 +296,7 @@ final class SimulatorDisplayReadTests: XCTestCase {
     XCTAssertEqual(report([cover, inner]), .transitioning)
     XCTAssertEqual(resolution([cover, inner]), .transitioning)
     XCTAssertEqual(
-      SimulatorDisplayError.transitioning.localizedDescription, "Invalid simulator CoreDevice response: Layout and backlight activity disagree")
+      SimulatorDisplayError.transitioning.localizedDescription, "Simulator display is still changing: layout has moved to a display that is not lit yet")
     xpc_dictionary_set_bool(inner, "active", true)
     XCTAssertEqual(try selected([cover, inner]).uniqueID, "inner")
   }

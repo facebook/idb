@@ -129,7 +129,7 @@ public enum SimulatorDisplayError: Error, LocalizedError {
     switch self {
     case let .screensNotReported(seconds): "Simulator did not report its displays within \(seconds) seconds"
     case .changed: "Simulator display changed during the operation"
-    case .transitioning: "Invalid simulator CoreDevice response: Layout and backlight activity disagree"
+    case .transitioning: "Simulator display is still changing: layout has moved to a display that is not lit yet"
     }
   }
 }
