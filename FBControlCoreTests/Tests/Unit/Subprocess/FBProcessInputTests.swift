@@ -43,7 +43,6 @@ final class FBProcessInputTests: XCTestCase {
 
     consumer.consumeData(Data("after".utf8))
 
-    // BUG: bytes written after detach are buffered for an attach that never comes — flipped in the following commit
-    XCTAssertEqual(input.value(forKey: "pendingData") as? Data, Data("after".utf8))
+    XCTAssertNil(input.value(forKey: "pendingData"))
   }
 }

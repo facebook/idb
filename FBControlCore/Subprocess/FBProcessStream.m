@@ -948,6 +948,8 @@ static NSTimeInterval const ProcessDetachDrainTimeout = 4;
 // What is consumed before the pipe exists, delivered once it is attached. Guarded by @synchronized(self), as is `writer`.
 @property (nullable, nonatomic, readwrite, strong) NSMutableData *pendingData;
 @property (nonatomic, readwrite, assign) BOOL pendingEndOfFile;
+// Once detached no attach follows, so later writes are dropped rather than held for one.
+@property (nonatomic, readwrite, assign) BOOL detached;
 
 @end
 
@@ -1107,6 +1109,7 @@ static NSTimeInterval const ProcessDetachDrainTimeout = 4;
              }
              @synchronized(self) {
                self.writer = writer;
+               self.detached = NO;
                NSData *pendingData = self.pendingData;
                if (pendingData) {
                  [writer consumeData:pendingData];
@@ -1129,6 +1132,9 @@ static NSTimeInterval const ProcessDetachDrainTimeout = 4;
            notifyOfCompletion:^(id _) {
              @synchronized(self) {
                self.writer = nil;
+               self.detached = YES;
+               self.pendingData = nil;
+               self.pendingEndOfFile = NO;
              }
            }]
           named:[NSString stringWithFormat:@"Detach %@", self.description]];
@@ -1143,6 +1149,9 @@ static NSTimeInterval const ProcessDetachDrainTimeout = 4;
       [self.writer consumeData:data];
       return;
     }
+    if (self.detached) {
+      return;
+    }
     if (!self.pendingData) {
       self.pendingData = [NSMutableData data];
     }
@@ -1155,6 +1164,9 @@ static NSTimeInterval const ProcessDetachDrainTimeout = 4;
   @synchronized(self) {
     if (self.writer) {
       [self.writer consumeEndOfFile];
+      return;
+    }
+    if (self.detached) {
       return;
     }
     self.pendingEndOfFile = YES;
