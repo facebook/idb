@@ -58,6 +58,11 @@ private func target(_ values: [xpc_object_t]) throws -> SimulatorDisplayTarget {
   return target
 }
 
+private func selected(_ values: [xpc_object_t]) throws -> SimulatorDisplay {
+  guard case let .selected(display) = try target(values) else { throw Untargeted(resolution: resolution(values)) }
+  return display
+}
+
 private func assertFallback(_ resolution: SimulatorDisplayResolution, _ message: String = "", file: StaticString = #filePath, line: UInt = #line) {
   guard case .fallback = resolution else { return XCTFail("Expected a fallback, got \(resolution) \(message)", file: file, line: line) }
 }
@@ -203,17 +208,21 @@ final class SimulatorDisplayReadTests: XCTestCase {
     guard case let .displays(displays) = report([]) else {
       return XCTFail("An empty current report is not a legacy provider")
     }
-    XCTAssertThrowsError(try SimulatorDisplayCommands.activeIntegratedDisplay(in: displays))
+    XCTAssertEqual(displays, [])
+    XCTAssertEqual(resolution([]), .fallback(.noActiveIntegratedDisplay))
   }
 
   /// The shape tvOS reports: its only display is an external TVOut with backlight state but no layout activity.
   func testReportWithOnlyAnExternalDisplayHasNoActiveIntegratedDisplay() throws {
-    for state in ["off", "unknown"] {
+    let fallbacks: [String: SimulatorDisplayFallback] = [
+      "off": .noActiveIntegratedDisplay, "unknown": .legacyIntegratedDisplays(count: 0),
+    ]
+    for (state, fallback) in fallbacks {
       let tvOut = displayValue(id: "TVOut", active: false, primary: true)
       xpc_dictionary_set_value(tvOut, "active", nil)
       xpc_dictionary_set_string(tvOut, "backlightState", state)
       xpc_dictionary_set_value(tvOut, "type", SimulatorCoreDevice.dictionary(["external": SimulatorCoreDevice.dictionary([:])]))
-      XCTAssertThrowsError(try SimulatorDisplayCommands.activeIntegratedDisplay(in: displays([tvOut])), state)
+      XCTAssertEqual(resolution([tvOut]), .fallback(fallback), state)
     }
   }
 
@@ -243,7 +252,6 @@ final class SimulatorDisplayReadTests: XCTestCase {
       "invalid record": [unscaled],
     ]
     for (shape, values) in reports {
-      XCTAssertThrowsError(try SimulatorDisplayCommands.activeIntegratedDisplay(in: displays(values)), shape)
       assertFallback(resolution(values), shape)
     }
   }
@@ -267,7 +275,7 @@ final class SimulatorDisplayReadTests: XCTestCase {
       for value in [cover, inner] { xpc_dictionary_set_value(value, "active", nil) }
       xpc_dictionary_set_string(cover, "backlightState", "off")
       xpc_dictionary_set_string(inner, "backlightState", state)
-      let selected = try SimulatorDisplayCommands.activeIntegratedDisplay(in: displays([cover, inner]))
+      let selected = try selected([cover, inner])
       XCTAssertEqual(selected.uniqueID, "inner")
       XCTAssertEqual(selected.activitySource, .backlight)
       XCTAssertNil(selected.reportedActivity)
@@ -293,7 +301,7 @@ final class SimulatorDisplayReadTests: XCTestCase {
     XCTAssertEqual(
       SimulatorDisplayError.transitioning.localizedDescription, "Invalid simulator CoreDevice response: Layout and backlight activity disagree")
     xpc_dictionary_set_bool(inner, "active", true)
-    let selected = try SimulatorDisplayCommands.activeIntegratedDisplay(in: displays([cover, inner]))
+    let selected = try selected([cover, inner])
     XCTAssertEqual(selected.activitySource, .layout)
     XCTAssertEqual(selected.reportedActivity, true)
   }
@@ -309,11 +317,10 @@ final class SimulatorDisplayReadTests: XCTestCase {
   }
 
   func testExplicitActivitySelectsInnerDespiteNonemptyPrimaryBounds() throws {
-    let selected = try SimulatorDisplayCommands.activeIntegratedDisplay(
-      in: displays([
-        displayValue(id: "cover", active: false, primary: true),
-        displayValue(id: "inner", active: true, rotation: "rot90"),
-      ]))
+    let selected = try selected([
+      displayValue(id: "cover", active: false, primary: true),
+      displayValue(id: "inner", active: true, rotation: "rot90"),
+    ])
     XCTAssertEqual(selected.uniqueID, "inner")
     XCTAssertEqual(selected.size, CGSize(width: 2853, height: 2007))
     XCTAssertEqual(selected.scale, 3)
@@ -328,8 +335,7 @@ final class SimulatorDisplayReadTests: XCTestCase {
 
   func testAmbiguousAndMissingActiveIntegratedDisplaysFail() throws {
     let values = [displayValue(id: "cover", active: true), displayValue(id: "inner", active: true)]
-    XCTAssertThrowsError(try SimulatorDisplayCommands.activeIntegratedDisplay(in: displays(values)))
-    XCTAssertThrowsError(try SimulatorDisplayCommands.activeIntegratedDisplay(in: []))
+    XCTAssertEqual(resolution(values), .fallback(.ambiguousActiveDisplays(["cover", "inner"])))
     assertFailed(report([values[0], values[0]]))
   }
 

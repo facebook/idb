@@ -133,8 +133,6 @@ public struct SimulatorDisplay: Equatable, Sendable {
 }
 
 public enum SimulatorDisplayError: Error, LocalizedError {
-  case noActiveIntegratedDisplay
-  case ambiguousActiveDisplays([String])
   case changed
   /// Layout has moved to another display whose backlight has not caught up, as after a hinge change.
   case transitioning
@@ -143,8 +141,6 @@ public enum SimulatorDisplayError: Error, LocalizedError {
   public var errorDescription: String? {
     switch self {
     case let .screensNotReported(seconds): "Simulator did not report its displays within \(seconds) seconds"
-    case .noActiveIntegratedDisplay: "Simulator has no active integrated display"
-    case let .ambiguousActiveDisplays(ids): "Simulator has multiple active integrated displays: \(ids.joined(separator: ", "))"
     case .changed: "Simulator display changed during the operation"
     case .transitioning: "Invalid simulator CoreDevice response: Layout and backlight activity disagree"
     }
@@ -203,24 +199,5 @@ public final class SimulatorDisplayCommands: DisplayCommands, @unchecked Sendabl
   private func target() throws -> Simulator {
     guard let simulator else { throw WeakTargetError.simulator }
     return simulator
-  }
-
-  public func activeIntegratedDisplay() async throws -> SimulatorDisplay {
-    switch try await report() {
-    case let .displays(displays): return try Self.activeIntegratedDisplay(in: displays)
-    case .legacy: throw SimulatorDisplayInteractionError.unsupportedCapability("display activity")
-    case .transitioning: throw SimulatorDisplayError.transitioning
-    case let .failed(error): throw error
-    }
-  }
-
-  static func activeIntegratedDisplay(in displays: [SimulatorDisplay]) throws -> SimulatorDisplay {
-    guard !displays.contains(where: { $0.isIntegrated && $0.activity == .unknown }) else {
-      throw SimulatorDisplayInteractionError.unsupportedCapability("integrated display activity")
-    }
-    let active = displays.filter { $0.isActive && $0.isIntegrated }
-    guard let display = active.first else { throw SimulatorDisplayError.noActiveIntegratedDisplay }
-    guard active.count == 1 else { throw SimulatorDisplayError.ambiguousActiveDisplays(active.map(\.uniqueID)) }
-    return display
   }
 }
