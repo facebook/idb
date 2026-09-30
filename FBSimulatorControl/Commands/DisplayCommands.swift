@@ -57,6 +57,9 @@ enum SimulatorDisplayResolution: Equatable, Sendable {
 enum SimulatorDisplayFallback: Equatable, Sendable {
   /// The runtime does not report displays.
   case unreported(String)
+  /// The runtime reports displays, but the report cannot select one: it failed, or it does not say which
+  /// integrated display is active.
+  case undetermined(String)
 }
 
 /// A display snapshot and the accessibility identity that routes to it.
@@ -133,6 +136,15 @@ extension DisplayCommands {
       return .target(try await interactionTarget())
     } catch let SimulatorCoreDeviceError.unsupported(detail) {
       return .fallback(.unreported(detail))
+    } catch let error as SimulatorCoreDeviceError {
+      return .fallback(.undetermined(error.localizedDescription))
+    } catch let SimulatorDisplayInteractionError.unsupportedCapability(detail) {
+      return .fallback(.undetermined(detail))
+    } catch let error as SimulatorDisplayError {
+      switch error {
+      case .noActiveIntegratedDisplay, .ambiguousActiveDisplays: return .fallback(.undetermined(error.localizedDescription))
+      case .changed, .transitioning, .screensNotReported: throw error
+      }
     }
   }
 

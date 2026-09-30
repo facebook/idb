@@ -76,7 +76,7 @@ final class DisplayCommandsTests: XCTestCase {
     XCTAssertEqual(resolved, .fallback(.unreported("displayinfo")))
   }
 
-  func testRuntimeThatCannotSayWhichDisplayIsTargetedFailsTheInteraction() async {
+  func testRuntimeThatCannotSayWhichDisplayIsTargetedFallsBack() async throws {
     let undetermined: [any Error] = [
       SimulatorCoreDeviceError.unavailable("displayinfo"),
       SimulatorCoreDeviceError.timedOut,
@@ -86,15 +86,18 @@ final class DisplayCommandsTests: XCTestCase {
       SimulatorDisplayError.noActiveIntegratedDisplay,
       SimulatorDisplayError.ambiguousActiveDisplays(["cover", "inner"]),
     ]
-    for error in undetermined {
-      let displays = DisplayCommandsDouble([.failure(error)])
-      // BUG: throws instead of falling back to the main display — flipped in the following commit
-      do {
-        _ = try await displays.resolveDisplay()
-        XCTFail("Expected \(error) to fail the interaction")
-      } catch let thrown {
-        XCTAssertEqual(String(describing: thrown), String(describing: error))
-      }
+    let fallbacks: [SimulatorDisplayResolution] = [
+      .fallback(.undetermined(SimulatorCoreDeviceError.unavailable("displayinfo").localizedDescription)),
+      .fallback(.undetermined(SimulatorCoreDeviceError.timedOut.localizedDescription)),
+      .fallback(.undetermined(SimulatorCoreDeviceError.malformed("Unknown backlight state").localizedDescription)),
+      .fallback(.undetermined("integrated display activity")),
+      .fallback(.undetermined("unambiguous legacy integrated display selection")),
+      .fallback(.undetermined(SimulatorDisplayError.noActiveIntegratedDisplay.localizedDescription)),
+      .fallback(.undetermined(SimulatorDisplayError.ambiguousActiveDisplays(["cover", "inner"]).localizedDescription)),
+    ]
+    for (error, fallback) in zip(undetermined, fallbacks) {
+      let resolved = try await DisplayCommandsDouble([.failure(error)]).resolveDisplay()
+      XCTAssertEqual(resolved, fallback)
     }
   }
 
