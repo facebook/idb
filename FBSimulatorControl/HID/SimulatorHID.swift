@@ -13,7 +13,7 @@ import Foundation
 /**
  Input for a Simulator: `SimulatorHIDEvent`s (touch, two-finger touch, button, remote button, keyboard,
  trackpad, delays and composites of them), delivered through a pluggable `SimulatorHIDTransport`
- (negotiated between `dtuhidd` and the legacy Indigo client).
+ (`dtuhidd` or the legacy Indigo client, whichever the toolchain supports).
 
  Device actions — rotation, the hinge, lock, shake, the in-call status bar — are not input and are
  commands on the `Simulator` (`orientation`, `hinge`, `hardware`, `statusBar`).

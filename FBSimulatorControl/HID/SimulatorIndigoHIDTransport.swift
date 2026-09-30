@@ -11,7 +11,8 @@ import CoreGraphics
 import Foundation
 
 /**
- The legacy HID transport (IndigoHIDRegistrationPort), used where `dtuhidd` is absent or unreachable.
+ The legacy HID transport (IndigoHIDRegistrationPort), the default on toolchains that predate `dtuhidd`.
+ On later toolchains only the tvOS trackpad still works over it.
 
  Builds `IndigoMessage` payloads with `SimulatorIndigoHID` and delivers them through the runtime-only
  `SimDeviceLegacyHIDClient` (owned by `SimulatorIndigoHIDClient`). Guest-side:

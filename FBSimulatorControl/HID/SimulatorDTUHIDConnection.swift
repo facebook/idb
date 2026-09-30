@@ -28,7 +28,7 @@ enum DTUHIDTiming {
   /// the same throttled job.
   static let livenessRetryBackoff = Duration.seconds(4)
 
-  /// Liveness attempts before the transport is reported unreachable and the caller falls back.
+  /// Liveness attempts before the transport is reported unreachable.
   ///
   /// Sized from a measured recovery: a daemon that aborted repeatedly through a slow boot answered
   /// roughly 19s after the boot finished, launchd's exponential respawn throttle being what that
