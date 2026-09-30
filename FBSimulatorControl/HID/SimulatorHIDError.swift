@@ -26,8 +26,8 @@ public enum SimulatorHIDError: Error, LocalizedError {
   case machSendFailed(port: mach_port_t, detail: String, code: kern_return_t)
   /// The SimulatorKit framework executable could not be opened.
   case simulatorKitUnavailable
-  /// The legacy keyboard HID service has been handed over to `dtuhidd` (Xcode 27+).
-  case keyboardSuppressedByDTUHIDD
+  /// The guest drops the named kind of legacy Indigo input (Xcode 27+).
+  case legacyInputSuppressed(operation: String)
   /// A primitive is not (yet) implemented on the DTUHID transport.
   case notImplementedOnDTUHIDTransport(operation: String)
   /// The named `dtuhidd` service could not be looked up in the simulator's bootstrap namespace.
@@ -70,9 +70,9 @@ public enum SimulatorHIDError: Error, LocalizedError {
       return "mach_msg to PurpleWorkspacePort \(port) failed: \(detail) (kr=0x\(String(code, radix: 16)))"
     case .simulatorKitUnavailable:
       return "Could not open the SimulatorKit framework executable"
-    case .keyboardSuppressedByDTUHIDD:
+    case let .legacyInputSuppressed(operation):
       return
-        "Keyboard HID is suppressed: CoreSimulator-1155.4 (Xcode 27) and later hand the legacy keyboard service over to dtuhidd for the lifetime of the boot. Use the DTUHID transport, which is the default on this CoreSimulator."
+        "\(operation) over Indigo is suppressed: CoreSimulator-1155.4 (Xcode 27) and later drop legacy Indigo \(operation.lowercased()) events for the lifetime of the boot. Use the DTUHID transport, which is the default on this CoreSimulator."
     case let .notImplementedOnDTUHIDTransport(operation):
       return "\(operation) is not implemented on the DTUHID transport"
     case let .dtuhidServiceUnavailable(name, _):

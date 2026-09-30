@@ -30,10 +30,10 @@ actor SimulatorIndigoHIDTransport {
   private let mainScreenSize: CGSize
   /// The scale of the main screen.
   private let mainScreenScale: Float
-  /// Whether the guest has handed its legacy keyboard HID over to `dtuhidd`, captured from
-  /// `Simulator.isLegacyKeyboardSuppressed` when the transport is built. `sendKeyboard` fails loudly on
-  /// it rather than typing into the void; the DTUHID transport is the workaround.
-  private let legacyKeyboardSuppressed: Bool
+  /// Whether the guest drops legacy input, captured from `Simulator.isLegacyInputSuppressed` when the
+  /// transport is built. `sendKeyboard` fails loudly on it rather than typing into the void; the DTUHID
+  /// transport is the workaround.
+  private let legacyInputSuppressed: Bool
   /// The product family of the target, captured at construction. Touchscreen touches are a no-op on
   /// tvOS (it has no digitizer), so the touch primitives reject `AppleTV` rather than failing silently.
   private let productFamily: ProductFamily
@@ -47,7 +47,7 @@ actor SimulatorIndigoHIDTransport {
       indigo: try SimulatorIndigoHID(),
       mainScreenSize: simulator.device.deviceType.mainScreenSize,
       mainScreenScale: simulator.device.deviceType.mainScreenScale,
-      legacyKeyboardSuppressed: simulator.isLegacyKeyboardSuppressed,
+      legacyInputSuppressed: simulator.isLegacyInputSuppressed,
       productFamily: simulator.productFamily)
   }
 
@@ -56,14 +56,14 @@ actor SimulatorIndigoHIDTransport {
     indigo: SimulatorIndigoHID,
     mainScreenSize: CGSize,
     mainScreenScale: Float,
-    legacyKeyboardSuppressed: Bool,
+    legacyInputSuppressed: Bool,
     productFamily: ProductFamily
   ) {
     self.indigoClient = indigoClient
     self.indigo = indigo
     self.mainScreenSize = mainScreenSize
     self.mainScreenScale = mainScreenScale
-    self.legacyKeyboardSuppressed = legacyKeyboardSuppressed
+    self.legacyInputSuppressed = legacyInputSuppressed
     self.productFamily = productFamily
   }
 
@@ -113,10 +113,10 @@ actor SimulatorIndigoHIDTransport {
   }
 
   func sendKeyboard(direction: SimulatorHIDDirection, keyCode: UInt32) async throws {
-    // On Xcode 27 (CoreSimulator-1155.4)+ the guest disconnects the legacy `ExternalKeyboardService`
-    // in favour of dtuhidd, so legacy keyboard events deliver byte-correctly but produce no text.
-    if legacyKeyboardSuppressed {
-      throw SimulatorHIDError.keyboardSuppressedByDTUHIDD
+    // On Xcode 27 (CoreSimulator-1155.4)+ legacy keyboard events deliver byte-correctly but produce no
+    // text, and nothing observable from here restores them.
+    if legacyInputSuppressed {
+      throw SimulatorHIDError.legacyInputSuppressed(operation: "Keyboard")
     }
     try await indigoClient.send(indigo.keyboard(with: direction, keyCode: keyCode))
   }

@@ -51,16 +51,16 @@ struct SimulatorHIDTransportSelectionTests {
     #expect(!SimulatorHIDError.touchUnsupportedOnAppleTV.isDTUHIDUnreachable)
   }
 
-  // MARK: - Legacy keyboard suppression
+  // MARK: - Legacy input suppression
 
-  @Test("A toolchain without dtuhidd never suppresses the legacy keyboard")
-  func legacyKeyboardIsNotSuppressedBeforeXcode27() {
-    #expect(!SimulatorHIDTransportSelection.isLegacyKeyboardSuppressed(coreSimulatorVersion: "1140.0"))
+  @Test("A toolchain without dtuhidd never suppresses legacy input")
+  func legacyInputIsNotSuppressedBeforeXcode27() {
+    #expect(!SimulatorHIDTransportSelection.isLegacyInputSuppressed(coreSimulatorVersion: "1140.0"))
   }
 
-  @Test("A toolchain that ships dtuhidd suppresses the legacy keyboard")
-  func legacyKeyboardIsSuppressedFromXcode27() {
-    #expect(SimulatorHIDTransportSelection.isLegacyKeyboardSuppressed(coreSimulatorVersion: "1169.1"))
+  @Test("A toolchain that ships dtuhidd suppresses legacy input")
+  func legacyInputIsSuppressedFromXcode27() {
+    #expect(SimulatorHIDTransportSelection.isLegacyInputSuppressed(coreSimulatorVersion: "1169.1"))
   }
 
   // MARK: - Default transport
