@@ -132,18 +132,6 @@ public struct SimulatorDisplay: Equatable, Sendable {
   }
 }
 
-/// What one `displayinfo` read says about the simulator's displays, before anything is selected from it.
-enum SimulatorDisplayReport: Equatable, Sendable {
-  /// Every display, identified, with its activity.
-  case displays([SimulatorDisplay])
-  /// A runtime that reports no display activity. The geometry of each integrated display, which may not be
-  /// identified.
-  case legacy(integrated: [SimulatorDisplayGeometry])
-  /// Layout has moved to a display whose backlight has not caught up, as after a hinge change.
-  case transitioning
-  case failed(SimulatorCoreDeviceError)
-}
-
 public enum SimulatorDisplayError: Error, LocalizedError {
   case noActiveIntegratedDisplay
   case ambiguousActiveDisplays([String])
