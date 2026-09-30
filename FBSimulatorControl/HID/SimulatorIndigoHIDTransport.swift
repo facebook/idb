@@ -31,8 +31,8 @@ actor SimulatorIndigoHIDTransport {
   /// The scale of the main screen.
   private let mainScreenScale: Float
   /// Whether the guest drops legacy input, captured from `Simulator.isLegacyInputSuppressed` when the
-  /// transport is built. `sendKeyboard` fails loudly on it rather than typing into the void; the DTUHID
-  /// transport is the workaround.
+  /// transport is built. Touch, button and keyboard sends fail loudly on it rather than reporting
+  /// success for input that has no effect; the DTUHID transport is the workaround.
   private let legacyInputSuppressed: Bool
   /// The product family of the target, captured at construction. Touchscreen touches are a no-op on
   /// tvOS (it has no digitizer), so the touch primitives reject `AppleTV` rather than failing silently.
@@ -79,6 +79,7 @@ actor SimulatorIndigoHIDTransport {
     guard productFamily.hasTouchscreen else {
       throw SimulatorHIDError.touchUnsupportedOnAppleTV
     }
+    try requireLegacyInput("Touch")
     try requireUnnamedDisplay(display)
     let point = try display?.geometry.unrotatedPoint(from: CGPoint(x: x, y: y)) ?? CGPoint(x: x, y: y)
     try await indigoClient.send(
@@ -92,6 +93,7 @@ actor SimulatorIndigoHIDTransport {
     guard productFamily.hasTouchscreen else {
       throw SimulatorHIDError.touchUnsupportedOnAppleTV
     }
+    try requireLegacyInput("Touch")
     try requireUnnamedDisplay(display)
     let first = try display?.geometry.unrotatedPoint(from: finger1) ?? finger1
     let second = try display?.geometry.unrotatedPoint(from: finger2) ?? finger2
@@ -102,6 +104,15 @@ actor SimulatorIndigoHIDTransport {
         direction: direction, finger1: first, finger2: second))
   }
 
+  /// On Xcode 27 (CoreSimulator-1155.4)+ button and keyboard events deliver byte-correctly but have no
+  /// effect, and touch is dropped unpredictably. Nothing observable from here tells a delivered send from
+  /// a dropped one, so none is reported as a success.
+  private func requireLegacyInput(_ operation: String) throws {
+    if legacyInputSuppressed {
+      throw SimulatorHIDError.legacyInputSuppressed(operation: operation)
+    }
+  }
+
   private func requireUnnamedDisplay(_ display: SimulatorHIDDisplay?) throws {
     if case .selected = display {
       throw SimulatorDisplayInteractionError.unsupportedCapability("explicit display routing over Indigo")
@@ -109,15 +120,12 @@ actor SimulatorIndigoHIDTransport {
   }
 
   func sendButton(direction: SimulatorHIDDirection, button: SimulatorHIDButton) async throws {
+    try requireLegacyInput("Button")
     try await indigoClient.send(indigo.button(with: direction, button: button))
   }
 
   func sendKeyboard(direction: SimulatorHIDDirection, keyCode: UInt32) async throws {
-    // On Xcode 27 (CoreSimulator-1155.4)+ legacy keyboard events deliver byte-correctly but produce no
-    // text, and nothing observable from here restores them.
-    if legacyInputSuppressed {
-      throw SimulatorHIDError.legacyInputSuppressed(operation: "Keyboard")
-    }
+    try requireLegacyInput("Keyboard")
     try await indigoClient.send(indigo.keyboard(with: direction, keyCode: keyCode))
   }
 
@@ -127,7 +135,8 @@ actor SimulatorIndigoHIDTransport {
     try await sendKeyboard(direction: direction, keyCode: button.keyboardUsage)
   }
 
-  // No tvOS guard — the trackpad is exactly what Apple TV targets need (unlike the touchscreen).
+  // No tvOS guard — the trackpad is exactly what Apple TV targets need (unlike the touchscreen). No
+  // suppression guard either: the tvOS guest still honours Indigo trackpad events on Xcode 27.
   func sendTrackpad(point: SimulatorTrackpadPoint, phase: SimulatorTrackpadPhase) async throws {
     try await indigoClient.send(indigo.trackpad(point: CGPoint(x: point.x, y: point.y), phase: phase))
   }

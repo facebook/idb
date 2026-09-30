@@ -92,27 +92,39 @@ struct SimulatorIndigoHIDTransportTests {
   @Test("Touch on a toolchain whose guest drops legacy input")
   func touchWhenSuppressed() async throws {
     let transport = try makeTransport(legacyInputSuppressed: true)
-    // BUG: the guest drops this touch, but it is sent and reported as delivered — flipped in the
-    // following commit.
-    try await transport.sendTouch(direction: .down, x: 100, y: 200, edge: .none)
-    #expect(delivered == 1)
+    let error = await #expect(throws: SimulatorHIDError.self) {
+      try await transport.sendTouch(direction: .down, x: 100, y: 200, edge: .none)
+    }
+    guard case .legacyInputSuppressed(operation: "Touch") = error else {
+      Issue.record("Unexpected error \(String(describing: error))")
+      return
+    }
+    #expect(delivered == 0)
   }
 
   @Test("Two-finger touch on a toolchain whose guest drops legacy input")
   func twoFingerTouchWhenSuppressed() async throws {
     let transport = try makeTransport(legacyInputSuppressed: true)
-    // BUG: the guest drops this touch, but it is sent and reported as delivered — flipped in the
-    // following commit.
-    try await transport.sendTwoFingerTouch(direction: .down, finger1: CGPoint(x: 100, y: 200), finger2: CGPoint(x: 200, y: 300))
-    #expect(delivered == 1)
+    let error = await #expect(throws: SimulatorHIDError.self) {
+      try await transport.sendTwoFingerTouch(direction: .down, finger1: CGPoint(x: 100, y: 200), finger2: CGPoint(x: 200, y: 300))
+    }
+    guard case .legacyInputSuppressed(operation: "Touch") = error else {
+      Issue.record("Unexpected error \(String(describing: error))")
+      return
+    }
+    #expect(delivered == 0)
   }
 
   @Test("Button on a toolchain whose guest drops legacy input")
   func buttonWhenSuppressed() async throws {
     let transport = try makeTransport(legacyInputSuppressed: true)
-    // BUG: the guest drops this button, but it is sent and reported as delivered — flipped in the
-    // following commit.
-    try await transport.sendButton(direction: .down, button: .homeButton)
-    #expect(delivered == 1)
+    let error = await #expect(throws: SimulatorHIDError.self) {
+      try await transport.sendButton(direction: .down, button: .homeButton)
+    }
+    guard case .legacyInputSuppressed(operation: "Button") = error else {
+      Issue.record("Unexpected error \(String(describing: error))")
+      return
+    }
+    #expect(delivered == 0)
   }
 }

@@ -37,7 +37,9 @@ enum SimulatorHIDTransportSelection {
   ///
   /// A property of the CoreSimulator version alone. From 1155.4 the guest drops it for the whole boot,
   /// independent of `dtuhidd` residency and of which other HID clients (Device Hub included) are
-  /// attached; restarting `backboardd` does not restore it.
+  /// attached; restarting `backboardd` does not restore it. Button and keyboard events are always
+  /// dropped. Touch is unreliable: dropped on some boots and intermittently within one. The tvOS
+  /// trackpad is the exception.
   static func isLegacyInputSuppressed(coreSimulatorVersion: String?) -> Bool {
     shipsDTUHID(coreSimulatorVersion: coreSimulatorVersion)
   }

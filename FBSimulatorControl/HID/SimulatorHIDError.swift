@@ -72,7 +72,7 @@ public enum SimulatorHIDError: Error, LocalizedError {
       return "Could not open the SimulatorKit framework executable"
     case let .legacyInputSuppressed(operation):
       return
-        "\(operation) over Indigo is suppressed: CoreSimulator-1155.4 (Xcode 27) and later drop legacy Indigo \(operation.lowercased()) events for the lifetime of the boot. Use the DTUHID transport, which is the default on this CoreSimulator."
+        "\(operation) over Indigo is suppressed: CoreSimulator-1155.4 (Xcode 27) and later do not reliably deliver legacy Indigo \(operation.lowercased()) events. Use the DTUHID transport, which is the default on this CoreSimulator."
     case let .notImplementedOnDTUHIDTransport(operation):
       return "\(operation) is not implemented on the DTUHID transport"
     case let .dtuhidServiceUnavailable(name, _):
