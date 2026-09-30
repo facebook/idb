@@ -47,7 +47,7 @@ public struct SimulatorDisplayGeometry: Equatable, Sendable {
 }
 
 /// A legacy provider can describe its sole integrated display without identifying it.
-public enum SimulatorInteractionDisplay: Equatable, Sendable {
+enum SimulatorInteractionDisplay: Equatable, Sendable {
   case identified(SimulatorDisplay)
   case legacy(SimulatorDisplayGeometry)
 
@@ -59,7 +59,7 @@ public enum SimulatorInteractionDisplay: Equatable, Sendable {
     }
   }
 
-  public var geometry: SimulatorDisplayGeometry {
+  var geometry: SimulatorDisplayGeometry {
     switch self {
     case let .identified(display): display.geometry
     case let .legacy(geometry): geometry
