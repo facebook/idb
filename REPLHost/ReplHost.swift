@@ -14,7 +14,10 @@ import SwiftUI
 struct ReplHost: App {
   var body: some Scene {
     WindowGroup {
-      if AccessibilityFixture.isRequested {
+      if let delay = SlowAccessibilityFixture.requestedDelay {
+        SlowAccessibilityFixture(delay: delay)
+          .ignoresSafeArea()
+      } else if AccessibilityFixture.isRequested {
         AccessibilityFixture()
           .ignoresSafeArea()
       } else {
