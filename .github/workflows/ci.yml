@@ -305,9 +305,15 @@ jobs:
         run: |
           mkdir -p "$RUNNER_TEMP/artifacts"
           tar -C "$RUNNER_TEMP/artifacts" -xzf idb-companion-distribution.tgz
+      # The runner image leaves Spotlight on, and its indexer takes more than a
+      # core while the freshly booted simulator and the tests are running.
+      # Nothing here searches with Spotlight. The `.noindex` suffix below keeps
+      # the device set out of the index even if this step fails.
+      - name: Turn off Spotlight indexing
+        run: sudo mdutil -a -i off || true
       # Export DEVICE_UDID and DEVICE_SET_PATH for a dedicated simulator.
       - name: Provision a simulator
-        run: python3 -m CI.provision_simulator --name end-to-end-provided --device-set "$RUNNER_TEMP/end-to-end-device-set" >> "$GITHUB_ENV"
+        run: python3 -m CI.provision_simulator --name end-to-end-provided --device-set "$RUNNER_TEMP/end-to-end-device-set.noindex" >> "$GITHUB_ENV"
       # Fail if a required simulator host service is unavailable. Record H.264
       # rather than the default HEVC: this run's video is what the website
       # publishes, and it is the encoding every browser decodes.
