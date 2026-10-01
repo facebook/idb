@@ -173,6 +173,61 @@ final class ApplicationArchiveTests: XCTestCase {
     XCTAssertEqual(events.map(\.phase), [.started, .completed])
   }
 
+  private func zipStream(streaming streamed: Data, spooling spooled: Data, spoolError: Error? = nil) throws -> InstallSource {
+    let spoolPath = path("spool-\(UUID().uuidString).ipa")
+    try spooled.write(to: URL(fileURLWithPath: spoolPath))
+    let input = FBProcessInput<NSData>(from: streamed).retyped(FBProcessInput<AnyObject>.self)
+    return .zipStream(input, spoolPath: spoolPath) {
+      if let spoolError {
+        throw spoolError
+      }
+    }
+  }
+
+  /// The spooled copy differs only in its identifier, which shows which of the
+  /// two the bundle was extracted from.
+  func testResolve_WhenGivenAZipStream_ExtractsItAsItArrivesAndRestoresWhatOnlyTheSpooledZipRecords() async throws {
+    let streamed = try makeZippedPayloadWithSymlink(identifier: "com.example.streamed")
+    let spooled = try makeZippedPayloadWithSymlink()
+
+    let (identifier, linkType, executablePermissions) = try await ApplicationArchive.withResolvedBundle(
+      from: try zipStream(streaming: streamed, spooling: spooled), temporaryDirectory: temporaryDirectory, logger: logger
+    ) { bundle in
+      let manager = FileManager.default
+      return (
+        bundle.identifier,
+        try manager.attributesOfItem(atPath: (bundle.path as NSString).appendingPathComponent("Link.plist"))[.type] as? FileAttributeType,
+        try manager.attributesOfItem(atPath: (bundle.path as NSString).appendingPathComponent("Sample"))[.posixPermissions] as? Int
+      )
+    }
+
+    XCTAssertEqual(identifier, "com.example.streamed")
+    XCTAssertEqual(linkType, .typeSymbolicLink)
+    XCTAssertEqual(executablePermissions, 0o755)
+  }
+
+  func testResolve_WhenAZipStreamCannotBeExtractedAsItArrives_ExtractsTheSpooledZip() async throws {
+    let zip = try makeZippedPayloadWithSymlink()
+
+    let (identifier, _, events) = try await resolve(try zipStream(streaming: Data("not a zip".utf8), spooling: zip))
+
+    XCTAssertEqual(identifier, "com.example.sample")
+    XCTAssertEqual(events.map(\.phase), [.started, .completed], "The fallback is part of the one extract stage")
+  }
+
+  func testResolve_WhenAZipStreamFailsToSpool_FailsWithTheSpoolError() async throws {
+    let zip = try makeZippedPayloadWithSymlink()
+    let spoolError = CocoaError(.fileWriteOutOfSpace)
+
+    try await assertResolveThrows(try zipStream(streaming: zip, spooling: zip, spoolError: spoolError)) { error in
+      guard case .extractionFailed(let underlying)? = error as? InstallError else {
+        XCTFail("Expected an extraction failure, got: \(error)")
+        return
+      }
+      XCTAssertEqual(underlying as? CocoaError, spoolError)
+    }
+  }
+
   // MARK: - Remote sources
 
   func testResolve_WhenGivenAURL_ReportsDownloadAndExtractProgress() async throws {
@@ -257,12 +312,24 @@ final class ApplicationArchiveTests: XCTestCase {
     XCTAssertEqual(linkType, .typeSymbolicLink)
   }
 
+  func testResolve_WhenAZipTransferFailsMidStream_FailsWithTheTransferError() async throws {
+    let zip = try makeZippedPayloadWithSymlink()
+    StubURLProtocol.behaviour = .truncate(statusCode: 200, body: zip, bytesBeforeFailure: zip.count / 2)
+
+    try await assertResolveThrows(.remoteURL(Self.stubbedURL), overStubbedNetwork: true) { error in
+      guard case .transferFailed? = error as? InstallError else {
+        XCTFail("Expected a transfer failure, got: \(error)")
+        return
+      }
+    }
+  }
+
   /// A zip laid out like an `.ipa` whose app holds `Link.plist -> Info.plist`.
-  private func makeZippedPayloadWithSymlink() throws -> Data {
+  private func makeZippedPayloadWithSymlink(identifier: String = "com.example.sample") throws -> Data {
     let root = path("zip-staging-\(UUID().uuidString)")
     let payload = (root as NSString).appendingPathComponent("Payload")
     try FileManager.default.createDirectory(atPath: payload, withIntermediateDirectories: true)
-    let app = try makeAppBundle("Sample.app", identifier: "com.example.sample")
+    let app = try makeAppBundle("Sample.app", identifier: identifier)
     let staged = (payload as NSString).appendingPathComponent("Sample.app")
     try FileManager.default.moveItem(atPath: app, toPath: staged)
     try FileManager.default.createSymbolicLink(

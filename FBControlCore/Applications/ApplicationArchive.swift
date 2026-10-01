@@ -144,9 +144,9 @@ public enum ApplicationArchive {
   /// complete file, so the download and extract stages overlap and each times
   /// against its own start.
   ///
-  /// A zip is the exception: it is written to `spoolPath` and extracted once
-  /// complete, since it records symlinks and permissions only in the central
-  /// directory at its end, which a reader of the transfer never reaches.
+  /// A zip is also written to `spoolPath`, since it records symlinks and
+  /// permissions only in the central directory at its end, which a reader of the
+  /// transfer never reaches.
   private static func downloadAndExtract(
     _ url: URL,
     to extractPath: String,
@@ -203,7 +203,7 @@ public enum ApplicationArchive {
         try await downloadCompleted()
         try await extraction
       case .spooled:
-        logger.log("Spooling the zip at \(url) to \(spoolPath) before extracting it")
+        logger.log("Spooling the zip at \(url) to \(spoolPath) as it is extracted")
         try await extractZipStream(
           download.input, spoolPath: spoolPath,
           spooled: {
@@ -215,9 +215,9 @@ public enum ApplicationArchive {
     }
   }
 
-  /// Extracts a zip from `spoolPath` once `spooled` returns. `input` carries the
-  /// same bytes as they arrive, but a reader of it never reaches the central
-  /// directory at the end, where a zip records symlinks and permissions.
+  /// Extracts a zip as it arrives, then applies what only the central directory
+  /// at its end records once the spooled copy is complete. A zip the stream
+  /// reader cannot handle is extracted again from the spooled copy.
   private static func extractZipStream(
     _ input: FBProcessInput<AnyObject>,
     spoolPath: String,
@@ -226,7 +226,27 @@ public enum ApplicationArchive {
     options: InstallOptions,
     logger: any ControlCoreLogger
   ) async throws {
+    var streamError: Error?
+    do {
+      try await ArchiveExtractors.default.extract(
+        .stream(input), to: extractPath, options: options.extractOptions, logger: logger)
+    } catch {
+      streamError = error
+    }
     try await spooled()
+    do {
+      if let streamError {
+        throw streamError
+      }
+      try ZipCentralDirectory(archiveAtPath: spoolPath).repair(extractedAt: extractPath)
+      return
+    } catch {
+      logger.log("Extracting the spooled zip at \(spoolPath), as extracting it as it arrived failed: \(error)")
+    }
+    // Best effort: whatever cannot be removed is overwritten, or fails the extraction with its own error.
+    for item in (try? FileManager.default.contentsOfDirectory(atPath: extractPath)) ?? [] {
+      try? FileManager.default.removeItem(atPath: (extractPath as NSString).appendingPathComponent(item))
+    }
     try await ArchiveExtractors.default.extract(
       .filePath(spoolPath), to: extractPath, options: options.extractOptions, logger: logger)
   }
@@ -254,7 +274,7 @@ public enum ApplicationArchive {
   }
 }
 
-/// Sends a download to a file if it is a zip, and on to the extractor otherwise,
+/// Sends a download on to the extractor, and to a file as well if it is a zip,
 /// deciding on the first bytes.
 // SAFETY: everything but `decision` and `spoolError` is touched only from the
 // download's serial delegate queue, after `forwardingTo` is called before the
@@ -317,7 +337,6 @@ private final class ZipSpoolingConsumer: NSObject, DataConsumer, @unchecked Send
       decide()
     }
     try? spool?.close()
-    // The extractor's pipe is closed even when the zip went to the spool.
     downstream?.consumeEndOfFile()
   }
 
@@ -340,9 +359,10 @@ private final class ZipSpoolingConsumer: NSObject, DataConsumer, @unchecked Send
   }
 
   private func write(_ data: Data, to route: Route) {
+    downstream?.consumeData(data)
     switch route {
     case .stream:
-      downstream?.consumeData(data)
+      return
     case .spooled:
       guard let spool else {
         return

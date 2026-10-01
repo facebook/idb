@@ -235,8 +235,8 @@ struct InstallMethodHandler: @unchecked Sendable {
     data.starts(with: zstdZipStreamMarker)
   }
 
-  /// A zip is spooled to disk before it is extracted, as its central directory
-  /// is at the end.
+  /// A zip is extracted as it arrives, and also spooled to disk, as its central
+  /// directory is at the end.
   private func installStreamedZip(
     initial: Data,
     requestStream: RequestStreamReader<Idb_InstallRequest>,
@@ -247,14 +247,27 @@ struct InstallMethodHandler: @unchecked Sendable {
     let archiveURL = try makeArchiveFile()
     defer { try? FileManager.default.removeItem(at: archiveURL) }
 
-    try await spool(initial: initial, requestStream: requestStream, to: archiveURL, telemetry: telemetry)
-    return try await commandExecutor.install_app_zip_stream(
-      FBProcessInput<OutputStream>.fromStream().retyped(FBProcessInput<AnyObject>.self),
-      spoolPath: archiveURL.path,
-      spooled: {},
-      make_debuggable: makeDebuggable,
-      override_modification_time: overrideModificationTime,
-      on_progress: telemetry.observe)
+    let input = FBProcessInput<OutputStream>.fromStream()
+    let (spooled, spoolCompletion) = AsyncThrowingStream<Never, Error>.makeStream()
+    async let receiving: Void = spool(initial: initial, requestStream: requestStream, to: archiveURL, teeingTo: input.contents, completing: spoolCompletion, telemetry: telemetry)
+    let artifact: InstalledArtifact
+    do {
+      artifact = try await commandExecutor.install_app_zip_stream(
+        input.retyped(FBProcessInput<AnyObject>.self),
+        spoolPath: archiveURL.path,
+        spooled: {
+          for try await _ in spooled {}
+        },
+        make_debuggable: makeDebuggable,
+        override_modification_time: overrideModificationTime,
+        on_progress: telemetry.observe)
+    } catch {
+      // The installer sees a failed receive only as a failed extraction.
+      try await receiving
+      throw error
+    }
+    try await receiving
+    return artifact
   }
 
   /// A zip is spooled to disk before it is installed, as its central directory is at the end.
@@ -289,19 +302,52 @@ struct InstallMethodHandler: @unchecked Sendable {
     initial: Data,
     requestStream: RequestStreamReader<Idb_InstallRequest>,
     to archiveURL: URL,
+    teeingTo output: OutputStream,
+    completing completion: AsyncThrowingStream<Never, Error>.Continuation,
+    telemetry: InstallTelemetry
+  ) async throws {
+    do {
+      try await spool(initial: initial, requestStream: requestStream, to: archiveURL, teeingTo: output, telemetry: telemetry)
+      completion.finish()
+    } catch {
+      completion.finish(throwing: error)
+      throw error
+    }
+  }
+
+  private func spool(
+    initial: Data,
+    requestStream: RequestStreamReader<Idb_InstallRequest>,
+    to archiveURL: URL,
+    teeingTo output: OutputStream? = nil,
     telemetry: InstallTelemetry
   ) async throws {
     let file = try FileHandle(forWritingTo: archiveURL)
+    var tee = output
+    tee?.open()
+    defer { tee?.close() }
     var receive = telemetry.startReceiving()
+    func append(_ data: Data) throws {
+      try file.write(contentsOf: data)
+      receive.count(data)
+      guard let stream = tee else {
+        return
+      }
+      do {
+        try write(data, to: stream)
+      } catch {
+        // The reader may finish before the end or fail; the spooled file carries on regardless.
+        stream.close()
+        tee = nil
+      }
+    }
     do {
-      try file.write(contentsOf: initial)
-      receive.count(initial)
+      try append(initial)
       for try await request in requestStream {
         guard let data = request.extractDataFrame() else {
           continue
         }
-        try file.write(contentsOf: data)
-        receive.count(data)
+        try append(data)
       }
       try file.close()
     } catch {
