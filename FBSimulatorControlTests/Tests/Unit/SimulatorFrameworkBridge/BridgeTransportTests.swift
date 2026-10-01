@@ -189,7 +189,7 @@ final class BridgeTransportTests: XCTestCase {
     for command: BridgeCommand in [.clearContacts, .dns(.clear), .accessibility(["verb": .string("perform"), "automationMode": .bool(true)])] {
       let connection = RecordingBridgeConnection(failures: 1)
       let factory = RecordingBridgeFactory([connection])
-      let transport = SimulatorFrameworkBridgePersistentTransport { try await factory.connect() }
+      let transport = SimulatorFrameworkBridgePersistentTransport(connector: factory)
       do {
         _ = try await transport.send(BridgeRequest(command: command))
         XCTFail("expected dropped response")
@@ -206,7 +206,7 @@ final class BridgeTransportTests: XCTestCase {
   func testReadRetriesOnceAndShutdownDiscardsARetainedConnection() async throws {
     let connection = RecordingBridgeConnection(failures: 1)
     let factory = RecordingBridgeFactory([connection])
-    let transport = SimulatorFrameworkBridgePersistentTransport { try await factory.connect() }
+    let transport = SimulatorFrameworkBridgePersistentTransport(connector: factory)
     _ = try await transport.send(BridgeRequest(command: .dns(.list)))
     let afterRetry = await factory.count
     XCTAssertEqual(afterRetry, 2)
@@ -221,7 +221,7 @@ final class BridgeTransportTests: XCTestCase {
   func testPersistentRejectsWrongIdentityWithoutReplayingAMutation() async throws {
     let connection = RecordingBridgeConnection(failures: 0, wrongID: true)
     let factory = RecordingBridgeFactory([connection])
-    let transport = SimulatorFrameworkBridgePersistentTransport { try await factory.connect() }
+    let transport = SimulatorFrameworkBridgePersistentTransport(connector: factory)
     do {
       _ = try await transport.send(BridgeRequest(command: .clearContacts))
       XCTFail("wrong response identity accepted")
@@ -235,7 +235,7 @@ final class BridgeTransportTests: XCTestCase {
   func testReadRetryIsBoundedAndReportedFailuresAreNotReplayed() async throws {
     let dropped = RecordingBridgeConnection(failures: 2)
     let factory = RecordingBridgeFactory([dropped])
-    let transport = SimulatorFrameworkBridgePersistentTransport { try await factory.connect() }
+    let transport = SimulatorFrameworkBridgePersistentTransport(connector: factory)
     do {
       _ = try await transport.send(BridgeRequest(command: .dns(.list)))
       XCTFail("two dropped responses must fail")
@@ -247,7 +247,7 @@ final class BridgeTransportTests: XCTestCase {
 
     let failure = BridgeResult(exitCode: 23, values: [.string("partial")])
     let reported = RecordingBridgeConnection(failures: 0, result: failure)
-    let responseTransport = SimulatorFrameworkBridgePersistentTransport { reported }
+    let responseTransport = SimulatorFrameworkBridgePersistentTransport(connector: RecordingBridgeFactory([reported]))
     let response = try await responseTransport.send(BridgeRequest(command: .dns(.list)))
     XCTAssertEqual(response, failure)
     let commands = await reported.commands
@@ -260,7 +260,7 @@ final class BridgeTransportTests: XCTestCase {
     let old = GatedBridgeConnection(firstStarted: firstStarted, secondStarted: secondStarted)
     let next = RecordingBridgeConnection(failures: 0)
     let factory = RecordingBridgeFactory([old, next])
-    let transport = SimulatorFrameworkBridgePersistentTransport { try await factory.connect() }
+    let transport = SimulatorFrameworkBridgePersistentTransport(connector: factory)
     let first = Task { try await transport.send(BridgeRequest(command: .clearPhotos, id: "first")) }
     await fulfillment(of: [firstStarted], timeout: 5)
     let second = Task { try await transport.send(BridgeRequest(command: .clearPhotos, id: "second")) }
@@ -307,11 +307,11 @@ private actor RecordingBridgeConnection: BridgeConnection {
   }
 }
 
-private actor RecordingBridgeFactory {
+private actor RecordingBridgeFactory: BridgeConnector {
   let connections: [any BridgeConnection]
   private(set) var count = 0
   init(_ connections: [any BridgeConnection]) { self.connections = connections }
-  func connect() throws -> any BridgeConnection {
+  func connection() throws -> any BridgeConnection {
     defer { count += 1 }
     return connections[min(count, connections.count - 1)]
   }

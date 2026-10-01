@@ -128,10 +128,7 @@ final class AXBridgeStreamTests: XCTestCase {
 
   func testTheTransportYieldsEachResultAsItsAccessibilityResponse() async throws {
     let connection = try XCTUnwrap(connection)
-    let transport = SimulatorFrameworkBridgePersistentTransport(
-      establish: { throw AXBridgeError.bridgeUnavailable },
-      establishStream: { connection }
-    )
+    let transport = SimulatorFrameworkBridgePersistentTransport(connector: StreamOnlyConnector(stream: connection))
     let stream = try await transport.stream(.quiescence(pid: 42, busyThresholdMs: nil, quietWindowMs: nil))
     let sent = try readGuestRequest()
     XCTAssertEqual(sent.command, .accessibility(["verb": .string("quiet"), "pid": .integer(42)]))
@@ -150,10 +147,7 @@ final class AXBridgeStreamTests: XCTestCase {
     var deadline = timeval(tv_sec: 5, tv_usec: 0)
     setsockopt(guest, SOL_SOCKET, SO_RCVTIMEO, &deadline, socklen_t(MemoryLayout<timeval>.size))
     let connection = try XCTUnwrap(connection)
-    let transport = SimulatorFrameworkBridgePersistentTransport(
-      establish: { throw AXBridgeError.bridgeUnavailable },
-      establishStream: { connection }
-    )
+    let transport = SimulatorFrameworkBridgePersistentTransport(connector: StreamOnlyConnector(stream: connection))
     let stream = try await transport.stream(.quiescence(pid: nil, busyThresholdMs: nil, quietWindowMs: nil))
     _ = try readGuestRequest()
     let consumer = Task { for try await _ in stream {} }
@@ -174,5 +168,18 @@ final class AXBridgeStreamTests: XCTestCase {
   func testAQuiescenceRequestFollowingTheFrontmostOmitsWhatWasNotGiven() throws {
     let request = AXBridgeRequest.quiescence(pid: nil, busyThresholdMs: nil, quietWindowMs: nil)
     XCTAssertEqual(request.payload as NSDictionary, ["verb": "quiet"])
+  }
+}
+
+/// Connects only for streams, always to `stream`.
+private struct StreamOnlyConnector: BridgeConnector {
+  let stream: SimulatorFrameworkBridgeConnection
+
+  func connection() async throws -> any BridgeConnection {
+    throw AXBridgeError.bridgeUnavailable
+  }
+
+  func streamConnection() async throws -> SimulatorFrameworkBridgeConnection {
+    stream
   }
 }

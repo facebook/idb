@@ -29,26 +29,31 @@ protocol BridgeConnection: Sendable {
   func roundTrip(_ requestData: Data) async throws -> Data
 }
 
+/// Where a persistent transport's connections to a guest come from.
+protocol BridgeConnector: Sendable {
+  func connection() async throws -> any BridgeConnection
+  /// A connection held for the whole of one stream.
+  func streamConnection() async throws -> SimulatorFrameworkBridgeConnection
+}
+
+extension BridgeConnector {
+  func streamConnection() async throws -> SimulatorFrameworkBridgeConnection {
+    throw AXBridgeError.bridgeUnavailable
+  }
+}
+
 /// Owns the lifecycle of a shared or exclusive SimulatorFrameworkBridge guest.
 actor SimulatorFrameworkBridgePersistentTransport: AXBridgeStreamingTransport {
-  private let establishConnection: @Sendable () async throws -> any BridgeConnection
-  private let establishStreamConnection: @Sendable () async throws -> SimulatorFrameworkBridgeConnection
+  private let connector: any BridgeConnector
   private var connectionTask: Task<any BridgeConnection, Error>?
   private var connectionGeneration = UUID()
 
   init(simulator: Simulator, scope: BridgeServiceScope) {
-    establishConnection = { [weak simulator] in try await Self.establish(simulator: simulator, scope: scope) }
-    // Each stream gets a guest of its own, whatever this transport's scope: a guest serves one connection
-    // at a time, and a stream holds its connection until the consumer stops.
-    establishStreamConnection = { [weak simulator] in try await Self.establish(simulator: simulator, scope: .exclusive) }
+    self.init(connector: SimulatorBridgeConnector(simulator: simulator, scope: scope))
   }
 
-  init(
-    establish: @escaping @Sendable () async throws -> any BridgeConnection,
-    establishStream: @escaping @Sendable () async throws -> SimulatorFrameworkBridgeConnection = { throw AXBridgeError.bridgeUnavailable }
-  ) {
-    establishConnection = establish
-    establishStreamConnection = establishStream
+  init(connector: any BridgeConnector) {
+    self.connector = connector
   }
 
   func send(_ request: AXBridgeRequest) async throws -> Data {
@@ -65,7 +70,7 @@ actor SimulatorFrameworkBridgePersistentTransport: AXBridgeStreamingTransport {
   }
 
   func stream(_ request: AXBridgeRequest) async throws -> AsyncThrowingStream<Data, Error> {
-    let results = try await establishStreamConnection().stream(BridgeRequest(command: request.command))
+    let results = try await connector.streamConnection().stream(BridgeRequest(command: request.command))
     return AsyncThrowingStream { continuation in
       let task = Task {
         do {
@@ -104,8 +109,8 @@ actor SimulatorFrameworkBridgePersistentTransport: AXBridgeStreamingTransport {
     }
     let generation = UUID()
     connectionGeneration = generation
-    let establish = establishConnection
-    let task = Task { try await establish() }
+    let connector = connector
+    let task = Task { try await connector.connection() }
     connectionTask = task
     do {
       return (generation, try await task.value)
@@ -137,7 +142,7 @@ actor SimulatorFrameworkBridgePersistentTransport: AXBridgeStreamingTransport {
     case busy
   }
 
-  private static func establish(
+  fileprivate static func establish(
     simulator: Simulator?,
     scope: BridgeServiceScope
   ) async throws -> SimulatorFrameworkBridgeConnection {
@@ -254,5 +259,21 @@ actor SimulatorFrameworkBridgePersistentTransport: AXBridgeStreamingTransport {
       simulator.logger.log("Could not reach the SimulatorFrameworkBridge guest just spawned on \(socketPath): \(error)")
       throw error
     }
+  }
+}
+
+/// Holds the `Simulator` weakly, as the command cache that owns this transport is the simulator's.
+private struct SimulatorBridgeConnector: BridgeConnector {
+  weak var simulator: Simulator?
+  let scope: BridgeServiceScope
+
+  func connection() async throws -> any BridgeConnection {
+    try await SimulatorFrameworkBridgePersistentTransport.establish(simulator: simulator, scope: scope)
+  }
+
+  // Each stream gets a guest of its own, whatever this transport's scope: a guest serves one connection
+  // at a time, and a stream holds its connection until the consumer stops.
+  func streamConnection() async throws -> SimulatorFrameworkBridgeConnection {
+    try await SimulatorFrameworkBridgePersistentTransport.establish(simulator: simulator, scope: .exclusive)
   }
 }
