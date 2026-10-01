@@ -36,37 +36,55 @@ enum SimulatorXPCConnectionError: Error, Equatable {
 /// CoreDevice and DTUHID alike, is built here, so it is the one place a test substitutes its own
 /// peers. The connection is returned unresumed.
 struct SimulatorXPCConnector: Sendable {
-  let state: @Sendable () -> TargetState
-  let lookup: @Sendable (_ service: String) throws -> xpc_connection_t
-  /// Resolves once the simulator is no longer booting.
-  let bootFinished: @Sendable () async throws -> Void
+  let namespace: any SimulatorXPCNamespace
 
   func connect(_ service: String) throws -> xpc_connection_t {
-    let state = state()
+    let state = namespace.simulatorState
     guard state == .booted else {
       throw SimulatorXPCConnectionError.notBooted(service: service, state: state)
     }
-    return try lookup(service)
+    return try namespace.lookup(service)
+  }
+
+  /// Resolves once the simulator is no longer booting.
+  func bootFinished() async throws {
+    try await namespace.bootFinished()
   }
 }
 
+/// The simulator whose bootstrap namespace a connector looks services up in.
+protocol SimulatorXPCNamespace: Sendable {
+  var simulatorState: TargetState { get }
+  func lookup(_ service: String) throws -> xpc_connection_t
+  func bootFinished() async throws
+}
+
 extension SimulatorXPCConnector {
-  /// Looks services up in `simulator`'s bootstrap namespace. Holds the `SimDevice` rather than the
-  /// `Simulator`, whose command cache keeps this connector's owners.
+  /// Looks services up in `simulator`'s bootstrap namespace.
   static func simulator(_ simulator: Simulator) -> SimulatorXPCConnector {
-    let device = simulator.device
-    let queue = simulator.workQueue
-    let state: @Sendable () -> TargetState = { TargetState(rawValue: UInt(device.state)) ?? .unknown }
-    return SimulatorXPCConnector(
-      state: state,
-      lookup: { service in
-        try SimulatorXPCConnection.connect(service: service) { service in
-          var error: NSError?
-          let port = device.lookup(service, error: &error)
-          return (port, error)
-        }
-      },
-      bootFinished: { try await pollUntilTrue(on: queue) { state() != .booting } })
+    SimulatorXPCConnector(namespace: SimDeviceNamespace(device: simulator.device, queue: simulator.workQueue))
+  }
+}
+
+/// Holds the `SimDevice` rather than the `Simulator`, whose command cache keeps this namespace's owners.
+private struct SimDeviceNamespace: SimulatorXPCNamespace {
+  let device: SimDevice
+  let queue: DispatchQueue
+
+  var simulatorState: TargetState {
+    TargetState(rawValue: UInt(device.state)) ?? .unknown
+  }
+
+  func lookup(_ service: String) throws -> xpc_connection_t {
+    try SimulatorXPCConnection.connect(service: service) { service in
+      var error: NSError?
+      let port = device.lookup(service, error: &error)
+      return (port, error)
+    }
+  }
+
+  func bootFinished() async throws {
+    try await pollUntilTrue(on: queue) { simulatorState != .booting }
   }
 }
 

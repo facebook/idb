@@ -18,7 +18,7 @@ import os
 /// A service nobody registered fails its lookup as CoreSimulator reports a service the runtime does
 /// not vend. Until the simulator is booted every lookup fails, registered or not, with the same
 /// `SimError` 405, as CoreSimulator's do.
-final class SyntheticXPCServices: Sendable {
+final class SyntheticXPCServices: SimulatorXPCNamespace {
   static let unsupportedService = NSError(domain: "com.apple.CoreSimulator.SimError", code: 405)
 
   private let state = OSAllocatedUnfairLock(
@@ -45,17 +45,16 @@ final class SyntheticXPCServices: Sendable {
   }
 
   var connector: SimulatorXPCConnector {
-    SimulatorXPCConnector(
-      state: { [self] in simulatorState },
-      lookup: { [self] service in try lookup(service) },
-      bootFinished: { [self] in
-        state.withLock { state in
-          if state.simulator == .booting { state.simulator = .booted }
-        }
-      })
+    SimulatorXPCConnector(namespace: self)
   }
 
-  private func lookup(_ service: String) throws -> xpc_connection_t {
+  func bootFinished() {
+    state.withLock { state in
+      if state.simulator == .booting { state.simulator = .booted }
+    }
+  }
+
+  func lookup(_ service: String) throws -> xpc_connection_t {
     let (peer, simulator) = state.withLock { state in
       state.lookups.append(service)
       return (state.peers[service], state.simulator)
