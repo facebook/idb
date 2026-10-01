@@ -53,6 +53,10 @@ DOCUMENTED_DEMOS: Mapping[str, str] = {
     "read-web-content-in-safari": (
         "EndToEndTests.test_demos.WebContentDemos.test_read_web_content_in_safari"
     ),
+    "drive-an-app-from-injected-swift": (
+        "EndToEndTests.test_demos.InjectedSwiftDemos"
+        ".test_drive_an_app_from_injected_swift"
+    ),
 }
 
 PACKAGE = "EndToEndTests"

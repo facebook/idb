@@ -24,6 +24,8 @@ from .harness import (
     _has_area,
     _label,
     _screen,
+    Completed,
+    FIXTURE_APP_BUNDLE_ID,
     IdbEndToEndTestCase,
     NotReady,
     select_tests_for_capability,
@@ -69,6 +71,48 @@ ACCESSIBILITY_DEMO_CAPABILITIES = {
 WEB_CONTENT_DEMO_CAPABILITIES = {
     "test_read_web_content_in_safari": SuiteCapability.ACCESSIBILITY_INTERACTION,
 }
+INJECTED_SWIFT_DEMO_CAPABILITIES = {
+    "test_drive_an_app_from_injected_swift": SuiteCapability.ACCESSIBILITY_INTERACTION,
+}
+
+COUNTER_ID = "injected-counter"
+TAPS = 3
+# The Swift a demo injects is published as part of its command, so it is
+# written to be read there.
+ADD_COUNTER = r"""import UIKit
+return await MainActor.run { () -> String in
+  let window = UIApplication.shared.connectedScenes
+    .compactMap { ($0 as? UIWindowScene)?.keyWindow }.first
+  guard let window else { return "No window to add to" }
+  let button = UIButton(configuration: .borderedProminent())
+  button.configuration?.title = "Taps: 0"
+  button.accessibilityIdentifier = "injected-counter"
+  button.addAction(UIAction { action in
+    guard let button = action.sender as? UIButton else { return }
+    button.tag += 1
+    button.configuration?.title = "Taps: \(button.tag)"
+  }, for: .primaryActionTriggered)
+  button.translatesAutoresizingMaskIntoConstraints = false
+  window.addSubview(button)
+  NSLayoutConstraint.activate([
+    button.centerXAnchor.constraint(equalTo: window.centerXAnchor),
+    button.bottomAnchor.constraint(
+      equalTo: window.safeAreaLayoutGuide.bottomAnchor, constant: -48),
+  ])
+  return "Added a button to \(Bundle.main.bundleIdentifier ?? "the app")"
+}"""
+READ_COUNTER = r"""import UIKit
+return await MainActor.run { () -> String in
+  func counter(in view: UIView) -> UIButton? {
+    if view.accessibilityIdentifier == "injected-counter" { return view as? UIButton }
+    return view.subviews.lazy.compactMap { counter(in: $0) }.first
+  }
+  let windows = UIApplication.shared.connectedScenes
+    .flatMap { ($0 as? UIWindowScene)?.windows ?? [] }
+  guard let button = windows.lazy.compactMap({ counter(in: $0) }).first
+  else { return "The button is gone" }
+  return "The button counted \(button.tag) taps"
+}"""
 
 
 def load_tests(
@@ -85,6 +129,7 @@ def load_tests(
                 for case, requirements in (
                     (AccessibilityDemos, ACCESSIBILITY_DEMO_CAPABILITIES),
                     (WebContentDemos, WEB_CONTENT_DEMO_CAPABILITIES),
+                    (InjectedSwiftDemos, INJECTED_SWIFT_DEMO_CAPABILITIES),
                 )
             ),
             loader.loadTestsFromTestCase(NotificationDemos),
@@ -578,4 +623,125 @@ class NotificationDemos(IdbEndToEndTestCase):
         self.note(
             "The app has no delivered notifications: clearing removed the new one"
             + (f" and the {_notifications(len(held))} there before." if held else ".")
+        )
+
+
+def _result(completed: Completed) -> str:
+    """What injected Swift returned, from idb-repl's `Result:` block."""
+    _, marker, result = completed.text.partition("Result:\n")
+    if not marker:
+        raise AssertionError(f"idb-repl printed no result: {completed.text!r}")
+    return result.strip()
+
+
+class InjectedSwiftCase(IdbEndToEndTestCase):
+    """Reads back the views a demo's injected Swift added to an app."""
+
+    async def describe_one(self, identifier: str, *, step: str) -> dict[str, Any]:
+        document = await self.idb_json(
+            "ui",
+            "describe",
+            identifier,
+            "--match-key",
+            "AXUniqueId",
+            "--api",
+            "axbridge",
+            "--format",
+            "complete",
+            step=step,
+        )
+        found = _visible(document, identifier)
+        self.assertEqual(len(found), 1, f"Expected one {identifier}: {document}")
+        return found[0]
+
+    async def wait_for_label(self, label: str) -> None:
+        await self.setup_idb(
+            "ui",
+            "wait",
+            label,
+            "--match-key",
+            "AXLabel",
+            "--api",
+            "axbridge",
+            "--timeout",
+            str(UI_UPDATE_TIMEOUT_SECONDS),
+        )
+
+
+class InjectedSwiftDemos(InjectedSwiftCase):
+    capabilities = INJECTED_SWIFT_DEMO_CAPABILITIES
+
+    @documented_demo(
+        slug="drive-an-app-from-injected-swift",
+        title="Add a control to a running app with injected Swift, then drive it",
+        summary=(
+            "Compile a few lines of Swift on the host and run them inside a "
+            "running app, adding a button the app was never built with. idb "
+            "finds the new button in the accessibility tree like any other "
+            "control and taps it. Its label counts the taps, and asking the "
+            "same live process how many it counted gives the same answer."
+        ),
+    )
+    async def test_drive_an_app_from_injected_swift(self) -> None:
+        self.addAsyncCleanup(self.setup_terminate_quietly, FIXTURE_APP_BUNDLE_ID)
+        await self.setup_terminate_quietly(FIXTURE_APP_BUNDLE_ID)
+
+        added = await self.idb_repl(
+            "app",
+            "--new-session",
+            ADD_COUNTER,
+            step="Add a button to a running app with injected Swift",
+        )
+        self.assertEqual(_result(added), f"Added a button to {FIXTURE_APP_BUNDLE_ID}")
+        self.note(
+            "idb-repl launched the host app with the REPL injected, compiled the "
+            "Swift on the host and ran it inside the app. The button is plain "
+            "UIKit, added while the app runs.",
+            FIXTURE_APP_BUNDLE_ID,
+        )
+
+        await self.wait_for_label("Taps: 0")
+        counter = await self.describe_one(
+            COUNTER_ID, step="Find the new button by its accessibility identifier"
+        )
+        self.assertEqual(_label(counter), "Taps: 0")
+        self.note(
+            f"The button is a {counter.get('type')} labelled 'Taps: 0', "
+            f"{_placed(counter, None)}. idb reads it like any control the app "
+            "shipped with.",
+            COUNTER_ID,
+            "Taps: 0",
+        )
+
+        for tap in range(1, TAPS + 1):
+            await self.idb(
+                "ui",
+                "tap",
+                COUNTER_ID,
+                "--match-key",
+                "AXUniqueId",
+                step=f"Tap the new button ({tap} of {TAPS})",
+            )
+            await self.wait_for_label(f"Taps: {tap}")
+
+        counted = await self.describe_one(
+            COUNTER_ID, step=f"Read the button's label after {TAPS} taps"
+        )
+        self.assertEqual(_label(counted), f"Taps: {TAPS}")
+        self.note(
+            f"The label reads 'Taps: {TAPS}': each tap ran the action the "
+            "injected Swift attached.",
+            f"Taps: {TAPS}",
+        )
+
+        read = await self.idb_repl(
+            "app",
+            READ_COUNTER,
+            step="Ask the running app how many taps it counted",
+        )
+        self.assertEqual(_result(read), f"The button counted {TAPS} taps")
+        self.note(
+            "idb-repl attached to the same process rather than relaunching it, "
+            f"so the button and its count of {TAPS} were still there.",
+            f"{TAPS} taps",
         )
