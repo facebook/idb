@@ -10,9 +10,10 @@ import Foundation
 
 /// One CoreDevice request over one channel, bounded by a deadline and by task cancellation.
 ///
-/// A request is either a `read`, one message answered by one reply, or a `stream`, one message that
-/// the provider answers with pushed events until it is asked to stop and then with a final reply.
-/// Either way the channel is cancelled once the session has its result, so a session is used once.
+/// A request is either a `read`, one message answered by one reply, a `stream`, one message that
+/// the provider answers with pushed events until it is asked to stop and then with a final reply, or a
+/// `subscribe`, which reads pushed events until the consumer stops. Either way the channel is cancelled
+/// once the session has its result, so a session is used once.
 ///
 // SAFETY: All mutable state and channel callbacks are confined to the channel's queue, including cancellation.
 // patternlint-disable-next-line unchecked-sendable
@@ -22,6 +23,7 @@ final class CoreDeviceSession<Response: Sendable>: @unchecked Sendable {
   private let timeout: DispatchTimeInterval
   private var held: Response?
   private var finished = false
+  private var received = false
 
   init(channel: SimulatorXPCChannel, timeout: DispatchTimeInterval = .seconds(5)) {
     self.channel = channel
@@ -55,6 +57,60 @@ final class CoreDeviceSession<Response: Sendable>: @unchecked Sendable {
       }
     } catch let error as SimulatorXPCError {
       throw SimulatorCoreDeviceError(channel: error)
+    }
+  }
+
+  /// Sends `request` and yields what `element` reads from each event the provider pushes back,
+  /// skipping events it reads as nil. Every event is acknowledged without asking the provider to stop,
+  /// so the stream lasts until the provider's final reply finishes it or the consumer stops iterating,
+  /// which cancels the channel. The deadline bounds only the wait for the first event.
+  func subscribe(_ request: xpc_object_t, element: @escaping @Sendable (xpc_object_t) throws -> Response?) -> AsyncThrowingStream<Response, Error> {
+    let (stream, continuation) = AsyncThrowingStream<Response, Error>.makeStream()
+    // Holding the session here keeps it alive for as long as the stream is.
+    continuation.onTermination = { _ in self.channel.cancel() }
+    queue.async { [self] in
+      channel.activate { [weak self] event in self?.handleSubscriptionEvent(event, element: element, continuation: continuation) }
+      channel.request(request) { [weak self] reply in self?.handleSubscriptionReply(reply, continuation: continuation) }
+      queue.asyncAfter(deadline: .now() + timeout) { [weak self] in
+        guard let self, !finished, !received else { return }
+        finished = true
+        continuation.finish(throwing: SimulatorCoreDeviceError.timedOut)
+      }
+    }
+    return stream
+  }
+
+  private func handleSubscriptionEvent(
+    _ event: SimulatorXPCEvent, element: (xpc_object_t) throws -> Response?, continuation: AsyncThrowingStream<Response, Error>.Continuation
+  ) {
+    dispatchPrecondition(condition: .onQueue(queue))
+    guard !finished else { return }
+    guard case let .message(event) = event else {
+      finished = true
+      continuation.finish(throwing: SimulatorCoreDeviceError.unavailable("Connection closed before the stream completed"))
+      return
+    }
+    received = true
+    do {
+      if let value = try element(event) {
+        continuation.yield(value)
+      }
+      channel.reply(to: event) { xpc_dictionary_set_bool($0, SimulatorCoreDevice.cancellationKey, false) }
+    } catch {
+      finished = true
+      continuation.finish(throwing: error)
+    }
+  }
+
+  private func handleSubscriptionReply(_ reply: Result<xpc_object_t, SimulatorXPCError>, continuation: AsyncThrowingStream<Response, Error>.Continuation) {
+    dispatchPrecondition(condition: .onQueue(queue))
+    guard !finished else { return }
+    finished = true
+    do {
+      try CoreDeviceReply.validate(reply.mapError { SimulatorCoreDeviceError(channel: $0) }.get())
+      continuation.finish()
+    } catch {
+      continuation.finish(throwing: error)
     }
   }
 

@@ -100,6 +100,16 @@ final class SimulatorCoreDeviceClient: @unchecked Sendable {
     return try await session(for: service).stream(request, sample: sample)
   }
 
+  /// One action whose provider pushes events until the consumer stops; see `CoreDeviceSession.subscribe`.
+  /// Throws before streaming when the simulator does not vend `service`.
+  func subscribe<Input: Encodable, Response: Sendable>(
+    action: String, service: String, input: Input,
+    element: @escaping @Sendable (xpc_object_t) throws -> Response?
+  ) throws -> AsyncThrowingStream<Response, Error> {
+    let request = try request(action: action, input: input)
+    return try session(for: service).subscribe(request, element: element)
+  }
+
   // MARK: - Plain messages
 
   /// One message to a service that speaks its own envelope rather than the CoreDevice action
