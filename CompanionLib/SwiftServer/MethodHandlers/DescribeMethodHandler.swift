@@ -18,6 +18,7 @@ struct DescribeMethodHandler {
   let logger: IDBLogger
   let target: any Target
   let commandExecutor: IDBCommandExecutor
+  let streamCapabilities: StreamCapabilities
 
   func handle(request: Idb_TargetDescriptionRequest, context: ServerContext) async throws -> Idb_TargetDescriptionResponse {
     let displays = await readDisplays()
@@ -44,7 +45,7 @@ struct DescribeMethodHandler {
       }
       $0.companion = Idb_CompanionInfo.with {
         $0.udid = target.udid
-        $0.setStreamCapabilities()
+        $0.setStreamCapabilities(streamCapabilities)
         if let metadata = try? JSONSerialization.data(withJSONObject: reporter.metadata) {
           $0.metadata = metadata
         }

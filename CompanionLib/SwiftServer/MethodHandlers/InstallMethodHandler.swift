@@ -16,6 +16,7 @@ struct InstallMethodHandler: @unchecked Sendable {
 
   let commandExecutor: IDBCommandExecutor
   let targetLogger: ControlCoreLogger
+  let streamCapabilities: StreamCapabilities
 
   func handle(requestStream: RequestStreamReader<Idb_InstallRequest>, responseStream: RPCWriter<Idb_InstallResponse>, context: ServerContext) async throws {
 
@@ -342,7 +343,7 @@ struct InstallMethodHandler: @unchecked Sendable {
     teeingTo tee: OutputStream,
     telemetry: InstallTelemetry
   ) async throws {
-    guard let decompressor = FBArchiveOperations.zstdDecompressorPath(searchPath: ProcessInfo.processInfo.environment["PATH"]) else {
+    guard let decompressor = streamCapabilities.zstdDecompressorPath else {
       throw RPCError(code: .failedPrecondition, message: "A zstd zip stream needs pzstd on the companion's PATH")
     }
     targetLogger.log("Decompressing a zstd zip stream with \(decompressor)")
