@@ -62,18 +62,24 @@ final class InstallTelemetry: @unchecked Sendable {
     lock.withLock { streamFormat = format }
   }
 
-  /// Measures `body` receiving the streamed payload, reporting what it received once it completes.
+  /// Measures `body` receiving the streamed payload, reporting what it received whether or not it
+  /// completes. A receive that throws is left in progress, so the failure is attributed to it.
   func receive<T>(_ body: (inout InstallReceive) async throws -> T) async rethrows -> T {
     lock.withLock { receiving = true }
     var receive = InstallReceive(telemetry: self)
-    let result = try await body(&receive)
-    receive.finish()
-    return result
+    do {
+      let result = try await body(&receive)
+      receive.finish(completed: true)
+      return result
+    } catch {
+      receive.finish(completed: false)
+      throw error
+    }
   }
 
-  fileprivate func received(bytes: Int64, elapsedMs: Int64) {
+  fileprivate func received(bytes: Int64, elapsedMs: Int64, completed: Bool) {
     lock.withLock {
-      receiving = false
+      receiving = !completed
       receivedBytes = bytes
       receiveMs = elapsedMs
     }
@@ -179,7 +185,7 @@ struct InstallReceive {
     bytes += Int64(data.count)
   }
 
-  fileprivate func finish() {
-    telemetry.received(bytes: bytes, elapsedMs: Int64(Date().timeIntervalSince(start) * 1000))
+  fileprivate func finish(completed: Bool) {
+    telemetry.received(bytes: bytes, elapsedMs: Int64(Date().timeIntervalSince(start) * 1000), completed: completed)
   }
 }

@@ -114,7 +114,10 @@ private struct Refused: Error {}
     }
     telemetry.failed(Refused())
 
-    #expect(columns(of: telemetry) == ["failure_kind=Refused", "failure_stage=receive", "payload_kind=data"])
+    let call = CallTelemetry()
+    telemetry.record(into: call)
+    #expect(call.size == 0)
+    #expect(call.normals == ["failure_kind": "Refused", "failure_stage": "receive", "payload_kind": "data"])
   }
 
   @Test func aStreamThatFailsPartwayReportsWhatItReceivedAndFailedWhileReceiving() async {
@@ -129,9 +132,8 @@ private struct Refused: Error {}
 
     let call = CallTelemetry()
     telemetry.record(into: call)
-    // BUG: what arrived before the failure is dropped, so size and receive_ms are missing — flipped in the following commit
-    #expect(call.size == nil)
-    #expect(call.ints["receive_ms"] == nil)
+    #expect(call.size == 10)
+    #expect(call.ints["receive_ms"] != nil)
     #expect(call.normals == ["failure_kind": "Refused", "failure_stage": "receive", "payload_kind": "data"])
   }
 
