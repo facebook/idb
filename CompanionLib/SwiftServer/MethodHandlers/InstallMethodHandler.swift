@@ -282,9 +282,7 @@ struct InstallMethodHandler: @unchecked Sendable {
   }
 
   private func makeArchiveFile() throws -> URL {
-    let archiveURL = FileManager.default.temporaryDirectory
-      .appendingPathComponent(UUID().uuidString)
-      .appendingPathExtension("ipa")
+    let archiveURL = commandExecutor.temporaryDirectory.ephemeralTemporaryDirectory().appendingPathExtension("ipa")
     guard FileManager.default.createFile(atPath: archiveURL.path, contents: nil) else {
       throw RPCError(code: .internalError, message: "Failed to create temporary install archive")
     }
