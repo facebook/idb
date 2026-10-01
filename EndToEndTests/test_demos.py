@@ -46,6 +46,7 @@ from .test_accessibility import (
     LIVE_ORIGIN,
     RETURN_KEY_CODE,
     SAFARI_ADDRESS_BAR_ID,
+    SAFARI_BUNDLE_ID,
     SAFARI_URL_FIELD_ID,
     SafariTestCase,
     SECOND_PAGE_LABEL,
@@ -316,6 +317,10 @@ class WebContentDemos(SafariTestCase):
         origin = await self.setup_web_origin(
             LIVE_ORIGIN, STAND_IN_PAGES, self.safari_shows_first_page
         )
+        # Choosing the origin leaves Safari on the first page, and the clip
+        # has to open it from the home screen.
+        await self.setup_terminate_quietly(SAFARI_BUNDLE_ID)
+        await self.setup_idb("ui", "button", "HOME")
         first_page = origin + FIRST_PAGE_PATH
         second_page = origin + SECOND_PAGE_PATH
 
