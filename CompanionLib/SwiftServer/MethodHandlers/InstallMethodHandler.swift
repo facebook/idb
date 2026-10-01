@@ -312,6 +312,7 @@ struct InstallMethodHandler: @unchecked Sendable {
           try write(data, to: stream)
         } catch {
           // The reader may finish before the end or fail; the spooled file carries on regardless.
+          targetLogger.log("Stopped teeing the streamed zip to its stream extractor, which extraction from the spooled file recovers from: \(error)")
           stream.close()
           tee = nil
         }
