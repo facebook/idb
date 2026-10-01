@@ -123,13 +123,15 @@ private func bitmapStreamPixelBufferAttributes(from pixelBuffer: CVPixelBuffer) 
 /// The clocks a stream reads: the monotonic one every frame is timed against, and the wall clock a
 /// recording's start is reported on. Injected so a test can move either without waiting or setting
 /// the machine's clock.
-struct VideoStreamClock: Sendable {
-  let uptime: @Sendable () -> TimeInterval
-  let wallClock: @Sendable () -> TimeInterval
+protocol VideoStreamClock: Sendable {
+  var uptime: TimeInterval { get }
+  var wallClock: TimeInterval { get }
+}
 
-  static let system = VideoStreamClock(
-    uptime: { ProcessInfo.processInfo.systemUptime },
-    wallClock: { Date().timeIntervalSince1970 })
+/// The machine's clocks.
+struct SystemVideoStreamClock: VideoStreamClock {
+  var uptime: TimeInterval { ProcessInfo.processInfo.systemUptime }
+  var wallClock: TimeInterval { Date().timeIntervalSince1970 }
 }
 
 public actor SimulatorVideoStream: VideoStreamOperation {
@@ -144,7 +146,7 @@ public actor SimulatorVideoStream: VideoStreamOperation {
   /// — instead of being byte-framed to `consumer`. nil for streaming.
   let encodedSampleConsumerOverride: EncodedSampleConsumer?
   let logger: any ControlCoreLogger
-  let clock: VideoStreamClock
+  let clock: any VideoStreamClock
 
   // MARK: - Lifecycle
 
@@ -263,7 +265,7 @@ public actor SimulatorVideoStream: VideoStreamOperation {
     return .eager(framesPerSecond: UInt(framesPerSecond))
   }
 
-  init(framebuffer: Framebuffer, configuration: VideoStreamConfiguration, edgeInsets: VideoStreamEdgeInsets, cadence: VideoStreamCadence, logger: any ControlCoreLogger, encodedSampleConsumerOverride: EncodedSampleConsumer? = nil, clock: VideoStreamClock = .system) {
+  init(framebuffer: Framebuffer, configuration: VideoStreamConfiguration, edgeInsets: VideoStreamEdgeInsets, cadence: VideoStreamCadence, logger: any ControlCoreLogger, encodedSampleConsumerOverride: EncodedSampleConsumer? = nil, clock: any VideoStreamClock = SystemVideoStreamClock()) {
     self.framebuffer = framebuffer
     self.configuration = configuration
     self.edgeInsets = edgeInsets
@@ -549,13 +551,13 @@ public actor SimulatorVideoStream: VideoStreamOperation {
 
     // Uptime is monotonic; the wall clock steps under NTP and can hand the encoder (and a file
     // writer) a timestamp earlier than the previous frame's.
-    let now = clock.uptime()
+    let now = clock.uptime
     let frameNumber = self.frameNumber
     if frameNumber == 0 {
       timeAtFirstFrame = now
       // Read here, beside the monotonic one, because this is the only moment at which the wall
       // clock says when this frame was captured. A reading taken later has had time to be set.
-      wallClockAtFirstFrame = clock.wallClock()
+      wallClockAtFirstFrame = clock.wallClock
     }
     let timeAtFirstFrame = self.timeAtFirstFrame
     let frameDuration = timeAtLastPush > 0 ? (now - timeAtLastPush) : 0

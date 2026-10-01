@@ -26,7 +26,7 @@ final class SimulatorVideoStreamPushFrameTests: XCTestCase {
     let logger: CapturingLogger
   }
 
-  private func makeStream(clock: VideoStreamClock = .system) -> Started {
+  private func makeStream(clock: any VideoStreamClock = SystemVideoStreamClock()) -> Started {
     let surface = FakeFramebufferSurface()
     let ioSurface = makeTestIOSurface()
     surface.immediateSurface = ioSurface
@@ -42,7 +42,7 @@ final class SimulatorVideoStreamPushFrameTests: XCTestCase {
     return Started(stream: stream, pusher: RecordingFramePusher(), surface: surface, ioSurface: ioSurface, logger: logger)
   }
 
-  private func startStream(clock: VideoStreamClock = .system) async throws -> Started {
+  private func startStream(clock: any VideoStreamClock = SystemVideoStreamClock()) async throws -> Started {
     let made = makeStream(clock: clock)
     let stream = made.stream
     let surface = made.surface
@@ -117,7 +117,7 @@ final class SimulatorVideoStreamPushFrameTests: XCTestCase {
 
   func testMediaOriginIsTheWallClockAtTheFirstFramePlusTheFileSAnchor() async throws {
     let clock = SettableClock(uptime: 100, wallClock: 1_000_000)
-    let started = try await startStream(clock: clock.streamClock)
+    let started = try await startStream(clock: clock)
     defer { Task { try? await started.stream.stopStreaming() } }
 
     await started.stream.pushFrame(forceKeyFrame: false)
@@ -132,7 +132,7 @@ final class SimulatorVideoStreamPushFrameTests: XCTestCase {
 
   func testMediaOriginWhenTheWallClockIsSetDuringTheRecording() async throws {
     let clock = SettableClock(uptime: 100, wallClock: 1_000_000)
-    let started = try await startStream(clock: clock.streamClock)
+    let started = try await startStream(clock: clock)
     defer { Task { try? await started.stream.stopStreaming() } }
 
     await started.stream.pushFrame(forceKeyFrame: false)
@@ -229,7 +229,7 @@ extension SimulatorVideoStream {
 /// A pair of clocks a test moves by hand, in place of the machine's.
 // SAFETY: both readings are guarded by `lock`.
 // patternlint-disable-next-line unchecked-sendable
-private final class SettableClock: @unchecked Sendable {
+private final class SettableClock: VideoStreamClock, @unchecked Sendable {
   private let lock = NSLock()
   private var uptimeReading: TimeInterval
   private var wallClockReading: TimeInterval
@@ -255,9 +255,5 @@ private final class SettableClock: @unchecked Sendable {
       uptimeReading += seconds
       wallClockReading += seconds
     }
-  }
-
-  var streamClock: VideoStreamClock {
-    VideoStreamClock(uptime: { self.uptime }, wallClock: { self.wallClock })
   }
 }
