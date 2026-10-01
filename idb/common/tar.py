@@ -160,17 +160,21 @@ class ZstdArchive(TarArchiveProcess):
         return [self._get_zstd_exe(), "-c"]
 
     @classmethod
+    def _find_zstd_exe(cls) -> str | None:
+        return next((exe for exe in cls.ZSTD_EXECUTABLES if _has_executable(exe)), None)
+
+    @classmethod
     def _get_zstd_exe(cls) -> str:
-        for zstd_exe in cls.ZSTD_EXECUTABLES:
-            if _has_executable(zstd_exe):
-                return zstd_exe
-        raise Exception(
-            f"Missing ZSTD dependencies. Make sure either of {cls.ZSTD_EXECUTABLES} is on the PATH"
-        )
+        zstd_exe = cls._find_zstd_exe()
+        if zstd_exe is None:
+            raise Exception(
+                f"Missing ZSTD dependencies. Make sure either of {cls.ZSTD_EXECUTABLES} is on the PATH"
+            )
+        return zstd_exe
 
 
 def has_zstd_compressor() -> bool:
-    return any(_has_executable(exe) for exe in ZstdArchive.ZSTD_EXECUTABLES)
+    return ZstdArchive._find_zstd_exe() is not None
 
 
 async def compress_zstd(chunks: AsyncIterator[bytes]) -> AsyncIterator[bytes]:
