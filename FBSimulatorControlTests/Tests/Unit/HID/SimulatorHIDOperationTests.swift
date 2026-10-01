@@ -36,6 +36,25 @@ final class SimulatorHIDOperationTests: XCTestCase {
     XCTAssertEqual(events.compactMap(\.1), [])
   }
 
+  func testNonFiniteTouchWithoutADisplay() async throws {
+    let recorder = Recorder()
+    var operation = SimulatorHIDOperation(
+      displays: DisplayCommandsDouble([.success(.failed(.unsupported("displayinfo")))]),
+      deliver: { event, display in await recorder.record(event, display: display) },
+      flush: {},
+      reportCleanupError: { XCTFail("cleanup failed: \($0)") })
+    // BUG: without a display, a non-finite point reaches the transport instead of being rejected — flipped in the following commit
+    try await operation.send(.tapAt(x: .nan, y: 30))
+    try await operation.finish(flushing: false)
+    let events = await recorder.events
+    XCTAssertEqual(events.count, 2)
+    for (event, _) in events {
+      guard case let .touch(_, x, y, _) = event else { return XCTFail("unexpected event: \(event)") }
+      XCTAssertTrue(x.isNaN)
+      XCTAssertEqual(y, 30)
+    }
+  }
+
   func testDisplayTransitionReleasesOnOriginalTargetWithoutSendingToNewTarget() async throws {
     let recorder = Recorder()
     let observation = SimulatorHIDDisplayObservation()
@@ -70,10 +89,11 @@ final class SimulatorHIDOperationTests: XCTestCase {
     }
   }
 
-  func testInvalidMoveReleasesAtLastValidPoint() async throws {
+  func testOffScreenMoveMidGesture() async throws {
     let recorder = Recorder()
     var operation = makeOperation(recorder)
     try await operation.send(.touch(direction: .down, x: 20, y: 30))
+    // BUG: a finite point past the edge fails the gesture instead of being clamped to it — flipped in the following commit
     do {
       try await operation.send(.touch(direction: .down, x: -1, y: 30))
       XCTFail("expected invalid coordinates")
@@ -86,6 +106,44 @@ final class SimulatorHIDOperationTests: XCTestCase {
     }
     let events = await recorder.events
     XCTAssertEqual(events.map(\.0), [.touch(direction: .down, x: 20, y: 30), .touch(direction: .up, x: 20, y: 30)])
+  }
+
+  func testOffScreenTwoFingerTouchOnRotatedDisplay() async throws {
+    let recorder = Recorder()
+    await recorder.setDisplay(screen(rotation: .clockwise))
+    var operation = makeOperation(recorder)
+    let first = CGPoint(x: 20, y: 30)
+    let second = CGPoint(x: 20, y: 250)
+    // BUG: a finite point past the edge fails the gesture instead of being clamped to it — flipped in the following commit
+    do {
+      try await operation.send(.twoFingerTouch(direction: .down, finger1: first, finger2: second))
+      XCTFail("expected invalid coordinates")
+    } catch {
+      guard case let SimulatorDisplayInteractionError.invalidPoint(point, bounds) = error else { return XCTFail("unexpected error: \(error)") }
+      XCTAssertEqual(point, second)
+      XCTAssertEqual(bounds, CGSize(width: 300, height: 200))
+      await operation.cleanup()
+    }
+    let events = await recorder.events
+    XCTAssertTrue(events.isEmpty)
+  }
+
+  func testNonFiniteTouchFailsWithoutDelivering() async throws {
+    let recorder = Recorder()
+    var operation = makeOperation(recorder)
+    do {
+      try await operation.send(.tapAt(x: .nan, y: 30))
+      XCTFail("expected invalid coordinates")
+    } catch {
+      guard case let SimulatorDisplayInteractionError.invalidPoint(point, bounds) = error else { return XCTFail("unexpected error: \(error)") }
+      XCTAssertTrue(point.x.isNaN)
+      XCTAssertEqual(point.y, 30)
+      XCTAssertEqual(bounds, CGSize(width: 200, height: 300))
+      XCTAssertEqual(error.localizedDescription, "Touch point (nan, 30.0) is not a real position (x is NaN) within the display's point bounds (200.0 x 300.0)")
+      await operation.cleanup()
+    }
+    let events = await recorder.events
+    XCTAssertTrue(events.isEmpty)
   }
 
   func testFinalReadDetectsRotationAfterLastTouch() async throws {
