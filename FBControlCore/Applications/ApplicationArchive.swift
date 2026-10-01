@@ -120,8 +120,10 @@ public enum ApplicationArchive {
       // The caller owns the writing end, so a writer that fails partway reaches
       // the extractor as nothing more than a short archive. Only the caller holds
       // the writer's own error.
+      // Not extracted in-process: with a client that compresses as it sends, the
+      // in-process reader is starved for input and takes twice as long as `bsdtar`.
       try await runExtractStage(to: extractPath, totalStart: totalStart, onProgress: onProgress) {
-        try await ArchiveExtractors.default.extract(
+        try await ArchiveExtractors.bsdTar.extract(
           .stream(input), to: extractPath, options: options.extractOptions, logger: logger)
       }
     case .zipStream(let input, let spoolPath, let spooled):

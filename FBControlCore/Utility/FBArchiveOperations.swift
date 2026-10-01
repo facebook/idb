@@ -162,6 +162,24 @@ public enum FBArchiveOperations {
       .retyped()
   }
 
+  /// Decompresses a zstd stream, returning a task whose stdout is attached to an input stream.
+  /// To confirm that the stream was decompressed in full, the caller should check the exit code
+  /// of the returned task once the input stream ends.
+  public static func decompressZstd(
+    fromStream stream: FBProcessInput<AnyObject>,
+    decompressorPath: String,
+    logger: any ControlCoreLogger
+  ) -> FBFuture<FBSubprocess<AnyObject, InputStream, AnyObject>> {
+    FBProcessBuilder<NSNull, NSData, NSData>
+      .withLaunchPath(decompressorPath, arguments: ["-d", "-q", "-c"])
+      .withStdIn(stream)
+      .withStdOutToInputStream()
+      .withStdErr(toLoggerAndErrorMessage: logger.debug())
+      .withTaskLifecycleLogging(to: logger)
+      .start()
+      .retyped()
+  }
+
   /// Creates a gzipped archive compressing the data provided.
   public static func createGzipData(
     from input: FBProcessInput<AnyObject>,

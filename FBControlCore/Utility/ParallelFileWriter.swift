@@ -36,11 +36,13 @@ final class ParallelFileWriter {
   }
 
   /// Creates `path`, which must not exist, with the contents `produce` passes to
-  /// its argument in order. `mode` is the file's permissions, or nil for the default.
+  /// its argument in order. `mode` is the file's permissions, or nil for the
+  /// default. Extended attributes are set as far as the system allows.
   func write(
     _ path: String,
     mode: mode_t? = nil,
     modified: timespec?,
+    extendedAttributes: [String: Data] = [:],
     contents produce: ((UnsafeRawBufferPointer) throws -> Void) throws -> Void
   ) throws {
     var contents = Data()
@@ -59,12 +61,17 @@ final class ParallelFileWriter {
         contents = Data()
       }
     }
-    let file = File(path: path, contents: contents, mode: mode, modified: modified)
+    let file = File(path: path, contents: contents, mode: mode, modified: modified, extendedAttributes: extendedAttributes)
     if let fd = inline {
       try Self.finish(file, fd: fd, overrideModificationTime: overrideModificationTime)
     } else {
       try queue.put(file)
     }
+  }
+
+  /// How long the caller has been held back by the writers falling behind.
+  var waited: TimeInterval {
+    queue.waited
   }
 
   /// Stops the writers taking more, so that `finish` throws `error`.
@@ -90,6 +97,7 @@ final class ParallelFileWriter {
     var contents: Data
     var mode: mode_t?
     var modified: timespec?
+    var extendedAttributes: [String: Data]
   }
 
   private static func create(_ path: String) throws -> Int32 {
@@ -109,6 +117,9 @@ final class ParallelFileWriter {
   }
 
   private static func finish(_ file: File, fd: Int32, overrideModificationTime: Bool) throws {
+    for (name, value) in file.extendedAttributes {
+      _ = value.withUnsafeBytes { fsetxattr(fd, name, $0.baseAddress, $0.count, 0, 0) }
+    }
     if let mode = file.mode {
       guard fchmod(fd, mode & 0o7777) == 0 else {
         throw POSIXError.current
@@ -145,6 +156,13 @@ final class ParallelFileWriter {
     private var bytes = 0
     private var closed = false
     private var error: Error?
+    private var waitedNanoseconds: UInt64 = 0
+
+    var waited: TimeInterval {
+      condition.lock()
+      defer { condition.unlock() }
+      return Double(waitedNanoseconds) / 1e9
+    }
 
     var failure: Error? {
       condition.lock()
@@ -155,9 +173,11 @@ final class ParallelFileWriter {
     func put(_ file: File) throws {
       condition.lock()
       defer { condition.unlock() }
+      let start = DispatchTime.now().uptimeNanoseconds
       while error == nil, files.count - head >= 1024 || bytes >= 64 << 20 {
         condition.wait()
       }
+      waitedNanoseconds += DispatchTime.now().uptimeNanoseconds - start
       if let error {
         throw error
       }
