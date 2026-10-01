@@ -21,6 +21,19 @@ final class VideoStreamConfigurationTests: XCTestCase {
     XCTAssertEqual(config.keyFrameRate, 4.0)
   }
 
+  func testTheDisplayIsKeptAndDescribed() {
+    let config = VideoStreamConfiguration(
+      format: VideoStreamFormat.compressedVideo(withCodec: VideoStreamCodec.h264, transport: VideoStreamTransport.annexB),
+      framesPerSecond: nil,
+      rateControl: nil,
+      scaleFactor: nil,
+      keyFrameRate: nil,
+      display: .display(uniqueID: "FA9C9507")
+    )
+    XCTAssertEqual(config.display, .display(uniqueID: "FA9C9507"))
+    XCTAssertTrue(config.description.hasSuffix("| Display FA9C9507"), config.description)
+  }
+
   /// Only nil takes the default, so a caller mapping an unset wire field has to send nil — zero
   /// survives, and zero is what VideoToolbox reads as an unlimited key frame interval.
   func testZeroKeyFrameRateIsNotTheDefault() {

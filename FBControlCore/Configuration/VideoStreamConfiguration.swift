@@ -110,27 +110,29 @@ public struct VideoEncodeOptions: Hashable, Sendable {
   }
 }
 
-/// Describes a video stream: the output format and the options controlling how frames are encoded.
+/// Describes a video stream: the display it captures, the output format and the options controlling how frames are encoded.
 public struct VideoStreamConfiguration: Hashable, CustomStringConvertible, Sendable {
 
   public let format: VideoStreamFormat
   public let encodeOptions: VideoEncodeOptions
+  public let display: FramebufferDisplay
 
   public var framesPerSecond: Int? { encodeOptions.framesPerSecond }
   public var rateControl: VideoStreamRateControl { encodeOptions.rateControl }
   public var scaleFactor: Double? { encodeOptions.scaleFactor }
   public var keyFrameRate: Double { encodeOptions.keyFrameRate }
 
-  public init(format: VideoStreamFormat, encodeOptions: VideoEncodeOptions) {
+  public init(format: VideoStreamFormat, encodeOptions: VideoEncodeOptions, display: FramebufferDisplay = .main) {
     self.format = format
     self.encodeOptions = encodeOptions
+    self.display = display
   }
 
-  public init(format: VideoStreamFormat, framesPerSecond: Int?, rateControl: VideoStreamRateControl?, scaleFactor: Double?, keyFrameRate: Double?) {
-    self.init(format: format, encodeOptions: VideoEncodeOptions(framesPerSecond: framesPerSecond, rateControl: rateControl, scaleFactor: scaleFactor, keyFrameRate: keyFrameRate))
+  public init(format: VideoStreamFormat, framesPerSecond: Int?, rateControl: VideoStreamRateControl?, scaleFactor: Double?, keyFrameRate: Double?, display: FramebufferDisplay = .main) {
+    self.init(format: format, encodeOptions: VideoEncodeOptions(framesPerSecond: framesPerSecond, rateControl: rateControl, scaleFactor: scaleFactor, keyFrameRate: keyFrameRate), display: display)
   }
 
   public var description: String {
-    "Format \(format) | FPS \(framesPerSecond.map { "\($0)" } ?? "nil") | Rate Control \(rateControl) | Scale \(scaleFactor.map { "\($0)" } ?? "nil") | Key frame rate \(keyFrameRate)"
+    "Format \(format) | FPS \(framesPerSecond.map { "\($0)" } ?? "nil") | Rate Control \(rateControl) | Scale \(scaleFactor.map { "\($0)" } ?? "nil") | Key frame rate \(keyFrameRate) | Display \(display)"
   }
 }

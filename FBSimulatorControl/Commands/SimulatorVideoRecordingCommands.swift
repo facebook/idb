@@ -65,7 +65,7 @@ public final class SimulatorVideoRecordingCommands: VideoRecordingCommands {
     if video != nil {
       throw SimulatorVideoRecordingCommandError.recordingAlreadyActive
     }
-    let framebuffer = try await simulator.framebuffer.connect()
+    let framebuffer = try await simulator.framebuffer.connect(display: configuration.display)
     let video = SimulatorVideo.video(withFramebuffer: framebuffer, configuration: configuration, filePath: filePath, logger: simulator.logger)
     try await video.startRecording()
     self.video = video

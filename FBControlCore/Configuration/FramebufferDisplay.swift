@@ -16,3 +16,16 @@ public enum FramebufferDisplay: Hashable, Sendable {
   /// The display with this CoreDevice UUID.
   case display(uniqueID: String)
 }
+
+extension FramebufferDisplay: CustomStringConvertible {
+  public var description: String {
+    switch self {
+    case .main:
+      return "main"
+    case .active:
+      return "active"
+    case let .display(uniqueID):
+      return uniqueID
+    }
+  }
+}
