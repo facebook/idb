@@ -243,30 +243,23 @@ public enum ZipExtractor {
   }
 
   private static func inflate(_ entry: ZipCentralDirectory.Entry, at offset: UInt64, from archive: Int32, into output: (UnsafeRawBufferPointer) throws -> Void) throws {
-    var stream = z_stream()
-    // Negative window bits: a zip holds raw deflate, without a zlib header.
-    guard inflateInit2_(&stream, -MAX_WBITS, ZLIB_VERSION, Int32(MemoryLayout<z_stream>.size)) == Z_OK else {
+    guard let inflater = Inflater(.deflate) else {
       throw ZipExtractorError.corrupt("cannot inflate \(entry.path)")
     }
-    defer { inflateEnd(&stream) }
     var decompressed = [UInt8](repeating: 0, count: chunkSize)
     var finished = false
     try readCompressed(entry, at: offset, from: archive) { compressed in
-      stream.next_in = UnsafeMutablePointer(mutating: compressed.bindMemory(to: Bytef.self).baseAddress)
-      stream.avail_in = uInt(compressed.count)
+      var remaining = compressed
+      var filled: Bool
       repeat {
-        let status = decompressed.withUnsafeMutableBytes { buffer in
-          stream.next_out = buffer.bindMemory(to: Bytef.self).baseAddress
-          stream.avail_out = uInt(buffer.count)
-          return zlib.inflate(&stream, Z_NO_FLUSH)
-        }
-        guard status == Z_OK || status == Z_STREAM_END || status == Z_BUF_ERROR else {
+        guard let step = decompressed.withUnsafeMutableBytes({ inflater.inflate(remaining, into: $0) }) else {
           throw ZipExtractorError.corrupt("\(entry.path) does not inflate")
         }
-        let produced = decompressed.count - Int(stream.avail_out)
-        try decompressed.withUnsafeBytes { try output(UnsafeRawBufferPointer(rebasing: $0[0..<produced])) }
-        finished = status == Z_STREAM_END
-      } while stream.avail_out == 0 && !finished
+        remaining = UnsafeRawBufferPointer(rebasing: remaining[step.consumed...])
+        try decompressed.withUnsafeBytes { try output(UnsafeRawBufferPointer(rebasing: $0[0..<step.produced])) }
+        finished = step.ended
+        filled = step.produced == decompressed.count
+      } while filled && !finished
     }
     guard finished || entry.size == 0 else {
       throw ZipExtractorError.corrupt("\(entry.path) is truncated")

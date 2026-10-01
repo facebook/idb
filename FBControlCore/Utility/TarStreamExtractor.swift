@@ -6,7 +6,6 @@
  */
 
 import Foundation
-import zlib
 
 public enum TarExtractorError: Error, Equatable {
   case unsupported(String)
@@ -382,57 +381,33 @@ public enum TarStreamExtractor {
 
   private struct Reader {
     let decoder: Decoder
-    private var buffer = [UInt8](repeating: 0, count: 1 << 20)
-    private var start = 0
-    private var end = 0
+    private var input: BufferedInput
 
     init(_ decoder: Decoder) {
       self.decoder = decoder
+      input = BufferedInput(capacity: 1 << 20, read: decoder.read)
     }
 
-    private var available: Int { end - start }
-
-    var buffered: Data { Data(buffer[start..<end]) }
-
-    /// Reads more after what is buffered, returning false at the end of the input.
-    private mutating func fill() throws -> Bool {
-      if start > 0 {
-        let (from, count) = (start, available)
-        buffer.withUnsafeMutableBytes { bytes in
-          guard let base = bytes.baseAddress else {
-            return
-          }
-          memmove(base, base + from, count)
-        }
-        end = count
-        start = 0
-      }
-      let offset = end
-      let count = try buffer.withUnsafeMutableBytes { try decoder.read(UnsafeMutableRawBufferPointer(rebasing: $0[offset...])) }
-      end += count
-      return count > 0
-    }
+    var buffered: Data { input.buffered }
 
     /// The next block without consuming it, or nil if the input ends first.
     mutating func peekBlock() throws -> [UInt8]? {
-      while available < 512 {
-        guard try fill() else {
-          return nil
-        }
+      guard try input.buffer(atLeast: 512) else {
+        return nil
       }
-      return Array(buffer[start..<start + 512])
+      return input.withAvailable { Array($0[0..<512]) }
     }
 
     /// Nil at the end of the input. An archive without the blocks of zeros that
     /// should end it is taken as complete, as `bsdtar` does.
     mutating func block() throws -> [UInt8]? {
       guard let block = try peekBlock() else {
-        guard available == 0 else {
+        guard input.available == 0 else {
           throw TarExtractorError.corrupt("the tar ends partway through a header")
         }
         return nil
       }
-      start += 512
+      input.consume(512)
       return block
     }
 
@@ -440,21 +415,21 @@ public enum TarStreamExtractor {
     mutating func contents(_ size: UInt64, into output: (UnsafeRawBufferPointer) throws -> Void) throws {
       var remaining = size
       while remaining > 0 {
-        if available == 0, try !fill() {
+        guard try input.buffer(atLeast: 1) else {
           throw TarExtractorError.corrupt("the tar ends partway through an entry")
         }
-        let count = Int(min(UInt64(available), remaining))
-        try buffer.withUnsafeBytes { try output(UnsafeRawBufferPointer(rebasing: $0[start..<start + count])) }
-        start += count
+        let count = Int(min(UInt64(input.available), remaining))
+        try input.withAvailable { try output(UnsafeRawBufferPointer(rebasing: $0[0..<count])) }
+        input.consume(count)
         remaining -= UInt64(count)
       }
       var padding = Int((512 - size % 512) % 512)
       while padding > 0 {
-        if available == 0, try !fill() {
+        guard try input.buffer(atLeast: 1) else {
           throw TarExtractorError.corrupt("the tar ends partway through an entry")
         }
-        let count = min(available, padding)
-        start += count
+        let count = min(input.available, padding)
+        input.consume(count)
         padding -= count
       }
     }
@@ -477,8 +452,7 @@ public enum TarStreamExtractor {
     /// Reads to the end of the input, discarding it, so a writer is never left
     /// blocked on a pipe that nothing reads.
     mutating func drain() throws {
-      start = 0
-      end = 0
+      input.discard()
       try decoder.drain()
     }
   }
@@ -488,63 +462,33 @@ public enum TarStreamExtractor {
     private enum State {
       case undetected
       case plain
-      case gzip
+      case gzip(Inflater)
       case finished
     }
 
-    private let raw: Read
     private var state = State.undetected
-    private var input = [UInt8](repeating: 0, count: 1 << 18)
-    private var start = 0
-    private var end = 0
-    private var rawEnded = false
-    private var stream = z_stream()
-    private var inflating = false
+    private var input: BufferedInput
 
     init(_ raw: @escaping Read) {
-      self.raw = raw
-    }
-
-    deinit {
-      if inflating {
-        inflateEnd(&stream)
-      }
+      input = BufferedInput(capacity: 1 << 18, read: raw)
     }
 
     func read(_ output: UnsafeMutableRawBufferPointer) throws -> Int {
       switch state {
       case .undetected:
-        guard try buffer(atLeast: 2) else {
+        guard try input.buffer(atLeast: 2), input[0] == 0x1F, input[1] == 0x8B else {
           state = .plain
           return try read(output)
         }
-        if input[start] == 0x1F, input[start + 1] == 0x8B {
-          // 16 over the window bits: a gzip header and trailer, not zlib's.
-          guard inflateInit2_(&stream, MAX_WBITS + 16, ZLIB_VERSION, Int32(MemoryLayout<z_stream>.size)) == Z_OK else {
-            throw TarExtractorError.corrupt("cannot inflate the gzip")
-          }
-          inflating = true
-          state = .gzip
-        } else {
-          state = .plain
+        guard let inflater = Inflater(.gzip) else {
+          throw TarExtractorError.corrupt("cannot inflate the gzip")
         }
+        state = .gzip(inflater)
         return try read(output)
       case .plain:
-        guard start < end else {
-          return try raw(output)
-        }
-        let count = min(end - start, output.count)
-        let from = start
-        input.withUnsafeBytes { bytes in
-          guard let base = bytes.baseAddress else {
-            return
-          }
-          output.baseAddress?.copyMemory(from: base + from, byteCount: count)
-        }
-        start += count
-        return count
-      case .gzip:
-        return try inflate(output)
+        return try input.read(into: output)
+      case .gzip(let inflater):
+        return try inflate(inflater, into: output)
       case .finished:
         return 0
       }
@@ -553,71 +497,32 @@ public enum TarStreamExtractor {
     /// Reads the raw input to its end.
     func drain() throws {
       state = .finished
-      start = 0
-      end = 0
-      var scratch = [UInt8](repeating: 0, count: 1 << 16)
-      while !rawEnded {
-        rawEnded = try scratch.withUnsafeMutableBytes { try raw($0) } == 0
-      }
+      try input.drain()
     }
 
-    private func inflate(_ output: UnsafeMutableRawBufferPointer) throws -> Int {
+    private func inflate(_ inflater: Inflater, into output: UnsafeMutableRawBufferPointer) throws -> Int {
       while true {
-        if start == end, try !buffer(atLeast: 1) {
+        guard try input.buffer(atLeast: 1) else {
           throw TarExtractorError.corrupt("the gzip ends early")
         }
-        let before = end - start
-        let offset = start
-        let status = input.withUnsafeMutableBytes { bytes in
-          stream.next_in = bytes.bindMemory(to: Bytef.self).baseAddress.map { $0 + offset }
-          stream.avail_in = uInt(before)
-          stream.next_out = output.bindMemory(to: Bytef.self).baseAddress
-          stream.avail_out = uInt(output.count)
-          return zlib.inflate(&stream, Z_NO_FLUSH)
-        }
-        start += before - Int(stream.avail_in)
-        guard status == Z_OK || status == Z_STREAM_END || status == Z_BUF_ERROR else {
+        guard let step = input.withAvailable({ inflater.inflate($0, into: output) }) else {
           throw TarExtractorError.corrupt("the gzip does not inflate")
         }
-        let produced = output.count - Int(stream.avail_out)
-        if status == Z_STREAM_END {
+        input.consume(step.consumed)
+        var finished = false
+        if step.ended {
           // gzip allows several members one after another; anything else after one is ignored.
-          if try buffer(atLeast: 2), input[start] == 0x1F, input[start + 1] == 0x8B {
-            inflateReset(&stream)
+          if try input.buffer(atLeast: 2), input[0] == 0x1F, input[1] == 0x8B {
+            inflater.reset()
           } else {
             state = .finished
+            finished = true
           }
         }
-        if produced > 0 || state == .finished {
-          return produced
+        if step.produced > 0 || finished {
+          return step.produced
         }
       }
-    }
-
-    /// Returns whether at least `count` bytes are buffered, reading more if needed.
-    private func buffer(atLeast count: Int) throws -> Bool {
-      while end - start < count {
-        if rawEnded {
-          return false
-        }
-        if start > 0 {
-          let (from, available) = (start, end - start)
-          input.withUnsafeMutableBytes { bytes in
-            guard let base = bytes.baseAddress else {
-              return
-            }
-            memmove(base, base + from, available)
-          }
-          (start, end) = (0, available)
-        }
-        let offset = end
-        let read = try input.withUnsafeMutableBytes { try raw(UnsafeMutableRawBufferPointer(rebasing: $0[offset...])) }
-        if read == 0 {
-          rawEnded = true
-        }
-        end += read
-      }
-      return true
     }
   }
 }

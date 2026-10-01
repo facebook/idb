@@ -146,78 +146,34 @@ public enum ZipStreamExtractor {
   }
 
   private struct Reader {
-    let fileDescriptor: Int32
-    private var buffer = [UInt8](repeating: 0, count: 1 << 20)
-    private var start = 0
-    private var end = 0
+    private var input: BufferedInput
 
     init(fileDescriptor: Int32) {
-      self.fileDescriptor = fileDescriptor
-    }
-
-    private var available: Int { end - start }
-
-    /// Reads more after what is buffered, returning false at the end of the input.
-    private mutating func fill() throws -> Bool {
-      if start > 0 {
-        let (from, count) = (start, available)
-        buffer.withUnsafeMutableBytes { bytes in
-          guard let base = bytes.baseAddress else {
-            return
-          }
-          memmove(base, base + from, count)
-        }
-        end = count
-        start = 0
-      }
-      while true {
-        let (fd, offset) = (fileDescriptor, end)
-        let count = buffer.withUnsafeMutableBytes { bytes in
-          Darwin.read(fd, bytes.baseAddress.map { $0 + offset }, bytes.count - offset)
-        }
-        if count < 0 && errno == EINTR {
-          continue
-        }
-        guard count >= 0 else {
-          throw POSIXError.current
-        }
-        end += count
-        return count > 0
-      }
+      input = BufferedInput(capacity: 1 << 20, read: TarStreamExtractor.reading(fileDescriptor: fileDescriptor))
     }
 
     private mutating func ensure(_ count: Int) throws {
-      while available < count {
-        guard try fill() else {
-          throw ZipExtractorError.corrupt("the zip ends early")
-        }
+      guard try input.buffer(atLeast: count) else {
+        throw ZipExtractorError.corrupt("the zip ends early")
       }
     }
 
     /// Nil at the end of the input.
     mutating func peekSignature() throws -> UInt32? {
-      while available < 4 {
-        guard try fill() else {
-          return nil
-        }
+      guard try input.buffer(atLeast: 4) else {
+        return nil
       }
-      return Data(buffer[start..<start + 4]).uint32(at: 0)
+      return input.withAvailable { Data($0[0..<4]) }.uint32(at: 0)
     }
 
     mutating func read(_ count: Int) throws -> Data {
       try ensure(count)
-      defer { start += count }
-      return Data(buffer[start..<start + count])
+      defer { input.consume(count) }
+      return input.withAvailable { Data($0[0..<count]) }
     }
 
-    /// Reads to the end of the input, discarding it.
     mutating func drain() throws {
-      start = 0
-      end = 0
-      while try fill() {
-        start = 0
-        end = 0
-      }
+      try input.drain()
     }
 
     /// Calls `output` with the entry's contents in order, checking their size and
@@ -234,12 +190,10 @@ public enum ZipStreamExtractor {
       if header.method == 0 {
         var remaining = header.compressedSize
         while remaining > 0 {
-          if available == 0 {
-            try ensure(1)
-          }
-          let count = Int(min(UInt64(available), remaining))
-          try buffer.withUnsafeBytes { try emit(UnsafeRawBufferPointer(rebasing: $0[start..<start + count])) }
-          start += count
+          try ensure(1)
+          let count = Int(min(UInt64(input.available), remaining))
+          try input.withAvailable { try emit(UnsafeRawBufferPointer(rebasing: $0[0..<count])) }
+          input.consume(count)
           remaining -= UInt64(count)
         }
       } else {
@@ -248,7 +202,7 @@ public enum ZipStreamExtractor {
       var expected = (crc32: header.crc32, size: header.size)
       if header.flags & 8 != 0 {
         if try peekSignature() == ZipSignature.dataDescriptor {
-          start += 4
+          input.consume(4)
         }
         let width = header.zip64 ? 8 : 4
         let descriptor = try read(4 + 2 * width)
@@ -261,34 +215,21 @@ public enum ZipStreamExtractor {
     }
 
     private mutating func inflate(_ path: String, into output: (UnsafeRawBufferPointer) throws -> Void) throws {
-      var stream = z_stream()
-      // Negative window bits: a zip holds raw deflate, without a zlib header.
-      guard inflateInit2_(&stream, -MAX_WBITS, ZLIB_VERSION, Int32(MemoryLayout<z_stream>.size)) == Z_OK else {
+      guard let inflater = Inflater(.deflate) else {
         throw ZipExtractorError.corrupt("cannot inflate \(path)")
       }
-      defer { inflateEnd(&stream) }
       var decompressed = [UInt8](repeating: 0, count: 1 << 18)
       while true {
-        if available == 0 {
-          try ensure(1)
+        try ensure(1)
+        let step = input.withAvailable { compressed in
+          decompressed.withUnsafeMutableBytes { inflater.inflate(compressed, into: $0) }
         }
-        let (offset, before) = (start, available)
-        let status = buffer.withUnsafeMutableBytes { input in
-          decompressed.withUnsafeMutableBytes { out in
-            stream.next_in = input.bindMemory(to: Bytef.self).baseAddress.map { $0 + offset }
-            stream.avail_in = uInt(before)
-            stream.next_out = out.bindMemory(to: Bytef.self).baseAddress
-            stream.avail_out = uInt(out.count)
-            return zlib.inflate(&stream, Z_NO_FLUSH)
-          }
-        }
-        start += before - Int(stream.avail_in)
-        guard status == Z_OK || status == Z_STREAM_END || status == Z_BUF_ERROR else {
+        guard let step else {
           throw ZipExtractorError.corrupt("\(path) does not inflate")
         }
-        let produced = decompressed.count - Int(stream.avail_out)
-        try decompressed.withUnsafeBytes { try output(UnsafeRawBufferPointer(rebasing: $0[0..<produced])) }
-        if status == Z_STREAM_END {
+        input.consume(step.consumed)
+        try decompressed.withUnsafeBytes { try output(UnsafeRawBufferPointer(rebasing: $0[0..<step.produced])) }
+        if step.ended {
           return
         }
       }
