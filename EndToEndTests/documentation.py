@@ -60,6 +60,9 @@ DOCUMENTED_DEMOS: Mapping[str, str] = {
     "spin-safaris-address-bar": (
         "EndToEndTests.test_demos.SpinningSafariDemos.test_spin_safaris_address_bar"
     ),
+    "seed-photos-and-a-location": (
+        "EndToEndTests.test_demos.SeededLibraryDemos.test_seed_photos_and_a_location"
+    ),
 }
 
 PACKAGE = "EndToEndTests"

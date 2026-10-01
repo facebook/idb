@@ -14,7 +14,11 @@ targeted test beside the other tests of its command.
 
 from __future__ import annotations
 
+import shutil
+import struct
 import unittest
+import zlib
+from pathlib import Path
 from typing import Any
 
 from .documentation import documented_demo
@@ -77,6 +81,9 @@ INJECTED_SWIFT_DEMO_CAPABILITIES = {
 }
 SPINNING_SAFARI_DEMO_CAPABILITIES = {
     "test_spin_safaris_address_bar": SuiteCapability.ACCESSIBILITY_INTERACTION,
+}
+SEEDED_LIBRARY_DEMO_CAPABILITIES = {
+    "test_seed_photos_and_a_location": SuiteCapability.ACCESSIBILITY_INTERACTION,
 }
 
 COUNTER_ID = "injected-counter"
@@ -149,6 +156,66 @@ return await MainActor.run { () -> String in
 }"""
 
 
+LIBRARY_ID = "seeded-library"
+PHOTO_SIZE = 64
+PHOTOS = {
+    "sunrise.png": (255, 149, 0),
+    "sea.png": (0, 122, 255),
+    "leaf.png": (52, 199, 89),
+}
+MENLO_PARK = ("37.4848", "-122.1484")
+LONDON = ("51.5072", "-0.1276")
+ALLOW_LOCATION = "Allow While Using App"
+SHOW_LIBRARY = r"""import CoreLocation
+import Photos
+import UIKit
+let options = PHImageRequestOptions()
+options.isSynchronous = true
+var found: [UIImage] = []
+PHAsset.fetchAssets(with: .image, options: nil).enumerateObjects { asset, _, _ in
+  PHImageManager.default().requestImage(
+    for: asset, targetSize: CGSize(width: 192, height: 192),
+    contentMode: .aspectFill, options: options
+  ) { image, _ in image.map { found.append($0) } }
+}
+let photos = found
+return await MainActor.run { () -> String in
+  let window = UIApplication.shared.connectedScenes
+    .compactMap { ($0 as? UIWindowScene)?.keyWindow }.first
+  guard let window else { return "No window to show them in" }
+  let row = UIStackView(arrangedSubviews: photos.map { photo in
+    let view = UIImageView(image: photo)
+    view.layer.cornerRadius = 16
+    view.clipsToBounds = true
+    view.widthAnchor.constraint(equalToConstant: 96).isActive = true
+    view.heightAnchor.constraint(equalToConstant: 96).isActive = true
+    return view
+  })
+  row.spacing = 12
+  let label = UILabel()
+  label.accessibilityIdentifier = "seeded-library"
+  label.text = "\(photos.count) photos, waiting for a location"
+  let column = UIStackView(arrangedSubviews: [row, label])
+  column.axis = .vertical
+  column.alignment = .center
+  column.spacing = 24
+  column.backgroundColor = .systemBackground
+  column.frame = window.bounds
+  column.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+  column.isLayoutMarginsRelativeArrangement = true
+  window.addSubview(column)
+  Task {
+    for try await update in CLLocationUpdate.liveUpdates() {
+      guard let place = update.location?.coordinate else { continue }
+      label.text = String(
+        format: "%d photos at %.4f, %.4f",
+        photos.count, place.latitude, place.longitude)
+    }
+  }
+  return "Showing \(photos.count) photos, and following the location"
+}"""
+
+
 def load_tests(
     loader: unittest.TestLoader,
     tests: unittest.TestSuite,
@@ -165,6 +232,7 @@ def load_tests(
                     (WebContentDemos, WEB_CONTENT_DEMO_CAPABILITIES),
                     (InjectedSwiftDemos, INJECTED_SWIFT_DEMO_CAPABILITIES),
                     (SpinningSafariDemos, SPINNING_SAFARI_DEMO_CAPABILITIES),
+                    (SeededLibraryDemos, SEEDED_LIBRARY_DEMO_CAPABILITIES),
                 )
             ),
             loader.loadTestsFromTestCase(NotificationDemos),
@@ -897,4 +965,136 @@ class SpinningSafariDemos(SafariTestCase):
             "idb-repl attached to the Safari it launched, found whatever was "
             "still spinning and removed the animation.",
             _result(stopped),
+        )
+
+
+def _png(colour: tuple[int, int, int]) -> bytes:
+    """A square PNG of one colour, so each seeded photo is told apart by eye."""
+
+    def chunk(kind: bytes, data: bytes) -> bytes:
+        body = kind + data
+        return struct.pack(">I", len(data)) + body + struct.pack(">I", zlib.crc32(body))
+
+    row = b"\x00" + bytes(colour) * PHOTO_SIZE
+    return b"".join(
+        [
+            b"\x89PNG\r\n\x1a\n",
+            chunk(
+                b"IHDR", struct.pack(">IIBBBBB", PHOTO_SIZE, PHOTO_SIZE, 8, 2, 0, 0, 0)
+            ),
+            chunk(b"IDAT", zlib.compress(row * PHOTO_SIZE)),
+            chunk(b"IEND", b""),
+        ]
+    )
+
+
+class SeededLibraryDemos(InjectedSwiftCase):
+    capabilities = SEEDED_LIBRARY_DEMO_CAPABILITIES
+
+    def write_photos(self) -> list[Path]:
+        # Inside the companion's directory, so the published paths read the
+        # same on every run.
+        directory = self.companion.directory / "seeded-photos"
+        directory.mkdir(exist_ok=True)
+        self.addCleanup(shutil.rmtree, directory, ignore_errors=True)
+        paths = []
+        for name, colour in PHOTOS.items():
+            path = directory / name
+            path.write_bytes(_png(colour))
+            paths.append(path)
+        return paths
+
+    async def wait_for_place(self, place: tuple[str, str]) -> str:
+        label = f"{len(PHOTOS)} photos at {place[0]}, {place[1]}"
+        await self.wait_for_label(label)
+        return label
+
+    @documented_demo(
+        slug="seed-photos-and-a-location",
+        title="Seed photos and a location, and watch an app pick them up",
+        summary=(
+            "Give a simulator a known photo library and location: clear its "
+            "photos, add three, let an app read them, and put the simulator in "
+            "Menlo Park. Swift injected into the app shows the photos and asks "
+            "for the location, idb answers the system prompt, and when idb "
+            "moves the simulator to London the app follows it there."
+        ),
+    )
+    async def test_seed_photos_and_a_location(self) -> None:
+        photos = self.write_photos()
+        # The library and location are cleared rather than restored: no test
+        # relies on the simulator's sample photos or where it is.
+        self.addAsyncCleanup(self.setup_idb, "photos", "clear")
+        self.addAsyncCleanup(self.simctl.run, "location", self.udid, "clear")
+        self.addAsyncCleanup(
+            self.idb, "revoke", FIXTURE_APP_BUNDLE_ID, "photos", "location", check=False
+        )
+        self.addAsyncCleanup(self.setup_terminate_quietly, FIXTURE_APP_BUNDLE_ID)
+        await self.setup_terminate_quietly(FIXTURE_APP_BUNDLE_ID)
+
+        await self.idb("photos", "clear", step="Start from an empty photo library")
+        self.note("The simulator's sample photos are gone.")
+
+        await self.idb(
+            "add-media", *(str(path) for path in photos), step="Add three photos"
+        )
+        self.note(
+            "Three one-colour images, written by the test, are now the whole "
+            "photo library."
+        )
+
+        await self.idb(
+            "approve",
+            FIXTURE_APP_BUNDLE_ID,
+            "photos",
+            step="Let the app read photos",
+        )
+        self.note("Granted ahead of time, so the app never asks for the photos.")
+
+        await self.idb(
+            "set-location", *MENLO_PARK, step="Put the simulator in Menlo Park"
+        )
+
+        shown = await self.idb_repl(
+            "app",
+            "--new-session",
+            SHOW_LIBRARY,
+            step="Show the photos and follow the location, with injected Swift",
+        )
+        self.assertEqual(
+            _result(shown),
+            f"Showing {len(PHOTOS)} photos, and following the location",
+        )
+        self.note(
+            f"The injected Swift read {len(PHOTOS)} photos from the library, "
+            "put them on screen, and left a task running in the app that "
+            "follows the location.",
+            f"{len(PHOTOS)} photos",
+        )
+
+        await self.wait_for_label(ALLOW_LOCATION)
+        await self.idb("ui", "tap", ALLOW_LOCATION, step="Answer the location prompt")
+        self.note(
+            "The app asked to use the location, and idb pressed the button on "
+            "the system's prompt by its label."
+        )
+
+        in_menlo_park = await self.wait_for_place(MENLO_PARK)
+        library = await self.describe_one(LIBRARY_ID, step="Read what the app shows")
+        self.assertEqual(_label(library), in_menlo_park)
+        self.note(
+            f"The app reads '{in_menlo_park}': the photos idb added and the "
+            "location idb set.",
+            in_menlo_park,
+        )
+
+        await self.idb("set-location", *LONDON, step="Move the simulator to London")
+
+        in_london = await self.wait_for_place(LONDON)
+        moved = await self.describe_one(LIBRARY_ID, step="Read what the app shows now")
+        self.assertEqual(_label(moved), in_london)
+        self.note(
+            f"The app now reads '{in_london}'. Nothing was relaunched: the "
+            "task the Swift left running saw the location change.",
+            in_london,
         )
