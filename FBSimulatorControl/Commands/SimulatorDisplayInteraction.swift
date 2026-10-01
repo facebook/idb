@@ -12,6 +12,7 @@ public enum SimulatorDisplayInteractionError: Error, LocalizedError {
   case inactiveDisplay(String)
   case missingMapping(String)
   case invalidPoint(CGPoint, bounds: CGSize)
+  case nonFinitePoint(CGPoint)
 
   public var errorDescription: String? {
     switch self {
@@ -20,15 +21,21 @@ public enum SimulatorDisplayInteractionError: Error, LocalizedError {
     case let .missingMapping(id): "Display \(id) has no unique accessibility and touchscreen mapping"
     case let .invalidPoint(point, bounds):
       "Touch point (\(point.x), \(point.y)) \(Self.invalidity(of: point)) the display's point bounds (\(bounds.width) x \(bounds.height))"
+    case let .nonFinitePoint(point):
+      "Touch point (\(point.x), \(point.y)) is not a real position (\(Self.nonFiniteAxes(of: point).joined(separator: ", ")))"
     }
   }
 
   private static func invalidity(of point: CGPoint) -> String {
-    let nonFinite = [("x", point.x), ("y", point.y)].compactMap { axis, value in
-      value.isNaN ? "\(axis) is NaN" : value.isInfinite ? "\(axis) is infinite" : nil
-    }
+    let nonFinite = nonFiniteAxes(of: point)
     if nonFinite.isEmpty { return "is outside" }
     return "is not a real position (\(nonFinite.joined(separator: ", "))) within"
+  }
+
+  private static func nonFiniteAxes(of point: CGPoint) -> [String] {
+    [("x", point.x), ("y", point.y)].compactMap { axis, value in
+      value.isNaN ? "\(axis) is NaN" : value.isInfinite ? "\(axis) is infinite" : nil
+    }
   }
 }
 

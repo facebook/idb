@@ -101,6 +101,7 @@ struct SimulatorHIDOperation {
   let deliver: @Sendable (SimulatorHIDEvent, SimulatorHIDDisplay?) async throws -> Void
   let flush: @Sendable () async throws -> Void
   let reportCleanupError: @Sendable (Error) -> Void
+  let log: @Sendable (String) -> Void
 
   private let observation: SimulatorHIDDisplayObservation
   private var observationTask: Task<Void, Never>?
@@ -115,6 +116,7 @@ struct SimulatorHIDOperation {
     deliver: @escaping @Sendable (SimulatorHIDEvent, SimulatorHIDDisplay?) async throws -> Void,
     flush: @escaping @Sendable () async throws -> Void,
     reportCleanupError: @escaping @Sendable (Error) -> Void,
+    log: @escaping @Sendable (String) -> Void,
     observation: SimulatorHIDDisplayObservation = SimulatorHIDDisplayObservation()
   ) {
     self.observation = observation
@@ -122,6 +124,7 @@ struct SimulatorHIDOperation {
     self.deliver = deliver
     self.flush = flush
     self.reportCleanupError = reportCleanupError
+    self.log = log
   }
 
   mutating func send(_ event: SimulatorHIDEvent) async throws {
@@ -130,15 +133,18 @@ struct SimulatorHIDOperation {
       for child in events { try await send(child) }
       return
     }
+    var event = event
     switch event {
     case let .touch(direction, x, y, edge):
       try await bindOrValidateDisplay()
-      _ = try display?.normalizedPoint(CGPoint(x: x, y: y))
-      if direction == .down { singleRelease = .touch(direction: .up, x: x, y: y, edge: edge) }
+      let point = try clamp(CGPoint(x: x, y: y))
+      event = .touch(direction: direction, x: point.x, y: point.y, edge: edge)
+      if direction == .down { singleRelease = .touch(direction: .up, x: point.x, y: point.y, edge: edge) }
     case let .twoFingerTouch(direction, first, second):
       try await bindOrValidateDisplay()
-      _ = try display?.normalizedPoint(first)
-      _ = try display?.normalizedPoint(second)
+      let first = try clamp(first)
+      let second = try clamp(second)
+      event = .twoFingerTouch(direction: direction, finger1: first, finger2: second)
       if direction == .down { twoFingerRelease = .twoFingerTouch(direction: .up, finger1: first, finger2: second) }
     case .button, .remoteButton, .keyboard, .trackpad, .delay, .composite:
       break
@@ -168,6 +174,17 @@ struct SimulatorHIDOperation {
     await stopObserving()
     try Task.checkCancellation()
     try observation.check()
+  }
+
+  private func clamp(_ point: CGPoint) throws -> CGPoint {
+    guard point.x.isFinite, point.y.isFinite else { throw SimulatorDisplayInteractionError.nonFinitePoint(point) }
+    guard let display else { return point }
+    let clamped = display.clampedPoint(point)
+    if clamped != point {
+      let size = display.geometry.pointSize
+      log("Clamped touch point (\(point.x), \(point.y)) to (\(clamped.x), \(clamped.y)) within the display's point bounds (\(size.width) x \(size.height))")
+    }
+    return clamped
   }
 
   private mutating func bindOrValidateDisplay() async throws {
