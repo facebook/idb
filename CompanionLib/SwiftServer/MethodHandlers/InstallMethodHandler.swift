@@ -169,16 +169,21 @@ struct InstallMethodHandler: @unchecked Sendable {
     switch source {
     case let .data(data):
       if destination == .app && isZipArchive(data) {
+        telemetry.streamed(.zip)
         return try await installZipArchive(makeDebuggable: makeDebuggable, overrideModificationTime: overrideModificationTime, telemetry: telemetry) { archiveURL in
           try await spool(initial: data, requestStream: requestStream, to: archiveURL, telemetry: telemetry)
         }
       }
       if destination == .app && Self.isZstdZipStream(data) {
+        telemetry.streamed(.zstdZip)
         return try await installZipArchive(makeDebuggable: makeDebuggable, overrideModificationTime: overrideModificationTime, telemetry: telemetry) { archiveURL in
           try await decompressZstd(initial: data, requestStream: requestStream, to: archiveURL, telemetry: telemetry)
         }
       }
 
+      if destination == .app {
+        telemetry.streamed(InstallStreamFormat(tarCompression: compression))
+      }
       let input = FBProcessInput<OutputStream>.fromStream()
       let output = input.contents
       async let writePayload: Void = writePayload(initial: data, requestStream: requestStream, output: output, telemetry: telemetry)

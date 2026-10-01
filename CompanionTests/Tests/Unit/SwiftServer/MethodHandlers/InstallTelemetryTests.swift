@@ -55,6 +55,19 @@ private struct Refused: Error {}
     #expect(call.normals == ["payload_kind": "data"])
   }
 
+  @Test(arguments: [
+    (InstallStreamFormat.zip, "zip"),
+    (.zstdZip, "zip_zstd"),
+    (InstallStreamFormat(tarCompression: .GZIP), "tar_gzip"),
+    (InstallStreamFormat(tarCompression: .ZSTD), "tar_zstd"),
+  ])
+  func aStreamedAppReportsItsFormat(format: InstallStreamFormat, column: String) {
+    let telemetry = InstallTelemetry(payloadKind: .data)
+    telemetry.streamed(format)
+
+    #expect(columns(of: telemetry) == ["payload_kind=data", "stream_format=\(column)"])
+  }
+
   @Test func aLocalPathReportsOnlyItsKindAndStages() {
     let telemetry = InstallTelemetry(payloadKind: .filePath)
     telemetry.observe(.installStarted(timing: timing(seconds: 0), appPath: "/a/A.app"))

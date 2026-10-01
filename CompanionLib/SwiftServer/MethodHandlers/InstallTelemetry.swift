@@ -18,6 +18,23 @@ enum InstallPayloadKind: String {
   case filePath = "file_path"
 }
 
+/// The format of an app streamed over the RPC, which the client picks from what the companion advertises.
+enum InstallStreamFormat: String {
+  case zip
+  case zstdZip = "zip_zstd"
+  case gzipTar = "tar_gzip"
+  case zstdTar = "tar_zstd"
+
+  init(tarCompression: FBCompressionFormat) {
+    switch tarCompression {
+    case .GZIP:
+      self = .gzipTar
+    case .ZSTD:
+      self = .zstdTar
+    }
+  }
+}
+
 /// Accumulates what one install did into the columns its event reports.
 ///
 /// `receive_ms` and `size` describe getting the payload onto the companion's host: streamed over the
@@ -29,6 +46,7 @@ final class InstallTelemetry: @unchecked Sendable {
 
   private let lock = NSLock()
   private let payloadKind: InstallPayloadKind
+  private var streamFormat: InstallStreamFormat?
   private var receivedBytes: Int64?
   private var receiveMs: Int64?
   private var receiving = false
@@ -38,6 +56,10 @@ final class InstallTelemetry: @unchecked Sendable {
 
   init(payloadKind: InstallPayloadKind) {
     self.payloadKind = payloadKind
+  }
+
+  func streamed(_ format: InstallStreamFormat) {
+    lock.withLock { streamFormat = format }
   }
 
   /// The client started streaming the payload.
@@ -98,6 +120,9 @@ final class InstallTelemetry: @unchecked Sendable {
   func record(into call: CallTelemetry) {
     lock.withLock {
       call.setNormal(payloadKind.rawValue, forKey: "payload_kind")
+      if let streamFormat {
+        call.setNormal(streamFormat.rawValue, forKey: "stream_format")
+      }
       if let receivedBytes {
         call.setSize(receivedBytes)
       }
