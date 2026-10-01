@@ -67,6 +67,16 @@ struct ZipExtractorTests {
     return tree
   }
 
+  /// What `bsdtar` extracted, less the AppleDouble entries for symlinks: `bsdtar`
+  /// cannot apply metadata to a symlink, so it writes those entries out as files.
+  private func bsdtarTree(at expected: String) throws -> [String: String] {
+    try tree(at: expected).filter { relative, _ in
+      let name = (relative as NSString).lastPathComponent
+      let sibling = ((relative as NSString).deletingLastPathComponent as NSString).appendingPathComponent(String(name.dropFirst(2)))
+      return !(name.hasPrefix("._") && (try? fileManager.destinationOfSymbolicLink(atPath: "\(expected)/\(sibling)")) != nil)
+    }
+  }
+
   private func expectParityWithBSDTar(_ archive: String) async throws {
     let expected = root.appendingPathComponent("bsdtar").path
     try fileManager.createDirectory(atPath: expected, withIntermediateDirectories: true)
@@ -76,12 +86,7 @@ struct ZipExtractorTests {
 
     let summary = try ZipExtractor.extract(archiveAtPath: archive, to: extracted)
 
-    // bsdtar cannot apply metadata to a symlink, so it writes the symlink's AppleDouble entry out as a file.
-    let expectedTree = try tree(at: expected).filter { relative, _ in
-      let name = (relative as NSString).lastPathComponent
-      let sibling = ((relative as NSString).deletingLastPathComponent as NSString).appendingPathComponent(String(name.dropFirst(2)))
-      return !(name.hasPrefix("._") && fileManager.fileExists(atPath: "\(expected)/\(relative)") && (try? fileManager.destinationOfSymbolicLink(atPath: "\(expected)/\(sibling)")) != nil)
-    }
+    let expectedTree = try bsdtarTree(at: expected)
     let extractedTree = try tree(at: extracted)
     let differences = Set(expectedTree.keys).union(extractedTree.keys).sorted().filter { expectedTree[$0] != extractedTree[$0] }
     #expect(differences.map { "\($0): \(expectedTree[$0] ?? "-") vs \(extractedTree[$0] ?? "-")" } == [])
@@ -191,6 +196,146 @@ struct ZipExtractorTests {
 
     #expect(throws: ZipExtractorError.unsupported("A.app/Info.plist is encrypted")) {
       try ZipExtractor.extract(archiveAtPath: archive, to: extracted)
+    }
+  }
+
+  // MARK: - ZipStreamExtractor
+
+  /// Extracts through a pipe, as a zip arrives, then repairs from the complete file.
+  @discardableResult
+  private func extractAsStream(_ archive: String, to extracted: String) throws -> ZipExtractor.Summary {
+    try fileManager.createDirectory(atPath: extracted, withIntermediateDirectories: true)
+    var fds: [Int32] = [0, 0]
+    #expect(pipe(&fds) == 0)
+    let (readEnd, writeEnd) = (fds[0], fds[1])
+    _ = fcntl(writeEnd, F_SETNOSIGPIPE, 1)
+    let contents = try Data(contentsOf: URL(fileURLWithPath: archive))
+    let wroteAll = OSAllocatedUnfairLock(initialState: false)
+    let finished = DispatchSemaphore(value: 0)
+    // After the read end closes, so that a reader that stops early fails this rather than hanging it.
+    defer {
+      finished.wait()
+      #expect(wroteAll.withLock { $0 }, "the extractor should read the whole zip, even when it fails")
+    }
+    defer { close(readEnd) }
+    let writer = Thread {
+      defer {
+        close(writeEnd)
+        finished.signal()
+      }
+      contents.withUnsafeBytes { buffer in
+        var offset = 0
+        while offset < buffer.count {
+          let written = write(writeEnd, buffer.baseAddress.map { $0 + offset }, min(buffer.count - offset, 7_000))
+          guard written > 0 else {
+            return
+          }
+          offset += written
+        }
+        wroteAll.withLock { $0 = true }
+      }
+    }
+    writer.start()
+    let summary = try ZipStreamExtractor.extract(from: readEnd, to: extracted)
+    try ZipCentralDirectory(archiveAtPath: archive).repair(extractedAt: extracted)
+    return summary
+  }
+
+  private func expectStreamParityWithBSDTar(_ archive: String) async throws {
+    let expected = root.appendingPathComponent("bsdtar").path
+    try fileManager.createDirectory(atPath: expected, withIntermediateDirectories: true)
+    try await BSDTarExtractor().extract(.filePath(archive), to: expected, options: ArchiveExtractOptions(), logger: logger)
+    let extracted = root.appendingPathComponent("stream").path
+
+    try extractAsStream(archive, to: extracted)
+
+    // The repair removes AppleDouble files after the fact, which moves their directories' times.
+    func withoutDirectoryTimes(_ tree: [String: String]) -> [String: String] {
+      tree.mapValues { $0.hasPrefix("dir") ? String($0.split(separator: " ").prefix(2).joined(separator: " ")) : $0 }
+    }
+    let expectedTree = withoutDirectoryTimes(try bsdtarTree(at: expected))
+    let extractedTree = withoutDirectoryTimes(try tree(at: extracted))
+    let differences = Set(expectedTree.keys).union(extractedTree.keys).sorted().filter { expectedTree[$0] != extractedTree[$0] }
+    #expect(differences.map { "\($0): \(expectedTree[$0] ?? "-") vs \(extractedTree[$0] ?? "-")" } == [])
+  }
+
+  @Test
+  func extractStream_OfADittoZip_MatchesBSDTarOnceRepaired() async throws {
+    let app = try makeApp()
+    let archive = root.appendingPathComponent("a.ipa").path
+    try run("/usr/bin/ditto", ["-c", "-k", "--keepParent", app, archive])
+
+    try await expectStreamParityWithBSDTar(archive)
+  }
+
+  @Test
+  func extractStream_OfAStoredZip_MatchesBSDTarOnceRepaired() async throws {
+    _ = try makeApp()
+    let archive = root.appendingPathComponent("a.ipa").path
+    try run("/usr/bin/zip", ["-qry0", archive, "A.app"])
+
+    try await expectStreamParityWithBSDTar(archive)
+  }
+
+  @Test
+  func extractStream_OfAZip64Archive_MatchesBSDTarOnceRepaired() async throws {
+    _ = try makeApp()
+    let archive = root.appendingPathComponent("a.ipa").path
+    try run("/usr/bin/zip", ["-qry", "-fz", archive, "A.app"])
+
+    try await expectStreamParityWithBSDTar(archive)
+  }
+
+  @Test
+  func extractStream_OfAZipWrittenToAPipe_MatchesBSDTarOnceRepaired() async throws {
+    _ = try makeApp()
+    let archive = root.appendingPathComponent("a.ipa").path
+    // Deflated with data descriptors, as zip cannot seek back to write sizes into a
+    // pipe. Symlinks are followed and the empty file left out, as those are stored.
+    try run("/bin/sh", ["-c", "/usr/bin/zip -qr - A.app -x A.app/Real/empty A.app/LinkDir/empty | /bin/cat > \"$0\"", archive])
+
+    try await expectStreamParityWithBSDTar(archive)
+  }
+
+  @Test
+  func extractStream_CountsTheFilesItWrote() throws {
+    _ = try makeApp()
+    let archive = root.appendingPathComponent("a.ipa").path
+    try run("/usr/bin/zip", ["-qry0", archive, "A.app"])
+
+    let summary = try extractAsStream(archive, to: root.appendingPathComponent("stream").path)
+
+    // Symlinks included: they arrive as files holding their target.
+    #expect(summary.files == 7)
+  }
+
+  @Test
+  func extractStream_RejectsAnEntryWhoseContentsDoNotMatchItsCRC() throws {
+    let contents = Data(String(repeating: "0123456789", count: 100).utf8)
+    try fileManager.createDirectory(at: root.appendingPathComponent("A.app"), withIntermediateDirectories: true)
+    try contents.write(to: root.appendingPathComponent("A.app/file"))
+    // More than a pipe holds after the corrupt entry, so that the writer only finishes if the extractor reads on.
+    try Data(repeating: 1, count: 1 << 20).write(to: root.appendingPathComponent("A.app/after"))
+    let archive = root.appendingPathComponent("a.ipa")
+    try run("/usr/bin/zip", ["-q0", archive.path, "A.app/file", "A.app/after"])
+    var bytes = try Data(contentsOf: archive)
+    let range = try #require(bytes.range(of: contents))
+    bytes[range.lowerBound] ^= 0xFF
+    try bytes.write(to: archive)
+
+    #expect(throws: ZipExtractorError.corrupt("A.app/file does not match its size or CRC")) {
+      try extractAsStream(archive.path, to: root.appendingPathComponent("stream").path)
+    }
+  }
+
+  @Test
+  func extractStream_OfAStoredEntryWithItsSizeAfterIt_IsUnsupported() throws {
+    _ = try makeApp()
+    let archive = root.appendingPathComponent("a.ipa").path
+    try run("/bin/sh", ["-c", "/usr/bin/zip -qry0 - A.app/Info.plist | /bin/cat > \"$0\"", archive])
+
+    #expect(throws: ZipExtractorError.unsupported("A.app/Info.plist is stored with its size after it")) {
+      try extractAsStream(archive, to: root.appendingPathComponent("stream").path)
     }
   }
 

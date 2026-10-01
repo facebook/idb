@@ -1,0 +1,203 @@
+/*
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
+
+import Foundation
+
+/// Creates files decoded on one thread, an archive read forwards, on
+/// `ZipExtractor.writerCount` others.
+///
+/// Small files are handed to the writers; a large one is written by the caller
+/// as it decodes, so that no more than about the queue's limit is held in memory.
+final class ParallelFileWriter {
+
+  private let queue = WriteQueue()
+  private let writers = DispatchGroup()
+  private let overrideModificationTime: Bool
+
+  init(overrideModificationTime: Bool) {
+    self.overrideModificationTime = overrideModificationTime
+    for _ in 0..<ZipExtractor.writerCount {
+      writers.enter()
+      Thread { [queue, writers] in
+        defer { writers.leave() }
+        while let file = queue.take() {
+          do {
+            try Self.write(file, overrideModificationTime: overrideModificationTime)
+          } catch {
+            queue.fail(error)
+          }
+        }
+      }.start()
+    }
+  }
+
+  /// Creates `path`, which must not exist, with the contents `produce` passes to
+  /// its argument in order. `mode` is the file's permissions, or nil for the default.
+  func write(
+    _ path: String,
+    mode: mode_t? = nil,
+    modified: timespec?,
+    contents produce: ((UnsafeRawBufferPointer) throws -> Void) throws -> Void
+  ) throws {
+    var contents = Data()
+    var inline: Int32?
+    defer { inline.map { _ = close($0) } }
+    try produce { buffer in
+      if let fd = inline {
+        try Self.writeAll(buffer, to: fd)
+        return
+      }
+      contents.append(contentsOf: buffer)
+      if contents.count > Self.inlineThreshold {
+        let fd = try Self.create(path)
+        inline = fd
+        try contents.withUnsafeBytes { try Self.writeAll($0, to: fd) }
+        contents = Data()
+      }
+    }
+    let file = File(path: path, contents: contents, mode: mode, modified: modified)
+    if let fd = inline {
+      try Self.finish(file, fd: fd, overrideModificationTime: overrideModificationTime)
+    } else {
+      try queue.put(file)
+    }
+  }
+
+  /// Stops the writers taking more, so that `finish` throws `error`.
+  func fail(_ error: Error) {
+    queue.fail(error)
+  }
+
+  /// Waits for everything handed over to be written, throwing the first failure.
+  func finish() throws {
+    queue.close()
+    writers.wait()
+    if let error = queue.failure {
+      throw error
+    }
+  }
+
+  // MARK: - Private
+
+  private static let inlineThreshold = 4 << 20
+
+  private struct File {
+    var path: String
+    var contents: Data
+    var mode: mode_t?
+    var modified: timespec?
+  }
+
+  private static func create(_ path: String) throws -> Int32 {
+    // Exclusive: an archive naming a path twice is left to an extractor with an opinion on it.
+    let fd = open(path, O_WRONLY | O_CREAT | O_EXCL | O_NOFOLLOW | O_CLOEXEC, 0o644)
+    guard fd >= 0 else {
+      throw POSIXError.current
+    }
+    return fd
+  }
+
+  private static func write(_ file: File, overrideModificationTime: Bool) throws {
+    let fd = try create(file.path)
+    defer { close(fd) }
+    try file.contents.withUnsafeBytes { try writeAll($0, to: fd) }
+    try finish(file, fd: fd, overrideModificationTime: overrideModificationTime)
+  }
+
+  private static func finish(_ file: File, fd: Int32, overrideModificationTime: Bool) throws {
+    if let mode = file.mode {
+      guard fchmod(fd, mode & 0o7777) == 0 else {
+        throw POSIXError.current
+      }
+    }
+    if !overrideModificationTime, let modified = file.modified {
+      let times = [modified, modified]
+      guard futimens(fd, times) == 0 else {
+        throw POSIXError.current
+      }
+    }
+  }
+
+  private static func writeAll(_ buffer: UnsafeRawBufferPointer, to fd: Int32) throws {
+    guard let base = buffer.baseAddress else {
+      return
+    }
+    var offset = 0
+    while offset < buffer.count {
+      let written = Darwin.write(fd, base + offset, buffer.count - offset)
+      guard written > 0 else {
+        throw POSIXError.current
+      }
+      offset += written
+    }
+  }
+
+  /// Hands files from the decoding thread to the writers, holding back the decoder
+  /// when the writers fall behind.
+  private final class WriteQueue: @unchecked Sendable {
+    private let condition = NSCondition()
+    private var files: [File] = []
+    private var head = 0
+    private var bytes = 0
+    private var closed = false
+    private var error: Error?
+
+    var failure: Error? {
+      condition.lock()
+      defer { condition.unlock() }
+      return error
+    }
+
+    func put(_ file: File) throws {
+      condition.lock()
+      defer { condition.unlock() }
+      while error == nil, files.count - head >= 1024 || bytes >= 64 << 20 {
+        condition.wait()
+      }
+      if let error {
+        throw error
+      }
+      files.append(file)
+      bytes += file.contents.count
+      condition.broadcast()
+    }
+
+    func take() -> File? {
+      condition.lock()
+      defer { condition.unlock() }
+      while error == nil, !closed, head == files.count {
+        condition.wait()
+      }
+      guard error == nil, head < files.count else {
+        return nil
+      }
+      let file = files[head]
+      head += 1
+      if head == files.count {
+        files.removeAll(keepingCapacity: true)
+        head = 0
+      }
+      bytes -= file.contents.count
+      condition.broadcast()
+      return file
+    }
+
+    func fail(_ failure: Error) {
+      condition.lock()
+      defer { condition.unlock() }
+      error = error ?? failure
+      condition.broadcast()
+    }
+
+    func close() {
+      condition.lock()
+      defer { condition.unlock() }
+      closed = true
+      condition.broadcast()
+    }
+  }
+}

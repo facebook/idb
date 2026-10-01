@@ -228,8 +228,8 @@ public enum ApplicationArchive {
   ) async throws {
     var streamError: Error?
     do {
-      try await ArchiveExtractors.default.extract(
-        .stream(input), to: extractPath, options: options.extractOptions, logger: logger)
+      try await ZipStreamExtractor.extract(
+        input, to: extractPath, overrideModificationTime: options.extractOptions.overrideModificationTime, logger: logger)
     } catch {
       streamError = error
     }
