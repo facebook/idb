@@ -500,6 +500,8 @@ class Client(ClientBase):
             else:
                 # chunk file from memory
                 self.logger.debug("Sending file data from input stream")
+                # `compression` is deliberately not reassigned: these bytes go out
+                # as their producer compressed them, so only a zip may be wrapped.
                 generator = generate_io_chunks(
                     io=bundle,
                     logger=self.logger,
