@@ -29,6 +29,15 @@ extension CompanionAddress {
     guard !host.isEmpty else { return nil }
     return .tcp(host: host, port: port)
   }
+
+  /// Parses an explicit `--companion`: the path of a companion's unix domain socket, or a
+  /// `host:port` as `parse(tcp:)` reads it. A slash marks a path, since no `host:port` has one.
+  public static func parse(companion value: String) -> CompanionAddress? {
+    if value.contains("/") {
+      return .domainSocket(path: value)
+    }
+    return parse(tcp: value)
+  }
 }
 
 /// A record of a single running companion, keyed by the simulator/device `udid`.

@@ -8,9 +8,9 @@
 /// How a CLI should reach a companion, decided from the connection options and whether the current
 /// platform supports discovering a local companion. Kept free of I/O.
 public enum CompanionRoute: Equatable {
-  /// Connect directly to the companion at this `host:port` (still to be parsed),
-  /// bypassing discovery. Corresponds to an explicit `--companion`.
-  case tcp(String)
+  /// Connect directly to the companion at this `host:port` or socket path (still to be
+  /// parsed), bypassing discovery. Corresponds to an explicit `--companion`.
+  case explicit(String)
   /// Discover a running companion, or start one on demand.
   case discoverLocal
   /// Select a remote companion from the environment or companion registry.
@@ -51,7 +51,7 @@ public let localCompanionDiscoverySupported = true
 public let localCompanionDiscoverySupported = false
 #endif
 
-/// An explicit `--companion host:port` always wins; otherwise local discovery is used where it is
+/// An explicit `--companion` always wins; otherwise local discovery is used where it is
 /// available and remote selection is used where it is not (e.g. Linux, which has no local
 /// `idb_companion`).
 public func planCompanionRoute(
@@ -59,7 +59,7 @@ public func planCompanionRoute(
   localAllowed: Bool = localCompanionDiscoverySupported
 ) -> CompanionRoute {
   if let companion {
-    return .tcp(companion)
+    return .explicit(companion)
   }
   return localAllowed ? .discoverLocal : .selectRemote
 }

@@ -46,7 +46,7 @@ struct ConnectionOptions: ParsableArguments {
 
   @Option(
     name: .long,
-    help: "Connect directly to a companion at host:port (e.g. 127.0.0.1:10882), bypassing discovery. Use to reach an already-running, typically remote, companion.")
+    help: "Connect directly to a companion at host:port (e.g. 127.0.0.1:10882) or at the path of its unix domain socket, bypassing discovery. Use to reach an already-running companion, typically a remote one.")
   var companion: String?
 
   @Flag(

@@ -130,4 +130,18 @@ struct CompanionAddressParseTests {
   func rejectsEmptyHost() {
     #expect(CompanionAddress.parse(tcp: ":10882") == nil)
   }
+
+  @Test
+  func explicitCompanionWithASlashIsASocketPath() {
+    #expect(
+      CompanionAddress.parse(companion: "/tmp/idb/companion.sock")
+        == .domainSocket(path: "/tmp/idb/companion.sock"))
+    #expect(CompanionAddress.parse(companion: "./companion.sock") == .domainSocket(path: "./companion.sock"))
+  }
+
+  @Test
+  func explicitCompanionWithoutASlashIsHostAndPort() {
+    #expect(CompanionAddress.parse(companion: "127.0.0.1:10882") == .tcp(host: "127.0.0.1", port: 10882))
+    #expect(CompanionAddress.parse(companion: "companion.sock") == nil)
+  }
 }

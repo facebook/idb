@@ -361,15 +361,15 @@ final class ReplSession {
 
   // MARK: - Connection
 
-  /// `--companion host:port` bypasses discovery. macOS otherwise discovers or starts a
+  /// `--companion` (a `host:port` or a socket path) bypasses discovery. macOS otherwise discovers or starts a
   /// local companion; other platforms select a remote companion from `IDB_COMPANION` or
   /// the companion registry.
   private static func resolveCompanion(config: ReplSessionConfig) async throws -> ResolvedCompanion {
     switch planCompanionRoute(companion: config.companion) {
-    case let .tcp(companion):
-      guard let address = CompanionAddress.parse(tcp: companion) else {
+    case let .explicit(companion):
+      guard let address = CompanionAddress.parse(companion: companion) else {
         throw ValidationError(
-          "--companion expects host:port, e.g. 127.0.0.1:10882 (got '\(companion)')")
+          "--companion expects host:port, e.g. 127.0.0.1:10882, or the path of a companion's socket (got '\(companion)')")
       }
       return ResolvedCompanion(address: address, source: .commandLine)
     case .discoverLocal:

@@ -12,14 +12,14 @@ import Testing
 struct CompanionRouteTests {
 
   @Test
-  func explicitCompanionRoutesToTCP() {
-    #expect(planCompanionRoute(companion: "127.0.0.1:10882", localAllowed: true) == .tcp("127.0.0.1:10882"))
+  func explicitCompanionRoutesDirectly() {
+    #expect(planCompanionRoute(companion: "127.0.0.1:10882", localAllowed: true) == .explicit("127.0.0.1:10882"))
   }
 
   @Test
   func explicitCompanionWinsEvenWhenLocalIsUnavailable() {
     // The TCP path is the only one available off macOS, and it is still honored.
-    #expect(planCompanionRoute(companion: "host:1", localAllowed: false) == .tcp("host:1"))
+    #expect(planCompanionRoute(companion: "host:1", localAllowed: false) == .explicit("host:1"))
   }
 
   @Test
