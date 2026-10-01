@@ -20,29 +20,13 @@ public enum GrowingFile {
       let complete = isComplete()
       let data = try file.read(upToCount: 1 << 20) ?? Data()
       if !data.isEmpty {
-        try write(data, to: output)
+        try output.writeAll(data)
         continue
       }
       if complete {
         return
       }
       try await Task.sleep(nanoseconds: 5_000_000)
-    }
-  }
-
-  private static func write(_ data: Data, to output: OutputStream) throws {
-    try data.withUnsafeBytes { (buffer: UnsafeRawBufferPointer) in
-      guard let base = buffer.bindMemory(to: UInt8.self).baseAddress else {
-        return
-      }
-      var offset = 0
-      while offset < buffer.count {
-        let written = output.write(base + offset, maxLength: buffer.count - offset)
-        guard written > 0 else {
-          throw output.streamError ?? CocoaError(.fileWriteUnknown)
-        }
-        offset += written
-      }
     }
   }
 }

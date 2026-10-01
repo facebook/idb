@@ -217,22 +217,14 @@ public struct InProcessTarExtractor: ArchiveExtractor {
     let written = await offCooperativePool {
       output.open()
       defer { output.close() }
-      func write(_ bytes: UnsafeRawBufferPointer) throws {
-        guard let base = bytes.bindMemory(to: UInt8.self).baseAddress, bytes.count > 0 else {
-          return
-        }
-        guard output.write(base, maxLength: bytes.count) == bytes.count else {
-          throw output.streamError ?? TarExtractorError.corrupt("cannot write to \(type(of: fallback))")
-        }
-      }
-      try prefix.withUnsafeBytes(write)
+      try output.writeAll(prefix)
       var chunk = [UInt8](repeating: 0, count: 1 << 16)
       while true {
         let count = try chunk.withUnsafeMutableBytes { try rest($0) }
         guard count > 0 else {
           return
         }
-        try chunk.withUnsafeBytes { try write(UnsafeRawBufferPointer(rebasing: $0[..<count])) }
+        try chunk.withUnsafeBytes { try output.writeAll(UnsafeRawBufferPointer(rebasing: $0[..<count])) }
       }
     }
     // The fallback's error first: it is why writing to it would fail.

@@ -309,7 +309,7 @@ struct InstallMethodHandler: @unchecked Sendable {
           return
         }
         do {
-          try write(data, to: stream)
+          try stream.writeAll(data)
         } catch {
           // The reader may finish before the end or fail; the spooled file carries on regardless.
           targetLogger.log("Stopped teeing the streamed zip to its stream extractor, which extraction from the spooled file recovers from: \(error)")
@@ -381,22 +381,15 @@ struct InstallMethodHandler: @unchecked Sendable {
     defer { output.close() }
 
     try await telemetry.receive { receive in
-      try write(initial, to: output)
+      try output.writeAll(initial)
       receive.count(initial)
       for try await request in requestStream {
         guard let data = request.extractDataFrame() else {
           continue
         }
-        try write(data, to: output)
+        try output.writeAll(data)
         receive.count(data)
       }
-    }
-  }
-
-  private func write(_ data: Data, to output: OutputStream) throws {
-    var buffer = [UInt8](data)
-    guard output.write(&buffer, maxLength: buffer.count) == buffer.count else {
-      throw output.streamError ?? RPCError(code: .internalError, message: "Failed to write install payload")
     }
   }
 
