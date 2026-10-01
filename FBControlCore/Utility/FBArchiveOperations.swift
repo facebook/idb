@@ -73,11 +73,16 @@ public enum FBArchiveOperations {
   /// The compressions a stream can be extracted from, given the `PATH` that subprocesses inherit.
   /// macOS does not ship the zstd decompressor that `commandToExtractFromStdIn` runs.
   public static func streamCompressions(searchPath: String?) -> [FBCompressionFormat] {
+    zstdDecompressorPath(searchPath: searchPath) == nil ? [.GZIP] : [.GZIP, .ZSTD]
+  }
+
+  /// The first zstd decompressor on `searchPath`, if any.
+  public static func zstdDecompressorPath(searchPath: String?) -> String? {
     let directories = searchPath?.split(separator: ":") ?? []
-    let hasZstd = directories.contains { directory in
-      FileManager.default.isExecutableFile(atPath: "\(directory)/\(ZstdDecompressor)")
-    }
-    return hasZstd ? [.GZIP, .ZSTD] : [.GZIP]
+    return
+      directories
+      .map { "\($0)/\(ZstdDecompressor)" }
+      .first { FileManager.default.isExecutableFile(atPath: $0) }
   }
 
   /// Builds a command to extract via stdin.
@@ -130,6 +135,24 @@ public enum FBArchiveOperations {
   ) -> FBFuture<NSString> {
     FBProcessBuilder<NSNull, NSData, NSData>
       .withLaunchPath("/usr/bin/gunzip", arguments: ["--to-stdout"])
+      .withStdIn(stream)
+      .withStdErr(toLoggerAndErrorMessage: logger.debug())
+      .withStdOutPath(extractPath)
+      .withTaskLifecycleLogging(to: logger)
+      .runUntilCompletion(withAcceptableExitCodes: [0])
+      .mapReplace(extractPath as NSString)
+      .retyped()
+  }
+
+  /// Decompresses a zstd stream to a single file, skipping any skippable frames in the stream.
+  public static func extractZstd(
+    fromStream stream: FBProcessInput<AnyObject>,
+    toPath extractPath: String,
+    decompressorPath: String,
+    logger: any ControlCoreLogger
+  ) -> FBFuture<NSString> {
+    FBProcessBuilder<NSNull, NSData, NSData>
+      .withLaunchPath(decompressorPath, arguments: ["-d", "-q", "-c"])
       .withStdIn(stream)
       .withStdErr(toLoggerAndErrorMessage: logger.debug())
       .withStdOutPath(extractPath)

@@ -93,4 +93,22 @@ final class InstallMethodHandlerTests: XCTestCase {
       }
     }
   }
+
+  func testZstdZipStreamIsRecognisedByItsSkippableFrame() {
+    let marked = Data([0x5E, 0x2A, 0x4D, 0x18, 0x08, 0x00, 0x00, 0x00]) + Data("idb-zip\0".utf8) + Data([0x28, 0xB5, 0x2F, 0xFD])
+    XCTAssertTrue(InstallMethodHandler.isZstdZipStream(marked))
+  }
+
+  func testOtherStreamsAreNotZstdZipStreams() {
+    let streams: [Data] = [
+      Data([0x50, 0x4B, 0x03, 0x04]),
+      Data([0x28, 0xB5, 0x2F, 0xFD]),
+      Data([0x50, 0x2A, 0x4D, 0x18, 0x04, 0x00, 0x00, 0x00]),
+      Data([0x5E, 0x2A, 0x4D, 0x18, 0x08, 0x00, 0x00, 0x00]) + Data("idb-tar\0".utf8),
+      Data([0x5E, 0x2A, 0x4D, 0x18]),
+    ]
+    for stream in streams {
+      XCTAssertFalse(InstallMethodHandler.isZstdZipStream(stream), "\(stream as NSData)")
+    }
+  }
 }

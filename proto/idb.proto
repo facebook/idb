@@ -149,6 +149,11 @@ message CompanionInfo {
   // The compressions the companion can extract an app stream from. Companions
   // that predate this field leave it empty, and only extract GZIP.
   repeated Payload.Compression supported_compressions = 7;
+  // Whether the companion can install a zstd compressed zip app stream. The
+  // stream starts with a zstd skippable frame whose magic is 0x184D2A5E and
+  // whose 8 byte content is "idb-zip\0", which tells it apart from a
+  // compressed tar. Companions without this must be sent the zip as is.
+  bool zstd_zip_streams = 8;
 }
 
 enum Setting {

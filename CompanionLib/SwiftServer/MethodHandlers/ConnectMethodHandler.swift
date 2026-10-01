@@ -26,6 +26,7 @@ struct ConnectMethodHandler {
         $0.udid = target.udid
         $0.isLocal = isLocal
         $0.supportedCompressions = supportedStreamCompressions()
+        $0.zstdZipStreams = supportsZstdZipStreams()
 
         do {
           $0.metadata = try JSONSerialization.data(withJSONObject: reporter.metadata, options: [])
@@ -46,4 +47,8 @@ func supportedStreamCompressions() -> [Idb_Payload.Compression] {
       return .zstd
     }
   }
+}
+
+func supportsZstdZipStreams() -> Bool {
+  FBArchiveOperations.zstdDecompressorPath(searchPath: ProcessInfo.processInfo.environment["PATH"]) != nil
 }

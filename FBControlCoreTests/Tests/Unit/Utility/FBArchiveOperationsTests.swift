@@ -167,6 +167,54 @@ final class FBArchiveOperationsTests: XCTestCase {
     XCTAssertEqual(FBArchiveOperations.streamCompressions(searchPath: nil), [.GZIP])
   }
 
+  func testZstdDecompressorPath_IsTheFirstExecutablePzstdOnPath() throws {
+    let first = (tempDirectory as NSString).appendingPathComponent("first")
+    let second = (tempDirectory as NSString).appendingPathComponent("second")
+    for directory in [first, second] {
+      try FileManager.default.createDirectory(atPath: directory, withIntermediateDirectories: true)
+      FileManager.default.createFile(atPath: "\(directory)/pzstd", contents: Data(), attributes: [.posixPermissions: 0o755])
+    }
+
+    XCTAssertEqual(FBArchiveOperations.zstdDecompressorPath(searchPath: "/nonexistent:\(first):\(second)"), "\(first)/pzstd")
+    XCTAssertNil(FBArchiveOperations.zstdDecompressorPath(searchPath: "/nonexistent"))
+  }
+
+  // MARK: - extractZstd
+
+  func testExtractZstd_SkipsALeadingSkippableFrame() async throws {
+    let searchPath = [ProcessInfo.processInfo.environment["PATH"], "/opt/homebrew/bin", "/usr/local/bin"].compactMap { $0 }.joined(separator: ":")
+    guard let pzstd = FBArchiveOperations.zstdDecompressorPath(searchPath: searchPath) else {
+      throw XCTSkip("pzstd is not installed")
+    }
+    let original = Data((0..<100_000).map { UInt8($0 % 251) })
+    let originalPath = (tempDirectory as NSString).appendingPathComponent("original")
+    try original.write(to: URL(fileURLWithPath: originalPath))
+    let compress = Process()
+    compress.executableURL = URL(fileURLWithPath: pzstd)
+    compress.arguments = ["-q", "-f", originalPath]
+    try compress.run()
+    compress.waitUntilExit()
+    let skippableFrame = Data([0x5E, 0x2A, 0x4D, 0x18, 0x08, 0x00, 0x00, 0x00]) + Data("idb-zip\0".utf8)
+    let compressed = skippableFrame + (try Data(contentsOf: URL(fileURLWithPath: "\(originalPath).zst")))
+
+    let input = FBProcessInput<OutputStream>.fromStream()
+    let extractPath = (tempDirectory as NSString).appendingPathComponent("extracted")
+    let extraction = FBArchiveOperations.extractZstd(
+      fromStream: input.retyped(FBProcessInput<AnyObject>.self),
+      toPath: extractPath,
+      decompressorPath: pzstd,
+      logger: logger)
+    let stream = input.contents
+    stream.open()
+    let bytes = [UInt8](compressed)
+    XCTAssertEqual(stream.write(bytes, maxLength: bytes.count), bytes.count)
+    stream.close()
+
+    let extracted = try await bridgeFBFuture(extraction)
+    XCTAssertEqual(extracted as String, extractPath)
+    XCTAssertEqual(try Data(contentsOf: URL(fileURLWithPath: extractPath)), original)
+  }
+
   // MARK: - createGzippedTarForPath with Non-Existent Path
 
   func testCreateGzippedTarDataForPath_WhenPathDoesNotExist_ReturnsError() {

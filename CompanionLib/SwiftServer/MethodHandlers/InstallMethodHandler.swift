@@ -169,12 +169,14 @@ struct InstallMethodHandler: @unchecked Sendable {
     switch source {
     case let .data(data):
       if destination == .app && isZipArchive(data) {
-        return try await installZipArchive(
-          initial: data,
-          requestStream: requestStream,
-          makeDebuggable: makeDebuggable,
-          overrideModificationTime: overrideModificationTime,
-          telemetry: telemetry)
+        return try await installZipArchive(makeDebuggable: makeDebuggable, overrideModificationTime: overrideModificationTime, telemetry: telemetry) { archiveURL in
+          try await spool(initial: data, requestStream: requestStream, to: archiveURL, telemetry: telemetry)
+        }
+      }
+      if destination == .app && Self.isZstdZipStream(data) {
+        return try await installZipArchive(makeDebuggable: makeDebuggable, overrideModificationTime: overrideModificationTime, telemetry: telemetry) { archiveURL in
+          try await decompressZstd(initial: data, requestStream: requestStream, to: archiveURL, telemetry: telemetry)
+        }
       }
 
       let input = FBProcessInput<OutputStream>.fromStream()
@@ -223,12 +225,19 @@ struct InstallMethodHandler: @unchecked Sendable {
     data.starts(with: [0x50, 0x4B, 0x03, 0x04])
   }
 
+  /// The zstd skippable frame that `CompanionInfo.zstd_zip_streams` clients start a compressed zip with.
+  static let zstdZipStreamMarker: [UInt8] = [0x5E, 0x2A, 0x4D, 0x18, 0x08, 0x00, 0x00, 0x00] + Array("idb-zip\0".utf8)
+
+  static func isZstdZipStream(_ data: Data) -> Bool {
+    data.starts(with: zstdZipStreamMarker)
+  }
+
+  /// A zip is spooled to disk before it is installed, as its central directory is at the end.
   private func installZipArchive(
-    initial: Data,
-    requestStream: RequestStreamReader<Idb_InstallRequest>,
     makeDebuggable: Bool,
     overrideModificationTime: Bool,
-    telemetry: InstallTelemetry
+    telemetry: InstallTelemetry,
+    spool: (URL) async throws -> Void
   ) async throws -> InstalledArtifact {
     let archiveURL = FileManager.default.temporaryDirectory
       .appendingPathComponent(UUID().uuidString)
@@ -238,6 +247,20 @@ struct InstallMethodHandler: @unchecked Sendable {
     }
     defer { try? FileManager.default.removeItem(at: archiveURL) }
 
+    try await spool(archiveURL)
+    return try await commandExecutor.install_app_file_path(
+      archiveURL.path,
+      make_debuggable: makeDebuggable,
+      override_modification_time: overrideModificationTime,
+      on_progress: telemetry.observe)
+  }
+
+  private func spool(
+    initial: Data,
+    requestStream: RequestStreamReader<Idb_InstallRequest>,
+    to archiveURL: URL,
+    telemetry: InstallTelemetry
+  ) async throws {
     let file = try FileHandle(forWritingTo: archiveURL)
     var receive = telemetry.startReceiving()
     do {
@@ -256,12 +279,27 @@ struct InstallMethodHandler: @unchecked Sendable {
       throw error
     }
     receive.finish()
+  }
 
-    return try await commandExecutor.install_app_file_path(
-      archiveURL.path,
-      make_debuggable: makeDebuggable,
-      override_modification_time: overrideModificationTime,
-      on_progress: telemetry.observe)
+  private func decompressZstd(
+    initial: Data,
+    requestStream: RequestStreamReader<Idb_InstallRequest>,
+    to archiveURL: URL,
+    telemetry: InstallTelemetry
+  ) async throws {
+    guard let decompressor = FBArchiveOperations.zstdDecompressorPath(searchPath: ProcessInfo.processInfo.environment["PATH"]) else {
+      throw RPCError(code: .failedPrecondition, message: "A zstd zip stream needs pzstd on the companion's PATH")
+    }
+    targetLogger.log("Decompressing a zstd zip stream with \(decompressor)")
+    let input = FBProcessInput<OutputStream>.fromStream()
+    async let writePayload: Void = writePayload(initial: initial, requestStream: requestStream, output: input.contents, telemetry: telemetry)
+    _ = try await bridgeFBFuture(
+      FBArchiveOperations.extractZstd(
+        fromStream: input.retyped(FBProcessInput<AnyObject>.self),
+        toPath: archiveURL.path,
+        decompressorPath: decompressor,
+        logger: targetLogger))
+    try await writePayload
   }
 
   private func writePayload(
