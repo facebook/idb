@@ -62,19 +62,16 @@ final class InstallTelemetry: @unchecked Sendable {
     lock.withLock { streamFormat = format }
   }
 
-  /// The client started streaming the payload.
-  func receiveStarted() {
+  /// Measures `body` receiving the streamed payload, reporting what it received once it completes.
+  func receive<T>(_ body: (inout InstallReceive) async throws -> T) async rethrows -> T {
     lock.withLock { receiving = true }
+    var receive = InstallReceive(telemetry: self)
+    let result = try await body(&receive)
+    receive.finish()
+    return result
   }
 
-  /// Marks the receive started and returns what measures it.
-  func startReceiving() -> InstallReceive {
-    receiveStarted()
-    return InstallReceive(telemetry: self)
-  }
-
-  /// The client finished streaming the payload.
-  func received(bytes: Int64, elapsedMs: Int64) {
+  fileprivate func received(bytes: Int64, elapsedMs: Int64) {
     lock.withLock {
       receiving = false
       receivedBytes = bytes
@@ -168,7 +165,7 @@ final class InstallTelemetry: @unchecked Sendable {
   }
 }
 
-/// Counts a streamed payload's bytes and time until `finish` hands them to its telemetry.
+/// Counts a streamed payload's bytes and time for `InstallTelemetry.receive`.
 struct InstallReceive {
   private let telemetry: InstallTelemetry
   private let start = Date()
@@ -182,7 +179,7 @@ struct InstallReceive {
     bytes += Int64(data.count)
   }
 
-  func finish() {
+  fileprivate func finish() {
     telemetry.received(bytes: bytes, elapsedMs: Int64(Date().timeIntervalSince(start) * 1000))
   }
 }

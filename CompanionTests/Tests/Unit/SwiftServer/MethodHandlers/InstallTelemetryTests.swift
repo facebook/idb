@@ -41,12 +41,12 @@ private struct Refused: Error {}
     #expect(columns(of: telemetry) == ["size=4096", "extract_ms=30000", "install_ms=40000", "payload_kind=url", "receive_ms=20000"])
   }
 
-  @Test func aStreamedPayloadReportsWhatWasReceived() {
+  @Test func aStreamedPayloadReportsWhatWasReceived() async {
     let telemetry = InstallTelemetry(payloadKind: .data)
-    var receive = telemetry.startReceiving()
-    receive.count(Data(count: 10))
-    receive.count(Data(count: 22))
-    receive.finish()
+    await telemetry.receive { receive in
+      receive.count(Data(count: 10))
+      receive.count(Data(count: 22))
+    }
 
     let call = CallTelemetry()
     telemetry.record(into: call)
@@ -107,9 +107,11 @@ private struct Refused: Error {}
     #expect(columns(of: telemetry) == ["failure_kind=Refused", "failure_stage=install", "payload_kind=file_path"])
   }
 
-  @Test func aStreamThatFailsBeforeAnyStageFailedWhileReceiving() {
+  @Test func aStreamThatFailsBeforeAnyStageFailedWhileReceiving() async {
     let telemetry = InstallTelemetry(payloadKind: .data)
-    _ = telemetry.startReceiving()
+    await #expect(throws: Refused.self) {
+      try await telemetry.receive { _ in throw Refused() }
+    }
     telemetry.failed(Refused())
 
     #expect(columns(of: telemetry) == ["failure_kind=Refused", "failure_stage=receive", "payload_kind=data"])

@@ -301,35 +301,35 @@ struct InstallMethodHandler: @unchecked Sendable {
     var tee: OutputStream? = output
     tee?.open()
     defer { tee?.close() }
-    var receive = telemetry.startReceiving()
-    func append(_ data: Data) throws {
-      try file.write(contentsOf: data)
-      receive.count(data)
-      guard let stream = tee else {
-        return
+    try await telemetry.receive { receive in
+      func append(_ data: Data) throws {
+        try file.write(contentsOf: data)
+        receive.count(data)
+        guard let stream = tee else {
+          return
+        }
+        do {
+          try write(data, to: stream)
+        } catch {
+          // The reader may finish before the end or fail; the spooled file carries on regardless.
+          stream.close()
+          tee = nil
+        }
       }
       do {
-        try write(data, to: stream)
-      } catch {
-        // The reader may finish before the end or fail; the spooled file carries on regardless.
-        stream.close()
-        tee = nil
-      }
-    }
-    do {
-      try append(initial)
-      for try await request in requestStream {
-        guard let data = request.extractDataFrame() else {
-          continue
+        try append(initial)
+        for try await request in requestStream {
+          guard let data = request.extractDataFrame() else {
+            continue
+          }
+          try append(data)
         }
-        try append(data)
+        try file.close()
+      } catch {
+        try? file.close()
+        throw error
       }
-      try file.close()
-    } catch {
-      try? file.close()
-      throw error
     }
-    receive.finish()
   }
 
   /// The decompressor writes to the archive file, which is followed as it grows
@@ -379,17 +379,17 @@ struct InstallMethodHandler: @unchecked Sendable {
     output.open()
     defer { output.close() }
 
-    var receive = telemetry.startReceiving()
-    try write(initial, to: output)
-    receive.count(initial)
-    for try await request in requestStream {
-      guard let data = request.extractDataFrame() else {
-        continue
+    try await telemetry.receive { receive in
+      try write(initial, to: output)
+      receive.count(initial)
+      for try await request in requestStream {
+        guard let data = request.extractDataFrame() else {
+          continue
+        }
+        try write(data, to: output)
+        receive.count(data)
       }
-      try write(data, to: output)
-      receive.count(data)
     }
-    receive.finish()
   }
 
   private func write(_ data: Data, to output: OutputStream) throws {
