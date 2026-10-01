@@ -117,6 +117,24 @@ private struct Refused: Error {}
     #expect(columns(of: telemetry) == ["failure_kind=Refused", "failure_stage=receive", "payload_kind=data"])
   }
 
+  @Test func aStreamThatFailsPartwayReportsWhatItReceivedAndFailedWhileReceiving() async {
+    let telemetry = InstallTelemetry(payloadKind: .data)
+    await #expect(throws: Refused.self) {
+      try await telemetry.receive { receive in
+        receive.count(Data(count: 10))
+        throw Refused()
+      }
+    }
+    telemetry.failed(Refused())
+
+    let call = CallTelemetry()
+    telemetry.record(into: call)
+    // BUG: what arrived before the failure is dropped, so size and receive_ms are missing — flipped in the following commit
+    #expect(call.size == nil)
+    #expect(call.ints["receive_ms"] == nil)
+    #expect(call.normals == ["failure_kind": "Refused", "failure_stage": "receive", "payload_kind": "data"])
+  }
+
   @Test func aFailureOutsideAnyStageHasNoStage() {
     let telemetry = InstallTelemetry(payloadKind: .filePath)
     telemetry.failed(Refused())
