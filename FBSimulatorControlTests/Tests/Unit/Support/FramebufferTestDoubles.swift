@@ -52,6 +52,34 @@ final class FakeFramebufferSurface: FramebufferSurface {
   }
 }
 
+/// Screens keyed by display UUID, recording which were asked for. A display without one fails to locate.
+// SAFETY: The requests are guarded by the lock; the screens are only read.
+// patternlint-disable-next-line unchecked-sendable
+final class FramebufferScreensDouble: FramebufferScreens, @unchecked Sendable {
+  struct NoScreen: Error {}
+
+  let main = FakeFramebufferSurface()
+  let screens: [String: FakeFramebufferSurface]
+  private let lock = NSLock()
+  private var requests: [String] = []
+
+  init(_ uniqueIDs: String...) {
+    screens = Dictionary(uniqueKeysWithValues: uniqueIDs.map { ($0, FakeFramebufferSurface()) })
+  }
+
+  var requested: [String] { lock.withLock { requests } }
+
+  func mainScreen() throws -> any FramebufferSurface {
+    main
+  }
+
+  func screen(uniqueID: String) async throws -> any FramebufferSurface {
+    lock.withLock { requests.append(uniqueID) }
+    guard let screen = screens[uniqueID] else { throw NoScreen() }
+    return screen
+  }
+}
+
 /// Creates a small BGRA IOSurface for tests. The full BGRA property set (format, row alignment,
 /// allocation size) makes the surface consumable by CoreImage and wrappable by
 /// `CVPixelBufferCreateWithIOSurface` (which rejects a surface with no pixel format), not just

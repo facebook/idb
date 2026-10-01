@@ -211,6 +211,11 @@ enum FramebufferSurfaceLocator {
   }
 
   static func framebuffer(for display: SimulatorDisplay, simulator: Simulator) async throws -> Framebuffer {
+    Framebuffer(surface: try await surface(uniqueID: display.uniqueID, simulator: simulator), logger: simulator.logger)
+  }
+
+  /// The surface of the screen whose `uniqueId` is the CoreDevice display UUID.
+  static func surface(uniqueID: String, simulator: Simulator) async throws -> any FramebufferSurface {
     guard let ports = simulator.device.io?.ioPorts() else {
       throw FramebufferError.mainScreenSurfaceNotFound(description: "No simulator IO ports")
     }
@@ -222,13 +227,13 @@ enum FramebufferSurfaceLocator {
           try FBObjCExceptionGuard.guarded {
             (screen.screenProperties as? any SimScreenProperties)?.uniqueId
           } as? String
-        if identity == display.uniqueID { matches.append(screen) }
+        if identity == uniqueID { matches.append(screen) }
       }
     }
     guard matches.count == 1,
       let renderable = matches.first as? (any SimDisplayIOSurfaceRenderable & SimDisplayRenderable)
-    else { throw FramebufferError.mainScreenSurfaceNotFound(description: "Active display has no unique framebuffer") }
-    return Framebuffer(surface: SimDisplayRenderableSurface(surface: renderable, logger: simulator.logger), logger: simulator.logger)
+    else { throw FramebufferError.mainScreenSurfaceNotFound(description: "Display \(uniqueID) has no unique framebuffer") }
+    return SimDisplayRenderableSurface(surface: renderable, logger: simulator.logger)
   }
 
   static func mainDisplaySurface(for simulator: Simulator, logger: any ControlCoreLogger) throws -> any FramebufferSurface {
