@@ -14,20 +14,6 @@ public protocol VideoRecording {
   func stop() async throws -> URL
 }
 
-/// A closure-backed recording handle for command implementations that keep ownership of the
-/// underlying recording operation.
-public final class VideoRecordingHandle: VideoRecording {
-  private let stopAction: () async throws -> URL
-
-  public init(stop: @escaping () async throws -> URL) {
-    self.stopAction = stop
-  }
-
-  public func stop() async throws -> URL {
-    try await stopAction()
-  }
-}
-
 public protocol VideoRecordingCommands {
 
   func start(toFile filePath: String) async throws -> any VideoRecording

@@ -69,9 +69,7 @@ public final class SimulatorVideoRecordingCommands: VideoRecordingCommands {
     let video = SimulatorVideo.video(withFramebuffer: framebuffer, configuration: configuration, filePath: filePath, logger: simulator.logger)
     try await video.startRecording()
     self.video = video
-    return VideoRecordingHandle {
-      return try await self.stop()
-    }
+    return SimulatorVideoRecording(commands: self)
   }
 
   public func stop() async throws -> URL {
@@ -81,5 +79,13 @@ public final class SimulatorVideoRecordingCommands: VideoRecordingCommands {
       throw SimulatorVideoRecordingCommandError.missingVideo(simulatorDescription: self.simulator?.description ?? "unknown")
     }
     return try await video.stop()
+  }
+}
+
+private struct SimulatorVideoRecording: VideoRecording {
+  let commands: SimulatorVideoRecordingCommands
+
+  func stop() async throws -> URL {
+    try await commands.stop()
   }
 }

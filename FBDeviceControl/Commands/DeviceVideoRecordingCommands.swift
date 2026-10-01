@@ -52,12 +52,10 @@ public final class DeviceVideoRecordingCommands: VideoRecordingCommands {
     let video = try await DeviceVideo.video(for: device, filePath: filePath)
     self.video = video
     try await video.startRecording()
-    return VideoRecordingHandle {
-      return try await self.stop()
-    }
+    return DeviceVideoRecording(commands: self)
   }
 
-  private func stop() async throws -> URL {
+  fileprivate func stop() async throws -> URL {
     guard let device else {
       throw DeviceVideoRecordingCommandError.missingDevice
     }
@@ -66,5 +64,13 @@ public final class DeviceVideoRecordingCommands: VideoRecordingCommands {
     }
     self.video = nil
     return try await video.stop()
+  }
+}
+
+private struct DeviceVideoRecording: VideoRecording {
+  let commands: DeviceVideoRecordingCommands
+
+  func stop() async throws -> URL {
+    try await commands.stop()
   }
 }

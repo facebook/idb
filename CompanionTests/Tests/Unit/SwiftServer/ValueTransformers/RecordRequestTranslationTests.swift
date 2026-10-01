@@ -12,11 +12,17 @@ import GRPCCore
 import IDBGRPCSwift
 import XCTest
 
+private struct RecordedFile: VideoRecording {
+  let url: URL
+
+  func stop() async throws -> URL { url }
+}
+
 /// A target that records at whatever settings it chooses, which is what every conformer does until
 /// it overrides `honorsRecordingConfiguration`.
 private final class FixedConfigurationRecorder: VideoRecordingCommands {
   func start(toFile filePath: String) async throws -> any VideoRecording {
-    VideoRecordingHandle { URL(fileURLWithPath: filePath) }
+    RecordedFile(url: URL(fileURLWithPath: filePath))
   }
 }
 
@@ -24,7 +30,7 @@ private final class ConfigurableRecorder: VideoRecordingCommands {
   var honorsRecordingConfiguration: Bool { true }
 
   func start(toFile filePath: String) async throws -> any VideoRecording {
-    VideoRecordingHandle { URL(fileURLWithPath: filePath) }
+    RecordedFile(url: URL(fileURLWithPath: filePath))
   }
 }
 
