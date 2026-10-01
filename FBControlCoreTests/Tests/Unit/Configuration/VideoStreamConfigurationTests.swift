@@ -19,6 +19,9 @@ final class VideoStreamConfigurationTests: XCTestCase {
     )
     XCTAssertEqual(config.rateControl, .automatic)
     XCTAssertEqual(config.keyFrameRate, 4.0)
+    // BUG: a video captures the main display, which on an iPhone Duo is the cover even while the inner
+    // display is active — flipped in the following commit.
+    XCTAssertEqual(config.display, .main)
   }
 
   func testTheDisplayIsKeptAndDescribed() {

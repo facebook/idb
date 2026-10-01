@@ -101,4 +101,18 @@ final class SimulatorFramebufferCommandsTests: XCTestCase {
     XCTAssertEqual(screens.requested, ["inner"])
     XCTAssertEqual(screens.main.registeredTokens.count, 1)
   }
+
+  func testTheDisplayAVideoCapturesByDefault() async throws {
+    let configuration = VideoStreamConfiguration(
+      format: VideoStreamFormat.compressedVideo(withCodec: VideoStreamCodec.h264, transport: VideoStreamTransport.annexB),
+      framesPerSecond: nil, rateControl: nil, scaleFactor: nil, keyFrameRate: nil)
+    let screens = FramebufferScreensDouble("cover", "inner")
+    let attachment = try await framebuffer(configuration.display, screens: screens)
+    defer { attachment.cancel() }
+
+    // BUG: captures the main screen while "inner" is active — flipped in the following commit.
+    XCTAssertEqual(screens.requested, [])
+    XCTAssertEqual(screens.screens["inner"]?.registeredTokens.count, 0)
+    XCTAssertEqual(screens.main.registeredTokens.count, 1)
+  }
 }
