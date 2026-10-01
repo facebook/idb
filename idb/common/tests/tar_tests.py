@@ -105,8 +105,7 @@ class CreateTarTests(TestCase):
         ):
             with self.assertRaises(TarException) as raised:
                 await create_tar([directory])
-        # BUG: the exit code is not interpolated — flipped in the following commit
-        self.assertTrue(str(raised.exception).endswith("{process.returncode}"))
+        self.assertTrue(str(raised.exception).endswith("non-zero exit code 1"))
 
 
 class ZstdArchiveTests(TestCase):

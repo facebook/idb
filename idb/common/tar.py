@@ -240,7 +240,7 @@ async def create_tar(
         if process.returncode != 0:
             raise TarException(
                 "Failed to create tar file, "
-                "tar command exited with non-zero exit code {process.returncode}"
+                f"tar command exited with non-zero exit code {process.returncode}"
             )
         return tar_contents
 
