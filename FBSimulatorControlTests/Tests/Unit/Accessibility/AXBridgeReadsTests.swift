@@ -964,7 +964,7 @@ final class AXBridgeReadsTests: XCTestCase {
 
   func testAOneshotPointWriteWithNoGuestBinaryKeepsItsError() async throws {
     let transport = AXBridgeOneshotTransport(
-      transport: SimulatorFrameworkBridgeOneshotTransport(launch: { _ in throw SimulatorFrameworkBridgeError.binaryMissing }))
+      transport: SimulatorFrameworkBridgeOneshotTransport(launcher: MissingGuestLauncher()))
     let reader = AXBridgeUIAutomation(
       simulator: SimulatorTestSupport.testableSimulator(withDevice: AXBridgeWaitDevice()),
       transport: transport,
@@ -2974,5 +2974,12 @@ private actor StubAXBridgeWaitTransport: AXBridgeTransport {
       throw AXBridgeError.bridgeUnavailable
     }
     return responses.removeFirst()
+  }
+}
+
+/// A simulator with no guest binary to launch.
+private struct MissingGuestLauncher: BridgeGuestLauncher {
+  func launch(_ arguments: [String]) async throws -> InSimulatorToolOutput {
+    throw SimulatorFrameworkBridgeError.binaryMissing
   }
 }

@@ -133,32 +133,24 @@ enum SimulatorFrameworkBridgeStaging {
   }
 }
 
+/// Runs the guest once to completion, for a oneshot transport.
+protocol BridgeGuestLauncher {
+  func launch(_ arguments: [String]) async throws -> InSimulatorToolOutput
+}
+
 struct SimulatorFrameworkBridgeOneshotTransport {
-  private let launch: ([String]) async throws -> InSimulatorToolOutput
+  private let launcher: any BridgeGuestLauncher
 
   init(simulator: Simulator, bundleIdentity: String? = nil) {
-    launch = { arguments in
-      guard let path = simulator.frameworkBridgePath else { throw SimulatorFrameworkBridgeError.binaryMissing }
-      guard let bundleIdentity else {
-        return try await simulator.runtimeTools.launchConsumingOutput(launchPath: path, arguments: arguments)
-      }
-      return try await simulator.temporaryDirectory.withTemporaryDirectory { stagingDirectory in
-        try await simulator.runtimeTools.launchConsumingOutput(
-          launchPath: SimulatorFrameworkBridgeStaging.stagedExecutablePath(
-            bundledGuestPath: path,
-            bundleIdentity: bundleIdentity,
-            stagingDirectory: stagingDirectory),
-          arguments: arguments)
-      }
-    }
+    launcher = SimulatorBridgeGuestLauncher(simulator: simulator, bundleIdentity: bundleIdentity)
   }
 
-  init(launch: @escaping ([String]) async throws -> InSimulatorToolOutput) {
-    self.launch = launch
+  init(launcher: any BridgeGuestLauncher) {
+    self.launcher = launcher
   }
 
   func send(_ request: BridgeRequest) async throws -> BridgeResult {
-    let output = try await launch(request.arguments)
+    let output = try await launcher.launch(request.arguments)
     guard !output.stdout.isEmpty else {
       throw AXBridgeError.guestFailure("exit \(output.exitCode); \(SimulatorFrameworkBridgeError.failureDetails(stderr: output.stderr, stdout: output.stdout))")
     }
@@ -167,6 +159,26 @@ struct SimulatorFrameworkBridgeOneshotTransport {
       throw AXBridgeError.guestFailure("process exited with \(output.exitCode) after reporting \(response.result.exitCode)")
     }
     return response.result
+  }
+}
+
+private struct SimulatorBridgeGuestLauncher: BridgeGuestLauncher {
+  let simulator: Simulator
+  let bundleIdentity: String?
+
+  func launch(_ arguments: [String]) async throws -> InSimulatorToolOutput {
+    guard let path = simulator.frameworkBridgePath else { throw SimulatorFrameworkBridgeError.binaryMissing }
+    guard let bundleIdentity else {
+      return try await simulator.runtimeTools.launchConsumingOutput(launchPath: path, arguments: arguments)
+    }
+    return try await simulator.temporaryDirectory.withTemporaryDirectory { stagingDirectory in
+      try await simulator.runtimeTools.launchConsumingOutput(
+        launchPath: SimulatorFrameworkBridgeStaging.stagedExecutablePath(
+          bundledGuestPath: path,
+          bundleIdentity: bundleIdentity,
+          stagingDirectory: stagingDirectory),
+        arguments: arguments)
+    }
   }
 }
 

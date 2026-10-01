@@ -149,10 +149,10 @@ final class BridgeTransportTests: XCTestCase {
   func testOneshotUsesTypedArgumentsAndPreservesPartialFailure() async throws {
     let request = BridgeRequest(command: .notifications(.delivered(bundleID: "app")), id: "oneshot")
     let result = BridgeResult(exitCode: 23, values: [.object(["id": .string("one")])])
-    let transport = SimulatorFrameworkBridgeOneshotTransport { arguments in
-      XCTAssertEqual(arguments, try request.arguments)
-      return InSimulatorToolOutput(stdout: try BridgeResponse(request: request, result: result).encoded(), stderr: Data(), exitCode: 23)
-    }
+    let transport = SimulatorFrameworkBridgeOneshotTransport(
+      launcher: CannedGuestLauncher(
+        expectedArguments: try request.arguments,
+        output: InSimulatorToolOutput(stdout: try BridgeResponse(request: request, result: result).encoded(), stderr: Data(), exitCode: 23)))
     let response = try await transport.send(request)
     XCTAssertEqual(response, result)
   }
@@ -164,7 +164,7 @@ final class BridgeTransportTests: XCTestCase {
       InSimulatorToolOutput(stdout: try BridgeResponse(request: request, result: BridgeResult(exitCode: 0)).encoded(), stderr: Data(), exitCode: 9),
       InSimulatorToolOutput(stdout: Data(), stderr: Data("failure".utf8), exitCode: 1),
     ] {
-      let transport = SimulatorFrameworkBridgeOneshotTransport { _ in output }
+      let transport = SimulatorFrameworkBridgeOneshotTransport(launcher: CannedGuestLauncher(output: output))
       do {
         _ = try await transport.send(request)
         XCTFail("invalid response accepted")
@@ -304,6 +304,19 @@ private actor RecordingBridgeConnection: BridgeConnection {
       throw BridgeTestFailure.dropped
     }
     return try BridgeResponse(id: wrongID ? "wrong" : request.id, result: result).encoded()
+  }
+}
+
+/// Answers every launch with `output`, checking its arguments against `expectedArguments` when set.
+private struct CannedGuestLauncher: BridgeGuestLauncher {
+  var expectedArguments: [String]?
+  let output: InSimulatorToolOutput
+
+  func launch(_ arguments: [String]) async throws -> InSimulatorToolOutput {
+    if let expectedArguments {
+      XCTAssertEqual(arguments, expectedArguments)
+    }
+    return output
   }
 }
 
