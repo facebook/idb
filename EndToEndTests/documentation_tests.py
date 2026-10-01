@@ -343,6 +343,7 @@ class DemoCaseStub:
 
     idb = IdbEndToEndTestCase.idb
     _run_once = IdbEndToEndTestCase._run_once
+    _run_traced = IdbEndToEndTestCase._run_traced
     note = IdbEndToEndTestCase.note
     run_client = IdbEndToEndTestCase.run_client
     _command_fields = IdbEndToEndTestCase._command_fields

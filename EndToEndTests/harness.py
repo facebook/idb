@@ -6,7 +6,8 @@
 """Run idb commands through one shared companion against a booted simulator.
 
 The caller supplies DEVICE_UDID, DEVICE_SET_PATH, IDB_BIN,
-IDB_E2E_COMPANION_PATH and IDB_E2E_RECORDER_PATH. The harness starts the companion
+IDB_E2E_COMPANION_PATH and IDB_E2E_RECORDER_PATH, and IDB_E2E_REPL_PATH for the
+tests that drive idb-repl. The harness starts the companion
 and applies the configured suite capability; it does not manage the simulator lifecycle.
 """
 
@@ -54,6 +55,7 @@ IDB_E2E_COMPANION_PATH_ENV = "IDB_E2E_COMPANION_PATH"
 IDB_SETUP_BIN_ENV = "IDB_SETUP_BIN"
 SUITE_CAPABILITY_ENV = "IDB_E2E_SUITE_CAPABILITY"
 IDB_E2E_RECORDER_PATH_ENV = "IDB_E2E_RECORDER_PATH"
+IDB_E2E_REPL_PATH_ENV = "IDB_E2E_REPL_PATH"
 STRICT_ENV = "IDB_E2E_STRICT"
 ARTIFACTS_ENV = "IDB_E2E_ARTIFACTS_DIR"
 ROUTE_ATTESTATION_ENV = "IDB_E2E_ROUTER_ATTESTATION"
@@ -119,6 +121,9 @@ TRANSIENT_ANSWER_TIMEOUT_SECONDS = 60.0
 COMPANION_READY_TIMEOUT_SECONDS = 180.0
 ACCESSIBILITY_READY_TIMEOUT_SECONDS = 180.0
 DEFAULT_COMMAND_TIMEOUT_SECONDS = 120.0
+# The first injection compiles a dylib with swiftc, which takes far longer
+# than any idb command.
+REPL_COMMAND_TIMEOUT_SECONDS = 300.0
 INSTALL_TIMEOUT_SECONDS = 300.0
 ROUTE_ATTESTATION_TIMEOUT_SECONDS = 10.0
 APP_STATE_TIMEOUT_SECONDS = 60.0
@@ -728,6 +733,7 @@ class Environment:
         companion_path: Path,
         recorder_path: Path,
         protected_package: tempfile.TemporaryDirectory[str] | None = None,
+        repl_path: Path | None = None,
     ) -> None:
         self.udid = udid
         self.device_set_path = device_set_path
@@ -736,6 +742,7 @@ class Environment:
         self.setup_idb_bin = setup_idb_bin
         self.companion_path = companion_path
         self.recorder_path = recorder_path
+        self.repl_path = repl_path
         self._protected_package = protected_package
         self.simctl = Simctl(udid, device_set_path)
 
@@ -757,6 +764,8 @@ class Environment:
         setup_idb_bin = _optional_binary_from_environment(IDB_SETUP_BIN_ENV, idb_bin)
         companion_path = _binary_from_environment(IDB_E2E_COMPANION_PATH_ENV)
         recorder_path = _binary_from_environment(IDB_E2E_RECORDER_PATH_ENV)
+        repl = os.environ.get(IDB_E2E_REPL_PATH_ENV)
+        repl_path = _executable(Path(repl), IDB_E2E_REPL_PATH_ENV) if repl else None
         udid = _required(DEVICE_UDID_ENV, "the booted simulator to test against")
         device_set_path = Path(
             _required(DEVICE_SET_PATH_ENV, f"the device set {DEVICE_UDID_ENV} lives in")
@@ -785,6 +794,7 @@ class Environment:
             companion_path,
             recorder_path,
             protected_package,
+            repl_path,
         )
 
 
@@ -1868,6 +1878,36 @@ class IdbEndToEndTestCase(unittest.IsolatedAsyncioTestCase):
             self.fail_or_skip_for(" ".join(args), completed)
         return completed
 
+    async def idb_repl(
+        self,
+        context: str,
+        *args: str,
+        check: bool = True,
+        timeout: float = REPL_COMMAND_TIMEOUT_SECONDS,
+        step: str | None = None,
+    ) -> Completed:
+        """Run idb-repl in `context` against this test's companion.
+
+        step publishes the command as it does for `idb`. The published argv
+        leaves out `--companion`, whose socket is private to this run.
+        """
+        repl = self.environment.repl_path
+        if repl is None:
+            raise HarnessError(
+                f"{IDB_E2E_REPL_PATH_ENV} is not set; it names the idb-repl this test drives."
+            )
+        argv = [str(repl), context, "--companion", self.companion.address, *args]
+        completed = await self._run_traced(
+            argv,
+            ["idb-repl", context, *args],
+            lambda: run(argv, timeout=timeout),
+            stdin=None,
+            published=lambda _: step,
+        )
+        if check and completed.returncode != 0:
+            self.fail_or_skip_for(" ".join(["idb-repl", context, *args]), completed)
+        return completed
+
     async def _run_once(
         self,
         args: Sequence[str],
@@ -1881,13 +1921,31 @@ class IdbEndToEndTestCase(unittest.IsolatedAsyncioTestCase):
         `published` sees the answer before it is traced, so a caller that
         repeats a command can publish only the attempt that ends it.
         """
-        started = time.monotonic()
         argv = idb_argv(self.environment, self.companion, *args)
+        return await self._run_traced(
+            argv,
+            ["idb", *args],
+            lambda: self.run_client(argv, timeout=timeout, stdin=stdin),
+            stdin=stdin,
+            published=published,
+        )
+
+    async def _run_traced(
+        self,
+        argv: Sequence[str],
+        shown: Sequence[str],
+        run: Callable[[], Awaitable[Completed]],
+        *,
+        stdin: bytes | None,
+        published: Callable[[Completed], str | None],
+    ) -> Completed:
+        """Run a client command and trace it as `shown`, the argv a reader sees."""
+        started = time.monotonic()
         given = {} if stdin is None else {"stdin": stdin}
         if self.recording is not None:
-            self.recording.command(["idb", *args])
+            self.recording.command(list(shown))
         try:
-            completed = await self.run_client(argv, timeout=timeout, stdin=stdin)
+            completed = await run()
         except BaseException as error:
             if self.recording is not None:
                 self.recording.exec_output(
@@ -1902,7 +1960,7 @@ class IdbEndToEndTestCase(unittest.IsolatedAsyncioTestCase):
                 # debug the run needs.
                 self.recording.event(
                     "command_error",
-                    argv=["idb", *args],
+                    argv=list(shown),
                     error=str(error),
                     seconds=time.monotonic() - started,
                 )
@@ -1918,7 +1976,7 @@ class IdbEndToEndTestCase(unittest.IsolatedAsyncioTestCase):
                 "command_finished",
                 returncode=completed.returncode,
                 seconds=time.monotonic() - started,
-                **self._command_fields(step, ["idb", *args], completed),
+                **self._command_fields(step, shown, completed),
             )
         return completed
 

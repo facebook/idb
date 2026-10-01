@@ -13,6 +13,7 @@ The permission test asks for what approving a service actually buys: the app sto
 | `IDB_SETUP_BIN` | optional client used only to prepare fixtures; defaults to `IDB_BIN` |
 | `IDB_E2E_COMPANION_PATH` | the `idb_companion` binary, with its `Resources/` directory beside it |
 | `IDB_E2E_RECORDER_PATH` | the built `sim-video` binary |
+| `IDB_E2E_REPL_PATH` | the built `idb-repl` binary, required by the demos that inject Swift |
 | `IDB_E2E_SUITE_CAPABILITY` | optional suite scope and companion readiness: `companion-process`, `accessibility-read`, or `accessibility-interaction` (the default) |
 | `DEVICE_UDID` | the booted simulator to test against |
 | `DEVICE_SET_PATH` | the device set `DEVICE_UDID` lives in |
@@ -45,6 +46,7 @@ xcrun simctl --set "$DEVICE_SET_PATH" bootstatus "$DEVICE_UDID"
 IDB_BIN="$(command -v idb)" \
 IDB_E2E_COMPANION_PATH="$PWD/Build/Distribution/idb_companion" \
 IDB_E2E_RECORDER_PATH="$PWD/Build/Distribution/sim-video" \
+IDB_E2E_REPL_PATH="$PWD/Build/Distribution/idb-repl" \
 python3 -m unittest discover -s EndToEndTests -t . -v
 ```
 

@@ -48,6 +48,7 @@ from .harness import (
     EXPECTED_IMPLEMENTATION_ENV,
     HarnessError,
     HostLoad,
+    IDB_E2E_REPL_PATH_ENV,
     IDB_SETUP_BIN_ENV,
     IdbEndToEndTestCase,
     IdbProcess,
@@ -1395,6 +1396,8 @@ class CommandTestCaseStub(HarnessCaseStub):
     fail_or_skip_for = IdbEndToEndTestCase.fail_or_skip_for
     run_client = IdbEndToEndTestCase.run_client
     _command_fields = IdbEndToEndTestCase._command_fields
+    _run_traced = IdbEndToEndTestCase._run_traced
+    idb_repl = IdbEndToEndTestCase.idb_repl
 
 
 class ExpectedFailureTest(unittest.IsolatedAsyncioTestCase):
@@ -1585,6 +1588,49 @@ class TransientAccessibilityAnswerTests(unittest.IsolatedAsyncioTestCase):
         ]
         self.assertEqual(outcome, SUCCEEDED)
         self.assertEqual(steps, [None, "Set the search field's value"])
+
+
+class ReplStepTests(unittest.IsolatedAsyncioTestCase):
+    def case(self, repl_path: Path | None) -> CommandTestCaseStub:
+        case = CommandTestCaseStub()
+        case.environment.repl_path = repl_path
+        case.recording = mock.Mock(spec=Recording)
+        case.transcript = Transcript(rules=())
+        return case
+
+    async def test_a_repl_step_runs_against_the_companion_and_publishes_without_it(
+        self,
+    ) -> None:
+        case = self.case(Path("/tmp/idb-repl"))
+        run = mock.AsyncMock(return_value=SUCCEEDED)
+
+        with mock.patch.object(harness, "run", new=run):
+            await case.idb_repl("app", "print(1)", step="Print from the app")
+
+        self.assertEqual(
+            run.await_args.args[0],
+            ["/tmp/idb-repl", "app", "--companion", "/tmp/companion.sock", "print(1)"],
+        )
+        finished = [
+            call.kwargs
+            for call in case.recording.event.call_args_list
+            if call.args == ("command_finished",)
+        ]
+        self.assertEqual(finished[0]["argv"], ["idb-repl", "app", "print(1)"])
+        self.assertEqual(finished[0]["step"], "Print from the app")
+
+    async def test_a_failed_repl_step_fails_the_test(self) -> None:
+        case = self.case(Path("/tmp/idb-repl"))
+
+        with mock.patch.object(harness, "run", new=mock.AsyncMock(return_value=FAILED)):
+            with self.assertRaises(Failed):
+                await case.idb_repl("app", "print(1)")
+
+    async def test_a_repl_step_without_a_repl_is_an_error(self) -> None:
+        case = self.case(None)
+
+        with self.assertRaisesRegex(HarnessError, IDB_E2E_REPL_PATH_ENV):
+            await case.idb_repl("app", "print(1)")
 
 
 BANNER = Query("ShortLook.Platter.Content.Seamless")

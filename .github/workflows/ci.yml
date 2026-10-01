@@ -345,6 +345,7 @@ jobs:
           IDB_BIN="$(command -v idb)" \
           IDB_E2E_COMPANION_PATH="$RUNNER_TEMP/artifacts/Distribution/idb_companion" \
           IDB_E2E_RECORDER_PATH="$RUNNER_TEMP/artifacts/Distribution/sim-video" \
+          IDB_E2E_REPL_PATH="$RUNNER_TEMP/artifacts/Distribution/idb-repl" \
           IDB_E2E_ARTIFACTS_DIR="$RUNNER_TEMP/end-to-end-diagnostics" \
           IDB_E2E_RECORDER_ENCODING=h264 \
           IDB_E2E_STRICT=1 \
