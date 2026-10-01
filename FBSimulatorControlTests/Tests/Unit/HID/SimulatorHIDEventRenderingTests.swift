@@ -253,54 +253,45 @@ final class SimulatorHIDEventRenderingTests: XCTestCase {
 
   // MARK: - Description rendering
 
-  /// Runs `body` with detailed HID event logging enabled, as deployments that
-  /// diagnose HID traffic configure the companion.
-  private func withHIDDetailLogging(_ body: () -> Void) {
-    setenv("FBSIMULATORCONTROL_LOG_HID_DETAILS", "1", 1)
-    defer { unsetenv("FBSIMULATORCONTROL_LOG_HID_DETAILS") }
-    body()
-  }
-
   func testTouchDescriptionRendersDirectionAndCoordinates() {
-    withHIDDetailLogging {
-      XCTAssertEqual(
-        SimulatorHIDEvent.touch(direction: .down, x: 10.5, y: 20.0).description,
-        "Touch down at (10.5,20.0)")
-      // Negative coordinates arrive unvalidated from the wire (off-screen
-      // swipe endpoints); rendering them must not trap.
-      XCTAssertEqual(
-        SimulatorHIDEvent.touch(direction: .up, x: -5.0, y: -0.5).description,
-        "Touch up at (-5.0,-0.5)")
-    }
+    XCTAssertEqual(
+      SimulatorHIDEvent.touch(direction: .down, x: 10.5, y: 20.0).logDescription(.detailed),
+      "Touch down at (10.5,20.0)")
+    // Negative coordinates arrive unvalidated from the wire (off-screen
+    // swipe endpoints); rendering them must not trap.
+    XCTAssertEqual(
+      SimulatorHIDEvent.touch(direction: .up, x: -5.0, y: -0.5).logDescription(.detailed),
+      "Touch up at (-5.0,-0.5)")
   }
 
   func testTwoFingerTouchDescriptionRendersBothFingersVerbatim() {
-    withHIDDetailLogging {
-      XCTAssertEqual(
-        SimulatorHIDEvent.twoFingerTouch(
-          direction: .up,
-          finger1: CGPoint(x: 10.5, y: 20.0),
-          finger2: CGPoint(x: -30.0, y: 40.0)
-        ).description,
-        "TwoFingerTouch up at (10.5,20.0) (-30.0,40.0)")
-    }
+    XCTAssertEqual(
+      SimulatorHIDEvent.twoFingerTouch(
+        direction: .up,
+        finger1: CGPoint(x: 10.5, y: 20.0),
+        finger2: CGPoint(x: -30.0, y: 40.0)
+      ).logDescription(.detailed),
+      "TwoFingerTouch up at (10.5,20.0) (-30.0,40.0)")
   }
 
   func testKeyboardDescriptionRendersKeyCodeAndDirection() {
-    withHIDDetailLogging {
-      XCTAssertEqual(
-        SimulatorHIDEvent.keyboard(direction: .down, keyCode: 40).description,
-        "Keyboard Code=40 down")
-    }
+    XCTAssertEqual(
+      SimulatorHIDEvent.keyboard(direction: .down, keyCode: 40).logDescription(.detailed),
+      "Keyboard Code=40 down")
   }
 
-  func testDescriptionsAreHiddenWithoutDetailLogging() {
-    unsetenv("FBSIMULATORCONTROL_LOG_HID_DETAILS")
+  func testRedactedDescriptionsHideThePayload() {
     XCTAssertEqual(
-      SimulatorHIDEvent.touch(direction: .down, x: 10.0, y: 20.0).description,
+      SimulatorHIDEvent.touch(direction: .down, x: 10.0, y: 20.0).logDescription(.redacted),
       "Touch <hidden>")
     XCTAssertEqual(
-      SimulatorHIDEvent.keyboard(direction: .down, keyCode: 40).description,
+      SimulatorHIDEvent.keyboard(direction: .down, keyCode: 40).logDescription(.redacted),
       "Key <hidden>")
+  }
+
+  func testCompositeDescriptionRendersChildrenAtTheSameLevel() {
+    let event = SimulatorHIDEvent.composite([.touch(direction: .down, x: 1, y: 2), .delay(0.5)])
+    XCTAssertEqual(event.logDescription(.detailed), "Composite [Touch down at (1.0,2.0), Delay for 0.5]")
+    XCTAssertEqual(event.logDescription(.redacted), "Composite [Touch <hidden>, Delay for 0.5]")
   }
 }

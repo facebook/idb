@@ -279,41 +279,52 @@ public extension SimulatorHIDEvent {
 
 // MARK: - CustomStringConvertible
 
+/// How much of an event's payload log lines carry. Coordinates and key codes can reveal what is being typed or tapped.
+public enum SimulatorHIDEventLogging: Sendable {
+  case redacted
+  case detailed
+
+  static var fromEnvironment: SimulatorHIDEventLogging {
+    ProcessInfo.processInfo.environment["FBSIMULATORCONTROL_LOG_HID_DETAILS"]?.boolValue == true ? .detailed : .redacted
+  }
+}
+
 extension SimulatorHIDEvent: CustomStringConvertible {
   public var description: String {
+    logDescription(.fromEnvironment)
+  }
+
+  public func logDescription(_ logging: SimulatorHIDEventLogging) -> String {
+    let detailed = logging == .detailed
     switch self {
     case let .touch(direction, x, y, edge):
-      guard shouldLogHIDEventDetails() else { return "Touch <hidden>" }
+      guard detailed else { return "Touch <hidden>" }
       guard edge != .none else { return "Touch \(direction.name) at (\(x),\(y))" }
       return "Touch \(direction.name) at (\(x),\(y)) from the \(edge.name) edge"
     case let .button(direction, button):
-      guard shouldLogHIDEventDetails() else { return "Button <hidden>" }
+      guard detailed else { return "Button <hidden>" }
       return "Button \(button.name) \(direction.name)"
     case let .remoteButton(direction, button):
-      guard shouldLogHIDEventDetails() else { return "Remote <hidden>" }
+      guard detailed else { return "Remote <hidden>" }
       return "Remote \(button.name) \(direction.name)"
     case let .keyboard(direction, keyCode):
-      guard shouldLogHIDEventDetails() else { return "Key <hidden>" }
+      guard detailed else { return "Key <hidden>" }
       return "Keyboard Code=\(keyCode) \(direction.name)"
     case let .twoFingerTouch(direction, finger1, finger2):
-      guard shouldLogHIDEventDetails() else { return "TwoFingerTouch <hidden>" }
+      guard detailed else { return "TwoFingerTouch <hidden>" }
       return "TwoFingerTouch \(direction.name) at (\(finger1.x),\(finger1.y)) (\(finger2.x),\(finger2.y))"
     case let .trackpad(phase, point):
-      guard shouldLogHIDEventDetails() else { return "Trackpad <hidden>" }
+      guard detailed else { return "Trackpad <hidden>" }
       return "Trackpad \(phase.name) at (\(point.x),\(point.y))"
     case let .delay(duration):
       return "Delay for \(duration)"
     case let .composite(events):
-      return "Composite [\(events.map { $0.description }.joined(separator: ", "))]"
+      return "Composite [\(events.map { $0.logDescription(logging) }.joined(separator: ", "))]"
     }
   }
 }
 
 // MARK: - Private helpers
-
-private func shouldLogHIDEventDetails() -> Bool {
-  ProcessInfo.processInfo.environment["FBSIMULATORCONTROL_LOG_HID_DETAILS"]?.boolValue ?? false
-}
 
 private extension String {
   var boolValue: Bool {
