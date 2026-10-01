@@ -142,6 +142,28 @@ struct TarStreamExtractorTests {
   }
 
   @Test
+  func extract_OfGzipMembersOneAfterAnother_MatchesBSDTar() async throws {
+    _ = try makeApp()
+    try run("/usr/bin/tar", ["-cf", "a.tar", "-C", root.path, "A.app"])
+    // Splitting the tar partway through a file makes the second member start mid-entry.
+    try run("/bin/sh", ["-c", "head -c 300000 a.tar | gzip > a.tgz && tail -c +300001 a.tar | gzip >> a.tgz"])
+
+    try await expectParityWithBSDTar(root.appendingPathComponent("a.tgz").path)
+  }
+
+  @Test
+  func extract_OfATruncatedGzip_Throws() throws {
+    _ = try makeApp()
+    let archive = root.appendingPathComponent("a.tgz").path
+    try run("/usr/bin/tar", ["-czf", archive, "-C", root.path, "A.app"])
+    let contents = try Data(contentsOf: URL(fileURLWithPath: archive))
+
+    #expect(throws: TarExtractorError.corrupt("the gzip ends early")) {
+      try extractFromPipe(contents.prefix(contents.count / 2), to: root.appendingPathComponent("extracted").path)
+    }
+  }
+
+  @Test
   func extract_RestoresExtendedAttributes() throws {
     let app = try makeApp()
     let archive = root.appendingPathComponent("a.tgz").path
