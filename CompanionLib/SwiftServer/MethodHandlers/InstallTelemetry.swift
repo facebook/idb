@@ -35,6 +35,22 @@ enum InstallStreamFormat: String {
   }
 }
 
+/// Where an install was when it failed: in one of its stages, or receiving a streamed payload before
+/// any stage began.
+enum InstallFailureStage: Equatable {
+  case stage(InstallStage)
+  case receive
+
+  var name: String {
+    switch self {
+    case .stage(let stage):
+      stage.rawValue
+    case .receive:
+      "receive"
+    }
+  }
+}
+
 /// Accumulates what one install did into the columns its event reports.
 ///
 /// `receive_ms` and `size` describe getting the payload onto the companion's host: streamed over the
@@ -52,7 +68,7 @@ final class InstallTelemetry: @unchecked Sendable {
   private var receiving = false
   private var stagesInFlight: Set<InstallStage> = []
   private var stageMs: [InstallStage: Int64] = [:]
-  private var failure: (stage: String?, kind: String, cancelled: Bool)?
+  private var failure: (stage: InstallFailureStage?, kind: String, cancelled: Bool)?
 
   init(payloadKind: InstallPayloadKind) {
     self.payloadKind = payloadKind
@@ -114,8 +130,8 @@ final class InstallTelemetry: @unchecked Sendable {
     let cancelled = rpcCancelled || Task.isCancelled
     lock.withLock {
       let stage =
-        [InstallStage.download, .extract, .install].first(where: stagesInFlight.contains)?.rawValue
-        ?? (receiving ? "receive" : nil)
+        [InstallStage.download, .extract, .install].first(where: stagesInFlight.contains).map(InstallFailureStage.stage)
+        ?? (receiving ? .receive : nil)
       failure = (stage, Self.kind(of: error), cancelled)
     }
   }
@@ -140,7 +156,7 @@ final class InstallTelemetry: @unchecked Sendable {
       }
       if let failure {
         if let stage = failure.stage {
-          call.setNormal(stage, forKey: "failure_stage")
+          call.setNormal(stage.name, forKey: "failure_stage")
         }
         call.setNormal(failure.kind, forKey: "failure_kind")
         if failure.cancelled {
