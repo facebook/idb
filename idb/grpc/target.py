@@ -69,6 +69,7 @@ def companion_to_py(companion: GrpcCompanionInfo, address: Address) -> Companion
             for compression in companion.supported_compressions
             if compression in _COMPRESSIONS
         ),
+        zstd_zip_streams=companion.zstd_zip_streams,
     )
 
 

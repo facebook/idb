@@ -205,6 +205,7 @@ class CompanionInfo:
     address: Address
     metadata: LoggingMetadata = field(default_factory=dict)
     supported_compressions: "frozenset[Compression]" = frozenset()
+    zstd_zip_streams: bool = False
 
 
 @dataclass(frozen=True)

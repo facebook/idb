@@ -159,6 +159,20 @@ class CompanionToPyTests(unittest.TestCase):
             frozenset({Compression.GZIP, Compression.ZSTD}),
         )
 
+    def test_maps_zstd_zip_streams(self) -> None:
+        address = TCPAddress(host="localhost", port=1)
+        self.assertTrue(
+            companion_to_py(
+                companion=GrpcCompanionInfo(udid="a", zstd_zip_streams=True),
+                address=address,
+            ).zstd_zip_streams
+        )
+        self.assertFalse(
+            companion_to_py(
+                companion=GrpcCompanionInfo(udid="a"), address=address
+            ).zstd_zip_streams
+        )
+
     def test_omits_unknown_compressions(self) -> None:
         companion = companion_to_py(
             companion=GrpcCompanionInfo(udid="a", supported_compressions=[99]),

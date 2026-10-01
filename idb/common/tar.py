@@ -173,6 +173,42 @@ def has_zstd_compressor() -> bool:
     return any(_has_executable(exe) for exe in ZstdArchive.ZSTD_EXECUTABLES)
 
 
+async def compress_zstd(chunks: AsyncIterator[bytes]) -> AsyncIterator[bytes]:
+    process = await asyncio.create_subprocess_exec(
+        ZstdArchive._get_zstd_exe(),
+        "-q",
+        "-c",
+        stdin=asyncio.subprocess.PIPE,
+        stdout=asyncio.subprocess.PIPE,
+        stderr=sys.stderr,
+    )
+    writer = none_throws(process.stdin)
+    reader = none_throws(process.stdout)
+
+    async def feed() -> None:
+        try:
+            async for chunk in chunks:
+                writer.write(chunk)
+                await writer.drain()
+        finally:
+            writer.close()
+
+    feeding = asyncio.create_task(feed())
+    try:
+        while data := await reader.read(READ_CHUNK_SIZE):
+            yield data
+        await feeding
+    except BaseException:
+        feeding.cancel()
+        with contextlib.suppress(ProcessLookupError):
+            process.kill()
+        raise
+    finally:
+        returncode = await process.wait()
+    if returncode != 0:
+        raise TarException(f"zstd exited with non-zero exit code {returncode}")
+
+
 def _create_untar_command(
     output_path: str, gnu_tar: bool, verbose: bool = False
 ) -> list[str]:

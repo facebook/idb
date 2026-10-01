@@ -84,8 +84,10 @@ class TargetDescriptionTests(TestCase):
                 pid=None,
                 address=TCPAddress(host="localhost", port=10882),
                 supported_compressions=frozenset([Compression.ZSTD, Compression.GZIP]),
+                zstd_zip_streams=True,
             ),
             screen_dimensions=None,
         )
         companion = json.loads(description.as_json)["companion_info"]
         self.assertEqual(companion["supported_compressions"], ["GZIP", "ZSTD"])
+        self.assertTrue(companion["zstd_zip_streams"])

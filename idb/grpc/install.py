@@ -6,6 +6,7 @@
 
 
 import os
+import struct
 from collections.abc import AsyncIterator
 from logging import Logger
 from typing import IO, List, Optional, Union
@@ -25,19 +26,87 @@ CHUNK_SIZE = (
 )  # 4Mb, matching tar.py/gzip.py and well under the companion's 16Mb max receive size
 Destination = InstallRequest.Destination
 Bundle = Union[str, IO[bytes]]
+ZIP_SIGNATURE = b"PK\x03\x04"
+# A zstd skippable frame that tells a companion advertising `zstd_zip_streams`
+# that the zstd stream after it decompresses to a zip, rather than to a tar.
+ZSTD_ZIP_STREAM_MARKER: bytes = struct.pack("<II", 0x184D2A5E, 8) + b"idb-zip\0"
+
+
+ZIP_DATA_DESCRIPTOR_SIGNATURE = b"PK\x07\x08"
+ZIP_STORED = 0
+ZIP_HAS_DATA_DESCRIPTOR = 0x08
+
+
+def _zip_stores_files(head: bytes) -> bool:
+    """Whether the first file in a zip is stored rather than compressed.
+
+    Directory entries are skipped since zip tools store them even in a
+    deflated archive. Returns True when `head` ends before the first file.
+    """
+    offset = 0
+    while head.startswith(ZIP_SIGNATURE, offset) and len(head) >= offset + 30:
+        (flags, method) = struct.unpack_from("<HH", head, offset + 6)
+        (compressed_size,) = struct.unpack_from("<I", head, offset + 18)
+        (name_length, extra_length) = struct.unpack_from("<HH", head, offset + 26)
+        name_end = offset + 30 + name_length
+        if not head[offset + 30 : name_end].endswith(b"/"):
+            return method == ZIP_STORED
+        offset = name_end + extra_length + compressed_size
+        if flags & ZIP_HAS_DATA_DESCRIPTOR:
+            if head.startswith(ZIP_DATA_DESCRIPTOR_SIGNATURE, offset):
+                offset += 4
+            offset += 12
+    return True
+
+
+async def _read_file(path: str) -> AsyncIterator[bytes]:
+    async with aiofiles.open(path, "rb") as file:
+        while chunk := await file.read(CHUNK_SIZE):
+            yield chunk
+
+
+async def _read_io(io: IO[bytes]) -> AsyncIterator[bytes]:
+    while chunk := io.read(CHUNK_SIZE):
+        yield chunk
+
+
+async def _prepend(first: bytes, rest: AsyncIterator[bytes]) -> AsyncIterator[bytes]:
+    if first:
+        yield first
+    async for chunk in rest:
+        yield chunk
+
+
+async def _zstd_zip_stream(zip_chunks: AsyncIterator[bytes]) -> AsyncIterator[bytes]:
+    yield ZSTD_ZIP_STREAM_MARKER
+    async for chunk in tar.compress_zstd(zip_chunks):
+        yield chunk
+
+
+async def _generate_payloads(
+    chunks: AsyncIterator[bytes], zstd_zip_stream: bool, logger: Logger
+) -> AsyncIterator[InstallRequest]:
+    first = await anext(chunks, b"")
+    stream = _prepend(first, chunks)
+    if zstd_zip_stream and first.startswith(ZIP_SIGNATURE):
+        if _zip_stores_files(first):
+            logger.debug("Streaming zip with ZSTD compression")
+            stream = _zstd_zip_stream(stream)
+        else:
+            logger.debug("Streaming zip as is, its files are already compressed")
+    async for chunk in stream:
+        yield InstallRequest(payload=Payload(data=chunk))
 
 
 async def _generate_ipa_chunks(
-    ipa_path: str, logger: Logger
+    ipa_path: str, zstd_zip_stream: bool, logger: Logger
 ) -> AsyncIterator[InstallRequest]:
     logger.debug(f"Generating Chunks for .ipa {ipa_path}")
-    async with aiofiles.open(ipa_path, "rb") as file:
-        while True:
-            chunk = await file.read(CHUNK_SIZE)
-            if not chunk:
-                logger.debug(f"Finished generating .ipa chunks for {ipa_path}")
-                return
-            yield InstallRequest(payload=Payload(data=chunk))
+    async for request in _generate_payloads(
+        _read_file(ipa_path), zstd_zip_stream=zstd_zip_stream, logger=logger
+    ):
+        yield request
+    logger.debug(f"Finished generating .ipa chunks for {ipa_path}")
 
 
 async def _generate_app_chunks(
@@ -94,15 +163,13 @@ async def generate_requests(
 
 
 async def generate_io_chunks(
-    io: IO[bytes], logger: Logger
+    io: IO[bytes], logger: Logger, zstd_zip_stream: bool = False
 ) -> AsyncIterator[InstallRequest]:
     logger.debug("Generating io chunks")
-    while True:
-        chunk = io.read(CHUNK_SIZE)
-        if not chunk:
-            logger.debug("Finished generating byte chunks")
-            return
-        yield InstallRequest(payload=Payload(data=chunk))
+    async for request in _generate_payloads(
+        _read_io(io), zstd_zip_stream=zstd_zip_stream, logger=logger
+    ):
+        yield request
     logger.debug("Finished generating io chunks")
 
 
@@ -125,10 +192,13 @@ def generate_binary_chunks(
     destination: Destination,
     compression: Compression | None,
     logger: Logger,
+    zstd_zip_stream: bool = False,
 ) -> AsyncIterator[InstallRequest]:
     if destination == InstallRequest.APP:
         if path.endswith(".ipa"):
-            return _generate_ipa_chunks(ipa_path=path, logger=logger)
+            return _generate_ipa_chunks(
+                ipa_path=path, zstd_zip_stream=zstd_zip_stream, logger=logger
+            )
         elif path.endswith(".app"):
             return _generate_app_chunks(
                 app_path=path,

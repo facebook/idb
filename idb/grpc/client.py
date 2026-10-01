@@ -492,12 +492,25 @@ class Client(ClientBase):
                             destination=destination,
                             compression=compression,
                             logger=self.logger,
+                            zstd_zip_stream=self._streams_zips_as_zstd(
+                                destination, compression
+                            ),
                         )
 
             else:
                 # chunk file from memory
                 self.logger.debug("Sending file data from input stream")
-                generator = generate_io_chunks(io=bundle, logger=self.logger)
+                generator = generate_io_chunks(
+                    io=bundle,
+                    logger=self.logger,
+                    zstd_zip_stream=self._streams_zips_as_zstd(
+                        destination,
+                        select_stream_compression(
+                            requested=compression,
+                            supported=self.companion.supported_compressions,
+                        ),
+                    ),
+                )
                 # stream to companion
             await stream.send_message(InstallRequest(destination=destination))
             if make_debuggable is not None:
@@ -543,6 +556,16 @@ class Client(ClientBase):
                 yield InstalledArtifact(
                     name=response.name, uuid=response.uuid, progress=response.progress
                 )
+
+    def _streams_zips_as_zstd(
+        self, destination: Destination, compression: Compression
+    ) -> bool:
+        # A companion without `zstd_zip_streams` would extract the stream as a tar.
+        return (
+            destination == InstallRequest.APP
+            and compression == Compression.ZSTD
+            and self.companion.zstd_zip_streams
+        )
 
     @property
     def _is_verbose(self) -> bool:
