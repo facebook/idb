@@ -32,7 +32,7 @@ enum MultisourceFileReader {
     var compression = FBCompressionFormat.GZIP
 
     if case let .compression(payloadCompression) = payload.source {
-      compression = compressionFormat(from: payloadCompression)
+      compression = FBCompressionFormat(payloadCompression)
       payload = try await readNextPayload()
     }
 
@@ -59,17 +59,6 @@ enum MultisourceFileReader {
 
     case .url, .compression, .none:
       throw RPCError(code: .invalidArgument, message: "Unrecogized initial payload type \(payload.source as Any)")
-    }
-  }
-
-  private static func compressionFormat(from request: Idb_Payload.Compression) -> FBCompressionFormat {
-    switch request {
-    case .gzip:
-      return .GZIP
-    case .zstd:
-      return .ZSTD
-    case .UNRECOGNIZED:
-      return .GZIP
     }
   }
 

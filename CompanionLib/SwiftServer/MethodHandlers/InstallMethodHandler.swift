@@ -95,7 +95,7 @@ struct InstallMethodHandler: @unchecked Sendable {
 
     var compression = FBCompressionFormat.GZIP
     if case let .compression(format) = payload.source {
-      compression = readCompressionFormat(from: format)
+      compression = FBCompressionFormat(format)
       request = try await requestStream.requiredNext()
       payload = try extractPayloadFromRequest()
     }
@@ -414,15 +414,6 @@ struct InstallMethodHandler: @unchecked Sendable {
       return .xcTest
     case .UNRECOGNIZED:
       return .app
-    }
-  }
-
-  private func readCompressionFormat(from compression: Idb_Payload.Compression) -> FBCompressionFormat {
-    switch compression {
-    case .gzip, .UNRECOGNIZED:
-      return .GZIP
-    case .zstd:
-      return .ZSTD
     }
   }
 }
