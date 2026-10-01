@@ -17,8 +17,8 @@ public enum ZipExtractorError: Error, Equatable {
 
 /// Extracts a complete zip file from its central directory, writing several
 /// files at once: an app bundle is tens of thousands of small files, and
-/// creating them one after another, as `bsdtar` does, takes about three times
-/// as long as four writers.
+/// creating them one after another, as `bsdtar` does, takes about twice as
+/// long.
 ///
 /// What it writes matches `bsdtar -xp --no-mac-metadata` of the same file:
 /// modes are applied, symlinks are made, and `__MACOSX` and AppleDouble entries
@@ -143,7 +143,9 @@ public enum ZipExtractor {
     }
   }
 
-  static let writerCount = 4
+  /// Creating a small file is mostly waiting, on the file system and on any
+  /// endpoint security agent inspecting it, rather than work for a core.
+  static let writerCount = 8
 
   static func makeDirectory(_ path: String) throws {
     if mkdir(path, 0o755) == 0 {
