@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="generator" content="Docusaurus v3.10.2">
 <title data-rh="true">Demos | idb</title><meta data-rh="true" name="viewport" content="width=device-width,initial-scale=1"><meta data-rh="true" name="twitter:card" content="summary_large_image"><meta data-rh="true" property="og:url" content="https://fbidb.io/docs/idb/demos"><meta data-rh="true" property="og:locale" content="en"><meta data-rh="true" name="docusaurus_locale" content="en"><meta data-rh="true" name="docsearch:language" content="en"><meta data-rh="true" name="docusaurus_version" content="current"><meta data-rh="true" name="docusaurus_tag" content="docs-default-current"><meta data-rh="true" name="docsearch:version" content="current"><meta data-rh="true" name="docsearch:docusaurus_tag" content="docs-default-current"><meta data-rh="true" property="og:title" content="Demos | idb"><meta data-rh="true" name="description" content="{/ Generated from an end-to-end run by scripts/generate-demos.js — do not edit. /}"><meta data-rh="true" property="og:description" content="{/ Generated from an end-to-end run by scripts/generate-demos.js — do not edit. /}"><link data-rh="true" rel="icon" href="/img/favicon.png"><link data-rh="true" rel="canonical" href="https://fbidb.io/docs/idb/demos"><link data-rh="true" rel="alternate" href="https://fbidb.io/docs/idb/demos" hreflang="en"><link data-rh="true" rel="alternate" href="https://fbidb.io/docs/idb/demos" hreflang="x-default"><script data-rh="true" type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Demos","item":"https://fbidb.io/docs/idb/demos"}]}</script><link rel="stylesheet" href="/assets/css/styles.c5d803fe.css">
-<script src="/assets/js/runtime~main.71926e22.js" defer="defer"></script>
+<script src="/assets/js/runtime~main.5b1b03f4.js" defer="defer"></script>
 <script src="/assets/js/main.e63aaa37.js" defer="defer"></script>
 </head>
 <body>
@@ -17,11 +17,167 @@
 ran against a real simulator, and the output is what <code>idb</code> printed, with
 run-specific values replaced so two runs read the same. A demo whose test
 fails is never published.</p>
-<section class="demo_dj8D" aria-labelledby="read-web-content-in-safari-title"><h2 id="read-web-content-in-safari-title"><a href="https://github.com/facebook/idb/blob/4b3a1de05247933d3519ce5db883f7fc508e1eff/EndToEndTests/test_demos.py#L305" title="Performed by EndToEndTests/test_demos.py:305">Read and navigate web content in Safari, including off-screen elements</a></h2><p>Read a web page&#x27;s own elements, not just Safari&#x27;s toolbar, and find a heading several screens below the visible area without scrolling to it. Then type a new address into Safari&#x27;s address bar, submit it with a key press, and find a label drawn inside one of the new page&#x27;s diagrams.</p><div class="stage__i3N"><div class="screen_TGW4"><figure class="figure_KgYY"><video class="video_FGCP" controls="" playsinline="" preload="metadata" poster="/demos/media/read-web-content-in-safari.png" width="604" height="1456"><source src="/demos/media/read-web-content-in-safari.mp4" type="video/mp4"></video></figure></div><div class="session_DCBj"><div class="terminal_ACBh"><div></div></div><div class="narration_WWLi"><ol class="steps_Timh"><li class="step_OqVk" data-showing="true" aria-current="step"><div class="stepHeader_c4Xv"><span class="count_cRUE">1<!-- --> of <!-- -->7</span><h3 class="stepName_oISX">Open idb&#x27;s documentation in Safari</h3></div><div><details class="more_Vzwx"><summary>Exited 0 after 0.67s<!-- -->, printing nothing<!-- -->; show the command</summary><pre class="command_UKf1"><code><span class="prompt_qWKD">$ </span>idb open https://fbidb.io/docs/idb/fbsimulatorcontrol</code></pre></details></div></li><li class="step_OqVk" data-showing="true" aria-current="step"><div class="stepHeader_c4Xv"><span class="count_cRUE">2<!-- --> of <!-- -->7</span><h3 class="stepName_oISX">Find a single heading in the page&#x27;s accessibility tree</h3></div><div class="notes_Aipk"><p class="note_RbCd">idb searched 1008 elements of the page and found the heading at y=5291, about 6 screens down the page. Nothing was scrolled.</p></div><div><pre class="output_Gzin"><code>          &quot;label&quot;: &quot;<mark class="highlight_QBEX">Functionality beyond Apple&#x27;s tools</mark>&quot;<!-- -->
+<section class="demo_dj8D" aria-labelledby="drive-an-app-from-injected-swift-title"><h2 id="drive-an-app-from-injected-swift-title"><a href="https://github.com/facebook/idb/blob/35e63c283abc2d934888d1493b03d4d82cb89af8/EndToEndTests/test_demos.py#L777" title="Performed by EndToEndTests/test_demos.py:777">Add a control to a running app with injected Swift, then drive it</a></h2><p>Compile a few lines of Swift on the host and run them inside a running app, adding a button the app was never built with. idb finds the new button in the accessibility tree like any other control and taps it. Its label counts the taps, and asking the same live process how many it counted gives the same answer.</p><div class="stage__i3N"><div class="screen_TGW4"><figure class="figure_KgYY"><video class="video_FGCP" controls="" playsinline="" preload="metadata" poster="/demos/media/drive-an-app-from-injected-swift.png" width="604" height="1456"><source src="/demos/media/drive-an-app-from-injected-swift.mp4" type="video/mp4"></video></figure></div><div class="session_DCBj"><div class="terminal_ACBh"><div></div></div><div class="narration_WWLi"><ol class="steps_Timh"><li class="step_OqVk" data-showing="true" aria-current="step"><div class="stepHeader_c4Xv"><span class="count_cRUE">1<!-- --> of <!-- -->7</span><h3 class="stepName_oISX">Add a button to a running app with injected Swift</h3></div><div class="notes_Aipk"><p class="note_RbCd">idb-repl launched the host app with the REPL injected, compiled the Swift on the host and ran it inside the app. The button is plain UIKit, added while the app runs.</p></div><div><pre class="output_Gzin"><code>Added a button to <mark class="highlight_QBEX">com.facebook.idb.replhost</mark>
+</code></pre><details class="more_Vzwx"><summary>Exited 0 after 12.35s<!-- -->; show the command<!-- --> and all 5 lines it printed</summary><pre class="command_UKf1"><code><span class="prompt_qWKD">$ </span>idb-repl app --new-session &#x27;import UIKit
+return await MainActor.run { () -&gt; String in
+  let window = UIApplication.shared.connectedScenes
+    .compactMap { ($0 as? UIWindowScene)?.keyWindow }.first
+  guard let window else { return &quot;No window to add to&quot; }
+  let button = UIButton(configuration: .borderedProminent())
+  button.configuration?.title = &quot;Taps: 0&quot;
+  button.accessibilityIdentifier = &quot;injected-counter&quot;
+  button.addAction(UIAction { action in
+    guard let button = action.sender as? UIButton else { return }
+    button.tag += 1
+    button.configuration?.title = &quot;Taps: \(button.tag)&quot;
+  }, for: .primaryActionTriggered)
+  button.translatesAutoresizingMaskIntoConstraints = false
+  window.addSubview(button)
+  NSLayoutConstraint.activate([
+    button.centerXAnchor.constraint(equalTo: window.centerXAnchor),
+    button.bottomAnchor.constraint(
+      equalTo: window.safeAreaLayoutGuide.bottomAnchor, constant: -48),
+  ])
+  return &quot;Added a button to \(Bundle.main.bundleIdentifier ?? &quot;the app&quot;)&quot;
+}&#x27;</code></pre><pre class="output_Gzin"><code>Result:<!-- -->
+<!-- -->Added a button to <mark class="highlight_QBEX">com.facebook.idb.replhost</mark>
+</code></pre><p class="label_PmaK">Errors</p><pre class="output_Gzin"><code>idb-repl: received generated interface(s):<!-- -->
+<!-- -->  IDBAPI<!-- -->
+<!-- -->idb-repl: compiling injected code for arm64-apple-ios26.5-simulator<!-- -->
+</code></pre></details></div></li><li class="step_OqVk" data-showing="true" aria-current="step"><div class="stepHeader_c4Xv"><span class="count_cRUE">2<!-- --> of <!-- -->7</span><h3 class="stepName_oISX">Find the new button by its accessibility identifier</h3></div><div class="notes_Aipk"><p class="note_RbCd">The button is a Button labelled &#x27;Taps: 0&#x27;, 79×34 points at (161, 758). idb reads it like any control the app shipped with.</p></div><div><pre class="output_Gzin"><code>      &quot;identifier&quot;: &quot;<mark class="highlight_QBEX">injected-counter</mark>&quot;,<!-- -->
+<!-- -->      &quot;label&quot;: &quot;<mark class="highlight_QBEX">Taps: 0</mark>&quot;,<!-- -->
+<!-- -->    &quot;value&quot;: &quot;<mark class="highlight_QBEX">injected-counter</mark>&quot;,<!-- -->
+</code></pre><details class="more_Vzwx"><summary>Exited 0 after 0.17s<!-- -->; show the command<!-- --> and all 54 lines it printed</summary><pre class="command_UKf1"><code><span class="prompt_qWKD">$ </span>idb ui describe injected-counter --match-key AXUniqueId --api axbridge --format complete --json</code></pre><pre class="output_Gzin"><code>{<!-- -->
+<!-- -->  &quot;automation&quot;: null,<!-- -->
+<!-- -->  &quot;backend&quot;: &quot;axbridge-exclusive&quot;,<!-- -->
+<!-- -->  &quot;coverage&quot;: null,<!-- -->
+<!-- -->  &quot;elements&quot;: [<!-- -->
+<!-- -->    {<!-- -->
+<!-- -->      &quot;children&quot;: [],<!-- -->
+<!-- -->      &quot;content_required&quot;: false,<!-- -->
+<!-- -->      &quot;custom_actions&quot;: [],<!-- -->
+<!-- -->      &quot;enabled&quot;: null,<!-- -->
+<!-- -->      &quot;frame&quot;: {<!-- -->
+<!-- -->        &quot;height&quot;: 34.33333333333337,<!-- -->
+<!-- -->        &quot;width&quot;: 79.33333333333334,<!-- -->
+<!-- -->        &quot;x&quot;: 161.33333333333334,<!-- -->
+<!-- -->        &quot;y&quot;: 757.6666666666666<!-- -->
+<!-- -->      },<!-- -->
+<!-- -->      &quot;help&quot;: null,<!-- -->
+<!-- -->      &quot;identifier&quot;: &quot;<mark class="highlight_QBEX">injected-counter</mark>&quot;,<!-- -->
+<!-- -->      &quot;label&quot;: &quot;<mark class="highlight_QBEX">Taps: 0</mark>&quot;,<!-- -->
+<!-- -->      &quot;pid&quot;: 6505,<!-- -->
+<!-- -->      &quot;role_description&quot;: null,<!-- -->
+<!-- -->      &quot;subrole&quot;: null,<!-- -->
+<!-- -->      &quot;title&quot;: null,<!-- -->
+<!-- -->      &quot;traits&quot;: [<!-- -->
+<!-- -->        &quot;Button&quot;<!-- -->
+<!-- -->      ],<!-- -->
+<!-- -->      &quot;type&quot;: &quot;Button&quot;,<!-- -->
+<!-- -->      &quot;value&quot;: null<!-- -->
+<!-- -->    }<!-- -->
+<!-- -->  ],<!-- -->
+<!-- -->  &quot;frames&quot;: {<!-- -->
+<!-- -->    &quot;framed&quot;: 1,<!-- -->
+<!-- -->    &quot;total&quot;: 1,<!-- -->
+<!-- -->    &quot;zero_frame&quot;: 0<!-- -->
+<!-- -->  },<!-- -->
+<!-- -->  &quot;interaction&quot;: null,<!-- -->
+<!-- -->  &quot;modal&quot;: null,<!-- -->
+<!-- -->  &quot;narrowing&quot;: null,<!-- -->
+<!-- -->  &quot;profile&quot;: null,<!-- -->
+<!-- -->  &quot;screen&quot;: {<!-- -->
+<!-- -->    &quot;coordinate_space&quot;: &quot;screen&quot;,<!-- -->
+<!-- -->    &quot;height&quot;: 874,<!-- -->
+<!-- -->    &quot;width&quot;: 402<!-- -->
+<!-- -->  },<!-- -->
+<!-- -->  &quot;target&quot;: {<!-- -->
+<!-- -->    &quot;kind&quot;: &quot;marker&quot;,<!-- -->
+<!-- -->    &quot;match_key&quot;: &quot;AXUniqueId&quot;,<!-- -->
+<!-- -->    &quot;pid&quot;: null,<!-- -->
+<!-- -->    &quot;value&quot;: &quot;<mark class="highlight_QBEX">injected-counter</mark>&quot;,<!-- -->
+<!-- -->    &quot;x&quot;: null,<!-- -->
+<!-- -->    &quot;y&quot;: null<!-- -->
+<!-- -->  },<!-- -->
+<!-- -->  &quot;truncated&quot;: false<!-- -->
+<!-- -->}<!-- -->
+</code></pre></details></div></li><li class="step_OqVk" data-showing="true" aria-current="step"><div class="stepHeader_c4Xv"><span class="count_cRUE">3<!-- --> of <!-- -->7</span><h3 class="stepName_oISX">Tap the new button (1 of 3)</h3></div><div><details class="more_Vzwx"><summary>Exited 0 after 0.23s<!-- -->, printing nothing<!-- -->; show the command</summary><pre class="command_UKf1"><code><span class="prompt_qWKD">$ </span>idb ui tap injected-counter --match-key AXUniqueId</code></pre></details></div></li><li class="step_OqVk" data-showing="true" aria-current="step"><div class="stepHeader_c4Xv"><span class="count_cRUE">4<!-- --> of <!-- -->7</span><h3 class="stepName_oISX">Tap the new button (2 of 3)</h3></div><div><details class="more_Vzwx"><summary>Exited 0 after 0.24s<!-- -->, printing nothing<!-- -->; show the command</summary><pre class="command_UKf1"><code><span class="prompt_qWKD">$ </span>idb ui tap injected-counter --match-key AXUniqueId</code></pre></details></div></li><li class="step_OqVk" data-showing="true" aria-current="step"><div class="stepHeader_c4Xv"><span class="count_cRUE">5<!-- --> of <!-- -->7</span><h3 class="stepName_oISX">Tap the new button (3 of 3)</h3></div><div><details class="more_Vzwx"><summary>Exited 0 after 0.22s<!-- -->, printing nothing<!-- -->; show the command</summary><pre class="command_UKf1"><code><span class="prompt_qWKD">$ </span>idb ui tap injected-counter --match-key AXUniqueId</code></pre></details></div></li><li class="step_OqVk" data-showing="true" aria-current="step"><div class="stepHeader_c4Xv"><span class="count_cRUE">6<!-- --> of <!-- -->7</span><h3 class="stepName_oISX">Read the button&#x27;s label after 3 taps</h3></div><div class="notes_Aipk"><p class="note_RbCd">The label reads &#x27;Taps: 3&#x27;: each tap ran the action the injected Swift attached.</p></div><div><pre class="output_Gzin"><code>      &quot;label&quot;: &quot;<mark class="highlight_QBEX">Taps: 3</mark>&quot;,<!-- -->
+</code></pre><details class="more_Vzwx"><summary>Exited 0 after 0.16s<!-- -->; show the command<!-- --> and all 54 lines it printed</summary><pre class="command_UKf1"><code><span class="prompt_qWKD">$ </span>idb ui describe injected-counter --match-key AXUniqueId --api axbridge --format complete --json</code></pre><pre class="output_Gzin"><code>{<!-- -->
+<!-- -->  &quot;automation&quot;: null,<!-- -->
+<!-- -->  &quot;backend&quot;: &quot;axbridge-exclusive&quot;,<!-- -->
+<!-- -->  &quot;coverage&quot;: null,<!-- -->
+<!-- -->  &quot;elements&quot;: [<!-- -->
+<!-- -->    {<!-- -->
+<!-- -->      &quot;children&quot;: [],<!-- -->
+<!-- -->      &quot;content_required&quot;: false,<!-- -->
+<!-- -->      &quot;custom_actions&quot;: [],<!-- -->
+<!-- -->      &quot;enabled&quot;: null,<!-- -->
+<!-- -->      &quot;frame&quot;: {<!-- -->
+<!-- -->        &quot;height&quot;: 34.33333333333337,<!-- -->
+<!-- -->        &quot;width&quot;: 79.33333333333334,<!-- -->
+<!-- -->        &quot;x&quot;: 161.33333333333334,<!-- -->
+<!-- -->        &quot;y&quot;: 757.6666666666666<!-- -->
+<!-- -->      },<!-- -->
+<!-- -->      &quot;help&quot;: null,<!-- -->
+<!-- -->      &quot;identifier&quot;: &quot;injected-counter&quot;,<!-- -->
+<!-- -->      &quot;label&quot;: &quot;<mark class="highlight_QBEX">Taps: 3</mark>&quot;,<!-- -->
+<!-- -->      &quot;pid&quot;: 6505,<!-- -->
+<!-- -->      &quot;role_description&quot;: null,<!-- -->
+<!-- -->      &quot;subrole&quot;: null,<!-- -->
+<!-- -->      &quot;title&quot;: null,<!-- -->
+<!-- -->      &quot;traits&quot;: [<!-- -->
+<!-- -->        &quot;Button&quot;<!-- -->
+<!-- -->      ],<!-- -->
+<!-- -->      &quot;type&quot;: &quot;Button&quot;,<!-- -->
+<!-- -->      &quot;value&quot;: null<!-- -->
+<!-- -->    }<!-- -->
+<!-- -->  ],<!-- -->
+<!-- -->  &quot;frames&quot;: {<!-- -->
+<!-- -->    &quot;framed&quot;: 1,<!-- -->
+<!-- -->    &quot;total&quot;: 1,<!-- -->
+<!-- -->    &quot;zero_frame&quot;: 0<!-- -->
+<!-- -->  },<!-- -->
+<!-- -->  &quot;interaction&quot;: null,<!-- -->
+<!-- -->  &quot;modal&quot;: null,<!-- -->
+<!-- -->  &quot;narrowing&quot;: null,<!-- -->
+<!-- -->  &quot;profile&quot;: null,<!-- -->
+<!-- -->  &quot;screen&quot;: {<!-- -->
+<!-- -->    &quot;coordinate_space&quot;: &quot;screen&quot;,<!-- -->
+<!-- -->    &quot;height&quot;: 874,<!-- -->
+<!-- -->    &quot;width&quot;: 402<!-- -->
+<!-- -->  },<!-- -->
+<!-- -->  &quot;target&quot;: {<!-- -->
+<!-- -->    &quot;kind&quot;: &quot;marker&quot;,<!-- -->
+<!-- -->    &quot;match_key&quot;: &quot;AXUniqueId&quot;,<!-- -->
+<!-- -->    &quot;pid&quot;: null,<!-- -->
+<!-- -->    &quot;value&quot;: &quot;injected-counter&quot;,<!-- -->
+<!-- -->    &quot;x&quot;: null,<!-- -->
+<!-- -->    &quot;y&quot;: null<!-- -->
+<!-- -->  },<!-- -->
+<!-- -->  &quot;truncated&quot;: false<!-- -->
+<!-- -->}<!-- -->
+</code></pre></details></div></li><li class="step_OqVk" data-showing="true" aria-current="step"><div class="stepHeader_c4Xv"><span class="count_cRUE">7<!-- --> of <!-- -->7</span><h3 class="stepName_oISX">Ask the running app how many taps it counted</h3></div><div class="notes_Aipk"><p class="note_RbCd">idb-repl attached to the same process rather than relaunching it, so the button and its count of 3 were still there.</p></div><div><pre class="output_Gzin"><code>The button counted <mark class="highlight_QBEX">3 taps</mark>
+</code></pre><details class="more_Vzwx"><summary>Exited 0 after 0.55s<!-- -->; show the command<!-- --> and all 5 lines it printed</summary><pre class="command_UKf1"><code><span class="prompt_qWKD">$ </span>idb-repl app &#x27;import UIKit
+return await MainActor.run { () -&gt; String in
+  func counter(in view: UIView) -&gt; UIButton? {
+    if view.accessibilityIdentifier == &quot;injected-counter&quot; { return view as? UIButton }
+    return view.subviews.lazy.compactMap { counter(in: $0) }.first
+  }
+  let windows = UIApplication.shared.connectedScenes
+    .flatMap { ($0 as? UIWindowScene)?.windows ?? [] }
+  guard let button = windows.lazy.compactMap({ counter(in: $0) }).first
+  else { return &quot;The button is gone&quot; }
+  return &quot;The button counted \(button.tag) taps&quot;
+}&#x27;</code></pre><pre class="output_Gzin"><code>Result:<!-- -->
+<!-- -->The button counted <mark class="highlight_QBEX">3 taps</mark>
+</code></pre><p class="label_PmaK">Errors</p><pre class="output_Gzin"><code>idb-repl: received generated interface(s):<!-- -->
+<!-- -->  IDBAPI<!-- -->
+<!-- -->idb-repl: compiling injected code for arm64-apple-ios26.5-simulator<!-- -->
+</code></pre></details></div></li></ol></div></div></div></section><section class="demo_dj8D" aria-labelledby="read-web-content-in-safari-title"><h2 id="read-web-content-in-safari-title"><a href="https://github.com/facebook/idb/blob/35e63c283abc2d934888d1493b03d4d82cb89af8/EndToEndTests/test_demos.py#L453" title="Performed by EndToEndTests/test_demos.py:453">Read and navigate web content in Safari, including off-screen elements</a></h2><p>Read a web page&#x27;s own elements, not just Safari&#x27;s toolbar, and find a heading several screens below the visible area without scrolling to it. Then type a new address into Safari&#x27;s address bar, submit it with a key press, and find a label drawn inside one of the new page&#x27;s diagrams.</p><div class="stage__i3N"><div class="screen_TGW4"><figure class="figure_KgYY"><video class="video_FGCP" controls="" playsinline="" preload="metadata" poster="/demos/media/read-web-content-in-safari.png" width="604" height="1456"><source src="/demos/media/read-web-content-in-safari.mp4" type="video/mp4"></video></figure></div><div class="session_DCBj"><div class="terminal_ACBh"><div></div></div><div class="narration_WWLi"><ol class="steps_Timh"><li class="step_OqVk" data-showing="true" aria-current="step"><div class="stepHeader_c4Xv"><span class="count_cRUE">1<!-- --> of <!-- -->7</span><h3 class="stepName_oISX">Open idb&#x27;s documentation in Safari</h3></div><div><details class="more_Vzwx"><summary>Exited 0 after 0.40s<!-- -->, printing nothing<!-- -->; show the command</summary><pre class="command_UKf1"><code><span class="prompt_qWKD">$ </span>idb open https://fbidb.io/docs/idb/fbsimulatorcontrol</code></pre></details></div></li><li class="step_OqVk" data-showing="true" aria-current="step"><div class="stepHeader_c4Xv"><span class="count_cRUE">2<!-- --> of <!-- -->7</span><h3 class="stepName_oISX">Find a single heading in the page&#x27;s accessibility tree</h3></div><div class="notes_Aipk"><p class="note_RbCd">idb searched 1008 elements of the page and found the heading at y=5291, about 6 screens down the page. Nothing was scrolled.</p></div><div><pre class="output_Gzin"><code>          &quot;label&quot;: &quot;<mark class="highlight_QBEX">Functionality beyond Apple&#x27;s tools</mark>&quot;<!-- -->
 <!-- -->          &quot;label&quot;: &quot;Direct link to <mark class="highlight_QBEX">Functionality beyond Apple&#x27;s tools</mark>&quot;<!-- -->
 <!-- -->      &quot;label&quot;: &quot;<mark class="highlight_QBEX">Functionality beyond Apple&#x27;s tools</mark> Direct link to <mark class="highlight_QBEX">Functionality beyond Apple&#x27;s tools</mark>&quot;<!-- -->
 <!-- -->    &quot;walked&quot;: <mark class="highlight_QBEX">1008</mark>
-</code></pre><details class="more_Vzwx"><summary>Exited 0 after 2.88s<!-- -->; show the command<!-- --> and all 71 lines it printed</summary><pre class="command_UKf1"><code><span class="prompt_qWKD">$ </span>idb ui describe-all --api axbridge --format complete --match &#x27;Functionality beyond Apple&#x27; --key AXLabel --key AXFrame --json</code></pre><pre class="output_Gzin"><code>{<!-- -->
+</code></pre><details class="more_Vzwx"><summary>Exited 0 after 2.60s<!-- -->; show the command<!-- --> and all 71 lines it printed</summary><pre class="command_UKf1"><code><span class="prompt_qWKD">$ </span>idb ui describe-all --api axbridge --format complete --match &#x27;Functionality beyond Apple&#x27; --key AXLabel --key AXFrame --json</code></pre><pre class="output_Gzin"><code>{<!-- -->
 <!-- -->  &quot;automation&quot;: {<!-- -->
 <!-- -->    &quot;asserted&quot;: false,<!-- -->
 <!-- -->    &quot;enabled&quot;: true<!-- -->
@@ -92,8 +248,8 @@ fails is never published.</p>
 <!-- -->  },<!-- -->
 <!-- -->  &quot;truncated&quot;: false<!-- -->
 <!-- -->}<!-- -->
-</code></pre></details></div></li><li class="step_OqVk" data-showing="true" aria-current="step"><div class="stepHeader_c4Xv"><span class="count_cRUE">3<!-- --> of <!-- -->7</span><h3 class="stepName_oISX">Tap the address bar by accessibility identifier</h3></div><div class="notes_Aipk"><p class="note_RbCd">Safari&#x27;s address bar has accessibility identifier TabBarItemTitle, so idb taps it like any native control.</p></div><div><details class="more_Vzwx"><summary>Exited 0 after 5.21s<!-- -->, printing nothing<!-- -->; show the command</summary><pre class="command_UKf1"><code><span class="prompt_qWKD">$ </span>idb ui tap TabBarItemTitle --match-key AXUniqueId</code></pre></details></div></li><li class="step_OqVk" data-showing="true" aria-current="step"><div class="stepHeader_c4Xv"><span class="count_cRUE">4<!-- --> of <!-- -->7</span><h3 class="stepName_oISX">Type the address of a second page</h3></div><div><details class="more_Vzwx"><summary>Exited 0 after 1.62s<!-- -->, printing nothing<!-- -->; show the command</summary><pre class="command_UKf1"><code><span class="prompt_qWKD">$ </span>idb ui text https://fbidb.io/docs/idb/accessibility</code></pre></details></div></li><li class="step_OqVk" data-showing="true" aria-current="step"><div class="stepHeader_c4Xv"><span class="count_cRUE">5<!-- --> of <!-- -->7</span><h3 class="stepName_oISX">Read the address bar&#x27;s value back</h3></div><div class="notes_Aipk"><p class="note_RbCd">The address bar reads &#x27;https://fbidb.io/docs/idb/accessibility&#x27;, exactly what was typed.</p></div><div><pre class="output_Gzin"><code>      &quot;value&quot;: &quot;<mark class="highlight_QBEX">https://fbidb.io/docs/idb/accessibility</mark>&quot;<!-- -->
-</code></pre><details class="more_Vzwx"><summary>Exited 0 after 0.34s<!-- -->; show the command<!-- --> and all 57 lines it printed</summary><pre class="command_UKf1"><code><span class="prompt_qWKD">$ </span>idb ui describe URL --match-key AXUniqueId --api axbridge --format complete --json</code></pre><pre class="output_Gzin"><code>{<!-- -->
+</code></pre></details></div></li><li class="step_OqVk" data-showing="true" aria-current="step"><div class="stepHeader_c4Xv"><span class="count_cRUE">3<!-- --> of <!-- -->7</span><h3 class="stepName_oISX">Tap the address bar by accessibility identifier</h3></div><div class="notes_Aipk"><p class="note_RbCd">Safari&#x27;s address bar has accessibility identifier TabBarItemTitle, so idb taps it like any native control.</p></div><div><details class="more_Vzwx"><summary>Exited 0 after 3.75s<!-- -->, printing nothing<!-- -->; show the command</summary><pre class="command_UKf1"><code><span class="prompt_qWKD">$ </span>idb ui tap TabBarItemTitle --match-key AXUniqueId</code></pre></details></div></li><li class="step_OqVk" data-showing="true" aria-current="step"><div class="stepHeader_c4Xv"><span class="count_cRUE">4<!-- --> of <!-- -->7</span><h3 class="stepName_oISX">Type the address of a second page</h3></div><div><details class="more_Vzwx"><summary>Exited 0 after 0.62s<!-- -->, printing nothing<!-- -->; show the command</summary><pre class="command_UKf1"><code><span class="prompt_qWKD">$ </span>idb ui text https://fbidb.io/docs/idb/accessibility</code></pre></details></div></li><li class="step_OqVk" data-showing="true" aria-current="step"><div class="stepHeader_c4Xv"><span class="count_cRUE">5<!-- --> of <!-- -->7</span><h3 class="stepName_oISX">Read the address bar&#x27;s value back</h3></div><div class="notes_Aipk"><p class="note_RbCd">The address bar reads &#x27;https://fbidb.io/docs/idb/accessibility&#x27;, exactly what was typed.</p></div><div><pre class="output_Gzin"><code>      &quot;value&quot;: &quot;<mark class="highlight_QBEX">https://fbidb.io/docs/idb/accessibility</mark>&quot;<!-- -->
+</code></pre><details class="more_Vzwx"><summary>Exited 0 after 0.36s<!-- -->; show the command<!-- --> and all 57 lines it printed</summary><pre class="command_UKf1"><code><span class="prompt_qWKD">$ </span>idb ui describe URL --match-key AXUniqueId --api axbridge --format complete --json</code></pre><pre class="output_Gzin"><code>{<!-- -->
 <!-- -->  &quot;automation&quot;: null,<!-- -->
 <!-- -->  &quot;backend&quot;: &quot;axbridge-exclusive&quot;,<!-- -->
 <!-- -->  &quot;coverage&quot;: null,<!-- -->
@@ -112,15 +268,15 @@ fails is never published.</p>
 <!-- -->      &quot;help&quot;: null,<!-- -->
 <!-- -->      &quot;identifier&quot;: &quot;URL&quot;,<!-- -->
 <!-- -->      &quot;label&quot;: &quot;Address&quot;,<!-- -->
-<!-- -->      &quot;pid&quot;: 5406,<!-- -->
+<!-- -->      &quot;pid&quot;: 5284,<!-- -->
 <!-- -->      &quot;role_description&quot;: null,<!-- -->
 <!-- -->      &quot;subrole&quot;: null,<!-- -->
 <!-- -->      &quot;title&quot;: null,<!-- -->
 <!-- -->      &quot;traits&quot;: [<!-- -->
-<!-- -->        &quot;Scrollable&quot;,<!-- -->
 <!-- -->        &quot;TextOperationsAvailable&quot;,<!-- -->
-<!-- -->        &quot;IsEditing&quot;,<!-- -->
-<!-- -->        &quot;TextEntry&quot;<!-- -->
+<!-- -->        &quot;Scrollable&quot;,<!-- -->
+<!-- -->        &quot;TextEntry&quot;,<!-- -->
+<!-- -->        &quot;IsEditing&quot;<!-- -->
 <!-- -->      ],<!-- -->
 <!-- -->      &quot;type&quot;: &quot;TextField&quot;,<!-- -->
 <!-- -->      &quot;value&quot;: &quot;<mark class="highlight_QBEX">https://fbidb.io/docs/idb/accessibility</mark>&quot;<!-- -->
@@ -150,7 +306,7 @@ fails is never published.</p>
 <!-- -->  },<!-- -->
 <!-- -->  &quot;truncated&quot;: false<!-- -->
 <!-- -->}<!-- -->
-</code></pre></details></div></li><li class="step_OqVk" data-showing="true" aria-current="step"><div class="stepHeader_c4Xv"><span class="count_cRUE">6<!-- --> of <!-- -->7</span><h3 class="stepName_oISX">Submit the address with a key press</h3></div><div><details class="more_Vzwx"><summary>Exited 0 after 0.28s<!-- -->, printing nothing<!-- -->; show the command</summary><pre class="command_UKf1"><code><span class="prompt_qWKD">$ </span>idb ui key 40</code></pre></details></div></li><li class="step_OqVk" data-showing="true" aria-current="step"><div class="stepHeader_c4Xv"><span class="count_cRUE">7<!-- --> of <!-- -->7</span><h3 class="stepName_oISX">Find SimulatorFrameworkBridge on the page that loaded</h3></div><div class="notes_Aipk"><p class="note_RbCd">The page mentions SimulatorFrameworkBridge in 7 places. The smallest is 100×8 points at (164, 4605) on a 402×874 screen: text inside a diagram, readable like any other element.</p></div><div><pre class="output_Gzin"><code>      &quot;label&quot;: &quot;<mark class="highlight_QBEX">SimulatorFrameworkBridge</mark>&quot;<!-- -->
+</code></pre></details></div></li><li class="step_OqVk" data-showing="true" aria-current="step"><div class="stepHeader_c4Xv"><span class="count_cRUE">6<!-- --> of <!-- -->7</span><h3 class="stepName_oISX">Submit the address with a key press</h3></div><div><details class="more_Vzwx"><summary>Exited 0 after 0.41s<!-- -->, printing nothing<!-- -->; show the command</summary><pre class="command_UKf1"><code><span class="prompt_qWKD">$ </span>idb ui key 40</code></pre></details></div></li><li class="step_OqVk" data-showing="true" aria-current="step"><div class="stepHeader_c4Xv"><span class="count_cRUE">7<!-- --> of <!-- -->7</span><h3 class="stepName_oISX">Find SimulatorFrameworkBridge on the page that loaded</h3></div><div class="notes_Aipk"><p class="note_RbCd">The page mentions SimulatorFrameworkBridge in 7 places. The smallest is 100×8 points at (164, 4605) on a 402×874 screen: text inside a diagram, readable like any other element.</p></div><div><pre class="output_Gzin"><code>      &quot;label&quot;: &quot;<mark class="highlight_QBEX">SimulatorFrameworkBridge</mark>&quot;<!-- -->
 <!-- -->      &quot;label&quot;: &quot;<mark class="highlight_QBEX">SimulatorFrameworkBridge</mark>&quot;<!-- -->
 <!-- -->      &quot;label&quot;: &quot;<mark class="highlight_QBEX">SimulatorFrameworkBridge</mark>&quot;<!-- -->
 <!-- -->      &quot;label&quot;: &quot;<mark class="highlight_QBEX">SimulatorFrameworkBridge</mark> (guest)&quot;<!-- -->
@@ -158,7 +314,7 @@ fails is never published.</p>
 <!-- -->      &quot;label&quot;: &quot;<mark class="highlight_QBEX">SimulatorFrameworkBridge</mark>&quot;<!-- -->
 <!-- -->      &quot;label&quot;: &quot;The <mark class="highlight_QBEX">SimulatorFrameworkBridge</mark> guest binary was not found in the companion Resources directory&quot;<!-- -->
 <!-- -->    &quot;match&quot;: &quot;<mark class="highlight_QBEX">SimulatorFrameworkBridge</mark>&quot;,<!-- -->
-</code></pre><details class="more_Vzwx"><summary>Exited 0 after 3.96s<!-- -->; show the command<!-- --> and all 110 lines it printed</summary><pre class="command_UKf1"><code><span class="prompt_qWKD">$ </span>idb ui describe-all --api axbridge --format complete --match SimulatorFrameworkBridge --key AXLabel --key AXFrame --json</code></pre><pre class="output_Gzin"><code>{<!-- -->
+</code></pre><details class="more_Vzwx"><summary>Exited 0 after 3.02s<!-- -->; show the command<!-- --> and all 110 lines it printed</summary><pre class="command_UKf1"><code><span class="prompt_qWKD">$ </span>idb ui describe-all --api axbridge --format complete --match SimulatorFrameworkBridge --key AXLabel --key AXFrame --json</code></pre><pre class="output_Gzin"><code>{<!-- -->
 <!-- -->  &quot;automation&quot;: {<!-- -->
 <!-- -->    &quot;asserted&quot;: false,<!-- -->
 <!-- -->    &quot;enabled&quot;: true<!-- -->
@@ -268,13 +424,337 @@ fails is never published.</p>
 <!-- -->  },<!-- -->
 <!-- -->  &quot;truncated&quot;: false<!-- -->
 <!-- -->}<!-- -->
-</code></pre></details></div></li></ol></div></div></div></section><section class="demo_dj8D" aria-labelledby="scroll-by-element-title"><h2 id="scroll-by-element-title"><a href="https://github.com/facebook/idb/blob/4b3a1de05247933d3519ce5db883f7fc508e1eff/EndToEndTests/test_demos.py#L233" title="Performed by EndToEndTests/test_demos.py:233">Scroll a list from an element, without pixel math</a></h2><p>Scroll a list down by naming its General row&#x27;s accessibility identifier, then back up from a row that scrolled into view. idb performs the platform&#x27;s page-scroll action on the list that contains the element, so there are no swipe coordinates, velocities or inertial deceleration to account for. Reading the accessibility tree before and after each scroll shows how far every row moved.</p><div class="stage__i3N"><div class="screen_TGW4"><figure class="figure_KgYY"><video class="video_FGCP" controls="" playsinline="" preload="metadata" poster="/demos/media/scroll-by-element.png" width="604" height="1456"><source src="/demos/media/scroll-by-element.mp4" type="video/mp4"></video></figure></div><div class="session_DCBj"><div class="terminal_ACBh"><div></div></div><div class="narration_WWLi"><ol class="steps_Timh"><li class="step_OqVk" data-showing="true" aria-current="step"><div class="stepHeader_c4Xv"><span class="count_cRUE">1<!-- --> of <!-- -->2</span><h3 class="stepName_oISX">Scroll down from the General row</h3></div><div class="notes_Aipk"><p class="note_RbCd">All 40 rows moved up 724 points.</p><p class="note_RbCd">com.facebook.idb.replhost.row.row-11 is now the top row on screen. The scroll back up starts from com.facebook.idb.replhost.row.row-19, near the middle of the screen.</p></div><div><details class="more_Vzwx"><summary>Exited 0 after 0.61s<!-- -->, printing nothing<!-- -->; show the command</summary><pre class="command_UKf1"><code><span class="prompt_qWKD">$ </span>idb ui scroll down com.facebook.idb.replhost.row.general --match-key AXUniqueId</code></pre></details></div></li><li class="step_OqVk" data-showing="true" aria-current="step"><div class="stepHeader_c4Xv"><span class="count_cRUE">2<!-- --> of <!-- -->2</span><h3 class="stepName_oISX">Scroll back up from com.facebook.idb.replhost.row.row-19</h3></div><div class="notes_Aipk"><p class="note_RbCd">All 40 rows moved down 724 points.</p></div><div><details class="more_Vzwx"><summary>Exited 0 after 0.60s<!-- -->, printing nothing<!-- -->; show the command</summary><pre class="command_UKf1"><code><span class="prompt_qWKD">$ </span>idb ui scroll up com.facebook.idb.replhost.row.row-19 --match-key AXUniqueId</code></pre></details></div></li></ol></div></div></div></section><section class="demo_dj8D" aria-labelledby="send-and-clear-a-notification-title"><h2 id="send-and-clear-a-notification-title"><a href="https://github.com/facebook/idb/blob/4b3a1de05247933d3519ce5db883f7fc508e1eff/EndToEndTests/test_demos.py#L459" title="Performed by EndToEndTests/test_demos.py:459">Send a push notification without a permission prompt or a running app</a></h2><p>Grant an app notification permission directly, so there is no system prompt to automate, then deliver a push notification to it while it isn&#x27;t running and see the system hold it for the app. Clear the app&#x27;s delivered notifications afterwards to leave the simulator clean for whatever runs next.</p><div class="stage__i3N"><div class="screen_TGW4"><figure class="figure_KgYY"><video class="video_FGCP" controls="" playsinline="" preload="metadata" poster="/demos/media/send-and-clear-a-notification.png" width="604" height="1456"><source src="/demos/media/send-and-clear-a-notification.mp4" type="video/mp4"></video></figure></div><div class="session_DCBj"><div class="terminal_ACBh"><div></div></div><div class="narration_WWLi"><ol class="steps_Timh"><li class="step_OqVk" data-showing="true" aria-current="step"><div class="stepHeader_c4Xv"><span class="count_cRUE">1<!-- --> of <!-- -->6</span><h3 class="stepName_oISX">Grant notification permission without showing a prompt</h3></div><div class="notes_Aipk"><p class="note_RbCd">com.apple.news can now receive notifications. idb granted the permission directly, so no prompt appeared.</p></div><div><details class="more_Vzwx"><summary>Exited 0 after 0.51s<!-- -->, printing nothing<!-- -->; show the command</summary><pre class="command_UKf1"><code><span class="prompt_qWKD">$ </span>idb approve com.apple.news notification</code></pre></details></div></li><li class="step_OqVk" data-showing="true" aria-current="step"><div class="stepHeader_c4Xv"><span class="count_cRUE">2<!-- --> of <!-- -->6</span><h3 class="stepName_oISX">List notifications before delivery</h3></div><div class="notes_Aipk"><p class="note_RbCd">The app already has 1 delivered notification, so the new one can be told apart.</p></div><div><details class="more_Vzwx"><summary>Exited 0 after 0.47s<!-- -->; show the command<!-- --> and all 1 lines it printed</summary><pre class="command_UKf1"><code><span class="prompt_qWKD">$ </span>idb notification list com.apple.news</code></pre><pre class="output_Gzin"><code>&quot;com.apple.news&quot; | &quot;00000000-0000-0000-0000-000000000000&quot; | &quot;Breaking&quot; | &quot;&quot; | &quot;idb delivered this without the app running.&quot; | &quot;&quot; | TIMESTAMP<!-- -->
-</code></pre></details></div></li><li class="step_OqVk" data-showing="true" aria-current="step"><div class="stepHeader_c4Xv"><span class="count_cRUE">3<!-- --> of <!-- -->6</span><h3 class="stepName_oISX">Deliver a notification while the app is not running</h3></div><div><details class="more_Vzwx"><summary>Exited 0 after 0.18s<!-- -->, printing nothing<!-- -->; show the command</summary><pre class="command_UKf1"><code><span class="prompt_qWKD">$ </span>idb send-notification com.apple.news &#x27;{&quot;aps&quot;: {&quot;alert&quot;: {&quot;title&quot;: &quot;Breaking&quot;, &quot;body&quot;: &quot;idb delivered this without the app running.&quot;}}}&#x27;</code></pre></details></div></li><li class="step_OqVk" data-showing="true" aria-current="step"><div class="stepHeader_c4Xv"><span class="count_cRUE">4<!-- --> of <!-- -->6</span><h3 class="stepName_oISX">List notifications after delivery</h3></div><div class="notes_Aipk"><p class="note_RbCd">The delivered-notification list now contains a new entry titled &#x27;Breaking&#x27;, although com.apple.news never ran to receive it.</p></div><div><pre class="output_Gzin"><code>&quot;com.apple.news&quot; | &quot;00000000-0000-0000-0000-000000000000&quot; | &quot;<mark class="highlight_QBEX">Breaking</mark>&quot; | &quot;&quot; | &quot;idb delivered this without the app running.&quot; | &quot;&quot; | TIMESTAMP<!-- -->
+</code></pre></details></div></li></ol></div></div></div></section><section class="demo_dj8D" aria-labelledby="scroll-by-element-title"><h2 id="scroll-by-element-title"><a href="https://github.com/facebook/idb/blob/35e63c283abc2d934888d1493b03d4d82cb89af8/EndToEndTests/test_demos.py#L381" title="Performed by EndToEndTests/test_demos.py:381">Scroll a list from an element, without pixel math</a></h2><p>Scroll a list down by naming its General row&#x27;s accessibility identifier, then back up from a row that scrolled into view. idb performs the platform&#x27;s page-scroll action on the list that contains the element, so there are no swipe coordinates, velocities or inertial deceleration to account for. Reading the accessibility tree before and after each scroll shows how far every row moved.</p><div class="stage__i3N"><div class="screen_TGW4"><figure class="figure_KgYY"><video class="video_FGCP" controls="" playsinline="" preload="metadata" poster="/demos/media/scroll-by-element.png" width="604" height="1456"><source src="/demos/media/scroll-by-element.mp4" type="video/mp4"></video></figure></div><div class="session_DCBj"><div class="terminal_ACBh"><div></div></div><div class="narration_WWLi"><ol class="steps_Timh"><li class="step_OqVk" data-showing="true" aria-current="step"><div class="stepHeader_c4Xv"><span class="count_cRUE">1<!-- --> of <!-- -->2</span><h3 class="stepName_oISX">Scroll down from the General row</h3></div><div class="notes_Aipk"><p class="note_RbCd">All 40 rows moved up 724 points.</p><p class="note_RbCd">com.facebook.idb.replhost.row.row-11 is now the top row on screen. The scroll back up starts from com.facebook.idb.replhost.row.row-19, near the middle of the screen.</p></div><div><details class="more_Vzwx"><summary>Exited 0 after 0.56s<!-- -->, printing nothing<!-- -->; show the command</summary><pre class="command_UKf1"><code><span class="prompt_qWKD">$ </span>idb ui scroll down com.facebook.idb.replhost.row.general --match-key AXUniqueId</code></pre></details></div></li><li class="step_OqVk" data-showing="true" aria-current="step"><div class="stepHeader_c4Xv"><span class="count_cRUE">2<!-- --> of <!-- -->2</span><h3 class="stepName_oISX">Scroll back up from com.facebook.idb.replhost.row.row-19</h3></div><div class="notes_Aipk"><p class="note_RbCd">All 40 rows moved down 724 points.</p></div><div><details class="more_Vzwx"><summary>Exited 0 after 0.59s<!-- -->, printing nothing<!-- -->; show the command</summary><pre class="command_UKf1"><code><span class="prompt_qWKD">$ </span>idb ui scroll up com.facebook.idb.replhost.row.row-19 --match-key AXUniqueId</code></pre></details></div></li></ol></div></div></div></section><section class="demo_dj8D" aria-labelledby="seed-photos-and-a-location-title"><h2 id="seed-photos-and-a-location-title"><a href="https://github.com/facebook/idb/blob/35e63c283abc2d934888d1493b03d4d82cb89af8/EndToEndTests/test_demos.py#L1012" title="Performed by EndToEndTests/test_demos.py:1012">Seed photos and a location, and watch an app pick them up</a></h2><p>Give a simulator a known photo library and location: clear its photos, add three, let an app read them, and put the simulator in Menlo Park. Swift injected into the app shows the photos and asks for the location, idb answers the system prompt, and when idb moves the simulator to London the app follows it there.</p><div class="stage__i3N"><div class="screen_TGW4"><figure class="figure_KgYY"><video class="video_FGCP" controls="" playsinline="" preload="metadata" poster="/demos/media/seed-photos-and-a-location.png" width="604" height="1456"><source src="/demos/media/seed-photos-and-a-location.mp4" type="video/mp4"></video></figure></div><div class="session_DCBj"><div class="terminal_ACBh"><div></div></div><div class="narration_WWLi"><ol class="steps_Timh"><li class="step_OqVk" data-showing="true" aria-current="step"><div class="stepHeader_c4Xv"><span class="count_cRUE">1<!-- --> of <!-- -->9</span><h3 class="stepName_oISX">Start from an empty photo library</h3></div><div class="notes_Aipk"><p class="note_RbCd">The simulator&#x27;s sample photos are gone.</p></div><div><details class="more_Vzwx"><summary>Exited 0 after 0.57s<!-- -->, printing nothing<!-- -->; show the command</summary><pre class="command_UKf1"><code><span class="prompt_qWKD">$ </span>idb photos clear</code></pre></details></div></li><li class="step_OqVk" data-showing="true" aria-current="step"><div class="stepHeader_c4Xv"><span class="count_cRUE">2<!-- --> of <!-- -->9</span><h3 class="stepName_oISX">Add three photos</h3></div><div class="notes_Aipk"><p class="note_RbCd">Three one-colour images, written by the test, are now the whole photo library.</p></div><div><details class="more_Vzwx"><summary>Exited 0 after 0.25s<!-- -->, printing nothing<!-- -->; show the command</summary><pre class="command_UKf1"><code><span class="prompt_qWKD">$ </span>idb add-media &#x27;$IDB_E2E_DIR/seeded-photos/sunrise.png&#x27; &#x27;$IDB_E2E_DIR/seeded-photos/sea.png&#x27; &#x27;$IDB_E2E_DIR/seeded-photos/leaf.png&#x27;</code></pre></details></div></li><li class="step_OqVk" data-showing="true" aria-current="step"><div class="stepHeader_c4Xv"><span class="count_cRUE">3<!-- --> of <!-- -->9</span><h3 class="stepName_oISX">Let the app read photos</h3></div><div class="notes_Aipk"><p class="note_RbCd">Granted ahead of time, so the app never asks for the photos.</p></div><div><details class="more_Vzwx"><summary>Exited 0 after 0.36s<!-- -->, printing nothing<!-- -->; show the command</summary><pre class="command_UKf1"><code><span class="prompt_qWKD">$ </span>idb approve com.facebook.idb.replhost photos</code></pre></details></div></li><li class="step_OqVk" data-showing="true" aria-current="step"><div class="stepHeader_c4Xv"><span class="count_cRUE">4<!-- --> of <!-- -->9</span><h3 class="stepName_oISX">Put the simulator in Menlo Park</h3></div><div><details class="more_Vzwx"><summary>Exited 0 after 0.18s<!-- -->, printing nothing<!-- -->; show the command</summary><pre class="command_UKf1"><code><span class="prompt_qWKD">$ </span>idb set-location 37.4848 -122.1484</code></pre></details></div></li><li class="step_OqVk" data-showing="true" aria-current="step"><div class="stepHeader_c4Xv"><span class="count_cRUE">5<!-- --> of <!-- -->9</span><h3 class="stepName_oISX">Show the photos and follow the location, with injected Swift</h3></div><div class="notes_Aipk"><p class="note_RbCd">The injected Swift read 3 photos from the library, put them on screen, and left a task running in the app that follows the location.</p></div><div><pre class="output_Gzin"><code>Showing <mark class="highlight_QBEX">3 photos</mark>, and following the location<!-- -->
+</code></pre><details class="more_Vzwx"><summary>Exited 0 after 2.43s<!-- -->; show the command<!-- --> and all 5 lines it printed</summary><pre class="command_UKf1"><code><span class="prompt_qWKD">$ </span>idb-repl app --new-session &#x27;import CoreLocation
+import Photos
+import UIKit
+let options = PHImageRequestOptions()
+options.isSynchronous = true
+var found: [UIImage] = []
+PHAsset.fetchAssets(with: .image, options: nil).enumerateObjects { asset, _, _ in
+  PHImageManager.default().requestImage(
+    for: asset, targetSize: CGSize(width: 192, height: 192),
+    contentMode: .aspectFill, options: options
+  ) { image, _ in image.map { found.append($0) } }
+}
+let photos = found
+return await MainActor.run { () -&gt; String in
+  let window = UIApplication.shared.connectedScenes
+    .compactMap { ($0 as? UIWindowScene)?.keyWindow }.first
+  guard let window else { return &quot;No window to show them in&quot; }
+  let row = UIStackView(arrangedSubviews: photos.map { photo in
+    let view = UIImageView(image: photo)
+    view.layer.cornerRadius = 16
+    view.clipsToBounds = true
+    view.widthAnchor.constraint(equalToConstant: 96).isActive = true
+    view.heightAnchor.constraint(equalToConstant: 96).isActive = true
+    return view
+  })
+  row.spacing = 12
+  let label = UILabel()
+  label.accessibilityIdentifier = &quot;seeded-library&quot;
+  label.text = &quot;\(photos.count) photos, waiting for a location&quot;
+  let column = UIStackView(arrangedSubviews: [row, label])
+  column.axis = .vertical
+  column.alignment = .center
+  column.spacing = 24
+  column.backgroundColor = .systemBackground
+  column.frame = window.bounds
+  column.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+  column.isLayoutMarginsRelativeArrangement = true
+  window.addSubview(column)
+  Task {
+    for try await update in CLLocationUpdate.liveUpdates() {
+      guard let place = update.location?.coordinate else { continue }
+      label.text = String(
+        format: &quot;%d photos at %.4f, %.4f&quot;,
+        photos.count, place.latitude, place.longitude)
+    }
+  }
+  return &quot;Showing \(photos.count) photos, and following the location&quot;
+}&#x27;</code></pre><pre class="output_Gzin"><code>Result:<!-- -->
+<!-- -->Showing <mark class="highlight_QBEX">3 photos</mark>, and following the location<!-- -->
+</code></pre><p class="label_PmaK">Errors</p><pre class="output_Gzin"><code>idb-repl: received generated interface(s):<!-- -->
+<!-- -->  IDBAPI<!-- -->
+<!-- -->idb-repl: compiling injected code for arm64-apple-ios26.5-simulator<!-- -->
+</code></pre></details></div></li><li class="step_OqVk" data-showing="true" aria-current="step"><div class="stepHeader_c4Xv"><span class="count_cRUE">6<!-- --> of <!-- -->9</span><h3 class="stepName_oISX">Answer the location prompt</h3></div><div class="notes_Aipk"><p class="note_RbCd">The app asked to use the location, and idb pressed the button on the system&#x27;s prompt by its label.</p></div><div><details class="more_Vzwx"><summary>Exited 0 after 0.35s<!-- -->, printing nothing<!-- -->; show the command</summary><pre class="command_UKf1"><code><span class="prompt_qWKD">$ </span>idb ui tap &#x27;Allow While Using App&#x27;</code></pre></details></div></li><li class="step_OqVk" data-showing="true" aria-current="step"><div class="stepHeader_c4Xv"><span class="count_cRUE">7<!-- --> of <!-- -->9</span><h3 class="stepName_oISX">Read what the app shows</h3></div><div class="notes_Aipk"><p class="note_RbCd">The app reads &#x27;3 photos at 37.4848, -122.1484&#x27;: the photos idb added and the location idb set.</p></div><div><pre class="output_Gzin"><code>      &quot;label&quot;: &quot;<mark class="highlight_QBEX">3 photos at 37.4848, -122.1484</mark>&quot;,<!-- -->
+</code></pre><details class="more_Vzwx"><summary>Exited 0 after 0.15s<!-- -->; show the command<!-- --> and all 54 lines it printed</summary><pre class="command_UKf1"><code><span class="prompt_qWKD">$ </span>idb ui describe seeded-library --match-key AXUniqueId --api axbridge --format complete --json</code></pre><pre class="output_Gzin"><code>{<!-- -->
+<!-- -->  &quot;automation&quot;: null,<!-- -->
+<!-- -->  &quot;backend&quot;: &quot;axbridge-exclusive&quot;,<!-- -->
+<!-- -->  &quot;coverage&quot;: null,<!-- -->
+<!-- -->  &quot;elements&quot;: [<!-- -->
+<!-- -->    {<!-- -->
+<!-- -->      &quot;children&quot;: [],<!-- -->
+<!-- -->      &quot;content_required&quot;: false,<!-- -->
+<!-- -->      &quot;custom_actions&quot;: [],<!-- -->
+<!-- -->      &quot;enabled&quot;: null,<!-- -->
+<!-- -->      &quot;frame&quot;: {<!-- -->
+<!-- -->        &quot;height&quot;: 658,<!-- -->
+<!-- -->        &quot;width&quot;: 240.33333333333337,<!-- -->
+<!-- -->        &quot;x&quot;: 81.00000000000001,<!-- -->
+<!-- -->        &quot;y&quot;: 182<!-- -->
+<!-- -->      },<!-- -->
+<!-- -->      &quot;help&quot;: null,<!-- -->
+<!-- -->      &quot;identifier&quot;: &quot;seeded-library&quot;,<!-- -->
+<!-- -->      &quot;label&quot;: &quot;<mark class="highlight_QBEX">3 photos at 37.4848, -122.1484</mark>&quot;,<!-- -->
+<!-- -->      &quot;pid&quot;: 10671,<!-- -->
+<!-- -->      &quot;role_description&quot;: null,<!-- -->
+<!-- -->      &quot;subrole&quot;: null,<!-- -->
+<!-- -->      &quot;title&quot;: null,<!-- -->
+<!-- -->      &quot;traits&quot;: [<!-- -->
+<!-- -->        &quot;StaticText&quot;<!-- -->
+<!-- -->      ],<!-- -->
+<!-- -->      &quot;type&quot;: &quot;StaticText&quot;,<!-- -->
+<!-- -->      &quot;value&quot;: null<!-- -->
+<!-- -->    }<!-- -->
+<!-- -->  ],<!-- -->
+<!-- -->  &quot;frames&quot;: {<!-- -->
+<!-- -->    &quot;framed&quot;: 1,<!-- -->
+<!-- -->    &quot;total&quot;: 1,<!-- -->
+<!-- -->    &quot;zero_frame&quot;: 0<!-- -->
+<!-- -->  },<!-- -->
+<!-- -->  &quot;interaction&quot;: null,<!-- -->
+<!-- -->  &quot;modal&quot;: null,<!-- -->
+<!-- -->  &quot;narrowing&quot;: null,<!-- -->
+<!-- -->  &quot;profile&quot;: null,<!-- -->
+<!-- -->  &quot;screen&quot;: {<!-- -->
+<!-- -->    &quot;coordinate_space&quot;: &quot;screen&quot;,<!-- -->
+<!-- -->    &quot;height&quot;: 874,<!-- -->
+<!-- -->    &quot;width&quot;: 402<!-- -->
+<!-- -->  },<!-- -->
+<!-- -->  &quot;target&quot;: {<!-- -->
+<!-- -->    &quot;kind&quot;: &quot;marker&quot;,<!-- -->
+<!-- -->    &quot;match_key&quot;: &quot;AXUniqueId&quot;,<!-- -->
+<!-- -->    &quot;pid&quot;: null,<!-- -->
+<!-- -->    &quot;value&quot;: &quot;seeded-library&quot;,<!-- -->
+<!-- -->    &quot;x&quot;: null,<!-- -->
+<!-- -->    &quot;y&quot;: null<!-- -->
+<!-- -->  },<!-- -->
+<!-- -->  &quot;truncated&quot;: false<!-- -->
+<!-- -->}<!-- -->
+</code></pre></details></div></li><li class="step_OqVk" data-showing="true" aria-current="step"><div class="stepHeader_c4Xv"><span class="count_cRUE">8<!-- --> of <!-- -->9</span><h3 class="stepName_oISX">Move the simulator to London</h3></div><div><details class="more_Vzwx"><summary>Exited 0 after 0.13s<!-- -->, printing nothing<!-- -->; show the command</summary><pre class="command_UKf1"><code><span class="prompt_qWKD">$ </span>idb set-location 51.5072 -0.1276</code></pre></details></div></li><li class="step_OqVk" data-showing="true" aria-current="step"><div class="stepHeader_c4Xv"><span class="count_cRUE">9<!-- --> of <!-- -->9</span><h3 class="stepName_oISX">Read what the app shows now</h3></div><div class="notes_Aipk"><p class="note_RbCd">The app now reads &#x27;3 photos at 51.5072, -0.1276&#x27;. Nothing was relaunched: the task the Swift left running saw the location change.</p></div><div><pre class="output_Gzin"><code>      &quot;label&quot;: &quot;<mark class="highlight_QBEX">3 photos at 51.5072, -0.1276</mark>&quot;,<!-- -->
+</code></pre><details class="more_Vzwx"><summary>Exited 0 after 0.14s<!-- -->; show the command<!-- --> and all 54 lines it printed</summary><pre class="command_UKf1"><code><span class="prompt_qWKD">$ </span>idb ui describe seeded-library --match-key AXUniqueId --api axbridge --format complete --json</code></pre><pre class="output_Gzin"><code>{<!-- -->
+<!-- -->  &quot;automation&quot;: null,<!-- -->
+<!-- -->  &quot;backend&quot;: &quot;axbridge-exclusive&quot;,<!-- -->
+<!-- -->  &quot;coverage&quot;: null,<!-- -->
+<!-- -->  &quot;elements&quot;: [<!-- -->
+<!-- -->    {<!-- -->
+<!-- -->      &quot;children&quot;: [],<!-- -->
+<!-- -->      &quot;content_required&quot;: false,<!-- -->
+<!-- -->      &quot;custom_actions&quot;: [],<!-- -->
+<!-- -->      &quot;enabled&quot;: null,<!-- -->
+<!-- -->      &quot;frame&quot;: {<!-- -->
+<!-- -->        &quot;height&quot;: 658,<!-- -->
+<!-- -->        &quot;width&quot;: 218,<!-- -->
+<!-- -->        &quot;x&quot;: 92,<!-- -->
+<!-- -->        &quot;y&quot;: 182<!-- -->
+<!-- -->      },<!-- -->
+<!-- -->      &quot;help&quot;: null,<!-- -->
+<!-- -->      &quot;identifier&quot;: &quot;seeded-library&quot;,<!-- -->
+<!-- -->      &quot;label&quot;: &quot;<mark class="highlight_QBEX">3 photos at 51.5072, -0.1276</mark>&quot;,<!-- -->
+<!-- -->      &quot;pid&quot;: 10671,<!-- -->
+<!-- -->      &quot;role_description&quot;: null,<!-- -->
+<!-- -->      &quot;subrole&quot;: null,<!-- -->
+<!-- -->      &quot;title&quot;: null,<!-- -->
+<!-- -->      &quot;traits&quot;: [<!-- -->
+<!-- -->        &quot;StaticText&quot;<!-- -->
+<!-- -->      ],<!-- -->
+<!-- -->      &quot;type&quot;: &quot;StaticText&quot;,<!-- -->
+<!-- -->      &quot;value&quot;: null<!-- -->
+<!-- -->    }<!-- -->
+<!-- -->  ],<!-- -->
+<!-- -->  &quot;frames&quot;: {<!-- -->
+<!-- -->    &quot;framed&quot;: 1,<!-- -->
+<!-- -->    &quot;total&quot;: 1,<!-- -->
+<!-- -->    &quot;zero_frame&quot;: 0<!-- -->
+<!-- -->  },<!-- -->
+<!-- -->  &quot;interaction&quot;: null,<!-- -->
+<!-- -->  &quot;modal&quot;: null,<!-- -->
+<!-- -->  &quot;narrowing&quot;: null,<!-- -->
+<!-- -->  &quot;profile&quot;: null,<!-- -->
+<!-- -->  &quot;screen&quot;: {<!-- -->
+<!-- -->    &quot;coordinate_space&quot;: &quot;screen&quot;,<!-- -->
+<!-- -->    &quot;height&quot;: 874,<!-- -->
+<!-- -->    &quot;width&quot;: 402<!-- -->
+<!-- -->  },<!-- -->
+<!-- -->  &quot;target&quot;: {<!-- -->
+<!-- -->    &quot;kind&quot;: &quot;marker&quot;,<!-- -->
+<!-- -->    &quot;match_key&quot;: &quot;AXUniqueId&quot;,<!-- -->
+<!-- -->    &quot;pid&quot;: null,<!-- -->
+<!-- -->    &quot;value&quot;: &quot;seeded-library&quot;,<!-- -->
+<!-- -->    &quot;x&quot;: null,<!-- -->
+<!-- -->    &quot;y&quot;: null<!-- -->
+<!-- -->  },<!-- -->
+<!-- -->  &quot;truncated&quot;: false<!-- -->
+<!-- -->}<!-- -->
+</code></pre></details></div></li></ol></div></div></div></section><section class="demo_dj8D" aria-labelledby="send-and-clear-a-notification-title"><h2 id="send-and-clear-a-notification-title"><a href="https://github.com/facebook/idb/blob/35e63c283abc2d934888d1493b03d4d82cb89af8/EndToEndTests/test_demos.py#L607" title="Performed by EndToEndTests/test_demos.py:607">Send a push notification without a permission prompt or a running app</a></h2><p>Grant an app notification permission directly, so there is no system prompt to automate, then deliver a push notification to it while it isn&#x27;t running and see the system hold it for the app. Clear the app&#x27;s delivered notifications afterwards to leave the simulator clean for whatever runs next.</p><div class="stage__i3N"><div class="screen_TGW4"><figure class="figure_KgYY"><video class="video_FGCP" controls="" playsinline="" preload="metadata" poster="/demos/media/send-and-clear-a-notification.png" width="604" height="1456"><source src="/demos/media/send-and-clear-a-notification.mp4" type="video/mp4"></video></figure></div><div class="session_DCBj"><div class="terminal_ACBh"><div></div></div><div class="narration_WWLi"><ol class="steps_Timh"><li class="step_OqVk" data-showing="true" aria-current="step"><div class="stepHeader_c4Xv"><span class="count_cRUE">1<!-- --> of <!-- -->6</span><h3 class="stepName_oISX">Grant notification permission without showing a prompt</h3></div><div class="notes_Aipk"><p class="note_RbCd">com.apple.news can now receive notifications. idb granted the permission directly, so no prompt appeared.</p></div><div><details class="more_Vzwx"><summary>Exited 0 after 0.17s<!-- -->, printing nothing<!-- -->; show the command</summary><pre class="command_UKf1"><code><span class="prompt_qWKD">$ </span>idb approve com.apple.news notification</code></pre></details></div></li><li class="step_OqVk" data-showing="true" aria-current="step"><div class="stepHeader_c4Xv"><span class="count_cRUE">2<!-- --> of <!-- -->6</span><h3 class="stepName_oISX">List notifications before delivery</h3></div><div class="notes_Aipk"><p class="note_RbCd">The app already has 1 delivered notification, so the new one can be told apart.</p></div><div><details class="more_Vzwx"><summary>Exited 0 after 0.36s<!-- -->; show the command<!-- --> and all 1 lines it printed</summary><pre class="command_UKf1"><code><span class="prompt_qWKD">$ </span>idb notification list com.apple.news</code></pre><pre class="output_Gzin"><code>&quot;com.apple.news&quot; | &quot;00000000-0000-0000-0000-000000000000&quot; | &quot;Breaking&quot; | &quot;&quot; | &quot;idb delivered this without the app running.&quot; | &quot;&quot; | TIMESTAMP<!-- -->
+</code></pre></details></div></li><li class="step_OqVk" data-showing="true" aria-current="step"><div class="stepHeader_c4Xv"><span class="count_cRUE">3<!-- --> of <!-- -->6</span><h3 class="stepName_oISX">Deliver a notification while the app is not running</h3></div><div><details class="more_Vzwx"><summary>Exited 0 after 0.15s<!-- -->, printing nothing<!-- -->; show the command</summary><pre class="command_UKf1"><code><span class="prompt_qWKD">$ </span>idb send-notification com.apple.news &#x27;{&quot;aps&quot;: {&quot;alert&quot;: {&quot;title&quot;: &quot;Breaking&quot;, &quot;body&quot;: &quot;idb delivered this without the app running.&quot;}}}&#x27;</code></pre></details></div></li><li class="step_OqVk" data-showing="true" aria-current="step"><div class="stepHeader_c4Xv"><span class="count_cRUE">4<!-- --> of <!-- -->6</span><h3 class="stepName_oISX">List notifications after delivery</h3></div><div class="notes_Aipk"><p class="note_RbCd">The delivered-notification list now contains a new entry titled &#x27;Breaking&#x27;, although com.apple.news never ran to receive it.</p></div><div><pre class="output_Gzin"><code>&quot;com.apple.news&quot; | &quot;00000000-0000-0000-0000-000000000000&quot; | &quot;<mark class="highlight_QBEX">Breaking</mark>&quot; | &quot;&quot; | &quot;idb delivered this without the app running.&quot; | &quot;&quot; | TIMESTAMP<!-- -->
 <!-- -->&quot;com.apple.news&quot; | &quot;00000000-0000-0000-0000-000000000000&quot; | &quot;<mark class="highlight_QBEX">Breaking</mark>&quot; | &quot;&quot; | &quot;idb delivered this without the app running.&quot; | &quot;&quot; | TIMESTAMP<!-- -->
-</code></pre><details class="more_Vzwx"><summary>Exited 0 after 0.54s<!-- -->; show the command</summary><pre class="command_UKf1"><code><span class="prompt_qWKD">$ </span>idb notification list com.apple.news</code></pre></details></div></li><li class="step_OqVk" data-showing="true" aria-current="step"><div class="stepHeader_c4Xv"><span class="count_cRUE">5<!-- --> of <!-- -->6</span><h3 class="stepName_oISX">Clear the app&#x27;s delivered notifications</h3></div><div><details class="more_Vzwx"><summary>Exited 0 after 0.62s<!-- -->, printing nothing<!-- -->; show the command</summary><pre class="command_UKf1"><code><span class="prompt_qWKD">$ </span>idb notification clear com.apple.news</code></pre></details></div></li><li class="step_OqVk" data-showing="true" aria-current="step"><div class="stepHeader_c4Xv"><span class="count_cRUE">6<!-- --> of <!-- -->6</span><h3 class="stepName_oISX">List notifications after clearing them</h3></div><div class="notes_Aipk"><p class="note_RbCd">The app has no delivered notifications: clearing removed the new one and the 1 delivered notification there before.</p></div><div><details class="more_Vzwx"><summary>Exited 0 after 0.42s<!-- -->, printing nothing<!-- -->; show the command</summary><pre class="command_UKf1"><code><span class="prompt_qWKD">$ </span>idb notification list com.apple.news</code></pre></details></div></li></ol></div></div></div></section><section class="demo_dj8D" aria-labelledby="tap-by-accessibility-id-title"><h2 id="tap-by-accessibility-id-title"><a href="https://github.com/facebook/idb/blob/4b3a1de05247933d3519ce5db883f7fc508e1eff/EndToEndTests/test_demos.py#L135" title="Performed by EndToEndTests/test_demos.py:135">Tap an element by its accessibility identifier</a></h2><p>Tap a list&#x27;s General row by naming its accessibility identifier. idb finds the element in the accessibility tree and activates it directly, so there are no screen coordinates to calculate, and the tap still lands if the layout, device size or scroll position changes. The General page opens.</p><div class="stage__i3N"><div class="screen_TGW4"><figure class="figure_KgYY"><video class="video_FGCP" controls="" playsinline="" preload="metadata" poster="/demos/media/tap-by-accessibility-id.png" width="604" height="1456"><source src="/demos/media/tap-by-accessibility-id.mp4" type="video/mp4"></video></figure></div><div class="session_DCBj"><div class="terminal_ACBh"><div></div></div><div class="narration_WWLi"><ol class="steps_Timh"><li class="step_OqVk" data-showing="true" aria-current="step"><div class="stepHeader_c4Xv"><span class="count_cRUE">1<!-- --> of <!-- -->3</span><h3 class="stepName_oISX">Find the General row by accessibility identifier</h3></div><div class="notes_Aipk"><p class="note_RbCd">The row is a Cell labelled &#x27;General&#x27;, with accessibility identifier com.facebook.idb.replhost.row.general. It is 362×53 points at (20, 180) on a 402×874 screen.</p></div><div><pre class="output_Gzin"><code>      &quot;identifier&quot;: &quot;<mark class="highlight_QBEX">com.facebook.idb.replhost.row.general</mark>&quot;,<!-- -->
+</code></pre><details class="more_Vzwx"><summary>Exited 0 after 0.36s<!-- -->; show the command</summary><pre class="command_UKf1"><code><span class="prompt_qWKD">$ </span>idb notification list com.apple.news</code></pre></details></div></li><li class="step_OqVk" data-showing="true" aria-current="step"><div class="stepHeader_c4Xv"><span class="count_cRUE">5<!-- --> of <!-- -->6</span><h3 class="stepName_oISX">Clear the app&#x27;s delivered notifications</h3></div><div><details class="more_Vzwx"><summary>Exited 0 after 0.39s<!-- -->, printing nothing<!-- -->; show the command</summary><pre class="command_UKf1"><code><span class="prompt_qWKD">$ </span>idb notification clear com.apple.news</code></pre></details></div></li><li class="step_OqVk" data-showing="true" aria-current="step"><div class="stepHeader_c4Xv"><span class="count_cRUE">6<!-- --> of <!-- -->6</span><h3 class="stepName_oISX">List notifications after clearing them</h3></div><div class="notes_Aipk"><p class="note_RbCd">The app has no delivered notifications: clearing removed the new one and the 1 delivered notification there before.</p></div><div><details class="more_Vzwx"><summary>Exited 0 after 0.38s<!-- -->, printing nothing<!-- -->; show the command</summary><pre class="command_UKf1"><code><span class="prompt_qWKD">$ </span>idb notification list com.apple.news</code></pre></details></div></li></ol></div></div></div></section><section class="demo_dj8D" aria-labelledby="spin-safaris-address-bar-title"><h2 id="spin-safaris-address-bar-title"><a href="https://github.com/facebook/idb/blob/35e63c283abc2d934888d1493b03d4d82cb89af8/EndToEndTests/test_demos.py#L873" title="Performed by EndToEndTests/test_demos.py:873">Spin Safari&#x27;s address bar, and tap it anyway</a></h2><p>Inject Swift into Safari, one of Apple&#x27;s own apps, and set its address bar spinning with Core Animation. The spin only changes what is drawn, so the accessibility tree still reports the bar exactly where it was, and idb taps it mid-spin. Then stop it.</p><div class="stage__i3N"><div class="screen_TGW4"><figure class="figure_KgYY"><video class="video_FGCP" controls="" playsinline="" preload="metadata" poster="/demos/media/spin-safaris-address-bar.png" width="604" height="1456"><source src="/demos/media/spin-safaris-address-bar.mp4" type="video/mp4"></video></figure></div><div class="session_DCBj"><div class="terminal_ACBh"><div></div></div><div class="narration_WWLi"><ol class="steps_Timh"><li class="step_OqVk" data-showing="true" aria-current="step"><div class="stepHeader_c4Xv"><span class="count_cRUE">1<!-- --> of <!-- -->7</span><h3 class="stepName_oISX">Launch Safari with Swift injected, and ask who it is</h3></div><div class="notes_Aipk"><p class="note_RbCd">The Swift ran inside Safari, which answers com.apple.mobilesafari. Nothing about Safari was rebuilt or re-signed.</p></div><div><pre class="output_Gzin"><code><mark class="highlight_QBEX">com.apple.mobilesafari</mark>
+</code></pre><details class="more_Vzwx"><summary>Exited 0 after 2.89s<!-- -->; show the command<!-- --> and all 5 lines it printed</summary><pre class="command_UKf1"><code><span class="prompt_qWKD">$ </span>idb-repl app --bundle-id com.apple.mobilesafari --new-session &#x27;return Bundle.main.bundleIdentifier ?? &quot;no bundle&quot;&#x27;</code></pre><pre class="output_Gzin"><code>Result:<!-- -->
+<mark class="highlight_QBEX">com.apple.mobilesafari</mark>
+</code></pre><p class="label_PmaK">Errors</p><pre class="output_Gzin"><code>idb-repl: received generated interface(s):<!-- -->
+<!-- -->  IDBAPI<!-- -->
+<!-- -->idb-repl: compiling injected code for arm64-apple-ios26.5-simulator<!-- -->
+</code></pre></details></div></li><li class="step_OqVk" data-showing="true" aria-current="step"><div class="stepHeader_c4Xv"><span class="count_cRUE">2<!-- --> of <!-- -->7</span><h3 class="stepName_oISX">Open a page in the same Safari</h3></div><div><details class="more_Vzwx"><summary>Exited 0 after 0.24s<!-- -->, printing nothing<!-- -->; show the command</summary><pre class="command_UKf1"><code><span class="prompt_qWKD">$ </span>idb open http://127.0.0.1:PORT/docs/idb/fbsimulatorcontrol</code></pre></details></div></li><li class="step_OqVk" data-showing="true" aria-current="step"><div class="stepHeader_c4Xv"><span class="count_cRUE">3<!-- --> of <!-- -->7</span><h3 class="stepName_oISX">Find the address bar</h3></div><div class="notes_Aipk"><p class="note_RbCd">The address bar has accessibility identifier TabBarItemTitle and is 66×20 points at (168, 806).</p></div><div><pre class="output_Gzin"><code>      &quot;identifier&quot;: &quot;<mark class="highlight_QBEX">TabBarItemTitle</mark>&quot;,<!-- -->
+<!-- -->      &quot;type&quot;: &quot;SFUnified<mark class="highlight_QBEX">TabBarItemTitle</mark>ContainerView&quot;,<!-- -->
+<!-- -->    &quot;value&quot;: &quot;<mark class="highlight_QBEX">TabBarItemTitle</mark>&quot;,<!-- -->
+</code></pre><details class="more_Vzwx"><summary>Exited 0 after 0.47s<!-- -->; show the command<!-- --> and all 55 lines it printed</summary><pre class="command_UKf1"><code><span class="prompt_qWKD">$ </span>idb ui describe TabBarItemTitle --match-key AXUniqueId --api axbridge --format complete --json</code></pre><pre class="output_Gzin"><code>{<!-- -->
+<!-- -->  &quot;automation&quot;: null,<!-- -->
+<!-- -->  &quot;backend&quot;: &quot;axbridge-exclusive&quot;,<!-- -->
+<!-- -->  &quot;coverage&quot;: null,<!-- -->
+<!-- -->  &quot;elements&quot;: [<!-- -->
+<!-- -->    {<!-- -->
+<!-- -->      &quot;children&quot;: [],<!-- -->
+<!-- -->      &quot;content_required&quot;: false,<!-- -->
+<!-- -->      &quot;custom_actions&quot;: [],<!-- -->
+<!-- -->      &quot;enabled&quot;: null,<!-- -->
+<!-- -->      &quot;frame&quot;: {<!-- -->
+<!-- -->        &quot;height&quot;: 20.33333333333337,<!-- -->
+<!-- -->        &quot;width&quot;: 66,<!-- -->
+<!-- -->        &quot;x&quot;: 168,<!-- -->
+<!-- -->        &quot;y&quot;: 806<!-- -->
+<!-- -->      },<!-- -->
+<!-- -->      &quot;help&quot;: null,<!-- -->
+<!-- -->      &quot;identifier&quot;: &quot;<mark class="highlight_QBEX">TabBarItemTitle</mark>&quot;,<!-- -->
+<!-- -->      &quot;label&quot;: &quot;Address&quot;,<!-- -->
+<!-- -->      &quot;pid&quot;: 10075,<!-- -->
+<!-- -->      &quot;role_description&quot;: null,<!-- -->
+<!-- -->      &quot;subrole&quot;: null,<!-- -->
+<!-- -->      &quot;title&quot;: null,<!-- -->
+<!-- -->      &quot;traits&quot;: [<!-- -->
+<!-- -->        &quot;TextEntry&quot;,<!-- -->
+<!-- -->        &quot;Scrollable&quot;<!-- -->
+<!-- -->      ],<!-- -->
+<!-- -->      &quot;type&quot;: &quot;SFUnified<mark class="highlight_QBEX">TabBarItemTitle</mark>ContainerView&quot;,<!-- -->
+<!-- -->      &quot;value&quot;: &quot;‎127.0.0.1&quot;<!-- -->
+<!-- -->    }<!-- -->
+<!-- -->  ],<!-- -->
+<!-- -->  &quot;frames&quot;: {<!-- -->
+<!-- -->    &quot;framed&quot;: 1,<!-- -->
+<!-- -->    &quot;total&quot;: 1,<!-- -->
+<!-- -->    &quot;zero_frame&quot;: 0<!-- -->
+<!-- -->  },<!-- -->
+<!-- -->  &quot;interaction&quot;: null,<!-- -->
+<!-- -->  &quot;modal&quot;: null,<!-- -->
+<!-- -->  &quot;narrowing&quot;: null,<!-- -->
+<!-- -->  &quot;profile&quot;: null,<!-- -->
+<!-- -->  &quot;screen&quot;: {<!-- -->
+<!-- -->    &quot;coordinate_space&quot;: &quot;screen&quot;,<!-- -->
+<!-- -->    &quot;height&quot;: 874,<!-- -->
+<!-- -->    &quot;width&quot;: 402<!-- -->
+<!-- -->  },<!-- -->
+<!-- -->  &quot;target&quot;: {<!-- -->
+<!-- -->    &quot;kind&quot;: &quot;marker&quot;,<!-- -->
+<!-- -->    &quot;match_key&quot;: &quot;AXUniqueId&quot;,<!-- -->
+<!-- -->    &quot;pid&quot;: null,<!-- -->
+<!-- -->    &quot;value&quot;: &quot;<mark class="highlight_QBEX">TabBarItemTitle</mark>&quot;,<!-- -->
+<!-- -->    &quot;x&quot;: null,<!-- -->
+<!-- -->    &quot;y&quot;: null<!-- -->
+<!-- -->  },<!-- -->
+<!-- -->  &quot;truncated&quot;: false<!-- -->
+<!-- -->}<!-- -->
+</code></pre></details></div></li><li class="step_OqVk" data-showing="true" aria-current="step"><div class="stepHeader_c4Xv"><span class="count_cRUE">4<!-- --> of <!-- -->7</span><h3 class="stepName_oISX">Set the address bar spinning</h3></div><div class="notes_Aipk"><p class="note_RbCd">The Swift found the view behind the address bar and added a rotation that repeats forever.</p></div><div><pre class="output_Gzin"><code><mark class="highlight_QBEX">Spinning a SFUnifiedTabBarItemTitleContainerView</mark>
+</code></pre><details class="more_Vzwx"><summary>Exited 0 after 1.04s<!-- -->; show the command<!-- --> and all 5 lines it printed</summary><pre class="command_UKf1"><code><span class="prompt_qWKD">$ </span>idb-repl app --bundle-id com.apple.mobilesafari &#x27;import UIKit
+return await MainActor.run { () -&gt; String in
+  func addressBar(in view: UIView) -&gt; UIView? {
+    if view.accessibilityIdentifier == &quot;TabBarItemTitle&quot; { return view }
+    return view.subviews.lazy.compactMap { addressBar(in: $0) }.first
+  }
+  let windows = UIApplication.shared.connectedScenes
+    .flatMap { ($0 as? UIWindowScene)?.windows ?? [] }
+  guard let bar = windows.lazy.compactMap({ addressBar(in: $0) }).first
+  else { return &quot;No address bar to spin&quot; }
+  let spin = CABasicAnimation(keyPath: &quot;transform.rotation.z&quot;)
+  spin.byValue = 2 * Double.pi
+  spin.duration = 1.5
+  spin.repeatCount = .infinity
+  bar.layer.add(spin, forKey: &quot;idb-spin&quot;)
+  return &quot;Spinning a \(type(of: bar))&quot;
+}&#x27;</code></pre><pre class="output_Gzin"><code>Result:<!-- -->
+<mark class="highlight_QBEX">Spinning a SFUnifiedTabBarItemTitleContainerView</mark>
+</code></pre><p class="label_PmaK">Errors</p><pre class="output_Gzin"><code>idb-repl: received generated interface(s):<!-- -->
+<!-- -->  IDBAPI<!-- -->
+<!-- -->idb-repl: compiling injected code for arm64-apple-ios26.5-simulator<!-- -->
+</code></pre></details></div></li><li class="step_OqVk" data-showing="true" aria-current="step"><div class="stepHeader_c4Xv"><span class="count_cRUE">5<!-- --> of <!-- -->7</span><h3 class="stepName_oISX">Find the address bar while it spins</h3></div><div class="notes_Aipk"><p class="note_RbCd">It is still 66×20 points at (168, 806). Core Animation spins what is drawn, not where UIKit lays the view out, and the accessibility tree reports the layout.</p></div><div><pre class="output_Gzin"><code>      &quot;identifier&quot;: &quot;<mark class="highlight_QBEX">TabBarItemTitle</mark>&quot;,<!-- -->
+<!-- -->      &quot;type&quot;: &quot;SFUnified<mark class="highlight_QBEX">TabBarItemTitle</mark>ContainerView&quot;,<!-- -->
+<!-- -->    &quot;value&quot;: &quot;<mark class="highlight_QBEX">TabBarItemTitle</mark>&quot;,<!-- -->
+</code></pre><details class="more_Vzwx"><summary>Exited 0 after 0.49s<!-- -->; show the command<!-- --> and all 55 lines it printed</summary><pre class="command_UKf1"><code><span class="prompt_qWKD">$ </span>idb ui describe TabBarItemTitle --match-key AXUniqueId --api axbridge --format complete --json</code></pre><pre class="output_Gzin"><code>{<!-- -->
+<!-- -->  &quot;automation&quot;: null,<!-- -->
+<!-- -->  &quot;backend&quot;: &quot;axbridge-exclusive&quot;,<!-- -->
+<!-- -->  &quot;coverage&quot;: null,<!-- -->
+<!-- -->  &quot;elements&quot;: [<!-- -->
+<!-- -->    {<!-- -->
+<!-- -->      &quot;children&quot;: [],<!-- -->
+<!-- -->      &quot;content_required&quot;: false,<!-- -->
+<!-- -->      &quot;custom_actions&quot;: [],<!-- -->
+<!-- -->      &quot;enabled&quot;: null,<!-- -->
+<!-- -->      &quot;frame&quot;: {<!-- -->
+<!-- -->        &quot;height&quot;: 20.33333333333337,<!-- -->
+<!-- -->        &quot;width&quot;: 66,<!-- -->
+<!-- -->        &quot;x&quot;: 168,<!-- -->
+<!-- -->        &quot;y&quot;: 806<!-- -->
+<!-- -->      },<!-- -->
+<!-- -->      &quot;help&quot;: null,<!-- -->
+<!-- -->      &quot;identifier&quot;: &quot;<mark class="highlight_QBEX">TabBarItemTitle</mark>&quot;,<!-- -->
+<!-- -->      &quot;label&quot;: &quot;Address&quot;,<!-- -->
+<!-- -->      &quot;pid&quot;: 10075,<!-- -->
+<!-- -->      &quot;role_description&quot;: null,<!-- -->
+<!-- -->      &quot;subrole&quot;: null,<!-- -->
+<!-- -->      &quot;title&quot;: null,<!-- -->
+<!-- -->      &quot;traits&quot;: [<!-- -->
+<!-- -->        &quot;Scrollable&quot;,<!-- -->
+<!-- -->        &quot;TextEntry&quot;<!-- -->
+<!-- -->      ],<!-- -->
+<!-- -->      &quot;type&quot;: &quot;SFUnified<mark class="highlight_QBEX">TabBarItemTitle</mark>ContainerView&quot;,<!-- -->
+<!-- -->      &quot;value&quot;: &quot;‎127.0.0.1&quot;<!-- -->
+<!-- -->    }<!-- -->
+<!-- -->  ],<!-- -->
+<!-- -->  &quot;frames&quot;: {<!-- -->
+<!-- -->    &quot;framed&quot;: 1,<!-- -->
+<!-- -->    &quot;total&quot;: 1,<!-- -->
+<!-- -->    &quot;zero_frame&quot;: 0<!-- -->
+<!-- -->  },<!-- -->
+<!-- -->  &quot;interaction&quot;: null,<!-- -->
+<!-- -->  &quot;modal&quot;: null,<!-- -->
+<!-- -->  &quot;narrowing&quot;: null,<!-- -->
+<!-- -->  &quot;profile&quot;: null,<!-- -->
+<!-- -->  &quot;screen&quot;: {<!-- -->
+<!-- -->    &quot;coordinate_space&quot;: &quot;screen&quot;,<!-- -->
+<!-- -->    &quot;height&quot;: 874,<!-- -->
+<!-- -->    &quot;width&quot;: 402<!-- -->
+<!-- -->  },<!-- -->
+<!-- -->  &quot;target&quot;: {<!-- -->
+<!-- -->    &quot;kind&quot;: &quot;marker&quot;,<!-- -->
+<!-- -->    &quot;match_key&quot;: &quot;AXUniqueId&quot;,<!-- -->
+<!-- -->    &quot;pid&quot;: null,<!-- -->
+<!-- -->    &quot;value&quot;: &quot;<mark class="highlight_QBEX">TabBarItemTitle</mark>&quot;,<!-- -->
+<!-- -->    &quot;x&quot;: null,<!-- -->
+<!-- -->    &quot;y&quot;: null<!-- -->
+<!-- -->  },<!-- -->
+<!-- -->  &quot;truncated&quot;: false<!-- -->
+<!-- -->}<!-- -->
+</code></pre></details></div></li><li class="step_OqVk" data-showing="true" aria-current="step"><div class="stepHeader_c4Xv"><span class="count_cRUE">6<!-- --> of <!-- -->7</span><h3 class="stepName_oISX">Tap the spinning address bar</h3></div><div class="notes_Aipk"><p class="note_RbCd">The tap landed where the bar is laid out, and Safari gave the address field the cursor.</p></div><div><details class="more_Vzwx"><summary>Exited 0 after 0.54s<!-- -->, printing nothing<!-- -->; show the command</summary><pre class="command_UKf1"><code><span class="prompt_qWKD">$ </span>idb ui tap TabBarItemTitle --match-key AXUniqueId</code></pre></details></div></li><li class="step_OqVk" data-showing="true" aria-current="step"><div class="stepHeader_c4Xv"><span class="count_cRUE">7<!-- --> of <!-- -->7</span><h3 class="stepName_oISX">Stop the spin</h3></div><div class="notes_Aipk"><p class="note_RbCd">idb-repl attached to the Safari it launched, found whatever was still spinning and removed the animation.</p></div><div><pre class="output_Gzin"><code><mark class="highlight_QBEX">Stopped 1 spinning view(s)</mark>
+</code></pre><details class="more_Vzwx"><summary>Exited 0 after 0.53s<!-- -->; show the command<!-- --> and all 5 lines it printed</summary><pre class="command_UKf1"><code><span class="prompt_qWKD">$ </span>idb-repl app --bundle-id com.apple.mobilesafari &#x27;import UIKit
+return await MainActor.run { () -&gt; String in
+  func spinning(in view: UIView) -&gt; [UIView] {
+    let here = view.layer.animation(forKey: &quot;idb-spin&quot;) == nil ? [] : [view]
+    return here + view.subviews.flatMap { spinning(in: $0) }
+  }
+  let windows = UIApplication.shared.connectedScenes
+    .flatMap { ($0 as? UIWindowScene)?.windows ?? [] }
+  let views = windows.flatMap { spinning(in: $0) }
+  views.forEach { $0.layer.removeAnimation(forKey: &quot;idb-spin&quot;) }
+  return &quot;Stopped \(views.count) spinning view(s)&quot;
+}&#x27;</code></pre><pre class="output_Gzin"><code>Result:<!-- -->
+<mark class="highlight_QBEX">Stopped 1 spinning view(s)</mark>
+</code></pre><p class="label_PmaK">Errors</p><pre class="output_Gzin"><code>idb-repl: received generated interface(s):<!-- -->
+<!-- -->  IDBAPI<!-- -->
+<!-- -->idb-repl: compiling injected code for arm64-apple-ios26.5-simulator<!-- -->
+</code></pre></details></div></li></ol></div></div></div></section><section class="demo_dj8D" aria-labelledby="tap-by-accessibility-id-title"><h2 id="tap-by-accessibility-id-title"><a href="https://github.com/facebook/idb/blob/35e63c283abc2d934888d1493b03d4d82cb89af8/EndToEndTests/test_demos.py#L283" title="Performed by EndToEndTests/test_demos.py:283">Tap an element by its accessibility identifier</a></h2><p>Tap a list&#x27;s General row by naming its accessibility identifier. idb finds the element in the accessibility tree and activates it directly, so there are no screen coordinates to calculate, and the tap still lands if the layout, device size or scroll position changes. The General page opens.</p><div class="stage__i3N"><div class="screen_TGW4"><figure class="figure_KgYY"><video class="video_FGCP" controls="" playsinline="" preload="metadata" poster="/demos/media/tap-by-accessibility-id.png" width="604" height="1456"><source src="/demos/media/tap-by-accessibility-id.mp4" type="video/mp4"></video></figure></div><div class="session_DCBj"><div class="terminal_ACBh"><div></div></div><div class="narration_WWLi"><ol class="steps_Timh"><li class="step_OqVk" data-showing="true" aria-current="step"><div class="stepHeader_c4Xv"><span class="count_cRUE">1<!-- --> of <!-- -->3</span><h3 class="stepName_oISX">Find the General row by accessibility identifier</h3></div><div class="notes_Aipk"><p class="note_RbCd">The row is a Cell labelled &#x27;General&#x27;, with accessibility identifier com.facebook.idb.replhost.row.general. It is 362×53 points at (20, 180) on a 402×874 screen.</p></div><div><pre class="output_Gzin"><code>      &quot;identifier&quot;: &quot;<mark class="highlight_QBEX">com.facebook.idb.replhost.row.general</mark>&quot;,<!-- -->
 <!-- -->      &quot;label&quot;: &quot;<mark class="highlight_QBEX">General</mark>&quot;,<!-- -->
 <!-- -->    &quot;value&quot;: &quot;<mark class="highlight_QBEX">com.facebook.idb.replhost.row.general</mark>&quot;,<!-- -->
-</code></pre><details class="more_Vzwx"><summary>Exited 0 after 0.65s<!-- -->; show the command<!-- --> and all 56 lines it printed</summary><pre class="command_UKf1"><code><span class="prompt_qWKD">$ </span>idb ui describe com.facebook.idb.replhost.row.general --match-key AXUniqueId --api axbridge --format complete --json</code></pre><pre class="output_Gzin"><code>{<!-- -->
+</code></pre><details class="more_Vzwx"><summary>Exited 0 after 0.46s<!-- -->; show the command<!-- --> and all 56 lines it printed</summary><pre class="command_UKf1"><code><span class="prompt_qWKD">$ </span>idb ui describe com.facebook.idb.replhost.row.general --match-key AXUniqueId --api axbridge --format complete --json</code></pre><pre class="output_Gzin"><code>{<!-- -->
 <!-- -->  &quot;automation&quot;: null,<!-- -->
 <!-- -->  &quot;backend&quot;: &quot;axbridge-exclusive&quot;,<!-- -->
 <!-- -->  &quot;coverage&quot;: null,<!-- -->
@@ -293,14 +773,14 @@ fails is never published.</p>
 <!-- -->      &quot;help&quot;: null,<!-- -->
 <!-- -->      &quot;identifier&quot;: &quot;<mark class="highlight_QBEX">com.facebook.idb.replhost.row.general</mark>&quot;,<!-- -->
 <!-- -->      &quot;label&quot;: &quot;<mark class="highlight_QBEX">General</mark>&quot;,<!-- -->
-<!-- -->      &quot;pid&quot;: 4395,<!-- -->
+<!-- -->      &quot;pid&quot;: 4683,<!-- -->
 <!-- -->      &quot;role_description&quot;: null,<!-- -->
 <!-- -->      &quot;subrole&quot;: null,<!-- -->
 <!-- -->      &quot;title&quot;: null,<!-- -->
 <!-- -->      &quot;traits&quot;: [<!-- -->
-<!-- -->        &quot;Button&quot;,<!-- -->
 <!-- -->        &quot;Scrollable&quot;,<!-- -->
-<!-- -->        &quot;TextOperationsAvailable&quot;<!-- -->
+<!-- -->        &quot;TextOperationsAvailable&quot;,<!-- -->
+<!-- -->        &quot;Button&quot;<!-- -->
 <!-- -->      ],<!-- -->
 <!-- -->      &quot;type&quot;: &quot;Cell&quot;,<!-- -->
 <!-- -->      &quot;value&quot;: &quot;&quot;<!-- -->
@@ -330,10 +810,10 @@ fails is never published.</p>
 <!-- -->  },<!-- -->
 <!-- -->  &quot;truncated&quot;: false<!-- -->
 <!-- -->}<!-- -->
-</code></pre></details></div></li><li class="step_OqVk" data-showing="true" aria-current="step"><div class="stepHeader_c4Xv"><span class="count_cRUE">2<!-- --> of <!-- -->3</span><h3 class="stepName_oISX">Tap the General row by accessibility identifier</h3></div><div class="notes_Aipk"><p class="note_RbCd">idb resolved com.facebook.idb.replhost.row.general to the row&#x27;s centre, (201, 206), and pressed it.</p></div><div><details class="more_Vzwx"><summary>Exited 0 after 1.64s<!-- -->, printing nothing<!-- -->; show the command</summary><pre class="command_UKf1"><code><span class="prompt_qWKD">$ </span>idb ui tap com.facebook.idb.replhost.row.general --match-key AXUniqueId</code></pre></details></div></li><li class="step_OqVk" data-showing="true" aria-current="step"><div class="stepHeader_c4Xv"><span class="count_cRUE">3<!-- --> of <!-- -->3</span><h3 class="stepName_oISX">Read the navigation bar of the page that opened</h3></div><div class="notes_Aipk"><p class="note_RbCd">The navigation bar reads &#x27;General&#x27;. It is 402×54 points at (0, 62) on a 402×874 screen.</p></div><div><pre class="output_Gzin"><code>      &quot;identifier&quot;: &quot;<mark class="highlight_QBEX">General</mark>&quot;,<!-- -->
+</code></pre></details></div></li><li class="step_OqVk" data-showing="true" aria-current="step"><div class="stepHeader_c4Xv"><span class="count_cRUE">2<!-- --> of <!-- -->3</span><h3 class="stepName_oISX">Tap the General row by accessibility identifier</h3></div><div class="notes_Aipk"><p class="note_RbCd">idb resolved com.facebook.idb.replhost.row.general to the row&#x27;s centre, (201, 206), and pressed it.</p></div><div><details class="more_Vzwx"><summary>Exited 0 after 0.91s<!-- -->, printing nothing<!-- -->; show the command</summary><pre class="command_UKf1"><code><span class="prompt_qWKD">$ </span>idb ui tap com.facebook.idb.replhost.row.general --match-key AXUniqueId</code></pre></details></div></li><li class="step_OqVk" data-showing="true" aria-current="step"><div class="stepHeader_c4Xv"><span class="count_cRUE">3<!-- --> of <!-- -->3</span><h3 class="stepName_oISX">Read the navigation bar of the page that opened</h3></div><div class="notes_Aipk"><p class="note_RbCd">The navigation bar reads &#x27;General&#x27;. It is 402×54 points at (0, 62) on a 402×874 screen.</p></div><div><pre class="output_Gzin"><code>      &quot;identifier&quot;: &quot;<mark class="highlight_QBEX">General</mark>&quot;,<!-- -->
 <!-- -->      &quot;type&quot;: &quot;<mark class="highlight_QBEX">NavigationBar</mark>&quot;,<!-- -->
 <!-- -->    &quot;value&quot;: &quot;<mark class="highlight_QBEX">General</mark>&quot;,<!-- -->
-</code></pre><details class="more_Vzwx"><summary>Exited 0 after 0.40s<!-- -->; show the command<!-- --> and all 54 lines it printed</summary><pre class="command_UKf1"><code><span class="prompt_qWKD">$ </span>idb ui describe General --match-key AXUniqueId --api axbridge --format complete --json</code></pre><pre class="output_Gzin"><code>{<!-- -->
+</code></pre><details class="more_Vzwx"><summary>Exited 0 after 0.31s<!-- -->; show the command<!-- --> and all 54 lines it printed</summary><pre class="command_UKf1"><code><span class="prompt_qWKD">$ </span>idb ui describe General --match-key AXUniqueId --api axbridge --format complete --json</code></pre><pre class="output_Gzin"><code>{<!-- -->
 <!-- -->  &quot;automation&quot;: null,<!-- -->
 <!-- -->  &quot;backend&quot;: &quot;axbridge-exclusive&quot;,<!-- -->
 <!-- -->  &quot;coverage&quot;: null,<!-- -->
@@ -352,7 +832,7 @@ fails is never published.</p>
 <!-- -->      &quot;help&quot;: null,<!-- -->
 <!-- -->      &quot;identifier&quot;: &quot;<mark class="highlight_QBEX">General</mark>&quot;,<!-- -->
 <!-- -->      &quot;label&quot;: null,<!-- -->
-<!-- -->      &quot;pid&quot;: 4395,<!-- -->
+<!-- -->      &quot;pid&quot;: 4683,<!-- -->
 <!-- -->      &quot;role_description&quot;: null,<!-- -->
 <!-- -->      &quot;subrole&quot;: null,<!-- -->
 <!-- -->      &quot;title&quot;: null,<!-- -->
