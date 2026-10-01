@@ -13,8 +13,9 @@ final class SimulatorHIDOperationTests: XCTestCase {
   func testNestedGestureUsesOneDisplayBindingAndDrainsOnce() async throws {
     let recorder = Recorder()
     var operation = makeOperation(recorder)
-    try await operation.send(.composite([.composite([.tapAt(x: 20, y: 30)])]))
+    let deliveries = try await operation.send(.composite([.composite([.tapAt(x: 20, y: 30)])]))
     try await operation.finish(flushing: true)
+    XCTAssertEqual(deliveries, [.unchanged(.touch(direction: .down, x: 20, y: 30)), .unchanged(.touch(direction: .up, x: 20, y: 30))])
     let events = await recorder.events
     XCTAssertEqual(events.map(\.0), [.touch(direction: .down, x: 20, y: 30), .touch(direction: .up, x: 20, y: 30)])
     XCTAssertEqual(events.compactMap(\.1), [display(), display()])
@@ -27,10 +28,8 @@ final class SimulatorHIDOperationTests: XCTestCase {
     var operation = SimulatorHIDOperation(
       displays: DisplayCommandsDouble([.success(.failed(.unsupported("displayinfo")))]),
       deliver: { event, display in await recorder.record(event, display: display) },
-      flush: {},
-      reportCleanupError: { XCTFail("cleanup failed: \($0)") },
-      log: { XCTFail("unexpected log: \($0)") })
-    try await operation.send(.tapAt(x: 20, y: 30))
+      flush: {})
+    _ = try await operation.send(.tapAt(x: 20, y: 30))
     try await operation.finish(flushing: false)
     let events = await recorder.events
     XCTAssertEqual(events.map(\.0), [.touch(direction: .down, x: 20, y: 30), .touch(direction: .up, x: 20, y: 30)])
@@ -42,18 +41,16 @@ final class SimulatorHIDOperationTests: XCTestCase {
     var operation = SimulatorHIDOperation(
       displays: DisplayCommandsDouble([.success(.failed(.unsupported("displayinfo")))]),
       deliver: { event, display in await recorder.record(event, display: display) },
-      flush: {},
-      reportCleanupError: { XCTFail("cleanup failed: \($0)") },
-      log: { XCTFail("unexpected log: \($0)") })
+      flush: {})
     do {
-      try await operation.send(.tapAt(x: .nan, y: 30))
+      _ = try await operation.send(.tapAt(x: .nan, y: 30))
       XCTFail("expected invalid coordinates")
     } catch {
       guard case let SimulatorDisplayInteractionError.nonFinitePoint(point) = error else { return XCTFail("unexpected error: \(error)") }
       XCTAssertTrue(point.x.isNaN)
       XCTAssertEqual(point.y, 30)
       XCTAssertEqual(error.localizedDescription, "Touch point (nan, 30.0) is not a real position (x is NaN)")
-      await operation.cleanup()
+      await assertCleanup(operation)
     }
     let events = await recorder.events
     XCTAssertTrue(events.isEmpty)
@@ -63,15 +60,15 @@ final class SimulatorHIDOperationTests: XCTestCase {
     let recorder = Recorder()
     let observation = SimulatorHIDDisplayObservation()
     var operation = makeOperation(recorder, observation: observation)
-    try await operation.send(.touch(direction: .down, x: 20, y: 30))
+    _ = try await operation.send(.touch(direction: .down, x: 20, y: 30))
     observation.record(.success(display("cover", target: 9)), matching: display())
     observation.record(.success(display()), matching: display())
     do {
-      try await operation.send(.touch(direction: .up, x: 20, y: 30))
+      _ = try await operation.send(.touch(direction: .up, x: 20, y: 30))
       XCTFail("expected a changed-display error")
     } catch {
       guard case SimulatorDisplayError.changed = error else { return XCTFail("unexpected error: \(error)") }
-      await operation.cleanup()
+      await assertCleanup(operation)
     }
     let events = await recorder.events
     XCTAssertEqual(events.map(\.0), [.touch(direction: .down, x: 20, y: 30), .touch(direction: .up, x: 20, y: 30)])
@@ -82,28 +79,30 @@ final class SimulatorHIDOperationTests: XCTestCase {
     let recorder = Recorder()
     let observation = SimulatorHIDDisplayObservation()
     var operation = makeOperation(recorder, observation: observation)
-    try await operation.send(.touch(direction: .down, x: 20, y: 30))
+    _ = try await operation.send(.touch(direction: .down, x: 20, y: 30))
     observation.record(.failure(SimulatorDisplayError.transitioning), matching: display())
     do {
-      try await operation.send(.touch(direction: .up, x: 20, y: 30))
+      _ = try await operation.send(.touch(direction: .up, x: 20, y: 30))
       XCTFail("expected the gesture to fail")
     } catch {
       guard case SimulatorDisplayError.changed = error else { return XCTFail("unexpected error: \(error)") }
-      await operation.cleanup()
+      await assertCleanup(operation)
     }
   }
 
   func testOffScreenMoveMidGesture() async throws {
     let recorder = Recorder()
     var operation = makeOperation(recorder)
-    try await operation.send(.touch(direction: .down, x: 20, y: 30))
-    try await operation.send(.touch(direction: .down, x: -1, y: 30))
-    await operation.cleanup()
+    _ = try await operation.send(.touch(direction: .down, x: 20, y: 30))
+    let deliveries = try await operation.send(.touch(direction: .down, x: -1, y: 30))
+    await assertCleanup(operation)
     let events = await recorder.events
     XCTAssertEqual(
       events.map(\.0),
       [.touch(direction: .down, x: 20, y: 30), .touch(direction: .down, x: 0, y: 30), .touch(direction: .up, x: 0, y: 30)])
-    XCTAssertEqual(recorder.log.lines, ["Clamped touch point (-1.0, 30.0) to (0.0, 30.0) within the display's point bounds (200.0 x 300.0)"])
+    XCTAssertEqual(
+      deliveries,
+      [.clamped(requested: .touch(direction: .down, x: -1, y: 30), delivered: .touch(direction: .down, x: 0, y: 30), bounds: CGSize(width: 200, height: 300))])
   }
 
   func testOffScreenTwoFingerTouchOnRotatedDisplay() async throws {
@@ -112,8 +111,8 @@ final class SimulatorHIDOperationTests: XCTestCase {
     var operation = makeOperation(recorder)
     let first = CGPoint(x: 20, y: 30)
     let second = CGPoint(x: 20, y: 250)
-    try await operation.send(.twoFingerTouch(direction: .down, finger1: first, finger2: second))
-    try await operation.send(.twoFingerTouch(direction: .up, finger1: first, finger2: second))
+    let down = try await operation.send(.twoFingerTouch(direction: .down, finger1: first, finger2: second))
+    let up = try await operation.send(.twoFingerTouch(direction: .up, finger1: first, finger2: second))
     try await operation.finish(flushing: true)
     let clamped = CGPoint(x: 20, y: 200)
     let events = await recorder.events
@@ -123,22 +122,31 @@ final class SimulatorHIDOperationTests: XCTestCase {
         .twoFingerTouch(direction: .down, finger1: first, finger2: clamped),
         .twoFingerTouch(direction: .up, finger1: first, finger2: clamped),
       ])
-    let line = "Clamped touch point (20.0, 250.0) to (20.0, 200.0) within the display's point bounds (300.0 x 200.0)"
-    XCTAssertEqual(recorder.log.lines, [line, line])
+    let bounds = CGSize(width: 300, height: 200)
+    XCTAssertEqual(
+      down + up,
+      [
+        .clamped(
+          requested: .twoFingerTouch(direction: .down, finger1: first, finger2: second),
+          delivered: .twoFingerTouch(direction: .down, finger1: first, finger2: clamped), bounds: bounds),
+        .clamped(
+          requested: .twoFingerTouch(direction: .up, finger1: first, finger2: second),
+          delivered: .twoFingerTouch(direction: .up, finger1: first, finger2: clamped), bounds: bounds),
+      ])
   }
 
   func testNonFiniteTouchFailsWithoutDelivering() async throws {
     let recorder = Recorder()
     var operation = makeOperation(recorder)
     do {
-      try await operation.send(.tapAt(x: .nan, y: 30))
+      _ = try await operation.send(.tapAt(x: .nan, y: 30))
       XCTFail("expected invalid coordinates")
     } catch {
       guard case let SimulatorDisplayInteractionError.nonFinitePoint(point) = error else { return XCTFail("unexpected error: \(error)") }
       XCTAssertTrue(point.x.isNaN)
       XCTAssertEqual(point.y, 30)
       XCTAssertEqual(error.localizedDescription, "Touch point (nan, 30.0) is not a real position (x is NaN)")
-      await operation.cleanup()
+      await assertCleanup(operation)
     }
     let events = await recorder.events
     XCTAssertTrue(events.isEmpty)
@@ -147,7 +155,7 @@ final class SimulatorHIDOperationTests: XCTestCase {
   func testFinalReadDetectsRotationAfterLastTouch() async throws {
     let recorder = Recorder()
     var operation = makeOperation(recorder)
-    try await operation.send(.tapAt(x: 20, y: 30))
+    _ = try await operation.send(.tapAt(x: 20, y: 30))
     await recorder.setDisplay(screen(rotation: .clockwise))
     do {
       try await operation.finish(flushing: true)
@@ -165,11 +173,11 @@ final class SimulatorHIDOperationTests: XCTestCase {
     let task = Task {
       var operation = makeOperation(recorder)
       do {
-        try await operation.send(.twoFingerTouch(direction: .down, finger1: first, finger2: second))
+        _ = try await operation.send(.twoFingerTouch(direction: .down, finger1: first, finger2: second))
         await entered.open()
         try await Task.sleep(nanoseconds: 60_000_000_000)
       } catch {
-        await operation.cleanup()
+        await assertCleanup(operation)
         throw error
       }
     }
@@ -202,9 +210,9 @@ final class SimulatorHIDOperationTests: XCTestCase {
     let task = Task {
       var operation = makeOperation(recorder)
       do {
-        try await operation.send(.tapAt(x: 20, y: 30))
+        _ = try await operation.send(.tapAt(x: 20, y: 30))
       } catch {
-        await operation.cleanup()
+        await assertCleanup(operation)
         throw error
       }
     }
@@ -229,7 +237,7 @@ final class SimulatorHIDOperationTests: XCTestCase {
     let sent = expectation(description: "touch samples sent while observation is blocked")
     let task = Task {
       var operation = makeOperation(recorder)
-      try await operation.send(.tapAt(x: 20, y: 30))
+      _ = try await operation.send(.tapAt(x: 20, y: 30))
       sent.fulfill()
       try await operation.finish(flushing: true)
     }
@@ -277,9 +285,12 @@ final class SimulatorHIDOperationTests: XCTestCase {
         await recorder.record(event, display: display)
       },
       flush: { await recorder.flush() },
-      reportCleanupError: { XCTFail("cleanup failed: \($0)") },
-      log: { recorder.log.append($0) },
       observation: observation)
+  }
+
+  private func assertCleanup(_ operation: SimulatorHIDOperation) async {
+    let failures = await operation.cleanup()
+    XCTAssertTrue(failures.isEmpty, "cleanup failed: \(failures)")
   }
 
   private func display(_ identity: String = "inner", target: UInt32 = 7, rotation: SimulatorDisplayRotation = .upright) -> SimulatorHIDDisplay {
@@ -299,7 +310,6 @@ final class SimulatorHIDOperationTests: XCTestCase {
   /// One of several displays, reached through digitizer target 7. Reads past `block(after:)` wait on the gate.
   private actor Recorder: DisplayCommands {
     nonisolated let identities = DisplayIdentityCache()
-    nonisolated let log = Log()
     var currentDisplay: SimulatorDisplay = SimulatorHIDOperationTests.makeScreen()
     var events: [(SimulatorHIDEvent, SimulatorHIDDisplay?)] = []
     var flushes = 0
@@ -330,24 +340,6 @@ final class SimulatorHIDOperationTests: XCTestCase {
       if Task.isCancelled { cancelledDeliveries += 1 }
     }
     func flush() { flushes += 1 }
-  }
-
-  /// The operation logs synchronously, so its lines cannot go through the `Recorder` actor.
-  private final class Log: @unchecked Sendable {
-    private let lock = NSLock()
-    private var recorded: [String] = []
-
-    var lines: [String] {
-      lock.lock()
-      defer { lock.unlock() }
-      return recorded
-    }
-
-    func append(_ line: String) {
-      lock.lock()
-      recorded.append(line)
-      lock.unlock()
-    }
   }
 
   private actor Gate {

@@ -95,13 +95,27 @@ final class SimulatorHIDDisplayObservation: @unchecked Sendable {
   }
 }
 
+/// What the operation did with one primitive event it delivered.
+enum SimulatorHIDDelivery: Equatable, Sendable, CustomStringConvertible {
+  /// Delivered as sent.
+  case unchanged(SimulatorHIDEvent)
+  /// Delivered with its touch points moved onto the display.
+  case clamped(requested: SimulatorHIDEvent, delivered: SimulatorHIDEvent, bounds: CGSize)
+
+  var description: String {
+    switch self {
+    case let .unchanged(event): "Delivered \(event)"
+    case let .clamped(requested, delivered, bounds):
+      "Clamped \(requested) to \(delivered) within the display's point bounds (\(bounds.width) x \(bounds.height))"
+    }
+  }
+}
+
 /// Operation-local state; no caller can send another event through this binding concurrently.
 struct SimulatorHIDOperation {
   let displays: (any DisplayCommands)?
   let deliver: @Sendable (SimulatorHIDEvent, SimulatorHIDDisplay?) async throws -> Void
   let flush: @Sendable () async throws -> Void
-  let reportCleanupError: @Sendable (Error) -> Void
-  let log: @Sendable (String) -> Void
 
   private let observation: SimulatorHIDDisplayObservation
   private var observationTask: Task<Void, Never>?
@@ -115,50 +129,50 @@ struct SimulatorHIDOperation {
     displays: (any DisplayCommands)?,
     deliver: @escaping @Sendable (SimulatorHIDEvent, SimulatorHIDDisplay?) async throws -> Void,
     flush: @escaping @Sendable () async throws -> Void,
-    reportCleanupError: @escaping @Sendable (Error) -> Void,
-    log: @escaping @Sendable (String) -> Void,
     observation: SimulatorHIDDisplayObservation = SimulatorHIDDisplayObservation()
   ) {
     self.observation = observation
     self.displays = displays
     self.deliver = deliver
     self.flush = flush
-    self.reportCleanupError = reportCleanupError
-    self.log = log
   }
 
-  mutating func send(_ event: SimulatorHIDEvent) async throws {
+  /// One delivery per primitive in `event`, in order; composites contribute their children's.
+  mutating func send(_ event: SimulatorHIDEvent) async throws -> [SimulatorHIDDelivery] {
     try Task.checkCancellation()
     if case let .composite(events) = event {
-      for child in events { try await send(child) }
-      return
+      var deliveries: [SimulatorHIDDelivery] = []
+      for child in events { deliveries += try await send(child) }
+      return deliveries
     }
-    var event = event
+    var delivered = event
     switch event {
     case let .touch(direction, x, y, edge):
       try await bindOrValidateDisplay()
       let point = try clamp(CGPoint(x: x, y: y))
-      event = .touch(direction: direction, x: point.x, y: point.y, edge: edge)
+      delivered = .touch(direction: direction, x: point.x, y: point.y, edge: edge)
       if direction == .down { singleRelease = .touch(direction: .up, x: point.x, y: point.y, edge: edge) }
     case let .twoFingerTouch(direction, first, second):
       try await bindOrValidateDisplay()
       let first = try clamp(first)
       let second = try clamp(second)
-      event = .twoFingerTouch(direction: direction, finger1: first, finger2: second)
+      delivered = .twoFingerTouch(direction: direction, finger1: first, finger2: second)
       if direction == .down { twoFingerRelease = .twoFingerTouch(direction: .up, finger1: first, finger2: second) }
     case .button, .remoteButton, .keyboard, .trackpad, .delay, .composite:
       break
     }
     try Task.checkCancellation()
     try observation.check()
-    try await deliver(event, display)
+    try await deliver(delivered, display)
     needsFlush = true
-    switch event {
+    switch delivered {
     case .touch(.up, _, _, _): singleRelease = nil
     case .twoFingerTouch(.up, _, _): twoFingerRelease = nil
     case .touch, .twoFingerTouch, .button, .remoteButton, .keyboard, .trackpad, .delay, .composite:
       break
     }
+    guard delivered != event, let display else { return [.unchanged(delivered)] }
+    return [.clamped(requested: event, delivered: delivered, bounds: display.geometry.pointSize)]
   }
 
   mutating func finish(flushing: Bool) async throws {
@@ -179,12 +193,7 @@ struct SimulatorHIDOperation {
   private func clamp(_ point: CGPoint) throws -> CGPoint {
     guard point.x.isFinite, point.y.isFinite else { throw SimulatorDisplayInteractionError.nonFinitePoint(point) }
     guard let display else { return point }
-    let clamped = display.clampedPoint(point)
-    if clamped != point {
-      let size = display.geometry.pointSize
-      log("Clamped touch point (\(point.x), \(point.y)) to (\(clamped.x), \(clamped.y)) within the display's point bounds (\(size.width) x \(size.height))")
-    }
-    return clamped
+    return display.clampedPoint(point)
   }
 
   private mutating func bindOrValidateDisplay() async throws {
@@ -239,22 +248,24 @@ struct SimulatorHIDOperation {
   }
 
   /// Cleanup is shielded from cancellation and uses the original target, even if it became inactive.
-  func cleanup() async {
+  /// Returns the failures from releasing contacts and draining; each step runs regardless.
+  func cleanup() async -> [Error] {
     await stopObserving()
     let releases = [singleRelease, twoFingerRelease].compactMap { $0 }
     let display = display
     let deliver = deliver
     let flush = flush
-    let report = reportCleanupError
     let shouldFlush = needsFlush || !releases.isEmpty
     let cleanup = Task {
+      var failures: [Error] = []
       for event in releases {
-        do { try await deliver(event, display) } catch { report(error) }
+        do { try await deliver(event, display) } catch { failures.append(error) }
       }
       if shouldFlush {
-        do { try await flush() } catch { report(error) }
+        do { try await flush() } catch { failures.append(error) }
       }
+      return failures
     }
-    await cleanup.value
+    return await cleanup.value
   }
 }

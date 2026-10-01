@@ -105,14 +105,16 @@ public final class SimulatorHID: CustomStringConvertible, Sendable {
           }
           try await deliver(event, display: display)
         },
-        flush: { [self] in try await flush() },
-        reportCleanupError: { logger.log("HID cleanup failed: \($0)") },
-        log: { logger.log($0) })
+        flush: { [self] in try await flush() })
       do {
-        for try await event in events { try await operation.send(event) }
+        for try await event in events {
+          for delivery in try await operation.send(event) {
+            if case .clamped = delivery { logger.log("\(delivery)") }
+          }
+        }
         try await operation.finish(flushing: flushing)
       } catch {
-        await operation.cleanup()
+        for failure in await operation.cleanup() { logger.log("HID cleanup failed: \(failure)") }
         throw error
       }
     }
