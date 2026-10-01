@@ -318,9 +318,11 @@ class WebContentDemos(SafariTestCase):
             LIVE_ORIGIN, STAND_IN_PAGES, self.safari_shows_first_page
         )
         # Choosing the origin leaves Safari on the first page, and the clip
-        # has to open it from the home screen.
+        # has to open it from the home screen. Terminating Safari is what
+        # returns there: SpringBoard holds a home button press until a second
+        # press can no longer follow it, so one sent here can act after the
+        # recorded `idb open` and put Safari back behind the home screen.
         await self.setup_terminate_quietly(SAFARI_BUNDLE_ID)
-        await self.setup_idb("ui", "button", "HOME")
         first_page = origin + FIRST_PAGE_PATH
         second_page = origin + SECOND_PAGE_PATH
 
