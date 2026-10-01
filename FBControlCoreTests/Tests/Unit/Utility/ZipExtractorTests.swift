@@ -203,7 +203,7 @@ struct ZipExtractorTests {
 
   /// Extracts through a pipe, as a zip arrives, then repairs from the complete file.
   @discardableResult
-  private func extractAsStream(_ archive: String, to extracted: String) throws -> ArchiveExtractionSummary {
+  private func extractAsStream(_ archive: String, to extracted: String, repair: Bool = true) throws -> ArchiveExtractionSummary {
     try fileManager.createDirectory(atPath: extracted, withIntermediateDirectories: true)
     var fds: [Int32] = [0, 0]
     #expect(pipe(&fds) == 0)
@@ -237,7 +237,9 @@ struct ZipExtractorTests {
     }
     writer.start()
     let summary = try ZipStreamExtractor.extract(from: readEnd, to: extracted)
-    try ZipCentralDirectory(archiveAtPath: archive).repair(extractedAt: extracted)
+    if repair {
+      try ZipCentralDirectory(archiveAtPath: archive).repair(extractedAt: extracted)
+    }
     return summary
   }
 
@@ -307,6 +309,31 @@ struct ZipExtractorTests {
 
     // Symlinks included: they arrive as files holding their target.
     #expect(summary.files == 7)
+  }
+
+  @Test
+  func extractStream_OfADittoZip_SkipsAppleDoubleEntriesAsTheyArrive() throws {
+    let app = try makeApp()
+    let archive = root.appendingPathComponent("a.ipa").path
+    try run("/usr/bin/ditto", ["-c", "-k", "--keepParent", app, archive])
+    let extracted = root.appendingPathComponent("stream").path
+
+    try extractAsStream(archive, to: extracted, repair: false)
+
+    #expect(try fileManager.subpathsOfDirectory(atPath: extracted).filter { ($0 as NSString).lastPathComponent.hasPrefix("._") } == [])
+  }
+
+  @Test
+  func extractStream_KeepsADotUnderscoreFileThatIsNotAppleDouble() throws {
+    let app = try makeApp()
+    try Data("not metadata".utf8).write(to: URL(fileURLWithPath: "\(app)/._Info.plist"))
+    let archive = root.appendingPathComponent("a.ipa").path
+    try run("/usr/bin/zip", ["-qry", archive, "A.app"])
+    let extracted = root.appendingPathComponent("stream").path
+
+    try extractAsStream(archive, to: extracted)
+
+    #expect(try Data(contentsOf: URL(fileURLWithPath: "\(extracted)/A.app/._Info.plist")) == Data("not metadata".utf8))
   }
 
   @Test

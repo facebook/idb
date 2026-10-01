@@ -92,9 +92,16 @@ public struct ZipCentralDirectory {
       // extracted, so nothing here may be reached through a symlink.
       try Self.verifyNoSymlinkAncestors(of: relative, in: root, verified: &verifiedDirectories)
       let path = (root as NSString).appendingPathComponent(relative)
-      if Self.isAppleDouble(relative, alongside: paths), Self.hasAppleDoubleHeader(atPath: path) {
-        try FileManager.default.removeItem(atPath: path)
-        continue
+      if Self.isAppleDouble(relative, alongside: paths) {
+        if Self.hasAppleDoubleHeader(atPath: path) {
+          try FileManager.default.removeItem(atPath: path)
+          continue
+        }
+        // The stream extractor skips AppleDouble entries it can recognise as they arrive.
+        var status = stat()
+        if lstat(path, &status) != 0, errno == ENOENT {
+          continue
+        }
       }
       guard let mode = entry.mode, mode != 0 else {
         continue

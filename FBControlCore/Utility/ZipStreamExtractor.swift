@@ -26,8 +26,10 @@ public enum ZipStreamExtractor {
     var summary = ArchiveExtractionSummary(files: 0, bytes: 0)
     do {
       var created = ArchiveExtraction.Directories(root: root)
+      var seen: Set<String> = []
       while let header = try LocalHeader(reading: &reader) {
         let relative = try ZipCentralDirectory.safeRelativePath(header.path)
+        defer { seen.insert(ZipCentralDirectory.trimmingTrailingSlash(relative)) }
         if header.path.hasSuffix("/") {
           try reader.decode(header) { _ in }
           if !relative.isEmpty {
@@ -40,10 +42,26 @@ public enum ZipStreamExtractor {
           try reader.decode(header) { _ in }
           continue
         }
+        // `ditto` puts each file's AppleDouble entry straight after it, so skipping
+        // it here saves creating a file that the repair would only remove.
+        var appleDoubleCandidate: Data?
+        if ZipCentralDirectory.isAppleDouble(relative, alongside: seen) {
+          var contents = Data()
+          try reader.decode(header) { contents.append(contentsOf: $0) }
+          if contents.starts(with: ZipCentralDirectory.appleDoubleMagic) {
+            continue
+          }
+          appleDoubleCandidate = contents
+        }
         try created.create((relative as NSString).deletingLastPathComponent)
         var size: UInt64 = 0
-        try writer.write((root as NSString).appendingPathComponent(relative), modified: header.modified.map { timespec(tv_sec: Int(floor($0.timeIntervalSince1970)), tv_nsec: 0) }) {
-          size = try reader.decode(header, into: $0)
+        try writer.write((root as NSString).appendingPathComponent(relative), modified: header.modified.map { timespec(tv_sec: Int(floor($0.timeIntervalSince1970)), tv_nsec: 0) }) { output in
+          guard let contents = appleDoubleCandidate else {
+            size = try reader.decode(header, into: output)
+            return
+          }
+          try contents.withUnsafeBytes { try output($0) }
+          size = UInt64(contents.count)
         }
         summary.files += 1
         summary.bytes += size
