@@ -122,13 +122,13 @@ public struct VideoStreamConfiguration: Hashable, CustomStringConvertible, Senda
   public var scaleFactor: Double? { encodeOptions.scaleFactor }
   public var keyFrameRate: Double { encodeOptions.keyFrameRate }
 
-  public init(format: VideoStreamFormat, encodeOptions: VideoEncodeOptions, display: FramebufferDisplay = .main) {
+  public init(format: VideoStreamFormat, encodeOptions: VideoEncodeOptions, display: FramebufferDisplay = .active) {
     self.format = format
     self.encodeOptions = encodeOptions
     self.display = display
   }
 
-  public init(format: VideoStreamFormat, framesPerSecond: Int?, rateControl: VideoStreamRateControl?, scaleFactor: Double?, keyFrameRate: Double?, display: FramebufferDisplay = .main) {
+  public init(format: VideoStreamFormat, framesPerSecond: Int?, rateControl: VideoStreamRateControl?, scaleFactor: Double?, keyFrameRate: Double?, display: FramebufferDisplay = .active) {
     self.init(format: format, encodeOptions: VideoEncodeOptions(framesPerSecond: framesPerSecond, rateControl: rateControl, scaleFactor: scaleFactor, keyFrameRate: keyFrameRate), display: display)
   }
 

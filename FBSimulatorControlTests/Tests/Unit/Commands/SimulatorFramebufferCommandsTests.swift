@@ -110,9 +110,8 @@ final class SimulatorFramebufferCommandsTests: XCTestCase {
     let attachment = try await framebuffer(configuration.display, screens: screens)
     defer { attachment.cancel() }
 
-    // BUG: captures the main screen while "inner" is active — flipped in the following commit.
-    XCTAssertEqual(screens.requested, [])
-    XCTAssertEqual(screens.screens["inner"]?.registeredTokens.count, 0)
-    XCTAssertEqual(screens.main.registeredTokens.count, 1)
+    XCTAssertEqual(screens.requested, ["inner"])
+    XCTAssertEqual(screens.screens["inner"]?.registeredTokens.count, 1)
+    XCTAssertEqual(screens.main.registeredTokens.count, 0)
   }
 }
