@@ -111,11 +111,16 @@ enum SimulatorHIDDelivery: Equatable, Sendable, CustomStringConvertible {
   }
 }
 
+/// Where an operation's events go. Cleanup calls it from a task that outlives the operation's cancellation.
+protocol SimulatorHIDOperationSink: Sendable {
+  func deliver(_ event: SimulatorHIDEvent, display: SimulatorHIDDisplay?) async throws
+  func flush() async throws
+}
+
 /// Operation-local state; no caller can send another event through this binding concurrently.
 struct SimulatorHIDOperation {
   let displays: (any DisplayCommands)?
-  let deliver: @Sendable (SimulatorHIDEvent, SimulatorHIDDisplay?) async throws -> Void
-  let flush: @Sendable () async throws -> Void
+  let sink: any SimulatorHIDOperationSink
 
   private let observation: SimulatorHIDDisplayObservation
   private var observationTask: Task<Void, Never>?
@@ -127,14 +132,12 @@ struct SimulatorHIDOperation {
 
   init(
     displays: (any DisplayCommands)?,
-    deliver: @escaping @Sendable (SimulatorHIDEvent, SimulatorHIDDisplay?) async throws -> Void,
-    flush: @escaping @Sendable () async throws -> Void,
+    sink: any SimulatorHIDOperationSink,
     observation: SimulatorHIDDisplayObservation = SimulatorHIDDisplayObservation()
   ) {
     self.observation = observation
     self.displays = displays
-    self.deliver = deliver
-    self.flush = flush
+    self.sink = sink
   }
 
   /// One delivery per primitive in `event`, in order; composites contribute their children's.
@@ -163,7 +166,7 @@ struct SimulatorHIDOperation {
     }
     try Task.checkCancellation()
     try observation.check()
-    try await deliver(delivered, display)
+    try await sink.deliver(delivered, display: display)
     needsFlush = true
     switch delivered {
     case .touch(.up, _, _, _): singleRelease = nil
@@ -179,7 +182,7 @@ struct SimulatorHIDOperation {
     try Task.checkCancellation()
     if flushing, needsFlush {
       needsFlush = false
-      try await flush()
+      try await sink.flush()
     }
     try Task.checkCancellation()
     if let display {
@@ -253,16 +256,15 @@ struct SimulatorHIDOperation {
     await stopObserving()
     let releases = [singleRelease, twoFingerRelease].compactMap { $0 }
     let display = display
-    let deliver = deliver
-    let flush = flush
+    let sink = sink
     let shouldFlush = needsFlush || !releases.isEmpty
     let cleanup = Task {
       var failures: [Error] = []
       for event in releases {
-        do { try await deliver(event, display) } catch { failures.append(error) }
+        do { try await sink.deliver(event, display: display) } catch { failures.append(error) }
       }
       if shouldFlush {
-        do { try await flush() } catch { failures.append(error) }
+        do { try await sink.flush() } catch { failures.append(error) }
       }
       return failures
     }

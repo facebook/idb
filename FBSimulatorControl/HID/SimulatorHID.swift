@@ -95,17 +95,7 @@ public final class SimulatorHID: CustomStringConvertible, Sendable {
 
   private func send<S: AsyncSequence>(events: S, logger: ControlCoreLogger, flushing: Bool) async throws where S.Element == SimulatorHIDEvent {
     try await operationLease.withLease {
-      var operation = SimulatorHIDOperation(
-        displays: displays,
-        deliver: { [self] event, display in
-          if case let .delay(duration) = event {
-            logger.log("Delay \(duration)s")
-          } else {
-            logger.log("Sending \(event)")
-          }
-          try await deliver(event, display: display)
-        },
-        flush: { [self] in try await flush() })
+      var operation = SimulatorHIDOperation(displays: displays, sink: LoggingSink(hid: self, logger: logger))
       do {
         for try await event in events {
           for delivery in try await operation.send(event) {
@@ -146,6 +136,25 @@ public final class SimulatorHID: CustomStringConvertible, Sendable {
 
   public var description: String {
     "SimulatorKit HID"
+  }
+}
+
+/// One operation's view of the HID, logging each event before it is delivered.
+private struct LoggingSink: SimulatorHIDOperationSink {
+  let hid: SimulatorHID
+  let logger: ControlCoreLogger
+
+  func deliver(_ event: SimulatorHIDEvent, display: SimulatorHIDDisplay?) async throws {
+    if case let .delay(duration) = event {
+      logger.log("Delay \(duration)s")
+    } else {
+      logger.log("Sending \(event)")
+    }
+    try await hid.deliver(event, display: display)
+  }
+
+  func flush() async throws {
+    try await hid.flush()
   }
 }
 

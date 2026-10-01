@@ -27,8 +27,7 @@ final class SimulatorHIDOperationTests: XCTestCase {
     let recorder = Recorder()
     var operation = SimulatorHIDOperation(
       displays: DisplayCommandsDouble([.success(.failed(.unsupported("displayinfo")))]),
-      deliver: { event, display in await recorder.record(event, display: display) },
-      flush: {})
+      sink: recorder)
     _ = try await operation.send(.tapAt(x: 20, y: 30))
     try await operation.finish(flushing: false)
     let events = await recorder.events
@@ -40,8 +39,7 @@ final class SimulatorHIDOperationTests: XCTestCase {
     let recorder = Recorder()
     var operation = SimulatorHIDOperation(
       displays: DisplayCommandsDouble([.success(.failed(.unsupported("displayinfo")))]),
-      deliver: { event, display in await recorder.record(event, display: display) },
-      flush: {})
+      sink: recorder)
     do {
       _ = try await operation.send(.tapAt(x: .nan, y: 30))
       XCTFail("expected invalid coordinates")
@@ -281,10 +279,7 @@ final class SimulatorHIDOperationTests: XCTestCase {
   private func makeOperation(_ recorder: Recorder, observation: SimulatorHIDDisplayObservation = SimulatorHIDDisplayObservation()) -> SimulatorHIDOperation {
     SimulatorHIDOperation(
       displays: recorder,
-      deliver: { event, display in
-        await recorder.record(event, display: display)
-      },
-      flush: { await recorder.flush() },
+      sink: recorder,
       observation: observation)
   }
 
@@ -307,8 +302,8 @@ final class SimulatorHIDOperationTests: XCTestCase {
       bounds: CGRect(x: 0, y: 0, width: 600, height: 900), scale: 3, rotation: rotation)
   }
 
-  /// One of several displays, reached through digitizer target 7. Reads past `block(after:)` wait on the gate.
-  private actor Recorder: DisplayCommands {
+  /// One of several displays, reached through digitizer target 7, and the sink recording what reaches it. Reads past `block(after:)` wait on the gate.
+  private actor Recorder: DisplayCommands, SimulatorHIDOperationSink {
     nonisolated let identities = DisplayIdentityCache()
     var currentDisplay: SimulatorDisplay = SimulatorHIDOperationTests.makeScreen()
     var events: [(SimulatorHIDEvent, SimulatorHIDDisplay?)] = []
@@ -335,7 +330,7 @@ final class SimulatorHIDOperationTests: XCTestCase {
     }
 
     func setDisplay(_ display: SimulatorDisplay) { currentDisplay = display }
-    func record(_ event: SimulatorHIDEvent, display: SimulatorHIDDisplay?) {
+    func deliver(_ event: SimulatorHIDEvent, display: SimulatorHIDDisplay?) {
       events.append((event, display))
       if Task.isCancelled { cancelledDeliveries += 1 }
     }
