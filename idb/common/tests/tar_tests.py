@@ -13,7 +13,13 @@ from collections.abc import AsyncGenerator
 from typing import Any, cast
 from unittest import mock
 
-from idb.common.tar import _create_untar_command, generate_tar, TarException
+from idb.common.tar import (
+    _create_untar_command,
+    create_tar,
+    generate_tar,
+    GzipArchive,
+    TarException,
+)
 from idb.common.types import Compression
 from idb.utils.testing import TestCase
 
@@ -84,6 +90,23 @@ class GenerateTarTests(TestCase):
                     with contextlib.suppress(ProcessLookupError):
                         process.kill()
                     await process.wait()
+
+
+class CreateTarTests(TestCase):
+    async def test_a_failing_compressor_reports_its_exit_code(self) -> None:
+        with (
+            tempfile.TemporaryDirectory() as directory,
+            mock.patch.object(
+                GzipArchive,
+                "_compress_command",
+                new_callable=mock.PropertyMock,
+                return_value=["false"],
+            ),
+        ):
+            with self.assertRaises(TarException) as raised:
+                await create_tar([directory])
+        # BUG: the exit code is not interpolated — flipped in the following commit
+        self.assertTrue(str(raised.exception).endswith("{process.returncode}"))
 
 
 class ZstdArchiveTests(TestCase):
