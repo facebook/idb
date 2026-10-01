@@ -162,9 +162,11 @@ jobs:
           if-no-files-found: ignore
           retention-days: 14
 
+  # A larger runner, because the build is compile-bound and the end-to-end
+  # shards and formulae wait on it.
   mac-companion:
     name: Build companion + distribution (macOS)
-    runs-on: macos-26
+    runs-on: macos-26-xlarge
     timeout-minutes: 90
     steps:
       - uses: actions/checkout@v5
