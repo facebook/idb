@@ -245,10 +245,7 @@ public enum ApplicationArchive {
     } catch {
       logger.log("Extracting the spooled zip at \(spoolPath), as extracting it as it arrived failed: \(error)")
     }
-    // Best effort: whatever cannot be removed is overwritten, or fails the extraction with its own error.
-    for item in (try? FileManager.default.contentsOfDirectory(atPath: extractPath)) ?? [] {
-      try? FileManager.default.removeItem(atPath: (extractPath as NSString).appendingPathComponent(item))
-    }
+    ArchiveExtraction.removeContents(of: extractPath)
     try await ArchiveExtractors.default.extract(
       .filePath(spoolPath), to: extractPath, options: options.extractOptions, logger: logger)
   }

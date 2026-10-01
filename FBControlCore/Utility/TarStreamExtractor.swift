@@ -35,7 +35,7 @@ public enum TarStreamExtractor {
   }
 
   public enum Outcome {
-    case extracted(ZipExtractor.Summary, Waits)
+    case extracted(ArchiveExtractionSummary, Waits)
     /// The input does not start with a tar header. `prefix` is everything read
     /// from it, decompressed, and `rest` reads what follows.
     case notTar(prefix: Data, rest: Read)
@@ -67,22 +67,14 @@ public enum TarStreamExtractor {
       return .notTar(prefix: reader.buffered, rest: decoder.read)
     }
     let writer = ParallelFileWriter(overrideModificationTime: overrideModificationTime)
-    var summary = ZipExtractor.Summary(files: 0, bytes: 0)
+    var summary = ArchiveExtractionSummary(files: 0, bytes: 0)
     var directories: [(path: String, mode: mode_t, modified: timespec)] = []
     var hardlinks: [(path: String, target: String)] = []
     do {
-      var created: Set<String> = []
-      var files: Set<String> = []
-      // A symlink is never recorded here, so no entry can be written through one:
+      // A symlink is never recorded as created, so no entry can be written through one:
       // making a directory where a symlink is fails.
-      func createDirectories(_ relative: String) throws {
-        guard !relative.isEmpty, !created.contains(relative) else {
-          return
-        }
-        try createDirectories((relative as NSString).deletingLastPathComponent)
-        try ZipExtractor.makeDirectory((root as NSString).appendingPathComponent(relative))
-        created.insert(relative)
-      }
+      var created = ArchiveExtraction.Directories(root: root)
+      var files: Set<String> = []
       var pax: [String: [UInt8]] = [:]
       var longName: String?
       var longLink: String?
@@ -134,20 +126,20 @@ public enum TarStreamExtractor {
           guard !relative.isEmpty else {
             continue
           }
-          try createDirectories(relative)
+          try created.create(relative)
           directories.append((destination, header.mode, modified))
           setExtendedAttributes(attributes, on: destination)
         case UInt8(ascii: "0"), 0, UInt8(ascii: "7"):
           guard !relative.isEmpty, !path.hasSuffix("/") else {
             // A pre-POSIX tar marks a directory only by its trailing slash.
             try reader.skip(size)
-            try createDirectories(relative)
+            try created.create(relative)
             if !relative.isEmpty {
               directories.append((destination, header.mode, modified))
             }
             continue
           }
-          try createDirectories((relative as NSString).deletingLastPathComponent)
+          try created.create((relative as NSString).deletingLastPathComponent)
           try writer.write(destination, mode: header.mode, modified: modified, extendedAttributes: attributes) {
             try reader.contents(size, into: $0)
           }
@@ -159,7 +151,7 @@ public enum TarStreamExtractor {
           guard !relative.isEmpty else {
             throw TarExtractorError.unsafePath(path)
           }
-          try createDirectories((relative as NSString).deletingLastPathComponent)
+          try created.create((relative as NSString).deletingLastPathComponent)
           guard symlink(link, destination) == 0 else {
             throw POSIXError.current
           }
@@ -173,7 +165,7 @@ public enum TarStreamExtractor {
           guard files.contains(target), !relative.isEmpty else {
             throw TarExtractorError.unsupported("\(path) is a hard link to \(link), which is not a file extracted before it")
           }
-          try createDirectories((relative as NSString).deletingLastPathComponent)
+          try created.create((relative as NSString).deletingLastPathComponent)
           hardlinks.append((destination, (root as NSString).appendingPathComponent(target)))
         default:
           throw TarExtractorError.unsupported("\(path) has type \(Character(Unicode.Scalar(header.type)))")

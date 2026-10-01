@@ -8,7 +8,7 @@
 import Foundation
 
 /// Creates files decoded on one thread, an archive read forwards, on
-/// `ZipExtractor.writerCount` others.
+/// `ArchiveExtraction.writerCount` others.
 ///
 /// Small files are handed to the writers; a large one is written by the caller
 /// as it decodes, so that no more than about the queue's limit is held in memory.
@@ -20,7 +20,7 @@ final class ParallelFileWriter {
 
   init(overrideModificationTime: Bool) {
     self.overrideModificationTime = overrideModificationTime
-    for _ in 0..<ZipExtractor.writerCount {
+    for _ in 0..<ArchiveExtraction.writerCount {
       writers.enter()
       Thread { [queue, writers] in
         defer { writers.leave() }

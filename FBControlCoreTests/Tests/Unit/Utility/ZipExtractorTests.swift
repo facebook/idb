@@ -203,7 +203,7 @@ struct ZipExtractorTests {
 
   /// Extracts through a pipe, as a zip arrives, then repairs from the complete file.
   @discardableResult
-  private func extractAsStream(_ archive: String, to extracted: String) throws -> ZipExtractor.Summary {
+  private func extractAsStream(_ archive: String, to extracted: String) throws -> ArchiveExtractionSummary {
     try fileManager.createDirectory(atPath: extracted, withIntermediateDirectories: true)
     var fds: [Int32] = [0, 0]
     #expect(pipe(&fds) == 0)

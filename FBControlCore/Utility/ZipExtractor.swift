@@ -26,13 +26,8 @@ public enum ZipExtractorError: Error, Equatable {
 /// symlink, which `bsdtar` writes out as a file, and which is skipped here too.
 public enum ZipExtractor {
 
-  public struct Summary: Equatable, Sendable {
-    public var files: Int
-    public var bytes: UInt64
-  }
-
   @discardableResult
-  public static func extract(archiveAtPath archivePath: String, to root: String, overrideModificationTime: Bool = false) throws -> Summary {
+  public static func extract(archiveAtPath archivePath: String, to root: String, overrideModificationTime: Bool = false) throws -> ArchiveExtractionSummary {
     let plan = try Plan(ZipCentralDirectory(archiveAtPath: archivePath).entries)
     let archive = open(archivePath, O_RDONLY | O_CLOEXEC)
     guard archive >= 0 else {
@@ -41,11 +36,11 @@ public enum ZipExtractor {
     defer { close(archive) }
 
     for directory in plan.directoriesToCreate {
-      try makeDirectory((root as NSString).appendingPathComponent(directory))
+      try ArchiveExtraction.makeDirectory((root as NSString).appendingPathComponent(directory))
     }
-    let width = writerCount
+    let width = ArchiveExtraction.writerCount
     let failure = OSAllocatedUnfairLock<Error?>(initialState: nil)
-    let written = OSAllocatedUnfairLock(initialState: Summary(files: 0, bytes: 0))
+    let written = OSAllocatedUnfairLock(initialState: ArchiveExtractionSummary(files: 0, bytes: 0))
     DispatchQueue.concurrentPerform(iterations: width) { worker in
       for index in stride(from: worker, to: plan.files.count, by: width) {
         guard failure.withLock({ $0 == nil }) else {
@@ -83,7 +78,7 @@ public enum ZipExtractor {
     for (entry, relative) in plan.directories.sorted(by: { $0.relative.count > $1.relative.count }) {
       let path = (root as NSString).appendingPathComponent(relative)
       if !overrideModificationTime, let modified = entry.modified {
-        try setTimes(modified) { utimes(path, $0) }
+        try ArchiveExtraction.setTimes(modified) { utimes(path, $0) }
       }
       if let mode = entry.mode, mode != 0 {
         guard chmod(path, mode & 0o7777) == 0 else {
@@ -113,7 +108,7 @@ public enum ZipExtractor {
       }
       for entry in entries {
         let relative = try ZipCentralDirectory.safeRelativePath(entry.path)
-        if relative.isEmpty || relative == "__MACOSX" || relative.hasPrefix("__MACOSX/") {
+        if relative.isEmpty || ArchiveExtraction.isMacMetadata(relative) {
           continue
         }
         guard entry.flags & 1 == 0 else {
@@ -140,21 +135,6 @@ public enum ZipExtractor {
         createAncestors(of: relative)
       }
       directoriesToCreate = create.sorted { $0.count < $1.count }
-    }
-  }
-
-  /// Creating a small file is mostly waiting, on the file system and on any
-  /// endpoint security agent inspecting it, rather than work for a core.
-  static let writerCount = 8
-
-  static func makeDirectory(_ path: String) throws {
-    if mkdir(path, 0o755) == 0 {
-      return
-    }
-    let error = POSIXError.current
-    var info = stat()
-    guard error.code == .EEXIST, lstat(path, &info) == 0, info.st_mode & S_IFMT == S_IFDIR else {
-      throw error
     }
   }
 
@@ -214,7 +194,7 @@ public enum ZipExtractor {
       }
     }
     if !overrideModificationTime, let modified = entry.modified {
-      try setTimes(modified) { futimes(fd, $0) }
+      try ArchiveExtraction.setTimes(modified) { futimes(fd, $0) }
     }
   }
 
@@ -291,20 +271,5 @@ public enum ZipExtractor {
     guard finished || entry.size == 0 else {
       throw ZipExtractorError.corrupt("\(entry.path) is truncated")
     }
-  }
-
-  static func setTimes(_ date: Date, apply: (UnsafePointer<timeval>) -> Int32) throws {
-    let seconds = date.timeIntervalSince1970.rounded(.down)
-    let time = timeval(tv_sec: Int(seconds), tv_usec: Int32((date.timeIntervalSince1970 - seconds) * 1_000_000))
-    let times = [time, time]
-    guard apply(times) == 0 else {
-      throw POSIXError.current
-    }
-  }
-}
-
-extension POSIXError {
-  static var current: POSIXError {
-    POSIXError(POSIXErrorCode(rawValue: errno) ?? .EIO)
   }
 }

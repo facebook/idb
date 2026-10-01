@@ -314,7 +314,7 @@ public struct ZipCentralDirectory {
 
   private static func setPermissions(_ mode: mode_t, atPath path: String) throws {
     guard fchmodat(AT_FDCWD, path, mode & 0o7777, AT_SYMLINK_NOFOLLOW) == 0 else {
-      throw POSIXError(POSIXErrorCode(rawValue: errno) ?? .EIO)
+      throw POSIXError.current
     }
   }
 

@@ -109,15 +109,12 @@ public struct InProcessZipExtractor: ArchiveExtractor {
       let summary = try await offCooperativePool {
         try ZipExtractor.extract(archiveAtPath: path, to: extractPath, overrideModificationTime: options.overrideModificationTime)
       }.get()
-      logger.log("Extracted \(summary.files) files, \(summary.bytes) bytes, from \(path) in-process in \(String(format: "%.2f", Date().timeIntervalSince(start)))s")
+      logger.log(summary.description(from: path, since: start))
       return
     } catch {
       logger.log("Extracting \(path) again with \(type(of: fallback)), as extracting it in-process failed: \(error)")
     }
-    // Best effort: whatever cannot be removed is overwritten, or fails the fallback with its own error.
-    for item in (try? FileManager.default.contentsOfDirectory(atPath: extractPath)) ?? [] {
-      try? FileManager.default.removeItem(atPath: (extractPath as NSString).appendingPathComponent(item))
-    }
+    ArchiveExtraction.removeContents(of: extractPath)
     try await fallback.extract(source, to: extractPath, options: options, logger: logger)
   }
 
@@ -199,7 +196,7 @@ public struct InProcessTarExtractor: ArchiveExtractor {
       outcome = extracted
     }
     if case .extracted(let summary, let waits) = outcome {
-      logger.log("Extracted \(summary.files) files, \(summary.bytes) bytes, from a tar stream in-process in \(String(format: "%.2f", Date().timeIntervalSince(start)))s, waiting \(String(format: "%.2f", waits.input))s for input and \(String(format: "%.2f", waits.writers))s for writers")
+      logger.log("\(summary.description(from: "a tar stream", since: start)), waiting \(String(format: "%.2f", waits.input))s for input and \(String(format: "%.2f", waits.writers))s for writers")
     }
   }
 

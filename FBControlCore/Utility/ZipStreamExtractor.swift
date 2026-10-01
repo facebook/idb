@@ -19,36 +19,28 @@ import zlib
 public enum ZipStreamExtractor {
 
   @discardableResult
-  public static func extract(from fileDescriptor: Int32, to root: String, overrideModificationTime: Bool = false) throws -> ZipExtractor.Summary {
+  public static func extract(from fileDescriptor: Int32, to root: String, overrideModificationTime: Bool = false) throws -> ArchiveExtractionSummary {
     var reader = Reader(fileDescriptor: fileDescriptor)
     let writer = ParallelFileWriter(overrideModificationTime: overrideModificationTime)
     var directories: [(path: String, modified: Date?)] = []
-    var summary = ZipExtractor.Summary(files: 0, bytes: 0)
+    var summary = ArchiveExtractionSummary(files: 0, bytes: 0)
     do {
-      var created: Set<String> = []
-      func createDirectories(_ relative: String) throws {
-        guard !relative.isEmpty, !created.contains(relative) else {
-          return
-        }
-        try createDirectories((relative as NSString).deletingLastPathComponent)
-        try ZipExtractor.makeDirectory((root as NSString).appendingPathComponent(relative))
-        created.insert(relative)
-      }
+      var created = ArchiveExtraction.Directories(root: root)
       while let header = try LocalHeader(reading: &reader) {
         let relative = try ZipCentralDirectory.safeRelativePath(header.path)
         if header.path.hasSuffix("/") {
           try reader.decode(header) { _ in }
           if !relative.isEmpty {
-            try createDirectories(relative)
+            try created.create(relative)
             directories.append(((root as NSString).appendingPathComponent(relative), header.modified))
           }
           continue
         }
-        if relative == "__MACOSX" || relative.hasPrefix("__MACOSX/") {
+        if ArchiveExtraction.isMacMetadata(relative) {
           try reader.decode(header) { _ in }
           continue
         }
-        try createDirectories((relative as NSString).deletingLastPathComponent)
+        try created.create((relative as NSString).deletingLastPathComponent)
         var size: UInt64 = 0
         try writer.write((root as NSString).appendingPathComponent(relative), modified: header.modified.map { timespec(tv_sec: Int(floor($0.timeIntervalSince1970)), tv_nsec: 0) }) {
           size = try reader.decode(header, into: $0)
@@ -67,7 +59,7 @@ public enum ZipStreamExtractor {
     if !overrideModificationTime {
       for (path, modified) in directories.reversed() {
         if let modified {
-          try ZipExtractor.setTimes(modified) { utimes(path, $0) }
+          try ArchiveExtraction.setTimes(modified) { utimes(path, $0) }
         }
       }
     }
@@ -315,6 +307,6 @@ extension ZipStreamExtractor {
     }
     _ = try? await bridgeFBFuture(input.detach())
     let summary = try result.get()
-    logger.log("Extracted \(summary.files) files, \(summary.bytes) bytes, from a zip stream in-process in \(String(format: "%.2f", Date().timeIntervalSince(start)))s")
+    logger.log(summary.description(from: "a zip stream", since: start))
   }
 }
