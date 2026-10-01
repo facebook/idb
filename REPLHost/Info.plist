@@ -24,6 +24,8 @@
 	<string>Requested on demand so a test can observe whether a pre-approval removed the system prompt.</string>
 	<key>NSContactsUsageDescription</key>
 	<string>Requested on demand so a test can observe whether a pre-approval removed the system prompt.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Read by Swift that idb-repl injects, so it can follow a location set with idb set-location.</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>Requested on demand so a test can observe whether a pre-approval removed the system prompt.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
