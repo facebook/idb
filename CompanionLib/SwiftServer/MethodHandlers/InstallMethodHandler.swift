@@ -228,7 +228,7 @@ struct InstallMethodHandler: @unchecked Sendable {
   }
 
   private func isZipArchive(_ data: Data) -> Bool {
-    data.starts(with: [0x50, 0x4B, 0x03, 0x04])
+    data.starts(with: ZipSignature.localHeaderBytes)
   }
 
   /// The zstd skippable frame that `CompanionInfo.zstd_zip_streams` clients start a compressed zip with.

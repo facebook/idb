@@ -289,8 +289,6 @@ private final class ZipSpoolingConsumer: NSObject, DataConsumer, @unchecked Send
     case spooled
   }
 
-  private static let zipSignature = Data([0x50, 0x4B, 0x03, 0x04])
-
   private let spoolPath: String
   private let decided = FBMutableFuture<NSNull>()
   private let lock = NSLock()
@@ -326,7 +324,7 @@ private final class ZipSpoolingConsumer: NSObject, DataConsumer, @unchecked Send
   func consumeData(_ data: Data) {
     guard let route = lock.withLock({ decision }) else {
       head.append(data)
-      if head.count >= Self.zipSignature.count {
+      if head.count >= ZipSignature.localHeaderBytes.count {
         decide()
       }
       return
@@ -343,7 +341,7 @@ private final class ZipSpoolingConsumer: NSObject, DataConsumer, @unchecked Send
   }
 
   private func decide() {
-    let route: Route = head.starts(with: Self.zipSignature) ? .spooled : .stream
+    let route: Route = head.starts(with: ZipSignature.localHeaderBytes) ? .spooled : .stream
     if route == .spooled {
       do {
         guard FileManager.default.createFile(atPath: spoolPath, contents: nil) else {

@@ -16,6 +16,17 @@ public enum ZipCentralDirectoryError: Error, Equatable {
   case unexpectedFileType(String)
 }
 
+/// Record signatures, as read little-endian from the file.
+public enum ZipSignature {
+  public static let localHeaderBytes = Data([0x50, 0x4B, 0x03, 0x04])
+  static let localHeader: UInt32 = 0x0403_4B50
+  static let dataDescriptor: UInt32 = 0x0807_4B50
+  static let centralDirectoryEntry: UInt32 = 0x0201_4B50
+  static let endOfCentralDirectory: UInt32 = 0x0605_4B50
+  static let zip64EndOfCentralDirectory: UInt32 = 0x0606_4B50
+  static let zip64Locator: UInt32 = 0x0706_4B50
+}
+
 /// The index at the end of a zip, which is the only place a zip records
 /// symlinks and permissions. A reader of the zip as a stream never reaches it.
 public struct ZipCentralDirectory {
@@ -114,10 +125,6 @@ public struct ZipCentralDirectory {
 
   // MARK: - Private
 
-  private static let endOfCentralDirectorySignature: UInt32 = 0x0605_4B50
-  private static let zip64LocatorSignature: UInt32 = 0x0706_4B50
-  private static let zip64EndOfCentralDirectorySignature: UInt32 = 0x0606_4B50
-  private static let centralDirectoryEntrySignature: UInt32 = 0x0201_4B50
   private static let unixHost: UInt16 = 3
   static let appleDoubleMagic = Data([0x00, 0x05, 0x16, 0x07])
 
@@ -128,15 +135,15 @@ public struct ZipCentralDirectory {
     guard let tail = try handle.read(upToCount: Int(tailLength)), tail.count == tailLength, tail.count >= 22 else {
       throw ZipCentralDirectoryError.noEndOfCentralDirectory
     }
-    guard let record = stride(from: tail.count - 22, through: 0, by: -1).first(where: { tail.uint32(at: $0) == endOfCentralDirectorySignature }) else {
+    guard let record = stride(from: tail.count - 22, through: 0, by: -1).first(where: { tail.uint32(at: $0) == ZipSignature.endOfCentralDirectory }) else {
       throw ZipCentralDirectoryError.noEndOfCentralDirectory
     }
     let recordOffset = size - tailLength + UInt64(record)
     if recordOffset >= 20 {
       try handle.seek(toOffset: recordOffset - 20)
-      if let locator = try handle.read(upToCount: 20), locator.count == 20, locator.uint32(at: 0) == zip64LocatorSignature {
+      if let locator = try handle.read(upToCount: 20), locator.count == 20, locator.uint32(at: 0) == ZipSignature.zip64Locator {
         try handle.seek(toOffset: locator.uint64(at: 8))
-        guard let zip64 = try handle.read(upToCount: 56), zip64.count == 56, zip64.uint32(at: 0) == zip64EndOfCentralDirectorySignature else {
+        guard let zip64 = try handle.read(upToCount: 56), zip64.count == 56, zip64.uint32(at: 0) == ZipSignature.zip64EndOfCentralDirectory else {
           throw ZipCentralDirectoryError.truncated
         }
         return (zip64.uint64(at: 32), zip64.uint64(at: 40), zip64.uint64(at: 48))
@@ -149,7 +156,7 @@ public struct ZipCentralDirectory {
     var entries: [Entry] = []
     var offset = 0
     for _ in 0..<count {
-      guard offset + 46 <= directory.count, directory.uint32(at: offset) == centralDirectoryEntrySignature else {
+      guard offset + 46 <= directory.count, directory.uint32(at: offset) == ZipSignature.centralDirectoryEntry else {
         throw ZipCentralDirectoryError.truncated
       }
       let host = directory.uint16(at: offset + 4) >> 8

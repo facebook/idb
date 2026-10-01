@@ -92,9 +92,9 @@ public enum ZipStreamExtractor {
         return nil
       }
       switch signature {
-      case 0x0403_4B50:
+      case ZipSignature.localHeader:
         break
-      case 0x0201_4B50, 0x0605_4B50, 0x0606_4B50:
+      case ZipSignature.centralDirectoryEntry, ZipSignature.endOfCentralDirectory, ZipSignature.zip64EndOfCentralDirectory:
         return nil
       default:
         throw ZipExtractorError.corrupt("no local header where one should be")
@@ -255,7 +255,7 @@ public enum ZipStreamExtractor {
       }
       var expected = (crc32: header.crc32, size: header.size)
       if header.flags & 8 != 0 {
-        if try peekSignature() == 0x0807_4B50 {
+        if try peekSignature() == ZipSignature.dataDescriptor {
           start += 4
         }
         let width = header.zip64 ? 8 : 4

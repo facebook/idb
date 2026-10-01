@@ -126,7 +126,7 @@ public struct InProcessZipExtractor: ArchiveExtractor {
       return false
     }
     defer { try? handle.close() }
-    return (try? handle.read(upToCount: 4)) == Data([0x50, 0x4B, 0x03, 0x04])
+    return (try? handle.read(upToCount: 4)) == ZipSignature.localHeaderBytes
   }
 }
 

@@ -221,7 +221,7 @@ public enum ZipExtractor {
   /// Calls `output` with the entry's contents in order, checking their size and CRC.
   private static func decode(_ entry: ZipCentralDirectory.Entry, from archive: Int32, into output: (UnsafeRawBufferPointer) throws -> Void) throws {
     var header = [UInt8](repeating: 0, count: 30)
-    guard pread(archive, &header, 30, off_t(entry.localHeaderOffset)) == 30, Data(header).uint32(at: 0) == 0x0403_4B50 else {
+    guard pread(archive, &header, 30, off_t(entry.localHeaderOffset)) == 30, Data(header).uint32(at: 0) == ZipSignature.localHeader else {
       throw ZipExtractorError.corrupt("no local header for \(entry.path)")
     }
     let dataOffset = entry.localHeaderOffset + 30 + UInt64(Data(header).uint16(at: 26)) + UInt64(Data(header).uint16(at: 28))
