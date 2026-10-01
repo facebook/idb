@@ -26,17 +26,22 @@ public struct SimulatorControlConfiguration: Equatable, Hashable, CustomStringCo
 
   public let deviceSetPath: String?
   public let logger: ControlCoreLogger
+  public let hidEventLogging: SimulatorHIDEventLogging
 
   /// - Parameter logger: nil means `ControlCoreGlobalConfiguration.defaultLogger` (os_log-only
   ///   by default — see its documentation).
-  public init(deviceSetPath: String?, logger: (any ControlCoreLogger)?) {
+  /// - Parameter hidEventLogging: how much of each HID event the set's simulators log.
+  public init(
+    deviceSetPath: String?, logger: (any ControlCoreLogger)?, hidEventLogging: SimulatorHIDEventLogging = .redacted
+  ) {
     self.deviceSetPath = deviceSetPath
     self.logger = logger ?? ControlCoreGlobalConfiguration.defaultLogger
+    self.hidEventLogging = hidEventLogging
   }
 
   // MARK: - Equatable, Hashable
 
-  /// Identity is the device set path alone; the logger is a dependency, not data.
+  /// Identity is the device set path alone; the logger and logging level are dependencies, not data.
   public static func == (lhs: SimulatorControlConfiguration, rhs: SimulatorControlConfiguration) -> Bool {
     lhs.deviceSetPath == rhs.deviceSetPath
   }

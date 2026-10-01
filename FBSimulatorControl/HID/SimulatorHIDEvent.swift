@@ -283,15 +283,11 @@ public extension SimulatorHIDEvent {
 public enum SimulatorHIDEventLogging: Sendable {
   case redacted
   case detailed
-
-  static var fromEnvironment: SimulatorHIDEventLogging {
-    ProcessInfo.processInfo.environment["FBSIMULATORCONTROL_LOG_HID_DETAILS"]?.boolValue == true ? .detailed : .redacted
-  }
 }
 
 extension SimulatorHIDEvent: CustomStringConvertible {
   public var description: String {
-    logDescription(.fromEnvironment)
+    logDescription(.redacted)
   }
 
   public func logDescription(_ logging: SimulatorHIDEventLogging) -> String {
@@ -321,13 +317,5 @@ extension SimulatorHIDEvent: CustomStringConvertible {
     case let .composite(events):
       return "Composite [\(events.map { $0.logDescription(logging) }.joined(separator: ", "))]"
     }
-  }
-}
-
-// MARK: - Private helpers
-
-private extension String {
-  var boolValue: Bool {
-    (self as NSString).boolValue
   }
 }

@@ -289,6 +289,23 @@ final class SimulatorHIDEventRenderingTests: XCTestCase {
       "Key <hidden>")
   }
 
+  func testDescriptionIsRedacted() {
+    XCTAssertEqual(SimulatorHIDEvent.touch(direction: .down, x: 10.0, y: 20.0).description, "Touch <hidden>")
+  }
+
+  func testClampedDeliveryRendersBothEventsAtTheSameLevel() {
+    let delivery = SimulatorHIDDelivery.clamped(
+      requested: .touch(direction: .down, x: -1, y: 30),
+      delivered: .touch(direction: .down, x: 0, y: 30),
+      bounds: CGSize(width: 200, height: 300))
+    XCTAssertEqual(
+      delivery.logDescription(.detailed),
+      "Clamped Touch down at (-1.0,30.0) to Touch down at (0.0,30.0) within the display's point bounds (200.0 x 300.0)")
+    XCTAssertEqual(
+      delivery.logDescription(.redacted),
+      "Clamped Touch <hidden> to Touch <hidden> within the display's point bounds (200.0 x 300.0)")
+  }
+
   func testCompositeDescriptionRendersChildrenAtTheSameLevel() {
     let event = SimulatorHIDEvent.composite([.touch(direction: .down, x: 1, y: 2), .delay(0.5)])
     XCTAssertEqual(event.logDescription(.detailed), "Composite [Touch down at (1.0,2.0), Delay for 0.5]")

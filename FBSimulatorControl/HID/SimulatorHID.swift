@@ -28,6 +28,7 @@ public final class SimulatorHID: CustomStringConvertible, Sendable {
   private let transport: SimulatorHIDTransport
   private let operationLease: SimulatorHIDOperationLease
   private let displays: (any DisplayCommands)?
+  private let logging: SimulatorHIDEventLogging
 
   // MARK: - Initializers
 
@@ -39,18 +40,21 @@ public final class SimulatorHID: CustomStringConvertible, Sendable {
     self.init(
       transport: try await SimulatorHIDTransport.negotiate(for: simulator, requested: transportType),
       operationLease: simulator.commandCache.resolve { SimulatorHIDOperationLease() },
-      displays: simulator.displays)
+      displays: simulator.displays,
+      logging: simulator.set?.configuration.hidEventLogging ?? .redacted)
   }
 
   /// Instances sharing `operationLease` never interleave operations.
   init(
     transport: SimulatorHIDTransport,
     operationLease: SimulatorHIDOperationLease = SimulatorHIDOperationLease(),
-    displays: (any DisplayCommands)? = nil
+    displays: (any DisplayCommands)? = nil,
+    logging: SimulatorHIDEventLogging = .redacted
   ) {
     self.transport = transport
     self.operationLease = operationLease
     self.displays = displays
+    self.logging = logging
   }
 
   /// Drains pending events before disconnecting, even when the caller is cancelled.
@@ -95,11 +99,11 @@ public final class SimulatorHID: CustomStringConvertible, Sendable {
 
   private func send<S: AsyncSequence>(events: S, logger: ControlCoreLogger, flushing: Bool) async throws where S.Element == SimulatorHIDEvent {
     try await operationLease.withLease {
-      var operation = SimulatorHIDOperation(displays: displays, sink: LoggingSink(hid: self, logger: logger))
+      var operation = SimulatorHIDOperation(displays: displays, sink: LoggingSink(hid: self, logger: logger, logging: logging))
       do {
         for try await event in events {
           for delivery in try await operation.send(event) {
-            if case .clamped = delivery { logger.log("\(delivery)") }
+            if case .clamped = delivery { logger.log(delivery.logDescription(logging)) }
           }
         }
         try await operation.finish(flushing: flushing)
@@ -143,12 +147,13 @@ public final class SimulatorHID: CustomStringConvertible, Sendable {
 private struct LoggingSink: SimulatorHIDOperationSink {
   let hid: SimulatorHID
   let logger: ControlCoreLogger
+  let logging: SimulatorHIDEventLogging
 
   func deliver(_ event: SimulatorHIDEvent, display: SimulatorHIDDisplay?) async throws {
     if case let .delay(duration) = event {
       logger.log("Delay \(duration)s")
     } else {
-      logger.log("Sending \(event)")
+      logger.log("Sending \(event.logDescription(logging))")
     }
     try await hid.deliver(event, display: display)
   }

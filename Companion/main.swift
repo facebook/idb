@@ -83,6 +83,7 @@ private let kUsageHelpMessage = """
       --verify-booted VALUE      If VALUE is a true value, will verify that the Simulator is in a known-booted state before --boot completes. Default is true.
       --terminate-offline VALUE  Terminate if the target goes offline, otherwise the companion will stay alive.
       --idle-shutdown-time SECS  Exit after SECS seconds with no active or newly received gRPC requests (default: stays alive).
+      --log-hid-details VALUE    If VALUE is a true value, HID log lines include touch coordinates, buttons and key codes (default: the FBSIMULATORCONTROL_LOG_HID_DETAILS environment variable, otherwise false).
 
    Filter Options:
       simulator                  Limit interactions to Simulators only.
@@ -120,16 +121,25 @@ private func writeTargetToStdOut(_ target: TargetInfo) {
   writeJSONToStdOut(TargetDescription(target: target).asJSON)
 }
 
-private func simulatorSetWithPath(_ deviceSetPath: String?, logger: ControlCoreLogger) throws -> SimulatorSet {
+private func hidEventLogging(_ userDefaults: UserDefaults) -> SimulatorHIDEventLogging {
+  let detailed =
+    userDefaults.object(forKey: "-log-hid-details") == nil
+    ? ProcessInfo.processInfo.environment["FBSIMULATORCONTROL_LOG_HID_DETAILS"].map { ($0 as NSString).boolValue } ?? false
+    : userDefaults.bool(forKey: "-log-hid-details")
+  return detailed ? .detailed : .redacted
+}
+
+private func simulatorSetWithPath(_ deviceSetPath: String?, userDefaults: UserDefaults, logger: ControlCoreLogger) throws -> SimulatorSet {
   // Give a more meaningful message if we can't load the frameworks.
   try SimulatorControlFrameworkLoader.essentialFrameworks.loadPrivateFrameworks(logger)
-  let configuration = SimulatorControlConfiguration(deviceSetPath: deviceSetPath, logger: logger)
+  let configuration = SimulatorControlConfiguration(
+    deviceSetPath: deviceSetPath, logger: logger, hidEventLogging: hidEventLogging(userDefaults))
   return try SimulatorControlBootstrap.withConfiguration(configuration).set
 }
 
 private func simulatorSet(_ userDefaults: UserDefaults, logger: ControlCoreLogger) throws -> SimulatorSet {
   let deviceSetPath = userDefaults.string(forKey: "-device-set-path")
-  return try simulatorSetWithPath(deviceSetPath, logger: logger)
+  return try simulatorSetWithPath(deviceSetPath, userDefaults: userDefaults, logger: logger)
 }
 
 /// How long a device-targeted invocation waits for MobileDevice to report a device. Overshooting only
@@ -338,7 +348,7 @@ private func runCreate(_ create: String, userDefaults: UserDefaults, logger: Con
 private func runClone(_ udid: String, userDefaults: UserDefaults, logger: ControlCoreLogger) async throws {
   let destinationSet = userDefaults.string(forKey: "-clone-destination-set")
   let base = try await resolveSimulator(udid, userDefaults: userDefaults, logger: logger)
-  let destination = try simulatorSetWithPath(destinationSet, logger: logger)
+  let destination = try simulatorSetWithPath(destinationSet, userDefaults: userDefaults, logger: logger)
   guard let baseSet = base.set else {
     throw SimulatorSetError.simulatorHasNoSet(udid: base.udid)
   }

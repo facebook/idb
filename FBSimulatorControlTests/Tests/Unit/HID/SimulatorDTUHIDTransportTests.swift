@@ -237,6 +237,17 @@ final class SimulatorDTUHIDTransportTests: XCTestCase {
     XCTAssertEqual(sleeps, [])
   }
 
+  func testSendLogsEventsAtTheConfiguredLevel() async throws {
+    let tap = SimulatorHIDEvent.touch(direction: .down, x: 10, y: 20)
+    let redacted = CapturingLogger()
+    try await makeHID(DrainRecorder()).send(event: tap, logger: redacted)
+    let detailed = CapturingLogger()
+    try await makeHID(DrainRecorder(), logging: .detailed).send(event: tap, logger: detailed)
+
+    XCTAssertEqual(redacted.messages as? [String], ["Sending Touch <hidden>"])
+    XCTAssertEqual(detailed.messages as? [String], ["Sending Touch down at (10.0,20.0)"])
+  }
+
   func testAGestureDrainsOnce() async throws {
     let recorder = DrainRecorder()
     let hid = makeHID(recorder)
@@ -567,8 +578,10 @@ final class SimulatorDTUHIDTransportTests: XCTestCase {
 
   /// A HID over a DTUHID transport whose drain waits are recorded rather than taken, talking to a
   /// synthetic `dtuhidd` that answers barriers.
-  private func makeHID(_ recorder: DrainRecorder, gate: SleepGate? = nil) -> SimulatorHID {
-    SimulatorHID(transport: .dtuhid(makeTransport(recorder, gate: gate)))
+  private func makeHID(
+    _ recorder: DrainRecorder, gate: SleepGate? = nil, logging: SimulatorHIDEventLogging = .redacted
+  ) -> SimulatorHID {
+    SimulatorHID(transport: .dtuhid(makeTransport(recorder, gate: gate)), logging: logging)
   }
 
   private func makeTransport(

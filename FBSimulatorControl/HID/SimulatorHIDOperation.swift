@@ -96,17 +96,17 @@ final class SimulatorHIDDisplayObservation: @unchecked Sendable {
 }
 
 /// What the operation did with one primitive event it delivered.
-enum SimulatorHIDDelivery: Equatable, Sendable, CustomStringConvertible {
+enum SimulatorHIDDelivery: Equatable, Sendable {
   /// Delivered as sent.
   case unchanged(SimulatorHIDEvent)
   /// Delivered with its touch points moved onto the display.
   case clamped(requested: SimulatorHIDEvent, delivered: SimulatorHIDEvent, bounds: CGSize)
 
-  var description: String {
+  func logDescription(_ logging: SimulatorHIDEventLogging) -> String {
     switch self {
-    case let .unchanged(event): "Delivered \(event)"
+    case let .unchanged(event): "Delivered \(event.logDescription(logging))"
     case let .clamped(requested, delivered, bounds):
-      "Clamped \(requested) to \(delivered) within the display's point bounds (\(bounds.width) x \(bounds.height))"
+      "Clamped \(requested.logDescription(logging)) to \(delivered.logDescription(logging)) within the display's point bounds (\(bounds.width) x \(bounds.height))"
     }
   }
 }
