@@ -27,6 +27,7 @@ from .harness import (
     Completed,
     FIXTURE_APP_BUNDLE_ID,
     IdbEndToEndTestCase,
+    LocalPages,
     NotReady,
     select_tests_for_capability,
     SuiteCapability,
@@ -74,6 +75,9 @@ WEB_CONTENT_DEMO_CAPABILITIES = {
 INJECTED_SWIFT_DEMO_CAPABILITIES = {
     "test_drive_an_app_from_injected_swift": SuiteCapability.ACCESSIBILITY_INTERACTION,
 }
+SPINNING_SAFARI_DEMO_CAPABILITIES = {
+    "test_spin_safaris_address_bar": SuiteCapability.ACCESSIBILITY_INTERACTION,
+}
 
 COUNTER_ID = "injected-counter"
 TAPS = 3
@@ -113,6 +117,36 @@ return await MainActor.run { () -> String in
   else { return "The button is gone" }
   return "The button counted \(button.tag) taps"
 }"""
+WHO_AM_I = 'return Bundle.main.bundleIdentifier ?? "no bundle"'
+SPIN_ADDRESS_BAR = r"""import UIKit
+return await MainActor.run { () -> String in
+  func addressBar(in view: UIView) -> UIView? {
+    if view.accessibilityIdentifier == "TabBarItemTitle" { return view }
+    return view.subviews.lazy.compactMap { addressBar(in: $0) }.first
+  }
+  let windows = UIApplication.shared.connectedScenes
+    .flatMap { ($0 as? UIWindowScene)?.windows ?? [] }
+  guard let bar = windows.lazy.compactMap({ addressBar(in: $0) }).first
+  else { return "No address bar to spin" }
+  let spin = CABasicAnimation(keyPath: "transform.rotation.z")
+  spin.byValue = 2 * Double.pi
+  spin.duration = 1.5
+  spin.repeatCount = .infinity
+  bar.layer.add(spin, forKey: "idb-spin")
+  return "Spinning a \(type(of: bar))"
+}"""
+STOP_SPINNING = r"""import UIKit
+return await MainActor.run { () -> String in
+  func spinning(in view: UIView) -> [UIView] {
+    let here = view.layer.animation(forKey: "idb-spin") == nil ? [] : [view]
+    return here + view.subviews.flatMap { spinning(in: $0) }
+  }
+  let windows = UIApplication.shared.connectedScenes
+    .flatMap { ($0 as? UIWindowScene)?.windows ?? [] }
+  let views = windows.flatMap { spinning(in: $0) }
+  views.forEach { $0.layer.removeAnimation(forKey: "idb-spin") }
+  return "Stopped \(views.count) spinning view(s)"
+}"""
 
 
 def load_tests(
@@ -130,6 +164,7 @@ def load_tests(
                     (AccessibilityDemos, ACCESSIBILITY_DEMO_CAPABILITIES),
                     (WebContentDemos, WEB_CONTENT_DEMO_CAPABILITIES),
                     (InjectedSwiftDemos, INJECTED_SWIFT_DEMO_CAPABILITIES),
+                    (SpinningSafariDemos, SPINNING_SAFARI_DEMO_CAPABILITIES),
                 )
             ),
             loader.loadTestsFromTestCase(NotificationDemos),
@@ -744,4 +779,122 @@ class InjectedSwiftDemos(InjectedSwiftCase):
             "idb-repl attached to the same process rather than relaunching it, "
             f"so the button and its count of {TAPS} were still there.",
             f"{TAPS} taps",
+        )
+
+
+class SpinningSafariDemos(SafariTestCase):
+    capabilities = SPINNING_SAFARI_DEMO_CAPABILITIES
+
+    async def describe_address_bar(self, *, step: str) -> dict[str, Any]:
+        document = await self.idb_json(
+            "ui",
+            "describe",
+            SAFARI_ADDRESS_BAR_ID,
+            "--match-key",
+            "AXUniqueId",
+            "--api",
+            "axbridge",
+            "--format",
+            "complete",
+            step=step,
+        )
+        bars = _visible(document, SAFARI_ADDRESS_BAR_ID)
+        self.assertEqual(len(bars), 1, f"Expected one address bar: {document}")
+        return bars[0]
+
+    @documented_demo(
+        slug="spin-safaris-address-bar",
+        title="Spin Safari's address bar, and tap it anyway",
+        summary=(
+            "Inject Swift into Safari, one of Apple's own apps, and set its "
+            "address bar spinning with Core Animation. The spin only changes "
+            "what is drawn, so the accessibility tree still reports the bar "
+            "exactly where it was, and idb taps it mid-spin. Then stop it."
+        ),
+    )
+    async def test_spin_safaris_address_bar(self) -> None:
+        pages = LocalPages({FIRST_PAGE_PATH: STAND_IN_PAGES[FIRST_PAGE_PATH]})
+        origin = pages.start()
+        self.addCleanup(pages.stop)
+
+        launched = await self.idb_repl(
+            "app",
+            "--bundle-id",
+            SAFARI_BUNDLE_ID,
+            "--new-session",
+            WHO_AM_I,
+            step="Launch Safari with Swift injected, and ask who it is",
+        )
+        self.assertEqual(_result(launched), SAFARI_BUNDLE_ID)
+        self.note(
+            f"The Swift ran inside Safari, which answers {SAFARI_BUNDLE_ID}. "
+            "Nothing about Safari was rebuilt or re-signed.",
+            SAFARI_BUNDLE_ID,
+        )
+
+        await self.idb(
+            "open", origin + FIRST_PAGE_PATH, step="Open a page in the same Safari"
+        )
+        await self.wait_for_web_label(FIRST_PAGE_HEADING)
+        await self.wait_for_tappable_address_bar()
+        before = await self.describe_address_bar(step="Find the address bar")
+        self.note(
+            f"The address bar has accessibility identifier "
+            f"{SAFARI_ADDRESS_BAR_ID} and is {_placed(before, None)}.",
+            SAFARI_ADDRESS_BAR_ID,
+        )
+
+        spun = await self.idb_repl(
+            "app",
+            "--bundle-id",
+            SAFARI_BUNDLE_ID,
+            SPIN_ADDRESS_BAR,
+            step="Set the address bar spinning",
+        )
+        spinning = _result(spun)
+        self.assertTrue(spinning.startswith("Spinning a "), spinning)
+        self.note(
+            "The Swift found the view behind the address bar and added a "
+            "rotation that repeats forever.",
+            spinning,
+        )
+
+        during = await self.describe_address_bar(
+            step="Find the address bar while it spins"
+        )
+        self.assertEqual(during["frame"], before["frame"])
+        self.note(
+            f"It is still {_placed(during, None)}. Core Animation spins what "
+            "is drawn, not where UIKit lays the view out, and the "
+            "accessibility tree reports the layout.",
+            SAFARI_ADDRESS_BAR_ID,
+        )
+
+        await self.idb(
+            "ui",
+            "tap",
+            SAFARI_ADDRESS_BAR_ID,
+            "--match-key",
+            "AXUniqueId",
+            step="Tap the spinning address bar",
+        )
+        await self.wait_for_address_bar()
+        self.note(
+            "The tap landed where the bar is laid out, and Safari gave the "
+            "address field the cursor.",
+            SAFARI_ADDRESS_BAR_ID,
+        )
+
+        stopped = await self.idb_repl(
+            "app",
+            "--bundle-id",
+            SAFARI_BUNDLE_ID,
+            STOP_SPINNING,
+            step="Stop the spin",
+        )
+        self.assertTrue(_result(stopped).startswith("Stopped "), stopped.text)
+        self.note(
+            "idb-repl attached to the Safari it launched, found whatever was "
+            "still spinning and removed the animation.",
+            _result(stopped),
         )

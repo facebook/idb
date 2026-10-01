@@ -57,6 +57,9 @@ DOCUMENTED_DEMOS: Mapping[str, str] = {
         "EndToEndTests.test_demos.InjectedSwiftDemos"
         ".test_drive_an_app_from_injected_swift"
     ),
+    "spin-safaris-address-bar": (
+        "EndToEndTests.test_demos.SpinningSafariDemos.test_spin_safaris_address_bar"
+    ),
 }
 
 PACKAGE = "EndToEndTests"
