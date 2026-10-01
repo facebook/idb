@@ -10,6 +10,7 @@ import FBSimulatorControl
 import Foundation
 import GRPCCore
 import IDBGRPCSwift
+import os
 
 struct InstallMethodHandler: @unchecked Sendable {
 
@@ -170,12 +171,14 @@ struct InstallMethodHandler: @unchecked Sendable {
     case let .data(data):
       if destination == .app && isZipArchive(data) {
         telemetry.streamed(.zip)
-        return try await installStreamedZip(initial: data, requestStream: requestStream, makeDebuggable: makeDebuggable, overrideModificationTime: overrideModificationTime, telemetry: telemetry)
+        return try await installStreamedZip(makeDebuggable: makeDebuggable, overrideModificationTime: overrideModificationTime, telemetry: telemetry) { archiveURL, tee in
+          try await spool(initial: data, requestStream: requestStream, to: archiveURL, teeingTo: tee, telemetry: telemetry)
+        }
       }
       if destination == .app && Self.isZstdZipStream(data) {
         telemetry.streamed(.zstdZip)
-        return try await installZipArchive(makeDebuggable: makeDebuggable, overrideModificationTime: overrideModificationTime, telemetry: telemetry) { archiveURL in
-          try await decompressZstd(initial: data, requestStream: requestStream, to: archiveURL, telemetry: telemetry)
+        return try await installStreamedZip(makeDebuggable: makeDebuggable, overrideModificationTime: overrideModificationTime, telemetry: telemetry) { archiveURL, tee in
+          try await decompressZstd(initial: data, requestStream: requestStream, to: archiveURL, teeingTo: tee, telemetry: telemetry)
         }
       }
 
@@ -235,21 +238,28 @@ struct InstallMethodHandler: @unchecked Sendable {
     data.starts(with: zstdZipStreamMarker)
   }
 
-  /// A zip is extracted as it arrives, and also spooled to disk, as its central
-  /// directory is at the end.
+  /// A zip is extracted as `receive` spools it to disk, and also from the spool
+  /// once complete, as its central directory is at the end.
   private func installStreamedZip(
-    initial: Data,
-    requestStream: RequestStreamReader<Idb_InstallRequest>,
     makeDebuggable: Bool,
     overrideModificationTime: Bool,
-    telemetry: InstallTelemetry
+    telemetry: InstallTelemetry,
+    receive: sending @escaping (_ archiveURL: URL, _ tee: OutputStream) async throws -> Void
   ) async throws -> InstalledArtifact {
     let archiveURL = try makeArchiveFile()
     defer { try? FileManager.default.removeItem(at: archiveURL) }
 
     let input = FBProcessInput<OutputStream>.fromStream()
     let (spooled, spoolCompletion) = AsyncThrowingStream<Never, Error>.makeStream()
-    async let receiving: Void = spool(initial: initial, requestStream: requestStream, to: archiveURL, teeingTo: input.contents, completing: spoolCompletion, telemetry: telemetry)
+    async let receiving: Void = {
+      do {
+        try await receive(archiveURL, input.contents)
+        spoolCompletion.finish()
+      } catch {
+        spoolCompletion.finish(throwing: error)
+        throw error
+      }
+    }()
     let artifact: InstalledArtifact
     do {
       artifact = try await commandExecutor.install_app_zip_stream(
@@ -270,24 +280,6 @@ struct InstallMethodHandler: @unchecked Sendable {
     return artifact
   }
 
-  /// A zip is spooled to disk before it is installed, as its central directory is at the end.
-  private func installZipArchive(
-    makeDebuggable: Bool,
-    overrideModificationTime: Bool,
-    telemetry: InstallTelemetry,
-    spool: (URL) async throws -> Void
-  ) async throws -> InstalledArtifact {
-    let archiveURL = try makeArchiveFile()
-    defer { try? FileManager.default.removeItem(at: archiveURL) }
-
-    try await spool(archiveURL)
-    return try await commandExecutor.install_app_file_path(
-      archiveURL.path,
-      make_debuggable: makeDebuggable,
-      override_modification_time: overrideModificationTime,
-      on_progress: telemetry.observe)
-  }
-
   private func makeArchiveFile() throws -> URL {
     let archiveURL = FileManager.default.temporaryDirectory
       .appendingPathComponent(UUID().uuidString)
@@ -303,27 +295,10 @@ struct InstallMethodHandler: @unchecked Sendable {
     requestStream: RequestStreamReader<Idb_InstallRequest>,
     to archiveURL: URL,
     teeingTo output: OutputStream,
-    completing completion: AsyncThrowingStream<Never, Error>.Continuation,
-    telemetry: InstallTelemetry
-  ) async throws {
-    do {
-      try await spool(initial: initial, requestStream: requestStream, to: archiveURL, teeingTo: output, telemetry: telemetry)
-      completion.finish()
-    } catch {
-      completion.finish(throwing: error)
-      throw error
-    }
-  }
-
-  private func spool(
-    initial: Data,
-    requestStream: RequestStreamReader<Idb_InstallRequest>,
-    to archiveURL: URL,
-    teeingTo output: OutputStream? = nil,
     telemetry: InstallTelemetry
   ) async throws {
     let file = try FileHandle(forWritingTo: archiveURL)
-    var tee = output
+    var tee: OutputStream? = output
     tee?.open()
     defer { tee?.close() }
     var receive = telemetry.startReceiving()
@@ -357,10 +332,13 @@ struct InstallMethodHandler: @unchecked Sendable {
     receive.finish()
   }
 
+  /// The decompressor writes to the archive file, which is followed as it grows
+  /// to tee the zip, as a pipe between them would need a third process.
   private func decompressZstd(
     initial: Data,
     requestStream: RequestStreamReader<Idb_InstallRequest>,
     to archiveURL: URL,
+    teeingTo tee: OutputStream,
     telemetry: InstallTelemetry
   ) async throws {
     guard let decompressor = FBArchiveOperations.zstdDecompressorPath(searchPath: ProcessInfo.processInfo.environment["PATH"]) else {
@@ -368,13 +346,27 @@ struct InstallMethodHandler: @unchecked Sendable {
     }
     targetLogger.log("Decompressing a zstd zip stream with \(decompressor)")
     let input = FBProcessInput<OutputStream>.fromStream()
+    let decompressed = OSAllocatedUnfairLock(initialState: false)
     async let writePayload: Void = writePayload(initial: initial, requestStream: requestStream, output: input.contents, telemetry: telemetry)
-    _ = try await bridgeFBFuture(
-      FBArchiveOperations.extractZstd(
-        fromStream: input.retyped(FBProcessInput<AnyObject>.self),
-        toPath: archiveURL.path,
-        decompressorPath: decompressor,
-        logger: targetLogger))
+    async let decompressing: Void = {
+      defer { decompressed.withLock { $0 = true } }
+      _ = try await bridgeFBFuture(
+        FBArchiveOperations.extractZstd(
+          fromStream: input.retyped(FBProcessInput<AnyObject>.self),
+          toPath: archiveURL.path,
+          decompressorPath: decompressor,
+          logger: targetLogger))
+    }()
+    tee.open()
+    defer { tee.close() }
+    do {
+      try await GrowingFile.copy(from: archiveURL.path, to: tee) { decompressed.withLock { $0 } }
+    } catch {
+      // The reader may finish before the end or fail; the archive file carries on regardless.
+      targetLogger.log("Stopped teeing the decompressed zip to its stream extractor, which extraction from the archive file recovers from: \(error)")
+      tee.close()
+    }
+    try await decompressing
     try await writePayload
   }
 
