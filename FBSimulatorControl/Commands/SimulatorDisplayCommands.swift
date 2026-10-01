@@ -187,4 +187,49 @@ public final class SimulatorDisplayCommands: DisplayCommands, @unchecked Sendabl
     guard let simulator else { throw WeakTargetError.simulator }
     return simulator
   }
+
+  /// Follows CoreDevice's display pushes, which arrive as the guest's layout changes rather than on
+  /// the next poll, and polls when the runtime does not push or its pushes stop.
+  func activeDisplayUpdates() -> AsyncStream<SimulatorDisplay> {
+    Self.activeDisplayUpdates(pushes: { try self.displayPushes() }, polling: { self.polledActiveDisplayUpdates() }, logger: simulator?.logger)
+  }
+
+  static func activeDisplayUpdates(
+    pushes: @escaping @Sendable () throws -> AsyncThrowingStream<SimulatorDisplayTarget, Error>,
+    polling: @escaping @Sendable () -> AsyncStream<SimulatorDisplay>,
+    logger: (any ControlCoreLogger)?
+  ) -> AsyncStream<SimulatorDisplay> {
+    AsyncStream { continuation in
+      let follow = Task {
+        do {
+          for try await target in try pushes() {
+            if case let .selected(display) = target {
+              continuation.yield(display)
+            }
+          }
+          if !Task.isCancelled {
+            logger?.log("Display pushes ended, polling the active display")
+          }
+        } catch {
+          logger?.log("Polling the active display, as display pushes are unavailable: \(error)")
+        }
+        guard !Task.isCancelled else { return continuation.finish() }
+        for await display in polling() {
+          continuation.yield(display)
+        }
+        continuation.finish()
+      }
+      continuation.onTermination = { _ in follow.cancel() }
+    }
+  }
+
+  private func displayPushes() throws -> AsyncThrowingStream<SimulatorDisplayTarget, Error> {
+    let channel = UUID()
+    return try target().coreDevice.subscribe(
+      action: SimulatorDisplayUpdatesProtocol.action, service: SimulatorDisplayUpdatesProtocol.service,
+      input: SimulatorDisplayUpdatesProtocol.StreamInput(channel: channel)
+    ) { event in
+      try SimulatorDisplayUpdatesProtocol.target(event, channel: channel)
+    }
+  }
 }

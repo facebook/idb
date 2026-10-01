@@ -160,7 +160,7 @@ final class FollowingFramebufferSurfaceTests: XCTestCase {
       .success(.reporting(.sole(.identified(display("lcd"))))), .success(.reporting(.selected(display("inner")))),
     ])
     var reported: [String] = []
-    for await update in displays.activeDisplayUpdates(interval: .milliseconds(1)) {
+    for await update in displays.polledActiveDisplayUpdates(interval: .milliseconds(1)) {
       reported.append(update.uniqueID)
       if reported.count == 3 { break }
     }

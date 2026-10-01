@@ -53,8 +53,17 @@ enum SimulatorDisplayProtocol {
   /// backlight is not evidence: Xcode 27.1 driving an iOS 26 runtime reports it on every display and sends
   /// no identity. A report with activity on some displays but not others is malformed.
   static func report(_ reply: xpc_object_t) -> SimulatorDisplayReport {
+    reading { try CoreDeviceReply.decode(Report.self, from: reply) }
+  }
+
+  /// A report pushed by `displayinfoupdates`, which arrives already decoded.
+  static func report(of report: Report) -> SimulatorDisplayReport {
+    reading { report }
+  }
+
+  private static func reading(_ decode: () throws -> Report) -> SimulatorDisplayReport {
     do {
-      return try report(of: validated(CoreDeviceReply.decode(Report.self, from: reply)))
+      return try interpreted(validated(decode()))
     } catch let error as SimulatorCoreDeviceError {
       return .failed(error)
     } catch {
@@ -62,7 +71,7 @@ enum SimulatorDisplayProtocol {
     }
   }
 
-  private static func report(of report: Report) throws -> SimulatorDisplayReport {
+  private static func interpreted(_ report: Report) throws -> SimulatorDisplayReport {
     let legacy = report.displays.allSatisfy { $0.active == nil && [nil, "unknown"].contains($0.backlightState) }
     guard legacy, !report.displays.isEmpty else {
       return try displays(in: report)

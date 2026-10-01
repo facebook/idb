@@ -19,6 +19,10 @@ protocol DisplayCommands: AnyObject, Sendable {
   var identities: DisplayIdentityCache { get }
 
   var transitionSettling: DisplayTransitionSettling { get }
+
+  /// The active display each time it may have changed while several integrated displays are attached,
+  /// until the stream is cancelled. Nothing is yielded for a sole display or mid-transition.
+  func activeDisplayUpdates() -> AsyncStream<SimulatorDisplay>
 }
 
 /// How long one-shot resolution keeps reading while a display transition settles, and how often.
@@ -241,9 +245,13 @@ extension DisplayCommands {
 
 extension DisplayCommands {
 
+  func activeDisplayUpdates() -> AsyncStream<SimulatorDisplay> {
+    polledActiveDisplayUpdates()
+  }
+
   /// Every read of the active display while several integrated displays are attached, until the stream
   /// is cancelled. A read that fails, as one does mid-transition, or that finds a sole display yields nothing.
-  func activeDisplayUpdates(interval: Duration = .milliseconds(250)) -> AsyncStream<SimulatorDisplay> {
+  func polledActiveDisplayUpdates(interval: Duration = .milliseconds(250)) -> AsyncStream<SimulatorDisplay> {
     AsyncStream { continuation in
       let poll = Task {
         while !Task.isCancelled {
