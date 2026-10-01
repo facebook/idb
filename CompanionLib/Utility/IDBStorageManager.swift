@@ -230,7 +230,7 @@ public class BundleStorage: IDBStorage {
 
   private func prepareDirectory(with url: URL) throws {
     if FileManager.default.fileExists(atPath: url.path) {
-      try FileManager.default.removeItem(at: url)
+      try FileManager.default.discardItem(at: url)
     }
     try FileManager.default.createDirectory(at: url, withIntermediateDirectories: true, attributes: nil)
   }
