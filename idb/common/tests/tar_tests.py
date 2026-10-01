@@ -18,7 +18,9 @@ from idb.common.tar import (
     create_tar,
     generate_tar,
     GzipArchive,
+    has_zstd_compressor,
     TarException,
+    ZstdArchive,
 )
 from idb.common.types import Compression
 from idb.utils.testing import TestCase
@@ -109,6 +111,24 @@ class CreateTarTests(TestCase):
 
 
 class ZstdArchiveTests(TestCase):
+    def test_prefers_pzstd(self) -> None:
+        with mock.patch("idb.common.tar._has_executable", return_value=True):
+            self.assertTrue(has_zstd_compressor())
+            self.assertEqual(ZstdArchive._get_zstd_exe(), "pzstd")
+
+    def test_falls_back_to_zstd(self) -> None:
+        with mock.patch(
+            "idb.common.tar._has_executable", side_effect=lambda exe: exe == "zstd"
+        ):
+            self.assertTrue(has_zstd_compressor())
+            self.assertEqual(ZstdArchive._get_zstd_exe(), "zstd")
+
+    def test_without_zstd(self) -> None:
+        with mock.patch("idb.common.tar._has_executable", return_value=False):
+            self.assertFalse(has_zstd_compressor())
+            with self.assertRaisesRegex(Exception, "Missing ZSTD dependencies"):
+                ZstdArchive._get_zstd_exe()
+
     async def test_generates_a_stream_zstd_can_decompress(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             bundle = os.path.join(directory, "App.app")
