@@ -238,3 +238,23 @@ extension DisplayCommands {
     }
   }
 }
+
+extension DisplayCommands {
+
+  /// Every read of the active display while several integrated displays are attached, until the stream
+  /// is cancelled. A read that fails, as one does mid-transition, or that finds a sole display yields nothing.
+  func activeDisplayUpdates(interval: Duration = .milliseconds(250)) -> AsyncStream<SimulatorDisplay> {
+    AsyncStream { continuation in
+      let poll = Task {
+        while !Task.isCancelled {
+          if case let .target(.selected(display))? = try? await currentDisplay() {
+            continuation.yield(display)
+          }
+          try? await Task.sleep(for: interval)
+        }
+        continuation.finish()
+      }
+      continuation.onTermination = { _ in poll.cancel() }
+    }
+  }
+}

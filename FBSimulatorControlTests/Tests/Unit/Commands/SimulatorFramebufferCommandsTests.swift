@@ -12,8 +12,18 @@ import XCTest
 
 final class SimulatorFramebufferCommandsTests: XCTestCase {
 
-  private func framebuffer(_ display: FramebufferDisplay, screens: FramebufferScreensDouble) async throws -> FramebufferAttachment {
-    try await SimulatorFramebufferCommands.framebuffer(display: display, screens: screens, logger: CapturingLogger()).attach()
+  private static func display(_ id: String) -> SimulatorDisplay {
+    SimulatorDisplay(
+      uniqueID: id, name: id, activity: .active, isPrimary: false, isIntegrated: true,
+      bounds: CGRect(x: 0, y: 0, width: 1200, height: 800), scale: 2, rotation: .upright)
+  }
+
+  private func framebuffer(
+    _ display: FramebufferDisplay,
+    displays: any DisplayCommands = DisplayCommandsDouble(.selected(display("inner"))),
+    screens: FramebufferScreensDouble
+  ) async throws -> FramebufferAttachment {
+    try await SimulatorFramebufferCommands.framebuffer(display: display, displays: displays, screens: screens, logger: CapturingLogger()).attach()
   }
 
   func testTheMainDisplayCapturesTheMainScreen() async throws {
@@ -36,6 +46,17 @@ final class SimulatorFramebufferCommandsTests: XCTestCase {
     XCTAssertEqual(screens.main.registeredTokens.count, 0)
   }
 
+  func testANamedDisplayIsCapturedWhileAnotherIsActive() async throws {
+    let screens = FramebufferScreensDouble("cover", "inner")
+    let attachment = try await framebuffer(.display(uniqueID: "cover"), screens: screens)
+    defer { attachment.cancel() }
+
+    XCTAssertEqual(screens.requested, ["cover"])
+    XCTAssertEqual(screens.screens["cover"]?.registeredTokens.count, 1)
+    XCTAssertEqual(screens.screens["inner"]?.registeredTokens.count, 0)
+    XCTAssertEqual(screens.main.registeredTokens.count, 0)
+  }
+
   func testANamedDisplayWithNoScreenFails() async throws {
     let screens = FramebufferScreensDouble("cover")
     do {
@@ -43,5 +64,41 @@ final class SimulatorFramebufferCommandsTests: XCTestCase {
       XCTFail("Expected a named display with no screen to fail")
     } catch is FramebufferScreensDouble.NoScreen {}
     XCTAssertEqual(screens.main.registeredTokens.count, 0)
+  }
+
+  func testTheActiveDisplayCapturesTheActiveOneOfSeveralScreens() async throws {
+    let screens = FramebufferScreensDouble("cover", "inner")
+    let attachment = try await framebuffer(.active, screens: screens)
+    defer { attachment.cancel() }
+
+    XCTAssertEqual(screens.requested, ["inner"])
+    XCTAssertEqual(screens.screens["inner"]?.registeredTokens.count, 1)
+    XCTAssertEqual(screens.main.registeredTokens.count, 0)
+  }
+
+  func testTheActiveDisplayOfASoleDisplayCapturesTheMainScreen() async throws {
+    let screens = FramebufferScreensDouble("lcd")
+    let attachment = try await framebuffer(.active, displays: DisplayCommandsDouble(.sole(.identified(Self.display("lcd")))), screens: screens)
+    defer { attachment.cancel() }
+
+    XCTAssertEqual(screens.requested, [])
+    XCTAssertEqual(screens.main.registeredTokens.count, 1)
+  }
+
+  func testTheActiveDisplayCapturesTheMainScreenWhenTheDisplaysCannotBeRead() async throws {
+    let screens = FramebufferScreensDouble("cover", "inner")
+    let attachment = try await framebuffer(.active, displays: DisplayCommandsDouble([.success(.failed(.malformed("unreadable")))]), screens: screens)
+    defer { attachment.cancel() }
+
+    XCTAssertEqual(screens.main.registeredTokens.count, 1)
+  }
+
+  func testTheActiveDisplayCapturesTheMainScreenWhenItHasNoScreen() async throws {
+    let screens = FramebufferScreensDouble("cover")
+    let attachment = try await framebuffer(.active, screens: screens)
+    defer { attachment.cancel() }
+
+    XCTAssertEqual(screens.requested, ["inner"])
+    XCTAssertEqual(screens.main.registeredTokens.count, 1)
   }
 }

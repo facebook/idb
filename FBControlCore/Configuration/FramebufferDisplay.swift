@@ -10,6 +10,9 @@ public enum FramebufferDisplay: Hashable, Sendable {
   /// The display with `displayClass` 0: the only display of most devices, and the cover display of an
   /// iPhone Duo.
   case main
+  /// The display the simulator's user is looking at, followed as it changes. Where it cannot be
+  /// found, the main display.
+  case active
   /// The display with this CoreDevice UUID.
   case display(uniqueID: String)
 }
