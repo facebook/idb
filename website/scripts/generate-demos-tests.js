@@ -192,6 +192,20 @@ test('the page imports the component and the manifest', () => {
   assert.ok(page.includes('<DemoTranscript {...manifest} />'), page);
 });
 
+test('the page links the tests the demos come from', () => {
+  const {websiteDir, source} = scratch(manifestFixture());
+
+  run(websiteDir, {IDB_DEMOS_DIR: source});
+  const page = read(websiteDir, 'docs', 'idb', 'demos.mdx');
+
+  assert.ok(
+    page.includes(
+      '[end-to-end test](https://github.com/facebook/idb/blob/main/EndToEndTests/test_demos.py)',
+    ),
+    page,
+  );
+});
+
 test('publishes the transcript of a demo whose clip could not be cut', () => {
   const manifest = manifestFixture();
   manifest.demos[0].video = null;

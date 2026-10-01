@@ -316,6 +316,8 @@ function copyMedia(source, websiteDir, manifest) {
   }
 }
 
+const DEMOS_SOURCE = `${SOURCE_PREFIX}main/EndToEndTests/test_demos.py`;
+
 function page() {
   return [
     '---',
@@ -328,7 +330,7 @@ function page() {
     "import DemoTranscript from '@site/src/components/DemoTranscript';",
     "import manifest from '@site/src/demos/demos.json';",
     '',
-    'Every demo below is one end-to-end test. The commands are the ones the test',
+    `Every demo below is one [end-to-end test](${DEMOS_SOURCE}). The commands are the ones the test`,
     'ran against a real simulator, and the output is what `idb` printed, with',
     'run-specific values replaced so two runs read the same. A demo whose test',
     'fails is never published.',
