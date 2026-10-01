@@ -19,6 +19,10 @@ public enum InstallSource {
 
   /// An archive arriving on a process input that the caller is writing to.
   case processInput(FBProcessInput<AnyObject>)
+
+  /// A zip arriving on a process input that the caller is writing to, and also
+  /// writing to `spoolPath`; `spooled` returns once that file is complete.
+  case zipStream(FBProcessInput<AnyObject>, spoolPath: String, spooled: @Sendable () async throws -> Void)
 }
 
 /// How to get from a source to an installable bundle.
@@ -120,6 +124,11 @@ public enum ApplicationArchive {
         try await ArchiveExtractors.default.extract(
           .stream(input), to: extractPath, options: options.extractOptions, logger: logger)
       }
+    case .zipStream(let input, let spoolPath, let spooled):
+      try await runExtractStage(to: extractPath, totalStart: totalStart, onProgress: onProgress) {
+        try await extractZipStream(
+          input, spoolPath: spoolPath, spooled: spooled, to: extractPath, options: options, logger: logger)
+      }
     case .remoteURL(let url):
       try await temporaryDirectory.withTemporaryDirectory { spoolDirectory in
         try await downloadAndExtract(
@@ -195,12 +204,31 @@ public enum ApplicationArchive {
         try await extraction
       case .spooled:
         logger.log("Spooling the zip at \(url) to \(spoolPath) before extracting it")
-        try await downloadCompleted()
-        try router.checkSpool()
-        try await ArchiveExtractors.default.extract(
-          .filePath(spoolPath), to: extractPath, options: options.extractOptions, logger: logger)
+        try await extractZipStream(
+          download.input, spoolPath: spoolPath,
+          spooled: {
+            try await downloadCompleted()
+            try router.checkSpool()
+          },
+          to: extractPath, options: options, logger: logger)
       }
     }
+  }
+
+  /// Extracts a zip from `spoolPath` once `spooled` returns. `input` carries the
+  /// same bytes as they arrive, but a reader of it never reaches the central
+  /// directory at the end, where a zip records symlinks and permissions.
+  private static func extractZipStream(
+    _ input: FBProcessInput<AnyObject>,
+    spoolPath: String,
+    spooled: () async throws -> Void,
+    to extractPath: String,
+    options: InstallOptions,
+    logger: any ControlCoreLogger
+  ) async throws {
+    try await spooled()
+    try await ArchiveExtractors.default.extract(
+      .filePath(spoolPath), to: extractPath, options: options.extractOptions, logger: logger)
   }
 
   private static func runExtractStage(

@@ -170,9 +170,7 @@ struct InstallMethodHandler: @unchecked Sendable {
     case let .data(data):
       if destination == .app && isZipArchive(data) {
         telemetry.streamed(.zip)
-        return try await installZipArchive(makeDebuggable: makeDebuggable, overrideModificationTime: overrideModificationTime, telemetry: telemetry) { archiveURL in
-          try await spool(initial: data, requestStream: requestStream, to: archiveURL, telemetry: telemetry)
-        }
+        return try await installStreamedZip(initial: data, requestStream: requestStream, makeDebuggable: makeDebuggable, overrideModificationTime: overrideModificationTime, telemetry: telemetry)
       }
       if destination == .app && Self.isZstdZipStream(data) {
         telemetry.streamed(.zstdZip)
@@ -237,6 +235,28 @@ struct InstallMethodHandler: @unchecked Sendable {
     data.starts(with: zstdZipStreamMarker)
   }
 
+  /// A zip is spooled to disk before it is extracted, as its central directory
+  /// is at the end.
+  private func installStreamedZip(
+    initial: Data,
+    requestStream: RequestStreamReader<Idb_InstallRequest>,
+    makeDebuggable: Bool,
+    overrideModificationTime: Bool,
+    telemetry: InstallTelemetry
+  ) async throws -> InstalledArtifact {
+    let archiveURL = try makeArchiveFile()
+    defer { try? FileManager.default.removeItem(at: archiveURL) }
+
+    try await spool(initial: initial, requestStream: requestStream, to: archiveURL, telemetry: telemetry)
+    return try await commandExecutor.install_app_zip_stream(
+      FBProcessInput<OutputStream>.fromStream().retyped(FBProcessInput<AnyObject>.self),
+      spoolPath: archiveURL.path,
+      spooled: {},
+      make_debuggable: makeDebuggable,
+      override_modification_time: overrideModificationTime,
+      on_progress: telemetry.observe)
+  }
+
   /// A zip is spooled to disk before it is installed, as its central directory is at the end.
   private func installZipArchive(
     makeDebuggable: Bool,
@@ -244,12 +264,7 @@ struct InstallMethodHandler: @unchecked Sendable {
     telemetry: InstallTelemetry,
     spool: (URL) async throws -> Void
   ) async throws -> InstalledArtifact {
-    let archiveURL = FileManager.default.temporaryDirectory
-      .appendingPathComponent(UUID().uuidString)
-      .appendingPathExtension("ipa")
-    guard FileManager.default.createFile(atPath: archiveURL.path, contents: nil) else {
-      throw RPCError(code: .internalError, message: "Failed to create temporary install archive")
-    }
+    let archiveURL = try makeArchiveFile()
     defer { try? FileManager.default.removeItem(at: archiveURL) }
 
     try await spool(archiveURL)
@@ -258,6 +273,16 @@ struct InstallMethodHandler: @unchecked Sendable {
       make_debuggable: makeDebuggable,
       override_modification_time: overrideModificationTime,
       on_progress: telemetry.observe)
+  }
+
+  private func makeArchiveFile() throws -> URL {
+    let archiveURL = FileManager.default.temporaryDirectory
+      .appendingPathComponent(UUID().uuidString)
+      .appendingPathExtension("ipa")
+    guard FileManager.default.createFile(atPath: archiveURL.path, contents: nil) else {
+      throw RPCError(code: .internalError, message: "Failed to create temporary install archive")
+    }
+    return archiveURL
   }
 
   private func spool(

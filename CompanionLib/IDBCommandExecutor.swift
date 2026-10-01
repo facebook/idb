@@ -115,6 +115,10 @@ public final class IDBCommandExecutor {
     return try await installApp(from: .processInput(input), makeDebuggable: makeDebuggable, options: InstallOptions(overrideModificationTime: overrideModificationTime, compression: compression), onProgress: onProgress)
   }
 
+  public func install_app_zip_stream(_ input: FBProcessInput<AnyObject>, spoolPath: String, spooled: @escaping @Sendable () async throws -> Void, make_debuggable makeDebuggable: Bool, override_modification_time overrideModificationTime: Bool, on_progress onProgress: @escaping @Sendable (InstallProgressEvent) -> Void = { _ in }) async throws -> InstalledArtifact {
+    return try await installApp(from: .zipStream(input, spoolPath: spoolPath, spooled: spooled), makeDebuggable: makeDebuggable, options: InstallOptions(overrideModificationTime: overrideModificationTime), onProgress: onProgress)
+  }
+
   public func install_app_url(_ url: URL, compression: FBCompressionFormat, make_debuggable makeDebuggable: Bool, override_modification_time overrideModificationTime: Bool, on_progress onProgress: @escaping @Sendable (InstallProgressEvent) -> Void = { _ in }) async throws -> InstalledArtifact {
     return try await installApp(from: .remoteURL(url), makeDebuggable: makeDebuggable, options: InstallOptions(overrideModificationTime: overrideModificationTime, compression: compression), onProgress: onProgress)
   }
