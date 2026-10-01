@@ -7,6 +7,7 @@
 
 import CompanionUtilities
 import FBControlCore
+import FBSimulatorControl
 import Foundation
 import GRPCCore
 import IDBGRPCSwift
@@ -19,6 +20,7 @@ struct DescribeMethodHandler {
   let commandExecutor: IDBCommandExecutor
 
   func handle(request: Idb_TargetDescriptionRequest, context: ServerContext) async throws -> Idb_TargetDescriptionResponse {
+    let displays = await readDisplays()
     var response = Idb_TargetDescriptionResponse.with {
       $0.targetDescription = .with {
         $0.udid = target.udid
@@ -38,6 +40,7 @@ struct DescribeMethodHandler {
         if let extData = try? JSONSerialization.data(withJSONObject: target.extendedInformation) {
           $0.extended = extData
         }
+        $0.displays = displays.map(Self.display)
       }
       $0.companion = Idb_CompanionInfo.with {
         $0.udid = target.udid
@@ -58,5 +61,30 @@ struct DescribeMethodHandler {
     response.targetDescription.diagnostics = diagnosticInfoData
 
     return response
+  }
+
+  static func display(_ display: SimulatorDisplay) -> Idb_Display {
+    .with {
+      $0.uniqueID = display.uniqueID
+      $0.name = display.name
+      $0.active = display.isActive
+      $0.integrated = display.isIntegrated
+      $0.width = UInt64(exactly: display.size.width.rounded()) ?? 0
+      $0.height = UInt64(exactly: display.size.height.rounded()) ?? 0
+      $0.density = display.scale
+    }
+  }
+
+  // A description is still useful without displays, so a failed read leaves them out.
+  private func readDisplays() async -> [SimulatorDisplay] {
+    guard let simulator = target as? Simulator, target.state == .booted else {
+      return []
+    }
+    do {
+      return try await simulator.displays.list()
+    } catch {
+      logger.info().log("Describing \(target.udid) without displays: \(error)")
+      return []
+    }
   }
 }

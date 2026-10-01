@@ -189,4 +189,12 @@ final class DisplayCommandsTests: XCTestCase {
       XCTFail("Expected a display change")
     } catch SimulatorDisplayError.changed {}
   }
+
+  func testListingNamesIdentifiedDisplaysAndNoLegacyOnes() throws {
+    let geometry = display("lcd").geometry
+    XCTAssertEqual(try SimulatorDisplayCommands.list(in: .displays([display("cover"), display("inner")])), [display("cover"), display("inner")])
+    XCTAssertEqual(try SimulatorDisplayCommands.list(in: .legacy(integrated: [geometry])), [])
+    XCTAssertThrowsError(try SimulatorDisplayCommands.list(in: .transitioning))
+    XCTAssertThrowsError(try SimulatorDisplayCommands.list(in: .failed(.malformed("unreadable"))))
+  }
 }

@@ -88,7 +88,7 @@ public struct SimulatorDisplay: Equatable, Sendable {
   public let scale: Double
   public let rotation: SimulatorDisplayRotation
 
-  init(
+  public init(
     uniqueID: String, name: String, activity: SimulatorDisplayActivity, isPrimary: Bool, isIntegrated: Bool,
     bounds: CGRect, scale: Double, rotation: SimulatorDisplayRotation
   ) {
@@ -158,6 +158,21 @@ public final class SimulatorDisplayCommands: DisplayCommands, @unchecked Sendabl
         decode: SimulatorDisplayProtocol.report)
     } catch let error as SimulatorCoreDeviceError {
       return .failed(error)
+    }
+  }
+
+  /// Every identified display. A runtime that reports no display activity does not identify its displays,
+  /// so none are listed.
+  public func list() async throws -> [SimulatorDisplay] {
+    try Self.list(in: await report())
+  }
+
+  static func list(in report: SimulatorDisplayReport) throws -> [SimulatorDisplay] {
+    switch report {
+    case let .displays(displays): displays
+    case .legacy: []
+    case .transitioning: throw SimulatorDisplayError.transitioning
+    case let .failed(error): throw error
     }
   }
 

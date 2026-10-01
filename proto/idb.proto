@@ -800,6 +800,25 @@ message TargetDescription {
   string architecture = 7;
   bytes extended = 9;
   bytes diagnostics = 10;
+  // Every display a booted simulator reports. Empty for any other target, and
+  // from a companion that predates this field.
+  repeated Display displays = 11;
+}
+
+message Display {
+  // Names this display in a video request.
+  string unique_id = 1;
+  // The runtime's name, which need not be readable: an iPhone Duo reports
+  // "LCD" for its cover display and "LCD-1" for its inner one.
+  string name = 2;
+  // Whether the guest is presenting on this display.
+  bool active = 3;
+  // Built into the device, rather than external or wireless.
+  bool integrated = 4;
+  // Pixels, in the current interface orientation.
+  uint64 width = 5;
+  uint64 height = 6;
+  double density = 7;
 }
 
 message LogRequest {
