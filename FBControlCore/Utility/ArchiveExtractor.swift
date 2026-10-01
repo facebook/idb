@@ -127,10 +127,12 @@ public struct InProcessZipExtractor: ArchiveExtractor {
   }
 }
 
-/// Unpacks a tar stream in-process with `TarStreamExtractor`, decompressing
-/// zstd with the same decompressor `bsdtar` would run, and anything else with
-/// `fallback`. A stream that turns out not to be a tar is passed on to
-/// `fallback` as read, decompressed.
+/// Unpacks a gzip tar stream in-process with `TarStreamExtractor`, and anything
+/// else with `fallback`. A stream that turns out not to be a tar is passed on to
+/// `fallback` as read.
+///
+/// A zstd tar goes straight to `fallback`: decoding it is bound by the zstd
+/// decompressor either way, so reading its output in-process gains nothing.
 public struct InProcessTarExtractor: ArchiveExtractor {
 
   private let fallback: any ArchiveExtractor
@@ -145,57 +147,23 @@ public struct InProcessTarExtractor: ArchiveExtractor {
     options: ArchiveExtractOptions,
     logger: any ControlCoreLogger
   ) async throws {
-    guard case .stream(let input) = source else {
+    guard case .stream(let input) = source, options.compression == .GZIP else {
       return try await fallback.extract(source, to: extractPath, options: options, logger: logger)
     }
     let start = Date()
-    let outcome: TarStreamExtractor.Outcome
-    switch options.compression {
-    case .GZIP:
-      let fileDescriptor = try await bridgeFBFuture(input.attach()).fileDescriptor
-      let result = await offCooperativePool {
-        try TarStreamExtractor.extract(
-          reading: TarStreamExtractor.reading(fileDescriptor: fileDescriptor), to: extractPath,
-          overrideModificationTime: options.overrideModificationTime)
-      }
-      if case .success(.notTar(let prefix, let rest)) = result {
-        return try await replay(prefix: prefix, rest: rest, to: extractPath, options: options, logger: logger) {
-          _ = try? await bridgeFBFuture(input.detach())
-        }
-      }
-      _ = try? await bridgeFBFuture(input.detach())
-      outcome = try result.get()
-    case .ZSTD:
-      guard let decompressorPath = FBArchiveOperations.zstdDecompressorPath(searchPath: ProcessInfo.processInfo.environment["PATH"]) else {
-        return try await fallback.extract(source, to: extractPath, options: options, logger: logger)
-      }
-      let decompressor = try await bridgeFBFuture(
-        FBArchiveOperations.decompressZstd(fromStream: input, decompressorPath: decompressorPath, logger: logger))
-      guard let stream = decompressor.stdOut else {
-        throw TarExtractorError.corrupt("\(decompressorPath) has no output")
-      }
-      let read = Self.reading(stream)
-      let result = await offCooperativePool {
-        stream.open()
-        return try TarStreamExtractor.extract(reading: read, to: extractPath, overrideModificationTime: options.overrideModificationTime)
-      }
-      if case .success(.notTar(let prefix, let rest)) = result {
-        var decompressed = options
-        decompressed.compression = .GZIP
-        return try await replay(prefix: prefix, rest: rest, to: extractPath, options: decompressed, logger: logger) {
-          _ = try await bridgeFBFuture(decompressor.exited(withCodes: [0]))
-        }
-      }
-      guard case .success(let extracted) = result else {
-        // Nothing reads the decompressor any more, so closing its output ends it.
-        stream.close()
-        outcome = try result.get()
-        break
-      }
-      _ = try await bridgeFBFuture(decompressor.exited(withCodes: [0]))
-      outcome = extracted
+    let fileDescriptor = try await bridgeFBFuture(input.attach()).fileDescriptor
+    let result = await offCooperativePool {
+      try TarStreamExtractor.extract(
+        reading: TarStreamExtractor.reading(fileDescriptor: fileDescriptor), to: extractPath,
+        overrideModificationTime: options.overrideModificationTime)
     }
-    if case .extracted(let summary, let waits) = outcome {
+    if case .success(.notTar(let prefix, let rest)) = result {
+      try await replay(prefix: prefix, rest: rest, to: extractPath, options: options, logger: logger)
+      _ = try? await bridgeFBFuture(input.detach())
+      return
+    }
+    _ = try? await bridgeFBFuture(input.detach())
+    if case .extracted(let summary, let waits) = try result.get() {
       logger.log("\(summary.description(from: "a tar stream", since: start)), waiting \(String(format: "%.2f", waits.input))s for input and \(String(format: "%.2f", waits.writers))s for writers")
     }
   }
@@ -206,8 +174,7 @@ public struct InProcessTarExtractor: ArchiveExtractor {
     rest: @escaping TarStreamExtractor.Read,
     to extractPath: String,
     options: ArchiveExtractOptions,
-    logger: any ControlCoreLogger,
-    finished: () async throws -> Void
+    logger: any ControlCoreLogger
   ) async throws {
     logger.log("Extracting a stream that is not a tar with \(type(of: fallback))")
     let replayed = FBProcessInput<OutputStream>.fromStream()
@@ -230,23 +197,6 @@ public struct InProcessTarExtractor: ArchiveExtractor {
     // The fallback's error first: it is why writing to it would fail.
     try await extraction
     try written.get()
-    try await finished()
-  }
-
-  private static func reading(_ stream: InputStream) -> TarStreamExtractor.Read {
-    // The stream closes itself at its end, after which reading it fails.
-    var ended = false
-    return { buffer in
-      guard !ended, let base = buffer.bindMemory(to: UInt8.self).baseAddress else {
-        return 0
-      }
-      let count = stream.read(base, maxLength: buffer.count)
-      guard count >= 0 else {
-        throw stream.streamError ?? TarExtractorError.corrupt("the decompressor's output cannot be read")
-      }
-      ended = count == 0
-      return count
-    }
   }
 }
 
