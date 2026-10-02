@@ -51,7 +51,7 @@ public final class SimulatorCrashLogCommands: CrashLogCommands {
       throw WeakTargetError.simulator
     }
     let simulatorPredicate = NSCompoundPredicate(andPredicateWithSubpredicates: [
-      CrashLogInfo.predicate(forExecutablePathContains: simulator.udid),
+      CrashLogInfo.predicate(forSimulatorUDID: simulator.udid),
       predicate,
     ])
     ingestAllCrashLogs(useCache: false)

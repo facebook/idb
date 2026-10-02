@@ -101,6 +101,7 @@ public final class CrashLogInfo: CustomStringConvertible {
   public let processType: CrashLogInfoProcessType
   public let exceptionDescription: String?
   public let crashedThreadDescription: String?
+  public let coalitionName: String?
 
   public var name: String {
     (crashPath as NSString).lastPathComponent
@@ -117,7 +118,8 @@ public final class CrashLogInfo: CustomStringConvertible {
     date: Date,
     processType: CrashLogInfoProcessType,
     exceptionDescription: String?,
-    crashedThreadDescription: String?
+    crashedThreadDescription: String?,
+    coalitionName: String? = nil
   ) {
     self.crashPath = crashPath
     self.executablePath = executablePath
@@ -130,6 +132,7 @@ public final class CrashLogInfo: CustomStringConvertible {
     self.processType = processType
     self.exceptionDescription = exceptionDescription
     self.crashedThreadDescription = crashedThreadDescription
+    self.coalitionName = coalitionName
   }
 
   // MARK: - Factory Methods
@@ -261,6 +264,16 @@ public final class CrashLogInfo: CustomStringConvertible {
     }
   }
 
+  /// A simulator's report names its udid in the executable's path, or, where macOS redacts that
+  /// path, in the report's coalition.
+  public class func predicate(forSimulatorUDID udid: String) -> NSPredicate {
+    let coalitionName = "com.apple.CoreSimulator.SimDevice.\(udid)"
+    return NSPredicate { evaluatedObject, _ in
+      guard let crashLog = evaluatedObject as? CrashLogInfo else { return false }
+      return crashLog.executablePath.contains(udid) || crashLog.coalitionName == coalitionName
+    }
+  }
+
   public class func predicate(forExecutablePathContains contains: String) -> NSPredicate {
     NSPredicate { evaluatedObject, _ in
       guard let crashLog = evaluatedObject as? CrashLogInfo else { return false }
@@ -295,6 +308,7 @@ public final class CrashLogInfo: CustomStringConvertible {
     var date: NSDate = NSDate()
     var exceptionDescription: NSString = NSString()
     var crashedThreadDescription: NSString = NSString()
+    var coalitionName: NSString = NSString()
 
     var parseError: NSError?
     parser.parseCrashLog(
@@ -308,6 +322,7 @@ public final class CrashLogInfo: CustomStringConvertible {
       dateOut: &date,
       exceptionDescription: &exceptionDescription,
       crashedThreadDescription: &crashedThreadDescription,
+      coalitionNameOut: &coalitionName,
       error: &parseError
     )
 
@@ -354,7 +369,8 @@ public final class CrashLogInfo: CustomStringConvertible {
       date: date as Date,
       processType: processType,
       exceptionDescription: exceptionDescStr.isEmpty ? nil : exceptionDescStr,
-      crashedThreadDescription: crashedThreadDescStr.isEmpty ? nil : crashedThreadDescStr
+      crashedThreadDescription: crashedThreadDescStr.isEmpty ? nil : crashedThreadDescStr,
+      coalitionName: coalitionName.length == 0 ? nil : coalitionName as String
     )
   }
 

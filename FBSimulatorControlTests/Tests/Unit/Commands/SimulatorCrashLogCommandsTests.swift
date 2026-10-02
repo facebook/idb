@@ -75,9 +75,8 @@ final class SimulatorCrashLogCommandsTests: XCTestCase {
 
     let pruned = try await commands.prune(matching: NSPredicate(value: true))
 
-    // BUG: the report names this simulator only in its coalition, which prune ignores — flipped in the following commit.
-    XCTAssertEqual(pruned.map(\.name), [])
-    XCTAssertTrue(FileManager.default.fileExists(atPath: path))
+    XCTAssertEqual(pruned.map(\.name), ["ReplHost-2026-09-30-102328.ips"])
+    XCTAssertFalse(FileManager.default.fileExists(atPath: path))
   }
 
   func testPruneLeavesOtherSimulatorsReportsWithARedactedPath() async throws {

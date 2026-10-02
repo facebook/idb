@@ -9,8 +9,8 @@ import Foundation
 
 @objc
 protocol CrashLogParser: NSObjectProtocol {
-  @objc(parseCrashLogFromString:executablePathOut:identifierOut:processNameOut:parentProcessNameOut:processIdentifierOut:parentProcessIdentifierOut:dateOut:exceptionDescription:crashedThreadDescription:error:)
-  func parseCrashLog(from str: String, executablePathOut: AutoreleasingUnsafeMutablePointer<NSString>, identifierOut: AutoreleasingUnsafeMutablePointer<NSString>, processNameOut: AutoreleasingUnsafeMutablePointer<NSString>, parentProcessNameOut: AutoreleasingUnsafeMutablePointer<NSString>, processIdentifierOut: UnsafeMutablePointer<pid_t>, parentProcessIdentifierOut: UnsafeMutablePointer<pid_t>, dateOut: AutoreleasingUnsafeMutablePointer<NSDate>, exceptionDescription: AutoreleasingUnsafeMutablePointer<NSString>, crashedThreadDescription: AutoreleasingUnsafeMutablePointer<NSString>, error: NSErrorPointer)
+  @objc(parseCrashLogFromString:executablePathOut:identifierOut:processNameOut:parentProcessNameOut:processIdentifierOut:parentProcessIdentifierOut:dateOut:exceptionDescription:crashedThreadDescription:coalitionNameOut:error:)
+  func parseCrashLog(from str: String, executablePathOut: AutoreleasingUnsafeMutablePointer<NSString>, identifierOut: AutoreleasingUnsafeMutablePointer<NSString>, processNameOut: AutoreleasingUnsafeMutablePointer<NSString>, parentProcessNameOut: AutoreleasingUnsafeMutablePointer<NSString>, processIdentifierOut: UnsafeMutablePointer<pid_t>, parentProcessIdentifierOut: UnsafeMutablePointer<pid_t>, dateOut: AutoreleasingUnsafeMutablePointer<NSDate>, exceptionDescription: AutoreleasingUnsafeMutablePointer<NSString>, crashedThreadDescription: AutoreleasingUnsafeMutablePointer<NSString>, coalitionNameOut: AutoreleasingUnsafeMutablePointer<NSString>, error: NSErrorPointer)
 }
 
 /// A macOS 12+ `.ips` file is two concatenated JSON objects (metadata, then content) with some fields
@@ -18,7 +18,7 @@ protocol CrashLogParser: NSObjectProtocol {
 /// than assuming a position.
 final class ConcatedJSONCrashLogParser: NSObject, CrashLogParser {
 
-  public func parseCrashLog(from str: String, executablePathOut: AutoreleasingUnsafeMutablePointer<NSString>, identifierOut: AutoreleasingUnsafeMutablePointer<NSString>, processNameOut: AutoreleasingUnsafeMutablePointer<NSString>, parentProcessNameOut: AutoreleasingUnsafeMutablePointer<NSString>, processIdentifierOut: UnsafeMutablePointer<pid_t>, parentProcessIdentifierOut: UnsafeMutablePointer<pid_t>, dateOut: AutoreleasingUnsafeMutablePointer<NSDate>, exceptionDescription: AutoreleasingUnsafeMutablePointer<NSString>, crashedThreadDescription: AutoreleasingUnsafeMutablePointer<NSString>, error: NSErrorPointer) {
+  public func parseCrashLog(from str: String, executablePathOut: AutoreleasingUnsafeMutablePointer<NSString>, identifierOut: AutoreleasingUnsafeMutablePointer<NSString>, processNameOut: AutoreleasingUnsafeMutablePointer<NSString>, parentProcessNameOut: AutoreleasingUnsafeMutablePointer<NSString>, processIdentifierOut: UnsafeMutablePointer<pid_t>, parentProcessIdentifierOut: UnsafeMutablePointer<pid_t>, dateOut: AutoreleasingUnsafeMutablePointer<NSDate>, exceptionDescription: AutoreleasingUnsafeMutablePointer<NSString>, crashedThreadDescription: AutoreleasingUnsafeMutablePointer<NSString>, coalitionNameOut: AutoreleasingUnsafeMutablePointer<NSString>, error: NSErrorPointer) {
     let parsedReport: [String: Any]
     do {
       parsedReport = try ConcatedJsonParser.parseConcatenatedJSON(from: str)
@@ -49,6 +49,9 @@ final class ConcatedJSONCrashLogParser: NSObject, CrashLogParser {
     }
     if let parentPid = parsedReport["parentPid"] as? NSNumber {
       parentProcessIdentifierOut.pointee = parentPid.int32Value
+    }
+    if let coalitionName = parsedReport["coalitionName"] as? String {
+      coalitionNameOut.pointee = coalitionName as NSString
     }
     if let captureTime = parsedReport["captureTime"] as? String {
       if let date = CrashReport.dateFormatter().date(from: captureTime) {
@@ -112,7 +115,8 @@ final class PlainTextCrashLogParser: NSObject, CrashLogParser {
 
   private static let maxLineSearch: UInt = 20
 
-  public func parseCrashLog(from str: String, executablePathOut: AutoreleasingUnsafeMutablePointer<NSString>, identifierOut: AutoreleasingUnsafeMutablePointer<NSString>, processNameOut: AutoreleasingUnsafeMutablePointer<NSString>, parentProcessNameOut: AutoreleasingUnsafeMutablePointer<NSString>, processIdentifierOut: UnsafeMutablePointer<pid_t>, parentProcessIdentifierOut: UnsafeMutablePointer<pid_t>, dateOut: AutoreleasingUnsafeMutablePointer<NSDate>, exceptionDescription: AutoreleasingUnsafeMutablePointer<NSString>, crashedThreadDescription: AutoreleasingUnsafeMutablePointer<NSString>, error: NSErrorPointer) {
+  // Leaves `coalitionNameOut` empty: this format has no coalition field, and it never redacts the simulator path, which `CrashLogInfo.predicate(forSimulatorUDID:)` matches instead.
+  public func parseCrashLog(from str: String, executablePathOut: AutoreleasingUnsafeMutablePointer<NSString>, identifierOut: AutoreleasingUnsafeMutablePointer<NSString>, processNameOut: AutoreleasingUnsafeMutablePointer<NSString>, parentProcessNameOut: AutoreleasingUnsafeMutablePointer<NSString>, processIdentifierOut: UnsafeMutablePointer<pid_t>, parentProcessIdentifierOut: UnsafeMutablePointer<pid_t>, dateOut: AutoreleasingUnsafeMutablePointer<NSDate>, exceptionDescription: AutoreleasingUnsafeMutablePointer<NSString>, crashedThreadDescription: AutoreleasingUnsafeMutablePointer<NSString>, coalitionNameOut: AutoreleasingUnsafeMutablePointer<NSString>, error: NSErrorPointer) {
     let nsStr = str as NSString
     let length = nsStr.length
     var paraStart: Int = 0
