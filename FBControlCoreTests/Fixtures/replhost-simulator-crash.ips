@@ -1,0 +1,37 @@
+{"app_name":"ReplHost","timestamp":"2026-09-30 10:23:28.00 -0700","app_version":"1.0","slice_uuid":"4c4c4492-5555-3144-a18d-8d6d274b26bf","build_version":"1","platform":7,"bundleID":"com.facebook.idb.replhost","share_with_app_devs":0,"is_first_party":0,"bug_type":"309","os_version":"macOS 26.5 (25F71)","roots_installed":0,"name":"ReplHost","incident_id":"FF7F373E-0B5C-4F3E-9D1A-6A2B4C8E1F20"}
+{
+  "uptime" : 1200,
+  "procRole" : "Foreground",
+  "version" : 2,
+  "userID" : 501,
+  "deployVersion" : 210,
+  "modelCode" : "Mac14,6",
+  "coalitionID" : 4521,
+  "osVersion" : {
+    "train" : "macOS 26.5",
+    "build" : "25F71",
+    "releaseType" : "User"
+  },
+  "captureTime" : "2026-09-30 10:23:27.3628 -0700",
+  "codeSigningMonitor" : 2,
+  "incident" : "FF7F373E-0B5C-4F3E-9D1A-6A2B4C8E1F20",
+  "pid" : 45264,
+  "cpuType" : "ARM-64",
+  "roots_installed" : 0,
+  "bug_type" : "309",
+  "procLaunch" : "2026-09-30 10:23:25.1024 -0700",
+  "procStartAbsTime" : 28873651234,
+  "procExitAbsTime" : 28926345678,
+  "procName" : "ReplHost",
+  "procPath" : "\/Volumes\/VOLUME\/*\/ReplHost.app\/ReplHost",
+  "bundleInfo" : {"CFBundleShortVersionString":"1.0","CFBundleVersion":"1","CFBundleIdentifier":"com.facebook.idb.replhost"},
+  "parentProc" : "launchd_sim",
+  "parentPid" : 43138,
+  "coalitionName" : "com.apple.CoreSimulator.SimDevice.321C16C2-D899-4FBE-8B39-B032AB0DF316",
+  "crashReporterKey" : "00000000-0000-0000-0000-000000000000",
+  "exception" : {"codes":"0x0000000000000001, 0x00000001a2b3c4d5","rawCodes":[1,7021970645],"type":"EXC_BREAKPOINT","signal":"SIGTRAP"},
+  "termination" : {"flags":0,"code":5,"namespace":"SIGNAL","indicator":"Trace\/BPT trap: 5","byProc":"exc handler","byPid":45264},
+  "faultingThread" : 0,
+  "threads" : [{"triggered":true,"id":918273,"queue":"com.apple.main-thread","frames":[{"imageOffset":4752,"symbol":"closure #1 in ReplHost.crashLater()","symbolLocation":48,"imageIndex":0}]}],
+  "usedImages" : [{"source":"P","arch":"arm64","base":4370644992,"size":16384,"uuid":"4c4c4492-5555-3144-a18d-8d6d274b26bf","path":"\/Volumes\/VOLUME\/*\/ReplHost.app\/ReplHost","name":"ReplHost"}]
+}

@@ -83,6 +83,20 @@ final class CrashLogInfoTests: XCTestCase {
     XCTAssertEqual(info.processType, .system)
   }
 
+  func testJSONCrashLogFormatForASimulatorApp() throws {
+    let info = try CrashLogInfo.fromCrashLog(atPath: TestFixtures.simulatorAppCrashWithJSONFormat)
+
+    // BUG: the identifier is the process name, not the bundle id the report records — flipped in the following commit.
+    XCTAssertEqual(info.identifier, "ReplHost")
+    XCTAssertEqual(info.processName, "ReplHost")
+    XCTAssertEqual(info.processIdentifier, 45264)
+    XCTAssertEqual(info.parentProcessName, "launchd_sim")
+    XCTAssertEqual(info.parentProcessIdentifier, 43138)
+    XCTAssertEqual(info.executablePath, "/Volumes/VOLUME/*/ReplHost.app/ReplHost")
+    XCTAssertEqual(info.exceptionDescription, "EXC_BREAKPOINT SIGTRAP")
+    XCTAssertEqual(info.processType, .application)
+  }
+
   private var allCrashLogs: NSArray {
     get throws {
       return try [
