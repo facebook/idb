@@ -63,6 +63,10 @@ DOCUMENTED_DEMOS: Mapping[str, str] = {
     "seed-photos-and-a-location": (
         "EndToEndTests.test_demos.SeededLibraryDemos.test_seed_photos_and_a_location"
     ),
+    "one-screen-across-display-settings": (
+        "EndToEndTests.test_demos.DisplaySettingsDemos."
+        "test_one_screen_across_display_settings"
+    ),
 }
 
 PACKAGE = "EndToEndTests"

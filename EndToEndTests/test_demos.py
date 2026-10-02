@@ -85,6 +85,9 @@ SPINNING_SAFARI_DEMO_CAPABILITIES = {
 SEEDED_LIBRARY_DEMO_CAPABILITIES = {
     "test_seed_photos_and_a_location": SuiteCapability.ACCESSIBILITY_INTERACTION,
 }
+DISPLAY_SETTINGS_DEMO_CAPABILITIES = {
+    "test_one_screen_across_display_settings": SuiteCapability.ACCESSIBILITY_READ,
+}
 
 COUNTER_ID = "injected-counter"
 TAPS = 3
@@ -215,6 +218,73 @@ return await MainActor.run { () -> String in
   return "Showing \(photos.count) photos, and following the location"
 }"""
 
+SETTINGS_ID = "screen-settings"
+STARTING_SETTINGS = {
+    "appearance": "light",
+    "content-size": "large",
+    "increase-contrast": "disable",
+}
+# `idb get` reports increase-contrast as a state, and `idb set` takes a verb.
+SET_VALUE_FOR_READ_VALUE = {"enabled": "enable", "disabled": "disable"}
+SHOW_SETTINGS = r"""import UIKit
+return await MainActor.run { () -> String in
+  let window = UIApplication.shared.connectedScenes
+    .compactMap { ($0 as? UIWindowScene)?.keyWindow }.first
+  guard let window else { return "No window to show it in" }
+  func settings(of traits: UITraitCollection) -> String {
+    let appearance = traits.userInterfaceStyle == .dark ? "dark" : "light"
+    let size = [
+      UIContentSizeCategory.large: "large",
+      .accessibilityExtraLarge: "accessibility-extra-large",
+    ][traits.preferredContentSizeCategory]
+      ?? traits.preferredContentSizeCategory.rawValue
+    let contrast = traits.accessibilityContrast == .high ? "high" : "standard"
+    return "\(appearance), \(size), \(contrast) contrast"
+  }
+  let label = UILabel()
+  label.accessibilityIdentifier = "screen-settings"
+  label.font = .preferredFont(forTextStyle: .title1)
+  label.adjustsFontForContentSizeCategory = true
+  label.numberOfLines = 0
+  label.textAlignment = .center
+  let swatches = UIStackView(arrangedSubviews: [
+    UIColor.systemRed, .systemOrange, .systemGreen, .systemBlue,
+  ].map { colour in
+    let swatch = UIView()
+    swatch.backgroundColor = colour
+    swatch.layer.cornerRadius = 24
+    swatch.widthAnchor.constraint(equalToConstant: 48).isActive = true
+    swatch.heightAnchor.constraint(equalToConstant: 48).isActive = true
+    return swatch
+  })
+  swatches.spacing = 12
+  let column = UIStackView(arrangedSubviews: [swatches, label])
+  column.axis = .vertical
+  column.alignment = .center
+  column.spacing = 24
+  column.translatesAutoresizingMaskIntoConstraints = false
+  let screen = UIView(frame: window.bounds)
+  screen.backgroundColor = .systemBackground
+  screen.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+  screen.addSubview(column)
+  NSLayoutConstraint.activate([
+    column.centerXAnchor.constraint(equalTo: screen.centerXAnchor),
+    column.centerYAnchor.constraint(equalTo: screen.centerYAnchor),
+    label.widthAnchor.constraint(lessThanOrEqualTo: screen.widthAnchor, constant: -48),
+  ])
+  window.addSubview(screen)
+  label.text = settings(of: screen.traitCollection)
+  let traits: [UITrait] = [
+    UITraitUserInterfaceStyle.self,
+    UITraitPreferredContentSizeCategory.self,
+    UITraitAccessibilityContrast.self,
+  ]
+  screen.registerForTraitChanges(traits) { (screen: UIView, _: UITraitCollection) in
+    label.text = settings(of: screen.traitCollection)
+  }
+  return "Showing \(label.text ?? "nothing")"
+}"""
+
 
 def load_tests(
     loader: unittest.TestLoader,
@@ -233,6 +303,7 @@ def load_tests(
                     (InjectedSwiftDemos, INJECTED_SWIFT_DEMO_CAPABILITIES),
                     (SpinningSafariDemos, SPINNING_SAFARI_DEMO_CAPABILITIES),
                     (SeededLibraryDemos, SEEDED_LIBRARY_DEMO_CAPABILITIES),
+                    (DisplaySettingsDemos, DISPLAY_SETTINGS_DEMO_CAPABILITIES),
                 )
             ),
             loader.loadTestsFromTestCase(NotificationDemos),
@@ -1097,4 +1168,91 @@ class SeededLibraryDemos(InjectedSwiftCase):
             f"The app now reads '{in_london}'. Nothing was relaunched: the "
             "task the Swift left running saw the location change.",
             in_london,
+        )
+
+
+class DisplaySettingsDemos(InjectedSwiftCase):
+    async def restore_settings_afterwards(self) -> None:
+        for name in STARTING_SETTINGS:
+            current = (await self.setup_idb("get", name)).text.strip()
+            self.addAsyncCleanup(
+                self.setup_idb,
+                "set",
+                name,
+                SET_VALUE_FOR_READ_VALUE.get(current, current),
+            )
+
+    async def read_settings(self, expected: str, *, step: str) -> dict[str, Any]:
+        await self.wait_for_label(expected)
+        screen = await self.describe_one(SETTINGS_ID, step=step)
+        self.assertEqual(_label(screen), expected)
+        return screen
+
+    @documented_demo(
+        slug="one-screen-across-display-settings",
+        title="Check one screen in dark mode, at a large text size, and with more contrast",
+        summary=(
+            "Swift injected into an app shows a screen that reports the "
+            "appearance, text size and contrast it is drawn with. idb switches "
+            "the simulator to dark mode, turns the text size up and increases "
+            "contrast, one at a time, and reads the screen after each change "
+            "while the app keeps running."
+        ),
+    )
+    async def test_one_screen_across_display_settings(self) -> None:
+        await self.restore_settings_afterwards()
+        self.addAsyncCleanup(self.setup_terminate_quietly, FIXTURE_APP_BUNDLE_ID)
+        for name, value in STARTING_SETTINGS.items():
+            await self.setup_idb("set", name, value)
+        await self.setup_terminate_quietly(FIXTURE_APP_BUNDLE_ID)
+
+        standard = "light, large, standard contrast"
+        shown = await self.idb_repl(
+            "app",
+            "--new-session",
+            SHOW_SETTINGS,
+            step="Show a screen that reports its own settings, with injected Swift",
+        )
+        self.assertEqual(_result(shown), f"Showing {standard}")
+        self.note(
+            "The screen reads the appearance, text size and contrast from its "
+            "trait collection, and rereads them whenever one changes.",
+            standard,
+        )
+
+        await self.idb("set", "appearance", "dark", step="Switch to dark mode")
+        dark = "dark, large, standard contrast"
+        before = await self.read_settings(dark, step="Read the screen in dark mode")
+        self.note(f"The running app redrew itself for dark mode: '{dark}'.", dark)
+
+        await self.idb(
+            "set",
+            "content-size",
+            "accessibility-extra-large",
+            step="Turn the text size up",
+        )
+        larger = "dark, accessibility-extra-large, standard contrast"
+        after = await self.read_settings(larger, step="Read the screen at that size")
+        grown_from = before["frame"]["height"]
+        grown_to = after["frame"]["height"]
+        self.assertGreater(grown_to, grown_from)
+        self.note(
+            f"The label is now {grown_to:.0f} points tall, up from "
+            f"{grown_from:.0f}: its font followed the text size.",
+            larger,
+        )
+
+        await self.idb("set", "increase-contrast", "enable", step="Increase contrast")
+        contrast = "dark, accessibility-extra-large, high contrast"
+        await self.read_settings(contrast, step="Read the screen with more contrast")
+        self.note("All three settings changed without relaunching the app.", contrast)
+
+        read_back = await self.idb(
+            "get", "content-size", step="Read a setting back from the simulator"
+        )
+        self.assertEqual(read_back.text.strip(), "accessibility-extra-large")
+        self.note(
+            "idb reads settings as well as setting them, which is how the test "
+            "puts back what it found.",
+            "accessibility-extra-large",
         )
