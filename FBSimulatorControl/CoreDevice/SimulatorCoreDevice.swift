@@ -23,7 +23,7 @@ enum SimulatorCoreDeviceError: Error, LocalizedError, Equatable {
 
   var errorDescription: String? {
     switch self {
-    case let .unsupported(detail): "Simulator CoreDevice capability unavailable: \(detail)"
+    case let .unsupported(detail): "Simulator CoreDevice capability not supported: \(detail)"
     case let .unavailable(detail): "Simulator CoreDevice service unavailable: \(detail)"
     case let .malformed(detail): "Invalid simulator CoreDevice response: \(detail)"
     case .timedOut: "Timed out waiting for the simulator CoreDevice reply"

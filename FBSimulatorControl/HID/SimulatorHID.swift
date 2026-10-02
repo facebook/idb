@@ -82,24 +82,34 @@ public final class SimulatorHID: CustomStringConvertible, Sendable {
   /// so a tap or typed string settles once, not per primitive. The transport skips the drain when
   /// nothing reached it.
   public func send(
-    event: SimulatorHIDEvent, logger: ControlCoreLogger, drain: SimulatorHIDDrain = .perEvent
+    event: SimulatorHIDEvent,
+    logger: ControlCoreLogger,
+    drain: SimulatorHIDDrain = .perEvent,
+    pinnedTo displayUniqueID: String? = nil
   ) async throws {
     let events = AsyncStream<SimulatorHIDEvent> { continuation in
       continuation.yield(event)
       continuation.finish()
     }
-    try await send(events: events, logger: logger, flushing: drain == .perEvent)
+    try await send(events: events, logger: logger, flushing: drain == .perEvent, pinnedTo: displayUniqueID)
   }
 
   /// Sends a stream as one operation. Touch coordinates use the display resolved at the first touch.
   /// An observed display change fails the operation; cancellation releases contacts on the original display.
-  public func send<S: AsyncSequence>(events: S, logger: ControlCoreLogger) async throws where S.Element == SimulatorHIDEvent {
-    try await send(events: events, logger: logger, flushing: true)
+  public func send<S: AsyncSequence>(
+    events: S, logger: ControlCoreLogger, pinnedTo displayUniqueID: String? = nil
+  ) async throws where S.Element == SimulatorHIDEvent {
+    try await send(events: events, logger: logger, flushing: true, pinnedTo: displayUniqueID)
   }
 
-  private func send<S: AsyncSequence>(events: S, logger: ControlCoreLogger, flushing: Bool) async throws where S.Element == SimulatorHIDEvent {
+  private func send<S: AsyncSequence>(
+    events: S, logger: ControlCoreLogger, flushing: Bool, pinnedTo displayUniqueID: String?
+  ) async throws where S.Element == SimulatorHIDEvent {
     try await operationLease.withLease {
-      var operation = SimulatorHIDOperation(displays: displays, sink: LoggingSink(hid: self, logger: logger, logging: logging))
+      var operation = SimulatorHIDOperation(
+        displays: displays,
+        pinnedTo: displayUniqueID,
+        sink: LoggingSink(hid: self, logger: logger, logging: logging))
       do {
         for try await event in events {
           for delivery in try await operation.send(event) {

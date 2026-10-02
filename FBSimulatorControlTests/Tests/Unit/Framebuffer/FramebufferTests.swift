@@ -211,6 +211,19 @@ final class FramebufferTests: XCTestCase {
     XCTAssertEqual(surface.unregisteredTokens.count, 1)
   }
 
+  func testAttachmentKeepsFramebufferAliveUntilCancel() throws {
+    let surface = FakeFramebufferSurface()
+    let attachment: FramebufferAttachment = try {
+      let framebuffer = makeFramebuffer(surface: surface)
+      return try framebuffer.attach()
+    }()
+
+    attachment.cancel()
+    attachment.cancel()
+
+    XCTAssertEqual(surface.unregisteredTokens.count, 1)
+  }
+
   func testAttachmentReleaseUnregisters() throws {
     let surface = FakeFramebufferSurface()
     let framebuffer = makeFramebuffer(surface: surface)

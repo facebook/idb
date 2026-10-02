@@ -276,9 +276,102 @@ final class SimulatorHIDOperationTests: XCTestCase {
     XCTAssertEqual(value, 42)
   }
 
-  private func makeOperation(_ recorder: Recorder, observation: SimulatorHIDDisplayObservation = SimulatorHIDDisplayObservation()) -> SimulatorHIDOperation {
+  func testPinnedGestureBindsEveryEventToTheConfirmedDisplay() async throws {
+    let recorder = Recorder()
+    var operation = makeOperation(recorder, pinnedTo: "inner")
+    _ = try await operation.send(.touch(direction: .down, x: 20, y: 30))
+    _ = try await operation.send(.touch(direction: .down, x: 25, y: 35))
+    _ = try await operation.send(.touch(direction: .up, x: 25, y: 35))
+    try await operation.finish(flushing: true)
+    let events = await recorder.events
+    XCTAssertEqual(events.compactMap(\.1), [display(), display(), display()])
+  }
+
+  func testPinnedGestureAcceptsMatchingSoleIdentifiedDisplay() async throws {
+    let recorder = Recorder()
+    let displays = DisplayCommandsDouble(.sole(.identified(screen())))
+    var operation = SimulatorHIDOperation(
+      displays: displays,
+      pinnedTo: "inner",
+      sink: recorder)
+
+    _ = try await operation.send(.tapAt(x: 20, y: 30))
+    try await operation.finish(flushing: true)
+
+    let events = await recorder.events
+    XCTAssertEqual(events.map(\.0), [.touch(direction: .down, x: 20, y: 30), .touch(direction: .up, x: 20, y: 30)])
+    XCTAssertEqual(events.compactMap(\.1), [.sole(.identified(screen())), .sole(.identified(screen()))])
+  }
+
+  func testPinnedGestureRefusesMismatchedSoleIdentifiedDisplay() async throws {
+    let recorder = Recorder()
+    var operation = SimulatorHIDOperation(
+      displays: DisplayCommandsDouble(.sole(.identified(screen("cover")))),
+      pinnedTo: "inner",
+      sink: recorder)
+
+    do {
+      _ = try await operation.send(.touch(direction: .down, x: 20, y: 30))
+      XCTFail("expected the pin to refuse the sole display")
+    } catch {
+      guard case let SimulatorDisplayInteractionError.inactiveDisplay(identity) = error, identity == "inner" else {
+        return XCTFail("unexpected error: \(error)")
+      }
+    }
+  }
+
+  func testPinnedGestureRefusesLegacySoleDisplayWithoutAnIdentity() async throws {
+    let recorder = Recorder()
+    var operation = SimulatorHIDOperation(
+      displays: DisplayCommandsDouble(.sole(.legacy(screen().geometry))),
+      pinnedTo: "inner",
+      sink: recorder)
+
+    do {
+      _ = try await operation.send(.touch(direction: .down, x: 20, y: 30))
+      XCTFail("expected an unidentified sole display to refuse the pin")
+    } catch {
+      guard case let SimulatorDisplayInteractionError.inactiveDisplay(identity) = error, identity == "inner" else {
+        return XCTFail("unexpected error: \(error)")
+      }
+    }
+  }
+
+  func testPinnedGestureIsRefusedWhenAnotherDisplayIsActive() async throws {
+    let recorder = Recorder()
+    var operation = makeOperation(recorder, pinnedTo: "cover")
+    do {
+      _ = try await operation.send(.touch(direction: .down, x: 20, y: 30))
+      XCTFail("expected the pin to refuse the active display")
+    } catch {
+      guard case let SimulatorDisplayInteractionError.inactiveDisplay(identity) = error, identity == "cover" else {
+        return XCTFail("unexpected error: \(error)")
+      }
+      _ = await operation.cleanup()
+    }
+    let events = await recorder.events
+    XCTAssertTrue(events.isEmpty)
+  }
+
+  func testAbandonedPinnedGestureReleasesOnTheDisplayItOpenedOn() async throws {
+    let recorder = Recorder()
+    var operation = makeOperation(recorder, pinnedTo: "inner")
+    _ = try await operation.send(.touch(direction: .down, x: 20, y: 30))
+    await recorder.setDisplay(screen("cover"))
+    _ = await operation.cleanup()
+    let events = await recorder.events
+    XCTAssertEqual(events.map(\.0), [.touch(direction: .down, x: 20, y: 30), .touch(direction: .up, x: 20, y: 30)])
+    XCTAssertEqual(events.compactMap(\.1), [display(), display()])
+  }
+
+  private func makeOperation(
+    _ recorder: Recorder,
+    observation: SimulatorHIDDisplayObservation = SimulatorHIDDisplayObservation(),
+    pinnedTo displayUniqueID: String? = nil
+  ) -> SimulatorHIDOperation {
     SimulatorHIDOperation(
       displays: recorder,
+      pinnedTo: displayUniqueID,
       sink: recorder,
       observation: observation)
   }

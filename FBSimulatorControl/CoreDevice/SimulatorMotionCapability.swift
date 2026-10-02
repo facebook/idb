@@ -6,7 +6,6 @@
  */
 
 import Foundation
-import XPC
 
 /// What a simulator's motion provider advertises, as `querymotioncapabilities` reports it. A
 /// capability the provider does not mention is not supported, the same as one it reports `false`.
@@ -42,7 +41,9 @@ struct MotionCapabilities: Decodable, Equatable, Sendable {
   }
 
   func require(_ capability: SimulatorMotionCapability) throws {
-    guard supports(capability) else { throw SimulatorCoreDeviceError.unsupported(capability.name) }
+    guard supports(capability) else {
+      throw SimulatorCoreDeviceError.unsupported(capability.unsupportedDetail)
+    }
   }
 
   /// Orientation writes go through the virtual machine's orientation control where the runtime
@@ -78,6 +79,13 @@ enum SimulatorMotionCapability {
     switch self {
     case .hingeAngle: "Hinge angle"
     case .deviceMotionState: "Device motion state"
+    }
+  }
+
+  var unsupportedDetail: String {
+    switch self {
+    case .hingeAngle: "Hinge angle, supported only on iPhone Duo simulators"
+    case .deviceMotionState: name
     }
   }
 }

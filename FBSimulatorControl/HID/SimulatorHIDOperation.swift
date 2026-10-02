@@ -120,6 +120,7 @@ protocol SimulatorHIDOperationSink: Sendable {
 /// Operation-local state; no caller can send another event through this binding concurrently.
 struct SimulatorHIDOperation {
   let displays: (any DisplayCommands)?
+  let pinnedDisplayUniqueID: String?
   let sink: any SimulatorHIDOperationSink
 
   private let observation: SimulatorHIDDisplayObservation
@@ -132,11 +133,13 @@ struct SimulatorHIDOperation {
 
   init(
     displays: (any DisplayCommands)?,
+    pinnedTo pinnedDisplayUniqueID: String? = nil,
     sink: any SimulatorHIDOperationSink,
     observation: SimulatorHIDDisplayObservation = SimulatorHIDDisplayObservation()
   ) {
     self.observation = observation
     self.displays = displays
+    self.pinnedDisplayUniqueID = pinnedDisplayUniqueID
     self.sink = sink
   }
 
@@ -202,6 +205,17 @@ struct SimulatorHIDOperation {
   private mutating func bindOrValidateDisplay() async throws {
     if !resolvedDisplay {
       display = try await Self.route(displays)
+      if let pinnedDisplayUniqueID {
+        let pinnedDisplay: SimulatorDisplay?
+        switch display {
+        case let .selected(selected, _): pinnedDisplay = selected
+        case let .sole(.identified(identified)): pinnedDisplay = identified
+        case .sole(.legacy), nil: pinnedDisplay = nil
+        }
+        guard pinnedDisplay?.uniqueID == pinnedDisplayUniqueID else {
+          throw SimulatorDisplayInteractionError.inactiveDisplay(pinnedDisplayUniqueID)
+        }
+      }
       try Task.checkCancellation()
       resolvedDisplay = true
       if let display, let displays {

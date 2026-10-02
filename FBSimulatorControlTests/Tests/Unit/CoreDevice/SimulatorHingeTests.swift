@@ -26,6 +26,15 @@ final class SimulatorHingeTests: XCTestCase {
     }
   }
 
+  /// A caller that asked for the hinge on an ordinary simulator gets told what it needs, and a
+  /// caller parsing the message can still recognise the capability signal in it.
+  func testUnsupportedHingeNamesTheHardwareItNeeds() {
+    XCTAssertThrowsError(try SimulatorMotionCapability.hingeAngle.requireSupported(in: capabilityReply(nil))) { error in
+      XCTAssertTrue(error.localizedDescription.contains("supported only on iPhone Duo simulators"))
+      XCTAssertTrue(error.localizedDescription.contains("not supported"))
+    }
+  }
+
   func testMalformedCapabilityDoesNotBecomeUnsupported() {
     for value in [xpc_int64_create(1), xpc_string_create("true"), xpc_null_create()] {
       XCTAssertThrowsError(try SimulatorMotionCapability.hingeAngle.requireSupported(in: capabilityReply(value))) { error in

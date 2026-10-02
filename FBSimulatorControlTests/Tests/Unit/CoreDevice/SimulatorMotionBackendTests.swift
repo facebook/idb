@@ -33,7 +33,7 @@ final class SimulatorMotionBackendTests: XCTestCase {
     for capabilities in [capabilities(deviceMotionState: true, hingeAngle: false), capabilities(deviceMotionState: true), .none] {
       XCTAssertThrowsError(try capabilities.require(.hingeAngle)) { error in
         guard case let SimulatorCoreDeviceError.unsupported(detail) = error else { return XCTFail("\(error)") }
-        XCTAssertEqual(detail, "Hinge angle")
+        XCTAssertEqual(detail, "Hinge angle, supported only on iPhone Duo simulators")
       }
     }
   }

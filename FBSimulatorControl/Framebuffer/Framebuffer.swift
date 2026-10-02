@@ -168,7 +168,12 @@ public final class FramebufferAttachment: @unchecked Sendable {
   public let events: AsyncStream<FramebufferEvent>
 
   private let token: UUID
-  private weak var framebuffer: Framebuffer?
+  /// Strong on purpose: the registration outlives the `Framebuffer` that made it — the display
+  /// surface holds the callbacks, not the framebuffer — so a weak reference here lets `cancel()`
+  /// silently skip `detach` whenever the caller did not keep the framebuffer alive itself, leaving
+  /// the surface calling into a finished stream. Nothing the framebuffer owns refers back to the
+  /// attachment, so there is no cycle to break.
+  private let framebuffer: Framebuffer
   private let continuation: AsyncStream<FramebufferEvent>.Continuation
   private let lock = NSLock()
   private var isCancelled = false
@@ -196,7 +201,7 @@ public final class FramebufferAttachment: @unchecked Sendable {
     }
     isCancelled = true
     lock.unlock()
-    framebuffer?.detach(token: token)
+    framebuffer.detach(token: token)
     continuation.finish()
   }
 
