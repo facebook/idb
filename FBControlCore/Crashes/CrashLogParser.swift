@@ -31,10 +31,14 @@ final class ConcatedJSONCrashLogParser: NSObject, CrashLogParser {
       executablePathOut.pointee = procPath as NSString
     }
 
-    // Name and identifier is the same thing
     if let procName = parsedReport["procName"] as? String {
       processNameOut.pointee = procName as NSString
       identifierOut.pointee = procName as NSString
+    }
+    // An app's report records its bundle id; a process without one is identified by its name.
+    let bundleInfo = parsedReport["bundleInfo"] as? [String: Any]
+    if let bundleID = bundleInfo?["CFBundleIdentifier"] as? String ?? parsedReport["bundleID"] as? String {
+      identifierOut.pointee = bundleID as NSString
     }
     if let pid = parsedReport["pid"] as? NSNumber {
       processIdentifierOut.pointee = pid.int32Value

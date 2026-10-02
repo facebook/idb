@@ -36,7 +36,6 @@ struct CrashLogInfoValueTransformerTests {
     #expect(response.processIdentifier == 45264)
     #expect(response.parentProcessIdentifier == 43138)
     #expect(response.timestamp == 1_790_789_007)
-    // BUG: the response drops the report's identifier, so a client never sees a bundle id — flipped in the following commit.
-    #expect(response.bundleID == "")
+    #expect(response.bundleID == "com.facebook.idb.replhost")
   }
 }

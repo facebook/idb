@@ -14,6 +14,7 @@ enum CrashLogInfoValueTransformer {
   static func responseCrashLogInfo(from crash: CrashLogInfo) -> Idb_CrashLogInfo {
     return .with {
       $0.name = crash.name
+      $0.bundleID = crash.identifier
       $0.processName = crash.processName
       $0.parentProcessName = crash.parentProcessName
       $0.processIdentifier = UInt64(crash.processIdentifier)

@@ -86,8 +86,7 @@ final class CrashLogInfoTests: XCTestCase {
   func testJSONCrashLogFormatForASimulatorApp() throws {
     let info = try CrashLogInfo.fromCrashLog(atPath: TestFixtures.simulatorAppCrashWithJSONFormat)
 
-    // BUG: the identifier is the process name, not the bundle id the report records — flipped in the following commit.
-    XCTAssertEqual(info.identifier, "ReplHost")
+    XCTAssertEqual(info.identifier, "com.facebook.idb.replhost")
     XCTAssertEqual(info.processName, "ReplHost")
     XCTAssertEqual(info.processIdentifier, 45264)
     XCTAssertEqual(info.parentProcessName, "launchd_sim")
