@@ -181,8 +181,22 @@ public struct SimulatorPreferencesCommands {
     try simulator.device.setContentSizeCategory(category.rawValue)
   }
 
+  /// What writing the hardware keyboard setting takes, in order.
+  enum HardwareKeyboardStep: Equatable {
+    case write(enabled: Bool)
+  }
+
+  static func hardwareKeyboardSteps(enabled: Bool) -> [HardwareKeyboardStep] {
+    [.write(enabled: enabled)]
+  }
+
   private func setHardwareKeyboardEnabled(_ enabled: Bool) async throws {
-    try simulator.device.setHardwareKeyboardEnabled(enabled, keyboardType: 0)
+    for step in Self.hardwareKeyboardSteps(enabled: enabled) {
+      switch step {
+      case let .write(enabled):
+        try simulator.device.setHardwareKeyboardEnabled(enabled, keyboardType: 0)
+      }
+    }
   }
 
   private func setSlowAnimationsEnabled(_ enabled: Bool) async throws {
