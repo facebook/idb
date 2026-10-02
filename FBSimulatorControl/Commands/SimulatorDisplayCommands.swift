@@ -203,6 +203,20 @@ public final class SimulatorDisplayCommands: DisplayCommands, @unchecked Sendabl
     }
   }
 
+  /// The geometry of the display interactions currently target, whether or not the runtime can identify it.
+  public func displayGeometry() async throws -> SimulatorDisplayGeometry {
+    switch try await resolveDisplay() {
+    case let .target(target):
+      return target.display.geometry
+    case let .fallback(.unreadable(error)):
+      throw error
+    case .fallback:
+      throw SimulatorDisplayInteractionError.unsupportedCapability("one integrated display")
+    case .transitioning:
+      throw SimulatorDisplayError.transitioning
+    }
+  }
+
   /// Lists connected touchscreens. Match `displayUniqueID` to a display snapshot before routing input.
   public func touchscreens() async throws -> [SimulatorTouchscreen] {
     // Universal HID can advertise a virtual digitizer even when the target has no touch display.
