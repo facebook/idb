@@ -43,8 +43,7 @@ final class SimulatorCrashLogCommandsTests: XCTestCase {
     try writeReport(named: "ReplHost.crash", udid: simulator.udid)
 
     let after = try await commands.crashes(matching: NSPredicate(value: true), useCache: false)
-    // BUG: reports are only read on the first call, so a crash after it is never listed — flipped in the following commit.
-    XCTAssertEqual(after.map(\.name), [])
+    XCTAssertEqual(after.map(\.name), ["ReplHost.crash"])
   }
 
   func testPruneRemovesTheSimulatorsReports() async throws {
@@ -52,9 +51,8 @@ final class SimulatorCrashLogCommandsTests: XCTestCase {
 
     let pruned = try await commands.prune(matching: NSPredicate(value: true))
 
-    // BUG: prune only forgets reports already read, and leaves the file behind — flipped in the following commit.
-    XCTAssertEqual(pruned.map(\.name), [])
-    XCTAssertTrue(FileManager.default.fileExists(atPath: path))
+    XCTAssertEqual(pruned.map(\.name), ["ReplHost.crash"])
+    XCTAssertFalse(FileManager.default.fileExists(atPath: path))
   }
 
   func testPruneLeavesOtherSimulatorsReports() async throws {

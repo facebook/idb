@@ -42,10 +42,7 @@ public final class SimulatorCrashLogCommands: CrashLogCommands {
   }
 
   public func crashes(matching predicate: NSPredicate, useCache: Bool) async throws -> [CrashLogInfo] {
-    if !hasPerformedInitialIngestion {
-      store.ingestAllExistingInDirectory()
-      hasPerformedInitialIngestion = true
-    }
+    ingestAllCrashLogs(useCache: useCache)
     return store.ingestedCrashLogs(matchingPredicate: predicate)
   }
 
@@ -57,10 +54,23 @@ public final class SimulatorCrashLogCommands: CrashLogCommands {
       CrashLogInfo.predicate(forExecutablePathContains: simulator.udid),
       predicate,
     ])
-    return store.pruneCrashLogs(matchingPredicate: simulatorPredicate)
+    ingestAllCrashLogs(useCache: false)
+    let pruned = store.pruneCrashLogs(matchingPredicate: simulatorPredicate)
+    for crashLog in pruned {
+      try FileManager.default.removeItem(atPath: crashLog.crashPath)
+    }
+    return pruned
   }
 
   public func withFiles<R>(body: (any AsyncFileContainer) async throws -> R) async throws -> R {
     throw SimulatorCrashLogError.fileAccessUnsupported
+  }
+
+  private func ingestAllCrashLogs(useCache: Bool) {
+    if hasPerformedInitialIngestion && useCache {
+      return
+    }
+    store.ingestAllExistingInDirectory()
+    hasPerformedInitialIngestion = true
   }
 }
