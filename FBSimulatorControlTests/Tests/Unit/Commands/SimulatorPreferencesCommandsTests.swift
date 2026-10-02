@@ -11,11 +11,12 @@ import Testing
 @Suite("Hardware keyboard setting")
 struct SimulatorPreferencesCommandsTests {
 
-  @Test("Enabling the hardware keyboard writes only the attached state")
+  @Test("Enabling the hardware keyboard turns on automatic minimization before writing the attached state")
   func enable() {
-    // BUG: apps keep showing the software keyboard unless the keyboard daemon's automatic
-    // minimization preference is also on, which a fresh simulator lacks — flipped in the following commit.
-    #expect(SimulatorPreferencesCommands.hardwareKeyboardSteps(enabled: true) == [.write(enabled: true)])
+    #expect(
+      SimulatorPreferencesCommands.hardwareKeyboardSteps(enabled: true) == [
+        .enableAutomaticMinimization, .write(enabled: true),
+      ])
   }
 
   @Test("Disabling the hardware keyboard writes only the attached state")

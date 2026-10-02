@@ -183,16 +183,23 @@ public struct SimulatorPreferencesCommands {
 
   /// What writing the hardware keyboard setting takes, in order.
   enum HardwareKeyboardStep: Equatable {
+    case enableAutomaticMinimization
     case write(enabled: Bool)
   }
 
+  // Apps only hide the software keyboard when the keyboard daemon's automatic minimization
+  // preference is also on. It is unset on a new simulator, and the daemon only sets it when it
+  // sees the keyboard attach while an app's software keyboard is up.
   static func hardwareKeyboardSteps(enabled: Bool) -> [HardwareKeyboardStep] {
-    [.write(enabled: enabled)]
+    enabled ? [.enableAutomaticMinimization, .write(enabled: true)] : [.write(enabled: false)]
   }
 
   private func setHardwareKeyboardEnabled(_ enabled: Bool) async throws {
     for step in Self.hardwareKeyboardSteps(enabled: enabled) {
       switch step {
+      case .enableAutomaticMinimization:
+        try await setPreference(
+          "AutomaticMinimizationEnabled", value: "true", type: "bool", domain: "com.apple.keyboard.preferences")
       case let .write(enabled):
         try simulator.device.setHardwareKeyboardEnabled(enabled, keyboardType: 0)
       }
