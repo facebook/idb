@@ -68,6 +68,29 @@ final class SimulatorCrashLogCommandsTests: XCTestCase {
     XCTAssertEqual(remaining.map(\.name), ["Other.crash"])
   }
 
+  func testPruneRemovesTheSimulatorsReportsWithARedactedPath() async throws {
+    let path = try writeRedactedReport(named: "ReplHost-2026-09-30-102328.ips", udid: simulator.udid)
+    let listed = try await commands.crashes(matching: NSPredicate(value: true), useCache: false)
+    XCTAssertEqual(listed.map(\.name), ["ReplHost-2026-09-30-102328.ips"])
+
+    let pruned = try await commands.prune(matching: NSPredicate(value: true))
+
+    // BUG: the report names this simulator only in its coalition, which prune ignores — flipped in the following commit.
+    XCTAssertEqual(pruned.map(\.name), [])
+    XCTAssertTrue(FileManager.default.fileExists(atPath: path))
+  }
+
+  func testPruneLeavesOtherSimulatorsReportsWithARedactedPath() async throws {
+    let path = try writeRedactedReport(named: "Other-2026-09-30-102328.ips", udid: UUID().uuidString)
+    let listed = try await commands.crashes(matching: NSPredicate(value: true), useCache: false)
+    XCTAssertEqual(listed.map(\.name), ["Other-2026-09-30-102328.ips"])
+
+    let pruned = try await commands.prune(matching: NSPredicate(value: true))
+
+    XCTAssertEqual(pruned.map(\.name), [])
+    XCTAssertTrue(FileManager.default.fileExists(atPath: path))
+  }
+
   @discardableResult
   private func writeReport(named name: String, udid: String) throws -> String {
     let path = (directory as NSString).appendingPathComponent(name)
@@ -77,6 +100,27 @@ final class SimulatorCrashLogCommandsTests: XCTestCase {
       Identifier:            com.facebook.idb.replhost
       Parent Process:        launchd_sim [4000]
       Date/Time:             2026-09-30 10:02:51.000 -0700
+      """
+    try report.write(toFile: path, atomically: true, encoding: .utf8)
+    return path
+  }
+
+  /// A current macOS redacts the executable's path in a simulator app's `.ips` report, leaving the
+  /// coalition as the only place the simulator's udid appears.
+  @discardableResult
+  private func writeRedactedReport(named name: String, udid: String) throws -> String {
+    let path = (directory as NSString).appendingPathComponent(name)
+    let report = """
+      {"app_name":"ReplHost","bundleID":"com.facebook.idb.replhost","bug_type":"309","name":"ReplHost"}
+      {
+        "captureTime" : "2026-09-30 10:23:27.3628 -0700",
+        "pid" : 45264,
+        "procName" : "ReplHost",
+        "procPath" : "\\/Volumes\\/VOLUME\\/*\\/ReplHost.app\\/ReplHost",
+        "parentProc" : "launchd_sim",
+        "parentPid" : 43138,
+        "coalitionName" : "com.apple.CoreSimulator.SimDevice.\(udid)"
+      }
       """
     try report.write(toFile: path, atomically: true, encoding: .utf8)
     return path
