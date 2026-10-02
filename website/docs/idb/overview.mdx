@@ -22,3 +22,11 @@ iOS Development Bridge (`idb`) is a versatile tool for automating iOS Simulators
 The [Architecture page](architecture.mdx) describes how these fit together. `idb` is in the middle of a transition to a pure Swift codebase: the companion is already Swift, and the frameworks are progressively migrating from Objective-C — the same page describes [where that migration stands](architecture.mdx#the-transition-to-pure-swift).
 
 To get going, [install idb](installation.mdx) and take the [guided tour](guided-tour.mdx); the [Commands page](commands.mdx) lists the full command surface.
+
+import FeaturedDemos from '@site/src/components/FeaturedDemos';
+import manifest from '@site/src/demos/demos.json';
+
+<FeaturedDemos
+  {...manifest}
+  slugs={['drive-an-app-from-injected-swift', 'spin-safaris-address-bar', 'read-web-content-in-safari']}
+/>
