@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import re
 import shutil
 import struct
 import time
@@ -142,15 +143,26 @@ return await MainActor.run { () -> String in
 WHO_AM_I = 'return Bundle.main.bundleIdentifier ?? "no bundle"'
 SPIN_ADDRESS_BAR = r"""import UIKit
 return await MainActor.run { () -> String in
-  func addressText(in view: UIView) -> UIView? {
-    if view.accessibilityIdentifier == "TabBarItemTitle" { return view }
-    return view.subviews.lazy.compactMap { addressText(in: $0) }.first
+  func addressTexts(in view: UIView) -> [UIView] {
+    if view.accessibilityIdentifier == "TabBarItemTitle" { return [view] }
+    return view.subviews.flatMap { addressTexts(in: $0) }
+  }
+  // Safari keeps an address bar for every tab, beside the current one and
+  // outside the window, so only the one drawn inside its window is on screen.
+  func isOnScreen(_ view: UIView) -> Bool {
+    guard let window = view.window, !window.isHidden else { return false }
+    var current: UIView? = view
+    while let shown = current {
+      if shown.isHidden || shown.alpha == 0 { return false }
+      current = shown.superview
+    }
+    return window.bounds.contains(view.convert(view.bounds, to: window))
   }
   let windows = UIApplication.shared.connectedScenes
     .flatMap { ($0 as? UIWindowScene)?.windows ?? [] }
-  guard let text = windows.lazy.compactMap({ addressText(in: $0) }).first,
-    let window = text.window
-  else { return "No address bar to spin" }
+  let shown = windows.flatMap { addressTexts(in: $0) }.filter(isOnScreen)
+  guard shown.count == 1, let text = shown.first, let window = text.window
+  else { return "Expected one address bar on screen, found \(shown.count)" }
   // The identified view is only the address text; the bar is the widest
   // view around it that is still inset from the window's edges.
   var bar = text
@@ -163,8 +175,10 @@ return await MainActor.run { () -> String in
   spin.repeatCount = .infinity
   bar.layer.add(spin, forKey: "idb-spin")
   Thread.main.threadDictionary["idb-spin"] = bar
-  let size = bar.bounds.size
-  return "Spinning a \(type(of: bar)), \(Int(size.width))×\(Int(size.height)) points"
+  // Safari's window fills the screen, so its coordinates are the screen's.
+  let frame = bar.convert(bar.bounds, to: nil)
+  return "Spinning a \(type(of: bar)), \(Int(frame.width))×\(Int(frame.height)) "
+    + "points at (\(Int(frame.minX)), \(Int(frame.minY)))"
 }"""
 STOP_SPINNING = r"""import UIKit
 return await MainActor.run { () -> String in
@@ -1013,7 +1027,21 @@ class SpinningSafariDemos(SafariTestCase):
             step="Set the address bar spinning",
         )
         spinning = _result(spun)
-        self.assertTrue(spinning.startswith("Spinning a "), spinning)
+        spun_frame = re.fullmatch(
+            r"Spinning a \w+, (\d+)×(\d+) points at \((-?\d+), (-?\d+)\)", spinning
+        )
+        if spun_frame is None:
+            self.fail(spinning)
+        width, height, x, y = (int(value) for value in spun_frame.groups())
+        address = before["frame"]
+        # Spinning any other view passes every other assertion but shows nothing.
+        self.assertTrue(
+            x <= address["x"]
+            and y <= address["y"]
+            and address["x"] + address["width"] <= x + width + 1
+            and address["y"] + address["height"] <= y + height + 1,
+            f"{spinning} does not surround the address bar at {address}",
+        )
         self.note(
             "The Swift climbed from the address text to the bar around it and "
             "added a rotation that repeats forever.",
