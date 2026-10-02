@@ -191,20 +191,33 @@ final class DisplayCommandsTests: XCTestCase {
     } catch SimulatorDisplayError.changed {}
   }
 
-  func testDescribingNamesIdentifiedDisplaysAndNoLegacyOnes() {
+  func testDescribingNamesIdentifiedDisplaysAndNoLegacyOnes() async throws {
     let geometry = display("lcd").geometry
-    guard case let .read(displays) = SimulatorDisplayCommands.describedDisplays(in: .displays([display("cover"), display("inner")])) else {
-      return XCTFail("identified displays are read")
-    }
+    guard case let .read(displays) = try await DisplayCommandsDouble([.success(.displays([display("cover"), display("inner")]))]).describedDisplays()
+    else { return XCTFail("identified displays are read") }
     XCTAssertEqual(displays.map(\.uniqueID), ["cover", "inner"])
-    guard case let .read(legacy) = SimulatorDisplayCommands.describedDisplays(in: .legacy(integrated: [geometry])) else {
+    guard case let .read(legacy) = try await DisplayCommandsDouble([.success(.legacy(integrated: [geometry]))]).describedDisplays() else {
       return XCTFail("a legacy runtime is read")
     }
     XCTAssertEqual(legacy, [])
-    guard case .failed = SimulatorDisplayCommands.describedDisplays(in: .transitioning) else { return XCTFail("a transition fails") }
-    guard case .failed = SimulatorDisplayCommands.describedDisplays(in: .failed(.malformed("unreadable"))) else {
+    guard case .failed = try await DisplayCommandsDouble([.success(.failed(.malformed("unreadable")))]).describedDisplays() else {
       return XCTFail("an unreadable report fails")
     }
+  }
+
+  func testDescribingDuringADisplayTransitionSettlesOnTheNextReport() async throws {
+    let displays = DisplayCommandsDouble([.success(.transitioning), .success(.displays([display("inner")]))])
+
+    guard case let .read(described) = try await displays.describedDisplays() else { return XCTFail("the settled displays are read") }
+
+    XCTAssertEqual(described.map(\.uniqueID), ["inner"])
+    XCTAssertEqual(displays.reads, 2)
+  }
+
+  func testDescribingFailsWhenADisplayTransitionDoesNotSettle() async throws {
+    guard case let .failed(error) = try await DisplayCommandsDouble([.success(.transitioning)]).describedDisplays(),
+      case SimulatorDisplayError.transitioning = error
+    else { return XCTFail("an unsettled transition fails") }
   }
 
   func testADisplayIsDescribedInItsCurrentOrientation() {

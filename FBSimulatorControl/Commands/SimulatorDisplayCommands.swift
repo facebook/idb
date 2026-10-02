@@ -170,27 +170,6 @@ public final class SimulatorDisplayCommands: DisplayCommands, @unchecked Sendabl
     }
   }
 
-  /// Every identified display. A runtime that reports no display activity does not identify its displays,
-  /// so none are listed.
-  func describedDisplays() async throws -> TargetDetail<[TargetDisplayDescription]> {
-    do {
-      return Self.describedDisplays(in: try await report())
-    } catch let error as CancellationError {
-      throw error
-    } catch {
-      return .failed(error)
-    }
-  }
-
-  static func describedDisplays(in report: SimulatorDisplayReport) -> TargetDetail<[TargetDisplayDescription]> {
-    switch report {
-    case let .displays(displays): .read(displays.map(TargetDisplayDescription.init))
-    case .legacy: .read([])
-    case .transitioning: .failed(SimulatorDisplayError.transitioning)
-    case let .failed(error): .failed(error)
-    }
-  }
-
   /// Lists connected touchscreens. Match `displayUniqueID` to a display snapshot before routing input.
   public func touchscreens() async throws -> [SimulatorTouchscreen] {
     // Universal HID can advertise a virtual digitizer even when the target has no touch display.

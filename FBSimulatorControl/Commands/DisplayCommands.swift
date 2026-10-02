@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+import FBControlCore
 import Foundation
 
 /// The display reads that route interactions. `SimulatorDisplayCommands` reads the simulator; the
@@ -182,11 +183,35 @@ extension DisplayCommands {
   /// the new display before its backlight follows, and one-shot resolution waits that out. `.transitioning` only
   /// when the transition outlasts `transitionSettling`.
   func resolveDisplay() async throws -> SimulatorDisplayResolution {
+    SimulatorDisplayResolution(try await settledReport())
+  }
+
+  /// Every identified display once any display transition has settled. A runtime that reports no display activity
+  /// does not identify its displays, so none are listed.
+  func describedDisplays() async throws -> TargetDetail<[TargetDisplayDescription]> {
+    let report: SimulatorDisplayReport
+    do {
+      report = try await settledReport()
+    } catch let error as CancellationError {
+      throw error
+    } catch {
+      return .failed(error)
+    }
+    switch report {
+    case let .displays(displays): return .read(displays.map(TargetDisplayDescription.init))
+    case .legacy: return .read([])
+    case .transitioning: return .failed(SimulatorDisplayError.transitioning)
+    case let .failed(error): return .failed(error)
+    }
+  }
+
+  /// `.transitioning` only when the transition outlasts `transitionSettling`.
+  private func settledReport() async throws -> SimulatorDisplayReport {
     let settling = transitionSettling
     let deadline = ContinuousClock.now + settling.timeout
     while true {
-      let resolution = try await currentDisplay()
-      guard resolution == .transitioning, ContinuousClock.now < deadline else { return resolution }
+      let current = try await report()
+      guard current == .transitioning, ContinuousClock.now < deadline else { return current }
       try await Task.sleep(for: settling.interval)
     }
   }
