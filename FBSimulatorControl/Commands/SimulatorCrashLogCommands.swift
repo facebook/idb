@@ -23,18 +23,18 @@ public final class SimulatorCrashLogCommands: CrashLogCommands {
 
   private weak var simulator: Simulator?
   private let notifier: CrashLogNotifier
+  private let store: CrashLogStore
   private var hasPerformedInitialIngestion: Bool = false
 
   public class func commands(with simulator: Simulator) -> SimulatorCrashLogCommands {
-    SimulatorCrashLogCommands(
-      simulator: simulator,
-      notifier: CrashLogNotifier.sharedInstance
-    )
+    let notifier = CrashLogNotifier.sharedInstance
+    return SimulatorCrashLogCommands(simulator: simulator, notifier: notifier, store: notifier.store)
   }
 
-  private init(simulator: Simulator, notifier: CrashLogNotifier) {
+  init(simulator: Simulator, notifier: CrashLogNotifier, store: CrashLogStore) {
     self.simulator = simulator
     self.notifier = notifier
+    self.store = store
   }
 
   public func notifyOfCrash(matching predicate: NSPredicate) async throws -> CrashLogInfo {
@@ -43,10 +43,10 @@ public final class SimulatorCrashLogCommands: CrashLogCommands {
 
   public func crashes(matching predicate: NSPredicate, useCache: Bool) async throws -> [CrashLogInfo] {
     if !hasPerformedInitialIngestion {
-      notifier.store.ingestAllExistingInDirectory()
+      store.ingestAllExistingInDirectory()
       hasPerformedInitialIngestion = true
     }
-    return notifier.store.ingestedCrashLogs(matchingPredicate: predicate)
+    return store.ingestedCrashLogs(matchingPredicate: predicate)
   }
 
   public func prune(matching predicate: NSPredicate) async throws -> [CrashLogInfo] {
@@ -57,7 +57,7 @@ public final class SimulatorCrashLogCommands: CrashLogCommands {
       CrashLogInfo.predicate(forExecutablePathContains: simulator.udid),
       predicate,
     ])
-    return notifier.store.pruneCrashLogs(matchingPredicate: simulatorPredicate)
+    return store.pruneCrashLogs(matchingPredicate: simulatorPredicate)
   }
 
   public func withFiles<R>(body: (any AsyncFileContainer) async throws -> R) async throws -> R {
