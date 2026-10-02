@@ -14,8 +14,10 @@ targeted test beside the other tests of its command.
 
 from __future__ import annotations
 
+import json
 import shutil
 import struct
+import time
 import unittest
 import zlib
 from pathlib import Path
@@ -87,6 +89,9 @@ SEEDED_LIBRARY_DEMO_CAPABILITIES = {
 }
 DISPLAY_SETTINGS_DEMO_CAPABILITIES = {
     "test_one_screen_across_display_settings": SuiteCapability.ACCESSIBILITY_READ,
+}
+CRASH_REPORT_DEMO_CAPABILITIES = {
+    "test_crash_and_read_the_report": SuiteCapability.PROCESS_CONTROL,
 }
 
 COUNTER_ID = "injected-counter"
@@ -285,6 +290,21 @@ return await MainActor.run { () -> String in
   return "Showing \(label.text ?? "nothing")"
 }"""
 
+CRASH_SCHEDULED = "ReplHost will crash in a second"
+# The Swift returns before the crash it schedules, so idb-repl prints a result
+# rather than losing its connection to the app mid-run.
+CRASH_LATER = f"""import Foundation
+DispatchQueue.main.asyncAfter(deadline: .now() + 1) {{
+  fatalError("Crashed on purpose by Swift that idb-repl injected")
+}}
+return "{CRASH_SCHEDULED}"
+"""
+# A report records the crashing thread's frames but not the fatalError message.
+# idb-repl wraps a session's first run in userCode_0, so the scheduled closure is
+# the first closure in it.
+CRASH_FRAME = "closure #1 in userCode_0()"
+CRASH_REPORT_TIMEOUT_SECONDS = 60.0
+
 
 def load_tests(
     loader: unittest.TestLoader,
@@ -304,6 +324,7 @@ def load_tests(
                     (SpinningSafariDemos, SPINNING_SAFARI_DEMO_CAPABILITIES),
                     (SeededLibraryDemos, SEEDED_LIBRARY_DEMO_CAPABILITIES),
                     (DisplaySettingsDemos, DISPLAY_SETTINGS_DEMO_CAPABILITIES),
+                    (CrashReportDemos, CRASH_REPORT_DEMO_CAPABILITIES),
                 )
             ),
             loader.loadTestsFromTestCase(NotificationDemos),
@@ -1256,3 +1277,91 @@ class DisplaySettingsDemos(InjectedSwiftCase):
             "puts back what it found.",
             "accessibility-extra-large",
         )
+
+
+def _crash_names(completed: Completed) -> list[str]:
+    return [
+        json.loads(line)["name"] for line in completed.text.splitlines() if line.strip()
+    ]
+
+
+class CrashReportDemos(IdbEndToEndTestCase):
+    capabilities = CRASH_REPORT_DEMO_CAPABILITIES
+
+    @documented_demo(
+        slug="crash-and-read-the-report",
+        title="Crash an app on purpose and read its crash report",
+        summary=(
+            "Swift injected into an app schedules a fatal error and returns. Once "
+            "the app has crashed, idb lists the crash report the simulator wrote, "
+            "shows the report, and deletes it."
+        ),
+    )
+    async def test_crash_and_read_the_report(self) -> None:
+        self.addAsyncCleanup(self.setup_terminate_quietly, FIXTURE_APP_BUNDLE_ID)
+        await self.setup_idb("crash", "delete", "--bundle-id", FIXTURE_APP_BUNDLE_ID)
+        # Whole seconds, and one early, since a report's time is compared to it.
+        since = str(int(time.time()) - 1)
+
+        scheduled = await self.idb_repl(
+            "app",
+            "--new-session",
+            CRASH_LATER,
+            step="Schedule a crash with injected Swift",
+        )
+        self.assertEqual(_result(scheduled), CRASH_SCHEDULED)
+        self.note(
+            "The Swift returned before the crash it scheduled, so idb-repl printed "
+            "its result and exited normally.",
+            CRASH_SCHEDULED,
+        )
+
+        async def reported() -> str:
+            completed = await self.setup_idb(
+                "crash", "list", "--bundle-id", FIXTURE_APP_BUNDLE_ID, "--since", since
+            )
+            names = _crash_names(completed)
+            if not names:
+                raise NotReady(f"no crash report for {FIXTURE_APP_BUNDLE_ID} yet")
+            return names[0]
+
+        name = await wait_until(
+            f"The simulator wrote no crash report for {FIXTURE_APP_BUNDLE_ID}",
+            CRASH_REPORT_TIMEOUT_SECONDS,
+            reported,
+        )
+        self.addAsyncCleanup(self.setup_idb, "crash", "delete", name)
+
+        listed = await self.idb(
+            "crash",
+            "list",
+            "--bundle-id",
+            FIXTURE_APP_BUNDLE_ID,
+            step="List the app's crash reports",
+        )
+        self.assertIn(name, _crash_names(listed))
+        self.note(
+            f"The simulator wrote a crash report for {FIXTURE_APP_BUNDLE_ID}, and idb "
+            "lists it with the process that crashed and when.",
+            FIXTURE_APP_BUNDLE_ID,
+        )
+
+        report = await self.idb("crash", "show", name, step="Read the crash report")
+        self.assertIn(CRASH_FRAME, report.text)
+        self.assertIn("EXC_BREAKPOINT", report.text)
+        self.note(
+            "The crashed thread stopped in the closure the injected Swift "
+            "scheduled, on the breakpoint trap fatalError raises.",
+            CRASH_FRAME,
+            "EXC_BREAKPOINT",
+        )
+
+        deleted = await self.idb(
+            "crash", "delete", name, step="Delete the crash report"
+        )
+        self.assertEqual(_crash_names(deleted), [name])
+        remaining = await self.setup_idb(
+            "crash", "list", "--bundle-id", FIXTURE_APP_BUNDLE_ID
+        )
+        self.assertNotIn(name, _crash_names(remaining))
+        self.note("idb no longer lists the report it deleted.")

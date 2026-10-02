@@ -67,6 +67,9 @@ DOCUMENTED_DEMOS: Mapping[str, str] = {
         "EndToEndTests.test_demos.DisplaySettingsDemos."
         "test_one_screen_across_display_settings"
     ),
+    "crash-and-read-the-report": (
+        "EndToEndTests.test_demos.CrashReportDemos.test_crash_and_read_the_report"
+    ),
 }
 
 PACKAGE = "EndToEndTests"
