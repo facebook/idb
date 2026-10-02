@@ -72,8 +72,9 @@ from .test_services import (
 )
 
 ACCESSIBILITY_DEMO_CAPABILITIES = {
-    "test_scroll_by_element": SuiteCapability.ACCESSIBILITY_INTERACTION,
-    "test_tap_by_accessibility_id": SuiteCapability.ACCESSIBILITY_INTERACTION,
+    "test_navigate_a_list_by_accessibility_id": (
+        SuiteCapability.ACCESSIBILITY_INTERACTION
+    ),
 }
 WEB_CONTENT_DEMO_CAPABILITIES = {
     "test_read_web_content_in_safari": SuiteCapability.ACCESSIBILITY_INTERACTION,
@@ -373,17 +374,24 @@ class AccessibilityDemos(AccessibilityFixtureTestCase):
         return document
 
     @documented_demo(
-        slug="tap-by-accessibility-id",
-        title="Tap an element by its accessibility identifier",
+        slug="navigate-a-list-by-accessibility-id",
+        title="Scroll a list and open a row by accessibility identifier",
         summary=(
-            "Tap a list's General row by naming its accessibility identifier. "
-            "idb finds the element in the accessibility tree and activates it "
-            "directly, so there are no screen coordinates to calculate, and "
-            "the tap still lands if the layout, device size or scroll position "
-            "changes. The General page opens."
+            "Scroll a list down from its General row and back up from a row "
+            "that scrolled into view, then tap General to open its page, "
+            "naming every element by its accessibility identifier. idb "
+            "performs the platform's page-scroll action on the list that "
+            "contains the element and activates the row directly, so there "
+            "are no screen coordinates, swipe velocities or inertial "
+            "deceleration to account for. Reading the accessibility tree "
+            "before and after each scroll shows how far every row moved."
         ),
     )
-    async def test_tap_by_accessibility_id(self) -> None:
+    async def test_navigate_a_list_by_accessibility_id(self) -> None:
+        await self.scroll_down_and_back()
+        await self.open_general()
+
+    async def open_general(self) -> None:
         before = await self.describe_by_id(
             GENERAL_ROW_ID, step="Find the General row by accessibility identifier"
         )
@@ -470,20 +478,7 @@ class AccessibilityDemos(AccessibilityFixtureTestCase):
             title,
         )
 
-    @documented_demo(
-        slug="scroll-by-element",
-        title="Scroll a list from an element, without pixel math",
-        summary=(
-            "Scroll a list down by naming its General row's accessibility "
-            "identifier, then back up from a row that scrolled into view. idb "
-            "performs the platform's page-scroll action on the list that "
-            "contains the element, so there are no swipe coordinates, "
-            "velocities or inertial deceleration to account for. Reading the "
-            "accessibility tree before and after each scroll shows how far "
-            "every row moved."
-        ),
-    )
-    async def test_scroll_by_element(self) -> None:
+    async def scroll_down_and_back(self) -> None:
         before = _row_positions(await self.describe_all_complete("axbridge"))
         self.assertIn(GENERAL_ROW_ID, before)
 

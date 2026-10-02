@@ -41,11 +41,9 @@ DEMO_ATTRIBUTE = "__idb_documented_demo__"
 
 # The demos the website publishes, and the test that performs each one.
 DOCUMENTED_DEMOS: Mapping[str, str] = {
-    "tap-by-accessibility-id": (
-        "EndToEndTests.test_demos.AccessibilityDemos.test_tap_by_accessibility_id"
-    ),
-    "scroll-by-element": (
-        "EndToEndTests.test_demos.AccessibilityDemos.test_scroll_by_element"
+    "navigate-a-list-by-accessibility-id": (
+        "EndToEndTests.test_demos.AccessibilityDemos"
+        ".test_navigate_a_list_by_accessibility_id"
     ),
     "send-and-clear-a-notification": (
         "EndToEndTests.test_demos.NotificationDemos.test_send_and_clear_a_notification"
