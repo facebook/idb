@@ -45,8 +45,9 @@ DOCUMENTED_DEMOS: Mapping[str, str] = {
         "EndToEndTests.test_demos.AccessibilityDemos"
         ".test_navigate_a_list_by_accessibility_id"
     ),
-    "send-and-clear-a-notification": (
-        "EndToEndTests.test_demos.NotificationDemos.test_send_and_clear_a_notification"
+    "open-an-app-from-a-notification-banner": (
+        "EndToEndTests.test_demos.NotificationDemos"
+        ".test_open_an_app_from_a_notification_banner"
     ),
     "read-web-content-in-safari": (
         "EndToEndTests.test_demos.WebContentDemos.test_read_web_content_in_safari"

@@ -14,6 +14,7 @@ each command's other tests do that, and a demo is free to overlap them.
 
 from __future__ import annotations
 
+import asyncio
 import json
 import shutil
 import struct
@@ -30,6 +31,7 @@ from .harness import (
     _has_area,
     _label,
     _screen,
+    AppState,
     Completed,
     FIXTURE_APP_BUNDLE_ID,
     IdbEndToEndTestCase,
@@ -68,7 +70,6 @@ from .test_services import (
     NOTIFICATION_LIST_TIMEOUT_SECONDS,
     NOTIFICATION_PAYLOAD,
     NOTIFICATION_STORE_TIMEOUT_SECONDS,
-    NOTIFICATION_TITLE,
 )
 
 ACCESSIBILITY_DEMO_CAPABILITIES = {
@@ -90,6 +91,11 @@ SEEDED_LIBRARY_DEMO_CAPABILITIES = {
 }
 DISPLAY_SETTINGS_DEMO_CAPABILITIES = {
     "test_one_screen_across_display_settings": SuiteCapability.ACCESSIBILITY_READ,
+}
+NOTIFICATION_DEMO_CAPABILITIES = {
+    "test_open_an_app_from_a_notification_banner": (
+        SuiteCapability.ACCESSIBILITY_INTERACTION
+    ),
 }
 CRASH_REPORT_DEMO_CAPABILITIES = {
     "test_crash_and_read_the_report": SuiteCapability.PROCESS_CONTROL,
@@ -305,6 +311,13 @@ return "{CRASH_SCHEDULED}"
 # the first closure in it.
 CRASH_FRAME = "closure #1 in userCode_0()"
 CRASH_REPORT_TIMEOUT_SECONDS = 60.0
+# A banner is not in the accessibility tree, so it is tapped where SpringBoard
+# puts it: centred, just below the Dynamic Island.
+BANNER_Y = 90
+# Nothing a client can read reports a banner landing; it slides in for well
+# under a second and stays for several.
+BANNER_ARRIVAL_SECONDS = 1.0
+BANNER_OPEN_TIMEOUT_SECONDS = 15.0
 
 
 def load_tests(
@@ -325,10 +338,10 @@ def load_tests(
                     (SpinningSafariDemos, SPINNING_SAFARI_DEMO_CAPABILITIES),
                     (SeededLibraryDemos, SEEDED_LIBRARY_DEMO_CAPABILITIES),
                     (DisplaySettingsDemos, DISPLAY_SETTINGS_DEMO_CAPABILITIES),
+                    (NotificationDemos, NOTIFICATION_DEMO_CAPABILITIES),
                     (CrashReportDemos, CRASH_REPORT_DEMO_CAPABILITIES),
                 )
             ),
-            loader.loadTestsFromTestCase(NotificationDemos),
         ]
     )
 
@@ -342,10 +355,6 @@ def _placed(element: dict[str, Any], screen: dict[str, float] | None) -> str:
     if screen is None:
         return where
     return f"{where} on a {screen['width']:.0f}×{screen['height']:.0f} screen"
-
-
-def _notifications(count: int) -> str:
-    return f"{count} delivered notification{'' if count == 1 else 's'}"
 
 
 class AccessibilityDemos(AccessibilityFixtureTestCase):
@@ -692,18 +701,21 @@ class WebContentDemos(SafariTestCase):
 
 class NotificationDemos(IdbEndToEndTestCase):
     @documented_demo(
-        slug="send-and-clear-a-notification",
-        title="Send a push notification without a permission prompt or a running app",
+        slug="open-an-app-from-a-notification-banner",
+        title="Deliver a push notification and open the app from its banner",
         summary=(
             "Grant an app notification permission directly, so there is no "
-            "system prompt to automate, then deliver a push notification to it "
-            "while it isn't running and see the system hold it for the app. "
-            "Clear the app's delivered notifications afterwards to leave the "
-            "simulator clean for whatever runs next."
+            "system prompt to automate, and deliver a push notification to it "
+            "while it isn't running. Its banner drops in over the home screen, "
+            "and tapping the banner opens the app. Clearing the app's "
+            "notifications leaves the simulator clean for whatever runs next."
         ),
     )
-    async def test_send_and_clear_a_notification(self) -> None:
+    async def test_open_an_app_from_a_notification_banner(self) -> None:
         self.addAsyncCleanup(self.setup_terminate_quietly, NEWS_BUNDLE_ID)
+        self.addAsyncCleanup(
+            self.setup_idb, "notification", "clear", NEWS_BUNDLE_ID, check=False
+        )
         await self.setup_terminate_quietly(NEWS_BUNDLE_ID)
         # The first push a simulator receives after it is erased waits on the
         # system building its notification store, for minutes at worst. This
@@ -716,6 +728,7 @@ class NotificationDemos(IdbEndToEndTestCase):
             check=False,
             timeout=NOTIFICATION_STORE_TIMEOUT_SECONDS,
         )
+        await self.setup_idb("notification", "clear", NEWS_BUNDLE_ID, check=False)
 
         await self.idb(
             "approve",
@@ -729,20 +742,33 @@ class NotificationDemos(IdbEndToEndTestCase):
             NEWS_BUNDLE_ID,
         )
 
-        before = await self.idb(
-            "notification",
-            "list",
-            NEWS_BUNDLE_ID,
-            step="List notifications before delivery",
+        await self.idb("ui", "button", "HOME", step="Go to the home screen")
+        screen = _screen(await self.idb_json("ui", "describe-all"))
+        if screen is None:
+            self.fail("the home screen reported no bounds")
+        x, y = int(screen["width"] / 2), BANNER_Y
+        under = await self.idb(
+            "ui",
+            "describe-point",
+            str(x),
+            str(y),
+            "--json",
+            step="Check what is where the banner will appear",
         )
-        held = {identifier for identifier, _ in _retained_notifications(before.text)}
+        beneath = [
+            label
+            for element in _elements(json.loads(under.text))
+            if (label := _label(element))
+        ]
+        self.assertFalse(
+            [label for label in beneath if "News" in label],
+            f"News's icon is at ({x}, {y}), so a tap there proves nothing",
+        )
         self.note(
-            "The app has no delivered notifications."
-            if not held
-            else (
-                f"The app already has {_notifications(len(held))}, so the new "
-                "one can be told apart."
-            )
+            f"({x}, {y}) is on {beneath[0] if beneath else 'the home screen'}, "
+            "not News's icon, so nothing there opens News until a banner covers "
+            "it.",
+            str(x),
         )
 
         await self.idb(
@@ -751,38 +777,14 @@ class NotificationDemos(IdbEndToEndTestCase):
             NOTIFICATION_PAYLOAD,
             step="Deliver a notification while the app is not running",
         )
-
-        def new_entries(text: str) -> list[str]:
-            return [
-                identifier
-                for identifier, title in _retained_notifications(text)
-                if title == NOTIFICATION_TITLE and identifier not in held
-            ]
-
-        async def stored() -> None:
-            completed = await self.setup_idb("notification", "list", NEWS_BUNDLE_ID)
-            if not new_entries(completed.text):
-                raise NotReady(f"{NOTIFICATION_TITLE!r} is not held yet")
-
-        await wait_until(
-            f"The system did not hold {NOTIFICATION_TITLE!r}",
-            NOTIFICATION_LIST_TIMEOUT_SECONDS,
-            stored,
+        await asyncio.sleep(BANNER_ARRIVAL_SECONDS)
+        await self.idb("ui", "tap", str(x), str(y), step="Tap the banner")
+        await self.wait_for_app(
+            NEWS_BUNDLE_ID, AppState.RUNNING, timeout=BANNER_OPEN_TIMEOUT_SECONDS
         )
-
-        after = await self.idb(
-            "notification",
-            "list",
-            NEWS_BUNDLE_ID,
-            step="List notifications after delivery",
-        )
-        delivered = new_entries(after.text)
-        self.assertEqual(len(delivered), 1, f"expected one new {NOTIFICATION_TITLE!r}")
         self.note(
-            f"The delivered-notification list now contains a new entry titled "
-            f"{NOTIFICATION_TITLE!r}, although {NEWS_BUNDLE_ID} never ran to "
-            "receive it.",
-            NOTIFICATION_TITLE,
+            f"{NEWS_BUNDLE_ID} is running: the tap landed on the notification's "
+            "banner, which opened the app."
         )
 
         await self.idb(
@@ -802,7 +804,6 @@ class NotificationDemos(IdbEndToEndTestCase):
             NOTIFICATION_LIST_TIMEOUT_SECONDS,
             released,
         )
-
         cleared = await self.idb(
             "notification",
             "list",
@@ -810,10 +811,7 @@ class NotificationDemos(IdbEndToEndTestCase):
             step="List notifications after clearing them",
         )
         self.assertEqual(_retained_notifications(cleared.text), [])
-        self.note(
-            "The app has no delivered notifications: clearing removed the new one"
-            + (f" and the {_notifications(len(held))} there before." if held else ".")
-        )
+        self.note("The app has no delivered notifications.")
 
 
 def _result(completed: Completed) -> str:
