@@ -142,32 +142,37 @@ return await MainActor.run { () -> String in
 WHO_AM_I = 'return Bundle.main.bundleIdentifier ?? "no bundle"'
 SPIN_ADDRESS_BAR = r"""import UIKit
 return await MainActor.run { () -> String in
-  func addressBar(in view: UIView) -> UIView? {
+  func addressText(in view: UIView) -> UIView? {
     if view.accessibilityIdentifier == "TabBarItemTitle" { return view }
-    return view.subviews.lazy.compactMap { addressBar(in: $0) }.first
+    return view.subviews.lazy.compactMap { addressText(in: $0) }.first
   }
   let windows = UIApplication.shared.connectedScenes
     .flatMap { ($0 as? UIWindowScene)?.windows ?? [] }
-  guard let bar = windows.lazy.compactMap({ addressBar(in: $0) }).first
+  guard let text = windows.lazy.compactMap({ addressText(in: $0) }).first,
+    let window = text.window
   else { return "No address bar to spin" }
+  // The identified view is only the address text; the bar is the widest
+  // view around it that is still inset from the window's edges.
+  var bar = text
+  while let parent = bar.superview, parent.bounds.width < window.bounds.width {
+    bar = parent
+  }
   let spin = CABasicAnimation(keyPath: "transform.rotation.z")
   spin.byValue = 2 * Double.pi
-  spin.duration = 1.5
+  spin.duration = 4
   spin.repeatCount = .infinity
   bar.layer.add(spin, forKey: "idb-spin")
-  return "Spinning a \(type(of: bar))"
+  Thread.main.threadDictionary["idb-spin"] = bar
+  let size = bar.bounds.size
+  return "Spinning a \(type(of: bar)), \(Int(size.width))×\(Int(size.height)) points"
 }"""
 STOP_SPINNING = r"""import UIKit
 return await MainActor.run { () -> String in
-  func spinning(in view: UIView) -> [UIView] {
-    let here = view.layer.animation(forKey: "idb-spin") == nil ? [] : [view]
-    return here + view.subviews.flatMap { spinning(in: $0) }
-  }
-  let windows = UIApplication.shared.connectedScenes
-    .flatMap { ($0 as? UIWindowScene)?.windows ?? [] }
-  let views = windows.flatMap { spinning(in: $0) }
-  views.forEach { $0.layer.removeAnimation(forKey: "idb-spin") }
-  return "Stopped \(views.count) spinning view(s)"
+  guard let bar = Thread.main.threadDictionary["idb-spin"] as? UIView
+  else { return "Nothing is spinning" }
+  Thread.main.threadDictionary.removeObject(forKey: "idb-spin")
+  bar.layer.removeAnimation(forKey: "idb-spin")
+  return "Stopped the \(type(of: bar))"
 }"""
 
 
@@ -318,6 +323,9 @@ BANNER_Y = 90
 # under a second and stays for several.
 BANNER_ARRIVAL_SECONDS = 1.0
 BANNER_OPEN_TIMEOUT_SECONDS = 15.0
+# On a fast host the steps around the spin finish in well under a second, too
+# quickly to see it in the recording.
+SPIN_HOLD_SECONDS = 10.0
 
 
 def load_tests(
@@ -1007,8 +1015,8 @@ class SpinningSafariDemos(SafariTestCase):
         spinning = _result(spun)
         self.assertTrue(spinning.startswith("Spinning a "), spinning)
         self.note(
-            "The Swift found the view behind the address bar and added a "
-            "rotation that repeats forever.",
+            "The Swift climbed from the address text to the bar around it and "
+            "added a rotation that repeats forever.",
             spinning,
         )
 
@@ -1022,6 +1030,7 @@ class SpinningSafariDemos(SafariTestCase):
             "accessibility tree reports the layout.",
             SAFARI_ADDRESS_BAR_ID,
         )
+        await asyncio.sleep(SPIN_HOLD_SECONDS)
 
         await self.idb(
             "ui",
@@ -1045,10 +1054,11 @@ class SpinningSafariDemos(SafariTestCase):
             STOP_SPINNING,
             step="Stop the spin",
         )
-        self.assertTrue(_result(stopped).startswith("Stopped "), stopped.text)
+        self.assertTrue(_result(stopped).startswith("Stopped the "), stopped.text)
         self.note(
-            "idb-repl attached to the Safari it launched, found whatever was "
-            "still spinning and removed the animation.",
+            "idb-repl attached to the same live Safari, so this Swift found the "
+            "view the first injection left in the main thread's dictionary and "
+            "removed its animation.",
             _result(stopped),
         )
 
