@@ -11,7 +11,7 @@ The "iOS Development Bridge" or `idb`, is a command line interface for automatin
 
 `idb` is built on top of the `FBSimulatorControl` and `FBDeviceControl` macOS Frameworks, contained within this repository. These Frameworks can be used independently of `idb`, however `idb` is likely to provide the simplest install and the most sensible defaults for most users.
 
-`idb` is transitioning to a pure Swift codebase: the companion is written in Swift, and the Frameworks are migrating from Objective-C. [The architecture documentation](https://www.fbidb.io/docs/idb/architecture) describes where the migration stands.
+`idb` is transitioning to a pure Swift codebase: the companion is written in Swift, and the Frameworks are migrating from Objective-C. [The architecture documentation](https://www.fbidb.io/idb/architecture) describes where the migration stands.
 
 A talk from F8 2019 covers the original motivation for `idb`; a [recording is available here](https://developers.facebook.com/videos/2019/reliable-code-at-scale/).
 
@@ -30,7 +30,7 @@ brew install facebook/fb/idb
 ```
 Note: Instructions on how to install brew can be found [here](https://brew.sh)
 
-To install a specific release, or the CI build of any commit or pull request, run `./homebrew.py` from a checkout; see [Installing a specific build](https://www.fbidb.io/docs/idb/installation#installing-a-specific-build).
+To install a specific release, or the CI build of any commit or pull request, run `./homebrew.py` from a checkout; see [Installing a specific build](https://www.fbidb.io/idb/installation#installing-a-specific-build).
 
 ### `idb` client
 
@@ -73,7 +73,7 @@ com.apple.mobilesafari | MobileSafari | system | arm64 | Not running | Not Debug
 $ idb launch com.apple.mobilesafari
 ```
 
-Head over [to the main documentation](https://www.fbidb.io) for more details on what you can do with idb and the full list of commands. There are also instructions on how to [make changes to `idb` including building it from source](https://www.fbidb.io/docs/development).
+Head over [to the main documentation](https://www.fbidb.io) for more details on what you can do with idb and the full list of commands. There are also instructions on how to [make changes to `idb` including building it from source](https://www.fbidb.io/idb/development).
 
 ## Building from Source
 

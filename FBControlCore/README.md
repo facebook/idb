@@ -13,4 +13,4 @@ Like the rest of the project, it is a mix of Objective-C and Swift, transitionin
 - **IO and processes.** Abstractions for reading and writing between sources and sinks (`FileReader`, `FileWriter`), and for spawning and supervising processes, backed by `libdispatch`.
 - **Logging.** `ControlCoreLogger` provides a common logging interface for all of the frameworks.
 
-[The architecture documentation](https://www.fbidb.io/docs/idb/architecture) covers how these pieces fit together in `idb`.
+[The architecture documentation](https://www.fbidb.io/idb/architecture) covers how these pieces fit together in `idb`.

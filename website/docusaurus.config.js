@@ -29,8 +29,8 @@ module.exports = {
     navbar: {
       title: 'idb',
       items: [
-        { to: 'docs/idb/overview', label: 'idb', position: 'right' },
-        { to: 'docs/idb-repl/overview', label: 'idb-repl', position: 'right' },
+        { to: '/', label: 'idb', position: 'right' },
+        { to: '/idb-repl/overview', label: 'idb-repl', position: 'right' },
         { href: 'https://github.com/facebook/idb', label: 'GitHub', position: 'right' },
       ],
     },
@@ -94,6 +94,7 @@ module.exports = {
       {
         docs: {
           path: './docs',
+          routeBasePath: '/',
           sidebarPath: require.resolve('./sidebars.js'),
         },
       },
@@ -106,19 +107,29 @@ module.exports = {
       {
         // Preserve the pre-reorganization URLs (docs moved under /docs/idb/).
         redirects: [
-          { from: '/docs/overview', to: '/docs/idb/overview' },
-          { from: '/docs/installation', to: '/docs/idb/installation' },
-          { from: '/docs/guided-tour', to: '/docs/idb/guided-tour' },
-          { from: '/docs/architecture', to: '/docs/idb/architecture' },
-          { from: '/docs/development', to: '/docs/idb/development' },
-          { from: '/docs/commands', to: '/docs/idb/commands' },
-          { from: '/docs/fbsimulatorcontrol', to: '/docs/idb/fbsimulatorcontrol' },
-          { from: '/docs/fbdevicecontrol', to: '/docs/idb/fbdevicecontrol' },
-          { from: '/docs/video', to: '/docs/idb/video' },
-          { from: '/docs/test-execution', to: '/docs/idb/test-execution' },
-          { from: '/docs/file-containers', to: '/docs/idb/file-containers' },
-          { from: '/docs/accessibility', to: '/docs/idb/accessibility' },
+          { from: '/docs/overview', to: '/' },
+          { from: '/docs/installation', to: '/idb/installation' },
+          { from: '/docs/guided-tour', to: '/idb/guided-tour' },
+          { from: '/docs/architecture', to: '/idb/architecture' },
+          { from: '/docs/development', to: '/idb/development' },
+          { from: '/docs/commands', to: '/idb/commands' },
+          { from: '/docs/fbsimulatorcontrol', to: '/idb/fbsimulatorcontrol' },
+          { from: '/docs/fbdevicecontrol', to: '/idb/fbdevicecontrol' },
+          { from: '/docs/video', to: '/idb/video' },
+          { from: '/docs/test-execution', to: '/idb/test-execution' },
+          { from: '/docs/file-containers', to: '/idb/file-containers' },
+          { from: '/docs/accessibility', to: '/idb/accessibility' },
         ],
+        // The docs were served under /docs/ until they became the site itself.
+        createRedirects(existingPath) {
+          if (existingPath === '/') {
+            return ['/docs', '/docs/idb/overview'];
+          }
+          if (existingPath.startsWith('/idb/') || existingPath.startsWith('/idb-repl/')) {
+            return [`/docs${existingPath}`];
+          }
+          return undefined;
+        },
       },
     ],
   ],
