@@ -404,6 +404,14 @@ extension Simulator {
     try await SimulatorEraseStrategy.erase(self)
   }
 
+  public func details(_ keys: Set<TargetDetailKey>) async throws -> TargetDetails {
+    var details = TargetDetails(unsupported: keys)
+    if keys.contains(.displays) {
+      details.displays = state == .booted ? try await displays.describedDisplays() : .read([])
+    }
+    return details
+  }
+
   public func spawn(_ configuration: ProcessSpawnConfiguration) async throws -> FBSubprocess<AnyObject, AnyObject, AnyObject> {
     try await SimulatorProcessSpawnStrategy.spawn(self, configuration: configuration)
   }

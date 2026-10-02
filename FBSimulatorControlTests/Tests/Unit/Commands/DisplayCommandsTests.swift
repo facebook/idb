@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+import FBControlCore
 @testable import FBSimulatorControl
 import Foundation
 import XCTest
@@ -190,11 +191,55 @@ final class DisplayCommandsTests: XCTestCase {
     } catch SimulatorDisplayError.changed {}
   }
 
-  func testListingNamesIdentifiedDisplaysAndNoLegacyOnes() throws {
+  func testDescribingNamesIdentifiedDisplaysAndNoLegacyOnes() {
     let geometry = display("lcd").geometry
-    XCTAssertEqual(try SimulatorDisplayCommands.list(in: .displays([display("cover"), display("inner")])), [display("cover"), display("inner")])
-    XCTAssertEqual(try SimulatorDisplayCommands.list(in: .legacy(integrated: [geometry])), [])
-    XCTAssertThrowsError(try SimulatorDisplayCommands.list(in: .transitioning))
-    XCTAssertThrowsError(try SimulatorDisplayCommands.list(in: .failed(.malformed("unreadable"))))
+    guard case let .read(displays) = SimulatorDisplayCommands.describedDisplays(in: .displays([display("cover"), display("inner")])) else {
+      return XCTFail("identified displays are read")
+    }
+    XCTAssertEqual(displays.map(\.uniqueID), ["cover", "inner"])
+    guard case let .read(legacy) = SimulatorDisplayCommands.describedDisplays(in: .legacy(integrated: [geometry])) else {
+      return XCTFail("a legacy runtime is read")
+    }
+    XCTAssertEqual(legacy, [])
+    guard case .failed = SimulatorDisplayCommands.describedDisplays(in: .transitioning) else { return XCTFail("a transition fails") }
+    guard case .failed = SimulatorDisplayCommands.describedDisplays(in: .failed(.malformed("unreadable"))) else {
+      return XCTFail("an unreadable report fails")
+    }
+  }
+
+  func testADisplayIsDescribedInItsCurrentOrientation() {
+    let display = SimulatorDisplay(
+      uniqueID: "FA9C9507-0D45-4189-A7D6-A3335032D47B", name: "LCD-1", activity: .active, isPrimary: false, isIntegrated: true,
+      bounds: CGRect(x: 0, y: 0, width: 2008, height: 2854), scale: 3, rotation: .clockwise)
+
+    XCTAssertEqual(
+      TargetDisplayDescription(display),
+      TargetDisplayDescription(
+        uniqueID: "FA9C9507-0D45-4189-A7D6-A3335032D47B", name: "LCD-1", isActive: true, isIntegrated: true, widthPixels: 2854,
+        heightPixels: 2008, scale: 3))
+  }
+
+  func testAnInactiveExternalDisplayIsDescribedAsSuch() {
+    let display = SimulatorDisplay(
+      uniqueID: "F774281A-0000-0000-0000-000000000000", name: "TVOut", activity: .inactive, isPrimary: false, isIntegrated: false,
+      bounds: CGRect(x: 0, y: 0, width: 1920, height: 1080), scale: 1, rotation: .upright)
+
+    let described = TargetDisplayDescription(display)
+
+    XCTAssertFalse(described.isActive)
+    XCTAssertFalse(described.isIntegrated)
+    XCTAssertEqual(described.widthPixels, 1920)
+    XCTAssertEqual(described.heightPixels, 1080)
+  }
+
+  func testADisplayWithoutAUsableSizeIsDescribedWithNone() {
+    let display = SimulatorDisplay(
+      uniqueID: "F774281A-0000-0000-0000-000000000000", name: "TVOut", activity: .inactive, isPrimary: false, isIntegrated: false,
+      bounds: CGRect(x: 0, y: 0, width: CGFloat.nan, height: -1), scale: 1, rotation: .upright)
+
+    let described = TargetDisplayDescription(display)
+
+    XCTAssertEqual(described.widthPixels, 0)
+    XCTAssertEqual(described.heightPixels, 0)
   }
 }

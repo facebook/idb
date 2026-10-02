@@ -88,7 +88,7 @@ public struct SimulatorDisplay: Equatable, Sendable {
   public let scale: Double
   public let rotation: SimulatorDisplayRotation
 
-  public init(
+  init(
     uniqueID: String, name: String, activity: SimulatorDisplayActivity, isPrimary: Bool, isIntegrated: Bool,
     bounds: CGRect, scale: Double, rotation: SimulatorDisplayRotation
   ) {
@@ -116,6 +116,15 @@ public struct SimulatorDisplay: Equatable, Sendable {
     case .upright, .upsideDown: bounds.size
     case .clockwise, .counterclockwise: CGSize(width: bounds.height, height: bounds.width)
     }
+  }
+}
+
+extension TargetDisplayDescription {
+  init(_ display: SimulatorDisplay) {
+    self.init(
+      uniqueID: display.uniqueID, name: display.name, isActive: display.isActive, isIntegrated: display.isIntegrated,
+      widthPixels: UInt(exactly: display.size.width.rounded()) ?? 0, heightPixels: UInt(exactly: display.size.height.rounded()) ?? 0,
+      scale: display.scale)
   }
 }
 
@@ -163,16 +172,22 @@ public final class SimulatorDisplayCommands: DisplayCommands, @unchecked Sendabl
 
   /// Every identified display. A runtime that reports no display activity does not identify its displays,
   /// so none are listed.
-  public func list() async throws -> [SimulatorDisplay] {
-    try Self.list(in: await report())
+  func describedDisplays() async throws -> TargetDetail<[TargetDisplayDescription]> {
+    do {
+      return Self.describedDisplays(in: try await report())
+    } catch let error as CancellationError {
+      throw error
+    } catch {
+      return .failed(error)
+    }
   }
 
-  static func list(in report: SimulatorDisplayReport) throws -> [SimulatorDisplay] {
+  static func describedDisplays(in report: SimulatorDisplayReport) -> TargetDetail<[TargetDisplayDescription]> {
     switch report {
-    case let .displays(displays): displays
-    case .legacy: []
-    case .transitioning: throw SimulatorDisplayError.transitioning
-    case let .failed(error): throw error
+    case let .displays(displays): .read(displays.map(TargetDisplayDescription.init))
+    case .legacy: .read([])
+    case .transitioning: .failed(SimulatorDisplayError.transitioning)
+    case let .failed(error): .failed(error)
     }
   }
 

@@ -152,6 +152,9 @@ public protocol Target: TargetInfo, TargetCommand {
   /// Erases the target, restoring it to a factory state.
   func erase() async throws
 
+  /// Reads the requested details. Only cancellation throws; a detail that cannot be read is `failed`.
+  func details(_ keys: Set<TargetDetailKey>) async throws -> TargetDetails
+
   // MARK: - Target properties
 
   /// The Target's Logger.
@@ -194,6 +197,14 @@ public protocol Target: TargetInfo, TargetCommand {
 
   /// Env var additions
   func environmentAdditions() -> [String: String]
+}
+
+// MARK: - Details
+
+extension Target {
+  public func details(_ keys: Set<TargetDetailKey>) async throws -> TargetDetails {
+    TargetDetails(unsupported: keys)
+  }
 }
 
 // MARK: - Target state and type

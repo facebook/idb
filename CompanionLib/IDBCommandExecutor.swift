@@ -547,13 +547,6 @@ public final class IDBCommandExecutor {
     return try await logger.tailToConsumer(consumer)
   }
 
-  public func diagnostic_information() async throws -> NSDictionary {
-    guard let device = target as? Device else {
-      return NSDictionary()
-    }
-    return try await device.diagnosticInformation.fetch() as NSDictionary
-  }
-
   public func hid(_ event: SimulatorHIDEvent) async throws {
     // The shared HID outlives the call, and `simulator.hid.disconnect()` drains it when closing it.
     try await connectToHID().send(event: event, logger: logger, drain: .onClose)

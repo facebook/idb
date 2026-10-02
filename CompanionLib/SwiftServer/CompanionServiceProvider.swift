@@ -134,7 +134,7 @@ final class CompanionServiceProvider: Idb_CompanionService.SimpleServiceProtocol
 
   func describe(request: Idb_TargetDescriptionRequest, context: ServerContext) async throws -> Idb_TargetDescriptionResponse {
     return try await trackedUnaryCall(context, request: request) {
-      try await DescribeMethodHandler(reporter: reporter, logger: logger, target: target, commandExecutor: commandExecutor, streamCapabilities: streamCapabilities)
+      try await DescribeMethodHandler(reporter: reporter, logger: logger, target: target, streamCapabilities: streamCapabilities)
         .handle(request: request, context: context)
     }
   }

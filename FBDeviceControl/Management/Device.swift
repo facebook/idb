@@ -355,6 +355,21 @@ extension Device {
     try await DeviceEraseStrategy.erase(self)
   }
 
+  public func details(_ keys: Set<TargetDetailKey>) async throws -> TargetDetails {
+    var details = TargetDetails(unsupported: keys)
+    guard keys.contains(.diagnostics) else {
+      return details
+    }
+    do {
+      details.diagnostics = .read(try await diagnosticInformation.fetch())
+    } catch let error as CancellationError {
+      throw error
+    } catch {
+      details.diagnostics = .failed(error)
+    }
+    return details
+  }
+
   /// Activates the device against Apple's activation servers, if it is not already activated.
   public func activate() async throws {
     try await DeviceActivationStrategy.activate(self)
