@@ -18,6 +18,10 @@ final class SimulatorVendorHIDTransportTests: XCTestCase {
     case injected
   }
 
+  private struct NoSleep: DTUHIDSleeper {
+    func sleep(for duration: Duration) async throws {}
+  }
+
   private actor Connections {
     let services = SyntheticXPCServices()
     let peer: SyntheticXPCPeer
@@ -39,7 +43,7 @@ final class SimulatorVendorHIDTransportTests: XCTestCase {
       return try await SimulatorDTUHIDConnection.connect(
         using: services.connector,
         serviceName: SimulatorVendorHIDTransport.serviceName,
-        clock: DTUHIDClock(sleep: { _ in }))
+        sleeper: NoSleep())
     }
   }
 

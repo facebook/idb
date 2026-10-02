@@ -38,10 +38,14 @@ enum DTUHIDTiming {
 }
 
 /// Injectable waits for the DTUHID transport.
-struct DTUHIDClock: Sendable {
-  let sleep: @Sendable (Duration) async throws -> Void
+protocol DTUHIDSleeper: Sendable {
+  func sleep(for duration: Duration) async throws
+}
 
-  static let live = DTUHIDClock(sleep: { try await Task.sleep(for: $0) })
+struct TaskSleeper: DTUHIDSleeper {
+  func sleep(for duration: Duration) async throws {
+    try await Task.sleep(for: duration)
+  }
 }
 
 /**
@@ -57,7 +61,7 @@ final class SimulatorDTUHIDConnection: Sendable {
 
   private let channel: SimulatorXPCChannel
   let serviceName: String
-  private let clock: DTUHIDClock
+  private let sleeper: any DTUHIDSleeper
   // A drain claims a snapshot of the send count; later sends remain outstanding.
   private let generations = OSAllocatedUnfairLock(initialState: (sent: 0, drained: 0))
 
@@ -72,13 +76,13 @@ final class SimulatorDTUHIDConnection: Sendable {
   /// closes once the boot settles, so a backed-off retry recovers the full transport, keyboard
   /// included, where giving up would cost the keyboard for the lifetime of the boot.
   static func connect(
-    using connector: SimulatorXPCConnector, serviceName: String, clock: DTUHIDClock = .live
+    using connector: SimulatorXPCConnector, serviceName: String, sleeper: any DTUHIDSleeper = TaskSleeper()
   ) async throws -> SimulatorDTUHIDConnection {
     let logger = ControlCoreGlobalConfiguration.defaultLogger
     var lastFailure: Error?
     for attempt in 1...DTUHIDTiming.livenessAttempts {
       do {
-        return try await connected(using: connector, serviceName: serviceName, clock: clock)
+        return try await connected(using: connector, serviceName: serviceName, sleeper: sleeper)
       } catch let error as SimulatorHIDError where error.isPermanentDTUHIDFailure {
         throw error
       } catch {
@@ -88,7 +92,7 @@ final class SimulatorDTUHIDConnection: Sendable {
         guard attempt < DTUHIDTiming.livenessAttempts else {
           break
         }
-        try await clock.sleep(DTUHIDTiming.livenessRetryBackoff)
+        try await sleeper.sleep(for: DTUHIDTiming.livenessRetryBackoff)
       }
     }
     throw SimulatorHIDError.dtuhidUnresponsive(
@@ -100,12 +104,12 @@ final class SimulatorDTUHIDConnection: Sendable {
   /// The lookup belongs to the attempt rather than preceding the loop: a failed attempt cancels its
   /// connection, and a cancelled XPC connection cannot be resumed.
   private static func connected(
-    using connector: SimulatorXPCConnector, serviceName: String, clock: DTUHIDClock
+    using connector: SimulatorXPCConnector, serviceName: String, sleeper: any DTUHIDSleeper
   ) async throws -> SimulatorDTUHIDConnection {
     let connection = SimulatorDTUHIDConnection(
       channel: try await channel(using: connector, serviceName: serviceName),
       serviceName: serviceName,
-      clock: clock)
+      sleeper: sleeper)
     do {
       try await connection.confirmLiveness()
     } catch {
@@ -139,10 +143,10 @@ final class SimulatorDTUHIDConnection: Sendable {
     }
   }
 
-  init(channel: SimulatorXPCChannel, serviceName: String, clock: DTUHIDClock = .live) {
+  init(channel: SimulatorXPCChannel, serviceName: String, sleeper: any DTUHIDSleeper = TaskSleeper()) {
     self.channel = channel
     self.serviceName = serviceName
-    self.clock = clock
+    self.sleeper = sleeper
     channel.activate { event in
       // XPC reconnects on the next send, so an interruption is survivable; it is logged because
       // anything the daemon held for this connection is gone.
@@ -164,7 +168,7 @@ final class SimulatorDTUHIDConnection: Sendable {
   /// so XPC's own answer is the negative result.
   func confirmLiveness() async throws {
     _ = try await channel.request(barrierMessage(), timeout: DTUHIDTiming.livenessTimeout)
-    try await clock.sleep(DTUHIDTiming.replyTail)
+    try await sleeper.sleep(for: DTUHIDTiming.replyTail)
   }
 
   func disconnect() {
@@ -214,7 +218,7 @@ final class SimulatorDTUHIDConnection: Sendable {
     guard generation > generations.withLock({ $0.drained }) else {
       return
     }
-    try await clock.sleep(DTUHIDTiming.drain)
+    try await sleeper.sleep(for: DTUHIDTiming.drain)
     generations.withLock { $0.drained = max($0.drained, generation) }
   }
 

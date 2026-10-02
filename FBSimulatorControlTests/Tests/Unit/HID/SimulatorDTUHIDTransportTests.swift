@@ -382,7 +382,7 @@ final class SimulatorDTUHIDTransportTests: XCTestCase {
     let peer = services.register(SimulatorDigitizerHIDTransport.serviceName, respond: Self.dtuhiddResponder(.answer))
 
     let connection = try await SimulatorDTUHIDConnection.connect(
-      using: services.connector, serviceName: SimulatorDigitizerHIDTransport.serviceName, clock: recordingClock(recorder))
+      using: services.connector, serviceName: SimulatorDigitizerHIDTransport.serviceName, sleeper: RecordingSleeper(recorder: recorder))
     defer { connection.disconnect() }
 
     XCTAssertEqual(services.lookups, [SimulatorDigitizerHIDTransport.serviceName])
@@ -398,7 +398,7 @@ final class SimulatorDTUHIDTransportTests: XCTestCase {
 
     do {
       _ = try await SimulatorDTUHIDConnection.connect(
-        using: services.connector, serviceName: SimulatorDigitizerHIDTransport.serviceName, clock: recordingClock(recorder))
+        using: services.connector, serviceName: SimulatorDigitizerHIDTransport.serviceName, sleeper: RecordingSleeper(recorder: recorder))
       XCTFail("expected the connect to give up")
     } catch let error as SimulatorHIDError {
       guard case .dtuhidUnresponsive(attempts: DTUHIDTiming.livenessAttempts, _) = error else {
@@ -443,7 +443,7 @@ final class SimulatorDTUHIDTransportTests: XCTestCase {
 
     do {
       _ = try await SimulatorDTUHIDConnection.connect(
-        using: services.connector, serviceName: SimulatorDigitizerHIDTransport.serviceName, clock: recordingClock(recorder))
+        using: services.connector, serviceName: SimulatorDigitizerHIDTransport.serviceName, sleeper: RecordingSleeper(recorder: recorder))
       XCTFail("expected the connect to fail")
     } catch let error as SimulatorHIDError {
       guard case .dtuhidServiceNotVended(name: SimulatorDigitizerHIDTransport.serviceName) = error else {
@@ -463,7 +463,7 @@ final class SimulatorDTUHIDTransportTests: XCTestCase {
     services.simulatorState = .booting
 
     let connection = try await SimulatorDTUHIDConnection.connect(
-      using: services.connector, serviceName: SimulatorDigitizerHIDTransport.serviceName, clock: recordingClock(recorder))
+      using: services.connector, serviceName: SimulatorDigitizerHIDTransport.serviceName, sleeper: RecordingSleeper(recorder: recorder))
     connection.disconnect()
 
     XCTAssertEqual(services.simulatorState, .booted)
@@ -480,7 +480,7 @@ final class SimulatorDTUHIDTransportTests: XCTestCase {
 
     do {
       _ = try await SimulatorDTUHIDConnection.connect(
-        using: services.connector, serviceName: SimulatorDigitizerHIDTransport.serviceName, clock: recordingClock(recorder))
+        using: services.connector, serviceName: SimulatorDigitizerHIDTransport.serviceName, sleeper: RecordingSleeper(recorder: recorder))
       XCTFail("expected the connect to fail")
     } catch let error as SimulatorHIDError {
       guard case .dtuhidSimulatorNotBooted(name: SimulatorDigitizerHIDTransport.serviceName, state: .shutdown) = error else {
@@ -600,7 +600,7 @@ final class SimulatorDTUHIDTransportTests: XCTestCase {
   ) -> SimulatorDTUHIDConnection {
     let peer = dtuhidd ?? Self.dtuhidd(.answer)
     let connection = SimulatorDTUHIDConnection(
-      channel: peer.channel(), serviceName: SimulatorDigitizerHIDTransport.serviceName, clock: recordingClock(recorder, gate: gate))
+      channel: peer.channel(), serviceName: SimulatorDigitizerHIDTransport.serviceName, sleeper: RecordingSleeper(recorder: recorder, gate: gate))
     addTeardownBlock {
       connection.disconnect()
       withExtendedLifetime(peer) {}
@@ -694,12 +694,15 @@ final class SimulatorDTUHIDTransportTests: XCTestCase {
     }
   }
 
-  private func recordingClock(_ recorder: DrainRecorder, gate: SleepGate? = nil) -> DTUHIDClock {
-    DTUHIDClock(sleep: { duration in
+  private struct RecordingSleeper: DTUHIDSleeper {
+    let recorder: DrainRecorder
+    var gate: SleepGate?
+
+    func sleep(for duration: Duration) async throws {
       try Task.checkCancellation()
       await gate?.enter()
       try await recorder.sleep(duration)
-    })
+    }
   }
 
   private func encodeDigitizer(_ event: IndigoDigitizerEvent) throws -> xpc_object_t {
