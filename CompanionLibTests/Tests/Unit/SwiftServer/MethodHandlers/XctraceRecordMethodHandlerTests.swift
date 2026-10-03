@@ -177,10 +177,9 @@ struct XctraceRecordMethodHandlerTests {
     try Data(repeating: 0xAB, count: 64 * 1024).write(to: trace.appendingPathComponent("sample"))
     let collector = CollectingWriter<Idb_XctraceRecordResponse>()
 
-    try await XctraceRecordMethodHandler.sendTrace(atPath: trace.path, responseStream: RPCWriter(wrapping: collector), logger: logger, targetLogger: logger)
+    try await XctraceRecordMethodHandler.sendTrace(atPath: trace.path, responseStream: RPCWriter(wrapping: collector), logger: logger)
 
     let received = collector.elements.reduce(into: Data()) { $0.append($1.payload.data) }
-    // BUG: the whole archive is sent as one message and then streamed again, so the client receives it twice — flipped in the following commit.
-    #expect(gzipMembers(in: received) == 2)
+    #expect(gzipMembers(in: received) == 1)
   }
 }

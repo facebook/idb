@@ -139,17 +139,11 @@ struct XctraceRecordMethodHandler {
       logger: logger)
     finishedWriting.set(true)
 
-    try await Self.sendTrace(atPath: processed.path, responseStream: responseStream, logger: logger, targetLogger: targetLogger)
+    try await Self.sendTrace(atPath: processed.path, responseStream: responseStream, logger: logger)
   }
 
-  /// Sends the trace at `path` to the client as a gzipped tar.
-  static func sendTrace(atPath path: String, responseStream: RPCWriter<Idb_XctraceRecordResponse>, logger: ControlCoreLogger, targetLogger: ControlCoreLogger) async throws {
-    let data = try await FBArchiveOperations.createGzippedTarDataAsync(forPath: path, queue: BridgeQueues.futureSerialFullfillmentQueue, logger: targetLogger)
-    let resp = Idb_XctraceRecordResponse.with {
-      $0.payload = .with { $0.data = data as Data }
-    }
-    try await responseStream.send(resp)
-
+  /// Streams the trace at `path` to the client as a single gzipped tar, in chunks.
+  static func sendTrace(atPath path: String, responseStream: RPCWriter<Idb_XctraceRecordResponse>, logger: ControlCoreLogger) async throws {
     let createTarOperation = try await FBArchiveOperations.createGzippedTarAsync(forPath: path, logger: logger)
     try await FileDrainWriter.performDrain(task: createTarOperation) { data in
       let response = Idb_XctraceRecordResponse.with {
