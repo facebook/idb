@@ -184,6 +184,10 @@ struct InstallMethodHandler: @unchecked Sendable {
       }
 
       let tarCompression = Self.tarCompression(declared: compression, initial: data)
+      if tarCompression != compression {
+        let head = data.prefix(16).map { String(format: "%02x", $0) }.joined(separator: " ")
+        targetLogger.log("Extracting a stream declared \(compression) as \(tarCompression), as it does not start with a zstd frame: \(head)")
+      }
       if destination == .app {
         telemetry.streamed(InstallStreamFormat(tarCompression: tarCompression))
       }
@@ -242,8 +246,17 @@ struct InstallMethodHandler: @unchecked Sendable {
   }
 
   /// The compression to extract a streamed tar with, given the one the client declared and the stream's first bytes.
+  ///
+  /// A stream declared zstd that does not start with a zstd frame is extracted as if undeclared, which detects gzip
+  /// and plain tars from their contents, rather than by the zstd decompressor, which would reject it.
   static func tarCompression(declared: FBCompressionFormat, initial: Data) -> FBCompressionFormat {
-    declared
+    guard declared == .ZSTD, initial.count >= 4 else {
+      return declared
+    }
+    let magic = Array(initial.prefix(4))
+    let isFrame = magic == [0x28, 0xB5, 0x2F, 0xFD]
+    let isSkippableFrame = magic[0] & 0xF0 == 0x50 && magic[1...] == [0x2A, 0x4D, 0x18]
+    return isFrame || isSkippableFrame ? .ZSTD : .GZIP
   }
 
   /// A zip is extracted as `receive` spools it to disk, and also from the spool

@@ -130,8 +130,7 @@ final class InstallMethodHandlerTests: XCTestCase {
       tarHeader,
     ]
     for stream in streams {
-      // BUG: a stream declared zstd that is gzip or a plain tar is extracted with the zstd decompressor, which rejects it — flipped in the following commit.
-      XCTAssertEqual(InstallMethodHandler.tarCompression(declared: .ZSTD, initial: stream), .ZSTD, "\(stream as NSData)")
+      XCTAssertEqual(InstallMethodHandler.tarCompression(declared: .ZSTD, initial: stream), .GZIP, "\(stream as NSData)")
     }
   }
 
