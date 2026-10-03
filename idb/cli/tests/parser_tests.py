@@ -426,7 +426,7 @@ class TestParser(TestCase):
             self.assertEqual(await cli_main(cmd_input=command), 0)
         self.assertEqual(
             output.getvalue(),
-            "Installed {install_response.progress}%\nInstalled: Symbols.dSYM\n",
+            "Installed 50.0%\nInstalled: Symbols.dSYM\n",
         )
         self.client_mock.install_dsym.assert_called_once_with(
             "Symbols.dSYM",
@@ -455,8 +455,7 @@ class TestParser(TestCase):
             self.assertEqual(await cli_main(cmd_input=command), 0)
         self.assertEqual(
             output.getvalue(),
-            "Installed {install_response.progress}%\n"
-            "Installed: libExample.dylib dylib-uuid\n",
+            "Installed 50.0%\nInstalled: libExample.dylib dylib-uuid\n",
         )
         self.client_mock.install_dylib.assert_called_once_with("libExample.dylib")
 
@@ -482,8 +481,7 @@ class TestParser(TestCase):
             self.assertEqual(await cli_main(cmd_input=command), 0)
         self.assertEqual(
             output.getvalue(),
-            "Installed {install_response.progress}%\n"
-            "Installed: Example.framework framework-uuid\n",
+            "Installed 50.0%\nInstalled: Example.framework framework-uuid\n",
         )
         self.client_mock.install_framework.assert_called_once_with("Example.framework")
 
@@ -815,8 +813,7 @@ class TestParser(TestCase):
             self.assertEqual(await cli_main(cmd_input=command), 0)
         self.assertEqual(
             output.getvalue(),
-            "Installed {install_response.progress}%\n"
-            "Installed: com.example.tests xctest-uuid\n",
+            "Installed 50.0%\nInstalled: com.example.tests xctest-uuid\n",
         )
         self.client_mock.install_xctest.assert_called_once_with(test_bundle_path, True)
 

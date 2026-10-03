@@ -53,7 +53,7 @@ class XctestInstallCommand(ClientCommand):
             args.test_bundle_path, args.skip_signing_bundles
         ):
             if install_response.progress != 0.0 and not args.json:
-                print("Installed {install_response.progress}%")
+                print(f"Installed {install_response.progress}%")
             elif args.json:
                 print(
                     json.dumps(

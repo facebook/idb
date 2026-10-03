@@ -30,7 +30,7 @@ class FrameworkInstallCommand(ClientCommand):
     async def run_with_client(self, args: Namespace, client: Client) -> None:
         async for install_response in client.install_framework(args.framework_path):
             if install_response.progress != 0.0 and not args.json:
-                print("Installed {install_response.progress}%")
+                print(f"Installed {install_response.progress}%")
             elif args.json:
                 print(
                     json.dumps(
