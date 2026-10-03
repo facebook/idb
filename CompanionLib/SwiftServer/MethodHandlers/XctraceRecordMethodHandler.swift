@@ -8,8 +8,24 @@
 import CompanionUtilities
 import FBControlCore
 import FBSimulatorControl
+import Foundation
 import GRPCCore
 import IDBGRPCSwift
+
+/// The parts of a running xctrace a record session drives.
+protocol XCTraceRecording: Sendable {
+  /// Resolves with xctrace's exit status once it exits, whether it was stopped or exited on its own.
+  func exitStatus() async throws -> Int32
+
+  /// Interrupts xctrace and returns the trace it wrote, throwing if xctrace exited with a failure.
+  func stop(withTimeout timeout: TimeInterval) async throws -> URL
+}
+
+extension XCTraceRecordOperation: XCTraceRecording {
+  func exitStatus() async throws -> Int32 {
+    try await bridgeFBFuture(task.exitCode).int32Value
+  }
+}
 
 struct XctraceRecordMethodHandler {
 
@@ -26,10 +42,18 @@ struct XctraceRecordMethodHandler {
     else { throw RPCError(code: .failedPrecondition, message: "Expected start control") }
     let operation = try await startXCTraceOperation(request: start, responseStream: responseStream, finishedWriting: _finishedWriting)
 
+    let stop = try await Self.recordUntilStopped(requestStream: requestStream, recording: operation)
+    try await finishXCTrace(operation: operation, request: stop, responseStream: responseStream, finishedWriting: _finishedWriting)
+  }
+
+  /// Records until the client sends Stop, then stops xctrace.
+  static func recordUntilStopped(requestStream: RequestStreamReader<Idb_XctraceRecordRequest>, recording: some XCTraceRecording) async throws -> Idb_XctraceRecordRequest.Stop {
     guard case let .stop(stop) = try await requestStream.requiredNext().control
     else { throw RPCError(code: .failedPrecondition, message: "Expected end control") }
 
-    try await stopXCTrace(operation: operation, request: stop, responseStream: responseStream, finishedWriting: _finishedWriting)
+    let stopTimeout = stop.timeout != 0 ? stop.timeout : DefaultXCTraceRecordStopTimeout
+    _ = try await recording.stop(withTimeout: stopTimeout)
+    return stop
   }
 
   private func startXCTraceOperation(request start: Idb_XctraceRecordRequest.Start, responseStream: RPCWriter<Idb_XctraceRecordResponse>, finishedWriting: Atomic<Bool>) async throws -> XCTraceRecordOperation {
@@ -64,9 +88,7 @@ struct XctraceRecordMethodHandler {
     return operation
   }
 
-  private func stopXCTrace(operation: XCTraceRecordOperation, request stop: Idb_XctraceRecordRequest.Stop, responseStream: RPCWriter<Idb_XctraceRecordResponse>, finishedWriting: Atomic<Bool>) async throws {
-    let stopTimeout = stop.timeout != 0 ? stop.timeout : DefaultXCTraceRecordStopTimeout
-    _ = try await operation.stop(withTimeout: stopTimeout)
+  private func finishXCTrace(operation: XCTraceRecordOperation, request stop: Idb_XctraceRecordRequest.Stop, responseStream: RPCWriter<Idb_XctraceRecordResponse>, finishedWriting: Atomic<Bool>) async throws {
     let response = Idb_XctraceRecordResponse.with {
       $0.state = .processing
     }
@@ -79,8 +101,11 @@ struct XctraceRecordMethodHandler {
       logger: logger)
     finishedWriting.set(true)
 
-    let path = processed.path
+    try await Self.sendTrace(atPath: processed.path, responseStream: responseStream, logger: logger, targetLogger: targetLogger)
+  }
 
+  /// Sends the trace at `path` to the client as a gzipped tar.
+  static func sendTrace(atPath path: String, responseStream: RPCWriter<Idb_XctraceRecordResponse>, logger: ControlCoreLogger, targetLogger: ControlCoreLogger) async throws {
     let data = try await FBArchiveOperations.createGzippedTarDataAsync(forPath: path, queue: BridgeQueues.futureSerialFullfillmentQueue, logger: targetLogger)
     let resp = Idb_XctraceRecordResponse.with {
       $0.payload = .with { $0.data = data as Data }

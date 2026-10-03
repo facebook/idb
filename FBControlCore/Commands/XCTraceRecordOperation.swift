@@ -29,7 +29,7 @@ extension XCTraceError: LocalizedError {
   }
 }
 
-public final class XCTraceRecordOperation {
+public final class XCTraceRecordOperation: @unchecked Sendable {
 
   public let task: FBSubprocess<AnyObject, AnyObject, AnyObject>
   public let queue: DispatchQueue
