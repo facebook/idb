@@ -44,6 +44,35 @@ private final class FakeRecording: XCTraceRecording, @unchecked Sendable {
   }
 }
 
+private let logger = FBControlCoreLoggerFactory.systemLoggerWriting(toStderr: false, withDebugLogging: false)
+
+private final class CollectingWriter<Element: Sendable>: RPCWriterProtocol, @unchecked Sendable {
+  private let lock = NSLock()
+  private var written: [Element] = []
+
+  var elements: [Element] { lock.withLock { written } }
+
+  func write(_ element: Element) async throws {
+    lock.withLock { written.append(element) }
+  }
+
+  func write(contentsOf elements: some Sequence<Element>) async throws {
+    for element in elements {
+      try await write(element)
+    }
+  }
+}
+
+/// Counts gzip member headers (magic, deflate, Unix OS byte). A client's `tar` stops at the end of the first member,
+/// so anything after it is unread.
+private func gzipMembers(in data: Data) -> Int {
+  let bytes = [UInt8](data)
+  guard bytes.count >= 10 else { return 0 }
+  return (0...(bytes.count - 10)).filter { offset in
+    bytes[offset] == 0x1F && bytes[offset + 1] == 0x8B && bytes[offset + 2] == 0x08 && bytes[offset + 9] == 0x03
+  }.count
+}
+
 private enum Outcome {
   case returned(Idb_XctraceRecordRequest.Stop)
   case threw(any Error)
@@ -138,5 +167,20 @@ struct XctraceRecordMethodHandlerTests {
     }
     #expect((error as? RPCError)?.message.contains("status 1") == true)
     #expect(recording.stopTimeouts.isEmpty)
+  }
+
+  @Test
+  func theTraceIsSentAsASingleArchive() async throws {
+    let trace = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent("xctrace-send-\(UUID().uuidString).trace")
+    try FileManager.default.createDirectory(at: trace, withIntermediateDirectories: true)
+    defer { try? FileManager.default.removeItem(at: trace) }
+    try Data(repeating: 0xAB, count: 64 * 1024).write(to: trace.appendingPathComponent("sample"))
+    let collector = CollectingWriter<Idb_XctraceRecordResponse>()
+
+    try await XctraceRecordMethodHandler.sendTrace(atPath: trace.path, responseStream: RPCWriter(wrapping: collector), logger: logger, targetLogger: logger)
+
+    let received = collector.elements.reduce(into: Data()) { $0.append($1.payload.data) }
+    // BUG: the whole archive is sent as one message and then streamed again, so the client receives it twice — flipped in the following commit.
+    #expect(gzipMembers(in: received) == 2)
   }
 }
