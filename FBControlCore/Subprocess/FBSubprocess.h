@@ -26,7 +26,7 @@ static const size_t FBProcessOutputErrorMessageLength = 200;
 @property (nonatomic, readonly, assign) pid_t processIdentifier;
 
 /**
- A future that resolves with the the value from waitpid(2) on termination.
+ A future that resolves with the value from waitpid(2) on termination.
  This will always resolve on completion, regardless of whether the process was signalled or exited normally.
  Cancelling this Future will have no effect on the process, but will settle the Future as cancelled so that it never delivers the value. To terminate the process use the `sendSignal:` APIs.
  */
