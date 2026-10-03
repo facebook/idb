@@ -151,7 +151,7 @@ struct InstallMethodHandler: @unchecked Sendable {
     telemetry: InstallTelemetry
   ) async throws -> InstalledArtifact {
 
-    func installSource(dataStream: FBProcessInput<AnyObject>, skipSigningBundles: Bool) async throws -> InstalledArtifact {
+    func installSource(dataStream: FBProcessInput<AnyObject>, compression: FBCompressionFormat, skipSigningBundles: Bool) async throws -> InstalledArtifact {
       switch destination {
       case .app:
         return try await commandExecutor.install_app_stream(dataStream, compression: compression, make_debuggable: makeDebuggable, override_modification_time: overrideModificationTime, on_progress: telemetry.observe)
@@ -183,14 +183,16 @@ struct InstallMethodHandler: @unchecked Sendable {
         }
       }
 
+      let tarCompression = Self.tarCompression(declared: compression, initial: data)
       if destination == .app {
-        telemetry.streamed(InstallStreamFormat(tarCompression: compression))
+        telemetry.streamed(InstallStreamFormat(tarCompression: tarCompression))
       }
       let input = FBProcessInput<OutputStream>.fromStream()
       let output = input.contents
       async let writePayload: Void = writePayload(initial: data, requestStream: requestStream, output: output, telemetry: telemetry)
       let artifact = try await installSource(
         dataStream: input.retyped(FBProcessInput<AnyObject>.self),
+        compression: tarCompression,
         skipSigningBundles: skipSigningBundles)
       try await writePayload
       return artifact
@@ -205,7 +207,7 @@ struct InstallMethodHandler: @unchecked Sendable {
       let download = DataDownloadInput.dataDownload(withURL: url, logger: targetLogger)
       let input = download.input
 
-      return try await installSource(dataStream: input, skipSigningBundles: skipSigningBundles)
+      return try await installSource(dataStream: input, compression: compression, skipSigningBundles: skipSigningBundles)
 
     case let .filePath(filePath):
       switch destination {
@@ -237,6 +239,11 @@ struct InstallMethodHandler: @unchecked Sendable {
 
   static func isZstdZipStream(_ data: Data) -> Bool {
     data.starts(with: zstdZipStreamMarker)
+  }
+
+  /// The compression to extract a streamed tar with, given the one the client declared and the stream's first bytes.
+  static func tarCompression(declared: FBCompressionFormat, initial: Data) -> FBCompressionFormat {
+    declared
   }
 
   /// A zip is extracted as `receive` spools it to disk, and also from the spool
