@@ -132,11 +132,11 @@ struct XctraceRecordMethodHandlerTests {
 
     let result = await outcome(of: recording, requests: requests)
 
-    // BUG: xctrace has already exited with status 1, but the session waits for a Stop that may never come, hanging the client — flipped in the following commit.
-    guard case .stillWaiting = result else {
-      Issue.record("expected recording to still be waiting, got \(result)")
+    guard case let .threw(error) = result else {
+      Issue.record("expected recording to fail once xctrace exited, got \(result)")
       return
     }
+    #expect((error as? RPCError)?.message.contains("status 1") == true)
     #expect(recording.stopTimeouts.isEmpty)
   }
 }

@@ -23,7 +23,24 @@ protocol XCTraceRecording: Sendable {
 
 extension XCTraceRecordOperation: XCTraceRecording {
   func exitStatus() async throws -> Int32 {
-    try await bridgeFBFuture(task.exitCode).int32Value
+    // Not `bridgeFBFuture`: cancelling this wait must not cancel `task.exitCode`, which `stop` still awaits.
+    let (statuses, continuation) = AsyncThrowingStream.makeStream(of: Int32.self, throwing: (any Error).self)
+    task.exitCode.onQueue(
+      queue,
+      notifyOfCompletion: { resolved in
+        if let error = resolved.error {
+          continuation.finish(throwing: error)
+        } else if let code = resolved.result as? NSNumber {
+          continuation.yield(code.int32Value)
+          continuation.finish()
+        } else {
+          continuation.finish(throwing: CancellationError())
+        }
+      })
+    for try await status in statuses {
+      return status
+    }
+    throw CancellationError()
   }
 }
 
@@ -46,9 +63,30 @@ struct XctraceRecordMethodHandler {
     try await finishXCTrace(operation: operation, request: stop, responseStream: responseStream, finishedWriting: _finishedWriting)
   }
 
-  /// Records until the client sends Stop, then stops xctrace.
+  /// Records until the client sends Stop, then stops xctrace. Fails as soon as xctrace exits with a failure,
+  /// since the client may otherwise wait forever for a session that has already ended.
   static func recordUntilStopped(requestStream: RequestStreamReader<Idb_XctraceRecordRequest>, recording: some XCTraceRecording) async throws -> Idb_XctraceRecordRequest.Stop {
-    guard case let .stop(stop) = try await requestStream.requiredNext().control
+    let request = try await withThrowingTaskGroup(of: Idb_XctraceRecordRequest?.self) { group in
+      group.addTask {
+        try await requestStream.requiredNext()
+      }
+      group.addTask {
+        let status = try await recording.exitStatus()
+        guard status == 0 else {
+          throw RPCError(code: .internalError, message: "xctrace exited with status \(status) before it was stopped")
+        }
+        // A clean exit leaves a trace to collect, so keep waiting for Stop.
+        return nil
+      }
+      while let next = try await group.next() {
+        if let request = next {
+          group.cancelAll()
+          return request
+        }
+      }
+      throw RPCError(code: .internalError, message: "Recording ended without a Stop")
+    }
+    guard case let .stop(stop) = request.control
     else { throw RPCError(code: .failedPrecondition, message: "Expected end control") }
 
     let stopTimeout = stop.timeout != 0 ? stop.timeout : DefaultXCTraceRecordStopTimeout
