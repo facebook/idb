@@ -55,6 +55,15 @@ enum TestFixtures {
   static let probeFootprintPath = Bundle(for: BundleFinder.self)
     .path(forResource: "probe_footprint", ofType: "json")!
 
+  static let probeXctraceTableOfContentsPath = Bundle(for: BundleFinder.self)
+    .path(forResource: "probe_xctrace_toc", ofType: "xml")!
+
+  static let probeXctraceTimeProfilePath = Bundle(for: BundleFinder.self)
+    .path(forResource: "probe_xctrace_time_profile", ofType: "xml")!
+
+  static let probeXctracePotentialHangsPath = Bundle(for: BundleFinder.self)
+    .path(forResource: "probe_xctrace_potential_hangs", ofType: "xml")!
+
   static let bundleResource = Bundle(for: BundleFinder.self).resourcePath!
 }
 
