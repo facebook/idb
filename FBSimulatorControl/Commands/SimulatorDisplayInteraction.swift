@@ -40,11 +40,13 @@ public enum SimulatorDisplayInteractionError: Error, LocalizedError {
 }
 
 /// An immutable mapping for one observed display configuration. Numeric IDs belong to separate namespaces.
-/// Revalidate before using saved coordinates; this snapshot does not record intervening transitions.
+/// Revalidate before using saved coordinates.
 public struct SimulatorDisplayInteractionContext: Equatable, Sendable {
   public let display: SimulatorDisplay
   public let accessibilityDisplayID: UInt32
   public let digitizerTarget: UInt32
+  /// The `SimulatorDisplayConfiguration.generation` the mapping was resolved in.
+  public let generation: UInt64
 
   /// Display-relative dimensions in points, after interface rotation.
   public var pointSize: CGSize {
@@ -116,7 +118,8 @@ extension SimulatorDisplayInteractionContext {
   static func join(
     display: SimulatorDisplay,
     touchscreens: [SimulatorTouchscreen],
-    accessibility: [SimulatorAccessibilityDisplay]
+    accessibility: [SimulatorAccessibilityDisplay],
+    generation: UInt64
   ) throws -> SimulatorDisplayInteractionContext {
     let matchingTouchscreens = touchscreens.filter { $0.displayUniqueID == display.uniqueID }
     let matchingAccessibility = accessibility.filter { $0.uniqueID == display.uniqueID }
@@ -125,7 +128,7 @@ extension SimulatorDisplayInteractionContext {
       touchscreen.digitizerTarget > 0, axDisplay.displayID > 0
     else { throw SimulatorDisplayInteractionError.missingMapping(display.uniqueID) }
     return SimulatorDisplayInteractionContext(
-      display: display, accessibilityDisplayID: axDisplay.displayID, digitizerTarget: touchscreen.digitizerTarget)
+      display: display, accessibilityDisplayID: axDisplay.displayID, digitizerTarget: touchscreen.digitizerTarget, generation: generation)
   }
 }
 
@@ -148,14 +151,20 @@ extension DisplayCommands {
     }
     let touchscreens = try await touchscreens()
     let accessibility = try AXBridgeDisplayInventory.decode(await transport.send(.displays))
-    let context = try SimulatorDisplayInteractionContext.join(display: display, touchscreens: touchscreens, accessibility: accessibility)
     try await validate(.identified(display))
-    return context
+    guard let configuration = configurationTracker.latest, configuration.active?.hasSameConfiguration(as: display) == true else {
+      throw SimulatorDisplayError.changed
+    }
+    return try SimulatorDisplayInteractionContext.join(
+      display: display, touchscreens: touchscreens, accessibility: accessibility, generation: configuration.generation)
   }
 
   /// Compares the observed identity, geometry and routing. No new display is substituted on mismatch.
   func validate(_ context: SimulatorDisplayInteractionContext, transport: any AXBridgeTransport) async throws {
     let current = try await interactionContext(for: nil, transport: transport)
+    guard current.generation == context.generation else {
+      throw SimulatorDisplayError.changed
+    }
     guard current.display.hasSameConfiguration(as: context.display),
       current.accessibilityDisplayID == context.accessibilityDisplayID,
       current.digitizerTarget == context.digitizerTarget

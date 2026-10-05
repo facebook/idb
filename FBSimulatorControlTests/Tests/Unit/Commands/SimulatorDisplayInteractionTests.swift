@@ -24,7 +24,7 @@ final class SimulatorDisplayInteractionTests: XCTestCase {
     try SimulatorDisplayInteractionContext.join(
       display: display,
       touchscreens: [SimulatorTouchscreen(displayUniqueID: display.uniqueID, digitizerTarget: 29)],
-      accessibility: [SimulatorAccessibilityDisplay(uniqueID: display.uniqueID, displayID: 82)])
+      accessibility: [SimulatorAccessibilityDisplay(uniqueID: display.uniqueID, displayID: 82)], generation: 1)
   }
 
   func testHIDBindingNeedsOnlyTheMatchingTouchscreenIdentity() async throws {
@@ -114,7 +114,7 @@ final class SimulatorDisplayInteractionTests: XCTestCase {
       accessibility: [
         SimulatorAccessibilityDisplay(uniqueID: "inner", displayID: 82),
         SimulatorAccessibilityDisplay(uniqueID: "cover", displayID: 29),
-      ])
+      ], generation: 1)
     XCTAssertEqual(result.display.uniqueID, "inner")
     XCTAssertEqual(result.accessibilityDisplayID, 82)
     XCTAssertEqual(result.digitizerTarget, 29)
@@ -124,10 +124,10 @@ final class SimulatorDisplayInteractionTests: XCTestCase {
     let touchscreen = SimulatorTouchscreen(displayUniqueID: "inner", digitizerTarget: 29)
     let axDisplay = SimulatorAccessibilityDisplay(uniqueID: "inner", displayID: 82)
     for touchscreens in [[], [touchscreen, touchscreen]] {
-      XCTAssertThrowsError(try SimulatorDisplayInteractionContext.join(display: display(), touchscreens: touchscreens, accessibility: [axDisplay]))
+      XCTAssertThrowsError(try SimulatorDisplayInteractionContext.join(display: display(), touchscreens: touchscreens, accessibility: [axDisplay], generation: 1))
     }
     for accessibility in [[], [axDisplay, axDisplay]] {
-      XCTAssertThrowsError(try SimulatorDisplayInteractionContext.join(display: display(), touchscreens: [touchscreen], accessibility: accessibility))
+      XCTAssertThrowsError(try SimulatorDisplayInteractionContext.join(display: display(), touchscreens: [touchscreen], accessibility: accessibility, generation: 1))
     }
   }
 
@@ -255,5 +255,17 @@ final class SimulatorDisplayInteractionTests: XCTestCase {
     let resolved = try await displays.interactionContext(for: "inner", transport: InventoryTransport(accessibility))
     XCTAssertEqual(resolved, saved)
     try await displays.validate(saved, transport: InventoryTransport(accessibility))
+  }
+
+  func testValidationRejectsAContextFromAnEarlierGenerationAfterTheDisplayReturns() async throws {
+    let displays = DisplayCommandsDouble(
+      .selected(display()), touchscreens: [SimulatorTouchscreen(displayUniqueID: "inner", digitizerTarget: 29)])
+    let saved = try await displays.interactionContext(for: nil, transport: InventoryTransport(accessibility))
+    _ = try displays.configurationTracker.observe(.reporting(.selected(display(rotation: .clockwise))))
+    _ = try displays.configurationTracker.observe(.reporting(.selected(display())))
+    do {
+      try await displays.validate(saved, transport: InventoryTransport(accessibility))
+      XCTFail("Expected a stale configuration")
+    } catch { guard case SimulatorDisplayError.changed = error else { return XCTFail("\(error)") } }
   }
 }

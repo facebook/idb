@@ -78,37 +78,38 @@ public final class SimulatorHID: CustomStringConvertible, Sendable {
 
   // MARK: - Dispatch
 
-  /// Sends one complete gesture using a single display binding. With `.perEvent` it then drains once —
+  /// Sends one complete gesture whose touches land on `binding`. With `.perEvent` it then drains once —
   /// so a tap or typed string settles once, not per primitive. The transport skips the drain when
   /// nothing reached it.
   public func send(
     event: SimulatorHIDEvent,
     logger: ControlCoreLogger,
     drain: SimulatorHIDDrain = .perEvent,
-    pinnedTo displayUniqueID: String? = nil
+    on binding: SimulatorHIDDisplayBinding = .active
   ) async throws {
     let events = AsyncStream<SimulatorHIDEvent> { continuation in
       continuation.yield(event)
       continuation.finish()
     }
-    try await send(events: events, logger: logger, flushing: drain == .perEvent, pinnedTo: displayUniqueID)
+    try await send(events: events, logger: logger, flushing: drain == .perEvent, binding: binding)
   }
 
-  /// Sends a stream as one operation. Touch coordinates use the display resolved at the first touch.
-  /// An observed display change fails the operation; cancellation releases contacts on the original display.
+  /// Sends a stream as one operation whose touches land on `binding`. Touch coordinates use the display resolved
+  /// at the first touch. An observed display change fails the operation; cancellation releases contacts on the
+  /// original display.
   public func send<S: AsyncSequence>(
-    events: S, logger: ControlCoreLogger, pinnedTo displayUniqueID: String? = nil
+    events: S, logger: ControlCoreLogger, on binding: SimulatorHIDDisplayBinding = .active
   ) async throws where S.Element == SimulatorHIDEvent {
-    try await send(events: events, logger: logger, flushing: true, pinnedTo: displayUniqueID)
+    try await send(events: events, logger: logger, flushing: true, binding: binding)
   }
 
   private func send<S: AsyncSequence>(
-    events: S, logger: ControlCoreLogger, flushing: Bool, pinnedTo displayUniqueID: String?
+    events: S, logger: ControlCoreLogger, flushing: Bool, binding: SimulatorHIDDisplayBinding
   ) async throws where S.Element == SimulatorHIDEvent {
     try await operationLease.withLease {
       var operation = SimulatorHIDOperation(
         displays: displays,
-        pinnedTo: displayUniqueID,
+        binding: binding,
         sink: LoggingSink(hid: self, logger: logger, logging: logging))
       do {
         for try await event in events {

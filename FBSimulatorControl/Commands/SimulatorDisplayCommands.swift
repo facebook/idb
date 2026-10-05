@@ -252,8 +252,8 @@ public final class SimulatorDisplayCommands: DisplayCommands, @unchecked Sendabl
     try await interactionContext(for: displayUniqueID, transport: AXBridgeOneshotTransport(simulator: target()))
   }
 
-  /// Fails if the observed active display, geometry or routing no longer matches the saved context.
-  /// This is a fresh snapshot comparison, not a record of every intervening display transition.
+  /// Fails if the observed active display, geometry or routing no longer matches the saved context, or the
+  /// configuration generation has moved on since it was resolved.
   public func validate(_ context: SimulatorDisplayInteractionContext) async throws {
     try await validate(context, transport: AXBridgeOneshotTransport(simulator: target()))
   }

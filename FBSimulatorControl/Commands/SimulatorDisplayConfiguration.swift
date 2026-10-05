@@ -39,6 +39,13 @@ final class DisplayConfigurationTracker: @unchecked Sendable {
   private let lock = NSLock()
   private var current: (configuration: SimulatorDisplayConfiguration, basis: [SimulatorInteractionDisplay])?
 
+  /// The most recently observed configuration, if any read has succeeded.
+  var latest: SimulatorDisplayConfiguration? {
+    lock.lock()
+    defer { lock.unlock() }
+    return current?.configuration
+  }
+
   /// Throws a failed read's error, which says nothing about the configuration.
   func observe(_ report: SimulatorDisplayReport) throws -> SimulatorDisplayConfiguration {
     lock.lock()

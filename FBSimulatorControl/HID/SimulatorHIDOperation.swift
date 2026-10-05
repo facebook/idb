@@ -120,26 +120,27 @@ protocol SimulatorHIDOperationSink: Sendable {
 /// Operation-local state; no caller can send another event through this binding concurrently.
 struct SimulatorHIDOperation {
   let displays: (any DisplayCommands)?
-  let pinnedDisplayUniqueID: String?
+  let binding: SimulatorHIDDisplayBinding
   let sink: any SimulatorHIDOperationSink
 
   private let observation: SimulatorHIDDisplayObservation
   private var observationTask: Task<Void, Never>?
   private var resolvedDisplay = false
   private var display: SimulatorHIDDisplay?
+  private var generation: UInt64?
   private var singleRelease: SimulatorHIDEvent?
   private var twoFingerRelease: SimulatorHIDEvent?
   private var needsFlush = false
 
   init(
     displays: (any DisplayCommands)?,
-    pinnedTo pinnedDisplayUniqueID: String? = nil,
+    binding: SimulatorHIDDisplayBinding = .active,
     sink: any SimulatorHIDOperationSink,
     observation: SimulatorHIDDisplayObservation = SimulatorHIDDisplayObservation()
   ) {
     self.observation = observation
     self.displays = displays
-    self.pinnedDisplayUniqueID = pinnedDisplayUniqueID
+    self.binding = binding
     self.sink = sink
   }
 
@@ -190,6 +191,7 @@ struct SimulatorHIDOperation {
     try Task.checkCancellation()
     if let display {
       observation.record(.success(try await Self.route(displays)), matching: display)
+      if Self.configurationMoved(in: displays, from: generation) { observation.record(.failure(SimulatorDisplayError.changed), matching: display) }
     }
     await stopObserving()
     try Task.checkCancellation()
@@ -205,21 +207,29 @@ struct SimulatorHIDOperation {
   private mutating func bindOrValidateDisplay() async throws {
     if !resolvedDisplay {
       display = try await Self.route(displays)
-      if let pinnedDisplayUniqueID {
+      let latest = displays?.configurationTracker.latest
+      switch binding {
+      case .active:
+        break
+      case let .display(uniqueID):
         let pinnedDisplay: SimulatorDisplay?
         switch display {
         case let .selected(selected, _): pinnedDisplay = selected
         case let .sole(.identified(identified)): pinnedDisplay = identified
         case .sole(.legacy), nil: pinnedDisplay = nil
         }
-        guard pinnedDisplay?.uniqueID == pinnedDisplayUniqueID else {
-          throw SimulatorDisplayInteractionError.inactiveDisplay(pinnedDisplayUniqueID)
+        guard pinnedDisplay?.uniqueID == uniqueID else {
+          throw SimulatorDisplayInteractionError.inactiveDisplay(uniqueID)
         }
+      case let .configuration(configuration):
+        guard latest?.generation == configuration.generation else { throw SimulatorDisplayError.changed }
       }
       try Task.checkCancellation()
       resolvedDisplay = true
+      generation = latest?.generation
       if let display, let displays {
         let observation = observation
+        let generation = generation
         // Capability round trips must not stretch the gesture's sample intervals. The operation
         // owns this observer and joins it before releasing its lease, including on cancellation.
         observationTask = Task {
@@ -235,6 +245,8 @@ struct SimulatorHIDOperation {
               case let .target(target):
                 guard target.display.hasSameConfiguration(as: display.interactionDisplay) else { throw SimulatorDisplayError.changed }
               }
+              // Another reader of the same simulator may have seen a change that this poll's interval missed.
+              if Self.configurationMoved(in: displays, from: generation) { throw SimulatorDisplayError.changed }
               try observation.check()
               try await Task.sleep(nanoseconds: 50_000_000)
             } catch {
@@ -257,6 +269,11 @@ struct SimulatorHIDOperation {
     case let .target(.sole(display)): return .sole(display)
     case let .target(.selected(display)): return .selected(display, target: try await displays.digitizerTarget(for: display))
     }
+  }
+
+  private static func configurationMoved(in displays: (any DisplayCommands)?, from generation: UInt64?) -> Bool {
+    guard let generation, let latest = displays?.configurationTracker.latest else { return false }
+    return latest.generation != generation
   }
 
   private func stopObserving() async {

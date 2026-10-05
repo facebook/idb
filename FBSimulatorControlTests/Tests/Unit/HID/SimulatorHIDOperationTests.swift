@@ -278,7 +278,7 @@ final class SimulatorHIDOperationTests: XCTestCase {
 
   func testPinnedGestureBindsEveryEventToTheConfirmedDisplay() async throws {
     let recorder = Recorder()
-    var operation = makeOperation(recorder, pinnedTo: "inner")
+    var operation = makeOperation(recorder, binding: .display(uniqueID: "inner"))
     _ = try await operation.send(.touch(direction: .down, x: 20, y: 30))
     _ = try await operation.send(.touch(direction: .down, x: 25, y: 35))
     _ = try await operation.send(.touch(direction: .up, x: 25, y: 35))
@@ -292,7 +292,7 @@ final class SimulatorHIDOperationTests: XCTestCase {
     let displays = DisplayCommandsDouble(.sole(.identified(screen())))
     var operation = SimulatorHIDOperation(
       displays: displays,
-      pinnedTo: "inner",
+      binding: .display(uniqueID: "inner"),
       sink: recorder)
 
     _ = try await operation.send(.tapAt(x: 20, y: 30))
@@ -307,7 +307,7 @@ final class SimulatorHIDOperationTests: XCTestCase {
     let recorder = Recorder()
     var operation = SimulatorHIDOperation(
       displays: DisplayCommandsDouble(.sole(.identified(screen("cover")))),
-      pinnedTo: "inner",
+      binding: .display(uniqueID: "inner"),
       sink: recorder)
 
     do {
@@ -324,7 +324,7 @@ final class SimulatorHIDOperationTests: XCTestCase {
     let recorder = Recorder()
     var operation = SimulatorHIDOperation(
       displays: DisplayCommandsDouble(.sole(.legacy(screen().geometry))),
-      pinnedTo: "inner",
+      binding: .display(uniqueID: "inner"),
       sink: recorder)
 
     do {
@@ -339,7 +339,7 @@ final class SimulatorHIDOperationTests: XCTestCase {
 
   func testPinnedGestureIsRefusedWhenAnotherDisplayIsActive() async throws {
     let recorder = Recorder()
-    var operation = makeOperation(recorder, pinnedTo: "cover")
+    var operation = makeOperation(recorder, binding: .display(uniqueID: "cover"))
     do {
       _ = try await operation.send(.touch(direction: .down, x: 20, y: 30))
       XCTFail("expected the pin to refuse the active display")
@@ -355,7 +355,7 @@ final class SimulatorHIDOperationTests: XCTestCase {
 
   func testAbandonedPinnedGestureReleasesOnTheDisplayItOpenedOn() async throws {
     let recorder = Recorder()
-    var operation = makeOperation(recorder, pinnedTo: "inner")
+    var operation = makeOperation(recorder, binding: .display(uniqueID: "inner"))
     _ = try await operation.send(.touch(direction: .down, x: 20, y: 30))
     await recorder.setDisplay(screen("cover"))
     _ = await operation.cleanup()
@@ -364,14 +364,57 @@ final class SimulatorHIDOperationTests: XCTestCase {
     XCTAssertEqual(events.compactMap(\.1), [display(), display()])
   }
 
+  func testConfigurationBoundGestureDeliversWhileItsGenerationIsCurrent() async throws {
+    let recorder = Recorder()
+    let configuration = try recorder.configurationTracker.observe(.reporting(.selected(screen())))
+    var operation = makeOperation(recorder, binding: .configuration(configuration))
+    _ = try await operation.send(.tapAt(x: 20, y: 30))
+    try await operation.finish(flushing: true)
+    let events = await recorder.events
+    XCTAssertEqual(events.compactMap(\.1), [display(), display()])
+  }
+
+  func testConfigurationBoundGestureIsRefusedOnceTheGenerationMovesOn() async throws {
+    let recorder = Recorder()
+    let stale = try recorder.configurationTracker.observe(.reporting(.selected(screen(rotation: .clockwise))))
+    var operation = makeOperation(recorder, binding: .configuration(stale))
+    do {
+      _ = try await operation.send(.touch(direction: .down, x: 20, y: 30))
+      XCTFail("expected a stale configuration")
+    } catch {
+      guard case SimulatorDisplayError.changed = error else { return XCTFail("unexpected error: \(error)") }
+      await assertCleanup(operation)
+    }
+    let events = await recorder.events
+    XCTAssertTrue(events.isEmpty)
+  }
+
+  func testGenerationChangeSeenByAnotherReaderFailsTheGestureAndReleasesOnTheOriginalDisplay() async throws {
+    let recorder = Recorder()
+    var operation = makeOperation(recorder)
+    _ = try await operation.send(.touch(direction: .down, x: 20, y: 30))
+    _ = try recorder.configurationTracker.observe(.reporting(.selected(screen(rotation: .clockwise))))
+    _ = try recorder.configurationTracker.observe(.reporting(.selected(screen())))
+    do {
+      try await operation.finish(flushing: true)
+      XCTFail("expected a changed display")
+    } catch {
+      guard case SimulatorDisplayError.changed = error else { return XCTFail("unexpected error: \(error)") }
+      await assertCleanup(operation)
+    }
+    let events = await recorder.events
+    XCTAssertEqual(events.map(\.0), [.touch(direction: .down, x: 20, y: 30), .touch(direction: .up, x: 20, y: 30)])
+    XCTAssertEqual(events.compactMap(\.1), [display(), display()])
+  }
+
   private func makeOperation(
     _ recorder: Recorder,
     observation: SimulatorHIDDisplayObservation = SimulatorHIDDisplayObservation(),
-    pinnedTo displayUniqueID: String? = nil
+    binding: SimulatorHIDDisplayBinding = .active
   ) -> SimulatorHIDOperation {
     SimulatorHIDOperation(
       displays: recorder,
-      pinnedTo: displayUniqueID,
+      binding: binding,
       sink: recorder,
       observation: observation)
   }
