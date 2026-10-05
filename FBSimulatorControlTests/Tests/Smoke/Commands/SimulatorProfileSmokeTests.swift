@@ -65,9 +65,10 @@ final class SimulatorProfileSmokeTests: ProvidedSimulatorTestCase {
         try await simulator.runtimeTools.launchConsumingOutput(launchPath: "/bin/sh", arguments: ["-c", "echo aborting >&2; kill -ABRT $$"])
       }
       XCTFail("sh killed itself with SIGABRT, but exited with code \(output.exitCode)")
-    } catch let ProcessTerminationError.exitedWithSignal(_, _, signal) {
-      // BUG: the error has nowhere to carry the tool's stderr, so why it died is lost — flipped in the following commit.
+    } catch let InSimulatorToolError.signalled(launchPath, signal, stderr) {
+      XCTAssertEqual(launchPath, "/bin/sh")
       XCTAssertEqual(signal, SIGABRT)
+      XCTAssertTrue(stderr.contains("aborting"), stderr)
     }
   }
 

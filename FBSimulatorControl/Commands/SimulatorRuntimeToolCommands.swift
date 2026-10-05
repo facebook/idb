@@ -22,6 +22,18 @@ public struct InSimulatorToolOutput: Sendable {
   }
 }
 
+public enum InSimulatorToolError: Error, Equatable, LocalizedError {
+  /// The tool was killed by a signal rather than exiting. What it wrote to stderr first is usually why.
+  case signalled(launchPath: String, signal: Int32, stderr: String)
+
+  public var errorDescription: String? {
+    switch self {
+    case let .signalled(launchPath, signal, stderr):
+      return "\(launchPath) was killed by signal \(signal): \(stderr.trimmingCharacters(in: .whitespacesAndNewlines))"
+    }
+  }
+}
+
 /// Spawns executables inside the simulator, capturing what they write.
 public struct SimulatorRuntimeToolCommands: Sendable {
 
@@ -69,7 +81,8 @@ public struct SimulatorRuntimeToolCommands: Sendable {
   /// filesystem, not the RuntimeRoot. Use `run` for runtime-vendored
   /// tools; use this directly only for host executables (e.g. `/bin/sh`, which
   /// the runtime does not ship). Exit codes are not interpreted — callers decide
-  /// which are acceptable.
+  /// which are acceptable. A tool killed by a signal throws
+  /// `InSimulatorToolError.signalled`, with its stderr.
   func launchConsumingOutput(
     launchPath: String,
     arguments: [String] = [],
@@ -91,13 +104,18 @@ public struct SimulatorRuntimeToolCommands: Sendable {
     )
 
     let process = try await simulator.spawn(configuration)
-    let exitCode = try await bridgeFBFuture(process.exitCode)
+    let statLoc = try await bridgeFBFuture(process.statLoc)
 
-    return InSimulatorToolOutput(
-      stdout: stdoutConsumer.data(),
-      stderr: stderrConsumer.data(),
-      exitCode: exitCode.int32Value
-    )
+    switch TerminationStatus(statLoc: statLoc.int32Value) {
+    case let .signalled(signal):
+      throw InSimulatorToolError.signalled(launchPath: launchPath, signal: signal, stderr: String(decoding: stderrConsumer.data(), as: UTF8.self))
+    case let .exited(exitCode):
+      return InSimulatorToolOutput(
+        stdout: stdoutConsumer.data(),
+        stderr: stderrConsumer.data(),
+        exitCode: exitCode
+      )
+    }
   }
 
   /// Resolves an executable vendored by the simulator runtime to its on-disk
