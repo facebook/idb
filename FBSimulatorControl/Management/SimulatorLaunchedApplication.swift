@@ -143,10 +143,9 @@ public final class SimulatorLaunchedApplication: LaunchedApplication, CustomStri
     withSimulator simulator: Simulator,
     configuration: ApplicationLaunchConfiguration,
     attachment: FBProcessFileAttachment,
-    launchFuture: FBFuture<NSNumber>
-  ) async throws -> SimulatorLaunchedApplication {
-    let processIdentifier = try await bridgeFBFuture(launchFuture).int32Value
-    return SimulatorLaunchedApplication(
+    processIdentifier: pid_t
+  ) -> SimulatorLaunchedApplication {
+    SimulatorLaunchedApplication(
       simulator: simulator,
       configuration: configuration,
       attachment: attachment,

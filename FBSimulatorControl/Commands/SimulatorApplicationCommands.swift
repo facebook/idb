@@ -149,8 +149,8 @@ public struct SimulatorApplicationCommands: ApplicationCommands {
     guard let stdOut = attachment.stdOut, let stdErr = attachment.stdErr else {
       throw SimulatorApplicationLaunchError.attachmentMissingFiles(bundleID: configuration.bundleID)
     }
-    let launchFuture = launch(configuration, stdOut: stdOut, stdErr: stdErr)
-    return try await SimulatorLaunchedApplication.application(withSimulator: simulator, configuration: configuration, attachment: attachment, launchFuture: launchFuture)
+    let processIdentifier = try await launch(configuration, stdOut: stdOut, stdErr: stdErr)
+    return SimulatorLaunchedApplication.application(withSimulator: simulator, configuration: configuration, attachment: attachment, processIdentifier: processIdentifier)
   }
 
   public func kill(bundleID: String) async throws {
@@ -374,12 +374,10 @@ public struct SimulatorApplicationCommands: ApplicationCommands {
     }
   }
 
-  private func launch(_ configuration: ApplicationLaunchConfiguration, stdOut: any ProcessFileOutput, stdErr: any ProcessFileOutput) -> FBFuture<NSNumber> {
-    fbFutureFromAsync { [self] in
-      try await bridgeFBFutureVoid(stdOut.startReading())
-      try await bridgeFBFutureVoid(stdErr.startReading())
-      return try await launch(configuration, stdOutPath: stdOut.filePath, stdErrPath: stdErr.filePath)
-    }
+  private func launch(_ configuration: ApplicationLaunchConfiguration, stdOut: any ProcessFileOutput, stdErr: any ProcessFileOutput) async throws -> pid_t {
+    try await bridgeFBFutureVoid(stdOut.startReading())
+    try await bridgeFBFutureVoid(stdErr.startReading())
+    return try await launch(configuration, stdOutPath: stdOut.filePath, stdErrPath: stdErr.filePath).int32Value
   }
 
   private func launch(_ configuration: ApplicationLaunchConfiguration, stdOutPath: String?, stdErrPath: String?) async throws -> NSNumber {

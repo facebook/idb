@@ -70,11 +70,11 @@ final class SimulatorLaunchedApplicationTests: XCTestCase {
       waitForDebugger: false,
       io: FBProcessIO<AnyObject, AnyObject, AnyObject>(stdIn: nil, stdOut: nil, stdErr: nil),
       launchMode: .failIfRunning)
-    return try await SimulatorLaunchedApplication.application(
+    return SimulatorLaunchedApplication.application(
       withSimulator: simulator,
       configuration: configuration,
       attachment: attachment,
-      launchFuture: FBFuture(result: NSNumber(value: process.processIdentifier)))
+      processIdentifier: process.processIdentifier)
   }
 
   // MARK: - Tests
