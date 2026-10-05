@@ -27,6 +27,13 @@ public struct RunningSubprocess: Sendable {
     }
   }
 
+  /// The termination status, or nil if the process has not terminated within
+  /// `deadline` seconds. The process is left running either way. Throws only
+  /// `CancellationError`.
+  public func terminationStatus(within deadline: TimeInterval) async throws -> TerminationStatus? {
+    try await exit.status(within: deadline)
+  }
+
   /// The termination status if it has already been observed, without
   /// waiting; `nil` while the process runs or its output is still draining.
   public var observedTerminationStatus: TerminationStatus? {

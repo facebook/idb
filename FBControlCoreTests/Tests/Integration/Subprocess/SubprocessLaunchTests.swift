@@ -60,6 +60,22 @@ struct SubprocessLaunchTests {
     #expect(status == .signalled(SIGABRT))
   }
 
+  @Test("Waiting with a deadline returns nothing once it passes, leaving the process running")
+  func deadlinePassesWithoutTermination() async throws {
+    let running = try await Self.shell("sleep 10000").launch(output: .closed, error: .closed)
+    defer { running.sendSignal(SIGKILL) }
+
+    #expect(try await running.terminationStatus(within: 0.2) == nil)
+    #expect(Self.isAlive(running.processIdentifier))
+  }
+
+  @Test("Waiting with a deadline returns the status of a process that terminates in time")
+  func deadlineWaitSeesTermination() async throws {
+    let running = try await Self.shell("exit 4").launch(output: .closed, error: .closed)
+
+    #expect(try await running.terminationStatus(within: 10) == .exited(4))
+  }
+
   @Test("Sending a signal after termination is a no-op")
   func signalAfterExitIsANoOp() async throws {
     let running = try await Self.shell("exit 0").launch(output: .closed, error: .closed)
