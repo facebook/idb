@@ -15,8 +15,10 @@ import Foundation
 public enum AccessibilityElementQuery: Equatable, Sendable {
   case point(CGPoint)
   /// An element whose `key` value *contains* `value` — a substring match, not an equality test, so
-  /// `"General"` finds an element labelled `"General Settings"`. Every backend matches the same way;
-  /// the first element found in tree order wins.
+  /// `"General"` finds an element labelled `"General Settings"`. Every backend matches by substring.
+  /// The axbridge backend prefers the first element whose value equals `value`, then the first that
+  /// contains it. The accessibility backend takes the first match in tree order, because an exact
+  /// match could be anywhere in a live tree it would otherwise stop walking early.
   ///
   /// `depth` bounds how deep the search descends and is honoured by the accessibility backend, which
   /// walks the live element tree. The axbridge backend reads a whole tree in one round trip (under its

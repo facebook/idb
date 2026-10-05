@@ -41,12 +41,9 @@ extension AXBridgeTreeReader {
         nestedFormat: false,
         pid: read.pid
       )
-      guard let match = AXTreeWalk.matchingElement(inElements: elements, markerValue: value, key: key, ignoresCase: ignoresCase) else {
-        throw UIAutomationError.elementNotFound(backend: backend, key: key.rawValue, value: value)
-      }
-      try validate(callerAssertion, against: match)
-      switch AXTreeWalk.resolveMarker(inElements: elements, markerValue: value, key: key, ignoresCase: ignoresCase) {
-      case let .resolved(x, y):
+      switch AXTreeWalk.markerTarget(inElements: elements, markerValue: value, key: key, ignoresCase: ignoresCase) {
+      case let .resolved(match, x, y):
+        try validate(callerAssertion, against: match)
         // Marker lookup is a substring match, but the guest's safety check is equality. Assert the
         // matched element's actual value rather than the substring the caller searched for.
         return AXWriteTarget(

@@ -50,15 +50,57 @@ enum AXTreeWalk {
     return AXBridgePlatformElement(attributes: node, children: children, pid: pid)
   }
 
-  /// The first element whose `key` value contains `markerValue`, via `AccessibilityMatch` so a marker
-  /// and `--match` agree on what "contains" means.
+  /// The element a marker names: the first whose `key` value equals `markerValue`, otherwise the first
+  /// that contains it, via `AccessibilityMatch` so a marker and `--match` agree on what "contains" means.
   static func matchingElement(
     inElements elements: [AccessibilityDocumentElement],
     markerValue: String,
     key: AXSearchableKey,
     ignoresCase: Bool = false
   ) -> AccessibilityDocumentElement? {
-    search(inElements: elements, markerValue: markerValue, key: key, ignoresCase: ignoresCase).match
+    preferredMatch(inElements: elements, markerValue: markerValue, key: key, ignoresCase: ignoresCase) { $0 }.resolved
+  }
+
+  /// The first match `resolve` accepts whose `key` value equals `markerValue`, otherwise the first it
+  /// accepts that only contains it. `matched` is whether anything matched, accepted or not.
+  private static func preferredMatch<Resolved>(
+    inElements elements: [AccessibilityDocumentElement],
+    markerValue: String,
+    key: AXSearchableKey,
+    ignoresCase: Bool,
+    resolve: (AccessibilityDocumentElement) -> Resolved?
+  ) -> (resolved: Resolved?, matched: Bool) {
+    let predicate = AccessibilityMatch(value: markerValue, key: key, ignoresCase: ignoresCase)
+    var matched = false
+    var firstContaining: Resolved?
+    for element in elements {
+      guard let value = element.searchableValue(for: key) else {
+        continue
+      }
+      if let predicate, !predicate.matches(value) {
+        continue
+      }
+      matched = true
+      guard let resolved = resolve(element) else {
+        continue
+      }
+      // An empty marker matches every element carrying the key, so the first of them wins.
+      guard let predicate else {
+        return (resolved, true)
+      }
+      if isEqual(value, to: predicate) {
+        return (resolved, true)
+      }
+      firstContaining = firstContaining ?? resolved
+    }
+    return (firstContaining, matched)
+  }
+
+  private static func isEqual(_ value: String, to predicate: AccessibilityMatch) -> Bool {
+    guard predicate.ignoresCase else {
+      return value == predicate.value
+    }
+    return value.caseInsensitiveCompare(predicate.value) == .orderedSame
   }
 
   /// Searches in order, retaining only nonmatching values of `key` visited before the first match.
@@ -94,41 +136,59 @@ enum AXTreeWalk {
     case resolved(x: Double, y: Double)
   }
 
-  /// Resolves `markerValue` to the centre of the first matching element that has a usable frame,
-  /// reporting whether a match without a usable frame existed so a caller can tell an off-screen
-  /// element apart from an absent one. Matches through the same `AccessibilityMatch` predicate as
-  /// `matchingElement`, so the asserted element and the tapped point cannot disagree.
+  /// A write's target for a marker: the element it names and the centre of that element's frame.
+  enum MarkerTarget {
+    /// No serialized element's `key` value contains the marker.
+    case notFound
+    /// A matching element exists, but none has a usable frame.
+    case offScreen
+    case resolved(AccessibilityDocumentElement, x: Double, y: Double)
+  }
+
+  /// Resolves `markerValue` among the matching elements that have a usable frame, preferring one equal
+  /// to it as `matchingElement` does, and reports whether a match without a usable frame existed so a
+  /// caller can tell an off-screen element apart from an absent one. The point and the element come
+  /// from one match, so a write cannot assert on one element and tap another.
+  static func markerTarget(
+    inElements elements: [AccessibilityDocumentElement],
+    markerValue: String,
+    key: AXSearchableKey,
+    ignoresCase: Bool = false
+  ) -> MarkerTarget {
+    let (resolved, matched) = preferredMatch(inElements: elements, markerValue: markerValue, key: key, ignoresCase: ignoresCase) {
+      element -> MarkerTarget? in
+      frameCentre(of: element).map { .resolved(element, x: $0.x, y: $0.y) }
+    }
+    return resolved ?? (matched ? .offScreen : .notFound)
+  }
+
+  /// `markerTarget` without the element.
   static func resolveMarker(
     inElements elements: [AccessibilityDocumentElement],
     markerValue: String,
     key: AXSearchableKey,
     ignoresCase: Bool = false
   ) -> MarkerResolution {
-    var matched = false
-    let match = AccessibilityMatch(value: markerValue, key: key, ignoresCase: ignoresCase)
-    for element in elements {
-      if let match {
-        guard let value = element.searchableValue(for: key), match.matches(value) else {
-          continue
-        }
-      } else {
-        // An empty marker matches the first element carrying the key, as `matchingElement` does.
-        guard element.searchableValue(for: key) != nil else {
-          continue
-        }
-      }
-      matched = true
-      // A zero-area frame counts as no frame: an element whose frame never reached the wire is normalized
-      // to zero on the way in and would otherwise resolve to the origin.
-      guard let frame = element.frame ?? nil,
-        let x = frame.x, let y = frame.y, let width = frame.width, let height = frame.height,
-        width > 0, height > 0
-      else {
-        continue
-      }
-      return .resolved(x: x + width / 2, y: y + height / 2)
+    switch markerTarget(inElements: elements, markerValue: markerValue, key: key, ignoresCase: ignoresCase) {
+    case .notFound:
+      return .notFound
+    case .offScreen:
+      return .offScreen
+    case let .resolved(_, x, y):
+      return .resolved(x: x, y: y)
     }
-    return matched ? .offScreen : .notFound
+  }
+
+  private static func frameCentre(of element: AccessibilityDocumentElement) -> (x: Double, y: Double)? {
+    // A zero-area frame counts as no frame: an element whose frame never reached the wire is normalized
+    // to zero on the way in and would otherwise resolve to the origin.
+    guard let frame = element.frame ?? nil,
+      let x = frame.x, let y = frame.y, let width = frame.width, let height = frame.height,
+      width > 0, height > 0
+    else {
+      return nil
+    }
+    return (x + width / 2, y + height / 2)
   }
 
   /// The centre of the first matching element with a usable frame, or `nil` when the marker matches
