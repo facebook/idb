@@ -123,6 +123,21 @@ struct SubprocessRunTests {
     #expect(new.terminationStatus == .exited(0))
   }
 
+  @Test("A logged stream reaches the logger twice")
+  func loggerSinkDeliversEachChunkTwice() async throws {
+    let logged = FBDataBuffer.consumableBuffer()
+    let logger = FBControlCoreLoggerFactory.logger(to: logged)
+
+    _ = try await Self.new("printf 'logged\\n'").run(output: .logger(logger), error: .closed)
+
+    // BUG: a logging sink attaches a logging consumer to the same logger the
+    // file reader already logs to, so every chunk arrives twice — flipped in
+    // the following commit.
+    #expect(logged.consumeLineString() == "logged")
+    #expect(logged.consumeLineString() == "logged")
+    #expect(logged.consumeLineString() == nil)
+  }
+
   @Test("A file the capture creates itself is readable afterwards")
   func fileCaptureCreatesAReadableFile() async throws {
     let directory = FileManager.default.temporaryDirectory
