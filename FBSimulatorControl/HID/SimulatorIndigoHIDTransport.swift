@@ -92,7 +92,7 @@ actor SimulatorIndigoHIDTransport {
       indigo.touchScreenSize(
         display?.geometry.bounds.size ?? mainScreenSize,
         screenScale: display.map { Float($0.geometry.scale) } ?? mainScreenScale,
-        direction: direction, x: point.x, y: point.y, edge: display?.unrotatedEdge(edge) ?? edge))
+        direction: direction, x: point.x, y: point.y, edge: display?.geometry.unrotatedEdge(edge) ?? edge))
   }
 
   func sendTwoFingerTouch(direction: SimulatorHIDDirection, finger1: CGPoint, finger2: CGPoint, display: SimulatorHIDDisplay? = nil) async throws {

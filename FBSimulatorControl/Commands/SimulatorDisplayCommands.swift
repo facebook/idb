@@ -44,6 +44,33 @@ public struct SimulatorDisplayGeometry: Equatable, Sendable {
     case .counterclockwise: return CGPoint(x: width - point.y, y: point.x)
     }
   }
+
+  /// A display-relative point as a fraction of the unrotated display, as the digitizer takes it.
+  func normalizedPoint(_ point: CGPoint) throws -> CGPoint {
+    let point = try unrotatedPoint(from: point)
+    return CGPoint(x: point.x * scale / bounds.width, y: point.y * scale / bounds.height)
+  }
+
+  /// The nearest point within the display's point bounds. backboardd clamps touches to the display
+  /// edge itself, so clamping here delivers the same touch while making the clamp visible to idb.
+  func clampedPoint(_ point: CGPoint) -> CGPoint {
+    let size = pointSize
+    return CGPoint(x: min(max(point.x, 0), size.width), y: min(max(point.y, 0), size.height))
+  }
+
+  func unrotatedEdge(_ edge: SimulatorHIDEdge) -> SimulatorHIDEdge {
+    guard edge != .none else { return .none }
+    let edges: [SimulatorHIDEdge] = [.top, .right, .bottom, .left]
+    let turns: Int
+    switch rotation {
+    case .upright: turns = 0
+    case .clockwise: turns = 3
+    case .upsideDown: turns = 2
+    case .counterclockwise: turns = 1
+    }
+    guard let index = edges.firstIndex(of: edge) else { return .none }
+    return edges[(index + turns) % edges.count]
+  }
 }
 
 /// A legacy provider can describe its sole integrated display without identifying it.

@@ -201,7 +201,7 @@ struct SimulatorHIDOperation {
   private func clamp(_ point: CGPoint) throws -> CGPoint {
     guard point.x.isFinite, point.y.isFinite else { throw SimulatorDisplayInteractionError.nonFinitePoint(point) }
     guard let display else { return point }
-    return display.clampedPoint(point)
+    return display.geometry.clampedPoint(point)
   }
 
   private mutating func bindOrValidateDisplay() async throws {

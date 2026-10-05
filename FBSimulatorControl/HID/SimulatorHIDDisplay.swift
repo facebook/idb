@@ -35,32 +35,6 @@ enum SimulatorHIDDisplay: Equatable, Sendable {
     }
   }
 
-  func normalizedPoint(_ point: CGPoint) throws -> CGPoint {
-    let point = try geometry.unrotatedPoint(from: point)
-    return CGPoint(x: point.x * geometry.scale / geometry.bounds.width, y: point.y * geometry.scale / geometry.bounds.height)
-  }
-
-  /// The nearest point within the display's point bounds. backboardd clamps touches to the display
-  /// edge itself, so clamping here delivers the same touch while making the clamp visible to idb.
-  func clampedPoint(_ point: CGPoint) -> CGPoint {
-    let size = geometry.pointSize
-    return CGPoint(x: min(max(point.x, 0), size.width), y: min(max(point.y, 0), size.height))
-  }
-
-  func unrotatedEdge(_ edge: SimulatorHIDEdge) -> SimulatorHIDEdge {
-    guard edge != .none else { return .none }
-    let edges: [SimulatorHIDEdge] = [.top, .right, .bottom, .left]
-    let turns: Int
-    switch geometry.rotation {
-    case .upright: turns = 0
-    case .clockwise: turns = 3
-    case .upsideDown: turns = 2
-    case .counterclockwise: turns = 1
-    }
-    guard let index = edges.firstIndex(of: edge) else { return .none }
-    return edges[(index + turns) % edges.count]
-  }
-
   func hasSameConfiguration(as other: Self) -> Bool {
     switch (self, other) {
     case let (.sole(first), .sole(second)): first.hasSameConfiguration(as: second)

@@ -79,16 +79,14 @@ final class SimulatorDisplayInteractionTests: XCTestCase {
       (.counterclockwise, CGPoint(x: 0.7, y: 0.2), .right),
     ]
     for (rotation, expected, edge) in cases {
-      let selected = display(rotation: rotation, scale: 3)
-      for binding in [SimulatorHIDDisplay.selected(selected, target: 82), .sole(.legacy(selected.geometry))] {
-        let size = binding.geometry.pointSize
-        let point = try binding.normalizedPoint(CGPoint(x: size.width * 0.2, y: size.height * 0.3))
-        XCTAssertEqual(point.x, expected.x, accuracy: 0.000001)
-        XCTAssertEqual(point.y, expected.y, accuracy: 0.000001)
-        XCTAssertEqual(binding.unrotatedEdge(.top), edge)
-        XCTAssertEqual(binding.unrotatedEdge(.none), .none)
-        XCTAssertThrowsError(try binding.normalizedPoint(CGPoint(x: size.width + 1, y: 0)))
-      }
+      let geometry = display(rotation: rotation, scale: 3).geometry
+      let size = geometry.pointSize
+      let point = try geometry.normalizedPoint(CGPoint(x: size.width * 0.2, y: size.height * 0.3))
+      XCTAssertEqual(point.x, expected.x, accuracy: 0.000001)
+      XCTAssertEqual(point.y, expected.y, accuracy: 0.000001)
+      XCTAssertEqual(geometry.unrotatedEdge(.top), edge)
+      XCTAssertEqual(geometry.unrotatedEdge(.none), .none)
+      XCTAssertThrowsError(try geometry.normalizedPoint(CGPoint(x: size.width + 1, y: 0)))
     }
     let first = SimulatorHIDDisplay.selected(display(), target: 82)
     XCTAssertFalse(first.hasSameConfiguration(as: .selected(display(), target: 29)))
