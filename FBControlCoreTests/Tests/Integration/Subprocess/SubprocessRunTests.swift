@@ -134,6 +134,29 @@ struct SubprocessRunTests {
     #expect(logged.consumeLineString() == nil)
   }
 
+  @Test("An error-message capture logs the whole stream and returns its tail")
+  func errorMessageCaptureLogsAndReturnsTheTail() async throws {
+    let logged = FBDataBuffer.consumableBuffer()
+    let logger = FBControlCoreLoggerFactory.logger(to: logged)
+
+    let new = try await Self.new("printf 'boom\\n' 1>&2")
+      .run(output: .closed, error: .loggerCapturingErrorMessage(logger))
+
+    #expect(new.standardError == "boom")
+    #expect(logged.consumeLineString() == "boom")
+  }
+
+  @Test("An error-message capture retains only the last bytes of a long stream")
+  func errorMessageCaptureRetainsOnlyTheTail() async throws {
+    let logger = FBControlCoreLoggerFactory.logger(to: FBDataBuffer.consumableBuffer())
+    let total = FBProcessOutputErrorMessageLength * 2
+
+    let new = try await Self.new("/usr/bin/head -c \(total) /dev/zero | /usr/bin/tr '\\0' 'x' 1>&2")
+      .run(output: .closed, error: .loggerCapturingErrorMessage(logger))
+
+    #expect(new.standardError == String(repeating: "x", count: FBProcessOutputErrorMessageLength))
+  }
+
   @Test("A file the capture creates itself is readable afterwards")
   func fileCaptureCreatesAReadableFile() async throws {
     let directory = FileManager.default.temporaryDirectory

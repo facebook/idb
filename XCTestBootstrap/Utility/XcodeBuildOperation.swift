@@ -75,7 +75,7 @@ public final class XcodeBuildOperation {
     let subprocess = Subprocess(executable: xcodeBuildPath, arguments: arguments, environment: .exact(environment))
     let running: RunningSubprocess
     if let logger {
-      running = try await subprocess.launch(output: .loggerCapturingErrorMessage(logger), error: .loggerCapturingErrorMessage(logger), logger: logger)
+      running = try await subprocess.launch(output: .logger(logger), error: .logger(logger), logger: logger)
     } else {
       // The unset builder default buffered both streams into memory that
       // nothing ever read; an open null device discards them outright.

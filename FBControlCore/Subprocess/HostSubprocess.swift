@@ -162,7 +162,7 @@ extension Subprocess.Output {
       return (try Self.drainedSink(into: FBLoggingDataConsumer(logger: logger), logger: nil), { Self.captured(()) })
     case .loggerCapturingErrorMessage(let logger):
       let buffer = FBDataBuffer.accumulatingBuffer(withCapacity: FBProcessOutputErrorMessageLength)
-      return (try Self.drainedSink(into: buffer, logger: logger), { Self.captured(()) })
+      return (try Self.drainedSink(into: buffer, logger: logger), { Self.captured(Self.string(from: buffer.data())) })
     case .lines(let sink):
       let consumer = FBBlockDataConsumer.asynchronousLineConsumer(sink)
       return (try Self.drainedSink(into: consumer, logger: nil), { Self.captured(()) })

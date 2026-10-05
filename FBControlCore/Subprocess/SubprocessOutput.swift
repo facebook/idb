@@ -120,12 +120,6 @@ extension Subprocess.Output where Captured == Void {
     .init(.logger(logger))
   }
 
-  /// Output is logged to `logger`, and its tail is retained for use in
-  /// error messages.
-  public static func loggerCapturingErrorMessage(_ logger: any ControlCoreLogger) -> Self {
-    .init(.loggerCapturingErrorMessage(logger))
-  }
-
   /// Each line of output is passed to `sink` as it arrives.
   public static func lines(_ sink: @escaping @Sendable (String) -> Void) -> Self {
     .init(.lines(sink))
@@ -146,6 +140,14 @@ extension Subprocess.Output where Captured == String {
   /// completion.
   public static var string: Self {
     .init(.string)
+  }
+
+  /// Output is logged to `logger`, and its last
+  /// `FBProcessOutputErrorMessageLength` bytes are returned on completion,
+  /// for a caller that logs a stream in full but quotes only its tail back
+  /// in an error.
+  public static func loggerCapturingErrorMessage(_ logger: any ControlCoreLogger) -> Self {
+    .init(.loggerCapturingErrorMessage(logger))
   }
 }
 
