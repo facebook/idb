@@ -74,6 +74,11 @@ actor SimulatorIndigoHIDTransport {
     indigoClient.disconnect()
   }
 
+  /// Returns once every message sent so far has been acknowledged, throwing the first delivery failure.
+  nonisolated func acknowledged() async throws {
+    try await indigoClient.acknowledged()
+  }
+
   func sendTouch(
     direction: SimulatorHIDDirection, x: Double, y: Double, edge: SimulatorHIDEdge, display: SimulatorHIDDisplay? = nil
   ) async throws {

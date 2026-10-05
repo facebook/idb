@@ -143,9 +143,15 @@ enum SimulatorHIDTransport: Sendable {
     }
   }
 
-  /// Only DTUHID has anything to drain; Indigo's client is synchronous.
+  /// Only DTUHID has anything to drain; what Indigo was sent is settled by `acknowledged()`.
   func flush() async throws {
     try await dtuhid?.flush()
+  }
+
+  /// Only Indigo sends without waiting for its acknowledgements; each DTUHID send already waits on its
+  /// own barrier.
+  func acknowledged() async throws {
+    try await indigo?.acknowledged()
   }
 
   /// Indigo only: the tvOS trackpad rides a dedicated Indigo service that `dtuhidd` does not expose (its

@@ -215,18 +215,20 @@ struct SimulatorIndigoHIDClientTests {
     #expect((try #require(underlying) as NSError).localizedDescription == NilReturningLegacyHIDClientStub.reason)
   }
 
-  @Test("A send the client reports as failed throws to the caller")
+  @Test("A send the client reports as failed throws from the next acknowledgement wait, once")
   func sendReportsClientFailure() async throws {
     let client = try SimulatorIndigoHIDClient(
       device: NSObject(), clientClass: ObjCRuntimeClass(FailingSendLegacyHIDClientStub.self))
+    try await client.send(Data([0x01, 0x02]))
     let error = try await #require(throws: (any Error).self) {
-      try await client.send(Data([0x01, 0x02]))
+      try await client.acknowledged()
     }
     #expect(error.localizedDescription == FailingSendLegacyHIDClientStub.reason)
+    try await client.acknowledged()
   }
 
-  @Test("A send is not handed to the client until the previous send is acknowledged")
-  func sendWaitsForThePreviousAcknowledgement() async throws {
+  @Test("A send is handed to the client without waiting for the previous send's acknowledgement")
+  func sendDoesNotWaitForThePreviousAcknowledgement() async throws {
     let acknowledgements = HeldAcknowledgementLegacyHIDClientStub.acknowledgements
     let client = try SimulatorIndigoHIDClient(
       device: NSObject(), clientClass: ObjCRuntimeClass(HeldAcknowledgementLegacyHIDClientStub.self))
@@ -246,19 +248,26 @@ struct SimulatorIndigoHIDClientTests {
     // once or not at all.
     try await Task.sleep(nanoseconds: 200 * NSEC_PER_MSEC)
 
-    // BUG: the key-up waits on the key-down's acknowledgement, so a slow acknowledgement holds the key
-    // down in the guest for as long as it takes. Flipped in the following commit.
-    #expect(acknowledgements.received == 1)
-    #expect(!outcome.returned)
-
-    acknowledgements.releaseAll()
-    try await Task.sleep(nanoseconds: 200 * NSEC_PER_MSEC)
     #expect(acknowledgements.received == 2)
-
-    acknowledgements.releaseAll()
-    try await Task.sleep(nanoseconds: 200 * NSEC_PER_MSEC)
     #expect(outcome.returned)
     #expect(outcome.error == nil)
+
+    let acknowledged = SendOutcome()
+    Task {
+      do {
+        try await client.acknowledged()
+        acknowledged.record(nil)
+      } catch {
+        acknowledged.record(error)
+      }
+    }
+    try await Task.sleep(nanoseconds: 200 * NSEC_PER_MSEC)
+    #expect(!acknowledged.returned)
+
+    acknowledgements.releaseAll()
+    try await Task.sleep(nanoseconds: 200 * NSEC_PER_MSEC)
+    #expect(acknowledged.returned)
+    #expect(acknowledged.error == nil)
   }
 
   @Test("A send whose client raises throws the raise to the caller")

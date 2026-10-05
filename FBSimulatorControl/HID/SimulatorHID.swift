@@ -120,8 +120,11 @@ public final class SimulatorHID: CustomStringConvertible, Sendable {
         try await operation.finish(flushing: flushing)
       } catch {
         for failure in await operation.cleanup() { logger.log("HID cleanup failed: \(failure)") }
+        // Settles what the failed operation sent, so that its delivery failures are not reported by the next.
+        try? await transport.acknowledged()
         throw error
       }
+      try await transport.acknowledged()
     }
   }
 

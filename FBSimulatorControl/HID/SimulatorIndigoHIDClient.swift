@@ -37,6 +37,10 @@ import Foundation
  via `unsafeBitCast` — it has relocated across Xcodes, so no link-time class reference is emitted.
 
  Message sends are serialized onto the private `queue`, so the type is `@unchecked Sendable`.
+
+ A send returns once its message is handed to the client, without waiting for the acknowledgement:
+ the wait would otherwise become hold time in the guest, where a key-down left waiting on its
+ acknowledgement repeats. `acknowledged()` waits for them instead.
  */
 final class SimulatorIndigoHIDClient: @unchecked Sendable {
 
@@ -47,6 +51,10 @@ final class SimulatorIndigoHIDClient: @unchecked Sendable {
   // Untyped on purpose: the concrete `SimDeviceLegacyHIDClient` is a runtime-only class (see
   // SimDeviceLegacyHIDClientMessaging). Messaged via unsafeBitCast to that protocol.
   private var client: AnyObject?
+  // Accessed only on `queue`, which is also where the client delivers acknowledgements.
+  private var pendingAcknowledgements = 0
+  private var firstDeliveryFailure: Error?
+  private var acknowledgementWaiters: [CheckedContinuation<Void, Error>] = []
 
   /// Resolves the runtime-only `SimDeviceLegacyHIDClient` class, dlopening the Xcode frameworks that
   /// vend it first — `FBSimulatorControl` itself loads only the essential set (CoreSimulator), so
@@ -94,7 +102,8 @@ final class SimulatorIndigoHIDClient: @unchecked Sendable {
     client = nil
   }
 
-  /// Sends the message bytes, returning when the client acknowledges delivery.
+  /// Sends the message bytes, returning once the client has taken them. A failed delivery is reported
+  /// by `acknowledged()`.
   ///
   /// The send is made on `queue`, which serializes it against the `disconnect()` that can arrive
   /// from any thread.
@@ -116,25 +125,67 @@ final class SimulatorIndigoHIDClient: @unchecked Sendable {
           continuation.resume(throwing: SimulatorHIDError.clientDisposed)
           return
         }
+        // Counted before sending, as the client may acknowledge before `send` returns.
+        pendingAcknowledgements += 1
         do {
           try FBObjCExceptionGuard.run {
             unsafeBitCast(client, to: SimDeviceLegacyHIDClientMessaging.self)
-              .send(withMessage: raw, freeWhenDone: true, completionQueue: queue) { error in
-                if let error {
-                  continuation.resume(throwing: error)
-                } else {
-                  continuation.resume()
-                }
+              .send(withMessage: raw, freeWhenDone: true, completionQueue: queue) { [self] error in
+                settleAcknowledgement(error)
               }
           }
+          continuation.resume()
         } catch {
           // `raw` is deliberately not freed. Ownership passes to the client with `freeWhenDone`, and a
           // raise leaves no way to tell whether it got that far; one leaked message beats a double free.
           //
-          // Resuming here assumes the client cannot have already completed before raising — true of
+          // Uncounting here assumes the client cannot have already completed before raising — true of
           // every observed raise, which come from `-[SimDeviceIOClient ioPorts]` on the way in.
+          pendingAcknowledgements -= 1
           continuation.resume(throwing: error)
         }
+      }
+    }
+  }
+
+  /// Returns once the client has acknowledged every message sent so far, throwing the first delivery
+  /// failure among the messages acknowledged since the last call.
+  func acknowledged() async throws {
+    try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+      queue.async { [self] in
+        acknowledgementWaiters.append(continuation)
+        if pendingAcknowledgements == 0 {
+          resumeAcknowledgementWaiters()
+        }
+      }
+    }
+  }
+
+  private func settleAcknowledgement(_ error: Error?) {
+    dispatchPrecondition(condition: .onQueue(queue))
+    if let error, firstDeliveryFailure == nil {
+      firstDeliveryFailure = error
+    }
+    pendingAcknowledgements -= 1
+    if pendingAcknowledgements == 0 {
+      resumeAcknowledgementWaiters()
+    }
+  }
+
+  private func resumeAcknowledgementWaiters() {
+    // With nobody waiting, a failure is kept for the next `acknowledged()` to report.
+    guard !acknowledgementWaiters.isEmpty else {
+      return
+    }
+    let failure = firstDeliveryFailure
+    let waiters = acknowledgementWaiters
+    firstDeliveryFailure = nil
+    acknowledgementWaiters = []
+    for waiter in waiters {
+      if let failure {
+        waiter.resume(throwing: failure)
+      } else {
+        waiter.resume()
       }
     }
   }
