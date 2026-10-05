@@ -102,7 +102,7 @@ public struct SimulatorProfileCommands: ProfileCommands {
     let output = try await tools.launchConsumingOutput(launchPath: "/usr/bin/footprint", arguments: [String(pid), "-j", path.path])
     try check(output, tool: "footprint", acceptingExitCodes: [0])
     guard let json = try? Data(contentsOf: path) else {
-      throw ProfileError.toolFailed(tool: "footprint", exitCode: output.exitCode, stderr: "wrote no report to \(path.path)\nstdout: \(text(output.stdout))\nstderr: \(text(output.stderr))")
+      throw ProfileError.noReport(tool: "footprint", output: "expected \(path.path)\nstdout: \(text(output.stdout))\nstderr: \(text(output.stderr))")
     }
     return json
   }

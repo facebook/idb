@@ -9,11 +9,15 @@ import Foundation
 
 public enum ProfileError: Error, Equatable, LocalizedError {
   case toolFailed(tool: String, exitCode: Int32, stderr: String)
+  /// The tool succeeded but left nothing to report.
+  case noReport(tool: String, output: String)
 
   public var errorDescription: String? {
     switch self {
     case let .toolFailed(tool, exitCode, stderr):
       return "\(tool) exited with code \(exitCode): \(stderr.trimmingCharacters(in: .whitespacesAndNewlines))"
+    case let .noReport(tool, output):
+      return "\(tool) wrote no report: \(output.trimmingCharacters(in: .whitespacesAndNewlines))"
     }
   }
 }
