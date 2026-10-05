@@ -76,4 +76,64 @@ struct XctraceProfilerTests {
     #expect((nodes.first as? XMLElement)?.attribute(forName: "schema")?.stringValue == "time-profile")
     #expect(try document.nodes(forXPath: XctraceProfiler.xpath(run: 2, schema: "time-profile")).isEmpty)
   }
+
+  @Test
+  func stoppingATraceReportsWhatItRecorded() async throws {
+    let directory = try FakeXctrace.makeDirectory()
+    defer { try? FileManager.default.removeItem(at: directory) }
+    let tracePath = directory.appendingPathComponent("stopped.trace").path
+    let configuration = TraceConfiguration(template: "Time Profiler", schemas: nil, timeLimit: .seconds(60), rowLimit: nil, outputPath: tracePath)
+    let xctrace = directory.appendingPathComponent("xctrace").path
+
+    let operation = XctraceProfiler.operation(configuration, process: .allProcesses, udid: Self.udid, scratchDirectory: directory.path, logger: ControlCoreLoggerDouble()) {
+      (xctrace, [:])
+    }
+    try await FakeXctrace.waitUntilRecording(to: tracePath)
+    operation.stop()
+
+    // BUG: stopping a trace cancels it, so the recording is discarded — flipped in the following commit.
+    await #expect(throws: CancellationError.self) { try await operation.result }
+  }
+}
+
+/// Stands in for xctrace: `record` creates its output once it is recording, and saves it on SIGINT, as Ctrl-C does;
+/// `export` prints the captured Probe app exports.
+private enum FakeXctrace {
+
+  static func makeDirectory() throws -> URL {
+    let directory = FileManager.default.temporaryDirectory.appendingPathComponent("fake-xctrace-\(UUID().uuidString)")
+    try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+    let script = """
+      #!/bin/sh
+      case "$1" in
+      record)
+        while [ $# -gt 0 ]; do
+          [ "$1" = --output ] && out="$2"
+          shift
+        done
+        trap 'touch "$out/saved"; exit 0' INT
+        mkdir "$out"
+        while true; do sleep 0.05; done
+        ;;
+      export)
+        case "$*" in
+        *--toc*) cat '\(TestFixtures.probeXctraceTableOfContentsPath)' ;;
+        *) cat '\(TestFixtures.probeXctraceTimeProfilePath)' ;;
+        esac
+        ;;
+      esac
+
+      """
+    let path = directory.appendingPathComponent("xctrace")
+    try script.write(to: path, atomically: true, encoding: .utf8)
+    try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: path.path)
+    return directory
+  }
+
+  static func waitUntilRecording(to tracePath: String) async throws {
+    for _ in 0..<500 where !FileManager.default.fileExists(atPath: tracePath) {
+      try await Task.sleep(for: .milliseconds(20))
+    }
+    try #require(FileManager.default.fileExists(atPath: tracePath), "The fake xctrace never started recording")
+  }
 }
