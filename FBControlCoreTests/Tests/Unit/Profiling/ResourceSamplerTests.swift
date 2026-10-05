@@ -88,4 +88,70 @@ struct ResourceSamplerTests {
   @Test func siblingPIDsUnderDeadParentIsEmpty() {
     #expect(ResourceSampler.siblingPIDs(under: 999_999).isEmpty)
   }
+
+  @Test func sampleReturnsWhenTheTargetExits() async throws {
+    let process = Process()
+    process.executableURL = URL(fileURLWithPath: "/bin/sleep")
+    process.arguments = ["60"]
+    try process.run()
+    let pid = process.processIdentifier
+    let samples = Samples()
+
+    // Ending the target only once it has been sampled stops a loaded host from letting it exit unseen.
+    await ResourceSampler.sample(pid: pid, interval: .milliseconds(50), scope: .app) {
+      samples.append($0)
+      kill(pid, SIGTERM)
+    }
+    process.waitUntilExit()
+
+    let taken = samples.all
+    #expect(!taken.isEmpty)
+    #expect(taken.allSatisfy { $0.pid == pid })
+    #expect(taken.first?.cpuPct == nil)
+  }
+
+  @Test func sampleReturnsWhenCancelled() async {
+    let samples = Samples()
+    // The test runner itself never exits during the test, so only cancellation can end this.
+    let task = Task {
+      await ResourceSampler.sample(pid: getpid(), interval: .milliseconds(50), scope: .appAndHelpers) { samples.append($0) }
+    }
+    try? await Task.sleep(for: .milliseconds(200))
+    task.cancel()
+    await task.value
+
+    #expect(samples.all.contains { $0.pid == getpid() })
+  }
+
+  @Test func aRunningTargetWithoutAStartTimeHasNotExited() {
+    #expect(!ResourceSampler.hasExited(pid: getpid(), startSeconds: nil))
+  }
+
+  @Test func aTargetWhoseStartTimeChangedHasExited() throws {
+    let startSeconds = try #require(ResourceSampler.processStartSecondsSince1970(pid: getpid()))
+    #expect(!ResourceSampler.hasExited(pid: getpid(), startSeconds: startSeconds))
+    #expect(ResourceSampler.hasExited(pid: getpid(), startSeconds: startSeconds - 1))
+  }
+
+  @Test func aTargetThatIsGoneHasExitedWithoutAStartTime() throws {
+    let process = Process()
+    process.executableURL = URL(fileURLWithPath: "/usr/bin/true")
+    try process.run()
+    process.waitUntilExit()
+
+    #expect(ResourceSampler.hasExited(pid: process.processIdentifier, startSeconds: nil))
+  }
+}
+
+private final class Samples: @unchecked Sendable {
+  private let lock = NSLock()
+  private var samples: [ResourceSample] = []
+
+  func append(_ sample: ResourceSample) {
+    lock.withLock { samples.append(sample) }
+  }
+
+  var all: [ResourceSample] {
+    lock.withLock { samples }
+  }
 }

@@ -394,6 +394,10 @@ extension Simulator {
     SimulatorRuntimeToolCommands.commands(with: self)
   }
 
+  public var profile: SimulatorProfileCommands {
+    SimulatorProfileCommands.commands(with: self)
+  }
+
   public var bootstrapPorts: SimulatorBootstrapPortCommands {
     SimulatorBootstrapPortCommands.commands(with: self)
   }

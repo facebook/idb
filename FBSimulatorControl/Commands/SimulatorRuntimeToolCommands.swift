@@ -23,7 +23,7 @@ public struct InSimulatorToolOutput: Sendable {
 }
 
 /// Spawns executables inside the simulator, capturing what they write.
-public struct SimulatorRuntimeToolCommands {
+public struct SimulatorRuntimeToolCommands: Sendable {
 
   private let simulator: Simulator
 

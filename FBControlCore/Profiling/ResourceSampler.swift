@@ -203,6 +203,53 @@ public enum ResourceSampler {
     }
   }
 
+  /// Samples `pid`, and its helpers for `.appAndHelpers`, until it exits or the task is cancelled. Falls back to `pid`
+  /// alone when its parent or start time can't be read.
+  public static func sample(
+    pid: pid_t,
+    interval: Duration,
+    scope: ResourceSampleScope,
+    emit: @escaping @Sendable (ResourceSample) -> Void
+  ) async {
+    // A recycled pid has a different start time, so this also catches the pid being reissued to another process.
+    let startSeconds = processStartSecondsSince1970(pid: pid)
+    let currentPIDs: @Sendable () -> [pid_t]
+    switch (scope, parentPID(pid: pid), startSeconds) {
+    case let (.appAndHelpers, .some(launchdSimPID), .some(appStartSeconds)):
+      currentPIDs = { currentHelperPIDs(appPID: pid, launchdSimPID: launchdSimPID, appStartSeconds: appStartSeconds) }
+    case (.app, _, _), (.appAndHelpers, nil, _), (.appAndHelpers, _, nil):
+      currentPIDs = { [pid] }
+    }
+
+    await withTaskGroup(of: Void.self) { group in
+      group.addTask {
+        await run(interval: interval, currentPIDs: currentPIDs, emit: emit)
+      }
+      group.addTask {
+        while !Task.isCancelled {
+          do {
+            try await Task.sleep(for: interval)
+          } catch {
+            return
+          }
+          if hasExited(pid: pid, startSeconds: startSeconds) {
+            return
+          }
+        }
+      }
+      _ = await group.next()
+      group.cancelAll()
+    }
+  }
+
+  /// Without a start time to compare, a recycled pid can't be told apart from `pid`, so only its disappearance counts.
+  static func hasExited(pid: pid_t, startSeconds: Int64?) -> Bool {
+    guard let startSeconds else {
+      return kill(pid, 0) != 0 && errno == ESRCH
+    }
+    return processStartSecondsSince1970(pid: pid) != startSeconds
+  }
+
   /// The app plus the processes under `launchdSimPID` that started at or after it.
   public static func currentHelperPIDs(appPID: pid_t, launchdSimPID: pid_t, appStartSeconds: Int64) -> [pid_t] {
     var result: [pid_t] = [appPID]
