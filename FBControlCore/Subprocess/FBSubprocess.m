@@ -273,7 +273,12 @@ static BOOL AddInputFileActions(posix_spawn_file_actions_t *fileActions, FBProce
   );
   dispatch_source_set_event_handler(source, ^{
     int status = 0;
-    if (waitpid(processIdentifier, &status, WNOHANG) == -1) {
+    // The exit event can arrive before the child is reapable, and a WNOHANG reap that returns 0 leaves the status at zero, which decodes as a clean exit.
+    pid_t reaped = waitpid(processIdentifier, &status, WNOHANG);
+    if (reaped == 0) {
+      reaped = waitpid(processIdentifier, &status, 0);
+    }
+    if (reaped != processIdentifier) {
       [logger log:[NSString stringWithFormat:@"Failed to get the exit status with waitpid: %s", strerror(errno)]];
     }
 
