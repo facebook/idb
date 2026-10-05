@@ -98,7 +98,10 @@ public struct SimulatorReplCommands {
       throw SimulatorReplError.bundledResourceMissing(item: "libRepl-iOS.dylib")
     }
     let idbInterfacePath = BundledResources.path(forItem: "IDBAPI.swiftinterface")
+    return try await startSimulator(bridgePath: bridgePath, libReplPath: libReplPath, extraInterfacePaths: [idbInterfacePath].compactMap { $0 })
+  }
 
+  func startSimulator(bridgePath: String, libReplPath: String, extraInterfacePaths: [String]) async throws -> LaunchedRepl {
     // `repl start` blocks until the socket is closed, which is what keeps the session alive.
     let socketPath = "/tmp/idb_repl_\(UUID().uuidString).sock"
 
@@ -115,7 +118,7 @@ public struct SimulatorReplCommands {
     // the socket is closed), matching the `LaunchedRepl.run` contract.
     let process = try await simulator.spawn(configuration)
     let run = process.statLoc.retyped(FBFuture<NSNull>.self)
-    return LaunchedRepl(socketPath: socketPath, run: run, extraInterfacePaths: [idbInterfacePath].compactMap { $0 })
+    return LaunchedRepl(socketPath: socketPath, run: run, extraInterfacePaths: extraInterfacePaths)
   }
 
   public func appLaunchEnvironment(bundleID: String) async throws -> [String: String] {
