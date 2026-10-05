@@ -17,8 +17,8 @@ import unittest
 import zipfile
 from unittest.mock import patch
 
-from idb.common.types import Compression
-from idb.grpc.idb_pb2 import InstallRequest, InstallResponse
+from idb.common.types import Compression, FileContainerType
+from idb.grpc.idb_pb2 import InstallRequest, InstallResponse, Payload
 from idb.grpc.install import (
     generate_binary_chunks,
     generate_io_chunks,
@@ -163,6 +163,114 @@ class InstallZipStreamTests(TestCase):
     async def test_a_zip_is_sent_as_is_to_a_companion_that_does_not(self) -> None:
         sent = await self._install_zip_from_io(zstd_zip_streams=False)
         self.assertEqual(sent, _zip_bytes())
+
+
+def _frame(message: InstallRequest) -> str:
+    value = message.WhichOneof("value")
+    if value != "payload":
+        return value
+    source = message.payload.WhichOneof("source")
+    if source == "compression":
+        return f"compression:{Payload.Compression.Name(message.payload.compression)}"
+    if source == "data":
+        if message.payload.data.startswith(b"\x1f\x8b"):
+            return "data:gzip"
+        if message.payload.data.startswith(b"\x28\xb5\x2f\xfd"):
+            return "data:zstd"
+    return source
+
+
+class InstallFrameOrderTests(TestCase):
+    """The companion reads every option frame before the payload, in a fixed order:
+    destination, name_hint, make_debuggable, override_modification_time,
+    skip_signing_bundles, link_dsym_to_bundle, then compression and the payload."""
+
+    async def _frames(
+        self, install: str, *, is_local: bool, **kwargs: object
+    ) -> list[str]:
+        stream = ScriptedStream(InstallResponse(name="installed"))
+        client, _ = make_client("install", stream, is_local=is_local)
+        client.companion = dataclasses.replace(
+            client.companion,
+            supported_compressions=frozenset({Compression.GZIP, Compression.ZSTD}),
+        )
+        with patch("idb.common.tar.has_zstd_compressor", return_value=True):
+            async for _ in getattr(client, install)(**kwargs):
+                pass
+        frames = []
+        for message, _ in stream.sent:
+            frame = _frame(message)
+            if not frames or frame != frames[-1] or not frame.startswith("data"):
+                frames.append(frame)
+        return frames
+
+    async def test_a_remote_dylib(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            dylib = os.path.join(directory, "libExample.dylib")
+            with open(dylib, "wb") as f:
+                f.write(b"dylib")
+            frames = await self._frames("install_dylib", is_local=False, dylib=dylib)
+        # BUG: the compression frame comes before name_hint, which the companion rejects, and labels gzip bytes as zstd.
+        self.assertEqual(
+            frames, ["destination", "compression:ZSTD", "name_hint", "data:gzip"]
+        )
+
+    async def test_a_remote_xctest(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            xctest = os.path.join(directory, "Example.xctest")
+            os.mkdir(xctest)
+            frames = await self._frames("install_xctest", is_local=False, xctest=xctest)
+        # BUG: labels a gzip tar as zstd.
+        self.assertEqual(frames, ["destination", "compression:ZSTD", "data:gzip"])
+
+    async def test_a_remote_framework(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            framework = os.path.join(directory, "Example.framework")
+            os.mkdir(framework)
+            frames = await self._frames(
+                "install_framework", is_local=False, framework_path=framework
+            )
+        # BUG: labels a gzip tar as zstd.
+        self.assertEqual(frames, ["destination", "compression:ZSTD", "data:gzip"])
+
+    async def test_a_dsym_linked_to_a_bundle(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            dsym = os.path.join(directory, "Example.dSYM")
+            os.mkdir(dsym)
+            frames = await self._frames(
+                "install_dsym",
+                is_local=True,
+                dsym=dsym,
+                bundle_id="com.example.app",
+                compression=Compression.GZIP,
+                bundle_type=FileContainerType.APPLICATION,
+            )
+        # BUG: the compression frame comes before link_dsym_to_bundle, which the companion rejects.
+        self.assertEqual(
+            frames,
+            ["destination", "compression:GZIP", "link_dsym_to_bundle", "file_path"],
+        )
+
+    async def test_a_local_app_with_options(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            app = os.path.join(directory, "Example.app")
+            os.mkdir(app)
+            frames = await self._frames(
+                "install",
+                is_local=True,
+                bundle=app,
+                make_debuggable=True,
+                override_modification_time=True,
+            )
+        self.assertEqual(
+            frames,
+            [
+                "destination",
+                "make_debuggable",
+                "override_modification_time",
+                "file_path",
+            ],
+        )
 
 
 class SelectStreamCompressionTests(unittest.TestCase):
