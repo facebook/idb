@@ -36,9 +36,7 @@ final class SimulatorProfileSmokeTests: ProvidedSimulatorTestCase {
     let operation = try await simulator.profile.profile(.footprint, target: .bundleID(Self.bundleID))
 
     do {
-      let result = try await skippingIfHostToolCannotLoad {
-        try await skippingIfGuestServiceSpawnUnavailable { try await operation.result }
-      }
+      let result = try await skippingIfGuestServiceSpawnUnavailable { try await operation.result }
       XCTFail("vmmap can't examine a system application, but reported \(String(describing: result.report))")
     } catch let ProfileError.toolFailed(tool, exitCode, stderr) {
       XCTAssertEqual(tool, "vmmap")
@@ -71,16 +69,6 @@ final class SimulatorProfileSmokeTests: ProvidedSimulatorTestCase {
       XCTAssertEqual(signal, SIGABRT)
       // Where the host's `sh` can't load in the runtime, dyld aborts it before it runs, with its own reason on stderr.
       XCTAssertTrue(stderr.contains("aborting") || stderr.contains("Library not loaded"), stderr)
-    }
-  }
-
-  /// `footprint` is the host's build, which on some hosts links libraries the runtime doesn't have, so dyld aborts it
-  /// before it runs. That is a property of the host, not of the code under test.
-  private func skippingIfHostToolCannotLoad<T>(_ body: () async throws -> T) async throws -> T {
-    do {
-      return try await body()
-    } catch let InSimulatorToolError.signalled(launchPath, _, stderr) where stderr.contains("Library not loaded") {
-      throw XCTSkip("The host's \(launchPath) can't load in this simulator runtime: \(stderr)")
     }
   }
 
