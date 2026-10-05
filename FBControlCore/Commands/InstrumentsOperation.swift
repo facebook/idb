@@ -232,25 +232,11 @@ public final class InstrumentsOperation {
     }
 
     logger?.log("Starting post processing | Launch path: \(arguments[0]) | Arguments: \(CollectionInformation.oneLineDescription(from: launchArguments))")
-    let builder = FBProcessBuilder<AnyObject, AnyObject, AnyObject>
-      .withLaunchPath(arguments[0], arguments: launchArguments)
-      .withStdInConnected()
-    let runFuture: FBFuture<AnyObject>
-    if let logger {
-      runFuture =
-        builder
-        .withStdOut(to: logger)
-        .withStdErr(to: logger)
-        .withTaskLifecycleLogging(to: logger)
-        .runUntilCompletion(withAcceptableExitCodes: [0])
-        .retyped(FBFuture<AnyObject>.self)
-    } else {
-      runFuture =
-        builder
-        .runUntilCompletion(withAcceptableExitCodes: [0])
-        .retyped(FBFuture<AnyObject>.self)
-    }
-    _ = try await bridgeFBFuture(runFuture)
+    let standardInput = InputSource()
+    defer { standardInput.finish() }
+    let output: Subprocess.Output<Void> = logger.map { .logger($0) } ?? .nullDevice
+    _ = try await Subprocess(executable: arguments[0], arguments: launchArguments)
+      .run(output: output, error: output, input: .source(standardInput), logger: logger)
     return outputTraceFile
   }
 }
