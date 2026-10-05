@@ -194,7 +194,7 @@ extension DisplayCommands {
   /// the new display before its backlight follows, and one-shot resolution waits that out. `.transitioning` only
   /// when the transition outlasts `transitionSettling`.
   func resolveDisplay() async throws -> SimulatorDisplayResolution {
-    SimulatorDisplayResolution(try await observedSettledReport())
+    configurationTracker.resolution(of: try await settledReport(within: transitionSettling.timeout))
   }
 
   /// Every identified display once any display transition has settled. A runtime that reports no display activity
@@ -235,13 +235,7 @@ extension DisplayCommands {
 
   /// One read of the display interactions target, without waiting for a transition to settle.
   func currentDisplay() async throws -> SimulatorDisplayResolution {
-    SimulatorDisplayResolution(try await observedReport())
-  }
-
-  private func observedReport() async throws -> SimulatorDisplayReport {
-    let report = try await report()
-    _ = try? configurationTracker.observe(report)
-    return report
+    configurationTracker.resolution(of: try await report())
   }
 
   /// The configuration once any display transition has settled. `.transitioning` only when the transition

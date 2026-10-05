@@ -99,22 +99,39 @@ final class DisplayConfigurationTracker: @unchecked Sendable {
 
   /// Throws a failed read's error, which says nothing about the configuration.
   func observe(_ report: SimulatorDisplayReport) throws -> SimulatorDisplayConfiguration {
+    try observation(of: report).configuration.get()
+  }
+
+  /// Where interactions route for `report`, numbered alongside its configuration. A failed read falls back to the
+  /// main display rather than throwing.
+  func resolution(of report: SimulatorDisplayReport) -> SimulatorDisplayResolution {
+    observation(of: report).resolution
+  }
+
+  private func observation(
+    of report: SimulatorDisplayReport
+  ) -> (configuration: Result<SimulatorDisplayConfiguration, SimulatorCoreDeviceError>, resolution: SimulatorDisplayResolution) {
+    let resolution = SimulatorDisplayResolution(report)
     lock.lock()
     defer { lock.unlock() }
     switch report {
     case let .failed(error):
-      throw error
+      return (.failure(error), resolution)
     case .transitioning:
       guard let current else {
-        return SimulatorDisplayConfiguration(generation: 1, displays: [], active: .unresolved, phase: .transitioning)
+        return (.success(SimulatorDisplayConfiguration(generation: 1, displays: [], active: .unresolved, phase: .transitioning)), resolution)
       }
       let previous = current.configuration
-      return SimulatorDisplayConfiguration(
-        generation: previous.generation, displays: previous.displays, active: previous.active, phase: .transitioning)
+      return (
+        .success(
+          SimulatorDisplayConfiguration(
+            generation: previous.generation, displays: previous.displays, active: previous.active, phase: .transitioning)),
+        resolution
+      )
     case let .displays(displays):
-      return settle(displays: displays, basis: displays.map { .identified($0) }, active: Self.active(in: report))
+      return (.success(settle(displays: displays, basis: displays.map { .identified($0) }, active: Self.active(in: resolution))), resolution)
     case let .legacy(integrated):
-      return settle(displays: [], basis: integrated.map { .legacy($0) }, active: Self.active(in: report))
+      return (.success(settle(displays: [], basis: integrated.map { .legacy($0) }, active: Self.active(in: resolution))), resolution)
     }
   }
 
@@ -134,8 +151,8 @@ final class DisplayConfigurationTracker: @unchecked Sendable {
   }
 
   /// Only called for reports that list displays, so neither an unreadable report nor a transition reaches here.
-  private static func active(in report: SimulatorDisplayReport) -> SimulatorDisplayConfiguration.ActiveDisplay {
-    switch SimulatorDisplayResolution(report) {
+  private static func active(in resolution: SimulatorDisplayResolution) -> SimulatorDisplayConfiguration.ActiveDisplay {
+    switch resolution {
     case let .target(.selected(display)), let .target(.sole(.identified(display))): .identified(display)
     case let .target(.sole(.legacy(geometry))): .unidentified(geometry)
     case .fallback(.noActiveIntegratedDisplay), .fallback(.ambiguousActiveDisplays), .transitioning: .unresolved
