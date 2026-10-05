@@ -24,18 +24,6 @@ public func awaitExitCode<StdIn, StdOut, StdErr>(
   return value.int32Value
 }
 
-/// Awaits `subprocess` to exit with one of the given codes.
-///
-/// Throws if the process exits with a status not in `codes`, or if it is
-/// signalled. Mirrors `-[FBSubprocess exitedWithCodes:]`.
-func awaitExit<StdIn, StdOut, StdErr>(
-  of subprocess: FBSubprocess<StdIn, StdOut, StdErr>,
-  withCodes codes: Set<Int32>
-) async throws {
-  let acceptable: Set<NSNumber> = Set(codes.map { NSNumber(value: $0) })
-  _ = try await bridgeFBFuture(subprocess.exited(withCodes: acceptable))
-}
-
 /// Builds and starts the process described by `builder` and returns the
 /// spawned `FBSubprocess`.
 ///
