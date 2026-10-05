@@ -46,6 +46,20 @@ private final class CapturingApplicationLauncher: ApplicationLaunching, @uncheck
   }
 }
 
+/// A launcher whose application "launches" at once, so production goes on to spawn the debug server.
+private final class LaunchedApplicationLauncher: ApplicationLaunching, @unchecked Sendable {
+  private final class Application: LaunchedApplication {
+    let bundleID = "com.example.myapp"
+    let processIdentifier: pid_t = 4242
+    func waitForTermination() async throws {}
+    func terminate() async throws {}
+  }
+
+  func launch(_ configuration: ApplicationLaunchConfiguration) async throws -> LaunchedApplication {
+    Application()
+  }
+}
+
 // MARK: - Tests
 
 final class SimulatorDebugServerCommandsTests: XCTestCase {
@@ -130,6 +144,89 @@ final class SimulatorDebugServerCommandsTests: XCTestCase {
     XCTAssertEqual(
       config?.bundleName, "SpecialApp",
       "Must use the bundle name from the application descriptor for display purposes")
+  }
+
+  // MARK: - The debug server process
+
+  /// A stand-in debug server that records its arguments and pid, then waits to be signalled.
+  private struct FakeDebugServer {
+    struct NeverStarted: Error {}
+
+    let directory: URL
+    var executable: String { directory.appendingPathComponent("debugserver").path }
+    var argumentsFile: URL { directory.appendingPathComponent("arguments") }
+    var pidFile: URL { directory.appendingPathComponent("pid") }
+
+    init(prelude: String = "") throws {
+      directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+      try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+      let script = """
+        #!/bin/sh
+        \(prelude)
+        echo "$@" > '\(directory.appendingPathComponent("arguments").path)'
+        echo $$ > '\(directory.appendingPathComponent("pid").path)'
+        while :; do sleep 1; done
+        """
+      try script.write(toFile: executable, atomically: true, encoding: .utf8)
+      try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: executable)
+    }
+
+    func awaitProcessIdentifier() throws -> pid_t {
+      let deadline = Date().addingTimeInterval(10)
+      while Date() < deadline {
+        if let contents = try? String(contentsOf: pidFile, encoding: .utf8), let pid = pid_t(contents.trimmingCharacters(in: .whitespacesAndNewlines)) {
+          return pid
+        }
+        Thread.sleep(forTimeInterval: 0.02)
+      }
+      throw NeverStarted()
+    }
+  }
+
+  private func isDead(_ processIdentifier: pid_t, within seconds: TimeInterval) -> Bool {
+    let deadline = Date().addingTimeInterval(seconds)
+    while Date() < deadline {
+      if kill(processIdentifier, 0) != 0 {
+        return true
+      }
+      Thread.sleep(forTimeInterval: 0.02)
+    }
+    return false
+  }
+
+  private func launch(_ fake: FakeDebugServer, port: in_port_t) async throws -> (any DebugServer, Simulator) {
+    let simulator = SimulatorTestSupport.testableSimulator()
+    let commands = SimulatorDebugServerCommands(
+      simulator: simulator,
+      debugServerPath: fake.executable,
+      applicationLauncher: LaunchedApplicationLauncher())
+    let app = BundleDescriptor(name: "MyApp", identifier: "com.example.myapp", path: "/path/to/MyApp.app", binary: nil)
+    return (try await commands.launch(forHostApplication: app, port: port), simulator)
+  }
+
+  func testLaunchAttachesTheDebugServerToTheLaunchedApplication() async throws {
+    let fake = try FakeDebugServer()
+    let (server, simulator) = try await launch(fake, port: 12345)
+    let processIdentifier = try fake.awaitProcessIdentifier()
+
+    XCTAssertEqual(server.lldbBootstrapCommands, ["process connect connect://localhost:12345"])
+    XCTAssertEqual(
+      try String(contentsOf: fake.argumentsFile, encoding: .utf8), "localhost:12345 --attach 4242\n")
+
+    try await server.cancel()
+    XCTAssertTrue(isDead(processIdentifier, within: 5))
+    withExtendedLifetime(simulator) {}
+  }
+
+  func testCancelKillsADebugServerThatIgnoresSIGTERM() async throws {
+    let fake = try FakeDebugServer(prelude: "trap '' TERM")
+    let (server, simulator) = try await launch(fake, port: 12346)
+    let processIdentifier = try fake.awaitProcessIdentifier()
+
+    try await server.cancel()
+
+    XCTAssertTrue(isDead(processIdentifier, within: 5), "SIGKILL follows SIGTERM after the grace period")
+    withExtendedLifetime(simulator) {}
   }
 
   // MARK: - Path Construction
