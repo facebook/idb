@@ -9,10 +9,10 @@ import Foundation
 import XPC
 
 /// An available touchscreen, joined to display snapshots by stable identity.
-public struct SimulatorTouchscreen: Equatable, Sendable {
-  public let displayUniqueID: String
+struct SimulatorTouchscreen: Equatable, Sendable {
+  let displayUniqueID: String
   /// The explicit target accepted by the Indigo digitizer service.
-  public let digitizerTarget: UInt32
+  let digitizerTarget: UInt32
 }
 
 /// The universal HID service's `connectedServices` listing, of which the touchscreens are the

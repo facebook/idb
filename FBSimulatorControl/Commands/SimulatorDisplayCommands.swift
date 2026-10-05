@@ -204,7 +204,7 @@ public final class SimulatorDisplayCommands: DisplayCommands, @unchecked Sendabl
   var logger: (any ControlCoreLogger)? { simulator?.logger }
 
   /// Lists connected touchscreens. Match `displayUniqueID` to a display snapshot before routing input.
-  public func touchscreens() async throws -> [SimulatorTouchscreen] {
+  func touchscreens() async throws -> [SimulatorTouchscreen] {
     // Universal HID can advertise a virtual digitizer even when the target has no touch display.
     let simulator = try target()
     guard simulator.productFamily.hasTouchscreen else { return [] }
