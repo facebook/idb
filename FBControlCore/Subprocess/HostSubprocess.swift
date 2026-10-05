@@ -21,12 +21,16 @@ enum HostSubprocess {
     executable: String,
     arguments: [String],
     environment: [String: String],
+    standardInput: Int32?,
     standardOutput: Int32?,
     standardError: Int32?
   ) throws -> pid_t {
     var fileActions: posix_spawn_file_actions_t?
     try checked(posix_spawn_file_actions_init(&fileActions), executable)
     defer { posix_spawn_file_actions_destroy(&fileActions) }
+    if let standardInput {
+      try checked(posix_spawn_file_actions_adddup2(&fileActions, standardInput, STDIN_FILENO), executable)
+    }
     if let standardOutput {
       try checked(posix_spawn_file_actions_adddup2(&fileActions, standardOutput, STDOUT_FILENO), executable)
     }

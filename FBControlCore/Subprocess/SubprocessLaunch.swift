@@ -75,6 +75,7 @@ extension Subprocess {
   public func launch(
     output: Output<Void>,
     error: Output<Void>,
+    input: Input = .closed,
     logger: (any ControlCoreLogger)? = nil
   ) async throws -> RunningSubprocess {
     var (stdOut, _) = try output.resolveHost()
@@ -85,7 +86,15 @@ extension Subprocess {
       stdOut.dispose()
       throw failure
     }
-    return try await startOnHost(stdOut: &stdOut, stdErr: &stdErr, logger: logger)
+    let stdIn: Int32?
+    do {
+      stdIn = try input.resolveHost()
+    } catch let failure {
+      stdOut.dispose()
+      stdErr.dispose()
+      throw failure
+    }
+    return try await startOnHost(stdIn: stdIn, stdOut: &stdOut, stdErr: &stdErr, logger: logger)
   }
 
   /// Launches on the host, runs `body` against the live process, and
@@ -94,11 +103,12 @@ extension Subprocess {
   public func withRunning<Result: Sendable>(
     output: Output<Void>,
     error: Output<Void>,
+    input: Input = .closed,
     gracePeriod: TimeInterval = 4,
     logger: (any ControlCoreLogger)? = nil,
     _ body: (RunningSubprocess) async throws -> Result
   ) async throws -> Result {
-    let running = try await launch(output: output, error: error, logger: logger)
+    let running = try await launch(output: output, error: error, input: input, logger: logger)
     do {
       let result = try await body(running)
       await running.terminateIgnoringCancellation(gracePeriod: gracePeriod)
@@ -114,10 +124,18 @@ extension Subprocess {
   /// returned broadcast therefore sees termination only after output has
   /// finished draining.
   func startOnHost(
+    stdIn: Int32?,
     stdOut: inout HostSink,
     stdErr: inout HostSink,
     logger: (any ControlCoreLogger)?
   ) async throws -> RunningSubprocess {
+    // The child's copy is dup'd by the spawn, so the parent's must go either
+    // way — on the failure path too, or the descriptor leaks.
+    defer {
+      if let stdIn {
+        close(stdIn)
+      }
+    }
     let processName = (executable as NSString).lastPathComponent
     let processIdentifier: pid_t
     do {
@@ -128,6 +146,7 @@ extension Subprocess {
         executable: executable,
         arguments: arguments,
         environment: environment.resolved(against: ProcessInfo.processInfo.environment),
+        standardInput: stdIn,
         standardOutput: stdOut.childDescriptor,
         standardError: stdErr.childDescriptor)
     } catch let failure {

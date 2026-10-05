@@ -12,6 +12,7 @@ public enum SubprocessError: Error, Equatable {
   case unacceptableTermination(status: TerminationStatus, policy: ExitPolicy, executable: String, processIdentifier: pid_t)
   case launchFailed(executable: String, message: String)
   case outputUnavailable(path: String, message: String)
+  case inputUnavailable(message: String)
   case timedOut(seconds: TimeInterval, executable: String, processIdentifier: pid_t)
 }
 
@@ -29,6 +30,8 @@ extension SubprocessError: LocalizedError {
       return "Failed to launch \(executable): \(message)"
     case let .outputUnavailable(path, message):
       return "Cannot create output for \(path): \(message)"
+    case let .inputUnavailable(message):
+      return "Cannot create input: \(message)"
     case let .timedOut(seconds, executable, processIdentifier):
       return "Process \(processIdentifier) (\(executable)) did not terminate within \(seconds) seconds"
     }
@@ -55,6 +58,7 @@ extension Subprocess {
   public func run<Out: Sendable, Err: Sendable>(
     output: Output<Out>,
     error: Output<Err>,
+    input: Input = .closed,
     exitPolicy: ExitPolicy = .mustExitZero,
     timeout: TimeInterval? = nil,
     logger: (any ControlCoreLogger)? = nil
@@ -67,8 +71,16 @@ extension Subprocess {
       stdOut.dispose()
       throw failure
     }
+    let stdIn: Int32?
+    do {
+      stdIn = try input.resolveHost()
+    } catch let failure {
+      stdOut.dispose()
+      stdErr.dispose()
+      throw failure
+    }
 
-    let running = try await startOnHost(stdOut: &stdOut, stdErr: &stdErr, logger: logger)
+    let running = try await startOnHost(stdIn: stdIn, stdOut: &stdOut, stdErr: &stdErr, logger: logger)
     let status: TerminationStatus
     if let timeout {
       guard let resolved = try await running.exit.status(within: timeout) else {
@@ -100,11 +112,12 @@ extension Subprocess {
   /// memory as strings — the same default an unconfigured `FBProcessBuilder`
   /// applies, made visible in the return type.
   public func run(
+    input: Input = .closed,
     exitPolicy: ExitPolicy = .mustExitZero,
     timeout: TimeInterval? = nil,
     logger: (any ControlCoreLogger)? = nil
   ) async throws -> Completed<String, String> {
-    try await run(output: .string, error: .string, exitPolicy: exitPolicy, timeout: timeout, logger: logger)
+    try await run(output: .string, error: .string, input: input, exitPolicy: exitPolicy, timeout: timeout, logger: logger)
   }
 }
 
