@@ -57,7 +57,7 @@ public struct Subprocess: Sendable, Equatable {
 
     /// The concrete variables the child receives, given the parent's
     /// environment.
-    func resolved(against parent: [String: String]) -> [String: String] {
+    public func resolved(against parent: [String: String]) -> [String: String] {
       switch self {
       case .idbDefault:
         return Self.filtered(parent)

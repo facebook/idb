@@ -157,6 +157,64 @@ final class SimulatorProcessSpawnStrategyTests: XCTestCase {
     XCTAssertEqual(received.data, payload)
   }
 
+  // MARK: - SubprocessLauncher
+
+  func testLauncherSpawnsTheSpecWithExactlyItsExplicitEnvironment() async throws {
+    let device = ExitingSpawnDevice(statLoc: 3 << 8)
+    let launcher = SimulatorSubprocessLauncher(simulator: SimulatorTestSupport.testableSimulator(withDevice: device))
+    let subprocess = Subprocess(executable: "/usr/bin/true", arguments: ["-a"], environment: .additions(["E": "1"]), mode: .posixSpawn)
+
+    let completed = try await subprocess.run(on: launcher, output: .closed, error: .closed, exitPolicy: .mustExit([3]))
+
+    XCTAssertEqual(completed.terminationStatus, .exited(3))
+    XCTAssertEqual(completed.processIdentifier, 4242)
+    let options = try XCTUnwrap(device.spawnedOptions)
+    XCTAssertEqual(options["arguments"] as? [String], ["/usr/bin/true", "-a"])
+    // None of the host's DEVELOPER_DIR, HOME or PATH leak into the simulator.
+    XCTAssertEqual(options["environment"] as? [String: String], ["E": "1"])
+    XCTAssertEqual((options["standalone"] as? NSNumber)?.boolValue, true)
+    XCTAssertNil(options["stdout"], "A closed stream is not handed to the device")
+  }
+
+  func testLauncherGivesAnInheritingEnvironmentNothingFromTheHost() async throws {
+    let device = ExitingSpawnDevice()
+    let launcher = SimulatorSubprocessLauncher(simulator: SimulatorTestSupport.testableSimulator(withDevice: device))
+
+    _ = try await Subprocess(executable: "/usr/bin/true", environment: .inherit).run(on: launcher, output: .closed, error: .closed)
+
+    XCTAssertEqual(device.spawnedOptions?["environment"] as? [String: String], [:])
+  }
+
+  func testLauncherDrainsStdOutBeforeTheExitResolves() async throws {
+    let payload = Data(repeating: UInt8(ascii: "x"), count: 12_000) + Data("end\n".utf8)
+    let device = ExitingSpawnDevice(stdOutPayload: payload)
+    let launcher = SimulatorSubprocessLauncher(simulator: SimulatorTestSupport.testableSimulator(withDevice: device))
+    let received = Received()
+    let consumer = FBBlockDataConsumer.synchronousDataConsumer { data in
+      Thread.sleep(forTimeInterval: 0.05)
+      received.append(data)
+    }
+
+    let completed = try await Subprocess(executable: "/bin/echo").run(on: launcher, output: .consumer(consumer), error: .closed)
+
+    XCTAssertEqual(completed.terminationStatus, .exited(0))
+    XCTAssertEqual(received.data, payload)
+  }
+
+  func testLauncherRejectsAStandardInputWithoutReachingTheDevice() async throws {
+    let device = RecordingSpawnDevice()
+    let launcher = SimulatorSubprocessLauncher(simulator: SimulatorTestSupport.testableSimulator(withDevice: device))
+
+    do {
+      _ = try await Subprocess(executable: "/bin/cat").run(on: launcher, output: .closed, error: .closed, input: .data(Data("in".utf8)))
+      XCTFail("Expected the launch to be rejected, but it ran")
+    } catch SubprocessError.inputUnsupported(let executable) {
+      XCTAssertEqual(executable, "/bin/cat")
+    }
+
+    XCTAssertNil(device.spawnedOptions)
+  }
+
   // MARK: - Application launch options
 
   func testAppLaunchOptionsDoNotPrependLaunchPathAndCarryStdioPaths() {
@@ -242,9 +300,12 @@ private final class ExitingSpawnDevice: @unchecked Sendable {
   @objc let state = UInt64(TargetState.booted.rawValue)
 
   private let stdOutPayload: Data
+  private let statLoc: Int32
+  private(set) var spawnedOptions: [String: Any]?
 
-  init(stdOutPayload: Data) {
+  init(stdOutPayload: Data = Data(), statLoc: Int32 = 0) {
     self.stdOutPayload = stdOutPayload
+    self.statLoc = statLoc
   }
 
   @objc(spawnAsyncWithPath:options:terminationQueue:terminationHandler:completionQueue:completionHandler:)
@@ -256,11 +317,14 @@ private final class ExitingSpawnDevice: @unchecked Sendable {
     completionQueue: DispatchQueue,
     completionHandler: @escaping (NSError?, pid_t) -> Void
   ) {
-    let fileDescriptor = (options["stdout"] as! NSNumber).int32Value
-    stdOutPayload.withUnsafeBytes { _ = write(fileDescriptor, $0.baseAddress, $0.count) }
+    spawnedOptions = options
+    if let fileDescriptor = (options["stdout"] as? NSNumber)?.int32Value {
+      stdOutPayload.withUnsafeBytes { _ = write(fileDescriptor, $0.baseAddress, $0.count) }
+    }
+    let statLoc = statLoc
     completionQueue.async {
       completionHandler(nil, 4242)
-      terminationQueue.async { terminationHandler(0) }
+      terminationQueue.async { terminationHandler(statLoc) }
     }
   }
 }

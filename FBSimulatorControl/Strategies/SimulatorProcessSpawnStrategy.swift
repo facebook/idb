@@ -115,14 +115,26 @@ final class SimulatorProcessSpawnStrategy {
   }
 
   static func simDeviceLaunchOptions(withSimulator simulator: Simulator, launchPath: String, arguments: [String], environment: [String: String], waitForDebugger: Bool, stdOut: FBProcessStreamAttachment?, stdErr: FBProcessStreamAttachment?, mode: ProcessSpawnMode) -> [String: Any] {
+    simDeviceLaunchOptions(
+      withSimulator: simulator,
+      launchPath: launchPath,
+      arguments: arguments,
+      environment: environment,
+      waitForDebugger: waitForDebugger,
+      standardOutput: stdOut?.fileDescriptor,
+      standardError: stdErr?.fileDescriptor,
+      mode: mode)
+  }
+
+  static func simDeviceLaunchOptions(withSimulator simulator: Simulator, launchPath: String, arguments: [String], environment: [String: String], waitForDebugger: Bool, standardOutput: Int32?, standardError: Int32?, mode: ProcessSpawnMode) -> [String: Any] {
     // argv[0] should be launch path of the process. SimDevice does not do this automatically, so we need to add it.
     let fullArguments = [launchPath] + arguments
     var options = launchOptions(withArguments: fullArguments, environment: environment, waitForDebugger: waitForDebugger)
-    if let stdOut {
-      options["stdout"] = NSNumber(value: stdOut.fileDescriptor)
+    if let standardOutput {
+      options["stdout"] = NSNumber(value: standardOutput)
     }
-    if let stdErr {
-      options["stderr"] = NSNumber(value: stdErr.fileDescriptor)
+    if let standardError {
+      options["stderr"] = NSNumber(value: standardError)
     }
     options["standalone"] = NSNumber(value: shouldLaunchStandalone(onSimulator: simulator, mode: mode))
     return options
@@ -136,6 +148,103 @@ final class SimulatorProcessSpawnStrategy {
       return true
     default:
       return simulator.state != .booted
+    }
+  }
+}
+
+/// Spawns inside a simulator with `SimDevice`.
+///
+/// `SimDevice` addresses stdout and stderr by descriptor but has no way of
+/// connecting a stdin, so only a `.closed` input is accepted.
+public struct SimulatorSubprocessLauncher: SubprocessLauncher {
+
+  let simulator: Simulator
+
+  public init(simulator: Simulator) {
+    self.simulator = simulator
+  }
+
+  public var supportsStandardInput: Bool {
+    false
+  }
+
+  public func spawn(
+    _ subprocess: Subprocess,
+    standardInput: Int32?,
+    standardOutput: Int32?,
+    standardError: Int32?,
+    logger: (any ControlCoreLogger)?
+  ) async throws -> LaunchedProcess {
+    let options = SimulatorProcessSpawnStrategy.simDeviceLaunchOptions(
+      withSimulator: simulator,
+      launchPath: subprocess.executable,
+      arguments: subprocess.arguments,
+      // Nothing of this process's environment belongs inside the simulator, so
+      // the inheriting cases resolve to nothing and only explicit variables pass.
+      environment: subprocess.environment.resolved(against: [:]),
+      waitForDebugger: false,
+      standardOutput: standardOutput,
+      standardError: standardError,
+      mode: ProcessSpawnMode(subprocess.mode))
+    let exit = SimulatorExit()
+    let processIdentifier = try await simulator.device.spawnAsync(
+      withPath: subprocess.executable,
+      options: options,
+      terminationQueue: simulator.asyncQueue,
+      terminationHandler: { statLoc in exit.resolve(statLoc) },
+      completionQueue: simulator.asyncQueue
+    )
+    return LaunchedProcess(processIdentifier: processIdentifier) {
+      await exit.statLoc()
+    }
+  }
+}
+
+/// Holds the status from `SimDevice`'s termination handler until the exit
+/// monitor asks for it, whichever comes first.
+///
+// SAFETY: `resolved` and `waiter` are only read or written inside `lock`, and
+// the continuation is resumed after the lock is released.
+// patternlint-disable-next-line unchecked-sendable
+private final class SimulatorExit: @unchecked Sendable {
+  private let lock = NSLock()
+  private var resolved: Int32?
+  private var waiter: CheckedContinuation<Int32, Never>?
+
+  func resolve(_ statLoc: Int32) {
+    let waiting: CheckedContinuation<Int32, Never>? = lock.withLock {
+      resolved = statLoc
+      defer { waiter = nil }
+      return waiter
+    }
+    waiting?.resume(returning: statLoc)
+  }
+
+  func statLoc() async -> Int32 {
+    await withCheckedContinuation { continuation in
+      let immediate: Int32? = lock.withLock {
+        if let resolved {
+          return resolved
+        }
+        waiter = continuation
+        return nil
+      }
+      if let immediate {
+        continuation.resume(returning: immediate)
+      }
+    }
+  }
+}
+
+extension ProcessSpawnMode {
+  init(_ mode: Subprocess.LaunchMode) {
+    switch mode {
+    case .default:
+      self = .default
+    case .posixSpawn:
+      self = .posixSpawn
+    case .launchd:
+      self = .launchd
     }
   }
 }
