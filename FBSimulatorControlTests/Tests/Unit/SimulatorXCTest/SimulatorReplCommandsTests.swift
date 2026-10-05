@@ -42,10 +42,7 @@ final class SimulatorReplCommandsTests: XCTestCase {
 
     XCTAssertFalse(repl.run.hasCompleted, "The session is live while the bridge runs")
     device.terminate(statLoc: 1 << 8)
-    // BUG: resolves with the bridge's wait status rather than `NSNull`, so awaiting it with
-    // `bridgeFBFutureVoid`, as `ReplMethodHandler` does, crashes on the cast — flipped in the following commit.
-    let resolved = try await bridgeFBFuture(repl.run.retyped(FBFuture<AnyObject>.self))
-    XCTAssertEqual(resolved as? NSNumber, NSNumber(value: 1 << 8))
+    try await bridgeFBFutureVoid(repl.run)
   }
 }
 

@@ -117,7 +117,7 @@ public struct SimulatorReplCommands {
     // Launch without waiting; `statLoc` completes when the bridge exits (once
     // the socket is closed), matching the `LaunchedRepl.run` contract.
     let process = try await simulator.spawn(configuration)
-    let run = process.statLoc.retyped(FBFuture<NSNull>.self)
+    let run = process.statLoc.mapReplace(NSNull()).retyped(FBFuture<NSNull>.self)
     return LaunchedRepl(socketPath: socketPath, run: run, extraInterfacePaths: extraInterfacePaths)
   }
 
