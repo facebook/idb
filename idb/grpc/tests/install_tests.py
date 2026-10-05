@@ -210,18 +210,14 @@ class InstallFrameOrderTests(TestCase):
             with open(dylib, "wb") as f:
                 f.write(b"dylib")
             frames = await self._frames("install_dylib", is_local=False, dylib=dylib)
-        # BUG: the compression frame comes before name_hint, which the companion rejects, and labels gzip bytes as zstd.
-        self.assertEqual(
-            frames, ["destination", "compression:ZSTD", "name_hint", "data:gzip"]
-        )
+        self.assertEqual(frames, ["destination", "name_hint", "data:gzip"])
 
     async def test_a_remote_xctest(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             xctest = os.path.join(directory, "Example.xctest")
             os.mkdir(xctest)
             frames = await self._frames("install_xctest", is_local=False, xctest=xctest)
-        # BUG: labels a gzip tar as zstd.
-        self.assertEqual(frames, ["destination", "compression:ZSTD", "data:gzip"])
+        self.assertEqual(frames, ["destination", "data:gzip"])
 
     async def test_a_remote_framework(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -230,8 +226,7 @@ class InstallFrameOrderTests(TestCase):
             frames = await self._frames(
                 "install_framework", is_local=False, framework_path=framework
             )
-        # BUG: labels a gzip tar as zstd.
-        self.assertEqual(frames, ["destination", "compression:ZSTD", "data:gzip"])
+        self.assertEqual(frames, ["destination", "data:gzip"])
 
     async def test_a_dsym_linked_to_a_bundle(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -245,10 +240,9 @@ class InstallFrameOrderTests(TestCase):
                 compression=Compression.GZIP,
                 bundle_type=FileContainerType.APPLICATION,
             )
-        # BUG: the compression frame comes before link_dsym_to_bundle, which the companion rejects.
         self.assertEqual(
             frames,
-            ["destination", "compression:GZIP", "link_dsym_to_bundle", "file_path"],
+            ["destination", "link_dsym_to_bundle", "compression:GZIP", "file_path"],
         )
 
     async def test_a_local_app_with_options(self) -> None:

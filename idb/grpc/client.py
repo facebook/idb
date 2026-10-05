@@ -479,10 +479,12 @@ class Client(ClientBase):
                         self.logger.debug(
                             f"Companion is remote, generating binary chunks for {file_path}"
                         )
-                        compression = select_stream_compression(
-                            requested=compression,
-                            supported=self.companion.supported_compressions,
-                        )
+                        # Only app and dSYM tars are compressed as declared; the other destinations always send gzip.
+                        if destination in (InstallRequest.APP, InstallRequest.DSYM):
+                            compression = select_stream_compression(
+                                requested=compression,
+                                supported=self.companion.supported_compressions,
+                            )
                         self.logger.debug(
                             f"Streaming {file_path} with {(compression or Compression.GZIP).name} compression"
                         )
@@ -529,12 +531,6 @@ class Client(ClientBase):
                 await stream.send_message(
                     InstallRequest(skip_signing_bundles=skip_signing_bundles)
                 )
-            if compression is not None:
-                await stream.send_message(
-                    InstallRequest(
-                        payload=Payload(compression=COMPRESSION_MAP[compression])
-                    )
-                )
             if bundle_id is not None:
                 link_to_bundle_type = None
                 if bundle_type == FileContainerType.APPLICATION:
@@ -549,6 +545,12 @@ class Client(ClientBase):
                     bundle_id=bundle_id, bundle_type=link_to_bundle_type
                 )
                 await stream.send_message(InstallRequest(link_dsym_to_bundle=message))
+            if compression is not None:
+                await stream.send_message(
+                    InstallRequest(
+                        payload=Payload(compression=COMPRESSION_MAP[compression])
+                    )
+                )
 
             async for message in generator:
                 await stream.send_message(message)
