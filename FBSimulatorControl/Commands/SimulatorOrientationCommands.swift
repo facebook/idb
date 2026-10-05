@@ -90,6 +90,18 @@ public struct SimulatorOrientationCommands {
     try await set(orientation.hidOrientation, convention: .device)
   }
 
+  /// Sets physical device orientation, then waits within `timeout` for `current()` to read it back and for the
+  /// displays to settle, returning a `.transitioning` configuration when they outlast the budget. The foreground
+  /// application may rotate its interface later, or not at all; follow `SimulatorDisplayCommands.configurations()`
+  /// to see it.
+  public func set(
+    _ orientation: SimulatorDeviceOrientation, confirmingWithin timeout: Duration
+  ) async throws
+    -> SimulatorDisplayConfiguration
+  {
+    try await set(orientation, confirmingWithin: timeout, interval: .milliseconds(100))
+  }
+
   /// Rotates through the backend the simulator's motion capabilities select: vendor HID where the
   /// runtime reports device motion, Purple otherwise.
   public func set(_ orientation: SimulatorHIDDeviceOrientation, convention: SimulatorOrientationConvention) async throws {
@@ -121,4 +133,12 @@ public struct SimulatorOrientationCommands {
     let state = try JSONDecoder().decode(State.self, from: Data(output.utf8))
     return try SimulatorDeviceOrientation.motionState(state.orientation)
   }
+}
+
+extension SimulatorOrientationCommands: PoseCommands {
+  var displays: any DisplayCommands { simulator.displays }
+
+  func reached(_ value: SimulatorDeviceOrientation, target: SimulatorDeviceOrientation) -> Bool { value == target }
+
+  func pose(_ value: SimulatorDeviceOrientation) -> SimulatorPose { .orientation(value) }
 }
