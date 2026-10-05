@@ -203,46 +203,6 @@ public final class SimulatorDisplayCommands: DisplayCommands, @unchecked Sendabl
 
   var logger: (any ControlCoreLogger)? { simulator?.logger }
 
-  /// The identified integrated display interactions currently target, after any transition settles.
-  public func activeIntegratedDisplay() async throws -> SimulatorDisplay {
-    try Self.activeIntegratedDisplay(in: try await resolveDisplay())
-  }
-
-  static func activeIntegratedDisplay(in resolution: SimulatorDisplayResolution) throws -> SimulatorDisplay {
-    switch resolution {
-    case let .target(.selected(display)), let .target(.sole(.identified(display))):
-      return display
-    case .target(.sole(.legacy)):
-      throw SimulatorDisplayInteractionError.unsupportedCapability(
-        "an identified integrated display")
-    case let .fallback(.unreadable(error)):
-      throw error
-    case .fallback(.noActiveIntegratedDisplay):
-      throw SimulatorDisplayError.noActiveIntegratedDisplay
-    case let .fallback(.ambiguousActiveDisplays(identities)):
-      throw SimulatorDisplayError.ambiguousActiveDisplays(identities)
-    case .fallback(.legacyIntegratedDisplays), .fallback(.unknownActivity):
-      throw SimulatorDisplayInteractionError.unsupportedCapability(
-        "one active integrated display")
-    case .transitioning:
-      throw SimulatorDisplayError.transitioning
-    }
-  }
-
-  /// The geometry of the display interactions currently target, whether or not the runtime can identify it.
-  public func displayGeometry() async throws -> SimulatorDisplayGeometry {
-    switch try await resolveDisplay() {
-    case let .target(target):
-      return target.display.geometry
-    case let .fallback(.unreadable(error)):
-      throw error
-    case .fallback:
-      throw SimulatorDisplayInteractionError.unsupportedCapability("one integrated display")
-    case .transitioning:
-      throw SimulatorDisplayError.transitioning
-    }
-  }
-
   /// Lists connected touchscreens. Match `displayUniqueID` to a display snapshot before routing input.
   public func touchscreens() async throws -> [SimulatorTouchscreen] {
     // Universal HID can advertise a virtual digitizer even when the target has no touch display.

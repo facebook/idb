@@ -18,6 +18,18 @@ public struct SimulatorDisplayConfiguration: Equatable, Sendable {
     case transitioning
   }
 
+  /// The display interactions target: the sole integrated display, or the active one of several.
+  public enum ActiveDisplay: Equatable, Sendable {
+    case identified(SimulatorDisplay)
+    /// The sole integrated display of a runtime that does not identify its displays.
+    case unidentified(SimulatorDisplayGeometry)
+    /// No integrated display is active, or several are. A later configuration may settle on one.
+    case unresolved
+    /// The runtime cannot say which display interactions target: it reports an integrated display's activity
+    /// as `unknown`, or several integrated displays without identifying them.
+    case unknown
+  }
+
   /// Increases whenever a display appears or disappears, or any display's activity or geometry changes,
   /// including its interface rotation. A transition that settles back where it started keeps its generation.
   /// Generations are per simulator, start at 1, and may skip values. A change reverted before anything reads
@@ -25,10 +37,48 @@ public struct SimulatorDisplayConfiguration: Equatable, Sendable {
   public let generation: UInt64
   /// Every identified display. Empty on runtimes that do not identify their displays.
   public let displays: [SimulatorDisplay]
-  /// The display interactions target: the sole integrated display, or the active one of several. Nil when
-  /// the runtime cannot name one.
-  public let active: SimulatorDisplay?
+  public let active: ActiveDisplay
   public let phase: Phase
+
+  /// The identified display interactions target, or why the configuration has none.
+  public func activeDisplay() throws -> SimulatorDisplay {
+    switch try settledActive() {
+    case let .identified(display):
+      return display
+    case .unidentified:
+      throw SimulatorDisplayInteractionError.unsupportedCapability("an identified integrated display")
+    case .unresolved:
+      throw unresolved
+    case .unknown:
+      throw SimulatorDisplayInteractionError.unsupportedCapability("one active integrated display")
+    }
+  }
+
+  /// The geometry of the display interactions target, whether or not the runtime identifies it.
+  public func activeGeometry() throws -> SimulatorDisplayGeometry {
+    switch try settledActive() {
+    case let .identified(display):
+      return display.geometry
+    case let .unidentified(geometry):
+      return geometry
+    case .unresolved:
+      throw unresolved
+    case .unknown:
+      throw SimulatorDisplayInteractionError.unsupportedCapability("one integrated display")
+    }
+  }
+
+  private func settledActive() throws -> ActiveDisplay {
+    switch phase {
+    case .settled: active
+    case .transitioning: throw SimulatorDisplayError.transitioning
+    }
+  }
+
+  private var unresolved: SimulatorDisplayError {
+    let identities = displays.filter { $0.isIntegrated && $0.isActive }.map(\.uniqueID)
+    return identities.isEmpty ? .noActiveIntegratedDisplay : .ambiguousActiveDisplays(identities)
+  }
 }
 
 /// Assigns generations to display reports. Every read of a simulator's displays passes through one tracker,
@@ -55,7 +105,7 @@ final class DisplayConfigurationTracker: @unchecked Sendable {
       throw error
     case .transitioning:
       guard let current else {
-        return SimulatorDisplayConfiguration(generation: 1, displays: [], active: nil, phase: .transitioning)
+        return SimulatorDisplayConfiguration(generation: 1, displays: [], active: .unresolved, phase: .transitioning)
       }
       let previous = current.configuration
       return SimulatorDisplayConfiguration(
@@ -63,12 +113,12 @@ final class DisplayConfigurationTracker: @unchecked Sendable {
     case let .displays(displays):
       return settle(displays: displays, basis: displays.map { .identified($0) }, active: Self.active(in: report))
     case let .legacy(integrated):
-      return settle(displays: [], basis: integrated.map { .legacy($0) }, active: nil)
+      return settle(displays: [], basis: integrated.map { .legacy($0) }, active: Self.active(in: report))
     }
   }
 
   private func settle(
-    displays: [SimulatorDisplay], basis: [SimulatorInteractionDisplay], active: SimulatorDisplay?
+    displays: [SimulatorDisplay], basis: [SimulatorInteractionDisplay], active: SimulatorDisplayConfiguration.ActiveDisplay
   ) -> SimulatorDisplayConfiguration {
     let generation: UInt64 =
       switch current {
@@ -82,10 +132,13 @@ final class DisplayConfigurationTracker: @unchecked Sendable {
     return configuration
   }
 
-  private static func active(in report: SimulatorDisplayReport) -> SimulatorDisplay? {
+  /// Only called for reports that list displays, so neither an unreadable report nor a transition reaches here.
+  private static func active(in report: SimulatorDisplayReport) -> SimulatorDisplayConfiguration.ActiveDisplay {
     switch SimulatorDisplayResolution(report) {
-    case let .target(.selected(display)), let .target(.sole(.identified(display))): display
-    case .target(.sole(.legacy)), .fallback, .transitioning: nil
+    case let .target(.selected(display)), let .target(.sole(.identified(display))): .identified(display)
+    case let .target(.sole(.legacy(geometry))): .unidentified(geometry)
+    case .fallback(.noActiveIntegratedDisplay), .fallback(.ambiguousActiveDisplays), .transitioning: .unresolved
+    case .fallback(.legacyIntegratedDisplays), .fallback(.unknownActivity), .fallback(.unreadable): .unknown
     }
   }
 }

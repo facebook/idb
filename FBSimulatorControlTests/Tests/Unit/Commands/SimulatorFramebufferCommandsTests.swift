@@ -53,7 +53,7 @@ final class SimulatorFramebufferCommandsTests: XCTestCase {
     defer { attachment.cancel() }
 
     let configuration = await firstConfiguration(of: attachment)
-    XCTAssertEqual(configuration?.active, Self.display("inner"))
+    XCTAssertEqual(configuration?.active, .identified(Self.display("inner")))
     XCTAssertEqual(screens.screens["inner"]?.registeredTokens.count, 0)
   }
 
@@ -63,7 +63,7 @@ final class SimulatorFramebufferCommandsTests: XCTestCase {
     defer { attachment.cancel() }
 
     let configuration = await firstConfiguration(of: attachment)
-    XCTAssertEqual(configuration?.active, Self.display("lcd"))
+    XCTAssertEqual(configuration?.active, .identified(Self.display("lcd")))
   }
 
   func testANamedDisplayIsCapturedWhileAnotherIsActive() async throws {
@@ -95,7 +95,7 @@ final class SimulatorFramebufferCommandsTests: XCTestCase {
     XCTAssertEqual(screens.screens["inner"]?.registeredTokens.count, 1)
     XCTAssertEqual(screens.main.registeredTokens.count, 0)
     let configuration = await firstConfiguration(of: attachment)
-    XCTAssertEqual(configuration?.active, Self.display("inner"))
+    XCTAssertEqual(configuration?.active, .identified(Self.display("inner")))
   }
 
   func testTheActiveDisplayOfASoleDisplayCapturesTheMainScreen() async throws {
@@ -142,49 +142,5 @@ final class SimulatorFramebufferCommandsTests: XCTestCase {
       if case let .configurationChanged(configuration) = event { return configuration }
     }
     return nil
-  }
-
-  func testActiveIntegratedDisplayAcceptsSelectedAndSoleIdentifiedTargets() throws {
-    let inner = Self.display("inner")
-    XCTAssertEqual(
-      try SimulatorDisplayCommands.activeIntegratedDisplay(in: .target(.selected(inner))),
-      inner)
-    XCTAssertEqual(
-      try SimulatorDisplayCommands.activeIntegratedDisplay(in: .target(.sole(.identified(inner)))),
-      inner)
-  }
-
-  func testActiveIntegratedDisplayTreatsNoActiveDisplayAsCurrentState() throws {
-    XCTAssertThrowsError(
-      try SimulatorDisplayCommands.activeIntegratedDisplay(
-        in: .fallback(.noActiveIntegratedDisplay))
-    ) { error in
-      guard case SimulatorDisplayError.noActiveIntegratedDisplay = error else {
-        return XCTFail("unexpected error: \(error)")
-      }
-    }
-  }
-
-  func testActiveIntegratedDisplayTreatsAmbiguousDisplaysAsCurrentState() throws {
-    XCTAssertThrowsError(
-      try SimulatorDisplayCommands.activeIntegratedDisplay(
-        in: .fallback(.ambiguousActiveDisplays(["cover", "inner"])))
-    ) { error in
-      guard case let SimulatorDisplayError.ambiguousActiveDisplays(identities) = error else {
-        return XCTFail("unexpected error: \(error)")
-      }
-      XCTAssertEqual(identities, ["cover", "inner"])
-    }
-  }
-
-  func testActiveIntegratedDisplayTreatsLegacyResolutionAsUnsupported() throws {
-    XCTAssertThrowsError(
-      try SimulatorDisplayCommands.activeIntegratedDisplay(
-        in: .target(.sole(.legacy(Self.display("lcd").geometry))))
-    ) { error in
-      guard case SimulatorDisplayInteractionError.unsupportedCapability = error else {
-        return XCTFail("unexpected error: \(error)")
-      }
-    }
   }
 }

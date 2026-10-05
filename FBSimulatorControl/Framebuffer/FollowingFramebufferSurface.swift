@@ -126,7 +126,9 @@ final class FollowingFramebufferSurface: FramebufferSurface, @unchecked Sendable
         registrations.values.forEach { $0.configurationChanged(configuration) }
         return screen.uniqueID
       }
-      guard movement == .followsActiveDisplay, configuration.phase == .settled, let display = configuration.active, display.uniqueID != current else {
+      guard movement == .followsActiveDisplay, configuration.phase == .settled, case let .identified(display) = configuration.active,
+        display.uniqueID != current
+      else {
         continue
       }
       do {

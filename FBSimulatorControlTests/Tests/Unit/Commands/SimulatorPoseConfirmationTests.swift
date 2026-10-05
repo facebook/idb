@@ -43,7 +43,7 @@ final class SimulatorPoseConfirmationTests: XCTestCase {
   func testReachedPoseReturnsTheSettledConfiguration() async throws {
     let poses = OrientationPoseDouble([.success(.landscapeLeft), .success(.faceUp), .success(.portrait)], displays: [.displays([display])])
     let configuration = try await poses.set(.portrait, confirmingWithin: .seconds(1), interval: .milliseconds(1))
-    XCTAssertEqual(configuration, SimulatorDisplayConfiguration(generation: 1, displays: [display], active: display, phase: .settled))
+    XCTAssertEqual(configuration, SimulatorDisplayConfiguration(generation: 1, displays: [display], active: .identified(display), phase: .settled))
     XCTAssertEqual(poses.writes, [.portrait])
     XCTAssertEqual(poses.reads, 3)
   }
@@ -63,7 +63,7 @@ final class SimulatorPoseConfirmationTests: XCTestCase {
     let poses = OrientationPoseDouble([.success(.portrait)], displays: [.displays([display]), .transitioning])
     _ = try await poses.displays.settledConfiguration(within: .zero)
     let configuration = try await poses.set(.portrait, confirmingWithin: .milliseconds(20), interval: .milliseconds(1))
-    XCTAssertEqual(configuration, SimulatorDisplayConfiguration(generation: 1, displays: [display], active: display, phase: .transitioning))
+    XCTAssertEqual(configuration, SimulatorDisplayConfiguration(generation: 1, displays: [display], active: .identified(display), phase: .transitioning))
   }
 
   func testFailedReadIsThrown() async {

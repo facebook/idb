@@ -18,7 +18,7 @@ final class SimulatorCapabilitiesTests: XCTestCase {
   }
 
   private func configuration(_ displays: [SimulatorDisplay]) -> SimulatorDisplayConfiguration {
-    SimulatorDisplayConfiguration(generation: 1, displays: displays, active: displays.first, phase: .settled)
+    SimulatorDisplayConfiguration(generation: 1, displays: displays, active: displays.first.map { .identified($0) } ?? .unresolved, phase: .settled)
   }
 
   func testAnIPhoneDuoHasEveryCapability() throws {

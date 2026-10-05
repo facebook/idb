@@ -53,7 +53,7 @@ final class FramebufferTests: XCTestCase {
   func testConfigurationChangesAreDeliveredInOrderWithSurfaceEvents() async throws {
     let surface = FakeFramebufferSurface()
     let attachment = try makeFramebuffer(surface: surface).attach()
-    let configuration = SimulatorDisplayConfiguration(generation: 2, displays: [], active: nil, phase: .settled)
+    let configuration = SimulatorDisplayConfiguration(generation: 2, displays: [], active: .unresolved, phase: .settled)
 
     surface.frameRendered?()
     surface.configurationChanged?(configuration)

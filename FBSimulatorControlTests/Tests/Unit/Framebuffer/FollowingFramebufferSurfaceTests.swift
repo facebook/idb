@@ -21,7 +21,7 @@ final class FollowingFramebufferSurfaceTests: XCTestCase {
   }
 
   private func configuration(active: String, phase: SimulatorDisplayConfiguration.Phase = .settled) -> SimulatorDisplayConfiguration {
-    SimulatorDisplayConfiguration(generation: 1, displays: [display(active)], active: display(active), phase: phase)
+    SimulatorDisplayConfiguration(generation: 1, displays: [display(active)], active: .identified(display(active)), phase: phase)
   }
 
   private func surface(
@@ -149,7 +149,7 @@ final class FollowingFramebufferSurfaceTests: XCTestCase {
     let token = UUID()
     var events: [String] = []
     try following.registerCallbacks(
-      token: token, ioSurfaceChanged: { _ in events.append("surface") }, frameRendered: {}, configurationChanged: { events.append("configuration \($0.active?.uniqueID ?? "none")") })
+      token: token, ioSurfaceChanged: { _ in events.append("surface") }, frameRendered: {}, configurationChanged: { if case let .identified(display) = $0.active { events.append("configuration \(display.uniqueID)") } })
 
     continuation.yield(configuration(active: "inner"))
     try await waitUntil { !inner.registeredTokens.isEmpty }

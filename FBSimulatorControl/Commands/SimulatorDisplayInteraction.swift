@@ -152,7 +152,9 @@ extension DisplayCommands {
     let touchscreens = try await touchscreens()
     let accessibility = try AXBridgeDisplayInventory.decode(await transport.send(.displays))
     try await validate(.identified(display))
-    guard let configuration = configurationTracker.latest, configuration.active?.hasSameConfiguration(as: display) == true else {
+    guard let configuration = configurationTracker.latest, case let .identified(active) = configuration.active,
+      active.hasSameConfiguration(as: display)
+    else {
       throw SimulatorDisplayError.changed
     }
     return try SimulatorDisplayInteractionContext.join(
