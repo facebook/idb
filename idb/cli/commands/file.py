@@ -100,7 +100,7 @@ class FSCommand(ClientCommand):
         bundle_id = args.bundle_id
         if bundle_id is not None:
             container = bundle_id
-            self.logger.warn(
+            self.logger.warning(
                 f"'--bundle-id {bundle_id}' is deprecated, please use --application prefixing '{bundle_id}' in the file path/s provided to this command."
             )
         else:

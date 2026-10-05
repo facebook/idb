@@ -10,7 +10,6 @@ import os.path
 import sys
 from argparse import ArgumentParser, Namespace, REMAINDER
 from pathlib import Path
-from typing import Optional, Set
 
 from idb.cli import ClientCommand
 from idb.common.command import CommandGroup

@@ -7,7 +7,6 @@
 
 import sys
 from argparse import ArgumentParser, Namespace
-from typing import Dict, List
 
 from idb.cli import ClientCommand
 from idb.common.signal import signal_handler_event, signal_handler_generator
