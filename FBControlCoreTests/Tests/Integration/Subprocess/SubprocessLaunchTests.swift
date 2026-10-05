@@ -48,6 +48,18 @@ struct SubprocessLaunchTests {
     #expect(try await second == .signalled(SIGTERM))
   }
 
+  @Test("The observed status is absent while the process runs and present once it has terminated")
+  func observedStatusFollowsTermination() async throws {
+    let running = try await Self.shell("sleep 10000").launch(output: .closed, error: .closed)
+    #expect(running.observedTerminationStatus == nil)
+
+    running.sendSignal(SIGABRT)
+    let status = try await running.terminationStatus
+
+    #expect(running.observedTerminationStatus == status)
+    #expect(status == .signalled(SIGABRT))
+  }
+
   @Test("Sending a signal after termination is a no-op")
   func signalAfterExitIsANoOp() async throws {
     let running = try await Self.shell("exit 0").launch(output: .closed, error: .closed)

@@ -27,6 +27,12 @@ public struct RunningSubprocess: Sendable {
     }
   }
 
+  /// The termination status if it has already been observed, without
+  /// waiting; `nil` while the process runs or its output is still draining.
+  public var observedTerminationStatus: TerminationStatus? {
+    exit.current
+  }
+
   /// Sends `signo` to the process, unless it has already terminated.
   public func sendSignal(_ signo: Int32) {
     // Reaped is checked rather than resolved: the status resolves only after the
