@@ -23,7 +23,7 @@ public struct SimulatorProfileCommands: ProfileCommands {
     switch configuration {
     case .leaks:
       let pid = try await resolvePID(target)
-      return Self.oneShot {
+      return ProfileOperation {
         // leaks exits 1 when it finds leaks.
         let stdout = try await Self.run("leaks", [String(pid)], acceptingExitCodes: [0, 1], tools: tools)
         return ProfileResult(report: .leaks(try RuntimeToolOutputParser.leaks(Self.text(stdout))), toolOutput: stdout, artifact: nil)
@@ -31,7 +31,7 @@ public struct SimulatorProfileCommands: ProfileCommands {
     case let .memgraph(outputPath):
       let pid = try await resolvePID(target)
       let graphPath = Self.graphPath(for: outputPath)
-      return Self.oneShot {
+      return ProfileOperation {
         // Writing the graph prints nothing useful, so the report comes from reading the graph back.
         _ = try await Self.run("leaks", ["--outputGraph=\(graphPath)", String(pid)], acceptingExitCodes: [0, 1], tools: tools)
         let stdout = try await Self.run("leaks", [graphPath], acceptingExitCodes: [0, 1], tools: tools)
@@ -39,44 +39,45 @@ public struct SimulatorProfileCommands: ProfileCommands {
       }
     case .heap:
       let pid = try await resolvePID(target)
-      return Self.oneShot {
+      return ProfileOperation {
         let stdout = try await Self.run("heap", [String(pid)], tools: tools)
         return ProfileResult(report: .heap(try RuntimeToolOutputParser.heap(Self.text(stdout))), toolOutput: stdout, artifact: nil)
       }
     case let .sample(seconds):
       let pid = try await resolvePID(target)
-      return Self.oneShot {
+      return ProfileOperation {
         let stdout = try await Self.run("sample", [String(pid), String(seconds)], tools: tools)
         return ProfileResult(report: .sample(try RuntimeToolOutputParser.sample(Self.text(stdout))), toolOutput: stdout, artifact: nil)
       }
     case .vmmap:
       let pid = try await resolvePID(target)
-      return Self.oneShot {
+      return ProfileOperation {
         let stdout = try await Self.run("vmmap", [String(pid), "-summary"], tools: tools)
         return ProfileResult(report: .vmmap(try RuntimeToolOutputParser.vmmap(Self.text(stdout))), toolOutput: stdout, artifact: nil)
       }
     case .footprint:
       let pid = try await resolvePID(target)
-      return Self.oneShot {
+      return ProfileOperation {
         let json = try await Self.footprint(pid: pid, tools: tools)
         return ProfileResult(report: .footprint(try RuntimeToolOutputParser.footprint(json)), toolOutput: json, artifact: nil)
       }
     case let .resources(interval, scope):
       let pid = try await resolvePID(target)
       let (samples, continuation) = AsyncStream<ResourceSample>.makeStream()
-      let task = Task<ProfileResult, Error> {
-        await ResourceSampler.sample(pid: pid, interval: interval, scope: scope) { continuation.yield($0) }
+      let operation = ProfileOperation(samples: samples) { stop in
+        await withTaskGroup(of: Void.self) { group in
+          group.addTask { await ResourceSampler.sample(pid: pid, interval: interval, scope: scope) { continuation.yield($0) } }
+          group.addTask { try? await stop.wait() }
+          await group.next()
+          group.cancelAll()
+        }
         continuation.finish()
         return ProfileResult(report: nil, toolOutput: Data(), artifact: nil)
       }
-      continuation.onTermination = { _ in task.cancel() }
-      return ProfileOperation(samples: samples, task: task)
+      continuation.onTermination = { _ in operation.stop() }
+      return operation
     case let .trace(trace):
-      let process = try await xctraceProcess(target)
-      let simulator = self.simulator
-      return Self.oneShot {
-        try await XctraceProfiler.trace(trace, process: process, target: simulator, logger: simulator.logger)
-      }
+      return XctraceProfiler.operation(trace, process: try await xctraceProcess(target), target: simulator, logger: simulator.logger)
     }
   }
 
@@ -107,10 +108,6 @@ public struct SimulatorProfileCommands: ProfileCommands {
   static func graphPath(for outputPath: String) -> String {
     let path = URL(fileURLWithPath: outputPath).standardizedFileURL.path
     return path.hasSuffix(".memgraph") ? path : path + ".memgraph"
-  }
-
-  private static func oneShot(_ body: @escaping @Sendable () async throws -> ProfileResult) -> ProfileOperation {
-    ProfileOperation(task: Task(operation: body))
   }
 
   private static func run(_ tool: String, _ arguments: [String], acceptingExitCodes: Set<Int32> = [0], tools: SimulatorRuntimeToolCommands) async throws -> Data {

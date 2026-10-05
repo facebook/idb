@@ -25,18 +25,46 @@ public enum XctraceProfiler {
     "Hangs": ["potential-hangs"],
   ]
 
-  /// Records until the time limit, or until the calling task is cancelled.
-  public static func trace(_ configuration: TraceConfiguration, process: XctraceProcess, target: any Target, logger: any ControlCoreLogger) async throws -> ProfileResult {
-    let xctrace = try XCTraceRecordOperation.xctracePath()
-    let tracePath = configuration.outputPath ?? (target.auxillaryDirectory as NSString).appendingPathComponent("xctrace-\(UUID().uuidString).trace")
+  /// Records until the time limit, or until the operation is stopped.
+  public static func operation(_ configuration: TraceConfiguration, process: XctraceProcess, target: any Target, logger: any ControlCoreLogger) -> ProfileOperation {
+    let deviceSetPath = target.customDeviceSetPath
+    return operation(configuration, process: process, udid: target.udid, scratchDirectory: target.auxillaryDirectory, logger: logger) {
+      (try XCTraceRecordOperation.xctracePath(), try await recordEnvironment(deviceSetPath: deviceSetPath))
+    }
+  }
+
+  /// `tool` resolves the xctrace to run and the environment `record` needs.
+  static func operation(
+    _ configuration: TraceConfiguration,
+    process: XctraceProcess,
+    udid: String,
+    scratchDirectory: String,
+    logger: any ControlCoreLogger,
+    tool: @escaping @Sendable () async throws -> (xctrace: String, recordEnvironment: [String: String])
+  ) -> ProfileOperation {
+    ProfileOperation {
+      let (xctrace, environment) = try await tool()
+      return try await trace(configuration, process: process, xctrace: xctrace, udid: udid, scratchDirectory: scratchDirectory, environment: environment, logger: logger)
+    }
+  }
+
+  private static func trace(
+    _ configuration: TraceConfiguration,
+    process: XctraceProcess,
+    xctrace: String,
+    udid: String,
+    scratchDirectory: String,
+    environment: [String: String],
+    logger: any ControlCoreLogger
+  ) async throws -> ProfileResult {
+    let tracePath = configuration.outputPath ?? (scratchDirectory as NSString).appendingPathComponent("xctrace-\(UUID().uuidString).trace")
     defer {
       if configuration.outputPath == nil {
         try? FileManager.default.removeItem(atPath: tracePath)
       }
     }
 
-    let environment = try await recordEnvironment(target: target)
-    let recordArguments = recordArguments(template: configuration.template, timeLimit: configuration.timeLimit, udid: target.udid, process: process, outputPath: tracePath)
+    let recordArguments = recordArguments(template: configuration.template, timeLimit: configuration.timeLimit, udid: udid, process: process, outputPath: tracePath)
     try await record(xctrace: xctrace, arguments: recordArguments, environment: environment, logger: logger)
 
     let tableOfContents = try await export(xctrace: xctrace, arguments: ["export", "--input", tracePath, "--toc"], logger: logger)
@@ -86,8 +114,8 @@ public enum XctraceProfiler {
   }
 
   /// xctrace can only see a simulator outside the default device set through the shim.
-  private static func recordEnvironment(target: any Target) async throws -> [String: String] {
-    guard let deviceSetPath = target.customDeviceSetPath else {
+  private static func recordEnvironment(deviceSetPath: String?) async throws -> [String: String] {
+    guard let deviceSetPath else {
       return [:]
     }
     let shim = try await XCTestShimConfiguration.sharedShimConfiguration()

@@ -12,10 +12,22 @@ public struct ProfileOperation: Sendable {
   /// Every sample a `resources` profiler takes; finishes immediately for every other profiler.
   public let samples: AsyncStream<ResourceSample>
   private let task: Task<ProfileResult, Error>
+  /// Nil for a profiler that only ever runs to completion.
+  private let stopRequest: ProfileStopRequest?
 
-  public init(samples: AsyncStream<ResourceSample> = AsyncStream { $0.finish() }, task: Task<ProfileResult, Error>) {
+  /// A profiler that runs to completion, so stopping it abandons it.
+  public init(_ body: @escaping @Sendable () async throws -> ProfileResult) {
+    samples = AsyncStream { $0.finish() }
+    task = Task(operation: body)
+    stopRequest = nil
+  }
+
+  /// A profiler that `body` ends early, reporting what it has, once its stop request is made.
+  public init(samples: AsyncStream<ResourceSample> = AsyncStream { $0.finish() }, stoppable body: @escaping @Sendable (ProfileStopRequest) async throws -> ProfileResult) {
+    let stopRequest = ProfileStopRequest()
     self.samples = samples
-    self.task = task
+    task = Task { try await body(stopRequest) }
+    self.stopRequest = stopRequest
   }
 
   /// Returns once the profiler finishes, throwing if its tool failed.
@@ -23,9 +35,17 @@ public struct ProfileOperation: Sendable {
     get async throws { try await task.value }
   }
 
-  /// Ends a `resources` profiler, or a `trace` before its time limit with what it recorded so far. Any other
-  /// profiler is cancelled, so `result` throws `CancellationError`.
+  /// Ends a stoppable profiler early, so `result` reports what it recorded so far. A profiler that only runs to
+  /// completion is cancelled instead, so `result` throws `CancellationError`.
   public func stop() {
+    guard let stopRequest else {
+      return task.cancel()
+    }
+    stopRequest.request()
+  }
+
+  /// Abandons the profiler without waiting for a report.
+  public func cancel() {
     task.cancel()
   }
 }
