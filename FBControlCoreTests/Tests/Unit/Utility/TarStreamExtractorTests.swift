@@ -290,4 +290,40 @@ struct TarStreamExtractorTests {
     let extractedTree = try tree(at: extracted)
     #expect(extractedTree == expectedTree)
   }
+
+  @Test
+  func inProcessTarExtractor_WhenTheFallbackFailsBeforeReading_Hangs() async throws {
+    let extracted = root.appendingPathComponent("extracted").path
+    try fileManager.createDirectory(atPath: extracted, withIntermediateDirectories: true)
+    let (outcomes, outcome) = AsyncStream<Result<Void, Error>>.makeStream()
+    Task {
+      do {
+        let input = FBProcessInput<NSData>(from: Data(repeating: 0x41, count: 4096)).retyped(FBProcessInput<AnyObject>.self)
+        try await InProcessTarExtractor(fallback: FailingBeforeReading()).extract(
+          .stream(input), to: extracted, options: ArchiveExtractOptions(), logger: ControlCoreGlobalConfiguration.defaultLogger)
+        outcome.yield(.success(()))
+      } catch {
+        outcome.yield(.failure(error))
+      }
+    }
+    Task {
+      try? await Task.sleep(for: .seconds(5))
+      outcome.finish()
+    }
+
+    let first = await outcomes.first { _ in true }
+
+    // BUG: the replay waits forever for the fallback to open its input, so extraction never returns — flipped in the following commit.
+    #expect(first == nil)
+  }
+}
+
+/// Fails without attaching its input, as a fallback cancelled before it starts does.
+private struct FailingBeforeReading: ArchiveExtractor {
+
+  struct Failure: Error, Equatable {}
+
+  func extract(_ source: ArchiveSource, to extractPath: String, options: ArchiveExtractOptions, logger: any ControlCoreLogger) async throws {
+    throw Failure()
+  }
 }
