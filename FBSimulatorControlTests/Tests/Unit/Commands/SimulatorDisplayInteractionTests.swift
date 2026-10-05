@@ -32,7 +32,7 @@ final class SimulatorDisplayInteractionTests: XCTestCase {
     XCTAssertEqual(cached, target)
     XCTAssertEqual(displays.touchscreenReads, 1)
 
-    let binding = SimulatorHIDDisplay.selected(selected, target: target)
+    let binding = SimulatorHIDDisplay.selected(selected, id: target)
     let identified = SimulatorHIDDisplay.sole(.identified(selected))
     let legacy = SimulatorHIDDisplay.sole(.legacy(selected.geometry))
     XCTAssertEqual(binding.digitizerTarget, 82)
@@ -88,9 +88,9 @@ final class SimulatorDisplayInteractionTests: XCTestCase {
       XCTAssertEqual(geometry.unrotatedEdge(.none), .none)
       XCTAssertThrowsError(try geometry.normalizedPoint(CGPoint(x: size.width + 1, y: 0)))
     }
-    let first = SimulatorHIDDisplay.selected(display(), target: 82)
-    XCTAssertFalse(first.hasSameConfiguration(as: .selected(display(), target: 29)))
-    XCTAssertFalse(first.hasSameConfiguration(as: .selected(display(rotation: .clockwise), target: 82)))
+    let first = SimulatorHIDDisplay.selected(display(), id: 82)
+    XCTAssertFalse(first.hasSameConfiguration(as: .selected(display(), id: 29)))
+    XCTAssertFalse(first.hasSameConfiguration(as: .selected(display(rotation: .clockwise), id: 82)))
   }
 
   func testInvalidPointDescriptionsNameTheProblem() {

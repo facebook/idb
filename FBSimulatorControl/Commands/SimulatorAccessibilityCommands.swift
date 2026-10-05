@@ -93,7 +93,7 @@ final class SimulatorAccessibilityCommands: AccessibilityOperations {
       return .sole(display)
     case let .target(.selected(display)):
       let accessibilityID = try await displays.accessibilityID(for: display, transport: simulator.frameworkBridgeTransport(scope: .exclusive))
-      return .selected(display, accessibilityID: accessibilityID)
+      return .selected(display, id: accessibilityID)
     }
   }
 

@@ -267,7 +267,7 @@ struct SimulatorHIDOperation {
     case .transitioning: throw SimulatorDisplayError.transitioning
     case .fallback: return nil
     case let .target(.sole(display)): return .sole(display)
-    case let .target(.selected(display)): return .selected(display, target: try await displays.digitizerTarget(for: display))
+    case let .target(.selected(display)): return .selected(display, id: try await displays.digitizerTarget(for: display))
     }
   }
 

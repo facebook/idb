@@ -97,7 +97,7 @@ final class AXBridgeUIAutomation: AXBridgeTreeReader, @unchecked Sendable {
     case let .target(.selected(selected)):
       let accessibilityID = try await displays.accessibilityID(
         for: selected, transport: transport, requiring: [.scopedInteractions, .scopedTrees])
-      display = .selected(selected, accessibilityID: accessibilityID)
+      display = .selected(selected, id: accessibilityID)
     }
     let scoped = AXBridgeUIAutomation(scoping: self, routing: .resolved(display, displays))
     let result = try await body(scoped)

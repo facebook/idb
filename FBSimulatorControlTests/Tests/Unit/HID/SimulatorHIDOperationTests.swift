@@ -425,7 +425,7 @@ final class SimulatorHIDOperationTests: XCTestCase {
   }
 
   private func display(_ identity: String = "inner", target: UInt32 = 7, rotation: SimulatorDisplayRotation = .upright) -> SimulatorHIDDisplay {
-    .selected(screen(identity, rotation: rotation), target: target)
+    .selected(screen(identity, rotation: rotation), id: target)
   }
 
   private func screen(_ identity: String = "inner", rotation: SimulatorDisplayRotation = .upright) -> SimulatorDisplay {
