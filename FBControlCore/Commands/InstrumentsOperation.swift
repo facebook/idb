@@ -88,13 +88,13 @@ final class InstrumentsConsumer: NSObject, DataConsumer, @unchecked Sendable {
 /// Represents an operation of the instruments command-line.
 public final class InstrumentsOperation {
 
-  public let task: FBSubprocess<AnyObject, AnyObject, AnyObject>
+  public let running: RunningSubprocess
   public let traceFile: URL
   public let configuration: InstrumentsConfiguration
   public let logger: any ControlCoreLogger
 
-  init(task: FBSubprocess<AnyObject, AnyObject, AnyObject>, traceFile: URL, configuration: InstrumentsConfiguration, logger: any ControlCoreLogger) {
-    self.task = task
+  init(running: RunningSubprocess, traceFile: URL, configuration: InstrumentsConfiguration, logger: any ControlCoreLogger) {
+    self.running = running
     self.traceFile = traceFile
     self.configuration = configuration
     self.logger = logger
@@ -170,16 +170,8 @@ public final class InstrumentsOperation {
     let instrumentsLogger = FBControlCoreLoggerFactory.logger(to: instrumentsConsumer)
     let compositeLogger = FBControlCoreLoggerFactory.compositeLogger(with: [logger, instrumentsLogger])
 
-    let startFuture = FBProcessBuilder<NSNull, AnyObject, AnyObject>
-      .withLaunchPath("/usr/bin/instruments", arguments: arguments)
-      .withStdOut(to: compositeLogger)
-      .withStdErr(to: compositeLogger)
-      .withTaskLifecycleLogging(to: logger)
-      .start()
-    let task = try await bridgeFBFuture(
-      startFuture
-        .timeout(attemptTimeout, waitingFor: "instruments to start")
-        .retyped(FBFuture<FBSubprocess<AnyObject, AnyObject, AnyObject>>.self))
+    let running = try await Subprocess(executable: "/usr/bin/instruments", arguments: arguments)
+      .launch(output: .logger(compositeLogger), error: .logger(compositeLogger), logger: logger)
 
     let templateLoaded = convertFBMutableFuture(instrumentsConsumer.hasStartedLoadingTemplate)
       .timeout(attemptTimeout, waitingFor: "instruments to start loading the template")
@@ -197,24 +189,30 @@ public final class InstrumentsOperation {
       ])
       _ = try await bridgeFBFuture(raced)
     } catch {
-      _ = try? await bridgeFBFuture(task.sendSignal(SIGTERM))
+      _ = try? await running.terminate(with: SIGTERM, gracePeriod: configuration.timings.terminateTimeout)
       throw error
     }
 
-    logger.log("Started instruments \(task)")
-    return InstrumentsOperation(task: task, traceFile: URL(fileURLWithPath: traceFile), configuration: configuration, logger: logger)
+    logger.log("Started instruments with pid \(running.processIdentifier)")
+    return InstrumentsOperation(running: running, traceFile: URL(fileURLWithPath: traceFile), configuration: configuration, logger: logger)
   }
 
   /// Stops the operation, waiting for the trace file to be written out to disk.
   /// Returns the trace file.
   public func stop() async throws -> URL {
-    logger.log("Terminating instruments \(task). Backoff Timeout \(configuration.timings.terminateTimeout)")
-    _ = try? await bridgeFBFuture(task.sendSignal(SIGINT, backingOffToKillWithTimeout: configuration.timings.terminateTimeout, logger: logger))
-    let exitCode = try await bridgeFBFuture(task.exitCode)
-    guard exitCode == 0 as NSNumber else {
-      throw InstrumentsError.exitedWithFailure(exitCode: exitCode)
+    logger.log("Terminating instruments with pid \(running.processIdentifier). Backoff Timeout \(configuration.timings.terminateTimeout)")
+    let status = try await running.terminate(with: SIGINT, gracePeriod: configuration.timings.terminateTimeout)
+    switch status {
+    case .exited(0):
+      return traceFile
+    case .exited(let code):
+      throw InstrumentsError.exitedWithFailure(exitCode: NSNumber(value: code))
+    case .signalled(let signo):
+      throw ProcessTerminationError.exitedWithSignal(
+        processIdentifier: running.processIdentifier,
+        processName: "instruments",
+        signal: signo)
     }
-    return traceFile
   }
 
   /// Post-processes an instruments trace, returning the post-processed trace URL.

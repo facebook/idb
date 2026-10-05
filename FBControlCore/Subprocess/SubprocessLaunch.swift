@@ -37,15 +37,16 @@ public struct RunningSubprocess: Sendable {
     kill(processIdentifier, signo)
   }
 
-  /// Sends `SIGTERM`, escalating to `SIGKILL` if the process has not
-  /// terminated within `gracePeriod`, and returns the termination status.
+  /// Sends `signo` (`SIGTERM` by default), escalating to `SIGKILL` if the
+  /// process has not terminated within `gracePeriod`, and returns the
+  /// termination status.
   @discardableResult
-  public func terminate(gracePeriod: TimeInterval) async throws -> TerminationStatus {
-    sendSignal(SIGTERM)
+  public func terminate(with signo: Int32 = SIGTERM, gracePeriod: TimeInterval) async throws -> TerminationStatus {
+    sendSignal(signo)
     if let status = try await exit.status(within: gracePeriod) {
       return status
     }
-    logger?.log("Process \(processIdentifier) didn't exit after wait for \(gracePeriod) seconds for sending signal \(SIGTERM), sending SIGKILL now.")
+    logger?.log("Process \(processIdentifier) didn't exit after wait for \(gracePeriod) seconds for sending signal \(signo), sending SIGKILL now.")
     sendSignal(SIGKILL)
     return try await exit.status()
   }

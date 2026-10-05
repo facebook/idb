@@ -31,22 +31,19 @@ extension XCTraceError: LocalizedError {
 
 public final class XCTraceRecordOperation: @unchecked Sendable {
 
-  public let task: FBSubprocess<AnyObject, AnyObject, AnyObject>
-  public let queue: DispatchQueue
+  public let running: RunningSubprocess
   public let traceDir: URL
   public let configuration: XCTraceRecordConfiguration
   public let logger: ControlCoreLogger
 
-  public init(task: FBSubprocess<AnyObject, AnyObject, AnyObject>, traceDir: URL, configuration: XCTraceRecordConfiguration, queue: DispatchQueue, logger: ControlCoreLogger) {
-    self.task = task
+  public init(running: RunningSubprocess, traceDir: URL, configuration: XCTraceRecordConfiguration, logger: ControlCoreLogger) {
+    self.running = running
     self.traceDir = traceDir
     self.configuration = configuration
-    self.queue = queue
     self.logger = logger
   }
 
   public class func operation(with target: any Target, configuration: XCTraceRecordConfiguration, logger: ControlCoreLogger) async throws -> XCTraceRecordOperation {
-    let queue = DispatchQueue(label: "com.facebook.fbcontrolcore.xctrace")
     let traceDir = (target.auxillaryDirectory as NSString).appendingPathComponent("xctrace-" + UUID().uuidString)
     do {
       try FileManager.default.createDirectory(atPath: traceDir, withIntermediateDirectories: false, attributes: nil)
@@ -95,46 +92,27 @@ public final class XCTraceRecordOperation: @unchecked Sendable {
       environment["DYLD_INSERT_LIBRARIES"] = shim.macOSTestShimPath
     }
 
-    let started = try await bridgeFBFuture(
-      FBProcessBuilder<AnyObject, AnyObject, AnyObject>
-        .withLaunchPath(xctracePath)
-        .withArguments(arguments)
-        .withEnvironmentAdditions(environment)
-        .withStdOut(to: logger)
-        .withStdErr(to: logger)
-        .withTaskLifecycleLogging(to: logger)
-        .start())
-    logger.log("Started xctrace \(started)")
-    let typedTask = started.retyped(FBSubprocess<AnyObject, AnyObject, AnyObject>.self)
-    return XCTraceRecordOperation(task: typedTask, traceDir: URL(fileURLWithPath: traceFile), configuration: configuration, queue: queue, logger: logger)
+    let running = try await Subprocess(executable: xctracePath, arguments: arguments, environment: .additions(environment))
+      .launch(output: .logger(logger), error: .logger(logger), logger: logger)
+    logger.log("Started xctrace with pid \(running.processIdentifier)")
+    return XCTraceRecordOperation(running: running, traceDir: URL(fileURLWithPath: traceFile), configuration: configuration, logger: logger)
   }
 
   /// Stops the xctrace recording and returns the trace directory URL on success.
   public func stop(withTimeout timeout: TimeInterval) async throws -> URL {
-    let url = try await bridgeFBFuture(self.stopFuture(withTimeout: timeout))
-    return url as URL
-  }
-
-  private func stopFuture(withTimeout timeout: TimeInterval) -> FBFuture<NSURL> {
-    let result = FBFuture<AnyObject>.onQueue(
-      queue,
-      resolve: {
-        self.logger.log("Terminating xctrace record \(self.task). Backoff Timeout \(timeout)")
-        return self.task.sendSignal(SIGINT, backingOffToKillWithTimeout: timeout, logger: self.logger).retyped(FBFuture<AnyObject>.self)
-      }
-    ).chainReplace(
-      self.task.exitCode
-        .onQueue(
-          self.queue,
-          fmap: { exitCode -> FBFuture<AnyObject> in
-            if exitCode.isEqual(to: NSNumber(value: 0)) {
-              return FBFuture<AnyObject>(result: self.traceDir as NSURL)
-            } else {
-              return FBFuture(error: XCTraceError.recordFailed(exitCode: exitCode))
-            }
-          })
-    )
-    return result.retyped(FBFuture<NSURL>.self)
+    logger.log("Terminating xctrace record with pid \(running.processIdentifier). Backoff Timeout \(timeout)")
+    let status = try await running.terminate(with: SIGINT, gracePeriod: timeout)
+    switch status {
+    case .exited(0):
+      return traceDir
+    case .exited(let code):
+      throw XCTraceError.recordFailed(exitCode: NSNumber(value: code))
+    case .signalled(let signo):
+      throw ProcessTerminationError.exitedWithSignal(
+        processIdentifier: running.processIdentifier,
+        processName: "xctrace",
+        signal: signo)
+    }
   }
 
   public class func xctracePath() throws -> String {

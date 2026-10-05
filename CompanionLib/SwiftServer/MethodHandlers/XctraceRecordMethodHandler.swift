@@ -23,24 +23,12 @@ protocol XCTraceRecording: Sendable {
 
 extension XCTraceRecordOperation: XCTraceRecording {
   func exitStatus() async throws -> Int32 {
-    // Not `bridgeFBFuture`: cancelling this wait must not cancel `task.exitCode`, which `stop` still awaits.
-    let (statuses, continuation) = AsyncThrowingStream.makeStream(of: Int32.self, throwing: (any Error).self)
-    task.exitCode.onQueue(
-      queue,
-      notifyOfCompletion: { resolved in
-        if let error = resolved.error {
-          continuation.finish(throwing: error)
-        } else if let code = resolved.result as? NSNumber {
-          continuation.yield(code.int32Value)
-          continuation.finish()
-        } else {
-          continuation.finish(throwing: CancellationError())
-        }
-      })
-    for try await status in statuses {
-      return status
+    switch try await running.terminationStatus {
+    case .exited(let code):
+      return code
+    case .signalled(let signo):
+      throw ProcessTerminationError.exitedWithSignal(processIdentifier: running.processIdentifier, processName: "xctrace", signal: signo)
     }
-    throw CancellationError()
   }
 }
 
