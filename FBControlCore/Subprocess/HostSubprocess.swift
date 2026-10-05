@@ -156,7 +156,10 @@ extension Subprocess.Output {
     case .consumer(let consumer):
       return (try Self.drainedSink(into: consumer, logger: nil), { Self.captured(()) })
     case .logger(let logger):
-      return (try Self.drainedSink(into: FBLoggingDataConsumer(logger: logger), logger: logger), { Self.captured(()) })
+      // One delivery, unlike `FBProcessOutput_Logger`, which hands the logger
+      // to both the consumer and the file reader and so logs every chunk of a
+      // logged stream twice.
+      return (try Self.drainedSink(into: FBLoggingDataConsumer(logger: logger), logger: nil), { Self.captured(()) })
     case .loggerCapturingErrorMessage(let logger):
       let buffer = FBDataBuffer.accumulatingBuffer(withCapacity: FBProcessOutputErrorMessageLength)
       return (try Self.drainedSink(into: buffer, logger: logger), { Self.captured(()) })

@@ -111,15 +111,14 @@ final class XCTestResultToolOperationTests: XCTestCase {
 
     // The tool's stderr is not forwarded line by line. It arrives as arbitrary read
     // chunks, trimmed of newlines at each chunk's edges.
-    // BUG: each chunk is delivered twice — the logger output path attaches two
-    // logging consumers to the same logger.
     //
     // The walk below verifies the whole of the captured stderr reached the logger
     // in order, whatever the chunking: a message that continues the expected text
-    // consumes it, its duplicate is expected to follow immediately, and anything
-    // else (the lifecycle lines) is passed over.
+    // consumes it, an immediate repeat of it that the text does not also continue
+    // with is a duplicate delivery, and anything else (the lifecycle lines) is
+    // passed over.
     var remainder = Substring(capturedStdErr.replacingOccurrences(of: "\n", with: ""))
-    var unpaired = [String]()
+    var duplicated = [String]()
     var index = 0
     while index < messages.count {
       let chunk = messages[index].replacingOccurrences(of: "\n", with: "")
@@ -128,10 +127,10 @@ final class XCTestResultToolOperationTests: XCTestCase {
         continue
       }
       remainder = remainder.dropFirst(chunk.count)
-      if index + 1 < messages.count, messages[index + 1] == messages[index] {
+      if index + 1 < messages.count, messages[index + 1] == messages[index], !remainder.hasPrefix(chunk) {
+        duplicated.append(messages[index])
         index += 2
       } else {
-        unpaired.append(messages[index])
         index += 1
       }
     }
@@ -139,8 +138,8 @@ final class XCTestResultToolOperationTests: XCTestCase {
       remainder.isEmpty,
       "The whole of the tool's stderr should reach the logger; never received: \(remainder) given: \(messages)")
     XCTAssertTrue(
-      unpaired.isEmpty,
-      "Every stderr chunk is currently delivered to the logger twice; these arrived once: \(unpaired)")
+      duplicated.isEmpty,
+      "Every stderr chunk should reach the logger exactly once; these arrived twice: \(duplicated)")
   }
 
   private func standardError(ofDirectlyRunning arguments: [String]) async throws -> String {
