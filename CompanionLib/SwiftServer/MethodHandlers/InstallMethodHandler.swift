@@ -160,9 +160,9 @@ struct InstallMethodHandler: @unchecked Sendable {
         return try await commandExecutor.install_app_url(url, compression: compression, make_debuggable: makeDebuggable, override_modification_time: overrideModificationTime, on_progress: telemetry.observe)
       }
       let download = DataDownloadInput.dataDownload(withURL: url, logger: targetLogger)
-      let input = download.input
-
-      return try await installSource(dataStream: input, compression: compression, skipSigningBundles: skipSigningBundles)
+      return try await Self.installDownload(download) { input in
+        try await installSource(dataStream: input, compression: compression, skipSigningBundles: skipSigningBundles)
+      }
 
     case let .filePath(filePath):
       switch destination {
@@ -183,6 +183,14 @@ struct InstallMethodHandler: @unchecked Sendable {
     default:
       throw RPCError(code: .invalidArgument, message: "Incorrect payload source")
     }
+  }
+
+  /// Installs a non-app artifact from a download's stream as it arrives.
+  static func installDownload(
+    _ download: DataDownloadInput,
+    install: (FBProcessInput<AnyObject>) async throws -> InstalledArtifact
+  ) async throws -> InstalledArtifact {
+    try await install(download.input)
   }
 
   private func isZipArchive(_ data: Data) -> Bool {
