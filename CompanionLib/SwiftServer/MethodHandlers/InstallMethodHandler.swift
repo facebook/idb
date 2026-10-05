@@ -49,57 +49,8 @@ struct InstallMethodHandler: @unchecked Sendable {
 
   private func install(requestStream: RequestStreamReader<Idb_InstallRequest>, responseStream: RPCWriter<Idb_InstallResponse>, context: ServerContext) async throws -> InstalledArtifact {
 
-    func extractPayloadFromRequest() throws -> Idb_Payload {
-      guard let payload = request.extractPayload() else {
-        throw RPCError(code: .invalidArgument, message: "Expected the next item in the stream to be a payload")
-      }
-      return payload
-    }
-
-    var request = try await requestStream.requiredNext()
-
-    guard case let .destination(destination) = request.value else {
-      throw RPCError(code: .failedPrecondition, message: "Expected destination as first request in stream")
-    }
-    request = try await requestStream.requiredNext()
-
-    var name = UUID().uuidString
-    if case let .nameHint(nameHint) = request.value {
-      name = nameHint
-      request = try await requestStream.requiredNext()
-    }
-
-    var makeDebuggable = false
-    if case let .makeDebuggable(debuggable) = request.value {
-      makeDebuggable = debuggable
-      request = try await requestStream.requiredNext()
-    }
-    var overrideModificationTime = false
-    if case let .overrideModificationTime(omtime) = request.value {
-      overrideModificationTime = omtime
-      request = try await requestStream.requiredNext()
-    }
-
-    var skipSigningBundles = false
-    if case let .skipSigningBundles(skip) = request.value {
-      skipSigningBundles = skip
-      request = try await requestStream.requiredNext()
-    }
-
-    var linkToBundle: DsymInstallLinkToBundle?
-    if case let .linkDsymToBundle(link) = request.value {
-      linkToBundle = readLinkBundleToDsym(from: link)
-      request = try await requestStream.requiredNext()
-    }
-
-    var payload = try extractPayloadFromRequest()
-
-    var compression = FBCompressionFormat.GZIP
-    if case let .compression(format) = payload.source {
-      compression = FBCompressionFormat(format)
-      request = try await requestStream.requiredNext()
-      payload = try extractPayloadFromRequest()
-    }
+    let header = try await InstallHeader.read { try await requestStream.requiredNext() }
+    let payload = header.payload
 
     let telemetry = InstallTelemetry(payloadKind: try payloadKind(of: payload.source))
     defer {
@@ -110,14 +61,14 @@ struct InstallMethodHandler: @unchecked Sendable {
     do {
       return try await installData(
         from: payload.source,
-        to: destination,
+        to: header.destination,
         requestStream: requestStream,
-        name: name,
-        makeDebuggable: makeDebuggable,
-        linkToBundle: linkToBundle,
-        compression: compression,
-        overrideModificationTime: overrideModificationTime,
-        skipSigningBundles: skipSigningBundles,
+        name: header.nameHint ?? UUID().uuidString,
+        makeDebuggable: header.makeDebuggable,
+        linkToBundle: header.linkDsymToBundle.map { readLinkBundleToDsym(from: $0) },
+        compression: header.compression,
+        overrideModificationTime: header.overrideModificationTime,
+        skipSigningBundles: header.skipSigningBundles,
         telemetry: telemetry)
     } catch {
       telemetry.failed(error, rpcCancelled: context.cancellation.isCancelled)
