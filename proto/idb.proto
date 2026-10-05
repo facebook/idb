@@ -125,6 +125,8 @@ message Payload {
     string file_path = 1;
     bytes data = 2;
     string url = 3;
+    // Declares how the payload that follows is compressed. It is a frame of
+    // its own, sent before that payload; without one the payload is GZIP.
     Compression compression = 4;
   }
   enum Compression {
@@ -255,6 +257,14 @@ message InstallRequest {
   // 5 was `bundle_id`, the form link_dsym_to_bundle replaced.
   reserved 5;
   reserved "bundle_id";
+  // An install is a stream of frames: the destination first, then each option
+  // at most once, then the payload. A data payload continues across as many
+  // frames as it needs. The compression frame counts as an option.
+  //
+  // Current companions accept the options in any order and reject a repeated
+  // one. Older companions accept only this order: name_hint, make_debuggable,
+  // override_modification_time, skip_signing_bundles, link_dsym_to_bundle,
+  // compression. Clients send that order so they work with either.
   oneof value {
     Destination destination = 1;
     Payload payload = 2;
