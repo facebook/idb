@@ -236,6 +236,13 @@ extension Subprocess {
       .init(.source(source))
     }
 
+    var isClosed: Bool {
+      if case .closed = kind {
+        return true
+      }
+      return false
+    }
+
     /// The descriptor the child receives on its standard input, or nil to
     /// leave it closed. The parent's copy is closed once the child owns it.
     func resolveHost() throws -> Int32? {

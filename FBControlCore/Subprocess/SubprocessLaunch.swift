@@ -69,19 +69,62 @@ public struct RunningSubprocess: Sendable {
 
 extension Subprocess {
 
-  /// Launches on the host and returns an escaping handle, for lifetimes
-  /// that genuinely are not lexical. Both streams must be live sinks —
-  /// captures that materialize at exit have nowhere to go.
+  /// Launches through `launcher` and returns an escaping handle, for
+  /// lifetimes that genuinely are not lexical. Both streams must be live
+  /// sinks — captures that materialize at exit have nowhere to go.
   public func launch(
+    on launcher: any SubprocessLauncher = HostSubprocessLauncher(),
     output: Output<Void>,
     error: Output<Void>,
     input: Input = .closed,
     logger: (any ControlCoreLogger)? = nil
   ) async throws -> RunningSubprocess {
-    var (stdOut, _) = try output.resolveHost()
-    var (stdErr, _): (HostSink, () -> Void)
+    try await start(on: launcher, output: output, error: error, input: input, logger: logger).running
+  }
+
+  /// Launches through `launcher`, runs `body` against the live process, and
+  /// terminates it when the scope exits — on return, on a thrown error, and
+  /// on cancellation alike.
+  public func withRunning<Result: Sendable>(
+    on launcher: any SubprocessLauncher = HostSubprocessLauncher(),
+    output: Output<Void>,
+    error: Output<Void>,
+    input: Input = .closed,
+    gracePeriod: TimeInterval = 4,
+    logger: (any ControlCoreLogger)? = nil,
+    _ body: (RunningSubprocess) async throws -> Result
+  ) async throws -> Result {
+    let running = try await launch(on: launcher, output: output, error: error, input: input, logger: logger)
     do {
-      (stdErr, _) = try error.resolveHost()
+      let result = try await body(running)
+      await running.terminateIgnoringCancellation(gracePeriod: gracePeriod)
+      return result
+    } catch let failure {
+      await running.terminateIgnoringCancellation(gracePeriod: gracePeriod)
+      throw failure
+    }
+  }
+
+  /// Resolves the streams, spawns through `launcher` and installs the exit
+  /// monitor: exit → drains complete → status resolved. Every observer of the
+  /// returned handle therefore sees termination only after output has
+  /// finished draining.
+  func start<Out: Sendable, Err: Sendable>(
+    on launcher: any SubprocessLauncher,
+    output: Output<Out>,
+    error: Output<Err>,
+    input: Input,
+    logger: (any ControlCoreLogger)?
+  ) async throws -> (running: RunningSubprocess, captureOut: () -> Out, captureErr: () -> Err) {
+    // Checked before resolving, so that no descriptor is opened for an input
+    // that could never be read.
+    if !launcher.supportsStandardInput && !input.isClosed {
+      throw SubprocessError.inputUnsupported(executable: executable)
+    }
+    var (stdOut, captureOut) = try output.resolveHost()
+    var (stdErr, captureErr): (HostSink, () -> Err)
+    do {
+      (stdErr, captureErr) = try error.resolveHost()
     } catch let failure {
       stdOut.dispose()
       throw failure
@@ -94,41 +137,6 @@ extension Subprocess {
       stdErr.dispose()
       throw failure
     }
-    return try await startOnHost(stdIn: stdIn, stdOut: &stdOut, stdErr: &stdErr, logger: logger)
-  }
-
-  /// Launches on the host, runs `body` against the live process, and
-  /// terminates it when the scope exits — on return, on a thrown error, and
-  /// on cancellation alike.
-  public func withRunning<Result: Sendable>(
-    output: Output<Void>,
-    error: Output<Void>,
-    input: Input = .closed,
-    gracePeriod: TimeInterval = 4,
-    logger: (any ControlCoreLogger)? = nil,
-    _ body: (RunningSubprocess) async throws -> Result
-  ) async throws -> Result {
-    let running = try await launch(output: output, error: error, input: input, logger: logger)
-    do {
-      let result = try await body(running)
-      await running.terminateIgnoringCancellation(gracePeriod: gracePeriod)
-      return result
-    } catch let failure {
-      await running.terminateIgnoringCancellation(gracePeriod: gracePeriod)
-      throw failure
-    }
-  }
-
-  /// Spawns with the resolved sinks and installs the exit monitor: exit
-  /// event → drains complete → status resolved. Every observer of the
-  /// returned broadcast therefore sees termination only after output has
-  /// finished draining.
-  func startOnHost(
-    stdIn: Int32?,
-    stdOut: inout HostSink,
-    stdErr: inout HostSink,
-    logger: (any ControlCoreLogger)?
-  ) async throws -> RunningSubprocess {
     // The child's copy is dup'd by the spawn, so the parent's must go either
     // way — on the failure path too, or the descriptor leaks.
     defer {
@@ -137,18 +145,17 @@ extension Subprocess {
       }
     }
     let processName = (executable as NSString).lastPathComponent
-    let processIdentifier: pid_t
+    let launched: LaunchedProcess
     do {
       for reader in [stdOut.reader, stdErr.reader].compactMap({ $0 }) {
         _ = try await bridgeFBFuture(reader.startReading())
       }
-      processIdentifier = try HostSubprocess.spawn(
-        executable: executable,
-        arguments: arguments,
-        environment: environment.resolved(against: ProcessInfo.processInfo.environment),
+      launched = try await launcher.spawn(
+        self,
         standardInput: stdIn,
         standardOutput: stdOut.childDescriptor,
-        standardError: stdErr.childDescriptor)
+        standardError: stdErr.childDescriptor,
+        logger: logger)
     } catch let failure {
       stdOut.dispose()
       stdErr.dispose()
@@ -156,12 +163,13 @@ extension Subprocess {
     }
     stdOut.closeChildDescriptor()
     stdErr.closeChildDescriptor()
+    let processIdentifier = launched.processIdentifier
     logger?.log("\(processName) Launched with pid \(processIdentifier)")
 
     let exit = ExitBroadcast()
     let readers = [stdOut.reader, stdErr.reader].compactMap { $0 }
     Task {
-      let statLoc = await HostSubprocess.exitStatLoc(of: processIdentifier, logger: logger)
+      let statLoc = await launched.exitStatLoc()
       exit.markReaped()
       for reader in readers {
         _ = try? await bridgeFBFuture(reader.finishedReading(withTimeout: HostSubprocess.drainTimeout))
@@ -175,7 +183,8 @@ extension Subprocess {
       }
       exit.resolve(status)
     }
-    return RunningSubprocess(processIdentifier: processIdentifier, exit: exit, logger: logger)
+    let running = RunningSubprocess(processIdentifier: processIdentifier, exit: exit, logger: logger)
+    return (running, captureOut, captureErr)
   }
 }
 

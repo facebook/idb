@@ -13,6 +13,7 @@ public enum SubprocessError: Error, Equatable {
   case launchFailed(executable: String, message: String)
   case outputUnavailable(path: String, message: String)
   case inputUnavailable(message: String)
+  case inputUnsupported(executable: String)
   case timedOut(seconds: TimeInterval, executable: String, processIdentifier: pid_t)
 }
 
@@ -32,6 +33,8 @@ extension SubprocessError: LocalizedError {
       return "Cannot create output for \(path): \(message)"
     case let .inputUnavailable(message):
       return "Cannot create input: \(message)"
+    case let .inputUnsupported(executable):
+      return "Cannot give \(executable) a standard input: its launcher provides no way of connecting one"
     case let .timedOut(seconds, executable, processIdentifier):
       return "Process \(processIdentifier) (\(executable)) did not terminate within \(seconds) seconds"
     }
@@ -40,7 +43,7 @@ extension SubprocessError: LocalizedError {
 
 extension Subprocess {
 
-  /// Launches the process on the host, waits for it to terminate, and
+  /// Launches the process through `launcher`, waits for it to terminate, and
   /// returns its termination status alongside whatever the output captures
   /// produced. Output is fully drained before termination is reported.
   ///
@@ -56,6 +59,7 @@ extension Subprocess {
   /// on writing to a live pipe instead of taking a SIGPIPE it would never have
   /// seen had the caller waited.
   public func run<Out: Sendable, Err: Sendable>(
+    on launcher: any SubprocessLauncher = HostSubprocessLauncher(),
     output: Output<Out>,
     error: Output<Err>,
     input: Input = .closed,
@@ -63,24 +67,7 @@ extension Subprocess {
     timeout: TimeInterval? = nil,
     logger: (any ControlCoreLogger)? = nil
   ) async throws -> Completed<Out, Err> {
-    var (stdOut, captureOut) = try output.resolveHost()
-    var (stdErr, captureErr): (HostSink, () -> Err)
-    do {
-      (stdErr, captureErr) = try error.resolveHost()
-    } catch let failure {
-      stdOut.dispose()
-      throw failure
-    }
-    let stdIn: Int32?
-    do {
-      stdIn = try input.resolveHost()
-    } catch let failure {
-      stdOut.dispose()
-      stdErr.dispose()
-      throw failure
-    }
-
-    let running = try await startOnHost(stdIn: stdIn, stdOut: &stdOut, stdErr: &stdErr, logger: logger)
+    let (running, captureOut, captureErr) = try await start(on: launcher, output: output, error: error, input: input, logger: logger)
     let status: TerminationStatus
     if let timeout {
       guard let resolved = try await running.exit.status(within: timeout) else {
@@ -112,12 +99,13 @@ extension Subprocess {
   /// memory as strings — the same default an unconfigured `FBProcessBuilder`
   /// applies, made visible in the return type.
   public func run(
+    on launcher: any SubprocessLauncher = HostSubprocessLauncher(),
     input: Input = .closed,
     exitPolicy: ExitPolicy = .mustExitZero,
     timeout: TimeInterval? = nil,
     logger: (any ControlCoreLogger)? = nil
   ) async throws -> Completed<String, String> {
-    try await run(output: .string, error: .string, input: input, exitPolicy: exitPolicy, timeout: timeout, logger: logger)
+    try await run(on: launcher, output: .string, error: .string, input: input, exitPolicy: exitPolicy, timeout: timeout, logger: logger)
   }
 }
 
