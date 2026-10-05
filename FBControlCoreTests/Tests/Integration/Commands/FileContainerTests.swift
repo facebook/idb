@@ -155,17 +155,7 @@ final class FileContainerTests: XCTestCase {
     var expectedFiles: Set<String> = ["some.txt", "Resources"]
     var actualFiles = try await container.contents(ofDirectory: "dir")
     XCTAssertEqual(expectedFiles, Set(actualFiles))
-    expectedFiles = [
-      "app_custom_set.crash",
-      "tree.json",
-      "app_default_set.crash",
-      "assetsd_custom_set.crash",
-      "xctest-concated-json-crash.ips",
-      "replhost-simulator-crash.ips",
-      "agent_custom_set.crash",
-      "photo0.png",
-      "simulator_system.log",
-    ]
+    expectedFiles = try Set(FileManager.default.contentsOfDirectory(atPath: pushedDirectory))
     actualFiles = try await container.contents(ofDirectory: "dir/Resources")
     XCTAssertEqual(expectedFiles, Set(actualFiles))
   }
@@ -306,17 +296,7 @@ final class FileContainerTests: XCTestCase {
     var expectedFiles: Set<String> = ["in_dir.txt", "Resources"]
     var actualFiles = try await container.contents(ofDirectory: "bar/dir")
     XCTAssertEqual(expectedFiles, Set(actualFiles))
-    expectedFiles = [
-      "app_custom_set.crash",
-      "tree.json",
-      "app_default_set.crash",
-      "assetsd_custom_set.crash",
-      "xctest-concated-json-crash.ips",
-      "replhost-simulator-crash.ips",
-      "agent_custom_set.crash",
-      "photo0.png",
-      "simulator_system.log",
-    ]
+    expectedFiles = try Set(FileManager.default.contentsOfDirectory(atPath: pushedDirectory))
     actualFiles = try await container.contents(ofDirectory: "bar/dir/Resources")
     XCTAssertEqual(expectedFiles, Set(actualFiles))
   }

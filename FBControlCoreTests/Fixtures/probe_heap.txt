@@ -1,0 +1,60 @@
+Process:         Probe [70010]
+Path:            ~/Library/Developer/CoreSimulator/Devices/B8169862-96E1-4841-B6D0-B1231442D766/data/Containers/Bundle/Application/B3694A72-1927-4E2B-BEEF-7DDFF875C6C8/Probe.app/Probe
+Load Address:    0x1009e4000
+Identifier:      com.example.probe
+Version:         1.0 (1)
+Code Type:       ARM64
+Platform:        iOS Simulator
+Parent Process:  launchd_sim [81205]
+Target Type:     corpse
+
+Date/Time:       2026-10-02 15:52:09.162 +0100
+Launch Time:     2026-10-02 15:51:55.865 +0100
+OS Version:      iPhone OS 26.5 (23F77)
+Report Version:  7
+Analysis Tool:   /Library/Developer/CoreSimulator/Volumes/iOS_23F77/Library/Developer/CoreSimulator/Profiles/Runtimes/iOS 26.5.simruntime/Contents/Resources/RuntimeRoot/usr/bin/heap
+Analysis Tool Version:  iOS Simulator 26.5 (23F77)
+
+Physical footprint:         20.1M
+Physical footprint (peak):  20.1M
+Idle exit:                  untracked
+----
+
+Process 70010: 4 zones
+
+All zones: 23906 nodes malloced - Sizes: 128KB[2] 96KB[5] 28KB[2] 20KB[4] 12KB[2] 10KB[8] 8KB[4] 6KB[3] 5KB[520] 4KB[1] 3.5KB[1] 3KB[64] 2.5KB[21] 2KB[7] 1.75KB[8] 1.5KB[3] 1.25KB[33] 1KB[6] 896[10] 768[25] 640[107] 512[14] 448[34] 384[51] 320[255] 256[687] 224[5234] 192[79] 160[651] 128[572] 112[219] 96[595] 80[1187] 64[1538] 48[10565] 32[1200] 16[189]
+
+Found:  990 ObjC classes  192 Swift classes  18 C++ classes  114 CFTypes
+Derived 231 type names for non-objects from allocation backtraces
+
+-----------------------------------------------------------------------
+All zones: 23906 nodes (6637376 bytes)
+
+   COUNT      BYTES       AVG   CLASS_NAME                                        TYPE    BINARY
+   =====      =====       ===   ==========                                        ====    ======
+    6929     359600      51.9   CFString                                          ObjC    CoreFoundation
+    5807    1316896     226.8   CFString (Storage)                                C       CoreFoundation
+    2264     104864      46.3   Class.data (class_rw_t)                           C       libobjc.A.dylib
+    1182     248336     210.1   Class.methodCache._buckets (bucket_t)             C       libobjc.A.dylib
+     504    2560256    5079.9   Swift._ContiguousArrayStorage<Swift.UInt8>        Swift   libswiftCore.dylib
+     500      24000      48.0   Node                                              Swift   Probe
+     354      33984      96.0   _TIPreference                                     ObjC    TextInput
+     327      19792      60.5   __NSMallocBlock__                                 ObjC    libsystem_blocks.dylib
+     265      25984      98.1   non-object from libsystem_notify.dylib            C       libsystem_notify.dylib
+     204       9792      48.0   NSMutableDictionary                               ObjC    CoreFoundation
+     200      22864     114.3   non-object in zone QuartzCore_0x1017a4000                 <unknown>
+     162      10368      64.0   NSMutableArray                                    ObjC    CoreFoundation
+     155     352288    2272.8   NSMutableDictionary (Storage)                     C       CoreFoundation
+     151      19328     128.0   BSObjCValue                                       ObjC    BaseBoard
+     150       5152      34.3   malloc in addMethods(objc_class*, objc_selector* const*, void (* const*)(), char const**, unsigned int, bool, unsigned int*)  C       libobjc.A.dylib
+     132      13888     105.2   NSMutableArray (Storage)                          C       CoreFoundation
+     113       8944      79.2   Class.data.methods.lists (method_list_t)          C       libobjc.A.dylib
+     112      17920     160.0   NSMapTable                                        ObjC    Foundation
+     108      21776     201.6   NSMapTable (Key Storage)                          C       Foundation
+     105      20816     198.2   NSMapTable (Value Storage)                        C       Foundation
+     105       7760      73.9   xpc_dictionary_t (Storage)                        C       libxpc.dylib
+      88       5072      57.6   malloc in FindMasterFeatureMapEntry(unsigned int)::$_0::__invoke(void*)  C++     CoreText
+      84       6720      80.0   Class.data.readonly (class_ro_t)                  C       libobjc.A.dylib
+      82       3488      42.5   malloc in FallbackForLangSysTag(unsigned int)::$_0::__invoke(void*)  C++     CoreText
+      79       8016     101.5   NSPathStore2                                      ObjC    Foundation
+      30       3520     117.3   non-object in zone DefaultMallocZone_0x1011f4000          <unknown>

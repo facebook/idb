@@ -40,6 +40,21 @@ enum TestFixtures {
   static let treeJSONPath = Bundle(for: BundleFinder.self)
     .path(forResource: "tree", ofType: "json")!
 
+  static let probeLeaksPath = Bundle(for: BundleFinder.self)
+    .path(forResource: "probe_leaks", ofType: "txt")!
+
+  static let probeHeapPath = Bundle(for: BundleFinder.self)
+    .path(forResource: "probe_heap", ofType: "txt")!
+
+  static let probeSamplePath = Bundle(for: BundleFinder.self)
+    .path(forResource: "probe_sample", ofType: "txt")!
+
+  static let probeVmmapPath = Bundle(for: BundleFinder.self)
+    .path(forResource: "probe_vmmap", ofType: "txt")!
+
+  static let probeFootprintPath = Bundle(for: BundleFinder.self)
+    .path(forResource: "probe_footprint", ofType: "json")!
+
   static let bundleResource = Bundle(for: BundleFinder.self).resourcePath!
 }
 
