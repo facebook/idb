@@ -72,26 +72,28 @@ final class InstallHeaderTests: XCTestCase {
     await assertRejected([Self.nameHint, Self.destination, Self.data], .failedPrecondition, "Expected destination as first request in stream")
   }
 
-  func testCompressionBeforeTheLink() async {
-    // BUG: an option after the compression frame is rejected; flipped in the following commit.
-    await assertRejected([Self.destination, Self.zstd, Self.link, Self.data], .invalidArgument, "Expected the next item in the stream to be a payload")
+  func testCompressionBeforeTheLink() async throws {
+    let header = try await read([Self.destination, Self.zstd, Self.link, Self.data])
+    XCTAssertEqual(header.linkDsymToBundle?.bundleID, "com.example.app")
+    XCTAssertEqual(header.compression, .ZSTD)
+    XCTAssertEqual(header.payload.data, Data([1, 2, 3]))
   }
 
-  func testOptionsOutOfTheCompanionsOrder() async {
-    // BUG: options are only read in one fixed order; flipped in the following commit.
-    await assertRejected([Self.destination, Self.link, Self.nameHint, Self.data], .invalidArgument, "Expected the next item in the stream to be a payload")
-    await assertRejected([Self.destination, Self.skipSigningBundles, Self.makeDebuggable, Self.data], .invalidArgument, "Expected the next item in the stream to be a payload")
+  func testOptionsOutOfTheCompanionsOrder() async throws {
+    var header = try await read([Self.destination, Self.link, Self.nameHint, Self.data])
+    XCTAssertEqual(header.linkDsymToBundle?.bundleID, "com.example.app")
+    XCTAssertEqual(header.nameHint, "A")
+    header = try await read([Self.destination, Self.skipSigningBundles, Self.makeDebuggable, Self.data])
+    XCTAssertTrue(header.skipSigningBundles)
+    XCTAssertTrue(header.makeDebuggable)
   }
 
   func testARepeatedOption() async {
-    // BUG: a repeated option is read as the payload; flipped in the following commit.
-    await assertRejected([Self.destination, Self.nameHint, Self.nameHint, Self.data], .invalidArgument, "Expected the next item in the stream to be a payload")
+    await assertRejected([Self.destination, Self.nameHint, Self.nameHint, Self.data], .invalidArgument, "Repeated name_hint in install request stream")
   }
 
-  func testARepeatedCompression() async throws {
-    let header = try await read([Self.destination, Self.zstd, Self.zstd, Self.data])
-    // The second compression frame becomes the payload, which installData rejects as an incorrect payload source.
-    XCTAssertEqual(header.payload.compression, .zstd)
+  func testARepeatedCompression() async {
+    await assertRejected([Self.destination, Self.zstd, Self.zstd, Self.data], .invalidArgument, "Repeated compression in install request stream")
   }
 
   func testAStreamWithoutAPayload() async {
