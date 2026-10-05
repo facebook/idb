@@ -8,6 +8,8 @@
 import Foundation
 
 enum XcodeDirectoryError: Error, LocalizedError {
+  case xcodeSelectTimedOut
+  case xcodeSelectFailed(status: Int32, stdErr: String)
   case emptyXcodeSelectOutput(stdErr: String)
   case pathNil
   case commandLineToolsOnly
@@ -16,6 +18,10 @@ enum XcodeDirectoryError: Error, LocalizedError {
 
   public var errorDescription: String? {
     switch self {
+    case .xcodeSelectTimedOut:
+      return "`xcode-select -p` did not return the developer directory within 10 seconds."
+    case let .xcodeSelectFailed(status, stdErr):
+      return "`xcode-select -p` failed with status \(status): \(stdErr)"
     case let .emptyXcodeSelectOutput(stdErr):
       return "Empty output for xcode directory returned from `xcode-select -p`: \(stdErr)"
     case .pathNil:
@@ -43,18 +49,28 @@ struct XcodeDirectory {
   }
 
   public static func xcodeSelectDeveloperDirectory() throws -> String {
-    let timedFuture = FBProcessBuilder<AnyObject, AnyObject, AnyObject>
-      .withLaunchPath("/usr/bin/xcode-select", arguments: ["--print-path"])
-      .withStdOutInMemoryAsString()
-      .withStdErrInMemoryAsString()
-      .runUntilCompletion(withAcceptableExitCodes: Set([0 as NSNumber]))
-      .timeout(10, waitingFor: "xcode-select to return the developer directory")
-    let taskObj = try timedFuture.await()
-    // swiftlint:disable:next force_cast
-    let task = taskObj as! FBSubprocess<AnyObject, AnyObject, AnyObject>
-    let directory = task.stdOut as? String ?? ""
-    if directory.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-      let stdErr = task.stdErr as? String ?? ""
+    let process = Process()
+    process.executableURL = URL(fileURLWithPath: "/usr/bin/xcode-select")
+    process.arguments = ["--print-path"]
+    let stdOutPipe = Pipe()
+    let stdErrPipe = Pipe()
+    process.standardOutput = stdOutPipe
+    process.standardError = stdErrPipe
+    let exited = DispatchSemaphore(value: 0)
+    process.terminationHandler = { _ in exited.signal() }
+    try process.run()
+    guard exited.wait(timeout: .now() + 10) == .success else {
+      process.terminate()
+      throw XcodeDirectoryError.xcodeSelectTimedOut
+    }
+    // The output is a single path, well within the pipe buffer, so it can be read after exit.
+    let stdErr = String(decoding: stdErrPipe.fileHandleForReading.readDataToEndOfFile(), as: UTF8.self)
+    guard process.terminationStatus == 0 else {
+      throw XcodeDirectoryError.xcodeSelectFailed(status: process.terminationStatus, stdErr: stdErr)
+    }
+    let directory = String(decoding: stdOutPipe.fileHandleForReading.readDataToEndOfFile(), as: UTF8.self)
+      .trimmingCharacters(in: .whitespacesAndNewlines)
+    if directory.isEmpty {
       throw XcodeDirectoryError.emptyXcodeSelectOutput(stdErr: stdErr)
     }
     let resolved = (directory as NSString).resolvingSymlinksInPath
