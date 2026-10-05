@@ -32,20 +32,19 @@ final class SimulatorProfileSmokeTests: ProvidedSimulatorTestCase {
     }
   }
 
-  func testFootprintReportsTheTarget() async throws {
-    let pid = try await simulator.application.processID(forBundleID: Self.bundleID)
+  func testFootprintRunsInTheRuntime() async throws {
+    let operation = try await simulator.profile.profile(.footprint, target: .bundleID(Self.bundleID))
 
-    let result = try await skippingIfHostToolCannotLoad {
-      try await skippingIfGuestServiceSpawnUnavailable {
-        try await simulator.profile.profile(.footprint, target: .bundleID(Self.bundleID)).result
+    do {
+      let result = try await skippingIfHostToolCannotLoad {
+        try await skippingIfGuestServiceSpawnUnavailable { try await operation.result }
       }
+      XCTFail("vmmap can't examine a system application, but reported \(String(describing: result.report))")
+    } catch let ProfileError.toolFailed(tool, exitCode, stderr) {
+      XCTAssertEqual(tool, "vmmap")
+      XCTAssertNotEqual(exitCode, 0)
+      XCTAssertTrue(stderr.contains("cannot examine"), stderr)
     }
-
-    guard case let .footprint(report) = result.report else {
-      return XCTFail("Expected a footprint report, got \(String(describing: result.report))")
-    }
-    XCTAssertEqual(report.pid, pid)
-    XCTAssertGreaterThan(report.footprintBytes, 0)
   }
 
   func testRuntimeToolFailureCarriesItsStderr() async throws {

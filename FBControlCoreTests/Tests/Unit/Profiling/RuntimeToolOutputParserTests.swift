@@ -105,12 +105,27 @@ struct RuntimeToolOutputParserTests {
 
   @Test
   func footprintReadsTheProcessAndSortsCategories() throws {
-    let report = try RuntimeToolOutputParser.footprint(Data(contentsOf: URL(fileURLWithPath: TestFixtures.probeFootprintPath)))
+    let report = try RuntimeToolOutputParser.footprint(fixture(TestFixtures.probeVmmapPath))
 
     #expect(report.name == "Probe")
     #expect(report.pid == 70010)
-    #expect(report.footprintBytes == 27707432)
-    #expect(report.categories.map(\.dirtyBytes) == report.categories.map(\.dirtyBytes).sorted(by: >))
+    #expect(report.footprintBytes == UInt64(20.1 * 1024 * 1024))
+    #expect(report.peakFootprintBytes == UInt64(20.1 * 1024 * 1024))
+    let small = try #require(report.categories.first { $0.name == "MALLOC_SMALL" })
+    #expect(small.dirtyBytes == 7040 * 1024)
+    #expect(small.regionCount == 41)
+    #expect(!report.categories.contains { $0.name == "MALLOC guard page" })
+    let sizes = report.categories.map { $0.dirtyBytes + $0.swappedBytes }
+    #expect(sizes == sizes.sorted(by: >))
+  }
+
+  @Test
+  func vmmapWithoutAPhysicalFootprintHasNoFootprint() throws {
+    let text = try fixture(TestFixtures.probeVmmapPath).replacing(#/Physical footprint.*\n/#, with: "")
+
+    #expect(throws: ProfileReportParseError.missingSection(tool: "vmmap", section: "physical footprint")) {
+      try RuntimeToolOutputParser.footprint(text)
+    }
   }
 
   @Test

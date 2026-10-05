@@ -144,16 +144,15 @@ public struct FootprintReport: Codable, Equatable, Sendable {
   public let name: String
   public let pid: Int32
   public let footprintBytes: UInt64
-  /// Largest dirty footprint first.
+  public let peakFootprintBytes: UInt64
+  /// vmmap's dirty and swapped memory per region type, largest first. These count shared library pages that the
+  /// footprint attributes elsewhere, so they need not sum to it.
   public let categories: [FootprintCategory]
 }
 
 public struct FootprintCategory: Codable, Equatable, Sendable {
   public let name: String
   public let dirtyBytes: UInt64
-  public let cleanBytes: UInt64
   public let swappedBytes: UInt64
-  public let reclaimableBytes: UInt64
-  public let wiredBytes: UInt64
   public let regionCount: Int
 }

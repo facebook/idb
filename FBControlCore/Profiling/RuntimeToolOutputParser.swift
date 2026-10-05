@@ -18,7 +18,7 @@ public enum ProfileReportParseError: Error, LocalizedError, Equatable {
   }
 }
 
-/// Parses the text reports of the `leaks`, `heap`, `sample` and `vmmap` tools, and the JSON of `footprint`.
+/// Parses the text reports of the `leaks`, `heap`, `sample` and `vmmap` tools.
 public enum RuntimeToolOutputParser {
 
   public static func leaks(_ text: String) throws -> LeaksReport {
@@ -199,41 +199,21 @@ public enum RuntimeToolOutputParser {
     return VmmapReport(process: process, regions: regions, total: total)
   }
 
-  /// Parses `footprint -j` for a single process.
-  public static func footprint(_ json: Data) throws -> FootprintReport {
-    struct Output: Decodable {
-      struct Process: Decodable {
-        struct Category: Decodable {
-          let dirty: UInt64
-          let swapped: UInt64
-          let clean: UInt64
-          let reclaimable: UInt64
-          let wired: UInt64
-          let regions: Int
-        }
-        let name: String
-        let pid: Int32
-        let footprint: UInt64
-        let categories: [String: Category]
-      }
-      let processes: [Process]
+  /// Reads the footprint from `vmmap --summary`.
+  public static func footprint(_ text: String) throws -> FootprintReport {
+    let vmmap = try vmmap(text)
+    guard let footprintBytes = vmmap.process.physicalFootprintBytes, let peakFootprintBytes = vmmap.process.peakPhysicalFootprintBytes else {
+      throw ProfileReportParseError.missingSection(tool: "vmmap", section: "physical footprint")
     }
-    guard let process = try JSONDecoder().decode(Output.self, from: json).processes.first else {
-      throw ProfileReportParseError.missingSection(tool: "footprint", section: "process")
-    }
-    let categories = process.categories
-      .map { name, category in
-        FootprintCategory(
-          name: name,
-          dirtyBytes: category.dirty,
-          cleanBytes: category.clean,
-          swappedBytes: category.swapped,
-          reclaimableBytes: category.reclaimable,
-          wiredBytes: category.wired,
-          regionCount: category.regions)
-      }
-      .sorted { ($0.dirtyBytes, $1.name) > ($1.dirtyBytes, $0.name) }
-    return FootprintReport(name: process.name, pid: process.pid, footprintBytes: process.footprint, categories: categories)
+    let categories = vmmap.regions
+      .filter { $0.dirtyBytes + $0.swappedBytes > 0 }
+      .map { FootprintCategory(name: $0.type, dirtyBytes: $0.dirtyBytes, swappedBytes: $0.swappedBytes, regionCount: $0.regionCount) }
+    return FootprintReport(
+      name: vmmap.process.name,
+      pid: vmmap.process.pid,
+      footprintBytes: footprintBytes,
+      peakFootprintBytes: peakFootprintBytes,
+      categories: stableSorted(categories, by: { $0.dirtyBytes + $0.swappedBytes }))
   }
 
   // MARK: Private

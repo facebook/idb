@@ -58,8 +58,9 @@ public struct SimulatorProfileCommands: ProfileCommands {
     case .footprint:
       let pid = try await resolvePID(target)
       return ProfileOperation {
-        let json = try await Self.footprint(pid: pid, tools: tools)
-        return ProfileResult(report: .footprint(try RuntimeToolOutputParser.footprint(json)), toolOutput: json, artifact: nil)
+        // The runtime ships no footprint, and the host's links libraries the runtime may lack, so its vmmap reports it.
+        let stdout = try await Self.run("vmmap", [String(pid), "-summary"], tools: tools)
+        return ProfileResult(report: .footprint(try RuntimeToolOutputParser.footprint(Self.text(stdout))), toolOutput: stdout, artifact: nil)
       }
     case let .resources(interval, scope):
       let pid = try await resolvePID(target)
@@ -114,19 +115,6 @@ public struct SimulatorProfileCommands: ProfileCommands {
     let output = try await tools.run("usr/bin/\(tool)", arguments: arguments)
     try check(output, tool: tool, acceptingExitCodes: acceptingExitCodes)
     return output.stdout
-  }
-
-  /// The runtime ships no footprint, and the host's must run inside the simulator: run on the host, it can't read a
-  /// simulator process without root.
-  private static func footprint(pid: pid_t, tools: SimulatorRuntimeToolCommands) async throws -> Data {
-    let path = FileManager.default.temporaryDirectory.appendingPathComponent("footprint-\(UUID().uuidString).json")
-    defer { try? FileManager.default.removeItem(at: path) }
-    let output = try await tools.launchConsumingOutput(launchPath: "/usr/bin/footprint", arguments: [String(pid), "-j", path.path])
-    try check(output, tool: "footprint", acceptingExitCodes: [0])
-    guard let json = try? Data(contentsOf: path) else {
-      throw ProfileError.noReport(tool: "footprint", output: "expected \(path.path)\nstdout: \(text(output.stdout))\nstderr: \(text(output.stderr))")
-    }
-    return json
   }
 
   private static func check(_ output: InSimulatorToolOutput, tool: String, acceptingExitCodes: Set<Int32>) throws {

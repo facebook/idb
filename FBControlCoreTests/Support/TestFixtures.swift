@@ -52,9 +52,6 @@ enum TestFixtures {
   static let probeVmmapPath = Bundle(for: BundleFinder.self)
     .path(forResource: "probe_vmmap", ofType: "txt")!
 
-  static let probeFootprintPath = Bundle(for: BundleFinder.self)
-    .path(forResource: "probe_footprint", ofType: "json")!
-
   static let probeXctraceTableOfContentsPath = Bundle(for: BundleFinder.self)
     .path(forResource: "probe_xctrace_toc", ofType: "xml")!
 
